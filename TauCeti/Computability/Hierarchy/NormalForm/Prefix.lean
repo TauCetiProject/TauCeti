@@ -653,24 +653,9 @@ disjunction. -/
 theorem eval_or_const_iff (p : QuantifierPrefix) (P : Prop) (R : List ℕ → Prop) (xs : List ℕ) :
     p.Eval (fun l => P ∨ R l) xs ↔ P ∨ p.Eval R xs := by
   classical
-  induction p using eval_induction generalizing xs with
-  | zero => simp
-  | sigma_zero =>
-    simp only [eval_sigma_zero]
-    exact ⟨fun ⟨y, h⟩ => h.imp_right fun hy => ⟨y, hy⟩,
-      fun h => h.elim (fun hP => ⟨0, Or.inl hP⟩) fun ⟨y, hy⟩ => ⟨y, Or.inr hy⟩⟩
-  | pi_zero =>
-    simp only [eval_pi_zero]
-    exact ⟨fun h => (em P).imp_right fun hnP y => (h y).resolve_left hnP,
-      fun h y => h.imp_right fun hR => hR y⟩
-  | sigma_succ n ih =>
-    simp only [eval_sigma_succ, ih]
-    exact ⟨fun ⟨y, h⟩ => h.imp_right fun hy => ⟨y, hy⟩,
-      fun h => h.elim (fun hP => ⟨0, Or.inl hP⟩) fun ⟨y, hy⟩ => ⟨y, Or.inr hy⟩⟩
-  | pi_succ n ih =>
-    simp only [eval_pi_succ, ih]
-    exact ⟨fun h => (em P).imp_right fun hnP y => (h y).resolve_left hnP,
-      fun h y => h.imp_right fun hR => hR y⟩
+  have h := eval_and_const_iff p.dual (¬P) (fun l => ¬R l) xs
+  simp only [← not_or, ← not_eval_iff] at h
+  exact not_iff_not.1 h
 
 /-- A premise independent of the bound variables pulls out of any quantifier prefix under
 implication. -/
@@ -727,90 +712,24 @@ theorem eval_addForall (p : QuantifierPrefix) (R : List ℕ → Prop) (xs : List
   rw [← dual_addForall, ← not_eval_iff] at h
   simpa [← not_eval_iff] using h.not
 
--- Inductive step for `eval_and_or_unpair_aux`, peeling off the outermost paired variable `y`.
-private theorem eval_and_or_unpair_step (q : QuantifierPrefix) (R₁ R₂ : List ℕ → Prop)
+-- Inductive step for `eval_and_unpair_iff`, peeling off the outermost paired variable `y`.
+private theorem eval_and_unpair_step (q : QuantifierPrefix) (R₁ R₂ : List ℕ → Prop)
     (xs₁ xs₂ xs : List ℕ) (y : ℕ)
     (ih :
-      (q.Eval (fun l =>
-          R₁ ((l.take q.depth).map (fun z => z.unpair.1) ++ (y.unpair.1 :: xs₁)) ∧
-          R₂ ((l.take q.depth).map (fun z => z.unpair.2) ++ (y.unpair.2 :: xs₂))) (y :: xs) ↔
-        q.Eval R₁ (y.unpair.1 :: xs₁) ∧ q.Eval R₂ (y.unpair.2 :: xs₂)) ∧
-      (q.Eval (fun l =>
-          R₁ ((l.take q.depth).map (fun z => z.unpair.1) ++ (y.unpair.1 :: xs₁)) ∨
-          R₂ ((l.take q.depth).map (fun z => z.unpair.2) ++ (y.unpair.2 :: xs₂))) (y :: xs) ↔
-        q.Eval R₁ (y.unpair.1 :: xs₁) ∨ q.Eval R₂ (y.unpair.2 :: xs₂))) :
-    (q.Eval (fun l =>
-        R₁ ((l.take (q.depth + 1)).map (fun z => z.unpair.1) ++ xs₁) ∧
-        R₂ ((l.take (q.depth + 1)).map (fun z => z.unpair.2) ++ xs₂)) (y :: xs) ↔
-      q.Eval R₁ (y.unpair.1 :: xs₁) ∧ q.Eval R₂ (y.unpair.2 :: xs₂)) ∧
-    (q.Eval (fun l =>
-        R₁ ((l.take (q.depth + 1)).map (fun z => z.unpair.1) ++ xs₁) ∨
-        R₂ ((l.take (q.depth + 1)).map (fun z => z.unpair.2) ++ xs₂)) (y :: xs) ↔
-      q.Eval R₁ (y.unpair.1 :: xs₁) ∨ q.Eval R₂ (y.unpair.2 :: xs₂)) := by
-  have htake (bs : List ℕ) (hbs : bs.length = q.depth) (f : ℕ → ℕ) :
+      q.Eval (fun l =>
+        R₁ ((l.take q.depth).map (fun z => z.unpair.1) ++ (y.unpair.1 :: xs₁)) ∧
+        R₂ ((l.take q.depth).map (fun z => z.unpair.2) ++ (y.unpair.2 :: xs₂))) (y :: xs) ↔
+      q.Eval R₁ (y.unpair.1 :: xs₁) ∧ q.Eval R₂ (y.unpair.2 :: xs₂)) :
+    q.Eval (fun l =>
+      R₁ ((l.take (q.depth + 1)).map (fun z => z.unpair.1) ++ xs₁) ∧
+      R₂ ((l.take (q.depth + 1)).map (fun z => z.unpair.2) ++ xs₂)) (y :: xs) ↔
+    q.Eval R₁ (y.unpair.1 :: xs₁) ∧ q.Eval R₂ (y.unpair.2 :: xs₂) := by
+  refine (eval_congr_append fun bs hbs => ?_).trans ih
+  have htake (f : ℕ → ℕ) :
       ((bs ++ y :: xs).take (q.depth + 1)).map f = bs.map f ++ [f y] := by
     rw [← hbs, List.take_append, List.take_of_length_le (Nat.le_succ _)]
     simp
-  have hcongr (bs : List ℕ) (hbs : bs.length = q.depth) :
-      ((bs ++ y :: xs).take (q.depth + 1)).map (fun z => z.unpair.1) ++ xs₁ =
-        ((bs ++ y :: xs).take q.depth).map (fun z => z.unpair.1) ++ (y.unpair.1 :: xs₁) ∧
-      ((bs ++ y :: xs).take (q.depth + 1)).map (fun z => z.unpair.2) ++ xs₂ =
-        ((bs ++ y :: xs).take q.depth).map (fun z => z.unpair.2) ++ (y.unpair.2 :: xs₂) := by
-    simp [htake bs hbs, List.take_left' hbs]
-  constructor
-  · refine (eval_congr_append fun bs hbs => ?_).trans ih.1
-    rw [(hcongr bs hbs).1, (hcongr bs hbs).2]
-  · refine (eval_congr_append fun bs hbs => ?_).trans ih.2
-    rw [(hcongr bs hbs).1, (hcongr bs hbs).2]
-
--- Unpairing all `p.depth` bound variables simultaneously distributes over both `∧` and `∨`.
-private theorem eval_and_or_unpair_aux (p : QuantifierPrefix) (R₁ R₂ : List ℕ → Prop)
-    (xs₁ xs₂ xs : List ℕ) :
-    (p.Eval (fun l =>
-        R₁ ((l.take p.depth).map (fun y => y.unpair.1) ++ xs₁) ∧
-        R₂ ((l.take p.depth).map (fun y => y.unpair.2) ++ xs₂)) xs ↔
-      p.Eval R₁ xs₁ ∧ p.Eval R₂ xs₂) ∧
-    (p.Eval (fun l =>
-        R₁ ((l.take p.depth).map (fun y => y.unpair.1) ++ xs₁) ∨
-        R₂ ((l.take p.depth).map (fun y => y.unpair.2) ++ xs₂)) xs ↔
-      p.Eval R₁ xs₁ ∨ p.Eval R₂ xs₂) := by
-  classical
-  induction p using eval_induction generalizing xs₁ xs₂ xs with
-  | zero => simp
-  | sigma_zero =>
-    simp only [eval_sigma_zero, depth_sigma, Nat.zero_add,
-      List.take_succ_cons, List.take_zero, List.map_cons, List.map_nil, List.singleton_append]
-    constructor
-    · rw [Nat.pairEquiv.symm.exists_congr_left]; simp [exists_and_left, exists_and_right]
-    · rw [Nat.pairEquiv.symm.exists_congr_left]; simp [exists_or]
-  | pi_zero =>
-    simp only [eval_pi_zero, depth_pi, Nat.zero_add,
-      List.take_succ_cons, List.take_zero, List.map_cons, List.map_nil, List.singleton_append]
-    constructor
-    · rw [Nat.pairEquiv.symm.forall_congr_left]; simp [forall_and]
-    · rw [Nat.pairEquiv.symm.forall_congr_left]; simp [forall_or_left, forall_or_right]
-  | sigma_succ n ih =>
-    simp only [eval_sigma_succ, depth_sigma]
-    have hstep (y : ℕ) :=
-      eval_and_or_unpair_step (.pi n) R₁ R₂ xs₁ xs₂ xs y
-        (ih (y.unpair.1 :: xs₁) (y.unpair.2 :: xs₂) (y :: xs))
-    simp only [depth_pi] at hstep
-    constructor
-    · refine (exists_congr fun y => (hstep y).1).trans ?_
-      rw [Nat.pairEquiv.symm.exists_congr_left]; simp [exists_and_left, exists_and_right]
-    · refine (exists_congr fun y => (hstep y).2).trans ?_
-      rw [Nat.pairEquiv.symm.exists_congr_left]; simp [exists_or]
-  | pi_succ n ih =>
-    simp only [eval_pi_succ, depth_pi]
-    have hstep (y : ℕ) :=
-      eval_and_or_unpair_step (.sigma n) R₁ R₂ xs₁ xs₂ xs y
-        (ih (y.unpair.1 :: xs₁) (y.unpair.2 :: xs₂) (y :: xs))
-    simp only [depth_sigma] at hstep
-    constructor
-    · refine (forall_congr' fun y => (hstep y).1).trans ?_
-      rw [Nat.pairEquiv.symm.forall_congr_left]; simp [forall_and]
-    · refine (forall_congr' fun y => (hstep y).2).trans ?_
-      rw [Nat.pairEquiv.symm.forall_congr_left]; simp [forall_or_left, forall_or_right]
+  simp [htake, List.take_left' hbs]
 
 /-- Simultaneous unpairing of bound variables distributes any quantifier prefix over conjunction
 of two matrices. -/
@@ -819,8 +738,37 @@ theorem eval_and_unpair_iff (p : QuantifierPrefix) (R₁ R₂ : List ℕ → Pro
     p.Eval (fun l =>
       R₁ ((l.take p.depth).map (fun y => y.unpair.1) ++ xs₁) ∧
       R₂ ((l.take p.depth).map (fun y => y.unpair.2) ++ xs₂)) xs ↔
-    p.Eval R₁ xs₁ ∧ p.Eval R₂ xs₂ :=
-  (eval_and_or_unpair_aux p R₁ R₂ xs₁ xs₂ xs).1
+    p.Eval R₁ xs₁ ∧ p.Eval R₂ xs₂ := by
+  induction p using eval_induction generalizing xs₁ xs₂ xs with
+  | zero => simp
+  | sigma_zero =>
+    simp only [eval_sigma_zero, depth_sigma, Nat.zero_add,
+      List.take_succ_cons, List.take_zero, List.map_cons, List.map_nil, List.singleton_append]
+    rw [Nat.pairEquiv.symm.exists_congr_left]
+    simp [exists_and_left, exists_and_right]
+  | pi_zero =>
+    simp only [eval_pi_zero, depth_pi, Nat.zero_add,
+      List.take_succ_cons, List.take_zero, List.map_cons, List.map_nil, List.singleton_append]
+    rw [Nat.pairEquiv.symm.forall_congr_left]
+    simp [forall_and]
+  | sigma_succ n ih =>
+    simp only [eval_sigma_succ, depth_sigma]
+    have hstep (y : ℕ) :=
+      eval_and_unpair_step (.pi n) R₁ R₂ xs₁ xs₂ xs y
+        (ih (y.unpair.1 :: xs₁) (y.unpair.2 :: xs₂) (y :: xs))
+    simp only [depth_pi] at hstep
+    refine (exists_congr hstep).trans ?_
+    rw [Nat.pairEquiv.symm.exists_congr_left]
+    simp [exists_and_left, exists_and_right]
+  | pi_succ n ih =>
+    simp only [eval_pi_succ, depth_pi]
+    have hstep (y : ℕ) :=
+      eval_and_unpair_step (.sigma n) R₁ R₂ xs₁ xs₂ xs y
+        (ih (y.unpair.1 :: xs₁) (y.unpair.2 :: xs₂) (y :: xs))
+    simp only [depth_sigma] at hstep
+    refine (forall_congr' hstep).trans ?_
+    rw [Nat.pairEquiv.symm.forall_congr_left]
+    simp [forall_and]
 
 /-- Simultaneous unpairing of bound variables distributes any quantifier prefix over disjunction
 of two matrices. -/
@@ -829,8 +777,11 @@ theorem eval_or_unpair_iff (p : QuantifierPrefix) (R₁ R₂ : List ℕ → Prop
     p.Eval (fun l =>
       R₁ ((l.take p.depth).map (fun y => y.unpair.1) ++ xs₁) ∨
       R₂ ((l.take p.depth).map (fun y => y.unpair.2) ++ xs₂)) xs ↔
-    p.Eval R₁ xs₁ ∨ p.Eval R₂ xs₂ :=
-  (eval_and_or_unpair_aux p R₁ R₂ xs₁ xs₂ xs).2
+    p.Eval R₁ xs₁ ∨ p.Eval R₂ xs₂ := by
+  classical
+  have h := eval_and_unpair_iff p.dual (fun l => ¬R₁ l) (fun l => ¬R₂ l) xs₁ xs₂ xs
+  simp only [depth_dual, ← not_or, ← not_eval_iff] at h
+  exact not_iff_not.1 h
 
 /-! ### Associated arithmetical pointclasses -/
 
@@ -860,59 +811,61 @@ theorem isClass_pi {Z : Set ℕ} {n : ℕ} {α : Type*} [Primcodable α] {P : α
 @[simp]
 theorem isClass_ofSigma {Z : Set ℕ} {n : ℕ} {α : Type*} [Primcodable α] {P : α → Prop} :
     IsClass Z (ofSigma n) P ↔ IsSigma Z n P := by
-  cases n <;> rfl
+  cases n with
+  | zero => rw [ofSigma_zero, isClass_zero]
+  | succ n => rw [ofSigma_succ, isClass_sigma]
 
 /-- `ofPi n` names Π⁰ₙ for every `n`. -/
 @[simp]
 theorem isClass_ofPi {Z : Set ℕ} {n : ℕ} {α : Type*} [Primcodable α] {P : α → Prop} :
     IsClass Z (ofPi n) P ↔ IsPi Z n P := by
   cases n with
-  | zero => exact isPi_zero_iff.symm
-  | succ n => rfl
+  | zero => rw [ofPi_zero, isClass_zero, isPi_zero_iff]
+  | succ n => rw [ofPi_succ, isClass_pi]
 
 /-- Pointclass membership depends only on the extension of the predicate. -/
 theorem IsClass.of_eq {Z : Set ℕ} {p : QuantifierPrefix} {α : Type*} [Primcodable α]
     {P Q : α → Prop} (h : p.IsClass Z P) (hPQ : ∀ x, P x ↔ Q x) : p.IsClass Z Q := by
   cases p with
-  | zero => exact IsSigma.of_eq h hPQ
-  | sigma n => exact IsSigma.of_eq h hPQ
-  | pi n => exact IsPi.of_eq h hPQ
+  | zero => exact isClass_zero.2 (IsSigma.of_eq (isClass_zero.1 h) hPQ)
+  | sigma _ => exact isClass_sigma.2 (IsSigma.of_eq (isClass_sigma.1 h) hPQ)
+  | pi _ => exact isClass_pi.2 (IsPi.of_eq (isClass_pi.1 h) hPQ)
 
 /-- Every prefix pointclass is closed under `Z`-computable changes of parameters. -/
 theorem IsClass.preimage {Z : Set ℕ} {p : QuantifierPrefix} {α β : Type*}
     [Primcodable α] [Primcodable β] {P : α → Prop} (h : p.IsClass Z P)
     {f : β → α} (hf : ComputableIn {Z.oracle} f) : p.IsClass Z (fun x => P (f x)) := by
   cases p with
-  | zero => exact IsSigma.preimage h hf
-  | sigma n => exact IsSigma.preimage h hf
-  | pi n => exact IsPi.preimage h hf
+  | zero => exact isClass_zero.2 (IsSigma.preimage (isClass_zero.1 h) hf)
+  | sigma _ => exact isClass_sigma.2 (IsSigma.preimage (isClass_sigma.1 h) hf)
+  | pi _ => exact isClass_pi.2 (IsPi.preimage (isClass_pi.1 h) hf)
 
 /-- Complementation dualizes the prefix pointclass. -/
 @[simp]
 theorem isClass_not_iff {Z : Set ℕ} {p : QuantifierPrefix} {α : Type*} [Primcodable α]
     {P : α → Prop} : p.IsClass Z (fun x => ¬P x) ↔ p.dual.IsClass Z P := by
   cases p with
-  | zero => exact isSigma_not_iff.trans isPi_zero_iff
-  | sigma n => exact isSigma_not_iff
-  | pi n => exact isPi_not_iff
+  | zero => simp only [dual_zero, isClass_zero, isSigma_not_iff, isPi_zero_iff]
+  | sigma _ => rw [dual_sigma, isClass_sigma, isClass_pi, isSigma_not_iff]
+  | pi _ => rw [dual_pi, isClass_pi, isClass_sigma, isPi_not_iff]
 
 /-- Every prefix pointclass is closed under conjunction. -/
 theorem IsClass.and {Z : Set ℕ} {p : QuantifierPrefix} {α : Type*} [Primcodable α]
     {P Q : α → Prop} (hP : p.IsClass Z P) (hQ : p.IsClass Z Q) :
     p.IsClass Z (fun x => P x ∧ Q x) := by
   cases p with
-  | zero => exact IsSigma.and hP hQ
-  | sigma _ => exact IsSigma.and hP hQ
-  | pi _ => exact IsPi.and hP hQ
+  | zero => exact isClass_zero.2 (IsSigma.and (isClass_zero.1 hP) (isClass_zero.1 hQ))
+  | sigma _ => exact isClass_sigma.2 (IsSigma.and (isClass_sigma.1 hP) (isClass_sigma.1 hQ))
+  | pi _ => exact isClass_pi.2 (IsPi.and (isClass_pi.1 hP) (isClass_pi.1 hQ))
 
 /-- Every prefix pointclass is closed under disjunction. -/
 theorem IsClass.or {Z : Set ℕ} {p : QuantifierPrefix} {α : Type*} [Primcodable α]
     {P Q : α → Prop} (hP : p.IsClass Z P) (hQ : p.IsClass Z Q) :
     p.IsClass Z (fun x => P x ∨ Q x) := by
   cases p with
-  | zero => exact IsSigma.or hP hQ
-  | sigma _ => exact IsSigma.or hP hQ
-  | pi _ => exact IsPi.or hP hQ
+  | zero => exact isClass_zero.2 (IsSigma.or (isClass_zero.1 hP) (isClass_zero.1 hQ))
+  | sigma _ => exact isClass_sigma.2 (IsSigma.or (isClass_sigma.1 hP) (isClass_sigma.1 hQ))
+  | pi _ => exact isClass_pi.2 (IsPi.or (isClass_pi.1 hP) (isClass_pi.1 hQ))
 
 /-- Hierarchy order on prefixes corresponds to inclusion of arithmetical pointclasses. -/
 theorem IsClass.mono {Z : Set ℕ} {p q : QuantifierPrefix} {α : Type*} [Primcodable α]
@@ -922,24 +875,27 @@ theorem IsClass.mono {Z : Set ℕ} {p q : QuantifierPrefix} {α : Type*} [Primco
   · have hdep : p.depth + 1 ≤ q.depth := lt_iff.1 hlt
     cases p with
     | zero =>
+      rw [isClass_zero] at h
       cases q with
-      | zero => exact h
-      | sigma m => exact h.of_le (Nat.zero_le _)
-      | pi m => exact (isPi_zero_iff.2 h).of_le (Nat.zero_le _)
-    | sigma n =>
-      cases q with
-      | zero => exact (Nat.not_lt_zero _ hlt).elim
-      | sigma m => exact h.of_le hlt.le
-      | pi m =>
-        simp only [depth_sigma, depth_pi] at hdep
-        exact h.pi_succ.of_le hdep
-    | pi n =>
+      | zero => exact isClass_zero.2 h
+      | sigma _ => exact isClass_sigma.2 (h.of_le (Nat.zero_le _))
+      | pi _ => exact isClass_pi.2 ((isPi_zero_iff.2 h).of_le (Nat.zero_le _))
+    | sigma _ =>
+      rw [isClass_sigma] at h
       cases q with
       | zero => exact (Nat.not_lt_zero _ hlt).elim
-      | sigma m =>
+      | sigma _ => exact isClass_sigma.2 (h.of_le hlt.le)
+      | pi _ =>
         simp only [depth_sigma, depth_pi] at hdep
-        exact h.sigma_succ.of_le hdep
-      | pi m => exact h.of_le hlt.le
+        exact isClass_pi.2 (h.pi_succ.of_le hdep)
+    | pi _ =>
+      rw [isClass_pi] at h
+      cases q with
+      | zero => exact (Nat.not_lt_zero _ hlt).elim
+      | sigma _ =>
+        simp only [depth_sigma, depth_pi] at hdep
+        exact isClass_sigma.2 (h.sigma_succ.of_le hdep)
+      | pi _ => exact isClass_pi.2 (h.of_le hlt.le)
 
 /-- Adding an existential number quantifier lands in `p.addExists.IsClass Z`, contracting with a
 leading existential block when `p` is already existential. -/
@@ -947,9 +903,15 @@ theorem IsClass.exists_nat {Z : Set ℕ} {p : QuantifierPrefix} {α : Type*} [Pr
     {R : α × ℕ → Prop} (h : p.IsClass Z R) :
     p.addExists.IsClass Z (fun x => ∃ y, R (x, y)) := by
   cases p with
-  | zero => exact isSigma_succ_iff.2 ⟨R, isPi_zero_iff.2 h, fun _ => Iff.rfl⟩
-  | sigma _ => exact IsSigma.exists_nat h
-  | pi _ => exact isSigma_succ_iff.2 ⟨R, h, fun _ => Iff.rfl⟩
+  | zero =>
+    rw [addExists_zero, isClass_sigma]
+    exact isSigma_succ_iff.2 ⟨R, isPi_zero_iff.2 (isClass_zero.1 h), fun _ => Iff.rfl⟩
+  | sigma _ =>
+    rw [addExists_sigma, isClass_sigma]
+    exact IsSigma.exists_nat (isClass_sigma.1 h)
+  | pi _ =>
+    rw [addExists_pi, isClass_sigma]
+    exact isSigma_succ_iff.2 ⟨R, isClass_pi.1 h, fun _ => Iff.rfl⟩
 
 /-- Adding a universal number quantifier lands in `p.addForall.IsClass Z`, contracting with a
 leading universal block when `p` is already universal. -/
@@ -957,9 +919,15 @@ theorem IsClass.forall_nat {Z : Set ℕ} {p : QuantifierPrefix} {α : Type*} [Pr
     {R : α × ℕ → Prop} (h : p.IsClass Z R) :
     p.addForall.IsClass Z (fun x => ∀ y, R (x, y)) := by
   cases p with
-  | zero => exact isPi_succ_iff.2 ⟨R, h, fun _ => Iff.rfl⟩
-  | sigma _ => exact isPi_succ_iff.2 ⟨R, h, fun _ => Iff.rfl⟩
-  | pi _ => exact IsPi.forall_nat h
+  | zero =>
+    rw [addForall_zero, isClass_pi]
+    exact isPi_succ_iff.2 ⟨R, isClass_zero.1 h, fun _ => Iff.rfl⟩
+  | sigma _ =>
+    rw [addForall_sigma, isClass_pi]
+    exact isPi_succ_iff.2 ⟨R, isClass_sigma.1 h, fun _ => Iff.rfl⟩
+  | pi _ =>
+    rw [addForall_pi, isClass_pi]
+    exact IsPi.forall_nat (isClass_pi.1 h)
 
 end QuantifierPrefix
 

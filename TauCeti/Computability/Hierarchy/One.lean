@@ -90,8 +90,8 @@ theorem isSigma_one_eval_bool :
       Primrec.snd
   have hdom := (isSigma_one_dom_eval (Z := Z) Code.universal).preimage harg.computableIn
   refine hdom.of_eq fun p => ?_
-  have hZ : Z.oracle = ((Z.indicator 1 : ℕ → ℕ) : ℕ →. ℕ) := funext fun n => by simp
-  rw [hZ, Code.eval_universal, ← hZ, ofNat_encode, Code.eval_comp]
+  rw [Z.oracle_eq_indicator, Code.eval_universal, ← Z.oracle_eq_indicator, ofNat_encode,
+    Code.eval_comp]
   have hbind : ∀ y : ℕ,
       y ∈ (Code.eval Z.oracle p.1 p.2 >>= Code.eval Z.oracle guard) ↔
         ∃ m ∈ Code.eval Z.oracle p.1 p.2, m < 2 ∧ y = 0 := fun y => by

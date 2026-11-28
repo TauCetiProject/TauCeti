@@ -227,20 +227,21 @@ theorem primrec₂_falseCode : Primrec₂ falseCode :=
 @[simp]
 theorem matrixHolds_falseCode (Z : Set ℕ) (p : QuantifierPrefix) (k : ℕ) (l : List ℕ) :
     ¬(falseCode p k).MatrixHolds Z l := by
-  simp [MatrixHolds]
+  simp [matrixHolds_iff]
 
 /-- `falseCode` is valid relative to every oracle. -/
 @[simp]
 theorem isValid_falseCode (Z : Set ℕ) (p : QuantifierPrefix) (k : ℕ) :
-    (falseCode p k).IsValid Z := fun _ _ => ⟨false, by simp [falseCode]⟩
+    (falseCode p k).IsValid Z :=
+  isValid_iff.2 fun _ _ => ⟨false, by simp [falseCode]⟩
 
 /-- `falseCode` defines the identically false predicate on lists. -/
 @[simp]
 theorem evalList_falseCode (Z : Set ℕ) (p : QuantifierPrefix) (k : ℕ) (xs : List ℕ) :
     ¬(falseCode p k).EvalList Z xs := by
   have h : (falseCode p k).EvalList Z xs ↔ p.Eval (fun _ => False) xs :=
-    QuantifierPrefix.eval_congr fun l => by
-      simp [MatrixHolds, falseCode]
+    evalList_iff.trans <| QuantifierPrefix.eval_congr fun l => by
+      simp [matrixHolds_iff, falseCode]
   rw [h]
   simp
 
@@ -249,7 +250,7 @@ theorem evalList_falseCode (Z : Set ℕ) (p : QuantifierPrefix) (k : ℕ) (xs : 
 theorem holds_falseCode (Z : Set ℕ) (p : QuantifierPrefix) (k : ℕ)
     (x : Fin (falseCode p k).arity → ℕ) :
     ¬(falseCode p k).Holds Z x :=
-  evalList_falseCode Z p k (List.ofFn x)
+  holds_iff.not.2 (evalList_falseCode Z p k (List.ofFn x))
 
 end NormalFormCode
 
@@ -366,7 +367,9 @@ private theorem isClass_eval_of_valid {Z : Set ℕ} {p : QuantifierPrefix} {k : 
 a predicate in the arithmetical pointclass named by its quantifier prefix. -/
 theorem NormalFormCode.IsValid.isClass_holds {Z : Set ℕ} {nf : NormalFormCode}
     (h : nf.IsValid Z) : nf.quantifiers.IsClass Z (nf.Holds Z) :=
-  isClass_eval_of_valid h
+  (isClass_eval_of_valid (NormalFormCode.isValid_iff.1 h)).of_eq fun _ =>
+    (QuantifierPrefix.eval_congr fun _ => NormalFormCode.matrixHolds_iff.symm).trans
+      (NormalFormCode.evalList_iff.symm.trans NormalFormCode.holds_iff.symm)
 
 -- Completeness at quantifier depth zero: extract a matrix program from a `Z`-computable Boolean.
 private theorem exists_code_of_isClass_zero {Z : Set ℕ} {k : ℕ}
@@ -458,9 +461,10 @@ theorem isClass_iff_exists_normalFormCode {Z : Set ℕ} {p : QuantifierPrefix} {
   constructor
   · intro hP
     obtain ⟨c, hval, hsem⟩ := exists_code_of_isClass hP
-    exact ⟨⟨p, k, c⟩, rfl, rfl, hval, hsem⟩
+    exact ⟨⟨p, k, c⟩, rfl, rfl, (NormalFormCode.isValid_mk Z p k c).2 hval,
+      fun x => (NormalFormCode.evalList_mk Z p k c (List.ofFn x)).trans (hsem x)⟩
   · rintro ⟨nf, rfl, rfl, hval, hsem⟩
-    exact hval.isClass_holds.of_eq hsem
+    exact hval.isClass_holds.of_eq fun x => NormalFormCode.holds_iff.trans (hsem x)
 
 /-- A `k`-ary predicate is Σ⁰ₙ relative to `Z` if and only if it is defined by a valid displayed
 normal-form code with prefix `QuantifierPrefix.ofSigma n` and arity `k`. -/
@@ -510,7 +514,7 @@ theorem isClass_iff_exists_normalFormCode_unary {Z : Set ℕ} {p : QuantifierPre
       Primrec.fin_curry.2 (Primrec.encode.comp Primrec.fst)
     have hclass := hval.isClass_holds.preimage hfun.computableIn
     refine hclass.of_eq fun x => ?_
-    simpa [NormalFormCode.Holds, List.ofFn_succ] using hsem x
+    simpa [NormalFormCode.holds_iff, List.ofFn_succ] using hsem x
 
 /-! ### Exact Π⁰₂-completeness and undecidability of `NormalFormCode.IsValid` -/
 
@@ -535,9 +539,11 @@ theorem isPi_two_isValid {Z : Set ℕ} : IsPi Z 2 (NormalFormCode.IsValid Z) := 
   constructor
   · intro h n
     by_cases hl : (ofNat (List ℕ) n).length = nf.quantifiers.depth + nf.arity
-    · exact Or.inr (by simpa only [encode_ofNat] using h (ofNat (List ℕ) n) hl)
+    · exact Or.inr (by
+        simpa only [encode_ofNat] using NormalFormCode.isValid_iff.1 h (ofNat (List ℕ) n) hl)
     · exact Or.inl hl
-  · intro h l hl
+  · intro h
+    refine NormalFormCode.isValid_iff.2 fun l hl => ?_
     rcases h (encode l) with hne | hb
     · simp only [ofNat_encode] at hne
       exact (hne hl).elim
@@ -563,7 +569,7 @@ theorem exists_primrec_totality_iff_isValid :
     simp only [Code.comp.injEq] at hmat
     rw [← @encode_ofNat Code _ e₁, ← @encode_ofNat Code _ e₂, hmat.2.1]
   · intro Z e
-    simp only [mem_totality, NormalFormCode.IsValid, QuantifierPrefix.depth_zero, Nat.zero_add]
+    simp only [mem_totality, NormalFormCode.isValid_mk, QuantifierPrefix.depth_zero, Nat.zero_add]
     have hmem : ∀ (x z : ℕ),
         z ∈ Code.eval Z.oracle (Code.comp Code.zero (Code.comp (ofNat Code e) headCode))
           (encode [x]) ↔ (Code.eval Z.oracle (ofNat Code e) x).Dom ∧ z = 0 := fun x z => by
