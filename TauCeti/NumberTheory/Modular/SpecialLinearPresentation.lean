@@ -23,6 +23,10 @@ presentation of `SL(2, ℤ)`:
 
 `SL(2, ℤ) ≅ ⟨s, r | s⁴, s² r⁻³⟩`.
 
+The amalgamated free product itself, the pushout `Monoid.PushoutI` of `ℤ/4 ← ℤ/2 → ℤ/6` along
+`1 ↦ 2` and `1 ↦ 3`, is identified with `SL(2, ℤ)` by `TauCeti.ModularGroup.slAmalgamEquiv` in
+`TauCeti.NumberTheory.Modular.Amalgam`.
+
 The proof lifts the presentation `PSL(2, ℤ) ≅ Δ(3, 2, ∞)` of
 `TauCeti.ModularGroup.modularEquiv` through the central extension
 `1 → {±1} → SL(2, ℤ) → PSL(2, ℤ) → 1`. In the presented group the element `s²` is central and
@@ -201,8 +205,10 @@ private theorem slPresentationHom_surjective : Function.Surjective slPresentatio
   · refine ⟨(PresentedGroup.of 0)⁻¹ * PresentedGroup.of 1, ?_⟩
     rw [map_mul, map_inv, slPresentationHom_of_zero, slPresentationHom_of_one, S_inv_mul_R]
 
-/-- **The amalgam presentation of the modular group.** `SL(2, ℤ)` is the group
-`⟨s, r | s⁴, s² r⁻³⟩ = ℤ/4 ∗_{ℤ/2} ℤ/6`, with `s` and `r` sent to `S` and `R = S T`. -/
+/-- **A presentation of the modular group.** `SL(2, ℤ)` is the group `⟨s, r | s⁴, s² r⁻³⟩`, with
+`s` and `r` sent to `S` and `R = S T`. These are the relations of the amalgam
+`ℤ/4 ∗_{ℤ/2} ℤ/6`; the amalgamated free product itself is identified with `SL(2, ℤ)` by
+`TauCeti.ModularGroup.slAmalgamEquiv` in `TauCeti.NumberTheory.Modular.Amalgam`. -/
 noncomputable def slPresentation : PresentedGroup slRelators ≃* SL(2, ℤ) :=
   MulEquiv.ofBijective slPresentationHom
     ⟨slPresentationHom_injective, slPresentationHom_surjective⟩

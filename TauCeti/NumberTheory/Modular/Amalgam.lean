@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.ZMod.Defs
 public import Mathlib.GroupTheory.PresentedGroup
+public import Mathlib.GroupTheory.PushoutI
 public import TauCeti.NumberTheory.Modular.Generators
 import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Triangle.Group
+import TauCeti.Data.ZMod.MonoidHomEquiv
 import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.FinTwo
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 
@@ -28,12 +31,18 @@ the subgroup it generates is presented by `⟨s, v | s², v³⟩`. The triangle 
 `TauCeti.ModularGroup.modularEquiv : Δ(3, 2, ∞) ≃* PSL(2, ℤ)` inverts the induced map of this
 quotient onto `PSL(2, ℤ)`, so the kernel lies in `{1, s²}`, and `s²` maps to `-1 ≠ 1`.
 
+Comparing universal properties, `SL(2, ℤ)` is then the amalgamated free product itself: the
+pushout `Monoid.PushoutI` of `ℤ/4 ← ℤ/2 → ℤ/6` along `1 ↦ 2` and `1 ↦ 3`.
+
 ## Main declarations
 
 * `TauCeti.ModularGroup.sl2zRelators`: the relators `s⁴` and `s² v⁻³` in `FreeGroup (Fin 2)`.
 * `TauCeti.ModularGroup.sl2zLift`: the universal property of the presentation.
 * `TauCeti.ModularGroup.sl2zPresentationEquiv`: the presentation
   `PresentedGroup sl2zRelators ≃* SL(2, ℤ)`, sending the generators to `S` and `-U`.
+* `TauCeti.ModularGroup.slAmalgamEquiv`: the amalgamated free product
+  `Monoid.PushoutI slAmalgamEmbedding = ℤ/4 ∗_{ℤ/2} ℤ/6` is isomorphic to `SL(2, ℤ)`, with the
+  generators of `ℤ/4`, `ℤ/6` and `ℤ/2` sent to `S`, `-U` and `-1`.
 
 ## References
 
@@ -218,5 +227,128 @@ theorem sl2zPresentationEquiv_symm_S : sl2zPresentationEquiv.symm S = .of 0 :=
 @[simp]
 theorem sl2zPresentationEquiv_symm_neg_U : sl2zPresentationEquiv.symm (-U) = .of 1 :=
   (MulEquiv.symm_apply_eq _).2 sl2zPresentationEquiv_of_one.symm
+
+/-! ### The amalgamated free product `ℤ/4 ∗_{ℤ/2} ℤ/6` -/
+
+/-- The orders `4` and `6` of the two cyclic factors of the amalgam `ℤ/4 ∗_{ℤ/2} ℤ/6`. -/
+def slAmalgamOrder : Fin 2 → ℕ := ![4, 6]
+
+/-- The first factor of the amalgam `ℤ/4 ∗_{ℤ/2} ℤ/6` has order `4`. -/
+theorem slAmalgamOrder_zero : slAmalgamOrder 0 = 4 := (rfl)
+
+/-- The second factor of the amalgam `ℤ/4 ∗_{ℤ/2} ℤ/6` has order `6`. -/
+theorem slAmalgamOrder_one : slAmalgamOrder 1 = 6 := (rfl)
+
+/-- The orders `4` and `6` of the factors of the amalgam are nonzero. -/
+instance (i : Fin 2) : NeZero (slAmalgamOrder i) :=
+  ⟨by fin_cases i <;> decide⟩
+
+/-- The factors `ℤ/4` (for `i = 0`) and `ℤ/6` (for `i = 1`) of the amalgam
+`ℤ/4 ∗_{ℤ/2} ℤ/6`, written multiplicatively. -/
+abbrev slAmalgamFactor (i : Fin 2) : Type := Multiplicative (ZMod (slAmalgamOrder i))
+
+/-- The embeddings of `ℤ/2` into `ℤ/4` and `ℤ/6` along which `SL(2, ℤ)` is amalgamated: the
+generator `1` goes to `2 ∈ ℤ/4` and to `3 ∈ ℤ/6`. -/
+noncomputable def slAmalgamEmbedding (i : Fin 2) : Multiplicative (ZMod 2) →* slAmalgamFactor i :=
+  (zmodMonoidHomEquiv 2 _).symm ⟨.ofAdd 1 ^ ![2, 3] i, by fin_cases i <;> decide⟩
+
+/-- The embedding `slAmalgamEmbedding i` sends the generator of `ℤ/2` to the square of the
+generator of `ℤ/4` (for `i = 0`) or the cube of the generator of `ℤ/6` (for `i = 1`). -/
+theorem slAmalgamEmbedding_ofAdd_one (i : Fin 2) :
+    slAmalgamEmbedding i (.ofAdd 1) = .ofAdd 1 ^ ![2, 3] i :=
+  zmodMonoidHomEquiv_symm_apply_ofAdd_one _
+
+/-- The embedding of `ℤ/2` into `ℤ/4` sends the generator to the square of the generator. -/
+@[simp]
+theorem slAmalgamEmbedding_zero_ofAdd_one :
+    slAmalgamEmbedding 0 (.ofAdd 1) = .ofAdd 1 ^ 2 :=
+  slAmalgamEmbedding_ofAdd_one 0
+
+/-- The embedding of `ℤ/2` into `ℤ/6` sends the generator to the cube of the generator. -/
+@[simp]
+theorem slAmalgamEmbedding_one_ofAdd_one :
+    slAmalgamEmbedding 1 (.ofAdd 1) = .ofAdd 1 ^ 3 :=
+  slAmalgamEmbedding_ofAdd_one 1
+
+/-- The generator `1` of the factor `ℤ/4` or `ℤ/6` in the amalgam. -/
+private noncomputable def amalgamGen (i : Fin 2) : Monoid.PushoutI slAmalgamEmbedding :=
+  Monoid.PushoutI.of (φ := slAmalgamEmbedding) i (.ofAdd 1)
+
+/-- The squared generator of `ℤ/4` and the cubed generator of `ℤ/6` are both the image of the
+generator of `ℤ/2`. -/
+private theorem amalgamGen_pow (i : Fin 2) :
+    amalgamGen i ^ ![2, 3] i = Monoid.PushoutI.base _ (.ofAdd 1) := by
+  rw [amalgamGen, ← map_pow, ← slAmalgamEmbedding_ofAdd_one, Monoid.PushoutI.of_apply_eq_base]
+
+/-- The homomorphism from the amalgam to `SL(2, ℤ)` sending the generators to `S` and `-U`; the
+homomorphisms out of the cyclic factors are given by `TauCeti.zmodMonoidHomEquiv`. -/
+private noncomputable def amalgamToSL : Monoid.PushoutI slAmalgamEmbedding →* SL(2, ℤ) :=
+  Monoid.PushoutI.lift
+    (fun i ↦ (zmodMonoidHomEquiv _ _).symm ⟨![S, -U] i, by
+      fin_cases i
+      exacts [S_pow_four, (pow_mul (-U) 3 2).trans (by rw [neg_U_pow_three]; decide)]⟩)
+    ((zmodMonoidHomEquiv 2 _).symm ⟨-1, by decide⟩) fun i ↦ MonoidHom.ext_mzmod <| by
+      rw [MonoidHom.comp_apply, slAmalgamEmbedding_ofAdd_one, map_pow,
+        zmodMonoidHomEquiv_symm_apply_ofAdd_one, zmodMonoidHomEquiv_symm_apply_ofAdd_one]
+      fin_cases i
+      exacts [S_sq, neg_U_pow_three]
+
+private theorem amalgamToSL_amalgamGen (i : Fin 2) :
+    amalgamToSL (amalgamGen i) = ![S, -U] i := by
+  rw [amalgamGen, amalgamToSL, Monoid.PushoutI.lift_of, zmodMonoidHomEquiv_symm_apply_ofAdd_one]
+
+/-- The homomorphism from `SL(2, ℤ)` to the amalgam sending `S` and `-U` to the generators,
+read off the presentation `sl2zPresentationEquiv`. -/
+private noncomputable def slToAmalgam : SL(2, ℤ) →* Monoid.PushoutI slAmalgamEmbedding :=
+  (sl2zLift (amalgamGen 0) (amalgamGen 1)
+    (by rw [amalgamGen, ← map_pow,
+      (by decide : Multiplicative.ofAdd (1 : ZMod (slAmalgamOrder 0)) ^ 4 = 1), map_one])
+    ((amalgamGen_pow 0).trans (amalgamGen_pow 1).symm)).comp
+    sl2zPresentationEquiv.symm.toMonoidHom
+
+private theorem slToAmalgam_S : slToAmalgam S = amalgamGen 0 := by
+  rw [slToAmalgam, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, sl2zPresentationEquiv_symm_S]
+  exact sl2zLift_of_zero ..
+
+private theorem slToAmalgam_neg_U : slToAmalgam (-U) = amalgamGen 1 := by
+  rw [slToAmalgam, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    sl2zPresentationEquiv_symm_neg_U]
+  exact sl2zLift_of_one ..
+
+/-- **`SL(2, ℤ)` is the amalgamated free product `ℤ/4 ∗_{ℤ/2} ℤ/6`.** The pushout of
+`ℤ/4 ← ℤ/2 → ℤ/6`, along `1 ↦ 2` and `1 ↦ 3`, is isomorphic to `SL(2, ℤ)`, with the generators
+of `ℤ/4` and `ℤ/6` sent to `S` and `-U = [[0, 1], [-1, 1]]`, and the generator of `ℤ/2` to
+`-1`. -/
+noncomputable def slAmalgamEquiv : Monoid.PushoutI slAmalgamEmbedding ≃* SL(2, ℤ) :=
+  MonoidHom.toMulEquiv amalgamToSL slToAmalgam
+    (Monoid.PushoutI.hom_ext_nonempty <| Fin.forall_fin_two.2
+      ⟨MonoidHom.ext_mzmod <|
+        (congrArg slToAmalgam (amalgamToSL_amalgamGen 0)).trans slToAmalgam_S,
+      MonoidHom.ext_mzmod <|
+        (congrArg slToAmalgam (amalgamToSL_amalgamGen 1)).trans slToAmalgam_neg_U⟩)
+    ((MonoidHom.cancel_right (f := sl2zPresentationEquiv.toMonoidHom)
+      sl2zPresentationEquiv.surjective).1 <| PresentedGroup.ext <| Fin.forall_fin_two.2
+        ⟨by simp [slToAmalgam_S, amalgamToSL_amalgamGen],
+          by simp [slToAmalgam_neg_U, amalgamToSL_amalgamGen]⟩)
+
+/-- The isomorphism `ℤ/4 ∗_{ℤ/2} ℤ/6 ≃* SL(2, ℤ)` sends the generator of `ℤ/4` to `S`. -/
+@[simp]
+theorem slAmalgamEquiv_of_zero :
+    slAmalgamEquiv (Monoid.PushoutI.of (φ := slAmalgamEmbedding) 0 (.ofAdd 1)) = S :=
+  amalgamToSL_amalgamGen 0
+
+/-- The isomorphism `ℤ/4 ∗_{ℤ/2} ℤ/6 ≃* SL(2, ℤ)` sends the generator of `ℤ/6` to
+`-U = [[0, 1], [-1, 1]]`. -/
+@[simp]
+theorem slAmalgamEquiv_of_one :
+    slAmalgamEquiv (Monoid.PushoutI.of (φ := slAmalgamEmbedding) 1 (.ofAdd 1)) = -U :=
+  amalgamToSL_amalgamGen 1
+
+/-- The isomorphism `ℤ/4 ∗_{ℤ/2} ℤ/6 ≃* SL(2, ℤ)` sends the generator of `ℤ/2` to `-1`. -/
+@[simp]
+theorem slAmalgamEquiv_base :
+    slAmalgamEquiv (Monoid.PushoutI.base slAmalgamEmbedding (.ofAdd 1)) = -1 := by
+  rw [← amalgamGen_pow 0, map_pow]
+  exact (congrArg (· ^ 2) (amalgamToSL_amalgamGen 0)).trans S_sq
 
 end TauCeti.ModularGroup

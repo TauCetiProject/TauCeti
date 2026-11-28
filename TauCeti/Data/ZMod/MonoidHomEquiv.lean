@@ -26,6 +26,7 @@ are written multiplicatively, as `Multiplicative (ZMod N)` and `Multiplicative (
 ## Main results
 
 * `Multiplicative.mem_zpowers_ofAdd_one`: the element `1` generates `ℤ/Nℤ`.
+* `MonoidHom.ext_mzmod`: homomorphisms `ℤ/Nℤ →* G` agreeing on `1` are equal.
 * `TauCeti.zmodMonoidHomEquiv_symm_apply` and `TauCeti.zmodProdMonoidHomEquiv_symm_apply`: the
   homomorphism of `g` sends `a` to `g ^ a.val`, and that of `(g, h)` sends `(a, b)` to
   `g ^ a.val * h ^ b.val`.
@@ -41,6 +42,14 @@ variable {N : ℕ}
 theorem Multiplicative.mem_zpowers_ofAdd_one (x : Multiplicative (ZMod N)) :
     x ∈ Subgroup.zpowers (.ofAdd 1) :=
   ⟨x.toAdd.cast, by simp [← ofAdd_zsmul]⟩
+
+/-- **Homomorphisms out of `ℤ/Nℤ` agreeing on `1` are equal**, since `1` generates `ℤ/Nℤ`: the
+analogue of `MonoidHom.ext_mint` for `Multiplicative (ZMod N)`. -/
+theorem MonoidHom.ext_mzmod {G : Type*} [Group G] {f g : Multiplicative (ZMod N) →* G}
+    (h : f (.ofAdd 1) = g (.ofAdd 1)) : f = g :=
+  MonoidHom.ext fun x ↦ by
+    obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.1 (Multiplicative.mem_zpowers_ofAdd_one x)
+    rw [map_zpow, map_zpow, h]
 
 namespace TauCeti
 
