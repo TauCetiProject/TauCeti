@@ -39,8 +39,15 @@ of additive functors is again additive. Hence the additive functors `D ⥤ A` in
 category `A` contain zero and are closed under kernels, cokernels, and all limits and colimits
 that exist in `A`. They are also closed under every finite product that exists in `D ⥤ A`, since
 such a product is a biproduct and the additive evaluation functors preserve it.
-In particular, additive functors have filtered colimits when the target does, and these colimits
-are exact when the target has finite limits and satisfies AB5.
+In particular, additive functors have filtered colimits when the target does.
+
+Colimits of a shape `J` are exact in `D ⥤+ A` when they are exact in a target `A` with finite
+limits. For the ordinary functor category `D ⥤ A` this is Mathlib's instance in
+`Mathlib/CategoryTheory/Abelian/GrothendieckAxioms/FunctorCategory.lean`, which is the pointwise
+step. The inclusion `D ⥤+ A ⥤ D ⥤ A` of the additive full subcategory is fully faithful and
+preserves finite limits and colimits of shape `J`, so Mathlib's
+`CategoryTheory.HasExactColimitsOfShape.domain_of_functor` transfers the result through it. For
+filtered shapes this gives AB5 for `D ⥤+ A` when `A` satisfies AB5.
 
 When `D` is linear over a ring `R`, so is the category `D ⥤+ A` of additive functors into any
 preadditive `A`, with `r ∈ R` acting on `φ : F ⟶ G` by `φ ≫ G(r • 𝟙)` ([Mitchell, §11]). This
@@ -181,13 +188,23 @@ instance additiveFunctor_isClosedUnderColimitsOfShape (J : Type*) [Category* J]
 instance [HasFilteredColimitsOfSize.{w, w'} A] : HasFilteredColimitsOfSize.{w, w'} (D ⥤+ A) where
   HasColimitsOfShape _ _ _ := inferInstance
 
+/-- Colimits of shape `J` of additive functors are exact if they are exact in a target with
+finite limits. Mathlib's instance for the functor category `D ⥤ A`
+(`Mathlib/CategoryTheory/Abelian/GrothendieckAxioms/FunctorCategory.lean`) gives exactness
+pointwise, and `HasExactColimitsOfShape.domain_of_functor` transfers it through the inclusion of
+the full subcategory of additive functors, which preserves finite limits and colimits of shape
+`J`. -/
+instance hasExactColimitsOfShape_additiveFunctor (J : Type*) [Category* J] [HasFiniteLimits A]
+    [HasColimitsOfShape J A] [HasExactColimitsOfShape J A] :
+    HasExactColimitsOfShape J (D ⥤+ A) := by
+  have : (additiveFunctor D A).IsClosedUnderFiniteLimits := ⟨fun _ _ _ ↦ inferInstance⟩
+  exact HasExactColimitsOfShape.domain_of_functor J (additiveFunctor D A).ι
+
 /-- Filtered colimits of additive functors are exact if they are exact in a target with finite
-limits. -/
+limits: apply `hasExactColimitsOfShape_additiveFunctor` to each filtered shape. -/
 noncomputable instance [HasFiniteLimits A] [HasFilteredColimitsOfSize.{w, w'} A]
     [AB5OfSize.{w, w'} A] : AB5OfSize.{w, w'} (D ⥤+ A) where
-  ofShape J _ _ := by
-    have : (additiveFunctor D A).IsClosedUnderFiniteLimits := ⟨fun _ _ _ ↦ inferInstance⟩
-    exact HasExactColimitsOfShape.domain_of_functor J (additiveFunctor D A).ι
+  ofShape J _ _ := hasExactColimitsOfShape_additiveFunctor J
 
 /-- The zero functor is additive. -/
 instance [HasZeroObject A] : (additiveFunctor D A).ContainsZero where

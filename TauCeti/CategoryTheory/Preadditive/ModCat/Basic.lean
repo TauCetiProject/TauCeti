@@ -41,8 +41,9 @@ finitely presented functors are additive, so `mod C` is a full subcategory of `M
 
 * `Abelian (ModCat C)` and `HasColimitsOfShape J (ModCat C)`, found by instance inference from
   the closure instances for additive functors and Mathlib's full-subcategory instances.
-* `ModCat.isSeparating_yoneda`: representable modules separate morphisms, by the additive
-  Yoneda equivalence `CategoryTheory.preadditiveYonedaHomEquiv`.
+* `ModCat.isSeparating_yoneda`: representable modules separate morphisms in `ModCat.{v} C`,
+  where `v` is the universe of the morphisms of `C`, by the additive Yoneda equivalence
+  `TauCeti.preadditiveYonedaHomEquiv`.
 * `Projective ((ModCat.yoneda C).obj X)`: representable modules are projective.
 * `TauCeti.ModCat.linear`: the scoped instance `Linear R (D ⥤+ AddCommGrpCat)` for an `R`-linear
   preadditive category `D`; after `open scoped TauCeti.ModCat`, specializing `D` to an opposite
@@ -85,23 +86,27 @@ abbrev yoneda : C ⥤ ModCat.{v} C :=
   ObjectProperty.lift _ preadditiveYoneda fun _ ↦ (additiveFunctor_iff _).2 inferInstance
 
 variable {C} in
-/-- The representable modules separate morphisms of modules. -/
+/-- The representable modules separate morphisms of modules in `ModCat.{v} C`, where `v` is the
+universe of the morphisms of `C`: the representables take values in `AddCommGrpCat.{v}`. An
+element `x` of a module `F` at `X` is the value at `𝟙 X` of the morphism
+`preadditiveYonedaHomEquiv.symm x` out of the representable module at `X`, so two morphisms
+agreeing after every such morphism agree on `x`. -/
 theorem isSeparating_yoneda :
     (ObjectProperty.ofObj (yoneda C).obj).IsSeparating := by
   intro F G f g h
-  let U := (Functor.whiskeringRight Cᵒᵖ AddCommGrpCat (Type v)).obj (forget AddCommGrpCat)
+  have : F.obj.Additive := (additiveFunctor_iff F.obj).1 F.property
   apply ObjectProperty.hom_ext
-  apply U.map_injective
-  refine hom_ext_yoneda fun X p ↦ ?_
-  let q : preadditiveYoneda.obj X ⟶ F.obj := preadditiveYonedaHomEquiv.symm (yonedaEquiv p)
-  have hq : U.map q = p :=
-    yonedaEquiv.injective <| (yonedaEquiv_whiskerRight_forget q).trans
-      (preadditiveYonedaHomEquiv.apply_symm_apply (yonedaEquiv p))
-  have he : U.map (q ≫ f.hom) = U.map (q ≫ g.hom) :=
-    congrArg (fun k : (yoneda C).obj X ⟶ G ↦ U.map k.hom)
-      (h _ ⟨X⟩ (ObjectProperty.homMk q))
-  -- The source after forgetting is `yoneda.obj X` by `whiskering_preadditiveYoneda`.
-  simpa only [Functor.map_comp, hq] using! he
+  ext X x
+  let q : (yoneda C).obj X.unop ⟶ F :=
+    ObjectProperty.homMk ((preadditiveYonedaHomEquiv (X := X.unop) (F := F.obj)).symm x)
+  have hq : q.hom.app X (𝟙 X.unop) = x :=
+    (preadditiveYonedaHomEquiv_apply (X := X.unop) (F := F.obj) q.hom).symm.trans
+      ((preadditiveYonedaHomEquiv (X := X.unop) (F := F.obj)).apply_symm_apply x)
+  have hc (k : F ⟶ G) : (q ≫ k).hom.app X (𝟙 X.unop) = k.hom.app X x := by
+    rw [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app]
+    exact (AddCommGrpCat.comp_apply (q.hom.app X) (k.hom.app X) (𝟙 X.unop)).trans
+      (congrArg (k.hom.app X) hq)
+  rw [← hc f, ← hc g, h _ ⟨X.unop⟩ q]
 
 /-- **Representable modules are projective.** A morphism `Hom(-, X) ⟶ G` is an element of
 `G(X)` by Yoneda, and it lifts along an epimorphism `F ⟶ G`, which is surjective at `X`. -/

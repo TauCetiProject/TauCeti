@@ -18,12 +18,16 @@ import Mathlib.CategoryTheory.Preadditive.Transfer
 
 The additive Yoneda lemma shows that the representable modules separate morphisms. On a small
 preadditive category their coproduct is a projective separator, and every module is a quotient of
-a coproduct of copies of this separator. This gives enough projectives on any essentially small
-preadditive category by passing to a small model.
+a coproduct of copies of this separator.
+
+The results here are about `ModCat.{w} C`, the modules with values in `AddCommGrpCat.{w}`, and
+they assume that `C` is essentially small in the same universe `w` (`EssentiallySmall.{w} C`).
+The value universe cannot be chosen independently of the size of `C`: the separator and the
+projective presentations are built from a `w`-small model of `C`.
 
 Filtered colimits of additive functors are exact because they are computed pointwise in abelian
-groups. Together with the separator this makes the module category Grothendieck abelian, so
-Mathlib's Grothendieck category API supplies `Ext` in the value universe.
+groups. Together with the separator this makes `ModCat.{w} C` Grothendieck abelian in the
+universe `w`, so Mathlib's Grothendieck category API supplies `Ext` groups that live in `w`.
 
 ## References
 
@@ -40,8 +44,9 @@ namespace TauCeti.ModCat
 
 variable {C : Type u} [Category.{v} C] [Preadditive C]
 
-/-- Modules on an essentially small preadditive category have a projective separator, obtained
-from the coproduct of the representables of a small model. -/
+/-- If `C` is essentially small in the universe `w`, then the category `ModCat.{w} C` of modules
+with values in `AddCommGrpCat.{w}` has a projective separator, obtained from the coproduct of the
+representables of a `w`-small model of `C`. -/
 theorem exists_projective_separator [EssentiallySmall.{w} C] :
     ∃ G : ModCat.{w} C, Projective G ∧ IsSeparator G := by
   let e := equivSmallModel.{w} C
@@ -55,14 +60,16 @@ theorem exists_projective_separator [EssentiallySmall.{w} C] :
   have hsep : IsSeparator G := isSeparating_yoneda.isSeparator_coproduct
   exact ⟨M.functor.obj G, (M.map_projective_iff G).2 inferInstance, hsep.of_equivalence M⟩
 
-/-- The category of modules over an essentially small preadditive category is Grothendieck
-abelian in the value universe. -/
+/-- If `C` is essentially small in the universe `w`, then `ModCat.{w} C` is Grothendieck abelian
+in the universe `w`. Hence Mathlib's `HasExt.{w}` instance for Grothendieck abelian categories
+applies, and the `Ext` groups of `ModCat.{w} C` live in `w`. -/
 noncomputable instance [EssentiallySmall.{w} C] : IsGrothendieckAbelian.{w} (ModCat.{w} C) where
   hasSeparator := by
     obtain ⟨G, _, hG⟩ := exists_projective_separator (C := C)
     exact ⟨G, hG⟩
 
-/-- Modules over an essentially small preadditive category admit epimorphisms from projectives. -/
+/-- If `C` is essentially small in the universe `w`, then `ModCat.{w} C` has enough projectives:
+every module is a quotient of a coproduct of copies of the projective separator. -/
 instance [EssentiallySmall.{w} C] : EnoughProjectives (ModCat.{w} C) where
   presentation F := by
     obtain ⟨G, hG, hsep⟩ := exists_projective_separator (C := C)
