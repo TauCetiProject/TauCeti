@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.Norm.Defs
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import TauCeti.RingTheory.Norm.Units
+import Mathlib.Topology.Algebra.Group.Units
 import Mathlib.Topology.Instances.Matrix
 
 /-!
@@ -40,6 +42,18 @@ theorem continuous_algebraNorm (R S : Type*) [CommRing R] [Ring S] [Algebra R S]
       (Algebra.leftMulMatrix b).toLinearMap).matrix_det.congr fun x ↦
         (Algebra.norm_eq_matrix_det b x).symm
   · exact continuous_const.congr fun x ↦ (Algebra.norm_eq_one_of_not_exists_basis R h x).symm
+
+/-- The unit-group norm `TauCeti.Algebra.normUnits R : Sˣ →* Rˣ` of an algebra with the module
+topology is continuous.
+
+No freeness, finiteness, or continuity of multiplication on `S` is needed: without a finite basis,
+`Algebra.norm` is identically `1`. -/
+@[continuity, fun_prop]
+theorem Algebra.continuous_normUnits (R S : Type*) [CommRing R] [Ring S] [Algebra R S]
+    [TopologicalSpace R] [IsTopologicalRing R] [TopologicalSpace S] [IsModuleTopology R S] :
+    Continuous (Algebra.normUnits R (S := S)) :=
+  (Continuous.units_map (Algebra.norm R : S →* R) (continuous_algebraNorm R S)).congr fun x ↦
+    Units.ext (Algebra.coe_normUnits R x).symm
 
 /-- The norm of a finite-dimensional Hausdorff topological vector space carrying an algebra
 structure over a complete nontrivially normed field is continuous. -/

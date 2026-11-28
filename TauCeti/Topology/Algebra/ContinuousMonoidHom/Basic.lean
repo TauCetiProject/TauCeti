@@ -239,15 +239,32 @@ theorem _root_.ContinuousMonoidHom.inv_apply {A E : Type*} [Monoid A] [Topologic
     f⁻¹ a = (f a)⁻¹ :=
   (rfl)
 
+/-- Evaluation at a point `a : A` as a monoid homomorphism `(A →ₜ* E) →* E`. -/
+@[to_additive /-- Evaluation at a point `a : A` as an additive monoid homomorphism
+`(A →ₜ+ E) →+ E`. -/]
+private def _root_.ContinuousMonoidHom.evalMonoidHom {A E : Type*} [Monoid A] [TopologicalSpace A]
+    [CommMonoid E] [TopologicalSpace E] [ContinuousMul E] (a : A) : (A →ₜ* E) →* E where
+  toFun g := g a
+  map_one' := by simp [ContinuousMonoidHom.one_toFun]
+  map_mul' g h := ContinuousMonoidHom.mul_apply g h a
+
 /-- Integer powers of continuous homomorphisms into a commutative topological group are computed
 pointwise. -/
 @[simp]
 theorem _root_.ContinuousMonoidHom.zpow_apply {A E : Type*} [Monoid A] [TopologicalSpace A]
     [CommGroup E] [TopologicalSpace E] [IsTopologicalGroup E] (f : A →ₜ* E) (n : ℤ) (a : A) :
     (f ^ n) a = f a ^ n :=
-  map_zpow
-    (⟨⟨fun g : A →ₜ* E ↦ g a, by simp [ContinuousMonoidHom.one_toFun]⟩,
-      fun g h ↦ ContinuousMonoidHom.mul_apply g h a⟩ : (A →ₜ* E) →* E) f n
+  map_zpow (ContinuousMonoidHom.evalMonoidHom a) f n
+
+/-- Finite products of continuous homomorphisms into a commutative topological monoid are computed
+pointwise. -/
+@[to_additive (attr := simp) /-- Finite sums of continuous additive homomorphisms into a
+commutative additive topological monoid are computed pointwise. -/]
+theorem _root_.ContinuousMonoidHom.finset_prod_apply {ι A E : Type*} [Monoid A]
+    [TopologicalSpace A] [CommMonoid E] [TopologicalSpace E] [ContinuousMul E]
+    (s : Finset ι) (f : ι → A →ₜ* E) (a : A) :
+    (∏ i ∈ s, f i) a = ∏ i ∈ s, f i a :=
+  map_prod (ContinuousMonoidHom.evalMonoidHom a) f s
 
 -- The three definitions below are exposed: downstream, `TopRep.res` objects taken along them have
 -- to be definitionally the ones taken along the bare `Subgroup.subtype`, `Subgroup.inclusion` and

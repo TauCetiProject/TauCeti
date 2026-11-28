@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.RingTheory.TensorProduct.Free
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
@@ -21,10 +22,13 @@ import Mathlib.RingTheory.Flat.Basic
 import Mathlib.Topology.Algebra.Algebra
 import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.Algebra.Algebra.Pi
+import TauCeti.NumberTheory.NumberField.Units.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.RingTheory.NormTrace.BaseChange
 import TauCeti.RingTheory.NormTrace.Pi
+import TauCeti.Topology.Algebra.Algebra.Norm
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import TauCeti.Topology.Algebra.Module.ModuleTopology
 
 /-!
@@ -76,6 +80,10 @@ Being compact, they form a basis of neighbourhoods of `1`; in particular `u ^ p 
 * `TauCeti.NumberField.PadicIntegralAlgebra.liftEquiv`: `ℤ_p`-algebra maps out of `O_p` are ring
   maps out of `𝓞 K`.
 * `TauCeti.NumberField.PadicIntegralAlgebra.principalUnits K p r`: the principal unit group `H_r`.
+* `TauCeti.NumberField.PadicIntegralAlgebra.normUnitsHom K p`: the continuous unit-group norm
+  `O_pˣ →ₜ* ℤ_pˣ`.
+* `TauCeti.NumberField.PadicIntegralAlgebra.globalUnitInclusion K p`: the inclusion
+  `(𝓞 K)ˣ →* O_pˣ`, `η ↦ 1 ⊗ η`.
 
 ## Main results
 
@@ -96,6 +104,13 @@ Being compact, they form a basis of neighbourhoods of `1`; in particular `u ^ p 
   basis of neighbourhoods of `1` in `O_pˣ`.
 * `TauCeti.NumberField.PadicIntegralAlgebra.tendsto_pow_prime_pow_of_mem_principalUnits`:
   `u ^ p ^ n → 1` for `u ∈ H_1`.
+* `TauCeti.NumberField.PadicIntegralAlgebra.globalUnitInclusion_injective`: injectivity of
+  the global unit inclusion.
+* `PadicIntegralAlgebra.normUnitsHom_globalUnitInclusion_eq_one_of_mem_principalUnitGroup`:
+  `N_p` is trivial on global congruence units modulo `N > 2`.
+* `PadicIntegralAlgebra.topologicalClosure_map_principalUnitGroup_le_ker_normUnitsHom`:
+  the topological closure of global congruence units modulo `N > 2` in `O_pˣ` lies in the
+  kernel of `N_p`.
 
 ## References
 
@@ -210,6 +225,32 @@ theorem tendsto_prime_pow_atTop_nhds_zero :
   simpa [Function.comp_def] using
     ((continuous_algebraMap ℤ_[p] (PadicIntegralAlgebra K p)).tendsto 0).comp h
 
+/-- The unit-group norm `N_p : O_pˣ →ₜ* ℤ_pˣ` as a continuous homomorphism. -/
+noncomputable def normUnitsHom : (PadicIntegralAlgebra K p)ˣ →ₜ* ℤ_[p]ˣ where
+  toMonoidHom := TauCeti.Algebra.normUnits ℤ_[p]
+  continuous_toFun := TauCeti.Algebra.continuous_normUnits ℤ_[p] (PadicIntegralAlgebra K p)
+
+@[simp]
+theorem coe_normUnitsHom :
+    (normUnitsHom K p : (PadicIntegralAlgebra K p)ˣ →* ℤ_[p]ˣ) =
+      TauCeti.Algebra.normUnits ℤ_[p] :=
+  (rfl)
+
+@[simp]
+theorem normUnitsHom_apply (x : (PadicIntegralAlgebra K p)ˣ) :
+    normUnitsHom K p x = TauCeti.Algebra.normUnits ℤ_[p] x :=
+  (rfl)
+
+/-- The inclusion of global units `(𝓞 K)ˣ →* O_pˣ`, `η ↦ 1 ⊗ η`. -/
+noncomputable def globalUnitInclusion : (𝓞 K)ˣ →* (PadicIntegralAlgebra K p)ˣ :=
+  Units.map (algebraMap (𝓞 K) (PadicIntegralAlgebra K p) : 𝓞 K →* PadicIntegralAlgebra K p)
+
+@[simp]
+theorem coe_globalUnitInclusion_apply (u : (𝓞 K)ˣ) :
+    ((globalUnitInclusion K p u : (PadicIntegralAlgebra K p)ˣ) : PadicIntegralAlgebra K p) =
+      algebraMap (𝓞 K) (PadicIntegralAlgebra K p) u :=
+  (rfl)
+
 section NumberField
 
 variable [NumberField K]
@@ -261,11 +302,34 @@ theorem norm_algebraMap_ringOfIntegers (x : 𝓞 K) :
 which is `±1`, read in `ℤ_pˣ`. -/
 @[simp]
 theorem normUnits_unitsMap_algebraMap (u : (𝓞 K)ˣ) :
-    TauCeti.Algebra.normUnits ℤ_[p]
-        (Units.map (algebraMap (𝓞 K) (PadicIntegralAlgebra K p) : 𝓞 K →* PadicIntegralAlgebra K p)
-          u) =
+    TauCeti.Algebra.normUnits ℤ_[p] (globalUnitInclusion K p u) =
       Units.map (Int.castRingHom ℤ_[p] : ℤ →* ℤ_[p]) (TauCeti.Algebra.normUnits ℤ u) :=
   Units.ext <| by simp
+
+/-- The inclusion of global units into `O_pˣ` is injective. -/
+theorem globalUnitInclusion_injective :
+    Function.Injective (globalUnitInclusion K p) := by
+  rw [globalUnitInclusion]
+  exact Units.map_injective (algebraMap_ringOfIntegers_injective K p)
+
+/-- On the `p`-adic image of a global congruence unit modulo `N > 2`, the `p`-adic norm `N_p` is
+trivial. -/
+theorem normUnitsHom_globalUnitInclusion_eq_one_of_mem_principalUnitGroup {N : ℕ} (hN : 2 < N)
+    {η : (𝓞 K)ˣ} (hη : η ∈ (Ideal.span {(N : 𝓞 K)}).principalUnitGroup) :
+    normUnitsHom K p (globalUnitInclusion K p η) = 1 := by
+  rw [normUnitsHom_apply, normUnits_unitsMap_algebraMap,
+    TauCeti.NumberField.Units.normUnits_ringOfIntegers_eq_one_of_mem_principalUnitGroup hN hη,
+    map_one]
+
+/-- **Central closure kernel theorem.** For `2 < N`, the topological closure in `O_pˣ` of the
+global congruence units modulo `N` lies in the kernel of `N_p : O_pˣ →ₜ* ℤ_pˣ`. -/
+theorem topologicalClosure_map_principalUnitGroup_le_ker_normUnitsHom {N : ℕ} (hN : 2 < N) :
+    ((Ideal.span {(N : 𝓞 K)}).principalUnitGroup.map
+      (globalUnitInclusion K p)).topologicalClosure ≤ (normUnitsHom K p).toMonoidHom.ker := by
+  refine Subgroup.topologicalClosure_minimal _ ?_ (normUnitsHom K p).isClosed_ker
+  rintro _ ⟨η, hη, rfl⟩
+  exact MonoidHom.mem_ker.mpr
+    (normUnitsHom_globalUnitInclusion_eq_one_of_mem_principalUnitGroup K p hN hη)
 
 /-- **The norm as a product over embeddings.** Let `E` be a field of characteristic zero
 over `ℤ_p` in which `K` splits, that is, with `[K : ℚ]` embeddings `σ : K → E`. Then the image in

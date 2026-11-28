@@ -7,9 +7,12 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Units.Basic
 public import Mathlib.Order.Filter.TendstoCofinite
+public import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
+public import TauCeti.RingTheory.Norm.Units
 import Mathlib.NumberTheory.NumberField.Norm
 import TauCeti.NumberTheory.NumberField.Minpoly
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
+import TauCeti.RingTheory.Norm.Congruence
 
 /-!
 # Units of a number field
@@ -38,6 +41,9 @@ to see that a non-torsion unit of a field of prime degree generates the field.
   product `|N(u)| = 1`.
 * `NumberField.InfinitePlace.exists_torsion_mul_embedding_eq_abs`: a torsion sign makes a
   unit's real embedding equal its absolute value at a real place.
+* `TauCeti.NumberField.Units.norm_ringOfIntegers_eq_one_of_mem_principalUnitGroup`,
+  `TauCeti.NumberField.Units.normUnits_ringOfIntegers_eq_one_of_mem_principalUnitGroup`: global
+  units congruent to `1` modulo `N > 2` have norm `1`.
 -/
 
 public section
@@ -98,6 +104,29 @@ theorem val_map_algebraMap_ringOfIntegers_subfield (F : Subfield K) (u : (𝓞 F
   simp [← IsScalarTower.algebraMap_apply]
 
 end Coe
+
+section Congruence
+
+variable {K : Type*} [Field K]
+
+/-- **Norm-one theorem for congruence units.** Any global unit `η ∈ (𝓞 K)ˣ` congruent to `1`
+modulo `N 𝓞 K` with `2 < N` has integer norm `1`. Neither total positivity nor coprimality of
+`N` to `p` is required. -/
+theorem norm_ringOfIntegers_eq_one_of_mem_principalUnitGroup {N : ℕ} (hN : 2 < N)
+    {η : (𝓞 K)ˣ} (hη : η ∈ (Ideal.span {(N : 𝓞 K)}).principalUnitGroup) :
+    Algebra.norm ℤ (η : 𝓞 K) = 1 :=
+  Algebra.norm_eq_one_of_isUnit_of_sub_one_mem_span_natCast hN η.isUnit
+    (Ideal.mem_principalUnitGroup.mp hη)
+
+/-- Any global unit `η ∈ (𝓞 K)ˣ` congruent to `1` modulo `N 𝓞 K` with `2 < N` has unit norm `1`
+over `ℤ`. -/
+theorem normUnits_ringOfIntegers_eq_one_of_mem_principalUnitGroup {N : ℕ} (hN : 2 < N)
+    {η : (𝓞 K)ˣ} (hη : η ∈ (Ideal.span {(N : 𝓞 K)}).principalUnitGroup) :
+    TauCeti.Algebra.normUnits ℤ η = 1 :=
+  (TauCeti.Algebra.normUnits_eq_iff ℤ).mpr <| by
+    simpa using norm_ringOfIntegers_eq_one_of_mem_principalUnitGroup hN hη
+
+end Congruence
 
 variable {K : Type*} [Field K] [NumberField K]
 
