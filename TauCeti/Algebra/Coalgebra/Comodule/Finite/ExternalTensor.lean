@@ -72,8 +72,7 @@ theorem externalTensorMap_tmul (f : M ⟶ M') (g : N ⟶ N') (m : M) (n : N) :
     externalTensorMap f g (m ⊗ₜ[R] n) = f m ⊗ₜ[R] g n := by
   rw [ofHom_apply]
   rw [Comodule.Hom.externalTensorMap_apply, TensorProduct.map_tmul]
-  -- The full-subcategory coercion evaluates a morphism by its ambient comodule map.
-  rfl
+  simp only [hom_toLinearMap_apply]
 
 /-- The external tensor product preserves identities. -/
 @[simp]
