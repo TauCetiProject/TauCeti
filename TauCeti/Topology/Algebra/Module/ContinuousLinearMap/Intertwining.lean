@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
+public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import TauCeti.LinearAlgebra.End.Aeval
 import Mathlib.Algebra.Polynomial.Div
+import TauCeti.LinearAlgebra.End.Split
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
 /-!
 # Intertwining linear maps
@@ -18,9 +21,10 @@ intertwined by continuous linear maps `Q` on `F` and `P` on `E` up to a continuo
 taking products. Exact intertwiners also intertwine the spectral operators `1 - a • u`, their
 powers, and polynomials in the intertwined operators (`Function.Semiconj.aeval`). Polynomial
 evaluation with zero constant coefficient commutes with extending an endomorphism along a
-continuous linear retract; no complement is needed. Along a splitting `i r + j s = id` for which
-an operator is upper triangular, the inclusion `i` intertwines its diagonal block with the
-operator.
+continuous linear retract, and for any polynomial with invertible constant coefficient the
+retraction and inclusion identify the kernels of the extended and original evaluations; no
+complement is needed. Along a splitting `i r + j s = id` for which an operator is upper
+triangular, the inclusion `i` intertwines its diagonal block with the operator.
 
 ## Main results
 
@@ -30,8 +34,12 @@ operator.
   continuous endomorphisms.
 * `ContinuousLinearMap.semiconj_of_split`: along a splitting, the inclusion of the first summand
   intertwines the diagonal block of an upper triangular operator with the operator.
+* `ContinuousLinearMap.semiconj_left_of_retract`, `ContinuousLinearMap.semiconj_right_of_retract`:
+  along a retract, the retraction and inclusion intertwine `i ∘ u ∘ r` and `u`.
 * `ContinuousLinearMap.aeval_comp_comp_of_retract`: polynomial evaluation with zero constant
   coefficient commutes with extension along a retract.
+* `ContinuousLinearMap.kerAevalEquivOfRetract`: along a retract, the retraction and inclusion
+  identify `ker P(i ∘ u ∘ r)` with `ker P(u)` whenever `P.coeff 0` is a unit.
 -/
 
 public section
@@ -110,6 +118,26 @@ theorem semiconj_of_split {K M F N : Type*} [Semiring K] [AddCommMonoid M]
     Function.Semiconj (i : F →ₗ[K] M) (r.comp (u.comp i)) u := fun x ↦ by
   simpa [show s (u (i x)) = 0 from congr($htri x)] using congr($hsplit (u (i x)))
 
+/-- Along a continuous linear retract `r ∘ i = id`, the retraction `r` intertwines the
+extended endomorphism `i ∘ u ∘ r` with `u`. -/
+theorem semiconj_left_of_retract {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [TopologicalSpace M] [Module R M]
+    [AddCommMonoid N] [TopologicalSpace N] [Module R N]
+    {i : M →L[R] N} {r : N →L[R] M} (hri : r.comp i = .id R M) (u : M →L[R] M) :
+    Function.Semiconj (r : N →ₗ[R] M) (i.comp (u.comp r)) u := fun y ↦ by
+  have hri' : r (i (u (r y))) = u (r y) := DFunLike.congr_fun hri (u (r y))
+  simpa only [coe_coe, comp_apply] using hri'
+
+/-- Along a continuous linear retract `r ∘ i = id`, the inclusion `i` intertwines `u` with the
+extended endomorphism `i ∘ u ∘ r`. -/
+theorem semiconj_right_of_retract {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [TopologicalSpace M] [Module R M]
+    [AddCommMonoid N] [TopologicalSpace N] [Module R N]
+    {i : M →L[R] N} {r : N →L[R] M} (hri : r.comp i = .id R M) (u : M →L[R] M) :
+    Function.Semiconj (i : M →ₗ[R] N) u (i.comp (u.comp r)) := fun x ↦ by
+  have hri' : r (i x) = x := DFunLike.congr_fun hri x
+  simpa only [coe_coe, comp_apply] using congrArg (fun z ↦ i (u z)) hri'.symm
+
 variable {R M N : Type*} [CommSemiring R]
   [TopologicalSpace M] [AddCommGroup M] [Module R M] [IsTopologicalAddGroup M]
   [ContinuousConstSMul R M]
@@ -123,27 +151,6 @@ theorem toLinearMap_aeval (u : M →L[R] M) (p : Polynomial R) :
   simpa only [Polynomial.map_id, toLinearMapRingHom_apply] using
     Polynomial.map_aeval_eq_aeval_map (ψ := toLinearMapRingHom)
       (φ := RingHom.id R) (by ext x; rfl) p u
-
-/-- Extending an endomorphism along a retract commutes with evaluating a polynomial whose
-constant coefficient is zero. The condition ensures that the polynomial also vanishes on the
-kernel of the retraction. -/
-theorem aeval_comp_comp_of_retract {i : M →L[R] N} {r : N →L[R] M}
-    (hri : r.comp i = .id R M) (u : M →L[R] M) {B : Polynomial R} (hB0 : B.coeff 0 = 0) :
-    Polynomial.aeval (i.comp (u.comp r)) B = i.comp ((Polynomial.aeval u B).comp r) := by
-  obtain ⟨Q, rfl⟩ := Polynomial.X_dvd_iff.2 hB0
-  have hr : u.toLinearMap ∘ₗ r.toLinearMap =
-      r.toLinearMap ∘ₗ (i.comp (u.comp r)).toLinearMap := by
-    apply LinearMap.ext
-    intro y
-    have h := DFunLike.congr_fun hri (u (r y))
-    simpa using h.symm
-  have hQ : (Polynomial.aeval u Q).comp r =
-      r.comp (Polynomial.aeval (i.comp (u.comp r)) Q) := by
-    apply ContinuousLinearMap.coe_injective
-    simpa only [toLinearMap_comp, toLinearMap_aeval] using
-      Module.End.aeval_comp_of_comp_eq hr Q
-  simp only [map_mul, Polynomial.aeval_X, mul_def, comp_assoc]
-  rw [← hQ]
 
 end ContinuousLinearMap
 
@@ -167,3 +174,117 @@ theorem aeval (hf : Function.Semiconj f u v) (P : Polynomial R) :
   exact (LinearMap.congr_fun hP x).symm
 
 end Function.Semiconj
+
+namespace ContinuousLinearMap
+
+variable {R M N : Type*} [CommSemiring R]
+  [TopologicalSpace M] [AddCommGroup M] [Module R M] [IsTopologicalAddGroup M]
+  [ContinuousConstSMul R M]
+  [TopologicalSpace N] [AddCommGroup N] [Module R N] [IsTopologicalAddGroup N]
+  [ContinuousConstSMul R N]
+
+/-- Extending an endomorphism along a retract commutes with evaluating a polynomial whose
+constant coefficient is zero. The condition ensures that the polynomial also vanishes on the
+kernel of the retraction. -/
+theorem aeval_comp_comp_of_retract {i : M →L[R] N} {r : N →L[R] M}
+    (hri : r.comp i = .id R M) (u : M →L[R] M) {B : Polynomial R} (hB0 : B.coeff 0 = 0) :
+    Polynomial.aeval (i.comp (u.comp r)) B = i.comp ((Polynomial.aeval u B).comp r) := by
+  obtain ⟨Q, rfl⟩ := Polynomial.X_dvd_iff.2 hB0
+  have hQ : (Polynomial.aeval u Q).comp r =
+      r.comp (Polynomial.aeval (i.comp (u.comp r)) Q) := by
+    ext y
+    exact ((semiconj_left_of_retract hri u).aeval Q y).symm
+  simp only [map_mul, Polynomial.aeval_X, mul_def, comp_assoc]
+  rw [← hQ]
+
+private theorem ker_aeval_units_smul {R M : Type*} [CommSemiring R]
+    [TopologicalSpace M] [AddCommGroup M] [Module R M] [IsTopologicalAddGroup M]
+    [ContinuousConstSMul R M] (u : M →L[R] M) (c : Rˣ) (P : Polynomial R) :
+    LinearMap.ker ((Polynomial.aeval u (c • P) : M →L[R] M) : M →ₗ[R] M) =
+      LinearMap.ker ((Polynomial.aeval u P : M →L[R] M) : M →ₗ[R] M) := by
+  ext x
+  simp only [Units.smul_def, map_smul, LinearMap.mem_ker, coe_coe, smul_apply,
+    c.isUnit.smul_eq_zero]
+
+private theorem aeval_eq_aeval_X_mul_divX_add_one {R W : Type*} [CommSemiring R]
+    [TopologicalSpace W] [AddCommGroup W] [Module R W] [IsTopologicalAddGroup W]
+    [ContinuousConstSMul R W] (w : W →L[R] W) {Q : Polynomial R}
+    (hQ : Q = Polynomial.X * Q.divX + 1) :
+    ((Polynomial.aeval w Q : W →L[R] W) : W →ₗ[R] W) =
+      ((Polynomial.aeval w (Polynomial.X * Q.divX) : W →L[R] W) : W →ₗ[R] W) + 1 := by
+  simpa only [map_add, map_one, toLinearMap_add, toLinearMap_one] using
+    congrArg (fun p : Polynomial R ↦ ((Polynomial.aeval w p : W →L[R] W) : W →ₗ[R] W)) hQ
+
+private theorem aeval_eq_splitEnd {R M N : Type*} [CommSemiring R]
+    [TopologicalSpace M] [AddCommGroup M] [Module R M] [IsTopologicalAddGroup M]
+    [ContinuousConstSMul R M]
+    [TopologicalSpace N] [AddCommGroup N] [Module R N] [IsTopologicalAddGroup N]
+    [ContinuousConstSMul R N] {i : M →L[R] N} {r : N →L[R] M}
+    (hri : r.comp i = .id R M) (u : M →L[R] M) {P : Polynomial R} (hP : IsUnit (P.coeff 0)) :
+    ((Polynomial.aeval (i.comp (u.comp r)) (hP.unit⁻¹ • P) : N →L[R] N) : N →ₗ[R] N) =
+      LinearMap.splitEnd r.toLinearMap i.toLinearMap (toLinearMap_comp_eq_id hri)
+        ((Polynomial.aeval u (hP.unit⁻¹ • P) : M →L[R] M) : M →ₗ[R] M) := by
+  set Q : Polynomial R := hP.unit⁻¹ • P
+  have hQ0 : Q.coeff 0 = 1 := by simp [Q, Units.smul_def, smul_eq_mul]
+  have hQ : Q = Polynomial.X * Q.divX + 1 := by
+    simpa [hQ0] using (Polynomial.X_mul_divX_add Q).symm
+  have hB : ((Polynomial.aeval (i.comp (u.comp r)) (Polynomial.X * Q.divX) :
+      N →L[R] N) : N →ₗ[R] N) =
+      i.toLinearMap ∘ₗ
+        ((Polynomial.aeval u (Polynomial.X * Q.divX) : M →L[R] M) : M →ₗ[R] M) ∘ₗ
+        r.toLinearMap := by
+    simpa only [toLinearMap_comp] using congrArg ContinuousLinearMap.toLinearMap
+      (aeval_comp_comp_of_retract hri u (B := Polynomial.X * Q.divX) (by simp))
+  calc
+    ((Polynomial.aeval (i.comp (u.comp r)) Q : N →L[R] N) : N →ₗ[R] N)
+      = ((Polynomial.aeval (i.comp (u.comp r)) (Polynomial.X * Q.divX) : N →L[R] N) :
+          N →ₗ[R] N) + 1 := aeval_eq_aeval_X_mul_divX_add_one (i.comp (u.comp r)) hQ
+    _ = 1 + i.toLinearMap ∘ₗ
+          ((Polynomial.aeval u (Polynomial.X * Q.divX) : M →L[R] M) : M →ₗ[R] M) ∘ₗ
+          r.toLinearMap := by rw [hB, add_comm]
+    _ = 1 + i.toLinearMap ∘ₗ
+          (((Polynomial.aeval u Q : M →L[R] M) : M →ₗ[R] M) - 1) ∘ₗ r.toLinearMap := by
+          rw [aeval_eq_aeval_X_mul_divX_add_one u hQ, add_sub_cancel_right]
+    _ = LinearMap.splitEnd r.toLinearMap i.toLinearMap (toLinearMap_comp_eq_id hri)
+          ((Polynomial.aeval u Q : M →L[R] M) : M →ₗ[R] M) :=
+          (LinearMap.splitEnd_eq_one_add _ _ _ _).symm
+
+/-- Along a continuous linear retract `r ∘ i = id`, if a polynomial `P` has invertible constant
+coefficient, then `r` and `i` identify `ker P(i ∘ u ∘ r)` with `ker P(u)` as topological
+modules. -/
+noncomputable def kerAevalEquivOfRetract {i : M →L[R] N} {r : N →L[R] M}
+    (hri : r.comp i = .id R M) (u : M →L[R] M) {P : Polynomial R} (hP : IsUnit (P.coeff 0)) :
+    LinearMap.ker ((Polynomial.aeval (i.comp (u.comp r)) P : N →L[R] N) : N →ₗ[R] N) ≃L[R]
+      LinearMap.ker ((Polynomial.aeval u P : M →L[R] M) : M →ₗ[R] M) :=
+  { toLinearEquiv :=
+      ((LinearEquiv.ofEq _ _
+          ((ker_aeval_units_smul (i.comp (u.comp r)) hP.unit⁻¹ P).symm.trans
+            (congrArg LinearMap.ker (aeval_eq_splitEnd hri u hP)))).trans
+        (LinearMap.kerSplitEndEquiv r.toLinearMap i.toLinearMap (toLinearMap_comp_eq_id hri)
+          ((Polynomial.aeval u (hP.unit⁻¹ • P) : M →L[R] M) : M →ₗ[R] M))).trans
+        (LinearEquiv.ofEq _ _ (ker_aeval_units_smul u hP.unit⁻¹ P))
+    continuous_toFun := continuous_induced_rng.2 <|
+      (r.continuous.comp continuous_subtypeVal).congr fun x ↦ by
+        simp [LinearMap.coe_kerSplitEndEquiv_apply]
+    continuous_invFun := continuous_induced_rng.2 <|
+      (i.continuous.comp continuous_subtypeVal).congr fun x ↦ by
+        simp [LinearMap.coe_kerSplitEndEquiv_symm_apply] }
+
+/-- The forward map of `kerAevalEquivOfRetract` applies the retraction `r`. -/
+@[simp]
+theorem coe_kerAevalEquivOfRetract_apply {i : M →L[R] N} {r : N →L[R] M}
+    (hri : r.comp i = .id R M) (u : M →L[R] M) {P : Polynomial R} (hP : IsUnit (P.coeff 0))
+    (x : LinearMap.ker ((Polynomial.aeval (i.comp (u.comp r)) P : N →L[R] N) : N →ₗ[R] N)) :
+    (kerAevalEquivOfRetract hri u hP x : M) = r x := by
+  simp [kerAevalEquivOfRetract]
+
+/-- The inverse map of `kerAevalEquivOfRetract` applies the inclusion `i`. -/
+@[simp]
+theorem coe_kerAevalEquivOfRetract_symm_apply {i : M →L[R] N} {r : N →L[R] M}
+    (hri : r.comp i = .id R M) (u : M →L[R] M) {P : Polynomial R} (hP : IsUnit (P.coeff 0))
+    (x : LinearMap.ker ((Polynomial.aeval u P : M →L[R] M) : M →ₗ[R] M)) :
+    ((kerAevalEquivOfRetract hri u hP).symm x : N) = i x := by
+  rw [← ContinuousLinearEquiv.coe_symm_toLinearEquiv]
+  simp [kerAevalEquivOfRetract]
+
+end ContinuousLinearMap

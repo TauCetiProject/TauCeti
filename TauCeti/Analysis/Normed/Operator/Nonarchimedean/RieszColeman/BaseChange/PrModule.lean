@@ -89,15 +89,15 @@ completed-tensor base change for a bounded scalar extension `S` satisfying
 theorem IsRieszColemanProjection.inverse_completedBaseChange (hM : HasPr R M)
     (α : S ⊗̂[R] M ≃L[S] N) {u E : M →L[R] M} {Q : R[X]}
     (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) :
-    (hE.completedBaseChange hS hM α hQ).inverse = hE.inverse.completedBaseChange α α := by
-  have hinv := hE.inverse_map (completedBaseChangeRingHom α)
+    (hE.completedBaseChange hS hM α hQ).toIsSpectralProjection.inverse =
+      hE.toIsSpectralProjection.inverse.completedBaseChange α α := by
+  have hinv := hE.toIsSpectralProjection.inverse_map (completedBaseChangeRingHom α)
+    (hE.completedBaseChange hS hM α hQ).toIsSpectralProjection
     (by
       rw [completedBaseChangeRingHom_apply,
         Polynomial.reverse_map_of_isUnit_leadingCoeff hQ (algebraMap R S),
-        aeval_completedBaseChange, completedBaseChangeRingHom_apply])
-    (fun {v} hv ↦ by
-      simpa only [completedBaseChangeRingHom_apply] using
-        completedBaseChange_mem_closure_adjoin hS hM α hv)
+        aeval_completedBaseChange])
+    (completedBaseChangeRingHom_apply α E).symm
   simpa only [completedBaseChangeRingHom_apply] using hinv
 
 include hS in
@@ -110,7 +110,8 @@ theorem IsRieszColemanProjection.eq_completedBaseChange (hM : HasPr R M) (α : S
     (hQ : IsUnit Q.leadingCoeff) {E' : N →L[S] N}
     (hE' : IsRieszColemanProjection (u.completedBaseChange α α) (Q.map (algebraMap R S)) E') :
     E' = E.completedBaseChange α α :=
-  hE'.unique (hE.completedBaseChange hS hM α hQ)
+  hE'.toIsSpectralProjection.unique
+    (hE.completedBaseChange hS hM α hQ).toIsSpectralProjection
 
 include hS in
 /-- **Constant stalk rank after bounded completed-tensor base change.** For a `(Pr)`-compact
@@ -181,7 +182,8 @@ theorem IsRieszColemanProjection.finrank_range_completedBaseChange [IsBoundedSMu
     (hcop : IsCoprime (IsEntire.polynomialHom Q) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
     Module.finrank L (E.completedBaseChange α α).range = Module.finrank K E.range := by
   have hQ := PowerSeries.isUnit_leadingCoeff_of_eq_coe_mul u.constantCoeff_charPowerSeries hQS
-  rw [(hE.completedBaseChange hL hu.hasPr_source α hQ).range_eq_ker, hE.range_eq_ker]
+  rw [(hE.completedBaseChange hL hu.hasPr_source α hQ).toIsSpectralProjection.range_eq_ker_spectral,
+    hE.toIsSpectralProjection.range_eq_ker_spectral]
   exact hu.finrank_ker_aeval_reverse_completedBaseChange hL α hS hQS hcop
 
 end PrFieldBaseChange

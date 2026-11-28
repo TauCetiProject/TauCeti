@@ -36,6 +36,7 @@ invertible modulo each of them (`C * wᵢ = wᵢ * C = 1 - Eᵢ`), are equal
 * `Commute.mul_mul_mul_pow_of_pow_succ_mul_eq`,
   `Commute.mul_mul_pow_mul_of_pow_succ_mul_eq`: `C * (b * (C * b) ^ h) = (C * b) ^ h` and
   `b * (C * b) ^ h * C = (C * b) ^ h`.
+* `Commute.of_mul_eq_one_sub`: if `C * w = 1 - E` and `w * C = 1 - E`, then `Commute C E`.
 * `IsIdempotentElem.isUnit_add_mul_one_sub`: `E + C * (1 - E)` is a unit when
   `C * w = w * C = 1 - E`.
 * `IsIdempotentElem.isUnit_one_add_sub_one_smul`: `1 + (x - 1) • E` is a unit when `IsUnit x`.
@@ -100,6 +101,18 @@ end Commute
 
 end Monoid
 
+section Ring
+
+variable {A : Type*} [Ring A] {C E w : A}
+
+/-- If `C * w = 1 - E` and `w * C = 1 - E` in a ring, then `C` commutes with `E`. -/
+theorem Commute.of_mul_eq_one_sub (hw : C * w = 1 - E) (hw' : w * C = 1 - E) : Commute C E := by
+  have hCw : Commute C w := hw.trans hw'.symm
+  have h1 : Commute C (1 - E) := hw' ▸ hCw.mul_right (Commute.refl C)
+  simpa using (Commute.one_right C).sub_right h1
+
+end Ring
+
 namespace IsIdempotentElem
 
 variable {A : Type*} [Ring A] {C E w : A} {h : ℕ}
@@ -110,10 +123,7 @@ The inverse is `E + (1 - E) * w`, where `C * w = w * C = 1 - E`. -/
 theorem isUnit_add_mul_one_sub (he : IsIdempotentElem E)
     (hw : C * w = 1 - E) (hw' : w * C = 1 - E) :
     IsUnit (E + C * (1 - E)) := by
-  have hCE : Commute C E := by
-    have hCw : Commute C w := hw.trans hw'.symm
-    have h1 : Commute C (1 - E) := hw' ▸ hCw.mul_right (Commute.refl C)
-    simpa using (Commute.one_right C).sub_right h1
+  have hCE : Commute C E := Commute.of_mul_eq_one_sub hw hw'
   have hEw : E * ((1 - E) * w) = 0 := by
     simp [← mul_assoc, mul_sub, he.eq]
   have hwE : (1 - E) * w * E = 0 := by
@@ -169,9 +179,7 @@ theorem eq_of_pow_mul_eq_zero {E₁ E₂ w₁ w₂ : A} (he₁ : IsIdempotentEle
   -- `1 - E₁ = w₁ ^ h * C ^ h` kills `E₂`, and `1 - E₂ = C ^ h * w₂ ^ h` is killed by `E₁`, which
   -- commutes with `C` because `C (1 - E₁) = C w₁ C = (1 - E₁) C`.
   have hCw₁ : Commute C w₁ := hw₁.trans hw₁'.symm
-  have hCE₁ : Commute C E₁ := by
-    have h1 : Commute C (1 - E₁) := hw₁' ▸ hCw₁.mul_right (Commute.refl C)
-    simpa using (Commute.one_right C).sub_right h1
+  have hCE₁ : Commute C E₁ := Commute.of_mul_eq_one_sub hw₁ hw₁'
   have h₁ : (1 - E₁) * E₂ = 0 := by
     rw [he₁.one_sub_eq_pow_mul_pow hz₁ hw₁ hw₁', (hCw₁.pow_pow h h).eq, mul_assoc, hz₂,
       mul_zero]

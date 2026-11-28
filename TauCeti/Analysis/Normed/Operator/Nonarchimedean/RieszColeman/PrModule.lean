@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszColeman.Decomposition
-import TauCeti.Algebra.Polynomial.AlgebraMap
-import TauCeti.LinearAlgebra.End.Split
 import TauCeti.RingTheory.Polynomial.Resultant.Coleman
 import TauCeti.RingTheory.PowerSeries.Dvd
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 
 /-!
 # Riesz–Coleman projections on modules with property (Pr)
@@ -107,21 +106,23 @@ projection of a `(Pr)`-compact operator is finitely generated. -/
 theorem IsRieszColemanProjection.finite_range_of_isPrCompact
     (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) (hu : u.IsPrCompact) :
     Module.Finite R E.range :=
-  (hE.isPrCompact hQ hu).finite_range_of_isIdempotentElem hE.isIdempotentElem
+  (hE.isPrCompact hQ hu).finite_range_of_isIdempotentElem
+    hE.toIsSpectralProjection.isIdempotentElem
 
 /-- On a module with property `(Pr)`, when `Q.leadingCoeff` is a unit, the range of a Riesz–Coleman
 projection of a `(Pr)`-compact operator is projective over the coefficient ring. -/
 theorem IsRieszColemanProjection.projective_range_of_isPrCompact
     (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) (hu : u.IsPrCompact) :
     Module.Projective R E.range :=
-  (hE.isPrCompact hQ hu).projective_range_of_isIdempotentElem hE.isIdempotentElem
+  (hE.isPrCompact hQ hu).projective_range_of_isIdempotentElem
+    hE.toIsSpectralProjection.isIdempotentElem
 
 /-- On a module with property `(Pr)`, when `Q.leadingCoeff` is a unit, `ker Q*(u)` for a
 Riesz–Coleman projection of a `(Pr)`-compact operator is finitely generated. -/
 theorem IsRieszColemanProjection.finite_ker_aeval_reverse_of_isPrCompact
     (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) (hu : u.IsPrCompact) :
     Module.Finite R (Polynomial.aeval u Q.reverse : M →L[R] M).ker := by
-  rw [← hE.range_eq_ker]
+  rw [← hE.toIsSpectralProjection.range_eq_ker_spectral]
   exact hE.finite_range_of_isPrCompact hQ hu
 
 /-- On a module with property `(Pr)`, when `Q.leadingCoeff` is a unit, `ker Q*(u)` for a
@@ -129,7 +130,7 @@ Riesz–Coleman projection of a `(Pr)`-compact operator is projective over the c
 theorem IsRieszColemanProjection.projective_ker_aeval_reverse_of_isPrCompact
     (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) (hu : u.IsPrCompact) :
     Module.Projective R (Polynomial.aeval u Q.reverse : M →L[R] M).ker := by
-  rw [← hE.range_eq_ker]
+  rw [← hE.toIsSpectralProjection.range_eq_ker_spectral]
   exact hE.projective_range_of_isPrCompact hQ hu
 
 end Compact
@@ -156,45 +157,8 @@ theorem IsPrCompact.rankAtStalk_ker_aeval_reverse {u : M →L[R] M} (hu : u.IsPr
   obtain ⟨J, _, _, i, r, hri⟩ := (TauCeti.hasPr_def R M).mp hu.hasPr_source
   have hv := hu.isRowCompact_comp i r
   rw [hu.charPowerSeries_eq hri] at hQS
-  set c := Ring.inverse Q.leadingCoeff
-  have hc : c * Q.leadingCoeff = 1 := Ring.inverse_mul_cancel _ hQ
-  have hcu : IsUnit c := IsUnit.of_mul_eq_one _ hc
-  set B : R[X] := 1 - Polynomial.C c * Q.reverse
-  have hB0 : B.coeff 0 = 0 := coeff_zero_one_sub_C_mul_reverse hc
-  have hri' : r.toLinearMap.comp i.toLinearMap = LinearMap.id := by
-    simpa only [toLinearMap_comp, coe_id] using
-      congrArg ContinuousLinearMap.toLinearMap hri
-  -- `1 - B(v) = c • Q*(v)` is the split extension of `1 - B(u) = c • Q*(u)`, and scaling by the
-  -- unit `c` preserves kernels.
-  have hker_u : LinearMap.ker (c • (Polynomial.aeval u Q.reverse : M →L[R] M).toLinearMap) =
-      LinearMap.ker (Polynomial.aeval u Q.reverse : M →L[R] M).toLinearMap := by
-    ext x; simp only [LinearMap.mem_ker, LinearMap.smul_apply, hcu.smul_eq_zero]
-  have hker_v : LinearMap.ker (c • (Polynomial.aeval (i.comp (u.comp r)) Q.reverse :
-      C₀(J, R) →L[R] C₀(J, R)).toLinearMap) =
-      LinearMap.ker (Polynomial.aeval (i.comp (u.comp r)) Q.reverse :
-        C₀(J, R) →L[R] C₀(J, R)).toLinearMap := by
-    ext x; simp only [LinearMap.mem_ker, LinearMap.smul_apply, hcu.smul_eq_zero]
-  have h1u : (1 - (Polynomial.aeval u B).toLinearMap : Module.End R M) =
-      c • (Polynomial.aeval u Q.reverse : M →L[R] M).toLinearMap := by
-    simpa only [toLinearMap_sub, toLinearMap_one, toLinearMap_smul] using
-      congrArg ContinuousLinearMap.toLinearMap
-        (Polynomial.one_sub_aeval_one_sub_C_mul u c Q.reverse)
-  have h1v : LinearMap.splitEnd r.toLinearMap i.toLinearMap hri'
-      (1 - (Polynomial.aeval u B).toLinearMap) =
-      c • (Polynomial.aeval (i.comp (u.comp r)) Q.reverse :
-        C₀(J, R) →L[R] C₀(J, R)).toLinearMap := by
-    rw [LinearMap.splitEnd_one_sub, ← toLinearMap_comp, ← toLinearMap_comp,
-      ← aeval_comp_comp_of_retract hri u hB0]
-    simpa only [toLinearMap_sub, toLinearMap_one, toLinearMap_smul] using
-      congrArg ContinuousLinearMap.toLinearMap
-        (Polynomial.one_sub_aeval_one_sub_C_mul (i.comp (u.comp r)) c Q.reverse)
-  have heq : LinearMap.ker (Polynomial.aeval (i.comp (u.comp r)) Q.reverse :
-      C₀(J, R) →L[R] C₀(J, R)).toLinearMap ≃ₗ[R]
-      LinearMap.ker (Polynomial.aeval u Q.reverse : M →L[R] M).toLinearMap := by
-    have e := LinearMap.kerSplitEndEquiv r.toLinearMap i.toLinearMap hri'
-      (1 - (Polynomial.aeval u B).toLinearMap)
-    rw [h1v, h1u] at e
-    exact (LinearEquiv.ofEq _ _ hker_v.symm).trans (e.trans (LinearEquiv.ofEq _ _ hker_u))
+  have heq := (ContinuousLinearMap.kerAevalEquivOfRetract hri u (P := Q.reverse)
+    (by simpa only [coeff_zero_reverse] using hQ)).toLinearEquiv
   have hrank : Module.rankAtStalk (R := R) (Polynomial.aeval u Q.reverse : M →L[R] M).ker =
       Module.rankAtStalk (R := R)
         (Polynomial.aeval (i.comp (u.comp r)) Q.reverse : C₀(J, R) →L[R] C₀(J, R)).ker := by
@@ -270,7 +234,7 @@ theorem rankAtStalk_range_of_isPrCompact {u E : M →L[R] M} {Q : R[X]} {S : R�
     (hcop : IsCoprime (IsEntire.polynomialHom Q) ⟨S, IsEntire.mem_subring.mpr hS⟩)
     (p : PrimeSpectrum R) :
     Module.rankAtStalk (R := R) E.range p = Q.natDegree := by
-  rw [hE.range_eq_ker]
+  rw [hE.toIsSpectralProjection.range_eq_ker_spectral]
   exact hu.rankAtStalk_ker_aeval_reverse hQ hS hQS hcop p
 
 /-- **Fredholm factor on the finite Riesz–Coleman summand on a module with property `(Pr)`.** For a
@@ -329,11 +293,12 @@ theorem charPowerSeries_restrict_range_of_isPrCompact {u E : M →L[R] M} {Q : R
     (hQ : IsUnit Q.leadingCoeff) (hS : S.IsEntire)
     (hQS : u.charPowerSeries = (Q : R⟦X⟧) * S)
     (hcop : IsCoprime (IsEntire.polynomialHom Q) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
-    (u.restrict hE.mapsTo_range).charPowerSeries =
+    (u.restrict hE.toIsSpectralProjection.mapsTo_range).charPowerSeries =
       ((Polynomial.C (Ring.inverse (Q.coeff 0)) * Q : R[X]) : R⟦X⟧) := by
-  have hcompl := ContinuousLinearMap.IsIdempotentElem.isTopCompl hE.isIdempotentElem
-  rw [hu.charPowerSeries_restrict_of_isTopCompl hcompl hE.mapsTo_range,
-    ← ContinuousLinearMap.IsIdempotentElem.eq_projectionL hE.isIdempotentElem]
+  have hSp := hE.toIsSpectralProjection
+  rw [hu.charPowerSeries_restrict_of_isTopCompl
+      (ContinuousLinearMap.IsIdempotentElem.isTopCompl hSp.isIdempotentElem) hSp.mapsTo_range,
+    ← ContinuousLinearMap.IsIdempotentElem.eq_projectionL hSp.isIdempotentElem]
   exact hE.charPowerSeries_mul_of_isPrCompact hu hQ hS hQS hcop
 
 /-- **Fredholm series of the restriction to `ker E`.** For a `(Pr)`-compact operator `u` with a
@@ -345,11 +310,13 @@ theorem charPowerSeries_restrict_ker_of_isPrCompact {u E : M →L[R] M} {Q : R[X
     (hQ : IsUnit Q.leadingCoeff) (hS : S.IsEntire)
     (hQS : u.charPowerSeries = (Q : R⟦X⟧) * S)
     (hcop : IsCoprime (IsEntire.polynomialHom Q) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
-    (u.restrict hE.mapsTo_ker).charPowerSeries = PowerSeries.C (Q.coeff 0) * S := by
-  have hcompl := ContinuousLinearMap.IsIdempotentElem.isTopCompl hE.isIdempotentElem
-  rw [hu.charPowerSeries_restrict_of_isTopCompl hcompl.symm hE.mapsTo_ker,
+    (u.restrict hE.toIsSpectralProjection.mapsTo_ker).charPowerSeries =
+      PowerSeries.C (Q.coeff 0) * S := by
+  have hSp := hE.toIsSpectralProjection
+  have hcompl := ContinuousLinearMap.IsIdempotentElem.isTopCompl hSp.isIdempotentElem
+  rw [hu.charPowerSeries_restrict_of_isTopCompl hcompl.symm hSp.mapsTo_ker,
     Submodule.projectionL_eq_id_sub_projectionL hcompl,
-    ← ContinuousLinearMap.IsIdempotentElem.eq_projectionL hE.isIdempotentElem, ← one_def]
+    ← ContinuousLinearMap.IsIdempotentElem.eq_projectionL hSp.isIdempotentElem, ← one_def]
   exact hE.charPowerSeries_mul_one_sub_of_isPrCompact hu hQ hS hQS hcop
 
 /-- **Characteristic polynomial of `u` on the finite Riesz–Coleman summand.** For a `(Pr)`-compact
@@ -364,17 +331,18 @@ theorem projectiveCharpolyRev_restrict_range_of_isPrCompact {u E : M →L[R] M} 
     letI : AddCommGroup E.range := inferInstance
     haveI : Module.Finite R E.range := hE.finite_range_of_isPrCompact hQ hu
     haveI : Module.Projective R E.range := hE.projective_range_of_isPrCompact hQ hu
-    (((u.restrict fun _ hx ↦ hE.mapsTo_range hx).toLinearMap).projectiveCharpolyRev) =
+    (((u.restrict fun _ hx ↦
+      hE.toIsSpectralProjection.mapsTo_range hx).toLinearMap).projectiveCharpolyRev) =
       Polynomial.C (Ring.inverse (Q.coeff 0)) * Q := by
   let : AddCommGroup E.range := inferInstance
   have := hE.finite_range_of_isPrCompact hQ hu
   have := hE.projective_range_of_isPrCompact hQ hu
   have hPr : TauCeti.HasPr R E.range :=
     hu.hasPr_source.of_isTopCompl
-      (ContinuousLinearMap.IsIdempotentElem.isTopCompl hE.isIdempotentElem)
+      (ContinuousLinearMap.IsIdempotentElem.isTopCompl hE.toIsSpectralProjection.isIdempotentElem)
   apply Polynomial.coe_inj.mp
   rw [← ContinuousLinearMap.charPowerSeries_eq_projectiveCharpolyRev hPr
-    (u.restrict hE.mapsTo_range)]
+    (u.restrict hE.toIsSpectralProjection.mapsTo_range)]
   exact hE.charPowerSeries_restrict_range_of_isPrCompact hu hQ hS hQS hcop
 
 end IsRieszColemanProjection
@@ -414,7 +382,7 @@ theorem IsRieszColemanProjection.finrank_range_of_isPrCompact {u E : M →L[K] M
     (hS : S.IsEntire) (hQS : u.charPowerSeries = (Q : K⟦X⟧) * S)
     (hcop : IsCoprime (IsEntire.polynomialHom Q) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
     Module.finrank K E.range = Q.natDegree := by
-  rw [hE.range_eq_ker]
+  rw [hE.toIsSpectralProjection.range_eq_ker_spectral]
   exact hu.finrank_ker_aeval_reverse hS hQS hcop
 
 end FieldRange

@@ -162,10 +162,10 @@ the same order. No compactness is needed. -/
 theorem IsRieszProjection.mapCoeffs [TauCeti.NormedRing.IsTate S]
     {u E : C₀(J, R) →L[R] C₀(J, R)} {a : R} {h : ℕ} (hE : IsRieszProjection u a h E)
     (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
-    IsRieszProjection (u.mapCoeffs f hf) (f a) h (E.mapCoeffs f hf) := by
-  simpa only [mapCoeffsRingHom_apply] using
-    hE.map (mapCoeffsRingHom f hf) (by simp)
-      (fun {v} hv ↦ by
-        simpa only [mapCoeffsRingHom_apply] using mapCoeffs_mem_closure_adjoin f hf hv)
+    IsRieszProjection (u.mapCoeffs f hf) (f a) h (E.mapCoeffs f hf) :=
+  isRieszProjection_def.mpr <| by
+    simpa only [mapCoeffsRingHom_apply, mapCoeffs_sub, mapCoeffs_one, mapCoeffs_smul] using
+      hE.toIsSpectralProjection.map (mapCoeffsRingHom f hf)
+        (fun hv ↦ by simpa only [mapCoeffsRingHom_apply] using mapCoeffs_mem_closure_adjoin f hf hv)
 
 end ContinuousLinearMap

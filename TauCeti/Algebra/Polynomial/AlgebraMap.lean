@@ -37,6 +37,9 @@ A monic polynomial of positive degree dividing every polynomial that vanishes at
 `1 - C c * P` at `u` recovers `c • P(u)` via `1 - (1 - C c * P)(u)`
 (`Polynomial.one_sub_aeval_one_sub_C_mul`).
 
+An element of an algebra killed by a polynomial whose constant coefficient maps to a unit in the
+algebra is a unit (`Polynomial.isUnit_of_aeval_eq_zero`).
+
 Evaluation at `a : R` yields scalar towers `R → R[X] → C`
 (`Polynomial.isScalarTower_evalRingHom_left`) and `R[X] → R → C`
 (`Polynomial.isScalarTower_evalRingHom_right`).
@@ -136,6 +139,33 @@ theorem Monic.faithfulSMul_of_dvd {A B : Type*} [CommRing A] [Ring B] [Algebra A
   by_contra ha0
   exact hp.not_dvd_of_natDegree_lt (C_ne_zero.mpr ha0) (by rwa [natDegree_C])
     (hdvd _ (by rwa [aeval_C]))
+
+/-- An element of an algebra killed by a polynomial whose constant coefficient maps to a unit in
+the algebra is a unit. -/
+theorem isUnit_of_aeval_eq_zero {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A] {x : A}
+    {p : R[X]} (hp : IsUnit (algebraMap R A (p.coeff 0))) (hx : aeval x p = 0) : IsUnit x := by
+  have hdiv := congrArg (aeval x) (X_mul_divX_add p)
+  simp only [map_add, map_mul, aeval_X, aeval_C, hx] at hdiv
+  let c : A := (hp.unit⁻¹ : Aˣ)
+  have hc : c * algebraMap R A (p.coeff 0) = 1 := by
+    simp [c]
+  have hcx : Commute c x := by
+    have hcomm : Commute (hp.unit : A) x := by
+      simpa only [IsUnit.unit_spec] using Algebra.commute_algebraMap_left (p.coeff 0) x
+    exact hcomm.units_inv_left
+  let y : A := c * aeval x p.divX
+  have hcomm : Commute x y :=
+    hcx.symm.mul_right
+      (by simpa only [aeval_X] using (Commute.all (X : R[X]) p.divX).map (aeval x))
+  have he : x * y + 1 = 0 := by
+    have hmul := congrArg (c * ·) hdiv
+    rw [mul_zero, mul_add, hc, ← mul_assoc, hcx.eq, mul_assoc] at hmul
+    exact hmul
+  have hee : (x * y) * (x * y) = 1 := by
+    calc (x * y) * (x * y) = (x * y) * (x * y) + (x * y + 1) := by rw [he, add_zero]
+      _ = (x * y) * (x * y + 1) + 1 := by rw [← add_assoc, mul_add, mul_one]
+      _ = 1 := by rw [he, mul_zero, zero_add]
+  exact (hcomm.isUnit_mul_iff.mp ⟨⟨x * y, x * y, hee, hee⟩, rfl⟩).1
 
 /-- Evaluating `1 - C c * P` at `u` satisfies `1 - aeval u (1 - C c * P) = c • aeval u P`. -/
 theorem one_sub_aeval_one_sub_C_mul {R A : Type*} [CommRing R] [Ring A] [Algebra R A]

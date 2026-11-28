@@ -19,6 +19,7 @@ import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.PowerSeries.Basic
 import TauCeti.RingTheory.PowerSeries.Inverse
 import TauCeti.RingTheory.PowerSeries.Trunc
+import TauCeti.RingTheory.PowerSeries.Weierstrass.Factors
 
 /-!
 # Division of entire power series by polynomials with invertible leading coefficient
@@ -96,12 +97,13 @@ operators, whose Fredholm determinants are entire series.
 * `TauCeti.PowerSeries.eq_and_eq_of_entire_mul_add_eq` and
   `TauCeti.PowerSeries.existsUnique_entire_mul_add_eq`: uniqueness over an ultrametric ring
   with `‖1‖ = 1`.
-* `TauCeti.PowerSeries.eq_of_coe_mul_eq_coe_mul_of_isEntire`,
+* `TauCeti.PowerSeries.dvd_of_coe_eq_coe_mul_entire`,
+  `TauCeti.PowerSeries.eq_of_coe_mul_eq_coe_mul_of_isEntire`,
   `TauCeti.PowerSeries.coe_subring_dvd_iff`, and
-  `TauCeti.PowerSeries.eq_of_coe_dvd_of_natDegree_le`: left cancellation of polynomials with
-  invertible leading coefficient against entire series, equivalence of polynomial divisibility with
-  divisibility in entire series, and equality of polynomials of bounded degree agreeing at a
-  left-regular coefficient.
+  `TauCeti.PowerSeries.eq_of_coe_dvd_of_natDegree_le`: recovering polynomial divisibility from
+  an entire quotient witness, left cancellation of polynomials with invertible leading coefficient
+  against entire series, equivalence of polynomial divisibility with divisibility in entire
+  series, and equality of polynomials of bounded degree agreeing at a left-regular coefficient.
 
 ## References
 
@@ -568,28 +570,39 @@ section Ultrametric
 
 variable [IsUltrametricDist R] [NormOneClass R]
 
+omit [CompleteSpace R] in
+/-- Over an ultrametric ring with `‖1‖ = 1`, two decompositions `(r : R⟦X⟧) + p * q = r' + p * q'`
+with `p` monic, `q, q'` entire, and `r.degree, r'.degree < p.degree` have equal quotients and
+remainders. Completeness of `R` is not needed. -/
+private theorem eq_and_eq_of_add_mul_eq (hp : p.Monic) {q q' : R⟦X⟧} {r r' : Polynomial R}
+    (hq : q.IsEntire) (hq' : q'.IsEntire) (hr : r.degree < p.degree) (hr' : r'.degree < p.degree)
+    (h : (r : R⟦X⟧) + p * q = (r' : R⟦X⟧) + p * q') :
+    q = q' ∧ r = r' := by
+  have : Nontrivial R := NormOneClass.nontrivial
+  have hdist := hp.isDistinguished_one_add_sum_norm_coeff
+  set c := 1 + ∑ i ∈ p.support, ‖p.coeff i‖
+  have hc0 : 0 < c := by positivity
+  have hrem (s : Polynomial R) (hs : s.degree < p.degree) :
+      ∀ m, p.natDegree ≤ m → coeff m (s : R⟦X⟧) = 0 := fun _ hm ↦
+    Polynomial.coeff_coe_eq_zero_of_degree_lt (hs.trans_le Polynomial.degree_le_natDegree) hm
+  have hmul : ∀ x, ‖x * coeff p.natDegree (p : R⟦X⟧)‖ = ‖x‖ * ‖coeff p.natDegree (p : R⟦X⟧)‖ := by
+    simp [hp.coeff_natDegree]
+  obtain ⟨hq_eq, hr_eq⟩ := TauCeti.PowerSeries.IsDistinguished.eq_and_eq_of_mul_add_eq_mul_add hdist
+    hc0 hmul (hq.isRestricted c) (hq'.isRestricted c) (hrem r hr) (hrem r' hr')
+    (by linear_combination h)
+  exact ⟨hq_eq, Polynomial.coe_inj.mp hr_eq⟩
+
 /-- **Uniqueness of entire division.** Over an ultrametric ring with `‖1‖ = 1`, if
 `f = r + p * q` with `q` entire and `r` of degree less than the monic polynomial `p`, then `q`
 and `r` are the quotient and remainder of `f` on division by `p`. -/
 theorem divByMonic_modByMonic_unique (q : R⟦X⟧) (r : Polynomial R) (hp : p.Monic)
     (hq : q.IsEntire) (h : (r : R⟦X⟧) + p * q = f ∧ r.degree < p.degree) :
     f.divByMonic p = q ∧ f.modByMonic p = r := by
+  have : Nontrivial R := NormOneClass.nontrivial
   obtain ⟨rfl, hr⟩ := h
   have hf : ((r : R⟦X⟧) + p * q).IsEntire := (isEntire_coe r).add ((isEntire_coe p).mul hq)
-  have : Nontrivial R := NormOneClass.nontrivial
-  have hdist := hp.isDistinguished_one_add_sum_norm_coeff
-  set c := 1 + ∑ i ∈ p.support, ‖p.coeff i‖
-  have hc0 : 0 < c := by positivity
-  have hrem (r' : Polynomial R) (hr' : r'.degree < p.degree) :
-      ∀ m, p.natDegree ≤ m → coeff m (r' : R⟦X⟧) = 0 := fun _ ↦
-    Polynomial.coeff_coe_eq_zero_of_degree_lt (hr'.trans_le Polynomial.degree_le_natDegree)
-  have hmul : ∀ x, ‖x * coeff p.natDegree (p : R⟦X⟧)‖ = ‖x‖ * ‖coeff p.natDegree (p : R⟦X⟧)‖ := by
-    simp [hp.coeff_natDegree]
-  have hdiv := hf.modByMonic_add_divByMonic hp
-  obtain ⟨hq', hr'⟩ := TauCeti.PowerSeries.IsDistinguished.eq_and_eq_of_mul_add_eq_mul_add hdist
-    hc0 hmul ((hf.divByMonic p).isRestricted c) (hq.isRestricted c)
-    (hrem _ (degree_modByMonic_lt _ hp.ne_zero)) (hrem r hr) (by linear_combination hdiv)
-  exact ⟨hq', Polynomial.coe_inj.mp hr'⟩
+  exact eq_and_eq_of_add_mul_eq hp (hf.divByMonic p) hq (degree_modByMonic_lt _ hp.ne_zero) hr
+    (hf.modByMonic_add_divByMonic hp)
 
 /-- Dividing `p * q` by `p`, for entire `q`, gives quotient `q` and remainder `0`. -/
 private theorem IsEntire.coe_mul_divByMonic_and_modByMonic {q : R⟦X⟧} (hq : q.IsEntire)
@@ -702,6 +715,13 @@ open _root_.PowerSeries
 variable {R : Type*} [NormedCommRing R] [CompleteSpace R]
   {f : R⟦X⟧} {p : Polynomial R}
 
+omit [CompleteSpace R] in
+private theorem coe_inv_unit_smul_mul_unit_smul (hp : IsUnit p.leadingCoeff) (x : R⟦X⟧) :
+    ((hp.unit⁻¹ • p : Polynomial R) : R⟦X⟧) * (hp.unit • x) = (p : R⟦X⟧) * x := by
+  have hcoe : ((hp.unit⁻¹ • p : Polynomial R) : R⟦X⟧) = hp.unit⁻¹ • (p : R⟦X⟧) := by
+    simp [Units.smul_def]
+  rw [hcoe, smul_mul_smul_comm, inv_mul_cancel, one_smul]
+
 /-- An entire series admits division by a polynomial with invertible leading coefficient,
 with entire quotient and polynomial remainder of degree less than the divisor. No ultrametric
 hypothesis is needed for existence. -/
@@ -709,18 +729,14 @@ theorem exists_entire_mul_add_eq (hf : f.IsEntire) (hp : IsUnit p.leadingCoeff)
     [Nontrivial R] :
     ∃ (q : R⟦X⟧) (b : Polynomial R),
       q.IsEntire ∧ b.degree < p.degree ∧ (p : R⟦X⟧) * q + b = f := by
-  let u := hp.unit
-  let P : Polynomial R := u⁻¹ • p
+  let P : Polynomial R := hp.unit⁻¹ • p
   have hP : P.Monic := Polynomial.monic_of_isUnit_leadingCoeff_inv_smul hp
   have hdeg : P.degree = p.degree :=
     Polynomial.degree_smul_of_smul_regular p (IsSMulRegular.all _)
-  have hcoe : (P : R⟦X⟧) = u⁻¹ • (p : R⟦X⟧) := by
-    simp [P, Units.smul_def]
-  refine ⟨u⁻¹ • f.divByMonic P, f.modByMonic P,
-    (hf.divByMonic P).smul _, ?_, ?_⟩
+  refine ⟨hp.unit⁻¹ • f.divByMonic P, f.modByMonic P, (hf.divByMonic P).smul _, ?_, ?_⟩
   · rw [← hdeg]
     exact PowerSeries.degree_modByMonic_lt f hP.ne_zero
-  · rw [mul_smul_comm, ← smul_mul_assoc, ← hcoe, add_comm]
+  · rw [← coe_inv_unit_smul_mul_unit_smul hp, smul_inv_smul, add_comm]
     exact hf.modByMonic_add_divByMonic hP
 
 /-- **Restricted quotients of entire series by Weierstrass polynomials are entire.** Over a
@@ -742,27 +758,26 @@ theorem IsMulDistinguished.isEntire_of_isEntire_coe_mul [IsUltrametricDist R] {c
 
 variable [IsUltrametricDist R] [NormOneClass R]
 
+omit [CompleteSpace R] in
 /-- Entire quotients and polynomial remainders of degree less than a polynomial with invertible
-leading coefficient are unique, over a complete ultrametric norm-one ring. -/
+leading coefficient are unique, over an ultrametric norm-one ring. Completeness of `R` is not
+needed. -/
 theorem eq_and_eq_of_entire_mul_add_eq (hp : IsUnit p.leadingCoeff)
     {q q' : R⟦X⟧} {b b' : Polynomial R} (hq : q.IsEntire) (hq' : q'.IsEntire)
     (hb : b.degree < p.degree) (hb' : b'.degree < p.degree)
     (h : (p : R⟦X⟧) * q + b = f) (h' : (p : R⟦X⟧) * q' + b' = f) :
     q = q' ∧ b = b' := by
-  let u := hp.unit
-  let P : Polynomial R := u⁻¹ • p
+  let P : Polynomial R := hp.unit⁻¹ • p
   have hP : P.Monic := Polynomial.monic_of_isUnit_leadingCoeff_inv_smul hp
   have hdeg : P.degree = p.degree :=
     Polynomial.degree_smul_of_smul_regular p (IsSMulRegular.all _)
-  have hcoe : (P : R⟦X⟧) = u⁻¹ • (p : R⟦X⟧) := by
-    simp [P, Units.smul_def]
-  have hdiv (x : R⟦X⟧) : (P : R⟦X⟧) * (u • x) = (p : R⟦X⟧) * x := by
-    rw [hcoe, smul_mul_smul_comm, inv_mul_cancel, one_smul]
-  have h₁ := PowerSeries.divByMonic_modByMonic_unique (f := f) (u • q) b hP (hq.smul _)
-    ⟨by rw [hdiv, add_comm]; exact h, hdeg.symm ▸ hb⟩
-  have h₂ := PowerSeries.divByMonic_modByMonic_unique (f := f) (u • q') b' hP (hq'.smul _)
-    ⟨by rw [hdiv, add_comm]; exact h', hdeg.symm ▸ hb'⟩
-  exact ⟨(MulAction.injective u) (h₁.1.symm.trans h₂.1), h₁.2.symm.trans h₂.2⟩
+  have heq : (b : R⟦X⟧) + (P : R⟦X⟧) * (hp.unit • q) =
+      (b' : R⟦X⟧) + (P : R⟦X⟧) * (hp.unit • q') := by
+    rw [coe_inv_unit_smul_mul_unit_smul hp, coe_inv_unit_smul_mul_unit_smul hp,
+      add_comm (b : R⟦X⟧), add_comm (b' : R⟦X⟧), h, h']
+  obtain ⟨hq_eq, hb_eq⟩ := _root_.PowerSeries.eq_and_eq_of_add_mul_eq hP (hq.smul _) (hq'.smul _)
+    (hdeg.symm ▸ hb) (hdeg.symm ▸ hb') heq
+  exact ⟨MulAction.injective hp.unit hq_eq, hb_eq⟩
 
 /-- **Entire division by a polynomial with invertible leading coefficient.** Over a complete
 ultrametric norm-one ring, every entire series has exactly one decomposition as the divisor
@@ -777,8 +792,31 @@ theorem existsUnique_entire_mul_add_eq (hf : f.IsEntire) (hp : IsUnit p.leadingC
   obtain ⟨rfl, rfl⟩ := eq_and_eq_of_entire_mul_add_eq hp hq' hq hb' hb h' h
   rfl
 
+omit [CompleteSpace R] in
+/-- If a polynomial with invertible leading coefficient divides another polynomial in the ring of
+entire power series, then it divides it in the polynomial ring. Completeness of `R` is not
+needed. -/
+theorem dvd_of_coe_eq_coe_mul_entire {g : Polynomial R} {q : R⟦X⟧}
+    (hp : IsUnit p.leadingCoeff) (hq : q.IsEntire) (h : (g : R⟦X⟧) = (p : R⟦X⟧) * q) :
+    p ∣ g := by
+  have : Nontrivial R := NormOneClass.nontrivial
+  let P : Polynomial R := hp.unit⁻¹ • p
+  have hP : P.Monic := Polynomial.monic_of_isUnit_leadingCoeff_inv_smul hp
+  set c := 1 + ∑ i ∈ P.support, ‖P.coeff i‖
+  have hPdist : IsMulDistinguished c P.natDegree (P : R⟦X⟧) :=
+    ⟨hP.isDistinguished_one_add_sum_norm_coeff, by
+      simpa only [Polynomial.coeff_coe, hP.coeff_natDegree] using isNormMulUnit_one⟩
+  have hPdvd : P ∣ g := hPdist.dvd_of_mul_eq (e := ⟨(hp.unit : R) • q, (hq.smul _).isRestricted c⟩)
+    (by positivity) ⟨rfl, hP⟩ <| by
+      simpa only [← Units.smul_def, mul_comm _ (P : R⟦X⟧)] using
+        (coe_inv_unit_smul_mul_unit_smul hp q).trans h.symm
+  obtain ⟨k, rfl⟩ := hPdvd
+  refine ⟨hp.unit⁻¹ • k, ?_⟩
+  rw [mul_smul_comm, ← smul_mul_assoc]
+
+omit [CompleteSpace R] in
 /-- A polynomial `Q` with invertible leading coefficient cancels on the left against entire power
-series, over a complete ultrametric norm-one ring. -/
+series, over an ultrametric norm-one ring. Completeness of `R` is not needed. -/
 theorem eq_of_coe_mul_eq_coe_mul_of_isEntire {Q : Polynomial R} {S S' : R⟦X⟧}
     (hQ : IsUnit Q.leadingCoeff) (hS : S.IsEntire) (hS' : S'.IsEntire)
     (heq : (Q : R⟦X⟧) * S = (Q : R⟦X⟧) * S') : S = S' := by
@@ -790,40 +828,24 @@ theorem eq_of_coe_mul_eq_coe_mul_of_isEntire {Q : Polynomial R} {S S' : R⟦X⟧
     (by rw [Polynomial.coe_zero, add_zero])
     (by rw [Polynomial.coe_zero, add_zero]; exact heq.symm)).1
 
-/-- Over a complete ultrametric norm-one ring, divisibility of a polynomial `P` by a polynomial `Q`
+omit [CompleteSpace R] in
+/-- Over an ultrametric norm-one ring, divisibility of a polynomial `P` by a polynomial `Q`
 with invertible leading coefficient in the subring of entire power series is equivalent to ordinary
 polynomial divisibility `Q ∣ P`. -/
 @[simp]
 theorem coe_subring_dvd_iff {Q P : Polynomial R} (hQ : IsUnit Q.leadingCoeff) :
     IsEntire.polynomialHom Q ∣ IsEntire.polynomialHom P ↔ Q ∣ P := by
   refine ⟨?_, ?_⟩
-  · set c := Ring.inverse Q.leadingCoeff
-    have hc : c * Q.leadingCoeff = 1 := Ring.inverse_mul_cancel _ hQ
-    set Q₁ : Polynomial R := Polynomial.C c * Q
-    have hq₁ : Q₁.Monic := Polynomial.monic_C_mul_of_mul_leadingCoeff_eq_one hc
-    rintro ⟨⟨G, hG⟩, hPG⟩
-    replace hG : G.IsEntire := IsEntire.mem_subring.mp hG
-    have hPG' : (P : R⟦X⟧) = (Q₁ : R⟦X⟧) * (PowerSeries.C Q.leadingCoeff * G) := by
-      have h1 : (P : R⟦X⟧) = (Q : R⟦X⟧) * G := by
-        simpa only [Subring.coe_mul, IsEntire.coe_polynomialHom] using congrArg Subtype.val hPG
-      have h2 : (Q₁ : R⟦X⟧) * PowerSeries.C Q.leadingCoeff = (Q : R⟦X⟧) := by
-        calc (Q₁ : R⟦X⟧) * PowerSeries.C Q.leadingCoeff
-            = PowerSeries.C (c * Q.leadingCoeff) * (Q : R⟦X⟧) := by
-              simp only [Q₁, Polynomial.coe_mul, Polynomial.coe_C, map_mul]; ring
-          _ = (Q : R⟦X⟧) := by rw [hc, map_one, one_mul]
-      rw [h1, ← h2, mul_assoc]
-    have hdiv := congrArg (fun F : R⟦X⟧ ↦ F.divByMonic Q₁) hPG'
-    rw [PowerSeries.divByMonic_coe P hq₁,
-      ((isEntire_C Q.leadingCoeff).mul hG).coe_mul_divByMonic_cancel_left hq₁] at hdiv
-    have hPK : P = Q₁ * (P /ₘ Q₁) :=
-      Polynomial.coe_inj.mp (by rw [Polynomial.coe_mul, hdiv, ← hPG'])
-    exact ⟨Polynomial.C c * (P /ₘ Q₁), by simpa only [Q₁, mul_assoc, mul_left_comm] using hPK⟩
+  · rintro ⟨⟨G, hG⟩, hPG⟩
+    exact dvd_of_coe_eq_coe_mul_entire hQ (IsEntire.mem_subring.mp hG) <| by
+      simpa only [Subring.coe_mul, IsEntire.coe_polynomialHom] using congrArg Subtype.val hPG
   · rintro ⟨K, rfl⟩
     exact ⟨IsEntire.polynomialHom K, map_mul IsEntire.polynomialHom Q K⟩
 
-/-- Over a complete ultrametric norm-one ring, if `Q` has invertible leading coefficient, `Q`
-divides `P` in the subring of entire power series, `P.natDegree ≤ Q.natDegree`, and `P` and `Q`
-share a left-regular coefficient `P.coeff k = Q.coeff k`, then `P = Q`. -/
+omit [CompleteSpace R] in
+/-- Over an ultrametric norm-one ring, if `Q` has invertible leading coefficient, `Q` divides `P` in
+the subring of entire power series, `P.natDegree ≤ Q.natDegree`, and `P` and `Q` share a
+left-regular coefficient `P.coeff k = Q.coeff k`, then `P = Q`. -/
 theorem eq_of_coe_dvd_of_natDegree_le {Q P : Polynomial R} (hQ : IsUnit Q.leadingCoeff)
     (hdvd : IsEntire.polynomialHom Q ∣ IsEntire.polynomialHom P)
     (hdeg : P.natDegree ≤ Q.natDegree) {k : ℕ} (hQk : IsLeftRegular (Q.coeff k))

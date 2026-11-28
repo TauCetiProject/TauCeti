@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.BaseChange
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Coprime
 public import TauCeti.RingTheory.Huber.BanachModule.ZeroAtInfty
+import TauCeti.Algebra.Polynomial.Reverse
 
 /-!
 # Completed-tensor base change of `(Pr)` modules, Fredholm series and Riesz projections
@@ -292,10 +293,9 @@ theorem aeval_completedBaseChange [IsTopologicalAddGroup M₁] [ContinuousConstS
     [IsTopologicalAddGroup N₁] [ContinuousConstSMul S N₁]
     (u : M₁ →L[R] M₁) (α : S ⊗̂[R] M₁ ≃L[S] N₁) (P : R[X]) :
     Polynomial.aeval (u.completedBaseChange α α) (Polynomial.map (algebraMap R S) P) =
-      (Polynomial.aeval u P).completedBaseChange α α := by
-  simpa only [completedBaseChangeRingHom_apply] using
-    (Polynomial.map_aeval_eq_aeval_map (ψ := completedBaseChangeRingHom α)
-      (RingHom.ext fun r ↦ by simp [Algebra.algebraMap_eq_smul_one]) P u).symm
+      (Polynomial.aeval u P).completedBaseChange α α :=
+  (Polynomial.map_aeval_eq_aeval_map (ψ := completedBaseChangeRingHom α) (φ := algebraMap R S)
+    (by ext1 r; simp [Algebra.algebraMap_eq_smul_one]) P u).symm
 
 /-- **Compatibility with changing module realisations and equivalent norms.** Post-composing
 `α₁`, `α₂` with equivalences `e₁`, `e₂` conjugates `completedBaseChange` by `e₁` and `e₂`. -/
@@ -492,13 +492,8 @@ theorem IsPrCompact.isUnit_aeval_reverse_completedBaseChange
     IsUnit (Polynomial.aeval (u.completedBaseChange α α)
       (Polynomial.map (algebraMap R S) Q).reverse) := by
   have huQ : IsUnit (Polynomial.aeval u Q.reverse) := (hu.isUnit_aeval_reverse_iff hQ).mpr hcop
-  have hrev : (Polynomial.map (algebraMap R S) Q).reverse =
-      Polynomial.map (algebraMap R S) Q.reverse :=
-    (subsingleton_or_nontrivial S).elim (fun _ ↦ Subsingleton.elim _ _) fun _ ↦ by
-      rw [Polynomial.reverse, Polynomial.reverse,
-        Polynomial.natDegree_map_of_leadingCoeff_ne_zero _ (hQ.map _).ne_zero,
-        Polynomial.reflect_map]
-  rw [hrev, aeval_completedBaseChange]; exact huQ.map (completedBaseChangeRingHom α)
+  rw [Polynomial.reverse_map_of_isUnit_leadingCoeff hQ (algebraMap R S), aeval_completedBaseChange]
+  exact huQ.map (completedBaseChangeRingHom α)
 
 /-- **Operator-norm continuity of `completedBaseChange`** between `(Pr)` modules over Tate rings. -/
 theorem continuous_completedBaseChange [TauCeti.NormedRing.IsTate S]
@@ -542,12 +537,15 @@ theorem IsRieszProjection.completedBaseChange [TauCeti.NormedRing.IsTate S]
     {u E : M₁ →L[R] M₁} {a : R} {h : ℕ} (hE : IsRieszProjection u a h E) :
     IsRieszProjection (u.completedBaseChange α α) (algebraMap R S a) h
       (E.completedBaseChange α α) := by
-  simpa only [completedBaseChangeRingHom_apply] using
-    hE.map (completedBaseChangeRingHom α)
-      (by simp only [map_sub, map_one, completedBaseChangeRingHom_apply, completedBaseChange_smul])
-      (fun {v} hv ↦ by
-        simpa only [completedBaseChangeRingHom_apply] using
-          completedBaseChange_mem_closure_adjoin hS hM α hv)
+  let Φ := completedBaseChangeRingHom α
+  have h1sub : Φ (1 - a • u) = 1 - algebraMap R S a • u.completedBaseChange α α := by
+    simp only [Φ, map_sub, map_one, completedBaseChangeRingHom_apply, completedBaseChange_smul]
+  have hu' : Φ u = u.completedBaseChange α α := completedBaseChangeRingHom_apply α u
+  have hE' : Φ E = E.completedBaseChange α α := completedBaseChangeRingHom_apply α E
+  exact isRieszProjection_def.mpr <| by
+    simpa only [hu', h1sub, hE'] using
+      hE.toIsSpectralProjection.map Φ fun {v} hv ↦
+        completedBaseChange_mem_closure_adjoin hS hM α hv
 
 end PrTransport
 

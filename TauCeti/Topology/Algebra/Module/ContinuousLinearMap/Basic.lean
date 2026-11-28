@@ -32,6 +32,8 @@ then Mathlib's algebraic flip `LinearMap.flip` applies to it.
 
 * `ContinuousLinearMap.toLinearMap_comp_eq`: a commutative square of continuous semilinear maps
   commutes after coercion to semilinear maps.
+* `ContinuousLinearMap.toLinearMap_comp_eq_id`: a continuous semilinear retract `r ∘ i = id`
+  forgets to a semilinear retract `r.toLinearMap ∘ i.toLinearMap = id`.
 * `ContinuousLinearMap.comp_continuousLinearEquiv_eq_zero_iff`: `L ∘ e = 0` exactly when `L = 0`,
   for a continuous semilinear equivalence `e`.
 * `ContinuousLinearMap.range_toLinearMap_eq_bot`: for a surjective scalar ring homomorphism, a
@@ -71,6 +73,13 @@ theorem toLinearMap_comp_eq {f : M₁ →SL[σ₁₂] M₂} {g : M₃ →SL[σ�
     (g : M₃ →ₛₗ[σ₃₄] M₄) ∘ₛₗ (i : M₁ →ₛₗ[σ₁₃] M₃) =
       (i' : M₂ →ₛₗ[σ₂₄] M₄) ∘ₛₗ (f : M₁ →ₛₗ[σ₁₂] M₂) := by
   rw [← toLinearMap_comp, h, toLinearMap_comp]
+
+/-- A continuous semilinear retract `r ∘ i = id` forgets to a semilinear retract
+`r.toLinearMap ∘ i.toLinearMap = id`. -/
+theorem toLinearMap_comp_eq_id {σ₂₁ : R₂ →+* R₁} [RingHomCompTriple σ₁₂ σ₂₁ (RingHom.id R₁)]
+    {i : M₁ →SL[σ₁₂] M₂} {r : M₂ →SL[σ₂₁] M₁} (hri : r.comp i = .id R₁ M₁) :
+    (r : M₂ →ₛₗ[σ₂₁] M₁).comp (i : M₁ →ₛₗ[σ₁₂] M₂) = LinearMap.id := by
+  rw [← toLinearMap_comp, hri, coe_id]
 
 /-- Precomposing with a continuous semilinear equivalence gives the zero map exactly when the
 original map is zero. -/
