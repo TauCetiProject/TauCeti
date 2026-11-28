@@ -8,13 +8,12 @@ module
 public import TauCeti.NumberTheory.ArithmeticFunction.TwistedDivisorSum
 public import Mathlib.Analysis.PSeries
 public import Mathlib.Analysis.SpecialFunctions.Log.Base
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 public import TauCeti.NumberTheory.ArithmeticFunction.Zeta
 public import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Basic
 import TauCeti.NumberTheory.ArithmeticFunction.Misc
 import TauCeti.NumberTheory.Divisors
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Bounds for divisor sums
@@ -191,11 +190,9 @@ most `n^(δ / 2)`. -/
 theorem eventually_card_divisors_le_rpow {δ : ℝ} (hδ : 0 < δ) :
     ∀ᶠ n : ℕ in Filter.atTop, (n.divisors.card : ℝ) ≤ (n : ℝ) ^ δ := by
   obtain ⟨C, -, hC⟩ := exists_pos_card_divisors_le_rpow (half_pos hδ)
-  have htend : Filter.Tendsto (fun n : ℕ ↦ (n : ℝ) ^ (δ / 2)) Filter.atTop Filter.atTop :=
-    (tendsto_rpow_atTop (half_pos hδ)).comp tendsto_natCast_atTop_atTop
-  filter_upwards [htend.eventually_ge_atTop C] with n hn
-  refine Real.le_rpow_of_le_mul_rpow_of_le_rpow_sub n.cast_nonneg (hC n) ?_
-  rwa [sub_half]
+  filter_upwards [tendsto_natCast_atTop_atTop.eventually
+    (eventually_const_mul_rpow_le_rpow (half_lt_self hδ) C)] with n hn
+  exact (hC n).trans hn
 
 end TauCeti
 

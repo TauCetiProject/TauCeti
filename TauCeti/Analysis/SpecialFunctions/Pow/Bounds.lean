@@ -131,8 +131,6 @@ both for `0 ≤ log x` and for the case `p = 0`, where the statement reduces to 
   `(log x) ^ p ≤ (p / ε) ^ p * x ^ ε` for `1 ≤ x`, `0 < ε` and a real `p ≥ 0` or a natural `p`.
 * `TauCeti.sqrt_mul_log_sq_le_div_sq_mul_rpow`: `√x * (log x) ^ 2 ≤ (2 / ε) ^ 2 * x ^ (1 / 2 + ε)`
   for `1 ≤ x` and `0 < ε`.
-* `Real.le_rpow_of_le_mul_rpow_of_le_rpow_sub`: for `0 ≤ x`, the bounds `a ≤ C * x ^ ε` and
-  `C ≤ x ^ (δ - ε)` give `a ≤ x ^ δ`.
 * `TauCeti.one_add_norm_add_rpow_le`: `(1 + ‖x + y‖) ^ s ≤ 2 ^ s ((1 + ‖x‖) ^ s + (1 + ‖y‖) ^ s)`
   for `0 ≤ s`.
 * `TauCeti.one_add_norm_add_le`: `1 + ‖x + y‖ ≤ (1 + ‖x‖) (1 + ‖y‖)`.
@@ -464,15 +462,6 @@ theorem log_add_one_le_rpow_div {x ε : ℝ} (hx : 0 ≤ x) (hε : 0 < ε) (hε�
     simpa using rpow_add_le_add_rpow hx zero_le_one hε.le hε₁
   rw [le_div_iff₀ hε, mul_comm, ← log_rpow (by linarith)]
   linarith [log_le_sub_one_of_pos (rpow_pos_of_pos (by linarith : 0 < x + 1) ε)]
-
-/-- A constant in a power bound is absorbed by a larger exponent: for `0 ≤ x`, if
-`a ≤ C * x ^ ε` and `C ≤ x ^ (δ - ε)`, then `a ≤ x ^ δ`. -/
-theorem le_rpow_of_le_mul_rpow_of_le_rpow_sub {a C x ε δ : ℝ} (hx : 0 ≤ x)
-    (h₁ : a ≤ C * x ^ ε) (h₂ : C ≤ x ^ (δ - ε)) : a ≤ x ^ δ :=
-  calc a ≤ C * x ^ ε := h₁
-    _ ≤ x ^ (δ - ε) * x ^ ε := mul_le_mul_of_nonneg_right h₂ (rpow_nonneg hx ε)
-    _ ≤ x ^ (δ - ε + ε) := le_rpow_add hx _ _
-    _ = x ^ δ := by rw [sub_add_cancel]
 
 end Real
 
