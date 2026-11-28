@@ -30,8 +30,9 @@ and exact radius `amiceRadius p 0` whenever `‖(1 : A)‖ = 1`
 (`TauCeti.PadicExp.radius_expSeries_of_normOneClass`), so when `A` is complete `NormedSpace.exp`
 has the power series expansion `NormedSpace.expSeries K A` on the open ball of radius
 `amiceRadius p 0` (`TauCeti.PadicExp.hasFPowerSeriesOnBall_exp`). See also
-`TauCeti.NumberTheory.Padics.Exp.Disc` for the functional equation, logarithm inverse, and norm
-preservation on `{x | ‖x‖ < amiceRadius p 0}`.
+`TauCeti.NumberTheory.Padics.Exp.Disc` for the functional equation, `TauCeti.norm_exp_of_norm_lt`,
+`TauCeti.norm_log_of_norm_sub_one_lt`, and the logarithm identities on
+`{x | ‖x‖ < amiceRadius p 0}`.
 
 On the open disc `{x | ‖x‖ < amiceRadius p 0}`:
 * In any complete normed division algebra `D` over `ℚ_[p]`, `exp (x - y) = exp x / exp y` for

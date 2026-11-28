@@ -21,24 +21,29 @@ import TauCeti.RingTheory.PowerSeries.GaussNorm
 /-!
 # Exponential polynomials over `p`-adic algebras
 
-In an ultrametric seminormed commutative `ℚ_[p]`-algebra `A` with `‖(1 : A)‖ = 1` (retaining its
-rational algebra structure `[Algebra ℚ A]` used by `PowerSeries.exp`), an exponential polynomial
+For a polynomial `Q` and frequency `ψ` over an algebra `A` over `ℚ_[p]` (retaining the rational
+algebra structure `[Algebra ℚ A]` used by `PowerSeries.exp`), the exponential polynomial
 `Q(X) exp(ψ X)` is represented formally as the power series
-`(Q : PowerSeries A) * PowerSeries.rescale ψ (PowerSeries.exp A)`. By the Gauss-norm estimate
-`PowerSeries.gaussNorm_rescale_exp` of `TauCeti.RingTheory.PowerSeries.Exp.Padic.Basic`, whenever
-`0 ≤ r` and `‖ψ‖ * r ≤ p ^ (-1 / (p - 1))`, the rescaled exponential `exp(ψ X)` has Gauss norm
-`1` at radius `r`. By submultiplicativity of the ultrametric Gauss norm
-(`TauCeti.PowerSeries.gaussNorm_mul_le`), multiplying `(Q : PowerSeries A)` by `exp(ψ X)` preserves
-any `r`-weighted bound `∀ j, ‖Q.coeff j‖ * r ^ j ≤ M`
-(`PowerSeries.norm_coeff_coe_mul_rescale_exp_mul_pow_le`).
+`(Q : PowerSeries A) * PowerSeries.rescale ψ (PowerSeries.exp A)`. This file establishes
+`r`-weighted coefficient bounds and analytic evaluations for `Q(X) exp(ψ X)` and its formal
+derivatives:
 
-When `A` is a complete normed commutative `ℚ_[p]`-algebra with `[Algebra ℚ A]` and
-`‖ψ * x‖ < p ^ (-1 / (p - 1))`, the Cauchy product via `PowerSeries.evalAt_mul_of_summable_norm`
-shows that `(Q : PowerSeries A) * rescale ψ (exp A)` converges at `x` to
-`Q.eval x * NormedSpace.exp (ψ * x)` (`PowerSeries.hasSum_coeff_coe_mul_rescale_exp`), and its
-`m`-th formal derivative converges to
-`(Polynomial.expDerivFactor ψ m Q).eval x * NormedSpace.exp (ψ * x)`
-(`PowerSeries.hasSum_coeff_iterate_derivative_coe_mul_rescale_exp`).
+* Over an ultrametric seminormed commutative `ℚ_[p]`-algebra `A` with `‖(1 : A)‖ = 1`, if
+  `‖Q.coeff j‖ * r ^ j ≤ M` for all `j` and `‖ψ‖ * r ≤ p ^ (-1 / (p - 1))` (with `r ≥ 0`), then
+  the coefficients of `Q(X) exp(ψ X)` satisfy the same `r`-weighted bound `M`
+  (`PowerSeries.norm_coeff_coe_mul_rescale_exp_mul_pow_le`), and for `r > 0` those of its `m`-th
+  formal derivative satisfy the bound `max r⁻¹ ‖ψ‖ ^ m * M`
+  (`PowerSeries.norm_coeff_iterate_derivative_coe_mul_rescale_exp_mul_pow_le`).
+* Over a complete normed commutative `ℚ_[p]`-algebra `A`, whenever `‖ψ * x‖ < p ^ (-1 / (p - 1))`,
+  the series `Q(X) exp(ψ X)` converges at `x` to `Q.eval x * NormedSpace.exp (ψ * x)`
+  (`PowerSeries.hasSum_coeff_coe_mul_rescale_exp`), and its `m`-th formal derivative converges at
+  `x` to `(Polynomial.expDerivFactor ψ m Q).eval x * NormedSpace.exp (ψ * x)`
+  (`PowerSeries.hasSum_coeff_iterate_derivative_coe_mul_rescale_exp`).
+
+Together with `PowerSeries.iterate_derivative_coe_mul_rescale_exp`, which expresses the formal
+derivatives of `Q(X) exp(ψ X)` via `Polynomial.expDerivFactor`, these coefficient bounds and
+evaluations of exponential polynomials and their derivatives are the estimates used by Baker's
+`p`-adic method over `ℂ_[p]` on discs of radius `r > 1`.
 
 ## Main results
 
