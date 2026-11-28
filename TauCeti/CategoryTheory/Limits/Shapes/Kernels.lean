@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 public import TauCeti.CategoryTheory.Limits.Shapes.Equalizers
@@ -22,6 +23,8 @@ assumed: all the relevant cocones and coforks are given.  This is the special ca
 This is how a quotient construction, such as relative chains as the quotient of the chains of a
 space by those of a subspace, inherits a colimit description from the two objects it is formed
 from.
+
+Applying `Hom(W, -)` to a kernel or `Hom(-, W)` to a cokernel gives an exact pair of functions.
 
 The file also records that the square of a cokernel against a zero object is a pushout
 (`CategoryTheory.IsPushout.of_isColimit_cokernelCofork`), and that so is the square comparing the
@@ -52,6 +55,31 @@ def isColimitOfIsColimitCokernelCofork (hπ : ∀ j, IsColimit (CokernelCofork.o
   isColimitOfIsColimitCofork (β := 0) (g := 0) hπ hF hG hf (fun _ ↦ by simp) hp hcok
 
 end TauCeti
+
+namespace CategoryTheory.Limits
+
+variable {C : Type*} [Category* C] [HasZeroMorphisms C]
+
+/-- Applying `Hom(W, -)` to a limiting kernel fork and its defining map gives an exact pair. -/
+theorem IsLimit.exact_postcomp {Y Z : C} {g : Y ⟶ Z} {s : KernelFork g}
+    (h : IsLimit s) (W : C) :
+    Function.Exact (fun a : W ⟶ s.pt ↦ a ≫ s.ι) (fun b : W ⟶ Y ↦ b ≫ g) := by
+  refine Function.Exact.of_comp_of_mem_range (funext fun a ↦ ?_) fun b hb ↦ ?_
+  · simp [Category.assoc, s.condition]
+  · obtain ⟨a, ha⟩ := KernelFork.IsLimit.lift' h b hb
+    exact ⟨a, ha⟩
+
+/-- Applying `Hom(-, W)` to a colimiting cokernel cofork and its defining map gives
+an exact pair. -/
+theorem IsColimit.exact_precomp {X Y : C} {f : X ⟶ Y} {s : CokernelCofork f}
+    (h : IsColimit s) (W : C) :
+    Function.Exact (fun a : s.pt ⟶ W ↦ s.π ≫ a) (fun b : Y ⟶ W ↦ f ≫ b) := by
+  refine Function.Exact.of_comp_of_mem_range (funext fun a ↦ ?_) fun b hb ↦ ?_
+  · simp [← Category.assoc, s.condition]
+  · obtain ⟨a, ha⟩ := CokernelCofork.IsColimit.desc' h b hb
+    exact ⟨a, ha⟩
+
+end CategoryTheory.Limits
 
 namespace CategoryTheory.IsPushout
 

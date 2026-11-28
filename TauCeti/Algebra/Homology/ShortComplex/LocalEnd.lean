@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.RingTheory.LocalRing.Basic
+import TauCeti.CategoryTheory.Preadditive.Radical.Minimal
 
 /-!
 # Non-split exact sequences with a local endomorphism ring
@@ -112,20 +113,16 @@ theorem ShortExact.isIso_of_τ₁_eq_id (hS : S.ShortExact) [IsLocalRing (End S.
 has a local endomorphism ring. -/
 theorem ShortExact.isIso_of_comp_g_eq (hS : S.ShortExact) [IsLocalRing (End S.X₁)]
     (hf : ¬ IsSplitMono S.f) (b : S.X₂ ⟶ S.X₂) (hb : b ≫ S.g = S.g) : IsIso b := by
-  have := hS.mono_f
-  obtain ⟨a, ha⟩ := hS.exact.lift' (S.f ≫ b) (by simp [hb])
-  let φ : S ⟶ S := ⟨a, b, 𝟙 S.X₃, ha, by simp [hb]⟩
-  have : IsIso φ := hS.isIso_of_τ₃_eq_id hf φ rfl
-  exact ((π₂ : ShortComplex C ⥤ C).mapIso (asIso φ)).isIso_hom
+  refine hS.fIsKernel.right_minimal_iff_mem_jacobsonRadical.mpr ?_ b hb
+  rw [KernelFork.ι_ofι]
+  exact (TauCeti.mem_jacobsonRadical_iff_not_isSplitMono (f := S.f)).mpr hf
 
 /-- The initial map of a non-split short exact sequence is left minimal if the right-hand end
 has a local endomorphism ring. -/
 theorem ShortExact.isIso_of_f_comp_eq (hS : S.ShortExact) [IsLocalRing (End S.X₃)]
     (hg : ¬ IsSplitEpi S.g) (b : S.X₂ ⟶ S.X₂) (hb : S.f ≫ b = S.f) : IsIso b := by
-  have := hS.epi_g
-  obtain ⟨c, hc⟩ := hS.exact.desc' (b ≫ S.g) (by simp [← Category.assoc, hb])
-  let φ : S ⟶ S := ⟨𝟙 S.X₁, b, c, by simp [hb], hc.symm⟩
-  have : IsIso φ := hS.isIso_of_τ₁_eq_id hg φ rfl
-  exact ((π₂ : ShortComplex C ⥤ C).mapIso (asIso φ)).isIso_hom
+  refine hS.gIsCokernel.left_minimal_iff_mem_jacobsonRadical.mpr ?_ b hb
+  rw [CokernelCofork.π_ofπ]
+  exact (TauCeti.mem_jacobsonRadical_iff_not_isSplitEpi (f := S.g)).mpr hg
 
 end CategoryTheory.ShortComplex

@@ -38,12 +38,12 @@ sequences of abelian groups, and of `R`-modules for an `R`-linear category.
 * `TauCeti.ExactStructure.Ext1.pushout_g_eq_zero_iff`: exactness at `Ext¹_E(W, Y)`.
 * `TauCeti.ExactStructure.Ext1.pullback_f_eq_zero_iff`: exactness at `Ext¹_E(Y, W)`.
 * `TauCeti.ExactStructure.Extension.injective_comp_f`,
-  `TauCeti.ExactStructure.Extension.exact_comp_f_comp_g`,
+  `e.isKernelCokernelPair.fIsKernel.exact_postcomp W`,
   `TauCeti.ExactStructure.Extension.exact_comp_g_mk_pullback`,
   `TauCeti.ExactStructure.Extension.exact_mk_pullback_pushout_f` and
   `TauCeti.ExactStructure.Extension.exact_pushout_f_pushout_g`: the covariant sequence.
 * `TauCeti.ExactStructure.Extension.injective_g_comp`,
-  `TauCeti.ExactStructure.Extension.exact_g_comp_f_comp`,
+  `e.isKernelCokernelPair.gIsCokernel.exact_precomp W`,
   `TauCeti.ExactStructure.Extension.exact_f_comp_mk_pushout`,
   `TauCeti.ExactStructure.Extension.exact_mk_pushout_pullback_g` and
   `TauCeti.ExactStructure.Extension.exact_pullback_g_pullback_f`: the contravariant sequence.
@@ -130,13 +130,6 @@ variable (e : E.Extension Z X) (W)
 theorem injective_comp_f : Function.Injective fun a : W ⟶ X ↦ a ≫ e.f :=
   fun _ _ h ↦ e.isKernelCokernelPair.mono_f.right_cancellation _ _ h
 
-/-- **Exactness at `Hom(W, Y)`**: a morphism into the middle term is killed by the deflation
-exactly when it factors through the inflation. -/
-theorem exact_comp_f_comp_g :
-    Function.Exact (fun a : W ⟶ X ↦ a ≫ e.f) fun t : W ⟶ e.obj ↦ t ≫ e.g := fun t ↦
-  ⟨fun ht ↦ ⟨e.isKernelCokernelPair.lift t ht, e.isKernelCokernelPair.lift_f t ht⟩,
-    by rintro ⟨a, rfl⟩; simp⟩
-
 /-- **Exactness at `Hom(W, Z)`**: the connecting map `u ↦ u^* [e]` vanishes exactly on the
 morphisms factoring through the deflation. -/
 theorem exact_comp_g_mk_pullback :
@@ -162,13 +155,6 @@ theorem exact_pushout_f_pushout_g :
 /-- **Exactness at `Hom(Z, W)`**: precomposition with the deflation is injective. -/
 theorem injective_g_comp : Function.Injective fun b : Z ⟶ W ↦ e.g ≫ b :=
   fun _ _ h ↦ e.isKernelCokernelPair.epi_g.left_cancellation _ _ h
-
-/-- **Exactness at `Hom(Y, W)`**: a morphism out of the middle term is killed by the inflation
-exactly when it factors through the deflation. -/
-theorem exact_g_comp_f_comp :
-    Function.Exact (fun b : Z ⟶ W ↦ e.g ≫ b) fun t : e.obj ⟶ W ↦ e.f ≫ t := fun t ↦
-  ⟨fun ht ↦ ⟨e.isKernelCokernelPair.desc t ht, e.isKernelCokernelPair.g_desc t ht⟩,
-    by rintro ⟨b, rfl⟩; simp⟩
 
 /-- **Exactness at `Hom(X, W)`**: the connecting map `v ↦ v_* [e]` vanishes exactly on the
 morphisms extending along the inflation. -/
