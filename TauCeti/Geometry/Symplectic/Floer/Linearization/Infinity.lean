@@ -11,6 +11,7 @@ import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.Conformal
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Analysis.Complex.HolomorphicFunctions.Lp.Removable
+import TauCeti.Analysis.Complex.Liouville
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
@@ -50,11 +51,22 @@ near infinity, the `L²` removable singularity theorem at infinity
 holomorphically across `ζ = 0`. The real parts at the vectors of a basis then reassemble the
 extension of `η'`.
 
+When the data are `J₀` and `0` on the whole plane, the same argument shows that the cokernel of the
+sphere has no nonzero smooth elements: if `η` is differentiable with `D^* η = 0` everywhere and
+`‖η‖²` is integrable on the plane, each `G_x` is entire and equal to `w⁻² g(w⁻¹)` near infinity for
+a function `g` continuous at `0`, so it tends to `0` at infinity and vanishes by Liouville's
+theorem; hence `η = 0`
+(`eq_zero_of_floerLinearizationAdjoint_const_eq_zero`, in the namespace `TauCeti.SymplecticForm`).
+This is the vanishing of holomorphic one-forms on the Riemann sphere.
+
 ## Main results
 
 * `exists_contDiffOn_eq_covectorPullback_inv_of_floerLinearizationAdjoint_eq_zero`, in the
   namespace `TauCeti.SymplecticForm`: square-integrable solutions of the formal adjoint near
   infinity extend smoothly across infinity.
+* `eq_zero_of_floerLinearizationAdjoint_const_eq_zero`, in the namespace `TauCeti.SymplecticForm`:
+  differentiable square-integrable solutions of the formal adjoint of constant data on the whole
+  plane vanish.
 
 ## References
 
@@ -220,5 +232,38 @@ theorem exists_contDiffOn_eq_covectorPullback_inv_of_floerLinearizationAdjoint_e
     rw [← re_covectorComplexify (J₀ := J₀), covectorComplexify_covectorPullback_inv u η hζ0]
     simp only [hgeq (b k) _ (by simpa using hζ) hζ0, smul_eq_mul, neg_mul, Complex.neg_re, e]
   simp [hk, Module.Basis.coord_apply, Finsupp.single_apply]
+
+/-- **Square-integrable solutions of the formal adjoint of constant data vanish.** Let `J₀` be an
+`ω`-invariant complex structure, and let `η` be a differentiable covector field on the plane,
+annihilated everywhere by the formal adjoint `D^*` of the constant data `J₀` with zero
+perturbation, with `‖η‖²` integrable on the plane. Then `η = 0`. Read on the Riemann sphere,
+the complexification of `η` at each vector is a holomorphic one-form on the whole sphere, and the
+sphere has no nonzero holomorphic one-forms. -/
+theorem eq_zero_of_floerLinearizationAdjoint_const_eq_zero (hJ₀ : ω.Invariant J₀)
+    (u : ℝ × ℝ → V) {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : Differentiable ℝ η)
+    (hD : ∀ z, ω.floerLinearizationAdjoint (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap)
+      (fun _ _ ↦ 0) (fun _ _ ↦ 0) u η z = 0)
+    (hL2 : Integrable fun z ↦ ‖η z‖ ^ 2) : η = 0 := by
+  set e := Complex.equivRealProdCLM
+  funext z
+  refine ContinuousLinearMap.ext fun x ↦ ?_
+  set G : ℂ → ℂ := fun w ↦ covectorComplexify J₀ x (η (e w))
+  have hG : Differentiable ℂ G := fun w ↦
+    differentiableAt_covectorComplexify hJ₀ u (hη _) (hD _) x
+  obtain ⟨g, hgd, hgeq⟩ := HolomorphicFunctions.exists_differentiableOn_eq_inv_sq_smul_comp_inv
+    hG.differentiableOn
+    (integrableOn_sq_norm_covectorComplexify (T := 1) (fun z _ ↦ hη z) hL2.integrableOn x)
+  -- Beyond the unit circle `G s = -s⁻² (-g) s⁻¹`, with `g` continuous at `0`, so `G` vanishes.
+  have hg0 : ContinuousAt g 0 :=
+    hgd.continuousOn.continuousAt (ball_mem_nhds 0 (by norm_num))
+  have hG0 : G (e.symm z) = 0 := hG.eq_zero_of_eq_neg_inv_sq_smul hg0.neg (by
+    filter_upwards [(isCompact_closedBall (0 : ℂ) 1).compl_mem_cocompact] with s hs
+    have hs1 : 1 < ‖s‖ := by simpa using hs
+    have hs0 : s ≠ 0 := norm_pos_iff.1 (one_pos.trans hs1)
+    -- Apply the transformation law of `g` at `s⁻¹`; the factors `s⁻²` and `s²` cancel.
+    rw [Pi.neg_apply, hgeq s⁻¹ (by simpa [norm_inv] using inv_lt_one_of_one_lt₀ hs1)
+      (inv_ne_zero hs0)]
+    simp [hs0]) _
+  simpa [G, re_covectorComplexify] using congrArg Complex.re hG0
 
 end TauCeti.SymplecticForm

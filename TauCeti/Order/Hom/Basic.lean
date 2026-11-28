@@ -21,7 +21,9 @@ the image `e '' H` of an order embedding `e : β ↪o γ` factors through `e` by
 with values in `H` (`OrderEmbedding.exists_trans_eq_of_forall_mem_image`).
 
 `OrderIso.toOrderEmbedding_toEmbedding` records that viewing an order isomorphism `e : α ≃o β`
-as an order embedding preserves its underlying `Function.Embedding`.
+as an order embedding preserves its underlying `Function.Embedding`, and
+`OrderIso.forall_inf_eq_bot_iff` transports bounded infimum-triviality conditions across an order
+isomorphism of semilattices with bottom.
 -/
 
 public section
@@ -90,5 +92,18 @@ theorem toOrderEmbedding_toEmbedding {α β : Type*} [LE α] [LE β] (e : α ≃
     e.toOrderEmbedding.toEmbedding = e.toEmbedding := by
   ext x
   rw [RelEmbedding.coe_toEmbedding, coe_toOrderEmbedding, ← RelIso.coe_toEmbedding]
+
+/-- An order isomorphism of semilattices with bottom transports bounded infimum-triviality
+conditions between predicates `P` and `Q` preserved by `e` and `e.symm`. -/
+theorem forall_inf_eq_bot_iff {α β : Type*} [SemilatticeInf α] [OrderBot α]
+    [SemilatticeInf β] [OrderBot β] (e : α ≃o β) {P : α → Prop} {Q : β → Prop}
+    (hPQ : ∀ a, P a → Q (e a)) (hQP : ∀ b, Q b → P (e.symm b)) {x : α} :
+    (∀ b, Q b → e x ⊓ b = ⊥ → b = ⊥) ↔ (∀ a, P a → x ⊓ a = ⊥ → a = ⊥) := by
+  refine ⟨fun h a ha hxa => e.injective ?_, fun h b hb hxb => e.symm.injective ?_⟩
+  · rw [map_bot]
+    exact h (e a) (hPQ a ha) (by rw [← map_inf, hxa, map_bot])
+  · rw [map_bot]
+    refine h (e.symm b) (hQP b hb) (e.injective ?_)
+    rw [map_inf, e.apply_symm_apply, hxb, map_bot]
 
 end OrderIso

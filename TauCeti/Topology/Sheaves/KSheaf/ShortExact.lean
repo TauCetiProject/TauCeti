@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.GrothendieckAbelian
+public import Mathlib.CategoryTheory.ObjectProperty.Extensions
+public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 public import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
 public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Homology.HomotopyCategory.ShortExact
@@ -41,6 +43,11 @@ length two of Pardon's Lemma A.2.11.
   in the short exact sequence `G ⟶ cone τ ⟶ F⟦1⟧`, whose third term, the shift of `F`, is
   the cokernel of `F ⟶ cone (𝟙 F)` into the acyclic mapping cone of the identity
   (`CategoryTheory.NatTrans.shortExact_mappingConeInrShortComplex`).
+* **Finite coproducts** (`TopCat.KPresheaf.isHomotopyKSheaf_of_isColimit_cofan`). A finite
+  coproduct of homotopy K-sheaves is a homotopy K-sheaf: a binary coproduct is a biproduct, the
+  middle term of a split short exact sequence, and the empty coproduct is zero. As a property of
+  K-presheaves (`TopCat.KPresheaf.isHomotopyKSheafProperty`), the homotopy K-sheaves are closed
+  under isomorphisms, extensions and finite coproducts, and contain zero.
 * **Shifts** (`TopCat.KPresheaf.IsHomotopyKSheaf.comp_shiftFunctor`,
   `TopCat.KPresheaf.isHomotopyKSheaf_comp_shiftFunctor_iff`). The shift `K ↦ F(K)⟦n⟧` of a
   homotopy K-sheaf is one for every `n : ℤ`: the shift by `1` is the cokernel of
@@ -56,6 +63,10 @@ compact, as in Pardon's setting of locally compact Hausdorff spaces.
 * `TopCat.KPresheaf.isHomotopyKSheaf_of_acyclic`: acyclic K-presheaves are homotopy K-sheaves.
 * `TopCat.KPresheaf.isHomotopyKSheaf_mappingConeFunctor`: mapping cones of morphisms of homotopy
   K-sheaves are homotopy K-sheaves.
+* `TopCat.KPresheaf.isHomotopyKSheaf_of_isColimit_cofan`: homotopy K-sheaves are closed under
+  finite coproducts.
+* `TopCat.KPresheaf.isHomotopyKSheafProperty`: the homotopy K-sheaves as an `ObjectProperty`, with
+  instances for closure under isomorphisms, extensions and finite coproducts.
 * `TopCat.KPresheaf.IsHomotopyKSheaf.comp_shiftFunctor`: homotopy K-sheaves are closed under
   shifts.
 
@@ -295,6 +306,55 @@ theorem isHomotopyKSheaf_mappingConeFunctor (hF : F.IsHomotopyKSheaf) (hG : G.Is
   -- the shift `F⟦1⟧` of `F` is the cokernel of `F ⟶ cone (𝟙 F)`, whose middle term is acyclic
   (NatTrans.shortExact_mappingConeInrShortComplex τ).isHomotopyKSheaf_X₂ hG
     hF.comp_shiftFunctor_one
+
+end TopCat.KPresheaf
+
+/-! ### Finite coproducts -/
+
+namespace TopCat.KPresheaf
+
+variable {X : TopCat.{w}} [T2Space X] {C : Type u} [Category.{v} C] [Abelian C]
+  [HasFilteredColimitsOfSize.{w, w} C] [AB5OfSize.{w, w} C] [WeaklyLocallyCompactSpace X]
+
+variable (X C) in
+/-- The homotopy K-sheaves, as a property of K-presheaves of cochain complexes. -/
+def isHomotopyKSheafProperty : ObjectProperty (KPresheaf (CochainComplex C ℤ) X) :=
+  fun F ↦ F.IsHomotopyKSheaf
+
+omit [HasFilteredColimitsOfSize.{w, w} C] [AB5OfSize.{w, w} C] [WeaklyLocallyCompactSpace X] in
+@[simp]
+lemma isHomotopyKSheafProperty_iff (F : KPresheaf (CochainComplex C ℤ) X) :
+    isHomotopyKSheafProperty X C F ↔ F.IsHomotopyKSheaf :=
+  Iff.rfl
+
+instance : (isHomotopyKSheafProperty X C).IsClosedUnderIsomorphisms :=
+  ⟨fun e hF ↦ IsHomotopyKSheaf.of_iso e hF⟩
+
+open ZeroObject in
+instance : (isHomotopyKSheafProperty X C).ContainsZero :=
+  ⟨⟨0, isZero_zero _, isHomotopyKSheaf_of_acyclic fun K ↦
+    HomologicalComplex.acyclic_of_isZero _ ((isZero_zero _).obj (op K))⟩⟩
+
+instance : (isHomotopyKSheafProperty X C).IsClosedUnderExtensions :=
+  ⟨fun hS h₁ h₃ ↦ hS.isHomotopyKSheaf_X₂ h₁ h₃⟩
+
+/-- A binary coproduct is a biproduct, an extension of its two summands. -/
+instance : (isHomotopyKSheafProperty X C).IsClosedUnderBinaryCoproducts :=
+  .mk' <| by
+    rintro _ ⟨F, hF⟩
+    exact ObjectProperty.prop_of_iso _
+      (biprod.isoCoprod _ _ ≪≫ HasColimit.isoOfNatIso (diagramIsoPair F).symm)
+      (ObjectProperty.prop_biprod _ (hF ⟨.left⟩) (hF ⟨.right⟩))
+
+instance : (isHomotopyKSheafProperty X C).IsClosedUnderFiniteCoproducts :=
+  .mk'
+
+/-- **Finite coproducts of homotopy K-sheaves are homotopy K-sheaves.** If a K-presheaf of cochain
+complexes is the coproduct of finitely many homotopy K-sheaves, it is a homotopy K-sheaf. -/
+theorem isHomotopyKSheaf_of_isColimit_cofan {J : Type*} [Finite J]
+    {F : J → KPresheaf (CochainComplex C ℤ) X} {c : Cofan F} (hc : IsColimit c)
+    (hF : ∀ j, (F j).IsHomotopyKSheaf) : c.pt.IsHomotopyKSheaf :=
+  (isHomotopyKSheafProperty X C).prop_of_isColimit_cofan hc hF
 
 end TopCat.KPresheaf
 
