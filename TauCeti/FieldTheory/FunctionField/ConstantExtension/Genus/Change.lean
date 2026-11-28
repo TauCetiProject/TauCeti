@@ -593,8 +593,6 @@ private theorem exists_intermediate_exact_genus_eq {K E : Type*} {k'' : Type w} 
   have := isScalarTower_base_constantCompositum K E M F'
   have hEM : constantCompositum E M EM = ⊤ := (constantCompositum_eq_top_iff E M F' EM).2 rfl
   have hFEM : IsFunctionField M EM := hE.of_constantCompositum_eq_top hEM
-  let _ := compAlgebra M k' k''; have := isScalarTower_compAlgebra_left M k' k''
-  have := isScalarTower_compAlgebra_right M k' k'' F'
   have : Algebra.IsAlgebraic M k' := .tower_top (K := K) M
   have : Algebra.IsAlgebraic M k'' := Algebra.IsAlgebraic.trans M k' k''
   obtain ⟨M₁, _, hstM, _, hexM₁⟩ :=

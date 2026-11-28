@@ -10,7 +10,6 @@ public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 
 import Mathlib.Algebra.Polynomial.Eval.Subring
 import Mathlib.Algebra.Polynomial.Expand
-import TauCeti.RingTheory.AlgebraTower
 
 /-!
 # Polynomials and prime-degree subextensions in purely inseparable extensions
@@ -144,8 +143,10 @@ theorem of_isIntegrallyClosedIn {k k' F : Type*} (F' : Type*) {k'' : Type*}
   obtain ⟨p, _⟩ := ExpChar.exists k
   have : ExpChar F p := expChar_of_injective_algebraMap (algebraMap k F).injective p
   have : ExpChar k' p := expChar_of_injective_algebraMap (algebraMap k k').injective p
-  let _ := compAlgebra k k' k''; have := isScalarTower_compAlgebra_left k k' k''
-  have := isScalarTower_compAlgebra_right k k' k'' F'
+  let _ := Algebra.compHom k'' (algebraMap k k')
+  have : IsScalarTower k k' k'' := .of_algebraMap_eq fun _ ↦ rfl
+  have : IsScalarTower k k'' F' := .of_algebraMap_eq fun c ↦ by
+    simp [Algebra.compHom_algebraMap_apply, ← IsScalarTower.algebraMap_apply _ _ F']
   have : Algebra.IsAlgebraic k k'' := Algebra.IsAlgebraic.trans k k' k''
   rw [isPurelyInseparable_iff_pow_mem k' p]
   intro c

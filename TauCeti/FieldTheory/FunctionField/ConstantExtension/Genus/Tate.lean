@@ -227,8 +227,10 @@ private theorem genus_le_and_sub_one_dvd_two_mul_genus_sub_genus {p : ℕ} [Fact
     [Algebra k'' F'] [IsScalarTower k' k'' F'] [Algebra.IsAlgebraic k' k'']
     (hex'' : IsIntegrallyClosedIn k'' F') :
     genus k'' F' ≤ genus k F ∧ (p - 1) ∣ 2 * (genus k F - genus k'' F') := by
-  let _ := compAlgebra k k' k''; have := isScalarTower_compAlgebra_left k k' k''
-  have := isScalarTower_compAlgebra_right k k' k'' F'
+  let _ := Algebra.compHom k'' (algebraMap k k')
+  have : IsScalarTower k k' k'' := .of_algebraMap_eq fun _ ↦ rfl
+  have : IsScalarTower k k'' F' := .of_algebraMap_eq fun c ↦ by
+    simp [Algebra.compHom_algebraMap_apply, ← IsScalarTower.algebraMap_apply _ _ F']
   have : Algebra.IsAlgebraic k k'' := Algebra.IsAlgebraic.trans k k' k''
   have htop : constantCompositum F k'' F' = ⊤ := constantCompositum_eq_top_of_isScalarTower h
   exact ⟨genus_le_genus_of_constantCompositum_eq_top hF htop,
