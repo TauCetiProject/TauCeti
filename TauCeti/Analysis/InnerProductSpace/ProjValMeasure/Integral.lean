@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Basic
-public import TauCeti.MeasureTheory.Function.BoundedBorel
+public import TauCeti.MeasureTheory.Function.BoundedBorel.Basic
 public import TauCeti.MeasureTheory.Function.SimpleFunc.Basic
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
@@ -70,6 +70,10 @@ continuous extension `LinearMap.extendOfNorm`.
   `x ↦ ‖f x‖ₑ ^ 2`.
 * `ProjValMeasure.integral_apply_eq_zero_iff`: `(∫ f dP) ξ = 0` iff `f = 0` almost everywhere
   for `P.diag ξ`.
+* `ProjValMeasure.isSelfAdjoint_integral_ofRealFunction`: real-valued bounded Borel symbols
+  integrate to self-adjoint operators.
+* `ProjValMeasure.integral_exp`: exponential compatibility
+  `P.integral (NormedSpace.exp f) = NormedSpace.exp (P.integral f)`.
 
 ## References
 
@@ -283,6 +287,12 @@ theorem integral_ofSimpleFunc (P : ProjValMeasure X H) (s : SimpleFunc X ℂ) :
       ∑ c ∈ s.range, c • P.proj (s ⁻¹' {c}) (s.measurableSet_fiber c) :=
   (P.integral_ofSimpleFunc_eq_simpleIntegral s).trans (P.simpleIntegral_apply s)
 
+/-- Integrating a constant scalar symbol gives the corresponding scalar multiple of the identity. -/
+@[simp]
+theorem integral_algebraMap (P : ProjValMeasure X H) (c : ℂ) :
+    P.integral (algebraMap ℂ (BoundedBorelFunction X) c) = c • (1 : H →L[ℂ] H) := by
+  rw [AlgHomClass.commutes, Algebra.algebraMap_eq_smul_one]
+
 /-- The integral of the indicator of a measurable set `B` is the projection `P(B)`. -/
 @[simp]
 theorem integral_indicator (P : ProjValMeasure X H) {B : Set X} (hB : MeasurableSet B) :
@@ -475,6 +485,21 @@ theorem diag_integral (P : ProjValMeasure X H) (g : BoundedBorelFunction X) (ξ 
       simpa only [ENNReal.rpow_two] using
         MeasureTheory.ofReal_setIntegral_norm_sq_eq hint.integrableOn
     _ = ((P.diag ξ).withDensity fun x => ‖g x‖ₑ ^ 2) B := (withDensity_apply _ hB).symm
+
+/-- Integrating a real-valued bounded Borel symbol against a projection-valued measure yields a
+self-adjoint operator. -/
+theorem isSelfAdjoint_integral_ofRealFunction (P : ProjValMeasure X H) (g : X → ℝ)
+    (hg : Measurable g) (hbound) :
+    IsSelfAdjoint (P.integral (BoundedBorelFunction.ofRealFunction g hg hbound)) :=
+  (BoundedBorelFunction.isSelfAdjoint_ofRealFunction g hg hbound).map P.integral
+
+/-- **Exponential compatibility of projection-valued measure integrals.** For every bounded Borel
+symbol `f : BoundedBorelFunction X`, `∫ exp f dP = exp (∫ f dP)`. -/
+theorem integral_exp (P : ProjValMeasure X H) (f : BoundedBorelFunction X) :
+    P.integral (NormedSpace.exp f) = NormedSpace.exp (P.integral f) := by
+  let +nondep : NormedAlgebra ℚ (BoundedBorelFunction X) := .restrictScalars ℚ ℂ _
+  let +nondep : NormedAlgebra ℚ (H →L[ℂ] H) := .restrictScalars ℚ ℂ _
+  exact NormedSpace.map_exp P.integral P.continuous_integral f
 
 /-- The squared extended norm of `(∫ g dP) ξ` is the second moment of `‖g‖ₑ` against
 `P.diag ξ`. -/

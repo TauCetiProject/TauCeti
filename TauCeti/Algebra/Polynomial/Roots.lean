@@ -18,7 +18,10 @@ splitting assumptions on the polynomial family.
 
 We also count the root zero: it occurs in `f.roots` with multiplicity the order of vanishing
 `f.natTrailingDegree`, so the roots satisfying a predicate that holds at zero number
-`f.natTrailingDegree` plus the nonzero roots satisfying it. Over any integral domain, summing
+`f.natTrailingDegree` plus the nonzero roots satisfying it. Over any ring, zero is a simple
+root, that is `f.natTrailingDegree = 1`, exactly when the constant coefficient vanishes and
+the linear one does not (`Polynomial.natTrailingDegree_eq_one_iff`,
+`Polynomial.rootMultiplicity_zero_eq_one_iff`). Over any integral domain, summing
 `f.rootMultiplicity` over any finite set of points never exceeds `f.natDegree`
 (`Polynomial.sum_rootMultiplicity_le_natDegree`), including for `f = 0`, and summing it over the
 distinct roots gives the number of roots counted with multiplicity
@@ -310,3 +313,29 @@ theorem infinite_of_pow_mem {R : Type*} [CommRing R] [NoZeroDivisors R] [Infinit
       fun x _ => Set.mem_iUnion.mpr ⟨⟨x ^ a, hpow x⟩, by simp [Polynomial.mem_nthRootsFinset ha]⟩)
 
 end Subring
+
+namespace Polynomial
+
+/-- The order of vanishing of `p` at `0` is `1` exactly when the constant coefficient of `p`
+vanishes and its linear coefficient does not. -/
+theorem natTrailingDegree_eq_one_iff {R : Type*} [Semiring R] {p : R[X]} :
+    p.natTrailingDegree = 1 ↔ p.coeff 0 = 0 ∧ p.coeff 1 ≠ 0 := by
+  refine ⟨fun h ↦ ⟨coeff_eq_zero_of_lt_natTrailingDegree (by omega), ?_⟩, fun ⟨h0, h1⟩ ↦ ?_⟩
+  · have hp : p ≠ 0 := by
+      rintro rfl
+      simp at h
+    have h_lead : p.trailingCoeff ≠ 0 := mt trailingCoeff_eq_zero.1 hp
+    rwa [trailingCoeff, h] at h_lead
+  · refine le_antisymm (natTrailingDegree_le_of_ne_zero h1) (le_natTrailingDegree ?_ fun m hm ↦ ?_)
+    · rintro rfl
+      exact h1 (coeff_zero 1)
+    · obtain rfl : m = 0 := by omega
+      exact h0
+
+/-- **Simple root at zero.** Over any ring, `0` is a simple root of `p` exactly when the constant
+coefficient of `p` vanishes and its linear coefficient does not. -/
+theorem rootMultiplicity_zero_eq_one_iff {R : Type*} [Ring R] {p : R[X]} :
+    p.rootMultiplicity 0 = 1 ↔ p.coeff 0 = 0 ∧ p.coeff 1 ≠ 0 := by
+  rw [rootMultiplicity_eq_natTrailingDegree', natTrailingDegree_eq_one_iff]
+
+end Polynomial

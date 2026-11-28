@@ -27,7 +27,10 @@ Composites of rescaled linear equivalences rescale by the quotient of the factor
 Linear maps conjugate under linear equivalences have linearly equivalent kernels and cokernels,
 `LinearMap.kerEquivOfComp` and `LinearMap.cokerEquivOfComp`.
 Coordinate relabelling of function modules (`LinearEquiv.funCongrLeft`) is injective in the
-coordinate equivalence over a nontrivial target module.
+coordinate equivalence over a nontrivial target module, and respects multiplication, identity, and
+inverses of coordinate permutations (`LinearEquiv.funCongrLeft_mul_symm`,
+`LinearEquiv.funCongrLeft_one_symm`, `LinearEquiv.funCongrLeft_inv_symm_cancel`,
+`LinearEquiv.funCongrLeft_inv_cancel`).
 Every `R`-linear automorphism of a rank-one free `R`-module `ι → R` over a commutative semiring `R`
 is scalar multiplication by a unit (`LinearEquiv.exists_eq_smulOfUnit_of_unique`), specializing over
 `ℤ` to `LinearMap.id` or `-LinearMap.id` (`LinearEquiv.toLinearMap_eq_id_or_neg_of_unique`).
@@ -112,6 +115,36 @@ theorem funCongrLeft_injective (R M : Type*) [Semiring R] [AddCommMonoid M] [Mod
   rw [funCongrLeft_apply, funCongrLeft_apply, LinearMap.funLeft_apply, LinearMap.funLeft_apply,
     Pi.single_eq_same, Pi.single_eq_of_ne (Ne.symm hne)] at hj
   exact hm hj
+
+section FunCongrLeftPerm
+
+variable (R M : Type*) [Semiring R] [AddCommMonoid M] [Module R M] {σ : Type*}
+
+/-- Coordinate relabelling along the inverse of a product of permutations factors as the reverse
+composite of the individual relabellings. -/
+theorem funCongrLeft_mul_symm (a b : Equiv.Perm σ) (v : σ → M) :
+    funCongrLeft R M (a * b).symm v =
+      funCongrLeft R M a.symm (funCongrLeft R M b.symm v) := by
+  rw [Equiv.Perm.mul_def, Equiv.symm_trans, funCongrLeft_comp, trans_apply]
+
+/-- Coordinate relabelling along the inverse of the identity permutation is the identity linear
+equivalence. -/
+@[simp]
+theorem funCongrLeft_one_symm :
+    funCongrLeft R M (1 : Equiv.Perm σ).symm = refl R (σ → M) := by
+  rw [Equiv.Perm.one_def, Equiv.refl_symm, funCongrLeft_id]
+
+/-- Coordinate relabelling along `a⁻¹.symm` cancels relabelling along `a.symm`. -/
+theorem funCongrLeft_inv_symm_cancel (a : Equiv.Perm σ) (v : σ → M) :
+    funCongrLeft R M a⁻¹.symm (funCongrLeft R M a.symm v) = v := by
+  rw [← funCongrLeft_mul_symm, inv_mul_cancel, funCongrLeft_one_symm, refl_apply]
+
+/-- Coordinate relabelling along `a.symm` cancels relabelling along `a⁻¹.symm`. -/
+theorem funCongrLeft_inv_cancel (a : Equiv.Perm σ) (v : σ → M) :
+    funCongrLeft R M a.symm (funCongrLeft R M a⁻¹.symm v) = v := by
+  rw [← funCongrLeft_mul_symm, mul_inv_cancel, funCongrLeft_one_symm, refl_apply]
+
+end FunCongrLeftPerm
 
 /-- Every `R`-linear automorphism of a rank-one free `R`-module `ι → R` over a commutative semiring
 `R` is scalar multiplication by a unit of `R`. -/
