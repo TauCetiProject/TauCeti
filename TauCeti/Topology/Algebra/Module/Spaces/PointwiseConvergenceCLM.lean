@@ -14,11 +14,9 @@ import Mathlib.Analysis.Normed.Operator.Completeness
 # Basic facts on the topology of pointwise convergence
 
 Scalar multiplication on `E →SLₚₜ[σ] F` is jointly continuous whenever it is on `F`, since it is
-computed pointwise (`PointwiseConvergenceCLM.continuousSMul`). Post-composition and
-pre-composition evaluate pointwise as `postcomp E L f x = L (f x)`
-(`PointwiseConvergenceCLM.postcomp_apply_apply`) and `precomp G L f x = f (L x)`
-(`PointwiseConvergenceCLM.precomp_apply_apply`), and post-composition by the identity is the
-identity (`PointwiseConvergenceCLM.postcomp_id`). For
+computed pointwise (`PointwiseConvergenceCLM.continuousSMul`). Post-composition evaluates pointwise
+as `postcomp E L f x = L (f x)` (`PointwiseConvergenceCLM.postcomp_apply_apply`), and
+post-composition by the identity is the identity (`PointwiseConvergenceCLM.postcomp_id`). For
 seminormed codomains, closure in the topology of pointwise convergence is characterized by
 simultaneous norm approximation on finite sets of vectors
 (`PointwiseConvergenceCLM.mem_closure_iff`,
@@ -30,9 +28,7 @@ A map lies in the closure of a set of maps in this topology exactly when it is t
 along some filter of maps eventually in the set
 (`ContinuousLinearMap.toPointwiseConvergenceCLM_mem_closure_image_iff`); since this topology need
 not be first countable, nets or filters cannot in general be replaced by sequences here.
-Finite-vector approximation neighborhoods are open
-(`PointwiseConvergenceCLM.isOpen_setOf_forall_norm_sub_apply_lt`) and yield witnesses in the set
-from closure membership
+Closure membership yields finite-vector approximation witnesses in the set
 (`PointwiseConvergenceCLM.exists_mem_forall_norm_sub_apply_lt_of_mem_closure`).
 Every closed operator-norm ball is closed in the topology of pointwise convergence
 (`PointwiseConvergenceCLM.isClosed_image_toPointwiseConvergenceCLM_closedBall`).
@@ -54,17 +50,6 @@ theorem postcomp_apply_apply {𝕜₁ 𝕜₂ 𝕜₃ E F G : Type*} [NormedFiel
     [ContinuousConstSMul 𝕜₃ G] (L : F →SL[τ] G) (f : E →SLₚₜ[σ] F) (x : E) :
     postcomp E L f x = L (f x) :=
   DFunLike.congr_fun (postcomp_apply E L f) x
-
-/-- Evaluating `PointwiseConvergenceCLM.precomp` on a map and a vector applies the map to the
-image under the inner operator. -/
-theorem precomp_apply_apply {𝕜₁ 𝕜₂ 𝕜₃ E F G : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂]
-    [NormedField 𝕜₃] {σ : 𝕜₁ →+* 𝕜₂} {τ : 𝕜₂ →+* 𝕜₃} {ρ : 𝕜₁ →+* 𝕜₃} [RingHomCompTriple σ τ ρ]
-    [AddCommGroup E] [TopologicalSpace E] [AddCommGroup F] [TopologicalSpace F]
-    [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
-    [Module 𝕜₁ E] [Module 𝕜₂ F] [Module 𝕜₃ G] [ContinuousConstSMul 𝕜₃ G]
-    (L : E →SL[σ] F) (f : F →SLₚₜ[τ] G) (x : E) :
-    precomp G L f x = f (L x) :=
-  DFunLike.congr_fun (precomp_apply G L f) x
 
 /-- Post-composition by the identity is the identity. -/
 @[simp]
@@ -109,18 +94,6 @@ theorem mem_closure_iff {𝕜₁ 𝕜₂ E F : Type*} [NormedField 𝕜₁] [Nor
     refine ⟨a, ha, fun v hv => ?_⟩
     simpa only [Metric.mem_ball, dist_zero_right, _root_.sub_apply, norm_sub_rev] using
       happrox v (hF.mem_toFinset.2 hv)
-
-/-- For a finite family of vectors `v`, the set of operators whose values on `v` stay within `ε` of
-a fixed operator `x` is open in the topology of pointwise convergence. -/
-theorem isOpen_setOf_forall_norm_sub_apply_lt {𝕜₁ 𝕜₂ E F ι : Type*} [NormedField 𝕜₁]
-    [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂} [AddCommGroup E] [TopologicalSpace E] [Module 𝕜₁ E]
-    [SeminormedAddCommGroup F] [Module 𝕜₂ F] [Finite ι] (x : E →SL[σ] F) (v : ι → E) (ε : ℝ) :
-    IsOpen {T : E →SLₚₜ[σ] F | ∀ i, ‖x (v i) - T (v i)‖ < ε} := by
-  have heq : {T : E →SLₚₜ[σ] F | ∀ i, ‖x (v i) - T (v i)‖ < ε} =
-      ⋂ i, {T : E →SLₚₜ[σ] F | ‖x (v i) - T (v i)‖ < ε} := by ext T; simp
-  rw [heq]
-  exact isOpen_iInter_of_finite fun i ↦
-    isOpen_lt (continuous_const.sub (continuous_eval_const (v i))).norm continuous_const
 
 end PointwiseConvergenceCLM
 

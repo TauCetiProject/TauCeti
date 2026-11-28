@@ -157,13 +157,6 @@ theorem piLpEntry_star [CompleteSpace H]
     ← PiLp.inner_single_left (F := fun _ : ι => H) i u, adjoint_inner_right, ← inner_conj_symm,
     PiLp.inner_single_left (F := fun _ : ι => H) j, inner_conj_symm]
 
-/-- For a self-adjoint operator on the finite Hilbert sum, taking the adjoint of the `(i, j)`
-matrix entry gives the `(j, i)` matrix entry. -/
-theorem _root_.IsSelfAdjoint.star_piLpEntry [CompleteSpace H]
-    {T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)} (hT : IsSelfAdjoint T)
-    (i j : ι) : star (T.piLpEntry i j) = T.piLpEntry j i := by
-  rw [← piLpEntry_star, hT.star_eq]
-
 /-- Every matrix entry of an operator on the Hilbert sum has norm at most that of the operator. -/
 theorem norm_piLpEntry_le (T : PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H))
     (i j : ι) : ‖T.piLpEntry i j‖ ≤ ‖T‖ :=
