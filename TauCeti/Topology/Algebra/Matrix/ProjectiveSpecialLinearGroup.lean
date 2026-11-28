@@ -26,8 +26,8 @@ for any topology on the coefficient ring.
 
 * `isEmbedding_psl2zToPSL2R`: the natural injection from the integral projective special linear
   group to the real one is a topological embedding.
-* `Subgroup.discreteTopology_map_sl2zToPSL2R`: the image in `PSL(2, ℝ)` of any subgroup of
-  `SL(2, ℤ)` is discrete.
+* `Subgroup.discreteTopology_map_sl2zToPSL2R`, `Subgroup.discreteTopology_map_psl2zToPSL2R`: the
+  image in `PSL(2, ℝ)` of any subgroup of `SL(2, ℤ)` or `PSL(2, ℤ)` is discrete.
 * `Subgroup.eventually_mk_eq_of_tendsto`: in a discrete subgroup, lifts converging in the special
   linear group to a lift of an element of the subgroup eventually lift that element.
 * `Matrix.ProjectiveSpecialLinearGroup.continuous_upperRightHom`: projective translations depend
@@ -90,6 +90,13 @@ instance Subgroup.discreteTopology_map_sl2zToPSL2R (H : Subgroup SL(2, ℤ)) :
     DiscreteTopology (H.map sl2zToPSL2R) :=
   .of_subset (inferInstance : DiscreteTopology psl2zToPSL2R.range)
     H.map_sl2zToPSL2R_le_range_psl2zToPSL2R
+
+/-- The image in `PSL(2, ℝ)` of a subgroup of `PSL(2, ℤ)` is discrete, as a subgroup of the
+discrete image of `PSL(2, ℤ)`. -/
+instance Subgroup.discreteTopology_map_psl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ)) :
+    DiscreteTopology (Γ'.map psl2zToPSL2R) :=
+  .of_subset (inferInstance : DiscreteTopology psl2zToPSL2R.range)
+    (Γ'.map_le_range psl2zToPSL2R)
 
 /-- In a discrete subgroup `Γ` of a projective special linear group, lifts of elements of `Γ`
 converging in the special linear group to a lift of an element of `Γ` eventually lift that

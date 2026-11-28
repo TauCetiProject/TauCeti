@@ -10,6 +10,7 @@ public import TauCeti.Combinatorics.PermutationTriple.Examples
 public import TauCeti.GroupTheory.QuotientGroup.MulAut
 public import TauCeti.GroupTheory.TriangleGroup.CosetTriple
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjJ
+import Mathlib.Dynamics.PeriodicPts.Lemmas
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.NumberTheory.Modular.ConjugateTranslation
 
@@ -119,6 +120,10 @@ noncomputable abbrev permT (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ'
 noncomputable def permR (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) : Perm (Fin n) :=
   e.permutationRepresentation (R : PSL(2, ℤ))
 
+/-- `permR Γ' e` is the coset permutation of `R = S T`. -/
+theorem permR_def (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
+    permR Γ' e = e.permutationRepresentation (R : PSL(2, ℤ)) := (rfl)
+
 /-- `permR Γ' e` factors as `permS Γ' e * permT Γ' e`. -/
 theorem permR_eq_permS_mul_permT (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     permR Γ' e = permS Γ' e * permT Γ' e := by
@@ -137,6 +142,101 @@ theorem permR_eq_permS_inv_mul_σ0_inv_mul_permS (Γ' : Subgroup PSL(2, ℤ))
 @[simp] theorem permR_pow_three (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     permR Γ' e ^ 3 = 1 := by
   rw [permR, ← map_pow, coe_R_pow_three, map_one]
+
+/-- Integer powers of `permT Γ' e` act on `e (g Γ')` by left multiplication by `T ^ k`. -/
+theorem permT_zpow_apply (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
+    (g : PSL(2, ℤ)) (k : ℤ) :
+    ((permT Γ' e) ^ k) (e (g : PSL(2, ℤ) ⧸ Γ')) =
+      e ((((T : PSL(2, ℤ)) ^ k * g : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) := by
+  rw [permT, modularTriple_σinf, ← map_zpow, Equiv.permutationRepresentation_apply,
+    Equiv.symm_apply_apply, MulAction.Quotient.smul_mk, smul_eq_mul]
+
+/-- Natural powers of `permT Γ' e` act on `e (g Γ')` by left multiplication by `T ^ k`. -/
+theorem permT_pow_apply (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
+    (g : PSL(2, ℤ)) (k : ℕ) :
+    ((permT Γ' e) ^ k) (e (g : PSL(2, ℤ) ⧸ Γ')) =
+      e ((((T : PSL(2, ℤ)) ^ k * g : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) := by
+  simpa only [zpow_natCast] using permT_zpow_apply Γ' e g k
+
+/-- `(permT Γ' e) ^ k` fixes `e (g Γ')` if and only if `g⁻¹ * T ^ k * g ∈ Γ'`. -/
+theorem permT_pow_apply_eq_iff (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
+    (g : PSL(2, ℤ)) (k : ℕ) :
+    ((permT Γ' e) ^ k) (e (g : PSL(2, ℤ) ⧸ Γ')) = e (g : PSL(2, ℤ) ⧸ Γ') ↔
+      g⁻¹ * (T : PSL(2, ℤ)) ^ k * g ∈ Γ' := by
+  rw [permT, modularTriple_σinf, ← map_pow]
+  exact e.permutationRepresentation_quotient_apply_eq_self_iff ((T : PSL(2, ℤ)) ^ k) g
+
+/-- `permS Γ' e` fixes `e (g Γ')` if and only if `g⁻¹ * S * g ∈ Γ'`. -/
+theorem permS_apply_eq_self_iff (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
+    (g : PSL(2, ℤ)) :
+    permS Γ' e (e (g : PSL(2, ℤ) ⧸ Γ')) = e (g : PSL(2, ℤ) ⧸ Γ') ↔
+      g⁻¹ * (S : PSL(2, ℤ)) * g ∈ Γ' := by
+  rw [permS, modularTriple_σ1]; exact e.permutationRepresentation_quotient_apply_eq_self_iff S g
+
+/-- `(modularTriple Γ' e).σ0` fixes `e (g Γ')` if and only if `g⁻¹ * U * g ∈ Γ'`. -/
+theorem modularTriple_σ0_apply_eq_self_iff (Γ' : Subgroup PSL(2, ℤ))
+    (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) (g : PSL(2, ℤ)) :
+    (modularTriple Γ' e).σ0 (e (g : PSL(2, ℤ) ⧸ Γ')) = e (g : PSL(2, ℤ) ⧸ Γ') ↔
+      g⁻¹ * (U : PSL(2, ℤ)) * g ∈ Γ' := by
+  rw [modularTriple_σ0]; exact e.permutationRepresentation_quotient_apply_eq_self_iff U g
+
+/-- `permR Γ' e` fixes `e (g Γ')` if and only if `g⁻¹ * R * g ∈ Γ'`. -/
+theorem permR_apply_eq_self_iff (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
+    (g : PSL(2, ℤ)) :
+    permR Γ' e (e (g : PSL(2, ℤ) ⧸ Γ')) = e (g : PSL(2, ℤ) ⧸ Γ') ↔
+      g⁻¹ * (R : PSL(2, ℤ)) * g ∈ Γ' := by
+  rw [permR]; exact e.permutationRepresentation_quotient_apply_eq_self_iff R g
+
+/-- The period of `permT Γ' e` at `e (g Γ')` divides `h` iff `g⁻¹ T ^ h g ∈ Γ'`. -/
+theorem minimalPeriod_permT_dvd_iff (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
+    (g : PSL(2, ℤ)) (h : ℕ) :
+    Function.minimalPeriod (permT Γ' e) (e (g : PSL(2, ℤ) ⧸ Γ')) ∣ h ↔
+      g⁻¹ * (T : PSL(2, ℤ)) ^ h * g ∈ Γ' := by
+  rw [← Function.isPeriodicPt_iff_minimalPeriod_dvd, Function.IsPeriodicPt, Function.IsFixedPt,
+    Perm.iterate_eq_pow, permT_pow_apply_eq_iff]
+
+/-- Lifted to `SL(2, ℤ)`, the period of `permT Γ' e` at `e (σ Γ')` divides `h` iff
+`σ⁻¹ T ^ h σ ∈ Γ'.liftSL`. -/
+theorem minimalPeriod_permT_mk_dvd_iff (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
+    (σ : SL(2, ℤ)) (h : ℕ) :
+    Function.minimalPeriod (permT Γ' e) (e ((σ : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) ∣ h ↔
+      σ⁻¹ * _root_.ModularGroup.T ^ h * σ ∈ Γ'.liftSL := by
+  rw [minimalPeriod_permT_dvd_iff, Subgroup.mem_liftSL, QuotientGroup.mk_mul,
+    QuotientGroup.mk_mul, QuotientGroup.mk_inv, QuotientGroup.mk_pow]
+
+/-- The period of `permT Γ' e` at `e (g Γ')` is the least positive `h` with `g⁻¹ T ^ h g ∈ Γ'`. -/
+theorem minimalPeriod_permT_eq_sInf (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
+    (g : PSL(2, ℤ)) :
+    Function.minimalPeriod (permT Γ' e) (e (g : PSL(2, ℤ) ⧸ Γ')) =
+      sInf {h : ℕ | 0 < h ∧ g⁻¹ * (T : PSL(2, ℤ)) ^ h * g ∈ Γ'} := by
+  rw [Function.minimalPeriod_eq_sInf_n_pos_IsPeriodicPt]; congr 1; ext h
+  simp only [Set.mem_ofPred_eq, Function.IsPeriodicPt, Function.IsFixedPt,
+    Equiv.Perm.iterate_eq_pow, permT_pow_apply_eq_iff]
+
+/-- For `σ : SL(2, ℤ)`, the period of `permT Γ' e` at `e (σ⁻¹ Γ')` (for the cusp `σ • ∞`) is the
+least positive `h` with `σ T ^ h σ⁻¹ ∈ Γ'.liftSL`. -/
+theorem minimalPeriod_permT_mk_inv_eq_sInf (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
+    (σ : SL(2, ℤ)) :
+    Function.minimalPeriod (permT Γ' e) (e (((σ⁻¹ : SL(2, ℤ)) : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) =
+      sInf {h : ℕ | 0 < h ∧ σ * _root_.ModularGroup.T ^ h * σ⁻¹ ∈ Γ'.liftSL} := by
+  rw [minimalPeriod_permT_eq_sInf]; congr 1; ext h
+  simp [Subgroup.mem_liftSL, QuotientGroup.mk_mul, QuotientGroup.mk_inv, QuotientGroup.mk_pow]
+
+/-- At the base coset `e 1` (the cusp `∞`), the period of `permT Γ' e` is the least positive `h`
+with `T ^ h ∈ Γ'.liftSL`. -/
+theorem minimalPeriod_permT_one (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
+    Function.minimalPeriod (permT Γ' e) (e ((1 : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) =
+      sInf {h : ℕ | 0 < h ∧ _root_.ModularGroup.T ^ h ∈ Γ'.liftSL} := by
+  simpa using minimalPeriod_permT_mk_inv_eq_sInf Γ' e 1
+
+/-- **Divisibility of cusp widths under subgroup inclusion.** If `Γ'' ≤ Γ'`, then the cusp width
+of `Γ'` at `g Γ'` divides the cusp width of `Γ''` at `g Γ''`. -/
+theorem minimalPeriod_permT_dvd_of_le {m : ℕ} {Γ'' Γ' : Subgroup PSL(2, ℤ)} (h : Γ'' ≤ Γ')
+    (e'' : PSL(2, ℤ) ⧸ Γ'' ≃ Fin m) (e' : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) (g : PSL(2, ℤ)) :
+    Function.minimalPeriod (permT Γ' e') (e' (g : PSL(2, ℤ) ⧸ Γ')) ∣
+      Function.minimalPeriod (permT Γ'' e'') (e'' (g : PSL(2, ℤ) ⧸ Γ'')) :=
+  (minimalPeriod_permT_dvd_iff Γ' e' g _).mpr <|
+    h ((minimalPeriod_permT_dvd_iff Γ'' e'' g _).mp dvd_rfl)
 
 /-- Transporting cosets along `modularEquiv : TriangleGroup 3 2 0 ≃* PSL(2, ℤ)` identifies
 `modularTriple Γ' e` with `TriangleGroup.cosetTriple`. -/
@@ -371,6 +471,13 @@ theorem modularTriple_quotientRightRel (Γ' : Subgroup PSL(2, ℤ))
   · dsimp only [e]
     rw [permR, Equiv.permCongr_rightCosetPerm, inv_inv]
 
+/-- The right-coset permutation of `S` squares to `1`. -/
+theorem rightCosetPerm_S_sq (Γ' : Subgroup PSL(2, ℤ))
+    (r : Quotient (QuotientGroup.rightRel Γ') ≃ Fin n) :
+    (r.permCongr (Γ'.rightCosetPerm (S : PSL(2, ℤ)))) ^ 2 = 1 := by
+  rw [sq, ← r.permCongr_mul, ← Γ'.rightCosetPerm_mul, ← sq, coe_S_sq, Γ'.rightCosetPerm_one]
+  exact Equiv.ext fun _ ↦ by simp
+
 /-- Bundled form of `modularTriple_quotientRightRel` in terms of `ofRightCosetPerms`. -/
 theorem modularTriple_quotientRightRel_eq_ofRightCosetPerms (Γ' : Subgroup PSL(2, ℤ))
     (r : Quotient (QuotientGroup.rightRel Γ') ≃ Fin n) :
@@ -378,10 +485,7 @@ theorem modularTriple_quotientRightRel_eq_ofRightCosetPerms (Γ' : Subgroup PSL(
       ofRightCosetPerms
         (r.permCongr (Γ'.rightCosetPerm (S : PSL(2, ℤ))))
         (r.permCongr (Γ'.rightCosetPerm (T : PSL(2, ℤ))))
-        (by
-          rw [sq, ← r.permCongr_mul, ← Γ'.rightCosetPerm_mul, ← sq, coe_S_sq,
-            Γ'.rightCosetPerm_one]
-          exact Equiv.ext fun _ ↦ by simp) := by
+        (rightCosetPerm_S_sq Γ' r) := by
   obtain ⟨-, h0, h1, _⟩ := modularTriple_quotientRightRel Γ' r
   exact ext_of_two h0 h1
 

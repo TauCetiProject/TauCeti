@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.Cusps.ConstantTerm
-public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
+public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic.Basic
 
 /-!
 # The cusp forms have codimension at most the number of cusps

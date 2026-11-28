@@ -348,3 +348,18 @@ theorem MonoidHom.injective_domRestrict_of_isMulTorsion {H : Type*} [Group H] (f
   exact Subtype.ext h1
 
 end PrimeOrder
+
+namespace TauCeti
+
+/-- In a torsion-free subgroup `H ≤ G`, a conjugate `g⁻¹ * x * g` of a finite-order element
+`x ^ k = 1` (`0 < k`) can lie in `H` only when `x = 1`. -/
+theorem eq_one_of_conj_mem_of_pow_eq_one {G : Type*} [Group G] {H : Subgroup G} [IsMulTorsionFree H]
+    {x g : G} {k : ℕ} (hk : 0 < k) (hxk : x ^ k = 1) (hmem : g⁻¹ * x * g ∈ H) : x = 1 := by
+  have hconj : (g⁻¹ * x * g) ^ k = 1 := by
+    simpa [MulAut.conj_apply, hxk] using (map_pow (MulAut.conj g⁻¹) x k).symm
+  have h1 : g⁻¹ * x * g = 1 :=
+    congrArg Subtype.val (isOfFinOrder_iff_pow_eq_one.mpr ⟨k, hk, Subtype.ext hconj⟩ :
+      IsOfFinOrder (⟨g⁻¹ * x * g, hmem⟩ : H)).eq_one'
+  simpa using mul_eq_one_iff_eq_inv.mp h1
+
+end TauCeti

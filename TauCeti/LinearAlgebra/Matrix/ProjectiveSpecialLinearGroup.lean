@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.FinTwo
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Projective
 
 /-!
 # Maps into `PSL(2, ℝ)`
@@ -27,9 +28,12 @@ The algebraic maps connecting the matrix groups of the modular theory to `PSL(2,
   (`TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R`), so the image of every subgroup of
   `SL(2, ℤ)` lies in that range (`Subgroup.map_sl2zToPSL2R_le_range_psl2zToPSL2R`).
 * The image of `H ≤ SL(2, ℤ)` has index `[SL(2, ℤ) : ±H]` in the level-one group
-  (`Subgroup.relIndex_map_sl2zToPSL2R`). When `H` is normal, its image is normalized by the image
-  of `SL(2, ℤ)` (`Subgroup.conjAct_sl2zToPSL2R_smul_map`), so it is a normal subgroup of the
-  level-one group (`Subgroup.normal_subgroupOf_map_sl2zToPSL2R`).
+  (`Subgroup.relIndex_map_sl2zToPSL2R`), and for `Γ' ≤ PSL(2, ℤ)` the image of `Γ'.liftSL` equals
+  `Γ'.map psl2zToPSL2R` (`Subgroup.map_liftSL_sl2zToPSL2R`) with relative index `Γ'.index`
+  (`Subgroup.relIndex_map_psl2zToPSL2R`, `Subgroup.isFiniteRelIndex_map_psl2zToPSL2R`). When `H`
+  is normal, its image is normalized by the image of `SL(2, ℤ)`
+  (`Subgroup.conjAct_sl2zToPSL2R_smul_map`), so it is a normal subgroup of the level-one group
+  (`Subgroup.normal_subgroupOf_map_sl2zToPSL2R`).
 * `glPosToSL2R : GL(2, ℝ)⁺ →* SL(2, ℝ)` — the det-normalized representative
   `(√det g)⁻¹ • g`, a monoid homomorphism since positive scalars are central and `√` is
   multiplicative on them; `glPosToPSL2R` is its projectivization.
@@ -204,6 +208,25 @@ instance isFiniteRelIndex_map_sl2zToPSL2R [H.FiniteIndex] :
     (H.map sl2zToPSL2R).IsFiniteRelIndex psl2zToPSL2R.range :=
   ⟨H.relIndex_map_sl2zToPSL2R ▸ FiniteIndex.index_ne_zero⟩
 
+/-- The effective image in `PSL(2, ℝ)` of `Γ'.liftSL` equals `Γ'.map psl2zToPSL2R`. -/
+theorem map_liftSL_sl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ)) :
+    Γ'.liftSL.map sl2zToPSL2R = Γ'.map psl2zToPSL2R := by
+  have hcomp : psl2zToPSL2R.comp (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))) = sl2zToPSL2R :=
+    MonoidHom.ext psl2zToPSL2R_mk
+  rw [← hcomp, ← Subgroup.map_map, Subgroup.map_liftSL]
+
+/-- The relative index of `Γ'.map psl2zToPSL2R` in `psl2zToPSL2R.range` equals `Γ'.index`. -/
+theorem relIndex_map_psl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ)) :
+    (Γ'.map psl2zToPSL2R).relIndex psl2zToPSL2R.range = Γ'.index := by
+  rw [← map_liftSL_sl2zToPSL2R, relIndex_map_sl2zToPSL2R,
+    withCenter_eq_self_iff.mpr (center_le_liftSL Γ'), index_liftSL]
+
+/-- The image in `PSL(2, ℝ)` of a finite-index `Γ' ≤ PSL(2, ℤ)` has finite relative index in
+`psl2zToPSL2R.range`. -/
+instance isFiniteRelIndex_map_psl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ)) [Γ'.FiniteIndex] :
+    (Γ'.map psl2zToPSL2R).IsFiniteRelIndex psl2zToPSL2R.range :=
+  ⟨Γ'.relIndex_map_psl2zToPSL2R.symm ▸ FiniteIndex.index_ne_zero⟩
+
 end Subgroup
 
 namespace ModularGroup
@@ -247,6 +270,23 @@ theorem pslS_mul_self : pslS * pslS = 1 := by
 /-- `pslS` is its own inverse. -/
 @[simp]
 theorem pslS_inv : pslS⁻¹ = pslS := inv_eq_of_mul_eq_one_right pslS_mul_self
+
+/-- Casting an `SL(2, ℤ)` matrix to `SL(2, ℝ)` and embedding into `GL(2, ℝ)` agrees with
+`Matrix.SpecialLinearGroup.mapGL ℝ`. -/
+theorem toGL_map_intCastRingHom (a : SL(2, ℤ)) :
+    Matrix.SpecialLinearGroup.toGL (Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) a) =
+      Matrix.SpecialLinearGroup.mapGL ℝ a := by
+  apply Units.ext
+  ext i j
+  simp [Matrix.SpecialLinearGroup.mapGL_coe_matrix]
+
+/-- An element of `SL(2, ℤ)` has parabolic image under `psl2zToPSL2R` exactly when its image
+`mapGL ℝ a` in `GL(2, ℝ)` is parabolic. -/
+theorem isParabolic_psl2zToPSL2R_iff (a : SL(2, ℤ)) :
+    Matrix.ProjectiveSpecialLinearGroup.IsParabolic (psl2zToPSL2R (a : PSL(2, ℤ))) ↔
+      (Matrix.SpecialLinearGroup.mapGL ℝ a).IsParabolic := by
+  rw [psl2zToPSL2R_mk, sl2zToPSL2R_apply,
+    Matrix.ProjectiveSpecialLinearGroup.isParabolic_mk_iff, toGL_map_intCastRingHom]
 
 end TauCeti
 

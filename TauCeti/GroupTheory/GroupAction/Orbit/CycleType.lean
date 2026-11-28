@@ -142,4 +142,36 @@ theorem fullCycleType_permutationRepresentation {G α : Type*} [Group G] [Fintyp
   rw [hperm, Perm.fullCycleType_permCongr, fullCycleType_toPerm_eq_replicate,
     Nat.card_eq_fintype_card, Fintype.card_congr e]
 
+/-- The cycles of the transported permutation `e.permutationRepresentation g` are in canonical
+bijection with the `Subgroup.zpowers g`-orbits on `α`. -/
+def sameCycleQuotientEquivOrbitQuotient {G α β : Type*} [Group G] [MulAction G α]
+    (e : α ≃ β) (g : G) :
+    Quotient (Perm.SameCycle.setoid (e.permutationRepresentation g)) ≃
+      orbitRel.Quotient (Subgroup.zpowers g) α :=
+  Quotient.congr e.symm fun x y ↦ by
+    obtain ⟨a, rfl⟩ := e.surjective x
+    obtain ⟨b, rfl⟩ := e.surjective y
+    simp only [Equiv.symm_apply_apply, orbitRel_apply, mem_orbit_iff, Subgroup.smul_def,
+      Subgroup.exists_zpowers]
+    constructor
+    · rintro ⟨k, hk⟩
+      refine ⟨-k, ?_⟩
+      rw [← map_zpow, Equiv.permutationRepresentation_apply, e.symm_apply_apply,
+        e.apply_eq_iff_eq] at hk
+      rw [← hk, ← mul_smul, zpow_neg, inv_mul_cancel, one_smul]
+    · rintro ⟨k, hk⟩
+      refine ⟨-k, ?_⟩
+      rw [← map_zpow, Equiv.permutationRepresentation_apply, e.symm_apply_apply,
+        e.apply_eq_iff_eq]
+      rw [← hk, ← mul_smul, zpow_neg, inv_mul_cancel, one_smul]
+
+/-- `sameCycleQuotientEquivOrbitQuotient` sends the cycle of `e a` to the `zpowers g`-orbit
+of `a`. -/
+@[simp]
+theorem sameCycleQuotientEquivOrbitQuotient_mk {G α β : Type*} [Group G] [MulAction G α]
+    (e : α ≃ β) (g : G) (a : α) :
+    e.sameCycleQuotientEquivOrbitQuotient g (Quotient.mk _ (e a)) =
+      Quotient.mk (orbitRel (Subgroup.zpowers g) α) a := by
+  simp [sameCycleQuotientEquivOrbitQuotient]
+
 end Equiv

@@ -227,6 +227,18 @@ theorem liftSL_conjAct_smul (g : SpecialLinearGroup n R)
   simp only [mem_pointwise_smul_iff_inv_smul_mem, mem_liftSL, ← map_inv, ConjAct.toConjAct_smul,
     QuotientGroup.mk_mul, QuotientGroup.mk_inv]
 
+/-- For a faithful scalar extension `R → S`, the image of `γ ∈ SL(n, R)` in `GL(n, S)` lies in the
+conjugate `σ⁻¹ Γ'.liftSL σ` (mapped via `mapGL S`) iff `(σ * γ * σ⁻¹ : PSL(n, R)) ∈ Γ'`. -/
+theorem mapGL_mem_map_conjAct_liftSL_iff (S : Type*) [CommRing S] [Algebra R S]
+    [FaithfulSMul R S] (Γ' : Subgroup (ProjectiveSpecialLinearGroup n R))
+    (σ γ : SpecialLinearGroup n R) :
+    SpecialLinearGroup.mapGL S γ ∈
+        (ConjAct.toConjAct σ⁻¹ • Γ'.liftSL).map (SpecialLinearGroup.mapGL S) ↔
+      ((σ * γ * σ⁻¹ : SpecialLinearGroup n R) : ProjectiveSpecialLinearGroup n R) ∈ Γ' := by
+  rw [mem_map_iff_mem SpecialLinearGroup.mapGL_injective,
+    mem_pointwise_smul_iff_inv_smul_mem, ← ConjAct.toConjAct_inv,
+    ConjAct.toConjAct_smul, mem_liftSL, inv_inv]
+
 end Lift
 
 section FinTwo

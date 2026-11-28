@@ -38,6 +38,7 @@ the compactified quotient and its complex structure already exist.
 
 ## Main results
 
+* `TauCeti.ModularGroup.finiteCWType_compactifiedQuotient`: `X(1)` has finite CW type.
 * `TauCeti.ModularGroup.eulerChar_compactifiedQuotient`: `χ(X(1)) = 2`.
 * `TauCeti.ModularGroup.genus_compactifiedQuotient`: `X(1)` has topological genus `0`.
 * `TauCeti.ModularGroup.ellipticOrbits_psl2zToPSL2RRange`: the elliptic orbits are those of `ρ`

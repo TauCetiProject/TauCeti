@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Compactness
+public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Modular
 public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Cusp
 import Mathlib.NumberTheory.Modular
-import Mathlib.NumberTheory.ModularForms.Cusps
 
 /-!
 # Compactness of the level-one modular compactification
@@ -41,36 +41,12 @@ open scoped MatrixGroups Modular
 
 namespace TauCeti.ModularGroup
 
-private theorem psl2zToPSL2R_smul_boundary (a : SL(2, ℤ)) (c : OnePoint ℝ) :
-    psl2zToPSL2R (a : PSL(2, ℤ)) • c = mapGL ℝ a • c := by
-  rw [psl2zToPSL2R_mk, sl2zToPSL2R_apply, OnePoint.pslMk_smul]
-  rfl
-
-private theorem isParabolic_psl2zToPSL2R_iff (a : SL(2, ℤ)) :
-    IsParabolic (psl2zToPSL2R (a : PSL(2, ℤ))) ↔ (mapGL ℝ a).IsParabolic := by
-  rw [psl2zToPSL2R_mk, sl2zToPSL2R_apply, isParabolic_mk_iff]
-  rfl
-
 /-- The projective cusp points of the effective modular group are Mathlib's cusps of
 `SL(2, ℤ)`; in particular, they are the rational projective boundary points. -/
 theorem isCuspPoint_iff_isCusp (c : OnePoint ℝ) :
     psl2zToPSL2R.range.IsCuspPoint c ↔ _root_.IsCusp c 𝒮ℒ := by
-  constructor
-  · intro hc
-    obtain ⟨⟨p, hp⟩, hfix, hpar⟩ :=
-      (Subgroup.isCuspPoint_iff_exists_mem_stabilizer_isParabolic).mp hc
-    obtain ⟨a, rfl⟩ := hp
-    induction a using QuotientGroup.induction_on with
-    | H a =>
-      exact ⟨mapGL ℝ a, ⟨a, rfl⟩,
-        (isParabolic_psl2zToPSL2R_iff a).mp hpar,
-        (psl2zToPSL2R_smul_boundary a c) ▸ (mem_stabilizer_iff.mp hfix)⟩
-  · rintro ⟨p, ⟨a, rfl⟩, hpar, hfix⟩
-    apply (Subgroup.isCuspPoint_iff_exists_mem_stabilizer_isParabolic).mpr
-    refine ⟨⟨psl2zToPSL2R (a : PSL(2, ℤ)), ⟨a, rfl⟩⟩, ?_, ?_⟩
-    · exact mem_stabilizer_iff.mpr (by
-        simpa only [MulAction.subgroup_smul_def, psl2zToPSL2R_smul_boundary] using hfix)
-    · exact (isParabolic_psl2zToPSL2R_iff a).mpr hpar
+  simpa [Subgroup.liftSL_top, Subgroup.map_top] using
+    Subgroup.isCuspPoint_map_psl2zToPSL2R_iff_isCusp (⊤ : Subgroup PSL(2, ℤ)) c
 
 /-- Every cusp of the effective level-one modular group is equivalent to infinity. -/
 theorem cuspPoint_mem_orbit_infty {c : OnePoint ℝ}
@@ -78,7 +54,7 @@ theorem cuspPoint_mem_orbit_infty {c : OnePoint ℝ}
     c ∈ orbit psl2zToPSL2R.range (∞ : OnePoint ℝ) := by
   obtain ⟨a, ha⟩ := (_root_.isCusp_SL2Z_iff').mp ((isCuspPoint_iff_isCusp c).mp hc)
   refine mem_orbit_iff.mpr ⟨⟨psl2zToPSL2R (a : PSL(2, ℤ)), ⟨a, rfl⟩⟩, ?_⟩
-  simpa only [MulAction.subgroup_smul_def, psl2zToPSL2R_smul_boundary] using ha.symm
+  simpa only [MulAction.subgroup_smul_def, TauCeti.psl2zToPSL2R_smul_boundary] using ha.symm
 
 /-- Infinity is a cusp point of the effective level-one modular group. -/
 theorem isCuspPoint_infty :

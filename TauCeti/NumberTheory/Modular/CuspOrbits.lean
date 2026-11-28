@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
+public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic.Basic
 public import TauCeti.NumberTheory.Modular.ConjugateTranslation
-public import TauCeti.NumberTheory.Modular.Invariants
+public import TauCeti.NumberTheory.Modular.Invariants.Basic
 
 /-!
 # The cusps of a subgroup of `PSL(2, ℤ)` are its cusp orbits

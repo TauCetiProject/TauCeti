@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.GroupAction.Burnside
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
+public import TauCeti.GroupTheory.DoubleCoset.Inv
 public import Mathlib.GroupTheory.Coset.Card
 public import Mathlib.GroupTheory.DoubleCoset
 import Mathlib.Tactic.Group
@@ -19,7 +20,8 @@ For subgroups `H` and `K` of a group `G`, a double coset is an orbit in two ways
 
 The double coset `KsH` is the preimage in `G` of the `K`-orbit of the coset `sH`
 (`TauCeti.preimage_orbit_eq_doubleCoset`), so the partition of `G ⧸ H` into `K`-orbits is the
-partition of `G` into `K`-`H` double cosets.
+partition of `G` into `K`-`H` double cosets; inverting the representative identifies those orbits
+with `H \ G / K` (`TauCeti.orbitQuotientEquivDoubleCoset`).
 
 Globally, the diagonal action of `G` on `(G ⧸ H) × (G ⧸ K)` has
 orbits in bijection with the double cosets `H \ G / K`: the orbit of `(aH, bK)` is recorded by the
@@ -31,6 +33,11 @@ numbers, which is the group-theoretic half of the statement that the permutation
 
 ## Main definitions
 
+* `TauCeti.orbitQuotientEquivDoubleCoset`: the bijection
+  `orbitRel.Quotient K (G ⧸ H) ≃ DoubleCoset.Quotient (H : Set G) K`, sending the `K`-orbit of
+  `gH` to `H g⁻¹ K`.
+* `TauCeti.rightCosetToDoubleCoset`: the canonical map from right cosets `H \ G` to double cosets
+  `H \ G / K`, sending `H g` to `H g K`.
 * `TauCeti.doubleCosetEquivOrbitQuotient`: the bijection
   `H \ G / K ≃ ((G ⧸ H) × (G ⧸ K)) / G`.
 * `TauCeti.doubleCosetQuotientEquivOrbitRelQuotient`: the class set `Γ \ G / J` as the orbit
@@ -42,6 +49,8 @@ numbers, which is the group-theoretic half of the statement that the permutation
 
 ## Main statements
 
+* `TauCeti.orbitRel_mk_iff_doubleCoset_inv_eq`: `g₁ H` and `g₂ H` lie in the same `K`-orbit iff
+  `H g₁⁻¹ K = H g₂⁻¹ K`.
 * `TauCeti.mem_doubleCoset_iff_mk_mem_orbit`: an element lies in `KsH` exactly when its coset
   lies in the `K`-orbit of `sH`.
 * `TauCeti.orbitRel_smul_iff_mem_doubleCoset_stabilizer`: the same for an arbitrary action —
@@ -127,6 +136,62 @@ theorem preimage_orbit_eq_doubleCoset (s : G) (H K : Subgroup G) :
     QuotientGroup.mk ⁻¹' (orbit K ((s : G ⧸ H)))
       = DoubleCoset.doubleCoset s (K : Set G) (H : Set G) :=
   Set.ext fun _ => (mem_doubleCoset_iff_mk_mem_orbit s H K).symm
+
+/-- Two left cosets `g₁ H` and `g₂ H` lie in the same `K`-orbit iff `H g₁⁻¹ K = H g₂⁻¹ K`. -/
+theorem orbitRel_mk_iff_doubleCoset_inv_eq (H K : Subgroup G) (g₁ g₂ : G) :
+    orbitRel K (G ⧸ H) (g₁ : G ⧸ H) (g₂ : G ⧸ H) ↔
+      DoubleCoset.mk H K g₁⁻¹ = DoubleCoset.mk H K g₂⁻¹ := by
+  rw [orbitRel_apply, ← mem_doubleCoset_iff_mk_mem_orbit,
+    ← DoubleCoset.inv_mem_doubleCoset_inv_iff, DoubleCoset.mem_doubleCoset]
+  exact DoubleCoset.eq.symm.trans eq_comm
+
+/-- **Orbits on cosets are double cosets.** The `K`-orbits on `G ⧸ H` are in canonical bijection
+with the double cosets `H \ G / K`, sending the `K`-orbit of `gH` to `H g⁻¹ K`. -/
+noncomputable def orbitQuotientEquivDoubleCoset (H K : Subgroup G) :
+    orbitRel.Quotient K (G ⧸ H) ≃ DoubleCoset.Quotient (H : Set G) K :=
+  Equiv.ofBijective
+    (Quotient.lift
+      (Quotient.lift (fun g : G => DoubleCoset.mk H K g⁻¹) fun g₁ g₂ h =>
+        DoubleCoset.eq.mpr
+          ⟨(g₁⁻¹ * g₂)⁻¹, H.inv_mem (QuotientGroup.leftRel_apply.mp h), 1, K.one_mem, by
+            simp [mul_assoc]⟩)
+      fun q₁ q₂ h => by
+        induction q₁ using QuotientGroup.induction_on with | H g₁ =>
+        induction q₂ using QuotientGroup.induction_on with | H g₂ =>
+        rw [Quotient.lift_mk, Quotient.lift_mk]
+        exact (orbitRel_mk_iff_doubleCoset_inv_eq H K g₁ g₂).mp h)
+    ⟨fun q₁ q₂ hq => by
+      induction q₁ using Quotient.ind with | _ c₁ =>
+      induction q₂ using Quotient.ind with | _ c₂ =>
+      induction c₁ using QuotientGroup.induction_on with | H g₁ =>
+      induction c₂ using QuotientGroup.induction_on with | H g₂ =>
+      rw [Quotient.lift_mk, Quotient.lift_mk, Quotient.lift_mk, Quotient.lift_mk] at hq
+      exact Quotient.sound' ((orbitRel_mk_iff_doubleCoset_inv_eq H K g₁ g₂).mpr hq),
+    fun d => by
+      induction d using Quotient.ind' with | _ g =>
+      refine ⟨Quotient.mk (orbitRel K (G ⧸ H)) ((g⁻¹ : G) : G ⧸ H), ?_⟩
+      rw [Quotient.lift_mk, Quotient.lift_mk, inv_inv]⟩
+
+/-- `orbitQuotientEquivDoubleCoset` sends the `K`-orbit of `gH` to `H g⁻¹ K`. -/
+@[simp]
+theorem orbitQuotientEquivDoubleCoset_mk (H K : Subgroup G) (g : G) :
+    orbitQuotientEquivDoubleCoset H K (Quotient.mk (orbitRel K (G ⧸ H)) (g : G ⧸ H)) =
+      DoubleCoset.mk H K g⁻¹ :=
+  (rfl)
+
+/-- The canonical map from right cosets `H \ G` to double cosets `H \ G / K`, sending `H g` to
+`H g K`. -/
+def rightCosetToDoubleCoset (H K : Subgroup G) :
+    Quotient (QuotientGroup.rightRel H) → DoubleCoset.Quotient (H : Set G) K :=
+  Quotient.lift (fun g => DoubleCoset.mk H K g) fun a b h =>
+    DoubleCoset.eq.mpr ⟨b * a⁻¹, QuotientGroup.rightRel_apply.mp h, 1, K.one_mem, by simp⟩
+
+/-- `TauCeti.rightCosetToDoubleCoset` sends the right coset `H g` to `H g K`. -/
+@[simp]
+theorem rightCosetToDoubleCoset_mk (H K : Subgroup G) (g : G) :
+    rightCosetToDoubleCoset H K (Quotient.mk (QuotientGroup.rightRel H) g) =
+      DoubleCoset.mk H K g :=
+  (rfl)
 
 end SingleCoset
 

@@ -14,6 +14,7 @@ public import TauCeti.GroupTheory.QuotientGroup.Basic
 import TauCeti.Algebra.Group.Subgroup.Conjugates
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.GroupTheory.QuotientGroup.Congr
+import TauCeti.GroupTheory.Torsion
 
 /-!
 # Permutation representations on coset spaces
@@ -502,5 +503,61 @@ theorem natCard_orbit_conjAct_eq_index_div_natCard_centralizer [Finite β] {H : 
         Nat.card (Subgroup.centralizer (Set.range (e.permutationRepresentation (G := G)))) := by
   rw [← e.natCard_orbit_conjAct_mul_natCard_centralizer_permutationRepresentation,
     Nat.mul_div_cancel _ Nat.card_pos]
+
+/-- If `e.permutationRepresentation g` fixes `x : β`, then `g` fixes `e.symm x` in `α`. -/
+theorem smul_symm_of_permutationRepresentation_eq {α : Type*} [MulAction G α] (e : α ≃ β)
+    {g : G} {x : β} (hx : e.permutationRepresentation g x = x) :
+    g • e.symm x = e.symm x := by
+  simpa [permutationRepresentation_apply] using congrArg e.symm hx
+
+/-- Transporting fixed points between `e.permutationRepresentation g` on `β` and the `G`-action
+on `α` via `e.symm`. -/
+def fixedPermutationRepresentationEquiv {α : Type*} [MulAction G α] (e : α ≃ β) (g : G) :
+    {x : β // e.permutationRepresentation g x = x} ≃ {y : α // g • y = y} :=
+  Equiv.subtypeEquiv e.symm fun x ↦ by
+    obtain ⟨y, rfl⟩ := e.surjective x
+    rw [e.symm_apply_apply, Equiv.permutationRepresentation_apply_eq_self_iff,
+      MulAction.mem_stabilizer_iff]
+
+/-- Evaluating `Equiv.fixedPermutationRepresentationEquiv` on `e y` gives `y`. -/
+@[simp] theorem fixedPermutationRepresentationEquiv_apply {α : Type*} [MulAction G α]
+    (e : α ≃ β) (g : G) (y : α) (hy : e.permutationRepresentation g (e y) = e y) :
+    (e.fixedPermutationRepresentationEquiv g ⟨e y, hy⟩).val = y :=
+  e.symm_apply_apply y
+
+/-- Evaluating the inverse of `Equiv.fixedPermutationRepresentationEquiv` on `y` gives `e y`. -/
+@[simp] theorem fixedPermutationRepresentationEquiv_symm_apply {α : Type*} [MulAction G α]
+    (e : α ≃ β) (g : G) (y : α) (hy : g • y = y) :
+    ((e.fixedPermutationRepresentationEquiv g).symm ⟨y, hy⟩).val = e y := by
+  simp [fixedPermutationRepresentationEquiv]
+
+/-- A transported coset permutation `e.permutationRepresentation a` fixes `e (g H)` if and only
+if `g⁻¹ * a * g ∈ H`. -/
+theorem permutationRepresentation_quotient_apply_eq_self_iff {H : Subgroup G}
+    (e : G ⧸ H ≃ β) (a g : G) :
+    e.permutationRepresentation a (e (g : G ⧸ H)) = e (g : G ⧸ H) ↔ g⁻¹ * a * g ∈ H := by
+  rw [permutationRepresentation_apply_eq_self_iff, MulAction.mem_stabilizer_iff]
+  exact TauCeti.smul_quotientGroup_mk_eq_self_iff H a g
+
+/-- A nontrivial finite-order element of `G` has no fixed points in the coset permutation
+representation of a torsion-free subgroup `H`. -/
+theorem permutationRepresentation_quotient_apply_ne_self {H : Subgroup G} [IsMulTorsionFree H]
+    (e : G ⧸ H ≃ β) {a : G} (ha_fin : IsOfFinOrder a) (ha : a ≠ 1) (i : β) :
+    e.permutationRepresentation a i ≠ i := by
+  intro hfi
+  obtain ⟨q, rfl⟩ := e.surjective i
+  induction q using QuotientGroup.induction_on with | H g =>
+  obtain ⟨k, hk, hak⟩ := isOfFinOrder_iff_pow_eq_one.mp ha_fin
+  exact ha (TauCeti.eq_one_of_conj_mem_of_pow_eq_one hk hak
+    ((e.permutationRepresentation_quotient_apply_eq_self_iff a g).mp hfi))
+
+/-- A nontrivial finite-order element of `G` fixes zero elements in the coset permutation
+representation of a torsion-free subgroup `H`. -/
+theorem natCard_fixed_permutationRepresentation_eq_zero {H : Subgroup G} [IsMulTorsionFree H]
+    (e : G ⧸ H ≃ β) {a : G} (ha_fin : IsOfFinOrder a) (ha : a ≠ 1) :
+    Nat.card {i : β // e.permutationRepresentation a i = i} = 0 :=
+  haveI : IsEmpty {i : β // e.permutationRepresentation a i = i} :=
+    ⟨fun ⟨i, hi⟩ ↦ e.permutationRepresentation_quotient_apply_ne_self ha_fin ha i hi⟩
+  Nat.card_of_isEmpty
 
 end Equiv
