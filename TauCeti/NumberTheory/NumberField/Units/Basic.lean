@@ -123,9 +123,8 @@ over `ℤ`. -/
 theorem normUnits_ringOfIntegers_eq_one_of_mem_principalUnitGroup {N : ℕ} (hN : 2 < N)
     {η : (𝓞 K)ˣ} (hη : η ∈ (Ideal.span {(N : 𝓞 K)}).principalUnitGroup) :
     TauCeti.Algebra.normUnits ℤ η = 1 :=
-  Units.ext <| by
-    simpa [TauCeti.Algebra.coe_normUnits] using
-      norm_ringOfIntegers_eq_one_of_mem_principalUnitGroup hN hη
+  (TauCeti.Algebra.normUnits_eq_iff ℤ).mpr <| by
+    simpa using norm_ringOfIntegers_eq_one_of_mem_principalUnitGroup hN hη
 
 end Congruence
 

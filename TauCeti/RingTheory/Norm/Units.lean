@@ -57,6 +57,11 @@ noncomputable def Algebra.normUnits : Sˣ →* Rˣ :=
 theorem Algebra.coe_normUnits (x : Sˣ) : (Algebra.normUnits R x : R) = Algebra.norm R (x : S) := by
   simp [Algebra.normUnits]
 
+/-- An equality of unit-group norms reduces to the corresponding equality of algebra norms. -/
+theorem Algebra.normUnits_eq_iff {x : Sˣ} {u : Rˣ} :
+    Algebra.normUnits R x = u ↔ Algebra.norm R (x : S) = u := by
+  simp [Units.ext_iff]
+
 /-- **The norm of a scalar.** In a free `R`-algebra `S`, the norm of a unit `a` of `R`, viewed in
 `S`, is `a ^ finrank R S`. -/
 @[simp]

@@ -104,9 +104,10 @@ Being compact, they form a basis of neighbourhoods of `1`; in particular `u ^ p 
   basis of neighbourhoods of `1` in `O_pˣ`.
 * `TauCeti.NumberField.PadicIntegralAlgebra.tendsto_pow_prime_pow_of_mem_principalUnits`:
   `u ^ p ^ n → 1` for `u ∈ H_1`.
-* `TauCeti.NumberField.PadicIntegralAlgebra.globalUnitInclusion_injective`,
-  `TauCeti.NumberField.PadicIntegralAlgebra.normUnitsHom_globalUnitInclusion`: injectivity and
-  norm compatibility of the global unit inclusion.
+* `TauCeti.NumberField.PadicIntegralAlgebra.globalUnitInclusion_injective`: injectivity of
+  the global unit inclusion.
+* `PadicIntegralAlgebra.normUnitsHom_globalUnitInclusion_eq_one_of_mem_principalUnitGroup`:
+  `N_p` is trivial on global congruence units modulo `N > 2`.
 * `PadicIntegralAlgebra.topologicalClosure_map_principalUnitGroup_le_ker_normUnitsHom`:
   the topological closure of global congruence units modulo `N > 2` in `O_pˣ` lies in the
   kernel of `N_p`.
@@ -301,29 +302,21 @@ theorem norm_algebraMap_ringOfIntegers (x : 𝓞 K) :
 which is `±1`, read in `ℤ_pˣ`. -/
 @[simp]
 theorem normUnits_unitsMap_algebraMap (u : (𝓞 K)ˣ) :
-    TauCeti.Algebra.normUnits ℤ_[p]
-        (Units.map (algebraMap (𝓞 K) (PadicIntegralAlgebra K p) : 𝓞 K →* PadicIntegralAlgebra K p)
-          u) =
+    TauCeti.Algebra.normUnits ℤ_[p] (globalUnitInclusion K p u) =
       Units.map (Int.castRingHom ℤ_[p] : ℤ →* ℤ_[p]) (TauCeti.Algebra.normUnits ℤ u) :=
   Units.ext <| by simp
 
+/-- The inclusion of global units into `O_pˣ` is injective. -/
 theorem globalUnitInclusion_injective :
     Function.Injective (globalUnitInclusion K p) :=
-  fun _ _ h ↦ Units.ext <|
-    algebraMap_ringOfIntegers_injective (K := K) (p := p) <| by
-      simpa only [← coe_globalUnitInclusion_apply] using congrArg Units.val h
-
-theorem normUnitsHom_globalUnitInclusion (u : (𝓞 K)ˣ) :
-    normUnitsHom K p (globalUnitInclusion K p u) =
-      Units.map (Int.castRingHom ℤ_[p] : ℤ →* ℤ_[p]) (TauCeti.Algebra.normUnits ℤ u) :=
-  normUnits_unitsMap_algebraMap K p u
+  Units.map_injective (algebraMap_ringOfIntegers_injective K p)
 
 /-- On the `p`-adic image of a global congruence unit modulo `N > 2`, the `p`-adic norm `N_p` is
 trivial. -/
 theorem normUnitsHom_globalUnitInclusion_eq_one_of_mem_principalUnitGroup {N : ℕ} (hN : 2 < N)
     {η : (𝓞 K)ˣ} (hη : η ∈ (Ideal.span {(N : 𝓞 K)}).principalUnitGroup) :
     normUnitsHom K p (globalUnitInclusion K p η) = 1 := by
-  rw [normUnitsHom_globalUnitInclusion,
+  rw [normUnitsHom_apply, normUnits_unitsMap_algebraMap,
     TauCeti.NumberField.Units.normUnits_ringOfIntegers_eq_one_of_mem_principalUnitGroup hN hη,
     map_one]
 

@@ -192,8 +192,7 @@ theorem inverseNormPullback_coprod_globalUnitInclusion (w : GeometricWeight K p 
       w (PadicIntegralAlgebra.globalUnitInclusion K p η) ^ 2 *
         (t (Units.map (Int.castRingHom ℤ_[p] : ℤ →* ℤ_[p])
           (TauCeti.Algebra.normUnits ℤ η)))⁻¹ := by
-  rw [inverseNormPullback_coprod_apply, ← PadicIntegralAlgebra.normUnitsHom_apply,
-    PadicIntegralAlgebra.normUnitsHom_globalUnitInclusion]
+  rw [inverseNormPullback_coprod_apply, PadicIntegralAlgebra.normUnits_unitsMap_algebraMap]
 
 /-- On a global unit of norm `1`, the central factor cancels and the pullback of `(w, t)`
 evaluates to `w(1 ⊗ η) ^ 2`. -/
@@ -203,7 +202,7 @@ theorem inverseNormPullback_coprod_globalUnitInclusion_of_norm_eq_one
     inverseNormPullback K p (w.coprod t) (PadicIntegralAlgebra.globalUnitInclusion K p η) =
       w (PadicIntegralAlgebra.globalUnitInclusion K p η) ^ 2 := by
   have hnorm : TauCeti.Algebra.normUnits ℤ η = 1 :=
-    Units.ext (by simpa [TauCeti.Algebra.coe_normUnits] using hη)
+    (TauCeti.Algebra.normUnits_eq_iff ℤ).mpr (by simpa using hη)
   rw [inverseNormPullback_coprod_globalUnitInclusion, hnorm]
   simp
 
@@ -230,7 +229,7 @@ theorem inverseNormPullback_coprod_globalUnitInclusion_of_norm_eq_neg_one
     inverseNormPullback K p (w.coprod t) (PadicIntegralAlgebra.globalUnitInclusion K p η) =
       w (PadicIntegralAlgebra.globalUnitInclusion K p η) ^ 2 * (t (-1))⁻¹ := by
   have hnorm : TauCeti.Algebra.normUnits ℤ η = -1 :=
-    Units.ext (by simpa [TauCeti.Algebra.coe_normUnits] using hη)
+    (TauCeti.Algebra.normUnits_eq_iff ℤ).mpr (by simpa using hη)
   rw [inverseNormPullback_coprod_globalUnitInclusion, hnorm]
   simp
 
