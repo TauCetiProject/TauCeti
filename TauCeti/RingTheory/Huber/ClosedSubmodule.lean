@@ -184,8 +184,8 @@ theorem IsTateRing.exists_presentation_isStrictMap_isOpenMap :
   obtain ⟨m, n, p, u, hsurj, hexact⟩ := Module.FinitePresentation.exists_fin' A M
   have hu : Continuous u := IsModuleTopology.continuous_of_linearMap u
   exact ⟨n, m, u, p, hu, IsModuleTopology.continuous_of_linearMap p, hsurj, hexact,
-    u.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits hu.continuousAt
-      (fun _ ↦ (continuous_id.smul continuous_const).continuousAt) (isClosed_of_isNoetherian _),
+    u.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits_of_continuousSMul hu.continuousAt
+      (isClosed_of_isNoetherian _),
     IsModuleTopology.isOpenMap_of_surjective hsurj⟩
 
 end ModuleFinite

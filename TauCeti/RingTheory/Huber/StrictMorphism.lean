@@ -60,9 +60,8 @@ it by `Topology.IsStrictMap.continuous`. -/
 theorem isStrictMap_of_module_finite (f : M →ₗ[A] N) : Topology.IsStrictMap f := by
   let _ : IsModuleTopology A M := TauCeti.Huber.IsTateRing.isModuleTopology
   have hcont : Continuous f := IsModuleTopology.continuous_of_linearMap f
-  exact f.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits hcont.continuousAt
-    (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)
-    (TauCeti.Huber.isClosed_of_isNoetherian (LinearMap.range f))
+  exact f.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits_of_continuousSMul
+    hcont.continuousAt (TauCeti.Huber.isClosed_of_isNoetherian (LinearMap.range f))
 
 end LinearMap
 

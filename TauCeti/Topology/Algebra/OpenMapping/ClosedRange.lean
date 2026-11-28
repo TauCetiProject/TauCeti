@@ -20,12 +20,14 @@ under `Φ` is `{p : E × G | p.2 = 0}`, which is closed in `E × G`.
 
 ## Main results
 
-* `ContinuousLinearMap.isClosed_range_of_isCompl_of_completeSpace_right`: if `f : E →L[R] F` is a
-  continuous linear map from a complete first-countable uniform module `E` into a `T₀` Baire
-  topological additive module `F` with continuous fixed scalar actions (`ContinuousConstSMul R F`)
-  over a topological ring with a zero sequence of units, and `G` is a first-countable algebraic
-  complement of `f.range` complete for its canonical additive uniformity, with scalar orbits
-  continuous at zero on both `E` and `G`, then `f.range` is closed.
+* `ContinuousLinearMap.isClosed_range_of_isCompl_of_completeSpace_right` and
+  `ContinuousLinearMap.isClosed_range_of_isCompl_of_completeSpace_right_of_continuousSMul`: if
+  `f : E →L[R] F` is a continuous linear map from a complete first-countable uniform module `E`
+  into a `T₀` Baire topological additive module `F` with continuous fixed scalar actions
+  (`ContinuousConstSMul R F`) over a topological ring with a zero sequence of units, and `G` is a
+  first-countable algebraic complement of `f.range` complete for its canonical additive uniformity,
+  with scalar orbits continuous at zero on both `E` and `G` (or `[ContinuousSMul R E]` and
+  `[ContinuousSMul R G]`), then `f.range` is closed.
 * `ContinuousLinearMap.isClosed_range_of_isCompl_of_isClosed_right_of_complete`: specialization
   where `F` is itself a complete first-countable uniform module, scalar multiplication is jointly
   continuous (`ContinuousSMul`) on both `E` and `F`, and `G` is a closed algebraic complement.
@@ -88,6 +90,17 @@ theorem isClosed_range_of_isCompl_of_completeSpace_right (f : E →L[R] F) (G : 
     TauCeti.HasZeroSequenceOfUnits.isQuotientMap Φ hsurj Φ.continuous.continuousAt hc
   exact hq.isClosed_preimage.mp hclosed
 
+/-- Variant of `ContinuousLinearMap.isClosed_range_of_isCompl_of_completeSpace_right` taking
+`[ContinuousSMul R E]` and `[ContinuousSMul R G]`. -/
+theorem isClosed_range_of_isCompl_of_completeSpace_right_of_continuousSMul
+    [ContinuousSMul R E] (f : E →L[R] F) (G : Submodule R F)
+    (hG : IsCompl f.range G) [@CompleteSpace G (IsTopologicalAddGroup.rightUniformSpace G)]
+    [(𝓝 (0 : G)).IsCountablyGenerated] [ContinuousSMul R G] :
+    IsClosed (f.range : Set F) :=
+  f.isClosed_range_of_isCompl_of_completeSpace_right G hG
+    (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)
+    (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)
+
 end Complement
 
 section ClosedComplement
@@ -111,9 +124,7 @@ theorem isClosed_range_of_isCompl_of_isClosed_right_of_complete
     rw [IsUniformAddGroup.rightUniformSpace_eq (G := G)]
     exact hG_closed.completeSpace_coe
   have : (𝓤 F).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
-  exact f.isClosed_range_of_isCompl_of_completeSpace_right G hG
-    (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)
-    (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)
+  exact f.isClosed_range_of_isCompl_of_completeSpace_right_of_continuousSMul G hG
 
 end ClosedComplement
 

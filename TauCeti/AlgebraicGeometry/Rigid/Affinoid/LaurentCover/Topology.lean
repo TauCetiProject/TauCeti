@@ -147,8 +147,8 @@ theorem isClosedEmbedding_moduleAugmentation
     rw [hrange]
     exact isClosed_singleton.preimage (continuous_moduleDiff M f hA)
   exact ⟨isEmbedding_iff_isStrictMap_injective.mpr
-    ⟨(moduleAugmentation M f).isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits
-      hc.continuousAt (fun _ ↦ (continuous_id.smul continuous_const).continuousAt) hclosed,
+    ⟨LinearMap.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits_of_continuousSMul
+      (moduleAugmentation M f) hc.continuousAt hclosed,
       moduleAugmentation_injective M hA f⟩, hclosed⟩
 
 omit [IsTopologicalAddGroup (L(f) ⊗[A] M)] [IsTopologicalAddGroup (G(f) ⊗[A] M)] in
@@ -165,9 +165,8 @@ theorem isOpenQuotientMap_moduleDiff
   have : ContinuousSMul A (O(f) ⊗[A] M) := IsScalarTower.continuousSMul O(f)
   have hc := continuous_moduleDiff M f hA
   exact ⟨moduleDiff_surjective M f, hc,
-    TauCeti.HasZeroSequenceOfUnits.isOpenMap (moduleDiff M f)
-      (moduleDiff_surjective M f) hc.continuousAt
-      fun _ ↦ (continuous_id.smul continuous_const).continuousAt⟩
+    TauCeti.HasZeroSequenceOfUnits.isOpenMap_of_continuousSMul (moduleDiff M f)
+      (moduleDiff_surjective M f) hc.continuousAt⟩
 
 end Strictness
 

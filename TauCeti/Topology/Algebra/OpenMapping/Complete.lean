@@ -9,6 +9,7 @@ public import TauCeti.Topology.Algebra.OpenMapping.Sequence
 public import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Topology.Algebra.Group.FirstCountable
 
 /-!
 # Removing the closure from Henkel's approximation
@@ -134,18 +135,23 @@ theorem mem_image_of_mem_closure_image {F : Type*} [FunLike F M N] [AddMonoidHom
     (hVN : ∀ n, closure ((f : M → N) '' (V (n + 1) : Set M)) ∈ 𝓝 (0 : N))
     {y : N} (hy : y ∈ closure ((f : M → N) '' (V 0 : Set M))) :
     y ∈ (f : M → N) '' (V 0 : Set M) := by
-  let W : ℕ → Set M := fun n ↦ (V (n - 1) : Set M)
+  let W : ℕ → Set M
+    | 0 => (V 0 : Set M)
+    | n + 1 => (V n : Set M)
   have hW0_eq : W 0 = (V 0 : Set M) := rfl
   have hW1_eq : W 1 = (V 0 : Set M) := rfl
   have hW_succ : ∀ n, W (n + 1) = (V n : Set M) := fun _ ↦ rfl
   have hW0 : IsClosed (W 0) := by
     rw [hW0_eq]
     exact (V 0).isClosed_of_isOpen ((V 0).isOpen_of_mem_nhds (hV.toHasBasis.mem_of_mem trivial))
-  have h0 : ∀ n, (0 : M) ∈ W n := fun n ↦ (V (n - 1)).zero_mem
+  have h0 : ∀ n, (0 : M) ∈ W n := fun n ↦ by
+    cases n with
+    | zero => exact (V 0).zero_mem
+    | succ n => exact (V n).zero_mem
   have hadd : ∀ n, W (n + 1) + W (n + 1) ⊆ W n := by
     rintro (_ | n)
     · exact Set.add_subset_iff.mpr fun a ha b hb ↦ (V 0).add_mem ha hb
-    · simpa [W] using Set.add_subset_iff.mpr fun a ha b hb ↦
+    · simpa [hW_succ] using Set.add_subset_iff.mpr fun a ha b hb ↦
         (V n).add_mem (hV.antitone (Nat.le_succ n) ha) (hV.antitone (Nat.le_succ n) hb)
   have hbasis : ∀ U ∈ 𝓝 (0 : M), ∃ n, W n ⊆ U := by
     intro U hU
@@ -159,31 +165,6 @@ theorem mem_image_of_mem_closure_image {F : Type*} [FunLike F M N] [AddMonoidHom
     exact hy
   have hmem := mem_image_of_mem_closure_image_of_add_subset f hf hW0 h0 hadd hbasis hWN hyW
   rwa [hW0_eq] at hmem
-
-omit [CompleteSpace M] in
-/-- Inside any neighbourhood `U` of `0` in a first-countable topological additive group, there is a
-sequence `V : ℕ → Set M` of neighbourhoods of `0` with `V 0` closed, `V 0 ⊆ U`,
-`V (n + 1) + V (n + 1) ⊆ V n` for all `n`, and every neighbourhood of `0` containing some `V n`. -/
-private theorem exists_closed_nhds_zero_add_subset [(𝓝 (0 : M)).IsCountablyGenerated]
-    {U : Set M} (hU : U ∈ 𝓝 (0 : M)) :
-    ∃ V : ℕ → Set M, IsClosed (V 0) ∧ V 0 ⊆ U ∧ (∀ n, V n ∈ 𝓝 (0 : M)) ∧
-      (∀ n, V (n + 1) + V (n + 1) ⊆ V n) ∧ (∀ S ∈ 𝓝 (0 : M), ∃ n, V n ⊆ S) := by
-  obtain ⟨W, hW⟩ := Filter.exists_antitone_basis (𝓝 (0 : M))
-  obtain ⟨φ, hφ_basis, hφ⟩ := hW.exists_subbasis_add_closure_subset
-  let B : ℕ → Set M := W ∘ φ
-  obtain ⟨k, -, hk⟩ := hφ_basis.toHasBasis.mem_iff.mp hU
-  let V : ℕ → Set M := fun n ↦ match n with
-    | 0 => closure (B (k + 1))
-    | n + 1 => B (k + n + 2)
-  refine ⟨V, isClosed_closure, (hφ k).2.trans hk, fun n ↦ ?_, fun n ↦ ?_, fun S hS ↦ ?_⟩
-  · cases n with
-    | zero => exact Filter.mem_of_superset (hφ_basis.toHasBasis.mem_of_mem trivial) subset_closure
-    | succ n => exact hφ_basis.toHasBasis.mem_of_mem trivial
-  · cases n with
-    | zero => exact (hφ (k + 1)).1.trans subset_closure
-    | succ n => exact (hφ (k + n + 2)).1
-  · obtain ⟨m, -, hm⟩ := hφ_basis.toHasBasis.mem_iff.mp hS
-    exact ⟨m + 1, (hφ_basis.antitone (by omega)).trans hm⟩
 
 /-- **Openness from the closure step.** Let `f : M → N` be an additive map, continuous at zero,
 from a complete first-countable uniform commutative additive group `M` into a `T₀` topological

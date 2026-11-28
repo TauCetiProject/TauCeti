@@ -153,8 +153,7 @@ theorem exists_preimage_norm_le_of_surjective (f : M →ₗ[R] N) (hf : Continuo
     (hsurj : Surjective f) :
     ∃ C > 0, ∀ y : N, ∃ x : M, f x = y ∧ ‖x‖ ≤ C * ‖y‖ :=
   f.exists_preimage_norm_le_of_isOpenMap <|
-    TauCeti.HasZeroSequenceOfUnits.isOpenMap f hsurj hf.continuousAt
-      fun _ ↦ (continuous_id.smul continuous_const).continuousAt
+    TauCeti.HasZeroSequenceOfUnits.isOpenMap_of_continuousSMul f hsurj hf.continuousAt
 
 end CompleteSource
 

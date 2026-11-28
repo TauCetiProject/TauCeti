@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Module.Submodule.Defs
 public import Mathlib.Topology.Algebra.IsUniformGroup.Basic
-public import TauCeti.Algebra.Module.Submodule.AddSubgroup
 
 /-!
 # The uniform structure on a submodule
@@ -24,9 +23,6 @@ Mathlib works around the first by hand: `Topology/Algebra/Module/FiniteDimension
 ## Main results
 
 * `Submodule.isUniformAddGroup`: `↥p` is a uniform additive group.
-* `Submodule.isTopologicalAddGroupOfNegMem` and `Submodule.isUniformAddGroupOfNegMem`:
-  named compatibility theorems for negation-closed submodules over a semiring under
-  `Submodule.addCommGroupOfNegMem`.
 * `Submodule.isCountablyGenerated_uniformity`: `↥p` inherits a countably generated uniformity.
 
 ## Use
@@ -56,24 +52,6 @@ namespace Submodule
 instance isUniformAddGroup {A M : Type*} [Ring A] [AddCommGroup M] [UniformSpace M]
     [IsUniformAddGroup M] [Module A M] (p : Submodule A M) : IsUniformAddGroup p :=
   inferInstanceAs (IsUniformAddGroup p.toAddSubgroup)
-
-/-- A negation-closed submodule over a semiring of a topological additive group is a topological
-additive group under `Submodule.addCommGroupOfNegMem`. -/
-theorem isTopologicalAddGroupOfNegMem {A M : Type*} [Semiring A] [AddCommGroup M]
-    [TopologicalSpace M] [IsTopologicalAddGroup M] [Module A M]
-    (p : Submodule A M) (hp : ∀ x ∈ p, -x ∈ p) :
-    @IsTopologicalAddGroup p _ (p.addCommGroupOfNegMem hp).toAddGroup := by
-  let _ : AddCommGroup p := p.addCommGroupOfNegMem hp
-  exact Topology.IsInducing.isTopologicalAddGroup p.subtype.toAddMonoidHom .subtypeVal
-
-/-- A negation-closed submodule over a semiring of a uniform additive group is a uniform additive
-group under `Submodule.addCommGroupOfNegMem`. -/
-theorem isUniformAddGroupOfNegMem {A M : Type*} [Semiring A] [AddCommGroup M]
-    [UniformSpace M] [IsUniformAddGroup M] [Module A M]
-    (p : Submodule A M) (hp : ∀ x ∈ p, -x ∈ p) :
-    @IsUniformAddGroup p _ (p.addCommGroupOfNegMem hp).toAddGroup := by
-  let _ : AddCommGroup p := p.addCommGroupOfNegMem hp
-  exact IsUniformAddGroup.comap p.subtype.toAddMonoidHom
 
 /-- **A submodule inherits a countably generated uniformity**, since its uniformity is the one
 comapped along the inclusion. This is the hypothesis the open mapping theorem states

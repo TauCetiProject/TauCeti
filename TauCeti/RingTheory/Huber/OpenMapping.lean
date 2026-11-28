@@ -110,10 +110,9 @@ countable, and the `Pi` instances transfer first-countability and completeness t
 theorem IsTateRing.isOpenMap_linearCombination (g : ι → N)
     (hspan : Submodule.span A (Set.range g) = ⊤) :
     IsOpenMap (Fintype.linearCombination A g : (ι → A) → N) :=
-  TauCeti.HasZeroSequenceOfUnits.isOpenMap (Fintype.linearCombination A g)
+  TauCeti.HasZeroSequenceOfUnits.isOpenMap_of_continuousSMul (Fintype.linearCombination A g)
     (span_range_eq_top_iff_surjective_fintypeLinearCombination A g |>.mp hspan)
     (IsModuleTopology.continuous_of_linearMap (Fintype.linearCombination A g)).continuousAt
-    fun _ ↦ (continuous_id.smul continuous_const).continuousAt
 
 /-- **The quotient form of `TauCeti.Huber.IsTateRing.isOpenMap_linearCombination`.** A finite
 spanning family does not merely present `N` as an open image of `ι → A`: the topology of `N` is
@@ -124,10 +123,9 @@ This is the pairing that `TauCeti.HasZeroSequenceOfUnits.isQuotientMap` makes wi
 theorem IsTateRing.isQuotientMap_linearCombination (g : ι → N)
     (hspan : Submodule.span A (Set.range g) = ⊤) :
     IsQuotientMap (Fintype.linearCombination A g : (ι → A) → N) :=
-  TauCeti.HasZeroSequenceOfUnits.isQuotientMap (Fintype.linearCombination A g)
+  TauCeti.HasZeroSequenceOfUnits.isQuotientMap_of_continuousSMul (Fintype.linearCombination A g)
     (span_range_eq_top_iff_surjective_fintypeLinearCombination A g |>.mp hspan)
     (IsModuleTopology.continuous_of_linearMap (Fintype.linearCombination A g)).continuousAt
-    fun _ ↦ (continuous_id.smul continuous_const).continuousAt
 
 end LinearCombination
 

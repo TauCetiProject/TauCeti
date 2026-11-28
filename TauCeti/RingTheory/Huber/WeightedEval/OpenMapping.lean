@@ -72,7 +72,7 @@ theorem isOpenQuotientMap_weightedEvalHomCompletion (hcont : Continuous (algebra
   have : (𝓤 (Completion (weightedRestrictedSubring T hT))).IsCountablyGenerated :=
     IsUniformAddGroup.uniformity_countably_generated
   have : (𝓤 B).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
-  exact ⟨hsurj, hψc, TauCeti.HasZeroSequenceOfUnits.isOpenMap π.toLinearMap hsurj
-    hψc.continuousAt fun _ ↦ (continuous_id.smul continuous_const).continuousAt⟩
+  exact ⟨hsurj, hψc, TauCeti.HasZeroSequenceOfUnits.isOpenMap_of_continuousSMul π.toLinearMap hsurj
+    hψc.continuousAt⟩
 
 end TauCeti.Huber

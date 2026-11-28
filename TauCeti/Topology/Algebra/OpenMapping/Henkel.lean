@@ -8,7 +8,6 @@ module
 public import TauCeti.Topology.Algebra.OpenMapping.Complete
 public import Mathlib.Topology.Maps.Strict.Module
 public import Mathlib.Topology.Metrizable.CompletelyMetrizable
-public import TauCeti.Topology.Algebra.IsUniformGroup.Submodule
 import Mathlib.Topology.Baire.CompleteMetrizable
 
 /-!
@@ -37,15 +36,20 @@ spaces, F-spaces, Banach spaces, and complete first-countable modules over Tate 
 
 ## Main results
 
-* `TauCeti.HasZeroSequenceOfUnits.isOpenMap`: Henkel's open mapping theorem.
-* `TauCeti.HasZeroSequenceOfUnits.isQuotientMap`: the surjective map in `isOpenMap` induces the
-  quotient topology on its target, so the target's topology is determined by the source's.
-* `LinearMap.isStrictMap_of_baireSpace_range_of_hasZeroSequenceOfUnits` and
-  `LinearMap.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits`: over a semiring with a
-  zero sequence of units, linear maps from a complete first-countable uniform additive module
-  whose range is `T₀` and Baire (for instance, closed range in a completely metrisable target) are
-  strict, assuming continuity at zero for the map and for the scalar action on the source, and
-  continuity of each fixed scalar action on the target.
+* `TauCeti.HasZeroSequenceOfUnits.isOpenMap` and
+  `TauCeti.HasZeroSequenceOfUnits.isOpenMap_of_continuousSMul`: Henkel's open mapping theorem.
+* `TauCeti.HasZeroSequenceOfUnits.isQuotientMap` and
+  `TauCeti.HasZeroSequenceOfUnits.isQuotientMap_of_continuousSMul`: the surjective map in
+  `isOpenMap` induces the quotient topology on its target, so the target's topology is determined
+  by the source's.
+* `LinearMap.isStrictMap_of_baireSpace_range_of_hasZeroSequenceOfUnits`,
+  `LinearMap.isStrictMap_of_baireSpace_range_of_hasZeroSequenceOfUnits_of_continuousSMul`,
+  `LinearMap.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits`, and
+  `LinearMap.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits_of_continuousSMul`: over a
+  ring with a zero sequence of units, linear maps from a complete first-countable uniform additive
+  module whose range is `T₀` and Baire (for instance, closed range in a completely metrisable
+  target) are strict, assuming continuity at zero for the map and for the scalar action on the
+  source (or `[ContinuousSMul R E]`), and continuity of each fixed scalar action on the target.
 
 The range equivalence `ContinuousLinearMap.equivRangeOfIsStrictMap` for injective strict maps
 lives in `TauCeti.Topology.Maps.Strict.Module`. The other two implications of Wedhorn's
@@ -93,6 +97,16 @@ theorem HasZeroSequenceOfUnits.isOpenMap {F : Type*} [FunLike F M N] [MulActionH
   isOpenMap_of_closure_image_mem_nhds f hfc fun _ hU ↦
     HasZeroSequenceOfUnits.closure_image_mem_nhds_zero f hf hc hU
 
+/-- **Henkel's open mapping theorem** with `[ContinuousSMul A M]` on the source supplying
+continuity of scalar orbits at zero. -/
+theorem HasZeroSequenceOfUnits.isOpenMap_of_continuousSMul [ContinuousSMul A M]
+    {F : Type*} [FunLike F M N] [MulActionHomClass F A M N]
+    [AddMonoidHomClass F M N] (f : F) (hf : Function.Surjective f)
+    (hfc : ContinuousAt (f : M → N) 0) :
+    IsOpenMap (f : M → N) :=
+  HasZeroSequenceOfUnits.isOpenMap f hf hfc
+    fun _ ↦ (continuous_id.smul continuous_const).continuousAt
+
 /-- **Henkel's theorem in quotient form.** Under exactly the hypotheses of
 `TauCeti.HasZeroSequenceOfUnits.isOpenMap` (`M` commutative, `N` not assumed commutative), the map
 does not merely carry open sets to open sets: the topology of `N` is the one coinduced from `M`, so
@@ -110,13 +124,23 @@ theorem HasZeroSequenceOfUnits.isQuotientMap {F : Type*} [FunLike F M N]
   have hcont : Continuous (f : M → N) := continuous_of_continuousAt_zero f hfc
   (HasZeroSequenceOfUnits.isOpenMap f hf hfc hc).isQuotientMap hcont hf
 
+/-- **Henkel's theorem in quotient form** with `[ContinuousSMul A M]` on the source supplying
+continuity of scalar orbits at zero. -/
+theorem HasZeroSequenceOfUnits.isQuotientMap_of_continuousSMul [ContinuousSMul A M]
+    {F : Type*} [FunLike F M N] [MulActionHomClass F A M N]
+    [AddMonoidHomClass F M N] (f : F) (hf : Function.Surjective f)
+    (hfc : ContinuousAt (f : M → N) 0) :
+    IsQuotientMap (f : M → N) :=
+  HasZeroSequenceOfUnits.isQuotientMap f hf hfc
+    fun _ ↦ (continuous_id.smul continuous_const).continuousAt
+
 end TauCeti
 
 section Strict
 
 open TopologicalSpace
 
-variable {R E F : Type*} [Semiring R] [TopologicalSpace R] [TauCeti.HasZeroSequenceOfUnits R]
+variable {R E F : Type*} [Ring R] [TopologicalSpace R] [TauCeti.HasZeroSequenceOfUnits R]
   [AddCommGroup E] [UniformSpace E] [IsUniformAddGroup E] [CompleteSpace E]
   [(𝓝 (0 : E)).IsCountablyGenerated] [Module R E]
   [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F]
@@ -124,7 +148,7 @@ variable {R E F : Type*} [Semiring R] [TopologicalSpace R] [TauCeti.HasZeroSeque
 
 namespace LinearMap
 
-/-- A linear map over a semiring with a zero sequence of units whose range is `T₀` and Baire is
+/-- A linear map over a ring with a zero sequence of units whose range is `T₀` and Baire is
 strict when the source is complete and first countable. On the source, only continuity at zero is
 needed for the map and for scalar multiplication (`hc : ∀ x, ContinuousAt (fun a ↦ a • x) 0`),
 while on the codomain `F`, each fixed scalar action must be continuous (`ContinuousConstSMul R F`).
@@ -136,9 +160,6 @@ theorem isStrictMap_of_baireSpace_range_of_hasZeroSequenceOfUnits (f : E →ₗ[
     [BaireSpace f.range] [T0Space f.range]
     (hfc : ContinuousAt (f : E → F) 0)
     (hc : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0) : Topology.IsStrictMap (f : E → F) := by
-  let _ : AddCommGroup f.range := f.rangeAddCommGroup
-  have : IsTopologicalAddGroup f.range :=
-    Submodule.isTopologicalAddGroupOfNegMem f.range f.range_neg_mem
   have hcont : Continuous (f.rangeRestrict : E → f.range) :=
     (continuous_of_continuousAt_zero f hfc).subtype_mk _
   have hq : IsQuotientMap (f.rangeRestrict : E → f.range) :=
@@ -149,7 +170,15 @@ theorem isStrictMap_of_baireSpace_range_of_hasZeroSequenceOfUnits (f : E →ₗ[
   rw [Topology.isStrictMap_iff_isQuotientMap_rangeFactorization, ← hcoe]
   exact hq
 
-/-- A linear map with closed range over a semiring with a zero sequence of units is strict when
+/-- Variant of `LinearMap.isStrictMap_of_baireSpace_range_of_hasZeroSequenceOfUnits` taking
+`[ContinuousSMul R E]` on the source. -/
+theorem isStrictMap_of_baireSpace_range_of_hasZeroSequenceOfUnits_of_continuousSMul
+    [ContinuousSMul R E] (f : E →ₗ[R] F) [BaireSpace f.range] [T0Space f.range]
+    (hfc : ContinuousAt (f : E → F) 0) : Topology.IsStrictMap (f : E → F) :=
+  f.isStrictMap_of_baireSpace_range_of_hasZeroSequenceOfUnits hfc
+    fun _ ↦ (continuous_id.smul continuous_const).continuousAt
+
+/-- A linear map with closed range over a ring with a zero sequence of units is strict when
 the source is complete and first countable and the target is completely metrisable. On the source,
 only continuity at zero is needed for the map and for scalar multiplication (`hc`), while on the
 codomain `F`, each fixed scalar action must be continuous (`ContinuousConstSMul R F`).
@@ -163,6 +192,15 @@ theorem isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits
     (hr : IsClosed (f.range : Set F)) : Topology.IsStrictMap (f : E → F) := by
   have : IsCompletelyMetrizableSpace f.range := hr.isCompletelyMetrizableSpace
   exact f.isStrictMap_of_baireSpace_range_of_hasZeroSequenceOfUnits hfc hc
+
+/-- Variant of `LinearMap.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits` taking
+`[ContinuousSMul R E]` on the source. -/
+theorem isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits_of_continuousSMul
+    [IsCompletelyMetrizableSpace F] [ContinuousSMul R E] (f : E →ₗ[R] F)
+    (hfc : ContinuousAt (f : E → F) 0)
+    (hr : IsClosed (f.range : Set F)) : Topology.IsStrictMap (f : E → F) :=
+  f.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits hfc
+    (fun _ ↦ (continuous_id.smul continuous_const).continuousAt) hr
 
 end LinearMap
 

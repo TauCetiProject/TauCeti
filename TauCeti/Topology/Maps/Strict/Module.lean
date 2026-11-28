@@ -65,6 +65,21 @@ theorem coe_equivRangeOfIsStrictMap (f : E →L[R] F)
     (f.equivRangeOfIsStrictMap hinj hstrict : E →L[R] f.range) = f.rangeRestrict :=
   ContinuousLinearMap.ext (equivRangeOfIsStrictMap_apply f hinj hstrict)
 
+@[simp]
+theorem equivRangeOfIsStrictMap_symm_apply_apply (f : E →L[R] F)
+    (hinj : Function.Injective f) (hstrict : Topology.IsStrictMap f) (x : E) :
+    (f.equivRangeOfIsStrictMap hinj hstrict).symm ⟨f x, f.mem_range_self x⟩ = x := by
+  have h : (⟨f x, f.mem_range_self x⟩ : f.range) = f.equivRangeOfIsStrictMap hinj hstrict x :=
+    (equivRangeOfIsStrictMap_apply f hinj hstrict x).symm
+  rw [h, ContinuousLinearEquiv.symm_apply_apply]
+
+@[simp]
+theorem apply_equivRangeOfIsStrictMap_symm (f : E →L[R] F)
+    (hinj : Function.Injective f) (hstrict : Topology.IsStrictMap f) (y : f.range) :
+    f ((f.equivRangeOfIsStrictMap hinj hstrict).symm y) = y := by
+  have h := congrArg Subtype.val ((f.equivRangeOfIsStrictMap hinj hstrict).apply_symm_apply y)
+  simpa only [equivRangeOfIsStrictMap_apply, coe_codRestrict_apply, coe_coe] using h
+
 end ContinuousLinearMap
 
 end

@@ -10,21 +10,23 @@ import Mathlib.Topology.Baire.CompleteMetrizable
 import Mathlib.Topology.Sequences
 import TauCeti.LinearAlgebra.Prod
 import TauCeti.Topology.Algebra.Group.FirstCountable
+import TauCeti.Topology.Algebra.IsUniformGroup.Submodule
 
 /-!
 # The Banach–Schauder open mapping, closed graph, and closed range theorems
 
 This file packages the Banach–Schauder mapping theorems for complete first-countable uniform
-additive modules over any topological semiring or ring carrying a zero sequence of units
+additive modules over any topological ring carrying a zero sequence of units
 (`TauCeti.HasZeroSequenceOfUnits`). Throughout, the standing scalar-action compatibility is
 jointly continuous scalar multiplication on the source (`ContinuousSMul R E`) and continuous
 fixed scalar actions on the target (`ContinuousConstSMul R F`), except that the closed-graph
 theorems assume only scalar-orbit continuity at zero on both `E` and `F` and continuous fixed
 scalar actions on `E` (`ContinuousConstSMul R E`). This covers Fréchet spaces, F-spaces, and
 Banach spaces over any nontrivially normed field (`ℝ`, `ℂ`, `ℚ_[p]`, …; normed-field users can
-import `TauCeti.Analysis.Normed.Ring.ZeroSequenceOfUnits` for the `HasZeroSequenceOfUnits`
-instance), as well as complete first-countable modules over Tate rings, without assuming local
-convexity, normability, or separability.
+import `TauCeti.Analysis.Normed.Ring.PseudoUniformizer` for the `HasZeroSequenceOfUnits`
+instance via `TauCeti.NormedRing.IsTate.of_nontriviallyNormedField`), as well as complete
+first-countable modules over Tate rings, without assuming local convexity, normability, or
+separability.
 
 ## Main results
 
@@ -33,7 +35,7 @@ convexity, normability, or separability.
   `ContinuousLinearMap.isOpenMap_of_complete`, `ContinuousLinearMap.isQuotientMap_of_complete`.
   A surjective continuous linear map between complete first-countable uniform modules (with `T₀`
   target, `ContinuousSMul R E` on the source, and `ContinuousConstSMul R F` on the target) over a
-  topological semiring with a zero sequence of units is open and a quotient map.
+  topological ring with a zero sequence of units is open and a quotient map.
 * **Continuous inverse theorem and uniqueness of complete uniformities**:
   `LinearEquiv.continuous_symm_of_complete`,
   `LinearEquiv.toContinuousLinearEquivOfContinuousOfComplete`,
@@ -46,7 +48,7 @@ convexity, normability, or separability.
   criteria), a continuous linear equivalence has continuous inverse, a bijective continuous linear
   map is a `ContinuousLinearEquiv`, and an endomorphism is a unit iff it is bijective. In
   particular, two comparable complete first-countable uniform group structures making a module over
-  a topological semiring with a zero sequence of units topological (with the coarser one `T₀`,
+  a topological ring with a zero sequence of units topological (with the coarser one `T₀`,
   `ContinuousSMul` for the finer one, and `ContinuousConstSMul` for the coarser one) must
   coincide.
 * **Closed graph and sequential closed graph theorems**:
@@ -55,7 +57,7 @@ convexity, normability, or separability.
   `ContinuousLinearMap.ofIsClosedGraphOfComplete`,
   `ContinuousLinearMap.ofSeqClosedGraphOfComplete`.
   Assuming scalar-orbit continuity at zero on both modules and `ContinuousConstSMul R E` on the
-  domain over a topological semiring with a zero sequence of units, a linear map with closed (or
+  domain over a topological ring with a zero sequence of units, a linear map with closed (or
   sequentially closed) graph into a complete first-countable uniform module from a `T₀` complete
   first-countable uniform module is continuous. First-countability of the product comes directly
   from countable generation of `𝓝 0` (`TauCeti.ContinuousConstVAdd.toFirstCountableTopology`), with
@@ -72,13 +74,11 @@ Complement and closed-range applications built on these results live in
 
 ## Attribution
 
-The API shapes for the continuous inverse, closed graph, and unit-criterion results generalise
-the Banach-space theorems in `Mathlib/Analysis/Normed/Operator/Banach.lean`. Specifically,
-`ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap_of_complete` is adapted directly from
-Mathlib's `ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap`, while the remaining constructor
-packaging and proofs (the inverse and bijective-equivalence constructors, the bijectivity unit
-criterion, the closed-graph theorems and constructors, and closed-range strictness) are adapted
-from the Tate-ring formalisation in `TauCeti/Analysis/Normed/Operator/RingOpNorm/OpenMapping.lean`.
+The API shapes and constructor packaging for the continuous inverse, bijectivity unit criteria,
+closed-graph theorems, and open-mapping equivalences generalise the Banach-space theorems in
+`Mathlib/Analysis/Normed/Operator/Banach.lean` (`LinearEquiv.continuous_symm`,
+`ContinuousLinearEquiv.ofBijective`, `ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap`,
+`LinearMap.continuous_of_isClosed_graph`, `ContinuousLinearMap.ofIsClosedGraph`).
 
 ## References
 
@@ -96,25 +96,25 @@ open scoped Uniformity
 
 /-! ### Open mapping, quotient map, continuous inverse, and uniqueness of uniformity -/
 
-section Semiring
+section Ring
 
-variable {R E F : Type*} [Semiring R] [TopologicalSpace R] [TauCeti.HasZeroSequenceOfUnits R]
-  [AddCommGroup E] [UniformSpace E] [IsUniformAddGroup E] [CompleteSpace E]
-  [(𝓝 (0 : E)).IsCountablyGenerated] [Module R E] [ContinuousSMul R E]
-  [AddCommGroup F] [UniformSpace F] [IsUniformAddGroup F] [CompleteSpace F]
-  [(𝓝 (0 : F)).IsCountablyGenerated] [T0Space F] [Module R F] [ContinuousConstSMul R F]
+variable {R E F : Type*} [Ring R] [TopologicalSpace R] [TauCeti.HasZeroSequenceOfUnits R]
+  [AddCommGroup E] [uE : UniformSpace E] [huE : IsUniformAddGroup E] [hcE : CompleteSpace E]
+  [hcgE : (𝓝 (0 : E)).IsCountablyGenerated] [Module R E] [hsmulE : ContinuousSMul R E]
+  [AddCommGroup F] [uF : UniformSpace F] [huF : IsUniformAddGroup F] [hcF : CompleteSpace F]
+  [hcgF : (𝓝 (0 : F)).IsCountablyGenerated] [ht0F : T0Space F] [Module R F]
+  [hsmulF : ContinuousConstSMul R F]
 
 namespace LinearMap
 
 /-- **Banach–Schauder open mapping theorem for linear maps.** A surjective linear map, continuous
 at zero, between complete first-countable uniform modules (with `T₀` target, `ContinuousSMul R E`
-on the source, and `ContinuousConstSMul R F` on the target) over a topological semiring with a zero
+on the source, and `ContinuousConstSMul R F` on the target) over a topological ring with a zero
 sequence of units is open. -/
 theorem isOpenMap_of_complete (f : E →ₗ[R] F) (hf : Surjective f)
     (hfc : ContinuousAt (f : E → F) 0) : IsOpenMap (f : E → F) := by
   have : (𝓤 F).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
-  exact TauCeti.HasZeroSequenceOfUnits.isOpenMap f hf hfc
-    fun _ ↦ (continuous_id.smul continuous_const).continuousAt
+  exact TauCeti.HasZeroSequenceOfUnits.isOpenMap_of_continuousSMul f hf hfc
 
 /-- **Banach–Schauder quotient map theorem for linear maps.** Under the hypotheses of
 `LinearMap.isOpenMap_of_complete` (including `ContinuousSMul R E` and `ContinuousConstSMul R F`),
@@ -122,8 +122,7 @@ the topology of `F` is coinduced by `f`. -/
 theorem isQuotientMap_of_complete (f : E →ₗ[R] F) (hf : Surjective f)
     (hfc : ContinuousAt (f : E → F) 0) : IsQuotientMap (f : E → F) := by
   have : (𝓤 F).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
-  exact TauCeti.HasZeroSequenceOfUnits.isQuotientMap f hf hfc
-    fun _ ↦ (continuous_id.smul continuous_const).continuousAt
+  exact TauCeti.HasZeroSequenceOfUnits.isQuotientMap_of_continuousSMul f hf hfc
 
 end LinearMap
 
@@ -131,7 +130,7 @@ namespace ContinuousLinearMap
 
 /-- **Banach–Schauder / Fréchet open mapping theorem.** Every surjective continuous linear map
 between complete first-countable uniform modules (with `T₀` target, `ContinuousSMul R E` on the
-source, and `ContinuousConstSMul R F` on the target) over a topological semiring with a zero
+source, and `ContinuousConstSMul R F` on the target) over a topological ring with a zero
 sequence of units is an open map.
 
 This covers Fréchet spaces, F-spaces, and Banach spaces over any nontrivially normed field (such
@@ -142,7 +141,7 @@ theorem isOpenMap_of_complete (f : E →L[R] F) (hf : Surjective f) : IsOpenMap 
 
 /-- **Banach–Schauder / Fréchet quotient map theorem.** Under the hypotheses of
 `ContinuousLinearMap.isOpenMap_of_complete` (including `ContinuousSMul R E` and
-`ContinuousConstSMul R F`, over a topological semiring with a zero sequence of units), every
+`ContinuousConstSMul R F`, over a topological ring with a zero sequence of units), every
 surjective continuous linear map between complete first-countable uniform modules (with `T₀` target)
 is a quotient map. -/
 theorem isQuotientMap_of_complete (f : E →L[R] F) (hf : Surjective f) : IsQuotientMap f :=
@@ -154,7 +153,7 @@ namespace LinearEquiv
 
 /-- **Banach–Schauder continuous inverse theorem.** If a linear equivalence between complete
 first-countable uniform modules (with `T₀` target, `ContinuousSMul R E` on the source, and
-`ContinuousConstSMul R F` on the target) over a topological semiring with a zero sequence of units
+`ContinuousConstSMul R F` on the target) over a topological ring with a zero sequence of units
 is continuous, then its inverse is also continuous. -/
 theorem continuous_symm_of_complete (e : E ≃ₗ[R] F) (he : Continuous e) : Continuous e.symm :=
   e.toEquiv.continuous_symm_iff.mpr
@@ -162,7 +161,7 @@ theorem continuous_symm_of_complete (e : E ≃ₗ[R] F) (he : Continuous e) : Co
 
 /-- Promote a continuous linear equivalence between complete first-countable uniform modules (with
 `T₀` target, `ContinuousSMul R E` on the source, and `ContinuousConstSMul R F` on the target) over
-a topological semiring with a zero sequence of units to a `ContinuousLinearEquiv`. -/
+a topological ring with a zero sequence of units to a `ContinuousLinearEquiv`. -/
 def toContinuousLinearEquivOfContinuousOfComplete (e : E ≃ₗ[R] F) (he : Continuous e) :
     E ≃L[R] F where
   toLinearEquiv := e
@@ -204,7 +203,7 @@ namespace ContinuousLinearEquiv
 
 /-- **Banach–Schauder isomorphism theorem.** A bijective continuous linear map between complete
 first-countable uniform modules (with `T₀` target, `ContinuousSMul R E` on the source, and
-`ContinuousConstSMul R F` on the target) over a topological semiring with a zero sequence of units
+`ContinuousConstSMul R F` on the target) over a topological ring with a zero sequence of units
 is a continuous linear equivalence. -/
 noncomputable def ofBijectiveOfComplete (f : E →L[R] F) (hf : Bijective f) : E ≃L[R] F :=
   (LinearEquiv.ofBijective f.toLinearMap hf).toContinuousLinearEquivOfContinuousOfComplete
@@ -236,7 +235,7 @@ end ContinuousLinearEquiv
 namespace ContinuousLinearMap
 
 /-- A continuous linear endomorphism of a `T₀` complete first-countable uniform module with jointly
-continuous scalar multiplication (`ContinuousSMul R E`) over a topological semiring with a zero
+continuous scalar multiplication (`ContinuousSMul R E`) over a topological ring with a zero
 sequence of units is a unit in `E →L[R] E` if and only if it is bijective. -/
 theorem isUnit_iff_bijective_of_complete [T0Space E] (f : E →L[R] E) :
     IsUnit f ↔ Bijective f :=
@@ -245,7 +244,7 @@ theorem isUnit_iff_bijective_of_complete [T0Space E] (f : E →L[R] E) :
       ContinuousLinearEquiv.coe_ofBijectiveOfComplete f hf⟩⟩
 
 /-- A continuous linear endomorphism of a `T₀` complete first-countable uniform module with jointly
-continuous scalar multiplication (`ContinuousSMul R E`) over a topological semiring with a zero
+continuous scalar multiplication (`ContinuousSMul R E`) over a topological ring with a zero
 sequence of units is a unit in `E →L[R] E` if and only if it is a unit as a bare linear
 endomorphism. -/
 theorem isUnit_iff_isUnit_toLinearMap_of_complete [T0Space E] (f : E →L[R] E) :
@@ -254,17 +253,17 @@ theorem isUnit_iff_isUnit_toLinearMap_of_complete [T0Space E] (f : E →L[R] E) 
 
 end ContinuousLinearMap
 
-end Semiring
+end Ring
 
 namespace IsUniformAddGroup
 
 /-- **Uniqueness of comparable complete first-countable uniformities.** If `u₁` and `u₂` are two
 complete first-countable uniform additive group structures on a module `E` over a topological
-semiring `R` with a zero sequence of units, satisfying
+ring `R` with a zero sequence of units, satisfying
 `u₁.toTopologicalSpace ≤ u₂.toTopologicalSpace` (`u₁` finer than `u₂`), `u₂` `T₀`, `ContinuousSMul`
 for `u₁`, and `ContinuousConstSMul` for `u₂`, then `u₁ = u₂` (and in particular their topologies
 agree). -/
-theorem eq_of_toTopologicalSpace_le_of_complete (R : Type*) {E : Type*} [Semiring R]
+theorem eq_of_toTopologicalSpace_le_of_complete (R : Type*) {E : Type*} [Ring R]
     [TopologicalSpace R] [TauCeti.HasZeroSequenceOfUnits R] [AddCommGroup E] [Module R E]
     {u₁ u₂ : UniformSpace E}
     (hu₁ : @IsUniformAddGroup E u₁ _) (hu₂ : @IsUniformAddGroup E u₂ _)
@@ -276,16 +275,14 @@ theorem eq_of_toTopologicalSpace_le_of_complete (R : Type*) {E : Type*} [Semirin
     (hsmul₂ : @ContinuousConstSMul R E u₂.toTopologicalSpace _)
     (hle : u₁.toTopologicalSpace ≤ u₂.toTopologicalSpace) :
     u₁ = u₂ := by
-  have hq : @IsQuotientMap E E u₁.toTopologicalSpace u₂.toTopologicalSpace id := by
-    simpa only [LinearMap.id_coe] using
-      @LinearMap.isQuotientMap_of_complete R E E _ _ _ _ u₁ hu₁ hc₁ hcg₁ _ hsmul₁
-        _ u₂ hu₂ hc₂ hcg₂ ht0 _ hsmul₂ LinearMap.id surjective_id
-        (@Continuous.continuousAt E E u₁.toTopologicalSpace u₂.toTopologicalSpace id 0
-          (continuous_id_of_le hle))
-  have htop' : u₂.toTopologicalSpace = u₁.toTopologicalSpace.coinduced id :=
-    @Topology.IsCoinducing.eq_coinduced E E u₁.toTopologicalSpace u₂.toTopologicalSpace id
-      (@Topology.IsQuotientMap.isCoinducing E E u₁.toTopologicalSpace u₂.toTopologicalSpace id hq)
-  exact hu₁.ext hu₂ (by rw [htop'.trans (@coinduced_id E u₁.toTopologicalSpace)])
+  have ho :=
+    LinearMap.isOpenMap_of_complete (R := R) (E := E) (F := E)
+      (uE := u₁) (huE := hu₁) (hcE := hc₁) (hcgE := hcg₁) (hsmulE := hsmul₁)
+      (uF := u₂) (huF := hu₂) (hcF := hc₂) (hcgF := hcg₂) (ht0F := ht0) (hsmulF := hsmul₂)
+      LinearMap.id surjective_id (Filter.tendsto_id.mono_left (nhds_mono hle))
+  have hle' : u₂.toTopologicalSpace ≤ u₁.toTopologicalSpace := fun s hs ↦ by
+    simpa only [LinearMap.id_coe, Set.image_id] using ho s hs
+  exact hu₁.ext hu₂ (by rw [le_antisymm hle hle'])
 
 end IsUniformAddGroup
 
@@ -293,7 +290,7 @@ end IsUniformAddGroup
 
 section ClosedGraph
 
-variable {R E F : Type*} [Semiring R] [TopologicalSpace R] [TauCeti.HasZeroSequenceOfUnits R]
+variable {R E F : Type*} [Ring R] [TopologicalSpace R] [TauCeti.HasZeroSequenceOfUnits R]
   [AddCommGroup E] [UniformSpace E] [IsUniformAddGroup E] [CompleteSpace E]
   [(𝓝 (0 : E)).IsCountablyGenerated] [T0Space E] [Module R E] [ContinuousConstSMul R E]
   [AddCommGroup F] [UniformSpace F] [IsUniformAddGroup F] [CompleteSpace F]
@@ -303,7 +300,7 @@ namespace LinearMap
 
 /-- **Banach–Schauder closed graph theorem.** A linear map between complete first-countable
 uniform modules (with `T₀` domain, `ContinuousConstSMul R E`, and scalar-orbit continuity at zero
-on both `E` and `F`) over a topological semiring with a zero sequence of units is continuous if its
+on both `E` and `F`) over a topological ring with a zero sequence of units is continuous if its
 graph is closed in `E × F`.
 
 Only the domain `E` needs to be `T₀` and `ContinuousConstSMul`, because Henkel's open mapping
@@ -315,9 +312,6 @@ theorem continuous_of_isClosed_graph_of_complete (f : E →ₗ[R] F)
   have : CompleteSpace f.graph := hg.completeSpace_coe
   have : FirstCountableTopology f.graph :=
     inferInstanceAs (FirstCountableTopology (f.graph : Set (E × F)))
-  let _ : AddCommGroup f.graph := f.graphAddCommGroup
-  have : IsUniformAddGroup f.graph :=
-    Submodule.isUniformAddGroupOfNegMem f.graph f.graph_neg_mem
   have : (𝓤 E).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
   have hcg : ∀ p : f.graph, ContinuousAt (fun a : R ↦ a • p) 0 := fun p ↦
     Topology.IsInducing.subtypeVal.continuousAt_iff.mpr
@@ -339,7 +333,7 @@ theorem continuous_of_isClosed_graph_of_complete (f : E →ₗ[R] F)
 
 /-- **Sequential closed graph theorem.** A linear map between complete first-countable uniform
 modules (with `T₀` domain, `ContinuousConstSMul R E`, and scalar-orbit continuity at zero on both
-`E` and `F`) over a topological semiring with a zero sequence of units is continuous if its graph
+`E` and `F`) over a topological ring with a zero sequence of units is continuous if its graph
 is sequentially closed: whenever `u n → x` and `f (u n) → y`, one has `y = f x`.
 
 First-countability of `E × F` follows from countable generation of `𝓝 (0 : E)` and `𝓝 (0 : F)`
@@ -367,7 +361,7 @@ variable {f : E →ₗ[R] F}
 
 /-- Bundle a linear map with closed graph between complete first-countable uniform modules (with
 `T₀` domain, `ContinuousConstSMul R E`, and scalar-orbit continuity at zero on both `E` and `F`)
-over a topological semiring with a zero sequence of units as a `ContinuousLinearMap`. -/
+over a topological ring with a zero sequence of units as a `ContinuousLinearMap`. -/
 def ofIsClosedGraphOfComplete (hcE : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0)
     (hcF : ∀ y : F, ContinuousAt (fun a : R ↦ a • y) 0)
     (hg : IsClosed (f.graph : Set (E × F))) : E →L[R] F where
@@ -397,7 +391,7 @@ theorem ofIsClosedGraphOfComplete_apply (hcE : ∀ x : E, ContinuousAt (fun a : 
 
 /-- Bundle a linear map with sequentially closed graph between complete first-countable uniform
 modules (with `T₀` domain, `ContinuousConstSMul R E`, and scalar-orbit continuity at zero on both
-`E` and `F`) over a topological semiring with a zero sequence of units as a
+`E` and `F`) over a topological ring with a zero sequence of units as a
 `ContinuousLinearMap`. -/
 def ofSeqClosedGraphOfComplete (hcE : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0)
     (hcF : ∀ y : F, ContinuousAt (fun a : R ↦ a • y) 0)
@@ -439,7 +433,7 @@ end ClosedGraph
 
 section Strict
 
-variable {R E F : Type*} [Semiring R] [TopologicalSpace R] [TauCeti.HasZeroSequenceOfUnits R]
+variable {R E F : Type*} [Ring R] [TopologicalSpace R] [TauCeti.HasZeroSequenceOfUnits R]
   [AddCommGroup E] [UniformSpace E] [IsUniformAddGroup E] [CompleteSpace E]
   [(𝓝 (0 : E)).IsCountablyGenerated] [Module R E] [ContinuousSMul R E]
   [AddCommGroup F] [UniformSpace F] [IsUniformAddGroup F] [CompleteSpace F]
@@ -449,13 +443,13 @@ namespace ContinuousLinearMap
 
 /-- A continuous linear map with closed range between complete first-countable uniform modules
 (with `T₀` target, `ContinuousSMul R E` on the source, and `ContinuousConstSMul R F` on the
-target) over a topological semiring with a zero sequence of units is strict
+target) over a topological ring with a zero sequence of units is strict
 (`Topology.IsStrictMap`). -/
 theorem isStrictMap_of_isClosed_range_of_complete (f : E →L[R] F)
     (hr : IsClosed (f.range : Set F)) : Topology.IsStrictMap f := by
   have : (𝓤 F).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
-  exact f.toLinearMap.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits
-    f.continuous.continuousAt (fun _ ↦ (continuous_id.smul continuous_const).continuousAt) hr
+  exact f.toLinearMap.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits_of_continuousSMul
+    f.continuous.continuousAt hr
 
 end ContinuousLinearMap
 

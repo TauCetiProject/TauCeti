@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Pointwise.Set.Basic
 public import Mathlib.Topology.Algebra.ConstMulAction
+public import Mathlib.Topology.Algebra.Group.Defs
 public import Mathlib.Topology.Bases
+import Mathlib.Topology.Algebra.Group.Pointwise
 
 /-!
 # A group with countably generated neighbourhoods of the identity is first countable
@@ -43,11 +46,14 @@ the class. That route is a theorem rather than an instance and needs a `UniformS
 
 * `ContinuousConstSMul.toFirstCountableTopology`, with its additive form
   `ContinuousConstVAdd.toFirstCountableTopology`.
+* `TauCeti.exists_closed_nhds_one_mul_subset`, with its additive form
+  `TauCeti.exists_closed_nhds_zero_add_subset`.
 -/
 
 namespace TauCeti
 
 open Filter Topology
+open scoped Pointwise
 
 public section
 
@@ -67,6 +73,36 @@ instance (priority := 100) ContinuousConstSMul.toFirstCountableTopology {G : Typ
   ⟨fun a ↦ by
     rw [← mul_one a, ← smul_eq_mul, nhds_smul, ← Filter.map_smul]
     infer_instance⟩
+
+/-- Inside any neighbourhood `U` of `1` in a topological group whose neighbourhood filter at `1` is
+countably generated, there is a sequence `V : ℕ → Set G` of neighbourhoods of `1` with `V 0`
+closed, `V 0 ⊆ U`, `V (n + 1) * V (n + 1) ⊆ V n` for all `n`, and every neighbourhood of `1`
+containing some `V n`. -/
+@[to_additive
+/-- Inside any neighbourhood `U` of `0` in an additive topological group whose neighbourhood filter
+at `0` is countably generated, there is a sequence `V : ℕ → Set M` of neighbourhoods of `0` with
+`V 0` closed, `V 0 ⊆ U`, `V (n + 1) + V (n + 1) ⊆ V n` for all `n`, and every neighbourhood of `0`
+containing some `V n`. -/]
+theorem exists_closed_nhds_one_mul_subset {G : Type*} [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] [(𝓝 (1 : G)).IsCountablyGenerated] {U : Set G} (hU : U ∈ 𝓝 (1 : G)) :
+    ∃ V : ℕ → Set G, IsClosed (V 0) ∧ V 0 ⊆ U ∧ (∀ n, V n ∈ 𝓝 (1 : G)) ∧
+      (∀ n, V (n + 1) * V (n + 1) ⊆ V n) ∧ (∀ S ∈ 𝓝 (1 : G), ∃ n, V n ⊆ S) := by
+  obtain ⟨W, hW⟩ := Filter.exists_antitone_basis (𝓝 (1 : G))
+  obtain ⟨φ, hφ_basis, hφ⟩ := hW.exists_subbasis_mul_closure_subset
+  let B : ℕ → Set G := W ∘ φ
+  obtain ⟨k, -, hk⟩ := hφ_basis.toHasBasis.mem_iff.mp hU
+  let V : ℕ → Set G := fun n ↦ match n with
+    | 0 => closure (B (k + 1))
+    | n + 1 => B (k + n + 2)
+  refine ⟨V, isClosed_closure, (hφ k).2.trans hk, fun n ↦ ?_, fun n ↦ ?_, fun S hS ↦ ?_⟩
+  · cases n with
+    | zero => exact Filter.mem_of_superset (hφ_basis.toHasBasis.mem_of_mem trivial) subset_closure
+    | succ n => exact hφ_basis.toHasBasis.mem_of_mem trivial
+  · cases n with
+    | zero => exact (hφ (k + 1)).1.trans subset_closure
+    | succ n => exact (hφ (k + n + 2)).1
+  · obtain ⟨m, -, hm⟩ := hφ_basis.toHasBasis.mem_iff.mp hS
+    exact ⟨m + 1, (hφ_basis.antitone (by omega)).trans hm⟩
 
 end
 

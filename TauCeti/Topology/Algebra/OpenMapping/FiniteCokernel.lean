@@ -8,7 +8,7 @@ module
 public import TauCeti.Topology.Algebra.OpenMapping.ClosedRange
 public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-import TauCeti.Analysis.Normed.Ring.ZeroSequenceOfUnits
+import TauCeti.Analysis.Normed.Ring.PseudoUniformizer
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -27,11 +27,7 @@ assuming jointly continuous scalar multiplication (`ContinuousSMul`) on both spa
   topological vector space (with `ContinuousSMul` on both spaces) with finite-dimensional cokernel
   has closed range.
 
-## Attribution & References
-
-The coproduct argument generalizes the former Banach-space proof of
-`ContinuousLinearMap.isClosed_range_of_finite_coker` in
-`TauCeti/Analysis/Fredholm/ClosedRange.lean`.
+## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, Appendix A.1 (for the
   Banach-space closed-range criterion from a finite-dimensional cokernel).
@@ -66,9 +62,7 @@ theorem isClosed_range_of_finite_coker {𝕜 E F : Type*}
   have : IsUniformAddGroup G := isUniformAddGroup_of_addCommGroup
   have : CompleteSpace G := FiniteDimensional.completeSpace 𝕜 G
   have : FirstCountableTopology G := FiniteDimensional.firstCountableTopology 𝕜 G
-  exact f.isClosed_range_of_isCompl_of_completeSpace_right G hG
-    (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)
-    (fun _ ↦ (continuous_id.smul continuous_const).continuousAt)
+  exact f.isClosed_range_of_isCompl_of_completeSpace_right_of_continuousSMul G hG
 
 end ContinuousLinearMap
 
