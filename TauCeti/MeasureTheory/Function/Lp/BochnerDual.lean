@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.Analysis.Normed.Operator.Norming
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -74,16 +75,6 @@ variable {α 𝕜 E F : Type*} [RCLike 𝕜] {mα : MeasurableSpace α} {μ : Me
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q]
 
-/-- A bilinear form that norms `E` almost attains the norm of each `e` on the unit ball. -/
-private theorem exists_norm_le_one_mul_norm_le (B : E →L[𝕜] F →L[𝕜] 𝕜)
-    (hB : ∀ e, ‖e‖ ≤ ‖B e‖) {θ : ℝ} (hθ : θ < 1) (e : E) :
-    ∃ y : F, ‖y‖ ≤ 1 ∧ θ * ‖e‖ ≤ ‖B e y‖ := by
-  rcases eq_or_ne e 0 with rfl | he
-  · exact ⟨0, by simp⟩
-  obtain ⟨y, hy, hlt⟩ := (B e).exists_lt_apply_of_lt_opNorm
-    ((mul_lt_of_lt_one_left (norm_pos_iff.2 he) hθ).trans_le (hB e))
-  exact ⟨y, hy.le, hlt.le⟩
-
 /-- **Norming of `Lᵖ` by a norming pairing, simple functions.** For a simple function `g` and
 `θ < 1`, the extended norm of `B.lpPairing μ p q g` is at least `θ ‖g‖_p`. -/
 private theorem mul_eLpNorm_le_enorm_lpPairing (B : E →L[𝕜] F →L[𝕜] 𝕜)
@@ -93,7 +84,7 @@ private theorem mul_eLpNorm_le_enorm_lpPairing (B : E →L[𝕜] F →L[𝕜] �
   set θ := a.toReal
   have hθ : θ < 1 := by
     simpa [θ] using ENNReal.toReal_strict_mono ENNReal.one_ne_top ha
-  choose c hc1 hc2 using exists_norm_le_one_mul_norm_le B hB hθ
+  choose c hc1 hc2 using fun e : E ↦ (B e).exists_norm_le_one_mul_opNorm_le hθ
   -- The scalar simple function `x ↦ B (ψ x) (c (ψ x))` dominates `θ ‖ψ‖`.
   set h : SimpleFunc α 𝕜 := ψ.map fun e ↦ B e (c e)
   have hψp : MemLp ψ p μ := (Lp.memLp g).ae_eq hψ.symm
@@ -130,7 +121,7 @@ private theorem mul_eLpNorm_le_enorm_lpPairing (B : E →L[𝕜] F →L[𝕜] �
     _ ≤ eLpNorm h p μ := eLpNorm_mono (ψ.aestronglyMeasurable.const_smul _) fun x ↦ by
         rw [Pi.smul_apply, norm_smul, RCLike.norm_ofReal, abs_of_nonneg ENNReal.toReal_nonneg,
           SimpleFunc.map_apply]
-        exact hc2 (ψ x)
+        exact (mul_le_mul_of_nonneg_left (hB _) ENNReal.toReal_nonneg).trans (hc2 (ψ x))
     _ ≤ ‖B.lpPairing μ p q g‖ₑ := hh
 
 /-- **Norming of `Lᵖ` by a norming pairing, `p < ∞`.** Let `B : E →L[𝕜] F →L[𝕜] 𝕜` norm `E`,
