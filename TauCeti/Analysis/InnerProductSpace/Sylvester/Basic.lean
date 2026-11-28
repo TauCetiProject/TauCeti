@@ -105,6 +105,12 @@ theorem sylvester_apply (A : E →L[𝕜] E) (B : F →L[𝕜] F) (X : F →L[�
     A.sylvester B X = A ∘L X - X ∘L B := by
   simp [sylvester]
 
+/-- Multiplication form of `ContinuousLinearMap.sylvester_apply` for endomorphisms on a
+seminormed space. -/
+theorem mul_sub_mul_eq_sylvester (A B X : E →L[𝕜] E) :
+    A * X - X * B = A.sylvester B X := by
+  rw [mul_def, mul_def, sylvester_apply]
+
 /-- The Sylvester operator is unchanged when both operators are shifted by the same scalar:
 `(A - c) X - X (B - c) = A X - X B`. -/
 @[simp]

@@ -23,9 +23,12 @@ spectral integral `(A.spectralPVM hA).integral`:
   eigenvalue `r`, `(A.spectralPVM hA).integral g` acts as multiplication by `g r`.
 * `LinearPMap.spectralPVM_integral_eq_diagonal`: in any orthonormal eigenbasis of `A`,
   `(A.spectralPVM hA).integral g` is diagonal with entries `g (lam i)`.
-* `LinearPMap.spectralPVM_integral_apply_of_anticommute` and
-  `LinearPMap.mul_spectralPVM_integral_of_anticommute`: any bounded operator preserving `D(A)` and
-  anticommuting with `A` anticommutes with `(A.spectralPVM hA).integral g` for odd `g`.
+* `LinearPMap.spectralPVM_integral_apply_of_anticommute`: on an eigenvector of `A` with real
+  eigenvalue `r`, `(A.spectralPVM hA).integral g (γ x) = g (-r) • γ x` when `γ` preserves `D(A)`
+  and anticommutes with `A`.
+* `LinearPMap.mul_spectralPVM_integral_of_anticommute`: when `A` has compact resolvent, any bounded
+  operator preserving `D(A)` and anticommuting with `A` anticommutes with
+  `(A.spectralPVM hA).integral g` for odd `g`.
 -/
 
 public section
@@ -99,9 +102,9 @@ theorem spectralPVM_integral_apply_of_anticommute (hA : IsSelfAdjoint A)
   rw [← Complex.ofReal_neg] at hγeig
   exact spectralPVM_integral_apply_of_apply_eq_smul hA g ⟨γ x, hγdom x x.property⟩ hγeig
 
-/-- **Anticommutation with odd functions.** If a bounded operator `γ` preserves the domain of `A`
-and anticommutes with `A` on `D(A)`, then `γ` anticommutes with `(A.spectralPVM hA).integral g` for
-every bounded Borel odd function `g`. -/
+/-- **Anticommutation with odd functions.** If `A` has compact resolvent and a bounded operator
+`γ` preserves the domain of `A` and anticommutes with `A` on `D(A)`, then `γ` anticommutes with
+`(A.spectralPVM hA).integral g` for every bounded Borel odd function `g`. -/
 theorem mul_spectralPVM_integral_of_anticommute (hA : IsSelfAdjoint A) (h : A.HasCompactResolvent)
     {γ : H →L[ℂ] H} (hγdom : ∀ x ∈ A.domain, γ x ∈ A.domain)
     (hγA : ∀ x : A.domain, γ (A x) = -A ⟨γ x, hγdom x x.property⟩)

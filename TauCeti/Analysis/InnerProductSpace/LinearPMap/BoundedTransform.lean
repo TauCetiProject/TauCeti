@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ProjValMeasure.Eigenbasis
-public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.OneAddSq
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Sylvester
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.Eigenbasis
@@ -30,8 +29,9 @@ is compact with `‖[F_A, T]‖ ≤ ‖C‖`.
 
 ## Main definitions & results
 
-* `LinearPMap.boundedTransform`, `LinearPMap.isSelfAdjoint_boundedTransform`,
-  `LinearPMap.norm_boundedTransform_le_one`, `LinearPMap.one_sub_boundedTransform_mul_self`.
+* `LinearPMap.boundedTransform`, `LinearPMap.boundedTransform_eq_spectralPVM_integral`,
+  `LinearPMap.isSelfAdjoint_boundedTransform`, `LinearPMap.norm_boundedTransform_le_one`,
+  `LinearPMap.one_sub_boundedTransform_mul_self`.
 * `LinearPMap.isCompactOperator_commutator_boundedTransform`,
   `LinearPMap.norm_commutator_boundedTransform_le`: the Baaj–Julg commutator theorem.
 
@@ -57,20 +57,12 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteS
 
 section BoundedTransform
 
-private theorem norm_div_sqrt_one_add_sq_le_one (t : ℝ) :
-    ‖((t / Real.sqrt (1 + t ^ 2) : ℝ) : ℂ)‖ ≤ 1 := by
-  simpa only [Complex.norm_real, Real.norm_eq_abs, add_comm 1 (t ^ 2)] using
-    Real.abs_div_sqrt_sq_add_le_one zero_le_one t
-
 private def boundedTransformSymbol : BoundedBorelFunction ℝ :=
   BoundedBorelFunction.ofFunction (fun t ↦ ((t / Real.sqrt (1 + t ^ 2) : ℝ) : ℂ))
     (Continuous.measurable <| by fun_prop (disch := intro t; positivity))
-    ⟨1, zero_le_one, norm_div_sqrt_one_add_sq_le_one⟩
-
-private theorem norm_boundedTransformSymbol_le (t : ℝ) :
-    ‖boundedTransformSymbol t‖ ≤ 1 := by
-  simpa only [boundedTransformSymbol, BoundedBorelFunction.ofFunction_apply] using
-    norm_div_sqrt_one_add_sq_le_one t
+    ⟨1, zero_le_one, fun t ↦ by
+      simpa only [Complex.norm_real, Real.norm_eq_abs, add_comm 1 (t ^ 2)] using
+        Real.abs_div_sqrt_sq_add_le_one zero_le_one t⟩
 
 /-- The **bounded transform** (or Woronowicz–Baaj–Julg transform) `F_A = A (1 + A²)⁻¹/²` of a
 self-adjoint operator `A`, defined as the bounded spectral integral of `t ↦ t / √(1 + t²)`. -/
@@ -78,6 +70,16 @@ def boundedTransform (A : H →ₗ.[ℂ] H) (hA : IsSelfAdjoint A) : H →L[ℂ]
   (A.spectralPVM hA).integral boundedTransformSymbol
 
 variable (hA : IsSelfAdjoint A)
+
+/-- **`F_A` is a spectral integral.** For a self-adjoint operator `A`, `A.boundedTransform hA` is
+the spectral integral of any bounded Borel symbol equal to `t ↦ t / √(1 + t²)`. -/
+theorem boundedTransform_eq_spectralPVM_integral (f : BoundedBorelFunction ℝ)
+    (hf : ∀ t : ℝ, f t = ((t / Real.sqrt (1 + t ^ 2) : ℝ) : ℂ)) :
+    A.boundedTransform hA = (A.spectralPVM hA).integral f := by
+  rw [boundedTransform]
+  congr 1
+  ext t
+  simp [boundedTransformSymbol, hf]
 
 /-- In any orthonormal eigenbasis of `A`, the bounded transform acts diagonally by
 `λᵢ / √(1 + λᵢ²)`. -/
@@ -110,27 +112,10 @@ theorem star_boundedTransform : star (A.boundedTransform hA) = A.boundedTransfor
 
 /-- The bounded transform is a contraction: `‖A (1 + A²)⁻¹/²‖ ≤ 1`. -/
 theorem norm_boundedTransform_le_one : ‖A.boundedTransform hA‖ ≤ 1 :=
-  (A.spectralPVM hA).norm_integral_le zero_le_one norm_boundedTransformSymbol_le
-
-/-- **`(1 + A²)⁻¹` is a spectral integral.** For a self-adjoint operator `A`, `(1 + A²)⁻¹` is the
-spectral integral of any bounded Borel symbol equal to `t ↦ (1 + t²)⁻¹`. -/
-theorem invOneAddSq_eq_spectralPVM_integral (f : BoundedBorelFunction ℝ)
-    (hf : ∀ t : ℝ, f t = ((1 + t ^ 2 : ℝ)⁻¹ : ℂ)) :
-    A.invOneAddSq = (A.spectralPVM hA).integral f := by
-  have hnegI : (-Complex.I).im ≠ 0 := by simp
-  have hI : Complex.I.im ≠ 0 := by simp
-  have hres : A.invOneAddSq = (A.spectralPVM hA).integral
-      (BoundedBorelFunction.resolventSymbol (-Complex.I) hnegI *
-        BoundedBorelFunction.resolventSymbol Complex.I hI) := by
-    simp [invOneAddSq_def, ContinuousLinearMap.mul_def,
-      hA.integral_spectralPVM_resolventSymbol]
-  rw [hres]
-  congr 1
-  ext t
-  simp only [_root_.mul_apply, BoundedBorelFunction.resolventSymbol_apply, hf]
-  have h1 : (-Complex.I - (t : ℂ)) * (Complex.I - (t : ℂ)) = ((1 + t ^ 2 : ℝ) : ℂ) := by
-    push_cast; linear_combination -Complex.I_sq
-  rw [← mul_inv, h1]
+  (A.spectralPVM hA).norm_integral_le zero_le_one fun t ↦ by
+    simpa only [boundedTransformSymbol, BoundedBorelFunction.ofFunction_apply,
+      Complex.norm_real, Real.norm_eq_abs, add_comm 1 (t ^ 2)] using
+      Real.abs_div_sqrt_sq_add_le_one zero_le_one t
 
 /-- **`1 - F_A² = (1 + A²)⁻¹`.** -/
 theorem one_sub_boundedTransform_mul_self :
@@ -164,7 +149,8 @@ theorem boundedTransform_conj {H' : Type*} [NormedAddCommGroup H']
       U.conjStarAlgEquiv (A.boundedTransform hA) :=
   spectralPVM_integral_conj hA U boundedTransformSymbol
 
-/-- Any bounded operator preserving `D(A)` and anticommuting with `A` anticommutes with `F_A`. -/
+/-- If `A` has compact resolvent, any bounded operator preserving `D(A)` and anticommuting with `A`
+anticommutes with `F_A`. -/
 theorem mul_boundedTransform_of_anticommute (h : A.HasCompactResolvent) {γ : H →L[ℂ] H}
     (hγdom : ∀ x ∈ A.domain, γ x ∈ A.domain)
     (hγA : ∀ x : A.domain, γ (A x) = -A ⟨γ x, hγdom x x.property⟩) :
@@ -264,12 +250,6 @@ private theorem continuous_bjMulRes (hA : IsSelfAdjoint A) : Continuous (bjMulRe
       (adjoint_resolvent_I_bjShift hA)
   exact (continuous_const (y := -(2 : ℂ)⁻¹)).smul (hcont_pos.add hcont_neg)
 
-omit [CompleteSpace H] in
-private theorem mul_sub_mul_eq_sylvester (X Y : H →L[ℂ] H) :
-    X * Y - Y * X = X.sylvester X Y := by
-  rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.mul_def,
-    ← ContinuousLinearMap.sylvester_apply]
-
 private theorem norm_bjMulRes_commutator_le (hA : IsSelfAdjoint A) {T C : H →L[ℂ] H}
     (hTC : SylvesterEquation A A T C) {r : ℝ} (hr : 0 ≤ r) :
     ‖bjMulRes A r * T - T * bjMulRes A r‖ ≤ ‖C‖ * (1 + r)⁻¹ := by
@@ -277,7 +257,7 @@ private theorem norm_bjMulRes_commutator_le (hA : IsSelfAdjoint A) {T C : H →L
       -(2 : ℂ)⁻¹ • (A.resolvent (Complex.I * bjShift r) * C * A.resolvent (Complex.I * bjShift r) +
         A.resolvent (-Complex.I * bjShift r) * C * A.resolvent (-Complex.I * bjShift r)) := by
     have hlin (X : H →L[ℂ] H) : X * T - T * X = (-(T.sylvester T)) X := by
-      rw [_root_.neg_apply, ← mul_sub_mul_eq_sylvester, neg_sub]
+      rw [_root_.neg_apply, ← ContinuousLinearMap.mul_sub_mul_eq_sylvester, neg_sub]
     rw [hlin, bjMulRes, ContinuousLinearMap.map_smul, ContinuousLinearMap.map_add,
       ← hlin, ← hlin,
       hTC.resolvent_mul_sub_mul_resolvent (mem_resolventSet_I_bjShift hA r),
@@ -384,14 +364,14 @@ private theorem commutator_boundedTransform_eq_integral (h : A.HasCompactResolve
   have hinner (r : ℝ) (hr : 0 < r) : ⟪b i, bjIntegrand A T r (b j)⟫_ℂ =
       (bjKernel (lam i) r - bjKernel (lam j) r) * ⟪b i, T (b j)⟫_ℂ := by
     rw [bjIntegrand, _root_.smul_apply, ← Complex.coe_smul, inner_smul_right,
-      mul_sub_mul_eq_sylvester,
+      ContinuousLinearMap.mul_sub_mul_eq_sylvester,
       ContinuousLinearMap.inner_sylvester_apply_of_apply_eq_smul
         (α := lam i / (1 + r + lam i ^ 2)) (isSelfAdjoint_bjMulRes hA r).isSymmetric T
         (bjMulRes_apply_basis hA hb hr.le i) (bjMulRes_apply_basis hA hb hr.le j)]
     simp only [bjKernel, bjKernelReal, Complex.ofRealCLM_apply,
       Complex.coe_algebraMap, add_right_comm 1 r]
     push_cast; ring
-  rw [mul_sub_mul_eq_sylvester,
+  rw [ContinuousLinearMap.mul_sub_mul_eq_sylvester,
     ContinuousLinearMap.inner_sylvester_apply_of_apply_eq_smul
       (α := lam i / Real.sqrt (1 + lam i ^ 2))
       (A.isSelfAdjoint_boundedTransform hA).isSymmetric T (hF_eig i) (hF_eig j),
