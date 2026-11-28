@@ -22,6 +22,7 @@ The file also records that, in a ring without zero divisors, a unit `u` other th
 its own inverse in the form `u - u⁻¹ ≠ 0`, as used for quantum integers at `δ = u + u⁻¹`.
 It finally records that a pair of units `r + s = 1` gives the pair `r⁻¹ + (-(s r⁻¹)) = 1`, the
 step reducing the Steinberg relation for the tame symbol from negative to positive order.
+If the commutator of `p` with a unit `u` is `u`, then that of `p` with `u⁻¹` is `-u⁻¹`.
 In a semiring, if `q` is a two-sided inverse of `p` and `n₁ q n₂ = 0`, then
 `(p + n₁) q (p + n₂) = p + n₁ + n₂`: this splits an invertible matrix over a unitization of a
 product into its two factors.
@@ -34,6 +35,7 @@ product into its two factors.
   `u - u⁻¹ ≠ 0`.
 * `Units.val_inv_add_val_neg_mul_inv_eq_one`: if `r + s = 1` for units, then
   `r⁻¹ + (-(s r⁻¹)) = 1`.
+* `Units.mul_inv_eq_inv_mul_sub_inv`: if `[p, u] = u` for a unit `u`, then `[p, u⁻¹] = -u⁻¹`.
 * `TauCeti.add_mul_mul_add_of_mul_eq_one`: if `p q = q p = 1` and `n₁ q n₂ = 0`, then
   `(p + n₁) q (p + n₂) = p + n₁ + n₂`.
 -/
@@ -75,6 +77,15 @@ theorem val_inv_add_val_neg_mul_inv_eq_one {r s : Rˣ} (h : (r : R) + s = 1) :
     ((r⁻¹ : Rˣ) : R) + ((-(s * r⁻¹) : Rˣ) : R) = 1 := by
   rw [Units.val_neg, Units.val_mul, ← sub_eq_add_neg, ← one_sub_mul, ← eq_sub_of_add_eq h,
     Units.mul_inv]
+
+/-- If `p u = u p + u`, that is `[p, u] = u`, then `p u⁻¹ = u⁻¹ p - u⁻¹`, that is
+`[p, u⁻¹] = -u⁻¹`. -/
+theorem mul_inv_eq_inv_mul_sub_inv {p : R} {u : Rˣ} (h : p * u = u * p + u) :
+    p * ↑u⁻¹ = ↑u⁻¹ * p - ↑u⁻¹ := by
+  -- Conjugate `h` by `u⁻¹`.
+  have h' := congr(↑u⁻¹ * $h * ↑u⁻¹)
+  simp only [mul_add, add_mul, mul_assoc, Units.mul_inv, mul_one, Units.inv_mul_cancel_left] at h'
+  rw [h', add_sub_cancel_right]
 
 variable [NoZeroDivisors R]
 

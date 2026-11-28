@@ -12,7 +12,7 @@ public import TauCeti.LinearAlgebra.RootSystem.Empty
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Transport
 import Mathlib.LinearAlgebra.Transvection.Basic
-import TauCeti.LinearAlgebra.RootSystem.Isomorphism
+import TauCeti.LinearAlgebra.RootSystem.Isomorphism.Basic
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Automorphism
 
 /-!

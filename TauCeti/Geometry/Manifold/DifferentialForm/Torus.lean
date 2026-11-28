@@ -94,7 +94,9 @@ volume form is the constant `1`, so a point factor `T^0` does not contribute to 
 * `TauCeti.torusVolumeForm_apply`, `TauCeti.torusVolumeForm_apply_ne_zero`: the determinant
   formula for the volume form, which vanishes nowhere, and its two-dimensional case
   `TauCeti.torusVolumeForm_fin_two_apply`, `dt₀ ∧ dt₁ (v, w) = v₀ w₁ - w₀ v₁`;
-  `TauCeti.torusVolumeForm_apply_eq_apply_zero`: its coefficients are constant.
+  `TauCeti.torusVolumeForm_apply_eq_apply_zero`,
+  `TauCeti.smul_torusVolumeForm_apply_eq_apply_zero`: its coefficients, and those of its constant
+  multiples, are constant.
 * `TauCeti.mpullback_reindex_torusVolumeForm`,
   `TauCeti.mpullback_piMap_diffeomorphAddCircle_torusVolumeForm`: the permutation sign law and the
   rescaling law for the volume form.
@@ -384,6 +386,13 @@ theorem torusVolumeForm_apply_eq_apply_zero (x : ∀ i, AddCircle (p i)) :
   ext w
   -- Both sides are the determinant of `w`, read at the points `x` and `0`.
   exact (torusVolumeForm_apply p x w).trans (torusVolumeForm_apply p 0 w).symm
+
+/-- Every constant multiple `A dt_0 ∧ ⋯ ∧ dt_(n-1)` of the volume form of the torus has constant
+coefficients in the product charts. -/
+theorem smul_torusVolumeForm_apply_eq_apply_zero (A : ℝ) (x : ∀ i, AddCircle (p i)) :
+    ((A • torusVolumeForm p).val x : (Fin n → ℝ) [⋀^Fin n]→L[ℝ] ℝ) =
+      (A • torusVolumeForm p).val 0 :=
+  congrArg (A • ·) (torusVolumeForm_apply_eq_apply_zero p x)
 
 /-- The volume form of the torus takes the value `1` on the coordinate basis of a tangent
 space. -/

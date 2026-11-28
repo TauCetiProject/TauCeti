@@ -50,6 +50,10 @@ this compares base change to the fibre ring `B ⊗[R] κ(p)` with base change to
   whose image in `Q` is a unit has an `R`-linear right inverse.
 * `TensorProduct.AlgebraTensorModule.cancelBaseChangeTensor`: tensoring with two
   scalar-extended modules cancels both copies of the extended coefficient ring.
+* `TensorProduct.congrIntModule`: `A`-linear equivalence between tensor products `A ⊗[ℤ] M`
+  built from any two `ℤ`-module structures on a commutative ring `A`.
+* `LinearEquiv.baseChangeₛₗ`: a `σ`-semilinear equivalence `M ≃ M'` and a ring isomorphism
+  `τ : A → B` restricting to `σ` give the `τ`-semilinear equivalence `A ⊗[R] M ≃ B ⊗[S] M'`.
 -/
 
 public section
@@ -335,4 +339,77 @@ theorem exists_smul_linearMap_eq_self {P : Type*} [AddCommMonoid P] [Module R P]
 
 end Invertible
 
+section IntModule
+
+/-- Any two `ℤ`-module structures on a commutative ring `A` (such as `AddCommGroup.toIntModule A`
+and `Algebra.toModule` from an `Algebra ℤ A` instance) yield `A`-linearly isomorphic tensor
+products `A ⊗[ℤ] M`. -/
+def congrIntModule (A M : Type*) [CommRing A] [AddCommGroup M] [Module ℤ M]
+    (m₁ m₂ : Module ℤ A) [@SMulCommClass ℤ A A m₁.toSMul _]
+    [@SMulCommClass ℤ A A m₂.toSMul _] :
+    (@TensorProduct ℤ _ A M _ _ m₁ _) ≃ₗ[A] (@TensorProduct ℤ _ A M _ _ m₂ _) := by
+  obtain rfl : m₁ = m₂ := Subsingleton.elim m₁ m₂
+  exact LinearEquiv.refl A _
+
+/-- `TensorProduct.congrIntModule` sends a pure tensor `a ⊗ₜ[ℤ] x` to the corresponding pure
+tensor for the target `ℤ`-module structure. -/
+@[simp]
+theorem congrIntModule_tmul (A M : Type*) [CommRing A] [AddCommGroup M] [Module ℤ M]
+    (m₁ m₂ : Module ℤ A) [@SMulCommClass ℤ A A m₁.toSMul _]
+    [@SMulCommClass ℤ A A m₂.toSMul _] (a : A) (x : M) :
+    congrIntModule A M m₁ m₂ (@TensorProduct.tmul ℤ _ A M _ _ m₁ _ a x) =
+      @TensorProduct.tmul ℤ _ A M _ _ m₂ _ a x := by
+  obtain rfl : m₁ = m₂ := Subsingleton.elim m₁ m₂
+  rfl
+
+/-- The inverse of `TensorProduct.congrIntModule` swaps the two `ℤ`-module structures. -/
+@[simp]
+theorem congrIntModule_symm (A M : Type*) [CommRing A] [AddCommGroup M] [Module ℤ M]
+    (m₁ m₂ : Module ℤ A) [@SMulCommClass ℤ A A m₁.toSMul _]
+    [@SMulCommClass ℤ A A m₂.toSMul _] :
+    (congrIntModule A M m₁ m₂).symm = congrIntModule A M m₂ m₁ := by
+  obtain rfl : m₁ = m₂ := Subsingleton.elim m₁ m₂
+  rfl
+
+end IntModule
+
 end TensorProduct
+
+namespace LinearEquiv
+
+open TensorProduct
+
+variable {R S A B M M' : Type*} [CommSemiring R] [CommSemiring S] [Semiring A] [Semiring B]
+  [Algebra R A] [Algebra S B]
+  {σ : R →+* S} {σ' : S →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+  {τ : A →+* B} {τ' : B →+* A} [RingHomInvPair τ τ'] [RingHomInvPair τ' τ]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid M'] [Module S M']
+
+/-- The scalar extension of a semilinear equivalence along a compatible ring isomorphism: for a
+`σ`-semilinear equivalence `f : M ≃ₛₗ[σ] M'` and a ring isomorphism `τ : A → B` of algebras that
+restricts to `σ` on scalars, the `τ`-semilinear equivalence `A ⊗[R] M ≃ B ⊗[S] M'` sending
+`a ⊗ m` to `τ a ⊗ f m`. -/
+def baseChangeₛₗ (f : M ≃ₛₗ[σ] M') (h : ∀ r, τ (algebraMap R A r) = algebraMap S B (σ r)) :
+    A ⊗[R] M ≃ₛₗ[τ] B ⊗[S] M' where
+  __ := TensorProduct.congr
+    { __ := (RingHomInvPair.toRingEquiv τ τ').toAddEquiv
+      map_smul' r a := by simp [Algebra.smul_def, h] : A ≃ₛₗ[σ] B } f
+  map_smul' a t := by
+    induction t with
+    | tmul b m => simp [smul_tmul']
+    | add x y hx hy => simp_all
+
+variable (f : M ≃ₛₗ[σ] M') (h : ∀ r, τ (algebraMap R A r) = algebraMap S B (σ r))
+
+/-- `LinearEquiv.baseChangeₛₗ` sends `a ⊗ m` to `τ a ⊗ f m`. -/
+@[simp]
+theorem baseChangeₛₗ_tmul (a : A) (m : M) : baseChangeₛₗ f h (a ⊗ₜ m) = τ a ⊗ₜ f m :=
+  (rfl)
+
+/-- The inverse of `LinearEquiv.baseChangeₛₗ` sends `b ⊗ m` to `τ' b ⊗ f.symm m`. -/
+@[simp]
+theorem baseChangeₛₗ_symm_tmul (b : B) (m : M') :
+    (baseChangeₛₗ f h).symm (b ⊗ₜ m) = τ' b ⊗ₜ f.symm m :=
+  (rfl)
+
+end LinearEquiv

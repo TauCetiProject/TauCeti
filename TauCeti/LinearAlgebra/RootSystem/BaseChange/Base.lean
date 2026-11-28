@@ -5,39 +5,30 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.RootSystem.BaseChange
-public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Basic
+public import TauCeti.LinearAlgebra.RootSystem.CoefficientReflection
 import TauCeti.Algebra.Group.Submonoid.Closure
 
 /-!
-# Pullback and scalar extension of root-pairing bases
+# Pullback and extension of scalars of a base
 
-This file provides foundational transport operations for `RootPairing.Base` without depending on
-automorphism or Weyl-group theory:
+This file provides transport operations for `RootPairing.Base`:
 
 * Pulling back a base `b : P.Base` along injective `R`-linear maps `fM : M₀ →ₗ[R] M` and
   `fN : N₀ →ₗ[R] N` compatible with roots and coroots over a faithful `R`-algebra `S`
-  (`RootPairing.Base.comapOfInjective`).
-* Extending scalars of a base `b : P.Base` along `RootPairing.baseChange`
-  (`TauCeti/LinearAlgebra/RootSystem/BaseChange/Basic.lean`) for a faithful flat `R`-algebra `S`
-  and a finite free coweight module `N` (`RootPairing.Base.baseChange`), together with invariance of
-  the `T`-valued and integral Cartan matrices (`RootPairing.Base.cartanMatrixIn_baseChange_apply`,
-  `RootPairing.Base.cartanMatrix_baseChange_apply`).
+  (`RootPairing.Base.comapOfInjective`, `RootPairing.Base.support_comapOfInjective`).
+* Extending a base of a root pairing along an injective flat ring map to a base of the
+  tensor-product root pairing (`RootPairing.Base.baseChange`), with the same simple-root indices.
+  The positive cones, integer root coefficients, heights and Cartan matrices are preserved. No
+  spanning hypothesis is imposed on the roots or coroots: in particular this construction applies to
+  integral reductive root data with central directions in their character and cocharacter lattices.
 
-## Main definitions
+For an integral datum, `b.baseChange ℚ` gives its chosen base over the rationals. One can then
+restrict to the rational root and coroot spans using `Base.restrictScalars'` and decompose into
+based irreducible components.
 
-* `RootPairing.Base.comapOfInjective`: pullback of a base along injective `R`-linear maps over a
-  faithful `R`-algebra.
-* `RootPairing.Base.baseChange`: scalar extension of a base along `RootPairing.baseChange`.
-
-## Main results
-
-* `RootPairing.Base.support_comapOfInjective` and `RootPairing.Base.support_baseChange`: base
-  transport leaves `support` unchanged.
-* `RootPairing.Base.cartanMatrixIn_baseChange_apply` and
-  `RootPairing.Base.cartanMatrix_baseChange_apply`: scalar extension preserves every entry of the
-  `T`-valued and integral Cartan matrices.
+The root pairing itself is `RootPairing.baseChange`; preservation of linear independence uses
+Mathlib's `Module.Flat.linearIndependent_one_tmul`.
 
 ## References
 
@@ -49,7 +40,7 @@ automorphism or Weyl-group theory:
 
 public section
 
-open Function Module Set
+open Function Module TensorProduct Set
 
 namespace RootPairing
 
@@ -86,53 +77,83 @@ noncomputable def Base.comapOfInjective : P₀.Base where
 
 end BaseComap
 
-section BaseBaseChange
-
-variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  {P : RootPairing ι R M N}
-
-variable (b : P.Base) (S : Type*) [CommRing S] [Algebra R S] [FaithfulSMul R S] [Flat R S]
+variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] (P : RootPairing ι R M N)
+  (S : Type*) [CommRing S] [Algebra R S] [FaithfulSMul R S]
   [Free R N] [Module.Finite R N]
 
-/-- **Extension of scalars of a base**: the base of `P.baseChange S` with the same simple root
-indices `b.support`. -/
+variable {P} (b : P.Base) [Flat R S]
+
+/-- Extension of a base along an injective flat ring map, on the same simple-root support. -/
 noncomputable def Base.baseChange : (P.baseChange S).Base where
   support := b.support
   linearIndepOn_root := by
-    simpa only [LinearIndepOn, Function.comp_def, P.baseChange_root S] using
-      Module.Flat.linearIndependent_one_tmul (S := S) b.linearIndepOn_root
+    simpa only [LinearIndepOn, baseChange_root] using
+      (Flat.linearIndependent_one_tmul (S := S) b.linearIndepOn_root)
   linearIndepOn_coroot := by
-    simpa only [LinearIndepOn, Function.comp_def, P.baseChange_coroot S] using
-      Module.Flat.linearIndependent_one_tmul (S := S) b.linearIndepOn_coroot
-  root_mem_or_neg_mem i := by
-    simpa only [← image_comp, Function.comp_def, LinearMap.toAddMonoidHom_coe,
-      TensorProduct.mk_apply, P.baseChange_root S] using
-      (TensorProduct.mk R S M 1).toAddMonoidHom.map_mem_closure_image_or_neg_mem
-        (b.root_mem_or_neg_mem i)
-  coroot_mem_or_neg_mem i := by
-    simpa only [← image_comp, Function.comp_def, LinearMap.toAddMonoidHom_coe,
-      TensorProduct.mk_apply, P.baseChange_coroot S] using
-      (TensorProduct.mk R S N 1).toAddMonoidHom.map_mem_closure_image_or_neg_mem
-        (b.coroot_mem_or_neg_mem i)
+    simpa only [LinearIndepOn, baseChange_coroot] using
+      (Flat.linearIndependent_one_tmul (S := S) b.linearIndepOn_coroot)
+  root_mem_or_neg_mem i := (b.root_mem_or_neg_mem i).imp
+    (fun h ↦ by simpa only [baseChange_root] using (P.mem_closure_root_baseChange_iff S).mpr h)
+    fun h ↦ by
+      simpa only [baseChange_root, tmul_neg] using (P.mem_closure_root_baseChange_iff S).mpr h
+  coroot_mem_or_neg_mem i := (b.coroot_mem_or_neg_mem i).imp
+    (fun h ↦ by simpa only [baseChange_coroot] using
+      (P.mem_closure_coroot_baseChange_iff S).mpr h)
+    fun h ↦ by
+      simpa only [baseChange_coroot, tmul_neg] using (P.mem_closure_coroot_baseChange_iff S).mpr h
 
-/-- Scalar extension of a base leaves `support` unchanged. -/
-@[simp] theorem Base.support_baseChange : (b.baseChange S).support = b.support := (rfl)
+@[simp]
+theorem Base.support_baseChange : (b.baseChange S).support = b.support := (rfl)
 
-/-- Scalar extension preserves every entry of the `T`-valued Cartan matrix of a base. -/
-@[simp] theorem Base.cartanMatrixIn_baseChange_apply (T : Type*) [CommRing T] [Algebra T R]
-    [Algebra T S] [IsScalarTower T R S] [FaithfulSMul T S] [P.IsValuedIn T]
+/-- The simple-root indices of the extended base are those of the original base. -/
+def Base.supportBaseChangeEquiv : (b.baseChange S).support ≃ b.support :=
+  Equiv.subtypeEquivRight fun _ ↦ by rw [Base.support_baseChange]
+
+@[simp]
+theorem Base.coe_supportBaseChangeEquiv (i : (b.baseChange S).support) :
+    (b.supportBaseChangeEquiv S i : ι) = i := (rfl)
+
+@[simp]
+theorem Base.coe_supportBaseChangeEquiv_symm (i : b.support) :
+    ((b.supportBaseChangeEquiv S).symm i : ι) = i := (rfl)
+
+/-- Extension of scalars preserves the Cartan matrix with values in any common coefficient
+ring. In particular it preserves the integer Cartan matrix of a crystallographic pairing. -/
+@[simp]
+theorem Base.cartanMatrixIn_baseChange (T : Type*) [CommRing T] [Algebra T R] [Algebra T S]
+    [IsScalarTower T R S] [P.IsValuedIn T]
     (i j : (b.baseChange S).support) :
     (b.baseChange S).cartanMatrixIn T i j =
-      b.cartanMatrixIn T ⟨i, (b.support_baseChange S).le i.property⟩
-        ⟨j, (b.support_baseChange S).le j.property⟩ := by simp [Base.cartanMatrixIn_def]
+      b.cartanMatrixIn T (b.supportBaseChangeEquiv S i) (b.supportBaseChangeEquiv S j) := by
+  simp only [Base.cartanMatrixIn, Matrix.of_apply, Base.coe_supportBaseChangeEquiv,
+    baseChange_pairingIn]
 
-/-- Scalar extension preserves every entry of the integral Cartan matrix of a crystallographic
-root pairing. -/
-theorem Base.cartanMatrix_baseChange_apply [CharZero S] [P.IsCrystallographic]
-    (i j : (b.baseChange S).support) :
-    (b.baseChange S).cartanMatrix i j = b.cartanMatrix ⟨i, (b.support_baseChange S).le i.property⟩
-      ⟨j, (b.support_baseChange S).le j.property⟩ := b.cartanMatrixIn_baseChange_apply S ℤ i j
+variable [CharZero R] [CharZero S]
 
-end BaseBaseChange
+/-- The integer simple-root coefficients of an extended root are unchanged. -/
+@[simp]
+theorem Base.rootCoefficients_baseChange (i : ι) (j : (b.baseChange S).support) :
+    (b.baseChange S).rootCoefficients i j =
+      b.rootCoefficients i (b.supportBaseChangeEquiv S j) := by
+  have h : (P.baseChange S).root i =
+      ∑ k : b.support, b.rootCoefficients i k •
+        (P.baseChange S).root k := by
+    simpa only [map_sum, map_zsmul, baseChange_root, TensorProduct.mk_apply] using
+      (congrArg (TensorProduct.mk R S M 1) (b.sum_rootCoefficients_smul_root i)).symm
+  exact (b.baseChange S).rootCoefficients_apply_of_injective Subtype.val_injective
+    (fun k ↦ k.property) h (b.supportBaseChangeEquiv S j)
+
+/-- Extension of a base preserves root heights. -/
+@[simp]
+theorem Base.height_baseChange (i : ι) : (b.baseChange S).height i = b.height i := by
+  rw [← (b.baseChange S).sum_rootCoefficients_eq_height, ← b.sum_rootCoefficients_eq_height]
+  simp only [Base.rootCoefficients_baseChange]
+  exact (b.supportBaseChangeEquiv S).sum_comp _
+
+/-- A root is positive for the extended base exactly when it was positive for the original base. -/
+@[simp]
+theorem Base.isPos_baseChange_iff (i : ι) : (b.baseChange S).IsPos i ↔ b.IsPos i := by
+  simp only [Base.isPos_iff, Base.height_baseChange]
 
 end RootPairing

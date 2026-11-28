@@ -101,6 +101,7 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `(0, ∞)`, on `[0, ∞)`, and everywhere when `0 < s.re`.
 * `TauCeti.ofReal_cpow_mul_inv_mul_inv_cpow` -- for `a > 0` and `w` off the negative real axis,
   `a ^ s * (a⁻¹ * w⁻¹) ^ s = w ^ (-s)`.
+* `Complex.normSq_rpow` -- `normSq z ^ σ = ‖z‖ ^ (2 σ)`.
 * `Complex.mul_cpow_sub_one` -- `x * x ^ (s - 1) = x ^ s` for `x ≠ 0`.
 * `Complex.exp_log_add_mul` -- split an exponential at a principal logarithm.
 * `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half`,
@@ -789,6 +790,11 @@ theorem norm_natCast_add_two_cpow_neg_sub_sub_le {z : ℂ} (hz : 0 ≤ z.re) {k 
 end TauCeti
 
 namespace Complex
+
+/-- A real power of `normSq z = ‖z‖ ^ 2` is a real power of the norm:
+`normSq z ^ σ = ‖z‖ ^ (2 σ)`. -/
+theorem normSq_rpow (z : ℂ) (σ : ℝ) : normSq z ^ σ = ‖z‖ ^ (2 * σ) := by
+  rw [normSq_eq_norm_sq, Real.rpow_mul (norm_nonneg z), Real.rpow_two]
 
 /-- Multiplying a principal power of a nonzero base by the base raises the exponent by one:
 `x * x ^ (s - 1) = x ^ s`. -/

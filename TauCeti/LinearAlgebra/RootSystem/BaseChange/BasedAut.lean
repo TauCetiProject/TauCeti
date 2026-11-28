@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Base
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Lattice
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.BasedAut
 import TauCeti.GroupTheory.Complement.SemidirectProduct
-import TauCeti.LinearAlgebra.RootSystem.Isomorphism
+import TauCeti.LinearAlgebra.RootSystem.Isomorphism.Basic
 import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
