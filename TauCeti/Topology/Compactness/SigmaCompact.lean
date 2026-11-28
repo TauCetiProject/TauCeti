@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Compactness.LocallyCompact
 public import Mathlib.Topology.Compactness.SigmaCompact
+public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 public import TauCeti.Topology.Sets.Opens
 
 /-!
@@ -18,7 +19,11 @@ subsets that exhausts it in the sense that every compact subset lies in one of t
 
 Conversely, compact subsets `Kₙ ⊆ U` of the ambient space with `Kₙ ⊆ interior Kₙ₊₁` that cover
 a subset `U` trace a compact exhaustion of the subspace `U` (`CompactExhaustion.subtype`); such
-a `U` is open (`TauCeti.isOpen_of_subset_interior_succ`).
+a `U` is open (`TauCeti.isOpen_of_subset_interior_succ`). Given two nested exhaustions `D` of `s`
+and `C` of `Ω` with each stage in the interior of the next, every `(x₀, y₀) ∈ s ×ˢ Ω` lies in
+`interior (D (m + 1)) ×ˢ interior (C (m + 1))` for a common index `m`
+(`TauCeti.exists_mem_interior_exhaustion_pair`), and in pseudometric spaces in a product of open
+balls contained therein (`TauCeti.exists_ball_subset_interior_exhaustion_pair`).
 
 In an R₁ space, a locally compact σ-compact open set is the union of an increasing sequence of
 open sets with compact closures inside it (`IsOpen.exists_iUnion_isOpen_isCompact_closure`).
@@ -86,6 +91,41 @@ theorem isOpen_of_subset_interior_succ {X : Type*} [TopologicalSpace X] {U : Set
   refine isOpen_iff_mem_nhds.2 fun x hx ↦ ?_
   obtain ⟨n, hn⟩ := mem_iUnion.1 (hcover hx)
   exact Filter.mem_of_superset (mem_interior_iff_mem_nhds.1 (hsub n hn)) (hKU (n + 1))
+
+/-- Given nested exhaustions `D` of `s` and `C` of `Ω` with `D j ⊆ interior (D (j + 1))` and
+`C j ⊆ interior (C (j + 1))`, every `(x₀, y₀) ∈ s ×ˢ Ω` lies in
+`interior (D (m + 1)) ×ˢ interior (C (m + 1))` for some common index `m`. -/
+theorem exists_mem_interior_exhaustion_pair {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] {s : Set X} {Ω : Set Y} {D : ℕ → Set X} {C : ℕ → Set Y}
+    (hD_step : ∀ j, D j ⊆ interior (D (j + 1))) (hD_uni : ⋃ j, D j = s)
+    (hC_step : ∀ j, C j ⊆ interior (C (j + 1))) (hC_uni : ⋃ j, C j = Ω)
+    {x₀ : X} (hx₀ : x₀ ∈ s) {y₀ : Y} (hy₀ : y₀ ∈ Ω) :
+    ∃ m : ℕ, x₀ ∈ interior (D (m + 1)) ∧ y₀ ∈ interior (C (m + 1)) := by
+  have hD_mono : Monotone D := monotone_nat_of_le_succ fun j ↦ (hD_step j).trans interior_subset
+  have hC_mono : Monotone C := monotone_nat_of_le_succ fun j ↦ (hC_step j).trans interior_subset
+  obtain ⟨m₁, hm₁⟩ := mem_iUnion.1 (hD_uni.symm ▸ hx₀)
+  obtain ⟨m₂, hm₂⟩ := mem_iUnion.1 (hC_uni.symm ▸ hy₀)
+  refine ⟨max m₁ m₂, ?_, ?_⟩
+  · exact hD_step _ (hD_mono (le_max_left m₁ m₂) hm₁)
+  · exact hC_step _ (hC_mono (le_max_right m₁ m₂) hm₂)
+
+open Metric in
+/-- Given nested exhaustions `D` of `s` and `C` of `Ω` in pseudometric spaces with
+`D j ⊆ interior (D (j + 1))` and `C j ⊆ interior (C (j + 1))`, every `(x₀, y₀) ∈ s ×ˢ Ω` admits
+positive radii `ρ, R` and a common index `m` such that `ball x₀ ρ ⊆ interior (D (m + 1))` and
+`ball y₀ R ⊆ interior (C (m + 1))`. -/
+theorem exists_ball_subset_interior_exhaustion_pair {X Y : Type*} [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] {s : Set X} {Ω : Set Y} {D : ℕ → Set X} {C : ℕ → Set Y}
+    (hD_step : ∀ j, D j ⊆ interior (D (j + 1))) (hD_uni : ⋃ j, D j = s)
+    (hC_step : ∀ j, C j ⊆ interior (C (j + 1))) (hC_uni : ⋃ j, C j = Ω)
+    {x₀ : X} (hx₀ : x₀ ∈ s) {y₀ : Y} (hy₀ : y₀ ∈ Ω) :
+    ∃ (m : ℕ) (ρ R : ℝ), 0 < ρ ∧ 0 < R ∧
+      ball x₀ ρ ⊆ interior (D (m + 1)) ∧ ball y₀ R ⊆ interior (C (m + 1)) := by
+  obtain ⟨m, hx', hy'⟩ :=
+    exists_mem_interior_exhaustion_pair hD_step hD_uni hC_step hC_uni hx₀ hy₀
+  obtain ⟨ρ, hρ, hball_x⟩ := Metric.isOpen_iff.1 isOpen_interior x₀ hx'
+  obtain ⟨R, hR, hball_y⟩ := Metric.isOpen_iff.1 isOpen_interior y₀ hy'
+  exact ⟨m, ρ, R, hρ, hR, hball_x, hball_y⟩
 
 end TauCeti
 
