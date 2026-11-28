@@ -249,6 +249,7 @@ theorem markoffHurwitzSignChange_apply (ε : Fin n → ℤˣ) (x : Fin n → R) 
     markoffHurwitzSignChange R ε x i = ((ε i : ℤ) : R) * x i := (rfl)
 
 /-- A sign change whose signs multiply to one preserves the Markoff–Hurwitz form. -/
+@[simp]
 theorem markoffHurwitzForm_markoffHurwitzSignChange (a : R) (ε : Fin n → ℤˣ)
     (hε : ∏ i, ε i = 1) (x : Fin n → R) :
     markoffHurwitzForm a (markoffHurwitzSignChange R ε x) = markoffHurwitzForm a x := by
@@ -263,6 +264,7 @@ theorem markoffHurwitzForm_markoffHurwitzSignChange (a : R) (ε : Fin n → ℤ�
   rw [Finset.sum_congr rfl (fun i _ ↦ hs i), Finset.prod_mul_distrib, hp, one_mul]
 
 /-- Even sign changes preserve every level of the Markoff–Hurwitz form. -/
+@[simp]
 theorem markoffHurwitzSignChange_mem_markoffHurwitzSet_iff {a k : R} {ε : Fin n → ℤˣ}
     (hε : ∏ i, ε i = 1) {x : Fin n → R} :
     markoffHurwitzSignChange R ε x ∈ markoffHurwitzSet n a k ↔ x ∈ markoffHurwitzSet n a k := by
