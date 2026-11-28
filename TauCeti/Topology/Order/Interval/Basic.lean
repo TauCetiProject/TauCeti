@@ -101,6 +101,10 @@ A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` 
   `[a, b]` has a continuous inverse on its range, clamped to be constant outside it.
 * `IsOpen.exists_first_exit` — a path continuous on `[a, b]` that starts in an open set and leaves
   it has a first exit time.
+* `TauCeti.locallyFinite_Icc_of_tendsto`, `TauCeti.locallyFinite_Icc_nsmul`,
+  `TauCeti.locallyFinite_Icc_natCast_mul` — closed intervals `[f n, g n]` with `f n → +∞` form
+  a locally finite family, and in particular `[n • τ, (n + 1) • τ]` and `[n τ, (n + 1) τ]` for
+  `τ > 0` in an Archimedean ordered monoid or semiring.
 -/
 
 public section
@@ -571,5 +575,37 @@ theorem _root_.ContinuousOn.image_Iio_eq_Ioi_of_tendsto {α β : Type*}
     (hcont : ContinuousOn d (Iio p)) (hpos : ∀ x ∈ Iio p, v < d x)
     (hbot : Tendsto d atBot (𝓝 v)) (hp : Tendsto d (𝓝[<] p) atTop) : d '' Iio p = Ioi v :=
   ContinuousOn.image_Ioi_eq_Ioi_of_tendsto (α := αᵒᵈ) hcont hpos hbot hp
+
+/-- In a linear order with closed upper rays and no maximum element, closed intervals
+`[f n, g n]` form a locally finite family whenever `f n → +∞`. -/
+theorem locallyFinite_Icc_of_tendsto {K : Type*} [LinearOrder K] [TopologicalSpace K]
+    [ClosedIciTopology K] [NoMaxOrder K] {f g : ℕ → K} (hf : Tendsto f atTop atTop) :
+    LocallyFinite fun n : ℕ ↦ Icc (f n) (g n) := by
+  intro t
+  obtain ⟨u, hu⟩ := exists_gt t
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (hf.eventually_gt_atTop u)
+  refine ⟨Iio u, Iio_mem_nhds hu, (finite_lt_nat N).subset fun n ⟨x, hx, hxu⟩ ↦ ?_⟩
+  rw [Set.mem_ofPred_eq]
+  by_contra! hNn
+  exact not_le_of_gt (hxu.trans_le (hN n hNn).le) hx.1
+
+/-- For `τ > 0` in an Archimedean linearly ordered cancellative additive monoid with closed upper
+rays, the closed grid intervals `[n • τ, (n + 1) • τ]` (`n : ℕ`) form a locally finite family. -/
+theorem locallyFinite_Icc_nsmul {K : Type*} [AddCommMonoid K] [LinearOrder K]
+    [IsOrderedCancelAddMonoid K] [TopologicalSpace K] [ClosedIciTopology K] [Archimedean K]
+    {τ : K} (hτ : 0 < τ) :
+    LocallyFinite fun n : ℕ ↦ Icc (n • τ) ((n + 1) • τ) := by
+  have : NoMaxOrder K := ⟨fun x ↦ ⟨x + τ, lt_add_of_pos_right x hτ⟩⟩
+  refine locallyFinite_Icc_of_tendsto (tendsto_atTop_atTop.2 fun b ↦ ?_)
+  obtain ⟨n, hn⟩ := Archimedean.arch b hτ
+  exact ⟨n, fun m hm ↦ hn.trans (nsmul_le_nsmul_left hτ.le hm)⟩
+
+/-- For `τ > 0` in an Archimedean ordered semiring with closed upper rays, the closed grid
+intervals `[n τ, (n + 1) τ]` (`n : ℕ`) form a locally finite family. -/
+theorem locallyFinite_Icc_natCast_mul {K : Type*} [Semiring K] [LinearOrder K]
+    [IsStrictOrderedRing K] [TopologicalSpace K] [ClosedIciTopology K] [Archimedean K]
+    {τ : K} (hτ : 0 < τ) :
+    LocallyFinite fun n : ℕ ↦ Icc ((n : K) * τ) (((n : K) + 1) * τ) := by
+  simpa only [nsmul_eq_mul, Nat.cast_add, Nat.cast_one] using locallyFinite_Icc_nsmul hτ
 
 end TauCeti

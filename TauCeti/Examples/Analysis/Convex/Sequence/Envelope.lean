@@ -86,28 +86,28 @@ theorem isConvexSeq_sqHeights : IsConvexSeq sqHeights :=
   isConvexSeq_sqHeights.lowerConvexEnvelope_eq
 
 /-- The piecewise-affine interpolation of the integer squares is convex on `[0, ∞)`. -/
-theorem convexOn_linearInterpolate_sq :
-    ConvexOn ℝ (Ici 0) (linearInterpolate fun n : ℕ => (n : ℝ) ^ 2) := by
-  have h := isConvexSeq_sqHeights.convexOn_linearInterpolate
+theorem convexOn_gridLinearInterpolant_sq :
+    ConvexOn ℝ (Ici 0) (gridLinearInterpolant 1 fun n : ℕ => (n : ℝ) ^ 2) := by
+  have h := isConvexSeq_sqHeights.convexOn_gridLinearInterpolant
   rwa [interpolationDomain_eq_Ici (l := 0) (by simp), Nat.cast_zero,
     funext untop₀_sqHeights] at h
 
 /-- The piecewise-affine interpolation of the integer squares takes the value `1 / 2` at `1 / 2`,
 the midpoint of the chord from `(0, 0)` to `(1, 1)`. -/
-theorem linearInterpolate_sq_one_half :
-    linearInterpolate (fun n : ℕ => (n : ℝ) ^ 2) (1 / 2) = 1 / 2 := by
+theorem gridLinearInterpolant_sq_one_half :
+    gridLinearInterpolant 1 (fun n : ℕ => (n : ℝ) ^ 2) (1 / 2) = 1 / 2 := by
   have hfloor : ⌊(1 / 2 : ℝ)⌋₊ = 0 := Nat.floor_eq_zero.mpr (by norm_num)
-  rw [linearInterpolate_def, hfloor]
+  rw [gridLinearInterpolant_one_def, hfloor]
   norm_num
 
 /-- The piecewise-affine interpolation of the integer squares and `x ↦ x ^ 2` are different
-functions on `[0, ∞)`, although both are convex there (`convexOn_linearInterpolate_sq` and
-`convexOn_pow`) and they agree at every natural number (`linearInterpolate_natCast`). -/
-theorem not_eqOn_linearInterpolate_sq :
-    ¬EqOn (linearInterpolate fun n : ℕ => (n : ℝ) ^ 2) (fun x => x ^ 2) (Ici 0) := by
+functions on `[0, ∞)`, although both are convex there (`convexOn_gridLinearInterpolant_sq` and
+`convexOn_pow`) and they agree at every natural number (`gridLinearInterpolant_one_natCast`). -/
+theorem not_eqOn_gridLinearInterpolant_sq :
+    ¬EqOn (gridLinearInterpolant 1 fun n : ℕ => (n : ℝ) ^ 2) (fun x => x ^ 2) (Ici 0) := by
   intro h
   have := h (show (1 / 2 : ℝ) ∈ Ici 0 by norm_num)
-  rw [linearInterpolate_sq_one_half] at this
+  rw [gridLinearInterpolant_sq_one_half] at this
   norm_num at this
 
 /-! ### Negative squares -/

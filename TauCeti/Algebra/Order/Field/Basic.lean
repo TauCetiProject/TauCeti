@@ -126,6 +126,12 @@ zero only at `0`. For `0 ≤ w` the truncation `w / (1 + ε w)` lies between `0`
   `TauCeti.div_one_add_mul_le_one_div`: for `0 ≤ w`, the truncation `w / (1 + ε w)` lies between
   `0` and `w` when `0 ≤ ε`, and is at most `1 / ε` when `0 < ε`.
 * `TauCeti.two_mul_sq_inv_mul_lt_one_iff`: `2 * (r ^ 2)⁻¹ * t < 1` iff `t < r ^ 2 / 2` for `r ≠ 0`.
+* `TauCeti.exists_pos_abs_mul_le`: given `m` and positive `c, b`, there exists `0 < τ < b` such
+  that `|m| * δ ≤ c` for all `δ ≤ τ`.
+* `TauCeti.one_add_mul_pos_of_abs_mul_lt_one`: `0 < 1 + m * δ` whenever `0 ≤ δ` and
+  `|m| * δ < 1`.
+* `TauCeti.exists_pos_forall_one_add_mul_pos`: given `m`, there exists `τ₀ > 0` such that
+  `0 < 1 + m * δ` for all `0 ≤ δ ≤ τ₀`.
 * `TauCeti.add_mul_div_le_add`: `t + m * M / t ≤ m + M` for `0 < t` and `m ≤ t ≤ M`.
 * `TauCeti.mul_le_sq_div_of_add_mul_le`: `a * b ≤ c ^ 2 / (4 * k)` for `0 < k` and
   `0 ≤ a + k * b ≤ c`.
@@ -535,6 +541,33 @@ theorem mul_div_one_add_mul_le {α : Type*} [Semifield α] [LinearOrder α]
 theorem div_one_add_eq_zero_iff {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
     {t : α} (ht : 0 ≤ t) : t / (1 + t) = 0 ↔ t = 0 :=
   div_eq_zero_iff.trans (or_iff_left (add_pos_of_pos_of_nonneg zero_lt_one ht).ne')
+
+/-- For any `m : K`, `c > 0`, and bound `b > 0` in a linearly ordered field, there exists a
+positive step size `τ < b` such that `|m| * δ ≤ c` for every `δ ≤ τ`. -/
+theorem exists_pos_abs_mul_le {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    (m : K) {c b : K} (hc : 0 < c) (hb : 0 < b) :
+    ∃ τ : K, 0 < τ ∧ τ < b ∧ ∀ ⦃δ : K⦄, δ ≤ τ → |m| * δ ≤ c := by
+  obtain ⟨r, hr0, hr⟩ := exists_pos_mul_lt hc |m|
+  exact ⟨min r (b / 2), lt_min hr0 (half_pos hb), (min_le_right _ _).trans_lt (half_lt_self hb),
+    fun _ hδ ↦
+      (mul_le_mul_of_nonneg_left (hδ.trans (min_le_left _ _)) (abs_nonneg m)).trans hr.le⟩
+
+/-- If `0 ≤ δ` and `|m| * δ < 1`, then `0 < 1 + m * δ`. -/
+theorem one_add_mul_pos_of_abs_mul_lt_one {K : Type*} [Ring K] [LinearOrder K]
+    [IsStrictOrderedRing K] {m δ : K} (hδ : 0 ≤ δ) (h : |m| * δ < 1) :
+    0 < 1 + m * δ := by
+  have hm := mul_le_mul_of_nonneg_right (neg_abs_le m) hδ
+  rw [neg_mul] at hm
+  exact (sub_pos.2 h).trans_le (sub_eq_add_neg 1 (|m| * δ) ▸ add_le_add_right hm 1)
+
+/-- For any `m : K` in a linearly ordered field, there exists `τ₀ > 0` such that `0 < 1 + m * δ`
+for every `0 ≤ δ ≤ τ₀`. -/
+theorem exists_pos_forall_one_add_mul_pos {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] (m : K) :
+    ∃ τ₀ : K, 0 < τ₀ ∧ ∀ ⦃δ : K⦄, 0 ≤ δ → δ ≤ τ₀ → 0 < 1 + m * δ :=
+  let ⟨τ₀, hτ₀, _, hm⟩ := exists_pos_abs_mul_le m (by norm_num : (0 : K) < 1 / 2) one_pos
+  ⟨τ₀, hτ₀, fun _ hδ0 hδ ↦
+    one_add_mul_pos_of_abs_mul_lt_one hδ0 ((hm hδ).trans_lt (by norm_num))⟩
 
 /-- For `0 < t` with `m ≤ t ≤ M`, `t + m * M / t ≤ m + M`: this is `(t - m) * (t - M) ≤ 0`
 divided by `t`. -/

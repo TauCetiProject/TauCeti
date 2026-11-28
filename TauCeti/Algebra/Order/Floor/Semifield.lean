@@ -56,6 +56,11 @@ lying under a line above a block lower polygon.
 * `TauCeti.card_biUnion_Ico_ceil_div_le`: the union of these index sets over `k` intervals has at
   most `(∑ᵢ (tᵢ - sᵢ)) / τ + k` elements.
 * `TauCeti.lt_floor_add_one_mul_floor_div_add_one`: `n < (⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` for `B > 0`.
+* `TauCeti.mem_Ico_floor_div_mul`: `t ∈ [⌊t / τ⌋₊ τ, (⌊t / τ⌋₊ + 1) τ)` for `τ > 0` and `t ≥ 0`.
+* `TauCeti.iUnion_Icc_natCast_mul`: `(⋃ n : ℕ, [n τ, (n + 1) τ]) = [0, ∞)` for `τ > 0`.
+* `TauCeti.ceil_eq_floor_or_add_one`: `⌈x⌉₊ = ⌊x⌋₊ ∨ ⌈x⌉₊ = ⌊x⌋₊ + 1`.
+* `TauCeti.floor_div_add_one_le_ceil_div`: `⌊s / τ⌋₊ + 1 ≤ ⌈t / τ⌉₊` for `0 < τ`, `s < t`,
+  and `0 < t`.
 * `TauCeti.lt_two_mul_floor_add_one_mul_floor_div_add_one`:
   `n < (2 * ⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` for `B > 0`.
 * `TauCeti.floor_mul_two_zpow_add_one_le`: `⌊a * 2 ^ k⌋₊ + 1 ≤ (⌊a⌋₊ + 1) * 2 ^ max k 0` for
@@ -128,6 +133,34 @@ theorem natCast_ceil_div_sub_ceil_div_lt [Sub K] [OrderedSub K] (hτ : 0 ≤ τ)
 theorem mem_Ico_ceil_div_iff (hτ : 0 < τ) {n : ℕ} :
     n ∈ Finset.Ico ⌈s / τ⌉₊ ⌈t / τ⌉₊ ↔ n * τ ∈ Set.Ico s t := by
   rw [Finset.mem_Ico, Nat.ceil_le, Nat.lt_ceil, div_le_iff₀ hτ, lt_div_iff₀ hτ, Set.mem_Ico]
+
+/-- For a step `τ > 0` and `t ≥ 0`, `t` lies in the step interval
+`[⌊t / τ⌋₊ τ, (⌊t / τ⌋₊ + 1) τ)`. -/
+theorem mem_Ico_floor_div_mul (hτ : 0 < τ) (ht : 0 ≤ t) :
+    t ∈ Set.Ico ((⌊t / τ⌋₊ : K) * τ) (((⌊t / τ⌋₊ : K) + 1) * τ) :=
+  ⟨(le_div_iff₀ hτ).1 (Nat.floor_le (div_nonneg ht hτ.le)),
+    (div_lt_iff₀ hτ).1 (Nat.lt_floor_add_one _)⟩
+
+/-- For a step `τ > 0`, the closed intervals `[n τ, (n + 1) τ]` (`n : ℕ`) cover `[0, ∞)`. -/
+theorem iUnion_Icc_natCast_mul (hτ : 0 < τ) :
+    (⋃ n : ℕ, Set.Icc ((n : K) * τ) (((n : K) + 1) * τ)) = Set.Ici 0 := by
+  ext t
+  simp only [Set.mem_iUnion, Set.mem_Icc, Set.mem_Ici]
+  exact ⟨fun ⟨n, h1, _⟩ ↦ (mul_nonneg n.cast_nonneg hτ.le).trans h1,
+    fun ht ↦ ⟨⌊t / τ⌋₊, Set.Ico_subset_Icc_self (mem_Ico_floor_div_mul hτ ht)⟩⟩
+
+/-- The natural ceiling `⌈x⌉₊` equals either `⌊x⌋₊` or `⌊x⌋₊ + 1`. -/
+theorem ceil_eq_floor_or_add_one {R : Type*} [Semiring R] [LinearOrder R] [FloorSemiring R]
+    (x : R) : ⌈x⌉₊ = ⌊x⌋₊ ∨ ⌈x⌉₊ = ⌊x⌋₊ + 1 := by
+  have := Nat.floor_le_ceil x
+  have := Nat.ceil_le_floor_add_one x
+  omega
+
+/-- For `0 < τ`, `s < t`, and `0 < t`, `⌊s / τ⌋₊ + 1 ≤ ⌈t / τ⌉₊`. -/
+theorem floor_div_add_one_le_ceil_div (hτ : 0 < τ) (hst : s < t) (ht : 0 < t) :
+    ⌊s / τ⌋₊ + 1 ≤ ⌈t / τ⌉₊ :=
+  Nat.add_one_le_iff.2
+    (Nat.floor_lt_ceil_of_lt_of_pos (div_lt_div_of_pos_right hst hτ) (div_pos ht hτ))
 
 /-- For a step `τ > 0`, the index sets `[⌈sᵢ / τ⌉₊, ⌈tᵢ / τ⌉₊)` of the multiples of `τ` in
 `[sᵢ, tᵢ)` are pairwise disjoint whenever the intervals `(sᵢ, tᵢ]` are. -/

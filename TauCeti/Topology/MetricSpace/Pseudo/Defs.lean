@@ -31,6 +31,9 @@ The bounded transform `dist x y / (1 + dist x y)` satisfies the triangle inequal
 On the real line, the extended distance from `b` to `a ≤ b` is `b - a`
 (`Real.edist_eq_ofReal_sub_of_le`).
 
+The squared distance `dist · z ^ 2` satisfies the one-sided perturbation bound
+`TauCeti.dist_sq_sub_le` and two-sided bound `TauCeti.abs_dist_sq_sub_le`.
+
 In a Hausdorff pseudometric space, if `f → a` and `g → b` along a nontrivial filter `l` with
 `dist (g z) (f z) ≤ dist (f z) a` eventually, then `a = b`
 (`Filter.Tendsto.eq_of_eventually_dist_le`).
@@ -103,6 +106,29 @@ theorem Metric.dist_div_one_add_dist_le {X : Type*} [PseudoMetricSpace X] (a b c
   exact add_le_add
     (div_le_div_of_nonneg_left hab (by positivity) (by linarith))
     (div_le_div_of_nonneg_left hbc (by positivity) (by linarith))
+
+namespace TauCeti
+
+/-- One-sided perturbation bound for squared distances in a pseudometric space:
+`d(x, z)² - d(y, z)² ≤ 2 d(x, z) d(x, y)`. -/
+theorem dist_sq_sub_le {X : Type*} [PseudoMetricSpace X] (x y z : X) :
+    dist x z ^ 2 - dist y z ^ 2 ≤ 2 * dist x z * dist x y := by
+  nlinarith [sq_nonneg (dist x z - dist y z), dist_triangle x y z, dist_nonneg (x := x) (y := z)]
+
+/-- Two-sided perturbation bound for squared distances in a pseudometric space:
+`|d(x, z)² - d(y, z)²| ≤ 2 d(x, z) d(x, y) + d(x, y)²`. -/
+theorem abs_dist_sq_sub_le {X : Type*} [PseudoMetricSpace X] (x y z : X) :
+    |dist x z ^ 2 - dist y z ^ 2| ≤ 2 * dist x z * dist x y + dist x y ^ 2 := by
+  have h1 : |dist x z - dist y z| ≤ dist x y := abs_dist_sub_le x y z
+  have h2 : dist x z + dist y z ≤ 2 * dist x z + dist x y := by linarith [dist_triangle_left y z x]
+  calc |dist x z ^ 2 - dist y z ^ 2|
+      = |dist x z - dist y z| * (dist x z + dist y z) := by
+        rw [sq_sub_sq, abs_mul, abs_of_nonneg (add_nonneg dist_nonneg dist_nonneg), mul_comm]
+    _ ≤ dist x y * (2 * dist x z + dist x y) :=
+        mul_le_mul h1 h2 (add_nonneg dist_nonneg dist_nonneg) dist_nonneg
+    _ = 2 * dist x z * dist x y + dist x y ^ 2 := by ring
+
+end TauCeti
 
 open Filter Topology in
 /-- If `f` tends to `a` and `g` tends to `b` along a nontrivial filter `l` in a Hausdorff
