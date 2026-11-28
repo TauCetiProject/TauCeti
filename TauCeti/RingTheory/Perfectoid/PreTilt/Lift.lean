@@ -41,8 +41,6 @@ tilting fully faithful.
 * `PreTilt.untilt_wittVectorHomEquiv_symm_apply`,
   `PreTilt.coeff_zero_wittVectorHomEquiv_symm_apply`: the inverse sends `g` to the map whose
   values have sharp `g [x]`, and zeroth coordinate `g [x]` modulo `p`.
-* `PreTilt.hom_ext`: ring homomorphisms from a perfect ring into `A♭` agreeing in the zeroth
-  coordinate are equal.
 
 ## References
 
@@ -64,14 +62,6 @@ variable {p : ℕ} [hp : Fact p.Prime] {k : Type*} [CommRing k] [CharP k p] [Per
   {A : Type*} [CommRing A] [Fact ¬IsUnit (p : A)]
 
 local notation "𝕎" => WittVector p
-
-/-- **Ring homomorphisms from a perfect ring into the tilt are determined by their zeroth
-coordinate.** -/
-theorem hom_ext {f g : k →+* PreTilt A p} (h : ∀ x, coeff 0 (f x) = coeff 0 (g x)) : f = g := by
-  have : (equivPerfection : PreTilt A p ≃+* _).toRingHom.comp f =
-      (equivPerfection : PreTilt A p ≃+* _).toRingHom.comp g :=
-    Perfection.hom_ext p fun x ↦ by simpa using h x
-  exact RingHom.ext fun x ↦ equivPerfection.injective (RingHom.congr_fun this x)
 
 variable [IsAdicComplete (span {(p : A)}) A]
 
@@ -110,9 +100,10 @@ homomorphisms `f : k →+* A♭` correspond to ring homomorphisms `W(k) →+* A`
 noncomputable def wittVectorHomEquiv : (k →+* PreTilt A p) ≃ (𝕎 k →+* A) where
   toFun f := (fontaineTheta A p).comp (WittVector.map f)
   invFun := wittVectorHomInv
-  left_inv f := hom_ext fun x ↦ by
+  left_inv f := Perfection.hom_ext p fun x ↦ (by
     rw [coeff_zero_wittVectorHomInv, RingHom.comp_apply, map_teichmuller,
-      fontaineTheta_teichmuller, mk_untilt_eq_coeff_zero]
+      fontaineTheta_teichmuller, mk_untilt_eq_coeff_zero] :
+    coeff 0 (wittVectorHomInv ((fontaineTheta A p).comp (WittVector.map f)) x) = coeff 0 (f x))
   right_inv g := ringHom_ext_teichmuller fun x ↦ by
     rw [RingHom.comp_apply, map_teichmuller, fontaineTheta_teichmuller, untilt_wittVectorHomInv]
 
