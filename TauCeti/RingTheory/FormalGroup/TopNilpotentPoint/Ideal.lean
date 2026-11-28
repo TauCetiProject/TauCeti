@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.TopNilpotentPoint.Hom
+import TauCeti.RingTheory.MvPowerSeries.Evaluation.IdealBounds
 import TauCeti.RingTheory.PowerSeries.Evaluation
 
 /-!
@@ -59,8 +60,14 @@ noncomputable def idealPointSubgroup (F : FormalGroup R) (I : Ideal A) :
 theorem mem_idealPointSubgroup (F : FormalGroup R) (I : Ideal A)
     (x : F.TopNilpotentPoint A) : x ∈ F.idealPointSubgroup I ↔ x.val ∈ I := Iff.rfl
 
+/-- Inclusion of ideals induces inclusion of their formal-group point subgroups. -/
+theorem idealPointSubgroup_mono (F : FormalGroup R) :
+    Monotone (F.idealPointSubgroup (A := A)) := by
+  intro I J hIJ x hx
+  exact (F.mem_idealPointSubgroup J x).2 (hIJ ((F.mem_idealPointSubgroup I x).1 hx))
+
 /-- Two points in the ideal subgroup are equal exactly when their coordinates agree. -/
-theorem idealPointSubgroup_eq_iff {F : FormalGroup R} {I : Ideal A}
+theorem idealPointSubgroup_ext_iff {F : FormalGroup R} {I : Ideal A}
     {x y : F.idealPointSubgroup I} : x = y ↔ x.val.val = y.val.val :=
   ⟨fun h ↦ congrArg (fun z : F.idealPointSubgroup I ↦ z.val.val) h,
     fun h ↦ Subtype.ext (TopNilpotentPoint.ext h)⟩
@@ -70,11 +77,12 @@ of the ideal. -/
 theorem range_val_idealPointSubgroup (F : FormalGroup R) (I : Ideal A) :
     Set.range (fun x : F.idealPointSubgroup I ↦ x.val.val) =
       (I : Set A) ∩ {s | IsTopologicallyNilpotent s} := by
-  change Set.range ((TopNilpotentPoint.val ⁻¹' (I : Set A)).domRestrict
-    (TopNilpotentPoint.val : F.TopNilpotentPoint A → A)) = _
-  rw [Set.range_domRestrict, Set.image_preimage_eq_inter_range]
-  congr 1
-  exact Set.ext fun s ↦ ⟨fun ⟨x, hx⟩ ↦ hx ▸ x.hasEval, fun hs ↦ ⟨⟨s, hs⟩, rfl⟩⟩
+  ext s
+  constructor
+  · rintro ⟨x, rfl⟩
+    exact ⟨(F.mem_idealPointSubgroup I x.val).1 x.property, x.val.hasEval⟩
+  · rintro ⟨hs, hnil⟩
+    exact ⟨⟨⟨s, hnil⟩, (F.mem_idealPointSubgroup I ⟨s, hnil⟩).2 hs⟩, rfl⟩
 
 end FormalGroup
 
@@ -181,6 +189,35 @@ theorem coe_toIdealPointEquiv_symm (f : FormalGroupIso F G) (I : Ideal A)
     (x : G.idealPointSubgroup I) :
     ((f.toIdealPointEquiv I).symm x : F.TopNilpotentPoint A) =
       f.invHom.toTopNilpotentPointHom A x := (rfl)
+
+/-- The identity formal-group isomorphism restricts to the identity on ideal points. -/
+@[simp]
+theorem toIdealPointEquiv_refl (I : Ideal A) :
+    (refl F).toIdealPointEquiv I = AddEquiv.refl _ := by
+  apply AddEquiv.ext
+  intro x
+  apply Subtype.ext
+  simp
+
+/-- Restricting the inverse isomorphism gives the inverse equivalence on ideal points. -/
+@[simp]
+theorem toIdealPointEquiv_symm (f : FormalGroupIso F G) (I : Ideal A) :
+    f.symm.toIdealPointEquiv I = (f.toIdealPointEquiv I).symm := by
+  apply AddEquiv.ext
+  intro x
+  apply Subtype.ext
+  simp
+
+/-- Restriction to ideal points preserves composition of formal-group isomorphisms. -/
+@[simp]
+theorem toIdealPointEquiv_trans {H : FormalGroup R}
+    (f : FormalGroupIso F G) (g : FormalGroupIso G H) (I : Ideal A) :
+    (f.trans g).toIdealPointEquiv I = (f.toIdealPointEquiv I).trans (g.toIdealPointEquiv I) := by
+  apply AddEquiv.ext
+  intro x
+  apply Subtype.ext
+  simp only [coe_toIdealPointEquiv, trans_toHom, AddEquiv.trans_apply,
+    FormalGroupHom.toTopNilpotentPointHom_comp, AddMonoidHom.comp_apply]
 
 /-- A formal-group isomorphism preserves and reflects membership of the coordinate in any ideal. -/
 @[simp]

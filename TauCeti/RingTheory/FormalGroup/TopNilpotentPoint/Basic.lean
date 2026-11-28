@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.Evaluation
 public import Mathlib.Topology.Algebra.Algebra
 public import TauCeti.RingTheory.FormalGroup.AddInv
-public import TauCeti.RingTheory.MvPowerSeries.Evaluation
+public import TauCeti.RingTheory.MvPowerSeries.Evaluation.Basic
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!

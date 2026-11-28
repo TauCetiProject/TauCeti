@@ -49,8 +49,11 @@ multiplication on the ideal by its linear coefficient. -/
 theorem rescaleLogPointEquiv_toIdealPointHom
     (f : FormalGroupHom (F.rescale s) (G.rescale t))
     (x : (F.rescale s).idealPointSubgroup I) :
-    G.rescaleLogPointEquiv ht I (f.toIdealPointHom I x) =
-      PowerSeries.coeff 1 f.toPowerSeries • F.rescaleLogPointEquiv hs I x := by
+    G.rescaleLogPointEquiv ht I
+        (fun _ hx ↦ (Fact.out : IsAdic I).isTopologicallyNilpotent_of_mem hx)
+        (f.toIdealPointHom I x) =
+      PowerSeries.coeff 1 f.toPowerSeries • F.rescaleLogPointEquiv hs I
+        (fun _ hx ↦ (Fact.out : IsAdic I).isTopologicallyNilpotent_of_mem hx) x := by
   apply Subtype.ext
   have h := ((G.rescaleLogHom ht).comp f).hasSum_val_toTopNilpotentPointHom x.val
   have hseries := f.subst_rescaleLog hs ht
@@ -74,14 +77,18 @@ theorem mem_range_toIdealPointHom_iff
     (f : FormalGroupHom (F.rescale s) (G.rescale t))
     (y : (G.rescale t).idealPointSubgroup I) :
     y ∈ (f.toIdealPointHom I).range ↔
-      ∃ z : I, PowerSeries.coeff 1 f.toPowerSeries • z = G.rescaleLogPointEquiv ht I y := by
+      ∃ z : I, PowerSeries.coeff 1 f.toPowerSeries • z =
+        G.rescaleLogPointEquiv ht I
+          (fun _ hx ↦ (Fact.out : IsAdic I).isTopologicallyNilpotent_of_mem hx) y := by
+  have hAdic : ∀ x ∈ I, IsTopologicallyNilpotent x :=
+    fun _ hx ↦ (Fact.out : IsAdic I).isTopologicallyNilpotent_of_mem hx
   constructor
   · rintro ⟨x, rfl⟩
-    exact ⟨F.rescaleLogPointEquiv hs I x,
+    exact ⟨F.rescaleLogPointEquiv hs I hAdic x,
       (f.rescaleLogPointEquiv_toIdealPointHom hs ht I x).symm⟩
   · rintro ⟨z, hz⟩
-    refine ⟨(F.rescaleLogPointEquiv hs I).symm z, ?_⟩
-    apply (G.rescaleLogPointEquiv ht I).injective
+    refine ⟨(F.rescaleLogPointEquiv hs I hAdic).symm z, ?_⟩
+    apply (G.rescaleLogPointEquiv ht I hAdic).injective
     simpa only [f.rescaleLogPointEquiv_toIdealPointHom hs ht I, AddEquiv.apply_symm_apply]
       using hz
 
@@ -92,13 +99,15 @@ theorem index_range_toIdealPointHom
     (f : FormalGroupHom (F.rescale s) (G.rescale t)) :
     (f.toIdealPointHom I).range.index =
       (DistribSMul.toAddMonoidHom I (PowerSeries.coeff 1 f.toPowerSeries)).range.index := by
-  have hr : (f.toIdealPointHom I).range.map (G.rescaleLogPointEquiv ht I).toAddMonoidHom =
+  have hAdic : ∀ x ∈ I, IsTopologicallyNilpotent x :=
+    fun _ hx ↦ (Fact.out : IsAdic I).isTopologicallyNilpotent_of_mem hx
+  have hr : (f.toIdealPointHom I).range.map (G.rescaleLogPointEquiv ht I hAdic).toAddMonoidHom =
       (DistribSMul.toAddMonoidHom I (PowerSeries.coeff 1 f.toPowerSeries)).range := by
     ext z
     rw [AddSubgroup.mem_map_equiv, f.mem_range_toIdealPointHom_iff hs ht I,
       AddEquiv.apply_symm_apply]
     simp only [AddMonoidHom.mem_range, DistribSMul.toAddMonoidHom_apply]
-  rw [← hr, AddSubgroup.index_map_of_bijective (G.rescaleLogPointEquiv ht I).bijective]
+  rw [← hr, AddSubgroup.index_map_of_bijective (G.rescaleLogPointEquiv ht I hAdic).bijective]
 
 /-- On a nonzero principal adic ideal in a domain, the cokernel index of a homomorphism
 between logarithmically linearised formal groups is the order of the ring modulo its tangent

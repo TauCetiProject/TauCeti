@@ -24,8 +24,8 @@ In particular, if all elements of `I` are topologically nilpotent, its coordinat
 over precisely `I`. Formal-module homomorphisms and continuous coefficient algebra maps
 sending the source ideal into the target ideal induce continuous linear maps on ideal points.
 A formal-group isomorphism intertwining the scalar actions induces a continuous linear
-equivalence. In particular, a change of coordinate gives this equivalence when the target
-carries the transported action.
+equivalence. For a change of coordinate `e`, use
+`ρ.idealPointContinuousLinearEquiv e (ρ.comp_act_conj e) I` with the transported action.
 
 ## References
 
@@ -94,13 +94,26 @@ theorem mem_idealPointSubmodule (I : Ideal S) (x : F.TopNilpotentPoint S) :
     x ∈ ρ.idealPointSubmodule I ↔ x.val ∈ I := F.mem_idealPointSubgroup I x
 
 /-- Two points in the ideal submodule are equal exactly when their coordinates agree. -/
-theorem idealPointSubmodule_eq_iff {I : Ideal S} {x y : ρ.idealPointSubmodule I} :
-    x = y ↔ x.val.val = y.val.val := FormalGroup.idealPointSubgroup_eq_iff
+theorem idealPointSubmodule_ext_iff {I : Ideal S} {x y : ρ.idealPointSubmodule I} :
+    x = y ↔ x.val.val = y.val.val := FormalGroup.idealPointSubgroup_ext_iff
 
+/-- Forgetting scalar multiplication recovers the formal-group point subgroup of the same ideal. -/
 @[simp]
 theorem idealPointSubmodule_toAddSubgroup (I : Ideal S) :
     letI := ρ.isComm
     (ρ.idealPointSubmodule I).toAddSubgroup = F.idealPointSubgroup I := (rfl)
+
+/-- Inclusion of ideals induces inclusion of their formal-module point submodules. -/
+theorem idealPointSubmodule_mono :
+    letI := ρ.isComm
+    letI := ρ.topNilpotentPointModule S
+    Monotone (ρ.idealPointSubmodule (S := S)) := by
+  let _ := ρ.isComm
+  let _ := ρ.topNilpotentPointModule S
+  intro I J hIJ
+  rw [← Submodule.toAddSubgroup_le, idealPointSubmodule_toAddSubgroup,
+    idealPointSubmodule_toAddSubgroup]
+  exact F.idealPointSubgroup_mono hIJ
 
 /-- The zero ideal cuts out just the zero point. -/
 @[simp]
@@ -215,11 +228,15 @@ theorem mapIdealPoint_comp {I : Ideal S} {J : Ideal T} {K : Ideal U}
   let _ := ρ.topNilpotentPointModule S
   let _ := ρ.topNilpotentPointModule T
   let _ := ρ.topNilpotentPointModule U
-  generalize_proofs h
-  unfold mapIdealPoint
-  erw [← ContinuousLinearMap.restrict_comp (p₂ := ρ.idealPointSubmodule J)]
-  congr 1
-  exact ρ.mapTopNilpotentPoint_comp ψ φ
+  apply ContinuousLinearMap.ext
+  intro x
+  apply Subtype.ext
+  calc
+    _ = TopNilpotentPoint.map F (ψ.comp φ) x :=
+      ρ.coe_mapIdealPoint (ψ.comp φ) (I := I) (J := K) _ x
+    _ = _ := by
+      simp only [ContinuousLinearMap.comp_apply, coe_mapIdealPoint, TopNilpotentPoint.map_comp,
+        AddMonoidHom.comp_apply]
 
 end Coefficients
 
@@ -324,10 +341,11 @@ theorem toIdealPointContinuousLinearMap_comp {H : FormalGroup R} {υ : FormalMod
   let _ := ρ.topNilpotentPointModule S
   let _ := τ.topNilpotentPointModule S
   let _ := υ.topNilpotentPointModule S
-  unfold toIdealPointContinuousLinearMap
-  erw [← ContinuousLinearMap.restrict_comp (p₂ := τ.idealPointSubmodule I)]
-  congr 1
-  exact toTopNilpotentPointContinuousLinearMap_comp g f
+  apply ContinuousLinearMap.ext
+  intro x
+  apply Subtype.ext
+  simp only [ContinuousLinearMap.comp_apply, coe_toIdealPointContinuousLinearMap,
+    comp_toFormalGroupHom, FormalGroupHom.toTopNilpotentPointHom_comp, AddMonoidHom.comp_apply]
 
 /-- Applying a formal-module homomorphism to an ideal point commutes with change of
 coefficient algebra. -/
@@ -354,16 +372,16 @@ def idealPointContinuousLinearEquiv {τ : FormalModule A G} (e : FormalGroupIso 
       E x = f.toIdealPointContinuousLinearMap I x :=
     Subtype.ext <| (e.coe_toIdealPointEquiv I x).trans
       (f.coe_toIdealPointContinuousLinearMap I x).symm
-  refine
-    { E.toLinearEquiv (fun a x ↦ by simp only [hf, map_smul]) with
-      continuous_toFun := ?_
-      continuous_invFun := ?_ }
-  · change Continuous (fun x ↦ E x)
+  have hcont : Continuous (fun x ↦ E x) := by
     simpa only [hf] using (f.toIdealPointContinuousLinearMap I).continuous
-  · change Continuous (fun x ↦ E.symm x)
+  have hcont_inv : Continuous E.symm := by
     apply continuous_induced_rng.2
     convert e.invHom.continuous_toTopNilpotentPointHom.comp continuous_subtypeVal using 1
     exact funext (e.coe_toIdealPointEquiv_symm I ·)
+  exact
+    { E.toLinearEquiv (fun a x ↦ by simp only [hf, map_smul]) with
+      continuous_toFun := hcont
+      continuous_invFun := hcont_inv }
 
 @[simp]
 theorem coe_idealPointContinuousLinearEquiv {τ : FormalModule A G} (e : FormalGroupIso F G)
@@ -381,6 +399,49 @@ theorem coe_idealPointContinuousLinearEquiv_symm {τ : FormalModule A G} (e : Fo
       e.invHom.toTopNilpotentPointHom S x :=
   e.coe_toIdealPointEquiv_symm I x
 
+/-- The identity formal-group isomorphism induces the identity equivalence on ideal points. -/
+@[simp]
+theorem idealPointContinuousLinearEquiv_refl (I : Ideal S) :
+    ρ.idealPointContinuousLinearEquiv (FormalGroupIso.refl F) (fun _ ↦ by simp) I =
+      ContinuousLinearEquiv.refl A (ρ.idealPointSubmodule I) := by
+  apply ContinuousLinearEquiv.ext
+  funext x
+  apply Subtype.ext
+  simp
+
+/-- The inverse intertwining isomorphism induces the inverse equivalence on ideal points. -/
+@[simp]
+theorem idealPointContinuousLinearEquiv_symm {τ : FormalModule A G} (e : FormalGroupIso F G)
+    (he : ∀ a, e.symm.toHom.comp (τ.act a) = (ρ.act a).comp e.symm.toHom) (I : Ideal S) :
+    τ.idealPointContinuousLinearEquiv e.symm he I =
+      (ρ.idealPointContinuousLinearEquiv e ((ρ.eq_conj_iff e τ).mp (by
+        calc
+          τ = (τ.conj e.symm).conj e := by
+            simpa only [FormalGroupIso.symm_symm] using (τ.conj_conj_symm e.symm).symm
+          _ = ρ.conj e := congrArg (·.conj e) ((τ.eq_conj_iff e.symm ρ).mpr he).symm)) I).symm := by
+  apply ContinuousLinearEquiv.ext
+  funext x
+  apply Subtype.ext
+  simp
+
+/-- The equivalence on ideal points preserves composition of intertwining isomorphisms. -/
+@[simp]
+theorem idealPointContinuousLinearEquiv_trans {H : FormalGroup R}
+    {τ : FormalModule A G} {υ : FormalModule A H} (e : FormalGroupIso F G) (g : FormalGroupIso G H)
+    (he : ∀ a, e.toHom.comp (ρ.act a) = (τ.act a).comp e.toHom)
+    (hg : ∀ a, g.toHom.comp (τ.act a) = (υ.act a).comp g.toHom) (I : Ideal S) :
+    (ρ.idealPointContinuousLinearEquiv e he I).trans (τ.idealPointContinuousLinearEquiv g hg I) =
+      ρ.idealPointContinuousLinearEquiv (e.trans g) (by
+        let f : ρ.Hom τ := ⟨e.toHom, he⟩
+        let k : τ.Hom υ := ⟨g.toHom, hg⟩
+        simpa only [FormalGroupIso.trans_toHom, Hom.comp_toFormalGroupHom] using
+          (k.comp f).comp_act) I := by
+  apply ContinuousLinearEquiv.ext
+  funext x
+  apply Subtype.ext
+  simp only [ContinuousLinearEquiv.trans_apply, coe_idealPointContinuousLinearEquiv,
+    FormalGroupIso.trans_toHom, FormalGroupHom.toTopNilpotentPointHom_comp, AddMonoidHom.comp_apply]
+
 /-- The equivalence on ideal points induced by a formal-module isomorphism commutes with
 change of coefficient algebra. -/
 theorem idealPointContinuousLinearEquiv_mapIdealPoint {τ : FormalModule A G}
@@ -394,25 +455,5 @@ theorem idealPointContinuousLinearEquiv_mapIdealPoint {τ : FormalModule A G}
   apply Subtype.ext
   simp only [coe_idealPointContinuousLinearEquiv, coe_mapIdealPoint]
   exact e.toHom.toTopNilpotentPointHom_map φ x.val
-
-/-- Changing formal coordinates induces a continuous linear equivalence on ideal points,
-with the transported scalar action on the target. -/
-def conjIdealPointContinuousLinearEquiv (e : FormalGroupIso F G) (I : Ideal S) :
-    ρ.idealPointSubmodule I ≃L[A] (ρ.conj e).idealPointSubmodule I :=
-  ρ.idealPointContinuousLinearEquiv e (ρ.comp_act_conj e) I
-
-@[simp]
-theorem coe_conjIdealPointContinuousLinearEquiv (e : FormalGroupIso F G) (I : Ideal S)
-    (x : ρ.idealPointSubmodule I) :
-    (ρ.conjIdealPointContinuousLinearEquiv e I x : G.TopNilpotentPoint S) =
-      e.toHom.toTopNilpotentPointHom S x := by
-  simp [conjIdealPointContinuousLinearEquiv]
-
-@[simp]
-theorem coe_conjIdealPointContinuousLinearEquiv_symm (e : FormalGroupIso F G) (I : Ideal S)
-    (x : (ρ.conj e).idealPointSubmodule I) :
-    ((ρ.conjIdealPointContinuousLinearEquiv e I).symm x : F.TopNilpotentPoint S) =
-      e.invHom.toTopNilpotentPointHom S x := by
-  simp [conjIdealPointContinuousLinearEquiv]
 
 end TauCeti.FormalModule

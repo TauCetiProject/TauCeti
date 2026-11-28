@@ -28,7 +28,7 @@ nilpotence of the elements of `I` — so that a ring satisfying `IsAdic I` may b
 Closedness is the form these are wanted in: an infinite sum all of whose terms lie in `I ^ n`
 again lies in `I ^ n`, because `I ^ n` is closed and `tsum_mem` applies. That is how a power
 series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
-`TauCeti.RingTheory.MvPowerSeries.Evaluation`.
+`TauCeti.RingTheory.MvPowerSeries.Evaluation.Basic`.
 
 ## Main results
 

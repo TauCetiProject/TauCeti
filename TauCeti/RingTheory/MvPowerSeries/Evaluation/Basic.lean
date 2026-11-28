@@ -12,7 +12,6 @@ import Mathlib.RingTheory.AdicCompletion.Completeness
 import Mathlib.RingTheory.AdicCompletion.Functoriality
 import Mathlib.RingTheory.AdicCompletion.Topology
 import TauCeti.Data.Finsupp.Weight
-import TauCeti.RingTheory.MvPowerSeries.Ideal
 
 /-!
 # Congruences, continuity and adic bounds for multivariate power-series evaluation
@@ -68,6 +67,11 @@ Finiteness of `σ` makes the decay condition of `HasEval` vacuous in
 `hasEval_of_finite_of_isTopologicallyNilpotent`, and `hasEval_of_mem` inherits it from there.
 In `continuous_eval₂_of_continuous` it instead permits choosing a common neighbourhood for
 all arguments.
+
+The companion module `TauCeti.RingTheory.MvPowerSeries.Evaluation.IdealBounds` gives
+`MvPowerSeries.eval₂_sub_constantCoeff_mem_of_finite` and `MvPowerSeries.eval₂_mem_of_finite`.
+These finite-variable bounds apply to arbitrary ideals, including nonclosed ideals, without
+an adic topology hypothesis.
 
 ## Main results
 
@@ -184,36 +188,6 @@ theorem continuous_eval₂_of_continuous [Finite σ] {X : Type*} [TopologicalSpa
     (I.toAddSubgroup.isClosed_of_isOpen hI) hy f
 
 end LinearTopology
-
-section FiniteBounds
-
-variable [Finite σ] [IsTopologicalRing S] [IsLinearTopology S S]
-  {φ : R →+* S} {a : σ → S} {I : Ideal S}
-
-/-- In finitely many variables, evaluation at admissible arguments in an ideal is congruent
-to the image of the constant term modulo that ideal. -/
-theorem eval₂_sub_constantCoeff_mem_of_finite (hφ : Continuous φ) (ha : HasEval a)
-    (hmem : ∀ i, a i ∈ I) (f : MvPowerSeries σ R) :
-    eval₂ φ a f - φ (constantCoeff f) ∈ I := by
-  let e := eval₂Hom (φ := φ) hφ ha
-  have hle : Ideal.span (Set.range X) ≤ I.comap e := by
-    refine Ideal.span_le.mpr ?_
-    rintro _ ⟨i, rfl⟩
-    change e (X i) ∈ I
-    simpa only [e, coe_eval₂Hom, eval₂_X] using hmem i
-  have he : e (f - C (constantCoeff f)) ∈ I :=
-    hle (mem_span_range_X_iff.mpr (by simp))
-  simpa only [map_sub, e, coe_eval₂Hom, eval₂_C] using he
-
-/-- In finitely many variables, evaluation lies in any ideal containing the admissible
-arguments and the image of the constant term. Taking the ideal to be `I ^ k` gives the
-bound for an ideal power. -/
-theorem eval₂_mem_of_finite (hφ : Continuous φ) (ha : HasEval a) (hmem : ∀ i, a i ∈ I)
-    (f : MvPowerSeries σ R) (hcc : φ (constantCoeff f) ∈ I) : eval₂ φ a f ∈ I := by
-  simpa only [sub_add_cancel] using I.add_mem
-    (eval₂_sub_constantCoeff_mem_of_finite hφ ha hmem f) hcc
-
-end FiniteBounds
 
 section AdicBounds
 

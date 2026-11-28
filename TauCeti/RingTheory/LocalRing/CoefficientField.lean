@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.MvPowerSeries.Basic
 public import Mathlib.RingTheory.Smooth.AdicCompletion
 public import TauCeti.Algebra.Module.SpanRank
 public import TauCeti.RingTheory.Smooth.Field
-import TauCeti.RingTheory.MvPowerSeries.Evaluation
+import TauCeti.RingTheory.MvPowerSeries.Evaluation.Basic
 
 /-!
 # Coefficient fields of complete local rings
