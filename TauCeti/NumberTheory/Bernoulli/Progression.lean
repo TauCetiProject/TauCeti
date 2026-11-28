@@ -25,18 +25,6 @@ open Finset Nat
 
 namespace TauCeti
 
-/-- The factorial-scaled progression sum is a difference of homogenized Bernoulli values. -/
-private theorem factorial_mul_sum_range_add_mul_pow_eq_bernoulli_sub {N : ℚ} (hN : N ≠ 0)
-    (k m : ℕ) (a : ℚ) :
-    ((k + 1).factorial : ℚ) * (∑ j ∈ range m, (a + N * j) ^ k) =
-      (k.factorial : ℚ) * N ^ k * ((Polynomial.bernoulli (k + 1)).eval (a / N + m) -
-        (Polynomial.bernoulli (k + 1)).eval (a / N)) := by
-  have hterm (j : ℕ) : (a + N * j) ^ k = N ^ k * (a / N + j) ^ k := by
-    rw [← mul_pow, mul_add, mul_comm N (a / N), div_mul_cancel₀ _ hN]
-  simp_rw [hterm, ← mul_sum]
-  rw [← succ_mul_sum_range_add_pow_eq_bernoulli_sub, Nat.factorial_succ, Nat.cast_mul]
-  ring
-
 /-- Separate the constant and linear terms in the translation formula for `Bₖ₊₁(x + y)`. -/
 private theorem bernoulli_eval_add_eq_add_linear_add_sq_mul_sum (k : ℕ) (x y : ℚ) :
     (Polynomial.bernoulli (k + 1)).eval (x + y) = (Polynomial.bernoulli (k + 1)).eval x +

@@ -52,6 +52,8 @@ polylogarithms.
 * `TauCeti.pow_mul_bernoulli_eval_div`: `Mᵏ Bₖ(x / M) = ∑ᵢ (k choose i) Bᵢ xᵏ⁻ⁱ Mⁱ`.
   Both the primorial `Pₖ₊₁` and the factorial `(k + 1)!` clear its denominators at integer
   numerators and natural denominators (with `M ≠ 0` for the primorial result).
+* `TauCeti.factorial_mul_sum_range_add_mul_pow_eq_bernoulli_sub`: the factorial-scaled power sum
+  along an arithmetic progression as a difference of homogenized Bernoulli values.
 
 ## References
 
@@ -214,6 +216,19 @@ theorem pow_mul_bernoulli_eval_div {M : ℚ} (hM : M ≠ 0) (k : ℕ) (x : ℚ) 
     rw [← pow_add, Nat.sub_add_cancel (Nat.lt_succ_iff.1 (mem_range.1 hi))]
   rw [Polynomial.eval_monomial, div_pow, hik]
   field_simp
+
+/-- For a rational arithmetic progression with nonzero step `N`, its factorial-scaled power
+sum is a difference of homogenized Bernoulli values. -/
+theorem factorial_mul_sum_range_add_mul_pow_eq_bernoulli_sub {N : ℚ} (hN : N ≠ 0)
+    (k m : ℕ) (a : ℚ) :
+    ((k + 1).factorial : ℚ) * (∑ j ∈ range m, (a + N * j) ^ k) =
+      (k.factorial : ℚ) * N ^ k * ((Polynomial.bernoulli (k + 1)).eval (a / N + m) -
+        (Polynomial.bernoulli (k + 1)).eval (a / N)) := by
+  have hterm (j : ℕ) : (a + N * j) ^ k = N ^ k * (a / N + j) ^ k := by
+    rw [← mul_pow, mul_add, mul_comm N (a / N), div_mul_cancel₀ _ hN]
+  simp_rw [hterm, ← mul_sum]
+  rw [← succ_mul_sum_range_add_pow_eq_bernoulli_sub, Nat.factorial_succ, Nat.cast_mul]
+  ring
 
 /-- For `M ≠ 0` and an integer `x`, `Pₖ₊₁ Mᵏ Bₖ(x / M)` is an integer, where
 `Pₖ₊₁ = primorial (k + 1)`. -/
