@@ -340,8 +340,13 @@ theorem finrank_fieldRange_functionFieldMap_eq_residueDegree {X Y : Scheme.{u}} 
     RingHom.algebraMap_toAlgebra]
   have := congr($hsq a)
   simp only [CommRingCat.comp_apply] at this
-  -- `ρX`, `ρY` and the range restriction of `f^*` apply the residue maps, the congruence
-  -- isomorphism and `f^*` by definition, and the inclusion of `f^* K(Y)` is the coercion.
+  -- The inclusion of `f^* K(Y)` is the coercion, and the range restriction of `f^*` is `f^*`.
+  rw [Subfield.algebraMap_ofSubfield, Subfield.subtype_apply,
+    RingHom.rangeRestrictFieldEquiv_apply_coe]
+  -- By definition, `ρX` applies the residue map of `X`, and `ρY` that of `Y` followed by the
+  -- congruence isomorphism.
+  change X.residue _ (f.functionFieldMap a) =
+    f.residueFieldMap _ ((Y.residueFieldCongr hy.symm).hom (Y.residue _ a))
   exact this.symm
 
 /-- The pullback of rational functions along a dominant morphism of irreducible schemes whose stalk

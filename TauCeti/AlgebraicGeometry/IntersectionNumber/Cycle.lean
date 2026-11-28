@@ -176,8 +176,7 @@ theorem intersectionNumber_pullback_eq_zero_of_height_eq_zero (f : Y ⟶ X) (x :
     f.exists_subschemeι_comp_eq_of_image_subset (Z := ⟨closure {x}, isClosed_closure⟩) hcl
     (hcl.closure_eq ▸ ((Set.mapsTo_singleton.mpr rfl).closure f.continuous).image_subset)
   rw [intersectionNumber_pullback]
-  exact intersectionNumber_eq_zero_of_eq_comp k _ g _ hg (t := IsLocalRing.closedPoint _)
-    (fun z ↦ Subsingleton.elim z _ ▸ specializes_rfl) a
+  exact intersectionNumber_eq_zero_of_eq_comp k _ g _ hg IsLocalRing.specializes_closedPoint a
 
 variable [IsProper (Y ↘ Spec (.of k))]
 
@@ -205,18 +204,19 @@ theorem intersectionNumber_pullback_eq_residueDegree_mul (f : Y ⟶ X) [f.IsOver
   let g := subschemeMap I J f hle
   have hg : g ≫ J.subschemeι = I.subschemeι ≫ f := subschemeMap_subschemeι I J f hle
   have : g.IsOver (Spec (.of k)) := ⟨by
-    rw [over_eq_subschemeι_comp, over_eq_subschemeι_comp, ← Category.assoc, hg, Category.assoc,
-      comp_over]⟩
+    rw [← comp_over J.subschemeι, ← Category.assoc, hg]
+    simp⟩
   have : IsProper (I.subscheme ↘ Spec (.of k)) := by
     rw [over_eq_subschemeι_comp]; infer_instance
   have : IsProper (J.subscheme ↘ Spec (.of k)) := by
     rw [over_eq_subschemeι_comp]; infer_instance
   have : IsProper g := g.isProper_of_isOver (Spec (.of k))
   have hgen : g (genericPoint I.subscheme) = genericPoint J.subscheme := by
-    apply J.subschemeι.isClosedEmbedding.injective
-    rw [← Scheme.Hom.comp_apply, hg, Scheme.Hom.comp_apply,
-      subschemeι_genericPoint_vanishingIdeal_closure_singleton,
-      subschemeι_genericPoint_vanishingIdeal_closure_singleton, hxy]
+    have h := congrArg (fun φ ↦ φ (genericPoint I.subscheme)) hg
+    simp only [Scheme.Hom.comp_apply] at h
+    rw [subschemeι_genericPoint_vanishingIdeal_closure_singleton, hxy] at h
+    exact J.subschemeι.isClosedEmbedding.injective
+      (h.trans (subschemeι_genericPoint_vanishingIdeal_closure_singleton _).symm)
   have : IsDominant g := isDominant_iff_genericPoint_eq.mpr hgen
   have : IsFinite g := isFinite_of_isDominant_of_topologicalKrullDim_eq_one k g
     (by exact_mod_cast hI) (by exact_mod_cast hJ)
@@ -228,11 +228,9 @@ theorem intersectionNumber_pullback_eq_residueDegree_mul (f : Y ⟶ X) [f.IsOver
     (X := J.subscheme) hJ.le
   -- The finite projection formula, with `[K(C') : K(C)]` the residue degree of `g`, hence of `f`.
   rw [intersectionNumber_pullback_of_isDominant k g J.subschemeι f hg.symm,
-    g.finrank_fieldRange_functionFieldMap_eq_residueDegree]
-  have hdeg := congrArg (fun φ ↦ φ.residueDegree (genericPoint I.subscheme)) hg
-  simp only [Scheme.Hom.residueDegree_comp, Scheme.Hom.residueDegree_eq_one_of_surjectiveOnStalks,
-    one_mul, mul_one] at hdeg
-  rw [hdeg, subschemeι_genericPoint_vanishingIdeal_closure_singleton]
+    g.finrank_fieldRange_functionFieldMap_eq_residueDegree,
+    Scheme.Hom.residueDegree_eq_of_comp_eq hg,
+    subschemeι_genericPoint_vanishingIdeal_closure_singleton]
 
 /-- **The projection formula for one-cycles.** For a morphism `f : Y ⟶ X` of proper schemes over
 `k`, a line-bundle class `a` on `X` and a one-cycle `α` on `Y`, `(a · f_* α) = (f^* a · α)`, where

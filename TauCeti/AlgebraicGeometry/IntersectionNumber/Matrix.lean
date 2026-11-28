@@ -280,11 +280,8 @@ theorem specialFiberIntersectionMatrix_eq_finsum {i j} (hij : i ≠ j) :
   have := isClosedImmersion_Spec_map_residue R
   have h :=
     (LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_eq_finsum_of_residueDegree_eq
-      (ResidueField R) _ toBase (fun y ↦ by
-        have h := congrArg (fun g ↦ Scheme.Hom.residueDegree g y)
-          (subschemeOverResidueField_comp hI)
-        simpa only [Scheme.Hom.residueDegree_comp,
-          Scheme.Hom.residueDegree_eq_one_of_surjectiveOnStalks, mul_one, one_mul] using h)
+      (ResidueField R) _ toBase
+      (Scheme.Hom.residueDegree_eq_of_comp_eq (subschemeOverResidueField_comp hI))
       (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX
         (j : CodimensionOnePoint X).property)
       (isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular hX
