@@ -364,20 +364,6 @@ theorem moduleEquiv_apply_moduleH [AddCommMonoid M] [Module R M]
   (rfl)
 
 @[simp]
-theorem moduleEquiv_apply_moduleA_smul [AddCommMonoid M] [Module R M]
-    (m : { m : Module (SmashProduct μ) M // @IsScalarTower R (SmashProduct μ) M _ m.toSMul _ })
-    (a : A) (x : M) :
-    (let _ := (moduleEquiv μ M m).moduleA; a • x) = (let _ := m.val; includeA (μ := μ) a • x) :=
-  (rfl)
-
-@[simp]
-theorem moduleEquiv_apply_moduleH_smul [AddCommMonoid M] [Module R M]
-    (m : { m : Module (SmashProduct μ) M // @IsScalarTower R (SmashProduct μ) M _ m.toSMul _ })
-    (h : H) (x : M) :
-    (let _ := (moduleEquiv μ M m).moduleH; h • x) = (let _ := m.val; includeH (μ := μ) h • x) :=
-  (rfl)
-
-@[simp]
 theorem moduleEquiv_symm_apply_val [AddCommMonoid M] [Module R M]
     (d : CompatibleActionData μ M) :
     ((moduleEquiv μ M).symm d).val =
@@ -388,24 +374,6 @@ theorem moduleEquiv_symm_apply_val [AddCommMonoid M] [Module R M]
       let _ := d.compatible
       moduleOfCompatible μ M :=
   (rfl)
-
-@[simp]
-theorem moduleEquiv_symm_apply_smul [AddCommMonoid M] [Module R M]
-    (d : CompatibleActionData μ M) (z : SmashProduct μ) (x : M) :
-    (let _ := ((moduleEquiv μ M).symm d).val; z • x) =
-      let _ := d.moduleA
-      let _ := d.towerA
-      let _ := d.moduleH
-      let _ := d.towerH
-      let _ := d.compatible
-      lsmulAlgHom μ M z x :=
-  (rfl)
-
-theorem moduleEquiv_symm_apply_pure_smul [AddCommMonoid M] [Module R M]
-    (d : CompatibleActionData μ M) (a : A) (h : H) (x : M) :
-    (let _ := ((moduleEquiv μ M).symm d).val; pure (μ := μ) a h • x) =
-      (let _ := d.moduleA; let _ := d.moduleH; a • (h • x)) := by
-  simp
 
 end ModuleEquivalence
 
