@@ -13,6 +13,7 @@ public import Mathlib.RepresentationTheory.Rep.Iso
 public import TauCeti.CategoryTheory.Simple.Classes
 public import TauCeti.CategoryTheory.Skeletal
 public import TauCeti.RepresentationTheory.Rep.Subrepresentation
+import TauCeti.CategoryTheory.Action.Monoidal
 import TauCeti.CategoryTheory.Action.Restriction
 import TauCeti.CategoryTheory.Linear.Biproduct
 import TauCeti.RepresentationTheory.AsModule
@@ -462,8 +463,8 @@ theorem finrankHom_biprod (c : SimpleFDRepClasses k G) (W₁ W₂ : FDRep k G) :
     c.finrankHom (W₁ ⊞ W₂) = c.finrankHom W₁ + c.finrankHom W₂ := by
   induction c using ind with
   | h X hX =>
-    rw [finrankHom_mk, finrankHom_mk, finrankHom_mk,
-      (TauCeti.homToBiprodLinearEquiv k X W₁ W₂).finrank_eq, Module.finrank_prod]
+    rw [finrankHom_mk, finrankHom_mk, finrankHom_mk]
+    exact TauCeti.finrank_homTo_biprod k X W₁ W₂
 
 /-- Over an algebraically closed field, `c.finrankHom Y` at a simple object `Y` is `1` at `mk Y`
 and `0` elsewhere (Schur's lemma). -/
@@ -498,7 +499,7 @@ class. -/
 theorem resEquiv_trivial (φ : G₁ ≃* G₂) :
     resEquiv k φ (trivial k G₂) = trivial k G₁ := by
   rw [← mk_tensorUnit, ← mk_tensorUnit, resEquiv_mk, mk_eq_mk_iff]
-  exact ⟨FDRep.resTensorUnitIso (φ : G₁ →* G₂)⟩
+  exact ⟨(Functor.Monoidal.εIso (Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂))).symm⟩
 
 /-- Restricting along a monoid isomorphism preserves `SimpleFDRepClasses.finrankHom`. -/
 @[simp]

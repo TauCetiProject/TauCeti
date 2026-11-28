@@ -243,11 +243,12 @@ theorem exists_isMcKayLabelling {G : Type u} [Group G] [Finite G] [Nontrivial G]
   let _ := Fintype.ofFinite (SimpleFDRepClasses ℂ G)
   obtain ⟨t, e, ht, hLab⟩ :=
     exists_affineDynkinType_of_symm_loopFree_mulVec_eq_two_smul V.mckayMatrix
-      (FDRep.isSymm_mckayMatrix_of_finrank_eq_two hdim hdet)
+      (FDRep.isSymm_mckayMatrix_of_finrank_eq_two_of_det_eq_one hdim hdet)
       (FDRep.mckayMatrix_apply_self_eq_zero hdim hfaithful hdet)
       (SimpleFDRepClasses.trivial ℂ G) (FDRep.reflTransGen_mckayMatrix_trivial V hfaithful)
       SimpleFDRepClasses.finrank SimpleFDRepClasses.finrank_pos SimpleFDRepClasses.finrank_trivial
-      fun c ↦ by simpa [hdim] using FDRep.sum_mckayMatrix_mul_finrank V c
+      (funext fun c ↦ by simpa [Matrix.mulVec, dotProduct, hdim] using
+        FDRep.sum_mckayMatrix_mul_finrank V c)
   exact ⟨t, e, ht, (isMcKayLabelling_iff_mckayMatrix V t e).mpr hLab⟩
 
 end TauCeti

@@ -15,10 +15,12 @@ public import TauCeti.RepresentationTheory.FDRep.Rigid
 public import TauCeti.RepresentationTheory.Maschke
 public import TauCeti.RepresentationTheory.Tensor.Power
 import Mathlib.GroupTheory.Perm.Cycle.Type
+import TauCeti.CategoryTheory.Action.Monoidal
 import TauCeti.LinearAlgebra.Determinant.FiniteOrder
 import TauCeti.LinearAlgebra.Matrix.Connected
 import TauCeti.RepresentationTheory.CharacterTable.Degree.Basic
 import TauCeti.RepresentationTheory.CharacterTable.TensorGeneration
+import TauCeti.RepresentationTheory.Charpoly
 import TauCeti.RepresentationTheory.InvariantForm.Determinant
 import TauCeti.RepresentationTheory.Irreducible
 
@@ -48,7 +50,7 @@ reachability to the trivial class for faithful complex representations.
   `FDRep.mckayMatrix_apply_self_eq_zero`: loop-freeness for faithful two-dimensional
   representations of determinant `1` of a nontrivial finite group.
 * `FDRep.mckayMatrix_transpose`, `FDRep.isSymm_mckayMatrix_of_equiv_dual`, and
-  `FDRep.isSymm_mckayMatrix_of_finrank_eq_two`: transpose via `ᘁV` and symmetry.
+  `FDRep.isSymm_mckayMatrix_of_finrank_eq_two_of_det_eq_one`: transpose via `ᘁV` and symmetry.
 * `FDRep.reindex_mckayMatrix_eq_transpose_fusionMatrix`: reindexing `V.mckayMatrix` along
   `SimpleFDRepClasses.equivSimpleClasses` recovers `(fusionMatrix k (SimpleClasses.classOf V))ᵀ`
   for simple `V`.
@@ -121,16 +123,12 @@ theorem finrank_hom_tensor_self_eq_zero_of_central [IsAlgClosed k] {V : FDRep k 
   have hz : (V.ρ g₀).rTensor X z = z := smul_right_injective _ hμ0 heq
   have hker : LinearMap.ker (V.ρ g₀ - 1) = ⊥ := by
     simpa [Module.End.hasEigenvalue_iff, Module.End.eigenspace_def] using hev
-  obtain ⟨L, hL⟩ := (V.ρ g₀ - 1).exists_leftInverse_of_injective hker
+  have hinj : Function.Injective ((V.ρ g₀ - 1).rTensor X) :=
+    Module.Flat.rTensor_preserves_injective_linearMap (M := X) _ (LinearMap.ker_eq_bot.mp hker)
   have hz0 : ((V.ρ g₀ - 1).rTensor X) z = 0 := by simp [hz, Module.End.one_eq_id]
   simp only [Action.zero_hom, ← CategoryTheory.ObjectProperty.ι_map, Functor.map_zero,
     ModuleCat.hom_zero, LinearMap.zero_apply]
-  calc
-    z = (LinearMap.id.rTensor X) z := by simp
-    _ = ((L ∘ₗ (V.ρ g₀ - 1)).rTensor X) z := by rw [hL]
-    _ = (L.rTensor X) (((V.ρ g₀ - 1).rTensor X) z) := by
-      rw [LinearMap.rTensor_comp, LinearMap.comp_apply]
-    _ = 0 := by rw [hz0, map_zero]
+  exact hinj (hz0.trans (map_zero _).symm)
 
 /-- A reducible faithful semisimple two-dimensional representation of determinant `1` has a
 central group element without eigenvalue `1`. -/
@@ -150,7 +148,7 @@ private theorem exists_central_no_eigenvalue_one_of_not_isIrreducible [Nontrivia
       LinearMap.det (W.toRepresentation g) * LinearMap.det (W'.toRepresentation g) = 1 :=
     have : FiniteDimensional k W.toSubmodule := Module.finite_of_finrank_pos (by omega)
     have : FiniteDimensional k W'.toSubmodule := Module.finite_of_finrank_pos (by omega)
-    (e.det_apply_eq_mul_of_prod g).symm.trans (hdet g)
+    ((e.det_apply_eq g).trans (LinearMap.det_prodMap _ _)).symm.trans (hdet g)
   have hcomm (g h : G) : g * h = h * g :=
     hfaithful <| LinearMap.ext fun v ↦ e.injective <| by
       simp [map_mul, mul_apply_eq_comp, he_apply, smul_smul, mul_comm]
@@ -257,7 +255,8 @@ theorem mckayMatrix_res_apply {k : Type u} {G₁ : Type v} {G₂ : Type w} [Fiel
   induction c₂ using SimpleFDRepClasses.ind with
   | h Y hY =>
     rw [SimpleFDRepClasses.resEquiv_mk, mckayMatrix_apply_mk, mckayMatrix_apply_mk,
-      (SimpleFDRepClasses.resEquiv k φ c₁).finrankHom_congr (FDRep.resTensorIso (φ : G₁ →* G₂) V Y),
+      (SimpleFDRepClasses.resEquiv k φ c₁).finrankHom_congr
+        (Functor.Monoidal.μIso (Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)) V Y),
       SimpleFDRepClasses.finrankHom_resEquiv]
 
 open scoped ZeroObject in
@@ -344,17 +343,20 @@ theorem reindex_mckayMatrix_eq_leftMulMatrix [IsAlgClosed k] [Group G] [NeZero (
 theorem isSymm_mckayMatrix_of_equiv_dual [Group G] [Invertible (Nat.card G : k)] {V : FDRep k G}
     (he : Nonempty (_root_.Representation.Equiv V.ρ (_root_.Representation.dual V.ρ))) :
     (mckayMatrix V).IsSymm := by
-  obtain ⟨e⟩ := he
-  rw [Matrix.IsSymm, mckayMatrix_transpose]
-  exact mckayMatrix_congr (FDRep.isoLeftDualOfEquivDual e).symm
+  ext c₁ c₂
+  induction c₁ using SimpleFDRepClasses.ind with | h X hX =>
+  induction c₂ using SimpleFDRepClasses.ind with | h Y hY =>
+    rw [Matrix.transpose_apply, mckayMatrix_mk_mk, mckayMatrix_mk_mk]
+    exact FDRep.finrank_hom_tensor_comm_of_equiv_dual he Y X
 
 /-- **Symmetry of the McKay matrix** for a two-dimensional representation of determinant `1` when
 `|G|` is invertible in `k`. -/
-theorem isSymm_mckayMatrix_of_finrank_eq_two [Group G] [Invertible (Nat.card G : k)] {V : FDRep k G}
-    (hdim : Module.finrank k V = 2) (hdet : ∀ g : G, LinearMap.det (V.ρ g) = 1) :
+theorem isSymm_mckayMatrix_of_finrank_eq_two_of_det_eq_one [Group G] [Invertible (Nat.card G : k)]
+    {V : FDRep k G} (hdim : Module.finrank k V = 2)
+    (hdet : ∀ g : G, LinearMap.det (V.ρ g) = 1) :
     (mckayMatrix V).IsSymm :=
   isSymm_mckayMatrix_of_equiv_dual
-    (_root_.Representation.nonempty_equiv_dual_of_finrank_eq_two V.ρ hdim hdet)
+    (_root_.Representation.nonempty_equiv_dual_of_finrank_eq_two_of_det_eq_one V.ρ hdim hdet)
 
 /-- **Diagonal vanishing of the McKay matrix** for a faithful two-dimensional representation of
 determinant `1` of a nontrivial finite group over an algebraically closed field of characteristic

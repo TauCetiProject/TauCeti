@@ -122,7 +122,7 @@ end SimpleGraph
 
 namespace TauCeti
 
-open Finset
+open Finset _root_.Matrix
 
 section Helpers
 
@@ -255,7 +255,7 @@ theorem exists_affineDynkinType_of_symm_loopFree_mulVec_eq_two_smul
     (M : Matrix ι ι ℕ) (hSymm : M.IsSymm) (hLoop : ∀ i, M i i = 0)
     (i₀ : ι) (hConn : ∀ i, Relation.ReflTransGen (fun x y ↦ x ≠ y ∧ 0 < M x y) i i₀)
     (δ : ι → ℕ) (hδ_pos : ∀ i, 0 < δ i) (hδ_one : δ i₀ = 1)
-    (hδ_sum : ∀ i, ∑ j, M i j * δ j = 2 * δ i) :
+    (hδ_sum : M *ᵥ δ = 2 • δ) :
     ∃ (t : AffineDynkinType) (e : ι ≃ Fin t.nodes),
       t.Valid ∧
         (∀ x y : ι,
@@ -263,6 +263,8 @@ theorem exists_affineDynkinType_of_symm_loopFree_mulVec_eq_two_smul
         (∀ x : ι, (δ x : ℤ) = t.marks (e x)) ∧
         e i₀ = t.affineNode := by
   classical
+  have hδ_sum' (i : ι) : ∑ j, M i j * δ j = 2 * δ i := by
+    simpa [Matrix.mulVec, dotProduct] using congrFun hδ_sum i
   let r : ι → ι → Prop := fun x y ↦ x ≠ y ∧ 0 < M x y
   have hsymm_rtg {x y : ι} (h : Relation.ReflTransGen r x y) : Relation.ReflTransGen r y x :=
     Relation.ReflTransGen.mono (fun _ _ hxy ↦ ⟨hxy.1.symm, hSymm.apply _ _ ▸ hxy.2⟩) y x
@@ -270,10 +272,10 @@ theorem exists_affineDynkinType_of_symm_loopFree_mulVec_eq_two_smul
   have hReach (x y : ι) : Relation.ReflTransGen r x y := (hConn x).trans (hsymm_rtg (hConn y))
   if hMult : ∃ a b : ι, 2 ≤ M a b then
     obtain ⟨a, b, hab2⟩ := hMult
-    exact exists_affineDynkinType_A_one_of_two_le M hSymm hLoop i₀ hReach δ hδ_pos hδ_one hδ_sum
+    exact exists_affineDynkinType_A_one_of_two_le M hSymm hLoop i₀ hReach δ hδ_pos hδ_one hδ_sum'
       hab2
   else
-    exact exists_affineDynkinType_of_le_one M hSymm hLoop i₀ hReach δ hδ_one hδ_sum
+    exact exists_affineDynkinType_of_le_one M hSymm hLoop i₀ hReach δ hδ_one hδ_sum'
       fun x y ↦ Nat.le_of_not_lt fun h ↦ hMult ⟨x, y, h⟩
 
 end MatrixRecognition

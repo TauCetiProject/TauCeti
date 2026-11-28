@@ -18,22 +18,24 @@ For a representation `ρ : Representation R G V` of a monoid `G` on a free modul
 basis `b : Module.Basis (Fin 2) R V` over a commutative ring `R`, if every element of `G` acts with
 determinant `1`, `b.detBilinForm` is `G`-invariant (`Module.Basis.isInvariantForm_detBilinForm`).
 When `G` is a group, `b.detBilinFormEquivDual` intertwines `ρ` with `ρ.dual`, yielding self-duality
-`Module.Basis.equivDualOfDetEqOne` and `Representation.nonempty_equiv_dual_of_finrank_eq_two` over
-any commutative ring, and hence the symmetric Hom-dimension identity
-`FDRep.finrank_hom_tensor_comm_of_finrank_eq_two` (`dim_k (X ⟶ V ⊗ Y) = dim_k (Y ⟶ V ⊗ X)`) when
-`|G|` is invertible in a field `k` (giving multiplicity symmetry for simple `X`, `Y` in the split
-semisimple case).
+`Module.Basis.equivDualOfDetEqOne` and
+`Representation.nonempty_equiv_dual_of_finrank_eq_two_of_det_eq_one` over any commutative ring, and
+hence the symmetric Hom-dimension identity
+`FDRep.finrank_hom_tensor_comm_of_finrank_eq_two_of_det_eq_one`
+(`dim_k (X ⟶ V ⊗ Y) = dim_k (Y ⟶ V ⊗ X)`) when `|G|` is invertible in a field `k` (giving
+multiplicity symmetry for simple `X`, `Y` in the split semisimple case).
 
 ## Main definitions and results
 
 * `Module.Basis.isInvariantForm_detBilinForm`: `G`-invariance of `b.detBilinForm` when
   `∀ g, LinearMap.det (ρ g) = 1`.
-* `Module.Basis.equivDualOfDetEqOne` and `Representation.nonempty_equiv_dual_of_finrank_eq_two`:
+* `Module.Basis.equivDualOfDetEqOne` and
+  `Representation.nonempty_equiv_dual_of_finrank_eq_two_of_det_eq_one`:
   self-duality `ρ.Equiv ρ.dual` of a rank-two representation of determinant `1` over a commutative
   ring.
-* `FDRep.finrank_hom_tensor_comm_of_finrank_eq_two`: symmetry of `dim_k (X ⟶ V ⊗ Y)` when `|G|` is
-  invertible in `k`, `dim_k V = 2`, and `∀ g, det (V.ρ g) = 1` (multiplicity symmetry for simple
-  inputs in the split semisimple case).
+* `FDRep.finrank_hom_tensor_comm_of_finrank_eq_two_of_det_eq_one`: symmetry of `dim_k (X ⟶ V ⊗ Y)`
+  when `|G|` is invertible in `k`, `dim_k V = 2`, and `∀ g, det (V.ρ g) = 1` (multiplicity symmetry
+  for simple inputs in the split semisimple case).
 -/
 
 public section
@@ -91,7 +93,7 @@ namespace Representation
 
 /-- **Every rank-two free representation of determinant `1` over a commutative ring is
 self-dual.** -/
-theorem nonempty_equiv_dual_of_finrank_eq_two {R : Type u} {G : Type v} {V : Type w}
+theorem nonempty_equiv_dual_of_finrank_eq_two_of_det_eq_one {R : Type u} {G : Type v} {V : Type w}
     [CommRing R] [Group G] [AddCommGroup V] [Module R V] [Module.Free R V]
     (ρ : Representation R G V) (hdim : Module.finrank R V = 2)
     (hdet : ∀ g : G, LinearMap.det (ρ g) = 1) : Nonempty (ρ.Equiv ρ.dual) := by
@@ -109,11 +111,12 @@ namespace FDRep
 /-- **Hom-dimension symmetry for a two-dimensional representation of determinant `1`**: when
 `|G|` is invertible in `k`, `dim_k (X ⟶ V ⊗ Y) = dim_k (Y ⟶ V ⊗ X)` (which is multiplicity
 symmetry for simple `X`, `Y` in the split semisimple case). -/
-theorem finrank_hom_tensor_comm_of_finrank_eq_two {k : Type u} {G : Type v} [Field k] [Group G]
-    [Invertible (Nat.card G : k)] {V : FDRep k G} (hdim : Module.finrank k V = 2)
-    (hdet : ∀ g : G, LinearMap.det (V.ρ g) = 1) (X Y : FDRep k G) :
+theorem finrank_hom_tensor_comm_of_finrank_eq_two_of_det_eq_one {k : Type u} {G : Type v}
+    [Field k] [Group G] [Invertible (Nat.card G : k)] {V : FDRep k G}
+    (hdim : Module.finrank k V = 2) (hdet : ∀ g : G, LinearMap.det (V.ρ g) = 1)
+    (X Y : FDRep k G) :
     Module.finrank k (X ⟶ V ⊗ Y) = Module.finrank k (Y ⟶ V ⊗ X) :=
   finrank_hom_tensor_comm_of_equiv_dual
-    (Representation.nonempty_equiv_dual_of_finrank_eq_two V.ρ hdim hdet) X Y
+    (Representation.nonempty_equiv_dual_of_finrank_eq_two_of_det_eq_one V.ρ hdim hdet) X Y
 
 end FDRep

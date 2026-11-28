@@ -97,18 +97,20 @@ theorem character_stdFDRep (H : Subgroup SU2) (h : H) :
 
 private noncomputable def stdFDRepConjLinearEquiv (g : SU2) :
     (Fin 2 → ℂ) ≃ₗ[ℂ] (Fin 2 → ℂ) :=
-  let ρSU2 : SU2 →* Module.End ℂ (Fin 2 → ℂ) := (TauCeti.stdRep ℂ 2).comp toGL
-  LinearEquiv.ofLinearMap (ρSU2 g⁻¹) (ρSU2 g)
-    (by rw [← Module.End.mul_eq_comp, ← map_mul, inv_mul_cancel, map_one, Module.End.one_eq_id])
-    (by rw [← Module.End.mul_eq_comp, ← map_mul, mul_inv_cancel, map_one, Module.End.one_eq_id])
+  LinearMap.GeneralLinearGroup.toLinearEquiv
+    (_root_.Representation.asGroupHom ((TauCeti.stdRep ℂ 2).comp toGL) g⁻¹)
 
 private theorem stdFDRepConjLinearEquiv_apply (g : SU2) (v : Fin 2 → ℂ) :
-    stdFDRepConjLinearEquiv g v = ((TauCeti.stdRep ℂ 2).comp toGL) g⁻¹ v :=
-  rfl
+    stdFDRepConjLinearEquiv g v = ((TauCeti.stdRep ℂ 2).comp toGL) g⁻¹ v := by
+  rw [stdFDRepConjLinearEquiv, LinearMap.GeneralLinearGroup.coe_toLinearEquiv,
+    _root_.Representation.asGroupHom_apply]
 
 private theorem stdFDRepConjLinearEquiv_symm_apply (g : SU2) (v : Fin 2 → ℂ) :
-    (stdFDRepConjLinearEquiv g).symm v = ((TauCeti.stdRep ℂ 2).comp toGL) g v :=
-  rfl
+    (stdFDRepConjLinearEquiv g).symm v = ((TauCeti.stdRep ℂ 2).comp toGL) g v := by
+  rw [stdFDRepConjLinearEquiv, ← LinearEquiv.coe_inv,
+    ← LinearMap.GeneralLinearGroup.toLinearEquiv_inv,
+    LinearMap.GeneralLinearGroup.coe_toLinearEquiv, ← map_inv,
+    _root_.Representation.asGroupHom_apply, inv_inv]
 
 private theorem stdFDRepConjLinearEquiv_equivariant {H K : Subgroup SU2} {g : SU2}
     (hK : K = H.map (MulAut.conj g : SU2 →* SU2)) (h : H) (v : Fin 2 → ℂ) :

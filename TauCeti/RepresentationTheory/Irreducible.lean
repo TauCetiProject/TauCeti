@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.RepresentationTheory.GFinite
@@ -17,8 +16,6 @@ import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 import TauCeti.RingTheory.Semisimple.DoubleCentralizer
 import TauCeti.RingTheory.Semisimple.Schur
 import TauCeti.LinearAlgebra.TensorProduct.Separation
-import TauCeti.LinearAlgebra.Determinant.Basic
-import TauCeti.RepresentationTheory.Charpoly
 
 /-!
 # Criteria for irreducibility
@@ -105,13 +102,6 @@ an algebra are those of the whole algebra.
   out of an irreducible representation differ by a unit scalar.
 * `Representation.exists_isCompl_finrank_eq_one_of_not_isIrreducible`: a reducible semisimple
   two-dimensional representation splits into two complementary one-dimensional subrepresentations.
-* `Representation.Equiv.det_apply_eq_mul_of_prod`: the determinant of a representation equivalent
-  to a product factors as the product of the determinants on the two factors.
-* `Representation.Equiv.apply_eq_prod_det_smul_of_finrank_eq_one`: a representation equivalent to a
-  product of two invariant lines acts on coordinates by scalar multiplication by the two
-  determinants.
-* `Representation.Equiv.not_hasEigenvalue_of_prod_finrank_eq_one`: a representation equivalent to
-  a product of two invariant lines has no eigenvalue `μ` when neither factor has determinant `μ`.
 -/
 
 public section
@@ -549,62 +539,5 @@ theorem exists_isCompl_finrank_eq_one_of_not_isIrreducible {ρ : Representation 
   have hsum := (Subrepresentation.equivProdOfIsCompl hWW').toLinearEquiv.finrank_eq
   rw [hdim, Module.finrank_prod, hW1] at hsum
   exact ⟨W, W', hWW', hW1, by omega⟩
-
-/-- If a representation is equivalent to a product of two representations on finite free modules,
-the determinant of each group element factors as the product of the determinants on the two
-factors. -/
-theorem Equiv.det_apply_eq_mul_of_prod {R G W₀ W₁ W₂ : Type*} [CommRing R] [Monoid G]
-    [AddCommGroup W₀] [Module R W₀]
-    [AddCommGroup W₁] [Module R W₁] [Module.Free R W₁] [Module.Finite R W₁]
-    [AddCommGroup W₂] [Module R W₂] [Module.Free R W₂] [Module.Finite R W₂]
-    {ρ : Representation R G W₀} {ρ₁ : Representation R G W₁} {ρ₂ : Representation R G W₂}
-    (e : ρ.Equiv (ρ₁.prod ρ₂)) (g : G) :
-    LinearMap.det (ρ g) = LinearMap.det (ρ₁ g) * LinearMap.det (ρ₂ g) :=
-  (e.det_apply_eq g).trans (LinearMap.det_prodMap (ρ₁ g) (ρ₂ g))
-
-/-- If a representation over a field `k` is equivalent to a product of two one-dimensional
-representations `ρ₁` and `ρ₂`, then the equivalence transports `ρ g` to scalar multiplication by
-`det (ρ₁ g)` and `det (ρ₂ g)` on the two factors. -/
-theorem Equiv.apply_eq_prod_det_smul_of_finrank_eq_one
-    {W₀ W₁ W₂ : Type*} [AddCommGroup W₀] [Module k W₀]
-    [AddCommGroup W₁] [Module k W₁] [AddCommGroup W₂] [Module k W₂]
-    {ρ : Representation k G W₀} {ρ₁ : Representation k G W₁} {ρ₂ : Representation k G W₂}
-    (e : ρ.Equiv (ρ₁.prod ρ₂))
-    (hW₁ : Module.finrank k W₁ = 1) (hW₂ : Module.finrank k W₂ = 1)
-    (g : G) (v : W₀) :
-    e (ρ g v) = (LinearMap.det (ρ₁ g) • (e v).1, LinearMap.det (ρ₂ g) • (e v).2) := by
-  have : FiniteDimensional k W₁ := Module.finite_of_finrank_pos (by omega)
-  have : FiniteDimensional k W₂ := Module.finite_of_finrank_pos (by omega)
-  have h := LinearMap.congr_fun (e.isIntertwining' g) v
-  exact Prod.ext
-    (by simpa [LinearMap.apply_eq_det_smul_of_finrank_eq_one hW₁] using congrArg Prod.fst h)
-    (by simpa [LinearMap.apply_eq_det_smul_of_finrank_eq_one hW₂] using congrArg Prod.snd h)
-
-/-- If a representation over a field `k` is equivalent to a product of two one-dimensional
-representations `ρ₁` and `ρ₂`, and neither `det (ρ₁ g)` nor `det (ρ₂ g)` equals `μ`, then `ρ g`
-does not have `μ` as an eigenvalue. -/
-theorem Equiv.not_hasEigenvalue_of_prod_finrank_eq_one
-    {W₀ W₁ W₂ : Type*} [AddCommGroup W₀] [Module k W₀]
-    [AddCommGroup W₁] [Module k W₁] [AddCommGroup W₂] [Module k W₂]
-    {ρ : Representation k G W₀} {ρ₁ : Representation k G W₁} {ρ₂ : Representation k G W₂}
-    (e : ρ.Equiv (ρ₁.prod ρ₂))
-    (hW₁ : Module.finrank k W₁ = 1) (hW₂ : Module.finrank k W₂ = 1)
-    {g : G} {μ : k} (hc₁ : LinearMap.det (ρ₁ g) ≠ μ) (hc₂ : LinearMap.det (ρ₂ g) ≠ μ) :
-    ¬ Module.End.HasEigenvalue (ρ g) μ := by
-  intro hev
-  obtain ⟨v, hv, hv0⟩ := hev.exists_hasEigenvector
-  have hv_fix : ρ g v = μ • v := by simpa using Module.End.mem_eigenspace_iff.mp hv
-  have hpair : (LinearMap.det (ρ₁ g) • (e v).1, LinearMap.det (ρ₂ g) • (e v).2) = μ • e v := by
-    calc
-      (LinearMap.det (ρ₁ g) • (e v).1, LinearMap.det (ρ₂ g) • (e v).2)
-        = e (ρ g v) := (e.apply_eq_prod_det_smul_of_finrank_eq_one hW₁ hW₂ g v).symm
-      _ = μ • e v := by rw [hv_fix, map_smul]
-  have h1 : (e v).1 = 0 := by
-    by_contra hnz
-    exact hc₁ (smul_left_injective k hnz (by simpa using congrArg Prod.fst hpair))
-  have h2 : (e v).2 = 0 := by
-    by_contra hnz
-    exact hc₂ (smul_left_injective k hnz (by simpa using congrArg Prod.snd hpair))
-  exact hv0 (e.injective ((Prod.ext h1 h2).trans (map_zero e).symm))
 
 end Representation

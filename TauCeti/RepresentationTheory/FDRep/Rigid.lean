@@ -145,7 +145,7 @@ theorem finrank_hom_tensor_comm_of_equiv_dual [Invertible (Nat.card G : k)] {V :
     (he : Nonempty (_root_.Representation.Equiv V.ρ (Representation.dual V.ρ)))
     (X Y : FDRep k G) : finrank k (X ⟶ V ⊗ Y) = finrank k (Y ⟶ V ⊗ X) := by
   obtain ⟨e⟩ := he
-  exact (finrank_hom_tensor_leftDual V X Y).trans
-    (Linear.homCongr k (Iso.refl Y) (whiskerRightIso (isoLeftDualOfEquivDual e).symm X)).finrank_eq
+  exact (finrank_hom_comm X (V ⊗ Y)).trans
+    (tensorLeftHomLinearEquivOfEquivDual e Y X).finrank_eq
 
 end FDRep

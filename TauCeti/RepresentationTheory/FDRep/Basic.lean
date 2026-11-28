@@ -97,8 +97,7 @@ of `Representation.Equiv` apply to isomorphic objects.
 * `FDRep.tensorUnit_ρ`, `FDRep.tensor_ρ`, `FDRep.finrank_tensor`, and `FDRep.tprodEquiv`: the
   actions on the tensor unit and on a tensor product, the `finrank` of a tensor product of free
   carriers, and the `Representation.Equiv` with `Representation.tprod`.
-* `FDRep.res_ρ`, `FDRep.resTensorUnitIso`, and `FDRep.resTensorIso`: the carried action and the
-  canonical tensor-unit and tensor-product comparisons under `Action.res`.
+* `FDRep.res_ρ`: the carried action of `FDRep` restriction under `Action.res`.
 * `FDRep.isoToLinearEquiv_whiskerLeftIso_tmul`: evaluation of `whiskerLeftIso` on pure tensors.
 * `FDRep.of_ρ_eq_self` and `FDRep.of_trivial`: rebundling the carried representation returns the
   object, and bundling the trivial action on `R` gives the tensor unit `𝟙_ (FDRep R G)`.
@@ -685,7 +684,7 @@ namespace FDRep
 
 section Res
 
-open CategoryTheory MonoidalCategory
+open CategoryTheory
 
 /-- Restricting a representation in `FDRep R G₂` along a monoid homomorphism `φ : G₁ →* G₂`
 pulls back its carried action along `φ`. -/
@@ -694,25 +693,6 @@ theorem res_ρ {R : Type u} {G₁ : Type v} {G₂ : Type w} [CommRing R] [Monoid
     FDRep.ρ ((Action.res (FGModuleCat R) φ).obj V) g = V.ρ (φ g) := by
   rw [← FDRep.hom_hom_action_ρ, ← FDRep.hom_hom_action_ρ, Action.res_obj_ρ]
   exact congrArg (fun f : End V.V => f.asHom.hom.hom) (MonoidHom.comp_apply (Action.ρ V) φ g)
-
-/-- Restricting the tensor unit of `FDRep R G₂` along a monoid homomorphism `φ : G₁ →* G₂`
-is isomorphic to the tensor unit of `FDRep R G₁`. -/
-noncomputable def resTensorUnitIso {R : Type u} {G₁ : Type v} {G₂ : Type w}
-    [CommRing R] [Monoid G₁] [Monoid G₂] (φ : G₁ →* G₂) :
-    (Action.res (FGModuleCat R) φ).obj (𝟙_ (FDRep R G₂)) ≅ 𝟙_ (FDRep R G₁) :=
-  LinearEquiv.toFDRepIso (LinearEquiv.refl R _) fun g x => by
-    rw [FDRep.res_ρ, FDRep.tensorUnit_ρ, FDRep.tensorUnit_ρ]
-    rfl
-
-/-- Restricting a tensor product in `FDRep R G₂` along a monoid homomorphism `φ : G₁ →* G₂`
-is isomorphic to the tensor product of the restrictions. -/
-noncomputable def resTensorIso {R : Type u} {G₁ : Type v} {G₂ : Type w}
-    [CommRing R] [Monoid G₁] [Monoid G₂] (φ : G₁ →* G₂) (V W : FDRep R G₂) :
-    (Action.res (FGModuleCat R) φ).obj V ⊗ (Action.res (FGModuleCat R) φ).obj W ≅
-      (Action.res (FGModuleCat R) φ).obj (V ⊗ W) :=
-  LinearEquiv.toFDRepIso (LinearEquiv.refl R _) fun g x => by
-    rw [FDRep.tensor_ρ, FDRep.res_ρ, FDRep.res_ρ, FDRep.res_ρ, FDRep.tensor_ρ]
-    rfl
 
 end Res
 
