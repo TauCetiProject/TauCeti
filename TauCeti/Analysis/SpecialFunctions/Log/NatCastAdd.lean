@@ -22,6 +22,8 @@ series of `a` plus the corresponding partial sum of a step correction.
 * `Real.log_natCast_add_pos` — `log (N + c)` is positive for every shift `c > 1`.
 * `Real.tendsto_log_natCast_add_atTop` — `log (N + c)` tends to `atTop` as `N → ∞`.
 * `Real.floor_exp_eq_of_mem_Ioo` — `⌊exp t⌋₊ = n` for `t ∈ (log n, log (n + 1))`.
+* `Real.log_natFloor_exp_mem_Icc` — for `t ≥ 0`, taking the natural floor before taking the
+  logarithm of `exp t` loses at most `log 2`.
 -/
 
 public section
@@ -50,5 +52,15 @@ theorem floor_exp_eq_of_mem_Ioo {n : ℕ} {t : ℝ}
   have hhi : exp t < n + 1 := by
     simpa [exp_log (by positivity : (0 : ℝ) < n + 1)] using exp_lt_exp.mpr ht.2
   exact (Nat.floor_eq_iff (exp_pos t).le).mpr ⟨hlo.le, hhi⟩
+
+/-- The logarithm of `⌊exp t⌋₊` for `t ≥ 0` is between `t - log 2` and `t`. -/
+theorem log_natFloor_exp_mem_Icc {t : ℝ} (ht : 0 ≤ t) :
+    log (⌊exp t⌋₊ : ℝ) ∈ Icc (t - log 2) t := by
+  have hn : (1 : ℝ) ≤ (⌊exp t⌋₊ : ℕ) := Nat.one_le_cast.mpr (by simpa using ht)
+  have hn' : 0 < (⌊exp t⌋₊ : ℝ) := zero_lt_one.trans_le hn
+  have h : exp t ≤ 2 * (⌊exp t⌋₊ : ℕ) := (Nat.lt_floor_add_one (exp t)).le.trans (by linarith)
+  have hlo := log_le_log (exp_pos t) h
+  rw [log_exp, log_mul two_ne_zero hn'.ne'] at hlo
+  exact ⟨by linarith, (log_le_log hn' (Nat.floor_le (exp_nonneg t))).trans_eq (log_exp t)⟩
 
 end Real

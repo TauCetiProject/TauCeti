@@ -35,6 +35,8 @@ lines, and that the inverse of a positive twist lift twists negatively.
 
 ## Main results
 
+* `Nat.exists_isLeast_dvd_and_lt_le_add`: the least multiple of `q` strictly above a nonnegative
+  threshold exceeds it by at most `q`.
 * `TauCeti.exists_pos_nat_mul_inv_lt`: for `0 < c` there is `n > 0` with `L * n⁻¹ < c`.
 * `TauCeti.exists_div_pow_lt`: for `1 < r` and `0 < ε` there is `m` with `w / r ^ m < ε`.
 * `TauCeti.exists_div_pow_lt_and_forall_mul_pow_lt_one`: for `1 < r`, `s < r` and `0 < p`
@@ -50,6 +52,32 @@ lines, and that the inverse of a positive twist lift twists negatively.
 -/
 
 public section
+
+namespace Nat
+
+/-- For `0 < q` and `0 ≤ t`, the least natural multiple of `q` strictly above `t` is at most
+`t + q`. -/
+theorem exists_isLeast_dvd_and_lt_le_add {R : Type*} [Semiring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [Archimedean R] {q : ℕ} (hq : 0 < q) {t : R} (ht : 0 ≤ t) :
+    ∃ b : ℕ, IsLeast {n : ℕ | q ∣ n ∧ t < (n : R)} b ∧ (b : R) ≤ t + q := by
+  classical
+  have hex : ∃ n : ℕ, q ∣ n ∧ t < (n : R) := by
+    obtain ⟨k, hk⟩ := exists_lt_nsmul (Nat.cast_pos.mpr hq : (0 : R) < q) t
+    exact ⟨k * q, dvd_mul_left q k, by simpa only [nsmul_eq_mul, Nat.cast_mul] using hk⟩
+  have hex' : ∃ b : ℕ, IsLeast {n : ℕ | q ∣ n ∧ t < (n : R)} b :=
+    ⟨Nat.find hex, Nat.isLeast_find hex⟩
+  obtain ⟨b, hb⟩ := hex'
+  refine ⟨b, hb, ?_⟩
+  obtain ⟨⟨k, rfl⟩, hlt⟩ := hb.1
+  cases k with
+  | zero => exact (ht.not_gt (by simpa using hlt)).elim
+  | succ k =>
+    have hk : ((q * k : ℕ) : R) ≤ t := by
+      by_contra! h
+      exact (Nat.mul_lt_mul_of_pos_left k.lt_succ_self hq).not_ge (hb.2 ⟨dvd_mul_right q k, h⟩)
+    simpa only [Nat.mul_succ, Nat.cast_add] using add_le_add_left hk (q : R)
+
+end Nat
 
 namespace TauCeti
 
