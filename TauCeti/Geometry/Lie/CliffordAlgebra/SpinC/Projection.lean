@@ -116,44 +116,30 @@ local notation "𝔰" => LeftInvariantDerivation IS (spinGroup (realCliffordForm
 local notation "𝔬" => LeftInvariantDerivation ISO SpecialOrthogonalUnitsRange
 local notation "d" => ContinuousMonoidHom.lieWeight (I := IC) (detContinuousMonoidHom _ hQ)
 
-private def realSpecialOrthogonalContinuousMulEquivRange :
-    QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) ≃ₜ*
-      SpecialOrthogonalUnitsRange where
-  toMulEquiv := (realCliffordSpecialOrthogonalContinuousMulEquivRange n).toMulEquiv
-  continuous_toFun :=
-    -- `realCliffordSpecialOrthogonalContinuousMulEquivRange` uses the entrywise matrix topology,
-    -- while this file selects `Matrix.linftyOpTopologicalSpace`; both agree by
-    -- `Matrix.linftyOpTopologicalSpace_eq`.
-    (Matrix.linftyOpTopologicalSpace_eq (Fin n) (Fin n) ℝ).symm ▸
-      (realCliffordSpecialOrthogonalContinuousMulEquivRange n).continuous_toFun
-  continuous_invFun :=
-    (Matrix.linftyOpTopologicalSpace_eq (Fin n) (Fin n) ℝ).symm ▸
-      (realCliffordSpecialOrthogonalContinuousMulEquivRange n).continuous_invFun
-
-private theorem realSpecialOrthogonalContinuousMulEquivRange_apply
-    (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)) :
-    realSpecialOrthogonalContinuousMulEquivRange n g =
-      realCliffordSpecialOrthogonalContinuousMulEquivRange n g :=
-  -- Both continuous equivalences wrap the same underlying `toMulEquiv`.
-  rfl
-
 /-- The rotation homomorphism on compact `Spinᶜ(n)` into the closed `SO(n)` matrix-units
 carrier. -/
 def realToSpecialOrthogonalRange : G →ₜ* SpecialOrthogonalUnitsRange where
   toMonoidHom :=
-    (realSpecialOrthogonalContinuousMulEquivRange n).toMonoidHom.comp
+    (realCliffordSpecialOrthogonalContinuousMulEquivRange n).toMonoidHom.comp
       (toSpecialOrthogonal (realCliffordForm n 0) hQ)
   continuous_toFun :=
-    (realSpecialOrthogonalContinuousMulEquivRange n).continuous.comp
+    -- `realCliffordSpecialOrthogonalContinuousMulEquivRange` uses the entrywise matrix topology,
+    -- while this file selects `Matrix.linftyOpTopologicalSpace`; both agree definitionally by
+    -- `Matrix.linftyOpTopologicalSpace_eq`.
+    (show QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) ≃ₜ*
+        SpecialOrthogonalUnitsRange from
+      realCliffordSpecialOrthogonalContinuousMulEquivRange n).continuous.comp
       (continuous_toSpecialOrthogonal_pi (realCliffordForm n 0) hQ)
 
 /-- `realToSpecialOrthogonalRange` transports `toSpecialOrthogonal` into the matrix-units range. -/
 theorem realToSpecialOrthogonalRange_apply (g : G) :
     realToSpecialOrthogonalRange n hQ g =
       realCliffordSpecialOrthogonalContinuousMulEquivRange n
-        (toSpecialOrthogonal (realCliffordForm n 0) hQ g) :=
-  realSpecialOrthogonalContinuousMulEquivRange_apply n
-    (toSpecialOrthogonal (realCliffordForm n 0) hQ g)
+        (toSpecialOrthogonal (realCliffordForm n 0) hQ g) := by
+  rw [realToSpecialOrthogonalRange]
+  -- Unfolding `realToSpecialOrthogonalRange` exposes the underlying `toMonoidHom` composition,
+  -- matching evaluation of `realCliffordSpecialOrthogonalContinuousMulEquivRange` definitionally.
+  rfl
 
 /-- On a quotient representative `[s, z]`, `realToSpecialOrthogonalRange` evaluates to the matrix
 of `π(s)`. -/
@@ -185,38 +171,21 @@ theorem realToSpecialOrthogonalRange_comp_ofCircleContinuousMonoidHom :
   ext z
   simp
 
-/-- The compact real Spin projection between the closed units-range carriers, viewed on the
-operator-norm matrix topology of `SpecialOrthogonalUnitsRange(n)`. -/
-def realSpinToSpecialOrthogonalRange : SpinUnitsRange →ₜ* SpecialOrthogonalUnitsRange where
-  toMonoidHom := (realCliffordSpinToSpecialOrthogonalRange n).toMonoidHom
-  continuous_toFun :=
-    -- `realCliffordSpinToSpecialOrthogonalRange` uses the entrywise matrix topology, while this
-    -- file selects `Matrix.linftyOpTopologicalSpace` (`Matrix.linftyOpTopologicalSpace_eq`).
-    (Matrix.linftyOpTopologicalSpace_eq (Fin n) (Fin n) ℝ).symm ▸
-      (realCliffordSpinToSpecialOrthogonalRange n).continuous
-
-/-- Pointwise evaluation of `realSpinToSpecialOrthogonalRange` agrees with
-`realCliffordSpinToSpecialOrthogonalRange`. -/
-@[simp]
-theorem realSpinToSpecialOrthogonalRange_apply (x : SpinUnitsRange) :
-    realSpinToSpecialOrthogonalRange n x =
-      realCliffordSpinToSpecialOrthogonalRange n x :=
-  -- Both continuous homomorphisms share the same underlying `toMonoidHom`.
-  (rfl)
-
 /-- Restricting `realToSpecialOrthogonalRange` to `Spin(n)` recovers the compact Spin projection
 into `SO(n)`. -/
 @[simp]
 theorem realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom :
     (realToSpecialOrthogonalRange n hQ).comp (ofSpinContinuousMonoidHom _ hQ) =
-      (realSpinToSpecialOrthogonalRange n).comp
+      -- `show` selects the operator-norm matrix topology (`Matrix.linftyOpTopologicalSpace_eq`)
+      -- on the codomain so both sides share the same `ContinuousMonoidHom` type.
+      (show SpinUnitsRange →ₜ* SpecialOrthogonalUnitsRange from
+        realCliffordSpinToSpecialOrthogonalRange n).comp
         (realCliffordSpinContinuousMulEquivUnitsRange n :
           spinGroup (realCliffordForm n 0) →ₜ* SpinUnitsRange) := by
   ext1 s
   rw [ContinuousMonoidHom.coe_comp, ContinuousMonoidHom.coe_comp,
     Function.comp_apply, Function.comp_apply, ContinuousMonoidHom.coe_coe,
     ofSpinContinuousMonoidHom_apply, realToSpecialOrthogonalRange_ofSpin,
-    realSpinToSpecialOrthogonalRange_apply,
     realCliffordSpecialOrthogonalContinuousMulEquivRange_apply,
     realCliffordSpinContinuousMulEquivUnitsRange_apply]
   exact (realCliffordSpinToSpecialOrthogonalRange_apply_toUnits n s).symm
@@ -259,7 +228,8 @@ theorem lieMap_realToSpecialOrthogonalRange_lieMap_ofSpinContinuousMonoidHom (X 
         (ContinuousMonoidHom.lieMap_comp_apply (I := IS) (I' := IC) (I'' := ISO)
           (ofSpinContinuousMonoidHom _ hQ) (realToSpecialOrthogonalRange n hQ) X).symm
     _ = ContinuousMonoidHom.lieMap (I := IS) (I' := ISO)
-          ((realSpinToSpecialOrthogonalRange n).comp
+          ((show SpinUnitsRange →ₜ* SpecialOrthogonalUnitsRange from
+            realCliffordSpinToSpecialOrthogonalRange n).comp
             (realCliffordSpinContinuousMulEquivUnitsRange n :
               spinGroup (realCliffordForm n 0) →ₜ* SpinUnitsRange)) X := by
         rw [realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom]
@@ -272,7 +242,8 @@ theorem lieMap_realToSpecialOrthogonalRange_lieMap_ofSpinContinuousMonoidHom (X 
         exact (ContinuousMonoidHom.lieMap_comp_apply (I := IS) (I' := IS) (I'' := ISO)
           (realCliffordSpinContinuousMulEquivUnitsRange n :
             spinGroup (realCliffordForm n 0) →ₜ* SpinUnitsRange)
-          (realSpinToSpecialOrthogonalRange n) X).symm
+          (show SpinUnitsRange →ₜ* SpecialOrthogonalUnitsRange from
+            realCliffordSpinToSpecialOrthogonalRange n) X).symm
 
 /-- Evaluating the rotation differential on `realSpinProdDetLinearEquiv (X, a)` projects onto the
 Spin factor via `realSpinToSpecialOrthogonalLieEquiv`. -/
@@ -574,31 +545,6 @@ theorem lie_realSoProdDetLinearEquiv (p q : LieAlgebra.Orthogonal.so (Fin n) ℝ
     Prod.ext rfl ((AbelianLieAlgebra.lie_eq_zero _ _).trans (map_zero _).symm)
   rw [hlie]
 
-private theorem coe_realCliffordSpecialOrthogonalLieEquivSo_Ad
-    (u : SpecialOrthogonalUnitsRange) (W : 𝔬) :
-    ((realCliffordSpecialOrthogonalLieEquivSo n (Lie.Ad (I := ISO) u W) :
-        LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) =
-      ((u : GL (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) *
-        ((realCliffordSpecialOrthogonalLieEquivSo n W :
-          LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) *
-        ((u : GL (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)ᵀ := by
-  rw [coe_realCliffordSpecialOrthogonalLieEquivSo_apply,
-    TauCeti.Lie.EmbeddedLieSubgroupData.lieMapSubtypeVal_apply,
-    ContMDiffMonoidMorphism.lieMap_Ad,
-    TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply,
-    TauCeti.Lie.unitsLieAlgebraLieEquiv_apply, TauCeti.Lie.unitsLieAlgebraEquiv_Ad,
-    ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
-    ← TauCeti.Lie.EmbeddedLieSubgroupData.lieMapSubtypeVal_apply,
-    ← coe_realCliffordSpecialOrthogonalLieEquivSo_apply]
-  have hu : ((u : GL (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) ∈
-      Matrix.specialOrthogonalGroup (Fin n) ℝ :=
-    (QuadraticMap.mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff n
-      (u : GL (Fin n) ℝ)).mp u.property
-  rw [Matrix.coe_units_inv, Matrix.inv_eq_right_inv hu.1.2]
-  -- `GL (Fin n) ℝ` is definitionally `(Matrix (Fin n) (Fin n) ℝ)ˣ` and `u.val` is
-  -- `(u : GL (Fin n) ℝ)`.
-  rfl
-
 /-- **Full `Spinᶜ(n)` adjoint equivariance of the `𝔰𝔬(n) × ℝ` lift**: any `g ∈ Spinᶜ(n)` acts on
 the rotation matrix component by conjugation by its projected special-orthogonal matrix and fixes
 the determinant component. -/
@@ -664,7 +610,12 @@ private def realSpecialOrthogonalProdCircleHomeomorph :
     QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) × Circle ≃ₜ
       SpecialOrthogonalUnitsRange × Circle :=
   Homeomorph.prodCongr
-    (realSpecialOrthogonalContinuousMulEquivRange n).toHomeomorph
+    -- `realCliffordSpecialOrthogonalContinuousMulEquivRange` uses the entrywise matrix topology,
+    -- which is definitionally equal to `Matrix.linftyOpTopologicalSpace`
+    -- (`Matrix.linftyOpTopologicalSpace_eq`).
+    (show QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) ≃ₜ
+        SpecialOrthogonalUnitsRange from
+      (realCliffordSpecialOrthogonalContinuousMulEquivRange n).toHomeomorph)
     (Homeomorph.refl Circle)
 
 private theorem coe_realToSpecialOrthogonalProdDetRange :
@@ -674,8 +625,11 @@ private theorem coe_realToSpecialOrthogonalProdDetRange :
           (det (realCliffordForm n 0) hQ)) := by
   funext g
   apply Prod.ext
-  · exact (realToSpecialOrthogonalRange_apply n hQ g).trans
-      (realSpecialOrthogonalContinuousMulEquivRange_apply n _).symm
+  · rw [realToSpecialOrthogonalProdDetRange_apply, realToSpecialOrthogonalRange_apply,
+      Function.comp_apply, MonoidHom.prod_apply, realSpecialOrthogonalProdCircleHomeomorph]
+    -- `Homeomorph.prodCongr` applies `realCliffordSpecialOrthogonalContinuousMulEquivRange` on
+    -- the first factor; the matrix topologies agree by `Matrix.linftyOpTopologicalSpace_eq`.
+    rfl
   · exact detContinuousMonoidHom_apply _ hQ g
 
 /-- The kernel of the smooth bundled projection `realToSpecialOrthogonalProdDetRange` coincides
