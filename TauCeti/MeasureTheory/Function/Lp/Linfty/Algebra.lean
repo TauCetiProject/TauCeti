@@ -56,9 +56,8 @@ almost everywhere equalities in place of pointwise ones.
 * `MeasureTheory.Lp.coeFn_algebraMap`: scalars act as almost everywhere constant classes.
 * `MeasureTheory.Lp.exists_eq_algebraMap_dirac`: over a Dirac measure, every element of `L∞` is
   a scalar in the image of `algebraMap`.
-* `MeasureTheory.MemLp.toLp_count_apply`, `MeasureTheory.Lp.countStarAlgEquiv`: over counting
-  measure, `MemLp.toLp` evaluates pointwise, and on a finite measurable-singleton space `α → R`
-  is star-isomorphic to `Lp R ∞ Measure.count`.
+* `MeasureTheory.Lp.countStarAlgEquiv`: over counting measure on a finite measurable-singleton
+  space, `α → R` is star-isomorphic to `Lp R ∞ Measure.count`.
 * `TauCeti.linftyIndicator_mul_linftyIndicator`, `TauCeti.isStarProjection_linftyIndicator`:
   algebraic and star properties of measurable-set indicators in `L∞`.
 * `MeasureTheory.Lp.exists_measurableSet_eq_linftyIndicator_of_isIdempotentElem`: over a normed
@@ -300,15 +299,6 @@ theorem _root_.StarAlgHom.coeFn_compLpTop (φ : A →⋆ₐ[𝕜] B) (hφ : Cont
 end StarAlgHom
 
 section Count
-
-/-- Evaluating the `Lp` class of a function on counting measure at any point returns its
-pointwise value. -/
-@[simp]
-theorem _root_.MeasureTheory.MemLp.toLp_count_apply {α E : Type*} {_ : MeasurableSpace α}
-    [NormedAddCommGroup E] {p : ℝ≥0∞} {f : α → E} (hf : MemLp f p (Measure.count : Measure α))
-    (x : α) :
-    hf.toLp f x = f x :=
-  Measure.ae_count_iff.mp hf.coeFn_toLp x
 
 /-- Over a finite measurable-singleton space `α`, pointwise evaluation identifies `α → R` with
 `Lp R ∞ (Measure.count : Measure α)` as a unital ⋆-algebra. -/

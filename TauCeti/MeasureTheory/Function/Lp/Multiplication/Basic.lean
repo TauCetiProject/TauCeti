@@ -113,16 +113,6 @@ theorem multiplicationOperator_ae (a : Lp 𝕜 ∞ μ) (f : Lp E p μ) :
     multiplicationOperator a f =ᵐ[μ] fun x ↦ a x • f x :=
   coeFn_lpSMul a f
 
-/-- On scalar `L²`, `multiplicationOperator` agrees with the Hölder operator built from complex
-multiplication `ContinuousLinearMap.mul ℂ ℂ`. -/
-theorem holderL_mul_eq_multiplicationOperator :
-    ⇑((ContinuousLinearMap.mul ℂ ℂ).holderL μ ∞ 2 2) =
-      multiplicationOperator (E := ℂ) (p := 2) (μ := μ) := by
-  funext a
-  ext f
-  rw [ContinuousLinearMap.holderL_apply_apply, ContinuousLinearMap.holder_mul_eq_smul,
-    multiplicationOperator_apply]
-
 /-- Multiplication by `a` changes the `Lᵖ` norm by at most `‖a‖ * ‖f‖`. -/
 theorem norm_multiplicationOperator_apply_le (a : Lp 𝕜 ∞ μ) (f : Lp E p μ) :
     ‖multiplicationOperator a f‖ ≤ ‖a‖ * ‖f‖ :=
@@ -235,6 +225,22 @@ theorem compMeasurePreserving_multiplicationOperator_apply {β : Type*} [Measura
 
 end NormedSpace
 
+section Holder
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- On scalar `Lᵖ` (`1 ≤ p ≤ ∞`), `multiplicationOperator` agrees with the Hölder operator built
+from `ContinuousLinearMap.mul 𝕜 𝕜`. -/
+theorem holderL_mul_eq_multiplicationOperator :
+    ⇑((ContinuousLinearMap.mul 𝕜 𝕜).holderL μ ∞ p p) =
+      multiplicationOperator (E := 𝕜) (p := p) (μ := μ) := by
+  funext a
+  ext f
+  rw [ContinuousLinearMap.holderL_apply_apply, ContinuousLinearMap.holder_mul_eq_smul,
+    multiplicationOperator_apply]
+
+end Holder
+
 section Indicator
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -255,40 +261,6 @@ theorem commute_multiplicationOperator_indicatorMultiplication (a : Lp 𝕜 ∞ 
     Commute (multiplicationOperator (E := E) (p := p) a) (indicatorMultiplication 𝕜 p hs) := by
   rw [← multiplicationOperator_linftyIndicator hs]
   exact commute_multiplicationOperator a _
-
-open Filter Topology in
-/-- **Cut-offs to shrinking sets.** Cutting an `Lᵖ` class, `p < ∞`, off to the sets of a decreasing
-family with empty intersection gives classes whose norms tend to zero: the `p`-th powers of the
-norms are the measures of the sets for the finite measure `‖f‖ᵖ μ`. -/
-theorem tendsto_norm_indicatorMultiplication {ι : Type*} [Preorder ι]
-    [IsCountablyGenerated (atTop : Filter ι)] (hp : p ≠ ∞) {s : ι → Set α}
-    (hs : ∀ i, MeasurableSet (s i)) (hanti : Antitone s) (hempty : ⋂ i, s i = ∅)
-    (f : Lp E p μ) :
-    Tendsto (fun i ↦ ‖indicatorMultiplication 𝕜 p (hs i) f‖) atTop (𝓝 0) := by
-  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₀⟩⟩
-  · rw [atTop.filter_eq_bot_of_isEmpty]
-    exact tendsto_bot
-  have hp0 : p ≠ 0 := (lt_of_lt_of_le zero_lt_one (Fact.out : 1 ≤ p)).ne'
-  have hpos : 0 < 1 / p.toReal := one_div_pos.2 (ENNReal.toReal_pos hp0 hp)
-  -- The `p`-th powers of the norms are the measures of the sets for `‖f‖ᵖ μ`.
-  set ν := μ.withDensity fun x ↦ ‖f x‖ₑ ^ p.toReal
-  have hν (i : ι) :
-      ‖indicatorMultiplication 𝕜 p (hs i) f‖ = (ν (s i) ^ (1 / p.toReal)).toReal := by
-    rw [Lp.norm_def, eLpNorm_congr_ae (indicatorMultiplication_ae (hs i) f),
-      eLpNorm_indicator_eq_eLpNorm_restrict (hs i).nullMeasurableSet,
-      eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp (Lp.aestronglyMeasurable f).restrict,
-      withDensity_apply _ (hs i)]
-  have hfin : ν (s i₀) ≠ ∞ := by
-    refine ne_top_of_le_ne_top ?_ (measure_mono (Set.subset_univ _))
-    rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
-    exact (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hp0 hp (Lp.eLpNorm_lt_top f)).ne
-  have h := tendsto_measure_iInter_atTop (μ := ν) (fun i ↦ (hs i).nullMeasurableSet) hanti
-    ⟨i₀, hfin⟩
-  rw [hempty, measure_empty] at h
-  have h' := ((ENNReal.continuous_rpow_const (y := 1 / p.toReal)).tendsto 0).comp h
-  rw [ENNReal.zero_rpow_of_pos hpos] at h'
-  simp only [hν]
-  simpa [Function.comp_def] using (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp h'
 
 end Indicator
 
@@ -529,6 +501,35 @@ theorem multiplicationOperator_inj [SigmaFinite μ] [Nontrivial E] {a b : Lp �
   (multiplicationOperator_injective (𝕜 := 𝕜) (E := E) (p := p) (μ := μ)).eq_iff
 
 end ExactNorm
+
+section LocalFaithfulness
+
+variable {𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- An `L∞` symbol supported on a finite-measure measurable set `s` whose multiplication operator
+on `Lp E p μ` (for a nontrivial space `E` and `1 ≤ p ≤ ∞`) vanishes is zero in `Lp 𝕜 ∞ μ`
+(with no `SigmaFinite` hypothesis on `μ`). -/
+theorem eq_zero_of_mul_linftyIndicator_eq_self_of_multiplicationOperator_eq_zero
+    [Nontrivial E] {s : Set α} (hs : MeasurableSet s) (hμs : μ s ≠ ∞) {a : Lp 𝕜 ∞ μ}
+    (hsupp : a * TauCeti.linftyIndicator μ 𝕜 s hs = a)
+    (hzero : multiplicationOperator (E := E) (p := p) a = 0) : a = 0 := by
+  obtain ⟨v, hv⟩ := exists_ne (0 : E)
+  have happly : multiplicationOperator (E := E) (p := p) a (indicatorConstLp p hs hμs v) = 0 := by
+    rw [hzero, zero_apply]
+  refine Lp.eq_zero_iff_ae_eq_zero.mpr ?_
+  filter_upwards [(Lp.ext_iff.mp hsupp.symm).trans (Lp.coeFn_mul a _),
+    TauCeti.coeFn_linftyIndicator (μ := μ) (R := 𝕜) hs,
+    (multiplicationOperator_ae a (indicatorConstLp p hs hμs v)).symm.trans
+      ((Lp.ext_iff.mp happly).trans (Lp.coeFn_zero E p μ)),
+    indicatorConstLp_coeFn (p := p) (hs := hs) (hμs := hμs) (c := v)]
+    with x hmul hsx h0 hind
+  by_cases hxs : x ∈ s
+  · simp only [hind, Set.indicator_of_mem hxs, Pi.zero_apply, smul_eq_zero] at h0
+    exact h0.resolve_right hv
+  · rw [hmul, Pi.mul_apply, hsx, Set.indicator_of_notMem hxs, mul_zero, Pi.zero_apply]
+
+end LocalFaithfulness
 
 end MeasureTheory.Lp
 

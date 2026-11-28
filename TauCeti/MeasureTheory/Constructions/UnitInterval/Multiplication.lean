@@ -9,11 +9,11 @@ public import Mathlib.MeasureTheory.Constructions.UnitInterval
 public import TauCeti.MeasureTheory.Function.Lp.Multiplication.Eigenspace
 
 /-!
-# Coordinate multiplication on `L²([0, 1])`
+# Coordinate multiplication on `Lᵖ([0, 1])`
 
 Defines the essentially bounded coordinate symbol `TauCeti.unitInterval.coordLp` (`t ↦ (t : ℂ)`)
 on the unit interval with Lebesgue measure and proves that multiplication by `coordLp` on
-`Lp E 2 (volume : Measure unitInterval)` has no eigenvalues.
+`Lp E p (volume : Measure unitInterval)` (`1 ≤ p ≤ ∞`) has no eigenvalues.
 
 ## Main declarations
 
@@ -21,7 +21,7 @@ on the unit interval with Lebesgue measure and proves that multiplication by `co
 * `TauCeti.unitInterval.coeFn_coordLp`: `coordLp` agrees with `t ↦ (t : ℂ)` almost everywhere.
 * `TauCeti.unitInterval.star_coordLp`: `coordLp` is self-adjoint.
 * `TauCeti.unitInterval.not_hasEigenvalue_multiplicationOperator_coordLp`: multiplication by
-  `coordLp` on `Lp E 2 volume` has no eigenvalues.
+  `coordLp` on `Lp E p volume` has no eigenvalues.
 -/
 
 public section
@@ -51,12 +51,12 @@ theorem coeFn_coordLp :
 theorem star_coordLp : star coordLp = coordLp :=
   Lp.star_eq_self_of_ae_eq_ofReal coeFn_coordLp
 
-/-- Multiplication by the coordinate function `t ↦ (t : ℂ)` on `Lp E 2 (volume : Measure I)` has
-no eigenvalues. -/
+/-- Multiplication by the coordinate function `t ↦ (t : ℂ)` on `Lp E p (volume : Measure I)`
+(`1 ≤ p ≤ ∞`) has no eigenvalues. -/
 theorem not_hasEigenvalue_multiplicationOperator_coordLp
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] (c : ℂ) :
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {p : ℝ≥0∞} [Fact (1 ≤ p)] (c : ℂ) :
     ¬ Module.End.HasEigenvalue
-      (Lp.multiplicationOperator (E := E) (p := 2) coordLp).toLinearMap c := by
+      (Lp.multiplicationOperator (E := E) (p := p) coordLp).toLinearMap c := by
   have hnull : ∀ᵐ t : I ∂volume, ((t : ℝ) : ℂ) ≠ c := by
     rw [ae_iff]
     exact Set.Subsingleton.measure_zero

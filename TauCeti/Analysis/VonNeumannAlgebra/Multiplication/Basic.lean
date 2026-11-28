@@ -126,7 +126,7 @@ theorem commutant_multiplicationAlgebra (μ : Measure α) :
     rw [← commutant_commutant (multiplicationAlgebra μ), mem_commutant_iff]
     intro S hS
     rw [← SetLike.mem_coe, coe_commutant_multiplicationAlgebra] at hS hT
-    exact (Lp.commute_of_mem_centralizer_range_multiplicationOperator hS hT).eq
+    exact (Lp.commute_of_mem_centralizer_range_multiplicationOperator ENNReal.ofNat_ne_top hS hT).eq
   · rw [multiplicationAlgebra_le_iff]
     intro a
     rw [← SetLike.mem_coe, coe_commutant_multiplicationAlgebra]
@@ -148,7 +148,7 @@ theorem mem_multiplicationAlgebra_iff_forall_commute_indicatorMultiplication {μ
   · rw [← commutant_multiplicationAlgebra, ← SetLike.mem_coe, coe_commutant_multiplicationAlgebra]
     rintro _ ⟨a, rfl⟩
     exact (commute_iff_eq _ _).mp <|
-      Lp.commute_of_forall_commute_indicatorMultiplication
+      Lp.commute_of_forall_commute_indicatorMultiplication ENNReal.ofNat_ne_top
         (fun _ hs _ ↦ Lp.commute_multiplicationOperator_indicatorMultiplication a hs) hT
 
 instance instIsMulCommutativeMultiplicationAlgebra (μ : Measure α) :
@@ -232,7 +232,7 @@ theorem coe_multiplicationAlgebra :
     (multiplicationAlgebra μ : Set (Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ)) =
       Set.range (Lp.multiplicationOperator (E := ℂ) (μ := μ)) := by
   rw [← commutant_multiplicationAlgebra, coe_commutant_multiplicationAlgebra,
-    Lp.centralizer_range_multiplicationOperator]
+    Lp.centralizer_range_multiplicationOperator (p := 2) ENNReal.ofNat_ne_top]
 
 theorem mem_multiplicationAlgebra_iff {μ : Measure α} [SigmaFinite μ]
     {T : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ} :
@@ -514,8 +514,8 @@ private theorem isIdempotentElem_of_mul_linftyIndicator_eq {μ : Measure α}
   have hS_idem : multiplicationStarAlgHom μ (p * p) = multiplicationStarAlgHom μ p := by
     rw [map_mul, ← hPE, mul_mul_mul_comm, hP.eq, hE_idem]
   exact sub_eq_zero.mp <|
-    Lp.eq_zero_of_mul_linftyIndicator_eq_self_of_multiplicationOperator_eq_zero (E := ℂ) hE hμE
-      (by rw [sub_mul, mul_assoc, hpe])
+    Lp.eq_zero_of_mul_linftyIndicator_eq_self_of_multiplicationOperator_eq_zero (E := ℂ) (p := 2)
+      hE hμE (by rw [sub_mul, mul_assoc, hpe])
       (by
         rw [Lp.multiplicationOperator_sub, sub_eq_zero]
         simpa only [coe_multiplicationStarAlgHom_apply] using congrArg Subtype.val hS_idem)
@@ -550,7 +550,7 @@ private theorem exists_measurableSet_subset_and_mul_linftyIndicator_eq {μ : Mea
       ENNReal.ofNat_ne_top (P : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ) hall))
   set eE := TauCeti.linftyIndicator μ ℂ E hE with heE_def
   obtain ⟨b, -, hb_eq⟩ := Lp.exists_norm_le_and_comp_indicatorMultiplication_eq
-    hE hμE (P : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ) fun _ ht hts ↦
+    ENNReal.ofNat_ne_top hE hμE (P : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ) fun _ ht hts ↦
       mem_multiplicationAlgebra_iff_forall_commute_indicatorMultiplication.mp P.property ht
         (measure_ne_top_of_subset hts hμE)
   set p : Lp ℂ ∞ μ := b * eE with hp_def

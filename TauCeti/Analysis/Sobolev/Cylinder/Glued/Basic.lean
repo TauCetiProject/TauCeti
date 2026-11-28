@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Gluing.Coefficient
 public import TauCeti.Analysis.Sobolev.Cylinder.Parametrix
 public import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-public import TauCeti.MeasureTheory.Function.Lp.Multiplication.Basic
+public import TauCeti.MeasureTheory.Function.Lp.Operator.LpMultiplication
 import Mathlib.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Analysis.Normed.Operator.Prod

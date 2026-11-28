@@ -11,6 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 public import TauCeti.MeasureTheory.Function.Lp.Linfty.Algebra
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.Lp.Holder
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -48,10 +49,13 @@ zero for `∅` and composes by intersection (`indicatorMultiplication_comp_indic
 cut-offs to a set and its complement add up to the identity (`indicatorMultiplication_add_compl`),
 it restricts constant indicator classes (`indicatorMultiplication_indicatorConstLp`), it is a
 contraction (`norm_indicatorMultiplication_le`), the `Lʳ` seminorm of `1_s f` is that of `f` on `s`
-(`eLpNorm_indicatorMultiplication`), almost-everywhere equal sets induce equal operators
-(`indicatorMultiplication_congr`) and conversely on finite-measure sets
-(`ae_eq_of_indicatorMultiplication_eq`, `indicatorMultiplication_inj`), and it is self-adjoint on
-`L²` (`inner_indicatorMultiplication_left`, `adjoint_indicatorMultiplication`).
+(`eLpNorm_indicatorMultiplication`), cutoffs along shrinking sets with empty intersection tend to
+zero (`tendsto_norm_indicatorMultiplication`), cutoffs along `spanningSets μ` on a `σ`-finite space
+converge strongly to the identity (`tendsto_indicatorMultiplication_spanningSets`),
+almost-everywhere equal sets induce equal operators (`indicatorMultiplication_congr`) and
+conversely on finite-measure sets (`ae_eq_of_indicatorMultiplication_eq`,
+`indicatorMultiplication_inj`), and it is self-adjoint on `L²`
+(`inner_indicatorMultiplication_left`, `adjoint_indicatorMultiplication`).
 
 Compare `MeasureTheory.Lp.multiplicationOperator` and `BoundedContinuousFunction.mulLp`.
 -/
@@ -410,6 +414,60 @@ theorem norm_indicatorMultiplication_le (hs : MeasurableSet s) :
     eLpNorm (indicatorMultiplication 𝕜 p hs f) r μ = eLpNorm f r (μ.restrict s) := by
   rw [eLpNorm_congr_ae (indicatorMultiplication_ae hs f),
     eLpNorm_indicator_eq_eLpNorm_restrict hs.nullMeasurableSet]
+
+open Filter Topology in
+/-- **Cut-offs to shrinking sets.** Cutting an `Lᵖ` class, `p < ∞`, off to the sets of a decreasing
+family with empty intersection gives classes whose norms tend to zero: the `p`-th powers of the
+norms are the measures of the sets for the finite measure `‖f‖ᵖ μ`. -/
+theorem tendsto_norm_indicatorMultiplication {ι : Type*} [Preorder ι]
+    [IsCountablyGenerated (atTop : Filter ι)] (hp : p ≠ ∞) {s : ι → Set α}
+    (hs : ∀ i, MeasurableSet (s i)) (hanti : Antitone s) (hempty : ⋂ i, s i = ∅)
+    (f : Lp E p μ) :
+    Tendsto (fun i ↦ ‖indicatorMultiplication 𝕜 p (hs i) f‖) atTop (𝓝 0) := by
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₀⟩⟩
+  · rw [atTop.filter_eq_bot_of_isEmpty]
+    exact tendsto_bot
+  have hp0 : p ≠ 0 := (lt_of_lt_of_le zero_lt_one (Fact.out : 1 ≤ p)).ne'
+  have hpos : 0 < 1 / p.toReal := one_div_pos.2 (ENNReal.toReal_pos hp0 hp)
+  -- The `p`-th powers of the norms are the measures of the sets for `‖f‖ᵖ μ`.
+  set ν := μ.withDensity fun x ↦ ‖f x‖ₑ ^ p.toReal
+  have hν (i : ι) :
+      ‖indicatorMultiplication 𝕜 p (hs i) f‖ = (ν (s i) ^ (1 / p.toReal)).toReal := by
+    rw [Lp.norm_def, eLpNorm_congr_ae (indicatorMultiplication_ae (hs i) f),
+      eLpNorm_indicator_eq_eLpNorm_restrict (hs i).nullMeasurableSet,
+      eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp (Lp.aestronglyMeasurable f).restrict,
+      withDensity_apply _ (hs i)]
+  have hfin : ν (s i₀) ≠ ∞ := by
+    refine ne_top_of_le_ne_top ?_ (measure_mono (Set.subset_univ _))
+    rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
+    exact (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hp0 hp (Lp.eLpNorm_lt_top f)).ne
+  have h := tendsto_measure_iInter_atTop (μ := ν) (fun i ↦ (hs i).nullMeasurableSet) hanti
+    ⟨i₀, hfin⟩
+  rw [hempty, measure_empty] at h
+  have h' := ((ENNReal.continuous_rpow_const (y := 1 / p.toReal)).tendsto 0).comp h
+  rw [ENNReal.zero_rpow_of_pos hpos] at h'
+  simp only [hν]
+  simpa [Function.comp_def] using (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp h'
+
+open Filter Topology in
+/-- On a sigma-finite measure space and for `p < ∞`, the indicator multiplications along
+`spanningSets μ` converge strongly to the identity on `Lp E p μ`. -/
+theorem tendsto_indicatorMultiplication_spanningSets [SigmaFinite μ] (hp : p ≠ ∞)
+    (f : Lp E p μ) :
+    Tendsto (fun n ↦ indicatorMultiplication 𝕜 p (measurableSet_spanningSets μ n) f)
+      atTop (𝓝 f) := by
+  have hmem (n : ℕ) : MemLp ((spanningSets μ n).indicator ⇑f) p μ :=
+    (Lp.memLp f).indicator (measurableSet_spanningSets μ n).nullMeasurableSet
+  have heq (n : ℕ) : indicatorMultiplication 𝕜 p (measurableSet_spanningSets μ n) f =
+      (hmem n).toLp _ :=
+    Lp.ext <| (indicatorMultiplication_ae (measurableSet_spanningSets μ n) f).trans
+      (hmem n).coeFn_toLp.symm
+  simp_rw [heq]
+  refine TauCeti.tendsto_toLp_of_ae_tendsto_of_norm_le hp hmem
+    EventuallyEq.rfl (fun n ↦ .of_forall fun x ↦ norm_indicator_le_norm_self _ _) ?_
+  refine .of_forall fun x ↦ tendsto_const_nhds.congr' ?_
+  filter_upwards [eventually_mem_spanningSets μ x] with n hn
+  exact (Set.indicator_of_mem hn _).symm
 
 end Indicator
 

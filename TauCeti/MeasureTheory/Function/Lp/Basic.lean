@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import Mathlib.MeasureTheory.Measure.Count
 public import TauCeti.MeasureTheory.Function.Lp.LinearIsometry
 
 /-!
@@ -33,6 +34,8 @@ operators `MeasureTheory.Lp.reCLM` and `MeasureTheory.Lp.imCLM` between `Lp ℝ 
 
 ## Main declarations
 
+* `MeasureTheory.MemLp.toLp_count_apply`: over counting measure, `MemLp.toLp` evaluates
+  pointwise.
 * `MeasureTheory.MemLp.toLp_finsetSum'`: `hsum.toLp (∑ i ∈ s, f i) = ∑ i ∈ s, (hf i).toLp (f i)`.
 * `MeasureTheory.MemLp.toLp_finsetSum`:
   `hsum.toLp (fun x ↦ ∑ i ∈ s, f i x) = ∑ i ∈ s, (hf i).toLp (f i)`.
@@ -66,6 +69,15 @@ public section
 open scoped ENNReal
 
 namespace MeasureTheory.MemLp
+
+/-- Evaluating the `Lp` class of a function on counting measure at any point returns its
+pointwise value. -/
+@[simp]
+theorem toLp_count_apply {α E : Type*} {_ : MeasurableSpace α}
+    [NormedAddCommGroup E] {p : ℝ≥0∞} {f : α → E} (hf : MemLp f p (Measure.count : Measure α))
+    (x : α) :
+    hf.toLp f x = f x :=
+  Measure.ae_count_iff.mp hf.coeFn_toLp x
 
 variable {α E ι : Type*} {_ : MeasurableSpace α} {μ : Measure α} [NormedAddCommGroup E]
   {p : ℝ≥0∞} {s : Finset ι} {f : ι → α → E}
