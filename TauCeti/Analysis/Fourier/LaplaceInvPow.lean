@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Fourier.FourierTransform
 import TauCeti.Analysis.LaplaceTransform.Elementary
 import Mathlib.Analysis.Fourier.Inversion
 import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
@@ -24,7 +23,9 @@ inversion evaluates the oscillatory integral `∫ z : ℝ, 𝐞 (x * z) * ((1 + 
 for every real `x`, yielding `x ^ k * exp (-x) / k!` for `x ≥ 0` and `0` for `x ≤ 0`.
 
 Combining this with the complex Gaussian integral `∫ w : ℂ, exp (-(1 + 2πit) ‖w‖²) = π / (1 + 2πit)`
-evaluates the `n`-th power Gaussian Fourier integral for `n ≥ 2` and `a ≥ 0`.
+evaluates the `n`-th power Gaussian Fourier integral for `n ≥ 2` and `a ≥ 0`. The Gaussian-power
+formula computes the archimedean local density of representing `a` by the standard Hermitian form
+on `ℂⁿ`, as used in Siegel's mass formula.
 
 ## Main statements
 
@@ -72,9 +73,15 @@ theorem integral_fourierChar_mul_inv_pow_eq_ite {k : ℕ} (hk : 1 ≤ k) (x : �
           rw [Real.fourier_eq', ← integral_div, ← integral_indicator measurableSet_Ioi]
           congr with t
           rcases lt_or_ge 0 t with ht | ht
-          · simp [p, ht, ht.le, Complex.exp_add, add_mul, Complex.exp_neg]
-            ring_nf
-          · simp [p, ht, Nat.one_le_iff_ne_zero.mp hk]
+          · rw [Set.indicator_of_mem ht]
+            simp only [p, Real.coe_toNNReal t ht.le, RCLike.inner_apply, conj_trivial, smul_eq_mul]
+            rw [mul_div_assoc', mul_left_comm, ← Complex.exp_add]
+            congr 2
+            push_cast
+            ring
+          · rw [Set.indicator_of_notMem (Set.notMem_Ioi.mpr ht)]
+            simp only [p, Real.toNNReal_of_nonpos ht, NNReal.coe_zero, ofReal_zero,
+              zero_pow (Nat.one_le_iff_ne_zero.mp hk), zero_mul, zero_div, smul_zero]
   have h_ne : 𝓕 p 0 ≠ 0 := by simp [← hg, g]
   have p_int : Integrable p := .of_integral_ne_zero (by simpa [Real.fourier_eq] using h_ne)
   have h_norm (z : ℝ) : ‖g z‖ ≤ (1 + (2 * π * z) ^ 2)⁻¹ := calc
@@ -120,7 +127,11 @@ theorem integral_fourierChar_mul_gaussian_pow {n : ℕ} (hn : 2 ≤ n) {a : ℝ}
       π * (1 + 2 * π * Complex.I * t)⁻¹ := by
     rw [GaussianFourier.integral_cexp_neg_mul_sq_norm (by simp)]
     simp [Complex.finrank_real_complex, division_def]
-  simp_rw [h_gauss, mul_pow, inv_pow, mul_left_comm _ ((π : ℂ) ^ (k + 1)), integral_const_mul,
+  have h_integrand (t : ℝ) :
+      (𝐞 (a * t) : ℂ) * ((π : ℂ) * (1 + 2 * π * Complex.I * t)⁻¹) ^ (k + 1) =
+        (π : ℂ) ^ (k + 1) * (𝐞 (a * t) * ((1 + 2 * π * Complex.I * t) ^ (k + 1))⁻¹) := by
+    rw [mul_pow, inv_pow]; ring
+  simp_rw [h_gauss, h_integrand, integral_const_mul,
     integral_fourierChar_mul_inv_pow (show 1 ≤ k by omega) ha, Nat.add_sub_cancel]
   ring
 
