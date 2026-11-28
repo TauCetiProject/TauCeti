@@ -15,6 +15,7 @@ public import Mathlib.Tactic.LinearCombination
 public import Mathlib.Tactic.Ring
 public import TauCeti.Algebra.Ring.Prod
 public import TauCeti.Data.ZMod.Two
+import TauCeti.Data.ZMod.Four
 
 /-!
 # The group algebra of the cyclic group of order two
@@ -33,6 +34,9 @@ homomorphism `R[C₂] → R × R`, `a + bσ ↦ (a + b, a - b)`.
 ## Main declarations
 
 * `TauCeti.cyclicTwoSign`: the sign character `Multiplicative (ZMod 2) →* R`.
+* `MonoidAlgebra.eq_single_one_add_single_ofAdd_one`,
+  `MonoidAlgebra.eq_single_one_add_single_neg_one`: the two-term decompositions in
+  `R[Multiplicative (ZMod 2)]` and `R[(ZMod 4)ˣ]`.
 * `MonoidAlgebra.cyclicTwoToProd`: the algebra homomorphism `R[C₂] →ₐ[R] R × R`.
 * `MonoidAlgebra.cyclicTwoEquivProd`: the isomorphism `R[C₂] ≃ₐ[R] R × R` when `2` is
   invertible in `R`.
@@ -101,6 +105,15 @@ theorem eq_single_one_add_single_ofAdd_one (x : MonoidAlgebra R (Multiplicative 
   rcases g.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
     simp [coeff_add, coeff_single, one_ne_ofAdd_one, one_ne_ofAdd_one.symm]
 
+/-- Every element of `R[(ℤ/4ℤ)ˣ]` is `a · 1 + b · (-1)`, where `a` and `b` are its coefficients
+at `1` and `-1`. -/
+theorem eq_single_one_add_single_neg_one (x : MonoidAlgebra R (ZMod 4)ˣ) :
+    x = single 1 (x.coeff 1) + single (-1) (x.coeff (-1)) := by
+  ext u
+  rcases ZMod.unitsFour_eq_one_or_neg_one u with rfl | rfl <;>
+    simp [coeff_add, coeff_single, ZMod.neg_one_ne_one_unitsFour,
+      ZMod.neg_one_ne_one_unitsFour.symm]
+
 /-- The product of two elements of `R[C₂]` written as `a + bσ`: since `σ² = 1`,
 `(a + bσ)(a' + b'σ) = (aa' + bb') + (ab' + ba')σ`. -/
 theorem single_one_add_single_ofAdd_one_mul (a b a' b' : R) :
@@ -147,23 +160,27 @@ theorem cyclicTwoToProd_apply (x : MonoidAlgebra R (Multiplicative (ZMod 2))) :
   simpa only [cyclicTwoToProd_single_one_add_single_ofAdd_one] using
     congrArg (cyclicTwoToProd R) (eq_single_one_add_single_ofAdd_one x)
 
+section Injectivity
+
+/-- The character map `cyclicTwoToProd R` is injective whenever multiplication by `2` is injective
+on `R`. -/
+theorem cyclicTwoToProd_injective (h2 : Function.Injective fun r : R ↦ (2 : R) * r) :
+    Function.Injective (cyclicTwoToProd R) := (injective_iff_map_eq_zero _).mpr fun x hx => by
+  rw [cyclicTwoToProd_apply, Prod.mk_eq_zero] at hx
+  have ha2 : (2 : R) * x.coeff 1 = (2 : R) * 0 := by linear_combination hx.1 + hx.2
+  have ha : x.coeff 1 = 0 := h2 ha2
+  have hb : x.coeff (Multiplicative.ofAdd 1) = 0 := by linear_combination hx.1 - ha
+  rw [eq_single_one_add_single_ofAdd_one x, ha, hb, single_zero, single_zero, add_zero]
+
+end Injectivity
+
 section Invertible
 
 variable [Invertible (2 : R)]
 
 private theorem cyclicTwoToProd_bijective : Function.Bijective (cyclicTwoToProd R) := by
-  refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx => ?_, fun z => ?_⟩
-  · rw [eq_single_one_add_single_ofAdd_one x,
-      cyclicTwoToProd_single_one_add_single_ofAdd_one, Prod.mk_eq_zero] at hx
-    obtain ⟨h₁, h₂⟩ := hx
-    have ha : x.coeff 1 = 0 := by
-      calc
-        x.coeff 1 = ⅟(2 : R) * (2 * x.coeff 1) := (invOf_mul_cancel_left _ _).symm
-        _ = ⅟(2 : R) * ((x.coeff 1 + x.coeff (Multiplicative.ofAdd 1)) +
-            (x.coeff 1 - x.coeff (Multiplicative.ofAdd 1))) := by ring
-        _ = 0 := by rw [h₁, h₂, add_zero, mul_zero]
-    have hb : x.coeff (Multiplicative.ofAdd 1) = 0 := by linear_combination h₁ - ha
-    rw [eq_single_one_add_single_ofAdd_one x, ha, hb, single_zero, single_zero, add_zero]
+  refine ⟨cyclicTwoToProd_injective R fun a b h => ?_, fun z => ?_⟩
+  · simpa using congrArg (⅟(2 : R) * ·) h
   · refine ⟨single 1 (⅟2 * (z.1 + z.2)) + single (Multiplicative.ofAdd 1) (⅟2 * (z.1 - z.2)), ?_⟩
     rw [cyclicTwoToProd_single_one_add_single_ofAdd_one]
     exact Prod.invOf_two_mul_add_sub z

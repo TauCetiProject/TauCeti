@@ -300,6 +300,11 @@ end TauCeti
 
 namespace MonoidAlgebra
 
+/-- The scalar embedding `singleOneRingHom : R →+* R[M]` agrees with `algebraMap R R[M]`. -/
+theorem singleOneRingHom_eq_algebraMap {R M : Type*} [CommSemiring R] [Monoid M] :
+    (singleOneRingHom : R →+* MonoidAlgebra R M) = algebraMap R (MonoidAlgebra R M) :=
+  RingHom.ext fun _ ↦ by simp
+
 /-- The coefficient at the identity is symmetric under swapping the factors in the monoid algebra
 over a commutative semiring of a Dedekind-finite monoid, one where `a * b = 1` implies
 `b * a = 1` (for instance a group, or a cancellative or commutative monoid). -/

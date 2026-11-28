@@ -70,8 +70,6 @@ namespace TauCeti.AnnularRing
 
 variable {p : ℕ} [Fact p.Prime] {K : Type*} [NormedField K]
 
-private theorem one_lt_p : (1 : ℝ) < p := mod_cast (Fact.out : p.Prime).one_lt
-
 /-! ### Bounds on the annulus -/
 
 section Bounds

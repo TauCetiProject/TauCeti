@@ -41,7 +41,8 @@ is an isometry (`TauCeti.isometry_padicIntAlgebraMap`), the norm of a natural nu
 `p`-adic norm (`TauCeti.norm_natCast_eq_norm_padic`), so `p` itself has norm `p⁻¹`
 (`TauCeti.norm_natCast_p`), and a nonzero integer `n` has norm at least
 `1 / |n|` in `K` (`TauCeti.inv_abs_le_norm_intCast`; for natural numbers in a normed division
-ring, `TauCeti.norm_inv_natCast_le` states `‖1 / n‖ ≤ n`).
+ring, `TauCeti.norm_inv_natCast_le` states `‖1 / n‖ ≤ n`). It also records that `ℚ_[p]` has no
+element of norm strictly between `p⁻¹` and `1` (`Padic.not_exists_norm_mem_Ioo`).
 
 Two continuous ring homomorphisms from `ℚ_[p]` to a Hausdorff semiring are equal
 (`RingHom.ext_padic_of_continuous`), since they agree on the dense subfield `ℚ`; for instance a
@@ -109,6 +110,21 @@ theorem norm_apply_le_of_mem_span_subring {V : Type*} [AddCommGroup V] [Module �
     (fun c ↦ (mem_subring_iff p).mp c.property) hr hf hx
 
 end PadicInt
+
+namespace Padic
+
+/-- `ℚ_[p]` contains no element of norm strictly between `p⁻¹` and `1`. -/
+theorem not_exists_norm_mem_Ioo {p : ℕ} [Fact p.Prime] :
+    ¬ ∃ t : ℚ_[p], ‖t‖ ∈ Set.Ioo (p : ℝ)⁻¹ 1 := by
+  have hp : (1 : ℝ) < p := mod_cast (Fact.out : p.Prime).one_lt
+  rintro ⟨t, hlow, hhigh⟩
+  have ht0 : t ≠ 0 := norm_pos_iff.1 ((inv_pos.2 (zero_lt_one.trans hp)).trans hlow)
+  rw [Padic.norm_eq_zpow_neg_valuation ht0] at hlow hhigh
+  have h1 := (zpow_lt_zpow_iff_right₀ hp).1 (zpow_neg_one (p : ℝ) ▸ hlow)
+  have h2 := (zpow_lt_zpow_iff_right₀ hp).1 (zpow_zero (p : ℝ) ▸ hhigh)
+  omega
+
+end Padic
 
 namespace TauCeti
 
