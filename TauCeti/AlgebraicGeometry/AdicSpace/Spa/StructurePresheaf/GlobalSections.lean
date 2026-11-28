@@ -56,17 +56,14 @@ itself an isomorphism.
 * `TauCeti.ValuationSpectrum.isIso_toPresentationLimit_top` : on the whole spectrum the canonical
   map is an isomorphism.
 * `TauCeti.ValuationSpectrum.presentationLimitRationalIso_map_top_apply` and
-  `TauCeti.ValuationSpectrum.presentationLimitMap_apply_toPresentationLimit_apply_eq_iff` : under
-  `presentationLimitRationalIso`, restricting the image of an element of `A` from the whole
-  spectrum to `R(p)` agrees with `toCompletionLoc`.
+  `presentationLimitMap_apply_toPresentationLimit_apply_eq_iff` : under
+  `presentationLimitRationalIso`, restricting `c : A` to `R(p)` agrees with `toCompletionLoc`.
 * `TauCeti.ValuationSpectrum.continuous_topSectionRingEquiv` and
-  `TauCeti.ValuationSpectrum.continuous_topSectionRingEquiv_symm` : continuity of
-  `topSectionRingEquiv` and its inverse.
+  `continuous_topSectionRingEquiv_symm` : continuity of `topSectionRingEquiv` and its inverse.
 * `TauCeti.ValuationSpectrum.rationalSectionRingEquiv_map_top`,
-  `TauCeti.ValuationSpectrum.rationalSectionRingEquiv_map_top_symm`, and
-  `TauCeti.ValuationSpectrum.rationalSectionRingEquiv_toPresentationLimit` : compatibility of
-  `topSectionRingEquiv`, `toPresentationLimit`, and `rationalSectionRingEquiv` with restriction
-  maps.
+  `rationalSectionRingEquiv_map_top_symm`, and `rationalSectionRingEquiv_toPresentationLimit` :
+  compatibility of `topSectionRingEquiv`, `toPresentationLimit`, and `rationalSectionRingEquiv`
+  with restriction maps.
 
 ## References
 

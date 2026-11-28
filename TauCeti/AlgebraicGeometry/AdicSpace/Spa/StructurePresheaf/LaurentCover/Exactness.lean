@@ -143,8 +143,8 @@ theorem laurent_injective_and_exact_of_isSheafyForEveryPresentation [IsHuberRing
       (presentationLimitMap_laurentInf_eq hSplus h₁ h₂ h₁₂ hc₁ hc₂ (by
         rw [← IsScalarTower.algebraMap_apply R R₁ R₁₂, ← IsScalarTower.algebraMap_apply R R₂ R₁₂]))
     exact e₀.symm.injective (hglue.unique
-      ⟨e₁.injective (by rw [e₁.apply_symm_apply, rationalSectionRingEquiv_map_top_symm]),
-       e₂.injective (by rw [e₂.apply_symm_apply, rationalSectionRingEquiv_map_top_symm])⟩
+      ⟨e₁.injective (by simp [e₀, e₁]),
+       e₂.injective (by simp [e₀, e₂])⟩
       ⟨e₁.injective (by
          rw [e₁.apply_symm_apply, rationalSectionRingEquiv_map_top_symm]
          exact (congrArg Prod.fst hr).symm),

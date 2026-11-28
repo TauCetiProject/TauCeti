@@ -57,13 +57,11 @@ example :
     let P := (IsHuberRing.nonempty_pairOfDefinition (A := A)).some
     let hden (T : Finset A) (s : A) (h : (1 : A) ∈ T) :=
       P.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) (isOpen_span_of_one_mem h)
-    GlueingSquare A (ratLoc P _ 1 (hden {X, 1} 1 (by simp)))
-        (ratLoc P _ X (hden {1} X (by simp)))
-        (ratLoc P _ X (hden {X * X, 1} X (by simp))) ∧
-      Nonempty ((A × A) ≃ₗ[A]
-        (GlueingDatum.ofModule (ratLoc P _ 1 (hden {X, 1} 1 (by simp)))
-          (ratLoc P _ X (hden {1} X (by simp)))
-          (ratLoc P _ X (hden {X * X, 1} X (by simp))) A (A × A)).sections A) := by
+    let L₁ := ratLoc P _ 1 (hden {X, 1} 1 (by simp))
+    let L₂ := ratLoc P _ X (hden {1} X (by simp))
+    let L₁₂ := ratLoc P _ X (hden {X * X, 1} X (by simp))
+    GlueingSquare A L₁ L₂ L₁₂ ∧
+      Nonempty ((A × A) ≃ₗ[A] (GlueingDatum.ofModule L₁ L₂ L₁₂ A (A × A)).sections A) := by
   let A := restrictedMvPowerSeriesCompletion 1 ℚ_[p]
   let X : A := Pair.polydiscVar 1 ℚ_[p] 0
   let P := (IsHuberRing.nonempty_pairOfDefinition (A := A)).some

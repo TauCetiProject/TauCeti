@@ -76,8 +76,7 @@ theorem modelEvalHom_apply (x : letI := P.toNonarchimedeanRing
   rfl
 
 /-- `modelEvalHom` sends a constant series to its image under `algebraMap A B`. -/
-@[simp]
-theorem modelEvalHom_weightedC (a : A) :
+@[simp] theorem modelEvalHom_weightedC (a : A) :
     letI := P.toNonarchimedeanRing
     modelEvalHom P hT e t ht (weightedC _ isWeightFamily_one_weight a) = algebraMap A B a := by
   let _ := P.toNonarchimedeanRing
@@ -99,13 +98,11 @@ theorem algebraMap_mul_modelEvalHom_X_of_eq_one (i : Fin k) (hti : t i = 1) :
     algebraMap A B s * modelEvalHom P hT e t ht (weightedX _ isWeightFamily_one_weight i) = 1 := by
   let _ := P.toNonarchimedeanRing
   let hden := P.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
-  let _ := P.locUniformSpace _ s _ hden
-  have _ := P.isUniformAddGroup_locUniformSpace _ s _ hden
+  let _ := P.locUniformSpace _ s _ hden; have _ := P.isUniformAddGroup_locUniformSpace _ s _ hden
   have _ := P.isTopologicalRing_locUniformSpace _ s _ hden
   rw [modelEvalHom_apply, restrictedMvPowerSeriesCompletionEquiv_symm_apply,
     P.rationalEvalHom_coe_weightedX, ← e.commutes s, ← map_mul, algebraMap_ratLoc,
-    P.toCompletionLoc_apply, ← Completion.coe_mul, hti, divBy_one,
-    IsLocalization.Away.mul_invSelf]
+    P.toCompletionLoc_apply, ← Completion.coe_mul, hti, divBy_one, IsLocalization.Away.mul_invSelf]
   exact map_one e
 
 end ModelEval

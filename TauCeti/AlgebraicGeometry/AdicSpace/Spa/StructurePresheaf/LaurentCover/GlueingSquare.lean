@@ -36,9 +36,8 @@ This bridges sheafiness and Kedlaya–Liu Lemma 2.4.22 to Definition 2.7.3:
 
 ## Main results
 
-* `TauCeti.Huber.GlueingSquare.of_simpleLaurent` and
-  `TauCeti.Huber.GlueingSquare.of_simpleLaurent_of_isSheafyRing`: simple Laurent covers of sheafy
-  complete Hausdorff Tate rings form glueing squares.
+* `TauCeti.Huber.GlueingSquare.of_simpleLaurent` and `of_simpleLaurent_of_isSheafyRing`: simple
+  Laurent covers of sheafy complete Hausdorff Tate rings form glueing squares.
 * `TauCeti.Huber.GlueingSquare.of_simpleLaurent_ratLoc`: canonical `GlueingSquare` on the three
   explicit `ratLoc` carriers with `laurentLeftAlgHom` and `laurentRightAlgHom`.
 
@@ -87,10 +86,10 @@ private theorem isScalarTower_and_continuous_toAlgebra_ratLocEquiv
       Continuous (algebraMap
         (ratLoc P T s (P.hasDenominatorPower_of_isOpen_span T s _ hT))
         (ratLoc P T' s' (P.hasDenominatorPower_of_isOpen_span T' s' _ hT'))) := by
-  let _ : Algebra (ratLoc P T s (P.hasDenominatorPower_of_isOpen_span T s _ hT))
-      (ratLoc P T' s' (P.hasDenominatorPower_of_isOpen_span T' s' _ hT')) :=
-    (hB'.ratLocEquiv.symm.toRingHom.comp
-      ((algebraMap B B').comp hB.ratLocEquiv.toRingHom)).toAlgebra
+  let L := ratLoc P T s (P.hasDenominatorPower_of_isOpen_span T s _ hT)
+  let L' := ratLoc P T' s' (P.hasDenominatorPower_of_isOpen_span T' s' _ hT')
+  let _ : Algebra L L' := (hB'.ratLocEquiv.symm.toRingHom.comp
+    ((algebraMap B B').comp hB.ratLocEquiv.toRingHom)).toAlgebra
   refine ⟨IsScalarTower.of_algebraMap_eq fun r ↦ ?_, ?_⟩
   · rw [RingHom.algebraMap_toAlgebra]
     simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
@@ -155,12 +154,12 @@ theorem GlueingSquare.of_simpleLaurent_ratLoc {R : Type*} [CommRing R] [UniformS
     [IsUniformAddGroup R] [IsTopologicalRing R] [IsTateRing R] [CompleteSpace R] [T0Space R]
     [DecidableEq R] (hs : IsSheafyRing R) (P : PairOfDefinition R) (f : R) :
     GlueingSquare R
-      (ratLoc P {f, 1} 1 (P.hasDenominatorPower_of_isOpen_span ({f, 1} : Finset R) 1
-        (Localization.Away (1 : R)) (isOpen_span_of_one_mem (by simp))))
-      (ratLoc P {1} f (P.hasDenominatorPower_of_isOpen_span ({1} : Finset R) f
-        (Localization.Away f) (isOpen_span_of_one_mem (by simp))))
-      (ratLoc P {f * f, 1} f (P.hasDenominatorPower_of_isOpen_span ({f * f, 1} : Finset R) f
-        (Localization.Away f) (isOpen_span_of_one_mem (by simp)))) :=
+      (ratLoc P {f, 1} 1 (P.hasDenominatorPower_of_isOpen_span _ _ _
+        (isOpen_span_of_one_mem (by simp))))
+      (ratLoc P {1} f (P.hasDenominatorPower_of_isOpen_span _ _ _
+        (isOpen_span_of_one_mem (by simp))))
+      (ratLoc P {f * f, 1} f (P.hasDenominatorPower_of_isOpen_span _ _ _
+        (isOpen_span_of_one_mem (by simp)))) :=
   GlueingSquare.of_simpleLaurent_of_isSheafyRing hs
     (isRationalCompletion_ratLoc P {f, 1} 1 (isOpen_span_of_one_mem (by simp)))
     (isRationalCompletion_ratLoc P {1} f (isOpen_span_of_one_mem (by simp)))

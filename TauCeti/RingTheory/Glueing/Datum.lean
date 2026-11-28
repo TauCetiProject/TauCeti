@@ -66,20 +66,15 @@ structure GlueingDatum where
 
 /-- Swapping the two pieces of a glueing datum. -/
 def GlueingDatum.symm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
-    GlueingDatum R₂ R₁ R₁₂ M₂ M₁ M₁₂ where
-  ψ₁ := D.ψ₂
-  ψ₂ := D.ψ₁
+    GlueingDatum R₂ R₁ R₁₂ M₂ M₁ M₁₂ := ⟨D.ψ₂, D.ψ₁⟩
 
-@[simp]
-theorem GlueingDatum.symm_ψ₁ (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
+@[simp] theorem GlueingDatum.symm_ψ₁ (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
     D.symm.ψ₁ = D.ψ₂ := by rfl
 
-@[simp]
-theorem GlueingDatum.symm_ψ₂ (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
+@[simp] theorem GlueingDatum.symm_ψ₂ (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
     D.symm.ψ₂ = D.ψ₁ := by rfl
 
-@[simp]
-theorem GlueingDatum.symm_symm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
+@[simp] theorem GlueingDatum.symm_symm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
     D.symm.symm = D := by rfl
 
 section Sections
@@ -162,21 +157,16 @@ def GlueingDatum.sectionsEquivSymm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂
     D.sections R ≃ₗ[R] D.symm.sections R where
   toFun x := ⟨(x.val.2, x.val.1), x.property.symm⟩
   invFun x := ⟨(x.val.2, x.val.1), x.property.symm⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv _ := rfl
-  right_inv _ := rfl
+  map_add' _ _ := rfl; map_smul' _ _ := rfl; left_inv _ := rfl; right_inv _ := rfl
 
 section Simps
 
 variable {R}
 
-@[simp]
-theorem GlueingDatum.mem_sections_iff (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) {x : M₁ × M₂} :
-    x ∈ D.sections R ↔ D.ψ₁ (1 ⊗ₜ x.1) = D.ψ₂ (1 ⊗ₜ x.2) := by rfl
+@[simp] theorem GlueingDatum.mem_sections_iff (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
+    {x : M₁ × M₂} : x ∈ D.sections R ↔ D.ψ₁ (1 ⊗ₜ x.1) = D.ψ₂ (1 ⊗ₜ x.2) := by rfl
 
-@[simp]
-theorem GlueingDatum.diff_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
+@[simp] theorem GlueingDatum.diff_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
     [Module R M₁₂] [IsScalarTower R R₁₂ M₁₂] (x : M₁ × M₂) :
     D.diff R x = D.ψ₁ (1 ⊗ₜ x.1) - D.ψ₂ (1 ⊗ₜ x.2) := by rfl
 
@@ -185,16 +175,13 @@ theorem GlueingDatum.sections_eq_ker (D : GlueingDatum R₁ R₂ R₁₂ M₁ M�
     [Module R M₁₂] [IsScalarTower R R₁₂ M₁₂] :
     D.sections R = LinearMap.ker (D.diff R) := by ext x; simp [sub_eq_zero]
 
-@[simp]
-theorem GlueingDatum.fst_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (x : D.sections R) :
+@[simp] theorem GlueingDatum.fst_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (x : D.sections R) :
     D.fst R x = x.val.1 := by rfl
 
-@[simp]
-theorem GlueingDatum.snd_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (x : D.sections R) :
+@[simp] theorem GlueingDatum.snd_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (x : D.sections R) :
     D.snd R x = x.val.2 := by rfl
 
-@[simp]
-theorem GlueingDatum.coe_lift_apply {N : Type*} [AddCommMonoid N] [Module R N]
+@[simp] theorem GlueingDatum.coe_lift_apply {N : Type*} [AddCommMonoid N] [Module R N]
     (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (f₁ : N →ₗ[R] M₁) (f₂ : N →ₗ[R] M₂)
     (h : ∀ n, D.ψ₁ (1 ⊗ₜ f₁ n) = D.ψ₂ (1 ⊗ₜ f₂ n)) (n : N) :
     ((D.lift f₁ f₂ h n : D.sections R) : M₁ × M₂) = (f₁ n, f₂ n) := by rfl
@@ -209,22 +196,19 @@ theorem GlueingDatum.snd_lift {N : Type*} [AddCommMonoid N] [Module R N]
     (h : ∀ n, D.ψ₁ (1 ⊗ₜ f₁ n) = D.ψ₂ (1 ⊗ₜ f₂ n)) (n : N) :
     D.snd R (D.lift f₁ f₂ h n) = f₂ n := by rfl
 
-@[simp]
-theorem GlueingDatum.fst_comp_lift {N : Type*} [AddCommMonoid N] [Module R N]
+@[simp] theorem GlueingDatum.fst_comp_lift {N : Type*} [AddCommMonoid N] [Module R N]
     (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (f₁ : N →ₗ[R] M₁) (f₂ : N →ₗ[R] M₂)
     (h : ∀ n, D.ψ₁ (1 ⊗ₜ f₁ n) = D.ψ₂ (1 ⊗ₜ f₂ n)) :
     (D.fst R).comp (D.lift f₁ f₂ h) = f₁ := by ext n; rfl
 
-@[simp]
-theorem GlueingDatum.snd_comp_lift {N : Type*} [AddCommMonoid N] [Module R N]
+@[simp] theorem GlueingDatum.snd_comp_lift {N : Type*} [AddCommMonoid N] [Module R N]
     (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (f₁ : N →ₗ[R] M₁) (f₂ : N →ₗ[R] M₂)
     (h : ∀ n, D.ψ₁ (1 ⊗ₜ f₁ n) = D.ψ₂ (1 ⊗ₜ f₂ n)) :
     (D.snd R).comp (D.lift f₁ f₂ h) = f₂ := by ext n; rfl
 
 /-- Two `R`-linear maps into `D.sections R` agree if their compositions with `D.fst R` and
 `D.snd R` agree. -/
-@[ext]
-theorem GlueingDatum.sections_hom_ext {N : Type*} [AddCommMonoid N] [Module R N]
+@[ext] theorem GlueingDatum.sections_hom_ext {N : Type*} [AddCommMonoid N] [Module R N]
     (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) {g₁ g₂ : N →ₗ[R] D.sections R}
     (h₁ : (D.fst R).comp g₁ = (D.fst R).comp g₂)
     (h₂ : (D.snd R).comp g₁ = (D.snd R).comp g₂) : g₁ = g₂ := by
@@ -240,35 +224,29 @@ theorem GlueingDatum.eq_lift {N : Type*} [AddCommMonoid N] [Module R N]
   D.sections_hom_ext (h₁.trans (D.fst_comp_lift f₁ f₂ h).symm)
     (h₂.trans (D.snd_comp_lift f₁ f₂ h).symm)
 
-@[simp]
-theorem GlueingDatum.baseChangeFst_tmul (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
+@[simp] theorem GlueingDatum.baseChangeFst_tmul (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
     (r₁ : R₁) (x : D.sections R) : D.baseChangeFst R (r₁ ⊗ₜ x) = r₁ • D.fst R x := by rfl
 
-@[simp]
-theorem GlueingDatum.baseChangeSnd_tmul (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
+@[simp] theorem GlueingDatum.baseChangeSnd_tmul (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
     (r₂ : R₂) (x : D.sections R) : D.baseChangeSnd R (r₂ ⊗ₜ x) = r₂ • D.snd R x := by rfl
 
 /-- The defining overlap compatibility of the two projections of a section `x : D.sections R`. -/
 theorem GlueingDatum.ψ₁_one_tmul_fst (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
     (x : D.sections R) : D.ψ₁ (1 ⊗ₜ D.fst R x) = D.ψ₂ (1 ⊗ₜ D.snd R x) := x.property
 
-@[simp]
-theorem GlueingDatum.sectionsEquivProdOfSubsingleton_apply [Subsingleton M₁₂]
+@[simp] theorem GlueingDatum.sectionsEquivProdOfSubsingleton_apply [Subsingleton M₁₂]
     (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (x : D.sections R) :
     D.sectionsEquivProdOfSubsingleton R x = x.val := by rfl
 
-@[simp]
-theorem GlueingDatum.coe_sectionsEquivProdOfSubsingleton_symm [Subsingleton M₁₂]
+@[simp] theorem GlueingDatum.coe_sectionsEquivProdOfSubsingleton_symm [Subsingleton M₁₂]
     (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (x : M₁ × M₂) :
     ((D.sectionsEquivProdOfSubsingleton R).symm x : M₁ × M₂) = x := by rfl
 
-@[simp]
-theorem GlueingDatum.coe_sectionsEquivSymm_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
+@[simp] theorem GlueingDatum.coe_sectionsEquivSymm_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
     (x : D.sections R) :
     ((D.sectionsEquivSymm R x : D.symm.sections R) : M₂ × M₁) = (x.val.2, x.val.1) := by rfl
 
-@[simp]
-theorem GlueingDatum.coe_sectionsEquivSymm_symm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
+@[simp] theorem GlueingDatum.coe_sectionsEquivSymm_symm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
     (x : D.symm.sections R) :
     (((D.sectionsEquivSymm R).symm x : D.sections R) : M₁ × M₂) = (x.val.2, x.val.1) := by rfl
 
@@ -284,20 +262,18 @@ theorem GlueingDatum.fst_sectionsEquivSymm_symm (D : GlueingDatum R₁ R₂ R₁
 theorem GlueingDatum.snd_sectionsEquivSymm_symm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
     (x : D.symm.sections R) : D.snd R ((D.sectionsEquivSymm R).symm x) = D.symm.fst R x := by rfl
 
-@[simp]
-theorem GlueingDatum.fst_comp_sectionsEquivSymm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
+@[simp] theorem GlueingDatum.fst_comp_sectionsEquivSymm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
     (D.symm.fst R).comp (D.sectionsEquivSymm R).toLinearMap = D.snd R := by ext x; rfl
 
-@[simp]
-theorem GlueingDatum.snd_comp_sectionsEquivSymm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
+@[simp] theorem GlueingDatum.snd_comp_sectionsEquivSymm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
     (D.symm.snd R).comp (D.sectionsEquivSymm R).toLinearMap = D.fst R := by ext x; rfl
 
-@[simp]
-theorem GlueingDatum.fst_comp_sectionsEquivSymm_symm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
+@[simp] theorem GlueingDatum.fst_comp_sectionsEquivSymm_symm
+    (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
     (D.fst R).comp (D.sectionsEquivSymm R).symm.toLinearMap = D.symm.snd R := by ext x; rfl
 
-@[simp]
-theorem GlueingDatum.snd_comp_sectionsEquivSymm_symm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
+@[simp] theorem GlueingDatum.snd_comp_sectionsEquivSymm_symm
+    (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
     (D.snd R).comp (D.sectionsEquivSymm R).symm.toLinearMap = D.symm.fst R := by ext x; rfl
 
 end Simps
@@ -319,13 +295,11 @@ variable {R : Type*} [CommRing R] [Algebra R R₁] [Algebra R R₂]
   [Algebra R R₁₂] [IsScalarTower R R₁ R₁₂] [IsScalarTower R R₂ R₁₂]
   {N : Type*} [AddCommGroup N] [Module R N]
 
-@[simp]
-theorem GlueingDatum.ofModule_ψ₁_tmul (r₁₂ : R₁₂) (r₁ : R₁) (n : N) :
+@[simp] theorem GlueingDatum.ofModule_ψ₁_tmul (r₁₂ : R₁₂) (r₁ : R₁) (n : N) :
     (GlueingDatum.ofModule R₁ R₂ R₁₂ R N).ψ₁ (r₁₂ ⊗ₜ (r₁ ⊗ₜ n)) = (r₁ • r₁₂) ⊗ₜ n :=
   AlgebraTensorModule.cancelBaseChange_tmul R R₁ R₁₂ r₁₂ n r₁
 
-@[simp]
-theorem GlueingDatum.ofModule_ψ₂_tmul (r₁₂ : R₁₂) (r₂ : R₂) (n : N) :
+@[simp] theorem GlueingDatum.ofModule_ψ₂_tmul (r₁₂ : R₁₂) (r₂ : R₂) (n : N) :
     (GlueingDatum.ofModule R₁ R₂ R₁₂ R N).ψ₂ (r₁₂ ⊗ₜ (r₂ ⊗ₜ n)) = (r₂ • r₁₂) ⊗ₜ n :=
   AlgebraTensorModule.cancelBaseChange_tmul R R₂ R₁₂ r₁₂ n r₂
 
@@ -338,8 +312,7 @@ def GlueingDatum.toSectionsOfModule :
   map_add' x y := by ext <;> simp [TensorProduct.tmul_add]
   map_smul' r x := by ext <;> simp [TensorProduct.tmul_smul]
 
-@[simp]
-theorem GlueingDatum.coe_toSectionsOfModule_apply (n : N) :
+@[simp] theorem GlueingDatum.coe_toSectionsOfModule_apply (n : N) :
     (GlueingDatum.toSectionsOfModule R₁ R₂ R₁₂ R N n : (R₁ ⊗[R] N) × (R₂ ⊗[R] N)) =
       ((1 : R₁) ⊗ₜ[R] n, (1 : R₂) ⊗ₜ[R] n) := by rfl
 
@@ -357,13 +330,18 @@ private theorem ofModule_cocycle_eq_rTensor (z : (R₁ ⊗[R] N) × (R₂ ⊗[R]
   | add x y hx hy =>
     simp only [map_add, Prod.fst_add, Prod.snd_add, TensorProduct.tmul_add, hx, hy]; abel
 
+section Exact
+
+variable [Module.Flat R N]
+  (hinj : Function.Injective fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r))
+  (hexact : Function.Exact (fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r))
+    fun x : R₁ × R₂ ↦ algebraMap R₁ R₁₂ x.1 - algebraMap R₂ R₁₂ x.2)
+include hinj hexact
+
 /-- Whenever `0 → R → R₁ × R₂ → R₁₂` is exact and `N` is a flat `R`-module, the canonical map
 `GlueingDatum.toSectionsOfModule` is bijective: flat base change preserves both injectivity of
 `R → R₁ × R₂` and exactness at `(R₁ × R₂) ⊗_R N`. -/
-theorem GlueingDatum.bijective_toSectionsOfModule_of_flat [Module.Flat R N]
-    (hinj : Function.Injective fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r))
-    (hexact : Function.Exact (fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r))
-      fun x : R₁ × R₂ ↦ algebraMap R₁ R₁₂ x.1 - algebraMap R₂ R₁₂ x.2) :
+theorem GlueingDatum.bijective_toSectionsOfModule_of_flat :
     Function.Bijective (GlueingDatum.toSectionsOfModule R₁ R₂ R₁₂ R N) := by
   let ι : R →ₗ[R] R₁ × R₂ := (Algebra.linearMap R R₁).prod (Algebra.linearMap R R₂)
   let δ : (R₁ × R₂) →ₗ[R] R₁₂ :=
@@ -384,21 +362,16 @@ theorem GlueingDatum.bijective_toSectionsOfModule_of_flat [Module.Flat R N]
 
 /-- For a flat `R`-module `N` over an exact ring diagram `0 → R → R₁ × R₂ → R₁₂`, the sections of
 `GlueingDatum.ofModule R₁ R₂ R₁₂ R N` are canonically `R`-linearly isomorphic to `N`. -/
-noncomputable def GlueingDatum.equivSectionsOfModule [Module.Flat R N]
-    (hinj : Function.Injective fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r))
-    (hexact : Function.Exact (fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r))
-      fun x : R₁ × R₂ ↦ algebraMap R₁ R₁₂ x.1 - algebraMap R₂ R₁₂ x.2) :
+noncomputable def GlueingDatum.equivSectionsOfModule :
     N ≃ₗ[R] (GlueingDatum.ofModule R₁ R₂ R₁₂ R N).sections R :=
   LinearEquiv.ofBijective (GlueingDatum.toSectionsOfModule R₁ R₂ R₁₂ R N)
     (GlueingDatum.bijective_toSectionsOfModule_of_flat hinj hexact)
 
-@[simp]
-theorem GlueingDatum.equivSectionsOfModule_apply [Module.Flat R N]
-    (hinj : Function.Injective fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r))
-    (hexact : Function.Exact (fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r))
-      fun x : R₁ × R₂ ↦ algebraMap R₁ R₁₂ x.1 - algebraMap R₂ R₁₂ x.2) (n : N) :
+@[simp] theorem GlueingDatum.equivSectionsOfModule_apply (n : N) :
     GlueingDatum.equivSectionsOfModule hinj hexact n =
       GlueingDatum.toSectionsOfModule R₁ R₂ R₁₂ R N n := by rfl
+
+end Exact
 
 end OfModule
 

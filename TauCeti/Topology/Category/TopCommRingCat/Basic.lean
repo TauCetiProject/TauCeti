@@ -12,7 +12,8 @@ public import Mathlib.Topology.Category.TopCommRingCat
 
 The forgetful functor to `CommRingCat` sends a continuous ring homomorphism to its underlying
 ring homomorphism. The transport lemma records this also when the source and target have been
-identified by equalities.
+identified by equalities; the file also provides elementwise composition and `eqToHom`
+cancellation lemmas.
 -/
 
 public section
@@ -20,6 +21,16 @@ public section
 namespace TauCeti.TopCommRingCat
 
 open CategoryTheory
+
+/-- Composition of morphisms in `TopCommRingCat` acts by function composition on underlying
+elements. -/
+theorem comp_val_apply {X Y Z : _root_.TopCommRingCat} (f : X ⟶ Y) (g : Y ⟶ Z) (x : X) :
+    (f ≫ g).val x = g.val (f.val x) := rfl
+
+/-- Cancellation of paired `eqToHom` transports on underlying elements in `TopCommRingCat`. -/
+theorem eqToHom_apply_eqToHom_symm_apply {X Y : _root_.TopCommRingCat} (e : X = Y) (y : Y) :
+    (eqToHom e).val ((eqToHom e.symm).val y) = y :=
+  (eqToIso e.symm).hom_inv_id_apply y
 
 /-- Forgetting the topology of a morphism keeps its underlying ring homomorphism. -/
 @[simp]

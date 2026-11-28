@@ -33,36 +33,25 @@ and universal properties of `ratLoc`.
 
 * `TauCeti.Huber.isRationalCompletion_def`,
   `TauCeti.Huber.isRationalCompletion_iff_exists_ringEquiv_completion`,
-  `TauCeti.Huber.isRationalCompletion_ratLoc`,
-  `TauCeti.Huber.IsRationalCompletion.continuous_ratLocEquiv`,
-  `TauCeti.Huber.IsRationalCompletion.continuous_ratLocEquiv_symm`, and
+  `TauCeti.Huber.isRationalCompletion_ratLoc`, `TauCeti.Huber.IsRationalCompletion.ratLocEquiv`
+  (`continuous_ratLocEquiv`, `continuous_ratLocEquiv_symm`), and
   `TauCeti.Huber.IsRationalCompletion.congr_pairOfDefinition`: comparison with `ratLoc` and
-  `Completion (Localization.Away s)`, bicontinuity of `ratLocEquiv`, and independence of the pair
-  of definition `P`.
-* `TauCeti.Huber.IsRationalCompletion.isTopologicalRing`,
-  `TauCeti.Huber.IsRationalCompletion.completeSpace`,
-  `TauCeti.Huber.IsRationalCompletion.t2Space`,
-  `TauCeti.Huber.IsRationalCompletion.isHuberRing`, and
-  `TauCeti.Huber.IsRationalCompletion.isTateRing`: topological ring, completeness, separation,
-  Huber, and Tate properties of any model.
+  `Completion (Localization.Away s)`, bicontinuity of `ratLocEquiv`, and independence of `P`.
+* `TauCeti.Huber.IsRationalCompletion.isTopologicalRing`, `completeSpace`, `t2Space`,
+  `isHuberRing`, and `isTateRing`: topological ring, completeness, separation, Huber, and Tate
+  properties of any model.
 * `TauCeti.Huber.IsRationalCompletion.isPowerBounded_algebraMap_mul_unit_inv`: the distinguished
   fractions `t / s` (`t ∈ T`) are power-bounded in any model.
-* `TauCeti.Huber.IsRationalCompletion.localizationAlgHom`,
-  `TauCeti.Huber.IsRationalCompletion.localizationAlgHom_algebraMap`,
-  `TauCeti.Huber.IsRationalCompletion.continuous_localizationAlgHom`, and
-  `TauCeti.Huber.IsRationalCompletion.denseRange_localizationAlgHom`: canonical dense copy of
+* `TauCeti.Huber.IsRationalCompletion.localizationAlgHom`, `localizationAlgHom_algebraMap`,
+  `continuous_localizationAlgHom`, and `denseRange_localizationAlgHom`: canonical dense copy of
   `Localization.Away s` in any model and its continuity for the localisation topology.
 * `TauCeti.Huber.IsRationalCompletion.ringHom_ext_of_continuous`,
-  `TauCeti.Huber.IsRationalCompletion.existsUnique_continuous_algHom`,
-  `TauCeti.Huber.IsRationalCompletion.existsUnique_continuous_algHom_of_refines`,
-  `TauCeti.Huber.IsRationalCompletion.comp_localizationAlgHom`,
-  `TauCeti.Huber.IsRationalCompletion.map_localizationAlgHom`, and
-  `TauCeti.Huber.IsRationalCompletion.denseRange_of_comp_algebraMap_eq`: uniqueness, universal
-  property, functoriality along refinements, localization-map compatibility, and density at a shared
-  denominator.
+  `existsUnique_continuous_algHom`, `existsUnique_continuous_algHom_of_refines`,
+  `comp_localizationAlgHom`, `map_localizationAlgHom`, and `denseRange_of_comp_algebraMap_eq`:
+  uniqueness, universal property, functoriality along refinements, localization-map compatibility,
+  and density at a shared denominator.
 * `TauCeti.Huber.isRationalCompletion_self_denom_one` and
-  `TauCeti.Huber.IsRationalCompletion.subsingleton_of_denom_zero`: behaviour at denominators `1`
-  and `0`.
+  `TauCeti.Huber.IsRationalCompletion.subsingleton_of_denom_zero`: behaviour at `1` and `0`.
 
 ## References
 
@@ -157,8 +146,7 @@ theorem IsRationalCompletion.congr_pairOfDefinition (h : IsRationalCompletion P 
       F (P'.locUniformSpace T s S hden') (P'.isUniformAddGroup_locUniformSpace T s S hden')
         (P'.isTopologicalRing_locUniformSpace T s S hden') (P'.toCompletionLoc T s S hden') := by
     have _ := PairOfDefinition.locUniformSpace_congr_pairOfDefinition P P' T s S hden hden'
-    have _ := PairOfDefinition.toCompletionLoc_heq_pairOfDefinition P P' T s S hden hden'
-    congr!
+    have _ := PairOfDefinition.toCompletionLoc_heq_pairOfDefinition P P' T s S hden hden'; congr!
   exact hF.mp h
 
 /-- Equivalence form of `IsRationalCompletion.congr_pairOfDefinition`. -/
@@ -192,16 +180,14 @@ theorem IsRationalCompletion.t2Space (h : IsRationalCompletion P T s hT B) : T2S
 /-- Any model of `A⟨T/s⟩` is a topological ring. -/
 theorem IsRationalCompletion.isTopologicalRing (h : IsRationalCompletion P T s hT B) :
     IsTopologicalRing B :=
-  let ⟨e, he, he'⟩ := h
-  _root_.Topology.IsInducing.isTopologicalRing e.symm.toRingHom
+  let ⟨e, he, he'⟩ := h; _root_.Topology.IsInducing.isTopologicalRing e.symm.toRingHom
     (Homeomorph.mk e.toEquiv he he').symm.isInducing
 
 /-- Any model of `A⟨T/s⟩` is a Huber ring. -/
 theorem IsRationalCompletion.isHuberRing (h : IsRationalCompletion P T s hT B) :
     @IsHuberRing B _ _ h.isTopologicalRing :=
-  have := h.isTopologicalRing; let ⟨e, he, he'⟩ := h
-  IsHuberRing.of_isOpenQuotientMap (f := e.toRingHom)
-    (Homeomorph.mk e.toEquiv he he').isOpenQuotientMap
+  have := h.isTopologicalRing; let ⟨e, he, he'⟩ := h; IsHuberRing.of_isOpenQuotientMap
+    (f := e.toRingHom) (Homeomorph.mk e.toEquiv he he').isOpenQuotientMap
 
 /-- Over a Tate ring `A`, any model of `A⟨T/s⟩` is a Tate ring. -/
 theorem IsRationalCompletion.isTateRing [IsTateRing A] (h : IsRationalCompletion P T s hT B) :
@@ -247,10 +233,8 @@ theorem IsRationalCompletion.algHom_ext_of_continuous (h : IsRationalCompletion 
 theorem IsRationalCompletion.isPowerBounded_algebraMap_mul_unit_inv
     (h : IsRationalCompletion P T s hT B) {t : A} (ht : t ∈ T) :
     IsPowerBounded (algebraMap A B t * ↑h.isUnit_algebraMap.unit⁻¹) := by
-  let S := Localization.Away s
-  let hden := P.hasDenominatorPower_of_isOpen_span T s S hT
-  let _ := P.locUniformSpace T s S hden
-  have _ := P.isUniformAddGroup_locUniformSpace T s S hden
+  let S := Localization.Away s; let hden := P.hasDenominatorPower_of_isOpen_span T s S hT
+  let _ := P.locUniformSpace T s S hden; have _ := P.isUniformAddGroup_locUniformSpace T s S hden
   have _ := P.isTopologicalRing_locUniformSpace T s S hden
   obtain ⟨e, he, he'⟩ := id h
   have hu : IsUnit (P.toCompletionLoc T s S hden s) := by
@@ -337,8 +321,7 @@ private theorem IsRationalCompletion.localizationAlgHom_eq_comp_coe
     letI := P.locUniformSpace T s (Localization.Away s) hden
     (h.localizationAlgHom : Localization.Away s → B) = e ∘ Completion.coe' := by
   let hden := P.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
-  let _ := P.locUniformSpace _ s _ hden
-  have _ := P.isUniformAddGroup_locUniformSpace _ s _ hden
+  let _ := P.locUniformSpace _ s _ hden; have _ := P.isUniformAddGroup_locUniformSpace _ s _ hden
   have _ := P.isTopologicalRing_locUniformSpace _ s _ hden
   have heq : h.localizationAlgHom.toRingHom = e.toRingHom.comp Completion.coeRingHom :=
     IsLocalization.ringHom_ext (Submonoid.powers s) (RingHom.ext fun a ↦ by
@@ -419,10 +402,12 @@ theorem isRationalCompletion_of_subsingleton_denom_zero (P : PairOfDefinition A)
     (B : Type*) [CommRing B] [TopologicalSpace B] [Algebra A B] [Subsingleton B] :
     IsRationalCompletion P T 0 hT B := by
   have _ := (isRationalCompletion_ratLoc P T 0 hT).subsingleton_of_denom_zero
-  exact ⟨{ toFun := fun _ ↦ 0, invFun := fun _ ↦ 0,
-           left_inv := fun _ ↦ Subsingleton.elim _ _, right_inv := fun _ ↦ Subsingleton.elim _ _,
-           map_mul' := fun _ _ ↦ Subsingleton.elim _ _, map_add' := fun _ _ ↦ Subsingleton.elim _ _,
-           commutes' := fun _ ↦ Subsingleton.elim _ _ }, continuous_const, continuous_const⟩
+  let e : ratLoc P T 0 _ ≃ₐ[A] B := {
+    toFun := fun _ ↦ 0, invFun := fun _ ↦ 0,
+    left_inv := fun _ ↦ Subsingleton.elim _ _, right_inv := fun _ ↦ Subsingleton.elim _ _,
+    map_mul' := fun _ _ ↦ Subsingleton.elim _ _, map_add' := fun _ _ ↦ Subsingleton.elim _ _,
+    commutes' := fun _ ↦ Subsingleton.elim _ _ }
+  exact ⟨e, continuous_const, continuous_const⟩
 
 end Basic
 
@@ -436,10 +421,8 @@ theorem isRationalCompletion_self_denom_one [CompleteSpace A] [T0Space A]
     (P : PairOfDefinition A) (T : Finset A) (hT : IsOpen (Ideal.span (T : Set A) : Set A))
     (hTpb : ∀ t ∈ T, IsPowerBounded t) : IsRationalCompletion P T 1 hT A := by
   rw [isRationalCompletion_iff_exists_ringEquiv_completion]
-  let S := Localization.Away (1 : A)
-  let hden := P.hasDenominatorPower_of_isOpen_span T 1 S hT
-  let _ := P.locUniformSpace _ 1 _ hden
-  have _ := P.isUniformAddGroup_locUniformSpace _ 1 _ hden
+  let S := Localization.Away (1 : A); let hden := P.hasDenominatorPower_of_isOpen_span T 1 S hT
+  let _ := P.locUniformSpace _ 1 _ hden; have _ := P.isUniformAddGroup_locUniformSpace _ 1 _ hden
   have _ := P.isTopologicalRing_locUniformSpace _ 1 _ hden
   let e := P.toCompletionLocEquivDenomOne T hTpb S
   have he : Continuous e := (P.continuous_toCompletionLoc T 1 S hden).congr fun a ↦

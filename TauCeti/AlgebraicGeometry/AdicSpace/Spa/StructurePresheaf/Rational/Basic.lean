@@ -78,25 +78,12 @@ public section
 
 universe v
 
-namespace TauCeti.TopCommRingCat
-
-/-- Cancellation of paired `eqToHom` transports on underlying elements in `TopCommRingCat`. -/
-theorem eqToHom_apply_eqToHom_symm_apply {X Y : _root_.TopCommRingCat.{v}} (e : X = Y) (y : Y) :
-    (eqToHom e).val ((eqToHom e.symm).val y) = y :=
-  (eqToIso e.symm).hom_inv_id_apply y
-
-end TauCeti.TopCommRingCat
-
 namespace TauCeti.Huber.PairOfDefinition
 
 variable {A : Type v} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
   [CompleteSpace A] [T0Space A] {P : PairOfDefinition A}
 
 /-! ### The structure maps as morphisms -/
-
--- Composition of morphisms in `TopCommRingCat` acts by function composition on underlying rings.
-private theorem topCommRingCat_comp_apply {X Y Z : TopCommRingCat.{v}} (f : X ⟶ Y) (g : Y ⟶ Z)
-    (x : X) : (f ≫ g).val x = g.val (f.val x) := rfl
 
 /-- **The structure map `A → A⟨p⟩`** of a presentation, as a morphism of
 `CompleteSeparatedTopCommRingCat` out of the complete Hausdorff ring `A`. -/
@@ -448,12 +435,6 @@ private theorem eqToHom_homOfRationalSubsetSubset_apply
       ringHomOfRationalSubsetSubset P Aplus hAplus p.num p.den _ p.hasDenominatorPower
         q.num q.den _ q.hasDenominatorPower hsub
         ((eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).val w) := by
-  let _ := locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  have _ := isUniformAddGroup_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  have _ := isTopologicalRing_locUniformSpace P p.num p.den _ p.hasDenominatorPower
-  let _ := locUniformSpace P q.num q.den _ q.hasDenominatorPower
-  have _ := isUniformAddGroup_locUniformSpace P q.num q.den _ q.hasDenominatorPower
-  have _ := isTopologicalRing_locUniformSpace P q.num q.den _ q.hasDenominatorPower
   have heq := congrArg
     (fun φ : (TopCommRingCat.isCompleteSeparated.ι ⋙
         forget₂ TopCommRingCat CommRingCat).obj p.completionLocObj ⟶ _ ↦ φ w)
@@ -480,19 +461,17 @@ private theorem ratLocEquiv_comp_ringHomOfRationalSubsetSubset
           T' s' (Localization.Away s') (P.hasDenominatorPower_of_isOpen_span T' s' _ hT') hsub) =
       (algebraMap B B').comp hB.ratLocEquiv.toRingHom := by
   have : T2Space B' := hB'.t2Space
+  let hden := P.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
+  let hden' := P.hasDenominatorPower_of_isOpen_span T' s' (Localization.Away s') hT'
+  let σ := ringHomOfRationalSubsetSubset P Aplus hAplus T s _ hden T' s' _ hden' hsub
   refine (isRationalCompletion_ratLoc P T s hT).ringHom_ext_of_continuous
-    (hB'.continuous_ratLocEquiv.comp (continuous_ringHomOfRationalSubsetSubset P Aplus hAplus
-      T s (Localization.Away s) (P.hasDenominatorPower_of_isOpen_span T s _ hT)
-      T' s' (Localization.Away s') (P.hasDenominatorPower_of_isOpen_span T' s' _ hT') hsub))
+    (hB'.continuous_ratLocEquiv.comp
+      (continuous_ringHomOfRationalSubsetSubset P Aplus hAplus T s _ hden T' s' _ hden' hsub))
     (hc.comp hB.continuous_ratLocEquiv) (RingHom.ext fun r ↦ ?_)
-  have hσr : (ringHomOfRationalSubsetSubset P Aplus hAplus T s (Localization.Away s)
-      (P.hasDenominatorPower_of_isOpen_span T s _ hT)
-      T' s' (Localization.Away s') (P.hasDenominatorPower_of_isOpen_span T' s' _ hT') hsub)
-      (P.toCompletionLoc T s _ (P.hasDenominatorPower_of_isOpen_span T s _ hT) r) =
-      P.toCompletionLoc T' s' _ (P.hasDenominatorPower_of_isOpen_span T' s' _ hT') r :=
-    RingHom.congr_fun (ringHomOfRationalSubsetSubset_comp_toCompletionLoc P Aplus hAplus
-      T s (Localization.Away s) (P.hasDenominatorPower_of_isOpen_span T s _ hT)
-      T' s' (Localization.Away s') (P.hasDenominatorPower_of_isOpen_span T' s' _ hT') hsub) r
+  have hσr : σ (P.toCompletionLoc T s _ hden r) = P.toCompletionLoc T' s' _ hden' r :=
+    RingHom.congr_fun
+      (ringHomOfRationalSubsetSubset_comp_toCompletionLoc P Aplus hAplus T s _ hden T' s' _ hden'
+        hsub) r
   simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
     AlgEquiv.coe_toRingEquiv]
   rw [hB.ratLocEquiv.commutes r, algebraMap_ratLoc, hσr, ← algebraMap_ratLoc,
@@ -519,25 +498,18 @@ theorem rationalSectionRingEquiv_map_le (P : PairOfDefinition A) {Aplus : Subrin
     spaBasicOpen_le_spaBasicOpen_iff.mp hle
   -- Identify `presentationLimitMap` with `homOfRationalSubsetSubset` under
   -- `presentationLimitRationalIso`.
-  have hmap := (Iso.inv_comp_eq _).1
-    (presentationLimitRationalIso_inv_comp_map_comp_hom Aplus hAplus p q hT hT' hle)
   have hmap_val : (presentationLimitRationalIso Aplus hAplus q hT').hom.hom.val
         ((presentationLimitMap (P := P) hle).hom.val z) =
       (homOfRationalSubsetSubset Aplus hAplus hsub).hom.val
         ((presentationLimitRationalIso Aplus hAplus p hT).hom.hom.val z) :=
-    congrArg (fun m ↦ m.hom.val z) hmap
+    congrArg (fun m ↦ m.hom.val z) ((Iso.inv_comp_eq _).1
+      (presentationLimitRationalIso_inv_comp_map_comp_hom Aplus hAplus p q hT hT' hle))
   -- Move `homOfRationalSubsetSubset` to the models and compare with `algebraMap B B'`.
   rw [rationalSectionRingEquiv_apply, rationalSectionRingEquiv_apply, hmap_val,
     eqToHom_homOfRationalSubsetSubset_apply]
   dsimp only [p, q] at hsub ⊢
   exact RingHom.congr_fun
     (ratLocEquiv_comp_ringHomOfRationalSubsetSubset P hAplus hT hT' hsub hB hB' hc) _
-
-end TauCeti.ValuationSpectrum
-
-namespace TauCeti.ValuationSpectrum
-
-open TauCeti.Huber TauCeti.Huber.PairOfDefinition
 
 /-- Under `rationalSectionRingEquiv`, `algebraMap A B r` corresponds to the canonical image of
 `r : A` transported across `presentationLimitRationalIso`. -/
@@ -553,21 +525,13 @@ theorem rationalSectionRingEquiv_symm_algebraMap
       (presentationLimitRationalIso Aplus hAplus p hT).inv.hom.val
         (p.toCompletionLocObjHom.hom.val
           ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm).val r)) := by
-  let _ := locUniformSpace P T s (Localization.Away s)
-    (P.hasDenominatorPower_of_isOpen_span T s _ hT)
-  have _ := isUniformAddGroup_locUniformSpace P T s (Localization.Away s)
-    (P.hasDenominatorPower_of_isOpen_span T s _ hT)
-  have _ := isTopologicalRing_locUniformSpace P T s (Localization.Away s)
-    (P.hasDenominatorPower_of_isOpen_span T s _ hT)
   let p : Presentation P := ⟨T, s, P.hasDenominatorPower_of_isOpen_span T s _ hT⟩
-  dsimp only
   have hinv (w) : (presentationLimitRationalIso Aplus hAplus p hT).hom.hom.val
       ((presentationLimitRationalIso Aplus hAplus p hT).inv.hom.val w) = w :=
-    congrArg (fun m ↦ m.hom.val w)
-      (presentationLimitRationalIso Aplus hAplus p hT).inv_hom_id
+    congrArg (fun m ↦ m.hom.val w) (presentationLimitRationalIso Aplus hAplus p hT).inv_hom_id
   rw [RingEquiv.symm_apply_eq, rationalSectionRingEquiv_apply, hinv,
-    Presentation.toCompletionLocObjHom_hom, topCommRingCat_comp_apply,
-    topCommRingCat_comp_apply, TopCommRingCat.eqToHom_apply_eqToHom_symm_apply,
+    Presentation.toCompletionLocObjHom_hom, TopCommRingCat.comp_val_apply,
+    TopCommRingCat.comp_val_apply, TopCommRingCat.eqToHom_apply_eqToHom_symm_apply,
     TopCommRingCat.eqToHom_apply_eqToHom_symm_apply]
   dsimp only
   rw [← algebraMap_ratLoc, hB.ratLocEquiv.commutes]
