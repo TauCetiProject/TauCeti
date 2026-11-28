@@ -62,8 +62,6 @@ this is how smooth local sections of the isotropic orbit are obtained over `ℝ`
 * `Matrix.unitaryGroupOf.inv_reflection` and
   `Matrix.unitaryGroupOf.reflection_eq_one_of_dotProduct_self_eq_zero`: the reflection is an
   involution, and is the identity at isotropic vectors.
-* `Matrix.unitaryTransvection_sub_mulVec_eq`: if `a B(x - y, y) = 1`, the raw transvection
-  `τ_{x - y,a}` sends `y` to `x`.
 * `Matrix.unitaryGroupOf.orbitSection_mulVec`: the orbit section sends `y` to every isotropic `x`
   with `⟨x, y⟩ ≠ 0`.
 

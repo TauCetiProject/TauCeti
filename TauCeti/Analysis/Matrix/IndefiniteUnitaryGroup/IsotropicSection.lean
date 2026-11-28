@@ -26,10 +26,10 @@ whose matrix entries are smooth functions of the real coordinates of the target 
 * If `y₀` is isotropic and `⟨y₀, x₀⟩ ≠ 0`, there are an open neighbourhood `N` of `x₀` and a map
   `g` from `𝕜ⁿ` to `U(J)`, whose matrix entries are real-analytic on `N`, with `g x *ᵥ y₀ = x` for
   every isotropic `x ∈ N`
-  (`Matrix.unitaryGroupOf.exists_contDiffOn_isotropicOrbitSection_of_pairing_ne_zero`).
+  (`Matrix.unitaryGroupOf.exists_contDiffOn_mulVec_eq_of_dotProduct_mulVec_ne_zero`).
 * If `J *ᵥ x₀ ≠ 0`, that is `x₀` is not in the radical of the form (for instance `J` invertible
   and `x₀ ≠ 0`), the same holds with `g x *ᵥ x₀ = x`
-  (`Matrix.unitaryGroupOf.exists_contDiffOn_isotropicOrbitSection_at_source`). This has content
+  (`Matrix.unitaryGroupOf.exists_contDiffOn_mulVec_eq_of_mulVec_ne_zero`). This has content
   only for isotropic `x₀`.
 
 Neither statement assumes that `x₀` is isotropic: if it is not, a neighbourhood of `x₀` contains no
@@ -53,10 +53,10 @@ with a normed real algebra structure and a continuous, real-linear involution.
 
 * `Matrix.unitaryGroupOf.contDiffOn_orbitSection_apply`: the entries of the orbit section are
   real-analytic where `⟨x, y₀⟩ - ⟨x, x⟩ / 2 ≠ 0`.
-* `Matrix.unitaryGroupOf.exists_contDiffOn_isotropicOrbitSection_of_pairing_ne_zero`: smooth
+* `Matrix.unitaryGroupOf.exists_contDiffOn_mulVec_eq_of_dotProduct_mulVec_ne_zero`: smooth
   local sections of the map `g ↦ g y₀`, for isotropic `y₀`, over the isotropic vectors near a
   vector `x₀` with `⟨y₀, x₀⟩ ≠ 0`.
-* `Matrix.unitaryGroupOf.exists_contDiffOn_isotropicOrbitSection_at_source`: smooth local sections
+* `Matrix.unitaryGroupOf.exists_contDiffOn_mulVec_eq_of_mulVec_ne_zero`: smooth local sections
   of the map `g ↦ g x₀` over the isotropic vectors near a vector `x₀` with `J *ᵥ x₀ ≠ 0`.
 
 ## Attribution
@@ -133,7 +133,7 @@ private theorem exists_contDiffOn_mulVec_eq_of_ne_zero {x₀ : n → 𝕜}
 let `x₀` be a vector with `⟨y₀, x₀⟩ ≠ 0`. Then there are an open neighbourhood `N` of `x₀` and a map
 `g` to the unitary group of `J`, whose matrix entries are real-analytic (in particular smooth)
 functions of the real coordinates on `N`, with `g x *ᵥ y₀ = x` for every isotropic `x ∈ N`. -/
-theorem exists_contDiffOn_isotropicOrbitSection_of_pairing_ne_zero (hJ : J.IsHermitian)
+theorem exists_contDiffOn_mulVec_eq_of_dotProduct_mulVec_ne_zero (hJ : J.IsHermitian)
     {x₀ y₀ : n → 𝕜} (hy₀ : star y₀ ⬝ᵥ J *ᵥ y₀ = 0) (hxy : star y₀ ⬝ᵥ J *ᵥ x₀ ≠ 0) :
     ∃ N, IsOpen N ∧ x₀ ∈ N ∧ ∃ g : (n → 𝕜) → unitaryGroupOf J,
       ContDiffOn ℝ ω (fun x => ((g x : GL n 𝕜) : Matrix n n 𝕜)) N ∧
@@ -158,7 +158,7 @@ of `x₀` and a map `g` to the unitary group of `J`, whose matrix entries are re
 particular smooth) functions of the real coordinates on `N`, with `g x *ᵥ x₀ = x` for every
 isotropic `x ∈ N`. This has content only when `x₀` is isotropic: otherwise `N` can be chosen to
 contain no isotropic vector. -/
-theorem exists_contDiffOn_isotropicOrbitSection_at_source (hJ : J.IsHermitian) {x₀ : n → 𝕜}
+theorem exists_contDiffOn_mulVec_eq_of_mulVec_ne_zero (hJ : J.IsHermitian) {x₀ : n → 𝕜}
     (hx₀ : J *ᵥ x₀ ≠ 0) :
     ∃ N, IsOpen N ∧ x₀ ∈ N ∧ ∃ g : (n → 𝕜) → unitaryGroupOf J,
       ContDiffOn ℝ ω (fun x => ((g x : GL n 𝕜) : Matrix n n 𝕜)) N ∧
@@ -181,7 +181,7 @@ theorem exists_contDiffOn_isotropicOrbitSection_at_source (hJ : J.IsHermitian) {
   have hyx : star y₀ ⬝ᵥ J *ᵥ x₀ ≠ 0 := by
     simpa [y₀, star_add, add_dotProduct, star_smul, smul_dotProduct, hiso] using hux
   obtain ⟨N, hN, hx₀N, g, hg, hgy⟩ :=
-    exists_contDiffOn_isotropicOrbitSection_of_pairing_ne_zero hJ hy₀ hyx
+    exists_contDiffOn_mulVec_eq_of_dotProduct_mulVec_ne_zero hJ hy₀ hyx
   -- The section `g` carries `y₀` to `x₀`, so `(g x₀)⁻¹` carries `x₀` back to `y₀`.
   have hinv : (((g x₀)⁻¹ : unitaryGroupOf J) : GL n 𝕜) *ᵥ x₀ = y₀ := calc
     _ = ((((g x₀ : GL n 𝕜)⁻¹ : GL n 𝕜) : Matrix n n 𝕜) *

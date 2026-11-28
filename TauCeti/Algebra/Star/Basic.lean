@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Star.Center
 public import Mathlib.Algebra.Star.Module
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Involution-closed absorption, proper-star annihilators, scalar commutation, and star-linearity
@@ -179,11 +181,8 @@ theorem inv_add_star_inv_add_mul_eq_zero_of_add_star_add_eq_zero {K : Type*} [Fi
   rcases eq_or_ne b 0 with rfl | h0
   · simp
   have h0' : star b ≠ 0 := star_ne_zero.mpr h0
-  calc
-    _ = b⁻¹ * (star b)⁻¹ * (b + star b + c) := by
-      rw [mul_add, mul_add, mul_right_comm b⁻¹ (star b)⁻¹ b, inv_mul_cancel₀ h0, one_mul,
-        inv_mul_cancel_right₀ h0', add_comm b⁻¹]
-    _ = 0 := by rw [h, mul_zero]
+  field_simp
+  linear_combination h
 
 end TauCeti
 

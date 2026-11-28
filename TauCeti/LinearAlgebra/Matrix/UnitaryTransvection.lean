@@ -67,6 +67,9 @@ are in `TauCeti/LinearAlgebra/Matrix/SpecialLinearGroup/Isometry/Transvection.le
   `Matrix.unitaryTransvection_mul_unitaryTransvection_star_param_eq_one_of_eq_zero`: for
   `σ = starRingEnd R` and a Hermitian Gram matrix `A`, `τ_{v,a}` preserves the form and is inverted
   by `τ_{v,star a}` when `a + star a + a star a B(v, v) = 0`.
+* `Matrix.unitaryTransvection_mulVec_of_dotProduct_eq_zero` and
+  `Matrix.unitaryTransvection_sub_mulVec_eq`: `τ_{v,a}` fixes every `x` with `B(v, x) = 0`, and
+  if `a B(x - y, y) = 1`, then `τ_{x - y,a}` sends `y` to `x`.
 * `Matrix.exists_eq_unitaryTransvection_smul_iff`: over a field, the transvections along a nonzero
   multiple of `v` are those along `v`.
 
