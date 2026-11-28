@@ -16,9 +16,14 @@ import TauCeti.Data.ZMod.SignedPowers
 
 `Parameters.IsSparse` excludes two short signed prime-power ratios from a common label
 after removing the prime part of the modulus. `Parameters.exists_large_sparse_place_labels`
-constructs a family with the cardinality bound of a Behrend digit box. It uses
-`exists_eq_and_eq_of_add_mul_modEq`, `Parameters.injOn_neg_pow_towerUnit`, and
-the signed-power exclusions in `TauCeti.Data.ZMod.SignedPowers`.
+constructs a family of class `-1` modulo `q₀` with the cardinality bound of a Behrend digit box.
+Under the identification of unit labels with the infinite places of the cyclotomic extension,
+these families provide candidates for the set `Φ_b` of places assigned weight `b` in the
+admissible data for the one-sided prime sum bound. The cardinality bound helps meet the size
+requirement on `Φ_b` while preserving sparsity up to the required prime cutoff.
+
+The cardinality bound comes from `exists_eq_and_eq_of_add_mul_modEq` and is preserved on passing
+to labels by `Parameters.injOn_neg_pow_towerUnit`.
 
 The sparsity condition and construction follow `New.Parameters.IsSparse` in
 `grh/src/New/Reduction/Data/AdmissibleData.lean` and `New.Parameters.exists_large_isSparse` in
