@@ -35,9 +35,6 @@ A surjective unit-reflecting map is `|ker f|`-to-one on units
 every fibre of the underlying additive map is a coset of the kernel. Applied to the matrix ring
 this counts the general linear group over `ℤ/pᵏ` from that over `𝔽_p`.
 
-Unit reflection also passes to subalgebras: if `R → S` reflects units then so does `R → T` for
-every subalgebra `T` of `S` (`Subalgebra.isLocalHom_algebraMap`).
-
 For a surjection of local rings `A → A'`, the image of the maximal ideal of `A` has radical the
 maximal ideal of `A'` (`TauCeti.IsLocalRing.radical_map_maximalIdeal_of_surjective`): the closed
 point of `Spec A'` is the only point over the closed point of `Spec A`.
@@ -109,19 +106,6 @@ theorem natCard_units_eq_natCard_ker_mul {R S : Type*} [Ring R] [Ring S] (f : R 
     Equiv.subtypeEquivRight fun x ↦ by simp [IsUnit.mem_submonoid_iff, isUnit_map_iff]
 
 end RingHom
-
-namespace Subalgebra
-
-variable {R S : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
-
-/-- If `R → S` reflects units, then so does `R → T` for every subalgebra `T` of `S`. -/
-instance isLocalHom_algebraMap [IsLocalHom (algebraMap R S)] (T : Subalgebra R S) :
-    IsLocalHom (algebraMap R T) :=
-  have : IsLocalHom ((T.val : T →+* S).comp (algebraMap R T)) := by
-    rwa [T.val.comp_algebraMap]
-  isLocalHom_of_comp _ (T.val : T →+* S)
-
-end Subalgebra
 
 namespace TauCeti.IsLocalRing
 

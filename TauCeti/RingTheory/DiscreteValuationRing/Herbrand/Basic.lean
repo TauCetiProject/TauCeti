@@ -5,24 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.DiscreteValuationRing.Inertia
 public import TauCeti.RingTheory.DiscreteValuationRing.LowerIndex
-public import TauCeti.RingTheory.LocalRing.Herbrand
+public import TauCeti.RingTheory.LocalRing.Herbrand.Jump
 import TauCeti.Algebra.Group.Subgroup.Finite
-import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
-import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
-import TauCeti.RingTheory.LocalRing.RingHom
+import TauCeti.RingTheory.LocalRing.FixedPoints.ResidueField
 
 /-!
-# Herbrand's theorem over discrete valuation rings
+# Herbrand's theorem and tower transitivity over discrete valuation rings
 
 Let a finite group `G` act faithfully on a discrete valuation ring `B` by `A`-algebra
-automorphisms, with invariants the discrete valuation ring `A` and separable residue extension,
-and let `H` be a normal subgroup. Mathlib makes `G ⧸ H` act on the fixed ring
-`B^H = FixedPoints.subalgebra A B H`, again a discrete valuation ring; for a finite Galois
-extension `L/K` with group `G` and integer ring `B`, this is the action of `Gal(L^H/K)` on the
-integer ring of `L^H`. Write `φ_G`, `ψ_G` and `G^v` for the Herbrand function, its inverse and the
-upper numbering of `G` acting on `B` (`TauCeti.IsLocalRing.herbrandFun`), and likewise for `H`
-acting on `B` and for `G ⧸ H` acting on `B^H`.
+automorphisms over a local ring `A` with separable residue extension, and let `H` be a normal
+subgroup. `G ⧸ H` acts on the fixed ring `B^H = FixedPoints.subalgebra A B H`, again a discrete
+valuation ring; for a finite Galois extension `L/K` with group `G` and integer ring `B`, this is
+the action of `Gal(L^H/K)` on the integer ring of `L^H`. Write `φ_G`, `ψ_G` and `G^v` for the
+Herbrand function, its inverse and the upper numbering of `G` acting on `B`
+(`TauCeti.IsLocalRing.herbrandFun`), and likewise for `H` acting on `B` and for `G ⧸ H` acting on
+`B^H`.
 
 The lower numbering does not pass to the quotient, but **Herbrand's theorem** says how it fails:
 
@@ -30,8 +29,9 @@ The lower numbering does not pass to the quotient, but **Herbrand's theorem** sa
 
 It follows from Serre's quotient formula for the lower index
 (`TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_mk_eq_sum_card`) and the equality
-`#H_0 = e(B/B^H)` of the order of the inertia group with the ramification index. Comparing orders,
-with `H_u = H ∩ G_u`, gives `#(G/H)_{φ_H(u)} · #H_u = #G_u`, so that the slopes of `φ_G` and of
+`#H_0 = e(B/B^H)` of the order of the inertia group with the ramification index
+(`TauCeti.IsLocalRing.natCard_ramificationGroup_zero_fixedPoints`). Comparing orders, with
+`H_u = H ∩ G_u`, gives `#(G/H)_{φ_H(u)} · #H_u = #G_u`, so that the slopes of `φ_G` and of
 `φ_{G/H} ∘ φ_H` agree, which is the **transitivity of the Herbrand functions**
 
 `φ_G = φ_{G/H} ∘ φ_H`  and  `ψ_G = ψ_H ∘ ψ_{G/H}`.
@@ -40,34 +40,40 @@ Together these give the compatibility of the upper numbering with quotients,
 
 `(G/H)^v = G^v H / H`,
 
-which is what makes the upper numbering pass to infinite Galois extensions, and the trace of the
-upper filtration on `H`, `H ∩ G^v = H^{ψ_{G/H}(v)}`. All statements hold for every real index;
-only indices in `[-1, ∞)` carry arithmetic meaning. Neither completeness of `A` nor finiteness of
-its residue field is assumed. Separability of the residue extension cannot be dropped: it is what
-makes `B` and `B^H` monogenic over `A`, on which the quotient formula rests.
+which is what makes the upper numbering pass to infinite Galois extensions, the trace of the upper
+filtration on `H`, `H ∩ G^v = H^{ψ_{G/H}(v)}`, and the decomposition of upper breaks
+(`upperJump_iff_upperJump_quotient_or_upperJump_inverseHerbrandFun`). All statements hold for every
+real index; only indices in `[-1, ∞)` carry arithmetic meaning. Neither completeness of `A` nor
+finiteness of its residue field is assumed.
 
 On nonarchimedean local fields these are
 `TauCeti.LocalFieldsRamification.map_restrictNormalHom_lowerRamificationGroupReal`,
-`TauCeti.LocalFieldsRamification.herbrand_tower` and
-`TauCeti.LocalFieldsRamification.map_restrictNormalHom_upperRamificationGroup`.
+`TauCeti.LocalFieldsRamification.herbrand_tower`,
+`TauCeti.LocalFieldsRamification.map_restrictNormalHom_upperRamificationGroup`, and
+`TauCeti.LocalFieldsRamification.upperJump_iff_upperJump_or_upperJump_inverseHerbrand` (adapting
+`TauCeti.NumberTheory.LocalField.Herbrand.UpperQuotient` for the upper-break decomposition).
 
 ## Main results
 
-* `TauCeti.IsLocalRing.natCard_ramificationGroup_zero`: `#G_0 = e(B/A)`.
 * `TauCeti.IsLocalRing.map_mk'_ramificationGroupReal`: **Herbrand's theorem**
   `(G/H)_{φ_H(u)} = G_u H / H`.
 * `TauCeti.IsLocalRing.natCard_ramificationGroupReal_herbrandFun_mul`: its counting form
   `#(G/H)_{φ_H(u)} · #H_u = #G_u`.
-* `TauCeti.IsLocalRing.herbrandFun_tower`, `TauCeti.IsLocalRing.inverseHerbrandFun_tower`:
+* `TauCeti.IsLocalRing.herbrandFun_tower`, `TauCeti.IsLocalRing.inverseHerbrandFun_tower`,
+  `TauCeti.IsLocalRing.herbrandOrderIso_tower`, `TauCeti.IsLocalRing.psiNat_tower`:
   `φ_G = φ_{G/H} ∘ φ_H` and `ψ_G = ψ_H ∘ ψ_{G/H}`.
 * `TauCeti.IsLocalRing.map_mk'_upperRamificationGroup`: `(G/H)^v = G^v H / H`.
 * `TauCeti.IsLocalRing.subgroupOf_upperRamificationGroup_eq_inverseHerbrandFun`:
   `H ∩ G^v = H^{ψ_{G/H}(v)}`.
+* `TauCeti.IsLocalRing.upperJump_iff_upperJump_quotient_or_upperJump_inverseHerbrandFun`: upper
+  breaks in a quotient.
 
 ## References
 
 * [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §1, Corollary to Proposition 4, and §3,
   Lemma 5 and Propositions 14 and 15.
+* J.-P. Serre, *Sur les corps locaux à corps résiduel algébriquement clos*, Bull. Soc. Math.
+  France 89 (1961), n° 3.1, pp. 127–128.
 -/
 
 public section
@@ -77,40 +83,32 @@ open IsLocalRing
 
 namespace TauCeti.IsLocalRing
 
-section Inertia
+attribute [local instance] fixedPointsSubalgebraAlgebra isScalarTower_fixedPoints_subalgebra
+  faithfulSMul_fixedPoints_subalgebra isLocalHom_algebraMap_fixedPoints_subalgebra
+  FixedPoints.moduleFinite_subalgebra FixedPoints.moduleFinite_subalgebra_of_le
+  isSeparable_residueField_fixedPoints_subalgebra
+  isSeparable_residueField_fixedPoints_subalgebra_of_le
 
-variable (A B : Type*) [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
-  [CommRing B] [IsDomain B] [IsDiscreteValuationRing B] [Algebra A B]
-  (G : Type*) [Group G] [Finite G] [MulSemiringAction G B] [SMulCommClass G A B]
-  [Algebra.IsInvariant A B G] [FaithfulSMul G B]
-
-/-- **The inertia group has order the ramification index.** Let a finite group `G` act faithfully
-on the discrete valuation ring `B` by `A`-algebra automorphisms, with invariants the discrete
-valuation ring `A` and separable residue extension. Then `#G_0 = e(B/A)`. -/
-theorem natCard_ramificationGroup_zero [IsLocalHom (algebraMap A B)]
-    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] :
-    Nat.card (ramificationGroup G B 0) = (maximalIdeal B).ramificationIdx A := by
-  have := Algebra.IsInvariant.isIntegral A B G
-  have := IsDiscreteValuationRing.faithfulSMul_of_isIntegral (R := A) (S := B)
-  have : IsGaloisGroup G A B := ⟨inferInstance, inferInstance, inferInstance⟩
-  have := IsGaloisGroup.moduleFinite_of_isIntegrallyClosed G A B
-  -- The residue fields are the quotients by the maximal ideals.
-  have : Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ maximalIdeal B) :=
-    ‹Algebra.IsSeparable (ResidueField A) (ResidueField B)›
-  rw [ramificationGroup_zero_eq_inertia,
-    Ideal.card_inertia_eq_ramificationIdxIn_of_isSeparable (G := G) (maximalIdeal A),
-    Ideal.ramificationIdxIn_eq_ramificationIdx (maximalIdeal A) (maximalIdeal B) G]
-
-end Inertia
-
-variable {A B : Type*} [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
+variable {A B : Type*} [CommRing A] [IsLocalRing A]
   [CommRing B] [IsDomain B] [IsDiscreteValuationRing B] [Algebra A B]
   [IsLocalHom (algebraMap A B)] [Algebra.IsSeparable (ResidueField A) (ResidueField B)]
   {G : Type*} [Group G] [Finite G] [MulSemiringAction G B] [SMulCommClass G A B]
-  [Algebra.IsInvariant A B G] [FaithfulSMul G B]
+  [FaithfulSMul G B]
   (H : Subgroup G) [H.Normal]
 
 /-! ### Herbrand's theorem in the lower numbering -/
+
+private theorem herbrandFun_lowerIndex_sub_one_mk' {σ : G} {j : ℕ}
+    (hj : lowerIndex B σ = j)
+    (hσ : ∀ τ ∈ (QuotientGroup.mk' H).ker, lowerIndex B (σ * τ) ≤ lowerIndex B σ) :
+    herbrandFun H B ((j : ℝ) - 1) =
+      ((lowerIndex (FixedPoints.subalgebra A B H) ((QuotientGroup.mk' H) σ)).toNat : ℝ) - 1 := by
+  have hsum := ramificationIdx_mul_lowerIndex_mk_eq_sum_card A B G H hj
+    (by simpa only [QuotientGroup.ker_mk'] using hσ)
+  rw [← natCard_ramificationGroup_zero_fixedPoints A B H] at hsum
+  exact herbrandFun_sub_one_of_card_mul_eq_sum H B
+    (lowerIndex_ne_top_of_forall_mem_ker_le (π := QuotientGroup.mk' H)
+      (hj ▸ ENat.natCast_ne_top j) hσ) hsum
 
 variable (A) in
 /-- If `σ` has the largest lower index in its coset `σ H`, then its class lies in the lower
@@ -122,41 +120,11 @@ theorem mk_mem_ramificationGroupReal_herbrandFun_iff {σ : G}
     (σ : G ⧸ H) ∈
         ramificationGroupReal (G ⧸ H) (FixedPoints.subalgebra A B H) (herbrandFun H B u) ↔
       σ ∈ ramificationGroupReal G B u := by
-  rcases eq_or_ne (lowerIndex B σ) ⊤ with htop | htop
-  · -- `i_G(σ) = ⊤` means `σ = 1`, and both sides hold.
-    rw [lowerIndex_eq_top_iff] at htop
-    subst htop
-    exact iff_of_true (one_mem _) (one_mem _)
-  obtain ⟨j, hj⟩ := ENat.ne_top_iff_exists.1 htop
-  have hsum := ramificationIdx_mul_lowerIndex_mk_eq_sum_card A H hj.symm hσ
-  -- The ramification index of `B` over `B^H` is `#H_0`.
-  have := Algebra.isSeparable_tower_top_of_isSeparable (ResidueField A)
-    (ResidueField (FixedPoints.subalgebra A B H)) (ResidueField B)
-  rw [← natCard_ramificationGroup_zero (FixedPoints.subalgebra A B H) B H] at hsum
-  -- Hence `i_{G/H}(σ H)` is a natural number `n` with `#H_0 · n = ∑_{k < j} #H_k`.
-  have h0 : Nat.card (ramificationGroup H B 0) ≠ 0 := Nat.card_pos.ne'
-  obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.1 <|
-    show lowerIndex (FixedPoints.subalgebra A B H) (σ : G ⧸ H) ≠ ⊤ from fun h ↦ by
-      rw [h, ENat.mul_top (by exact_mod_cast h0), ← Nat.cast_sum] at hsum
-      exact ENat.natCast_ne_top _ hsum.symm
-  rw [← hn, ← Nat.cast_mul, ← Nat.cast_sum, Nat.cast_inj] at hsum
-  -- It remains to show `φ_H(j - 1) = n - 1`.
-  have hφ : herbrandFun H B ((j : ℝ) - 1) = (n : ℝ) - 1 := by
-    have h0R : (Nat.card (ramificationGroup H B 0) : ℝ) ≠ 0 := by exact_mod_cast h0
-    rcases j with _ | m
-    · simp only [Finset.range_zero, Finset.sum_empty, mul_eq_zero, h0, false_or] at hsum
-      simp [hsum]
-    · rw [Nat.cast_add_one, add_sub_cancel_right, herbrandFun_natCast, div_eq_iff h0R]
-      rw [Finset.range_eq_Ico, Finset.sum_eq_sum_Ico_succ_bot (Nat.add_one_pos m), Nat.cast_zero,
-        zero_add, Finset.Ico_add_one_right_eq_Icc] at hsum
-      have hsumR : (Nat.card (ramificationGroup H B 0) : ℝ) * n =
-          Nat.card (ramificationGroup H B 0) +
-            ∑ i ∈ Finset.Icc 1 m, (Nat.card (ramificationGroup H B i) : ℝ) := by
-        exact_mod_cast hsum
-      linear_combination -hsumR
-  rw [mem_ramificationGroupReal_iff_of_lowerIndex_eq hn.symm,
-    mem_ramificationGroupReal_iff_of_lowerIndex_eq hj.symm, ← hφ]
-  exact (herbrandFun_strictMono H B).le_iff_le
+  have hσ' : ∀ τ ∈ (QuotientGroup.mk' H).ker, lowerIndex B (σ * τ) ≤ lowerIndex B σ := by
+    simpa only [QuotientGroup.ker_mk'] using hσ
+  exact apply_mem_ramificationGroupReal_iff (π := QuotientGroup.mk' H)
+    (herbrandFun_strictMono H B) (fun hj ↦ lowerIndex_ne_top_of_forall_mem_ker_le hj hσ')
+    (fun hj ↦ herbrandFun_lowerIndex_sub_one_mk' (A := A) H hj hσ') u
 
 variable (A) in
 /-- **Herbrand's theorem.** The image of the lower ramification group `G_u` in `G ⧸ H` is the
@@ -164,21 +132,11 @@ lower ramification group of `G ⧸ H` acting on `B^H` at `φ_H(u)`:
 `(G/H)_{φ_H(u)} = G_u H / H`. -/
 theorem map_mk'_ramificationGroupReal (u : ℝ) :
     (ramificationGroupReal G B u).map (QuotientGroup.mk' H) =
-      ramificationGroupReal (G ⧸ H) (FixedPoints.subalgebra A B H) (herbrandFun H B u) := by
-  ext q
-  induction q using QuotientGroup.induction_on with | H σ =>
-  -- Replace `σ` by an element `σ τ₀` of largest lower index in its coset.
-  obtain ⟨τ₀, hτ₀H, hτ₀⟩ := H.exists_mem_forall_lowerIndex_mul_le (S := B) σ
-  have hmk : ((σ * τ₀ : G) : G ⧸ H) = σ := QuotientGroup.mk_mul_of_mem σ hτ₀H
-  rw [← hmk, mk_mem_ramificationGroupReal_herbrandFun_iff A H hτ₀, Subgroup.mem_map]
-  constructor
-  · rintro ⟨σ', hσ', hσ'σ⟩
-    -- `σ' = σ τ₀ τ` with `τ ∈ H`, and `i(σ') ≤ i(σ τ₀)`.
-    obtain ⟨τ, hτ, rfl⟩ : ∃ τ ∈ H, σ * τ₀ * τ = σ' :=
-      ⟨(σ * τ₀)⁻¹ * σ', QuotientGroup.eq.1 hσ'σ.symm, mul_inv_cancel_left _ _⟩
-    rw [ramificationGroupReal_def, mem_ramificationGroup_iff_le_lowerIndex] at hσ' ⊢
-    exact hσ'.trans (hτ₀ τ hτ)
-  · exact fun h ↦ ⟨σ * τ₀, h, rfl⟩
+      ramificationGroupReal (G ⧸ H) (FixedPoints.subalgebra A B H) (herbrandFun H B u) :=
+  map_ramificationGroupReal_eq_of_surjective (QuotientGroup.mk'_surjective H)
+    (herbrandFun_strictMono H B)
+    (fun _ hσ hj ↦ lowerIndex_ne_top_of_forall_mem_ker_le hj hσ)
+    (fun _ hσ _ hj ↦ herbrandFun_lowerIndex_sub_one_mk' (A := A) H hj hσ) u
 
 variable (A) in
 /-- **Herbrand's theorem in counting form**: `#(G/H)_{φ_H(u)} · #H_u = #G_u`. The kernel of
@@ -274,7 +232,19 @@ theorem inverseHerbrandFun_tower (v : ℝ) :
   rw [← herbrandFun_tower A H, herbrandFun_inverseHerbrandFun, herbrandFun_inverseHerbrandFun,
     herbrandFun_inverseHerbrandFun]
 
-/-! ### The upper numbering -/
+variable (A) in
+/-- **Transitivity of the bundled Herbrand order isomorphisms** on `ℝ`. -/
+theorem herbrandOrderIso_tower : herbrandOrderIso G B =
+    (herbrandOrderIso H B).trans (herbrandOrderIso (G ⧸ H) (FixedPoints.subalgebra A B H)) :=
+  OrderIso.ext <| funext fun u ↦ by simp
+
+variable (A) in
+/-- **Transitivity of the integral inverse Herbrand function**: `ψℕ_G = ψℕ_H ∘ ψℕ_{G ⧸ H}`. -/
+theorem psiNat_tower :
+    psiNat G B = psiNat H B ∘ psiNat (G ⧸ H) (FixedPoints.subalgebra A B H) :=
+  funext fun _ ↦ Nat.cast_injective (R := ℝ) <| by simp
+
+/-! ### The upper numbering and upper breaks -/
 
 variable (A) in
 /-- **Herbrand's theorem in the upper numbering.** The image of the upper ramification group
@@ -296,5 +266,52 @@ theorem subgroupOf_upperRamificationGroup_eq_inverseHerbrandFun (v : ℝ) :
         (inverseHerbrandFun (G ⧸ H) (FixedPoints.subalgebra A B H) v) := by
   rw [subgroupOf_upperRamificationGroup, ← inverseHerbrandFun_tower A H,
     herbrandFun_inverseHerbrandFun]
+
+variable {H} in
+/-- An upper break of `G ⧸ H` on `B^H` is an upper break of `G` on `B`. -/
+theorem UpperJump.of_quotient {v : ℝ} (hv : UpperJump (G ⧸ H) (FixedPoints.subalgebra A B H) v) :
+    UpperJump G B v := by
+  rw [upperJump_iff] at hv ⊢
+  intro w hvw
+  refine lt_of_le_of_ne (upperRamificationGroup_antitone G B hvw.le) fun heq ↦ (hv w hvw).ne ?_
+  rw [← map_mk'_upperRamificationGroup A H, heq, map_mk'_upperRamificationGroup A H]
+
+variable {H} in
+/-- If `ψ_{G ⧸ H}(v)` is an upper break of `H` on `B`, then `v` is an upper break of `G` on `B`. -/
+theorem UpperJump.of_inverseHerbrandFun {v : ℝ}
+    (hv : UpperJump H B (inverseHerbrandFun (G ⧸ H) (FixedPoints.subalgebra A B H) v)) :
+    UpperJump G B v := by
+  rw [upperJump_iff] at hv ⊢
+  intro w hvw
+  refine lt_of_le_of_ne (upperRamificationGroup_antitone G B hvw.le) fun heq ↦
+    (hv _ (inverseHerbrandFun_strictMono (G ⧸ H) (FixedPoints.subalgebra A B H) hvw)).ne ?_
+  rw [← subgroupOf_upperRamificationGroup_eq_inverseHerbrandFun A H,
+    ← subgroupOf_upperRamificationGroup_eq_inverseHerbrandFun A H, heq]
+
+/-- **Upper breaks in a quotient**: `UpperJump G B v` iff `UpperJump (G ⧸ H) B^H v` or
+`UpperJump H B (ψ_{G ⧸ H}(v))`. -/
+theorem upperJump_iff_upperJump_quotient_or_upperJump_inverseHerbrandFun (v : ℝ) :
+    UpperJump G B v ↔ UpperJump (G ⧸ H) (FixedPoints.subalgebra A B H) v ∨
+      UpperJump H B (inverseHerbrandFun (G ⧸ H) (FixedPoints.subalgebra A B H) v) := by
+  let C := FixedPoints.subalgebra A B H
+  refine ⟨fun hv ↦ or_iff_not_imp_left.2 fun hQ ↦ ?_,
+    fun h ↦ h.elim UpperJump.of_quotient UpperJump.of_inverseHerbrandFun⟩
+  rw [upperJump_iff] at hv ⊢
+  intro x hx
+  simp only [upperJump_iff, not_forall] at hQ
+  obtain ⟨w₀, hvw₀, hlt⟩ := hQ
+  have hw₀ := (upperRamificationGroup_antitone (G ⧸ H) C hvw₀.le).eq_of_not_lt hlt
+  set w := min w₀ (herbrandFun (G ⧸ H) C x)
+  have hvw : v < w := lt_min hvw₀ (inverseHerbrandFun_lt_iff.1 hx)
+  have hw : upperRamificationGroup (G ⧸ H) C w = upperRamificationGroup (G ⧸ H) C v :=
+    le_antisymm (upperRamificationGroup_antitone (G ⧸ H) C hvw.le)
+      (hw₀ ▸ upperRamificationGroup_antitone (G ⧸ H) C (min_le_left _ _))
+  refine (upperRamificationGroup_antitone H B
+    ((inverseHerbrandFun_le_iff (G := G ⧸ H) (S := C)).2 (min_le_right w₀ _))).trans_lt ?_
+  rw [← subgroupOf_upperRamificationGroup_eq_inverseHerbrandFun A H,
+    ← subgroupOf_upperRamificationGroup_eq_inverseHerbrandFun A H]
+  refine lt_of_le_of_ne (Subgroup.comap_mono (upperRamificationGroup_antitone G B hvw.le))
+    fun heq ↦ (QuotientGroup.strictMono_comap_prod_map H (hv w hvw)).ne (Prod.ext heq ?_)
+  simpa only [map_mk'_upperRamificationGroup A H] using hw
 
 end TauCeti.IsLocalRing
