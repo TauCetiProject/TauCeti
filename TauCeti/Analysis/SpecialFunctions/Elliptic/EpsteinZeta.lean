@@ -34,7 +34,7 @@ which is the form in which the constant term enters the Chowla–Selberg formula
   pair, normalised by its covolume.
 * `PeriodPair.epsteinZeta_eq_of_lattice_eq`, `PeriodPair.epsteinZeta_smul`: `E(Λ, s)` depends only
   on the lattice, and only on its homothety class.
-* `PeriodPair.epsteinZeta_periodPair`: for `Λ = ℤ τ + ℤ` it is `UpperHalfPlane.epsteinZeta τ`.
+* `UpperHalfPlane.epsteinZeta_periodPair`: for `Λ = ℤ τ + ℤ` it is `UpperHalfPlane.epsteinZeta τ`.
 * `UpperHalfPlane.logPeriod_eq_of_lattice_eq`: if `Λ = c (ℤ τ + ℤ)`, then
   `log (4 π Im τ |η(τ)|⁴) = log (A / π) + log |Δ(Λ)| / 6`.
 * `PeriodPair.hasSum_epsteinZeta`: the series `E(Λ, s)` converges for `s > 1`.
