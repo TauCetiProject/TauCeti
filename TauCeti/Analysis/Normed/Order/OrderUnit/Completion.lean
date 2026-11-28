@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Operator.Basic
 public import TauCeti.Analysis.Normed.Order.OrderUnit.Basic
 public import TauCeti.Analysis.Normed.Order.OrderUnit.StateSpace
 import Mathlib.Analysis.Normed.Operator.Extend
+import TauCeti.Analysis.Normed.Operator.Completion
 
 /-!
 # Completion of an order-unit space
@@ -367,20 +368,13 @@ theorem extend_smul {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [Comp
 @[simp]
 theorem opNorm_extend {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
     (T : E →L[ℝ] F) : ‖extend he T‖ = ‖T‖ := by
-  refine le_antisymm ?_ ?_
-  · -- `E` is only seminormed, so `ContinuousLinearMap.opNorm_extend_le` (which requires
-    -- `[NormedAddCommGroup E]`) does not apply directly; use `LinearMap.extendOfNorm` instead.
-    have hbound : ∀ a : E, ‖(T : E →ₗ[ℝ] F) a‖ ≤ ‖T‖ * ‖coe he a‖ := fun a => by
-      simpa [(coe he).norm_map] using T.le_opNorm a
-    have heq : (T : E →ₗ[ℝ] F).extendOfNorm (coe he).toLinearMap = extend he T :=
-      LinearMap.extendOfNorm_unique (denseRange_coe he) ‖T‖ hbound (extend he T)
-        (LinearMap.ext fun a => extend_coe T a)
-    rw [← heq]
-    exact LinearMap.opNorm_extendOfNorm_le (denseRange_coe he) (norm_nonneg T) hbound
-  · refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun a => ?_
-    calc ‖T a‖ = ‖extend he T (coe he a)‖ := by rw [extend_coe]
-      _ ≤ ‖extend he T‖ * ‖coe he a‖ := (extend he T).le_opNorm _
-      _ = ‖extend he T‖ * ‖a‖ := by rw [(coe he).norm_map]
+  have heq : extend he T =
+      T.fromCompletion.comp (toCompletionₗᵢ he :
+        OrderUnitCompletion he →L[ℝ] UniformSpace.Completion E) := by
+    refine (extend_unique T fun a => ?_).symm
+    simp [ContinuousLinearMap.fromCompletion_apply_coe]
+  rw [heq, ContinuousLinearMap.opNorm_comp_linearIsometryEquiv,
+    ContinuousLinearMap.norm_fromCompletion]
 
 /-- The continuous extension of a monotone continuous linear map into a complete space with closed
 order is again monotone. -/
