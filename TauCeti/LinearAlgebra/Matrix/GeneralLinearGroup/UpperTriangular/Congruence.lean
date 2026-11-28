@@ -126,6 +126,18 @@ theorem parahoricSubgroup_toDual_eq_upperTriangularCongruenceSubgroup (I : Ideal
   ext g
   simp [mem_parahoricSubgroup, mem_upperTriangularCongruenceSubgroup_iff]
 
+/-- For any antitone labelling `τ : m → α` and ideal `I` of a commutative ring `R`, the
+upper-triangular congruence subgroup `upperTriangularCongruenceSubgroup m I` is contained in
+`parahoricSubgroup τ I`. -/
+theorem upperTriangularCongruenceSubgroup_le_parahoricSubgroup {α : Type*} [LinearOrder α]
+    {τ : m → α} (hτ : Antitone τ) (I : Ideal R) :
+    upperTriangularCongruenceSubgroup m I ≤ parahoricSubgroup τ I := by
+  intro g hg
+  rw [mem_parahoricSubgroup]
+  intro i j hij
+  exact (mem_upperTriangularCongruenceSubgroup_iff.mp hg)
+    (lt_of_not_ge fun h ↦ not_lt_of_ge (hτ h) hij)
+
 /-- Membership in the upper-unitriangular congruence subgroup modulo `I`: every entry below the
 diagonal lies in `I`, and every diagonal entry is congruent to `1` modulo `I`. -/
 @[simp]
