@@ -19,6 +19,7 @@ public import Mathlib.Topology.VectorBundle.FiniteDimensional
 
 import TauCeti.Topology.FiberBundle.Pullback
 import TauCeti.Topology.FiberBundle.Sigma
+import TauCeti.Topology.Homeomorph.Sigma
 import TauCeti.Topology.LocallyConstant.Fiber
 import TauCeti.Topology.VectorBundle.IsEmpty
 import TauCeti.Topology.VectorBundle.Smul
@@ -662,15 +663,12 @@ variable (𝕜) (r : LocallyConstant X ℕ) (V : X → Type w')
 private noncomputable def gluedOfBundlesHomeomorph :
     (ofBundles 𝕜 r V E e).GluedTotalSpace ≃ₜ Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n) :=
   letI (n : ℕ) := totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x
-  { toEquiv := Equiv.sigmaCongrRight fun n ↦
-      (totalSpaceHomeomorphOfContinuousLinearEquiv (Fin n → 𝕜) (e n)
-        (isInducing_totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x)).toEquiv
-    continuous_toFun := continuous_sigma fun n ↦ continuous_sigmaMk.comp
-      (totalSpaceHomeomorphOfContinuousLinearEquiv (Fin n → 𝕜) (e n)
-        (isInducing_totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x)).continuous
-    continuous_invFun := continuous_sigma fun n ↦ continuous_sigmaMk.comp
-      (totalSpaceHomeomorphOfContinuousLinearEquiv (Fin n → 𝕜) (e n)
-        (isInducing_totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x)).symm.continuous }
+  Homeomorph.sigmaCongrRight
+    (X := fun n ↦ TotalSpace (Fin n → 𝕜) (fun x : {x : X // r x = n} ↦ V x.val))
+    (Y := fun n ↦ TotalSpace (Fin n → 𝕜) (E n))
+    fun n ↦
+      totalSpaceHomeomorphOfContinuousLinearEquiv (Fin n → 𝕜) (e n)
+        (isInducing_totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x)
 
 /-- Homeomorphism over `X` between the global total space of `ofBundles 𝕜 r V E e` and the disjoint
 union of the stratum total spaces `TotalSpace (Fin n → 𝕜) (E n)`. -/
@@ -680,19 +678,25 @@ noncomputable def ofBundlesHomeomorph :
 
 @[simp] theorem ofBundlesHomeomorph_apply (p : TotalSpace Unit (ofBundles 𝕜 r V E e).Fiber) :
     ofBundlesHomeomorph 𝕜 r V E e p =
-      ⟨r p.proj, ⟨⟨p.proj, rfl⟩, e (r p.proj) ⟨p.proj, rfl⟩ p.snd⟩⟩ :=
-  letI := totalSpaceInduced (Fin (r p.proj) → 𝕜) (E := E (r p.proj)) fun x ↦ e (r p.proj) x
-  (congrArg (gluedOfBundlesHomeomorph 𝕜 r V E e)
-    ((ofBundles 𝕜 r V E e).totalSpaceHomeomorph_symm_apply p)).trans <|
-    congrArg (Sigma.mk (r p.proj))
-      (totalSpaceHomeomorphOfContinuousLinearEquiv_apply (Fin (r p.proj) → 𝕜) (e (r p.proj)) _ _)
+      ⟨r p.proj, ⟨⟨p.proj, rfl⟩, e (r p.proj) ⟨p.proj, rfl⟩ p.snd⟩⟩ := by
+  let _ (n : ℕ) := totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x
+  rw [ofBundlesHomeomorph, Homeomorph.trans_apply,
+    (ofBundles 𝕜 r V E e).totalSpaceHomeomorph_symm_apply]
+  refine (Homeomorph.sigmaCongrRight_apply _ _).trans ?_
+  exact congrArg (Sigma.mk (r p.proj))
+    (totalSpaceHomeomorphOfContinuousLinearEquiv_apply (Fin (r p.proj) → 𝕜) (e (r p.proj)) _ _)
 
 @[simp] theorem ofBundlesHomeomorph_symm_apply (n : ℕ) (p : TotalSpace (Fin n → 𝕜) (E n)) :
-    (ofBundlesHomeomorph 𝕜 r V E e).symm ⟨n, p⟩ = ⟨p.proj.val, (e n p.proj).symm p.snd⟩ :=
-  letI := totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x
-  (congrArg (fun q ↦ (ofBundles 𝕜 r V E e).totalSpaceHomeomorph ⟨n, q⟩)
-    (totalSpaceHomeomorphOfContinuousLinearEquiv_symm_apply (Fin n → 𝕜) (e n) _ p)).trans
-    ((ofBundles 𝕜 r V E e).totalSpaceHomeomorph_apply _)
+    (ofBundlesHomeomorph 𝕜 r V E e).symm ⟨n, p⟩ = ⟨p.proj.val, (e n p.proj).symm p.snd⟩ := by
+  let _ (n : ℕ) := totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x
+  rw [ofBundlesHomeomorph, Homeomorph.symm_trans_apply]
+  refine (congrArg (ofBundles 𝕜 r V E e).totalSpaceHomeomorph
+    (Homeomorph.sigmaCongrRight_symm_apply _ _)).trans ?_
+  dsimp only
+  refine (congrArg (fun q ↦ (ofBundles 𝕜 r V E e).totalSpaceHomeomorph ⟨n, q⟩)
+    (totalSpaceHomeomorphOfContinuousLinearEquiv_symm_apply (Fin n → 𝕜) (e n) _ p)).trans ?_
+  exact (ofBundles 𝕜 r V E e).totalSpaceHomeomorph_apply
+    ⟨n, ⟨p.proj, (e n p.proj).symm p.snd⟩⟩
 
 end OfBundles
 

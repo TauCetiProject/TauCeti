@@ -23,7 +23,9 @@ fibrewise continuous linear equivalences `e : ∀ b : B, E' b ≃L[𝕜] E b`:
   leaving transition operators unchanged
   (`Bundle.Trivialization.coordChangeL_compContinuousLinearEquiv`);
 * `FiberBundle.ofContinuousLinearEquiv` and `VectorBundle.ofContinuousLinearEquiv` transport
-  `[FiberBundle F E]` and `[VectorBundle 𝕜 F E]` structures to `E'`.
+  `[FiberBundle F E]` and `[VectorBundle 𝕜 F E]` structures to `E'` (with
+  `VectorBundle.ofHomeomorph_of_eq` handling the case where `FiberBundle` was transported via an
+  equal family of homeomorphisms).
 
 This adapts the bundle-transport pattern in
 `TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Euclidean` (for empty base
@@ -156,7 +158,7 @@ section Transfer
 
 /-- Transfer a `FiberBundle F E` structure to `E'` along `e : ∀ b, E' b ≃L[𝕜] E b` inducing the
 total-space topology on `TotalSpace F E'`. -/
-@[instance_reducible]
+@[expose, instance_reducible]
 def FiberBundle.ofContinuousLinearEquiv {B : Type*} [TopologicalSpace B] {𝕜 : Type*} [Semiring 𝕜]
     (F : Type*) [TopologicalSpace F] {E : B → Type*} [∀ b, AddCommMonoid (E b)]
     [∀ b, Module 𝕜 (E b)] [∀ b, TopologicalSpace (E b)] [TopologicalSpace (TotalSpace F E)]
@@ -229,6 +231,26 @@ theorem VectorBundle.ofContinuousLinearEquiv {B : Type*} [TopologicalSpace B]
     exact (continuousOn_coordChange 𝕜 t₁ t₂).congr fun b _ ↦ congrArg
       ContinuousLinearEquiv.toContinuousLinearMap
       (Trivialization.coordChangeL_compContinuousLinearEquiv t₁ t₂ e h_ind b)
+
+/-- Transfer a `VectorBundle 𝕜 F E` structure to `E'` over
+`FiberBundle.ofHomeomorph F e_homeo h_ind` when the fibrewise homeomorphisms `e_homeo` agree
+pointwise with continuous linear equivalences `e : ∀ b, E' b ≃L[𝕜] E b`. -/
+theorem VectorBundle.ofHomeomorph_of_eq {B : Type*} [TopologicalSpace B]
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜] (F : Type*) [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {E : B → Type*} [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)] [∀ b, TopologicalSpace (E b)]
+    [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle 𝕜 F E]
+    {E' : B → Type*} [∀ b, AddCommMonoid (E' b)] [∀ b, Module 𝕜 (E' b)]
+    [∀ b, TopologicalSpace (E' b)] [TopologicalSpace (TotalSpace F E')]
+    (e : ∀ b : B, E' b ≃L[𝕜] E b) (e_homeo : ∀ b : B, E' b ≃ₜ E b)
+    (h_ind : IsInducing
+      (fun p : TotalSpace F E' ↦ (⟨p.proj, e_homeo p.proj p.snd⟩ : TotalSpace F E)))
+    (he : ∀ b x, e_homeo b x = e b x) :
+    letI := FiberBundle.ofHomeomorph F e_homeo h_ind
+    VectorBundle 𝕜 F E' := by
+  have he' : e_homeo = fun b ↦ (e b).toHomeomorph :=
+    funext fun b ↦ Homeomorph.ext (he b)
+  subst he'
+  exact VectorBundle.ofContinuousLinearEquiv F e h_ind
 
 end Transfer
 
