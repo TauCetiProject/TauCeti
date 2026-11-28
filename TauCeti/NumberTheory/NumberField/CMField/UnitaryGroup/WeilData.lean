@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.NumberField.CMField.AdeleStar
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.AddChar
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Splitting
+import TauCeti.LinearAlgebra.Matrix.DotProduct
+import TauCeti.NumberTheory.NumberField.CMField.AddChar
 
 /-!
 # Weil data of a CM field
@@ -62,6 +64,14 @@ of every global unit multiply to one, which fails for `i ∈ ℚ(i)`.
 * `TauCeti.WeilData.traceOne_add_star`: `c₀ + conj c₀ = 1`.
 * `TauCeti.WeilData.toFractionalIdeal_scaleIdele`: `j α (conj α)` generates `𝔇⁻¹`.
 * `TauCeti.WeilData.forall_selfDualAddChar_mul_eq_one_iff`: `Ô` is self-dual for `ψ₀`.
+* `TauCeti.WeilData.selfDualAddChar_eq_one_of_mem`, `TauCeti.WeilData.selfDualAddChar_star`,
+  `TauCeti.WeilData.selfDualAddChar_sub_star`: `ψ₀` is trivial on `Ô`, `ψ₀(conj z) = ψ₀(−z)`, and
+  `ψ₀(w − conj w) = ψ₀(w)²`.
+* `TauCeti.WeilData.selfDualAddChar_algebraMap_div_two_mul_sq`: `ψ₀(½ x z)² = ψ₀(x z)` for
+  `x ∈ E`.
+* `TauCeti.WeilData.semichar_sq_of_forall_mem`, `TauCeti.WeilData.semichar_add_of_forall_mem`: on
+  `Ôⁿ` the semicharacter takes the values `±1` and satisfies
+  `semi(a + b) = semi(a) semi(b) ψ₀(½ b* a)`.
 * `TauCeti.WeilData.vacuum_zero`, `TauCeti.WeilData.norm_vacuum_of_forall_mem`,
   `TauCeti.WeilData.vacuum_of_not_forall_mem`, `TauCeti.WeilData.continuous_vacuum`: the vacuum
   is `1` at `0`, a Gaussian in absolute value on `𝔸_∞^n × α Ô^n`, zero off it, and continuous.
@@ -165,6 +175,11 @@ theorem traceOne_def : W.traceOne = (1 - W.j⁻¹) / 2 := (rfl)
 theorem isIntegral_traceOne : IsIntegral ℤ W.traceOne :=
   W.isIntegral_one_sub_inv_j_div_two
 
+/-- `c₀` is integral at every finite place. -/
+theorem algebraMap_traceOne_mem_integralAdeles :
+    algebraMap E (FiniteAdeleRing (𝓞 E) E) W.traceOne ∈ integralAdeles (𝓞 E) E :=
+  (algebraMap_mem_integralAdeles_iff _).2 ⟨⟨W.traceOne, W.isIntegral_traceOne⟩, rfl⟩
+
 /-- **`c₀ + conj c₀ = 1`**, as `j⁻¹` is purely imaginary. -/
 theorem traceOne_add_star : W.traceOne + star W.traceOne = 1 := by
   simp only [traceOne_def, star_div₀, star_sub, star_inv₀, W.star_j, star_one, star_ofNat]
@@ -217,6 +232,36 @@ theorem forall_selfDualAddChar_mul_eq_one_iff (z : FiniteAdeleRing (𝓞 E) E) :
   rw [forall_finiteAdeleAddChar_mul_eq_one_iff,
     mem_finiteAdelicIdeal_iff W.scaleIdele W.toFractionalIdeal_scaleIdele,
     Units.inv_mul_cancel_left]
+
+/-- `t = j α (conj α)` is purely imaginary: `conj t = −t`. -/
+theorem star_coe_scaleIdele :
+    star (W.scaleIdele : FiniteAdeleRing (𝓞 E) E) = -W.scaleIdele := by
+  rw [coe_scaleIdele, star_mul, star_mul, star_star, ← algebraMap_star_comm, W.star_j, map_neg]
+  ring
+
+/-- `ψ₀` is trivial on `Ô`, which is self-dual for it. -/
+theorem selfDualAddChar_eq_one_of_mem {z : FiniteAdeleRing (𝓞 E) E}
+    (hz : z ∈ integralAdeles (𝓞 E) E) : W.selfDualAddChar z = 1 := by
+  simpa using (W.forall_selfDualAddChar_mul_eq_one_iff 1).2 (one_mem _) z hz
+
+/-- `ψ₀(conj z) = ψ₀(−z)`, since `ψ_f` is invariant under conjugation and `conj t = −t`. -/
+theorem selfDualAddChar_star (z : FiniteAdeleRing (𝓞 E) E) :
+    W.selfDualAddChar (star z) = W.selfDualAddChar (-z) := by
+  rw [selfDualAddChar_apply, selfDualAddChar_apply, ← finiteAdeleAddChar_star, star_mul,
+    star_star, star_coe_scaleIdele, mul_neg, mul_neg, mul_comm]
+
+/-- `ψ₀(w − conj w) = ψ₀(w)²`. -/
+theorem selfDualAddChar_sub_star (w : FiniteAdeleRing (𝓞 E) E) :
+    W.selfDualAddChar (w - star w) = W.selfDualAddChar w ^ 2 := by
+  rw [sub_eq_add_neg, AddChar.map_add_eq_mul, ← star_neg, selfDualAddChar_star, neg_neg, sq]
+
+/-- **Halving under `ψ₀`**: `ψ₀(½ x z)² = ψ₀(x z)` for `x ∈ E`. -/
+theorem selfDualAddChar_algebraMap_div_two_mul_sq (x : E) (z : FiniteAdeleRing (𝓞 E) E) :
+    W.selfDualAddChar (algebraMap E _ (x / 2) * z) ^ 2 =
+      W.selfDualAddChar (algebraMap E _ x * z) := by
+  rw [← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, Nat.cast_ofNat, ← mul_assoc,
+    ← map_ofNat (algebraMap E (FiniteAdeleRing (𝓞 E) E)) 2, ← map_mul,
+    mul_div_cancel₀ _ two_ne_zero]
 
 /-! ### The real scales and the Hecke character `χ_𝔸` -/
 
@@ -320,6 +365,58 @@ theorem semichar_apply (z : n → FiniteAdeleRing (𝓞 E) E) :
 @[simp]
 theorem semichar_zero : W.semichar (0 : n → FiniteAdeleRing (𝓞 E) E) = 1 := by
   simp [semichar]
+
+/-- The semicharacter is continuous. -/
+@[fun_prop, continuity]
+theorem continuous_semichar : Continuous (W.semichar (n := n)) :=
+  (W.continuous_selfDualAddChar.comp (by fun_prop)).congr fun z ↦ (W.semichar_apply z).symm
+
+/-- `ψ₀(½ c₀ z)² = ψ₀(c₀ z) = 1` for `z ∈ Ô`, as `c₀` is integral. -/
+theorem selfDualAddChar_traceOne_div_two_mul_sq_of_mem {z : FiniteAdeleRing (𝓞 E) E}
+    (hz : z ∈ integralAdeles (𝓞 E) E) :
+    W.selfDualAddChar (algebraMap E _ (W.traceOne / 2) * z) ^ 2 = 1 := by
+  rw [selfDualAddChar_algebraMap_div_two_mul_sq]
+  exact W.selfDualAddChar_eq_one_of_mem (mul_mem W.algebraMap_traceOne_mem_integralAdeles hz)
+
+/-- On `Ôⁿ` the semicharacter takes the values `±1`: `semi(z)² = ψ₀(c₀ z* z) = 1`. -/
+theorem semichar_sq_of_forall_mem {z : n → FiniteAdeleRing (𝓞 E) E}
+    (hz : ∀ i, z i ∈ integralAdeles (𝓞 E) E) : W.semichar z ^ 2 = 1 :=
+  W.selfDualAddChar_traceOne_div_two_mul_sq_of_mem
+    (dotProduct_mem (forall_star_apply_mem_integralAdeles_iff.2 hz) hz)
+
+/-- **The semicharacter law** on `Ôⁿ`: `semi(a + b) = semi(a) semi(b) ψ₀(½ b* a)` for integral
+vectors `a` and `b`. -/
+theorem semichar_add_of_forall_mem {a b : n → FiniteAdeleRing (𝓞 E) E}
+    (ha : ∀ i, a i ∈ integralAdeles (𝓞 E) E) (hb : ∀ i, b i ∈ integralAdeles (𝓞 E) E) :
+    W.semichar (a + b) =
+      W.semichar a * W.semichar b * W.selfDualAddChar (algebraMap E _ 2⁻¹ * (star b ⬝ᵥ a)) := by
+  -- With `u = b* a`, `(a + b)* (a + b) = a* a + b* b + (u + conj u)`, and for `c = ½ c₀` the
+  -- quotient of `ψ₀(c (u + conj u))` by `ψ₀(½ u)` is `ψ₀(w − conj w) = ψ₀(w)²` with
+  -- `w = c conj u`, because `c − ½ = −conj c`; it is `1` because `u` is integral.
+  set u := star b ⬝ᵥ a
+  set c := algebraMap E (FiniteAdeleRing (𝓞 E) E) (W.traceOne / 2)
+  have hu : u ∈ integralAdeles (𝓞 E) E :=
+    dotProduct_mem (forall_star_apply_mem_integralAdeles_iff.2 hb) ha
+  have hstar : star u = ∑ i, star (a i) * b i := by
+    simp only [u, dotProduct, Pi.star_apply, star_sum, star_mul, star_star]
+  have hsum : ∑ i, star ((a + b) i) * (a + b) i =
+      ∑ i, star (a i) * a i + ∑ i, star (b i) * b i + (u + star u) := by
+    rw [hstar]
+    simp only [u, dotProduct, Pi.add_apply, Pi.star_apply, star_add, ← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun i _ ↦ by ring
+  have hc : c - algebraMap E _ 2⁻¹ = -star c := by
+    rw [← algebraMap_star_comm, ← map_sub, ← map_neg, star_div₀, star_ofNat]
+    congr 1
+    linear_combination (2⁻¹ : E) * W.traceOne_add_star
+  have hw : W.selfDualAddChar (c * star u - star (c * star u)) = 1 := by
+    rw [selfDualAddChar_sub_star]
+    exact W.selfDualAddChar_traceOne_div_two_mul_sq_of_mem (star_mem_integralAdeles_iff.2 hu)
+  have hsplit : c * (u + star u) =
+      algebraMap E _ 2⁻¹ * u + (c * star u - star (c * star u)) := by
+    rw [star_mul, star_star, mul_comm u (star c)]
+    linear_combination u * hc
+  rw [semichar_apply, semichar_apply, semichar_apply, hsum, mul_add, mul_add, hsplit]
+  simp only [AddChar.map_add_eq_mul, hw, mul_one]
 
 end WeilData
 

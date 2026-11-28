@@ -50,6 +50,7 @@ two values at the differences divided by `ρ`.
   standard form pulled back along `A`.
 * `Matrix.star_dotProduct_mulVec_self_mem_skewAdjoint`: `x* S x` is skew-adjoint for a
   skew-hermitian `S`.
+* `TauCeti.dotProduct_mem`: a dot product of vectors with coordinates in a subsemiring lies in it.
 * `Matrix.dotProduct_self_nonneg`: over an ordered ring `v ⬝ᵥ v` is nonnegative.
 * `TauCeti.mul_dotProduct_eq_of_mulVec_eq_smul`: if `A *ᵥ x = a • x'` and `Aᵀ *ᵥ y' = b • y`,
   then `a * (x' ⬝ᵥ y') = b * (x ⬝ᵥ y)`.
@@ -132,6 +133,13 @@ theorem Matrix.star_dotProduct_mulVec_self_mem_skewAdjoint {n α : Type*} [Finty
     star x ⬝ᵥ S *ᵥ x ∈ skewAdjoint α := by
   rw [skewAdjoint.mem_iff, ← star_dotProduct_star, star_star, star_mulVec, ← dotProduct_mulVec,
     ← star_eq_conjTranspose, skewAdjoint.mem_iff.1 hS, neg_mulVec, dotProduct_neg]
+
+/-- A dot product of vectors whose coordinates lie in a set closed under addition and
+multiplication, such as a subsemiring, lies in it. -/
+theorem TauCeti.dotProduct_mem {n α S : Type*} [Fintype n] [Mul α] [AddCommMonoid α] [SetLike S α]
+    [AddSubmonoidClass S α] [MulMemClass S α] {s : S} {v w : n → α} (hv : ∀ i, v i ∈ s)
+    (hw : ∀ i, w i ∈ s) : v ⬝ᵥ w ∈ s :=
+  sum_mem fun i _ ↦ mul_mem (hv i) (hw i)
 
 /-- Over an ordered ring the dot product `v ⬝ᵥ v`, a sum of squares, is nonnegative. -/
 @[simp]
