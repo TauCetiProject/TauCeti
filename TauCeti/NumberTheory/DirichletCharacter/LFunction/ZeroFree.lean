@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Meromorphic.ZeroFree
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.CyclicFamily.Basic
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 
 /-!
 # Zero-free half-planes and cyclic families of Dirichlet characters
@@ -17,6 +18,12 @@ zero-freeness at one modulus can be tested just on primitive characters of condu
 that modulus. Over all moduli it can equivalently be tested on the cyclic families of primitive
 characters. This lets a bound proved separately for each such family yield a statement about
 all characters, including imprimitive ones.
+
+`DirichletCharacter.zeroFreeRightOf_LFunction_iff_LFunction_ne_zero` converts the order-form
+predicate `TauCeti.ZeroFreeRightOf` into nonvanishing of the values of `χ.LFunction` for an
+arbitrary cutoff, with the principal character's pole excepted. It reads the order through
+`DirichletCharacter.meromorphicOrderAt_LFunction_pos_iff`, whose principal case is the simple pole
+`TauCeti.meromorphicOrderAt_LFunctionTrivChar_one`.
 
 The reduction at the Riemann hypothesis threshold corresponds to Levent Alpöge's
 `Formalism.HC.zeroFreeOn_of_levels` in `ExplicitFormulaErrorOfHostConditions.lean` and
@@ -30,6 +37,19 @@ public section
 open TauCeti
 
 namespace DirichletCharacter
+
+/-- Zero-freeness of `χ.LFunction` to the right of `σ`, measured by meromorphic order, is
+nonvanishing of its values there, with the pole at `s = 1` of the principal character excepted. -/
+theorem zeroFreeRightOf_LFunction_iff_LFunction_ne_zero {N : ℕ} [NeZero N]
+    (χ : DirichletCharacter ℂ N) (σ : ℝ) :
+    ZeroFreeRightOf σ χ.LFunction ↔
+      ∀ s : ℂ, σ < s.re → (χ ≠ 1 ∨ s ≠ 1) → χ.LFunction s ≠ 0 := by
+  rw [zeroFreeRightOf_iff]
+  refine forall₂_congr fun s _ ↦ ⟨fun h hregular hzero ↦ h.not_gt
+    (χ.meromorphicOrderAt_LFunction_pos_iff.mpr ⟨hzero, hregular.symm⟩), fun h ↦ ?_⟩
+  refine le_of_not_gt fun hpos ↦ ?_
+  obtain ⟨hzero, hregular⟩ := χ.meromorphicOrderAt_LFunction_pos_iff.mp hpos
+  exact h hregular.symm hzero
 
 /-- For a nonnegative threshold, lifting a character to a multiple of its level preserves
 zero-freeness to the right of that threshold. The pole of a principal character is allowed. -/

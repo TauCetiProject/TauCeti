@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
+public import TauCeti.Analysis.Meromorphic.ZeroFree
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.ZeroFree
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.ZeroReflection
 import TauCeti.NumberTheory.LSeries.RiemannZeta.RiemannHypothesis
 
 /-!
@@ -37,6 +40,15 @@ while nonvanishing on `1 ≤ Re s` (`DirichletCharacter.LFunction_ne_zero_of_one
   character modulo any `N ≥ 1`, `DirichletGRH` is equivalent to Mathlib's `RiemannHypothesis`; in
   particular `GRH` implies `RiemannHypothesis` (`TauCeti.GRH.riemannHypothesis`).
 * `DirichletCharacter.dirichletGRH_inv_iff`: `DirichletGRH` is invariant under character inversion.
+* `DirichletCharacter.dirichletGRH_iff_zeroFreeRightOf` and
+  `DirichletCharacter.dirichletGRH_iff_LFunction_ne_zero`: `DirichletGRH χ` is the order-form
+  zero-freeness `TauCeti.ZeroFreeRightOf (1 / 2) χ.LFunction`, the form of the hypothesis in
+  Theorem 1.1 of OpenAI's Quasi-Riemann Hypothesis preprint cited at `TauCeti.ZeroFreeRightOf`,
+  and equivalently nonvanishing of `χ.LFunction` on `1 / 2 < Re s` away from the principal pole.
+  The value form specializes
+  `DirichletCharacter.zeroFreeRightOf_LFunction_iff_LFunction_ne_zero`, which bridges order and
+  value through `DirichletCharacter.meromorphicOrderAt_LFunction_pos_iff` and
+  `TauCeti.meromorphicOrderAt_LFunctionTrivChar_one`.
 
 ## References
 
@@ -71,6 +83,18 @@ theorem dirichletGRH_def {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) :
     DirichletGRH χ =
       ∀ s : ℂ, 0 < s.re → (χ ≠ 1 ∨ s ≠ 1) → χ.LFunction s = 0 → s.re = 1 / 2 :=
   (rfl)
+
+/-- `DirichletGRH χ` says that `χ.LFunction` is zero-free to the right of the critical line, as
+measured by meromorphic order. -/
+theorem dirichletGRH_iff_zeroFreeRightOf {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) :
+    DirichletGRH χ ↔ ZeroFreeRightOf (1 / 2) χ.LFunction :=
+  χ.zeroFreeRightOf_one_half_LFunction_iff_forall_re_pos.symm
+
+/-- `DirichletGRH χ` is nonvanishing of `χ.LFunction` to the right of the critical line, with the
+pole at `s = 1` of the principal character excepted. -/
+theorem dirichletGRH_iff_LFunction_ne_zero {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) :
+    DirichletGRH χ ↔ ∀ s : ℂ, 1 / 2 < s.re → (χ ≠ 1 ∨ s ≠ 1) → χ.LFunction s ≠ 0 := by
+  rw [dirichletGRH_iff_zeroFreeRightOf, zeroFreeRightOf_LFunction_iff_LFunction_ne_zero]
 
 /-- Because `χ.LFunction` has no zeros on `1 ≤ Re s` (away from the principal pole at `1`),
 `DirichletGRH χ` is equivalent to every zero in the open critical strip `0 < Re s < 1` lying on
