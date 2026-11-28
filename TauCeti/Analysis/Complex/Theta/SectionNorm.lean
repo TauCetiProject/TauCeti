@@ -10,18 +10,20 @@ public import TauCeti.Analysis.Complex.Theta.Sections
 import TauCeti.Analysis.Complex.Theta.Vanishing
 
 /-!
-# Unconditional lattice descent of the Hermitian norm on theta sections
+# Unconditional translation invariance of the Hermitian norm on theta sections
 
 For a holomorphic theta section `s ∈ thetaSections k τ α β`, the pointwise Hermitian norm squared
-`thetaMetric k τ z * ‖s z‖²` is invariant under the lattice `ℤ + τℤ` unconditionally in `τ`:
-when `τ.im ≠ 0`, this is `TauCeti.thetaMetric_add_mul_norm_sq`; when `τ.im = 0`, either `k = 0`
-(where `thetaMetric` and the multiplier have modulus `1`) or `k > 0` (where `s = 0` by
+`thetaMetric k τ z * ‖s z‖²` is invariant under translations `z ↦ z + m + n * τ` (`m, n : ℤ`)
+unconditionally in `τ : ℂ`: when `τ.im ≠ 0`, `ℤ + τℤ` is a lattice and this expresses double
+periodicity and descent to the complex torus `ℂ / (ℤ + τℤ)`
+(`TauCeti.thetaMetric_add_mul_norm_sq`); when `τ.im = 0`, either `k = 0` (where `thetaMetric` is
+`1` and the multiplier has modulus `1`) or `k > 0` (where `s = 0` by
 `TauCeti.thetaSections_eq_bot_of_im_nonpos`).
 
 ## Main results
 
-* `TauCeti.thetaMetric_add_mul_norm_sq_of_mem_thetaSections`: unconditional lattice invariance of
-  the pointwise Hermitian norm squared on `thetaSections`.
+* `TauCeti.thetaMetric_add_mul_norm_sq_of_mem_thetaSections`: unconditional invariance of the
+  pointwise Hermitian norm squared on `thetaSections` under translations `z ↦ z + m + n * τ`.
 
 ## References
 
@@ -36,7 +38,9 @@ public section
 namespace TauCeti
 
 /-- For every theta section `s`, the pointwise Hermitian norm squared `thetaMetric k τ z * ‖s z‖²`
-is doubly periodic on the lattice `ℤ + τℤ`, unconditionally in `τ`. -/
+is invariant under all translations `z ↦ z + m + n * τ` (`m, n : ℤ`), unconditionally in `τ`.
+When `τ.im ≠ 0`, `ℤ + τℤ` is a lattice and this expresses double periodicity (descent to the
+complex torus `ℂ / (ℤ + τℤ)`). -/
 theorem thetaMetric_add_mul_norm_sq_of_mem_thetaSections {k : ℕ} {τ : ℂ}
     {α β : ℝ} {s : ℂ → ℂ} (hs : s ∈ thetaSections k τ α β) (m n : ℤ) (z : ℂ) :
     thetaMetric k τ (z + m + n * τ) * ‖s (z + m + n * τ)‖ ^ 2 =

@@ -10,10 +10,12 @@ public import TauCeti.Analysis.Complex.ThetaLine.Basic
 /-!
 # Holomorphic sections of the level-`k` theta line
 
-Fix `k : ℕ`, `τ : ℂ`, and real characteristics `α, β`. The entire functions `s : ℂ → ℂ` with the
-automorphy laws `s (z + 1) = e^{2πiα} s z` and `s (z + τ) = e^{2πiβ - πikτ - 2πikz} s z` are the
-holomorphic sections, pulled back to the universal cover `ℂ`, of the degree-`k` theta line on the
-complex torus `ℂ / (ℤ + τℤ)`. They form the complex vector space `TauCeti.thetaSections k τ α β`.
+Fix `k : ℕ`, `τ : ℂ`, and real characteristics `α, β`. The submodule `TauCeti.thetaSections k τ α β`
+consists of all entire functions `s : ℂ → ℂ` satisfying the two automorphy laws
+`s (z + 1) = e^{2πiα} s z` and `s (z + τ) = e^{2πiβ - πikτ - 2πikz} s z` for all `z : ℂ`.
+When `τ.im > 0`, `ℤ + τℤ` is a lattice in `ℂ` and these functions are the holomorphic sections,
+pulled back to the universal cover `ℂ`, of the degree-`k` theta line on the complex torus
+`ℂ / (ℤ + τℤ)`.
 
 ## Main definitions
 
@@ -44,9 +46,11 @@ open scoped Real
 
 namespace TauCeti
 
-/-- The holomorphic sections of the level-`k` theta line with characteristics `(α, β)` on the
-complex torus `ℂ / (ℤ + τℤ)`, pulled back to the universal cover `ℂ`: the entire functions `s`
-with `s (z + 1) = e^{2πiα} s z` and `s (z + τ) = e^{2πiβ - πikτ - 2πikz} s z` for all `z`. -/
+/-- For `k : ℕ`, `τ : ℂ`, and real characteristics `α, β`, the complex vector space of entire
+functions `s : ℂ → ℂ` satisfying `s (z + 1) = e^{2πiα} s z` and
+`s (z + τ) = e^{2πiβ - πikτ - 2πikz} s z` for all `z : ℂ`. When `τ.im > 0`, these are the
+holomorphic sections of the level-`k` theta line on the complex torus `ℂ / (ℤ + τℤ)`, pulled back
+to the universal cover `ℂ`. -/
 def thetaSections (k : ℕ) (τ : ℂ) (α β : ℝ) : Submodule ℂ (ℂ → ℂ) where
   carrier := {s | Differentiable ℂ s ∧ (∀ z, s (z + 1) = cexp (2 * π * I * α) * s z) ∧
     ∀ z, s (z + τ) = cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) * s z}
@@ -66,7 +70,7 @@ theorem mem_thetaSections_iff : s ∈ thetaSections k τ α β ↔ Differentiabl
     ∀ z, s (z + τ) = cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) * s z :=
   Iff.rfl
 
-/-- Full lattice automorphy law for a holomorphic theta section under any translation
+/-- Full `ℤ²`-automorphy law for a holomorphic theta section under any translation
 `z ↦ z + m + n * τ`. -/
 theorem add_eq_thetaFactor_mul_of_mem_thetaSections
     (hs : s ∈ thetaSections k τ α β) (m n : ℤ) (z : ℂ) :

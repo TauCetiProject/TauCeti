@@ -24,10 +24,10 @@ function. The coordinates of a section `s` in this basis are its twisted Fourier
 
 For `k > 0` and `0 < τ.im`, integrating the theta series termwise
 (`TauCeti.integral_cexp_mul_jacobiTheta₂_mul_add`) computes all twisted Fourier coefficients of
-`θ_r`: they vanish off the congruence class `r + kℤ` and are explicit Gaussian exponentials on
-`r + kℤ`, yielding `thetaFourierCoeff α θ_r r' = δ_{rr'}` for `r, r' : Fin k`. Combined with
-the shift-by-`k` recurrence from `TauCeti.Analysis.Complex.Theta.Fourier` and Fourier uniqueness
-from `TauCeti.Analysis.Complex.QuasiPeriodic.Fourier`,
+`θ_r`: they vanish when the integer mode index lies off `r + kℤ` and are explicit Gaussian
+exponentials on `r + kℤ`, yielding `thetaFourierCoeff α θ_r r' = δ_{rr'}` for `r, r' : Fin k`.
+Combined with the shift-by-`k` recurrence from `TauCeti.Analysis.Complex.Theta.Fourier` and Fourier
+uniqueness from `TauCeti.Analysis.Complex.QuasiPeriodic.Fourier`,
 `s ↦ (thetaFourierCoeff α s 0, …, thetaFourierCoeff α s (k - 1))` is a linear isomorphism onto
 `Fin k → ℂ`, giving the basis `TauCeti.thetaSectionsBasis` and the dimension formula
 `TauCeti.finrank_thetaSections`.
@@ -68,9 +68,12 @@ namespace TauCeti
 variable {k : ℕ} {τ : ℂ} {α β : ℝ} {s : ℂ → ℂ}
 
 /-- The theta function of level `k` with characteristics `(α, β)` and index `r`:
-`θ_r(z) = e^{2πi(r + α)z} θ(kz + (r + α)τ - β, kτ)`, where `θ = jacobiTheta₂`. Its Fourier series is
-`∑_n e^{πikn²τ + 2πin((r + α)τ - β)} e^{2πi(r + kn + α)z}`, supported on the frequencies `≡ r`
-modulo `k`. -/
+`θ_r(z) = e^{2πi(r + α)z} θ(kz + (r + α)τ - β, kτ)`, where `θ = jacobiTheta₂`. For `0 < k` and
+`0 < τ.im`, its convergent Fourier series (`TauCeti.hasSum_characteristicTheta`) is
+`∑' n : ℤ, e^{πikn²τ + 2πin((r + α)τ - β)} e^{2πi(r + nk + α)z}`, whose integer mode indices
+`r + nk` lie in the congruence class `r + kℤ` (so the frequencies `r + nk + α` lie in
+`r + α + kℤ`). When `k = 0` or `τ.im ≤ 0`, `characteristicTheta` vanishes identically by the
+`jacobiTheta₂_undef` zero convention (`TauCeti.characteristicTheta_undef`). -/
 noncomputable def characteristicTheta (k : ℕ) (τ : ℂ) (α β : ℝ) (r : ℤ) (z : ℂ) : ℂ :=
   cexp (2 * π * I * (r + α) * z) * jacobiTheta₂ (k * z + (r + α) * τ - β) (k * τ)
 
@@ -154,8 +157,9 @@ theorem jacobiTheta₂_mem_thetaSections (τ : ℂ) :
   rw [hfun]
   exact characteristicTheta_mem_thetaSections 1 τ 0 0 0
 
-/-- Explicit `ℤ`-indexed Fourier series of `characteristicTheta k τ α β r` supported on the
-congruence class `r + kℤ`, for `0 < k` and `0 < τ.im`. -/
+/-- For `0 < k` and `0 < τ.im`, the convergent `ℤ`-indexed Fourier series of
+`characteristicTheta k τ α β r`, with integer mode indices in `r + kℤ` and frequencies in
+`r + α + kℤ`. -/
 theorem hasSum_characteristicTheta {k : ℕ} (hk : 0 < k) {τ : ℂ} (hτ : 0 < τ.im) (α β : ℝ)
     (r : ℤ) (z : ℂ) :
     HasSum
@@ -206,8 +210,9 @@ private lemma thetaFourierCoeff_characteristicTheta_eq {k : ℕ} (hk : 0 < k) {�
     ring
   · rfl
 
-/-- On the congruence class `r + kℤ`, the twisted Fourier coefficients of `characteristicTheta`
-are given by the explicit Gaussian exponentials. -/
+/-- For `0 < k` and `0 < τ.im`, on the congruence class `r + kℤ` of integer mode indices, the
+twisted Fourier coefficients of `characteristicTheta` are given by the explicit Gaussian
+exponentials. -/
 theorem thetaFourierCoeff_characteristicTheta_add_mul {k : ℕ} (hk : 0 < k) {τ : ℂ} (hτ : 0 < τ.im)
     (α β : ℝ) (r n : ℤ) :
     thetaFourierCoeff α (characteristicTheta k τ α β r) (r + n * k) =
@@ -221,8 +226,8 @@ theorem thetaFourierCoeff_characteristicTheta_add_mul {k : ℕ} (hk : 0 < k) {τ
   rw [thetaFourierCoeff_characteristicTheta_eq hk hτ α β r (r + n * k)]
   simp only [hdvd, ↓reduceIte, hdiv]
 
-/-- Off the congruence class `r + kℤ`, all twisted Fourier coefficients of `characteristicTheta`
-vanish. -/
+/-- Off the congruence class `r + kℤ` of integer mode indices, all twisted Fourier coefficients of
+`characteristicTheta` vanish. -/
 theorem thetaFourierCoeff_characteristicTheta_eq_zero (k : ℕ) (τ : ℂ) (α β : ℝ) {r m : ℤ}
     (h : ¬ (k : ℤ) ∣ m - r) :
     thetaFourierCoeff α (characteristicTheta k τ α β r) m = 0 := by
