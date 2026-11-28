@@ -17,22 +17,18 @@ by `σ : L ≃ₐ[E] L` agrees with acting via `TauCeti.algEquivEquivEmbeddingSu
 
 ## Main results
 
-* `TauCeti.algEquivEquivEmbeddingSubgroup_smul_integralClosure`: acting on `integralClosure A L` by
+* `AlgEquiv.algEquivEquivEmbeddingSubgroup_smul_integralClosure`: acting on `integralClosure A L` by
   `σ : L ≃ₐ[E] L` agrees with acting via `TauCeti.algEquivEquivEmbeddingSubgroup K E L σ`.
 -/
 
 public section
 
-namespace TauCeti
-
 /-- Acting on `integralClosure A L` by `σ : L ≃ₐ[E] L` agrees with acting via
 `TauCeti.algEquivEquivEmbeddingSubgroup K E L σ : TauCeti.embeddingSubgroup K E L`. -/
-@[simp] theorem algEquivEquivEmbeddingSubgroup_smul_integralClosure {A K E L : Type*}
+@[simp] theorem AlgEquiv.algEquivEquivEmbeddingSubgroup_smul_integralClosure {A K E L : Type*}
     [CommRing A] [Field K] [Field E] [Field L] [Algebra A L] [Algebra K E] [Algebra E L]
     [Algebra K L] [IsScalarTower K E L] [SMulCommClass (L ≃ₐ[K] L) A L]
     [SMulCommClass (L ≃ₐ[E] L) A L] (σ : L ≃ₐ[E] L) (x : integralClosure A L) :
     (TauCeti.algEquivEquivEmbeddingSubgroup K E L σ :
       TauCeti.embeddingSubgroup K E L) • x = σ • x :=
   Subtype.ext (by simp [Subgroup.smul_def, AlgEquiv.smul_def])
-
-end TauCeti

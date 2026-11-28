@@ -71,7 +71,7 @@ private theorem herbrandFun_embeddingSubgroup_integralClosure [IsScalarTower A E
   (herbrandFun_eq_of_smul_eq
     (φ := (TauCeti.algEquivEquivEmbeddingSubgroup K E L : (L ≃ₐ[E] L) →* _))
     (TauCeti.algEquivEquivEmbeddingSubgroup K E L).bijective
-    (fun _ _ ↦ (TauCeti.algEquivEquivEmbeddingSubgroup_smul_integralClosure _ _).symm) u).symm
+    (fun _ _ ↦ (AlgEquiv.algEquivEquivEmbeddingSubgroup_smul_integralClosure _ _).symm) u).symm
 
 private theorem upperJump_embeddingSubgroup_integralClosure_iff [IsScalarTower A E L]
     (v : ℝ) :
@@ -80,7 +80,7 @@ private theorem upperJump_embeddingSubgroup_integralClosure_iff [IsScalarTower A
   (upperJump_iff_of_smul_eq (S := integralClosure A L)
     (φ := (TauCeti.algEquivEquivEmbeddingSubgroup K E L : (L ≃ₐ[E] L) →* _))
     (TauCeti.algEquivEquivEmbeddingSubgroup K E L).bijective
-    (fun _ _ ↦ (TauCeti.algEquivEquivEmbeddingSubgroup_smul_integralClosure _ _).symm) v).symm
+    (fun _ _ ↦ (AlgEquiv.algEquivEquivEmbeddingSubgroup_smul_integralClosure _ _).symm) v).symm
 
 section QuotientHelpers
 
