@@ -39,8 +39,8 @@ theorem covolume_lattice_smul (c : ℂˣ) :
     ZLattice.covolume (c • L).lattice = ‖(c : ℂ)‖ ^ 2 * ZLattice.covolume L.lattice := by
   have : NeZero (c : ℂ) := ⟨c.ne_zero⟩
   have h : (c • L).lattice = (c : ℂ) • L.lattice := by
-    ext x
-    simp [lattice_smul, Submodule.mem_smul_pointwise_iff_exists]
+    rw [lattice_smul, Submodule.pointwise_smul_def]
+    rfl
   rw [← ZLattice.covolume_complex_smul]
   -- The covolumes of the two sides are those of the submodules identified by `h`; the instance
   -- arguments of `ZLattice.covolume` are propositions.
