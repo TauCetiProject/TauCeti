@@ -65,7 +65,9 @@ Isomorphic bundles have isomorphic orientation local systems. A fibrewise isomor
 a map of double covers, so pulling functions on orientations back along it is an isomorphism
 `o(E) ≅ o(E')` (`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise`, by
 `IsCoveringMap.signLocalSystemIsoOfMap`). Hence homology and cohomology twisted by the
-orientation local system depend only on the isomorphism class of the bundle.
+orientation local system depend only on the isomorphism class of the bundle. Tensored with itself,
+this isomorphism carries the canonical pairing `o(E) ⊗ o(E) ≅ R` to that of `o(E')`
+(`signLocalSystemIsoOfFiberwise_hom_tensorHom_signLocalSystemTensorIso_hom`).
 
 Every loop acts on a fibre of `o(E)` by `1` or by `-1`
 (`VectorBundleOrientationCover.monodromyRepresentation_signLocalSystem_eq_one_or_eq_neg_one`).
@@ -671,6 +673,40 @@ theorem signLocalSystemObjEquiv_signLocalSystemIsoOfFiberwise_inv_app_apply
         (proj ⁻¹' {x.as} : Set (VectorBundleOrientationCover F' E' ι)) → R) ⟨⟨x.as, o⟩, rfl⟩ := by
   rw [← signLocalSystemObjEquiv_signLocalSystemIsoOfFiberwise_hom_app_apply (hφ := hφ) (o := o),
     ← ModuleCat.comp_apply, Iso.inv_hom_id_app, ModuleCat.id_apply]
+
+section Tensor
+
+open MonoidalCategory
+
+variable {S : Type (max uB uE uι)} [CommRing S]
+
+/-- **The tensor pairing of orientation local systems is natural in bundle isomorphisms.** The
+isomorphism `o(E) ≅ o(E')` induced by a fibrewise isomorphism `φ b : E'_b ≃ E_b`, tensored with
+itself, carries the canonical pairing `o(E) ⊗ o(E) ≅ S` to the canonical pairing of `o(E')`
+(`TauCeti.VectorBundleOrientationCover.signLocalSystemTensorIso`). -/
+@[reassoc]
+theorem signLocalSystemIsoOfFiberwise_hom_tensorHom_signLocalSystemTensorIso_hom :
+    ((signLocalSystemIsoOfFiberwise S hι hι' hφ).hom ⊗ₘ
+        (signLocalSystemIsoOfFiberwise S hι hι' hφ).hom) ≫ (signLocalSystemTensorIso hι').hom =
+      (signLocalSystemTensorIso hι).hom :=
+  (isCoveringMap_proj hι').signLocalSystemIsoOfMap_hom_tensorHom_signLocalSystemTensorIso_hom
+    deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι' h) (surjective_proj hι') (isCoveringMap_proj hι)
+    (proj_comp_map hι' hφ) (map_comp_deck hι' hφ) deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h)
+    (surjective_proj hι)
+
+/-- The inverse of the canonical pairing `o(E) ⊗ o(E) ≅ S`, followed by the tensor square of the
+isomorphism `o(E) ≅ o(E')` induced by a fibrewise isomorphism, is the inverse of the canonical
+pairing of `o(E')`. -/
+@[reassoc]
+theorem signLocalSystemTensorIso_inv_signLocalSystemIsoOfFiberwise_hom_tensorHom :
+    (signLocalSystemTensorIso hι).inv ≫
+      ((signLocalSystemIsoOfFiberwise S hι hι' hφ).hom ⊗ₘ
+        (signLocalSystemIsoOfFiberwise S hι hι' hφ).hom) =
+      (signLocalSystemTensorIso hι').inv := by
+  rw [Iso.inv_comp_eq, Iso.eq_comp_inv,
+    signLocalSystemIsoOfFiberwise_hom_tensorHom_signLocalSystemTensorIso_hom]
+
+end Tensor
 
 end Fiberwise
 

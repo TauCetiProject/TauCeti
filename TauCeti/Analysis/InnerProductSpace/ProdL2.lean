@@ -36,7 +36,10 @@ entries is compact (`WithLp.isCompactOperator_blockL2`). The block diagonal oper
 block sums `ContinuousLinearMap.withLpProdMap` (`WithLp.blockL2_zero_zero`).
 
 The orthogonal complement of the diagonal `WithLp.diagonal 2 𝕜 E` of `WithLp 2 (E × E)` consists
-of the antidiagonal vectors `(η, -η)` (`WithLp.mem_orthogonal_diagonal_iff`).
+of the antidiagonal vectors `(η, -η)` (`WithLp.mem_orthogonal_diagonal_iff`). The product
+`p × q` of two subspaces with orthogonal projections, the subspace
+`(p.prod q).comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap`, has an orthogonal projection,
+which projects each component (`WithLp.starProjection_comap_prod`).
 -/
 
 public section
@@ -150,6 +153,44 @@ theorem mem_orthogonal_diagonal_iff {ζ : WithLp 2 (E × E)} :
     rw [← inner_add_right, inner_self_eq_zero] at h'
     exact eq_neg_iff_add_eq_zero.2 (by rwa [add_comm])
   · simp [prod_inner_apply, mem_diagonal_iff.1 hu, h]
+
+/-! ### Product subspaces -/
+
+section ProdSubmodule
+
+variable {𝕜 E F} (p : Submodule 𝕜 E) (q : Submodule 𝕜 F) [p.HasOrthogonalProjection]
+  [q.HasOrthogonalProjection]
+
+/-- Projecting the two components of `x` gives a vector of `p × q` whose difference with `x` is
+orthogonal to `p × q`. -/
+private theorem toLp_starProjection_mem_and_sub_mem_orthogonal (x : WithLp 2 (E × F)) :
+    toLp 2 (p.starProjection x.fst, q.starProjection x.snd) ∈
+        (p.prod q).comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap ∧
+      x - toLp 2 (p.starProjection x.fst, q.starProjection x.snd) ∈
+        ((p.prod q).comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap)ᗮ := by
+  refine ⟨Submodule.mem_prod.2 ⟨p.starProjection_apply_mem _, q.starProjection_apply_mem _⟩,
+    fun w hw ↦ ?_⟩
+  rw [Submodule.mem_comap, Submodule.mem_prod] at hw
+  simpa [prod_inner_apply] using congrArg₂ (· + ·)
+    (p.sub_starProjection_mem_orthogonal x.fst w.fst hw.1)
+    (q.sub_starProjection_mem_orthogonal x.snd w.snd hw.2)
+
+/-- The product `p × q` of two subspaces with orthogonal projections, as a subspace of
+`WithLp 2 (E × F)`, has an orthogonal projection. -/
+instance : ((p.prod q).comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap).HasOrthogonalProjection
+    where
+  exists_orthogonal x := ⟨_, toLp_starProjection_mem_and_sub_mem_orthogonal p q x⟩
+
+/-- The orthogonal projection onto the product subspace `p × q` of `WithLp 2 (E × F)` projects
+each component: `P_{p × q} (x, y) = (P_p x, P_q y)`. -/
+theorem starProjection_comap_prod (x : WithLp 2 (E × F)) :
+    ((p.prod q).comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap).starProjection x =
+      toLp 2 (p.starProjection x.fst, q.starProjection x.snd) :=
+  Submodule.eq_starProjection_of_mem_orthogonal
+    (toLp_starProjection_mem_and_sub_mem_orthogonal p q x).1
+    (toLp_starProjection_mem_and_sub_mem_orthogonal p q x).2
+
+end ProdSubmodule
 
 /-! ### Block operators -/
 

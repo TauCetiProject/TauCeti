@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.Algebra.Algebra.Subalgebra.Matrix
+public import Mathlib.LinearAlgebra.Matrix.Block
+public import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -33,6 +35,10 @@ because they shift weights differently. No commutator formula is used.
 
 * `Matrix.RaisesDegree`: the degree-raising condition, with its closure properties.
 * `Matrix.RaisesDegree.mul`: degrees add under multiplication.
+* `Matrix.RaisesDegree.inv`: the inverse of a matrix raising the degree by at least `0` raises it
+  by at least `0`.
+* `Matrix.RaisesDegree.trace_eq_zero`: a matrix raising the degree by a positive amount has
+  trace zero.
 * `Matrix.RaisesDegree.of_shift`: a matrix shifting weights by `a` raises their degree by
   `degree a`.
 * `TauCeti.Matrix.raisesDegree_list_prod_sub`: the leading-degree congruence for an ordered product.
@@ -147,6 +153,48 @@ theorem RaisesDegree.mul [NonUnitalNonAssocSemiring A] [Fintype η] {X Y : Matri
   have hr := hX r t (left_ne_zero_of_mul hne)
   have hs := hY t s (right_ne_zero_of_mul hne)
   omega
+
+/-- Raising the degree by at least `max d d'` is raising it by at least `d` and by at least
+`d'`. -/
+theorem raisesDegree_max_iff [Zero A] {X : Matrix η η A} :
+    RaisesDegree deg (max d d') X ↔ RaisesDegree deg d X ∧ RaisesDegree deg d' X := by
+  simp only [raisesDegree_iff, ← forall_and]
+  refine forall₃_congr fun r s _ ↦ ?_
+  omega
+
+/-- Matrices differing from the identity by a matrix raising the degree by at least `d ≥ 0` are
+closed under multiplication. -/
+theorem RaisesDegree.mul_sub_one [Ring A] [Fintype η] [DecidableEq η] {X Y : Matrix η η A}
+    (hX : RaisesDegree deg d (X - 1)) (hY : RaisesDegree deg d (Y - 1)) (hd : 0 ≤ d) :
+    RaisesDegree deg d (X * Y - 1) := by
+  have h : X * Y - 1 = (X - 1) * (Y - 1) + (X - 1) + (Y - 1) := by noncomm_ring
+  rw [h]
+  exact (((hX.mul hY).mono (by omega)).add hX).add hY
+
+/-- A matrix raises the degree by at least `0` exactly when it is block triangular for the
+blocks of equal degree, ordered by decreasing degree. -/
+theorem raisesDegree_zero_iff_blockTriangular [Zero A] {X : Matrix η η A} :
+    RaisesDegree deg 0 X ↔ X.BlockTriangular (OrderDual.toDual ∘ deg) := by
+  simp only [raisesDegree_iff, BlockTriangular, add_zero, Function.comp_apply,
+    OrderDual.toDual_lt_toDual]
+  exact ⟨fun h i j hij ↦ by_contra fun hne ↦ (h i j hne).not_gt hij,
+    fun h i j hne ↦ le_of_not_gt fun hlt ↦ hne (h hlt)⟩
+
+/-- The inverse of a matrix raising the degree by at least `0` raises it by at least `0`. -/
+theorem RaisesDegree.inv [CommRing A] [Fintype η] [DecidableEq η] {X : Matrix η η A}
+    (hX : RaisesDegree deg 0 X) : RaisesDegree deg 0 X⁻¹ := by
+  rw [raisesDegree_zero_iff_blockTriangular] at hX ⊢
+  by_cases h : IsUnit X.det
+  · have := X.invertibleOfIsUnitDet h
+    exact blockTriangular_inv_of_blockTriangular hX
+  · rw [nonsing_inv_apply_not_isUnit X h]
+    exact blockTriangular_zero
+
+/-- A matrix raising the degree by a positive amount has trace zero: its diagonal entries
+vanish. -/
+theorem RaisesDegree.trace_eq_zero [AddCommMonoid A] [Fintype η] {X : Matrix η η A}
+    (hX : RaisesDegree deg d X) (hd : 0 < d) : X.trace = 0 :=
+  Finset.sum_eq_zero fun i _ ↦ hX.apply_eq_zero (r := i) (s := i) (by omega)
 
 end Matrix
 

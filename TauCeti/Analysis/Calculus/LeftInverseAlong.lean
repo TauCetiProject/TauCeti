@@ -28,6 +28,10 @@ direction `v` are
 `HasFDerivAt.id_sub_comp_leftInverseAlong`, `DifferentiableAt.fderiv_id_sub_comp_leftInverseAlong`).
 The differentiability lemmas for `K` are `fun_prop` rules.
 
+A family `η` differentiable at a parameter, with values in the ranges of a differentiable family
+`L` split-injective there, is `L (a)` for coefficients `a = K η` differentiable there
+(`DifferentiableAt.exists_differentiableAt_eventually_eq_apply`).
+
 In a perturbative construction, `P` and its kernel `W` are often chosen once near a base parameter
 and then held fixed. Then `∂ᵥ P = 0` and the terms containing it vanish, and for a family of
 equations `L(σ) f + S(σ) = 0` the reduced section `σ ↦ Π_σ S(σ)` takes values in the fixed space
@@ -206,3 +210,25 @@ theorem DifferentiableAt.fderiv_id_sub_comp_leftInverseAlong (hL : Differentiabl
           (.id 𝕜 F - L x ∘L (L x).leftInverseAlong (P x)) := by
   rw [(hL.hasFDerivAt.id_sub_comp_leftInverseAlong hP.hasFDerivAt h).fderiv]
   simp only [sub_apply, neg_apply, coe_comp, Function.comp_apply, compL_apply, flip_apply]
+
+/-- **Differentiable coefficients along a split-injective family.** Let `L y` be a family of
+operators out of a Banach space, differentiable at `x`, such that `L x` has a continuous linear
+left inverse. A family `η y` differentiable at `x`, with `η y` in the range of `L y` for `y` near
+`x`, is `L y (a y)` near `x` for coefficients `a y` differentiable at `x`: one may take
+`a y = K y (η y)`, with `K y` the left inverse of `L y` along the kernel of a fixed left inverse
+of `L x`. -/
+theorem DifferentiableAt.exists_differentiableAt_eventually_eq_apply
+    (hL : DifferentiableAt 𝕜 L x) (hLx : (L x).HasLeftInverse) {η : X → F}
+    (hη : DifferentiableAt 𝕜 η x) (hmem : ∀ᶠ y in nhds x, η y ∈ Set.range (L y)) :
+    ∃ a : X → E, DifferentiableAt 𝕜 a x ∧ ∀ᶠ y in nhds x, η y = L y (a y) := by
+  set P := hLx.leftInverse
+  have hP : (P ∘L L x).IsInvertible := by
+    rw [hLx.leftInverse_comp]
+    exact isInvertible_equiv (f := ContinuousLinearEquiv.refl 𝕜 E)
+  have hev : ∀ᶠ y in nhds x, (P ∘L L y).IsInvertible :=
+    (continuous_const.clm_comp continuous_id).continuousAt.comp hL.continuousAt
+      |>.eventually hP.eventually_nhds
+  refine ⟨fun y ↦ (L y).leftInverseAlong P (η y),
+    (hL.leftInverseAlong (differentiableAt_const P) hP).clm_apply hη, ?_⟩
+  filter_upwards [hev, hmem] with y hy ⟨w, hw⟩
+  rw [← hw, leftInverseAlong_apply_self hy]

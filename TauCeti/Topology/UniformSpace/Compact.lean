@@ -10,7 +10,7 @@ import Mathlib.Topology.Compactness.Compact
 import Mathlib.Topology.UniformSpace.Compact
 
 /-!
-# Compact sets in uniform spaces: separating maps and near retractions
+# Compact sets in uniform spaces: separating maps, disjoint images and near retractions
 
 ## Finite subfamilies of separating maps
 
@@ -20,6 +20,12 @@ finite set `F` of indices such that `∀ i ∈ F, (f i x, f i y) ∈ V` already 
 (`TauCeti.exists_finset_forall_mem_of_isClosed`). The closed sets
 `{(x, y) | (f i x, f i y) ∈ V}` meet the compact complement of the interior of `W` in the empty
 set, so finitely many of them already do.
+
+## Disjoint images of compact sets
+
+Finitely many pairwise disjoint compact closed sets `F i` have an entourage `U` whose images
+`U.image (F i)` are pairwise disjoint (`TauCeti.exists_mem_uniformity_disjoint_image`), by
+intersecting the entourages that Mathlib's `Disjoint.exists_uniform_thickening` gives for each pair.
 
 ## Near retractions onto compact sets
 
@@ -36,10 +42,34 @@ public section
 
 namespace TauCeti
 
-open Set
+open Function Set
 open scoped Uniformity
 
-variable {X : Type*} [UniformSpace X] [CompactSpace X]
+variable {X : Type*} [UniformSpace X]
+
+/-- Finitely many pairwise disjoint compact closed sets `F i` in a uniform space have an entourage
+whose images of the `F i` are pairwise disjoint. -/
+theorem exists_mem_uniformity_disjoint_image {ι : Type*} [Finite ι] {F : ι → Set X}
+    (hK : ∀ i, IsCompact (F i)) (hF : ∀ i, IsClosed (F i))
+    (hdisj : Pairwise (Disjoint on F)) :
+    ∃ U ∈ 𝓤 X, Pairwise (Disjoint on fun i ↦ SetRel.image U (F i)) := by
+  have hpair (p : ι × ι) : ∃ V ∈ 𝓤 X,
+      p.1 ≠ p.2 → Disjoint (SetRel.image V (F p.1)) (SetRel.image V (F p.2)) := by
+    by_cases hp : p.1 = p.2
+    · exact ⟨univ, Filter.univ_mem, fun h ↦ (h hp).elim⟩
+    · obtain ⟨V, hV, hd⟩ := (hdisj hp).exists_uniform_thickening (hK p.1) (hF p.2)
+      -- The image under the symmetrization of `V` lies in the `V`-thickening.
+      have himage (A : Set X) : (SetRel.symmetrize V).image A ⊆ ⋃ x ∈ A, SetRel.ball V x :=
+        fun b hb ↦ by
+          obtain ⟨a, ha, hab⟩ := SetRel.mem_image.1 hb
+          exact mem_iUnion₂.2
+            ⟨a, ha, SetRel.mem_ball.2 (SetRel.mem_inv.1 (SetRel.symmetrize_subset_inv hab))⟩
+      exact ⟨_, symmetrize_mem_uniformity hV, fun _ ↦ hd.mono (himage _) (himage _)⟩
+  choose V hV hd using hpair
+  refine ⟨⋂ p, V p, Filter.iInter_mem.2 hV, fun i j hij ↦ (hd (i, j) hij).mono ?_ ?_⟩ <;>
+    exact SetRel.image_subset_image_left (iInter_subset V (i, j))
+
+variable [CompactSpace X]
 
 /-- **Finite windows.** On a compact uniform space, if continuous maps `f i` into a topological
 space `Y` separate points through a closed set `V`, then for every entourage `W` a finite set `F`

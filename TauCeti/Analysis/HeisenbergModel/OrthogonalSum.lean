@@ -22,9 +22,14 @@ which `e` is a vacuum, and the tensor product `(v ⊗ w) (φ (x₁, x₂)) = v x
 bilinear map `M(β₁, e₁) × M(β₂, e₂) → M(β, e)`, multiplicative for norms and for `⟨·, ·⟩`,
 compatible with the Heisenberg operators and with the Weil representations of product actions.
 
+The product `β₁ ⊠ β₂` of two Heisenberg data (`TauCeti.HeisenbergDatum.prod`), with the product
+vacuum, is their orthogonal sum along the identity.
+
 ## Main definitions
 
 * `TauCeti.HeisenbergDatum.OrthogonalSum`: an orthogonal sum of Heisenberg data with vacua.
+* `TauCeti.HeisenbergDatum.OrthogonalSum.prod`: the orthogonal sum structure of the product of two
+  Heisenberg data.
 * `TauCeti.HeisenbergDatum.OrthogonalSum.tmul`: the tensor product of model vectors.
 
 ## Main results
@@ -73,6 +78,21 @@ structure OrthogonalSum (β : HeisenbergDatum W) (β₁ : HeisenbergDatum W₁)
   equiv : W₁ × W₂ ≃ₜ+ W
   apply_equiv_equiv (x y : W₁ × W₂) : β (equiv x) (equiv y) = β₁ x.1 y.1 * β₂ x.2 y.2
   vacuum_equiv (x : W₁ × W₂) : e (equiv x) = e₁ x.1 * e₂ x.2
+
+/-- The product of two Heisenberg data, with the product vacuum, is their orthogonal sum along the
+identity of `W₁ × W₂`. -/
+def OrthogonalSum.prod (β₁ : HeisenbergDatum W₁) (β₂ : HeisenbergDatum W₂) (e₁ : W₁ → ℂ)
+    (e₂ : W₂ → ℂ) :
+    (β₁.prod β₂).OrthogonalSum β₁ β₂ (fun x ↦ e₁ x.1 * e₂ x.2) e₁ e₂ where
+  equiv := ContinuousAddEquiv.refl (W₁ × W₂)
+  apply_equiv_equiv x y := prod_apply β₁ β₂ x y
+  vacuum_equiv _ := (rfl)
+
+@[simp]
+theorem OrthogonalSum.prod_equiv (β₁ : HeisenbergDatum W₁) (β₂ : HeisenbergDatum W₂)
+    (e₁ : W₁ → ℂ) (e₂ : W₂ → ℂ) :
+    (OrthogonalSum.prod β₁ β₂ e₁ e₂).equiv = ContinuousAddEquiv.refl (W₁ × W₂) :=
+  (rfl)
 
 namespace Representation
 
