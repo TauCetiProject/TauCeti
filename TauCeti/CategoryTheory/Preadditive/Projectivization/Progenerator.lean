@@ -55,7 +55,11 @@ noncomputable def projectiveEquivalenceCompιIso (hP : IsProgenerator P)
     [IsIdempotentComplete C] :
     hP.projectiveEquivalence.functor ⋙ (finiteProjectiveModules (End P)ᵐᵒᵖ).ι ≅
       (isProjective C).ι ⋙ preadditiveCoyonedaObj P :=
-  NatIso.ofComponents (fun _ ↦ Iso.refl _)
+  Functor.associator _ _ _ ≪≫
+    Functor.isoWhiskerLeft (ObjectProperty.ιOfLE hP.isProjective_le_additiveClosure)
+      (projectivizationFunctorCompιIso (M := P)) ≪≫
+    (Functor.associator _ _ _).symm ≪≫
+    Functor.isoWhiskerRight (ObjectProperty.ιOfLECompιIso hP.isProjective_le_additiveClosure) _
 
 instance additive_projectiveEquivalence_functor (hP : IsProgenerator P) [IsIdempotentComplete C] :
     hP.projectiveEquivalence.functor.Additive :=
@@ -75,15 +79,23 @@ theorem projectiveEquivalence_functor_obj_obj (hP : IsProgenerator P) [IsIdempot
 theorem projectiveEquivalenceCompιIso_hom_app (hP : IsProgenerator P) [IsIdempotentComplete C]
     (X : (isProjective C).FullSubcategory) :
     hP.projectiveEquivalenceCompιIso.hom.app X =
-      eqToHom (hP.projectiveEquivalence_functor_obj_obj X) :=
-  (rfl)
+      eqToHom (hP.projectiveEquivalence_functor_obj_obj X) := by
+  dsimp [projectiveEquivalenceCompιIso, projectiveEquivalence, Equivalence.trans,
+    Functor.asEquivalence, ObjectProperty.ιOfLECompιIso]
+  simp only [projectivizationFunctorCompιIso_hom_app, Functor.comp_obj, ObjectProperty.ι_obj,
+    preadditiveCoyonedaObj_map, Category.comp_id, Category.id_comp]
+  exact ModuleCat.hom_ext (LinearMap.ext fun _ ↦ rfl)
 
 @[simp]
 theorem projectiveEquivalenceCompιIso_inv_app (hP : IsProgenerator P) [IsIdempotentComplete C]
     (X : (isProjective C).FullSubcategory) :
     hP.projectiveEquivalenceCompιIso.inv.app X =
-      eqToHom (hP.projectiveEquivalence_functor_obj_obj X).symm :=
-  (rfl)
+      eqToHom (hP.projectiveEquivalence_functor_obj_obj X).symm := by
+  dsimp [projectiveEquivalenceCompιIso, projectiveEquivalence, Equivalence.trans,
+    Functor.asEquivalence, ObjectProperty.ιOfLECompιIso]
+  simp only [preadditiveCoyonedaObj_map, Category.comp_id, projectivizationFunctorCompιIso_inv_app,
+    Functor.comp_obj, ObjectProperty.ι_obj, ObjectProperty.ιOfLE_obj_obj]
+  exact ModuleCat.hom_ext (LinearMap.ext fun _ ↦ rfl)
 
 /-- The action of `hP.projectiveEquivalence.functor` on morphisms agrees with `Hom(P, -)` modulo the
 comparison isomorphism `hP.projectiveEquivalenceCompιIso`. -/

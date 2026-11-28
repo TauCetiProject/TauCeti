@@ -297,14 +297,17 @@ theorem ι_comp_biproductObjIsoPi_hom {J : Type} [Finite J] [DecidableEq J]
     (f : J → S.FullSubcategory) [HasBiproduct f] (j : J) :
     (biproduct.ι f j).hom ≫ (S.biproductObjIsoPi f).hom =
       ModuleCat.ofHom (LinearMap.single R (fun i ↦ (f i).obj) j) := by
-  ext x k
-  have h : (S.biproductObjIsoPi f).hom ((biproduct.ι f j).hom x) k =
-      ((biproduct.ι f j).hom ≫ (biproduct.π f k).hom) x := by
-    rw [biproductObjIsoPi_hom_apply, ModuleCat.comp_apply]
-  rw [← FullSubcategory.comp_hom, biproduct.ι_π] at h
-  rcases eq_or_ne j k with rfl | hne
-  · simpa using h
-  · simpa [hne] using h
+  refine ModuleCat.hom_ext <| LinearMap.ext fun x ↦ funext fun k ↦ ?_
+  have h : ((biproduct.ι f j).hom ≫ (S.biproductObjIsoPi f).hom) ≫
+      ModuleCat.ofHom (LinearMap.proj k) =
+      ModuleCat.ofHom (LinearMap.single R (fun i ↦ (f i).obj) j) ≫
+        ModuleCat.ofHom (LinearMap.proj k) := by
+    rw [Category.assoc, S.biproductObjIsoPi_hom_comp_proj f k, ← FullSubcategory.comp_hom,
+      biproduct.ι_π, ← ModuleCat.ofHom_comp]
+    rcases eq_or_ne j k with rfl | hne
+    · simp [LinearMap.proj_comp_single_same]
+    · simp [hne, LinearMap.proj_comp_single_ne _ _ _ _ hne.symm]
+  simpa [-biproductObjIsoPi_hom_comp_proj] using ConcreteCategory.congr_hom h x
 
 /-- `LinearMap.single` followed by the inverse of `biproductObjIsoPi` is the `j`-th biproduct
 inclusion. -/

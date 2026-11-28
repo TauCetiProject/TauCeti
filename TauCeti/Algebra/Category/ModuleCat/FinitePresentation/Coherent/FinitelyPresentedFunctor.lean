@@ -12,8 +12,10 @@ public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.WeakKernels
 /-!
 # Six-way coherence characterization via finitely presented functors
 
-By Chase's theorem and the Freyd-Auslander criterion, the following six properties of a ring `R`
-are equivalent (`TauCeti.isCoherentRing_tfae`):
+Alongside Chase's ring-theoretic characterization of coherent rings (Chase 1960), the module
+criteria of `TauCeti.Algebra.Category.ModuleCat.FinitePresentation.Coherent.Basic` and the
+Freyd-Auslander weak-kernel criterion yield six equivalent criteria for left coherence of a ring `R`
+(`TauCeti.isCoherentRing_tfae`):
 
 * `R` is left coherent (`TauCeti.IsCoherentRing R`);
 * `TauCeti.finitePresentationModules R` is closed under kernels in `ModuleCat R`;
@@ -46,8 +48,8 @@ namespace TauCeti
 
 variable (R : Type u) [Ring R]
 
-/-- **Chase's coherence theorem and categorical characterizations of left coherence.** For any ring
-`R`, the following are equivalent:
+/-- **Categorical characterizations of left coherence.** For any ring `R`, the following six
+criteria for left coherence are equivalent:
 1. `R` is left coherent (`TauCeti.IsCoherentRing R`);
 2. `TauCeti.finitePresentationModules R` is closed under kernels in `ModuleCat R`;
 3. `(TauCeti.finitePresentationModules R).FullSubcategory` is an abelian category;

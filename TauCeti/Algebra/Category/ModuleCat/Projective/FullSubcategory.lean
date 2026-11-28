@@ -58,20 +58,19 @@ theorem moduleProjective_of_projective [S.IsClosedUnderFiniteProducts]
     Module.Projective R P.obj := by
   obtain ⟨n, q, hq⟩ := Module.Finite.exists_fin' R P.obj
   let eFin : (Fin n → R₀.obj) ≃ₗ[R] (Fin n → R) := LinearEquiv.piCongrRight fun _ ↦ eR
-  let φ : (Fin n → R₀.obj) →ₗ[R] P.obj := q ∘ₗ eFin.toLinearMap
-  have hφ : Function.Surjective φ := hq.comp eFin.surjective
   let π : (⨁ fun _ : Fin n ↦ R₀) ⟶ P :=
-    ObjectProperty.homMk ((S.biproductObjIsoPi fun _ : Fin n ↦ R₀).hom ≫ ModuleCat.ofHom φ)
-  have : Epi π := S.epi_homMk_biproductObjIsoPi_comp hφ
-  let s : P ⟶ (⨁ fun _ : Fin n ↦ R₀) := Projective.factorThru (𝟙 P) π
-  refine Module.Projective.of_split
-    (eFin.toLinearMap ∘ₗ (S.biproductObjIsoPi fun _ : Fin n ↦ R₀).hom.hom ∘ₗ s.hom.hom)
-    q (LinearMap.ext fun x ↦ ?_)
-  have hs : (s ≫ π).hom.hom x = x := by
-    rw [Projective.factorThru_comp, ObjectProperty.FullSubcategory.id_hom,
-      ModuleCat.hom_id, LinearMap.id_apply]
-  simpa [π, φ, ObjectProperty.FullSubcategory.comp_hom, ModuleCat.hom_comp,
-    LinearMap.comp_apply] using hs
+    ObjectProperty.homMk
+      ((S.biproductObjIsoPi fun _ : Fin n ↦ R₀).hom ≫ ModuleCat.ofHom (q ∘ₗ eFin.toLinearMap))
+  have : Epi π := S.epi_homMk_biproductObjIsoPi_comp (hq.comp eFin.surjective)
+  let r : Retract P (⨁ fun _ : Fin n ↦ R₀) :=
+    ⟨Projective.factorThru (𝟙 P) π, π, Projective.factorThru_comp (𝟙 P) π⟩
+  have : Small.{v} R := ⟨⟨R₀.obj, ⟨eR.toEquiv.symm⟩⟩⟩
+  have : Module.Projective R (Fin n → R₀.obj) := Module.Projective.of_equiv' eFin.symm
+  have : Projective (ModuleCat.of R (Fin n → R₀.obj)) := inferInstance
+  have : Projective (S.ι.obj (⨁ fun _ : Fin n ↦ R₀)) :=
+    Projective.of_iso (S.biproductObjIsoPi _).symm inferInstance
+  have : Projective P.obj := (r.map S.ι).projective
+  exact inferInstance
 
 /-- Characterization of finitely generated projective objects in `S.FullSubcategory` when `S` is
 closed under finite products, `S.ι` preserves epimorphisms, and `S` contains an object linearly

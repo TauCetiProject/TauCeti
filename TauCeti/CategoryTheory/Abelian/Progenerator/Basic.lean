@@ -141,12 +141,14 @@ theorem finitePresentationModules_le_essImage (hP : IsProgenerator P) :
   rw [← presented_finiteProjectiveModules (End P)ᵐᵒᵖ] at hM
   obtain @⟨A₀, A₁, α, c, hc, hA₀, hA₁⟩ := hM
   let F := projectivizationFunctor P
+  let iso (A : (finiteProjectiveModules (End P)ᵐᵒᵖ).FullSubcategory) :
+      (preadditiveCoyonedaObj P).obj (F.objPreimage A).obj ≅ A.obj :=
+    (projectivizationFunctorCompιIso (M := P)).symm.app (F.objPreimage A) ≪≫
+      (finiteProjectiveModules (End P)ᵐᵒᵖ).ι.mapIso (F.objObjPreimageIso A)
   let Q₀ := F.objPreimage ⟨A₀, hA₀⟩
   let Q₁ := F.objPreimage ⟨A₁, hA₁⟩
-  let e₀ : (preadditiveCoyonedaObj P).obj Q₀.obj ≅ A₀ :=
-    (finiteProjectiveModules (End P)ᵐᵒᵖ).ι.mapIso (F.objObjPreimageIso ⟨A₀, hA₀⟩)
-  let e₁ : (preadditiveCoyonedaObj P).obj Q₁.obj ≅ A₁ :=
-    (finiteProjectiveModules (End P)ᵐᵒᵖ).ι.mapIso (F.objObjPreimageIso ⟨A₁, hA₁⟩)
+  let e₀ : (preadditiveCoyonedaObj P).obj Q₀.obj ≅ A₀ := iso ⟨A₀, hA₀⟩
+  let e₁ : (preadditiveCoyonedaObj P).obj Q₁.obj ≅ A₁ := iso ⟨A₁, hA₁⟩
   obtain ⟨u, hu⟩ := (TauCeti.preadditiveCoyonedaObj_map_bijective Q₀.property Q₁.obj).2
     (e₀.hom ≫ α ≫ e₁.inv)
   have hu' : (preadditiveCoyonedaObj P).map u ≫ e₁.hom = e₀.hom ≫ α := by
@@ -197,10 +199,8 @@ theorem progeneratorFunctor_map_hom (hP : IsProgenerator P) {X Y : C} (f : X ⟶
   (NatIso.naturality_2 hP.progeneratorFunctorCompιIso f).symm
 
 instance additive_progeneratorFunctor (hP : IsProgenerator P) :
-    hP.progeneratorFunctor.Additive :=
-  have : (hP.progeneratorFunctor ⋙ (finitePresentationModules (End P)ᵐᵒᵖ).ι).Additive :=
-    Functor.additive_of_iso hP.progeneratorFunctorCompιIso.symm
-  Functor.additive_of_comp_faithful _ (finitePresentationModules (End P)ᵐᵒᵖ).ι
+    hP.progeneratorFunctor.Additive := by
+  unfold progeneratorFunctor; infer_instance
 
 instance full_progeneratorFunctor (hP : IsProgenerator P) : hP.progeneratorFunctor.Full :=
   have : (preadditiveCoyonedaObj P).Full :=
@@ -209,8 +209,7 @@ instance full_progeneratorFunctor (hP : IsProgenerator P) : hP.progeneratorFunct
 
 instance faithful_progeneratorFunctor (hP : IsProgenerator P) :
     hP.progeneratorFunctor.Faithful :=
-  have : (preadditiveCoyonedaObj P).Faithful :=
-    { map_injective := fun {X Y _ _} h ↦ (hP.preadditiveCoyonedaObj_map_bijective X Y).1 h }
+  have := (isSeparator_iff_faithful_preadditiveCoyonedaObj P).mp hP.isSeparator
   by unfold progeneratorFunctor; infer_instance
 
 /-- **The progenerator equivalence.** For a progenerator `P` of an abelian category `C`, `Hom(P, -)`
@@ -241,10 +240,9 @@ theorem progeneratorEquivalence_functor_map_hom (hP : IsProgenerator P) {X Y : C
   hP.progeneratorFunctor_map_hom f
 
 instance additive_progeneratorEquivalence_functor (hP : IsProgenerator P) :
-    hP.progeneratorEquivalence.functor.Additive where
-  map_add := by
-    rw [hP.progeneratorEquivalence_functor]
-    exact hP.additive_progeneratorFunctor.map_add
+    hP.progeneratorEquivalence.functor.Additive := by
+  rw [hP.progeneratorEquivalence_functor]
+  infer_instance
 
 /-- On `add P`, `hP.progeneratorFunctor` restricts to `TauCeti.projectivizationFunctor P` followed
 by the inclusion of finitely generated projective modules into finitely presented modules. -/
@@ -252,21 +250,48 @@ noncomputable def additiveClosureCompProgeneratorFunctorIso (hP : IsProgenerator
     (additiveClosure P).ι ⋙ hP.progeneratorFunctor ≅
       projectivizationFunctor P ⋙
         ObjectProperty.ιOfLE (finiteProjectiveModules_le_finitePresentationModules (End P)ᵐᵒᵖ) :=
-  NatIso.ofComponents (fun _ ↦ Iso.refl _)
+  let α :
+      ((additiveClosure P).ι ⋙ hP.progeneratorFunctor) ⋙
+          (finitePresentationModules (End P)ᵐᵒᵖ).ι ≅
+        (projectivizationFunctor P ⋙
+          ObjectProperty.ιOfLE (finiteProjectiveModules_le_finitePresentationModules (End P)ᵐᵒᵖ)) ⋙
+          (finitePresentationModules (End P)ᵐᵒᵖ).ι :=
+    Functor.associator _ _ _ ≪≫
+      Functor.isoWhiskerLeft (additiveClosure P).ι hP.progeneratorFunctorCompιIso ≪≫
+      (projectivizationFunctorCompιIso (M := P)).symm ≪≫
+      Functor.isoWhiskerLeft (projectivizationFunctor P)
+        (ObjectProperty.ιOfLECompιIso _).symm ≪≫
+      (Functor.associator _ _ _).symm
+  NatIso.ofComponents
+    (fun X ↦ (ObjectProperty.fullyFaithfulι _).preimageIso (α.app X))
+    fun {X Y} f ↦ (ObjectProperty.fullyFaithfulι _).map_injective <| by
+      simpa using α.hom.naturality f
 
 @[simp]
 theorem additiveClosureCompProgeneratorFunctorIso_hom_app (hP : IsProgenerator P)
     (X : (additiveClosure P).FullSubcategory) :
     (hP.additiveClosureCompProgeneratorFunctorIso.hom.app X).hom =
-      eqToHom (hP.progeneratorFunctor_obj_obj X.obj) :=
-  (rfl)
+      eqToHom (hP.progeneratorFunctor_obj_obj X.obj) := by
+  simp only [additiveClosureCompProgeneratorFunctorIso, NatIso.ofComponents_hom_app,
+    Functor.FullyFaithful.preimageIso_hom, ObjectProperty.fullyFaithfulι,
+    ObjectProperty.homMk_hom, Iso.app_hom, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app,
+    Functor.associator_hom_app, Functor.associator_inv_app, Functor.isoWhiskerLeft_hom,
+    Functor.whiskerLeft_app, ObjectProperty.ιOfLECompιIso, Iso.refl_inv, Functor.comp_obj,
+    progeneratorFunctorCompιIso_hom_app, projectivizationFunctorCompιIso_inv_app]
+  exact ModuleCat.hom_ext (LinearMap.ext fun _ ↦ rfl)
 
 @[simp]
 theorem additiveClosureCompProgeneratorFunctorIso_inv_app (hP : IsProgenerator P)
     (X : (additiveClosure P).FullSubcategory) :
     (hP.additiveClosureCompProgeneratorFunctorIso.inv.app X).hom =
-      eqToHom (hP.progeneratorFunctor_obj_obj X.obj).symm :=
-  (rfl)
+      eqToHom (hP.progeneratorFunctor_obj_obj X.obj).symm := by
+  simp only [additiveClosureCompProgeneratorFunctorIso, NatIso.ofComponents_inv_app,
+    Functor.FullyFaithful.preimageIso_inv, ObjectProperty.fullyFaithfulι,
+    ObjectProperty.homMk_hom, Iso.app_inv, Iso.trans_inv, Iso.symm_inv, NatTrans.comp_app,
+    Functor.associator_hom_app, Functor.associator_inv_app, Functor.isoWhiskerLeft_inv,
+    Functor.whiskerLeft_app, ObjectProperty.ιOfLECompιIso, Iso.refl_hom, Functor.comp_obj,
+    progeneratorFunctorCompιIso_inv_app, projectivizationFunctorCompιIso_hom_app]
+  exact ModuleCat.hom_ext (LinearMap.ext fun _ ↦ rfl)
 
 /-- On `proj C`, `hP.progeneratorEquivalence.functor` restricts to
 `hP.projectiveEquivalence.functor` followed by the inclusion of finitely generated projective
@@ -275,23 +300,37 @@ noncomputable def isProjectiveCompProgeneratorEquivalenceFunctorIso (hP : IsProg
     (isProjective C).ι ⋙ hP.progeneratorEquivalence.functor ≅
       hP.projectiveEquivalence.functor ⋙
         ObjectProperty.ιOfLE (finiteProjectiveModules_le_finitePresentationModules (End P)ᵐᵒᵖ) :=
+  let α :
+      ((isProjective C).ι ⋙ hP.progeneratorEquivalence.functor) ⋙
+          (finitePresentationModules (End P)ᵐᵒᵖ).ι ≅
+        (hP.projectiveEquivalence.functor ⋙
+          ObjectProperty.ιOfLE (finiteProjectiveModules_le_finitePresentationModules (End P)ᵐᵒᵖ)) ⋙
+          (finitePresentationModules (End P)ᵐᵒᵖ).ι :=
+    Functor.associator _ _ _ ≪≫
+      eqToIso (congrArg (fun F ↦ (isProjective C).ι ⋙ F ⋙ _)
+        hP.progeneratorEquivalence_functor) ≪≫
+      Functor.isoWhiskerLeft (isProjective C).ι hP.progeneratorFunctorCompιIso ≪≫
+      hP.projectiveEquivalenceCompιIso.symm ≪≫
+      Functor.isoWhiskerLeft hP.projectiveEquivalence.functor
+        (ObjectProperty.ιOfLECompιIso _).symm ≪≫
+      (Functor.associator _ _ _).symm
   NatIso.ofComponents
-    (fun X ↦ ObjectProperty.isoMk _ (eqToIso (by simp)))
-    fun {X Y} f ↦ ObjectProperty.hom_ext _ <| by
-      simp [-preadditiveCoyonedaObj_map, Category.assoc]
+    (fun X ↦ (ObjectProperty.fullyFaithfulι _).preimageIso (α.app X))
+    fun {X Y} f ↦ (ObjectProperty.fullyFaithfulι _).map_injective <| by
+      simpa using α.hom.naturality f
 
 @[simp]
 theorem isProjectiveCompProgeneratorEquivalenceFunctorIso_hom_app (hP : IsProgenerator P)
     (X : (isProjective C).FullSubcategory) :
     (hP.isProjectiveCompProgeneratorEquivalenceFunctorIso.hom.app X).hom =
-      eqToHom (by simp) :=
-  (rfl)
+      eqToHom (by simp) := by
+  simp [isProjectiveCompProgeneratorEquivalenceFunctorIso, ObjectProperty.ιOfLECompιIso]
 
 @[simp]
 theorem isProjectiveCompProgeneratorEquivalenceFunctorIso_inv_app (hP : IsProgenerator P)
     (X : (isProjective C).FullSubcategory) :
     (hP.isProjectiveCompProgeneratorEquivalenceFunctorIso.inv.app X).hom =
-      eqToHom (by simp) :=
-  (rfl)
+      eqToHom (by simp) := by
+  simp [isProjectiveCompProgeneratorEquivalenceFunctorIso, ObjectProperty.ιOfLECompιIso]
 
 end TauCeti.IsProgenerator

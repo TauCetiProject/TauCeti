@@ -160,7 +160,8 @@ surjective with kernel `LinearMap.range (1 - i ∘ r)`, which is finitely genera
 instance : (finitePresentationModules R).IsStableUnderRetracts where
   of_retract {M N} h hN := by
     have : Module.FinitePresentation R N := finitePresentationModules_iff.mp hN
-    have hcomp : h.r.hom ∘ₗ h.i.hom = LinearMap.id := congrArg ModuleCat.Hom.hom h.retract
+    have hcomp : h.r.hom ∘ₗ h.i.hom = LinearMap.id := by
+      rw [← ModuleCat.hom_comp, h.retract, ModuleCat.hom_id]
     refine finitePresentationModules_iff.mpr
       (Module.finitePresentation_of_surjective h.r.hom
         (LinearMap.surjective_of_comp_eq_id h.i.hom h.r.hom hcomp) ?_)
@@ -191,42 +192,5 @@ theorem finitePresentationModulesRegular_obj :
 noncomputable def finitePresentationModulesRegularLinearEquiv :
     (finitePresentationModulesRegular R).obj ≃ₗ[R] R :=
   (eqToIso (finitePresentationModulesRegular_obj R)).toLinearEquiv
-
-/-- The forward map of `TauCeti.finitePresentationModulesRegularLinearEquiv R` as a morphism in
-`ModuleCat R` is `eqToHom` along `TauCeti.finitePresentationModulesRegular_obj R`. -/
-@[simp]
-theorem ofHom_finitePresentationModulesRegularLinearEquiv :
-    ModuleCat.ofHom (finitePresentationModulesRegularLinearEquiv R).toLinearMap =
-      eqToHom (finitePresentationModulesRegular_obj R) := by
-  unfold finitePresentationModulesRegularLinearEquiv
-  rfl
-
-/-- The inverse map of `TauCeti.finitePresentationModulesRegularLinearEquiv R` as a morphism in
-`ModuleCat R` is `eqToHom` along `(TauCeti.finitePresentationModulesRegular_obj R).symm`. -/
-@[simp]
-theorem ofHom_finitePresentationModulesRegularLinearEquiv_symm :
-    ModuleCat.ofHom (finitePresentationModulesRegularLinearEquiv R).symm.toLinearMap =
-      eqToHom (finitePresentationModulesRegular_obj R).symm := by
-  unfold finitePresentationModulesRegularLinearEquiv
-  rfl
-
-/-- Applying `TauCeti.finitePresentationModulesRegularLinearEquiv R` agrees with transport along
-`TauCeti.finitePresentationModulesRegular_obj R`. -/
-@[simp]
-theorem finitePresentationModulesRegularLinearEquiv_apply
-    (x : (finitePresentationModulesRegular R).obj) :
-    finitePresentationModulesRegularLinearEquiv R x =
-      eqToHom (finitePresentationModulesRegular_obj R) x := by
-  unfold finitePresentationModulesRegularLinearEquiv
-  rfl
-
-/-- Applying the inverse of `TauCeti.finitePresentationModulesRegularLinearEquiv R` agrees with
-transport along `(TauCeti.finitePresentationModulesRegular_obj R).symm`. -/
-@[simp]
-theorem finitePresentationModulesRegularLinearEquiv_symm_apply (r : R) :
-    (finitePresentationModulesRegularLinearEquiv R).symm r =
-      eqToHom (finitePresentationModulesRegular_obj R).symm r := by
-  unfold finitePresentationModulesRegularLinearEquiv
-  rfl
 
 end TauCeti

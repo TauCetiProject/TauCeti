@@ -14,8 +14,9 @@ public import TauCeti.CategoryTheory.Abelian.Progenerator.Basic
 If `P` is a progenerator of an abelian category `C`, the progenerator equivalence
 `TauCeti.IsProgenerator.progeneratorEquivalence` identifies `C` with the full subcategory of
 finitely presented `(End P)ᵐᵒᵖ`-modules. Since `C` has kernels, so does this full subcategory,
-and Chase's coherence theorem (`TauCeti.hasKernels_finitePresentationModules_iff_isCoherentRing`)
-shows that `(End P)ᵐᵒᵖ` is left coherent.
+and the kernel criterion for left coherence
+(`TauCeti.hasKernels_finitePresentationModules_iff_isCoherentRing`) shows that `(End P)ᵐᵒᵖ` is left
+coherent.
 
 ## Main results
 

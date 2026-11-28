@@ -16,8 +16,9 @@ Because a module is finitely presented exactly when it is the cokernel of a morp
 finitely generated projective modules (`TauCeti.presented_finiteProjectiveModules`), the Yoneda
 description of finitely presented functors on a category of projective objects identifies the
 finitely presented `R`-modules with `mod (proj R)`, the finitely presented functors on the category
-of finitely generated projective `R`-modules. Evaluating the functor attached to a module at the
-regular module `R` recovers the underlying abelian group of the module.
+of finitely generated projective `R`-modules. Evaluating a functor `F` in `mod (proj R)` at the
+regular module `R` with the `R`-action induced by right multiplication on `R` gives the inverse
+equivalence.
 
 ## Main definitions
 
@@ -26,6 +27,12 @@ regular module `R` recovers the underlying abelian group of the module.
 * `TauCeti.finitePresentationEquivalenceModCompιIso`: the forward functor is `M ↦ (-, M)|_{proj R}`.
 * `TauCeti.finitePresentationEquivalenceModCompEvaluationIso`: the composite of this equivalence
   with evaluation at `R` is the underlying abelian group of a module.
+* `TauCeti.finitePresentationEvaluationFunctor`: evaluation at the regular module `R`, equipped
+  with the `R`-action induced by right multiplication on `R`.
+* `TauCeti.finitePresentationEvaluationFunctorCompForgetIso`: the underlying abelian group of
+  `TauCeti.finitePresentationEvaluationFunctor` is evaluation at `R`.
+* `TauCeti.finitePresentationEvaluationFunctorIso`: `TauCeti.finitePresentationEvaluationFunctor`
+  is naturally isomorphic to `(TauCeti.finitePresentationEquivalenceMod R).inverse`.
 
 ## References
 
@@ -71,8 +78,7 @@ private theorem finitePresentationEvalComp_hom_apply
     (g : ((finiteProjectiveModules R).restrictedPreadditiveYoneda.obj M.obj).obj
       (op (finiteProjectiveModulesRegular R))) :
     (finitePresentationEvalComp R M).hom g =
-      (g : (finiteProjectiveModulesRegular R).obj ⟶ M.obj).hom
-        ((eqToHom (finiteProjectiveModulesRegular_obj R).symm).hom (1 : R)) :=
+      (g : (finiteProjectiveModulesRegular R).obj ⟶ M.obj).hom (1 : R) :=
   rfl
 
 /-- The functor attached to a finitely presented `R`-module `M` takes the value `(R, M)` at the
@@ -91,5 +97,198 @@ noncomputable def finitePresentationEquivalenceModCompEvaluationIso :
           (finiteProjectiveModules R).restrictedPreadditiveYoneda_map_app_apply f.hom
             (op (finiteProjectiveModulesRegular R)) g]
         exact ModuleCat.comp_apply (g : (finiteProjectiveModulesRegular R).obj ⟶ M.obj) f.hom _
+
+/-- The forward comparison `TauCeti.finitePresentationEquivalenceModCompEvaluationIso` evaluates
+the Yoneda-represented morphism at `1 : R` after applying
+`TauCeti.finitePresentationEquivalenceModCompιIso`. -/
+@[simp]
+theorem finitePresentationEquivalenceModCompEvaluationIso_hom_app_apply
+    (M : (finitePresentationModules R).FullSubcategory)
+    (x : ((finitePresentationEquivalenceMod R).functor.obj M).obj.obj
+      (op (finiteProjectiveModulesRegular R))) :
+    dsimp% (finitePresentationEquivalenceModCompEvaluationIso R).hom.app M x =
+      (((finitePresentationEquivalenceModCompιIso R).hom.app M).app
+        (op (finiteProjectiveModulesRegular R)) x :
+          (finiteProjectiveModulesRegular R).obj ⟶ M.obj).hom (1 : R) := by
+  dsimp [finitePresentationEquivalenceModCompEvaluationIso]
+  exact finitePresentationEvalComp_hom_apply R M _
+
+private def finiteProjectiveModulesRegularMulRight (r : R) :
+    finiteProjectiveModulesRegular R ⟶ finiteProjectiveModulesRegular R :=
+  ObjectProperty.homMk (ModuleCat.ofHom (LinearMap.mulRight R r))
+
+private theorem finiteProjectiveModulesRegularMulRight_one :
+    finiteProjectiveModulesRegularMulRight R 1 = 𝟙 _ :=
+  ObjectProperty.hom_ext _ <| ModuleCat.hom_ext <| LinearMap.ext fun (x : R) ↦ mul_one x
+
+private theorem finiteProjectiveModulesRegularMulRight_mul (r s : R) :
+    finiteProjectiveModulesRegularMulRight R (r * s) =
+      finiteProjectiveModulesRegularMulRight R r ≫
+        finiteProjectiveModulesRegularMulRight R s :=
+  ObjectProperty.hom_ext _ <| ModuleCat.hom_ext <| LinearMap.ext fun (x : R) ↦
+    (mul_assoc x r s).symm
+
+private theorem finiteProjectiveModulesRegularMulRight_add (r s : R) :
+    finiteProjectiveModulesRegularMulRight R (r + s) =
+      finiteProjectiveModulesRegularMulRight R r +
+        finiteProjectiveModulesRegularMulRight R s :=
+  ObjectProperty.hom_ext _ <| ModuleCat.hom_ext <| LinearMap.ext fun (x : R) ↦ mul_add x r s
+
+private theorem finiteProjectiveModulesRegularMulRight_zero :
+    finiteProjectiveModulesRegularMulRight R 0 = 0 :=
+  ObjectProperty.hom_ext _ <| ModuleCat.hom_ext <| LinearMap.ext fun (x : R) ↦ mul_zero x
+
+private def finitePresentationEvalModuleObj
+    (F : (isFinitelyPresentedFunctor (finiteProjectiveModules R).FullSubcategory).FullSubcategory) :
+    ModuleCat.{u} R :=
+  letI : Module R (F.obj.obj (op (finiteProjectiveModulesRegular R))) :=
+    { smul := fun r x ↦
+        (F.obj.map (finiteProjectiveModulesRegularMulRight R r).op).hom x
+      one_smul := fun x ↦ by
+        change (F.obj.map (finiteProjectiveModulesRegularMulRight R 1).op).hom x = x
+        rw [finiteProjectiveModulesRegularMulRight_one]
+        simp
+      mul_smul := fun r s x ↦ by
+        change (F.obj.map (finiteProjectiveModulesRegularMulRight R (r * s)).op).hom x =
+          (F.obj.map (finiteProjectiveModulesRegularMulRight R r).op).hom
+            ((F.obj.map (finiteProjectiveModulesRegularMulRight R s).op).hom x)
+        rw [finiteProjectiveModulesRegularMulRight_mul]
+        simp
+      smul_zero := fun _ ↦ map_zero _
+      smul_add := fun _ _ _ ↦ map_add _ _ _
+      add_smul := fun r s x ↦ by
+        have := F.property.additive
+        change (F.obj.map (finiteProjectiveModulesRegularMulRight R (r + s)).op).hom x =
+          (F.obj.map (finiteProjectiveModulesRegularMulRight R r).op).hom x +
+            (F.obj.map (finiteProjectiveModulesRegularMulRight R s).op).hom x
+        rw [finiteProjectiveModulesRegularMulRight_add, op_add, F.obj.map_add]
+        rfl
+      zero_smul := fun x ↦ by
+        have := F.property.additive
+        change (F.obj.map (finiteProjectiveModulesRegularMulRight R 0).op).hom x = 0
+        rw [finiteProjectiveModulesRegularMulRight_zero, op_zero, F.obj.map_zero]
+        rfl }
+  ModuleCat.of R (F.obj.obj (op (finiteProjectiveModulesRegular R)))
+
+private def finitePresentationEvalModule :
+    (isFinitelyPresentedFunctor (finiteProjectiveModules R).FullSubcategory).FullSubcategory ⥤
+      ModuleCat.{u} R where
+  obj := finitePresentationEvalModuleObj R
+  map {F G} θ := ModuleCat.ofHom
+    (X := finitePresentationEvalModuleObj R F) (Y := finitePresentationEvalModuleObj R G)
+    { toFun := fun x ↦ (θ.hom.app (op (finiteProjectiveModulesRegular R))).hom x
+      map_add' := fun _ _ ↦ map_add _ _ _
+      map_smul' := fun r x ↦ by
+        let x' : F.obj.obj (op (finiteProjectiveModulesRegular R)) := x
+        change (θ.hom.app (op (finiteProjectiveModulesRegular R))).hom
+            ((F.obj.map (finiteProjectiveModulesRegularMulRight R r).op).hom x') =
+          (G.obj.map (finiteProjectiveModulesRegularMulRight R r).op).hom
+            ((θ.hom.app (op (finiteProjectiveModulesRegular R))).hom x')
+        have hn := ConcreteCategory.congr_hom
+          (θ.hom.naturality (finiteProjectiveModulesRegularMulRight R r).op) x'
+        rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hn
+        exact hn }
+  map_id _ := ModuleCat.hom_ext (LinearMap.ext fun _ ↦ rfl)
+  map_comp _ _ := ModuleCat.hom_ext (LinearMap.ext fun _ ↦ rfl)
+
+private noncomputable def finitePresentationEquivalenceModCompEvalModuleIso :
+    (finitePresentationEquivalenceMod R).functor ⋙ finitePresentationEvalModule R ≅
+      (finitePresentationModules R).ι :=
+  NatIso.ofComponents
+    (fun M ↦
+      let f : ((finitePresentationEquivalenceMod R).functor ⋙
+          finitePresentationEvalModule R).obj M →ₗ[R] M.obj :=
+        { toFun := fun x ↦ (finitePresentationEquivalenceModCompEvaluationIso R).hom.app M x
+          map_add' := fun _ _ ↦ map_add _ _ _
+          map_smul' := fun r x ↦ by
+            let x' : ((finitePresentationEquivalenceMod R).functor.obj M).obj.obj
+                (op (finiteProjectiveModulesRegular R)) := x
+            let lhs : M.obj :=
+              (finitePresentationEquivalenceModCompEvaluationIso R).hom.app M
+                ((((finitePresentationEquivalenceMod R).functor.obj M).obj.map
+                  (finiteProjectiveModulesRegularMulRight R r).op).hom x')
+            let rhs : M.obj :=
+              (finitePresentationEquivalenceModCompEvaluationIso R).hom.app M x'
+            change lhs = r • rhs
+            dsimp only [lhs, rhs]
+            rw [finitePresentationEquivalenceModCompEvaluationIso_hom_app_apply,
+              finitePresentationEquivalenceModCompEvaluationIso_hom_app_apply]
+            have hn := ConcreteCategory.congr_hom
+              (((finitePresentationEquivalenceModCompιIso R).hom.app M).naturality
+                (finiteProjectiveModulesRegularMulRight R r).op) x'
+            rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hn
+            dsimp only [Functor.comp_obj, ObjectProperty.ι_obj] at hn
+            rw [hn]
+            let ψ : ModuleCat.of R R ⟶ M.obj :=
+              ((finitePresentationEquivalenceModCompιIso R).hom.app M).app
+                (op (finiteProjectiveModulesRegular R)) x'
+            change ψ.hom (LinearMap.mulRight R r 1) = r • ψ.hom 1
+            rw [show LinearMap.mulRight R r 1 = r • (1 : R) by simp, map_smul] }
+      (LinearEquiv.ofBijective f
+        (ConcreteCategory.bijective_of_isIso
+          ((finitePresentationEquivalenceModCompEvaluationIso R).hom.app M))).toModuleIso)
+    fun {M N} f ↦ ModuleCat.hom_ext <| LinearMap.ext fun x ↦ by
+      have hn := ConcreteCategory.congr_hom
+        ((finitePresentationEquivalenceModCompEvaluationIso R).hom.naturality f) x
+      exact hn
+
+/-- Evaluation at the regular module `R`, equipped with the `R`-action induced by right
+multiplication on `R`, as a functor from `mod (proj R)` to finitely presented `R`-modules. -/
+noncomputable def finitePresentationEvaluationFunctor :
+    (isFinitelyPresentedFunctor (finiteProjectiveModules R).FullSubcategory).FullSubcategory ⥤
+      (finitePresentationModules R).FullSubcategory :=
+  ObjectProperty.lift (finitePresentationModules R) (finitePresentationEvalModule R) fun F ↦ by
+    let E := finitePresentationEquivalenceMod R
+    let e : (finitePresentationEvalModule R).obj F ≅ (E.inverse.obj F).obj :=
+      (finitePresentationEvalModule R).mapIso (E.counitIso.app F).symm ≪≫
+        (finitePresentationEquivalenceModCompEvalModuleIso R).app (E.inverse.obj F)
+    exact (finitePresentationModules R).prop_of_iso e.symm (E.inverse.obj F).property
+
+/-- The underlying abelian group of `(TauCeti.finitePresentationEvaluationFunctor R).obj F` is
+`F` evaluated at the regular module `R`. -/
+noncomputable def finitePresentationEvaluationFunctorCompForgetIso :
+    (finitePresentationEvaluationFunctor R ⋙ (finitePresentationModules R).ι) ⋙
+        forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u} ≅
+      (isFinitelyPresentedFunctor _).ι ⋙
+        (evaluation _ _).obj (op (finiteProjectiveModulesRegular R)) :=
+  NatIso.ofComponents
+    (fun _ ↦ AddEquiv.toAddCommGrpIso (AddEquiv.refl _))
+    fun _ ↦ AddCommGrpCat.ext fun _ ↦ rfl
+
+/-- Under `TauCeti.finitePresentationEvaluationFunctorCompForgetIso`, scalar multiplication by
+`r : R` corresponds to the action of right multiplication by `r` on the regular module `R`. -/
+@[simp]
+theorem finitePresentationEvaluationFunctorCompForgetIso_hom_app_smul
+    (F : (isFinitelyPresentedFunctor (finiteProjectiveModules R).FullSubcategory).FullSubcategory)
+    (r : R) (x : ((finitePresentationEvaluationFunctor R).obj F).obj) :
+    dsimp% (finitePresentationEvaluationFunctorCompForgetIso R).hom.app F (r • x) =
+      (F.obj.map (ObjectProperty.homMk
+        (ModuleCat.ofHom (LinearMap.mulRight R r)) :
+          finiteProjectiveModulesRegular R ⟶ finiteProjectiveModulesRegular R).op).hom
+        ((finitePresentationEvaluationFunctorCompForgetIso R).hom.app F x) := by
+  dsimp [finitePresentationEvaluationFunctorCompForgetIso, finitePresentationEvaluationFunctor,
+    finitePresentationEvalModule, finitePresentationEvalModuleObj]
+  rfl
+
+/-- Evaluation at the regular module `R`, equipped with its induced `R`-action, is naturally
+isomorphic to `(TauCeti.finitePresentationEquivalenceMod R).inverse`. -/
+noncomputable def finitePresentationEvaluationFunctorIso :
+    finitePresentationEvaluationFunctor R ≅ (finitePresentationEquivalenceMod R).inverse :=
+  let hcomp :
+      (finitePresentationEquivalenceMod R).functor ⋙
+          finitePresentationEvaluationFunctor R ≅
+        𝟭 (finitePresentationModules R).FullSubcategory :=
+    NatIso.ofComponents
+      (fun M ↦ (ObjectProperty.fullyFaithfulι _).preimageIso
+        ((finitePresentationEquivalenceModCompEvalModuleIso R).app M))
+      fun {M N} f ↦ (ObjectProperty.fullyFaithfulι _).map_injective <| by
+        simp only [Functor.comp_obj, ObjectProperty.ι_obj, Functor.id_obj, Functor.comp_map,
+          ObjectProperty.ι_map, ObjectProperty.FullSubcategory.comp_hom, Functor.id_map]
+        exact (finitePresentationEquivalenceModCompEvalModuleIso R).hom.naturality f
+  (Functor.leftUnitor _).symm ≪≫
+    Functor.isoWhiskerRight (finitePresentationEquivalenceMod R).counitIso.symm _ ≪≫
+    Functor.associator _ _ _ ≪≫
+    Functor.isoWhiskerLeft _ hcomp ≪≫
+    Functor.rightUnitor _
 
 end TauCeti
