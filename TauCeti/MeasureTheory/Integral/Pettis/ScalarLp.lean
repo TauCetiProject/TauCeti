@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+public import TauCeti.Analysis.Normed.Module.DoubleDual
 public import TauCeti.MeasureTheory.Function.Holder
 public import TauCeti.MeasureTheory.Function.Lp.ScalarEvaluation
 
@@ -99,30 +99,16 @@ private theorem dunfordLpCLM_apply (f : S → X)
   filter_upwards [coeFn_scalarEvalLp (ι := .id 𝕜 _) (hf := hfp) x'] with s hs
   rw [ContinuousLinearMap.mul_apply', hs, ContinuousLinearMap.id_apply]
 
-variable (𝕜 X) in
-/-- The canonical image of `X` in its bidual, as a submodule. -/
-private abbrev bidualRange : Submodule 𝕜 (StrongDual 𝕜 (StrongDual 𝕜 X)) :=
-  LinearMap.range (NormedSpace.inclusionInDoubleDual 𝕜 X : X →ₗ[𝕜] _)
-
-private theorem isClosed_bidualRange [CompleteSpace X] :
-    IsClosed (bidualRange 𝕜 X : Set (StrongDual 𝕜 (StrongDual 𝕜 X))) := by
-  rw [LinearMap.coe_range, ContinuousLinearMap.coe_coe]
-  -- `inclusionInDoubleDualLi` is `inclusionInDoubleDual` bundled as a linear isometry.
-  exact (NormedSpace.inclusionInDoubleDualLi 𝕜 (E := X)).isometry.isUniformInducing
-    |>.isComplete_range |>.isClosed
-
-variable (𝕜 X) in
-private theorem injective_inclusionInDoubleDual :
-    Function.Injective
-      (NormedSpace.inclusionInDoubleDual 𝕜 X : X →ₗ[𝕜] StrongDual 𝕜 (StrongDual 𝕜 X)) := by
-  rw [ContinuousLinearMap.coe_coe]
-  -- `inclusionInDoubleDualLi` is `inclusionInDoubleDual` bundled as a linear isometry.
-  exact (NormedSpace.inclusionInDoubleDualLi 𝕜 (E := X)).injective
-
-private theorem mem_bidualRange_iff {Φ : StrongDual 𝕜 (StrongDual 𝕜 X)} :
-    Φ ∈ bidualRange 𝕜 X ↔ ∃ x : X, ∀ x' : StrongDual 𝕜 X, x' x = Φ x' := by
-  simp only [LinearMap.mem_range, ContinuousLinearMap.coe_coe, ContinuousLinearMap.ext_iff,
-    NormedSpace.dual_def]
+/-- Integrating against a constant multiple `c 𝟙_A` of an indicator is `c` times the integral
+over `A`. -/
+private theorem integral_indicatorConstLp_mul {r : ℝ≥0∞} {A : Set S} (hA : MeasurableSet A)
+    (hμA : μ A ≠ ∞) (c : 𝕜) (g : S → 𝕜) :
+    ∫ s, indicatorConstLp r hA hμA c s * g s ∂μ = c * ∫ s in A, g s ∂μ := by
+  rw [← integral_const_mul, ← integral_indicator hA]
+  refine integral_congr_ae ?_
+  filter_upwards [indicatorConstLp_coeFn (p := r) (hs := hA) (hμs := hμA) (c := c)] with s hs
+  rw [hs]
+  by_cases hsA : s ∈ A <;> simp [hsA]
 
 /-- The functional of a constant multiple of an indicator lies in the image of `X` when `f` is
 bounded on the set. -/
@@ -130,23 +116,21 @@ private theorem dunfordLpCLM_indicatorConstLp_mem_of_bounded [CompleteSpace X] {
     (hf : AEStronglyMeasurable f μ) (hfp : ∀ x' : StrongDual 𝕜 X, MemLp (fun s ↦ x' (f s)) p μ)
     {A : Set S} (hA : MeasurableSet A) (hμA : μ A ≠ ∞) (c : 𝕜) {M : ℝ}
     (hM : ∀ᵐ s ∂μ.restrict A, ‖f s‖ ≤ M) :
-    dunfordLpCLM f hfp (indicatorConstLp q hA hμA c) ∈ bidualRange 𝕜 X := by
+    dunfordLpCLM f hfp (indicatorConstLp q hA hμA c) ∈
+      range (NormedSpace.inclusionInDoubleDual 𝕜 X) := by
   let : NormedSpace ℝ X := NormedSpace.restrictScalars ℝ 𝕜 X
   have hfA : IntegrableOn f A μ := Measure.integrableOn_of_bounded hμA hf hM
-  refine mem_bidualRange_iff.2 ⟨c • ∫ s in A, f s ∂μ, fun x' ↦ ?_⟩
-  rw [dunfordLpCLM_apply, map_smul, ← x'.integral_comp_comm hfA, smul_eq_mul,
-    ← integral_const_mul, ← integral_indicator hA]
-  refine integral_congr_ae ?_
-  filter_upwards [indicatorConstLp_coeFn (p := q) (hs := hA) (hμs := hμA) (c := c)] with s hs
-  rw [hs]
-  by_cases hsA : s ∈ A <;> simp [hsA]
+  refine ⟨c • ∫ s in A, f s ∂μ, ContinuousLinearMap.ext fun x' ↦ ?_⟩
+  rw [NormedSpace.dual_def, dunfordLpCLM_apply, map_smul, ← x'.integral_comp_comm hfA,
+    smul_eq_mul, integral_indicatorConstLp_mul]
 
 /-- The functional of a constant multiple of the indicator of a set of finite measure lies in the
 image of `X`. -/
 private theorem dunfordLpCLM_indicatorConstLp_mem [CompleteSpace X] {f : S → X}
     (hf : AEStronglyMeasurable f μ) (hfp : ∀ x' : StrongDual 𝕜 X, MemLp (fun s ↦ x' (f s)) p μ)
     (hq : q ≠ ∞) {A : Set S} (hA : MeasurableSet A) (hμA : μ A ≠ ∞) (c : 𝕜) :
-    dunfordLpCLM f hfp (indicatorConstLp q hA hμA c) ∈ bidualRange 𝕜 X := by
+    dunfordLpCLM f hfp (indicatorConstLp q hA hμA c) ∈
+      range (NormedSpace.inclusionInDoubleDual 𝕜 X) := by
   set g := hf.mk f
   -- The truncations `A ∩ {‖g‖ ≤ n}` of `A`, on which `f` is essentially bounded by `n`.
   set B : ℕ → Set S := fun n ↦ A ∩ {s | ‖g s‖ ≤ n}
@@ -170,7 +154,7 @@ private theorem dunfordLpCLM_indicatorConstLp_mem [CompleteSpace X] {f : S → X
     rw [Function.comp_apply, symmDiff_of_le inter_subset_left]
   have hlim := tendsto_indicatorConstLp_set (c := c) (hs := hA) (hμs := hμA) (ht := hBm)
     (hμt := hμB) hq hsymm
-  refine isClosed_bidualRange.mem_of_tendsto
+  refine (NormedSpace.isClosed_range_inclusionInDoubleDual 𝕜 X).mem_of_tendsto
     ((dunfordLpCLM f hfp).continuous.tendsto _ |>.comp hlim) (Eventually.of_forall fun n ↦ ?_)
   refine dunfordLpCLM_indicatorConstLp_mem_of_bounded hf hfp (hBm n) (hμB n) c (M := n) ?_
   filter_upwards [ae_restrict_mem (hBm n), ae_restrict_of_ae hf.ae_eq_mk] with s hs hfs
@@ -180,15 +164,16 @@ private theorem dunfordLpCLM_indicatorConstLp_mem [CompleteSpace X] {f : S → X
 /-- The functional of every `φ ∈ L^q(μ)` lies in the image of `X`. -/
 private theorem dunfordLpCLM_mem [CompleteSpace X] {f : S → X} (hf : AEStronglyMeasurable f μ)
     (hfp : ∀ x' : StrongDual 𝕜 X, MemLp (fun s ↦ x' (f s)) p μ) (hq : q ≠ ∞) (φ : Lp 𝕜 q μ) :
-    dunfordLpCLM f hfp φ ∈ bidualRange 𝕜 X := by
-  refine Lp.induction hq (fun φ ↦ dunfordLpCLM f hfp φ ∈ bidualRange 𝕜 X) ?_ ?_ ?_ φ
+    dunfordLpCLM f hfp φ ∈ range (NormedSpace.inclusionInDoubleDual 𝕜 X) := by
+  refine Lp.induction hq
+    (fun φ ↦ dunfordLpCLM f hfp φ ∈ range (NormedSpace.inclusionInDoubleDual 𝕜 X)) ?_ ?_ ?_ φ
   · intro c A hA hμA
     rw [Lp.simpleFunc.coe_indicatorConst]
     exact dunfordLpCLM_indicatorConstLp_mem hf hfp hq hA hμA.ne c
-  · intro u v _ _ _ hu hv
-    rw [map_add]
-    exact add_mem hu hv
-  · exact IsClosed.preimage (dunfordLpCLM f hfp).continuous isClosed_bidualRange
+  · rintro u v _ _ _ ⟨x, hx⟩ ⟨y, hy⟩
+    exact ⟨x + y, by rw [map_add, map_add, hx, hy]⟩
+  · exact (NormedSpace.isClosed_range_inclusionInDoubleDual 𝕜 X).preimage
+      (dunfordLpCLM f hfp).continuous
 
 /-- Hölder's inequality for the bidual functional of `φ`: its norm is at most `‖T_f‖ ‖φ‖_q`. -/
 private theorem norm_dunfordLpCLM_apply_le (f : S → X)
@@ -210,8 +195,9 @@ private def pettisIntegralₗ [CompleteSpace X] (f : S → X) (hf : AEStronglyMe
     (hfp : ∀ x' : StrongDual 𝕜 X, MemLp (fun s ↦ x' (f s)) p μ) (hq : q ≠ ∞) :
     Lp 𝕜 q μ →ₗ[𝕜] X :=
   LinearMap.codRestrictOfInjective (dunfordLpCLM f hfp).toLinearMap
-    (NormedSpace.inclusionInDoubleDual 𝕜 X).toLinearMap (injective_inclusionInDoubleDual 𝕜 X)
-    fun φ ↦ dunfordLpCLM_mem hf hfp hq φ
+    (NormedSpace.inclusionInDoubleDual 𝕜 X).toLinearMap
+    (NormedSpace.inclusionInDoubleDual_injective 𝕜 X) fun φ ↦
+      LinearMap.mem_range.2 (dunfordLpCLM_mem hf hfp hq φ)
 
 private theorem inclusionInDoubleDual_pettisIntegralₗ [CompleteSpace X] {f : S → X}
     (hf : AEStronglyMeasurable f μ) (hfp : ∀ x' : StrongDual 𝕜 X, MemLp (fun s ↦ x' (f s)) p μ)
@@ -287,10 +273,6 @@ theorem exists_forall_strongDual_apply_eq_setIntegral (hf : AEStronglyMeasurable
     (hA : MeasurableSet A) (hμA : μ A ≠ ∞) :
     ∃ x : X, ∀ x' : StrongDual 𝕜 X, x' x = ∫ s in A, x' (f s) ∂μ := by
   refine ⟨pettisIntegralCLM f hf hfp hq (indicatorConstLp q hA hμA 1), fun x' ↦ ?_⟩
-  rw [strongDual_apply_pettisIntegralCLM, ← integral_indicator hA]
-  refine integral_congr_ae ?_
-  filter_upwards [indicatorConstLp_coeFn (p := q) (hs := hA) (hμs := hμA) (c := (1 : 𝕜))] with s hs
-  rw [hs]
-  by_cases hsA : s ∈ A <;> simp [hsA]
+  rw [strongDual_apply_pettisIntegralCLM, integral_indicatorConstLp_mul, one_mul]
 
 end TauCeti
