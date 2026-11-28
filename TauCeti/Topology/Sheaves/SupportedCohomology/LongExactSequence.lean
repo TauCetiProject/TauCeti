@@ -131,51 +131,60 @@ lemma supportedModuleHPresheafδ_map_f (hT : T.ShortExact) (n : ℕ) :
   simp only [supportedModuleHPresheafPostcomp_mk₀, supportedModuleHPresheafPostcomp_extClass] at h
   exact h
 
-/-- The coefficient sequence is exact at the middle supported cohomology presheaf. -/
-theorem exact_map_supportedModuleHPresheafFunctor (hT : T.ShortExact) (n : ℕ) :
-    (T.map (supportedModuleHPresheafFunctor S n)).Exact := by
+/-- Exactness of a short complex of supported cohomology presheaves follows from pointwise
+exactness of the induced `Ext` postcomposition maps on `CategoryTheory.Sheaf.supportedModuleH`. -/
+private lemma exact_supportedModuleHPresheaf_of_exact_postcomp
+    {F₁ F₂ F₃ : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)} {n₁ n₂ n₃ m₁₂ m₂₃ : ℕ}
+    {α : Ext.{u} F₁ F₂ m₁₂} {β : Ext.{u} F₂ F₃ m₂₃}
+    {h₁₂ : n₁ + m₁₂ = n₂} {h₂₃ : n₂ + m₂₃ = n₃}
+    (φ : F₁.supportedModuleHPresheaf S n₁ ⟶ F₂.supportedModuleHPresheaf S n₂)
+    (ψ : F₂.supportedModuleHPresheaf S n₂ ⟶ F₃.supportedModuleHPresheaf S n₃)
+    (hφ : ∀ (W : (Opens X)ᵒᵖ) (y : F₁.supportedModuleH S W.unop n₁), φ.app W y = y.comp α h₁₂)
+    (hψ : ∀ (W : (Opens X)ᵒᵖ) (x : F₂.supportedModuleH S W.unop n₂), ψ.app W x = x.comp β h₂₃)
+    (hφψ : φ ≫ ψ = 0)
+    (h : ∀ (W : (Opens X)ᵒᵖ) (x : F₂.supportedModuleH S W.unop n₂),
+      x.comp β h₂₃ = 0 → ∃ y : F₁.supportedModuleH S W.unop n₁, y.comp α h₁₂ = x) :
+    (ShortComplex.mk φ ψ hφψ).Exact := by
   rw [ShortComplex.exact_iff_evaluation]
   intro W
   rw [ShortComplex.moduleCat_exact_iff]
   intro x hx
-  dsimp only [ShortComplex.map_f, ShortComplex.map_g, evaluation_obj_map] at hx ⊢
-  let x' : T.X₂.supportedModuleH S W.unop n := x
-  change ((supportedModuleHPresheafFunctor S n).map T.g).app W x' = 0 at hx
-  rw [supportedModuleHPresheafFunctor_map_app_apply] at hx
-  obtain ⟨y, hy⟩ := Ext.covariant_sequence_exact₂ _ hT x' hx
-  exact ⟨y, (supportedModuleHPresheafFunctor_map_app_apply S n T.f W y).trans hy⟩
+  -- Expose the `supportedModuleH` carrier of `(F₂.supportedModuleHPresheaf S n₂).obj W`.
+  let x' : F₂.supportedModuleH S W.unop n₂ := x
+  change ψ.app W x' = 0 at hx
+  rw [hψ] at hx
+  obtain ⟨y, hy⟩ := h W x' hx
+  exact ⟨y, (hφ W y).trans hy⟩
+
+/-- The coefficient sequence is exact at the middle supported cohomology presheaf. -/
+theorem exact_map_supportedModuleHPresheafFunctor (hT : T.ShortExact) (n : ℕ) :
+    (T.map (supportedModuleHPresheafFunctor S n)).Exact :=
+  exact_supportedModuleHPresheaf_of_exact_postcomp S
+    ((supportedModuleHPresheafFunctor S n).map T.f)
+    ((supportedModuleHPresheafFunctor S n).map T.g)
+    (supportedModuleHPresheafFunctor_map_app_apply S n T.f)
+    (supportedModuleHPresheafFunctor_map_app_apply S n T.g) _
+    fun _ x hx ↦ Ext.covariant_sequence_exact₂ _ hT x hx
 
 /-- The coefficient sequence is exact immediately before its connecting map. -/
 theorem exact_supportedModuleHPresheafFunctor_map_g_δ (hT : T.ShortExact) (n : ℕ) :
     (ShortComplex.mk ((supportedModuleHPresheafFunctor S n).map T.g)
       (supportedModuleHPresheafδ S hT n)
-      (supportedModuleHPresheafFunctor_map_g_δ S hT n)).Exact := by
-  rw [ShortComplex.exact_iff_evaluation]
-  intro W
-  rw [ShortComplex.moduleCat_exact_iff]
-  intro x hx
-  dsimp only [ShortComplex.map_f, ShortComplex.map_g, evaluation_obj_map] at hx ⊢
-  let x' : T.X₃.supportedModuleH S W.unop n := x
-  change (supportedModuleHPresheafδ S hT n).app W x' = 0 at hx
-  rw [supportedModuleHPresheafδ_app_apply] at hx
-  obtain ⟨y, hy⟩ := Ext.covariant_sequence_exact₃ _ hT x' rfl hx
-  exact ⟨y, (supportedModuleHPresheafFunctor_map_app_apply S n T.g W y).trans hy⟩
+      (supportedModuleHPresheafFunctor_map_g_δ S hT n)).Exact :=
+  exact_supportedModuleHPresheaf_of_exact_postcomp S _ _
+    (supportedModuleHPresheafFunctor_map_app_apply S n T.g)
+    (supportedModuleHPresheafδ_app_apply S hT n) _
+    fun _ x hx ↦ Ext.covariant_sequence_exact₃ _ hT x rfl hx
 
 /-- The coefficient sequence is exact immediately after its connecting map. -/
 theorem exact_supportedModuleHPresheafδ_map_f (hT : T.ShortExact) (n : ℕ) :
     (ShortComplex.mk (supportedModuleHPresheafδ S hT n)
       ((supportedModuleHPresheafFunctor S (n + 1)).map T.f)
-      (supportedModuleHPresheafδ_map_f S hT n)).Exact := by
-  rw [ShortComplex.exact_iff_evaluation]
-  intro W
-  rw [ShortComplex.moduleCat_exact_iff]
-  intro x hx
-  dsimp only [ShortComplex.map_f, ShortComplex.map_g, evaluation_obj_map] at hx ⊢
-  let x' : T.X₁.supportedModuleH S W.unop (n + 1) := x
-  change ((supportedModuleHPresheafFunctor S (n + 1)).map T.f).app W x' = 0 at hx
-  rw [supportedModuleHPresheafFunctor_map_app_apply] at hx
-  obtain ⟨y, hy⟩ := Ext.covariant_sequence_exact₁ _ hT x' hx rfl
-  exact ⟨y, (supportedModuleHPresheafδ_app_apply S hT n W y).trans hy⟩
+      (supportedModuleHPresheafδ_map_f S hT n)).Exact :=
+  exact_supportedModuleHPresheaf_of_exact_postcomp S _ _
+    (supportedModuleHPresheafδ_app_apply S hT n)
+    (supportedModuleHPresheafFunctor_map_app_apply S (n + 1) T.f) _
+    fun _ x hx ↦ Ext.covariant_sequence_exact₁ _ hT x hx rfl
 
 /-- A flasque middle term makes the positive-degree connecting morphism an
 isomorphism of supported cohomology presheaves. -/

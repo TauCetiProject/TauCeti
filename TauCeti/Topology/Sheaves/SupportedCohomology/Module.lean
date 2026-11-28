@@ -754,9 +754,13 @@ def supportedModuleHPresheafPostcomp
   app W := ModuleCat.ofHom (Ext.postcompOfLinear α R
     ((S.supportedFreeModuleSheafFunctor R).obj W.unop) hk)
   naturality _ _ _ := by
-    refine ModuleCat.hom_ext <| LinearMap.ext fun (x : F.supportedModuleH S _ m) ↦ ?_
-    change Ext.postcompOfLinear α R _ hk ((F.supportedModuleHPresheaf S m).map _ x) =
-      (G.supportedModuleHPresheaf S k).map _ (Ext.postcompOfLinear α R _ hk x)
+    refine ModuleCat.hom_ext <| LinearMap.ext ?_
+    -- Normalize the presheaf carrier and `ModuleCat.ofHom` before introducing `x` so
+    -- `supportedModuleHPresheaf_map_apply` and `TauCeti.coe_postcompOfLinear` can rewrite.
+    change ∀ x : F.supportedModuleH S _ m,
+      Ext.postcompOfLinear α R _ hk ((F.supportedModuleHPresheaf S m).map _ x) =
+        (G.supportedModuleHPresheaf S k).map _ (Ext.postcompOfLinear α R _ hk x)
+    intro x
     simp only [TauCeti.coe_postcompOfLinear, AddMonoidHom.flip_apply,
       Ext.bilinearComp_apply_apply, supportedModuleHPresheaf_map_apply]
     exact Ext.comp_assoc _ x α (zero_add m) hk (by omega)

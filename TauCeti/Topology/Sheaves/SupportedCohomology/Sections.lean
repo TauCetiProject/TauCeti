@@ -388,6 +388,8 @@ lemma supportedModuleHPresheafZeroIso_hom_naturality (f : F ⟶ G) :
       (F.supportedModuleHPresheafZeroIso S).hom ≫ ((supportedSubmoduleFunctor S).map f).hom := by
   ext W x
   refine Subtype.ext ?_
+  -- Expose the `supportedModuleH` carrier of
+  -- `((supportedModuleHPresheafFunctor S 0).obj F).obj (op W)`.
   let s : F.supportedModuleH S W 0 := x
   refine (coe_supportedModuleHPresheafZeroIso_hom_app_apply S G (op W)
     (((supportedModuleHPresheafFunctor S 0).map f).app (op W) s)).trans ?_
