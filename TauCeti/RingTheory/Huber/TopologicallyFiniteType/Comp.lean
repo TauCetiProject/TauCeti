@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Pair
 
+import TauCeti.Algebra.Ring.Hom
 import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.WeightedPresentation
 import TauCeti.RingTheory.Huber.WeightedEval.Finite
@@ -154,24 +155,6 @@ private theorem iterateStructureHom_eq_comp {k m : ℕ} {A : Type*} [CommRing A]
   simp only [iterateStructureHom_apply, RingHom.comp_apply,
     algebraMap_completion_weightedRestrictedSubring_apply]
 
-private theorem comp_weighted_presentation_ringHom
-    {A B C D₁ D₂ D₃ D₄ D₅ : Type*} [CommRing A] [CommRing B] [CommRing C]
-    [CommRing D₁] [CommRing D₂] [CommRing D₃] [CommRing D₄] [CommRing D₅]
-    {φ : A →+* B} {ψ : B →+* C}
-    {ιA₁ : A →+* D₁} {ιA₅ : A →+* D₅} {ι₁₂ : D₁ →+* D₂} {ιB₃ : B →+* D₃} {ιB₄ : B →+* D₄}
-    {e : D₅ →+* D₂} {β : D₂ →+* D₃} {π : D₁ →+* B} {θ : D₃ →+* D₄} {ρ : D₄ →+* C}
-    (he : e.comp ιA₅ = ι₁₂.comp ιA₁) (hβ : β.comp ι₁₂ = ιB₃.comp π)
-    (hπφ : π.comp ιA₁ = φ) (hθB : θ.comp ιB₃ = ιB₄) (hρψ : ρ.comp ιB₄ = ψ) :
-    ((ρ.comp θ).comp (β.comp e)).comp ιA₅ = ψ.comp φ := by
-  calc
-    ((ρ.comp θ).comp (β.comp e)).comp ιA₅
-      = ρ.comp (θ.comp (β.comp (e.comp ιA₅))) := by simp only [RingHom.comp_assoc]
-    _ = ρ.comp (θ.comp ((β.comp ι₁₂).comp ιA₁)) := by rw [he, RingHom.comp_assoc]
-    _ = ρ.comp (θ.comp ((ιB₃.comp π).comp ιA₁)) := by rw [hβ]
-    _ = (ρ.comp (θ.comp ιB₃)).comp (π.comp ιA₁) := by simp only [RingHom.comp_assoc]
-    _ = (ρ.comp ιB₄).comp φ := by rw [hθB, hπφ]
-    _ = ψ.comp φ := by rw [hρψ]
-
 /-- **Wedhorn Proposition 6.33(1).** If `φ : A → B` and `ψ : B → C` are topologically of finite
 type and `A` is a Huber ring, then `ψ ∘ φ` is topologically of finite type. -/
 theorem IsTopologicallyFiniteType.comp [IsHuberRing A]
@@ -206,7 +189,7 @@ theorem IsTopologicallyFiniteType.comp [IsHuberRing A]
   refine isTopologicallyFiniteType_iff.mpr
     ⟨k + (m + n), Q, finite_append_append_weights hTfin hVfin,
       hQ, (ρ.comp θ).comp (β.comp (e : _ →+* _)), hρ.comp (hθ.comp (hβ.comp he)), ?_⟩
-  exact comp_weighted_presentation_ringHom
+  exact RingHom.comp_comp_comp_eq_comp_of_comp_eq
     (by rw [iterateRingEquiv_coe, iterateSplitHom_comp_algebraMap, iterateStructureHom_eq_comp])
     (weightedMapCompletion_comp_algebraMap hπ.continuous hW hW' fun i ↦ (hWW' i).subset)
     hπφ hθB hρψ
@@ -266,7 +249,7 @@ theorem Hom.IsTopologicallyFiniteType.comp {S : Pair A} {U : Pair B} {V : Pair C
     simpa [Hom.toRingHom_comp, Hom.toRingHom_weightedCompletionHom] using congrArg Hom.toRingHom hρg
   refine Hom.ext ?_
   simpa only [Hom.toRingHom_comp, Hom.toRingHom_weightedCompletionHom] using
-    comp_weighted_presentation_ringHom
+    RingHom.comp_comp_comp_eq_comp_of_comp_eq
       (by rw [Hom.toRingHom_iterateSplitHom, iterateSplitHom_comp_algebraMap,
         iterateStructureHom_eq_comp])
       (by rw [Hom.toRingHom_weightedMapCompletion, weightedMapCompletion_comp_algebraMap])
