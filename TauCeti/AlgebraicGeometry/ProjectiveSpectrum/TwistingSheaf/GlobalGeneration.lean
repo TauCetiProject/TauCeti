@@ -94,7 +94,8 @@ epimorphism from `𝒪^{⊕I} ⊗ 𝒪(-n) ≅ 𝒪(-n)^{⊕I}` for some finite 
 theorem eventually_exists_epi_free_tensor_twistingSheaf [CompactSpace (Proj 𝒜)]
     (F : (Proj 𝒜).Modules) [F.IsQuasicoherent] [F.IsFiniteType] :
     ∀ᶠ n : ℕ in Filter.atTop, ∃ (I : Type u) (_ : Finite I)
-      (π : (SheafOfModules.free I : (Proj 𝒜).Modules) ⊗ twistingSheaf 𝒜 (-n) ⟶ F), Epi π := by
+      (π : ((SheafOfModules.free I : (Proj 𝒜).Modules) ⊗ twistingSheaf 𝒜 (-n) :
+        (Proj 𝒜).Modules) ⟶ F), Epi π := by
   filter_upwards [eventually_exists_generatingSections_tensor_twistingSheaf f hf hcover F]
     with n ⟨σ, _⟩
   -- Tensor `𝒪^{⊕I} → F(n)` with `𝒪(-n)` and cancel `𝒪(n) ⊗ 𝒪(-n) ≅ 𝒪(0) ≅ 𝒪`.

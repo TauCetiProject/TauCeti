@@ -34,6 +34,8 @@ of the Clifford algebra over the trivial group `SO(0)`
   compact real Spin projection as a quotient covering map by its kernel.
 * `CliffordAlgebra.isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom` packages the projection
   as an ordinary covering map.
+* `CliffordAlgebra.isCoveringMap_spinToSpecialOrthogonal_realCliffordForm_zero` states the same
+  covering property directly for `spinToSpecialOrthogonal (realCliffordForm n 0)`.
 * `CliffordAlgebra.isCoveringMap_realCliffordSpinProjectionZero` gives the same result for the
   bundled continuous homomorphism.
 * `CliffordAlgebra.realCliffordSpinHomEquivKer` identifies continuous homomorphisms out of
@@ -112,6 +114,18 @@ theorem isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom
     (n : ℕ) [NeZero n] :
     IsCoveringMap (realCliffordSpinDoubleCoverZero n).rightHom :=
   (isQuotientCoveringMap_realCliffordSpinDoubleCoverZero_rightHom n).isCoveringMap
+
+/-- The Spin projection `spinToSpecialOrthogonal (realCliffordForm n 0)` is a covering map. -/
+theorem isCoveringMap_spinToSpecialOrthogonal_realCliffordForm_zero
+    (n : ℕ) :
+    IsCoveringMap (spinToSpecialOrthogonal (realCliffordForm n 0)) := by
+  obtain rfl | hn := n.eq_zero_or_pos
+  · -- `realCliffordForm 0 0` lives on `Fin (0 + 0) → ℝ`, which is `Fin 0 → ℝ` by definition.
+    have : Subsingleton (Fin (0 + 0) → ℝ) := inferInstanceAs (Subsingleton (Fin 0 → ℝ))
+    exact .of_discreteTopology _
+  · have : NeZero n := ⟨hn.ne'⟩
+    have h := isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom n
+    rwa [realCliffordSpinDoubleCoverZero_rightHom] at h
 
 /-- The bundled compact real Spin projection is a covering map. -/
 theorem isCoveringMap_realCliffordSpinProjectionZero

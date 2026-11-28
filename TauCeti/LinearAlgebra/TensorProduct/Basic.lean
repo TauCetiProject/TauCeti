@@ -67,6 +67,9 @@ across `M ⊗[R] N` can also be moved across `M ⊗[R] (N ⊗[K] P)`.
   stays injective after tensoring with `M`.
 * `TensorProduct.tensorTensorTensorComm_comm_tmul_comm`: exchanging the factors of both arguments
   of `tensorTensorTensorComm` exchanges the factors of its value.
+* `TensorProduct.outerComm`: three-factor tensor reversal `M ⊗ (N ⊗ P) ≃ P ⊗ (N ⊗ M)`.
+* `TensorProduct.outerComm_comp_assoc_comp_rTensor`, `TensorProduct.outerComm_comp_lTensor`:
+  naturality of `outerComm` with maps into a tensor product on either factor.
 * `TensorProduct.assoc_rTensor_tensorTensorTensorComm_tmul`: reassociating both arguments of
   `tensorTensorTensorComm` reassociates its value, and
   `TensorProduct.assoc_rTensor_comp_map_tensorTensorTensorComm_tmul` is its form after maps into
@@ -557,6 +560,59 @@ trivial too (`TensorProduct.uniqueRight`). -/
 theorem nontrivial_right [Nontrivial (M ⊗[R] N)] : Nontrivial N :=
   not_subsingleton_iff_nontrivial.1 fun _ =>
     not_subsingleton (M ⊗[R] N) uniqueRight.instSubsingleton
+
+section OuterComm
+
+variable (R M N P) in
+/-- Reverses the three factors of a right-associated triple tensor product, sending
+`m ⊗ₜ (n ⊗ₜ p)` to `p ⊗ₜ (n ⊗ₜ m)`. -/
+def outerComm : M ⊗[R] (N ⊗[R] P) ≃ₗ[R] P ⊗[R] (N ⊗[R] M) :=
+  (TensorProduct.assoc R M N P).symm ≪≫ₗ
+    TensorProduct.comm R (M ⊗[R] N) P ≪≫ₗ
+    LinearEquiv.lTensor P (TensorProduct.comm R M N)
+
+/-- `outerComm` reverses the three factors on pure tensors. -/
+@[simp]
+theorem outerComm_tmul (m : M) (n : N) (p : P) :
+    outerComm R M N P (m ⊗ₜ[R] (n ⊗ₜ[R] p)) = p ⊗ₜ[R] (n ⊗ₜ[R] m) := by
+  simp [outerComm]
+
+/-- `outerComm` is self-inverse up to swapping the outer module arguments. -/
+@[simp]
+theorem outerComm_symm : (outerComm R M N P).symm = outerComm R P N M :=
+  LinearEquiv.toLinearMap_injective <| ext_threefold' fun _ _ _ ↦ rfl
+
+/-- Naturality of `outerComm` with a map `f` applied on the left factor before reassociation:
+reversing after `assoc ∘ₗ f.rTensor Q` agrees with swapping the inputs and applying `comm ∘ₗ f` on
+the right factor. -/
+theorem outerComm_comp_assoc_comp_rTensor (f : M →ₗ[R] N ⊗[R] P) :
+    (outerComm R N P Q).toLinearMap ∘ₗ
+        (TensorProduct.assoc R N P Q).toLinearMap ∘ₗ f.rTensor Q =
+      ((TensorProduct.comm R N P).toLinearMap ∘ₗ f).lTensor Q ∘ₗ
+        (TensorProduct.comm R M Q).toLinearMap := by
+  refine TensorProduct.ext' fun m q ↦ ?_
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.rTensor_tmul,
+    LinearMap.lTensor_tmul, comm_tmul]
+  induction f m using TensorProduct.inductionOn with
+  | add u v hu hv => simp only [add_tmul, tmul_add, map_add, hu, hv]
+  | tmul n p => simp
+
+/-- Naturality of `outerComm` with a map `f` applied on the right factor: reversing after
+`f.lTensor M` agrees with swapping the inputs, applying `comm ∘ₗ f` on the left factor, and
+reassociating. -/
+theorem outerComm_comp_lTensor (f : Q →ₗ[R] N ⊗[R] P) :
+    (outerComm R M N P).toLinearMap ∘ₗ f.lTensor M =
+      (TensorProduct.assoc R P N M).toLinearMap ∘ₗ
+        ((TensorProduct.comm R N P).toLinearMap ∘ₗ f).rTensor M ∘ₗ
+        (TensorProduct.comm R M Q).toLinearMap := by
+  refine TensorProduct.ext' fun m q ↦ ?_
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.lTensor_tmul,
+    LinearMap.rTensor_tmul, comm_tmul]
+  induction f q using TensorProduct.inductionOn with
+  | add u v hu hv => simp only [tmul_add, add_tmul, map_add, hu, hv]
+  | tmul n p => simp
+
+end OuterComm
 
 variable (M) in
 /-- The map `M → A ⊗[R] M`, `m ↦ 1 ⊗ m`, is `(Algebra.linearMap R A).rTensor M` composed with the

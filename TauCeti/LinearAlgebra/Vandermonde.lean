@@ -11,6 +11,8 @@ public import Mathlib.Data.Pi.Interval
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Vandermonde
 public import Mathlib.RingTheory.Polynomial.Pochhammer
+public import TauCeti.Algebra.BigOperators.Finset.Pairs
+import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Order.SuccPred.Int
 import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
@@ -107,6 +109,8 @@ groups, is divisible by `2!/2 · 4!/2 ⋯ (2n - 2)!/2`, with the monic even poly
 
 ## Main results
 
+* `TauCeti.abs_det_vandermonde_pow_eq_prod`: the power of the absolute determinant
+  as a product over strictly increasing pairs of indices.
 * `TauCeti.factorial_mul_sum_det_vandermonde`: **the box-sum identity for Vandermonde
   determinants.**
 * `TauCeti.sum_mul_det_vandermonde_update_sub_one` and `TauCeti.sum_mul_prod_sub_update_sub_one`:
@@ -139,6 +143,19 @@ public section
 namespace TauCeti
 
 open Finset Matrix Polynomial
+
+/-- The absolute Vandermonde determinant to any natural power is the corresponding product
+of powered absolute gaps. -/
+theorem abs_det_vandermonde_pow_eq_prod {R : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] {n : ℕ} (d : Fin n → R) (k : ℕ) :
+    |(vandermonde d).det| ^ k = ∏ ij : FinStrictUpper n, |d ij.val.2 - d ij.val.1| ^ k := by
+  let e := Equiv.subtypeProdEquivSigmaSubtype (fun i j : Fin n ↦ i < j)
+  have h : (vandermonde d).det = ∏ ij : FinStrictUpper n, (d ij.val.2 - d ij.val.1) := by
+    rw [det_vandermonde]
+    simp_rw [Finset.prod_subtype _ (fun _ ↦ Finset.mem_Ioi)]
+    rw [← Fintype.prod_sigma']
+    exact (Fintype.prod_equiv e _ _ fun _ ↦ rfl).symm
+  rw [h, Finset.abs_prod, Finset.prod_pow]
 
 /-! ### The box-sum identity -/
 
