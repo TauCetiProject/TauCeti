@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PositiveDefinite.Kernel.MeanEmbedding
-import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.InnerProductSpace.UnitVector
 
 /-!
