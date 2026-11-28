@@ -7,16 +7,12 @@ module
 
 public import TauCeti.Algebra.Category.FGModuleCat.RepresentationFinite
 import TauCeti.Algebra.Category.FGModuleCat.AlmostSplit.SourceSink
-import TauCeti.Algebra.Category.FGModuleCat.Generator.Basic
-import TauCeti.Algebra.Category.FGModuleCat.KrullSchmidt
-import TauCeti.Algebra.Category.FGModuleCat.MatlisDuality.Basic
+import TauCeti.Algebra.Category.FGModuleCat.Generator.Cogenerator
 import TauCeti.Algebra.Category.ModuleCat.Algebra
-import TauCeti.Algebra.Subalgebra.Center
 import TauCeti.CategoryTheory.AlmostSplit.Finiteness
 import TauCeti.CategoryTheory.Generator.Biproduct
 import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Nilpotence
 import TauCeti.CategoryTheory.Preadditive.Radical.Chain
-import TauCeti.RingTheory.Artinian.Subalgebra
 
 /-!
 # The infinite radical of an Artin algebra
@@ -40,7 +36,7 @@ module.
 
 public section
 
-open CategoryTheory CategoryTheory.Limits Opposite
+open CategoryTheory CategoryTheory.Limits
 open scoped ModuleCat.Algebra
 
 namespace TauCeti
@@ -76,8 +72,7 @@ theorem isRepresentationFinite_of_jacobsonRadicalIdeal_pow_eq_bot {n : ℕ}
     rw [← hF]
     exact MorphismIdeal.mem_bot.mp hmem
   let G := FGModuleCat.of A (Shrink.{w} A)
-  have : Module.IsGenerator A (Shrink.{w} A) := .of_linearEquiv (Shrink.linearEquiv A A)
-  have hG : IsSeparator G := FGModuleCat.isSeparator_of_isGenerator _
+  have hG : IsSeparator G := FGModuleCat.isSeparator_shrink A
   obtain ⟨m, P, hP, ⟨e⟩⟩ := IsKrullSchmidt.exists_iso_biproduct G
   obtain ⟨S, hS, -, hreach⟩ := exists_finite_forall_iso_of_hom_ne_zero
     (fun X : FGModuleCat.{w} A ↦ Indecomposable X)
@@ -111,23 +106,8 @@ theorem isRepresentationFinite_iff_forall_mem_jacobsonRadicalIdeal_pow :
         (∀ n : ℕ, f ∈ (jacobsonRadicalIdeal (FGModuleCat.{w} A) ^ n).hom X Y) → f = 0 := by
   rw [isRepresentationFinite_iff_exists_jacobsonRadicalIdeal_pow_eq_bot R]
   refine ⟨fun ⟨n, hn⟩ X Y f hf ↦ MorphismIdeal.mem_bot.mp (hn ▸ hf n), fun h ↦ ?_⟩
-  · -- Use the centre so that the coefficient module for Matlis duality fits the module universe.
-    let Z := Subalgebra.center R A
-    have : Module.Finite Z A := Subalgebra.finite_centerAlgebra_of_finite
-    have : Small.{w} Z := inferInstanceAs (Small.{w} {a : A // a ∈ Z})
-    obtain ⟨E, _, _, q, hq, -⟩ := exists_isInjectiveEnvelope_quotient_jacobson.{v, w} Z
-    let e := hq.fgModuleCatMatlisDuality (A := A)
-    let G := FGModuleCat.of A (Shrink.{w} A)
-    have : Module.IsGenerator A (Shrink.{w} A) := .of_linearEquiv (Shrink.linearEquiv A A)
-    have : Small.{w} Aᵐᵒᵖ := small_of_injective MulOpposite.unop_injective
-    let G' := FGModuleCat.of Aᵐᵒᵖ (Shrink.{w} Aᵐᵒᵖ)
-    have : Module.IsGenerator Aᵐᵒᵖ (Shrink.{w} Aᵐᵒᵖ) :=
-      .of_linearEquiv (Shrink.linearEquiv Aᵐᵒᵖ Aᵐᵒᵖ)
-    have hG : IsSeparator G := FGModuleCat.isSeparator_of_isGenerator _
-    have hG' : IsSeparator G' := FGModuleCat.isSeparator_of_isGenerator _
-    let D := (e.inverse.obj G').unop
-    have hD : IsCoseparator D := (isCoseparator_unop_iff _).2 (hG'.of_equivalence e.symm)
-    exact (jacobsonRadicalIdeal (FGModuleCat.{w} A))
-      |>.exists_pow_eq_bot_of_forall_mem_pow R hG hD (h G D)
+  obtain ⟨D, -, hD⟩ := FGModuleCat.exists_injective_isCoseparator R (A := A)
+  exact (jacobsonRadicalIdeal (FGModuleCat.{w} A))
+    |>.exists_pow_eq_bot_of_forall_mem_pow R (FGModuleCat.isSeparator_shrink A) hD (h _ D)
 
 end TauCeti

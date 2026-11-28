@@ -14,6 +14,7 @@ public import TauCeti.Algebra.Module.Generator
 public import TauCeti.CategoryTheory.Generator.GeneratorCogenerator
 -- Private: the comparison of separators with generators in `ModuleCat R`, and the regular module
 -- as a projective object of `FGModuleCat R`, and finite intersections in Artinian modules.
+import Mathlib.Algebra.Category.ModuleCat.AB
 import TauCeti.Algebra.Category.FGModuleCat.Projective
 import TauCeti.Algebra.Category.ModuleCat.Generator
 import TauCeti.RingTheory.Artinian.Module
@@ -52,6 +53,8 @@ projective object of `mod R`, such as `R`, splits.
   module category.
 * `FGModuleCat.isSeparator_of_isGenerator`: a generator is a separator, in any universe.
 * `FGModuleCat.isSeparator`: the regular module is a separator of `FGModuleCat R`.
+* `FGModuleCat.isSeparator_shrink`: the same holds for the regular module shrunk to the universe
+  of the modules.
 * `FGModuleCat.additiveClosure_of_isGenerator_of_projective`: a finitely generated projective
   module lies in the additive closure `add M` of every finitely generated generator `M`, in any
   universe.
@@ -114,6 +117,12 @@ variable (R) in
 regular module does. -/
 theorem _root_.FGModuleCat.isSeparator : IsSeparator (FGModuleCat.of R R) :=
   FGModuleCat.isSeparator_of_isGenerator _
+
+variable (R) in
+/-- The regular module shrunk to the universe of the modules is a separator of `mod R`. -/
+theorem _root_.FGModuleCat.isSeparator_shrink [Small.{v} R] :
+    IsSeparator (FGModuleCat.of R (Shrink.{v} R)) :=
+  (FGModuleCat.isSeparator_iff_isSeparator_obj _).2 (ModuleCat.isSeparator R)
 
 /-- **Finitely generated projective modules are summands of finite sums of a generator**: if `M`
 is a generator of the module category, then a projective object of `FGModuleCat R` lies in `add M`.
