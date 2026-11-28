@@ -293,11 +293,8 @@ theorem continuous_toCompactlyGeneratedProd {A : Type*} [TopologicalSpace A]
     [UCompactlyGeneratedSpace.{u} A] {X Y : CompactlyGenerated.{u, w}}
     {g : A → ↑(X ⊗ Y)} (hg : Continuous fun a ↦ ((g a).1, (g a).2)) :
     Continuous g := by
-  refine ((⟨fun a ↦ ((g a).1, (g a).2), hg⟩ : C(A, X × Y)).toCompactlyGenerated.{u}.continuous.comp
-    (counitHomeomorph.{u} (TopCat.of A)).symm.continuous).congr fun a ↦ ?_
-  rw [Function.comp_apply, ContinuousMap.toCompactlyGenerated_apply, ContinuousMap.coe_mk,
-    counitHomeomorph_symm_apply]
-  exact Prod.eta (g a)
+  change Continuous[_, TopologicalSpace.compactlyGenerated.{u} (X × Y)] g
+  exact TopologicalSpace.continuous_to_compactlyGenerated_of_uCompactlyGeneratedSpace.{u} hg
 
 /-! ### Cartesian closed structure -/
 

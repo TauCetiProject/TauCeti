@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Limits.Preserves.Limits
 public import Mathlib.Topology.Category.CompactlyGenerated
+public import Mathlib.Topology.Convenient.Category
 public import TauCeti.Topology.Category.TopCat.Compact
 public import TauCeti.Topology.Convenient.CompactlyGenerated
 

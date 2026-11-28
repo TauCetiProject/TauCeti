@@ -19,7 +19,9 @@ Mathlib provides both compact generation (`TopologicalSpace.compactlyGenerated`,
 `Topology.IsGeneratedBy`). Here we identify them for `CompHaus.{u}` in an explicit test universe `u`
 and establish the point-set inputs for `CompactlyGenerated.{u, w}`:
 
-* `TopologicalSpace.generatedBy_compHaus`, `Topology.isGeneratedBy_compHaus_iff`, and idempotence
+* `TopologicalSpace.generatedBy_compHaus`,
+  `TopologicalSpace.continuous_to_compactlyGenerated_of_uCompactlyGeneratedSpace`,
+  `Topology.isGeneratedBy_compHaus_iff`, and idempotence
   `TopologicalSpace.compactlyGenerated_compactlyGenerated`.
 * Compact subsets as `CompHaus.{u}` images (`IsCompact.exists_compHaus_range_eq`), giving
   `TauCeti.instUCompactlyGeneratedSpaceOfCompactlyCoherentSpaceOfT2` and the compact-open comparison
@@ -64,6 +66,15 @@ theorem continuous_to_compactlyGenerated {Y : Type v} [TopologicalSpace Y] {S : 
   suffices ∀ i, Continuous[inferInstance, compactlyGenerated.{u} Y] fun a : i.fst ↦ p ⟨i, a⟩ from
     this ⟨S, g⟩
   rw [← @continuous_sigma_iff]; exact continuous_coinduced_rng
+
+/-- Any continuous map from a `u`-compactly generated space into `Y` remains continuous when the
+target is equipped with `compactlyGenerated.{u} Y`. -/
+theorem continuous_to_compactlyGenerated_of_uCompactlyGeneratedSpace
+    {X : Type v} {Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
+    [UCompactlyGeneratedSpace.{u} X] {f : X → Y} (hf : Continuous f) :
+    Continuous[inferInstance, compactlyGenerated.{u} Y] f :=
+  continuous_from_uCompactlyGeneratedSpace (tY := compactlyGenerated.{u} Y) f fun _ g ↦
+    continuous_to_compactlyGenerated ((⟨f, hf⟩ : C(X, Y)).comp g)
 
 /-- The compactly generated topology refines (is finer than or equal to, in Mathlib's order `≤`)
 the original topology. -/

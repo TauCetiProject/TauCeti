@@ -9,7 +9,6 @@ public import Mathlib.CategoryTheory.Monoidal.Cartesian.Basic
 public import Mathlib.CategoryTheory.Monoidal.Closed.Basic
 public import TauCeti.Topology.Category.TopCat.Monoidal
 public import TauCeti.Topology.Convenient.Category
-public import TauCeti.Topology.Convenient.GeneratedBy
 public import TauCeti.Topology.Convenient.HomSpace
 
 /-!

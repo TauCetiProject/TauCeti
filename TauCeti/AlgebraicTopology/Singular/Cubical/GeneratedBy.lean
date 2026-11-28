@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.ChainComplex
+public import TauCeti.Topology.Convenient.Category
 public import TauCeti.Topology.Convenient.CompactlyGenerated
 import Mathlib.Algebra.Category.ModuleCat.EpiMono
 
