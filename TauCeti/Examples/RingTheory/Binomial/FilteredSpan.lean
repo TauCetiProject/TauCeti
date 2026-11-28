@@ -20,6 +20,10 @@ namespace TauCeti
 
 variable {R : Type*} [Ring R] [BinomialRing R]
 
+-- Unit membership simplifies before singleton normalization unfolds the stage.
+example (h : Fin 1 → R) (n : ℕ) : 1 ∈ ringChooseFilteredSpan h n := by
+  simp
+
 -- With no coordinates, integer binomials still lie in the integral span of one.
 example (c : ℤ) (n : ℕ) :
     Ring.choose (c : R) n ∈ ringChooseFilteredSpan (Fin.elim0 : Fin 0 → R) n := by
@@ -35,7 +39,7 @@ example {x y : R} (hxy : Commute x y) :
   simpa [Fin.sum_univ_two, zsmul_eq_mul, sub_eq_add_neg] using
     ringChoose_sum_zsmul_add_intCast_mem_ringChooseFilteredSpan ![x, y] hcomm ![2, -1] 1 2
 
--- The integral coefficients are 4, -2, 1, and 3, on monomials of total degree at most two.
+-- The coefficients 4, -2, 1, and 3 multiply ordered binomial products of total degree at most two.
 example {x y : R} (hxy : Commute x y) :
     Ring.choose (2 * x - y + 1) 2 =
       (4 : ℕ) • Ring.choose x 2 - (2 : ℕ) • (x * y) +

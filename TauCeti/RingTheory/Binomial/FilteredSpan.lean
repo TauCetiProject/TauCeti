@@ -89,13 +89,13 @@ theorem toAddSubgroup_iSup_ringChooseFilteredSpan_eq_closure {r : ℕ} (h : Fin 
   simp_rw [ringChooseFilteredSpan_def]
   rw [iSup_span, ← Set.image_iUnion]
   have hcuts : (⋃ n : ℕ, {a : Fin r → ℕ | ∑ i, a i ≤ n}) = Set.univ := by
-    ext a
-    simp only [Set.mem_iUnion, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
-    exact ⟨∑ i, a i, le_rfl⟩
+    exact (Set.preimage_iUnion (f := fun a : Fin r → ℕ => ∑ i, a i)
+      (s := fun n : ℕ => Set.Iic n)).symm.trans
+      (by rw [Set.iUnion_Iic, Set.preimage_univ])
   rw [hcuts, Set.image_univ, span_int_eq_addSubgroupClosure]
 
 /-- Every stage contains one, the product with all exponents zero. -/
-@[simp]
+@[simp↓]
 theorem one_mem_ringChooseFilteredSpan {r : ℕ} (h : Fin r → R) (n : ℕ) :
     1 ∈ ringChooseFilteredSpan h n := by
   simpa using prod_ofFn_ringChoose_mem_ringChooseFilteredSpan h (fun _ => 0)
