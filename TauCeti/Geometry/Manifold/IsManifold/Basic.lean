@@ -33,8 +33,6 @@ by `tangentSpaceCast`.
 * `TauCeti.heq_tangentSpaceCast`: over equal base points, `tangentSpaceCast` is heterogeneously
   the identity.
 * `TauCeti.tangentSpaceCast_self`: identifying a tangent space with itself is the identity.
-* `Module.Basis.coe_map_tangentSpaceCastModel_symm`: mapping a model-space basis along
-  `(tangentSpaceCastModel I x).symm` preserves its underlying function into `TangentSpace I x`.
 * `TauCeti.apply_eq_of_tangentSpaceCast`: evaluating a basepoint-dependent expression at equal
   base points and `tangentSpaceCast`-related tangent vectors gives equal values.
 * `TauCeti.tangentSpaceCast_trans`: composing two `tangentSpaceCast` identifications across equal
@@ -96,14 +94,6 @@ instance isManifold_natCast_zero (I : ModelWithCorners 𝕜 E H) (M : Type*) [To
 @[simp]
 theorem finrank_tangentSpace (x : M) : Module.finrank 𝕜 (TangentSpace I x) = Module.finrank 𝕜 E :=
   (tangentSpaceCastModel I x).toLinearEquiv.finrank_eq
-
-/-- Mapping a model-space basis along `(tangentSpaceCastModel I x).symm` preserves its underlying
-function into `TangentSpace I x`. -/
-theorem _root_.Module.Basis.coe_map_tangentSpaceCastModel_symm {ι : Type*}
-    (b : Module.Basis ι 𝕜 E) (x : M) :
-    (⇑(b.map (tangentSpaceCastModel I x).symm.toLinearEquiv) : ι → TangentSpace I x) =
-      (⇑b : ι → E) :=
-  (rfl)
 
 /-- Over equal base points, `tangentSpaceCast` is heterogeneously the identity. This identifies
 tangent vectors over base points that agree only propositionally, for instance when comparing

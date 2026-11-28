@@ -73,30 +73,17 @@ theorem integralDensity_pos_of_continuousOn_inChartAt [IsManifold I 1 M]
   have : FiniteDimensional ℝ E := Module.Finite.of_basis b₀
   let : LocallyCompactSpace H := I.locallyCompactSpace
   let c := chooseChartCover (I := I) (_root_.tsupport (α := Density E m) μ) hi.isCompact
-  let α' : Fin (c.n + 1) → M := Fin.cons x₀ c.center
-  let u' : Fin (c.n + 1) → Set M := Fin.cons (extChartAt I x₀).source c.domain
-  have hu' : ∀ i, IsChartMeasurable I (u' i) := Fin.cases
-    (isOpen_extChartAt_source (I := I) x₀).isChartMeasurable
-    fun i ↦ (c.isOpen_domain i).isChartMeasurable
-  have hs' : ∀ i, u' i ⊆ (extChartAt I (α' i)).source := Fin.cases Subset.rfl c.domain_subset
-  have hc' : {x | μ x ≠ 0} ⊆ ⋃ i, u' i := fun x hx ↦
-    let ⟨i, hi⟩ := mem_iUnion.mp (c.covers (subset_closure hx))
-    mem_iUnion.mpr ⟨i.succ, hi⟩
-  rw [integralDensity_eq_sum_disjointed_chart_integrals hi b₀ α' u' hu' hs' hc',
-    Fin.sum_univ_succ]
+  rw [integralDensity_eq_sum_disjointed_chart_integrals hi b₀ (c.cons x₀).center (c.cons x₀).domain
+    (fun i ↦ ((c.cons x₀).isOpen_domain i).isChartMeasurable) (c.cons x₀).domain_subset
+    (fun x hx ↦ (c.cons x₀).covers (subset_closure hx)), Fin.sum_univ_succ]
   refine add_pos_of_pos_of_nonneg ?_ (Finset.sum_nonneg fun i _ ↦
-    integral_nonneg fun y ↦ RoughDensity.inChartAt_nonneg hnn b₀ (α' i.succ) y)
-  have hpiece : (extChartAt I (α' 0)) '' disjointed u' 0 = (extChartAt I x₀).target := by
-    rw [← bot_eq_zero, disjointed_bot, bot_eq_zero]
-    simp only [α', u', Fin.cons_zero]
-    exact (extChartAt I x₀).image_source_eq_target
+    integral_nonneg fun y ↦ RoughDensity.inChartAt_nonneg hnn b₀ ((c.cons x₀).center i.succ) y)
+  rw [← ChartCover.piece_def, ChartCover.image_extChartAt_piece_cons_zero,
+    ChartCover.cons_center_zero]
   have hg₀ : 0 < μ.inChartAt b₀ x₀ (extChartAt I x₀ x₀) := by
-    rw [μ.inChartAt_self b₀ x₀]
-    let b₀' : Basis (Fin m) ℝ (TangentSpace I x₀) :=
-      b₀.map (tangentSpaceCastModel I x₀).symm.toLinearEquiv
-    rw [← b₀.coe_map_tangentSpaceCastModel_symm x₀, (μ x₀).apply_eq_abs_det_mul c₀ b₀']
-    exact mul_pos (abs_pos.mpr (c₀.isUnit_det b₀').ne_zero) hpos
-  rw [hpiece]
+    rw [μ.inChartAt_self b₀ x₀, (μ x₀).apply_eq_abs_det_mul c₀ b₀]
+    exact mul_pos (abs_pos.mpr (c₀.is_basis_iff_det.mp
+      ⟨b₀.linearIndependent, b₀.span_eq⟩).ne_zero) hpos
   exact setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target (μ := b₀.addHaar) x₀
     (RoughDensity.inChartAt_nonneg hnn b₀ x₀)
     (hi.integrable_inChartAt b₀ x₀).integrableOn

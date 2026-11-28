@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
 import TauCeti.Geometry.Manifold.ExtChartAt.Integral
-import Mathlib.Order.Disjointed
 
 /-!
 # Positivity of the integral of top forms
@@ -200,28 +199,19 @@ theorem integralTopForm_pos [NeZero k] (o : Manifold.Orientation I M (Fin k))
   have hi := hφ.integrableTopForm hc b
   -- Compute the integral on a chart cover whose first chart is the chart at `x₀`, so that the
   -- first disjointed piece is that chart's whole source.
-  obtain ⟨m, α, u, _, hu, hcover⟩ := exists_finite_precompact_chart_cover (I := I) hc
-  let α' : Fin (m + 1) → M := Fin.cons x₀ α
-  let u' : Fin (m + 1) → Set M := Fin.cons (extChartAt I x₀).source u
-  have hu' : ∀ i, IsOpen (u' i) ∧ u' i ⊆ (extChartAt I (α' i)).source := by
-    refine Fin.cases ?_ fun i ↦ ?_
-    · simpa [α', u'] using isOpen_extChartAt_source (I := I) x₀
-    · simpa [α', u'] using And.intro (hu i).1 (hu i).2.1
-  have hcover' : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ ⋃ i, u' i :=
-    hcover.trans (iUnion_subset fun i ↦ by simpa [u'] using subset_iUnion u' i.succ)
-  rw [integralTopForm_eq_sum_disjointed_chart_integrals l φ hi b α' u' (fun i ↦ (hu' i).1)
-    (fun i ↦ (hu' i).2) hcover', Finset.mul_sum, Fin.sum_univ_succ]
+  let c := chooseChartCover (I := I) (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ) hc
+  rw [integralTopForm_eq_sum_disjointed_chart_integrals l φ hi b (c.cons x₀).center
+    (c.cons x₀).domain (c.cons x₀).isOpen_domain (c.cons x₀).domain_subset (c.cons x₀).covers,
+    Finset.mul_sum, Fin.sum_univ_succ]
   refine add_pos_of_pos_of_nonneg ?_ (Finset.sum_nonneg fun i _ ↦ ?_)
   swap
   · rw [← integral_const_mul]
-    exact integral_nonneg fun y ↦ signBasis_mul_signedInChartAt_nonneg l hnn b (α' i.succ) y
-  have hpiece : (extChartAt I (α' 0)) '' disjointed u' 0 = (extChartAt I (α' 0)).target := by
-    rw [← bot_eq_zero, disjointed_bot, bot_eq_zero]
-    simp only [α', u', Fin.cons_zero]
-    exact (extChartAt I x₀).image_source_eq_target
-  rw [hpiece, ← integral_const_mul]
+    exact integral_nonneg fun y ↦
+      signBasis_mul_signedInChartAt_nonneg l hnn b ((c.cons x₀).center i.succ) y
+  rw [← ChartCover.piece_def, ChartCover.image_extChartAt_piece_cons_zero,
+    ChartCover.cons_center_zero, ← integral_const_mul]
   exact setIntegral_signBasis_mul_signedInChartAt_pos l hφ hi hnn b
-    (by simp [α']) c₀ hc₀ hφ₀
+    (mem_extChartAt_source x₀) c₀ hc₀ hφ₀
 
 /-- **A nowhere-vanishing top form has positive integral for the orientation it defines**, on a
 nonempty compact manifold of positive dimension. -/

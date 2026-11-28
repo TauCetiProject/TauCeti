@@ -102,6 +102,45 @@ theorem piece_covers : s ⊆ ⋃ i, c.piece i := by
 theorem pairwise_disjoint : Pairwise (fun i j ↦ Disjoint (c.piece i) (c.piece j)) :=
   disjoint_disjointed c.domain
 
+/-- Prepend the full preferred chart at `x₀` to a chart cover of `s`. -/
+@[expose, reducible]
+noncomputable def cons (x₀ : M) (c : ChartCover I s) : ChartCover I s where
+  n := c.n + 1
+  center := Fin.cons x₀ c.center
+  domain := Fin.cons (extChartAt I x₀).source c.domain
+  isOpen_domain := Fin.cases (isOpen_extChartAt_source x₀) c.isOpen_domain
+  domain_subset := Fin.cases Subset.rfl c.domain_subset
+  covers := c.covers.trans (iUnion_subset fun i ↦
+    subset_iUnion (Fin.cons (extChartAt I x₀).source c.domain) i.succ)
+
+@[simp]
+theorem cons_n (x₀ : M) (c : ChartCover I s) : (c.cons x₀).n = c.n + 1 := rfl
+
+@[simp]
+theorem cons_center_zero (x₀ : M) (c : ChartCover I s) : (c.cons x₀).center 0 = x₀ := rfl
+
+@[simp]
+theorem cons_center_succ (x₀ : M) (c : ChartCover I s) (i : Fin c.n) :
+    (c.cons x₀).center i.succ = c.center i := rfl
+
+@[simp]
+theorem cons_domain_zero (x₀ : M) (c : ChartCover I s) :
+    (c.cons x₀).domain 0 = (extChartAt I x₀).source := rfl
+
+@[simp]
+theorem cons_domain_succ (x₀ : M) (c : ChartCover I s) (i : Fin c.n) :
+    (c.cons x₀).domain i.succ = c.domain i := rfl
+
+@[simp]
+theorem piece_cons_zero (x₀ : M) (c : ChartCover I s) :
+    (c.cons x₀).piece 0 = (extChartAt I x₀).source := by
+  rw [piece, ← bot_eq_zero, disjointed_bot, bot_eq_zero, cons_domain_zero]
+
+/-- The coordinate image of the zeroth piece of `c.cons x₀` is the full chart target at `x₀`. -/
+theorem image_extChartAt_piece_cons_zero (x₀ : M) (c : ChartCover I s) :
+    (extChartAt I ((c.cons x₀).center 0)) '' (c.cons x₀).piece 0 = (extChartAt I x₀).target := by
+  rw [cons_center_zero, piece_cons_zero, (extChartAt I x₀).image_source_eq_target]
+
 variable [MeasurableSpace E] [OpensMeasurableSpace E]
 
 theorem isChartMeasurable_piece (i : Fin c.n) : IsChartMeasurable I (c.piece i) :=
@@ -112,6 +151,20 @@ theorem measurableSet_image_piece (i : Fin c.n) :
   (c.isChartMeasurable_piece i).image_extChartAt (c.center i) (c.piece_subset i)
 
 end ChartCover
+
+omit [NormedSpace ℝ F] in
+/-- A compact set has a finite open `ChartCover` on whose chart-domain images any family of
+functions continuous on each chart target is integrable. -/
+theorem exists_chartCover_integrableOn [MeasurableSpace E] [OpensMeasurableSpace E]
+    [LocallyCompactSpace H] {ν : Measure E} [IsFiniteMeasureOnCompacts ν]
+    {s : Set M} (hs : IsCompact s) {f : M → E → F}
+    (hf : ∀ α, ContinuousOn (f α) (extChartAt I α).target) :
+    ∃ c : ChartCover I s,
+      ∀ i, IntegrableOn (f (c.center i)) ((extChartAt I (c.center i)) '' c.domain i) ν := by
+  obtain ⟨n, α, u, B, hu, hcover⟩ := exists_finite_precompact_chart_cover (I := I) hs
+  exact ⟨⟨n, α, u, fun i ↦ (hu i).1, fun i ↦ (hu i).2.1, hcover⟩, fun i ↦
+    (((hf (α i)).mono (hu i).2.2.2.1).integrableOn_compact (hu i).2.2.1).mono_set
+      (hu i).2.2.2.2⟩
 
 omit [NormedSpace ℝ F] in
 /-- A coefficient in the preferred chart at `α` is integrable when it vanishes off the chart
@@ -251,14 +304,13 @@ theorem sum_setIntegral_image_extChartAt_piece_eq_integral [MeasurableSpace E]
   refine setIntegral_eq_of_subset_of_ae_sdiff_eq_zero
     (c.measurableSet_image_piece i).nullMeasurableSet
     (image_mono (inter_subset_left : c.piece i ∩ (extChartAt I α).source ⊆ c.piece i)) ?_
-  filter_upwards [hae i] with y hy
-  rintro ⟨⟨x, hx, rfl⟩, hnot⟩
-  have hxo : extChartAt I (c.center i) x ∉ (extChartAt I (c.center i)) ''
-      ((extChartAt I (c.center i)).source ∩ (extChartAt I α).source) := by
-    rintro ⟨x', hx', heq⟩
-    have hx_eq : x' = x := (extChartAt I (c.center i)).injOn hx'.1 (c.piece_subset i hx) heq
-    exact hnot ⟨x, ⟨hx, hx_eq ▸ hx'.2⟩, rfl⟩
-  exact hy hxo (mem_image_of_mem _ hx)
+  have hinter : (extChartAt I (c.center i)) '' (c.piece i ∩ (extChartAt I α).source) =
+      (extChartAt I (c.center i)) '' c.piece i ∩ (extChartAt I (c.center i)) ''
+        ((extChartAt I (c.center i)).source ∩ (extChartAt I α).source) := by
+    rw [← (extChartAt I (c.center i)).injOn.image_inter (c.piece_subset i) inter_subset_left,
+      ← inter_assoc, inter_eq_self_of_subset_left (c.piece_subset i)]
+  filter_upwards [hae i] with y hy ⟨hy_piece, hy_not⟩
+  exact hy (fun hy_ov ↦ hy_not (hinter ▸ ⟨hy_piece, hy_ov⟩)) hy_piece
 
 /-- Chart coefficients that satisfy the absolute Jacobian law on a chart overlap have equal
 integrals over the coordinate images of a subset of the overlap, and are integrable there

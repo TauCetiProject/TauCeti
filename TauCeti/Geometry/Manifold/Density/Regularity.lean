@@ -132,11 +132,9 @@ theorem RoughDensity.integrableDensity_of_continuousOn_inChartAt [IsManifold I 1
   let : MeasurableSpace E := borel E
   have : BorelSpace E := ⟨rfl⟩
   let : LocallyCompactSpace H := I.locallyCompactSpace
-  obtain ⟨n, β, u, B, hu, hcover⟩ := exists_finite_precompact_chart_cover (I := I) hc
-  refine μ.integrableDensity_of_open_cover hc b β u (fun i ↦ (hu i).1)
-    (fun i ↦ by simpa only [extChartAt_source] using (hu i).2.1) hcover fun i ↦ ?_
-  exact (((hμ (β i)).mono (hu i).2.2.2.1).integrableOn_compact
-    (hu i).2.2.1 (μ := b.addHaar)).mono_set (hu i).2.2.2.2
+  obtain ⟨c, hc'⟩ := exists_chartCover_integrableOn (I := I) hc (ν := b.addHaar) hμ
+  exact μ.integrableDensity_of_open_cover hc b c.center c.domain c.isOpen_domain
+    (fun i ↦ by simpa only [extChartAt_source] using c.domain_subset i) c.covers hc'
 
 /-- Every compactly supported continuous section of `TauCeti.DensityBundle` is integrable. -/
 theorem RoughDensity.integrableDensity_of_continuous_section

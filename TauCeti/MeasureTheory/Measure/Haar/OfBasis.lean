@@ -113,8 +113,7 @@ theorem setIntegral_addHaar_of_subsingleton {V ι F : Type*}
     [Fintype ι] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
     (b : Basis ι ℝ V) (f : V → F) {s : Set V} (hs : s.Nonempty) (x : V) :
     (∫ y in s, f y ∂b.addHaar) = f x := by
-  have : IsEmpty ι := ⟨fun i ↦ (zero_ne_one : (0 : ℝ) ≠ 1)
-    (by simpa [Subsingleton.elim (b i) 0] using (b.repr_self i).symm)⟩
+  have : IsEmpty ι := (linearIndependent_subsingleton_iff (R := ℝ) (⇑b)).mp b.linearIndependent
   rw [hs.eq_univ, Measure.restrict_univ, addHaar_eq_dirac, integral_dirac, Subsingleton.elim 0 x]
 
 section ChangeBasis

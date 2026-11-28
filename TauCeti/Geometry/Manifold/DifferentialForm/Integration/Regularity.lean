@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.CompactSupp
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Pullback
 public import Mathlib.Geometry.Manifold.Instances.Icc
+import TauCeti.Geometry.Manifold.ExtChartAt.Integral
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
@@ -51,13 +52,11 @@ theorem IsSmoothForm.integrableTopForm (hφ : IsSmoothForm I n φ)
   let : MeasurableSpace E := borel E
   let : BorelSpace E := ⟨rfl⟩
   let : LocallyCompactSpace H := I.locallyCompactSpace
-  obtain ⟨m, β, u, B, hu, hcover⟩ := exists_finite_precompact_chart_cover (I := I) hc
-  apply φ.integrableTopForm_of_open_cover hc b β u (fun i ↦ (hu i).1)
-    (fun i ↦ by simpa only [extChartAt_source] using (hu i).2.1) hcover
-  intro i
-  exact (((φ.continuousOn_signedInChartAt b (β i) (fun _ ↦ 1) continuous_const
-    (hφ.continuousOn_inChartAt (β i))).mono (hu i).2.2.2.1).integrableOn_compact
-      (hu i).2.2.1 (μ := b.addHaar)).mono_set (hu i).2.2.2.2
+  obtain ⟨c, hc'⟩ := exists_chartCover_integrableOn (I := I) hc (ν := b.addHaar)
+    fun α ↦ φ.continuousOn_signedInChartAt b α (fun _ ↦ 1) continuous_const
+      (hφ.continuousOn_inChartAt α)
+  exact φ.integrableTopForm_of_open_cover hc b c.center c.domain c.isOpen_domain
+    (fun i ↦ by simpa only [extChartAt_source] using c.domain_subset i) c.covers hc'
 
 omit [FiniteDimensional ℝ E] in
 /-- Every positive signed preferred-chart coefficient of a compactly supported C0 form is

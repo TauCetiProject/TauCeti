@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Boundary.Basic
 import Mathlib.Analysis.Convex.Measure
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Measure.LocallyNull
+import TauCeti.MeasureTheory.Measure.PartialEquiv
 
 /-!
 # Null sets on manifolds
@@ -76,11 +77,12 @@ theorem IsNullSet.ae_extChartAt_symm_notMem_of_sdiff_source {I : ModelWithCorner
     (μ : Measure E) [μ.IsAddHaarMeasure] :
     ∀ᵐ y ∂μ, y ∉ (extChartAt I β) '' ((extChartAt I β).source ∩ (extChartAt I α).source) →
       y ∈ (extChartAt I β).target → (extChartAt I β).symm y ∉ A := by
-  have hs' := hs.chartwise β μ
-  rw [inter_comm, (extChartAt I β).image_source_inter_eq'] at hs'
+  have hs' := (PartialEquiv.measure_image_setOf_not_inter_source_eq_zero_iff
+    (extChartAt I β) μ (p := fun x ↦ x ∉ A \ (extChartAt I α).source)).mp (by
+      simpa only [not_not, ofPred_mem_eq] using hs.chartwise β μ)
   rw [(extChartAt I β).image_source_inter_eq']
-  filter_upwards [measure_eq_zero_iff_ae_notMem.mp hs'] with y hy ho ht hA
-  exact hy ⟨ht, hA, fun ha ↦ ho ⟨ht, ha⟩⟩
+  filter_upwards [hs'] with y hy ho ht hA
+  exact hy ht ⟨hA, fun ha ↦ ho ⟨ht, ha⟩⟩
 
 /-- A subset of a null set is null. -/
 theorem IsNullSet.mono {I : ModelWithCorners ℝ E H} [MeasurableSpace E] [hE : BorelSpace E]
