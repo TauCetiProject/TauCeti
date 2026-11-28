@@ -39,7 +39,6 @@ theorem aefinStronglyMeasurable_of_tendsto_ae {α E : Type*} [MeasurableSpace α
     (hf : ∀ n, AEFinStronglyMeasurable (f n) μ)
     (hlim : ∀ᵐ x ∂μ, Tendsto (fun n ↦ f n x) atTop (𝓝 (g x))) :
     AEFinStronglyMeasurable g μ := by
-  classical
   obtain ⟨s, hs, hzero, hσ⟩ := AEFinStronglyMeasurable.exists_set_sigmaFinite_of_countable hf
   have hg0 : ∀ᵐ x ∂μ, x ∉ s → g x = 0 := by
     have h0 := (ae_restrict_iff' hs.compl).mp (ae_all_iff.mpr hzero)
@@ -48,10 +47,7 @@ theorem aefinStronglyMeasurable_of_tendsto_ae {α E : Type*} [MeasurableSpace α
   have hg : AEStronglyMeasurable g μ :=
     aestronglyMeasurable_of_tendsto_ae atTop (fun n ↦
       ⟨(hf n).mk (f n), (hf n).finStronglyMeasurable_mk.stronglyMeasurable, (hf n).ae_eq_mk⟩) hlim
-  refine ⟨s.indicator (hg.mk g), ?_, ?_⟩
-  · exact (hg.stronglyMeasurable_mk.indicator hs).finStronglyMeasurable_of_set_sigmaFinite
-      hs (fun x hx ↦ indicator_of_notMem hx _) hσ
-  · filter_upwards [hg.ae_eq_mk, hg0] with x hx hx0
-    by_cases hxs : x ∈ s <;> simp [hxs, ← hx, hx0]
+  exact TauCeti.aefinStronglyMeasurable_iff_aestronglyMeasurable_and_exists_set_sigmaFinite.2
+    ⟨hg, s, hs, (ae_restrict_iff' hs.compl).mpr hg0, hσ⟩
 
 end MeasureTheory
