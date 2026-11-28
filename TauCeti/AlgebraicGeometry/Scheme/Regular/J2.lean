@@ -17,11 +17,13 @@ J-2 ring.
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.Hom.isOpen_regularLocus_of_isJ2` proves openness using affine
-  neighbourhoods of the image. It uses `Scheme.Hom.preimage_regularLocus` to restrict to affine
-  charts and `TauCeti.Excellence.IsJ2.isOpen_regularLocus_of_finiteType` on their coordinate rings.
-* `AlgebraicGeometry.Scheme.Hom.isOpen_regularLocus_of_spec_isJ2` applies this to an affine
-  base presented as a spectrum.
+* `AlgebraicGeometry.Scheme.Hom.isOpen_regularLocus_of_isJ2`: the source of a locally finite-type
+  morphism has open regular locus if its image is covered by affine opens with J-2 coordinate rings.
+* `AlgebraicGeometry.Scheme.Hom.isOpen_regularLocus_of_spec_isJ2`: a scheme locally of finite type
+  over the spectrum of a J-2 ring has open regular locus.
+
+The chart argument uses Mathlib's `Scheme.Hom.finiteType_appLE` and Tau Ceti's
+`Scheme.Hom.preimage_regularLocus` and `TauCeti.Excellence.IsJ2.isOpen_regularLocus_of_finiteType`.
 
 ## References
 
@@ -47,22 +49,26 @@ theorem isOpen_regularLocus_of_isJ2 (f : X ⟶ Y) [LocallyOfFiniteType f]
   intro x hx
   obtain ⟨U, hU, hxU, hJ2⟩ := h x
   obtain ⟨V, hV, hxV, hVU⟩ :=
-    exists_isAffineOpen_mem_and_subset (x := x) (U := f ⁻¹ᵁ U) hxU
+    exists_isAffineOpen_mem_and_subset (f.mem_preimage.mpr hxU)
   let := (f.appLE U V hVU).hom.toAlgebra
-  have : Algebra.FiniteType Γ(Y, U) Γ(X, V) := f.finiteType_appLE hU hV hVU
+  have : Algebra.FiniteType Γ(Y, U) Γ(X, V) := by
+    apply RingHom.finiteType_algebraMap.mp
+    rw [RingHom.algebraMap_toAlgebra]
+    exact f.finiteType_appLE hU hV hVU
   have hOpen : IsOpen (hV.fromSpec ⁻¹' X.regularLocus) := by
     rw [hV.fromSpec.preimage_regularLocus, Scheme.regularLocus_Spec]
     exact IsJ2.isOpen_regularLocus_of_finiteType (R := Γ(Y, U))
   refine ⟨hV.fromSpec '' (hV.fromSpec ⁻¹' X.regularLocus), Set.image_preimage_subset _ _,
     hV.fromSpec.isOpenEmbedding.isOpenMap _ hOpen, ?_⟩
   rw [Set.image_preimage_eq_inter_range, hV.range_fromSpec]
-  exact ⟨hx, hxV⟩
+  exact Set.mem_inter hx hxV
 
 /-- A scheme locally of finite type over the spectrum of a J-2 ring has open regular locus. -/
 theorem isOpen_regularLocus_of_spec_isJ2 {R : CommRingCat.{u}} [IsJ2 R]
     (f : X ⟶ Spec R) [LocallyOfFiniteType f] : IsOpen X.regularLocus := by
   apply f.isOpen_regularLocus_of_isJ2
   intro x
-  exact ⟨⊤, isAffineOpen_top _, trivial, (Scheme.ΓSpecIso R).symm.commRingCatIsoToRingEquiv.isJ2⟩
+  exact ⟨⊤, isAffineOpen_top _, TopologicalSpace.Opens.mem_top (f x),
+    (Scheme.ΓSpecIso R).symm.commRingCatIsoToRingEquiv.isJ2⟩
 
 end AlgebraicGeometry.Scheme.Hom
