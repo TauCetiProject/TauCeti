@@ -22,6 +22,9 @@ For an `R`-algebra `A`, an `R`-algebra `S` and an `S`-algebra map `q : S →ₐ[
 (`AlgHom.restrictScalars_comp_bijective_iff`). This reduces lifting problems for algebras over an
 arbitrary base `R` to lifting problems over `S` itself.
 
+`AlgHom.liftEquiv_rTensor_apply` describes evaluation after mapping the left tensor factor
+and postcomposing the evaluation map compatibly.
+
 When an `R`-algebra map `φ : A →ₐ[R] B` into an `S`-algebra `B` carries an `R`-basis of `A` to an
 `S`-basis of `B`, the induced `S`-algebra multiplication map `AlgHom.liftEquiv R S A B φ` is
 bijective (`AlgHom.liftEquiv_bijective_of_basis`).
@@ -45,6 +48,22 @@ theorem liftEquiv_comp_includeRight {R S A B : Type*} [CommSemiring R] [CommSemi
     [IsScalarTower R S B] (f : A →ₐ[R] B) :
     ((f.liftEquiv R S A B).restrictScalars R).comp Algebra.TensorProduct.includeRight = f :=
   (AlgHom.liftEquiv R S A B).left_inv f
+
+/-- Tensor evaluation commutes with mapping the left factor by `g` and postcomposing by `q`
+when `q` acts on the scalars through `g`. -/
+theorem liftEquiv_rTensor_apply {R S U A T V : Type*} [CommSemiring R] [CommSemiring S]
+    [CommSemiring U] [Semiring A] [Semiring T] [Semiring V]
+    [Algebra R S] [Algebra R U] [Algebra R A] [Algebra R T] [Algebra R V]
+    [Algebra S T] [Algebra U V] [IsScalarTower R S T] [IsScalarTower R U V]
+    (f : A →ₐ[R] T) (g : S →ₐ[R] U) (q : T →ₐ[R] V)
+    (h : ∀ s, q (algebraMap S T s) = algebraMap U V (g s)) (x : S ⊗[R] A) :
+    liftEquiv R U A V (q.comp f) (Algebra.TensorProduct.rTensor A g x) =
+      q (liftEquiv R S A T f x) := by
+  have he : ((liftEquiv R U A V (q.comp f)).restrictScalars R).comp
+        (Algebra.TensorProduct.rTensor A g) =
+      q.comp ((liftEquiv R S A T f).restrictScalars R) :=
+    Algebra.TensorProduct.ext' fun s a ↦ by simp [Algebra.smul_def, h]
+  exact DFunLike.congr_fun he x
 
 section Comp
 

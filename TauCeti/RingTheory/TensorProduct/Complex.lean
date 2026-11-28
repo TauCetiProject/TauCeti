@@ -36,6 +36,7 @@ This is distinct from the nonreduced tensor products caused by inseparability.
 public section
 
 open TensorProduct
+open scoped ComplexConjugate
 
 namespace TauCeti
 

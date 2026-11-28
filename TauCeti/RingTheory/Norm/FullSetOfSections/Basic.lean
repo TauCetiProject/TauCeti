@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.TensorProduct.Pi
 public import TauCeti.RingTheory.NormTrace.BaseChange
 public import TauCeti.RingTheory.NormTrace.Pi
 public import TauCeti.RingTheory.TensorProduct.Maps
+import TauCeti.RingTheory.TensorProduct.LiftEquiv
 
 /-!
 # Full sets of sections
@@ -214,7 +215,15 @@ private theorem norm_eq_prod_of_generic {κ : Type*} [Fintype κ] (b : Module.Ba
     simp [c, TensorProduct.smul_tmul']
   rw [← hf, Algebra.norm_rTensor, h, map_prod]
   refine Finset.prod_congr rfl fun i _ ↦ ?_
-  rw [AlgHom.sectionBaseChange_rTensor, AlgHom.sectionBaseChange_sum_tmul]
+  let x := ∑ j, (X j : MvPolynomial κ A) ⊗ₜ[A] b j
+  let g : MvPolynomial κ A →ₐ[A] T := aeval fun j ↦ c j
+  have hn : (s i).sectionBaseChange T (Algebra.TensorProduct.rTensor B g x) =
+      g ((s i).sectionBaseChange (MvPolynomial κ A) x) := by
+    simpa only [AlgHom.sectionBaseChange, ← AlgHom.comp_assoc, Algebra.comp_ofId] using
+      AlgHom.liftEquiv_rTensor_apply ((Algebra.ofId A _).comp (s i)) g g (fun _ ↦ rfl) x
+  rw [hn]
+  dsimp only [x, g]
+  rw [AlgHom.sectionBaseChange_sum_tmul]
 
 -- For `B` free, the defining identity holds for test algebras in every universe; this is the
 -- free case of `IsFullSetOfSections.norm_eq`.

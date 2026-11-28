@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Product
 public import TauCeti.Algebra.Bialgebra.Hom.Representable
 public import TauCeti.RingTheory.Norm.FullSetOfSections.Basic
 public import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
+import TauCeti.RingTheory.TensorProduct.LiftEquiv
 
 /-!
 # Katz–Mazur generators of finite flat group schemes
@@ -199,6 +200,9 @@ private theorem liftEquiv_comp_generatorFamily {T : Type w} [CommRing T] [Algebr
   have := HomAlgebra.homEquiv_comp_one_tmul (AlgHom.id R _) φ h
   rw [AlgHom.comp_id] at this
   simp [generatorFamily, this]
+  simpa only [AlgHom.sectionBaseChange, ← AlgHom.comp_assoc, Algebra.comp_ofId] using
+    (AlgHom.liftEquiv_rTensor_apply ((Algebra.ofId R _).comp (eval R A a)) φ φ
+      (fun _ ↦ rfl) (HomAlgebra.homEquiv R H _ _ (AlgHom.id R _) (1 ⊗ₜ[R] h))).symm
 
 variable (R H A)
 
