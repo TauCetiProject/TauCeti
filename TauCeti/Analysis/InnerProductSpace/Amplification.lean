@@ -256,14 +256,8 @@ theorem piLpEntryCLM_toPointwiseConvergenceCLM [ContinuousSMul 𝕜 (PiLp 2 (fun
         (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) _ _ T) =
       ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H (T.piLpEntry i j) := by
   ext h
-  have h1 : (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜)
-      (PiLp 2 fun _ : ι => H) (PiLp 2 fun _ : ι => H) T) (PiLp.single 2 j h) =
-      T (PiLp.single 2 j h) :=
-    DFunLike.congr_fun (ContinuousLinearMap.toPointwiseConvergenceCLM_apply _ _ _ _ T) _
-  have h2 : (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H
-      (T.piLpEntry i j)) h = T.piLpEntry i j h :=
-    DFunLike.congr_fun (ContinuousLinearMap.toPointwiseConvergenceCLM_apply _ _ _ _ _) _
-  rw [piLpEntryCLM_apply, h1, h2, ContinuousLinearMap.piLpEntry_apply]
+  rw [piLpEntryCLM_apply, ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply,
+    ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply, ContinuousLinearMap.piLpEntry_apply]
 
 end PointwiseConvergenceCLM
 

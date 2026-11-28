@@ -119,6 +119,14 @@ theorem isOpen_setOf_forall_norm_sub_apply_lt {𝕜₁ 𝕜₂ E F ι : Type*} [
 
 end PointwiseConvergenceCLM
 
+/-- Evaluating `toPointwiseConvergenceCLM 𝕜₂ σ E F f` at a vector `x` gives `f x`. -/
+theorem ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply {𝕜₁ 𝕜₂ E F : Type*}
+    [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂} [AddCommGroup E] [TopologicalSpace E]
+    [Module 𝕜₁ E] [ContinuousSMul 𝕜₁ E] [AddCommGroup F] [TopologicalSpace F]
+    [IsTopologicalAddGroup F] [Module 𝕜₂ F] [ContinuousConstSMul 𝕜₂ F]
+    (f : E →SL[σ] F) (x : E) :
+    toPointwiseConvergenceCLM 𝕜₂ σ E F f x = f x :=
+  DFunLike.congr_fun (toPointwiseConvergenceCLM_apply 𝕜₂ σ E F f) x
 
 /-- Passing to the topology of pointwise convergence does not identify distinct maps. -/
 theorem ContinuousLinearMap.toPointwiseConvergenceCLM_injective {𝕜₁ 𝕜₂ E F : Type*}

@@ -27,33 +27,61 @@ import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 Let `S` be a unital star subalgebra of the bounded operators on a complex Hilbert space `H`. By the
 bicommutant theorem, `S` is strongly dense in its double commutant `S''`. The **Kaplansky density
-theorem** sharpens this to norm balls: for every radius `r : ℝ`, the strong-star, strong, weak,
-ultrastrong, and ultraweak closures of `S ∩ closedBall 0 r` all equal `S'' ∩ closedBall 0 r`. In
-particular, the strong operator closure of the closed unit ball of `S` is the closed unit ball of
-`S''` (`StarSubalgebra.closure_unitBall_eq_unitBall_double_centralizer`), and the same holds for
-the self-adjoint parts at any radius `r`
-(`StarSubalgebra.closure_selfAdjoint_closedBall_eq_selfAdjoint_closedBall_double_centralizer`)
-and the positive parts
-(`StarSubalgebra.closure_nonneg_unitBall_eq_nonneg_unitBall_double_centralizer`),
-as well as at every radius `r : ℝ` and for `Icc 0 1`, and in the strong-star topology
-(`StarSubalgebra.closure_strongStar_unitBall_eq_unitBall_double_centralizer`,
-`StarSubalgebra.closure_image_strongStar_ofCLM_inter_closedBall`).
+theorem** sharpens this to norm balls: for every radius `r : ℝ`, the strong-star, strong operator,
+weak operator, ultrastrong, and ultraweak closures of `S ∩ closedBall 0 r` all equal
+`S'' ∩ closedBall 0 r` (`StarSubalgebra.closure_image_strongStar_ofCLM_inter_closedBall`,
+`StarSubalgebra.closure_image_toPointwiseConvergenceCLM_inter_closedBall`,
+`StarSubalgebra.closure_image_ofCLM_inter_closedBall`,
+`StarSubalgebra.closure_image_ultrastrongOfCLM_inter_closedBall`,
+`StarSubalgebra.closure_image_ultraweakOfCLM_inter_closedBall`), with unit-ball forms
+`StarSubalgebra.closure_strongStar_unitBall_eq_unitBall_double_centralizer` and
+`StarSubalgebra.closure_unitBall_eq_unitBall_double_centralizer`. The same holds for the
+self-adjoint parts at any radius `r` in the strong operator
+(`StarSubalgebra.closure_selfAdjoint_closedBall_eq_selfAdjoint_closedBall_double_centralizer`,
+`StarSubalgebra.closure_image_toPointwiseConvergenceCLM_inter_selfAdjoint_inter_closedBall`),
+strong-star (via
+`closure_strongStar_selfAdjoint_closedBall_eq_selfAdjoint_closedBall_double_centralizer` in
+`StarSubalgebra`), weak operator
+(`StarSubalgebra.closure_image_ofCLM_inter_selfAdjoint_inter_closedBall`), ultrastrong
+(`StarSubalgebra.closure_image_ultrastrongOfCLM_inter_selfAdjoint_inter_closedBall`), and ultraweak
+(`StarSubalgebra.closure_image_ultraweakOfCLM_inter_selfAdjoint_inter_closedBall`) topologies.
 
-Combining bounded strong (respectively, weak) density with the agreement of strong and ultrastrong
-(respectively, weak and ultraweak) topologies on norm-bounded sets yields the bounded ultrastrong
-and ultraweak Kaplansky density theorems
-(`StarSubalgebra.closure_image_ultrastrongOfCLM_inter_closedBall`,
-`StarSubalgebra.closure_image_ultraweakOfCLM_inter_closedBall`, together with their self-adjoint
-and positive-part variants) and characterizes concrete von Neumann algebras among unital star
-subalgebras by weak operator compactness of closed balls of positive radius
-(`StarSubalgebra.double_commutant_iff_isCompact_image_ofCLM_inter_closedBall`), as well as the
-matrix-amplified strong operator and strong-star Kaplansky density theorems
+For the positive parts (`Ici 0`), density at every radius `r : ℝ` holds in the strong operator
+(`StarSubalgebra.closure_image_toPointwiseConvergenceCLM_inter_Ici_zero_inter_closedBall`),
+strong-star (`StarSubalgebra.closure_image_strongStar_ofCLM_inter_Ici_zero_inter_closedBall`), weak
+operator (`StarSubalgebra.closure_image_ofCLM_inter_Ici_zero_inter_closedBall`), ultrastrong
+(`StarSubalgebra.closure_image_ultrastrongOfCLM_inter_Ici_zero_inter_closedBall`), and ultraweak
+(`StarSubalgebra.closure_image_ultraweakOfCLM_inter_Ici_zero_inter_closedBall`) topologies. For
+positive contractions, the unit-ball predicate form is exported in the strong operator topology
+(`StarSubalgebra.closure_nonneg_unitBall_eq_nonneg_unitBall_double_centralizer`), and the `Icc 0 1`
+interval form is exported in the weak operator, ultrastrong, and ultraweak topologies
+(`StarSubalgebra.closure_image_ofCLM_inter_Icc_zero_one`,
+`StarSubalgebra.closure_image_ultrastrongOfCLM_inter_Icc_zero_one`,
+`StarSubalgebra.closure_image_ultraweakOfCLM_inter_Icc_zero_one`).
+
+These results characterize concrete von Neumann algebras among unital star subalgebras by weak
+operator compactness of closed balls of positive radius
+(`StarSubalgebra.double_commutant_iff_isCompact_image_ofCLM_inter_closedBall`), specialize to
+`VonNeumannAlgebra.adjoin`, and yield the matrix-amplified strong operator and strong-star
+Kaplansky density theorems
 (`StarSubalgebra.closure_image_toPointwiseConvergenceCLM_piLpMatrix_inter_closedBall`,
 `StarSubalgebra.closure_image_strongStar_ofCLM_piLpMatrix_inter_closedBall`). For the unbounded
 ultrastrong and ultraweak bicommutant theorems themselves, see
 `StarSubalgebra.closure_image_ultrastrongOfCLM` and
 `StarSubalgebra.closure_image_ultraweakOfCLM` in
 `TauCeti.Analysis.VonNeumannAlgebra.UltraweakClosure`.
+
+## Formal proof inputs
+
+The self-adjoint step reduces a self-adjoint contraction in `S''` via `TauCeti.kaplanskyFun` and
+`TauCeti.kaplanskyFunInv`, transfers strong operator convergence along
+`TauCeti.tendsto_cfc_kaplanskyFun_apply` (from
+`TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Kaplansky`), and pulls norm-closure
+approximants back to `S` using `TauCeti.closure_inter_selfAdjoint_inter_closedBall`. The full
+strong-star ball theorem reduces to the `2 × 2` self-adjoint matrix amplification via
+`StarSubalgebra.mem_centralizer_centralizer_piLpMatrix_iff` and extracts the `(0, 1)` entry using
+`TauCeti.ContinuousLinearMapStrongStar.continuous_piLpEntry`. The weak-operator compactness
+criterion uses `ContinuousLinearMapWOT.isCompact_image_ofCLM_closedBall`.
 
 ## References
 
@@ -87,6 +115,15 @@ private theorem isClosed_image_ofCLM_inter (S : Set (H →L[ℂ] H)) (r : ℝ)
   exact (S.centralizer.isClosed_image_ofCLM_centralizer.inter hP).inter
     (ContinuousLinearMapWOT.isCompact_image_ofCLM_closedBall 0 r).isClosed
 
+private theorem isClosed_image_ofCLM_double_centralizer_inter_closedBall
+    (S : Set (H →L[ℂ] H)) (r : ℝ) :
+    IsClosed (ContinuousLinearMapWOT.ofCLM '' (S.centralizer.centralizer ∩ closedBall 0 r)) := by
+  simpa only [Set.inter_univ] using
+    isClosed_image_ofCLM_inter S r (P := Set.univ)
+      (by
+        rw [Set.image_univ, ContinuousLinearMapWOT.ofCLM_surjective.range_eq]
+        exact isClosed_univ)
+
 private theorem isClosed_image_toPointwiseConvergenceCLM_inter (S : Set (H →L[ℂ] H))
     {P : Set (H →L[ℂ] H)} (hP : IsClosed (ContinuousLinearMapWOT.ofCLM '' P)) (r : ℝ) :
     IsClosed (ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) H H ''
@@ -97,12 +134,9 @@ private theorem isClosed_image_toPointwiseConvergenceCLM_inter (S : Set (H →L[
 private theorem isClosed_image_toPointwiseConvergenceCLM_double_centralizer_inter_closedBall
     (S : Set (H →L[ℂ] H)) (r : ℝ) :
     IsClosed (ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) H H ''
-      (S.centralizer.centralizer ∩ closedBall 0 r)) := by
-  simpa only [Set.inter_univ] using
-    isClosed_image_toPointwiseConvergenceCLM_inter S (P := Set.univ)
-      (by
-        rw [Set.image_univ, ContinuousLinearMapWOT.ofCLM_surjective.range_eq]
-        exact isClosed_univ) r
+      (S.centralizer.centralizer ∩ closedBall 0 r)) :=
+  ContinuousLinearMapWOT.isClosed_image_toPointwiseConvergenceCLM_of_isClosed_image_ofCLM
+    (isClosed_image_ofCLM_double_centralizer_inter_closedBall S r)
 
 omit [CompleteSpace H] in
 private theorem setOf_mem_and_pred_and_norm_le_eq_inter
@@ -228,7 +262,7 @@ theorem closure_nonneg_unitBall_eq_nonneg_unitBall_double_centralizer
     exact ContinuousLinearMap.tendsto_comp_apply_of_eventually_norm_le hlim hlim
       (hlS.mono fun a ha => ha.2.2) v
 
-/-! ### Strong-star forms for self-adjoint and positive parts -/
+/-! ### Strong-star form for self-adjoint parts -/
 
 /-- **The Kaplansky density theorem for self-adjoint parts, strong-star form.** For a unital star
 subalgebra `S` of `B(H)`, the strong-star closure of the self-adjoint elements of norm at most `r`
@@ -242,18 +276,6 @@ theorem closure_strongStar_selfAdjoint_closedBall_eq_selfAdjoint_closedBall_doub
   ContinuousLinearMapStrongStar.closure_image_ofCLM_eq_of_isStarNormal
     (fun _ hx => hx.2.1.isStarNormal)
     (S.closure_selfAdjoint_closedBall_eq_selfAdjoint_closedBall_double_centralizer r)
-
-/-- **The Kaplansky density theorem for positive parts, strong-star form.** For a unital star
-subalgebra `S` of `B(H)`, the strong-star closure of the positive contractions of `S` is the set of
-positive contractions of its double commutant `S''`. -/
-theorem closure_strongStar_nonneg_unitBall_eq_nonneg_unitBall_double_centralizer
-    (S : StarSubalgebra ℂ (H →L[ℂ] H)) :
-    closure (ContinuousLinearMapStrongStar.ofCLM '' {x | x ∈ S ∧ 0 ≤ x ∧ ‖x‖ ≤ 1}) =
-      ContinuousLinearMapStrongStar.ofCLM ''
-        {x | x ∈ (S : Set (H →L[ℂ] H)).centralizer.centralizer ∧ 0 ≤ x ∧ ‖x‖ ≤ 1} :=
-  ContinuousLinearMapStrongStar.closure_image_ofCLM_eq_of_isStarNormal
-    (fun _ hx => (IsSelfAdjoint.of_nonneg hx.2.1).isStarNormal)
-    S.closure_nonneg_unitBall_eq_nonneg_unitBall_double_centralizer
 
 /-! ### Shared closure helpers -/
 
@@ -357,10 +379,8 @@ private theorem isClosed_image_strongStar_ofCLM_double_centralizer_inter_closedB
     (S : StarSubalgebra ℂ (H →L[ℂ] H)) (r : ℝ) :
     IsClosed (TauCeti.ContinuousLinearMapStrongStar.ofCLM ''
       ((S : Set (H →L[ℂ] H)).centralizer.centralizer ∩ closedBall 0 r)) :=
-  ContinuousLinearMapStrongStar.isClosed_image_ofCLM_of_isClosed_image_wot <| by
-    simpa only [Set.inter_univ] using isClosed_image_ofCLM_inter (S : Set (H →L[ℂ] H)) r
-      (P := Set.univ)
-      (by simp [Set.image_univ_of_surjective ContinuousLinearMapWOT.ofCLM_surjective])
+  ContinuousLinearMapStrongStar.isClosed_image_ofCLM_of_isClosed_image_wot
+    (isClosed_image_ofCLM_double_centralizer_inter_closedBall (S : Set (H →L[ℂ] H)) r)
 
 private theorem dilation_mem_piLpMatrix_double_centralizer_selfAdjoint_inter_closedBall
     (S : StarSubalgebra ℂ (H →L[ℂ] H)) {x : H →L[ℂ] H} {r : ℝ}
@@ -500,48 +520,17 @@ theorem closure_image_strongStar_ofCLM_piLpMatrix_inter_closedBall
   ext T
   exact S.mem_centralizer_centralizer_piLpMatrix_iff.symm
 
-/-- **The Kaplansky density theorem for matrix amplifications, strong-star form.** For a unital
-star subalgebra `S` of `B(H)` and a finite index type `ι`, the strong-star closure of the closed
-unit ball of the matrix amplification `Mᵢ(S)` consists of the contractions on the Hilbert sum
-`PiLp 2 (fun _ : ι => H)` all of whose matrix entries lie in `S''`. -/
-theorem closure_strongStar_piLpMatrix_unitBall_eq_unitBall_piLpEntry_double_centralizer
-    (S : StarSubalgebra ℂ (H →L[ℂ] H)) {ι : Type*} [Fintype ι] [DecidableEq ι] :
-    closure (ContinuousLinearMapStrongStar.ofCLM '' {T | T ∈ S.piLpMatrix ι ∧ ‖T‖ ≤ 1}) =
-      ContinuousLinearMapStrongStar.ofCLM ''
-        {T | (∀ i j, T.piLpEntry i j ∈ (S : Set (H →L[ℂ] H)).centralizer.centralizer) ∧
-          ‖T‖ ≤ 1} := by
-  simp_rw [closure_strongStar_unitBall_eq_unitBall_double_centralizer,
-    mem_centralizer_centralizer_piLpMatrix_iff]
-
-/-- **The Kaplansky density theorem for matrix amplifications.** For a unital star subalgebra `S`
-of `B(H)` and a finite index type `ι`, the strong operator closure of the closed unit ball of the
-matrix amplification `Mᵢ(S)` consists of the contractions on the Hilbert sum
-`PiLp 2 (fun _ : ι => H)` all of whose matrix entries lie in `S''`. -/
-theorem closure_piLpMatrix_unitBall_eq_unitBall_piLpEntry_double_centralizer
-    (S : StarSubalgebra ℂ (H →L[ℂ] H)) {ι : Type*} [Fintype ι] [DecidableEq ι] :
-    closure (ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ)
-        (PiLp 2 (fun _ : ι => H)) (PiLp 2 (fun _ : ι => H)) ''
-        {T | T ∈ S.piLpMatrix ι ∧ ‖T‖ ≤ 1}) =
-      ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ)
-        (PiLp 2 (fun _ : ι => H)) (PiLp 2 (fun _ : ι => H)) ''
-        {T | (∀ i j, T.piLpEntry i j ∈ (S : Set (H →L[ℂ] H)).centralizer.centralizer) ∧
-          ‖T‖ ≤ 1} := by
-  simp_rw [closure_unitBall_eq_unitBall_double_centralizer,
-    mem_centralizer_centralizer_piLpMatrix_iff]
-
 /-- **Weak operator Kaplansky density theorem.** For every radius `r : ℝ`, the weak operator
 closure of `S ∩ closedBall 0 r` equals `S'' ∩ closedBall 0 r`. -/
 theorem closure_image_ofCLM_inter_closedBall
     (S : StarSubalgebra ℂ (H →L[ℂ] H)) (r : ℝ) :
     closure (ContinuousLinearMapWOT.ofCLM '' ((S : Set (H →L[ℂ] H)) ∩ closedBall 0 r)) =
       ContinuousLinearMapWOT.ofCLM ''
-        ((S : Set (H →L[ℂ] H)).centralizer.centralizer ∩ closedBall 0 r) := by
-  refine ContinuousLinearMapWOT.closure_image_ofCLM_eq_of_subset_closure_toPointwiseConvergenceCLM
-    (inter_subset_inter_left _ Set.subset_centralizer_centralizer) ?_
+        ((S : Set (H →L[ℂ] H)).centralizer.centralizer ∩ closedBall 0 r) :=
+  ContinuousLinearMapWOT.closure_image_ofCLM_eq_of_subset_closure_toPointwiseConvergenceCLM
+    (inter_subset_inter_left _ Set.subset_centralizer_centralizer)
+    (isClosed_image_ofCLM_double_centralizer_inter_closedBall (S : Set (H →L[ℂ] H)) r)
     (S.closure_image_toPointwiseConvergenceCLM_inter_closedBall r).ge
-  rw [Set.image_inter ContinuousLinearMapWOT.ofCLM_injective]
-  exact ((S : Set (H →L[ℂ] H)).centralizer.isClosed_image_ofCLM_centralizer).inter
-    (ContinuousLinearMapWOT.isCompact_image_ofCLM_closedBall 0 r).isClosed
 
 /-- **Finite-vector strong-star Kaplansky approximation.** Every `x ∈ S''` can be approximated
 simultaneously with its adjoint on finitely many vectors by `s ∈ S` satisfying `‖s‖ ≤ ‖x‖`. -/
@@ -603,6 +592,18 @@ theorem closure_image_toPointwiseConvergenceCLM_inter_Ici_zero_inter_closedBall
     simp only [← SetLike.mem_coe, setOf_mem_and_pred_and_norm_le_eq_inter] at hb_mem
     exact hb_mem
 
+/-- **Strong-star positive-part Kaplansky density theorem for arbitrary radius `r : ℝ`.** The
+strong-star closure of `S ∩ Ici 0 ∩ closedBall 0 r` equals `S'' ∩ Ici 0 ∩ closedBall 0 r`. -/
+theorem closure_image_strongStar_ofCLM_inter_Ici_zero_inter_closedBall
+    (S : StarSubalgebra ℂ (H →L[ℂ] H)) (r : ℝ) :
+    closure (TauCeti.ContinuousLinearMapStrongStar.ofCLM ''
+        ((S : Set (H →L[ℂ] H)) ∩ Ici 0 ∩ closedBall 0 r)) =
+      TauCeti.ContinuousLinearMapStrongStar.ofCLM ''
+        ((S : Set (H →L[ℂ] H)).centralizer.centralizer ∩ Ici 0 ∩ closedBall 0 r) :=
+  ContinuousLinearMapStrongStar.closure_image_ofCLM_eq_of_isStarNormal
+    (fun _ hx ↦ (IsSelfAdjoint.of_nonneg hx.1.2).isStarNormal)
+    (S.closure_image_toPointwiseConvergenceCLM_inter_Ici_zero_inter_closedBall r)
+
 /-- **Weak operator positive-part Kaplansky density theorem for arbitrary radius `r : ℝ`.** The
 weak operator closure of `S ∩ Ici 0 ∩ closedBall 0 r` equals `S'' ∩ Ici 0 ∩ closedBall 0 r`. -/
 theorem closure_image_ofCLM_inter_Ici_zero_inter_closedBall
@@ -610,15 +611,12 @@ theorem closure_image_ofCLM_inter_Ici_zero_inter_closedBall
     closure (ContinuousLinearMapWOT.ofCLM ''
         ((S : Set (H →L[ℂ] H)) ∩ Ici 0 ∩ closedBall 0 r)) =
       ContinuousLinearMapWOT.ofCLM ''
-        ((S : Set (H →L[ℂ] H)).centralizer.centralizer ∩ Ici 0 ∩ closedBall 0 r) := by
-  refine ContinuousLinearMapWOT.closure_image_ofCLM_eq_of_subset_closure_toPointwiseConvergenceCLM
-    (inter_subset_inter_left _ (inter_subset_inter_left _ Set.subset_centralizer_centralizer)) ?_
+        ((S : Set (H →L[ℂ] H)).centralizer.centralizer ∩ Ici 0 ∩ closedBall 0 r) :=
+  ContinuousLinearMapWOT.closure_image_ofCLM_eq_of_subset_closure_toPointwiseConvergenceCLM
+    (inter_subset_inter_left _ (inter_subset_inter_left _ Set.subset_centralizer_centralizer))
+    (isClosed_image_ofCLM_inter (S : Set (H →L[ℂ] H)) r
+      (ContinuousLinearMapWOT.isClosed_image_ofCLM_Ici (a := 0)))
     (S.closure_image_toPointwiseConvergenceCLM_inter_Ici_zero_inter_closedBall r).ge
-  rw [Set.image_inter ContinuousLinearMapWOT.ofCLM_injective,
-    Set.image_inter ContinuousLinearMapWOT.ofCLM_injective]
-  exact (((S : Set (H →L[ℂ] H)).centralizer.isClosed_image_ofCLM_centralizer).inter
-    ContinuousLinearMapWOT.isClosed_image_ofCLM_Ici).inter
-    (ContinuousLinearMapWOT.isCompact_image_ofCLM_closedBall 0 r).isClosed
 
 /-- **Weak operator positive-part Kaplansky density theorem.** The weak operator closure of the
 positive contractions `S ∩ Icc 0 1` equals `S'' ∩ Icc 0 1`. -/
@@ -780,9 +778,8 @@ theorem double_commutant_iff_isClosed_image_ofCLM_inter_closedBall
     (S : Set (H →L[ℂ] H)).centralizer.centralizer = S ↔
       IsClosed (ContinuousLinearMapWOT.ofCLM '' ((S : Set (H →L[ℂ] H)) ∩ closedBall 0 r)) := by
   refine ⟨fun hS ↦ ?_, fun hcl ↦ ?_⟩
-  · rw [Set.image_inter ContinuousLinearMapWOT.ofCLM_injective]
-    exact (S.double_commutant_iff_isClosed_image_ofCLM.mp hS).inter
-      (ContinuousLinearMapWOT.isCompact_image_ofCLM_closedBall 0 r).isClosed
+  · rw [← hS]
+    exact isClosed_image_ofCLM_double_centralizer_inter_closedBall (S : Set (H →L[ℂ] H)) r
   · rw [S.double_commutant_iff_isClosed_image_toPointwiseConvergenceCLM_inter_closedBall hr]
     exact ContinuousLinearMapWOT.isClosed_image_toPointwiseConvergenceCLM_of_isClosed_image_ofCLM
       hcl

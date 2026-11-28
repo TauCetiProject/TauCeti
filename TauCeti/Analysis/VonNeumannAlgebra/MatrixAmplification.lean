@@ -177,20 +177,14 @@ the element belongs to `M`. -/
 @[simp]
 theorem singleEntryCLM_mem_piLpMatrix {M : VonNeumannAlgebra H} {ι : Type*} [Fintype ι]
     [DecidableEq ι] {i j : ι} {s : H →L[ℂ] H} :
-    PiLp.singleEntryCLM i j s ∈ M.piLpMatrix ι ↔ s ∈ M := by
-  refine mem_piLpMatrix_iff.trans ⟨fun h => by simpa using h i j, fun hs k l => ?_⟩
-  rw [ContinuousLinearMap.piLpEntry_singleEntryCLM]
-  split_ifs
-  exacts [hs, zero_mem M]
+    PiLp.singleEntryCLM i j s ∈ M.piLpMatrix ι ↔ s ∈ M :=
+  StarSubalgebra.singleEntryCLM_mem_piLpMatrix
 
 /-- Diagonal amplification maps `M` into `M.piLpMatrix ι`. -/
 theorem diagStarAlgHom_mem_piLpMatrix {M : VonNeumannAlgebra H} {ι : Type*} [Fintype ι]
     [DecidableEq ι] {s : H →L[ℂ] H} (hs : s ∈ M) :
     PiLp.diagStarAlgHom ℂ H ι s ∈ M.piLpMatrix ι :=
-  mem_piLpMatrix_iff.2 fun i j => by
-    rw [ContinuousLinearMap.piLpEntry_diagStarAlgHom]
-    split_ifs
-    exacts [hs, zero_mem M]
+  StarSubalgebra.diagStarAlgHom_mem_piLpMatrix hs
 
 /-- The commutant of the matrix von Neumann algebra `M.piLpMatrix ι` consists of block-diagonal
 operators with constant diagonal entry in `M.commutant`. -/

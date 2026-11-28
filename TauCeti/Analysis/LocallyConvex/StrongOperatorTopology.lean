@@ -201,16 +201,12 @@ theorem isClosed_image_toPointwiseConvergenceCLM_closedBall (f₀ : E →SL[σ] 
   simp only [Set.mem_image, Set.mem_preimage]
   constructor
   · rintro ⟨f, hf, rfl⟩
-    -- `toPointwiseConvergenceCLM_apply` exposes the same underlying map across distinct `FunLike`
-    -- instances on `E →SL[σ] F` and `E →SLₚₜ[σ] F`, whose coercions agree definitionally.
-    exact ⟨f, hf, by rw [ContinuousLinearMap.toPointwiseConvergenceCLM_apply]; rfl⟩
+    exact ⟨f, hf, funext fun x ↦ ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply f x⟩
   · rintro ⟨f, hf, hT⟩
     obtain ⟨g, rfl⟩ := ContinuousLinearMap.toPointwiseConvergenceCLM_surjective T
     refine ⟨f, hf, congrArg (ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜₂ σ E F)
       (ContinuousLinearMap.ext fun x ↦ ?_)⟩
-    have hx := congrFun hT x
-    rw [ContinuousLinearMap.toPointwiseConvergenceCLM_apply] at hx
-    exact hx
+    exact (congrFun hT x).trans (ContinuousLinearMap.toPointwiseConvergenceCLM_apply_apply g x)
 
 end ClosedBall
 
