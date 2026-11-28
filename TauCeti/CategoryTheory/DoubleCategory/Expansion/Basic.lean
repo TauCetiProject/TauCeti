@@ -238,6 +238,11 @@ theorem expand_cast {a b c d : O}
       (congrArg (@composePath O V a c) hl) (congrArg (@composePath O V b d) hr) :=
   D.toDoubleCategoryStruct.expand_cast hp hq hl hr α
 
+/-- Expansion commutes with exchanging the horizontal and vertical directions. -/
+@[simp]
+theorem expand_transpose : D.transpose.expand = D.expand.transpose := by
+  rfl
+
 end StrictDoubleCategory
 
 end TauCeti
