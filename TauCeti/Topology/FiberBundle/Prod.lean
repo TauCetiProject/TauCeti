@@ -89,6 +89,7 @@ variable {B F₁ F₂ : Type*} {E₁ E₂ : B → Type*}
 
 /-- A change from a product trivialization has the two factor coordinate changes as its
 components, over the base of the source trivialization. -/
+@[simp]
 theorem _root_.Bundle.Trivialization.coordChange_prod (e₁ e₁' : Bundle.Trivialization F₁ (π F₁ E₁))
     (e₂ e₂' : Bundle.Trivialization F₂ (π F₂ E₂)) {b : B}
     (h₁ : b ∈ e₁.baseSet) (h₂ : b ∈ e₂.baseSet) (v₁ : F₁) (v₂ : F₂) :
@@ -110,6 +111,7 @@ variable {B F₁ F₂ : Type*} {E₁ E₂ : B → Type*}
 
 /-- The fibre coordinate in the preferred chart of a fibrewise product is the pair of
 preferred fibre coordinates of its components. -/
+@[simp↓] -- Rewrite before `FiberBundle.prod_trivializationAt'` expands the chart.
 theorem trivializationAt_prod_snd (b : B) (z : TotalSpace (F₁ × F₂) (E₁ ×ᵇ E₂)) :
     (trivializationAt (F₁ × F₂) (E₁ ×ᵇ E₂) b z).2 =
       ((trivializationAt F₁ E₁ b ⟨z.proj, z.snd.fst⟩).2,
