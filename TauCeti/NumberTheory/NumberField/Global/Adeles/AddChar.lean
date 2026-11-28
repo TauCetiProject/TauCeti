@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.AdeleRing
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
 public import TauCeti.NumberTheory.NumberField.AddChar
+public import TauCeti.NumberTheory.NumberField.Global.Adeles.GaloisAction
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.AddChar
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.FractionalIdeal
 
@@ -56,6 +57,8 @@ complex embeddings above `w` identifies `K_w` with `ℂ`.
   `TauCeti.GlobalNumberFields.finiteAdeleAddChar_apply_of_mem_integralAdeles`: `ψ_f` is
   `e(Tr_{K/ℚ} ·)` on `K` and trivial on `Ô`.
 * `TauCeti.GlobalNumberFields.eq_finiteAdeleAddChar_iff`: these two properties characterize `ψ_f`.
+* `TauCeti.GlobalNumberFields.finiteAdeleAddChar_finiteAdeleEquiv`: `ψ_f` is invariant under
+  transport along isomorphisms of number fields.
 * `TauCeti.GlobalNumberFields.continuous_finiteAdeleAddChar`: `ψ_f` is continuous.
 * `TauCeti.GlobalNumberFields.forall_finiteAdeleAddChar_mul_eq_one_iff`: the annihilator of `Ô`
   under `(z, u) ↦ ψ_f (z u)` is the finite adelic ideal of the inverse different.
@@ -117,6 +120,23 @@ theorem finiteAdeleAddChar_apply_of_mem_integralAdeles {a : FiniteAdeleRing (�
 theorem finiteAdeleAddChar_add_of_mem_integralAdeles {a o : FiniteAdeleRing (𝓞 K) K}
     (ho : o ∈ integralAdeles (𝓞 K) K) : finiteAdeleAddChar K (a + o) = finiteAdeleAddChar K a :=
   extendAddChar_add_of_mem_integralAdeles _ _ ho
+
+/-- `ψ_f` is invariant under transport of finite adeles along an isomorphism `e : K ≃ L` of number
+fields: `ψ_L (e a) = ψ_K a`. -/
+theorem finiteAdeleAddChar_finiteAdeleEquiv {L : Type*} [Field L] [NumberField L] (e : K ≃+* L)
+    (a : FiniteAdeleRing (𝓞 K) K) :
+    finiteAdeleAddChar L (finiteAdeleEquiv K L e a) = finiteAdeleAddChar K a := by
+  obtain ⟨x, -, hx⟩ := exists_algebraMap_mem_and_sub_mem_integralAdeles a Filter.univ_mem
+  have hx' : a - algebraMap K _ x ∈ integralAdeles (𝓞 K) K := by
+    rw [← neg_sub]
+    exact neg_mem hx
+  have hex : finiteAdeleEquiv K L e a - algebraMap L _ (e x) ∈ integralAdeles (𝓞 L) L := by
+    rw [← finiteAdeleEquiv_algebraMap, ← map_sub]
+    exact finiteAdeleEquiv_mem_integralAdeles e hx'
+  rw [finiteAdeleAddChar_apply_of_sub_mem hex, finiteAdeleAddChar_apply_of_sub_mem hx',
+    numberFieldTraceChar_apply, numberFieldTraceChar_apply]
+  exact congrArg (fun t : ℚ ↦ Real.fourierChar (t : ℝ))
+    (Algebra.trace_eq_of_algEquiv e.toRatAlgEquiv x)
 
 /-- **Characterization of `ψ_f`**: it is the unique additive character of the finite adeles that
 is trivial on the integral finite adeles and equals `exp (2πi Tr_{K/ℚ} x)` at every `x ∈ K`. -/
