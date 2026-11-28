@@ -12,8 +12,6 @@ public import Mathlib.Topology.Inseparable
 public import Mathlib.Topology.LocallyClosed
 public import Mathlib.Topology.Maps.OpenQuotient
 public import TauCeti.Data.Setoid.Basic
-import Mathlib.Topology.ContinuousMap.Basic
-import Mathlib.Topology.Homeomorph.Quotient
 
 /-!
 # Open quotient maps
@@ -196,22 +194,53 @@ equivalence relation `r.comap Subtype.val` is homeomorphic to its image `Quotien
 even when `W` is not saturated for `r`. -/
 noncomputable def IsOpen.quotientComapHomeomorphImage {r : Setoid X} {W : Set X} (hW : IsOpen W)
     (hq : IsOpenMap (Quotient.mk r)) :
-    Quotient (r.comap (Subtype.val : W → X)) ≃ₜ Quotient.mk r '' W := by
-  let g : C(W, Quotient.mk r '' W) :=
-    ⟨fun w ↦ ⟨Quotient.mk r w.val, w.val, w.property, rfl⟩,
-      (continuous_quot_mk.comp continuous_subtypeVal).subtype_mk _⟩
-  have hg : IsOpenQuotientMap g :=
-    ⟨fun ⟨_, x, hxW, hx⟩ ↦ ⟨⟨x, hxW⟩, Subtype.ext hx⟩,
-      g.continuous, (hq.comp hW.isOpenMap_subtypeVal).subtype_mk _⟩
-  exact (Homeomorph.Quotient.congrRight fun w₁ w₂ ↦ by
-    rw [Setoid.comap_rel, Setoid.ker_def, Subtype.ext_iff]
-    exact (@Quotient.eq _ r w₁.val w₂.val).symm).trans hg.isQuotientMap.homeomorph
+    Quotient (r.comap (Subtype.val : W → X)) ≃ₜ Quotient.mk r '' W :=
+  let g : W → Quotient.mk r '' W := Set.imageFactorization (Quotient.mk r) W
+  let e : Quotient (r.comap (Subtype.val : W → X)) ≃ Quotient.mk r '' W :=
+    Setoid.comapValQuotientEquiv r W
+  have he : (e : Quotient (r.comap (Subtype.val : W → X)) → Quotient.mk r '' W) ∘
+      @Quotient.mk' _ (r.comap (Subtype.val : W → X)) = g :=
+    funext fun w ↦ Setoid.comapValQuotientEquiv_mk r W w
+  { toEquiv := e
+    continuous_toFun :=
+      (isQuotientMap_quotient_mk' (s := r.comap (Subtype.val : W → X))).continuous_iff.mpr <| by
+        rw [Equiv.toFun_as_coe, he]
+        exact (continuous_quot_mk.comp continuous_subtypeVal).subtype_mk _
+    continuous_invFun := e.continuous_symm_iff.mpr <|
+      IsOpenMap.of_comp (continuous_quotient_mk' (s := r.comap (Subtype.val : W → X)))
+        (Quotient.mk_surjective (s := r.comap (Subtype.val : W → X))) <| by
+        rw [he]
+        exact (hq.comp hW.isOpenMap_subtypeVal).subtype_mk _ }
 
+/-- The underlying equivalence of `IsOpen.quotientComapHomeomorphImage` is
+`Setoid.comapValQuotientEquiv`. -/
 @[simp]
+theorem IsOpen.toEquiv_quotientComapHomeomorphImage {r : Setoid X} {W : Set X} (hW : IsOpen W)
+    (hq : IsOpenMap (Quotient.mk r)) :
+    (hW.quotientComapHomeomorphImage hq).toEquiv = Setoid.comapValQuotientEquiv r W :=
+  (rfl)
+
+/-- `IsOpen.quotientComapHomeomorphImage` maps the equivalence class of `w : W` to
+`Quotient.mk r w.val` in `Quotient.mk r '' W`. -/
+@[simp]
+theorem IsOpen.quotientComapHomeomorphImage_mk {r : Setoid X} {W : Set X} (hW : IsOpen W)
+    (hq : IsOpenMap (Quotient.mk r)) (w : W) :
+    hW.quotientComapHomeomorphImage hq (Quotient.mk (r.comap (Subtype.val : W → X)) w) =
+      ⟨Quotient.mk r w.val, Set.mem_image_of_mem (Quotient.mk r) w.property⟩ :=
+  Setoid.comapValQuotientEquiv_mk r W w
+
+/-- The inverse of `IsOpen.quotientComapHomeomorphImage` sends the image point represented by
+`w : W` back to the class of `w`. -/
+@[simp]
+theorem IsOpen.quotientComapHomeomorphImage_symm_mk {r : Setoid X} {W : Set X} (hW : IsOpen W)
+    (hq : IsOpenMap (Quotient.mk r)) (w : W) (hw : Quotient.mk r w.val ∈ Quotient.mk r '' W) :
+    (hW.quotientComapHomeomorphImage hq).symm ⟨Quotient.mk r w.val, hw⟩ =
+      Quotient.mk (r.comap (Subtype.val : W → X)) w :=
+  Setoid.comapValQuotientEquiv_symm_mk r W w hw
+
+/-- `IsOpen.quotientComapHomeomorphImage` maps the class of `w : W` to `Quotient.mk r w.val`. -/
 theorem IsOpen.coe_quotientComapHomeomorphImage_mk {r : Setoid X} {W : Set X} (hW : IsOpen W)
     (hq : IsOpenMap (Quotient.mk r)) (w : W) :
     ((hW.quotientComapHomeomorphImage hq
       (Quotient.mk (r.comap (Subtype.val : W → X)) w)) : Quotient r) = Quotient.mk r w.val := by
-  simp only [IsOpen.quotientComapHomeomorphImage, Homeomorph.trans_apply,
-    IsQuotientMap.homeomorph_apply]
-  exact congrArg Subtype.val (Setoid.kerLift_mk _ w)
+  simp
