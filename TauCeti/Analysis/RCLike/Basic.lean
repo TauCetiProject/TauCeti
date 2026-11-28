@@ -35,6 +35,7 @@ public import Mathlib.Analysis.RCLike.Basic
 * `RCLike.sum_mul_inv_le_sum_mul_re_sub_inv`: lower bound for weighted sums of
   `re (((σ : K) - ρ)⁻¹)` over real points `ρ ∈ S` with `0 < σ - re ρ ≤ D`.
 * `RCLike.one_sub_re_le_norm_sub_one`: `1 - re z ≤ ‖z - 1‖`.
+* `RCLike.norm_sub_one_sq_le_of_norm_le_one`: `‖z - 1‖ ^ 2 ≤ 2 * (1 - re z)` for `‖z‖ ≤ 1`.
 * `RCLike.norm_I_le_one`: `‖I‖ ≤ 1`, uniformly over `ℝ` (where `I = 0`) and `ℂ` (where `‖I‖ = 1`).
 * `RCLike.ext_of_re_eq_of_re_I_mul_eq`: two scalars in `K` with equal real parts before and after
   multiplying by `RCLike.I` are equal (uniformly over `ℝ` and `ℂ`).
@@ -161,6 +162,15 @@ theorem sum_mul_inv_le_sum_mul_re_sub_inv {S : Finset K} {w : K → ℝ} {σ D :
 /-- The real part of a scalar falls short of `1` by at most its distance to `1`. -/
 theorem one_sub_re_le_norm_sub_one (z : K) : 1 - re z ≤ ‖z - 1‖ := by
   simpa [norm_sub_rev] using re_le_norm (1 - z)
+
+/-- A scalar in the closed unit disk satisfies `‖z - 1‖ ^ 2 ≤ 2 * (1 - re z)`. -/
+theorem norm_sub_one_sq_le_of_norm_le_one {z : K} (hz : ‖z‖ ≤ 1) :
+    ‖z - 1‖ ^ 2 ≤ 2 * (1 - re z) := by
+  have hsq : normSq z ≤ 1 := by
+    simpa [normSq_eq_def'] using pow_le_pow_left₀ (norm_nonneg z) hz 2
+  rw [← normSq_eq_def', normSq_sub z 1, normSq_one]
+  simp only [map_one, mul_one]
+  linarith
 
 /-- Two scalars in an `RCLike` field are equal if they have the same real part and their products
 with `RCLike.I` also have the same real part. Over `ℝ` the second hypothesis is `0 = 0`; over `ℂ`

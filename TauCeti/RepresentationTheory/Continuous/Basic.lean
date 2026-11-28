@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.SemidirectProduct
 public import Mathlib.RepresentationTheory.Continuous.Basic
+import Mathlib.Dynamics.FixedPoints.Topology
 
 /-!
 # Basic facts about continuous representations
@@ -25,6 +26,14 @@ on each vector unchanged.
   `ρ' g ∘ T ∘ ρ g⁻¹ = S`.
 * `ContRepresentation.apply_inr_apply_inl`: in a representation of a semidirect product
   `N ⋊[φ] K`, the operator of `k : K` intertwines the action of `n : N` with that of `φ k n`.
+* `ContRepresentation.isClosed_invariants`: the invariants of a representation on a Hausdorff
+  space are closed, hence complete in a complete ambient space.
+* `ContRepresentation.mem_invariants_restrict`: membership in the invariants of `π|_S` in terms
+  of elements of `S`.
+* `ContRepresentation.invariants_restrict_bot`, `ContRepresentation.invariants_restrict_top`:
+  the invariants of the trivial and whole-group restrictions.
+* `ContRepresentation.apply_mem_invariants_restrict`: for a normal subgroup `S`, the invariants
+  of `π|_S` are `G`-stable.
 
 ## References
 
@@ -85,5 +94,66 @@ theorem apply_inr_apply_inl {R N K V : Type*} [Ring R] [Group N] [Group K] [AddC
     ρ (inr k) (ρ (inl n) v) = ρ (inl (φ k n)) (ρ (inr k) v) := by
   rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul, ← map_mul, inl_aut,
     map_inv, inv_mul_cancel_right]
+
+section Closed
+
+variable {R G V : Type*} [Ring R] [Monoid G] [AddCommGroup V] [Module R V]
+
+/-- The invariants of a continuous representation on a Hausdorff space form a closed subspace: they
+are the intersection of the closed fixed-point sets of the operators `π g`. -/
+theorem isClosed_invariants [TopologicalSpace V] [IsTopologicalAddGroup V] [T2Space V]
+    (π : ContRepresentation R G V) :
+    IsClosed (π.invariants : Set V) := by
+  have h : (π.invariants : Set V) = ⋂ g, Function.fixedPoints (π g) := by
+    ext
+    simp [Function.IsFixedPt]
+  rw [h]
+  exact isClosed_iInter fun g ↦ isClosed_fixedPoints (π g).continuous
+
+/-- The invariants of a continuous representation on a complete Hausdorff space are complete. -/
+instance [UniformSpace V] [IsTopologicalAddGroup V] [CompleteSpace V] [T2Space V]
+    (π : ContRepresentation R G V) :
+    CompleteSpace π.invariants :=
+  π.isClosed_invariants.completeSpace_coe
+
+end Closed
+
+section RestrictionInvariants
+
+variable {R G V : Type*} [Ring R] [Group G] [AddCommGroup V] [TopologicalSpace V]
+  [IsTopologicalAddGroup V] [Module R V]
+
+-- Not `@[simp]`: `simp` already normalizes the left-hand side to the right-hand side through
+-- `mem_invariants`, `restrict_apply_apply` and `Subtype.forall`, so the attribute would make this
+-- a `simpNF` violation. This is the `rw`-usable form of that normalization.
+/-- Membership in the invariants of `π|_S`, in terms of elements of `G` lying in `S`. -/
+theorem mem_invariants_restrict {π : ContRepresentation R G V} {S : Subgroup G} {v : V} :
+    v ∈ (π.restrict S.subtype).invariants ↔ ∀ s ∈ S, π s v = v :=
+  ⟨fun hv s hs ↦ hv ⟨s, hs⟩, fun hv s ↦ hv (s : G) s.property⟩
+
+/-- The trivial subgroup fixes everything. -/
+@[simp]
+theorem invariants_restrict_bot (π : ContRepresentation R G V) :
+    (π.restrict (⊥ : Subgroup G).subtype).invariants = ⊤ := by
+  ext v
+  simp
+
+/-- The invariants of the whole group are the invariants of `π`. -/
+@[simp]
+theorem invariants_restrict_top (π : ContRepresentation R G V) :
+    (π.restrict (⊤ : Subgroup G).subtype).invariants = π.invariants :=
+  SetLike.ext fun _ ↦ by simp [mem_invariants]
+
+/-- For a normal subgroup `S`, the invariants of `π|_S` are a `G`-stable submodule. -/
+theorem apply_mem_invariants_restrict (π : ContRepresentation R G V) (S : Subgroup G) [S.Normal]
+    (g : G) (v : V) (hv : v ∈ (π.restrict S.subtype).invariants) :
+    π g v ∈ (π.restrict S.subtype).invariants := by
+  rw [mem_invariants_restrict] at hv ⊢
+  intro s hs
+  have hv' : π (g⁻¹ * s * g) v = v := hv _ ((‹S.Normal›).conj_mem' s hs g)
+  have hg : s * g = g * (g⁻¹ * s * g) := by simp [mul_assoc]
+  rw [← mul_apply_eq_comp, ← map_mul, hg, map_mul, mul_apply_eq_comp, hv']
+
+end RestrictionInvariants
 
 end ContRepresentation

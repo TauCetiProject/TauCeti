@@ -65,6 +65,16 @@ theorem RelativePropertyT.map {K : Type w} [Group K] {Λ : Subgroup G}
   obtain ⟨x, hx, hfx⟩ := g.property
   simpa [hfx] using hfixed ⟨x, hx⟩
 
+/-- Relative property (T) is preserved and reflected by group isomorphisms. -/
+theorem relativePropertyT_map_mulEquiv_iff {K : Type w} [Group K] {Λ : Subgroup G}
+    (e : G ≃* K) :
+    (Λ.map e.toMonoidHom).RelativePropertyT.{u} ↔ Λ.RelativePropertyT.{u} := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.map e.toMonoidHom⟩
+  have h' := h.map e.symm.toMonoidHom
+  have hΛ : (Λ.map e.toMonoidHom).map e.symm.toMonoidHom = Λ :=
+    (Subgroup.map_symm_eq_iff_map_eq (e := e) Λ).mpr rfl
+  rwa [hΛ] at h'
+
 /-- Every finite subgroup has relative property (T), regardless of the ambient group. -/
 theorem relativePropertyT_of_finite (Λ : Subgroup G) [Finite Λ] :
     Λ.RelativePropertyT.{u} := by

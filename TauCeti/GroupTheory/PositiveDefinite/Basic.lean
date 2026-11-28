@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Order.Filter.Cofinite.Basic
+import TauCeti.GroupTheory.PositiveDefinite.Bounds
 
 /-!
 # Restriction, limits, zero extension and induction of positive-definite functions
@@ -26,7 +27,9 @@ operations used to pass between a group and its subgroups:
   `g ↦ [G : H]⁻¹ ∑_{x ∈ G ⧸ H} φ₀ ((s (g • x))⁻¹ * g * s x)`, with `φ₀` the extension of `φ`
   by zero. Its arguments `(s (g • x))⁻¹ * g * s x` lie in `H`; it agrees with `φ` at `1`, vanishes
   at infinity when `φ` does, and is uniformly close to `1` on `g` when `φ` is close to `1` at
-  the finitely many points `(s (g • x))⁻¹ * g * s x`.
+  the finitely many points `(s (g • x))⁻¹ * g * s x`. When `s` fixes the identity coset and `φ` is
+  normalized positive definite, `[G : H] * (1 - re (inducedFun s φ h))` dominates `1 - re (φ h)`
+  for every `h ∈ H`.
 
 Pointwise products are covered by Mathlib's Schur product theorem
 `Matrix.PosSemidef.hadamard`, since the kernel of `φ * ψ` is the Hadamard product of the kernels.
@@ -42,7 +45,9 @@ permanence of the Haagerup property under increasing unions and finite-index ove
 * `Matrix.PosSemidef.extend_subtype`: extension by zero from a subgroup.
 * `TauCeti.inducedFun`: the function induced from a subgroup of finite index along a section,
   with `TauCeti.posSemidef_inducedFun`, `TauCeti.inducedFun_one`,
-  `TauCeti.tendsto_inducedFun_cofinite` and `TauCeti.norm_inducedFun_sub_one_lt`.
+  `TauCeti.tendsto_inducedFun_cofinite`, `TauCeti.norm_inducedFun_sub_one_lt`,
+  `TauCeti.card_mul_one_sub_re_inducedFun`, and
+  `TauCeti.one_sub_re_le_card_mul_one_sub_re_inducedFun`.
 
 ## References
 
@@ -121,6 +126,8 @@ theorem inv_mul_mul_mem_of_section {s : G ⧸ H → G} (hs : ∀ x, (s x : G ⧸
   nth_rewrite 1 [← hs x]
   exact MulAction.Quotient.smul_mk (H := H) g (s x)
 
+section FintypeQuotient
+
 variable [Fintype (G ⧸ H)]
 
 /-- The function induced from a function `φ` on a subgroup `H` of finite index along a map
@@ -180,27 +187,68 @@ theorem tendsto_inducedFun_cofinite (s : G ⧸ H → G) {φ : H → 𝕜}
   rw [Finset.sum_const_zero, mul_zero] at h
   exact h.congr fun g ↦ (inducedFun_apply s φ g).symm
 
+/-- Centered coset-average formula: `inducedFun s φ g - 1` is the average of `φ (…) - 1` over
+the cosets `x : G ⧸ H`. -/
+private theorem inducedFun_sub_one {s : G ⧸ H → G} (hs : ∀ x, (s x : G ⧸ H) = x) (φ : H → 𝕜)
+    (g : G) :
+    inducedFun s φ g - 1 = (Fintype.card (G ⧸ H) : 𝕜)⁻¹ *
+      ∑ x, (φ ⟨(s (g • x))⁻¹ * g * s x, inv_mul_mul_mem_of_section hs g x⟩ - 1) := by
+  have hcard : (Fintype.card (G ⧸ H) : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  have hext (x : G ⧸ H) : Function.extend Subtype.val φ 0 ((s (g • x))⁻¹ * g * s x) =
+      φ ⟨_, inv_mul_mul_mem_of_section hs g x⟩ :=
+    Subtype.val_injective.extend_apply φ 0 ⟨_, inv_mul_mul_mem_of_section hs g x⟩
+  simp only [inducedFun_apply, hext, Finset.sum_sub_distrib, Finset.sum_const,
+    Finset.card_univ, nsmul_eq_mul, mul_one, mul_sub, inv_mul_cancel₀ hcard]
+
 /-- If `φ` is within `ε` of `1` at the finitely many elements `(s (g • x))⁻¹ * g * s x` of `H`, then
 the induced function is within `ε` of `1` at `g`. -/
 theorem norm_inducedFun_sub_one_lt {s : G ⧸ H → G} (hs : ∀ x, (s x : G ⧸ H) = x) {φ : H → 𝕜}
     {g : G} {ε : ℝ}
     (hφ : ∀ x, ‖φ ⟨(s (g • x))⁻¹ * g * s x, inv_mul_mul_mem_of_section hs g x⟩ - 1‖ < ε) :
     ‖inducedFun s φ g - 1‖ < ε := by
-  have hcard : (Fintype.card (G ⧸ H) : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
-  have hext (x : G ⧸ H) : Function.extend Subtype.val φ 0 ((s (g • x))⁻¹ * g * s x) =
-      φ ⟨_, inv_mul_mul_mem_of_section hs g x⟩ :=
-    Subtype.val_injective.extend_apply φ 0 ⟨_, inv_mul_mul_mem_of_section hs g x⟩
-  -- `inducedFun s φ g - 1` is the average of the differences `φ (…) - 1`.
-  have heq : inducedFun s φ g - 1 = (Fintype.card (G ⧸ H) : 𝕜)⁻¹ *
-      ∑ x, (φ ⟨_, inv_mul_mul_mem_of_section hs g x⟩ - 1) := by
-    simp only [inducedFun_apply, hext, Finset.sum_sub_distrib, Finset.sum_const,
-      Finset.card_univ, nsmul_eq_mul, mul_one, mul_sub, inv_mul_cancel₀ hcard]
-  rw [heq, norm_mul, norm_inv, RCLike.norm_natCast]
+  rw [inducedFun_sub_one hs φ g, norm_mul, norm_inv, RCLike.norm_natCast]
   have hpos : (0 : ℝ) < Fintype.card (G ⧸ H) := Nat.cast_pos.mpr Fintype.card_pos
   rw [inv_mul_lt_iff₀ hpos]
   calc ‖∑ x, (φ ⟨_, inv_mul_mul_mem_of_section hs g x⟩ - 1)‖
       ≤ ∑ x, ‖φ ⟨_, inv_mul_mul_mem_of_section hs g x⟩ - 1‖ := norm_sum_le _ _
     _ < ∑ _x : G ⧸ H, ε := Finset.sum_lt_sum_of_nonempty Finset.univ_nonempty fun x _ ↦ hφ x
     _ = Fintype.card (G ⧸ H) * ε := by simp
+
+/-- For a section `s` of `G → G ⧸ H`, `[G : H] * (1 - re (inducedFun s φ g))` equals the sum of
+`1 - re (φ ((s (g • x))⁻¹ * g * s x))` over all cosets `x : G ⧸ H`. -/
+theorem card_mul_one_sub_re_inducedFun {s : G ⧸ H → G} (hs : ∀ x, (s x : G ⧸ H) = x)
+    (φ : H → 𝕜) (g : G) :
+    (Fintype.card (G ⧸ H) : ℝ) * (1 - RCLike.re (inducedFun s φ g)) =
+      ∑ x : G ⧸ H, (1 - RCLike.re (φ ⟨(s (g • x))⁻¹ * g * s x,
+        inv_mul_mul_mem_of_section hs g x⟩)) := by
+  have hpos : (0 : ℝ) < Fintype.card (G ⧸ H) := Nat.cast_pos.mpr Fintype.card_pos
+  have hsub : 1 - RCLike.re (inducedFun s φ g) = -RCLike.re (inducedFun s φ g - 1) := by simp
+  have hcoe : (Fintype.card (G ⧸ H) : 𝕜)⁻¹ = (((Fintype.card (G ⧸ H) : ℝ)⁻¹ : ℝ) : 𝕜) := by
+    simp
+  rw [hsub, inducedFun_sub_one hs φ g, hcoe, RCLike.re_ofReal_mul, map_sum, mul_neg,
+    ← mul_assoc, mul_inv_cancel₀ hpos.ne', one_mul, ← Finset.sum_neg_distrib]
+  simp [map_sub, RCLike.one_re]
+
+/-- For a normalized positive-definite function `φ` on a finite-index subgroup `H` and a section
+`s` fixing the identity coset, `1 - re (φ h)` is bounded above by
+`[G : H] * (1 - re (inducedFun s φ h))` for every `h : H`. -/
+theorem one_sub_re_le_card_mul_one_sub_re_inducedFun {s : G ⧸ H → G}
+    (hs : ∀ x, (s x : G ⧸ H) = x) (hs1 : s ((1 : G) : G ⧸ H) = 1) {φ : H → 𝕜}
+    (hφ : (of fun a b : H ↦ φ (a⁻¹ * b)).PosSemidef) (h1 : φ 1 = 1) (h : H) :
+    1 - RCLike.re (φ h) ≤ (Fintype.card (G ⧸ H) : ℝ) * (1 - RCLike.re (inducedFun s φ h)) := by
+  have hsmul : (h : G) • ((1 : G) : G ⧸ H) = ((1 : G) : G ⧸ H) := by
+    rw [MulAction.Quotient.smul_mk, smul_eq_mul, mul_one]
+    exact QuotientGroup.eq.mpr (by simp)
+  have hx₀ : (⟨(s ((h : G) • ((1 : G) : G ⧸ H)))⁻¹ * (h : G) * s ((1 : G) : G ⧸ H),
+      inv_mul_mul_mem_of_section hs h ((1 : G) : G ⧸ H)⟩ : H) = h := by
+    ext
+    simp [hsmul, hs1]
+  rw [card_mul_one_sub_re_inducedFun hs φ h]
+  simpa only [hx₀] using Finset.single_le_sum (f := fun x : G ⧸ H ↦
+      1 - RCLike.re (φ ⟨(s ((h : G) • x))⁻¹ * (h : G) * s x,
+        inv_mul_mul_mem_of_section hs h x⟩))
+    (fun x _ ↦ hφ.one_sub_re_nonneg h1 _) (Finset.mem_univ ((1 : G) : G ⧸ H))
+
+end FintypeQuotient
 
 end TauCeti

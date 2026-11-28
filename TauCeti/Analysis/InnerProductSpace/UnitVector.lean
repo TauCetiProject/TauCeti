@@ -22,6 +22,8 @@ the remainder `d - ⟪d, e⟫ e` does not increase length: `⟪d, e⟫² + ‖d 
 ## Main results
 
 * `TauCeti.norm_inner_sub_one_le`: `‖⟪ξ, x⟫ - 1‖ ≤ ‖x - ξ‖` for a unit vector `ξ`.
+* `TauCeti.norm_sub_sq_eq_two_mul_one_sub_re_inner`: `‖x - ξ‖ ^ 2 = 2 * (1 - re ⟪ξ, x⟫)` for unit
+  vectors `x` and `ξ`.
 * `TauCeti.norm_sub_le_sqrt_two_mul_norm_sub_inner_smul`: for real unit vectors with
   `⟪ξ, x⟫ ≥ 0`, the chord `‖x - ξ‖` is at most `√2` times the sine `‖x - ⟪ξ, x⟫ ξ‖`.
 * `TauCeti.inner_sq_add_norm_sub_sq_le`: `⟪d, e⟫² + ‖d - ⟪d, e⟫ e‖² ≤ ‖d‖²` for `‖e‖ ≤ 1`.
@@ -40,6 +42,12 @@ theorem norm_inner_sub_one_le {ξ : E} (hξ : ‖ξ‖ = 1) (x : E) : ‖⟪ξ, 
   rw [← inner_self_eq_one_of_norm_eq_one hξ, ← inner_sub_right]
   simpa [hξ] using norm_inner_le_norm (𝕜 := 𝕜) ξ (x - ξ)
 
+/-- For unit vectors `x` and `ξ`, `‖x - ξ‖ ^ 2 = 2 * (1 - re ⟪ξ, x⟫)`. -/
+theorem norm_sub_sq_eq_two_mul_one_sub_re_inner {x ξ : E} (hx : ‖x‖ = 1) (hξ : ‖ξ‖ = 1) :
+    ‖x - ξ‖ ^ 2 = 2 * (1 - RCLike.re ⟪ξ, x⟫_𝕜) := by
+  rw [norm_sub_sq (𝕜 := 𝕜), hx, hξ, inner_re_symm]
+  ring
+
 /-- For real unit vectors `ξ` and `x` with `⟪ξ, x⟫ ≥ 0`, the chord `‖x - ξ‖` is at most `√2`
 times the sine `‖x - ⟪ξ, x⟫ ξ‖` of their angle: with `ρ = ⟪ξ, x⟫ ∈ [0, 1]`,
 `‖x - ξ‖² = 2 (1 - ρ) ≤ 2 (1 - ρ²) = 2 ‖x - ρ ξ‖²`. -/
@@ -47,15 +55,13 @@ theorem norm_sub_le_sqrt_two_mul_norm_sub_inner_smul {F : Type*} [NormedAddCommG
     [InnerProductSpace ℝ F] {ξ x : F} (hξ : ‖ξ‖ = 1) (hx : ‖x‖ = 1) (h : 0 ≤ ⟪ξ, x⟫_ℝ) :
     ‖x - ξ‖ ≤ √2 * ‖x - ⟪ξ, x⟫_ℝ • ξ‖ := by
   have hρ : ⟪ξ, x⟫_ℝ ≤ 1 := by simpa [hξ, hx] using real_inner_le_norm ξ x
-  have h₁ : ‖x - ξ‖ ^ 2 = 2 - 2 * ⟪ξ, x⟫_ℝ := by
-    rw [norm_sub_sq_real, hx, hξ, real_inner_comm]
-    ring
   have h₂ : ‖x - ⟪ξ, x⟫_ℝ • ξ‖ ^ 2 = 1 - ⟪ξ, x⟫_ℝ ^ 2 := by
     simp only [norm_sub_sq_real, inner_smul_right, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs,
       hx, hξ, real_inner_comm x ξ]
     ring
   refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp ?_
-  rw [mul_pow, Real.sq_sqrt zero_le_two, h₁, h₂]
+  rw [mul_pow, Real.sq_sqrt zero_le_two,
+    norm_sub_sq_eq_two_mul_one_sub_re_inner (𝕜 := ℝ) hx hξ, RCLike.re_to_real, h₂]
   nlinarith
 
 /-- For `‖e‖ ≤ 1`, the component `⟪d, e⟫` of `d` along `e` and the remainder `d - ⟪d, e⟫ e`

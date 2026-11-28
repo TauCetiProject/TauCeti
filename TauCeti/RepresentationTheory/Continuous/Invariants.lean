@@ -7,8 +7,8 @@ module
 
 public import Mathlib.RepresentationTheory.Continuous.TopRep
 public import Mathlib.CategoryTheory.Adjunction.Basic
+public import TauCeti.RepresentationTheory.Continuous.Basic
 public import TauCeti.RepresentationTheory.Continuous.Subrepresentation
-import Mathlib.Dynamics.FixedPoints.Topology
 
 /-!
 # Invariants of continuous representations
@@ -49,14 +49,8 @@ homomorphism `G → G ⧸ S` together with the inclusion `Xˢ ↪ X`.
 
 ## Main results
 
-* `ContRepresentation.isClosed_invariants`: the invariants of a representation on a Hausdorff
-  space are closed, hence complete in a complete ambient space.
 * `TopRep.invariantsFunctor_map`, `TopRep.invariantsFunctor_map_hom`: taking invariants restricts a
   morphism to invariant vectors, as a bundled morphism and as a continuous linear map.
-* `ContRepresentation.apply_mem_invariants_restrict`: the invariants of `π|_S` are a
-  `G`-stable submodule when `S` is normal.
-* `ContRepresentation.invariants_restrict_bot`,
-  `ContRepresentation.invariants_restrict_top`: the two degenerate subgroups.
 * `TopRep.quotientToInvariantsMap_comp_quotientToInvariantsι`: naturality of the inclusion of the
   invariants.
 * `TopRep.isIso_invariantsResMap_quotientToInvariantsι`: taking quotient invariants and then
@@ -101,66 +95,9 @@ end AddSubgroup
 
 namespace ContRepresentation
 
-section Closed
-
-variable {R G V : Type*} [Ring R] [Monoid G] [AddCommGroup V] [Module R V]
-
-/-- The invariants of a continuous representation on a Hausdorff space form a closed subspace: they
-are the intersection of the closed fixed-point sets of the operators `π g`. -/
-theorem isClosed_invariants [TopologicalSpace V] [IsTopologicalAddGroup V] [T2Space V]
-    (π : ContRepresentation R G V) :
-    IsClosed (π.invariants : Set V) := by
-  have h : (π.invariants : Set V) = ⋂ g, Function.fixedPoints (π g) := by
-    ext
-    simp [Function.IsFixedPt]
-  rw [h]
-  exact isClosed_iInter fun g ↦ isClosed_fixedPoints (π g).continuous
-
-/-- The invariants of a continuous representation on a complete Hausdorff space are complete. -/
-instance [UniformSpace V] [IsTopologicalAddGroup V] [CompleteSpace V] [T2Space V]
-    (π : ContRepresentation R G V) :
-    CompleteSpace π.invariants :=
-  π.isClosed_invariants.completeSpace_coe
-
-end Closed
-
 variable {R G V : Type*} [Ring R] [Group G] [AddCommGroup V] [TopologicalSpace V]
   [IsTopologicalAddGroup V] [Module R V]
   (π : ContRepresentation R G V) (S : Subgroup G) [S.Normal]
-
-omit [S.Normal] in
-variable {π S} in
--- Not `@[simp]`: `simp` already normalizes the left-hand side to the right-hand side through
--- `mem_invariants`, `restrict_apply_apply` and `Subtype.forall`, so the attribute would make this
--- a `simpNF` violation. This is the `rw`-usable form of that normalization.
-/-- Membership in the invariants of `π|_S`, in terms of elements of `G` lying in `S`. -/
-theorem mem_invariants_restrict {v : V} :
-    v ∈ (π.restrict S.subtype).invariants ↔ ∀ s ∈ S, π s v = v :=
-  ⟨fun hv s hs ↦ hv ⟨s, hs⟩, fun hv s ↦ hv (s : G) s.property⟩
-
-omit [S.Normal] in
-/-- The trivial subgroup fixes everything. -/
-@[simp]
-theorem invariants_restrict_bot : (π.restrict (⊥ : Subgroup G).subtype).invariants = ⊤ := by
-  ext v
-  simp
-
-omit [S.Normal] in
-/-- The invariants of the whole group are the invariants of `π`. -/
-@[simp]
-theorem invariants_restrict_top : (π.restrict (⊤ : Subgroup G).subtype).invariants = π.invariants :=
-  SetLike.ext fun _ ↦ by simp [mem_invariants]
-
-/-- For a normal subgroup `S`, the invariants of `π|_S` are a `G`-stable submodule: this is the
-statement that makes `toInvariants` below a representation of `G` and not merely of `S`. -/
-theorem apply_mem_invariants_restrict (g : G) (v : V)
-    (hv : v ∈ (π.restrict S.subtype).invariants) :
-    π g v ∈ (π.restrict S.subtype).invariants := by
-  rw [mem_invariants_restrict] at hv ⊢
-  intro s hs
-  have hv' : π (g⁻¹ * s * g) v = v := hv _ ((‹S.Normal›).conj_mem' s hs g)
-  have hg : s * g = g * (g⁻¹ * s * g) := by group
-  rw [← mul_apply_eq_comp, ← map_mul, hg, map_mul, mul_apply_eq_comp, hv']
 
 /-- The representation of `G` on the invariants of `π|_S`, for a normal subgroup `S ≤ G`; the
 continuous counterpart of `Representation.toInvariants`. -/

@@ -53,12 +53,8 @@ theorem inner_gnsVector (a b : G) : ⟪hF.gnsVector a, hF.gnsVector b⟫_ℂ = F
 theorem norm_gnsVector_sub_sq (a b : G) :
     ‖hF.gnsVector a - hF.gnsVector b‖ ^ 2 =
       2 * ((F 0).re - (F (a - b)).re) := by
-  rw [gnsVector, gnsVector, Matrix.PosSemidef.norm_kolmogorovFeature_sub_sq]
-  simp only [sub_self]
-  -- The generic Kolmogorov formula uses `RCLike.re`; here the scalar field is `ℂ`.
-  change (F 0).re - 2 * (F (a - b)).re + (F 0).re =
-    2 * ((F 0).re - (F (a - b)).re)
-  ring
+  simpa [gnsVector] using
+    hF.posSemidef.norm_kolmogorovFeature_sub_sq_of_diag_eq (c := F 0) (by simp) (by simp)
 
 /-- The GNS vectors span a dense subspace. -/
 theorem gnsVector_dense :

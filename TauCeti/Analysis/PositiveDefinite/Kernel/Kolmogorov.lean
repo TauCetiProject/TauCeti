@@ -167,6 +167,15 @@ theorem norm_kolmogorovFeature_sub_sq (hK : Matrix.PosSemidef K) (a b : α) :
   rw [norm_sub_sq (𝕜 := 𝕜), norm_kolmogorovFeature_sq hK, norm_kolmogorovFeature_sq hK,
     inner_kolmogorovFeature hK]
 
+/-- When two diagonal entries of a positive-semidefinite kernel agree, the squared distance
+between the corresponding canonical feature vectors is `2 * (re c - re (K a b))`. -/
+theorem norm_kolmogorovFeature_sub_sq_of_diag_eq (hK : Matrix.PosSemidef K) {a b : α} {c : 𝕜}
+    (ha : K a a = c) (hb : K b b = c) :
+    ‖kolmogorovFeature hK a - kolmogorovFeature hK b‖ ^ 2 =
+      2 * (RCLike.re c - RCLike.re (K a b)) := by
+  rw [norm_kolmogorovFeature_sub_sq hK a b, ha, hb]
+  ring
+
 /-- The canonical feature map of a jointly continuous positive-definite kernel is continuous. -/
 theorem continuous_kolmogorovFeature [TopologicalSpace α] (hK : Matrix.PosSemidef K)
     (hKc : Continuous (Function.uncurry K)) : Continuous (kolmogorovFeature hK) := by

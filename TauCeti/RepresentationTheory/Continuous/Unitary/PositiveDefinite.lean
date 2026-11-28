@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.PositiveDefinite.Kernel.Kolmogorov
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 import Mathlib.Analysis.InnerProductSpace.GramMatrix
-import TauCeti.Analysis.RCLike.Basic
 import TauCeti.Analysis.Normed.Operator.Dense
+import TauCeti.Analysis.RCLike.Basic
 
 /-!
 # Positive-definite functions on groups and unitary representations
@@ -42,10 +42,18 @@ representations on Hilbert spaces.
 * `ContRepresentation.IsUnitary.posSemidef_inner_map_inv_mul`: coefficients of unitary
   representations are positive definite.
 * `Matrix.PosSemidef.gnsRepresentation`: the GNS unitary representation of a positive-definite
-  function, with `Matrix.PosSemidef.isUnitary_gnsRepresentation` and
-  `Matrix.PosSemidef.inner_gnsVector_one_gnsRepresentation`.
-* `Matrix.PosSemidef.tendsto_inner_gnsRepresentation_cofinite`: the GNS representation of a
-  positive-definite function vanishing at infinity has coefficients vanishing at infinity.
+  function, with `Matrix.PosSemidef.isUnitary_gnsRepresentation`,
+  `Matrix.PosSemidef.inner_gnsVector_one_gnsRepresentation`,
+  `Matrix.PosSemidef.norm_gnsVector_eq_one`, `Matrix.PosSemidef.norm_gnsVector_sub_sq_le`,
+  `Matrix.PosSemidef.norm_gnsVector_sub_lt`,
+  `Matrix.PosSemidef.norm_gnsRepresentation_gnsVector_one_sub_sq_le`, and
+  `Matrix.PosSemidef.norm_gnsRepresentation_gnsVector_one_sub_lt`.
+* `Matrix.PosSemidef.tendsto_inner_gnsRepresentation_of_tendsto_mul`,
+  `Matrix.PosSemidef.eq_zero_of_eventually_gnsRepresentation_eq_self`,
+  `Matrix.PosSemidef.invariants_restrict_gnsRepresentation_eq_bot`, and
+  `Matrix.PosSemidef.tendsto_inner_gnsRepresentation_cofinite`: decay of matrix coefficients of
+  the GNS representation along a filter or at infinity, and the resulting vanishing of invariant
+  vectors.
 * `Matrix.PosSemidef.continuous_gnsRepresentation_apply` and
   `Matrix.PosSemidef.continuous_gnsRepresentation_apply_iff`: the GNS representation is strongly
   continuous exactly when the positive-definite function is continuous, and continuity at the
@@ -179,38 +187,60 @@ theorem gnsRepresentation_gnsVector_one_dense :
       (Set.range fun g ↦ hφ.gnsRepresentation g (hφ.gnsVector 1))).topologicalClosure = ⊤ := by
   simpa only [hφ.gnsRepresentation_gnsVector_one] using hφ.gnsVector_dense
 
+/-- Every GNS vector of a normalized (`φ 1 = 1`) positive-definite function has unit norm. -/
+theorem norm_gnsVector_eq_one (h1 : φ 1 = 1) (g : G) : ‖hφ.gnsVector g‖ = 1 := by
+  have hsq : ‖hφ.gnsVector g‖ ^ 2 = 1 := by
+    rw [gnsVector, hφ.norm_kolmogorovFeature_sq g, Matrix.of_apply, inv_mul_cancel, h1,
+      RCLike.one_re]
+  exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).mp hsq
+
 /-- The squared distance between two GNS vectors in terms of the positive-definite function. -/
 theorem norm_gnsVector_sub_sq (g h : G) :
     ‖hφ.gnsVector g - hφ.gnsVector h‖ ^ 2 =
       2 * (RCLike.re (φ 1) - RCLike.re (φ (g⁻¹ * h))) := by
-  rw [@norm_sub_sq 𝕜, ← inner_self_eq_norm_sq (𝕜 := 𝕜), ← inner_self_eq_norm_sq (𝕜 := 𝕜)]
-  simp only [inner_gnsVector, inv_mul_cancel]
-  ring
+  simpa [gnsVector] using
+    hφ.norm_kolmogorovFeature_sub_sq_of_diag_eq (c := φ 1) (by simp) (by simp)
 
-/-- For a positive-definite function normalized by `φ 1 = 1`, the GNS vector at the identity is a
-unit vector. -/
-theorem norm_gnsVector_one (hφ1 : φ 1 = 1) : ‖hφ.gnsVector 1‖ = 1 := by
-  have h : ‖hφ.gnsVector 1‖ ^ 2 = 1 := by
-    rw [@norm_sq_eq_re_inner 𝕜, hφ.inner_gnsVector, inv_mul_cancel, hφ1, RCLike.one_re]
-  exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).mp h
+/-- For a normalized (`φ 1 = 1`) positive-definite function, the squared distance between two GNS
+vectors is at most `2 * ‖φ (g⁻¹ * h) - 1‖`. -/
+theorem norm_gnsVector_sub_sq_le (h1 : φ 1 = 1) (g h : G) :
+    ‖hφ.gnsVector g - hφ.gnsVector h‖ ^ 2 ≤ 2 * ‖φ (g⁻¹ * h) - 1‖ := by
+  rw [hφ.norm_gnsVector_sub_sq g h, h1, RCLike.one_re]
+  linarith [RCLike.one_sub_re_le_norm_sub_one (φ (g⁻¹ * h))]
 
 /-- For a positive-definite function normalized by `φ 1 = 1`, the GNS representation moves the GNS
 vector at the identity by `g` a distance whose square is at most `2 * ‖φ g - 1‖`. -/
 theorem norm_gnsRepresentation_gnsVector_one_sub_sq_le (hφ1 : φ 1 = 1) (g : G) :
     ‖hφ.gnsRepresentation g (hφ.gnsVector 1) - hφ.gnsVector 1‖ ^ 2 ≤ 2 * ‖φ g - 1‖ := by
-  rw [hφ.gnsRepresentation_gnsVector_one, norm_sub_rev, hφ.norm_gnsVector_sub_sq, inv_one,
-    one_mul, hφ1, RCLike.one_re]
-  linarith [RCLike.one_sub_re_le_norm_sub_one (φ g)]
+  rw [hφ.gnsRepresentation_gnsVector_one, norm_sub_rev]
+  simpa using hφ.norm_gnsVector_sub_sq_le hφ1 1 g
 
-/-- If a positive-definite function vanishes at infinity, then so does every coefficient
-`g ↦ ⟪x, π g y⟫` of its GNS representation `π`. -/
-theorem tendsto_inner_gnsRepresentation_cofinite (hφ0 : Tendsto φ cofinite (𝓝 0))
-    (x y : hφ.gnsSpace) :
-    Tendsto (fun g ↦ ⟪x, hφ.gnsRepresentation g y⟫_𝕜) cofinite (𝓝 0) := by
+/-- If a normalized positive-definite function `φ` satisfies `‖φ (g⁻¹ * h) - 1‖ < δ ^ 2 / 2` with
+`δ > 0`, then the GNS vectors at `g` and `h` lie within distance `δ`. -/
+theorem norm_gnsVector_sub_lt (h1 : φ 1 = 1) {g h : G} {δ : ℝ} (hδ : 0 < δ)
+    (hgh : ‖φ (g⁻¹ * h) - 1‖ < δ ^ 2 / 2) :
+    ‖hφ.gnsVector g - hφ.gnsVector h‖ < δ :=
+  (sq_lt_sq₀ (norm_nonneg _) hδ.le).mp <|
+    (hφ.norm_gnsVector_sub_sq_le h1 g h).trans_lt (by linarith)
+
+/-- If a normalized positive-definite function `φ` satisfies `‖φ g - 1‖ < δ ^ 2 / 2` with `δ > 0`,
+then `g` moves the GNS vector at the identity by less than `δ`. -/
+theorem norm_gnsRepresentation_gnsVector_one_sub_lt (h1 : φ 1 = 1) {g : G} {δ : ℝ} (hδ : 0 < δ)
+    (hg : ‖φ g - 1‖ < δ ^ 2 / 2) :
+    ‖hφ.gnsRepresentation g (hφ.gnsVector 1) - hφ.gnsVector 1‖ < δ := by
+  rw [hφ.gnsRepresentation_gnsVector_one, norm_sub_rev]
+  exact hφ.norm_gnsVector_sub_lt h1 hδ (by simpa using hg)
+
+/-- If all double translates `i ↦ φ (a⁻¹ * s i * b)` converge to `0` along a filter `l`, then
+every matrix coefficient `i ↦ ⟪x, π (s i) y⟫` of the GNS representation `π` converges to `0` along
+`l`. -/
+theorem tendsto_inner_gnsRepresentation_of_tendsto_mul {ι : Type*} {l : Filter ι} {s : ι → G}
+    (hs : ∀ a b : G, Tendsto (fun i ↦ φ (a⁻¹ * s i * b)) l (𝓝 0)) (x y : hφ.gnsSpace) :
+    Tendsto (fun i ↦ ⟪x, hφ.gnsRepresentation (s i) y⟫_𝕜) l (𝓝 0) := by
   set S := Submodule.span 𝕜 (Set.range hφ.gnsVector)
-  -- Coefficients of GNS vectors are translates of `φ`, so the claim holds on the span `S`.
+  -- Coefficients of GNS vectors are double translates of `φ`, so the claim holds on the span `S`.
   have hS : ∀ x ∈ S, ∀ y ∈ S,
-      Tendsto (fun g ↦ ⟪x, hφ.gnsRepresentation g y⟫_𝕜) cofinite (𝓝 0) := by
+      Tendsto (fun i ↦ ⟪x, hφ.gnsRepresentation (s i) y⟫_𝕜) l (𝓝 0) := by
     intro x hx y hy
     induction hx using Submodule.span_induction with
     | mem _ hx =>
@@ -218,48 +248,61 @@ theorem tendsto_inner_gnsRepresentation_cofinite (hφ0 : Tendsto φ cofinite (�
       induction hy using Submodule.span_induction with
       | mem _ hy =>
         obtain ⟨b, rfl⟩ := hy
-        have hinj : Function.Injective fun g : G ↦ a⁻¹ * (g * b) :=
-          fun g k h ↦ mul_right_cancel (mul_left_cancel h)
-        simpa [Function.comp_def] using hφ0.comp hinj.tendsto_cofinite
+        simpa [mul_assoc] using hs a b
       | zero => simpa using tendsto_const_nhds
       | add _ _ _ _ h₁ h₂ => simpa [inner_add_right] using h₁.add h₂
       | smul c _ _ h => simpa [inner_smul_right] using h.const_mul c
     | zero => simpa using tendsto_const_nhds
     | add _ _ _ _ h₁ h₂ => simpa [inner_add_left] using h₁.add h₂
     | smul c _ _ h => simpa [inner_smul_left] using h.const_mul (conj c)
-  -- A function uniformly approximated by functions vanishing at infinity vanishes at infinity.
-  have hlim (f : G → 𝕜) (hf : ∀ ε > 0, ∃ f' : G → 𝕜,
-      Tendsto f' cofinite (𝓝 0) ∧ ∀ g, ‖f g - f' g‖ < ε) : Tendsto f cofinite (𝓝 0) := by
-    refine Metric.tendsto_nhds.mpr fun ε hε ↦ ?_
-    obtain ⟨f', hf', hclose⟩ := hf (ε / 2) (half_pos hε)
-    filter_upwards [Metric.tendsto_nhds.mp hf' (ε / 2) (half_pos hε)] with g hg
-    rw [dist_zero_right] at hg ⊢
-    linarith [norm_sub_norm_le (f g) (f' g), hclose g]
-  have hdense (z : hφ.gnsSpace) {δ : ℝ} (hδ : 0 < δ) : ∃ z' ∈ S, ‖z - z'‖ < δ := by
-    have hz : z ∈ closure (S : Set hφ.gnsSpace) := by
-      rw [← Submodule.topologicalClosure_coe, hφ.gnsVector_dense]
-      trivial
-    simpa only [dist_eq_norm, SetLike.mem_coe] using Metric.mem_closure_iff.mp hz δ hδ
   have hπ := hφ.isUnitary_gnsRepresentation
-  -- Approximate `x` and then `y` by elements of `S`, using `‖⟪u, π g v⟫‖ ≤ ‖u‖ * ‖v‖`.
-  have hS' : ∀ y ∈ S, Tendsto (fun g ↦ ⟪x, hφ.gnsRepresentation g y⟫_𝕜) cofinite (𝓝 0) := by
+  have hD : Dense (S : Set hφ.gnsSpace) := hφ.dense_span_range_gnsVector
+  have hS' : ∀ y ∈ S, Tendsto (fun i ↦ ⟪x, hφ.gnsRepresentation (s i) y⟫_𝕜) l (𝓝 0) := by
     intro y hy
-    refine hlim _ fun ε hε ↦ ?_
-    obtain ⟨x', hx', hxx'⟩ := hdense x (div_pos hε (by positivity : (0 : ℝ) < ‖y‖ + 1))
-    refine ⟨_, hS x' hx' y hy, fun g ↦ ?_⟩
-    rw [← inner_sub_left]
-    have h := (lt_div_iff₀ (by positivity : (0 : ℝ) < ‖y‖ + 1)).mp hxx'
-    calc ‖⟪x - x', hφ.gnsRepresentation g y⟫_𝕜‖
-        ≤ ‖x - x'‖ * ‖hφ.gnsRepresentation g y‖ := norm_inner_le_norm _ _
-      _ < ε := by rw [hπ.norm_map]; nlinarith [norm_nonneg (x - x')]
-  refine hlim _ fun ε hε ↦ ?_
-  obtain ⟨y', hy', hyy'⟩ := hdense y (div_pos hε (by positivity : (0 : ℝ) < ‖x‖ + 1))
-  refine ⟨_, hS' y' hy', fun g ↦ ?_⟩
-  rw [← inner_sub_right, ← map_sub]
-  have h := (lt_div_iff₀ (by positivity : (0 : ℝ) < ‖x‖ + 1)).mp hyy'
-  calc ‖⟪x, hφ.gnsRepresentation g (y - y')⟫_𝕜‖
-      ≤ ‖x‖ * ‖hφ.gnsRepresentation g (y - y')‖ := norm_inner_le_norm _ _
-    _ < ε := by rw [hπ.norm_map]; nlinarith [norm_nonneg (y - y'), norm_nonneg x]
+    let f : ι → hφ.gnsSpace →L⋆[𝕜] 𝕜 := fun i ↦ innerSLFlip 𝕜 (hφ.gnsRepresentation (s i) y)
+    have hbound : ∀ᶠ i in l, ‖f i‖ ≤ ‖y‖ := Eventually.of_forall fun i ↦
+      (f i).opNorm_le_bound (norm_nonneg y) fun u ↦ by
+        simpa [f, hπ.norm_map, mul_comm] using norm_inner_le_norm u (hφ.gnsRepresentation (s i) y)
+    simpa [f] using ContinuousLinearMap.tendsto_apply_of_dense (g := 0) hD hbound
+      (fun u hu ↦ by simpa [f] using hS u hu y hy) x
+  let f : ι → hφ.gnsSpace →L[𝕜] 𝕜 := fun i ↦ (innerSL 𝕜 x).comp (hφ.gnsRepresentation (s i))
+  have hbound : ∀ᶠ i in l, ‖f i‖ ≤ ‖x‖ := Eventually.of_forall fun i ↦
+    (f i).opNorm_le_bound (norm_nonneg x) fun v ↦ by
+      simpa [f, hπ.norm_map] using norm_inner_le_norm x (hφ.gnsRepresentation (s i) v)
+  simpa [f] using ContinuousLinearMap.tendsto_apply_of_dense (g := 0) hD hbound
+    (fun v hv ↦ by simpa [f] using hS' v hv) y
+
+/-- If all double translates `i ↦ φ (a⁻¹ * s i * b)` converge to `0` along a nontrivial filter `l`,
+then any vector in the GNS space fixed eventually by `gnsRepresentation (s i)` is zero. -/
+theorem eq_zero_of_eventually_gnsRepresentation_eq_self {ι : Type*} {l : Filter ι} [l.NeBot]
+    {s : ι → G} (hs : ∀ a b : G, Tendsto (fun i ↦ φ (a⁻¹ * s i * b)) l (𝓝 0))
+    {v : hφ.gnsSpace} (hv : ∀ᶠ i in l, hφ.gnsRepresentation (s i) v = v) :
+    v = 0 := by
+  have hconst : Tendsto (fun i ↦ ⟪v, hφ.gnsRepresentation (s i) v⟫_𝕜) l (𝓝 ⟪v, v⟫_𝕜) :=
+    tendsto_const_nhds.congr' (hv.mono fun i hi ↦ congrArg (⟪v, ·⟫_𝕜) hi.symm)
+  exact inner_self_eq_zero.mp
+    (tendsto_nhds_unique hconst (hφ.tendsto_inner_gnsRepresentation_of_tendsto_mul hs v v))
+
+/-- If all double translates `i ↦ φ (a⁻¹ * f (s i) * b)` along a monoid homomorphism `f : K →* G`
+converge to `0` along a nontrivial filter `l`, then the restricted GNS representation
+`gnsRepresentation.restrict f` has no nonzero invariant vectors. -/
+theorem invariants_restrict_gnsRepresentation_eq_bot {ι K : Type*} {l : Filter ι} [l.NeBot]
+    [Monoid K] (f : K →* G) {s : ι → K}
+    (hs : ∀ a b : G, Tendsto (fun i ↦ φ (a⁻¹ * f (s i) * b)) l (𝓝 0)) :
+    (hφ.gnsRepresentation.restrict f).invariants = ⊥ :=
+  (Submodule.eq_bot_iff _).mpr fun v hv ↦
+    hφ.eq_zero_of_eventually_gnsRepresentation_eq_self hs <|
+      Eventually.of_forall fun i ↦ by simpa using hv (s i)
+
+/-- If a positive-definite function vanishes at infinity, then so does every coefficient
+`g ↦ ⟪x, π g y⟫` of its GNS representation `π`. -/
+theorem tendsto_inner_gnsRepresentation_cofinite (hφ0 : Tendsto φ cofinite (𝓝 0))
+    (x y : hφ.gnsSpace) :
+    Tendsto (fun g ↦ ⟪x, hφ.gnsRepresentation g y⟫_𝕜) cofinite (𝓝 0) :=
+  hφ.tendsto_inner_gnsRepresentation_of_tendsto_mul (s := id) (fun a b ↦ by
+    have hinj : Function.Injective fun g : G ↦ a⁻¹ * g * b :=
+      fun g k h ↦ mul_left_cancel (mul_right_cancel h)
+    exact hφ0.comp hinj.tendsto_cofinite) x y
 
 section Continuity
 
