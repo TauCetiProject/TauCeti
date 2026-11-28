@@ -114,17 +114,6 @@ namespace TauCeti
 
 open Complex Set
 
-/-- The branch of the logarithm **based at `a`**: the translate of Mathlib's principal branch that
-takes the value `a` at the point `Complex.exp a`, its branch cut rotated away from there. -/
-private noncomputable def logBranch (a v : ℂ) : ℂ := a + Complex.log (v / Complex.exp a)
-
-/-- **The branch based at `a` inverts `Complex.exp`** on the strip of height `2 π` centred at `a`,
-because `Complex.log_exp` inverts it on `-π < im ≤ π`. -/
-private theorem logBranch_exp {a w : ℂ} (h₁ : -Real.pi < (w - a).im) (h₂ : (w - a).im ≤ Real.pi) :
-    logBranch a (Complex.exp w) = w := by
-  rw [logBranch, ← Complex.exp_sub, Complex.log_exp h₁ h₂]
-  ring
-
 /-- Near any point of an open set, a continuous branch `L` of `log ∘ g` coincides with the
 branch of the logarithm based at `L z₀`, composed with `g`: continuity confines `L z - L z₀` to
 the strip on which that branch inverts `Complex.exp`. -/
