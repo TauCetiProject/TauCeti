@@ -12,11 +12,16 @@ public import Mathlib.RingTheory.WittVector.Basic
 
 A ring isomorphism `e : R ≃+* S` induces a ring isomorphism `WittVector p R ≃+* WittVector p S`,
 acting on Witt coordinates by `e`, with inverse induced by `e.symm`. It upgrades Mathlib's
-`WittVector.map` to ring isomorphisms.
+`WittVector.map` to ring isomorphisms. Alongside Mathlib's `WittVector.map_id`, it records that
+`WittVector.map` respects composition.
 
 ## Main definitions
 
 * `WittVector.mapEquiv`: the ring isomorphism of Witt vectors induced by a ring isomorphism.
+
+## Main results
+
+* `WittVector.map_comp`: `W(g ∘ f) = W(g) ∘ W(f)`.
 -/
 
 public section
@@ -24,6 +29,11 @@ public section
 namespace WittVector
 
 variable {p : ℕ} [Fact p.Prime] {R S : Type*} [CommRing R] [CommRing S]
+
+/-- `WittVector.map` respects composition: `W(g ∘ f) = W(g) ∘ W(f)`. -/
+theorem map_comp {T : Type*} [CommRing T] (f : R →+* S) (g : S →+* T) :
+    map (p := p) (g.comp f) = (map g).comp (map f) :=
+  RingHom.ext fun _ ↦ ext fun _ ↦ by simp only [map_coeff, RingHom.comp_apply]
 
 /-- The ring isomorphism `WittVector p R ≃+* WittVector p S` induced by a ring isomorphism
 `e : R ≃+* S`, acting on Witt coordinates by `e`. -/

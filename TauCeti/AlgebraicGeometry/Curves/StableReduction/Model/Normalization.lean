@@ -12,12 +12,14 @@ public import TauCeti.AlgebraicGeometry.Normalization.Normal
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Isomorphism
+public import TauCeti.AlgebraicGeometry.Morphisms.IsoLocus
+public import TauCeti.AlgebraicGeometry.Morphisms.RelativeDimension
 
-import TauCeti.AlgebraicGeometry.AffineScheme.Basic
-import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Sections
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 import TauCeti.AlgebraicGeometry.Normalization.Finite
+import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Normal
 import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
 import TauCeti.RingTheory.IntegralClosure.SeparatingCoordinate
@@ -82,9 +84,13 @@ are the hypotheses of the ring-level finiteness theorem
   generic fibre gives a normal total space, including for disconnected generic fibres.
 * `TauCeti.Model.isFinite_fromNormalization_genericι`: the normalization of a model whose
   generic fibre is smooth of relative dimension one is finite, over any discrete valuation ring.
+* `TauCeti.Model.le_isoLocus_fromNormalization_genericι`: normalizing the total space in the
+  generic fibre is an isomorphism over every normal open of the total space. Over an affine open
+  `Spec A` of such an open, the generic fibre is `Spec A[1/π]`, and the normal ring `A` is
+  integrally closed in its localization `A[1/π]` at the nonzerodivisor `π`.
 * `TauCeti.Model.isIso_fromNormalization_of_isNormalScheme` and
-  `TauCeti.Model.isIso_normalizationHom_of_isNormalScheme`: when the total space of `M` is already
-  normal, `M.genericι.fromNormalization` and `M.normalizationHom` are isomorphisms.
+  `TauCeti.Model.isIso_normalizationHom`: when the total space of `M` is already normal,
+  `M.genericι.fromNormalization` and `M.normalizationHom` are isomorphisms.
 * `TauCeti.Model.normalizationLift_normalizationHom` and `TauCeti.Model.eq_normalizationLift`:
   any morphism from a normal model factors uniquely through `M.normalization`.
 
@@ -105,7 +111,6 @@ noncomputable section
 
 open CategoryTheory Limits
 open AlgebraicGeometry
-open scoped nonZeroDivisors
 
 namespace TauCeti
 
@@ -138,30 +143,6 @@ instance isNormalScheme_normalization_of_smooth [Smooth toK] :
     AlgebraicGeometry.IsNormalScheme M.genericι.normalization := by
   have := AlgebraicGeometry.IsRegular.of_smooth toK
   exact M.genericι.isNormalScheme_normalization
-
-/-- If the total space of `M` is already normal, then `M.genericι.fromNormalization` is an
-isomorphism. -/
-instance isIso_fromNormalization_of_isNormalScheme [AlgebraicGeometry.IsNormalScheme M.total] :
-    IsIso M.genericι.fromNormalization := by
-  rw [Scheme.Hom.isIso_fromNormalization_iff]
-  refine fun U hU ↦ ⟨M.genericι.app_injective U, fun s hs ↦ ?_⟩
-  have := LocallyOfFiniteType.isLocallyNoetherian M.toBase
-  have : IsIntegrallyClosed Γ(M.total, U) :=
-    AlgebraicGeometry.IsNormalScheme.isIntegrallyClosed_of_isLocallyNoetherian_of_isAffineOpen hU
-  refine AlgebraicGeometry.with_algebraIsPushout_of_isPullback
-    M.isPullback_genericι hU fun hXY ↦ ?_
-  obtain ⟨π, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible R
-  have : IsLocalization.Away (algebraMap R Γ(M.total, U) π) Γ(C, M.genericι ⁻¹ᵁ U) :=
-    hπ.isLocalizationAway_of_isPushout (K := K)
-  have hsub : Submonoid.powers (algebraMap R Γ(M.total, U) π) ≤ Γ(M.total, U)⁰ :=
-    fun c hc ↦ isRegular_iff_mem_nonZeroDivisors.mp <|
-      (_root_.IsLocalization.injective_iff_isRegular (S := Γ(C, M.genericι ⁻¹ᵁ U))
-        (Submonoid.powers (algebraMap R Γ(M.total, U) π))).mp
-        (hXY ▸ M.genericι.app_injective U) ⟨c, hc⟩
-  have hclosed : IsIntegrallyClosedIn Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U) :=
-    TauCeti.IsLocalization.isIntegrallyClosedIn_of_isIntegrallyClosed
-      (Submonoid.powers (algebraMap R Γ(M.total, U) π)) hsub
-  exact (hXY ▸ (isIntegrallyClosedIn_iff.mp hclosed).2) hs
 
 section Finite
 
@@ -207,16 +188,8 @@ instance isFinite_fromNormalization_genericι [SmoothOfRelativeDimension 1 toK] 
   have : Algebra.FiniteType R Γ(M.total, U) := RingHom.finiteType_algebraMap.mp <|
     M.toBase.algebraMap_sections U ▸ M.toBase.finiteType_ΓSpecIso_inv_comp_appLE hU
   have := M.krullDimLE_sections_quotient (d := 1) hU hπ
-  have : IsLocalization.Away (algebraMap R Γ(M.total, U) π) Γ(C, M.genericι ⁻¹ᵁ U) := by
-    refine M.genericι.isLocalization_app_of_inf_opensRange_eq hU.isCompact hU.isQuasiSeparated ?_
-    -- The generic fibre is the basic open of the pullback of `π`.
-    have hrange : M.genericι.opensRange =
-        M.toBase ⁻¹ᵁ (Spec (.of R)).basicOpen ((Scheme.ΓSpecIso (.of R)).inv π) := by
-      ext1
-      rw [Scheme.Hom.coe_opensRange, Scheme.preimage_basicOpen_top,
-        M.range_genericι_eq_basicOpen ((mem_maximalIdeal π).mpr hπ.not_isUnit) hπ.ne_zero]
-    rw [hrange, M.toBase.algebraMap_sections]
-    exact (Scheme.basicOpen_appLE _ _ _ _ _).symm
+  have := M.isLocalization_away_app_genericι hU ((mem_maximalIdeal π).mpr hπ.not_isUnit)
+    hπ.ne_zero
   have hB := toK.locally_isStandardSmoothOfRelativeDimension_sections 1 (hU.preimage M.genericι)
   have := SmoothOfRelativeDimension.smooth 1 toK
   have := AlgebraicGeometry.IsRegular.of_smooth toK
@@ -225,6 +198,50 @@ instance isFinite_fromNormalization_genericι [SmoothOfRelativeDimension 1 toK] 
       transcendental_and_finrank_kaehlerDifferential_residueField_eq_one hB p hp
 
 end Finite
+
+section Normal
+
+open _root_.IsLocalRing TauCeti.AlgebraicGeometry
+
+/-- **Normalization changes nothing over the normal locus.** Over an open `V` of the total space
+of a model `M` which is a normal scheme, the normalization of the total space in the generic fibre
+is an isomorphism. -/
+theorem le_isoLocus_fromNormalization_genericι (V : M.total.Opens) [IsNormalScheme V] :
+    V ≤ M.genericι.fromNormalization.isoLocus := by
+  intro y hy
+  obtain ⟨_, ⟨U, hU, rfl⟩, hyU, hUV⟩ :=
+    M.total.isBasis_affineOpens.exists_subset_of_mem_open hy V.isOpen
+  refine M.genericι.fromNormalization.mem_isoLocus_iff.mpr ⟨U, hyU, ?_⟩
+  rw [Scheme.Hom.isIso_morphismRestrict_fromNormalization_iff _ hU]
+  -- Over `U`, the generic fibre is `Spec Γ(X, U)[1/π]`, with `π` a nonzerodivisor.
+  have := M.isOpenImmersion_genericι
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible R
+  let := (M.genericι.app U).hom.toAlgebra
+  let := M.toBase.sectionsAlgebra U
+  have := M.isLocalization_away_app_genericι hU ((mem_maximalIdeal π).mpr hπ.not_isUnit)
+    hπ.ne_zero
+  -- The ring `Γ(X, U)` is normal, since `U` is an open of the normal scheme `V`.
+  have : IsNormalScheme U := .of_isOpenImmersion (M.total.homOfLE (show U ≤ V from hUV))
+  have : IsNormalScheme (Spec Γ(M.total, U)) := .of_isOpenImmersion hU.isoSpec.inv
+  have : IsIntegrallyClosedIn Γ(M.total, U) Γ(C, M.genericι ⁻¹ᵁ U) := by
+    refine Spec.isIntegrallyClosedIn_of_presheaf_map_leTop_bijective
+      (Submonoid.powers_le.mpr (M.algebraMap_mem_nonZeroDivisors_sections hU hπ.ne_zero)) ⊤
+      (fun p _ ↦ (isNormalScheme_Spec_iff_forall_localization _).mp ‹_› p.asIdeal) ?_
+    -- Restriction from `Spec Γ(X, U)` to its top open is the identity.
+    rw [TopologicalSpace.Opens.leTop, homOfLE_refl, op_id, CategoryTheory.Functor.map_id]
+    exact ConcreteCategory.bijective_of_isIso _
+  refine ⟨M.genericι.app_injective U, fun s hs ↦ ?_⟩
+  obtain ⟨a, rfl⟩ := IsIntegrallyClosedIn.isIntegral_iff.mp hs
+  exact ⟨a, rfl⟩
+
+/-- **Normalizing a normal model changes nothing on the underlying morphism.** If the total
+space of `M` is normal, then `M.genericι.fromNormalization` is an isomorphism. -/
+instance isIso_fromNormalization_of_isNormalScheme [IsNormalScheme M.total] :
+    IsIso M.genericι.fromNormalization := by
+  rw [← Scheme.Hom.isoLocus_eq_top_iff, eq_top_iff]
+  exact M.le_isoLocus_fromNormalization_genericι ⊤
+
+end Normal
 
 variable [IsFinite M.genericι.fromNormalization]
 
@@ -303,11 +320,12 @@ theorem isIso_normalizationHom_iff : IsIso M.normalizationHom ↔
   rw [isIso_iff_isIso_hom, normalizationHom_hom, Scheme.Hom.isIso_fromNormalization_iff]
   exact forall₂_congr fun U _ ↦ and_iff_right (M.genericι.app_injective U)
 
-/-- If the total space of `M` is already normal, then `M.normalizationHom` is an isomorphism. -/
-instance isIso_normalizationHom_of_isNormalScheme [AlgebraicGeometry.IsNormalScheme M.total] :
+/-- **Normalizing a normal model changes nothing.** If the total space of `M` is normal, the
+normalization morphism of models is an isomorphism. -/
+instance isIso_normalizationHom [AlgebraicGeometry.IsNormalScheme M.total] :
     IsIso M.normalizationHom := by
-  rw [isIso_iff_isIso_hom, normalizationHom_hom]
-  infer_instance
+  rw [isIso_iff_isIso_hom, normalizationHom_hom, ← Scheme.Hom.isoLocus_eq_top_iff, eq_top_iff]
+  exact M.le_isoLocus_fromNormalization_genericι ⊤
 
 variable {M} {N : Model R K C toK}
 

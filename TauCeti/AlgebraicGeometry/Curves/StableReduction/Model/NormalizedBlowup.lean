@@ -8,59 +8,92 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Blowup
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.CartierDivisor
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Normalization
+public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.RegularLocus
+public import TauCeti.AlgebraicGeometry.Morphisms.IsoLocus
+
+import TauCeti.AlgebraicGeometry.Blowup.Restriction
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 
 /-!
-# Normalized blowups of models over a discrete valuation ring
+# Normalized blowups of models of curves
 
-Let `R` be a discrete valuation ring with fraction field `K`, let `M` be a model over `R` of a
-scheme `C` over `K`, and let `I` be an ideal sheaf on `M.total` whose support `V(I)` is disjoint
-from the generic fibre `C ⊆ M.total`. When the normalization of the blowup `M.blowup I hC` in `C`
-is finite — in particular, unconditionally over any discrete valuation ring whenever `C` is smooth
-of relative dimension `1` over `K` (`TauCeti.Model.isFinite_fromNormalization_genericι`) — the
-*normalized blowup* `M.normalizedBlowup I hC` is `(M.blowup I hC).normalization`, with canonical
-morphism `M.normalizedBlowupHom I hC : M.normalizedBlowup I hC ⟶ M`.
+Let `R` be a discrete valuation ring with fraction field `K`, and let `M` be a model over `R` of a
+scheme `C` over `K`, with total space `X`. Given an ideal sheaf `I` on `X` whose support `V(I)` is
+disjoint from the generic fibre `C ⊆ X`, when the normalization of the blowup `M.blowup I hC` in
+`C` is finite — in particular, unconditionally over any discrete valuation ring whenever `C` is
+smooth of relative dimension `1` over `K` (`TauCeti.Model.isFinite_fromNormalization_genericι`) —
+the **normalized blowup** `M.normalizedBlowupOfIdeal I hC` is `(M.blowup I hC).normalization`,
+with canonical morphism `M.normalizedBlowupOfIdealHom I hC : M.normalizedBlowupOfIdeal I hC ⟶ M`.
+
+In particular, for a smooth curve `C` and a point `x` of the special fibre, typically a closed
+point, the **normalized blowup** `M.normalizedBlowup x hx` of `M` in `x` blows up `X` along the
+closure of `x`, with its reduced structure, and normalizes the result in the generic fibre. It is
+again a model of `C`, proper when `M` is, its total space is normal with finitely many singular
+points, and when `X` is normal the normalized blowup changes nothing away from the closure of `x`.
 
 Iterating normalized blowups in non-regular closed points of the special fibre is Lipman's and
 Liu's resolution procedure producing a regular proper model of a smooth proper curve over `K`.
-This file establishes the basic properties of a single normalized-blowup step:
+Normalizing does nothing over a normal open of `X`
+(`TauCeti.Model.le_isoLocus_fromNormalization_genericι`), so when `X` is normal the normalized
+blowup is the blowup away from the closure of `x`.
 
-* every effective Cartier divisor on a model pulls back to an effective Cartier divisor along every
-  morphism of models (`TauCeti.Model.isEffectiveCartier_comap_hom`, in `Model.CartierDivisor`),
-  without assuming flatness of the morphism, integrality of the source, or a support restriction;
-* consequently, the centre `I` pulls back to an effective Cartier divisor on the normalized blowup
-  (`TauCeti.Model.isEffectiveCartier_comap_normalizedBlowupHom`);
-* as an abbreviation for `(M.blowup I hC).normalization`, the normalized blowup preserves
-  properness via `TauCeti.Model.isProper_normalization` and has normal total space when `C` is
-  smooth over `K` via `TauCeti.Model.isNormalScheme_normalization_of_smooth`;
-* any morphism from a normal model along which `I` pulls back to an effective Cartier divisor
-  factors uniquely through `M.normalizedBlowup I hC` (`TauCeti.Model.normalizedBlowupLift`,
-  `TauCeti.Model.normalizedBlowupLift_normalizationHom`,
-  `TauCeti.Model.normalizedBlowupLift_normalizedBlowupHom`, and
-  `TauCeti.Model.eq_normalizedBlowupLift`);
-* when `M.total` is already normal, `M.normalizedBlowupHom I hC` is an isomorphism if and only if
-  `I` is already an effective Cartier divisor on `M.total`
-  (`TauCeti.Model.isIso_normalizedBlowupHom_iff`).
+## Main definitions
+
+* `TauCeti.Model.normalizedBlowupOfIdeal M I hC`: the normalized blowup of `M` along an ideal
+  sheaf `I` supported away from the generic fibre, as a model of `C`.
+* `TauCeti.Model.normalizedBlowupOfIdealHom M I hC`: the normalized-blowup morphism for an ideal
+  sheaf `I`, as a morphism of models.
+* `TauCeti.Model.normalizedBlowupOfIdealLift`: the unique factorization through
+  `M.normalizedBlowupOfIdeal I hC` of a morphism from a normal model along which `I` pulls back
+  to an effective Cartier divisor.
+* `TauCeti.Model.normalizedBlowup M x hx`: the normalized blowup of `M` in a point `x` of the
+  special fibre, as a model of `C`.
+* `TauCeti.Model.normalizedBlowupHom M x hx`: the normalized blowup morphism at `x`, as a morphism
+  of models.
+
+## Main results
+
+* `TauCeti.Model.isEffectiveCartier_comap_normalizedBlowupOfIdealHom`: the centre `I` pulls back
+  to an effective Cartier divisor on `M.normalizedBlowupOfIdeal I hC`.
+* `TauCeti.Model.isIso_normalizedBlowupOfIdealHom_iff`: when `M.total` is normal,
+  `M.normalizedBlowupOfIdealHom I hC` is an isomorphism if and only if `I` is already an effective
+  Cartier divisor.
+* `TauCeti.Model.normalizedBlowupOfIdealLift_normalizedBlowupOfIdealHom` and
+  `TauCeti.Model.eq_normalizedBlowupOfIdealLift`: the universal property of the normalized blowup
+  along `I` for morphisms from normal models.
+* `TauCeti.Model.isProper_normalizedBlowup`, `TauCeti.Model.isNormalScheme_normalizedBlowup` and
+  `TauCeti.Model.finite_compl_regularLocus_normalizedBlowup`: a normalized blowup of a proper model
+  in `x` is a proper normal model with finitely many singular points.
+* `TauCeti.Model.centre_normalizedBlowupHom_subset`: a normalized blowup of a normal model in `x`
+  is an isomorphism away from the closure of `x`.
 
 ## References
 
+* The Stacks Project, Section 54.14 (resolution of two-dimensional schemes by normalized
+  blowups, Theorem 0BGP) and Lemmas 55.8.2 (0C2T) and 55.8.3 (0C2U).
+* J. Lipman, *Desingularization of two-dimensional schemes*, Ann. of Math. (2) 107 (1978),
+  151–207.
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Oxford University Press, 2002, Section 8.3
-  and Chapter 10.
-* [Stacks Project, Lemma 55.8.2 (0C2T)](https://stacks.math.columbia.edu/tag/0C2T).
+  and Chapter 10 (desingularization of arithmetic surfaces).
 -/
 
 public section
 
 noncomputable section
 
-open CategoryTheory Limits AlgebraicGeometry
+open CategoryTheory AlgebraicGeometry TauCeti.AlgebraicGeometry IsLocalRing
 
-namespace TauCeti.Model
+namespace TauCeti
 
 universe u
 
+namespace Model
+
 variable {R K : Type u} [CommRing R] [IsDomain R] [_root_.IsDiscreteValuationRing R]
-  [Field K] [Algebra R K] [IsFractionRing R K]
-  {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
+variable [Field K] [Algebra R K] [IsFractionRing R K]
+variable {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
+
+section NormalizedBlowupOfIdeal
 
 variable (M : Model R K C toK) (I : M.total.IdealSheafData)
   (hC : Disjoint (Set.range M.genericι) (I.support : Set M.total))
@@ -69,103 +102,192 @@ variable (M : Model R K C toK) (I : M.total.IdealSheafData)
 /-- **The normalized blowup of a model** along an ideal sheaf `I` supported away from the generic
 fibre: the normalization of `M.blowup I hC` in `C`. When `SmoothOfRelativeDimension 1 toK`, the
 finiteness hypothesis is synthesized automatically over any discrete valuation ring `R`. -/
-abbrev normalizedBlowup : Model R K C toK :=
+abbrev normalizedBlowupOfIdeal : Model R K C toK :=
   (M.blowup I hC).normalization
 
-/-- **The normalized-blowup morphism of models** `M.normalizedBlowup I hC ⟶ M`. -/
-def normalizedBlowupHom : M.normalizedBlowup I hC ⟶ M :=
+/-- **The normalized-blowup morphism of models** `M.normalizedBlowupOfIdeal I hC ⟶ M`. -/
+def normalizedBlowupOfIdealHom : M.normalizedBlowupOfIdeal I hC ⟶ M :=
   (M.blowup I hC).normalizationHom ≫ M.blowupHom I hC
 
 /-- The normalized-blowup morphism of models factors as the normalization morphism followed by the
 blowup morphism. -/
 @[reassoc]
-lemma normalizedBlowupHom_eq :
-    M.normalizedBlowupHom I hC = (M.blowup I hC).normalizationHom ≫ M.blowupHom I hC :=
+lemma normalizedBlowupOfIdealHom_eq :
+    M.normalizedBlowupOfIdealHom I hC = (M.blowup I hC).normalizationHom ≫ M.blowupHom I hC :=
   (rfl)
 
 /-- The normalized-blowup morphism of models has the composite of the normalization and blowup
 morphisms as its underlying scheme morphism. -/
 @[simp]
-lemma normalizedBlowupHom_hom :
-    (M.normalizedBlowupHom I hC).hom =
+lemma normalizedBlowupOfIdealHom_hom :
+    (M.normalizedBlowupOfIdealHom I hC).hom =
       (M.blowup I hC).genericι.fromNormalization ≫ I.blowupToBase := by
-  rw [normalizedBlowupHom_eq, comp_hom, normalizationHom_hom, blowupHom_hom]
+  rw [normalizedBlowupOfIdealHom_eq, comp_hom, normalizationHom_hom, blowupHom_hom]
 
 /-- The normalized-blowup morphism of models is proper on total spaces. -/
-instance isProper_normalizedBlowupHom_hom :
-    AlgebraicGeometry.IsProper (M.normalizedBlowupHom I hC).hom := by
+instance isProper_normalizedBlowupOfIdealHom_hom :
+    AlgebraicGeometry.IsProper (M.normalizedBlowupOfIdealHom I hC).hom := by
   have := LocallyOfFiniteType.isLocallyNoetherian M.toBase
-  rw [normalizedBlowupHom_hom]
+  rw [normalizedBlowupOfIdealHom_hom]
   infer_instance
 
 /-- The centre `I` pulls back to an effective Cartier divisor on the normalized blowup. -/
-theorem isEffectiveCartier_comap_normalizedBlowupHom :
-    (I.comap (M.normalizedBlowupHom I hC).hom).IsEffectiveCartier := by
-  rw [normalizedBlowupHom_eq, comp_hom, Scheme.IdealSheafData.comap_comp, blowupHom_hom]
+theorem isEffectiveCartier_comap_normalizedBlowupOfIdealHom :
+    (I.comap (M.normalizedBlowupOfIdealHom I hC).hom).IsEffectiveCartier := by
+  rw [normalizedBlowupOfIdealHom_eq, comp_hom, Scheme.IdealSheafData.comap_comp, blowupHom_hom]
   exact isEffectiveCartier_comap_hom (M.blowup I hC).normalizationHom
     I.isEffectiveCartier_comap_blowupToBase
 
 /-- When the total space of `M` is normal, the normalized-blowup morphism is an isomorphism if and
 only if the centre `I` is already an effective Cartier divisor on `M.total`. -/
-theorem isIso_normalizedBlowupHom_iff [TauCeti.AlgebraicGeometry.IsNormalScheme M.total] :
-    IsIso (M.normalizedBlowupHom I hC) ↔ I.IsEffectiveCartier := by
+theorem isIso_normalizedBlowupOfIdealHom_iff [IsNormalScheme M.total] :
+    IsIso (M.normalizedBlowupOfIdealHom I hC) ↔ I.IsEffectiveCartier := by
   refine ⟨fun _ ↦ ?_, fun hI ↦ ?_⟩
-  · have : IsIso (M.normalizedBlowupHom I hC).hom := (isIso_iff_isIso_hom _).mp ‹_›
-    have hEC := (M.isEffectiveCartier_comap_normalizedBlowupHom I hC).comap
-      (inv (M.normalizedBlowupHom I hC).hom)
+  · have : IsIso (M.normalizedBlowupOfIdealHom I hC).hom := (isIso_iff_isIso_hom _).mp ‹_›
+    have hEC := (M.isEffectiveCartier_comap_normalizedBlowupOfIdealHom I hC).comap
+      (inv (M.normalizedBlowupOfIdealHom I hC).hom)
     rwa [← Scheme.IdealSheafData.comap_comp, IsIso.inv_hom_id,
       Scheme.IdealSheafData.comap_id] at hEC
   · have : IsIso (M.blowupHom I hC) := (M.isIso_blowupHom_iff I hC).mpr hI
     have : IsIso (M.blowupHom I hC).hom := (isIso_iff_isIso_hom _).mp ‹_›
-    have : TauCeti.AlgebraicGeometry.IsNormalScheme (M.blowup I hC).total :=
+    have : IsNormalScheme (M.blowup I hC).total :=
       .of_isOpenImmersion (M.blowupHom I hC).hom
-    rw [normalizedBlowupHom_eq]
+    rw [normalizedBlowupOfIdealHom_eq]
     infer_instance
 
 variable {M I hC} {N : Model R K C toK}
 
 /-- **The universal property of the normalized blowup: the lift.** A morphism of models
 `f : N ⟶ M` from a normal model `N` along which `I` pulls back to an effective Cartier divisor
-factors through `M.normalizedBlowup I hC`. -/
-def normalizedBlowupLift [TauCeti.AlgebraicGeometry.IsNormalScheme N.total]
+factors through `M.normalizedBlowupOfIdeal I hC`. -/
+def normalizedBlowupOfIdealLift [IsNormalScheme N.total]
     (f : N ⟶ M) (hf : (I.comap f.hom).IsEffectiveCartier) :
-    N ⟶ M.normalizedBlowup I hC :=
+    N ⟶ M.normalizedBlowupOfIdeal I hC :=
   normalizationLift (blowupLift (hC := hC) f hf)
 
 /-- The lift to the normalized blowup is the lift to the normalization of the lift to the
 blowup. -/
-lemma normalizedBlowupLift_eq [TauCeti.AlgebraicGeometry.IsNormalScheme N.total]
+lemma normalizedBlowupOfIdealLift_eq [IsNormalScheme N.total]
     (f : N ⟶ M) (hf : (I.comap f.hom).IsEffectiveCartier) :
-    normalizedBlowupLift (hC := hC) f hf = normalizationLift (blowupLift (hC := hC) f hf) :=
+    normalizedBlowupOfIdealLift (hC := hC) f hf =
+      normalizationLift (blowupLift (hC := hC) f hf) :=
   (rfl)
 
 /-- Composing the lift to the normalized blowup with the normalization morphism recovers the lift to
 the blowup. -/
 @[reassoc (attr := simp)]
-lemma normalizedBlowupLift_normalizationHom
-    [TauCeti.AlgebraicGeometry.IsNormalScheme N.total]
+lemma normalizedBlowupOfIdealLift_normalizationHom
+    [IsNormalScheme N.total]
     (f : N ⟶ M) (hf : (I.comap f.hom).IsEffectiveCartier) :
-    normalizedBlowupLift (hC := hC) f hf ≫ (M.blowup I hC).normalizationHom =
+    normalizedBlowupOfIdealLift (hC := hC) f hf ≫ (M.blowup I hC).normalizationHom =
       blowupLift (hC := hC) f hf :=
   normalizationLift_normalizationHom _
 
-/-- The lift to the normalized blowup commutes with `M.normalizedBlowupHom I hC`. -/
+/-- The lift to the normalized blowup commutes with `M.normalizedBlowupOfIdealHom I hC`. -/
 @[reassoc (attr := simp)]
-lemma normalizedBlowupLift_normalizedBlowupHom
-    [TauCeti.AlgebraicGeometry.IsNormalScheme N.total]
+lemma normalizedBlowupOfIdealLift_normalizedBlowupOfIdealHom
+    [IsNormalScheme N.total]
     (f : N ⟶ M) (hf : (I.comap f.hom).IsEffectiveCartier) :
-    normalizedBlowupLift (hC := hC) f hf ≫ M.normalizedBlowupHom I hC = f := by
-  rw [normalizedBlowupLift_eq, normalizedBlowupHom_eq, ← Category.assoc,
+    normalizedBlowupOfIdealLift (hC := hC) f hf ≫ M.normalizedBlowupOfIdealHom I hC = f := by
+  rw [normalizedBlowupOfIdealLift_eq, normalizedBlowupOfIdealHom_eq, ← Category.assoc,
     normalizationLift_normalizationHom, blowupLift_blowupHom]
 
 /-- **The universal property of the normalized blowup: uniqueness.** Every morphism of models
-from a normal model `N` to `M.normalizedBlowup I hC` lying over `f : N ⟶ M` equals
-`normalizedBlowupLift`. -/
-theorem eq_normalizedBlowupLift [TauCeti.AlgebraicGeometry.IsNormalScheme N.total]
+from a normal model `N` to `M.normalizedBlowupOfIdeal I hC` lying over `f : N ⟶ M` equals
+`normalizedBlowupOfIdealLift`. -/
+theorem eq_normalizedBlowupOfIdealLift [IsNormalScheme N.total]
     {f : N ⟶ M} (hf : (I.comap f.hom).IsEffectiveCartier)
-    {g : N ⟶ M.normalizedBlowup I hC} (hg : g ≫ M.normalizedBlowupHom I hC = f) :
-    g = normalizedBlowupLift f hf := by
+    {g : N ⟶ M.normalizedBlowupOfIdeal I hC}
+    (hg : g ≫ M.normalizedBlowupOfIdealHom I hC = f) :
+    g = normalizedBlowupOfIdealLift f hf := by
   refine eq_normalizationLift (eq_blowupLift hf ?_)
-  simpa [normalizedBlowupHom_eq, Category.assoc] using hg
+  simpa [normalizedBlowupOfIdealHom_eq, Category.assoc] using hg
 
-end TauCeti.Model
+end NormalizedBlowupOfIdeal
+
+section NormalizedBlowup
+
+variable (M : Model R K C toK) {x : M.total}
+
+/-- The closure of a point of the special fibre of a model does not meet the generic fibre: it is
+the support of the ideal sheaf of the centre of the normalized blowup in that point. -/
+lemma disjoint_range_genericι_support_vanishingIdeal (hx : M.toBase x = closedPoint R) :
+    Disjoint (Set.range M.genericι)
+      ((Scheme.IdealSheafData.vanishingIdeal ⟨closure {x}, isClosed_closure⟩).support :
+        Set M.total) := by
+  rw [Scheme.IdealSheafData.coe_support_vanishingIdeal, TopologicalSpace.Closeds.coe_mk,
+    M.range_genericι_eq_setOf_base_ne_closedPoint]
+  -- The special fibre is closed and contains `x`, hence the closure of `x`.
+  have hcl : closure {x} ⊆ M.toBase ⁻¹' {closedPoint R} :=
+    closure_minimal (Set.singleton_subset_iff.mpr hx)
+      ((isClosed_singleton_closedPoint R).preimage M.toBase.continuous)
+  exact Set.disjoint_left.mpr fun y hy hyx ↦ hy (hcl hyx)
+
+variable [SmoothOfRelativeDimension 1 toK]
+
+/-- **The normalized blowup of a model in a point of its special fibre.** For a point `x` of the
+special fibre of a model `M` of a smooth curve, blow up the total space along the closure of `x`,
+with its reduced structure, and normalize the result in the generic fibre. -/
+abbrev normalizedBlowup (x : M.total) (hx : M.toBase x = closedPoint R) : Model R K C toK :=
+  M.normalizedBlowupOfIdeal (Scheme.IdealSheafData.vanishingIdeal ⟨closure {x}, isClosed_closure⟩)
+    (M.disjoint_range_genericι_support_vanishingIdeal hx)
+
+/-- **The normalized blowup morphism.** The normalization morphism followed by the blowup
+morphism, as a morphism of models from the normalized blowup of `M` to `M`. -/
+def normalizedBlowupHom (x : M.total) (hx : M.toBase x = closedPoint R) :
+    M.normalizedBlowup x hx ⟶ M :=
+  M.normalizedBlowupOfIdealHom _ _
+
+/-- The normalized blowup morphism of models is the normalization morphism followed by the
+blowup morphism of total spaces. -/
+@[simp]
+lemma normalizedBlowupHom_hom (hx : M.toBase x = closedPoint R) :
+    (M.normalizedBlowupHom x hx).hom =
+      (M.blowup (Scheme.IdealSheafData.vanishingIdeal ⟨closure {x}, isClosed_closure⟩)
+        (M.disjoint_range_genericι_support_vanishingIdeal hx)).genericι.fromNormalization ≫
+        (Scheme.IdealSheafData.vanishingIdeal ⟨closure {x}, isClosed_closure⟩).blowupToBase := by
+  simp [normalizedBlowupHom]
+
+/-- The normalized blowup of a proper model is a proper model. -/
+instance isProper_normalizedBlowup [M.IsProper] (hx : M.toBase x = closedPoint R) :
+    (M.normalizedBlowup x hx).IsProper :=
+  isProper_normalization _
+
+/-- The total space of a normalized blowup is normal. -/
+instance isNormalScheme_normalizedBlowup (hx : M.toBase x = closedPoint R) :
+    IsNormalScheme (M.normalizedBlowup x hx).total := by
+  have := SmoothOfRelativeDimension.smooth 1 toK
+  exact isNormalScheme_normalization_of_smooth _
+
+/-- The total space of a normalized blowup has only finitely many non-regular points. -/
+theorem finite_compl_regularLocus_normalizedBlowup (hx : M.toBase x = closedPoint R) :
+    (M.normalizedBlowup x hx).total.regularLocusᶜ.Finite :=
+  finite_compl_regularLocus_normalization _
+
+/-- **A normalized blowup of a normal model changes nothing away from its centre.** If the total
+space of `M` is normal, the normalized blowup of `M` in a point `x` of the special fibre is an
+isomorphism over the complement of the closure of `x`; for a closed point `x`, over the complement
+of `x`. -/
+theorem centre_normalizedBlowupHom_subset [IsNormalScheme M.total]
+    (hx : M.toBase x = closedPoint R) :
+    (M.normalizedBlowupHom x hx).hom.centre ⊆ closure {x} := by
+  set I := Scheme.IdealSheafData.vanishingIdeal (X := M.total) ⟨closure {x}, isClosed_closure⟩
+  set N := M.blowup I (M.disjoint_range_genericι_support_vanishingIdeal hx)
+  -- Over the complement `W` of the centre the blowup is an isomorphism, so its preimage in the
+  -- blowup is normal and the normalization changes nothing over it.
+  let W := I.support.compl
+  have : IsNormalScheme (I.blowupToBase ⁻¹ᵁ W) := .of_isOpenImmersion (I.blowupToBase ∣_ W)
+  have h := (Scheme.Hom.le_isoLocus_iff _).mp
+    (N.le_isoLocus_fromNormalization_genericι (I.blowupToBase ⁻¹ᵁ W))
+  have hW : IsIso ((M.normalizedBlowupHom x hx).hom ∣_ W) := by
+    rw [normalizedBlowupHom_hom, morphismRestrict_comp]
+    exact IsIso.comp_isIso' h I.isIso_blowupToBase_restrict_compl_support
+  have h := (Scheme.Hom.disjoint_centre_iff _).mpr hW
+  rwa [TopologicalSpace.Closeds.coe_compl, Scheme.IdealSheafData.coe_support_vanishingIdeal,
+    TopologicalSpace.Closeds.coe_mk, Set.disjoint_compl_left_iff_subset] at h
+
+end NormalizedBlowup
+
+end Model
+
+end TauCeti

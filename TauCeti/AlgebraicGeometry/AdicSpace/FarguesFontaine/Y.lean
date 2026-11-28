@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Analytic
-public import TauCeti.RingTheory.WittVector.Frobenius
+public import TauCeti.RingTheory.WittVector.Frobenius.Basic
 import TauCeti.AlgebraicGeometry.AdicSpace.Cont.DominatingUnit
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap
 

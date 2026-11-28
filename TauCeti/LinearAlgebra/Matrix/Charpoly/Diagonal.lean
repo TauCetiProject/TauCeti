@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 
 /-!
 # Characteristic roots of diagonal matrices
@@ -17,9 +18,15 @@ characteristic polynomial up to permutation, with one diagonal for each permutat
 the multiplicity `n!` in the spectral change of variables of Anderson, Guionnet and Zeitouni,
 *An Introduction to Random Matrices* (2010), §4.1.
 
+A matrix conjugate to a diagonal matrix has the same characteristic polynomial, so the diagonal
+entries of a diagonalisation are the characteristic roots of the matrix.
+
 ## Main results
 
 * `Matrix.roots_charpoly_diagonal` — the characteristic roots of a diagonal are its entries.
+* `Matrix.charpoly_eq_prod_of_mul_eq_mul_diagonal`, `Matrix.roots_charpoly_of_mul_eq_mul_diagonal`,
+  `Matrix.mem_roots_charpoly_of_mul_eq_mul_diagonal` — the diagonal entries of a diagonalisation
+  `M * P = P * diagonal d` are the characteristic roots of `M`, with multiplicity.
 * `Matrix.diagonalCharpolyFiber` — the diagonals with the same characteristic polynomial as a
   given diagonal.
 * `Matrix.permEquivDiagonalCharpolyFiber` — permutations parametrize that fiber when the given
@@ -44,6 +51,14 @@ def diagonalCharpolyFiber (d : ι → R) : Set (ι → R) :=
     e ∈ diagonalCharpolyFiber d ↔ (diagonal e).charpoly = (diagonal d).charpoly :=
   Iff.rfl
 
+/-- A matrix conjugate to `diagonal d` by `P` has characteristic polynomial `∏ i, (X - C (d i))`.
+-/
+theorem charpoly_eq_prod_of_mul_eq_mul_diagonal {M : Matrix ι ι R} {P : GL ι R} {d : ι → R}
+    (hP : M * P = P * diagonal d) : M.charpoly = ∏ i, (X - C (d i)) := by
+  have hM : M = (P : Matrix ι ι R) * diagonal d * (P : Matrix ι ι R)⁻¹ := by
+    simpa only [coe_units_inv] using (Units.eq_mul_inv_iff_mul_eq (c := P)).2 hP
+  rw [hM, charpoly_units_conj, charpoly_diagonal]
+
 variable [IsDomain R]
 
 /-- The characteristic roots of a diagonal matrix are its diagonal entries with multiplicity. -/
@@ -52,6 +67,19 @@ theorem roots_charpoly_diagonal (d : ι → R) :
   rw [charpoly_diagonal, roots_prod]
   · simp
   · exact Finset.prod_ne_zero_iff.mpr fun _ _ ↦ X_sub_C_ne_zero _
+
+/-- The characteristic roots of a matrix `M` with a diagonalisation `M * P = P * diagonal d` are
+the diagonal entries `d i`, with multiplicity. -/
+theorem roots_charpoly_of_mul_eq_mul_diagonal {M : Matrix ι ι R} {P : GL ι R} {d : ι → R}
+    (hP : M * P = P * diagonal d) : M.charpoly.roots = Finset.univ.val.map d := by
+  rw [charpoly_eq_prod_of_mul_eq_mul_diagonal hP, ← charpoly_diagonal, roots_charpoly_diagonal]
+
+/-- The diagonal entries of a diagonalisation `M * P = P * diagonal d` are roots of the
+characteristic polynomial of `M`. -/
+theorem mem_roots_charpoly_of_mul_eq_mul_diagonal {M : Matrix ι ι R} {P : GL ι R} {d : ι → R}
+    (hP : M * P = P * diagonal d) (i : ι) : d i ∈ M.charpoly.roots := by
+  rw [roots_charpoly_of_mul_eq_mul_diagonal hP]
+  exact Multiset.mem_map_of_mem d (Finset.mem_univ_val i)
 
 private theorem injective_of_roots_charpoly_diagonal_eq {d e : ι → R} (hd : Function.Injective d)
     (h : (diagonal e).charpoly.roots = (diagonal d).charpoly.roots) : Function.Injective e := by

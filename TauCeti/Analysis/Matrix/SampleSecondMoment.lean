@@ -31,6 +31,8 @@ entry by entry.
 * `TauCeti.sampleSecondMoment_apply`: its entries are sample means of coordinate products.
 * `TauCeti.isHermitian_sampleSecondMoment`, `TauCeti.posSemidef_sampleSecondMoment`: it is
   Hermitian, and positive semidefinite in finite dimension.
+* `TauCeti.sampleSecondMoment_eq_inv_smul_transpose_mul`: it is the normalized Gram matrix
+  `r⁻¹ Vᵀ conj V` of the matrix `V` whose rows are the samples.
 * `Matrix.sampleCovariance`: the sample covariance matrix `X Xᴴ / n` of a `p × n` data matrix, whose
   columns are the samples; `Matrix.sampleCovariance_eq_sampleSecondMoment` identifies it with the
   empirical second-moment matrix of the columns, and `Matrix.isHermitian_sampleCovariance` and
@@ -87,6 +89,15 @@ theorem posSemidef_sampleSecondMoment [Finite n] (v : ι → n → 𝕜) :
   have := Fintype.ofFinite n
   rw [sampleSecondMoment_def, finiteMean_eq_inv_smul_sum]
   exact (posSemidef_sum _ fun i _ ↦ posSemidef_vecMulVec_self_star (v i)).smul (by positivity)
+
+/-- The empirical second-moment matrix of the rows of `Matrix.of v` is its normalized Gram
+matrix: `r⁻¹ ∑ᵢ vᵢ vᵢᴴ = r⁻¹ Vᵀ conj V` with `V = Matrix.of v` and `r = card ι`. Over `ℝ` the
+right side is `r⁻¹ Vᵀ V`. -/
+theorem sampleSecondMoment_eq_inv_smul_transpose_mul (v : ι → n → 𝕜) :
+    sampleSecondMoment v =
+      (Fintype.card ι : 𝕜)⁻¹ • ((Matrix.of v)ᵀ * (Matrix.of v).map star) := by
+  ext k l
+  simp [finiteMean_eq_inv_smul_sum, Matrix.mul_apply]
 
 end TauCeti
 

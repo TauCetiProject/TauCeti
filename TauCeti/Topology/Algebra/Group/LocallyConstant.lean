@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
 public import Mathlib.Topology.CompactOpen
+public import TauCeti.Topology.LocallyConstant.Basic
 public import TauCeti.Topology.LocallyConstant.Compact
 import Mathlib.Topology.Separation.Connected
 import TauCeti.Topology.ContinuousMap.LocallyConstant
@@ -17,7 +18,12 @@ import TauCeti.Topology.ContinuousMap.LocallyConstant
 A homomorphism from a group with separately continuous multiplication whose kernel is open is
 locally constant, even when its codomain is only a `MulOneClass`
 (`MonoidHom.isLocallyConstant_of_isOpen_ker`, with its additive form). Open kernels are preserved
-by taking integer multiples of additive homomorphisms into an additive commutative group.
+by taking integer multiples of additive homomorphisms into an additive commutative group. On a
+compact group a homomorphism with open kernel has finite range
+(`MonoidHom.finite_range_of_isOpen_ker`). Conversely, a continuous homomorphism to a `T₁` space
+with finite range has open kernel (`MonoidHom.isOpen_ker_of_finite_range`), so on a compact group
+the kernel is open exactly when the range is finite (`MonoidHom.isOpen_ker_iff_finite_range`).
+These three criteria also have additive forms.
 
 A locally constant function `f : G → A` on a topological group is constant near each point, but
 the neighbourhood on which it is constant depends on the point. On a *compact* group the
@@ -29,7 +35,9 @@ locally constant function with compact support, which vanishes off a compact set
 (`TauCeti.isOpen_rightTranslationStabilizer_of_hasCompactSupport`). On an additive group the
 stabilizer is the subgroup of periods of `f`, `TauCeti.addRightTranslationStabilizer f`, so a
 locally constant compactly supported function is periodic under an open subgroup
-(`TauCeti.isOpen_addRightTranslationStabilizer_of_hasCompactSupport`).
+(`TauCeti.isOpen_addRightTranslationStabilizer_of_hasCompactSupport`). Conversely, on any group
+with separately continuous multiplication, a function whose right-translation stabilizer is open
+is locally constant (`TauCeti.isLocallyConstant_of_isOpen_rightTranslationStabilizer`).
 
 Uniform local constancy is what makes the coinduced module of locally constant equivariant maps a
 *discrete* `G`-module, its right-translation stabilizers being open. Since an open subgroup of a
@@ -63,6 +71,34 @@ theorem isLocallyConstant_of_isOpen_ker [MulOneClass A] (χ : G →* A)
     hχ.preimage (continuous_id.const_mul x⁻¹)
   filter_upwards [hopen.mem_nhds (by simp)] with y hy
   exact χ.eq_iff.mpr hy
+
+/-- A homomorphism with open kernel on a compact group has finite range. -/
+@[to_additive /-- An additive homomorphism with open kernel on a compact additive group has finite
+range. -/]
+theorem finite_range_of_isOpen_ker [CompactSpace G] [MulOneClass A] (χ : G →* A)
+    (hχ : IsOpen (χ.ker : Set G)) : (Set.range χ).Finite :=
+  (χ.isLocallyConstant_of_isOpen_ker hχ).range_finite
+
+omit [SeparatelyContinuousMul G] in
+/-- A continuous homomorphism to a `T₁` space with finite range has open kernel. -/
+@[to_additive /-- A continuous additive homomorphism to a `T₁` space with finite range has open
+kernel. -/]
+theorem isOpen_ker_of_finite_range [MulOneClass A] [TopologicalSpace A] [T1Space A]
+    (χ : G →* A) (hχ : Continuous χ) (hfin : (Set.range χ).Finite) :
+    IsOpen (χ.ker : Set G) :=
+  (IsLocallyConstant.of_continuous_of_finite_range hχ hfin).isOpen_fiber 1
+
+/-- A continuous homomorphism from a compact group to a `T₁` space has open kernel exactly when
+its range is finite. Compactness is needed for the forward direction: the identity of `ℤ` with
+the discrete topology has open kernel and infinite range. The `T₁` condition is needed for the
+converse: the identity of a two-element group with the indiscrete topology has finite range and a
+kernel that is not open. -/
+@[to_additive /-- A continuous additive homomorphism from a compact additive group to a `T₁` space
+has open kernel exactly when its range is finite. -/]
+theorem isOpen_ker_iff_finite_range [CompactSpace G] [MulOneClass A] [TopologicalSpace A]
+    [T1Space A] (χ : G →* A) (hχ : Continuous χ) :
+    IsOpen (χ.ker : Set G) ↔ (Set.range χ).Finite :=
+  ⟨χ.finite_range_of_isOpen_ker, χ.isOpen_ker_of_finite_range hχ⟩
 
 end MonoidHom
 
@@ -131,6 +167,17 @@ def rightTranslationStabilizer (f : G → A) : Subgroup G where
 @[to_additive (attr := simp) mem_addRightTranslationStabilizer]
 theorem mem_rightTranslationStabilizer {f : G → A} {g : G} :
     g ∈ rightTranslationStabilizer f ↔ ∀ x : G, f (x * g) = f x := Iff.rfl
+
+/-- A function whose right-translation stabilizer is open is locally constant: it is constant on
+the open neighbourhood `x U` of each point `x`, where `U` is the stabilizer. -/
+theorem isLocallyConstant_of_isOpen_rightTranslationStabilizer [TopologicalSpace G]
+    [SeparatelyContinuousMul G] {f : G → A} (hf : IsOpen (rightTranslationStabilizer f : Set G)) :
+    IsLocallyConstant f := by
+  refine (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦ ?_
+  have hU : IsOpen ((x⁻¹ * ·) ⁻¹' (rightTranslationStabilizer f : Set G)) :=
+    hf.preimage (continuous_const_mul _)
+  filter_upwards [hU.mem_nhds (by simp [one_mem])] with y hy
+  simpa using mem_rightTranslationStabilizer.1 hy x
 
 /-- A locally constant function on a compact topological group is *uniformly* locally constant:
 its right-translation stabilizer is an open subgroup, so a single open neighbourhood of `1` makes

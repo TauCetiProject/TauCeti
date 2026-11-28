@@ -36,6 +36,9 @@ Poincare--Birkhoff--Witt theorem or injectivity of the canonical Lie map is asse
   `TauCeti.UniversalEnvelopingAlgebra.map_comp`: enveloping-algebra maps are functorial.
 * `TauCeti.UniversalEnvelopingAlgebra.map_surjective_of_surjective`: surjective Lie maps induce
   surjective enveloping-algebra maps.
+* `UniversalEnvelopingAlgebra.map_representation_of_map_lie`: a linear map intertwining
+  Lie actions along a Lie homomorphism `f` intertwines the enveloping-algebra actions along
+  `map f`.
 * `TauCeti.UniversalEnvelopingAlgebra.map_injective_of_leftInverse` and
   `TauCeti.UniversalEnvelopingAlgebra.map_surjective_of_rightInverse`: split morphisms remain split
   after passing to enveloping algebras.
@@ -268,5 +271,29 @@ theorem mapEquiv_trans (e : LieEquiv R L M) (d : LieEquiv R M N) :
       intro x
       simp only [LieEquiv.trans_apply, LieHom.comp_apply, LieEquiv.coe_coe]
     rw [hLie, map_comp]
+
+section Representation
+
+variable {R}
+variable {V : Type*} {W : Type*} [AddCommGroup V] [Module R V] [LieRingModule L V]
+  [LieModule R L V] [AddCommGroup W] [Module R W] [LieRingModule M W] [LieModule R M W]
+
+/-- **Linear maps intertwining Lie actions along a Lie homomorphism intertwine the
+enveloping-algebra actions.** If `T : V → W` satisfies `T ⁅x, v⁆ = ⁅f x, T v⁆` for a Lie
+homomorphism `f : L → M`, then `T (u • v) = map f u • T v` for every `u ∈ U(L)`: the elements of
+`U(L)` for which this holds contain the canonical Lie generators and are closed under the algebra
+operations. -/
+theorem _root_.UniversalEnvelopingAlgebra.map_representation_of_map_lie
+    (f : LieHom R L M) (T : V →ₗ[R] W)
+    (hT : ∀ (x : L) (v : V), T ⁅x, v⁆ = ⁅f x, T v⁆)
+    (u : _root_.UniversalEnvelopingAlgebra R L) (v : V) :
+    T (representation R L V u v) = representation R M W (map R f u) (T v) := by
+  induction u using induction_ι generalizing v with
+  | ι x => rw [map_ι, representation_ι_apply, representation_ι_apply, hT]
+  | algebraMap r => simp [Algebra.algebraMap_eq_smul_one]
+  | add a b ha hb => simp only [map_add, LinearMap.add_apply, ha, hb]
+  | mul a b ha hb => simp only [map_mul, mul_apply_eq_comp, ha, hb]
+
+end Representation
 
 end TauCeti.UniversalEnvelopingAlgebra

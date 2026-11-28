@@ -287,7 +287,7 @@ theorem MemSobolev.compCLM_of_norm_iteratedFDeriv_le_natCeil (hp : 1 < p) (hp_to
     (hΦb : ∀ n, 1 ≤ n → n ≤ ⌈|s|⌉₊ → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ x‖ ≤ C)
     (hΨb : ∀ n, 1 ≤ n → n ≤ ⌈|s|⌉₊ + 1 → ∃ C, ∀ x, ‖iteratedFDeriv ℝ n Φ.symm x‖ ≤ C)
     {T : 𝓢'(E, F)} (hT : MemSobolev s p T) : MemSobolev s p (compCLM F Φ hΦ hΨ T) :=
-  hT.map_of_forall_intCast hp hp_top _ fun _ hk _ hu ↦
+  hT.map_of_forall_intCast hp hp_top hp hp_top _ fun _ hk _ hu ↦
     hu.compCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top hΦ hΨ
       (fun n hn₁ hn₂ ↦ hΦb n hn₁ (hn₂.trans hk)) fun n hn₁ hn₂ ↦ hΨb n hn₁ (by omega)
 
