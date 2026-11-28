@@ -220,9 +220,32 @@ lemma twistedHomologyTotalToOuter_naturality_coefficient
       (T.twistedChainComplexTotalToOuter_naturality η)).trans
       (HomologicalComplex.homologyMap_comp _ _ _))
 
-/-- The quotient `Hₖ(X, B) ⟶ Hₖ(X, A)` of a triple commutes with a map `g'` of the total pairs and
-a map `g` of the outer pairs that have the same ambient component, once the coefficients are
-matched. -/
+/-- The quotient `C(X,B;L) ⟶ C(X,A;L)` commutes with maps of the total and outer pairs
+with the same ambient component and compatible coefficient morphisms. -/
+@[reassoc]
+lemma twistedChainComplexTotalToOuter_naturality_of_fst_eq {T' : TopTriple.{v}}
+    {S : LocalCoefficientSystem.{u, v, max v w} R T'.fst}
+    (g : outerPair.obj T ⟶ outerPair.obj T') (g' : totalPair.obj T ⟶ totalPair.obj T')
+    (hg : TopPair.Hom.fst g' = TopPair.Hom.fst g)
+    (a : L ⟶ (LocalCoefficientSystem.pullback (TopPair.Hom.fst g).hom).obj S)
+    (a' : L ⟶ (LocalCoefficientSystem.pullback (TopPair.Hom.fst g').hom).obj S)
+    (ha : a' ≫ eqToHom (congrArg (fun t : T.fst ⟶ T'.fst ↦
+      (LocalCoefficientSystem.pullback t.hom).obj S) hg) = a) :
+    T.twistedChainComplexTotalToOuter L ≫ (outerPair.obj T).twistedChainComplexCoefficientMap a ≫
+        TopPair.twistedChainComplexMap g S =
+      (totalPair.obj T).twistedChainComplexCoefficientMap a' ≫
+        TopPair.twistedChainComplexMap g' S ≫ T'.twistedChainComplexTotalToOuter S := by
+  apply (cancel_epi ((totalPair.obj T).twistedChainComplexπ L)).1
+  rw [twistedChainComplexπ_comp_totalToOuter_assoc,
+    TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
+    TopPair.twistedChainComplexπ_comp_twistedChainComplexMap,
+    TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
+    TopPair.twistedChainComplexπ_comp_twistedChainComplexMap_assoc,
+    twistedChainComplexπ_comp_totalToOuter, twistedChainComplexMap_congr _ S hg, ← ha,
+    twistedChainComplexCoefficientMap_comp_assoc, eqToIso.hom, Category.assoc]
+
+/-- The quotient `Hₖ(X,B;L) ⟶ Hₖ(X,A;L)` commutes with maps of the total and outer pairs
+with the same ambient component and compatible coefficient morphisms. -/
 @[reassoc]
 lemma twistedHomologyTotalToOuter_naturality_of_fst_eq {T' : TopTriple.{v}}
     {S : LocalCoefficientSystem.{u, v, max v w} R T'.fst}
@@ -238,15 +261,8 @@ lemma twistedHomologyTotalToOuter_naturality_of_fst_eq {T' : TopTriple.{v}}
       (totalPair.obj T).twistedHomologyCoefficientMap a' k ≫
         TopPair.twistedHomologyMap g' S k ≫ T'.twistedHomologyTotalToOuter S k := by
   simp only [twistedHomologyTotalToOuter, ← HomologicalComplex.homologyMap_comp]
-  congr 1
-  apply (cancel_epi ((totalPair.obj T).twistedChainComplexπ L)).1
-  rw [twistedChainComplexπ_comp_totalToOuter_assoc,
-    TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
-    TopPair.twistedChainComplexπ_comp_twistedChainComplexMap,
-    TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc,
-    TopPair.twistedChainComplexπ_comp_twistedChainComplexMap_assoc,
-    twistedChainComplexπ_comp_totalToOuter, twistedChainComplexMap_congr _ S hg, ← ha,
-    twistedChainComplexCoefficientMap_comp_assoc, eqToIso.hom, Category.assoc]
+  exact congrArg (fun f ↦ HomologicalComplex.homologyMap f k)
+    (T.twistedChainComplexTotalToOuter_naturality_of_fst_eq L g g' hg a a' ha)
 
 /-- The triple sequence ends with a surjection on degree-zero relative homology. -/
 instance epi_twistedHomologyTotalToOuter_zero : Epi (T.twistedHomologyTotalToOuter L 0) :=

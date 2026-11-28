@@ -29,6 +29,9 @@ same formula computes its coefficients.
 
 * `MvPolynomial.aeval_esymm_eq_coeff_prod_X_sub_C`: the elementary symmetric polynomials at `x`
   are the signed coefficients of `∏ i, (X - C (x i))`.
+* `MvPolynomial.prod_X_sub_C_coeff`: over `R[Xⱼ : j ∈ σ]`, the coefficient of `T^k` in
+  `∏ⱼ (T - Xⱼ)` is `(-1)^(|σ| - k) e_{|σ| - k}`; its constant coefficient is `(-1)^|σ| ∏ⱼ Xⱼ`
+  (`MvPolynomial.prod_X_sub_C_coeff_zero`).
 * `Polynomial.eq_prod_X_sub_C_of_monic_of_roots_eq`: a monic polynomial whose roots are listed by
   `x` on a finite set `s` is the product of the linear factors `X - C (x i)` over `s`.
 * `Polynomial.eq_prod_X_sub_C_of_monic_of_isRoot`: the same when the values of `x` on `s` are
@@ -79,6 +82,30 @@ theorem aeval_esymm_eq_coeff_prod_X_sub_C (x : σ → S) {k : ℕ} (hk : k ≤ F
     ← Function.comp_def (fun t => Polynomial.X - Polynomial.C t) x, ← Multiset.map_map,
     Multiset.prod_X_sub_C_coeff _ (by simp)]
   simp [Nat.sub_sub_self hk]
+
+end MvPolynomial
+
+namespace MvPolynomial
+
+variable (R σ : Type*) [CommRing R] [Fintype σ]
+
+/-- **Vieta's formulas** for `MvPolynomial`: for `k ≤ |σ|`, the coefficient of `T^k` in
+`∏ⱼ (T - Xⱼ)` is `(-1)^(|σ| - k) e_{|σ| - k}`. -/
+theorem prod_X_sub_C_coeff {k : ℕ} (hk : k ≤ Fintype.card σ) :
+    (∏ j : σ, (Polynomial.X - Polynomial.C (X j : MvPolynomial σ R))).coeff k =
+      (-1) ^ (Fintype.card σ - k) * esymm σ R (Fintype.card σ - k) := by
+  have h := Multiset.prod_X_sub_C_coeff
+    (Finset.univ.val.map (X : σ → MvPolynomial σ R)) (k := k) (by simpa using hk)
+  rw [Multiset.map_map, Function.comp_def, Multiset.card_map, ← Finset.card_def,
+    Finset.card_univ] at h
+  rw [esymm_eq_multiset_esymm, Finset.prod_eq_multiset_prod, ← h]
+
+/-- The constant coefficient of `∏ⱼ (T - Xⱼ)` is `(-1)^|σ| ∏ⱼ Xⱼ`. -/
+theorem prod_X_sub_C_coeff_zero :
+    (∏ j : σ, (Polynomial.X - Polynomial.C (X j : MvPolynomial σ R))).coeff 0 =
+      (-1) ^ Fintype.card σ * ∏ j : σ, X j := by
+  rw [Polynomial.coeff_zero_eq_eval_zero, Polynomial.eval_prod]
+  simp [Finset.prod_neg]
 
 end MvPolynomial
 

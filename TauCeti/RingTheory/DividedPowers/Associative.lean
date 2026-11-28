@@ -192,6 +192,12 @@ theorem map_dividedPower {B : Type*} [Semiring B] [Algebra ℚ B]
     f (dividedPower n x) = dividedPower n (f x) := by
   simp [dividedPower_def]
 
+/-- Passing from the opposite algebra preserves divided powers. -/
+@[simp]
+theorem _root_.MulOpposite.unop_dividedPower (n : ℕ) (x : Aᵐᵒᵖ) :
+    MulOpposite.unop (dividedPower n x) = dividedPower n (MulOpposite.unop x) := by
+  simp only [dividedPower_def, MulOpposite.unop_smul, MulOpposite.unop_pow]
+
 /-- Multiplying an element on the left by a commuting element multiplies its `n`-th divided
 power by the `n`-th power of that element. -/
 theorem dividedPower_mul_left {a x : A} (hax : Commute a x) (n : ℕ) :
@@ -311,6 +317,23 @@ theorem dividedPower_add {x y : A} (hxy : Commute x y) (n : ℕ) :
   rw [← Nat.cast_smul_eq_nsmul ℚ, smul_smul, dividedPower_def, dividedPower_def,
     smul_mul_smul]
   rw [Nat.inv_factorial_mul_choose n ij.1 ij.2 (mem_antidiagonal.mp hij)]
+
+/-- If three rational algebra maps satisfy `D z = L z + R z + e`, the image of a
+divided power expands as the antidiagonal convolution of the three divided-power sequences. -/
+theorem _root_.AlgHom.dividedPower_eq_sum {B : Type*} [CommSemiring B] [Algebra ℚ B]
+    (D L R : A →ₐ[ℚ] B) (z : A) (e : B)
+    (hz : D z = L z + R z + e) (n : ℕ) :
+    D (dividedPower n z) = ∑ jl ∈ antidiagonal n,
+      (∑ ab ∈ antidiagonal jl.1,
+        L (dividedPower ab.1 z) * R (dividedPower ab.2 z)) * dividedPower jl.2 e := by
+  rw [map_dividedPower, hz, dividedPower_add (Commute.all _ _)]
+  apply sum_congr rfl
+  intro jl _
+  rw [dividedPower_add (Commute.all _ _)]
+  congr 1
+  apply sum_congr rfl
+  intro ab _
+  rw [map_dividedPower, map_dividedPower]
 
 end Semiring
 

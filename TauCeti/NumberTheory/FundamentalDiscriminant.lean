@@ -28,6 +28,9 @@ prime-discriminant theory.
   rational square, so `ℚ(√D)` is a genuine quadratic field.
 * `Int.exists_isFundamentalDiscr_eq_sq_mul`: every nonzero discriminant `D ≡ 0, 1 (mod 4)` is
   `f² D₀` for a fundamental discriminant `D₀`.
+* `Int.IsFundamentalDiscr.eq_neg_four_or_eq_neg_eight_or_exists_prime_of_card_primeFactors_eq_one`:
+  a negative fundamental discriminant with a single prime factor is `-4`, `-8` or `-p` for a prime
+  `p ≡ 3 (mod 4)`.
 -/
 
 public section
@@ -124,5 +127,33 @@ theorem exists_isFundamentalDiscr_eq_sq_mul {D : ℤ} (hD : D % 4 = 0 ∨ D % 4 
     omega
   exact ⟨c.natAbs, 4 * a, isFundamentalDiscr_four_mul.mpr ⟨ha, ha23⟩,
     by rw [Int.natAbs_sq]; ring⟩
+
+/-- **Negative fundamental discriminants with one prime factor.** A negative fundamental
+discriminant divisible by exactly one prime is `-4`, `-8`, or `-p` for a prime `p ≡ 3 (mod 4)`:
+in the odd case `D` is squarefree, so `|D|` is that prime, and `D ≡ 1 (mod 4)` forces
+`p ≡ 3 (mod 4)`; in the even case `D = 4m` with `m` squarefree and `2` the only prime dividing it,
+so `m ∈ {-1, -2}`. -/
+theorem IsFundamentalDiscr.eq_neg_four_or_eq_neg_eight_or_exists_prime_of_card_primeFactors_eq_one
+    {D : ℤ} (hD : IsFundamentalDiscr D) (hneg : D < 0) (ht : D.natAbs.primeFactors.card = 1) :
+    D = -4 ∨ D = -8 ∨ ∃ p : ℕ, p.Prime ∧ p % 4 = 3 ∧ D = -p := by
+  obtain ⟨p, hp⟩ := Finset.card_eq_one.mp ht
+  rcases isFundamentalDiscr_iff_squarefree.mp hD with ⟨h1, hsf⟩ | ⟨h0, hsf, -⟩
+  · -- `D ≡ 1 (mod 4)` is squarefree, so `|D|` is the product of its single prime factor.
+    have habs : D.natAbs = p := by
+      rw [← Nat.prod_primeFactors_of_squarefree (squarefree_natAbs.mpr hsf), hp,
+        Finset.prod_singleton]
+    exact Or.inr (Or.inr ⟨p, Nat.prime_of_mem_primeFactors (hp ▸ Finset.mem_singleton_self p),
+      by omega, by omega⟩)
+  · -- `D = 4m` with `m` squarefree: the prime factors of `|m|` lie among those of `|D|`, that is
+    -- `{2}`, so the squarefree `|m|` is `1` or `2`.
+    have h2 : 2 ∈ D.natAbs.primeFactors :=
+      Nat.mem_primeFactors.mpr ⟨Nat.prime_two, by omega, by omega⟩
+    rw [hp, Finset.mem_singleton] at h2
+    have hsub : (D / 4).natAbs.primeFactors ⊆ {2} := by
+      rw [h2, ← hp]
+      exact Nat.primeFactors_mono ⟨4, by omega⟩ (by omega)
+    have habs := Nat.prod_primeFactors_of_squarefree (squarefree_natAbs.mpr hsf)
+    rcases Finset.subset_singleton_iff.mp hsub with h | h <;>
+      rw [h] at habs <;> simp only [Finset.prod_empty, Finset.prod_singleton] at habs <;> omega
 
 end Int

@@ -47,6 +47,8 @@ groups, as for the infinite-adele comparison in
   the semilocal map after evaluation at `v`.
 * `TauCeti.GlobalNumberFields.finiteAdeleBaseChangeHom_injective`,
   `TauCeti.GlobalNumberFields.finiteAdeleBaseChangeHom_surjective`: the map is bijective.
+* `TauCeti.GlobalNumberFields.finiteAdeleBaseChangeEquiv_proj`: projecting
+  `finiteAdeleBaseChangeEquiv` to a place `w ∣ v` recovers `TauCeti.semilocalContinuousEquiv`.
 * `TauCeti.GlobalNumberFields.finiteAdeleBaseChangeEquiv_tower`: in a tower `K ⊆ L ⊆ M`, base
   change from `K` to `M` factors through base change from `K` to `L`.
 
@@ -254,13 +256,28 @@ theorem finiteAdeleBaseChangeAlgEquiv_toAlgHom :
     (finiteAdeleBaseChangeAlgEquiv K L).toAlgHom = finiteAdeleBaseChangeHom K L :=
   (rfl)
 
+/-- The algebraic comparison sends a pure tensor to the extended adele times the diagonal
+field element. -/
+@[simp]
+theorem finiteAdeleBaseChangeAlgEquiv_tmul (a : FiniteAdeleRing (𝓞 K) K) (x : L) :
+    finiteAdeleBaseChangeAlgEquiv K L (a ⊗ₜ x) =
+      finiteAdeleExtension (𝓞 K) K (𝓞 L) L a *
+        algebraMap L (FiniteAdeleRing (𝓞 L) L) x :=
+  finiteAdeleBaseChangeHom_tmul K L a x
+
 /-- The algebraic inverse comparison sends a diagonal field element to `1 ⊗ x`. -/
 @[simp]
 theorem finiteAdeleBaseChangeAlgEquiv_symm_algebraMap (x : L) :
     (finiteAdeleBaseChangeAlgEquiv K L).symm
       (algebraMap L (FiniteAdeleRing (𝓞 L) L) x) = 1 ⊗ₜ[K] x := by
   apply (finiteAdeleBaseChangeAlgEquiv K L).injective
-  simp [finiteAdeleBaseChangeAlgEquiv]
+  simp
+
+/-- The algebraic comparison sends `1 ⊗ x` to the diagonal field element. -/
+theorem finiteAdeleBaseChangeAlgEquiv_one_tmul (x : L) :
+    finiteAdeleBaseChangeAlgEquiv K L (1 ⊗ₜ[K] x) =
+      algebraMap L (FiniteAdeleRing (𝓞 L) L) x := by
+  simp
 
 variable [TopologicalSpace (FiniteAdeleRing (𝓞 K) K ⊗[K] L)]
   [IsModuleTopology (FiniteAdeleRing (𝓞 K) K) (FiniteAdeleRing (𝓞 K) K ⊗[K] L)]
@@ -305,9 +322,13 @@ field element. -/
 @[simp]
 theorem finiteAdeleBaseChangeEquiv_tmul (a : FiniteAdeleRing (𝓞 K) K) (x : L) :
     finiteAdeleBaseChangeEquiv K L (a ⊗ₜ x) =
-      finiteAdeleExtension (𝓞 K) K (𝓞 L) L a * algebraMap L (FiniteAdeleRing (𝓞 L) L) x := by
-  have h : (finiteAdeleBaseChangeEquiv K L).toAlgHom = finiteAdeleBaseChangeHom K L := by simp
-  exact (AlgHom.congr_fun h (a ⊗ₜ[K] x)).trans (finiteAdeleBaseChangeHom_tmul K L a x)
+      finiteAdeleExtension (𝓞 K) K (𝓞 L) L a * algebraMap L (FiniteAdeleRing (𝓞 L) L) x :=
+  finiteAdeleBaseChangeAlgEquiv_tmul K L a x
+
+/-- The continuous comparison sends `1 ⊗ x` to the diagonal field element. -/
+theorem finiteAdeleBaseChangeEquiv_one_tmul (x : L) :
+    finiteAdeleBaseChangeEquiv K L (1 ⊗ₜ[K] x) = algebraMap L (FiniteAdeleRing (𝓞 L) L) x := by
+  simp
 
 /-- The inverse comparison sends a diagonal field element to `1 ⊗ x`. -/
 @[simp]
@@ -328,5 +349,37 @@ theorem finiteAdeleBaseChangeEquiv_tower (M : Type*) [Field M] [NumberField M] [
       finiteAdeleBaseChangeEquiv L M (finiteAdeleBaseChangeEquiv K L (a ⊗ₜ 1) ⊗ₜ z) := by
   simp only [finiteAdeleBaseChangeEquiv_tmul, map_one, mul_one]
   rw [← finiteAdeleExtension_comp (𝓞 K) K (𝓞 L) L (𝓞 M) M, RingHom.comp_apply]
+
+/-- Projecting `finiteAdeleBaseChangeEquiv K L s` to a place `w ∣ v` of `L` agrees with
+applying the semilocal comparison at `v` to the `v`-component tensor of `s`. -/
+theorem finiteAdeleBaseChangeEquiv_proj (v : HeightOneSpectrum (𝓞 K))
+    [TopologicalSpace (v.adicCompletion K ⊗[K] L)]
+    [IsModuleTopology (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)]
+    (s : FiniteAdeleRing (𝓞 K) K ⊗[K] L)
+    (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) :
+    FiniteAdeleRing.proj L w.val (finiteAdeleBaseChangeEquiv K L s) =
+      TauCeti.semilocalContinuousEquiv L v
+        (Algebra.TensorProduct.rTensor L
+          (FiniteAdeleRing.proj K v : FiniteAdeleRing (𝓞 K) K →ₐ[K] v.adicCompletion K) s) w := by
+  induction s using TensorProduct.inductionOn with
+  | tmul a x =>
+    obtain ⟨w, hw⟩ := w
+    obtain rfl : v = w.under (𝓞 K) := HeightOneSpectrum.asIdeal_injective hw.over
+    simp [FiniteAdeleRing.proj_apply, finiteAdeleExtension_apply, FiniteAdeleRing.algebraMap_apply,
+      HeightOneSpectrum.algebraMap_adicCompletionExtensionAlgebra,
+      HeightOneSpectrum.algebraMap_adicCompletion]
+  | add s₁ s₂ hs₁ hs₂ =>
+    simp only [map_add, Pi.add_apply, hs₁, hs₂]
+
+/-- Pure-tensor form of `finiteAdeleBaseChangeEquiv_proj`. -/
+theorem finiteAdeleBaseChangeEquiv_proj_tmul (v : HeightOneSpectrum (𝓞 K))
+    [TopologicalSpace (v.adicCompletion K ⊗[K] L)]
+    [IsModuleTopology (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)]
+    (a : FiniteAdeleRing (𝓞 K) K) (x : L)
+    (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) :
+    FiniteAdeleRing.proj L w.val (finiteAdeleBaseChangeEquiv K L (a ⊗ₜ[K] x)) =
+      TauCeti.semilocalContinuousEquiv L v (FiniteAdeleRing.proj K v a ⊗ₜ[K] x) w := by
+  simpa only [Algebra.TensorProduct.rTensor, Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
+    ContinuousAlgHom.coe_coe] using finiteAdeleBaseChangeEquiv_proj K L v (a ⊗ₜ[K] x) w
 
 end TauCeti.GlobalNumberFields
