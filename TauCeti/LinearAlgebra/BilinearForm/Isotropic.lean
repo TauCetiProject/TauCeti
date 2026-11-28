@@ -11,6 +11,7 @@ import Mathlib.LinearAlgebra.Basis.Prod
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
+import TauCeti.LinearAlgebra.SesquilinearForm.Isotropic
 
 /-!
 # Isotropic subspaces of an alternating form and the transitivity of its isometries
@@ -66,25 +67,11 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm
 
 /-- Every isotropic submodule of an alternating form lies in a self-orthogonal submodule. A
 maximal isotropic submodule containing it, which exists by Zorn's lemma, is self-orthogonal. No
-finiteness or nondegeneracy is needed. -/
+finiteness or nondegeneracy is needed. This is the case of scalar values of
+`LinearMap.IsAlt.exists_le_eq_orthogonalBilin`. -/
 theorem IsAlt.exists_le_eq_orthogonal (hB : B.IsAlt) {U : Submodule R M}
     (hU : U ≤ B.orthogonal U) : ∃ L, U ≤ L ∧ L = B.orthogonal L := by
-  -- The supremum of a nonempty chain of isotropic submodules is isotropic, since any two of its
-  -- vectors lie in a common member of the chain.
-  have hchain : ∀ c ⊆ {W | U ≤ W ∧ W ≤ B.orthogonal W}, IsChain (· ≤ ·) c →
-      ∀ W ∈ c, ∃ ub ∈ {W | U ≤ W ∧ W ≤ B.orthogonal W}, ∀ W' ∈ c, W' ≤ ub := by
-    intro c hcS hc W hW
-    refine ⟨sSup c, ⟨(hcS hW).1.trans (le_sSup hW), fun x hx ↦ ?_⟩, fun _ ↦ le_sSup⟩
-    refine mem_orthogonal_iff.mpr fun y hy ↦ ?_
-    obtain ⟨W₁, hW₁, hx⟩ := (mem_sSup_of_directed ⟨W, hW⟩ hc.directedOn).mp hx
-    obtain ⟨W₂, hW₂, hy⟩ := (mem_sSup_of_directed ⟨W, hW⟩ hc.directedOn).mp hy
-    obtain ⟨W₃, hW₃, h₁, h₂⟩ := hc.directedOn W₁ hW₁ W₂ hW₂
-    exact mem_orthogonal_iff.mp ((hcS hW₃).2 (h₁ hx)) y (h₂ hy)
-  obtain ⟨L, hUL, ⟨-, hL⟩, hmax⟩ := zorn_le_nonempty₀ _ hchain U ⟨le_rfl, hU⟩
-  refine ⟨L, hUL, le_antisymm hL fun v hv ↦ ?_⟩
-  have hle : L ⊔ R ∙ v ≤ L :=
-    hmax ⟨hUL.trans le_sup_left, hB.sup_span_singleton_le_orthogonal hL hv⟩ le_sup_left
-  exact hle (mem_sup_right (mem_span_singleton_self v))
+  simpa only [orthogonal] using LinearMap.IsAlt.exists_le_eq_orthogonalBilin hB hU
 
 end CommRing
 
