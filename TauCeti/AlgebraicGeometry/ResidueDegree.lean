@@ -9,6 +9,8 @@ public import Mathlib.AlgebraicGeometry.Morphisms.SurjectiveOnStalks
 public import Mathlib.AlgebraicGeometry.ResidueField
 public import Mathlib.LinearAlgebra.Dimension.FreeAndStrongRankCondition
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
+public import Mathlib.RingTheory.Length
+public import TauCeti.AlgebraicGeometry.Scheme.Stalk
 
 /-!
 # Residue degrees of scheme morphisms
@@ -27,16 +29,23 @@ one over any open of its target over which it is an isomorphism. The comparison
 `finrank_residueField_stalk` computes this degree from the residue field of the local ring with
 any compatible base-field algebra structure, and `residueDegree_eq_finrank_residueField` computes
 it through any local ring isomorphic to the source stalk compatibly with the stalk map. These facts
-supply the residue-field weights used in degree and pushforward constructions.
+supply the residue-field weights used in degree and pushforward constructions. The comparison
+`toNat_length_residueField_eq_residueDegree` expresses the same degree as the natural-number
+truncation of the length of `κ(x)` over the local ring of its image; it also applies to a point
+over a specified equal image `y`, using `stalkAlgebraOfApplyEq` from
+`TauCeti.AlgebraicGeometry.Scheme.Stalk`, whose algebra map is local by
+`isLocalHom_algebraMap_stalkAlgebraOfApplyEq`.
 
 The construction follows the residue-degree convention for pushforward of cycles in the
 [Stacks Project, Tag 02R4](https://stacks.math.columbia.edu/tag/02R4). The proofs reuse
 Mathlib's residue-field maps and the field-extension tower law `Module.finrank_mul_finrank`.
+The length comparison is adapted from the
+[lookahead formalization](https://github.com/roed-math/TauCeti-w2-fresh/tree/678c1bad7a8c53d6cffb49946b9fefc73d4c0435).
 -/
 
 public section
 
-open CategoryTheory
+open CategoryTheory IsLocalRing
 
 namespace AlgebraicGeometry.Scheme.Hom
 
@@ -181,5 +190,22 @@ theorem finrank_residueField_stalk {K : Type u} [Field K] {X : Scheme.{u}}
   exact (congrArg (fun g : Γ(X, ⊤) ⟶ CommRingCat.of
     (IsLocalRing.ResidueField (X.presheaf.stalk x)) ↦
       g (((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom c)) hc).symm
+
+/-- The natural-number truncation of the length of `κ(x)` over `𝒪_{Y,y}` is the residue
+degree `[κ(x) : κ(y)]` (both truncations are `0` when the extension is infinite). -/
+theorem toNat_length_residueField_eq_residueDegree (f : X ⟶ Y) {x : X} {y : Y} (h : f x = y) :
+    letI := stalkAlgebraOfApplyEq f h
+    (Module.length (Y.presheaf.stalk y) (ResidueField (X.presheaf.stalk x))).toNat =
+      f.residueDegree x := by
+  subst h
+  let _ := f.stalkAlgebraOfApplyEq (rfl : f x = f x)
+  have := f.isLocalHom_algebraMap_stalkAlgebraOfApplyEq (rfl : f x = f x)
+  -- `𝒪_{Y,f x}` acts on `κ(x)` through `κ(f x)`, by Mathlib's residue-field scalar tower.
+  rw [Module.length_eq_of_surjective (R := ResidueField (Y.presheaf.stalk (f x)))
+    IsLocalRing.residue_surjective, Module.length_eq_rank, Cardinal.toNat_toENat]
+  -- `Module.finrank` is by definition the `toNat` of the rank; compare through the identity
+  -- equivalence of the source stalk.
+  exact (f.residueDegree_eq_finrank_residueField x (RingEquiv.refl _)
+    fun a ↦ by simp).symm
 
 end AlgebraicGeometry.Scheme.Hom

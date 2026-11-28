@@ -256,6 +256,34 @@ theorem germToFunctionField_functionFieldMap (f : X ⟶ Y) [IsDominant f] (U : Y
   rw [Scheme.germToFunctionField, Scheme.germToFunctionField, functionFieldMap,
     TopCat.Presheaf.germ_stalkSpecializes_assoc, germ_stalkMap]
 
+/-- Pulling a section back to a smaller nonempty open and then taking its germ in the function
+field agrees with taking its germ first and pulling back along the dominant morphism. This is
+not a simp lemma: `simp` derives it from `Scheme.Hom.appLE_germ` in
+`TauCeti.AlgebraicGeometry.Scheme.Stalk`, `germ_stalkMap` and
+`germToFunctionField_functionFieldMap`. -/
+@[reassoc]
+theorem appLE_germToFunctionField (f : X ⟶ Y) [IsDominant f]
+    (U : Y.Opens) (V : X.Opens) [Nonempty U] [Nonempty V] (e : V ≤ f ⁻¹ᵁ U) :
+    f.appLE U V e ≫ X.germToFunctionField V =
+      Y.germToFunctionField U ≫ f.functionFieldMap := by
+  simp [Scheme.germToFunctionField, Scheme.Hom.appLE]
+
+/-- Mapping a section through a target stalk and then pulling it into the source function
+field agrees with taking the function-field germ of its pullback to a smaller nonempty open. -/
+theorem functionFieldMap_comp_algebraMap_comp_germ (f : X ⟶ Y) [IsDominant f]
+    (U : Y.Opens) (V : X.Opens) [Nonempty V] (e : V ≤ f ⁻¹ᵁ U)
+    {y : Y} (hy : y ∈ U) :
+    f.functionFieldMap.hom.comp
+        ((algebraMap (Y.presheaf.stalk y) Y.functionField).comp
+          (Y.presheaf.germ U y hy).hom) =
+      (X.germToFunctionField V).hom.comp (f.appLE U V e).hom := by
+  have : Nonempty U := ⟨⟨y, hy⟩⟩
+  ext a
+  simp only [RingHom.comp_apply]
+  rw [Scheme.algebraMap_germ_eq_germToFunctionField]
+  exact congrArg (fun g : Γ(Y, U) ⟶ X.functionField ↦ g a)
+    (f.appLE_germToFunctionField U V e).symm
+
 /-- The pullback of rational functions `f^*` along a dominant morphism `f : X ⟶ Y` of irreducible
 schemes is compatible with the maps of stalks: at a point `x` of `X`, it sends the image in `K(Y)`
 of an element `a` of `𝒪_{Y,f x}` to the image in `K(X)` of its pullback `f^* a ∈ 𝒪_{X,x}`. -/
@@ -275,11 +303,11 @@ theorem appLE_injective_of_isDominant [IsIntegral Y] (f : X ⟶ Y) [IsDominant f
     (U : Y.Opens) (V : X.Opens) [Nonempty V] (e : V ≤ f ⁻¹ᵁ U) :
     Function.Injective (f.appLE U V e) := by
   have : Nonempty U := ⟨⟨_, e (Classical.arbitrary V).property⟩⟩
-  have h : f.appLE U V e ≫ X.germToFunctionField V =
-      Y.germToFunctionField U ≫ f.functionFieldMap := by
-    simp [Scheme.germToFunctionField, Scheme.Hom.appLE]
   refine .of_comp (f := X.germToFunctionField V) ?_
-  rw [← RingHom.coe_comp, ← CommRingCat.hom_comp, h, CommRingCat.hom_comp, RingHom.coe_comp]
+  have h := congrArg (fun g : Γ(Y, U) ⟶ X.functionField ↦ (g : Γ(Y, U) → X.functionField))
+    (f.appLE_germToFunctionField U V e)
+  simp only [ConcreteCategory.coe_comp] at h
+  rw [h]
   exact f.functionFieldMap.hom.injective.comp (Y.germToFunctionField_injective U)
 
 /-- The pullback of rational functions along the identity is the identity. -/

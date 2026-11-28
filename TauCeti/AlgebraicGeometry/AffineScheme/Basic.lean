@@ -129,6 +129,19 @@ universe u
 
 namespace AlgebraicGeometry
 
+/-- The point of an affine open corresponding to a prime of its sections lies in that open. -/
+@[simp]
+theorem IsAffineOpen.fromSpec_mem {X : Scheme.{u}} {U : X.Opens} (hU : IsAffineOpen U)
+    (q : PrimeSpectrum Γ(X, U)) : hU.fromSpec q ∈ U :=
+  hU.range_fromSpec.le ⟨q, rfl⟩
+
+/-- On an affine open `U`, the prime of `Γ(X, U)` of a point `fromSpec q` is `q`. -/
+@[simp]
+theorem IsAffineOpen.primeIdealOf_fromSpec {X : Scheme.{u}} {U : X.Opens} (hU : IsAffineOpen U)
+    (q : PrimeSpectrum Γ(X, U)) (hq : hU.fromSpec q ∈ U) :
+    hU.primeIdealOf ⟨hU.fromSpec q, hq⟩ = q :=
+  hU.fromSpec.isOpenEmbedding.injective (hU.fromSpec_primeIdealOf ⟨_, hq⟩)
+
 /-- The global sections of the inverse of `X ≅ Spec Γ(X, ⊤)`, for an affine scheme `X`. -/
 theorem Scheme.isoSpec_inv_appTop (X : Scheme.{u}) [IsAffine X] :
     X.isoSpec.inv.appTop = (Scheme.ΓSpecIso Γ(X, ⊤)).inv := by
