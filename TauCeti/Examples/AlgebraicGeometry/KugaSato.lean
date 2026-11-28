@@ -44,8 +44,7 @@ example {V : Type*} [AddCommGroup V] [Module ℚ V] (T : Fin 0 → Module.End �
 
 /-- A filtration of length one needs no correction: the correction is the identity polynomial. -/
 example : idempotentCorrection (R := ℚ) 1 = X := by
-  simpa only [aeval_X_left_apply] using (aeval_idempotentCorrection (R := ℚ) (X : ℚ[X]) 1).trans
-    (by rw [pow_one, pow_one, sub_sub_self])
+  rw [idempotentCorrection_def, pow_one, pow_one, sub_sub_self]
 
 /-- The correction distinguishes eigenvalues zero and one even with nontrivial generalized
 eigenvectors. The unipotent block's fifth power still fails idempotence. -/

@@ -33,6 +33,10 @@ variable {R : Type*} [CommRing R]
 noncomputable def idempotentCorrection (d : ℕ) : R[X] :=
   1 - (1 - X ^ d) ^ d
 
+/-- The defining formula for the idempotent correction polynomial. -/
+theorem idempotentCorrection_def (d : ℕ) :
+    idempotentCorrection (R := R) d = 1 - (1 - X ^ d) ^ d := (rfl)
+
 /-- The correction evaluated in an algebra. -/
 @[simp]
 theorem aeval_idempotentCorrection {A : Type*} [Ring A] [Algebra R A] (x : A) (d : ℕ) :
