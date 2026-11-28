@@ -12,6 +12,7 @@ public import Mathlib.Data.Set.Card
 
 import Mathlib.Basic.Finite.Prod
 import Mathlib.Data.Fintype.BigOperators
+import TauCeti.Algebra.Order.Floor.Abs
 import TauCeti.Data.Int.Interval
 
 /-!
@@ -55,8 +56,9 @@ only finitely many rounded families have entries in `[-R, R]`.
 * `TauCeti.mem_Icc_ceil_floor_of_mem_Icc`: if `x ∈ [δ m, δ (m + 1)]` and `|x| ≤ R`, then
   `m ∈ [⌈-R / δ⌉ - 1, ⌊R / δ⌋]`.
 * `TauCeti.exists_finset_forall_exists_le_lt_add`: finitely many families round up, by less
-  than `δ` in each entry, every family with entries in `[-R, R]`. Mathlib's `Int.card_Icc`
-  and `Fintype.card_fun` bound the number of families by `(2 * ⌈R / δ⌉₊ + 1) ^ Nat.card κ`.
+  than `δ` in each entry, every family with entries in `[-R, R]`. The proof uses
+  `Int.natAbs_floor_le_natCeil_abs` for grid membership and `Int.card_Icc_neg_natCast_natCast`
+  with `Fintype.card_fun` to bound the number of families by `(2 * ⌈R / δ⌉₊ + 1) ^ Nat.card κ`.
 * `TauCeti.floor_div_eq_of_forall_intCast_mul_notMem_uIcc`: if no multiple of `δ > 0` lies
   between `a` and `b`, then `⌊a / δ⌋ = ⌊b / δ⌋`.
 * `TauCeti.encard_setOf_intCast_mul_mem_Ioo_le`: an open interval of length `L` contains at most
@@ -272,18 +274,13 @@ theorem exists_finset_forall_exists_le_lt_add {κ : Type*} [Finite κ] (hδ : 0 
     rw [Finset.card_univ, Fintype.card_fun, Fintype.card_coe, Int.card_Icc_neg_natCast_natCast,
       Nat.card_eq_fintype_card]
   · intro a ha
-    have hR : R / δ ≤ (m : K) := Nat.le_ceil _
     let g (k : κ) : I := ⟨⌈a k / δ⌉, Finset.mem_Icc.mpr (by
-      have hk := abs_le.mp (ha k)
-      constructor
-      · rw [← Int.ceil_intCast (R := K) (-(m : ℤ))]
-        apply Int.ceil_mono
-        rw [Int.cast_neg, Int.cast_natCast]
-        have hlow := div_le_div_of_nonneg_right hk.1 hδ.le
-        rw [neg_div] at hlow
-        exact (neg_le_neg hR).trans hlow
-      · rw [Int.ceil_le, Int.cast_natCast]
-        exact (div_le_div_of_nonneg_right hk.2 hδ.le).trans hR)⟩
+      have hfloor := Int.natAbs_floor_le_natCeil_abs (-(a k / δ))
+      simp only [Int.floor_neg, Int.natAbs_neg, abs_neg, abs_div, abs_of_pos hδ] at hfloor
+      have hceil : ⌈|a k| / δ⌉₊ ≤ m :=
+        Nat.ceil_mono (div_le_div_of_nonneg_right (ha k) hδ.le)
+      have hbound := hfloor.trans hceil
+      omega)⟩
     refine ⟨round g, Finset.mem_image_of_mem _ (Finset.mem_univ _), fun k ↦ ?_⟩
     have hlo : a k ≤ (⌈a k / δ⌉ : ℤ) * δ := (div_le_iff₀ hδ).mp (Int.le_ceil _)
     have hhi : ((⌈a k / δ⌉ : ℤ) : K) * δ < a k + δ := by
