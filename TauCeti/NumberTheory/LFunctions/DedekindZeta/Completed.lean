@@ -87,6 +87,8 @@ pole of `Λ_K` there), and has a simple pole at `s = 1` whose residue is Mathlib
   everywhere.
 * `TauCeti.LFunctions.tendsto_sub_one_mul_dedekindZetaC`: its residue at `s = 1` is
   `NumberField.dedekindZeta_residue K = 2 ^ r₁ (2π) ^ r₂ h R / (w √|d_K|)`.
+* `TauCeti.LFunctions.dedekindZetaC_conj`: reflection symmetry
+  `dedekindZetaC K (conj s) = conj (dedekindZetaC K s)`.
 
 ## References
 
@@ -649,6 +651,23 @@ theorem dedekindZetaC_eventuallyEq_invDedekindZetaCompletionFactor_mul (s : ℂ)
   rw [dedekindZetaC_eq_toMeromorphicNFOn]
   exact (meromorphic_invDedekindZetaCompletionFactor_mul K).meromorphicOn
     |>.toMeromorphicNFOn_eq_self_on_nhdsNE (mem_univ s)
+
+open scoped ComplexConjugate in
+/-- **Reflection symmetry of the continued Dedekind zeta function**:
+`dedekindZetaC K (conj s) = conj (dedekindZetaC K s)` for every `s : ℂ`, including at its
+pole `s = 1` where both sides are zero. -/
+@[simp]
+theorem dedekindZetaC_conj (s : ℂ) :
+    dedekindZetaC K (conj s) = conj (dedekindZetaC K s) := by
+  have h : conj ∘ dedekindZetaC K ∘ conj = dedekindZetaC K := by
+    apply eq_of_meromorphicNFOn_of_eqOn_halfPlane
+      (meromorphicNFOn_conj_conj_iff.mpr (by simpa using meromorphicNFOn_dedekindZetaC K))
+      (meromorphicNFOn_dedekindZetaC K) (σ := 1)
+    intro z hz
+    have hz' : 1 < (conj z).re := by simpa only [conj_re] using Set.mem_ofPred.mp hz
+    simp only [Function.comp_apply, dedekindZetaC_eq_dedekindZeta K hz',
+      dedekindZetaC_eq_dedekindZeta K hz, dedekindZeta_conj, conj_conj]
+  simpa only [Function.comp_apply, conj_conj] using (congrFun h (conj s)).symm
 
 end Continued
 

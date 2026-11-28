@@ -99,6 +99,15 @@ theorem meromorphicOrderAt_dedekindZetaC_zero :
     ← WithTop.LinearOrderedAddCommGroup.coe_sub, hrank]
   exact congrArg _ (by ring)
 
+/-- At `s = 0`, `dedekindZetaC K` has analytic vanishing order equal to the Dirichlet unit rank
+`NumberField.Units.rank K = r₁ + r₂ - 1`. -/
+@[simp]
+theorem analyticOrderAt_dedekindZetaC_zero :
+    analyticOrderAt (dedekindZetaC K) 0 = NumberField.Units.rank K := by
+  have h := (analyticAt_dedekindZetaC K zero_ne_one).meromorphicOrderAt_eq
+  rw [meromorphicOrderAt_dedekindZetaC_zero K, ← ENat.map_natCast] at h
+  exact ENat.map_natCast_injective h.symm
+
 /-- **Value of `ζ_K` at `s = 0` in positive unit rank**: `ζ_K(0) = 0`. -/
 @[simp]
 theorem dedekindZetaC_zero_of_rank_pos (hr : 0 < NumberField.Units.rank K) :
