@@ -134,6 +134,16 @@ def directionDeductionCost [Fintype ι] (height : ι → ℕ) (a b : Option ι �
     (q * ((∑ i, b (some i)) + if markR then 0 else b none)) +
   (∑ i, a (some i)) + min (∑ i, a (some i) * height i) (q * (∑ i, b (some i) * height i))
 
+/-- The scaled deduction is the sum of the two minimum costs and the number of
+columns in the ordinary source blocks. -/
+theorem directionDeductionCost_def [Fintype ι] (height : ι → ℕ) (a b : Option ι → ℕ)
+    (q : ℕ) (markL markR : Bool) :
+    directionDeductionCost height a b q markL markR =
+      min (if markL then 0 else a none)
+        (q * ((∑ i, b (some i)) + if markR then 0 else b none)) +
+      (∑ i, a (some i)) + min (∑ i, a (some i) * height i) (q * (∑ i, b (some i) * height i)) :=
+  (rfl)
+
 /-- Choosing the cheaper side for the two variable costs pays the deduction exactly. -/
 private theorem pairedDirection_cost [Fintype ι] (a b : Option ι → ℕ) (q : ℕ)
     (markL markR : Bool) :
@@ -152,8 +162,8 @@ private theorem pairedDirection_cost [Fintype ι] (a b : Option ι → ℕ) (q :
     (∑ h, a h * l h) + q * (∑ h, b h * r h) =
       directionDeductionCost height a b q markL markR := by
   classical
-  dsimp only [directionDeductionCost]
-  rw [Fintype.sum_option, Fintype.sum_option]
+  dsimp only
+  rw [directionDeductionCost_def, Fintype.sum_option, Fintype.sum_option]
   split_ifs <;> simp_all only [Finset.sum_add_distrib, Nat.mul_add, min_def,
     zero_add, add_zero, mul_zero, mul_one, Option.elim_none, Option.elim_some,
     Option.isSome_none, Option.isSome_some, Bool.true_and, Bool.false_and, Bool.true_or,

@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ThetaLift.Direction.Congruences
 public import TauCeti.RingTheory.Valuation.AddValuation
 public import Mathlib.Basic.ENNReal.Inv
+import TauCeti.Algebra.BigOperators.Group.Finset.Piecewise
 
 /-!
 # Simultaneous changes of theta directions
@@ -16,7 +17,7 @@ public import Mathlib.Basic.ENNReal.Inv
 submodules from `TauCeti.exists_colengthDvd_frobenius_pairing` to impose all nonexempt
 congruences on one family of direction changes. Its weighted determinant divisibility
 bound is used in the theta-jet substitution.
-`TauCeti.exists_direction_matrices_with_le_frobenius_deduction` converts this divisibility
+`AddValuation.exists_direction_matrices_with_le_frobenius_deduction` converts this divisibility
 to the normalized additive valuation budget.
 
 The construction follows `New.exists_newDirection_dvd` in
@@ -31,18 +32,6 @@ open Finset Matrix
 open scoped ENNReal
 
 namespace TauCeti
-
-/-- A local cost contributes one weighted sum at the source and a scaled one at the partner,
-including when the two places coincide. -/
-private theorem prod_direction_endpoint_pow {R τ H : Type*} [CommMonoid R] [Fintype τ]
-    [DecidableEq τ] [Fintype H] (u v : τ) (d : R) (q : ℕ) (a : τ → H → ℕ) (l r : H → ℕ) :
-    (∏ t, ∏ h, ((if t = u then d ^ l h else 1) *
-      (if t = v then (d ^ q) ^ r h else 1)) ^ a t h) =
-      d ^ ((∑ h, a u h * l h) + q * (∑ h, a v h * r h)) := by
-  rw [Finset.prod_comm]
-  simp_rw [mul_pow, Finset.prod_mul_distrib, ite_pow, one_pow, Fintype.prod_ite_eq']
-  simp_rw [← pow_mul (d ^ q), Nat.mul_comm (r _) (a v _), Finset.prod_pow_eq_pow_sum]
-  simp_rw [← pow_mul, Nat.mul_comm (l _) (a u _), Finset.prod_pow_eq_pow_sum, ← pow_add]
 
 /-- For finitely many Frobenius exponents and a partner rule on finitely many places, one
 matrix per place and block label suffices to make all nonexempt pairings divisible by `π`.
@@ -109,8 +98,17 @@ theorem exists_direction_matrices_with_dvd_frobenius_pairings
           (f := fun th iu ↦ B th.1 th.2 iu.1 iu.2 ^ a th.1 th.2))
     _ = _ := by
       refine Finset.prod_congr rfl fun i _ ↦ Finset.prod_congr rfl fun u _ ↦ ?_
-      rw [← hcost i u]
-      exact prod_direction_endpoint_pow u (partner i u) (d i) (p ^ e i) a (l i u) (r i u)
+      rw [← hcost i u, Fintype.prod_prod_ite_mul_pow]
+      simp_rw [← pow_mul (d i ^ (p ^ e i)), Nat.mul_comm (r i u _) (a (partner i u) _),
+        Finset.prod_pow_eq_pow_sum]
+      simp_rw [← pow_mul, Nat.mul_comm (l i u _) (a u _), Finset.prod_pow_eq_pow_sum, ← pow_add]
+
+end TauCeti
+
+namespace AddValuation
+
+open TauCeti (DirectionPairExempt directionDeductionCost
+  exists_direction_matrices_with_dvd_frobenius_pairings)
 
 /-- The direction changes satisfying all nonexempt congruences for `s` can be chosen
 with total weighted determinant valuation at most `v π` times the normalized deduction. -/
@@ -143,4 +141,4 @@ theorem exists_direction_matrices_with_le_frobenius_deduction
     mul_comm (↑(p ^ e i) : ℝ≥0∞),
     ENNReal.div_mul_cancel hq (ENNReal.natCast_ne_top _)]
 
-end TauCeti
+end AddValuation
