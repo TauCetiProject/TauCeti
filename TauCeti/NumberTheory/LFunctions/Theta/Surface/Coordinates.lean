@@ -290,4 +290,24 @@ theorem exists_norm_surfaceScale_le_of_forall_le {E : Type*} [Norm E] {f : realS
         (Real.rpow_nonneg hu0 (Module.finrank ℚ K : ℝ)⁻¹)
   simpa only [neg_mul, mul_assoc] using h
 
+open scoped Classical in
+/-- Every bounded set `D` of archimedean parameters has preimage on `normOneSurface K` enclosed
+in a compact subset of `normOneSurface K`. -/
+theorem exists_isCompact_superset_preimage {D : Set (realSpace K)}
+    (hD : Bornology.IsBounded D) :
+    ∃ S : Set (normOneSurface K), IsCompact S ∧ Subtype.val ⁻¹' D ⊆ S := by
+  obtain ⟨C, hC1, hC⟩ := exists_forall_mem_Icc_of_isBounded hD
+  let B : Set (realSpace K) :=
+    Set.univ.pi (fun _ : InfinitePlace K ↦ Set.Icc C⁻¹ C) ∩ archNorm ⁻¹' {1}
+  have hB : IsCompact B :=
+    (isCompact_univ_pi fun _ ↦ isCompact_Icc).inter_right
+      (isClosed_singleton.preimage continuous_archNorm)
+  have hrange : B ⊆ Set.range (Subtype.val : normOneSurface K → realSpace K) := by
+    rintro y ⟨hy, hN⟩
+    have hpos : ∀ w, 0 < y w := fun w ↦
+      lt_of_lt_of_le (inv_pos.mpr (zero_lt_one.trans_le hC1)) (hy w trivial).1
+    exact ⟨⟨y, mem_normOneSurface.mpr ⟨hpos, hN⟩⟩, rfl⟩
+  refine ⟨Subtype.val ⁻¹' B, Topology.IsInducing.subtypeVal.isCompact_preimage' hB hrange, ?_⟩
+  exact fun x hx ↦ ⟨fun w _ ↦ hC x hx x.property w, (mem_normOneSurface.mp x.property).2⟩
+
 end TauCeti.LFunctions

@@ -30,10 +30,10 @@ and `1/w` accounts for the roots of unity, which act trivially on the parameters
   full lattice `L` and every `D`, the first half of Neukirch (5.8). It follows from the theta
   transformation `latticeTheta_inv` and the invariance of `d*x` under inversion; the covolumes
   `V_L V_{L^∨} = 1` make the two rescalings match.
-* `continuousOn_mellinKernel`: for a bounded measurable `D` the kernel is continuous on `(0, ∞)`.
+* `continuousOn_mellinKernel`: for a bounded set `D` the kernel is continuous on `(0, ∞)`.
   A bounded subset of `S` lies in a box `[C⁻¹, C]` of the open orthant, so near a positive `u` the
   theta series is dominated by a constant, which is integrable because `D` has finite `d*x`-mass.
-* `exists_norm_mellinKernel_sub_le`: for a bounded measurable `D` the kernel tends to
+* `exists_norm_mellinKernel_sub_le`: for a bounded set `D` the kernel tends to
   `(2^r₂ / w) vol(D)` with error `O(exp(-c u^(1/n)))`, uniformly from the decay of the theta
   series on bounded subsets of `S`, the second half of Neukirch (5.8);
   `exists_norm_mellinKernel_sub_le_on_Ici` promotes this to any ray `[a, ∞)` (`a > 0`) via
@@ -130,21 +130,9 @@ theorem mellinKernel_inv (D : Set (realSpace K)) (L : Submodule ℤ (mixedSpace 
   ring
 
 open scoped Classical in
-/-- On a bounded surface set, the theta series is uniformly bounded for radial parameters
-above any fixed positive lower radius. -/
-theorem exists_norm_latticeTheta_surfaceScale_le {D : Set (realSpace K)}
-    (hD : Bornology.IsBounded D) (L : Submodule ℤ (mixedSpace K))
-    {t₀ : ℝ} (ht₀ : 0 < t₀) :
-    ∃ B : ℝ, ∀ t ≥ t₀, ∀ x : normOneSurface K, (x : realSpace K) ∈ D →
-      ‖latticeTheta L (surfaceScale (x : realSpace K) t)‖ ≤ B :=
-  exists_norm_surfaceScale_le_of_isBounded
-    (fun hδ ↦ ⟨‖latticeTheta L fun _ ↦ _‖, fun _ hy ↦ norm_latticeTheta_le L (fun _ ↦ hδ) hy⟩)
-    hD ht₀
-
-open scoped Classical in
-/-- For a bounded measurable surface set, the theta series at a positive radial parameter is
+/-- For a bounded surface set, the theta series at a positive radial parameter is
 integrable over that set. -/
-theorem integrableOn_latticeTheta_surfaceScale {D : Set (realSpace K)} (_hDm : MeasurableSet D)
+theorem integrableOn_latticeTheta_surfaceScale {D : Set (realSpace K)}
     (hD : Bornology.IsBounded D) (L : Submodule ℤ (mixedSpace K))
     {t : ℝ} (ht : 0 < t) :
     IntegrableOn (fun x : normOneSurface K ↦ latticeTheta L (surfaceScale (x : realSpace K) t))
@@ -156,7 +144,7 @@ open scoped Classical in
 /-- Subtracting the constant term of the kernel subtracts `1` from the theta series before
 averaging. The constant is the surface mass times `2^r₂ / w`. -/
 theorem mellinKernel_sub_eq_integral_sub_one {D : Set (realSpace K)}
-    (hDm : MeasurableSet D) (hD : Bornology.IsBounded D)
+    (hD : Bornology.IsBounded D)
     (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L] [IsZLattice ℝ L]
     {u : ℝ} (hu : 0 < u) :
     mellinKernel D L u - (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
@@ -167,15 +155,15 @@ theorem mellinKernel_sub_eq_integral_sub_one {D : Set (realSpace K)}
             (u / ZLattice.covolume L ^ 2)) - 1) ∂surfaceHaar K := by
   have hV : 0 < ZLattice.covolume L := ZLattice.covolume_pos L
   have := isFiniteMeasure_restrict.mpr (surfaceHaar_preimage_lt_top hD).ne
-  rw [integral_sub (integrableOn_latticeTheta_surfaceScale hDm hD L (by positivity))
+  rw [integral_sub (integrableOn_latticeTheta_surfaceScale hD L (by positivity))
     (integrable_const _), integral_const, measureReal_restrict_apply_univ, ← Complex.coe_smul,
     smul_eq_mul, mul_one, mellinKernel_def]
   ring
 
 open scoped Classical in
-/-- **The Mellin kernel is continuous on `(0, ∞)`** for a bounded measurable set `D` of
+/-- **The Mellin kernel is continuous on `(0, ∞)`** for any bounded set `D` of
 parameters, such as a unit fundamental domain. -/
-theorem continuousOn_mellinKernel {D : Set (realSpace K)} (_hDm : MeasurableSet D)
+theorem continuousOn_mellinKernel {D : Set (realSpace K)}
     (hD : Bornology.IsBounded D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
     [IsZLattice ℝ L] : ContinuousOn (mellinKernel D L) (Set.Ioi 0) := by
   have hV : 0 < ZLattice.covolume L := ZLattice.covolume_pos L
@@ -197,18 +185,11 @@ section
 
 open Filter Set
 
-/-- At a positive norm `t`, the theta series of a lattice is continuous along the norm-one
-surface. -/
-theorem continuous_latticeTheta_surfaceScale (L : Submodule ℤ (mixedSpace K))
-    {t : ℝ} (ht : 0 < t) :
-    Continuous fun x : normOneSurface K ↦ latticeTheta L (surfaceScale (x : realSpace K) t) :=
-  continuous_comp_surfaceScale (continuousAt_latticeTheta L) ht
-
 open scoped Classical in
-/-- **The Mellin kernel at `∞`**: over a bounded measurable set `D` of parameters the kernel of a
+/-- **The Mellin kernel at `∞`**: over a bounded set `D` of parameters the kernel of a
 full lattice tends to `(2^r₂ / w) vol(D)`, `vol = surfaceHaar K`, with an error
 `O(exp(-c u^(1/n)))`, `n = [K : ℚ]`. -/
-theorem exists_norm_mellinKernel_sub_le {D : Set (realSpace K)} (hDm : MeasurableSet D)
+theorem exists_norm_mellinKernel_sub_le {D : Set (realSpace K)}
     (hD : Bornology.IsBounded D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
     [IsZLattice ℝ L] :
     ∃ c > 0, ∃ C ≥ 0, ∀ᶠ u : ℝ in atTop,
@@ -224,13 +205,13 @@ theorem exists_norm_mellinKernel_sub_le {D : Set (realSpace K)} (hDm : Measurabl
     ((2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ)) (sq_pos_of_pos hV)
   refine ⟨c, hc, C, hC, ?_⟩
   filter_upwards [h, eventually_gt_atTop 0] with u hu hu0
-  simpa only [mellinKernel_sub_eq_integral_sub_one hDm hD L hu0, one_mul] using hu
+  simpa only [mellinKernel_sub_eq_integral_sub_one hD L hu0, one_mul] using hu
 
 open scoped Classical in
-/-- Over any bounded measurable set `D` of parameters, `mellinKernel D L` minus its asymptotic
+/-- Over any bounded set `D` of parameters, `mellinKernel D L` minus its asymptotic
 constant `(2 ^ r₂ / w) vol(D)` satisfies a stretched-exponential bound with exponent
 `[K : ℚ]⁻¹` on every ray `[a, ∞)` with `a > 0`. -/
-theorem exists_norm_mellinKernel_sub_le_on_Ici {D : Set (realSpace K)} (hDm : MeasurableSet D)
+theorem exists_norm_mellinKernel_sub_le_on_Ici {D : Set (realSpace K)}
     (hD : Bornology.IsBounded D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
     [IsZLattice ℝ L] {a : ℝ} (ha : 0 < a) :
     ∃ c > 0, ∃ C ≥ 0, ∀ u ∈ Ici a,
@@ -238,20 +219,20 @@ theorem exists_norm_mellinKernel_sub_le_on_Ici {D : Set (realSpace K)} (hDm : Me
           ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ)‖ ≤
         C * Real.exp (-c * u ^ (Module.finrank ℚ K : ℝ)⁻¹) :=
   exists_norm_le_mul_exp_neg_mul_rpow_Ici_of_exists_eventually (.inl ha)
-    (((continuousOn_mellinKernel hDm hD L).mono (Ici_subset_Ioi.mpr ha)).sub continuousOn_const)
-    (exists_norm_mellinKernel_sub_le hDm hD L)
+    (((continuousOn_mellinKernel hD L).mono (Ici_subset_Ioi.mpr ha)).sub continuousOn_const)
+    (exists_norm_mellinKernel_sub_le hD L)
 
 open scoped Classical in
-/-- Over a bounded measurable set `D` of parameters the kernel of a full lattice minus
+/-- Over a bounded set `D` of parameters the kernel of a full lattice minus
 `(2^r₂ / w) vol(D)` decays faster than every power, as the Mellin principle requires. -/
-theorem isBigO_mellinKernel_sub_rpow {D : Set (realSpace K)} (hDm : MeasurableSet D)
+theorem isBigO_mellinKernel_sub_rpow {D : Set (realSpace K)}
     (hD : Bornology.IsBounded D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
     [IsZLattice ℝ L] (r : ℝ) :
     (fun u ↦ mellinKernel D L u - (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
         ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ)) =O[atTop] (· ^ r) :=
   isBigO_rpow_of_eventually_norm_le_exp_neg
     (inv_pos.mpr (Nat.cast_pos.mpr (Module.finrank_pos (R := ℚ) (M := K))))
-    (exists_norm_mellinKernel_sub_le hDm hD L) r
+    (exists_norm_mellinKernel_sub_le hD L) r
 
 end
 

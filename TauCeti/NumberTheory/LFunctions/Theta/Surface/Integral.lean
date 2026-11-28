@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Haar
-import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Analysis.SpecialFunctions.Exp.StretchedDecay
 
 /-!
@@ -23,7 +22,7 @@ bounded subset `D` of the norm-one surface `normOneSurface K` with respect to `s
   decay bound on `g (surfaceScale x u) - ε` through the surface integral and radial rescaling.
 
 Both integrability and local continuity follow by enclosing `Subtype.val ⁻¹' D` in a compact
-box inside `normOneSurface K` via `exists_forall_mem_Icc_of_isBounded`.
+box inside `normOneSurface K` via `exists_isCompact_superset_preimage`.
 -/
 
 public section
@@ -35,31 +34,6 @@ open Filter MeasureTheory NumberField NumberField.InfinitePlace NumberField.mixe
 namespace TauCeti.LFunctions
 
 variable {K : Type*} [Field K] [NumberField K]
-
-open scoped Classical in
-private theorem exists_isCompact_superset_preimage {D : Set (realSpace K)}
-    (hD : Bornology.IsBounded D) :
-    ∃ S : Set (normOneSurface K), IsCompact S ∧ Subtype.val ⁻¹' D ⊆ S := by
-  obtain ⟨C, hC1, hC⟩ := exists_forall_mem_Icc_of_isBounded hD
-  have hK : IsCompact (Set.univ.pi (fun _ : InfinitePlace K ↦ Set.Icc C⁻¹ C) ∩
-      {y : realSpace K | archNorm y = 1}) :=
-    (isCompact_univ_pi fun _ ↦ isCompact_Icc).inter_right
-      (isClosed_singleton.preimage continuous_archNorm)
-  let S : Set (normOneSurface K) := Subtype.val ⁻¹' (Set.univ.pi (fun _ ↦ Set.Icc C⁻¹ C))
-  refine ⟨S, ?_, fun x hx w _ ↦ hC x hx x.property w⟩
-  have himg : Subtype.val '' S =
-      Set.univ.pi (fun _ ↦ Set.Icc C⁻¹ C) ∩ {y : realSpace K | archNorm y = 1} := by
-    ext y
-    simp only [S, Set.mem_image, Set.mem_preimage, Set.mem_pi, Set.mem_univ, forall_true_left,
-      Subtype.exists, Set.mem_inter_iff, Set.mem_ofPred_eq]
-    constructor
-    · rintro ⟨y, hyS, hy, rfl⟩
-      exact ⟨hy, (mem_normOneSurface.mp hyS).2⟩
-    · rintro ⟨hy, hN⟩
-      have hpos : ∀ w, 0 < y w := fun w ↦
-        lt_of_lt_of_le (inv_pos.mpr (zero_lt_one.trans_le hC1)) (hy w).1
-      exact ⟨y, mem_normOneSurface.mpr ⟨hpos, hN⟩, hy, rfl⟩
-  exact Topology.IsInducing.subtypeVal.isCompact_iff.mpr (himg ▸ hK)
 
 open scoped Classical in
 /-- A continuous surface weight `w` multiplied by a positive-orthant continuous function

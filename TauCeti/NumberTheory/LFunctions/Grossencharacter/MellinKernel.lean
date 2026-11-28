@@ -170,17 +170,16 @@ private theorem exists_archWeight_le_on_surface (χ : Grossencharacter K 𝔪)
     {D : Set (realSpace K)} (hD : Bornology.IsBounded D) :
     ∃ W : ℝ, 0 ≤ W ∧ ∀ x : normOneSurface K, (x : realSpace K) ∈ D →
       ‖(χ.archWeight (x : realSpace K) : ℂ)‖ ≤ W := by
-  obtain ⟨C, _, hC⟩ := exists_forall_mem_Icc_of_isBounded hD
-  refine ⟨∏ w : InfinitePlace K, C ^ ((χ.harmonicExponent w : ℝ) / 2),
-    Finset.prod_nonneg fun w _ ↦ by positivity, fun x hx ↦ ?_⟩
-  have hxpos := (mem_normOneSurface.mp x.property).1
-  rw [Complex.norm_real, Real.norm_of_nonneg (χ.archWeight_nonneg fun w ↦ (hxpos w).le)]
-  exact χ.archWeight_le_of_le_const (fun w ↦ (hxpos w).le) fun w ↦ (hC x hx x.property w).2
+  obtain ⟨S, hS, hsub⟩ := exists_isCompact_superset_preimage hD
+  obtain ⟨W, hW⟩ := hS.exists_bound_of_continuousOn
+    (Complex.continuous_ofReal.comp
+      (χ.continuous_archWeight.comp continuous_subtypeVal)).continuousOn
+  exact ⟨max W 0, le_max_right _ _, fun x hx ↦ (hW x (hsub hx)).trans (le_max_left _ _)⟩
 
-/-- For a bounded measurable surface set `D` and `0 < t`, `(χ.archWeight x : ℂ) * χ.heckeTheta J
+/-- For a bounded surface set `D` and `0 < t`, `(χ.archWeight x : ℂ) * χ.heckeTheta J
 (surfaceScale x t)` is integrable over `Subtype.val ⁻¹' D` with respect to `surfaceHaar K`. -/
 theorem integrableOn_archWeight_mul_heckeTheta_surfaceScale (χ : Grossencharacter K 𝔪)
-    {D : Set (realSpace K)} (_hDm : MeasurableSet D) (hD : Bornology.IsBounded D)
+    {D : Set (realSpace K)} (hD : Bornology.IsBounded D)
     (J : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {t : ℝ} (ht : 0 < t) :
     IntegrableOn (fun x : normOneSurface K ↦
       (χ.archWeight (x : realSpace K) : ℂ) *
@@ -191,9 +190,9 @@ theorem integrableOn_archWeight_mul_heckeTheta_surfaceScale (χ : Grossencharact
     (χ.continuousAt_heckeTheta J) hD ht
 
 /-- The Mellin kernel of a fractional ideal is continuous at positive radii for any bounded
-measurable set of surface parameters. -/
+set of surface parameters. -/
 theorem continuousOn_heckeMellinKernel (χ : Grossencharacter K 𝔪)
-    (J : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {D : Set (realSpace K)} (_hDm : MeasurableSet D)
+    (J : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {D : Set (realSpace K)}
     (hD : Bornology.IsBounded D) : ContinuousOn (χ.heckeMellinKernel D J) (Ioi 0) := by
   have hm : χ.heckeMellinKernel D J = fun u ↦
       mellinFactor χ J * ∫ x in Subtype.val ⁻¹' D,
@@ -269,7 +268,7 @@ open scoped Classical in
 /-- Subtracting the constant term from `χ.heckeMellinKernel D J` shifts `χ.heckeTheta J`
 by `χ.heckeEpsilon` inside the surface integral. -/
 theorem heckeMellinKernel_sub_eq_integral (χ : Grossencharacter K 𝔪)
-    (J : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {D : Set (realSpace K)} (hDm : MeasurableSet D)
+    (J : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {D : Set (realSpace K)}
     (hD : Bornology.IsBounded D) {u : ℝ} (hu : 0 < u) :
     χ.heckeMellinKernel D J u -
         χ.heckeEpsilon * ((2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
@@ -294,18 +293,18 @@ theorem heckeMellinKernel_sub_eq_integral (χ : Grossencharacter K 𝔪)
       Nat.cast_zero, Finset.sum_const_zero, neg_zero, zero_div, Real.rpow_zero, Complex.ofReal_one,
       mul_one, h, one_mul]
   have hfin := surfaceHaar_preimage_lt_top hD
-  have hInt := χ.integrableOn_archWeight_mul_heckeTheta_surfaceScale hDm hD
+  have hInt := χ.integrableOn_archWeight_mul_heckeTheta_surfaceScale hD
     J (div_pos hu (χ.heckeScale_pos J))
   simp_rw [mul_sub, archWeight_mul_heckeEpsilon]
   rw [integral_sub hInt (integrableOn_const hfin.ne), setIntegral_const,
     Complex.real_smul, mul_sub, hconst]
 
 open scoped Classical in
-/-- Over a bounded measurable surface set `D`, `χ.heckeMellinKernel D J` tends to
+/-- Over a bounded surface set `D`, `χ.heckeMellinKernel D J` tends to
 `χ.heckeEpsilon * (2^r₂ / w) * vol(D)` with stretched-exponential error `O(exp(-c u^(1/n)))`,
 `n = [K : ℚ]`. -/
 theorem exists_norm_heckeMellinKernel_sub_le (χ : Grossencharacter K 𝔪)
-    {D : Set (realSpace K)} (hDm : MeasurableSet D) (hD : Bornology.IsBounded D)
+    {D : Set (realSpace K)} (hD : Bornology.IsBounded D)
     (J : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
     ∃ c > 0, ∃ C ≥ 0, ∀ᶠ u : ℝ in atTop,
       ‖χ.heckeMellinKernel D J u -
@@ -324,14 +323,14 @@ theorem exists_norm_heckeMellinKernel_sub_le (χ : Grossencharacter K 𝔪)
   refine ⟨c, hc, C, hC, ?_⟩
   filter_upwards [h, eventually_gt_atTop 0] with u hu hu0
   change _ ≤ _ at hu
-  rwa [χ.heckeMellinKernel_sub_eq_integral J hDm hD hu0]
+  rwa [χ.heckeMellinKernel_sub_eq_integral J hD hu0]
 
 open scoped Classical in
-/-- Over any bounded measurable surface set `D`, `χ.heckeMellinKernel D J` minus its asymptotic
+/-- Over any bounded surface set `D`, `χ.heckeMellinKernel D J` minus its asymptotic
 constant `χ.heckeEpsilon * (2^r₂ / w) * vol(D)` satisfies a stretched-exponential bound with
 exponent `[K : ℚ]⁻¹` on every ray `[a, ∞)` with `a > 0`. -/
 theorem exists_norm_heckeMellinKernel_sub_le_on_Ici (χ : Grossencharacter K 𝔪)
-    {D : Set (realSpace K)} (hDm : MeasurableSet D) (hD : Bornology.IsBounded D)
+    {D : Set (realSpace K)} (hD : Bornology.IsBounded D)
     (J : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {a : ℝ} (ha : 0 < a) :
     ∃ c > 0, ∃ C ≥ 0, ∀ u ∈ Ici a,
       ‖χ.heckeMellinKernel D J u -
@@ -339,22 +338,22 @@ theorem exists_norm_heckeMellinKernel_sub_le_on_Ici (χ : Grossencharacter K �
             ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ))‖ ≤
         C * Real.exp (-c * u ^ (Module.finrank ℚ K : ℝ)⁻¹) :=
   exists_norm_le_mul_exp_neg_mul_rpow_Ici_of_exists_eventually (.inl ha)
-    (((χ.continuousOn_heckeMellinKernel J hDm hD).mono (Ici_subset_Ioi.mpr ha)).sub
+    (((χ.continuousOn_heckeMellinKernel J hD).mono (Ici_subset_Ioi.mpr ha)).sub
       continuousOn_const)
-    (χ.exists_norm_heckeMellinKernel_sub_le hDm hD J)
+    (χ.exists_norm_heckeMellinKernel_sub_le hD J)
 
 open scoped Classical in
-/-- Over any bounded measurable surface set `D`, `χ.heckeMellinKernel D J` minus its constant term
+/-- Over any bounded surface set `D`, `χ.heckeMellinKernel D J` minus its constant term
 `χ.heckeEpsilon * (2^r₂ / w) * vol(D)` decays faster than every power as `u → ∞`. -/
 theorem isBigO_heckeMellinKernel_sub_rpow_of_isBounded (χ : Grossencharacter K 𝔪)
-    {D : Set (realSpace K)} (hDm : MeasurableSet D) (hD : Bornology.IsBounded D)
+    {D : Set (realSpace K)} (hD : Bornology.IsBounded D)
     (J : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (r : ℝ) :
     (fun u ↦ χ.heckeMellinKernel D J u -
         χ.heckeEpsilon * ((2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
           ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ))) =O[atTop] (· ^ r) :=
   isBigO_rpow_of_eventually_norm_le_exp_neg
     (inv_pos.mpr (Nat.cast_pos.mpr (Module.finrank_pos (R := ℚ) (M := K))))
-    (χ.exists_norm_heckeMellinKernel_sub_le hDm hD J) r
+    (χ.exists_norm_heckeMellinKernel_sub_le hD J) r
 
 /-- After subtraction of its constant term, the Mellin kernel over a unit fundamental domain
 has stretched-exponential decay as the radius tends to infinity. -/
@@ -362,7 +361,7 @@ theorem exists_isBigO_heckeMellinKernel_sub_exp (χ : Grossencharacter K 𝔪)
     (J : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D) :
     ∃ c > 0, (fun u ↦ χ.heckeMellinKernel D J u - χ.heckeEpsilon * mellinConstant K) =O[atTop]
       (fun u ↦ Real.exp (-c * u ^ (Module.finrank ℚ K : ℝ)⁻¹)) := by
-  obtain ⟨c, hc, C, _, h⟩ := χ.exists_norm_heckeMellinKernel_sub_le hD.measurableSet hD.isBounded J
+  obtain ⟨c, hc, C, _, h⟩ := χ.exists_norm_heckeMellinKernel_sub_le hD.isBounded J
   refine ⟨c, hc, Asymptotics.IsBigO.of_bound C ?_⟩
   filter_upwards [h] with u hu
   simpa only [coe_mellinConstant_eq_mul_surfaceHaar_real hD, Real.norm_eq_abs,
@@ -374,8 +373,8 @@ theorem isBigO_heckeMellinKernel_sub_rpow (χ : Grossencharacter K 𝔪)
     (r : ℝ) :
     (fun u ↦ χ.heckeMellinKernel D J u - χ.heckeEpsilon * mellinConstant K) =O[atTop]
       (fun u ↦ u ^ r) := by
-  obtain ⟨c, hc, h⟩ := χ.exists_isBigO_heckeMellinKernel_sub_exp J hD
-  exact isBigO_rpow_of_isBigO_exp_neg hc (inv_pos.mpr (Nat.cast_pos.mpr Module.finrank_pos)) h r
+  simpa only [coe_mellinConstant_eq_mul_surfaceHaar_real hD] using
+    χ.isBigO_heckeMellinKernel_sub_rpow_of_isBounded hD.isBounded J r
 
 /-- For `Re s > 1`, the centered twisted theta series times the archimedean and Mellin weights
 is absolutely integrable over the cone above a unit fundamental domain. -/
@@ -463,7 +462,7 @@ theorem hasMellin_heckeMellinKernel_sub (χ : Grossencharacter K 𝔪)
       centeredSurfaceAverage χ D J (u / χ.heckeScale J) =
       χ.heckeMellinKernel D J u - χ.heckeEpsilon * mellinConstant K := by
     rw [coe_mellinConstant_eq_mul_surfaceHaar_real hD,
-      heckeMellinKernel_sub_eq_integral χ J hD.measurableSet hD.isBounded hu]
+      heckeMellinKernel_sub_eq_integral χ J hD.isBounded hu]
     simp only [centeredSurfaceAverage, mellinFactor, smul_eq_mul]
   have hkernel := (hasMellin_congr heq).mp
     ((hasMellin_centeredSurfaceAverage χ J hD hs).const_smul_comp_div (mellinFactor χ J) hscale)

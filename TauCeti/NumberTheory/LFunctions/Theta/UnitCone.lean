@@ -269,7 +269,7 @@ theorem hasMellin_mellinKernel_sub {D : Set (realSpace K)} (hDm : MeasurableSet 
     hasMellin_integral_surfaceScale hDm (s / 2) h
   have havg (u : ℝ) (hu : 0 < u) : c • F (u / ZLattice.covolume L ^ 2) =
       mellinKernel D L u - c * (surfaceHaar K).real (Subtype.val ⁻¹' D) := by
-    rw [mellinKernel_sub_eq_integral_sub_one hDm hD L hu]
+    rw [mellinKernel_sub_eq_integral_sub_one hD L hu]
     simp only [F, c, smul_eq_mul]
   simpa only [c, smul_eq_mul, Complex.ofReal_pow] using
     (hasMellin_congr havg).mp (hF.const_smul_comp_div c (sq_pos_of_pos hV))

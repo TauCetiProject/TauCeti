@@ -85,4 +85,23 @@ theorem isBigO_latticeTheta_surfaceScale_sub_one_rpow
   filter_upwards [h, hx] with u hu hxu
   exact hu (x u) hxu
 
+open scoped Classical in
+/-- On a bounded surface set, the theta series is uniformly bounded for radial parameters
+above any fixed positive lower radius. -/
+theorem exists_norm_latticeTheta_surfaceScale_le {D : Set (realSpace K)}
+    (hD : Bornology.IsBounded D) (L : Submodule ℤ (mixedSpace K))
+    {t₀ : ℝ} (ht₀ : 0 < t₀) :
+    ∃ B : ℝ, ∀ t ≥ t₀, ∀ x : normOneSurface K, (x : realSpace K) ∈ D →
+      ‖latticeTheta L (surfaceScale (x : realSpace K) t)‖ ≤ B :=
+  exists_norm_surfaceScale_le_of_isBounded
+    (fun hδ ↦ ⟨‖latticeTheta L fun _ ↦ _‖, fun _ hy ↦ norm_latticeTheta_le L (fun _ ↦ hδ) hy⟩)
+    hD ht₀
+
+/-- At a positive norm `t`, the theta series of a lattice is continuous along the norm-one
+surface. -/
+theorem continuous_latticeTheta_surfaceScale (L : Submodule ℤ (mixedSpace K))
+    {t : ℝ} (ht : 0 < t) :
+    Continuous fun x : normOneSurface K ↦ latticeTheta L (surfaceScale (x : realSpace K) t) :=
+  continuous_comp_surfaceScale (continuousAt_latticeTheta L) ht
+
 end TauCeti.LFunctions
