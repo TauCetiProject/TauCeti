@@ -250,8 +250,8 @@ theorem timeDependentFlowOf_def :
 /-- Outside the domain of the time-dependent flow, the flow takes the junk value `x`. -/
 theorem timeDependentFlowOf_of_notMem (h : ((s, t), x) ∉ timeDependentFlowDomain X) :
     timeDependentFlowOf X s t x = x := by
-  rw [mem_timeDependentFlowDomain, mem_flowDomain] at h
-  rw [timeDependentFlowOf_def, flowOf_apply, maximalIntegralCurve_eq_of_not_mem h]
+  rw [mem_timeDependentFlowDomain] at h
+  rw [timeDependentFlowOf_def, flowOf_of_notMem h]
 
 /-! ### Solutions of the time-dependent equation -/
 
@@ -750,7 +750,7 @@ include hX
 theorem mem_timeDependentFlowDomain_self (s : ℝ) (x : M) :
     ((s, s), x) ∈ timeDependentFlowDomain X := by
   rw [mem_timeDependentFlowDomain, sub_self]
-  exact mem_flowDomain_zero (contMDiff_timeDependentSuspensionField hX) (s, x)
+  exact mem_flowDomain_zero (contMDiff_timeDependentSuspensionField hX (s, x))
 
 variable [T2Space M]
 

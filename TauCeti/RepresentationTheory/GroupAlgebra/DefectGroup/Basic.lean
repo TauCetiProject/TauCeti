@@ -19,8 +19,10 @@ import TauCeti.GroupTheory.PGroup
 For an element `e` of the group algebra `R[G]` and a prime `p`, a **defect group** of `e` is a
 `p`-subgroup `P` of `G` with `Br_P(e) ≠ 0`, maximal among the `p`-subgroups with this property
 (`TauCeti.IsDefectGroup`). The case of interest is a block idempotent `e` of `k[G]`, `k` a field
-of characteristic `p`. Any element fixed by conjugation by `g` has the conjugate defect groups
-`gPg⁻¹` (`TauCeti.IsDefectGroup.conj`), and every nonzero element of `R[G]` has a
+of characteristic `p`. A group isomorphism `σ : G ≃* G'` carries the defect groups of `x` to
+those of `σ x` (`TauCeti.isDefectGroup_domCongr_map_iff`), because `Br_{σ(P)}(σ x) = 0` exactly
+when `Br_P(x) = 0`. In particular, an element fixed by conjugation by `g` has the conjugate defect
+groups `gPg⁻¹` (`TauCeti.IsDefectGroup.conj`), and every nonzero element of `R[G]` has a
 defect group (`TauCeti.exists_isDefectGroup`).
 
 For `G` finite, every `x ∈ R[G]^G` has subgroups `P` minimal with `x ∈ Tr_P^G(R[G]^P)`
@@ -43,6 +45,8 @@ conjugate of `P`, since by the Mackey formula the other summands of `Tr_P^G(a)` 
 
 ## Main results
 
+* `TauCeti.IsDefectGroup.domCongr_map`, `TauCeti.isDefectGroup_domCongr_map_iff`: a group
+  isomorphism `σ : G ≃* G'` carries the defect groups of `x` to those of `σ x`.
 * `TauCeti.IsDefectGroup.conj`: defect groups of a `g`-fixed element are permuted by `g`.
 * `TauCeti.exists_isDefectGroup`: every nonzero element of `R[G]` has a defect group.
 * `TauCeti.IsPrimitiveIdempotent.exists_isDefectGroup`: so does every primitive idempotent of
@@ -109,27 +113,40 @@ theorem isPGroup (h : IsDefectGroup R p e P) : IsPGroup p P :=
 theorem brauerProjection_ne_zero (h : IsDefectGroup R p e P) : brauerProjection P e ≠ 0 :=
   h.prop.2
 
+/-- A defect group of `x` is carried by a group isomorphism `σ` to a defect group of `σ x`. -/
+theorem domCongr_map {G' : Type*} [Group G'] (σ : G ≃* G') {x : MonoidAlgebra R G}
+    (h : IsDefectGroup R p x P) :
+    IsDefectGroup R p (domCongr R R σ x) (P.map σ.toMonoidHom) := by
+  obtain ⟨hP, hPx, hmax⟩ := isDefectGroup_iff.1 h
+  refine isDefectGroup_iff.2 ⟨hP.map _, (brauerProjection_map_domCongr_eq_zero_iff σ).not.2 hPx,
+    fun Q hQ hQx hPQ ↦ ?_⟩
+  -- pull `Q` back to `G`
+  have hQ' : (Q.comap σ.toMonoidHom).map σ.toMonoidHom = Q :=
+    Subgroup.map_comap_eq_self_of_surjective σ.surjective Q
+  rw [← hQ'] at hQx hPQ ⊢
+  rw [hmax _ (hQ.comap_of_injective _ σ.injective)
+    ((brauerProjection_map_domCongr_eq_zero_iff σ).not.1 hQx)
+    ((Subgroup.map_le_map_iff_of_injective σ.injective).1 hPQ)]
+
 /-- **Conjugate defect groups.** If `e` is fixed by conjugation by `g`, then `gPg⁻¹` is a defect
 group of `e` whenever `P` is. This applies to every `g` when `e` is central. -/
 theorem conj (h : IsDefectGroup R p e P) {g : G} (hg : conjRepresentation R G g e = e) :
     IsDefectGroup R p e (MulAut.conj g • P) := by
-  have hg' : conjRepresentation R G g⁻¹ e = e :=
-    (conjRepresentation R G).inv_apply_eq_iff.2 hg.symm
-  refine isDefectGroup_iff.2
-    ⟨h.isPGroup.of_equiv (Subgroup.equivSMul _ P), ?_, fun Q hQ hQe hPQ => ?_⟩
-  · exact (brauerProjection_conj_eq_zero_iff_of_conjRepresentation_eq hg).not.2
-      h.brauerProjection_ne_zero
-  · have hQ' : IsPGroup p (MulAut.conj g⁻¹ • Q : Subgroup G) :=
-      hQ.of_equiv (Subgroup.equivSMul _ Q)
-    have hQe' : brauerProjection (MulAut.conj g⁻¹ • Q) e ≠ 0 := by
-      rwa [Ne, brauerProjection_conj_eq_zero_iff_of_conjRepresentation_eq hg']
-    have hPQ' : P ≤ MulAut.conj g⁻¹ • Q := by
-      rw [← Subgroup.pointwise_smul_le_pointwise_smul_iff (a := MulAut.conj g), map_inv,
-        smul_inv_smul]
-      exact hPQ
-    rw [← (isDefectGroup_iff.1 h).2.2 _ hQ' hQe' hPQ', map_inv, smul_inv_smul]
+  rw [Subgroup.pointwise_smul_def, ← hg]
+  have h' := h.domCongr_map (MulAut.conj g)
+  rwa [← conjRepresentation_apply] at h'
 
 end IsDefectGroup
+
+/-- **Transport of defect groups.** `σ(P)` is a defect group of `σ x` exactly when `P` is a
+defect group of `x`. -/
+theorem isDefectGroup_domCongr_map_iff {G' : Type*} [Group G'] (σ : G ≃* G') {p : ℕ}
+    {x : MonoidAlgebra R G} {P : Subgroup G} :
+    IsDefectGroup R p (domCongr R R σ x) (P.map σ.toMonoidHom) ↔ IsDefectGroup R p x P := by
+  refine ⟨fun h ↦ ?_, IsDefectGroup.domCongr_map σ⟩
+  have h' := h.domCongr_map σ.symm
+  rwa [← domCongr_symm, AlgEquiv.symm_apply_apply, Subgroup.map_equiv_eq_comap_symm',
+    MulEquiv.symm_symm, Subgroup.comap_map_eq_self_of_injective σ.injective] at h'
 
 /-- **Defect groups exist.** A nonzero element `e` of `R[G]` has a defect group for every `p`;
 no finiteness of `G` is needed. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.Quasicategory.Nerve
 public import Mathlib.AlgebraicTopology.Quasicategory.StrictBicategory
+public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Inner.PushoutProduct
 public import Mathlib.AlgebraicTopology.SimplicialSet.NerveAdjunction
 public import TauCeti.AlgebraicTopology.Quasicategory.FullyFaithful
 public import TauCeti.AlgebraicTopology.Quasicategory.HomotopyCategory
@@ -14,6 +15,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.HoFunctorIhom
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.FunctorCategory
 public import TauCeti.AlgebraicTopology.SimplicialSet.WeakHomotopyEquivalence.Realization
 public import TauCeti.CategoryTheory.Bicategory.Adjunction.Basic
+public import TauCeti.CategoryTheory.Bicategory.CatEnriched
 
 /-!
 # Categorical equivalences of quasicategories
@@ -43,10 +45,15 @@ the full faithfulness of `f`.
 
 * `SSet.QCat.homotopyCategoryFunctor X Y`: the functor from the hom-category `X ⟶ Y` of the
   bicategory of quasicategories to `ho X ⥤ ho Y`, which sends `f` to `mapHomotopyCategory f.hom`.
+* `SSet.QCat.nonempty_iso_homMk_pre_app`: an invertible `2`-morphism `h ≅ h'` gives an invertible
+  `2`-morphism between the precomposition maps `Fun(Y, E) ⟶ Fun(X, E)`.
 * `SSet.QCat.IsCategoricalEquivalence`: categorical equivalences of quasicategories, with
   `SSet.QCat.isCategoricalEquivalence_iff_exists_equivalence` identifying them with the
-  `1`-morphisms underlying equivalences in the bicategory. They contain the isomorphisms and are
-  closed under composition.
+  `1`-morphisms underlying equivalences in the bicategory. They contain the isomorphisms, are
+  closed under composition, are invariant under invertible `2`-morphisms and satisfy two out of
+  three.
+* `SSet.QCat.IsCategoricalEquivalence.pre_app`: precomposition `Fun(Y, E) ⟶ Fun(X, E)` with a
+  categorical equivalence `X ⟶ Y` is a categorical equivalence.
 * `SSet.QCat.IsCategoricalEquivalence.of_rlp_monomorphisms`: a trivial fibration between
   quasicategories is a categorical equivalence.
 * `SSet.QCat.IsCategoricalEquivalence.isEquivalence_mapHomotopyCategory`: a categorical
@@ -54,6 +61,8 @@ the full faithfulness of `f`.
 * `SSet.QCat.IsCategoricalEquivalence.exists_isEquivalence`: a categorical equivalence is
   essentially surjective, every vertex of the target being joined by an equivalence to a vertex of
   the image.
+* `SSet.QCat.IsCategoricalEquivalence.isEquivalence_map_iff`: a categorical equivalence preserves
+  and reflects equivalences.
 * `SSet.QCat.homEquiv_eq_mk`, `SSet.QCat.exists_isEquivalence_of_iso`: the objects of the
   hom-categories are the vertices of `Fun(X, Y)`, and their isomorphisms are classes of
   equivalences of `Fun(X, Y)`.
@@ -80,7 +89,7 @@ public section
 
 universe u
 
-open CategoryTheory MonoidalCategory Simplicial
+open CategoryTheory MonoidalCategory MonoidalClosed Simplicial
 
 namespace SSet.QCat
 
@@ -141,11 +150,9 @@ lemma exists_isEquivalence_of_iso {f g : X ⟶ Y} (e : f ≅ g) :
     ∃ α : Edge ((ihomObj₀Equiv X.obj Y.obj).symm f.hom) ((ihomObj₀Equiv X.obj Y.obj).symm g.hom),
       α.IsEquivalence := by
   have := Y.property
-  have h₁ : e.hom.base ≫ e.inv.base = 𝟙 _ := congrArg CatEnrichedOrdinary.Hom.base e.hom_inv_id
-  have h₂ : e.inv.base ≫ e.hom.base = 𝟙 _ := congrArg CatEnrichedOrdinary.Hom.base e.inv_hom_id
   let φ : HomotopyCategory.mk ((ihomObj₀Equiv X.obj Y.obj).symm f.hom) ≅
       HomotopyCategory.mk ((ihomObj₀Equiv X.obj Y.obj).symm g.hom) :=
-    eqToIso (homEquiv_eq_mk f).symm ≪≫ ⟨e.hom.base, e.inv.base, h₁, h₂⟩ ≪≫
+    eqToIso (homEquiv_eq_mk f).symm ≪≫ CatEnrichedOrdinary.isoEquiv e ≪≫
       eqToIso (homEquiv_eq_mk g)
   exact HomotopyCategory.nonempty_iso_mk_iff.1 ⟨φ⟩
 
@@ -182,6 +189,27 @@ lemma isFullyFaithful_iff_of_iso {f g : X ⟶ Y} (e : f ≅ g) :
   have := Y.property
   obtain ⟨α, hα⟩ := exists_isEquivalence_of_iso e
   simpa only [Equiv.apply_symm_apply] using isFullyFaithful_iff_of_isEquivalence hα
+
+/-- An invertible `2`-morphism `h ≅ h'` between maps `X ⟶ Y` of quasicategories gives an
+invertible `2`-morphism between the precomposition maps `Fun(Y, E) ⟶ Fun(X, E)`: it is the image of
+`h ≅ h'` under precomposition as a map `Fun(X, Y) ⟶ Fun(Fun(Y, E), Fun(X, E))`, which sends the
+vertex of `k` to the vertex of `pre k` (`SSet.curry_braiding_comp_app_ihomObj₀Equiv_symm`). -/
+lemma nonempty_iso_homMk_pre_app {h h' : X ⟶ Y} (α : h ≅ h') (E : SSet.{u}) [Quasicategory E] :
+    Nonempty ((ObjectProperty.homMk ((pre h.hom).app E) :
+        (⟨(ihom Y.obj).obj E, inferInstance⟩ : QCat.{u}) ⟶ ⟨(ihom X.obj).obj E, inferInstance⟩) ≅
+      ObjectProperty.homMk ((pre h'.hom).app E)) := by
+  have hk (k : X ⟶ Y) :
+      (mapHomotopyCategory (curry ((β_ _ _).hom ≫ comp X.obj Y.obj E))).obj
+          (CatEnrichedOrdinary.homEquiv k) =
+        CatEnrichedOrdinary.homEquiv (ObjectProperty.homMk ((pre k.hom).app E) :
+          (⟨(ihom Y.obj).obj E, inferInstance⟩ : QCat.{u}) ⟶
+            ⟨(ihom X.obj).obj E, inferInstance⟩) := by
+    rw [homEquiv_eq_mk, homEquiv_eq_mk, mapHomotopyCategory_obj_mk,
+      curry_braiding_comp_app_ihomObj₀Equiv_symm]
+    simp only [ObjectProperty.homMk_hom]
+  exact ⟨CatEnrichedOrdinary.isoEquiv.symm (eqToIso (hk h).symm ≪≫
+    (mapHomotopyCategory (curry ((β_ _ _).hom ≫ comp X.obj Y.obj E))).mapIso
+      (CatEnrichedOrdinary.isoEquiv α) ≪≫ eqToIso (hk h'))⟩
 
 /-- A map of quasicategories is a categorical equivalence when it is an equivalence in the
 bicategory of quasicategories: it admits a quasi-inverse together with invertible natural
@@ -247,6 +275,50 @@ theorem of_rlp_monomorphisms {p : X ⟶ Y}
   exact (isCategoricalEquivalence_iff_exists_equivalence p).2
     ⟨.mkOfAdjointifyCounit η (eqToIso hε), rfl⟩
 
+/-- Categorical equivalences are invariant under invertible `2`-morphisms. -/
+lemma of_iso {f f' : X ⟶ Y} (i : f ≅ f') (hf : IsCategoricalEquivalence f) :
+    IsCategoricalEquivalence f' := by
+  obtain ⟨e, rfl⟩ := (isCategoricalEquivalence_iff_exists_equivalence _).1 hf
+  exact (isCategoricalEquivalence_iff_exists_equivalence _).2
+    ⟨.mkOfAdjointifyCounit (e.unit ≪≫ Bicategory.whiskerRightIso i e.inv)
+      (Bicategory.whiskerLeftIso e.inv i.symm ≪≫ e.counit), rfl⟩
+
+/-- **Two out of three** for categorical equivalences: if `f` and `f ≫ g` are categorical
+equivalences, so is `g`. -/
+lemma of_comp_left {f : X ⟶ Y} {g : Y ⟶ Z} (hf : IsCategoricalEquivalence f)
+    (hfg : IsCategoricalEquivalence (f ≫ g)) : IsCategoricalEquivalence g := by
+  obtain ⟨e, rfl⟩ := (isCategoricalEquivalence_iff_exists_equivalence f).1 hf
+  exact of_iso ((Bicategory.associator _ _ _).symm ≪≫ Bicategory.whiskerRightIso e.counit g ≪≫
+    Bicategory.leftUnitor g)
+    (((isCategoricalEquivalence_iff_exists_equivalence _).2 ⟨e.symm, rfl⟩).comp hfg)
+
+/-- **Two out of three** for categorical equivalences: if `g` and `f ≫ g` are categorical
+equivalences, so is `f`. -/
+lemma of_comp_right {f : X ⟶ Y} {g : Y ⟶ Z} (hg : IsCategoricalEquivalence g)
+    (hfg : IsCategoricalEquivalence (f ≫ g)) : IsCategoricalEquivalence f := by
+  obtain ⟨e, rfl⟩ := (isCategoricalEquivalence_iff_exists_equivalence _).1 hg
+  exact of_iso (Bicategory.associator _ _ _ ≪≫ Bicategory.whiskerLeftIso f e.unit.symm ≪≫
+    Bicategory.rightUnitor f)
+    (hfg.comp ((isCategoricalEquivalence_iff_exists_equivalence _).2 ⟨e.symm, rfl⟩))
+
+/-- Precomposition `Fun(Y, E) ⟶ Fun(X, E)` with a categorical equivalence `g : X ⟶ Y` is a
+categorical equivalence, with quasi-inverse the precomposition with a quasi-inverse of `g`. -/
+lemma pre_app {g : X ⟶ Y} (hg : IsCategoricalEquivalence g) (E : SSet.{u}) [Quasicategory E] :
+    IsCategoricalEquivalence (X := ⟨(ihom Y.obj).obj E, inferInstance⟩)
+      (Y := ⟨(ihom X.obj).obj E, inferInstance⟩) (ObjectProperty.homMk ((pre g.hom).app E)) := by
+  obtain ⟨e, rfl⟩ := (isCategoricalEquivalence_iff_exists_equivalence _).1 hg
+  obtain ⟨α⟩ := nonempty_iso_homMk_pre_app e.counit E
+  obtain ⟨β⟩ := nonempty_iso_homMk_pre_app e.unit E
+  refine (isCategoricalEquivalence_iff_exists_equivalence _).2
+    ⟨.mkOfAdjointifyCounit (g := ObjectProperty.homMk ((pre e.inv.hom).app E))
+      (eqToIso ?_ ≪≫ α.symm ≪≫ eqToIso ?_) (eqToIso ?_ ≪≫ β.symm ≪≫ eqToIso ?_), rfl⟩
+  all_goals ext1
+  -- The `1`-morphisms of the bicategory of quasicategories compose as maps of simplicial sets.
+  · exact (NatTrans.congr_app (pre_id Y.obj) E).symm
+  · exact NatTrans.congr_app (pre_map e.inv.hom e.hom.hom) E
+  · exact (NatTrans.congr_app (pre_map e.hom.hom e.inv.hom) E).symm
+  · exact NatTrans.congr_app (pre_id X.obj) E
+
 /-- A categorical equivalence of quasicategories induces an equivalence of homotopy
 categories. -/
 lemma isEquivalence_mapHomotopyCategory {f : X ⟶ Y} (hf : IsCategoricalEquivalence f) :
@@ -301,6 +373,15 @@ lemma exists_isEquivalence {f : X ⟶ Y} (hf : IsCategoricalEquivalence f) (y : 
   have := Y.property
   have := hf.isEquivalence_mapHomotopyCategory
   (essSurj_mapHomotopyCategory_iff f.hom).1 inferInstance y
+
+/-- A categorical equivalence of quasicategories preserves and reflects equivalences, being fully
+faithful (`SSet.Edge.isEquivalence_map_iff_of_isFullyFaithful`). -/
+lemma isEquivalence_map_iff {f : X ⟶ Y} (hf : IsCategoricalEquivalence f) {x₀ x₁ : X.obj _⦋0⦌}
+    (e : Edge x₀ x₁) : (e.map f.hom).IsEquivalence ↔ e.IsEquivalence :=
+  have := X.property
+  have := Y.property
+  have := hf.isFullyFaithful
+  Edge.isEquivalence_map_iff_of_isFullyFaithful f.hom e
 
 end IsCategoricalEquivalence
 
@@ -387,14 +468,12 @@ lemma isCategoricalEquivalence_homMk_nerveMap_iff (F : C ⥤ D) :
       (ObjectProperty.homMk (nerveMap F)) ↔ F.IsEquivalence := by
   refine ⟨fun h ↦ ?_, fun _ ↦ ⟨ObjectProperty.homMk (nerveMap F.inv),
     ⟨F.asEquivalence.unitIso.nerveMap⟩, ⟨F.asEquivalence.counitIso.nerveMap⟩⟩⟩
-  -- The counit `ho (N E) ≅ E` of the nerve adjunction is natural in `E`.
-  let c (E : Type u) [Category.{u} E] :=
-    Cat.equivOfIso (nerveFunctorCompHoFunctorIso.app (Cat.of E))
-  have hc : mapHomotopyCategory (nerveMap F) ⋙ (c D).functor = (c C).functor ⋙ F :=
-    congrArg Cat.Hom.toFunctor (nerveFunctorCompHoFunctorIso.hom.naturality F.toCatHom)
+  -- The equivalence `ho (N E) ≌ E` is natural in `E`.
+  let c (E : Type u) [Category.{u} E] := nerveHomotopyCategoryEquiv E
   let e := (c C).symm.trans
     ((@Functor.asEquivalence _ _ _ _ _ h.isEquivalence_mapHomotopyCategory).trans (c D))
-  exact (e.changeFunctor (Functor.isoWhiskerLeft (c C).inverse (eqToIso hc) ≪≫
+  exact (e.changeFunctor (Functor.isoWhiskerLeft (c C).inverse
+    (eqToIso (mapHomotopyCategory_nerveMap_comp_nerveHomotopyCategoryEquiv_functor F)) ≪≫
     (Functor.associator _ _ _).symm ≪≫ Functor.isoWhiskerRight (c C).counitIso F ≪≫
       F.leftUnitor)).isEquivalence_functor
 

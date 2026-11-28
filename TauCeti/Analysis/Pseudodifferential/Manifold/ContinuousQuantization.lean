@@ -214,7 +214,7 @@ theorem exists_norm_chartSobolevExtension_chartQuantization_le
   obtain ⟨q, hq, hqa⟩ := exists_norm_chartReading_chartQuantization_le (hc' := hc') (φ := φ) he φ₀
     ψ₀ K hψ ht
   exact ⟨q, hq, fun a haK ↦ ContinuousLinearMap.opNorm_le_bound _ (apply_nonneg _ _)
-    (norm_chartSobolevExtension_apply_le (hqa a haK))⟩
+    (LinearMap.norm_rangeClosureExtension_apply_le (hqa a haK))⟩
 
 /-- **Continuity of chart quantizations in the symbol.** If `y ↦ a y` is a continuous family of
 classical symbols of order `m`, all vanishing at positions outside a fixed compact set `K`, then

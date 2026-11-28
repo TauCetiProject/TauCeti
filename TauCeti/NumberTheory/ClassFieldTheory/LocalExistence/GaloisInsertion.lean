@@ -39,9 +39,14 @@ to `p`.
 
 * `TauCeti.ClassFieldTheory.localClassField_galoisConnection`: the norm subgroup of `V` lies in
   `N` exactly when `V` lies in the class field of `N`.
+* `TauCeti.ClassFieldTheory.classField_localClassField_le_iff`: the same statement on fields, a
+  finite Galois extension contains the class field of `N` exactly when its norm group lies in `N`.
 * `TauCeti.ClassFieldTheory.localClassField_localNormOpenSubgroup`: the class field of the norm
   subgroup of `V` is the maximal abelian sublayer of `V`.
-* `TauCeti.ClassFieldTheory.localClassFieldPrimeToResidueCharacteristic_galoisConnection` and
+* `TauCeti.ClassFieldTheory.localClassField_galoisConnection_closureOperator`: the closure operator
+  of the Galois connection is `OpenNormalSubgroup.abelianLayerClosure`.
+* `TauCeti.ClassFieldTheory.localClassFieldPrimeToResidueCharacteristic_galoisConnection`,
+  `classField_localClassFieldPrimeToResidueCharacteristic_le_iff` and
   `localClassFieldPrimeToResidueCharacteristic_localNormOpenSubgroupPrimeTo`, in the same
   namespace: the same statements in the prime-to-residue-characteristic range.
 
@@ -94,6 +99,16 @@ theorem localClassField_galoisConnection :
   conv_lhs => rw [← localNormOpenSubgroup_localClassField N]
   exact localNormOpenSubgroup_le_iff_of_isAbelian (localClassField N).property
 
+/-- **The norm-subgroup Galois connection on fields.** In characteristic zero, a finite Galois
+extension `L/K` contains the class field of `N` exactly when `N_{L/K}(Lˣ) ≤ N`. The extension need
+not be abelian. -/
+theorem classField_localClassField_le_iff
+    {V : OpenNormalSubgroup (AbsoluteGaloisGroup K)} {N : LocalNormSubgroups K} :
+    classField K (localClassField N).val ≤ classField K V ↔
+      localNormSubgroup K V ≤ N.val.toSubgroup := by
+  rw [classField_le_classField_iff, ← localClassField_normSubgroup N]
+  exact (localNormSubgroup_le_iff_of_isAbelian (localClassField N).property).symm
+
 variable (K) in
 /-- **The norm-subgroup Galois insertion** in characteristic zero: the Galois connection
 `localClassField_galoisConnection`, with `localClassField_normSubgroup` as the insertion
@@ -116,6 +131,17 @@ theorem localClassField_localNormOpenSubgroup (V : OpenNormalSubgroup (AbsoluteG
     V.isAbelianClassFieldLayer_maximalAbelianLayer <| by
       rw [localClassField_normSubgroup, localNormSubgroup_maximalAbelianLayer,
         localNormOpenSubgroup_toSubgroup]
+
+variable (K) in
+/-- **The closure operator of the norm-subgroup Galois connection** is the maximal abelian
+sublayer `OpenNormalSubgroup.abelianLayerClosure`. -/
+@[simp]
+theorem localClassField_galoisConnection_closureOperator :
+    (localClassField_galoisConnection K).closureOperator =
+      OpenNormalSubgroup.abelianLayerClosure :=
+  ClosureOperator.ext _ _ fun V ↦ by
+    rw [GaloisConnection.closureOperator_apply, OpenNormalSubgroup.abelianLayerClosure_apply,
+      localClassField_localNormOpenSubgroup]
 
 end CharZero
 
@@ -183,6 +209,17 @@ theorem localClassFieldPrimeToResidueCharacteristic_galoisConnection :
   conv_lhs => rw [← localNormOpenSubgroupPrimeTo_localClassFieldPrimeToLayer p N]
   exact localNormOpenSubgroup_le_iff_of_isAbelian
     (localClassFieldPrimeToResidueCharacteristic p N).val.property
+
+/-- **The prime-to-residue-characteristic norm-subgroup Galois connection on fields.** A finite
+Galois extension `L/K` contains the class field of an open subgroup `N` of index prime to the
+residue characteristic `p` exactly when `N_{L/K}(Lˣ) ≤ N`. The degree of `L/K` is arbitrary. -/
+theorem classField_localClassFieldPrimeToResidueCharacteristic_le_iff
+    {V : OpenNormalSubgroup (AbsoluteGaloisGroup K)} {N : LocalNormSubgroupsPrimeTo K p} :
+    classField K (localClassFieldPrimeToResidueCharacteristic p N).val.val ≤ classField K V ↔
+      localNormSubgroup K V ≤ N.val.val.toSubgroup := by
+  rw [classField_le_classField_iff, ← localClassFieldPrimeToResidueCharacteristic_normSubgroup p N]
+  exact (localNormSubgroup_le_iff_of_isAbelian
+    (localClassFieldPrimeToResidueCharacteristic p N).val.property).symm
 
 variable (K) in
 /-- **The prime-to-residue-characteristic norm-subgroup Galois insertion**, with
