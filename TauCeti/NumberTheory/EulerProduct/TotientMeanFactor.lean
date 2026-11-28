@@ -242,11 +242,7 @@ theorem abs_tprod_totientMeanFactor_sub_one_le (n : ℕ) {y : ℝ} (hy : 0 < y) 
       4 * (2 ^ n - 1) * Real.exp (4 * (2 ^ n - 1)) / y := by
   have hK : (0 : ℝ) ≤ 4 * (2 ^ n - 1) :=
     mul_nonneg zero_le_four (sub_nonneg.2 (one_le_pow₀ one_le_two))
-  have h1 := norm_tprod_one_add_sub_one_le (f := fun k : S ↦ totientMeanFactor n k - 1)
-    ((summable_totientMeanFactor_sub_one n).subtype (· ∈ S)).norm
-  simp only [add_sub_cancel, norm_totientMeanFactor_natCast_sub_one] at h1
-  rw [Real.norm_eq_abs] at h1
-  have h2 := tsum_totientMeanFactor_sub_one_le n fun k hk ↦ (Nat.floor_lt hy.le).2 (hS k hk)
+  have hfloor : ∀ k ∈ S, ⌊y⌋₊ < k := fun k hk ↦ (Nat.floor_lt hy.le).2 (hS k hk)
   have ht0 : 0 ≤ 4 * (2 ^ n - 1) / ((⌊y⌋₊ : ℝ) + 1) := div_nonneg hK (by positivity)
   have hty : 4 * (2 ^ n - 1) / ((⌊y⌋₊ : ℝ) + 1) ≤ 4 * (2 ^ n - 1) / y :=
     div_le_div_of_nonneg_left hK hy (Nat.lt_floor_add_one y).le
@@ -255,9 +251,10 @@ theorem abs_tprod_totientMeanFactor_sub_one_le (n : ℕ) {y : ℝ} (hy : 0 < y) 
   have h3 := abs_exp_sub_one_le_mul_exp ((abs_of_nonneg ht0).trans_le hty)
     ((abs_of_nonneg ht0).trans_le ht1)
   calc |∏' k : S, totientMeanFactor n k - 1|
-      ≤ Real.exp (∑' k : S, (totientMeanFactor n k - 1)) - 1 := h1
+      = ∏' k : S, totientMeanFactor n k - 1 :=
+        abs_of_nonneg (sub_nonneg.2 (one_le_tprod_totientMeanFactor n S))
     _ ≤ Real.exp (4 * (2 ^ n - 1) / ((⌊y⌋₊ : ℝ) + 1)) - 1 :=
-        sub_le_sub_right (Real.exp_le_exp.2 h2) 1
+        sub_le_sub_right (tprod_totientMeanFactor_le_exp n hfloor) 1
     _ ≤ |Real.exp (4 * (2 ^ n - 1) / ((⌊y⌋₊ : ℝ) + 1)) - 1| := le_abs_self _
     _ ≤ 4 * (2 ^ n - 1) / y * Real.exp (4 * (2 ^ n - 1)) := h3
     _ = 4 * (2 ^ n - 1) * Real.exp (4 * (2 ^ n - 1)) / y := by ring
