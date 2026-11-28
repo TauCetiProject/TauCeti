@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.DiracSystem.Norm
+import TauCeti.Analysis.ODE.VariationOfConstants
 
 /-!
 # The Hermite–Biehler functions of a Dirac system
@@ -41,6 +42,8 @@ literature), built from the Neumann column `(A, C)` and the Dirichlet column `(B
   (`TauCeti.diracHermiteBiehler_eq_one_add_integral`,
   `TauCeti.diracHermiteBiehlerDirichlet_eq_neg_I_add_integral`). The second factor `A + iC` is the
   reflection `E#(z) = conj E(conj z)` once `A` and `C` are known to be real entire functions.
+  Variation of constants between two times gives the free kernel `exp (-iz(t-s))`
+  (`TauCeti.diracFundamentalMatrix_sub_I_mul_eq_exp_mul_add_integral`).
 * For the zero potential, `E(t, z) = e^{-itz}` and `E~(t, z) = -i e^{-itz}`
   (`TauCeti.diracHermiteBiehler_zero_potential`,
   `TauCeti.diracHermiteBiehlerDirichlet_zero_potential`).
@@ -110,16 +113,20 @@ theorem differentiable_diracHermiteBiehlerDirichlet (hq : IntegrableOn q (uIcc 0
 /-- `t ↦ E(t, z)` is continuous on `[0, T]` when `q` is integrable there. -/
 theorem continuousOn_diracHermiteBiehler {T : ℝ} (hq : IntegrableOn q (Icc 0 T)) (z : ℂ) :
     ContinuousOn (fun s ↦ diracHermiteBiehler q s z) (Icc 0 T) := by
+  rcases lt_or_ge T 0 with hT | hT
+  · simp [Icc_eq_empty_of_lt hT]
   simp_rw [diracHermiteBiehler_def]
-  exact (continuousOn_diracFundamentalMatrix_apply hq z 0 _).sub
-    (continuousOn_const.mul (continuousOn_diracFundamentalMatrix_apply hq z 1 _))
+  have hc (i : Fin 2) := continuousOn_diracFundamentalMatrix_apply hq (left_mem_Icc.2 hT) z i 0
+  exact (hc 0).sub (continuousOn_const.mul (hc 1))
 
 /-- `t ↦ E~(t, z)` is continuous on `[0, T]` when `q` is integrable there. -/
 theorem continuousOn_diracHermiteBiehlerDirichlet {T : ℝ} (hq : IntegrableOn q (Icc 0 T))
     (z : ℂ) : ContinuousOn (fun s ↦ diracHermiteBiehlerDirichlet q s z) (Icc 0 T) := by
+  rcases lt_or_ge T 0 with hT | hT
+  · simp [Icc_eq_empty_of_lt hT]
   simp_rw [diracHermiteBiehlerDirichlet_def]
-  exact (continuousOn_diracFundamentalMatrix_apply hq z 0 _).sub
-    (continuousOn_const.mul (continuousOn_diracFundamentalMatrix_apply hq z 1 _))
+  have hc (i : Fin 2) := continuousOn_diracFundamentalMatrix_apply hq (left_mem_Icc.2 hT) z i 1
+  exact (hc 0).sub (continuousOn_const.mul (hc 1))
 
 /-- **Joint continuity of `E`.** If `q` is integrable on `[0, T]`, `E(t, z)` is continuous in
 `(t, z)` on `[0, T] × ℂ`. -/
@@ -186,7 +193,7 @@ private theorem hermiteBiehler_diracCoeff (z : ℂ) (s : ℝ) (x : Fin 2 → ℂ
 private theorem hermiteBiehler_column_eq_add_integral (hq : IntegrableOn q (uIcc 0 t)) (z : ℂ)
     (j : Fin 2) :
     diracFundamentalMatrix q t z 0 j - I * diracFundamentalMatrix q t z 1 j =
-      ((Pi.single j (1 : ℂ) : Fin 2 → ℂ) 0 - I * (Pi.single j (1 : ℂ) : Fin 2 → ℂ) 1) +
+      (diracFundamentalMatrix q 0 z 0 j - I * diracFundamentalMatrix q 0 z 1 j) +
         ∫ s in (0 : ℝ)..t, (-I * z * (diracFundamentalMatrix q s z 0 j -
             I * diracFundamentalMatrix q s z 1 j) +
           q s * (diracFundamentalMatrix q s z 0 j + I * diracFundamentalMatrix q s z 1 j)) := by
@@ -198,7 +205,8 @@ private theorem hermiteBiehler_column_eq_add_integral (hq : IntegrableOn q (uIcc
     (diracFundamentalMatrix_mulVec_eq_add_integral hq left_mem_uIcc right_mem_uIcc z v)
   rw [map_add, ← ℓ.intervalIntegral_comp_comm
     (intervalIntegrable_diracCoeff_mulVec_diracFundamentalMatrix_mulVec hq z v)] at key
-  simpa only [hℓ, hermiteBiehler_diracCoeff, v, Matrix.mulVec_single_one, Matrix.col_apply]
+  simpa only [hℓ, hermiteBiehler_diracCoeff, v, Matrix.mulVec_single_one, Matrix.col_apply,
+    diracFundamentalMatrix_zero, Matrix.one_apply, Pi.single_apply, eq_comm]
     using key
 
 /-- **The integral equation of `E`.** If `q` is integrable between `0` and `t`, then
@@ -218,6 +226,44 @@ theorem diracHermiteBiehlerDirichlet_eq_neg_I_add_integral (hq : IntegrableOn q 
         q s * (diracFundamentalMatrix q s z 0 1 + I * diracFundamentalMatrix q s z 1 1)) := by
   simpa [diracHermiteBiehlerDirichlet_def, sub_eq_add_neg] using
     hermiteBiehler_column_eq_add_integral hq z 1
+
+/-- Variation of constants between two times in a closed interval containing `0` on which `q`
+is integrable. For the `j`-th column `(u, v)`, the free evolution of `u - iv` has kernel
+`exp (-iz(t-r))` and forcing `q(r)(u + iv)`. -/
+theorem diracFundamentalMatrix_sub_I_mul_eq_exp_mul_add_integral
+    {a b s : ℝ} (hq : IntegrableOn q (Icc a b)) (h0 : 0 ∈ Icc a b) (hs : s ∈ Icc a b)
+    (ht : t ∈ Icc a b) (z : ℂ) (j : Fin 2) :
+    diracFundamentalMatrix q t z 0 j - I * diracFundamentalMatrix q t z 1 j =
+      exp (-I * z * (t - s)) *
+        (diracFundamentalMatrix q s z 0 j - I * diracFundamentalMatrix q s z 1 j) +
+      ∫ r in s..t, exp (-I * z * (t - r)) * (q r *
+        (diracFundamentalMatrix q r z 0 j + I * diracFundamentalMatrix q r z 1 j)) := by
+  let X (r : ℝ) := diracFundamentalMatrix q r z 0 j - I * diracFundamentalMatrix q r z 1 j
+  let F (r : ℝ) := q r * (diracFundamentalMatrix q r z 0 j + I * diracFundamentalMatrix q r z 1 j)
+  let k := -I * z
+  let P (_ : ℝ) := k • (1 : ℂ →L[ℂ] ℂ)
+  have hc (i : Fin 2) := continuousOn_diracFundamentalMatrix_apply hq h0 z i j
+  have hX : ContinuousOn X (Icc a b) := (hc 0).sub (continuousOn_const.mul (hc 1))
+  have hF : IntegrableOn F (Icc a b) :=
+    hq.mul_continuousOn ((hc 0).add (continuousOn_const.mul (hc 1))) isCompact_Icc
+  have hint (r : ℝ) (hr : r ∈ Icc a b) :
+      IntervalIntegrable (fun u ↦ k * X u + F u) volume 0 r :=
+    (IntegrableOn.mono_set ((hX.integrableOn_Icc.const_mul k).add hF)
+      (uIcc_subset_Icc h0 hr)).intervalIntegrable
+  have hinit (r : ℝ) (hr : r ∈ Icc a b) : X r = X 0 + ∫ u in (0 : ℝ)..r, k * X u + F u := by
+    exact hermiteBiehler_column_eq_add_integral (hq.mono_set (uIcc_subset_Icc h0 hr)) z j
+  -- Subtract the integral equations at the two endpoints to start the evolution at `s`.
+  have hsol := eq_propagator_apply_add_integral (P := P)
+    (integrableOn_const measure_Icc_lt_top.ne) hF hs ht hX (fun r hr ↦ by
+      simp only [P, smul_apply, one_apply_eq_self, smul_eq_mul]
+      rw [← intervalIntegral.integral_interval_sub_left (hint r hr) (hint s hs)]
+      linear_combination hinit r hr - hinit s hs)
+  have hfree (r : ℝ) (v : ℂ) :
+      propagator P t r v = exp (k * (t - r)) * v := by
+    simp only [P, propagator_const, smul_smul, RCLike.ofReal_eq_complex_ofReal]
+    rw [← Algebra.algebraMap_eq_smul_one, ← NormedSpace.algebraMap_exp_comm]
+    simp [← Complex.exp_eq_exp_ℂ, mul_comm k]
+  simpa only [hfree] using hsol
 
 /-- **The free case.** For the zero potential, `E(t, z) = e^{-itz}`. -/
 theorem diracHermiteBiehler_zero_potential (t : ℝ) (z : ℂ) :

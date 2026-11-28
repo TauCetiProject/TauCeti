@@ -44,6 +44,8 @@ formula (`QuotientGroup.lintegral_eq_lintegral_automorphize`), and `G ⧸ Γ` is
   is finite.
 * `Subgroup.IsLattice.of_isHaarMeasure`, `Subgroup.IsUniformLattice.of_isHaarMeasure`: being a
   (uniform) lattice does not depend on the Haar measure.
+* `Subgroup.covolume_op_eq_covolume`: for an inversion invariant measure, the left and right
+  actions of a countable subgroup have the same covolume.
 * `Subgroup.isLattice_of_isFundamentalDomain_measure_lt_top`: for an inversion invariant Haar
   measure, a discrete subgroup whose left action has a fundamental domain of finite measure is a
   lattice.
@@ -112,6 +114,17 @@ theorem _root_.MeasureTheory.IsFundamentalDomain.preimage_inv_op [MeasurableInv 
     simpa using congrArg (fun x : Γ.op ↦ (x : Gᵐᵒᵖ).unop⁻¹) h
   · exact ⟨⟨γ.val.unop⁻¹, inv_mem (mem_op.mp γ.property)⟩, by ext; simp⟩
   · simp [Subgroup.smul_def, mul_inv_rev]
+
+/-- For an inversion invariant measure, the left and right actions of a countable subgroup with a
+fundamental domain have the same covolume: inversion exchanges their fundamental domains. -/
+theorem covolume_op_eq_covolume [MeasurableMul G] [MeasurableInv G] {Γ : Subgroup G}
+    [Countable Γ] {μ : Measure G} [μ.IsMulLeftInvariant] [μ.IsInvInvariant]
+    (h : HasFundamentalDomain Γ G μ) : covolume Γ.op G μ = covolume Γ G μ := by
+  obtain ⟨s, hs⟩ := h.ExistsIsFundamentalDomain
+  have : Countable Γ.op := (equivOp Γ).symm.injective.countable
+  -- a left invariant measure that is invariant under inversion is right invariant
+  have : μ.IsMulRightInvariant := μ.inv_eq_self ▸ inferInstance
+  rw [hs.preimage_inv_op.covolume_eq_volume, Measure.measure_preimage_inv, hs.covolume_eq_volume]
 
 variable [TopologicalSpace G] {Γ : Subgroup G} {μ : Measure G}
 

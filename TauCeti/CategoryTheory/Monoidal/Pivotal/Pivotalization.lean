@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Transport
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.SquaredNorm
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Linear
 
 /-!
 # The pivotalization of a rigid category
@@ -58,6 +59,10 @@ arbitrary monoidal `e`, and proves nothing specific to the Radford isomorphism.
 * `TauCeti.Pivotalization.rightDim_hom`, `TauCeti.Pivotalization.leftDim_hom`,
   `TauCeti.Pivotalization.squaredNorm_hom` and `TauCeti.Pivotalization.squaredNorm_iso`: the
   dimensions and squared norms of the pivotalization are computed in `C`.
+* `TauCeti.Pivotalization.exists_two_lifts_of_bijective`: an object with scalar endomorphisms
+  isomorphic to its double right dual has exactly two nonisomorphic lifts over an algebraically
+  closed field of characteristic different from two. The scalar hypothesis is supplied for
+  finite-dimensional simple endomorphism spaces by `TauCeti.bijective_algebraMap_end_of_simple`.
 
 ## References
 
@@ -602,3 +607,99 @@ end Pivotal
 end Pivotalization
 
 end TauCeti
+
+public section
+
+namespace TauCeti.Pivotalization
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RightRigidCategory C]
+  {e : 𝟭 C ≅ doubleRightDualFunctor C ⋙ doubleRightDualFunctor C} {X : C}
+
+/-- Over a fixed object with scalar endomorphisms, two pivotal lifts are isomorphic if and only
+if their structure isomorphisms agree. -/
+theorem nonempty_iso_mk_iff_of_surjective {R : Type*} [CommSemiring R] [Preadditive C]
+    [Linear R C] [(doubleRightDualFunctor C).Linear R]
+    (hX : Function.Surjective (algebraMap R (End X)))
+    {a b : X ≅ (doubleRightDualFunctor C).obj X}
+    {ha : a.hom ≫ (doubleRightDualFunctor C).map a.hom = e.hom.app X}
+    {hb : b.hom ≫ (doubleRightDualFunctor C).map b.hom = e.hom.app X} :
+    Nonempty ((⟨X, a, ha⟩ : Pivotalization e) ≅ ⟨X, b, hb⟩) ↔ a = b := by
+  constructor
+  · rintro ⟨i⟩
+    have hf : IsIso i.hom.hom := Functor.map_isIso (forget e) i.hom
+    obtain ⟨r, hr : r • 𝟙 X = i.hom.hom⟩ :=
+      End.exists_smul_id_eq_of_surjective hX i.hom.hom
+    have hc : i.hom.hom ≫ b.hom = a.hom ≫ (doubleRightDualFunctor C).map i.hom.hom :=
+      i.hom.comm
+    have h : i.hom.hom ≫ b.hom = i.hom.hom ≫ a.hom := by
+      -- Both composites reduce to the same scalar multiple of the structure map.
+      rw [hc, ← hr, Functor.map_smul, CategoryTheory.Functor.map_id, Linear.comp_smul,
+        Linear.smul_comp, Category.comp_id, Category.id_comp]
+    exact Iso.ext ((cancel_epi i.hom.hom).mp h).symm
+  · rintro rfl
+    exact ⟨Iso.refl _⟩
+
+/-- Let `X` have scalar endomorphisms over an algebraically closed field of characteristic
+different from two. If `X` is isomorphic to its double right dual, it has exactly two
+nonisomorphic lifts to the pivotalization, represented by opposite structure morphisms.
+See [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §7.21. -/
+theorem exists_two_lifts_of_bijective {k : Type*} [Field k] [IsAlgClosed k] [NeZero (2 : k)]
+    [Preadditive C] [Linear k C] [(doubleRightDualFunctor C).Linear k]
+    (hX : Function.Bijective (algebraMap k (End X)))
+    (a : X ≅ (doubleRightDualFunctor C).obj X) :
+    ∃ (b : X ≅ (doubleRightDualFunctor C).obj X)
+      (hb : b.hom ≫ (doubleRightDualFunctor C).map b.hom = e.hom.app X)
+      (hn : (-b).hom ≫ (doubleRightDualFunctor C).map (-b).hom = e.hom.app X),
+      ¬ Nonempty ((⟨X, b, hb⟩ : Pivotalization e) ≅ ⟨X, -b, hn⟩) ∧
+        ∀ (Y : Pivotalization e), Y.obj = X → Y = ⟨X, b, hb⟩ ∨ Y = ⟨X, -b, hn⟩ := by
+  have hId : 𝟙 X ≠ 0 := fun h ↦ one_ne_zero (hX.1 (by
+    rw [map_one, map_zero, ← End.of_id, ← End.of_zero, h]))
+  have hom_ne_zero {Z : C} (j : X ≅ Z) : j.hom ≠ 0 := by
+    intro h
+    exact hId (by simpa only [h, Limits.zero_comp] using j.hom_inv_id.symm)
+  have square_smul (r : k) (f : X ⟶ (doubleRightDualFunctor C).obj X) :
+      (r • f) ≫ (doubleRightDualFunctor C).map (r • f) =
+        r ^ 2 • (f ≫ (doubleRightDualFunctor C).map f) := by
+    rw [Functor.map_smul, Linear.smul_comp, Linear.comp_smul, smul_smul, pow_two]
+  obtain ⟨s, hs⟩ := (a ≪≫ (doubleRightDualFunctor C).mapIso a).exists_smul_hom_eq_of_surjective
+    hX.2 (e.hom.app X)
+  simp only [Iso.trans_hom, Functor.mapIso_hom] at hs
+  obtain ⟨r, hr⟩ := IsAlgClosed.exists_pow_nat_eq s zero_lt_two
+  have hr₀ : r ≠ 0 := by
+    rintro rfl
+    rw [zero_pow (by decide : 2 ≠ 0)] at hr
+    exact hom_ne_zero (e.app X) (by simpa only [← hr, zero_smul, Iso.app_hom] using hs.symm)
+  let b : X ≅ (doubleRightDualFunctor C).obj X :=
+    { hom := r • a.hom
+      inv := r⁻¹ • a.inv
+      hom_inv_id := by simp [smul_smul, hr₀]
+      inv_hom_id := by simp [smul_smul, hr₀] }
+  have hb : b.hom ≫ (doubleRightDualFunctor C).map b.hom = e.hom.app X :=
+    (square_smul r a.hom).trans (hr ▸ hs)
+  have hn : (-b).hom ≫ (doubleRightDualFunctor C).map (-b).hom = e.hom.app X := by
+    -- Changing the sign leaves the square unchanged.
+    rw [Preadditive.neg_iso_hom, ← neg_one_smul k, square_smul, neg_sq, one_pow, one_smul, hb]
+  refine ⟨b, hb, hn, ?_, ?_⟩
+  · intro h
+    have he : b.hom = (-b).hom :=
+      congrArg Iso.hom ((nonempty_iso_mk_iff_of_surjective hX.2).mp h)
+    rw [Preadditive.neg_iso_hom, ← neg_one_smul k] at he
+    have hs : (1 : k) = -1 :=
+      smul_left_injective k (hom_ne_zero b) ((one_smul k b.hom).trans he)
+    apply NeZero.ne (2 : k)
+    have hsum : (1 : k) + 1 = -1 + 1 := congrArg (· + 1) hs
+    rwa [one_add_one_eq_two, neg_add_cancel] at hsum
+  · rintro ⟨Y, d, hd⟩ hY
+    cases hY
+    obtain ⟨t, ht⟩ := b.exists_smul_hom_eq_of_surjective hX.2 d.hom
+    have ht₂ : t ^ 2 = 1 := by
+      rw [← ht, square_smul, hb] at hd
+      exact smul_left_injective k (hom_ne_zero (e.app Y)) (hd.trans (one_smul k _).symm)
+    rcases sq_eq_one_iff.mp ht₂ with h | h
+    · have he : d = b := Iso.ext (by simpa only [h, one_smul] using ht.symm)
+      exact .inl (by congr)
+    · have he : d = -b := Iso.ext (by
+        simpa only [h, neg_one_smul, Preadditive.neg_iso_hom] using ht.symm)
+      exact .inr (by congr)
+
+end TauCeti.Pivotalization

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
 public import Mathlib.Analysis.Distribution.TestFunction
-public import TauCeti.Analysis.Fourier.PoissonSummation
+public import TauCeti.Analysis.Fourier.Poisson.Lattice
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.SmoothSeries
 import TauCeti.Algebra.Module.ZLattice.Scaling

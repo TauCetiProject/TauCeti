@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Star.Subsemiring
 public import TauCeti.NumberTheory.NumberField.CMField.FinitePlace
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.GaloisAction
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocalUnits
 
 /-!
 # Complex conjugation as a star structure on the adeles of a CM field
@@ -59,8 +60,17 @@ infinite adeles only needs `E` to be an algebraic CM field.
   involutions.
 * `IsDedekindDomain.FiniteAdeleRing.star_apply_conjPlace`: the components of the conjugate of a
   finite adele.
+* `IsDedekindDomain.FiniteAdeleRing.unitsProj_star_eq_one_iff`: the corresponding criterion
+  for a conjugate finite idele to have component `1` at a place, via `coe_unitsProj_apply`.
+* `RingEquiv.finiteAdeleEquiv_star`: transport of finite adeles along an
+  isomorphism of CM fields commutes with conjugation.
+* `IsDedekindDomain.FiniteAdeleRing.star_indicatorOne`: the conjugate of the indicator of a set
+  of finite places is the indicator of the set of their conjugates, so the indicator of a set
+  stable under conjugation is self-adjoint.
 * `NumberField.InfiniteAdeleRing.extensionEmbedding_star_apply`: the components of the conjugate
   of an infinite adele.
+* `NumberField.InfiniteAdeleRing.norm_apply_le_one_of_star_dotProduct_self_eq_one`: the entries
+  of a vector `u` over the infinite adeles with `u* u = 1` have norm at most one at every place.
 
 ## References
 
@@ -177,6 +187,26 @@ end FiniteAdeleRing
 
 end NumberField.IsCMField
 
+namespace RingEquiv
+
+variable {E E' : Type*} [Field E] [NumberField E] [IsCMField E] [Field E'] [NumberField E']
+  [IsCMField E']
+
+/-- Transport of finite adeles along an isomorphism of CM fields commutes with complex conjugation:
+the isomorphism intertwines the complex conjugations of the two fields
+(`NumberField.IsCMField.complexConj_algebraMap`). -/
+@[simp]
+theorem finiteAdeleEquiv_star (e : E ≃+* E') (a : 𝔸ᶠ[E]) :
+    finiteAdeleEquiv E E' e (star a) = star (finiteAdeleEquiv E E' e a) := by
+  let : Algebra E E' := e.toRingHom.toAlgebra
+  have h : (complexConj E).toRingEquiv.trans e = e.trans (complexConj E').toRingEquiv :=
+    RingEquiv.ext fun x ↦ (complexConj_algebraMap E E' x).symm
+  rw [← finiteAdeleConj_apply, ← finiteAdeleConj_apply, finiteAdeleConj_def, finiteAdeleConj_def,
+    ← RingEquiv.trans_apply, ← RingEquiv.trans_apply, finiteAdeleEquiv_trans,
+    finiteAdeleEquiv_trans, h]
+
+end RingEquiv
+
 namespace IsDedekindDomain.FiniteAdeleRing
 
 variable {E : Type*} [Field E] [NumberField E] [IsCMField E]
@@ -191,6 +221,33 @@ theorem star_apply_conjPlace (a : 𝔸ᶠ[E]) (w : HeightOneSpectrum (𝓞 E)) :
   rw [← coe_finiteAdeleConj, finiteAdeleConj_def]
   exact finiteAdeleEquiv_apply_eq_adicCompletionCongr _ _ a
 
+/-- **Conjugation of finite adeles at a place, for any presentation of the conjugate place.** If
+`|conj x|_{w'} = |x|_w` for all `x ∈ E`, so that `w'` is the conjugate place `conj w`, the component
+at `w'` of the conjugate of a finite adele `a` is the image of `a_w` under the isomorphism
+`E_w ≃ E_{w'}` extending the conjugation of `E`. With `w = conj w'` this computes every component
+of `star a`, and at a place `w` with `conj w = w` it reads `(star a)_w = conj (a_w)` for the
+automorphism `t ↦ conj t` of `E_w`. -/
+theorem star_apply_eq_adicCompletionCongr {w w' : HeightOneSpectrum (𝓞 E)}
+    (hw : ∀ x, w'.valuation E ((complexConj E).toRingEquiv x) = w.valuation E x) (a : 𝔸ᶠ[E]) :
+    (star a) w' =
+      HeightOneSpectrum.adicCompletionCongr w w' (complexConj E).toRingEquiv hw (a w) := by
+  obtain rfl := HeightOneSpectrum.eq_conjPlace_iff.2 hw
+  exact star_apply_conjPlace a w
+
+/-- A conjugate finite idele has component `1` at a place if and only if the original
+idele has component `1` at the conjugate place. -/
+@[simp]
+theorem unitsProj_star_eq_one_iff
+    {v : HeightOneSpectrum (𝓞 E)} {a : (𝔸ᶠ[E])ˣ} :
+    unitsProj E v (star a) = 1 ↔ unitsProj E v.conjPlace a = 1 := by
+  have h (w : HeightOneSpectrum (𝓞 E)) :
+      unitsProj E w.conjPlace (star a) = 1 ↔ unitsProj E w a = 1 := by
+    simp only [← Units.val_eq_one, coe_unitsProj_apply, Units.coe_star, star_apply_conjPlace,
+      RingEquiv.map_eq_one_iff]
+  have hv := h v.conjPlace
+  rw [HeightOneSpectrum.conjPlace_conjPlace] at hv
+  exact hv
+
 /-- The diagonal embedding of a CM field in its finite adeles commutes with conjugation. As
 `star_eq_complexConj` makes `complexConj E` the `simp` normal form of conjugation on `E` and
 `finiteAdeleConj_apply` makes `star` the normal form on the finite adeles, this is the `simp`
@@ -199,6 +256,21 @@ lemma joining them. -/
 theorem algebraMap_complexConj (x : E) :
     algebraMap E 𝔸ᶠ[E] (complexConj E x) = star (algebraMap E 𝔸ᶠ[E] x) := by
   rw [← finiteAdeleConj_apply, finiteAdeleConj_algebraMap]
+
+/-- **Conjugating the indicator of a set of places.** The conjugate of the indicator of a set `S`
+of finite places is the indicator of the set of places whose conjugate lies in `S`; in particular
+the indicator of a set stable under conjugation is self-adjoint. This is the case of complex
+conjugation of `TauCeti.GlobalNumberFields.finiteAdeleEquiv_indicatorOne`. -/
+@[simp]
+theorem star_indicatorOne (S : Set (HeightOneSpectrum (𝓞 E))) :
+    star (indicatorOne (K := E) S) = indicatorOne (HeightOneSpectrum.conjPlace ⁻¹' S) := by
+  -- The bijection of places induced by complex conjugation is `conjPlace`, an involution.
+  have h : ⇑(HeightOneSpectrum.equivOfRingEquiv
+      (RingOfIntegers.mapRingEquiv (complexConj E).toRingEquiv)) = HeightOneSpectrum.conjPlace :=
+    funext fun w ↦ HeightOneSpectrum.eq_conjPlace_iff.2
+      ((complexConj E).toRingEquiv.valuation_equivOfRingEquiv w)
+  rw [← finiteAdeleConj_apply, finiteAdeleConj_def, finiteAdeleEquiv_indicatorOne, h,
+    Function.Involutive.image_eq_preimage_symm HeightOneSpectrum.conjPlace_conjPlace]
 
 end IsDedekindDomain.FiniteAdeleRing
 
@@ -336,5 +408,29 @@ theorem extensionEmbedding_star_apply (a : InfiniteAdeleRing E) (w : InfinitePla
       exact complexEmbedding_complexConj E w.embedding _
   rw [star_apply_eq_of_apply_eq (hsw (a w)).symm]
   exact congr_fun key (a w)
+
+open Matrix in
+variable {ι : Type*} [Fintype ι] in
+/-- **The entries of a unit vector over the infinite adeles have norm at most one.** If
+`u* u = 1` for a vector `u` over the infinite adeles of a CM field, then every entry of `u` has
+norm at most one at every infinite place `w`: read in `ℂ` through the embedding attached to `w`,
+which turns conjugation into complex conjugation, `u` becomes a complex unit vector. -/
+theorem norm_apply_le_one_of_star_dotProduct_self_eq_one {u : ι → InfiniteAdeleRing E}
+    (hu : star u ⬝ᵥ u = 1) (j : ι) (w : InfinitePlace E) : ‖u j w‖ ≤ 1 := by
+  -- Evaluation at `w` followed by the embedding `E_w → ℂ`, as a ring homomorphism.
+  let ψ : InfiniteAdeleRing E →+* ℂ :=
+    (InfinitePlace.Completion.extensionEmbedding w).comp (Pi.evalRingHom _ w)
+  have hψ (a : InfiniteAdeleRing E) : ψ (star a) = conj (ψ a) :=
+    extensionEmbedding_star_apply a w
+  have hsum : ∑ i, ‖ψ (u i)‖ ^ 2 = 1 := by
+    have h := congrArg ψ hu
+    simp only [dotProduct, Pi.star_apply, map_sum, map_mul, hψ, Complex.conj_mul',
+      map_one] at h
+    exact_mod_cast h
+  have hj : ‖ψ (u j)‖ ^ 2 ≤ 1 :=
+    hsum ▸ Finset.single_le_sum (fun i _ ↦ sq_nonneg ‖ψ (u i)‖) (Finset.mem_univ j)
+  rw [← (InfinitePlace.Completion.isometry_extensionEmbedding w).norm_map_of_map_zero
+    (map_zero _) (u j w)]
+  exact (sq_le_one_iff₀ (norm_nonneg _)).1 hj
 
 end NumberField.InfiniteAdeleRing

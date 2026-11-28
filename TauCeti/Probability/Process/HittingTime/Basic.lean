@@ -8,27 +8,47 @@ module
 public import Mathlib.Probability.Process.HittingTime
 
 /-!
-# Basic properties of hitting times
+# Basic properties and composition identities for hitting times
 
 General order-theoretic and set-theoretic properties of Mathlib's `MeasureTheory.hittingAfter` for
 arbitrary processes, without measurability, filtration, or topological assumptions.
 
-In particular, post-composing a process with a state-space map `f` pulls back the target set in
-`hittingAfter` (`MeasureTheory.hittingAfter_comp`), and whenever `f` maps `s` into `t`, the
-post-composed process hits `t` no later than the original process hits `s`
-(`Set.MapsTo.hittingAfter_comp_le`).
+Postcomposing a process `u` with a state-space map `f` pulls back the target set in
+`MeasureTheory.hittingAfter` along `f` (`MeasureTheory.hittingAfter_comp`), and whenever `f` maps
+`s` into `t`, the postcomposed process hits `t` no later than the original process hits `s`
+(`Set.MapsTo.hittingAfter_comp_le`). Applying an injective map (such as `Subtype.val`) to the
+state space preserves the hitting time of a singleton.
+
+## Main statements
+
+* `MeasureTheory.hittingAfter_comp`: postcomposing the process pulls back the target set.
+* `Set.MapsTo.hittingAfter_comp_le`: monotonicity under `Set.MapsTo`.
+* `Function.Injective.hittingAfter_singleton`: singleton hitting times under injective state
+  maps.
 -/
 
 public section
 
 namespace MeasureTheory
 
+section Composition
+
+variable {ι Ω α β : Type*} [Preorder ι] [InfSet ι]
+
 /-- Hitting a set `t` after time `n` along a post-composed process `i ↦ f (u i ·)` is the same
 as hitting the preimage `f ⁻¹' t` after time `n` along `u`. -/
-theorem hittingAfter_comp {ι Ω α β : Type*} [Preorder ι] [InfSet ι] (u : ι → Ω → α)
-    (f : α → β) (t : Set β) (n : ι) :
+theorem hittingAfter_comp (u : ι → Ω → α) (f : α → β) (t : Set β) (n : ι) :
     hittingAfter (fun i ω => f (u i ω)) t n = hittingAfter u (f ⁻¹' t) n :=
   rfl
+
+/-- Applying an injective map to the values of a process preserves the hitting time of the image
+singleton. -/
+theorem _root_.Function.Injective.hittingAfter_singleton {f : α → β} (hf : Function.Injective f)
+    (u : ι → Ω → α) (x : α) (n : ι) :
+    hittingAfter (fun i ω => f (u i ω)) {f x} n = hittingAfter u {x} n := by
+  rw [hittingAfter_comp, ← Set.image_singleton, hf.preimage_image]
+
+end Composition
 
 end MeasureTheory
 

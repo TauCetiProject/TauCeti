@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.ArithmeticFunction.CompletelyMultiplicative
 public import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.ArithmeticFunction.Misc
+import TauCeti.NumberTheory.ArithmeticFunction.Moebius
 
 /-!
 # Arithmetic functions of Dirichlet characters
@@ -64,10 +65,8 @@ end CommMonoidWithZero
 
 /-- The coefficients of the Möbius-twisted Dirichlet character have norm at most one. -/
 theorem norm_mul_moebius_le_one {N : ℕ} (χ : DirichletCharacter ℂ N) (n : ℕ) :
-    ‖χ n * (μ n : ℂ)‖ ≤ 1 := by
-  rw [norm_mul]
-  have hμ : ‖(μ n : ℂ)‖ ≤ 1 := by exact_mod_cast ArithmeticFunction.abs_moebius_le_one (n := n)
-  exact (mul_le_of_le_one_right (norm_nonneg _) hμ).trans (χ.norm_le_one n)
+    ‖χ n * (μ n : ℂ)‖ ≤ 1 :=
+  (ArithmeticFunction.norm_mul_moebius_le n (χ n)).trans (χ.norm_le_one n)
 
 /-- On `Re s > 1`, a character's arithmetic function has an absolutely convergent
 Dirichlet series with sum equal to its continued L-function. -/

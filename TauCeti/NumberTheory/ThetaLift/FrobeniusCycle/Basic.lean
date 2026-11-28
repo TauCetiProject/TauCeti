@@ -10,10 +10,12 @@ public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Data.ZMod.Basic
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parahoric
+public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.TwoBlockLabel
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 
-import TauCeti.Data.ZMod.Count
+import Mathlib.Data.Nat.Prime.Int
+import TauCeti.Data.ZMod.FinEquiv
 import TauCeti.Data.ZMod.Periodic
 
 /-!
@@ -24,17 +26,24 @@ family of ring maps `ι s : W →+* R`, `s : ZMod N`, each congruent modulo a pr
 `P`-th power of the one before, `P = p ^ e ≥ 5`, where the residue field of `W` has
 `q = P ^ N` elements; the letters carry alternating parities, and `R` contains a square root
 `w` of `p`. An element `g` of `GL_k(W)` has at each letter `s` the matrix `g_s`: `ι s` of `g` if
-`s` is even, `ι s` of the inverse transpose of `g` if `s` is odd. The variables `x (b, s)`,
-`b : Fin k`, carry the notions of depth (for a split `r` of the indices) and of defect weights
-(for a pair of indices and a letter). On the parahoric subgroup
-`TauCeti.GeneralLinear.parahoricSubgroup` of a labelling `τ` of the indices, `p` divides the
-entry `(i, j)` of the letter matrix `g_s` when `τ i < τ j` at an even letter `s` and when
-`τ j < τ i` at an odd letter `s`.
+`s` is even, `ι s` of the inverse transpose of `g` if `s` is odd.
+
+These data serve forms in variables `x (b, s)`, `b : Fin k`, one block of `k` variables for each
+letter `s`: the columns of the letter matrix `g_s` prescribe the substitution of `g` in the
+variables of the letter `s` (the twisted action, in
+`TauCeti.NumberTheory.ThetaLift.FrobeniusCycle.Forms`), and depth and defect measure the
+exponents `β : Fin k × ZMod N →₀ ℕ` of the monomials of the resulting forms. The depth for a split
+`r` of the indices counts the degree in the deep variables; the defect along a pair of indices
+`(a, a')` at a reference letter `i` is the weighted degree for the defect weights. The comparison
+of the letter matrices with the Levi and parahoric subgroups of `GL_k(W)` is in
+`TauCeti.NumberTheory.ThetaLift.FrobeniusCycle.Parahoric`.
 
 ## Main definitions
 
 * `TauCeti.FrobeniusCycle W R N`: a Frobenius cycle with `N` letters; `P` and `q` are its power
   and the size of the residue field.
+* `TauCeti.FrobeniusCycle.map`: the cycle obtained by composing the letter maps with a ring map
+  `R →+* S`.
 * `TauCeti.FrobeniusCycle.letterMatrix`: the matrix `g_s` of `g` at a letter.
 * `TauCeti.FrobeniusCycle.depth`, `TauCeti.FrobeniusCycle.defectWeight`,
   `TauCeti.FrobeniusCycle.defect`: the degree in the deep variables, and the weights and
@@ -45,21 +54,19 @@ entry `(i, j)` of the letter matrix `g_s` when `τ i < τ j` at an even letter `
 * `TauCeti.FrobeniusCycle.even`: a Frobenius cycle has an even number of letters.
 * `TauCeti.FrobeniusCycle.dvd_ι_of_mem_maximalIdeal`: the letter maps send the maximal ideal
   into `p R`.
-* `TauCeti.FrobeniusCycle.p_dvd_letterMatrix_of_mem_parahoricSubgroup`: the letter matrices of
-  an element of the parahoric subgroup of `τ` have their entry `(i, j)` divisible by `p` when
-  `τ i < τ j` at an even letter and when `τ j < τ i` at an odd letter.
 * `TauCeti.FrobeniusCycle.defectWeight_sub_mem_Icc`,
-  `TauCeti.FrobeniusCycle.abs_defect_le`: the two defect weights at a letter differ by at most
-  `3 / 2`, and an exponent of degree at most `d` in each letter has defect at most `2 * d` in
-  absolute value.
+  `TauCeti.FrobeniusCycle.abs_defect_le`: at each letter, the weight at `posIndex` minus the
+  weight at `negIndex` lies in `[0, 3 / 2]` (it is `0` when the two indices coincide), and an
+  exponent of degree at most `d` in each letter has defect at most `2 * d` in absolute value.
 
 ## References
 
 * The formal proof whose route this follows: the folder `grh` of
   https://github.com/lsernau/grh-lean at commit 72fead102f663d5c7a407964a13dc0cf9d977207, file
   `New/UpperBound/ElementaryDivisors/TwistingData.lean` (`New.FrobeniusCycle`,
+  `New.FrobeniusCycle.letterRep` for the twisted action through the letter matrices `g_s`,
+  which are `letterMatrix` here,
   `New.FrobeniusCycle.depth`, `New.FrobeniusCycle.defectWeight`,
-  `New.FrobeniusCycle.p_dvd_letterMatrix_of_mem_parahoric`,
   `New.FrobeniusCycle.defectWeight_sub_mem_Icc`,
   `New.FrobeniusCycle.abs_weight_defectWeight_le`).
 -/
@@ -117,11 +124,59 @@ theorem P_def : T.P = T.p ^ T.e := (rfl)
 /-- Unfolding `q`. -/
 theorem q_def : T.q = T.P ^ N := (rfl)
 
+/-- The Frobenius cycle obtained by composing the letter maps with a ring map `f : R →+* S`, for
+instance the reduction modulo an ideal of `R`: the same prime, exponent and parities, the letter
+maps `f.comp (ι s)` and the square root `f w`. -/
+def map {S : Type*} [CommRing S] (f : R →+* S) : FrobeniusCycle W S N where
+  p := T.p
+  prime := T.prime
+  e := T.e
+  five_le_pow := T.five_le_pow
+  ι s := f.comp (T.ι s)
+  isEven := T.isEven
+  isEven_add_one := T.isEven_add_one
+  w := f T.w
+  w_sq := by rw [← map_pow, T.w_sq, map_natCast]
+  card_residueField := T.card_residueField
+  dvd_ι_add_one_sub_pow s y := by
+    simpa using map_dvd f (T.dvd_ι_add_one_sub_pow s y)
+
+section Map
+
+variable {S : Type*} [CommRing S] (f : R →+* S)
+
+/-- `map` keeps the prime. -/
+@[simp] theorem map_p : (T.map f).p = T.p := (rfl)
+
+/-- `map` keeps the exponent. -/
+@[simp] theorem map_e : (T.map f).e = T.e := (rfl)
+
+/-- The letter maps of `map f` are those of the cycle followed by `f`. -/
+@[simp] theorem map_ι (s : ZMod N) : (T.map f).ι s = f.comp (T.ι s) := (rfl)
+
+/-- `map` keeps the parities. -/
+@[simp] theorem map_isEven : (T.map f).isEven = T.isEven := (rfl)
+
+/-- The square root of `p` of `map f` is the image of that of the cycle. -/
+@[simp] theorem map_w : (T.map f).w = f T.w := (rfl)
+
+/-- `map` keeps `P`. -/
+@[simp] theorem map_P : (T.map f).P = T.P := by simp only [P_def, map_p, map_e]
+
+/-- `map` keeps `q`. -/
+@[simp] theorem map_q : (T.map f).q = T.q := by simp only [q_def, map_P]
+
+end Map
+
 /-- `P ≥ 5`. -/
-theorem five_le_P : 5 ≤ T.P := T.five_le_pow
+theorem five_le_P : 5 ≤ T.P := by
+  rw [P_def]
+  exact T.five_le_pow
 
 /-- The residue field of `W` has `q` elements. -/
-theorem card_residueField_eq_q : Nat.card (ResidueField W) = T.q := T.card_residueField
+theorem card_residueField_eq_q : Nat.card (ResidueField W) = T.q := by
+  rw [q_def, P_def]
+  exact T.card_residueField
 
 include T in
 /-- A Frobenius cycle has at least one letter. -/
@@ -134,6 +189,7 @@ theorem neZero : NeZero N := by
 /-- `q ≥ 5`. -/
 theorem five_le_q : 5 ≤ T.q := by
   have := T.neZero
+  rw [q_def]
   calc 5 ≤ T.P := T.five_le_P
     _ ≤ T.P ^ N := Nat.le_self_pow (NeZero.ne N) _
 
@@ -179,6 +235,48 @@ theorem even : Even N := by
   · simpa using hN
   · cases T.isEven 0 <;> simp_all
 
+/-- The parity of every letter is determined by the parity of the letter `0`. The two cycles may
+have different target rings. -/
+theorem isEven_eq_of_isEven_zero_eq {S : Type*} [CommRing S] {T : FrobeniusCycle W R N}
+    {T' : FrobeniusCycle W S N} (h : T.isEven 0 = T'.isEven 0) : T.isEven = T'.isEven :=
+  funext fun s ↦ by
+    have := T.neZero
+    have hT := T.isEven_add_natCast 0 s.val
+    have hT' := T'.isEven_add_natCast 0 s.val
+    rw [zero_add, ZMod.natCast_zmod_val] at hT hT'
+    rw [hT, hT', h]
+
+/-- The exponent of a Frobenius cycle is nonzero, since `p ^ e ≥ 5`. -/
+theorem e_ne_zero : T.e ≠ 0 := fun h ↦ by
+  have h5 := T.five_le_pow
+  rw [h, pow_zero] at h5
+  omega
+
+/-- The prime and the exponent of a Frobenius cycle are determined by `W` and `N`: the residue
+field of `W` has `p ^ (e * N)` elements. The two cycles may have different target rings. -/
+theorem p_eq_and_e_eq {S : Type*} [CommRing S] (T : FrobeniusCycle W R N)
+    (T' : FrobeniusCycle W S N) : T.p = T'.p ∧ T.e = T'.e := by
+  have := T.neZero
+  have hpow : T.p ^ (T.e * N) = T'.p ^ (T'.e * N) := by
+    rw [pow_mul, pow_mul, ← T.card_residueField, T'.card_residueField]
+  obtain ⟨hp, he'⟩ := Nat.Prime.pow_inj' T.prime T'.prime (mul_ne_zero T.e_ne_zero (NeZero.ne N))
+    (mul_ne_zero T'.e_ne_zero (NeZero.ne N)) hpow
+  exact ⟨hp, Nat.eq_of_mul_eq_mul_right (NeZero.pos N) he'⟩
+
+/-- Two Frobenius cycles with the same letter maps, the same parity of the letter `0` and the same
+square root of `p` are equal: the prime and the exponent are determined by the size of the residue
+field (`p_eq_and_e_eq`), and the parities by that of `0` (`isEven_eq_of_isEven_zero_eq`). -/
+@[ext]
+theorem ext {T T' : FrobeniusCycle W R N} (hι : T.ι = T'.ι) (hisEven : T.isEven 0 = T'.isEven 0)
+    (hw : T.w = T'.w) : T = T' := by
+  obtain ⟨hp, he⟩ := p_eq_and_e_eq T T'
+  have hpar := isEven_eq_of_isEven_zero_eq hisEven
+  cases T
+  cases T'
+  dsimp only at hp he hι hpar hw
+  subst hp he hι hpar hw
+  rfl
+
 /-- Iterating the Frobenius congruences: `ι (s + j) y ≡ ι s y ^ P ^ j` modulo `p`. -/
 theorem dvd_ι_add_natCast_sub_pow (s : ZMod N) (y : W) (j : ℕ) :
     (T.p : R) ∣ T.ι (s + j) y - T.ι s y ^ T.P ^ j := by
@@ -197,22 +295,19 @@ theorem dvd_ι_of_mem_maximalIdeal {y : W} (hy : y ∈ maximalIdeal W) (s : ZMod
     (T.p : R) ∣ T.ι s y := by
   obtain ⟨m, hm⟩ : ∃ m, T.q = m + 1 := ⟨T.q - 1, by have := T.five_le_q; omega⟩
   have hm0 : 0 < m := by have := T.five_le_q; omega
-  let π := Ideal.Quotient.mk (Ideal.span {(T.p : R)})
-  -- the image of `ι s y` modulo `p` is fixed by the `q`-th power (the congruences around the cycle)
-  have hcycle : π (T.ι s y) ^ (m + 1) = π (T.ι s y) := by
+  -- `ι s y ≡ ι s y ^ q` modulo `p` (the congruences around the cycle)
+  have hcong : (T.p : R) ∣ T.ι s y - T.ι s y ^ T.q := by
     have h := T.dvd_ι_add_natCast_sub_pow s y N
-    rw [ZMod.natCast_self, add_zero, ← Ideal.mem_span_singleton, ← Ideal.Quotient.eq,
-      map_pow] at h
-    rw [← hm]
-    exact h.symm
-  have hunit : IsUnit (π (T.ι s (1 - y ^ m))) :=
-    ((isUnit_one_sub_self_of_mem_nonunits _ ((mem_maximalIdeal _).mp
-      ((maximalIdeal W).pow_mem_of_mem hy _ hm0))).map _).map _
-  have hzero : π (T.ι s y) * π (T.ι s (1 - y ^ m)) = 0 := by
-    simp only [map_sub, map_one, map_pow]
-    linear_combination -hcycle
-  rw [← Ideal.mem_span_singleton, ← Ideal.Quotient.eq_zero_iff_mem]
-  exact hunit.mul_left_eq_zero.mp hzero
+    rwa [ZMod.natCast_self, add_zero, ← q_def] at h
+  -- `1 - y ^ m` is a unit of `W`, so its image is a unit of `R`
+  have hunit : IsUnit (T.ι s (1 - y ^ m)) :=
+    (isUnit_one_sub_self_of_mem_nonunits _ ((mem_maximalIdeal _).mp
+      ((maximalIdeal W).pow_mem_of_mem hy _ hm0))).map _
+  have hprod : T.ι s y - T.ι s y ^ T.q = T.ι s y * T.ι s (1 - y ^ m) := by
+    simp only [hm, map_sub, map_one, map_pow]
+    ring
+  rw [hprod] at hcong
+  exact hunit.dvd_mul_right.mp hcong
 
 /-! ### Letter matrices -/
 
@@ -234,6 +329,21 @@ theorem letterMatrix_of_isEven {s : ZMod N} (hs : T.isEven s = true) (g : GL (Fi
 theorem letterMatrix_of_not_isEven {s : ZMod N} (hs : T.isEven s = false) (g : GL (Fin k) W) :
     T.letterMatrix s g = (↑g⁻¹ : Matrix (Fin k) (Fin k) W)ᵀ.map (T.ι s) := by
   simp [letterMatrix, hs, GeneralLinearGroup.coe_inverseTranspose]
+
+/-- The letter matrix of the transpose of `g` is the transpose of the letter matrix of `g`. -/
+@[simp]
+theorem letterMatrix_unop_transposeMulEquiv (s : ZMod N) (g : GL (Fin k) W) :
+    T.letterMatrix s (GeneralLinearGroup.transposeMulEquiv _ g).unop =
+      (T.letterMatrix s g)ᵀ := by
+  -- the transpose of `g` has inverse the inverse transpose of `g`
+  have hinv : (GeneralLinearGroup.transposeMulEquiv _ g).unop⁻¹ =
+      GeneralLinearGroup.inverseTranspose g := by
+    rw [GeneralLinearGroup.unop_transposeMulEquiv_eq_inverseTranspose_inv, ← map_inv, inv_inv]
+  cases hs : T.isEven s
+  · simp [T.letterMatrix_of_not_isEven hs, hinv, GeneralLinearGroup.coe_inverseTranspose,
+      Matrix.transpose_map]
+  · simp [T.letterMatrix_of_isEven hs, GeneralLinearGroup.coe_unop_transposeMulEquiv,
+      Matrix.transpose_map]
 
 /-! ### Depth and defect -/
 
@@ -311,14 +421,53 @@ theorem negIndex_of_not_isEven {s : ZMod N} (hs : T.isEven s = false) (a a' : Fi
     T.negIndex a a' s = a' := by
   simp [negIndex, hs]
 
+/-- At every letter, the indices of the two weighted variables coincide exactly when
+`a = a'`. It is a pre-`simp` rule, so that it applies before the two indices are evaluated by
+parity. -/
+@[simp↓]
+theorem negIndex_eq_posIndex_iff {a a' : Fin k} {s : ZMod N} :
+    T.negIndex a a' s = T.posIndex a a' s ↔ a = a' := by
+  unfold negIndex posIndex
+  split_ifs
+  exacts [Iff.rfl, eq_comm]
+
+/-- The denominator `q - 1` of the defect weights is positive. -/
+private theorem q_sub_one_pos : 0 < (T.q : ℝ) - 1 := by
+  have := T.one_lt_q
+  rw [sub_pos]
+  exact_mod_cast this
+
+/-- The magnitude `P ^ (1 + (s - 1 - i).val) / (q - 1)` of the positive defect weight at the
+letter `s`, for the reference letter `i`. -/
+private noncomputable def posWeight (i s : ZMod N) : ℝ :=
+  (T.P : ℝ) ^ (1 + (s - 1 - i).val) / (T.q - 1)
+
+/-- The magnitude `P ^ (s - i).val / (q - 1)` of the negative defect weight at the letter `s`,
+for the reference letter `i`. -/
+private noncomputable def negWeight (i s : ZMod N) : ℝ :=
+  (T.P : ℝ) ^ (s - i).val / (T.q - 1)
+
+private theorem posWeight_nonneg (i s : ZMod N) : 0 ≤ T.posWeight i s :=
+  div_nonneg (by positivity) T.q_sub_one_pos.le
+
+private theorem negWeight_nonneg (i s : ZMod N) : 0 ≤ T.negWeight i s :=
+  div_nonneg (by positivity) T.q_sub_one_pos.le
+
 /-- The defect weights at the letter `i` along `(a, a')`: the variable `x (posIndex a a' s, s)`
 has weight `P ^ (1 + (s - 1 - i).val) / (q - 1)`; if `a ≠ a'`, the variable
 `x (negIndex a a' s, s)` has weight `-P ^ (s - i).val / (q - 1)`; every other variable has weight
 `0`. When `a = a'` the two indices coincide and that variable gets the positive weight
 (`defectWeight_posIndex`, `defectWeight_negIndex`). -/
 noncomputable def defectWeight (a a' : Fin k) (i : ZMod N) (x : Fin k × ZMod N) : ℝ :=
-  if x.1 = T.posIndex a a' x.2 then (T.P : ℝ) ^ (1 + (x.2 - 1 - i).val) / (T.q - 1)
-  else if x.1 = T.negIndex a a' x.2 then -((T.P : ℝ) ^ (x.2 - i).val / (T.q - 1)) else 0
+  if x.1 = T.posIndex a a' x.2 then T.posWeight i x.2
+  else if x.1 = T.negIndex a a' x.2 then -T.negWeight i x.2 else 0
+
+/-- Unfolding `defectWeight` at any variable `x = (b, s)`. -/
+theorem defectWeight_def (a a' : Fin k) (i : ZMod N) (x : Fin k × ZMod N) :
+    T.defectWeight a a' i x =
+      if x.1 = T.posIndex a a' x.2 then (T.P : ℝ) ^ (1 + (x.2 - 1 - i).val) / (T.q - 1)
+      else if x.1 = T.negIndex a a' x.2 then -((T.P : ℝ) ^ (x.2 - i).val / (T.q - 1)) else 0 :=
+  (rfl)
 
 /-- The defect weight of the variable of positive weight. It is a pre-`simp` rule, so that it
 applies before `posIndex` is evaluated by parity. -/
@@ -326,18 +475,15 @@ applies before `posIndex` is evaluated by parity. -/
 theorem defectWeight_posIndex (a a' : Fin k) (i s : ZMod N) :
     T.defectWeight a a' i (T.posIndex a a' s, s) =
       (T.P : ℝ) ^ (1 + (s - 1 - i).val) / (T.q - 1) := by
-  simp [defectWeight]
+  simp [defectWeight, posWeight]
 
 /-- The defect weight of the variable of negative weight, for distinct indices. It is a
 pre-`simp` rule, so that it applies before `negIndex` is evaluated by parity. -/
 @[simp↓]
 theorem defectWeight_negIndex {a a' : Fin k} (h : a ≠ a') (i s : ZMod N) :
     T.defectWeight a a' i (T.negIndex a a' s, s) = -((T.P : ℝ) ^ (s - i).val / (T.q - 1)) := by
-  have hne : T.negIndex a a' s ≠ T.posIndex a a' s := by
-    unfold negIndex posIndex
-    split_ifs
-    exacts [h, h.symm]
-  simp [defectWeight, hne]
+  have hne : T.negIndex a a' s ≠ T.posIndex a a' s := mt T.negIndex_eq_posIndex_iff.mp h
+  simp [defectWeight, hne, negWeight]
 
 /-- The other variables have defect weight `0`. -/
 @[simp]
@@ -366,25 +512,88 @@ theorem defect_single (a a' : Fin k) (i : ZMod N) (x : Fin k × ZMod N) (m : ℕ
     T.defect a a' i (Finsupp.single x m) = m * T.defectWeight a a' i x := by
   simp [defect, Finsupp.weight_single]
 
-/-! ### Letter matrices on the parahoric subgroup -/
+/-! ### Changing the target ring -/
+
+/-- Changing the target along the identity does nothing. -/
+@[simp] theorem map_id : T.map (RingHom.id R) = T := by
+  ext1
+  · exact funext fun s ↦ by simp only [map_ι, RingHom.id_comp]
+  · simp only [map_isEven]
+  · simp only [map_w, RingHom.id_apply]
+
+section Map
+
+variable {S : Type*} [CommRing S] (f : R →+* S)
+
+/-- Two successive changes of target are one change along the composite. -/
+@[simp] theorem map_map {S' : Type*} [CommRing S'] (g : S →+* S') :
+    (T.map f).map g = T.map (g.comp f) := by
+  ext1
+  · exact funext fun s ↦ by simp only [map_ι, RingHom.comp_assoc]
+  · simp only [map_isEven]
+  · simp only [map_w, RingHom.comp_apply]
+
+/-- `map` does not change which variables are deep. It is a pre-`simp` rule, so that it applies
+before `isDeep_iff` unfolds `IsDeep` by parity. -/
+@[simp↓]
+theorem map_isDeep (r : ℕ) (x : Fin k × ZMod N) : (T.map f).IsDeep r x ↔ T.IsDeep r x := by
+  simp only [IsDeep, map_isEven]
+
+/-- The letter matrices of `map f` are those of the cycle with `f` applied entrywise. -/
+@[simp]
+theorem map_letterMatrix (s : ZMod N) (g : GL (Fin k) W) :
+    (T.map f).letterMatrix s g = (T.letterMatrix s g).map f := by
+  cases hs : T.isEven s <;>
+    simp only [letterMatrix_of_isEven, letterMatrix_of_not_isEven, map_isEven, hs,
+      Matrix.map_map, map_ι, RingHom.coe_comp]
+
+/-- `map` does not change depths. -/
+@[simp]
+theorem map_depth (r : ℕ) : (T.map f).depth (k := k) r = T.depth r := by
+  refine AddMonoidHom.ext fun β ↦ ?_
+  simp only [depth_apply, map_isDeep]
+
+/-- `map` does not change `posIndex`. -/
+@[simp]
+theorem map_posIndex (a a' : Fin k) (s : ZMod N) :
+    (T.map f).posIndex a a' s = T.posIndex a a' s := by
+  simp only [posIndex, map_isEven]
+
+/-- `map` does not change `negIndex`. -/
+@[simp]
+theorem map_negIndex (a a' : Fin k) (s : ZMod N) :
+    (T.map f).negIndex a a' s = T.negIndex a a' s := by
+  simp only [negIndex, map_isEven]
+
+/-- `map` does not change the defect weights. -/
+@[simp]
+theorem map_defectWeight (a a' : Fin k) (i : ZMod N) :
+    (T.map f).defectWeight a a' i = T.defectWeight a a' i := by
+  ext x
+  simp only [defectWeight, posWeight, negWeight, map_posIndex, map_negIndex, map_P, map_q]
+
+/-- `map` does not change defects. -/
+@[simp]
+theorem map_defect (a a' : Fin k) (i : ZMod N) :
+    (T.map f).defect a a' i = T.defect a a' i := by
+  simp only [defect, map_defectWeight]
+
+end Map
 
 open GeneralLinear in
-/-- For `g` in the parahoric subgroup of `τ`, `p` divides the entry `(i, j)` of the letter matrix
-`g_s` if `s` is even and `τ i < τ j`, or if `s` is odd and `τ j < τ i`. -/
-theorem p_dvd_letterMatrix_of_mem_parahoricSubgroup {τ : Fin k → ℕ} {g : GL (Fin k) W}
-    (hg : g ∈ parahoricSubgroup W τ) {s : ZMod N} {i j : Fin k}
-    (h : T.isEven s = true ∧ τ i < τ j ∨ T.isEven s = false ∧ τ j < τ i) :
-    (T.p : R) ∣ T.letterMatrix s g i j := by
-  rcases h with ⟨hs, h⟩ | ⟨hs, h⟩
-  · rw [T.letterMatrix_of_isEven hs, Matrix.map_apply]
-    exact T.dvd_ι_of_mem_maximalIdeal ((mem_parahoricSubgroup_iff τ g).mp hg i j h) s
-  · rw [T.letterMatrix_of_not_isEven hs, Matrix.map_apply, Matrix.transpose_apply]
-    exact T.dvd_ι_of_mem_maximalIdeal
-      ((mem_parahoricSubgroup_iff τ _).mp ((parahoricSubgroup W τ).inv_mem hg) j i h) s
+/-- Two indices have the same label for `twoBlockLabel r` exactly when, at any letter, the
+variables of the two indices are both deep for `r` or both not deep. -/
+theorem twoBlockLabel_eq_iff_isDeep_iff (r : ℕ) (b b' : Fin k) (s : ZMod N) :
+    twoBlockLabel r b = twoBlockLabel r b' ↔ (T.IsDeep r (b, s) ↔ T.IsDeep r (b', s)) := by
+  rw [twoBlockLabel_eq_iff]
+  cases hs : T.isEven s <;>
+    simp only [isDeep_iff, hs, ← not_lt, not_iff_not, Bool.false_eq_true, Bool.true_eq_false,
+      true_and, false_and, false_or, or_false]
 
 /-! ### Bounds for the defect weights -/
 
-/-- The weight of `u_s` minus that of `ū_s` lies in `[0, 3 / 2]`. -/
+/-- At each letter `s`, the defect weight of the variable at `posIndex` minus that of the
+variable at `negIndex` lies in `[0, 3 / 2]`; it is `0` when the two indices coincide. -/
 theorem defectWeight_sub_mem_Icc (a a' : Fin k) (i s : ZMod N) :
     T.defectWeight a a' i (T.posIndex a a' s, s) - T.defectWeight a a' i (T.negIndex a a' s, s) ∈
       Set.Icc (0 : ℝ) (3 / 2) := by
@@ -392,16 +601,13 @@ theorem defectWeight_sub_mem_Icc (a a' : Fin k) (i s : ZMod N) :
   by_cases h : a = a'
   · -- for `a = a'` the two indices coincide and the difference is `0`
     subst h
-    have hidx : T.negIndex a a s = T.posIndex a a s := by
-      unfold negIndex posIndex
-      split_ifs <;> rfl
-    rw [hidx, sub_self]
+    rw [T.negIndex_eq_posIndex_iff.mpr rfl, sub_self]
     norm_num
   rw [T.defectWeight_posIndex, T.defectWeight_negIndex h, sub_neg_eq_add, ← add_div]
   have hP : (5 : ℝ) ≤ T.P := by exact_mod_cast T.five_le_P
   have hq : (T.q : ℝ) = (T.P : ℝ) ^ N := by rw [q_def, Nat.cast_pow]
   have hq5 : (5 : ℝ) ≤ T.q := by exact_mod_cast T.five_le_q
-  refine ⟨div_nonneg (by positivity) (by linarith), (div_le_iff₀ (by linarith)).mpr ?_⟩
+  refine ⟨div_nonneg (by positivity) T.q_sub_one_pos.le, (div_le_iff₀ T.q_sub_one_pos).mpr ?_⟩
   -- stepping from the letter `s - 1 - i` to `s - i` either adds `1` to the residue or wraps
   have hsucc : s - 1 - i + 1 = s - i := by ring
   have hstep := ZMod.val_add_one_eq_or (s - 1 - i)
@@ -423,15 +629,14 @@ theorem defectWeight_sub_mem_Icc (a a' : Fin k) (i s : ZMod N) :
     rw [hexp, hzero, pow_zero, ← hq]
     linarith
 
-/-- Fix the reference letter `i` of the defect. At each letter `s`, the sum of the two formulas
-`P ^ (1 + (s - 1 - i).val) / (q - 1)` and `P ^ (s - i).val / (q - 1)` is an upper bound for the
-absolute value of every defect weight of a variable at `s` (when `a = a'` only the first occurs).
-Summed over the letters `s`, these bounds give `(P + 1) / (P - 1) ≤ 2`. -/
-private theorem sum_abs_defectWeight_le [NeZero N] (i : ZMod N) :
-    ∑ s : ZMod N, ((T.P : ℝ) ^ (1 + (s - 1 - i).val) / (T.q - 1) +
-      (T.P : ℝ) ^ (s - i).val / (T.q - 1)) ≤ 2 := by
+/-- Fix the reference letter `i` of the defect. At each letter `s`, the sum
+`posWeight i s + negWeight i s` of the two magnitudes is an upper bound for the absolute value of
+every defect weight of a variable at `s` (when `a = a'` only the first occurs). Summed over the
+letters `s`, these bounds give `(P + 1) / (P - 1) ≤ 2`. -/
+private theorem sum_posWeight_add_negWeight_le [NeZero N] (i : ZMod N) :
+    ∑ s : ZMod N, (T.posWeight i s + T.negWeight i s) ≤ 2 := by
+  simp only [posWeight, negWeight]
   have hP : (5 : ℝ) ≤ T.P := by exact_mod_cast T.five_le_P
-  have hq5 : (5 : ℝ) ≤ T.q := by exact_mod_cast T.five_le_q
   set S := ∑ j ∈ Finset.range N, (T.P : ℝ) ^ j
   have hS : 0 ≤ S := Finset.sum_nonneg fun _ _ ↦ by positivity
   have hq : (T.q : ℝ) - 1 = S * (T.P - 1) := by
@@ -442,7 +647,7 @@ private theorem sum_abs_defectWeight_le [NeZero N] (i : ZMod N) :
   have h1 : ∑ s : ZMod N, (T.P : ℝ) ^ (1 + (s - 1 - i).val) = T.P * S := by
     simp_rw [pow_add, pow_one, ← Finset.mul_sum, sub_sub, h2]
   simp only [← add_div, ← Finset.sum_div, Finset.sum_add_distrib, h1, h2 i]
-  rw [div_le_iff₀ (by linarith), hq]
+  rw [div_le_iff₀ T.q_sub_one_pos, hq]
   nlinarith [mul_nonneg hS (by linarith : (0 : ℝ) ≤ T.P - 3)]
 
 /-- An exponent of degree at most `d` in each letter has defect of absolute value at most
@@ -450,32 +655,31 @@ private theorem sum_abs_defectWeight_le [NeZero N] (i : ZMod N) :
 theorem abs_defect_le (a a' : Fin k) (i : ZMod N) {β : Fin k × ZMod N →₀ ℕ} {d : ℕ}
     (hβ : ∀ s, ∑ b, β (b, s) ≤ d) : |T.defect a a' i β| ≤ 2 * d := by
   have := T.neZero
-  set M : ZMod N → ℝ := fun s ↦ (T.P : ℝ) ^ (1 + (s - 1 - i).val) / (T.q - 1)
-  set m : ZMod N → ℝ := fun s ↦ (T.P : ℝ) ^ (s - i).val / (T.q - 1)
-  have hq5 : (5 : ℝ) ≤ T.q := by exact_mod_cast T.five_le_q
-  have hM : ∀ s, 0 ≤ M s := fun s ↦ div_nonneg (by positivity) (by linarith)
-  have hm : ∀ s, 0 ≤ m s := fun s ↦ div_nonneg (by positivity) (by linarith)
-  have hw : ∀ b s, |T.defectWeight a a' i (b, s)| ≤ M s + m s := by
+  -- `B s` bounds the absolute value of every defect weight at the letter `s`
+  let B s := T.posWeight i s + T.negWeight i s
+  have hB : ∀ s, 0 ≤ B s := fun s ↦ add_nonneg (T.posWeight_nonneg i s) (T.negWeight_nonneg i s)
+  have hw : ∀ b s, |T.defectWeight a a' i (b, s)| ≤ B s := by
     intro b s
-    have h1 : 0 ≤ (T.P : ℝ) ^ (1 + (s - 1 - i).val) / (T.q - 1) := hM s
-    have h2 : 0 ≤ (T.P : ℝ) ^ (s - i).val / (T.q - 1) := hm s
-    dsimp only [M, m]
+    have h1 := T.posWeight_nonneg i s
+    have h2 := T.negWeight_nonneg i s
     unfold defectWeight
-    split_ifs <;> simp only [abs_neg, abs_of_nonneg h1, abs_of_nonneg h2, abs_zero] <;> linarith
-  have hsum : |T.defect a a' i β| ≤ d * ∑ s, (M s + m s) := by
-    rw [T.defect_apply, Finsupp.sum_fintype _ _ (by simp), Fintype.sum_prod_type_right,
-      Finset.mul_sum]
+    split_ifs <;> simp only [abs_neg, abs_of_nonneg h1, abs_of_nonneg h2, abs_zero, B] <;>
+      linarith
+  have hsum : |T.defect a a' i β| ≤ d * ∑ s, B s := by
+    rw [defect, Finsupp.weight_eq_sum]
+    simp only [nsmul_eq_mul]
+    rw [Fintype.sum_prod_type_right, Finset.mul_sum]
     refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun s _ ↦ ?_)
     refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
     calc ∑ b, |(β (b, s) : ℝ) * T.defectWeight a a' i (b, s)|
-        ≤ ∑ b, (β (b, s) : ℝ) * (M s + m s) := Finset.sum_le_sum fun b _ ↦ by
+        ≤ ∑ b, (β (b, s) : ℝ) * B s := Finset.sum_le_sum fun b _ ↦ by
           rw [abs_mul, Nat.abs_cast]
           exact mul_le_mul_of_nonneg_left (hw b s) (Nat.cast_nonneg _)
-      _ ≤ d * (M s + m s) := by
+      _ ≤ d * B s := by
           rw [← Finset.sum_mul]
-          exact mul_le_mul_of_nonneg_right (by exact_mod_cast hβ s) (add_nonneg (hM s) (hm s))
+          exact mul_le_mul_of_nonneg_right (by exact_mod_cast hβ s) (hB s)
   refine hsum.trans (mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg _) |>.trans_eq (mul_comm _ _))
-  exact T.sum_abs_defectWeight_le i
+  exact T.sum_posWeight_add_negWeight_le i
 
 end FrobeniusCycle
 

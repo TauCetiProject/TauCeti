@@ -49,7 +49,9 @@ functions.
 ## Main declarations
 
 * `TauCeti.Symbol.IsUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le`: the
-  `H^{s,p}` Schwartz estimate `‖Op(a) u‖_{H^{s - m,p}} ≤ C ‖u‖_{H^{s,p}}` for `1 < p < ∞`.
+  `H^{s,p}` Schwartz estimate `‖Op(a) u‖_{H^{s - m,p}} ≤ C ‖u‖_{H^{s,p}}` for `1 < p < ∞`, and
+  its form `‖Op(a) u‖_{H^{s,p}} ≤ C ‖u‖_{H^{r,p}}` for `s ≤ r - m`
+  (`TauCeti.Symbol.IsUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le_of_le`).
 * `TauCeti.Symbol.quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM`: the operator
   `H^{s,p} → H^{s - m,p}` extends `Op(a)` from Schwartz functions.
 * `TauCeti.Symbol.IsUniform.hasBesselPotentialSpaceExtension`: equivalently, `a` has the extension
@@ -108,6 +110,23 @@ theorem IsUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le
     ← ContinuousLinearMap.comp_apply, hab, ContinuousLinearMap.comp_apply, coe_quantizeUniformCLM]
   refine (ENNReal.toReal_mono ?_ (hC _)).trans_eq (by simp [ENNReal.toReal_mul])
   exact ENNReal.mul_ne_top ENNReal.coe_ne_top (SchwartzMap.memLp _ p volume).eLpNorm_ne_top
+
+/-- **The `H^{s,p}` estimate on Schwartz functions, into a lower order.** For a uniform symbol `a`
+of order `m` between complex Hilbert spaces, `1 < p < ∞` and real `s ≤ r - m`,
+`‖Op(a) u‖_{H^{s,p}} ≤ C ‖u‖_{H^{r,p}}` for every Schwartz function `u`: `Op(a)` maps `H^{r,p}` to
+`H^{r - m,p}`, which embeds into `H^{s,p}`. -/
+theorem IsUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le_of_le
+    {a : Symbol n V W m} (ha : a.IsUniform) {s r : ℝ} (hsr : s ≤ r - m) {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] (hp : 1 < p) (hp_top : p ≠ ∞) :
+    ∃ C, ∀ u : 𝓢(CoordinateSpace n, V),
+      ‖toBesselPotentialSpaceCLM s p (quantizeUniformCLM a ha u)‖ ≤
+        C * ‖toBesselPotentialSpaceCLM r p u‖ := by
+  obtain ⟨C, hC⟩ := ha.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le r hp hp_top
+  refine ⟨‖BesselPotentialSpace.inclusion (E := CoordinateSpace n) (G := W) (p := p) hsr‖ * C,
+    fun u ↦ ?_⟩
+  rw [← BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM hsr, mul_assoc]
+  exact (ContinuousLinearMap.le_opNorm _ _).trans
+    (mul_le_mul_of_nonneg_left (hC u) (norm_nonneg _))
 
 variable {a : Symbol n V W m} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 

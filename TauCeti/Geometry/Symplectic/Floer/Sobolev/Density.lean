@@ -25,7 +25,8 @@ records the derivatives of a section cut off by a function of `s`.
 
 ## Main results
 
-* `TauCeti.Floer.sobolevDensity_nonneg`: the density is nonnegative.
+* `TauCeti.Floer.sobolevDensity_nonneg`, `TauCeti.Floer.norm_sq_le_sobolevDensity`: the density
+  is nonnegative and bounds `‖ξ‖²`.
 * `TauCeti.Floer.continuous_sobolevDensity`, `TauCeti.Floer.continuousAt_sobolevDensity`: the
   density of a `C¹` map is continuous, and that of a map `C¹` at a point is continuous there.
 * `TauCeti.Floer.sobolevDensity_congr_of_eventuallyEq`: the density at `z` depends only on the
@@ -69,6 +70,13 @@ theorem sobolevDensity_apply (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
 theorem sobolevDensity_nonneg (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : 0 ≤ sobolevDensity ξ z := by
   rw [sobolevDensity_apply]
   positivity
+
+/-- The energy density bounds the squared norm: `‖ξ z‖² ≤ sobolevDensity ξ z`. -/
+theorem norm_sq_le_sobolevDensity (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ‖ξ z‖ ^ 2 ≤ sobolevDensity ξ z := by
+  rw [sobolevDensity_apply]
+  nlinarith [sq_nonneg ‖fderiv ℝ ξ z stdComplexLineReal‖,
+    sq_nonneg ‖fderiv ℝ ξ z stdComplexLineImag‖]
 
 /-- The zero map has zero energy density. -/
 @[simp]

@@ -30,7 +30,11 @@ For a group acting on `L` by ring automorphisms, the translate `g • A` of a va
 its pullback along `g⁻¹`, with units and nonunits translated accordingly; automorphisms fixing a
 subfield `K` do not change the restriction to `K`.
 
+Membership in the subring of an additive valuation is equivalent to nonnegativity.
+
 ## Main results
+
+* `AddValuation.mem_toValuation_valuationSubring_iff`: additive valuation subring membership.
 
 * `ValuationSubring.mem_nonunits_comap`: nonunits of a pulled-back valuation subring.
 * `ValuationSubring.valuation_map_eq_one`: units of `O` map to units of every valuation subring
@@ -380,3 +384,32 @@ theorem exists_valuationRing_of_isPrime_le {V : Type*} {T : Type v} [CommRing V]
     exact mem_nonunits_iff.mp ((mem_maximalIdeal _).mp hgx) hx
 
 end TauCeti
+
+namespace AddValuation
+
+/-- Membership in the valuation subring is nonnegativity of the additive valuation. -/
+@[simp high] -- Apply before `Valuation.mem_valuationSubring_iff`.
+theorem mem_toValuation_valuationSubring_iff {K Γ : Type*} [Field K]
+    [LinearOrderedAddCommGroupWithTop Γ] (v : AddValuation K Γ) (x : K) :
+    x ∈ v.toValuation.valuationSubring ↔ 0 ≤ v x := by
+  rw [Valuation.mem_valuationSubring_iff, toValuation_apply,
+    ← ofAdd_zero, Multiplicative.ofAdd_le, ← toDual_zero,
+    OrderDual.toDual_le_toDual]
+
+
+end AddValuation
+
+namespace ValuationSubring
+
+/-- If `u : Kˣ` has valuation `1` for `A : ValuationSubring K`, then every diagonal entry of the
+torus element `Pi.mulSingle a (-u⁻¹) * Pi.mulSingle b u` (equal to `-u⁻¹` at `a` and `u` at `b`
+when `a ≠ b`, `-1` at `a` when `a = b`, and `1` elsewhere) has valuation `1`.
+Adapted from grh-lean (`src/Lib/LocalGL/Iwahori/QuadraticRelation.lean`,
+`New.v_mulSingle_neg_inv_mul_mulSingle_eq_one`, Apache 2.0, Copyright 2026 Anthropic PBC). -/
+theorem valuation_mulSingle_neg_inv_mul_mulSingle_eq_one {K m : Type*} [Field K] [DecidableEq m]
+    (A : ValuationSubring K) (a b : m) {u : Kˣ} (hu : A.valuation (u : K) = 1) (i : m) :
+    A.valuation ((Pi.mulSingle a (-u⁻¹) * Pi.mulSingle b u : m → Kˣ) i : K) = 1 := by
+  simp only [Pi.mul_apply, Units.val_mul, map_mul, Pi.mulSingle_apply]
+  split_ifs <;> simp [Units.val_inv_eq_inv_val, hu]
+
+end ValuationSubring

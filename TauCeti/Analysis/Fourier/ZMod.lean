@@ -29,6 +29,8 @@ function with values in a subring `R ⊆ ℂ` containing them again has its valu
 
 ## Main results
 
+* `DirichletCharacter.IsPrimitive.invDFT_apply` evaluates the normalized inverse transform
+  by Mathlib’s primitive Gauss-sum formula.
 * `ZMod.norm_invDFT_le_of_forall_norm_le`: a pointwise bound on a function also bounds every
   coefficient of its inverse Fourier transform.
 * `ZMod.fourier_val_div_eq_stdAddChar`: the Fourier mode `n` at `j.val / N` on the circle is the
@@ -161,3 +163,13 @@ theorem map_dft_of_comp_unitMul {σ : ℂ →+* ℂ} {d : (ZMod N)ˣ}
   simp only [hmap, ← hΦ, dft_comp_unitMul, Units.inv_mul_cancel_left]
 
 end ZMod
+
+open scoped ZMod
+
+/-- The normalized inverse Fourier coefficient of a primitive character at `k` is its Gauss
+sum divided by the modulus, times the inverse character at `k`. -/
+theorem DirichletCharacter.IsPrimitive.invDFT_apply {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) (k : ZMod N) :
+    𝓕⁻ (χ : ZMod N → ℂ) k = (gaussSum χ ZMod.stdAddChar / (N : ℂ)) * χ⁻¹ k := by
+  rw [ZMod.invDFT_apply', hχ.fourierTransform_eq_inv_mul_gaussSum, neg_neg, smul_eq_mul]
+  ring

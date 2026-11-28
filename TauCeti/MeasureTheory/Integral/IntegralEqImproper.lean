@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # Derivatives of improper tail integrals
@@ -67,6 +68,12 @@ integrable function over them converge to its integral. A nonnegative function w
 these preimages converge as the radii `r i` tend to infinity has the limit as its integral
 over the whole space (`TauCeti.lintegral_ofReal_eq_of_tendsto_setIntegral_closedBall`). For
 example, the plane `ℝ × ℝ` is exhausted by the Euclidean discs `{‖w‖ ≤ r}` of `ℂ`.
+
+For improper interval integrals on a ray `[a, ∞)`,
+`MeasureTheory.LocallyIntegrableOn.tendsto_intervalIntegral_sub` shifts the lower endpoint between
+any two points of `[a, ∞)`, while
+`TauCeti.tendsto_intervalIntegral_zero_of_not_locallyIntegrableOn_Ici` records the
+`intervalIntegral.integral_undef` collapse when local integrability fails.
 
 ## References
 
@@ -418,6 +425,24 @@ theorem integral_comp_add_mul_left_Ioi' {E : Type*} [NormedAddCommGroup E] [Norm
       g (Ioi (c + b * a)),
     preimage_const_add_Ioi, add_sub_cancel_left]
 
+/-- If `g` fails `LocallyIntegrableOn g (Ici x) μ` for a measure without point masses, then
+`∫ t in x..R, g t ∂μ = 0` for all sufficiently large `R` by `intervalIntegral.integral_undef`,
+so `fun R ↦ ∫ t in x..R, g t ∂μ` tends to `0`. -/
+theorem tendsto_intervalIntegral_zero_of_not_locallyIntegrableOn_Ici {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {g : ℝ → E} {μ : Measure ℝ} [NullSingletonClass μ]
+    {x : ℝ} (hnot : ¬ LocallyIntegrableOn g (Ici x) μ) :
+    Tendsto (fun R : ℝ ↦ ∫ t in x..R, g t ∂μ) atTop (𝓝 0) := by
+  rw [LocallyIntegrableOn] at hnot; push Not at hnot
+  obtain ⟨y, hy, hy_not⟩ := hnot
+  have hnot_Icc : ¬ IntegrableOn g (Icc x (y + 1)) μ := fun hIcc ↦ hy_not ⟨Icc x (y + 1), by
+    filter_upwards [self_mem_nhdsWithin,
+      nhdsWithin_le_nhds (Iio_mem_nhds (lt_add_one y))] with _ h1 h2 using ⟨h1, h2.le⟩, hIcc⟩
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [eventually_ge_atTop (y + 1)] with R hR
+  exact (intervalIntegral.integral_undef fun hInt ↦ hnot_Icc
+    (((intervalIntegrable_iff_integrableOn_Icc_of_le (by linarith [mem_Ici.mp hy])
+      eNorm_ne_top).mp hInt).mono_set (Icc_subset_Icc_right hR))).symm
+
 /-- **Bounding an integral over `(c, ∞)` piece by piece.** Split `(c, ∞)` at `c ≤ a ≤ δ`: if `‖φ‖`
 is dominated by integrable `g₁`, `g₂`, `g₃` on `(c, a]`, `(a, δ]` and `(δ, ∞)`, then
 `‖∫_c^∞ φ‖ ≤ ∫_c^a g₁ + ∫_a^δ g₂ + ∫_δ^∞ g₃`. -/
@@ -446,3 +471,18 @@ theorem norm_integral_Ioi_le_of_three_pieces {E : Type*} [NormedAddCommGroup E]
     (hn measurableSet_Ioc hi₂ hb₂) (hn measurableSet_Ioi hi₃ hb₃))
 
 end TauCeti
+
+/-- **Basepoint shifting for improper interval integrals on `[a, ∞)`.** If `g` is locally
+integrable on `[a, ∞)` and its improper integral from `b ≥ a` converges to `L`, then for every
+`x ≥ a` its improper integral from `x` converges to `L - ∫ t in b..x, g t ∂μ`. -/
+theorem MeasureTheory.LocallyIntegrableOn.tendsto_intervalIntegral_sub {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {g : ℝ → E} {μ : Measure ℝ} {a b x : ℝ} {L : E}
+    (hg : LocallyIntegrableOn g (Ici a) μ) (hb : a ≤ b) (hx : a ≤ x)
+    (hconv : Tendsto (fun R : ℝ ↦ ∫ t in b..R, g t ∂μ) atTop (𝓝 L)) :
+    Tendsto (fun R : ℝ ↦ ∫ t in x..R, g t ∂μ) atTop (𝓝 (L - ∫ t in b..x, g t ∂μ)) := by
+  refine (hconv.sub_const (∫ t in b..x, g t ∂μ)).congr' ?_
+  filter_upwards [eventually_ge_atTop a] with R hR
+  rw [← intervalIntegral.integral_add_adjacent_intervals
+      (hg.intervalIntegrable (ordConnected_Ici.uIcc_subset hb hx))
+      (hg.intervalIntegrable (ordConnected_Ici.uIcc_subset hx hR)),
+    add_sub_cancel_left]

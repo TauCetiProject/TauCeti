@@ -252,8 +252,11 @@ theorem killingForm_specialUnitaryLieAlgebra_self_neg {X : specialUnitaryLieAlge
 variable (ι κ) in
 /-- The **block inclusion** `𝔰𝔲(m) → 𝔰𝔲(m + k)`, `X ↦ diag(X, 0)`: the matrix `X` placed in the
 top-left block of a matrix indexed by `ι ⊕ κ`. As mathematical background, this is the
-differential of the group block inclusion `SU(m) → SU(m + k)`, `g ↦ diag(g, 1)`; that group map and
-the identification of its differential are not formalized here. -/
+differential of the group block inclusion `SU(m) → SU(m + k)`, `g ↦ diag(g, 1)`. That group map is
+`TauCeti.GLSpecialUnitary.fromBlocksInlSmoothHom`, and its differential is computed as
+`X ↦ diag(X, 0)` in matrix coordinates in
+`TauCeti.GLSpecialUnitary.unitsLieAlgebraEquiv_lieMapSubtypeVal_lieMap_fromBlocksInlSmoothHom`
+(in `TauCeti.Geometry.Lie.Subgroup.SpecialUnitary.Block`). -/
 def specialUnitaryBlockInclusion :
     specialUnitaryLieAlgebra ι →ₗ⁅ℝ⁆ specialUnitaryLieAlgebra (ι ⊕ κ) where
   toFun X := ⟨fromBlocks₁₁NonUnitalStarAlgHom ℝ ℂ ι κ X, by
