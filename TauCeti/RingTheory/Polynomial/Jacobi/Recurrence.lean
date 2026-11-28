@@ -43,8 +43,8 @@ as `Polynomial.jacobi_succ_contiguous_left` does from `Polynomial.jacobi_succ_co
 The three-term recurrence holds for all parameters, whatever its leading coefficient
 `c = 2 (n + 2) (n + α + β + 2) (2n + α + β + 2)` is. How much it says about `Pₙ₊₂^{(α,β)}` depends
 on `c`. If `c` is a unit of the base ring, the recurrence can be solved for `Pₙ₊₂^{(α,β)}` by
-multiplying by the inverse of `c`. If multiplication by `c` is only injective, there is no such
-formula, but `Pₙ₊₂^{(α,β)}` is still the unique polynomial satisfying the recurrence, by
+multiplying by the inverse of `c`. If multiplication by `c` is only injective, that inverse is not
+available, but `Pₙ₊₂^{(α,β)}` is still the unique polynomial satisfying the recurrence, by
 cancellation. If `c` is a zero divisor, for instance `c = 0` for `α + β = -(n + 2)`, the
 recurrence is still a valid identity but no longer determines `Pₙ₊₂^{(α,β)}`.
 

@@ -379,9 +379,7 @@ theorem derivative_mul_mulLeft_X {R : Type*} [CommSemiring R] :
 /-- **Differentiating a shifted-power expansion.** The derivative of a combination of the products
 `(X + a) ^ (n + 1 - k) (X + b) ^ k`, `k ≤ n + 1`, is the combination of the products
 `(X + a) ^ (n - k) (X + b) ^ k`, `k ≤ n`, in which the coefficient of the `k`-th product is
-`(n - k + 1) f k + (k + 1) f (k + 1)`. Over a commutative ring in which `a - b` is invertible the
-products of total degree `n` form a basis of the polynomials of degree at most `n`; in general
-they are only a family. -/
+`(n - k + 1) f k + (k + 1) f (k + 1)`. -/
 theorem derivative_sum_smul_X_add_C_pow_mul_X_add_C_pow {R : Type*} [CommSemiring R] (a b : R)
     (f : ℕ → R) (n : ℕ) :
     derivative (∑ k ∈ Finset.range (n + 2), f k • ((X + C a) ^ (n + 1 - k) * (X + C b) ^ k)) =
