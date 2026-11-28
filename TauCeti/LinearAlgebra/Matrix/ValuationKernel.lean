@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Valuation.ValuationRing
 
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.Order.WellFoundedSet
+import TauCeti.RingTheory.Valuation.FinsetDvd
 
 /-!
 # Normalised minimal-support kernel vectors over a valuation domain
@@ -48,7 +49,7 @@ endomorphisms to arbitrary matrices with a nonzero kernel vector and maps fixing
 
 @[expose] public section
 
-open Function Ideal Matrix
+open Function Matrix
 
 namespace Matrix
 
@@ -64,8 +65,7 @@ theorem exists_mulVec_eq_zero_and_forall_comp_eq {m d R : Type*} [Fintype d] [Co
   obtain ⟨w, ⟨hw, hMw⟩, hmin⟩ := exists_minimalFor_of_wellFoundedLT
     (fun v : d → R ↦ v ≠ 0 ∧ M *ᵥ v = 0) support hw₀
   have : Nonempty d := (Function.ne_iff.mp hw).nonempty
-  obtain ⟨ν, hν⟩ : ∃ ν : d, ∀ i : d, w ν ∣ w i := by
-    simpa [mem_span_singleton] using Finite.exists_max fun i ↦ (span {w i} : Ideal R)
+  obtain ⟨ν, hν⟩ := TauCeti.PreValuationRing.exists_forall_dvd w
   choose a ha using hν
   generalize ht : w ν = t at ha
   obtain rfl : w = t • a := funext ha
