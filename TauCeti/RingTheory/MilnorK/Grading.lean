@@ -32,7 +32,7 @@ this file provides:
   `TauCeti.RingTheory.MilnorK.Basic`, together with its naturality `MilnorK.degreeTwoEquiv_map`;
 * functoriality `MilnorK.quotTensorPowerMap` on the tensor-power quotients
   `(⨂[ℤ]^n (Additive Rˣ)) ⧸ steinbergRelations R n` and naturality of `MilnorK.degreeEquiv` in
-  arbitrary degree (`MilnorK.degreeEquiv_map`, `MilnorK.degreeEquiv_symm_degreeMap`).
+  arbitrary degree (`MilnorK.degreeEquiv_map`).
 
 ## Main definitions
 
@@ -48,8 +48,7 @@ this file provides:
   `TauCeti.MilnorK.steinbergRelations R 2` under `TauCeti.tensorProductEquivTensorSquare`.
 * `TauCeti.MilnorK.degreeTwoEquiv_map`: naturality of `degreeTwoEquiv` with respect to ring
   homomorphisms.
-* `TauCeti.MilnorK.degreeEquiv_map` and `TauCeti.MilnorK.degreeEquiv_symm_degreeMap`:
-  naturality of `degreeEquiv` in arbitrary degree `n`.
+* `TauCeti.MilnorK.degreeEquiv_map`: naturality of `degreeEquiv` in arbitrary degree `n`.
 
 ## References
 
@@ -365,12 +364,5 @@ theorem degreeEquiv_map {R : Type u} [CommRing R] {S : Type w} [CommRing S]
         ofTensorPower_tprod]
     simp only [Function.comp_def, RingHom.toMonoidHom_eq_coe]
   exact LinearMap.congr_fun h x
-
-/-- `(degreeEquiv _ n).symm` intertwines `degreeMap f n` and `quotTensorPowerMap f n`. -/
-theorem degreeEquiv_symm_degreeMap {R : Type u} [CommRing R] {S : Type w} [CommRing S]
-    (f : R →+* S) (n : ℕ) (x : degree R n) :
-    (degreeEquiv S n).symm (degreeMap f n x) =
-      quotTensorPowerMap f n ((degreeEquiv R n).symm x) := by
-  rw [LinearEquiv.symm_apply_eq, ← degreeEquiv_map, LinearEquiv.apply_symm_apply]
 
 end TauCeti.MilnorK

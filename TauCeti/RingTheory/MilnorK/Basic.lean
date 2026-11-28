@@ -15,6 +15,7 @@ public import TauCeti.RingTheory.MilnorK.SteinbergPairing
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.Ring.Parity
+import TauCeti.RingTheory.TwoSidedIdeal.Operations
 
 /-!
 # Milnor K-theory
@@ -65,8 +66,7 @@ Permutation-sign rules and general repeated-entry torsion live in
   `a + b = 1`, `TauCeti.MilnorK.isSteinbergPairing_mul_ofUnit` for the resulting Steinberg pairing,
   and `TauCeti.MilnorK.symbol_append_cons_cons_of_add_eq_one` for two neighbouring entries of any
   symbol.
-* `TauCeti.MilnorK.symbol_append_cons_mul`, `TauCeti.MilnorK.symbol_append_cons_pow`,
-  `TauCeti.MilnorK.symbol_append_cons_inv`, `TauCeti.MilnorK.symbol_append_cons_zpow`: symbols
+* `TauCeti.MilnorK.symbol_append_cons_mul`, `TauCeti.MilnorK.symbol_append_cons_pow`: symbols
   are additive in every entry.
 * `TauCeti.MilnorK.ringHom_ext`: ring homomorphisms out of `MilnorK R` agreeing on degree-one
   classes are equal.
@@ -75,7 +75,6 @@ Permutation-sign rules and general repeated-entry torsion live in
 * `TauCeti.MilnorK.degree_eq_span`, `TauCeti.MilnorK.mem_degree_iff`,
   `TauCeti.MilnorK.degree_eq_map_range_pow`: the degree-`n` group is spanned by the symbols of
   length `n`, and is the image of the degree-`n` tensors.
-* `TauCeti.MilnorK.degree_induction_on`: induction principle for elements of `degree R n`.
 * `TauCeti.MilnorK.iSup_degree_eq_top`, `TauCeti.MilnorK.span_range_symbol`: the degree
   submodules exhaust `MilnorK R`, and the symbols span it.
 * `TauCeti.MilnorK.surjective_of_symbol_mem_range`,
@@ -84,11 +83,9 @@ Permutation-sign rules and general repeated-entry torsion live in
 * `TauCeti.MilnorK.instGradedMonoidDegree`: the degree submodules make `MilnorK R` a graded monoid.
 * `TauCeti.MilnorK.instCharZero`, `TauCeti.MilnorK.ofUnit_injective`: `ℤ` and `Rˣ` embed.
 * `TauCeti.MilnorK.ofUnit_mul_ofUnit_neg_self`, `TauCeti.MilnorK.ofUnit_mul_ofUnit_comm`,
-  `TauCeti.MilnorK.ofUnit_mul_ofUnit_self`, `TauCeti.MilnorK.two_nsmul_ofUnit_mul_ofUnit_self`,
-  `TauCeti.MilnorK.ofUnit_mul_ofUnit_self_eq_zero_of_charTwo`,
-  `TauCeti.MilnorK.symbol_append_cons_cons_swap`: over a field, `{a, -a} = 0`, `{a, b} = -{b, a}`,
-  `{a, a} = {a, -1}`, `2 • {a, a} = 0` (`{a, a} = 0` in characteristic `2`), and swapping
-  adjacent entries negates a symbol.
+  `TauCeti.MilnorK.ofUnit_mul_ofUnit_self`, `TauCeti.MilnorK.symbol_append_cons_cons_swap`: over a
+  field, `{a, -a} = 0`, `{a, b} = -{b, a}`, `{a, a} = {a, -1}`, and swapping adjacent entries
+  negates a symbol.
 * `TauCeti.MilnorK.symbol_append_cons_cons_self`: over a field, `{…, a, a, …} = {…, a, -1, …}`.
 * `TauCeti.MilnorK.involute_of_mem_degree`: `σ` is multiplication by `(-1) ^ n` on `K_nᴹ(R)`.
 * `TauCeti.MilnorK.ofUnit_mul_involute`, `TauCeti.MilnorK.mul_comm_of_mem_degree`: over a field,
@@ -160,24 +157,6 @@ theorem mk_eq_mk_iff {x y : TensorAlgebra ℤ (Additive Rˣ)} :
   (ringCon R).eq
 
 variable (R) in
-private theorem ringCon_eq_span_ringCon :
-    ringCon R =
-      (TwoSidedIdeal.span
-        {z | ∃ a b : Rˣ, (a : R) + b = 1 ∧
-          z = ι ℤ (Additive.ofMul a) * ι ℤ (Additive.ofMul b)}).ringCon := by
-  refine le_antisymm ?_ ?_
-  · rw [ringCon_eq, RingCon.ringConGen_le]
-    rintro _ _ h
-    rcases (milnorRel_iff R).mp h with ⟨a, b, hab, rfl, rfl⟩
-    rw [TwoSidedIdeal.rel_iff, sub_zero]
-    exact TwoSidedIdeal.subset_span ⟨a, b, hab, rfl⟩
-  · refine (TwoSidedIdeal.ringCon_le_iff
-      (J := TwoSidedIdeal.ofRingCon (ringCon R))).mp (TwoSidedIdeal.span_le.mpr ?_)
-    rintro _ ⟨a, b, hab, rfl⟩
-    rw [SetLike.mem_coe, TwoSidedIdeal.mem_ofRingCon, ringCon_eq]
-    exact RingConGen.Rel.of _ _ ((milnorRel_iff R).mpr ⟨a, b, hab, rfl, rfl⟩)
-
-variable (R) in
 /-- The kernel of `MilnorK.mk` is the two-sided ideal of `TensorAlgebra ℤ (Additive Rˣ)` generated
 by the Steinberg products `ι ℤ (Additive.ofMul a) * ι ℤ (Additive.ofMul b)` with
 `(a : R) + b = 1`. -/
@@ -186,9 +165,16 @@ theorem ker_mk_eq_span :
       (TwoSidedIdeal.span
         {z | ∃ a b : Rˣ, (a : R) + b = 1 ∧
           z = ι ℤ (Additive.ofMul a) * ι ℤ (Additive.ofMul b)}).asIdeal := by
+  have hrel : milnorRel R = fun x y ↦
+      x ∈ {z | ∃ a b : Rˣ, (a : R) + b = 1 ∧
+        z = ι ℤ (Additive.ofMul a) * ι ℤ (Additive.ofMul b)} ∧ y = 0 :=
+    funext₂ fun _ _ ↦ propext
+      ⟨fun ⟨a, b, hab, hx, hy⟩ ↦ ⟨⟨a, b, hab, hx⟩, hy⟩,
+        fun ⟨⟨a, b, hab, hx⟩, hy⟩ ↦ ⟨a, b, hab, hx, hy⟩⟩
   ext z
   have h : mk z = mk 0 ↔ ringCon R z 0 := (ringCon R).eq
-  rw [RingHom.mem_ker, ← map_zero (mk (R := R)), h, ringCon_eq_span_ringCon]
+  rw [RingHom.mem_ker, ← map_zero (mk (R := R)), h, ringCon_eq, hrel,
+    TwoSidedIdeal.ringConGen_eq_span_ringCon]
   simp [TwoSidedIdeal.mem_iff]
 
 /-- The Steinberg products vanish in the Milnor K-ring. -/
@@ -337,22 +323,6 @@ theorem symbol_append_cons_cons_of_add_eq_one (l₁ l₂ : List Rˣ) {a b : Rˣ}
     (h : (a : R) + b = 1) : symbol (l₁ ++ a :: b :: l₂) = 0 := by
   simp [← mul_assoc, ofUnit_mul_ofUnit_of_add_eq_one h]
 
-/-- A two-entry symbol equals `ofUnit a * ofUnit b`. -/
-theorem symbol_pair (a b : Rˣ) : symbol [a, b] = ofUnit a * ofUnit b := by
-  rw [symbol_cons, symbol_singleton]
-
-/-- Inverting an entry negates the symbol. -/
-theorem symbol_append_cons_inv (l₁ : List Rˣ) (a : Rˣ) (l₂ : List Rˣ) :
-    symbol (l₁ ++ a⁻¹ :: l₂) = -symbol (l₁ ++ a :: l₂) := by
-  simp only [symbol_append, symbol_cons, ofUnit_inv]
-  rw [neg_mul (ofUnit a), mul_neg (symbol l₁)]
-
-/-- Raising an entry to an integer power scales the symbol. -/
-theorem symbol_append_cons_zpow (l₁ : List Rˣ) (a : Rˣ) (n : ℤ) (l₂ : List Rˣ) :
-    symbol (l₁ ++ (a ^ n) :: l₂) = n • symbol (l₁ ++ a :: l₂) := by
-  simp only [symbol_append, symbol_cons, ofUnit_zpow]
-  rw [smul_mul_assoc n (ofUnit a), mul_smul_comm n (symbol l₁)]
-
 /-! ### The universal property -/
 
 /-- Ring homomorphisms out of the Milnor K-ring are determined by their values on the degree-one
@@ -467,29 +437,6 @@ theorem degree_eq_span (n : ℕ) :
 
 theorem symbol_mem_degree (l : List Rˣ) : symbol l ∈ degree R l.length :=
   Submodule.subset_span ⟨l, rfl, rfl⟩
-
-/-- Every symbol of length `n` lies in `MilnorK.degree R n`. -/
-theorem symbol_mem_degree_of_length {l : List Rˣ} {n : ℕ} (hl : l.length = n) :
-    symbol l ∈ degree R n := hl ▸ symbol_mem_degree l
-
-/-- Induction principle for elements of `MilnorK.degree R n` generated by length-`n` symbols. -/
-@[elab_as_elim]
-theorem degree_induction_on {n : ℕ} {motive : degree R n → Prop} (x : degree R n)
-    (zero : motive 0)
-    (symbol : ∀ (l : List Rˣ) (hl : l.length = n),
-      motive ⟨symbol l, symbol_mem_degree_of_length hl⟩)
-    (add : ∀ x y, motive x → motive y → motive (x + y))
-    (smul : ∀ (k : ℤ) (x : degree R n), motive x → motive (k • x)) :
-    motive x := by
-  rcases x with ⟨v, hv⟩
-  refine Submodule.span_induction
-    (p := fun y hy ↦ motive ⟨y, hy⟩) ?_ zero ?_ ?_ hv
-  · rintro _ ⟨l, hl, rfl⟩
-    exact symbol l hl
-  · intro a b ha hb hma hmb
-    exact add ⟨a, ha⟩ ⟨b, hb⟩ hma hmb
-  · intro k a ha hma
-    exact smul k ⟨a, ha⟩ hma
 
 theorem ofUnit_mem_degree_one (a : Rˣ) : ofUnit a ∈ degree R 1 := by
   simpa using symbol_mem_degree [a]
@@ -825,16 +772,6 @@ theorem ofUnit_mul_ofUnit_comm (a b : Fˣ) : ofUnit a * ofUnit b = -(ofUnit b * 
 `{-1, -1} ≠ 0` over `ℝ` (Weibel, Example III.7.2(c)). -/
 theorem ofUnit_mul_ofUnit_self (a : Fˣ) : ofUnit a * ofUnit a = ofUnit a * ofUnit (-1) :=
   isSteinbergPairing_mul_ofUnit.map_self a
-
-/-- Over a field, `2 • (ofUnit a * ofUnit a) = 0`. -/
-theorem two_nsmul_ofUnit_mul_ofUnit_self (a : Fˣ) : 2 • (ofUnit a * ofUnit a) = 0 :=
-  isSteinbergPairing_mul_ofUnit.two_nsmul_map_self a
-
-/-- In characteristic `2`, `ofUnit a * ofUnit a = 0`. -/
-@[simp]
-theorem ofUnit_mul_ofUnit_self_eq_zero_of_charTwo [CharP F 2] (a : Fˣ) :
-    ofUnit a * ofUnit a = 0 :=
-  isSteinbergPairing_mul_ofUnit.map_self_of_charTwo a
 
 /-- Over a field, for units `a, b` with difference `h = a - b`,
 `{a, b} = {h, b} - {h, a} + {a, -1}`. Applied to two distinct monic polynomials of the same degree

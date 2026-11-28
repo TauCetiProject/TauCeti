@@ -40,8 +40,6 @@ K-groups of an algebraically closed field are uniquely divisible in degrees at l
 
 ## Main results
 
-* `TauCeti.MilnorK.quotient_linearMap_ext`: extensionality for `ℤ`-linear maps out of
-  `U^{⊗ n} / R_n`.
 * `TauCeti.MilnorK.mk_eq_zero_iff`: a tensor lies in `I` exactly when each of its homogeneous
   components, in the sense of `TensorAlgebra.toDirectSum`, lies in the corresponding `R_n`.
 * `TauCeti.MilnorK.isHomogeneous_ker_mk`: `I` is a homogeneous ideal for the grading
@@ -253,13 +251,6 @@ theorem ofTensorPower_tprod {n : ℕ} (f : Fin n → Rˣ) :
   | zero => simp
   | succ n ih => simp [List.ofFn_succ, ← ih (fun i ↦ f i.succ), Function.comp_def]
 
-/-- `ofTensorPower` sends a pure tensor `tprod ℤ x` to the symbol of its entries viewed in
-`Rˣ`. -/
-theorem ofTensorPower_tprod_toMul {n : ℕ} (x : Fin n → Additive Rˣ) :
-    ofTensorPower R n (PiTensorProduct.tprod ℤ x) =
-      symbol (List.ofFn fun k ↦ Additive.toMul (x k)) := by
-  simpa only [ofMul_toMul] using ofTensorPower_tprod (R := R) fun k ↦ Additive.toMul (x k)
-
 /-- `ofTensorPower` turns the multiplication of tensor powers into the product of the Milnor
 K-ring. -/
 @[simp]
@@ -373,19 +364,6 @@ theorem degreeEquiv_symm_symbol {n : ℕ} (f : Fin n → Rˣ) :
   rw [LinearEquiv.symm_apply_eq]
   ext
   simp
-
-/-- Two `ℤ`-linear maps out of `(Additive Rˣ)^{⊗ n} ⧸ steinbergRelations R n` agreeing on the
-classes of pure tensors of units are equal. -/
-@[ext]
-theorem quotient_linearMap_ext {A : Type*} [AddCommMonoid A] [Module ℤ A] {n : ℕ}
-    {φ ψ : (((⨂[ℤ]^n) (Additive Rˣ)) ⧸ steinbergRelations R n) →ₗ[ℤ] A}
-    (h : ∀ x : Fin n → Additive Rˣ,
-      φ (Submodule.Quotient.mk (PiTensorProduct.tprod ℤ x)) =
-        ψ (Submodule.Quotient.mk (PiTensorProduct.tprod ℤ x))) :
-    φ = ψ := by
-  have hcomp : φ.comp (steinbergRelations R n).mkQ = ψ.comp (steinbergRelations R n).mkQ :=
-    PiTensorProduct.ext (MultilinearMap.ext h)
-  exact LinearMap.ext fun q ↦ Submodule.Quotient.induction_on _ q (LinearMap.congr_fun hcomp)
 
 /-! ### The direct sum decomposition -/
 
