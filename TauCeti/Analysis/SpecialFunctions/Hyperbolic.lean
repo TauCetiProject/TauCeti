@@ -42,6 +42,7 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
 * `Real.sqrt_one_sub_tanh_sq` — `√(1 - tanh x ^ 2) = (cosh x)⁻¹`, the hyperbolic secant.
 * `Real.hasDerivAt_tanh`, `Real.deriv_tanh` and `Real.one_sub_tanh_sq` — the derivative of
   `Real.tanh` is `1 / cosh x ^ 2 = 1 - tanh x ^ 2`.
+* `Real.lipschitzWith_tanh`: `Real.tanh` is `1`-Lipschitz, because that derivative is at most `1`.
 * `Real.tendsto_tanh_atTop` and `Real.tendsto_tanh_atBot` — `Real.tanh` tends to `±1` at `±∞`.
 * `Real.hasDerivAt_inv_cosh` — the derivative of `(cosh x)⁻¹` is `-tanh x * (cosh x)⁻¹`.
 * `Real.one_add_exp_two_mul`, `Real.one_add_tanh`, `Real.one_sub_tanh`,
@@ -182,6 +183,14 @@ theorem hasDerivAt_tanh (x : ℝ) : HasDerivAt tanh (1 / cosh x ^ 2) x := by
 @[simp]
 theorem deriv_tanh (x : ℝ) : deriv tanh x = 1 / cosh x ^ 2 :=
   (hasDerivAt_tanh x).deriv
+
+/-- The hyperbolic tangent is `1`-Lipschitz: its derivative `1 / cosh x ^ 2` is at most `1`. -/
+theorem lipschitzWith_tanh : LipschitzWith 1 tanh := by
+  refine lipschitzWith_of_nnNorm_deriv_le (fun x ↦ (hasDerivAt_tanh x).differentiableAt)
+    fun x ↦ ?_
+  rw [← NNReal.coe_le_coe, coe_nnNorm, deriv_tanh, Real.norm_eq_abs, NNReal.coe_one,
+    abs_of_pos (by positivity)]
+  exact div_le_one_of_le₀ (one_le_pow₀ (one_le_cosh x)) (by positivity)
 
 /-- The derivative of `(cosh x)⁻¹` is `-tanh x * (cosh x)⁻¹`, so `(cosh x)⁻¹` solves
 `v' = -tanh(x) v`. -/
