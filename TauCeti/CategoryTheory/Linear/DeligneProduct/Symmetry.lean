@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.EssentiallySmall
 public import TauCeti.CategoryTheory.Linear.DeligneProduct.Basic
 
 /-!
@@ -14,13 +13,10 @@ public import TauCeti.CategoryTheory.Linear.DeligneProduct.Basic
 The tensor product of two linear categories admits linear equivalences that exchange its factors
 or pass to the opposite of both factors. On morphisms the equivalences are induced by the
 commutor of module tensor products and by applying `Quiver.Hom.unop` in both factors.
-The product also preserves essential smallness in a common universe, so these comparisons
-apply to the categories used as domains of additive bimodule functors.
+These comparisons apply to the categories used as domains of additive bimodule functors.
 
-For preadditive categories we use the same product over `ℤ`, via Mathlib's canonical
-`CategoryTheory.Linear.preadditiveIntLinear` instances. The tensor category construction in
-`TauCeti.LinearTensor` is the linear tensor product of Mitchell, *Rings with several objects*,
-§2.
+The tensor category construction in `TauCeti.LinearTensor` is the linear tensor product of
+Mitchell, *Rings with several objects*, §2.
 -/
 
 public section
@@ -29,12 +25,9 @@ noncomputable section
 
 open CategoryTheory Opposite
 
-universe w v₁ v₂ u₁ u₂ s
+universe w v₁ v₂ u₁ u₂
 
 namespace TauCeti
-
-/-- The tensor product of preadditive categories, using their canonical integer linearity. -/
-abbrev Preadditive.TensorProduct (C : Type u₁) (D : Type u₂) := LinearTensor ℤ C D
 
 namespace LinearTensor
 
@@ -303,27 +296,6 @@ instance : (unopFunctor (R := R) (C := C) (D := D)).Linear R :=
   (opEquiv (R := R) (C := C) (D := D)).inverseLinear R
 
 end Opposite
-
-section Smallness
-
-/-- The homs of the tensor product are small in any universe in which both factors have
-small homs. -/
-instance [LocallySmall.{s} C] [LocallySmall.{s} D] : LocallySmall.{s} (LinearTensor R C D) where
-  hom_small P Q := small_map (homEquiv P Q).toEquiv
-
-/-- The tensor product of two essentially small linear categories is essentially small in
-the same universe. -/
-instance [EssentiallySmall.{s} C] [EssentiallySmall.{s} D] :
-    EssentiallySmall.{s} (LinearTensor R C D) := by
-  refine (essentiallySmall_iff _).2 ⟨?_, inferInstance⟩
-  refine small_of_surjective (f := fun p : Skeleton C × Skeleton D ↦
-    toSkeleton (⟨(fromSkeleton C).obj p.1, (fromSkeleton D).obj p.2⟩ : LinearTensor R C D)) ?_
-  intro P
-  obtain ⟨⟨X, Y⟩, rfl⟩ := Quotient.exists_rep P
-  exact ⟨(toSkeleton X, toSkeleton Y), congr_toSkeleton_of_iso
-    (isoMk (fromSkeletonToSkeletonIso X) (fromSkeletonToSkeletonIso Y))⟩
-
-end Smallness
 
 end LinearTensor
 

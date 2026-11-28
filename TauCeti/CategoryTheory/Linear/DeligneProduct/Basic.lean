@@ -27,7 +27,11 @@ composed componentwise on pure tensors: `(f ⊗ g) ≫ (f' ⊗ g') = (f ≫ f') 
 a functor `F : C ⥤ D ⥤ E` into a `k`-linear category which is additive and `k`-linear in each
 variable extends along `bifunctor` to the `k`-linear functor `LinearTensor.lift k F`, and an
 additive functor out of `LinearTensor k C D` is determined up to isomorphism by its restriction
-along `bifunctor`. This is the ordinary-category counterpart of the tensor product
+along `bifunctor`. The tensor product preserves essential smallness in a common universe.
+For preadditive categories, `Preadditive.TensorProduct` specializes this construction to `ℤ`,
+using Mathlib's `CategoryTheory.Linear.preadditiveIntLinear` instances.
+
+The linear tensor product is the ordinary-category counterpart of the tensor product
 `TauCeti.tensorEnrichedCategory` of enriched categories: here `LinearTensor k C D` is a category
 with a `Linear k` structure, which is what `Mat_` and split simple families are built on.
 
@@ -81,7 +85,7 @@ noncomputable section
 
 open CategoryTheory Limits TensorProduct
 
-universe w v₁ v₂ v₃ u₁ u₂ u₃
+universe w v₁ v₂ v₃ u₁ u₂ u₃ s
 
 namespace TauCeti
 
@@ -92,6 +96,9 @@ structure LinearTensor (k : Type w) (C : Type u₁) (D : Type u₂) where
   fst : C
   /-- The component in `D`. -/
   snd : D
+
+/-- The tensor product of preadditive categories, using their canonical integer linearity. -/
+abbrev Preadditive.TensorProduct (C : Type u₁) (D : Type u₂) := LinearTensor ℤ C D
 
 namespace LinearTensor
 
@@ -286,6 +293,23 @@ def isoMk {X X' : C} {Y Y' : D} (e : X ≅ X') (e' : Y ≅ Y') :
   inv := tmul e.inv e'.inv
   hom_inv_id := by simp
   inv_hom_id := by simp
+
+/-- The homs of the tensor product are small in any universe in which both factors have
+small homs. -/
+instance [LocallySmall.{s} C] [LocallySmall.{s} D] : LocallySmall.{s} (LinearTensor k C D) where
+  hom_small P Q := small_map (homEquiv P Q).toEquiv
+
+/-- The tensor product of two essentially small linear categories is essentially small in
+the same universe. -/
+instance [EssentiallySmall.{s} C] [EssentiallySmall.{s} D] :
+    EssentiallySmall.{s} (LinearTensor k C D) := by
+  refine (essentiallySmall_iff _).2 ⟨?_, inferInstance⟩
+  refine small_of_surjective (f := fun p : Skeleton C × Skeleton D ↦
+    toSkeleton (⟨(fromSkeleton C).obj p.1, (fromSkeleton D).obj p.2⟩ : LinearTensor k C D)) ?_
+  intro P
+  obtain ⟨⟨X, Y⟩, rfl⟩ := Quotient.exists_rep P
+  exact ⟨(toSkeleton X, toSkeleton Y), congr_toSkeleton_of_iso
+    (isoMk (fromSkeletonToSkeletonIso X) (fromSkeletonToSkeletonIso Y))⟩
 
 instance {P Q : LinearTensor k C D} [Subsingleton (P.fst ⟶ Q.fst)] : Subsingleton (P ⟶ Q) :=
   inferInstanceAs <| Subsingleton ((P.fst ⟶ Q.fst) ⊗[k] (P.snd ⟶ Q.snd))
