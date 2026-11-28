@@ -145,7 +145,11 @@ namespace TauCeti
 
 namespace IsOrderUnitNorm
 
-variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E] {e : E}
+variable {E : Type*} [SeminormedAddCommGroup E] [PartialOrder E] {e : E}
+
+section Module
+
+variable [Module ℝ E]
 
 /-- Bundle a positive linear map between order-unit spaces as a `PositiveContinuousLinearMap`. -/
 noncomputable def toPositiveContinuousLinearMap {F G : Type*} [SeminormedAddCommGroup F]
@@ -163,7 +167,11 @@ theorem toPositiveContinuousLinearMap_apply {F G : Type*} [SeminormedAddCommGrou
     (hf : IsOrderUnitNorm f) (T : G) (a : E) :
     he.toPositiveContinuousLinearMap hf T a = T a := (rfl)
 
-variable [IsOrderedAddMonoid E]
+end Module
+
+section NormedSpace
+
+variable [NormedSpace ℝ E] [IsOrderedAddMonoid E]
 
 /-- **Kadison's characterization of positivity:** a continuous real linear functional `φ` on an
 order-unit space is monotone if and only if `‖φ‖ = φ e`. -/
@@ -182,6 +190,8 @@ if and only if `‖φ‖ = 1`. -/
 theorem monotone_iff_opNorm_eq_one (he : IsOrderUnitNorm e) {φ : E →L[ℝ] ℝ} (hφ : φ e = 1) :
     Monotone φ ↔ ‖φ‖ = 1 := by
   rw [he.monotone_iff_opNorm_eq_apply, hφ]
+
+end NormedSpace
 
 end IsOrderUnitNorm
 
