@@ -61,10 +61,7 @@ theorem eq_zero_of_matrix_map_eq_zero [IsDomain R] {S : Type*} [CommRing S] [Non
     {e : Matrix n n R} (he : IsIdempotentElem e) (f : R →+* S) (h : e.map f = 0) : e = 0 := by
   classical
   have hdet : (1 - e).det ≠ 0 := fun h0 ↦ by
-    have h1 := congrArg f h0
-    rw [RingHom.map_det, map_sub, map_one, RingHom.mapMatrix_apply, h, sub_zero, det_one,
-      map_zero] at h1
-    exact one_ne_zero h1
+    simpa [RingHom.map_det, Matrix.map_sub, h] using congrArg f h0
   have h1 : (1 - e).det • e = 0 :=
     calc (1 - e).det • e = e * ((1 - e) * (1 - e).adjugate) := by
           rw [mul_adjugate, mul_smul_comm, mul_one]
@@ -104,8 +101,8 @@ theorem exists_isIdempotentElem_matrix_map {ε : Matrix n n K} (hε : IsIdempote
     refine ext_of_mulVec_single fun j ↦ ?_
     rw [← mulVec_mulVec, he]
     refine Submodule.projection_apply_of_mem_left hT ?_
-    rw [LinearMap.mem_ker, hφ, ← hmap, hN, hsingle, mulVec_mulVec, mul_smul_comm, sub_mul, hε.eq,
-      one_mul, sub_self, smul_zero, zero_mulVec]
+    rw [LinearMap.mem_ker, hφ, ← hmap, hN, hsingle, mulVec_mulVec]
+    simp [sub_mul, hε.eq]
   refine ⟨LinearMap.toMatrix' P, ?_, ?_, ?_⟩
   · rw [IsIdempotentElem, ← LinearMap.toMatrix'_comp]
     exact congrArg _ (Submodule.isIdempotentElem_projection hT).eq

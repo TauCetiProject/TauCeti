@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Data.Matrix.Basic
+public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.RingTheory.Ideal.BigOperators
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.Ideal.Operations
@@ -42,6 +43,8 @@ closure proof performs when it propagates a relation through a matrix identity.
   `P * A` (for a left ideal) and `A * Q`.
 * `Matrix.mul_apply_mem_mul`: every entry of `A * B` lies in `I * J` when the entries of `A` lie
   in `I` and those of `B` lie in `J`.
+* `Matrix.trace_mul_mem_of_forall_apply_mem`: the trace of `P * A` lies in a left ideal
+  containing every entry of `A`.
 * `Matrix.sum_smul_apply_mem`: every entry of `∑ a, c a • F a` lies in a submodule containing
   every entry of every `F a`.
 * `Matrix.mul_eq_zero_of_mul_eq_bot`: the product of a matrix with entries in `I` and a matrix
@@ -100,6 +103,12 @@ theorem mul_apply_mem_mul [Semiring S] [Fintype m] {I J : Ideal S} {A : Matrix l
     (A * B) i j ∈ I * J := by
   rw [Matrix.mul_apply]
   exact Ideal.sum_mem _ fun k _ => Ideal.mul_mem_mul (hA i k) (hB k j)
+
+/-- **The trace of a left multiple of a matrix with entries in a left ideal lies in the ideal.**
+Each diagonal entry of `P * A` lies in the ideal. -/
+theorem trace_mul_mem_of_forall_apply_mem [Semiring S] [Fintype m] [Fintype n] {A : Matrix m n S}
+    {I : Ideal S} (hA : ∀ i j, A i j ∈ I) (P : Matrix n m S) : (P * A).trace ∈ I :=
+  Ideal.sum_mem _ fun i _ ↦ mul_apply_mem_left hA P i i
 
 /-- **A submodule containing the entries of a family of matrices contains the entries of every
 linear combination of them.** -/
