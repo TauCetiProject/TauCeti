@@ -452,7 +452,7 @@ theorem norm_le_one_of_mem_quasicentralSet {I : TwoSidedIdeal A} {G : Finset I}
   exact h₁
 
 /-- An element of `I.quasicentralSet G F ε` fixes elements `x ∈ G` on the left within `ε`. -/
-theorem norm_mul_sub_lt_of_mem_quasicentralSet {I : TwoSidedIdeal A} {G : Finset I}
+theorem norm_mul_sub_lt_left_of_mem_quasicentralSet {I : TwoSidedIdeal A} {G : Finset I}
     {F : Finset A} {ε : ℝ} {e : A} (he : e ∈ I.quasicentralSet G F ε) {x : I} (hx : x ∈ G) :
     ‖e * (x : A) - x‖ < ε := by
   obtain ⟨_, _, _, hG, _⟩ := mem_quasicentralSet_iff.mp he
@@ -460,7 +460,7 @@ theorem norm_mul_sub_lt_of_mem_quasicentralSet {I : TwoSidedIdeal A} {G : Finset
   exact hleft
 
 /-- An element of `I.quasicentralSet G F ε` fixes elements `x ∈ G` on the right within `ε`. -/
-theorem norm_sub_mul_lt_of_mem_quasicentralSet {I : TwoSidedIdeal A} {G : Finset I}
+theorem norm_mul_sub_lt_right_of_mem_quasicentralSet {I : TwoSidedIdeal A} {G : Finset I}
     {F : Finset A} {ε : ℝ} {e : A} (he : e ∈ I.quasicentralSet G F ε) {x : I} (hx : x ∈ G) :
     ‖(x : A) * e - x‖ < ε := by
   obtain ⟨_, _, _, hG, _⟩ := mem_quasicentralSet_iff.mp he
@@ -729,10 +729,10 @@ private theorem cesaro_mem_and_mul_lt (I : TwoSidedIdeal A) [IsClosed (I : Set A
   refine ⟨heI, he₀, he₁, fun x hx => ⟨?_, ?_⟩⟩
   · simpa only [smul_mul_assoc, Finset.sum_mul] using
       havg (fun k => u k * (x : A)) x
-        (fun k hk => norm_mul_sub_lt_of_mem_quasicentralSet (hu k hk) hx)
+        (fun k hk => norm_mul_sub_lt_left_of_mem_quasicentralSet (hu k hk) hx)
   · simpa only [mul_smul_comm, Finset.mul_sum] using
       havg (fun k => (x : A) * u k) x
-        (fun k hk => norm_sub_mul_lt_of_mem_quasicentralSet (hu k hk) hx)
+        (fun k hk => norm_mul_sub_lt_right_of_mem_quasicentralSet (hu k hk) hx)
 
 omit [PartialOrder A] [StarOrderedRing A] in
 private theorem norm_commutator_average_sq_le {n : ℕ} {u : ℕ → A} {a : A}
