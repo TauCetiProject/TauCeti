@@ -22,6 +22,11 @@ places `w` with `conj w ≠ w` lie above the places of the maximal real subfield
 
 * `IsDedekindDomain.HeightOneSpectrum.conjPlace`: the conjugate of a finite place.
 * `IsDedekindDomain.HeightOneSpectrum.valuation_conjPlace`: `|conj x|_{conj w} = |x|_w`.
+* `IsDedekindDomain.HeightOneSpectrum.valuation_complexConj`: `|conj x|_w = |x|_{conj w}`, and
+  `IsDedekindDomain.HeightOneSpectrum.valuation_complexConj_of_conjPlace_eq`: conjugation preserves
+  the valuation of a place fixed by conjugation.
+* `IsDedekindDomain.HeightOneSpectrum.map_asIdeal_of_conjPlace_eq`: the ideal of a place fixed by
+  conjugation is stable under conjugation of the integers.
 * `IsDedekindDomain.HeightOneSpectrum.eq_conjPlace_iff`: the conjugate place is the only finite
   place with this property.
 * `IsDedekindDomain.HeightOneSpectrum.conjPlace_conjPlace`: conjugation of finite places is an
@@ -60,5 +65,33 @@ theorem eq_conjPlace_iff {w w' : HeightOneSpectrum (𝓞 E)} :
 theorem conjPlace_conjPlace (w : HeightOneSpectrum (𝓞 E)) : w.conjPlace.conjPlace = w :=
   (eq_conjPlace_iff.2 fun x ↦ by
     rw [← valuation_conjPlace w (complexConj E x), complexConj_apply_apply]).symm
+
+/-- `|conj x|_w = |x|_{conj w}`: the valuation at `w` of a conjugate is the valuation at the
+conjugate place. -/
+theorem valuation_complexConj (w : HeightOneSpectrum (𝓞 E)) (x : E) :
+    w.valuation E ((complexConj E).toRingEquiv x) = w.conjPlace.valuation E x := by
+  rw [AlgEquiv.coe_toRingEquiv, ← valuation_conjPlace w (complexConj E x),
+    complexConj_apply_apply]
+
+/-- At a place with `conj w = w`, complex conjugation preserves the `w`-adic valuation. -/
+theorem valuation_complexConj_of_conjPlace_eq {w : HeightOneSpectrum (𝓞 E)}
+    (h : w.conjPlace = w) (x : E) :
+    w.valuation E ((complexConj E).toRingEquiv x) = w.valuation E x := by
+  rw [valuation_complexConj, h]
+
+/-- The ideal of a finite place fixed by conjugation is stable under conjugation of the
+integers. -/
+theorem map_asIdeal_of_conjPlace_eq {w : HeightOneSpectrum (𝓞 E)} (h : w.conjPlace = w) :
+    w.asIdeal.map (ringOfIntegersComplexConj E) = w.asIdeal := by
+  -- `conj w` is the transport of `w` along conjugation of the integers, whose ideal is the image
+  -- of that of `w`
+  have hw : w.conjPlace =
+      equivOfRingEquiv (RingOfIntegers.mapRingEquiv (complexConj E).toRingEquiv) w :=
+    (eq_conjPlace_iff.2 (RingEquiv.valuation_equivOfRingEquiv _ w)).symm
+  have := asIdeal_equivOfRingEquiv (RingOfIntegers.mapRingEquiv (complexConj E).toRingEquiv) w
+  rw [← hw, h] at this
+  -- `ringOfIntegersComplexConj E` and `RingOfIntegers.mapRingEquiv (complexConj E).toRingEquiv`
+  -- have the same underlying map, so the two images of `w.asIdeal` agree
+  exact this.symm
 
 end IsDedekindDomain.HeightOneSpectrum

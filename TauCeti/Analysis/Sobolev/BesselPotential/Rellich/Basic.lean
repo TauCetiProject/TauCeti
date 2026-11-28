@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
+public import TauCeti.Analysis.Normed.Operator.RangeClosure
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
@@ -76,6 +78,9 @@ is compact.
   `H^s` on which multiplication by `φ` is the identity has compact closure in `H^r`.
 * `BesselPotentialSpace.isCompactOperator_piLp_of_smulLeftCLM_eq`: the same in finite Hilbert sums
   `⨁ₖ H^s ⊆ ⨁ₖ H^r`, for maps between subspaces whose components are fixed by `φ`.
+* `BesselPotentialSpace.isCompactOperator_rangeClosureMap_piMap_inclusion`: the componentwise
+  inclusion between the closures of the ranges of linear maps into `⨁ₖ H^s` and `⨁ₖ H^r` is
+  compact when multiplication by `φ` fixes the components of the values.
 * `BesselPotentialSpace.not_isCompactOperator_inclusion`: the inclusion `H^{s,p} ⊆ H^{r,p}` on the
   whole space is not compact.
 * `BesselPotentialSpace.exists_norm_inclusion_smulLeftCLM_le`,
@@ -404,6 +409,29 @@ theorem isCompactOperator_piLp_of_smulLeftCLM_eq [FiniteDimensional ℂ F] {κ X
   refine ⟨j ⁻¹' K, hj.isCompact_preimage hK, ?_⟩
   rw [← preimage_comp, hjL, preimage_comp]
   exact hi.continuousAt.preimage_mem_nhds (by rwa [hi0])
+
+/-- **Rellich's theorem for closures of ranges in a finite Hilbert sum.** Let `R` and `R'` be
+linear maps from a vector space `D` to the finite Hilbert sums `⨁ₖ H^s(E, F)` and `⨁ₖ H^r(E, F)`,
+for real orders `r < s`, with `R' u` the componentwise inclusion of `R u`. If multiplication by a
+scalar Schwartz function `φ` fixes every component of every `R u`, then the componentwise
+inclusion from the closure of the range of `R` to that of `R'` is compact. The Sobolev spaces of
+functions and of sections on a compact manifold, the closures of the chart readings of smooth
+objects, are of this form. -/
+theorem isCompactOperator_rangeClosureMap_piMap_inclusion [FiniteDimensional ℂ F] {κ D : Type*}
+    [Fintype κ] [AddCommGroup D] [Module ℂ D] (φ : 𝓢(E, ℂ)) (h : r < s)
+    {R : D →ₗ[ℂ] PiLp 2 fun _ : κ ↦ H^{s}(E, F)} {R' : D →ₗ[ℂ] PiLp 2 fun _ : κ ↦ H^{r}(E, F)}
+    (hφ : ∀ u k, smulLeftCLM s φ (R u k) = R u k)
+    (hR : ∀ u, PiLp.piMap 2 (fun _ ↦ inclusion h.le) (R u) = R' u) :
+    IsCompactOperator (R.rangeClosureMap R' (PiLp.piMap 2 fun _ ↦ inclusion h.le) hR) := by
+  refine isCompactOperator_piLp_of_smulLeftCLM_eq φ h (i := Subtype.val) continuous_subtypeVal rfl
+    R'.isClosed_rangeClosure.isClosedEmbedding_subtypeVal (fun x k ↦ ?_)
+    fun x k ↦ by rw [LinearMap.coe_rangeClosureMap_apply, PiLp.piMap_apply]
+  -- The components fixed by `φ` form a closed set containing the range of `R`.
+  have hclosed : IsClosed {y : PiLp 2 fun _ : κ ↦ H^{s}(E, F) | smulLeftCLM s φ (y k) = y k} :=
+    isClosed_eq (by fun_prop) (by fun_prop)
+  refine closure_minimal ?_ hclosed (R.mem_rangeClosure_iff.1 x.property)
+  rintro _ ⟨u, rfl⟩
+  exact hφ u k
 
 section NotCompact
 

@@ -9,9 +9,12 @@ public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
 public import Mathlib.AlgebraicGeometry.Pullbacks
+import TauCeti.AlgebraicGeometry.Morphisms.OpenImmersion
+import TauCeti.AlgebraicGeometry.Restrict
+import TauCeti.CategoryTheory.Comma.Over
 
 /-!
-# Finiteness and quasi-compactness under `Over.pullback` of schemes
+# Base change in the over category of schemes
 
 Mathlib proves stability of `LocallyOfFiniteType` and `QuasiCompact` under `Limits.pullback`,
 which yields `LocallyOfFiniteType (pullback.snd Y.hom f)` and `CompactSpace (pullback Y.hom f)`
@@ -27,11 +30,39 @@ morphisms of schemes.
   morphism of schemes preserves `LocallyOfFiniteType` on structure morphisms in `Over`.
 * `TauCeti.AlgebraicGeometry.compactSpace_over_pullback_obj_left`: base change along a
   quasi-compact morphism of schemes preserves `CompactSpace` on underlying schemes in `Over`.
+* `CategoryTheory.Over.Hom.morphismRestrictPullbackMapIso`: the cartesian square for base
+  change along an open immersion identifies the base-changed map with the open restriction.
+* `CategoryTheory.Over.Hom.isIso_pullback_map_iff_of_isOpenImmersion`: the corresponding
+  isomorphism criterion, using reflection of isomorphisms by `Over.forget`.
 -/
 
 public section
 
 open CategoryTheory Limits AlgebraicGeometry
+
+namespace CategoryTheory.Over.Hom
+
+universe u
+
+/-- Base change of `m` along the open immersion `j` identifies its underlying arrow with
+the restriction of `m.left` to the inverse image of `j.opensRange`. -/
+noncomputable def morphismRestrictPullbackMapIso {T S : Scheme.{u}} {X Y : Over S}
+    (m : X ⟶ Y) (j : T ⟶ S) [IsOpenImmersion j] :
+    Arrow.mk (m.left ∣_ Y.hom ⁻¹ᵁ j.opensRange) ≅ Arrow.mk ((Over.pullback j).map m).left := by
+  have sq := Over.isPullback_pullback_map_left j m
+  rw [Scheme.preimage_opensRange_of_isPullback (IsPullback.of_hasPullback Y.hom j).flip]
+  exact m.left.morphismRestrictArrowIso _ sq.w.symm (Scheme.preimage_opensRange_of_isPullback sq)
+
+/-- Base change of `m` along the open immersion `j` is an isomorphism exactly when its
+underlying morphism restricts to an isomorphism over the inverse image of `j.opensRange`. -/
+theorem isIso_pullback_map_iff_of_isOpenImmersion {T S : Scheme.{u}} {X Y : Over S}
+    (m : X ⟶ Y) (j : T ⟶ S) [IsOpenImmersion j] :
+    IsIso ((Over.pullback j).map m) ↔ IsIso (m.left ∣_ Y.hom ⁻¹ᵁ j.opensRange) :=
+  (isIso_iff_of_reflects_iso ((Over.pullback j).map m) (Over.forget _)).symm.trans
+    ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
+      (m.morphismRestrictPullbackMapIso j)).symm
+
+end CategoryTheory.Over.Hom
 
 namespace TauCeti
 
