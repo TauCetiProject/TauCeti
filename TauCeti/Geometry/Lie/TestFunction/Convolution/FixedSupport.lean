@@ -11,11 +11,13 @@ import Mathlib.MeasureTheory.Integral.Bochner.Set
 /-!
 # Convolution on fixed-support spaces of Lie test functions
 
-The convolution of test functions supported in `C` and `D` is supported in `C * D`.
-For a left-invariant measure, `LieTestFunction.fixedSupportSeminorm_convolution_le` bounds
+`MeasureTheory.Measure.convolutionFixedSupport` restricts convolution to the support bound
+`C * D` using Mathlib's bilinear restriction maps.
+For a left-invariant measure, `MeasureTheory.Measure.fixedSupportSeminorm_convolution_le` bounds
 each output seminorm by the corresponding left-derivative seminorm of the first factor times
-the supremum norm of the second and the measure of the first support. This uses
-`LieTestFunction.leftDeriv_convolution` and Mathlib's bound for a set integral by a constant.
+the supremum norm of the second and the measure of the first support. The proof combines
+`MeasureTheory.Measure.leftDerivWord_convolution` with
+Mathlib's `norm_setIntegral_le_of_norm_le_const`.
 
 `MeasureTheory.Measure.continuous_convolutionFixedSupport` gives joint continuity on the
 fixed-support spaces when the first support bound has finite measure. See Bernstein–Krötz,
@@ -39,12 +41,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- For a left-invariant measure, the seminorm of a convolution for `w` is bounded by the
 product of the seminorm of the first factor for `w`, the supremum norm of the second factor,
 and the measure of the first factor's support closure. -/
-theorem fixedSupportSeminorm_convolution_le [μ.IsMulLeftInvariant] (a b : LieTestFunction I G)
-    (w : List (GroupLieAlgebra I G)) :
+theorem _root_.MeasureTheory.Measure.fixedSupportSeminorm_convolution_le [μ.IsMulLeftInvariant]
+    (a b : LieTestFunction I G) (w : List (GroupLieAlgebra I G)) :
     fixedSupportSeminorm w (convolution μ a b) ≤
       μ.real (tsupport a) * (fixedSupportSeminorm w a * fixedSupportSeminorm [] b) := by
   refine (fixedSupportSeminorm_le_iff w _ (by positivity)).2 fun g ↦ ?_
-  rw [leftDerivWord_convolution, convolution_apply,
+  rw [μ.leftDerivWord_convolution, convolution_apply,
     ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := tsupport a)]
   · rw [mul_comm (μ.real (tsupport a))]
     refine norm_setIntegral_le_of_norm_le_const a.hasCompactSupport.isCompact.measure_lt_top
@@ -67,17 +69,12 @@ fixed-support space for `C * D`. -/
 def _root_.MeasureTheory.Measure.convolutionFixedSupport (μ : Measure G)
     [IsFiniteMeasureOnCompacts μ] :
     FixedSupport I G C →ₗ[ℂ] FixedSupport I G D →ₗ[ℂ] FixedSupport I G (C * D) :=
-  let conv (a : FixedSupport I G C) (b : FixedSupport I G D) : FixedSupport I G (C * D) :=
-    mk _ ((tsupport_convolution_subset μ _ _).trans
-      (mul_subset_mul (tsupport_inclusion_subset a) (tsupport_inclusion_subset b)))
-  have hconv (a b) : inclusion I G (C * D) (conv a b) =
-      LieTestFunction.convolution μ (inclusion I G C a) (inclusion I G D b) :=
-    inclusion_mk ..
-  LinearMap.mk₂ ℂ conv
-    (fun _ _ _ ↦ inclusion_injective (by simp only [hconv, map_add, LinearMap.add_apply]))
-    (fun _ _ _ ↦ inclusion_injective (by simp only [hconv, map_smul, LinearMap.smul_apply]))
-    (fun _ _ _ ↦ inclusion_injective (by simp only [hconv, map_add]))
-    (fun _ _ _ ↦ inclusion_injective (by simp only [hconv, map_smul]))
+  ((LieTestFunction.convolution μ).compl₁₂ (inclusion I G C) (inclusion I G D)).codRestrict₂
+    (inclusion I G (C * D)) inclusion_injective fun a b ↦ by
+      rw [LinearMap.compl₁₂_apply, LinearMap.mem_range]
+      exact ⟨mk _ ((tsupport_convolution_subset μ _ _).trans
+        (mul_subset_mul (tsupport_inclusion_subset a) (tsupport_inclusion_subset b))),
+        inclusion_mk ..⟩
 
 /-- The inclusion of a fixed-support convolution into the space of test functions is the
 convolution of the two inclusions. -/
@@ -85,8 +82,8 @@ convolution of the two inclusions. -/
 theorem _root_.MeasureTheory.Measure.convolutionFixedSupport_inclusion
     (a : FixedSupport I G C) (b : FixedSupport I G D) :
     inclusion I G (C * D) (μ.convolutionFixedSupport a b) =
-      LieTestFunction.convolution μ (inclusion I G C a) (inclusion I G D b) :=
-  (inclusion_mk ..)
+      LieTestFunction.convolution μ (inclusion I G C a) (inclusion I G D b) := by
+  rw [Measure.convolutionFixedSupport, LinearMap.codRestrict₂_apply, LinearMap.compl₁₂_apply]
 
 /-- On fixed-support spaces the convolution seminorm bound uses the measure of `C`. -/
 theorem _root_.MeasureTheory.Measure.seminormFamily_convolutionFixedSupport_le
@@ -95,7 +92,7 @@ theorem _root_.MeasureTheory.Measure.seminormFamily_convolutionFixedSupport_le
     seminormFamily I G (C * D) w (μ.convolutionFixedSupport a b) ≤
       μ.real C * (seminormFamily I G C w a * seminormFamily I G D [] b) := by
   simp only [seminormFamily_apply, Measure.convolutionFixedSupport_inclusion]
-  refine (fixedSupportSeminorm_convolution_le μ _ _ w).trans ?_
+  refine (μ.fixedSupportSeminorm_convolution_le _ _ w).trans ?_
   gcongr
   exact tsupport_inclusion_subset a
 

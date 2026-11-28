@@ -36,7 +36,7 @@ of `a` in the first, and outside `g (supp b)⁻¹` in the second.
 
 * `TauCeti.LieTestFunction.rightDeriv_convolution`: `R(X) (a * b) = a * R(X) b`.
 * `TauCeti.LieTestFunction.leftDeriv_convolution`,
-  `TauCeti.LieTestFunction.leftDerivWord_convolution`:
+  `MeasureTheory.Measure.leftDerivWord_convolution`:
   left differentiation acts on the first factor for a left-invariant measure.
 
 ## References
@@ -153,7 +153,7 @@ theorem leftDeriv_convolution [μ.IsMulLeftInvariant]
 omit [CompleteSpace E] [I.Boundaryless] in
 /-- Iterated left differentiation of a convolution against a left-invariant measure acts on
 the first factor. -/
-theorem leftDerivWord_convolution [μ.IsMulLeftInvariant]
+theorem _root_.MeasureTheory.Measure.leftDerivWord_convolution [μ.IsMulLeftInvariant]
     (a b : LieTestFunction I G) (w : List (GroupLieAlgebra I G)) :
     leftDerivWord w (convolution μ a b) = convolution μ (leftDerivWord w a) b := by
   induction w with
