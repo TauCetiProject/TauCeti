@@ -169,10 +169,8 @@ theorem norm_exp_two_pi_mul_ofReal_mul_I (x : ℝ) : ‖cexp (2 * π * x * I)‖
 /-- `exp (2 π i x) = 1` for real `x` if and only if `x` is an integer. -/
 theorem exp_two_pi_mul_I_mul_ofReal_eq_one_iff (x : ℝ) :
     cexp (2 * π * I * x) = 1 ↔ ∃ n : ℤ, x = n := by
-  rw [Complex.exp_eq_one_iff]
-  have h2πI : (2 * π * I : ℂ) ≠ 0 := two_pi_I_ne_zero
-  refine ⟨fun ⟨n, hn⟩ => ⟨n, ?_⟩, fun ⟨n, hn⟩ => ⟨n, by rw [hn]; push_cast; ring⟩⟩
-  exact_mod_cast mul_left_cancel₀ h2πI (hn.trans (mul_comm _ _))
+  rw [exp_two_pi_mul_I_mul_eq_one_iff (z := (x : ℂ))]
+  exact_mod_cast Iff.rfl
 
 /-- Two logarithms of the same number, divided by `2πi`, differ by an integer; so the vectors
 `(a / 2πi) • v` and `(b / 2πi) • v` differ by an integer multiple of `v`. -/

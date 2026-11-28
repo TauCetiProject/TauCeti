@@ -10,6 +10,7 @@ import TauCeti.Analysis.Complex.Laurent.Expansion
 import TauCeti.Analysis.Complex.Laurent.Periodic
 import TauCeti.Analysis.Complex.Periodic
 import TauCeti.Analysis.Fourier.FourierCoeffOn
+import TauCeti.Analysis.Fourier.RiemannLebesgue
 
 /-!
 # Twisted Fourier analysis of quasi-periodic entire functions
@@ -213,7 +214,7 @@ filter on `ℤ` (by the Riemann–Lebesgue lemma). -/
 theorem tendsto_thetaFourierCoeff_zero (α : ℝ) (s : ℂ → ℂ) :
     Tendsto (thetaFourierCoeff α s) cofinite (𝓝 0) := by
   simpa only [funext (thetaFourierCoeff_def α s)] using
-    tendsto_fourierCoeffOn_zero zero_lt_one (fun t : ℝ => cexp (-2 * π * I * α * t) * s t)
+    tendsto_fourierCoeffOn_cofinite zero_lt_one (fun t : ℝ => cexp (-2 * π * I * α * t) * s t)
 
 /-- An entire function whose twisted Fourier coefficients all vanish is identically zero. -/
 theorem eq_zero_of_thetaFourierCoeff_eq_zero {α : ℝ} {s : ℂ → ℂ} (hs : Differentiable ℂ s)

@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
-import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Fourier.Uniqueness
 import TauCeti.Analysis.Fourier.AddCircle
@@ -25,8 +24,7 @@ integrand of such a coefficient stays interval-integrable
 (`IntervalIntegrable.fourier_smul`), the additivity of `fourierCoeffOn`
 on interval-integrable functions (`TauCeti.fourierCoeffOn_add`, `TauCeti.fourierCoeffOn_sub`),
 the interval counterparts of Mathlib's `fourierCoeff.add`, bounds the coefficients by a sup bound
-on `(a, b]` (`TauCeti.norm_fourierCoeffOn_le`), proves Riemann–Lebesgue decay along `cofinite`
-(`TauCeti.tendsto_fourierCoeffOn_zero`), and computes the coefficients of the
+on `(a, b]` (`TauCeti.norm_fourierCoeffOn_le`), and computes the coefficients of the
 Fourier monomials themselves (`TauCeti.fourierCoeffOn_fourier`), the interval counterpart of
 Mathlib's `fourierCoeff_fourier`, in particular for a circle `c + w e^{2πimt/(b-a)}`
 (`TauCeti.fourierCoeffOn_const_add_mul_fourier`). Conversely, a function continuous on `[a, b]`
@@ -99,31 +97,6 @@ theorem norm_fourierCoeffOn_le (hab : a < b) {g : ℝ → E} {M : ℝ}
   rw [norm_div, norm_one, Real.norm_of_nonneg hba.le]
   calc 1 / (b - a) * _ ≤ 1 / (b - a) * (M * (b - a)) := by gcongr
     _ = M := by field_simp
-
-/-- **Riemann–Lebesgue lemma for interval Fourier coefficients.** The Fourier coefficients of any
-function `f : ℝ → E` on `[a, b]` tend to `0` along the cofinite filter on `ℤ`. -/
-theorem tendsto_fourierCoeffOn_zero (hab : a < b) (f : ℝ → E) :
-    Filter.Tendsto (fourierCoeffOn hab f) Filter.cofinite (nhds 0) := by
-  let g : ℝ → E := Set.indicator (Ioc a b) fun x => (1 / (b - a)) • f x
-  have hba : b - a ≠ 0 := (sub_pos.mpr hab).ne'
-  have htend : Filter.Tendsto (fun n : ℤ => (n : ℝ) * (b - a)⁻¹) Filter.cofinite
-      (Filter.cocompact ℝ) := by
-    refine ((Homeomorph.mulRight₀ (b - a)⁻¹
-      (inv_ne_zero hba)).isClosedEmbedding.tendsto_cocompact).comp ?_
-    simpa [Filter.cocompact_eq_cofinite] using Int.isClosedEmbedding_coe_real.tendsto_cocompact
-  refine ((Real.tendsto_integral_exp_smul_cocompact g).comp htend).congr fun n => ?_
-  dsimp only [Function.comp_def, g]
-  rw [fourierCoeffOn_eq_integral, intervalIntegral.integral_of_le hab.le,
-    ← MeasureTheory.integral_smul, ← MeasureTheory.integral_indicator measurableSet_Ioc]
-  refine MeasureTheory.integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
-  dsimp only
-  by_cases hx : x ∈ Ioc a b
-  · simp only [Set.indicator_of_mem hx, Circle.smul_def, Real.fourierChar_apply, fourier_coe_apply]
-    rw [smul_comm]
-    congr 3
-    push_cast
-    ring
-  · simp only [Set.indicator_of_notMem hx, smul_zero]
 
 /-- On `[a, b]`, the `m`-th Fourier monomial of period `b - a` has Fourier coefficient one at
 frequency `m` and zero at every other frequency. -/
