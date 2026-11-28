@@ -13,10 +13,10 @@ import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 /-!
 # Isogeny criteria over a field
 
-A finite homomorphism of abelian varieties of the same dimension is an isogeny. The finiteness
-criterion for proper homomorphisms then tests for an isogeny by the scheme-theoretic kernel.
-For a composite of homomorphisms, if the first source and target have the same dimension, the
-composite is an isogeny exactly when both factors are. These criteria apply over any field.
+A finite homomorphism of abelian varieties is an isogeny if the source dimension is at least
+the target dimension. In equal dimensions, the scheme-theoretic kernel tests for an isogeny.
+If the source dimension is at least the intermediate dimension, a composite of homomorphisms
+is an isogeny exactly when both factors are. These criteria apply over any field.
 
 ## References
 
@@ -40,15 +40,15 @@ theorem IsIsogeny.dim_eq {f : A ⟶ B} (hf : IsIsogeny f) : A.dim = B.dim := by
   exact (Hom.toSchemeHom f).topologicalKrullDim_eq_of_isClosedMap_of_surjective
     (Hom.toSchemeHom f).isClosedMap
 
-/-- A homomorphism between abelian varieties of the same dimension is an isogeny if its
-underlying scheme morphism is finite. -/
+/-- A finite homomorphism of abelian varieties is an isogeny if the source dimension is at least
+the target dimension. -/
 theorem isIsogeny_of_isFinite (f : A ⟶ B) [IsFinite (Hom.toSchemeHom f)]
-    (hdim : A.dim = B.dim) : IsIsogeny f := by
+    (hdim : B.dim ≤ A.dim) : IsIsogeny f := by
   have : CompactSpace B.toScheme := QuasiCompact.compactSpace_of_compactSpace B.toOver.hom
   exact (isIsogeny_iff f).mpr ⟨inferInstance,
     (Hom.toSchemeHom f).surjective_of_isClosed_range_of_topologicalKrullDim_le
       (Hom.toSchemeHom f).isClosedMap.isClosed_range
-      (topologicalKrullDim_ne_top_of_locallyOfFiniteType B.toOver.hom) hdim.ge⟩
+      (topologicalKrullDim_ne_top_of_locallyOfFiniteType B.toOver.hom) hdim⟩
 
 /-- A homomorphism of abelian varieties is an isogeny exactly when the dimensions agree and
 its scheme-theoretic kernel is finite over the base field. -/
@@ -65,11 +65,11 @@ theorem isIsogeny_iff_dim_eq_and_isFinite_kernel (f : A ⟶ B) :
   rw [hg] at hfin
   exact ⟨fun hf ↦ ⟨hf.dim_eq, hfin.mp hf.isFinite⟩, fun ⟨hdim, hk⟩ ↦
     have := hfin.mpr hk
-    isIsogeny_of_isFinite f hdim⟩
+    isIsogeny_of_isFinite f hdim.ge⟩
 
-/-- If the intermediate abelian variety has the same dimension as the source, a composite
-is an isogeny exactly when both factors are isogenies. -/
-theorem isIsogeny_comp_iff (f : A ⟶ B) (g : B ⟶ C) (hdim : A.dim = B.dim) :
+/-- If the source dimension is at least the intermediate dimension, a composite is an isogeny
+exactly when both factors are isogenies. -/
+theorem isIsogeny_comp_iff (f : A ⟶ B) (g : B ⟶ C) (hdim : B.dim ≤ A.dim) :
     IsIsogeny (f ≫ g) ↔ IsIsogeny f ∧ IsIsogeny g := by
   refine ⟨fun hfg ↦ ?_, fun ⟨hf, hg⟩ ↦ hf.comp hg⟩
   have hcomp := hfg.isFinite
