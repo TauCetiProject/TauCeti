@@ -82,9 +82,9 @@ theorem sum_value_le_sum_prefix {n : ℕ} {v w : Fin n → R} (hv : ∀ i, 0 ≤
 value per unit of weight, if the items up to and including item `k` weigh more than the capacity
 `W`, then every set of items of weight at most `W` is worth at most the first `k` items together
 with item `k`. -/
-theorem sum_value_le_sum_prefix_add {n : ℕ} {v w : Fin n → R} (hv : ∀ i, 0 ≤ v i)
-    (hw : ∀ i, 0 ≤ w i) (hsort : ∀ i j, i < j → v j * w i ≤ v i * w j) {W : R} (k : Fin n)
-    (hW : W < ∑ i with i ≤ k, w i) {A : Finset (Fin n)} (hA : ∑ i ∈ A, w i ≤ W) :
+theorem sum_value_le_sum_prefix_add [Fintype ι] [LinearOrder ι] {v w : ι → R}
+    (hv : ∀ i, 0 ≤ v i) (hw : ∀ i, 0 ≤ w i) (hsort : ∀ i j, i < j → v j * w i ≤ v i * w j)
+    {W : R} (k : ι) (hW : W < ∑ i with i ≤ k, w i) {A : Finset ι} (hA : ∑ i ∈ A, w i ≤ W) :
     ∑ i ∈ A, v i ≤ ∑ i with i < k, v i + v k := by
   have hk : univ.filter (· ≤ k) = insert k (univ.filter (· < k)) := by
     ext i
@@ -100,9 +100,9 @@ set of items of weight at most `W` is worth at most twice the larger of the valu
 `k` items and the value of item `k`. When the first `k` items and item `k` each weigh at most
 `W`, the more valuable of these two sets is thus a set of weight at most `W` worth at least half
 of every such set. -/
-theorem sum_value_le_two_mul_max {n : ℕ} {v w : Fin n → R} (hv : ∀ i, 0 ≤ v i)
-    (hw : ∀ i, 0 ≤ w i) (hsort : ∀ i j, i < j → v j * w i ≤ v i * w j) {W : R} (k : Fin n)
-    (hW : W < ∑ i with i ≤ k, w i) {A : Finset (Fin n)} (hA : ∑ i ∈ A, w i ≤ W) :
+theorem sum_value_le_two_mul_max [Fintype ι] [LinearOrder ι] {v w : ι → R}
+    (hv : ∀ i, 0 ≤ v i) (hw : ∀ i, 0 ≤ w i) (hsort : ∀ i j, i < j → v j * w i ≤ v i * w j)
+    {W : R} (k : ι) (hW : W < ∑ i with i ≤ k, w i) {A : Finset ι} (hA : ∑ i ∈ A, w i ≤ W) :
     ∑ i ∈ A, v i ≤ 2 * max (∑ i with i < k, v i) (v k) :=
   (sum_value_le_sum_prefix_add hv hw hsort k hW hA).trans <| by
     rw [two_mul]
