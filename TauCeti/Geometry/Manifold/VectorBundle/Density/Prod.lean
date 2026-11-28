@@ -20,11 +20,13 @@ A density `μ` at a point `x` of a manifold `M` and a density `ν` at `y ∈ N` 
 `TauCeti.Density.prod` on `T_x M × T_y N`, read on the tangent space of the product through
 `TauCeti.Manifold.tangentSpaceProdEquiv`. On a pair of tuples of tangent vectors to the two
 factors it is the product of the values of `μ` and `ν`
-(`TauCeti.DensityBundle.prod_apply_append`), and it is bilinear.
+(`TauCeti.DensityBundle.prod_apply_append`). It is bilinear, and it vanishes only when a factor
+does (`TauCeti.DensityBundle.prod_eq_zero_iff`).
 
 The product of two `C^n` density sections is a `C^n` density section on `M × N`
-(`TauCeti.DensityBundle.contMDiff_prod`). In the preferred local frames the product reads as the
-product of the two factor readings, up to a constant depending only on the model spaces
+(`TauCeti.DensityBundle.contMDiff_prod`; pointwise, `TauCeti.DensityBundle.contMDiffAt_prod`).
+In the preferred local frames the product reads as the product of the two factor readings, up to
+a constant depending only on the model spaces
 (`TauCeti.DensityBundle.prod_apply_trivializationAt_symm`), since the inverse tangent
 trivialization of a product is the product of the inverse trivializations of the factors.
 
@@ -89,7 +91,25 @@ theorem prod_smul {x : M} {y : N} (a : ℝ) (μ : DensityBundle I M x) (ν : Den
     prod μ (a • ν) = a • prod μ ν := by
   simp [prod, Density.prod_smul]
 
+@[simp]
+theorem zero_prod {x : M} {y : N} (ν : DensityBundle J N y) :
+    prod (0 : DensityBundle I M x) ν = 0 := by
+  simp [prod]
+
+@[simp]
+theorem prod_zero {x : M} {y : N} (μ : DensityBundle I M x) :
+    prod μ (0 : DensityBundle J N y) = 0 := by
+  simp [prod]
+
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+
+/-- A product of densities vanishes only when one of its factors does. -/
+@[simp]
+theorem prod_eq_zero_iff {x : M} {y : N} {μ : DensityBundle I M x} {ν : DensityBundle J N y} :
+    prod μ ν = 0 ↔ μ = 0 ∨ ν = 0 := by
+  rw [prod, LinearEquiv.map_eq_zero_iff]
+  exact Density.prod_eq_zero_iff (TauCeti.finrank_tangentSpace x) (TauCeti.finrank_tangentSpace y)
+    finrank_prod.symm
 
 /-- **The product density on product frames.** On tangent vectors `(v i, 0)` followed by
 `(0, w j)`, the product of densities `μ` at `x` and `ν` at `y` takes the value `μ v * ν w`. -/
@@ -191,20 +211,20 @@ theorem prod_apply_trivializationAt_symm {p₀ p : M × N}
 
 variable {n : WithTop ℕ∞}
 
-/-- **Products of smooth densities are smooth.** If `μ` and `ν` are `C^n` density sections on `M`
-and on `N`, then `(x, y) ↦ prod (μ x) (ν y)` is a `C^n` density section on `M × N`. -/
-theorem contMDiff_prod {μ : ∀ x, DensityBundle I M x} {ν : ∀ y, DensityBundle J N y}
-    (hμ : ContMDiff I (I.prod 𝓘(ℝ)) n (fun x ↦ TotalSpace.mk' ℝ x (μ x)))
-    (hν : ContMDiff J (J.prod 𝓘(ℝ)) n (fun y ↦ TotalSpace.mk' ℝ y (ν y))) :
-    ContMDiff (I.prod J) ((I.prod J).prod 𝓘(ℝ)) n
+/-- **Products of smooth densities are smooth.** If the density sections `μ` on `M` and `ν` on
+`N` are `C^n` at `p₀.1` and at `p₀.2`, then `(x, y) ↦ prod (μ x) (ν y)` is a density section on
+`M × N` that is `C^n` at `p₀`. -/
+theorem contMDiffAt_prod {μ : ∀ x, DensityBundle I M x} {ν : ∀ y, DensityBundle J N y}
+    {p₀ : M × N} (hμ : ContMDiffAt I (I.prod 𝓘(ℝ)) n (fun x ↦ TotalSpace.mk' ℝ x (μ x)) p₀.1)
+    (hν : ContMDiffAt J (J.prod 𝓘(ℝ)) n (fun y ↦ TotalSpace.mk' ℝ y (ν y)) p₀.2) :
+    ContMDiffAt (I.prod J) ((I.prod J).prod 𝓘(ℝ)) n
       (fun p : M × N ↦
-        TotalSpace.mk' ℝ (E := DensityBundle (I.prod J) (M × N)) p (prod (μ p.1) (ν p.2))) := by
-  intro p₀
+        TotalSpace.mk' ℝ (E := DensityBundle (I.prod J) (M × N)) p (prod (μ p.1) (ν p.2))) p₀ := by
   refine (Density.contMDiffAt_section_iff (F := E × E') (V := TangentSpace (I.prod J))
     (s := fun p : M × N ↦ (prod (μ p.1) (ν p.2) : DensityBundle (I.prod J) (M × N) p)) p₀).2 ?_
-  have h₁ := ((Density.contMDiffAt_section_iff p₀.1).1 (hμ p₀.1)).comp p₀
+  have h₁ := ((Density.contMDiffAt_section_iff p₀.1).1 hμ).comp p₀
     (contMDiffAt_fst (I := I) (J := J))
-  have h₂ := ((Density.contMDiffAt_section_iff p₀.2).1 (hν p₀.2)).comp p₀
+  have h₂ := ((Density.contMDiffAt_section_iff p₀.2).1 hν).comp p₀
     (contMDiffAt_snd (I := I) (J := J))
   -- In the preferred frames the product density is a constant times the product of the two
   -- factor readings; the constant is the one of `prod_apply_trivializationAt_symm`, read off by
@@ -213,5 +233,15 @@ theorem contMDiff_prod {μ : ∀ x, DensityBundle I M x} {ν : ∀ y, DensityBun
     Filter.eventually_of_mem
       ((chartAt (ModelProd H H') p₀).open_source.mem_nhds (mem_chart_source _ p₀))
       fun p hp ↦ prod_apply_trivializationAt_symm hp (μ p.1) (ν p.2)
+
+/-- **Products of smooth densities are smooth.** If `μ` and `ν` are `C^n` density sections on `M`
+and on `N`, then `(x, y) ↦ prod (μ x) (ν y)` is a `C^n` density section on `M × N`. -/
+theorem contMDiff_prod {μ : ∀ x, DensityBundle I M x} {ν : ∀ y, DensityBundle J N y}
+    (hμ : ContMDiff I (I.prod 𝓘(ℝ)) n (fun x ↦ TotalSpace.mk' ℝ x (μ x)))
+    (hν : ContMDiff J (J.prod 𝓘(ℝ)) n (fun y ↦ TotalSpace.mk' ℝ y (ν y))) :
+    ContMDiff (I.prod J) ((I.prod J).prod 𝓘(ℝ)) n
+      (fun p : M × N ↦
+        TotalSpace.mk' ℝ (E := DensityBundle (I.prod J) (M × N)) p (prod (μ p.1) (ν p.2))) :=
+  fun p₀ ↦ contMDiffAt_prod (hμ p₀.1) (hν p₀.2)
 
 end TauCeti.DensityBundle

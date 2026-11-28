@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Products.Basic
+public import TauCeti.CategoryTheory.DoubleCategory.Functor
 public import TauCeti.CategoryTheory.DoubleCategory.Transpose
 
 /-!
@@ -212,6 +213,35 @@ theorem hWhiskerLeft_obj (p : Edge H a b) (q : D.HorizontalGlobular b c) :
 theorem hWhiskerLeft_map_cell (p : Edge H a b) {q r : D.HorizontalGlobular b c} (α : q ⟶ r) :
     ((D.hWhiskerLeft p).map α).cell = D.hComp (D.vId p) α.cell :=
   rfl
+
+namespace HorizontalGlobular
+
+variable {D} {a b : O}
+
+/-- Equality of horizontal edges, viewed as a globular morphism, transports the identity cell. -/
+@[simp]
+theorem eqToHom_cell {p q : D.HorizontalGlobular a b} (h : p = q) :
+    (eqToHom h).cell = (D.vId p.edge).cast rfl (congrArg edge h) rfl rfl := by
+  cases h
+  rfl
+
+/-- Precomposition by an equality morphism transports the top boundary of a globular cell. -/
+@[simp high]
+theorem eqToHom_comp_cell {p p' q : D.HorizontalGlobular a b} (h : p = p') (α : p' ⟶ q) :
+    (eqToHom h ≫ α).cell = α.cell.cast (congrArg edge h).symm rfl rfl rfl := by
+  cases h
+  simp
+
+/-- Equality morphisms on both sides transport the top and bottom boundaries of a cell. -/
+theorem eqToHom_comp_eqToHom_cell {p p' q q' : D.HorizontalGlobular a b}
+    (h : p = p') (α : p' ⟶ q) (h' : q = q') :
+    (eqToHom h ≫ α ≫ eqToHom h').cell =
+      α.cell.cast (congrArg edge h).symm (congrArg edge h') rfl rfl := by
+  cases h
+  cases h'
+  simp
+
+end HorizontalGlobular
 
 /-- An invertible horizontal globular cell between the horizontal edges `p` and `q`: an
 isomorphism from `p` to `q` in the horizontal globular category. -/
@@ -583,3 +613,66 @@ end BoundaryChange
 end StrictDoubleCategory
 
 end TauCeti
+
+namespace TauCeti.StrictDoubleFunctor
+
+open CategoryTheory TauCeti.StrictDoubleCategory TauCeti.DoubleCategoryStruct
+
+universe s₁ s₂ s₃ u₁ u₂ u₃ h₁ h₂ h₃ v₁ v₂ v₃
+
+variable {O₁ : Type u₁} {H₁ : Category.{h₁} O₁} {V₁ : Category.{v₁} O₁}
+  {O₂ : Type u₂} {H₂ : Category.{h₂} O₂} {V₂ : Category.{v₂} O₂}
+  {D₁ : StrictDoubleCategory.{s₁} O₁ H₁ V₁} {D₂ : StrictDoubleCategory.{s₂} O₂ H₂ V₂}
+
+/-- A strict double functor acts on horizontal globular hom-categories. Vertical identity
+boundaries are identified using preservation of vertical identities. -/
+-- Exposure lets the boundary types of mapped cells compute.
+@[expose]
+def horizontalGlobularFunctor (F : StrictDoubleFunctor D₁ D₂) (a b : O₁) :
+    D₁.HorizontalGlobular a b ⥤ D₂.HorizontalGlobular (F.obj a) (F.obj b) where
+  obj p := ⟨F.hMap p.edge⟩
+  map α := ⟨(F.map α.cell).cast rfl rfl (F.vMap_id a) (F.vMap_id b)⟩
+  map_id p := by
+    ext
+    simp
+  map_comp α β := by
+    ext
+    simp [HorizontalGlobular.comp_cell]
+
+@[simp]
+theorem horizontalGlobularFunctor_obj_edge (F : StrictDoubleFunctor D₁ D₂) (a b : O₁)
+    (p : D₁.HorizontalGlobular a b) :
+    ((F.horizontalGlobularFunctor a b).obj p).edge = F.hMap p.edge :=
+  (rfl)
+
+@[simp]
+theorem horizontalGlobularFunctor_map_cell (F : StrictDoubleFunctor D₁ D₂) {a b : O₁}
+    {p q : D₁.HorizontalGlobular a b} (α : p ⟶ q) :
+    ((F.horizontalGlobularFunctor a b).map α).cell =
+      (F.map α.cell).cast rfl rfl (F.vMap_id a) (F.vMap_id b) :=
+  (rfl)
+
+/-- The identity double functor acts identically on each globular hom-category. -/
+@[simp]
+theorem id_horizontalGlobularFunctor (a b : O₁) :
+    (StrictDoubleFunctor.id D₁).horizontalGlobularFunctor a b =
+      𝟭 (D₁.HorizontalGlobular a b) :=
+  (rfl)
+
+/-- The action on globular hom-categories preserves composition of double functors. -/
+@[simp]
+theorem comp_horizontalGlobularFunctor {O₃ : Type u₃} {H₃ : Category.{h₃} O₃}
+    {V₃ : Category.{v₃} O₃} {D₃ : StrictDoubleCategory.{s₃} O₃ H₃ V₃}
+    (F : StrictDoubleFunctor D₁ D₂) (G : StrictDoubleFunctor D₂ D₃) (a b : O₁) :
+    (F.comp G).horizontalGlobularFunctor a b =
+      F.horizontalGlobularFunctor a b ⋙ G.horizontalGlobularFunctor (F.obj a) (F.obj b) := by
+  -- Compute the object maps before applying dependent functor extensionality.
+  dsimp only [horizontalGlobularFunctor, StrictDoubleFunctor.comp]
+  refine CategoryTheory.Functor.ext ?_ ?_
+  · intro p
+    rfl
+  · intro p q α
+    apply HorizontalGlobular.hom_ext
+    simp
+
+end TauCeti.StrictDoubleFunctor

@@ -256,7 +256,7 @@ theorem subsingleton_of_projective (h : IsMinimalProjectivePresentation p‚ÇÅ p‚Ç
     exact LinearMap.ker_zero
   have hsup := h.isSuperfluous_ker
   rw [hker] at hsup
-  exact isSuperfluous_top_iff.mp hsup
+  exact (Submodule.subsingleton_iff R).mp (isSuperfluous_top_iff.mp hsup)
 
 end IsMinimalProjectivePresentation
 

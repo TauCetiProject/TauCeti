@@ -20,8 +20,9 @@ A point of `[0, n)` in an ordered ring with a floor operation is the sum of an i
 `Fin n` and a remainder in `[0, 1)`. This describes, for example, time along one of the
 finitely many edges in a polygonal boundary parametrization. In the same way, a `1`-periodic
 function is determined by its values on `[0, 1)`: it takes the same value at `t` and at the
-fractional part of `t`. The integers in `[a, y)` number `max (y - a) 0` up to one, and for
-`N ≠ 0` only finitely many points `q` of a closed interval have `N q` an integer.
+fractional part of `t`. The integers in `[a, y)` number `max (y - a) 0` up to one, a closed
+interval `[a, b]` with `a ≤ b + 1` contains at most `b - a + 1` integers, and for `N ≠ 0` only
+finitely many points `q` of a closed interval have `N q` an integer.
 
 For a step `δ > 0` in a linearly ordered field with an integer floor, the multiples of `δ` cut
 the line into the closed intervals `[δ m, δ (m + 1)]` with `m ∈ ℤ`. Every point `x` lies in the
@@ -47,6 +48,7 @@ only finitely many rounded families have entries in `[-R, R]`.
   that coordinate into `[0, 1]`.
 * `Nat.cast_lt_iff_le_ceil_sub_one`: `(n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1` for natural `n`.
 * `TauCeti.abs_card_Ico_ceil_sub_le`: `|#[a, ⌈y⌉) - max (y - a) 0| ≤ 1` for an integer `a`.
+* `TauCeti.card_Icc_ceil_floor_le`: `#[⌈a⌉, ⌊b⌋] ≤ b - a + 1` for `a ≤ b + 1`.
 * `TauCeti.finite_setOf_mem_Icc_natCast_mul_eq_intCast`: for `N ≠ 0`, the points `q` of
   `[a, b]` with `N q` an integer form a finite set.
 * `TauCeti.fract_inv_two`: `{1/2} = 1/2`.
@@ -168,6 +170,15 @@ theorem abs_card_Ico_ceil_sub_le {R : Type*} [Ring R] [LinearOrder R] [IsStrictO
       abs_le]
     exact ⟨(neg_nonpos.2 zero_le_one).trans (sub_nonneg.2 (Int.le_ceil y)),
       (sub_lt_iff_lt_add'.2 (Int.ceil_lt_add_one y)).le⟩
+
+/-- The closed interval `[a, b]` contains at most `b - a + 1` integers, for `a ≤ b + 1`. -/
+theorem card_Icc_ceil_floor_le {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+    [FloorRing R] {a b : R} (hab : a ≤ b + 1) :
+    ((Finset.Icc ⌈a⌉ ⌊b⌋).card : R) ≤ b - a + 1 := by
+  rw [Int.card_Icc, ← Int.cast_natCast]
+  push_cast [Int.toNat_eq_max, sub_add_eq_add_sub]
+  exact max_le (sub_le_sub ((add_le_add_iff_right 1).2 (Int.floor_le b)) (Int.le_ceil a))
+    (sub_nonneg.2 hab)
 
 /-- In an ordered ring with an integer floor, the points `q` of `[a, b]` with `N q` an integer
 for a fixed `N ≠ 0` form a finite set. In a field these are the points of `[a, b]` in

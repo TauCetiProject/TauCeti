@@ -25,8 +25,9 @@ with a basis of `n` vectors have a **product** `μ.prod ν`, a density on `V × 
 `(μ.prod ν) (v × w) = μ v * ν w` for all tuples `v` of `V` and `w` of `W`
 (`TauCeti.Density.prod_apply_append`). The right side does not depend on the choice of the bases,
 because a change of product bases has the product determinant (`Module.Basis.det_prod`). The
-product is bilinear (`TauCeti.Density.prodₗ`), and on top-dimensional densities it identifies the
-tensor product of the density lines of `V` and `W` with the density line of `V × W`
+product is bilinear (`TauCeti.Density.prodₗ`). On top-dimensional densities it vanishes only
+when a factor does (`TauCeti.Density.prod_eq_zero_iff`), and it identifies the tensor product of
+the density lines of `V` and `W` with the density line of `V × W`
 (`TauCeti.Density.prodTensorEquiv`). This is the linear algebra behind the identification of the
 density bundle of a product manifold with the external tensor product of the density bundles of
 its factors.
@@ -218,6 +219,24 @@ def prodₗ : Density V m →ₗ[ℝ] Density W n →ₗ[ℝ] Density (V × W) k
 @[simp]
 theorem prodₗ_apply (μ : Density V m) (ν : Density W n) : prodₗ V W m n k μ ν = μ.prod ν :=
   (rfl)
+
+@[simp]
+theorem zero_prod (ν : Density W n) : ((0 : Density V m).prod ν : Density (V × W) k) = 0 :=
+  (prodₗ V W m n k).map_zero₂ ν
+
+@[simp]
+theorem prod_zero (μ : Density V m) : (μ.prod (0 : Density W n) : Density (V × W) k) = 0 :=
+  (prodₗ V W m n k μ).map_zero
+
+/-- When `V` and `W` have dimensions `m` and `n` and `m + n = k`, a product of densities
+vanishes only when one of its factors does. -/
+theorem prod_eq_zero_iff [FiniteDimensional ℝ V] [FiniteDimensional ℝ W] (hm : finrank ℝ V = m)
+    (hn : finrank ℝ W = n) (h : m + n = k) {μ : Density V m} {ν : Density W n} :
+    (μ.prod ν : Density (V × W) k) = 0 ↔ μ = 0 ∨ ν = 0 := by
+  let b := finBasisOfFinrankEq ℝ V hm
+  let c := finBasisOfFinrankEq ℝ W hn
+  rw [← apply_basis_eq_zero_iff _ ((b.prod c).reindex (finSumFinEquiv.trans (finCongr h))),
+    prod_apply_reindex_prod, mul_eq_zero, apply_basis_eq_zero_iff, apply_basis_eq_zero_iff]
 
 /-- **The density line of a product.** For finite-dimensional `V` and `W` of dimensions `m` and
 `n` and `m + n = k`, the product of densities is a linear equivalence from the tensor product of

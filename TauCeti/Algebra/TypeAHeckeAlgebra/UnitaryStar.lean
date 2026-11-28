@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.Subalgebra
-public import TauCeti.Algebra.Star.Unitary
+public import TauCeti.Algebra.Star.Unitary.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Complement
 import TauCeti.Algebra.Star.SelfAdjoint
 
