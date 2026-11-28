@@ -41,15 +41,19 @@ under isomorphism of `f` need not be cut out by a sentence.
   separating analytic sets with no isomorphic pair (or disjoint analytic sets with one side
   isomorphism invariant) by an `L_{ω₁ω}` sentence, for relational languages of arbitrary
   cardinality.
+* `TauCeti.RelationalConfiguration.exists_modelsOf_eq_of_analyticSet_compl`:
+  **Suslin–López–Escobar**, showing that every isomorphism-invariant bi-analytic set of
+  configurations is the model class of an `L_{ω₁ω}` sentence.
 * `TauCeti.RelationalConfiguration.exists_modelsOf_eq_iff`: **López–Escobar's theorem**,
   characterizing model classes of `L_{ω₁ω}` sentences on a countable carrier as the
   isomorphism-invariant measurable sets, for relational languages of arbitrary cardinality.
+* `TauCeti.RelationalConfiguration.exists_sentence_separating_preimage` and
+  `TauCeti.RelationalConfiguration.exists_sentence_mem_modelsOf_iff`: **relative separation**
+  and **relative López–Escobar** along a measurable family parametrized by a standard Borel space,
+  in a countable relational vocabulary.
 * `TauCeti.RelationalConfiguration.lopezEscobar_action_iff`: López–Escobar's theorem in action form:
   on a countable carrier the measurable fixed blocks of the logic action are exactly the model
   classes `modelsOf φ`.
-* `TauCeti.RelationalConfiguration.exists_sentence_mem_modelsOf_iff`: **relative López–Escobar**
-  along a measurable family parametrized by a standard Borel space, in a countable relational
-  vocabulary.
 
 ## References
 
@@ -516,6 +520,16 @@ theorem exists_sentence_separating [Countable V]
   exists_sentence_separating_of_forall_not_isoSetoid hA hB fun _ ha _ hb hab =>
     disjoint_left.1 hAB ha ((hB_inv.mem_iff hab).2 hb)
 
+/-- **Suslin–López–Escobar theorem.** On a countable carrier, in a relational language of arbitrary
+cardinality, an isomorphism-invariant bi-analytic set of configurations is the model class of a
+single `L_{ω₁ω}` sentence. -/
+theorem exists_modelsOf_eq_of_analyticSet_compl [Countable V]
+    {A : Set (RelationalConfiguration L V)} (hA : AnalyticSet A) (hAc : AnalyticSet Aᶜ)
+    (hinv : IsomorphismInvariant A) :
+    ∃ θ : L.Sentenceω, modelsOf (V := V) θ = A := by
+  obtain ⟨θ, hsub, hdisj⟩ := exists_sentence_separating hA hAc hinv.compl disjoint_compl_right
+  exact ⟨θ, (disjoint_compl_left_iff_subset.1 hdisj).antisymm hsub⟩
+
 /-- **López–Escobar's theorem.** On a countable carrier, in a relational language of arbitrary
 cardinality, the subsets of `RelationalConfiguration L V` of the form `modelsOf θ` for an `L_{ω₁ω}`
 sentence `θ` are precisely the isomorphism-invariant measurable sets. -/
@@ -535,12 +549,27 @@ theorem exists_modelsOf_eq_iff [Countable V] {B : Set (RelationalConfiguration L
     dsimp only
     rw [hsmul]
     exact hB_inv σ (smul_mem_smul_set hc₀)
-  obtain ⟨θ₀, hsub, hdisj⟩ := exists_sentence_separating hB₀_meas.analyticSet
-    hB₀_meas.compl.analyticSet hB₀_inv.compl disjoint_compl_right
-  have hθ₀ : modelsOf θ₀ = B₀ :=
-    (disjoint_compl_left_iff_subset.1 hdisj).antisymm hsub
+  obtain ⟨θ₀, hθ₀⟩ := exists_modelsOf_eq_of_analyticSet_compl hB₀_meas.analyticSet
+    hB₀_meas.compl.analyticSet hB₀_inv
   refine ⟨ι₀.onBoundedFormulaInf θ₀, ?_⟩
   rw [ι₀.modelsOf_onBoundedFormulaInf, hθ₀]
+
+/-- **Relative sentence separation along a Borel map.** Let `X` be a standard Borel space and
+`f : X → RelationalConfiguration L V` a measurable map into configurations on a countable carrier
+in a countable relational vocabulary. If `U` and `W` are measurable subsets of `X` whose `f`-images
+contain no isomorphic pair, then some `L_{ω₁ω}` sentence `θ` satisfies `U ⊆ f ⁻¹' modelsOf θ` and
+`Disjoint W (f ⁻¹' modelsOf θ)`. -/
+theorem exists_sentence_separating_preimage {X : Type*} [MeasurableSpace X] [StandardBorelSpace X]
+    [∀ n, Countable (L.Relations n)] [Countable V]
+    {f : X → RelationalConfiguration L V} (hf : Measurable f) {U W : Set X}
+    (hU : MeasurableSet U) (hW : MeasurableSet W)
+    (hUW : ∀ x ∈ U, ∀ y ∈ W, ¬ isoSetoid L V (f x) (f y)) :
+    ∃ θ : L.Sentenceω, U ⊆ f ⁻¹' modelsOf θ ∧ Disjoint W (f ⁻¹' modelsOf θ) := by
+  obtain ⟨θ, hsub, hdisj⟩ := exists_sentence_separating_of_forall_not_isoSetoid
+    (hU.analyticSet_image hf) (hW.analyticSet_image hf) (by
+      rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩ hxy
+      exact hUW x hx y hy hxy)
+  exact ⟨θ, image_subset_iff.1 hsub, disjoint_image_left.1 hdisj⟩
 
 /-- **Relative López–Escobar.** Let `X` be a standard Borel space and
 `f : X → RelationalConfiguration L V` a measurable family of configurations on a countable carrier
@@ -551,14 +580,9 @@ theorem exists_sentence_mem_modelsOf_iff {X : Type*} [MeasurableSpace X] [Standa
     {f : X → RelationalConfiguration L V} (hf : Measurable f) {U : Set X} (hU : MeasurableSet U)
     (hinv : ∀ x y, isoSetoid L V (f x) (f y) → (x ∈ U ↔ y ∈ U)) :
     ∃ θ : L.Sentenceω, ∀ x, f x ∈ modelsOf θ ↔ x ∈ U := by
-  have hAU : AnalyticSet (f '' U) := hU.analyticSet_image hf
-  have hBU : AnalyticSet (f '' Uᶜ) := hU.compl.analyticSet_image hf
-  obtain ⟨θ, hsub, hdisj⟩ := exists_sentence_separating_of_forall_not_isoSetoid hAU hBU
-    (by
-      rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩ hxy
-      exact hy ((hinv x y hxy).1 hx))
-  refine ⟨θ, fun x => ⟨fun hθ => by_contra fun hx => ?_, fun hx => hsub ⟨x, hx, rfl⟩⟩⟩
-  exact disjoint_left.1 hdisj ⟨x, mem_compl hx, rfl⟩ hθ
+  obtain ⟨θ, hsub, hdisj⟩ := exists_sentence_separating_preimage hf hU hU.compl
+    fun x hx y hy hxy => hy ((hinv x y hxy).1 hx)
+  exact ⟨θ, fun x => ⟨fun hθ => by_contra fun hx => disjoint_left.1 hdisj hx hθ, fun hx => hsub hx⟩⟩
 
 end Main
 

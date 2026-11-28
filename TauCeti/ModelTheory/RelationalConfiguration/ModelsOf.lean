@@ -35,6 +35,7 @@ Descriptive Set Theory*, and Kechris, *Classical Descriptive Set Theory*.
 
 * `TauCeti.RelationalConfiguration.modelsOf`: the configurations on `V` decoding to models of a
   sentence.
+* `TauCeti.RelationalConfiguration.isoSetoidOn`: isomorphism restricted to `modelsOf φ`.
 
 ## Main results
 
@@ -228,5 +229,13 @@ theorem isomorphismInvariant_modelsOf (φ : L.SentenceInf ι) :
   isomorphismInvariant_iff.2 fun _ _ h hc => by
     obtain ⟨e⟩ := isoSetoid_apply.1 h
     exact (e.mem_modelsOf_iff φ).1 hc
+
+variable (V) in
+/-- Isomorphism of decoded structures, restricted to the configurations on `V` that decode to
+models of `φ`: isomorphism on the class `modelsOf φ`. Its classes are the isomorphism classes of
+the models of `φ` with carrier `V`. It is an abbreviation, so results stated for `classIso` apply
+to it. -/
+abbrev isoSetoidOn (φ : L.SentenceInf ι) : Setoid (modelsOf (V := V) φ) :=
+  classIso (modelsOf φ)
 
 end TauCeti.RelationalConfiguration

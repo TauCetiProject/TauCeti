@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.RelationalConfiguration.ClassIso
 public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 public import TauCeti.SetTheory.Descriptive.Antichain
 import TauCeti.SetTheory.Descriptive.Silver
@@ -99,14 +98,6 @@ namespace TauCeti
 namespace RelationalConfiguration
 
 variable {L : Language.{u, v}} [L.IsRelational] {ι : Type uι}
-
-variable (V : Type w) in
-/-- Isomorphism of decoded structures, restricted to the configurations on `V` that decode to
-models of `φ`: isomorphism on the class `modelsOf φ`. Its classes are the isomorphism classes of
-the models of `φ` with carrier `V`. It is an abbreviation, so results stated for `classIso` apply
-to it. -/
-abbrev isoSetoidOn (φ : L.SentenceInf ι) : Setoid (modelsOf (V := V) φ) :=
-  classIso (modelsOf φ)
 
 /-- If every model of `φ` on `V` is a model of `ψ`, the models of `φ` on `V` have at most as many
 isomorphism classes as those of `ψ`: the inclusion of model classes is injective on classes. -/

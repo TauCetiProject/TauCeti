@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.RelationalConfiguration.SentenceTheory
+public import TauCeti.ModelTheory.RelationalConfiguration.Sentence.Basic
 public import TauCeti.SetTheory.Descriptive.ThinRank
 import TauCeti.ModelTheory.RelationalConfiguration.Observables
 import TauCeti.SetTheory.Cardinal.AlephOne
