@@ -82,7 +82,7 @@ def IsFundamentalClass.toModuleOrientation {μ : ↑((toSSet.obj (TopCat.of M)).
   ⟨fun x ↦ ⟨singularHomologyToLocalHomology N x d μ,
       (isModuleLocalOrientation_iff N x d _).2 ((isFundamentalClass_iff μ).1 hμ x)⟩,
    fun g ↦ Subtype.ext <| (coe_moduleLocalOrientationTransport N M E d g _).trans
-      (localHomologyTransport_singularHomologyToLocalHomology (E := E) g μ)⟩
+      (localHomologyTransport_singularHomologyToLocalHomology_path (E := E) g μ)⟩
 @[simp] theorem IsFundamentalClass.coe_toModuleOrientation_apply
     {μ : ↑((toSSet.obj (TopCat.of M)).homology N d)} (hμ : IsFundamentalClass μ) (x : M) :
     (hμ.toModuleOrientation (E := E) x).val = singularHomologyToLocalHomology N x d μ := (rfl)

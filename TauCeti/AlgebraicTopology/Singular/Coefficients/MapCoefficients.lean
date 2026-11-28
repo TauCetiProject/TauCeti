@@ -105,17 +105,6 @@ lemma singularHomologyFunctorObjCompIso_inv_app (n : ℕ) (X : TopCat.{w}) :
           (((singularChainComplexFunctor C).obj R).obj X) :=
   SSet.homologyFunctorObjCompIso_inv_app F R n (TopCat.toSSet.obj X)
 
-/-- The inverse of `F (Hₙ(X; R)) ≅ Hₙ(X; F R)` at a space `X` is the map induced by
-`C(X; F R) ≅ F (C(X; R))`, followed by the comparison of the homology of the image complex with
-the image of the homology. -/
-lemma singularHomologyFunctorObjCompIso_inv_app (n : ℕ) (X : TopCat.{w}) :
-    (singularHomologyFunctorObjCompIso F R n).inv.app X =
-      HomologicalComplex.homologyMap ((singularChainComplexFunctorObjCompMapIso F R).inv.app X)
-          n ≫
-        (F.mapHomologicalComplexCompHomologyFunctorIso (.down ℕ) n).hom.app
-          (((singularChainComplexFunctor C).obj R).obj X) :=
-  (rfl)
-
 /-- For a faithful additive functor `F : C ⥤ D` preserving coproducts and homology,
 `Hₙ(X; F R) = 0` if and only if `Hₙ(X; R) = 0`. -/
 lemma isZero_singularHomologyFunctor_iff [F.Faithful] (n : ℕ) (X : TopCat.{w}) :

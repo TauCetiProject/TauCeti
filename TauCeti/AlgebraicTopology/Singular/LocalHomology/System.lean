@@ -40,8 +40,8 @@ compatibility with composition characterizes the transport
   `Hₖ(M; N) → Hₖ(M, M ∖ {x}; N)` from singular homology to the local homology at `x`, the map of
   the long exact sequence of the pair `(M, M ∖ {x})`
   (`TauCeti.singularHomologyToLocalHomology_eq_singularHomologyπ`), invariant under transport
-  (`TauCeti.localHomologyTransport_singularHomologyToLocalHomology`) and vanishing on classes pushed
-  forward from subsets avoiding `x`
+  (`TauCeti.localHomologyTransport_singularHomologyToLocalHomology_path`) and vanishing on
+  classes pushed forward from subsets avoiding `x`
   (`TauCeti.singularHomologyToLocalHomology_map_subtypeVal_eq_zero_of_notMem`). For `x ∈ S` it
   factors through the local homology along `S`
   (`TauCeti.singularHomologyToLocalHomology_eq_localHomologyRestriction`).
@@ -999,7 +999,7 @@ theorem map_localHomologyTransport_comp_of_restriction {B : Type*} [Category* B]
   exact show f ∈ S.arrows x y from hS ▸ trivial
 
 /-- Local homology images of any global class `μ ∈ Hₖ(M; N)` are invariant under path transport. -/
-@[simp] theorem localHomologyTransport_singularHomologyToLocalHomology {Λ : Type*} [Ring Λ]
+@[simp] theorem localHomologyTransport_singularHomologyToLocalHomology_path {Λ : Type*} [Ring Λ]
     {N : ModuleCat.{w} Λ} {k : ℕ} {x y : FundamentalGroupoid M} (g : x ⟶ y)
     (μ : ↑((TopCat.toSSet.obj (TopCat.of M)).homology N k)) :
     localHomologyTransport N M E k g (singularHomologyToLocalHomology N x.as k μ) =
