@@ -19,8 +19,10 @@ For a differentiable function `α : E → ℂ` on a real normed space, the **pha
 branch of `arg α`. This file proves that it is as regular as `dα` away from the zeros of `α`
 (`TauCeti.contDiffAt_phaseForm`), that it is closed there (`TauCeti.extDeriv_phaseForm`), that it
 is natural under pullback (`TauCeti.phaseForm_comp`), and that it is additive under products
-(`TauCeti.phaseForm_mul`). For a function `u` with values in the unit circle, it
-recovers the derivative: `du = u · i Im (u⁻¹ du)` (`TauCeti.fderiv_apply_eq_mul_I_mul_phaseForm`).
+(`TauCeti.phaseForm_mul`). For a circle-valued function `X + i Y` it is `X dY - Y dX`
+(`TauCeti.phaseForm_ofReal_add_ofReal_mul_I_apply`). For a function `u` with values in the unit
+circle, it recovers the derivative: `du = u · i Im (u⁻¹ du)`
+(`TauCeti.fderiv_apply_eq_mul_I_mul_phaseForm`).
 
 ## Main definitions
 
@@ -131,6 +133,21 @@ theorem phaseForm_mul (hu : DifferentiableAt ℝ u x) (hα : DifferentiableAt �
     fderiv_mul hu hα, _root_.add_apply, _root_.smul_apply, smul_eq_mul, ← add_im]
   congr 1
   field_simp
+  ring
+
+/-- The phase form of a function `X + i Y` at a point where `X² + Y² = 1` is `X dY - Y dX`. -/
+theorem phaseForm_ofReal_add_ofReal_mul_I_apply {X Y : E → ℝ} (hX : DifferentiableAt ℝ X x)
+    (hY : DifferentiableAt ℝ Y x) (h : X x ^ 2 + Y x ^ 2 = 1) (v : E) :
+    phaseForm (fun y ↦ (X y : ℂ) + Y y * I) x (fun _ ↦ v) =
+      X x * fderiv ℝ Y x v - Y x * fderiv ℝ X x v := by
+  have hf : HasFDerivAt (fun y ↦ (X y : ℂ) + Y y * I) _ x :=
+    (ofRealCLM.hasFDerivAt.comp x hX.hasFDerivAt).add
+      ((ofRealCLM.hasFDerivAt.comp x hY.hasFDerivAt).mul_const I)
+  have hinv : ((X x : ℂ) + Y x * I)⁻¹ = X x - Y x * I := by
+    rw [inv_def, normSq_add_mul_I, h, inv_one, ofReal_one, mul_one]
+    simp [Complex.ext_iff]
+  rw [phaseForm_apply, hf.fderiv, hinv]
+  simp [mul_im]
   ring
 
 /-- The derivative of a function `u` that is circle-valued near `x` is `du = u · i Im (u⁻¹ du)`:

@@ -45,7 +45,9 @@ differentiation commutes with this extension.
 * `TauCeti.contMDiffAt_mpullback_extChartAt`: a flat form that is `C^n` within the model range
   pulls back along a chart to a `C^n` section.
 * `TauCeti.contMDiffOn_mextDerivWithin`, `TauCeti.isSmoothBundleForm_mextDeriv`,
-  `TauCeti.isSmoothForm_mextDeriv`: the exterior derivative lowers regularity by one.
+  `TauCeti.isSmoothForm_mextDeriv`: the exterior derivative lowers regularity by one;
+  `TauCeti.contMDiffAt_mextDeriv_ofFunction` is the pointwise form for the differential of a
+  function, from `C²` to `C¹`.
 * `TauCeti.mextDeriv_mem_smoothBundleForms`: the exterior derivative preserves smooth forms.
 * `TauCeti.exists_mextDeriv_eq_of_forall_eventuallyEq_add_const`: a global function which near
   every point differs by a constant from a local primitive of a `1`-form is itself a primitive.
@@ -524,6 +526,23 @@ theorem mdifferentiableAt_ofFunction [IsManifold I 1 M] {f : M → F} {x : M}
   rw [heq]
   exact ((ContinuousAlternatingMap.constOfIsEmptyLIE ℝ E F (Fin 0)).toContinuousLinearEquiv
     : F →L[ℝ] E [⋀^Fin 0]→L[ℝ] F).mdifferentiableAt.comp x hf
+
+/-- The differential of a function that is `C²` at `x` is a `C¹` section at `x`. -/
+theorem contMDiffAt_mextDeriv_ofFunction [IsManifold I 2 M] {f : M → F} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ, F) 2 f x) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F)) 1
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) y (mextDeriv (RoughForm.ofFunction I f) y))
+      x := by
+  -- On an open neighbourhood `v` of `x` the function is `C²`, so `mextDerivWithin f v` is `C¹`.
+  obtain ⟨u, hu, hfu⟩ := (contMDiffAt_iff_contMDiffOn_nhds (by simp)).1 hf
+  obtain ⟨v, hvu, hv, hxv⟩ := mem_nhds_iff.1 hu
+  have h := contMDiffOn_mextDerivWithin (n := 1) (RoughForm.ofFunction I f) (s := v)
+    (fun y hy ↦ (contMDiffAt_ofFunction_iff.2 ((hfu y (hvu hy)).contMDiffAt
+      (Filter.mem_of_superset (hv.mem_nhds hy) hvu))).contMDiffWithinAt)
+    hv.uniqueMDiffOn (by rw [hv.interior_eq]; exact subset_closure)
+  refine ((h x hxv).contMDiffAt (hv.mem_nhds hxv)).congr_of_eventuallyEq ?_
+  filter_upwards [hv.mem_nhds hxv] with y hy
+  rw [mextDerivWithin_of_isOpen hv hy]
 
 /-- **Local primitives glue to a global one.** If near every point `x` the function `f` differs by
 a constant from a function `g` which is `C^r` at `x` with `d g = φ` at `x`, then the
