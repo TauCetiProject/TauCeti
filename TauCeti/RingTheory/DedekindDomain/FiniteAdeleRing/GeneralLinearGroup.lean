@@ -87,6 +87,9 @@ theorem commute_of_forall_map_proj_eq_one_or {x y : GL ι (FiniteAdeleRing R K)}
       GeneralLinearGroup.map (proj K v : _ →+* v.adicCompletion K) x = 1 ∨
         GeneralLinearGroup.map (proj K v : _ →+* v.adicCompletion K) y = 1) : Commute x y :=
   generalLinearGroup_ext fun v ↦ by
+    -- `generalLinearGroup_ext` reads components through `(proj K v).toRingHom`, which factors
+    -- through `ContinuousAlgHom.toAlgHom`; no rewrite lemma (not even `AlgHom.toRingHom_eq_coe`)
+    -- turns it into the `RingHomClass` coercion used here, but the two are definitionally equal.
     change GeneralLinearGroup.map (proj K v : _ →+* v.adicCompletion K) (x * y) =
       GeneralLinearGroup.map (proj K v : _ →+* v.adicCompletion K) (y * x)
     rw [map_mul, map_mul]
@@ -204,7 +207,9 @@ theorem range_ofAdicCompletionGL (v : HeightOneSpectrum R) :
     generalLinearGroup_ext fun u ↦ ?_⟩⟩
   · rintro ⟨g, rfl⟩ u hu
     exact map_proj_ofAdicCompletionGL_of_ne hu g
-  · change GeneralLinearGroup.map (proj K u : FiniteAdeleRing R K →+* u.adicCompletion K) _ =
+  · -- As in `commute_of_forall_map_proj_eq_one_or`: pass from `(proj K u).toRingHom` to the
+    -- definitionally equal `RingHomClass` coercion, for which no rewrite lemma exists.
+    change GeneralLinearGroup.map (proj K u : FiniteAdeleRing R K →+* u.adicCompletion K) _ =
       GeneralLinearGroup.map (proj K u : _ →+* u.adicCompletion K) x
     rcases eq_or_ne u v with rfl | hu
     · exact map_proj_ofAdicCompletionGL_self u _

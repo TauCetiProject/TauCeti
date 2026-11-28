@@ -177,7 +177,10 @@ theorem range_ofSplitPlace :
   refine ⟨?_, fun hx ↦ ⟨proj E ι w x, Subtype.ext <| generalLinearGroup_ext fun u ↦ ?_⟩⟩
   · rintro ⟨g, rfl⟩ u hu hu'
     exact proj_ofSplitPlace_of_ne hw hu hu' g
-  · change GeneralLinearGroup.map (FiniteAdeleRing.proj E u : 𝔸ᶠ[E] →+* u.adicCompletion E) _ =
+  · -- `generalLinearGroup_ext` reads components through `(FiniteAdeleRing.proj E u).toRingHom`,
+    -- which factors through `ContinuousAlgHom.toAlgHom`; no rewrite lemma turns it into the
+    -- definitionally equal `RingHomClass` coercion of `proj_eq_map`, so restate the goal.
+    change GeneralLinearGroup.map (FiniteAdeleRing.proj E u : 𝔸ᶠ[E] →+* u.adicCompletion E) _ =
       GeneralLinearGroup.map (FiniteAdeleRing.proj E u : 𝔸ᶠ[E] →+* u.adicCompletion E) (x : GL ι _)
     rw [← proj_eq_map, ← proj_eq_map]
     rcases eq_or_ne u w with rfl | hu
