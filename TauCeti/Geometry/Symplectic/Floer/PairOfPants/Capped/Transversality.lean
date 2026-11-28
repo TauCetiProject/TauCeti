@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capped.SemiFredholm
 public import TauCeti.Geometry.Symplectic.Floer.Transversality.Conformal
+import TauCeti.Analysis.Fredholm.Stabilization
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capped.Fredholm
 
 /-!
 # Hamiltonian variations along the capped comparison family detect the cokernel
@@ -36,9 +38,15 @@ is that of the data read in the plane chart
 placed on `u` over `O`, which may be constant there.
 
 The statement is linear: it holds for every member `R`, including the member `R = 0`, whose
-perturbation vanishes. When `D_u` is Fredholm, the closed range of finite codimension turns
-density into surjectivity, with finitely many variations
-(`TauCeti.SymplecticForm.exists_finset_subset_hamiltonianVariationsOn_range_sup_span_eq_top`).
+perturbation vanishes.
+
+Where `D_u` is Fredholm, for compatible structures
+(`TauCeti.SymplecticForm.isFredholm_floerConformalSobolevOperator_cappedComparison`), its closed
+range of finite codimension turns density into surjectivity. Finitely many Hamiltonian variations
+`y₁, …, y_N` supported in `W` make the universal operator `(ξ, a) ↦ D_u ξ + ∑ aᵢ yᵢ` onto
+(`exists_surjective_floerConformalSobolevOperator_coprod_cappedComparison`, in the namespace
+`TauCeti.SymplecticForm`). If `yᵢ` is the class of `-X_{δKᵢ}(u)`, this operator is the
+linearization at `(u, 0)` of the Floer operator of the perturbations `K_R + ∑ aᵢ δKᵢ`.
 
 ## References
 
@@ -92,5 +100,39 @@ theorem topologicalClosure_range_sup_span_hamiltonianVariationsOn_cappedComparis
     (ω.memLp_floerConformalJetCoeff_cappedComparison h₀ hJ hJp (fun q ↦ (hJs q).of_le one_le_two)
       hH (fun q ↦ (hHs q).of_le (by norm_num)) R (hu.of_le one_le_two))
     hO hOne (subset_univ O) hW
+
+/-- **The universal linearized operator along the capped comparison family is onto.** Let `J₀` be
+`ω`-compatible, let `J_q(t, x)` be period-one `C³` families of `ω`-compatible structures on the
+three ends, and let `H_q` be period-one `C⁴` Hamiltonians. For every member `R` of the comparison
+family, every `C³` map `u` of the plane chart of the three-pole sphere, every nonempty open set `O`
+of the plane chart and every neighbourhood `W` of the graph of `u` over `O`, there are finitely
+many Hamiltonian variations `y₁, …, y_N` supported in `W` such that the operator
+`(ξ, a) ↦ D_u ξ + ∑ aᵢ yᵢ` from `W^{1,2}` of the sphere times `ℝᴺ` to `L²` is onto, where `D_u` is
+the linearized operator of the data `K_R` and `J_R`. -/
+theorem exists_surjective_floerConformalSobolevOperator_coprod_cappedComparison
+    (ω : SymplecticForm V) (h₀ : ω.Compatible J₀) (hJ : ∀ q t x, ω.Tames (J q t x))
+    (hJc : ∀ q t x, ω.Compatible (J q t x)) (hJp : ∀ q, Periodic (J q) 1)
+    (hJs : ∀ q, ContDiff ℝ 3 fun p : ℝ × V ↦ (J q p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 4 (uncurry (H q))) (R : ℝ)
+    {u : ℝ × ℝ → V} (hu : ContDiff ℝ 3 u) {O : Set (ℝ × ℝ)} (hO : IsOpen O) (hOne : O.Nonempty)
+    {W : Set ((ℝ × ℝ) × V)} (hW : ∀ z ∈ O, W ∈ 𝓝 (z, u z)) :
+    ∃ (N : ℕ) (y : Fin N → Lp V 2 (volume.restrict univ)),
+      (∀ i, y i ∈ ω.hamiltonianVariationsOn univ u W) ∧
+      Function.Surjective ((ω.floerConformalSobolevOperator univ sphereWeight
+        (fun z y ↦ (cappedComparisonAlmostComplex h₀ J hJ R
+          (equivRealProdCLM.symm z) y).toLinearMap.toContinuousLinearMap)
+        (fun z y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y 1)
+        (fun z y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y I) u).coprod
+          (Fintype.linearCombination ℝ y).toContinuousLinearMap) := by
+  -- `D_u` is Fredholm, so its range is closed and of finite codimension.
+  have hD := ω.isFredholm_floerConformalSobolevOperator_cappedComparison h₀ hJ hJc hJp hJs hH hHs
+    R hu
+  -- The range of `D_u` and the Hamiltonian variations span a dense subspace, so finitely many
+  -- variations already span a complement of the range.
+  refine hD.exists_surjective_coprod_fintypeLinearCombination_of_dense ?_
+  rw [Submodule.dense_iff_topologicalClosure_eq_top]
+  exact ω.topologicalClosure_range_sup_span_hamiltonianVariationsOn_cappedComparison_eq_top h₀ hJ
+    hJp (fun q ↦ (hJs q).of_le (by norm_num)) hH (fun q ↦ (hHs q).of_le (by norm_num)) R
+    (hu.of_le (by norm_num)) hO hOne hW
 
 end TauCeti.SymplecticForm

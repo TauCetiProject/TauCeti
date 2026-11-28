@@ -310,6 +310,27 @@ theorem modularFunctionAction_apply_ofQuotient (γ : SL(2, ℤ))
     Subgroup.compactifiedQuotientConj_ofQuotient, Subgroup.quotientConjHomeomorph_mk,
     UpperHalfPlane.sl2zToPSL2R_smul]
 
+/-- The finite part of `F ∘ γ` at the orbit of `τ` is the finite part of `F` at the orbit of
+`γ • τ`. -/
+@[simp]
+theorem finitePart_unop_modularFunctionAction (γ : SL(2, ℤ))
+    (F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) (τ : ℍ) :
+    (unop (modularFunctionAction N γ) F).finitePart (ofQuotient (Quotient.mk _ τ)) =
+      F.finitePart (ofQuotient (Quotient.mk _ (γ • τ))) := by
+  rw [MeromorphicFunction.finitePart_def, MeromorphicFunction.finitePart_def,
+    modularFunctionAction_apply_ofQuotient]
+
+open scoped _root_.ModularForm in
+/-- The weight-`0` slash by `γ` of the pullback to `ℍ` of the finite part of `F` is the pullback
+of the finite part of `F ∘ γ`. -/
+theorem finitePart_ofQuotient_slash_zero (γ : SL(2, ℤ))
+    (F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) :
+    (fun τ ↦ F.finitePart (ofQuotient (Quotient.mk _ τ))) ∣[(0 : ℤ)] γ =
+      fun τ ↦ (unop (modularFunctionAction N γ) F).finitePart (ofQuotient (Quotient.mk _ τ)) := by
+  rw [ModularForm.SL_slash_zero]
+  funext τ
+  rw [finitePart_unop_modularFunctionAction]
+
 /-- **Multiplication order.** The action is a right action: acting by `γ * δ` is acting by `γ`
 and then by `δ`. -/
 theorem unop_modularFunctionAction_mul_apply (γ δ : SL(2, ℤ))

@@ -37,6 +37,7 @@ maps valued in an arbitrary module.
 
 ## Main results
 
+* `LinearMap.BilinForm.IsAlt.add_flip_eq_zero`: an alternating form and its flip sum to zero.
 * `TauCeti.BilinForm.eq_zero_of_isSymm_of_isAlt`: a symmetric alternating form over a commutative
   semiring in which `2` is regular is zero.
 * `TauCeti.BilinForm.nondegenerate_smul_iff`: scalar multiplication by a regular element
@@ -50,6 +51,8 @@ maps valued in an arbitrary module.
   nondegeneracy without symmetry.
 * `LinearMap.BilinForm.anisotropic_toQuadraticMap_compl₁₂`: injective pullback preserves
   anisotropy of the diagonal.
+* `LinearMap.BilinForm.anisotropic_toQuadraticMap_restrict`: an anisotropic form stays anisotropic
+  on every submodule.
 * `LinearMap.BilinForm.inf_eq_bot_of_forall_apply_self_eq_zero`: a subspace on which the diagonal
   has no nonzero zeros meets every subspace of isotropic vectors trivially.
 * `IsSMulRegular.isSymm_smul_iff`: rescaling by a scalar acting injectively on `R`
@@ -119,6 +122,15 @@ end LinearMap.IsAlt
 
 namespace LinearMap.BilinForm
 
+/-- An alternating bilinear form is skew-symmetric, `B + B.flip = 0`, over any commutative
+semiring (Mathlib's `LinearMap.IsAlt.neg` needs additive inverses). -/
+theorem IsAlt.add_flip_eq_zero {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    {B : LinearMap.BilinForm R M} (hB : B.IsAlt) : B + B.flip = 0 := by
+  ext x y
+  have := hB (x + y)
+  simp only [map_add, LinearMap.add_apply, hB x, hB y, zero_add, add_zero] at this
+  simpa [add_comm] using this
+
 /-- Restriction to a submodule is pullback along its inclusion in both arguments. -/
 theorem restrict_eq_compl₁₂ {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
     (B : LinearMap.BilinForm R M) (W : Submodule R M) :
@@ -146,6 +158,14 @@ theorem anisotropic_toQuadraticMap_compl₁₂ {R M N : Type*} [CommSemiring R]
     (LinearMap.BilinMap.toQuadraticMap (B.compl₁₂ f f)).Anisotropic := by
   rw [LinearMap.BilinMap.toQuadraticMap_comp_same]
   exact hB.comp f hf
+
+/-- An anisotropic form, a positive definite one for instance, stays anisotropic on every
+submodule. -/
+theorem anisotropic_toQuadraticMap_restrict {R M : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] (B : LinearMap.BilinForm R M)
+    (hB : B.toQuadraticMap.Anisotropic) (W : Submodule R M) :
+    (B.restrict W).toQuadraticMap.Anisotropic :=
+  B.anisotropic_toQuadraticMap_compl₁₂ hB _ W.injective_subtype
 
 /-- Restriction to a submodule commutes with scalar multiplication of a bilinear form. -/
 @[simp]

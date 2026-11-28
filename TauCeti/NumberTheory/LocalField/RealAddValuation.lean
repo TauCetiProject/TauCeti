@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.RingTheory.Valuation.ToAdditive
 import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
+import TauCeti.NumberTheory.LocalField.FractionalIdeal
 
 /-!
 # The real-valued normalized additive valuation of a nonarchimedean local field
@@ -150,6 +151,21 @@ theorem mem_integer_iff_realAddValuation_nonneg {x : K} :
     have hval := realAddValuation_coe_unit (Units.mk0 x hx)
     simp only [Units.val_mk0] at h hval
     rw [h, hval, ← WithTop.coe_zero, WithTop.coe_le_coe]; exact_mod_cast Iff.rfl
+
+/-- Membership in the fractional power `𝓂[K] ^ n` is the lower bound `n ≤ v_K(x)`, with
+the integer-normalized additive valuation and `v_K(0) = ⊤`. -/
+theorem mem_maximalIdeal_zpow_iff_le_realAddValuation {x : K} {n : ℤ} :
+    x ∈ (𝓂[K] : FractionalIdeal (nonZeroDivisors 𝒪[K]) K) ^ n ↔
+      ((n : ℝ) : WithTop ℝ) ≤ realAddValuation K x := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp [FractionalIdeal.zero_mem]
+  lift x to Kˣ using isUnit_iff_ne_zero.mpr hx
+  obtain ⟨u, hu⟩ := normalizedValuation_surjective (K := K) (Multiplicative.ofAdd n)
+  have hn : (normalizedValuation K u).toAdd = n := congrArg Multiplicative.toAdd hu
+  rw [← hn, ← Units.spanSingleton_eq_maximalIdeal_zpow, ← FractionalIdeal.spanSingleton_le_iff_mem,
+    spanSingleton_le_spanSingleton_iff_valuation_le,
+    ← toAdd_normalizedValuation_le_iff_valuation_le, realAddValuation_coe_unit]
+  norm_cast
 
 /-- On `𝒪[K]`, `realAddValuation` agrees with `IsDiscreteValuationRing.addVal` cast to `ℝ`. -/
 theorem realAddValuation_coe_integer (a : 𝒪[K]) :

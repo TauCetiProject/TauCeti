@@ -12,6 +12,7 @@ public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.Analysis.ODE.Caratheodory
 
 /-!
 # The cokernel of the trajectory operator
@@ -60,6 +61,9 @@ to prove that `D_A` is Fredholm when the limits of `A` at `±∞` are hyperbolic
 * `TauCeti.WeakDerivStep.exists_hasDerivAt_adjoint_of_mem_orthogonal_range_trajectoryOperator`: for
   a continuous family, a path orthogonal to the range of `D_A` is almost everywhere a classical
   solution of the adjoint equation `w' = A† w`.
+* `TauCeti.WeakDerivStep.exists_hasDerivAt_ne_zero_of_mem_orthogonal_range_trajectoryOperator`:
+  for a continuous family of self-adjoint operators, a nonzero path orthogonal to the range of
+  `D_A` is almost everywhere a classical solution of `u' = A u` vanishing at no time.
 * `TauCeti.WeakDerivStep.squareIntegrableSolutions_neg_adjoint_eq_bot_of_surjective`: when `D_A`
   is onto, the adjoint equation `w' = A† w` has no nonzero square-integrable solution.
 
@@ -346,6 +350,28 @@ theorem exists_hasDerivAt_adjoint_of_mem_orthogonal_range_trajectoryOperator (hA
   refine ⟨w, fun s ↦ by simpa using hw s, ?_⟩
   rw [← hzv, ContinuousLinearMap.coe_coe, prevL_apply]
   exact hzw
+
+/-- **Nonzero paths orthogonal to the range of a symmetric trajectory operator vanish nowhere.**
+For a continuous family `A` of self-adjoint operators with `L∞` class `AL`, a nonzero
+`v ∈ L²(ℝ, E)` orthogonal to the range of `D_A u = u' + A u` agrees almost everywhere with a
+classical solution `u` of `u' = A(s) u` which vanishes at no time: by uniqueness for linear
+equations, a solution vanishing at one time vanishes identically. -/
+theorem exists_hasDerivAt_ne_zero_of_mem_orthogonal_range_trajectoryOperator (hA : Continuous A)
+    (hsa : ∀ s, IsSelfAdjoint (A s))
+    {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
+    {v : Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hv : v ∈ (trajectoryOperator (p := 2) AL).rangeᗮ) (hv0 : v ≠ 0) :
+    ∃ u : ℝ → E, (∀ s, HasDerivAt u (A s (u s)) s) ∧
+      v =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] u ∧ ∀ s, u s ≠ 0 := by
+  obtain ⟨u, hu, hvu⟩ :=
+    exists_hasDerivAt_adjoint_of_mem_orthogonal_range_trajectoryOperator hA hAL hv
+  have hu' (s : ℝ) : HasDerivAt u (A s (u s)) s := by
+    simpa only [(hsa s).adjoint_eq] using hu s
+  refine ⟨u, hu', hvu, fun s₀ h ↦ hv0 ?_⟩
+  have hu0 : u = fun _ ↦ 0 :=
+    hA.eq_of_hasDerivAt_clm_apply hu' (fun s ↦ by simpa using hasDerivAt_const s (0 : E)) h
+  exact Lp.eq_zero_iff_ae_eq_zero.2 (hvu.trans (.of_forall fun s ↦ by simp [hu0]))
 
 /-- **An onto trajectory operator has no square-integrable adjoint solutions.** If the trajectory
 operator `D_A u = u' + A u` of a continuous family on a finite-dimensional space maps

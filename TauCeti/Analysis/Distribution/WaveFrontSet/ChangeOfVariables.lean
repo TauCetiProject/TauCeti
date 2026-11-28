@@ -368,12 +368,10 @@ zero covectors, since the transposed derivative of `e` is injective. -/
 theorem ne_zero_of_mem_covectorPullback (e : OpenPartialHomeomorph E E)
     (he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source) (he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target)
     {U : Set E} (hU : U ⊆ e.source) {Γ : Set (E × E)} (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0) {p : E × E}
-    (hp : p ∈ TauCeti.covectorPullback e U Γ) : p.2 ≠ 0 := by
-  obtain ⟨hx, η, hη, hηp⟩ := TauCeti.mem_covectorPullback.1 hp
-  intro h0
-  refine hΓ0 _ hη ?_
-  rw [← e.adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_contDiffOn he he' (by simp) (hU hx) η,
-    hηp, h0, map_zero]
+    (hp : p ∈ TauCeti.covectorPullback e U Γ) : p.2 ≠ 0 :=
+  TauCeti.ne_zero_of_mem_covectorPullback (fun x hx ↦ LeftInverse.injective
+    (e.adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_contDiffOn he he' (by simp) (hU hx)))
+    hΓ0 hp
 
 /-- **The pullback of a closed cone is closed.** If `Γ` is closed in `Ω × (E \ {0})`, then the
 pullback `e^* Γ` along a change of variables is closed in `U × (E \ {0})`: over `U` it is the
@@ -382,31 +380,15 @@ theorem isOpen_prod_compl_sdiff_covectorPullback (e : OpenPartialHomeomorph E E)
     (he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source) (he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target)
     {U Ω : Set E} (hUo : IsOpen U) (hU : U ⊆ e.source) (hUΩ : MapsTo e U Ω) {Γ : Set (E × E)}
     (hΓ : IsOpen ((Ω ×ˢ {0}ᶜ) \ Γ)) :
-    IsOpen ((U ×ˢ {0}ᶜ) \ TauCeti.covectorPullback e U Γ) := by
-  set Φ : E × E → E × E := fun p ↦ (e p.1, ((fderiv ℝ e.symm (e p.1))†) p.2)
-  have hset : (U ×ˢ {0}ᶜ) \ TauCeti.covectorPullback e U Γ =
-      (U ×ˢ {0}ᶜ) ∩ Φ ⁻¹' ((Ω ×ˢ {0}ᶜ) \ Γ) := by
-    ext ⟨x, ξ⟩
-    simp only [Set.mem_sdiff, mem_prod, mem_compl_iff, mem_singleton_iff, mem_inter_iff,
-      mem_preimage, e.mem_covectorPullback_iff he he' hU, Φ]
-    constructor
-    · rintro ⟨⟨hx, hξ⟩, hn⟩
-      refine ⟨⟨hx, hξ⟩, ⟨hUΩ hx, fun h0 ↦ hξ ?_⟩, fun hΓξ ↦ hn ⟨hx, hΓξ⟩⟩
-      rw [← e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn he he' (by simp)
-        (hU hx) ξ, h0, map_zero]
-    · rintro ⟨⟨hx, hξ⟩, -, hn⟩
-      exact ⟨⟨hx, hξ⟩, fun h ↦ hn h.2⟩
-  rw [hset]
-  have hcont : ContinuousOn Φ (U ×ˢ univ) := by
-    have he1 : ContinuousOn (fun p : E × E ↦ e p.1) (U ×ˢ univ) :=
-      (e.continuousOn.mono hU).comp continuousOn_fst fun p hp ↦ hp.1
-    have hD : ContinuousOn (fun p : E × E ↦ (fderiv ℝ e.symm (e p.1))†) (U ×ˢ univ) :=
-      (ContinuousLinearMap.adjoint (𝕜 := ℝ) (E := E) (F := E)).continuous.comp_continuousOn
-        ((he'.continuousOn_fderiv_of_isOpen e.open_target (by simp)).comp he1
-          fun p hp ↦ e.map_source (hU hp.1))
-    exact he1.prodMk (hD.clm_apply continuousOn_snd)
-  exact (hcont.mono (prod_mono subset_rfl (subset_univ _))).isOpen_inter_preimage
-    (hUo.prod isOpen_compl_singleton) hΓ
+    IsOpen ((U ×ˢ {0}ᶜ) \ TauCeti.covectorPullback e U Γ) :=
+  TauCeti.isOpen_diff_covectorPullback_of_leftInverse hUo hUΩ (e.continuousOn.mono hU)
+    ((he.continuousOn_fderiv_of_isOpen e.open_source (by simp)).mono hU)
+    (fun x ↦ (fderiv ℝ e.symm (e x))†)
+    ((ContinuousLinearMap.adjoint (𝕜 := ℝ) (E := E) (F := E)).continuous.comp_continuousOn
+      ((he'.continuousOn_fderiv_of_isOpen e.open_target (by simp)).comp
+        (e.continuousOn.mono hU) fun _ hx ↦ e.map_source (hU hx)))
+    (fun x hx ↦ e.adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_contDiffOn he he' (by simp)
+      (hU hx)) hΓ
 
 end OpenPartialHomeomorph
 

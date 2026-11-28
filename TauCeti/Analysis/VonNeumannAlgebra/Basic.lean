@@ -25,6 +25,8 @@ The instances use Mathlib's generic subobject constructions, in particular
 `Subtype.starOrderedRing`. The underlying star subalgebra has the same instances;
 no new norm, completion, or algebra carrier is introduced. We also provide the canonical
 star algebra isomorphism `VonNeumannAlgebra.equivOfEq` between equal von Neumann algebras.
+Because `M` is a closed complex subspace, it also contains the linear span and norm-closed linear
+span of any subset (`VonNeumannAlgebra.span_subset`, `VonNeumannAlgebra.closure_span_subset`).
 
 Conjugation along a linear isometric equivalence `U : H₁ ≃ₗᵢ[ℂ] H₂` transports concrete von Neumann
 algebras as an order isomorphism (`VonNeumannAlgebra.mapLinearIsometryEquiv`) commuting with
@@ -34,6 +36,8 @@ commutants, and restricts to a `⋆`-algebra isomorphism on carriers
 
 public section
 
+open scoped ComplexStarModule InnerProduct
+
 namespace VonNeumannAlgebra
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
@@ -41,6 +45,18 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteS
 /-- Concrete von Neumann algebras are closed under complex scalar multiplication. -/
 instance instSMulMemClass : SMulMemClass (VonNeumannAlgebra H) ℂ (H →L[ℂ] H) where
   smul_mem {M} c {_} ha := SMulMemClass.smul_mem (s := M.toStarSubalgebra) c ha
+
+/-- The real part of an operator in `M` belongs to `M`. -/
+theorem realPart_mem {M : VonNeumannAlgebra H} {x : H →L[ℂ] H} (hx : x ∈ M) :
+    (ℜ x : H →L[ℂ] H) ∈ M := by
+  rw [realPart_apply_coe, ← Complex.coe_smul]
+  exact SMulMemClass.smul_mem _ (add_mem hx (star_mem hx))
+
+/-- The imaginary part of an operator in `M` belongs to `M`. -/
+theorem imaginaryPart_mem {M : VonNeumannAlgebra H} {x : H →L[ℂ] H} (hx : x ∈ M) :
+    (ℑ x : H →L[ℂ] H) ∈ M := by
+  rw [imaginaryPart_apply_coe, ← Complex.coe_smul]
+  exact SMulMemClass.smul_mem _ (SMulMemClass.smul_mem _ (sub_mem hx (star_mem hx)))
 
 /-- A concrete von Neumann algebra is closed in the operator norm topology. -/
 instance isClosed (M : VonNeumannAlgebra H) : IsClosed (M : Set (H →L[ℂ] H)) := by
@@ -77,6 +93,17 @@ fails. -/
 instance instStarOrderedRingToStarSubalgebra (M : VonNeumannAlgebra H) :
     StarOrderedRing M.toStarSubalgebra :=
   Subtype.starOrderedRing _
+
+/-- The complex linear span of a subset of a von Neumann algebra `M` is contained in `M`. -/
+theorem span_subset {M : VonNeumannAlgebra H} {s : Set (H →L[ℂ] H)} (hs : s ⊆ M) :
+    (Submodule.span ℂ s : Set (H →L[ℂ] H)) ⊆ M :=
+  (Submodule.span_le (p := M.toStarSubalgebra.toSubmodule)).2 hs
+
+/-- The norm-closed complex linear span of a subset of a von Neumann algebra `M` is contained in
+`M`. -/
+theorem closure_span_subset {M : VonNeumannAlgebra H} {s : Set (H →L[ℂ] H)} (hs : s ⊆ M) :
+    closure (Submodule.span ℂ s : Set (H →L[ℂ] H)) ⊆ M :=
+  closure_minimal (span_subset hs) M.isClosed
 
 /-- On a subsingleton Hilbert space there is only one concrete von Neumann algebra. -/
 instance instSubsingleton [Subsingleton H] : Subsingleton (VonNeumannAlgebra H) where

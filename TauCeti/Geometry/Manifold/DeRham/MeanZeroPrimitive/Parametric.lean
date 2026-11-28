@@ -16,9 +16,10 @@ import TauCeti.Geometry.Manifold.DifferentialForm.ParametricPrimitive
 Let `M` be a compact manifold with a finite measure `μ` charging every nonempty open set, such as
 the Liouville measure of a symplectic form, and let `S = TauCeti.meanZeroPrimitive I μ` send an
 exact one-form on `M` to its primitive with mean zero on every connected component. This file
-shows that `S` depends smoothly on parameters: if `α_p`, for `p` in a boundaryless manifold `P`, is
-a family of exact one-forms on `M` which is jointly `C^r` in the point and the parameter, that is,
-`α_p` is the slice `v ↦ B_(x, p)(v, 0)` of a `C^r` one-form `B` on `M × P`, then
+shows that `S` depends smoothly on parameters: if `α_p`, for `p` in a manifold `P`, possibly with
+boundary and corners, is a family of exact one-forms on `M` which is jointly `C^r` in the point and
+the parameter, that is, `α_p` is the slice `v ↦ B_(x, p)(v, 0)` of a `C^r` one-form `B` on
+`M × P`, then
 
 `(x, p) ↦ (S α_p)(x)`
 
@@ -63,11 +64,11 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   [IsManifold I ∞ M] [MeasurableSpace M] [OpensMeasurableSpace M] [CompactSpace M]
   [T2Space M] {μ : Measure M} [IsFiniteMeasure μ] [μ.IsOpenPosMeasure]
   {G HP : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [TopologicalSpace HP]
-  {IP : ModelWithCorners ℝ G HP} [IP.Boundaryless] {P : Type*} [TopologicalSpace P]
+  {IP : ModelWithCorners ℝ G HP} {P : Type*} [TopologicalSpace P]
   [ChartedSpace HP P] [IsManifold IP ∞ P]
 
-/-- **Mean-zero primitives depend smoothly on parameters.** Let `α_p`, for `p` in a boundaryless
-manifold `P`, be exact one-forms on a compact manifold `M` which are the slices
+/-- **Mean-zero primitives depend smoothly on parameters.** Let `α_p`, for `p` in a manifold `P`
+with boundary and corners allowed, be exact one-forms on a compact manifold `M` which are the slices
 `v ↦ B_(x, p)(v, 0)` of a `C^r` one-form `B` on `M × P`. Then their primitives with mean zero on
 every connected component of `M` form a `C^r` function `(x, p) ↦ (S α_p)(x)` on `M × P`. -/
 theorem contMDiff_meanZeroPrimitive {r : ℕ∞} {B : RoughForm (I.prod IP) (M × P) ℝ 1}

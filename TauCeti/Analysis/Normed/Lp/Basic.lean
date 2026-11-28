@@ -26,7 +26,9 @@ the sum of the norms of the coordinates (`lp.hasSum_norm_one`, and `lp.hasSum_en
 extended norms); for `1 ≤ p` it bounds the `ℓ^p` norm (`lp.norm_le_tsum_norm`). Sequences whose
 coordinates have the same norms have the same `ℓᵖ` norm (`lp.norm_eq_of_forall_norm_eq`); in
 particular the sequence `i ↦ ‖f i‖` of coordinate norms of `f ∈ ℓᵖ` (`lp.normSeq`) has `ℓᵖ` norm
-`‖f‖` (`lp.norm_normSeq`). For Hölder conjugate exponents `p` and `q`, including `1` and `∞`,
+`‖f‖` (`lp.norm_normSeq`). Coordinates pass to limits: if `fₙ → f` in `ℓᵖ` and each
+`e (fₙ i)` is `A xₙ` for continuous `e`, `A` and `xₙ → x`, then `e (f i) = A x`
+(`lp.map_apply_eq_of_tendsto`). For Hölder conjugate exponents `p` and `q`, including `1` and `∞`,
 every finite sum of `‖f i‖ ‖g i‖` is at most `‖f‖ ‖g‖` (`lp.sum_norm_mul_norm_le`). For `0 < p ≤ q`
 the `ℓ^q` norm of a sequence is at most its `ℓᵖ` norm (`lp.norm_le_norm_of_exponent_le`), the norm
 form of Mathlib's inclusion `Memℓp.of_exponent_ge`. A sequence indexed by `ℕ` whose terms are
@@ -222,6 +224,16 @@ theorem normSeq_apply (f : lp E p) (i : ι) : normSeq f i = ‖f i‖ := (rfl)
 @[simp]
 theorem norm_normSeq (f : lp E p) : ‖normSeq f‖ = ‖f‖ :=
   norm_eq_of_forall_norm_eq fun i ↦ by simp
+
+/-- **Coordinates of a limit in `ℓᵖ`.** If `fₙ → f` in `ℓᵖ`, `xₙ → x`, and `e (fₙ i) = A xₙ` for
+continuous maps `e` and `A` into a Hausdorff space, then `e (f i) = A x`. -/
+theorem map_apply_eq_of_tendsto [Fact (1 ≤ p)] {α X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [T2Space Y] {l : Filter α} [l.NeBot] {F : α → lp E p} {f : lp E p}
+    (hF : Tendsto F l (𝓝 f)) {x : α → X} {y : X} (hx : Tendsto x l (𝓝 y)) {i : ι}
+    {e : E i → Y} (he : Continuous e) {A : X → Y} (hA : Continuous A)
+    (h : ∀ n, e (F n i) = A (x n)) : e (f i) = A y :=
+  tendsto_nhds_unique (((he.tendsto _).comp (tendsto_pi_nhds.1
+    ((lp.uniformContinuous_coe.continuous.tendsto f).comp hF) i)).congr h) ((hA.tendsto y).comp hx)
 
 /-- The coordinates of the Hölder pairing `lp.holderL r B hBK e f` are `B i (e i) (f i)`. -/
 @[simp]
