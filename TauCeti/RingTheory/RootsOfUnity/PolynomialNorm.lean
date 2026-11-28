@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Polynomial.Expand
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import Mathlib.Algebra.Polynomial.FieldDivision
+import Mathlib.Algebra.Ring.Hom.InjSurj
+import Mathlib.RingTheory.AdjoinRoot
 import TauCeti.Algebra.Polynomial.Degree.Operations
 import TauCeti.RingTheory.Polynomial.CyclicInvariants.Basic
 
@@ -20,8 +22,7 @@ multiples of `e`, and `N(p) = Q(Xᵉ)` for `Q = contract e N(p)`. When `e ≠ 0`
 `N(p) = Q(Xᵉ)`, the value `p(u)` divides `Q(uᵉ)`, since `p(u)` is the factor `k = 0` of `N(p)(u)`.
 Over a commutative ring `K`, if `Xᵉ - w` is prime, `ζ ≠ 0`, `deg p < e` and `Q(w) = 0`, then
 `p = 0`: the prime `Xᵉ - w` divides `Q(Xᵉ) = N(p)`, so it divides some factor `p(ζᵏ X)`, of degree
-less than `e`. Such a ring `K` is a domain, since the monic prime `Xᵉ - w` divides no nonzero
-constant.
+less than `e`. Such a ring `K` is a domain, since it embeds in the domain `K[X] / (Xᵉ - w)`.
 
 Stepanov's method for `y^e = f(x)` uses this norm in place of the squaring of the case `e = 2`.
 
@@ -99,20 +100,14 @@ theorem eq_zero_of_prod_comp_C_mul_X_eq_expand {K : Type*} [CommRing K] {e : ℕ
     {w ζ : K} (hprime : Prime (X ^ e - C w)) (hζ : ζ ≠ 0) {p Q : K[X]} (hpdeg : p.natDegree < e)
     (hNQ : ∏ k ∈ Finset.range e, p.comp (C (ζ ^ k) * X) = expand K e Q) (hQ : Q.eval w = 0) :
     p = 0 := by
-  -- `K` is a domain: the monic prime `Xᵉ - w`, of degree `e > 0`, divides no nonzero constant.
+  -- `K` is a domain: it embeds in the domain `K[X] / (Xᵉ - w)`, as `Xᵉ - w` is monic of
+  -- degree `e > 0`.
   have : Nontrivial K := nontrivial_iff.1 (nontrivial_of_ne _ _ hprime.ne_zero)
-  have hmonic : (X ^ e - C w).Monic := monic_X_pow_sub_C w (Nat.ne_zero_of_lt hpdeg)
-  have hC (a : K) (h : X ^ e - C w ∣ C a) : a = 0 := by
-    by_contra ha
-    refine hmonic.not_dvd_of_natDegree_lt (C_ne_zero.2 ha) ?_ h
-    rw [natDegree_C, natDegree_X_pow_sub_C]
-    exact Nat.zero_lt_of_lt hpdeg
-  have : NoZeroDivisors K := ⟨fun {a b} hab ↦ by
-    have h : X ^ e - C w ∣ C a * C b := by
-      rw [← C_mul, hab, C_0]
-      exact dvd_zero _
-    exact (hprime.dvd_or_dvd h).imp (hC a) (hC b)⟩
-  have : IsDomain K := NoZeroDivisors.to_isDomain K
+  have he : 0 < e := Nat.zero_lt_of_lt hpdeg
+  have := AdjoinRoot.isDomain_of_prime hprime
+  have : IsDomain K := Function.Injective.isDomain _
+    (AdjoinRoot.of.injective_of_monic_of_degree_pos (monic_X_pow_sub_C w he.ne')
+      (by rw [degree_X_pow_sub_C he]; exact_mod_cast he))
   -- `X - w` divides `Q`, so the prime `Xᵉ - w` divides `Q(Xᵉ)`, hence some factor `p(ζᵏ X)`.
   have hdvd : X ^ e - C w ∣ expand K e Q := by
     simpa using _root_.map_dvd (expand K e) (dvd_iff_isRoot.2 hQ)
