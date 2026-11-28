@@ -7,10 +7,13 @@ module
 
 public import Mathlib.Analysis.Calculus.LocalExtr.Basic
 public import Mathlib.Analysis.LocallyConvex.Separation
+public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.Analysis.Calculus.TangentCone.Basic
 public import TauCeti.Analysis.Calculus.TangentCone.Prod
+public import TauCeti.Topology.Algebra.Module.Equiv.Pi
+import TauCeti.Geometry.Manifold.Corners.LocalQuadrant
 
 /-!
 # The depth of a point of a manifold with corners
@@ -27,11 +30,16 @@ The depth is defined for every real model with corners `I`, without reference to
 *depth* `I.depthAt y` of a point `y` of the model vector space `E` is, when `E` is
 finite-dimensional, the codimension of the largest linear subspace contained in the positive
 tangent cone of `range I` at `y`. If `E` is infinite-dimensional then `finrank ℝ E = 0` and the
-depth is identically `0`, so the results below assume finite dimensionality. For the
+depth is identically `0`, so the results below assume finite dimensionality where needed. For the
 quadrant model `𝓡c n` it is the number of vanishing coordinates of `y`
 (`ModelWithCorners.depthAt_modelWithCornersEuclideanQuadrant`), and for the half-space model
 `𝓡∂ n` it is `1` on the boundary hyperplane and `0` elsewhere
-(`ModelWithCorners.depthAt_modelWithCornersEuclideanHalfSpace`).
+(`ModelWithCorners.depthAt_modelWithCornersEuclideanHalfSpace`). More generally, whenever `range I`
+is cut out by the nonnegativity of a set `S` of coordinates under a continuous linear coordinate
+equivalence `L : E ≃L[ℝ] (ι → ℝ)` with `ι` finite (covering boundaryless models, half-spaces,
+quadrants, and all finite products via `ContinuousLinearEquiv.prodCoordEquiv`), `I.depthAt y`
+counts the vanishing coordinates of `S` at any `y ∈ range I`
+(`ModelWithCorners.depthAt_eq_natCard_of_range_eq_equiv`).
 
 The depth `I.depth x` of a point `x` of a manifold is the depth of its image in the preferred
 extended chart. On a `C¹` manifold the image in any chart of the maximal atlas has the same depth
@@ -40,8 +48,14 @@ positive tangent cones into positive tangent cones, so an injective differential
 the dimension of the largest linear subspace in the cone
 (`ModelWithCorners.finrank_sub_depthAt_le_of_hasFDerivWithinAt`). Applied to chart transitions in
 both directions this gives chart independence, and applied to a map with injective differential
-it shows that local diffeomorphisms and diffeomorphisms preserve the depth
-(`IsLocalDiffeomorphAt.depth_eq`, `Diffeomorph.depth_eq`).
+it shows that `C¹` local diffeomorphisms and diffeomorphisms preserve the depth
+(`IsLocalDiffeomorphAt.depth_eq`, `Diffeomorph.depth_eq`). Near a point of depth `k` on a quadrant
+manifold — and hence on any manifold locally `C¹`-diffeomorphic to open subsets of a Euclidean
+quadrant, including coordinate-nonnegative models via
+`ModelWithCorners.exists_opens_diffeomorph_opens_euclideanQuadrant_of_range_eq_equiv` — the
+nonvanishing coordinates stay positive, so the depth is upper semicontinuous
+(`ModelWithCorners.isOpen_setOf_depth_le_of_local_quadrant`,
+`ModelWithCorners.isOpen_setOf_depth_le_of_range_eq_equiv`).
 
 The depth is additive on products (`ModelWithCorners.depthAt_prod`, `ModelWithCorners.depth_prod`):
 the range of a product model is the product of the ranges, both are convex, and the positive tangent
@@ -61,8 +75,14 @@ along `Sᵏ⁻¹ × Sⁿ⁻ᵏ⁻¹`, and `M × [0, 1]` along `∂M × {0, 1}`.
   in the positive tangent cone.
 * `ModelWithCorners.depthAt_eq_zero_iff`, `ModelWithCorners.depth_eq_zero_iff`: depth zero means
   interior point.
-* `ModelWithCorners.depthAt_eq_natCard_of_range_eq`: for a model whose range is cut out by the
-  nonnegativity of some coordinates, the depth counts the vanishing ones among them.
+* `ModelWithCorners.depthAt_eq_of_image_range`,
+  `ModelWithCorners.depthAt_transContinuousLinearEquiv`: continuous linear equivalences of model
+  vector spaces preserve `depthAt`.
+* `ModelWithCorners.depthAt_eq_natCard_of_range_eq`,
+  `ModelWithCorners.depthAt_eq_natCard_of_range_eq_equiv`,
+  `ModelWithCorners.range_prod_eq_of_range_eq_equiv`: for a model whose range is cut out by the
+  nonnegativity of some coordinates, the depth of a point in the range counts the vanishing ones
+  among them, and products of such models have the same form.
 * `ModelWithCorners.depthAt_extend_eq_depth`: the depth does not depend on the chart.
 * `ModelWithCorners.depth_modelWithCornersEuclideanQuadrant`: on a manifold modelled on the
   quadrant, the depth of a point counts the vanishing coordinates of its image in any chart.
@@ -70,14 +90,19 @@ along `Sᵏ⁻¹ × Sⁿ⁻ᵏ⁻¹`, and `M × [0, 1]` along `∂M × {0, 1}`.
   cardinality of a finset.
 * `MDifferentiableAt.finrank_sub_depth_le`: a map with injective differential does not decrease
   the dimension of the largest linear subspace in the cone.
-* `IsLocalDiffeomorphAt.depth_eq`, `Diffeomorph.depth_eq`: (local) diffeomorphisms preserve the
-  depth.
+* `IsLocalDiffeomorphAt.depth_eq`, `Diffeomorph.depth_eq`: `C¹` (local) diffeomorphisms preserve
+  the depth.
 * `ModelWithCorners.depthAt_prod`, `ModelWithCorners.depth_prod`: the depth of a point of a
   product is the sum of the depths of its coordinates.
 * `ModelWithCorners.depth_modelWithCornersEuclideanHalfSpace_eq_one_iff`: on a manifold modelled on
   the half-space, the points of depth one are the boundary points.
 * `ModelWithCorners.depth_prod_eq_two_iff`: in a product of two such manifolds, the points of
   depth two are the pairs of boundary points.
+* `ModelWithCorners.isOpen_setOf_depth_le_modelWithCornersEuclideanQuadrant`,
+  `ModelWithCorners.isOpen_setOf_depth_le_of_local_quadrant`,
+  `ModelWithCorners.isClosed_setOf_le_depth_of_local_quadrant`,
+  `ModelWithCorners.isOpen_setOf_depth_le_of_range_eq_equiv`,
+  `ModelWithCorners.isClosed_setOf_le_depth_of_range_eq_equiv`: upper semicontinuity of depth.
 
 ## Implementation notes
 
@@ -101,7 +126,7 @@ public section
 noncomputable section
 
 open Set Filter Function Module
-open scoped Manifold Topology
+open scoped Manifold Topology ContDiff
 
 namespace ModelWithCorners
 
@@ -130,6 +155,29 @@ variable {I I'}
 theorem depthAt_le_finrank (y : E) : I.depthAt y ≤ finrank ℝ E := by
   simp only [depthAt]
   exact Nat.sub_le _ _
+
+/-- A continuous linear equivalence carrying `range I` onto `range I'` preserves `depthAt`. -/
+theorem depthAt_eq_of_image_range (e : E ≃L[ℝ] E') (he : e '' range I = range I') (y : E) :
+    I.depthAt y = I'.depthAt (e y) := by
+  classical
+  simp only [depthAt, e.toLinearEquiv.finrank_eq, ← he]
+  congr 2
+  ext d
+  refine ⟨fun ⟨V, hV, hd⟩ ↦ ⟨V.map e.toLinearMap, ?_, ?_⟩,
+    fun ⟨W, hW, hd⟩ ↦ ⟨W.map e.symm.toLinearMap, ?_, ?_⟩⟩
+  · rintro _ ⟨v, hv, rfl⟩
+    exact e.mem_posTangentConeAt_image_iff.2 (hV hv)
+  · rwa [← (e.toLinearEquiv.submoduleMap V).finrank_eq]
+  · rintro _ ⟨w, hw, rfl⟩
+    refine e.mem_posTangentConeAt_image_iff.1 ?_
+    simpa using hW hw
+  · rwa [← (e.symm.toLinearEquiv.submoduleMap W).finrank_eq]
+
+/-- Composing a real model with corners with a continuous linear equivalence preserves `depthAt`. -/
+@[simp]
+theorem depthAt_transContinuousLinearEquiv (e : E ≃L[ℝ] E') (y : E) :
+    (I.transContinuousLinearEquiv e).depthAt (e y) = I.depthAt y :=
+  (depthAt_eq_of_image_range e (I.transContinuousLinearEquiv_range e).symm y).symm
 
 variable {y : E}
 
@@ -385,6 +433,52 @@ theorem depthAt_modelWithCornersEuclideanHalfSpace {n : ℕ} [NeZero n]
 
 end Coordinates
 
+section LinearCoordinates
+
+variable {I}
+
+/-- For a model with corners whose range is cut out by the nonnegativity of the coordinates in `S`
+under a continuous linear coordinate equivalence `L : E ≃L[ℝ] (ι → ℝ)`, the depth of a point of
+`range I` is the number of coordinates in `S` that vanish there. -/
+theorem depthAt_eq_natCard_of_range_eq_equiv {ι : Type*} [Finite ι]
+    (L : E ≃L[ℝ] (ι → ℝ)) {S : Set ι} (hI : range I = {y | ∀ i ∈ S, 0 ≤ L y i})
+    {y : E} (hy : y ∈ range I) :
+    I.depthAt y = Nat.card {i // i ∈ S ∧ L y i = 0} := by
+  cases nonempty_fintype ι
+  let e : E ≃L[ℝ] EuclideanSpace ℝ ι :=
+    L.trans ((ContinuousLinearEquiv.piCongrLeft ℝ (fun _ ↦ ℝ) (.refl ι)).trans
+      (EuclideanSpace.equiv ι ℝ).symm)
+  have hJ : range (I.transContinuousLinearEquiv e) = {z | ∀ i ∈ S, 0 ≤ z i} := by
+    simpa only [Equiv.coe_refl, image_id] using
+      I.range_transContinuousLinearEquiv_of_range_eq_equiv L (.refl ι) hI
+  rw [← I.depthAt_transContinuousLinearEquiv e y,
+    depthAt_eq_natCard_of_range_eq hJ
+      (I.transContinuousLinearEquiv_range e ▸ mem_image_of_mem e hy)]
+  exact Nat.card_congr (Equiv.subtypeEquivRight fun i ↦ by simp [e])
+
+/-- The product of two models whose ranges are cut out by nonnegative coordinates has range cut out
+by the corresponding nonnegative coordinates under `ContinuousLinearEquiv.prodCoordEquiv`. -/
+theorem range_prod_eq_of_range_eq_equiv {E₁ E₂ H₁ H₂ ι₁ ι₂ : Type*}
+    [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [TopologicalSpace H₁]
+    [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [TopologicalSpace H₂]
+    {I₁ : ModelWithCorners ℝ E₁ H₁} {I₂ : ModelWithCorners ℝ E₂ H₂}
+    {L₁ : E₁ ≃L[ℝ] (ι₁ → ℝ)} {L₂ : E₂ ≃L[ℝ] (ι₂ → ℝ)} {S₁ : Set ι₁} {S₂ : Set ι₂}
+    (hI₁ : range I₁ = {y | ∀ i ∈ S₁, 0 ≤ L₁ y i})
+    (hI₂ : range I₂ = {y | ∀ j ∈ S₂, 0 ≤ L₂ y j}) :
+    range (I₁.prod I₂) =
+      {p | ∀ k ∈ Sum.inl '' S₁ ∪ Sum.inr '' S₂, 0 ≤ L₁.prodCoordEquiv L₂ p k} := by
+  rw [range_prod, hI₁, hI₂]
+  ext ⟨y₁, y₂⟩
+  simp only [mem_prod, mem_ofPred_eq, mem_union, mem_image]
+  refine ⟨?_, fun h ↦ ⟨fun i hi ↦ ?_, fun j hj ↦ ?_⟩⟩
+  · rintro ⟨h₁, h₂⟩ k (⟨i, hi, rfl⟩ | ⟨j, hj, rfl⟩)
+    · simpa using h₁ i hi
+    · simpa using h₂ j hj
+  · simpa using h (.inl i) (.inl ⟨i, hi, rfl⟩)
+  · simpa using h (.inr j) (.inr ⟨j, hj, rfl⟩)
+
+end LinearCoordinates
+
 section Manifold
 
 variable {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
@@ -404,6 +498,18 @@ theorem depth_def (x : M) : I.depth x = I.depthAt (extChartAt I x x) := (rfl)
 /-- The depth of a point is at most the dimension of the model vector space. -/
 theorem depth_le_finrank (x : M) : I.depth x ≤ finrank ℝ E :=
   depthAt_le_finrank _
+
+/-- Composing the model with a continuous linear equivalence does not change the depth of a
+point. -/
+@[simp]
+theorem depth_transContinuousLinearEquiv (e : E ≃L[ℝ] E') (x : M) :
+    (I.transContinuousLinearEquiv e).depth x = I.depth x := by
+  simp [depth_def]
+
+/-- Restricting to an open subset does not change the depth of a point. -/
+@[simp]
+theorem depth_opens {U : TopologicalSpace.Opens M} (u : U) : I.depth u = I.depth (u : M) := by
+  simp [depth_def, extChartAt, TopologicalSpace.Opens.chartAt_eq]
 
 variable [FiniteDimensional ℝ E]
 
@@ -487,6 +593,28 @@ theorem depth_eq_card_filter_chartAt (hr : r ≠ 0) {x y : M}
   rw [depth_modelWithCornersEuclideanQuadrant hr (IsManifold.chart_mem_maximalAtlas x) hy,
     Nat.card_eq_fintype_card, Fintype.card_subtype]
 
+open scoped Finset in
+/-- **Upper semicontinuity of depth on a quadrant manifold:** on a `C^r` manifold modelled on
+`𝓡c n`, `r ≠ 0`, the sublevel set `{x : M | (𝓡c n).depth x ≤ k}` is open for every `k`. -/
+theorem isOpen_setOf_depth_le_modelWithCornersEuclideanQuadrant (hr : r ≠ 0) (k : ℕ) :
+    IsOpen {x : M | (𝓡c n).depth x ≤ k} := by
+  rw [isOpen_iff_forall_mem_open]
+  intro x hx
+  let Z : Finset (Fin n) := {i | (chartAt (EuclideanQuadrant n) x x).val i = 0}
+  have hopen : IsOpen {h : EuclideanQuadrant n | ∀ i ∉ Z, 0 < h.val i} :=
+    TauCeti.isOpen_setOf_forall_pos (· ∉ Z) fun i ↦
+      (PiLp.continuous_apply 2 _ i).comp continuous_subtypeVal
+  refine ⟨(chartAt (EuclideanQuadrant n) x).source ∩
+      {y | ∀ i ∉ Z, 0 < (chartAt (EuclideanQuadrant n) x y).val i},
+    ?_, (chartAt _ x).continuousOn.isOpen_inter_preimage (chartAt _ x).open_source hopen,
+    mem_chart_source _ x, fun i hi ↦ lt_of_le_of_ne
+      ((chartAt (EuclideanQuadrant n) x x).prop i) (Ne.symm (by simpa [Z] using hi))⟩
+  rintro y ⟨hy, hpos⟩
+  rw [mem_ofPred_eq, depth_eq_card_filter_chartAt hr hy]
+  rw [mem_ofPred_eq, depth_eq_card_filter_chartAt hr (mem_chart_source _ x)] at hx
+  exact (Finset.card_le_card fun i hi ↦ by_contra fun hiZ ↦
+    (hpos i hiZ).ne' (by simpa using hi)).trans hx
+
 end Quadrant
 
 section HalfSpace
@@ -558,21 +686,35 @@ theorem MDifferentiableAt.finrank_sub_depth_le {f : M → N} {x : M} (hf : MDiff
     (hφ.mono (inter_subset_left.trans (extChartAt_target_subset_range x))) hf'
   rwa [writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x)] at h
 
-variable [FiniteDimensional ℝ E] {n : WithTop ℕ∞}
+variable {n : WithTop ℕ∞}
 
+omit [FiniteDimensional ℝ E'] in
 /-- A local diffeomorphism preserves the depth. -/
 theorem IsLocalDiffeomorphAt.depth_eq (hn : n ≠ 0) {f : M → N} {x : M}
     (hf : IsLocalDiffeomorphAt I I' n f x) : I'.depth (f x) = I.depth x := by
-  have hg := hf.localInverse_isLocalDiffeomorphAt
-  have h₁ := (hf.mdifferentiableAt hn).finrank_sub_depth_le (hf.isInvertible_mfderiv hn).injective
-  have h₂ := (hg.mdifferentiableAt hn).finrank_sub_depth_le (hg.isInvertible_mfderiv hn).injective
-  rw [hf.localInverse_left_inv hf.localInverse_mem_target] at h₂
-  have hE : finrank ℝ E = finrank ℝ E' :=
-    (hf.mfderivToContinuousLinearEquiv hn).toLinearEquiv.finrank_eq
-  have h₃ := depth_le_finrank (I := I) x
-  have h₄ := depth_le_finrank (I := I') (f x)
-  omega
+  by_cases hE : FiniteDimensional ℝ E
+  · have : FiniteDimensional ℝ E' :=
+      (hf.mfderivToContinuousLinearEquiv hn).toLinearEquiv.finiteDimensional
+    have hg := hf.localInverse_isLocalDiffeomorphAt
+    have h₁ :=
+      (hf.mdifferentiableAt hn).finrank_sub_depth_le (hf.isInvertible_mfderiv hn).injective
+    have h₂ :=
+      (hg.mdifferentiableAt hn).finrank_sub_depth_le (hg.isInvertible_mfderiv hn).injective
+    rw [hf.localInverse_left_inv hf.localInverse_mem_target] at h₂
+    have hdim : finrank ℝ E = finrank ℝ E' :=
+      (hf.mfderivToContinuousLinearEquiv hn).toLinearEquiv.finrank_eq
+    have h₃ := depth_le_finrank (I := I) x
+    have h₄ := depth_le_finrank (I := I') (f x)
+    omega
+  · have hE' : ¬ FiniteDimensional ℝ E' := fun _ ↦
+      hE (hf.mfderivToContinuousLinearEquiv hn).symm.toLinearEquiv.finiteDimensional
+    have h₃ := depth_le_finrank (I := I) x
+    have h₄ := depth_le_finrank (I := I') (f x)
+    rw [finrank_of_infinite_dimensional hE] at h₃
+    rw [finrank_of_infinite_dimensional hE'] at h₄
+    omega
 
+omit [FiniteDimensional ℝ E'] in
 /-- A diffeomorphism preserves the depth. -/
 @[simp]
 theorem Diffeomorph.depth_eq (hn : n ≠ 0) (Φ : M ≃ₘ^n⟮I, I'⟯ N) (x : M) :
@@ -580,3 +722,74 @@ theorem Diffeomorph.depth_eq (hn : n ≠ 0) (Φ : M ≃ₘ^n⟮I, I'⟯ N) (x : 
   (Φ.isLocalDiffeomorph x).depth_eq hn
 
 end Maps
+
+namespace ModelWithCorners
+
+section LocalQuadrant
+
+private theorem isClosed_setOf_le_of_isOpen_setOf_le {X : Type*} [TopologicalSpace X] {f : X → ℕ}
+    (hf : ∀ k, IsOpen {x | f x ≤ k}) (k : ℕ) : IsClosed {x | k ≤ f x} := by
+  cases k with
+  | zero => simp
+  | succ k =>
+    convert (hf k).isClosed_compl using 1
+    ext x
+    simp only [mem_ofPred_eq, mem_compl_iff, not_le]
+    omega
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H}
+
+/-- **Upper semicontinuity of depth for manifolds with local quadrant charts:** if every point of
+`M` has an open neighbourhood `C¹`-diffeomorphic to an open subset of
+`EuclideanQuadrant (finrank ℝ E)`, then `{x : M | I.depth x ≤ k}` is open for every `k`. -/
+theorem isOpen_setOf_depth_le_of_local_quadrant
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    (hloc : ∀ x : M, ∃ (U : TopologicalSpace.Opens M)
+      (V : TopologicalSpace.Opens (EuclideanQuadrant (finrank ℝ E))),
+      x ∈ U ∧ Nonempty (U ≃ₘ^1⟮I, 𝓡c (finrank ℝ E)⟯ V))
+    (k : ℕ) : IsOpen {x : M | I.depth x ≤ k} := by
+  rw [isOpen_iff_forall_mem_open]
+  intro x hx
+  obtain ⟨U, V, hxU, ⟨Φ⟩⟩ := hloc x
+  have hopen : IsOpen {u : U | (𝓡c (finrank ℝ E)).depth (Φ u) ≤ k} :=
+    (isOpen_setOf_depth_le_modelWithCornersEuclideanQuadrant (M := V) one_ne_zero k).preimage
+      Φ.continuous
+  refine ⟨Subtype.val '' {u : U | (𝓡c (finrank ℝ E)).depth (Φ u) ≤ k}, ?_,
+    U.isOpen.isOpenMap_subtypeVal _ hopen, ⟨x, hxU⟩, ?_, rfl⟩
+  · rintro _ ⟨u, hu, rfl⟩
+    simpa only [mem_ofPred_eq, Φ.depth_eq one_ne_zero, depth_opens] using hu
+  · simpa only [mem_ofPred_eq, Φ.depth_eq one_ne_zero, depth_opens] using hx
+
+/-- If every point of `M` has an open neighbourhood `C¹`-diffeomorphic to an open subset of
+`EuclideanQuadrant (finrank ℝ E)`, then `{x : M | k ≤ I.depth x}` is closed for every `k`. -/
+theorem isClosed_setOf_le_depth_of_local_quadrant
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    (hloc : ∀ x : M, ∃ (U : TopologicalSpace.Opens M)
+      (V : TopologicalSpace.Opens (EuclideanQuadrant (finrank ℝ E))),
+      x ∈ U ∧ Nonempty (U ≃ₘ^1⟮I, 𝓡c (finrank ℝ E)⟯ V))
+    (k : ℕ) : IsClosed {x : M | k ≤ I.depth x} :=
+  isClosed_setOf_le_of_isOpen_setOf_le (isOpen_setOf_depth_le_of_local_quadrant hloc) k
+
+/-- **Upper semicontinuity of depth:** on a `C¹` manifold whose model range is cut out by
+nonnegative coordinates in a linear coordinate system, `{x : M | I.depth x ≤ k}` is open for every
+`k`. -/
+theorem isOpen_setOf_depth_le_of_range_eq_equiv {ι : Type*} [Finite ι] (L : E ≃L[ℝ] (ι → ℝ))
+    {S : Set ι} (hI : range I = {y | ∀ i ∈ S, 0 ≤ L y i})
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] (k : ℕ) :
+    IsOpen {x : M | I.depth x ≤ k} :=
+  isOpen_setOf_depth_le_of_local_quadrant
+    (exists_opens_diffeomorph_opens_euclideanQuadrant_of_range_eq_equiv L hI) k
+
+/-- On a `C¹` manifold whose model range is cut out by nonnegative coordinates in a linear
+coordinate system, `{x : M | k ≤ I.depth x}` is closed for every `k`. -/
+theorem isClosed_setOf_le_depth_of_range_eq_equiv {ι : Type*} [Finite ι] (L : E ≃L[ℝ] (ι → ℝ))
+    {S : Set ι} (hI : range I = {y | ∀ i ∈ S, 0 ≤ L y i})
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] (k : ℕ) :
+    IsClosed {x : M | k ≤ I.depth x} :=
+  isClosed_setOf_le_depth_of_local_quadrant
+    (exists_opens_diffeomorph_opens_euclideanQuadrant_of_range_eq_equiv L hI) k
+
+end LocalQuadrant
+
+end ModelWithCorners

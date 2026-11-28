@@ -26,8 +26,10 @@ The construction combines `LinearEquiv.piOptionEquivProd` with
 
 For Mathlib's `ContinuousLinearEquiv.piCongrLeft` and `ContinuousLinearEquiv.sumPiEquivProdPi`,
 `@[simp]` lemmas evaluate the equivalences and their inverses and record reflexivity of
-`piCongrLeft`, and `ContinuousLinearEquiv.piProdEquivPiSumUnique` identifies `(σ → M) × M` with
-`σ ⊕ τ → M` for any unique index type `τ`.
+`piCongrLeft`, `ContinuousLinearEquiv.piProdEquivPiSumUnique` identifies `(σ → M) × M` with
+`σ ⊕ τ → M` for any unique index type `τ`, and `ContinuousLinearEquiv.prodCoordEquiv` combines
+coordinate equivalences `E₁ ≃L[R] (ι₁ → N)` and `E₂ ≃L[R] (ι₂ → N)` into
+`(E₁ × E₂) ≃L[R] (ι₁ ⊕ ι₂ → N)`.
 `ContinuousLinearEquiv.negCoord` negates a single coordinate of a dependent product while leaving
 the remaining coordinates fixed; `TauCeti.image_single_add_negCoord_univ_pi`,
 `TauCeti.image_single_add_negCoord_Icc`, and `TauCeti.image_single_add_negCoord_pi_Ioo` record
@@ -169,6 +171,45 @@ def piProdEquivPiSumUnique (σ τ N : Type*) [Unique τ]
     [AddCommMonoid N] [Module R N] [TopologicalSpace N] (p : σ ⊕ τ → N) :
     (piProdEquivPiSumUnique R σ τ N).symm p = (p ∘ Sum.inl, p (.inr default)) :=
   (rfl)
+
+section ProdCoord
+
+variable {R} {N E₁ E₂ ι₁ ι₂ : Type*}
+  [AddCommMonoid N] [Module R N] [TopologicalSpace N]
+  [AddCommMonoid E₁] [Module R E₁] [TopologicalSpace E₁]
+  [AddCommMonoid E₂] [Module R E₂] [TopologicalSpace E₂]
+
+/-- Combine two continuous linear coordinate equivalences `L₁ : E₁ ≃L[R] (ι₁ → N)` and
+`L₂ : E₂ ≃L[R] (ι₂ → N)` into a coordinate equivalence on `E₁ × E₂` indexed by `ι₁ ⊕ ι₂`. -/
+def prodCoordEquiv (L₁ : E₁ ≃L[R] (ι₁ → N)) (L₂ : E₂ ≃L[R] (ι₂ → N)) :
+    (E₁ × E₂) ≃L[R] (ι₁ ⊕ ι₂ → N) :=
+  (L₁.prodCongr L₂).trans (sumPiEquivProdPi R ι₁ ι₂ (fun _ ↦ N)).symm
+
+/-- `prodCoordEquiv` is the product of the two coordinate equivalences followed by
+`(sumPiEquivProdPi R ι₁ ι₂ (fun _ ↦ N)).symm`. -/
+theorem prodCoordEquiv_def (L₁ : E₁ ≃L[R] (ι₁ → N)) (L₂ : E₂ ≃L[R] (ι₂ → N)) :
+    L₁.prodCoordEquiv L₂ = (L₁.prodCongr L₂).trans (sumPiEquivProdPi R ι₁ ι₂ (fun _ ↦ N)).symm :=
+  (rfl)
+
+@[simp]
+theorem prodCoordEquiv_apply_inl (L₁ : E₁ ≃L[R] (ι₁ → N)) (L₂ : E₂ ≃L[R] (ι₂ → N))
+    (p : E₁ × E₂) (i : ι₁) :
+    L₁.prodCoordEquiv L₂ p (.inl i) = L₁ p.1 i :=
+  (rfl)
+
+@[simp]
+theorem prodCoordEquiv_apply_inr (L₁ : E₁ ≃L[R] (ι₁ → N)) (L₂ : E₂ ≃L[R] (ι₂ → N))
+    (p : E₁ × E₂) (j : ι₂) :
+    L₁.prodCoordEquiv L₂ p (.inr j) = L₂ p.2 j :=
+  (rfl)
+
+@[simp]
+theorem prodCoordEquiv_symm_apply (L₁ : E₁ ≃L[R] (ι₁ → N)) (L₂ : E₂ ≃L[R] (ι₂ → N))
+    (f : ι₁ ⊕ ι₂ → N) :
+    (L₁.prodCoordEquiv L₂).symm f = (L₁.symm (f ∘ Sum.inl), L₂.symm (f ∘ Sum.inr)) :=
+  (rfl)
+
+end ProdCoord
 
 end SumPi
 
