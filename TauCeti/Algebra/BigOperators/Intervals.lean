@@ -37,8 +37,10 @@ denominator cleared it holds in any ring, as does Gauss's sum `2 ∑_{r < n} r =
 Read backwards, `∑_{j < n} (n - j) = n (n + 1) / 2` in `ℕ`.
 Counted with sign, the integers between `0` and any `k : ℤ` sum to `k (k - 1) / 2`, the signed
 form of Gauss's sum; more generally, the signed partial sums of a sequence indexed by `ℤ` form its
-discrete primitive vanishing at `0`. Grouping `i < n` into blocks of length `H`, the quotients
-`i / H` sum to `H (q choose 2) + ρ q` for `n = H q + ρ` with `ρ < H`.
+discrete primitive vanishing at `0`. Likewise, the signed sums of `k - j`, `j ^ 2`, and
+`j (k - j)` between `0` and `k` equal `k (k + 1) / 2`, `k (k - 1) (2 k - 1) / 6`, and
+`(k ^ 3 - k) / 6`. Grouping `i < n` into blocks of length `H`, the quotients `i / H` sum to
+`H (q choose 2) + ρ q` for `n = H q + ρ` with `ρ < H`.
 A sum over `Icc 0 N` of a sequence vanishing at `0` is its sum over `Icc 1 N`.
 A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the shifts of `f` that read
 `f` at `j + d - L` where this index is defined, and vanish otherwise.
@@ -80,6 +82,11 @@ by at most two `n'`, so `∑_{0 < n' ≤ H} w(|n - n'|) ≤ 2 w(0) + 2 ∑_{1 �
   `i + 1`.
 * `Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero`: twice `∑_{0 ≤ j < k} j - ∑_{k ≤ j < 0} j` is
   `k (k - 1)` for every `k : ℤ`.
+* `Finset.card_Ico_sub_card_Ico`,
+  `Finset.two_mul_sum_Ico_zero_sub_sub_sum_Ico_zero_sub`,
+  `Finset.six_mul_sum_Ico_zero_sq_sub_sum_Ico_zero_sq`,
+  `Finset.six_mul_sum_Ico_zero_mul_sub_sub_sum_Ico_zero_mul_sub`: signed cardinality and signed
+  sums of `k - j`, `j ^ 2`, and `j (k - j)` between `0` and `k : ℤ`, with denominators cleared.
 * `Finset.sum_Icc_zero_eq_sum_Icc_one`: a sum over `Icc 0 N` of a sequence vanishing at `0` is
   its sum over `Icc 1 N`.
 * `Finset.sum_Ico_sub_add_eq_sum_range_indicator`: a window sum `∑_{j - L ≤ k < j + L} f k` as the
@@ -381,6 +388,56 @@ theorem two_mul_sum_Ico_zero_sub_sum_Ico_zero (k : ℤ) :
     have := sum_Ico_zero_add_one_sub_sum_Ico_add_one_zero (fun j => j) (-(i : ℤ) - 1)
     rw [sub_add_cancel] at this
     linear_combination ih - 2 * this
+
+/-- The signed cardinality of the integer interval between `a` and `b` is `b - a`:
+`#(Ico a b) - #(Ico b a) = b - a` for all `a b : ℤ`. -/
+theorem card_Ico_sub_card_Ico (a b : ℤ) :
+    ((Ico a b).card : ℤ) - (Ico b a).card = b - a := by
+  simp only [Int.card_Ico]
+  omega
+
+/-- Counted with sign, the differences `k - j` for integers between `0` and `k` sum to
+`k (k + 1) / 2`: twice `∑_{0 ≤ j < k} (k - j) - ∑_{k ≤ j < 0} (k - j)` is `k (k + 1)` for every
+`k : ℤ`. -/
+theorem two_mul_sum_Ico_zero_sub_sub_sum_Ico_zero_sub (k : ℤ) :
+    2 * (∑ j ∈ Ico 0 k, (k - j) - ∑ j ∈ Ico k 0, (k - j)) = k * (k + 1) := by
+  have hcard : ((Ico 0 k).card : ℤ) - (Ico k 0).card = k := by
+    rw [card_Ico_sub_card_Ico, sub_zero]
+  rw [sum_sub_distrib, sum_sub_distrib, sum_const, sum_const, nsmul_eq_mul, nsmul_eq_mul]
+  linear_combination 2 * k * hcard - two_mul_sum_Ico_zero_sub_sum_Ico_zero k
+
+/-- Counted with sign, the squares of the integers between `0` and `k` sum to
+`k (k - 1) (2 k - 1) / 6`: six times `∑_{0 ≤ j < k} j ^ 2 - ∑_{k ≤ j < 0} j ^ 2` is
+`k (k - 1) (2 k - 1)` for every `k : ℤ`. -/
+theorem six_mul_sum_Ico_zero_sq_sub_sum_Ico_zero_sq (k : ℤ) :
+    6 * (∑ j ∈ Ico 0 k, j ^ 2 - ∑ j ∈ Ico k 0, j ^ 2) = k * (k - 1) * (2 * k - 1) := by
+  rcases le_or_gt 0 k with hk | hk
+  · obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hk
+    rw [Ico_eq_empty_of_le hk, sum_empty, sub_zero, Int.Ico_eq_finset_map, sum_map]
+    simp [mul_comm (6 : ℤ), sum_range_natCast_sq_mul_six]
+  · obtain ⟨n, hn⟩ := Int.eq_ofNat_of_zero_le (by omega : 0 ≤ -k)
+    have hkn : k = -(n : ℤ) := by omega
+    rw [hkn, Ico_eq_empty_of_le (by omega : -(n : ℤ) ≤ 0), sum_empty, zero_sub, mul_neg,
+      Int.Ico_eq_finset_map, sum_map]
+    simp only [sub_neg_eq_add, zero_add, Int.toNat_natCast, Function.Embedding.trans_apply,
+      Nat.castEmbedding_apply, addLeftEmbedding_apply]
+    have hsq_term (r : ℕ) : (-(n : ℤ) + (r : ℤ)) ^ 2 =
+        (r : ℤ) ^ 2 - 2 * (n : ℤ) * (r : ℤ) + (n : ℤ) ^ 2 := by ring
+    simp only [hsq_term, sum_add_distrib, sum_sub_distrib, ← mul_sum, sum_const, card_range,
+      nsmul_eq_mul]
+    have hsq := sum_range_natCast_sq_mul_six (R := ℤ) n
+    have hlin := sum_range_natCast_mul_two (R := ℤ) n
+    linear_combination -hsq + 6 * (n : ℤ) * hlin
+
+/-- Counted with sign, the products `j (k - j)` for integers between `0` and `k` sum to
+`(k ^ 3 - k) / 6`: six times `∑_{0 ≤ j < k} j * (k - j) - ∑_{k ≤ j < 0} j * (k - j)` is
+`k ^ 3 - k` for every `k : ℤ`. -/
+theorem six_mul_sum_Ico_zero_mul_sub_sub_sum_Ico_zero_mul_sub (k : ℤ) :
+    6 * (∑ j ∈ Ico 0 k, j * (k - j) - ∑ j ∈ Ico k 0, j * (k - j)) = k ^ 3 - k := by
+  simp only [mul_sub, ← sq, sum_sub_distrib, ← sum_mul]
+  linear_combination
+    3 * k * two_mul_sum_Ico_zero_sub_sum_Ico_zero k -
+      six_mul_sum_Ico_zero_sq_sub_sum_Ico_zero_sq k
 
 /-- A window sum `∑_{j - L ≤ k < j + L} f k` is the sum of `2 L` shifts of `f`: the `d`-th one
 reads `f` at `j + d - L`, where this index is defined. -/

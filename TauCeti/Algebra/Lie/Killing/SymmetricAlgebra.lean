@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Lie.Killing.Duality
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Lie.Module
 
+import TauCeti.LinearAlgebra.BilinearForm.Basic
+
 /-!
 # The Killing identification of `S(L)` with the polynomial functions on `L`
 
@@ -24,10 +26,18 @@ polynomials `x ↦ tr (ρ(x) ^ m)` of a representation `ρ`, are compared with t
 central elements of the enveloping algebra, which live in `S(L)^L`, in the proof of the
 Harish-Chandra isomorphism by Chevalley's restriction theorem.
 
+Applying generator multiplication to the canonical Killing Casimir tensor
+`TauCeti.killingCasimirTensor K L ∈ L ⊗[K] L` yields the **quadratic symmetric Casimir**
+`∑ᵢ xᵢ yᵢ ∈ S²(L)` (`TauCeti.symmetricCasimir`), which expands identically in any basis, is
+homogeneous of degree two, and evaluates under `κ(v, ·)` to `κ(v, v)`. Away from characteristic
+two it is nonzero whenever `L` is nontrivial; in characteristic two the Killing form is alternating,
+so the sum vanishes in `S²(L)`.
+
 ## Main definitions
 
 * `TauCeti.killingSymmetricEquiv`: the algebra equivalence `S(L) ≃ S(L*)` induced by the Killing
   duality `TauCeti.killingDuality : L ≃ L*` of `TauCeti/Algebra/Lie/Killing/Duality.lean`.
+* `TauCeti.symmetricCasimir`: the quadratic Casimir tensor `∑ᵢ xᵢ yᵢ ∈ S(L)`.
 
 ## Main results
 
@@ -38,6 +48,9 @@ Harish-Chandra isomorphism by Chevalley's restriction theorem.
   action on `S(L)` with the coadjoint action on `S(L*)`.
 * `TauCeti.map_killingSymmetricEquiv_lieInvariants`: it carries the invariants `S(L)^L` onto the
   invariant polynomial functions `S(L*)^L`.
+* `TauCeti.symmetricCasimir_eq_sum`, `TauCeti.symmetricCasimir_mem_homogeneousSubmodule`,
+  `TauCeti.lift_killingForm_symmetricCasimir`, `TauCeti.symmetricCasimir_ne_zero`: basis
+  independence, degree-two homogeneity, Killing evaluation, and nonvanishing of `symmetricCasimir`.
 
 ## References
 
@@ -112,5 +125,55 @@ theorem map_killingSymmetricEquiv_lieInvariants :
         (killingSymmetricEquiv K L : SymmetricAlgebra K L →ₐ[K] SymmetricAlgebra K (Dual K L)) =
       lieInvariants K L (Dual K L) := by
   rw [killingSymmetricEquiv, ← (killingDuality K L).map_lieInvariants, ← mapEquiv_toAlgHom]
+
+/-! ### The quadratic symmetric Casimir -/
+
+/-- **The quadratic symmetric Casimir** `∑ᵢ xᵢ yᵢ ∈ S(L)`, obtained by applying generator
+multiplication to `TauCeti.killingCasimirTensor K L`. It is the degree-two PBW symbol of the
+Casimir element of `U(L)`. -/
+noncomputable def symmetricCasimir : SymmetricAlgebra K L :=
+  LinearMap.mul' K (SymmetricAlgebra K L)
+    (TensorProduct.map (ι K L) (ι K L) (killingCasimirTensor K L))
+
+variable {K L} in
+/-- **The quadratic symmetric Casimir may be computed in any basis.** -/
+theorem symmetricCasimir_eq_sum {ι' : Type*} [DecidableEq ι'] [Fintype ι']
+    (b : Module.Basis ι' K L) :
+    symmetricCasimir K L = ∑ i, ι K L (b i) * ι K L (killingDualBasis b i) := by
+  rw [symmetricCasimir, killingCasimirTensor_eq_sum b, map_sum, map_sum]
+  simp only [TensorProduct.map_tmul, LinearMap.mul'_apply]
+
+/-- **The quadratic symmetric Casimir is homogeneous of degree two.** -/
+theorem symmetricCasimir_mem_homogeneousSubmodule :
+    symmetricCasimir K L ∈ homogeneousSubmodule K L 2 := by
+  rw [symmetricCasimir_eq_sum (Module.finBasis K L)]
+  refine Submodule.sum_mem _ fun i _ ↦ ?_
+  simpa using SetLike.mul_mem_graded
+    (ι_mem_homogeneousSubmodule K L (Module.finBasis K L i))
+    (ι_mem_homogeneousSubmodule K L (killingDualBasis (Module.finBasis K L) i))
+
+/-- **Evaluating the quadratic symmetric Casimir at `κ(v, ·)` gives `κ(v, v)`.** -/
+@[simp]
+theorem lift_killingForm_symmetricCasimir (v : L) :
+    lift (killingForm K L v) (symmetricCasimir K L) = killingForm K L v v := by
+  set b := Module.finBasis K L
+  have hnd := IsKilling.killingForm_nondegenerate K L
+  rw [symmetricCasimir_eq_sum b]
+  simp only [map_sum, map_mul, lift_ι_apply]
+  simp only [← smul_eq_mul, ← map_smul, ← map_sum]
+  rw [LinearMap.BilinForm.sum_apply_smul_dualBasis hnd b v]
+
+/-- **Away from characteristic two, the quadratic symmetric Casimir of a nontrivial Lie algebra is
+nonzero.** In characteristic two the Killing form is alternating, so `∑ᵢ xᵢ yᵢ` vanishes in
+`S²(L)`. -/
+theorem symmetricCasimir_ne_zero [NeZero (2 : K)] [Nontrivial L] :
+    symmetricCasimir K L ≠ 0 := by
+  intro h0
+  have hdiag (v : L) : killingForm K L v v = 0 := by
+    rw [← lift_killingForm_symmetricCasimir K L v, h0, map_zero]
+  exact (IsKilling.killingForm_nondegenerate K L).ne_zero <|
+    TauCeti.BilinForm.eq_zero_of_isSymm_of_isAlt
+      (IsRegular.of_ne_zero (NeZero.ne (2 : K))).left
+      ⟨LieModule.traceForm_comm K L L⟩ hdiag
 
 end TauCeti

@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Current.CompletedCoordinateAction
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Summation
+public import TauCeti.Algebra.Lie.Current.CompletedCoordinateAction
 
-import TauCeti.Algebra.BigOperators.Intervals
 import Mathlib.Topology.Algebra.InfiniteSum.Module
+import TauCeti.Topology.Algebra.InfiniteSum.Basic
 
 /-!
 # Normally ordered modes in the completed enveloping algebra
@@ -46,11 +46,12 @@ ordered modes, current generators and a central term
 (`TauCeti.CurrentAlgebra.toCompletedEnveloping_mul_normalOrderedMode_sub_mul`):
 
 `[z_k, :x y:_n] = :⁅z, x⁆ y:_{n+k} + :x ⁅z, y⁆:_{n+k} + k ⁅⁅z, x⁆, y⁆_{n+k}
-  - k a Φ(z, x) y_{n+k} - k a Φ(z, y) x_{n+k} - δ_{n+k, 0} (k (k - 1) / 2) a Φ(⁅z, x⁆, y)`.
+  - k a Φ(z, x) y_{n+k} - k a Φ(z, y) x_{n+k} - δ_{n+k, 0} (k (k - 1) / 2) a Φ(⁅z, x⁆, y)`,
 
-The term `k ⁅⁅z, x⁆, y⁆_{n+k}` and the last central term come from moving the cut of the normal
-ordering of `:⁅z, x⁆ y:` from `k` back to `0`. This is the formula from which the commutators of
-currents with the quadratic Segal--Sugawara modes are computed.
+where `k (k - 1) / 2` is computed in `ℤ` before casting to the base ring `R`. The term
+`k ⁅⁅z, x⁆, y⁆_{n+k}` and the last central term come from moving the cut of the normal ordering of
+`:⁅z, x⁆ y:` from `k` back to `0`. This is the formula from which the commutators of currents with
+the quadratic Segal--Sugawara modes are computed.
 
 The modes `:x y:_n` are bilinear in `x` and `y`, and the completed level comparison
 `TauCeti.CurrentAlgebra.levelCompletedEnvelopingEquiv`, which is the identity on currents, carries
@@ -73,12 +74,15 @@ field and at every central value.
 
 * `TauCeti.CurrentAlgebra.hasSum_normalOrderedMode`: `:x y:_n` is the sum of its normally ordered
   summands.
-* `TauCeti.CurrentAlgebra.summable_normalOrderedSummand`: the summands ordered at any cut form a
-  summable family.
+* `TauCeti.CurrentAlgebra.summable_normalOrderedSummand`,
+  `TauCeti.CurrentAlgebra.summable_smul_normalOrderedSummand`: the summands (and their scalar
+  weightings) ordered at any cut form a summable family.
 * `TauCeti.CurrentAlgebra.limπ_normalOrderedMode`: its coordinates are finite sums.
 * `TauCeti.CurrentAlgebra.limSmul_normalOrderedMode`: its action on a smooth vector is a finite
   sum.
-* `TauCeti.CurrentAlgebra.tsum_normalOrderedSummand`: moving the cut of the normal ordering.
+* `TauCeti.CurrentAlgebra.normalOrderedSummand_eq_add_sub`,
+  `TauCeti.CurrentAlgebra.tsum_smul_normalOrderedSummand`,
+  `TauCeti.CurrentAlgebra.tsum_normalOrderedSummand`: moving the cut of the normal ordering.
 * `TauCeti.CurrentAlgebra.coordinateEnvelopingAut_homothety_normalOrderedSummand`: homothety
   scaling of each normally ordered summand at any cut.
 * `TauCeti.CurrentAlgebra.coordinateCompletedEnvelopingAut_homothety_tsum_normalOrderedSummand`:
@@ -254,13 +258,54 @@ theorem limSmul_normalOrderedMode {M : ModuleCat UK}
 
 /-- The summands at the cut `p` differ from those at the cut `0` by the commutator
 `[xₘ, y_{n-m}]` when `0 ≤ m < p`, and by its negative when `p ≤ m < 0`. -/
-private theorem normalOrderedSummand_eq_add_sub (p n m : ℤ) (x y : L) :
+theorem normalOrderedSummand_eq_add_sub (p n m : ℤ) (x y : L) :
     normalOrderedSummand Φ hΦ hΦs a p n m x y =
       normalOrderedSummand Φ hΦ hΦs a 0 n m x y +
         (if m ∈ Finset.Ico 0 p then ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m] else 0) -
         (if m ∈ Finset.Ico p 0 then ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m] else 0) := by
   simp only [normalOrderedSummand_apply, Finset.mem_Ico]
   split_ifs <;> first | omega | abel
+
+variable (Φ hΦ hΦs a) in
+/-- Multiplying the normally ordered summands at any cut by arbitrary scalar weights preserves
+summability in `Û`. -/
+theorem summable_smul_normalOrderedSummand (p n : ℤ) (w : ℤ → R) (x y : L) :
+    Summable fun m ↦
+      w m • toCompletedEnveloping Φ hΦ hΦs a (normalOrderedSummand Φ hΦ hΦs a p n m x y) := by
+  simpa only [algebraMap_smul] using (orderQuotientTower Φ hΦ hΦs a).summable_smul
+    (summable_normalOrderedSummand Φ hΦ hΦs a p n x y) (fun m : ℤ ↦ algebraMap R UK (w m))
+
+/-- **Moving the cut of a scalar-weighted normally ordered series.** Multiplying the summands of
+`:x y:_n` at the cut `p` by scalar weights `w : ℤ → R` and moving the cut back to `0` produces
+the cut-`0` weighted series plus the weighted commutators `w m • [xₘ, y_{n-m}]` for `0 ≤ m < p`,
+minus those for `p ≤ m < 0`. -/
+theorem tsum_smul_normalOrderedSummand (p n : ℤ) (w : ℤ → R) (x y : L) :
+    ∑' m, w m • toCompletedEnveloping Φ hΦ hΦs a (normalOrderedSummand Φ hΦ hΦs a p n m x y) =
+      (∑' m, w m •
+          toCompletedEnveloping Φ hΦ hΦs a (normalOrderedSummand Φ hΦ hΦs a 0 n m x y)) +
+        toCompletedEnveloping Φ hΦ hΦs a
+          (∑ m ∈ Finset.Ico 0 p, w m • (ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m]) -
+            ∑ m ∈ Finset.Ico p 0, w m • (ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m])) := by
+  refine HasSum.tsum_eq ?_
+  have hterm (m : ℤ) :
+      w m • toCompletedEnveloping Φ hΦ hΦs a (normalOrderedSummand Φ hΦ hΦs a p n m x y) =
+        w m • toCompletedEnveloping Φ hΦ hΦs a (normalOrderedSummand Φ hΦ hΦs a 0 n m x y) +
+          toCompletedEnveloping Φ hΦ hΦs a (if m ∈ Finset.Ico 0 p then
+            w m • (ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m]) else 0) -
+          toCompletedEnveloping Φ hΦ hΦs a (if m ∈ Finset.Ico p 0 then
+            w m • (ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m]) else 0) := by
+    rw [normalOrderedSummand_eq_add_sub p n, map_sub, map_add, smul_sub, smul_add]
+    have hite (s : Finset ℤ) :
+        w m • toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then
+          ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m] else 0) =
+        toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then
+          w m • (ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m]) else 0) := by
+      split_ifs <;> simp
+    rw [hite (Finset.Ico 0 p), hite (Finset.Ico p 0)]
+  simp only [hterm, map_sub, ← add_sub_assoc]
+  exact (((summable_smul_normalOrderedSummand Φ hΦ hΦs a 0 n w x y).hasSum).add
+    (hasSum_map_ite_mem (toCompletedEnveloping Φ hΦ hΦs a) _ _)).sub
+    (hasSum_map_ite_mem (toCompletedEnveloping Φ hΦ hΦs a) _ _)
 
 /-- **Moving the cut of the normal ordering.** If the summands of `:x y:_n` are ordered at the cut
 `p` instead of `0`, putting `xₘ` on the left exactly when `m < p`, the series still converges in
@@ -272,17 +317,8 @@ theorem tsum_normalOrderedSummand (p n : ℤ) (x y : L) :
       normalOrderedMode Φ hΦ hΦs a n x y + toCompletedEnveloping Φ hΦ hΦs a
         (∑ m ∈ Finset.Ico 0 p, (ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m]) -
           ∑ m ∈ Finset.Ico p 0, (ι[x, m] * ι[y, n - m] - ι[y, n - m] * ι[x, m])) := by
-  -- A family supported in a finite set `s` and given there by `f` sums to the finite sum of `f`.
-  have hs (s : Finset ℤ) (f : ℤ → UK) :
-      HasSum (fun m ↦ toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0))
-        (toCompletedEnveloping Φ hΦ hΦs a (∑ m ∈ s, f m)) := by
-    have h : HasSum (fun m ↦ toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0))
-        (∑ m ∈ s, toCompletedEnveloping Φ hΦ hΦs a (if m ∈ s then f m else 0)) :=
-      hasSum_sum_of_ne_finset_zero fun m hm ↦ by simp [hm]
-    rwa [← map_sum, Finset.sum_ite_mem, Finset.inter_self] at h
-  refine HasSum.tsum_eq ?_
-  simp only [normalOrderedSummand_eq_add_sub p n, map_add, map_sub, ← add_sub_assoc]
-  exact ((hasSum_normalOrderedMode n x y).add (hs _ _)).sub (hs _ _)
+  simpa only [Pi.one_apply, one_smul, ← normalOrderedMode_apply] using
+    tsum_smul_normalOrderedSummand (Φ := Φ) (hΦ := hΦ) (hΦs := hΦs) (a := a) p n 1 x y
 
 end NormalOrder
 
@@ -367,62 +403,28 @@ private theorem envelopingι_mul_normalOrderedSummand_sub_mul (z x y : L) (k n m
         normalOrderedSummand Φ hΦ hΦs a 0 (n + k) m x ⁅z, y⁆ +
         algebraMap R UK (if k + m = 0 then a * m * Φ z x else 0) * ι[y, n - m] +
         algebraMap R UK (if k + (n - m) = 0 then a * (n - m : ℤ) * Φ z y else 0) * ι[x, m] := by
-  -- The Leibniz rule for commutators with a product.
-  have hL (u v w : UK) : u * (v * w) - v * w * u = (u * v - v * u) * w + v * (u * w - w * u) := by
-    simp only [mul_sub, sub_mul, mul_assoc]
-    abel
   have hy : n + k - (m + k) = n - m := by ring
   have hx : k + m = m + k := add_comm k m
   have hz : k + (n - m) = n + k - m := by ring
   have hm : m + k < k ↔ m < 0 := by omega
+  have hL (u v w : UK) : u * (v * w) - v * w * u = (u * v - v * u) * w + v * (u * w - w * u) := by
+    simp only [mul_sub, sub_mul, mul_assoc]
+    abel
   simp only [normalOrderedSummand_apply, hy, hm]
   by_cases h : m < 0 <;> simp only [h, ↓reduceIte] <;>
   · rw [hL, envelopingι_single_tmul_mul_sub_mul, envelopingι_single_tmul_mul_sub_mul, hx, hz]
     simp only [mul_add, add_mul, Algebra.commutes]
     abel
 
-/-- The commutators `[x_j, y_{n-j}]` for `0 ≤ j < k`, minus those for `k ≤ j < 0`, sum to
-`k ⁅x, y⁆_n` minus the central term `(k (k - 1) / 2) a Φ(x, y)` at `n = 0`. -/
-private theorem sum_Ico_sub_sum_Ico_envelopingι_mul_sub_mul (x y : L) (k n : ℤ) :
-    ∑ j ∈ Finset.Ico 0 k, (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) -
-        ∑ j ∈ Finset.Ico k 0, (ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j]) =
-      (k : R) • ι[⁅x, y⁆, n] -
-        algebraMap R UK (if n = 0 then (k * (k - 1) / 2 : ℤ) * a * Φ x y else 0) := by
-  -- Each commutator is `⁅x, y⁆_n` plus `-j` times the central term `a Φ(x, y)` at `n = 0`.
-  have hj (j : ℤ) : ι[x, j] * ι[y, n - j] - ι[y, n - j] * ι[x, j] =
-      ι[⁅x, y⁆, n] + (-j) • algebraMap R UK (if n = 0 then a * Φ x y else 0) := by
-    rw [envelopingι_single_tmul_mul_sub_mul, add_sub_cancel]
-    split_ifs with hn
-    · rw [hn, zero_sub, ← map_zsmul, zsmul_eq_mul, Int.cast_neg]
-      ring_nf
-    · simp
-  simp only [hj, Finset.sum_add_distrib, Finset.sum_const, ← Finset.sum_smul]
-  have hc : ((Finset.Ico 0 k).card : ℤ) - (Finset.Ico k 0).card = k := by
-    simp only [Int.card_Ico]
-    omega
-  have hs : ∑ j ∈ Finset.Ico 0 k, -j - ∑ j ∈ Finset.Ico k 0, -j = -(k * (k - 1) / 2) := by
-    rw [Finset.sum_neg_distrib, Finset.sum_neg_distrib,
-      ← Int.eq_ediv_of_mul_eq_right two_ne_zero (Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero k)]
-    ring
-  have hw : algebraMap R UK (if n = 0 then ((k * (k - 1) / 2 : ℤ) : R) * a * Φ x y else 0) =
-      (k * (k - 1) / 2) • algebraMap R UK (if n = 0 then a * Φ x y else 0) := by
-    split_ifs <;> simp [zsmul_eq_mul, mul_assoc]
-  have key (c₀ c₁ s₀ s₁ M : ℤ) (v w : UK) (hc : c₀ - c₁ = k) (hs : s₀ - s₁ = -M) :
-      c₀ • v + s₀ • w - (c₁ • v + s₁ • w) = k • v - M • w := by
-    rw [← hc, show M = -(s₀ - s₁) by omega]
-    simp only [sub_smul, neg_smul]
-    abel
-  rw [hw, Int.cast_smul_eq_zsmul, ← natCast_zsmul, ← natCast_zsmul]
-  exact key _ _ _ _ _ _ _ hc hs
-
 /-- **The commutator of a current with a normally ordered mode.** In `Û`, for the current
 generator `z_k` of the mode `z ⊗ tᵏ`,
 
 `[z_k, :x y:_n] = :⁅z, x⁆ y:_{n+k} + :x ⁅z, y⁆:_{n+k} + k ⁅⁅z, x⁆, y⁆_{n+k}
-  - k a Φ(z, x) y_{n+k} - k a Φ(z, y) x_{n+k} - δ_{n+k, 0} (k (k - 1) / 2) a Φ(⁅z, x⁆, y)`.
+  - k a Φ(z, x) y_{n+k} - k a Φ(z, y) x_{n+k} - δ_{n+k, 0} (k (k - 1) / 2) a Φ(⁅z, x⁆, y)`,
 
-Here `Φ` has Mathlib's positive-residue convention, so that
-`[xₘ, yₙ] = ⁅x, y⁆_{m+n} - a m δ_{m+n, 0} Φ(x, y)`; for the affine level form `κ` take `Φ = -κ`. -/
+where `k (k - 1) / 2` is computed in `ℤ` before casting to `R`. Here `Φ` has Mathlib's
+positive-residue convention, so that `[xₘ, yₙ] = ⁅x, y⁆_{m+n} - a m δ_{m+n, 0} Φ(x, y)`; for the
+affine level form `κ` take `Φ = -κ`. -/
 theorem toCompletedEnveloping_mul_normalOrderedMode_sub_mul (z x y : L) (k n : ℤ) :
     toC ι[z, k] * normalOrderedMode Φ hΦ hΦs a n x y -
         normalOrderedMode Φ hΦ hΦs a n x y * toC ι[z, k] =

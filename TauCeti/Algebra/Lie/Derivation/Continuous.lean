@@ -80,6 +80,16 @@ theorem derivationLieAlgebra.continuous_center_smul {R A : Type*} [CommRing R] [
     Continuous ((z • D : derivationLieAlgebra R A) : Module.End R A) :=
   (continuous_const_mul (z : A)).comp hD
 
+/-- Multiplying a continuous derivation by a scalar preserves continuity. -/
+theorem derivationLieAlgebra.continuous_smul {R A : Type*} [CommRing R] [Ring A]
+    [Algebra R A] [TopologicalSpace A] [SeparatelyContinuousMul A]
+    (r : R) {D : derivationLieAlgebra R A}
+    (hD : Continuous (D : Module.End R A)) :
+    Continuous ((r • D : derivationLieAlgebra R A) : Module.End R A) :=
+  (continuous_center_smul (algebraMap R (Subalgebra.center R A) r) hD).congr fun a => by
+    rw [center_smul_apply, Subalgebra.coe_algebraMap, ← Algebra.smul_def, SetLike.val_smul,
+      LinearMap.smul_apply]
+
 section ContinuousDerivations
 
 variable (R : Type u) (A : Type v) [CommRing R] [NonUnitalNonAssocRing A] [Module R A]

@@ -178,16 +178,20 @@ theorem residuePairing_vectorFieldDerivation_add (Φ : LinearMap.BilinForm R L) 
         residuePairing_tmul, ← add_mul, LaurentSeries.residuePairing_mul_derivative_add,
         zero_mul]
 
+/-- **Monomial vector fields on modes**: `tᵐ d/dt` sends `x_n = r tⁿ ⊗ x` to `n x_{m + n - 1}`. -/
+theorem vectorFieldDerivation_single_single_tmul (m n : ℤ) (r : R) (x : L) :
+    vectorFieldDerivation R L (single m 1) (single n r ⊗ₜ x) =
+      n • (single (m + n - 1) r ⊗ₜ x) := by
+  rw [vectorFieldDerivation_tmul, LaurentSeries.derivative_apply,
+    LaurentSeries.hasseDeriv_single, Ring.choose_one_right, Nat.cast_one,
+    single_mul_single, one_mul, ← add_sub_assoc, TensorProduct.smul_tmul']
+  exact congrArg (· ⊗ₜ x) (map_zsmul (HahnSeries.single.addMonoidHom (m + n - 1)) n r)
+
 /-- **The degree derivation on modes**: `t d/dt` sends `x_n = r tⁿ ⊗ x` to `n x_n`. -/
 theorem vectorFieldDerivation_single_one_single_tmul (n : ℤ) (r : R) (x : L) :
     vectorFieldDerivation R L (single 1 1) (single n r ⊗ₜ x) = n • (single n r ⊗ₜ x) := by
-  rw [vectorFieldDerivation_tmul, TensorProduct.smul_tmul']
-  congr 1
-  ext m
-  rw [LaurentSeries.coeff_single_one_mul_derivative, HahnSeries.coeff_smul]
-  obtain rfl | hm := eq_or_ne m n
-  · rfl
-  · rw [HahnSeries.coeff_single_of_ne hm, smul_zero, smul_zero]
+  simpa only [add_comm 1 n, add_sub_cancel_right] using
+    vectorFieldDerivation_single_single_tmul 1 n r x
 
 /-- **The degree derivation multiplies the coefficient of `tⁿ` by `n`.** -/
 theorem coeff_vectorFieldDerivation_single_one (n : ℤ) (u : C) :
@@ -210,9 +214,7 @@ theorem vectorFieldDerivation_neg (h : R⸨X⸩) :
 /-- **The translation on modes**: `d/dt` sends `x_n = r tⁿ ⊗ x` to `n x_{n - 1}`. -/
 theorem vectorFieldDerivation_one_single_tmul (n : ℤ) (r : R) (x : L) :
     vectorFieldDerivation R L 1 (single n r ⊗ₜ x) = n • (single (n - 1) r ⊗ₜ x) := by
-  rw [vectorFieldDerivation_tmul, one_mul, LaurentSeries.derivative_apply,
-    LaurentSeries.hasseDeriv_single, Ring.choose_one_right, Nat.cast_one, TensorProduct.smul_tmul']
-  exact congrArg (· ⊗ₜ x) (map_zsmul (HahnSeries.single.addMonoidHom (n - 1)) n r)
+  simpa only [single_zero_one, zero_add] using vectorFieldDerivation_single_single_tmul 0 n r x
 
 /-- **The commutator of vector fields**: `[h₁ d/dt, h₂ d/dt] = (h₁ h₂' - h₂ h₁') d/dt`. -/
 theorem lie_vectorFieldDerivation (h₁ h₂ : R⸨X⸩) :
