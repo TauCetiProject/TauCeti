@@ -9,6 +9,7 @@ public import TauCeti.Probability.PointProcess.OccurrenceTime.CountingPath
 public import TauCeti.Probability.PointProcess.Poisson.Temporal
 public import TauCeti.Probability.PointProcess.Poisson.Thinning
 import TauCeti.Probability.Kernel.Composition.MeasureCompProd
+import TauCeti.Probability.PointProcess.OccurrenceTime.Path
 
 /-!
 # Poisson count processes as Poisson random measures
@@ -47,49 +48,58 @@ exponential waiting-time law is used.
 public section
 
 open MeasureTheory ProbabilityTheory Set
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal NNRat
 
 namespace TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {N : ℝ≥0 → Ω → ℕ}
 
-/-- Almost surely counting paths are recovered by the cumulative counts of their counting
-measures, simultaneously at all times. -/
-private theorem ae_forall_countingPathMeasure_Iic
-    (hmono : ∀ᵐ ω ∂P, Monotone fun t ↦ N t ω)
-    (hrc : ∀ᵐ ω ∂P, IsRightContinuous fun t ↦ N t ω) :
-    ∀ᵐ ω ∂P, ∀ t, countingPathMeasure (fun t ↦ N t ω) (Iic t) = N t ω := by
-  filter_upwards [hmono, hrc] with ω h₁ h₂ t using countingPathMeasure_Iic h₁ h₂ t
-
-/-- A natural-valued process with measurable coordinates and almost surely nondecreasing
-right-continuous paths is a Poisson count process with locally finite intensity `Λ`, without
-mass at zero, exactly when the counting measures of its paths form a Poisson random measure of
-intensity `Λ`. Atoms of `Λ` at positive times are allowed. -/
-theorem isPoissonRandomMeasure_countingPathMeasure_iff {Λ : Measure ℝ≥0}
-    [IsLocallyFiniteMeasure Λ] (hΛ : Λ {0} = 0) (hm : ∀ t, Measurable (N t))
-    (hmono : ∀ᵐ ω ∂P, Monotone fun t ↦ N t ω)
-    (hrc : ∀ᵐ ω ∂P, IsRightContinuous fun t ↦ N t ω) :
-    IsPoissonRandomMeasure P (fun ω ↦ countingPathMeasure fun t ↦ N t ω) Λ ↔
+/-- For a count process measurable at nonnegative rational times whose paths are monotone and
+right-continuous on one event of full measure, `countingPathMeasure (N · ω)` is a Poisson random
+measure with locally finite intensity `Λ` (`Λ {0} = 0`) if and only if `N 0 = 0` almost surely and
+`N` has independent Poisson increments with parameters `(Λ (Ioc s t)).toNNReal`. -/
+theorem isPoissonRandomMeasure_countingPathMeasure_iff_of_nnrat {Λ : Measure ℝ≥0}
+    [IsLocallyFiniteMeasure Λ] (hΛ : Λ {0} = 0) (hN : ∀ q : ℚ≥0, Measurable (N q))
+    (hreg : ∀ᵐ ω ∂P, Monotone (N · ω) ∧ IsRightContinuous (N · ω)) :
+    IsPoissonRandomMeasure P (fun ω ↦ countingPathMeasure (N · ω)) Λ ↔
       (∀ᵐ ω ∂P, N 0 ω = 0) ∧ HasIndepIncrements N P ∧
-        ∀ s t, s ≤ t → HasLaw (fun ω ↦ N t ω - N s ω)
-          (poissonMeasure (Λ (Ioc s t)).toNNReal) P :=
+      ∀ s t, s ≤ t → HasLaw (fun ω ↦ N t ω - N s ω)
+        (poissonMeasure (Λ (Ioc s t)).toNNReal) P :=
   isPoissonRandomMeasure_iff_count_increments hΛ
-    (measurable_countingPathMeasure.comp (measurable_pi_iff.2 hm))
-    (ae_forall_countingPathMeasure_Iic hmono hrc)
+    (measurable_countingPathMeasure_of_nnrat hN)
+    (ae_forall_countingPathMeasure_Iic_eq hreg)
 
-/-- A natural-valued process with measurable coordinates and almost surely nondecreasing
-right-continuous paths is a rate-`r` Poisson process exactly when the counting measures of its
-paths form a homogeneous Poisson random measure of rate `r`. Rate zero is included. -/
-theorem isPoissonRandomMeasure_countingPathMeasure_smul_nnvolume_iff
-    (hm : ∀ t, Measurable (N t)) (hmono : ∀ᵐ ω ∂P, Monotone fun t ↦ N t ω)
-    (hrc : ∀ᵐ ω ∂P, IsRightContinuous fun t ↦ N t ω) {r : ℝ≥0} :
-    IsPoissonRandomMeasure P (fun ω ↦ countingPathMeasure fun t ↦ N t ω)
+/-- Homogeneous specialization: for a count process measurable at nonnegative rational times whose
+paths are monotone and right-continuous on one event of full measure,
+`countingPathMeasure (N · ω)` is a rate-`r` homogeneous Poisson random measure if and only if
+`N 0 = 0` almost surely and `N` has independent rate-`r` Poisson increments. -/
+theorem isPoissonRandomMeasure_countingPathMeasure_smul_nnvolume_iff_of_nnrat
+    (hN : ∀ q : ℚ≥0, Measurable (N q))
+    (hreg : ∀ᵐ ω ∂P, Monotone (N · ω) ∧ IsRightContinuous (N · ω)) {r : ℝ≥0} :
+    IsPoissonRandomMeasure P (fun ω ↦ countingPathMeasure (N · ω))
         ((r : ℝ≥0∞) • nnvolume) ↔
       (∀ᵐ ω ∂P, N 0 ω = 0) ∧ HasIndepIncrements N P ∧
-        ∀ s t, s ≤ t → HasLaw (fun ω ↦ N t ω - N s ω) (poissonMeasure (r * (t - s))) P :=
+      ∀ s t, s ≤ t → HasLaw (fun ω ↦ N t ω - N s ω) (poissonMeasure (r * (t - s))) P :=
   isPoissonRandomMeasure_smul_nnvolume_iff_count_increments
-    (measurable_countingPathMeasure.comp (measurable_pi_iff.2 hm))
-    (ae_forall_countingPathMeasure_Iic hmono hrc)
+    (measurable_countingPathMeasure_of_nnrat hN)
+    (ae_forall_countingPathMeasure_Iic_eq hreg)
+
+/-- For a natural-valued process with measurable coordinates whose paths are monotone and
+right-continuous on one event of full measure, `countingPathMeasure (N · ω)` is a rate-`r`
+homogeneous Poisson random measure on `ℝ≥0` if and only if `(N t ω : ℝ)` is a rate-`r` Poisson
+process relative to its natural filtration. -/
+theorem
+    isPoissonRandomMeasure_countingPathMeasure_smul_nnvolume_iff_isFilteredPoissonProcess_natural
+    {r : ℝ≥0} (hN : ∀ t, Measurable (N t))
+    (hreg : ∀ᵐ ω ∂P, Monotone (N · ω) ∧ IsRightContinuous (N · ω)) :
+    IsPoissonRandomMeasure P (fun ω ↦ countingPathMeasure (N · ω)) ((r : ℝ≥0∞) • nnvolume) ↔
+      IsFilteredPoissonProcess
+        (Filtration.natural (fun t ω ↦ (N t ω : ℝ))
+          (fun t ↦ (Measurable.of_discrete.comp (hN t)).stronglyMeasurable))
+        r (fun t ω ↦ (N t ω : ℝ)) P :=
+  isPoissonRandomMeasure_smul_nnvolume_iff_isFilteredPoissonProcess_natural
+    (measurable_countingPathMeasure_of_nnrat fun q ↦ hN q) hN
+    (ae_forall_countingPathMeasure_Iic_eq hreg)
 
 end TauCeti.Probability
 
@@ -120,17 +130,17 @@ theorem HasIndepIncrements.add_and_hasLaw_sub_poissonMeasure {N₁ N₂ : ℝ≥
     HasIndepIncrements (fun t ω ↦ N₁ t ω + N₂ t ω) P ∧
       ∀ s t, s ≤ t → HasLaw (fun ω ↦ (N₁ t ω + N₂ t ω) - (N₁ s ω + N₂ s ω))
         (poissonMeasure ((Λ₁ + Λ₂) (Ioc s t)).toNNReal) P := by
-  have hM₁ := (isPoissonRandomMeasure_countingPathMeasure_iff hΛ₁ hm₁ hmono₁ hrc₁).2
-    ⟨h0₁, hN₁, hlaw₁⟩
-  have hM₂ := (isPoissonRandomMeasure_countingPathMeasure_iff hΛ₂ hm₂ hmono₂ hrc₂).2
-    ⟨h0₂, hN₂, hlaw₂⟩
+  have hM₁ := (isPoissonRandomMeasure_countingPathMeasure_iff_of_nnrat hΛ₁
+    (fun q ↦ hm₁ q) (hmono₁.and hrc₁)).2 ⟨h0₁, hN₁, hlaw₁⟩
+  have hM₂ := (isPoissonRandomMeasure_countingPathMeasure_iff_of_nnrat hΛ₂
+    (fun q ↦ hm₂ q) (hmono₂.and hrc₂)).2 ⟨h0₂, hN₂, hlaw₂⟩
   have hsum := isPoissonRandomMeasure_add hM₁ hM₂
     (hind.comp measurable_countingPathMeasure measurable_countingPathMeasure)
   have hcount : ∀ᵐ ω ∂P, ∀ t,
       (countingPathMeasure (fun t ↦ N₁ t ω) + countingPathMeasure fun t ↦ N₂ t ω) (Iic t) =
         ((N₁ t ω + N₂ t ω : ℕ) : ℝ≥0∞) := by
-    filter_upwards [ae_forall_countingPathMeasure_Iic hmono₁ hrc₁,
-      ae_forall_countingPathMeasure_Iic hmono₂ hrc₂] with ω h₁ h₂ t
+    filter_upwards [ae_forall_countingPathMeasure_Iic_eq (hmono₁.and hrc₁),
+      ae_forall_countingPathMeasure_Iic_eq (hmono₂.and hrc₂)] with ω h₁ h₂ t
     simp [h₁ t, h₂ t]
   obtain ⟨-, hind', hlaw'⟩ := (isPoissonRandomMeasure_iff_count_increments
     (by simp [hΛ₁, hΛ₂]) hsum.measurable hcount).1 hsum
@@ -188,7 +198,8 @@ theorem HasIndepIncrements.exists_bernoulli_thinning_of_hasLaw_poissonMeasure {�
         (P ⊗ₘ η.comap (fun ω t ↦ N t ω) (measurable_pi_iff.2 hm)) ∧
       ∀ᵐ z ∂(P ⊗ₘ η.comap (fun ω t ↦ N t ω) (measurable_pi_iff.2 hm)), ∀ t,
         ⌊(z.2.1 (Ioc 0 t)).toNNReal⌋₊ + ⌊(z.2.2 (Ioc 0 t)).toNNReal⌋₊ = N t z.1 := by
-  have hM := (isPoissonRandomMeasure_countingPathMeasure_iff hΛ hm hmono hrc).2 ⟨h0, hN, hlaw⟩
+  have hM := (isPoissonRandomMeasure_countingPathMeasure_iff_of_nnrat hΛ
+    (fun q ↦ hm q) (hmono.and hrc)).2 ⟨h0, hN, hlaw⟩
   obtain ⟨η, hη, h₁, h₂, hind, hadd⟩ := hM.exists_bernoulli_thinning p
   -- Thin the counting measure of the path.
   let κ := η.comap countingPathMeasure measurable_countingPathMeasure

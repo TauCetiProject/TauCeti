@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Count
 public import Mathlib.MeasureTheory.Measure.Map
 public import Mathlib.MeasureTheory.Measure.Restrict
 public import TauCeti.MeasureTheory.Measure.Sub
+import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 
 /-!
 # Integer-valued measures
@@ -61,13 +62,6 @@ theorem IsIntegerValued.exists_eq_natCast (hμ : μ.IsIntegerValued) {A : Set X}
     (hA : MeasurableSet A) (hfin : μ A < ∞) : ∃ n : ℕ, μ A = n :=
   isIntegerValued_def.1 hμ hA hfin
 
-/-- Flooring a finite measurable mass of an integer-valued measure to a natural number and
-casting back recovers the mass. -/
-theorem IsIntegerValued.natCast_floor_toNNReal (hμ : μ.IsIntegerValued) {A : Set X}
-    (hA : MeasurableSet A) (hfin : μ A ≠ ∞) : (⌊(μ A).toNNReal⌋₊ : ℝ≥0∞) = μ A := by
-  obtain ⟨n, hn⟩ := hμ.exists_eq_natCast hA hfin.lt_top
-  rw [hn, ENNReal.toNNReal_natCast, Nat.floor_natCast]
-
 /-- An integer-valued measure takes only natural-number or infinite values on measurable sets. -/
 theorem isIntegerValued_iff : μ.IsIntegerValued ↔
     ∀ A : Set X, MeasurableSet A → (∃ n : ℕ, μ A = n) ∨ μ A = ∞ := by
@@ -88,6 +82,31 @@ theorem IsIntegerValued.one_le_apply (hμ : μ.IsIntegerValued) {A : Set X}
   · rw [hn] at hne ⊢
     exact_mod_cast Nat.one_le_iff_ne_zero.2 (by simpa using hne)
   · simp [hn]
+
+/-- For an integer-valued measure, the natural floor of any finite mass casts back to that mass.
+The set need not be measurable: its mass is that of a measurable hull. -/
+@[simp]
+theorem IsIntegerValued.natCast_natFloor_apply (hμ : μ.IsIntegerValued) {A : Set X}
+    (hfin : μ A < ∞) : (⌊(μ A).toNNReal⌋₊ : ℝ≥0∞) = μ A := by
+  rw [← measure_toMeasurable A] at hfin ⊢
+  obtain ⟨n, hn⟩ := hμ.exists_eq_natCast (measurableSet_toMeasurable μ A) hfin
+  rw [hn, ENNReal.toNNReal_natCast, Nat.floor_natCast]
+
+/-- For a locally finite integer-valued measure on a preorder with a least element and compact
+closed intervals, the natural floor of `μ (Set.Iic t)` casts back to `μ (Set.Iic t)`. -/
+@[simp]
+theorem IsIntegerValued.natCast_natFloor_Iic [Preorder X] (hμ : μ.IsIntegerValued)
+    [TopologicalSpace X] [CompactIccSpace X] [OrderBot X] [IsLocallyFiniteMeasure μ] (t : X) :
+    (⌊(μ (Set.Iic t)).toNNReal⌋₊ : ℝ≥0∞) = μ (Set.Iic t) :=
+  hμ.natCast_natFloor_apply (measure_Iic_lt_top (μ := μ))
+
+/-- For a locally finite integer-valued measure on a preorder with compact closed intervals, the
+natural floor of `μ (Set.Ioc s t)` casts back to `μ (Set.Ioc s t)`. -/
+@[simp]
+theorem IsIntegerValued.natCast_natFloor_Ioc [Preorder X] (hμ : μ.IsIntegerValued)
+    [TopologicalSpace X] [CompactIccSpace X] [IsLocallyFiniteMeasure μ] (s t : X) :
+    (⌊(μ (Set.Ioc s t)).toNNReal⌋₊ : ℝ≥0∞) = μ (Set.Ioc s t) :=
+  hμ.natCast_natFloor_apply (measure_Ioc_lt_top (μ := μ))
 
 /-- The zero measure is integer-valued. -/
 @[simp] theorem isIntegerValued_zero : (0 : Measure X).IsIntegerValued := by

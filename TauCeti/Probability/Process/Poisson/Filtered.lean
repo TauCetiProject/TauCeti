@@ -12,12 +12,14 @@ public import Mathlib.Probability.Moments.Variance
 public import Mathlib.Probability.Process.Adapted
 public import TauCeti.Probability.Process.Filtration.AmbientNullAugmentation
 import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.Order.Filter.Basic
 import TauCeti.Probability.Distributions.Poisson.Basic
 import TauCeti.Probability.HasLaw
 import TauCeti.Probability.Independence.Completion
 import TauCeti.Probability.Independence.Filtration
 import TauCeti.Probability.Independence.Process.HasIndepIncrements
 import TauCeti.Probability.Process.Filtration.Natural
+import TauCeti.Probability.Process.Poisson.Characterization
 
 /-!
 # Homogeneous Poisson processes relative to a filtration
@@ -57,6 +59,9 @@ The rate may be zero, in which case the process vanishes almost surely at every 
 * `ProbabilityTheory.HasIndepIncrements.isFilteredPoissonProcess_natural`: conversely, a process
   with independent Poisson increments starting at `0` is a Poisson process relative to its
   natural filtration.
+* `TauCeti.Probability.isFilteredPoissonProcess_natCast_iff`,
+  `TauCeti.Probability.isFilteredPoissonProcess_natural_natCast_iff`: characterizations of when the
+  real cast of a natural-valued process is a filtered Poisson process.
 
 ## References
 
@@ -273,11 +278,7 @@ theorem congr (h : IsFilteredPoissonProcess ℱ α N P) {M : ℝ≥0 → Ω → 
   eval_zero_ae_eq_zero := by
     filter_upwards [h.eval_zero_ae_eq_zero, hNM 0] with ω hω hω' using hω' ▸ hω
   hasLaw_sub s t hst := (h.hasLaw_sub hst).congr ((hNM t).sub (hNM s)).symm
-  indep_sub s t hst := by
-    have hi : @IndepFun Ω ℝ Ω mΩ inferInstance (ℱ s) (N t - N s) id P := by
-      simpa only [IndepFun_iff_Indep, MeasurableSpace.comap_id] using h.indep_sub hst
-    have hj := hi.congr ((hNM t).sub (hNM s)) (Filter.EventuallyEq.refl ..)
-    simpa only [IndepFun_iff_Indep, MeasurableSpace.comap_id] using hj
+  indep_sub s t hst := (h.indep_sub hst).comap_congr_left ((hNM t).sub (hNM s))
 
 /-- The future increment process `(N (s + u) - N s)_u` of a Poisson process is independent of
 `ℱ s`. -/
@@ -334,3 +335,77 @@ theorem isFilteredPoissonProcess_natural (hN : HasIndepIncrements N P)
       (hN.indepFun_past_sub (fun t ↦ (hmeas t).measurable) h0 hst)).symm
 
 end ProbabilityTheory.HasIndepIncrements
+
+namespace TauCeti.Probability
+
+section NatCast
+
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {N : ℝ≥0 → Ω → ℕ}
+
+/-- The real cast of a natural-valued process `N` is a rate-`r` Poisson process relative to `ℱ`
+if and only if `N` is adapted to `ℱ`, starts at zero almost surely, and has `ℱ`-independent
+`poissonMeasure (r * (t - s))` increments. -/
+theorem isFilteredPoissonProcess_natCast_iff
+    (ℱ : Filtration ℝ≥0 mΩ) {r : ℝ≥0} :
+    IsFilteredPoissonProcess ℱ r (fun t ω ↦ (N t ω : ℝ)) P ↔
+      Adapted ℱ N ∧ (∀ᵐ ω ∂P, N 0 ω = 0) ∧
+      (∀ s t, s ≤ t → HasLaw (fun ω ↦ N t ω - N s ω) (poissonMeasure (r * (t - s))) P) ∧
+      ∀ ⦃s t : ℝ≥0⦄, s ≤ t →
+        Indep (.comap (fun ω ↦ N t ω - N s ω) inferInstance) (ℱ s) P := by
+  have hind_iff {s t : ℝ≥0} (hle : ∀ᵐ ω ∂P, N s ω ≤ N t ω) :
+      Indep (.comap ((fun ω ↦ (N t ω : ℝ)) - fun ω ↦ (N s ω : ℝ)) inferInstance) (ℱ s) P ↔
+        Indep (.comap (fun ω ↦ N t ω - N s ω) inferInstance) (ℱ s) P := by
+    have hcomap : MeasurableSpace.comap (fun ω ↦ ((N t ω - N s ω : ℕ) : ℝ)) inferInstance =
+        MeasurableSpace.comap (fun ω ↦ N t ω - N s ω) inferInstance := by
+      rw [← Function.comp_def (Nat.cast : ℕ → ℝ), ← MeasurableSpace.comap_comp,
+        MeasurableEmbedding.natCast.comap_eq]
+    rw [← hcomap]
+    exact ⟨fun hi ↦ hi.comap_congr_left (Filter.EventuallyLE.natCast_sub hle).symm,
+      fun hi ↦ hi.comap_congr_left (Filter.EventuallyLE.natCast_sub hle)⟩
+  constructor
+  · intro h
+    have hle {s t : ℝ≥0} (hst : s ≤ t) : ∀ᵐ ω ∂P, N s ω ≤ N t ω := by
+      filter_upwards [(h.hasLaw_sub hst).ae (ae_nonneg_map_cast_poissonMeasure _)] with ω hω
+      exact Nat.cast_le.1 (sub_nonneg.1 hω)
+    exact ⟨fun t ↦ MeasurableEmbedding.natCast.measurable_comp_iff.mp (h.adapted t),
+      h.eval_zero_ae_eq_zero.mono fun _ hω ↦ Nat.cast_eq_zero.1 hω,
+      fun s t hst ↦ (hasLaw_sub_natCast_iff (hle hst)).1 (h.hasLaw_sub hst),
+      fun s t hst ↦ (hind_iff (hle hst)).1 (h.indep_sub hst)⟩
+  · rintro ⟨hadapt, h0, hlaw, hind⟩
+    have hle {s t : ℝ≥0} (hst : s ≤ t) : ∀ᵐ ω ∂P, N s ω ≤ N t ω :=
+      ae_le_of_hasLaw_sub_poissonMeasure h0 hlaw hst
+    exact ⟨fun t ↦ (Measurable.of_discrete.comp (hadapt t)).stronglyMeasurable,
+      h0.mono fun _ hω ↦ by simp [hω],
+      fun s t hst ↦ (hasLaw_sub_natCast_iff (hle hst)).2 (hlaw s t hst),
+      fun s t hst ↦ (hind_iff (hle hst)).2 (hind hst)⟩
+
+/-- For a coordinatewise measurable natural-valued process `N`, its real cast is a rate-`r`
+Poisson process relative to its natural filtration if and only if `N 0 = 0` almost surely and `N`
+has independent `poissonMeasure (r * (t - s))` increments. -/
+theorem isFilteredPoissonProcess_natural_natCast_iff {r : ℝ≥0}
+    (hN : ∀ t, Measurable (N t)) :
+    IsFilteredPoissonProcess
+        (Filtration.natural (fun t ω ↦ (N t ω : ℝ))
+          (fun t ↦ (Measurable.of_discrete.comp (hN t)).stronglyMeasurable))
+        r (fun t ω ↦ (N t ω : ℝ)) P ↔
+      (∀ᵐ ω ∂P, N 0 ω = 0) ∧ HasIndepIncrements N P ∧
+      ∀ s t, s ≤ t → HasLaw (fun ω ↦ N t ω - N s ω) (poissonMeasure (r * (t - s))) P := by
+  let hmeas : ∀ t, StronglyMeasurable (fun ω ↦ (N t ω : ℝ)) :=
+    fun t ↦ (Measurable.of_discrete.comp (hN t)).stronglyMeasurable
+  constructor
+  · intro h
+    let := h.isProbabilityMeasure
+    obtain ⟨hadapt, h0, hlaw, hind_sub⟩ :=
+      (isFilteredPoissonProcess_natCast_iff (Filtration.natural _ hmeas)).1 h
+    exact ⟨h0, hadapt.hasIndepIncrements hind_sub, hlaw⟩
+  · rintro ⟨h0, hind, hlaw⟩
+    let := hind.isProbabilityMeasure
+    have hle ⦃s t : ℝ≥0⦄ (hst : s ≤ t) : ∀ᵐ ω ∂P, N s ω ≤ N t ω :=
+      ae_le_of_hasLaw_sub_poissonMeasure h0 hlaw hst
+    exact (hind.natCast hle).isFilteredPoissonProcess_natural hmeas
+      (h0.mono fun _ hω ↦ by simp [hω]) fun s t hst ↦
+        (hasLaw_sub_natCast_iff (hle hst)).2 (hlaw s t hst)
+
+end NatCast
+
+end TauCeti.Probability

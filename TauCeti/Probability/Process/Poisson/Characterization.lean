@@ -8,6 +8,8 @@ module
 public import TauCeti.Probability.Distributions.Poisson.Characterization
 public import TauCeti.Probability.Distributions.Poisson.SmallRate
 public import Mathlib.Probability.Independence.Integration
+import TauCeti.Probability.Distributions.Poisson.Basic
+import TauCeti.Probability.HasLaw
 
 /-!
 # Poisson marginals from microscopic increment probabilities
@@ -20,7 +22,8 @@ does not by itself assert independence of arbitrary collections of increments or
 of paths; those need the corresponding process hypotheses.
 
 Conversely, Poisson marginals give the microscopic limits, and Poisson increment laws give
-stationarity when compared with the corresponding marginal laws.
+stationarity when compared with the corresponding marginal laws. Moreover, Poisson increment laws
+force pairwise almost-sure monotonicity when the process starts at zero almost surely.
 
 ## References
 
@@ -34,6 +37,41 @@ open Filter MeasureTheory ProbabilityTheory Topology Asymptotics
 open scoped NNReal ENNReal
 
 namespace TauCeti.Probability
+
+/-- A natural-valued process starting at zero almost surely whose increments `N t - N s` have
+rate-`r` Poisson laws is almost surely nondecreasing at each fixed pair of times. -/
+theorem ae_le_of_hasLaw_sub_poissonMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {N : ℝ≥0 → Ω → ℕ} {r : ℝ≥0}
+    (h0 : ∀ᵐ ω ∂P, N 0 ω = 0)
+    (hlaw : ∀ s t, s ≤ t → HasLaw (fun ω ↦ N t ω - N s ω) (poissonMeasure (r * (t - s))) P)
+    {s t : ℝ≥0} (hst : s ≤ t) :
+    ∀ᵐ ω ∂P, N s ω ≤ N t ω := by
+  have hmarg (u : ℝ≥0) : HasLaw (fun ω ↦ (N u ω : ℝ)) Po(ℝ, r * u) P :=
+    HasLaw.natCast_poissonMeasure <| by
+      simpa only [tsub_zero] using (hlaw 0 u zero_le).congr (h0.mono fun ω hω ↦ by simp [hω])
+  have hs := hmarg s
+  have ht := hmarg t
+  have hd := (hlaw s t hst).natCast_poissonMeasure
+  have hadm : Integrable (fun ω ↦ (N s ω : ℝ) + ((N t ω - N s ω : ℕ) : ℝ)) P :=
+    hs.integrable_map_cast_poissonMeasure.add hd.integrable_map_cast_poissonMeasure
+  -- Truncated subtraction only overestimates `N t`, and both sides have expectation `r * t`, so
+  -- equality holds almost surely.
+  have hle : (fun ω ↦ (N t ω : ℝ)) ≤ᵐ[P] fun ω ↦ (N s ω : ℝ) + ((N t ω - N s ω : ℕ) : ℝ) :=
+    ae_of_all P fun ω ↦ by
+      simpa only [← Nat.cast_add] using
+        Nat.cast_le (α := ℝ).2 (le_add_tsub : N t ω ≤ N s ω + (N t ω - N s ω))
+  have heq : (fun ω ↦ (N t ω : ℝ)) =ᵐ[P] fun ω ↦ (N s ω : ℝ) + ((N t ω - N s ω : ℕ) : ℝ) := by
+    refine (integral_eq_iff_of_ae_le ht.integrable_map_cast_poissonMeasure hadm hle).1 ?_
+    rw [integral_add hs.integrable_map_cast_poissonMeasure hd.integrable_map_cast_poissonMeasure,
+      integral_of_hasLaw_map_cast_poissonMeasure ht,
+      integral_of_hasLaw_map_cast_poissonMeasure hs,
+      integral_of_hasLaw_map_cast_poissonMeasure hd]
+    push_cast [NNReal.coe_sub hst]
+    ring
+  filter_upwards [heq] with ω hω
+  have hnat : N t ω = N s ω + (N t ω - N s ω) :=
+    Nat.cast_injective (R := ℝ) (by simpa only [← Nat.cast_add] using hω)
+  omega
 
 /-- A natural-valued process starting at zero and almost surely nondecreasing at each fixed
 pair of times has Poisson marginals if its increments are stationary and independent of the

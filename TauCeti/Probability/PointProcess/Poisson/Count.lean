@@ -11,8 +11,8 @@ public import TauCeti.Probability.PointProcess.Poisson.Superposition.Basic
 public import TauCeti.MeasureTheory.Measure.NNReal
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
 import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.MeasureTheory.Measure.Interval
 import TauCeti.Probability.RandomMeasure.Cumulative
-import TauCeti.MeasureTheory.Measure.IntegerValued.Stieltjes
 
 /-!
 # Counts of temporal Poisson random measures
@@ -48,20 +48,12 @@ namespace TauCeti.Probability
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {M : Ω → Measure ℝ≥0} {Λ : Measure ℝ≥0} {r : ℝ≥0}
 
-/-- The natural-valued cumulative count path `μ ↦ (t ↦ ⌊(μ (Ioc 0 t)).toNNReal⌋₊)` is
-measurable for the evaluation σ-algebra on measures over `ℝ≥0` and the product σ-algebra on
-paths. -/
-theorem measurable_nat_count_path :
-    Measurable fun (μ : Measure ℝ≥0) (t : ℝ≥0) ↦ ⌊(μ (Ioc 0 t)).toNNReal⌋₊ :=
-  measurable_pi_iff.mpr fun _ ↦
-    (Measure.measurable_coe measurableSet_Ioc).ennreal_toNNReal.nat_floor
-
 namespace IsPoissonRandomMeasure
 
 /-- Each natural-valued cumulative count of a Poisson random measure is measurable. -/
 theorem measurable_nat_count (h : IsPoissonRandomMeasure P M Λ) (t : ℝ≥0) :
     Measurable (fun ω ↦ ⌊(M ω (Ioc 0 t)).toNNReal⌋₊) :=
-  ((measurable_pi_apply t).comp measurable_nat_count_path).comp h.measurable
+  ((measurable_pi_apply t).comp (measurable_natFloor_measure_Ioc 0)).comp h.measurable
 
 /-- The natural-valued count on any right-closed temporal interval has Poisson law with
 parameter equal to the intensity of that interval. This includes empty intervals. -/
@@ -87,7 +79,7 @@ theorem ae_monotone_nat_count [IsLocallyFiniteMeasure Λ]
     ∀ᵐ ω ∂P, Monotone (fun t : ℝ≥0 ↦ ⌊(M ω (Ioc 0 t)).toNNReal⌋₊) := by
   filter_upwards [h.ae_isLocallyFiniteMeasure] with ω hω
   let := hω
-  exact Measure.monotone_nat_count
+  exact Measure.monotone_natFloor_Ioc (M ω) 0
 
 /-- If the intensity gives no mass to the origin, cumulative masses equal the natural-valued
 counts simultaneously at every time, on one event of full probability. In particular the
@@ -99,13 +91,7 @@ theorem ae_forall_measure_Iic_eq_natCast_nat_count [IsLocallyFiniteMeasure Λ]
     h.ae_eq_zero hΛ]
     with ω hint hfin hz t
   let := hfin
-  have hinterval : M ω (Iic t) = M ω (Ioc 0 t) := by
-    have hu := measure_union (μ := M ω) (s₁ := Iic 0) (s₂ := Ioc 0 t)
-      (Iic_disjoint_Ioc le_rfl) measurableSet_Ioc
-    have hbot : Iic (0 : ℝ≥0) = {0} := by ext x; simp
-    rw [Iic_union_Ioc_eq_Iic (zero_le (a := t)), hbot, hz, zero_add] at hu
-    exact hu
-  rw [hinterval, hint.natCast_nat_count_Ioc]
+  rw [← (M ω).measure_Ioc_bot_eq_Iic hz t, NNReal.bot_eq_zero, hint.natCast_natFloor_Ioc]
 
 private theorem ae_nat_count_sub_eq [IsLocallyFiniteMeasure Λ]
     (h : IsPoissonRandomMeasure P M Λ) {s t : ℝ≥0} (hst : s ≤ t) :

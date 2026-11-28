@@ -13,6 +13,8 @@ import Mathlib.Probability.IdentDistribIndep
 import Mathlib.Probability.Process.FiniteDimensionalLaws
 import Mathlib.Data.Finset.Sort
 import TauCeti.Data.Finset.Sort
+import TauCeti.Order.Filter.Basic
+import TauCeti.Probability.IdentDistrib
 import TauCeti.Probability.Independence.Sup
 
 /-!
@@ -352,16 +354,9 @@ theorem IdentDistrib.natCast_sub_of_le {Ω Ω' : Type*}
     (h : IdentDistrib (fun ω ↦ b ω - a ω) (fun ω ↦ b' ω - a' ω) P Q)
     (hab : ∀ᵐ ω ∂P, a ω ≤ b ω) (hab' : ∀ᵐ ω ∂Q, a' ω ≤ b' ω) :
     IdentDistrib (fun ω ↦ (b ω : ℤ) - a ω)
-      (fun ω ↦ (b' ω : ℤ) - a' ω) P Q := by
-  have hcast := h.comp (measurable_of_countable (fun n : ℕ ↦ (n : ℤ)))
-  have hx : (fun ω ↦ ((b ω - a ω : ℕ) : ℤ)) =ᵐ[P]
-      (fun ω ↦ (b ω : ℤ) - a ω) := by
-    filter_upwards [hab] with ω hω using Int.ofNat_sub hω
-  have hy : (fun ω ↦ ((b' ω - a' ω : ℕ) : ℤ)) =ᵐ[Q]
-      (fun ω ↦ (b' ω : ℤ) - a' ω) := by
-    filter_upwards [hab'] with ω hω using Int.ofNat_sub hω
-  exact (IdentDistrib.of_ae_eq hcast.aemeasurable_fst hx).symm.trans
-    (hcast.trans (IdentDistrib.of_ae_eq hcast.aemeasurable_snd hy))
+      (fun ω ↦ (b' ω : ℤ) - a' ω) P Q :=
+  (h.comp (measurable_of_countable (fun n : ℕ ↦ (n : ℤ)))).congr
+    (Filter.EventuallyLE.natCast_sub hab) (Filter.EventuallyLE.natCast_sub hab')
 
 /-- Nondecreasing count processes starting at zero have the same full path law if they have
 independent increments and corresponding increment laws agree. The sample spaces may differ.
@@ -389,7 +384,7 @@ theorem HasIndepIncrements.identDistrib_nat {T Ω Ω' : Type*} [LinearOrder T] [
     (hY.natCast fun _ _ hst ↦ hmonoY.mono fun _ hω ↦ hω hst)
     hmXZ hmYZ h0XZ h0YZ (fun s t hst ↦
       (hlaw s t hst).natCast_sub_of_le
-        (hmonoX.mono fun _ hω ↦ hω hst) (hmonoY.mono fun _ hω ↦ hω hst))
+        (hmonoX.monotone_apply_le s t hst) (hmonoY.monotone_apply_le s t hst))
   simpa only [Function.comp_def, Int.toNat_natCast] using
     hdist.comp (Measurable.of_eval fun _ ↦
       (measurable_of_countable Int.toNat).comp (measurable_pi_apply _))

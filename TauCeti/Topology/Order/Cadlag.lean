@@ -96,14 +96,28 @@ theorem isCadlag_ite_le {ι E : Type*} [LinearOrder ι] [TopologicalSpace ι]
       filter_upwards [self_mem_nhdsWithin] with s hs
       simp [not_le.mpr (hs.trans_le (le_of_not_gt hat))]
 
+/-- A function into a discrete space is continuous within a set `s` at `a` if and only if it
+eventually takes its value there along `𝓝[s] a`. -/
+theorem continuousWithinAt_iff_eventually_eq {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [DiscreteTopology Y] {f : X → Y} {s : Set X} {a : X} :
+    ContinuousWithinAt f s a ↔ ∀ᶠ x in 𝓝[s] a, f x = f a := by
+  simp only [ContinuousWithinAt, nhds_discrete, tendsto_pure]
+
 /-- A function into a discrete space is right-continuous exactly when, at each point, it
 eventually takes its value there on the right. -/
 theorem isRightContinuous_iff_eventually_eq {X Y : Type*} [TopologicalSpace X] [Preorder X]
     [TopologicalSpace Y] [DiscreteTopology Y] {f : X → Y} :
     IsRightContinuous f ↔ ∀ a, ∀ᶠ x in 𝓝[>] a, f x = f a := by
-  simp only [IsRightContinuous, ContinuousWithinAt, nhds_discrete, tendsto_pure]
+  simp only [IsRightContinuous, continuousWithinAt_iff_eventually_eq]
 
 end TauCeti
+
+/-- A function into a discrete space that is continuous within a set `s` at `a` eventually takes
+the value `f a` along `𝓝[s] a`. -/
+theorem ContinuousWithinAt.eventually_eq {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [DiscreteTopology Y] {f : X → Y} {s : Set X} {a : X}
+    (hf : ContinuousWithinAt f s a) : ∀ᶠ x in 𝓝[s] a, f x = f a :=
+  TauCeti.continuousWithinAt_iff_eventually_eq.1 hf
 
 /-- A right-continuous function into a discrete space is constant on a right neighbourhood of
 each point. -/

@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Probability.Process.Poisson.Characterization
 public import TauCeti.Probability.Process.Poisson.Simplicity
+public import TauCeti.Probability.Process.Poisson.Filtered
 public import TauCeti.Probability.Independence.Process.HasIndepIncrements
+import TauCeti.Analysis.Asymptotics.Lemmas
+import TauCeti.Probability.Independence.Filtration
 
 /-!
 # The microscopic characterization of Poisson counts
@@ -18,11 +21,15 @@ independent increments have the rate-`r` Poisson laws exactly when the increment
 stationary and the one- and multiple-occurrence probabilities satisfy
 
 ```text
-P(N h = 1) / h → r,       P(N h ≥ 2) / h → 0       as h ↓ 0.
+P(N h = 1) / h → r,       P(N h ≥ 2) / h → 0       as h ↓ 0,
 ```
 
+or equivalently `P(N h = 1) - r * h = o(h)` and `P(N h ≥ 2) = o(h)` on `𝓝[>] 0`.
+
 This connects the scalar convolution-semigroup characterization with Mathlib's
-`HasIndepIncrements`, rather than assuming independence from the current count separately.
+`HasIndepIncrements`, rather than assuming independence from the current count separately, and
+characterizes microscopically when the real cast of `N` is an `IsFilteredPoissonProcess` relative
+to a filtration `ℱ` or relative to its natural filtration.
 It also proves simplicity simultaneously at every positive time: almost surely, for each
 `t > 0` there is an `s < t` with `N t ≤ N s + 1`. For nondecreasing paths this excludes a
 jump from the left of size two or more.
@@ -96,9 +103,27 @@ theorem HasIndepIncrements.hasLaw_sub_poissonMeasure_iff_stationary_small_time
   · rintro ⟨hstat, h1, h2⟩ s t hst
     exact hN.hasLaw_sub_poissonMeasure_of_small_time h0 hmono hstat r h1 h2 hst
 
+/-- Landau `=o[𝓝[>] 0]` form of the microscopic characterization of Poisson counts. -/
+theorem HasIndepIncrements.hasLaw_sub_poissonMeasure_iff_stationary_isLittleO
+    (hN : HasIndepIncrements N P)
+    (h0 : ∀ᵐ ω ∂P, N 0 ω = 0)
+    (hmono : ∀ s t, s ≤ t → ∀ᵐ ω ∂P, N s ω ≤ N t ω) (r : ℝ≥0) :
+    (∀ s t, s ≤ t → HasLaw (fun ω ↦ N t ω - N s ω) (poissonMeasure (r * (t - s))) P) ↔
+      (∀ s t, IdentDistrib (fun ω ↦ N (s + t) ω - N s ω) (N t) P P) ∧
+      (fun h : ℝ≥0 ↦ P.real {ω | N h ω = 1} - (r : ℝ) * h) =o[𝓝[>] 0]
+        (fun h : ℝ≥0 ↦ (h : ℝ)) ∧
+      (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω}) =o[𝓝[>] 0] (fun h : ℝ≥0 ↦ (h : ℝ)) := by
+  have hne : ∀ᶠ h : ℝ≥0 in 𝓝[>] 0, (h : ℝ) ≠ 0 :=
+    Eventually.mono self_mem_nhdsWithin fun _ hh ↦ (NNReal.coe_pos.mpr hh).ne'
+  rw [hN.hasLaw_sub_poissonMeasure_iff_stationary_small_time h0 hmono r,
+    isLittleO_sub_mul_iff_tendsto_div hne,
+    isLittleO_iff_tendsto' (hne.mono fun _ hx ↦ by simp [hx])]
+
 end ProbabilityTheory
 
 namespace TauCeti.Probability
+
+section Simplicity
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {N : ℝ≥0 → Ω → ℕ}
 
@@ -120,5 +145,62 @@ theorem ae_count_le_add_one_of_hasLaw_sub_poissonMeasure
   · exact (isLittleO_iff_tendsto' (Eventually.of_forall fun h hz ↦ by
       have : h = 0 := NNReal.coe_eq_zero.mp hz
       simp [this])).2 hsmall
+
+end Simplicity
+
+section Filtered
+
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {N : ℝ≥0 → Ω → ℕ}
+
+/-- **Microscopic characterization of a filtered Poisson count process.** On a probability space,
+a pairwise almost surely nondecreasing natural-valued process `N` is a rate-`r` Poisson process
+relative to `ℱ` (after casting to `ℝ`) if and only if it is adapted to `ℱ`, starts at zero
+almost surely, has `ℱ`-independent stationary increments, and satisfies
+`P(N h = 1) - r * h = o(h)` and `P(N h ≥ 2) = o(h)` as `h ↓ 0`. -/
+theorem isFilteredPoissonProcess_natCast_iff_stationary_isLittleO [IsProbabilityMeasure P]
+    (ℱ : Filtration ℝ≥0 mΩ) {r : ℝ≥0}
+    (hmono : ∀ s t, s ≤ t → ∀ᵐ ω ∂P, N s ω ≤ N t ω) :
+    IsFilteredPoissonProcess ℱ r (fun t ω ↦ (N t ω : ℝ)) P ↔
+      Adapted ℱ N ∧ (∀ᵐ ω ∂P, N 0 ω = 0) ∧
+      (∀ ⦃s t : ℝ≥0⦄, s ≤ t →
+        Indep (.comap (fun ω ↦ N t ω - N s ω) inferInstance) (ℱ s) P) ∧
+      (∀ s t, IdentDistrib (fun ω ↦ N (s + t) ω - N s ω) (N t) P P) ∧
+      (fun h : ℝ≥0 ↦ P.real {ω | N h ω = 1} - (r : ℝ) * h) =o[𝓝[>] 0]
+        (fun h : ℝ≥0 ↦ (h : ℝ)) ∧
+      (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω}) =o[𝓝[>] 0] (fun h : ℝ≥0 ↦ (h : ℝ)) := by
+  rw [isFilteredPoissonProcess_natCast_iff ℱ]
+  constructor
+  · rintro ⟨hadapt, h0, hlaw, hind_sub⟩
+    have hind : HasIndepIncrements N P := hadapt.hasIndepIncrements hind_sub
+    obtain ⟨hstat, h1, h2⟩ :=
+      (hind.hasLaw_sub_poissonMeasure_iff_stationary_isLittleO h0 hmono r).1 hlaw
+    exact ⟨hadapt, h0, hind_sub, hstat, h1, h2⟩
+  · rintro ⟨hadapt, h0, hind_sub, hstat, h1, h2⟩
+    have hind : HasIndepIncrements N P := hadapt.hasIndepIncrements hind_sub
+    exact ⟨hadapt, h0,
+      (hind.hasLaw_sub_poissonMeasure_iff_stationary_isLittleO h0 hmono r).2 ⟨hstat, h1, h2⟩,
+      hind_sub⟩
+
+/-- **Microscopic characterization relative to the natural filtration.** For a coordinatewise
+measurable, pairwise almost surely nondecreasing natural-valued process `N`, its real cast is a
+rate-`r` Poisson process relative to its natural filtration if and only if `N 0 = 0` almost
+surely, `N` has stationary independent increments, and the `o(h)` microscopic limits hold. -/
+theorem isFilteredPoissonProcess_natural_natCast_iff_stationary_isLittleO {r : ℝ≥0}
+    (hN : ∀ t, Measurable (N t))
+    (hmono : ∀ s t, s ≤ t → ∀ᵐ ω ∂P, N s ω ≤ N t ω) :
+    IsFilteredPoissonProcess
+        (Filtration.natural (fun t ω ↦ (N t ω : ℝ))
+          (fun t ↦ (Measurable.of_discrete.comp (hN t)).stronglyMeasurable))
+        r (fun t ω ↦ (N t ω : ℝ)) P ↔
+      (∀ᵐ ω ∂P, N 0 ω = 0) ∧ HasIndepIncrements N P ∧
+      (∀ s t, IdentDistrib (fun ω ↦ N (s + t) ω - N s ω) (N t) P P) ∧
+      (fun h : ℝ≥0 ↦ P.real {ω | N h ω = 1} - (r : ℝ) * h) =o[𝓝[>] 0]
+        (fun h : ℝ≥0 ↦ (h : ℝ)) ∧
+      (fun h : ℝ≥0 ↦ P.real {ω | 2 ≤ N h ω}) =o[𝓝[>] 0] (fun h : ℝ≥0 ↦ (h : ℝ)) := by
+  rw [isFilteredPoissonProcess_natural_natCast_iff hN]
+  exact and_congr_right fun h0 ↦ and_congr_right fun hind ↦
+    hind.hasLaw_sub_poissonMeasure_iff_stationary_isLittleO h0 hmono r
+
+end Filtered
 
 end TauCeti.Probability

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Filter.Basic
+public import Mathlib.Data.Int.Cast.Basic
 
 /-!
 # Basic facts about filters
@@ -20,6 +21,10 @@ inclusion.
 * `Filter.isCodirectedOrder_mem`: the members of a filter are codirected under inclusion.
 * `Filter.le_of_eventually_le_and_le`: bounds `a ≤ f x ≤ b` holding eventually along a nontrivial
   filter force `a ≤ b`.
+* `Filter.EventuallyLE.natCast_sub`: when one natural-valued function is eventually bounded by
+  another along a filter, casting their subtraction agrees eventually with subtracting their casts.
+* `Filter.Eventually.monotone_apply_le`: if a family `f · x` is eventually monotone along a
+  filter, then `f s x ≤ f t x` holds eventually for any `s ≤ t`.
 * `Equiv.symm_comp_eventuallyEq_iff`: the eventual form of `Equiv.symm_comp_eq`, which moves an
   equivalence to the other side of an eventual equality.
 -/
@@ -40,6 +45,25 @@ theorem le_of_eventually_le_and_le {β : Type*} [Preorder β] {l : Filter α} [l
     {f : α → β} {a b : β} (h : ∀ᶠ x in l, a ≤ f x ∧ f x ≤ b) : a ≤ b :=
   let ⟨_, hx⟩ := h.exists
   hx.1.trans hx.2
+
+/-- If a family `f · x` is eventually monotone along a filter `l`, then for every ordered pair
+`s ≤ t`, `f s x ≤ f t x` holds eventually along `l`. -/
+theorem Eventually.monotone_apply_le {β γ : Type*} [Preorder β] [Preorder γ]
+    {l : Filter α} {f : β → α → γ} (h : ∀ᶠ x in l, Monotone (f · x))
+    (s t : β) (hst : s ≤ t) :
+    ∀ᶠ x in l, f s x ≤ f t x :=
+  h.mono fun _ hx ↦ hx hst
+
+namespace EventuallyLE
+
+/-- When one natural-valued function is eventually bounded by another along a filter, casting
+their subtraction to an `AddGroupWithOne` agrees eventually with subtracting their casts. -/
+theorem natCast_sub {R : Type*} [AddGroupWithOne R] {l : Filter α}
+    {f g : α → ℕ} (h : f ≤ᶠ[l] g) :
+    (fun x ↦ ((g x - f x : ℕ) : R)) =ᶠ[l] fun x ↦ (g x : R) - (f x : R) :=
+  h.mono fun _ hx ↦ Nat.cast_sub hx
+
+end EventuallyLE
 
 end Filter
 

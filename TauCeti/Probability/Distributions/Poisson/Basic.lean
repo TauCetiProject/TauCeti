@@ -241,9 +241,27 @@ theorem variance_of_hasLaw_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace
   rw [hX.variance_eq]
   exact variance_id_map_cast_poissonMeasure r
 
+/-- A real-valued Poisson law is supported on nonnegative numbers. -/
+theorem ae_nonneg_map_cast_poissonMeasure (r : ℝ≥0) :
+    ∀ᵐ x ∂Po(ℝ, r), 0 ≤ x :=
+  (ae_map_iff Measurable.of_discrete.aemeasurable
+    (measurableSet_le measurable_const measurable_id)).2 (ae_of_all _ Nat.cast_nonneg)
+
 end TauCeti.Probability
 
 namespace ProbabilityTheory.HasLaw
+
+/-- A natural random variable with a Poisson law has real cast with the real-valued Poisson
+law. -/
+theorem natCast_poissonMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℕ} {r : ℝ≥0} (hX : HasLaw X (poissonMeasure r) P) :
+    HasLaw (fun ω ↦ (X ω : ℝ)) Po(ℝ, r) P :=
+  (hasLaw_map Measurable.of_discrete.aemeasurable).comp hX
+
+/-- A real random variable with a Poisson law is integrable. -/
+theorem integrable_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {r : ℝ≥0} (hX : HasLaw X Po(ℝ, r) P) : Integrable X P :=
+  hX.integrable ((TauCeti.Probability.memLp_id_map_cast_poissonMeasure r 1).integrable le_rfl)
 
 /-- A real random variable with Poisson law has centered second moment equal to the rate. -/
 theorem integral_sub_sq_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace Ω]

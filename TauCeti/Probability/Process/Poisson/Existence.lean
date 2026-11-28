@@ -10,10 +10,10 @@ public import TauCeti.Probability.PointProcess.Poisson.Basic
 public import TauCeti.Probability.Process.Poisson.Filtered
 public import TauCeti.Probability.Process.SimpleCountingPath
 import TauCeti.MeasureTheory.Measure.IntegerValued.Stieltjes
-import TauCeti.Probability.Independence.Process.HasIndepIncrements
 import TauCeti.Probability.PointProcess.Poisson.Count
 import TauCeti.Probability.PointProcess.Poisson.Construction
 import TauCeti.Probability.PointProcess.Poisson.Simplicity
+import TauCeti.Probability.RandomMeasure.Cumulative
 
 /-!
 # Existence of homogeneous Poisson processes
@@ -32,8 +32,8 @@ with jumps from the left of size at most one (`exists_isFilteredPoissonProcess`)
 natural-valued and nondecreasing, each path has finitely many jumps on every bounded interval.
 
 The filtration-relative Poisson property comes from the independent Poisson increments of the
-counts through `HasIndepIncrements.isFilteredPoissonProcess_natural`; path regularity comes
-from the deterministic count-path lemmas for locally finite integer-valued measures.
+counts through `isFilteredPoissonProcess_natural_natCast_iff`; path regularity comes from the
+deterministic count-path lemmas for locally finite integer-valued measures.
 
 ## References
 
@@ -63,16 +63,9 @@ theorem IsPoissonRandomMeasure.isFilteredPoissonProcess_natural_count
       (fun t ω => (⌊(M ω (Ioc 0 t)).toNNReal⌋₊ : ℝ)) P := by
   have : IsLocallyFiniteMeasure ((α : ℝ≥0∞) • nnvolume) :=
     nnvolume.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
-  have hmono := h.ae_monotone_nat_count
-  refine HasIndepIncrements.isFilteredPoissonProcess_natural
-    (h.hasIndepIncrements_nat_count.natCast fun _ _ hst ↦ hmono.mono fun _ hω ↦ hω hst) hmeas
-    (ae_of_all _ fun ω => by simp) fun s t hst => ?_
-  have hcast := (hasLaw_map (P := poissonMeasure (α * (t - s)))
-    (measurable_of_countable (Nat.cast : ℕ → ℝ)).aemeasurable).fun_comp
-    (h.hasLaw_nat_count_sub_smul_nnvolume hst)
-  refine hcast.congr ?_
-  filter_upwards [hmono] with ω hω
-  simp [Nat.cast_sub (hω hst)]
+  exact (isFilteredPoissonProcess_natural_natCast_iff h.measurable_nat_count).2
+    ⟨ae_of_all _ fun _ => by simp, h.hasIndepIncrements_nat_count,
+      fun _ _ hst => h.hasLaw_nat_count_sub_smul_nnvolume hst⟩
 
 /-- **Existence of Poisson processes.** For every rate `α`, some probability space carries a
 Poisson process of rate `α` relative to its natural filtration whose paths are all simple
@@ -121,13 +114,14 @@ theorem exists_isFilteredPoissonProcess (α : ℝ≥0) :
   · have hK : (K · μ) = fun _ => 0 := funext fun t => by simp [K, hμS]
     rw [hK]
     exact IsSimpleCountingPath.fun_zero
-  · obtain ⟨_, hint, hsimple⟩ : μ ∈ G := by
+  · obtain ⟨hloc, hint, hsimple⟩ : μ ∈ G := by
       by_contra hμG
       exact hμS (subset_toMeasurable P Gᶜ hμG)
+    have : IsLocallyFiniteMeasure μ := hloc
     have hK (t : ℝ≥0) : K t μ = C t μ := by simp [K, hμS]
     have hKC : (K · μ) = (C · μ) := funext hK
-    refine ⟨by simp [hK, C], hKC ▸ Measure.monotone_nat_count,
-      hKC ▸ hint.isRightContinuous_nat_count, fun t ht => ?_⟩
+    refine ⟨by simp [hK, C], hKC ▸ μ.monotone_natFloor_Ioc 0,
+      hKC ▸ μ.isRightContinuous_natFloor_Ioc 0, fun t ht => ?_⟩
     obtain ⟨s, hst, hle⟩ := hint.exists_nat_count_le_add_floor ht
     have hfloor : ⌊(μ {t}).toNNReal⌋₊ ≤ 1 :=
       Nat.floor_le_one_of_le_one <| by
