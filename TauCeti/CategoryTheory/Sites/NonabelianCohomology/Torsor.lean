@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.Grp.CartesianMonoidal
 public import Mathlib.Algebra.Category.Grp.ForgetCorepresentable
 public import Mathlib.Algebra.Group.Action.Pretransitive
 public import Mathlib.CategoryTheory.Groupoid
 public import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
+public import Mathlib.CategoryTheory.Sites.CartesianMonoidal
 public import Mathlib.CategoryTheory.Sites.CoversTop.Basic
 public import Mathlib.CategoryTheory.Sites.LocalProperties
 public import Mathlib.CategoryTheory.Sites.LocallyBijective
+public import Mathlib.CategoryTheory.Skeletal
 
 /-!
 # Torsors under a sheaf of groups and their classes
@@ -30,6 +33,8 @@ relative to a fixed family of objects; here no covering is chosen.
 
 * `CategoryTheory.Sheaf.Torsor G`: a `G`-torsor; the action is objectwise and compatible with
   restriction, the local nonemptiness is phrased with Mathlib's `GrothendieckTopology.CoversTop`.
+* `CategoryTheory.Sheaf.Torsor.isLocallySurjective_of_exists_eq_smul`: a morphism of sheaves of
+  sets between torsors whose image is stable under the action is locally surjective.
 * `CategoryTheory.Sheaf.Torsor.isIso_hom`: a morphism of `G`-torsors is an isomorphism of
   sheaves, so the category of `G`-torsors is a groupoid.
 * `CategoryTheory.Sheaf.Torsor.trivial G`: the trivial torsor, `G` acting on itself by left
@@ -42,6 +47,10 @@ relative to a fixed family of objects; here no covering is chosen.
   from a torsor to a sheaf of sets is given by a global section.
 * `CategoryTheory.Sheaf.Torsor.isIso_of_bijective_app`: a morphism of sheaves of sets which is
   bijective over every object over which a torsor has a section is an isomorphism.
+* `CategoryTheory.Sheaf.Torsor.hom_ext_of_coversTop`: two morphisms of torsors which agree on
+  one section over each object of a covering family are equal.
+* `CategoryTheory.Sheaf.Torsor.prod P Q`: the product of a `G`-torsor and an `H`-torsor, a torsor
+  under `G × H`.
 * `CategoryTheory.Sheaf.NonabelianH1 G`: the pointed set of isomorphism classes of `G`-torsors,
   with `NonabelianH1.mk`, `NonabelianH1.lift` and `NonabelianH1.mk_eq_mk_iff`.
 * `CategoryTheory.Sheaf.NonabelianH1.mk_eq_one_iff`: a torsor is trivial if and only if it has a
@@ -57,7 +66,7 @@ relative to a fixed family of objects; here no covering is chosen.
 
 public section
 
-open CategoryTheory Limits Opposite
+open CategoryTheory Limits Opposite MonoidalCategory
 
 universe w v u
 
@@ -132,6 +141,12 @@ lemma id_hom (P : Torsor G) : Hom.hom (𝟙 P) = 𝟙 P.sheaf := rfl
 @[simp]
 lemma comp_hom (f : P ⟶ Q) (g : Q ⟶ R) : (f ≫ g).hom = f.hom ≫ g.hom := rfl
 
+/-- The inverse of an isomorphism of torsors undoes its forward map on sections. -/
+@[simp]
+lemma _root_.CategoryTheory.Iso.torsor_hom_inv_id_apply (e : P ≅ Q) {U : Cᵒᵖ}
+    (p : P.sheaf.obj.obj U) : e.inv.hom.hom.app U (e.hom.hom.hom.app U p) = p :=
+  congrArg (fun f ↦ f.hom.hom.app U p) e.hom_inv_id
+
 /-- A morphism of torsors is injective on sections. -/
 lemma injective_app (f : P ⟶ Q) (U : Cᵒᵖ) : Function.Injective (f.hom.hom.app U) := by
   intro p p' h
@@ -140,16 +155,27 @@ lemma injective_app (f : P ⟶ Q) (U : Cᵒᵖ) : Function.Injective (f.hom.hom.
   obtain rfl : g = 1 := Q.smul_left_injective _ (h.symm.trans (one_smul _ _).symm)
   exact (one_smul _ _).symm
 
+/-- A morphism of sheaves of sets from a `G`-torsor to an `H`-torsor is locally surjective as
+soon as its image is stable under the action of `H`: over an object where the source has a
+section `p`, every section of the target is a translate of the image of `p`. -/
+lemma isLocallySurjective_of_exists_eq_smul {H : Sheaf J GrpCat.{w}} {Q : Torsor H}
+    (f : P.sheaf ⟶ Q.sheaf)
+    (hf : ∀ (U : Cᵒᵖ) (p : P.sheaf.obj.obj U) (h : H.obj.obj U),
+      ∃ p' : P.sheaf.obj.obj U, f.hom.app U p' = h • f.hom.app U p) :
+    Presheaf.IsLocallySurjective J f.hom := by
+  refine ⟨fun {U} q ↦ J.superset_covering ?_ (P.coversTop U)⟩
+  rintro V a ⟨⟨W, ⟨p⟩⟩, ⟨b⟩⟩
+  obtain ⟨h, hh⟩ := MulAction.exists_smul_eq (H.obj.obj (op V))
+    (f.hom.app _ (P.sheaf.obj.map b.op p)) (Q.sheaf.obj.map a.op q)
+  obtain ⟨p', hp'⟩ := hf _ (P.sheaf.obj.map b.op p) h
+  exact ⟨p', hp'.trans hh⟩
+
 /-- A morphism of torsors is an isomorphism of the underlying sheaves: it is injective on
 sections, and locally surjective because the source is locally nonempty. -/
-instance isIso_hom (f : P ⟶ Q) : IsIso f.hom := by
-  refine (Sheaf.isLocallyBijective_iff_isIso (A := Type w) f.hom).1
-    ⟨Presheaf.isLocallyInjective_of_injective _ _ (injective_app f), ⟨fun {U} q ↦ ?_⟩⟩
-  refine J.superset_covering ?_ (P.coversTop U)
-  rintro V a ⟨⟨W, ⟨p⟩⟩, ⟨b⟩⟩
-  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq (G.obj.obj (op V))
-    (f.hom.hom.app _ (P.sheaf.obj.map b.op p)) (Q.sheaf.obj.map a.op q)
-  exact ⟨g • P.sheaf.obj.map b.op p, by rw [f.map_smul, hg]⟩
+instance isIso_hom (f : P ⟶ Q) : IsIso f.hom :=
+  (Sheaf.isLocallyBijective_iff_isIso (A := Type w) f.hom).1
+    ⟨Presheaf.isLocallyInjective_of_injective _ _ (injective_app f),
+      isLocallySurjective_of_exists_eq_smul f.hom fun U p g ↦ ⟨g • p, f.map_smul U g p⟩⟩
 
 /-- Every morphism of torsors is an isomorphism. -/
 instance : IsGroupoid (Torsor G) where
@@ -286,6 +312,65 @@ lemma isIso_of_bijective_app (P : Torsor G) {F F' : Sheaf J (Type w)} (f : F ⟶
     rintro ⟨V⟩
     exact (isIso_iff_bijective _).2 (hf V.left ⟨P.sheaf.obj.map V.hom.op i.property.some⟩)
 
+/-- Two morphisms of `G`-torsors are equal as soon as they agree on one section over each object
+of a covering family: by equivariance they then agree on every section over every object with a
+map to the family, and these objects cover the site. -/
+lemma hom_ext_of_coversTop {P Q : Torsor G} {f g : P ⟶ Q} {I : Type*} {Y : I → C}
+    (hY : J.CoversTop Y) (p : ∀ i, P.sheaf.obj.obj (op (Y i)))
+    (h : ∀ i, f.hom.hom.app _ (p i) = g.hom.hom.app _ (p i)) : f = g := by
+  have key {V : C} (i : I) (a : V ⟶ Y i) (x : P.sheaf.obj.obj (op V)) :
+      f.hom.hom.app _ x = g.hom.hom.app _ x := by
+    obtain ⟨b, rfl⟩ :=
+      MulAction.exists_smul_eq (G.obj.obj (op V)) (P.sheaf.obj.map a.op (p i)) x
+    rw [f.map_smul, g.map_smul, NatTrans.naturality_apply f.hom.hom,
+      NatTrans.naturality_apply g.hom.hom, h]
+  ext U x
+  refine (((isSheaf_iff_isSheaf_of_type J _).1 Q.sheaf.property).isSeparated _
+    (hY U.unop)).ext fun V a ⟨i, ⟨b⟩⟩ ↦ ?_
+  exact ((NatTrans.naturality_apply f.hom.hom a.op x).symm.trans (key i b _)).trans
+    (NatTrans.naturality_apply g.hom.hom a.op x)
+
+section prod
+
+variable {G H : Sheaf J GrpCat.{w}}
+
+/-- The product `P × Q` of a `G`-torsor `P` and an `H`-torsor `Q`, a torsor under the product
+`G × H` of sheaves of groups acting componentwise.
+
+The body is exposed because the sections of `P × Q` are, by definition, the pairs of sections of
+`P` and of `Q`; statements about it apply the action to such pairs. Use `prod_sheaf` and
+`prod_smul` rather than unfolding it. -/
+@[expose] def prod (P : Torsor G) (Q : Torsor H) : Torsor (G ⊗ H) where
+  sheaf := P.sheaf ⊗ Q.sheaf
+  mulAction U :=
+    { smul g x := (g.1 • x.1, g.2 • x.2)
+      one_smul x := Prod.ext (one_smul _ x.1) (one_smul _ x.2)
+      mul_smul g g' x := Prod.ext (mul_smul g.1 g'.1 x.1) (mul_smul g.2 g'.2 x.2) }
+  map_smul U V f g x := Prod.ext (P.map_smul f g.1 x.1) (Q.map_smul f g.2 x.2)
+  coversTop X := J.superset_covering (by
+      rintro W a ⟨⟨⟨V, ⟨p⟩⟩, ⟨b⟩⟩, ⟨⟨V', ⟨q⟩⟩, ⟨b'⟩⟩⟩
+      exact ⟨⟨W, ⟨(P.sheaf.obj.map b.op p, Q.sheaf.obj.map b'.op q)⟩⟩, ⟨𝟙 W⟩⟩)
+    (J.intersection_covering (P.coversTop X) (Q.coversTop X))
+  bijective U :=
+    ((Equiv.prodProdProdComm _ _ _ _).trans
+      (((Equiv.ofBijective _ (P.bijective U)).prodCongr
+        (Equiv.ofBijective _ (Q.bijective U))).trans
+          (Equiv.prodProdProdComm _ _ _ _))).bijective
+
+variable (P : Torsor G) (Q : Torsor H)
+
+/-- The underlying sheaf of the product torsor is the product of the underlying sheaves. -/
+lemma prod_sheaf : (P.prod Q).sheaf = P.sheaf ⊗ Q.sheaf :=
+  (rfl)
+
+/-- `G × H` acts componentwise on the product torsor. -/
+@[simp]
+lemma prod_smul {U : Cᵒᵖ} (g : (G ⊗ H).obj.obj U) (x : (P.prod Q).sheaf.obj.obj U) :
+    g • x = (g.1 • x.1, g.2 • x.2) :=
+  (rfl)
+
+end prod
+
 end Torsor
 
 variable (G : Sheaf J GrpCat.{w})
@@ -302,6 +387,16 @@ variable {G}
 /-- The class of a `G`-torsor. -/
 def mk (P : Torsor G) : NonabelianH1 G :=
   _root_.Quotient.mk _ P
+
+/-- Torsor classes identify with the objects of the skeleton of the category of torsors.
+This equivalence transfers algebraic structures without exposing the quotient representation. -/
+def skeletonEquiv : NonabelianH1 G ≃ Skeleton (Torsor G) :=
+  Equiv.refl _
+
+/-- The skeleton equivalence sends a torsor class to its skeleton class. -/
+@[simp]
+lemma skeletonEquiv_mk (P : Torsor G) : skeletonEquiv (mk P) = toSkeleton P :=
+  (rfl)
 
 /-- The base point of `NonabelianH1 G` is the class of the trivial torsor. -/
 instance : One (NonabelianH1 G) :=
