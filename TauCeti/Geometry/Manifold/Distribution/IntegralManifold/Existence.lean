@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Distribution.IntegralManifold.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
+import TauCeti.Geometry.Manifold.Diffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace

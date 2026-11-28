@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Topology.IsLocalHomeomorph.Basic
+public import TauCeti.Geometry.Manifold.Diffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
@@ -22,6 +23,8 @@ Main results:
   with simp lemmas for its source, target, forward function and inverse.
 * `IsLocalDiffeomorph.diffeomorphOfInjective`: an injective local diffeomorphism as a
   diffeomorphism onto its open image.
+* `IsLocalDiffeomorph.diffeomorphOfInjectiveOfRangeEq`: the same construction onto a
+  specified open range, with forward and inverse computation laws.
 
 The construction extends Mathlib's `IsLocalDiffeomorph.diffeomorphOfBijective`, using
 `Set.InjOn.toPartialEquiv` for the inverse and its inverse laws. Nonemptiness of the domain
@@ -127,5 +130,34 @@ Not `@[simp]`: its left-hand side has the variable head `f`. -/
 theorem apply_diffeomorphOfInjective_symm (y : hf.image) :
     f ((hf.diffeomorphOfInjective hinj).symm y) = y :=
   Equiv.apply_ofInjective_symm hinj y
+
+/-- The open image is a specified open subset when its carrier equals the range. -/
+theorem image_eq_of_range_eq {U : TopologicalSpace.Opens N} (hrange : range f = U) :
+    hf.image = U :=
+  TopologicalSpace.Opens.ext (hf.image_coe.trans hrange)
+
+/-- An injective local diffeomorphism is a diffeomorphism onto any specified open subset
+equal to its range. -/
+def diffeomorphOfInjectiveOfRangeEq {U : TopologicalSpace.Opens N} (hrange : range f = U) :
+    M ≃ₘ^n⟮I, J⟯ U :=
+  (hf.diffeomorphOfInjective hinj).trans
+    ((Diffeomorph.refl J N n).subtype fun _ ↦ by rw [hf.image_eq_of_range_eq hrange]; rfl)
+
+/-- The diffeomorphism onto a specified open range evaluates as the original map. -/
+@[simp]
+theorem diffeomorphOfInjectiveOfRangeEq_apply_coe
+    {U : TopologicalSpace.Opens N}
+    (hrange : range f = U) (x : M) :
+    (hf.diffeomorphOfInjectiveOfRangeEq hinj hrange x : N) = f x := by
+  simp [diffeomorphOfInjectiveOfRangeEq, Diffeomorph.subtype_apply_coe]
+
+/-- The original map undoes the inverse of the diffeomorphism onto its specified open range.
+
+Not `@[simp]`: its left-hand side has the variable head `f`. -/
+theorem apply_diffeomorphOfInjectiveOfRangeEq_symm {U : TopologicalSpace.Opens N}
+    (hrange : range f = U) (y : U) :
+    f ((hf.diffeomorphOfInjectiveOfRangeEq hinj hrange).symm y) = y := by
+  rw [← hf.diffeomorphOfInjectiveOfRangeEq_apply_coe hinj hrange]
+  exact congrArg Subtype.val ((hf.diffeomorphOfInjectiveOfRangeEq hinj hrange).apply_symm_apply y)
 
 end IsLocalDiffeomorph

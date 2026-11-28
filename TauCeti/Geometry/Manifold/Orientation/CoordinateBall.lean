@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Defs
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.LocalDiffeomorph
 
 import TauCeti.Analysis.InnerProductSpace.Reflection
 import TauCeti.Geometry.Manifold.ContMDiff.Parametrization
@@ -23,6 +24,10 @@ nontrivial, the ball can be chosen to preserve any given orientations of `E` and
 every point (`exists_isOpenEmbedding_isLocalDiffeomorph_isOrientationPreservingAt`): on the
 connected space `E`, its orientation is the pullback orientation or its opposite. In the latter
 case, precomposing with a reflection of `E` makes the ball preserve orientations everywhere.
+
+A smooth embedding `E → M` precomposed with a suitable linear isometry of `E` preserves the
+given orientations at the origin
+(`SmoothEmbedding.exists_linearIsometryEquiv_isOrientationPreservingAt_zero`).
 -/
 
 public section
@@ -57,3 +62,27 @@ theorem exists_isOpenEmbedding_isLocalDiffeomorph_isOrientationPreservingAt
       fun v ↦ isOrientationPreservingAt_comp_of_det_neg (hrev (R v)) hR⟩
 
 end TauCeti.Manifold.Orientation
+
+namespace TauCeti.SmoothEmbedding
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [Nontrivial E]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 1 M]
+  {ι : Type*} [Fintype ι] {n : ℕ∞ω}
+
+/-- Precomposing a smooth embedding with an orthogonal frame makes it preserve the chosen
+orientations at the origin. -/
+theorem exists_linearIsometryEquiv_isOrientationPreservingAt_zero
+    (f : TauCeti.SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) n E M) (hn : 1 ≤ n)
+    (oE : TauCeti.Manifold.Orientation 𝓘(ℝ, E) E ι)
+    (oM : TauCeti.Manifold.Orientation 𝓘(ℝ, E) M ι) :
+    ∃ R : E ≃ₗᵢ[ℝ] E, oE.IsOrientationPreservingAt oM (f ∘ R) 0 := by
+  have hd := (f.isImmersion.of_le hn).isLocalDiffeomorph rfl le_rfl 0
+  rcases hd.isOrientationPreservingAt_or_isOrientationReversingAt (by simp) oE oM with h | h
+  · exact ⟨LinearIsometryEquiv.refl ℝ E, by simpa using h⟩
+  · obtain ⟨R, hR⟩ := TauCeti.exists_det_neg (F := E)
+    refine ⟨R, ?_⟩
+    exact TauCeti.Manifold.Orientation.isOrientationPreservingAt_comp_of_det_neg
+      (by simpa using h) hR
+
+end TauCeti.SmoothEmbedding

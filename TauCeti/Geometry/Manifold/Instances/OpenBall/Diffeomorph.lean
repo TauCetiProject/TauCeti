@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Normed.Module.Ball.Opens
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
+import TauCeti.Geometry.Manifold.Diffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
@@ -89,6 +90,28 @@ theorem coe_unitBallDiffeomorph_symm_apply (v : F) :
 theorem unitBallDiffeomorph_zero :
     unitBallDiffeomorph F ⟨0, zero_mem_unitBallOpens _⟩ = 0 := by
   rw [unitBallDiffeomorph_apply, univUnitBall_symm_apply_zero]
+
+/-- The norm of the radial diffeomorphism is the original radius divided by
+`sqrt (1 - r²)`. -/
+theorem norm_unitBallDiffeomorph (p : unitBallOpens F) :
+    ‖unitBallDiffeomorph F p‖ = ‖(p : F)‖ / Real.sqrt (1 - ‖(p : F)‖ ^ 2) := by
+  have hp : ‖(p : F)‖ < 1 := mem_unitBallOpens.1 p.property
+  have hd : 0 < Real.sqrt (1 - ‖(p : F)‖ ^ 2) :=
+    Real.sqrt_pos.2 (by nlinarith [norm_nonneg (p : F)])
+  rw [unitBallDiffeomorph_apply, OpenPartialHomeomorph.univUnitBall_symm_apply,
+    norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hd, inv_mul_eq_div]
+
+/-- Conjugating an orthogonal map by the unit-ball diffeomorphism retains its Euclidean action. -/
+theorem coe_unitBallDiffeomorph_symm_linearIsometryEquiv_unitBallDiffeomorph (R : F ≃ₗᵢ[ℝ] F)
+    (p : TauCeti.unitBallOpens F) :
+    ((TauCeti.unitBallDiffeomorph F).symm (R (TauCeti.unitBallDiffeomorph F p)) : F) =
+      R p := by
+  have hR (x : F) : OpenPartialHomeomorph.univUnitBall (R x) =
+      R (OpenPartialHomeomorph.univUnitBall x) := by
+    simp only [OpenPartialHomeomorph.univUnitBall_apply, R.norm_map, R.map_smul]
+  rw [TauCeti.coe_unitBallDiffeomorph_symm_apply, hR,
+    ← TauCeti.coe_unitBallDiffeomorph_symm_apply, Diffeomorph.symm_apply_apply]
+
 
 /-- **Discs instead of vector spaces.** The image of a smooth embedding `ι` of a real vector space
 `V` of dimension `k` is also the image of a smooth embedding of the open unit disc of `ℝᵏ`, which

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Topology.Homeomorph.Extend
 import TauCeti.Data.Set.Function
+import TauCeti.Geometry.Manifold.Diffeomorph.OpenSubset
 
 /-!
 # Extending diffeomorphisms by the identity
