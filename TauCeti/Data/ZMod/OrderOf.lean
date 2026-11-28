@@ -58,6 +58,8 @@ decides which `q ^ k + 1` are divisible by `p`.
   order of `a` modulo `ℓ ^ r` for all large `r`.
 * `ZMod.two_pow_le_mul_succ_of_pow_eq_one`: if `a > 1` and `a ^ n ≡ 1` modulo `2 ^ (s + 1)`
   for `n > 0`, then `2 ^ s ≤ n * (a + 1)`.
+* `ZMod.two_pow_dvd_orderOf_neg_natCast`: the order of `-a` at a level divisible by
+  `2 ^ (3 * e)` is divisible by `2 ^ e` if `a` is neither sign modulo `2 ^ e`.
 * `ZMod.two_dvd_exponent_units`: for `n ≠ 1, 2`, `2` divides the exponent of `(ℤ/n)ˣ`.
 * `ZMod.isUnit_of_orderOf_eq_totient`, `ZMod.zpowers_eq_top_of_orderOf_eq_totient`: a residue of
   order `φ(n)` is a unit, and generates `(ℤ/n)ˣ`.
@@ -184,6 +186,45 @@ theorem two_pow_le_mul_succ_of_pow_eq_one {a n s : ℕ} (ha : 1 < a) (hn : 0 < n
       2 ^ s ≤ 2 ^ (multiplicity 2 n + multiplicity 2 (a + 1)) :=
         Nat.pow_le_pow_right (by decide) (by omega)
       _ ≤ n * (a + 1) := by rw [pow_add]; gcongr
+
+/-- If `2 ^ e` divides neither `a - 1` nor `a + 1`, the order of `-a` at a level divisible by
+`2 ^ (3 * e)` is divisible by `2 ^ e`. This also holds when the order is zero. -/
+theorem two_pow_dvd_orderOf_neg_natCast {a e q : ℕ} (hq : 2 ^ (3 * e) ∣ q)
+    (hsub : ¬ 2 ^ e ∣ a - 1) (hadd : ¬ 2 ^ e ∣ a + 1) :
+    2 ^ e ∣ orderOf (-(a : ZMod q)) := by
+  let o := orderOf (-(a : ZMod q))
+  by_cases ho : o = 0
+  · have h : 2 ^ e ∣ o := ho.symm ▸ dvd_zero _
+    exact h
+  have ha : 1 < a := by
+    by_contra! ha
+    exact hsub (by simp [Nat.sub_eq_zero_of_le ha])
+  have he : e ≠ 0 := by rintro rfl; exact hsub (by simp)
+  have hpow : (a : ZMod q) ^ (2 * o) = 1 := calc
+    (a : ZMod q) ^ (2 * o) = (-(a : ZMod q)) ^ (2 * o) := by simp only [pow_mul, neg_sq]
+    _ = 1 := by rw [mul_comm, pow_mul, pow_orderOf_eq_one, one_pow]
+  have hdiv : 2 ^ (3 * e) ∣ a ^ (2 * o) - 1 :=
+    hq.trans ((dvd_pow_sub_one_iff_orderOf_natCast_dvd (by omega) _).mpr
+      (orderOf_dvd_of_pow_eq_one hpow))
+  have hao : Odd a := by
+    by_contra! h
+    have h₂ := dvd_pow (even_iff_two_dvd.mp h) (by omega : 2 * o ≠ 0)
+    have h₁ := (dvd_pow_self 2 (by omega : 3 * e ≠ 0)).trans hdiv
+    have hA : a ^ (2 * o) - (a ^ (2 * o) - 1) = 1 :=
+      Nat.sub_sub_self (Nat.one_le_pow _ _ (by omega))
+    exact (by decide : ¬ 2 ∣ 1) (hA ▸ Nat.dvd_sub h₂ h₁)
+  have hle := (Nat.pow_dvd_iff_le_multiplicity (by decide : (2 : ℕ) ≠ 1)
+    (Nat.sub_ne_zero_of_lt (Nat.one_lt_pow (by omega) ha))).mp hdiv
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  -- Lifting the exponent writes the valuation of the unsigned power in terms of `o`.
+  have hv := Nat.multiplicity_pow_two_sub_one ha hao.not_two_dvd_nat
+    (by omega : 2 * o ≠ 0) (even_two_mul o)
+  rw [Nat.multiplicity_mul (by decide : (2 : ℕ) ≠ 0) ho, Nat.Prime.multiplicity_self] at hv
+  have hminus := mt (Nat.pow_dvd_iff_le_multiplicity (by decide : (2 : ℕ) ≠ 1)
+    (by omega : a - 1 ≠ 0)).mpr hsub
+  have hplus := mt (Nat.pow_dvd_iff_le_multiplicity (by decide : (2 : ℕ) ≠ 1)
+    (by omega : a + 1 ≠ 0)).mpr hadd
+  exact (Nat.pow_dvd_iff_le_multiplicity (by decide : (2 : ℕ) ≠ 1) ho).mpr (by omega)
 
 /-- The case of `eventually_pow_dvd_orderOf_natCast` where `ℓ` is a prime not dividing `a`. -/
 private theorem eventually_pow_dvd_orderOf_natCast_of_prime {ℓ : ℕ} (hℓ : ℓ.Prime) {a : ℕ}
