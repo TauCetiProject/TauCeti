@@ -84,18 +84,17 @@ theorem reachableSubspace_mul_right_of_surjective {m' : Type*} [Fintype m']
       exact mulVec_mem_reachableSubspace (A := A) (B := B * M) w)
       fun _ => mulVec_mem_reachableSubspace_of_mem
 
-/-- An invertible change of input coordinates `G` preserves the reachable subspace. -/
-@[simp]
+/-- An invertible change of input coordinates `G` preserves the reachable subspace.
+The simplifier removes the input change before simplifying either matrix. -/
+@[simp↓]
 theorem reachableSubspace_mul_units [DecidableEq m] (A : Matrix n n R) (B : Matrix n m R)
     (G : (Matrix m m R)ˣ) :
     reachableSubspace A (B * (G : Matrix m m R)) = reachableSubspace A B :=
-  le_antisymm (reachableSubspace_mul_right_le A B (G : Matrix m m R)) <| by
-    simpa [Matrix.mul_assoc] using
-      reachableSubspace_mul_right_le A (B * (G : Matrix m m R))
-        ((G⁻¹ : (Matrix m m R)ˣ) : Matrix m m R)
+  reachableSubspace_mul_right_of_surjective A B fun v =>
+    ⟨(↑G⁻¹ : Matrix m m R) *ᵥ v, by simp [mulVec_mulVec]⟩
 
 /-- An invertible change of input coordinates `G` preserves controllability. -/
-@[simp]
+@[simp↓]
 theorem isControllable_mul_units_iff [DecidableEq m] (A : Matrix n n R) (B : Matrix n m R)
     (G : (Matrix m m R)ˣ) :
     IsControllable A (B * (G : Matrix m m R)) ↔ IsControllable A B := by
@@ -116,10 +115,9 @@ theorem reachableSubspace_mul_of_mul_eq {n' : Type*} [Fintype n'] [DecidableEq n
       exact Submodule.mem_map_of_mem (mulVec_mem_reachableSubspace_of_mem hx)
   · rw [Submodule.map_le_iff_le_comap]
     refine reachableSubspace_le (fun v => ?_) fun x hx => ?_
-    · change M *ᵥ (B *ᵥ v) ∈ reachableSubspace A' (M * B)
-      rw [mulVec_mulVec]
+    · rw [Submodule.mem_comap, mulVecLin_apply, mulVec_mulVec]
       exact mulVec_mem_reachableSubspace v
-    · change M *ᵥ (A *ᵥ x) ∈ reachableSubspace A' (M * B)
+    · rw [Submodule.mem_comap, mulVecLin_apply] at hx ⊢
       rw [mulVec_mulVec, ← hMA, ← mulVec_mulVec]
       exact mulVec_mem_reachableSubspace_of_mem hx
 
@@ -133,7 +131,8 @@ theorem isControllable_mul_of_mul_eq_iff {n' : Type*} [Fintype n'] [DecidableEq 
   exact map_eq_top_iff (Submodule.orderIsoMapComapOfBijective M.mulVecLin hM)
 
 /-- Under a change of state coordinates `P`, the reachable subspace transforms by
-`P.mulVecLin`. -/
+`P.mulVecLin`. The simplifier applies this before rewriting the coerced inverse. -/
+@[simp↓]
 theorem reachableSubspace_units_conj (A : Matrix n n R) (B : Matrix n m R)
     (P : (Matrix n n R)ˣ) :
     reachableSubspace ((P : Matrix n n R) * A * ((P⁻¹ : (Matrix n n R)ˣ) : Matrix n n R))
@@ -141,15 +140,8 @@ theorem reachableSubspace_units_conj (A : Matrix n n R) (B : Matrix n m R)
       (reachableSubspace A B).map (P : Matrix n n R).mulVecLin :=
   reachableSubspace_mul_of_mul_eq B (by simp [Matrix.mul_assoc])
 
-/-- Variant of `Matrix.reachableSubspace_units_conj` for the inverse coordinate change `P⁻¹`. -/
-theorem reachableSubspace_units_conj' (A : Matrix n n R) (B : Matrix n m R)
-    (P : (Matrix n n R)ˣ) :
-    reachableSubspace (((P⁻¹ : (Matrix n n R)ˣ) : Matrix n n R) * A * (P : Matrix n n R))
-        (((P⁻¹ : (Matrix n n R)ˣ) : Matrix n n R) * B) =
-      (reachableSubspace A B).map ((P⁻¹ : (Matrix n n R)ˣ) : Matrix n n R).mulVecLin := by
-  simpa using reachableSubspace_units_conj A B P⁻¹
-
 /-- A change of state coordinates `P` preserves controllability. -/
+@[simp↓]
 theorem isControllable_units_conj_mul_iff (A : Matrix n n R) (B : Matrix n m R)
     (P : (Matrix n n R)ˣ) :
     IsControllable ((P : Matrix n n R) * A * ((P⁻¹ : (Matrix n n R)ˣ) : Matrix n n R))
@@ -159,15 +151,6 @@ theorem isControllable_units_conj_mul_iff (A : Matrix n n R) (B : Matrix n m R)
     Function.bijective_iff_has_inverse.2
       ⟨((P⁻¹ : (Matrix n n R)ˣ) : Matrix n n R).mulVecLin,
         fun x => by simp [mulVec_mulVec], fun x => by simp [mulVec_mulVec]⟩
-
-/-- Variant of `Matrix.isControllable_units_conj_mul_iff` for the inverse coordinate change
-`P⁻¹`. -/
-theorem isControllable_units_conj_mul_iff' (A : Matrix n n R) (B : Matrix n m R)
-    (P : (Matrix n n R)ˣ) :
-    IsControllable (((P⁻¹ : (Matrix n n R)ˣ) : Matrix n n R) * A * (P : Matrix n n R))
-        (((P⁻¹ : (Matrix n n R)ˣ) : Matrix n n R) * B) ↔
-      IsControllable A B := by
-  simpa using isControllable_units_conj_mul_iff A B P⁻¹
 
 end CommSemiring
 
