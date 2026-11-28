@@ -44,6 +44,8 @@ inert although `2 ∣ 6`, and in `ℚ(ζ₂) = ℚ` the prime `2` splits complet
   `φ(p ^ k)`.
 * `TauCeti.NumberField.inertiaDegIn_eq_orderOf`: the residue degree of `p` is the order of `p`
   modulo `m`.
+* `TauCeti.NumberField.inertiaDeg_eq_orderOf`: every prime `P` of `𝓞 K` above `p` has residue
+  degree `orderOf (p : ZMod m)` over `ℤ`.
 * `TauCeti.NumberField.absNorm_eq_pow_orderOf`: every prime `P` of `𝓞 K` above `p` has absolute
   norm `p ^ orderOf (p : ZMod m)`.
 * `TauCeti.NumberField.ncard_primesOver_mul_orderOf_eq_totient_of_eq_pow_mul`: the number of
@@ -117,15 +119,21 @@ theorem inertiaDegIn_eq_orderOf (hn : n = p ^ k * m) (hm : ¬ p ∣ m) :
     exact IsCyclotomicExtension.Rat.inertiaDegIn_eq_of_not_dvd p K hm
   | succ k => exact IsCyclotomicExtension.Rat.inertiaDegIn_eq n K hn hm
 
+/-- **Residue degree of a prime ideal in a cyclotomic field.** If `n = p ^ k * m` with `¬ p ∣ m`,
+every prime ideal `P` of `𝓞 K` lying over `p` has residue degree `orderOf (p : ZMod m)` over `ℤ`. -/
+theorem inertiaDeg_eq_orderOf (hn : n = p ^ k * m) (hm : ¬ p ∣ m) (P : Ideal (𝓞 K))
+    [P.IsPrime] [P.LiesOver (span {(p : ℤ)})] :
+    P.inertiaDeg ℤ = orderOf (p : ZMod m) := by
+  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {n} ℚ K
+  rw [← inertiaDegIn_eq_inertiaDeg (span {(p : ℤ)}) P Gal(K/ℚ), inertiaDegIn_eq_orderOf hn hm]
+
 /-- **Norm of a prime ideal in a cyclotomic field.** If `n = p ^ k * m` with `¬ p ∣ m`, every prime
 ideal `P` of `𝓞 K` lying over `p` has absolute norm `p ^ orderOf (p : ZMod m)`, by Mathlib's
 `Ideal.pow_inertiaDeg`. -/
 theorem absNorm_eq_pow_orderOf (hn : n = p ^ k * m) (hm : ¬ p ∣ m) (P : Ideal (𝓞 K))
     [P.IsPrime] [P.LiesOver (span {(p : ℤ)})] :
     absNorm P = p ^ orderOf (p : ZMod m) := by
-  have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {n} ℚ K
-  rw [← pow_inertiaDeg p P, ← inertiaDegIn_eq_inertiaDeg (span {(p : ℤ)}) P Gal(K/ℚ),
-    inertiaDegIn_eq_orderOf hn hm]
+  rw [← pow_inertiaDeg p P, inertiaDeg_eq_orderOf hn hm P]
 
 /-- **The number of primes above `p` in a cyclotomic field.** If `n = p ^ k * m` with `p ∤ m`,
 the number of primes above `p` in an `n`-th cyclotomic field over `ℚ`, times the order of `p`

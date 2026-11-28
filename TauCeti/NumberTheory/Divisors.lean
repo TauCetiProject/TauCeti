@@ -62,6 +62,9 @@ product over the divisors of `1, …, N` by divisor: `d` occurs `N / d` times.
 For radical `P`, `Nat.pairwiseDisjoint_divisors_pow_filter_dvd` states that the families of
 divisors of `d ^ M` divisible by `d` are pairwise disjoint as `d` ranges over the divisors of `P`.
 
+`Nat.divisorsAntidiagonal_prime_pow` identifies the factor pairs of a prime power `p ^ k` with the
+image of `Finset.antidiagonal k` under `(i, j) ↦ (p ^ i, p ^ j)`.
+
 For coprime `m` and `n`, `Nat.Coprime.divisors_filter_pow_dvd_mul` splits the divisors `d` of
 `m * n` with `d ^ k ∣ m * n` as products of the corresponding divisors of `m` and of `n`.
 
@@ -187,6 +190,19 @@ theorem injOn_add_divisorsAntidiagonal_filter_lt (n : ℕ) :
   rcases _root_.mul_eq_zero.mp hprod with h | h
   · exact Prod.ext (by omega) (by omega)
   · omega
+
+/-- The factor pairs of a prime power `p ^ k` are the pairs `(p ^ i, p ^ j)` with `i + j = k`. -/
+theorem divisorsAntidiagonal_prime_pow {p : ℕ} (hp : p.Prime) (k : ℕ) :
+    letI ι : ℕ ↪ ℕ := ⟨(p ^ ·), Nat.pow_right_injective hp.one_lt⟩
+    (p ^ k).divisorsAntidiagonal = (Finset.antidiagonal k).map (.prodMap ι ι) := by
+  refine Finset.Subset.antisymm (fun ⟨a, b⟩ hab ↦ ?_)
+    (Nat.antidiagonal_map_subset_divisorsAntidiagonal_pow hp.one_lt k)
+  obtain ⟨hmul, -⟩ := Nat.mem_divisorsAntidiagonal.mp hab
+  obtain ⟨i, -, rfl⟩ := (Nat.dvd_prime_pow hp).mp (Dvd.intro b hmul)
+  obtain ⟨j, -, rfl⟩ := (Nat.dvd_prime_pow hp).mp (Dvd.intro_left (p ^ i) hmul)
+  rw [← pow_add] at hmul
+  exact Finset.mem_map.mpr ⟨(i, j),
+    Finset.mem_antidiagonal.mpr (Nat.pow_right_injective hp.one_lt hmul), rfl⟩
 
 /-- A proper divisor of `n` is at most `n / 2`. -/
 theorem le_div_two_of_mem_properDivisors {n d : ℕ} (hd : d ∈ n.properDivisors) :
