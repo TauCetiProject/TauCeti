@@ -326,6 +326,14 @@ transpose. -/
 def changeRight (e : D.VerticalIso r r') (α : D.Cell p q l r) : D.Cell p q l r' :=
   D.transpose.changeBottom e α
 
+/-- Changing the left boundary is changing the top boundary in the transpose. -/
+theorem changeLeft_eq_transpose_changeTop (e : D.VerticalIso l l') (α : D.Cell p q l r) :
+    D.changeLeft e α = D.transpose.changeTop e α := (rfl)
+
+/-- Changing the right boundary is changing the bottom boundary in the transpose. -/
+theorem changeRight_eq_transpose_changeBottom (e : D.VerticalIso r r') (α : D.Cell p q l r) :
+    D.changeRight e α = D.transpose.changeBottom e α := (rfl)
+
 /-- Changing the top boundary pastes the inverse globular cell on top. -/
 theorem changeTop_def (e : D.HorizontalIso p p') (α : D.Cell p q l r) :
     D.changeTop e α = (D.vComp e.inv.cell α).cast rfl rfl (Category.id_comp (self := V) l)
