@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Renewal.Bernoulli
+public import TauCeti.Probability.Renewal.Bernoulli.Basic
 import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
