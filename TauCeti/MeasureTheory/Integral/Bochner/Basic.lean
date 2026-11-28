@@ -225,6 +225,13 @@ Adapted from the AINTLIB `LeanModularForms` project,
 `HeckeRIngs/GL2/AdjointTheory/SummandAdjoint.lean`, `setIntegral_biUnion_finset_ae`, where it is
 stated for the same purpose. The name here follows the Mathlib lemma it weakens rather than that
 source's.
+
+## Source
+
+* `MeasureTheory.abs_integral_map_sub_le_of_lipschitz` is adapted from the integral-difference
+  step of Mathlib's `MeasureTheory.tendstoInDistribution_of_tendstoInMeasure_sub`
+  (`Mathlib/MeasureTheory/Function/ConvergenceInDistribution.lean`), splitting the integral on a
+  null-measurable Lipschitz deviation event.
 -/
 
 public section
@@ -1299,7 +1306,11 @@ namespace MeasureTheory
 /-- For a bounded `L`-Lipschitz function `F : E → ℝ` and a finite measure `μ`, the difference of
 integrals `|∫ x, F x ∂(μ.map Y) - ∫ x, F x ∂(μ.map X)|` is bounded by
 `L * δ * μ.real Set.univ + M * μ.real {ω | δ ≤ dist (Y ω) (X ω)}` without assuming measurability
-of `dist (Y ·) (X ·)`. -/
+of `dist (Y ·) (X ·)`.
+
+Adapted from the integral-difference step of Mathlib's
+`MeasureTheory.tendstoInDistribution_of_tendstoInMeasure_sub`
+(`Mathlib/MeasureTheory/Function/ConvergenceInDistribution.lean`). -/
 theorem abs_integral_map_sub_le_of_lipschitz
     {E Ω : Type*} [PseudoMetricSpace E] [MeasurableSpace E] [OpensMeasurableSpace E]
     [MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ]
