@@ -380,6 +380,22 @@ theorem coeff_charpoly (x : R) (j : ℕ) :
       ite_eq_right (by simp at hi'; omega), ite_eq_left (by omega)]
   · exact Finset.sum_eq_zero fun i hi ↦ ite_eq_right (by simp at hi; omega)
 
+/-- Two determinants of the same degree have equal characteristic polynomials at their
+respective inputs exactly when all their characteristic coefficients agree there. -/
+theorem charpoly_eq_iff_charCoeff_eq {R' : Type*} [Semiring R'] [Algebra A R']
+    (E : Determinant A R' d) {x : R} {y : R'} :
+    D.charpoly x = E.charpoly y ↔ ∀ i, D.charCoeff i x = E.charCoeff i y := by
+  constructor
+  · intro h i
+    by_cases hi : i ≤ d
+    · have hc := congrArg (fun p : A[X] ↦ p.coeff (d - i)) h
+      simp only [coeff_charpoly, ite_eq_left (Nat.sub_le _ _), Nat.sub_sub_self hi] at hc
+      exact (isUnit_neg_one.pow i).isRegular.left hc
+    · rw [D.charCoeff_eq_zero (lt_of_not_ge hi), E.charCoeff_eq_zero (lt_of_not_ge hi)]
+  · intro h
+    ext j
+    rw [D.coeff_charpoly, E.coeff_charpoly, h]
+
 /-- The characteristic polynomial has degree at most the dimension. -/
 theorem charpoly_natDegree_le (x : R) : (D.charpoly x).natDegree ≤ d :=
   natDegree_le_iff_coeff_eq_zero.mpr fun j hj ↦ by rw [coeff_charpoly, ite_eq_right (by omega)]
