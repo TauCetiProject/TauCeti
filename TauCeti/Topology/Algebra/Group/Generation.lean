@@ -191,6 +191,22 @@ theorem _root_.MonoidHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top {M : Ty
   MonoidHom.ext fun x ↦
     MonoidHom.eqOn_topologicalClosure_closure hf hg hfg (by rw [hs]; exact Subgroup.mem_top x)
 
+/-- Evaluation on a topological generator preserves the order of a continuous character. -/
+theorem _root_.ContinuousMonoidHom.orderOf_apply_eq_of_topologicalGenerator
+    {g : G} {A : Type*} [CommMonoid A] [TopologicalSpace A] [ContinuousMul A] [T2Space A]
+    (χ : G →ₜ* A) (hg : (Subgroup.closure {g}).topologicalClosure = ⊤) :
+    orderOf (χ g) = orderOf χ := by
+  rw [orderOf_eq_orderOf_iff]
+  intro n
+  constructor
+  · intro h
+    apply ContinuousMonoidHom.toMonoidHom_injective
+    apply MonoidHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top hg
+      (χ ^ n).continuous (1 : G →ₜ* A).continuous
+    simpa [Set.eqOn_singleton] using h
+  · intro h
+    simpa using DFunLike.congr_fun h g
+
 omit [IsTopologicalGroup H] in
 /-- The range of a continuous homomorphism lies in a closed subgroup exactly when a topological
 generating set of the source maps into it. -/
