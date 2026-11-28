@@ -364,6 +364,11 @@ private theorem ne_neg_one_of_modEq_four {D : ℤ} (hD : D ≡ 0 [ZMOD 4] ∨ D 
   rintro rfl
   rcases hD with h | h <;> revert h <;> decide
 
+private theorem χ₈_natAbs (b : ℤ) : χ₈ (b.natAbs : ZMod 8) = χ₈ b := by
+  rcases Int.natAbs_eq b with h | h
+  · rw [← Int.cast_natCast, ← h]
+  · rw [← Int.cast_natCast, ← neg_eq_iff_eq_neg.mpr h, Int.cast_neg, χ₈_neg]
+
 /-- For `D ≡ 1 (mod 4)`, the Kronecker symbol `(D / n)` is the Jacobi symbol `J(n | |D|)`, for every
 integer `n`. At odd `n > 0` this is quadratic reciprocity, at `n = 2` the supplementary law
 `χ₈ D = J(2 | |D|)`, and at `n = -1` the supplementary law `sign D = J(-1 | |D|)`. In particular
@@ -385,11 +390,7 @@ theorem kroneckerSym_eq_jacobiSym_natAbs {D : ℤ} (hD : D ≡ 1 [ZMOD 4]) (n : 
     -- factors at `m`, and the supplementary law `J(2 | |D|) = χ₈ |D|` those at `2 ^ e`.
     rw [kroneckerSym_mul_right_of_ne_neg_one hD1, kroneckerSym_pow_right, kroneckerSym_two_right,
       kroneckerSym_eq_jacobiSym _ hm, jacobiSym_eq_jacobiSym_natAbs_of_emod_four_eq_one hD4 hm]
-    simp only [jacobiSym.mul_left, jacobiSym.pow_left, jacobiSym.at_two hodd]
-    congr 2
-    rcases Int.natAbs_eq D with h | h
-    · rw [h, Int.natAbs_natCast, Int.cast_natCast]
-    · rw [h, Int.natAbs_neg, Int.natAbs_natCast, Int.cast_neg, Int.cast_natCast, χ₈_neg]
+    simp only [jacobiSym.mul_left, jacobiSym.pow_left, jacobiSym.at_two hodd, χ₈_natAbs]
   rcases Int.eq_nat_or_neg n with ⟨k, rfl | rfl⟩
   · exact hnat k
   · rw [neg_eq_neg_one_mul, kroneckerSym_mul_right_of_ne_neg_one hD1, kroneckerSym_neg_one_right,
@@ -417,10 +418,7 @@ both sides vanish, and for odd `b` it reduces to `jacobiSym.at_two` on `|b|`. -/
 theorem kroneckerSym_two_left (b : ℤ) : kroneckerSym 2 b = χ₈ b := by
   by_cases hb : Odd b
   · rw [kroneckerSym_of_odd 2 hb, ite_eq_right (by omega), one_mul,
-      jacobiSym.at_two (Int.natAbs_odd.mpr hb)]
-    rcases Int.natAbs_eq b with h | h
-    · rw [h, Int.natAbs_natCast, Int.cast_natCast]
-    · rw [h, Int.natAbs_neg, Int.natAbs_natCast, Int.cast_neg, Int.cast_natCast, χ₈_neg]
+      jacobiSym.at_two (Int.natAbs_odd.mpr hb), χ₈_natAbs]
   · have h2 : (2 : ℤ) ∣ b := even_iff_two_dvd.mp (Int.not_odd_iff_even.mp hb)
     rw [kroneckerSym_eq_zero_of_dvd (by decide) (dvd_refl 2) h2, (χ₈_intCast_eq_zero_iff b).mpr h2]
 

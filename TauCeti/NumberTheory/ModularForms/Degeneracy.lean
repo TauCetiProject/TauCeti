@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Data.Nat.Cast.Basic
 import TauCeti.Data.ZMod.Divisibility
 import TauCeti.Data.ZMod.Units
 public import Mathlib.NumberTheory.ModularForms.QExpansion
@@ -632,8 +633,8 @@ lemma coe_conjScaleGamma0 {N δ : ℕ} (hδ : δ ∣ N) (γ : Gamma0 N) :
 lemma conjScaleGamma0_apply_one_zero_of_eq {N δ : ℕ} (hδ : δ ∣ N) {γ : SL(2, ℤ)}
     (hγ : γ ∈ Gamma0 N) {t : ℤ} (ht : γ 1 0 = N * t) :
     conjScaleGamma0 hδ ⟨γ, hγ⟩ 1 0 = (N / δ : ℕ) * t := by
-  have hmul : (δ : ℤ) * (N / δ : ℕ) = N := by exact_mod_cast Nat.mul_div_cancel' hδ
-  have hc : γ 1 0 = δ * ((N / δ : ℕ) * t) := by rw [ht, ← mul_assoc, hmul]
+  have hc : γ 1 0 = δ * ((N / δ : ℕ) * t) := by
+    rw [ht, ← mul_assoc, Nat.cast_mul_div_of_dvd hδ]
   rcases eq_or_ne δ 0 with rfl | hδ0
   · simp
   · have hδZ : (δ : ℤ) ≠ 0 := Nat.cast_ne_zero.mpr hδ0
@@ -643,14 +644,6 @@ lemma conjScaleGamma0_apply_one_zero_of_eq {N δ : ℕ} (hδ : δ ∣ N) {γ : S
 @[simp] lemma conjScaleGamma0_negOne {N δ : ℕ} (hδ : δ ∣ N) :
     conjScaleGamma0 hδ (Gamma0.negOne N) = -1 := by
   ext i j; fin_cases i <;> fin_cases j <;> simp [Gamma0.coe_negOne]
-
-/-- `conjScaleGamma0 hδ` commutes with negation on `Γ₀(N)`. -/
-@[simp] lemma conjScaleGamma0_neg {N δ : ℕ} (hδ : δ ∣ N) (γ : Gamma0 N)
-    (hneg : -(γ : SL(2, ℤ)) ∈ Gamma0 N) :
-    conjScaleGamma0 hδ ⟨-(γ : SL(2, ℤ)), hneg⟩ = -conjScaleGamma0 hδ γ :=
-  have h : (⟨-(γ : SL(2, ℤ)), hneg⟩ : Gamma0 N) = Gamma0.negOne N * γ :=
-    Subtype.ext (by simp [Gamma0.coe_negOne])
-  h ▸ by rw [map_mul, conjScaleGamma0_negOne, neg_one_mul]
 
 /-- `conjScaleGamma0 hδ` sends `Tⁿ ∈ Γ₀(N)` to `T^{δ n}` (`1` when `δ = 0`). -/
 @[simp] lemma conjScaleGamma0_T_zpow {N δ : ℕ} (hδ : δ ∣ N) (n : ℤ)

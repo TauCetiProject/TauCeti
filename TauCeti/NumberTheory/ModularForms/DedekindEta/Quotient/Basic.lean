@@ -102,9 +102,8 @@ Newman, Gordon–Hughes and Ligozat, whose cusp conditions are the orders above.
 * `TauCeti.ModularForm.etaQuotientMultiplier_negOne`,
   `TauCeti.ModularForm.etaQuotientMultiplier_T_zpow`: the multiplier at `-1` is
   `(-i) ^ {∑_δ r_δ}`, and at `Tⁿ` it is the factor of the translation law.
-* `TauCeti.ModularForm.etaQuotientMultiplier_eq_prod`,
-  `TauCeti.ModularForm.etaQuotientMultiplier_eq_I_zpow_mul_of_c_neg`: factoring the multiplier
-  across conjugate factors `γ_δ`, and passing from `c < 0` to `-γ`.
+* `TauCeti.ModularForm.etaQuotientMultiplier_eq_prod`: factoring the multiplier across conjugate
+  factors `γ_δ`.
 * `TauCeti.ModularForm.etaQuotientMultiplier_eq_of_etaQuotient_smul_eq`: the multiplier is
   determined by the transformation law at a single point; `etaQuotientMultiplier_ne_zero` and
   `norm_etaQuotientMultiplier` record that it is a unit of norm one.
@@ -719,37 +718,6 @@ theorem etaQuotientMultiplier_eq_prod {N : ℕ} (r : ℕ → ℤ) {γ : SL(2, �
     etaQuotientMultiplier N r ⟨γ, hγ⟩ = ∏ δ ∈ N.divisors, F δ ^ r δ := by
   rw [etaQuotientMultiplier_def, ← Finset.prod_attach N.divisors (fun δ ↦ F δ ^ r δ)]
   exact Finset.prod_congr rfl fun δ _ ↦ by rw [hF δ δ.property]
-
-/-- When `(γ : SL(2, ℤ)) 1 0 < 0`, negating `γ` makes the lower-left entry of every conjugate
-`γ_δ` positive, and `etaQuotientMultiplier N r γ` equals `I ^ (∑ δ ∈ N.divisors, r δ)` times
-`etaQuotientMultiplier N r (Gamma0.negOne N * γ)`. -/
-theorem etaQuotientMultiplier_eq_I_zpow_mul_of_c_neg (N : ℕ) (r : ℕ → ℤ) (γ : Gamma0 N)
-    (hc : (γ : SL(2, ℤ)) 1 0 < 0) :
-    etaQuotientMultiplier N r γ =
-      I ^ (∑ δ ∈ N.divisors, r δ) * etaQuotientMultiplier N r (Gamma0.negOne N * γ) := by
-  have hNc : (N : ℤ) ∣ (γ : SL(2, ℤ)) 1 0 := mem_Gamma0_iff_dvd.mp γ.property
-  have hneg_mem : -(γ : SL(2, ℤ)) ∈ Gamma0 N := by
-    simpa using (Gamma0 N).mul_mem neg_one_mem_Gamma0 γ.property
-  have hneg_eq : Gamma0.negOne N * γ = ⟨-(γ : SL(2, ℤ)), hneg_mem⟩ :=
-    Subtype.ext (by simp [Gamma0.coe_negOne])
-  rw [hneg_eq, etaQuotientMultiplier_def, etaQuotientMultiplier_def]
-  have hfac (δ : N.divisors) :
-      etaMultiplier (conjScaleGamma0 (Nat.dvd_of_mem_divisors δ.property) γ) ^ r δ =
-        I ^ r δ * etaMultiplier (conjScaleGamma0 (Nat.dvd_of_mem_divisors δ.property)
-          ⟨-(γ : SL(2, ℤ)), hneg_mem⟩) ^ r δ := by
-    have hδ_pos : (0 : ℤ) < δ := Int.natCast_pos.mpr (Nat.pos_of_mem_divisors δ.property)
-    have hδ_dvd : (δ : ℤ) ∣ (γ : SL(2, ℤ)) 1 0 :=
-      dvd_trans (Int.natCast_dvd_natCast.mpr (Nat.dvd_of_mem_divisors δ.property)) hNc
-    have hneg_c_pos : 0 < (conjScaleGamma0 (Nat.dvd_of_mem_divisors δ.property)
-        ⟨-(γ : SL(2, ℤ)), hneg_mem⟩) 1 0 := by
-      simp only [coe_conjScaleGamma0, Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply,
-        Matrix.of_apply, Matrix.cons_val_one, Matrix.cons_val_zero]
-      exact Int.ediv_pos_of_pos_of_dvd (neg_pos.mpr hc) hδ_pos.le (dvd_neg.mpr hδ_dvd)
-    rw [← neg_neg (conjScaleGamma0 (Nat.dvd_of_mem_divisors δ.property) γ),
-      ← conjScaleGamma0_neg _ γ hneg_mem,
-      etaMultiplier_neg_of_c_pos _ hneg_c_pos, mul_zpow]
-  rw [Finset.prod_congr rfl fun δ _ ↦ hfac δ, Finset.prod_mul_distrib,
-    Finset.prod_zpow_eq_zpow_sum_of_isUnit _ I_ne_zero.isUnit, Finset.sum_attach]
 
 /-- **The eta-quotient multiplier is a character of `Γ₀(N)`** when `∑_{δ ∣ N} r δ` is even: then
 the eta quotient has integral weight `k = ½ ∑_δ r δ`, and the slash relation `etaQuotient_slash`

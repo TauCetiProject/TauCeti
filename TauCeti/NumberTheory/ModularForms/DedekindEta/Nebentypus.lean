@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.DedekindEta.Quotient.Kronecker
 public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 import TauCeti.Algebra.BigOperators.ZPow
+import TauCeti.Data.Nat.Cast.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.NumberTheory.ModularForms.Basic
 
@@ -25,8 +26,8 @@ then `f ∣[k] γ = χ(d) f` for every `γ = (a b; c d) ∈ Γ₀(N)`, where
 `TauCeti.kroneckerSym`. Hence `χ` is a character modulo `N`, and if moreover the order of `f` at
 every cusp is nonnegative (positive), then `f` is a modular form (cusp form) of weight `k` on
 `Γ₁(N)` with nebentypus `χ`. The orders at the cusps are computed in
-`TauCeti.NumberTheory.ModularForms.DedekindEta.Quotient`; they depend only on `gcd(N, c)` for a
-cusp `a / c`, so it suffices to check them at the divisors of `N`.
+`TauCeti.NumberTheory.ModularForms.DedekindEta.Quotient.Basic`; they depend only on `gcd(N, c)` for
+a cusp `a / c`, so it suffices to check them at the divisors of `N`.
 
 For example, the criterion applies to `η(τ) η(23 τ)` (`N = 23`, `k = 1`, character `(-23 / ·)`)
 and to `η(τ)² η(11 τ)²` (`N = 11`, `k = 2`, trivial character), whose orders at both cusps are
@@ -82,12 +83,6 @@ open scoped Real ModularForm MatrixGroups UpperHalfPlane Manifold
 
 namespace TauCeti.ModularForm
 
-/-! ### The conjugates `γ_δ` -/
-
-private theorem natCast_mul_natCast_div {N δ : ℕ} (hδ : δ ∈ N.divisors) :
-    (δ : ℤ) * (N / δ : ℕ) = N := by
-  exact_mod_cast Nat.mul_div_cancel' (Nat.dvd_of_mem_divisors hδ)
-
 /-! ### The Kronecker-symbol value of the multiplier -/
 
 /-- The value `((-1) ^ k ∏_δ δ ^ (r δ) / d) = (-1 / d) ^ k ∏_{δ ∣ N} (δ / d) ^ (r δ)`. -/
@@ -103,7 +98,8 @@ private theorem sum_mul_oddExp (N : ℕ) (r : ℕ → ℤ) (a b d t : ℤ) :
         (∑ δ ∈ N.divisors, (δ : ℤ) * r δ) * (b * d) := by
   rw [Finset.sum_mul, Finset.sum_mul, ← Finset.sum_add_distrib]
   exact Finset.sum_congr rfl fun δ hδ ↦ by
-    linear_combination (-(r δ * b * d * (N / δ : ℕ) * t ^ 2)) * natCast_mul_natCast_div hδ
+    linear_combination (-(r δ * b * d * (N / δ : ℕ) * t ^ 2)) *
+      (Nat.cast_mul_div_of_dvd (R := ℤ) (Nat.dvd_of_mem_divisors hδ))
 
 /-- For `c = N t ≥ 0`: `∏_δ ((c / δ) / d) ^ r δ = ∏_δ (δ / d) ^ r δ`, as `∑_δ r δ` is even. -/
 private theorem prod_kroneckerSym_div_left {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
@@ -116,7 +112,7 @@ private theorem prod_kroneckerSym_div_left {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
   refine (Finset.prod_congr rfl fun δ hδ ↦ ?_).trans (Finset.prod_zpow_mul_eq_prod_of_sq_eq_one _
     (sq_intCast_kroneckerSym_eq_one (Int.isCoprime_iff_gcd_eq_one.mp hcop)) (hk ▸ even_two_mul k) _)
   have hc : (N / δ : ℕ) * t * δ = γ 1 0 := by
-    linear_combination t * natCast_mul_natCast_div hδ - ht
+    linear_combination t * (Nat.cast_mul_div_of_dvd (R := ℤ) (Nat.dvd_of_mem_divisors hδ)) - ht
   have hx : 0 ≤ ((N / δ : ℕ) : ℤ) * t := mul_nonneg (Int.natCast_nonneg _) ht0
   have hδ0 : (0 : ℤ) < δ := by exact_mod_cast Nat.pos_of_mem_divisors hδ
   have hmul : kroneckerSym ((N / δ : ℕ) * t * δ) (γ 1 1) =
@@ -141,7 +137,7 @@ private theorem prod_kroneckerSym_div_right {N : ℕ} {r : ℕ → ℤ} {k : ℤ
   refine (Finset.prod_congr rfl fun δ hδ ↦ ?_).trans (Finset.prod_zpow_mul_eq_prod_of_sq_eq_one _
     (sq_intCast_kroneckerSym_eq_one (Int.isCoprime_iff_gcd_eq_one.mp hcop)) (hk ▸ even_two_mul k) _)
   have hc : (N / δ : ℕ) * t * δ = γ 1 0 := by
-    linear_combination t * natCast_mul_natCast_div hδ - ht
+    linear_combination t * (Nat.cast_mul_div_of_dvd (R := ℤ) (Nat.dvd_of_mem_divisors hδ)) - ht
   have hm : (0 : ℤ) < (N / δ : ℕ) := by
     exact_mod_cast Nat.div_pos (Nat.divisor_le hδ) (Nat.pos_of_mem_divisors hδ)
   rw [← hc, kroneckerSym_mul_right _ (mul_pos hm ht0).ne'
@@ -187,18 +183,11 @@ private theorem etaQuotientMultiplier_eq_symb_of_odd {N : ℕ} {r : ℕ → ℤ}
     (h24' : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) {γ : SL(2, ℤ)}
     (hγ : γ ∈ Gamma0 N) {t : ℤ} (ht : γ 1 0 = N * t) (ht0 : 0 ≤ t) (hdo : Odd (γ 1 1)) :
     etaQuotientMultiplier N r ⟨γ, hγ⟩ = symb N r k (γ 1 1) := by
-  obtain ⟨A, hA⟩ := h24
-  obtain ⟨B, hB⟩ := h24'
   obtain ⟨v, hv⟩ := hdo
   -- The exponents sum to `k (12 v)` modulo `24`, and `e(12 v k / 24) = χ₄(d) ^ k = (-1 / d) ^ k`.
-  have hsum : (∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) *
-        ((γ 0 0 + γ 1 1) * t - γ 0 1 * γ 1 1 * N * t ^ 2 - 3 * t * γ 1 1) +
-      (∑ δ ∈ N.divisors, (δ : ℤ) * r δ) * (γ 0 1 * γ 1 1) +
-      (∑ δ ∈ N.divisors, r δ) * (3 * γ 1 1 - 3) ≡ k * (12 * v) [ZMOD 24] := by
-    refine Int.modEq_iff_dvd.mpr ⟨-(B * ((γ 0 0 + γ 1 1) * t - γ 0 1 * γ 1 1 * N * t ^ 2 -
-      3 * t * γ 1 1) + A * (γ 0 1 * γ 1 1)), ?_⟩
-    rw [hA, hB, hk, hv]
-    ring
+  have hsum : etaQuotientMultiplierExp N r (γ 0 0) (γ 0 1) (γ 1 1) t ≡ k * (12 * v) [ZMOD 24] := by
+    simpa only [show (∑ δ ∈ N.divisors, r δ) * (3 * γ 1 1 - 3) = k * (12 * v) by
+      rw [hk, hv]; ring] using etaQuotientMultiplierExp_modEq h24 h24' (γ 0 0) (γ 0 1) (γ 1 1) t
   rw [etaQuotientMultiplier_eq_prod_kroneckerSym_mul_e24_of_odd_d r hγ ht ⟨v, hv⟩,
     e24_congr hsum, e24_mul, e24_twelve_mul_eq_χ₄, prod_kroneckerSym_div_left hk γ ht ht0, symb,
     kroneckerSym_neg_one_left_of_odd ⟨v, hv⟩, hv, mul_comm]

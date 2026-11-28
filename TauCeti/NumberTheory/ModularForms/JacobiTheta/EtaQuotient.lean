@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
-public import TauCeti.NumberTheory.ModularForms.DedekindEta.Quotient
+public import TauCeti.NumberTheory.ModularForms.DedekindEta.Quotient.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
 import TauCeti.NumberTheory.ModularForms.DedekindEta.Basic
 import TauCeti.NumberTheory.ModularForms.JacobiTheta.Product
