@@ -8,7 +8,9 @@ module
 public import Mathlib.Algebra.Category.Ring.FilteredColimits
 public import Mathlib.Algebra.Category.Ring.Under.Basic
 public import Mathlib.Algebra.Colimit.DirectLimit
+public import Mathlib.Algebra.Colimit.Ring
 public import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
+public import TauCeti.Algebra.Category.Ring.ULift
 public import TauCeti.Order.Interval.Set.Directed
 
 /-!
@@ -28,6 +30,10 @@ The index type may live in a smaller universe than the rings, as in
 
 ## Main declarations
 
+* `TauCeti.Ring.DirectLimit.diagram` packages a concrete directed system as a diagram, and
+  `TauCeti.Ring.DirectLimit.isColimitCocone` identifies its concrete ring colimit with the
+  categorical colimit of the universe-lifted diagram.
+
 * `CategoryTheory.Functor.tailAlgebra`, `CategoryTheory.Functor.colimitAlgebra`: the
   `F.obj i₀`-algebra structures on the stages above `i₀` and on `colimit F`.
 * `CategoryTheory.Functor.tailTransition`: the maps of `F` between the stages above `i₀`, as
@@ -43,6 +49,66 @@ The index type may live in a smaller universe than the rings, as in
 public section
 
 open CategoryTheory CategoryTheory.Limits
+
+namespace TauCeti.Ring.DirectLimit
+
+open _root_.Ring.DirectLimit
+
+universe v u
+
+variable {ι : Type v} [Preorder ι] {G : ι → Type u} [∀ i, CommRing (G i)]
+  (f : ∀ i j, i ≤ j → G i →+* G j) [DirectedSystem G (f · · ·)]
+
+/-- A directed system of commutative rings as a diagram in `CommRingCat`. -/
+abbrev diagram : ι ⥤ CommRingCat.{u} where
+  obj i := CommRingCat.of (G i)
+  map {i j} h := CommRingCat.ofHom (f i j h.le)
+  map_id i := CommRingCat.hom_ext <| RingHom.ext fun x ↦ DirectedSystem.map_self' (i := i) f x
+  map_comp g h := CommRingCat.hom_ext <| RingHom.ext fun _ ↦
+    (DirectedSystem.map_map' f g.le h.le _).symm
+
+/-- The concrete ring colimit gives a cocone on the universe lift of `diagram f`. -/
+noncomputable abbrev cocone : Cocone (diagram f ⋙ CommRingCat.uliftFunctor.{v, u}) where
+  pt := CommRingCat.of (_root_.Ring.DirectLimit G (f · · ·))
+  ι.app i := CommRingCat.ofHom ((of G (f · · ·) i).comp ULift.ringEquiv.toRingHom)
+  ι.naturality i j h := CommRingCat.hom_ext <| RingHom.ext fun x ↦ by
+    simp only [Functor.const_obj_map]
+    exact of_f h.le x.down
+
+/-- The point of the cocone is the concrete ring colimit. -/
+@[simp]
+theorem cocone_pt : (cocone f).pt = CommRingCat.of (_root_.Ring.DirectLimit G (f · · ·)) :=
+  (rfl)
+
+/-- The cocone legs are the canonical maps from the stages, after removing the universe lift. -/
+@[simp]
+theorem cocone_ι_app (i : ι) :
+    (cocone f).ι.app i = CommRingCat.ofHom ((of G (f · · ·) i).comp ULift.ringEquiv.toRingHom) :=
+  (rfl)
+
+/-- The concrete ring colimit is a colimit of the universe lift of `diagram f`. -/
+noncomputable def isColimitCocone : IsColimit (cocone f) :=
+  let g (c : Cocone (diagram f ⋙ CommRingCat.uliftFunctor.{v, u})) (i : ι) :
+      G i →+* c.pt := (c.ι.app i).hom.comp ULift.ringEquiv.symm.toRingHom
+  have hg c i j (h : i ≤ j) (x : G i) : g c j (f i j h x) = g c i x := by
+    have hw := ConcreteCategory.congr_hom (c.w (homOfLE h)) (ULift.up x)
+    exact (ConcreteCategory.comp_apply
+      ((diagram f ⋙ CommRingCat.uliftFunctor.{v, u}).map (homOfLE h)) (c.ι.app j)
+      (ULift.up x)).symm.trans hw
+  let d (c : Cocone (diagram f ⋙ CommRingCat.uliftFunctor.{v, u})) :
+      _root_.Ring.DirectLimit G (f · · ·) →+* c.pt := lift G (f · · ·) c.pt (g c) (hg c)
+  have hd c i (x : G i) : d c (of G (f · · ·) i x) = (c.ι.app i).hom (ULift.up x) := by
+    exact lift_of _ (g c) (hg c) i x
+  { desc := fun c ↦ CommRingCat.ofHom (d c)
+    fac := fun c i ↦ CommRingCat.hom_ext <| RingHom.ext fun x ↦ by
+      exact hd c i x.down
+    uniq := fun c m hm ↦ CommRingCat.hom_ext <| _root_.Ring.DirectLimit.hom_ext _
+      fun i ↦ RingHom.ext fun x ↦
+        let hx := ConcreteCategory.congr_hom (hm i) (ULift.up x)
+        ((ConcreteCategory.comp_apply ((cocone f).ι.app i) m (ULift.up x)).symm.trans hx).trans
+          (hd c i x).symm }
+
+end TauCeti.Ring.DirectLimit
 
 namespace CategoryTheory.Functor
 
