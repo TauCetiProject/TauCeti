@@ -10,7 +10,7 @@ public import TauCeti.Combinatorics.Young.Partitions
 public import TauCeti.Combinatorics.Young.LittlewoodRichardson.Yamanouchi
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Bialternant
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Symmetric
-import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basis
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.LinearIndependent
 
 /-!
 # The Littlewood–Richardson rule in Stembridge's form

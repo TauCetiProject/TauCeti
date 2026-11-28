@@ -70,7 +70,8 @@ involution, and it lives downstream in
 * `TauCeti.diagramSchurPoly_eq_zero_iff` and `TauCeti.schurPoly_eq_zero_iff`: a Schur polynomial
   vanishes exactly for a shape taller than its alphabet.
 * `TauCeti.sum_nsmul_diagramSchurPoly_eq_sum_colLen_le`: a sum of Schur polynomials over the
-  partitions of `n` only sees the partitions with at most `N` rows.
+  partitions of `n` in `N` variables only sees the partitions with at most `b` rows whenever
+  `N ≤ b`.
 * `TauCeti.isHomogeneous_diagramSchurPoly` and `TauCeti.isHomogeneous_schurPoly`: a Schur
   polynomial is homogeneous of degree the number of cells of its shape.
 
@@ -358,14 +359,14 @@ theorem coeff_diagramSchurPoly_ofPartition_eq_zero_of_not_dominates (hd : ¬ μ.
     exact ((degree_rowLenWeight_lt h).trans_eq (card_ofPartition ν)).ne
 
 /-- A sum of Schur polynomials in the alphabet `Fin N` over the partitions of `n` only sees the
-partitions with at most `N` rows: the Schur polynomials of the others vanish. -/
-theorem sum_nsmul_diagramSchurPoly_eq_sum_colLen_le (c : n.Partition → ℕ) :
+partitions with at most `b` rows whenever `N ≤ b`: the Schur polynomials of the others vanish. -/
+theorem sum_nsmul_diagramSchurPoly_eq_sum_colLen_le {b : ℕ} (hN : N ≤ b) (c : n.Partition → ℕ) :
     ∑ ν, c ν • diagramSchurPoly N R (ofPartition ν) =
-      ∑ ν : {ν : n.Partition // (ofPartition ν).colLen 0 ≤ N},
+      ∑ ν : {ν : n.Partition // (ofPartition ν).colLen 0 ≤ b},
         c ν.val • diagramSchurPoly N R (ofPartition ν.val) := by
-  rw [← Fintype.sum_subtype_add_sum_subtype fun ν => (ofPartition ν).colLen 0 ≤ N,
-    Fintype.sum_eq_zero (fun ν : {ν // ¬(ofPartition ν).colLen 0 ≤ N} => _) fun ν => by
-      rw [diagramSchurPoly_eq_zero_of_lt_colLen (not_le.mp ν.property), smul_zero],
+  rw [← Fintype.sum_subtype_add_sum_subtype fun ν => (ofPartition ν).colLen 0 ≤ b,
+    Fintype.sum_eq_zero (fun ν : {ν // ¬(ofPartition ν).colLen 0 ≤ b} => _) fun ν => by
+      rw [diagramSchurPoly_eq_zero_of_lt_colLen (hN.trans_lt (not_le.mp ν.property)), smul_zero],
     add_zero]
 
 end Partition

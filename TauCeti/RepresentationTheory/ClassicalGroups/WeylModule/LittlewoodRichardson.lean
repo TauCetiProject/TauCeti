@@ -200,8 +200,8 @@ theorem nonempty_equiv_tprod_rationalWeylRep (l m : DominantWeight n) :
     ← Units.val_mul, ← zpow_add]
   -- Expand `s_{λ₀} s_{μ₀}` by the Littlewood–Richardson rule for Schur polynomials, over the
   -- partitions with at most `n` rows, and the sum of characters over partitions and then tableaux.
-  rw [diagramSchurPoly_mul_diagramSchurPoly, sum_nsmul_diagramSchurPoly_eq_sum_colLen_le, map_sum,
-    mul_sum, Fintype.sum_sigma]
+  rw [diagramSchurPoly_mul_diagramSchurPoly, sum_nsmul_diagramSchurPoly_eq_sum_colLen_le le_rfl,
+    map_sum, mul_sum, Fintype.sum_sigma]
   refine Fintype.sum_congr _ _ fun ν => ?_
   simp only [char_rationalWeylRep_shift_weightOfShape_diagonal ℂ n ν.property, sum_const, card_univ,
     Fintype.card_subtype, map_nsmul, mul_smul_comm]
@@ -245,7 +245,7 @@ theorem nonempty_equiv_tprod_weylRepOfShape_lrTableau (lam μ : YoungDiagram) :
   rw [char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly,
     char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly, ← eval_mul,
     diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau,
-    sum_nsmul_diagramSchurPoly_eq_sum_colLen_le, map_sum, Fintype.sum_sigma]
+    sum_nsmul_diagramSchurPoly_eq_sum_colLen_le le_rfl, map_sum, Fintype.sum_sigma]
   refine Fintype.sum_congr _ _ fun ν => ?_
   simp only [map_nsmul, char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly, sum_const,
     card_univ, Nat.card_eq_fintype_card]
