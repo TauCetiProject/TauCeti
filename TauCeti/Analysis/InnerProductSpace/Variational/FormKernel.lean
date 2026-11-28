@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair.Basic
-public import TauCeti.Analysis.InnerProductSpace.Variational.FormEigenspace
+public import TauCeti.Analysis.InnerProductSpace.Variational.FormEigenspace.Basic
 public import TauCeti.Analysis.InnerProductSpace.Variational.EnergySpace
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.RCLike.SesquilinearForm
 
 /-!
@@ -170,18 +171,8 @@ instance completeSpace_kernelOrthogonal [CompleteSpace V] : CompleteSpace P.kern
   P.isClosed_kernelOrthogonal.completeSpace_coe
 
 /-- The form kernel `N` and the kernel-orthogonal part `{u | j u ⊥ j N}` are complements. -/
-theorem isCompl_formKernel : IsCompl P.formKernel P.kernelOrthogonal := by
-  refine ⟨Submodule.disjoint_def.2 fun n hn hn' ↦ P.injective ?_, ?_⟩
-  · have h : P.inclusion n ∈ P.formKernelImage ⊓ P.formKernelImageᗮ :=
-      ⟨inclusion_mem_formKernelImage hn, mem_kernelOrthogonal.1 hn'⟩
-    rw [Submodule.inf_orthogonal_eq_bot, Submodule.mem_bot] at h
-    rw [h, map_zero]
-  · refine codisjoint_iff_le_sup.2 fun v _ ↦ ?_
-    obtain ⟨n, hn, hjn⟩ :=
-      mem_formKernelImage.1 (P.formKernelImage.starProjection_apply_mem (P.inclusion v))
-    refine Submodule.mem_sup.2 ⟨n, hn, v - n, mem_kernelOrthogonal.2 ?_, add_sub_cancel _ _⟩
-    rw [map_sub, hjn]
-    exact P.formKernelImage.sub_starProjection_mem_orthogonal (P.inclusion v)
+theorem isCompl_formKernel : IsCompl P.formKernel P.kernelOrthogonal :=
+  P.formKernel.isCompl_comap_orthogonal_map P.inclusion.toLinearMap P.injective
 
 /-! ### Coercivity on the kernel-orthogonal part -/
 

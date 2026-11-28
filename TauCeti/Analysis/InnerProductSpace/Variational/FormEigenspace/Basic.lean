@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
-import TauCeti.Analysis.Normed.Operator.Compact.Orthonormal
 
 /-!
 # Variational eigenspaces of a compact form pair
@@ -143,21 +142,16 @@ theorem exists_mem_formEigenspace_norm_inclusion_eq_one (hne : P.formEigenspace 
 /-- **Finitely many variational eigenvalues lie below any bound.** -/
 theorem finite_setOf_formEigenspace_ne_bot_le (M : ℝ) :
     {lam | P.formEigenspace lam ≠ ⊥ ∧ lam ≤ M}.Finite := by
-  obtain ⟨C, -, hC⟩ := P.exists_norm_le_mul_norm_inclusion_of_mem_formEigenspace M
   set s := {lam | P.formEigenspace lam ≠ ⊥ ∧ lam ≤ M}
   choose u hu hu1 using fun l : s ↦ exists_mem_formEigenspace_norm_inclusion_eq_one l.property.1
-  -- The normalized eigenvectors are bounded in `V`.
-  have hbound (l : s) : ‖u l‖ ≤ C := by
-    simpa [hu1 l] using hC l l.property.2 (u l) (hu l)
-  -- Their images are orthonormal in `H`.
-  have hon : Orthonormal 𝕜 fun l : s ↦ P.inclusion (u l) :=
+  have hon : Orthonormal 𝕜 (P.inclusion ∘ u) :=
     ⟨hu1, fun l l' hll' ↦ inner_inclusion_eq_zero_of_mem_formEigenspace
       (fun h ↦ hll' (Subtype.ext h)) (hu l) (hu l')⟩
-  have hfin := IsCompactOperator.finite_setOf_le_norm_of_apply_eq_smul
-    (T := (P.inclusion : V →ₗ[𝕜] H)) P.isCompactOperator hbound hon (μ := fun _ ↦ 1)
-    (fun l ↦ by simp) one_pos
-  simp only [norm_one, le_refl, Set.ofPred_true] at hfin
-  exact Set.finite_coe_iff.1 (Set.finite_univ_iff.1 hfin)
+  have henergy (l : s) : P.energy (u l) ≤ M := by
+    simpa only [energy_eq_of_mem_formEigenspace (hu l), hu1 l, one_pow, mul_one] using l.property.2
+  have hcutoff : {l | P.energy (u l) ≤ M} = Set.univ := Set.eq_univ_of_forall henergy
+  exact Set.finite_coe_iff.1 (Set.finite_univ_iff.1
+    (hcutoff ▸ P.finite_setOf_energy_le_of_orthonormal hon M))
 
 end CompactFormPair
 

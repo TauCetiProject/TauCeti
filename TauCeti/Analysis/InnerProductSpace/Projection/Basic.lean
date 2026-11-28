@@ -337,6 +337,20 @@ theorem isCompl_orthogonal_span_of_finite {s : Set E} (hs : s.Finite) :
   have : FiniteDimensional 𝕜 (span 𝕜 s) := FiniteDimensional.span_of_finite 𝕜 hs
   (span 𝕜 s).isCompl_orthogonal
 
+/-- If the image of a submodule under an injective linear map admits an orthogonal projection,
+the preimage of the image's orthogonal complement is a complement of the original submodule. -/
+theorem isCompl_comap_orthogonal_map {M : Type*} [AddCommGroup M] [Module 𝕜 M]
+    (S : Submodule 𝕜 M) (f : M →ₗ[𝕜] E) (hf : Function.Injective f)
+    [(S.map f).HasOrthogonalProjection] : IsCompl S ((S.map f)ᗮ.comap f) := by
+  refine ⟨disjoint_def.2 fun x hx hx' ↦ hf ?_, codisjoint_iff_le_sup.2 fun x _ ↦ ?_⟩
+  · have h : f x ∈ S.map f ⊓ (S.map f)ᗮ := ⟨mem_map_of_mem hx, mem_comap.1 hx'⟩
+    rw [inf_orthogonal_eq_bot, mem_bot] at h
+    simpa only [map_zero] using h
+  · obtain ⟨y, hy, z, hz, h⟩ := (S.map f).exists_add_mem_mem_orthogonal (f x)
+    obtain ⟨w, hw, rfl⟩ := mem_map.1 hy
+    refine mem_sup.2 ⟨w, hw, x - w, mem_comap.2 ?_, add_sub_cancel w x⟩
+    rwa [map_sub, h, add_sub_cancel_left]
+
 /-- For a finite-dimensional subspace `V` and a subspace `U` with `dim V ≤ dim U`, a lower bound
 `k ‖u‖² ≤ ‖P_V u‖²` on the cosines of `U` towards `V` transfers to the same lower bound for `V`
 towards `U`. -/
