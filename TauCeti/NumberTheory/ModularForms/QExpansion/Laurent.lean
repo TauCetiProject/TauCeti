@@ -62,6 +62,8 @@ expansion here of the function read in the scaling coordinate of the cusp.
 * `TauCeti.UpperHalfPlane.analyticAt_cuspFunction_iff_orderTop_laurentQExpansion_nonneg`: the
   cusp function is analytic at `0` exactly when the expansion has no negative powers of `q`.
 * `TauCeti.UpperHalfPlane.hasSum_laurentQExpansion`: convergence near `i∞`.
+* `TauCeti.UpperHalfPlane.tendsto_laurentQExpansion_coeff_zero`: without negative powers, the
+  function tends to the constant coefficient at `i∞`.
 * `TauCeti.UpperHalfPlane.laurentQExpansion_eq_laurentQExpansion_iff`: the `q`-expansion
   principle.
 * `TauCeti.UpperHalfPlane.laurentQExpansion_pnat_mul`: the expansion at period `d * h` is the
@@ -509,6 +511,17 @@ theorem hasSum_laurentQExpansion (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex
     by_contra! H
     exact hm ⟨(m + k).toNat, by simp only; omega⟩
   rw [laurentQExpansion_coeff_eq_zero_of_lt_neg hk hm', zero_mul]
+
+/-- **The constant term as a limit.** A periodic function whose cusp function is meromorphic at
+`0` and whose Laurent `q`-expansion has no negative powers tends at `i∞` to the constant
+coefficient of that expansion. -/
+theorem tendsto_laurentQExpansion_coeff_zero (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex) h)
+    (hf : MeromorphicAt (cuspFunction h f) 0) (h0 : 0 ≤ (laurentQExpansion h f).orderTop) :
+    Tendsto f atImInfty (𝓝 ((laurentQExpansion h f).coeff 0)) := by
+  have han := (analyticAt_cuspFunction_iff_orderTop_laurentQExpansion_nonneg hf).mpr h0
+  rw [laurentQExpansion_coeff_zero_of_analyticAt han]
+  exact (han.continuousAt.tendsto.comp (qParam_tendsto_atImInfty hh)).congr fun τ ↦
+    eq_cuspFunction τ hh.ne' hfper
 
 /-- Functions which agree sufficiently high in the upper half-plane have the same Laurent
 `q`-expansion. -/

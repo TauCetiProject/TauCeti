@@ -19,6 +19,7 @@ import Mathlib.Data.Nat.Factorization.Induction
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.Data.Int.ChineseRemainder
 import TauCeti.Data.ZMod.Divisibility
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection.FinTwo
@@ -130,6 +131,8 @@ infrastructure independent of the diamond operators.
   lower-right entry of a matrix in `Γ₀(N)` (via strong approximation for `SL₂`).
 * `CongruenceSubgroup.exists_mem_Gamma_map_intCast_zmod_eq`: **strong approximation along a
   coprime level** — for coprime `d` and `d'`, `Γ(d')` still surjects onto `SL₂(ℤ/dℤ)`.
+* `CongruenceSubgroup.exists_map_mul_diagonal_eq`: integral partners for conjugation by
+  `diag(1, d)` modulo `M`, preserving `Γ(N)` for every divisor `N` of `M`.
 * `CongruenceSubgroup.gamma0Twist`: an explicit `Γ₀(N)` element whose lower-right entry is any
   natural number coprime to `N`.
 * `CongruenceSubgroup.gamma0TwistOfUnit` and
@@ -1114,6 +1117,33 @@ theorem exists_mem_Gamma_map_intCast_zmod_eq {d d' : ℕ} (hcop : Nat.Coprime d 
   obtain ⟨γ, hγ⟩ := Matrix.SpecialLinearGroup.map_intCast_zmod_prod_surjective hcop (A, 1)
   rw [MonoidHom.prod_apply, Prod.mk.injEq] at hγ
   exact ⟨γ, Gamma_mem'.mpr hγ.2, hγ.1⟩
+
+/-- Every `γ ∈ SL(2, ℤ)` has a partner `γ'` with `γ' diag(1, d) = diag(1, d) γ` modulo `M`,
+which lies in `Γ(N)` when `γ` does, provided `N ∣ M`. -/
+theorem exists_map_mul_diagonal_eq {M : ℕ} (hNM : N ∣ M) (d : (ZMod M)ˣ) (γ : SL(2, ℤ)) :
+    ∃ γ' : SL(2, ℤ), (γ ∈ Gamma N → γ' ∈ Gamma N) ∧
+      ((Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod M)) γ' :
+        SL(2, ZMod M)) : Matrix (Fin 2) (Fin 2) (ZMod M)) *
+          Matrix.diagonal ![1, (d : ZMod M)] =
+        Matrix.diagonal ![1, (d : ZMod M)] *
+          (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod M)) γ) := by
+  set red : SL(2, ℤ) →* SL(2, ZMod M) :=
+    Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod M))
+  obtain ⟨γ', hγ'⟩ := Matrix.SpecialLinearGroup.map_intCast_zmod_surjective (d := M)
+    (Matrix.SpecialLinearGroup.conjDiagonal d (red γ))
+  refine ⟨γ', fun hγ ↦ ?_, (Matrix.SpecialLinearGroup.conjDiagonal_eq_iff d).1 hγ'.symm⟩
+  -- reducing modulo `N`, the conjugate of `γ ≡ 1` by `D` is `1`
+  let ρ := ZMod.castHom hNM (ZMod N)
+  have hred (δ : SL(2, ℤ)) :
+      ((Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) δ : SL(2, ZMod N)) :
+        Matrix (Fin 2) (Fin 2) (ZMod N)) = ρ.mapMatrix (red δ) := by
+    ext i j
+    simp [red, ρ]
+  refine Gamma_mem'.2 (Subtype.ext ?_)
+  rw [hred, hγ', Matrix.SpecialLinearGroup.coe_conjDiagonal, map_mul, map_mul, ← hred,
+    congrArg Subtype.val (Gamma_mem'.1 hγ)]
+  simp only [Matrix.SpecialLinearGroup.coe_one, Matrix.mul_one, ← map_mul,
+    TauCeti.diagonal_vec2_one_mul_eq_one d.mul_inv, map_one]
 
 /-! ### Entry congruences in `Γ₀` -/
 

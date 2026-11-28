@@ -59,7 +59,7 @@ theorem exists_pow_eq_expand_of_surjective_frobenius (d : ℕ+) [ExpChar R d]
   by_cases hd : (d : ℤ) ∣ k
   · obtain ⟨j, rfl⟩ := hd
     simp [coeff_mapRingHom, coeff_expand_mul]
-  · simp [coeff_mapRingHom, coeff_expand_of_not_dvd d _ hd]
+  · simp [coeff_expand_of_not_dvd d _ hd]
 
 end Frobenius
 

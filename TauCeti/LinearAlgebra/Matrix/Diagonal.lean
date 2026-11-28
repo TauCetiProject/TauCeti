@@ -42,6 +42,7 @@ basis vector maps to the corresponding scalar multiple of the target basis vecto
 * `TauCeti.isUnit_diagonal_iff`: a diagonal matrix over a possibly noncommutative semiring is a
   unit exactly when its diagonal is.
 * `TauCeti.isUnit_diagonal_snoc_one_iff`: `diagonal (1, …, 1, x)` is a unit exactly when `x` is.
+* `TauCeti.diagonal_vec2_one_mul_eq_one`: `diag(1, a) diag(1, b) = 1` when `a b = 1`.
 * `TauCeti.diagonal_vec2_one_mul_mul_diagonal_vec2_one_inv`: conjugating a `2 × 2` matrix by
   `diag(1, c⁻¹)` multiplies its upper right entry by `c⁻¹` and its lower left entry by `c`.
 * `TauCeti.apply_eq_zero_of_commute_diagonal`: a matrix commuting with a diagonal matrix has
@@ -120,6 +121,14 @@ theorem isUnit_diagonal_iff {R : Type*} [Semiring R] {v : n → R} :
 theorem isUnit_diagonal_snoc_one_iff {R : Type*} [Semiring R] {d : ℕ} (x : R) :
     IsUnit (diagonal (Fin.snoc (α := fun _ ↦ R) (1 : Fin d → R) x)) ↔ IsUnit x := by
   simp [isUnit_diagonal_iff, Pi.isUnit_iff, Fin.forall_fin_succ']
+
+/-- `diag(1, a) diag(1, b) = 1` when `a b = 1`. -/
+theorem diagonal_vec2_one_mul_eq_one {R : Type*} [Semiring R] {a b : R} (h : a * b = 1) :
+    diagonal ![1, a] * diagonal ![1, b] = 1 := by
+  rw [diagonal_mul_diagonal, ← diagonal_one]
+  congr 1
+  ext i
+  fin_cases i <;> simp [h]
 
 /-- Conjugating a `2 × 2` matrix by `diag(1, c⁻¹)` multiplies its upper right entry by `c⁻¹` and
 its lower left entry by `c`. -/
