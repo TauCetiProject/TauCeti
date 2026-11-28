@@ -5,526 +5,409 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.LinearMap
-public import Mathlib.Analysis.Normed.Lp.PiLp
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedForm.Basic
-public import TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair
-import Mathlib.Analysis.Normed.Operator.Bilinear
-import Mathlib.Analysis.RCLike.Lemmas
-import TauCeti.Analysis.Normed.Operator.Compact.Pi
+public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Analysis.Normed.Module.DoubleDual
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+public import TauCeti.Analysis.Variational.BoundedSublevels
+public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
+public import TauCeti.Topology.Semicontinuity.Sequences
+import TauCeti.Analysis.Convex.Uniform.Basic
+import TauCeti.Analysis.InnerProductSpace.LinearPMap.ClosedForm.Basic
+import TauCeti.Analysis.LocallyConvex.WeakSpace.Basic
+import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
+import TauCeti.Analysis.Normed.Module.WeakSpace.Sphere
+import TauCeti.Analysis.Normed.Operator.Compact.WeakSpace
+import TauCeti.Analysis.Variational.MinimizingSequence
 import TauCeti.Analysis.Variational.QuadraticEnergy
 
 /-!
-# Functorial constructions and quadratic energy identities for compact form pairs
+# Compact form pairs and their constrained minima
 
-This file complements `TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair` with
-additional algebraic identities for `CompactFormPair.energy` and the standard functorial
-constructions on `CompactFormPair`:
+A **compact form pair** (`TauCeti.CompactFormPair 𝕜 V H`) is the abstract setting of a
+variational eigenvalue problem over `𝕜 = ℝ` or `ℂ`. It consists of
 
-* `CompactFormPair.shift`: adding a real multiple of the ambient inner product `α ⟪j u, j v⟫_𝕜`.
-* `CompactFormPair.mapLinearIsometryEquiv`: transporting the ambient space along a linear
-  isometric equivalence.
-* `CompactFormPair.comapEquiv`: changing the form domain to an equivalent norm.
-* `CompactFormPair.restrict`: restricting to a submodule `V₁ ≤ V` with ambient space
-  `(V₁.map j).topologicalClosure`.
-* `CompactFormPair.pi`: finite `ℓ²`-direct sum of compact form pairs.
-* `CompactFormPair.restrictScalars`: real restriction of a pair over `𝕜` to the underlying real
-  spaces via `IsScalarTower ℝ 𝕜`.
-* `CompactFormPair.ofFiniteDimensional`: the finite-dimensional pair with `j = id`.
+* a continuous linear map `j : V → H` between inner-product spaces, the inclusion of a form
+  domain `V` into a space `H`, which is injective, compact and of dense range (it need not be a
+  topological embedding);
+* a bounded Hermitian sesquilinear form `a` on `V`, conjugate linear in its first argument,
+  whose **energy** `q(u) = re a(u, u)` satisfies a shifted coercivity bound
+  `c ‖u‖² ≤ q(u) + ω ‖j u‖²` for some `c > 0` and some real `ω`, possibly negative.
+
+The constants `c` and `ω` are not part of the data: the bound is an existential field, so a pair
+is determined by `j` and `a` (`TauCeti.CompactFormPair.ext`). For the Dirichlet form of the
+Laplacian on a bounded open set, `V = H¹₀`, `H = L²`, `j` is the inclusion, `a(u, v) = ⟪∇u, ∇v⟫`,
+`c = 1` and `ω = 1`.
+
+For a submodule `W` of `H`, the **constrained sphere** `S_W = {u | j u ∈ W, ‖j u‖ = 1}`
+(`TauCeti.CompactFormPair.unitConstraint`) is the admissible set of the Rayleigh minimization
+behind the eigenvalues of the pair: its first eigenvalue is the minimum of `q` on `S_H`, and the
+later ones are minima on the spheres of orthogonal complements of the eigenvectors already found.
+This file proves that these minima exist when `V` is complete, `W` is closed and `S_W` is
+nonempty (`TauCeti.CompactFormPair.exists_isMinOn_energy_unitConstraint`). Nonemptiness means
+that some `u` has `j u ∈ W` and `j u ≠ 0`; for `W = ⊤` it holds exactly when `H` is nontrivial.
+The sphere is not weakly closed in general
+(`TauCeti.CompactFormPair.not_isClosed_toWeakSpace_unitConstraint_top`), so the proof runs the
+sequential direct method in the reflexive space `V`:
+
+* compactness of `j` makes `S_W` sequentially weakly closed when `W` is closed;
+* the shifted coercivity bound gives `c ‖u‖² ≤ q(u) + ω` on `S_W`, so the energy has bounded
+  sublevels there and is bounded below by `-ω`;
+* on `S_W` the energy differs by the constant `ω` from the nonnegative Hermitian form
+  `q + ω ‖j ·‖²`, which is weakly lower semicontinuous.
+
+Minimizers also minimize the Rayleigh quotient `q(u) / ‖j u‖²` over the `u ≠ 0` with `j u ∈ W`
+(`TauCeti.CompactFormPair.mul_norm_sq_le_energy_of_isMinOn`,
+`TauCeti.CompactFormPair.isLeast_rayleigh_of_isMinOn`), and they satisfy the Euler–Lagrange
+equation `a(u₀, v) = q(u₀) ⟪j u₀, j v⟫` for every `v` with `j v ∈ W`
+(`TauCeti.CompactFormPair.form_apply_eq_mul_inner_of_isMinOn`): `u₀` minimizes the nonnegative
+energy of the shifted form `a - q(u₀) ⟪j ·, j ·⟫` on `u₀ + j⁻¹ W`, so it solves the weak equation
+of that form (`ContinuousLinearMap.apply_eq_of_forall_le_quadraticEnergy_add`).
 
 ## References
 
-* J. K. Hunter, *Notes on Partial Differential Equations*, Section 4.8.
-* V. Ivrii, *Partial Differential Equations*, Section 13.1.
+* V. Ivrii, *Partial Differential Equations*, Chapter 13, §13.1, Theorem 4 and its proof.
+* J. K. Hunter, *Notes on Partial Differential Equations*, Chapter 4, §4.8 and §4.10.
 -/
 
 public section
 
-noncomputable section
-
-open scoped InnerProductSpace
+open Bornology Filter Metric RCLike Set
 
 namespace TauCeti
 
+variable (𝕜 V H : Type*) [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
+
+/-- A **compact form pair**: an injective compact continuous linear map `j : V → H` of dense
+range, the inclusion of a form domain, together with a bounded Hermitian sesquilinear form `a`
+on `V`, conjugate linear in its first argument, satisfying the shifted coercivity bound
+`c ‖u‖² ≤ re a(u, u) + ω ‖j u‖²` for some `c > 0` and some real `ω`. -/
+@[ext]
+structure CompactFormPair where
+  /-- The form-domain inclusion `j : V → H`. -/
+  inclusion : V →L[𝕜] H
+  /-- The inclusion is injective. -/
+  injective : Function.Injective inclusion
+  /-- The inclusion has dense range. -/
+  denseRange : DenseRange inclusion
+  /-- The inclusion is a compact operator. -/
+  isCompactOperator : IsCompactOperator inclusion
+  /-- The bounded sesquilinear form `a`, conjugate linear in its first argument. -/
+  form : V →L⋆[𝕜] V →L[𝕜] 𝕜
+  /-- The form is Hermitian. -/
+  hermitian : ∀ u v, form u v = star (form v u)
+  /-- The shifted coercivity bound, for some constant `c > 0` and some shift `ω`. -/
+  exists_shifted_coercive :
+    ∃ c > 0, ∃ ω : ℝ, ∀ u, c * ‖u‖ ^ 2 ≤ re (form u u) + ω * ‖inclusion u‖ ^ 2
+
 namespace CompactFormPair
 
-section Energy
+variable {𝕜 V H} (P : CompactFormPair 𝕜 V H)
 
-variable {𝕜 V H : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
-  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
+/-! ### The energy -/
 
-/-- The diagonal value `P.form u u` is real and equals `P.energy u`. -/
-theorem form_self_eq_ofReal_energy (P : CompactFormPair 𝕜 V H) (u : V) :
-    P.form u u = (P.energy u : 𝕜) := by
-  rw [energy_def]
-  exact (LinearMap.ofReal_re_apply_self_of_eq_star (a := P.form.toLinearMap₁₂) P.hermitian u).symm
+/-- The energy `q(u) = re a(u, u)` of a compact form pair. -/
+def energy (u : V) : ℝ :=
+  re (P.form u u)
 
-/-- The real part of the form is symmetric. -/
-theorem re_form_symm (P : CompactFormPair 𝕜 V H) (u v : V) :
-    RCLike.re (P.form u v) = RCLike.re (P.form v u) :=
-  LinearMap.re_apply_comm_of_eq_star (a := P.form.toLinearMap₁₂) P.hermitian u v
-
-/-- Expansion of the quadratic energy on a sum `u + v`. -/
-theorem energy_add (P : CompactFormPair 𝕜 V H) (u v : V) :
-    P.energy (u + v) = P.energy u + 2 * RCLike.re (P.form u v) + P.energy v := by
-  simp only [energy_def]
-  exact LinearMap.re_apply_add_self_of_eq_star (a := P.form.toLinearMap₁₂) P.hermitian u v
-
-/-- Expansion of the quadratic energy on a difference `u - v`. -/
-theorem energy_sub (P : CompactFormPair 𝕜 V H) (u v : V) :
-    P.energy (u - v) = P.energy u - 2 * RCLike.re (P.form u v) + P.energy v := by
-  simp only [energy_def]
-  exact LinearMap.re_apply_sub_self_of_eq_star (a := P.form.toLinearMap₁₂) P.hermitian u v
-
-/-- Increment formula `q(u) - q(v) = q(u - v) + 2 Re a(v, u - v)`. -/
-theorem energy_sub_energy (P : CompactFormPair 𝕜 V H) (u v : V) :
-    P.energy u - P.energy v = P.energy (u - v) + 2 * RCLike.re (P.form v (u - v)) := by
-  have h := P.form.quadraticEnergy_add 0 P.hermitian v (u - v)
-  simp only [add_sub_cancel, ContinuousLinearMap.quadraticEnergy_zero,
-    zero_apply, sub_zero, ← energy_def] at h
-  linarith
-
-/-- Quadratic expansion along a real line `u + t • v`. -/
-theorem energy_add_real_smul (P : CompactFormPair 𝕜 V H) (u v : V) (t : ℝ) :
-    P.energy (u + (t : 𝕜) • v) =
-      P.energy u + 2 * t * RCLike.re (P.form u v) + t ^ 2 * P.energy v := by
-  simp only [energy_def]
-  have h : RCLike.re (P.form (u + (t : 𝕜) • v) (u + (t : 𝕜) • v)) =
-      RCLike.re (P.form u u) + 2 * RCLike.re ((t : 𝕜) * P.form u v) +
-        ‖(t : 𝕜)‖ ^ 2 * RCLike.re (P.form v v) :=
-    LinearMap.re_apply_add_smul_self_of_eq_star (a := P.form.toLinearMap₁₂) P.hermitian u v (t : 𝕜)
-  rw [RCLike.re_ofReal_mul, RCLike.norm_ofReal, sq_abs] at h
-  linarith
-
-/-- The quadratic energy is bounded by `‖P.form‖ ‖u‖²`. -/
-theorem abs_energy_le (P : CompactFormPair 𝕜 V H) (u : V) :
-    |P.energy u| ≤ ‖P.form‖ * ‖u‖ ^ 2 := by
-  rw [energy_def]
-  exact P.form.abs_re_apply_self_le u
-
-end Energy
-
-section Shift
-
-variable {𝕜 V H : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
-  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
-
-/-- Shift a compact form pair by a real multiple `α` of the ambient inner product:
-`a_α(u, v) = a(u, v) + α ⟪j u, j v⟫_𝕜`. -/
-def shift (P : CompactFormPair 𝕜 V H) (α : ℝ) : CompactFormPair 𝕜 V H where
-  inclusion := P.inclusion
-  injective := P.injective
-  denseRange := P.denseRange
-  isCompactOperator := P.isCompactOperator
-  form := ContinuousLinearMap.shiftedForm P.inclusion P.form α
-  hermitian := ContinuousLinearMap.shiftedForm_eq_star P.inclusion P.hermitian α
-  exists_shifted_coercive := by
-    obtain ⟨c, hc, ω, hbound⟩ := P.exists_shifted_coercive
-    refine ⟨c, hc, ω - α, fun u => ?_⟩
-    rw [ContinuousLinearMap.re_shiftedForm_self]
-    linarith [hbound u]
-
-@[simp]
-theorem shift_inclusion (P : CompactFormPair 𝕜 V H) (α : ℝ) :
-    (P.shift α).inclusion = P.inclusion :=
+theorem energy_def (u : V) : P.energy u = re (P.form u u) :=
   (rfl)
 
-@[simp]
-theorem shift_form (P : CompactFormPair 𝕜 V H) (α : ℝ) :
-    (P.shift α).form = ContinuousLinearMap.shiftedForm P.inclusion P.form α :=
-  (rfl)
-
-theorem shift_form_apply (P : CompactFormPair 𝕜 V H) (α : ℝ) (u v : V) :
-    (P.shift α).form u v = P.form u v + (α : 𝕜) * ⟪P.inclusion u, P.inclusion v⟫_𝕜 :=
-  ContinuousLinearMap.shiftedForm_apply P.inclusion P.form α u v
+/-- The shifted coercivity bound of a compact form pair, stated with its energy. -/
+theorem exists_mul_norm_sq_le_energy_add :
+    ∃ c > 0, ∃ ω : ℝ, ∀ u, c * ‖u‖ ^ 2 ≤ P.energy u + ω * ‖P.inclusion u‖ ^ 2 :=
+  P.exists_shifted_coercive
 
 @[simp]
-theorem shift_energy (P : CompactFormPair 𝕜 V H) (α : ℝ) (u : V) :
-    (P.shift α).energy u = P.energy u + α * ‖P.inclusion u‖ ^ 2 := by
-  rw [energy_def, energy_def, shift_form]
-  exact ContinuousLinearMap.re_shiftedForm_self P.inclusion P.form α u
+theorem energy_zero : P.energy 0 = 0 := by
+  simp [energy_def]
+
+/-- The energy is homogeneous of degree two: `q(t • u) = ‖t‖² q(u)`. -/
+@[simp]
+theorem energy_smul (t : 𝕜) (u : V) : P.energy (t • u) = ‖t‖ ^ 2 * P.energy u := by
+  simp only [energy_def, map_smulₛₗ, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul, ← mul_assoc,
+    RingHom.id_apply, RCLike.mul_conj, ← RCLike.ofReal_pow, RCLike.re_ofReal_mul]
 
 @[simp]
-theorem shift_zero (P : CompactFormPair 𝕜 V H) : P.shift 0 = P := by
-  ext <;> simp
+theorem energy_neg (u : V) : P.energy (-u) = P.energy u := by
+  simpa using P.energy_smul (-1) u
+
+theorem continuous_energy : Continuous P.energy :=
+  continuous_re.comp (P.form.continuous.clm_apply continuous_id)
+
+/-! ### Constrained spheres -/
+
+/-- The constrained sphere `S_W = {u | j u ∈ W, ‖j u‖ = 1}` of a submodule `W` of `H`: the
+admissible set of the Rayleigh minimization in `W`. -/
+def unitConstraint (W : Submodule 𝕜 H) : Set V :=
+  {u | P.inclusion u ∈ W ∧ ‖P.inclusion u‖ = 1}
+
+variable {P} {W W' : Submodule 𝕜 H} {u : V}
 
 @[simp]
-theorem shift_shift (P : CompactFormPair 𝕜 V H) (α β : ℝ) :
-    (P.shift α).shift β = P.shift (α + β) := by
-  ext <;> simp
+theorem mem_unitConstraint : u ∈ P.unitConstraint W ↔ P.inclusion u ∈ W ∧ ‖P.inclusion u‖ = 1 :=
+  Iff.rfl
 
-/-- Every compact form pair becomes strictly coercive after a sufficiently large real shift. -/
-theorem exists_shift_coercive (P : CompactFormPair 𝕜 V H) :
-    ∃ ω₀ : ℝ, ∀ α : ℝ, ω₀ ≤ α → ∃ c : ℝ, 0 < c ∧ ∀ u : V, c * ‖u‖ ^ 2 ≤ (P.shift α).energy u := by
-  obtain ⟨c, hc, ω, hbound⟩ := P.exists_shifted_coercive
-  exact ⟨ω, fun α hα => ⟨c, hc, by
-    simpa only [energy_def, shift_form] using
-      ContinuousLinearMap.mul_norm_sq_le_re_shiftedForm_self P.inclusion hα hbound⟩⟩
+variable (P W) in
+theorem unitConstraint_eq_preimage :
+    P.unitConstraint W = P.inclusion ⁻¹' ((W : Set H) ∩ sphere 0 1) := by
+  ext u
+  simp
 
-/-- Over `ℝ`, shifting a compact form pair by any `α` above its lower-bound shift yields a
-Mathlib-coercive bilinear form. -/
-theorem exists_shift_isCoercive {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-    [NormedAddCommGroup H] [InnerProductSpace ℝ H] (P : CompactFormPair ℝ V H) :
-    ∃ ω₀ : ℝ, ∀ α : ℝ, ω₀ ≤ α → IsCoercive (P.shift α).form := by
-  obtain ⟨ω₀, hω₀⟩ := P.exists_shift_coercive
-  refine ⟨ω₀, fun α hα => ?_⟩
-  obtain ⟨c, hc, hbound⟩ := hω₀ α hα
-  refine ⟨c, hc, fun u => ?_⟩
-  have hu := hbound u
-  rw [energy_def] at hu
-  simpa only [RCLike.re_to_real, sq, mul_assoc] using hu
-
-end Shift
-
-section Transport
-
-variable {𝕜 V V' V'' H H' H'' : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
-  [NormedAddCommGroup V'] [InnerProductSpace 𝕜 V']
-  [NormedAddCommGroup V''] [InnerProductSpace 𝕜 V'']
-  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
-  [NormedAddCommGroup H'] [InnerProductSpace 𝕜 H']
-  [NormedAddCommGroup H''] [InnerProductSpace 𝕜 H'']
-
-/-- Transport the ambient space of a compact form pair along a linear isometric equivalence
-`U : H ≃ₗᵢ[𝕜] H'`. -/
-def mapLinearIsometryEquiv (P : CompactFormPair 𝕜 V H) (U : H ≃ₗᵢ[𝕜] H') :
-    CompactFormPair 𝕜 V H' where
-  inclusion := U.toContinuousLinearEquiv.toContinuousLinearMap.comp P.inclusion
-  injective := U.injective.comp P.injective
-  denseRange := U.surjective.denseRange.comp P.denseRange U.continuous
-  isCompactOperator := P.isCompactOperator.clm_comp U.toContinuousLinearEquiv.toContinuousLinearMap
-  form := P.form
-  hermitian := P.hermitian
-  exists_shifted_coercive := by
-    obtain ⟨c, hc, ω, hbound⟩ := P.exists_shifted_coercive
-    exact ⟨c, hc, ω, fun u => by simpa using hbound u⟩
-
+/-- The unconstrained sphere `S_H` is the set of `u` with `‖j u‖ = 1`. -/
 @[simp]
-theorem mapLinearIsometryEquiv_inclusion_apply (P : CompactFormPair 𝕜 V H) (U : H ≃ₗᵢ[𝕜] H')
-    (u : V) : (P.mapLinearIsometryEquiv U).inclusion u = U (P.inclusion u) :=
-  (rfl)
+theorem unitConstraint_top : P.unitConstraint ⊤ = {u | ‖P.inclusion u‖ = 1} := by
+  ext u
+  simp
 
-@[simp]
-theorem mapLinearIsometryEquiv_form (P : CompactFormPair 𝕜 V H) (U : H ≃ₗᵢ[𝕜] H') :
-    (P.mapLinearIsometryEquiv U).form = P.form :=
-  (rfl)
+theorem unitConstraint_mono (h : W ≤ W') : P.unitConstraint W ⊆ P.unitConstraint W' :=
+  fun _ hu ↦ ⟨h hu.1, hu.2⟩
 
-@[simp]
-theorem mapLinearIsometryEquiv_energy (P : CompactFormPair 𝕜 V H) (U : H ≃ₗᵢ[𝕜] H') (u : V) :
-    (P.mapLinearIsometryEquiv U).energy u = P.energy u := by
-  rw [energy_def, energy_def, mapLinearIsometryEquiv_form]
+/-- A constrained sphere is invariant under multiplication by scalars of norm one, and so is the
+energy (`TauCeti.CompactFormPair.energy_smul`). -/
+theorem smul_mem_unitConstraint (hu : u ∈ P.unitConstraint W) {t : 𝕜} (ht : ‖t‖ = 1) :
+    t • u ∈ P.unitConstraint W := by
+  rw [mem_unitConstraint, map_smul, norm_smul, ht, one_mul]
+  exact ⟨W.smul_mem t hu.1, hu.2⟩
 
-@[simp]
-theorem mapLinearIsometryEquiv_refl (P : CompactFormPair 𝕜 V H) :
-    P.mapLinearIsometryEquiv (LinearIsometryEquiv.refl 𝕜 H) = P := by
-  ext u <;> simp
+/-- Normalizing a vector with nonzero image in `W` puts it on the constrained sphere `S_W`. -/
+theorem inv_norm_smul_mem_unitConstraint (hu : P.inclusion u ∈ W) (hu0 : P.inclusion u ≠ 0) :
+    ((‖P.inclusion u‖⁻¹ : ℝ) : 𝕜) • u ∈ P.unitConstraint W := by
+  refine ⟨by simpa using W.smul_mem _ hu, ?_⟩
+  simp [norm_smul, hu0]
 
-theorem mapLinearIsometryEquiv_trans (P : CompactFormPair 𝕜 V H)
-    (U : H ≃ₗᵢ[𝕜] H') (W : H' ≃ₗᵢ[𝕜] H'') :
-    (P.mapLinearIsometryEquiv U).mapLinearIsometryEquiv W =
-      P.mapLinearIsometryEquiv (U.trans W) := by
-  ext u <;> simp
+/-- The constrained sphere `S_W` is nonempty exactly when some form-domain vector has a nonzero
+image in `W`. A nonzero `W` does not suffice, since `W` may meet the range of `j` only in `0`. -/
+theorem unitConstraint_nonempty_iff :
+    (P.unitConstraint W).Nonempty ↔ ∃ u, P.inclusion u ∈ W ∧ P.inclusion u ≠ 0 := by
+  constructor
+  · rintro ⟨u, hu, hnorm⟩
+    exact ⟨u, hu, fun h ↦ by simp [h] at hnorm⟩
+  · rintro ⟨u, hu, hu0⟩
+    exact ⟨_, inv_norm_smul_mem_unitConstraint hu hu0⟩
 
-/-- Pull back a compact form pair along a continuous linear equivalence `e : V' ≃L[𝕜] V`
-(change to an equivalent norm on the form domain). -/
-def comapEquiv (P : CompactFormPair 𝕜 V H) (e : V' ≃L[𝕜] V) :
-    CompactFormPair 𝕜 V' H where
-  inclusion := P.inclusion.comp e.toContinuousLinearMap
-  injective := P.injective.comp e.injective
-  denseRange := P.denseRange.comp e.surjective.denseRange P.inclusion.continuous
-  isCompactOperator := P.isCompactOperator.comp_clm e.toContinuousLinearMap
-  form := P.form.bilinearComp e.toContinuousLinearMap e.toContinuousLinearMap
-  hermitian u v := by
-    simp only [ContinuousLinearMap.bilinearComp_apply, ContinuousLinearEquiv.coe_coe,
-      P.hermitian (e u) (e v)]
-  exists_shifted_coercive := by
-    obtain ⟨c, hc, ω, hbound⟩ := P.exists_shifted_coercive
-    set M : ℝ := ‖(e.symm : V →L[𝕜] V')‖ + 1
-    have hMpos : 0 < M := by positivity
-    refine ⟨c / M ^ 2, by positivity, ω, fun u => ?_⟩
-    have hu : ‖u‖ ≤ M * ‖e u‖ := by
-      calc ‖u‖ = ‖(e.symm : V →L[𝕜] V') (e u)‖ := by simp
-        _ ≤ ‖(e.symm : V →L[𝕜] V')‖ * ‖e u‖ := (e.symm : V →L[𝕜] V').le_opNorm (e u)
-        _ ≤ M * ‖e u‖ := mul_le_mul_of_nonneg_right (by linarith) (norm_nonneg _)
-    have hsq : ‖u‖ ^ 2 ≤ M ^ 2 * ‖e u‖ ^ 2 := by
-      have hsq' := pow_le_pow_left₀ (norm_nonneg u) hu 2
-      simpa [mul_pow] using hsq'
-    have hle : c / M ^ 2 * ‖u‖ ^ 2 ≤ c * ‖e u‖ ^ 2 := by
-      calc c / M ^ 2 * ‖u‖ ^ 2 ≤ c / M ^ 2 * (M ^ 2 * ‖e u‖ ^ 2) :=
-            mul_le_mul_of_nonneg_left hsq (by positivity)
-        _ = c * ‖e u‖ ^ 2 := by field_simp
-    simpa only [ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe] using hle.trans (hbound (e u))
+/-- The unconstrained sphere `S_H` is nonempty exactly when `H` is nontrivial, by density of the
+range of the inclusion. -/
+theorem unitConstraint_top_nonempty_iff : (P.unitConstraint ⊤).Nonempty ↔ Nontrivial H := by
+  rw [unitConstraint_nonempty_iff]
+  constructor
+  · rintro ⟨u, -, hu⟩
+    exact ⟨⟨_, _, hu⟩⟩
+  · intro hH
+    by_contra! h
+    have hrange : range P.inclusion ⊆ {0} := by
+      rintro _ ⟨u, rfl⟩
+      exact h u Submodule.mem_top
+    have huniv : (univ : Set H) ⊆ {0} := by
+      rw [← P.denseRange.closure_range]
+      exact closure_minimal hrange isClosed_singleton
+    obtain ⟨x, hx⟩ := exists_ne (0 : H)
+    exact hx (huniv (mem_univ x))
 
-@[simp]
-theorem comapEquiv_inclusion_apply (P : CompactFormPair 𝕜 V H) (e : V' ≃L[𝕜] V) (u : V') :
-    (P.comapEquiv e).inclusion u = P.inclusion (e u) :=
-  (rfl)
+/-! ### Bounds on constrained spheres -/
 
-@[simp]
-theorem comapEquiv_form_apply (P : CompactFormPair 𝕜 V H) (e : V' ≃L[𝕜] V) (u v : V') :
-    (P.comapEquiv e).form u v = P.form (e u) (e v) :=
-  (rfl)
+/-- On a constrained sphere a shifted coercivity bound `c ‖v‖² ≤ q(v) + ω ‖j v‖²` reads
+`c ‖u‖² ≤ q(u) + ω`. -/
+theorem mul_norm_sq_le_energy_add_of_mem_unitConstraint {c ω : ℝ}
+    (h : ∀ v, c * ‖v‖ ^ 2 ≤ P.energy v + ω * ‖P.inclusion v‖ ^ 2) (hu : u ∈ P.unitConstraint W) :
+    c * ‖u‖ ^ 2 ≤ P.energy u + ω := by
+  simpa [hu.2] using h u
 
-@[simp]
-theorem comapEquiv_energy (P : CompactFormPair 𝕜 V H) (e : V' ≃L[𝕜] V) (u : V') :
-    (P.comapEquiv e).energy u = P.energy (e u) := by
-  rw [energy_def, energy_def, comapEquiv_form_apply]
+/-- On a constrained sphere the energy is bounded below by `-ω`, for any shift `ω` in a
+shifted coercivity bound with constant `c ≥ 0`. -/
+theorem neg_le_energy_of_mem_unitConstraint {c ω : ℝ} (hc : 0 ≤ c)
+    (h : ∀ v, c * ‖v‖ ^ 2 ≤ P.energy v + ω * ‖P.inclusion v‖ ^ 2) (hu : u ∈ P.unitConstraint W) :
+    -ω ≤ P.energy u := by
+  nlinarith [sq_nonneg ‖u‖, mul_norm_sq_le_energy_add_of_mem_unitConstraint h hu]
 
-@[simp]
-theorem comapEquiv_refl (P : CompactFormPair 𝕜 V H) :
-    P.comapEquiv (ContinuousLinearEquiv.refl 𝕜 V) = P := by
-  ext u v <;> simp
+variable (P W)
 
-theorem comapEquiv_trans (P : CompactFormPair 𝕜 V H)
-    (e₁ : V'' ≃L[𝕜] V') (e₂ : V' ≃L[𝕜] V) :
-    (P.comapEquiv e₂).comapEquiv e₁ = P.comapEquiv (e₁.trans e₂) := by
-  ext u v <;> simp
+/-- The energy is bounded below on every constrained sphere. -/
+theorem bddBelow_energy_image_unitConstraint : BddBelow (P.energy '' P.unitConstraint W) := by
+  obtain ⟨c, hc, ω, h⟩ := P.exists_mul_norm_sq_le_energy_add
+  exact ⟨-ω, by rintro _ ⟨u, hu, rfl⟩; exact neg_le_energy_of_mem_unitConstraint hc.le h hu⟩
 
-end Transport
-
-section Restrict
-
-variable {𝕜 V H : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
-  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
-
-/-- Restrict a compact form pair to a submodule `V₁ ≤ V`, replacing the ambient space with the
-norm closure `(V₁.map P.inclusion.toLinearMap).topologicalClosure` so that density is preserved. -/
-def restrict (P : CompactFormPair 𝕜 V H) (V₁ : Submodule 𝕜 V) :
-    CompactFormPair 𝕜 V₁ (V₁.map P.inclusion.toLinearMap).topologicalClosure :=
-  let hmem : ∀ x ∈ V₁, P.inclusion x ∈ (V₁.map P.inclusion.toLinearMap).topologicalClosure :=
-    fun x hx => Submodule.le_topologicalClosure _ ⟨x, hx, rfl⟩
-  { inclusion := P.inclusion.restrict hmem
-    injective := fun u v huv => by
-      have huv' := congrArg Subtype.val huv
-      rw [ContinuousLinearMap.coe_restrict_apply, ContinuousLinearMap.coe_restrict_apply] at huv'
-      exact Subtype.ext (P.injective huv')
-    denseRange := by
-      rw [DenseRange, Subtype.dense_iff, ← Set.range_comp]
-      refine subset_trans (le_of_eq (Submodule.topologicalClosure_coe _)) (closure_mono ?_)
-      rintro _ ⟨x, hx, rfl⟩
-      exact ⟨⟨x, hx⟩, ContinuousLinearMap.coe_restrict_apply hmem ⟨x, hx⟩⟩
-    isCompactOperator :=
-      (P.isCompactOperator.comp_clm V₁.subtypeL).codRestrict
-        (V := (V₁.map P.inclusion.toLinearMap).topologicalClosure)
-        (fun u => hmem u.val u.property)
-        (V₁.map P.inclusion.toLinearMap).isClosed_topologicalClosure
-    form := P.form.bilinearComp V₁.subtypeL V₁.subtypeL
-    hermitian := fun u v => by
-      simp only [ContinuousLinearMap.bilinearComp_apply, Submodule.subtypeL_apply,
-        P.hermitian u.val v.val]
-    exists_shifted_coercive := by
-      obtain ⟨c, hc, ω, hbound⟩ := P.exists_shifted_coercive
-      exact ⟨c, hc, ω, fun u => by
-        simpa [ContinuousLinearMap.coe_restrict_apply] using hbound u.val⟩ }
-
-@[simp]
-theorem restrict_inclusion_coe (P : CompactFormPair 𝕜 V H) (V₁ : Submodule 𝕜 V) (u : V₁) :
-    ((P.restrict V₁).inclusion u : H) = P.inclusion u := by
-  dsimp only [restrict]
-  exact ContinuousLinearMap.coe_restrict_apply _ u
-
-@[simp]
-theorem restrict_form_apply (P : CompactFormPair 𝕜 V H) (V₁ : Submodule 𝕜 V) (u v : V₁) :
-    (P.restrict V₁).form u v = P.form u v :=
-  (rfl)
-
-@[simp]
-theorem restrict_energy (P : CompactFormPair 𝕜 V H) (V₁ : Submodule 𝕜 V) (u : V₁) :
-    (P.restrict V₁).energy u = P.energy u := by
-  rw [energy_def, energy_def, restrict_form_apply]
-
-end Restrict
-
-section Pi
-
-variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι]
-  {V H : ι → Type*}
-  [∀ i, NormedAddCommGroup (V i)] [∀ i, InnerProductSpace 𝕜 (V i)]
-  [∀ i, NormedAddCommGroup (H i)] [∀ i, InnerProductSpace 𝕜 (H i)]
-
-private def piInclusion (P : ∀ i, CompactFormPair 𝕜 (V i) (H i)) :
-    PiLp 2 V →L[𝕜] PiLp 2 H :=
-  (PiLp.continuousLinearEquiv 2 𝕜 H).symm.toContinuousLinearMap.comp
-    ((ContinuousLinearMap.piMap fun i => (P i).inclusion).comp
-      (PiLp.continuousLinearEquiv 2 𝕜 V).toContinuousLinearMap)
-
-omit [Fintype ι] in
-private theorem coe_piInclusion (P : ∀ i, CompactFormPair 𝕜 (V i) (H i)) :
-    (piInclusion P : PiLp 2 V → PiLp 2 H) =
-      (PiLp.continuousLinearEquiv 2 𝕜 H).symm ∘
-        (Pi.map fun i => (P i).inclusion) ∘
-        (PiLp.continuousLinearEquiv 2 𝕜 V) := by
-  funext u
-  simp [piInclusion]
-
-omit [Fintype ι] in
-private theorem piInclusion_apply (P : ∀ i, CompactFormPair 𝕜 (V i) (H i))
-    (u : PiLp 2 V) (i : ι) :
-    piInclusion P u i = (P i).inclusion (u i) := by
-  simp [piInclusion]
-
-private def piForm (P : ∀ i, CompactFormPair 𝕜 (V i) (H i)) :
-    PiLp 2 V →L⋆[𝕜] PiLp 2 V →L[𝕜] 𝕜 :=
-  ∑ i : ι, (P i).form.bilinearComp (PiLp.proj 2 V i) (PiLp.proj 2 V i)
-
-private theorem piForm_apply (P : ∀ i, CompactFormPair 𝕜 (V i) (H i))
-    (u v : PiLp 2 V) :
-    piForm P u v = ∑ i : ι, (P i).form (u i) (v i) := by
-  simp only [piForm, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.bilinearComp_apply,
-    PiLp.proj_apply]
-
-/-- Finite `ℓ²`-direct sum of compact form pairs. -/
-def pi (P : ∀ i, CompactFormPair 𝕜 (V i) (H i)) :
-    CompactFormPair 𝕜 (PiLp 2 V) (PiLp 2 H) where
-  inclusion := piInclusion P
-  injective := by
-    rw [coe_piInclusion]
-    exact (PiLp.continuousLinearEquiv 2 𝕜 H).symm.injective.comp
-      ((Function.Injective.piMap fun i => (P i).injective).comp
-        (PiLp.continuousLinearEquiv 2 𝕜 V).injective)
-  denseRange := by
-    rw [coe_piInclusion]
-    exact (PiLp.continuousLinearEquiv 2 𝕜 H).symm.surjective.denseRange.comp
-      ((DenseRange.piMap fun i => (P i).denseRange).comp
-        (PiLp.continuousLinearEquiv 2 𝕜 V).surjective.denseRange
-        (Continuous.piMap fun i => (P i).inclusion.continuous))
-      (PiLp.continuousLinearEquiv 2 𝕜 H).symm.continuous
-  isCompactOperator := by
-    have hprod : IsCompactOperator (ContinuousLinearMap.piMap fun i => (P i).inclusion) := by
-      have hpi : IsCompactOperator (fun (x : ∀ i, V i) i => (P i).inclusion (x i)) :=
-        IsCompactOperator.pi (f := fun i (x : ∀ j, V j) => (P i).inclusion (x i)) fun i =>
-          (P i).isCompactOperator.comp_clm (ContinuousLinearMap.proj (R := 𝕜) i)
-      rw [ContinuousLinearMap.coe_piMap']
-      exact hpi
-    exact (hprod.comp_clm (PiLp.continuousLinearEquiv 2 𝕜 V).toContinuousLinearMap).clm_comp
-      (PiLp.continuousLinearEquiv 2 𝕜 H).symm.toContinuousLinearMap
-  form := piForm P
-  hermitian u v := by
-    simp only [piForm_apply, star_sum, fun i => (P i).hermitian (u i) (v i)]
-  exists_shifted_coercive := by
-    choose c hc ω hbound using fun i => (P i).exists_shifted_coercive
-    by_cases hne : (Finset.univ : Finset ι).Nonempty
-    · refine ⟨Finset.univ.inf' hne c, (Finset.lt_inf'_iff hne).mpr fun i _ => hc i,
-        Finset.univ.sup' hne ω, fun u => ?_⟩
-      simp only [PiLp.norm_sq_eq_of_L2, piForm_apply, piInclusion_apply, map_sum,
-        Finset.mul_sum, ← Finset.sum_add_distrib]
-      refine Finset.sum_le_sum fun i _ => ?_
-      have hc_le : Finset.univ.inf' hne c * ‖u i‖ ^ 2 ≤ c i * ‖u i‖ ^ 2 :=
-        mul_le_mul_of_nonneg_right (Finset.inf'_le c (Finset.mem_univ i)) (sq_nonneg _)
-      have hω_le : ω i * ‖(P i).inclusion (u i)‖ ^ 2 ≤
-          Finset.univ.sup' hne ω * ‖(P i).inclusion (u i)‖ ^ 2 :=
-        mul_le_mul_of_nonneg_right (Finset.le_sup' ω (Finset.mem_univ i)) (sq_nonneg _)
-      linarith [hbound i (u i)]
-    · rw [Finset.not_nonempty_iff_eq_empty] at hne
-      refine ⟨1, zero_lt_one, 0, fun u => ?_⟩
-      simp [PiLp.norm_sq_eq_of_L2, piForm_apply, hne]
-
-@[simp]
-theorem pi_inclusion_apply (P : ∀ i, CompactFormPair 𝕜 (V i) (H i)) (u : PiLp 2 V) (i : ι) :
-    (CompactFormPair.pi P).inclusion u i = (P i).inclusion (u i) :=
-  piInclusion_apply P u i
-
-@[simp]
-theorem pi_form_apply (P : ∀ i, CompactFormPair 𝕜 (V i) (H i)) (u v : PiLp 2 V) :
-    (CompactFormPair.pi P).form u v = ∑ i : ι, (P i).form (u i) (v i) :=
-  piForm_apply P u v
-
-@[simp]
-theorem pi_energy (P : ∀ i, CompactFormPair 𝕜 (V i) (H i)) (u : PiLp 2 V) :
-    (CompactFormPair.pi P).energy u = ∑ i : ι, (P i).energy (u i) := by
-  simp [energy_def, pi_form_apply, map_sum]
-
-end Pi
-
-section RestrictScalars
-
-variable {𝕜 V H : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [InnerProductSpace ℝ V] [IsScalarTower ℝ 𝕜 V]
-  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [InnerProductSpace ℝ H] [IsScalarTower ℝ 𝕜 H]
-
-/-- View a compact form pair over `𝕜` as a real compact form pair on the same underlying spaces
-with real symmetric bilinear form `(u, v) ↦ Re (P.form u v)`. -/
-def restrictScalars (P : CompactFormPair 𝕜 V H) : CompactFormPair ℝ V H where
-  inclusion := P.inclusion.restrictScalars ℝ
-  injective := by rw [ContinuousLinearMap.coe_restrictScalars']; exact P.injective
-  denseRange := by rw [ContinuousLinearMap.coe_restrictScalars']; exact P.denseRange
-  isCompactOperator := by rw [ContinuousLinearMap.coe_restrictScalars']; exact P.isCompactOperator
-  form := P.form.reBilin
-  hermitian u v := by
-    rw [ContinuousLinearMap.reBilin_apply_apply, ContinuousLinearMap.reBilin_apply_apply,
-      star_trivial, P.re_form_symm u v]
-  exists_shifted_coercive := by
-    obtain ⟨c, hc, ω, hbound⟩ := P.exists_shifted_coercive
-    refine ⟨c, hc, ω, fun u => ?_⟩
-    rw [RCLike.re_to_real, ContinuousLinearMap.reBilin_apply_apply,
-      ContinuousLinearMap.coe_restrictScalars']
-    exact hbound u
-
-@[simp]
-theorem restrictScalars_inclusion (P : CompactFormPair 𝕜 V H) :
-    P.restrictScalars.inclusion = P.inclusion.restrictScalars ℝ :=
-  (rfl)
-
-@[simp]
-theorem restrictScalars_form_apply (P : CompactFormPair 𝕜 V H) (u v : V) :
-    P.restrictScalars.form u v = RCLike.re (P.form u v) :=
-  ContinuousLinearMap.reBilin_apply_apply P.form u v
-
-@[simp]
-theorem restrictScalars_energy (P : CompactFormPair 𝕜 V H) (u : V) :
-    P.restrictScalars.energy u = P.energy u := by
-  rw [energy_def, restrictScalars_form_apply, RCLike.re_to_real, energy_def]
-
-end RestrictScalars
-
-section FiniteDimensional
-
-variable {𝕜 H : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [FiniteDimensional 𝕜 H]
-
-/-- Any bounded Hermitian form on a finite-dimensional inner-product space `H` forms a compact form
-pair with `inclusion = ContinuousLinearMap.id 𝕜 H`. -/
-def ofFiniteDimensional (a : H →L⋆[𝕜] H →L[𝕜] 𝕜) (ha : ∀ u v : H, a u v = star (a v u)) :
-    CompactFormPair 𝕜 H H where
-  inclusion := ContinuousLinearMap.id 𝕜 H
-  injective := by rw [ContinuousLinearMap.coe_id']; exact Function.injective_id
-  denseRange := by rw [ContinuousLinearMap.coe_id']; exact denseRange_id
-  isCompactOperator := by
-    have : ProperSpace H := FiniteDimensional.proper_rclike 𝕜 H
-    rw [ContinuousLinearMap.coe_id']
-    exact isCompactOperator_id
-  form := a
-  hermitian := ha
-  exists_shifted_coercive := by
-    refine ⟨1, zero_lt_one, ‖a‖ + 1, fun u => ?_⟩
-    have hre : -RCLike.re (a u u) ≤ ‖a‖ * ‖u‖ ^ 2 :=
-      (neg_le_abs _).trans (a.abs_re_apply_self_le u)
-    simp only [ContinuousLinearMap.id_apply]
+/-- The energy has norm-bounded sublevels on every constrained sphere: on `S_W` the shifted
+coercivity bound reads `c ‖u‖² ≤ q(u) + ω`. -/
+theorem hasBoundedSublevelsOn_energy_unitConstraint :
+    HasBoundedSublevelsOn P.energy (P.unitConstraint W) := by
+  obtain ⟨c, hc, ω, h⟩ := P.exists_mul_norm_sq_le_energy_add
+  refine hasBoundedSublevelsOn_iff.2 fun b ↦ isBounded_iff_forall_norm_le.2 ⟨1 + (b + ω) / c, ?_⟩
+  rintro u ⟨hu, hub⟩
+  have hcu := mul_norm_sq_le_energy_add_of_mem_unitConstraint h hu
+  have hsq : ‖u‖ ^ 2 ≤ (b + ω) / c := by
+    rw [le_div_iff₀ hc]
     linarith
+  nlinarith [sq_nonneg (‖u‖ - 1)]
 
-@[simp]
-theorem ofFiniteDimensional_inclusion (a : H →L⋆[𝕜] H →L[𝕜] 𝕜)
-    (ha : ∀ u v : H, a u v = star (a v u)) :
-    (ofFiniteDimensional a ha).inclusion = ContinuousLinearMap.id 𝕜 H :=
-  (rfl)
+/-! ### Weak topology -/
 
-@[simp]
-theorem ofFiniteDimensional_form (a : H →L⋆[𝕜] H →L[𝕜] 𝕜)
-    (ha : ∀ u v : H, a u v = star (a v u)) :
-    (ofFiniteDimensional a ha).form = a :=
-  (rfl)
+/-- On a constrained sphere the energy is lower semicontinuous for the weak topology of `V`.
+There it differs by a constant from the nonnegative Hermitian form `q + ω ‖j ·‖²`. -/
+theorem lowerSemicontinuousOn_energy_comp_toWeakSpace_symm_unitConstraint :
+    LowerSemicontinuousOn (fun w : WeakSpace 𝕜 V ↦ P.energy ((toWeakSpace 𝕜 V).symm w))
+      (toWeakSpace 𝕜 V '' P.unitConstraint W) := by
+  obtain ⟨c, hc, ω, h⟩ := P.exists_shifted_coercive
+  set a := ContinuousLinearMap.shiftedForm P.inclusion P.form ω
+  have hlsc := a.lowerSemicontinuous_re_apply_self_comp_toWeakSpace_symm
+    (ContinuousLinearMap.shiftedForm_eq_star P.inclusion P.hermitian ω)
+    fun u ↦ le_trans (by positivity)
+      (ContinuousLinearMap.mul_norm_sq_le_re_shiftedForm_self P.inclusion le_rfl h u)
+  have hconst : LowerSemicontinuous fun _ : WeakSpace 𝕜 V ↦ -ω := lowerSemicontinuous_const
+  have hlsc' := (hlsc.add hconst).lowerSemicontinuousOn (toWeakSpace 𝕜 V '' P.unitConstraint W)
+  have heq : EqOn (fun w : WeakSpace 𝕜 V ↦ re (a ((toWeakSpace 𝕜 V).symm w)
+      ((toWeakSpace 𝕜 V).symm w)) + -ω) (fun w ↦ P.energy ((toWeakSpace 𝕜 V).symm w))
+      (toWeakSpace 𝕜 V '' P.unitConstraint W) := by
+    rintro _ ⟨u, hu, rfl⟩
+    simp only [LinearEquiv.symm_apply_apply, a, ContinuousLinearMap.re_shiftedForm_self, hu.2,
+      one_pow, mul_one, energy_def]
+    ring
+  exact fun w hw ↦
+    LowerSemicontinuousWithinAt.congr_of_eventuallyEq (hlsc' w hw) hw heq.eventuallyEq_nhdsWithin
 
-theorem ofFiniteDimensional_energy (a : H →L⋆[𝕜] H →L[𝕜] 𝕜)
-    (ha : ∀ u v : H, a u v = star (a v u)) (u : H) :
-    (ofFiniteDimensional a ha).energy u = RCLike.re (a u u) := by
-  rw [energy_def, ofFiniteDimensional_form]
+/-- When `W` is closed, the constrained sphere `S_W` is sequentially closed in the weak topology
+of `V`: a weakly convergent sequence has norm-convergent images under the compact map `j`. -/
+theorem isSeqClosed_toWeakSpace_unitConstraint (hW : IsClosed (W : Set H)) :
+    IsSeqClosed (toWeakSpace 𝕜 V '' P.unitConstraint W) := by
+  rw [unitConstraint_eq_preimage]
+  exact P.isCompactOperator.isSeqClosed_toWeakSpace_preimage (hW.inter isClosed_sphere)
 
-end FiniteDimensional
+/-- If `V` is infinite dimensional, the unconstrained sphere `S_H` is not weakly closed: `0` lies in
+its weak closure. So constrained minima are found along sequences or inside bounded sets. -/
+theorem not_isClosed_toWeakSpace_unitConstraint_top (hV : ¬ FiniteDimensional 𝕜 V) :
+    ¬ IsClosed (toWeakSpace 𝕜 V '' P.unitConstraint ⊤) := by
+  rw [unitConstraint_top]
+  exact not_isClosed_toWeakSpace_setOf_norm_eq hV P.injective one_pos
+
+/-- When `V` is complete and `W` is closed, the part of the constrained sphere `S_W` in any closed
+ball of `V` is weakly compact, although `S_W` itself need not be weakly closed. -/
+theorem isCompact_toWeakSpace_unitConstraint_inter_closedBall [CompleteSpace V]
+    (hW : IsClosed (W : Set H)) (x : V) (r : ℝ) :
+    IsCompact (toWeakSpace 𝕜 V '' (P.unitConstraint W ∩ closedBall x r)) := by
+  have hball := isCompact_toWeakSpace_closedBall
+    (surjective_inclusionInDoubleDual_of_innerProductSpace (𝕜 := 𝕜)) x r
+  have hclosed := P.isCompactOperator.isClosed_toWeakSpace_inter_preimage_of_isBounded
+    isBounded_closedBall hball.isClosed (hW.inter (isClosed_sphere (x := 0) (ε := 1)))
+  rw [unitConstraint_eq_preimage, inter_comm]
+  exact hball.of_isClosed_subset hclosed (image_mono inter_subset_left)
+
+/-- When `V` is reflexive and `W` is closed, every sublevel of the energy on the constrained sphere
+`S_W` is weakly compact. -/
+theorem isCompact_toWeakSpace_sublevel_unitConstraint_of_surjective
+    (hV : Function.Surjective (NormedSpace.inclusionInDoubleDual 𝕜 V))
+    (hW : IsClosed (W : Set H)) (b : ℝ) :
+    IsCompact (toWeakSpace 𝕜 V '' {u ∈ P.unitConstraint W | P.energy u ≤ b}) :=
+  isCompact_toWeakSpace_sublevel_of_isSeqClosed hV
+    (P.isSeqClosed_toWeakSpace_unitConstraint W hW)
+    (P.lowerSemicontinuousOn_energy_comp_toWeakSpace_symm_unitConstraint
+      W).seqLowerSemicontinuousOn b
+    ((P.hasBoundedSublevelsOn_energy_unitConstraint W).isBounded_sublevel b)
+
+/-- When `V` is complete and `W` is closed, every sublevel of the energy on the constrained sphere
+`S_W` is weakly compact. -/
+theorem isCompact_toWeakSpace_sublevel_unitConstraint [CompleteSpace V]
+    (hW : IsClosed (W : Set H)) (b : ℝ) :
+    IsCompact (toWeakSpace 𝕜 V '' {u ∈ P.unitConstraint W | P.energy u ≤ b}) :=
+  P.isCompact_toWeakSpace_sublevel_unitConstraint_of_surjective W
+    surjective_inclusionInDoubleDual_of_innerProductSpace hW b
+
+/-! ### Existence of constrained minima -/
+
+/-- **Constrained Rayleigh minima** (reflexive form). If `V` is reflexive and the constrained
+sphere `S_W` of a closed submodule `W` is nonempty, the energy attains its minimum on `S_W`. -/
+theorem exists_isMinOn_energy_unitConstraint_of_surjective
+    (hV : Function.Surjective (NormedSpace.inclusionInDoubleDual 𝕜 V))
+    (hW : IsClosed (W : Set H)) (hne : (P.unitConstraint W).Nonempty) :
+    ∃ u ∈ P.unitConstraint W, IsMinOn P.energy (P.unitConstraint W) u :=
+  exists_isMinOn_of_isSeqClosed hV hne
+    (P.isSeqClosed_toWeakSpace_unitConstraint W hW)
+    (P.lowerSemicontinuousOn_energy_comp_toWeakSpace_symm_unitConstraint
+      W).seqLowerSemicontinuousOn
+    (P.hasBoundedSublevelsOn_energy_unitConstraint W)
+
+/-- **Constrained Rayleigh minima.** If `V` is complete and the constrained sphere `S_W` of a
+closed submodule `W` is nonempty, the energy attains its minimum on `S_W`. -/
+theorem exists_isMinOn_energy_unitConstraint [CompleteSpace V] (hW : IsClosed (W : Set H))
+    (hne : (P.unitConstraint W).Nonempty) :
+    ∃ u ∈ P.unitConstraint W, IsMinOn P.energy (P.unitConstraint W) u :=
+  P.exists_isMinOn_energy_unitConstraint_of_surjective W
+    surjective_inclusionInDoubleDual_of_innerProductSpace hW hne
+
+/-- If `V` is complete and `W` is closed, the set of minimizers of the energy on the constrained
+sphere `S_W` is weakly compact. -/
+theorem isCompact_toWeakSpace_minimizers_unitConstraint [CompleteSpace V]
+    (hW : IsClosed (W : Set H)) :
+    IsCompact (toWeakSpace 𝕜 V ''
+      {u ∈ P.unitConstraint W | IsMinOn P.energy (P.unitConstraint W) u}) :=
+  isCompact_toWeakSpace_minimizers_of_isSeqClosed
+    surjective_inclusionInDoubleDual_of_innerProductSpace
+    (P.isSeqClosed_toWeakSpace_unitConstraint W hW)
+    (P.lowerSemicontinuousOn_energy_comp_toWeakSpace_symm_unitConstraint
+      W).seqLowerSemicontinuousOn
+    (P.hasBoundedSublevelsOn_energy_unitConstraint W)
+
+variable {P W}
+
+/-- **Rayleigh-quotient form of a constrained minimum.** A minimizer `u₀` of the energy on the
+constrained sphere `S_W` satisfies `q(u₀) ‖j u‖² ≤ q(u)` for every `u` with `j u ∈ W`: the
+minimum bounds the Rayleigh quotient `q(u) / ‖j u‖²` below on the `u ≠ 0` with `j u ∈ W`. -/
+theorem mul_norm_sq_le_energy_of_isMinOn {u₀ : V}
+    (hmin : IsMinOn P.energy (P.unitConstraint W) u₀) (hu : P.inclusion u ∈ W) :
+    P.energy u₀ * ‖P.inclusion u‖ ^ 2 ≤ P.energy u := by
+  by_cases hu0 : P.inclusion u = 0
+  · rw [P.injective (hu0.trans (map_zero P.inclusion).symm)]
+    simp
+  have h : P.energy u₀ ≤ P.energy _ := hmin (inv_norm_smul_mem_unitConstraint hu hu0)
+  simp only [energy_smul, norm_inv, norm_algebraMap', norm_norm, inv_pow] at h
+  calc P.energy u₀ * ‖P.inclusion u‖ ^ 2
+      ≤ ((‖P.inclusion u‖ ^ 2)⁻¹ * P.energy u) * ‖P.inclusion u‖ ^ 2 := by gcongr
+    _ = P.energy u := by field_simp
+
+/-- The energy at `u₀` is a lower bound for the energy on the constrained sphere `S_W` exactly
+when `q(u₀) ‖j u‖² ≤ q(u)` for every `u` with `j u ∈ W`. For `u₀ ∈ S_W` this says that `q(u₀)` is
+the least value of the Rayleigh quotient `q(u) / ‖j u‖²` over the `u ≠ 0` with `j u ∈ W`. -/
+theorem isMinOn_energy_unitConstraint_iff {u₀ : V} :
+    IsMinOn P.energy (P.unitConstraint W) u₀ ↔
+      ∀ u, P.inclusion u ∈ W → P.energy u₀ * ‖P.inclusion u‖ ^ 2 ≤ P.energy u := by
+  refine ⟨fun hmin _ hu ↦ mul_norm_sq_le_energy_of_isMinOn hmin hu, fun h u hu ↦ ?_⟩
+  simpa [hu.2] using h u hu.1
+
+/-- **The Rayleigh principle on a constrained sphere.** For a minimizer `u₀` of the energy on the
+constrained sphere `S_W`, `q(u₀)` is the least value of the Rayleigh quotient `q(u) / ‖j u‖²` over
+the `u` with `j u ∈ W` and `j u ≠ 0`. -/
+theorem isLeast_rayleigh_of_isMinOn {u₀ : V} (hu₀ : u₀ ∈ P.unitConstraint W)
+    (hmin : IsMinOn P.energy (P.unitConstraint W) u₀) :
+    IsLeast {r | ∃ u, P.inclusion u ∈ W ∧ P.inclusion u ≠ 0 ∧
+      r = P.energy u / ‖P.inclusion u‖ ^ 2} (P.energy u₀) := by
+  obtain ⟨hW₀, h₁⟩ := mem_unitConstraint.1 hu₀
+  refine ⟨⟨u₀, hW₀, norm_ne_zero_iff.1 (by simp [h₁]), by simp [h₁]⟩, ?_⟩
+  rintro _ ⟨u, hu, hu0, rfl⟩
+  exact (le_div_iff₀ (by positivity)).2 (mul_norm_sq_le_energy_of_isMinOn hmin hu)
+
+/-- **The Euler–Lagrange equation of a constrained minimum.** A minimizer `u₀` of the energy on the
+constrained sphere `S_W` satisfies `a(u₀, v) = q(u₀) ⟪j u₀, j v⟫` for every `v` with `j v ∈ W`. -/
+theorem form_apply_eq_mul_inner_of_isMinOn {u₀ v : V} (hu₀ : u₀ ∈ P.unitConstraint W)
+    (hmin : IsMinOn P.energy (P.unitConstraint W) u₀) (hv : P.inclusion v ∈ W) :
+    P.form u₀ v = (P.energy u₀ : 𝕜) * inner 𝕜 (P.inclusion u₀) (P.inclusion v) := by
+  obtain ⟨hW₀, h₁⟩ := mem_unitConstraint.1 hu₀
+  -- `u₀` minimizes the energy of the Hermitian form `a - q(u₀) ⟪j ·, j ·⟫` on `u₀ + j⁻¹ W`,
+  -- since that energy is nonnegative there and vanishes at `u₀`.
+  set a := ContinuousLinearMap.shiftedForm P.inclusion P.form (-P.energy u₀)
+  have hmin' : ∀ w ∈ W.comap (P.inclusion : V →ₗ[𝕜] H),
+      a.quadraticEnergy 0 u₀ ≤ a.quadraticEnergy 0 (u₀ + w) := by
+    intro w hw
+    have h := mul_norm_sq_le_energy_of_isMinOn hmin (u := u₀ + w)
+      (by simpa using W.add_mem hW₀ (Submodule.mem_comap.1 hw))
+    simp only [a, ContinuousLinearMap.quadraticEnergy_apply,
+      ContinuousLinearMap.re_shiftedForm_self, h₁, ← energy_def,
+      zero_apply, map_zero]
+    linarith
+  have h := ContinuousLinearMap.apply_eq_of_forall_le_quadraticEnergy_add 0
+    (ContinuousLinearMap.shiftedForm_eq_star P.inclusion P.hermitian _) hmin'
+    (Submodule.mem_comap.2 hv)
+  rw [ContinuousLinearMap.shiftedForm_apply, zero_apply, RCLike.ofReal_neg] at h
+  linear_combination h
 
 end CompactFormPair
 

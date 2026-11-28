@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.DoubleDual
-public import TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair.Basic
+public import TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair.Constructions
 public import TauCeti.Analysis.InnerProductSpace.Variational.Rayleigh
 import TauCeti.Analysis.Convex.Uniform.Basic
 import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
@@ -17,7 +17,7 @@ import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 /-!
 # Constrained Rayleigh minima and compactness of minimizers
 
-This file complements `TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair` with
+This file complements `TauCeti.Analysis.InnerProductSpace.Variational.CompactFormPair.Basic` with
 additional theory for `P.energy` on the constrained unit sphere `P.unitConstraint W`:
 
 * Transport, shift, and scalar-restriction identities for `P.unitConstraint W`, and phase

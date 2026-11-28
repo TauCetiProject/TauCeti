@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
+import TauCeti.Analysis.Normed.Operator.Bilinear
 
 /-!
 # The energy space of a coercive Hermitian form
