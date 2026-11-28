@@ -91,9 +91,9 @@ group `G_1` is the unique Sylow `p`-subgroup of `G_0`.
 * `TauCeti.IsLocalRing.coe_tameCharacter_of_smul_eq_mul`: the tame character computed at any
   uniformizer.
 * `TauCeti.IsLocalRing.toAdd_ramificationGroupToResidueField_of_mul_eq` and
-  `TauCeti.IsLocalRing.toAdd_ramificationGroupGradedToResidueField_of_mul_eq`: changing the
-  uniformizer from `π` to `π a` multiplies the positive-depth coordinate by the `(n + 1)`-st
-  power of `a`.
+  `TauCeti.IsLocalRing.toAdd_ramificationGroupGradedToResidueField_of_mul_eq`: for `π' = π * a`,
+  the positive-depth coordinate at `π` equals `residue S a ^ (n + 1)` times the coordinate at
+  `π'`.
 * `TauCeti.IsLocalRing.ker_tameCharacter`, `TauCeti.IsLocalRing.tameCharacter_injective_iff`,
   `TauCeti.IsLocalRing.tameCharacter_injective_of_charZero`, and
   `TauCeti.IsLocalRing.tameCharacterGraded_injective`;
@@ -1097,6 +1097,12 @@ theorem ramificationGroupOneSylow_coe (p : ℕ) [Fact p.Prime] [CharP (ResidueFi
     (ramificationGroupOneSylow G S R p : Subgroup (ramificationGroup G S 0)) =
       (ramificationGroup G S 1).subgroupOf (ramificationGroup G S 0) :=
   (rfl)
+
+/-- The canonical wild inertia Sylow subgroup is normal in `G_0`. -/
+instance instNormalRamificationGroupOneSylow (p : ℕ) [Fact p.Prime] [CharP (ResidueField S) p] :
+    (ramificationGroupOneSylow G S R p : Subgroup (ramificationGroup G S 0)).Normal := by
+  rw [ramificationGroupOneSylow_coe]
+  infer_instance
 
 /-- **`G_1` is the only Sylow `p`-subgroup of `G_0`**: the Sylow subgroup
 `TauCeti.IsLocalRing.ramificationGroupOneSylow` is normal. -/

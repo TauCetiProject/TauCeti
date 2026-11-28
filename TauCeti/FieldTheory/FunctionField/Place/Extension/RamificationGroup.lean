@@ -229,14 +229,11 @@ theorem toAdd_ramificationResidueHom_apply (ht : P.ord t = 1) (i : ℕ)
     Multiplicative.toAdd (ramificationResidueHom F P ht i g) x =
       IsLocalRing.residue P.integers y := by
   have ht0 : t ≠ 0 := fun h0 ↦ by simp [h0, ord_zero] at ht
-  apply (ramificationResidueCoord P ht i).injective
   simp only [ramificationResidueHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     AddEquiv.toMultiplicative_apply_apply, toAdd_ofAdd, AddEquiv.piCongrRight_apply,
-    LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply, LinearEquiv.apply_symm_apply,
-    ramificationResidueCoord, residueFieldEquivMaximalIdealGradedOfUniformizer_mk,
+    LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply, ramificationResidueCoord,
     IsLocalRing.toAdd_displacementHom_apply]
-  refine congrArg Submodule.Quotient.mk (Subtype.ext ?_)
-  apply Subtype.ext
+  refine residueFieldEquivMaximalIdealGradedOfUniformizer_symm_mk _ _ _ (Subtype.ext ?_)
   simp only [MulEquiv.subgroupCongr_apply, AddSubgroupClass.coe_sub,
     ValuationSubring.coe_decompositionSubgroup_smul, MulMemClass.coe_mul, SubmonoidClass.coe_pow,
     hy]

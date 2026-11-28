@@ -172,6 +172,17 @@ theorem residueFieldEquivMaximalIdealGradedOfUniformizer_mk (π : R)
     (LinearMap.quotKerEquivOfSurjective_apply_mk ..).trans
       (uniformizerPowToMaximalIdealGraded_apply π hπ m x)
 
+/-- The inverse of `residueFieldEquivMaximalIdealGradedOfUniformizer` sends the class of `z` to
+`residue R y` whenever `(z : R) = y * π ^ m`. -/
+theorem residueFieldEquivMaximalIdealGradedOfUniformizer_symm_mk (π : R)
+    (hπ : Irreducible π) (m : ℕ) {z : (maximalIdeal R ^ m : Ideal R)} {y : R}
+    (hz : (z : R) = y * π ^ m) :
+    (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ m).symm (Submodule.Quotient.mk z) =
+      residue R y := by
+  apply (residueFieldEquivMaximalIdealGradedOfUniformizer π hπ m).injective
+  rw [LinearEquiv.apply_symm_apply, residueFieldEquivMaximalIdealGradedOfUniformizer_mk]
+  exact congrArg Submodule.Quotient.mk (Subtype.ext hz)
+
 /-- Replacing `π` by `π' = π * a` in the principal-power equivalence is the same as first
 multiplying the residue coordinate by `a ^ m`. -/
 theorem residueFieldEquivMaximalIdealGradedOfUniformizer_change (π π' : R)
