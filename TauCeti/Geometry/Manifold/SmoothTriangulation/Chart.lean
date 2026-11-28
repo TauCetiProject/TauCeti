@@ -34,6 +34,9 @@ spanned by an affine basis of `E`.
   extended charts and their inverses carry immersed simplices to immersed simplices.
 * `TauCeti.isSimplexImmersion_extChartAt_comp_iff`: a map of a simplex into the source of an
   extended chart is an immersion exactly when its chart expression is.
+* `TauCeti.IsSimplexImmersion.exists_hasFDerivWithinAt_extChartAt`: at a point of the simplex
+  mapped into the source of an extended chart, the chart expression of an immersion of a simplex
+  has a derivative within the simplex which is injective on its directions.
 * `ModelWithCorners.IsInteriorPoint.exists_isSimplexImmersion_isClosedEmbedding_range_mem_nhds`:
   every interior point of a Hausdorff manifold modelled on a finite-dimensional space is in the
   interior of the image of a `Cⁿ` closed embedding of a top-dimensional simplex which is an
@@ -84,6 +87,36 @@ theorem extChartAt_symm_comp {g : StandardSimplex σ → E} (h : IsSimplexImmers
     ⟨_, (mdifferentiableWithinAt_extChartAt_symm (hg hy)).hasMFDerivWithinAt.mono
       (extChartAt_target_subset_range x),
       (isInvertible_mfderivWithin_extChartAt_symm (hg hy)).injective⟩
+
+omit [IsManifold I n M] in
+/-- An immersion of a simplex, read in an extended chart whose source contains its value at a point
+`w` of the simplex, is in barycentric coordinates the restriction of a map with a derivative within
+the simplex at `w` that is injective on the directions of the simplex, the vectors with coordinate
+sum zero. Unlike `TauCeti.IsSimplexImmersion.extChartAt_comp`, only `g w` need lie in the chart
+source. -/
+theorem exists_hasFDerivWithinAt_extChartAt {g : StandardSimplex σ → M}
+    (h : IsSimplexImmersion I n g) {w : StandardSimplex σ} (hw : g w ∈ (extChartAt I x).source) :
+    ∃ F : (σ → ℝ) → E, ∃ D : (σ → ℝ) →L[ℝ] E,
+      (∀ z : StandardSimplex σ, F (fun a => z.val a) = extChartAt I x (g z)) ∧
+      HasFDerivWithinAt F D (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights)
+        (fun a => w.val a) ∧
+      ∀ v : σ → ℝ, ∑ a, v a = 0 → D v = 0 → v = 0 := by
+  obtain ⟨G, hGg, -, hG'⟩ := isSimplexImmersion_iff.mp h
+  obtain ⟨t₀, ht₀⟩ : (fun a : σ => w.val a) ∈
+      range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights := by
+    rw [← Finset.range_standardSimplex_coordinates]
+    exact mem_range_self w
+  replace ht₀ : ⇑t₀.weights = fun a : σ => w.val a := ht₀
+  obtain ⟨G', hG't, hinj⟩ := hG' t₀
+  have hsrc : G t₀.weights ∈ (extChartAt I x).source := by rwa [ht₀, hGg]
+  have hφ := (mdifferentiableAt_extChartAt (I := I) (x := x)
+    (by rwa [← extChartAt_source (I := I) x])).hasMFDerivAt
+  refine ⟨extChartAt I x ∘ G, (mfderiv I 𝓘(ℝ, E) (extChartAt I x) (G t₀.weights)).comp G',
+    fun z => by rw [comp_apply, hGg], ?_, fun v hv hv0 => hinj v hv
+      ((isInvertible_mfderiv_extChartAt hsrc).injective (hv0.trans (map_zero _).symm))⟩
+  rw [← ht₀]
+  exact hasMFDerivWithinAt_iff_hasFDerivWithinAt.mp
+    (HasMFDerivAt.comp_hasMFDerivWithinAt _ hφ hG't)
 
 end IsSimplexImmersion
 
