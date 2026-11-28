@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Nat.Factorization.Basic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
+import TauCeti.GroupTheory.QuotientGroup.Map
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Card
 
 /-!
@@ -150,8 +151,8 @@ obtained by composing `(quotientGammaEquiv N).symm` with the quotient map from `
 `Δ.normalCore`. -/
 noncomputable def slZModToQuotientNormalCore {N : ℕ} {Δ : Subgroup SL(2, ℤ)} (h : Gamma N ≤ Δ) :
     SL(2, ZMod N) →* SL(2, ℤ) ⧸ Δ.normalCore :=
-  (QuotientGroup.map (Gamma N) Δ.normalCore (MonoidHom.id _)
-    (Subgroup.normal_le_normalCore.mpr h)).comp (quotientGammaEquiv N).symm.toMonoidHom
+  (TauCeti.QuotientGroup.mapOfLE (Subgroup.normal_le_normalCore.mpr h)).comp
+    (quotientGammaEquiv N).symm.toMonoidHom
 
 /-- Evaluation of `slZModToQuotientNormalCore` on reductions of integer matrices. -/
 @[simp]
@@ -160,15 +161,12 @@ theorem slZModToQuotientNormalCore_map_intCast {N : ℕ} {Δ : Subgroup SL(2, �
     slZModToQuotientNormalCore h (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ) =
       QuotientGroup.mk γ := by
   rw [slZModToQuotientNormalCore, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    ← quotientGammaEquiv_mk, MulEquiv.symm_apply_apply]
-  exact QuotientGroup.map_mk _ _ _ _ γ
+    ← quotientGammaEquiv_mk, MulEquiv.symm_apply_apply, TauCeti.QuotientGroup.mapOfLE_mk]
 
 /-- The canonical reduction homomorphism `SL₂(ℤ/Nℤ) →* SL₂(ℤ) ⧸ Δ.normalCore` is surjective. -/
 theorem slZModToQuotientNormalCore_surjective {N : ℕ} {Δ : Subgroup SL(2, ℤ)} (h : Gamma N ≤ Δ) :
     Function.Surjective (slZModToQuotientNormalCore h) :=
-  (QuotientGroup.map_surjective_of_surjective _ _ (MonoidHom.id _)
-    (QuotientGroup.mk'_surjective _) (Subgroup.normal_le_normalCore.mpr h)).comp
-    (quotientGammaEquiv N).symm.surjective
+  (TauCeti.QuotientGroup.mapOfLE_surjective _).comp (quotientGammaEquiv N).symm.surjective
 
 /-- **Order obstruction in `SL₂(ℤ)`:** if `Γ(N) ≤ Δ`, then
 `|SL₂(ℤ) ⧸ Δ.normalCore| ∣ |SL₂(ℤ/Nℤ)|`. -/

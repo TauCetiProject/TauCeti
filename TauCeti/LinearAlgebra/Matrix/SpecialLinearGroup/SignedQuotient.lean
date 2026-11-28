@@ -118,26 +118,20 @@ theorem map_surjective {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] 
 @[simp]
 theorem map_id (n R : Type*) [Fintype n] [DecidableEq n] [CommRing R]
     [Fact (Even (Fintype.card n))] :
-    map (n := n) (RingHom.id R) = MonoidHom.id (SignedQuotient n R) := by
-  rw [map]
-  simpa only [_root_.Matrix.SpecialLinearGroup.map_id] using
-    QuotientGroup.map_id (Subgroup.zpowers (-1 : _root_.Matrix.SpecialLinearGroup n R))
+    map (n := n) (RingHom.id R) = MonoidHom.id (SignedQuotient n R) :=
+  QuotientGroup.monoidHom_ext _ (MonoidHom.ext fun g ↦ by
+    simp only [MonoidHom.comp_apply, QuotientGroup.mk'_apply, map_mk,
+      _root_.Matrix.SpecialLinearGroup.map_id, MonoidHom.id_apply])
 
 /-- Extension of scalars on signed quotients respects composition of ring homomorphisms. -/
 @[simp]
 theorem map_comp {n R S T : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
     [CommRing T] [Fact (Even (Fintype.card n))] (f : R →+* S) (g : S →+* T) :
-    (map (n := n) g).comp (map (n := n) f) = map (n := n) (g.comp f) := by
-  rw [map, map, map]
-  simpa only [_root_.Matrix.SpecialLinearGroup.map_comp_map] using
-    QuotientGroup.map_comp_map
-      (Subgroup.zpowers (-1 : _root_.Matrix.SpecialLinearGroup n R))
-      (Subgroup.zpowers (-1 : _root_.Matrix.SpecialLinearGroup n S))
-      (Subgroup.zpowers (-1 : _root_.Matrix.SpecialLinearGroup n T))
-      (_root_.Matrix.SpecialLinearGroup.map f) (_root_.Matrix.SpecialLinearGroup.map g)
-      (map_zpowers_neg_one_le f) (map_zpowers_neg_one_le g)
-      (by simpa only [← _root_.Matrix.SpecialLinearGroup.map_comp_map] using
-        map_zpowers_neg_one_le (g.comp f))
+    (map (n := n) g).comp (map (n := n) f) = map (n := n) (g.comp f) :=
+  QuotientGroup.monoidHom_ext _ (MonoidHom.ext fun h ↦ by
+    rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.comp_apply,
+      QuotientGroup.mk'_apply, map_mk, map_mk, map_mk,
+      ← MonoidHom.comp_apply, _root_.Matrix.SpecialLinearGroup.map_comp_map])
 
 end SignedQuotient
 

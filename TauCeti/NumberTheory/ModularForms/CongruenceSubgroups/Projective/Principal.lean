@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.SignedQuotient
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Projective.Basic
 import TauCeti.Algebra.Group.Subgroup.ZPowers
+import TauCeti.GroupTheory.QuotientGroup.Map
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Card
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.SignedQuotient
 
@@ -147,9 +148,10 @@ theorem GammaProjective_index_six : (GammaProjective 6).index = 72 := by
 /-- `GammaProjective 8` has index `192 = |SL₂(ℤ/8ℤ)| / 2`. -/
 theorem GammaProjective_index_eight : (GammaProjective 8).index = 192 := by
   have h := two_mul_GammaProjective_index (N := 8) (by norm_num)
-  have h8 : (8 : ℕ) = 2 ^ 3 := by norm_num
-  rw [h8, TauCeti.natCard_SL_fin_two_zmod_prime_pow Nat.prime_two (by norm_num)] at h
-  norm_num at h
+  have hc : Nat.card SL(2, ZMod 8) = 384 := by
+    rw [show (8 : ℕ) = 2 ^ 3 by norm_num,
+      TauCeti.natCard_SL_fin_two_zmod_prime_pow Nat.prime_two (by norm_num)]
+    norm_num
   omega
 
 /-- `GammaProjective 10` has index `360 = |SL₂(𝔽₂)| · |SL₂(𝔽₅)| / 2`. -/
@@ -183,7 +185,7 @@ theorem index_dvd_of_Gamma_le_liftSL {N : ℕ} {Γ : Subgroup PSL(2, ℤ)}
 noncomputable def signedQuotientToQuotientNormalCore {N : ℕ} {Γ : Subgroup PSL(2, ℤ)}
     (h : CongruenceSubgroup.Gamma N ≤ Γ.liftSL) :
     TauCeti.Matrix.SignedQuotient (Fin 2) (ZMod N) →* PSL(2, ℤ) ⧸ Γ.normalCore :=
-  (QuotientGroup.map (GammaProjective N) Γ.normalCore (MonoidHom.id _)
+  (TauCeti.QuotientGroup.mapOfLE
     (Subgroup.normal_le_normalCore.mpr (GammaProjective_le_iff.mpr h))).comp
     (quotientGammaProjectiveEquiv N).symm.toMonoidHom
 
@@ -193,16 +195,14 @@ theorem signedQuotientToQuotientNormalCore_psl2zToSignedQuotient {N : ℕ} {Γ :
     (h : CongruenceSubgroup.Gamma N ≤ Γ.liftSL) (x : PSL(2, ℤ)) :
     signedQuotientToQuotientNormalCore h (psl2zToSignedQuotient N x) = QuotientGroup.mk x := by
   rw [signedQuotientToQuotientNormalCore, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    ← quotientGammaProjectiveEquiv_mk, MulEquiv.symm_apply_apply]
-  exact QuotientGroup.map_mk _ _ _ _ x
+    ← quotientGammaProjectiveEquiv_mk, MulEquiv.symm_apply_apply,
+    TauCeti.QuotientGroup.mapOfLE_mk]
 
 /-- The canonical homomorphism `SL₂(ℤ/Nℤ) ⧸ {±I} →* PSL₂(ℤ) ⧸ Γ.normalCore` is surjective. -/
 theorem signedQuotientToQuotientNormalCore_surjective {N : ℕ} {Γ : Subgroup PSL(2, ℤ)}
     (h : CongruenceSubgroup.Gamma N ≤ Γ.liftSL) :
     Function.Surjective (signedQuotientToQuotientNormalCore h) :=
-  (QuotientGroup.map_surjective_of_surjective _ _ (MonoidHom.id _)
-    (QuotientGroup.mk'_surjective _)
-    (Subgroup.normal_le_normalCore.mpr (GammaProjective_le_iff.mpr h))).comp
+  (TauCeti.QuotientGroup.mapOfLE_surjective _).comp
     (quotientGammaProjectiveEquiv N).symm.surjective
 
 /-- **Order obstruction on the monodromy / normal-core quotient in `PSL₂(ℤ)`:** if

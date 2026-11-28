@@ -61,7 +61,7 @@ theorem _root_.MonoidHom.ker_mk'_comp_subgroupComap (f : G →* Q) (K H : Subgro
     [(K.subgroupOf H).Normal] :
     ((QuotientGroup.mk' (K.subgroupOf H)).comp (f.subgroupComap H)).ker =
       (K.comap f).subgroupOf (H.comap f) := by
-  ext x; exact QuotientGroup.eq_one_iff _
+  rw [← MonoidHom.comap_ker, QuotientGroup.ker_mk', ← comap_subgroupOf]
 
 /-- **A surjective group homomorphism identifies subquotients.** Given `f : G →* Q` surjective and
 subgroups `K, H` of `Q` with `K.subgroupOf H` normal, the subquotient of their preimages is

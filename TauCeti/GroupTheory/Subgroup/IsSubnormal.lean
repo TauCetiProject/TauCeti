@@ -191,8 +191,9 @@ private theorem of_normal_map_eq_bot {H K N : Subgroup G} [N.Normal] (hH : H.IsS
   have hmap : (K.subgroupOf H).map ψ = (K.map πN).subgroupOf (H.map πN) := by
     have hmem : K.map πN = ((K.subgroupOf H).map ψ).map (H.map πN).subtype := by
       conv_lhs => rw [← Subgroup.map_subgroupOf_eq_of_le hKH]
-      rw [Subgroup.map_map, Subgroup.map_map]
-      rfl
+      have hcomp : (H.map πN).subtype.comp ψ = πN.comp H.subtype := by
+        ext x; simp [ψ]
+      rw [Subgroup.map_map, Subgroup.map_map, hcomp]
     rw [hmem, Subgroup.subgroupOf]
     exact (Subgroup.comap_map_eq_self_of_injective (H.map πN).subtype_injective _).symm
   have hK'N : ((K.map πN).subgroupOf (H.map πN)).Normal := hmap ▸ hKN.map ψ hψ_surj
@@ -211,13 +212,21 @@ private theorem of_normal_map_eq_top {H K N : Subgroup G} (hH : H.IsSubnormal)
     (hKH : K ≤ H) [(K.subgroupOf H).Normal] (e : (H ⧸ K.subgroupOf H) ≃* S)
     (htop : (N.subgroupOf H).map (QuotientGroup.mk' (K.subgroupOf H)) = ⊤) :
     HasSubnormalSection N S := by
-  let α : H.subgroupOf N →* H := ⟨⟨fun x ↦ ⟨x.val.val, x.property⟩, rfl⟩, fun _ _ ↦ rfl⟩
+  let α : H.subgroupOf N →* H :=
+    (N.subtype.comp (H.subgroupOf N).subtype).codRestrict H fun x ↦ by
+      rw [MonoidHom.comp_apply, Subgroup.coe_subtype, Subgroup.coe_subtype]
+      exact Subgroup.mem_subgroupOf.mp x.property
   let ω := (QuotientGroup.mk' (K.subgroupOf H)).comp α
   have hω_surj : Function.Surjective ω := fun q ↦ by
     rcases mem_map.mp (htop.symm ▸ mem_top q) with ⟨y, hyN, rfl⟩
-    exact ⟨⟨⟨y.val, hyN⟩, y.property⟩, rfl⟩
+    refine ⟨⟨⟨y.val, Subgroup.mem_subgroupOf.mp hyN⟩, Subgroup.mem_subgroupOf.mpr y.property⟩, ?_⟩
+    simp only [ω, α, MonoidHom.comp_apply, QuotientGroup.mk'_apply, MonoidHom.codRestrict_apply,
+      Subgroup.coe_subtype]
   have hker : ω.ker = (K.subgroupOf N).subgroupOf (H.subgroupOf N) := by
-    ext x; exact QuotientGroup.eq_one_iff _
+    rw [← MonoidHom.comap_ker, QuotientGroup.ker_mk']
+    ext x
+    simp only [Subgroup.mem_comap, Subgroup.mem_subgroupOf, α, MonoidHom.codRestrict_apply,
+      MonoidHom.comp_apply, Subgroup.coe_subtype]
   have hKNN : ((K.subgroupOf N).subgroupOf (H.subgroupOf N)).Normal := hker ▸ ω.normal_ker
   exact ⟨H.subgroupOf N, K.subgroupOf N, hH.subgroupOf, subgroupOf_mono N hKH, hKNN,
     ⟨(QuotientGroup.liftEquiv _ (φ := ω) hω_surj hker.symm).trans e⟩⟩

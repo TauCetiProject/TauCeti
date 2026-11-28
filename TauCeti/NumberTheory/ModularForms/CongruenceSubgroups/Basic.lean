@@ -266,15 +266,16 @@ attribute [local instance] Gamma_normal
 modulo `N` and strong approximation (`Matrix.SpecialLinearGroup.map_intCast_zmod_surjective`). -/
 noncomputable def quotientGammaEquiv (N : ℕ) :
     (SL(2, ℤ) ⧸ Gamma N) ≃* SL(2, ZMod N) :=
-  QuotientGroup.quotientKerEquivOfSurjective
-    (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)))
+  QuotientGroup.liftEquiv (Gamma N)
     Matrix.SpecialLinearGroup.map_intCast_zmod_surjective
+    (ker_map_intCast_zmod N).symm
 
 /-- `quotientGammaEquiv N` evaluates on coset representatives by entrywise reduction modulo `N`. -/
 @[simp]
 theorem quotientGammaEquiv_mk (N : ℕ) (γ : SL(2, ℤ)) :
     quotientGammaEquiv N (QuotientGroup.mk γ) =
-      Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ := (rfl)
+      Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod N)) γ :=
+  QuotientGroup.liftEquiv_mk _ _ _ γ
 
 end
 
