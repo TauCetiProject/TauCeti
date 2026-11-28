@@ -297,6 +297,8 @@ variable {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E H'}
   [RiemannianBundle (fun y : N ↦ TangentSpace I' y)]
   [IsContinuousRiemannianBundle E (fun y : N ↦ TangentSpace I' y)]
 
+omit [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+  [IsContinuousRiemannianBundle E (fun y : N ↦ TangentSpace I' y)] in
 /-- Composing with a Riemannian isometry `Φ` and then with its inverse is the identity on `L²`. -/
 private theorem compMeasurePreserving_symm_compMeasurePreserving
     (Φ : RiemannianIsometry I I' M N) (u : Lp ℝ 2 (riemannianVolume I' N)) :

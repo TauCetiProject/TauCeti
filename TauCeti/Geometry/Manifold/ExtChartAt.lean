@@ -13,6 +13,8 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.Topology.Compactness.Paracompact
 public import Mathlib.Topology.Sets.Compacts
 import TauCeti.Geometry.Manifold.ChartedSpace
+public import TauCeti.Geometry.Manifold.ExtChartAt.CoordChange
+import TauCeti.Geometry.Manifold.ExtChartAt.Measurable
 import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
 /-!
@@ -288,6 +290,9 @@ theorem comp_extChartAt_symm_comp_extChartAt_eventuallyEq {α : Type*} (f : M �
   filter_upwards [extChartAt_source_mem_nhds (I := I) x] with y hy
   exact congrArg f ((extChartAt I x).left_inv hy)
 
+/-- The preferred extended chart at `x` is the extension of `chartAt H x` by `I`. -/
+theorem extChartAt_eq_extend (x : M) : extChartAt I x = (chartAt H x).extend I := rfl
+
 /-- The inverse of the extended chart at `x` sends a point of its target into the source of the
 chart at `x`. -/
 theorem extChartAt_symm_mem_chart_source {x : M} {z : E} (hz : z ∈ (extChartAt I x).target) :
@@ -371,10 +376,8 @@ omit [ChartedSpace H M] in
 any point in both chart domains. -/
 theorem _root_.ModelWithCorners.extendCoordChange_source_mem_nhds [I.Boundaryless]
     {e e' : OpenPartialHomeomorph M H} {x : M} (hx : x ∈ e.source) (hx' : x ∈ e'.source) :
-    (I.extendCoordChange e e').source ∈ 𝓝 (I (e x)) := by
-  apply I.isOpen_extendCoordChange_source.mem_nhds
-  rw [← OpenPartialHomeomorph.extend_image_source_inter]
-  exact Set.mem_image_of_mem _ ⟨hx, hx'⟩
+    (I.extendCoordChange e e').source ∈ 𝓝 (I (e x)) :=
+  I.isOpen_extendCoordChange_source.mem_nhds (I.extend_mem_extendCoordChange_source hx hx')
 
 omit [ChartedSpace H M] in
 /-- A change of extended charts sends the coordinate of a point in the first chart to its
@@ -611,10 +614,8 @@ end Manifold
 
 /-- An extended chart target is measurable in the model space. -/
 theorem measurableSet_extChartAt_target [MeasurableSpace E] [OpensMeasurableSpace E]
-    (x : M) : MeasurableSet (extChartAt I x).target := by
-  rw [extChartAt_target]
-  exact ((chartAt H x).open_target.preimage I.continuous_symm).measurableSet.inter
-    I.isClosed_range.measurableSet
+    (x : M) : MeasurableSet (extChartAt I x).target :=
+  (chartAt H x).measurableSet_extend_target I
 
 omit [ChartedSpace H M] in
 /-- The coordinate expression `ψ.extend I ∘ u ∘ (φ.extend J).symm` of a map continuous on `s` is
@@ -1066,31 +1067,15 @@ local instance extChartAtBorelSpaceE : BorelSpace E := ⟨rfl⟩
 measurable spaces. -/
 theorem measurableEmbedding_extChartAt_restrict (x : M) :
     MeasurableEmbedding ((extChartAt I x).source.domRestrict (extChartAt I x)) := by
-  -- The extended chart is continuous in both directions, so it is a partial homeomorphism onto
-  -- its (not necessarily open) target. `e` is built on the very `PartialEquiv` `extChartAt I x`,
-  -- so `e.isEmbedding_restrict` is a statement about the map appearing in the goal.
-  let e : PartialHomeomorph M E :=
-    { toPartialEquiv := extChartAt I x
-      continuousOn_toFun := continuousOn_extChartAt x
-      continuousOn_invFun := continuousOn_extChartAt_symm x }
-  have hrange :
-      MeasurableSet (Set.range ((extChartAt I x).source.domRestrict (extChartAt I x))) := by
-    rw [Set.range_domRestrict, PartialEquiv.image_source_eq_target]
-    exact measurableSet_extChartAt_target x
-  exact e.isEmbedding_restrict.measurableEmbedding hrange
+  rw [extChartAt_source]
+  exact (chartAt H x).measurableEmbedding_extend_restrict I
 
 /-- For Borel measurable spaces on the manifold and on the model space, a subset of an extended
 chart's source is measurable exactly when its image in the model space is measurable. -/
 theorem measurableSet_image_extChartAt_iff [MeasurableSpace E] [BorelSpace E] {s : Set M} (x : M)
     (hsource : s ⊆ (extChartAt I x).source) :
-    MeasurableSet ((extChartAt I x) '' s) ↔ MeasurableSet s := by
-  obtain rfl : ‹MeasurableSpace E› = extChartAtMeasurableSpaceE := ‹BorelSpace E›.measurable_eq
-  have himage : (extChartAt I x) '' s =
-      (extChartAt I x).source.domRestrict (extChartAt I x) '' (Subtype.val ⁻¹' s) := by
-    rw [Set.image_domRestrict, Set.inter_eq_left.mpr hsource]
-  rw [himage, (measurableEmbedding_extChartAt_restrict (I := I) x).measurableSet_image,
-    ← (MeasurableEmbedding.subtypeVal (isOpen_extChartAt_source (I := I) x).measurableSet)
-      |>.measurableSet_image, Subtype.image_preimage_coe, Set.inter_eq_right.mpr hsource]
+    MeasurableSet ((extChartAt I x) '' s) ↔ MeasurableSet s :=
+  (chartAt H x).measurableSet_image_extend_iff I (extChartAt_source (I := I) x ▸ hsource)
 
 /-- For the Borel measurable space on the manifold, the image of a measurable subset of an
 extended chart's source is measurable in the model space, for any measurable space structure on
@@ -1098,10 +1083,7 @@ it in which open sets are measurable. -/
 theorem _root_.MeasurableSet.image_extChartAt [MeasurableSpace E] [OpensMeasurableSpace E]
     {s : Set M} (hs : MeasurableSet s) (x : M)
     (hsource : s ⊆ (extChartAt I x).source) : MeasurableSet ((extChartAt I x) '' s) :=
-  OpensMeasurableSpace.borel_le _ <| by
-    let : MeasurableSpace E := borel E
-    have : BorelSpace E := ⟨rfl⟩
-    exact (measurableSet_image_extChartAt_iff x hsource).mpr hs
+  (chartAt H x).measurableSet_image_extend I hs (extChartAt_source (I := I) x ▸ hsource)
 
 end BorelModel
 

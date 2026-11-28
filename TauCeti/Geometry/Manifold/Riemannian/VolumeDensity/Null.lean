@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
-public import TauCeti.Geometry.Manifold.Measure.PositiveDensity
+public import TauCeti.Geometry.Manifold.Measure.PositiveDensity.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 /-!

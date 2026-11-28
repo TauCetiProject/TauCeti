@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.Measure.AE
 public import TauCeti.Geometry.Manifold.Measure.Chart
-import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
+import TauCeti.Geometry.Manifold.ExtChartAt.Measure
 
 /-!
 # Positive continuous density measures on a manifold
@@ -50,9 +51,11 @@ positive constant factor.
   model suffices to test the definition.
 * `TauCeti.IsPositiveDensityMeasure.measure_eq_zero_iff_image_of_subset`: a subset of a chart
   source is `μ`-null exactly when its image in the chart is Haar-null.
-* `TauCeti.IsPositiveDensityMeasure.isNullSet_iff_measure_eq_zero`,
-  `TauCeti.IsPositiveDensityMeasure.ae_eq`: on a Lindelöf manifold, the `μ`-null sets are the
-  chartwise null sets, so `ae μ = TauCeti.Manifold.ae I M`.
+* `TauCeti.IsPositiveDensityMeasure.isNullSet_of_measure_eq_zero`,
+  `TauCeti.IsPositiveDensityMeasure.isNullSet_iff_measure_eq_zero`,
+  `TauCeti.IsPositiveDensityMeasure.ae_eq`: every `μ`-null set is chartwise null, and on a
+  Lindelöf manifold the `μ`-null sets are the chartwise null sets, so
+  `ae μ = TauCeti.Manifold.ae I M`.
 * `TauCeti.IsPositiveDensityMeasure.isLocallyFiniteMeasure`,
   `TauCeti.IsPositiveDensityMeasure.isOpenPosMeasure`: such a measure is locally finite and
   positive on nonempty open sets.
@@ -114,16 +117,10 @@ theorem isPositiveDensityMeasure_iff_of_isAddHaarMeasure [BorelSpace E] [FiniteD
         (ν.restrict (extChartAt I x).target).withDensity fun y ↦ ENNReal.ofReal (w y) := by
   refine ⟨fun hμ x ↦ hμ x ν, fun h x ν' _ ↦ ?_⟩
   obtain ⟨w, hwc, hwpos, hw⟩ := h x
-  -- `ν = c • ν'` for a positive constant `c`, which is absorbed into the density.
-  set c : ℝ≥0 := Measure.addHaarScalarFactor ν ν'
-  have hc : 0 < c := Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure ν ν'
-  refine ⟨fun y ↦ c * w y, continuousOn_const.mul hwc,
-    fun y hy ↦ mul_pos (NNReal.coe_pos.2 hc) (hwpos y hy), ?_⟩
-  rw [hw, Measure.isAddLeftInvariant_eq_smul ν ν', Measure.restrict_smul,
-    ENNReal.smul_def, withDensity_smul_measure, ← withDensity_smul' _ _ ENNReal.coe_ne_top]
-  congr 1
-  ext y
-  simp [c, ENNReal.ofReal_mul (NNReal.coe_nonneg c)]
+  refine ⟨fun y ↦ (Measure.addHaarScalarFactor ν ν' : ℝ) * w y, continuousOn_const.mul hwc,
+    fun y hy ↦ mul_pos (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure ν ν') (hwpos y hy), ?_⟩
+  rw [hw, Measure.restrict_withDensity_ofReal_eq_addHaarScalarFactor_mul ν ν'
+    (measurableSet_extChartAt_target x)]
 
 variable [BorelSpace M] [BorelSpace E]
 
@@ -135,36 +132,19 @@ measurable. -/
 theorem IsPositiveDensityMeasure.measure_eq_zero_iff_image_of_subset
     (hμ : IsPositiveDensityMeasure I μ) {x : M} {s : Set M} (hsub : s ⊆ (extChartAt I x).source)
     (ν : Measure E) [ν.IsAddHaarMeasure] : μ s = 0 ↔ ν ((extChartAt I x) '' s) = 0 := by
-  let e := extChartAt I x
-  have hsrc : MeasurableSet e.source := (isOpen_extChartAt_source x).measurableSet
   obtain ⟨w, hwc, hwpos, hw⟩ := hμ x ν
-  have htgt : MeasurableSet e.target := measurableSet_extChartAt_target x
-  -- The density is positive on the target, so the chart measure has the null sets of `ν` there.
-  have hzero : ∀ A ⊆ e.target, (μ.restrict e.source).map e A = 0 ↔ ν A = 0 := fun A hA ↦ by
-    rw [hw, withDensity_apply_eq_zero' (f := fun y ↦ ENNReal.ofReal (w y))
-      ((ENNReal.continuous_ofReal.comp_continuousOn hwc).aemeasurable htgt),
-      Measure.restrict_apply' htgt]
-    congr! 2
-    ext y
-    simp only [mem_inter_iff, mem_ofPred_eq]
-    exact ⟨fun h ↦ h.1.2, fun hy ↦ ⟨⟨(ENNReal.ofReal_pos.2 (hwpos y (hA hy))).ne', hy⟩, hA hy⟩⟩
-  have himage : e '' s ⊆ e.target := e.image_source_eq_target ▸ image_mono hsub
-  rw [← hzero _ himage]
-  constructor
-  · intro hs
-    -- Enlarge `s` to a measurable null subset of the chart source.
-    let t := toMeasurable μ s ∩ e.source
-    have ht : MeasurableSet t := (measurableSet_toMeasurable μ s).inter hsrc
-    have hst : s ⊆ t := fun y hy ↦ ⟨subset_toMeasurable μ s hy, hsub hy⟩
-    refine measure_mono_null (image_mono hst) ?_
-    rw [map_restrict_extChartAt_source_apply_image ht inter_subset_right]
-    exact measure_mono_null inter_subset_left (by rwa [measure_toMeasurable])
-  · intro hs
-    have hle := Measure.le_map_apply ((continuousOn_extChartAt x).aemeasurable hsrc (μ := μ))
-      (e '' s)
-    rw [hs, nonpos_iff_eq_zero, Measure.restrict_apply' hsrc] at hle
-    have hs' : s ⊆ e ⁻¹' (e '' s) ∩ e.source := fun y hy ↦ ⟨mem_image_of_mem e hy, hsub hy⟩
-    exact measure_mono_null hs' hle
+  rw [extChartAt_source, extChartAt_eq_extend] at hw
+  have htgt : MeasurableSet ((chartAt H x).extend I).target := by
+    simpa only [← extChartAt_eq_extend] using measurableSet_extChartAt_target x
+  have hwc' : ContinuousOn w ((chartAt H x).extend I).target := by
+    simpa only [extChartAt_eq_extend] using hwc
+  have hwpos' : ∀ y ∈ ((chartAt H x).extend I).target, 0 < w y := by
+    simpa only [extChartAt_eq_extend] using hwpos
+  exact (chartAt H x).measure_eq_zero_iff_image_extend_of_map_restrict_eq I
+    (ContinuousOn.aemeasurable (ENNReal.continuous_ofReal.comp_continuousOn hwc') htgt)
+    ((ae_restrict_iff' htgt).2 (Filter.Eventually.of_forall fun y hy ↦
+      (ENNReal.ofReal_pos.2 (hwpos' y hy)).ne'))
+    hw (extChartAt_source (I := I) x ▸ hsub)
 
 /-- Every point has measure zero for a positive continuous density measure on a manifold of
 positive dimension. -/
@@ -174,6 +154,16 @@ theorem IsPositiveDensityMeasure.nullSingletonClass [FiniteDimensional ℝ E]
   rw [hμ.measure_eq_zero_iff_image_of_subset (singleton_subset_iff.2 (mem_extChartAt_source x))
     (Measure.addHaar : Measure E), image_singleton]
   exact measure_singleton _
+
+/-- Every `μ`-null set of a positive continuous density measure is chartwise null. No Lindelöf
+assumption on `M` is needed for this direction. -/
+theorem IsPositiveDensityMeasure.isNullSet_of_measure_eq_zero
+    (hμ : IsPositiveDensityMeasure I μ) {s : Set M} (hs : μ s = 0) :
+    IsNullSet I s := by
+  rw [isNullSet_iff]
+  intro x ν _
+  exact (hμ.measure_eq_zero_iff_image_of_subset inter_subset_right ν).1
+    (measure_mono_null inter_subset_left hs)
 
 /-- On a Lindelöf manifold, the null sets of a positive continuous density measure are the
 chartwise null sets. -/
@@ -190,11 +180,7 @@ theorem IsPositiveDensityMeasure.isNullSet_iff_measure_eq_zero [FiniteDimensiona
     refine measure_mono_null hsub ((measure_biUnion_null_iff ht).mpr fun x _ ↦ ?_)
     exact (hμ.measure_eq_zero_iff_image_of_subset inter_subset_right Measure.addHaar).mpr
       (hs.chartwise x _)
-  · intro hs
-    rw [isNullSet_iff]
-    intro x ν _
-    exact (hμ.measure_eq_zero_iff_image_of_subset inter_subset_right ν).mp
-      (measure_mono_null inter_subset_left hs)
+  · exact hμ.isNullSet_of_measure_eq_zero
 
 /-- **Almost everywhere does not depend on the density.** On a Lindelöf manifold, the
 almost-everywhere filter of a positive continuous density measure is the filter of complements of
@@ -225,7 +211,7 @@ theorem IsPositiveDensityMeasure.isLocallyFiniteMeasure [FiniteDimensional ℝ E
     exists_isOpen_setLIntegral_image_extChartAt_lt_top hwc (Measure.addHaar : Measure E)
   have hUm : MeasurableSet (extChartAt I x '' U) := hUo.measurableSet.image_extChartAt x hUsub
   refine ⟨U, hUo.mem_nhds hxU, ?_⟩
-  rwa [← map_restrict_extChartAt_source_apply_image hUo.measurableSet hUsub, hw,
+  rwa [← map_restrict_extChartAt_source_apply_image hUsub, hw,
     withDensity_apply _ hUm, Measure.restrict_restrict hUm,
     inter_eq_left.2 ((image_mono hUsub).trans (extChartAt I x).image_source_eq_target.subset)]
 

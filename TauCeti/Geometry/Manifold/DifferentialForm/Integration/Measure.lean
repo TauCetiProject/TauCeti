@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.Measure
 public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
+import TauCeti.Geometry.Manifold.ExtChartAt.Measure
 import TauCeti.MeasureTheory.Integral.Bochner.Alternating
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
@@ -110,9 +111,8 @@ namespace RoughForm
 /-- The measure supplied by the preferred chart at `α`: coordinate Lebesgue measure weighted by
 the absolute coefficient of `φ`, carried to the chart source. -/
 private def chartMeasure (φ : RoughForm I M ℝ k) (α : M) : Measure M :=
-  (((finBasisOfFinrankEq ℝ E hk.out).addHaar.withDensity fun y ↦
-      ENNReal.ofReal |φ.inChartAt α y (finBasisOfFinrankEq ℝ E hk.out)|).comap
-    ((extChartAt I α).source.domRestrict (extChartAt I α))).map Subtype.val
+  (chartAt H α).localChartMeasure I (finBasisOfFinrankEq ℝ E hk.out).addHaar
+    fun y ↦ ENNReal.ofReal |φ.inChartAt α y (finBasisOfFinrankEq ℝ E hk.out)|
 
 omit [IsManifold I 1 M] in
 private theorem chartMeasure_apply (φ : RoughForm I M ℝ k) (α : M) {s : Set M}
@@ -121,18 +121,14 @@ private theorem chartMeasure_apply (φ : RoughForm I M ℝ k) (α : M) {s : Set 
       ∫⁻ y in (extChartAt I α) '' (s ∩ (extChartAt I α).source),
         ENNReal.ofReal |φ.inChartAt α y (finBasisOfFinrankEq ℝ E hk.out)|
           ∂(finBasisOfFinrankEq ℝ E hk.out).addHaar := by
-  rw [chartMeasure, Measure.map_apply measurable_subtypeVal hs,
-    (measurableEmbedding_extChartAt_restrict α).comap_apply, image_domRestrict,
-    withDensity_apply _ ((hs.inter (isOpen_extChartAt_source α).measurableSet).image_extChartAt α
-      inter_subset_right)]
+  simpa only [chartMeasure, extChartAt_eq_extend, (chartAt H α).extend_source] using
+    (chartAt H α).localChartMeasure_apply I (finBasisOfFinrankEq ℝ E hk.out).addHaar _ hs
 
 omit [IsManifold I 1 M] in
 private theorem chartMeasure_restrict_source (φ : RoughForm I M ℝ k) (α : M) :
     (chartMeasure φ α).restrict (extChartAt I α).source = chartMeasure φ α := by
-  ext s hs
-  rw [Measure.restrict_apply hs,
-    chartMeasure_apply φ α (hs.inter (isOpen_extChartAt_source α).measurableSet),
-    chartMeasure_apply φ α hs, inter_assoc, inter_self]
+  simpa only [chartMeasure, extChartAt_source] using
+    (chartAt H α).restrict_source_localChartMeasure I _ _
 
 /-- The chart measures agree on chart overlaps: this is the change of variables along the chart
 transition, applied to the identity map. -/

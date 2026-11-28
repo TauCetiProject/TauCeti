@@ -96,7 +96,6 @@ section Definition
 
 variable [IsManifold I 1 M] [LindelofSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
 variable (I) in
 /-- The **Liouville energy** `J(u) = ∫ (|∇u|² / 2 + K u + e^(2u) / 2) dV` of a function `u`, for a

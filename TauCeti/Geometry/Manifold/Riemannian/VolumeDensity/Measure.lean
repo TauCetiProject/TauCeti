@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ExtChartAt
+public import TauCeti.Geometry.Manifold.ExtChartAt.Measure
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.ChangeOfCoordinates
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.MeasureTheory.Function.Jacobian
@@ -70,16 +71,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
 
-/-- The coordinate density in a chart, extended measurably by zero off the chart target. -/
-private structure ChartVolumeDensityData (I : ModelWithCorners ℝ E H) (M : Type*)
-    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] (alpha : M) where
-  toFun : E → ℝ≥0∞
-  measurable_toFun : Measurable toFun
-  eq_on_target : Set.EqOn toFun
-    (fun y ↦ ENNReal.ofReal (chartVolumeDensity (I := I) alpha ((extChartAt I alpha).symm y)))
-    (extChartAt I alpha).target
-
 omit [MeasurableSpace M] [BorelSpace M] in
 /-- The chart density of a continuous metric, read in coordinates, is continuous on the chart
 target. -/
@@ -108,32 +99,11 @@ theorem aemeasurable_ofReal_chartVolumeDensity_extChartAt_symm
   (ENNReal.continuous_ofReal.comp_continuousOn
     ((continuousOn_chartVolumeDensity_extChartAt_symm α).mono hAt)).aemeasurable hA
 
-private def chartVolumeDensityData
-    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (alpha : M) :
-    ChartVolumeDensityData I M alpha := by
-  let target := (extChartAt I alpha).target
-  let density := fun y ↦
-    ENNReal.ofReal (chartVolumeDensity (I := I) alpha ((extChartAt I alpha).symm y))
-  have htarget : MeasurableSet target := by
-    simpa only [target, Set.range_domRestrict, PartialEquiv.image_source_eq_target] using
-      (measurableEmbedding_extChartAt_restrict (I := I) alpha).measurableSet_range
-  have hdensity : ContinuousOn density target :=
-    ENNReal.continuous_ofReal.comp_continuousOn
-      (continuousOn_chartVolumeDensity_extChartAt_symm alpha)
-  classical
-  refine
-    { toFun := target.piecewise density 0
-      measurable_toFun := hdensity.measurable_piecewise continuousOn_const htarget
-      eq_on_target := by
-        intro y hy
-        exact Set.piecewise_eq_of_mem _ _ _ hy }
-
 /-- The local Riemannian volume measure supplied by the preferred chart at `α`. It is supported
 on the source of that chart. -/
-def chartRiemannianVolume
-    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (α : M) : Measure M :=
-  (((Module.finBasis ℝ E).addHaar.withDensity (chartVolumeDensityData (I := I) α).toFun).comap
-        ((extChartAt I α).source.domRestrict (extChartAt I α))).map Subtype.val
+def chartRiemannianVolume (α : M) : Measure M :=
+  (chartAt H α).localChartMeasure I (Module.finBasis ℝ E).addHaar
+    fun y ↦ ENNReal.ofReal (chartVolumeDensity (I := I) α ((extChartAt I α).symm y))
 
 /-- **Integration in coordinates** against a chart volume measure: the integral of `φ` over a
 measurable set `s` is the coordinate integral, over the image of the part of `s` in the chart
@@ -145,33 +115,16 @@ theorem setLIntegral_chartRiemannianVolume
       ∫⁻ y in (extChartAt I α) '' (s ∩ (extChartAt I α).source),
         ENNReal.ofReal (chartVolumeDensity (I := I) α ((extChartAt I α).symm y)) *
           φ ((extChartAt I α).symm y) ∂(Module.finBasis ℝ E).addHaar := by
-  set e := extChartAt I α
-  set d := chartVolumeDensityData (I := I) α
-  have hR : MeasurableEmbedding (e.source.domRestrict e) :=
-    measurableEmbedding_extChartAt_restrict α
-  have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
-    MeasurableEmbedding.subtypeVal (isOpen_extChartAt_source α).measurableSet
-  have himage : e.source.domRestrict e '' (Subtype.val ⁻¹' s) = e '' (s ∩ e.source) :=
-    Set.image_domRestrict _ _ _
-  have hA : MeasurableSet (e '' (s ∩ e.source)) := by
-    rw [← himage]
-    exact hR.measurableSet_image.mpr (hs.preimage measurable_subtypeVal)
-  have htarget : e '' (s ∩ e.source) ⊆ e.target :=
-    e.image_source_eq_target.subset.trans' (Set.image_mono inter_subset_right)
-  -- Read `φ` on the chart source through the coordinate map `e`.
-  have hφ (μ : Measure e.source) : ∫⁻ z, φ z ∂μ =
-      ∫⁻ z, (fun y ↦ φ (e.symm y)) (e.source.domRestrict e z) ∂μ :=
-    lintegral_congr fun z ↦ by simp only [Set.domRestrict_apply, e.left_inv z.property]
-  rw [chartRiemannianVolume, hval.restrict_map, hval.lintegral_map, hR.restrict_comap, himage, hφ]
-  refine (hR.lintegral_map (fun y ↦ φ (e.symm y))).symm.trans ?_
-  rw [hR.map_comap, Measure.restrict_restrict hR.measurableSet_range,
-    Set.inter_eq_right.2 (himage ▸ Set.image_subset_range _ _),
-    setLIntegral_withDensity_eq_setLIntegral_mul_non_measurable _ d.measurable_toFun _ hA
-      ((ae_restrict_iff' hA).2 (Filter.Eventually.of_forall fun y hy ↦ ?_))]
-  · refine setLIntegral_congr_fun hA fun y hy ↦ ?_
-    rw [Pi.mul_apply, d.eq_on_target (htarget hy)]
-  · rw [d.eq_on_target (htarget hy)]
-    exact ENNReal.ofReal_lt_top
+  have hA : MeasurableSet ((extChartAt I α) '' (s ∩ (extChartAt I α).source)) :=
+    (hs.inter (isOpen_extChartAt_source α).measurableSet).image_extChartAt α inter_subset_right
+  have hAt : (extChartAt I α) '' (s ∩ (extChartAt I α).source) ⊆ (extChartAt I α).target :=
+    (extChartAt I α).image_source_eq_target.subset.trans' (image_mono inter_subset_right)
+  have hg := aemeasurable_ofReal_chartVolumeDensity_extChartAt_symm α hA hAt
+    (Module.finBasis ℝ E).addHaar
+  simpa only [chartRiemannianVolume, extChartAt_eq_extend, (chartAt H α).extend_source] using
+    (chartAt H α).setLIntegral_localChartMeasure I (Module.finBasis ℝ E).addHaar hs
+      (by simpa only [extChartAt_eq_extend, (chartAt H α).extend_source] using hg)
+      (Filter.Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top) φ
 
 /-- **Integration in coordinates** against a chart volume measure, for Bochner integrals: the
 integral of `φ` over a measurable set `s` is the coordinate integral, over the image of the part of
@@ -185,46 +138,30 @@ theorem setIntegral_chartRiemannianVolume
       ∫ y in (extChartAt I α) '' (s ∩ (extChartAt I α).source),
         chartVolumeDensity (I := I) α ((extChartAt I α).symm y) • φ ((extChartAt I α).symm y)
           ∂(Module.finBasis ℝ E).addHaar := by
-  set e := extChartAt I α
-  set d := chartVolumeDensityData (I := I) α
-  have hR : MeasurableEmbedding (e.source.domRestrict e) :=
-    measurableEmbedding_extChartAt_restrict α
-  have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
-    MeasurableEmbedding.subtypeVal (isOpen_extChartAt_source α).measurableSet
-  have himage : e.source.domRestrict e '' (Subtype.val ⁻¹' s) = e '' (s ∩ e.source) :=
-    Set.image_domRestrict _ _ _
-  have hA : MeasurableSet (e '' (s ∩ e.source)) := by
-    rw [← himage]
-    exact hR.measurableSet_image.mpr (hs.preimage measurable_subtypeVal)
-  have htarget : e '' (s ∩ e.source) ⊆ e.target :=
-    e.image_source_eq_target.subset.trans' (Set.image_mono inter_subset_right)
-  -- Read `φ` on the chart source through the coordinate map `e`.
-  have hφ (μ : Measure e.source) : ∫ z, φ z ∂μ =
-      ∫ z, (fun y ↦ φ (e.symm y)) (e.source.domRestrict e z) ∂μ :=
-    integral_congr_ae (Filter.Eventually.of_forall fun z ↦ by
-      simp only [Set.domRestrict_apply, e.left_inv z.property])
-  rw [chartRiemannianVolume, hval.restrict_map, hval.integral_map, hR.restrict_comap, himage, hφ]
-  refine (hR.integral_map (fun y ↦ φ (e.symm y))).symm.trans ?_
-  rw [hR.map_comap, Measure.restrict_restrict hR.measurableSet_range,
-    Set.inter_eq_right.2 (himage ▸ Set.image_subset_range _ _),
-    setIntegral_withDensity_eq_setIntegral_toReal_smul d.measurable_toFun
-      ((ae_restrict_iff' hA).2 (Filter.Eventually.of_forall fun y hy ↦ ?_)) _ hA]
-  · refine setIntegral_congr_fun hA fun y hy ↦ ?_
-    rw [d.eq_on_target (htarget hy), ENNReal.toReal_ofReal (chartVolumeDensity_nonneg _ _)]
-  · rw [d.eq_on_target (htarget hy)]
-    exact ENNReal.ofReal_lt_top
+  have hA : MeasurableSet ((extChartAt I α) '' (s ∩ (extChartAt I α).source)) :=
+    (hs.inter (isOpen_extChartAt_source α).measurableSet).image_extChartAt α inter_subset_right
+  have hAt : (extChartAt I α) '' (s ∩ (extChartAt I α).source) ⊆ (extChartAt I α).target :=
+    (extChartAt I α).image_source_eq_target.subset.trans' (image_mono inter_subset_right)
+  have hg := aemeasurable_ofReal_chartVolumeDensity_extChartAt_symm α hA hAt
+    (Module.finBasis ℝ E).addHaar
+  have h := (chartAt H α).setIntegral_localChartMeasure I (Module.finBasis ℝ E).addHaar hs
+    (by simpa only [extChartAt_eq_extend, (chartAt H α).extend_source] using hg)
+    (Filter.Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top) φ
+  simpa only [chartRiemannianVolume, extChartAt_eq_extend, (chartAt H α).extend_source] using
+    h.trans (setIntegral_congr_fun
+      (by simpa only [extChartAt_eq_extend, (chartAt H α).extend_source] using hA)
+      fun y _ ↦ by rw [ENNReal.toReal_ofReal (chartVolumeDensity_nonneg _ _)])
 
 /-- A chart volume measure evaluates a measurable set by integrating the chart density over its
 coordinate image inside the chart source. -/
 theorem chartRiemannianVolume_apply
-    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
     (α : M) {s : Set M} (hs : MeasurableSet s) :
     chartRiemannianVolume (I := I) α s =
       ∫⁻ y in (extChartAt I α) '' (s ∩ (extChartAt I α).source),
         ENNReal.ofReal (chartVolumeDensity (I := I) α ((extChartAt I α).symm y))
           ∂(Module.finBasis ℝ E).addHaar := by
-  simpa only [mul_one, setLIntegral_one] using
-    setLIntegral_chartRiemannianVolume (I := I) α hs (fun _ ↦ 1)
+  simpa only [chartRiemannianVolume, extChartAt_eq_extend, (chartAt H α).extend_source] using
+    (chartAt H α).localChartMeasure_apply I (Module.finBasis ℝ E).addHaar _ hs
 
 /-- A nonempty open subset of a chart source has positive chart volume. -/
 theorem chartRiemannianVolume_pos_of_isOpen_subset_source
@@ -232,40 +169,32 @@ theorem chartRiemannianVolume_pos_of_isOpen_subset_source
     {s : Set M} (hs : IsOpen s) (hsub : s ⊆ (chartAt H α).source) (hne : s.Nonempty) :
     0 < chartRiemannianVolume (I := I) α s := by
   let e := extChartAt I α
-  let d := chartVolumeDensityData (I := I) α
   have hsub' : s ⊆ e.source := by
     simpa only [e, extChartAt_source] using hsub
   have hmeasure : 0 < (Module.finBasis ℝ E).addHaar (e '' s) := by
     have h := measure_image_extChartAt_inter_source_pos (I := I) hs (x := α)
       (hne.mono fun z hz ↦ ⟨hz, hsub' hz⟩) (Module.finBasis ℝ E).addHaar
     rwa [inter_eq_left.2 hsub'] at h
-  rw [chartRiemannianVolume_apply α hs.measurableSet]
   have himage : e '' (s ∩ e.source) = e '' s := by
     rw [inter_eq_left.mpr hsub']
-  rw [himage]
   have himage_measurable : MeasurableSet (e '' s) := by
     rw [← himage]
     simpa only [e, inter_comm] using hs.measurableSet_image_extChartAt_source_inter α
-  have heq :
-      (∫⁻ y in e '' s,
-          ENNReal.ofReal (chartVolumeDensity (I := I) α (e.symm y))
-            ∂(Module.finBasis ℝ E).addHaar) =
-        ∫⁻ y in e '' s, d.toFun y ∂(Module.finBasis ℝ E).addHaar := by
-    apply setLIntegral_congr_fun himage_measurable
-    rintro y ⟨z, hz, rfl⟩
-    exact (d.eq_on_target (e.map_source (hsub' hz))).symm
-  rw [heq, setLIntegral_pos_iff d.measurable_toFun]
-  have hsupport : e '' s ⊆ Function.support d.toFun := by
-    rintro y ⟨z, hz, rfl⟩
-    apply Function.mem_support.mpr
-    rw [d.eq_on_target (e.map_source (hsub' hz))]
-    have hinv : (extChartAt I α).symm (e z) = z := e.left_inv (hsub' hz)
+  have hd := aemeasurable_ofReal_chartVolumeDensity_extChartAt_symm α himage_measurable
+    ((image_mono hsub').trans e.image_source_eq_target.subset) (Module.finBasis ℝ E).addHaar
+  have hpos : ∀ y ∈ e '' s,
+      ENNReal.ofReal (chartVolumeDensity (I := I) α (e.symm y)) ≠ 0 := by
+    rintro _ ⟨z, hz, rfl⟩
+    rw [e.left_inv (hsub' hz)]
     exact (ENNReal.ofReal_pos.mpr (chartVolumeDensity_pos α (by
       rw [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I α]
-      rw [hinv]
       exact hsub' hz))).ne'
-  rw [inter_eq_right.mpr hsupport]
-  exact hmeasure
+  rw [chartRiemannianVolume_apply α hs.measurableSet, himage, pos_iff_ne_zero, Ne,
+    lintegral_eq_zero_iff' hd]
+  intro h
+  have hnull : ∀ᵐ y ∂(Module.finBasis ℝ E).addHaar, y ∉ e '' s :=
+    ((ae_restrict_iff' himage_measurable).1 h).mono fun y hy hyA ↦ hpos y hyA (hy hyA)
+  exact hmeasure.ne' (measure_eq_zero_iff_ae_notMem.2 hnull)
 
 /-- A chart volume gives positive mass to the source of a chart. -/
 theorem chartRiemannianVolume_pos
@@ -276,15 +205,10 @@ theorem chartRiemannianVolume_pos
 
 /-- A chart volume measure is supported on the source of its chart. -/
 @[simp]
-theorem chartRiemannianVolume_restrict_source
-    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (α : M) :
+theorem chartRiemannianVolume_restrict_source (α : M) :
     (chartRiemannianVolume (I := I) α).restrict (chartAt H α).source =
-      chartRiemannianVolume (I := I) α := by
-  ext s hs
-  rw [Measure.restrict_apply hs, chartRiemannianVolume_apply α
-    (hs.inter (chartAt H α).open_source.measurableSet), chartRiemannianVolume_apply α hs]
-  congr 2
-  simp only [extChartAt_source, inter_assoc, inter_self]
+      chartRiemannianVolume (I := I) α :=
+  (chartAt H α).restrict_source_localChartMeasure I _ _
 
 omit [MeasurableSpace M] [BorelSpace M] in
 /-- On the overlap of two chart sources, the `α` coordinate density is the `β` coordinate density
@@ -352,8 +276,7 @@ private theorem setLIntegral_chartVolumeDensity_image_eq (α β : M) {t : Set M}
 
 /-- The local Riemannian volume measures supplied by two preferred charts agree on their overlap.
 This is the cocycle condition needed to descend the local coordinate measures to the manifold. -/
-theorem chartRiemannianVolume_restrict_overlap
-    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (α β : M) :
+theorem chartRiemannianVolume_restrict_overlap (α β : M) :
     (chartRiemannianVolume (I := I) α).restrict
         ((extChartAt I α).source ∩ (extChartAt I β).source) =
       (chartRiemannianVolume (I := I) β).restrict

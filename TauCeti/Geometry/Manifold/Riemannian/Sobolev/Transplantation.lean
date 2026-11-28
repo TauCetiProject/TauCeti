@@ -336,7 +336,7 @@ theorem intertwines_negLaplacian_normalizedPullbackLp (hq : IsQuotientCoveringMa
       ext f
       simp [← normalizedPullback_resolvent hq hf, toLp_normalizedPullback])
 
-omit [T2Space N] in
+omit [T2Space N] [IsContinuousRiemannianBundle E (fun y : N ↦ TangentSpace I' y)] in
 /-- The Laplacian of a deck-invariant element of the domain of `Δ⁺_M` is deck invariant, hence the
 normalized pullback of an element of `L²(N)`. -/
 private theorem negLaplacian_mem_range_normalizedPullbackLp (hq : IsQuotientCoveringMap q G)

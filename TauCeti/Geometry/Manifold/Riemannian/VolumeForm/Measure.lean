@@ -130,6 +130,7 @@ variable [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
 
 attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
 
+omit [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
 /-- **The Riemannian measure is the measure of the volume form.** The measure `|dV|` of the
 Riemannian volume form of any orientation is the Riemannian volume measure. -/
 @[simp]

@@ -79,12 +79,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E H'}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' 1 N]
   [MeasurableSpace N] [BorelSpace N] [LindelofSpace N]
   [RiemannianBundle (fun y : N ↦ TangentSpace I' y)]
-  [IsContinuousRiemannianBundle E (fun y : N ↦ TangentSpace I' y)]
   {G : Type*} [Group G] [MulAction G M] [Finite G] {q : M → N}
 
 /-- If `q` is injective on a measurable set `V` and `D ⊆ q '' V` is measurable, then `q⁻¹ D` is
