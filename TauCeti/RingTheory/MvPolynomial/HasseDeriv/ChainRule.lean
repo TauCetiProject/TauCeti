@@ -7,9 +7,8 @@ module
 
 public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
-public import TauCeti.Data.Finsupp.Weight
+public import TauCeti.RingTheory.MvPolynomial.Block.Subst
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Taylor
-public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
 # Hasse derivatives after a linear substitution
@@ -19,17 +18,14 @@ a polynomial `G`. Since `gₛ(Y + T) = gₛ(Y) + gₛ(T)`, the Taylor expansion 
 the chain rule for Hasse derivatives
 `∂_Y^k (G(g(Y))) = ∑_{|e| = |k|} c_{e,k} (∂_X^e G)(g(Y))`, where `c_{e,k} = [T^k] g(T)^e`.
 
-For a *block-linear* substitution `X_{h,l} = ∑ₐ A_{h,l,a} Y_{h,a}`, in which the variables of
-block `h` only involve the parameters of block `h`, the coefficient `c_{e,k}` vanishes unless `e`
-and `k` have the same degree `∑ₗ e_{h,l} = ∑ₐ k_{h,a}` in every block. Consequently a nonzero jet
-of the substituted polynomial `(∂^i F)(AY)` at a point `y` forces a nonzero jet `∂^(i + e) F` of
-`F` at `Ay`, with `e` of the same block degrees as `k`. This is how a nonzero jet of an auxiliary
-polynomial restricted to a family of subspaces produces a nonzero jet of the polynomial itself,
-in Schmidt's subspace theorem.
-
-## Main definitions
-
-* `MvPolynomial.blockLinearForm A`: the block-linear forms `X_{h,l} ↦ ∑ₐ A_{h,l,a} Y_{h,a}`.
+For a *block-linear* substitution `X_{h,l} = ∑ₐ A_{h,l,a} Y_{h,a}`
+(`MvPolynomial.blockLinearForm` in `TauCeti.RingTheory.MvPolynomial.Block.Subst`), in which the
+variables of block `h` only involve the parameters of block `h`, the coefficient `c_{e,k}`
+vanishes unless `e` and `k` have the same degree `∑ₗ e_{h,l} = ∑ₐ k_{h,a}` in every block.
+Consequently a nonzero jet of the substituted polynomial `(∂^i F)(AY)` at a point `y` forces a
+nonzero jet `∂^(i + e) F` of `F` at `Ay`, with `e` of the same block degrees as `k`. This is how
+a nonzero jet of an auxiliary polynomial restricted to a family of subspaces produces a nonzero jet
+of the polynomial itself, in Schmidt's subspace theorem.
 
 ## Main results
 
@@ -37,12 +33,6 @@ in Schmidt's subspace theorem.
   `ℓ(X + Y) = ℓ(X) + ℓ(Y)`.
 * `MvPolynomial.hasseDeriv_aeval`: the chain rule for Hasse derivatives after substituting
   linear forms.
-* `MvPolynomial.isWeightedHomogeneous_blockLinearForm`: with the indicator weight of a block `b`,
-  a block-linear form has weight `1` on the variables of block `b` and `0` on the others.
-* `MvPolynomial.sum_eq_sum_of_coeff_aeval_blockLinearForm_ne_zero`: `c_{e,k} ≠ 0` forces equal
-  block degrees.
-* `MvPolynomial.degreeOf_aeval_blockLinearForm_le`: block degrees `≤ d h` bound the degree of the
-  substituted polynomial in each parameter of block `h`.
 * `MvPolynomial.hasseDeriv_aeval_blockLinearForm_hasseDeriv`: the chain rule
   `∂_Y^k ((∂_X^i F)(AY)) = ∑_{e ∈ E(k)} c_{e,k} binom(i + e, i) (∂_X^(i + e) F)(AY)`, the sum
   running over the `e` with the block degrees of `k`.
@@ -138,76 +128,6 @@ end LinearForm
 section BlockLinear
 
 variable {ι κ : Type*} [Fintype τ]
-
-/-- The block-linear forms `X_{h,l} ↦ ∑ₐ A_{h,l,a} Y_{h,a}`: the variable `l` of block `h` becomes
-a linear form in the parameters `Y_{h,a}` of the same block. -/
-noncomputable def blockLinearForm (A : ι → κ → τ → R) (p : ι × κ) : MvPolynomial (ι × τ) R :=
-  ∑ a, C (A p.1 p.2 a) * X (p.1, a)
-
-theorem blockLinearForm_apply (A : ι → κ → τ → R) (p : ι × κ) :
-    blockLinearForm A p = ∑ a, C (A p.1 p.2 a) * X (p.1, a) :=
-  (rfl)
-
-/-- The value of a block-linear form at `y` is `∑ₐ A_{h,l,a} y_{h,a}`. -/
-@[simp]
-theorem eval_blockLinearForm (A : ι → κ → τ → R) (y : ι × τ → R) (p : ι × κ) :
-    eval y (blockLinearForm A p) = ∑ a, A p.1 p.2 a * y (p.1, a) := by
-  simp [blockLinearForm_apply]
-
-/-- Evaluating after the block-linear substitution is evaluating at the point `Ay`. -/
-theorem eval_aeval_blockLinearForm (A : ι → κ → τ → R) (y : ι × τ → R)
-    (F : MvPolynomial (ι × κ) R) :
-    eval y (aeval (blockLinearForm A) F) = eval (fun p ↦ ∑ a, A p.1 p.2 a * y (p.1, a)) F := by
-  simpa only [aeval_eq_eval, eval_blockLinearForm] using
-    comp_aeval_apply (blockLinearForm A) (aeval y) F
-
-/-- Block-linear forms are linear forms: homogeneous of degree one. -/
-theorem isHomogeneous_blockLinearForm (A : ι → κ → τ → R) (p : ι × κ) :
-    (blockLinearForm A p).IsHomogeneous 1 :=
-  IsHomogeneous.sum _ _ _ fun _ _ ↦ isHomogeneous_C_mul_X _ _
-
-/-- With the indicator weight of block `b`, the block-linear form of a variable of block `h` is
-weighted homogeneous of weight `1` if `h = b` and `0` otherwise. -/
-theorem isWeightedHomogeneous_blockLinearForm [DecidableEq ι] (A : ι → κ → τ → R)
-    (b : ι) (p : ι × κ) :
-    (blockLinearForm A p).IsWeightedHomogeneous (fun q : ι × τ ↦ if q.1 = b then 1 else 0)
-      (if p.1 = b then 1 else 0) :=
-  IsWeightedHomogeneous.sum _ _ _ fun a _ ↦ (isWeightedHomogeneous_X _ _ (p.1, a)).C_mul _
-
-/-- **Block degrees of the substitution coefficients.** If the coefficient
-`c_{e,k} = [Y^k] ∏_{h,l} (∑ₐ A_{h,l,a} Y_{h,a})^(e_{h,l})` is nonzero, then `e` and `k` have the
-same degree in every block: `∑ₗ e_{b,l} = ∑ₐ k_{b,a}`. -/
-theorem sum_eq_sum_of_coeff_aeval_blockLinearForm_ne_zero [Fintype κ]
-    {A : ι → κ → τ → R} {e : ι × κ →₀ ℕ} {k : ι × τ →₀ ℕ}
-    (h : (aeval (blockLinearForm A) (monomial e (1 : R))).coeff k ≠ 0) (b : ι) :
-    ∑ l, e (b, l) = ∑ a, k (b, a) := by
-  classical
-  have hw := IsWeightedHomogeneous.aeval
-    (isWeightedHomogeneous_monomial (fun p : ι × κ ↦ if p.1 = b then 1 else 0) e (1 : R) rfl)
-    (isWeightedHomogeneous_blockLinearForm A b)
-  rw [← Finsupp.weight_ite_fst_eq_sum, ← Finsupp.weight_ite_fst_eq_sum, hw h]
-
-/-- **Degrees after a block-linear substitution.** If every monomial of `F` has degree at most
-`d h` in each block `h`, then the substituted polynomial `F(AY)` has degree at most `d h` in each
-parameter `Y_{h,a}` of block `h`. -/
-theorem degreeOf_aeval_blockLinearForm_le [Fintype κ] (A : ι → κ → τ → R)
-    {F : MvPolynomial (ι × κ) R} {d : ι → ℕ} (hF : ∀ μ ∈ F.support, ∀ h, ∑ l, μ (h, l) ≤ d h)
-    (q : ι × τ) : (aeval (blockLinearForm A) F).degreeOf q ≤ d q.1 := by
-  classical
-  refine degreeOf_le_iff.2 fun ν hν ↦ ?_
-  rw [← support_sum_monomial_coeff F, map_sum] at hν
-  obtain ⟨μ, hμ, hν⟩ := mem_biUnion.1 (support_sum hν)
-  -- The substituted monomial `μ` has the block degree of `μ` in block `q.1`, hence so does `ν`.
-  have hw := IsWeightedHomogeneous.aeval
-    (isWeightedHomogeneous_monomial (fun p : ι × κ ↦ if p.1 = q.1 then 1 else 0) μ
-      (F.coeff μ) rfl)
-    (isWeightedHomogeneous_blockLinearForm A q.1)
-  have hblock := hw (mem_support_iff.1 hν)
-  rw [Finsupp.weight_ite_fst_eq_sum, Finsupp.weight_ite_fst_eq_sum] at hblock
-  calc ν q ≤ ∑ a, ν (q.1, a) :=
-        single_le_sum (f := fun a ↦ ν (q.1, a)) (fun _ _ ↦ Nat.zero_le _) (mem_univ q.2)
-    _ = ∑ l, μ (q.1, l) := hblock
-    _ ≤ d q.1 := hF μ hμ q.1
 
 /-- **The chain rule for a block-linear substitution**:
 `∂_Y^k ((∂_X^i F)(AY)) = ∑_{e ∈ E(k)} c_{e,k} binom(i + e, i) (∂_X^(i + e) F)(AY)`, where

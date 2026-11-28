@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Exponential
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import TauCeti.RingTheory.MvPolynomial.MultiHomogeneous
-import TauCeti.Probability.Distributions.Uniform.Finite.Hoeffding
 import TauCeti.Algebra.Order.Antidiag.Moments
+import TauCeti.Combinatorics.Enumerative.AntidiagLargeDeviation
+import TauCeti.Probability.Distributions.Uniform.Finite.Hoeffding
 
 /-!
 # Weighted support counts for multihomogeneous polynomials
@@ -24,6 +26,9 @@ The mean calculation uses `Finset.card_mul_sum_finsuppAntidiag_apply` via
 In Evertse and Ferretti's auxiliary-polynomial construction, each high-weight monomial in a
 specified coordinate system imposes one linear condition on the polynomial's coefficients.
 The simultaneous count bounds the number of equations over all the coordinate systems.
+We also transfer the budgeted antidiagonal lower-tail bound
+`Finset.exists_bound_mul_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_lt` to
+`MvPolynomial.multiMons` in `TauCeti.exists_bound_mul_card_filter_multiMons_sum_div_le_lt`.
 
 ## References
 
@@ -134,5 +139,30 @@ theorem two_mul_sum_card_filter_multiMons_weight_gt_le [DecidableEq κ] [Decidab
             (2 * Fintype.card ν / exp (Fintype.card κ * ε ^ 2 / 2)) := by ring
         _ ≤ _ := mul_le_of_le_one_right (Nat.cast_nonneg _)
           (div_le_one_of_le₀ hbudget (exp_pos _).le)
+
+/-- Budgeted lower-tail count for multidegree monomials: if `c ≥ 0`, `η ≥ 0`, and
+`4 * Real.log c < Fintype.card ι * (Fintype.card ι + 1) * η ^ 2 * Fintype.card κ`, then for all
+sufficiently large block degrees `d` and every coordinate `i : ι`, `c` copies of the lower-tail
+monomials in `multiMons ι d` number strictly less than `#(multiMons ι d)`. -/
+theorem exists_bound_mul_card_filter_multiMons_sum_div_le_lt [DecidableEq κ] [DecidableEq ι]
+    {c η : ℝ} (hc : 0 ≤ c) (hη : 0 ≤ η)
+    (hm : 4 * Real.log c < Fintype.card ι * (Fintype.card ι + 1) * η ^ 2 * Fintype.card κ) :
+    ∃ D₀ : ℕ, 0 < D₀ ∧ ∀ d : κ → ℕ, (∀ h, D₀ ≤ d h) → ∀ i : ι,
+      c * (#{N ∈ multiMons ι d |
+        ∑ h, (N (h, i) : ℝ) / d h ≤
+          Fintype.card κ / Fintype.card ι - Fintype.card κ * η} : ℝ) <
+        #(multiMons ι d) := by
+  classical
+  rw [← card_univ (α := ι)] at hm
+  obtain ⟨D₀, hD₀, htail⟩ :=
+    exists_bound_mul_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_lt
+      (univ : Finset ι) hc hη hm
+  refine ⟨D₀, hD₀, fun d hd i ↦ ?_⟩
+  rw [card_filter_multiMons_eq d (fun g ↦
+    ∑ h, (g (h, i) : ℝ) / d h ≤ Fintype.card κ / Fintype.card ι - Fintype.card κ * η),
+    card_multiMons_eq_card_piFinset]
+  have htail' := htail d hd (mem_univ i)
+  rw [card_univ] at htail'
+  convert htail'
 
 end TauCeti

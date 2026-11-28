@@ -10,11 +10,13 @@ public import TauCeti.Algebra.Polynomial.Coeff.ToMvPolynomial
 public import TauCeti.Algebra.MvPolynomial.Rename
 public import TauCeti.Algebra.MvPolynomial.Variables
 public import Mathlib.NumberTheory.Height.NumberField
+public import Mathlib.NumberTheory.NumberField.House
 public import TauCeti.RingTheory.MvPolynomial.Abv.Coeff
 public import TauCeti.Algebra.MvPolynomial.HasseDeriv.Basic
 public import TauCeti.RingTheory.MvPolynomial.Box
 import TauCeti.Algebra.MvPolynomial.Division
 import TauCeti.NumberTheory.Height.Basic
+import TauCeti.NumberTheory.Height.NumberField
 
 /-!
 # Projective coefficient heights of multivariate polynomials
@@ -26,9 +28,12 @@ renaming, and placement of a univariate polynomial in one coordinate preserve th
 These comparisons allow auxiliary polynomials to be handled in their natural variable types.
 
 The normalization is relative to the admissible family of absolute values of the field.
-In particular, constant polynomials and the zero polynomial have multiplicative height one.
+In particular, constant polynomials, the zero polynomial, and all polynomials in an empty variable
+type have multiplicative height one (`mulHeight_eq_one_of_isEmpty`, `logHeight_eq_zero_of_isEmpty`).
 For polynomials over number fields, `logHeight_eq_of_numberField` expresses the height
-as a sum of local logarithmic sup norms, with complex-place multiplicity two.
+as a sum of local logarithmic sup norms, with complex-place multiplicity two, and
+`mulHeight_le_pow_finrank_of_house_le` / `logHeight_le_finrank_mul_log_of_house_le` bound the
+height of a polynomial whose nonzero coefficients are algebraic integers of bounded house.
 
 There is no bound for the height of a sum of polynomials in terms of the heights of its terms,
 so the height of a determinant of a matrix of polynomials is bounded place by place.
@@ -38,7 +43,13 @@ entries have partial degrees at most `d j` and coefficients dominated by those o
 `h(det A) ≤ n h(P) + totalWeight K * (log n! + n (∑ j, d j * log 2 + log C))`.
 This applies to the generalized Wronskians of Hasse derivatives of `P` in Roth's lemma:
 `MvPolynomial.logHeight_det_hasseDeriv_le` bounds the height of any `n × n` determinant of Hasse
-derivatives of `P` by `n h(P) + totalWeight K * (log n! + 2 n ∑ j, d j * log 2)`.
+derivatives of `P` by `n h(P) + totalWeight K * (log n! + 2 n ∑ j, d j * log 2)`, while for a
+single derivative `MvPolynomial.mulHeight_hasseDeriv_le` and `MvPolynomial.logHeight_hasseDeriv_le`
+bound `H(∂^I P)` by `(2 ^ P.totalDegree) ^ totalWeight K * H(P)` without assuming `σ` is finite.
+More generally, `MvPolynomial.mulHeight_le_of_abv_coeff_le` and
+`MvPolynomial.logHeight_le_of_mulHeight_le` compare
+the height of `Q` with those of a finite tuple `x` and polynomial `P` from place-by-place
+coefficient estimates.
 
 Although the height of a product is not the product of the heights in general, it is when the
 two factors involve disjoint sets of variables: then the coefficients of the product are exactly
@@ -155,6 +166,16 @@ theorem mulHeight_C (c : K) : (C c : MvPolynomial σ K).mulHeight = 1 := by
 
 @[simp]
 theorem logHeight_C (c : K) : (C c : MvPolynomial σ K).logHeight = 0 := by
+  simp [logHeight_eq_log_mulHeight]
+
+/-- With no variables, every polynomial is constant, so its multiplicative height is one. -/
+@[simp]
+theorem mulHeight_eq_one_of_isEmpty [IsEmpty σ] (p : MvPolynomial σ K) : p.mulHeight = 1 := by
+  rw [eq_C_of_isEmpty p, mulHeight_C]
+
+/-- With no variables, every polynomial is constant, so its logarithmic height is zero. -/
+@[simp]
+theorem logHeight_eq_zero_of_isEmpty [IsEmpty σ] (p : MvPolynomial σ K) : p.logHeight = 0 := by
   simp [logHeight_eq_log_mulHeight]
 
 @[simp]
@@ -365,6 +386,35 @@ theorem logHeight_eq_of_numberField (p : MvPolynomial σ K) :
     Real.log_finprod hf]
   simp only [Real.log_pow]
 
+/-- A polynomial over a number field `K` whose nonzero coefficients are algebraic integers with
+house at most `B` (`1 ≤ B`) has multiplicative height at most `B ^ [K : ℚ]`. -/
+theorem mulHeight_le_pow_finrank_of_house_le {P : MvPolynomial σ K} {B : ℝ} (hB : 1 ≤ B)
+    (hint : ∀ m ∈ P.support, IsIntegral ℤ (P.coeff m))
+    (hhouse : ∀ m ∈ P.support, NumberField.house (P.coeff m) ≤ B) :
+    P.mulHeight ≤ B ^ Module.finrank ℚ K := by
+  classical
+  rcases eq_or_ne P 0 with rfl | hP0
+  · simpa using one_le_pow₀ hB
+  let y : P.support → NumberField.RingOfIntegers K := fun m ↦ ⟨P.coeff m, hint m m.property⟩
+  obtain ⟨m₀, hm₀⟩ := support_nonempty.mpr hP0
+  have hy0 : y ≠ 0 := Function.ne_iff.mpr
+    ⟨⟨m₀, hm₀⟩, mt (congrArg (algebraMap (NumberField.RingOfIntegers K) K))
+      (mem_support_iff.mp hm₀)⟩
+  rw [mulHeight_eq_support]
+  refine NumberField.mulHeight_le_pow_finrank_of_forall_le hy0 fun m w ↦ ?_
+  rw [← NumberField.InfinitePlace.norm_embedding_eq]
+  exact (NumberField.norm_embedding_le_house _ _).trans (hhouse m m.property)
+
+/-- Logarithmic form of `mulHeight_le_pow_finrank_of_house_le`: if the nonzero coefficients of `P`
+are algebraic integers with house at most `B` (`1 ≤ B`), then `h(P) ≤ [K : ℚ] * log B`. -/
+theorem logHeight_le_finrank_mul_log_of_house_le {P : MvPolynomial σ K} {B : ℝ} (hB : 1 ≤ B)
+    (hint : ∀ m ∈ P.support, IsIntegral ℤ (P.coeff m))
+    (hhouse : ∀ m ∈ P.support, NumberField.house (P.coeff m) ≤ B) :
+    P.logHeight ≤ Module.finrank ℚ K * Real.log B := by
+  rw [logHeight_eq_log_mulHeight]
+  exact (Real.log_le_log (mulHeight_pos P)
+    (mulHeight_le_pow_finrank_of_house_le hB hint hhouse)).trans_eq (Real.log_pow _ _)
+
 end MvPolynomial
 
 namespace Matrix
@@ -394,13 +444,6 @@ theorem mulHeight_det_le (A : Matrix n n (MvPolynomial σ K)) {P : MvPolynomial 
   have hK : (1 : ℝ) ≤ (Fintype.card n)! * (2 ^ (∑ k, d k) * C) ^ Fintype.card n :=
     one_le_mul_of_one_le_of_one_le (by exact_mod_cast (Fintype.card n).factorial_pos)
       (one_le_pow₀ (one_le_mul_of_one_le_of_one_le (one_le_pow₀ one_le_two) hC))
-  -- Every coefficient of `P` is bounded by the local factor of its nonzero coefficients.
-  have hM (v : AbsoluteValue K ℝ) (b : σ →₀ ℕ) :
-      v (P.coeff b) ≤ ⨆ c : P.support, v (P.coeff c) := by
-    by_cases hb : b ∈ P.support
-    · exact Finite.le_ciSup_of_le ⟨b, hb⟩ le_rfl
-    · rw [notMem_support_iff.mp hb, map_zero]
-      exact Real.iSup_nonneg fun _ ↦ v.nonneg _
   have hM0 (v : AbsoluteValue K ℝ) : 0 ≤ (⨆ c : P.support, v (P.coeff c)) ^ Fintype.card n :=
     pow_nonneg (Real.iSup_nonneg fun _ ↦ v.nonneg _) _
   rw [mulHeight_eq_support, mulHeight_eq_support]
@@ -410,11 +453,12 @@ theorem mulHeight_det_le (A : Matrix n n (MvPolynomial σ K)) {P : MvPolynomial 
   · refine (abv_coeff_det_le A (C := C * ⨆ c : P.support, v (P.coeff c)) hB
       (fun i j a ↦ ?_) t).trans_eq ?_
     · obtain ⟨b, hb⟩ := harch v hv i j a
-      exact hb.trans (mul_le_mul_of_nonneg_left (hM v b) (zero_le_one.trans hC))
+      exact hb.trans (mul_le_mul_of_nonneg_left (abv_coeff_le_iSup_support v P b)
+        (zero_le_one.trans hC))
     · rw [nsmul_eq_mul, Nat.cast_pow, Nat.cast_ofNat, ← mul_assoc, mul_pow, mul_assoc]
   · refine abv_coeff_det_le_of_isNonarchimedean A (isNonarchimedean v hv) (fun i j a ↦ ?_) t
     obtain ⟨b, hb⟩ := hnon v hv i j a
-    exact hb.trans (hM v b)
+    exact hb.trans (abv_coeff_le_iSup_support v P b)
 
 /-- **The logarithmic height of a determinant of polynomials.** Under the hypotheses of
 `Matrix.mulHeight_det_le`,
@@ -441,6 +485,140 @@ namespace MvPolynomial
 
 open Finset Height AdmissibleAbsValues
 open scoped Nat
+
+section HasseDeriv
+
+variable {K σ : Type*} [Field K] [AdmissibleAbsValues K]
+
+/-- **The multiplicative height of a Hasse derivative.** Each binomial factor in `∂^I P` is bounded
+by `2 ^ P.totalDegree` at archimedean absolute values and by `1` at nonarchimedean ones, so
+`H(∂^I P) ≤ (2 ^ P.totalDegree) ^ totalWeight K * H(P)` over any variable type `σ`. -/
+theorem mulHeight_hasseDeriv_le (I : σ →₀ ℕ) (P : MvPolynomial σ K) :
+    (hasseDeriv I P).mulHeight ≤ ((2 : ℝ) ^ P.totalDegree) ^ totalWeight K * P.mulHeight := by
+  have hC : (1 : ℝ) ≤ (2 : ℝ) ^ P.totalDegree := one_le_pow₀ one_le_two
+  have hM0 (v : AbsoluteValue K ℝ) : 0 ≤ ⨆ c : P.support, v (P.coeff c) :=
+    Real.iSup_nonneg fun _ ↦ v.nonneg _
+  rw [mulHeight_eq_support, mulHeight_eq_support]
+  refine (mulHeight_le_of_forall_iSup_le _ _ hC (p := 1)
+    (fun v _ ↦ Real.iSup_le (fun m ↦ ?_) (mul_nonneg (zero_le_one.trans hC) (by simpa using hM0 v)))
+    fun v hv ↦ Real.iSup_le (fun m ↦ ?_) (by simpa using hM0 v)).trans_eq (by rw [pow_one])
+  · rw [pow_one]
+    by_cases hm : P.coeff (m.val + I) = 0
+    · rw [hasseDeriv_coeff, hm, mul_zero, map_zero]
+      exact mul_nonneg (zero_le_one.trans hC) (hM0 v)
+    · have hdeg : (m.val + I).degree ≤ P.totalDegree := by
+        simpa only [Finsupp.degree_apply, Finsupp.sum] using le_totalDegree (mem_support_iff.mpr hm)
+      exact (abv_coeff_hasseDeriv_le v I m.val P).trans
+        (mul_le_mul (pow_le_pow_right₀ one_le_two hdeg)
+          (abv_coeff_le_iSup_support v P (m.val + I)) (v.nonneg _) (zero_le_one.trans hC))
+  · rw [pow_one]
+    exact (abv_coeff_hasseDeriv_le_of_isNonarchimedean (isNonarchimedean v hv) I m.val P).trans
+      (abv_coeff_le_iSup_support v P (m.val + I))
+
+/-- **The logarithmic height of a Hasse derivative:**
+`h(∂^I P) ≤ h(P) + totalWeight K * (P.totalDegree * log 2)`. -/
+theorem logHeight_hasseDeriv_le (I : σ →₀ ℕ) (P : MvPolynomial σ K) :
+    (hasseDeriv I P).logHeight ≤
+      P.logHeight + totalWeight K * (P.totalDegree * Real.log 2) := by
+  have h := Real.log_le_log (mulHeight_pos _) (mulHeight_hasseDeriv_le I P)
+  rw [Real.log_mul (by positivity) (mulHeight_pos P).ne', Real.log_pow, Real.log_pow] at h
+  rw [logHeight_eq_log_mulHeight, logHeight_eq_log_mulHeight]
+  linarith
+
+end HasseDeriv
+
+section Comparison
+
+variable {K σ τ α : Type*} [Field K] [AdmissibleAbsValues K]
+
+/-- **Local-to-global polynomial height comparison.** Let `x : α → K` be a finite nonempty tuple
+and `P`, `Q` multivariate polynomials over `K`. Suppose `P = 0 → Q = 0`, `x = 0 → D ≠ 0 → Q = 0`,
+and at every archimedean (resp. nonarchimedean) absolute value `v`, uniform bounds `v (x i) ≤ B`
+and `v (P.coeff a) ≤ C` imply `v (Q.coeff t) ≤ (c * B) ^ D * C` (resp. `B ^ D * C`, for `0 ≤ B`),
+with `1 ≤ c`. Then
+`Q.mulHeight ≤ (c ^ D) ^ totalWeight K * Height.mulHeight x ^ D * P.mulHeight`. -/
+theorem mulHeight_le_of_abv_coeff_le [Finite α] [Nonempty α] {x : α → K}
+    {P : MvPolynomial σ K} {Q : MvPolynomial τ K} {D : ℕ} {c : ℝ} (hc : 1 ≤ c)
+    (h0P : P = 0 → Q = 0) (h0x : x = 0 → D ≠ 0 → Q = 0)
+    (harch : ∀ v ∈ archAbsVal (K := K), ∀ {B C : ℝ}, (∀ i, v (x i) ≤ B) →
+      (∀ a, v (P.coeff a) ≤ C) → ∀ t, v (Q.coeff t) ≤ (c * B) ^ D * C)
+    (hnon : ∀ v ∈ nonarchAbsVal (K := K), ∀ {B C : ℝ}, 0 ≤ B →
+      (∀ i, v (x i) ≤ B) → (∀ a, v (P.coeff a) ≤ C) → ∀ t, v (Q.coeff t) ≤ B ^ D * C) :
+    Q.mulHeight ≤ (c ^ D) ^ totalWeight K * Height.mulHeight x ^ D * P.mulHeight := by
+  classical
+  cases nonempty_fintype α
+  have hC : (1 : ℝ) ≤ c ^ D := one_le_pow₀ hc
+  rcases eq_or_ne P 0 with rfl | hP0
+  · rw [h0P rfl, mulHeight_zero, mulHeight_zero, mul_one]
+    exact one_le_mul_of_one_le_of_one_le (one_le_pow₀ hC) (one_le_pow₀ (Height.one_le_mulHeight x))
+  by_cases hxD : x = 0 ∧ D ≠ 0
+  · rw [h0x hxD.1 hxD.2, mulHeight_zero]
+    exact one_le_mul_of_one_le_of_one_le
+      (one_le_mul_of_one_le_of_one_le (one_le_pow₀ hC) (one_le_pow₀ (Height.one_le_mulHeight x)))
+      P.one_le_mulHeight
+  let z : P.support → K := fun c ↦ P.coeff c
+  obtain ⟨c₁, hc₁⟩ := support_nonempty.mpr hP0
+  have hz : z ≠ 0 := Function.ne_iff.mpr ⟨⟨c₁, hc₁⟩, mem_support_iff.mp hc₁⟩
+  have hxpow : x ^ D ≠ 0 := by
+    rcases eq_or_ne D 0 with rfl | hD
+    · exact Function.ne_iff.mpr ⟨Classical.arbitrary α, by simp⟩
+    · obtain ⟨i, hi⟩ := Function.ne_iff.mp fun h ↦ hxD ⟨h, hD⟩
+      exact Function.ne_iff.mpr ⟨i, pow_ne_zero D hi⟩
+  let w : α × P.support → K := fun a ↦ (x ^ D) a.1 * z a.2
+  have hwH : Height.mulHeight w = Height.mulHeight x ^ D * P.mulHeight := by
+    rw [Height.mulHeight_fun_mul_eq hxpow hz, Height.mulHeight_pow, ← mulHeight_eq_support]
+  have hlocal (v : AbsoluteValue K ℝ) : ∃ B C, 0 ≤ B ∧ (∀ i, v (x i) ≤ B) ∧
+      (∀ a, v (P.coeff a) ≤ C) ∧ B ^ D * C ≤ ⨆ a, v (w a) := by
+    obtain ⟨i₀, -, himax⟩ := exists_max_image univ (fun i : α ↦ v (x i)) univ_nonempty
+    obtain ⟨c₀, hc₀, hcmax⟩ := exists_max_image P.support (v ∘ P.coeff) (support_nonempty.mpr hP0)
+    refine ⟨v (x i₀), v (P.coeff c₀), v.nonneg _, fun i ↦ himax i (mem_univ _),
+      fun a ↦ by
+        by_cases ha : a ∈ P.support
+        · exact hcmax a ha
+        · rw [notMem_support_iff.mp ha, map_zero]; exact v.nonneg _,
+      (by simp [w, z, Pi.pow_apply] : v (x i₀) ^ D * v (P.coeff c₀) = v (w (i₀, ⟨c₀, hc₀⟩))) ▸
+        Finite.le_ciSup_of_le (i₀, ⟨c₀, hc₀⟩) le_rfl⟩
+  have hw0 (v : AbsoluteValue K ℝ) : 0 ≤ ⨆ a, v (w a) := Real.iSup_nonneg fun _ ↦ v.nonneg _
+  rw [mul_assoc, ← hwH, mulHeight_eq_support]
+  refine (Height.mulHeight_le_of_forall_iSup_le w _ hC (p := 1)
+    (fun v _ ↦ Real.iSup_le (fun t ↦ ?_) (mul_nonneg (zero_le_one.trans hC) (by simpa using hw0 v)))
+    fun v hv ↦ Real.iSup_le (fun t ↦ ?_) (by simpa using hw0 v)).trans_eq (by rw [pow_one])
+  · obtain ⟨B, C, -, hxB, hPC, hBC⟩ := hlocal v
+    rw [pow_one]
+    exact (harch v ‹_› hxB hPC t.val).trans
+      ((by rw [mul_pow, mul_assoc] : (c * B) ^ D * C = c ^ D * (B ^ D * C)).trans_le
+        (mul_le_mul_of_nonneg_left hBC (zero_le_one.trans hC)))
+  · obtain ⟨B, C, hB0, hxB, hPC, hBC⟩ := hlocal v
+    simpa only [pow_one] using (hnon v ‹_› hB0 hxB hPC t.val).trans hBC
+
+/-- Logarithmic form of a multiplicative height bound of the shape
+`Q.mulHeight ≤ (c ^ D) ^ totalWeight K * Height.mulHeight x ^ D * P.mulHeight`, handling the
+empty-index case (`0 ≤ Real.log c`, `IsEmpty τ`) unconditionally. -/
+theorem logHeight_le_of_mulHeight_le [Finite α] {x : α → K}
+    {P : MvPolynomial σ K} {Q : MvPolynomial τ K} {D : ℕ} {c : ℝ}
+    (hEmpty : IsEmpty α → IsEmpty τ) (hc_pos : Nonempty α → 0 < c)
+    (hc_log : IsEmpty α → 0 ≤ Real.log c)
+    (hmul : Nonempty α →
+      Q.mulHeight ≤ (c ^ D) ^ totalWeight K * Height.mulHeight x ^ D * P.mulHeight) :
+    Q.logHeight ≤ P.logHeight + D * Height.logHeight x + totalWeight K * D * Real.log c := by
+  by_cases hα : Nonempty α
+  · have hc : 0 < c := hc_pos hα
+    have hxpos : 0 < Height.mulHeight x ^ D := pow_pos (Height.mulHeight_pos x) D
+    have h := Real.log_le_log (mulHeight_pos Q) (hmul hα)
+    rw [Real.log_mul (mul_pos (by positivity) hxpos).ne' (mulHeight_pos P).ne',
+      Real.log_mul (by positivity) hxpos.ne', Real.log_pow, Real.log_pow,
+      Real.log_pow (Height.mulHeight x)] at h
+    rw [logHeight_eq_log_mulHeight, logHeight_eq_log_mulHeight, Height.logHeight_eq_log_mulHeight]
+    linarith
+  · have : IsEmpty α := not_nonempty_iff.mp hα
+    have : IsEmpty τ := hEmpty ‹_›
+    have hlogc : 0 ≤ Real.log c := hc_log ‹_›
+    have hP : 0 ≤ P.logHeight := P.logHeight_nonneg
+    simp only [logHeight_eq_zero_of_isEmpty, Height.logHeight_eq_zero_of_subsingleton, mul_zero,
+      add_zero]
+    positivity
+
+end Comparison
 
 variable {K σ : Type*} [Field K] [AdmissibleAbsValues K] [Fintype σ]
   {n : Type*} [Fintype n] [DecidableEq n]

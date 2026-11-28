@@ -41,6 +41,9 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
 * `Finsupp.prod_pow_eq_pow_degree`: `∏ a ^ tᵢ = a ^ degree t`.
+* `Finsupp.prod_pow_eq_prod_sigma`, `Finsupp.sum_nsmul_eq_sum_sigma`: expanding `s.prod (f · ^ ·)`
+  (resp. `s.sum (· • f ·)`) over `s.support.sigma fun i ↦ Finset.range (s i)`.
+* `Finsupp.card_sigma_range_eq_degree`: `#(s.support.sigma fun i ↦ Finset.range (s i)) = s.degree`.
 * `Finsupp.degree_optionElim`: extending by `y` at `none` adds `y` to the degree.
 * `Finsupp.mapDomain_apply_eq_degree`: pushed forward to a type with a single element,
   a finitely supported function takes its degree as value.
@@ -111,6 +114,25 @@ the degree of `t`. -/
 theorem prod_pow_eq_pow_degree {σ M : Type*} [CommMonoid M] (t : σ →₀ ℕ) (a : M) :
     (t.prod fun _ n ↦ a ^ n) = a ^ t.degree := by
   rw [Finsupp.prod, Finset.prod_pow_eq_pow_sum, degree_apply]
+
+/-- Expanding a product of powers `s.prod (fun i e ↦ f i ^ e)` as a product over the sigma finset
+`s.support.sigma fun i ↦ Finset.range (s i)` repeats each factor `f i` exactly `s i` times. -/
+@[to_additive
+  /-- Expanding a sum of multiples `s.sum (fun i e ↦ e • f i)` as a sum over the sigma finset
+  `s.support.sigma fun i ↦ Finset.range (s i)` repeats each term `f i` exactly `s i` times. -/]
+theorem prod_pow_eq_prod_sigma {σ M : Type*} [CommMonoid M] (s : σ →₀ ℕ) (f : σ → M) :
+    (s.prod fun i e ↦ f i ^ e) =
+      ∏ q ∈ s.support.sigma (fun i ↦ Finset.range (s i)), f q.1 := by
+  simp [Finset.prod_sigma, Finsupp.prod]
+
+/-- The cardinality of the sigma finset `s.support.sigma fun i ↦ Finset.range (s i)` is the degree
+of `s`. This is not a `simp` lemma: `Finset.card_sigma` and `Finset.card_range` already simplify
+the left-hand side to `∑ i ∈ s.support, s i`, so tagging it would leave it out of simp-normal
+form. -/
+theorem card_sigma_range_eq_degree {σ : Type*} (s : σ →₀ ℕ) :
+    (s.support.sigma fun i ↦ Finset.range (s i)).card = s.degree := by
+  rw [Finset.card_sigma, degree_apply]
+  simp_rw [Finset.card_range]
 
 /-- Extending `f` to `Option σ` by the value `y` at `none` adds `y` to the degree. -/
 @[simp]

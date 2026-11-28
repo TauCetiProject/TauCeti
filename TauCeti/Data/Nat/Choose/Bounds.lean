@@ -15,12 +15,15 @@ import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Tactic.Positivity
 
 /-!
-# Bounds on binomial coefficients and binomial-weighted power sums
+# Bounds on binomial coefficients, multichoose, and binomial-weighted power sums
 
 The sum `∑_{j = k}^{d} choose j k · A ^ (j - k)` is the value at `A` of the `k`-th Hasse
 derivative of `1 + X + ⋯ + X^d`, and so bounds evaluated Hasse derivatives of polynomials of degree
 at most `d`. Bounding each binomial coefficient by `2 ^ d` and each power by `max 1 A ^ d` gives
 the coarse bound `(d + 1) 2 ^ d max(1, A) ^ d`.
+
+The multichoose number `n.multichoose k`, counting multisets of size `k` from `n` elements (and
+hence degree-`k` monomials in `n` variables), is bounded by `n ^ k`.
 
 The sum `∑ₖ m (m - 1) ⋯ (m - k + 1) · A ^ (m - k)` collects the coefficients of the iterated
 derivatives `(d/dX)ᵏ X^m = m (m - 1) ⋯ (m - k + 1) X^(m - k)` evaluated at `A`. Since
@@ -35,6 +38,7 @@ polynomial of degree `m` to its Hasse derivatives, by `(1 + m A) ^ m`.
   least `n + 2` monomials of degree `d` in `n + 1` variables.
 * `Nat.sum_Icc_choose_mul_pow_le`: `∑_{j = k}^{d} choose j k · A ^ (j - k) ≤
   (d + 1) 2 ^ d max(1, A) ^ d` for `0 ≤ A` in a linearly ordered semiring.
+* `Nat.multichoose_le_pow`: `n.multichoose k ≤ n ^ k`.
 * `Nat.sum_range_descFactorial_mul_pow_le`: `∑_{k < N} m.descFactorial k · A ^ (m - k) ≤
   (m + A) ^ m` for `0 ≤ A` in an ordered commutative semiring.
 * `Nat.sum_range_factorial_mul_pow_le`: `∑_{k ≤ m} k! · A ^ k ≤ (1 + m A) ^ m` for `0 ≤ A` in an
@@ -79,6 +83,22 @@ theorem Nat.sum_Icc_choose_mul_pow_le {α : Type*} [Semiring α] [LinearOrder α
       rw [sum_const, nsmul_eq_mul, Nat.card_Icc, mul_assoc]
       refine mul_le_mul_of_nonneg_right ?_ (by positivity)
       exact_mod_cast Nat.sub_le (d + 1) k
+
+/-- There are at most `n ^ k` multisets of size `k` drawn from `n` elements:
+`n.multichoose k ≤ n ^ k`. -/
+theorem Nat.multichoose_le_pow : ∀ n k : ℕ, n.multichoose k ≤ n ^ k
+  | 0, 0 => by simp
+  | 0, k + 1 => by simp
+  | n + 1, 0 => by simp
+  | n + 1, k + 1 => by
+    rw [Nat.multichoose_succ_succ]
+    calc n.multichoose (k + 1) + (n + 1).multichoose k
+        ≤ n ^ (k + 1) + (n + 1) ^ k :=
+          Nat.add_le_add (multichoose_le_pow n (k + 1)) (multichoose_le_pow (n + 1) k)
+      _ ≤ n * (n + 1) ^ k + (n + 1) ^ k := by
+          rw [pow_succ']
+          exact Nat.add_le_add_right (Nat.mul_le_mul_left n (Nat.pow_le_pow_left n.le_succ k)) _
+      _ = (n + 1) ^ (k + 1) := by rw [← Nat.succ_mul, pow_succ']
 
 /-- The comparison behind both factorial-type power-sum bounds: if `c k ≤ choose m k · m ^ k` for
 `k ≤ m`, then `∑_{k ≤ m} c k · X ^ k · Y ^ (m - k) ≤ (m X + Y) ^ m` for `0 ≤ X, Y`, by the

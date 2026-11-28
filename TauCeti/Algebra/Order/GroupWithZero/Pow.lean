@@ -36,6 +36,8 @@ with zero and divisibility rigidity in discrete archimedean ordered groups with 
   `(m, n)` and `(m', n')` are proportional.
 * `TauCeti.pow_le_max_one_pow`: `c ^ m ≤ max 1 c ^ n` for `0 ≤ c` and `m ≤ n`.
 * `TauCeti.pow_le_max_one_pow_pow`: `c ^ m ≤ (max 1 c ^ k) ^ n` for `0 ≤ c` and `m ≤ k * n`.
+* `TauCeti.mul_mul_pow_le_sq_mul_pow`: `a * (r * b) ^ n ≤ (r ^ 2 * b) ^ n` when `a ≤ r ^ n` and
+  `0 ≤ r * b`.
 * `TauCeti.pow_mul_pow_sub_two_mul_le`: for `0 ≤ c ≤ b ^ 2` and `0 ≤ b`, the product
   `c ^ s * b ^ (L - 2 * s)` does not increase with `s` while `2 * s ≤ L`.
 * `TauCeti.pow_mul_pow_sub_le_mul_pow_div_pow`: for `0 ≤ c ≤ b ^ 2`, `c ≤ A ^ 2 / m`,
@@ -82,6 +84,17 @@ theorem pow_le_max_one_pow_pow {M₀ : Type*} [MonoidWithZero M₀] [LinearOrder
     c ^ m ≤ (max 1 c ^ k) ^ n := by
   rw [← pow_mul]
   exact pow_le_max_one_pow hc h
+
+/-- In a preordered commutative monoid with zero, if `a ≤ r ^ n` and `0 ≤ r * b`, then
+`a * (r * b) ^ n ≤ (r ^ 2 * b) ^ n`. -/
+theorem mul_mul_pow_le_sq_mul_pow {M₀ : Type*} [CommMonoidWithZero M₀] [Preorder M₀]
+    [ZeroLEOneClass M₀] [PosMulMono M₀] {a r b : M₀} {n : ℕ}
+    (ha : a ≤ r ^ n) (hb : 0 ≤ r * b) :
+    a * (r * b) ^ n ≤ (r ^ 2 * b) ^ n := by
+  have := PosMulMono.toMulPosMono (α := M₀)
+  calc a * (r * b) ^ n
+      ≤ r ^ n * (r * b) ^ n := mul_le_mul_of_nonneg_right ha (pow_nonneg hb _)
+    _ = (r ^ 2 * b) ^ n := by rw [← mul_pow, sq, mul_assoc]
 
 /-- Trading one factor `c` for two factors `b`: in an ordered monoid with zero, if
 `0 ≤ c ≤ b ^ 2` and `0 ≤ b`, then `c ^ s * b ^ (L - 2 * s) ≤ c ^ r * b ^ (L - 2 * r)` for

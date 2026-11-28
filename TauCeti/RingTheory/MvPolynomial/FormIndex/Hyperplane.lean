@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.MvPolynomial.LinearSubst
 
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.Algebra.MvPolynomial.Funext
-import TauCeti.RingTheory.MvPolynomial.HasseDeriv.BlockSubst
+import TauCeti.RingTheory.MvPolynomial.Block.Subst
 
 /-!
 # Hyperplane derivative characterization of the index along linear forms

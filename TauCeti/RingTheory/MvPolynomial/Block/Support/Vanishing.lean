@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.Block.Support.Count
-public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.BlockSubst
+public import TauCeti.RingTheory.MvPolynomial.Block.Subst
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!

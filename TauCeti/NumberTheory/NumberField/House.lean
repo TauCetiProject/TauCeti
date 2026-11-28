@@ -38,6 +38,8 @@ theorem.
 
 ## Main results
 
+* `NumberField.house_le_of_forall_norm_embedding_le`: a uniform upper bound on all complex
+  conjugates bounds the house.
 * `NumberField.house_le_of_norm_embedding_eq`: if every complex conjugate of `γ` is, up to the
   factor `s ^ d`, the value of an integer polynomial `P` of degree `d` at the corresponding
   conjugate of `g`, then `house γ ≤ s ^ n * ((n + 1) * R ^ n) * H(P)`.
@@ -70,6 +72,14 @@ public section
 namespace NumberField
 
 open Finset Module Polynomial
+
+/-- If every complex conjugate `φ x` of `x` has norm at most `C` (with `0 ≤ C`), then
+`house x ≤ C`. -/
+theorem house_le_of_forall_norm_embedding_le {F : Type*} [Field F] [NumberField F] {x : F}
+    {C : ℝ} (hC : 0 ≤ C) (h : ∀ φ : F →+* ℂ, ‖φ x‖ ≤ C) : house x ≤ C := by
+  rw [house_eq_sup', ← NNReal.coe_mk C hC, NNReal.coe_le_coe]
+  exact Finset.sup'_le Finset.univ_nonempty _ fun φ _ ↦
+    NNReal.coe_le_coe.mp (by simpa only [NNReal.coe_mk, coe_nnNorm] using h φ)
 
 /-- If every conjugate `σ γ` of `γ` has absolute value `s ^ d * ‖P(σ g)‖`, where `1 ≤ s` and `P` has
 degree `d ≤ n`, and `max 1 ‖σ g‖ ≤ R` for every conjugate, then the house of `γ` is at most

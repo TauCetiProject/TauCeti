@@ -53,6 +53,9 @@ degree `d` it is the representation `TauCeti.polynomialRep` of the general linea
 * `MvPolynomial.aeval_linearSubst`: `linearSubst M p` evaluated at `x` is `p` evaluated at
   `M *ᵥ x`.
 * `MvPolynomial.linearSubst_mul`: the substitution is a right action.
+* `MvPolynomial.linearSubst_zero`, `MvPolynomial.constantCoeff_linearSubst`,
+  `MvPolynomial.coeff_zero_linearSubst`: substituting the zero matrix leaves the constant term,
+  and any linear substitution preserves the constant coefficient.
 * `MvPolynomial.linearSubst_injective_of_det_mem_nonZeroDivisors`,
   `MvPolynomial.linearSubst_injective`: linear substitutions with regular determinant (or
   nonzero determinant over a domain) are injective.
@@ -230,6 +233,26 @@ theorem exists_aeval_pderiv_linearSubst_ne_zero [DecidableEq σ] {k K : Type*} [
 @[simp]
 theorem linearSubst_one [DecidableEq σ] : linearSubst (1 : Matrix σ σ R) = AlgHom.id R _ :=
   algHom_ext fun i ↦ by simp [Matrix.one_apply]
+
+/-- Substituting the zero matrix kills all positive-degree monomials, leaving the constant term. -/
+@[simp]
+theorem linearSubst_zero (p : MvPolynomial σ R) :
+    linearSubst (0 : Matrix σ σ R) p = C (p.coeff 0) := by
+  have h0 : (fun i : σ ↦ ∑ j : σ, C ((0 : Matrix σ σ R) i j) * X j) = 0 :=
+    funext fun _ ↦ by simp
+  rw [linearSubst_eq_aeval, h0, aeval_zero, algebraMap_eq, constantCoeff_eq]
+
+/-- A linear change of variables preserves the constant coefficient. -/
+@[simp]
+theorem constantCoeff_linearSubst (M : Matrix σ σ R) (p : MvPolynomial σ R) :
+    constantCoeff (linearSubst M p) = constantCoeff p := by
+  rw [← eval_zero, eval_linearSubst, Matrix.mulVec_zero, eval_zero]
+
+/-- A linear change of variables preserves the constant coefficient. -/
+@[simp]
+theorem coeff_zero_linearSubst (M : Matrix σ σ R) (p : MvPolynomial σ R) :
+    (linearSubst M p).coeff 0 = p.coeff 0 :=
+  constantCoeff_linearSubst M p
 
 /-- The substitution is a right action of the matrix monoid: substituting along `M * N` is
 substituting along `M` and then along `N`. -/

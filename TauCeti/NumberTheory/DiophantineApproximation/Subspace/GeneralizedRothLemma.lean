@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.IndexEstimate
-public import TauCeti.NumberTheory.Height.BlockDehomogenize
+public import TauCeti.NumberTheory.Height.Block.Dehomogenize
 public import TauCeti.RingTheory.MvPolynomial.FormIndex.Dehomogenize
 public import TauCeti.RingTheory.MvPolynomial.FormIndex.Specialization
 

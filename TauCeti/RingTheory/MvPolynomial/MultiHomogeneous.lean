@@ -9,9 +9,9 @@ public import Mathlib.Algebra.MvPolynomial.Division
 public import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.WeightedHomogeneous
-import TauCeti.Data.Finsupp.MapDomain
-
 import TauCeti.Algebra.MvPolynomial.Division
+import TauCeti.Data.Finsupp.MapDomain
+import TauCeti.Data.Nat.Choose.Bounds
 import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
@@ -46,8 +46,12 @@ conditions of the construction be imposed on derivatives.
 
 * `MvPolynomial.isMultiHomogeneous_iff`: the characterization by the monomials occurring in `P`,
   and `MvPolynomial.isMultiHomogeneous_iff_support_subset`, the same through `multiMons`.
-* `MvPolynomial.card_multiMons`: `multiMons d` has `∏ h, (card ι + d h - 1).choose (d h)`
-  elements.
+* `MvPolynomial.card_multiMons`, `MvPolynomial.card_multiMons_le_pow`, and
+  `MvPolynomial.card_support_le_pow_of_isMultiHomogeneous`: `multiMons d` has
+  `∏ h, (card ι + d h - 1).choose (d h) ≤ card ι ^ ∑ h, d h` elements, bounding `#P.support`.
+* `MvPolynomial.card_multiMons_eq_card_piFinset`, `MvPolynomial.card_filter_multiMons_eq`:
+  `multiMons d` and its filtered subsets match the cardinality of the product `Fintype.piFinset`
+  of block antidiagonals.
 * `MvPolynomial.IsMultiHomogeneous.mul`, `.pow`, `.prod`, `.add`, `.sum`: multidegrees add
   under products and are preserved by sums.
 * `MvPolynomial.IsHomogeneous.isMultiHomogeneous_rename`: a form of degree `m` written in the
@@ -337,6 +341,14 @@ noncomputable def multiMons (d : κ → ℕ) : Finset (κ × ι →₀ ℕ) :=
   (Fintype.piFinset fun h ↦ (univ : Finset ι).finsuppAntidiag (d h)).map
     (Finsupp.equivFunOnFinite.symm.trans Finsupp.curryEquiv.symm).toEmbedding
 
+/-- Explicit definition of `multiMons ι d` as the image of the product `Fintype.piFinset` of
+block antidiagonals. -/
+theorem multiMons_def (d : κ → ℕ) :
+    multiMons ι d =
+      (Fintype.piFinset fun h ↦ (univ : Finset ι).finsuppAntidiag (d h)).map
+        (Finsupp.equivFunOnFinite.symm.trans Finsupp.curryEquiv.symm).toEmbedding :=
+  (rfl)
+
 /-- A multidegree exponent vector is obtained by assembling one exponent vector
 of degree `d h` for each block `h`. -/
 noncomputable def _root_.TauCeti.multiMonsEquiv (d : κ → ℕ) :
@@ -373,11 +385,41 @@ theorem card_multiMons (d : κ → ℕ) :
     #(multiMons ι d) = ∏ h, (Fintype.card ι + d h - 1).choose (d h) := by
   simp [multiMons, Fintype.card_piFinset, card_finsuppAntidiag_nat_eq_choose]
 
+/-- There are at most `card ι ^ ∑ h, d h` exponent vectors of multidegree `d`. -/
+theorem card_multiMons_le_pow (d : κ → ℕ) :
+    #(multiMons ι d) ≤ Fintype.card ι ^ ∑ h, d h := by
+  rw [card_multiMons, ← prod_pow_eq_pow_sum]
+  exact prod_le_prod fun h _ ↦
+    Nat.multichoose_eq (Fintype.card ι) (d h) ▸ Nat.multichoose_le_pow (Fintype.card ι) (d h)
+
+/-- `multiMons ι d` has the same cardinality as the product `Fintype.piFinset` of block
+antidiagonals. -/
+theorem card_multiMons_eq_card_piFinset (d : κ → ℕ) :
+    #(multiMons ι d) = #(Fintype.piFinset fun h ↦ (univ : Finset ι).finsuppAntidiag (d h)) := by
+  rw [multiMons_def, card_map]
+
+/-- Filtering `multiMons ι d` by a predicate on exponent functions has the same cardinality as
+filtering the product `Fintype.piFinset` of block antidiagonals. -/
+theorem card_filter_multiMons_eq (d : κ → ℕ) (p : (κ × ι → ℕ) → Prop) [DecidablePred p] :
+    #{N ∈ multiMons ι d | p fun q ↦ N q} =
+      #{f ∈ Fintype.piFinset (fun h ↦ (univ : Finset ι).finsuppAntidiag (d h)) |
+        p fun q ↦ f q.1 q.2} := by
+  rw [multiMons_def, filter_map, card_map]
+  exact congrArg Finset.card <| filter_congr fun f _ ↦ by
+    simp [Finsupp.uncurry_apply]
+
 /-- `P` is multihomogeneous of multidegree `d` if and only if all its monomials have
 multidegree `d`. -/
 theorem isMultiHomogeneous_iff_support_subset :
     IsMultiHomogeneous d P ↔ P.support ⊆ multiMons ι d := by
   simp only [isMultiHomogeneous_iff, subset_iff, mem_support_iff, mem_multiMons]
+
+omit [DecidableEq ι] in
+/-- A multihomogeneous polynomial of multidegree `d` has at most `card ι ^ ∑ h, d h` monomials. -/
+theorem card_support_le_pow_of_isMultiHomogeneous (hP : IsMultiHomogeneous d P) :
+    #P.support ≤ Fintype.card ι ^ ∑ h, d h := by
+  classical
+  exact (card_le_card (isMultiHomogeneous_iff_support_subset.1 hP)).trans (card_multiMons_le_pow d)
 
 end multiMons
 

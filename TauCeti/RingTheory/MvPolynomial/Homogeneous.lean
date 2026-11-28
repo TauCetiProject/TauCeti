@@ -13,6 +13,7 @@ import Mathlib.Algebra.MvPolynomial.NoZeroDivisors
 import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 -- `IsPrimitiveRoot.sum_zpow_pow_eq`, the orthogonality of the characters of `ℤ ⧸ n`.
 import TauCeti.RingTheory.RootsOfUnity.Basic
+import TauCeti.Algebra.Order.Antidiag.FinsuppEquiv
 import TauCeti.RingTheory.MvPolynomial.Initial.Weight
 
 /-!
@@ -56,7 +57,9 @@ The top component of a nonzero polynomial is nonzero
 (`MvPolynomial.homogeneousComponent_totalDegree_ne_zero`), and a polynomial of total degree at
 most `m` is the sum of its components of degree at most `m`
 (`MvPolynomial.sum_homogeneousComponent_of_totalDegree_le`). With no variables every homogeneous
-polynomial of positive degree is zero (`MvPolynomial.homogeneousSubmodule_succ_eq_bot_of_isEmpty`).
+polynomial of positive degree is zero (`MvPolynomial.homogeneousSubmodule_succ_eq_bot_of_isEmpty`),
+and in finitely many variables a degree-`n` homogeneous polynomial has at most `card σ ^ n`
+monomials (`MvPolynomial.card_support_le_pow_of_isHomogeneous`).
 Finally, `MvPolynomial.eval_eq_sum_homogeneousComponent_of_eval_smul` averages over the `n`-th
 roots of unity: if scaling the point by every `n`-th root of unity `ζ ^ j` scales the value by
 `(ζ ^ j) ^ a`, only the homogeneous components of degree congruent to `a` modulo `n` contribute.
@@ -373,6 +376,21 @@ theorem homogeneousSubmodule_succ_eq_bot_of_isEmpty [IsEmpty σ] (n : ℕ) :
   refine eq_bot_iff.2 fun p hp ↦ ?_
   rw [Submodule.mem_bot, eq_C_of_isEmpty p,
     ((mem_homogeneousSubmodule _ _).1 hp).coeff_eq_zero (by simp), map_zero]
+
+/-- A homogeneous polynomial of degree `n` in finitely many variables has at most
+`card σ ^ n` monomials. -/
+theorem card_support_le_pow_of_isHomogeneous [Fintype σ] {p : MvPolynomial σ R} {n : ℕ}
+    (hp : p.IsHomogeneous n) :
+    p.support.card ≤ Fintype.card σ ^ n := by
+  classical
+  have hsub : p.support ⊆ (Finset.univ : Finset σ).finsuppAntidiag n := fun s hs ↦ by
+    rw [Finset.mem_finsuppAntidiag]
+    refine ⟨?_, Finset.subset_univ _⟩
+    rw [← Finsupp.sum_fintype s (fun _ c ↦ c) (fun _ ↦ rfl)]
+    simpa only [Finsupp.weight_apply, Pi.one_apply, smul_eq_mul, mul_one] using
+      hp (mem_support_iff.1 hs)
+  exact (Finset.card_le_card hsub).trans
+    (by simpa using Finset.card_finsuppAntidiag_le_pow (Finset.univ : Finset σ) n)
 
 end CommSemiring
 

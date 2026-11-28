@@ -25,6 +25,9 @@ linear coefficient of a univariate power series (`PowerSeries.coeff_one_mul`).
 A linear operator that acts diagonally on the monomials, `X ^ m ↦ w m • X ^ m`, acts on the
 coefficients by the same scalars.
 
+For a finite sum of monomials with distinct exponents, the coefficient at each occurring exponent
+equals the corresponding summand (`MvPolynomial.coeff_sum_monomial_of_injOn`).
+
 ## Main results
 
 * `MvPolynomial.coeff_sum_linearCombination_X_pow_of_fintype`: the coefficients of a power sum of
@@ -37,6 +40,8 @@ coefficients by the same scalars.
   `pᵢ q(0) + p(0) qᵢ`.
 * `MvPolynomial.coeff_apply_eq_mul_of_apply_monomial`: an operator multiplying each monomial
   `X ^ m` by `w m` multiplies the coefficient of `X ^ m` by `w m`.
+* `MvPolynomial.coeff_sum_monomial_of_injOn`:
+  `(∑ i ∈ s, monomial (a i) (w i)).coeff (a j) = w j` when `a` is injective on `s` and `j ∈ s`.
 -/
 
 public section
@@ -93,5 +98,17 @@ theorem coeff_apply_eq_mul_of_apply_monomial {f : Module.End R (MvPolynomial σ 
   split_ifs with hm
   · rfl
   · rw [notMem_support_iff.1 hm, mul_zero]
+
+/-- If `a` is injective on `s`, then the coefficient of `∑ i ∈ s, monomial (a i) (w i)` at `a j`
+for `j ∈ s` is `w j`. -/
+theorem coeff_sum_monomial_of_injOn {s : Finset ι} {a : ι → σ →₀ ℕ} {w : ι → R}
+    (ha : Set.InjOn a s) {j : ι} (hj : j ∈ s) :
+    (∑ i ∈ s, monomial (a i) (w i)).coeff (a j) = w j := by
+  classical
+  rw [coeff_sum]
+  simp_rw [coeff_monomial]
+  rw [Finset.sum_eq_single_of_mem j hj
+    fun i hi hne ↦ ite_eq_right fun h ↦ hne (ha (Finset.mem_coe.2 hi) (Finset.mem_coe.2 hj) h)]
+  simp
 
 end MvPolynomial

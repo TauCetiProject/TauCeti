@@ -52,6 +52,8 @@ differences of the remaining columns.
   sum, over the choices of one summand in each row, of the determinants of the resulting matrices.
 * `Matrix.det_submatrix_ne_zero_of_map`: a minor whose image under a ring homomorphism is nonzero
   is nonzero, and `Matrix.det_submatrix_map_ne_zero_iff` is the converse for an injective one.
+* `Matrix.exists_isUnit_det_row_eq`: any row with a unit entry extends to a matrix with unit
+  determinant.
 * `Matrix.isUnit_det_mul_add_one_sub`: for an idempotent `P` commuting with an invertible `g`,
   the matrix `P * g + 1 - P` has invertible determinant.
 * `Matrix.isUnit_det_map_intCast`: an integer matrix with nonzero determinant has unit
@@ -217,6 +219,19 @@ theorem det_of_sum_rows {ι R : Type*} {κ : ι → Type*} [Fintype ι] [Decidab
     exact Finset.sum_apply j _ _
   rw [hrow] at key
   exact key
+
+/-- **Completing a row with a unit entry to a matrix with unit determinant.** If `f j₀` is a unit
+in `R`, then `f` is row `i₀` of a square matrix over `R` with unit determinant. -/
+theorem exists_isUnit_det_row_eq {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+    (i₀ : ι) {f : ι → R} {j₀ : ι} (hj₀ : IsUnit (f j₀)) :
+    ∃ A : Matrix ι ι R, IsUnit A.det ∧ A i₀ = f := by
+  let M : Matrix ι ι R := (1 : Matrix ι ι R).updateRow j₀ f
+  have hsum : (∑ k, f k • (1 : Matrix ι ι R) k) = f := by ext m; simp [Matrix.one_apply]
+  have hMdet : M.det = f j₀ := by
+    simpa [M, hsum] using det_updateRow_sum (1 : Matrix ι ι R) j₀ f
+  refine ⟨M.submatrix (Equiv.swap i₀ j₀) id, ?_, by ext m; simp [M]⟩
+  rw [det_permute, hMdet]
+  exact ((Int.castRingHom R).isUnit_map (Units.isUnit _)).mul hj₀
 
 /-- For an idempotent matrix `P` commuting with an invertible matrix `g`, the matrix
 `P * g + 1 - P`, which acts as `g` on the range of `P` and as the identity on that of `1 - P`, has

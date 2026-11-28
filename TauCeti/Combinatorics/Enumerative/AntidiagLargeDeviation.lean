@@ -26,7 +26,9 @@ evaluates it at `l = #s * (#s + 1) * η / 2`, the minimizer of the leading,
 degree-independent quadratic term. The block degrees may differ, and their error is measured
 by the sum of their reciprocals.
 `Finset.exists_bound_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_div_sub_mul_le`
-absorbs that error into any positive slack in the per-block exponent (rate) of the upper bound.
+absorbs that error into any positive slack in the per-block exponent (rate) of the upper bound,
+and `Finset.exists_bound_mul_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_lt` turns a
+logarithmic budget `4 * log c < #s * (#s + 1) * η ^ 2 * card κ` into `c * #tail < #total`.
 Such bounds count the linear vanishing conditions in the construction of multihomogeneous
 auxiliary polynomials.
 
@@ -226,6 +228,69 @@ theorem exists_bound_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_div_s
     (prod_nonneg fun _ _ ↦ Nat.cast_nonneg _)
   dsimp [C] at herror
   nlinarith only [herror]
+
+/-- Budgeted lower-tail count for multidegree monomials: if `c ≥ 0`, `η ≥ 0`, and
+`4 * Real.log c < s.card * (s.card + 1) * η ^ 2 * Fintype.card κ`, then for all sufficiently
+large block degrees `d`, the lower-tail filter scaled by `c` is strictly smaller than the full
+product of antidiagonals. -/
+theorem exists_bound_mul_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_lt
+    [Fintype κ] [DecidableEq κ]
+    (s : Finset ι) {c η : ℝ} (hc : 0 ≤ c) (hη : 0 ≤ η)
+    (hm : 4 * Real.log c < s.card * (s.card + 1) * η ^ 2 * Fintype.card κ) :
+    ∃ D : ℕ, 0 < D ∧ ∀ d : κ → ℕ, (∀ h, D ≤ d h) → ∀ ⦃i : ι⦄, i ∈ s →
+      c * ((Fintype.piFinset (fun h ↦ finsuppAntidiag s (d h))).filter
+        (fun f ↦ ∑ h, (f h i : ℝ) / d h ≤
+          Fintype.card κ / s.card - Fintype.card κ * η)).card <
+        (Fintype.piFinset (fun h ↦ finsuppAntidiag s (d h))).card := by
+  classical
+  have hpi_pos (d : κ → ℕ) {i : ι} (hi : i ∈ s) :
+      0 < (Fintype.piFinset (fun h ↦ finsuppAntidiag s (d h))).card :=
+    card_pos.mpr ⟨fun h ↦ Finsupp.single i (d h),
+      Fintype.mem_piFinset.mpr fun h ↦ mem_finsuppAntidiag.mpr
+        ⟨by simp [Finsupp.single_apply, hi],
+          Finsupp.support_single_subset.trans (singleton_subset_iff.mpr hi)⟩⟩
+  rcases eq_or_lt_of_le hc with rfl | hc_pos
+  · exact ⟨1, one_pos, fun d _ i hi ↦ by rw [zero_mul]; exact Nat.cast_pos.mpr (hpi_pos d hi)⟩
+  by_cases hκ : Fintype.card κ = 0
+  · have : IsEmpty κ := Fintype.card_eq_zero_iff.mp hκ
+    have hc1 : c < 1 := by
+      by_contra! hc1
+      have hlog : 0 ≤ Real.log c := Real.log_nonneg hc1
+      rw [hκ, Nat.cast_zero, mul_zero] at hm
+      linarith
+    refine ⟨1, one_pos, fun d _ i _ ↦ ?_⟩
+    have hcard : (Fintype.piFinset (fun h ↦ finsuppAntidiag s (d h))).card = 1 := by
+      simp
+    have hle : (((Fintype.piFinset (fun h ↦ finsuppAntidiag s (d h))).filter
+        (fun f ↦ ∑ h, (f h i : ℝ) / d h ≤
+          Fintype.card κ / s.card - Fintype.card κ * η)).card : ℝ) ≤ 1 := by
+      exact_mod_cast (card_filter_le _ _).trans_eq hcard
+    rw [hcard, Nat.cast_one]
+    exact (mul_le_of_le_one_right hc_pos.le hle).trans_lt hc1
+  · have hm_pos : 0 < (Fintype.card κ : ℝ) := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hκ)
+    let ε : ℝ := (s.card * (s.card + 1) * η ^ 2 * Fintype.card κ - 4 * Real.log c) /
+      (8 * Fintype.card κ)
+    obtain ⟨D, hD, htail⟩ :=
+      exists_bound_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_div_sub_mul_le
+        s hη (div_pos (sub_pos.mpr hm) (by positivity) : 0 < ε)
+    have hexp_lt :
+        c * Real.exp ((-s.card * (s.card + 1) * η ^ 2 / 4 + ε) * Fintype.card κ) < 1 := by
+      rw [← Real.exp_log hc_pos, ← Real.exp_add, Real.exp_lt_one_iff]
+      have hsum : Real.log c + (-s.card * (s.card + 1) * η ^ 2 / 4 + ε) * Fintype.card κ =
+          -(s.card * (s.card + 1) * η ^ 2 * Fintype.card κ - 4 * Real.log c) / 8 := by
+        dsimp [ε]
+        field_simp [hm_pos.ne']
+        ring
+      linarith
+    refine ⟨D, hD, fun d hd i hi ↦ ?_⟩
+    have hSpos : (0 : ℝ) < (Fintype.piFinset (fun h ↦ finsuppAntidiag s (d h))).card :=
+      Nat.cast_pos.mpr (hpi_pos d hi)
+    have htail' := htail d hd hi
+    rw [← Nat.cast_prod, ← Fintype.card_piFinset] at htail'
+    exact (mul_le_mul_of_nonneg_left htail' hc_pos.le).trans_lt
+      ((by ring : c * (((Fintype.piFinset (fun h ↦ finsuppAntidiag s (d h))).card : ℝ) * _) =
+          ((Fintype.piFinset (fun h ↦ finsuppAntidiag s (d h))).card : ℝ) * (c * _)).trans_lt
+        ((mul_lt_mul_of_pos_left hexp_lt hSpos).trans_eq (mul_one _)))
 
 /-- The empty block family has exactly one monomial; its tail at the mean has probability one.
 For `i ∈ s`, the lower-tail estimates still apply with non-strict thresholds: their exponents
