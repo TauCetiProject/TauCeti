@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Gluing.Separated
+import TauCeti.Topology.Frontier
 
 /-!
 # Separated gluing away from the boundary
@@ -34,33 +35,6 @@ namespace AlgebraicGeometry
 
 variable {X Y S : Scheme.{u}} {U V W : Y.Opens}
 
-/-- The graph of a universally closed map `V ⟶ X` on an open of `Y`, restricted over
-`W ⊆ Y`, is closed in `X ×[S] W` when `Y ⟶ S` is separated. -/
-theorem Scheme.Opens.isClosedImmersion_pullbackLift_inf (V W : Y.Opens)
-    (p : V.toScheme ⟶ X) [UniversallyClosed p] (f : X ⟶ S) (g : Y ⟶ S) [IsSeparated g]
-    (hp : p ≫ f = V.ι ≫ g) :
-    IsClosedImmersion (pullback.lift (f := f) (g := W.ι ≫ g)
-      (Y.homOfLE (inf_le_left : V ⊓ W ≤ V) ≫ p) (Y.homOfLE inf_le_right)
-      (by simp [hp])) := by
-  let e := (isPullback_opens_inf V W).isoPullback
-  let baseChange := pullback.lift (f := f) (g := W.ι ≫ g)
-    (pullback.fst (V.ι ≫ g) (W.ι ≫ g) ≫ p) (pullback.snd _ _) (by simp [hp, pullback.condition])
-  have : UniversallyClosed baseChange :=
-    MorphismProperty.pullbackLift_fst_snd (W.ι ≫ g) hp.symm ‹UniversallyClosed p›
-  let graph := pullback.lift (f := f) (g := W.ι ≫ g)
-    (Y.homOfLE (inf_le_left : V ⊓ W ≤ V) ≫ p) (Y.homOfLE inf_le_right) (by simp [hp])
-  -- Pass first from the product over Y to the product over S, then base change p.
-  have hgraph : graph = e.hom ≫ pullback.mapDesc V.ι W.ι g ≫ baseChange := by
-    apply pullback.hom_ext <;> simp [graph, baseChange, e]
-  have : UniversallyClosed graph := by
-    rw [hgraph]
-    infer_instance
-  have : IsImmersion (graph ≫ pullback.snd f (W.ι ≫ g)) := by
-    rw [pullback.lift_snd (f := f)]
-    infer_instance
-  have := IsImmersion.of_comp graph (pullback.snd f (W.ι ≫ g))
-  exact IsClosedImmersion.of_isPreimmersion graph graph.isClosedMap.isClosed_range
-
 /-- The gluing of `X` and `W` along `U` is separated exactly when no point of the frontier
 of `U` lies in both `V` and `W`, provided the overlap map to `X` extends to a universally
 closed map on `V`. -/
@@ -78,14 +52,11 @@ theorem IsSeparated.pushout_desc_iff_disjoint_frontier (hUV : U ≤ V) (hUW : U 
       (Y.homOfLE hUW) (by simp [hp]) = i ≫ graph := by
     apply pullback.hom_ext <;> simp [i, graph]
   rw [IsSeparated.pushout_desc_iff, hfac, IsClosedImmersion.comp_iff]
-  rw [IsClosedImmersion.iff_isPreimmersion, and_iff_right (inferInstance : IsPreimmersion i),
-    ← Scheme.Hom.coe_opensRange, Scheme.opensRange_homOfLE, TopologicalSpace.Opens.map_coe]
-  -- Inside the open intersection the overlap is open, so closedness is detected by its frontier.
-  have hclopen : IsClosed ((V ⊓ W).ι ⁻¹' (U : Set Y)) ↔ IsClopen ((V ⊓ W).ι ⁻¹' (U : Set Y)) :=
-    ⟨fun h ↦ ⟨h, U.isOpen.preimage (V ⊓ W).ι.continuous⟩, IsClopen.isClosed⟩
-  rw [hclopen, isClopen_iff_frontier_eq_empty,
-    ← (V ⊓ W).ι.isOpenEmbedding.isOpenMap.preimage_frontier_eq_frontier_preimage
-      (V ⊓ W).ι.continuous, Set.preimage_eq_empty_iff, Scheme.Opens.range_ι, disjoint_comm]
+  rw [IsClosedImmersion.iff_isPreimmersion, and_iff_right (inferInstance : IsPreimmersion i)]
+  simpa only [i, ← Scheme.Hom.coe_opensRange, Scheme.opensRange_homOfLE,
+    TopologicalSpace.Opens.map_coe, Scheme.Opens.opensRange_ι] using
+    (V ⊓ W).ι.isOpenEmbedding.isOpenMap.isClosed_preimage_iff_disjoint_frontier
+      (V ⊓ W).ι.continuous U.isOpen
 
 /-- Gluing to the complement of the closure of `V ∖ U` gives a separated scheme over the
 base. This complement is the open `V ⇨ U`, the largest open meeting `V` only in `U`. -/
