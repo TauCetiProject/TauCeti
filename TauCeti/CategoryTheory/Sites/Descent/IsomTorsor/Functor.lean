@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Sites.Descent.IsomTorsor.Sheaf
 public import TauCeti.CategoryTheory.Sites.Descent.IsGerbe
+public import TauCeti.CategoryTheory.Sites.Descent.PresheafHomMap
 
 /-!
 # Functoriality of Isom torsors in both endpoints

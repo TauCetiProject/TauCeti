@@ -23,6 +23,8 @@ homeomorphism, whose inverse sends a line `[v]` to the class of `v / ‖v‖`.
 
 * `TauCeti.ComplexProjectiveSpace.homeomorphProjectivization`: the homeomorphism
   `CPⁿ ≃ₜ ℙ ℂ (Fin (n + 1) → ℂ)` sending the class of a unit vector to the line it spans.
+* `TauCeti.ComplexProjectiveSpace.homeomorphProjectivization_mk_eq_mk_iff`: it sends the class of
+  a unit vector `x` to the line `[w]` exactly when `x` is a complex multiple of `w`.
 * `TauCeti.ComplexProjectiveSpace.homeomorphProjectivization_symm_mk_eq_mk_inv_norm_smul`: its
   inverse sends a line `[v]` to the class of `v / ‖v‖`.
 -/
@@ -99,6 +101,14 @@ theorem homeomorphProjectivization_mk (x : sphere (0 : EuclideanSpace ℂ (Fin (
       Projectivization.mk ℂ (WithLp.ofLp (x : EuclideanSpace ℂ (Fin (n + 1))))
         ((WithLp.ofLp_eq_zero _).not.2 (ne_zero_of_mem_sphere one_ne_zero x)) :=
   lift_lineOfSphere_mk n x
+
+/-- The homeomorphism `CPⁿ ≃ₜ ℙ ℂ (Fin (n + 1) → ℂ)` sends the class of a unit vector `x` to the
+line `[w]` exactly when `x` is a complex multiple of `w`. -/
+theorem homeomorphProjectivization_mk_eq_mk_iff
+    (x : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) {w : Fin (n + 1) → ℂ} (hw : w ≠ 0) :
+    homeomorphProjectivization n (mk n x) = Projectivization.mk ℂ w hw ↔
+      ∃ a : ℂ, a • w = WithLp.ofLp (x : EuclideanSpace ℂ (Fin (n + 1))) := by
+  rw [homeomorphProjectivization_mk, Projectivization.mk_eq_mk_iff']
 
 /-- The inverse of `CPⁿ ≃ₜ ℙ ℂ (Fin (n + 1) → ℂ)` sends the line spanned by a unit vector to its
 class. -/

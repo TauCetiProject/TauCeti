@@ -43,8 +43,9 @@ the slab `M × (0, 1)`; the critical points of the corresponding function on the
 of index `ind q`, and no trajectory goes from the level `1` back to the level `0`. The twisting
 cocycle of the slab is block upper triangular, its diagonal blocks are the cocycles of `f₀` and
 `f₁`, and its off-diagonal block is the continuation cocycle from the one to the other. The
-twisted complex of `ν.cone` is, as a graded module, the mapping cone of the continuation map of
-`ν`; that identification is not made here.
+twisted complex of `ν.cone` is the mapping cone of the continuation map of `ν`
+(`TauCeti.ContinuationCocycle.coneTwistedCochainComplexIso`, in
+`TauCeti.Algebra.Homology.DG.Twisted.MappingCone`).
 
 ## Main definitions
 
@@ -64,6 +65,10 @@ twisted complex of `ν.cone` is, as a graded module, the mapping cone of the con
   and `ν`.
 * `TauCeti.TwistingCocycle.cone_blockContinuation`: a block-triangular twisting cocycle is the
   cone of its off-diagonal block.
+* `TauCeti.ContinuationCocycle.twistedDifferential_cone_apply_inl`,
+  `TauCeti.ContinuationCocycle.twistedDifferential_cone_apply_inr`: the twisted differential of
+  `ν.cone` is block-triangular, with the twisted differentials of `mP` and `mQ` on the diagonal and
+  `(-1) ^ (n + 1)` times the continuation map of `ν` in total degree `n` off the diagonal.
 
 ## References
 
@@ -77,7 +82,7 @@ public section
 
 namespace TauCeti
 
-universe uR uA uP uQ
+universe uR uA uM uP uQ
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} {d : A →ₗ[R] A}
@@ -267,6 +272,43 @@ theorem blockRight_cone : (ν.cone hν).blockRight (ν.cone_m_inr_inl hν) = mQ 
 theorem blockContinuation_cone_ν (x : P) (y : Q) :
     ((ν.cone hν).blockContinuation (ν.cone_m_inr_inl hν)).ν x y = ν.ν x y := by
   simp
+
+/-! ### The twisted differential of the cone -/
+
+section Differential
+
+open MulOpposite
+
+variable {M : Type uM} [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
+  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ] {dM : M →ₗ[R] M}
+
+/-- On the generators of `P`, the twisted differential of `ν.cone` is the twisted differential
+of `mP`: the cone never goes from `Q` to `P`. -/
+theorem twistedDifferential_cone_apply_inl (f : P ⊕ Q → M) (x : P) :
+    twistedDifferential (ν.cone hν).m ℳ dM f (.inl x) =
+      twistedDifferential mP.m ℳ dM (fun p ↦ f (.inl p)) x := by
+  simp [twistedDifferential_apply, Fintype.sum_sum_type]
+
+/-- On the generators of `Q`, the twisted differential of `ν.cone` on a family of total degree `n`
+is the twisted differential of `mQ` plus `(-1) ^ (n + 1)` times the continuation map of `ν`. -/
+theorem twistedDifferential_cone_apply_inr {n : ℤ} {f : P ⊕ Q → M}
+    (hf : f ∈ twistedTotalGrading ℳ (Sum.elim (fun x ↦ ind x + 1) indQ) n) (y : Q) :
+    twistedDifferential (ν.cone hν).m ℳ dM f (.inr y) =
+      twistedDifferential mQ.m ℳ dM (fun y ↦ f (.inr y)) y +
+        (n + 1).negOnePow • continuationMap R M ν.ν (fun x ↦ f (.inl x)) y := by
+  rw [twistedDifferential_apply, twistedDifferential_apply, Fintype.sum_sum_type,
+    continuationMap_apply, Finset.smul_sum, add_comm (∑ x : P, _), ← add_assoc]
+  simp only [cone_m_inr_inr, cone_m_inl_inr]
+  congr 1
+  refine Finset.sum_congr rfl fun x _ ↦ ?_
+  have hx : f (.inl x) ∈ ℳ (n + (ind x + 1)) := by
+    simpa using mem_twistedTotalGrading_iff.1 hf (.inl x)
+  -- The sign of the row and the Koszul sign of `f (inl x)` combine to `(-1) ^ (n + 1)`.
+  rw [koszulTwist_one_eq_negOnePow_smul hx, op_smul, smul_assoc,
+    smul_comm (op (ν.ν x y)) (n + (ind x + 1)).negOnePow, smul_smul,
+    negOnePow_mul_negOnePow_of_even (c := n + 1) ⟨ind x, by ring⟩]
+
+end Differential
 
 end ContinuationCocycle
 
