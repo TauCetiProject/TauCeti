@@ -37,7 +37,7 @@ opposite weights yields faithful flatness and a bijective Galois map.
 
 public section
 
-open scoped TensorProduct
+open scoped DirectSum TensorProduct
 
 namespace TauCeti.ComoduleAlgebra
 
@@ -103,30 +103,38 @@ theorem coe_decompose_weightSpace [DecidableEq G] (a : A) (g : Additive G) :
 
 end Monoid
 
+section RightCancelMonoid
+
+variable {R G A : Type*} [CommSemiring R] [RightCancelMonoid G] [Semiring A] [Algebra R A]
+  [ComoduleAlgebra R (MonoidAlgebra R G) A]
+
+/-- Right multiplication by a homogeneous element of weight `h` shifts weight projections by
+right multiplication by `h` on the character monoid. -/
+theorem weightProj_mul_right_of_mem_weightSpace {h : G} {b : A} (hb : b ∈ weightSpace R G A h)
+    (g : G) (a : A) : weightProj R G A (g * h) (a * b) = weightProj R G A g a * b := by
+  classical
+  simpa only [coe_decompose_weightSpace, toMul_add, toMul_ofMul] using
+    (DirectSum.coe_decompose_mul_add_of_right_mem (fun i : Additive G ↦ weightSpace R G A i.toMul)
+      (i := Additive.ofMul g) (j := Additive.ofMul h) (a := a) hb)
+
+end RightCancelMonoid
+
 section StrongGrading
 
 variable {R G A : Type*} [CommSemiring R] [Group G] [Semiring A] [Algebra R A]
   [ComoduleAlgebra R (MonoidAlgebra R G) A]
 
 local notation "W" => weightSpace R G A
-local notation "P" => weightProj R G A
 
-/-- Right multiplication by a homogeneous element of weight `h` shifts weight projections by
-right multiplication by `h` on the character group. -/
-theorem weightProj_mul_right_of_mem_weightSpace {h : G} {b : A} (hb : b ∈ W h)
-    (g : G) (a : A) : P (g * h) (a * b) = P g a * b := by
-  classical
-  simpa only [coe_decompose_weightSpace, toMul_add, toMul_ofMul] using
-    (DirectSum.coe_decompose_mul_add_of_right_mem (fun i : Additive G ↦ W i.toMul)
-      (i := Additive.ofMul g) (j := Additive.ofMul h) (a := a) hb)
-
-/-- If opposite weight submodules multiply to the scalar submodule, multiplication is strong:
-the product spans the entire submodule of the product weight. -/
-theorem weightSpace_mul_eq (g h : G) (hInv : W h⁻¹ * W h = 1) : W g * W h = W (g * h) := by
+/-- If a product of opposite weights contains one, multiplication by the right-hand weight
+spans the entire submodule of the product weight. -/
+theorem weightSpace_mul_eq (g h : G) (hInv : (1 : A) ∈ W h⁻¹ * W h) :
+    W g * W h = W (g * h) := by
   refine le_antisymm (weightSpace_mul_le g h) ?_
   calc
-    W (g * h) = W (g * h) * (W h⁻¹ * W h) := by rw [hInv, mul_one]
-    _ = (W (g * h) * W h⁻¹) * W h := by rw [mul_assoc]
+    W (g * h) = W (g * h) * 1 := (mul_one _).symm
+    _ ≤ W (g * h) * (W h⁻¹ * W h) := mul_le_mul_right (Submodule.one_le.mpr hInv) _
+    _ = (W (g * h) * W h⁻¹) * W h := (mul_assoc _ _ _).symm
     _ ≤ W g * W h := by
       gcongr
       simpa [mul_assoc] using (weightSpace_mul_le (R := R) (A := A) (g * h) h⁻¹)
@@ -136,7 +144,7 @@ of the coordinate algebra. -/
 noncomputable def weightSpaceUnits (hInv : ∀ g : G, W g⁻¹ * W g = 1) :
     G →* (Submodule R A)ˣ :=
   MonoidHom.mk' (fun g ↦ ⟨W g, W g⁻¹, by simpa only [inv_inv] using hInv g⁻¹, hInv g⟩)
-    fun g h ↦ Units.ext (weightSpace_mul_eq g h (hInv h)).symm
+    fun g h ↦ Units.ext (weightSpace_mul_eq g h (Submodule.one_le.mp (hInv h).ge)).symm
 
 variable (hInv : ∀ g : G, weightSpace R G A g⁻¹ * weightSpace R G A g = 1)
 
@@ -153,13 +161,73 @@ theorem coe_inv_weightSpaceUnits (g : G) :
 
 end StrongGrading
 
-section Group
+section Galois
 
-variable {R G A : Type*} [CommSemiring R] [Group G] [CommSemiring A] [Algebra R A]
-  [ComoduleAlgebra R (MonoidAlgebra R G) A]
+variable {R G A : Type*}
 
 local notation "W" => weightSpace R G A
 local notation "P" => weightProj R G A
+
+local notation "β" => galoisMap R
+  (fun r ↦ Subalgebra.algebraMap_mem (coinvariants R (MonoidAlgebra R G) A) r)
+
+section Monoid
+
+variable [CommSemiring R] [Monoid G] [CommSemiring A] [Algebra R A]
+  [ComoduleAlgebra R (MonoidAlgebra R G) A]
+
+/-- The coefficient of a character in the Galois image of a pure tensor is the first factor
+times the corresponding weight projection of the second factor. -/
+theorem tensorCoeffEquiv_galoisMap_tmul (g : G) (a b : A) :
+    tensorCoeffEquiv R G A (β (a ⊗ₜ[R] b)) g = a * P g b := by
+  have hone : β ((1 : A) ⊗ₜ[R] b) = coact (R := R) (C := MonoidAlgebra R G) b := by
+    rw [galoisMap_tmul, ← Algebra.TensorProduct.one_def, one_mul]
+  rw [tensorCoeffEquiv_apply, LinearMap.tensorComponent_eq_liftBaseChange,
+    TensorProduct.tmul_eq_smul_one_tmul]
+  simp only [map_smul, hone, smul_eq_mul]
+  rw [weightProj_apply, LinearMap.tensorComponent_eq_liftBaseChange]
+
+private noncomputable def tensorWeightDecomposition :
+    (⨁ g : G, A ⊗[R] W g) ≃ₗ[R] A ⊗[R] A := by
+  classical
+  exact (TensorProduct.directSumRight R R A (fun g ↦ ↥(W g))).symm.trans
+    ((LinearEquiv.ofBijective (DirectSum.coeLinearMap W) (isInternal_weightSpace R G A)).lTensor A)
+
+private noncomputable def tensorCoeffDecomposition :
+    A ⊗[R] MonoidAlgebra R G ≃ₗ[R] ⨁ _ : G, A := by
+  classical
+  exact (tensorCoeffEquiv R G A).trans (finsuppLEquivDirectSum R A G)
+
+private theorem galoisMap_comp_tensorWeightDecomposition :
+    (tensorCoeffDecomposition (R := R) (G := G) (A := A)).toLinearMap ∘ₗ
+      (β).toLinearMap.restrictScalars R ∘ₗ (tensorWeightDecomposition (R := R)).toLinearMap =
+    DirectSum.lmap (fun g : G ↦ ((W g).subtype.liftBaseChange A).restrictScalars R) := by
+  classical
+  apply DirectSum.linearMap_ext R
+  intro g
+  apply TensorProduct.ext'
+  intro a b
+  have he : tensorWeightDecomposition (DirectSum.lof R G _ g (a ⊗ₜ[R] b)) =
+      a ⊗ₜ[R] (b : A) := by
+    simp only [tensorWeightDecomposition, LinearEquiv.trans_apply,
+      TensorProduct.directSumRight_symm_lof_tmul, LinearEquiv.lTensor_tmul]
+    congr 1
+    exact DirectSum.coeLinearMap_lof W g b
+  have hcoeff : tensorCoeffEquiv R G A (β (a ⊗ₜ[R] (b : A))) = Finsupp.single g (a * b) := by
+    ext i
+    rw [tensorCoeffEquiv_galoisMap_tmul]
+    by_cases hi : i = g
+    · subst i
+      simp [weightProj_of_mem b.property]
+    · simp [hi, weightProj_of_mem_of_ne hi b.property]
+  simp [-galoisMap_tmul, he, tensorCoeffDecomposition, hcoeff, finsuppLEquivDirectSum_single]
+
+end Monoid
+
+section Group
+
+variable [CommSemiring R] [Group G] [CommSemiring A] [Algebra R A]
+  [ComoduleAlgebra R (MonoidAlgebra R G) A]
 
 /-- Surjectivity of the Galois map forces a finite sum of products of opposite-weight elements
 to be equal to one. -/
@@ -167,22 +235,11 @@ theorem one_mem_weightSpace_inv_mul_of_surjective_galoisMap
     (hsurj : Function.Surjective (galoisMap R
       (fun r ↦ (coinvariants R (MonoidAlgebra R G) A).algebraMap_mem r)))
     (g : G) : (1 : A) ∈ W g⁻¹ * W g := by
-  let β := galoisMap R (fun r ↦ (coinvariants R (MonoidAlgebra R G) A).algebraMap_mem r)
-  let coeff : A ⊗[R] MonoidAlgebra R G →ₗ[A] A :=
-    ((Algebra.linearMap R A).comp (monoidCoeff R G g)).liftBaseChange A
+  let coeff := LinearMap.tensorComponent (M := A) (monoidCoeff R G g)
   have h (t : A ⊗[R] A) : P 1 (coeff (β t)) ∈ W g⁻¹ * W g := by
     induction t using TensorProduct.inductionOn with
     | tmul a b =>
-      have hcoeff : coeff (β (a ⊗ₜ[R] b)) = a * P g b := by
-        have hone : β ((1 : A) ⊗ₜ[R] b) = coact (R := R) (C := MonoidAlgebra R G) b := by
-          rw [galoisMap_tmul, ← Algebra.TensorProduct.one_def, one_mul]
-        calc
-          coeff (β (a ⊗ₜ[R] b)) = a * coeff (coact (R := R) (C := MonoidAlgebra R G) b) := by
-            rw [TensorProduct.tmul_eq_smul_one_tmul]
-            simp only [map_smul, hone, smul_eq_mul]
-          _ = a * P g b := by
-            rw [weightProj_apply, LinearMap.tensorComponent_eq_liftBaseChange]
-      rw [hcoeff]
+      rw [← tensorCoeffEquiv_apply, tensorCoeffEquiv_galoisMap_tmul]
       have hb := weightProj_mem_weightSpace (R := R) (G := G) g b
       have he := weightProj_mul_right_of_mem_weightSpace hb g⁻¹ a
       rw [inv_mul_cancel] at he
@@ -191,8 +248,7 @@ theorem one_mem_weightSpace_inv_mul_of_surjective_galoisMap
     | add x y hx hy => simpa only [map_add] using (W g⁻¹ * W g).add_mem hx hy
   obtain ⟨t, ht⟩ := hsurj ((1 : A) ⊗ₜ[R] MonoidAlgebra.single g (1 : R))
   have ht' : coeff (β t) = 1 := by
-    rw [ht, ← LinearMap.tensorComponent_eq_liftBaseChange]
-    simp
+    simp [coeff, ht]
   simpa only [ht', weightProj_of_mem (one_mem_weightSpace (G := G))] using h t
 
 /-- If the trivial weight is the image of the base and the Galois map is surjective, each
@@ -205,47 +261,92 @@ theorem weightSpace_inv_mul_eq_one_of_surjective_galoisMap (h₁ : W 1 = 1)
     (one_mem_weightSpace_inv_mul_of_surjective_galoisMap hsurj g))
   simpa only [inv_mul_cancel, h₁] using (weightSpace_mul_le (R := R) (A := A) g⁻¹ g)
 
-variable [FaithfulSMul R A]
-
 /-- A weight space whose product with its opposite is the scalar submodule is an invertible
 module over the base. -/
-theorem invertible_weightSpace (g : G) (h : W g⁻¹ * W g = 1) : Module.Invertible R (W g) :=
+theorem invertible_weightSpace [FaithfulSMul R A] (g : G) (h : W g⁻¹ * W g = 1) :
+    Module.Invertible R (W g) :=
   -- The inverse of the constructed unit has underlying submodule definitionally equal to `W g`.
   inferInstanceAs (Module.Invertible R ↥(↑((Units.mkOfMulEqOne (W g⁻¹) (W g) h)⁻¹) :
     Submodule R A))
 
-/-- Multiplication identifies the tensor product of two character lines with the character line
-of the product weight. -/
-noncomputable def weightSpaceMulEquiv (hInv : ∀ g : G, W g⁻¹ * W g = 1) (g h : G) :
+private theorem mulMap'_bijective_of_weightSpace_inv_mul_eq_one (M : Submodule R A)
+    (g : G) (hg : W g⁻¹ * W g = 1) : Function.Bijective (Submodule.mulMap' M (W g)) := by
+  let m := Submodule.mulMap' M (W g)
+  -- Each expression of a scalar as a sum of opposite-weight products lifts scalar
+  -- multiplication on the tensor product through `m`.
+  let L (z : A) := ∃ r : R, algebraMap R A r = z ∧
+    ∃ l : ↥(M * W g) →ₗ[R] M ⊗[R] W g, l ∘ₗ m = r • LinearMap.id
+  have liftScalar : L 1 := by
+    refine Submodule.mul_induction_on (C := L) (hg.symm ▸ Submodule.one_le.mp le_rfl) ?_ ?_
+    · intro c hc d hd
+      obtain ⟨r, hr⟩ := Submodule.mem_one.mp (hg ▸ Submodule.mul_mem_mul hc hd)
+      have hmul : (M * W g) * W g⁻¹ ≤ M := by rw [mul_assoc, mul_comm (W g), hg, mul_one]
+      let f : ↥(M * W g) →ₗ[R] M :=
+        ((LinearMap.mulRight R c).comp (M * W g).subtype).codRestrict M
+          (fun x ↦ hmul (Submodule.mul_mem_mul x.property hc))
+      refine ⟨r, hr, (TensorProduct.mk R M (W g)).flip ⟨d, hd⟩ ∘ₗ f, ?_⟩
+      apply TensorProduct.ext'
+      intro a b
+      obtain ⟨s, hs⟩ := Submodule.mem_one.mp
+        (hg ▸ Submodule.mul_mem_mul hc b.property)
+      have hleft : f (m (a ⊗ₜ[R] b)) = s • a := by
+        apply Subtype.ext
+        simp only [f, m, LinearMap.codRestrict_apply, LinearMap.comp_apply, Submodule.subtype_apply,
+          LinearMap.mulRight_apply, Submodule.val_mulMap'_tmul, SetLike.val_smul,
+          Algebra.smul_def, hs]
+        ac_rfl
+      have hright : s • (⟨d, hd⟩ : W g) = r • b := by
+        apply Subtype.ext
+        simp only [SetLike.val_smul, Algebra.smul_def, hs, hr]
+        ac_rfl
+      simp only [LinearMap.comp_apply, LinearMap.flip_apply, TensorProduct.mk_apply, hleft,
+        TensorProduct.smul_tmul, hright, LinearMap.smul_apply, LinearMap.id_apply,
+        TensorProduct.tmul_smul]
+    · intro x y hx hy
+      obtain ⟨r, hr, f, hf⟩ := hx
+      obtain ⟨s, hs, l, hl⟩ := hy
+      exact ⟨r + s, by rw [map_add, hr, hs], f + l, by rw [LinearMap.add_comp, hf, hl, add_smul]⟩
+  obtain ⟨r, hr, l, hl⟩ := liftScalar
+  have hrl : r • LinearMap.id (R := R) (M := M ⊗[R] W g) = LinearMap.id := by
+    apply TensorProduct.ext'
+    intro a b
+    have ha : r • a = a := Subtype.ext (by simp [Algebra.smul_def, hr])
+    rw [LinearMap.smul_apply, LinearMap.id_apply, TensorProduct.smul_tmul', ha]
+  exact ⟨Function.LeftInverse.injective (fun t ↦ LinearMap.congr_fun (hl.trans hrl) t),
+    Submodule.mulMap'_surjective _ _⟩
+
+/-- Multiplication identifies the tensor product of two weight spaces with the product weight
+space when the right-hand weight and its opposite multiply to the scalar submodule. -/
+noncomputable def weightSpaceMulEquiv (g h : G) (hInv : W h⁻¹ * W h = 1) :
     W g ⊗[R] W h ≃ₗ[R] W (g * h) :=
-  (Submodule.tensorEquivMul (weightSpaceUnits hInv g) (weightSpaceUnits hInv h)).trans
-    (LinearEquiv.ofEq _ _ (weightSpace_mul_eq g h (hInv h)))
+  (LinearEquiv.ofBijective _ (mulMap'_bijective_of_weightSpace_inv_mul_eq_one (W g) h hInv)).trans
+    (LinearEquiv.ofEq _ _ (weightSpace_mul_eq g h (Submodule.one_le.mp hInv.ge)))
 
 /-- The multiplication equivalence takes pure tensors to the product in the coordinate ring. -/
 @[simp]
-theorem coe_weightSpaceMulEquiv_tmul (hInv : ∀ g : G, W g⁻¹ * W g = 1) {g h : G}
+theorem coe_weightSpaceMulEquiv_tmul {g h : G} (hInv : W h⁻¹ * W h = 1)
     (a : W g) (b : W h) :
-    (weightSpaceMulEquiv hInv g h (a ⊗ₜ[R] b) : A) = (a : A) * (b : A) :=
-  -- Mathlib constructs `tensorEquivMul` with `Submodule.mulMap'` as its forward map.
-  (rfl)
+    (weightSpaceMulEquiv g h hInv (a ⊗ₜ[R] b) : A) = (a : A) * (b : A) := by
+  rw [weightSpaceMulEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
+  exact Submodule.val_mulMap'_tmul a b
 
 /-- Multiplication trivializes a character line over the coordinate algebra itself. -/
 noncomputable def weightSpaceBaseChangeEquiv (g : G) (h : W g⁻¹ * W g = 1) :
     A ⊗[R] W g ≃ₗ[A] A := by
-  let := invertible_weightSpace g h
   let m := (W g).subtype.liftBaseChange A
-  refine LinearEquiv.ofBijective m (Module.Invertible.bijective_of_surjective ?_)
   let e := (Submodule.topEquiv (R := R) (M := A)).rTensor (W g)
-  have hm : (m.restrictScalars R).comp e.toLinearMap = Submodule.mulMap ⊤ (W g) :=
-    TensorProduct.ext' fun a b ↦ by simp [m, e]
-  have hs : Function.Surjective (Submodule.mulMap (⊤ : Submodule R A) (W g)) := by
-    rw [← LinearMap.range_eq_top, Submodule.mulMap_range]
-    exact Submodule.top_mul_eq_top_of_mul_eq_one h
-  have hcomp : Function.Surjective (m ∘ e) := by
-    rw [← hm] at hs
-    simpa only [LinearMap.coe_comp, LinearMap.coe_restrictScalars,
-      LinearEquiv.coe_toLinearMap] using hs
-  exact hcomp.of_comp
+  let f := (LinearEquiv.ofEq _ _ (Submodule.top_mul_eq_top_of_mul_eq_one h)).trans
+    (Submodule.topEquiv (R := R) (M := A))
+  have hm : m.restrictScalars R ∘ₗ e.toLinearMap =
+      f.toLinearMap ∘ₗ Submodule.mulMap' ⊤ (W g) := by
+    apply TensorProduct.ext'
+    intro a b
+    simp [m, e, f, LinearEquiv.coe_ofEq_apply]
+  have hb : Function.Bijective (m ∘ e) := by
+    simpa only [← LinearMap.coe_comp, ← LinearEquiv.coe_toLinearMap f,
+      ← LinearEquiv.coe_toLinearMap e, ← LinearMap.coe_restrictScalars R m, hm] using
+      f.bijective.comp (mulMap'_bijective_of_weightSpace_inv_mul_eq_one ⊤ g h)
+  exact LinearEquiv.ofBijective m ((Function.Bijective.of_comp_iff m e.bijective).mp hb)
 
 /-- The trivialization is multiplication on pure tensors. -/
 @[simp]
@@ -253,39 +354,19 @@ theorem weightSpaceBaseChangeEquiv_tmul (g : G) (h : W g⁻¹ * W g = 1) (a : A)
     weightSpaceBaseChangeEquiv g h (a ⊗ₜ[R] b) = a * (b : A) := by
   simp [weightSpaceBaseChangeEquiv]
 
-/-- If opposite weight spaces in a faithful algebra multiply to the scalar submodule, the Galois
-map is bijective. -/
+/-- If opposite weight spaces multiply to the scalar submodule, the Galois map is bijective. -/
 theorem bijective_galoisMap_of_weightSpace_inv_mul_eq_one
     (hInv : ∀ g : G, W g⁻¹ * W g = 1) :
     Function.Bijective (galoisMap R
       (fun r ↦ (coinvariants R (MonoidAlgebra R G) A).algebraMap_mem r)) := by
   classical
-  let β := galoisMap R (fun r ↦ (coinvariants R (MonoidAlgebra R G) A).algebraMap_mem r)
-  let fromWeights := LinearEquiv.ofBijective (DirectSum.coeLinearMap W)
-    (isInternal_weightSpace R G A)
-  let d := TensorProduct.directSumRight R R A (fun g ↦ ↥(W g))
-  let e := d.symm.trans (fromWeights.lTensor A)
-  let f := (tensorCoeffEquiv R G A).trans (finsuppLEquivDirectSum R A G)
+  let e := tensorWeightDecomposition (R := R) (G := G) (A := A)
+  let f := tensorCoeffDecomposition (R := R) (G := G) (A := A)
   let m (g : G) := (weightSpaceBaseChangeEquiv g (hInv g)).restrictScalars R
-  have h : f.toLinearMap ∘ₗ (β.toLinearMap.restrictScalars R) ∘ₗ e.toLinearMap =
+  have h : f.toLinearMap ∘ₗ (β).toLinearMap.restrictScalars R ∘ₗ e.toLinearMap =
       (DirectSum.congrLinearEquiv m).toLinearMap := by
-    apply DirectSum.linearMap_ext R
-    intro g
-    apply TensorProduct.ext'
-    intro a b
-    have he : e (DirectSum.lof R G _ g (a ⊗ₜ[R] b)) = a ⊗ₜ[R] (b : A) := by
-      simp only [e, d, LinearEquiv.trans_apply, TensorProduct.directSumRight_symm_lof_tmul,
-        LinearEquiv.lTensor_tmul]
-      congr 1
-      exact DirectSum.coeLinearMap_lof W g b
-    have hβ : β (a ⊗ₜ[R] (b : A)) =
-        (a * (b : A)) ⊗ₜ[R] MonoidAlgebra.single g (1 : R) := by
-      rw [galoisMap_tmul, mem_weightSpace.mp b.property, Algebra.TensorProduct.tmul_mul_tmul,
-        one_mul]
-    have hf (x : A) : tensorCoeffEquiv R G A (x ⊗ₜ[R] MonoidAlgebra.single g (1 : R)) =
-        Finsupp.single g x := by
-      rw [← tensorCoeffEquiv_symm_single, LinearEquiv.apply_symm_apply]
-    simp [he, hβ, hf, f, m, DirectSum.congrLinearEquiv_toLinearMap]
+    rw [galoisMap_comp_tensorWeightDecomposition, DirectSum.congrLinearEquiv_toLinearMap]
+    congr 1
   have hfun : f ∘ β ∘ e = ⇑(DirectSum.congrLinearEquiv m) := by
     simpa only [LinearMap.coe_comp, LinearMap.coe_restrictScalars, LinearEquiv.coe_toLinearMap,
       AlgHom.coe_toLinearMap] using congrArg DFunLike.coe h
@@ -294,6 +375,8 @@ theorem bijective_galoisMap_of_weightSpace_inv_mul_eq_one
   exact (f.bijective.of_comp_iff' β).1 ((Function.Bijective.of_comp_iff (f ∘ β) e.bijective).1 hb)
 
 end Group
+
+end Galois
 
 section Torsor
 
