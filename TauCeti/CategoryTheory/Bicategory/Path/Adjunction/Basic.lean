@@ -55,9 +55,10 @@ lemma leftZigzag_toPath (η : 𝟙 a.as ⟶ f ≫ g) (ε : g ≫ f ⟶ 𝟙 b.as
     Path.whiskerLeftEval_def f.toPath (q := g.toPath.cons f) (q' := Path.nil) ε]
   erw [Strict.associator_eqToIso (B := Paths B)]
   erw [eqToIso.hom, eqToHom_def, eqToHom_refl]
+  erw [Path.evalComp_cons_toPath_cons Path.nil f g f]
   simp only [Path.comp_toPath_eq_cons, Path.eval_cons_nil, Path.eval_nil, Path.eval_toPath,
     Path.eval_cons_cons, Path.evalComp_toPath, Path.evalCons_nil_hom, Path.evalCons_cons,
-    Iso.refl_inv, Category.comp_id, Path.comp_cons, Path.comp_nil, Path.evalComp_toPath_cons,
+    Iso.refl_inv, Category.comp_id, Path.comp_cons, Path.comp_nil,
     Path.evalComp_nil, Iso.symm_inv, Category.assoc]
   -- Normalize the evaluated path endpoints before applying category laws in `B`.
   change ((λ_ f).inv ≫ η ▷ f) ≫ 𝟙 ((f ≫ g) ≫ f) ≫
@@ -80,9 +81,10 @@ lemma rightZigzag_toPath (η : 𝟙 a.as ⟶ f ≫ g) (ε : g ≫ f ⟶ 𝟙 b.a
     Path.whiskerRightEval_def (p := g.toPath.cons f) (p' := Path.nil) ε g.toPath]
   erw [Strict.associator_eqToIso (B := Paths B)]
   erw [eqToIso.inv, eqToHom_def, eqToHom_refl]
+  erw [Path.evalComp_cons_toPath_cons Path.nil g f g]
   simp only [Path.comp_nil, Path.eval_toPath, Path.eval_nil, Path.comp_cons,
     Path.comp_toPath_eq_cons, Path.eval_cons_cons, Path.evalComp_nil, Iso.symm_hom,
-    Path.evalComp_toPath_cons, Path.eval_cons_nil, Path.evalComp_toPath, Path.evalCons_cons,
+    Path.eval_cons_nil, Path.evalComp_toPath, Path.evalCons_cons,
     Iso.refl_hom, Path.evalCons_nil_inv, Category.id_comp, Category.assoc]
   -- Normalize the evaluated path endpoints before applying category laws in `B`.
   change ((ρ_ g).inv ≫ g ◁ η ≫ (α_ g f g).inv) ≫ 𝟙 ((g ≫ f) ≫ g) ≫

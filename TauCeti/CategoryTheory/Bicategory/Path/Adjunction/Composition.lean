@@ -33,16 +33,14 @@ namespace CategoryTheory.Bicategory.Adjunction
 variable {B : Type u} [Bicategory.{w, v} B] {a b c : B}
   {f₁ : a ⟶ b} {g₁ : b ⟶ a} {f₂ : b ⟶ c} {g₂ : c ⟶ b}
 
-/-- The unit of the composite of two singleton-path adjunctions evaluates to the original
-composite unit, after the concatenation comparison. -/
-lemma toPaths_comp_unit (adj₁ : f₁ ⊣ g₁) (adj₂ : f₂ ⊣ g₂) :
-    (adj₁.toPaths.comp adj₂.toPaths).unit =
-      (adj₁.comp adj₂).unit ≫
-        (Path.evalComp (f₁.toPath.comp f₂.toPath) (g₂.toPath.comp g₁.toPath)).inv := by
-  refine (Iso.eq_comp_inv
-    (Path.evalComp (f₁.toPath.comp f₂.toPath) (g₂.toPath.comp g₁.toPath))).2 ?_
-  -- The path hom-categories compute by evaluation; `erw` reduces their projections.
-  erw [comp_unit, comp_unit, compUnit, compUnit]
+/-- The composite unit between singleton paths evaluates to the two original units,
+with the right unitor and inverse associator accounting for their parenthesization. -/
+lemma compUnit_toPaths (adj₁ : f₁ ⊣ g₁) (adj₂ : f₂ ⊣ g₂) :
+    (Adjunction.compUnit adj₁.toPaths adj₂.toPaths : 𝟙 a ⟶ ((f₁ ≫ f₂) ≫ g₂) ≫ g₁) =
+      (adj₁.unit : 𝟙 a ⟶ f₁ ≫ g₁) ≫ (ρ_ f₁).inv ▷ g₁ ≫ (f₁ ◁ adj₂.unit) ▷ g₁ ≫
+        (α_ f₁ f₂ g₂).inv ▷ g₁ := by
+  -- Expand the structural comparisons, then evaluate the path hom-category operations.
+  rw [Adjunction.compUnit]
   dsimp only [bicategoricalComp, BicategoricalCoherence.assoc,
     BicategoricalCoherence.assoc', BicategoricalCoherence.refl, BicategoricalCoherence.iso]
   simp only [Iso.trans_hom, Iso.refl_hom, Iso.symm_hom, whiskerLeftIso_hom,
@@ -58,30 +56,26 @@ lemma toPaths_comp_unit (adj₁ : f₁ ⊣ g₁) (adj₂ : f₂ ⊣ g₂) :
     Paths.whiskerLeft_def (a := (⟨a⟩ : Paths B)) (b := ⟨b⟩) (c := ⟨a⟩),
     Paths.whiskerRight_def (a := (⟨b⟩ : Paths B)) (b := ⟨b⟩) (c := ⟨a⟩)]
   simp only [Category.id_comp, Path.whiskerLeftEval_eqToHom]
-  erw [Path.whiskerLeftEval_def f₁.toPath
-    (q := Path.nil.comp g₁.toPath) (q' := (f₂.toPath.comp g₂.toPath).comp g₁.toPath)]
-  erw [Path.whiskerRightEval_def (p := Path.nil) (p' := f₂.toPath.comp g₂.toPath)
-    adj₂.toPaths.unit g₁.toPath]
-  simp only [Paths.comp_def, Paths.id_def, toPaths_unit,
-    Quiver.Hom.toPath, Path.comp_cons, Path.comp_nil, Path.evalComp_cons, Path.evalComp_nil,
-    Path.evalCons_cons, Path.evalCons_nil, Path.eval_cons_cons, Path.eval_cons_nil,
-    Path.eval_nil, Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv,
-    whiskerRightIso_hom, whiskerRightIso_inv, whiskerLeftIso_hom, whiskerLeftIso_inv,
-    Iso.refl_hom, Iso.refl_inv]
+  erw [Path.whiskerLeftEval_whiskerRightEval_toPath f₁.toPath adj₂.toPaths.unit g₁]
   erw [eqToHom_refl, eqToHom_refl, eqToHom_refl]
   erw [Path.whiskerLeftEval_id f₁.toPath ((f₂.toPath.comp g₂.toPath).comp g₁.toPath)]
+  simp only [Paths.comp_def, Paths.id_def, Path.comp_toPath_eq_cons, Path.comp_cons,
+    Path.comp_nil, Path.eval_nil, Path.eval_cons_cons, Path.eval_toPath,
+    toPaths_unit, Path.evalComp_nil, Iso.symm_hom,
+    Path.evalCons_cons, Iso.refl_inv]
+  simp only [Quiver.Hom.toPath, Path.eval_cons_cons, Path.eval_cons_nil,
+    Path.evalCons_cons, Iso.refl_hom]
+  erw [Path.evalComp_cons_toPath_cons Path.nil f₁ f₂ g₂]
   bicategory
 
-/-- The counit of the composite of two singleton-path adjunctions evaluates to the original
-composite counit, after the inverse concatenation comparison. -/
-lemma toPaths_comp_counit (adj₁ : f₁ ⊣ g₁) (adj₂ : f₂ ⊣ g₂) :
-    (adj₁.toPaths.comp adj₂.toPaths).counit =
-      (Path.evalComp (g₂.toPath.comp g₁.toPath) (f₁.toPath.comp f₂.toPath)).hom ≫
-        (adj₁.comp adj₂).counit := by
-  refine (Iso.inv_comp_eq
-    (Path.evalComp (g₂.toPath.comp g₁.toPath) (f₁.toPath.comp f₂.toPath))).1 ?_
-  -- The path hom-categories compute by evaluation; `erw` reduces their projections.
-  erw [comp_counit, comp_counit, compCounit, compCounit]
+/-- The composite counit between singleton paths evaluates to the two original counits,
+with the associator and right unitor accounting for their parenthesization. -/
+lemma compCounit_toPaths (adj₁ : f₁ ⊣ g₁) (adj₂ : f₂ ⊣ g₂) :
+    Adjunction.compCounit adj₁.toPaths adj₂.toPaths =
+      (α_ g₂ g₁ f₁).hom ▷ f₂ ≫ (g₂ ◁ adj₁.counit) ▷ f₂ ≫
+        (ρ_ g₂).hom ▷ f₂ ≫ adj₂.counit := by
+  -- Expand the structural comparisons, then evaluate the path hom-category operations.
+  rw [Adjunction.compCounit]
   dsimp only [bicategoricalComp, BicategoricalCoherence.assoc,
     BicategoricalCoherence.assoc', BicategoricalCoherence.refl, BicategoricalCoherence.iso]
   simp only [Iso.trans_hom, Iso.refl_hom, Iso.symm_hom, whiskerLeftIso_hom,
@@ -98,18 +92,44 @@ lemma toPaths_comp_counit (adj₁ : f₁ ⊣ g₁) (adj₂ : f₂ ⊣ g₂) :
     Paths.whiskerLeft_def (a := (⟨c⟩ : Paths B)) (b := ⟨b⟩) (c := ⟨c⟩),
     Paths.whiskerRight_def (a := (⟨b⟩ : Paths B)) (b := ⟨b⟩) (c := ⟨c⟩)]
   simp only [Category.id_comp, Path.whiskerLeftEval_eqToHom]
-  erw [Path.whiskerLeftEval_def g₂.toPath
-    (q := (g₁.toPath.comp f₁.toPath).comp f₂.toPath) (q' := Path.nil.comp f₂.toPath)]
-  erw [Path.whiskerRightEval_def (p := g₁.toPath.comp f₁.toPath) (p' := Path.nil)
-    adj₁.toPaths.counit f₂.toPath]
-  simp only [Paths.comp_def, Paths.id_def, toPaths_counit,
-    Quiver.Hom.toPath, Path.comp_cons, Path.comp_nil, Path.evalComp_cons, Path.evalComp_nil,
-    Path.evalCons_cons, Path.evalCons_nil, Path.eval_cons_cons, Path.eval_cons_nil,
-    Path.eval_nil, Iso.trans_hom, Iso.trans_inv, Iso.symm_hom, Iso.symm_inv,
-    whiskerRightIso_hom, whiskerRightIso_inv, whiskerLeftIso_hom, whiskerLeftIso_inv,
-    Iso.refl_hom, Iso.refl_inv]
+  erw [Path.whiskerLeftEval_whiskerRightEval_toPath g₂.toPath adj₁.toPaths.counit f₂]
   erw [eqToHom_refl, eqToHom_refl, eqToHom_refl]
   erw [Path.whiskerLeftEval_id g₂.toPath ((g₁.toPath.comp f₁.toPath).comp f₂.toPath)]
+  simp only [Paths.comp_def, Paths.id_def, Path.comp_toPath_eq_cons, Path.comp_cons,
+    Path.comp_nil, Path.eval_nil, Path.eval_cons_cons, Path.eval_toPath,
+    toPaths_counit, Path.evalComp_nil, Iso.symm_inv,
+    Path.evalCons_cons, Iso.refl_hom]
+  simp only [Quiver.Hom.toPath, Path.eval_cons_cons, Path.eval_cons_nil,
+    Path.evalCons_cons, Iso.refl_inv]
+  erw [Path.evalComp_cons_toPath_cons Path.nil g₂ g₁ f₁]
+  bicategory
+
+/-- The unit of the composite of two singleton-path adjunctions evaluates to the original
+composite unit, after the concatenation comparison. -/
+lemma toPaths_comp_unit (adj₁ : f₁ ⊣ g₁) (adj₂ : f₂ ⊣ g₂) :
+    (adj₁.toPaths.comp adj₂.toPaths).unit =
+      (adj₁.comp adj₂).unit ≫
+        (Path.evalComp (f₁.toPath.comp f₂.toPath) (g₂.toPath.comp g₁.toPath)).inv := by
+  refine (Iso.eq_comp_inv
+    (Path.evalComp (f₁.toPath.comp f₂.toPath) (g₂.toPath.comp g₁.toPath))).2 ?_
+  erw [comp_unit, compUnit_toPaths]
+  rw [comp_unit]
+  dsimp only [compUnit]
+  simp only [Path.comp_toPath_eq_cons, Path.evalComp_cons_toPath_cons]
+  bicategory
+
+/-- The counit of the composite of two singleton-path adjunctions evaluates to the original
+composite counit, after the inverse concatenation comparison. -/
+lemma toPaths_comp_counit (adj₁ : f₁ ⊣ g₁) (adj₂ : f₂ ⊣ g₂) :
+    (adj₁.toPaths.comp adj₂.toPaths).counit =
+      (Path.evalComp (g₂.toPath.comp g₁.toPath) (f₁.toPath.comp f₂.toPath)).hom ≫
+        (adj₁.comp adj₂).counit := by
+  refine (Iso.inv_comp_eq
+    (Path.evalComp (g₂.toPath.comp g₁.toPath) (f₁.toPath.comp f₂.toPath))).1 ?_
+  erw [comp_counit, compCounit_toPaths]
+  rw [comp_counit]
+  dsimp only [compCounit]
+  simp only [Path.comp_toPath_eq_cons, Path.evalComp_cons_toPath_cons]
   bicategory
 
 end CategoryTheory.Bicategory.Adjunction
