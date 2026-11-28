@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Geometry.Convex.PolyhedralComplex.Basic
+import TauCeti.Analysis.Convex.Polyhedron.Facet
 
 /-!
 # Codimension skeleta and local isolation
@@ -19,7 +20,8 @@ the cell codimension. No boundedness or salience is required.
 
 Adapted from `Mei/Geometry/Convex/PolyhedralComplex/Strata.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
-`7f1e4c7714fb020473694755ad8748c8f15d0e7f` (Apache 2.0).
+`7f1e4c7714fb020473694755ad8748c8f15d0e7f` (Apache 2.0). The frontier and intersection
+results adapt the same file at commit `bf3986029ff4d3eb4025d4067489511b0724374e`.
 -/
 
 public section
@@ -111,6 +113,18 @@ theorem cellsOfCodimension_subset_cells_codimensionGE
   obtain ⟨hPC, hdim⟩ := mem_cellsOfCodimension.mp hP
   exact mem_cells_codimensionGE.mpr ⟨hPC, hdim.le⟩
 
+/-- A cell in the codimension skeleton belongs to some exact stratum at or above its cutoff. -/
+theorem mem_cells_codimensionGE_iff_exists {C : FinitePolyhedralComplex h}
+    {k : ℕ} {P : Set V} :
+    P ∈ (C.codimensionGE k).cells ↔ ∃ l ≥ k, P ∈ C.cellsOfCodimension l := by
+  simp only [mem_cells_codimensionGE, mem_cellsOfCodimension]
+  constructor
+  · rintro ⟨hP, hcod⟩
+    exact ⟨Module.finrank ℝ V - Module.finrank ℝ (affineSpan ℝ P).direction,
+      by omega, hP, by omega⟩
+  · rintro ⟨l, hkl, hP, hcod⟩
+    exact ⟨hP, by omega⟩
+
 /-- Increasing the codimension bound decreases the set of cells. -/
 theorem cells_codimensionGE_antitone (C : FinitePolyhedralComplex h) :
     Antitone (fun k => (C.codimensionGE k).cells) := by
@@ -171,6 +185,35 @@ theorem support_codimensionGE_eq_empty (C : FinitePolyhedralComplex h) {k : ℕ}
     (hk : Module.finrank ℝ V < k) : (C.codimensionGE k).support = ∅ := by
   ext x
   simp [mem_support, C.cells_codimensionGE_eq_empty hk]
+
+/-- The relative frontier of a cell of the codimension-`k` skeleton lies in the
+support of the next skeleton. -/
+theorem intrinsicFrontier_subset_support_codimensionGE_succ (C : FinitePolyhedralComplex h)
+    {k : ℕ} {P : Set V} (hP : P ∈ (C.codimensionGE k).cells) :
+    intrinsicFrontier ℝ P ⊆ (C.codimensionGE (k + 1)).support := by
+  have := h.finiteDimensional
+  obtain ⟨hPC, hdP⟩ := mem_cells_codimensionGE.mp hP
+  intro x hx
+  obtain ⟨F, hF, hxF, hdF⟩ :=
+    (C.isConvexPolyhedron hPC).mem_intrinsicFrontier_iff_exists_facet.mp hx
+  have hFC := C.face_closed P hPC F ⟨⟨x, hxF⟩, hF⟩
+  rw [← direction_affineSpan, ← direction_affineSpan] at hdF
+  exact mem_support.mpr ⟨F, mem_cells_codimensionGE.mpr ⟨hFC, by omega⟩, hxF⟩
+
+/-- A nonempty intersection of distinct cells of the codimension-`k` skeleton lies in the
+next skeleton. The two cells may have different codimensions. -/
+theorem inter_mem_cells_codimensionGE_succ (C : FinitePolyhedralComplex h)
+    {k : ℕ} {P Q : Set V} (hP : P ∈ (C.codimensionGE k).cells)
+    (hQ : Q ∈ (C.codimensionGE k).cells)
+    (hne : P ≠ Q) (hnt : (P ∩ Q).Nonempty) : P ∩ Q ∈ (C.codimensionGE (k + 1)).cells := by
+  obtain ⟨hPC, hdP⟩ := mem_cells_codimensionGE.mp hP
+  obtain ⟨hQC, hdQ⟩ := mem_cells_codimensionGE.mp hQ
+  have hPQ := C.inter_mem_cells hPC hQC hnt
+  refine mem_cells_codimensionGE.mpr ⟨hPQ, ?_⟩
+  by_contra! hd
+  have heP := C.eq_of_subset_of_finrank_direction_le hPQ hPC Set.inter_subset_left (by omega)
+  have heQ := C.eq_of_subset_of_finrank_direction_le hPQ hQC Set.inter_subset_right (by omega)
+  exact hne (heP.symm.trans heQ)
 
 open Filter Topology in
 /-- Near a relative interior point of an exact-codimension cell, each cell of the skeleton

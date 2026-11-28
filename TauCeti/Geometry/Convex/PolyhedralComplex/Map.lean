@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.Polyhedron.Rational.Map
-public import TauCeti.Geometry.Convex.PolyhedralComplex.Basic
+public import TauCeti.Geometry.Convex.PolyhedralComplex.Skeleton
 
 /-!
 # Integral affine transport of finite polyhedral complexes
@@ -16,7 +16,7 @@ image. Exposed sets are preserved by continuous affine equivalences, so faces of
 images of faces, and rational normals are transported by the existing presentation API (the
 translation of `e` and the offsets of the presentations are arbitrary). The image complex has
 support `e '' C.support` (`TauCeti.FinitePolyhedralComplex.support_image`), and transport preserves
-weak refinements, subdivisions, subcomplexes and the cells of each ambient codimension.
+weak refinements, subdivisions, subcomplexes, and both exact strata and codimension skeleta.
 
 Adapted from `Mei/Geometry/Convex/PolyhedralComplex/Map.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei),
@@ -136,6 +136,18 @@ theorem mem_cellsOfCodimension_image (C : FinitePolyhedralComplex h)
     exact ⟨P, ⟨hP, by rwa [hd, ← hv] at hdim⟩, rfl⟩
   · rintro ⟨P, ⟨hP, hdim⟩, rfl⟩
     exact ⟨⟨P, hP, rfl⟩, by rw [hd, ← hv]; exact hdim⟩
+
+/-- Taking a codimension skeleton commutes with integral affine transport. -/
+theorem codimensionGE_image (C : FinitePolyhedralComplex h)
+    (e : Toric.IntegralAffineEquiv h h') (k : ℕ) :
+    (C.image e).codimensionGE k = (C.codimensionGE k).image e := by
+  ext P
+  simp only [mem_cells_codimensionGE_iff_exists, mem_cellsOfCodimension_image, mem_cells_image]
+  constructor
+  · rintro ⟨l, hkl, Q, hQ, rfl⟩
+    exact ⟨Q, ⟨l, hkl, hQ⟩, rfl⟩
+  · rintro ⟨Q, ⟨l, hkl, hQ⟩, rfl⟩
+    exact ⟨l, hkl, Q, hQ, rfl⟩
 
 end FinitePolyhedralComplex
 

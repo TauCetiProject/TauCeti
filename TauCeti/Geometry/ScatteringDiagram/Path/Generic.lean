@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Analysis.Normed.Affine.Generic
-public import TauCeti.Geometry.ScatteringDiagram.SingularSupport
+public import TauCeti.Geometry.ScatteringDiagram.SingularSupport.Basic
 
 /-!
 # Two transverse segments between allowed wall endpoints
