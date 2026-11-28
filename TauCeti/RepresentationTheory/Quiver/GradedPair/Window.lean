@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Interval.Basic
-public import TauCeti.Combinatorics.Quiver.Embedding
 public import TauCeti.Combinatorics.Quiver.Line
 public import TauCeti.RepresentationTheory.Quiver.GradedPair.Basic
-public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
+public import TauCeti.RepresentationTheory.Quiver.Representation.ExtendByZero
 import Mathlib.Algebra.DirectSum.Decomposition
-import Mathlib.CategoryTheory.PathCategory.MorphismProperty
 
 /-!
 # Graded pairs on a finite interval and representations of a line quiver
@@ -23,8 +21,8 @@ inverse assembles the vertex spaces and arrow maps into a graded operator with z
 outside the interval.
 
 `GradedPair.InWindow.windowEquivalence` packages the two functors. Enlarging the window
-adds zero vertex spaces and zero boundary arrows, and restriction back recovers the
-original representation naturally in graded intertwiners.
+extends the representation by zero, and restriction back recovers the original representation
+naturally in graded intertwiners.
 
 ## References
 
@@ -89,6 +87,7 @@ theorem windowDegree_injective (d : StepDirection) (w : NonemptyInterval ℤ) :
   cases d <;> simp only [windowDegree, vertexIndex] at h <;> omega
 
 /-- Every integer degree in the interval labels a vertex of the line quiver. -/
+@[simp↓]
 theorem mem_range_windowDegree_iff (d : StepDirection) (w : NonemptyInterval ℤ) {a : ℤ} :
     a ∈ Set.range (d.windowDegree w) ↔ a ∈ w := by
   refine ⟨fun ⟨i, hi⟩ ↦ hi ▸ d.windowDegree_mem w i, fun ha ↦ ?_⟩
@@ -243,6 +242,21 @@ theorem toRep_obj (P : InWindow w d) (i : Paths (StepDirection.WindowVertex w)) 
 theorem toRep_map_arrow (P : InWindow w d) {i j : StepDirection.WindowVertex w} (e : i ⟶ j) :
     P.toRep.map e.toPath = ModuleCat.ofHom (P.arrowMap e) :=
   Paths.lift_toPath _ e
+
+/-- On the underlying carrier, a path acts by the corresponding power of the operator. -/
+theorem coe_toRep_map_path (P : InWindow w d) {i j : StepDirection.WindowVertex w}
+    (p : Quiver.Path i j) (x : P.space.grade (d.windowDegree w i)) :
+    (QuiverRep.mapₗ ℂ _ P.toRep p x : P.space.grade (d.windowDegree w j)).val =
+      (P.pair.operator ^ p.length) x := by
+  induction p with
+  | nil => simp [id]
+  | cons p e ih =>
+    -- Express the final `cons` as concatenation so `mapₗ_comp` applies.
+    change (QuiverRep.mapₗ ℂ _ P.toRep (p.comp e.toPath) x).val = _
+    have he : QuiverRep.mapₗ ℂ _ P.toRep e.toPath = P.arrowMap e :=
+      congrArg ModuleCat.Hom.hom (P.toRep_map_arrow e)
+    erw [QuiverRep.mapₗ_comp, LinearMap.comp_apply, he, coe_arrowMap, ih,
+      Quiver.Path.length_cons, pow_succ', mul_apply_eq_comp]
 
 /-- Restrict a graded morphism to the vertex spaces of the window. -/
 def toRepMap (f : P ⟶ Q) : P.toRep ⟶ Q.toRep :=
@@ -560,10 +574,10 @@ theorem ofRepCarrierEquiv_mem_grade_iff (M : FiniteRep w)
       ∀ i, d.windowDegree w i ≠ a → x i = 0 :=
   coordinateEquiv_mem_grade_iff M x a
 
+-- Keep the family formula for explicit rewriting so component simplification can use an arrow.
 open Classical in
 /-- The operator on an assembled vector applies the incoming arrow map at each vertex, giving
 zero at a vertex with no incoming arrow. -/
-@[simp]
 theorem ofRep_operator (M : FiniteRep w)
     (x : ∀ i, QuiverRep.vertexSpace ℂ (WindowVertex w) M.obj i) :
     (ofRep d M).pair.operator (ofRepCarrierEquiv d M x) =
@@ -575,6 +589,25 @@ theorem ofRep_operator (M : FiniteRep w)
   let y : ∀ i, vertexSpace M i := x
   exact (LinearEquiv.conj_apply_apply E (repOperator M) (E y)).trans
     (congrArg E ((congrArg (repOperator M) (E.symm_apply_apply y)).trans (repOperator_apply M y)))
+
+/-- In carrier coordinates, a vertex with an incoming arrow receives the image of the
+component at its source. -/
+theorem ofRep_operator_component_of_arrow (M : FiniteRep w) {i j : WindowVertex w}
+    (e : i ⟶ j) (x : ∀ i, QuiverRep.vertexSpace ℂ (WindowVertex w) M.obj i) :
+    (ofRepCarrierEquiv d M).symm ((ofRep d M).pair.operator (ofRepCarrierEquiv d M x)) j =
+      QuiverRep.mapₗ ℂ (WindowVertex w) M.obj e.toPath (x i) := by
+  rw [ofRep_operator, LinearEquiv.symm_apply_apply]
+  exact (congrFun (repOperator_apply M x) j).symm.trans (repOperator_apply_of_arrow M e x)
+
+/-- In carrier coordinates, the operator has zero component at a vertex with no incoming
+arrow. -/
+@[simp↓]
+theorem ofRep_operator_component_of_no_arrow (M : FiniteRep w) (j : WindowVertex w)
+    (hj : ∀ i : WindowVertex w, IsEmpty (i ⟶ j))
+    (x : ∀ i, QuiverRep.vertexSpace ℂ (WindowVertex w) M.obj i) :
+    (ofRepCarrierEquiv d M).symm ((ofRep d M).pair.operator (ofRepCarrierEquiv d M x)) j = 0 := by
+  rw [ofRep_operator, LinearEquiv.symm_apply_apply]
+  exact dite_eq_right fun ⟨i, ⟨e⟩⟩ ↦ (hj i).false e
 
 open Classical in
 /-- The vertex space of a representation is linearly equivalent to the corresponding graded
@@ -812,6 +845,18 @@ theorem windowDegree_windowEmbedding_obj (d : StepDirection) (h : w ≤ W) (i : 
   exact ((d.mem_range_windowDegree_iff W).2
     (NonemptyInterval.coe_subset_coe.mpr h (d.windowDegree_mem w i))).choose_spec
 
+/-- The image of a window embedding consists of the vertices whose degrees lie in the smaller
+window. -/
+@[simp↓]
+theorem mem_range_windowEmbedding_obj_iff (d : StepDirection) (h : w ≤ W) (j : WindowVertex W) :
+    j ∈ Set.range (windowEmbedding d h).obj ↔ d.windowDegree W j ∈ w := by
+  constructor
+  · rintro ⟨i, rfl⟩
+    simpa only [windowDegree_windowEmbedding_obj] using d.windowDegree_mem w i
+  · intro hj
+    obtain ⟨i, hi⟩ := (d.mem_range_windowDegree_iff w).2 hj
+    exact ⟨i, d.windowDegree_injective W ((windowDegree_windowEmbedding_obj d h i).trans hi)⟩
+
 /-- Include a graded pair supported in a smaller window into the category for the larger window.
 The carrier is definitionally the same, so operators and intertwiners act on the original
 coordinate spaces. -/
@@ -966,6 +1011,142 @@ theorem coe_enlargeRestrictIso_inv_app (h : w ≤ W) (P : InWindow w d)
     (i : Paths (WindowVertex w)) (x : P.space.grade (d.windowDegree w i)) :
     (((((enlargeRestrictIso d h).inv.app P).hom.app i).hom x).val : P.space.Carrier) = x.val :=
   coe_gradeIso_hom P.space (windowDegree_windowEmbedding_obj d h i).symm x
+
+private def enlargeExtendByZeroApp (h : w ≤ W) (P : InWindow w d) (j : WindowVertex W) :
+    P.space.grade (d.windowDegree W j) →ₗ[ℂ]
+      ∀ u : (windowEmbedding d h).Fiber j, QuiverRep.vertexSpace ℂ _ P.toRep u.val :=
+  LinearMap.pi fun u ↦
+    (gradeIso P.space ((congrArg (d.windowDegree W) u.property).symm.trans
+      (windowDegree_windowEmbedding_obj d h u.val))).hom.hom
+
+private theorem coe_enlargeExtendByZeroApp (h : w ≤ W) (P : InWindow w d) (j : WindowVertex W)
+    (x : P.space.grade (d.windowDegree W j)) (u : (windowEmbedding d h).Fiber j) :
+    (enlargeExtendByZeroApp h P j x u : P.space.grade (d.windowDegree w u.val)).val = x.val :=
+  coe_gradeIso_hom P.space _ x
+
+private theorem enlargeExtendByZeroApp_bijective (h : w ≤ W) (P : InWindow w d)
+    (j : WindowVertex W) :
+    Function.Bijective (enlargeExtendByZeroApp h P j) := by
+  refine ⟨fun x y hxy ↦ ?_, fun y ↦ ?_⟩
+  · apply Subtype.ext
+    by_cases hj : j ∈ Set.range (windowEmbedding d h).obj
+    · obtain ⟨i, hi⟩ := hj
+      simpa only [coe_enlargeExtendByZeroApp] using congrArg Subtype.val (congrFun hxy ⟨i, hi⟩)
+    · have hdeg := mt (mem_range_windowEmbedding_obj_iff d h j).2 hj
+      exact (P.eq_zero_of_notMem hdeg x).trans (P.eq_zero_of_notMem hdeg y).symm
+  · by_cases hj : j ∈ Set.range (windowEmbedding d h).obj
+    · obtain ⟨i, rfl⟩ := hj
+      let e := (gradeIso P.space (windowDegree_windowEmbedding_obj d h i)).toLinearEquiv
+      refine ⟨e.symm (y ⟨i, rfl⟩), funext fun u ↦ ?_⟩
+      obtain rfl : u = ⟨i, rfl⟩ := Subsingleton.elim _ _
+      exact e.apply_symm_apply _
+    · exact ⟨0, funext fun u ↦ (hj ⟨u.val, u.property⟩).elim⟩
+
+private theorem enlargeExtendByZeroApp_arrow (h : w ≤ W) (P : InWindow w d) {i j : WindowVertex W}
+    (e : i ⟶ j) (x : P.space.grade (d.windowDegree W i)) :
+    enlargeExtendByZeroApp h P j (((enlargeFunctor d h).obj P).arrowMap e x) =
+      (windowEmbedding d h).extendByZeroMap P.toRep e (enlargeExtendByZeroApp h P i x) := by
+  funext u
+  apply Subtype.ext
+  by_cases hi : i ∈ Set.range (windowEmbedding d h).obj
+  · obtain ⟨a, rfl⟩ := hi
+    obtain ⟨b, rfl⟩ := u
+    have hd := d.windowDegree_arrow W e
+    rw [windowDegree_windowEmbedding_obj, windowDegree_windowEmbedding_obj] at hd
+    obtain ⟨f⟩ := (d.nonempty_hom_iff_windowDegree_eq_add_step w a b).2 hd
+    have he : (windowEmbedding d h).map f = e := Subsingleton.elim _ _
+    rw [← he, QuiverEmbedding.extendByZeroMap_map_apply, coe_enlargeExtendByZeroApp, coe_arrowMap]
+    have hf : QuiverRep.mapₗ ℂ _ P.toRep f.toPath = P.arrowMap f :=
+      congrArg ModuleCat.Hom.hom (P.toRep_map_arrow f)
+    erw [hf, coe_arrowMap, coe_enlargeExtendByZeroApp, enlargeFunctor_obj_pair_operator]
+  · have hx := P.eq_zero_of_notMem (mt (mem_range_windowEmbedding_obj_iff d h i).2 hi) x
+    rw [QuiverEmbedding.extendByZeroMap_apply_of_not_exists _ _ _
+      (fun ⟨v, _, _⟩ ↦ hi ⟨v.val, v.property⟩), coe_enlargeExtendByZeroApp, coe_arrowMap, hx,
+      map_zero]
+    rfl
+
+private def enlargeExtendByZeroVertexIso (h : w ≤ W) (P : InWindow w d) (j : WindowVertex W) :
+    ((enlargeFunctor d h).obj P).toRep.obj (j : Paths (WindowVertex W)) ≅
+      ((windowEmbedding d h).extendByZeroRep P.toRep).obj (j : Paths (WindowVertex W)) :=
+  (LinearEquiv.ofBijective (enlargeExtendByZeroApp h P j)
+    (enlargeExtendByZeroApp_bijective h P j)).toModuleIso ≪≫
+      (eqToIso ((windowEmbedding d h).extendByZeroRep_obj P.toRep j)).symm
+
+private theorem enlargeExtendByZeroVertexIso_hom (h : w ≤ W) (P : InWindow w d)
+    (j : WindowVertex W) :
+    (enlargeExtendByZeroVertexIso h P j).hom = ModuleCat.ofHom (enlargeExtendByZeroApp h P j) ≫
+      eqToHom ((windowEmbedding d h).extendByZeroRep_obj P.toRep j).symm :=
+  (rfl)
+
+private def enlargeExtendByZeroRepIso (h : w ≤ W) (P : InWindow w d) :
+    ((enlargeFunctor d h).obj P).toRep ≅ (windowEmbedding d h).extendByZeroRep P.toRep :=
+  Paths.liftNatIso (enlargeExtendByZeroVertexIso h P)
+    (fun {i j} e ↦ by
+      apply (cancel_mono (eqToHom ((windowEmbedding d h).extendByZeroRep_obj P.toRep j))).mp
+      simp only [toRep_map_arrow, QuiverEmbedding.extendByZeroRep_map_toPath,
+        enlargeExtendByZeroVertexIso_hom]
+      let arrow := ModuleCat.ofHom (((enlargeFunctor d h).obj P).arrowMap e)
+      let compare (v : WindowVertex W) := ModuleCat.ofHom (enlargeExtendByZeroApp h P v)
+      let extended := ModuleCat.ofHom ((windowEmbedding d h).extendByZeroMap P.toRep e)
+      let fiberIso (v : WindowVertex W) :=
+        eqToIso ((windowEmbedding d h).extendByZeroRep_obj P.toRep v)
+      -- Give the transports a common type before cancelling them in the arrow square.
+      change (arrow ≫ compare j ≫ (fiberIso j).inv) ≫ (fiberIso j).hom =
+        ((compare i ≫ (fiberIso i).inv) ≫ (fiberIso i).hom ≫ extended ≫ (fiberIso j).inv) ≫
+          (fiberIso j).hom
+      simp only [Category.assoc, Iso.inv_hom_id, Iso.inv_hom_id_assoc, Category.comp_id]
+      exact ModuleCat.hom_ext (LinearMap.ext (enlargeExtendByZeroApp_arrow h P e)))
+
+private theorem enlargeExtendByZeroApp_naturality (h : w ≤ W) (f : P ⟶ Q) (j : WindowVertex W)
+    (x : P.space.grade (d.windowDegree W j)) :
+    enlargeExtendByZeroApp h Q j (f.isHomogeneous.restrict (d.windowDegree W j) x) =
+      (windowEmbedding d h).extendByZeroApp (toRepMap f) j (enlargeExtendByZeroApp h P j x) := by
+  funext u
+  apply Subtype.ext
+  rw [QuiverEmbedding.extendByZeroApp_apply]
+  -- Read the two component maps as restrictions of the same intertwiner on the carrier.
+  change (enlargeExtendByZeroApp h Q j (f.isHomogeneous.restrict (d.windowDegree W j) x) u :
+    Q.space.grade _).val =
+    (f.isHomogeneous.restrict (d.windowDegree w u.val) (enlargeExtendByZeroApp h P j x u)).val
+  erw [coe_enlargeExtendByZeroApp, LinearMap.IsHomogeneous.coe_restrict_apply,
+    LinearMap.IsHomogeneous.coe_restrict_apply, coe_enlargeExtendByZeroApp]
+
+/-- Restricting an enlarged pair to its larger window gives the extension by zero of its
+representation in the smaller window, naturally in graded intertwiners. -/
+def enlargeExtendByZeroIso (d : StepDirection) (h : w ≤ W) :
+    enlargeFunctor d h ⋙ toRepFunctor W d ⋙
+      ObjectProperty.ι (IsFinDim ℂ (WindowVertex W)) ≅
+      toRepFunctor w d ⋙ ObjectProperty.ι (IsFinDim ℂ (WindowVertex w)) ⋙
+        (windowEmbedding d h).extendByZeroFunctor ℂ :=
+  NatIso.ofComponents (fun P ↦ enlargeExtendByZeroRepIso h P ≪≫
+    (eqToIso ((windowEmbedding d h).extendByZeroFunctor_obj (M := P.toRep))).symm)
+    (fun {P Q} f ↦ by
+      apply NatTrans.ext
+      funext j
+      let v : WindowVertex W := j
+      apply (cancel_mono (eqToHom ((Functor.congr_obj
+        ((windowEmbedding d h).extendByZeroFunctor_obj (M := Q.toRep)) j).trans
+          ((windowEmbedding d h).extendByZeroRep_obj Q.toRep v)))).mp
+      simp only [NatTrans.comp_app, Functor.comp_map, ObjectProperty.ι_map, toRepFunctor_map_hom,
+        enlargeExtendByZeroRepIso, Paths.liftNatIso_hom_app, Iso.trans_hom, Iso.symm_hom,
+        eqToIso.inv, eqToHom_app]
+      erw [(windowEmbedding d h).extendByZeroFunctor_map_app (toRepMap f) v,
+        enlargeExtendByZeroVertexIso_hom h Q v, enlargeExtendByZeroVertexIso_hom h P v]
+      let restrict := ModuleCat.ofHom (f.isHomogeneous.restrict (d.windowDegree W v))
+      let compare (X : InWindow w d) := ModuleCat.ofHom (enlargeExtendByZeroApp h X v)
+      let extended := ModuleCat.ofHom ((windowEmbedding d h).extendByZeroApp (toRepMap f) v)
+      let functorObj (X : InWindow w d) := Functor.congr_obj
+        ((windowEmbedding d h).extendByZeroFunctor_obj (M := X.toRep)) (v : Paths _)
+      let fiberObj (X : InWindow w d) := (windowEmbedding d h).extendByZeroRep_obj X.toRep v
+      let objEq (X : InWindow w d) := (functorObj X).trans (fiberObj X)
+      -- Identify the transports at the vertex before cancelling them in the morphism square.
+      change (restrict ≫ compare Q ≫ eqToHom (fiberObj Q).symm ≫ eqToHom (functorObj Q).symm) ≫
+        eqToHom (objEq Q) =
+        ((compare P ≫ eqToHom (fiberObj P).symm ≫ eqToHom (functorObj P).symm) ≫
+          eqToHom (objEq P) ≫ extended ≫ eqToHom (objEq Q).symm) ≫ eqToHom (objEq Q)
+      simp only [Category.assoc, eqToHom_trans, eqToHom_trans_assoc, eqToHom_refl, Category.comp_id,
+        Category.id_comp]
+      exact ModuleCat.hom_ext (LinearMap.ext (enlargeExtendByZeroApp_naturality h f v)))
 
 end Enlargement
 
