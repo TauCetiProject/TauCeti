@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 public import TauCeti.NumberTheory.NumberField.CMField.AdeleStar
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.IntegralGL
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
-public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
+public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup.Basic
 import Mathlib.Topology.Algebra.Group.Matrix
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel

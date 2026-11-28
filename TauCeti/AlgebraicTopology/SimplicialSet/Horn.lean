@@ -36,7 +36,8 @@ to a simplex `σ`, the faces of `σ` are the members of `f`
 (`SSet.horn.IsCompatible.δ_yonedaEquiv_of_desc_eq`). A family of simplices whose faces other than
 the `0`th are constant at a vertex is compatible on the horn `Λ[n + 2, 0]`
 (`SSet.horn.IsCompatible.of_δ_succ`). An edge of a face of a horn is an edge of the horn
-(`SSet.horn.ι_app_edge`).
+(`SSet.horn.ι_app_edge`); in particular the initial edges of `Λ[2, 0]` and `Λ[3, 0]` are edges
+of their last faces (`SSet.horn.edge_two_zero_eq_ι_app`, `SSet.horn.edge_three_zero_eq_ι_app`).
 -/
 
 public section
@@ -63,6 +64,22 @@ lemma horn.ι_app_edge {n : ℕ} (i j : Fin (n + 2)) (hj : j ≠ i) (a b : Fin (
   rw [← NatTrans.comp_app_apply, horn.ι_ι]
   refine stdSimplex.ext _ _ fun k ↦ ?_
   fin_cases k <;> rfl
+
+/-- The initial edge, from `0` to `1`, of the horn `Λ[2, 0]` is the edge of its face `2`. -/
+lemma horn.edge_two_zero_eq_ι_app :
+    horn.edge.{u} 2 0 0 1 (Fin.zero_le _) (by simp) =
+      (horn.ι 0 2 (by decide)).app _ (yonedaEquiv (𝟙 Δ[1])) := by
+  refine (horn.ι_app_edge 0 2 (by decide) 0 1 (Fin.zero_le _)).symm.trans (congrArg _ ?_)
+  ext i
+  fin_cases i <;> rfl
+
+/-- The initial edge, from `0` to `1`, of the horn `Λ[3, 0]` is the edge `δ 2` of its face `3`. -/
+lemma horn.edge_three_zero_eq_ι_app :
+    horn.edge.{u} 3 0 0 1 (Fin.zero_le _) (by simp) =
+      (horn.ι 0 3 (by decide)).app _ (yonedaEquiv (stdSimplex.δ 2)) := by
+  refine (horn.ι_app_edge 0 3 (by decide) 0 1 (Fin.zero_le _)).symm.trans (congrArg _ ?_)
+  ext i
+  fin_cases i <;> rfl
 
 namespace horn.IsCompatible
 

@@ -30,6 +30,8 @@ sequence of integers (`TauCeti.doubledHCParameter_strictAnti`) of the parity of 
 `l : ι → ℤ`, with `card ι = n`, is the doubled parameter of `(κ, e)`
 (`TauCeti.IsDoubledHCParameter`) if it lists these entries in some order; the entries at the
 positions `p < n` themselves form one (`TauCeti.isDoubledHCParameter_doubledHCParameter`).
+The permutation of the entries can be supplied as an explicit bijection
+(`TauCeti.IsDoubledHCParameter.exists_equiv`).
 
 The doubled Harish-Chandra parameters of the discrete series of a unitary group `U(p, q)` with a
 gap, the regular parameters, have distinct entries of the parity of `n - 1`. This file shows that
@@ -199,16 +201,29 @@ theorem congr (h : IsDoubledHCParameter κ e l) (hκ : ∀ k < Fintype.card ι, 
     obtain ⟨p, hp, hi⟩ := h.exists_lt_eq i
     exact ⟨p, hp, hi.trans (doubledHCParameter_congr hκ e p)⟩⟩
 
+/-- A doubled parameter is obtained from its standard decreasing sequence by a bijection
+of the index set with the positions. -/
+theorem exists_equiv (h : IsDoubledHCParameter κ e l) :
+    ∃ σ : ι ≃ Fin (Fintype.card ι),
+      ∀ i, l i = doubledHCParameter (Fintype.card ι) κ e (σ i) := by
+  classical
+  choose p hp hl using h.exists_lt_eq
+  let f (i : ι) : Fin (Fintype.card ι) := ⟨p i, hp i⟩
+  have hf : Function.Injective f := by
+    intro i j hij
+    apply h.injective
+    rw [hl i, hl j, Fin.mk.inj_iff.mp hij]
+  have hbij : Function.Bijective f :=
+    (Fintype.bijective_iff_injective_and_card f).mpr ⟨hf, (Fintype.card_fin _).symm⟩
+  refine ⟨Equiv.ofBijective f hbij, fun i ↦ ?_⟩
+  -- The bijection evaluates as `f`; the subtype records the chosen natural-number position.
+  simpa only [Equiv.coe_ofBijective] using hl i
+
 /-- Every entry of the doubled parameter occurs in `l`. -/
 theorem exists_eq (h : IsDoubledHCParameter κ e l) {p : ℕ} (hp : p < Fintype.card ι) :
     ∃ i, l i = doubledHCParameter (Fintype.card ι) κ e p := by
-  -- The positions of the entries of `l` are distinct, so they fill all of `Fin (card ι)`.
-  choose pos hpos hl using h.exists_lt_eq
-  have h_inj : Function.Injective fun i => (⟨pos i, hpos i⟩ : Fin (Fintype.card ι)) :=
-    fun i i' hii' => h.injective <| by rw [hl i, hl i', Fin.mk.inj_iff.mp hii']
-  obtain ⟨i, hi⟩ := ((Fintype.bijective_iff_injective_and_card _).mpr
-    ⟨h_inj, (Fintype.card_fin _).symm⟩).2 ⟨p, hp⟩
-  exact ⟨i, by rw [hl i, Fin.mk.inj_iff.mp hi]⟩
+  obtain ⟨σ, hσ⟩ := h.exists_equiv
+  exact ⟨σ.symm ⟨p, hp⟩, by simpa only [Equiv.apply_symm_apply] using hσ (σ.symm ⟨p, hp⟩)⟩
 
 /-- A bound `β` on the entries of `l` bounds every entry of the doubled parameter of `(κ, e)`. -/
 theorem abs_doubledHCParameter_le (h : IsDoubledHCParameter κ e l) {β : ℤ}

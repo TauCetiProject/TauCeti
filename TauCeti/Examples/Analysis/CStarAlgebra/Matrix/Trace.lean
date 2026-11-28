@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 public import TauCeti.Analysis.CStarAlgebra.Matrix.EuclideanCLM
-public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
+public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace.Basic
 
 /-!
 # Matrix-unit checks for the normalized trace and 2-norm

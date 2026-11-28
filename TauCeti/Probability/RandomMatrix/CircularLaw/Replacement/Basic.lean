@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.RandomMatrix.ResolventReplacement
+public import TauCeti.Probability.RandomMatrix.ShiftedMatrix
 
 import TauCeti.Data.Matrix.Basis
 import TauCeti.LinearAlgebra.Matrix.Rank
@@ -82,9 +83,8 @@ theorem norm_integral_normalized_trace_inv_fromBlocks_sub_smul_one_sub_integral_
     (hsq : (∫ w : ℂ, w ^ 2 ∂μ) = ∫ w : ℂ, w ^ 2 ∂ν)
     (habs : (∫ w : ℂ, ‖w‖ ^ 2 ∂μ) = ∫ w : ℂ, ‖w‖ ^ 2 ∂ν)
     (k : ℕ) (D : Matrix (Fin (k + 1)) (Fin (k + 1)) ℂ) {z : ℂ} (hz : z.im ≠ 0) :
-    let Y (x : Fin (k + 1) × Fin (k + 1) → ℂ) :=
-      D + (Real.sqrt (k + 1))⁻¹ • Matrix.of (fun i j ↦ x (i, j))
-    let f x := ((2 : ℂ) * (k + 1))⁻¹ * (fromBlocks 0 (Y x) (Y x)ᴴ 0 - z • 1)⁻¹.trace
+    let Y := D.addInvSqrtCardSmulEntries
+    let f x := (fromBlocks 0 (Y x) (Y x)ᴴ 0).normalizedResolventTrace z
     let b := |z.im|⁻¹
     let c := 2 * (Real.sqrt (k + 1))⁻¹
     ‖(∫ x, f x ∂Measure.pi (fun _ ↦ μ)) - ∫ x, f x ∂Measure.pi (fun _ ↦ ν)‖ ≤
@@ -92,6 +92,8 @@ theorem norm_integral_normalized_trace_inv_fromBlocks_sub_smul_one_sub_integral_
         ((∫ w, ‖w‖ ^ 2 * min (b * c * ‖w‖) 1 ∂μ) +
           ∫ w, ‖w‖ ^ 2 * min (b * c * ‖w‖) 1 ∂ν) := by
   dsimp only
+  simp only [normalizedResolventTrace_sum, addInvSqrtCardSmulEntries_def,
+    Fintype.card_fin, Nat.cast_add, Nat.cast_one, ← two_mul ((k : ℂ) + 1)]
   let b := |z.im|⁻¹
   let c := 2 * (Real.sqrt (k + 1))⁻¹
   let a : ℝ := (Real.sqrt (k + 1))⁻¹
@@ -145,10 +147,8 @@ theorem tendsto_integral_normalized_trace_inv_fromBlocks_sub_smul_one_sub_integr
     (hsq : (∫ w : ℂ, w ^ 2 ∂μ) = ∫ w : ℂ, w ^ 2 ∂ν)
     (habs : (∫ w : ℂ, ‖w‖ ^ 2 ∂μ) = ∫ w : ℂ, ‖w‖ ^ 2 ∂ν)
     (D : ∀ k : ℕ, Matrix (Fin (k + 1)) (Fin (k + 1)) ℂ) {z : ℂ} (hz : z.im ≠ 0) :
-    let Y (k : ℕ) (x : Fin (k + 1) × Fin (k + 1) → ℂ) :=
-      D k + (Real.sqrt (k + 1))⁻¹ • Matrix.of (fun i j ↦ x (i, j))
-    let f (k : ℕ) x := ((2 : ℂ) * (k + 1))⁻¹ *
-      (fromBlocks 0 (Y k x) (Y k x)ᴴ 0 - z • 1)⁻¹.trace
+    let Y (k : ℕ) := (D k).addInvSqrtCardSmulEntries
+    let f (k : ℕ) x := (fromBlocks 0 (Y k x) (Y k x)ᴴ 0).normalizedResolventTrace z
     Tendsto (fun k : ℕ ↦ (∫ x, f k x ∂Measure.pi (fun _ ↦ μ)) -
       ∫ x, f k x ∂Measure.pi (fun _ ↦ ν)) atTop (𝓝 0) := by
   apply tendsto_zero_iff_norm_tendsto_zero.mpr
@@ -191,22 +191,18 @@ theorem tendsto_integral_normalized_trace_inv_fromBlocks_sub_smul_one_sub_integr
     (hsq : (∫ w : ℂ, w ^ 2 ∂μ) = ∫ w : ℂ, w ^ 2 ∂ν)
     (habs : (∫ w : ℂ, ‖w‖ ^ 2 ∂μ) = ∫ w : ℂ, ‖w‖ ^ 2 ∂ν)
     (D : ∀ k : ℕ, Matrix (Fin (k + 1)) (Fin (k + 1)) ℂ) {z : ℂ} (hz : z.im ≠ 0) :
-    let Z (k : ℕ) (x : Fin (k + 1) × Fin (k + 1) → ℂ) :=
-      D k + (Real.sqrt (k + 1))⁻¹ • Matrix.of (fun i j ↦ x (i, j))
-    let f (k : ℕ) x := ((2 : ℂ) * (k + 1))⁻¹ *
-      (fromBlocks 0 (Z k x) (Z k x)ᴴ 0 - z • 1)⁻¹.trace
+    let Z (k : ℕ) := (D k).addInvSqrtCardSmulEntries
+    let f (k : ℕ) x := (fromBlocks 0 (Z k x) (Z k x)ᴴ 0).normalizedResolventTrace z
     Tendsto (fun k ↦ (∫ ω, f k (X k ω) ∂P) - ∫ ω, f k (Y k ω) ∂Q) atTop (𝓝 0) := by
   intro Z f
   have hc (k : ℕ) : Continuous (f k) := by
-    have hZ : Continuous (Z k) := by
-      unfold Z
-      fun_prop
+    have hZ : Continuous (Z k) := continuous_addInvSqrtCardSmulEntries (D k)
     let H x := fromBlocks 0 (Z k x) (Z k x)ᴴ 0
     have hH : Continuous H :=
       continuous_const.matrix_fromBlocks hZ hZ.matrix_conjTranspose continuous_const
     have hh (x) : (H x).IsHermitian :=
       IsHermitian.fromBlocks isHermitian_zero rfl isHermitian_zero
-    exact continuous_const.mul (hH.matrix_inv_sub_smul_one hh hz).matrix_trace
+    exact hH.matrix_normalizedResolventTrace_of_isHermitian hh hz
   have hx (k) := (hX k).integral_comp (hc k).aestronglyMeasurable
   have hy (k) := (hY k).integral_comp (hc k).aestronglyMeasurable
   simp only [Function.comp_def] at hx hy
