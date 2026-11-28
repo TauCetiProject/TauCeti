@@ -176,16 +176,10 @@ variable {ι : Type*} [Fintype ι]
 as a `C^n` map `M → G`. -/
 def evalSection (φ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯)
     (s : ι → Cₛ^n⟮I; F, V⟯) : C^n⟮I, M; 𝓘(𝕜, G), G⟯ :=
-  ⟨fun x ↦ φ x (s · x), fun x₀ ↦ by
-    let e := trivializationAt F V x₀
-    have hφ := (contMDiffAt_section_iff x₀).1 (φ.contMDiff x₀)
-    have hs (i : ι) := (contMDiffAt_section_iff x₀).1 ((s i).contMDiff x₀)
-    refine (hφ.continuousAlternatingMap_apply hs).congr_of_eventuallyEq ?_
-    filter_upwards [e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F V x₀)] with x hx
-    rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd,
-      ContinuousAlternatingMap.compContinuousLinearMap_apply]
-    refine congrArg (φ x) (funext fun i ↦ ?_)
-    rw [Function.comp_apply, e.symmL_apply hx, e.symm_apply_apply_mk hx]⟩
+  ⟨fun x ↦ φ x (s · x), fun x₀ ↦
+    (contMDiffAt_section_iff x₀).1 <|
+      (φ.contMDiff x₀).continuousAlternatingMap_bundle_apply (E₂ := Bundle.Trivial M G)
+        (fun i ↦ (s i).contMDiff x₀)⟩
 
 @[simp] theorem evalSection_apply (φ : Cₛ^n⟮I; F [⋀^ι]→L[𝕜] G, fun x ↦ V x [⋀^ι]→L[𝕜] G⟯)
     (s : ι → Cₛ^n⟮I; F, V⟯) (x : M) : φ.evalSection s x = φ x (s · x) := (rfl)
