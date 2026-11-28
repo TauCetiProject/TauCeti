@@ -14,6 +14,7 @@ import TauCeti.Algebra.Lie.Basic
 import TauCeti.Algebra.Lie.Subalgebra.Automorphism
 import TauCeti.LinearAlgebra.Eigenspace.Separation
 import TauCeti.LinearAlgebra.FixedSubmodule
+import TauCeti.Order.Minimal
 
 /-!
 # The Cartan decomposition of a Lie algebra automorphism
@@ -140,7 +141,7 @@ theorem projection_fixedSubalgebra_cartanP_eq_eigenProjOfInvolutive [Invertible 
   let u := Module.End.eigenProjOfInvolutive hg (one_mul (1 : R)) x
   let v := Module.End.eigenProjOfInvolutive hg ((neg_mul_neg (1 : R) 1).trans (one_mul 1)) x
   have hu : (u : L) ∈ θ.toLieHom.fixedSubalgebra.toSubmodule := by
-    rw [LieHom.fixedSubalgebra_toSubmodule_eq_eigenspace]
+    rw [LieHom.fixedSubalgebra_toSubmodule, ← Module.End.eigenspace_one_eq_fixedSubmodule]
     exact u.property
   have hv : (v : L) ∈ θ.cartanP := v.property
   have huv : (u : L) + v = x :=
@@ -235,13 +236,6 @@ theorem map_cartanP {M : Type*} [LieRing M] [LieAlgebra R M] (e : L ≃ₗ⁅R�
   exact e.injective (by simp only [coe_toLieHom]; rw [← h, e.apply_symm_apply, hy, map_neg,
     e.apply_symm_apply])
 
-private theorem maximal_orderIso_iff {α β : Type*} [PartialOrder α] [PartialOrder β]
-    (φ : α ≃o β) {p : α → Prop} {q : β → Prop} (hP : ∀ x, q (φ x) ↔ p x) (x : α) :
-    Maximal q (φ x) ↔ Maximal p x := by
-  have hmax := φ.toOrderEmbedding.maximal_apply_mem_iff (t := Set.ofPred q) (x := x)
-    (by simp [φ.range_eq])
-  simpa only [OrderIso.coe_toOrderEmbedding, Set.mem_ofPred_eq, hP] using hmax
-
 /-- An intertwining Lie equivalence preserves maximal abelian subspaces inside `𝔭`. -/
 theorem maximal_abelian_submodule_cartanP_iff {M : Type*} [LieRing M] [LieAlgebra R M]
     (e : L ≃ₗ⁅R⁆ M) {θ' : M ≃ₗ⁅R⁆ M} (h : ∀ x, θ' (e x) = e (θ x)) (𝔞 : Submodule R L) :
@@ -260,7 +254,7 @@ theorem maximal_abelian_submodule_cartanP_iff {M : Type*} [LieRing M] [LieAlgebr
     · obtain ⟨x₀, hx₀, rfl⟩ := hx; obtain ⟨y₀, hy₀, rfl⟩ := hy
       simp only [LinearEquiv.coe_coe, coe_toLinearEquiv]
       rw [← e.map_lie, hab x₀ hx₀ y₀ hy₀, map_zero]
-  simpa only [φ, Submodule.orderIsoMapComap_apply, he_lin] using maximal_orderIso_iff φ hP 𝔞
+  simpa only [φ, Submodule.orderIsoMapComap_apply, he_lin] using φ.maximal_apply_iff hP 𝔞
 
 /-- An intertwining Lie equivalence preserves maximal abelian Lie subalgebras inside `𝔭`. -/
 theorem maximal_isLieAbelian_cartanP_iff {M : Type*} [LieRing M] [LieAlgebra R M]
@@ -280,7 +274,7 @@ theorem maximal_isLieAbelian_cartanP_iff {M : Type*} [LieRing M] [LieAlgebra R M
       exact Submodule.map_le_map_iff_of_injective e.injective _ _
     exact and_congr hsub
       (hφ 𝔟 ▸ (lie_abelian_iff_equiv_lie_abelian (e.lieSubalgebraMap 𝔟)).symm)
-  simpa only [hφ] using maximal_orderIso_iff φ hP 𝔞
+  simpa only [hφ] using φ.maximal_apply_iff hP 𝔞
 
 /-- `[𝔨, 𝔭] ⊆ 𝔭`. -/
 theorem lie_mem_cartanP {x y : L} (hx : x ∈ θ.toLieHom.fixedSubalgebra) (hy : y ∈ θ.cartanP) :

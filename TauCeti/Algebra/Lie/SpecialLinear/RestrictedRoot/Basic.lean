@@ -13,7 +13,8 @@ public import TauCeti.Algebra.Lie.SpecialLinear.Root.Base
 /-!
 # Restricted roots of `𝔰𝔩_n(ℝ)`
 
-On `𝔰𝔩_{r+1}(ℝ)` with the Cartan involution `θ X = -Xᵀ` (`TauCeti.specialLinearNegTranspose`), the
+On `𝔰𝔩_{r+1}(ℝ)` with the Cartan involution `θ X = -Xᵀ`
+(`LieAlgebra.SpecialLinear.cartanInvolution`), the
 trace-zero diagonal matrices `𝔞 = TauCeti.specialLinearDiagonal r ℝ` form a maximal abelian
 subspace of the `-1`-eigenspace `𝔭` (the symmetric matrices). For `H ∈ 𝔞` the bracket `[H, X]`
 has `(k, l)` entry `(H k k - H l l) X k l` (`TauCeti.lie_apply_of_mem_specialLinearDiagonal`), so:
@@ -159,12 +160,12 @@ theorem restrictedRootSpace_zero_specialLinearDiagonal :
 
 /-- `𝔞` lies in the `-1`-eigenspace `𝔭` of `X ↦ -Xᵀ`: diagonal matrices are symmetric. -/
 theorem specialLinearDiagonal_le_cartanP :
-    specialLinearDiagonal r ℝ ≤ (specialLinearNegTranspose r).cartanP := fun _ hX ↦
-  LieEquiv.mem_cartanP.mpr (specialLinearNegTranspose_apply_of_mem_specialLinearDiagonal hX)
+    specialLinearDiagonal r ℝ ≤ (cartanInvolution (Fin (r + 1)) ℝ).cartanP := fun _ hX ↦
+  LieEquiv.mem_cartanP.mpr (cartanInvolution_apply_of_mem_specialLinearDiagonal hX)
 
 /-- **The trace-zero diagonal matrices are a maximal abelian subspace of `𝔭`.** -/
 theorem isMaximalAbelianInP_specialLinearDiagonal :
-    (specialLinearNegTranspose r).IsMaximalAbelianInP (specialLinearDiagonal r ℝ) := by
+    (cartanInvolution (Fin (r + 1)) ℝ).IsMaximalAbelianInP (specialLinearDiagonal r ℝ) := by
   refine LieEquiv.isMaximalAbelianInP_iff.mpr ⟨⟨specialLinearDiagonal_le_cartanP, ?_⟩,
     fun 𝔟 h𝔟 hle Y hY ↦ ?_⟩
   · exact fun _ hX _ hY ↦ lie_eq_zero_of_mem_specialLinearDiagonal hX hY
@@ -175,11 +176,11 @@ theorem isMaximalAbelianInP_specialLinearDiagonal :
 centralizes `𝔞`. -/
 theorem restrictedRootSpace_zero_inf_fixedSubalgebra_specialLinearDiagonal :
     (specialLinearDiagonal r ℝ).restrictedRootSpace 0 ⊓
-      (specialLinearNegTranspose r).toLieHom.fixedSubalgebra.toSubmodule = ⊥ := by
+      (cartanInvolution (Fin (r + 1)) ℝ).toLieHom.fixedSubalgebra.toSubmodule = ⊥ := by
   rw [restrictedRootSpace_zero_specialLinearDiagonal, ← disjoint_iff]
-  exact ((specialLinearNegTranspose r).isCompl_fixedSubalgebra_cartanP two_ne_zero.isUnit
-    (isCartanInvolution_specialLinearNegTranspose r).involutive).disjoint.symm.mono_left
-      specialLinearDiagonal_le_cartanP
+  exact ((cartanInvolution (Fin (r + 1)) ℝ).isCompl_fixedSubalgebra_cartanP two_ne_zero.isUnit
+    (isCartanInvolution_cartanInvolution (n := Fin (r + 1))
+      (K := ℝ)).involutive).disjoint.symm.mono_left specialLinearDiagonal_le_cartanP
 
 /-- **The restricted root space of `e_i - e_j` is the line of the matrix unit `E_ij`.** -/
 theorem restrictedRootSpace_specialLinearRestrictedRoot {i j : Fin (r + 1)} (hij : i ≠ j) :

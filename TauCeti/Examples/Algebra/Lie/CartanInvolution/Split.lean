@@ -40,7 +40,7 @@ namespace TauCeti.Examples.RestrictedRootSplit
 example (r : ℕ) :
     (specialLinearDiagonalCartan r ℝ).IsCartanSubalgebra :=
   (LieEquiv.IsMaximalAbelianInP.isCartanSubalgebra_iff
-    (isCartanInvolution_specialLinearNegTranspose r)
+    (SpecialLinear.isCartanInvolution_cartanInvolution (n := Fin (r + 1)) (K := ℝ))
     (by rw [specialLinearDiagonalCartan_toSubmodule]
         exact isMaximalAbelianInP_specialLinearDiagonal)).mpr
     (by rw [specialLinearDiagonalCartan_toSubmodule]

@@ -66,7 +66,7 @@ trace-zero diagonal matrices `𝔞`. -/
 noncomputable abbrev specialLinearRestrictedRootPairing :
     RootPairing (specialLinearDiagonal r ℝ).restrictedRoots ℝ
       (Dual ℝ (specialLinearDiagonal r ℝ)) (specialLinearDiagonal r ℝ) :=
-  (isCartanInvolution_specialLinearNegTranspose r).restrictedRootPairing
+  (isCartanInvolution_cartanInvolution (n := Fin (r + 1)) (K := ℝ)).restrictedRootPairing
     isMaximalAbelianInP_specialLinearDiagonal
 
 variable (r) in
@@ -96,7 +96,7 @@ theorem specialLinearRestrictedRootPairing_coroot {i j : Fin (r + 1)} (hij : i �
   -- `E_ij` spans `𝔤_{e_i - e_j}`, so the `𝔰𝔩₂` triple `(H', E_ij, F)` of the restricted root
   -- has `F = c E_ji`, hence `H' = [E_ij, F] = c (E_ii - E_jj)`, and `(e_i - e_j)(H') = 2`
   -- forces `c = 1`.
-  have hθ := isCartanInvolution_specialLinearNegTranspose r
+  have hθ := isCartanInvolution_cartanInvolution (n := Fin (r + 1)) (K := ℝ)
   have h𝔞 := isMaximalAbelianInP_specialLinearDiagonal (r := r)
   have hμ : specialLinearRestrictedRoot r ℝ i j ≠ 0 :=
     (Submodule.mem_restrictedRoots.mp (specialLinearRestrictedRootIndex r i j hij).property).1
@@ -137,7 +137,8 @@ theorem specialLinearRestrictedRootPairing_pairing {i j k l : Fin (r + 1)} (hij 
 /-- The restricted roots of `𝔰𝔩_{r+1}(ℝ)` form a finite set. -/
 instance finite_restrictedRoots_specialLinearDiagonal :
     Finite (specialLinearDiagonal r ℝ).restrictedRoots :=
-  ((isCartanInvolution_specialLinearNegTranspose r).finite_restrictedRoots _).to_subtype
+  ((isCartanInvolution_cartanInvolution (n := Fin (r + 1))
+    (K := ℝ)).finite_restrictedRoots _).to_subtype
 
 /-- **The restricted root system of `𝔰𝔩_{r+1}(ℝ)` is reduced**: the only restricted roots
 proportional to a restricted root `α` are `±α`. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Abelian
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # Lie algebra equivalences on centres
@@ -31,13 +32,10 @@ variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing M] [
 /-- Every Lie algebra equivalence maps the centre onto the centre as Lie subalgebras. -/
 theorem map_center_toLieSubalgebra (e : L ≃ₗ⁅R⁆ M) :
     (center R L).toLieSubalgebra.map e.toLieHom = (center R M).toLieSubalgebra := by
-  ext y
-  simp only [LieSubalgebra.mem_map, LieIdeal.mem_toLieSubalgebra, LieModule.mem_maxTrivSubmodule]
-  refine ⟨?_, fun hy ↦ ⟨e.symm y, fun u ↦ e.injective ?_, e.apply_symm_apply y⟩⟩
-  · rintro ⟨x, hx, rfl⟩ w
-    obtain ⟨u, rfl⟩ := e.surjective w
-    rw [coe_toLieHom, ← e.map_lie, hx u, map_zero]
-  · rw [e.toLieHom.map_lie, map_zero, coe_toLieHom, e.apply_symm_apply]; exact hy (e u)
+  refine LieSubalgebra.toSubmodule_injective ?_
+  rw [LieSubalgebra.map_toSubmodule]
+  exact (LieIdeal.coe_map_of_surjective (I := center R L) (f := (e : L →ₗ⁅R⁆ M))
+    e.surjective).symm.trans (congrArg LieSubmodule.toSubmodule e.map_center)
 
 /-- Restriction of a Lie algebra equivalence to the centre. -/
 def restrictCenter (e : L ≃ₗ⁅R⁆ M) : center R L ≃ₗ⁅R⁆ center R M :=
