@@ -65,6 +65,15 @@ theorem exists_isOptimalCoupling_iff {c : X × Y → ℝ≥0∞} (hc : LowerSemi
   simpa only [← hmass, smul_smul, ENNReal.mul_inv_cancel hμ0 (measure_ne_top μ univ),
     one_smul] using hscaled
 
+/-- A lower-semicontinuous cost with finite transport cost admits an optimal coupling of finite
+measures, without requiring an explicit equal-mass proof: finite cost supplies a coupling and
+therefore equal total mass. -/
+theorem exists_isOptimalCoupling_of_transportCost_ne_top {c : X × Y → ℝ≥0∞}
+    (hc : LowerSemicontinuous c) (hfin : transportCost c μ ν ≠ ∞) :
+    ∃ π, IsOptimalCoupling c π μ ν :=
+  (exists_isOptimalCoupling_iff hc).2
+    (exists_isCoupling_of_transportCost_ne_top hfin).choose_spec.measure_univ_eq
+
 /-- An extended-real cost with an integrable split lower bound whose residual is lower
 semicontinuous attains its signed transport value between finite equal-mass measures.
 The same plan attains the value for every other integrable split lower bound, without any

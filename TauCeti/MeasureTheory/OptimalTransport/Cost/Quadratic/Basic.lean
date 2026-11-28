@@ -37,11 +37,17 @@ half-squared cost to a minimizer of squared ground distance, as used by `W₂`.
   `TauCeti.isOptimalCoupling_edist_rpow_two_of_norm_sub_sq_div_two` and
   `TauCeti.isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two` — convert between the
   half-squared Brenier cost and the squared-distance cost without changing optimal couplings;
-* `TauCeti.IsCoupling.lintegral_norm_sub_sq_div_two` and
+* `TauCeti.IsCoupling.lintegral_norm_sub_sq_div_two`,
+  `TauCeti.IsCoupling.transportCost_norm_sub_sq_div_two_ne_top`,
+  `TauCeti.transportCost_norm_sub_sq_div_two_ne_top_of_memLp`,
+  `TauCeti.transportCost_norm_sub_sq_div_two_ne_top_of_ae_mem_of_isBounded`,
+  `TauCeti.transportCost_norm_sub_sq_div_two_ne_top_of_withDensity_isBounded`, and
   `TauCeti.IsCoupling.integral_inner_le` — for marginals with finite second moments, the quadratic
-  cost of a plan is a second-moment term minus its correlation, and the correlation is at most
-  that term; `ProbabilityTheory.HasLaw.lintegral_norm_sub_sq_div_two` is the identity for a pair
-  of random variables.
+  cost of a plan is a second-moment term minus its correlation, the optimal quadratic cost is
+  finite whenever a coupling exists (in particular for equal-mass finite measures via the normalised
+  product coupling, or for probability measures carried by bounded sets), and the correlation is at
+  most the second-moment term; `ProbabilityTheory.HasLaw.lintegral_norm_sub_sq_div_two` is the
+  identity for a pair of random variables.
 
 ## References
 
@@ -92,7 +98,7 @@ end TauCeti
 
 namespace TauCeti
 
-variable {F : Type*} [NormedAddCommGroup F] [MeasurableSpace F]
+variable {F : Type*} [SeminormedAddCommGroup F] [MeasurableSpace F]
 
 omit [MeasurableSpace F] in
 /-- The half-squared-displacement cost `‖x - y‖ ^ 2 / 2`, as an extended nonnegative cost, is
@@ -135,6 +141,78 @@ theorem isOptimalCoupling_norm_sub_sq_div_two_of_edist_rpow_two
   simpa only [edist_rpow_two_eq_two_mul_ofReal_norm_sub_sq_div_two,
     ENNReal.inv_mul_cancel_left two_ne_zero ENNReal.ofNat_ne_top] using
     hπ.const_mul (a := 2⁻¹) (ENNReal.inv_ne_top.2 two_ne_zero)
+
+/-- **Coupled measures with finite second moments have finite quadratic transport cost.** -/
+theorem IsCoupling.transportCost_norm_sub_sq_div_two_ne_top {μ ν : Measure F}
+    {σ : Measure (F × F)} (hσ : IsCoupling σ μ ν) (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) :
+    transportCost (fun z : F × F => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
+  have hnorm {g : Measure F} (hg : MemLp id 2 g) : MemLp (fun x : F => ‖x‖) 2 g :=
+    hg.congr_eNorm hg.aestronglyMeasurable.norm (.of_forall fun _ => (eNorm_norm _).symm)
+  have h1 := (hnorm hμ).comp_measurePreserving hσ.measurePreserving_fst
+  have h2 := (hnorm hν).comp_measurePreserving hσ.measurePreserving_snd
+  have hdiff : MemLp (fun z : F × F => ‖z.1 - z.2‖) 2 σ :=
+    (h1.add h2).mono
+      ((hμ.aestronglyMeasurable.comp_measurePreserving hσ.measurePreserving_fst).sub
+        (hν.aestronglyMeasurable.comp_measurePreserving hσ.measurePreserving_snd)).norm
+      (.of_forall fun z => by
+        simpa [Real.norm_of_nonneg (norm_nonneg _),
+          Real.norm_of_nonneg (by positivity : 0 ≤ ‖z.1‖ + ‖z.2‖)] using norm_sub_le z.1 z.2)
+  have hint : Integrable (fun z : F × F => ‖z.1 - z.2‖ ^ 2 / 2) σ := by
+    simpa [Real.norm_of_nonneg (norm_nonneg _)] using
+      (hdiff.integrable_norm_pow two_ne_zero).div_const 2
+  exact ((transportCost_le_lintegral hσ _).trans_lt
+    ((lintegral_ofReal_ne_top_iff_integrable hint.aestronglyMeasurable
+      (.of_forall fun _ => by positivity)).2 hint).lt_top).ne
+
+/-- **Equal-mass finite measures with finite second moments have finite quadratic transport cost.**
+-/
+theorem transportCost_norm_sub_sq_div_two_ne_top_of_memLp {μ ν : Measure F} [IsFiniteMeasure μ]
+    (hμν : μ Set.univ = ν Set.univ) (hμ : MemLp id 2 μ) (hν : MemLp id 2 ν) :
+    transportCost (fun z : F × F => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ :=
+  (isCoupling_inv_smul_prod hμν).transportCost_norm_sub_sq_div_two_ne_top hμ hν
+
+/-- Probability measures carried almost everywhere by bounded sets have finite transport cost for
+`‖x - y‖ ^ 2 / 2`. -/
+theorem transportCost_norm_sub_sq_div_two_ne_top_of_ae_mem_of_isBounded
+    {μ ν : Measure F} {X Y : Set F} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    (hXb : Bornology.IsBounded X) (hYb : Bornology.IsBounded Y)
+    (hμ : ∀ᵐ x ∂μ, x ∈ X) (hν : ∀ᵐ y ∂ν, y ∈ Y) :
+    transportCost (fun z : F × F => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) μ ν ≠ ∞ := by
+  obtain ⟨Rx, hRx⟩ := hXb.subset_closedBall 0
+  obtain ⟨Ry, hRy⟩ := hYb.subset_closedBall 0
+  have hπ := isCoupling_prod μ ν
+  have hbdd : ∀ᵐ z ∂(μ.prod ν),
+      ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) ≤
+        ENNReal.ofReal ((max Rx 0 + max Ry 0) ^ 2 / 2) := by
+    filter_upwards [hπ.measurePreserving_fst.quasiMeasurePreserving.ae hμ,
+      hπ.measurePreserving_snd.quasiMeasurePreserving.ae hν] with z hz₁ hz₂
+    refine ENNReal.ofReal_le_ofReal (div_le_div_of_nonneg_right
+      (pow_le_pow_left₀ (norm_nonneg _) ((norm_sub_le z.1 z.2).trans <| add_le_add
+        ((mem_closedBall_zero_iff.1 (hRx hz₁)).trans (le_max_left Rx 0))
+        ((mem_closedBall_zero_iff.1 (hRy hz₂)).trans (le_max_left Ry 0))) 2)
+      zero_le_two)
+  refine ((transportCost_le_lintegral hπ _).trans_lt ?_).ne
+  calc ∫⁻ z, ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) ∂(μ.prod ν)
+      ≤ ∫⁻ _ : F × F, ENNReal.ofReal ((max Rx 0 + max Ry 0) ^ 2 / 2) ∂(μ.prod ν) :=
+        lintegral_mono_ae hbdd
+    _ < ∞ := by rw [lintegral_const, measure_univ, mul_one]; exact ENNReal.ofReal_lt_top
+
+/-- Probability measures given by densities on bounded sets have finite transport cost for
+`‖x - y‖ ^ 2 / 2`. Neither set need be measurable. -/
+theorem transportCost_norm_sub_sq_div_two_ne_top_of_withDensity_isBounded [OpensMeasurableSpace F]
+    {ρ₁ ρ₂ : Measure F} {X Y : Set F} {f g : F → ℝ≥0∞}
+    (hXb : Bornology.IsBounded X) (hYb : Bornology.IsBounded Y)
+    [IsProbabilityMeasure ((ρ₁.restrict X).withDensity f)]
+    [IsProbabilityMeasure ((ρ₂.restrict Y).withDensity g)] :
+    transportCost (fun z : F × F => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
+      ((ρ₁.restrict X).withDensity f) ((ρ₂.restrict Y).withDensity g) ≠ ∞ :=
+  have hae (ρ : Measure F) (S : Set F) (h : F → ℝ≥0∞) :
+      ∀ᵐ z ∂(ρ.restrict S).withDensity h, z ∈ closure S :=
+    (withDensity_absolutelyContinuous (ρ.restrict S) h).ae_le
+      (ae_restrict_of_ae_restrict_of_subset subset_closure
+        (ae_restrict_mem isClosed_closure.measurableSet))
+  transportCost_norm_sub_sq_div_two_ne_top_of_ae_mem_of_isBounded
+    hXb.closure hYb.closure (hae ρ₁ X f) (hae ρ₂ Y g)
 
 end TauCeti
 
@@ -228,7 +306,5 @@ theorem _root_.ProbabilityTheory.HasLaw.lintegral_norm_sub_sq_div_two {α : Type
   rw [hσ.lintegral_norm_sub_sq_div_two hμ hν, integral_map hpair (h₁.inner h₂)]
 
 end TauCeti
-
-end
 
 end

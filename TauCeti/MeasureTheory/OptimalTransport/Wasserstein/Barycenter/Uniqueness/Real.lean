@@ -15,15 +15,16 @@ import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.PopulationBarycenter
 
 The quantile isometry makes the quadratic Wasserstein space `P₂(ℝ)` a CAT(0) space
 (`TauCeti.WassersteinSpace.instIsCATZeroSpace`), and the CAT(0) inequality makes quadratic Fréchet
-barycenters unique. With the Le Gouic--Loubes existence theorem, every law on `P₂(ℝ)` with finite
-second moment has exactly one quadratic Wasserstein barycenter. Unlike the barycenter theory on
-`ℝⁿ` (`TauCeti.WassersteinSpace.subsingleton_frechetBarycenters_two`), this needs no absolute
-continuity of any of the averaged laws.
+barycenters unique. With the Le Gouic--Loubes existence theorem, every probability law on `P₂(ℝ)`
+with finite second moment has exactly one quadratic Wasserstein barycenter. Unlike the
+uniqueness criterion on `ℝⁿ` (`TauCeti.WassersteinSpace.subsingleton_frechetBarycenters_two`),
+which assumes `P` gives positive mass to `c - c`-regular laws as a sufficient condition, this
+needs no regularity or absolute continuity of any of the averaged laws.
 
 ## Main statements
 
-* `TauCeti.WassersteinSpace.existsUnique_isFrechetBarycenter_real` — a law on `P₂(ℝ)` with finite
-  second moment has exactly one quadratic Wasserstein barycenter.
+* `TauCeti.WassersteinSpace.existsUnique_isFrechetBarycenter_real` — a probability law on `P₂(ℝ)`
+  with finite second moment has exactly one quadratic Wasserstein barycenter.
 
 ## References
 

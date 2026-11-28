@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
-import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Module.Span
-public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Linear isometries, orthogonal complements, and product decompositions
@@ -63,6 +63,8 @@ diffeomorphisms.
   its orthogonal complement are equal, without a unit-norm assumption.
 * `LinearIsometryEquiv.eq_extendOrthogonalComplement_iff`: a linear isometry equals the
   extension if and only if it agrees with it on the unit vector and its orthogonal complement.
+* `TauCeti.exists_linearIsometryEquiv_of_unit` and `LinearIsometryEquiv.exists_unit`:
+  orthonormal splittings `E ≃ₗᵢ[ℝ] ℝ^{d-1} ×₂ ℝ` from a unit vector and vice versa.
 * `LinearIsometryEquiv.inner_toLinearEquiv_conj_apply`: the matrix entries of an operator
   conjugated by a linear isometry equivalence.
 * `LinearIsometryEquiv.forall_orthonormal_iff`: a condition holds along all orthonormal families
@@ -391,6 +393,69 @@ theorem inner_add_smul (e : E) (he : ‖e‖ = 1) (y : (ℝ ∙ e)ᗮ) (t : ℝ)
     ⟪e, (y : E) + t • e⟫ = t := by
   rw [← orthogonalLineEquiv_apply e he, ← orthogonalLineEquiv_symm_snd e he,
     ContinuousLinearEquiv.symm_apply_apply]
+
+/-- The inverse of `orthogonalLineIsometry` extracts the orthogonal projection onto `(ℝ ∙ e)ᗮ`
+and the inner product with `e`. -/
+@[simp]
+theorem orthogonalLineIsometry_symm_apply (e : E) (he : ‖e‖ = 1) (x : E) :
+    (orthogonalLineIsometry e he).symm x =
+      WithLp.toLp 2 ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x, ⟪e, x⟫) :=
+  (orthogonalLineIsometry e he).injective <| by
+    rw [LinearIsometryEquiv.apply_symm_apply, orthogonalLineIsometry_apply,
+      Submodule.coe_orthogonalProjectionOnto_orthogonal_singleton he, sub_add_cancel]
+
+/-- A unit vector `e` in a finite-dimensional real inner product space `E` induces an orthonormal
+splitting `Φ : E ≃ₗᵢ[ℝ] WithLp 2 (EuclideanSpace ℝ (Fin (finrank ℝ E - 1)) × ℝ)` whose second
+coordinate is `⟪x, e⟫` and whose first coordinate is an isometric identification `ψ` of
+`(ℝ ∙ e)ᗮ.orthogonalProjectionOnto x`. -/
+theorem exists_linearIsometryEquiv_of_unit [FiniteDimensional ℝ E] {e : E} (he : ‖e‖ = 1) :
+    ∃ (Φ : E ≃ₗᵢ[ℝ] WithLp 2 (EuclideanSpace ℝ (Fin (Module.finrank ℝ E - 1)) × ℝ))
+      (ψ : ↥(ℝ ∙ e)ᗮ ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E - 1))),
+      (∀ x, (Φ x).fst = ψ ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x)) ∧
+      (∀ x, (Φ x).snd = inner ℝ x e) := by
+  have hdim : Module.finrank ℝ ↥(ℝ ∙ e)ᗮ = Module.finrank ℝ E - 1 :=
+    Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one (fun h => by simp [h] at he)
+  let ψ : ↥(ℝ ∙ e)ᗮ ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E - 1)) :=
+    (stdOrthonormalBasis ℝ ↥(ℝ ∙ e)ᗮ).repr.trans (.piLpCongrLeft 2 ℝ ℝ (finCongr hdim))
+  let Φ := (orthogonalLineIsometry e he).symm.trans (ψ.withLpProdCongr 2 (.refl ℝ ℝ))
+  have hΦ (x : E) :
+      Φ x = WithLp.toLp 2 (ψ ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x), inner ℝ x e) := by
+    simp [Φ, real_inner_comm]
+  exact ⟨Φ, ψ, fun x => by simp [hΦ x], fun x => by simp [hΦ x]⟩
+
+/-- An orthonormal splitting
+`Φ : E ≃ₗᵢ[ℝ] WithLp 2 (EuclideanSpace ℝ (Fin (finrank ℝ E - 1)) × ℝ)` determines a unit vector
+`e` (the preimage of `(0, 1)`) and a linear isometry
+`ψ : ↥(ℝ ∙ e)ᗮ →ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ E - 1))` realizing the two coordinates of
+`Φ` as `ψ ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x)` and `⟪x, e⟫`. -/
+theorem _root_.LinearIsometryEquiv.exists_unit
+    (Φ : E ≃ₗᵢ[ℝ] WithLp 2 (EuclideanSpace ℝ (Fin (Module.finrank ℝ E - 1)) × ℝ)) :
+    ∃ (e : E) (_ : ‖e‖ = 1)
+      (ψ : ↥(ℝ ∙ e)ᗮ →ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E - 1))),
+      (∀ x, ψ ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x) = (Φ x).fst) ∧
+      (∀ x, inner ℝ x e = (Φ x).snd) := by
+  let p₀ : WithLp 2 (EuclideanSpace ℝ (Fin (Module.finrank ℝ E - 1)) × ℝ) := .toLp 2 (0, 1)
+  let e : E := Φ.symm p₀
+  have he : ‖e‖ = 1 := by
+    rw [LinearIsometryEquiv.norm_map, ← sq_eq_sq₀ (norm_nonneg _) zero_le_one,
+      WithLp.prod_norm_sq_eq_of_L2]
+    simp [p₀]
+  have hin (x : E) : inner ℝ x e = (Φ x).snd := by
+    simpa [e, p₀, WithLp.prod_inner_apply] using (Φ.inner_map_map x e).symm
+  let ψ : ↥(ℝ ∙ e)ᗮ →ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E - 1)) :=
+    { toFun := fun y => (Φ (y : E)).fst
+      map_add' := by simp
+      map_smul' := by simp
+      norm_map' := fun y => by
+        rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← Submodule.norm_coe, ← Φ.norm_map (y : E),
+          WithLp.prod_norm_sq_eq_of_L2, ← hin (y : E),
+          Submodule.mem_orthogonal_singleton_iff_inner_left.mp y.property]
+        simp }
+  refine ⟨e, he, ψ, fun x => ?_, hin⟩
+  have hΦe : (Φ e).fst = 0 := by simp [e, p₀]
+  have hdec : ((ℝ ∙ e)ᗮ.orthogonalProjectionOnto x : E) + inner ℝ e x • e = x := by
+    rw [Submodule.coe_orthogonalProjectionOnto_orthogonal_singleton he, sub_add_cancel]
+  simpa [ψ, map_add, map_smul, hΦe] using congrArg (fun z => (Φ z).fst) hdec
 
 end TauCeti
 

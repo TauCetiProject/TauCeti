@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Data.EReal.Basic
+public import Mathlib.Topology.Algebra.Module.Basic
+public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 import TauCeti.Analysis.Convex.Prod
 import TauCeti.Data.EReal.Operations
 
@@ -16,18 +18,23 @@ import TauCeti.Data.EReal.Operations
 For a function `f : E → EReal` with convex real epigraph, the effective domain
 `{x | f x ≠ ⊤}` is convex. If `f` never takes the value `⊥`, its real representative
 `x ↦ (f x).toReal` is convex on that domain and agrees there with `f` by
-`EReal.coe_toReal`.
+`EReal.coe_toReal`. Conversely, in a topological real vector space, if `f` takes the value `⊥` at
+any point, then `f` equals `⊥` at every interior point of `{x | f x ≠ ⊤}`.
 
 ## Main statements
 
 * `TauCeti.le_coe_of_convex_epigraph` — the epigraph gives a convex-combination bound;
 * `TauCeti.convex_setOf_ne_top` — the effective domain is convex;
+* `TauCeti.eq_bot_of_mem_interior_of_eq_bot` and
+  `TauCeti.toReal_eventuallyEq_zero_of_mem_interior_of_eq_bot` — taking the value `⊥` anywhere
+  forces `f = ⊥`, and `(f ·).toReal =ᶠ[𝓝 x] 0`, throughout the interior of its effective domain;
 * `TauCeti.convexOn_toReal` — the real representative is convex on the effective domain;
 * `TauCeti.convex_epigraph_coe_mul_iff` — scaling by a positive real preserves convexity of the
   epigraph;
-* `TauCeti.setOf_ite_ne_top`, `TauCeti.ite_ne_bot` and `TauCeti.convexOn_iff_convex_epigraph_ite`
-  — a real function extended by `⊤` off `Ω` has effective domain `Ω`, never takes the value `⊥`,
-  and has convex real epigraph exactly when it is convex on `Ω`.
+* `TauCeti.setOf_ite_ne_top`, `TauCeti.ite_ne_bot`, `TauCeti.convexOn_iff_convex_epigraph_ite`,
+  and `TauCeti.convexOn_iff_convex_epigraph_coe` — a real function extended by `⊤` off `Ω` has
+  effective domain `Ω`, never takes the value `⊥`, and has convex real epigraph exactly when it is
+  convex on `Ω` (with the specialization to `Ω = univ`).
 
 ## References
 
@@ -56,6 +63,49 @@ closed under convex combinations. -/
 theorem convex_setOf_ne_top (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) :
     Convex ℝ {x | f x ≠ ⊤} := fun _ hx _ hy _ _ ha hb hab =>
   ne_top_of_le_ne_top (EReal.coe_ne_top _) (le_coe_of_convex_epigraph hf hx hy ha hb hab)
+
+/-- If a function `f : E → EReal` with convex real epigraph on a topological real vector space takes
+the value `⊥` at some point `z₀`, then `f x = ⊥` at every interior point `x` of its effective domain
+`{z | f z ≠ ⊤}`. -/
+theorem eq_bot_of_mem_interior_of_eq_bot {V : Type*} [AddCommGroup V] [Module ℝ V]
+    [TopologicalSpace V] [ContinuousAdd V] [ContinuousSMul ℝ V] {f : V → EReal}
+    (hf : Convex ℝ {p : V × ℝ | f p.1 ≤ p.2}) {x z₀ : V}
+    (hx : x ∈ interior {z | f z ≠ ⊤}) (hz₀ : f z₀ = ⊥) : f x = ⊥ := by
+  have hcont : Continuous fun t : ℝ => x + t • (x - z₀) := by fun_prop
+  obtain ⟨δ, hδ, hδB⟩ := Metric.mem_nhds_iff.1 <|
+    (hcont.continuousAt (x := (0 : ℝ))).preimage_mem_nhds
+      (isOpen_interior.mem_nhds (by simpa using hx))
+  set t := δ / 2; have ht : 0 < t := half_pos hδ
+  have hw : x + t • (x - z₀) ∈ interior {z | f z ≠ ⊤} :=
+    hδB (by rw [Metric.mem_ball, Real.dist_eq, sub_zero, abs_of_pos ht]; exact half_lt_self hδ)
+  set r := (f (x + t • (x - z₀))).toReal; set a := t / (1 + t); set b := 1 / (1 + t)
+  have ha : 0 < a := by positivity
+  have h1 : 1 + t ≠ 0 := by positivity
+  have hfst : a • z₀ + b • (x + t • (x - z₀)) = x := by
+    calc a • z₀ + b • (x + t • (x - z₀))
+        = ((1 + t) / (1 + t)) • x + ((t - t) / (1 + t)) • z₀ := by
+          simp only [a, b, smul_add, smul_smul, smul_sub, sub_self, zero_div, zero_smul, add_zero]
+          module
+      _ = x := by simp [div_self h1]
+  refine (EReal.eq_bot_iff_forall_lt _).2 fun c =>
+    lt_of_le_of_lt ?_ (EReal.coe_lt_coe_iff.2 (sub_one_lt c))
+  have hsnd : a * ((c - 1 - b * r) / a) + b * r = c - 1 := by rw [mul_div_cancel₀ _ ha.ne']; ring
+  simpa only [Prod.smul_mk, Prod.mk_add_mk, smul_eq_mul, hfst, hsnd, mem_ofPred_eq] using
+    hf (x := (z₀, (c - 1 - b * r) / a)) (y := (x + t • (x - z₀), r)) (b := b)
+      (by simp [hz₀]) (EReal.le_coe_toReal (interior_subset hw)) ha.le (by positivity)
+      (by simp only [a, b]; field_simp; ring)
+
+open scoped Topology in
+/-- If a function `f : V → EReal` with convex real epigraph on a topological real vector space
+takes the value `⊥` at some point `z₀`, then `(f ·).toReal` agrees with `0` on a neighborhood of
+every interior point `x` of its effective domain `{z | f z ≠ ⊤}`. -/
+theorem toReal_eventuallyEq_zero_of_mem_interior_of_eq_bot {V : Type*} [AddCommGroup V]
+    [Module ℝ V] [TopologicalSpace V] [ContinuousAdd V] [ContinuousSMul ℝ V] {f : V → EReal}
+    (hf : Convex ℝ {p : V × ℝ | f p.1 ≤ p.2}) {x z₀ : V}
+    (hx : x ∈ interior {z | f z ≠ ⊤}) (hz₀ : f z₀ = ⊥) :
+    (fun x' => (f x').toReal) =ᶠ[𝓝 x] 0 := by
+  filter_upwards [isOpen_interior.mem_nhds hx] with x' hx'
+  simp [eq_bot_of_mem_interior_of_eq_bot hf hx' hz₀]
 
 /-- **The real representative of a convex function.** If `f : E → EReal` has convex real epigraph
 and never takes the value `⊥`, then `x ↦ (f x).toReal` is convex on the effective domain
@@ -93,6 +143,12 @@ theorem convexOn_iff_convex_epigraph_ite :
   by_cases hp : p.1 ∈ Ω <;> simp [hp]
 
 end Ite
+
+/-- A real function `u` is convex on `univ` if and only if `(u · : EReal)` has convex real
+epigraph. -/
+theorem convexOn_iff_convex_epigraph_coe {u : E → ℝ} :
+    ConvexOn ℝ univ u ↔ Convex ℝ {p : E × ℝ | (u p.1 : EReal) ≤ p.2} := by
+  simpa only [mem_univ, ite_true] using convexOn_iff_convex_epigraph_ite (Ω := univ) (u := u)
 
 /-- Scaling an extended-real potential by a positive real number `c` does not change convexity of
 its real epigraph: the two epigraphs differ by scaling the height coordinate. -/

@@ -45,6 +45,10 @@ convex.
   `TauCeti.toReal_add_le_toReal_of_mem_subdifferential`;
 * `TauCeti.mem_subdifferential_ite_iff` — for a real function extended by `⊤` off `Ω`, a
   subgradient at a point of `Ω` is a `y` satisfying the subgradient inequality on `Ω`;
+* `TauCeti.mem_subdifferential_add` — the sum of subgradients of `f` and `g` at `x` is a
+  subgradient of `f + g` at `x`;
+* `TauCeti.mem_subdifferential_norm_sq_div_two` — `x` is a subgradient of `z ↦ ‖z‖ ^ 2 / 2` at `x`
+  on any seminormed real inner product space;
 * `TauCeti.mem_subdifferential_add_affine_iff` and `TauCeti.subgradientImage_add_affine` —
   adding the affine function `z ↦ B z q + c` translates subdifferentials and subgradient images
   by `q`, and `TauCeti.convex_epigraph_add_affine_iff` — it preserves convexity of the real
@@ -54,6 +58,8 @@ convex.
   subdifferentials at distinct points;
 * `TauCeti.convex_subdifferential` and `TauCeti.isClosed_subdifferential` — the subdifferential
   is convex, and closed for a topology making every `B x` continuous;
+* `TauCeti.exists_mem_subdifferential_apply_eq` and `TauCeti.exists_mem_subdifferential_inner_eq` —
+  by convexity, the subdifferential attains intermediate values of any linear functional;
 * `TauCeti.convex_setOf_mem_subdifferential` — for a convex `f`, the points at which a fixed `y`
   is a subgradient form a convex set;
 * `TauCeti.mem_subdifferential_fenchelConjugate_of_mem_subdifferential` — **conjugate-subgradient
@@ -184,6 +190,27 @@ theorem toReal_add_le_toReal_of_mem_subdifferential (h : y ∈ subdifferential B
     (hx' : f x' ≠ ⊤) : (f x).toReal + B (x' - x) y ≤ (f x').toReal :=
   (mem_subdifferential_iff_forall_toReal_add_le B (apply_ne_bot_of_mem_subdifferential B h)
     (ne_top_of_mem_subdifferential B h)).1 h x' hx'
+
+/-- **Subdifferential sum inclusion.** If `y₁` is a subgradient of `f` at `x` and `y₂` is a
+subgradient of `g` at `x`, then `y₁ + y₂` is a subgradient of `z ↦ f z + g z` at `x`. -/
+theorem mem_subdifferential_add {g : E → EReal} {y₁ y₂ : F}
+    (h₁ : y₁ ∈ subdifferential B f x) (h₂ : y₂ ∈ subdifferential B g x) :
+    y₁ + y₂ ∈ subdifferential B (fun z => f z + g z) x := by
+  rw [mem_subdifferential_iff] at h₁ h₂ ⊢
+  have hfx : f x = ((f x).toReal : EReal) := (EReal.coe_toReal h₁.2.1 h₁.1).symm
+  have hgx : g x = ((g x).toReal : EReal) := (EReal.coe_toReal h₂.2.1 h₂.1).symm
+  refine ⟨by rw [hfx, hgx, ← EReal.coe_add]; exact EReal.coe_ne_bot _,
+    by rw [hfx, hgx, ← EReal.coe_add]; exact EReal.coe_ne_top _, fun z => ?_⟩
+  have h1 := h₁.2.2 z
+  have h2 := h₂.2.2 z
+  rw [hfx] at h1 ⊢
+  rw [hgx] at h2 ⊢
+  rw [map_add, ← EReal.coe_add, ← EReal.coe_add]
+  rw [← EReal.coe_add] at h1 h2
+  have heq : (f x).toReal + (g x).toReal + (B (z - x) y₁ + B (z - x) y₂) =
+      ((f x).toReal + B (z - x) y₁) + ((g x).toReal + B (z - x) y₂) := by ring
+  rw [heq, EReal.coe_add]
+  exact add_le_add h1 h2
 
 /-- **Subgradients are monotone.** If `y₁ ∈ ∂f(x₁)` and `y₂ ∈ ∂f(x₂)`, then
 `B (x₂ - x₁) y₁ ≤ B (x₂ - x₁) y₂`; for the inner product this is the monotonicity
@@ -551,6 +578,51 @@ theorem mem_subdifferential_fenchelConjugate_flip_of_le {g : F → EReal}
   simpa using mem_subdifferential_fenchelConjugate_of_mem_subdifferential B.flip hx
 
 end
+
+section IntermediateValue
+
+/-- By convexity of the subdifferential, if two subgradients `p, q ∈ ∂u(x)` satisfy `‖p‖ ≤ M`,
+`‖q‖ ≤ M`, and `φ p ≤ c ≤ φ q` for a linear functional `φ : F →ₗ[ℝ] ℝ`, then there exists a
+subgradient `α ∈ ∂u(x)` with `‖α‖ ≤ M` and `φ α = c`. -/
+theorem exists_mem_subdifferential_apply_eq {E F : Type*} [AddCommGroup E] [Module ℝ E]
+    [SeminormedAddCommGroup F] [NormedSpace ℝ F] {B : E →ₗ[ℝ] F →ₗ[ℝ] ℝ} {u : E → EReal}
+    {x : E} {p q : F} (φ : F →ₗ[ℝ] ℝ) {c M : ℝ} (hp : p ∈ subdifferential B u x)
+    (hq : q ∈ subdifferential B u x) (hpM : ‖p‖ ≤ M) (hqM : ‖q‖ ≤ M) (hpc : φ p ≤ c)
+    (hcq : c ≤ φ q) :
+    ∃ α ∈ subdifferential B u x, ‖α‖ ≤ M ∧ φ α = c := by
+  have hconv : Convex ℝ (φ '' (subdifferential B u x ∩ Metric.closedBall 0 M)) :=
+    ((convex_subdifferential B u x).inter (convex_closedBall 0 M)).linear_image φ
+  obtain ⟨α, ⟨hα_sub, hαM⟩, hφα⟩ := hconv.ordConnected.out
+    (Set.mem_image_of_mem φ ⟨hp, mem_closedBall_zero_iff.2 hpM⟩)
+    (Set.mem_image_of_mem φ ⟨hq, mem_closedBall_zero_iff.2 hqM⟩) ⟨hpc, hcq⟩
+  exact ⟨α, hα_sub, mem_closedBall_zero_iff.1 hαM, hφα⟩
+
+/-- Inner-product specialization of `TauCeti.exists_mem_subdifferential_apply_eq`: if
+`p, q ∈ ∂u(x)` satisfy `‖p‖ ≤ M`, `‖q‖ ≤ M`, and `⟪p, e⟫ ≤ c ≤ ⟪q, e⟫`, then some
+`α ∈ ∂u(x)` satisfies `‖α‖ ≤ M` and `⟪α, e⟫ = c`. -/
+theorem exists_mem_subdifferential_inner_eq {E : Type*} [SeminormedAddCommGroup E]
+    [InnerProductSpace ℝ E] {u : E → EReal} {x e p q : E} {c M : ℝ}
+    (hp : p ∈ subdifferential (innerₗ E) u x) (hq : q ∈ subdifferential (innerₗ E) u x)
+    (hpM : ‖p‖ ≤ M) (hqM : ‖q‖ ≤ M) (hpc : inner ℝ p e ≤ c) (hcq : c ≤ inner ℝ q e) :
+    ∃ α ∈ subdifferential (innerₗ E) u x, ‖α‖ ≤ M ∧ inner ℝ α e = c :=
+  exists_mem_subdifferential_apply_eq ((innerₗ E).flip e) hp hq hpM hqM hpc hcq
+
+end IntermediateValue
+
+section InnerProduct
+
+/-- At every point `x` of a seminormed real inner product space, `x` is a subgradient of the
+quadratic function `z ↦ ‖z‖ ^ 2 / 2`. -/
+theorem mem_subdifferential_norm_sq_div_two {E : Type*} [SeminormedAddCommGroup E]
+    [InnerProductSpace ℝ E] (x : E) :
+    x ∈ subdifferential (innerₗ E) (fun z => ((‖z‖ ^ 2 / 2 : ℝ) : EReal)) x :=
+  (mem_subdifferential_coe_iff (innerₗ E) fun z => ‖z‖ ^ 2 / 2).2 fun z => by
+    simp only [innerₗ_apply_apply, inner_sub_left, real_inner_self_eq_norm_sq]
+    have hsq : 0 ≤ ‖z - x‖ ^ 2 := sq_nonneg _
+    rw [norm_sub_sq_real] at hsq
+    linarith
+
+end InnerProduct
 
 end TauCeti
 

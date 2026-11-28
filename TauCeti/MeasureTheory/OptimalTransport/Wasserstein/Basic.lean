@@ -105,16 +105,18 @@ gluing lemma consumes.
   moments survive finite scalings and sums of finite measures, hence mixtures;
 * `TauCeti.HasFiniteMoment.integrable_of_lipschitzWith` — a Lipschitz real function is integrable
   against a finite measure of finite first moment;
-* `TauCeti.HasFiniteMoment.memLp_id` — on a seminormed additive group, a finite measure of finite
-  `p`-moment has the identity in `L^p`, and `TauCeti.memLp_of_hasFiniteMoment_map` reads this off
-  for a function from its law; `TauCeti.integrable_norm_sub_sq_of_hasFiniteMoment` deduces that the
-  quadratic cost is integrable against a coupling of laws of finite second moment, and
+* `TauCeti.HasFiniteMoment.memLp_id`, `TauCeti.hasFiniteMoment_of_memLp_id`, and
+  `TauCeti.hasFiniteMoment_iff_memLp_id` — on a seminormed additive group, a finite measure has
+  finite `p`-moment if and only if the identity lies in `L^p`, and
+  `TauCeti.memLp_of_hasFiniteMoment_map` reads this off for a function from its law;
+  `TauCeti.integrable_norm_sub_sq_of_hasFiniteMoment` deduces that the quadratic cost is
+  integrable against a coupling of laws of finite second moment, and
   `TauCeti.lintegral_edist_sq_eq_ofReal_integral` rewrites its transport integral as a real one;
 * `TauCeti.wassersteinEDist_rpow_eq_transportCost` and
   `TauCeti.wassersteinEDist_eq_transportCost_rpow` — for `0 < p < ∞`, the exact bridge to the
   transport cost `TauCeti.transportCost` of `edist ^ p`, with
   `TauCeti.isOptimalCoupling_edist_rpow_iff` identifying the minimizers,
-  `TauCeti.wassersteinEDist_one_eq_transportCost` giving the case `p = 1`, and
+  `TauCeti.wassersteinEDist_one_eq_transportCost` giving the case `p = 1`,
   `TauCeti.wassersteinEDist_rpow_le_lintegral` the bound by the transport integral of a single
   coupling, and `TauCeti.transportCost_edist_rpow_eq_top_of_not_hasFiniteMoment` the infinite
   value against a target without finite moment;
@@ -945,6 +947,12 @@ theorem lintegral_edist_sq_eq_ofReal_integral {π : Measure (E × E)}
   refine lintegral_congr fun z ↦ ?_
   rw [edist_dist, dist_eq_norm, ENNReal.ofReal_pow (norm_nonneg _)]
 
+/-- On a seminormed additive group, if the identity lies in `L^p(ν)` then `ν` has finite
+`p`-moment (taking `0` as basepoint). -/
+theorem hasFiniteMoment_of_memLp_id {ν : Measure E} (h : MemLp id p ν) :
+    HasFiniteMoment p ν :=
+  ⟨0, by simpa [eDist_eq_eNorm_sub] using h.eNorm⟩
+
 variable [OpensMeasurableSpace E] [SecondCountableTopology E]
 
 /-- On a seminormed additive group, a finite measure with finite `p`-moment has the identity in
@@ -954,6 +962,12 @@ theorem HasFiniteMoment.memLp_id {ν : Measure E} [IsFiniteMeasure ν] (h : HasF
   (memLp_congr_eNorm aestronglyMeasurable_id measurable_edist_right.aestronglyMeasurable
     (.of_forall fun x ↦ by simp [eDist_eq_eNorm_sub])).2
     (h.memLp (x := 0) measurable_edist_right.aestronglyMeasurable)
+
+/-- On a seminormed additive group, a finite measure has finite `p`-moment if and only if the
+identity lies in `L^p`. -/
+theorem hasFiniteMoment_iff_memLp_id {ν : Measure E} [IsFiniteMeasure ν] :
+    HasFiniteMoment p ν ↔ MemLp id p ν :=
+  ⟨HasFiniteMoment.memLp_id, hasFiniteMoment_of_memLp_id⟩
 
 /-- A function whose law under a finite measure has finite `q`-th moment lies in `Lq`. -/
 theorem memLp_of_hasFiniteMoment_map {α : Type*} [MeasurableSpace α] {π : Measure α}

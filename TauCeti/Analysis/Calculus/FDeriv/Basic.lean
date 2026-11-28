@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
+public import Mathlib.Order.Interval.Set.Basic
+import Mathlib.Analysis.Calculus.Deriv.Slope
 
 /-!
 # Differentiability criteria
@@ -15,7 +17,10 @@ public import Mathlib.Analysis.Calculus.FDeriv.Mul
 The derivative `fderiv 𝕜 f` is totalized: it is `0` where `f` is not differentiable. So a
 nonzero derivative certifies differentiability, as `differentiableAt_of_deriv_ne_zero` does for
 functions of one variable. Likewise, two differentiable independent linear combinations of two
-scalar functions recover both functions as differentiable.
+scalar functions recover both functions as differentiable. Conversely, a real-valued function with
+a positive linear lower bound on its symmetric second differences
+`u (x + t • v) + u (x - t • v) - 2 * u x` for small `t > 0` along some direction is not
+differentiable at that point.
 
 ## Main results
 
@@ -27,6 +32,9 @@ scalar functions recover both functions as differentiable.
   surjective derivative at every point, so it is a submersion.
 * `TauCeti.differentiableAt_and_of_differentiableAt_comb`: if two combinations `a F + b G` and
   `c F + d G` with `a d - b c ≠ 0` are differentiable at a point, so are `F` and `G`.
+* `TauCeti.not_differentiableAt_of_add_sub_two_mul_ge`: a linear lower bound with strictly
+  positive slope on the symmetric second difference `u (x + t • v) + u (x - t • v) - 2 * u x` for
+  small `t > 0` precludes differentiability at `x`.
 * `Asymptotics.IsBigO.hasFDerivWithinAt_zero`, `Asymptotics.IsBigO.hasFDerivAt_zero`: a function
   dominated near a point by a function with zero value and zero derivative there has zero
   derivative there as well.
@@ -88,6 +96,34 @@ theorem differentiableAt_and_of_differentiableAt_comb {F G : E → 𝕜} {a b c 
       linear_combination (-(G y)) * hi
     rw [this]
     exact (hA.const_mul _).add (hB.const_mul _)
+
+/-- If a real-valued function on a real seminormed space satisfies a positive linear lower bound
+`c * t ≤ u (x + t • v) + u (x - t • v) - 2 * u x` for all `t ∈ (0, δ)`, then `u` is not
+differentiable at `x`. -/
+theorem not_differentiableAt_of_add_sub_two_mul_ge {V : Type*} [SeminormedAddCommGroup V]
+    [NormedSpace ℝ V] {u : V → ℝ} {x v : V} {c δ : ℝ} (hc : 0 < c) (hδ : 0 < δ)
+    (h : ∀ t ∈ Set.Ioo 0 δ, c * t ≤ u (x + t • v) + u (x - t • v) - 2 * u x) :
+    ¬ DifferentiableAt ℝ u x := fun hd => by
+  have hderiv (w : V) : HasDerivAt (fun t : ℝ => u (x + t • w)) (fderiv ℝ u x w) 0 := by
+    rw [hasDerivAt_iff_isLittleO_nhds_zero]
+    have h1 := hasFDerivAt_iff_isLittleO.1 hd.hasFDerivAt
+    have h2 : Filter.Tendsto (fun t : ℝ => x + t • w) (nhds (0 : ℝ)) (nhds x) := by
+      simpa [Pi.add_def] using
+        ((continuous_const (y := x)).add (continuous_id.smul continuous_const) :
+          Continuous (fun t : ℝ => x + t • w)).tendsto 0
+    have h3 : (fun t : ℝ => (x + t • w) - x) =O[nhds 0] (fun t : ℝ => t) :=
+      Asymptotics.IsBigO.of_bound ‖w‖ (.of_forall fun t => by
+        simp [norm_smul, Real.norm_eq_abs, mul_comm])
+    simpa [Function.comp_def, add_sub_cancel_left, map_smul, smul_eq_mul] using
+      (h1.comp_tendsto h2).trans_isBigO h3
+  have h₁ : HasDerivAt (fun t : ℝ => u (x + t • v)) (fderiv ℝ u x v) 0 := hderiv v
+  have h₂ : HasDerivAt (fun t : ℝ => u (x - t • v)) (-fderiv ℝ u x v) 0 := by
+    simpa [sub_eq_add_neg, neg_smul] using hderiv (-v)
+  refine not_le_of_gt hc
+    (ge_of_tendsto (add_neg_cancel (fderiv ℝ u x v) ▸ h₁.add h₂).tendsto_slope_zero_right ?_)
+  filter_upwards [Ioo_mem_nhdsGT hδ] with t ht
+  simp only [Pi.add_apply, zero_add, zero_smul, add_zero, sub_zero, smul_eq_mul]
+  rw [le_inv_mul_iff₀ ht.1, mul_comm]; linarith [h t ht]
 
 /-- A bound `‖f (x + h) - f x‖ ≤ ‖h‖ K` for all `‖h‖ ≤ δ`, with `δ > 0`, bounds the derivative of
 `f` at `x` by `K`. -/

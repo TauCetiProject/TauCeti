@@ -38,7 +38,7 @@ potentials whose gradient pushes an absolutely continuous `μ` to an absolutely 
 Applied to the potential of Brenier's theorem, this says that the Brenier potential is a weak
 solution of its transport equation
 (`TauCeti.exists_isKantorovichOptimalTransportMap_gradient_and_mongeAmpereMeasure_eq`, in
-`TauCeti.MeasureTheory.OptimalTransport.Brenier`).
+`TauCeti.MeasureTheory.OptimalTransport.Brenier.Basic`).
 
 A weak solution need not be an *Aleksandrov* solution, one whose unweighted measure
 `MA_f(s) = ρ(∂f(s ∩ D))`, for an additive Haar measure `ρ`, is `g₀ / g₁(∇f) dx`. Because

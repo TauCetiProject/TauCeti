@@ -48,6 +48,9 @@ points reduce the dimension in the Minkowski–Carathéodory theorem.
 
 * `Convex.subset_of_image_inner_subset`: a set whose heights along every unit vector are heights
   of points of a nonempty open convex set `W` is contained in `W`.
+* `Convex.exists_norm_eq_one_closure_subset_setOf_inner_eq`: the closure of a nonempty convex
+  set with empty interior in a finite-dimensional real inner product space lies in an affine
+  hyperplane `{x | ⟪x, e⟫ = c}` with unit normal `e`.
 * `Convex.exists_ne_zero_forall_closure_inner_sub_nonpos`: at every frontier point `x` of a convex
   set `C` in a finite-dimensional real inner product space, there is a nonzero vector `y` with
   `⟪z - x, y⟫ ≤ 0` for all `z ∈ closure C`.
@@ -93,6 +96,34 @@ theorem Convex.subset_of_image_inner_subset {E : Type*} [NormedAddCommGroup E]
   rw [hfw, hfw, ← mul_left_cancel₀ (inv_ne_zero (norm_ne_zero_iff.2 hw)) hax] at this
   exact lt_irrefl _ this
 
+/-- **Affine-hyperplane containment for convex sets with empty interior.** In a finite-dimensional
+real inner product space `E`, the closure of a nonempty convex set `C` with empty interior is
+contained in a single affine hyperplane `{x | ⟪x, e⟫ = c}` for some unit normal `e` and scalar `c`.
+-/
+theorem Convex.exists_norm_eq_one_closure_subset_setOf_inner_eq {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] {C : Set E} (hC : Convex ℝ C)
+    (hCne : C.Nonempty) (hint : interior C = ∅) :
+    ∃ (e : E) (c : ℝ), ‖e‖ = 1 ∧ closure C ⊆ {x | ⟪x, e⟫ = c} := by
+  have haff_ne : affineSpan ℝ C ≠ ⊤ := fun htop =>
+    (Set.not_nonempty_iff_eq_empty.mpr hint)
+      (hC.interior_nonempty_iff_affineSpan_eq_top.mpr htop)
+  have hdir_ne : vectorSpan ℝ C ≠ ⊤ := by
+    rw [← direction_affineSpan]
+    exact fun hdir => haff_ne
+      ((AffineSubspace.direction_eq_top_iff_of_nonempty
+        (hCne.mono (subset_affineSpan ℝ C))).mp hdir)
+  obtain ⟨v, hv_mem, hv0⟩ :=
+    Submodule.exists_mem_ne_zero_of_ne_bot (mt Submodule.orthogonal_eq_bot_iff.mp hdir_ne)
+  obtain ⟨x₀, hx₀⟩ := hCne
+  let e : E := ‖v‖⁻¹ • v
+  refine ⟨e, ⟪x₀, e⟫, by simp [e, norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.2 hv0)],
+    closure_minimal (fun x hx => ?_) (isClosed_eq (by fun_prop) continuous_const)⟩
+  have hsub_mem : x - x₀ ∈ vectorSpan ℝ C := by
+    rw [← direction_affineSpan]
+    exact AffineSubspace.vsub_mem_direction (subset_affineSpan ℝ C hx) (subset_affineSpan ℝ C hx₀)
+  rw [mem_ofPred_eq, ← sub_eq_zero, ← inner_sub_left]
+  exact Submodule.inner_right_of_mem_orthogonal hsub_mem (Submodule.smul_mem _ _ hv_mem)
+
 /-- **Supporting hyperplane at a frontier point** (Rockafellar, *Convex Analysis*, Theorem 11.6).
 At every point `x ∈ frontier C` of a convex set `C` in a finite-dimensional real inner product
 space `E`, there is a nonzero vector `y` such that `⟪z - x, y⟫ ≤ 0` for all `z ∈ closure C`. No
@@ -103,24 +134,10 @@ theorem Convex.exists_ne_zero_forall_closure_inner_sub_nonpos {E : Type*} [Norme
     ∃ y : E, y ≠ 0 ∧ ∀ z ∈ closure C, ⟪z - x, y⟫ ≤ 0 := by
   obtain ⟨hx_cl, hx_not_int⟩ := hx
   rcases (interior C).eq_empty_or_nonempty with hint_empty | hint
-  · have hCne : C.Nonempty := closure_nonempty_iff.mp ⟨x, hx_cl⟩
-    have haff_ne : affineSpan ℝ C ≠ ⊤ := fun htop =>
-      (Set.not_nonempty_iff_eq_empty.mpr hint_empty)
-        (hC.interior_nonempty_iff_affineSpan_eq_top.mpr htop)
-    have hdir_ne : vectorSpan ℝ C ≠ ⊤ := by
-      rw [← direction_affineSpan]
-      exact fun hdir => haff_ne
-        ((AffineSubspace.direction_eq_top_iff_of_nonempty
-          (hCne.mono (subset_affineSpan ℝ C))).mp hdir)
-    obtain ⟨y, hy_mem, hy0⟩ :=
-      Submodule.exists_mem_ne_zero_of_ne_bot (mt Submodule.orthogonal_eq_bot_iff.mp hdir_ne)
-    refine ⟨y, hy0, fun z hz => ?_⟩
-    have hcl_sub : closure C ⊆ (affineSpan ℝ C : Set E) :=
-      (affineSpan ℝ C).isClosed_of_finiteDimensional.closure_subset_iff.mpr (subset_affineSpan ℝ C)
-    have hsub_mem : z - x ∈ vectorSpan ℝ C := by
-      rw [← direction_affineSpan]
-      exact AffineSubspace.vsub_mem_direction (hcl_sub hz) (hcl_sub hx_cl)
-    exact (Submodule.inner_right_of_mem_orthogonal hsub_mem hy_mem).le
+  · obtain ⟨e, c, he, hsub⟩ := hC.exists_norm_eq_one_closure_subset_setOf_inner_eq
+      (closure_nonempty_iff.mp ⟨x, hx_cl⟩) hint_empty
+    refine ⟨e, fun h0 => by simp [h0] at he, fun z hz => ?_⟩
+    rw [inner_sub_left, (hsub hz : ⟪z, e⟫ = c), (hsub hx_cl : ⟪x, e⟫ = c), sub_self]
   · have hcl_int : interior (closure C) = interior C :=
       hC.interior_closure_eq_interior_of_nonempty_interior hint
     obtain ⟨L, hL0, hcl_le⟩ := geometric_hahn_banach_of_nonempty_interior_point hC.closure

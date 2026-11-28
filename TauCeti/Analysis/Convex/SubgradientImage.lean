@@ -5,15 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Convex.EffectiveDomain
-public import TauCeti.Analysis.Convex.Subdifferential
+public import TauCeti.Analysis.Convex.Differentiability
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Topology.MetricSpace.Lipschitz
 public import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
-import TauCeti.Analysis.Convex.Differentiability
 import Mathlib.Topology.MetricSpace.Thickening
-import Mathlib.Analysis.Convex.Continuous
+import TauCeti.Analysis.Convex.Function.Topology
 
 /-!
 # Compactness of subgradient images of convex functions
@@ -30,7 +29,10 @@ in particular a real function convex on an open set has a supporting hyperplane 
 Combining local nonemptiness of the subdifferential with continuity of local subgradient selections
 at single-valued points yields Rockafellar's differentiability criterion
 (`TauCeti.differentiableAt_toReal_iff_subsingleton_subdifferential`): at `x ∈ D`, the real
-representative `(f ·).toReal` is differentiable at `x` precisely when `∂f(x)` is a subsingleton.
+representative `(f ·).toReal` is differentiable at `x` precisely when `∂f(x)` is a subsingleton
+(without assuming `f` never takes `⊥`). Consequently, a real function convex on an open set `Ω` is
+differentiable at a point of `Ω` iff its subgradient there is unique, and agrees on any compact
+subset of `Ω` with a globally convex Lipschitz function.
 
 For a real function `u` continuous on the compact closure of a set `Ω`, every slope of an affine
 function through a point of the graph over `Ω` that lies below `u` on the frontier of `Ω` is a
@@ -50,6 +52,8 @@ neighbourhood of the subgradient image of `K` under `u` eventually contains that
 
 * `TauCeti.mul_norm_le_of_forall_add_inner_le` — a subgradient of `u` at `x` relative to `Ω` is
   bounded in terms of a bound for `|u|` on a ball about `x` inside `Ω`;
+* `LipschitzWith.norm_le_of_forall_add_inner_le` — a global subgradient of a `K`-Lipschitz
+  function has norm at most `K`;
 * `TauCeti.exists_norm_le_of_mem_subdifferential` — the subgradients of `f` are bounded over
   compact subsets of `D`;
 * `TauCeti.isClosed_setOf_mem_subdifferential` — the graph of the subdifferential over a closed
@@ -63,11 +67,17 @@ neighbourhood of the subgradient image of `K` under `u` eventually contains that
 * `TauCeti.nonempty_subdifferential_of_mem_interior` — the subdifferential is nonempty at every
   point of `D`, and `TauCeti.eventually_nonempty_subdifferential` at every point near a point
   around which `f` is finite;
+* `TauCeti.hasGradientAt_toReal_of_forall_mem_subdifferential_eq` — a unique subgradient at an
+  interior point of the effective domain is the gradient;
 * `TauCeti.differentiableAt_toReal_iff_subsingleton_subdifferential` — **Rockafellar's
-  differentiability criterion**: on `D`, `(f ·).toReal` is differentiable at `x` if and only if
+  differentiability criterion**: at an interior point `x` of the effective domain (without
+  requiring `f` never to take `⊥`), `(f ·).toReal` is differentiable at `x` if and only if
   `(subdifferential (innerₗ E) f x).Subsingleton`;
-* `ConvexOn.exists_forall_add_inner_le` — a real function convex on an open set has a subgradient
-  relative to that set at each of its points;
+* `ConvexOn.exists_forall_add_inner_le`,
+  `ConvexOn.differentiableAt_iff_subsingleton_setOf_forall_add_inner_le`, and
+  `ConvexOn.exists_convexOn_lipschitzWith_eqOn` — supporting hyperplanes, subgradient
+  characterization of differentiability on open convex domains, and global convex Lipschitz
+  modification agreeing on a compact subset of an open convex domain;
 * `TauCeti.exists_forall_add_apply_le_of_forall_frontier` — continuous-linear-functional slopes
   below the boundary values support the function on the closure at an interior-domain point;
 * `TauCeti.exists_forall_add_inner_le_of_forall_frontier` — slopes of affine functions through a
@@ -119,6 +129,20 @@ theorem mul_norm_le_of_forall_add_inner_le {Ω : Set E} {u : E → ℝ} {x y : E
   have h := hy x' (hΩ hx')
   rw [hinner] at h
   linarith [(abs_le.1 (hM x' hx')).2]
+
+/-- **Subgradients of a Lipschitz function are bounded by the Lipschitz constant.** If `u` is
+`K`-Lipschitz on a seminormed real inner product space and `p` is a global subgradient of `u` at
+`x`, then `‖p‖ ≤ K`. -/
+theorem _root_.LipschitzWith.norm_le_of_forall_add_inner_le {u : E → ℝ} {K : NNReal}
+    (hu : LipschitzWith K u) {x p : E} (hp : ∀ y, u x + inner ℝ (y - x) p ≤ u y) :
+    ‖p‖ ≤ K := by
+  rcases (norm_nonneg p).eq_or_lt with h0 | hpos
+  · exact h0 ▸ K.coe_nonneg
+  · have h1 := hp (x + p)
+    rw [add_sub_cancel_left, real_inner_self_eq_norm_sq] at h1
+    have h2 := hu.dist_le_mul (x + p) x
+    rw [Real.dist_eq, dist_eq_norm, add_sub_cancel_left] at h2
+    nlinarith [(le_abs_self _).trans h2]
 
 /-- The graph of the subdifferential of `f : E → EReal`, never `⊥`, over a closed set `K` is
 closed if `f` is finite on `K` and its real representative is continuous there. -/
@@ -261,35 +285,56 @@ theorem eventually_nonempty_subdifferential {x : E} (hdom : ∀ᶠ x' in 𝓝 x,
   Filter.eventually_of_mem (isOpen_interior.mem_nhds (mem_interior_iff_mem_nhds.2 hdom))
     fun _ hx' => nonempty_subdifferential_of_mem_interior hf hbot hx'
 
-open scoped Topology in
-/-- **Rockafellar's differentiability criterion** (Rockafellar, *Convex Analysis*, Theorem 25.1).
-Let `f : E → EReal` have convex real epigraph and never take the value `⊥` on a finite-dimensional
-real inner product space `E`. At an interior point `x` of `{x | f x ≠ ⊤}`, the real representative
-`x' ↦ (f x').toReal` is differentiable at `x` if and only if the subdifferential
-`subdifferential (innerₗ E) f x` contains at most one element. -/
-theorem differentiableAt_toReal_iff_subsingleton_subdifferential {x : E}
-    (hx : x ∈ interior {x | f x ≠ ⊤}) :
-    DifferentiableAt ℝ (fun x' => (f x').toReal) x ↔
-      (subdifferential (innerₗ E) f x).Subsingleton := by
-  have hdom : ∀ᶠ x' in 𝓝 x, f x' ≠ ⊤ := mem_interior_iff_mem_nhds.1 hx
-  refine ⟨fun hd y₁ hy₁ y₂ hy₂ => ?_, fun hsub => ?_⟩
-  · rw [← gradient_toReal_eq_of_mem_subdifferential hy₁ hdom hd,
-      ← gradient_toReal_eq_of_mem_subdifferential hy₂ hdom hd]
-  · classical
-    let T : E → E := fun z =>
-      if h : (subdifferential (innerₗ E) f z).Nonempty then h.choose else 0
-    have hT : ∀ᶠ z in 𝓝 x, T z ∈ subdifferential (innerₗ E) f z := by
-      filter_upwards [eventually_nonempty_subdifferential hf hbot hdom] with z hz
-      simp only [T, hz, ↓reduceDIte]
-      exact hz.choose_spec
-    exact (hasGradientAt_toReal_of_continuousAt_subgradient
-      (continuousAt_of_subsingleton_subdifferential hf hbot hx hsub hT) hT).differentiableAt
-
 end FiniteDimensional
 
 section OpenDomain
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+open scoped Topology in
+/-- **A unique subgradient at an interior domain point is the gradient.** If `f : E → EReal` has
+convex real epigraph and has `y` as its only subgradient at an interior point `x` of its effective
+domain (which already forces `f` never to take `⊥`), then `y` is the gradient of the real
+representative at `x`. -/
+theorem hasGradientAt_toReal_of_forall_mem_subdifferential_eq {f : E → EReal}
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) {x y : E}
+    (hx : x ∈ interior {x | f x ≠ ⊤}) (hyMem : y ∈ subdifferential (innerₗ E) f x)
+    (hy : ∀ y' ∈ subdifferential (innerₗ E) f x, y' = y) :
+    HasGradientAt (fun x' => (f x').toReal) y x := by
+  classical
+  have hbot := apply_ne_bot_of_mem_subdifferential (innerₗ E) hyMem
+  have hdom : ∀ᶠ x' in 𝓝 x, f x' ≠ ⊤ := mem_interior_iff_mem_nhds.1 hx
+  let T : E → E := fun z =>
+    if h : (subdifferential (innerₗ E) f z).Nonempty then h.choose else y
+  have hT : ∀ᶠ z in 𝓝 x, T z ∈ subdifferential (innerₗ E) f z := by
+    filter_upwards [eventually_nonempty_subdifferential hf hbot hdom] with z hz
+    simp only [T, hz, ↓reduceDIte]
+    exact hz.choose_spec
+  have hTx : T x = y := hy _ hT.self_of_nhds
+  exact hTx ▸ hasGradientAt_toReal_of_continuousAt_subgradient
+    (continuousAt_of_subsingleton_subdifferential hf hbot hx
+      (fun y₁ hy₁ y₂ hy₂ => (hy y₁ hy₁).trans (hy y₂ hy₂).symm) hT) hT
+
+/-- **Rockafellar's differentiability criterion** (Rockafellar, *Convex Analysis*, Theorem 25.1).
+Let `f : E → EReal` have convex real epigraph on a finite-dimensional real inner product space `E`,
+and let `x` lie in the interior of its effective domain `{z | f z ≠ ⊤}` (without assuming `f` never
+takes `⊥`). Then `x' ↦ (f x').toReal` is differentiable at `x` if and only if
+`subdifferential (innerₗ E) f x` is a subsingleton. -/
+theorem differentiableAt_toReal_iff_subsingleton_subdifferential {f : E → EReal}
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) {x : E} (hx : x ∈ interior {z | f z ≠ ⊤}) :
+    DifferentiableAt ℝ (fun x' => (f x').toReal) x ↔
+      (subdifferential (innerₗ E) f x).Subsingleton := by
+  refine ⟨fun hd y₁ hy₁ y₂ hy₂ => ?_, fun hsub => ?_⟩
+  · have hdom := mem_interior_iff_mem_nhds.1 hx
+    rw [← gradient_toReal_eq_of_mem_subdifferential hy₁ hdom hd,
+      ← gradient_toReal_eq_of_mem_subdifferential hy₂ hdom hd]
+  · by_cases hbot : ∀ z, f z ≠ ⊥
+    · obtain ⟨y, hy⟩ := nonempty_subdifferential_of_mem_interior hf hbot hx
+      exact (hasGradientAt_toReal_of_forall_mem_subdifferential_eq hf hx hy
+        fun _ hy' => hsub hy' hy).differentiableAt
+    · push Not at hbot; obtain ⟨_, hz₀⟩ := hbot
+      exact (differentiableAt_const (0 : ℝ)).congr_of_eventuallyEq
+        (toReal_eventuallyEq_zero_of_mem_interior_of_eq_bot hf hx hz₀)
 
 /-- **Supporting hyperplanes of convex functions.** A real function convex on an open subset `Ω`
 of a finite-dimensional real inner product space has a subgradient relative to `Ω` at every point
@@ -300,8 +345,46 @@ theorem _root_.ConvexOn.exists_forall_add_inner_le {Ω : Set E} {u : E → ℝ} 
   classical
   obtain ⟨p, hp⟩ := nonempty_subdifferential_of_mem_interior
     (convexOn_iff_convex_epigraph_ite.1 hu) ite_ne_bot (by rwa [setOf_ite_ne_top, hΩ.interior_eq])
-  exact ⟨p, by simpa only [innerₗ_apply_apply] using
-    (mem_subdifferential_ite_iff (innerₗ E) hx).1 hp⟩
+  exact ⟨p, fun y hy => by
+    simpa only [innerₗ_apply_apply] using (mem_subdifferential_ite_iff (innerₗ E) hx).1 hp y hy⟩
+
+/-- **Subgradient characterization of differentiability on an open domain.** A real function `u`
+convex on an open subset `Ω` of a finite-dimensional real inner product space is differentiable at
+`x ∈ Ω` if and only if it has at most one subgradient relative to `Ω` at `x`. -/
+theorem _root_.ConvexOn.differentiableAt_iff_subsingleton_setOf_forall_add_inner_le {Ω : Set E}
+    {u : E → ℝ} (hΩ : IsOpen Ω) (hu : ConvexOn ℝ Ω u) {x : E} (hx : x ∈ Ω) :
+    DifferentiableAt ℝ u x ↔ {p : E | ∀ y ∈ Ω, u x + inner ℝ (y - x) p ≤ u y}.Subsingleton := by
+  classical
+  let f : E → EReal := fun z => if z ∈ Ω then (u z : EReal) else ⊤
+  have hev : (fun z => (f z).toReal) =ᶠ[nhds x] u :=
+    Filter.eventually_of_mem (hΩ.mem_nhds hx) fun z hz => by simp [f, hz]
+  have hsub_eq :
+      {p | ∀ y ∈ Ω, u x + inner ℝ (y - x) p ≤ u y} = subdifferential (innerₗ E) f x := by
+    ext p
+    simpa only [f, innerₗ_apply_apply, mem_ofPred_eq] using
+      (mem_subdifferential_ite_iff (innerₗ E) hx).symm
+  rw [← hev.differentiableAt_iff, hsub_eq]
+  exact differentiableAt_toReal_iff_subsingleton_subdifferential
+    (convexOn_iff_convex_epigraph_ite.1 hu) (by rwa [setOf_ite_ne_top, hΩ.interior_eq])
+
+/-- **Global convex Lipschitz modification over a compact set.** Let `u` be convex on an open subset
+`Ω` of a finite-dimensional real inner product space `E`, and let `K ⊆ Ω` be compact. Then `u`
+agrees on `K` with a globally convex, globally Lipschitz function `v : E → ℝ`. -/
+theorem _root_.ConvexOn.exists_convexOn_lipschitzWith_eqOn {Ω : Set E} {u : E → ℝ} (hΩ : IsOpen Ω)
+    (hu : ConvexOn ℝ Ω u) {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+    ∃ (L : NNReal) (v : E → ℝ), ConvexOn ℝ univ v ∧ LipschitzWith L v ∧ EqOn u v K := by
+  classical
+  obtain ⟨M, hM⟩ := exists_norm_le_of_mem_subdifferential
+    (f := fun z => if z ∈ Ω then (u z : EReal) else ⊤) (convexOn_iff_convex_epigraph_ite.1 hu)
+    ite_ne_bot hK (by rwa [setOf_ite_ne_top, hΩ.interior_eq])
+  let L : NNReal := ⟨max M 0, le_max_right _ _⟩
+  choose p hp using fun z : K => hu.exists_forall_add_inner_le hΩ (hKΩ z.property)
+  have hpL (z : K) : ‖p z‖ ≤ (L : ℝ) := (hM z z.property (p z)
+    ((mem_subdifferential_ite_iff (innerₗ E) (hKΩ z.property)).2 fun y hy => by
+      simpa only [innerₗ_apply_apply] using hp z y hy)).trans (le_max_left _ _)
+  obtain ⟨v, hconv, hlip, hv⟩ := exists_convexOn_lipschitzWith_apply_eq (x := fun z : K => (z : E))
+    (a := fun z : K => u z) hpL fun z₁ z₂ => hp z₁ z₂ (hKΩ z₂.property)
+  exact ⟨L, v, hconv, hlip, fun y hy => (hv ⟨y, hy⟩).symm⟩
 
 end OpenDomain
 

@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Convex.SingularSet
 public import TauCeti.Analysis.InnerProductSpace.OrthogonalLine.HausdorffDimension
+import TauCeti.Analysis.Convex.CCHypersurface.Regular.Differentiability
+import TauCeti.Analysis.Convex.CCHypersurface.Regular.SufficientConditions
 import TauCeti.Analysis.Convex.Separation
 import TauCeti.Analysis.Convex.SubgradientImage
 
@@ -16,7 +18,7 @@ import TauCeti.Analysis.Convex.SubgradientImage
 # Singular sets and effective-domain frontiers of convex functions in finite dimension
 
 Let `E` be a finite-dimensional real inner product space and let `f : E → EReal` have convex real
-epigraph and never take the value `⊥`. By Rockafellar's differentiability criterion
+epigraph. By Rockafellar's differentiability criterion
 (`TauCeti.differentiableAt_toReal_iff_subsingleton_subdifferential` in
 `TauCeti.Analysis.Convex.SubgradientImage`), at an interior point `x` of the effective domain
 `D = {x | f x ≠ ⊤}`, the real representative `x' ↦ (f x').toReal` is differentiable at `x`
@@ -40,7 +42,8 @@ transferring along a continuous linear equivalence to `EuclideanSpace ℝ (Fin (
 that in any finite-dimensional real normed space `E`, `dimH (frontier C) ≤ finrank ℝ E - 1`
 (`Convex.dimH_frontier_le`) and every measure vanishing on measurable sets with
 `dimH A + 1 ≤ finrank ℝ E` or `dimH A ≤ finrank ℝ E - 1`—strengthening `Convex.addHaar_frontier`—
-sees `f` finite on a neighbourhood and differentiable almost everywhere on `{x | f x ≠ ⊤}`.
+sees `f` avoiding `⊤` on a neighbourhood and its real representative differentiable almost
+everywhere on `{x | f x ≠ ⊤}`.
 
 ## Main statements
 
@@ -55,11 +58,9 @@ sees `f` finite on a neighbourhood and differentiable almost everywhere on `{x |
 * `Convex.dimH_frontier_le` and `Convex.dimH_sdiff_interior_le` — the frontier and non-interior
   points `C \ interior C` of a convex set in any finite-dimensional real normed space have
   Hausdorff dimension at most `finrank ℝ E - 1`;
-* `TauCeti.ae_eventually_ne_top_and_differentiableAt_toReal_of_null_lipschitz_graphs`,
-  `TauCeti.ae_eventually_ne_top_and_differentiableAt_toReal_of_dimH_add_one_le`, and
+* `TauCeti.ae_eventually_ne_top_and_differentiableAt_toReal_of_dimH_add_one_le` and
   `TauCeti.ae_eventually_ne_top_and_differentiableAt_toReal_of_dimH_le` — almost-everywhere
-  interiority and differentiability on `{x | f x ≠ ⊤}` for measures vanishing on Lipschitz
-  hypersurface graphs or small sets.
+  interiority and differentiability on `{x | f x ≠ ⊤}` for measures vanishing on small sets.
 
 ## References
 
@@ -253,24 +254,6 @@ theorem _root_.Convex.ae_mem_interior_of_null_lipschitz_graphs
   (interior_ae_eq_of_null_frontier
     (hC.measure_frontier_eq_zero_of_null_lipschitz_graphs hμ)).symm.subset
 
-/-- **Almost-everywhere differentiability of convex functions under measures vanishing on Lipschitz
-hypersurfaces.** Let `f : E → EReal` have convex real epigraph and never take the value `⊥` on a
-finite-dimensional real inner product space `E`, and let `μ` be any measure on `E` that gives mass
-`0` to every globally Lipschitz graph over the orthogonal complement of a unit vector. Then at
-`μ`-almost every point `x` of `{x | f x ≠ ⊤}`, `f` is finite on a neighbourhood of `x` and its real
-representative is differentiable at `x`. -/
-theorem ae_eventually_ne_top_and_differentiableAt_toReal_of_null_lipschitz_graphs
-    [MeasurableSpace E] {f : E → EReal} {μ : Measure E}
-    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥)
-    (hμ : ∀ (v : E), ‖v‖ = 1 → ∀ (K : ℝ≥0) (g : (ℝ ∙ v)ᗮ → ℝ), LipschitzWith K g →
-      μ (range fun w : (ℝ ∙ v)ᗮ => (w : E) + g w • v) = 0) :
-    ∀ᵐ x ∂μ, f x ≠ ⊤ →
-      (∀ᶠ x' in 𝓝 x, f x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (f x').toReal) x := by
-  filter_upwards [(convex_setOf_ne_top hf).ae_mem_interior_of_null_lipschitz_graphs hμ,
-    ae_subsingleton_subdifferential_of_null_lipschitz_graphs f hμ] with x hint hsub hfx
-  exact ⟨mem_interior_iff_mem_nhds.1 (hint hfx),
-    (differentiableAt_toReal_iff_subsingleton_subdifferential hf hbot (hint hfx)).2 hsub⟩
-
 end InnerProduct
 
 section Normed
@@ -283,7 +266,7 @@ finite-dimensional real normed space `E` remains satisfiable by nonzero measures
 `finrank ℝ E = 0` (where `dimH A + 1 ≤ 0` is unsatisfiable). -/
 theorem ae_eventually_ne_top_and_differentiableAt_toReal_of_dimH_add_one_le
     [MeasurableSpace E] [OpensMeasurableSpace E] {f : E → EReal} {μ : Measure E}
-    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥)
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
     (hμ : ∀ A, MeasurableSet A → dimH A + 1 ≤ (finrank ℝ E : ℝ≥0∞) → μ A = 0) :
     ∀ᵐ x ∂μ, f x ≠ ⊤ →
       (∀ᶠ x' in 𝓝 x, f x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (f x').toReal) x := by
@@ -300,9 +283,8 @@ theorem ae_eventually_ne_top_and_differentiableAt_toReal_of_dimH_add_one_le
     rw [Measure.map_apply he hA]
     refine hμ (e ⁻¹' A) (he hA) ?_
     simpa only [E₀, e.dimH_preimage, finrank_euclideanSpace_fin] using hdim
-  have hae₀ := ae_eventually_ne_top_and_differentiableAt_toReal_of_null_lipschitz_graphs hf₀
-    (fun y => hbot (e.symm y)) fun _ hv _ _ hg =>
-      measure_range_add_smul_eq_zero_of_dimH_add_one_le hμ₀ hv hg
+  have hae₀ := (isCCRegular_of_dimH_add_one_le hμ₀).ae_eventually_ne_top_and_differentiableAt_toReal
+    (u := fun y => f (e.symm y)) hf₀
   filter_upwards [ae_of_ae_map he.aemeasurable hae₀] with x hx hfx
   obtain ⟨hdom, hd⟩ := hx (by simpa only [e.symm_apply_apply] using hfx)
   refine ⟨?_, ?_⟩
@@ -314,11 +296,11 @@ theorem ae_eventually_ne_top_and_differentiableAt_toReal_of_dimH_add_one_le
 measurable sets (`dimH A ≤ finrank ℝ E - 1` on a finite-dimensional real normed space `E`).** -/
 theorem ae_eventually_ne_top_and_differentiableAt_toReal_of_dimH_le
     [MeasurableSpace E] [OpensMeasurableSpace E] {f : E → EReal} {μ : Measure E}
-    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥)
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2})
     (hμ : ∀ A, MeasurableSet A → dimH A ≤ ((finrank ℝ E - 1 : ℕ) : ℝ≥0∞) → μ A = 0) :
     ∀ᵐ x ∂μ, f x ≠ ⊤ →
       (∀ᶠ x' in 𝓝 x, f x' ≠ ⊤) ∧ DifferentiableAt ℝ (fun x' => (f x').toReal) x :=
-  ae_eventually_ne_top_and_differentiableAt_toReal_of_dimH_add_one_le hf hbot fun _ hA hdim =>
+  ae_eventually_ne_top_and_differentiableAt_toReal_of_dimH_add_one_le hf fun _ hA hdim =>
     hμ _ hA (by
       simpa only [ENNReal.natCast_sub, Nat.cast_one] using
         ENNReal.le_sub_of_add_le_right ENNReal.one_ne_top hdim)

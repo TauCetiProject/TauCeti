@@ -5,30 +5,33 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.Brenier
+public import TauCeti.MeasureTheory.OptimalTransport.Brenier.Basic
 
 /-!
 # Brenier's polar factorization
 
-Let `(α, m)` be a probability space and `U : α → E` a map into a finite-dimensional real inner
-product space, such as `ℝⁿ`, whose law `m.map U` is absolutely continuous with respect to
-Lebesgue measure. Let `P` be another absolutely continuous probability law on `E`, at finite
-quadratic transport cost from the law of `U`. **Brenier's polar factorization theorem** writes
+Let `(α, m)` be a finite measure space and `U : α → E` a map into a finite-dimensional real inner
+product space, such as `ℝⁿ`, whose law `m.map U` is `c - c`-regular (for example, absolutely
+continuous with respect to Lebesgue measure, which is a sufficient condition for
+`c - c`-regularity). Let `P` be another `c - c`-regular measure on `E`, at finite quadratic
+transport cost from the law of `U`. **Brenier's polar factorization theorem** writes
 
 `U = ∇u ∘ s` almost everywhere,
 
-where `u : E → EReal` is convex and `s : α → E` has law `P`, that is, `s` is measure-preserving
-from `(α, m)` to `(E, P)`. A vector field thus factors as a measure-preserving map followed by the
-gradient of a convex function, as a square matrix factors as an orthogonal matrix followed by a
-positive semidefinite one. The two factors are unique in different senses.
+where `u : E → EReal` is convex, `U` is almost-everywhere measurable, and `s : α → E` is
+almost-everywhere measurable with pushforward `P` (`HasLaw s P m`). A vector field thus factors as
+an almost-everywhere measurable map of law `P` followed by the gradient of a convex function, as a
+square matrix factors as an orthogonal matrix followed by a positive semidefinite one. The two
+factors are unique in different senses.
 
 * The gradient `∇u` is the *monotone rearrangement* of `U` on `(E, P)`: it is the Brenier map
   from `P` to the law of `U`, so it is determined `P`-almost everywhere. Among gradients of convex
   functions pushing `P` to the law of `U` it is unique when both laws have finite second moments.
 * Once `u` is fixed, the measure-preserving factor is determined `m`-almost everywhere: it is
   `s = ∇u⋆ ∘ U`, where `u⋆` is the Legendre–Fenchel conjugate of `u`. Variationally, `s` is the
-  unique map of law `P` closest to `U`, minimising `∫ ‖s' - U‖ ^ 2 / 2 dm`; when `P` and the law
-  of `U` have finite second moments, it is the unique map of law `P` maximising the correlation
+  `m`-almost everywhere unique map of law `P` closest to `U`, minimising
+  `∫⁻ ω, ENNReal.ofReal (‖s' ω - U ω‖ ^ 2 / 2) ∂m`; when `P` and the law of `U` have finite second
+  moments, it is the `m`-almost everywhere unique map of law `P` maximising the correlation
   `∫ ⟪s', U⟫ dm`.
 
 Both factors come from Brenier's theorem applied in the two directions between `P` and the law
@@ -39,7 +42,7 @@ from `μ` to the law of `U` and `U = T ∘ s` with `s` of law `μ`, the pair `(s
 the graph plan of `T`, so `s` minimises the transport cost of `(s', U)` among all maps `s'` of
 law `μ`; for the quadratic cost this is `TauCeti.integral_inner_le_of_ae_eq_comp`, maximality of
 the correlation. Uniqueness of the minimiser is uniqueness of the optimal quadratic plan out of
-the absolutely continuous law of `U`, the quadratic cost being symmetric. Uniqueness of the
+the `c - c`-regular law of `U`, the quadratic cost being symmetric. Uniqueness of the
 monotone rearrangement is `TauCeti.gradient_ae_eq_gradient_of_hasLaw`.
 
 ## Main statements
@@ -54,8 +57,9 @@ monotone rearrangement is `TauCeti.gradient_ae_eq_gradient_of_hasLaw`.
   quadratic transport map `T` and a map `s` of law `μ`, then `s` maximises the correlation
   `∫ ⟪s', U⟫` among maps `s'` of law `μ`;
 * `TauCeti.ae_eq_of_lintegral_norm_sub_sq_div_two_le` and `TauCeti.ae_eq_of_integral_inner_le`:
-  the measure-preserving factor is the unique map of law `P` minimising the quadratic cost to `U`,
-  and, for laws with finite second moments, the unique one maximising the correlation with `U`.
+  the measure-preserving factor is the `m`-almost everywhere unique map of law `P` minimising the
+  quadratic cost to `U`, and, for laws with finite second moments, the `m`-almost everywhere unique
+  one maximising the correlation with `U`.
 
 ## References
 
@@ -105,16 +109,15 @@ end Correlation
 section FiniteDimensional
 
 variable {α E : Type*} [MeasurableSpace α] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {ρ : Measure E}
-  [ρ.IsAddHaarMeasure] {m : Measure α} {P : Measure E} {U s s' : α → E} {u : E → EReal}
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {m : Measure α} {P : Measure E}
+  {U s s' : α → E} {u : E → EReal}
 
 /-- **The measure-preserving factor is determined by the convex factor.** Let `u : E → EReal` be
 convex and never `⊥`, finite with differentiable real representative at `P`-almost every point,
-and let `U : α → E` have law absolutely continuous with respect to an additive Haar measure. If
-`U = ∇u ∘ s` almost everywhere for a map `s` of law `P`, then `s = ∇u⋆ ∘ U` almost everywhere,
-where `u⋆` is the Legendre–Fenchel conjugate of `u`. In particular any two such factors agree
-almost everywhere. -/
-theorem ae_eq_gradient_fenchelConjugate_comp_of_ae_eq_gradient_comp (hUρ : m.map U ≪ ρ)
+and let `U : α → E` have `c - c`-regular law. If `U = ∇u ∘ s` almost everywhere for a map `s` of law
+`P`, then `s = ∇u⋆ ∘ U` almost everywhere, where `u⋆` is the Legendre–Fenchel conjugate of `u`. In
+particular any two such factors agree almost everywhere. -/
+theorem ae_eq_gradient_fenchelConjugate_comp_of_ae_eq_gradient_comp (hU : IsCCRegular (m.map U))
     (hconv : Convex ℝ {p : E × ℝ | u p.1 ≤ p.2}) (hbot : ∀ x, u x ≠ ⊥)
     (hdiff : ∀ᵐ x ∂P, u x ≠ ⊤ ∧ DifferentiableAt ℝ (fun x' => (u x').toReal) x)
     (hs : HasLaw s P m) (h : U =ᵐ[m] (∇ fun x => (u x).toReal) ∘ s) :
@@ -133,33 +136,34 @@ theorem ae_eq_gradient_fenchelConjugate_comp_of_ae_eq_gradient_comp (hUρ : m.ma
   -- Exchanging the coordinates gives the graph plan of `∇u⋆`, so `∇u⋆ ∘ ∇u = id` `P`-a.e.
   have hinv := (comp_ae_eq_id_of_map_swap_graphPlan_eq hT.aemeasurable
     (measurable_gradient _).aemeasurable
-    (map_swap_eq_graphPlan_gradient_fenchelConjugate hπ.snd_eq hUρ hsub).2).1
+    (map_swap_eq_graphPlan_gradient_fenchelConjugate hπ.snd_eq hU hsub).2).1
   -- Read the inverse relation along `s`, whose law is `P`.
   rw [← hs.map_eq] at hinv
   filter_upwards [ae_eq_comp hs.aemeasurable hinv, h] with ω hω hω'
   simp only [Function.comp_apply, id] at hω hω' ⊢
   rw [hω', hω]
 
-/-- **Brenier's polar factorization.** Let `(α, m)` be a probability space and `U : α → E` an
+/-- **Brenier's polar factorization.** Let `(α, m)` be a finite measure space and `U : α → E` an
 a.e. measurable map into a finite-dimensional real inner product space, and let `P` be a measure
-on `E`. Suppose that `P` and the law of `U` are absolutely continuous with respect to an additive
-Haar measure and that the optimal cost between them for `‖x - y‖ ^ 2 / 2` is finite, as it is for
-laws with finite second moment. Then `P` is a probability law, since a coupling with the law of
-`U` has the same total mass, and there is a convex, lower semicontinuous `u : E → EReal` that
-never takes the value `⊥`, finite near `P`-almost every point with differentiable real
-representative there, such that:
+on `E`. Suppose that `P` and the law of `U` are `c - c`-regular (a condition implied, for instance,
+by absolute continuity with respect to an additive Haar measure) and that the optimal cost between
+them for `‖x - y‖ ^ 2 / 2` is finite, as it is for finite measures of equal total mass and finite
+second moments (`TauCeti.transportCost_norm_sub_sq_div_two_ne_top_of_memLp`). Then `P` is a finite
+measure with the same total mass as `m`, and there is a convex, lower
+semicontinuous `u : E → EReal` that never takes the value `⊥`, finite near `P`-almost every point
+with differentiable real representative there, such that:
 
 * the gradient `∇u` is an optimal transport map from `P` to the law of `U`, the monotone
   rearrangement of `U` on `(E, P)`;
 * the map `s = ∇u⋆ ∘ U` has law `P`, where `u⋆` is the Legendre–Fenchel conjugate of `u`;
 * `U = ∇u ∘ s` almost everywhere.
 
-The factor `s` is determined by `u`
-(`TauCeti.ae_eq_gradient_fenchelConjugate_comp_of_ae_eq_gradient_comp`) and is the unique map of
-law `P` minimising the quadratic cost to `U`
+The factor `s` is determined `m`-almost everywhere by `u`
+(`TauCeti.ae_eq_gradient_fenchelConjugate_comp_of_ae_eq_gradient_comp`) and is the `m`-almost
+everywhere unique map of law `P` minimising the quadratic cost to `U`
 (`TauCeti.ae_eq_of_lintegral_norm_sub_sq_div_two_le`). -/
-theorem exists_hasLaw_and_ae_eq_gradient_comp [IsProbabilityMeasure m]
-    (hU : AEMeasurable U m) (hUρ : m.map U ≪ ρ) (hP : P ≪ ρ)
+theorem exists_hasLaw_and_ae_eq_gradient_comp [IsFiniteMeasure m]
+    (hU : AEMeasurable U m) (hUreg : IsCCRegular (m.map U)) (hP : IsCCRegular P)
     (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) P (m.map U) ≠ ∞) :
     ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
       (∀ x, u x ≠ ⊥) ∧
@@ -169,21 +173,23 @@ theorem exists_hasLaw_and_ae_eq_gradient_comp [IsProbabilityMeasure m]
       HasLaw ((∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ∘ U) P m ∧
       U =ᵐ[m] (∇ fun x => (u x).toReal) ∘
         (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ∘ U := by
-  have := isProbabilityMeasure_left_of_transportCost_ne_top hfin
+  have : IsFiniteMeasure P :=
+    ⟨(exists_isCoupling_of_transportCost_ne_top hfin).choose_spec.measure_univ_eq ▸
+      measure_lt_top (m.map U) Set.univ⟩
   obtain ⟨u, hconv, hlsc, hbot, hdiff, -, hT, hS, -, hinv⟩ :=
-    exists_isKantorovichOptimalTransportMap_gradient_and_gradient_fenchelConjugate hP hUρ hfin
+    exists_isKantorovichOptimalTransportMap_gradient_and_gradient_fenchelConjugate hP hUreg hfin
   refine ⟨u, hconv, hlsc, hbot, hdiff, hT, hS.toHasLaw.comp (hasLaw_map hU), ?_⟩
   filter_upwards [ae_eq_comp hU hinv] with ω hω using hω.symm
 
-/-- **The measure-preserving factor is the unique cost minimiser.** On a finite measure space
-`(α, m)`, let `T : E → E` be an optimal transport map for `‖x - y‖ ^ 2 / 2` from `P` to the law
-of `U : α → E`, at finite optimal cost, the law of `U` being absolutely continuous with respect
-to an additive Haar measure. Let `s` have law `P` with `U = T ∘ s` almost everywhere. If a map `s'`
-of law `P` is at most as far from `U` as `s`, in the sense that
-`∫ ‖s' - U‖ ^ 2 / 2 dm ≤ ∫ ‖s - U‖ ^ 2 / 2 dm`, then `s' = s` almost everywhere. For the polar
-factorization, `T` is the gradient `∇u`. -/
-theorem ae_eq_of_lintegral_norm_sub_sq_div_two_le [IsFiniteMeasure m] (hUρ : m.map U ≪ ρ)
-    {T : E → E}
+/-- **The measure-preserving factor is the `m`-almost everywhere unique cost minimiser.** On a
+finite measure space `(α, m)`, let `T : E → E` be an optimal transport map for `‖x - y‖ ^ 2 / 2`
+from `P` to the law of `U : α → E`, at finite optimal cost, the law of `U` being `c - c`-regular.
+Let `s` have law `P` with `U = T ∘ s` almost everywhere. If a map `s'` of law `P` is at most as
+far from `U` as `s`, in the sense that
+`∫⁻ ω, ENNReal.ofReal (‖s' ω - U ω‖ ^ 2 / 2) ∂m ≤ ∫⁻ ω, ENNReal.ofReal (‖s ω - U ω‖ ^ 2 / 2) ∂m`,
+then `s' = s` `m`-almost everywhere. For the polar factorization, `T` is the gradient `∇u`. -/
+theorem ae_eq_of_lintegral_norm_sub_sq_div_two_le [IsFiniteMeasure m]
+    (hUreg : IsCCRegular (m.map U)) {T : E → E}
     (hT : IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
       P (m.map U) T)
     (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) P (m.map U) ≠ ∞)
@@ -195,7 +201,7 @@ theorem ae_eq_of_lintegral_norm_sub_sq_div_two_le [IsFiniteMeasure m] (hUρ : m.
   have hU : AEMeasurable U m := hs.aemeasurable_of_ae_eq_comp hT.aemeasurable h
   have : IsFiniteMeasure P := hs.map_eq ▸ inferInstance
   -- The quadratic cost is symmetric, so exchanging coordinates turns plans out of `P` into plans
-  -- out of the absolutely continuous law of `U`, where the optimal plan is unique.
+  -- out of the `c - c`-regular law of `U`, where the optimal plan is unique.
   have hsymm : (fun z : E × E => ENNReal.ofReal (‖z.swap.1 - z.swap.2‖ ^ 2 / 2)) =
       fun z => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2) := by
     funext z
@@ -221,42 +227,37 @@ theorem ae_eq_of_lintegral_norm_sub_sq_div_two_le [IsFiniteMeasure m] (hUρ : m.
       exact hle
     exact hsymm ▸ hopt.swap
   -- That optimal plan is the graph plan of a gradient `∇v`, so `s` and `s'` are both `∇v ∘ U`.
-  obtain ⟨v, -, -, -, -, hgraph⟩ := (hopt hs le_rfl).exists_eq_graphPlan_gradient hUρ hfin'
+  obtain ⟨v, -, -, -, -, hgraph⟩ := (hopt hs le_rfl).exists_eq_graphPlan_gradient hUreg hfin'
   have hS : AEMeasurable (∇ fun y => (v y).toReal) (m.map U) :=
     (measurable_gradient fun y => (v y).toReal).aemeasurable
   filter_upwards [ae_eq_comp_of_map_swap_map_prodMk_eq_graphPlan hS hs'.aemeasurable hU
-      (((hopt hs le_rfl).unique hUρ (hopt hs' hle) hfin').symm.trans hgraph),
+      (((hopt hs le_rfl).unique hUreg (hopt hs' hle) hfin').symm.trans hgraph),
     ae_eq_comp_of_map_swap_map_prodMk_eq_graphPlan hS hs.aemeasurable hU hgraph] with ω h₁ h₂
   rw [h₁, h₂]
 
-/-- **The measure-preserving factor is the unique correlation maximiser.** On a finite measure
-space `(α, m)`, let `P` and the law of `U : α → E` have finite second moments, the law of `U`
-being absolutely continuous with respect to an additive Haar measure. Let `T : E → E` be an
-optimal transport map for `‖x - y‖ ^ 2 / 2` from `P` to the law of `U`, and let `s` have law `P`
-with `U = T ∘ s` almost everywhere. By `TauCeti.integral_inner_le_of_ae_eq_comp`, `s` maximises
-the correlation `∫ ⟪s', U⟫ dm` among maps `s'` of law `P`; it is the unique maximiser: if `s'`
-has law `P` and `∫ ⟪s, U⟫ dm ≤ ∫ ⟪s', U⟫ dm`, then `s' = s` almost everywhere. For the polar
+/-- **The measure-preserving factor is the `m`-almost everywhere unique correlation maximiser.**
+On a finite measure space `(α, m)`, let `P` and the law of `U : α → E` have finite second moments,
+the law of `U` being `c - c`-regular. Let `T : E → E` be an optimal transport map for
+`‖x - y‖ ^ 2 / 2` from `P` to the law of `U`, and let `s` have law `P` with `U = T ∘ s` almost
+everywhere. By `TauCeti.integral_inner_le_of_ae_eq_comp`, `s` maximises the correlation
+`∫ ⟪s', U⟫ dm` among maps `s'` of law `P`; it is the `m`-almost everywhere unique maximiser: if `s'`
+has law `P` and `∫ ⟪s, U⟫ dm ≤ ∫ ⟪s', U⟫ dm`, then `s' = s` `m`-almost everywhere. For the polar
 factorization, `T` is the gradient `∇u`, optimal by
 `TauCeti.isKantorovichOptimalTransportMap_gradient`. -/
 theorem ae_eq_of_integral_inner_le [IsFiniteMeasure m] (hP2 : MemLp id 2 P)
-    (hν : MemLp id 2 (m.map U)) (hUρ : m.map U ≪ ρ) {T : E → E}
+    (hν : MemLp id 2 (m.map U)) (hUreg : IsCCRegular (m.map U)) {T : E → E}
     (hT : IsKantorovichOptimalTransportMap (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2))
       P (m.map U) T)
     (hs : HasLaw s P m) (h : U =ᵐ[m] T ∘ s) (hs' : HasLaw s' P m)
     (hle : ∫ ω, ⟪s ω, U ω⟫ ∂m ≤ ∫ ω, ⟪s' ω, U ω⟫ ∂m) :
     s' =ᵐ[m] s := by
   have hUm : AEMeasurable U m := hs.aemeasurable_of_ae_eq_comp hT.aemeasurable h
-  have h₁ := hs.lintegral_norm_sub_sq_div_two (hasLaw_map hUm) hP2 hν
-  have h₂ := hs'.lintegral_norm_sub_sq_div_two (hasLaw_map hUm) hP2 hν
-  have hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) P (m.map U)
-      ≠ ∞ := by
-    rw [← lintegral_eq_transportCost_of_ae_eq_comp
-      (continuous_ofReal_norm_sub_sq_div_two (F := E)).measurable hT hs h]
-    dsimp only
-    rw [h₁]
-    exact ENNReal.ofReal_ne_top
-  refine ae_eq_of_lintegral_norm_sub_sq_div_two_le hUρ hT hfin hs h hs' ?_
-  rw [h₁, h₂]
+  have hfin :=
+    (isCoupling_map_prodMk_of_aemeasurable hs.aemeasurable hUm hs.map_eq
+      rfl).transportCost_norm_sub_sq_div_two_ne_top hP2 hν
+  refine ae_eq_of_lintegral_norm_sub_sq_div_two_le hUreg hT hfin hs h hs' ?_
+  rw [hs.lintegral_norm_sub_sq_div_two (hasLaw_map hUm) hP2 hν,
+    hs'.lintegral_norm_sub_sq_div_two (hasLaw_map hUm) hP2 hν]
   exact ENNReal.ofReal_le_ofReal (by linarith)
 
 end FiniteDimensional
