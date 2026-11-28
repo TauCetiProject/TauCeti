@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Batteries.Data.Fin.Fold
 public import Mathlib.Data.Fintype.Perm
 
 public import Mathlib.Algebra.BigOperators.Fin
@@ -145,6 +146,11 @@ range, so the value is a `dite` rather than a plain application.
   change its final partial product.
 * `Fin.prod_contractNth_castSucc` and `Fin.sum_contractNth_castSucc`: multiplying (adding) two
   adjacent entries of a tuple does not change the product (sum) of all its entries.
+* `Fin.dfoldl_castLE_zero`, `Fin.dfoldl_castLE_succ` and `Fin.dfoldl_castLE_last`: the zero,
+  successor and last-index equations for the dependent left fold `Fin.dfoldl` restricted along
+  `Fin.castLE`.
+* `Fin.eq_dfoldl_of_zero_of_succ`: a dependent family indexed by `Fin (n + 1)` satisfying the
+  zero and successor equations equals the restricted dependent left fold `Fin.dfoldl`.
 * `TauCeti.add_one_ne_self`: adding one in `Fin n` is nontrivial when `2 ≤ n`.
 * `TauCeti.add_one_add_one_ne_self`: adding one twice in `Fin n` is nontrivial when `3 ≤ n`;
   `TauCeti.sub_one_ne_self` and `TauCeti.add_one_ne_sub_one` are the companions for subtraction.
@@ -896,6 +902,54 @@ theorem exists_orderHom_succAbove_eq {m : ℕ} (l : Fin (m + 2)) :
     have := succAbove_predAbove (p := l.castPred hl) (i := v)
       (by rwa [castSucc_castPred])
     rwa [castSucc_castPred] at this
+
+/-- Evaluating the restricted dependent left fold `Fin.dfoldl` along `Fin.castLE` at prefix index
+`0` returns the initial value `x`. -/
+theorem dfoldl_castLE_zero {n : ℕ} {α : Fin (n + 1) → Type*}
+    (f : ∀ i : Fin n, α i.castSucc → α i.succ) (x : α 0) :
+    Fin.dfoldl (0 : Fin (n + 1)).val (fun j => α (Fin.castLE (0 : Fin (n + 1)).isLt j))
+      (fun j => f (Fin.castLE (Nat.le_of_lt_succ (0 : Fin (n + 1)).isLt) j)) x = x :=
+  -- `Fin.castLE _ 0` reduces definitionally to `0`.
+  Fin.dfoldl_zero (α := fun j => α (Fin.castLE (0 : Fin (n + 1)).isLt j)) _ x
+
+/-- Evaluating the restricted dependent left fold `Fin.dfoldl` along `Fin.castLE` at prefix index
+`i.succ` applies `f i` to the restricted fold at `i.castSucc`. -/
+theorem dfoldl_castLE_succ {n : ℕ} {α : Fin (n + 1) → Type*}
+    (f : ∀ i : Fin n, α i.castSucc → α i.succ) (x : α 0) (i : Fin n) :
+    Fin.dfoldl i.succ.val (fun j => α (Fin.castLE i.succ.isLt j))
+      (fun j => f (Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j)) x =
+      f i (Fin.dfoldl i.castSucc.val (fun j => α (Fin.castLE i.castSucc.isLt j))
+        (fun j => f (Fin.castLE (Nat.le_of_lt_succ i.castSucc.isLt) j)) x) :=
+  -- `Fin.castLE` reduces definitionally on `j.castSucc` to `(Fin.castLE _ j).castSucc` and on
+  -- `Fin.last i.val` to `i`.
+  Fin.dfoldl_succ_last (α := fun j => α (Fin.castLE i.succ.isLt j))
+    (fun j => f (Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j)) x
+
+/-- Evaluating the restricted dependent left fold `Fin.dfoldl` along `Fin.castLE` at the final
+prefix index `Fin.last n` agrees with the unrestricted dependent left fold `Fin.dfoldl n`. -/
+theorem dfoldl_castLE_last {n : ℕ} {α : Fin (n + 1) → Type*}
+    (f : ∀ i : Fin n, α i.castSucc → α i.succ) (x : α 0) :
+    Fin.dfoldl (Fin.last n).val (fun j => α (Fin.castLE (Fin.last n).isLt j))
+      (fun j => f (Fin.castLE (Nat.le_of_lt_succ (Fin.last n).isLt) j)) x =
+      Fin.dfoldl n α f x :=
+  -- `Fin.last n` has `.val = n`, and both `Fin.castLE` maps are `Fin.castLE_rfl`, reducing
+  -- definitionally to `id`.
+  rfl
+
+/-- A dependent family indexed by `Fin (n + 1)` that agrees with `x` at `0` and satisfies the step
+equation `g i.succ = f i (g i.castSucc)` equals the restricted dependent left fold `Fin.dfoldl` at
+every prefix index `k`. -/
+theorem eq_dfoldl_of_zero_of_succ {n : ℕ} {α : Fin (n + 1) → Type*}
+    (f : ∀ i : Fin n, α i.castSucc → α i.succ) (x : α 0) (g : ∀ k : Fin (n + 1), α k)
+    (h0 : g 0 = x) (hs : ∀ i : Fin n, g i.succ = f i (g i.castSucc)) (k : Fin (n + 1)) :
+    g k =
+      Fin.dfoldl k.val (fun j => α (Fin.castLE k.isLt j))
+        (fun j => f (Fin.castLE (Nat.le_of_lt_succ k.isLt) j)) x := by
+  induction k using Fin.induction with
+  | zero => exact h0.trans (Fin.dfoldl_castLE_zero f x).symm
+  | succ i ih =>
+    rw [hs i, ih]
+    exact (Fin.dfoldl_castLE_succ f x i).symm
 
 end Fin
 

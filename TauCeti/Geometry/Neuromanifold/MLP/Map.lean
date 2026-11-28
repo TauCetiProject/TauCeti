@@ -281,14 +281,10 @@ unchanged polynomial `X` of the output head. -/
     map φ ((polynomial d q).polynomialPrefix q i o) =
       (polynomial d (fun j => (q j).map φ)).polynomialPrefix
         (fun j => (q j).map φ) i o := by
-  -- Both specifications have widths `d`; normalize these also in polynomial instances.
-  dsimp +instances only [polynomial, ParameterIndex] at *
-  induction i using Fin.induction with
-  | zero => simp
-  | succ i ih =>
-    rw [polynomialPrefix_succ, polynomialPrefix_succ,
-      Polynomial.map_aeval_eq_aeval_map (map_comp_C φ).symm, map_layerPolynomial]
-    simp [ih]
+  -- Normalize the common widths in the dependent coordinate types and their instances.
+  dsimp +instances only [polynomial, ParameterIndex, polynomialPrefix_eq_polynomialChainPrefix]
+  exact map_polynomialChainPrefix_aeval φ (I := fun j => Fin (d j))
+    (fun _ a => map_polynomialDense φ a) (fun k _ => map_layerPolynomial φ q k) i o
 
 /-- The joint polynomial tuple of the transported affine MLP is the coefficientwise image
 of the original tuple. -/

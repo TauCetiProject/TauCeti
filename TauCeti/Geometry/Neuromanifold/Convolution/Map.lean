@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Neuromanifold.Convolution.Polynomial
 public import TauCeti.Geometry.Neuromanifold.Polynomial.Map
+import TauCeti.Geometry.Neuromanifold.MLP.Map
 
 /-!
 # Scalar transport of polynomial convolutional networks
@@ -91,17 +92,13 @@ polynomials are mapped along the scalar homomorphism. -/
     (a : Fin (A.width i)) :
     MvPolynomial.map φ (A.polynomialPrefix q i a) =
       (A.polynomial (Polynomial.map φ ∘ q)).polynomialPrefix (Polynomial.map φ ∘ q) i a := by
-  -- Compute the common index types even when the scalar types live in different universes.
-  dsimp only [polynomial]
-  induction i using Fin.induction with
-  | zero => simp
-  | succ i ih =>
-    rw [polynomialPrefix_succ, polynomialPrefix_succ]
-    dsimp only
-    split_ifs with h
-    · rw [Polynomial.map_aeval_eq_aeval_map (MvPolynomial.map_comp_C φ).symm]
-      simp [ih]
-    · simp [ih]
+  rw [A.polynomialPrefix_eq_polynomialChainPrefix,
+    (A.polynomial (Polynomial.map φ ∘ q)).polynomialPrefix_eq_polynomialChainPrefix]
+  -- Normalize the common widths, strides, and filter lengths in the dependent coordinate types.
+  dsimp +instances only [polynomial, ParameterIndex]
+  exact map_polynomialChainPrefix_aeval φ (I := fun j => Fin (A.width j))
+    (fun k b => map_polynomialAffineConvolution φ (A.length_eq k) b)
+    (fun k _ => by simpa only [Function.comp_def] using MLPSpec.map_layerPolynomial φ q k) i a
 
 /-- The full affine joint polynomial tuple transports coefficientwise. -/
 @[simp] theorem map_polynomialRealize (A : ConvolutionSpec K L)

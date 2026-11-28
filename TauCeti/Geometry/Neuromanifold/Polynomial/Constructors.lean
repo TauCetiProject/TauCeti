@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Neuromanifold.Activation
 public import TauCeti.Geometry.Neuromanifold.Convolution.Basic
 public import TauCeti.Geometry.Neuromanifold.Dense
 public import TauCeti.Geometry.Neuromanifold.Polynomial.Basic
+import TauCeti.Algebra.MvPolynomial.Degrees
 
 /-!
 # Constructors of jointly polynomial models
@@ -28,15 +29,23 @@ each construction realizes the expected map, as an equality of realization maps:
   `compose (polynomialRealization P) (polynomialRealization Q)` after splitting the parameters
   with `Equiv.sumArrowEquivProdArrow`.
 
-On collected input polynomials, reparametrization substitutes into the parameter coefficients
-(`inputPolynomial_polynomialReparametrize`) and composition substitutes the collected input
-polynomials of `P` for the inputs of `Q` (`inputPolynomial_polynomialCompose`).
+On collected input polynomials, variables give input variables or constant parameter-variable
+coefficients (`inputPolynomial_X_inr`, `inputPolynomial_X_inl`), reparametrization substitutes
+into the parameter coefficients without increasing the uniform input-degree bound
+(`inputPolynomial_polynomialReparametrize`, `polynomialInputDegree_polynomialReparametrize_le`,
+including parameter renaming `inputPolynomial_rename_sumMap`), coordinatewise polynomial
+postcomposition applies the polynomial to each collected input polynomial
+(`inputPolynomial_aeval`), and binary composition substitutes the collected input polynomials of
+`P` for the inputs of `Q` and multiplies uniform input-degree bounds
+(`inputPolynomial_polynomialCompose`, `polynomialInputDegree_polynomialCompose_le`).
 
 The concrete layers are polynomial models: `polynomialDense` and `polynomialLinear` realize
 the dense affine and linear layers after the identifications `denseParameterEquiv` and
 `linearParameterEquiv` of their parameter index types with matrices and bias vectors;
 `polynomialConvolution` and `polynomialAffineConvolution` realize valid convolution;
 `polynomialActivation p` realizes the coordinatewise activation by the polynomial `p`.
+Substituting zero for the bias variables reduces `polynomialDense` to `polynomialLinear` and
+`polynomialAffineConvolution` to `polynomialConvolution`.
 Since the identifications are equivalences, the polynomial and the original layers have the
 same realized functions. The identity and monomial activations are the input variables and
 their powers. Composing these layers with `polynomialCompose` presents a layer-by-layer network
@@ -75,12 +84,24 @@ section Basic
   funext w x j
   simp
 
+/-- Input variables have the corresponding input variables as their collected input polynomials. -/
+@[simp] theorem inputPolynomial_X_inr (e : J → I) (j : J) :
+    inputPolynomial (fun k => X (Sum.inr (e k)) : J → MvPolynomial (W ⊕ I) K) j = X (e j) := by
+  simp [inputPolynomial_def]
+
 /-- Parameter variables realize the input-independent map selecting those parameters. -/
 @[simp] theorem polynomialRealization_X_inl (e : J → W) :
     polynomialRealization (fun j => X (Sum.inl (e j)) : J → MvPolynomial (W ⊕ I) K) =
       fun w _ => w ∘ e := by
   funext w x j
   simp
+
+/-- Parameter variables give constant collected input polynomials with those parameter variables as
+coefficients. -/
+@[simp] theorem inputPolynomial_X_inl (e : J → W) (j : J) :
+    inputPolynomial (fun k => X (Sum.inl (e k)) : J → MvPolynomial (W ⊕ I) K) j =
+      C (X (e j)) := by
+  simp [inputPolynomial_def]
 
 /-- Pairing two polynomial models with the same parameters and inputs realizes the pair of
 their outputs, indexed by the sum of the output types. -/
@@ -94,6 +115,33 @@ their outputs, indexed by the sum of the output types. -/
 end Basic
 
 section Substitution
+
+/-- Collecting the inputs after substituting parameter polynomials `R` for the parameters and `P`
+for the inputs of `Q` maps the parameter coefficients of `Q` by `aeval R` and substitutes the
+collected input polynomials of `P` for the inputs of `Q`. -/
+theorem inputPolynomial_aeval_sumElim {W' : Type*} (R : V → MvPolynomial W' K)
+    (P : J → MvPolynomial (W' ⊕ I) K) (Q : L → MvPolynomial (V ⊕ J) K) (l : L) :
+    inputPolynomial (fun k => aeval (Sum.elim (fun v => rename Sum.inl (R v)) P) (Q k)) l =
+      eval₂ (C.comp (aeval R : MvPolynomial V K →ₐ[K] MvPolynomial W' K))
+        (inputPolynomial P) (inputPolynomial Q l) := by
+  have hC :
+      (C.comp (aeval R : MvPolynomial V K →ₐ[K] MvPolynomial W' K) :
+          MvPolynomial V K →+* MvPolynomial I (MvPolynomial W' K)) =
+        eval₂Hom (C.comp C) (fun v => C (R v)) := by
+    apply ringHom_ext <;> simp
+  -- Express `inputPolynomial` as a `RingHom` application so `map_aeval` rewrites `φ (aeval _ _)`.
+  let φ : MvPolynomial (W' ⊕ I) K →+* MvPolynomial I (MvPolynomial W' K) :=
+    ((sumAlgEquiv K I W').toAlgHom.comp (rename Sum.swap)).toRingHom
+  have hφ (p : MvPolynomial (W' ⊕ I) K) : sumAlgEquiv K I W' (rename Sum.swap p) = φ p := rfl
+  rw [inputPolynomial_def, inputPolynomial_def (P := Q), hC, eval₂_sumAlgEquiv, eval₂_rename,
+    hφ, map_aeval, algebraMap_eq]
+  refine congrArg₂ (fun f g => eval₂ f g (Q l)) (RingHom.ext fun k => by simp [φ])
+    (funext fun x => ?_)
+  rcases x with v | j
+  · have hinr : sumAlgEquiv K I W' (rename Sum.inr (R v)) = C (R v) := by
+      simpa using AlgHom.congr_fun (sumAlgEquiv_comp_rename_inr K I W') (R v)
+    simpa [φ, ← AlgHom.comp_apply, rename_comp_rename, Function.comp_def] using hinr
+  · simp [φ, inputPolynomial_def]
 
 /-- Substitute a polynomial `R i` in the new parameters `W'` for each old parameter `i`,
 leaving the input variables unchanged. -/
@@ -113,13 +161,11 @@ coefficients of each collected input polynomial. -/
     (P : J → MvPolynomial (W ⊕ I) K) (j : J) :
     inputPolynomial (polynomialReparametrize R P) j =
       map (aeval R : MvPolynomial W K →ₐ[K] MvPolynomial W' K) (inputPolynomial P j) := by
-  have hinr (q : MvPolynomial W' K) : sumAlgEquiv K I W' (rename Sum.inr q) = C q := by
-    simpa using AlgHom.congr_fun (sumAlgEquiv_comp_rename_inr K I W') q
-  simp only [inputPolynomial_def, polynomialReparametrize_apply]
-  induction P j using MvPolynomial.induction_on with
-  | C a => simp
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p i hp => cases i <;> simp [hp, hinr, Function.comp_def]
+  have hX : inputPolynomial (fun a : I => (X (Sum.inr a) : MvPolynomial (W' ⊕ I) K)) = X :=
+    funext (inputPolynomial_X_inr id)
+  unfold polynomialReparametrize
+  rw [map_eq_eval₂Hom_C_comp, coe_eval₂Hom, ← hX]
+  exact inputPolynomial_aeval_sumElim R (fun a : I => X (Sum.inr a)) P j
 
 /-- A reparametrized polynomial model realizes the original model at the evaluated
 polynomial parameters. -/
@@ -132,6 +178,53 @@ polynomial parameters. -/
     comp_aeval_apply]
   refine congrArg (fun F => aeval F (P j)) (funext fun i => ?_)
   cases i <;> simp [eval_rename, Function.comp_def]
+
+/-- Reparametrizing a polynomial model cannot increase its uniform input-degree bound. -/
+theorem polynomialInputDegree_polynomialReparametrize_le [Fintype J] (R : W → MvPolynomial W' K)
+    (P : J → MvPolynomial (W ⊕ I) K) :
+    polynomialInputDegree (polynomialReparametrize R P) ≤ polynomialInputDegree P :=
+  polynomialInputDegree_le_of_inputPolynomial_eq_map (inputPolynomial_polynomialReparametrize R P)
+
+/-- Renaming the parameter variables is reparametrization by the renamed variables. -/
+@[simp] theorem polynomialReparametrize_X (f : W → W') (P : J → MvPolynomial (W ⊕ I) K) :
+    polynomialReparametrize (fun w => X (f w)) P = fun j => rename (Sum.map f id) (P j) := by
+  funext j
+  rw [polynomialReparametrize_apply, rename_eq_aeval (Sum.map f id)]
+  refine congrArg (fun F : W ⊕ I → MvPolynomial (W' ⊕ I) K => aeval F (P j)) (funext fun i => ?_)
+  cases i <;> simp
+
+/-- Renaming the parameter variables maps the parameter-polynomial coefficients of each collected
+input polynomial. -/
+@[simp] theorem inputPolynomial_rename_sumMap (f : W → W') (P : J → MvPolynomial (W ⊕ I) K)
+    (j : J) :
+    inputPolynomial (fun k => rename (Sum.map f id) (P k)) j =
+      map (rename f : MvPolynomial W K →ₐ[K] MvPolynomial W' K) (inputPolynomial P j) := by
+  rw [← polynomialReparametrize_X, inputPolynomial_polynomialReparametrize, rename_eq_aeval]
+  simp only [Function.comp_def]
+
+/-- Renaming the parameter variables precomposes the realization map with that renaming. -/
+@[simp] theorem polynomialRealization_rename_sumMap (f : W → W')
+    (P : J → MvPolynomial (W ⊕ I) K) :
+    polynomialRealization (fun j => rename (Sum.map f id) (P j)) =
+      fun w' => polynomialRealization P (w' ∘ f) := by
+  simp [← polynomialReparametrize_X, Function.comp_def]
+
+/-- Renaming the parameter variables cannot increase the uniform input-degree bound. -/
+theorem polynomialInputDegree_rename_sumMap_le [Fintype J] (f : W → W')
+    (P : J → MvPolynomial (W ⊕ I) K) :
+    polynomialInputDegree (fun j => rename (Sum.map f id) (P j)) ≤ polynomialInputDegree P := by
+  rw [← polynomialReparametrize_X]
+  exact polynomialInputDegree_polynomialReparametrize_le _ P
+
+/-- Keeping variables `X ⟨i, a⟩` on the left summand and substituting `0` on the right summand of
+an indexed sum `(i : ι) × (V i ⊕ B i)` applies `Sum.elim X 0` at each index `i` and tags the kept
+variables with `Sigma.mk i`. -/
+theorem sumElim_X_zero_eq_rename {ι : Type*} {V B : ι → Type*} :
+    ((fun ⟨i, j⟩ => Sum.elim (fun a => X ⟨i, a⟩) (fun _ => 0) j) :
+        ((k : ι) × (V k ⊕ B k)) → MvPolynomial ((k : ι) × V k) K) =
+      fun p => rename (Sigma.mk p.1) (Sum.elim X (0 : B p.1 → MvPolynomial (V p.1) K) p.2) := by
+  funext ⟨i, j⟩
+  cases j <;> simp
 
 /-- Substitute the outputs of `P` for the input variables of `Q`. The parameters of the
 composite are those of `P` followed by those of `Q`. -/
@@ -157,20 +250,29 @@ theorem inputPolynomial_polynomialCompose (P : J → MvPolynomial (W ⊕ I) K)
         (fun j => map (rename Sum.inl : MvPolynomial W K →ₐ[K] MvPolynomial (W ⊕ V) K)
           (inputPolynomial P j))
         (inputPolynomial Q l) := by
-  -- Renaming the parameters of `P` into the composite parameters commutes with collecting inputs.
-  have hP (p : MvPolynomial (W ⊕ I) K) :
-      sumAlgEquiv K I (W ⊕ V) (rename (Sum.swap ∘ Sum.map Sum.inl id) p) =
-        map (rename Sum.inl : MvPolynomial W K →ₐ[K] MvPolynomial (W ⊕ V) K)
-          (sumAlgEquiv K I W (rename Sum.swap p)) := by
-    induction p using MvPolynomial.induction_on with
-    | C a => simp
-    | add p q hp hq => simp [hp, hq]
-    | mul_X p i hp => cases i <;> simp [hp]
-  simp only [inputPolynomial_def, polynomialCompose_apply]
-  induction Q l using MvPolynomial.induction_on with
-  | C a => simp
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p i hp => cases i <;> simp [hp, hP]
+  have hcomp :
+      polynomialCompose P Q =
+        fun k => aeval (Sum.elim (fun v => rename Sum.inl (X (Sum.inr v)))
+          (fun j => rename (Sum.map Sum.inl id) (P j))) (Q k) := by
+    funext k
+    simp [polynomialCompose_apply]
+  rw [hcomp, inputPolynomial_aeval_sumElim, rename_eq_aeval Sum.inr]
+  congr 2
+  funext j
+  exact inputPolynomial_rename_sumMap Sum.inl P j
+
+/-- The uniform input-degree bound of `polynomialCompose P Q` is at most the product of the uniform
+input-degree bounds of `P` and `Q`. -/
+theorem polynomialInputDegree_polynomialCompose_le [Fintype J] [Fintype L]
+    (P : J → MvPolynomial (W ⊕ I) K) (Q : L → MvPolynomial (V ⊕ J) K) :
+    polynomialInputDegree (polynomialCompose P Q) ≤
+      polynomialInputDegree P * polynomialInputDegree Q := by
+  refine (polynomialInputDegree_le_iff _).2 fun l => ?_
+  rw [inputPolynomial_polynomialCompose]
+  refine (totalDegree_eval₂_C_comp_le _ _ fun j _ =>
+    totalDegree_map_inputPolynomial_le P _ j).trans ?_
+  rw [mul_comm]
+  exact Nat.mul_le_mul_left _ (totalDegree_inputPolynomial_le Q l)
 
 /-- Composition by polynomial substitution realizes the composite of the two realization
 maps, after splitting the parameters into those of `P` and those of `Q`. -/
@@ -245,6 +347,21 @@ theorem polynomialDense_apply (o : ο) :
     (polynomialDense o : MvPolynomial ((ο × ι ⊕ ο) ⊕ ι) K) =
       ∑ i, X (Sum.inl (Sum.inl (o, i))) * X (Sum.inr i) + X (Sum.inl (Sum.inr o)) := (rfl)
 
+/-- The collected input polynomials of the dense affine layer are affine forms whose coefficients
+are the weight and bias variables. -/
+@[simp] theorem inputPolynomial_polynomialDense (o : ο) :
+    inputPolynomial (polynomialDense : ο → MvPolynomial ((ο × ι ⊕ ο) ⊕ ι) K) o =
+      ∑ i, C (X (Sum.inl (o, i))) * X i + C (X (Sum.inr o)) := by
+  simp [inputPolynomial_def, polynomialDense_apply]
+
+/-- Substituting zero for the bias variables in the polynomial dense layer gives the polynomial
+linear layer. -/
+@[simp] theorem polynomialReparametrize_sumElim_X_zero_polynomialDense :
+    polynomialReparametrize (Sum.elim X (0 : ο → MvPolynomial (ο × ι) K))
+      (polynomialDense : ο → MvPolynomial ((ο × ι ⊕ ο) ⊕ ι) K) = polynomialLinear := by
+  funext o
+  simp [polynomialReparametrize_apply, polynomialDense_apply, polynomialLinear_apply]
+
 /-- The polynomial dense layer realizes the dense affine layer. -/
 @[simp] theorem polynomialRealization_polynomialDense :
     polynomialRealization (polynomialDense : ο → MvPolynomial ((ο × ι ⊕ ο) ⊕ ι) K) =
@@ -265,6 +382,33 @@ end Layers
 section Activation
 
 variable {ι : Type*}
+
+/-- Applying a one-variable polynomial coordinatewise to the outputs of a polynomial model applies
+it to each collected input polynomial. -/
+@[simp] theorem inputPolynomial_aeval (P : J → MvPolynomial (W ⊕ I) K) (p : Polynomial K)
+    (j : J) :
+    inputPolynomial (fun k => Polynomial.aeval (P k) p) j =
+      Polynomial.aeval (inputPolynomial P j) p := by
+  simpa [inputPolynomial_def] using
+    (Polynomial.aeval_algHom_apply ((sumAlgEquiv K I W).toAlgHom.comp (rename Sum.swap))
+      (P j) p).symm
+
+/-- Applying a one-variable polynomial coordinatewise to the outputs of a polynomial model
+evaluates that polynomial on each realized output coordinate. -/
+@[simp] theorem polynomialRealization_aeval (P : J → MvPolynomial (W ⊕ I) K) (p : Polynomial K) :
+    polynomialRealization (fun j => Polynomial.aeval (P j) p) =
+      fun w x j => p.eval (polynomialRealization P w x j) := by
+  funext w x j
+  simp
+
+/-- Reparametrization commutes with applying a one-variable polynomial coordinatewise to the
+outputs. -/
+@[simp] theorem polynomialReparametrize_aeval (R : W → MvPolynomial W' K)
+    (P : J → MvPolynomial (W ⊕ I) K) (p : Polynomial K) :
+    polynomialReparametrize R (fun j => Polynomial.aeval (P j) p) =
+      fun j => Polynomial.aeval (polynomialReparametrize R P j) p := by
+  funext j
+  exact (Polynomial.aeval_algHom_apply (aeval _) (P j) p).symm
 
 /-- The coordinatewise activation by a polynomial `p`, as a polynomial model whose
 parameters `W` do not occur. -/
@@ -313,6 +457,13 @@ theorem polynomialConvolution_apply (h : n = s * (m - 1) + k) (i : Fin m) :
     (polynomialConvolution h i : MvPolynomial (Fin k ⊕ Fin n) K) =
       ∑ j, X (Sum.inl j) * X (Sum.inr (convolutionIndex h i j)) := (rfl)
 
+/-- The collected input polynomials of valid convolution are linear forms in the window inputs
+whose coefficients are the filter variables. -/
+@[simp] theorem inputPolynomial_polynomialConvolution (h : n = s * (m - 1) + k) (i : Fin m) :
+    inputPolynomial (polynomialConvolution (K := K) h) i =
+      ∑ j, C (X j) * X (convolutionIndex h i j) := by
+  simp [inputPolynomial_def, polynomialConvolution_apply]
+
 /-- The polynomial convolution realizes valid convolution. -/
 @[simp] theorem polynomialRealization_polynomialConvolution (h : n = s * (m - 1) + k) :
     polynomialRealization (polynomialConvolution (K := K) h) = convolution h := by
@@ -331,6 +482,24 @@ theorem polynomialAffineConvolution_apply (h : n = s * (m - 1) + k) (i : Fin m) 
     (polynomialAffineConvolution h i : MvPolynomial ((Fin k ⊕ Unit) ⊕ Fin n) K) =
       ∑ j, X (Sum.inl (Sum.inl j)) * X (Sum.inr (convolutionIndex h i j)) +
         X (Sum.inl (Sum.inr ())) := (rfl)
+
+/-- The collected input polynomials of affine valid convolution are affine forms in the window
+inputs whose coefficients are the filter variables and the shared bias variable. -/
+@[simp] theorem inputPolynomial_polynomialAffineConvolution (h : n = s * (m - 1) + k)
+    (i : Fin m) :
+    inputPolynomial (polynomialAffineConvolution (K := K) h) i =
+      ∑ j, C (X (Sum.inl j)) * X (convolutionIndex h i j) + C (X (Sum.inr ())) := by
+  simp [inputPolynomial_def, polynomialAffineConvolution_apply]
+
+/-- Substituting zero for the shared bias variable in the polynomial affine convolution gives the
+polynomial valid convolution. -/
+@[simp] theorem polynomialReparametrize_sumElim_X_zero_polynomialAffineConvolution
+    (h : n = s * (m - 1) + k) :
+    polynomialReparametrize (Sum.elim X (0 : Unit → MvPolynomial (Fin k) K))
+      (polynomialAffineConvolution (K := K) h) = polynomialConvolution h := by
+  funext i
+  simp [polynomialReparametrize_apply, polynomialAffineConvolution_apply,
+    polynomialConvolution_apply]
 
 /-- The polynomial affine convolution realizes the affine convolution. -/
 @[simp] theorem polynomialRealization_polynomialAffineConvolution (h : n = s * (m - 1) + k) :
