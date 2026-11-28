@@ -79,6 +79,26 @@ theorem toFiniteIdele_ofAdicCompletion (v : HeightOneSpectrum R) (u : (v.adicCom
   Units.ext (by
     simp only [coe_toFiniteIdele, val_ofAdicCompletion_apply, coe_unitsOfAdicCompletion_apply])
 
+/-- There is an idele whose finite divisor is the positive part of the finite divisor of `x`. -/
+theorem exists_adicOrd_toFiniteIdele_eq_max (x : IdeleGroup R K) :
+    ∃ y : IdeleGroup R K, ∀ w,
+      adicOrd (toFiniteIdele R K y) w = max (adicOrd (toFiniteIdele R K x) w) 0 := by
+  classical
+  let S : Set (HeightOneSpectrum R) := {w | 0 < adicOrd (toFiniteIdele R K x) w}
+  have hS : S.Finite := (Filter.eventually_cofinite.mp
+    (eventually_adicOrd_eq_zero (toFiniteIdele R K x))).subset fun _ h ↦ ne_of_gt h
+  refine ⟨∏ w ∈ hS.toFinset, ofAdicCompletion R K w (w.ideleFiniteCoord x), ?_⟩
+  intro w
+  have h := w.ideleFiniteCoord_prod_ofAdicCompletion hS.toFinset (fun w ↦ w.ideleFiniteCoord x)
+  by_cases hw : w ∈ S
+  · rw [ite_eq_left (hS.mem_toFinset.mpr hw)] at h
+    rw [max_eq_left (le_of_lt hw)]
+    simpa only [adicOrd_def, coe_toFiniteIdele, coe_ideleFiniteCoord] using
+      congrArg (fun u : (w.adicCompletion K)ˣ ↦ -WithZero.log (Valued.v (u : w.adicCompletion K))) h
+  · rw [ite_eq_right (fun h ↦ hw (hS.mem_toFinset.mp h))] at h
+    rw [max_eq_right (le_of_not_gt hw), adicOrd_eq_zero_iff, coe_toFiniteIdele,
+      ← coe_ideleFiniteCoord, h, Units.val_one, map_one]
+
 end NumberField.IdeleGroup
 
 namespace ClassGroup

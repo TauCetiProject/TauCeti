@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.FiniteIdeal
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.FiniteAdele
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.GaloisAction
+public import TauCeti.RingTheory.DedekindDomain.HeightOneSpectrumAction
 public import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
 /-!
@@ -453,6 +454,20 @@ private theorem valued_ideleFiniteCoord_smul [NumberField K] (σ : L ≃ₐ[K] L
     semilocalEquiv_finiteAdeleSemilocalHom] at hw
   rw [coe_ideleFiniteCoord, coe_idele_smul, adeleGaloisAction_apply, adeleEquiv_snd,
     ← hw, valued_completionCongr, coe_ideleFiniteCoord]
+
+/-- The order of the finite component of `σ • x` at `w` is the order of `x` at `σ⁻¹ • w`. -/
+theorem adicOrd_toFiniteIdele_smul [NumberField K] (σ : L ≃ₐ[K] L) (x : IdeleGroup (𝓞 L) L)
+    (w : HeightOneSpectrum (𝓞 L)) :
+    FiniteAdeleRing.adicOrd (IdeleGroup.toFiniteIdele (𝓞 L) L (σ • x)) w =
+      FiniteAdeleRing.adicOrd (IdeleGroup.toFiniteIdele (𝓞 L) L x) (σ⁻¹ • w) := by
+  let v := w.under (𝓞 K)
+  have hv : (σ⁻¹ • w).under (𝓞 K) = v := under_smul _ _
+  let w' : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal} :=
+    ⟨σ⁻¹ • w, hv ▸ inferInstance⟩
+  have h := valued_ideleFiniteCoord_smul σ x ⟨w, inferInstance⟩ w' (by
+    simp [w', ← asIdeal_smul, smul_inv_smul])
+  simpa only [FiniteAdeleRing.adicOrd_def, IdeleGroup.coe_toFiniteIdele, coe_ideleFiniteCoord] using
+    congrArg (fun a ↦ -WithZero.log a) h
 
 /-- **The `S`-ideles are stable under the Galois action.** Since `S` is a set of places of `K`,
 the places of `L` not above `S` are permuted by `Aut(L/K)`. -/
