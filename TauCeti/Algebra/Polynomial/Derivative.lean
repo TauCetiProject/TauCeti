@@ -66,6 +66,14 @@ has no antiderivative.
 
 As linear endomorphisms of `R[X]`, the derivative and multiplication by `X` satisfy the Weyl
 relation `d x = x d + 1` (`Polynomial.derivative_mul_mulLeft_X`).
+
+Over a commutative ring, the derivative of a combination of the products
+`(X - a) ^ (n + 1 - k) (X - b) ^ k` is a combination of the products `(X - a) ^ (n - k) (X - b) ^ k`
+with explicit coefficients (`Polynomial.derivative_sum_smul_X_sub_C_pow_mul_X_sub_C_pow`).
+
+Over a ring in which multiplication by each nonzero natural number is injective, such as a
+`ℚ`-algebra, a polynomial is determined by its derivative together with its value at one point
+(`Polynomial.eq_of_derivative_eq_of_eval_eq`).
 -/
 
 public section
@@ -367,5 +375,50 @@ theorem derivative_mul_mulLeft_X {R : Type*} [CommSemiring R] :
       LinearMap.mulLeft R X * derivative + 1 := by
   refine LinearMap.ext fun p ↦ ?_
   simp [derivative_mul, add_comm]
+
+/-- **Differentiating a shifted-power expansion.** The derivative of a combination of the products
+`(X - a) ^ (n + 1 - k) (X - b) ^ k`, `k ≤ n + 1`, is the combination of the products
+`(X - a) ^ (n - k) (X - b) ^ k`, `k ≤ n`, in which the coefficient of the `k`-th product is
+`(n - k + 1) f k + (k + 1) f (k + 1)`. For `a - b` invertible the products of total degree `n`
+form a basis of the polynomials of degree at most `n`; in general they are only a family. -/
+theorem derivative_sum_smul_X_sub_C_pow_mul_X_sub_C_pow {R : Type*} [CommRing R] (a b : R)
+    (f : ℕ → R) (n : ℕ) :
+    derivative (∑ k ∈ Finset.range (n + 2), f k • ((X - C a) ^ (n + 1 - k) * (X - C b) ^ k)) =
+      ∑ k ∈ Finset.range (n + 1), ((((n - k : ℕ) : R) + 1) * f k + ((k : R) + 1) * f (k + 1)) •
+        ((X - C a) ^ (n - k) * (X - C b) ^ k) := by
+  have h (m k : ℕ) : derivative ((X - C a) ^ m * (X - C b) ^ k) =
+      C (m : R) * ((X - C a) ^ (m - 1) * (X - C b) ^ k) +
+        C (k : R) * ((X - C a) ^ m * (X - C b) ^ (k - 1)) := by
+    simp only [derivative_mul, derivative_pow, derivative_sub, derivative_X, derivative_C,
+      sub_zero, mul_one]
+    ring
+  simp only [derivative_sum, derivative_smul, h, smul_add, Finset.sum_add_distrib]
+  -- The first sum loses its top term and the second its bottom term, both with coefficient `0`.
+  rw [Finset.sum_range_succ, Finset.sum_range_succ' (fun k =>
+    f k • (C (k : R) * ((X - C a) ^ (n + 1 - k) * (X - C b) ^ (k - 1))))]
+  simp only [Nat.sub_self, Nat.cast_zero, C_0, zero_mul, smul_zero, add_zero]
+  rw [← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun k hk => ?_
+  have hk' : k ≤ n := Nat.lt_succ_iff.1 (Finset.mem_range.1 hk)
+  -- The exponent of `X - C a` in the `k`-th term of the first sum, as a successor.
+  have hexp : n + 1 - k = n - k + 1 := by omega
+  rw [Nat.add_sub_add_right, Nat.add_sub_cancel, hexp, Nat.add_sub_cancel]
+  simp only [smul_eq_C_mul, C_add, C_mul, Nat.cast_add, Nat.cast_one, C_1]
+  ring
+
+/-- Over a ring in which multiplication by each nonzero natural number is injective, such as a
+`ℚ`-algebra, two polynomials with equal derivatives and equal values at one point `x` agree.
+
+Both hypotheses are needed: over `ℚ`, the polynomials `X - 1` and `0` agree at `1` but have
+different derivatives, while `1` and `0` have the same derivative but different values. So is
+the assumption on `R`: over `ZMod 2`, the polynomials `X ^ 2` and `0` have the same derivative and
+agree at `0`. -/
+theorem eq_of_derivative_eq_of_eval_eq {R : Type*} [Ring R] [HasUniqueDiv R] {p q : R[X]}
+    (x : R) (hd : derivative p = derivative q) (he : p.eval x = q.eval x) : p = q := by
+  have h := eq_C_of_derivative_eq_zero (p := p - q) (by rw [derivative_sub, hd, sub_self])
+  have h0 : (p - q).coeff 0 = 0 := by
+    have h1 := congrArg (eval x) h
+    rwa [eval_sub, he, sub_self, eval_C, eq_comm] at h1
+  rwa [h0, C_0, sub_eq_zero] at h
 
 end Polynomial
