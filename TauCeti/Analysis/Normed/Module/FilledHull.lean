@@ -46,8 +46,8 @@ regularity assumptions on `K`. The related frontier bound in
   places its image strictly inside the sphere of radius `R` whenever `‖r‖ < R`.
 * `TauCeti.filledHull_subset_closedConvexHull` — the filled hull of a nonempty set lies in its
   closed convex hull.
-* `TauCeti.isBounded_filledHull` and `TauCeti.diam_filledHull` — filling preserves boundedness
-  and diameter.
+* `TauCeti.isBounded_filledHull`, `TauCeti.diam_filledHull`, and
+  `IsCompact.isCompact_filledHull` — filling preserves boundedness, diameter, and compactness.
 * `TauCeti.diam_le_diam_of_subset_filledHull` and
   `IsPreconnected.diam_le_diam_of_disjoint` — sets enclosed by a bounded `K` are no wider than `K`.
 * `TauCeti.filledHull_empty` — the empty hull is empty in a nontrivial real normed space.
@@ -187,6 +187,12 @@ theorem _root_.IsPreconnected.diam_le_diam_of_disjoint (hS : IsPreconnected S) (
   diam_le_diam_of_subset_filledHull hK (hS.subset_filledHull hSK hne)
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {K : Set E}
+
+/-- Filling a compact set preserves compactness in a proper real normed space. -/
+theorem _root_.IsCompact.isCompact_filledHull [ProperSpace E] (hK : IsCompact K) :
+    IsCompact (filledHull K) :=
+  isCompact_of_isClosed_isBounded hK.isClosed.isClosed_filledHull
+    (isBounded_filledHull.mpr hK.isBounded)
 
 /-- The filled hull of the empty set is empty in a nontrivial real normed space. This does not
 extend to seminormed spaces with identically zero seminorm. -/

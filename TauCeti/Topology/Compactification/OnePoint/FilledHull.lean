@@ -30,6 +30,9 @@ closure pulls back to `filledHull K`.
 
 * `TauCeti.closure_image_coe_connectedComponentIn_subset` describes the closure of a bounded
   complementary component in `OnePoint E`.
+* `TauCeti.connectedComponentIn_compl_image_coe` identifies the connected component in the
+  complement of `(↑) '' K` of any point in `filledHull K \ K` with the image of its component in
+  `Kᶜ`.
 * `TauCeti.not_joinedIn_compl_image_coe` separates the component from every other point by paths.
 * `TauCeti.closure_connectedComponentIn_subset_range_onePoint`: a complementary component disjoint
   from the component of `Φ ∞` whose closure adds only points of `(Φ ∘ (↑)) '' K` has closure inside
@@ -87,23 +90,38 @@ theorem closure_image_coe_connectedComponentIn_subset {K : Set E} (hK : IsClosed
   exact frontier_connectedComponentIn_subset_compl hK.isOpen_compl x
     ⟨hy, by rw [hK.isOpen_compl.connectedComponentIn.interior_eq]; exact hyD.1⟩ hyD.2
 
+/-- In the one-point compactification, the connected component in `(((↑) : E → OnePoint E) '' K)ᶜ`
+of a point in a bounded complementary component of a closed set `K` is the image of its component in
+`Kᶜ`. -/
+theorem connectedComponentIn_compl_image_coe {K : Set E} (hK : IsClosed K) {x : E}
+    (hx : x ∈ filledHull K \ K) :
+    connectedComponentIn (((↑) : E → OnePoint E) '' K)ᶜ (x : OnePoint E) =
+      ((↑) : E → OnePoint E) '' connectedComponentIn Kᶜ x := by
+  rcases hx with ⟨hxH, hxK⟩
+  have hxS : (x : OnePoint E) ∈ (((↑) : E → OnePoint E) '' K)ᶜ :=
+    fun ⟨_, hy, hyx⟩ ↦ hxK (OnePoint.coe_injective hyx ▸ hy)
+  refine Subset.antisymm ?_
+    ((OnePoint.continuous_coe.continuousOn.image_connectedComponentIn_subset hxK).trans
+      (connectedComponentIn_mono _ (image_compl_subset OnePoint.coe_injective)))
+  have hU : IsOpen (((↑) : E → OnePoint E) '' connectedComponentIn Kᶜ x) :=
+    OnePoint.isOpenEmbedding_coe.isOpenMap _ hK.isOpen_compl.connectedComponentIn
+  refine isPreconnected_connectedComponentIn.subset_of_closure_inter_subset hU
+    ⟨(x : OnePoint E), mem_connectedComponentIn hxS,
+      mem_image_of_mem _ (mem_connectedComponentIn hxK)⟩ ?_
+  rintro w ⟨hcl, hwS⟩
+  obtain ⟨y, hy | hy, rfl⟩ := closure_image_coe_connectedComponentIn_subset hK hxH hcl
+  · exact ⟨y, hy, rfl⟩
+  · exact (connectedComponentIn_subset _ _ hwS (mem_image_of_mem _ hy)).elim
+
 /-- A point of the one-point compactification outside the image of a bounded complementary
 component of a closed set `K` cannot be joined to it by a path avoiding the image of `K`. -/
 theorem not_joinedIn_compl_image_coe {K : Set E} (hK : IsClosed K) {x : E}
     (hx : x ∈ filledHull K \ K) {w : OnePoint E}
     (hw : w ∉ ((↑) : E → OnePoint E) '' connectedComponentIn Kᶜ x) :
-    ¬ JoinedIn (((↑) : E → OnePoint E) '' K)ᶜ (x : OnePoint E) w := by
-  intro h
-  have hU : IsOpen (((↑) : E → OnePoint E) '' connectedComponentIn Kᶜ x) :=
-    OnePoint.isOpenEmbedding_coe.isOpenMap _ hK.isOpen_compl.connectedComponentIn
-  have hsub := (isConnected_range h.somePath.continuous).isPreconnected
-    |>.subset_of_closure_inter_subset hU
-      ⟨x, ⟨0, by simp⟩, mem_image_of_mem _ (mem_connectedComponentIn hx.2)⟩ ?_
-  · exact hw (hsub ⟨1, by simp⟩)
-  · rintro _ ⟨hcl, t, rfl⟩
-    obtain ⟨y, hy | hy, hyt⟩ := closure_image_coe_connectedComponentIn_subset hK hx.1 hcl
-    · exact ⟨y, hy, hyt⟩
-    · exact absurd ⟨y, hy, hyt⟩ (h.somePath_mem t)
+    ¬ JoinedIn (((↑) : E → OnePoint E) '' K)ᶜ (x : OnePoint E) w := fun h ↦
+  hw <| connectedComponentIn_compl_image_coe hK hx ▸
+    (isConnected_range h.somePath.continuous).isPreconnected.subset_connectedComponentIn
+      ⟨0, by simp⟩ (range_subset_iff.mpr h.somePath_mem) ⟨1, by simp⟩
 
 /-- In a homeomorphic model `Φ : OnePoint E ≃ₜ S` of the one-point compactification of a proper
 locally connected metric space `E`, if the complement of `(Φ ∘ (↑)) '' K` for a closed set `K`

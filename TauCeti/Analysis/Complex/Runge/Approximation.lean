@@ -6,37 +6,47 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Eval.Defs
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Analysis.Complex.Runge.Hull
 public import TauCeti.Analysis.Complex.Runge.Operator
 public import TauCeti.Analysis.Normed.Module.Exhaustion
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.SummableUniformlyOn
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
+import TauCeti.Analysis.Analytic.HermiteInterpolation
+import TauCeti.Analysis.Analytic.Order
 import TauCeti.Analysis.Complex.PowerSeries.Approximation
 import TauCeti.Analysis.Complex.Runge.SimpleFraction
 import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.Analysis.Normed.Module.FilledIn
 
 /-!
-# Runge's approximation theorem and holomorphic hulls
+# Runge's approximation theorem, holomorphic hulls, and finite-jet interpolation
 
-This file proves Runge's approximation theorem in its domain-relative form on open subsets
-`Ω ⊆ ℂ`: a compact subset `K ⊆ Ω` admits uniform approximation of neighbourhood-holomorphic
-functions by `Ω`-holomorphic functions if and only if `(Ω, K)` is a Runge compact pair, i.e. no
-connected component of `Ω \ K` is relatively compact in `Ω`
+This file proves Runge's approximation theorem in its domain-relative, finite-jet, and polynomial
+forms on open subsets `Ω ⊆ ℂ`: a compact subset `K ⊆ Ω` admits uniform approximation of
+neighbourhood-holomorphic functions by `Ω`-holomorphic functions if and only if `(Ω, K)` is a Runge
+compact pair, i.e. no connected component of `Ω \ K` is relatively compact in `Ω`
 (`TauCeti.isRungeCompactPair_iff_approximation`). Together with the explicit filled compact
 exhaustions `TauCeti.filledExhaustion Ω` (`TauCeti.Analysis.Normed.Module.Exhaustion`), these
 equivalences provide the compact-to-global patching step for constructing global holomorphic
-functions on arbitrary open plane sets.
+functions on arbitrary open plane sets. Combining analytic Hermite interpolation
+(`AnalyticOnNhd.exists_polynomial_iteratedDeriv_eq_and_sub_eq_mul`) with scalar Runge approximation
+yields `Ω`-holomorphic approximants matching prescribed finite jets of orders `k < m a` at finitely
+many points of `U ∩ Ω`
+(`TauCeti.IsRungeCompactPair.exists_differentiableOn_iteratedDeriv_eq_and_norm_sub_lt`).
 
 From scalar Runge approximation we identify `TauCeti.holomorphicHull Ω K` with
 `TauCeti.fillIn K Ω`, the union of `K` and all relatively compact connected components of `Ω \ K` in
 `Ω` (`TauCeti.holomorphicHull_eq_fill`), establishing `holomorphicHull Ω K = K ↔ IsFilledIn K Ω`.
 Specializing to `Ω = Set.univ` links `TauCeti.holomorphicHull Set.univ K = TauCeti.filledHull K`,
 polynomial convexity in dimension one, and uniform polynomial approximation on compact sets with
-connected complement.
+connected complement. Rational Runge approximation with a prescribed pole set in `OnePoint ℂ` is
+developed in `TauCeti/Analysis/Complex/Runge/Rational.lean`.
 
 ## Main results
 
@@ -47,6 +57,9 @@ connected complement.
 * `TauCeti.IsRungeCompactPair.exists_differentiableOn_norm_sub_lt` and
   `TauCeti.isRungeCompactPair_iff_approximation`: forward uniform Runge approximation of functions
   with values in a complex normed space, and the full domain-relative Runge equivalence.
+* `TauCeti.IsRungeCompactPair.exists_differentiableOn_iteratedDeriv_eq_and_norm_sub_lt`: scalar
+  Runge approximation matching prescribed finite jets of orders `k < m a` at finitely many points of
+  `U ∩ Ω`.
 * `TauCeti.differentiableOn_tsum_of_forall_norm_le_filledExhaustion`: a series of holomorphic
   functions whose `k`-th term is bounded on the `k`-th stage by a summable sequence has a
   holomorphic sum.
@@ -62,7 +75,7 @@ connected complement.
 
 ## References
 
-* A. Rainer, *Advanced Complex Analysis*, Theorem 11.1 and Lemma 11.3.
+* A. Rainer, *Advanced Complex Analysis*, Theorem 11.1, Lemma 11.3, and Theorem 11.7.
 * L. Hörmander, *An Introduction to Complex Analysis in Several Variables*, 3rd ed.,
   Theorems 1.3.1 and 1.3.9.
 * W. Rudin, *Real and Complex Analysis*, 3rd ed., Theorem 13.5.
@@ -70,7 +83,7 @@ connected complement.
 
 public section
 
-open Metric Set
+open Metric Polynomial Set
 open scoped NNReal Topology
 
 namespace TauCeti
@@ -315,5 +328,54 @@ theorem _root_.IsCompact.isConnected_compl_iff_forall_differentiableOn_exists_po
   · intro h U hU hKU f hf ε hε
     obtain ⟨p, hp_lt⟩ := h U hU hKU f hf ε hε
     exact ⟨fun z => p.eval z, p.differentiable.differentiableOn, hp_lt⟩
+
+/-- **Scalar Runge approximation with exact finite-jet interpolation.** Let `(Ω, K)` be a Runge
+compact pair, let `f : ℂ → ℂ` be holomorphic on an open neighbourhood `U` of `K`, and let `s` be a
+finite subset of `U` and `Ω` with prescribed jet orders `m : ℂ → ℕ`. For every `ε > 0`, there
+exists `g : ℂ → ℂ` holomorphic on `Ω` matching the iterated derivatives of `f` of orders `k < m a`
+at every `a ∈ s` (`iteratedDeriv k g a = iteratedDeriv k f a` for `k < m a`) while satisfying
+`‖f z - g z‖ < ε` on `K`. -/
+theorem IsRungeCompactPair.exists_differentiableOn_iteratedDeriv_eq_and_norm_sub_lt
+    {Ω K U s : Set ℂ} (hRunge : IsRungeCompactPair Ω K) (hU : IsOpen U) (hKU : K ⊆ U)
+    (hs : s.Finite) (hsU : s ⊆ U) (hsΩ : s ⊆ Ω) (m : ℂ → ℕ) {f : ℂ → ℂ}
+    (hf : DifferentiableOn ℂ f U) {ε : ℝ} (hε : 0 < ε) :
+    ∃ g : ℂ → ℂ, DifferentiableOn ℂ g Ω ∧
+      (∀ a ∈ s, ∀ k < m a, iteratedDeriv k g a = iteratedDeriv k f a) ∧
+      ∀ z ∈ K, ‖f z - g z‖ < ε := by
+  classical
+  set t : Finset ℂ := hs.toFinset
+  have htU : (t : Set ℂ) ⊆ U := hs.coe_toFinset.trans_subset hsU
+  have hf_an : AnalyticOnNhd ℂ f U := (Complex.analyticOnNhd_iff_differentiableOn hU).mpr hf
+  obtain ⟨P, F, -, hF, hP_jet, hfactor⟩ :=
+    hf_an.exists_polynomial_iteratedDeriv_eq_and_sub_eq_mul htU m
+  set Qp : ℂ[X] := ∏ x ∈ t, (X - C x) ^ m x
+  -- Approximate `F` on `K` by `G` holomorphic on `Ω`, scaled against a bound for `Qp` on `K`.
+  obtain ⟨M, hM⟩ :=
+    hRunge.isCompact.exists_bound_of_continuousOn Qp.differentiable.continuous.continuousOn
+  obtain ⟨δ, hδ, hMδ⟩ := exists_pos_mul_lt hε M
+  obtain ⟨G, hG, hFG⟩ :=
+    hRunge.exists_differentiableOn_norm_sub_lt hU hKU hF.differentiableOn hδ
+  refine ⟨fun z ↦ P.eval z + Qp.eval z * G z,
+    P.differentiableOn.add (Qp.differentiableOn.mul hG), fun a ha k hk ↦ ?_, fun z hz ↦ ?_⟩
+  · have hat : a ∈ t := hs.mem_toFinset.mpr ha
+    have hQp_an : AnalyticAt ℂ (fun z ↦ Qp.eval z) a := Qp.differentiable.analyticAt a
+    have hG_an : AnalyticAt ℂ G a := hG.analyticAt (hRunge.isOpen.mem_nhds (hsΩ ha))
+    have hQG_an : AnalyticAt ℂ (fun z ↦ Qp.eval z * G z) a := hQp_an.mul hG_an
+    have hQp_eq : (fun z ↦ Qp.eval z) = ∏ x ∈ t, (· - x) ^ m x := by
+      ext z
+      simp [Qp, eval_prod]
+    have hQG_ord : (m a : ℕ∞) ≤ analyticOrderAt (fun z ↦ Qp.eval z * G z) a := by
+      rw [analyticOrderAt_fun_mul hQp_an hG_an, hQp_eq, analyticOrderAt_prod_sub_pow,
+        ite_eq_left hat]
+      exact le_self_add
+    have hQG_zero : iteratedDeriv k (fun z ↦ Qp.eval z * G z) a = 0 :=
+      (natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero hQG_an).mp hQG_ord k hk
+    rw [iteratedDeriv_fun_add (P.differentiable.analyticAt a).contDiffAt hQG_an.contDiffAt,
+      hP_jet a hat k hk, hQG_zero, add_zero]
+  · have hsub : f z - (P.eval z + Qp.eval z * G z) = Qp.eval z * (F z - G z) := by
+      linear_combination hfactor z
+    rw [hsub, norm_mul]
+    exact (mul_le_mul (hM z hz) (hFG z hz).le (norm_nonneg _)
+      ((norm_nonneg _).trans (hM z hz))).trans_lt hMδ
 
 end TauCeti
