@@ -187,45 +187,38 @@ theorem map_extend_eq_comp_inv {Y : Over S} (hY : P Y.hom) (f : (Over.pullback j
     (Over.pullback j).map (M.extend Y hY f) = f ≫ M.genericIso.inv := by
   simp [← cancel_mono M.genericIso.hom]
 
-/-- Every section of the marked fibre extends uniquely to a section of the model when the
-base itself belongs to the test class. -/
-theorem existsUnique_section (hP : P (𝟙 S)) (x : Over.mk (𝟙 η) ⟶ A) :
-    ∃! s : Over.mk (𝟙 S) ⟶ M.model, j ≫ s.left = x.left ≫ M.genericι := by
-  let T := Over.mk (𝟙 S)
-  let q : (Over.pullback j).obj T ⟶ Over.mk (𝟙 η) :=
-    Over.homMk (pullback.snd (𝟙 S) j) (by simp [T])
-  let s := M.extend T hP (q ≫ x)
-  have hs : (Over.pullback j).map s = (q ≫ x) ≫ M.genericIso.inv :=
-    M.map_extend_eq_comp_inv hP (q ≫ x)
-  -- The inverse to the base-changed identity's projection to η has components j and 𝟙 η.
-  let i : η ⟶ ((Over.pullback j).obj T).left :=
-    pullback.lift j (𝟙 η) (by simp : j ≫ 𝟙 S = 𝟙 η ≫ j)
-  have hi : i ≫ q.left = 𝟙 η := pullback.lift_snd _ _ _
-  have hi_fst : i ≫ pullback.fst T.hom j = j := pullback.lift_fst _ _ _
-  have hs' : j ≫ s.left = x.left ≫ M.genericι := calc
-    j ≫ s.left = i ≫ ((Over.pullback j).map s).left ≫ pullback.fst M.model.hom j := by
-      simpa only [Over.pullback_map_left, pullback.lift_fst, Category.assoc] using
-        (congrArg (· ≫ s.left) hi_fst).symm
-    _ = (i ≫ q.left) ≫ x.left ≫ M.genericι := by
-      rw [hs]
-      simp only [Over.comp_left, Category.assoc, genericIso_inv_left_fst]
-    _ = _ := by rw [hi, Category.id_comp]
-  refine ⟨s, hs', fun s' h' ↦ ?_⟩
-  apply M.mappingProperty.hom_ext hP
-  apply Over.OverMorphism.ext
-  apply pullback.hom_ext
-  · have hf : pullback.fst (𝟙 S) j = pullback.snd _ _ ≫ j := by
-      simpa using pullback.condition (f := 𝟙 S) (g := j)
-    simpa only [Over.pullback_map_left, pullback.lift_fst, Over.mk_hom, hf, Category.assoc] using
-      congrArg (pullback.snd (𝟙 S) j ≫ ·) (h'.trans hs'.symm)
-  · simp
-
 /-- A morphism into a model is the extension of `f` if and only if its marked restriction is
 `f`. -/
 theorem eq_extend_iff {Y : Over S} {hY : P Y.hom} {f : (Over.pullback j).obj Y ⟶ A}
     {g : Y ⟶ M.model} :
     g = M.extend Y hY f ↔ (Over.pullback j).map g ≫ M.genericIso.hom = f := by
   rw [extend, Equiv.eq_symm_apply, homEquiv_apply]
+
+/-- A morphism extends `f` if and only if the square with the marked fibre map commutes. -/
+theorem eq_extend_iff_genericι {Y : Over S} {hY : P Y.hom}
+    {f : (Over.pullback j).obj Y ⟶ A} {g : Y ⟶ M.model} :
+    g = M.extend Y hY f ↔ pullback.fst Y.hom j ≫ g.left = f.left ≫ M.genericι := by
+  rw [M.eq_extend_iff]
+  have hfst : ((Over.pullback j).map g ≫ M.genericIso.hom).left ≫ M.genericι =
+      pullback.fst Y.hom j ≫ g.left := by
+    simp [Over.pullback_map_left]
+  rw [← hfst]
+  refine ⟨fun h ↦ by rw [h], fun h ↦ Over.OverMorphism.ext ?_⟩
+  exact M.isPullback_genericι.hom_ext h (by simp)
+
+/-- Every section of the marked fibre extends uniquely to a section of the model when the
+base itself belongs to the test class. -/
+theorem existsUnique_section (hP : P (𝟙 S)) (x : Over.mk (𝟙 η) ⟶ A) :
+    ∃! s : Over.mk (𝟙 S) ⟶ M.model, j ≫ s.left = x.left ≫ M.genericι := by
+  let q : (Over.pullback j).obj (Over.mk (𝟙 S)) ⟶ Over.mk (𝟙 η) :=
+    Over.homMk (pullback.snd (𝟙 S) j) (by simp)
+  have hf : pullback.fst (𝟙 S) j = pullback.snd (𝟙 S) j ≫ j := by
+    simpa using pullback.condition (f := 𝟙 S) (g := j)
+  have hsection (s : Over.mk (𝟙 S) ⟶ M.model) :
+      s = M.extend _ hP (q ≫ x) ↔ j ≫ s.left = x.left ≫ M.genericι := by
+    rw [M.eq_extend_iff_genericι]
+    simp only [Over.mk_hom, hf, Over.comp_left, q, Over.homMk_left, Category.assoc, cancel_epi]
+  exact ⟨_, (hsection _).1 rfl, fun s hs ↦ (hsection s).2 hs⟩
 
 /-- Uniqueness of the extension: a morphism whose marked restriction is `f` is the extension
 of `f`. -/

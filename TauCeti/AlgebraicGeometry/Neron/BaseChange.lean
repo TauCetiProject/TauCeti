@@ -117,6 +117,34 @@ theorem baseChange_genericIso_hom [Smooth g] (sq : IsPullback j' g' g j) (M : Ne
         (Over.pullback g').map M.genericIso.hom :=
   (rfl)
 
+/-- The marked fibre map after smooth base change commutes with the projections to the
+original fibre and total space. -/
+@[simp]
+theorem baseChange_genericι_comp_fst [Smooth g] (sq : IsPullback j' g' g j)
+    (M : NeronModel j A) :
+    (M.baseChange sq).genericι ≫ pullback.fst M.model.hom g =
+      pullback.fst A.hom g' ≫ M.genericι := by
+  rw [← cancel_epi ((Over.forget _).mapIso (M.baseChange sq).genericIso).hom]
+  rw [Functor.mapIso_hom, Over.forget_map]
+  refine ((M.baseChange sq).genericIso_hom_left_genericι_assoc
+    (pullback.fst M.model.hom g)).trans ?_
+  refine (Over.pullbackPullbackIsoOfComm_hom_app_left_fst sq.w M.model).symm.trans ?_
+  rw [baseChange_genericIso_hom, Over.comp_left]
+  symm
+  refine (Category.assoc _ _ _).trans (congrArg (fun k ↦
+    ((Over.pullbackPullbackIsoOfComm sq.w).hom.app M.model).left ≫ k) ?_)
+  simp [Over.pullback_map_left]
+
+-- The generated reassociation would leave the left side nested at the base-changed total space.
+/-- The marked fibre projection formula followed by a morphism out of the original total space. -/
+@[simp]
+theorem baseChange_genericι_comp_fst_assoc [Smooth g] (sq : IsPullback j' g' g j)
+    (M : NeronModel j A) {Z : Scheme.{u}} (k : M.model.left ⟶ Z) :
+    (M.baseChange sq).genericι ≫ pullback.fst M.model.hom g ≫ k =
+      pullback.fst A.hom g' ≫ M.genericι ≫ k :=
+  (Category.assoc _ _ _).symm.trans <|
+    (congrArg (· ≫ k) (baseChange_genericι_comp_fst sq M)).trans (Category.assoc _ _ _)
+
 /-- Base change commutes with extension of morphisms to Néron models: the base change of the
 extension of `φ : A ⟶ B` is the extension of the base change of `φ`. -/
 theorem pullback_map_extendHom [Smooth g] (sq : IsPullback j' g' g j) (M : NeronModel j A)
