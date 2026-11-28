@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Surface.Paraboloid.Basic
 import TauCeti.Analysis.InnerProductSpace.Normalize
+import TauCeti.Analysis.InnerProductSpace.RangeProjection
+import TauCeti.Analysis.Normed.Module.Normalize
 
 /-!
 # The upward normal fields of the paraboloid
@@ -95,10 +97,10 @@ theorem contDiff_paraboloidNormal {n : ℕ∞ω} : ContDiff ℝ n paraboloidNorm
 /-- The upward normal spans the whole graph normal space at every Cartesian point. -/
 theorem orthogonal_range_fderiv_paraboloidGraph_eq_span_paraboloidNormal (x : V₂) :
     (fderiv ℝ paraboloidGraph x).rangeᗮ = Submodule.span ℝ {paraboloidNormal x} := by
-  have hdim := (fderiv ℝ paraboloidGraph x).range.finrank_add_finrank_orthogonal
-  have hrank := LinearMap.finrank_range_of_inj (fderiv_paraboloidGraph_injective x)
-  norm_num at hdim hrank
-  exact eq_span_singleton_of_mem_of_finrank_eq_one (by omega)
+  have hdim : Module.finrank ℝ (fderiv ℝ paraboloidGraph x).rangeᗮ = 1 := by
+    simpa using LinearMap.finrank_orthogonal_range_of_injective
+      (A := (fderiv ℝ paraboloidGraph x).toLinearMap) (fderiv_paraboloidGraph_injective x)
+  exact eq_span_singleton_of_mem_of_finrank_eq_one hdim
     (paraboloidNormal_mem_orthogonal_range_fderiv_paraboloidGraph x) (paraboloidNormal_ne_zero x)
 
 /-- The upward unit normal to the Cartesian paraboloid. -/
@@ -152,22 +154,11 @@ unit normal. -/
 theorem eq_paraboloidUnitNormal_iff (x : V₂) (v : E₃) :
     v = paraboloidUnitNormal x ↔
       ‖v‖ = 1 ∧ v ∈ (fderiv ℝ paraboloidGraph x).rangeᗮ ∧ 0 < v 2 := by
-  constructor
-  · rintro rfl
-    refine ⟨norm_paraboloidUnitNormal x,
-      paraboloidUnitNormal_mem_orthogonal_range_fderiv_paraboloidGraph x, ?_⟩
-    rw [paraboloidUnitNormal_apply_two]
-    positivity
-  · rintro ⟨hnorm, hmem, hpos⟩
-    rw [orthogonal_range_fderiv_paraboloidGraph_eq_span_paraboloidNormal,
-      Submodule.mem_span_singleton] at hmem
-    obtain ⟨c, rfl⟩ := hmem
-    have hc : 0 < c := by simpa using hpos
-    calc
-      c • paraboloidNormal x = NormedSpace.normalize (c • paraboloidNormal x) :=
-        (NormedSpace.normalize_eq_self_of_norm_eq_one hnorm).symm
-      _ = paraboloidUnitNormal x := by
-        rw [paraboloidUnitNormal, NormedSpace.normalize_smul_of_pos hc]
+  simpa only [paraboloidUnitNormal,
+    orthogonal_range_fderiv_paraboloidGraph_eq_span_paraboloidNormal,
+    ContinuousLinearMap.coe_coe, PiLp.proj_apply] using
+    (NormedSpace.eq_normalize_iff_of_apply_pos (u := paraboloidNormal x) (v := v)
+      (ℓ := (PiLp.proj (𝕜 := ℝ) 2 (fun _ : Fin 3 ↦ ℝ) 2).toLinearMap) (by simp))
 
 /-- The upward unit normal is smooth at every order, including analytic order. -/
 @[fun_prop]
