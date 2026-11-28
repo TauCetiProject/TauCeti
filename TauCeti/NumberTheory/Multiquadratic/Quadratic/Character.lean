@@ -7,8 +7,10 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Character
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Ramification
+import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Values
 import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.SplitPrime
 import TauCeti.NumberTheory.NumberField.Discriminant.Basic
+import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import TauCeti.NumberTheory.NumberField.Quadratic.Splitting
 import TauCeti.NumberTheory.RamificationInertia.Inert
 
@@ -33,7 +35,11 @@ unramified `D = d ≡ 1 (mod 4)`, so the splitting law at `2`
 primes are those dividing `D`, where `χ_D` vanishes.
 
 In ideal-theoretic form, `χ_D(p) = 1` makes `p 𝓞 K` the product of two distinct primes and
-`χ_D(p) = -1` makes `p 𝓞 K` itself prime, since `p` is then unramified.
+`χ_D(p) = -1` makes `p 𝓞 K` itself prime, since `p` is then unramified. Accordingly, a prime of
+`𝓞 K` above `p` has absolute norm `p²` when `χ_D(p) = -1` and `p` otherwise.
+
+When `D` is the odd prime discriminant `q* = ±q`, the character `χ_D` is the Legendre symbol
+`(· / q)`.
 
 These values determine the local factors in the factorization `ζ_K(s) = ζ(s) L(s, χ_D)` of the
 Dedekind zeta function of `K`.
@@ -54,6 +60,11 @@ Dedekind zeta function of `K`.
   if `χ_D(p) = 1`, then `p 𝓞 K = 𝔭 𝔮` for distinct primes `𝔭 ≠ 𝔮`.
 * `TauCeti.Multiquadratic.isPrime_span_natCast_of_fundamentalDiscriminantChar_discr_eq_neg_one`:
   if `χ_D(p) = -1`, then `p 𝓞 K` is prime.
+* `TauCeti.Multiquadratic.absNorm_eq_sq_of_fundamentalDiscriminantChar_discr_eq_neg_one`,
+  `TauCeti.Multiquadratic.absNorm_eq_of_fundamentalDiscriminantChar_discr_ne_neg_one`: a prime of
+  `𝓞 K` above `p` has norm `p²` if `χ_D(p) = -1` and `p` otherwise.
+* `TauCeti.Multiquadratic.fundamentalDiscriminantChar_discr_eq_legendreSym`: if `D = q*` for an
+  odd prime `q`, then `χ_D = (· / q)`.
 * `TauCeti.Multiquadratic.ringHomComp_fundamentalDiscriminantChar_discr_ne_one`: the complex
   character `χ_D` is nontrivial.
 * `TauCeti.Multiquadratic.fundamentalDiscriminantChar_discr_apply_eq_of_algEquiv`: isomorphic
@@ -222,6 +233,47 @@ theorem isPrime_span_natCast_of_fundamentalDiscriminantChar_discr_eq_neg_one
     hone (Algebra.IsUnramifiedIn.ramificationIdx_eq_one (R := ℤ) hun hmem.2)
   simp only [Ideal.map_span, Set.image_singleton, map_natCast] at hmap
   exact hmap ▸ hmem.1
+
+/-- **The norm of an inert prime.** For a quadratic field `K` with discriminant `D`, if
+`χ_D(p) = -1`, then the prime of `𝓞 K` above `p` has absolute norm `p²`. -/
+theorem absNorm_eq_sq_of_fundamentalDiscriminantChar_discr_eq_neg_one (hK : finrank ℚ K = 2)
+    (p : ℕ) [Fact p.Prime] (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime] [𝔭.LiesOver (span {(p : ℤ)})]
+    (h : fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) p = -1) :
+    absNorm 𝔭 = p ^ 2 := by
+  have hun := (isUnramifiedIn_iff_fundamentalDiscriminantChar_discr_ne_zero hK p).mpr
+    (by rw [h]; exact neg_ne_zero.mpr one_ne_zero)
+  have hone := ((fundamentalDiscriminantChar_discr_eq_neg_one_iff hK p).mp h).2
+  obtain ⟨𝔮, h𝔮⟩ := Set.ncard_eq_one.mp hone
+  have h𝔭 : 𝔭 ∈ (span {(p : ℤ)}).primesOver (𝓞 K) := ⟨‹_›, ‹_›⟩
+  rw [h𝔮, Set.mem_singleton_iff] at h𝔭
+  have hT : (span {(p : ℤ)}).primesOver (𝓞 K) = {𝔭} := h𝔭 ▸ h𝔮
+  rw [TauCeti.NumberField.absNorm_eq_pow_finrank_of_primesOver_eq_singleton 𝔭 hT
+    (Algebra.IsUnramifiedIn.ramificationIdx_eq_one (R := ℤ) hun ‹_›), hK]
+
+/-- **The norm of a split or ramified prime.** For a quadratic field `K` with discriminant `D`,
+if `χ_D(p) ≠ -1`, then every prime of `𝓞 K` above `p` has absolute norm `p`. -/
+theorem absNorm_eq_of_fundamentalDiscriminantChar_discr_ne_neg_one (hK : finrank ℚ K = 2)
+    (p : ℕ) [Fact p.Prime] (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime] [𝔭.LiesOver (span {(p : ℤ)})]
+    (h : fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) p ≠ -1) :
+    absNorm 𝔭 = p := by
+  by_cases hram : p ∈ ramifiedPrimes K
+  · exact NumberField.absNorm_eq_of_mem_ramifiedPrimes hK hram 𝔭
+  · refine Ideal.absNorm_eq_of_ncard_primesOver_eq_finrank 𝔭 ?_
+    rw [hK, ← fundamentalDiscriminantChar_discr_eq_one_iff hK p]
+    rcases (fundamentalDiscriminantChar_isQuadratic _ p).resolve_left
+      (mt (fundamentalDiscriminantChar_discr_eq_zero_iff hK p).mp hram) with h' | h'
+    · exact h'
+    · exact absurd h' h
+
+/-- **The character of a prime-discriminant field is a Legendre symbol.** If a quadratic field
+`K` has discriminant the odd prime discriminant `q* = ±q`, then `χ_D(n) = (n / q)`. -/
+theorem fundamentalDiscriminantChar_discr_eq_legendreSym (hK : finrank ℚ K = 2) {q : ℕ}
+    [Fact q.Prime] (hq : Odd q) (hD : NumberField.discr K = oddPrimeDiscriminant q) (n : ℤ) :
+    fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) n =
+      legendreSym q n := by
+  rw [fundamentalDiscriminantChar_intCast, hD, ← fundamentalDiscriminantChar_intCast
+    (isPrimeDiscriminant_oddPrimeDiscriminant Fact.out hq).isFundamentalDiscr,
+    fundamentalDiscriminantChar_oddPrimeDiscriminant hq]
 
 /-- The complex quadratic character `χ_D` of a quadratic field is nontrivial: the discriminant of
 a quadratic field is not `1`. -/
