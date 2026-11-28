@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basis
-public import TauCeti.RingTheory.AdicCompletion.ScalarIdeal
+public import TauCeti.RingTheory.AdicCompletion.Filtered
 
 import TauCeti.LinearAlgebra.Basis.ExtendedIdeal
 import TauCeti.RingTheory.Ideal.Operations
@@ -110,6 +110,6 @@ theorem toCompletionₐ_injective [Module.Free R L] [IsHausdorff I R] :
     IsWellOrder.linearOrder WellOrderingRel
   let : Module.Free R U := Module.Free.of_basis b.pbwBasis
   let : IsHausdorff I U := IsHausdorff.of_free I U
-  exact TauCeti.toCompletionₐ_injective_of_isHausdorff I
+  exact TauCeti.extendedIdealToCompletionₐ_injective_of_isHausdorff I
 
 end TauCeti.UniversalEnvelopingAlgebra
