@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.FieldTheory.Finite.GaloisField
 public import TauCeti.AlgebraicGeometry.Sites.Etale.GeometricPoint.Frobenius
 public import TauCeti.AlgebraicGeometry.Sites.Etale.GeometricPoint.Functoriality
-public import TauCeti.FieldTheory.RatFunc.PowerTower
 import TauCeti.CategoryTheory.Aut.Basic
 
 /-!
@@ -28,11 +27,11 @@ Galois actions on stalks, and the stalk Frobenius:
   `stalkGeometricFrobenius` acts by `ζ ↦ ζ ^ 3` (since `3 · 2 ≡ 1 [MOD 5]`),
   `stalkArithmeticFrobenius` acts by `ζ ↦ ζ ^ 2`, and the two automorphisms are distinct on this
   stalk.
-* **Rational function fields `K(X)`**: the morphism `algClosureToSepClosure` from
-  `Spec (AlgebraicClosure (RatFunc K))` to `Spec (SeparableClosure (RatFunc K))` is an isomorphism
-  in `GeometricPoint` if and only if `CharZero K` (in particular, it is not an isomorphism for
-  `𝔽_p(t)`); see `isIso_toPointFunctor_map` for why every morphism induces an isomorphism of
-  points and stalks.
+* **The imperfect function field `𝔽_p(t)`**: by `isIso_algClosureToSepClosure_ratFunc_iff`, the
+  morphism `algClosureToSepClosure` from `Spec (AlgebraicClosure (RatFunc (ZMod p)))` to
+  `Spec (SeparableClosure (RatFunc (ZMod p)))` is not an isomorphism in `GeometricPoint`
+  (`not_isIso_algClosureToSepClosure_ratFunc_zmod`); see `isIso_toPointFunctor_map` for why
+  every morphism induces an isomorphism of points and stalks.
 -/
 
 public section
@@ -166,6 +165,10 @@ end QuadraticFiniteField
 
 section FifthRootsOverF2
 
+/-- `5` is a unit in `ZMod 2`. -/
+lemma isUnit_five_zmod_two : IsUnit (5 : CommRingCat.of (ZMod 2)) :=
+  isUnit_iff_ne_zero.mpr (by decide)
+
 variable (kbar : Type) [Field kbar] [Algebra (ZMod 2) kbar] [PerfectField kbar] [IsSepClosed kbar]
 
 /-- **Stalk Frobenius on `μ_5` over `Spec 𝔽_2`.** Under the identification of the stalk of the
@@ -175,17 +178,17 @@ theorem kummerCoverStalkEquivRootsOfUnity_stalkGeometricFrobenius_zmod_two_five
     (z : (Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of (ZMod 2)))) kbar).hom).sheafFiber.obj
       ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod 2)))).obj
         (FiniteEtaleScheme.kummerCover (1 : (CommRingCat.of (ZMod 2))ˣ) 5
-          (isUnit_iff_ne_zero.mpr (by decide))))) :
+          isUnit_five_zmod_two))) :
     kummerCoverStalkEquivRootsOfUnity (ZMod 2) kbar (1 : (CommRingCat.of (ZMod 2))ˣ) 5
-        (isUnit_iff_ne_zero.mpr (by decide)) (map_one _)
+        isUnit_five_zmod_two (map_one _)
         ((stalkGeometricFrobenius (𝟙 (Spec (.of (ZMod 2)))) kbar).asIso.hom.app
           ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod 2)))).obj
             (FiniteEtaleScheme.kummerCover (1 : (CommRingCat.of (ZMod 2))ˣ) 5
-              (isUnit_iff_ne_zero.mpr (by decide)))) z) =
+              isUnit_five_zmod_two)) z) =
       (kummerCoverStalkEquivRootsOfUnity (ZMod 2) kbar (1 : (CommRingCat.of (ZMod 2))ˣ) 5
-        (isUnit_iff_ne_zero.mpr (by decide)) (map_one _) z) ^ 3 :=
+        isUnit_five_zmod_two (map_one _) z) ^ 3 :=
   kummerCoverStalkEquivRootsOfUnity_stalkGeometricFrobenius_of_mul_modEq (ZMod 2) kbar
-    (1 : (CommRingCat.of (ZMod 2))ˣ) 5 (isUnit_iff_ne_zero.mpr (by decide)) (map_one _)
+    (1 : (CommRingCat.of (ZMod 2))ˣ) 5 isUnit_five_zmod_two (map_one _)
     (by rw [Nat.card_zmod]; decide) z
 
 /-- On the stalk `rootsOfUnity 5 kbar` of `μ_5` over `Spec 𝔽_2`, `stalkArithmeticFrobenius` acts
@@ -194,18 +197,18 @@ theorem kummerCoverStalkEquivRootsOfUnity_stalkArithmeticFrobenius_zmod_two_five
     (z : (Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of (ZMod 2)))) kbar).hom).sheafFiber.obj
       ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod 2)))).obj
         (FiniteEtaleScheme.kummerCover (1 : (CommRingCat.of (ZMod 2))ˣ) 5
-          (isUnit_iff_ne_zero.mpr (by decide))))) :
+          isUnit_five_zmod_two))) :
     kummerCoverStalkEquivRootsOfUnity (ZMod 2) kbar (1 : (CommRingCat.of (ZMod 2))ˣ) 5
-        (isUnit_iff_ne_zero.mpr (by decide)) (map_one _)
+        isUnit_five_zmod_two (map_one _)
         ((stalkArithmeticFrobenius (𝟙 (Spec (.of (ZMod 2)))) kbar).asIso.hom.app
           ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod 2)))).obj
             (FiniteEtaleScheme.kummerCover (1 : (CommRingCat.of (ZMod 2))ˣ) 5
-              (isUnit_iff_ne_zero.mpr (by decide)))) z) =
+              isUnit_five_zmod_two)) z) =
       (kummerCoverStalkEquivRootsOfUnity (ZMod 2) kbar (1 : (CommRingCat.of (ZMod 2))ˣ) 5
-        (isUnit_iff_ne_zero.mpr (by decide)) (map_one _) z) ^ 2 := by
+        isUnit_five_zmod_two (map_one _) z) ^ 2 := by
   simpa [Nat.card_zmod] using
     kummerCoverStalkEquivRootsOfUnity_stalkArithmeticFrobenius (ZMod 2) kbar
-      (1 : (CommRingCat.of (ZMod 2))ˣ) 5 (isUnit_iff_ne_zero.mpr (by decide)) (map_one _) z
+      (1 : (CommRingCat.of (ZMod 2))ˣ) 5 isUnit_five_zmod_two (map_one _) z
 
 /-- On `μ_5` over `Spec 𝔽_2`, `stalkGeometricFrobenius` (`ζ ↦ ζ ^ 3`) and `stalkArithmeticFrobenius`
 (`ζ ↦ ζ ^ 2`) are distinct automorphisms of the stalk. -/
@@ -213,14 +216,14 @@ theorem stalkGeometricFrobenius_ne_stalkArithmeticFrobenius_zmod_two_five :
     (stalkGeometricFrobenius (𝟙 (Spec (.of (ZMod 2)))) kbar).asIso.hom.app
         ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod 2)))).obj
           (FiniteEtaleScheme.kummerCover (1 : (CommRingCat.of (ZMod 2))ˣ) 5
-            (isUnit_iff_ne_zero.mpr (by decide)))) ≠
+            isUnit_five_zmod_two)) ≠
       (stalkArithmeticFrobenius (𝟙 (Spec (.of (ZMod 2)))) kbar).asIso.hom.app
         ((FiniteEtaleScheme.toSheaf (Spec (.of (ZMod 2)))).obj
           (FiniteEtaleScheme.kummerCover (1 : (CommRingCat.of (ZMod 2))ˣ) 5
-            (isUnit_iff_ne_zero.mpr (by decide)))) := by
+            isUnit_five_zmod_two)) := by
   intro heq
   let e := kummerCoverStalkEquivRootsOfUnity (ZMod 2) kbar (1 : (CommRingCat.of (ZMod 2))ˣ) 5
-    (isUnit_iff_ne_zero.mpr (by decide)) (map_one _)
+    isUnit_five_zmod_two (map_one _)
   have hone (ζ : rootsOfUnity 5 kbar) : ζ = 1 := by
     have h32 : ζ ^ 3 = ζ ^ 2 := by
       have hstep := congrArg e (congrArg (fun g ↦ g (e.symm ζ)) heq)
@@ -228,28 +231,22 @@ theorem stalkGeometricFrobenius_ne_stalkArithmeticFrobenius_zmod_two_five :
         kummerCoverStalkEquivRootsOfUnity_stalkArithmeticFrobenius_zmod_two_five,
         Equiv.apply_symm_apply] at hstep
       exact hstep
-    exact mul_left_cancel (a := ζ ^ 2) (by rw [← pow_succ, mul_one, h32])
+    have hmul : ζ ^ 2 * ζ = ζ ^ 2 * 1 := by
+      calc ζ ^ 2 * ζ = ζ ^ (2 + 1) := (pow_succ ζ 2).symm
+        _ = ζ ^ 3 := by norm_num
+        _ = ζ ^ 2 * 1 := by rw [h32, mul_one]
+    exact mul_left_cancel hmul
   let _ : Unique (rootsOfUnity 5 kbar) := ⟨⟨1⟩, hone⟩
   have hcard : Nat.card (rootsOfUnity 5 kbar) = 5 :=
     (Nat.card_congr e.symm).trans
       (natCard_kummerCoverStalk (ZMod 2) kbar (1 : (CommRingCat.of (ZMod 2))ˣ) 5
-        (isUnit_iff_ne_zero.mpr (by decide)))
+        isUnit_five_zmod_two)
   rw [Nat.card_unique] at hcard
   exact absurd hcard (by decide)
 
 end FifthRootsOverF2
 
 section ImperfectFunctionField
-
-/-- For any field `K` and any `a : Spec (.of (RatFunc K)) ⟶ S`, the morphism
-`algClosureToSepClosure a` is an isomorphism in `GeometricPoint S` if and only if `K` has
-characteristic zero (whereas `(toPointFunctor S).map (algClosureToSepClosure a)` is always an
-isomorphism by `isIso_toPointFunctor_map`). -/
-theorem isIso_algClosureToSepClosure_ratFunc_iff {S : Scheme.{u}} {K : Type u} [Field K]
-    (a : Spec (.of (RatFunc K)) ⟶ S) :
-    IsIso (algClosureToSepClosure a) ↔ CharZero K :=
-  (isIso_algClosureToSepClosure_iff_perfectField a).trans
-    (TauCeti.RatFunc.perfectField_iff_charZero K)
 
 /-- For `k = 𝔽_p(t)`, the morphism `Spec (AlgebraicClosure k) ⟶ Spec (SeparableClosure k)` over
 `Spec k` is not an isomorphism in `GeometricPoint (Spec (.of (RatFunc (ZMod p))))` (though by

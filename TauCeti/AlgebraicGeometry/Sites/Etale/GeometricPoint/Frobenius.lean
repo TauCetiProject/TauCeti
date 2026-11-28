@@ -103,10 +103,24 @@ noncomputable def stalkArithmeticFrobenius :
     Aut ((Scheme.pointSmallEtale (ofOver a kbar).hom).sheafFiber (A := A)) :=
   ofOverGaloisStalkAction a kbar (TauCeti.FiniteField.frobeniusAlgEquivOfFinite k kbar)
 
+/-- `stalkGeometricFrobenius a kbar` is the Galois stalk action of the geometric Frobenius
+`(TauCeti.FiniteField.frobeniusAlgEquivOfFinite k kbar).symm`. -/
+theorem stalkGeometricFrobenius_eq :
+    stalkGeometricFrobenius a kbar (A := A) =
+      ofOverGaloisStalkAction a kbar (TauCeti.FiniteField.frobeniusAlgEquivOfFinite k kbar).symm :=
+  (rfl)
+
+/-- `stalkArithmeticFrobenius a kbar` is the Galois stalk action of the arithmetic Frobenius
+`TauCeti.FiniteField.frobeniusAlgEquivOfFinite k kbar`. -/
+theorem stalkArithmeticFrobenius_eq :
+    stalkArithmeticFrobenius a kbar (A := A) =
+      ofOverGaloisStalkAction a kbar (TauCeti.FiniteField.frobeniusAlgEquivOfFinite k kbar) :=
+  (rfl)
+
 /-- The arithmetic Frobenius acts on stalks by the inverse of `stalkGeometricFrobenius`. -/
 theorem stalkArithmeticFrobenius_eq_inv :
     stalkArithmeticFrobenius a kbar (A := A) = (stalkGeometricFrobenius a kbar (A := A))⁻¹ := by
-  rw [stalkArithmeticFrobenius, stalkGeometricFrobenius, ← map_inv, AlgEquiv.aut_inv,
+  rw [stalkArithmeticFrobenius_eq, stalkGeometricFrobenius_eq, ← map_inv, AlgEquiv.aut_inv,
     AlgEquiv.symm_symm]
 
 /-- `stalkGeometricFrobenius` is the inverse of `stalkArithmeticFrobenius`. -/
@@ -133,7 +147,7 @@ theorem stalkGeometricFrobenius_asIso_hom :
       ((toPointFunctor S).map
         (homOfAlgHom a
           (TauCeti.FiniteField.frobeniusAlgEquivOfFinite k kbar).symm.toAlgHom)).sheafFiber := by
-  rw [stalkGeometricFrobenius, ofOverGaloisStalkAction_asIso_hom]
+  rw [stalkGeometricFrobenius_eq, ofOverGaloisStalkAction_asIso_hom]
 
 /-- The forward natural transformation of `stalkArithmeticFrobenius` is the stalk map of
 arithmetic Frobenius. -/
@@ -142,7 +156,7 @@ theorem stalkArithmeticFrobenius_asIso_hom :
       ((toPointFunctor S).map
         (homOfAlgHom a
           (TauCeti.FiniteField.frobeniusAlgEquivOfFinite k kbar).toAlgHom)).sheafFiber := by
-  rw [stalkArithmeticFrobenius, ofOverGaloisStalkAction_asIso_hom]
+  rw [stalkArithmeticFrobenius_eq, ofOverGaloisStalkAction_asIso_hom]
 
 /-- On any sheaf of sets, `stalkGeometricFrobenius` followed by `stalkArithmeticFrobenius` is the
 identity. -/
@@ -186,7 +200,7 @@ theorem toSheafSpecStalkEquiv_stalkArithmeticFrobenius (B : CommAlgCat.FiniteEta
           ((FiniteEtaleScheme.toSheaf (Spec (.of k))).obj
             ((FiniteEtaleScheme.spec (.of k)).obj (op B))) z) b =
       (toSheafSpecStalkEquiv k kbar B z b) ^ Nat.card k := by
-  rw [stalkArithmeticFrobenius, toSheafSpecStalkEquiv_ofOverGaloisStalkAction, AlgHom.comp_apply,
+  rw [stalkArithmeticFrobenius_eq, toSheafSpecStalkEquiv_ofOverGaloisStalkAction, AlgHom.comp_apply,
     AlgEquiv.coe_toAlgHom, TauCeti.FiniteField.frobeniusAlgEquivOfFinite_apply]
 
 /-- On the stalk of `FiniteEtaleScheme.toSheaf` of `Spec B`, raising the coordinate values after
@@ -203,7 +217,7 @@ theorem toSheafSpecStalkEquiv_stalkGeometricFrobenius_apply_pow_card
           ((FiniteEtaleScheme.toSheaf (Spec (.of k))).obj
             ((FiniteEtaleScheme.spec (.of k)).obj (op B))) z) b) ^ Nat.card k =
       toSheafSpecStalkEquiv k kbar B z b := by
-  rw [stalkGeometricFrobenius, toSheafSpecStalkEquiv_ofOverGaloisStalkAction, AlgHom.comp_apply,
+  rw [stalkGeometricFrobenius_eq, toSheafSpecStalkEquiv_ofOverGaloisStalkAction, AlgHom.comp_apply,
     AlgEquiv.coe_toAlgHom, TauCeti.FiniteField.frobeniusAlgEquivOfFinite_symm_apply_pow]
 
 /-- On the stalk of `FiniteEtaleScheme.toSheaf` of any finite étale `k`-scheme `X`,
@@ -219,7 +233,7 @@ theorem toSheafStalkEquiv_stalkArithmeticFrobenius
         ((stalkArithmeticFrobenius (𝟙 (Spec (.of k))) kbar).asIso.hom.app
           ((FiniteEtaleScheme.toSheaf (Spec (.of k))).obj X) z) b =
       (toSheafStalkEquiv k kbar X z b) ^ Nat.card k := by
-  rw [stalkArithmeticFrobenius, toSheafStalkEquiv_ofOverGaloisStalkAction, AlgHom.comp_apply,
+  rw [stalkArithmeticFrobenius_eq, toSheafStalkEquiv_ofOverGaloisStalkAction, AlgHom.comp_apply,
     AlgEquiv.coe_toAlgHom, TauCeti.FiniteField.frobeniusAlgEquivOfFinite_apply]
 
 /-- On the stalk of `FiniteEtaleScheme.toSheaf` of any finite étale `k`-scheme `X`, raising the
@@ -235,7 +249,7 @@ theorem toSheafStalkEquiv_stalkGeometricFrobenius_apply_pow_card
         ((stalkGeometricFrobenius (𝟙 (Spec (.of k))) kbar).asIso.hom.app
           ((FiniteEtaleScheme.toSheaf (Spec (.of k))).obj X) z) b) ^ Nat.card k =
       toSheafStalkEquiv k kbar X z b := by
-  rw [stalkGeometricFrobenius, toSheafStalkEquiv_ofOverGaloisStalkAction, AlgHom.comp_apply,
+  rw [stalkGeometricFrobenius_eq, toSheafStalkEquiv_ofOverGaloisStalkAction, AlgHom.comp_apply,
     AlgEquiv.coe_toAlgHom, TauCeti.FiniteField.frobeniusAlgEquivOfFinite_symm_apply_pow]
 
 end FiniteEtaleAction
@@ -261,7 +275,7 @@ theorem kummerCoverStalkEquivRootsOfUnity_stalkArithmeticFrobenius
       (kummerCoverStalkEquivRootsOfUnity k kbar t n hn h z) ^ Nat.card k := by
   apply Subtype.ext
   apply Units.ext
-  rw [stalkArithmeticFrobenius, coe_kummerCoverStalkEquivRootsOfUnity_ofOverGaloisStalkAction,
+  rw [stalkArithmeticFrobenius_eq, coe_kummerCoverStalkEquivRootsOfUnity_ofOverGaloisStalkAction,
     TauCeti.FiniteField.frobeniusAlgEquivOfFinite_apply, Subgroup.coe_pow,
     Units.val_pow_eq_pow_val]
 
@@ -278,7 +292,7 @@ theorem kummerCoverStalkEquivRootsOfUnity_stalkGeometricFrobenius_apply_pow_card
       kummerCoverStalkEquivRootsOfUnity k kbar t n hn h z := by
   apply Subtype.ext
   apply Units.ext
-  rw [Subgroup.coe_pow, Units.val_pow_eq_pow_val, stalkGeometricFrobenius,
+  rw [Subgroup.coe_pow, Units.val_pow_eq_pow_val, stalkGeometricFrobenius_eq,
     coe_kummerCoverStalkEquivRootsOfUnity_ofOverGaloisStalkAction,
     TauCeti.FiniteField.frobeniusAlgEquivOfFinite_symm_apply_pow]
 
@@ -301,12 +315,8 @@ theorem kummerCoverStalkEquivRootsOfUnity_stalkGeometricFrobenius_of_mul_modEq
         (FiniteEtaleScheme.kummerCover t n hn)) z)
   have hpow : ζ' ^ Nat.card k = kummerCoverStalkEquivRootsOfUnity k kbar t n hn h z :=
     kummerCoverStalkEquivRootsOfUnity_stalkGeometricFrobenius_apply_pow_card k kbar t n hn h z
-  have hord : orderOf ζ' ∣ n := orderOf_dvd_of_pow_eq_one (by
-    apply Subtype.ext
-    rw [Subgroup.coe_pow, Subgroup.coe_one]
-    apply Units.ext
-    rw [Units.val_pow_eq_pow_val, Units.val_one]
-    exact (mem_rootsOfUnity' n _).mp ζ'.prop)
+  have hord : orderOf ζ' ∣ n :=
+    orderOf_dvd_of_pow_eq_one (Subtype.ext ((mem_rootsOfUnity n _).mp ζ'.prop))
   have hmod : Nat.card k * m ≡ 1 [MOD orderOf ζ'] := by
     rw [mul_comm]
     exact hm.of_dvd hord
@@ -336,7 +346,7 @@ theorem stalkArithmeticFrobenius_pow_app_eq_iff (m : ℕ)
             (op (CommAlgCat.FiniteEtale.ofSeparableFieldExt k L)))) z = z ↔
       Module.finrank k L ∣ m := by
   let B := CommAlgCat.FiniteEtale.ofSeparableFieldExt k L
-  rw [stalkArithmeticFrobenius, ← map_pow, ← (toSheafSpecStalkEquiv k kbar B).injective.eq_iff,
+  rw [stalkArithmeticFrobenius_eq, ← map_pow, ← (toSheafSpecStalkEquiv k kbar B).injective.eq_iff,
     toSheafSpecStalkEquiv_ofOverGaloisStalkAction]
   let φ : L →ₐ[k] kbar := toSheafSpecStalkEquiv k kbar B z
   exact TauCeti.FiniteField.frobeniusAlgEquivOfFinite_pow_comp_eq_iff k kbar φ m

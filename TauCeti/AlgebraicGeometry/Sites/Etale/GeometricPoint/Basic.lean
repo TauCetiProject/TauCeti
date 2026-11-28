@@ -222,7 +222,7 @@ theorem Hom.ringHom_comp {s₁ s₂ s₃ : GeometricPoint S} (f : s₁ ⟶ s₂)
       Hom.SpecMap_ringHom, Hom.SpecMap_ringHom])
 
 /-- A morphism of geometric points lies over a single scheme-theoretic point of `S`. -/
-theorem Hom.hom_default_eq {s₁ s₂ : GeometricPoint S} (f : s₁ ⟶ s₂) :
+theorem hom_default_eq_of_hom {s₁ s₂ : GeometricPoint S} (f : s₁ ⟶ s₂) :
     s₁.hom default = s₂.hom default := by
   rw [← f.w, Scheme.Hom.comp_apply, Subsingleton.elim (f.hom default) default]
 

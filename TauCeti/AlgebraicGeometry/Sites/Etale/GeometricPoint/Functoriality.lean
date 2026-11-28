@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Sites.Etale.GeometricPoint.Galois
 public import TauCeti.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.FieldTheory.IsSepClosed
+public import TauCeti.FieldTheory.RatFunc.PowerTower
 
 /-!
 # Pushforward functoriality and algebraic-closure comparisons
@@ -225,6 +226,16 @@ theorem isIso_algClosureToSepClosure_iff_perfectField {K : Type u} [Field K]
     Algebra.IsAlgebraic.tower_top (K := K) (L := SeparableClosure K) (A := AlgebraicClosure K)
   rw [← IsAlgClosed.iff_algebraMap_surjective (SeparableClosure K) (AlgebraicClosure K),
     IsSepClosed.isAlgClosed_iff_perfectField K (SeparableClosure K)]
+
+/-- For any field `K` and any `a : Spec (.of (RatFunc K)) ⟶ S`, the morphism
+`algClosureToSepClosure a` is an isomorphism in `GeometricPoint S` if and only if `K` has
+characteristic zero (whereas `(toPointFunctor S).map (algClosureToSepClosure a)` is always an
+isomorphism by `isIso_toPointFunctor_map`). -/
+theorem isIso_algClosureToSepClosure_ratFunc_iff {K : Type u} [Field K]
+    (a : Spec (.of (RatFunc K)) ⟶ S) :
+    IsIso (algClosureToSepClosure a) ↔ CharZero K :=
+  (isIso_algClosureToSepClosure_iff_perfectField a).trans
+    (TauCeti.RatFunc.perfectField_iff_charZero K)
 
 end Closures
 
