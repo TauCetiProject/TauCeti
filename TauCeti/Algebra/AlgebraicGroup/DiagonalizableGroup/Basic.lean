@@ -117,7 +117,7 @@ theorem pointEquiv_apply (f : MonoidAlgebra R G →ₐ[R] A) :
 @[simp]
 theorem pointEquiv_symm_apply (χ : G →* Aˣ) :
     (pointEquiv (R := R) (A := A) (G := G)).symm χ = point χ :=
-  (pointEquiv (R := R) (A := A) (G := G)).symm_apply_eq.mpr (charOfPoint_point χ).symm
+  rfl
 
 /-- Reading off characters turns the convolution product of points into the pointwise
 product of characters. -/

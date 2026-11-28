@@ -43,7 +43,7 @@ variable [CommSemiring R] [CommSemiring A] [Algebra R A] [CommGroup G]
 /-- The `R[G]`-point of the diagonalizable group `D(G)` corresponding to a character of `G`.
 It is the algebra map extending `χ` via the universal property of the group algebra; it sends
 `single g r` to `r • χ g`. -/
-noncomputable def point (χ : G →* Aˣ) : MonoidAlgebra R G →ₐ[R] A :=
+@[expose] noncomputable def point (χ : G →* Aˣ) : MonoidAlgebra R G →ₐ[R] A :=
   MonoidAlgebra.lift R A G ((Units.coeHom A).comp χ)
 
 /-- The point associated to a character sends `single g r` to `r • χ g`. -/

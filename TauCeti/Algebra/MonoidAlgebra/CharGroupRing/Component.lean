@@ -415,7 +415,8 @@ theorem componentEquiv_symm_apply (hPH : P.IsComplement' H) (χ : H →* Oˣ)
       proj {ψ : G →* Oˣ | ψ.comp H.subtype = χ}
         (MonoidAlgebra.mapDomainAlgHom O O P.subtype y) := by
   apply (componentEquiv hPH χ).injective
-  simp [componentEquiv_proj]
+  rw [AlgEquiv.apply_symm_apply, componentEquiv_proj,
+    MonoidAlgebra.componentProj_mapDomainAlgHom_left]
 
 /-- Evaluating `componentEquiv hPH χ y` at a character `φ : P →* Oˣ` reads off the
 `hPH.extendChar φ χ`-coordinate of `y`. -/

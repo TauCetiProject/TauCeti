@@ -83,12 +83,8 @@ at the restricted character `ψ.comp f`. -/
 theorem charEval_mapDomain {H : Type*} [CommGroup H] (ψ : G →* Oˣ) (f : H →* G)
     (y : MonoidAlgebra O H) :
     ψ.charEval (MonoidAlgebra.mapDomain f y) = (ψ.comp f).charEval y := by
-  have heq : ψ.charEval.comp (MonoidAlgebra.mapDomainAlgHom O O f) = (ψ.comp f).charEval := by
-    apply MonoidAlgebra.algHom_ext
-    · intro h
-      simp [MonoidHom.charEval]
-    · ext
-  simpa [MonoidAlgebra.mapDomainAlgHom_apply] using DFunLike.congr_fun heq y
+  simpa only [MonoidHom.charEval, TauCeti.DiagonalizableGroup.point, MonoidHom.comp_assoc] using
+    MonoidAlgebra.lift_mapDomain ((Units.coeHom O).comp ψ) f y
 
 /-- The value of a character `ψ` on the character sum `∑_{h ∈ H} χ(h) h` over a finite subgroup
 `H` is `#H` when `χ ψ` is trivial on `H`. -/

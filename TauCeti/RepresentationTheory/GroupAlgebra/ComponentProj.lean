@@ -95,7 +95,9 @@ theorem ker_componentProj [Fintype H] (hPH : P.IsComplement' H)
           componentProj hPH χ x =
               componentProj hPH χ (mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent χ)) *
                 componentProj hPH χ x := by
-            simp [Nat.card_eq_fintype_card (α := H) ▸ hH, ← MonoidAlgebra.one_def]
+            rw [componentProj_mapDomainAlgHom_right,
+              χ.charEval_charIdempotent_self (Nat.card_eq_fintype_card (α := H) ▸ hH), map_one,
+              one_mul]
           _ = componentProj hPH χ
                 (mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent χ) * x) :=
             (map_mul _ _ _).symm
