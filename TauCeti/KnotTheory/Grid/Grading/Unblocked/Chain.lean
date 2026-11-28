@@ -614,19 +614,18 @@ pieces. -/
 @[simp]
 theorem coarsenGrading_bigradedChainMinusPiece_snd (R : Type*) [CommSemiring R] :
     coarsenGrading (G.bigradedChainMinusPiece R) Prod.snd = G.alexanderChainMinusPiece R := by
-  funext a
-  refine le_antisymm (coarsenGrading_le_iff.mpr ?_) ?_
-  · rintro ⟨m, b⟩ (rfl : b = a)
-    exact G.bigradedChainMinusPiece_le_alexanderChainMinusPiece R m b
-  · rw [alexanderChainMinusPiece, GridChainMinus.monomialDegreePiece_eq_span, Submodule.span_le]
-    rintro _ ⟨⟨x, e⟩, (hxe : G.alexanderℤ x - (e.degree : ℤ) = a), rfl⟩
-    simp only [GridChainMinus.monomialChainBasis_apply, SetLike.mem_coe]
-    have hmem : (Finsupp.single x (monomial e (1 : R)) : GridChainMinus R n) ∈
-        G.bigradedChainMinusPiece R (G.monomialBidegree x e) :=
-      G.single_monomial_mem_bigradedChainMinusPiece R x e 1
-    have hsnd : (G.monomialBidegree x e).snd = a := by
-      rw [monomialBidegree_snd, hxe]
-    exact hsnd ▸ mem_coarsenGrading_of_mem Prod.snd hmem
+  have hbigraded : G.bigradedChainMinusPiece R = fun g ↦
+      Submodule.span R (GridChainMinus.monomialChainBasis (n := n) R ''
+        {ix | G.monomialBidegree ix.fst ix.snd = g}) := by
+    funext g
+    rw [bigradedChainMinusPiece, GridChainMinus.monomialDegreePiece_eq_span]
+  have halex : G.alexanderChainMinusPiece R = fun a ↦
+      Submodule.span R (GridChainMinus.monomialChainBasis (n := n) R ''
+        {ix | (G.monomialBidegree ix.fst ix.snd).snd = a}) := by
+    funext a
+    simp only [alexanderChainMinusPiece, GridChainMinus.monomialDegreePiece_eq_span,
+      monomialBidegree_snd]
+  rw [hbigraded, halex, coarsenGrading_span_image_fiber]
 
 /-- Each Alexander piece of `GC⁻` is the supremum of the Maslov--Alexander pieces with that
 Alexander degree. -/
