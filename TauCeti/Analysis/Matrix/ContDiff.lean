@@ -33,3 +33,10 @@ theorem ContDiff.matrix_mul {f : E → Matrix m n R} {g : E → Matrix n p R}
   refine contDiff_pi' fun i => contDiff_pi' fun j => ?_
   simp only [Matrix.mul_apply]
   fun_prop
+
+/-- The product of two matrix families smooth on the same set is smooth on that set. -/
+@[fun_prop]
+theorem ContDiffOn.matrix_mul {f : E → Matrix m n R} {g : E → Matrix n p R} {s : Set E}
+    (hf : ContDiffOn 𝕜 k f s) (hg : ContDiffOn 𝕜 k g s) :
+    ContDiffOn 𝕜 k (fun x => f x * g x) s :=
+  (contDiff_fst.matrix_mul contDiff_snd).comp_contDiffOn (hf.prodMk hg)

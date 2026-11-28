@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Algebra.Star.Center
 public import Mathlib.Algebra.Star.Module
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.LinearCombination
+import Mathlib.Algebra.Field.Basic
+import Mathlib.Tactic.Ring
 
 /-!
 # Involution-closed absorption, proper-star annihilators, scalar commutation, and star-linearity
@@ -170,6 +170,42 @@ end TauCeti
 
 namespace TauCeti
 
+/-- Admissibility for the scalar equation `a + star a + a * star a * d = 0` is preserved by
+conjugating the parameter. -/
+theorem add_star_add_mul_eq_zero_star {R : Type*} [CommSemiring R] [StarRing R]
+    {a d : R} (ha : a + star a + a * star a * d = 0) :
+    star a + star (star a) + star a * star (star a) * d = 0 := by
+  rw [star_star, add_comm (star a), mul_comm (star a), ha]
+
+/-- Two parameters admissible for a star-fixed scalar `d` compose to the admissible parameter
+`a + b + a * b * d`. -/
+theorem add_star_add_mul_eq_zero_mul {R : Type*} [CommSemiring R] [StarRing R]
+    {a b d : R} (hd : star d = d) (ha : a + star a + a * star a * d = 0)
+    (hb : b + star b + b * star b * d = 0) :
+    let c := a + b + a * b * d
+    c + star c + c * star c * d = 0 := by
+  dsimp only
+  simp only [star_add, star_mul, hd]
+  calc
+    _ = (1 + (b + star b) * d + b * star b * d ^ 2) *
+        (a + star a + a * star a * d) + (b + star b + b * star b * d) := by ring
+    _ = 0 := by rw [ha, hb, mul_zero, add_zero]
+
+/-- The reflection parameter `-(2 / d)` is admissible for every star-fixed scalar `d`, including
+`d = 0` and characteristic two. -/
+theorem neg_two_div_add_star_add_mul_eq_zero {K : Type*} [Field K] [StarRing K]
+    {d : K} (hd : star d = d) :
+    let a := -(2 / d)
+    a + star a + a * star a * d = 0 := by
+  dsimp only
+  simp only [star_neg, star_div₀, star_ofNat, hd]
+  by_cases h : d = 0
+  · simp [h]
+  · simp only [div_eq_mul_inv]
+    calc
+      _ = (4 * (d⁻¹ * d) - 4) * d⁻¹ := by ring
+      _ = 0 := by rw [inv_mul_cancel₀ h]; ring
+
 /-- **Inverting a solution of `b + star b + c = 0`.** In a field with involution, if
 `b + star b + c = 0`, then `b⁻¹ + star b⁻¹ + b⁻¹ * star b⁻¹ * c = 0`; this also holds at `b = 0`,
 where `b⁻¹ = 0`. For `c = ⟨v, v⟩` the value of a Hermitian form, it says that `b⁻¹` is an
@@ -181,8 +217,7 @@ theorem inv_add_star_inv_add_mul_eq_zero_of_add_star_add_eq_zero {K : Type*} [Fi
   rcases eq_or_ne b 0 with rfl | h0
   · simp
   have h0' : star b ≠ 0 := star_ne_zero.mpr h0
-  field_simp
-  linear_combination h
+  rw [inv_add_inv h0 h0', div_eq_inv_mul, mul_inv, ← mul_add, h, mul_zero]
 
 end TauCeti
 

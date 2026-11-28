@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Operations
-public import Mathlib.Analysis.Matrix.Normed
+public import TauCeti.Analysis.Matrix.ContDiff
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.UnitaryTransvection
 import TauCeti.Algebra.Star.Pi
 import TauCeti.Analysis.Calculus.ContDiff.Star
@@ -35,14 +34,13 @@ whose matrix entries are smooth functions of the real coordinates of the target 
 Neither statement assumes that `x₀` is isotropic: if it is not, a neighbourhood of `x₀` contains no
 isotropic vector and the constant map `1` is a section.
 
-The section is explicit: for isotropic `x₀`, `g x` is the admissible transvection
+For the first statement and isotropic `x₀`, the section `g x` is the admissible transvection
 `Matrix.unitaryGroupOf.orbitSection` along `x - y₀` with parameter `(⟨x, y₀⟩ - ⟨x, x⟩ / 2)⁻¹`.
 It lies in `U(J)` for every `x`. Where the denominator `⟨x, y₀⟩ - ⟨x, x⟩ / 2` is nonzero, it is a
 quasi-reflection whose entries are rational functions of the coordinates of `x` and their
 conjugates; at a zero denominator the section is the identity. It sends `y₀` to every isotropic
-`x` at which that denominator does not vanish. For the second statement, a coordinate vector
-pairing nontrivially with `x₀`, corrected by a multiple of `x₀`
-(`Matrix.exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero`), is an isotropic `y₀` with
+`x` at which that denominator does not vanish. For the second statement,
+`Matrix.exists_comp_dotProduct_mulVec_eq_zero_and_eq_one` supplies an isotropic partner `y₀` with
 `⟨y₀, x₀⟩ ≠ 0`; it gives a section `g` carrying `y₀`, and `x ↦ g x * (g x₀)⁻¹` carries `x₀`.
 
 Smoothness uses the entrywise matrix norm (`Matrix.Norms.Elementwise`); entrywise regularity is
@@ -65,8 +63,9 @@ The statements follow `New.Exchange.exists_contDiff_carrying_isotropic` and
 `New.Exchange.exists_contDiff_eventually_mulVec_eq` of grh-lean
 (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), file
 `src/Lib/Adelic/Witt/SmoothWitt.lean`, which construct such sections over `ℂ` from
-quasi-reflections and Eichler maps. Here a single admissible transvection, with a parameter adapted
-to the target vector, is used over `ℝ` or `ℂ`.
+quasi-reflections and Eichler maps. Here the first statement uses a single admissible transvection
+with a parameter adapted to the target vector over `ℝ` or `ℂ`; the fixed-source statement uses
+the product `g x * (g x₀)⁻¹`.
 
 ## References
 
@@ -166,22 +165,15 @@ theorem exists_contDiffOn_mulVec_eq_of_mulVec_ne_zero (hJ : J.IsHermitian) {x₀
   by_cases hiso : star x₀ ⬝ᵥ J *ᵥ x₀ = 0
   swap
   · exact exists_contDiffOn_mulVec_eq_of_ne_zero hiso x₀
-  -- A coordinate vector pairing nontrivially with `x₀`, corrected to an isotropic partner `y₀`.
-  obtain ⟨i, hi⟩ := Function.ne_iff.mp hx₀
-  have hux : (starRingEnd 𝕜 ∘ Pi.single i 1) ⬝ᵥ (J *ᵥ x₀) ≠ 0 := by
-    simpa [TauCeti.starRingEnd_comp_eq_star, Pi.star_single] using hi
-  obtain ⟨c, hy₀⟩ := exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero
+  obtain ⟨y₀, -, hy₀, hyx, -⟩ := exists_comp_dotProduct_mulVec_eq_zero_and_eq_one
     (starRingEnd_self_apply (R := 𝕜)) (by rw [one_smul, transpose_map_starRingEnd, hJ.eq])
     (fun s hs => ⟨s / 2, by
       simp only [one_mul] at hs
-      simp [hs, map_ofNat]⟩)
-    (by rwa [TauCeti.starRingEnd_comp_eq_star]) hux
-  set y₀ := Pi.single i 1 + c • x₀
-  rw [TauCeti.starRingEnd_comp_eq_star] at hy₀ hux
-  have hyx : star y₀ ⬝ᵥ J *ᵥ x₀ ≠ 0 := by
-    simpa [y₀, star_add, add_dotProduct, star_smul, smul_dotProduct, hiso] using hux
+      simp [hs, map_ofNat]⟩) hx₀ (by rwa [TauCeti.starRingEnd_comp_eq_star])
+  rw [TauCeti.starRingEnd_comp_eq_star] at hy₀ hyx
   obtain ⟨N, hN, hx₀N, g, hg, hgy⟩ :=
-    exists_contDiffOn_mulVec_eq_of_dotProduct_mulVec_ne_zero hJ hy₀ hyx
+    exists_contDiffOn_mulVec_eq_of_dotProduct_mulVec_ne_zero hJ hy₀
+      (by rw [← hJ.star_dotProduct_mulVec_comm, hyx, star_one]; exact one_ne_zero)
   -- The section `g` carries `y₀` to `x₀`, so `(g x₀)⁻¹` carries `x₀` back to `y₀`.
   have hinv : (((g x₀)⁻¹ : unitaryGroupOf J) : GL n 𝕜) *ᵥ x₀ = y₀ := calc
     _ = ((((g x₀ : GL n 𝕜)⁻¹ : GL n 𝕜) : Matrix n n 𝕜) *
@@ -189,10 +181,7 @@ theorem exists_contDiffOn_mulVec_eq_of_mulVec_ne_zero (hJ : J.IsHermitian) {x₀
       rw [← mulVec_mulVec, hgy x₀ hx₀N hiso, Subgroup.coe_inv]
     _ = y₀ := by rw [Units.inv_mul, one_mulVec]
   refine ⟨N, hN, hx₀N, fun x => g x * (g x₀)⁻¹, ?_, fun x hx hxx => ?_⟩
-  · refine contDiffOn_pi.mpr fun i => contDiffOn_pi.mpr fun j => ?_
-    simp only [Subgroup.coe_mul, Units.val_mul, Matrix.mul_apply]
-    exact ContDiffOn.sum fun l _ =>
-      ((contDiffOn_pi.mp (contDiffOn_pi.mp hg i)) l).mul contDiffOn_const
+  · simpa only [Subgroup.coe_mul, Units.val_mul] using hg.matrix_mul contDiffOn_const
   · rw [Subgroup.coe_mul, Units.val_mul, ← mulVec_mulVec, hinv, hgy x hx hxx]
 
 end Matrix.unitaryGroupOf

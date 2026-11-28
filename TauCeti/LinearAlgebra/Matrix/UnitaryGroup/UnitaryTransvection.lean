@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Form
 public import TauCeti.LinearAlgebra.Matrix.UnitaryTransvection
-import Mathlib.LinearAlgebra.Matrix.SemiringInverse
+public import TauCeti.Algebra.Star.Basic
 import Mathlib.Tactic.FieldSimp
-import TauCeti.Algebra.Star.Basic
 import TauCeti.Algebra.Star.Pi
 
 /-!
@@ -46,8 +44,8 @@ this is how smooth local sections of the isotropic orbit are obtained over `ℝ`
 
 * `Matrix.unitaryGroupOf.unitaryTransvection`: the admissible transvection `τ_{v,a}` as an element
   of `unitaryGroupOf A`, for Hermitian `A` and admissible `a`.
-* `Matrix.unitaryGroupOf.reflection`: the reflection in a non-isotropic vector `v`, extended by the
-  identity to isotropic `v`.
+* `Matrix.unitaryGroupOf.reflection`: when `2 ≠ 0`, the reflection in non-isotropic `v`, extended
+  by the identity to isotropic `v`; in characteristic two it is always the identity.
 * `Matrix.unitaryGroupOf.orbitSection`: the admissible transvection along `x - y` with parameter
   `(⟨x, y⟩ - ⟨x, x⟩ / 2)⁻¹`, for isotropic `y`; a quasi-reflection where the denominator is nonzero
   and the identity where it vanishes.
@@ -92,13 +90,6 @@ section CommSemiring
 
 variable {R : Type*} [CommSemiring R] [StarRing R] {A : Matrix n n R} {v : n → R} {a : R}
 
-omit [DecidableEq n] in
-/-- The parameter `star a` is admissible for `v` when `a` is. -/
-private theorem unitaryTransvection_star_param_admissible
-    (ha : a + star a + a * star a * (star v ⬝ᵥ A *ᵥ v) = 0) :
-    star a + star (star a) + star a * star (star a) * (star v ⬝ᵥ A *ᵥ v) = 0 := by
-  rw [star_star, add_comm (star a), mul_comm (star a), ha]
-
 namespace unitaryGroupOf
 
 /-- **The admissible transvection `τ_{v,a}` as an element of the unitary group** of a Hermitian
@@ -125,7 +116,7 @@ theorem val_unitaryTransvection :
 theorem inv_unitaryTransvection :
     (unitaryTransvection hA v a ha)⁻¹ =
       unitaryTransvection hA v (star a)
-        (by exact unitaryTransvection_star_param_admissible ha) := by
+        (TauCeti.add_star_add_mul_eq_zero_star ha) := by
   apply inv_eq_of_mul_eq_one_right
   apply unitaryGroupOf.ext
   simpa only [Subgroup.coe_mul, Units.val_mul, val_unitaryTransvection,
@@ -146,34 +137,36 @@ theorem unitaryTransvection_zero (v : n → R) :
   apply unitaryGroupOf.ext
   simp
 
-/-- A zero direction gives the identity element of the unitary group. -/
+/-- A zero direction gives the identity for parameters satisfying `a + star a = 0`. -/
 @[simp]
 theorem unitaryTransvection_zero_left (a : R) (ha : a + star a = 0) :
     unitaryTransvection hA 0 a (by simpa using ha) = 1 := by
   apply unitaryGroupOf.ext
   simp
 
-omit [DecidableEq n] in
-private theorem unitaryTransvection_mul_param_admissible (hA : A.IsHermitian) {b : R}
-    (ha : a + star a + a * star a * (star v ⬝ᵥ A *ᵥ v) = 0)
-    (hb : b + star b + b * star b * (star v ⬝ᵥ A *ᵥ v) = 0) :
-    let d := a + b + a * b * (star v ⬝ᵥ A *ᵥ v)
-    d + star d + d * star d * (star v ⬝ᵥ A *ᵥ v) = 0 := by
-  dsimp only
-  simp only [star_add, star_mul, hA.star_dotProduct_mulVec_comm v v]
-  calc
-    _ = (1 + (b + star b) * (star v ⬝ᵥ A *ᵥ v) +
-        b * star b * (star v ⬝ᵥ A *ᵥ v) ^ 2) *
-        (a + star a + a * star a * (star v ⬝ᵥ A *ᵥ v)) +
-        (b + star b + b * star b * (star v ⬝ᵥ A *ᵥ v)) := by ring
-    _ = 0 := by rw [ha, hb, mul_zero, add_zero]
+/-- Rescaling the direction transports admissibility and multiplies the parameter by the norm
+`c * star c` of the scaling factor. -/
+theorem unitaryTransvection_smul (c a : R)
+    (ha : a + star a + a * star a * (star (c • v) ⬝ᵥ A *ᵥ (c • v)) = 0) :
+    unitaryTransvection hA (c • v) a ha =
+      unitaryTransvection hA v (a * c * star c) (by
+        rw [star_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul,
+          smul_eq_mul] at ha
+        calc
+          _ = c * star c *
+              (a + star a + a * star a * (star c * (c * (star v ⬝ᵥ A *ᵥ v)))) := by
+            simp only [star_mul, star_star]
+            ring
+          _ = 0 := by rw [ha, mul_zero]) := by
+  apply unitaryGroupOf.ext
+  simp only [val_unitaryTransvection, Matrix.unitaryTransvection_smul, starRingEnd_apply]
 
 /-- The product of two admissible transvections along the same vector is a transvection. -/
 theorem unitaryTransvection_mul_unitaryTransvection {b : R}
     (hb : b + star b + b * star b * (star v ⬝ᵥ A *ᵥ v) = 0) :
     unitaryTransvection hA v a ha * unitaryTransvection hA v b hb =
       unitaryTransvection hA v (a + b + a * b * (star v ⬝ᵥ A *ᵥ v))
-        (by exact unitaryTransvection_mul_param_admissible hA ha hb) := by
+        (TauCeti.add_star_add_mul_eq_zero_mul (hA.star_dotProduct_mulVec_comm v v) ha hb) := by
   apply unitaryGroupOf.ext
   simp only [Subgroup.coe_mul, Units.val_mul, val_unitaryTransvection,
     Matrix.unitaryTransvection_mul_unitaryTransvection_eq, TauCeti.starRingEnd_comp_eq_star]
@@ -186,27 +179,18 @@ section Field
 
 variable {K : Type*} [Field K] [StarRing K] {A : Matrix n n K}
 
-omit [DecidableEq n] in
-/-- The reflection parameter is admissible, including when its denominator is zero. -/
-private theorem reflection_param_admissible (hA : A.IsHermitian) (v : n → K) :
-    let a := -(2 / (star v ⬝ᵥ A *ᵥ v))
-    a + star a + a * star a * (star v ⬝ᵥ A *ᵥ v) = 0 := by
-  dsimp only
-  simp only [star_neg, star_div₀, star_ofNat, hA.star_dotProduct_mulVec_comm v v]
-  by_cases hv : star v ⬝ᵥ A *ᵥ v = 0
-  · simp [hv]
-  · field_simp
-    ring
-
 namespace unitaryGroupOf
 
 /-- **The reflection in a vector**, for a Hermitian Gram matrix `A`: the admissible transvection
 `1 - (2 / ⟨v, v⟩) • v (star v ᵥ* A)` in `unitaryGroupOf A`, defined for every `v`. For
-non-isotropic `v`, it sends `v` to `-v` (`reflection_mulVec_self`) and fixes the vectors orthogonal
-to `v` for the form (`reflection_mulVec_of_dotProduct_eq_zero`). For isotropic `v` it is the
-identity (`reflection_eq_one_of_dotProduct_self_eq_zero`). -/
+non-isotropic `v` and `2 ≠ 0`, this is the usual reflection: it sends `v` to `-v`
+(`reflection_mulVec_self`) and fixes the vectors orthogonal to `v` for the form
+(`reflection_mulVec_of_dotProduct_eq_zero`). For isotropic `v` it is the
+identity (`reflection_eq_one_of_dotProduct_self_eq_zero`). In characteristic two it is the
+identity for every `v`, including non-isotropic vectors. -/
 noncomputable def reflection (hA : A.IsHermitian) (v : n → K) : unitaryGroupOf A :=
-  unitaryTransvection hA v (-(2 / (star v ⬝ᵥ A *ᵥ v))) (reflection_param_admissible hA v)
+  unitaryTransvection hA v (-(2 / (star v ⬝ᵥ A *ᵥ v)))
+    (TauCeti.neg_two_div_add_star_add_mul_eq_zero (hA.star_dotProduct_mulVec_comm v v))
 
 @[simp]
 theorem val_reflection (hA : A.IsHermitian) (v : n → K) :
@@ -243,6 +227,18 @@ theorem reflection_eq_one_of_dotProduct_self_eq_zero (hA : A.IsHermitian) {v : n
     (hv : star v ⬝ᵥ A *ᵥ v = 0) : reflection hA v = 1 := by
   apply unitaryGroupOf.ext
   simp [hv]
+
+/-- The reflection depends only on the line of its direction: a nonzero rescaling leaves it
+unchanged. -/
+theorem reflection_smul (hA : A.IsHermitian) (v : n → K) {c : K} (hc : c ≠ 0) :
+    reflection hA (c • v) = reflection hA v := by
+  rw [reflection, unitaryTransvection_smul]
+  congr 1
+  rw [star_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, smul_eq_mul]
+  by_cases hv : star v ⬝ᵥ A *ᵥ v = 0
+  · simp [hv]
+  · have hsc : star c ≠ 0 := star_ne_zero.mpr hc
+    field_simp
 
 /-- The reflection in `v` is its own inverse. -/
 @[simp]

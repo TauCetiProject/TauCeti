@@ -741,19 +741,24 @@ theorem exists_comp_dotProduct_mulVec_eq_zero_and_eq_add_smul {v : n → K}
     fun _ huv hux ↦ by simp [mulVec_sub, mulVec_smul, dotProduct_sub, dotProduct_smul, huv, hux],
     (sub_add_cancel _ _).symm⟩
 
-/-- **Extending a nonzero isotropic vector to a hyperbolic pair.** For involutive `σ` and
-invertible `ε`-Hermitian `Q` with surjective `ε`-trace, any nonzero isotropic `e` pairs with some
-nonzero isotropic `f` satisfying `B(e, f) = 1` and `B(f, e) = ε`. -/
+omit [DecidableEq n] in
+/-- **Extending an isotropic vector outside the radical to a hyperbolic pair.** For involutive
+`σ` and `ε`-Hermitian `Q` with surjective `ε`-trace, any isotropic `e` with `Q *ᵥ e ≠ 0`
+pairs with some nonzero isotropic `f` satisfying `B(e, f) = 1` and `B(f, e) = ε`. -/
 theorem exists_comp_dotProduct_mulVec_eq_zero_and_eq_one (hσ : Function.Involutive σ)
-    (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
-    (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) {e : n → K} (he₀ : e ≠ 0)
+    (hQ : (Q.map σ)ᵀ = ε • Q)
+    (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) {e : n → K} (he₀ : Q *ᵥ e ≠ 0)
     (he : (σ ∘ e) ⬝ᵥ (Q *ᵥ e) = 0) :
     ∃ f : n → K, f ≠ 0 ∧ (σ ∘ f) ⬝ᵥ (Q *ᵥ f) = 0 ∧ (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1 ∧
       (σ ∘ f) ⬝ᵥ (Q *ᵥ e) = ε := by
-  obtain ⟨u, hue, -⟩ := exists_comp_dotProduct_mulVec_ne_zero_pair (σ := σ) hdet he₀ he₀
+  classical
+  obtain ⟨i, hi⟩ := Function.ne_iff.mp he₀
+  let u : n → K := Pi.single i 1
+  have hue : (σ ∘ u) ⬝ᵥ (Q *ᵥ e) ≠ 0 := by
+    simpa [u, TauCeti.map_comp_single] using hi
   obtain ⟨c, hf₀⟩ := exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero hσ hQ htr he hue
-  set f₀ := u + c • e; have := Function.nonempty_of_ne he₀
-  have hε := mul_self_eq_one_of_trace_of_det_ne_zero hσ hQ hdet htr
+  set f₀ := u + c • e
+  have hε := mul_self_eq_one_of_trace hσ hQ htr (by rintro rfl; simp at he₀)
   have hef₀ : (σ ∘ e) ⬝ᵥ (Q *ᵥ f₀) ≠ 0 :=
     (comp_dotProduct_mulVec_ne_zero_comm hσ hQ).mpr (by simpa [f₀, he] using hue)
   let f := ((σ ∘ e) ⬝ᵥ (Q *ᵥ f₀))⁻¹ • f₀
@@ -812,8 +817,8 @@ theorem exists_comp_dotProduct_mulVec_eq_zero_and_eq_one_of_notMem_span
   have hfe := comp_dotProduct_mulVec_eq_of_eq_one hσ hQ hε hef
   obtain ⟨u₀, hu₀_ne, heu₀, hfu₀, hu₀_iso⟩ :=
     exists_isotropic_ne_zero_in_ortho hσ hQ hε he hfe hu₀ hw_span hu hw huw
-  obtain ⟨z, -, -, -, hzu₀⟩ := exists_comp_dotProduct_mulVec_eq_zero_and_eq_one hσ hQ hdet htr
-    hu₀_ne hu₀_iso
+  obtain ⟨z, -, -, -, hzu₀⟩ := exists_comp_dotProduct_mulVec_eq_zero_and_eq_one hσ hQ htr
+    (by simpa using (mulVec_injective_of_det_ne_zero hdet).ne hu₀_ne) hu₀_iso
   obtain ⟨z₀, hez₀, hfz₀, hz_eq⟩ := exists_eq_add_and_comp_dotProduct_mulVec_eq_zero hε he hf hef
     hfe z
   have hz₀u₀ : (σ ∘ z₀) ⬝ᵥ (Q *ᵥ u₀) = ε := by
