@@ -64,6 +64,7 @@ the other; by the universal property of base change these are the `R`-algebra ho
   `PreTilt.untilt_wittVectorAlgHomEquiv_symm_apply`: the bijection over a base sends `f` to
   `r ⊗ w ↦ r • θ_A (W(f) w)`, and its inverse sends `g` to the map whose values have sharp
   `g (1 ⊗ [x])`.
+* `PreTilt.comp_wittVectorAlgHomEquiv`: the bijection over a base is natural in `A`.
 
 ## References
 
@@ -175,7 +176,7 @@ theorem exists_map_eq_iff (hθ : Function.Surjective (fontaineTheta A p)) {ξ : 
 
 end Tilt
 
-section Base
+end PreTilt
 
 /-! ### Over a base
 
@@ -184,18 +185,52 @@ also `p`-adically complete with `p` not a unit, and `k` a perfect `R♭`-algebra
 `W(R♭)`-algebra through `θ_R`, `A` through `R`, and `W(k)` through `W(R♭) → W(k)`. Then
 `wittVectorHomEquiv` matches the ring homomorphisms `k → A♭` compatible with `R♭ → k` and
 `R♭ → A♭` with the `W(R♭)`-algebra homomorphisms `W(k) → A`, hence with the `R`-algebra
-homomorphisms `R ⊗_{W(R♭)} W(k) → A`. -/
+homomorphisms `R ⊗_{W(R♭)} W(k) → A`. A nonzero `R♭`-algebra has characteristic `p`; for the zero
+ring `k` both sides are empty. -/
+
+namespace PreTilt
 
 open scoped TensorProduct
 
-variable {R : Type*} [CommRing R] [Fact ¬IsUnit (p : R)] [IsAdicComplete (span {(p : R)}) R]
+variable {p : ℕ} [hp : Fact p.Prime] {k : Type*} [CommRing k]
+
+/-- A nonzero `R♭`-algebra has characteristic `p`. -/
+private theorem charP_of_nontrivial (R : Type*) [CommRing R] [Fact ¬IsUnit (p : R)]
+    [Algebra (PreTilt R p) k] [Nontrivial k] : CharP k p :=
+  (CharP.charP_iff_prime_eq_zero hp.out).mpr <| by
+    rw [← map_natCast (algebraMap (PreTilt R p) k), CharP.cast_eq_zero, map_zero]
+
+/-- The source of a ring homomorphism into `A♭` is nonzero. -/
+private theorem nontrivial_of_ringHom {A : Type*} [CommRing A] [Fact ¬IsUnit (p : A)]
+    (f : k →+* PreTilt A p) : Nontrivial k :=
+  have : Nontrivial (PreTilt A p) := CharP.nontrivial_of_char_ne_one hp.out.ne_one
+  f.domain_nontrivial
+
+variable [PerfectRing k p]
+  {A : Type*} [CommRing A] [Fact ¬IsUnit (p : A)] [IsAdicComplete (span {(p : A)}) A]
+  {R : Type*} [CommRing R] [Fact ¬IsUnit (p : R)] [IsAdicComplete (span {(p : R)}) R]
   [Algebra (PreTilt R p) k] [Algebra (WittVector p (PreTilt R p)) R]
   [Algebra (WittVector p (PreTilt R p)) (WittVector p k)] [Algebra R A]
   [Algebra (WittVector p (PreTilt R p)) A] [IsScalarTower (WittVector p (PreTilt R p)) R A]
 
+local notation "𝕎" => WittVector p
+
+omit [PerfectRing k p] [IsAdicComplete (span {(p : A)}) A] [IsAdicComplete (span {(p : R)}) R]
+  [Algebra (PreTilt R p) k] [Algebra (𝕎 (PreTilt R p)) A] [IsScalarTower (𝕎 (PreTilt R p)) R A] in
+/-- If there is an `R`-algebra homomorphism `R ⊗_{W(R♭)} W(k) → A`, then `k` is nonzero: otherwise
+`W(k)`, the tensor product and hence `A` would be zero, while `p` is not a unit in `A`. -/
+private theorem nontrivial_of_algHom (g : R ⊗[𝕎 (PreTilt R p)] 𝕎 k →ₐ[R] A) : Nontrivial k := by
+  by_contra hk
+  have : Subsingleton k := not_nontrivial_iff_subsingleton.mp hk
+  have h1 : (1 : 𝕎 k) = 0 := WittVector.ext fun _ ↦ Subsingleton.elim _ _
+  have h0 : (0 : A) = 1 := by
+    rw [← map_one g, Algebra.TensorProduct.one_def, h1, TensorProduct.tmul_zero, map_zero]
+  have : Subsingleton A := subsingleton_of_zero_eq_one h0
+  exact (Fact.out : ¬IsUnit (p : A)) (isUnit_of_subsingleton _)
+
 /-- A ring homomorphism `f : k → A♭` is compatible with `R♭ → k` and the tilt `R♭ → A♭` of the
 structure map exactly when `θ_A ∘ W(f) : W(k) → A` is a `W(R♭)`-algebra homomorphism. -/
-private theorem wittVectorHomEquiv_comp_algebraMap_eq_iff
+private theorem wittVectorHomEquiv_comp_algebraMap_eq_iff [CharP k p]
     (hR : algebraMap (𝕎 (PreTilt R p)) R = fontaineTheta R p)
     (hk : algebraMap (𝕎 (PreTilt R p)) (𝕎 k) = WittVector.map (algebraMap (PreTilt R p) k))
     (f : k →+* PreTilt A p) :
@@ -210,15 +245,8 @@ private theorem wittVectorHomEquiv_comp_algebraMap_eq_iff
   rw [hA, hk, wittVectorHomEquiv_apply, RingHom.comp_assoc, ← WittVector.map_comp,
     ← wittVectorHomEquiv_apply, (wittVectorHomEquiv p (PreTilt R p) A).injective.eq_iff]
 
-variable (p k A R) in
-/-- **The universal property of the tilt over a base.** Let `R` and `A` be `p`-adically complete
-rings in which `p` is not a unit, `A` an `R`-algebra and `k` a perfect `R♭`-algebra of
-characteristic `p`, with `R` and `W(k)` regarded as `W(R♭)`-algebras through `θ_R` and
-`W(R♭) → W(k)`. Then ring homomorphisms
-`f : k → A♭` compatible with `R♭ → k` and the tilt `R♭ → A♭` of the structure map correspond to
-`R`-algebra homomorphisms `R ⊗_{W(R♭)} W(k) → A`, by `f ↦ (r ⊗ w ↦ r • θ_A (W(f) w))`
-(`wittVectorAlgHomEquiv_apply_tmul`). -/
-noncomputable def wittVectorAlgHomEquiv
+/-- `wittVectorAlgHomEquiv` for `k` of characteristic `p`. -/
+private noncomputable def wittVectorAlgHomEquivOfCharP [CharP k p]
     (hR : algebraMap (𝕎 (PreTilt R p)) R = fontaineTheta R p)
     (hk : algebraMap (𝕎 (PreTilt R p)) (𝕎 k) = WittVector.map (algebraMap (PreTilt R p) k)) :
     {f : k →+* PreTilt A p // f.comp (algebraMap (PreTilt R p) k) = map p (algebraMap R A)} ≃
@@ -232,6 +260,29 @@ noncomputable def wittVectorAlgHomEquiv
       right_inv _ := rfl }).trans
     (AlgHom.liftEquiv (𝕎 (PreTilt R p)) R (𝕎 k) A)
 
+open Classical in
+variable (p k A R) in
+/-- **The universal property of the tilt over a base.** Let `R` and `A` be `p`-adically complete
+rings in which `p` is not a unit, `A` an `R`-algebra and `k` a perfect `R♭`-algebra, with `R` and
+`W(k)` regarded as `W(R♭)`-algebras through `θ_R` and `W(R♭) → W(k)`. Then ring homomorphisms
+`f : k → A♭` compatible with `R♭ → k` and the tilt `R♭ → A♭` of the structure map correspond to
+`R`-algebra homomorphisms `R ⊗_{W(R♭)} W(k) → A`, by `f ↦ (r ⊗ w ↦ r • θ_A (W(f) w))`
+(`wittVectorAlgHomEquiv_apply_tmul`). If `k` is zero, both sides are empty. -/
+noncomputable def wittVectorAlgHomEquiv
+    (hR : algebraMap (𝕎 (PreTilt R p)) R = fontaineTheta R p)
+    (hk : algebraMap (𝕎 (PreTilt R p)) (𝕎 k) = WittVector.map (algebraMap (PreTilt R p) k)) :
+    {f : k →+* PreTilt A p // f.comp (algebraMap (PreTilt R p) k) = map p (algebraMap R A)} ≃
+      (R ⊗[𝕎 (PreTilt R p)] 𝕎 k →ₐ[R] A) :=
+  if h : Nontrivial k then
+    have := charP_of_nontrivial (p := p) (k := k) R
+    wittVectorAlgHomEquivOfCharP hR hk
+  else
+    have : IsEmpty {f : k →+* PreTilt A p //
+        f.comp (algebraMap (PreTilt R p) k) = map p (algebraMap R A)} :=
+      ⟨fun f ↦ h (nontrivial_of_ringHom f.val)⟩
+    have : IsEmpty (R ⊗[𝕎 (PreTilt R p)] 𝕎 k →ₐ[R] A) := ⟨fun g ↦ h (nontrivial_of_algHom g)⟩
+    Equiv.equivOfIsEmpty _ _
+
 /-- `wittVectorAlgHomEquiv` sends `f` to the map `r ⊗ w ↦ r • θ_A (W(f) w)`. -/
 @[simp]
 theorem wittVectorAlgHomEquiv_apply_tmul
@@ -240,8 +291,11 @@ theorem wittVectorAlgHomEquiv_apply_tmul
     (f : {f : k →+* PreTilt A p // f.comp (algebraMap (PreTilt R p) k) = map p (algebraMap R A)})
     (r : R) (w : 𝕎 k) :
     wittVectorAlgHomEquiv p k A R hR hk f (r ⊗ₜ w) =
-      r • fontaineTheta A p (WittVector.map f.val w) :=
-  (rfl)
+      r • fontaineTheta A p (WittVector.map f.val w) := by
+  unfold wittVectorAlgHomEquiv
+  split
+  · rfl
+  · exact absurd (nontrivial_of_ringHom f.val) ‹_›
 
 /-- The inverse of `wittVectorAlgHomEquiv` sends `g` to the map `k → A♭` whose value at `x` has
 sharp `g (1 ⊗ [x])`. -/
@@ -250,9 +304,27 @@ theorem untilt_wittVectorAlgHomEquiv_symm_apply
     (hR : algebraMap (𝕎 (PreTilt R p)) R = fontaineTheta R p)
     (hk : algebraMap (𝕎 (PreTilt R p)) (𝕎 k) = WittVector.map (algebraMap (PreTilt R p) k))
     (g : R ⊗[𝕎 (PreTilt R p)] 𝕎 k →ₐ[R] A) (x : k) :
-    (((wittVectorAlgHomEquiv p k A R hR hk).symm g).val x).untilt = g (1 ⊗ₜ teichmuller p x) :=
-  untilt_wittVectorHomEquiv_symm_apply _ x
+    (((wittVectorAlgHomEquiv p k A R hR hk).symm g).val x).untilt = g (1 ⊗ₜ teichmuller p x) := by
+  unfold wittVectorAlgHomEquiv
+  split
+  · have := charP_of_nontrivial (p := p) (k := k) R
+    exact untilt_wittVectorHomEquiv_symm_apply _ x
+  · exact absurd (nontrivial_of_algHom g) ‹_›
 
-end Base
+/-- **Naturality of `wittVectorAlgHomEquiv` in `A`.** For an `R`-algebra homomorphism `h : A → A'`,
+composing the image of `f` with `h` gives the image of `h♭ ∘ f`. -/
+theorem comp_wittVectorAlgHomEquiv {A' : Type*} [CommRing A'] [Fact ¬IsUnit (p : A')]
+    [IsAdicComplete (span {(p : A')}) A'] [Algebra R A'] [Algebra (𝕎 (PreTilt R p)) A']
+    [IsScalarTower (𝕎 (PreTilt R p)) R A']
+    (hR : algebraMap (𝕎 (PreTilt R p)) R = fontaineTheta R p)
+    (hk : algebraMap (𝕎 (PreTilt R p)) (𝕎 k) = WittVector.map (algebraMap (PreTilt R p) k))
+    (h : A →ₐ[R] A')
+    (f : {f : k →+* PreTilt A p // f.comp (algebraMap (PreTilt R p) k) = map p (algebraMap R A)}) :
+    h.comp (wittVectorAlgHomEquiv p k A R hR hk f) =
+      wittVectorAlgHomEquiv p k A' R hR hk ⟨(map p (h : A →+* A')).comp f.val, by
+        rw [RingHom.comp_assoc, f.property, ← map_comp, AlgHom.comp_algebraMap]⟩ :=
+  Algebra.TensorProduct.ext' fun r w ↦ by
+    rw [AlgHom.comp_apply, wittVectorAlgHomEquiv_apply_tmul, wittVectorAlgHomEquiv_apply_tmul,
+      map_smul, WittVector.map_comp, RingHom.comp_apply, theta_natural, AlgHom.coe_toRingHom]
 
 end PreTilt
