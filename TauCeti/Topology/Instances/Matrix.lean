@@ -45,7 +45,8 @@ uniform version for uniformly continuous maps (`UniformContinuous.exists_pos_for
 
 Over a topological field, the inverse of a matrix-valued function that is continuous at a point
 with invertible value is continuous there (`ContinuousAt.matrix_inv`), and so are its entries
-(`ContinuousAt.matrix_inv_apply`).
+(`ContinuousAt.matrix_inv_apply`). For an everywhere invertible family, inversion preserves
+continuity (`Continuous.matrix_inv`).
 
 Square matrices over a commutative topological ring `R` with open units again have open units
 (`Matrix.instIsOpenUnits`). The invertible matrices are the preimage of the open set of units of
@@ -58,7 +59,9 @@ for the subspace topology, already for `n = 1`.
 
 Each characteristic coefficient is continuous over a commutative topological ring
 (`Matrix.continuous_charpoly_coeff`). The proof uses Mathlib's universal characteristic polynomial
-`Matrix.charpoly.univ`, whose coefficients are multivariate polynomials in the matrix entries.
+`Matrix.charpoly.univ`, whose coefficients are multivariate polynomials in the matrix entries;
+so is each coefficient of the reversed characteristic polynomial `det (1 - X A)`
+(`Matrix.continuous_charpolyRev_coeff`).
 Hence two continuous maps `ρ ρ' : Γ → Mₙ(A)` into a Hausdorff topological ring whose
 characteristic polynomials agree on a dense subset of `Γ` have the same characteristic polynomial
 everywhere (`Matrix.charpoly_eq_of_dense`). In size two the characteristic polynomial is
@@ -78,6 +81,9 @@ sesquilinear forms gives convergence of their Gram matrices in any pair of finit
 (`LinearMap.tendsto_toMatrix₂`). Square matrices tending to the identity are eventually invertible
 (`Matrix.eventually_det_ne_zero_of_tendsto_one`). The matrices with nonnegative diagonal form a
 closed set (`Matrix.isClosed_setOfPred_nonneg_diag`).
+
+The matrices whose entries all lie in a dense set are dense (`Dense.matrix`), the dense
+counterpart of Mathlib's `IsOpen.matrix`.
 
 `Matrix.ofHomeomorph` bundles `Matrix.of` as a homeomorphism `(m → n → α) ≃ₜ Matrix m n α`.
 Flattening a family of matrices `(i : ι) → Matrix (κ i) (μ i) α` to `(Σ i, κ i × μ i) → α` is a
@@ -275,6 +281,13 @@ theorem ContinuousAt.matrix_inv (hA : ContinuousAt A x) (hdet : (A x).det ≠ 0)
     ContinuousAt (fun y ↦ (A y)⁻¹) x :=
   (continuousAt_matrix_inv _ (by rw [Ring.inverse_eq_inv']; exact continuousAt_inv₀ hdet)).comp hA
 
+/-- The inverse of a continuous matrix-valued function with everywhere nonzero determinant
+is continuous. -/
+@[fun_prop]
+theorem Continuous.matrix_inv (hA : Continuous A) (hdet : ∀ x, (A x).det ≠ 0) :
+    Continuous (fun x ↦ (A x)⁻¹) :=
+  continuous_iff_continuousAt.2 fun x ↦ hA.continuousAt.matrix_inv (hdet x)
+
 /-- The entries of the inverse of a matrix-valued function are continuous at every point where the
 function is continuous and its value is invertible. -/
 theorem ContinuousAt.matrix_inv_apply (hA : ContinuousAt A x) (hdet : (A x).det ≠ 0) (k l : n) :
@@ -300,6 +313,16 @@ theorem continuous_charpoly_coeff (k : ℕ) :
     ext i j
     rfl
   simpa only [MvPolynomial.eval, charpoly.univ_coeff_eval₂Hom, hmatrix] using h
+
+/-- Every coefficient of the reversed characteristic polynomial `det (1 - X A)` is continuous for
+the entrywise matrix topology. -/
+@[continuity, fun_prop]
+theorem continuous_charpolyRev_coeff (k : ℕ) :
+    Continuous (fun A : Matrix n n R => A.charpolyRev.coeff k) := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact continuous_of_const fun _ _ ↦ Subsingleton.elim _ _
+  simp_rw [← reverse_charpoly, Polynomial.coeff_reverse, charpoly_natDegree_eq_dim]
+  exact continuous_charpoly_coeff _
 
 /-- **Recognition on a dense subset.** Two continuous matrix-valued maps `ρ ρ' : Γ → Mₙ(A)` into a
 Hausdorff topological ring whose characteristic polynomials agree on a dense subset of `Γ` have
@@ -454,3 +477,10 @@ theorem tendsto_toMatrix₂ {R M₁ M₂ N₂ n m α : Type*} [CommSemiring R] [
     simpa only [toMatrix₂_apply] using hB (b₁ i) (b₂ j)
 
 end LinearMap
+
+/-- The matrices whose entries all lie in a dense set `S` form a dense set. -/
+theorem Dense.matrix {m n R : Type*} [TopologicalSpace R] {S : Set R} (hS : Dense S) :
+    Dense (S.matrix : Set (Matrix m n R)) := by
+  rw [Set.matrix_eq_pi]
+  exact (dense_pi Set.univ fun _ _ ↦ dense_pi Set.univ fun _ _ ↦ hS).preimage
+    Matrix.ofHomeomorph.symm.isOpenMap

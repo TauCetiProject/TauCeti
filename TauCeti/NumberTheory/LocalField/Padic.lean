@@ -62,8 +62,9 @@ concrete p-adic norm and valuation APIs.
   `p ≢ 1 (mod 4)`; its case `p = 2` is the instance `Fact (¬ IsSquare (-1 : ℚ_[2]))`, which makes
   the quadratic algebra `ℚ_2(i)` a field.
 * `Padic.not_isSquare_intCast_of_not_isSquare_zmod`: an integer that is not a square modulo a
-  power of `p` is not a square in `ℚ_[p]`; `Padic.not_isSquare_five` (`5` in `ℚ_[2]`) and
-  `Padic.not_isSquare_neg_three` (`-3` in `ℚ_[5]`) are its two instances.
+  power of `p` is not a square in `ℚ_[p]`; `Padic.not_isSquare_five` (`5` in `ℚ_[2]`),
+  `Padic.not_isSquare_neg_three_padicTwo` (`-3` in `ℚ_[2]`) and `Padic.not_isSquare_neg_three`
+  (`-3` in `ℚ_[5]`) are its instances.
 * `Padic.irreducible_X_sq_add_X_add_one`: `X² + X + 1` is irreducible over `ℚ_[5]`.
 
 The Padic and residue-field constructions used here are part of Mathlib's upstream
@@ -263,6 +264,12 @@ instance : Fact (¬ IsSquare (-1 : ℚ_[2])) :=
 /-- `5` is not a square in `ℚ_[2]`, since no square is `5` modulo `8`. -/
 theorem not_isSquare_five : ¬IsSquare (5 : ℚ_[2]) := by
   have h := not_isSquare_intCast_of_not_isSquare_zmod (p := 2) (a := 5) (k := 3)
+    (by rintro ⟨x, hx⟩; revert x hx; decide)
+  simpa using h
+
+/-- `-3` is not a square in `ℚ_[2]`, since no square is `5` modulo `8`. -/
+theorem not_isSquare_neg_three_padicTwo : ¬IsSquare (-3 : ℚ_[2]) := by
+  have h := not_isSquare_intCast_of_not_isSquare_zmod (p := 2) (a := -3) (k := 3)
     (by rintro ⟨x, hx⟩; revert x hx; decide)
   simpa using h
 

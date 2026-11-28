@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.CompletelyPositiveMap
 public import TauCeti.Analysis.CStarAlgebra.Matrix.Order
+public import TauCeti.LinearAlgebra.Matrix.Choi
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
 import Mathlib.LinearAlgebra.Matrix.Trace
@@ -18,6 +19,9 @@ Rectangular complex matrices `V k : Matrix n m ℂ` define the completely positi
 `a ↦ ∑ k, (V k)ᴴ * a * V k`. Its value at one is the Kraus normalization sum.
 The trace dual is `ρ ↦ ∑ k, V k * ρ * (V k)ᴴ`; it preserves trace exactly when
 that normalization sum is one. Isometric changes of Kraus family preserve the map.
+
+`krausMapLinearMap` is `Matrix.krausMap` on ordinary matrices, and its Choi matrix is
+`∑ i, Matrix.vecMulVec (V i)ᴴ.vec (star (V i)ᴴ.vec)` by `choiMatrix_krausMapLinearMap`.
 
 The normalization criterion connects the Heisenberg and Schrödinger pictures of
 a finite-dimensional quantum channel.
@@ -34,12 +38,12 @@ and `CStarMatrix.map_toBlocks₂₂_nonneg`.
 
 public section
 
-open scoped CStarAlgebra ComplexOrder
+open scoped CStarAlgebra ComplexOrder Matrix
 open CStarMatrix
 
-namespace Matrix
-
 variable {n m ι κ : Type*} [Fintype n] [Fintype m] [Fintype ι] [Fintype κ]
+
+namespace Matrix
 
 /-- Conjugation by a rectangular matrix is completely positive. -/
 noncomputable def conjugateCP (V : Matrix n m ℂ) :
@@ -106,6 +110,40 @@ theorem krausMap_apply (V : ι → Matrix n m ℂ) (a : CStarMatrix n n ℂ) :
   change (∑ i, (conjugateCP (V i)).toLinearMap) a = _
   simp only [LinearMap.sum_apply]
   rfl
+
+end Matrix
+
+namespace TauCeti
+
+/-- The underlying linear map of `Matrix.krausMap V`, transported to ordinary matrices. -/
+noncomputable def krausMapLinearMap (V : ι → Matrix n m ℂ) :
+    Matrix n n ℂ →ₗ[ℂ] Matrix m m ℂ :=
+  ((ofMatrixₗ (R := ℂ)).arrowCongr (ofMatrixₗ (R := ℂ))).symm
+    (Matrix.krausMap V : _ →ₗ[ℂ] _)
+
+/-- On ordinary matrices, the Kraus map evaluates to the sum of conjugations. -/
+@[simp]
+theorem krausMapLinearMap_apply (V : ι → Matrix n m ℂ) (X : Matrix n n ℂ) :
+    krausMapLinearMap V X = ∑ i, (V i)ᴴ * X * V i := by
+  simp only [krausMapLinearMap, LinearEquiv.arrowCongr_symm_apply, LinearMap.coe_ofClass,
+    ofMatrixₗ_apply, ofMatrixₗ_symm_apply, Matrix.krausMap_apply, Equiv.symm_apply_apply]
+
+/-- The Choi matrix of a Kraus map is the sum of outer products of its vectorized adjoints
+with their entrywise conjugates. -/
+theorem choiMatrix_krausMapLinearMap [DecidableEq n] (V : ι → Matrix n m ℂ) :
+    choiMatrix (krausMapLinearMap V) =
+      ∑ i, Matrix.vecMulVec (V i)ᴴ.vec (star (V i)ᴴ.vec) := by
+  have h : (⇑(krausMapLinearMap V)) = ∑ i, fun X : Matrix n n ℂ => (V i)ᴴ * X * V i := by
+    funext X
+    simp only [krausMapLinearMap_apply, Finset.sum_apply]
+  rw [h, choiMatrix_sum]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  simpa only [Matrix.conjTranspose_conjTranspose] using
+    ((V i)ᴴ).choiMatrix_mul_mul_conjTranspose
+
+end TauCeti
+
+namespace Matrix
 
 /-- A Kraus map is unital precisely when its normalization sum is one. -/
 @[simp] theorem krausMap_unital_iff [DecidableEq n] [DecidableEq m]

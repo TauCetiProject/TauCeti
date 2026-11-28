@@ -9,11 +9,12 @@ public import Mathlib.Combinatorics.SimpleGraph.LapMatrix
 import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!
-# The adjacency, degree and Laplacian matrices: coefficients and edge-disjoint unions
+# The adjacency, degree and Laplacian matrices
 
 The adjacency matrix `G.adjMatrix R` and the degree matrix `G.degMatrix R` of a simple graph have
 entries built from `0`, `1` and natural-number casts, so applying a coefficient map entrywise
-gives the same matrix over the target ring.
+gives the same matrix over the target ring. The entries of the square of the adjacency matrix
+count common neighbours, and the row sums of the adjacency matrix of a `d`-regular graph are `d`.
 
 The adjacency, degree and Laplacian matrices are additive over the union `G ⊔ H` of two
 edge-disjoint graphs on one vertex type. Consequently, for `G ≤ H` the Laplacian of the graph
@@ -26,6 +27,11 @@ spectra under adding edges rest on this decomposition.
   and `1` to `1`.
 * `SimpleGraph.degMatrix_map`: the degree matrix is preserved by any additive map sending `1`
   to `1`.
+* `SimpleGraph.adjMatrix_sq_apply`: the `(v, w)` entry of `A²` is the number of common neighbours
+  of `v` and `w`.
+* `SimpleGraph.IsRegularOfDegree.adjMatrix_mul_of_one`: for a `d`-regular graph, `A J = d J`,
+  where `J` is the all-ones matrix; equivalently `(A - d I) J = 0`
+  (`SimpleGraph.IsRegularOfDegree.adjMatrix_sub_smul_one_mul_of_one`).
 * `SimpleGraph.adjMatrix_sup_of_disjoint`, `SimpleGraph.degMatrix_sup_of_disjoint`,
   `SimpleGraph.lapMatrix_sup_of_disjoint`: the matrices of the union of two edge-disjoint graphs
   are the sums of their matrices.
@@ -54,6 +60,31 @@ theorem degMatrix_map [AddMonoidWithOne R] [AddMonoidWithOne S] [AddMonoidHomCla
     (G.degMatrix R).map f = G.degMatrix S := by
   ext v w
   simp [degMatrix, diagonal_apply, apply_ite f, map_natCast' f (map_one f)]
+
+/-- The `(v, w)` entry of the square of the adjacency matrix is the number of common neighbours
+of `v` and `w`; on the diagonal this is the degree of `v`. -/
+theorem adjMatrix_sq_apply [Fintype V] [DecidableEq V] [Semiring R] (v w : V) :
+    (G.adjMatrix R ^ 2) v w = Fintype.card (G.commonNeighbors v w) := by
+  rw [sq, adjMatrix_mul_apply, Fintype.card_subtype]
+  simp only [adjMatrix_apply, Finset.sum_boole]
+  congr 2
+  ext u
+  simp [commonNeighbors, adj_comm]
+
+/-- For a graph that is regular of degree `d`, the product of the adjacency matrix with the
+all-ones matrix `J` is `d • J`. -/
+theorem IsRegularOfDegree.adjMatrix_mul_of_one [Fintype V] [NonAssocSemiring R] {d : ℕ}
+    (hd : G.IsRegularOfDegree d) :
+    G.adjMatrix R * Matrix.of (fun _ _ ↦ (1 : R)) = (d : R) • Matrix.of (fun _ _ ↦ (1 : R)) := by
+  ext v w
+  simp [adjMatrix_mul_apply, hd v]
+
+/-- For a graph that is regular of degree `d`, `(A - d I) J = 0`, where `J` is the all-ones
+matrix. -/
+theorem IsRegularOfDegree.adjMatrix_sub_smul_one_mul_of_one [Fintype V] [DecidableEq V] [Ring R]
+    {d : ℕ} (hd : G.IsRegularOfDegree d) :
+    (G.adjMatrix R - (d : R) • 1) * Matrix.of (fun _ _ ↦ (1 : R)) = 0 := by
+  simp [sub_mul, hd.adjMatrix_mul_of_one]
 
 /-! ### Edge-disjoint unions -/
 

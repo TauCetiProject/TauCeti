@@ -58,7 +58,8 @@ The proof is Campanato's, by comparison with the problem frozen at the boundary 
   (`TauCeti.PDE.exists_setIntegral_ball_inter_norm_gradient_sq_le` and
   `TauCeti.PDE.exists_setIntegral_ball_inter_norm_gradient_sub_inner_setAverage_div_smul_sq_le`)
   apply to it, and transfer to `u` up to `∫_{B_r⁺} ‖∇u - ∇w‖²`
-  (`TauCeti.MeasureTheory.setIntegral_norm_sub_sq_le_add_of_le`), which is of order
+  (`TauCeti.PDE.setIntegral_ball_inter_norm_gradient_sub_sq_le_add_of_le`, by
+  `TauCeti.MeasureTheory.setIntegral_norm_sub_sq_le_add_of_le`), which is of order
   `r^{2α} K_a² ∫_{B_r⁺} ‖∇u‖²` plus the data term.
 * **Iteration.** As in the interior, four steps of Campanato's perturbation argument
   (`TauCeti.exists_le_mul_mul_div_rpow_of_le_mul_div_rpow_mul_add` and
@@ -99,7 +100,7 @@ section Comparison
 `ball z r ⊆ U`, and let `w ∈ H¹(B_r ∩ H)` have the boundary values of `u`, that is
 `u - w ∈ H¹₀(B_r ∩ H)`. Then `u` minus the zero extension of `u - w` is a function
 `W ∈ H¹(B_r)` that vanishes on `B_r ∖ H` and restricts to `w` on `B_r ∩ H`. -/
-private theorem exists_restrictL_eq_of_sub_mem_w1p0Submodule
+theorem exists_restrictL_eq_of_sub_mem_w1p0Submodule
     {U H : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {u : W1p volume U 2}
     {z : EuclideanSpace ℝ (Fin (n + 1))} {r : ℝ}
     (hu0 : ∀ᵐ x ∂volume.restrict U, x ∉ H → W1p.value u x = 0) (hball : ball z r ⊆ U)
@@ -218,8 +219,42 @@ private theorem exists_frozen_ball_inter {U H : Opens (EuclideanSpace ℝ (Fin (
       (by positivity) hest hX hY hF
 
 /-- **Transferring decay from a comparison function on half-balls.** Let `u ∈ H¹(U)`,
-`ball z r ⊆ U` and `W ∈ H¹(B_r)`, write `B_t⁺ = B(z, t) ∩ H`, and suppose that `W` decays like
-`∫_{B_ρ⁺} ‖∇W‖² ≤ C₁ (ρ / r)^{n+1} ∫_{B_r⁺} ‖∇W‖²` and
+`ball z r ⊆ U`, `W ∈ H¹(B(z, r))` and `ρ ≤ r`, and write `B_t⁺ = B(z, t) ∩ H`. Suppose that `b`
+is at least as close to `∇u` in `L²(B_ρ⁺)` as `k`, and that `W` decays like
+`∫_{B_ρ⁺} ‖∇W - k‖² ≤ D q ∫_{B_r⁺} ‖∇W - c‖²` with `0 ≤ D` and `0 ≤ q ≤ 1`. Then `u` decays in the
+same way up to the distance `E = ∫_{B_r⁺} ‖∇u - ∇W‖²`:
+`∫_{B_ρ⁺} ‖∇u - b‖² ≤ 4 D q ∫_{B_r⁺} ‖∇u - c‖² + (4 D + 2) E`. -/
+theorem setIntegral_ball_inter_norm_gradient_sub_sq_le_add_of_le
+    {U H : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {u : W1p volume U 2}
+    {z b k c : EuclideanSpace ℝ (Fin (n + 1))} {r ρ D q : ℝ}
+    {W : W1p volume (⟨ball z r, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2}
+    (hball : ball z r ⊆ U) (hρr : ρ ≤ r) (hD : 0 ≤ D) (hq0 : 0 ≤ q) (hq1 : q ≤ 1)
+    (hbest : ∫ x in ball z ρ ∩ H, ‖W1p.gradient u x - b‖ ^ 2 ≤
+      ∫ x in ball z ρ ∩ H, ‖W1p.gradient u x - k‖ ^ 2)
+    (hdecay : ∫ x in ball z ρ ∩ H, ‖W1p.gradient W x - k‖ ^ 2 ≤
+      D * q * ∫ x in ball z r ∩ H, ‖W1p.gradient W x - c‖ ^ 2) :
+    ∫ x in ball z ρ ∩ H, ‖W1p.gradient u x - b‖ ^ 2 ≤
+      4 * D * q * (∫ x in ball z r ∩ H, ‖W1p.gradient u x - c‖ ^ 2) +
+        (4 * D + 2) * ∫ x in ball z r ∩ H, ‖W1p.gradient u x - W1p.gradient W x‖ ^ 2 := by
+  set S := ball z r ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))
+  have hS : volume S ≠ ⊤ := measure_ball_inter_ne_top
+  have hsS : ball z ρ ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ S :=
+    inter_subset_inter_left _ (ball_subset_ball hρr)
+  have hfm : MemLp (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) →
+      EuclideanSpace ℝ (Fin (n + 1))) 2 (volume.restrict S) :=
+    (Lp.memLp (W1p.gradient u)).mono_measure
+      (Measure.restrict_mono (inter_subset_left.trans hball) le_rfl)
+  have hWm : MemLp (W1p.gradient W : EuclideanSpace ℝ (Fin (n + 1)) →
+      EuclideanSpace ℝ (Fin (n + 1))) 2 (volume.restrict S) :=
+    (Lp.memLp (W1p.gradient W)).mono_measure (Measure.restrict_mono inter_subset_left le_rfl)
+  exact setIntegral_norm_sub_sq_le_add_of_le hsS hD hq0 hq1
+    (hfm.integrableOn_norm_sub_sq_of_subset subset_rfl hS c)
+    (hWm.integrableOn_norm_sub_sq_of_subset hsS (ne_top_of_le_ne_top hS (measure_mono hsS)) k)
+    ((hfm.sub hWm).integrable_norm_pow two_ne_zero) hbest hdecay
+
+/-- **Transferring both decay estimates from a comparison function on half-balls.** Let
+`u ∈ H¹(U)`, `ball z r ⊆ U` and `W ∈ H¹(B_r)`, write `B_t⁺ = B(z, t) ∩ H`, and suppose that `W`
+decays like `∫_{B_ρ⁺} ‖∇W‖² ≤ C₁ (ρ / r)^{n+1} ∫_{B_r⁺} ‖∇W‖²` and
 `∫_{B_ρ⁺} ‖∇W - p_ρ‖² ≤ C₂ (ρ / r)^{n+3} ∫_{B_r⁺} ‖∇W - t ν‖²` for every real `t`, where `p_ρ` is
 the multiple of `ν` closest to `∇W` in `L²(B_ρ⁺)`. Then `u` decays in the same way up to the
 distance `E = ∫_{B_r⁺} ‖∇u - ∇W‖²`:
@@ -243,32 +278,17 @@ private theorem setIntegral_ball_inter_le_add_of_le {U H : Opens (EuclideanSpace
           (⟪⨍ y in ball z r ∩ H, W1p.gradient u y, ν⟫_ℝ / ‖ν‖ ^ 2) • ν‖ ^ 2) +
           (4 * C₂ + 2) * ∫ x in ball z r ∩ H, ‖W1p.gradient u x - W1p.gradient W x‖ ^ 2 := by
   have hr : 0 < r := hρ.trans_le hρr
-  set S := ball z r ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))
-  have hS : volume S ≠ ⊤ := measure_ball_inter_ne_top
-  have hsS : ball z ρ ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ S :=
-    inter_subset_inter_left _ (ball_subset_ball hρr)
-  have hs : volume (ball z ρ ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))) ≠ ⊤ :=
-    ne_top_of_le_ne_top hS (measure_mono hsS)
-  have hfm : MemLp (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) →
-      EuclideanSpace ℝ (Fin (n + 1))) 2 (volume.restrict S) :=
-    (Lp.memLp (W1p.gradient u)).mono_measure
-      (Measure.restrict_mono (inter_subset_left.trans hball) le_rfl)
-  have hHm : MemLp (W1p.gradient W : EuclideanSpace ℝ (Fin (n + 1)) →
-      EuclideanSpace ℝ (Fin (n + 1))) 2 (volume.restrict S) :=
-    (Lp.memLp (W1p.gradient W)).mono_measure (Measure.restrict_mono inter_subset_left le_rfl)
-  have hfK : IntegrableOn (fun x => ‖W1p.gradient u x - W1p.gradient W x‖ ^ 2) S :=
-    (hfm.sub hHm).integrable_norm_pow two_ne_zero
   have hq0 : 0 ≤ ρ / r := by positivity
   have hq1 : ρ / r ≤ 1 := (div_le_one hr).2 hρr
-  refine ⟨?_, setIntegral_norm_sub_sq_le_add_of_le hsS hC₂ (pow_nonneg hq0 _)
-    (pow_le_one₀ hq0 hq1) (hfm.integrableOn_norm_sub_sq_of_subset subset_rfl hS _)
-    (hHm.integrableOn_norm_sub_sq_of_subset hsS hs _) hfK
+  have hs : volume (ball z ρ ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))) ≠ ⊤ :=
+    measure_ball_inter_ne_top
+  refine ⟨?_, setIntegral_ball_inter_norm_gradient_sub_sq_le_add_of_le hball hρr hC₂
+    (pow_nonneg hq0 _) (pow_le_one₀ hq0 hq1)
     (setIntegral_norm_sub_inner_setAverage_div_smul_sq_le_of_subset subset_rfl hs
-      (hfm.mono_measure (Measure.restrict_mono hsS le_rfl)) ν _) (hd₂ _)⟩
-  simpa only [sub_zero] using setIntegral_norm_sub_sq_le_add_of_le (b := 0) (k := 0) (c := 0) hsS
-    hC₁ (pow_nonneg hq0 _) (pow_le_one₀ hq0 hq1)
-    (hfm.integrableOn_norm_sub_sq_of_subset subset_rfl hS 0)
-    (hHm.integrableOn_norm_sub_sq_of_subset hsS hs 0) hfK le_rfl
+      ((Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono
+        (inter_subset_left.trans ((ball_subset_ball hρr).trans hball)) le_rfl)) ν _) (hd₂ _)⟩
+  simpa only [sub_zero] using setIntegral_ball_inter_norm_gradient_sub_sq_le_add_of_le (b := 0)
+    (k := 0) (c := 0) hball hρr hC₁ (pow_nonneg hq0 _) (pow_le_one₀ hq0 hq1) le_rfl
     (by simpa only [sub_zero] using hd₁)
 
 /-- **Comparison with the frozen problem on half-balls.** There is `A`, depending only on `n`,

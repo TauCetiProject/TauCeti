@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import TauCeti.MeasureTheory.Function.AreaFormula.Curve
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Geometry.Euclidean.Volume.Sphere
+import TauCeti.Topology.Circle.Metric
 import TauCeti.Topology.EMetricSpace.CurveLength
 
 /-!
@@ -36,7 +37,12 @@ case of the measure `n ω_n r ^ (n - 1)` of spheres.
 * `TauCeti.eVariationOn_circleMap_Icc_zero_four_pi`: the double traversal has length
   `2 * μHE[1] (sphere c |R|)`.
 * `TauCeti.smul_map_volume_restrict_circleMap`: `|R|` times the image of Lebesgue measure on
-  `[0, 2π]` under `circleMap c R` is `μHE[1]` restricted to `sphere c |R|`.
+  `[a, a + 2π]` under `circleMap c R` is `μHE[1]` restricted to `sphere c |R|`.
+* `TauCeti.euclideanHausdorffMeasure_sphere_inter_eq_volume_preimage_circleMap`: the length of a
+  measurable part of the circle `sphere c |R|` is `|R|` times the measure of its parameters on a
+  full turn.
+* `Complex.euclideanHausdorffMeasure_sphere_inter_ball`: for `0 < r ≤ 2ρ`, the arc of the circle
+  `sphere c ρ` within distance `r` of a point on it has length `4ρ arcsin (r / (2ρ))`.
 -/
 
 public section
@@ -155,23 +161,49 @@ theorem eVariationOn_circleMap_Icc_zero_four_pi (c : ℂ) (R : ℝ) :
   rw [lintegral_congr_ae hmult, lintegral_indicator_const isClosed_sphere.measurableSet]
 
 /-- **Arc length on a circle.** The parametrization `circleMap c R` has speed `|R|`, so `|R|`
-times the image of Lebesgue measure on `[0, 2π]` under it is the one-dimensional Hausdorff
-measure on the circle `sphere c |R|`. For `R = 0` both sides vanish. -/
-theorem smul_map_volume_restrict_circleMap (c : ℂ) (R : ℝ) :
-    ENNReal.ofReal |R| • (volume.restrict (Icc 0 (2 * π))).map (circleMap c R) =
+times the image of Lebesgue measure on a full turn `[a, a + 2π]` under it is the one-dimensional
+Hausdorff measure on the circle `sphere c |R|`. For `R = 0` both sides vanish. -/
+theorem smul_map_volume_restrict_circleMap (c : ℂ) (R a : ℝ) :
+    ENNReal.ofReal |R| • (volume.restrict (Icc a (a + 2 * π))).map (circleMap c R) =
       μHE[1].restrict (sphere c |R|) := by
   rcases eq_or_ne R 0 with rfl | hR
   · rw [abs_zero, ENNReal.ofReal_zero, zero_smul, eq_comm, Measure.restrict_eq_zero]
     simpa using hausdorffMeasure_sphere_zero c
-  have himage : circleMap c R '' Icc 0 (2 * π) = sphere c |R| :=
-    Subset.antisymm ((image_subset_range _ _).trans_eq (range_circleMap c R))
-      ((image_circleMap_Ioc c R).symm.subset.trans (image_mono Ioc_subset_Icc_self))
+  have himage : circleMap c R '' Icc a (a + 2 * π) = sphere c |R| := by
+    rw [(periodic_circleMap c R).image_Icc two_pi_pos a, range_circleMap]
   have h := LipschitzOnWith.map_withDensity_enorm_deriv_eq_euclideanHausdorffMeasure_restrict
-    ((lipschitzWith_circleMap c R).lipschitzOnWith (s := Icc 0 (2 * π)))
+    ((lipschitzWith_circleMap c R).lipschitzOnWith (s := Icc a (a + 2 * π)))
     ((injOn_circleMap_of_abs_sub_le' hR (by simp)).mono Ioo_subset_Ico_self)
   have hd : (fun t ↦ ‖deriv (circleMap c R) t‖ₑ) = fun _ ↦ ENNReal.ofReal |R| :=
     funext fun t ↦ by simp [deriv_circleMap, ← ofReal_norm]
   rwa [hd, withDensity_const, Measure.map_smul, himage] at h
   exact (continuous_circleMap c R).aemeasurable
+
+/-- The length of a measurable part `sphere c |R| ∩ T` of a circle is `|R|` times the Lebesgue
+measure of its parameters on a full turn `[a, a + 2π]`. -/
+theorem euclideanHausdorffMeasure_sphere_inter_eq_volume_preimage_circleMap (c : ℂ) (R a : ℝ)
+    {T : Set ℂ} (hT : MeasurableSet T) :
+    μHE[1] (sphere c |R| ∩ T) =
+      ENNReal.ofReal |R| * volume (Icc a (a + 2 * π) ∩ circleMap c R ⁻¹' T) := by
+  rw [inter_comm, ← Measure.restrict_apply hT, ← smul_map_volume_restrict_circleMap c R a,
+    smul_apply, Measure.map_apply (continuous_circleMap c R).measurable hT,
+    Measure.restrict_apply (hT.preimage (continuous_circleMap c R).measurable), smul_eq_mul,
+    inter_comm]
+
+/-- **The length of a short arc.** For `0 < r ≤ 2ρ`, the arc of the circle `sphere c ρ` within
+distance `r` of a point `x` on it has length `4ρ arcsin (r / (2ρ))`. -/
+theorem _root_.Complex.euclideanHausdorffMeasure_sphere_inter_ball (c : ℂ) {ρ r : ℝ} (hρ : 0 < ρ)
+    (hr : 0 < r) (hr2 : r ≤ 2 * ρ) {x : ℂ} (hx : x ∈ sphere c ρ) :
+    μHE[1] (sphere c ρ ∩ ball x r) = ENNReal.ofReal (4 * ρ * arcsin (r / (2 * ρ))) := by
+  obtain ⟨φ, rfl⟩ : ∃ φ, circleMap c ρ φ = x := by
+    rw [← mem_range, range_circleMap, abs_of_pos hρ]
+    exact hx
+  have h := euclideanHausdorffMeasure_sphere_inter_eq_volume_preimage_circleMap c ρ (φ - π)
+    (measurableSet_ball (x := circleMap c ρ φ) (ε := r))
+  rw [abs_of_pos hρ, show φ - π + 2 * π = φ + π by ring] at h
+  rw [h, inter_comm, preimage_circleMap_ball_inter_Icc c hρ hr hr2, Real.volume_Ioo,
+    ← ENNReal.ofReal_mul hρ.le]
+  congr 1
+  ring
 
 end TauCeti

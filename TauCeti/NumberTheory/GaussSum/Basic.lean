@@ -60,6 +60,10 @@ then reindexing the Gauss sum by the Frobenius gives `g(χ ^ p, ψ) = g(χ, ψ)`
 * `MulChar.gaussSum_mulShift_eq_inv_mul_gaussSum`: `g(χ, x ↦ ψ (b * x)) = χ⁻¹ b * g(χ, ψ)` for
   every `b` when the characters take values in an integral domain and `χ` is primitive, that is,
   nontrivial on some unit `1 + c * a` for each `a ≠ 0`.
+* `MulChar.sum_gaussSum_mulShift`: the sum over all shift parameters factors as
+  `(∑ x, χ x) * ∑ a, ψ a`.
+* `MulChar.gaussSum_mulShift_eq_ite`: over a finite field the usual shift formula extends
+  to zero, with a single exceptional value for the trivial multiplicative character.
 * `TauCeti.gaussSum_mul_gaussSum_inv_eq_card_of_forall_mulShift` and
   `TauCeti.norm_gaussSum_of_forall_mulShift`: `g(χ, ψ) g(χ⁻¹, ψ⁻¹) = #R` and `‖g(χ, ψ)‖ = √#R`
   over a finite ring, when the shifted sums are proportional to `χ⁻¹`.
@@ -243,6 +247,27 @@ end TauCeti
 
 namespace MulChar
 
+/-- Summing a Gauss sum over all shifts of its additive character gives the product of
+the two character sums. In particular the result vanishes when the coefficient ring `S`
+is a domain and either character is nontrivial. -/
+theorem sum_gaussSum_mulShift {R S : Type*} [CommRing R] [Fintype R] [CommRing S]
+    (χ : MulChar R S) (ψ : AddChar R S) :
+    ∑ a : R, gaussSum χ (ψ.mulShift a) = (∑ x, χ x) * ∑ a, ψ a := by
+  simp only [gaussSum, AddChar.mulShift_apply]
+  rw [Finset.sum_comm, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun x _ ↦ ?_
+  rw [← Finset.mul_sum]
+  by_cases hx : IsUnit x
+  · rw [(IsUnit.isUnit_iff_mulRight_bijective.mp hx).sum_comp ψ]
+  · simp [χ.map_nonunit hx]
+
+/-- Over a domain of coefficients, the sum over all shifts of a nontrivial additive
+character vanishes for any multiplicative character. -/
+theorem sum_gaussSum_mulShift_eq_zero_of_ne_one_right {R S : Type*} [CommRing R] [Fintype R]
+    [CommRing S] [IsDomain S] (χ : MulChar R S) {ψ : AddChar R S} (hψ : ψ ≠ 1) :
+    ∑ a : R, gaussSum χ (ψ.mulShift a) = 0 := by
+  rw [χ.sum_gaussSum_mulShift, AddChar.sum_eq_zero_of_ne_one hψ, mul_zero]
+
 /-- **A Gauss sum against a degenerate shift vanishes.** Let `u` be a unit of the finite ring `R`
 and `b` an element with `b * (u - 1) = 0`, so that the shifted additive character
 `x ↦ ψ (b * x)` is invariant under multiplication by `u`. If `χ u ≠ 1`, then the Gauss sum of `χ`
@@ -296,6 +321,23 @@ theorem gaussSum_pow_eq_sum {R R' : Type*} [CommRing R] [Fintype R] [CommRing R'
   rw [Finset.prod_mul_distrib, map_prod, AddChar.map_sum_eq_prod]
 
 variable {F : Type*} [Field F] [Fintype F]
+
+open scoped Classical in
+/-- For a multiplicative shift by `a` in a finite field, the shifted Gauss sum is the
+unshifted sum times `χ⁻¹ a`, except at `a = 0` for the trivial character, where it is
+`Nat.card F - 1` cast into `S`. -/
+theorem gaussSum_mulShift_eq_ite {S : Type*} [CommRing S] [NoZeroDivisors S]
+    (χ : MulChar F S) (ψ : AddChar F S) (a : F) :
+    gaussSum χ (ψ.mulShift a) =
+      if a = 0 ∧ χ = 1 then ↑(Nat.card F - 1) else χ⁻¹ a * gaussSum χ ψ := by
+  nontriviality S
+  have : IsDomain S := NoZeroDivisors.to_isDomain S
+  by_cases ha : a = 0
+  · subst a
+    by_cases hχ : χ = 1
+    · simp [hχ, Fintype.card_units]
+    · simp [hχ, gaussSum_one_right hχ]
+  · simpa [ha] using gaussSum_mulShift_eq χ ψ (Units.mk0 a ha)
 
 /-- **Gauss sums are invariant under the Frobenius.** If `F` has characteristic `p` and the
 additive character `ψ` satisfies `ψ (x ^ p) = ψ x`, then `g(χ ^ p, ψ) = g(χ, ψ)` for every

@@ -37,6 +37,13 @@ applies to contact structures which are not the kernel of any global one-form.
   is Legendrian exactly when all its conformal symplectic normal spaces vanish
   (`TauCeti.isLegendrianImmersion_iff_forall_subsingleton_conformalSymplecticNormal`).
 
+The Levi orthogonal `(T_y N)^⊥ ⊆ ξ_(f y)` of the tangent image, as a subspace of `T_(f y) M`, is
+`TauCeti.leviOrthogonal J ξ f y`. For an isotropic map with injective differential at `y` it has
+dimension `dim M - dim N - 1` (`TauCeti.IsHorizontalMap.finrank_leviOrthogonal_add`), and if a
+smooth one-form `α` has kernel `ξ` near `f y`, it consists of the vectors `v` with `α (v) = 0` and
+`dα (df_y w, v) = 0` for every `w ∈ T_y N` (`TauCeti.mem_leviOrthogonal_iff_of_ker_eq`,
+`TauCeti.mem_leviOrthogonal_iff_of_basis`).
+
 The spaces are invariants of local contactomorphisms. Let `Φ : M → M₂` be a `C²` local
 diffeomorphism at `f y` whose differential carries `ξ` onto a `C¹` distribution `ξ₂` near `f y`.
 Then `dΦ` induces a linear equivalence `[u] ↦ [dΦ u]` from the conformal symplectic normal space of
@@ -60,7 +67,10 @@ carries the Levi form of `ξ` to that of `ξ₁` up to this isomorphism
 conformal symplectic normal space of `f` onto that of `F ∘ f`
 (`TauCeti.conformalSymplecticNormalEquiv`), conformally symplectic for the two line-valued forms
 (`TauCeti.conformalSymplecticNormalForm_conformalSymplecticNormalEquiv`), and compatible with
-composition (`TauCeti.conformalSymplecticNormalEquiv_trans`).
+composition (`TauCeti.conformalSymplecticNormalEquiv_trans`). It is induced by the map
+`u ↦ dF u` of Levi orthogonals: `dF` maps the Levi orthogonal of the tangent image of `f` onto that
+of `F ∘ f` (`TauCeti.map_orthogonalBilin_comap_range_mfderiv`,
+`TauCeti.mfderiv_mem_leviOrthogonal`).
 
 A local defining form `α` of `ξ` at `f y`, with `ker α_(f y) = ξ_(f y)`, identifies the contact
 line with `ℝ` and turns the line-valued form into a linear symplectic form
@@ -133,6 +143,42 @@ theorem conformalSymplecticNormalForm_mk
 /-- The form on the conformal symplectic normal space is alternating. -/
 theorem isAlt_conformalSymplecticNormalForm : (conformalSymplecticNormalForm J D f y).IsAlt :=
   isAlt_distributionLeviForm.isAlt_symplecticNormalForm
+
+/-! ### The Levi orthogonal of the tangent image -/
+
+variable (J D f) in
+/-- The **Levi orthogonal** of the tangent image of `f : N → M` at `y` for a hyperplane field `D`:
+the vectors `v ∈ D_(f y)` with `L_D (w, v) = 0` for every `w ∈ D_(f y)` in the tangent image
+`df_y (T_y N)`, as a subspace of `T_(f y) M`. It is the image in `T_(f y) M` of the orthogonal
+whose quotient is the conformal symplectic normal space `TauCeti.ConformalSymplecticNormal`. -/
+def leviOrthogonal (y : N) : Submodule ℝ (TangentSpace I (f y)) :=
+  (((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).orthogonalBilin
+    (distributionLeviForm D (f y))).map (D (f y)).subtype
+
+/-- The Levi orthogonal of the tangent image is the image in `T_(f y) M` of the orthogonal, inside
+`D_(f y)`, of the part of the tangent image lying in `D_(f y)` for the Levi form. -/
+theorem map_subtype_orthogonalBilin_eq_leviOrthogonal :
+    (((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).orthogonalBilin
+      (distributionLeviForm D (f y))).map (D (f y)).subtype = leviOrthogonal J D f y :=
+  (rfl)
+
+/-- A vector lies in the Levi orthogonal of the tangent image exactly when it lies in `D` and the
+Levi form pairs every tangent image vector in `D` with it to zero. -/
+theorem mem_leviOrthogonal_iff {v : TangentSpace I (f y)} :
+    v ∈ leviOrthogonal J D f y ↔ ∃ h : v ∈ D (f y), ∀ w : D (f y),
+      (w : TangentSpace I (f y)) ∈ LinearMap.range (mfderiv J I f y).toLinearMap →
+        distributionLeviForm D (f y) w ⟨v, h⟩ = 0 := by
+  simp only [← map_subtype_orthogonalBilin_eq_leviOrthogonal, Submodule.mem_map,
+    Submodule.subtype_apply]
+  constructor
+  · rintro ⟨u, hu, rfl⟩
+    exact ⟨u.property, fun w hw ↦ hu w hw⟩
+  · rintro ⟨h, hv⟩
+    exact ⟨⟨v, h⟩, fun w hw ↦ hv w hw, rfl⟩
+
+/-- The Levi orthogonal lies in `D`. -/
+theorem leviOrthogonal_le : leviOrthogonal J D f y ≤ D (f y) := fun _ hv ↦
+  (mem_leviOrthogonal_iff.1 hv).1
 
 /-! ### Naturality under local diffeomorphisms preserving the distributions -/
 
@@ -318,9 +364,20 @@ theorem contactLineEquiv_trans {x : M} (hFx : (mfderiv I I₁ F x).IsInvertible)
   | H u => simp [mfderiv_comp x hG hF]
 
 omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] in
+/-- An invertible differential `dF_x` mapping `D x` into `D₁ (F x)`, whose inverse maps
+`D₁ (F x)` into `D x`, carries `D x` onto `D₁ (F x)`. -/
+theorem map_ofBijective_mfderiv_eq {x : M} (hFx : (mfderiv I I₁ F x).IsInvertible)
+    (hFD : ∀ u ∈ D x, mfderiv I I₁ F x u ∈ D₁ (F x))
+    (hFD' : ∀ v ∈ D₁ (F x), (mfderiv I I₁ F x).inverse v ∈ D x) :
+    (D x).map (LinearEquiv.ofBijective (mfderiv I I₁ F x).toLinearMap
+      hFx.bijective : TangentSpace I x →ₗ[ℝ] TangentSpace I₁ (F x)) = D₁ (F x) :=
+  Submodule.map_equiv_eq_iff.2 fun u ↦
+    ⟨fun hu ↦ hFx.inverse_apply_self u ▸ hFD' _ hu, hFD u⟩
+
+omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] in
 /-- The differential of `F` carries the part of the tangent image of `f` lying in `D` onto the part
 of the tangent image of `F ∘ f` lying in `D₁`. -/
-private theorem map_comap_range_mfderiv (hFx : (mfderiv I I₁ F (f y)).IsInvertible)
+theorem map_comap_range_mfderiv (hFx : (mfderiv I I₁ F (f y)).IsInvertible)
     (hmap : (D (f y)).map (LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap
       hFx.bijective : TangentSpace I (f y) →ₗ[ℝ] TangentSpace I₁ (F (f y))) = D₁ (F (f y)))
     (hFd : MDifferentiableAt I I₁ F (f y)) (hf : MDifferentiableAt J I f y) :
@@ -350,6 +407,30 @@ private theorem distributionLeviForm_ofSubmodules_ofBijective {n : ℕ∞ω} {x 
     LinearEquiv.ofSubmodules_ofBijective_apply _ hFx.bijective hmap hFD v]
   exact distributionLeviForm_restrict_mfderiv hD hD₁ hF hn hFx hFD hFD' u v
 
+/-- **Levi orthogonals are natural.** Let `F` be `C²` at `f y` with invertible differential,
+mapping `D (f y)` into `D₁ (F (f y))`, and whose inverse differentials map `D₁` into `D` near
+`f y`, and let `f` be differentiable at `y`. Then the isomorphism `D (f y) ≃ D₁ (F (f y))` induced
+by `dF` carries the Levi orthogonal, inside `D`, of the part of the tangent image of `f` lying in
+`D` onto that of `F ∘ f`. -/
+theorem map_orthogonalBilin_comap_range_mfderiv {n : ℕ∞ω} (hD : IsContMDiffDistribution I 1 k D)
+    (hD₁ : IsContMDiffDistribution I₁ 1 k₁ D₁) (hF : ContMDiffAt I I₁ n F (f y)) (hn : 2 ≤ n)
+    (hFx : (mfderiv I I₁ F (f y)).IsInvertible)
+    (hFD : ∀ u ∈ D (f y), mfderiv I I₁ F (f y) u ∈ D₁ (F (f y)))
+    (hFD' : ∀ᶠ z in 𝓝 (f y), ∀ v ∈ D₁ (F z), (mfderiv I I₁ F z).inverse v ∈ D z)
+    (hmap : (D (f y)).map (LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap
+      hFx.bijective : TangentSpace I (f y) →ₗ[ℝ] TangentSpace I₁ (F (f y))) = D₁ (F (f y)))
+    (hf : MDifferentiableAt J I f y) :
+    (((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).orthogonalBilin
+        (distributionLeviForm D (f y))).map
+        ((LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap hFx.bijective).ofSubmodules
+          _ _ hmap : D (f y) →ₗ[ℝ] D₁ (F (f y))) =
+      ((LinearMap.range (mfderiv J I₁ (F ∘ f) y).toLinearMap).comap
+        (D₁ ((F ∘ f) y)).subtype).orthogonalBilin (distributionLeviForm D₁ ((F ∘ f) y)) := by
+  rw [← map_comap_range_mfderiv hFx hmap (hF.mdifferentiableAt (two_pos.trans_le hn).ne') hf]
+  exact LinearEquiv.map_orthogonalBilin _
+    ((Submodule.mapQ_injective_iff _ _ _ hFD).2 fun u ↦ (Submodule.map_equiv_eq_iff.1 hmap u).1)
+    (distributionLeviForm_ofSubmodules_ofBijective hD hD₁ hF hn hFx hFD hFD' hmap) _
+
 variable (J D f y) in
 /-- **The conformal symplectic normal spaces under a map carrying one distribution to another.**
 Let `F : M → M₁` be `C²` at `f y`, with invertible differential there, and let `D`, `D₁` be `C¹`
@@ -366,19 +447,11 @@ def conformalSymplecticNormalEquiv {n : ℕ∞ω} (hD : IsContMDiffDistribution 
     (hFD' : ∀ᶠ z in 𝓝 (f y), ∀ v ∈ D₁ (F z), (mfderiv I I₁ F z).inverse v ∈ D z)
     (hf : MDifferentiableAt J I f y) :
     ConformalSymplecticNormal J D f y ≃ₗ[ℝ] ConformalSymplecticNormal J D₁ (F ∘ f) y :=
-  -- The inverse differential carries `D₁ (F (f y))` back into `D (f y)`.
-  have hFD₁ (u) (hu : mfderiv I I₁ F (f y) u ∈ D₁ (F (f y))) : u ∈ D (f y) :=
-    hFx.inverse_apply_self u ▸ hFD'.self_of_nhds _ hu
-  have hmap : (D (f y)).map (LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap
-      hFx.bijective : TangentSpace I (f y) →ₗ[ℝ] TangentSpace I₁ (F (f y))) = D₁ (F (f y)) :=
-    Submodule.map_equiv_eq_iff.2 fun u ↦ ⟨hFD₁ u, hFD u⟩
-  have hW := map_comap_range_mfderiv hFx hmap (hF.mdifferentiableAt (two_pos.trans_le hn).ne') hf
+  have hmap := map_ofBijective_mfderiv_eq hFx hFD hFD'.self_of_nhds
   LinearMap.symplecticNormalCongr _ _
     ((LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap hFx.bijective).ofSubmodules _ _
-      hmap) hW <| by
-    rw [← hW]
-    exact LinearEquiv.map_orthogonalBilin _ ((Submodule.mapQ_injective_iff _ _ _ hFD).2 hFD₁)
-      (distributionLeviForm_ofSubmodules_ofBijective hD hD₁ hF hn hFx hFD hFD' hmap) _
+      hmap) (map_comap_range_mfderiv hFx hmap (hF.mdifferentiableAt (two_pos.trans_le hn).ne') hf)
+    (map_orthogonalBilin_comap_range_mfderiv hD hD₁ hF hn hFx hFD hFD' hmap hf)
 
 /-- The isomorphism of conformal symplectic normal spaces induced by `F` sends the class of `u` to
 the class of `dF u`. -/
@@ -459,6 +532,26 @@ theorem conformalSymplecticNormalEquiv_trans {n n₁ n₂ : ℕ∞ω}
         (LinearMap.symplecticNormalCongr_mk _ _ _ u).symm)
     simp [hcomp]
 
+/-- **The differential of a contactomorphism maps Levi orthogonals into Levi orthogonals.** Let `F`
+be `C²` at `f y` with invertible differential, mapping `D (f y)` into `D₁ (F (f y))`, and whose
+inverse differentials map `D₁` into `D` near `f y`, and let `f` be differentiable at `y`; these are
+the hypotheses of `TauCeti.conformalSymplecticNormalEquiv`. Then `dF` maps the Levi orthogonal of
+the tangent image of `f` at `y` into that of `F ∘ f`. This is the map of Levi orthogonals inducing
+`TauCeti.conformalSymplecticNormalEquiv`. -/
+theorem mfderiv_mem_leviOrthogonal {n : ℕ∞ω} (hD : IsContMDiffDistribution I 1 k D)
+    (hD₁ : IsContMDiffDistribution I₁ 1 k₁ D₁) (hF : ContMDiffAt I I₁ n F (f y)) (hn : 2 ≤ n)
+    (hFx : (mfderiv I I₁ F (f y)).IsInvertible)
+    (hFD : ∀ u ∈ D (f y), mfderiv I I₁ F (f y) u ∈ D₁ (F (f y)))
+    (hFD' : ∀ᶠ z in 𝓝 (f y), ∀ v ∈ D₁ (F z), (mfderiv I I₁ F z).inverse v ∈ D z)
+    (hf : MDifferentiableAt J I f y) {u : TangentSpace I (f y)}
+    (hu : u ∈ leviOrthogonal J D f y) :
+    mfderiv I I₁ F (f y) u ∈ leviOrthogonal J D₁ (F ∘ f) y := by
+  have hmap := map_ofBijective_mfderiv_eq hFx hFD hFD'.self_of_nhds
+  rw [← map_subtype_orthogonalBilin_eq_leviOrthogonal] at hu ⊢
+  obtain ⟨w, hw, rfl⟩ := hu
+  rw [← map_orthogonalBilin_comap_range_mfderiv hD hD₁ hF hn hFx hFD hFD' hmap hf]
+  exact ⟨_, Submodule.mem_map_of_mem hw, by simp⟩
+
 end NaturalityInvertible
 
 variable [FiniteDimensional ℝ E] {n : ℕ∞ω}
@@ -498,6 +591,34 @@ theorem IsHorizontalMap.finrank_conformalSymplecticNormal_add [IsManifold I (n +
       LinearMap.finrank_range_of_inj hinj]
     exact finrank_tangentSpace y
   have := hD.finrank_add_one (f y)
+  omega
+
+/-- **The dimension of the Levi orthogonal.** For an isotropic map `f` into a contact manifold
+with injective differential at `y`, the Levi orthogonal of the tangent image has dimension
+`dim M - dim N - 1`. -/
+theorem IsHorizontalMap.finrank_leviOrthogonal_add [IsManifold I (n + 1) M]
+    (hD : IsContactDistribution I n D) (hn : 1 ≤ n)
+    (hf : IsHorizontalMap J D f) (hfy : ContMDiffAt J I 2 f y)
+    (hinj : Injective (mfderiv J I f y)) :
+    finrank ℝ (leviOrthogonal J D f y) + (finrank ℝ E' + 1) = finrank ℝ E := by
+  have hcsn := hf.finrank_conformalSymplecticNormal_add hD hn hfy hinj
+  set Wt := (LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype
+  set B := distributionLeviForm D (f y)
+  -- `W^⊥ ⧸ W` is the conformal symplectic normal space, and `W ≤ W^⊥` has dimension `dim N`.
+  have h1 : finrank ℝ (leviOrthogonal J D f y) = finrank ℝ (Wt.orthogonalBilin B) :=
+    Submodule.finrank_map_subtype_eq _ _
+  have h2 := Submodule.finrank_quotient_add_finrank (Wt.comap (Wt.orthogonalBilin B).subtype)
+  have h3 : finrank ℝ (Wt.comap (Wt.orthogonalBilin B).subtype) = finrank ℝ Wt :=
+    LinearEquiv.finrank_eq (Submodule.comapSubtypeEquivOfLe (hf.le_orthogonalBilin hD hn hfy))
+  have h4 : finrank ℝ Wt = finrank ℝ E' := by
+    rw [LinearEquiv.finrank_eq (Submodule.comapSubtypeEquivOfLe (hf.range_mfderiv_le y)),
+      LinearMap.finrank_range_of_inj hinj]
+    -- `TangentSpace J y` is the model space `E'` by definition.
+    rfl
+  -- `ConformalSymplecticNormal` and `LinearMap.SymplecticNormal` are abbreviations unfolding to
+  -- this quotient.
+  have h5 : finrank ℝ (ConformalSymplecticNormal J D f y) =
+      finrank ℝ (Wt.orthogonalBilin B ⧸ Wt.comap (Wt.orthogonalBilin B).subtype) := rfl
   omega
 
 /-- **Legendrian immersions have zero conformal symplectic normal spaces.** -/
@@ -581,6 +702,66 @@ theorem IsContactDistribution.normalSymplecticForm_mk_eq_mextDeriv
   rw [hD.normalSymplecticForm_mk hDα.self_of_nhds hw]
   exact RoughForm.apply_eq_mextDeriv_of_mkQ_eq_distributionLeviForm (hX.of_le hn)
     (hU.mem_nhds hxU) hαd (hDα.mono fun _ h ↦ h.ge) hw
+
+omit [FiniteDimensional ℝ E] in
+/-- **The Levi orthogonal in terms of a local defining form.** Let `D` have a `C¹` local frame
+near `f y` and let the smooth one-form `α` have kernel `D` near `f y`. For a map `f` horizontal
+for `D`, a vector `v` lies in the Levi orthogonal of the tangent image of `f` at `y` exactly when
+`α (v) = 0` and `dα (df_y w, v) = 0` for every `w ∈ T_y N`. -/
+theorem mem_leviOrthogonal_iff_of_ker_eq {k : ℕ} (hD : IsContMDiffDistribution I 1 k D)
+    (hf : IsHorizontalMap J D f) {α : SmoothForm I M ℝ 1}
+    (hα : ∀ᶠ z in 𝓝 (f y), RoughForm.ker α.val z = D z) {v : TangentSpace I (f y)} :
+    v ∈ leviOrthogonal J D f y ↔ α.val (f y) ![v] = 0 ∧
+      ∀ w : TangentSpace J y, mextDeriv α.val (f y) ![mfderiv J I f y w, v] = 0 := by
+  obtain ⟨U, hU, hxU, X, hX⟩ := isContMDiffDistribution_iff.1 hD (f y)
+  have hαd : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun z ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) z (α.val z)) (f y) :=
+    α.contMDiff.mdifferentiableAt (by simp)
+  have hDα : ∀ᶠ z in 𝓝 (f y), D z ≤ RoughForm.ker α.val z := hα.mono fun _ h ↦ h.ge
+  have hker : ∀ u : TangentSpace I (f y), u ∈ D (f y) ↔ α.val (f y) ![u] = 0 := fun u ↦ by
+    rw [← hα.self_of_nhds, RoughForm.mem_ker]
+  -- The Levi form vanishes on a pair of vectors of `D` exactly when `dα` does.
+  have hL : ∀ u w : D (f y), distributionLeviForm D (f y) u w = 0 ↔
+      mextDeriv α.val (f y) ![(u : TangentSpace I (f y)), (w : TangentSpace I (f y))] = 0 := by
+    intro u w
+    obtain ⟨w', hw'⟩ := (D (f y)).mkQ_surjective (distributionLeviForm D (f y) u w)
+    rw [← RoughForm.apply_eq_mextDeriv_of_mkQ_eq_distributionLeviForm hX (hU.mem_nhds hxU) hαd
+      hDα hw', ← hw', ← hker, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+  rw [mem_leviOrthogonal_iff]
+  constructor
+  · rintro ⟨hvD, hv⟩
+    refine ⟨(hker v).1 hvD, fun w ↦ ?_⟩
+    exact (hL ⟨_, hf.range_mfderiv_le y ⟨w, rfl⟩⟩ ⟨v, hvD⟩).1 (hv _ ⟨w, rfl⟩)
+  · rintro ⟨hv₀, hv⟩
+    refine ⟨(hker v).2 hv₀, fun w ⟨w₀, hw₀⟩ ↦ ?_⟩
+    refine (hL w ⟨v, _⟩).2 ?_
+    rw [← hw₀]
+    exact hv w₀
+
+omit [FiniteDimensional ℝ E] in
+/-- **The Levi orthogonal in terms of a local defining form and a basis.** If the smooth one-form
+`α` has kernel `D` near `f y`, then `v` lies in the Levi orthogonal of the tangent image of a
+horizontal map `f` at `y` exactly when `α (v) = 0` and `dα (df_y (b i), v) = 0` for every member
+of a basis `b` of `T_y N`. -/
+theorem mem_leviOrthogonal_iff_of_basis {k : ℕ} (hD : IsContMDiffDistribution I 1 k D)
+    (hf : IsHorizontalMap J D f) {α : SmoothForm I M ℝ 1}
+    (hα : ∀ᶠ z in 𝓝 (f y), RoughForm.ker α.val z = D z) {ι : Type*}
+    (b : Module.Basis ι ℝ (TangentSpace J y)) {v : TangentSpace I (f y)} :
+    v ∈ leviOrthogonal J D f y ↔ α.val (f y) ![v] = 0 ∧
+      ∀ i, mextDeriv α.val (f y) ![mfderiv J I f y (b i), v] = 0 := by
+  rw [mem_leviOrthogonal_iff_of_ker_eq hD hf hα]
+  refine and_congr_right fun _ ↦ ⟨fun h i ↦ h (b i), fun h w ↦ ?_⟩
+  -- `w ↦ dα (df_y w, v)` is linear and vanishes on the basis `b`.
+  let L : TangentSpace J y →ₗ[ℝ] ℝ :=
+    (((mextDeriv α.val (f y)).toContinuousMultilinearMap.toContinuousLinearMap
+      ![0, v] 0).comp (mfderiv J I f y) : TangentSpace J y →L[ℝ] ℝ)
+  have hL (w : TangentSpace J y) : L w = mextDeriv α.val (f y) ![mfderiv J I f y w, v] := by
+    simp only [L, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
+      ContinuousMultilinearMap.toContinuousLinearMap_apply,
+      ContinuousAlternatingMap.coe_toContinuousMultilinearMap]
+    exact congrArg _ (by simp [funext_iff, Fin.forall_fin_two])
+  have hL0 : L = 0 := b.ext fun i ↦ by rw [hL, LinearMap.zero_apply]; exact h i
+  rw [← hL, hL0, LinearMap.zero_apply]
 
 /-- **Transition law.** Multiplying a defining form `α` by a function `g` not vanishing at `f y`
 multiplies its symplectic form on the conformal symplectic normal space by `g (f y)`. -/

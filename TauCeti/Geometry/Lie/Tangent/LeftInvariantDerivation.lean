@@ -21,6 +21,7 @@ The latter is the manifold model vector space, so this also determines the Lie a
 
 ## Main results
 
+* `LeftInvariantDerivation.map_algebraMap`: a left-invariant derivation kills the constants.
 * `LeftInvariantDerivation.evalAt_one_injective`: identity evaluation is injective for monoids.
 * `LeftInvariantDerivation.evalAt_injective`: evaluation at any point is injective.
 * `tangentToLeftInvariantDerivation`: the left-invariant derivation associated to a tangent vector
@@ -46,6 +47,12 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G]
+
+/-- A left-invariant derivation kills the constant functions. -/
+@[simp]
+theorem map_algebraMap [Monoid G] [ContMDiffMul I ∞ G] (X : LeftInvariantDerivation I G) (c : 𝕜) :
+    X (algebraMap 𝕜 C^∞⟮I, G; 𝕜⟯ c) = 0 :=
+  X.toDerivation.map_algebraMap c
 
 /-- A left-invariant derivation on a monoid is determined by its value at the identity. -/
 theorem evalAt_one_injective [Monoid G] [ContMDiffMul I ∞ G] :

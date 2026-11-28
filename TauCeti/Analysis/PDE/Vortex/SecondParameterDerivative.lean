@@ -295,36 +295,24 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_fun_fderiv_orthogonalKerProjectio
                 (sobolevGaugeFixedOperator (a p))) p v e) p₀ w) z) i : ℂ)) ∧
           ‖u‖ ≤ K * (M₂ + Mv * Mw) * (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
             sobolevFieldValues e z) 2 volume).toReal := by
-  obtain ⟨kπ, hkπ⟩ :=
-    exists_forall_eLpNorm_exp_mul_smul_orthogonalKerProjection_le_of_forall_mem_norm_le m R₀ hc
+  obtain ⟨K₀, hK₀, hK₀b⟩ :=
+    exists_forall_norm_exp_mul_smul_orthogonalKerProjection_le_of_forall_mem_norm_le m R₀ B hc k
   obtain ⟨K₂, hK₂⟩ :=
     exists_forall_eLpNorm_exp_mul_smul_fderiv_fun_fderiv_orthogonalKerProjection_le m R₀ hc
-  obtain ⟨K₁, hK₁, hK₁b⟩ :=
-    exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul k B c
   obtain ⟨KS, hKS, hKSb⟩ :=
     exists_forall_norm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_forall_mem_norm_le m R₀ B
       hc k
   obtain ⟨K₃, hK₃, hK₃b⟩ :=
     exists_forall_exists_inclusionLp_ae_eq_of_sobolevGaugeFixedOperator_eq_neg_add_add k B c
-  refine ⟨K₃ * (K₁ * kπ + KS + K₂ * 1), by positivity, ?_⟩
+  refine ⟨K₃ * (K₀ + KS + K₂ * 1), by positivity, ?_⟩
   intro x D hx hbound hxb hsol hframe hD hD₀ X _ _ a p₀ hax ha v w βv βw β₂ Mv Mw M₂ hbv hbw hb₂
     hβv hβw hβ₂ hβvb hβwb hβ₂b e he
   obtain ⟨hT, hsurj⟩ := isFredholm_and_surjective_sobolevGaugeFixedOperator hx hsol hframe hax
   have hd : DifferentiableAt ℝ a p₀ := ha.differentiableAt (by simp)
   have := hT.finite_ker
   set π := orthogonalKerProjection sobolevFieldValues (sobolevGaugeFixedOperator (a p₀))
-  have hπ0 : sobolevGaugeFixedOperator (a p₀) (π e) = 0 :=
-    (isOrthogonalKerProjection_orthogonalKerProjection sobolevFieldValues_injective _).mem_ker e
-  have he' := (ENNReal.ofReal_toReal he.eLpNorm_lt_top.ne).ge
-  -- `exp(c ρ) π e` has coordinates `u₁` in `H^(k+1)`, since `π e` solves `L_x Y = 0` weakly.
-  obtain ⟨hπm, hπn⟩ := memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul (by positivity)
-    (hkπ x D hx hbound hsol hframe hD hD₀ (a p₀) hax e) he'
-  obtain ⟨u₁, hu₁, hu₁n⟩ := hK₁b x hx hxb (0 : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) _
-    ((Lp.memLp _).mono_measure (Measure.restrict_coe_opens_top _).ge)
-    ((Lp.memLp _).mono_measure (Measure.restrict_coe_opens_top _).ge) (fun η hη hηc ↦ by
-      rw [integral_inner_sobolevFieldValues_gaugeFixedAdjoint hx.continuous hax (π e) hη hηc,
-        hπ0]) hπm 0 fun i ↦ .of_forall fun z ↦ by simp
-  rw [norm_zero, zero_add] at hu₁n
+  -- `exp(c ρ) π e` has coordinates `u₁` in `H^(k+1)`.
+  obtain ⟨u₁, hu₁, hu₁n⟩ := hK₀b x D hx hbound hxb hsol hframe hD hD₀ (a p₀) hax e he
   -- `exp(c ρ) π'_w e` and `exp(c ρ) π'_v e` have coordinates `u₂`, `u₃` in `H^(k+1)`.
   obtain ⟨u₂, hu₂, hu₂n⟩ :=
     hKSb x D hx hbound hxb hsol hframe hD hD₀ hax hd w βw Mw hbw hβw hβwb e he
@@ -342,9 +330,8 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_fun_fderiv_orthogonalKerProjectio
         (contDiff_sobolevGaugeFixedOperator.contDiffAt.comp p₀ ha)]
       simp only [fderiv_fun_fderiv_sobolevGaugeFixedOperator_comp_apply ha,
         fderiv_sobolevGaugeFixedOperator_comp_apply hd, π])
-    _ _ 1 _ (by positivity) hKS zero_le_one ENNReal.toReal_nonneg
-    ((hu₁n.trans (mul_le_mul_of_nonneg_left hπn hK₁)).trans_eq (by ring)) hu₂n hu₃n K₂ _
+    _ _ 1 _ hK₀ hKS zero_le_one ENNReal.toReal_nonneg hu₁n hu₂n hu₃n K₂ _
     (hK₂ x D hx hbound hsol hframe hD hD₀ hax ha v w e)
-    (by rwa [one_mul])
+    (by rw [one_mul]; exact (ENNReal.ofReal_toReal he.eLpNorm_lt_top.ne).ge)
 
 end TauCeti.Vortex

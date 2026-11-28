@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Basic
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Weight
+import TauCeti.AlgebraicGeometry.SpecialFiber.Reduced
 
 /-!
 # The numerical type of a regular model
@@ -220,6 +221,28 @@ theorem specialFiberNumericalType_weight_mul_genus
       Module.finrank (ResidueField R) (Cohomology (InvertibleSheaf.trivial (vanishingIdeal
         ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).subscheme).obj 1) :=
   toBase.specialFiberWeight_mul_finrank_cohomology_one _
+
+/-- **Uniformizer independence of `specialFiberNumericalType`.** Any two nonzerodivisor generators
+of `maximalIdeal R` define the same `TauCeti.NumericalType`. -/
+theorem specialFiberNumericalType_congr {π' : R}
+    (hπ' : maximalIdeal R = Ideal.span {π'}) (hreg' : IsSMulRegular R π') :
+    toBase.specialFiberNumericalType hX hη hC hπ hreg hconn =
+      toBase.specialFiberNumericalType hX hη hC hπ' hreg' hconn :=
+  let T := toBase.specialFiberNumericalType hX hη hC hπ hreg hconn
+  (T.reindex_refl).symm.trans (T.reindex_eq
+    (T' := toBase.specialFiberNumericalType hX hη hC hπ' hreg' hconn)
+    (Equiv.refl T.Component)
+    (fun i ↦ PNat.eq (toBase.specialFiberMultiplicity_congr (hπ.symm.trans hπ') i.val).symm)
+    (fun _ ↦ rfl) (fun _ _ ↦ rfl) fun _ ↦ rfl)
+
+/-- The special fibre is reduced iff every component has multiplicity `1` in
+`specialFiberNumericalType`. -/
+theorem isReduced_specialFiber_iff_multiplicity_eq_one :
+    IsReduced (specialFiber R toBase).left ↔
+      ∀ i, (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).multiplicity i = 1 := by
+  rw [toBase.isReduced_specialFiber_iff_specialFiberMultiplicity_eq_one_of_isRegular hX hη hπ]
+  exact ⟨fun h i ↦ PNat.eq (h i.val ((Set.Finite.mem_toFinset _).mp i.property)),
+    fun h x hx ↦ congrArg PNat.val (h ⟨x, (Set.Finite.mem_toFinset _).mpr hx⟩)⟩
 
 end AlgebraicGeometry.Scheme.Hom
 
