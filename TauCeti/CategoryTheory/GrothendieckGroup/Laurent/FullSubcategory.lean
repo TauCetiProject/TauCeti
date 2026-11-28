@@ -191,6 +191,21 @@ theorem map_lift_surjective {F : C ⥤ D} [F.Additive] (hF : GradedConflationExa
     rwa [ObjectProperty.essSurj_lift_iff, Functor.essImage_ι_comp]
   map_surjective _
 
+/-- The class of an explicitly presented ambient finite biproduct in the graded `K₀` of an
+extension-closed, shift-stable full subcategory is the sum of the classes of its summands. -/
+theorem of_biproduct_fullSubcategory {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
+    [HasBinaryBiproducts C] {E : GradedExactStructure C} {R : ObjectProperty C}
+    [EssentiallySmall.{w} R.FullSubcategory] [R.ContainsZero] [R.IsClosedUnderBinaryProducts]
+    (hR : E.toExactStructure.IsExtensionClosed R) (hRshift : R.inverseImage E.shift.functor = R)
+    {J : Type*} [Fintype J] (f : J → C) [HasBiproduct f] (hf : ∀ j, R (f j)) (hRf : R (⨁ f)) :
+    of.{w} (E.fullSubcategory R hR hRshift) ⟨⨁ f, hRf⟩ =
+      ∑ j, of.{w} (E.fullSubcategory R hR hRshift) ⟨f j, hf j⟩ := by
+  have := hasFiniteBiproducts_of_hasBinaryBiproducts (C := R.FullSubcategory)
+  let g : J → R.FullSubcategory := fun j => ⟨f j, hf j⟩
+  have e : (⟨⨁ f, hRf⟩ : R.FullSubcategory) ≅ ⨁ g :=
+    R.fullyFaithfulι.preimageIso (R.ι.mapBiproduct g).symm
+  rw [of_congr.{w} _ e, of_biproduct.{w}]
+
 end LaurentK0
 
 end TauCeti

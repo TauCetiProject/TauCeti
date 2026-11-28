@@ -448,16 +448,6 @@ theorem gradedVertexSimpleProjectiveResolution_termObj_one (i : Q)
       gradedArrowSum k Q i :=
   (rfl)
 
-/-- Every term of the first-arrow resolution of `Sᵢ` in homological degree `n ≥ 2` is a zero
-object. -/
-theorem isZero_gradedVertexSimpleProjectiveResolution_termObj_of_two_le (i : Q)
-    [Finite ((j : Q) × (i ⟶ j))] {n : ℕ} (hn : 2 ≤ n) :
-    Limits.IsZero ((gradedVertexSimpleProjectiveResolution k Q i).termObj n) := by
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
-  have : Subsingleton ((gradedVertexSimpleProjectiveResolution k Q i).termObj (m + 2)) :=
-    inferInstanceAs (Subsingleton (DirectSum (Fin 0) fun _ => gradedVertexProjective k Q i))
-  exact GradedModuleCat.isZero_of_subsingleton _
-
 /-- The augmentation of the first-arrow resolution of `Sᵢ` is `gradedVertexProjectiveToSimple`,
 transported along `gradedVertexSimpleProjectiveResolution_termObj_zero`. -/
 theorem gradedVertexSimpleProjectiveResolution_augmentation (i : Q)

@@ -495,7 +495,7 @@ namespace SplitK0.AdditiveInvariant
 
 /-- An additive invariant is additive on finite biproducts. -/
 @[simp]
-theorem obj_biproduct [HasZeroObject C] {J : Type} [Fintype J] (f : J → C) [HasBiproduct f] :
+theorem obj_biproduct [HasZeroObject C] {J : Type*} [Fintype J] (f : J → C) [HasBiproduct f] :
     v.obj (⨁ f) = ∑ j, v.obj (f j) := by
   have := hasFiniteBiproducts_of_hasBinaryBiproducts (C := C)
   revert f
@@ -521,7 +521,7 @@ variable [EssentiallySmall.{w} C]
 
 /-- The class of a finite biproduct is the sum of the classes of its summands. -/
 @[simp]
-theorem of_biproduct [HasZeroObject C] {J : Type} [Fintype J] (f : J → C) [HasBiproduct f] :
+theorem of_biproduct [HasZeroObject C] {J : Type*} [Fintype J] (f : J → C) [HasBiproduct f] :
     (of (⨁ f) : SplitK0 C) = ∑ j, of (f j) :=
   (ofInvariant C).obj_biproduct f
 

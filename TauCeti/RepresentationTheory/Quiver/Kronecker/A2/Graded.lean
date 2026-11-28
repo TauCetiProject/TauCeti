@@ -18,10 +18,12 @@ simple and a degree-one target simple. The minimal linear resolutions of the ver
 Betti Poincaré matrix `[1, 0; q t, 1]`, whose evaluation at `t = -1` is `[1, 0; -q, 1]`, the
 inverse of the graded Cartan matrix. The categorical q-Euler matrix of the vertex simples is
 `[1, -q⁻¹; 0, 1]`, not `[1, -q; 0, 1]`, because the pairing is q-antilinear in its first
-variable. These matrices are inverse conjugate transposes.
+variable. The graded Cartan and q-Euler matrices are inverse conjugate transposes (equivalently,
+the q-Euler matrix is the conjugate transpose of `B(q, -1)`).
 
-The results below identify all three displayed matrices with the actual Laurent Grothendieck-group
-constructions, compute the two columns of the graded Cartan map, verify `C(q) · B(q, -1) = I`,
+The results below identify the Cartan and Euler matrices with the actual Laurent Grothendieck-group
+constructions, identify the Betti matrix with the Betti Poincaré matrix of the minimal first-arrow
+resolutions, compute the two columns of the graded Cartan map, verify `C(q) · B(q, -1) = I`,
 and recover the ordinary Cartan and Euler matrices by evaluation at `q = 1`. The Euler-form
 identification uses the finite-support Ext computation from the first-arrow resolutions, not a
 totalized infinite sum.
