@@ -19,15 +19,17 @@ On a quasi-affine scheme, a finite-type quasi-coherent module has finitely many 
 generators (`AlgebraicGeometry.Scheme.Modules.exists_finite_generatingSections_of_isQuasiAffine`).
 A finitely presented module moreover has a finite global presentation
 (`AlgebraicGeometry.Scheme.Modules.exists_isFinite_presentation_of_isQuasiAffine`).
-For generation we specialize
-`AlgebraicGeometry.Scheme.Modules.eventually_exists_generatingSections_tensor_tensorPow`
-to the structure sheaf, using Mathlib's affine basic open basis. For presentations we use
-Mathlib's open immersion `Scheme.toSpecΓ` and Tau Ceti's finitely presented extension theorem
-`AlgebraicGeometry.Scheme.Modules.exists_isFinitePresentation_restrict_iso`.
+
+A finite free presentation describes morphisms out of a module by finite tuples of global
+sections of the target satisfying the relations. This lets one compare such morphisms by
+comparing global sections and checking compatibility with the relation maps.
 
 The generation statement is the quasi-affine case of
 [Stacks, Tag 01Q3](https://stacks.math.columbia.edu/tag/01Q3), with the ample invertible module
 taken to be the structure sheaf.
+
+The results use Tau Ceti's `eventually_exists_generatingSections_tensor_tensorPow` and
+`exists_isFinitePresentation_restrict_iso`, together with Mathlib's open immersion `Scheme.toSpecΓ`.
 -/
 
 public section
