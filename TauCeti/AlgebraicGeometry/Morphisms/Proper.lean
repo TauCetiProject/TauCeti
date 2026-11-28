@@ -33,7 +33,9 @@ For a universally closed morphism `f : X ⟶ Y` and an affine open `U ⊆ Y`, th
 over `U`; it holds without finiteness or Noetherian hypotheses.
 
 An open subscheme whose inclusion is a closed immersion is proper over every base over which
-the ambient scheme is proper (`AlgebraicGeometry.Scheme.Opens.isProper_over`).
+the ambient scheme is proper (`AlgebraicGeometry.Scheme.Opens.isProper_over`), and a morphism over
+`S` from a scheme proper over `S` to one separated over `S` is proper
+(`AlgebraicGeometry.Scheme.Hom.isProper_of_isOver`).
 -/
 
 public section
@@ -106,5 +108,11 @@ instance Scheme.Opens.isProper_over {S X : Scheme} [X.Over S] (U : X.Opens)
     [IsClosedImmersion U.ι] [IsProper (X ↘ S)] : IsProper (U.toScheme ↘ S) := by
   rw [← Scheme.Opens.ι_comp_over]
   infer_instance
+
+/-- A morphism over `S` from a scheme proper over `S` to a scheme separated over `S` is proper. -/
+theorem Scheme.Hom.isProper_of_isOver {X Y : Scheme} (S : Scheme) [X.Over S] [Y.Over S]
+    (f : X ⟶ Y) [f.IsOver S] [IsProper (X ↘ S)] [IsSeparated (Y ↘ S)] : IsProper f := by
+  have : IsProper (f ≫ Y ↘ S) := by rw [comp_over]; infer_instance
+  exact .of_comp f (Y ↘ S)
 
 end AlgebraicGeometry

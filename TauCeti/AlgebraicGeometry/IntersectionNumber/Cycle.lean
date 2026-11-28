@@ -8,9 +8,12 @@ module
 public import TauCeti.AlgebraicGeometry.Chow.TopDimension
 public import TauCeti.AlgebraicGeometry.Chow.Pushforward
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Basic
+import TauCeti.AlgebraicGeometry.Chow.PointCycle
 import TauCeti.AlgebraicGeometry.Curves.Normalization
 import TauCeti.AlgebraicGeometry.IntersectionNumber.ProjectionFormula
 import TauCeti.AlgebraicGeometry.LineBundle.BaseChange
+import TauCeti.AlgebraicGeometry.Morphisms.Proper
+import TauCeti.AlgebraicGeometry.Scheme.ConstantOnClosed
 
 /-!
 # Intersection numbers with one-cycles
@@ -165,22 +168,16 @@ theorem intersectionNumber_pullback_eq_zero_of_height_eq_zero (f : Y ⟶ X) (x :
     (hx : Order.height (f x) = 0) (a : LineBundleClass X) :
     intersectionNumber k (vanishingIdeal ⟨closure {x}, isClosed_closure⟩).subschemeι
       (pullback f a) = 0 := by
-  set I := vanishingIdeal (⟨closure {x}, isClosed_closure⟩ : Closeds Y)
-  set J := vanishingIdeal (⟨closure {f x}, isClosed_closure⟩ : Closeds X)
-  have hle : J ≤ (I.subschemeι ≫ f).ker :=
-    vanishingIdeal_le_ker_subschemeι_comp f ((Set.mapsTo_singleton.mpr rfl).closure f.continuous)
+  -- The point `f x` is minimal for the specialization order, so it is closed.
+  have hcl : IsClosed ({f x} : Set X) := closure_subset_iff_isClosed.mp fun z hz ↦ by
+    rw [closure_singleton_eq_Iic] at hz
+    exact (Specializes.antisymm (Order.height_eq_zero.mp hx hz) hz).eq
+  obtain ⟨g, hg⟩ :=
+    f.exists_subschemeι_comp_eq_of_image_subset (Z := ⟨closure {x}, isClosed_closure⟩) hcl
+    (hcl.closure_eq ▸ ((Set.mapsTo_singleton.mpr rfl).closure f.continuous).image_subset)
   rw [intersectionNumber_pullback]
-  refine intersectionNumber_eq_zero_of_eq_comp k (I.subschemeι ≫ f)
-    (IsClosedImmersion.lift J.subschemeι _ (by simpa using hle)) J.subschemeι
-    (IsClosedImmersion.lift_fac _ _ _).symm (t := genericPoint J.subscheme) (fun z ↦ ?_) a
-  -- A point of the reduced closure of `f x` is a specialization of `f x`; since `f x` has height
-  -- zero, `f x` is in turn a specialization of it.
-  rw [← J.subschemeι.isClosedEmbedding.isInducing.specializes_iff,
-    subschemeι_genericPoint_vanishingIdeal_closure_singleton]
-  have hz : J.subschemeι z ∈ closure {f x} := by
-    have : J.subschemeι z ∈ Set.range J.subschemeι := ⟨z, rfl⟩
-    rwa [range_subschemeι, coe_support_vanishingIdeal] at this
-  exact (Order.height_eq_zero.mp hx) (specializes_iff_mem_closure.mpr hz)
+  exact intersectionNumber_eq_zero_of_eq_comp k _ g _ hg (t := IsLocalRing.closedPoint _)
+    (fun z ↦ Subsingleton.elim z _ ▸ specializes_rfl) a
 
 variable [IsProper (Y ↘ Spec (.of k))]
 
@@ -203,10 +200,10 @@ theorem intersectionNumber_pullback_eq_residueDegree_mul (f : Y ⟶ X) [f.IsOver
   have hJ :=
     topologicalKrullDim_subscheme_vanishingIdeal_closure_of_mem_pointsOfDimension y.property
   -- `f` restricts to a morphism `g` from the reduced closure of `x` to that of `y`.
-  have hle : J ≤ (I.subschemeι ≫ f).ker :=
-    vanishingIdeal_le_ker_subschemeι_comp f ((Set.mapsTo_singleton.mpr hxy).closure f.continuous)
-  let g := IsClosedImmersion.lift J.subschemeι (I.subschemeι ≫ f) (by simpa using hle)
-  have hg : g ≫ J.subschemeι = I.subschemeι ≫ f := IsClosedImmersion.lift_fac _ _ _
+  have hle : J ≤ I.map f :=
+    vanishingIdeal_le_map_vanishingIdeal f ((Set.mapsTo_singleton.mpr hxy).closure f.continuous)
+  let g := subschemeMap I J f hle
+  have hg : g ≫ J.subschemeι = I.subschemeι ≫ f := subschemeMap_subschemeι I J f hle
   have : g.IsOver (Spec (.of k)) := ⟨by
     rw [over_eq_subschemeι_comp, over_eq_subschemeι_comp, ← Category.assoc, hg, Category.assoc,
       comp_over]⟩
@@ -214,9 +211,7 @@ theorem intersectionNumber_pullback_eq_residueDegree_mul (f : Y ⟶ X) [f.IsOver
     rw [over_eq_subschemeι_comp]; infer_instance
   have : IsProper (J.subscheme ↘ Spec (.of k)) := by
     rw [over_eq_subschemeι_comp]; infer_instance
-  have : IsProper (g ≫ J.subscheme ↘ Spec (.of k)) := by
-    rw [comp_over]; infer_instance
-  have : IsProper g := .of_comp g (J.subscheme ↘ Spec (.of k))
+  have : IsProper g := g.isProper_of_isOver (Spec (.of k))
   have hgen : g (genericPoint I.subscheme) = genericPoint J.subscheme := by
     apply J.subschemeι.isClosedEmbedding.injective
     rw [← Scheme.Hom.comp_apply, hg, Scheme.Hom.comp_apply,
@@ -245,14 +240,10 @@ theorem intersectionNumber_pullback_eq_residueDegree_mul (f : Y ⟶ X) [f.IsOver
 `[κ(C') : κ(C)] C`, and one contracted to a point is sent to zero. -/
 theorem cycleIntersectionNumber_cyclesMap (f : Y ⟶ X) [f.IsOver (Spec (.of k))]
     (a : LineBundleClass X) (α : cyclesOfDimension Y 1) :
-    letI : QuasiCompact f := by
-      have : IsProper (f ≫ X ↘ Spec (.of k)) := by rw [comp_over]; infer_instance
-      have : IsProper f := .of_comp f (X ↘ Spec (.of k))
-      infer_instance
+    letI : IsProper f := f.isProper_of_isOver (Spec (.of k))
     cycleIntersectionNumber k X (Additive.ofMul a) (cyclesMap k f α) =
       cycleIntersectionNumber k Y (Additive.ofMul (pullback f a)) α := by
-  have : IsProper (f ≫ X ↘ Spec (.of k)) := by rw [comp_over]; infer_instance
-  have : IsProper f := .of_comp f (X ↘ Spec (.of k))
+  have : IsProper f := f.isProper_of_isOver (Spec (.of k))
   let : CompactSpace X := QuasiCompact.compactSpace_of_compactSpace (X ↘ Spec (.of k))
   let : CompactSpace Y := QuasiCompact.compactSpace_of_compactSpace (Y ↘ Spec (.of k))
   classical
@@ -266,9 +257,10 @@ theorem cycleIntersectionNumber_cyclesMap (f : Y ⟶ X) [f.IsOver (Spec (.of k))
   have hx : Order.height (x : Y) = 1 := by
     obtain ⟨n, hn, hn'⟩ := mem_pointsOfDimension.mp x.property
     rw [hn]; exact_mod_cast hn'
-  have hmap : (cyclesMap k f (cyclesOfDimensionBasis Y 1 x) : AlgebraicCycle X ℤ) =
-      Function.locallyFinsuppWithin.single (f x) (f.residueDegree x : ℤ) := by
-    rw [coe_cyclesMap, coe_cyclesOfDimensionBasis, AlgebraicCycle.map_height_single k, one_mul]
+  have hbasis : cyclesOfDimensionBasis Y 1 x =
+      ⟨_, single_mem_cyclesOfDimension x.property 1⟩ :=
+    Subtype.ext (coe_cyclesOfDimensionBasis ..)
+  rw [hbasis]
   -- The proper map `f` does not raise heights, so the image of the curve is a point or a curve.
   rcases ((f.isClosedMap.specializingMap.height_apply_le_height (x : Y)).trans
     hx.le).lt_or_eq with h0 | h1
@@ -279,14 +271,15 @@ theorem cycleIntersectionNumber_cyclesMap (f : Y ⟶ X) [f.IsOver (Spec (.of k))
       have := height_apply_eq_height_of_residueDegree_ne_zero k f hne
       rw [h0, hx] at this
       exact zero_ne_one this
-    have : cyclesMap k f (cyclesOfDimensionBasis Y 1 x) = 0 :=
-      Subtype.ext (by rw [hmap, hdeg]; simp)
+    have : cyclesMap k f ⟨_, single_mem_cyclesOfDimension x.property 1⟩ = 0 :=
+      Subtype.ext (by rw [cyclesMap_single, hdeg]; simp)
     rw [this, map_zero, intersectionNumber_pullback_eq_zero_of_height_eq_zero k f x h0]
   · -- The curve maps onto a curve, with degree the residue degree at its generic point.
     let y : pointsOfDimension X 1 := ⟨f x, mem_pointsOfDimension.mpr ⟨1, h1, rfl⟩⟩
-    have : cyclesMap k f (cyclesOfDimensionBasis Y 1 x) =
+    have : cyclesMap k f ⟨_, single_mem_cyclesOfDimension x.property 1⟩ =
         ⟨Function.locallyFinsuppWithin.single (y : X) (f.residueDegree x : ℤ),
-          single_mem_cyclesOfDimension y.property _⟩ := Subtype.ext hmap
+          single_mem_cyclesOfDimension y.property _⟩ :=
+      Subtype.ext (by rw [cyclesMap_single, one_mul])
     rw [this, cycleIntersectionNumber_single,
       intersectionNumber_pullback_eq_residueDegree_mul k f x y rfl]
 

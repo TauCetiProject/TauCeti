@@ -75,6 +75,8 @@ All in the namespace `TauCeti.AlgebraicGeometry`, except the last, which is in
   the transcendence degree over `k` of the residue field.
 * `finite_preimage_singleton_of_height_eq`: a fibre whose points all have the height of their
   image is finite.
+* `height_genericPoint_of_topologicalKrullDim_eq`: the generic point of an irreducible scheme of
+  dimension `n` has height `n`.
 * `isFinite_of_height_apply_eq`: a proper morphism under which every point keeps its height is
   finite; in particular a proper dominant morphism of irreducible curves is finite
   (`isFinite_of_isDominant_of_topologicalKrullDim_eq_one`).
@@ -314,6 +316,12 @@ theorem finite_preimage_singleton_of_height_eq {Y : Scheme.{u}} [Y.Over (Spec (.
   have : Finite (f.fiber y) := TopologicalSpace.NoetherianSpace.finite_of_t1Space
   exact f.range_fiberι y ▸ Set.finite_range _
 
+/-- On an irreducible scheme of dimension `n`, the generic point has height `n`. -/
+theorem height_genericPoint_of_topologicalKrullDim_eq {Z : Scheme.{u}} [IrreducibleSpace Z]
+    {n : ℕ∞} (hZ : topologicalKrullDim Z = n) : Order.height (genericPoint Z) = n := by
+  rw [← (genericPoint_spec Z).height_eq_topologicalKrullDim] at hZ
+  exact_mod_cast hZ
+
 /-- **Proper morphisms preserving heights are finite.** Let `f : X ⟶ Y` be a proper morphism of
 schemes over a field `k`, with `X` locally of finite type over `k`, such that every point of `X`
 has the height of its image. Then every fibre is finite, so `f` is quasi-finite and hence finite.
@@ -335,22 +343,14 @@ theorem isFinite_of_isDominant_of_topologicalKrullDim_eq_one {Y : Scheme.{u}}
     [IsProper f] [IsDominant f] (hX : topologicalKrullDim X = 1)
     (hY : topologicalKrullDim Y = 1) : IsFinite f := by
   have : IrreducibleSpace Y := f.irreducibleSpace_of_isDominant
-  have h1 (Z : Scheme.{u}) [IrreducibleSpace Z] (hZ : topologicalKrullDim Z = 1) :
-      Order.height (genericPoint Z) = 1 := by
-    rw [← (genericPoint_spec Z).height_eq_topologicalKrullDim] at hZ
-    exact_mod_cast hZ
   refine isFinite_of_height_apply_eq k f fun x ↦
     le_antisymm (f.isClosedMap.specializingMap.height_apply_le_height x) ?_
   by_cases hx : x = genericPoint X
-  · rw [hx, f.genericPoint_eq_of_isDominant, h1 X hX, h1 Y hY]
-  -- Every other point is a proper specialization of the generic point, so it is closed.
-  have hspec := (genericPoint_spec X).specializes (Set.mem_univ x)
-  have hlt : x < genericPoint X := ⟨hspec, fun h ↦ hx (h.antisymm hspec).eq⟩
-  have htop : Order.height (genericPoint X) < ⊤ := by
-    rw [h1 X hX]; exact ENat.one_lt_top
-  replace hlt := Order.height_strictMono hlt ((Order.height_mono hlt.le).trans_lt htop)
-  rw [h1 X hX, Order.lt_one_iff] at hlt
-  simp [hlt]
+  · rw [hx, f.genericPoint_eq_of_isDominant, height_genericPoint_of_topologicalKrullDim_eq hX,
+      height_genericPoint_of_topologicalKrullDim_eq hY]
+  -- Every other point is closed, of height zero.
+  rw [Scheme.height_of_isClosed (Scheme.isClosed_singleton_of_ne_genericPoint hX.le hx)]
+  exact zero_le
 
 /-- **Proper generically finite morphisms are finite in codimension one.** Let `f : X ⟶ Y` be a
 proper dominant morphism of schemes over a field `k`, with `X` irreducible and locally of
@@ -364,10 +364,9 @@ theorem exists_isFinite_morphismRestrict_of_height_add_one {Y : Scheme.{u}}
     (hy : Order.height y = n) :
     ∃ V : Y.Opens, y ∈ V ∧ IsFinite (f ∣_ V) := by
   have : IrreducibleSpace Y := f.irreducibleSpace_of_isDominant
-  have hgen : ∀ (Z : Scheme.{u}) [IrreducibleSpace Z], topologicalKrullDim Z = n + 1 →
-      Order.height (genericPoint Z) = n + 1 := fun Z _ hZ ↦ by
-    rw [← (genericPoint_spec Z).height_eq_topologicalKrullDim] at hZ
-    exact_mod_cast hZ
+  have hgen (Z : Scheme.{u}) [IrreducibleSpace Z] (hZ : topologicalKrullDim Z = n + 1) :
+      Order.height (genericPoint Z) = n + 1 :=
+    height_genericPoint_of_topologicalKrullDim_eq (by exact_mod_cast hZ)
   -- Every point `x` over `y` has height `n`: at least `n` since the closed map `f` does not
   -- increase heights, and less than `n + 1` since `x` is not the generic point of `X`, which maps
   -- to that of `Y`.
