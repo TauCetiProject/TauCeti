@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Hom.Rat
 public import Mathlib.LinearAlgebra.Complex.Module
 public import TauCeti.RingTheory.TensorProduct.Maps
 import Mathlib.Tactic.LinearCombination
@@ -27,6 +28,9 @@ map exchanges the two components (`TauCeti.complexTensorProductEquivProd_lTensor
 `A = ℂ`, conjugation of the second factor exchanges the two components up to conjugation
 (`TauCeti.complexTensorProductEquivProd_lTensor_conjAe`).
 
+On `ℝ ⊗[ℚ] E`, evaluating at a conjugate ring homomorphism conjugates the value
+(`RingHom.liftEquiv_star_toRatAlgHom_apply`).
+
 In particular, for nontrivial `A` the tensor product `ℂ ⊗[ℝ] A` has zero divisors. Explicit
 factors are `I ⊗ 1 - 1 ⊗ I` and `I ⊗ 1 + 1 ⊗ I`, where the second occurrence of `I` is mapped into
 `A`. So extending real scalars to `ℂ` never yields a domain when the algebra already contains `ℂ`.
@@ -36,6 +40,18 @@ This is distinct from the nonreduced tensor products caused by inseparability.
 public section
 
 open TensorProduct
+open scoped ComplexConjugate
+
+/-- Evaluating a real tensor at the conjugate ring homomorphism conjugates its value. -/
+theorem RingHom.liftEquiv_star_toRatAlgHom_apply {E : Type*} [Ring E] [Algebra ℚ E]
+    (φ : E →+* ℂ) (x : ℝ ⊗[ℚ] E) :
+    AlgHom.liftEquiv ℚ ℝ E ℂ (star φ).toRatAlgHom x =
+      conj (AlgHom.liftEquiv ℚ ℝ E ℂ φ.toRatAlgHom x) := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul r a =>
+    simp only [AlgHom.liftEquiv_tmul, RingHom.toRatAlgHom_apply, RingHom.star_apply,
+      ← starRingEnd_apply, Complex.real_smul, map_mul, Complex.conj_ofReal]
 
 namespace TauCeti
 

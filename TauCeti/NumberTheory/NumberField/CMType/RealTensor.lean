@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.NumberField.CMType.Basic
 import TauCeti.RingTheory.Etale.Galois
 import TauCeti.RingTheory.Etale.Reduced
 import TauCeti.RingTheory.Etale.Splitting
+import TauCeti.RingTheory.TensorProduct.Complex
 
 /-!
 # The real algebra of a CM type
@@ -32,51 +33,56 @@ open scoped TensorProduct ComplexConjugate
 
 namespace TauCeti.CMType
 
-/-- Evaluating a real tensor at the conjugate embedding conjugates its value. -/
-private theorem liftEquiv_star_apply {E : Type*} [Ring E] [Algebra ℚ E]
-    (φ : E →+* ℂ) (x : ℝ ⊗[ℚ] E) :
-    AlgHom.liftEquiv ℚ ℝ E ℂ (star φ).toRatAlgHom x =
-      conj (AlgHom.liftEquiv ℚ ℝ E ℂ φ.toRatAlgHom x) := by
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy => simp only [map_add, hx, hy]
-  | tmul r a =>
-    simp only [AlgHom.liftEquiv_tmul, RingHom.toRatAlgHom_apply, RingHom.star_apply,
-      ← starRingEnd_apply, Complex.real_smul, map_mul, Complex.conj_ofReal]
-
 variable {E : Type*} [CommRing E] [Algebra ℚ E] [Module.Finite ℚ E] [IsReduced E]
+
+/-- Evaluation at the embeddings selected by a CM type separates points of the real scalar
+extension. -/
+theorem injective_pi_liftEquiv (Φ : CMType E) :
+    Function.Injective (AlgHom.pi fun φ : Φ ↦ AlgHom.liftEquiv ℚ ℝ E ℂ φ.val.toRatAlgHom) := by
+  classical
+  let eval := AlgHom.liftEquiv ℚ ℝ E ℂ
+  have : Algebra.Etale ℚ E :=
+    algebraEtale_iff_finite_and_isReduced.mpr ⟨inferInstance, inferInstance⟩
+  intro x y h
+  apply _root_.Algebra.Etale.pi_id_injective ℝ ℂ (ℝ ⊗[ℚ] E)
+  funext ψ
+  obtain ⟨φ, rfl⟩ := ((RingHom.equivRatAlgHom E ℂ).trans eval).surjective ψ
+  -- The missing coordinates are the conjugates of the selected ones.
+  by_cases hφ : φ ∈ Φ
+  · exact congrFun h ⟨φ, hφ⟩
+  · have he := congrFun h (⟨star φ, (Φ.star_mem_iff φ).mpr hφ⟩ : Φ)
+    simp only [AlgHom.pi_apply, RingHom.liftEquiv_star_toRatAlgHom_apply] at he
+    exact Function.Involutive.injective Complex.conj_conj he
+
+/-- The real scalar extension and the complex coordinates selected by a CM type have the same
+real dimension. -/
+theorem finrank_realTensor_eq (Φ : CMType E) :
+    Module.finrank ℝ (ℝ ⊗[ℚ] E) = Module.finrank ℝ (Φ → ℂ) := by
+  have : Algebra.Etale ℚ E :=
+    algebraEtale_iff_finite_and_isReduced.mpr ⟨inferInstance, inferInstance⟩
+  let := Fintype.ofFinite Φ
+  rw [Module.finrank_baseChange, ← Algebra.Etale.card_algHom_eq_finrank ℚ E ℂ,
+    ← Nat.card_congr (RingHom.equivRatAlgHom E ℂ), Φ.card_ringHom_eq_two_mul]
+  simp [Module.finrank_pi_fintype, Nat.card_eq_fintype_card, Nat.mul_comm]
+
+private theorem bijective_pi_liftEquiv (Φ : CMType E) :
+    Function.Bijective (AlgHom.pi fun φ : Φ ↦ AlgHom.liftEquiv ℚ ℝ E ℂ φ.val.toRatAlgHom) := by
+  let := Fintype.ofFinite Φ
+  let f := AlgHom.pi fun φ : Φ ↦ AlgHom.liftEquiv ℚ ℝ E ℂ φ.val.toRatAlgHom
+  exact ⟨Φ.injective_pi_liftEquiv,
+    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (f := f.toLinearMap)
+      Φ.finrank_realTensor_eq).mp Φ.injective_pi_liftEquiv⟩
 
 /-- The decomposition of the real scalar extension into the complex coordinates selected by a
 CM type. Its coordinate at `φ` sends `r ⊗ a` to `r * φ(a)`. -/
-noncomputable def realTensorEquiv (Φ : CMType E) : ℝ ⊗[ℚ] E ≃ₐ[ℝ] (Φ → ℂ) := by
-  classical
-  let eval := AlgHom.liftEquiv ℚ ℝ E ℂ
-  let f := AlgHom.pi fun φ : Φ ↦ eval φ.val.toRatAlgHom
-  have : Algebra.Etale ℚ E :=
-    algebraEtale_iff_finite_and_isReduced.mpr ⟨inferInstance, inferInstance⟩
-  -- The missing coordinates are the conjugates of the selected ones.
-  have hinj : Function.Injective f := by
-    intro x y h
-    apply _root_.Algebra.Etale.pi_id_injective ℝ ℂ (ℝ ⊗[ℚ] E)
-    funext ψ
-    obtain ⟨φ, rfl⟩ := ((RingHom.equivRatAlgHom E ℂ).trans eval).surjective ψ
-    by_cases hφ : φ ∈ Φ
-    · exact congrFun h ⟨φ, hφ⟩
-    · have he : eval (star φ).toRatAlgHom x = eval (star φ).toRatAlgHom y :=
-        congrFun h ⟨star φ, (Φ.star_mem_iff φ).mpr hφ⟩
-      rw [liftEquiv_star_apply, liftEquiv_star_apply] at he
-      exact Function.Involutive.injective Complex.conj_conj he
-  letI := Fintype.ofFinite Φ
-  have hdim : Module.finrank ℝ (ℝ ⊗[ℚ] E) = Module.finrank ℝ (Φ → ℂ) := by
-    rw [Module.finrank_baseChange, ← Algebra.Etale.card_algHom_eq_finrank ℚ E ℂ,
-      ← Nat.card_congr (RingHom.equivRatAlgHom E ℂ), Φ.card_ringHom_eq_two_mul]
-    simp [Module.finrank_pi_fintype, Nat.card_eq_fintype_card, Nat.mul_comm]
-  exact AlgEquiv.ofBijective f ⟨hinj,
-    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (f := f.toLinearMap) hdim).mp hinj⟩
+noncomputable def realTensorEquiv (Φ : CMType E) : ℝ ⊗[ℚ] E ≃ₐ[ℝ] (Φ → ℂ) :=
+  AlgEquiv.ofBijective (AlgHom.pi fun φ : Φ ↦ AlgHom.liftEquiv ℚ ℝ E ℂ φ.val.toRatAlgHom)
+    (bijective_pi_liftEquiv Φ)
 
 /-- A coordinate of the decomposition is the real-linear extension of its embedding. -/
 theorem realTensorEquiv_apply (Φ : CMType E) (x : ℝ ⊗[ℚ] E) (φ : Φ) :
-    Φ.realTensorEquiv x φ = AlgHom.liftEquiv ℚ ℝ E ℂ φ.val.toRatAlgHom x :=
-  (rfl)
+    Φ.realTensorEquiv x φ = AlgHom.liftEquiv ℚ ℝ E ℂ φ.val.toRatAlgHom x := by
+  rw [realTensorEquiv, AlgEquiv.ofBijective_apply, AlgHom.pi_apply]
 
 @[simp]
 theorem realTensorEquiv_tmul (Φ : CMType E) (r : ℝ) (a : E) (φ : Φ) :
@@ -102,10 +108,11 @@ theorem liftEquiv_complexScalarHom (Φ : CMType E) (φ : E →+* ℂ) (z : ℂ)
     AlgHom.liftEquiv ℚ ℝ E ℂ φ.toRatAlgHom (Φ.complexScalarHom z) =
       if φ ∈ Φ then z else conj z := by
   split_ifs with hφ
-  · exact congrFun (Φ.realTensorEquiv_complexScalarHom z) ⟨φ, hφ⟩
+  · simpa only [realTensorEquiv_apply] using
+      congrFun (Φ.realTensorEquiv_complexScalarHom z) (⟨φ, hφ⟩ : Φ)
   · have h := congrFun (Φ.realTensorEquiv_complexScalarHom z)
         ⟨star φ, (Φ.star_mem_iff φ).mpr hφ⟩
-    rw [realTensorEquiv_apply, liftEquiv_star_apply] at h
+    rw [realTensorEquiv_apply, RingHom.liftEquiv_star_toRatAlgHom_apply] at h
     simpa only [Complex.conj_conj] using congrArg (conj : ℂ → ℂ) h
 
 end TauCeti.CMType
