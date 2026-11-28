@@ -194,9 +194,8 @@ theorem eq_zero_of_commute_simpleReflection {i j : I} (hij : i ≠ j)
     A i j = 0 ∧ A j i = 0 := by
   rw [R.simpleReflection_eq_reflection hA i,
     R.simpleReflection_eq_reflection hA j (by simp [hA j])] at h
-  have hne (k : I) : Dual.eval K H (R.coroot k) ≠ 0 := fun hk ↦
-    R.coroot_linearIndependent.ne_zero k <| (Module.forall_dual_apply_eq_zero_iff K _).mp
-      fun φ ↦ by simpa using congr($(hk) φ)
+  have hne (k : I) : Dual.eval K H (R.coroot k) ≠ 0 :=
+    (Module.eval_apply_eq_zero_iff K _).not.mpr (R.coroot_linearIndependent.ne_zero k)
   have h0 := (Module.commute_reflection_iff
     (R.linearIndependent_root_pair hij) (hne i) (hne j)).mp h
   simpa [R.root_coroot] using h0
@@ -211,10 +210,10 @@ theorem commute_simpleReflection_iff_eq_zero {i j : I} (hij : i ≠ j) :
 /-- If `A i j = 0` and `A j i = 0`, the dual simple reflections `sᵢ` and `sⱼ` commute. -/
 theorem commute_simpleCoreflection_of_eq_zero {i j : I} (hij : A i j = 0) (hji : A j i = 0) :
     Commute (R.simpleCoreflection hA i) (R.simpleCoreflection hA j) := by
-  ext h
-  simp only [mul_apply_eq_comp, simpleCoreflection_apply, map_sub, map_smul, root_coroot,
-    hij, hji, zero_smul, sub_zero]
-  exact sub_right_comm _ _ _
+  rw [R.simpleCoreflection_eq_reflection hA i,
+    R.simpleCoreflection_eq_reflection hA j (by simp [hA j])]
+  exact Module.commute_reflection _ _ (by simpa [R.root_coroot] using hji)
+    (by simpa [R.root_coroot] using hij)
 
 /-! ### The Weyl group and its contragredient ambient action -/
 
