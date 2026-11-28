@@ -44,11 +44,11 @@ open Polynomial
 /-- The universal binary-form discriminant is a square modulo four in the coefficient ring. -/
 theorem exists_universalDiscr_eq_sq_sub_four_mul (n : ℕ) :
     ∃ s t : MvPolynomial (Fin (n + 1)) ℤ, universalDiscr n = s ^ 2 - 4 * t := by
-  have hnz : universalPoly n ≠ 0 := leadingCoeff_ne_zero.mp <| by simp
+  have hnz : freePoly ℤ n ≠ 0 := leadingCoeff_ne_zero.mp <| by simp
   obtain ⟨s, t, h⟩ := (monic_integralNormalization hnz).exists_discr_eq_sq_sub_four_mul
   obtain ⟨k, hk⟩ : Even ((n - 1) * (n - 2)) := by
     simpa only [Nat.sub_sub, one_add_one_eq_two] using Nat.even_mul_pred_self (n - 1)
-  rw [discr_integralNormalization, natDegree_universalPoly, leadingCoeff_universalPoly,
+  rw [discr_integralNormalization, natDegree_freePoly, leadingCoeff_freePoly,
     ← universalDiscr_def, hk, pow_add, ← pow_two] at h
   exact exists_eq_sq_sub_four_mul_of_X_pow_mul (Fin.last n) k h
 

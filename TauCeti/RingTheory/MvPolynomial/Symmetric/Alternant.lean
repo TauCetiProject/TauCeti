@@ -63,6 +63,9 @@ sign appears: that is the dual Pieri rule.
   `(∏ i, X i) ^ c`.
 * `TauCeti.alternant_fin_val_eq_vandermonde`: for the exponents `0, 1, …, n - 1` the alternant
   is the Vandermonde product `∏_{i < j} (X_j - X_i)`.
+* `TauCeti.prod_Ioi_X_sub_X_eq_neg_one_pow_mul_alternant`, `TauCeti.alternant_fin_val_sq`: sign
+  and square conversion between `∏_{i < j} (X_i - X_j)` and the Vandermonde alternant.
+* `TauCeti.isSymmetric_alternant_of_two_eq_zero`: symmetry of alternants when `2 = 0`.
 * `MvPolynomial.rename_vandermonde` and `MvPolynomial.vandermonde_ne_zero`: the Vandermonde
   product is antisymmetric, and nonzero over a nontrivial ring.
 * `TauCeti.psum_mul_alternant`: the power-sum multiplication rule `p_r · a_α = ∑_j a_{α + r e_j}`.
@@ -334,6 +337,42 @@ theorem esymm_mul_alternant (r : ℕ) (α : σ → ℕ) :
   rw [h]
   refine sum_congr rfl fun T _ => ?_
   simp [Finsupp.finsetSum_apply, Finsupp.single_apply]
+
+/-- The reversed Vandermonde product `∏_{i < j} (X i - X j)` equals
+`(-1) ^ (n * (n - 1) / 2) * alternant (Fin n) R (fun j => (j : ℕ))`. -/
+theorem prod_Ioi_X_sub_X_eq_neg_one_pow_mul_alternant (n : ℕ) :
+    (∏ i : Fin n, ∏ j ∈ Ioi i, (X i - X j : MvPolynomial (Fin n) R)) =
+      (-1) ^ (n * (n - 1) / 2) * alternant (Fin n) R (fun j => (j : ℕ)) := by
+  rw [alternant_fin_val_eq_vandermonde]
+  have hneg : ∀ i : Fin n, ∀ j ∈ Ioi i,
+      (X i - X j : MvPolynomial (Fin n) R) = (-1) * (X j - X i) := fun _ _ _ => by ring
+  rw [prod_congr rfl fun i _ => prod_congr rfl (hneg i)]
+  simp only [prod_mul_distrib, prod_const, prod_pow_eq_pow_sum]
+  congr 2
+  simp only [Fin.card_Ioi, Fin.sum_univ_eq_sum_range fun i => n - 1 - i]
+  rw [sum_range_reflect (fun i => i) n, sum_range_id]
+
+/-- The square of `alternant (Fin n) R (fun j => (j : ℕ))` equals the square of the reversed
+Vandermonde product `∏_{i < j} (X i - X j)`. -/
+theorem alternant_fin_val_sq (n : ℕ) :
+    alternant (Fin n) R (fun j => (j : ℕ)) ^ 2 =
+      (∏ i : Fin n, ∏ j ∈ Ioi i, (X i - X j : MvPolynomial (Fin n) R)) ^ 2 := by
+  rw [prod_Ioi_X_sub_X_eq_neg_one_pow_mul_alternant, mul_pow, ← pow_mul, mul_comm _ 2,
+    pow_mul, neg_one_sq, one_pow, one_mul]
+
+/-- Over a ring in which `2 = 0`, every alternant is symmetric. -/
+theorem isSymmetric_alternant_of_two_eq_zero (h2 : (2 : R) = 0) (α : σ → ℕ) :
+    (alternant σ R α).IsSymmetric := by
+  intro e
+  rw [rename_alternant]
+  rcases Int.units_eq_one_or e.sign with hs | hs
+  · simp [hs]
+  · have h2' : (2 : MvPolynomial σ R) = 0 := by rw [← map_ofNat C 2, h2, map_zero]
+    have hneg : (-1 : MvPolynomial σ R) = 1 := by
+      calc (-1 : MvPolynomial σ R) = 1 - 2 := by ring
+        _ = 1 := by rw [h2', sub_zero]
+    rw [hs, Units.smul_def, Units.val_neg, Units.val_one, neg_smul, one_smul, neg_eq_neg_one_mul,
+      hneg, one_mul]
 
 end TauCeti
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Variables
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.RingTheory.Ideal.Defs
 
 import Mathlib.RingTheory.Ideal.Span
@@ -58,11 +59,16 @@ isomorphisms and by reindexing.
 * `MvPolynomial.exists_pos_eval_eq_mul_eval_div`: clears nonzero polynomial denominators in the
   value of a polynomial at a coordinatewise rational map by a strictly positive polynomial factor.
 * `MvPolynomial.exists_eval_comp`: closure of polynomial-witnessed maps under composition.
+* `MvPolynomial.coeff_aeval_ite_X`: evaluating a multivariate polynomial by sending one variable
+  to `Polynomial.X` and all others to `0` extracts the univariate coefficients along that
+  variable.
 -/
 
 public section
 
 namespace MvPolynomial
+
+open scoped Polynomial
 
 variable {σ : Type*}
 
@@ -226,5 +232,27 @@ theorem exists_eval_comp {σ τ R : Type*} [CommSemiring R] {Φ : (τ → R) →
   refine ⟨aeval Q P, fun w ↦ ?_⟩
   rw [hP (Ψ w), ← aeval_eq_eval, ← aeval_eq_eval, comp_aeval_apply, aeval_eq_eval, aeval_eq_eval]
   exact congrArg (fun x ↦ eval x P) (funext fun k ↦ hQ k w)
+
+/-- Evaluating an `MvPolynomial` by sending `j₀` to `Polynomial.X` and all other variables to `0`
+yields a univariate polynomial whose `X ^ k` coefficient is `P.coeff (Finsupp.single j₀ k)`. -/
+theorem coeff_aeval_ite_X {A : Type*} [CommSemiring A] [DecidableEq σ]
+    (j₀ : σ) (P : MvPolynomial σ A) (k : ℕ) :
+    (aeval (fun j : σ ↦ if j = j₀ then (Polynomial.X : A[X]) else 0) P).coeff k =
+      P.coeff (Finsupp.single j₀ k) := by
+  induction P using MvPolynomial.induction_on generalizing k with
+  | C a =>
+    simp [Polynomial.coeff_C, MvPolynomial.coeff_C, eq_comm]
+  | add p q hp hq =>
+    simp [hp, hq]
+  | mul_X p i hp =>
+    rw [map_mul, MvPolynomial.aeval_X]
+    by_cases hi : i = j₀
+    · subst hi
+      simp only [↓reduceIte]
+      rcases k with _ | k
+      · simp [MvPolynomial.coeff_mul_X']
+      · rw [Polynomial.coeff_mul_X, hp k]
+        simp [Finsupp.single_add]
+    · simp [hi, MvPolynomial.coeff_mul_X']
 
 end MvPolynomial

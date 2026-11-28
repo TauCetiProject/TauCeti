@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
+public import TauCeti.RingTheory.Polynomial.UniversalFactorizationRing
 import TauCeti.RingTheory.Polynomial.Resultant.Product
 import TauCeti.RingTheory.Polynomial.Resultant.RootCoordinates
 
@@ -24,9 +25,8 @@ hyperelliptic curve, where `G` has formal degree `2g + 2` but may have actual de
 
 ## Main definitions
 
-* `TauCeti.universalPoly n`: the universal polynomial `Σ aᵢ Tⁱ` of formal degree `n` over
-  `ℤ[a₀, …, aₙ]`.
-* `TauCeti.universalDiscr n`: its discriminant, an integer polynomial in `a₀, …, aₙ`.
+* `TauCeti.universalDiscr n`: the discriminant of `Polynomial.freePoly ℤ n`, an integer polynomial
+  in `a₀, …, aₙ`.
 * `Polynomial.formDiscr n G`: the discriminant of `G` as a binary form of degree `n`, obtained by
   evaluating `universalDiscr n` at the coefficients of `G`.
 
@@ -51,10 +51,10 @@ hyperelliptic curve, where `G` has formal degree `2g + 2` but may have actual de
 
 The degree-drop formula is proved universally: over `ℤ[a₀, …, aₙ]` the polynomial of formal
 degree `n + 1` with vanishing top coefficient is turned, by reversal at the formal degree, into
-`X` times the reversal of the universal polynomial of degree `n`, whose constant coefficient `aₙ`
-is nonzero. The general case follows by specialisation. At `n = 1` the convention of Mathlib's
-`Polynomial.discr_of_degree_eq_one` gives `formDiscr 1 G = 1` for every `G`, so the degree-drop
-formula needs `n ≥ 1` and its corollaries need `n ≥ 2`.
+`X` times the reversal of the universal polynomial `Polynomial.freePoly ℤ n` of degree `n`, whose
+constant coefficient `aₙ` is nonzero. The general case follows by specialisation. At `n = 1` the
+convention of Mathlib's `Polynomial.discr_of_degree_eq_one` gives `formDiscr 1 G = 1` for every `G`,
+so the degree-drop formula needs `n ≥ 1` and its corollaries need `n ≥ 2`.
 
 ## References
 
@@ -72,73 +72,15 @@ namespace TauCeti
 
 open Polynomial
 
-/-! ### The universal polynomial -/
-
-/-- The universal polynomial `Σ aᵢ Tⁱ` of formal degree `n`, whose coefficients are the variables
-of `ℤ[a₀, …, aₙ]`. Every polynomial of degree at most `n` is a specialisation of it
-(`TauCeti.map_universalPoly_of_natDegree_le`). -/
-noncomputable def universalPoly (n : ℕ) : (MvPolynomial (Fin (n + 1)) ℤ)[X] :=
-  ∑ i : Fin (n + 1), C (MvPolynomial.X i) * X ^ (i : ℕ)
-
-/-- The `i`-th coefficient of the universal polynomial is the variable `aᵢ`. -/
-@[simp]
-theorem coeff_universalPoly (n : ℕ) (i : Fin (n + 1)) :
-    (universalPoly n).coeff i = MvPolynomial.X i := by
-  simp [universalPoly, Fin.val_inj]
-
-@[simp]
-theorem coeff_zero_universalPoly (n : ℕ) : (universalPoly n).coeff 0 = MvPolynomial.X 0 :=
-  coeff_universalPoly n 0
-
-/-- The `k`-th coefficient of the universal polynomial of formal degree `n ≥ k` is the variable
-`aₖ`. -/
-theorem coeff_universalPoly_of_le {n k : ℕ} (hk : k ≤ n) :
-    (universalPoly n).coeff k = MvPolynomial.X ⟨k, Nat.lt_succ_of_le hk⟩ :=
-  coeff_universalPoly n ⟨k, Nat.lt_succ_of_le hk⟩
-
-/-- The universal polynomial of formal degree `n` has no coefficients beyond degree `n`. -/
-theorem coeff_universalPoly_of_lt {n k : ℕ} (hk : n < k) : (universalPoly n).coeff k = 0 := by
-  simp only [universalPoly, finsetSum_coeff, coeff_C_mul_X_pow]
-  exact Finset.sum_eq_zero fun i _ ↦ ite_eq_right_iff.mpr fun h ↦ absurd h (by omega)
-
-@[simp]
-theorem natDegree_universalPoly (n : ℕ) : (universalPoly n).natDegree = n := by
-  refine natDegree_eq_of_le_of_coeff_ne_zero ?_ ?_
-  · exact natDegree_le_iff_coeff_eq_zero.mpr fun k hk ↦
-      coeff_universalPoly_of_lt (by exact_mod_cast hk)
-  · rw [coeff_universalPoly_of_le le_rfl]
-    exact MvPolynomial.X_ne_zero _
-
-@[simp]
-theorem leadingCoeff_universalPoly (n : ℕ) :
-    (universalPoly n).leadingCoeff = MvPolynomial.X (Fin.last n) := by
-  rw [leadingCoeff, natDegree_universalPoly]
-  exact coeff_universalPoly n (Fin.last n)
-
-/-- Specialising the coefficients of the universal polynomial to `a`. -/
-theorem map_universalPoly {R : Type*} [CommRing R] (n : ℕ) (a : Fin (n + 1) → R) :
-    (universalPoly n).map (MvPolynomial.aeval a).toRingHom =
-      ∑ i : Fin (n + 1), C (a i) * X ^ (i : ℕ) := by
-  simp [universalPoly, Polynomial.map_sum]
-
-/-- A polynomial of degree at most `n` is the specialisation of the universal polynomial of formal
-degree `n` at its coefficients. -/
-theorem map_universalPoly_of_natDegree_le {R : Type*} [CommRing R] {n : ℕ} {G : R[X]}
-    (hG : G.natDegree ≤ n) :
-    (universalPoly n).map (MvPolynomial.aeval fun i : Fin (n + 1) ↦ G.coeff i).toRingHom =
-      G := by
-  rw [map_universalPoly, Fin.sum_univ_eq_sum_range (fun i ↦ C (G.coeff i) * X ^ i) (n + 1)]
-  exact (as_sum_range_C_mul_X_pow' G (Nat.lt_succ_of_le hG)).symm
-
 /-! ### The discriminant of a binary form -/
 
 /-- The universal discriminant of a binary form of degree `n`: the discriminant of the universal
-polynomial `Σ aᵢ Tⁱ`, an integer polynomial in `a₀, …, aₙ`. -/
+polynomial `Polynomial.freePoly ℤ n`, an integer polynomial in `a₀, …, aₙ`. -/
 noncomputable def universalDiscr (n : ℕ) : MvPolynomial (Fin (n + 1)) ℤ :=
-  (universalPoly n).discr
+  (freePoly ℤ n).discr
 
 /-- Unfolding `TauCeti.universalDiscr` outside this module. -/
-theorem universalDiscr_def (n : ℕ) : universalDiscr n = (universalPoly n).discr :=
+theorem universalDiscr_def (n : ℕ) : universalDiscr n = (freePoly ℤ n).discr :=
   (rfl)
 
 end TauCeti
@@ -171,9 +113,11 @@ theorem formDiscr_congr {n : ℕ} {G H : R[X]} (h : ∀ i ≤ n, G.coeff i = H.c
     _root_.funext fun i : Fin (n + 1) ↦ h i (Nat.lt_succ_iff.mp i.isLt)
   rw [formDiscr, formDiscr, hGH]
 
+/-- The degree-`n` binary-form discriminant of `Polynomial.freePoly ℤ n` recovers
+`TauCeti.universalDiscr n`. -/
 @[simp]
-theorem formDiscr_universalPoly (n : ℕ) : (universalPoly n).formDiscr n = universalDiscr n := by
-  simp only [formDiscr, coeff_universalPoly]
+theorem formDiscr_freePoly (n : ℕ) : (freePoly ℤ n).formDiscr n = universalDiscr n := by
+  simp only [formDiscr, coeff_freePoly_fin]
   exact MvPolynomial.aeval_X_left_apply _
 
 /-- The binary-form discriminant commutes with every ring homomorphism, whether or not it
@@ -187,53 +131,54 @@ theorem formDiscr_map (n : ℕ) (G : R[X]) (φ : R →+* S) :
 /-- In the generic degree the binary-form discriminant is Mathlib's `Polynomial.discr`. -/
 theorem formDiscr_of_natDegree_eq {n : ℕ} {G : R[X]} (hG : G.natDegree = n) :
     G.formDiscr n = G.discr := by
-  have hmap := map_universalPoly_of_natDegree_le hG.le
-  have hdeg : ((universalPoly n).map
+  have hmap := map_aeval_coeff_freePoly (R := ℤ) hG.le
+  have hdeg : ((freePoly ℤ n).map
       (MvPolynomial.aeval fun i : Fin (n + 1) ↦ G.coeff i).toRingHom).natDegree =
-      (universalPoly n).natDegree := by
-    rw [hmap, hG, natDegree_universalPoly]
-  rw [← hmap, discr_map_of_natDegree_eq _ hdeg, formDiscr_map, formDiscr_universalPoly,
+      (freePoly ℤ n).natDegree := by
+    rw [hmap, hG, natDegree_freePoly]
+  rw [← hmap, discr_map_of_natDegree_eq _ hdeg, formDiscr_map, formDiscr_freePoly,
     universalDiscr]
 
 @[simp]
 theorem formDiscr_zero (G : R[X]) : G.formDiscr 0 = 1 := by
-  rw [formDiscr, universalDiscr, eq_C_of_natDegree_eq_zero (natDegree_universalPoly 0), discr_C,
+  rw [formDiscr, universalDiscr, eq_C_of_natDegree_eq_zero (natDegree_freePoly (R := ℤ)), discr_C,
     map_one]
 
 @[simp]
 theorem formDiscr_one (G : R[X]) : G.formDiscr 1 = 1 := by
-  have hdeg : (universalPoly 1).degree = 1 := by
-    rw [degree_eq_natDegree, natDegree_universalPoly, Nat.cast_one]
-    rw [← leadingCoeff_ne_zero, leadingCoeff_universalPoly]
+  have hdeg : (freePoly ℤ 1).degree = 1 := by
+    rw [degree_eq_natDegree, natDegree_freePoly, Nat.cast_one]
+    rw [← leadingCoeff_ne_zero, leadingCoeff_freePoly]
     exact MvPolynomial.X_ne_zero _
   rw [formDiscr, universalDiscr, discr_of_degree_eq_one hdeg, map_one]
 
 /-- The universal form of the degree-drop formula: the polynomial `Σ_{i ≤ n} aᵢ Tⁱ`, viewed as a
 binary form of degree `n + 1`, has discriminant `aₙ² · universalDiscr n`. -/
-private theorem formDiscr_succ_universalPoly {n : ℕ} (hn : 1 ≤ n) :
-    (universalPoly n).formDiscr (n + 1) =
+private theorem formDiscr_succ_freePoly {n : ℕ} (hn : 1 ≤ n) :
+    (freePoly ℤ n).formDiscr (n + 1) =
       MvPolynomial.X (Fin.last n) ^ 2 * universalDiscr n := by
-  set V := universalPoly n
+  set V := freePoly ℤ n
   set ρ : MvPolynomial (Fin (n + 2)) ℤ →+* MvPolynomial (Fin (n + 1)) ℤ :=
     (MvPolynomial.aeval fun i : Fin (n + 2) ↦ V.coeff i).toRingHom
   have hV0 : V.coeff 0 ≠ 0 := by
-    rw [coeff_zero_universalPoly]
+    rw [coeff_freePoly_zero]
     exact MvPolynomial.X_ne_zero _
-  have h0 : ρ ((universalPoly (n + 1)).coeff 0) ≠ 0 := by
-    simpa [ρ, coeff_zero_universalPoly] using hV0
-  have hmap : (universalPoly (n + 1)).map ρ = V :=
-    map_universalPoly_of_natDegree_le (by simp [V])
-  have hrev : ((universalPoly (n + 1)).reverse).map ρ = X * V.reverse := by
-    have h := reflect_mul V 1 (natDegree_universalPoly n).le (natDegree_one.trans_le zero_le_one)
+  have h0 : ρ ((freePoly ℤ (n + 1)).coeff 0) ≠ 0 := by
+    simpa [ρ, coeff_freePoly_zero] using hV0
+  have hmap : (freePoly ℤ (n + 1)).map ρ = V :=
+    map_aeval_coeff_freePoly (R := ℤ) (by simp [V])
+  have hrev : ((freePoly ℤ (n + 1)).reverse).map ρ = X * V.reverse := by
+    have h := reflect_mul V 1 (natDegree_freePoly (R := ℤ) (n := n)).le
+      (natDegree_one.trans_le zero_le_one)
     rw [mul_one, reflect_one, pow_one] at h
-    rw [reverse, natDegree_universalPoly, ← reflect_map, hmap, h, reverse, natDegree_universalPoly,
+    rw [reverse, natDegree_freePoly, ← reflect_map, hmap, h, reverse, natDegree_freePoly,
       mul_comm]
   have hVrev : V.reverse.natDegree = n := by
     rw [reverse_natDegree, natTrailingDegree_eq_zero.2 (.inr hV0), Nat.sub_zero,
-      natDegree_universalPoly]
-  have key := discr_map_reverse (universalPoly (n + 1)) ρ h0
+      natDegree_freePoly]
+  have key := discr_map_reverse (freePoly ℤ (n + 1)) ρ h0
   rw [hrev, discr_X_mul _ (by omega), discr_reverse _ hV0, coeff_zero_reverse,
-    leadingCoeff_universalPoly] at key
+    leadingCoeff_freePoly] at key
   simp only [formDiscr, universalDiscr]
   rw [mul_comm]
   exact key.symm
@@ -243,11 +188,11 @@ of degree `n + 1`, has discriminant `Gₙ²` times its discriminant as a binary 
 `n`. -/
 theorem formDiscr_succ {n : ℕ} (hn : 1 ≤ n) {G : R[X]} (hG : G.natDegree ≤ n) :
     G.formDiscr (n + 1) = G.coeff n ^ 2 * G.formDiscr n := by
-  rw [← map_universalPoly_of_natDegree_le hG, formDiscr_map, formDiscr_map,
-    formDiscr_succ_universalPoly hn, coeff_map, ← formDiscr_universalPoly, map_mul, map_pow]
+  rw [← map_aeval_coeff_freePoly (R := ℤ) hG, formDiscr_map, formDiscr_map,
+    formDiscr_succ_freePoly hn, coeff_map, ← formDiscr_freePoly, map_mul, map_pow]
   congr 2
   simpa using (congrArg (MvPolynomial.aeval fun i : Fin (n + 1) ↦ G.coeff i)
-    (coeff_universalPoly n (Fin.last n))).symm
+    (coeff_freePoly_fin (R := ℤ) (Fin.last n))).symm
 
 /-- The degree-drop formula read against `Polynomial.discr`: for `G` of degree at most `n ≥ 1`,
 the binary form of degree `n + 1` has discriminant `Gₙ² · discr G`. When `Gₙ = 0` both sides
@@ -277,11 +222,11 @@ theorem formDiscr_eq_zero_of_natDegree_le {n : ℕ} (hn : 2 ≤ n) {G : R[X]}
 
 /-- The universal form of homogeneity: over the domain `ℤ[a₀, …, aₙ][Y]`, scaling the universal
 polynomial by `Y` scales its discriminant by `Y ^ (2n - 2)`. -/
-private theorem formDiscr_C_X_mul_map_universalPoly (n : ℕ) :
-    (C (X : (MvPolynomial (Fin (n + 1)) ℤ)[X]) * (universalPoly n).map C).formDiscr n =
-      X ^ (2 * n - 2) * ((universalPoly n).map C).formDiscr n := by
-  have hdeg : ((universalPoly n).map (C : MvPolynomial (Fin (n + 1)) ℤ →+* _)).natDegree = n := by
-    rw [natDegree_map_eq_of_injective C_injective, natDegree_universalPoly]
+private theorem formDiscr_C_X_mul_map_freePoly (n : ℕ) :
+    (C (X : (MvPolynomial (Fin (n + 1)) ℤ)[X]) * (freePoly ℤ n).map C).formDiscr n =
+      X ^ (2 * n - 2) * ((freePoly ℤ n).map C).formDiscr n := by
+  have hdeg : ((freePoly ℤ n).map (C : MvPolynomial (Fin (n + 1)) ℤ →+* _)).natDegree = n := by
+    rw [natDegree_map_eq_of_injective C_injective, natDegree_freePoly]
   rw [formDiscr_of_natDegree_eq hdeg,
     formDiscr_of_natDegree_eq (by rw [natDegree_C_mul X_ne_zero, hdeg]),
     TauCeti.discr_C_mul _ X_ne_zero, hdeg]
@@ -294,49 +239,49 @@ theorem formDiscr_C_mul (n : ℕ) (c : R) (G : R[X]) :
   set ψ : (MvPolynomial (Fin (n + 1)) ℤ)[X] →+* R :=
     eval₂RingHom (MvPolynomial.aeval a).toRingHom c
   have hψC : ψ.comp C = (MvPolynomial.aeval a).toRingHom := RingHom.ext fun x ↦ eval₂_C _ _
-  have hmap : ((universalPoly n).map C).map ψ =
-      (universalPoly n).map (MvPolynomial.aeval a).toRingHom := by
+  have hmap : ((freePoly ℤ n).map C).map ψ =
+      (freePoly ℤ n).map (MvPolynomial.aeval a).toRingHom := by
     rw [map_map, hψC]
   have hcoeff (i : ℕ) (hi : i ≤ n) :
-      G.coeff i = ((universalPoly n).map (MvPolynomial.aeval a).toRingHom).coeff i := by
-    rw [coeff_map, coeff_universalPoly_of_le hi]
+      G.coeff i = ((freePoly ℤ n).map (MvPolynomial.aeval a).toRingHom).coeff i := by
+    rw [coeff_map, coeff_freePoly_of_le hi]
     simp [a]
-  have hG : G.formDiscr n = (((universalPoly n).map C).map ψ).formDiscr n :=
+  have hG : G.formDiscr n = (((freePoly ℤ n).map C).map ψ).formDiscr n :=
     formDiscr_congr fun i hi ↦ by rw [hmap]; exact hcoeff i hi
   have hCG : (C c * G).formDiscr n =
-      ((C (X : (MvPolynomial (Fin (n + 1)) ℤ)[X]) * (universalPoly n).map C).map ψ).formDiscr
+      ((C (X : (MvPolynomial (Fin (n + 1)) ℤ)[X]) * (freePoly ℤ n).map C).map ψ).formDiscr
         n := by
     refine formDiscr_congr fun i hi ↦ ?_
     rw [Polynomial.map_mul, map_C, coeff_C_mul, coeff_C_mul, hmap]
     congr 1
     · simp [ψ]
     exact hcoeff i hi
-  rw [hCG, hG, formDiscr_map, formDiscr_map, formDiscr_C_X_mul_map_universalPoly, map_mul,
+  rw [hCG, hG, formDiscr_map, formDiscr_map, formDiscr_C_X_mul_map_freePoly, map_mul,
     map_pow]
   simp [ψ]
 
 /-- Reversing the coefficients of the universal polynomial is the reversal of the polynomial. -/
-private theorem map_rename_rev_universalPoly (n : ℕ) :
-    (universalPoly n).map (MvPolynomial.rename Fin.rev).toRingHom = (universalPoly n).reverse := by
+private theorem map_rename_rev_freePoly (n : ℕ) :
+    (freePoly ℤ n).map (MvPolynomial.rename Fin.rev).toRingHom = (freePoly ℤ n).reverse := by
   ext k : 2
-  rw [coeff_reverse, natDegree_universalPoly, coeff_map]
+  rw [coeff_reverse, natDegree_freePoly, coeff_map]
   rcases le_or_gt k n with hk | hk
-  · rw [revAt_le hk, coeff_universalPoly_of_le hk, coeff_universalPoly_of_le (Nat.sub_le n k)]
+  · rw [revAt_le hk, coeff_freePoly_of_le hk, coeff_freePoly_of_le (Nat.sub_le n k)]
     simp [Fin.ext_iff, Fin.val_rev]
-  · rw [coeff_universalPoly_of_lt hk, revAt_eq_self_of_lt hk, coeff_universalPoly_of_lt hk,
+  · rw [coeff_freePoly_of_lt hk, revAt_eq_self_of_lt hk, coeff_freePoly_of_lt hk,
       map_zero]
 
 /-- The universal discriminant is invariant under reversing the order of the coefficients. -/
 private theorem rename_rev_universalDiscr (n : ℕ) :
     MvPolynomial.rename Fin.rev (universalDiscr n) = universalDiscr n := by
-  have hdeg : ((universalPoly n).map (MvPolynomial.rename Fin.rev).toRingHom).natDegree =
-      (universalPoly n).natDegree :=
+  have hdeg : ((freePoly ℤ n).map (MvPolynomial.rename Fin.rev).toRingHom).natDegree =
+      (freePoly ℤ n).natDegree :=
     natDegree_map_eq_of_injective (MvPolynomial.rename_injective _ Fin.rev_injective) _
-  have h0 : (universalPoly n).coeff 0 ≠ 0 := by
-    rw [coeff_zero_universalPoly]
+  have h0 : (freePoly ℤ n).coeff 0 ≠ 0 := by
+    rw [coeff_freePoly_zero]
     exact MvPolynomial.X_ne_zero _
   have key := discr_map_of_natDegree_eq _ hdeg
-  rw [map_rename_rev_universalPoly, discr_reverse _ h0] at key
+  rw [map_rename_rev_freePoly, discr_reverse _ h0] at key
   exact key.symm
 
 /-- **Invariance under inversion.** Reflecting `G` at the formal degree `n`, which is the

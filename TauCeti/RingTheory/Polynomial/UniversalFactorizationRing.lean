@@ -8,17 +8,159 @@ module
 public import Mathlib.RingTheory.Polynomial.UniversalFactorizationRing
 
 /-!
-# Quotient naturality of the universal coprime factorization ring
+# Universal factorization ring and free polynomial
 
-Composing a point of `Polynomial.UniversalCoprimeFactorizationRing` with values in `R` with the
-reduction `R → R ⧸ I` reduces both factors modulo `I`
-(`Polynomial.UniversalCoprimeFactorizationRing.homEquiv_mkₐ_comp_fst` and
-`Polynomial.UniversalCoprimeFactorizationRing.homEquiv_mkₐ_comp_snd`).
+Let `R` be a commutative semiring. Alongside Mathlib's `Polynomial.freeMonic` (the universal monic
+polynomial of degree `n`), `Polynomial.freePoly R n` is the universal polynomial of degree at most
+`n` with free coefficients over `MvPolynomial (Fin (n + 1)) R`.
+
+## Main definitions
+
+* `Polynomial.freePoly`: the universal polynomial `∑ i : Fin (n + 1), C (X i) * X ^ i` of degree
+  at most `n` with free coefficients.
+
+## Main results
+
+* `Polynomial.coeff_freePoly`, `Polynomial.coeff_freePoly_fin`, `Polynomial.coeff_freePoly_zero`,
+  `Polynomial.coeff_freePoly_of_le`, `Polynomial.coeff_freePoly_of_lt`,
+  `Polynomial.natDegree_freePoly`, `Polynomial.degree_freePoly`, `Polynomial.leadingCoeff_freePoly`,
+  `Polynomial.map_map_freePoly`, `Polynomial.map_freePoly_eq_iff`,
+  `Polynomial.map_algHom_freePoly_eq_iff`, `Polynomial.map_aeval_coeff_freePoly`: coefficient,
+  degree, base-change, and universal specialization lemmas for `Polynomial.freePoly`.
+* `Polynomial.UniversalCoprimeFactorizationRing.homEquiv_mkₐ_comp_fst` and
+  `Polynomial.UniversalCoprimeFactorizationRing.homEquiv_mkₐ_comp_snd`: composing a point of the
+  universal coprime factorization ring with values in `R` with the reduction `R → R ⧸ I` reduces
+  both factors modulo `I`.
 -/
 
 public section
 
 open Polynomial
+
+namespace Polynomial
+
+section FreePoly
+
+variable (R : Type*) [CommSemiring R] (n : ℕ)
+
+/-- The universal polynomial `∑ i : Fin (n + 1), C (X i) * X ^ i` of degree at most `n` with free
+coefficients over `MvPolynomial (Fin (n + 1)) R`, the nonmonic counterpart of
+`Polynomial.freeMonic`. -/
+noncomputable def freePoly : (MvPolynomial (Fin (n + 1)) R)[X] :=
+  ∑ i : Fin (n + 1), C (MvPolynomial.X i) * X ^ (i : ℕ)
+
+variable {R n}
+
+/-- The `k`-th coefficient of `Polynomial.freePoly R n` is `MvPolynomial.X k` for `k ≤ n` and `0`
+otherwise. -/
+theorem coeff_freePoly (k : ℕ) :
+    (freePoly R n).coeff k =
+      if hk : k ≤ n then MvPolynomial.X ⟨k, Nat.lt_succ_of_le hk⟩ else 0 := by
+  simp only [freePoly, finsetSum_coeff, coeff_C_mul_X_pow]
+  split_ifs with hk
+  · rw [Finset.sum_eq_single_of_mem (⟨k, Nat.lt_succ_of_le hk⟩ : Fin (n + 1)) (Finset.mem_univ _)
+      fun i _ hi ↦ ite_eq_right fun h : k = ↑i ↦ hi (Fin.ext h.symm)]
+    exact ite_eq_left rfl
+  · exact Finset.sum_eq_zero fun i _ ↦
+      ite_eq_right fun h : k = ↑i ↦ hk (h ▸ Nat.le_of_lt_succ i.isLt)
+
+/-- The `i`-th coefficient of `Polynomial.freePoly R n` is `MvPolynomial.X i`. -/
+@[simp]
+theorem coeff_freePoly_fin (i : Fin (n + 1)) :
+    (freePoly R n).coeff i = MvPolynomial.X i := by
+  rw [coeff_freePoly, dite_eq_left (Nat.lt_succ_iff.mp i.isLt)]
+
+/-- The constant coefficient of `Polynomial.freePoly R n` is `MvPolynomial.X 0`. -/
+@[simp]
+theorem coeff_freePoly_zero : (freePoly R n).coeff 0 = MvPolynomial.X 0 :=
+  coeff_freePoly_fin 0
+
+/-- The `k`-th coefficient of `Polynomial.freePoly R n` for `k ≤ n` is `MvPolynomial.X k`. -/
+theorem coeff_freePoly_of_le {k : ℕ} (hk : k ≤ n) :
+    (freePoly R n).coeff k = MvPolynomial.X ⟨k, Nat.lt_succ_of_le hk⟩ :=
+  coeff_freePoly_fin ⟨k, Nat.lt_succ_of_le hk⟩
+
+/-- `Polynomial.freePoly R n` has no coefficients beyond degree `n`. -/
+theorem coeff_freePoly_of_lt {k : ℕ} (hk : n < k) : (freePoly R n).coeff k = 0 := by
+  rw [coeff_freePoly, dite_eq_right hk.not_ge]
+
+/-- Over a nontrivial commutative semiring, `Polynomial.freePoly R n` has `natDegree` equal to
+`n`. -/
+@[simp]
+theorem natDegree_freePoly [Nontrivial R] : (freePoly R n).natDegree = n := by
+  refine le_antisymm ?_ ?_
+  · refine natDegree_le_iff_coeff_eq_zero.mpr fun k hk ↦ ?_
+    rw [coeff_freePoly, dite_eq_right (not_le.mpr hk)]
+  · refine le_natDegree_of_ne_zero ?_
+    rw [coeff_freePoly, dite_eq_left le_rfl]
+    exact MvPolynomial.X_ne_zero _
+
+/-- Over a nontrivial commutative semiring, `Polynomial.freePoly R n` has degree `n`. -/
+@[simp]
+theorem degree_freePoly [Nontrivial R] : (freePoly R n).degree = n := by
+  rw [degree_eq_natDegree (fun h ↦ by
+    have hc := congrArg (fun p : (MvPolynomial (Fin (n + 1)) R)[X] ↦ p.coeff n) h
+    rw [coeff_freePoly, dite_eq_left le_rfl, coeff_zero] at hc
+    exact MvPolynomial.X_ne_zero _ hc), natDegree_freePoly]
+
+/-- Over a nontrivial commutative semiring, the leading coefficient of `Polynomial.freePoly R n` is
+`MvPolynomial.X (Fin.last n)`. -/
+@[simp]
+theorem leadingCoeff_freePoly [Nontrivial R] :
+    (freePoly R n).leadingCoeff = MvPolynomial.X (Fin.last n) := by
+  rw [leadingCoeff, natDegree_freePoly]
+  exact coeff_freePoly_fin (Fin.last n)
+
+/-- Mapping the base ring commutes with forming `Polynomial.freePoly`. -/
+@[simp]
+theorem map_map_freePoly {S : Type*} [CommSemiring S] (φ : R →+* S) (n : ℕ) :
+    (freePoly R n).map (MvPolynomial.map φ) = freePoly S n := by
+  simp [freePoly, Polynomial.map_sum]
+
+/-- **Characteristic specialization property of `Polynomial.freePoly`.** For any polynomial
+`p : S[X]` of `natDegree` at most `n`, a ring homomorphism
+`φ : MvPolynomial (Fin (n + 1)) R →+* S` realizes `p` from `freePoly R n` if and only if it
+sends each variable `X i` to the coefficient `p.coeff i`. -/
+theorem map_freePoly_eq_iff {R S : Type*} [CommSemiring R] [CommSemiring S]
+    {p : S[X]} {n : ℕ} (hn : p.natDegree ≤ n) (φ : MvPolynomial (Fin (n + 1)) R →+* S) :
+    (freePoly R n).map φ = p ↔ ∀ i : Fin (n + 1), φ (MvPolynomial.X i) = p.coeff i := by
+  constructor
+  · intro h i
+    have hc := congrArg (fun q : S[X] ↦ q.coeff i) h
+    simpa [coeff_map, coeff_freePoly, Nat.lt_succ_iff.mp i.isLt] using hc
+  · intro hφ
+    ext k
+    rw [coeff_map, coeff_freePoly]
+    split_ifs with hk
+    · exact hφ ⟨k, Nat.lt_succ_of_le hk⟩
+    · rw [map_zero, eq_comm]
+      exact coeff_eq_zero_of_natDegree_lt (lt_of_le_of_lt hn (not_le.mp hk))
+
+/-- **Unique `R`-algebra specialization of `Polynomial.freePoly`.** For any polynomial
+`p : S[X]` of `natDegree` at most `n` over an `R`-algebra `S`, an `R`-algebra homomorphism
+`φ : MvPolynomial (Fin (n + 1)) R →ₐ[R] S` maps `freePoly R n` to `p` if and only if
+`φ = MvPolynomial.aeval fun i : Fin (n + 1) ↦ p.coeff i`. -/
+theorem map_algHom_freePoly_eq_iff (R : Type*) [CommSemiring R] {S : Type*} [CommSemiring S]
+    [Algebra R S] {p : S[X]} {n : ℕ} (hn : p.natDegree ≤ n)
+    (φ : MvPolynomial (Fin (n + 1)) R →ₐ[R] S) :
+    (freePoly R n).map φ.toRingHom = p ↔
+      φ = MvPolynomial.aeval (R := R) fun i : Fin (n + 1) ↦ p.coeff i := by
+  rw [map_freePoly_eq_iff hn]
+  exact ⟨fun h ↦ MvPolynomial.algHom_ext fun i ↦ by simpa using h i,
+    fun h i ↦ by simp [h]⟩
+
+/-- Specializing `Polynomial.freePoly R n` at the coefficients of a polynomial `p : S[X]` with
+`p.natDegree ≤ n` over an `R`-algebra `S` recovers `p`. -/
+theorem map_aeval_coeff_freePoly {S : Type*} [CommSemiring S] [Algebra R S]
+    {p : S[X]} {n : ℕ} (hn : p.natDegree ≤ n) :
+    (freePoly R n).map
+        (MvPolynomial.aeval (R := R) fun i : Fin (n + 1) ↦ p.coeff i).toRingHom =
+      p :=
+  (map_algHom_freePoly_eq_iff R hn _).mpr rfl
+
+end FreePoly
+
+end Polynomial
 
 namespace Polynomial.UniversalCoprimeFactorizationRing
 

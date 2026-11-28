@@ -8,7 +8,11 @@ module
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import Mathlib.Algebra.MvPolynomial.Equiv
+public import Mathlib.Algebra.Regular.Basic
+public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.RingTheory.Polynomial.Ideal
+import Mathlib.Algebra.MvPolynomial.Division
+import Mathlib.RingTheory.MvPolynomial.Localization
 import TauCeti.Algebra.MvPolynomial.Monomial
 import TauCeti.RingTheory.Localization.Ideal
 
@@ -85,6 +89,9 @@ its graph equations `Y i - f i`. These formulas need no monomial order.
   the contraction of an ideal in one more variable, and the contraction from the localization.
 * `Ideal.adjoin_range_quotient_mk_X_eq_top`: the residue classes of the variables generate any
   quotient `MvPolynomial σ R ⧸ I` as an `R`-algebra.
+* `MvPolynomial.dvd_of_C_pow_mul_dvd_of_isRegular_map_quotient` and
+  `MvPolynomial.dvd_of_map_isLocalization_away_dvd`: divisibility saturation from regularity modulo
+  `r` and descent from a localization away from `r`.
 * `Module.IsTorsionBySet.ker_mvPolynomial_map`: an `MvPolynomial σ A`-module annihilated by
   `RingHom.ker f` over `A` is annihilated by `RingHom.ker (MvPolynomial.map f)`.
 
@@ -529,6 +536,74 @@ theorem C_mem_sup_ker_eval_iff (a : σ → R) (H : Ideal (MvPolynomial σ R)) (r
     Ideal.mem_comap, eval_C]
 
 end PointEvaluation
+
+section SaturationLocalization
+
+attribute [local instance] algebraMvPolynomial
+
+variable {R : Type*} [CommRing R]
+
+/-- If `D : MvPolynomial σ R` is regular modulo `r` and `r` is regular in `R`, then divisibility
+by `D` is saturated with respect to `MvPolynomial.C (r ^ k)`. -/
+theorem dvd_of_C_pow_mul_dvd_of_isRegular_map_quotient {r : R} (hr : IsRegular r)
+    {D : MvPolynomial σ R}
+    (hreg : IsRegular (MvPolynomial.map (Ideal.Quotient.mk (Ideal.span {r})) D)) :
+    ∀ k : ℕ, ∀ f : MvPolynomial σ R, D ∣ C (r ^ k) * f → D ∣ f := by
+  have hsat1 : ∀ h₀ : MvPolynomial σ R, D ∣ C r * h₀ → D ∣ h₀ := by
+    intro h₀ ⟨h, hh⟩
+    let mk := Ideal.Quotient.mk (Ideal.span {r})
+    have hmap0 : map mk D * map mk h = 0 := by
+      have h1 := congrArg (map mk) hh
+      have hmkr : mk r = 0 :=
+        Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (Set.mem_singleton _))
+      rw [map_mul, map_C, hmkr, map_zero, zero_mul, map_mul] at h1
+      exact h1.symm
+    have hmh0 : map mk h = 0 := hreg.left (by simpa using hmap0)
+    have hdvd_coeff : ∀ d : σ →₀ ℕ, r ∣ h.coeff d := by
+      intro d
+      have hc : mk (h.coeff d) = 0 := by
+        simpa [coeff_map] using
+          congrArg (fun p : MvPolynomial σ (R ⧸ Ideal.span {r}) ↦ p.coeff d) hmh0
+      exact Ideal.mem_span_singleton.mp (Ideal.Quotient.eq_zero_iff_mem.mp hc)
+    obtain ⟨h₁, hh₁⟩ := (C_dvd_iff_dvd_coeff r h).mpr hdvd_coeff
+    have hmul : C r * h₀ = C r * (D * h₁) := by
+      rw [hh, hh₁]; ring
+    refine ⟨h₁, ?_⟩
+    ext d
+    exact hr.left (by
+      simpa only [coeff_C_mul] using congrArg (fun p : MvPolynomial σ R ↦ p.coeff d) hmul)
+  intro k
+  induction k with
+  | zero => intro f hf; simpa using hf
+  | succ k ih =>
+    intro f hf
+    refine ih f (hsat1 _ ?_)
+    rwa [pow_succ', map_mul, mul_assoc] at hf
+
+/-- If `S` is a localization away from `r` and divisibility by `D` is `r`-saturated, then
+divisibility by `D` after base change to `S` descends back to `R`. -/
+theorem dvd_of_map_isLocalization_away_dvd (S : Type*) [CommRing S] [Algebra R S] {r : R}
+    [IsLocalization.Away r S] {D f : MvPolynomial σ R}
+    (hsat : ∀ k : ℕ, ∀ g : MvPolynomial σ R, D ∣ C (r ^ k) * g → D ∣ g)
+    (hdvd : map (algebraMap R S) D ∣ map (algebraMap R S) f) : D ∣ f := by
+  -- Step 1: Clear denominators in the localized quotient `q`.
+  obtain ⟨q, hq⟩ := hdvd
+  obtain ⟨⟨_, _, ⟨k, rfl⟩, rfl⟩, q₀, hq₀⟩ :=
+    IsLocalization.exists_integer_multiple ((Submonoid.powers r).map (C (σ := σ))) q
+  rw [Algebra.smul_def, algebraMap_def, map_C, map_pow] at hq₀
+  have hmulp : algebraMap (MvPolynomial σ R) (MvPolynomial σ S) (C (r ^ k) * f) =
+      algebraMap (MvPolynomial σ R) (MvPolynomial σ S) (D * q₀) := by
+    simp only [algebraMap_def, map_mul, map_C, map_pow, hq, hq₀]
+    ring
+  -- Step 2: Lift the equality `map (C (r ^ k) * f) = map (D * q₀)` up to a common power of `r`.
+  obtain ⟨⟨_, _, ⟨l, rfl⟩, rfl⟩, hl⟩ :=
+    IsLocalization.exists_of_eq (M := (Submonoid.powers r).map (C (σ := σ))) hmulp
+  -- Step 3: Descend divisibility using `r`-saturation at `l + k`.
+  refine hsat (l + k) f ⟨C (r ^ l) * q₀, ?_⟩
+  rw [pow_add, map_mul, mul_assoc, hl]
+  ring
+
+end SaturationLocalization
 
 end MvPolynomial
 
