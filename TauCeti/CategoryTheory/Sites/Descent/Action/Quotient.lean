@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.CategoryTheory.Sites.Descent.ActionGroupoid
+public import TauCeti.CategoryTheory.Sites.Descent.Action.Groupoid
 public import TauCeti.CategoryTheory.Sites.Descent.LocallyEssSurj
 public import TauCeti.CategoryTheory.Sites.Descent.Stackification.StrongTrans
 public import TauCeti.CategoryTheory.Sites.Descent.Yoneda

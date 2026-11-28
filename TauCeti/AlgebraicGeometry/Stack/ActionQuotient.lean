@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Sites.SubcanonicalOver
 public import TauCeti.AlgebraicGeometry.Stack.Stackification
-public import TauCeti.CategoryTheory.Sites.Descent.ActionQuotient
+public import TauCeti.CategoryTheory.Sites.Descent.Action.Quotient
 
 /-!
 # The fppf quotient stack of an action
