@@ -33,9 +33,11 @@ when the model `I` itself has a boundary.
 * `OpenPartialHomeomorph.trans_interiorChart_symm_mem_maximalAtlas`: an open partial homeomorphism
   from a manifold to `E` that is `C^n` with `C^n` inverse, followed by the inverse of
   `I.interiorChart`, is a chart of the `C^n` maximal atlas.
-* `OpenPartialHomeomorph.extend_trans_interiorChart_symm_target`,
+* `OpenPartialHomeomorph.extend_trans_interiorChart_symm_eq`,
+  `OpenPartialHomeomorph.extend_trans_interiorChart_symm_target`,
   `OpenPartialHomeomorph.extend_trans_interiorChart_symm_symm`: for boundaryless `I`, extending
-  `e.trans I.interiorChart.symm` by `I` preserves `e.target` and `e.symm`.
+  `e.trans I.interiorChart.symm` by `I` recovers `e.toPartialEquiv` (and in particular preserves
+  `e.target` and `e.symm`).
 * `PartialDiffeomorph.trans_trans_interiorChart_symm_mem_maximalAtlas`: a partial diffeomorphism
   from a manifold to `E`, followed by a chart of the maximal atlas of `E` and by the inverse of
   `I.interiorChart`, is a chart of the `C^n` maximal atlas.
@@ -133,7 +135,9 @@ theorem OpenPartialHomeomorph.trans_interiorChart_symm_mem_maximalAtlas {n : ℕ
     exact he'.comp I.contMDiff.contMDiffOn fun z hz ↦ htgt hz
 
 omit [ChartedSpace H M] in
-private theorem OpenPartialHomeomorph.extend_trans_interiorChart_symm_eq [I.Boundaryless]
+/-- When `I` is boundaryless, extending `e.trans I.interiorChart.symm` by `I` recovers
+`e.toPartialEquiv`. -/
+theorem OpenPartialHomeomorph.extend_trans_interiorChart_symm_eq [I.Boundaryless]
     (e : OpenPartialHomeomorph M E) :
     (e.trans I.interiorChart.symm).extend I = e.toPartialEquiv := by
   have hIw (w : E) : I (I.symm w) = w := I.right_inv (I.range_eq_univ ▸ mem_univ w)
