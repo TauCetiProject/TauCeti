@@ -64,12 +64,15 @@ theorem hasseDeriv_mul_pow_natCard {k : ℕ} (hk : k < Nat.card K) (f g : K[X]) 
     hasseDeriv k (f * g ^ Nat.card K) = hasseDeriv k f * g ^ Nat.card K := by
   have : Finite K := Nat.finite_of_card_ne_zero (by omega)
   have := Fintype.ofFinite K
-  -- `g ^ q = expand K q g` with `q = p ^ n`, and `hasseDeriv_expand_mul` pulls it out.
+  -- Mathlib's `FiniteField.card'` writes `q` as a power `p ^ n` of the characteristic.
   obtain ⟨p, _, n, hp, hcard⟩ := FiniteField.card' K
   have : Fact p.Prime := ⟨hp⟩
-  rw [Nat.card_eq_fintype_card, hcard] at hk
-  rw [Nat.card_eq_fintype_card, ← FiniteField.Polynomial.expand_card, hcard, mul_comm f,
-    hasseDeriv_expand_mul hk, mul_comm]
+  have hq : Nat.card K = p ^ (n : ℕ) := by rw [Nat.card_eq_fintype_card, hcard]
+  -- `g ^ q` is the expansion of `g` by `q = p ^ n`, which `hasseDeriv_expand_mul` pulls out.
+  have hg : g ^ Nat.card K = expand K (p ^ (n : ℕ)) g := by
+    rw [← hq, Nat.card_eq_fintype_card, FiniteField.Polynomial.expand_card]
+  rw [hq] at hk
+  simpa only [hg, mul_comm] using hasseDeriv_expand_mul hk g f
 
 /-- Over a finite field with `q = Fintype.card K` elements, the Hasse derivatives of `f ^ q` vanish
 at every order `k` not divisible by `q`, for instance at every `k` with `0 < k < q`. -/

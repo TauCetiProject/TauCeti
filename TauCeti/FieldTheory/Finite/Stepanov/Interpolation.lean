@@ -137,7 +137,9 @@ private theorem pow_mul_eval_hasseDeriv_eq {e J ℓ c : ℕ} (hℓ : ℓ < Nat.c
   simp only [eval₂_id, eval_finsetSum, Finset.mul_sum]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   -- `(X ^ q) ^ j = (X ^ j) ^ q`, and `D^ℓ` passes through the `q`-th power.
-  rw [← pow_mul, pow_mul' (X : F[X]), ← mul_assoc, hasseDeriv_mul_pow_natCard hℓ]
+  have hXj : ((X : F[X]) ^ Nat.card F) ^ (j : ℕ) = (X ^ (j : ℕ)) ^ Nat.card F := by
+    rw [← pow_mul, ← pow_mul, mul_comm]
+  simp only [hXj, ← mul_assoc, hasseDeriv_mul_pow_natCard hℓ]
   have h := congrArg (eval x) (pow_mul_stepanovMap f ((i : ℕ) * c) ℓ (B i j))
   have hxi : f.eval x ^ ((i : ℕ) * c) = 1 := by rw [pow_mul', hx, one_pow]
   simp only [eval_mul, eval_pow, hxi, one_mul] at h
@@ -156,11 +158,10 @@ private theorem exists_ne_zero_and_forall_eval_hasseDeriv_sum_eq_zero_of_pos {c 
   let K (ℓ : ℕ) := ℓ * f.natDegree + D + J
   have hK (ℓ : ℕ) : K ℓ = ℓ * f.natDegree + D + J := rfl
   let B (i : Fin e) (j : Fin J) : (Fin e × Fin J × Fin (D + 1) → F) →ₗ[F] F[X] :=
-    ofFn (D + 1) ∘ₗ LinearMap.pi fun r => LinearMap.proj (i, j, r)
+    ofFn (D + 1) ∘ₗ LinearMap.funLeft F F fun r : Fin (D + 1) => (i, j, r)
   have hBa (i j a) : B i j a = ofFn (D + 1) fun r => a (i, j, r) := by
     simp only [B, LinearMap.comp_apply]
-    refine congrArg _ (_root_.funext fun r => ?_)
-    rw [LinearMap.pi_apply, LinearMap.proj_apply]
+    exact congrArg _ (_root_.funext fun r => LinearMap.funLeft_apply _ _ _ _ _)
   let T (ℓ : ℕ) : (Fin e × Fin J × Fin (D + 1) → F) →ₗ[F] F[X] :=
     ∑ i : Fin e, ∑ j : Fin J,
       LinearMap.mulRight F (X ^ (j : ℕ)) ∘ₗ stepanovMap f ((i : ℕ) * c) ℓ ∘ₗ B i j
@@ -231,7 +232,9 @@ theorem exists_ne_zero_and_forall_eval_hasseDeriv_sum_eq_zero {R : Type*} [CommR
   classical
   rcases finite_or_infinite R with hR | hR
   · have := Fintype.ofFinite R
-    let := Fintype.fieldOfDomain R
+    -- `Fintype.fieldOfDomain` extends the given `CommRing R` structure, so the ring operations
+    -- of `hRF` are those of `R`, and the field case is the original goal.
+    let hRF : Field R := Fintype.fieldOfDomain R
     exact exists_ne_zero_and_forall_eval_hasseDeriv_sum_eq_zero_of_field hM f hcount
   · obtain rfl : M = 0 := by simpa using hM
     have he : 0 < e ∧ 0 < J := by
