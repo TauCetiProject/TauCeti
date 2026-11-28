@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.GelfandTriple
 public import TauCeti.Analysis.Normed.Operator.Compact.Ehrling
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -48,6 +49,9 @@ subsequence of `i ∘ uₙ` is Cauchy in `Lᵖ(a, b; X)`.
 
 * `IsCompactOperator.exists_subseq_tendsto_eLpNorm_of_hasWeakLineDerivOn`: the Aubin–Lions
   theorem.
+* `IsCompactOperator.exists_subseq_tendsto_eLpNorm_of_hasWeakLineDerivOn_gelfandDual`: its form
+  for a Gelfand triple `V → H → V*`, with the time derivative taken in `V*`, localized by an
+  operator `m` symmetric for the pairing.
 
 ## References
 
@@ -60,7 +64,7 @@ subsequence of `i ∘ uₙ` is Cauchy in `Lᵖ(a, b; X)`.
 public section
 
 open MeasureTheory Set Filter Topology
-open scoped ENNReal NNReal Interval BoundedContinuousFunction
+open scoped ENNReal NNReal Interval BoundedContinuousFunction InnerProductSpace
 
 variable {X₀ X X₁ : Type*} [NormedAddCommGroup X₀] [NormedSpace ℝ X₀]
   [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup X₁] [NormedSpace ℝ X₁]
@@ -249,5 +253,46 @@ theorem exists_subseq_tendsto_eLpNorm_of_hasWeakLineDerivOn [CompleteSpace X]
   refine ⟨φ, hφ, G, Lp.memLp G, ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ G).1 hG).congr
     fun n ↦ eLpNorm_congr_ae ?_⟩
   exact (i.comp_memLp' (hu (φ n))).coeFn_toLp.sub EventuallyEq.rfl
+
+/-- **The Aubin–Lions theorem in a Gelfand triple.** Let `ι : V → H` be a continuous linear map
+with dense range into a real Hilbert space, so that `H` embeds in `V*` through `ι.gelfandDual`,
+and let `m : V → V` be a continuous linear map, symmetric for the pairing `⟪ι v, ι w⟫`, such that
+`ι ∘ m` is compact. Let `1 ≤ p ≤ ∞` and `1 < r ≤ ∞`, let `u n` be bounded in `Lᵖ(a, b; V)`, and
+let `ι.gelfandDual ∘ ι ∘ u n` have weak derivatives `u' n` on `(a, b)` bounded in
+`Lʳ(a, b; V*)`. Then a subsequence of `ι ∘ m ∘ u n` converges in `Lᵖ(a, b; H)`.
+For `m = id` this is the theorem for a compact embedding `V → H`. A cutoff `m` localizes it when
+`ι` is not compact, as for Sobolev spaces on the whole space. -/
+theorem exists_subseq_tendsto_eLpNorm_of_hasWeakLineDerivOn_gelfandDual {V H : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup H] [InnerProductSpace ℝ H]
+    [CompleteSpace H] {ι : V →L[ℝ] H} {m : V →L[ℝ] V} (hi : IsCompactOperator (ι.comp m))
+    (hι : DenseRange ι) (hm : ∀ v w, ⟪ι (m v), ι w⟫_ℝ = ⟪ι v, ι (m w)⟫_ℝ) {p r : ℝ≥0∞}
+    (hp : 1 ≤ p) (hr : 1 < r) {a b : ℝ} {M M' : ℝ≥0} {u : ℕ → ℝ → V}
+    {u' : ℕ → ℝ → StrongDual ℝ V} (huM : ∀ n, eLpNorm (u n) p (volume.restrict (Ioo a b)) ≤ M)
+    (hderiv : ∀ n, TauCeti.HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩
+      (fun t ↦ ι.gelfandDual (ι (u n t))) (u' n) 1)
+    (hu'M : ∀ n, eLpNorm (u' n) r (volume.restrict (Ioo a b)) ≤ M') :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ g : ℝ → H, MemLp g p (volume.restrict (Ioo a b)) ∧
+      Tendsto (fun n ↦ eLpNorm (fun t ↦ ι (m (u (φ n) t)) - g t) p (volume.restrict (Ioo a b)))
+        atTop (𝓝 0) := by
+  -- The functional of `ι (m w)` is that of `ι w` precomposed with `m`.
+  let ρ : StrongDual ℝ V →L[ℝ] StrongDual ℝ V := (ContinuousLinearMap.compL ℝ V V ℝ).flip m
+  have hρ (w : V) : ι.gelfandDual (ι.comp m w) = ρ (ι.gelfandDual (ι w)) := by
+    ext v
+    simpa [ρ] using hm w v
+  have hderiv' n : TauCeti.HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩
+      (fun t ↦ ι.gelfandDual (ι.comp m (u n t))) (fun t ↦ ρ (u' n t)) 1 := by
+    simpa only [hρ] using (hderiv n).clm_comp ρ
+  have hu'M' n : eLpNorm (fun t ↦ ρ (u' n t)) r (volume.restrict (Ioo a b)) ≤
+      ((‖ρ‖₊ * M' : ℝ≥0) : ℝ≥0∞) := by
+    have hm' : MemLp (u' n) r (volume.restrict (Ioo a b)) := (hu'M n).trans_lt ENNReal.coe_lt_top
+    refine (eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul
+      (ρ.continuous.comp_aestronglyMeasurable hm'.aestronglyMeasurable)
+      (ae_of_all _ fun t ↦ ρ.le_opNNNorm (u' n t)) r).trans ?_
+    rw [ENNReal.smul_def, smul_eq_mul, ENNReal.coe_mul]
+    gcongr
+    exact hu'M n
+  simpa only [ContinuousLinearMap.comp_apply] using
+    hi.exists_subseq_tendsto_eLpNorm_of_hasWeakLineDerivOn (ι.gelfandDual_injective hι) hp hr huM
+      hderiv' hu'M'
 
 end IsCompactOperator

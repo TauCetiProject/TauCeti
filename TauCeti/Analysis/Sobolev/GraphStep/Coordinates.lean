@@ -39,6 +39,8 @@ Only the reconstruction needs `F` to be finite-dimensional.
 * `TauCeti.WeakDerivStep.sum_smulRightW1pL_toW1pL`: a field is the sum of its coordinate fields.
 * `TauCeti.WeakDerivStep.eq_zero_of_forall_inner_compLpL_prev_eq_zero`: for `T` with dense range,
   the fields `T ∘ u` of the graph space over `ι` are dense in `L²`.
+* `TauCeti.WeakDerivStep.denseRange_prevL_two`: the fields of `W^{1,2}(E, F)` are dense in
+  `L²(E, F)`.
 * `smulRightComplexL`, `prev_smulRightComplexL`, `weakFDeriv_smulRightComplexL_ae`:
   rank-one reconstruction of complex scalar graphs in an arbitrary complex normed target.
 * `coordinatesL`: the native scalar projections, bundled into one continuous linear map.
@@ -227,6 +229,21 @@ theorem eq_zero_of_forall_inner_compLpL_prev_eq_zero {ι T : D →L[ℝ] F} (hT 
   filter_upwards [prev_smulRightBaseW1pL_ofTestFunctionₗ_ae_eq (p := 2) ι a φ,
     T.coeFn_compLpL (prev _ u)] with x hx hTx
   rw [hTx, hx, map_smul, inner_smul_left, inner_smul_right, conj_trivial]
+
+/-- **The fields of `W^{1,2}(E, F)` are dense in `L²(E, F)`.** -/
+theorem denseRange_prevL_two :
+    DenseRange (prevL (ContinuousLinearMap.id ℝ (Lp F 2 (mu.restrict (⊤ : Opens E))))) := by
+  suffices Dense ((LinearMap.range (prevL (ContinuousLinearMap.id ℝ
+      (Lp F 2 (mu.restrict (⊤ : Opens E))))).toLinearMap : Submodule ℝ _) :
+      Set (Lp F 2 (mu.restrict (⊤ : Opens E)))) by
+    rwa [LinearMap.coe_range, ContinuousLinearMap.coe_coe] at this
+  rw [Submodule.dense_iff_topologicalClosure_eq_top, Submodule.topologicalClosure_eq_top_iff,
+    Submodule.eq_bot_iff]
+  intro h hh
+  refine eq_zero_of_forall_inner_compLpL_prev_eq_zero (ι := ContinuousLinearMap.id ℝ F)
+    (T := ContinuousLinearMap.id ℝ F) (by simpa using denseRange_id) fun w ↦ ?_
+  have := (Submodule.mem_orthogonal' _ _).1 hh (prevL _ (toIdL _ w)) ⟨_, rfl⟩
+  rwa [prevL_apply, prev_toIdL, real_inner_comm] at this
 
 end Density
 
