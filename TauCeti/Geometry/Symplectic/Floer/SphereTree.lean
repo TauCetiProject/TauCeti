@@ -140,6 +140,38 @@ dimension `0`, only the unbroken pairs of pants without bubbles; in a problem of
 The latter are the boundary of the one-dimensional moduli spaces that gives the Leibniz rule of the
 product.
 
+**One-parameter families.** The chain homotopies behind the identities of the product count
+solutions over a one-parameter family of Floer problems: the homotopies comparing two choices of
+auxiliary data or exchanging the inputs, which are families of pairs of pants, and the
+associativity family of four-holed spheres. A limit over a face of dimension `p` of the parameter
+space, `p = 1` at interior parameters and `p = 0` at an end point, has expected dimension that of
+its configuration plus `p`. In a family whose unbubbled strata have expected dimension at most one,
+a stratum therefore has nonnegative expected dimension exactly when it has no nonconstant bubble
+and at most `ind + p` of its levels are taken modulo translation, `ind` being the total index of its
+levels (`TauCeti.Floer.brokenSphereTreeDimension_add_nonneg_iff`), and likewise for a broken pair of
+pants (`TauCeti.Floer.sphereTreeDimension_brokenPantsDimension_add_nonneg_iff`). A homotopy has
+index `-1`: its rigid counts come from unbroken configurations at interior parameters, and its
+one-dimensional spaces, of index `0`, end at a single broken-off cylinder at an interior parameter
+or at an unbroken configuration at an end point.
+
+The associativity family consists of four-holed spheres with three inputs and one output, whose
+index is `μ₁ + μ₂ + μ₃ - μ₀ - 2n + 2 c₁(A)`. A broken four-holed sphere has that index in its
+total class minus the number of broken-off cylinders
+(`TauCeti.Floer.brokenFourHoledSphereDimension_eq`). At its two long-neck ends the four-holed sphere
+breaks into two pairs of pants, one glued into the first or the second input of the other, possibly
+with cylinders broken off between them; their expected dimensions add up to the index of the
+four-holed sphere minus the number of broken-off cylinders, because the grading of the capped
+generator at which they meet cancels
+(`TauCeti.Floer.brokenPantsDimension_add_brokenPantsDimension_fst`,
+`TauCeti.Floer.brokenPantsDimension_add_brokenPantsDimension_snd`). Hence in the one-dimensional
+problem of the family, of index `0`, the strata of nonnegative expected dimension are the unbroken
+four-holed spheres and those with a single broken-off cylinder at interior parameters
+(`TauCeti.Floer.sphereTreeDimension_brokenFourHoledSphereDimension_add_nonneg_iff`), and at the
+two ends the two composites of unbroken pairs of pants meeting at a capped generator
+(`TauCeti.Floer.sphereTreeDimension_brokenPantsDimension_add_brokenPantsDimension_fst_nonneg_iff`,
+`TauCeti.Floer.sphereTreeDimension_brokenPantsDimension_add_brokenPantsDimension_snd_nonneg_iff`),
+all without sphere bubbles.
+
 These are statements about expected dimensions. That a stratum of negative expected dimension is
 empty for generic data is the transversality of the evaluation maps of simple spheres, which is not
 proved here; nor is the identification of a Gromov–Floer limit with a reduced stratum.
@@ -429,6 +461,26 @@ theorem sphereTreeDimension_nonneg_iff {n : ℤ} (c : G →+ ℤ) {ind : G → �
     simp only [not_isEmpty_of_nonempty, false_and, iff_false, not_le]
     exact this
 
+/-- **The strata over a core of given expected dimension.** On a target where every simple sphere
+has nonnegative first Chern number, consider a stratum whose core has expected dimension
+`I₀ = J + 2 c₁(X) - k`, with a tree of simple spheres attached whose bubbles have total class
+`∑ v, B v`. If the unbubbled problem in the total class `X + ∑ v, B v`, of expected dimension
+`J + 2 c₁(X + ∑ v, B v) - k`, has expected dimension at most one, the stratum has nonnegative
+expected dimension exactly when it has no nonconstant sphere bubble and the unbubbled problem has
+nonnegative expected dimension. This is `TauCeti.Floer.sphereTreeDimension_nonneg_iff` for an index
+affine in the class; typically `k` counts the cylinders taken modulo translation. -/
+theorem sphereTreeDimension_nonneg_iff_of_eq_add_two_mul_sub {n I₀ J k : ℤ} (c : G →+ ℤ) {X : G}
+    {B : ι → G} {B' : κ → G} {m : ι → ℕ} {ρ : ι → κ} (hB : ∀ v, B v = m v • B' (ρ v))
+    (hm : ∀ v, 0 < m v) (hρ : Function.Surjective ρ) (hc : ∀ w, 0 ≤ c (B' w))
+    (hI : I₀ = J + 2 * c X - k) (hA : J + 2 * c (X + ∑ v, B v) - k ≤ 1) (parent : κ → Option κ)
+    (node root : κ → P) :
+    0 ≤ sphereTreeDimension n I₀ (fun w => c (B' w)) parent node root ↔
+      IsEmpty κ ∧ k ≤ J + 2 * c (X + ∑ v, B v) := by
+  subst hI
+  simpa only [sub_nonneg] using sphereTreeDimension_nonneg_iff c
+    (ind := fun A' => J + 2 * c A' - k) (fun _ _ => by rw [map_add]; ring) X hB hm hρ hc hA parent
+    node root
+
 end Reduction
 
 section Broken
@@ -528,6 +580,28 @@ theorem brokenSphereTreeDimension_le_sub_two_mul_sum_of_area_eq_mul_chern {n : �
   rw [brokenSphereTreeDimension]
   linarith
 
+/-- On a target where every simple sphere has nonnegative first Chern number, a stratum of broken
+configurations with at least one nonconstant sphere bubble has expected dimension at most
+`∑ ℓ, ind ℓ (A₀ ℓ + ∑ v, B ℓ v) - #T - 2`. -/
+theorem brokenSphereTreeDimension_le_sub_two {n : ℤ} (c : G →+ ℤ) {ind : L → G → ℤ}
+    (hind : ∀ ℓ A B, ind ℓ (A + B) = ind ℓ A + 2 * c B) (A₀ : L → G) {B : ∀ ℓ, ι ℓ → G}
+    {B' : ∀ ℓ, κ ℓ → G} {m : ∀ ℓ, ι ℓ → ℕ} {ρ : ∀ ℓ, ι ℓ → κ ℓ}
+    (hB : ∀ ℓ v, B ℓ v = m ℓ v • B' ℓ (ρ ℓ v)) (hm : ∀ ℓ v, 0 < m ℓ v)
+    (hρ : ∀ ℓ, Function.Surjective (ρ ℓ)) (hc : ∀ ℓ w, 0 ≤ c (B' ℓ w))
+    (hκ : ∃ ℓ, Nonempty (κ ℓ)) (parent : ∀ ℓ, κ ℓ → Option (κ ℓ)) (node root : ∀ ℓ, κ ℓ → P ℓ)
+    (T : Finset L) :
+    brokenSphereTreeDimension n (fun ℓ => ind ℓ (A₀ ℓ)) (fun ℓ w => c (B' ℓ w)) parent node root
+        T ≤
+      ∑ ℓ, ind ℓ (A₀ ℓ + ∑ v, B ℓ v) - #T - 2 := by
+  obtain ⟨ℓ₀, _⟩ := hκ
+  have h := brokenSphereTreeDimension_le_sub_two_mul_card c hind A₀ hB hm hρ hc parent node root
+    T (n := n)
+  have hcard : (1 : ℤ) ≤ ∑ ℓ, (Fintype.card (κ ℓ) : ℤ) :=
+    calc (1 : ℤ) ≤ Fintype.card (κ ℓ₀) := by exact_mod_cast Fintype.card_pos
+      _ ≤ ∑ ℓ, (Fintype.card (κ ℓ) : ℤ) :=
+        single_le_sum (fun _ _ => Int.natCast_nonneg _) (mem_univ ℓ₀)
+  linarith
+
 /-- **Exclusion of sphere bubbles in broken configurations.** On a target where every simple
 sphere has nonnegative first Chern number, if the levels have total expected index at most
 `#T + 1`, every stratum of broken configurations with at least one nonconstant sphere bubble has
@@ -542,13 +616,8 @@ theorem brokenSphereTreeDimension_neg_of_le_card_add_one {n : ℤ} (c : G →+ �
     (parent : ∀ ℓ, κ ℓ → Option (κ ℓ)) (node root : ∀ ℓ, κ ℓ → P ℓ) :
     brokenSphereTreeDimension n (fun ℓ => ind ℓ (A₀ ℓ)) (fun ℓ w => c (B' ℓ w)) parent node root
       T < 0 := by
-  obtain ⟨ℓ₀, _⟩ := hκ
-  have h := brokenSphereTreeDimension_le_sub_two_mul_card c hind A₀ hB hm hρ hc parent node root
-    T (n := n)
-  have hcard : (1 : ℤ) ≤ ∑ ℓ, (Fintype.card (κ ℓ) : ℤ) :=
-    calc (1 : ℤ) ≤ Fintype.card (κ ℓ₀) := by exact_mod_cast Fintype.card_pos
-      _ ≤ ∑ ℓ, (Fintype.card (κ ℓ) : ℤ) :=
-        single_le_sum (fun _ _ => Int.natCast_nonneg _) (mem_univ ℓ₀)
+  have := brokenSphereTreeDimension_le_sub_two c hind A₀ hB hm hρ hc hκ parent node root T
+    (n := n)
   linarith
 
 /-- **Exclusion of multiply broken configurations.** On a target where every simple sphere has
@@ -609,6 +678,37 @@ theorem brokenSphereTreeDimension_neg_of_le_one {n : ℤ} (c : G →+ ℤ) {ind 
     linarith
   · exact brokenSphereTreeDimension_neg_of_le_card_add_one c hind A₀ hB hm hρ hc hκ T
       (by linarith [Int.natCast_nonneg #T]) parent node root
+
+/-- **The strata of a family of broken configurations.** Let a family of Floer problems depend on
+parameters, and consider its limits over a face of dimension `p` of the parameter space: the
+interior of a one-parameter family has `p = 1`, its end points `p = 0`. Such a stratum of broken
+configurations with sphere trees has expected dimension
+`TauCeti.Floer.brokenSphereTreeDimension` plus `p`. On a target where every simple sphere has
+nonnegative first Chern number, if the stratum without bubbles has expected dimension
+`∑ ℓ, ind ℓ (A₀ ℓ + ∑ v, B ℓ v) + p - #T` at most one, the stratum has nonnegative expected
+dimension exactly when it has no nonconstant sphere bubble and at most
+`∑ ℓ, ind ℓ (A₀ ℓ + ∑ v, B ℓ v) + p` of its levels are taken modulo translation. -/
+theorem brokenSphereTreeDimension_add_nonneg_iff {n : ℤ} (p : ℤ) (c : G →+ ℤ)
+    {ind : L → G → ℤ} (hind : ∀ ℓ A B, ind ℓ (A + B) = ind ℓ A + 2 * c B) (A₀ : L → G)
+    {B : ∀ ℓ, ι ℓ → G} {B' : ∀ ℓ, κ ℓ → G} {m : ∀ ℓ, ι ℓ → ℕ} {ρ : ∀ ℓ, ι ℓ → κ ℓ}
+    (hB : ∀ ℓ v, B ℓ v = m ℓ v • B' ℓ (ρ ℓ v)) (hm : ∀ ℓ v, 0 < m ℓ v)
+    (hρ : ∀ ℓ, Function.Surjective (ρ ℓ)) (hc : ∀ ℓ w, 0 ≤ c (B' ℓ w)) (T : Finset L)
+    (hA : ∑ ℓ, ind ℓ (A₀ ℓ + ∑ v, B ℓ v) + p - #T ≤ 1)
+    (parent : ∀ ℓ, κ ℓ → Option (κ ℓ)) (node root : ∀ ℓ, κ ℓ → P ℓ) :
+    0 ≤ brokenSphereTreeDimension n (fun ℓ => ind ℓ (A₀ ℓ)) (fun ℓ w => c (B' ℓ w)) parent node
+        root T + p ↔
+      (∀ ℓ, IsEmpty (κ ℓ)) ∧ (#T : ℤ) ≤ ∑ ℓ, ind ℓ (A₀ ℓ + ∑ v, B ℓ v) + p := by
+  by_cases hκ : ∀ ℓ, IsEmpty (κ ℓ)
+  · -- Without simple spheres there are no bubbles, since every bubble covers a simple sphere.
+    have : ∀ ℓ, IsEmpty (ι ℓ) := fun ℓ => Function.isEmpty (ρ ℓ)
+    simp only [brokenSphereTreeDimension_of_isEmpty, univ_eq_empty, sum_empty, add_zero, hκ,
+      implies_true, true_and]
+    constructor <;> intro h <;> linarith
+  · obtain ⟨ℓ, hℓ⟩ := not_forall.1 hκ
+    have := brokenSphereTreeDimension_le_sub_two c hind A₀ hB hm hρ hc
+      ⟨ℓ, not_isEmpty_iff.1 hℓ⟩ parent node root T (n := n)
+    simp only [hκ, false_and, iff_false, not_le]
+    linarith
 
 end Broken
 
@@ -699,6 +799,33 @@ theorem sphereTreeDimension_brokenPantsDimension_le (n : ℤ) (c : G →+ ℤ) {
     (ind := fun A' => g₁ 0 + g₂ 0 - g₀ (Fin.last k₀) - n + 2 * c A' - (k₁ + k₂ + k₀))
     (fun _ _ => by rw [map_add]; ring) _ hB hm hρ hc parent node root
 
+/-- **The strata of one-parameter families of pairs of pants.** Consider a family of pair-of-pants
+problems, such as the homotopies that compare the products of two choices of auxiliary data or
+exchange the inputs, and its limits over a face of dimension `p` of the parameter space: `p = 1`
+in the interior of a one-parameter family and `p = 0` at its end points. The core of such a limit
+is a broken pair of pants, whose expected dimension in the family is
+`TauCeti.Floer.brokenPantsDimension` plus `p`. On a target where every simple sphere has
+nonnegative first Chern number, if this is at most one, the stratum with a tree of simple spheres
+attached has nonnegative expected dimension exactly when it has no nonconstant sphere bubble and
+at most `μ₁ + μ₂ - μ₀ - n + 2 c₁(A') + p` cylinders have broken off, `A'` being the total class.
+So the rigid counts of a homotopy, of index `-1`, come from unbroken pairs of pants at interior
+parameters only; the one-dimensional spaces of index `0` meet the strata of a single broken-off
+cylinder at interior parameters and of unbroken pairs of pants at the end points. -/
+theorem sphereTreeDimension_brokenPantsDimension_add_nonneg_iff (n p : ℤ) (c : G →+ ℤ)
+    {k₁ k₂ k₀ : ℕ} (g₁ : Fin (k₁ + 1) → ℤ) (g₂ : Fin (k₂ + 1) → ℤ) (g₀ : Fin (k₀ + 1) → ℤ)
+    (C₁ : Fin k₁ → G) (C₂ : Fin k₂ → G) (C₀ : Fin k₀ → G) (A : G) {B : ι → G} {B' : κ → G}
+    {m : ι → ℕ} {ρ : ι → κ} (hB : ∀ v, B v = m v • B' (ρ v)) (hm : ∀ v, 0 < m v)
+    (hρ : Function.Surjective ρ) (hc : ∀ w, 0 ≤ c (B' w))
+    (hA : g₁ 0 + g₂ 0 - g₀ (Fin.last k₀) - n + p +
+        2 * c (A + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₀ j + ∑ v, B v) - (k₁ + k₂ + k₀) ≤ 1)
+    (parent : κ → Option κ) (node root : κ → P) :
+    0 ≤ sphereTreeDimension n (brokenPantsDimension n c g₁ g₂ g₀ C₁ C₂ C₀ A + p)
+        (fun w => c (B' w)) parent node root ↔
+      IsEmpty κ ∧ (k₁ + k₂ + k₀ : ℤ) ≤ g₁ 0 + g₂ 0 - g₀ (Fin.last k₀) - n + p +
+        2 * c (A + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₀ j + ∑ v, B v) :=
+  sphereTreeDimension_nonneg_iff_of_eq_add_two_mul_sub c hB hm hρ hc
+    (by rw [brokenPantsDimension_eq]; ring) hA parent node root
+
 /-- **The strata of the product's rigid and one-dimensional problems.** On a target where every
 simple sphere has nonnegative first Chern number, consider the limits of pairs of pants between
 capped generators of gradings `μ₁ = g₁ 0`, `μ₂ = g₂ 0` and `μ₀ = g₀ (last k₀)`, in a total class
@@ -722,12 +849,202 @@ theorem sphereTreeDimension_brokenPantsDimension_nonneg_iff (n : ℤ) (c : G →
         parent node root ↔
       IsEmpty κ ∧ (k₁ + k₂ + k₀ : ℤ) ≤ g₁ 0 + g₂ 0 - g₀ (Fin.last k₀) - n +
         2 * c (A + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₀ j + ∑ v, B v) := by
-  rw [brokenPantsDimension_eq]
-  refine (sphereTreeDimension_nonneg_iff c
-    (ind := fun A' => g₁ 0 + g₂ 0 - g₀ (Fin.last k₀) - n + 2 * c A' - (k₁ + k₂ + k₀))
-    (fun _ _ => by rw [map_add]; ring) _ hB hm hρ hc hA parent node root).trans ?_
-  simp only [sub_nonneg]
+  simpa only [add_zero] using sphereTreeDimension_brokenPantsDimension_add_nonneg_iff n 0 c g₁ g₂
+    g₀ C₁ C₂ C₀ A hB hm hρ hc (by simpa only [add_zero] using hA) parent node root
 
 end BrokenPants
+
+/-! ### The associativity family -/
+
+section Associativity
+
+variable {G : Type*} [AddCommMonoid G] {ι : Type*} [Fintype ι]
+
+/-- The expected dimension of a broken limit of four-holed spheres with three inputs and one
+output, in a target of real dimension `2n`, before bubbling. Its four-holed sphere has inputs at
+capped orbits of gradings `g₁ (last k₁)`, `g₂ (last k₂)` and `g₃ (last k₃)`, output at a capped
+orbit of grading `g₀ 0`, and class `A` relative to these caps, so its index is
+`g₁ (last k₁) + g₂ (last k₂) + g₃ (last k₃) - g₀ 0 - 2n + 2 c₁(A)`. As for
+`TauCeti.Floer.brokenPantsDimension`, at each input `i` a chain of `kᵢ` Floer cylinders
+(`TauCeti.Floer.cylinderChainDimension`) runs from the capped generator of grading `gᵢ 0` to the
+four-holed sphere, and at its output a chain of `k₀` cylinders runs from the four-holed sphere to
+the capped generator of grading `g₀ (last k₀)`. -/
+def brokenFourHoledSphereDimension (n : ℤ) (c : G →+ ℤ) {k₁ k₂ k₃ k₀ : ℕ} (g₁ : Fin (k₁ + 1) → ℤ)
+    (g₂ : Fin (k₂ + 1) → ℤ) (g₃ : Fin (k₃ + 1) → ℤ) (g₀ : Fin (k₀ + 1) → ℤ) (C₁ : Fin k₁ → G)
+    (C₂ : Fin k₂ → G) (C₃ : Fin k₃ → G) (C₀ : Fin k₀ → G) (A : G) : ℤ :=
+  g₁ (Fin.last k₁) + g₂ (Fin.last k₂) + g₃ (Fin.last k₃) - g₀ 0 - 2 * n + 2 * c A +
+    cylinderChainDimension c g₁ C₁ + cylinderChainDimension c g₂ C₂ +
+      cylinderChainDimension c g₃ C₃ + cylinderChainDimension c g₀ C₀
+
+theorem brokenFourHoledSphereDimension_def (n : ℤ) (c : G →+ ℤ) {k₁ k₂ k₃ k₀ : ℕ}
+    (g₁ : Fin (k₁ + 1) → ℤ) (g₂ : Fin (k₂ + 1) → ℤ) (g₃ : Fin (k₃ + 1) → ℤ)
+    (g₀ : Fin (k₀ + 1) → ℤ) (C₁ : Fin k₁ → G) (C₂ : Fin k₂ → G) (C₃ : Fin k₃ → G)
+    (C₀ : Fin k₀ → G) (A : G) :
+    brokenFourHoledSphereDimension n c g₁ g₂ g₃ g₀ C₁ C₂ C₃ C₀ A =
+      g₁ (Fin.last k₁) + g₂ (Fin.last k₂) + g₃ (Fin.last k₃) - g₀ 0 - 2 * n + 2 * c A +
+        cylinderChainDimension c g₁ C₁ + cylinderChainDimension c g₂ C₂ +
+          cylinderChainDimension c g₃ C₃ + cylinderChainDimension c g₀ C₀ := by
+  rw [brokenFourHoledSphereDimension]
+
+/-- **The index of a broken four-holed sphere.** The expected dimension of a broken limit of
+four-holed spheres is the index `μ₁ + μ₂ + μ₃ - μ₀ - 2n + 2 c₁(A')` of the unbroken problem between
+the capped generators of gradings `μᵢ = gᵢ 0` and `μ₀ = g₀ (last k₀)`, in the total class
+`A' = A + ∑ C₁ + ∑ C₂ + ∑ C₃ + ∑ C₀`, minus one for each of the `k₁ + k₂ + k₃ + k₀` cylinders that
+have broken off. -/
+theorem brokenFourHoledSphereDimension_eq (n : ℤ) (c : G →+ ℤ) {k₁ k₂ k₃ k₀ : ℕ}
+    (g₁ : Fin (k₁ + 1) → ℤ) (g₂ : Fin (k₂ + 1) → ℤ) (g₃ : Fin (k₃ + 1) → ℤ)
+    (g₀ : Fin (k₀ + 1) → ℤ) (C₁ : Fin k₁ → G) (C₂ : Fin k₂ → G) (C₃ : Fin k₃ → G)
+    (C₀ : Fin k₀ → G) (A : G) :
+    brokenFourHoledSphereDimension n c g₁ g₂ g₃ g₀ C₁ C₂ C₃ C₀ A =
+      g₁ 0 + g₂ 0 + g₃ 0 - g₀ (Fin.last k₀) - 2 * n +
+          2 * c (A + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₃ j + ∑ j, C₀ j) -
+        (k₁ + k₂ + k₃ + k₀) := by
+  rw [brokenFourHoledSphereDimension, cylinderChainDimension_eq, cylinderChainDimension_eq,
+    cylinderChainDimension_eq, cylinderChainDimension_eq]
+  simp only [map_add]
+  ring
+
+/-- **The strata of the associativity family at interior parameters.** On a target where every
+simple sphere has nonnegative first Chern number, consider the limits of the one-parameter family
+of four-holed spheres joining the two ways of composing two pairs of pants, over a face of
+dimension `p` of its parameter space. Their core is a broken four-holed sphere, of expected
+dimension `TauCeti.Floer.brokenFourHoledSphereDimension` plus `p`. If this is at most one, the
+stratum with a tree of simple spheres attached has nonnegative expected dimension exactly when it
+has no nonconstant sphere bubble and at most `μ₁ + μ₂ + μ₃ - μ₀ - 2n + 2 c₁(A') + p` cylinders
+have broken off, `A'` being the total class. So in the one-dimensional problem, of index `0`, the
+strata at interior parameters (`p = 1`) are the unbroken four-holed spheres and those with a single
+Floer cylinder broken off at one of the four ends, the faces at which a differential of one of the
+complexes appears. -/
+theorem sphereTreeDimension_brokenFourHoledSphereDimension_add_nonneg_iff (n p : ℤ) (c : G →+ ℤ)
+    {k₁ k₂ k₃ k₀ : ℕ} (g₁ : Fin (k₁ + 1) → ℤ) (g₂ : Fin (k₂ + 1) → ℤ) (g₃ : Fin (k₃ + 1) → ℤ)
+    (g₀ : Fin (k₀ + 1) → ℤ) (C₁ : Fin k₁ → G) (C₂ : Fin k₂ → G) (C₃ : Fin k₃ → G)
+    (C₀ : Fin k₀ → G) (A : G) {B : ι → G} {B' : κ → G} {m : ι → ℕ} {ρ : ι → κ}
+    (hB : ∀ v, B v = m v • B' (ρ v)) (hm : ∀ v, 0 < m v) (hρ : Function.Surjective ρ)
+    (hc : ∀ w, 0 ≤ c (B' w))
+    (hA : g₁ 0 + g₂ 0 + g₃ 0 - g₀ (Fin.last k₀) - 2 * n + p +
+        2 * c (A + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₃ j + ∑ j, C₀ j + ∑ v, B v) -
+          (k₁ + k₂ + k₃ + k₀) ≤ 1)
+    (parent : κ → Option κ) (node root : κ → P) :
+    0 ≤ sphereTreeDimension n (brokenFourHoledSphereDimension n c g₁ g₂ g₃ g₀ C₁ C₂ C₃ C₀ A + p)
+        (fun w => c (B' w)) parent node root ↔
+      IsEmpty κ ∧ (k₁ + k₂ + k₃ + k₀ : ℤ) ≤ g₁ 0 + g₂ 0 + g₃ 0 - g₀ (Fin.last k₀) - 2 * n + p +
+        2 * c (A + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₃ j + ∑ j, C₀ j + ∑ v, B v) :=
+  sphereTreeDimension_nonneg_iff_of_eq_add_two_mul_sub c hB hm hρ hc
+    (by rw [brokenFourHoledSphereDimension_eq]; ring) hA parent node root
+
+/-- **The long-neck end of the associativity family composing the first two inputs.** At this
+end the four-holed sphere breaks into a broken pair of pants `P` with inputs `x₁`, `x₂` and a
+broken pair of pants `Q` whose first input receives the output of `P`, with a chain of cylinders
+broken off between them: the output chain `h` of `P` ends at the capped generator at which the
+first input chain `h'` of `Q` starts. The expected dimensions of `P` and `Q` add up to the index
+`μ₁ + μ₂ + μ₃ - μ₀ - 2n + 2 c₁(A')` of the four-holed sphere between the outer capped generators,
+in the total class `A'`, minus the number of cylinders that have broken off, including those
+between `P` and `Q`. -/
+theorem brokenPantsDimension_add_brokenPantsDimension_fst (n : ℤ) (c : G →+ ℤ)
+    {k₁ k₂ k k' k₃ k₀ : ℕ} (g₁ : Fin (k₁ + 1) → ℤ) (g₂ : Fin (k₂ + 1) → ℤ) (h : Fin (k + 1) → ℤ)
+    (h' : Fin (k' + 1) → ℤ) (g₃ : Fin (k₃ + 1) → ℤ) (g₀ : Fin (k₀ + 1) → ℤ) (C₁ : Fin k₁ → G)
+    (C₂ : Fin k₂ → G) (D : Fin k → G) (D' : Fin k' → G) (C₃ : Fin k₃ → G) (C₀ : Fin k₀ → G)
+    (A₁ A₂ : G) (hh : h (Fin.last k) = h' 0) :
+    brokenPantsDimension n c g₁ g₂ h C₁ C₂ D A₁ + brokenPantsDimension n c h' g₃ g₀ D' C₃ C₀ A₂ =
+      g₁ 0 + g₂ 0 + g₃ 0 - g₀ (Fin.last k₀) - 2 * n +
+          2 * c (A₁ + A₂ + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, D j + ∑ j, D' j + ∑ j, C₃ j +
+            ∑ j, C₀ j) -
+        (k₁ + k₂ + k + k' + k₃ + k₀) := by
+  rw [brokenPantsDimension_eq, brokenPantsDimension_eq, hh]
+  simp only [map_add]
+  ring
+
+/-- **The long-neck end of the associativity family composing the last two inputs.** At this end
+the four-holed sphere breaks into a broken pair of pants `P` with inputs `x₂`, `x₃` and a broken
+pair of pants `Q` whose second input receives the output of `P`, with a chain of cylinders broken
+off between them: the output chain `h` of `P` ends at the capped generator at which the second
+input chain `h'` of `Q` starts. The expected dimensions of `P` and `Q` add up to the index
+`μ₁ + μ₂ + μ₃ - μ₀ - 2n + 2 c₁(A')` of the four-holed sphere between the outer capped generators,
+in the total class `A'`, minus the number of cylinders that have broken off, including those
+between `P` and `Q`. -/
+theorem brokenPantsDimension_add_brokenPantsDimension_snd (n : ℤ) (c : G →+ ℤ)
+    {k₁ k₂ k k' k₃ k₀ : ℕ} (g₁ : Fin (k₁ + 1) → ℤ) (g₂ : Fin (k₂ + 1) → ℤ) (g₃ : Fin (k₃ + 1) → ℤ)
+    (h : Fin (k + 1) → ℤ) (h' : Fin (k' + 1) → ℤ) (g₀ : Fin (k₀ + 1) → ℤ) (C₁ : Fin k₁ → G)
+    (C₂ : Fin k₂ → G) (C₃ : Fin k₃ → G) (D : Fin k → G) (D' : Fin k' → G) (C₀ : Fin k₀ → G)
+    (A₁ A₂ : G) (hh : h (Fin.last k) = h' 0) :
+    brokenPantsDimension n c g₂ g₃ h C₂ C₃ D A₁ + brokenPantsDimension n c g₁ h' g₀ C₁ D' C₀ A₂ =
+      g₁ 0 + g₂ 0 + g₃ 0 - g₀ (Fin.last k₀) - 2 * n +
+          2 * c (A₁ + A₂ + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₃ j + ∑ j, D j + ∑ j, D' j +
+            ∑ j, C₀ j) -
+        (k₁ + k₂ + k₃ + k + k' + k₀) := by
+  rw [brokenPantsDimension_eq, brokenPantsDimension_eq, hh]
+  simp only [map_add]
+  ring
+
+/-- **The strata at the long-neck end composing the first two inputs.** On a target where every
+simple sphere has nonnegative first Chern number, consider the limits of the associativity family
+at its end composing the first two inputs: a broken pair of pants `P` glued into the first input of
+a broken pair of pants `Q`, as in
+`TauCeti.Floer.brokenPantsDimension_add_brokenPantsDimension_fst`, with a tree of simple spheres
+attached. The end point is a face of dimension zero of the parameter space, so the expected
+dimension of the core is the sum of those of `P` and `Q`. If this is at most one, the stratum has
+nonnegative expected dimension exactly when it has no nonconstant sphere bubble and at most
+`μ₁ + μ₂ + μ₃ - μ₀ - 2n + 2 c₁(A')` cylinders have broken off. In the one-dimensional problem, of
+index `0`, the only such strata are two unbroken pairs of pants meeting at a capped generator,
+whose expected dimensions add up to zero. They form the composite of the rigid products once every
+piece of negative expected dimension is empty, a genericity statement not proved here. -/
+theorem sphereTreeDimension_brokenPantsDimension_add_brokenPantsDimension_fst_nonneg_iff
+    (n : ℤ) (c : G →+ ℤ) {k₁ k₂ k k' k₃ k₀ : ℕ} (g₁ : Fin (k₁ + 1) → ℤ) (g₂ : Fin (k₂ + 1) → ℤ)
+    (h : Fin (k + 1) → ℤ) (h' : Fin (k' + 1) → ℤ) (g₃ : Fin (k₃ + 1) → ℤ)
+    (g₀ : Fin (k₀ + 1) → ℤ) (C₁ : Fin k₁ → G) (C₂ : Fin k₂ → G) (D : Fin k → G)
+    (D' : Fin k' → G) (C₃ : Fin k₃ → G) (C₀ : Fin k₀ → G) (A₁ A₂ : G)
+    (hh : h (Fin.last k) = h' 0) {B : ι → G} {B' : κ → G} {m : ι → ℕ} {ρ : ι → κ}
+    (hB : ∀ v, B v = m v • B' (ρ v)) (hm : ∀ v, 0 < m v) (hρ : Function.Surjective ρ)
+    (hc : ∀ w, 0 ≤ c (B' w))
+    (hA : g₁ 0 + g₂ 0 + g₃ 0 - g₀ (Fin.last k₀) - 2 * n +
+        2 * c (A₁ + A₂ + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, D j + ∑ j, D' j + ∑ j, C₃ j +
+          ∑ j, C₀ j + ∑ v, B v) - (k₁ + k₂ + k + k' + k₃ + k₀) ≤ 1)
+    (parent : κ → Option κ) (node root : κ → P) :
+    0 ≤ sphereTreeDimension n
+        (brokenPantsDimension n c g₁ g₂ h C₁ C₂ D A₁ +
+          brokenPantsDimension n c h' g₃ g₀ D' C₃ C₀ A₂)
+        (fun w => c (B' w)) parent node root ↔
+      IsEmpty κ ∧ (k₁ + k₂ + k + k' + k₃ + k₀ : ℤ) ≤ g₁ 0 + g₂ 0 + g₃ 0 - g₀ (Fin.last k₀) - 2 * n +
+        2 * c (A₁ + A₂ + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, D j + ∑ j, D' j + ∑ j, C₃ j +
+          ∑ j, C₀ j + ∑ v, B v) :=
+  sphereTreeDimension_nonneg_iff_of_eq_add_two_mul_sub c hB hm hρ hc
+    (brokenPantsDimension_add_brokenPantsDimension_fst n c g₁ g₂ h h' g₃ g₀ C₁ C₂ D D' C₃ C₀ A₁ A₂
+      hh) hA parent node root
+
+/-- **The strata at the long-neck end composing the last two inputs.** On a target where every
+simple sphere has nonnegative first Chern number, consider the limits of the associativity family
+at its end composing the last two inputs: a broken pair of pants `P` glued into the second input of
+a broken pair of pants `Q`, as in
+`TauCeti.Floer.brokenPantsDimension_add_brokenPantsDimension_snd`, with a tree of simple spheres
+attached. If the expected dimension of the core is at most one, the stratum has nonnegative
+expected dimension exactly when it has no nonconstant sphere bubble and at most
+`μ₁ + μ₂ + μ₃ - μ₀ - 2n + 2 c₁(A')` cylinders have broken off. In the one-dimensional problem, of
+index `0`, the only such strata are two unbroken pairs of pants meeting at a capped generator,
+whose expected dimensions add up to zero. They form the composite of the rigid products once every
+piece of negative expected dimension is empty, a genericity statement not proved here. -/
+theorem sphereTreeDimension_brokenPantsDimension_add_brokenPantsDimension_snd_nonneg_iff
+    (n : ℤ) (c : G →+ ℤ) {k₁ k₂ k k' k₃ k₀ : ℕ} (g₁ : Fin (k₁ + 1) → ℤ) (g₂ : Fin (k₂ + 1) → ℤ)
+    (g₃ : Fin (k₃ + 1) → ℤ) (h : Fin (k + 1) → ℤ) (h' : Fin (k' + 1) → ℤ)
+    (g₀ : Fin (k₀ + 1) → ℤ) (C₁ : Fin k₁ → G) (C₂ : Fin k₂ → G) (C₃ : Fin k₃ → G)
+    (D : Fin k → G) (D' : Fin k' → G) (C₀ : Fin k₀ → G) (A₁ A₂ : G)
+    (hh : h (Fin.last k) = h' 0) {B : ι → G} {B' : κ → G} {m : ι → ℕ} {ρ : ι → κ}
+    (hB : ∀ v, B v = m v • B' (ρ v)) (hm : ∀ v, 0 < m v) (hρ : Function.Surjective ρ)
+    (hc : ∀ w, 0 ≤ c (B' w))
+    (hA : g₁ 0 + g₂ 0 + g₃ 0 - g₀ (Fin.last k₀) - 2 * n +
+        2 * c (A₁ + A₂ + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₃ j + ∑ j, D j + ∑ j, D' j +
+          ∑ j, C₀ j + ∑ v, B v) - (k₁ + k₂ + k₃ + k + k' + k₀) ≤ 1)
+    (parent : κ → Option κ) (node root : κ → P) :
+    0 ≤ sphereTreeDimension n
+        (brokenPantsDimension n c g₂ g₃ h C₂ C₃ D A₁ +
+          brokenPantsDimension n c g₁ h' g₀ C₁ D' C₀ A₂)
+        (fun w => c (B' w)) parent node root ↔
+      IsEmpty κ ∧ (k₁ + k₂ + k₃ + k + k' + k₀ : ℤ) ≤ g₁ 0 + g₂ 0 + g₃ 0 - g₀ (Fin.last k₀) - 2 * n +
+        2 * c (A₁ + A₂ + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₃ j + ∑ j, D j + ∑ j, D' j +
+          ∑ j, C₀ j + ∑ v, B v) :=
+  sphereTreeDimension_nonneg_iff_of_eq_add_two_mul_sub c hB hm hρ hc
+    (brokenPantsDimension_add_brokenPantsDimension_snd n c g₁ g₂ g₃ h h' g₀ C₁ C₂ C₃ D D' C₀ A₁ A₂
+      hh) hA parent node root
+
+end Associativity
 
 end TauCeti.Floer

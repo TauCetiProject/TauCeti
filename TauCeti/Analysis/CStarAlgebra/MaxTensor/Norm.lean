@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.SpatialNorm
 public import TauCeti.Analysis.CStarAlgebra.Representation.GNS
 import Mathlib.LinearAlgebra.TensorProduct.Finiteness
+import TauCeti.Analysis.CStarAlgebra.Hom
 
 /-!
 # The maximal C*-norm on an algebraic tensor product of C*-algebras
@@ -42,6 +43,11 @@ The maximal norm dominates every norm obtained from a commuting pair in the univ
 (`TauCeti.norm_tensorHom_le_maxTensorNorm`), every norm obtained from commuting star homomorphisms
 into a C*-algebra in that universe (`TauCeti.norm_liftNonUnitalStarAlgHom_le_maxTensorNorm`), and
 the supremum over any family of commuting pairs (`TauCeti.supTensorNorm_le_maxTensorNorm`).
+
+If a star homomorphism `Φ` carries `A ⊗[ℂ] B` bijectively onto a C*-algebra, every supremum over
+a family containing a commuting pair with injective integrated form, in particular the maximal
+norm, is `‖Φ x‖` (`TauCeti.supTensorNorm_eq_norm_of_bijective`,
+`TauCeti.maxTensorNorm_eq_norm_of_bijective`).
 
 ## Main declarations
 
@@ -374,6 +380,18 @@ theorem supTensorNorm_tmul {a : A} {b : B} (h : ∃ i, ‖(f i).tensorHom (a ⊗
   obtain ⟨i, hi⟩ := h
   exact le_antisymm (supTensorNorm_tmul_le f a b) (hi ▸ norm_tensorHom_le_supTensorNorm f i _)
 
+/-- If a star homomorphism `Φ` carries `A ⊗[ℂ] B` bijectively onto a C*-algebra, the supremum
+over a family of commuting pairs one of which has injective integrated form is `‖Φ x‖`. -/
+theorem supTensorNorm_eq_norm_of_bijective {D : Type*} [NonUnitalCStarAlgebra D]
+    {Φ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D} (hΦ : Function.Bijective Φ)
+    (hf : ∃ i, Function.Injective (f i).tensorHom) (x : A ⊗[ℂ] B) :
+    supTensorNorm f x = ‖Φ x‖ := by
+  obtain ⟨i, hi⟩ := hf
+  refine le_antisymm (supTensorNorm_le_of_forall f (norm_nonneg _) fun j ↦
+    NonUnitalStarAlgHom.norm_apply_le_of_bijective (f j).tensorHom hΦ x) ?_
+  rw [← NonUnitalStarAlgHom.norm_apply_eq_of_bijective hi hΦ x]
+  exact norm_tensorHom_le_supTensorNorm f i x
+
 end SupTensorNorm
 
 /-! ### The maximal norm -/
@@ -458,6 +476,13 @@ theorem maxTensorNorm_eq_zero_iff {x : A ⊗[ℂ] B} : maxTensorNorm A B x = 0 �
 theorem maxTensorNorm_tmul (a : A) (b : B) : maxTensorNorm A B (a ⊗ₜ b) = ‖a‖ * ‖b‖ :=
   supTensorNorm_tmul id <|
     (exists_tensorHom_injective_and_norm_tensorHom_tmul A B).imp fun _ h ↦ h.2 a b
+
+/-- If a star homomorphism `Φ` carries `A ⊗[ℂ] B` bijectively onto a C*-algebra, the maximal norm
+is `‖Φ x‖`. -/
+theorem maxTensorNorm_eq_norm_of_bijective {D : Type*} [NonUnitalCStarAlgebra D]
+    {Φ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D} (hΦ : Function.Bijective Φ) (x : A ⊗[ℂ] B) :
+    maxTensorNorm A B x = ‖Φ x‖ :=
+  supTensorNorm_eq_norm_of_bijective id hΦ (exists_tensorHom_injective A B) x
 
 /-- **Universal bound.** Commuting star homomorphisms `φ : A → C` and `ψ : B → C` into a
 C*-algebra `C` in the universe `max u v` integrate to a star homomorphism `A ⊗[ℂ] B → C` bounded

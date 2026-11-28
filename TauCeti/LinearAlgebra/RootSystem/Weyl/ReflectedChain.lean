@@ -85,18 +85,16 @@ public section
 
 universe u v w x
 
-namespace TauCeti
-
-open RootPairing CoxeterSystem
+open RootPairing CoxeterSystem TauCeti
 
 variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
 
 /-! ### Reflecting a saturated chain -/
 
-namespace _root_.CoxeterSystem.MinimalCosetRepChain
+namespace CoxeterSystem.MinimalCosetRepChain
 
 variable [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] {P : _root_.RootPairing ι R M N} {b : P.Base} [Finite ι]
+  [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} {b : P.Base} [Finite ι]
   [P.IsCrystallographic] [P.IsReduced] {lam : M}
 
 /-- The **reflection** `sᵢ x₀ ⋗ sᵢ x₁ ⋗ ⋯ ⋗ sᵢ x_l` of a saturated chain `x₀ ⋗ ⋯ ⋗ x_l` of
@@ -142,16 +140,16 @@ theorem last_simpleMul :
     (simpleMul hlam C i hC).last.val = (weylCoxeterSystem P b).simple i * C.last.val :=
   (rfl)
 
-end _root_.CoxeterSystem.MinimalCosetRepChain
+end CoxeterSystem.MinimalCosetRepChain
 
 /-! ### `a`-chains of a root datum -/
 
 section RootDatum
 
-variable [AddCommGroup M] [AddCommGroup N] {P : _root_.RootPairing ι ℤ M N} {b : P.Base}
+variable [AddCommGroup M] [AddCommGroup N] {P : RootPairing ι ℤ M N} {b : P.Base}
   [Finite ι] [P.IsReduced] {lam : M} {a : ℚ}
 
-namespace _root_.CoxeterSystem.MinimalCosetRepChain
+namespace CoxeterSystem.MinimalCosetRepChain
 
 variable {hlam : lam ∈ dominantChamber P b}
   {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} {i : b.support}
@@ -188,7 +186,9 @@ theorem isAChain_simpleMul_iff :
   rw [TauCeti.isAChain_iff_den_dvd_bondGcd, TauCeti.isAChain_iff_den_dvd_bondGcd,
     bondGcd_simpleMul]
 
-end _root_.CoxeterSystem.MinimalCosetRepChain
+end CoxeterSystem.MinimalCosetRepChain
+
+namespace TauCeti
 
 /-- **The cover `u ⋖ sᵢ u` is an `a`-chain when `a ⟨u λ, αᵢ^∨⟩` is an integer.** For a minimal coset
 representative `u` of `W / W_λ` with `⟨u λ, αᵢ^∨⟩ > 0`, the saturated chain `sᵢ u ⋗ u` has the
@@ -296,12 +296,12 @@ theorem IsAChain.exists_isAChain_simple_mul_last (hlam : lam ∈ dominantChamber
     Or.inl fun j ↦ by
       have hj : (j : ℕ) < C.length - (k + 1) + 1 := j.isLt
       exact hpos (j + (k + 1)) (by omega) (Nat.le_add_left _ _)
-  set D := _root_.CoxeterSystem.MinimalCosetRepChain.simpleMul hlam E i hE
+  set D := CoxeterSystem.MinimalCosetRepChain.simpleMul hlam E i hE
   have hjoin : (C.take ⟨k, by omega⟩).last = D.head :=
     Subtype.ext (by simpa [D, E] using heq)
   refine ⟨(C.take ⟨k, by omega⟩).smash D hjoin, by simp, by simp [D, E],
     (isAChain_smash_iff hjoin).mpr ⟨hC.take _, ?_⟩⟩
-  exact _root_.CoxeterSystem.MinimalCosetRepChain.isAChain_simpleMul_iff.mpr (hC.drop _)
+  exact CoxeterSystem.MinimalCosetRepChain.isAChain_simpleMul_iff.mpr (hC.drop _)
 
 /-- **Littelmann's chain at the end of a reflected piece of `e_αᵢ`.** If `C` is an `a`-chain of
 `W / W_λ` from `x` down to `y` with `⟨x λ, αᵢ^∨⟩ < 0 ≤ ⟨y λ, αᵢ^∨⟩`, then there is an `a`-chain
@@ -341,13 +341,13 @@ theorem IsAChain.exists_isAChain_simple_mul_head (hlam : lam ∈ dominantChamber
   set E := C.take ⟨k, by omega⟩
   have hE : (∀ j, 0 < P.coroot' i ((E j).val • lam)) ∨ ∀ j, P.coroot' i ((E j).val • lam) < 0 :=
     Or.inr fun j ↦ hneg j (by have : (j : ℕ) < k + 1 := j.isLt; omega)
-  set D := _root_.CoxeterSystem.MinimalCosetRepChain.simpleMul hlam E i hE
+  set D := CoxeterSystem.MinimalCosetRepChain.simpleMul hlam E i hE
   have hjoin : D.last = (C.drop ⟨k + 1, by omega⟩).head :=
     Subtype.ext (by simpa [D, E] using heq.symm)
   refine ⟨D.smash (C.drop ⟨k + 1, by omega⟩) hjoin, by simp [D, E], by simp,
     (isAChain_smash_iff hjoin).mpr ⟨?_, hC.drop _⟩⟩
-  exact _root_.CoxeterSystem.MinimalCosetRepChain.isAChain_simpleMul_iff.mpr (hC.take _)
-
-end RootDatum
+  exact CoxeterSystem.MinimalCosetRepChain.isAChain_simpleMul_iff.mpr (hC.take _)
 
 end TauCeti
+
+end RootDatum

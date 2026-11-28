@@ -106,6 +106,18 @@ in the second. -/
 theorem mk_smul_left (g : G) (e : E) (a : A) : mk G (g • e) a = mk G e (g⁻¹ • a) :=
   Quotient.sound ⟨g, by simp⟩
 
+/-- Moving a point of `E × A` by `g` in the second coordinate is the same as moving it by `g⁻¹`
+in the first. Not `@[simp]`: together with `mk_smul_left` it would loop. -/
+theorem mk_smul_right (g : G) (e : E) (a : A) : mk G e (g • a) = mk G (g⁻¹ • e) a := by
+  rw [mk_smul_left, inv_inv]
+
+/-- A property of the balanced product holds everywhere once it holds for the class of every
+pair. -/
+@[elab_as_elim]
+theorem ind {motive : BalancedProduct G E A → Prop} (h : ∀ e a, motive (mk G e a))
+    (x : BalancedProduct G E A) : motive x :=
+  Quotient.ind (fun p ↦ h p.1 p.2) x
+
 /-- Two pairs have the same class in the balanced product exactly when one is a translate of the
 other under the diagonal action. -/
 theorem mk_eq_mk_iff {e e' : E} {a a' : A} :

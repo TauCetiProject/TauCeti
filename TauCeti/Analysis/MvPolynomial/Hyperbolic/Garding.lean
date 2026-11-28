@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.Analysis.Convex.PathConnected
+public import Mathlib.Geometry.Convex.Cone.Basic
 public import TauCeti.Analysis.MvPolynomial.Hyperbolic
+import TauCeti.Analysis.Convex.Cone.Orthant
 import TauCeti.Analysis.Polynomial.RootLocation
 
 /-!
@@ -19,8 +21,8 @@ Gårding's theorem says that `p` is then hyperbolic in every direction `b ∈ Γ
 `Γ(p, b) = Γ`. Consequently `Γ` is convex: for `y ∈ Γ` it is the cone `Γ(p, y)`, which is
 star-convex with respect to `y`. With the derivative rule of `MvPolynomial.IsHyperbolic` it also
 gives that the directional derivative `D_b p = ∑ᵢ bᵢ ∂p/∂Xᵢ` is positive on `Γ` for every `b ∈ Γ`
-when `m ≥ 1`. The concavity of `p^{1/m}` on `Γ`, the remaining part of Gårding's theorem, is not
-proved here.
+when `m ≥ 1`. The concavity of `p^{1/m}` on `Γ`, the remaining part of Gårding's theorem, is in
+`TauCeti.Analysis.MvPolynomial.Hyperbolic.Concave` (`MvPolynomial.IsHyperbolic.concaveOn_rpow`).
 
 The model case is that of the elementary symmetric polynomials `σ_k`, hyperbolic in the direction
 `e = (1, …, 1)` with Gårding cones the cones `Γ_k` (`MvPolynomial.gardingCone_esymm`): for them
@@ -37,6 +39,10 @@ fully nonlinear elliptic equations such as the complex Hessian equations require
 * `MvPolynomial.IsHyperbolic.gardingCone_eq_of_mem`: `Γ(p, b) = Γ(p, a)` for `b ∈ Γ(p, a)`.
 * `MvPolynomial.IsHyperbolic.convex_gardingCone`, `MvPolynomial.IsHyperbolic.add_mem_gardingCone`:
   `Γ` is a convex cone.
+* `MvPolynomial.IsHyperbolic.gardingConvexCone`: `Γ` as a `ConvexCone`.
+* `MvPolynomial.IsHyperbolic.setOf_forall_pos_subset_iff`: `Γ` contains the positive orthant if
+  and only if every coordinate vector `eᵢ` lies in its closure.
+* `MvPolynomial.IsHyperbolic.add_mem_gardingCone_of_mem_closure`: `Γ + closure Γ ⊆ Γ`.
 * `MvPolynomial.IsHyperbolic.eval_sum_smul_pderiv_pos`: `D_b p > 0` on `Γ` for `b ∈ Γ`, `m ≥ 1`.
 
 ## Implementation notes
@@ -357,6 +363,48 @@ theorem add_mem_gardingCone (hp : IsHyperbolic p m a) {y : σ → ℝ} (hx : x �
       (by norm_num)) two_pos
   rwa [smul_add, smul_smul, smul_smul, show (2 : ℝ) * (1 / 2) = 1 by norm_num, one_smul,
     one_smul] at h
+
+/-- The Gårding cone `Γ(p, a)` of a hyperbolic polynomial, as a convex cone. -/
+def gardingConvexCone (hp : IsHyperbolic p m a) : ConvexCone ℝ (σ → ℝ) where
+  carrier := gardingCone p a
+  smul_mem' _ hc _ hx := smul_mem_gardingCone hp.isHomogeneous hx hc
+  add_mem' _ hx _ hy := hp.add_mem_gardingCone hx hy
+
+/-- The underlying set of `IsHyperbolic.gardingConvexCone` is the Gårding cone. -/
+@[simp]
+theorem coe_gardingConvexCone (hp : IsHyperbolic p m a) :
+    (hp.gardingConvexCone : Set (σ → ℝ)) = gardingCone p a :=
+  (rfl)
+
+/-- Membership in `IsHyperbolic.gardingConvexCone` is membership in the Gårding cone. -/
+@[simp]
+theorem mem_gardingConvexCone (hp : IsHyperbolic p m a) {x : σ → ℝ} :
+    x ∈ hp.gardingConvexCone ↔ x ∈ gardingCone p a :=
+  .rfl
+
+/-- **The positive orthant and the Gårding cone.** For `p` hyperbolic in the direction `a`, the
+Gårding cone `Γ(p, a)` contains the positive orthant `Γ_n` if and only if every coordinate
+vector `eᵢ` lies in its closure. -/
+theorem setOf_forall_pos_subset_iff [Finite σ] [DecidableEq σ] (hp : IsHyperbolic p m a) :
+    {x : σ → ℝ | ∀ i, 0 < x i} ⊆ gardingCone p a ↔
+      ∀ i, (Pi.single i 1 : σ → ℝ) ∈ closure (gardingCone p a) :=
+  hp.coe_gardingConvexCone ▸ ConvexCone.setOf_forall_pos_subset_iff
+    (hp.coe_gardingConvexCone ▸ isOpen_gardingCone hp.isHomogeneous hp.eval_pos.ne')
+    (hp.coe_gardingConvexCone ▸ ⟨a, self_mem_gardingCone hp.isHomogeneous hp.eval_pos.ne'⟩)
+
+/-- The Gårding cone of a hyperbolic polynomial absorbs its closure under addition:
+`Γ(p, a) + closure Γ(p, a) ⊆ Γ(p, a)`, since `Γ(p, a)` is an open convex cone. -/
+theorem add_mem_gardingCone_of_mem_closure (hp : IsHyperbolic p m a) {y : σ → ℝ}
+    (hx : x ∈ gardingCone p a) (hy : y ∈ closure (gardingCone p a)) :
+    x + y ∈ gardingCone p a := by
+  have hopen := isOpen_gardingCone hp.isHomogeneous hp.eval_pos.ne'
+  -- `x / 2 + y / 2` is a combination of an interior point and a point of the closure.
+  have h := hp.convex_gardingCone.combo_interior_closure_mem_interior
+    (hopen.interior_eq.symm ▸ hx) hy (by norm_num : (0 : ℝ) < 1 / 2)
+    (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num)
+  rw [hopen.interior_eq] at h
+  convert smul_mem_gardingCone hp.isHomogeneous h two_pos using 1
+  module
 
 /-- **Gårding's theorem, positivity of the derivatives.** For `p` hyperbolic of degree `m ≥ 1` in
 the direction `a` and `b ∈ Γ(p, a)`, the directional derivative `D_b p = ∑ᵢ bᵢ ∂p/∂Xᵢ` is positive
