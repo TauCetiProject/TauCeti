@@ -94,8 +94,6 @@ theorem ContMDiff.associatedBundleTotalSpaceMap (f : F →[G] F') (hf : ContMDif
 
 namespace TauCeti.AssociatedBundle
 
--- `ManifoldTotalSpace.fiberwiseMap` requires a common model fibre for source and target.
--- Here the two model fibres may differ, so we transport through their respective homeomorphisms.
 /-- The map of associated total spaces induced by a `C^n` equivariant fibre map is `C^n`. -/
 theorem contMDiff_totalSpaceMap (f : F →[G] F') (hf : ContMDiff IF IF' n f) :
     ContMDiff (IB.prod IF) (IB.prod IF') n

@@ -231,32 +231,34 @@ section FiberwiseMap
 
 omit [TopologicalSpace B] [∀ b, TopologicalSpace (E b)] [TopologicalSpace F] [FiberBundle F E]
 
-variable {E' : B → Type*} [TopologicalSpace (TotalSpace F E')]
+variable {F' : Type*} {E' : B → Type*} [TopologicalSpace (TotalSpace F' E')]
 
 /-- The map on charted total spaces induced by a family of maps between fibres over the same
 base. No continuity or smoothness of the family is assumed. -/
 def fiberwiseMap (φ : ∀ b, E b → E' b) (x : ManifoldTotalSpace F E) :
-    ManifoldTotalSpace F E' :=
-  homeomorph F E' ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).snd⟩
+    ManifoldTotalSpace F' E' :=
+  homeomorph F' E' ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).snd⟩
 
 /-- A fibrewise map evaluated on a point transported from the original total space. -/
 @[simp]
 theorem fiberwiseMap_homeomorph (φ : ∀ b, E b → E' b) (p : TotalSpace F E) :
-    fiberwiseMap φ (homeomorph F E p) = homeomorph F E' ⟨p.proj, φ _ p.snd⟩ := by
+    fiberwiseMap φ (homeomorph F E p) = homeomorph F' E' ⟨p.proj, φ _ p.snd⟩ := by
   unfold fiberwiseMap
   rw [Homeomorph.symm_apply_apply]
 
 /-- Reading a fibrewise map back in the original total space evaluates the map on its fibre. -/
 @[simp]
 theorem homeomorph_symm_fiberwiseMap (φ : ∀ b, E b → E' b) (x : ManifoldTotalSpace F E) :
-    (homeomorph F E').symm (fiberwiseMap φ x) =
+    (homeomorph F' E').symm (fiberwiseMap φ x) =
       ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).snd⟩ := by
   simp [fiberwiseMap]
 
 /-- The fibrewise map of a family of composites is the composite of the fibrewise maps. -/
-theorem fiberwiseMap_comp {E'' : B → Type*} [TopologicalSpace (TotalSpace F E'')]
+theorem fiberwiseMap_comp {F'' : Type*} {E'' : B → Type*}
+    [TopologicalSpace (TotalSpace F'' E'')]
     (ψ : ∀ b, E' b → E'' b) (φ : ∀ b, E b → E' b) :
-    fiberwiseMap (F := F) (fun b ↦ ψ b ∘ φ b) = fiberwiseMap ψ ∘ fiberwiseMap φ := by
+    fiberwiseMap (F := F) (F' := F'') (fun b ↦ ψ b ∘ φ b) =
+      fiberwiseMap (F := F') ψ ∘ fiberwiseMap φ := by
   funext x
   obtain ⟨p, rfl⟩ := (homeomorph F E).surjective x
   simp
@@ -264,7 +266,7 @@ theorem fiberwiseMap_comp {E'' : B → Type*} [TopologicalSpace (TotalSpace F E'
 /-- Expanding `fiberwiseMap` as a function through `homeomorph`. -/
 theorem fiberwiseMap_eq (φ : ∀ b, E b → E' b) :
     fiberwiseMap (F := F) φ = fun x : ManifoldTotalSpace F E ↦
-      homeomorph F E' ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).snd⟩ := by
+      homeomorph F' E' ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).snd⟩ := by
   unfold fiberwiseMap; rfl
 
 end FiberwiseMap
@@ -317,10 +319,11 @@ theorem _root_.ContMDiff.fiberwiseMap_comp {E' E'' : B → Type*}
     [TopologicalSpace (TotalSpace F E')] [∀ b, TopologicalSpace (E' b)] [FiberBundle F E']
     [TopologicalSpace (TotalSpace F E'')] [∀ b, TopologicalSpace (E'' b)] [FiberBundle F E'']
     {ψ : ∀ b, E' b → E'' b} {φ : ∀ b, E b → E' b}
-    (hψ : ContMDiff (IB.prod IF) (IB.prod IF) n (fiberwiseMap (F := F) ψ))
-    (hφ : ContMDiff (IB.prod IF) (IB.prod IF) n (fiberwiseMap (F := F) φ)) :
-    ContMDiff (IB.prod IF) (IB.prod IF) n (fiberwiseMap (F := F) fun b ↦ ψ b ∘ φ b) := by
-  rw [ManifoldTotalSpace.fiberwiseMap_comp]
+    (hψ : ContMDiff (IB.prod IF) (IB.prod IF) n (fiberwiseMap (F := F) (F' := F) ψ))
+    (hφ : ContMDiff (IB.prod IF) (IB.prod IF) n (fiberwiseMap (F := F) (F' := F) φ)) :
+    ContMDiff (IB.prod IF) (IB.prod IF) n
+      (fiberwiseMap (F := F) (F' := F) fun b ↦ ψ b ∘ φ b) := by
+  rw [ManifoldTotalSpace.fiberwiseMap_comp (F' := F)]
   exact hψ.comp hφ
 
 /-- The preferred chart at a point is the trivialization at its base point followed by the
@@ -486,7 +489,7 @@ theorem contMDiff_fiberwiseMap_of_coord {E' : B → Type*} [TopologicalSpace (To
     [∀ b, TopologicalSpace (E' b)] [FiberBundle F E'] (e : ∀ b, E b → E' b)
     (hcoord : ∀ b₀ : B, ∀ᶠ b in 𝓝 b₀, ∀ z : E b,
       (trivializationAt F E' b₀ ⟨b, e b z⟩).2 = (trivializationAt F E b₀ ⟨b, z⟩).2) :
-    ContMDiff (IB.prod IF) (IB.prod IF) n (fiberwiseMap (F := F) e) := by
+    ContMDiff (IB.prod IF) (IB.prod IF) n (fiberwiseMap (F := F) (F' := F) e) := by
   intro y₀
   rw [fiberwiseMap_eq, ManifoldTotalSpace.contMDiffAt_iff]
   let b₀ := ((homeomorph F E).symm y₀).proj

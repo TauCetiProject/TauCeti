@@ -84,7 +84,7 @@ the charts through the fibre, exhibits `c` and `c'` as `C^n`-cohomologous. -/
 theorem IsContMDiffCohomologous.of_equivariant (φ : B → G → G)
     (hφ : ∀ b p g, φ b (p * g) = φ b p * g)
     (hφs : ContMDiff (IB.prod IG) (IB.prod IG) n
-      (fiberwiseMap (F := G)
+      (fiberwiseMap (F := G) (F' := G)
         (E := (fiberBundleCoreOfGroupCocycle U c hc.mul_eq G hU indexAt hindex
           hc.continuousOn).Fiber)
         (E' := (fiberBundleCoreOfGroupCocycle U c' hc'.mul_eq G hU indexAt hindex
@@ -138,7 +138,7 @@ theorem IsContMDiffCohomologous.of_equivariant (φ : B → G → G)
 theorem IsContMDiffCohomologous.exists_equivariant (h : IsContMDiffCohomologous IB IG n U c c') :
     ∃ e : B → G ≃ G, (∀ b p g, e b (p * g) = e b p * g) ∧
       ContMDiff (IB.prod IG) (IB.prod IG) n
-        (fiberwiseMap (F := G)
+        (fiberwiseMap (F := G) (F' := G)
           (E := (fiberBundleCoreOfGroupCocycle U c hc.mul_eq G hU indexAt hindex
             hc.continuousOn).Fiber)
           (E' := (fiberBundleCoreOfGroupCocycle U c' hc'.mul_eq G hU indexAt hindex
@@ -166,7 +166,7 @@ theorem NonabelianCechH1.mk_eq_mk_iff_exists_equivariant :
     mk c hc = mk c' hc' ↔
       ∃ e : B → G ≃ G, (∀ b p g, e b (p * g) = e b p * g) ∧
         ContMDiff (IB.prod IG) (IB.prod IG) n
-          (fiberwiseMap (F := G)
+          (fiberwiseMap (F := G) (F' := G)
             (E := (fiberBundleCoreOfGroupCocycle U c hc.mul_eq G hU indexAt hindex
               hc.continuousOn).Fiber)
             (E' := (fiberBundleCoreOfGroupCocycle U c' hc'.mul_eq G hU indexAt hindex
@@ -252,7 +252,7 @@ is `C^n` for the charts through the fibre. -/
 theorem exists_equivariant_fiberBundleCoreOfGroupCocycle_coordChange :
     ∃ ψ : ∀ b, G ≃ P b, (∀ b v g, ψ b (v * g) = op g • ψ b v) ∧
       ContMDiff (IB.prod IG) (IB.prod IG) n
-        (fiberwiseMap (F := G)
+        (fiberwiseMap (F := G) (F' := G)
           (E := (fiberBundleCoreOfGroupCocycle U (fun i j b ↦ (e i).coordChange (e j) b 1)
             (isContMDiffGroupCocycle_coordChange IB IG n e heU).mul_eq G
             (fun i ↦ heU i ▸ (e i).open_baseSet) indexAt hindex
@@ -314,7 +314,7 @@ theorem NonabelianCechH1.mk_coordChange_eq_mk_coordChange_iff_exists_equivariant
       mk (fun i j b ↦ (e' i).coordChange (e' j) b 1)
         (isContMDiffGroupCocycle_coordChange IB IG n e' he'U) ↔
       ∃ φ : ∀ b, P b ≃ Q b, (∀ b (g : G) p, φ b (op g • p) = op g • φ b p) ∧
-        ContMDiff (IB.prod IG) (IB.prod IG) n (fiberwiseMap (F := G) fun b ↦ φ b) := by
+        ContMDiff (IB.prod IG) (IB.prod IG) n (fiberwiseMap (F := G) (F' := G) fun b ↦ φ b) := by
   choose indexAt hindex using hcov
   have hU (i : ι) : IsOpen (U i) := heU i ▸ (e i).open_baseSet
   have hcoc := isContMDiffGroupCocycle_coordChange IB IG n e heU
@@ -329,11 +329,11 @@ theorem NonabelianCechH1.mk_coordChange_eq_mk_coordChange_iff_exists_equivariant
     exists_equivariant_fiberBundleCoreOfGroupCocycle_coordChange (IB := IB) (IG := IG) (n := n) e'
       he'U indexAt hindex
   have hψinv : ContMDiff (IB.prod IG) (IB.prod IG) n
-      (fiberwiseMap (F := G) (E := P) (E' := Z.Fiber) fun b ↦ (ψ b).symm) :=
+      (fiberwiseMap (F := G) (F' := G) (E := P) (E' := Z.Fiber) fun b ↦ (ψ b).symm) :=
     PrincipalBundle.contMDiff_symm_of_equivariant (P := Z.Fiber) (fun b ↦ ψ b)
       (fun b g p ↦ hψ b p g) hψs
   have hψ'inv : ContMDiff (IB.prod IG) (IB.prod IG) n
-      (fiberwiseMap (F := G) (E := Q) (E' := Z'.Fiber) fun b ↦ (ψ' b).symm) :=
+      (fiberwiseMap (F := G) (F' := G) (E := Q) (E' := Z'.Fiber) fun b ↦ (ψ' b).symm) :=
     PrincipalBundle.contMDiff_symm_of_equivariant (P := Z'.Fiber) (fun b ↦ ψ' b)
       (fun b g p ↦ hψ' b p g) hψ's
   -- The inverses of `ψ` and `ψ'` are equivariant too.

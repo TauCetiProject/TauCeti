@@ -66,6 +66,7 @@ fibre is a bijection onto the base.
 * `Bundle.Trivialization.map_mem_sheet_iff`, `Bundle.Trivialization.map_symm_eq_of_mem_sheet`:
   a continuous map `g` over the base, between two trivialized maps with discrete target fibre,
   carries the sheets of `p` over a preconnected set onto sheets of `q`.
+* `TauCeti.nonempty_fiber_of_nonempty`: a bundle with nonempty model fibre has nonempty fibres.
 * `Bundle.Trivialization.compHomeomorphOfEq`: pre-composing a trivialization with a homeomorphism
   intertwining two projections.
 * `TauCeti.subsingleton_fiber_of_subsingleton`, `TauCeti.bijective_proj_of_subsingleton`: a fibre
@@ -616,6 +617,13 @@ end SheetComparison
 end Bundle.Trivialization
 
 namespace TauCeti
+
+/-- Every fibre of a fibre bundle with nonempty model fibre is nonempty. -/
+theorem nonempty_fiber_of_nonempty {B : Type*} [TopologicalSpace B]
+    (F : Type*) [TopologicalSpace F] [Nonempty F] (E : B → Type*)
+    [TopologicalSpace (TotalSpace F E)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+    (b : B) : Nonempty (E b) :=
+  (FiberBundle.homeomorphAt F E b).toEquiv.nonempty
 
 section Subsingleton
 

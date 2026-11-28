@@ -344,7 +344,7 @@ theorem mfderiv_diffeomorphOfEquivariant_rightFundamentalVectorField {Q : B → 
     [∀ b, MulAction Gᵐᵒᵖ (Q b)] [PrincipalBundle G Q] [LieGroup IG n G] (hn : n ≠ 0)
     (e : ∀ b, P b ≃ Q b) (he : ∀ b (g : G) (p : P b), e b (op g • p) = op g • e b p)
     (hf : ContMDiff (IB.prod IG) (IB.prod IG) n
-      (ManifoldTotalSpace.fiberwiseMap (F := G) fun b => e b))
+      (ManifoldTotalSpace.fiberwiseMap (F := G) (F' := G) fun b => e b))
     (x : ManifoldTotalSpace G P) (ξ : GroupLieAlgebra IG G) :
     mfderiv (IB.prod IG) (IB.prod IG) (diffeomorphOfEquivariant G e he hf) x
         (rightFundamentalVectorField (IB.prod IG) ξ x) =
