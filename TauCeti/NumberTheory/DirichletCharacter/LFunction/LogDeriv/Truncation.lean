@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.NumberTheory.MulChar.Duality
-import TauCeti.NumberTheory.Chebyshev.Mertens
+import TauCeti.NumberTheory.Chebyshev.Mertens.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Riesz.Remainder
 
 /-!

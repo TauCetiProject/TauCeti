@@ -17,7 +17,7 @@ import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.Rat
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 import TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt
-import TauCeti.NumberTheory.Chebyshev.Mertens
+import TauCeti.NumberTheory.Chebyshev.Mertens.Basic
 import TauCeti.NumberTheory.Chebyshev.PrimeTail
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.SumPrimePow
