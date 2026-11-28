@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Action.Defs
+public import Mathlib.Algebra.Group.Irreducible.Defs
 public import Mathlib.GroupTheory.GroupAction.Defs
+import Mathlib.Algebra.Group.Action.End
+import Mathlib.Algebra.Group.Irreducible.Lemmas
 
 /-!
 # Multiplicative distributive actions on monoids
@@ -16,7 +19,8 @@ A multiplicative distributive action of `G` on a monoid `A`, such as a `MulSemir
 `SMulDistribClass G A A`, the form taken by statements about semilinear actions on `A`-modules
 when the module is `A` itself. Moreover, because two-sided inverses in a monoid are unique, any
 `g : G` fixing a unit also fixes its inverse, so inclusion `FixedPoints.submonoid G B →* B`
-reflects and preserves units.
+reflects and preserves units. When `G` is a group, each `g • ·` is a multiplicative
+automorphism of `A`, so it preserves irreducibility.
 
 ## Main results
 
@@ -24,6 +28,7 @@ reflects and preserves units.
 * `TauCeti.smul_val_inv_eq_of_smul_eq`: if `g` fixes a unit `u`, then `g` fixes `u⁻¹`.
 * `TauCeti.isUnit_coe_fixedPoints_submonoid_iff`: inclusion `FixedPoints.submonoid G B →* B`
   reflects and preserves units.
+* `Irreducible.smul`: irreducibility is preserved by a multiplicative distributive group action.
 -/
 
 public section
@@ -50,3 +55,8 @@ theorem smul_val_inv_eq_of_smul_eq {B G : Type*} [Monoid B] [Monoid G] [MulDistr
     hu ▸ rfl⟩⟩
 
 end TauCeti
+
+/-- Irreducibility is preserved by a multiplicative distributive group action. -/
+theorem Irreducible.smul {G A : Type*} [Group G] [Monoid A] [MulDistribMulAction G A]
+    {a : A} (ha : Irreducible a) (g : G) : Irreducible (g • a) :=
+  ha.map (MulDistribMulAction.toMulEquiv A g)

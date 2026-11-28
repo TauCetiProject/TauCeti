@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
+public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.Colimits
 public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.Spf
 public import TauCeti.RingTheory.AdicCompletion.Noetherian
 
@@ -69,16 +70,12 @@ extends the preadditive structure of `CoherentFormalModule 𝔛`. -/
 @[instance_reducible]
 def abelianOfIso (e : 𝔛 ≅ 𝔜) [Abelian (CoherentFormalModule 𝔜)] :
     Abelian (CoherentFormalModule 𝔛) :=
-  have : HasFiniteProducts (CoherentFormalModule 𝔛) :=
-    ⟨fun _ ↦ Adjunction.hasLimitsOfShape_of_equivalence (pullback e.inv)⟩
   abelianOfEquivalence (pullback e.inv)
 
 /-- **Coherent formal modules on `Spf A` form an abelian category** for an adic ring `A` whose
 underlying ring is noetherian, being equivalent to finite `A`-modules (`spfEquivFGModuleCat`). -/
 instance (A : AdicRing.{u}) [IsNoetherianRing A.carrier] :
     Abelian (CoherentFormalModule (Spf A)) :=
-  have : HasFiniteProducts (CoherentFormalModule (Spf A)) :=
-    ⟨fun _ ↦ Adjunction.hasLimitsOfShape_of_equivalence (spfEquivFGModuleCat A).functor⟩
   abelianOfEquivalence (spfEquivFGModuleCat A).functor
 
 /-- Coherent formal modules on the system `spf I` of the schemes `Spec (R ⧸ I ^ (n + 1))` form an

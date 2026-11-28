@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.Torsion
 public import TauCeti.GroupTheory.OrderOfElement.PPart
+import TauCeti.Algebra.Group.Conj
 
 /-!
 # `p`-sections of a group
@@ -32,6 +33,7 @@ An element `s` is **`p`-regular** when `(orderOf s).Coprime p`.
 ## Main definitions
 
 * `TauCeti.pSection p x`: the `p`-section of `x`.
+* `TauCeti.pRegularConjClasses p G`: the conjugacy classes of `p`-regular elements.
 * `TauCeti.pFreePartEquiv`: `g ↦ pFreePart p g`, from the elements with `p`-part `x` to the
   `p`-regular elements of `C_G(x)`.
 * `TauCeti.centralizerConjClassesMul x`: the class of `s` in `C_G(x)` goes to the class of `s * x`
@@ -217,6 +219,33 @@ theorem isConj_iff_exists_mem_centralizer {x g h : G} (hg : pPart p g = x) (hh :
           group
       _ = h := by rw [hcg, hg, hcx, ← hh, pFreePart_mul_pPart]
 
+/-! ### `p`-regular classes -/
+
+/-- The **`p`-regular conjugacy classes** of a group: the classes of elements whose order is
+coprime to `p`. -/
+def pRegularConjClasses (p : ℕ) (G : Type*) [Group G] : Set (ConjClasses G) :=
+  {c | ∃ g : G, ConjClasses.mk g = c ∧ (orderOf g).Coprime p}
+
+variable (p) in
+/-- Membership in the `p`-regular conjugacy classes. -/
+theorem mem_pRegularConjClasses_iff {c : ConjClasses G} :
+    c ∈ pRegularConjClasses p G ↔ ∃ g : G, ConjClasses.mk g = c ∧ (orderOf g).Coprime p :=
+  Iff.rfl
+
+variable (p) in
+/-- The class of `g` is `p`-regular exactly when the order of `g` is coprime to `p`. -/
+@[simp]
+theorem mk_mem_pRegularConjClasses_iff {g : G} :
+    ConjClasses.mk g ∈ pRegularConjClasses p G ↔ (orderOf g).Coprime p := by
+  refine ⟨?_, fun h ↦ ⟨g, rfl, h⟩⟩
+  rintro ⟨h, hh, hp⟩
+  rwa [← (ConjClasses.mk_eq_mk_iff_isConj.1 hh).orderOf_eq]
+
+/-- The chosen representative of a `p`-regular conjugacy class has order coprime to `p`. -/
+theorem coprime_orderOf_out_of_mem_pRegularConjClasses {c : ConjClasses G}
+    (hc : c ∈ pRegularConjClasses p G) : (orderOf c.out).Coprime p :=
+  (mk_mem_pRegularConjClasses_iff p).1 <| by rwa [ConjClasses.mk_out]
+
 /-! ### Conjugacy classes in a section -/
 
 /-- The map sending the conjugacy class of `s` in `C_G(x)` to the conjugacy class of `s * x` in
@@ -240,8 +269,7 @@ theorem centralizerConjClassesMul_mk (x : G) (s : centralizer {x}) :
 to the conjugacy classes of `G` contained in the `p`-section of `x`. -/
 theorem bijOn_centralizerConjClassesMul (hp : p.Prime) {x : G} {k : ℕ} (hx : orderOf x = p ^ k)
     (hG : IsMulTorsion G) :
-    Set.BijOn (centralizerConjClassesMul x)
-      {C | ∃ s : centralizer {x}, ConjClasses.mk s = C ∧ (orderOf s).Coprime p}
+    Set.BijOn (centralizerConjClassesMul x) (pRegularConjClasses p (centralizer {x}))
       {C | ∃ g : G, ConjClasses.mk g = C ∧ g ∈ pSection p x} := by
   have hreg (s : centralizer {x}) (hs : (orderOf s).Coprime p) : (orderOf (s : G)).Coprime p := by
     rwa [orderOf_coe]
@@ -273,8 +301,7 @@ theorem bijOn_centralizerConjClassesMul (hp : p.Prime) {x : G} {k : ℕ} (hx : o
 theorem natCard_conjClasses_pSection (hp : p.Prime) {x : G} {k : ℕ} (hx : orderOf x = p ^ k)
     (hG : IsMulTorsion G) :
     Nat.card {C : ConjClasses G // ∃ g : G, ConjClasses.mk g = C ∧ g ∈ pSection p x} =
-      Nat.card {C : ConjClasses (centralizer {x}) //
-        ∃ s : centralizer {x}, ConjClasses.mk s = C ∧ (orderOf s).Coprime p} :=
+      Nat.card (pRegularConjClasses p (centralizer {x})) :=
   (Nat.card_congr ((bijOn_centralizerConjClassesMul hp hx hG).equiv _)).symm
 
 /-- **The class count by sections.** Let `r` be a set of representatives of the conjugacy classes
@@ -283,8 +310,7 @@ of the number of conjugacy classes of `p`-regular elements of `C_G(r i)`. -/
 theorem natCard_conjClasses_eq_sum (hp : p.Prime) [Finite G] {ι : Type*} [Fintype ι] (r : ι → G)
     (hrp : ∀ i, ∃ k : ℕ, orderOf (r i) = p ^ k) (hr : ∀ i j, IsConj (r i) (r j) → i = j)
     (hcov : ∀ x : G, ∀ k : ℕ, orderOf x = p ^ k → ∃ i, IsConj x (r i)) :
-    Nat.card (ConjClasses G) = ∑ i, Nat.card {C : ConjClasses (centralizer {r i}) //
-      ∃ s : centralizer {r i}, ConjClasses.mk s = C ∧ (orderOf s).Coprime p} := by
+    Nat.card (ConjClasses G) = ∑ i, Nat.card (pRegularConjClasses p (centralizer {r i})) := by
   -- Sort each class into the unique section containing its elements.
   let f : ConjClasses G → ι := fun C =>
     (existsUnique_mem_pSection r hr hcov C.exists_rep.choose).choose

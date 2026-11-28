@@ -348,7 +348,8 @@ private theorem setAverage_norm_sub_setAverage_rpow_le_of_ae_eq_add {γ : ℝ} (
             _ ≤ _ := norm_add_le _ _
         exact (Real.rpow_le_rpow (norm_nonneg _) htri hγ0.le).trans
           (Real.rpow_add_le_mul_rpow_add_rpow (norm_nonneg _) (norm_nonneg _) hγ))
-  have hC1 := setAverage_ball_le (μ := volume) hρ hρsub (hrp hHw) fun x _ => by positivity
+  have hC1 := setAverage_ball_le (μ := volume) hρ hρsub (hrp hHw)
+    (ae_of_all _ fun x => by positivity)
   rw [finrank_euclideanSpace_fin] at hC1
   refine ⟨hA1.trans (by gcongr; exact hB1.trans (by gcongr)),
     setAverage_le_mul_add_of_ae_le (hrp hH) (hrp hHw) (ae_of_all _ fun x => by positivity) ?_⟩
