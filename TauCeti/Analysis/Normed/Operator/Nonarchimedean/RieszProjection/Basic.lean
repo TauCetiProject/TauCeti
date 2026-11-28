@@ -188,13 +188,12 @@ retract of a normed module `N`. If `E` is a Riesz projection of the extension `i
 of order `h`, then `r ∘ E ∘ i` is a Riesz projection of `u` at `a` of order `h`. -/
 theorem IsRieszProjection.comp_comp_of_retract (hri : r.comp i = .id R M) {a : R} {h : ℕ}
     {E : N →L[R] N} (hE : IsRieszProjection (i.comp (u.comp r)) a h E) :
-    IsRieszProjection u a h (r.comp (E.comp i)) := by
-  have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
-  have hr : Function.Semiconj (r : N →ₗ[R] M) (i.comp (u.comp r)) u := fun y ↦ by simp [hri']
-  have hi : Function.Semiconj (i : M →ₗ[R] N) u (i.comp (u.comp r)) := fun x ↦ by simp [hri']
-  exact isRieszProjection_def.mpr
-    (IsSpectralProjection.comp_comp_of_retract hri (hr.one_sub_smul a) (hi.one_sub_smul a)
-      hE.toIsSpectralProjection)
+    IsRieszProjection u a h (r.comp (E.comp i)) :=
+  isRieszProjection_def.mpr <|
+    IsSpectralProjection.comp_comp_of_retract hri
+      ((semiconj_left_of_retract hri u).one_sub_smul a)
+      ((semiconj_right_of_retract hri u).one_sub_smul a)
+      hE.toIsSpectralProjection
 
 end Retract
 

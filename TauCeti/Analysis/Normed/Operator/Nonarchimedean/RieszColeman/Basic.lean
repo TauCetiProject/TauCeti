@@ -34,7 +34,7 @@ decomposition
 
 into `u`-stable submodules (`ContinuousLinearMap.IsSpectralProjection.range_eq_ker_spectral`,
 `ContinuousLinearMap.IsSpectralProjection.range_spectral_eq_ker`,
-`ContinuousLinearMap.IsSpectralProjection.isTopCompl_ker_range_spectral`), on which
+`ContinuousLinearMap.IsSpectralProjection.isTopCompl_ker_range_pow`), on which
 `Q*(u)` vanishes on the first summand and restricts to a continuous linear automorphism of the
 second (`ContinuousLinearMap.IsSpectralProjection.equivKer`). Such a projection is unique
 (`ContinuousLinearMap.IsSpectralProjection.unique`); for `Q = 1` it is zero
@@ -436,13 +436,12 @@ a retract of a seminormed module `N`. If `E` is a Riesz–Coleman projection of 
 then `r ∘ E ∘ i` is a Riesz–Coleman projection of `u` for `Q`. -/
 theorem IsRieszColemanProjection.comp_comp_of_retract (hri : r.comp i = .id R M) {E : N →L[R] N}
     (hE : IsRieszColemanProjection (i.comp (u.comp r)) Q E) :
-    IsRieszColemanProjection u Q (r.comp (E.comp i)) := by
-  have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
-  have hr_semi : Function.Semiconj r.toLinearMap (i.comp (u.comp r)) u := fun y ↦ by simp [hri']
-  have hi_semi : Function.Semiconj i.toLinearMap u (i.comp (u.comp r)) := fun x ↦ by simp [hri']
-  exact isRieszColemanProjection_def.mpr
-    (IsSpectralProjection.comp_comp_of_retract hri (hr_semi.aeval Q.reverse)
-      (hi_semi.aeval Q.reverse) hE.toIsSpectralProjection)
+    IsRieszColemanProjection u Q (r.comp (E.comp i)) :=
+  isRieszColemanProjection_def.mpr <|
+    IsSpectralProjection.comp_comp_of_retract hri
+      ((semiconj_left_of_retract hri u).aeval Q.reverse)
+      ((semiconj_right_of_retract hri u).aeval Q.reverse)
+      hE.toIsSpectralProjection
 
 /-- When `Q.leadingCoeff` is a unit, the Riesz–Coleman projection `E'` of the extension
 `i ∘ u ∘ r` along a continuous linear retract `r ∘ i = id` vanishes on `ker r` and takes values in
@@ -453,7 +452,6 @@ theorem IsRieszColemanProjection.comp_comp_eq_of_retract (hri : r.comp i = .id R
     (hE' : IsRieszColemanProjection (i.comp (u.comp r)) Q E') (hQ : IsUnit Q.leadingCoeff) :
     i.comp (E.comp r) = E' := by
   have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
-  have hr_semi : Function.Semiconj r.toLinearMap (i.comp (u.comp r)) u := fun y ↦ by simp [hri']
   have hfac := hE'.mul_smul_aeval_divX_reverse_mul hQ
   ext y
   -- Since `E' = (i ∘ u ∘ r) * (...)`, `E' y` already lies in `range i`, so `i (r (E' y)) = E' y`.
@@ -464,7 +462,8 @@ theorem IsRieszColemanProjection.comp_comp_eq_of_retract (hri : r.comp i = .id R
   calc (i.comp (E.comp r)) y = i (E (r y)) := by simp
     _ = i (r (E' y)) :=
       congrArg i (hE'.toIsSpectralProjection.semiconj
-        hE.toIsSpectralProjection r.toLinearMap (hr_semi.aeval Q.reverse) y).symm
+        hE.toIsSpectralProjection r.toLinearMap
+        ((semiconj_left_of_retract hri u).aeval Q.reverse) y).symm
     _ = E' y := hirE
 
 /-- When `Q.leadingCoeff` is a unit, along a continuous linear retract `r ∘ i = id`, `i` and `r`

@@ -132,6 +132,14 @@ variable {R M : Type*} [NormedCommRing R] [IsUltrametricDist R]
   [SeminormedAddCommGroup M] [Module R M] [ContinuousConstSMul R M]
   {u E : M →L[R] M} {a : R} {h n : ℕ}
 
+private theorem aeval_one_sub_C_mul_X_pow {R W : Type*} [CommRing R]
+    [TopologicalSpace W] [AddCommGroup W] [Module R W] [IsTopologicalAddGroup W]
+    [ContinuousConstSMul R W] (w : W →L[R] W) (a : R) (n : ℕ) :
+    (Polynomial.aeval w ((1 - Polynomial.C a * Polynomial.X) ^ n) : W →L[R] W) =
+      (1 - a • w) ^ n := by
+  simp only [map_pow, map_sub, map_one, map_mul, Polynomial.aeval_C, Polynomial.aeval_X,
+    Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul]
+
 /-- At a good Fredholm zero of order `h`, every stabilized generalized eigenspace on a
 module with property (Pr) has rank `h` at every prime ideal of the coefficient ring.
 No Noetherianity or reducedness hypothesis is imposed. -/
@@ -149,16 +157,7 @@ theorem IsPrCompact.rankAtStalk_ker_pow (hu : u.IsPrCompact)
   have heq := (ContinuousLinearMap.kerAevalEquivOfRetract hri u
     (P := (1 - Polynomial.C a * Polynomial.X) ^ n)
     (by simp [Polynomial.coeff_zero_eq_eval_zero])).toLinearEquiv
-  have h1sub :
-      (Polynomial.aeval u ((1 - Polynomial.C a * Polynomial.X) ^ n) : M →L[R] M) =
-        (1 - a • u) ^ n := by
-    simp [Algebra.algebraMap_eq_smul_one]
-  have h1sub' :
-      (Polynomial.aeval (i.comp (u.comp r))
-        ((1 - Polynomial.C a * Polynomial.X) ^ n) : C₀(J, R) →L[R] C₀(J, R)) =
-        (1 - a • i.comp (u.comp r)) ^ n := by
-    simp [Algebra.algebraMap_eq_smul_one]
-  rw [h1sub, h1sub'] at heq
+  rw [aeval_one_sub_C_mul_X_pow u, aeval_one_sub_C_mul_X_pow (i.comp (u.comp r))] at heq
   have hker : Module.rankAtStalk (R := R)
       (LinearMap.ker (((1 - a • u) ^ n : M →L[R] M) : M →ₗ[R] M)) =
       Module.rankAtStalk (R := R)

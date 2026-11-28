@@ -55,8 +55,7 @@ properties depend only on this structure:
   `ContinuousLinearMap.IsSpectralProjection.range_pow_eq_ker`,
   `ContinuousLinearMap.IsSpectralProjection.isTopCompl_ker_range_pow`,
   `ContinuousLinearMap.IsSpectralProjection.range_eq_ker_spectral`,
-  `ContinuousLinearMap.IsSpectralProjection.range_spectral_eq_ker`,
-  `ContinuousLinearMap.IsSpectralProjection.isTopCompl_ker_range_spectral`: stabilised kernel–range
+  `ContinuousLinearMap.IsSpectralProjection.range_spectral_eq_ker`: stabilised kernel–range
   topological splitting (including order-one forms directly in terms of `C`).
 * `ContinuousLinearMap.IsSpectralProjection.unique`: uniqueness of spectral projections.
 * `ContinuousLinearMap.IsSpectralProjection.semiconj`,
@@ -264,11 +263,6 @@ theorem inverse_units_smul_spectral (hE : IsSpectralProjection u C h E) (c : Rˣ
   · rw [units_smul_mul_inv, hE.spectral_mul_inverse]
   · rw [Units.smul_def, mul_smul_comm, hE.mul_inverse_eq_zero, smul_zero]
 
-/-- Increasing the nilpotence bound does not change the complementary inverse. -/
-theorem inverse_of_le (hE : IsSpectralProjection u C h E) (hn : h ≤ n) :
-    (hE.of_le hn).inverse = hE.inverse :=
-  (hE.of_le hn).inverse_congr hE rfl
-
 /-- The complementary inverse preserves the kernel of the spectral projection. -/
 theorem mapsTo_ker_inverse (hE : IsSpectralProjection u C h E) :
     Set.MapsTo hE.inverse E.ker E.ker := by
@@ -343,10 +337,6 @@ theorem isTopCompl_ker_range_pow (hE : IsSpectralProjection u C h E) (hn : h ≤
 theorem spectral_mul_eq_zero (hE : IsSpectralProjection u C 1 E) : C * E = 0 := by
   simpa only [pow_one] using hE.pow_mul_eq_zero
 
-/-- For an order-one spectral projection, `E * C = 0`. -/
-theorem mul_spectral_eq_zero (hE : IsSpectralProjection u C 1 E) : E * C = 0 := by
-  simpa only [pow_one] using hE.mul_pow_eq_zero
-
 /-- **The range of an order-one spectral projection is `ker C`.** -/
 theorem range_eq_ker_spectral (hE : IsSpectralProjection u C 1 E) :
     LinearMap.range (E : M →ₗ[R] M) = LinearMap.ker (C : M →ₗ[R] M) := by
@@ -356,11 +346,6 @@ theorem range_eq_ker_spectral (hE : IsSpectralProjection u C 1 E) :
 theorem range_spectral_eq_ker (hE : IsSpectralProjection u C 1 E) :
     LinearMap.range (C : M →ₗ[R] M) = LinearMap.ker (E : M →ₗ[R] M) := by
   simpa only [pow_one] using hE.range_pow_eq_ker le_rfl
-
-/-- **`ker C` and `range C` are topological complements** for an order-one spectral projection. -/
-theorem isTopCompl_ker_range_spectral (hE : IsSpectralProjection u C 1 E) :
-    (LinearMap.ker (C : M →ₗ[R] M)).IsTopCompl (LinearMap.range (C : M →ₗ[R] M)) := by
-  simpa only [pow_one] using hE.isTopCompl_ker_range_pow le_rfl
 
 /-- Every stabilised range of `C` is closed whenever `M` is `T₁` (in particular, normed). -/
 theorem isClosed_range_pow [T1Space M] (hE : IsSpectralProjection u C h E) (hn : h ≤ n) :
