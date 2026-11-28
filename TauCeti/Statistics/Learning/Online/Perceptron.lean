@@ -37,8 +37,8 @@ then the number of update rounds is at most `(R * ‖u‖ / γ) ^ 2`, whatever t
   Theory of Automata 12 (1962), 615–622.
 * S. Shalev-Shwartz and S. Ben-David, *Understanding Machine Learning*, Cambridge University
   Press (2014), §21.4, Theorem 21.16.
-* M. Mohri, A. Rostamizadeh and A. Talwalkar, *Foundations of Machine Learning*, MIT Press
-  (2012), equation (8.23) and Theorem 8.8.
+* M. Mohri, A. Rostamizadeh and A. Talwalkar, *Foundations of Machine Learning*, second
+  edition, MIT Press (2018), equation (8.23) and Theorem 8.8.
 -/
 
 public section
@@ -48,7 +48,7 @@ open scoped RealInnerProductSpace
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- The perceptron weights for instances `x` and labels `y`: `w 0 = 0`, and
 `w (t + 1) = w t + y t • x t` when `y t * ⟪w t, x t⟫ ≤ 0`, `w (t + 1) = w t` otherwise. -/
@@ -80,7 +80,7 @@ theorem perceptronWeight_succ (t : ℕ) :
 variable {x y}
 
 /-- At an update round the weight moves by `y t • x t`. -/
-theorem perceptronWeight_succ_of_le {t : ℕ} (h : y t * ⟪perceptronWeight x y t, x t⟫ ≤ 0) :
+theorem perceptronWeight_succ_of_nonpos {t : ℕ} (h : y t * ⟪perceptronWeight x y t, x t⟫ ≤ 0) :
     perceptronWeight x y (t + 1) = perceptronWeight x y t + y t • x t := by
   simp [perceptronWeight_succ, h]
 
@@ -104,7 +104,7 @@ theorem perceptronUpdates_zero : perceptronUpdates x y 0 = ∅ := by
 
 /-- If round `T` is an update round, the update rounds among the first `T + 1` rounds are those
 among the first `T` together with `T`. -/
-theorem perceptronUpdates_succ_of_le {T : ℕ}
+theorem perceptronUpdates_succ_of_nonpos {T : ℕ}
     (h : y T * ⟪perceptronWeight x y T, x T⟫ ≤ 0) :
     perceptronUpdates x y (T + 1) = insert T (perceptronUpdates x y T) := by
   simp [perceptronUpdates, range_add_one, filter_insert, h]
@@ -153,7 +153,7 @@ theorem norm_perceptronWeight_sq_le {T : ℕ} {R : ℝ} (hy : ∀ t < T, |y t| �
     have ih := ih (fun t ht ↦ hy t (ht.trans T.lt_add_one))
       (fun t ht ↦ hR t (ht.trans T.lt_add_one))
     rcases le_or_gt (y T * ⟪perceptronWeight x y T, x T⟫) 0 with h | h
-    · rw [perceptronWeight_succ_of_le h, perceptronUpdates_succ_of_le h,
+    · rw [perceptronWeight_succ_of_nonpos h, perceptronUpdates_succ_of_nonpos h,
         card_insert_of_notMem (fun hT ↦ (mem_perceptronUpdates.mp hT).1.false),
         norm_add_sq_real, real_inner_smul_right]
       have hxy : ‖y T • x T‖ ≤ R := by
