@@ -13,7 +13,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.Basic
 import Mathlib.MeasureTheory.Group.Integral
 import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import TauCeti.LinearAlgebra.Multilinear.Basis
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 import TauCeti.MeasureTheory.Measure.Comap
 
 /-!

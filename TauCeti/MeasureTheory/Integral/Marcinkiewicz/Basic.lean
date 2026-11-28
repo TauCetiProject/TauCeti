@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
--- `TauCeti.MeasureTheory.Integral.Prod` is imported privately: its Tonelli exchange
+-- `TauCeti.MeasureTheory.Integral.Prod.Basic` is imported privately: its Tonelli exchange
 -- `TauCeti.lintegral_mul_setLIntegral_eq` appears only inside the proofs below.
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 
 /-!
 # Marcinkiewicz interpolation between weak type `(1,1)` and `L^∞`

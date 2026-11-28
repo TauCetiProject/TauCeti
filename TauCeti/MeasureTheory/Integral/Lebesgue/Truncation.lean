@@ -11,12 +11,12 @@ public import Mathlib.MeasureTheory.Integral.Lebesgue.Add
 -- `Mathlib.Analysis.SpecialFunctions.Pow.Continuity` and
 -- `Mathlib.MeasureTheory.Function.SpecialFunctions.Basic` are imported privately: they supply the
 -- continuity and measurability of `x ↦ x ^ q` on `ℝ≥0∞` inside the proof of
--- `TauCeti.lintegral_rpow_le_of_forall_le`. `TauCeti.MeasureTheory.Integral.Prod` supplies the
+-- `TauCeti.lintegral_rpow_le_of_forall_le`. `TauCeti.MeasureTheory.Integral.Prod.Basic` supplies the
 -- measurability of set integrals along a jointly measurable relation.
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 
 /-!
 # Lebesgue integrals of truncations

@@ -12,7 +12,7 @@ public import TauCeti.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Integral.Marginal
 import Mathlib.Probability.HasLaw
 import TauCeti.MeasureTheory.Function.Lp.Iterated
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 
 /-!
 # Integrals over finite product measures

@@ -14,7 +14,7 @@ import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Integral.ChristKiselev
 import TauCeti.MeasureTheory.Integral.Kernel.Pairing
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 
 /-!
 # Retarded Strichartz estimates from dual estimates

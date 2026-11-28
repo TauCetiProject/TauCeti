@@ -9,7 +9,7 @@ public import TauCeti.Probability.Distributions.Dirichlet.MixedMoments
 import TauCeti.Probability.Distributions.Dirichlet.Aggregation
 import TauCeti.Probability.Distributions.Dirichlet.StickBreaking.Basic
 import TauCeti.Probability.Distributions.Beta.Basic
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 
 /-!
 # Sharp integrability of Dirichlet mixed powers

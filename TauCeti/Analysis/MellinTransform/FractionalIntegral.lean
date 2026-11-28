@@ -14,7 +14,7 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.MeasureTheory.Integral.Asymptotics
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!

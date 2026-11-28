@@ -47,7 +47,9 @@ pair, then coding at the swapped base point and swapping the output has the same
 
 It also records that almost every section of an almost-everywhere measurable function on a
 product `μ.prod ν` is almost-everywhere measurable (`AEMeasurable.prodMk_left`), the counterpart of
-Mathlib's `MeasureTheory.AEStronglyMeasurable.prodMk_left`.
+Mathlib's `MeasureTheory.AEStronglyMeasurable.prodMk_left`. An almost-everywhere property on a
+product holds in almost every section in either coordinate order
+(`MeasureTheory.Measure.ae_ae_snd_of_ae_prod`).
 For a countable first factor with measurable singletons, the converse is characterized by
 `MeasureTheory.Measure.aemeasurable_uncurry_prod_iff`. Mapping an indexed family over a product
 then gives a measure bind (`MeasureTheory.Measure.map_uncurry_prod_eq_bind_map`), with evaluation
@@ -76,6 +78,14 @@ public section
 open scoped ENNReal
 
 namespace MeasureTheory.Measure
+
+/-- An almost-everywhere property on a product holds in almost every section, with the second
+coordinate chosen first. -/
+theorem ae_ae_snd_of_ae_prod {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    (μ : Measure α) (ν : Measure β) [SFinite μ] [SFinite ν]
+    {P : α × β → Prop} (h : ∀ᵐ p ∂μ.prod ν, P p) :
+    ∀ᵐ y ∂ν, ∀ᵐ x ∂μ, P (x, y) :=
+  ae_ae_of_ae_prod (measurePreserving_swap.quasiMeasurePreserving.ae h)
 
 /-- Partitioning a measure on `X × ι` (for a countable discrete space `ι`) into vertical singleton
 slices `univ ×ˢ {i}` and projecting onto `X` recovers `μ.map Prod.fst` for every measure `μ`. -/

@@ -12,7 +12,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Compact
 public import TauCeti.MeasureTheory.OptimalTransport.Finite.Duality
 import TauCeti.MeasureTheory.Integral.Bochner.Fintype
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 
 /-!
 # Strong Kantorovich duality for continuous costs on compact spaces

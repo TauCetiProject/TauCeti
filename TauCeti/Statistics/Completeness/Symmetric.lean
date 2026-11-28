@@ -12,7 +12,7 @@ import Mathlib.Combinatorics.Enumerative.InclusionExclusion
 import TauCeti.GroupTheory.Perm.Fin
 import TauCeti.MeasureTheory.Constructions.Pi
 import TauCeti.MeasureTheory.Integral.Pi
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 
 /-!

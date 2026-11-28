@@ -12,7 +12,7 @@ import TauCeti.MeasureTheory.Function.Lorentz
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Integral.Kernel.Pairing
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!

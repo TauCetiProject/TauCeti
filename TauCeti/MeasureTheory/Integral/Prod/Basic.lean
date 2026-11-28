@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.Probability.ConditionalProbability
 public import TauCeti.MeasureTheory.Integral.PiSystem
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Measure.Typeclasses.SFinite
 
 /-!
@@ -46,6 +47,14 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
   σ-algebra (`MeasureTheory.isPiSystem_prod`, `MeasureTheory.generateFrom_prod`), so this is the
   general `TauCeti.setIntegral_eq_zero_of_isPiSystem` instantiated at that π-system; the only work
   left here is extracting the whole-space hypothesis from the rectangle `univ ×ˢ univ`.
+* `MeasureTheory.Measure.ae_eq_zero_of_marginal_right_eq_zero` transfers zeros of an
+  a.e. nonnegative, a.e.-strongly measurable function's marginal to the function itself,
+  assuming a.e. integrable sections.
+* `MeasureTheory.Measure.ae_nonneg_integral_prod_right` preserves a.e. nonnegativity in the
+  second marginal.
+* `MeasureTheory.Measure.integrable_mul_comp_snd_of_integrable_marginal_mul` derives integrability
+  of an a.e. nonnegative, a.e.-strongly measurable function times an a.e.-measurable second-factor
+  weight from integrability of its weighted marginal, assuming a.e. integrable sections.
 * `TauCeti.enorm_integral_setIntegral_le_lintegral_lintegral` bounds an iterated integral
   truncated to a region `s ∈ S t` (such as `s < t`) by the iterated integral of the norm, as used
   to pass from bilinear to retarded estimates.
@@ -105,7 +114,7 @@ end MeasureTheory
 
 namespace TauCeti
 
-open MeasureTheory Set
+open MeasureTheory MeasureTheory.Measure Set
 open scoped ENNReal ProbabilityTheory
 
 variable {α β γ E : Type*} {mα : MeasurableSpace α} {mβ : MeasurableSpace β}
@@ -299,6 +308,82 @@ theorem setIntegral_eq_zero_of_forall_prod {ρ : Measure (α × β)} {f : α × 
     rwa [Set.univ_prod_univ, setIntegral_univ] at h
   exact setIntegral_eq_zero_of_isPiSystem le_rfl generateFrom_prod.symm isPiSystem_prod hf huniv
     fun _ ⟨s, hs, t, ht, h⟩ => h ▸ hrect s hs t ht
+
+/-- An a.e. nonnegative, a.e. strongly measurable function with a.e. integrable sections vanishes
+almost everywhere where its second marginal vanishes. -/
+theorem _root_.MeasureTheory.Measure.ae_eq_zero_of_marginal_right_eq_zero
+    (μ : Measure α) (ν : Measure β)
+    [SFinite μ] [SFinite ν] {g : α × β → ℝ}
+    (hnonneg : 0 ≤ᵐ[μ.prod ν] g) (hg : AEStronglyMeasurable g (μ.prod ν))
+    (hsections : ∀ᵐ y ∂ν, Integrable (fun x ↦ g (x, y)) μ) :
+    ∀ᵐ p ∂μ.prod ν, (∫ x, g (x, p.2) ∂μ) = 0 → g p = 0 := by
+  let b : β → ℝ := fun y ↦ ∫ x, g (x, y) ∂μ
+  let bad : Set (β × α) := {p | b p.1 = 0 ∧ g (p.2, p.1) ≠ 0}
+  have hbmeas : AEMeasurable (fun p : β × α ↦ b p.1) (ν.prod μ) :=
+    hg.prod_swap.integral_prod_right'.aemeasurable.comp_quasiMeasurePreserving
+      quasiMeasurePreserving_fst
+  have hgmeas : AEMeasurable (fun p : β × α ↦ g (p.2, p.1)) (ν.prod μ) :=
+    hg.prod_swap.aemeasurable
+  have hbad : NullMeasurableSet bad (ν.prod μ) :=
+    (nullMeasurableSet_eq_fun hbmeas aemeasurable_const).inter
+      (nullMeasurableSet_eq_fun hgmeas aemeasurable_const).compl
+  have hnull_sections : ∀ᵐ y ∂ν, μ (Prod.mk y ⁻¹' bad) = 0 := by
+    filter_upwards [Measure.ae_ae_snd_of_ae_prod μ ν hnonneg, hsections] with y hy hyi
+    by_cases hz : b y = 0
+    · have hzero := (integral_eq_zero_iff_of_nonneg_ae hy hyi).mp hz
+      apply measure_eq_zero_iff_ae_notMem.2
+      filter_upwards [hzero] with x hx
+      simp [bad, hx]
+    · simp [bad, hz]
+  have hbad_zero : (ν.prod μ) bad = 0 := by
+    rw [Measure.prod_apply₀ hbad]
+    exact lintegral_eq_zero_of_ae_eq_zero hnull_sections
+  have hforward := measurePreserving_swap.quasiMeasurePreserving.ae
+    (measure_eq_zero_iff_ae_notMem.1 hbad_zero)
+  filter_upwards [hforward] with p hp
+  intro hz
+  by_contra hn
+  exact hp ⟨hz, hn⟩
+
+/-- The second marginal of an a.e. nonnegative product function is a.e. nonnegative. -/
+theorem _root_.MeasureTheory.Measure.ae_nonneg_integral_prod_right
+    (μ : Measure α) (ν : Measure β) [SFinite μ] [SFinite ν] {g : α × β → ℝ}
+    (hnonneg : 0 ≤ᵐ[μ.prod ν] g) :
+    0 ≤ᵐ[ν] fun y ↦ ∫ x, g (x, y) ∂μ := by
+  filter_upwards [Measure.ae_ae_snd_of_ae_prod μ ν hnonneg] with _ hy
+  exact integral_nonneg_of_ae hy
+
+/-- An a.e. nonnegative, a.e. strongly measurable product function with a.e. integrable sections
+becomes integrable when multiplied by an a.e.-measurable second-factor weight if its weighted
+second marginal is integrable. -/
+theorem _root_.MeasureTheory.Measure.integrable_mul_comp_snd_of_integrable_marginal_mul
+    (μ : Measure α) (ν : Measure β)
+    [SFinite μ] [SFinite ν] {g : α × β → ℝ} {w : β → ℝ}
+    (hnonneg : 0 ≤ᵐ[μ.prod ν] g) (hg : AEStronglyMeasurable g (μ.prod ν))
+    (hsections : ∀ᵐ y ∂ν, Integrable (fun x ↦ g (x, y)) μ)
+    (hw : AEMeasurable w ν)
+    (hmarg : Integrable (fun y ↦ (∫ x, g (x, y) ∂μ) * w y) ν) :
+    Integrable (fun p ↦ g p * w p.2) (μ.prod ν) := by
+  let b : β → ℝ := fun y ↦ ∫ x, g (x, y) ∂μ
+  have hmeas : AEStronglyMeasurable (fun p ↦ g p * w p.2) (μ.prod ν) :=
+    hg.mul
+      (hw.aestronglyMeasurable.comp_quasiMeasurePreserving quasiMeasurePreserving_snd)
+  apply (integrable_prod_iff' hmeas).2
+  constructor
+  · filter_upwards [hsections] with y hy
+    exact hy.mul_const _
+  · apply hmarg.norm.congr
+    filter_upwards [Measure.ae_ae_snd_of_ae_prod μ ν hnonneg] with y hy
+    have hb : 0 ≤ b y := integral_nonneg_of_ae hy
+    calc
+      ‖b y * w y‖ = b y * ‖w y‖ := by
+        rw [norm_mul, Real.norm_eq_abs, abs_of_nonneg hb]
+      _ = ∫ x, g (x, y) * ‖w y‖ ∂μ := (integral_mul_const _ _).symm
+      _ = ∫ x, ‖g (x, y) * w y‖ ∂μ := by
+        apply integral_congr_ae
+        filter_upwards [hy] with x hx
+        simp only [Pi.zero_apply] at hx
+        simp only [norm_mul, Real.norm_eq_abs, abs_of_nonneg hx]
 
 /-- If two integrals over the second factor differ by at most `C` almost everywhere under the
 finite first-factor measure, then the product integrals differ by at most `C` times its mass. -/

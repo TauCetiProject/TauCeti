@@ -17,7 +17,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.MeasureTheory.Function.Lp.AeMem
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.EndpointEstimates
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!

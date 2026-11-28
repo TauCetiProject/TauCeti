@@ -9,6 +9,8 @@ public import Mathlib.InformationTheory.KullbackLeibler.Basic
 public import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 import TauCeti.Analysis.Real.Sqrt
 import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
+import TauCeti.MeasureTheory.Measure.LogLikelihoodRatio
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Convexity of relative entropy
@@ -29,6 +31,10 @@ values to be finite. Equality for an interior mixture holds exactly when the mea
 For absolutely continuous measures, relative entropy is the integral of
 `InformationTheory.klFun` of the Radon–Nikodym density. Strict convexity of this integrand
 on `[0, ∞)` forces those densities to agree almost everywhere in the equality case.
+
+`MeasureTheory.Measure.integral_log_sum_le` gives an integral log-sum inequality for a.e.
+nonnegative integrable densities when the first vanishes almost everywhere where the second does
+and the weighted logarithmic difference is integrable.
 
 Strict convexity also holds quantitatively. The midpoint convexity defect of `klFun` at two
 nonnegative reals bounds the square of their distance relative to their sum, and integrating
@@ -52,6 +58,61 @@ public section
 
 open MeasureTheory InformationTheory Set Real
 open scoped ENNReal NNReal
+
+namespace MeasureTheory.Measure
+
+/-- For `A = ∫ f dμ` and `B = ∫ h dμ`, the log-sum inequality is
+`A log (A / B) ≤ ∫ (f log f - f log h) dμ`. A zero of `h` must also be a zero of `f` almost
+everywhere. Integrability is required for the difference, not for each logarithmic term. -/
+theorem integral_log_sum_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
+    {f h : α → ℝ} (hf : 0 ≤ᵐ[μ] f) (hh : 0 ≤ᵐ[μ] h)
+    (hzero : ∀ᵐ x ∂μ, h x = 0 → f x = 0)
+    (hfi : Integrable f μ) (hhi : Integrable h μ)
+    (hdiff : Integrable (fun x ↦ f x * Real.log (f x) - f x * Real.log (h x)) μ) :
+    (∫ x, f x ∂μ) * Real.log ((∫ x, f x ∂μ) / (∫ x, h x ∂μ)) ≤
+      ∫ x, f x * Real.log (f x) - f x * Real.log (h x) ∂μ := by
+  let ρ := μ.withDensity fun x ↦ ENNReal.ofReal (f x)
+  let η := μ.withDensity fun x ↦ ENNReal.ofReal (h x)
+  have hfm : AEMeasurable f μ := hfi.aestronglyMeasurable.aemeasurable
+  have hhm : AEMeasurable h μ := hhi.aestronglyMeasurable.aemeasurable
+  have : IsFiniteMeasure ρ := isFiniteMeasure_withDensity_ofReal hfi.2
+  have : IsFiniteMeasure η := isFiniteMeasure_withDensity_ofReal hhi.2
+  have hac : ρ ≪ η := by
+    apply Measure.ae_le_iff_absolutelyContinuous.mp
+    intro s hs
+    have hs' := (ae_withDensity_iff' hhm.ennreal_ofReal).mp hs
+    apply (ae_withDensity_iff' hfm.ennreal_ofReal).mpr
+    filter_upwards [hs', hh, hzero] with x hx hnonneg hz hfpos
+    apply hx
+    have hhne : h x ≠ 0 := by
+      intro heq
+      apply hfpos
+      simp [hz heq]
+    exact ne_of_gt (ENNReal.ofReal_pos.mpr (lt_of_le_of_ne hnonneg (Ne.symm hhne)))
+  have hllr := TauCeti.llr_withDensity_ofReal_ae_eq hfm hhm hac
+  have hint_base : Integrable (fun x ↦ Real.log (f x) - Real.log (h x)) ρ := by
+    dsimp [ρ]
+    apply (TauCeti.MeasureTheory.integrable_withDensity_ofReal_iff hfm hf).2
+    simpa only [smul_eq_mul, mul_sub] using hdiff
+  have hint : Integrable (llr ρ η) ρ := hint_base.congr hllr.symm
+  have hint_eq : (∫ x, llr ρ η x ∂ρ) =
+      ∫ x, f x * Real.log (f x) - f x * Real.log (h x) ∂μ := by
+    calc
+      _ = ∫ x, Real.log (f x) - Real.log (h x) ∂ρ := integral_congr_ae hllr
+      _ = _ := by
+        simpa only [ρ, smul_eq_mul, mul_sub] using
+          (TauCeti.MeasureTheory.integral_withDensity_ofReal hfm hf
+            (fun x ↦ Real.log (f x) - Real.log (h x)))
+  have hmass {g : α → ℝ} (hg : 0 ≤ᵐ[μ] g) (hgm : AEMeasurable g μ) :
+      (μ.withDensity fun x ↦ ENNReal.ofReal (g x)).real univ = ∫ x, g x ∂μ := by
+    simpa only [Measure.restrict_univ, setIntegral_univ] using
+      (TauCeti.MeasureTheory.measureReal_withDensity_ofReal (s := univ)
+        (by simpa using hg) MeasurableSet.univ.nullMeasurableSet (by simpa using hgm))
+  have hbound := InformationTheory.mul_log_le_toReal_klDiv hac hint
+  rw [InformationTheory.toReal_klDiv hac hint, hint_eq, hmass hf hfm, hmass hh hhm] at hbound
+  linarith
+
+end MeasureTheory.Measure
 
 namespace TauCeti
 

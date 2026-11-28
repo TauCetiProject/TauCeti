@@ -16,7 +16,7 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.AlternatingForm
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 import TauCeti.Analysis.PDE.Vortex.Flux.Basic
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!

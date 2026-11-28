@@ -13,7 +13,7 @@ import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Normed.Operator.Exponential
 import TauCeti.MeasureTheory.Integral.Exp.Decay
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 
 /-!
 # The whole-line Green integral of an exponential dichotomy

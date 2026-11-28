@@ -11,7 +11,7 @@ import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
 import TauCeti.Analysis.SpecialFunctions.Beta.Substitution
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 
 /-!
 # The Mellin–Barnes integral of `(1 + u)^{-a}` and Barnes's first lemma
