@@ -244,7 +244,7 @@ theorem IsNondegenerate.gaussSum_mul_conj (hA : A.IsNondegenerate) :
   · simp [Nat.card_eq_fintype_card]
   · intro c _ hc
     have hpc : A.toFiniteBilinearModule.pairing c ≠ 0 := fun h ↦
-      hc (FiniteBilinearModule.IsNondegenerate.injective _ hA (h.trans (map_zero _).symm))
+      hc (FiniteBilinearModule.IsNondegenerate.injective hA (h.trans (map_zero _).symm))
     simp [hpc]
   · simp
 
@@ -342,7 +342,7 @@ theorem gaussSum_eq_sqrt_natCard_of_isMetabolic (hA : A.IsNondegenerate) (h : A.
     A.gaussSum = √(Nat.card A) := by
   obtain ⟨H, hH⟩ := (isMetabolic_def A).1 h
   rw [gaussSum_eq_natCard_of_isLagrangian hH,
-    ← FiniteBilinearModule.IsLagrangian.card_sq A.toFiniteBilinearModule
+    ← FiniteBilinearModule.IsLagrangian.card_sq
       (IsLagrangian.toFiniteBilinearModule A hH) hA, Nat.cast_pow,
     Real.sqrt_sq (Nat.cast_nonneg _), ofReal_natCast]
 
@@ -399,7 +399,7 @@ theorem isLagrangian_zmultiples_and_not_isMetabolic_zmodStandard_two_prod :
     (isNondegenerate_prod _ _).2
       ⟨isNondegenerate_zmodStandard 2 even_two, isNondegenerate_zmodStandard 2 even_two⟩
   have hcardA : Nat.card (ZMod 2 × ZMod 2) = 4 := by simp
-  refine ⟨FiniteBilinearModule.IsIsotropic.isLagrangian_of_card_sq_eq _ ?_ hA ?_, fun h ↦ ?_⟩
+  refine ⟨FiniteBilinearModule.IsIsotropic.isLagrangian_of_card_sq_eq ?_ hA ?_, fun h ↦ ?_⟩
   · rw [FiniteBilinearModule.isIsotropic_zmultiples_iff, FiniteBilinearModule.isIsotropicElem_def]
     -- Both factors carry the standard pairing `b(x, y) = xy / 2`, reducibly.
     have h : (FiniteBilinearModule.zmodStandard 2).pairing 1 1 +

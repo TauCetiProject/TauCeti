@@ -174,7 +174,6 @@ theorem isIsotropic_codeInTypeA2Discriminant_iff (C : AdditiveCode (ZMod 3) ι) 
     ((IntegralLattice.typeAStandardQuadraticModule 2).coordinatePower ι).IsIsotropic C := by
   rw [codeInTypeA2Discriminant, ← typeA2CoordinateDiscriminantQuadraticIsometry_toAddEquiv]
   exact FiniteQuadraticModule.Isometry.isIsotropic_map_iff
-    ((IntegralLattice.typeAStandardQuadraticModule 2).coordinatePower ι)
     ((IntegralLattice.typeADiscriminantQuadraticIsometry 2).coordinatePower ι) C
 
 /-- Transport to the `A₂` discriminant groups preserves and reflects the quadratic
@@ -187,7 +186,6 @@ theorem isLagrangian_codeInTypeA2Discriminant_iff (C : AdditiveCode (ZMod 3) ι)
     ((IntegralLattice.typeAStandardQuadraticModule 2).coordinatePower ι).IsLagrangian C := by
   rw [codeInTypeA2Discriminant, ← typeA2CoordinateDiscriminantQuadraticIsometry_toAddEquiv]
   exact FiniteQuadraticModule.Isometry.isLagrangian_map_iff
-    ((IntegralLattice.typeAStandardQuadraticModule 2).coordinatePower ι)
     ((IntegralLattice.typeADiscriminantQuadraticIsometry 2).coordinatePower ι) C
 
 namespace Tetracode

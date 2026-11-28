@@ -275,7 +275,7 @@ theorem natCard_a1TwentyFourGlueSubgroup : Nat.card a1TwentyFourGlueSubgroup = 4
 its order `4096` squares to the order `2²⁴` of the module of glue words. -/
 theorem isLagrangian_a1TwentyFourGlueSubgroup :
     a1TwentyFourGlueModule.IsLagrangian a1TwentyFourGlueSubgroup := by
-  rw [← FiniteQuadraticModule.Isometry.isLagrangian_map_iff _ a1TableToGolayIsometry,
+  rw [← FiniteQuadraticModule.Isometry.isLagrangian_map_iff a1TableToGolayIsometry,
     map_a1TwentyFourGlueSubgroup_a1TableToGolayIsometry]
   exact (FiniteQuadraticModule.isLagrangian_def _ _).mpr
     ⟨BinaryGolay.isIsotropic_code, BinaryGolay.isLagrangian_code⟩
@@ -464,7 +464,7 @@ noncomputable def a1TwentyFourthConstructionAIsometry :
     (isEven_pi_rootLattice (fun _ : Fin 24 ↦ A 1) (fun _ ↦ isSimplyLaced_A 1))
     (ConstructionA.isEven_zeroLattice 2 (Fin 24) even_two)
     (((glueWordIsometry (fun _ : Fin 24 ↦ A 1) (fun _ ↦ isSimplyLaced_A 1)
-      (fun _ ↦ valid_A.mpr le_rfl)).isIsotropic_map_iff _ _).mpr
+      (fun _ ↦ valid_A.mpr le_rfl)).isIsotropic_map_iff _).mpr
         isLagrangian_a1TwentyFourGlueSubgroup.isIsotropic)
     hD map_a1TableDiscriminantSubgroup
   exact (Isometry.ofEq (a1TwentyFourthLattice_def.trans

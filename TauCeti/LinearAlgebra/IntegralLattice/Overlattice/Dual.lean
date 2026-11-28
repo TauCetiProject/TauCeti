@@ -237,7 +237,7 @@ theorem card_discriminantSubgroup_mul_card_discriminantSubgroup_dual
     congrArg (fun K : AddSubgroup L.DiscriminantGroup ↦ Nat.card K) (discriminantSubgroup_dual M)
   rw [hcard]
   exact FiniteBilinearModule.IsNondegenerate.card_mul_card_orthogonalComplement
-    L.discriminantBilinearModule L.isNondegenerate_discriminantBilinearModule _
+    L.isNondegenerate_discriminantBilinearModule _
 
 /-! ## Unimodular intermediate carriers and Lagrangian subgroups -/
 

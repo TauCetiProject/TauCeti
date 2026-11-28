@@ -62,7 +62,7 @@ theorem isIsotropic_codeInTypeA2CoordinatePowerDiscriminant_iff
         (codeInTypeA2CoordinatePowerDiscriminant C) ↔
       ((typeAStandardQuadraticModule 2).coordinatePower ι).IsIsotropic C := by
   rw [codeInTypeA2CoordinatePowerDiscriminant]
-  exact FiniteQuadraticModule.Isometry.isIsotropic_map_iff _
+  exact FiniteQuadraticModule.Isometry.isIsotropic_map_iff
     ((typeADiscriminantQuadraticIsometry 2).coordinatePowerDiscriminant ι) C
 
 /-- A ternary code is a quadratic Lagrangian in the actual coordinate-power discriminant group
@@ -75,7 +75,7 @@ theorem isLagrangian_codeInTypeA2CoordinatePowerDiscriminant_iff
         (codeInTypeA2CoordinatePowerDiscriminant C) ↔
       ((typeAStandardQuadraticModule 2).coordinatePower ι).IsLagrangian C := by
   rw [codeInTypeA2CoordinatePowerDiscriminant]
-  exact FiniteQuadraticModule.Isometry.isLagrangian_map_iff _
+  exact FiniteQuadraticModule.Isometry.isLagrangian_map_iff
     ((typeADiscriminantQuadraticIsometry 2).coordinatePowerDiscriminant ι) C
 
 namespace Tetracode
@@ -139,7 +139,7 @@ theorem isIsotropic_codeInTypeD4CoordinatePowerDiscriminant_iff
         (codeInTypeD4CoordinatePowerDiscriminant hF hω C) ↔
       ((typeD4QuaternaryQuadraticModule hF).coordinatePower ι).IsIsotropic C := by
   rw [codeInTypeD4CoordinatePowerDiscriminant]
-  exact FiniteQuadraticModule.Isometry.isIsotropic_map_iff _
+  exact FiniteQuadraticModule.Isometry.isIsotropic_map_iff
     ((typeD4QuaternaryDiscriminantQuadraticIsometry hF hω).coordinatePowerDiscriminant ι) C
 
 /-- A quaternary code is a quadratic Lagrangian in the actual `D₄` coordinate-power discriminant
@@ -153,7 +153,7 @@ theorem isLagrangian_codeInTypeD4CoordinatePowerDiscriminant_iff
         (codeInTypeD4CoordinatePowerDiscriminant hF hω C) ↔
       ((typeD4QuaternaryQuadraticModule hF).coordinatePower ι).IsLagrangian C := by
   rw [codeInTypeD4CoordinatePowerDiscriminant]
-  exact FiniteQuadraticModule.Isometry.isLagrangian_map_iff _
+  exact FiniteQuadraticModule.Isometry.isLagrangian_map_iff
     ((typeD4QuaternaryDiscriminantQuadraticIsometry hF hω).coordinatePowerDiscriminant ι) C
 
 namespace Hexacode

@@ -87,7 +87,7 @@ theorem pairing_ne_zero_of_addEquiv (A : FiniteBilinearModule) (hA : A.IsNondege
     · exact hxy
     · exact hAlt _
     · rw [he11, A.pairing_add_right, hAlt, hxy, add_zero]
-  exact hxne (FiniteBilinearModule.IsNondegenerate.injective _ hA
+  exact hxne (FiniteBilinearModule.IsNondegenerate.injective hA
     (hxpair.trans (map_zero _).symm))
 
 /-- In a nondegenerate alternating Klein four module, the two generators of an additive

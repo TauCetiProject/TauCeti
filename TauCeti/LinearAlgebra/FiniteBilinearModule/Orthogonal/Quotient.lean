@@ -203,6 +203,7 @@ theorem isNondegenerate_orthogonalQuotient_iff (H : AddSubgroup A) :
     exact hle (x := ⟨x, hxperp⟩) (AddSubgroup.mem_addSubgroupOf.mpr (AddSubgroup.mem_sup_right hx))
   · rw [sup_eq_left.mpr hle]
 
+variable {A} in
 /-- The orthogonal quotient of a nondegenerate finite bilinear module is nondegenerate. -/
 theorem IsNondegenerate.isNondegenerate_orthogonalQuotient (hA : A.IsNondegenerate)
     (H : AddSubgroup A) : (A.orthogonalQuotient H).IsNondegenerate :=
@@ -217,6 +218,7 @@ theorem card_orthogonalQuotient (H : AddSubgroup A) :
     (H.addSubgroupOf (A.orthogonalComplement H))
     (A.addSubgroupOf_orthogonalComplement_le_radical_restrict H)
 
+variable {A} in
 /-- **The general order formula for an orthogonal quotient.** In a nondegenerate finite bilinear
 module, the orders of `H⊥ / (H ∩ H⊥)`, `H ∩ H⊥`, and `H` multiply to the order of the
 ambient module. -/
@@ -226,8 +228,9 @@ theorem IsNondegenerate.card_orthogonalQuotient_mul_card_addSubgroupOf_mul_card
         Nat.card (H.addSubgroupOf (A.orthogonalComplement H)) * Nat.card H = Nat.card A := by
   rw [A.card_orthogonalQuotient H,
     (H.addSubgroupOf (A.orthogonalComplement H)).index_mul_card, mul_comm]
-  exact IsNondegenerate.card_mul_card_orthogonalComplement A hA H
+  exact hA.card_mul_card_orthogonalComplement H
 
+variable {A} in
 /-- **The order of the orthogonal quotient of an isotropic subgroup.**  In a nondegenerate finite
 bilinear module, `|H⊥ / H| · |H|² = |A|`. -/
 theorem IsNondegenerate.card_orthogonalQuotient_mul_card_sq (hA : A.IsNondegenerate)
@@ -237,7 +240,7 @@ theorem IsNondegenerate.card_orthogonalQuotient_mul_card_sq (hA : A.IsNondegener
   have hcard : Nat.card (H.addSubgroupOf (A.orthogonalComplement H)) = Nat.card H :=
     Nat.card_congr (AddSubgroup.addSubgroupOfEquivOfLe hle).toEquiv
   simpa only [hcard, pow_two, mul_assoc] using
-    (IsNondegenerate.card_orthogonalQuotient_mul_card_addSubgroupOf_mul_card A hA H)
+    (hA.card_orthogonalQuotient_mul_card_addSubgroupOf_mul_card H)
 
 /-! ## The Lagrangian criterion -/
 
@@ -275,7 +278,7 @@ orthogonal complement. -/
 private theorem map_toIntSubmodule_addSubgroupOf_orthogonalComplement
     (f : Isometry A B) (H : AddSubgroup A) :
     (H.addSubgroupOf (A.orthogonalComplement H)).toIntSubmodule.map
-        ((Isometry.orthogonalComplementEquiv A f H).toIntLinearEquiv :
+        ((f.orthogonalComplementEquiv H).toIntLinearEquiv :
           A.orthogonalComplement H →ₗ[ℤ]
             B.orthogonalComplement (H.map f.toAddEquiv)) =
       ((H.map f.toAddEquiv).addSubgroupOf
@@ -285,12 +288,12 @@ private theorem map_toIntSubmodule_addSubgroupOf_orthogonalComplement
   -- `mem_map_equiv` exposes membership in the underlying `ℤ`-submodules; normalize those
   -- coercions to the corresponding `AddSubgroup.addSubgroupOf` memberships so its public lemma
   -- and the representative formula for `orthogonalComplementEquiv` can be used.
-  change (Isometry.orthogonalComplementEquiv A f H).symm y ∈
+  change (f.orthogonalComplementEquiv H).symm y ∈
       H.addSubgroupOf (A.orthogonalComplement H) ↔
     y ∈ (H.map f.toAddEquiv).addSubgroupOf
       (B.orthogonalComplement (H.map f.toAddEquiv))
   rw [AddSubgroup.mem_addSubgroupOf, AddSubgroup.mem_addSubgroupOf,
-    Isometry.coe_orthogonalComplementEquiv_symm_apply A f H]
+    Isometry.coe_orthogonalComplementEquiv_symm_apply f H]
   constructor
   · intro hy
     exact ⟨f.symm (y : B), hy, f.apply_symm_apply (y : B)⟩
@@ -308,7 +311,7 @@ image. -/
 private noncomputable def orthogonalQuotientAddEquiv (f : Isometry A B) (H : AddSubgroup A) :
     A.orthogonalQuotient H ≃+ B.orthogonalQuotient (H.map f.toAddEquiv) :=
   (Submodule.Quotient.equiv _ _
-    (Isometry.orthogonalComplementEquiv A f H).toIntLinearEquiv
+    (f.orthogonalComplementEquiv H).toIntLinearEquiv
     (map_toIntSubmodule_addSubgroupOf_orthogonalComplement f H)).toAddEquiv
 
 /-- The image-subgroup additive equivalence sends the class of `x ∈ H⊥` to the class of
@@ -318,12 +321,12 @@ private theorem orthogonalQuotientAddEquiv_orthogonalQuotientMk (f : Isometry A 
     (H : AddSubgroup A) (x : A.orthogonalComplement H) :
     f.orthogonalQuotientAddEquiv H (A.orthogonalQuotientMk H x) =
       B.orthogonalQuotientMk (H.map f.toAddEquiv)
-        (Isometry.orthogonalComplementEquiv A f H x) := by
+        (f.orthogonalComplementEquiv H x) := by
   rw [orthogonalQuotientMk_apply, orthogonalQuotientMk_apply]
   -- After replacing the packaged quotient constructors by `Submodule.Quotient.mk`, expose the
   -- underlying quotient equivalence so Mathlib's `equiv_apply` and `mapQ_apply` lemmas match.
   change (Submodule.Quotient.equiv _ _
-      (Isometry.orthogonalComplementEquiv A f H).toIntLinearEquiv
+      (f.orthogonalComplementEquiv H).toIntLinearEquiv
       (map_toIntSubmodule_addSubgroupOf_orthogonalComplement f H))
       (Submodule.Quotient.mk x) = Submodule.Quotient.mk _
   rw [Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
@@ -341,8 +344,8 @@ private noncomputable def orthogonalQuotientMap (f : Isometry A B) (H : AddSubgr
         rw [orthogonalQuotientAddEquiv_orthogonalQuotientMk,
           orthogonalQuotientAddEquiv_orthogonalQuotientMk,
           B.orthogonalQuotient_pairing_mk, A.orthogonalQuotient_pairing_mk,
-          Isometry.coe_orthogonalComplementEquiv_apply A f H,
-          Isometry.coe_orthogonalComplementEquiv_apply A f H,
+          Isometry.coe_orthogonalComplementEquiv_apply f H,
+          Isometry.coe_orthogonalComplementEquiv_apply f H,
           f.map_pairing]
 
 /-- The image-subgroup transport sends the class of `x ∈ H⊥` to the class of `f x`. -/
@@ -351,7 +354,7 @@ private theorem orthogonalQuotientMap_orthogonalQuotientMk (f : Isometry A B)
     (H : AddSubgroup A) (x : A.orthogonalComplement H) :
     f.orthogonalQuotientMap H (A.orthogonalQuotientMk H x) =
       B.orthogonalQuotientMk (H.map f.toAddEquiv)
-        (Isometry.orthogonalComplementEquiv A f H x) := by
+        (f.orthogonalComplementEquiv H x) := by
   rw [orthogonalQuotientMap]
   exact orthogonalQuotientAddEquiv_orthogonalQuotientMk f H x
 
@@ -370,11 +373,11 @@ theorem orthogonalQuotientEquiv_orthogonalQuotientMk (f : Isometry A B)
     (x : A.orthogonalComplement H) :
     f.orthogonalQuotientEquiv h (A.orthogonalQuotientMk H x) =
       B.orthogonalQuotientMk K
-        ⟨f (x : A), Isometry.map_mem_orthogonalComplement_of_map_eq A f h x.property⟩ := by
+        ⟨f (x : A), Isometry.map_mem_orthogonalComplement_of_map_eq f h x.property⟩ := by
   rw [orthogonalQuotientEquiv, trans_apply, orthogonalQuotientMap_orthogonalQuotientMk,
     B.orthogonalQuotientCongr_orthogonalQuotientMk]
   apply congrArg (B.orthogonalQuotientMk K)
-  exact Subtype.ext (Isometry.coe_orthogonalComplementEquiv_apply A f H x)
+  exact Subtype.ext (Isometry.coe_orthogonalComplementEquiv_apply f H x)
 
 /-- **The inverse representative formula for a transported orthogonal quotient.** The inverse
 transport sends the class of `y ∈ K⊥` to the class of `f⁻¹ y ∈ H⊥`. -/

@@ -178,7 +178,7 @@ theorem natCard_glueSubgroup_le (r : RootfulNiemeierType) :
     Nat.card r.glueSubgroup ≤ r.glueOrder := by
   have hA := DynkinType.isNondegenerate_pi_glueAlphabet r.componentType
     r.isSimplyLaced_componentType
-  have hmul := FiniteBilinearModule.IsNondegenerate.card_mul_card_orthogonalComplement _ hA
+  have hmul := FiniteBilinearModule.IsNondegenerate.card_mul_card_orthogonalComplement hA
     r.glueSubgroup
   have hle := AddSubgroup.card_le_of_le
     ((FiniteBilinearModule.isIsotropic_iff_le_orthogonalComplement _ _).mp

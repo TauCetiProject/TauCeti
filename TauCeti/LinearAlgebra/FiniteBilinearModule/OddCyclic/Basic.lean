@@ -200,7 +200,7 @@ theorem isNondegenerate_oddCyclic_iff :
       obtain ⟨i, rfl⟩ := ZMod.intCast_surjective (n := m) y
       -- The zero character evaluates to `0`; `AddMonoidHom.zero_apply` holds by `rfl`.
       exact hval i
-    exact hx (FiniteBilinearModule.IsNondegenerate.injective _ h (hpair.trans (map_zero _).symm))
+    exact hx (FiniteBilinearModule.IsNondegenerate.injective h (hpair.trans (map_zero _).symm))
   · refine (FiniteBilinearModule.isNondegenerate_iff_injective _).2
       ((injective_iff_map_eq_zero _).2 fun x hx ↦ ?_)
     obtain ⟨j, rfl⟩ := ZMod.intCast_surjective (n := m) x

@@ -96,7 +96,7 @@ noncomputable def gluedLattice
     IntegralLattice (∀ i, Fin (t i).rank → ℚ) :=
   (pi fun i ↦ (t i).rootLattice (ht i)).ofIsotropicSubgroup (isEven_pi_rootLattice t ht)
     (H.map (glueWordIsometry t ht hv).toAddEquiv.toAddMonoidHom)
-    (((glueWordIsometry t ht hv).isIsotropic_map_iff _ H).mpr hH)
+    (((glueWordIsometry t ht hv).isIsotropic_map_iff H).mpr hH)
 
 variable (H : AddSubgroup (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)))
   (hH : (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)).IsIsotropic H)
@@ -107,7 +107,7 @@ theorem gluedLattice_def :
     gluedLattice t ht hv H hH =
       (pi fun i ↦ (t i).rootLattice (ht i)).ofIsotropicSubgroup (isEven_pi_rootLattice t ht)
         (H.map (glueWordIsometry t ht hv).toAddEquiv.toAddMonoidHom)
-        (((glueWordIsometry t ht hv).isIsotropic_map_iff _ H).mpr hH) :=
+        (((glueWordIsometry t ht hv).isIsotropic_map_iff H).mpr hH) :=
   (rfl)
 
 /-- Gluing keeps the form of the orthogonal sum of root lattices. -/
@@ -191,9 +191,9 @@ theorem isUnimodular_gluedLattice_iff :
     (gluedLattice t ht hv H hH).IsUnimodular ↔
       (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)).IsLagrangian H := by
   refine (isUnimodular_ofIsotropicSubgroup_iff_isLagrangian _ _ _ _).trans
-    (Iff.trans ?_ ((glueWordIsometry t ht hv).isLagrangian_map_iff _ H))
+    (Iff.trans ?_ ((glueWordIsometry t ht hv).isLagrangian_map_iff H))
   exact ⟨fun h ↦ (FiniteQuadraticModule.isLagrangian_def _ _).mpr
-      ⟨((glueWordIsometry t ht hv).isIsotropic_map_iff _ H).mpr hH, h⟩,
+      ⟨((glueWordIsometry t ht hv).isIsotropic_map_iff H).mpr hH, h⟩,
     fun h ↦ h.toFiniteBilinearModule⟩
 
 /-- **A glued lattice is unimodular exactly when `|H|²` is the number of glue words**, the
@@ -202,7 +202,7 @@ theorem isUnimodular_gluedLattice_iff_natCard_sq_eq :
     (gluedLattice t ht hv H hH).IsUnimodular ↔
       Nat.card H ^ 2 = Nat.card (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)) := by
   rw [isUnimodular_gluedLattice_iff]
-  exact ⟨fun h ↦ FiniteBilinearModule.IsLagrangian.card_sq _ h.toFiniteBilinearModule
+  exact ⟨fun h ↦ FiniteBilinearModule.IsLagrangian.card_sq h.toFiniteBilinearModule
       (isNondegenerate_pi_glueAlphabet t ht),
     hH.isLagrangian_of_card_sq_eq _ (isNondegenerate_pi_glueAlphabet t ht)⟩
 
@@ -230,11 +230,11 @@ private theorem gluedLattice_eq_toIntegralLattice :
       (((pi fun i ↦ (t i).rootLattice (ht i)).isEven_intermediateCarrierOfDiscriminantSubgroup_iff
         (isEven_pi_rootLattice t ht)
         (H.map (glueWordIsometry t ht hv).toAddEquiv.toAddMonoidHom)).mpr
-        (((glueWordIsometry t ht hv).isIsotropic_map_iff _ H).mpr
+        (((glueWordIsometry t ht hv).isIsotropic_map_iff H).mpr
           hH)).isIntegral.toIntegralLattice := by
   refine (ofIsotropicSubgroup_eq_toIntegralLattice _ (isEven_pi_rootLattice t ht)
     ⟨H.map (glueWordIsometry t ht hv).toAddEquiv.toAddMonoidHom,
-      ((glueWordIsometry t ht hv).isIsotropic_map_iff _ H).mpr hH⟩).trans ?_
+      ((glueWordIsometry t ht hv).isIsotropic_map_iff H).mpr hH⟩).trans ?_
   congr 2
   exact evenIntermediateCarrierOrderIsoIsotropicSubgroup_symm_apply_coe _ _ _
 
@@ -270,7 +270,7 @@ noncomputable def gluedLatticeDiscriminantIsometry :
       (isEven_gluedLattice t ht hv H hH)).trans
     ((pi fun i ↦ (t i).rootLattice (ht i)).discriminantOrthogonalQuotientIsometryOfSubgroup
       (isEven_pi_rootLattice t ht)
-      (((glueWordIsometry t ht hv).isIsotropic_map_iff _ H).mpr hH))).trans
+      (((glueWordIsometry t ht hv).isIsotropic_map_iff H).mpr hH))).trans
     ((glueWordIsometry t ht hv).orthogonalQuotientEquiv hH rfl).symm
 
 /-- **The glue word of a dual vector of a glued lattice is orthogonal to the glue code.**
@@ -287,8 +287,7 @@ theorem glueWordIsometry_symm_mk_mem_orthogonalComplement
   rw [discriminantSubgroup_intermediateCarrierOfDiscriminantSubgroup,
     IntermediateCarrier.IsIntegral.dualClassHom_apply,
     mk_dualCarrierEquiv_ofEq_gluedLattice] at hmem
-  have h := ((FiniteBilinearModule.Isometry.orthogonalComplementEquiv _
-    (glueWordIsometry t ht hv).toFiniteBilinearModule H).symm
+  have h := (((glueWordIsometry t ht hv).toFiniteBilinearModule.orthogonalComplementEquiv H).symm
       ⟨_, by rwa [FiniteQuadraticModule.Isometry.toFiniteBilinearModule_toAddEquiv]⟩).property
   rw [FiniteBilinearModule.Isometry.coe_orthogonalComplementEquiv_symm_apply,
     ← FiniteBilinearModule.Isometry.coe_toAddEquiv,
@@ -308,13 +307,13 @@ theorem gluedLatticeDiscriminantIsometry_mk
     (Isometry.ofEq (gluedLattice_eq_toIntegralLattice t ht hv H hH))
     (isEven_gluedLattice t ht hv H hH) y
   have h3 := discriminantOrthogonalQuotientIsometryOfSubgroup_mk _ (isEven_pi_rootLattice t ht)
-    (((glueWordIsometry t ht hv).isIsotropic_map_iff _ H).mpr hH)
+    (((glueWordIsometry t ht hv).isIsotropic_map_iff H).mpr hH)
     ((Isometry.ofEq (gluedLattice_eq_toIntegralLattice t ht hv H hH)).dualCarrierEquiv y)
   -- Evaluate the three factors of the composite one at a time.
   refine (congrArg (fun z ↦ ((glueWordIsometry t ht hv).orthogonalQuotientEquiv hH rfl).symm
     ((pi fun i ↦ (t i).rootLattice (ht i)).discriminantOrthogonalQuotientIsometryOfSubgroup
       (isEven_pi_rootLattice t ht)
-      (((glueWordIsometry t ht hv).isIsotropic_map_iff _ H).mpr hH) z)) h2).trans ?_
+      (((glueWordIsometry t ht hv).isIsotropic_map_iff H).mpr hH) z)) h2).trans ?_
   refine (congrArg ((glueWordIsometry t ht hv).orthogonalQuotientEquiv hH rfl).symm h3).trans ?_
   refine (FiniteQuadraticModule.Isometry.orthogonalQuotientEquiv_symm_orthogonalQuotientMk
     _ _ _ _).trans ?_

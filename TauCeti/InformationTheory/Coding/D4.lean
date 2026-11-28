@@ -386,7 +386,7 @@ theorem isIsotropic_codeInTypeD4Discriminant_iff (hF : Nat.card F = 4) {ω : F}
       (codeInTypeD4Discriminant hF hω C) ↔
     ((typeD4QuaternaryQuadraticModule hF).coordinatePower ι).IsIsotropic C := by
   rw [codeInTypeD4Discriminant]
-  exact FiniteQuadraticModule.Isometry.isIsotropic_map_iff _
+  exact FiniteQuadraticModule.Isometry.isIsotropic_map_iff
     ((typeD4QuaternaryDiscriminantQuadraticIsometry hF hω).coordinatePower ι) C
 
 /-- Transport to the `D₄` discriminant groups preserves and reflects the quadratic Lagrangian
@@ -399,7 +399,7 @@ theorem isLagrangian_codeInTypeD4Discriminant_iff (hF : Nat.card F = 4) {ω : F}
       (codeInTypeD4Discriminant hF hω C) ↔
     ((typeD4QuaternaryQuadraticModule hF).coordinatePower ι).IsLagrangian C := by
   rw [codeInTypeD4Discriminant]
-  exact FiniteQuadraticModule.Isometry.isLagrangian_map_iff _
+  exact FiniteQuadraticModule.Isometry.isLagrangian_map_iff
     ((typeD4QuaternaryDiscriminantQuadraticIsometry hF hω).coordinatePower ι) C
 
 end TauCeti

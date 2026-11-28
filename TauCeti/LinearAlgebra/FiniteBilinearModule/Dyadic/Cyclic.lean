@@ -149,7 +149,7 @@ theorem isNondegenerate_dyadicCyclic_iff : (dyadicCyclic k θ).IsNondegenerate �
       obtain ⟨i, rfl⟩ := ZMod.intCast_surjective (n := 2 ^ (j + 1)) y
       -- The zero character evaluates to `0`; `AddMonoidHom.zero_apply` holds by `rfl`.
       exact hval i
-    exact hx (FiniteBilinearModule.IsNondegenerate.injective _ h (hpair.trans (map_zero _).symm))
+    exact hx (FiniteBilinearModule.IsNondegenerate.injective h (hpair.trans (map_zero _).symm))
   · have hcop : IsCoprime ((2 : ℤ) ^ k) θ := by
       obtain ⟨t, rfl⟩ := hθ
       exact IsCoprime.pow_left ⟨-t, 1, by ring⟩

@@ -90,6 +90,7 @@ theorem pairingRestrict_ker (H : AddSubgroup A) :
   exact ⟨fun hx y hy ↦ DFunLike.congr_fun hx ⟨y, hy⟩,
     fun hx ↦ CharacterModule.ext H fun (y : H) ↦ hx y y.property⟩
 
+variable {A} in
 /-- In a nondegenerate finite bilinear module, every character of a subgroup is pairing with an
 element of the ambient module. -/
 theorem IsNondegenerate.pairingRestrict_surjective (hA : A.IsNondegenerate)
@@ -104,18 +105,20 @@ theorem IsNondegenerate.pairingRestrict_surjective (hA : A.IsNondegenerate)
   have hy := DFunLike.congr_fun hd y
   exact hy
 
+variable {A} in
 /-- In a nondegenerate finite bilinear module, the orders of a subgroup and its orthogonal
 complement multiply to the order of the ambient module. -/
 theorem IsNondegenerate.card_mul_card_orthogonalComplement (hA : A.IsNondegenerate)
     (H : AddSubgroup A) :
     Nat.card H * Nat.card (A.orthogonalComplement H) = Nat.card A := by
-  have hs := IsNondegenerate.pairingRestrict_surjective A hA H
+  have hs := hA.pairingRestrict_surjective H
   have hindex : (A.pairingRestrict H).ker.index = Nat.card H := by
     rw [AddSubgroup.index_ker, AddMonoidHom.range_eq_top.mpr hs]
     simp
   rw [mul_comm, ← A.pairingRestrict_ker H, ← hindex]
   exact (A.pairingRestrict H).ker.card_mul_index
 
+variable {A} in
 /-- An isotropic subgroup of a nondegenerate finite bilinear module is Lagrangian when its
 squared order is the order of the ambient module. -/
 theorem IsIsotropic.isLagrangian_of_card_sq_eq {H : AddSubgroup A}
@@ -124,13 +127,14 @@ theorem IsIsotropic.isLagrangian_of_card_sq_eq {H : AddSubgroup A}
   rw [A.isLagrangian_def]
   apply AddSubgroup.eq_of_le_of_card_ge
     (A.isIsotropic_iff_le_orthogonalComplement H |>.mp hH)
-  have hmul := IsNondegenerate.card_mul_card_orthogonalComplement A hA H
+  have hmul := hA.card_mul_card_orthogonalComplement H
   rw [pow_two] at hcard
   have hcard' : Nat.card H = Nat.card (A.orthogonalComplement H) := by
     apply Nat.mul_left_cancel (Nat.card_pos (α := H))
     exact hcard.trans hmul.symm
   exact hcard'.ge
 
+variable {A} in
 /-- Double orthogonal complementation is the identity in a nondegenerate finite bilinear module. -/
 theorem IsNondegenerate.orthogonalComplement_orthogonalComplement
     (hA : A.IsNondegenerate) (H : AddSubgroup A) :
@@ -138,8 +142,8 @@ theorem IsNondegenerate.orthogonalComplement_orthogonalComplement
   symm
   apply AddSubgroup.eq_of_le_of_card_ge
     (A.le_orthogonalComplement_orthogonalComplement H)
-  have hH := IsNondegenerate.card_mul_card_orthogonalComplement A hA H
-  have hHperp := IsNondegenerate.card_mul_card_orthogonalComplement A hA
+  have hH := hA.card_mul_card_orthogonalComplement H
+  have hHperp := hA.card_mul_card_orthogonalComplement
     (A.orthogonalComplement H)
   rw [mul_comm] at hHperp
   have hcard : Nat.card H =
@@ -148,6 +152,7 @@ theorem IsNondegenerate.orthogonalComplement_orthogonalComplement
     exact hH.trans hHperp.symm
   exact hcard.symm.le
 
+variable {A} in
 /-- **The orthogonal complement of the `n`-torsion is `nA`** in a nondegenerate finite bilinear
 module. Multiplication by `n` is self-adjoint, so `nA` pairs trivially with the `n`-torsion `A[n]`,
 and the orders agree because `|A[n]| |nA| = |A| = |A[n]| |A[n]⊥|`. -/
@@ -160,7 +165,7 @@ theorem IsNondegenerate.orthogonalComplement_ker_zsmul (hA : A.IsNondegenerate) 
     refine (A.mem_orthogonalComplement_iff _ _).2 fun h hh ↦ ?_
     rw [zsmulAddGroupHom_apply, A.pairing_comm, map_zsmul, ← A.pairing_comm, ← map_zsmul,
       ← zsmulAddGroupHom_apply, AddMonoidHom.mem_ker.mp hh, map_zero]
-  · have h := IsNondegenerate.card_mul_card_orthogonalComplement A hA
+  · have h := hA.card_mul_card_orthogonalComplement
       (zsmulAddGroupHom (α := A) n).ker
     rw [← AddSubgroup.card_ker_mul_card_range (zsmulAddGroupHom (α := A) n)] at h
     exact (Nat.mul_left_cancel Nat.card_pos h).le
@@ -205,8 +210,7 @@ theorem orthogonalComplement_orthogonalComplement (H : AddSubgroup A) :
       obtain ⟨z, hz, rfl⟩ := hy
       exact radicalQuotient_pairing_mk A x z ▸
         (A.mem_orthogonalComplement_iff (A.orthogonalComplement H) x |>.mp hx z hz)
-    rw [IsNondegenerate.orthogonalComplement_orthogonalComplement
-      (radicalQuotient A) A.isNondegenerate_radicalQuotient] at hxq
+    rw [A.isNondegenerate_radicalQuotient.orthogonalComplement_orthogonalComplement] at hxq
     rw [← A.radicalQuotientMk_ker, ← AddSubgroup.comap_map_eq]
     exact hxq
   · refine sup_le (A.le_orthogonalComplement_orthogonalComplement H) ?_
@@ -215,6 +219,7 @@ theorem orthogonalComplement_orthogonalComplement (H : AddSubgroup A) :
     intro y _
     exact A.mem_radical_iff x |>.mp hx y
 
+variable {A} in
 /-- A Lagrangian subgroup of a nondegenerate finite bilinear module has squared order equal to the
 order of the ambient group. -/
 theorem IsLagrangian.card_sq (hH : A.IsLagrangian H) (hA : A.IsNondegenerate) :
@@ -225,7 +230,7 @@ theorem IsLagrangian.card_sq (hH : A.IsLagrangian H) (hA : A.IsNondegenerate) :
   calc
     Nat.card H ^ 2 = Nat.card H * Nat.card H := pow_two _
     _ = Nat.card H * Nat.card (A.orthogonalComplement H) := congrArg _ hcard
-    _ = Nat.card A := IsNondegenerate.card_mul_card_orthogonalComplement A hA H
+    _ = Nat.card A := hA.card_mul_card_orthogonalComplement H
 
 /-! ## The radical of a pairing restricted to an orthogonal complement -/
 

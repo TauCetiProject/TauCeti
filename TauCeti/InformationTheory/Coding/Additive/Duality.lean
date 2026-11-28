@@ -72,11 +72,9 @@ theorem IsNondegenerate.orthogonalComplement_shorten (hA : A.IsNondegenerate) :
       AdditiveCode.puncture ((A.coordinatePower ι).orthogonalComplement C) s := by
   have hι := hA.coordinatePower ι
   have hs := hA.coordinatePower s
-  rw [← IsNondegenerate.orthogonalComplement_orthogonalComplement
-    (A.coordinatePower s) hs
+  rw [← hs.orthogonalComplement_orthogonalComplement
     (AdditiveCode.puncture ((A.coordinatePower ι).orthogonalComplement C) s),
-    A.orthogonalComplement_puncture,
-    IsNondegenerate.orthogonalComplement_orthogonalComplement (A.coordinatePower ι) hι]
+    A.orthogonalComplement_puncture, hι.orthogonalComplement_orthogonalComplement]
 
 section DirectSum
 

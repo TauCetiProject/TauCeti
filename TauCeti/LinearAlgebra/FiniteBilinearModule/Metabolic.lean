@@ -41,7 +41,7 @@ theorem IsMetabolic.isSquare_natCard {A : FiniteQuadraticModule} (h : A.IsMetabo
   obtain ⟨H, hH⟩ := A.isMetabolic_def.mp h
   refine ⟨Nat.card H, ?_⟩
   simpa only [pow_two] using
-    (FiniteBilinearModule.IsLagrangian.card_sq _ hH.toFiniteBilinearModule hA).symm
+    (FiniteBilinearModule.IsLagrangian.card_sq hH.toFiniteBilinearModule hA).symm
 
 /-- An isometry preserves the existence of a quadratic Lagrangian.
 The isometry must be supplied explicitly: it occurs in neither side of the equivalence. -/
@@ -51,10 +51,10 @@ theorem Isometry.isMetabolic_iff {A B : FiniteQuadraticModule} (f : Isometry A B
   constructor
   · rintro ⟨H, hH⟩
     exact ⟨H.map f.toAddEquiv,
-      (FiniteQuadraticModule.Isometry.isLagrangian_map_iff A f H).2 hH⟩
+      (FiniteQuadraticModule.Isometry.isLagrangian_map_iff f H).2 hH⟩
   · rintro ⟨H, hH⟩
     exact ⟨H.map f.symm.toAddEquiv,
-      (FiniteQuadraticModule.Isometry.isLagrangian_map_iff B (f.symm : Isometry B A) H).2 hH⟩
+      (FiniteQuadraticModule.Isometry.isLagrangian_map_iff (f.symm : Isometry B A) H).2 hH⟩
 
 end FiniteQuadraticModule
 

@@ -96,7 +96,7 @@ theorem isLagrangian_discriminantGraph :
           have h : -(M.discriminantQuadraticModule hM).quadratic (e x) =
               (L.discriminantQuadraticModule hL).quadratic x := e.map_app x
           exact neg_eq_iff_eq_neg.mp h)
-  apply (FiniteQuadraticModule.Isometry.isLagrangian_map_iff _ f
+  apply (FiniteQuadraticModule.Isometry.isLagrangian_map_iff f
     (L.discriminantGraph M hL hM e)).mp
   convert hgraph using 1
   ext x
@@ -376,7 +376,7 @@ theorem exists_eq_glueAlongDiscriminant (N : IntegralLattice (V × W))
   have hlag : (S.discriminantQuadraticModule hS).IsLagrangian (S.discriminantSubgroup P) :=
     (S.isLagrangian_discriminantSubgroup_toIntermediateCarrier_iff hS N hform hle).mpr ⟨hNe, hNu⟩
   have hlag' := ((L.discriminantQuadraticIsometryOrthogonalSum M hL hM).isLagrangian_map_iff
-    _ (S.discriminantSubgroup P)).mpr hlag
+    (S.discriminantSubgroup P)).mpr hlag
   rw [discriminantQuadraticIsometryOrthogonalSum_toAddEquiv] at hlag'
   have hmem := L.mk_mem_map_discriminantSubgroup_iff M P
   rw [hPc] at hmem
