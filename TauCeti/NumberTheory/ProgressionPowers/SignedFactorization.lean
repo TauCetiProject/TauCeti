@@ -1,0 +1,130 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Data.Int.SmoothPart
+public import TauCeti.NumberTheory.ProgressionPowers.Basic
+import Mathlib.Basic.Sign.Basic
+
+/-!
+# Signed factorization of a progression with perfect-power product
+
+For an odd exponent, nonzero terms whose valuations at primes at least the length are divisible
+by the exponent split uniquely as positive smooth coefficients times signed powers. A primitive
+solution with odd prime exponent supplies these hypotheses. The coefficients keep all powers of
+the primes strictly below the length. If the length is prime and divides a term, it divides
+that term's root. The coefficients enter the generalized Fermat equations obtained from triples
+of progression terms.
+
+See M. Bennett and S. Siksek, *A conjecture of Erdős, supersingular primes and short character
+sums*, §3, equation (6).
+-/
+
+public section
+
+namespace TauCeti.ProgressionPowers
+
+/-- The signed factorizations `n + i*d = Aᵢ zᵢ^ℓ` with positive `k`-smooth coefficients
+and nonzero roots supported on primes at least `k`. -/
+@[mk_iff]
+structure IsSignedFactorization (n d : ℤ) (k ℓ : ℕ) (A : Fin k → ℕ) (z : Fin k → ℤ) : Prop where
+  smooth : ∀ i, A i ∈ k.smoothNumbers
+  root_ne_zero : ∀ i, z i ≠ 0
+  term_eq : ∀ i : Fin k, n.progressionTerm d i = (A i : ℤ) * z i ^ ℓ
+  le_of_mem_primeFactors_root : ∀ i p, p ∈ (z i).natAbs.primeFactors → k ≤ p
+
+variable {n d y : ℤ} {k ℓ : ℕ} {A B : Fin k → ℕ} {z w : Fin k → ℤ}
+
+/-- Each coefficient in a signed factorization is positive. -/
+theorem IsSignedFactorization.coeff_pos (h : IsSignedFactorization n d k ℓ A z) (i : Fin k) :
+    0 < A i :=
+  Nat.pos_of_ne_zero (Nat.ne_zero_of_mem_smoothNumbers (h.smooth i))
+
+/-- Each coefficient divides the absolute value of its progression term. -/
+theorem IsSignedFactorization.coeff_dvd_natAbs (h : IsSignedFactorization n d k ℓ A z)
+    (i : Fin k) : A i ∣ (n.progressionTerm d i).natAbs := by
+  rw [h.term_eq, Int.natAbs_mul, Int.natAbs_natCast]
+  exact dvd_mul_right ..
+
+/-- A prime in the support of a coefficient is strictly below the cutoff. -/
+theorem IsSignedFactorization.lt_of_mem_primeFactors_coeff
+    (h : IsSignedFactorization n d k ℓ A z) {i : Fin k} {p : ℕ}
+    (hp : p ∈ (A i).primeFactors) : p < k :=
+  (Nat.mem_primesBelow.mp (Nat.primeFactors_subset_of_mem_smoothNumbers (h.smooth i) hp)).1
+
+/-- Every prime dividing a coefficient is strictly below the cutoff. -/
+theorem IsSignedFactorization.lt_of_prime_dvd_coeff (h : IsSignedFactorization n d k ℓ A z)
+    {i : Fin k} {p : ℕ} (hp : p.Prime) (hd : p ∣ A i) : p < k :=
+  h.lt_of_mem_primeFactors_coeff (Nat.mem_primeFactors.mpr ⟨hp, hd, (h.coeff_pos i).ne'⟩)
+
+/-- Every prime dividing the absolute value of a root is at least the cutoff. -/
+theorem IsSignedFactorization.le_of_prime_dvd_natAbs_root
+    (h : IsSignedFactorization n d k ℓ A z) {i : Fin k} {p : ℕ}
+    (hp : p.Prime) (hd : p ∣ (z i).natAbs) : k ≤ p :=
+  h.le_of_mem_primeFactors_root i p (Nat.mem_primeFactors.mpr ⟨hp, hd, Int.natAbs_ne_zero.mpr
+    (h.root_ne_zero i)⟩)
+
+/-- For a nonzero exponent, a prime at or above the cutoff divides the absolute term
+exactly when it divides the absolute root. -/
+theorem IsSignedFactorization.dvd_natAbs_progressionTerm_iff_dvd_natAbs_root
+    (h : IsSignedFactorization n d k ℓ A z) {i : Fin k} {p : ℕ}
+    (hp : p.Prime) (hk : k ≤ p) (hℓ : ℓ ≠ 0) :
+    p ∣ (n.progressionTerm d i).natAbs ↔ p ∣ (z i).natAbs := by
+  have hcoeff : ¬ p ∣ A i := fun hd ↦ (not_lt_of_ge hk) (h.lt_of_prime_dvd_coeff hp hd)
+  rw [h.term_eq i, Int.natAbs_mul, Int.natAbs_natCast, Int.natAbs_pow, hp.dvd_mul,
+    or_iff_right hcoeff, hp.prime.dvd_pow_iff_dvd hℓ]
+
+/-- The coefficient in any signed factorization is the full smooth part of the absolute term. -/
+theorem IsSignedFactorization.coeff_eq_smoothPart (h : IsSignedFactorization n d k ℓ A z)
+    (i : Fin k) : A i = (n.progressionTerm d i).natAbs.smoothPart k := by
+  have heq := congrArg Int.natAbs (h.term_eq i)
+  rw [Int.natAbs_mul, Int.natAbs_pow, Int.natAbs_natCast] at heq
+  rw [heq, Nat.smoothPart_mul (Nat.ne_zero_of_mem_smoothNumbers (h.smooth i))
+    (pow_ne_zero _ (Int.natAbs_ne_zero.mpr (h.root_ne_zero i))),
+    Nat.smoothPart_eq_self_iff.mpr (h.smooth i)]
+  suffices ((z i).natAbs ^ ℓ).smoothPart k = 1 by simp [this]
+  apply Nat.smoothPart_eq_one_iff.mpr
+  rcases eq_or_ne ℓ 0 with rfl | hℓ
+  · simp
+  · simpa only [Nat.primeFactors_pow _ hℓ] using h.le_of_mem_primeFactors_root i
+
+/-- For odd exponent, the signed root and the progression term have the same sign. -/
+theorem IsSignedFactorization.sign_root (h : IsSignedFactorization n d k ℓ A z)
+    (hℓ : Odd ℓ) (i : Fin k) : (z i).sign = (n.progressionTerm d i).sign := by
+  have ha : 0 < (A i : ℤ) := by
+    exact_mod_cast h.coeff_pos i
+  simp [Int.sign_eq_sign, h.term_eq i, sign_mul, sign_pos ha, sign_pow, SignType.pow_odd _ hℓ]
+
+/-- At odd exponent the coefficient and root families are both unique. -/
+theorem IsSignedFactorization.unique (h : IsSignedFactorization n d k ℓ A z)
+    (h' : IsSignedFactorization n d k ℓ B w) (hℓ : Odd ℓ) : A = B ∧ z = w := by
+  have hAB := funext fun i ↦ (h.coeff_eq_smoothPart i).trans (h'.coeff_eq_smoothPart i).symm
+  subst B
+  refine ⟨rfl, funext fun i ↦ hℓ.pow_injective ?_⟩
+  have ha : (A i : ℤ) ≠ 0 := by exact_mod_cast (h.coeff_pos i).ne'
+  exact mul_left_cancel₀ ha ((h.term_eq i).symm.trans (h'.term_eq i))
+
+/-- Nonzero terms with `ℓ`-divisible large-prime valuations admit a unique signed factorization
+for every odd `ℓ`. No product equation is needed once the valuations are known. -/
+theorem existsUnique_isSignedFactorization (hℓ : Odd ℓ)
+    (hne : ∀ i : Fin k, n.progressionTerm d i ≠ 0)
+    (hval : ∀ (i : Fin k) (p : ℕ), p.Prime → k ≤ p → ℓ ∣ padicValInt p (n.progressionTerm d i)) :
+    ∃! f : (Fin k → ℕ) × (Fin k → ℤ), IsSignedFactorization n d k ℓ f.1 f.2 := by
+  choose z hz hlarge using fun i ↦ Int.exists_eq_smoothPart_mul_pow hℓ (hval i)
+  let A (i : Fin k) := (n.progressionTerm d i).natAbs.smoothPart k
+  have h : IsSignedFactorization n d k ℓ A z :=
+    ⟨fun i ↦ Nat.smoothPart_mem_smoothNumbers .., fun i hzi ↦ hne i (by
+      simpa [hzi, zero_pow hℓ.pos.ne'] using hz i), hz, hlarge⟩
+  exact ⟨(A, z), h, fun _ h' ↦ Prod.ext_iff.mpr (h'.unique h hℓ)⟩
+
+/-- A primitive progression solution of odd prime exponent has a unique signed factorization. -/
+theorem PrimitiveSolution.existsUnique_isSignedFactorization (h : PrimitiveSolution n d k y ℓ)
+    (hℓ : Odd ℓ) :
+    ∃! f : (Fin k → ℕ) × (Fin k → ℤ), IsSignedFactorization n d k ℓ f.1 f.2 :=
+  ProgressionPowers.existsUnique_isSignedFactorization hℓ (fun i ↦ h.progressionTerm_ne_zero i.isLt)
+    fun i _ hp hk ↦ dvd_padicValInt_progressionTerm h.gcd_eq_one h.prod_eq_pow hp hk i.isLt
+
+end TauCeti.ProgressionPowers

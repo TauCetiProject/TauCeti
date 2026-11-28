@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Ring.Int
 public import Mathlib.Algebra.Ring.Int.Parity
+public import Mathlib.Data.Nat.Dist
 public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Algebra.Order.Archimedean.Basic
 import Mathlib.Data.Int.Order.Units
@@ -28,15 +29,32 @@ integers of arbitrarily large absolute value avoid them.
 
 ## Main results
 
+* `Int.progressionTerm`: the term at a nonnegative index.
 * `Int.exists_nat_add_mul_pos_odd`: a positive odd term at a nonnegative index.
 * `Int.not_dvd_one_add_max_abs_mul`: `d ∤ 1 + max |d| 2 * k` for a non-unit `d`.
 * `IsCoprime.exists_isCoprime_add_mul`: a progression `a + ℤ * b` with `a` and `b` coprime
   contains a term coprime to any nonzero `m : ℤ`.
+* `Int.gcd_progressionTerm_dvd_dist`: in a primitive progression, the gcd of two terms
+  divides the distance between their indices.
+* `Int.eq_of_dvd_progressionTerm_of_length_le`: a modulus at least the progression length
+  divides at most one term of a primitive progression.
 -/
 
 public section
 
 namespace Int
+
+/-- The term with zero-based index `i` of the progression starting at `n` with difference `d`. -/
+def progressionTerm (n d : ℤ) (i : ℕ) : ℤ := n + i * d
+
+theorem progressionTerm_def (n d : ℤ) (i : ℕ) : n.progressionTerm d i = n + i * d := (rfl)
+
+@[simp] theorem progressionTerm_zero (n d : ℤ) : n.progressionTerm d 0 = n := by
+  simp [progressionTerm]
+
+@[simp] theorem progressionTerm_succ (n d : ℤ) (i : ℕ) :
+    n.progressionTerm d (i + 1) = n.progressionTerm d i + d := by
+  simp [progressionTerm, add_mul, add_assoc]
 
 /-- A progression with positive step contains a positive odd term at a nonnegative index if its
 initial term or its step is odd. -/
@@ -76,6 +94,34 @@ theorem not_dvd_one_add_max_abs_mul {d : ℤ} (hd : ¬ IsUnit d) (k : ℤ) :
     rw [max_eq_left hd2, add_comm] at hdvd
     exact hd <| isUnit_of_dvd_one <|
       (dvd_add_right (((dvd_abs d d).mpr dvd_rfl).mul_right k)).mp hdvd
+
+/-- The gcd of two terms of a primitive progression divides the distance between their indices.
+See Bennett and Siksek, *A conjecture of Erdős, supersingular primes and short character sums*,
+Lemma 3.1(i). -/
+theorem gcd_progressionTerm_dvd_dist {n d : ℤ} (h : n.gcd d = 1) (i j : ℕ) :
+    (n.progressionTerm d i).gcd (n.progressionTerm d j) ∣ Nat.dist i j := by
+  simp only [progressionTerm_def]
+  let g := (n + i * d).gcd (n + j * d)
+  have hcop : IsCoprime (g : ℤ) d :=
+    ((Int.isCoprime_iff_gcd_eq_one.mpr h).add_mul_right_left (i : ℤ)).of_isCoprime_of_dvd_left
+      (Int.gcd_dvd_left ..)
+  have hsub : (g : ℤ) ∣ ((j : ℤ) - i) * d := by
+    simpa only [g, sub_mul, add_sub_add_left_eq_sub] using
+      dvd_sub (Int.gcd_dvd_right (n + i * d) (n + j * d)) (Int.gcd_dvd_left ..)
+  have hdist : ((j : ℤ) - i).natAbs = Nat.dist i j := by
+    unfold Nat.dist
+    omega
+  exact hdist ▸ Int.ofNat_dvd_left.mp (hcop.dvd_of_dvd_mul_right hsub)
+
+/-- A modulus at least the length divides at most one term of a primitive progression. -/
+theorem eq_of_dvd_progressionTerm_of_length_le {n d : ℤ} {k q i j : ℕ}
+    (h : n.gcd d = 1) (hq : k ≤ q) (hi : i < k) (hj : j < k) (hqi : (q : ℤ) ∣ n.progressionTerm d i)
+    (hqj : (q : ℤ) ∣ n.progressionTerm d j) : i = j := by
+  by_contra hne
+  have := Nat.le_of_dvd (Nat.dist_pos_of_ne hne)
+    ((Int.dvd_gcd hqi hqj).trans (gcd_progressionTerm_dvd_dist h i j))
+  unfold Nat.dist at this
+  omega
 
 end Int
 
