@@ -14,7 +14,6 @@ import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.Algebra.AlgebraicGroup.BaseChange.Naturality
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Yoneda
 import TauCeti.Algebra.AlgebraicGroup.Torus.Splitting
-import TauCeti.RingTheory.NormTrace.Prod
 
 /-!
 # The splitting of the Deligne torus over `ℂ`
@@ -35,7 +34,7 @@ points `S(R) = (ℂ ⊗[ℝ] R)ˣ` are identified with `Rˣ × Rˣ`
 * the diagonal `d(r)` and the weight `w(r)` are `(r, r)` and `(r⁻¹, r⁻¹)`
   (`TauCeti.DeligneTorus.complexSplitting_diagonal`,
   `TauCeti.DeligneTorus.complexSplitting_weight`), and the product of the two components is the
-  norm `Nm` (`TauCeti.DeligneTorus.fst_mul_snd_complexSplitting`).
+  norm `Nm` (`TauCeti.DeligneTorus.coe_norm_eq_mul`).
 
 The cocharacter `μ : 𝔾_{m,ℂ} → S_ℂ` is `z ↦ (z, 1)` (`TauCeti.DeligneTorus.mu`). It is not
 defined over `ℝ`: `μ(-1) = (-1, 1)` is not of the form `(z, conj z)`
@@ -82,9 +81,8 @@ satisfies `g ^ 2 = 1` (`TauCeti.DeligneTorus.isEmpty_realPoints_mulEquiv_pi`).
   inside `S(ℂ)`.
 * `TauCeti.DeligneTorus.complexSplitting_conj`: complex conjugation on `S(ℂ)` is
   `(z₁, z₂) ↦ (conj z₂, conj z₁)`.
-* `TauCeti.DeligneTorus.complexSplitting_diagonal`, `TauCeti.DeligneTorus.complexSplitting_weight`,
-  `TauCeti.DeligneTorus.fst_mul_snd_complexSplitting`: compatibility with `diagonal`, `weight`, and
-  `norm`.
+* `TauCeti.DeligneTorus.complexSplitting_diagonal`, `TauCeti.DeligneTorus.complexSplitting_weight`:
+  `d(r) = (r, r)` and `w(r) = (r⁻¹, r⁻¹)`.
 * `TauCeti.DeligneTorus.mu_neg_one_notMem_range_mapValue`: `μ` is not defined over `ℝ`.
 * `TauCeti.DeligneTorus.characterGroup_injective`: distinct pairs `(p, q)` give distinct
   characters of `S(ℂ)`.
@@ -169,17 +167,6 @@ theorem complexSplitting_diagonal (r : Rˣ) : complexSplitting R (diagonal R r) 
 @[simp]
 theorem complexSplitting_weight (r : Rˣ) : complexSplitting R (weight R r) = (r⁻¹, r⁻¹) := by
   rw [weight_eq_inv_diagonal, map_inv (complexSplitting R), complexSplitting_diagonal, Prod.inv_mk]
-
-/-- **The product of the two splitting components is the norm** over any commutative complex algebra
-`R`. -/
-theorem fst_mul_snd_complexSplitting (f : WithConv (S →ₐ[ℝ] R)) :
-    (complexSplitting R f).1 * (complexSplitting R f).2 = norm R f := by
-  have hcomm : Algebra.TensorProduct.comm ℝ R ℂ
-      (Algebra.TensorProduct.comm ℝ ℂ R (pointsMulEquiv R f)) = pointsMulEquiv R f :=
-    (Algebra.TensorProduct.comm ℝ ℂ R).symm_apply_apply _
-  ext
-  rw [Units.val_mul, coe_complexSplitting_fst, coe_complexSplitting_snd, norm_apply,
-    NormTorus.coe_norm, norm_tensorProduct_complex, tensorProductComplexEquivProd_apply, hcomm]
 
 end Splitting
 
@@ -342,17 +329,11 @@ theorem characterGroup_mapValue {R' : Type*} [CommRing R'] [Algebra ℝ R'] [Alg
 `S(R) ≃ Rˣ × Rˣ` has norm `z₁ * z₂`. -/
 theorem coe_norm_eq_mul (f : WithConv (S →ₐ[ℝ] R)) :
     (norm R f : R) = (complexSplitting R f).1 * (complexSplitting R f).2 := by
-  -- `R ⊗[ℝ] ℂ ≃ₐ[R] R × R`, `x ⊗ a ↦ (a • x, conj a • x)`; the type is not written out, since
-  -- with `Algebra ℂ R` in scope the notation `R ⊗[ℝ] ℂ` would pick the real structure of `ℂ`
-  let e := AlgEquiv.ofRingEquiv (R := R)
-    (f := ((Algebra.TensorProduct.comm ℝ ℂ R).symm.trans
-      (complexTensorProductEquivProd R)).toRingEquiv)
-    fun r ↦ by simp [Algebra.TensorProduct.algebraMap_apply]
-  have he : ∀ x, e (Algebra.TensorProduct.comm ℝ ℂ R x) = complexTensorProductEquivProd R x :=
-    fun x ↦ congrArg (complexTensorProductEquivProd R)
-      ((Algebra.TensorProduct.comm ℝ ℂ R).symm_apply_apply x)
-  rw [norm_apply, NormTorus.coe_norm, ← Algebra.norm_eq_of_algEquiv e, Algebra.norm_prod]
-  simp [he, coe_complexSplitting_fst, coe_complexSplitting_snd]
+  have hcomm : Algebra.TensorProduct.comm ℝ R ℂ
+      (Algebra.TensorProduct.comm ℝ ℂ R (pointsMulEquiv R f)) = pointsMulEquiv R f :=
+    (Algebra.TensorProduct.comm ℝ ℂ R).symm_apply_apply _
+  rw [norm_apply, NormTorus.coe_norm, norm_tensorProduct_complex,
+    tensorProductComplexEquivProd_apply, hcomm, coe_complexSplitting_fst, coe_complexSplitting_snd]
 
 /-- **The norm is the character `(1, 1)`** of `S(R) ≃ Rˣ × Rˣ`, `(z₁, z₂) ↦ z₁ * z₂`. -/
 theorem norm_eq_characterGroup (f : WithConv (S →ₐ[ℝ] R)) :
@@ -409,22 +390,6 @@ noncomputable abbrev baseChangeComplexPointsMulEquiv (R : Type*) [CommRing R] [A
     WithConv (baseChangeComplex →ₐ[ℂ] R) ≃* WithConv (S →ₐ[ℝ] R) :=
   (AlgHom.baseChangePointsMulEquiv (k := ℝ) (K := ℂ)
     (A := FiniteTypeCommHopfAlgCat.of ℝ S) (R := R)).symm
-
-/-- The underlying `ℝ`-algebra map of `baseChangeComplexPointsMulEquiv R g` restricts `g` along
-`a ↦ 1 ⊗ a`. -/
-@[simp]
-theorem ofConv_baseChangeComplexPointsMulEquiv {R : Type*} [CommRing R] [Algebra ℝ R]
-    [Algebra ℂ R] [IsScalarTower ℝ ℂ R] (g : WithConv (baseChangeComplex →ₐ[ℂ] R)) :
-    (baseChangeComplexPointsMulEquiv R g).ofConv = (AlgHom.liftEquiv ℝ ℂ S R).symm g.ofConv :=
-  AlgHom.baseChangePointsMulEquiv_symm_ofConv g
-
-/-- The underlying `ℂ`-algebra map of `(baseChangeComplexPointsMulEquiv R).symm f` is the
-`ℂ`-linear lift of `f` to `ℂ ⊗[ℝ] S`. -/
-@[simp]
-theorem ofConv_baseChangeComplexPointsMulEquiv_symm {R : Type*} [CommRing R] [Algebra ℝ R]
-    [Algebra ℂ R] [IsScalarTower ℝ ℂ R] (f : WithConv (S →ₐ[ℝ] R)) :
-    ((baseChangeComplexPointsMulEquiv R).symm f).ofConv = AlgHom.liftEquiv ℝ ℂ S R f.ofConv :=
-  AlgHom.baseChangePointsMulEquiv_apply_ofConv f
 
 /-- On a commutative `ℂ`-algebra `R`, `R`-points of `baseChangeComplex` (over `ℂ`) correspond
 naturally to `R`-points of `ℂ[T;T⁻¹] ⊗[ℂ] ℂ[T;T⁻¹]` (over `ℂ`) through `complexSplitting R`. -/

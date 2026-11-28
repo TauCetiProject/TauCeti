@@ -34,8 +34,8 @@ structure (`[Algebra ℝ R] [Algebra ℂ R] [IsScalarTower ℝ ℂ R]`).
   (`TauCeti.DeligneTorus.not_exists_realPoints_lift_mu`,
   `TauCeti.DeligneTorus.not_exists_bialgHom_inducing_mu_on_realPoints`).
 * Pairing `characterGroup R` with `muConj R` extracts the second exponent
-  (`TauCeti.DeligneTorus.characterGroup_muConj`), and over every such algebra `R` the character
-  `(1, 1)` equals `norm R` (`TauCeti.DeligneTorus.characterGroup_one_one`).
+  (`TauCeti.DeligneTorus.characterGroup_muConj`), and on real points the character `(1, 1)` equals
+  `norm ℝ` embedded into `ℂˣ` (`TauCeti.DeligneTorus.characterGroup_norm_real`).
 * The additive group of group-like elements of `baseChangeComplex` is isomorphic to `ℤ × ℤ`
   (`TauCeti.DeligneTorus.characterLatticeEquiv`), with the group-like element
   corresponding to `(p, q)` evaluating on a base-changed `R`-point `g` to the value of
@@ -65,7 +65,8 @@ structure (`[Algebra ℝ R] [Algebra ℂ R] [IsScalarTower ℝ ℂ R]`).
 * `TauCeti.DeligneTorus.not_exists_realPoints_lift_mu`,
   `TauCeti.DeligneTorus.not_exists_bialgHom_inducing_mu_on_realPoints`: `μ` does not lift to `ℝ`
   on real points.
-* `TauCeti.DeligneTorus.characterGroup_muConj`, `TauCeti.DeligneTorus.characterGroup_one_one`,
+* `TauCeti.DeligneTorus.norm_mu`, `TauCeti.DeligneTorus.norm_muConj`,
+  `TauCeti.DeligneTorus.characterGroup_muConj`, `TauCeti.DeligneTorus.characterGroup_norm_real`,
   `TauCeti.DeligneTorus.ofConv_characterLatticeEquiv_symm`,
   `TauCeti.DeligneTorus.characterLatticeEquiv_conjAe_smul`.
 
@@ -125,13 +126,13 @@ theorem mapValue_conj_mu_conj (z : ℂˣ) :
 
 /-- `Nm ∘ μ = id` on `Rˣ`. -/
 @[simp]
-theorem norm_mu (z : Rˣ) : norm R (mu R z) = z := by
-  rw [← fst_mul_snd_complexSplitting, complexSplitting_mu, mul_one]
+theorem norm_mu (z : Rˣ) : norm R (mu R z) = z :=
+  Units.ext <| by rw [coe_norm_eq_mul, complexSplitting_mu, Units.val_one, mul_one]
 
 /-- `Nm ∘ muConj = id` on `Rˣ`. -/
 @[simp]
-theorem norm_muConj (z : Rˣ) : norm R (muConj R z) = z := by
-  rw [← fst_mul_snd_complexSplitting, complexSplitting_muConj, one_mul]
+theorem norm_muConj (z : Rˣ) : norm R (muConj R z) = z :=
+  Units.ext <| by rw [coe_norm_eq_mul, complexSplitting_muConj, Units.val_one, one_mul]
 
 /-- Over a complex algebra `R`, the diagonal factors as `d(r) = μ(r) * muConj(r)`. -/
 theorem diagonal_eq_mu_mul_muConj (r : Rˣ) :
@@ -236,18 +237,12 @@ theorem characterGroup_muConj (p q : ℤ) (z : Rˣ) :
     characterGroup R (.ofAdd (p, q)) (muConj R z) = z ^ q := by
   rw [characterGroup_apply, complexSplitting_muConj, one_zpow, one_mul]
 
-/-- **The character `(1, 1)` is the norm** over every commutative complex algebra `R`. -/
-@[simp]
-theorem characterGroup_one_one : characterGroup R (.ofAdd (1, 1)) = norm R := by
-  ext f
-  rw [characterGroup_apply, zpow_one, zpow_one, fst_mul_snd_complexSplitting]
-
 /-- **On real points, the character `(1, 1)` equals the norm `Nm : S(ℝ) →* ℝˣ` embedded into
 `ℂˣ`.** -/
 theorem characterGroup_norm_real (f : WithConv (S →ₐ[ℝ] ℝ)) :
     characterGroup ℂ (.ofAdd (1, 1)) (AlgHom.mapValue (Algebra.ofId ℝ ℂ) f) =
       Units.map (algebraMap ℝ ℂ : ℝ →* ℂ) (norm ℝ f) := by
-  rw [characterGroup_one_one, norm_mapValue]
+  rw [← norm_eq_characterGroup, norm_mapValue]
   exact Units.ext (by simp)
 
 /-! ### Identification of the algebraic character lattice over `ℂ` with `ℤ × ℤ` -/
@@ -298,12 +293,6 @@ private lemma ofConv_conjAe_smul (g : WithConv (baseChangeComplex →ₐ[ℂ] �
           (baseChangeComplexPointsMulEquiv ℂ g))).ofConv z) := by
   simp [g.ofConv.apply_scalarAut_smul Complex.conjAe z]
 
-private lemma characterGroup_swap_conj (pq : ℤ × ℤ) (f : WithConv (S →ₐ[ℝ] ℂ)) :
-    characterGroup ℂ (.ofAdd pq.swap) f =
-      star (characterGroup ℂ (.ofAdd pq) (AlgHom.mapValue Complex.conjAe.toAlgHom f)) := by
-  rw [characterGroup_apply, characterGroup_apply, complexSplitting_conj]
-  simp [mul_comm]
-
 /-- **Galois equivariance of the algebraic character lattice**: the action of complex conjugation
 `Complex.conjAe` on `Additive (GroupLike ℂ baseChangeComplex)` corresponds under
 `characterLatticeEquiv` to swapping the two coordinates `(p, q) ↦ (q, p)`. -/
@@ -317,13 +306,15 @@ theorem characterLatticeEquiv_conjAe_smul
   let g : WithConv (baseChangeComplex →ₐ[ℂ] ℂ) := (baseChangeComplexPointsMulEquiv ℂ).symm f
   have hf : baseChangeComplexPointsMulEquiv ℂ g = f :=
     (baseChangeComplexPointsMulEquiv ℂ).apply_symm_apply f
+  obtain ⟨⟨p, q⟩, hpq⟩ : ∃ pq, characterLatticeEquiv x = pq := ⟨_, rfl⟩
   rw [← hf, ← ofConv_characterLatticeEquiv_symm, AddEquiv.symm_apply_apply,
-    Additive.toMul_smul, TauCeti.ScalarAut.val_smul, ofConv_conjAe_smul, hf,
-    characterGroup_swap_conj, Units.coe_star]
+    Additive.toMul_smul, TauCeti.ScalarAut.val_smul, ofConv_conjAe_smul, hf, hpq]
+  dsimp only [Prod.swap]
+  rw [← star_star (characterGroup ℂ (.ofAdd (q, p)) f), ← characterGroup_conj, Units.coe_star]
   congr 1
   have h1 := ofConv_characterLatticeEquiv_symm (R := ℂ) (characterLatticeEquiv x)
     ((baseChangeComplexPointsMulEquiv ℂ).symm (AlgHom.mapValue Complex.conjAe.toAlgHom f))
-  rwa [AddEquiv.symm_apply_apply, MulEquiv.apply_symm_apply] at h1
+  rwa [AddEquiv.symm_apply_apply, MulEquiv.apply_symm_apply, hpq] at h1
 
 end Characters
 
