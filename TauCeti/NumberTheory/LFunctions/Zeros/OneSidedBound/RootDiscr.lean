@@ -12,7 +12,11 @@ import TauCeti.NumberTheory.NumberField.Cyclotomic.RootDiscr
 import TauCeti.NumberTheory.NumberField.Discriminant.Basic
 
 /-!
-# Upper root-discriminant bound at the prime-sum scale
+# Root-discriminant bounds at the prime-sum scale
+
+A number field containing a primitive root of order `q₁(s)` contains the dyadic
+cyclotomic field of order `2 ^ (s + 1)`, whose root discriminant `2 ^ s` gives the
+lower bound `x^11` at the ranks used in the prime sums.
 
 For a quadratic base of absolute discriminant `d`, the root discriminant of the cyclotomic
 host of level `q₁ s` is at most `x^12` at the separated scales. The factor from the base
@@ -20,8 +24,9 @@ field is bounded by `d`, and the margin between `x^11` and `x^12` absorbs it tog
 with the initial modulus and the logarithmic factor in the tower level.
 
 The target scale is that of `New.Data.rootDiscr_mem_Icc` in
-`grh/src/New/Derivatives/Field/ChosenPlaces.lean` of lsernau/grh-lean (`72fead1`). Here the
-upper bound uses the compositum formula instead of estimates at individual infinite places.
+`grh/src/New/Derivatives/Field/ChosenPlaces.lean` of lsernau/grh-lean (`72fead1`). Neither bound
+needs estimates at individual infinite places: the lower bound uses the dyadic subfield and
+the upper bound uses the compositum formula.
 -/
 
 public section
@@ -29,6 +34,23 @@ public section
 open NumberField Real
 
 namespace TauCeti.OneSidedBound.Parameters
+
+/-- At prime-sum scale `x`, the dyadic subfield alone forces the root discriminant
+of the host to be at least `x ^ 11`. -/
+theorem pow_le_rootDiscr (P : Parameters) {E : Type*} [Field E] [NumberField E]
+    {s x m : ℕ} {ζ : E} (hζ : IsPrimitiveRoot ζ (P.q₁ s))
+    (hm : x ≤ m ^ 2) (hs : m ^ 22 ≤ 2 ^ s) :
+    (x : ℝ) ^ 11 ≤ rootDiscr E := by
+  obtain ⟨a, ha⟩ := P.two_pow_succ_dvd_q₁ s
+  have hζ' : IsPrimitiveRoot (ζ ^ a) (2 ^ (s + 1)) :=
+    hζ.pow (P.q₁_pos s) (ha.trans (Nat.mul_comm _ _))
+  have hdisc : (2 : ℝ) ^ s ≤ rootDiscr E := by
+    have hexp : (s : ℝ) + 1 - ((2 : ℝ) - 1)⁻¹ = s := by norm_num
+    simpa only [Nat.cast_ofNat, hexp, Real.rpow_natCast] using hζ'.rpow_le_rootDiscr Nat.prime_two
+  have hx : x ^ 11 ≤ 2 ^ s := calc
+    x ^ 11 ≤ (m ^ 2) ^ 11 := Nat.pow_le_pow_left hm _
+    _ ≤ 2 ^ s := by rwa [← pow_mul]
+  exact (by exact_mod_cast hx : (x : ℝ) ^ 11 ≤ 2 ^ s).trans hdisc
 
 /-- The cyclotomic level times the base discriminant fits into the upper scale `x^12`. -/
 theorem d_mul_q₁_le_pow_twelve (P : Parameters) {s : ℕ} {x : ℝ}
