@@ -12,6 +12,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+
 /-!
 # A manifold carrying a chosen Riemannian metric
 
@@ -44,6 +46,10 @@ copies of `M` are related by the identity diffeomorphism
 * `TauCeti.WithMetric.mfderiv_ofWithMetric`: the differential of `ofWithMetric` is the identity.
 * `TauCeti.WithMetric.mfderiv_comp_ofWithMetric`: the chain rule for a function read on the copy,
   without a differentiability hypothesis.
+* `TauCeti.WithMetric.mfderiv_toWithMetric_comp` and
+  `TauCeti.WithMetric.mfderiv_ofWithMetric_mfderiv_toWithMetric_comp`: the chain rule and
+  cancellation law for a map postcomposed with `toWithMetric g`, without a differentiability
+  hypothesis.
 * `TauCeti.WithMetric.inner_def`: the inner product of the copy is `g` evaluated on the
   transported tangent vectors.
 * `TauCeti.WithMetric.mfderiv_ofWithMetric_chartLocalFrame`: the chart frames of the copy are
@@ -383,6 +389,33 @@ theorem mfderiv_comp_ofWithMetric (u : M → M') (x : WithMetric g) :
   · exact mfderiv_comp x h (hasMFDerivAt_ofWithMetric x).mdifferentiableAt
   · rw [mfderiv_zero_of_not_mdifferentiableAt h, ContinuousLinearMap.zero_comp,
       mfderiv_zero_of_not_mdifferentiableAt (mdifferentiableAt_comp_ofWithMetric_iff.not.2 h)]
+
+/-- A map into `M` is differentiable at a point exactly when it is differentiable after
+postcomposing with `toWithMetric g`. -/
+theorem mdifferentiableAt_toWithMetric_comp_iff {φ : M' → M} {x : M'} :
+    MDifferentiableAt I' I (toWithMetric g ∘ φ) x ↔ MDifferentiableAt I' I φ x :=
+  coe_diffeomorph_symm (g := g) 1 ▸
+    (diffeomorph g 1).symm.mdifferentiableAt_comp_iff (K := I') one_ne_zero (f := φ) (x := x)
+
+/-- The chain rule along `toWithMetric g`. Since `toWithMetric g` is a diffeomorphism, it holds
+without a differentiability hypothesis on `φ`. -/
+theorem mfderiv_toWithMetric_comp (φ : M' → M) (x : M') :
+    mfderiv I' I (toWithMetric g ∘ φ) x =
+      (mfderiv I I (toWithMetric g) (φ x)).comp (mfderiv I' I φ x) :=
+  coe_diffeomorph_symm (g := g) 1 ▸
+    (diffeomorph g 1).symm.mfderiv_diffeomorph_comp (K := I') one_ne_zero φ x
+
+/-- Postcomposing `φ` with `toWithMetric g` and applying the differential of `ofWithMetric`
+recovers the differential of `φ`, without any differentiability hypothesis on `φ`. Not tagged
+`@[simp]` because `simp` simplifies `(toWithMetric g ∘ φ) x` and the implicit codomain type via
+`Function.comp_apply` and `ofWithMetric_toWithMetric`. -/
+theorem mfderiv_ofWithMetric_mfderiv_toWithMetric_comp (φ : M' → M) (x : M')
+    (v : TangentSpace I' x) :
+    mfderiv I I ofWithMetric (toWithMetric g (φ x))
+        (mfderiv I' I (toWithMetric g ∘ φ) x v) =
+      mfderiv I' I φ x v := by
+  rw [mfderiv_toWithMetric_comp, ContinuousLinearMap.comp_apply,
+    mfderiv_ofWithMetric_mfderiv_toWithMetric]
 
 /-- The differential of a vector-valued function pulls back along `ofWithMetric`, without
 any differentiability hypothesis on the function. -/
