@@ -589,23 +589,6 @@ instance : curveULift.{u}.IsElliptic := by
   rw [curveULift_eq]
   infer_instance
 
-/-- A ring homomorphism out of `ULift.{u} ℤ[A, B][Δ⁻¹]` is the classifying homomorphism of the Tate
-normal form with the images of `A` and `B` as coefficients. -/
-theorem eq_liftULift (φ : ULift.{u} Ring →+* R) :
-    ∃ h : IsUnit (tateNormalForm (φ curveULift.a₁) (φ curveULift.a₃)).Δ, φ = liftULift h := by
-  have hφ : curveULift.map φ = tateNormalForm (φ curveULift.a₁) (φ curveULift.a₃) := by simp
-  have h : IsUnit (tateNormalForm (φ curveULift.a₁) (φ curveULift.a₃)).Δ := by
-    rw [← hφ, map_Δ]
-    exact curveULift.isUnit_Δ.map φ
-  refine ⟨h, ringHom_ext_uLift ?_ ?_⟩ <;> simp
-
-/-- Congruence for `liftULift` with respect to the Tate normal form parameters `a` and `b`. -/
-theorem liftULift_congr {a b a' b' : R} (h : IsUnit (tateNormalForm a b).Δ)
-    (h' : IsUnit (tateNormalForm a' b').Δ) (ha : a = a') (hb : b = b') :
-    liftULift h = liftULift h' := by
-  subst ha hb
-  rfl
-
 end UniversalTate
 
 /-! ### The universal Tate normal form with `4 • (0, 0) = 0` -/
@@ -750,34 +733,30 @@ theorem lift_comp_toUniversalTate {R : Type*} [CommRing R] {b : R}
   ext <;> simp
 
 /-- **Universal property of `toUniversalTate`.** A ring homomorphism `φ : ℤ[A, B][Δ⁻¹] →+* S`
-factors uniquely through `toUniversalTate` (with the factor sending `param` to `φ B`) if and only
-if `φ A = 1`. -/
+factors uniquely through `toUniversalTate` if and only if `φ A = 1`. -/
 theorem existsUnique_comp_toUniversalTate_iff {S : Type*} [CommRing S]
     (φ : UniversalTate.Ring →+* S) :
-    (∃! ψ : Ring →+* S, ψ.comp toUniversalTate = φ ∧
-      ψ param = φ (algebraMap (MvPolynomial (Fin 2) ℤ) UniversalTate.Ring (X 1))) ↔
+    (∃! ψ : Ring →+* S, ψ.comp toUniversalTate = φ) ↔
       φ (algebraMap (MvPolynomial (Fin 2) ℤ) UniversalTate.Ring (X 0)) = 1 := by
   refine ⟨?_, fun h₁ ↦ ?_⟩
-  · rintro ⟨ψ, ⟨hcomp, -⟩, -⟩
+  · rintro ⟨ψ, hcomp, -⟩
     rw [← hcomp, RingHom.comp_apply, toUniversalTate_X_zero, map_one]
   · have hΔ : IsUnit (tateNormalForm 1
         (φ (algebraMap (MvPolynomial (Fin 2) ℤ) UniversalTate.Ring (X 1)))).Δ := by
       have hmap := UniversalTate.curve.isUnit_Δ.map φ
       rwa [← WeierstrassCurve.map_Δ, UniversalTate.map_curve, h₁] at hmap
-    refine ⟨lift hΔ, ⟨?_, lift_param hΔ⟩, fun ψ' ⟨_, hparam⟩ ↦ ?_⟩
+    refine ⟨lift hΔ, ?_, fun ψ' hcomp ↦ ?_⟩
     · ext
       · simp [h₁]
       · simp
     · ext
-      rw [hparam, lift_param]
+      rw [lift_param, ← toUniversalTate_X_one, ← RingHom.comp_apply, hcomp]
 
 -- Factor the quotient map modulo `(A - 1)` through `toUniversalTate`.
 private theorem exists_factor_quotient_mk_toUniversalTate :
     ∃ ψ : Ring →+* UniversalTate.Ring ⧸ Ideal.span {UniversalTate.curve.a₁ - 1},
       ψ.comp toUniversalTate =
-          Ideal.Quotient.mk (Ideal.span {UniversalTate.curve.a₁ - 1}) ∧
-        ψ param = Ideal.Quotient.mk (Ideal.span {UniversalTate.curve.a₁ - 1})
-          (algebraMap (MvPolynomial (Fin 2) ℤ) UniversalTate.Ring (X 1)) := by
+        Ideal.Quotient.mk (Ideal.span {UniversalTate.curve.a₁ - 1}) := by
   have hq : Ideal.Quotient.mk (Ideal.span {UniversalTate.curve.a₁ - 1})
       (algebraMap (MvPolynomial (Fin 2) ℤ) UniversalTate.Ring (X 0)) = 1 := by
     rw [← UniversalTate.curve_a₁, ← map_one (Ideal.Quotient.mk _), Ideal.Quotient.eq]
@@ -788,7 +767,7 @@ private theorem exists_factor_quotient_mk_toUniversalTate :
 `A - 1`. -/
 theorem ker_toUniversalTate :
     RingHom.ker toUniversalTate = Ideal.span {UniversalTate.curve.a₁ - 1} := by
-  obtain ⟨ψ, hψ, -⟩ := exists_factor_quotient_mk_toUniversalTate
+  obtain ⟨ψ, hψ⟩ := exists_factor_quotient_mk_toUniversalTate
   refine le_antisymm (fun x hx ↦ ?_) (Ideal.span_le.mpr ?_)
   · rw [RingHom.mem_ker] at hx
     rw [← Ideal.Quotient.eq_zero_iff_mem, ← hψ, RingHom.comp_apply, hx, map_zero]
@@ -798,13 +777,13 @@ theorem ker_toUniversalTate :
 /-- The specialization map `toUniversalTate : ℤ[A, B][Δ⁻¹] →+* ℤ[B, (B(1 - 16B))⁻¹]` is
 surjective. -/
 theorem surjective_toUniversalTate : Function.Surjective toUniversalTate := by
-  obtain ⟨ψ, -, hψ_param⟩ := exists_factor_quotient_mk_toUniversalTate
+  obtain ⟨ψ, hψ⟩ := exists_factor_quotient_mk_toUniversalTate
   have hker : ∀ a ∈ Ideal.span {UniversalTate.curve.a₁ - 1}, toUniversalTate a = 0 :=
     fun _ ha ↦ RingHom.mem_ker.mp (ker_toUniversalTate.ge ha)
   have hcomp : (Ideal.Quotient.lift _ toUniversalTate hker).comp ψ = RingHom.id Ring := by
     ext
-    rw [RingHom.comp_apply, hψ_param, Ideal.Quotient.lift_mk, toUniversalTate_X_one,
-      RingHom.id_apply]
+    rw [RingHom.comp_apply, ← toUniversalTate_X_one, ← RingHom.comp_apply ψ, hψ,
+      Ideal.Quotient.lift_mk, toUniversalTate_X_one, RingHom.id_apply]
   intro r
   obtain ⟨x, hx⟩ := Ideal.Quotient.mk_surjective (ψ r)
   refine ⟨x, ?_⟩
@@ -957,16 +936,13 @@ theorem liftULift_comp_toUniversalTate_ulift {R : Type*} [CommRing R] {b : R}
   exact RingHom.congr_fun (lift_comp_toUniversalTate h) x.down
 
 /-- **Universal property of `toUniversalTate.ulift`.** A ring homomorphism
-`φ : ULift.{u} ℤ[A, B][Δ⁻¹] →+* S` factors uniquely through `toUniversalTate.ulift` (with the
-factor sending `.up param` to `φ UniversalTate.curveULift.a₃`) if and only if
-`φ UniversalTate.curveULift.a₁ = 1`. -/
+`φ : ULift.{u} ℤ[A, B][Δ⁻¹] →+* S` factors uniquely through `toUniversalTate.ulift` if and only
+if `φ UniversalTate.curveULift.a₁ = 1`. -/
 theorem existsUnique_comp_toUniversalTate_ulift_iff {S : Type*} [CommRing S]
     (φ : ULift.{u} UniversalTate.Ring →+* S) :
-    (∃! ψ : ULift.{u} Ring →+* S, ψ.comp toUniversalTate.ulift.{u, u} = φ ∧
-      ψ (.up param) = φ UniversalTate.curveULift.a₃) ↔
+    (∃! ψ : ULift.{u} Ring →+* S, ψ.comp toUniversalTate.ulift.{u, u} = φ) ↔
       φ UniversalTate.curveULift.a₁ = 1 := by
-  rw [UniversalTate.curveULift_a₁, UniversalTate.curveULift_a₃,
-    UniversalTate.curve_a₁, UniversalTate.curve_a₃]
+  rw [UniversalTate.curveULift_a₁, UniversalTate.curve_a₁]
   let e : (ULift.{u} Ring →+* S) ≃ (Ring →+* S) :=
     { toFun := fun ψ ↦ ψ.comp ULift.ringEquiv.symm.toRingHom
       invFun := fun ψ ↦ ψ.comp ULift.ringEquiv.toRingHom
@@ -975,10 +951,8 @@ theorem existsUnique_comp_toUniversalTate_ulift_iff {S : Type*} [CommRing S]
   refine (e.existsUnique_congr fun ψ ↦ ?_).trans <|
     existsUnique_comp_toUniversalTate_iff <|
       φ.comp (ULift.ringEquiv.symm : UniversalTate.Ring ≃+* ULift.{u} UniversalTate.Ring).toRingHom
-  refine and_congr ⟨fun h ↦ RingHom.ext fun x ↦ RingHom.congr_fun h (.up x),
-    fun h ↦ RingHom.ext fun x ↦ RingHom.congr_fun h x.down⟩ ?_
-  simp only [e, Equiv.coe_fn_mk, RingHom.comp_apply]
-  rfl
+  exact ⟨fun h ↦ RingHom.ext fun x ↦ RingHom.congr_fun h (.up x),
+    fun h ↦ RingHom.ext fun x ↦ RingHom.congr_fun h x.down⟩
 
 end UniversalGammaOneFour
 

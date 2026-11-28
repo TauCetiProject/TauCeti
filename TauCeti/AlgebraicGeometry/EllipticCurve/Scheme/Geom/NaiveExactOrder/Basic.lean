@@ -554,6 +554,14 @@ theorem exists_lift_naiveExactOrderPreimageι_iff {x : Z ⟶ Over.mk E.structure
     rw [← hx, ← hux]
     simp
 
+/-- A scheme `Z` over `S` factors through the locus where `P` has naive exact order `N`
+exactly when the restricted section `toUnit Z ≫ P` has naive exact order `N`. -/
+theorem exists_lift_naiveExactOrderPreimageι_toUnit_comp_iff (Z : Over S) :
+    (∃ l : Z.left ⟶ naiveExactOrderPreimage N P, l ≫ naiveExactOrderPreimageι N P = Z.hom) ↔
+      E.IsOfNaiveExactOrder (toUnit Z ≫ P) N :=
+  exists_lift_naiveExactOrderPreimageι_iff N P
+    (by simp only [Over.comp_left, Over.toUnit_left])
+
 /-- **The locus where `P` has naive exact order `N` is closed where `N` is invertible.** If `N` is
 invertible in every residue field of `S`, the naive locus of the universal point of `E[N]` is closed
 in `E[N]` (`EllipticCurveGeom.isClopen_naiveLocus`), so its preimage under `P` is a closed subscheme
@@ -581,13 +589,11 @@ and only if `t ≫ f` factors through the locus where `P` has naive exact order 
 theorem exists_lift_naiveExactOrderPreimageι_iff_of_isPullback {T : Scheme.{u}} (t : T ⟶ S') :
     (∃ l : T ⟶ naiveExactOrderPreimage N P', l ≫ naiveExactOrderPreimageι N P' = t) ↔
       ∃ l : T ⟶ naiveExactOrderPreimage N P, l ≫ naiveExactOrderPreimageι N P = t ≫ f := by
-  have h₁ := exists_lift_naiveExactOrderPreimageι_iff N P' (Z := Over.mk t)
-    (x := toUnit (Over.mk t) ≫ P') rfl
-  have h₂ := exists_lift_naiveExactOrderPreimageι_iff N P (Z := Over.mk (t ≫ f))
-    (x := toUnit (Over.mk (t ≫ f)) ≫ P) rfl
+  have h₁ := exists_lift_naiveExactOrderPreimageι_toUnit_comp_iff N P' (Over.mk t)
+  have h₂ := exists_lift_naiveExactOrderPreimageι_toUnit_comp_iff N P (Over.mk (t ≫ f))
   simp only [Over.mk_hom] at h₁ h₂
-  exact h₁.trans <| (isOfNaiveExactOrder_iff_of_isPullback hg h0 (Z := Over.mk t) rfl
-    (by simp [Category.assoc, hP])).trans h₂.symm
+  exact h₁.trans <| (isOfNaiveExactOrder_iff_of_isPullback hg h0 (Z := Over.mk t)
+    (by simp) (by simp [Category.assoc, hP])).trans h₂.symm
 
 /-- The morphism from the locus where `P'` has naive exact order `N` to the locus where `P` has
 naive exact order `N`, induced by a pullback square of elliptic curves carrying `P'` to `P`. -/

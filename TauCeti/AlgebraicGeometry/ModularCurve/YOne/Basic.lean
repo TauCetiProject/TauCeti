@@ -305,8 +305,8 @@ theorem exists_comp_yOneι_eq_iff {S : Scheme.{u}}
     (∃ h : S ⟶ yOne.{u} N, h ≫ yOneι N = t) ↔
       t ≫ (pointHom ^ N).left = t ≫ curveGeom.zero ∧ ∀ s, t s ∈ exactOrderOpens N := by
   simp_rw [yOneι_def]
-  have h := EllipticCurveGeom.exists_lift_naiveExactOrderPreimageι_iff N pointHom
-    (Z := Over.mk t) (x := toUnit (Over.mk t) ≫ pointHom) rfl
+  have h := EllipticCurveGeom.exists_lift_naiveExactOrderPreimageι_toUnit_comp_iff N pointHom
+    (Over.mk t)
   simp only [Over.mk_hom, EllipticCurveGeom.isOfNaiveExactOrder_toUnit_comp_iff_forall_lt] at h
   refine h.trans (and_congr_right fun _ ↦ ?_)
   simp only [mem_exactOrderOpens_iff]
@@ -336,10 +336,11 @@ theorem exists_comp_yOneι_eq_iff_of_isPullback
     [NeZero N] :
     (∃ h : S ⟶ yOne.{u} N, h ≫ yOneι N = t) ↔
       P ^ N = 1 ∧ ∀ k : ℕ, 0 < k → k < N → ∀ s, (P ^ k).left s ≠ E.zero s := by
-  rw [exists_comp_yOneι_eq_iff, pow_eq_one_iff_of_isPullback hg h₀ hP N]
-  refine and_congr_right fun _ ↦ ⟨fun ht k hk hkN s hs ↦ ?_, fun hk s k hk' hkN hs ↦ ?_⟩
-  · exact ht s k hk hkN ((pow_left_apply_eq_zero_iff_of_isPullback hg h₀ hP k s).mp hs)
-  · exact hk k hk' hkN s ((pow_left_apply_eq_zero_iff_of_isPullback hg h₀ hP k s).mpr hs)
+  have h₁ := exists_lift_naiveExactOrderPreimageι_iff_of_isPullback N hg h₀ hP (𝟙 S)
+  have h₂ := exists_lift_naiveExactOrderPreimageι_iff N P (Z := 𝟙_ (Over S)) (x := P) (by simp)
+  simp only [Category.id_comp, Over.tensorUnit_left, Over.tensorUnit_hom] at h₁ h₂
+  rw [yOneι_def, ← h₁, h₂, isOfNaiveExactOrder_iff_forall_lt]
+  simp only [isEmpty_equalizer_one_iff]
 
 /-- **`Y₁(N)` is a fine moduli scheme for points of naive exact order `N`.** Let `N ≥ 4` and let
 `P` be an `S`-point of an elliptic curve `E` over `S` with `N • P = 0` such that none of

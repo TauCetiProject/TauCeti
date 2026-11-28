@@ -198,7 +198,7 @@ theorem comp_projModelMulBy_of_isPullback {S : Scheme.{u}} {E : EllipticCurveGeo
 
 /-- Multiplication by `n` commutes with the base change morphism of projective Weierstrass
 models. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem projModelMulBy_projModelBaseChange {R' : Type u} [CommRing R'] (f : R →+* R') (n : ℤ) :
     (W.map f).projModelMulBy n ≫ W.projModelBaseChange f =
       W.projModelBaseChange f ≫ W.projModelMulBy n := by

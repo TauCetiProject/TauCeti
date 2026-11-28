@@ -431,9 +431,7 @@ private theorem IsTate.base_eq {f f' : Spec (.of R) ⟶ Spec (.of (ULift.{u} Uni
   have hab := (W.existsUnique_tateNormalForm hP h₁ h₂ h₃).unique
     (y₁ := (φ curveULift.a₁, φ curveULift.a₃)) (y₂ := (φ' curveULift.a₁, φ' curveULift.a₃))
     ⟨e, he, he₀, heP⟩ ⟨e', he', he₀', heP'⟩
-  obtain ⟨hΔ, hφ⟩ := eq_liftULift φ
-  obtain ⟨hΔ', hφ'⟩ := eq_liftULift φ'
-  rw [hφ, hφ', liftULift_congr hΔ hΔ' (congrArg Prod.fst hab) (congrArg Prod.snd hab)]
+  rw [UniversalTate.ringHom_ext_uLift (congrArg Prod.fst hab) (congrArg Prod.snd hab)]
 
 end Affine
 

@@ -97,7 +97,7 @@ private theorem exists_toSpec_of_isAffine {X : Scheme.{u}} [IsAffine X]
   obtain ⟨φ, hφ⟩ := Spec.map_surjective (X.isoSpec.inv ≫ f)
   have hN : Spec.map φ ≫ (pointHom.{u} ^ 4).left = Spec.map φ ≫ curveGeom.zero := by
     rw [hφ, Category.assoc, hf, Category.assoc]
-  obtain ⟨ψ, ⟨hcomp, -⟩, -⟩ :=
+  obtain ⟨ψ, hcomp, -⟩ :=
     (UniversalGammaOneFour.existsUnique_comp_toUniversalTate_ulift_iff φ.hom).mpr
       ((specMap_comp_pointHom_pow_four_eq_zero_iff φ.hom).mp hN)
   refine ⟨X.isoSpec.hom ≫ Spec.map (CommRingCat.ofHom ψ), ?_⟩
