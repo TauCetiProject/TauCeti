@@ -254,8 +254,11 @@ theorem isTopologicallyFiniteType_iff_isPlusWeaklyFiniteType_of_discreteTopology
   have hev_surj : Function.Surjective ev := fun b ↦ by
     obtain ⟨p, rfl⟩ := hψ₀ b
     refine ⟨MvPolynomial.rename (Fin.castAdd E.card) p, ?_⟩
-    have hcomp : ev.comp (MvPolynomial.rename (Fin.castAdd E.card)) = ψ₀ := by ext i; simp [ev]
-    exact AlgHom.congr_fun hcomp p
+    rw [← AlgHom.comp_apply]
+    dsimp only [ev]
+    rw [MvPolynomial.aeval_comp_rename]
+    simp only [Function.comp_def, Fin.append_left]
+    exact AlgHom.congr_fun (MvPolynomial.aeval_unique ψ₀).symm p
   let π := weightedCompletionQuotientHom T hT ev
   have hπ : IsOpenQuotientMap π := isOpenQuotientMap_weightedCompletionQuotientHom T hT ev hev_surj
   have hπC (a : A) : π (algebraMap A _ a) = f.toRingHom a :=

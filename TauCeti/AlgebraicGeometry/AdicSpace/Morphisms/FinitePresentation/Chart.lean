@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.FinitePresentation.B
 public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.FiniteType
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyHuberStandard
 
-import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete.Chart
 import TauCeti.RingTheory.Huber.NoetherianType.TopologicallyFiniteType
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Cancel
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Comp
@@ -38,8 +37,8 @@ this is equivalent to the pointwise complete Hausdorff chart condition
   `∀ x, LocallyOfFinitePresentationAt f x`.
 * `LocallyOfFinitePresentation.locallyOfPlusWeaklyFiniteType`,
   `.locallyOfWeaklyFiniteType`, `.isAdic`: implications down Huber's hierarchy.
-* `LocallyOfFinitePresentation.isLocallyHuberStandard_source`, `.isLocallyNoetherian_source`:
-  unconditional source regularity.
+* `LocallyOfFinitePresentation.isLocallyNoetherian_source`: unconditional locally noetherian
+  source.
 * `LocallyOfFinitePresentation.exists_openImmersion_chart`,
   `locallyOfFinitePresentationAt_of_openImmersion_sq`,
   `locallyOfFinitePresentation_iff_forall_exists_openImmersion_chart`: open-immersion charts.
@@ -112,18 +111,11 @@ theorem LocallyOfFinitePresentation.isAdic {f : X ⟶ Y}
     (hf : LocallyOfFinitePresentation f) : IsAdic f :=
   hf.locallyOfFiniteType.isAdic
 
-/-- **Unconditional source regularity**: if `f : X ⟶ Y` is locally of finite presentation, then the
-source `X` is locally of Huber's standing class (`X.IsLocallyHuberStandard`), with no hypothesis on
-`Y` (each chart target ring satisfies `IsHuberStandard A`, which ascends to `B`). -/
-theorem LocallyOfFinitePresentation.isLocallyHuberStandard_source {f : X ⟶ Y}
-    (hf : LocallyOfFinitePresentation f) : X.IsLocallyHuberStandard :=
-  IsLocallyHuberStandard.of_locallyOfFinitePresentation hf
-
 /-- **Unconditional locally noetherian source**: if `f : X ⟶ Y` is locally of finite presentation,
 then `X` is locally noetherian (`X.IsLocallyNoetherian`), with no hypothesis on `Y`. -/
 theorem LocallyOfFinitePresentation.isLocallyNoetherian_source {f : X ⟶ Y}
     (hf : LocallyOfFinitePresentation f) : X.IsLocallyNoetherian :=
-  hf.isLocallyHuberStandard_source.isLocallyNoetherian
+  (IsLocallyHuberStandard.of_locallyOfFinitePresentation hf).isLocallyNoetherian
 
 /-- **Pointwise open-immersion chart construction for `LocallyOfFinitePresentationAt`**: a
 commuting open-immersion square `CY.pairComap CX φ ≫ CY.hom = CX.hom ≫ f.hom` covering `x ∈ X`
@@ -166,32 +158,23 @@ theorem locallyOfFinitePresentation_iff (f : X ⟶ Y) :
     LocallyOfFinitePresentation f ↔ ∀ x : X.obj, LocallyOfFinitePresentationAt f x := by
   constructor
   · intro hf x
-    obtain ⟨U, hxU, V, -, A, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP', φ,
-      ⟨hφ, hStdA, hfp⟩, hsheafB, eU, eV, hfac⟩ :=
-      (chartLocally_iff f.hom).mp ((locallyOfFinitePresentation_iff_chartLocally f).mp hf) x
-    have hsheafA := isSheaf_of_restrict_iso P hP eV
-    let CY₀ := ofCompletion P hP hsheafA
-    let CX₀ := ofCompletion P' hP' hsheafB
-    let φ₁ := ofCompletionMap P hP hsheafA P' hP' hsheafB φ
-    have hφ₁ : φ₁.IsTopologicallyFiniteType :=
-      isTopologicallyFiniteType_ofCompletionMap P hP hsheafA P' hP' hsheafB φ hφ
-    have hStdCY₀ : IsHuberStandard CY₀.Ring := isHuberStandard_ofCompletion P hP hsheafA
-    have hfp₁ : DiscreteTopology CY₀.Ring → φ₁.toRingHom.FinitePresentation := fun _ ↦
-      finitePresentation_ofCompletionMap_of_discreteTopology P hP hsheafA P' hP' hsheafB φ hφ hfp
-    let CY := CY₀.compOpenImmersion (eV.inv ≫ Y.obj.ofRestrict V.isOpenEmbedding)
-    let CX := CX₀.compOpenImmersion (eU.inv ≫ X.obj.ofRestrict U.isOpenEmbedding)
-    have : IsHuberStandard CY.Ring := hStdCY₀
-    obtain ⟨b₀, hb₀⟩ : eU.hom.base ⟨x, hxU⟩ ∈ Set.range CX₀.hom.base :=
-      range_ofCompletion_hom_base P' hP' hsheafB ▸ Set.mem_univ _
-    have hb₀' : CX.hom.base b₀ = x := by
-      rw [compOpenImmersion_hom_base, hb₀, ← ofRestrictIso_hom T P' hP' hsheafB eU]
-      exact ofRestrictIso_hom_base T P' hP' hsheafB eU hxU
-    refine locallyOfFinitePresentationAt_of_openImmersion_sq CY CX φ₁ hφ₁ hfp₁ hb₀' <|
-      (pairComap_compOpenImmersion_left_comp_hom CY₀ CX _ φ₁).trans <|
-        (pairComap_compOpenImmersion_right_eq_comp_iff CY₀ CX₀ _ φ₁ f.hom _).mpr ?_
-    rw [pairComap_ofCompletionMap_comp_hom_assoc, presentationLimitPreAdicSpacePairComap_def]
-    have hfac' := congrArg (fun m ↦ CX₀.hom ≫ eU.inv ≫ m) hfac
-    simpa only [Category.assoc, Iso.inv_hom_id_assoc] using hfac'.symm
+    obtain ⟨U, hxU, V, hUV, A, _, _, _, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P',
+      hP', φ, ⟨hφ, hStdA, hfp⟩, hsheaf, eU, eV, hfac⟩ :=
+      exists_complete_chart_of_chartLocally
+        (@fun A _ _ _ _ _ _ _ _ _ _ _ φ ↦ φ.IsTopologicallyFiniteType ∧
+          IsHuberStandard A ∧ (DiscreteTopology A → φ.toRingHom.FinitePresentation))
+        (fun hιA ⟨hcomp, hStdA, hfp⟩ ↦ by
+          have _ := hStdA
+          have hφ₁ := Pair.Hom.IsTopologicallyFiniteType.of_comp hcomp
+          exact ⟨hφ₁, .of_isTopologicallyFiniteType hιA.isTopologicallyFiniteType_toRingHom,
+            fun _ ↦ hιA.isTopologicallyFiniteType_toRingHom.finitePresentation_of_comp
+              hφ₁.isTopologicallyFiniteType_toRingHom
+              (fun hDisc ↦ by rw [← Pair.Hom.toRingHom_comp]; exact hfp hDisc)⟩)
+        ((locallyOfFinitePresentation_iff_chartLocally f).mp hf) x
+    exact ⟨U, hxU, V, hUV, A, inferInstance, inferInstance, inferInstance, inferInstance,
+      inferInstance, inferInstance, inferInstance, inferInstance, S, P, hP, B, inferInstance,
+      inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
+      T, P', hP', φ, hφ, hfp, hsheaf, eU, eV, hfac⟩
   · intro hf
     rw [locallyOfFinitePresentation_iff_chartLocally, chartLocally_iff]
     intro x

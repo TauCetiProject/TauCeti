@@ -460,7 +460,7 @@ private theorem chartLocally_of_isPullback
   -- 1. Choose a complete Hausdorff chart `(U, V)` of `f` around `p(z)`.
   obtain ⟨U, hzpU, V, hUV, A, _, _, _, _, _, _, _, SA, PA, hPA,
     C, _, _, _, _, _, _, _, UC, PC, hPC, φ, hφQ, hsheafC, eU₀, eV₀, hfac_f⟩ :=
-    exists_complete_chart_of_chartLocally Q hQcomp hf (p.hom.base z)
+    exists_complete_chart_of_chartLocally Q (fun _ ↦ hQcomp) hf (p.hom.base z)
   have hφtft : IsTopologicallyFiniteType φ.toRingHom := hQtft hφQ
   have hsheafA := isSheaf_of_restrict_iso PA hPA eV₀
   -- 2. Since `g(q(z)) = f(p(z)) ∈ V`, pick a stably sheafy affinoid `W ⊆ g⁻¹(V)` at `q(z)`.

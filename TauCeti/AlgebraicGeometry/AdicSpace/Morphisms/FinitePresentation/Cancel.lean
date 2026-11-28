@@ -89,7 +89,7 @@ theorem LocallyOfFinitePresentation.restrict {U V : AdicSpace.{u}} {iU : U ⟶ X
     (hf : LocallyOfFinitePresentation f) : LocallyOfFinitePresentation g :=
   LocallyOfFinitePresentation.of_comp
     (hcomm ▸ (LocallyOfFinitePresentation.of_isOpenImmersion iU
-      (hf.isLocallyHuberStandard_source.of_isOpenImmersion iU)).comp hf)
+      ((IsLocallyHuberStandard.of_locallyOfFinitePresentation hf).of_isOpenImmersion iU)).comp hf)
     (LocallyOfFiniteType.of_isOpenImmersion iV)
 
 end TauCeti.AdicSpace

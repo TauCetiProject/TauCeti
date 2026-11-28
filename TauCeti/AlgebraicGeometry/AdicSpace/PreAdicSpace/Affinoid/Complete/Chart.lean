@@ -9,9 +9,8 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete
 public import TauCeti.RingTheory.Huber.LocalizationTopology.BaseChange
 public import TauCeti.RingTheory.Huber.NoetherianType.HuberStandard
 
+import TauCeti.RingTheory.Huber.LocalizationTopology.FiniteType
 import TauCeti.RingTheory.Huber.NoetherianType.TopologicallyFiniteType
-import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Cancel
-import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Comp
 
 /-!
 # Completed presentations via `{1} / 1`
@@ -155,9 +154,14 @@ theorem pairComap_ofCompletionMap_comp_hom (φ : Pair.Hom S T) :
 /-- `ofCompletionMap` preserves `Pair.Hom.IsTopologicallyFiniteType`. -/
 theorem isTopologicallyFiniteType_ofCompletionMap (φ : Pair.Hom S T)
     (hφ : φ.IsTopologicallyFiniteType) :
-    (ofCompletionMap P hP hsheafA P' hP' hsheafB φ).IsTopologicallyFiniteType :=
-  .of_comp ((ofCompletionMap_comp_toCompletionHom P hP hsheafA P' hP' hsheafB φ).symm ▸
-    (isTopologicallyFiniteType_toCompletionHom P' hP' hsheafB).comp hφ)
+    (ofCompletionMap P hP hsheafA P' hP' hsheafB φ).IsTopologicallyFiniteType := by
+  unfold ofCompletionMap
+  exact P.isTopologicallyFiniteType_completionLocPairMap S hP ({1} : Finset A) 1
+    (Localization.Away (1 : A))
+    (P.hasDenominatorPower_of_isOpen_span ({1} : Finset A) 1 _ (by simp))
+    P' T hP' φ ({1} : Finset B) 1 (Localization.Away (1 : B))
+    (P'.hasDenominatorPower_of_isOpen_span ({1} : Finset B) 1 _ (by simp))
+    (map_one φ.toRingHom) (by simp) hφ (by simp)
 
 /-- When `A` is in Huber's standing class, `φ : S → T` is topologically of finite type,
 `B` is finitely presented over `A` whenever `A` is discrete, and the completed target ring

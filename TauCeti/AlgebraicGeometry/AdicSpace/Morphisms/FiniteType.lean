@@ -163,7 +163,7 @@ theorem LocallyOfFiniteType.exists_complete_openImmersion_chart {f : X ⟶ Y}
   obtain ⟨U, hxU, V, -, A, _, _, _, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP',
     φ, hφ, hsheafB, eU, eV, hfac⟩ :=
     exists_complete_chart_of_chartLocally (fun φ ↦ φ.IsTopologicallyFiniteType)
-      (fun h ↦ .of_comp h) ((locallyOfFiniteType_iff_chartLocally f).mp hf) x
+      (fun _ h ↦ .of_comp h) ((locallyOfFiniteType_iff_chartLocally f).mp hf) x
   have hsheafA := isSheaf_of_restrict_iso P hP eV
   exact ⟨ofRestrictIso S P hP hsheafA eV, ofRestrictIso T P' hP' hsheafB eU, φ, hφ,
     eU.hom.base ⟨x, hxU⟩, ofRestrictIso_hom_base T P' hP' hsheafB eU hxU,

@@ -48,7 +48,8 @@ example (p : ℕ) [Fact p.Prime] (n : ℕ) :
   have hlfp := locallyOfFinitePresentation_comapOfPair_of_isTateRing hS hT φ
     (S.isTopologicallyFiniteType_weightedCompletionHom (fun _ ↦ Set.finite_singleton 1)
       isWeightFamily_one_weight)
-  exact ⟨hlfp, hlfp.isLocallyHuberStandard_source, hlfp.isLocallyNoetherian_source⟩
+  exact ⟨hlfp, IsLocallyHuberStandard.of_locallyOfFinitePresentation hlfp,
+    hlfp.isLocallyNoetherian_source⟩
 
 /-- Right-cancellation on rational sections of the `p`-adic polydisc via `of_comp`. -/
 example (p : ℕ) [Fact p.Prime] (n : ℕ) (t : Fin n → (Pair.powerBounded ℚ_[p]).plus) :

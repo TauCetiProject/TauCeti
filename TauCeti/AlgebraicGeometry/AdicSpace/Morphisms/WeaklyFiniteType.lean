@@ -310,7 +310,7 @@ theorem LocallyOfWeaklyFiniteType.exists_complete_chart {f : X ⟶ Y}
           T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf ≫
           eV.inv ≫ Y.obj.ofRestrict _ :=
   exists_complete_chart_of_chartLocally (fun φ ↦ IsTopologicallyFiniteType φ.toRingHom)
-    (fun h ↦ Pair.Hom.isTopologicallyFiniteType_toRingHom_of_comp h)
+    (fun _ h ↦ Pair.Hom.isTopologicallyFiniteType_toRingHom_of_comp h)
     ((locallyOfWeaklyFiniteType_iff_chartLocally f).mp hf) x
 
 -- When a morphism `f : Spa(D, D⁺) ⟶ Spa(A, A⁺)` of complete Hausdorff affinoid pre-adic spaces
