@@ -56,7 +56,7 @@ noncomputable def ofEdge (w : W) : coherentIso ⟶ C.equivalenceAttachment W :=
   Sigma.ι (fun _ : W ↦ coherentIso.{u}) w ≫ ofCoproduct W
 
 @[reassoc (attr := simp)]
-lemma ι_ofCoproduct (w : W) :
+lemma sigmaι_ofCoproduct (w : W) :
     Sigma.ι (fun _ : W ↦ coherentIso.{u}) w ≫ ofCoproduct W = ofEdge W w := (rfl)
 
 /-- The defining pushout square of the attachment. -/
@@ -96,7 +96,7 @@ lemma ofCoproduct_desc (f : C ⟶ D) (g : W → (coherentIso ⟶ D)) (h) :
 @[reassoc (attr := simp)]
 lemma ofEdge_desc (f : C ⟶ D) (g : W → (coherentIso ⟶ D)) (h) (w : W) :
     ofEdge W w ≫ desc W f g h = g w := by
-  rw [← ι_ofCoproduct, Category.assoc, ofCoproduct_desc, Sigma.ι_comp_desc]
+  rw [← sigmaι_ofCoproduct, Category.assoc, ofCoproduct_desc, Sigma.ι_comp_desc]
 
 /-- Maps out of the attachment are determined by their restrictions to `C` and every
 attached coherent isomorphism. -/
@@ -151,7 +151,7 @@ lemma desc_comp (f : C ⟶ D) (g : W → (coherentIso ⟶ D)) (h) (k : D ⟶ B) 
   apply hom_ext <;> simp
 
 /-- Every marked edge becomes an equivalence in the attachment. No fibrancy is assumed. -/
-theorem isEquivalence_map (w : W) :
+theorem isEquivalence_ι_app (w : W) :
     (Edge.mk' ((ι W).app _ w.val)).IsEquivalence := by
   have h : yonedaEquiv (yonedaEquiv.symm w.val ≫ ι W) = (ι W).app _ w.val :=
     (yonedaEquiv_comp _ _).trans
@@ -165,7 +165,7 @@ theorem isEquivalence_of_extension {f : C ⟶ D} {g : C.equivalenceAttachment W 
   subst f
   exact (Edge.isEquivalence_iff_of_edge_eq (by
     simp only [Edge.map_edge, Edge.mk'_edge, NatTrans.comp_app, types_comp_apply])).1
-      ((isEquivalence_map W w).map g)
+      ((isEquivalence_ι_app W w).map g)
 
 /-- A map to a quasicategory extends across the attachment if and only if it sends
 all the marked edges to equivalences. -/
@@ -243,6 +243,11 @@ lemma stdSimplexOneIso_inv :
 lemma ι_stdSimplexOneIso_hom :
     ι {yonedaEquiv (𝟙 (Δ[1] : SSet.{u}))} ≫ stdSimplexOneIso.hom =
       coherentIso.edgeInclusion := ι_stdSimplexOneHom
+
+@[reassoc (attr := simp)]
+lemma ofEdge_stdSimplexOneIso_hom
+    (w : ({yonedaEquiv (𝟙 (Δ[1] : SSet.{u}))} : Set (Δ[1] _⦋1⦌))) :
+    ofEdge _ w ≫ stdSimplexOneIso.hom = 𝟙 coherentIso := ofEdge_stdSimplexOneHom w
 
 end StandardEdge
 

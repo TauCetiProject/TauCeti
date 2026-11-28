@@ -15,7 +15,8 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Cylinder
 The inclusion of the forward edge into Mathlib's coherent isomorphism is a left anodyne
 extension. Compatible contractions to the initial vertex give the lifting property by
 `SSet.exists_lift_cylinder_ι₀_of_mono`. This supplies extensions of edges into Kan
-complexes without using a model structure on simplicial sets.
+complexes and supports the characterization of equivalence edges in quasicategories by
+extensions from the coherent isomorphism.
 
 ## References
 
@@ -78,19 +79,26 @@ def contraction : Homotopy (const x₀) (𝟙 coherentIso.{u}) where
         apply Codiscrete.equivFun.injective
         rfl }
   h₀ := by
-    apply NatTrans.ext
-    funext ⟨⟨n⟩⟩
+    ext ⟨⟨n⟩⟩ : 1
     apply ConcreteCategory.hom_ext
     intro p
     apply Codiscrete.equivFun.injective
-    rfl
+    funext k
+    -- Unwrap the anonymous homotopy component and the constant simplex's nerve reindexing;
+    -- neither has an object-evaluation lemma available here.
+    change (if (ι₀.app _ p).2 k = 0 then ULift.up false else
+      ((ι₀.app _ p).1.obj k).as) = ULift.up false
+    simp
   h₁ := by
-    apply NatTrans.ext
-    funext ⟨⟨n⟩⟩
+    ext ⟨⟨n⟩⟩ : 1
     apply ConcreteCategory.hom_ext
     intro p
     apply Codiscrete.equivFun.injective
-    rfl
+    funext k
+    -- Unwrap the anonymous homotopy component so the cylinder computations apply.
+    change (if (ι₁.app _ p).2 k = 0 then ULift.up false else
+      ((ι₁.app _ p).1.obj k).as) = (p.obj k).as
+    simp
   rel := by ext _ ⟨⟨_, ⟨⟩⟩, _⟩
 
 /-- On vertex lists the contraction replaces a vertex by the initial object when the
@@ -99,7 +107,7 @@ interval coordinate is zero. -/
 lemma contraction_h_app_obj {n : ℕ}
     (p : coherentIso.{u} _⦋n⦌ × (Δ[1] : SSet.{u}) _⦋n⦌) (k : Fin (n + 1)) :
     dsimp% ((contraction.h.app _ p).obj k).as =
-      if stdSimplex.asOrderHom p.2 k = 0 then ULift.up false else (p.1.obj k).as :=
+      if p.2 k = 0 then ULift.up false else (p.1.obj k).as :=
   (rfl)
 
 /-- The contractions of the standard edge and coherent isomorphism agree on the edge. -/
@@ -107,34 +115,16 @@ lemma contraction_h_app_obj {n : ℕ}
 lemma edgeInclusion_contraction :
     edgeInclusion.{u} ▷ Δ[1] ≫ contraction.h =
       (stdSimplex.contraction 1).h ≫ edgeInclusion := by
-  apply NatTrans.ext
-  funext ⟨⟨n⟩⟩
+  ext ⟨⟨n⟩⟩ : 1
   apply ConcreteCategory.hom_ext
   rintro ⟨s, t⟩
-  calc
-    _ = contraction.h.app _ ((edgeInclusion ▷ Δ[1]).app _ (s, t)) :=
-      NatTrans.comp_app_apply _ _ _ _
-    _ = contraction.h.app _ (edgeInclusion.app _ s, t) :=
-      congrArg (contraction.h.app _) (whiskerRight_app_apply _ _ _)
-    _ = edgeInclusion.app _ ((stdSimplex.contraction 1).h.app _ (s, t)) := by
-      apply Codiscrete.equivFun.injective
-      funext k
-      have hc : (stdSimplex.contraction 1).h.app _ (s, t) k =
-          if stdSimplex.asOrderHom t k = 0 then 0 else stdSimplex.asOrderHom s k :=
-        stdSimplex.contraction_h_app_apply (s, t) k
-      apply (Codiscrete.equivFun_apply _ _).trans
-      refine Eq.trans (contraction_h_app_obj _ k) ?_
-      calc
-        _ = if stdSimplex.asOrderHom t k = 0 then ULift.up false else
-            ULift.up (decide (s k = 1)) :=
-          congrArg (fun a ↦ if stdSimplex.asOrderHom t k = 0 then ULift.up false else a)
-            (edgeInclusion_app_obj s k)
-        _ = ULift.up (decide ((if stdSimplex.asOrderHom t k = 0 then 0 else
-            stdSimplex.asOrderHom s k) = 1)) := by split_ifs <;> rfl
-        _ = ULift.up (decide ((stdSimplex.contraction 1).h.app _ (s, t) k = 1)) :=
-          congrArg (fun a : Fin 2 ↦ ULift.up (decide (a = 1))) hc.symm
-        _ = _ := (edgeInclusion_app_obj _ k).symm.trans (Codiscrete.equivFun_apply _ _).symm
-    _ = _ := (NatTrans.comp_app_apply _ _ _ _).symm
+  -- Rewriting through Homotopy and the concrete-function wrappers needs default transparency.
+  erw [NatTrans.comp_app_apply, NatTrans.comp_app_apply, whiskerRight_app_apply]
+  apply Codiscrete.equivFun.injective
+  funext k
+  erw [Codiscrete.equivFun_apply, Codiscrete.equivFun_apply, contraction_h_app_obj,
+    edgeInclusion_app_obj, edgeInclusion_app_obj, stdSimplex.contraction_h_app_apply]
+  split_ifs <;> rfl
 
 /-- The standard edge is a left anodyne subcomplex of the coherent isomorphism. -/
 theorem leftAnodyneExtensions_edgeInclusion : leftAnodyneExtensions edgeInclusion.{u} := by

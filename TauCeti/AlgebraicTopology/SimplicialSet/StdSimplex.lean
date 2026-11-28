@@ -292,7 +292,7 @@ noncomputable def contraction (n : ℕ) :
 lemma contraction_h_app_apply {n d : ℕ}
     (p : (Δ[n] : SSet.{u}) _⦋d⦌ × (Δ[1] : SSet.{u}) _⦋d⦌) (k : Fin (d + 1)) :
     dsimp% (contraction n).h.app _ p k =
-      if asOrderHom p.2 k = 0 then 0 else asOrderHom p.1 k :=
+      if p.2 k = 0 then 0 else p.1 k :=
   (rfl)
 
 /-- The standard simplex functor `SimplexCategory ⥤ SSet` is dense. -/

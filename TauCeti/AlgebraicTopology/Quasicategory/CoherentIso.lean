@@ -12,8 +12,8 @@ public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn.Basic
 # Extending equivalence edges to coherent isomorphisms
 
 An edge of a quasicategory is an equivalence precisely when it extends to a map from
-Mathlib's coherent isomorphism. An equivalence edge factors through the core, which
-is Kan, and the standard-edge inclusion is anodyne.
+Mathlib's coherent isomorphism. This characterization supplies the extension property
+for attaching walking equivalences in quasicategory localization.
 
 ## References
 
