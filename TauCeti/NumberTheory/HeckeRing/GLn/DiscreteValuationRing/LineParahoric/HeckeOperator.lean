@@ -24,9 +24,10 @@ representation `ρ` of `GL_ι(K)` on a module over a commutative semiring, the d
 (`Representation.doubleCosetOperator_doubleCosetOperator_inv_lineParahoric`): composing
 Hecke operators is convolving their functions, and `1_{J t J} ⋆ 1_{J t⁻¹ J}` is
 `q^{n-2} (1_J + (q - 1) 1_{GL_ι(R)})` by the count of cosets
-`HeckeRing.GLn.sum_indicator_doubleCoset_inv_lineParahoric`. Over a field of characteristic zero
-it reads `T⁺ T⁻ y = q^{n-2} (y + (qⁿ - 1) e y)` with `e` the mean over `GL_ι(R) / J`, the projector
-onto the vectors fixed by `GL_ι(R)`
+`HeckeRing.GLn.sum_indicator_doubleCoset_inv_lineParahoric`. Over a field in which the index
+`[GL_ι(R) : J]` is nonzero, for instance of characteristic zero, it reads
+`T⁺ T⁻ y = q^{n-2} (y + (qⁿ - 1) e y)` with `e` the mean over `GL_ι(R) / J`, the projector onto the
+vectors fixed by `GL_ι(R)`
 (`Representation.doubleCosetOperator_doubleCosetOperator_inv_lineParahoric_eq_mean`).
 
 For a `ρ`-invariant sesquilinear form, in particular for the inner product of a unitary
@@ -119,7 +120,7 @@ sesquilinear form `B`, in particular for the inner product of a unitary represen
 operators `T⁺ = [J t J]` and `T⁻ = [J t⁻¹ J]` are adjoint on the `J`-invariant vectors:
 `B (T⁺ x) y = B x (T⁻ y)`. -/
 theorem sesqForm_doubleCosetOperator_lineParahoric_left_eq_right_inv [StarRing A]
-    {B : W →ₗ⋆[A] W →ₗ[A] A} (hB : ∀ g x y, B (ρ g x) (ρ g y) = B x y) (hϖ : Irreducible ϖ)
+    {B : W →ₗ⋆[A] W →ₗ[A] A} (hB : ρ.IsInvariantSesqForm B) (hϖ : Irreducible ϖ)
     (hπ : algebraMap R K ϖ = π) {x y : W}
     (hx : x ∈ weightSpace (ρ.comp (lineParahoric R K i).subtype) 1)
     (hy : y ∈ weightSpace (ρ.comp (lineParahoric R K i).subtype) 1) :
@@ -130,15 +131,17 @@ theorem sesqForm_doubleCosetOperator_lineParahoric_left_eq_right_inv [StarRing A
 
 end CommSemiring
 
-/-- **The quadratic relation with the spherical mean.** Over a field `𝕜` of characteristic zero,
+/-- **The quadratic relation with the spherical mean.** Over a field `𝕜` in which the index
+`[GL_ι(R) : J]` is nonzero, for instance of characteristic zero,
 let `e y = [GL_ι(R) : J]⁻¹ ∑_{h ∈ GL_ι(R) / J} ρ(h) y` be the mean over `GL_ι(R)` of a
 `J`-invariant vector `y`, the projector onto the vectors fixed by `GL_ι(R)`; for a smooth
 representation it is `Representation.smoothAverage` (`Representation.smoothAverage_apply_of_le`).
 Then `T⁺ T⁻ y = q^{n-2} (y + (qⁿ - 1) e y)`. -/
 theorem doubleCosetOperator_doubleCosetOperator_inv_lineParahoric_eq_mean {𝕜 V : Type*}
-    [Field 𝕜] [CharZero 𝕜] [AddCommGroup V] [Module 𝕜 V] (ρ : Representation 𝕜 (GL ι K) V)
+    [Field 𝕜] [AddCommGroup V] [Module 𝕜 V] (ρ : Representation 𝕜 (GL ι K) V)
     [Finite (ResidueField R)] (hϖ : Irreducible ϖ) (hπ : algebraMap R K ϖ = π)
-    (hn : 2 ≤ Fintype.card ι) {y : V}
+    (hN : ((lineParahoric R K i).relIndex (integralGL R K ι) : 𝕜) ≠ 0) (hn : 2 ≤ Fintype.card ι)
+    {y : V}
     (hy : y ∈ weightSpace (ρ.comp (lineParahoric R K i).subtype) 1) :
     ρ.doubleCosetOperator (lineParahoric R K i) (diagGL (Pi.mulSingle i π))
         (ρ.doubleCosetOperator (lineParahoric R K i) (diagGL (Pi.mulSingle i π))⁻¹ y) =
@@ -147,9 +150,6 @@ theorem doubleCosetOperator_doubleCosetOperator_inv_lineParahoric_eq_mean {𝕜 
           (((lineParahoric R K i).relIndex (integralGL R K ι) : 𝕜)⁻¹ •
             ∑ᶠ h : integralGL R K ι ⧸ (lineParahoric R K i).subgroupOf (integralGL R K ι),
               ρ h.out y)) := by
-  have := isFiniteRelIndex_lineParahoric (i := i) hϖ hπ
-  have hN : ((lineParahoric R K i).relIndex (integralGL R K ι) : 𝕜) ≠ 0 :=
-    Nat.cast_ne_zero.mpr Subgroup.relIndex_ne_zero
   rw [ρ.doubleCosetOperator_doubleCosetOperator_inv_lineParahoric hϖ hπ hn hy,
     ← relIndex_lineParahoric_mul hϖ hπ, mul_comm, mul_smul,
     ← Nat.cast_smul_eq_nsmul 𝕜 ((lineParahoric R K i).relIndex _), smul_inv_smul₀ hN]

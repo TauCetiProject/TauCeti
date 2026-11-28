@@ -12,9 +12,11 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.LineHyperplane
 public import TauCeti.NumberTheory.HeckeRing.CosetSystem.Basic
 public import TauCeti.NumberTheory.HeckeRing.GLn.FractionRing
 
+import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Lift
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
+import TauCeti.NumberTheory.HeckeRing.GLn.DiscreteValuationRing.Minuscule
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 
 /-!
@@ -52,6 +54,8 @@ vanish and `c ↦ ∑_{b ≠ i} c_b x_{b i}` is a nonzero linear form.
   maximal ideal for `a ≠ i`.
 * `HeckeRing.GLn.mem_conjAct_lineParahoric_iff`: `t J t⁻¹` is the set of `g ∈ GL_ι(R)` with
   `g_{i b}` in the maximal ideal for `b ≠ i`.
+* `HeckeRing.GLn.map_mem_lineParahoric_iff`, `HeckeRing.GLn.map_mem_conjAct_lineParahoric_iff`:
+  the same criteria for the image of a given `γ ∈ GL_ι(R)`.
 * `HeckeRing.GLn.map_inverseTranspose_lineParahoric`: inverse transpose carries `J` to `t J t⁻¹`.
 * `HeckeRing.GLn.relIndex_conjAct_lineParahoric`,
   `HeckeRing.GLn.relIndex_conjAct_inv_lineParahoric`: `J t J` and `J t⁻¹ J` are unions of
@@ -90,34 +94,6 @@ section Field
 
 variable {k : Type*} [Field k] {i : ι}
 
-/-- An element of the stabiliser of the line `k eᵢ` has a nonzero `(i, i)` entry. -/
-private theorem apply_self_ne_zero_of_mem_lineStabilizer {g : GL ι k}
-    (hg : g ∈ lineStabilizer k i) : (g : Matrix ι ι k) i i ≠ 0 := by
-  intro h
-  have h0 : (g : Matrix ι ι k) *ᵥ Pi.single i 1 = 0 := by
-    ext a
-    rw [mulVec_single_one, col_apply, Pi.zero_apply]
-    by_cases ha : a = i
-    · rwa [ha]
-    · exact mem_lineStabilizer_iff.mp hg a ha
-  have h1 : (Pi.single i 1 : ι → k) = 0 := by
-    rw [← one_mulVec (Pi.single i 1), ← Units.inv_mul g, ← mulVec_mulVec, h0, mulVec_zero]
-  simpa using congrFun h1 i
-
-/-- An element of the stabiliser of the hyperplane `xᵢ = 0` has a nonzero `(i, i)` entry. -/
-private theorem apply_self_ne_zero_of_mem_hyperplaneStabilizer {g : GL ι k}
-    (hg : g ∈ hyperplaneStabilizer k i) : (g : Matrix ι ι k) i i ≠ 0 := by
-  intro h
-  have h0 : Pi.single i 1 ᵥ* (g : Matrix ι ι k) = 0 := by
-    ext b
-    rw [single_one_vecMul, row_apply, Pi.zero_apply]
-    by_cases hb : b = i
-    · rwa [hb]
-    · exact mem_hyperplaneStabilizer_iff.mp hg b hb
-  have h1 : (Pi.single i 1 : ι → k) = 0 := by
-    rw [← vecMul_one (Pi.single i 1), ← Units.mul_inv g, ← vecMul_vecMul, h0, zero_vecMul]
-  simpa using congrFun h1 i
-
 /-- The vector `eᵢ + c` of the `i`th row of `rowUnipotent c`, for `c` supported off `i`. -/
 private def rowVec (c : {b // b ≠ i} → k) (b : ι) : k := if h : b = i then 1 else c ⟨b, h⟩
 
@@ -152,17 +128,6 @@ private theorem rowUnipotent_mem_lineStabilizer (c : {b // b ≠ i} → k) :
     rowUnipotent c ∈ lineStabilizer k i :=
   mem_lineStabilizer_iff.mpr fun a ha ↦ by
     rw [rowUnipotent_apply, ite_eq_right ha, one_apply_ne ha]
-
-/-- The `i`th row of a matrix stabilising the hyperplane `xᵢ = 0` is a multiple of `eᵢ`. -/
-private theorem single_vecMul_eq_of_mem_hyperplaneStabilizer {g : GL ι k}
-    (hg : g ∈ hyperplaneStabilizer k i) :
-    Pi.single i 1 ᵥ* (g : Matrix ι ι k) = (g : Matrix ι ι k) i i • Pi.single i 1 := by
-  ext b
-  rw [single_one_vecMul, row_apply, Pi.smul_apply, smul_eq_mul]
-  by_cases hb : b = i
-  · subst hb
-    simp
-  · rw [mem_hyperplaneStabilizer_iff.mp hg b hb, Pi.single_eq_of_ne hb, mul_zero]
 
 /-- **Distinct `c` give distinct cosets.** If `rowUnipotent c * (rowUnipotent c')⁻¹` stabilises the
 hyperplane `xᵢ = 0`, then `c = c'`. -/
@@ -208,43 +173,6 @@ private theorem exists_rowUnipotent_mul_mem {p : GL ι k} (hp : p ∈ lineStabil
 private theorem rowUnipotent_mul_apply_self (c : {b // b ≠ i} → k) (M : Matrix ι ι k) :
     ((rowUnipotent c : Matrix ι ι k) * M) i i = rowVec c ⬝ᵥ fun a ↦ M a i := by
   simp [Matrix.mul_apply, dotProduct, rowUnipotent_apply]
-
-/-- A product `p' p` of a matrix stabilising the hyperplane `xᵢ = 0` and one stabilising the line
-`k eᵢ` has nonzero `(i, i)` entry `p'ᵢᵢ pᵢᵢ`. -/
-private theorem mul_apply_self_ne_zero {p p' : GL ι k} (hp' : p' ∈ hyperplaneStabilizer k i)
-    (hp : p ∈ lineStabilizer k i) : ((p' * p : GL ι k) : Matrix ι ι k) i i ≠ 0 := by
-  rw [coe_mul_apply_of_mem_lineStabilizer p' hp i]
-  exact mul_ne_zero (apply_self_ne_zero_of_mem_hyperplaneStabilizer hp')
-    (apply_self_ne_zero_of_mem_lineStabilizer hp)
-
-/-- For `ξ` with `ξᵢᵢ ≠ 0` there is `p'` stabilising the hyperplane `xᵢ = 0` with `p'⁻¹ ξ`
-stabilising the line `k eᵢ`: `p'` is the identity off the `i`th column, which is the `i`th column of
-`ξ` scaled to have `i`th entry `1`. -/
-private theorem exists_mem_hyperplaneStabilizer_inv_mul_mem {ξ : GL ι k}
-    (hξ : (ξ : Matrix ι ι k) i i ≠ 0) :
-    ∃ p' ∈ hyperplaneStabilizer k i, p'⁻¹ * ξ ∈ lineStabilizer k i := by
-  set d := (ξ : Matrix ι ι k) i i
-  set w : ι → k := d⁻¹ • (ξ : Matrix ι ι k) *ᵥ Pi.single i 1
-  have hw : w i = 1 := by simp [w, d, hξ]
-  have hdet : ((1 : Matrix ι ι k).updateCol i w).det ≠ 0 := by
-    rw [← det_transpose, ← updateRow_transpose, transpose_one, det_updateRow_one, hw]
-    exact one_ne_zero
-  set p' := GeneralLinearGroup.mkOfDetNeZero _ hdet
-  have hp' : (p' : Matrix ι ι k) = (1 : Matrix ι ι k).updateCol i w :=
-    GeneralLinearGroup.val_mkOfDetNeZero _ _
-  have hp'e : (p' : Matrix ι ι k) *ᵥ Pi.single i 1 = w := by
-    ext a
-    rw [hp', mulVec_single_one, col_apply, updateCol_self]
-  refine ⟨p', mem_hyperplaneStabilizer_iff.mpr fun b hb ↦ ?_,
-    mem_lineStabilizer_iff.mpr fun a ha ↦ ?_⟩
-  · rw [hp', updateCol_ne hb, one_apply_ne (Ne.symm hb)]
-  · -- `p'⁻¹ ξ eᵢ = d p'⁻¹ w = d eᵢ`
-    have hcol : ((p'⁻¹ * ξ : GL ι k) : Matrix ι ι k) *ᵥ Pi.single i 1 = d • Pi.single i 1 := by
-      have hξe : (ξ : Matrix ι ι k) *ᵥ Pi.single i 1 = d • w := by
-        simp [w, smul_smul, mul_inv_cancel₀ hξ]
-      rw [Units.val_mul, ← mulVec_mulVec, hξe, mulVec_smul, ← hp'e, mulVec_mulVec,
-        ← Units.val_mul, inv_mul_cancel, Units.val_one, one_mulVec]
-    simpa [mulVec_single_one, Pi.single_eq_of_ne ha] using congrFun hcol a
 
 variable [Finite k]
 
@@ -352,6 +280,15 @@ theorem lineParahoric_le_integralGL : lineParahoric R K i ≤ integralGL R K ι 
   obtain ⟨γ, hγ, -⟩ := mem_lineParahoric_iff.mp hg
   exact ⟨γ, hγ⟩
 
+/-- **Membership of an integral matrix in `J`**: when `R → K` is injective, the image of
+`γ ∈ GL_ι(R)` lies in `J` exactly when the entries `γ_{a i}` with `a ≠ i` lie in the maximal
+ideal. -/
+theorem map_mem_lineParahoric_iff (hinj : Injective (algebraMap R K)) (γ : GL ι R) :
+    GeneralLinearGroup.map (algebraMap R K) γ ∈ lineParahoric R K i ↔
+      ∀ a, a ≠ i → (γ : Matrix ι ι R) a i ∈ maximalIdeal R := by
+  rw [mem_lineParahoric_iff]
+  exact ⟨fun ⟨γ', hγ', h⟩ ↦ GeneralLinearGroup.map_injective hinj hγ' ▸ h, fun h ↦ ⟨γ, rfl, h⟩⟩
+
 end Defs
 
 section DVR
@@ -372,11 +309,6 @@ private theorem map_residue_mem_hyperplaneStabilizer_iff (γ : GL ι R) :
     GeneralLinearGroup.map (residue R) γ ∈ hyperplaneStabilizer (ResidueField R) i ↔
       ∀ b, b ≠ i → (γ : Matrix ι ι R) i b ∈ maximalIdeal R := by
   simp only [mem_hyperplaneStabilizer_iff, GeneralLinearGroup.map_apply, residue_eq_zero_iff]
-
-private theorem map_mem_lineParahoric {γ : GL ι R}
-    (hγ : GeneralLinearGroup.map (residue R) γ ∈ lineStabilizer (ResidueField R) i) :
-    GeneralLinearGroup.map (algebraMap R K) γ ∈ lineParahoric R K i :=
-  Subgroup.mem_map_of_mem _ hγ
 
 omit [IsDomain R] [IsDiscreteValuationRing R] in
 /-- If the entries of a conjugate `(diag s) γ (diag s)⁻¹` of `γ ∈ GL_ι(R)` are those of a matrix
@@ -407,8 +339,7 @@ private theorem inv_mul_map_mul_mem_lineParahoric (hϖ : Irreducible ϖ)
     (hrow : ∀ b, b ≠ i → (γ : Matrix ι ι R) i b ∈ maximalIdeal R) :
     (diagGL (Pi.mulSingle i π))⁻¹ * GeneralLinearGroup.map (algebraMap R K) γ *
       diagGL (Pi.mulSingle i π) ∈ lineParahoric R K i := by
-  have hinj : Injective (algebraMap R K) :=
-    TauCeti.IsDiscreteValuationRing.injective_of_map_ne_zero _ hϖ (hπ ▸ π.ne_zero)
+  have hinj : Injective (algebraMap R K) := injective_algebraMap hϖ hπ
   have hϖm : ϖ ∈ maximalIdeal R := hϖ.maximalIdeal_eq ▸ Ideal.mem_span_singleton_self ϖ
   have hent (a b : ι) : ∃ r : R, algebraMap R K r = ((Pi.mulSingle i π⁻¹ : ι → Kˣ) a : K) *
       algebraMap R K ((γ : Matrix ι ι R) a b) * (((Pi.mulSingle i π⁻¹ : ι → Kˣ) b)⁻¹ : Kˣ) := by
@@ -444,8 +375,7 @@ private theorem exists_map_eq_mul_map_mul_inv (hϖ : Irreducible ϖ) (hπ : alge
       diagGL (Pi.mulSingle i π) * GeneralLinearGroup.map (algebraMap R K) γ *
         (diagGL (Pi.mulSingle i π))⁻¹ ∧
       ∀ b, b ≠ i → (γ' : Matrix ι ι R) i b ∈ maximalIdeal R := by
-  have hinj : Injective (algebraMap R K) :=
-    TauCeti.IsDiscreteValuationRing.injective_of_map_ne_zero _ hϖ (hπ ▸ π.ne_zero)
+  have hinj : Injective (algebraMap R K) := injective_algebraMap hϖ hπ
   have hϖm : ϖ ∈ maximalIdeal R := hϖ.maximalIdeal_eq ▸ Ideal.mem_span_singleton_self ϖ
   have hent (a b : ι) : ∃ r : R, algebraMap R K r = ((Pi.mulSingle i π : ι → Kˣ) a : K) *
       algebraMap R K ((γ : Matrix ι ι R) a b) * (((Pi.mulSingle i π : ι → Kˣ) b)⁻¹ : Kˣ) := by
@@ -478,8 +408,7 @@ theorem mem_conjAct_lineParahoric_iff (hϖ : Irreducible ϖ) (hπ : algebraMap R
     g ∈ ConjAct.toConjAct (diagGL (Pi.mulSingle i π)) • lineParahoric R K i ↔
       ∃ γ : GL ι R, GeneralLinearGroup.map (algebraMap R K) γ = g ∧
         ∀ b, b ≠ i → (γ : Matrix ι ι R) i b ∈ maximalIdeal R := by
-  rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← ConjAct.toConjAct_inv, ConjAct.smul_def,
-    ConjAct.ofConjAct_toConjAct, inv_inv]
+  rw [Subgroup.mem_conjAct_smul_iff]
   constructor
   · intro h
     obtain ⟨γ, hγ, hcol⟩ := mem_lineParahoric_iff.mp h
@@ -487,6 +416,17 @@ theorem mem_conjAct_lineParahoric_iff (hϖ : Irreducible ϖ) (hπ : algebraMap R
     exact ⟨γ', by rw [hγ'g, hγ]; group, hrow⟩
   · rintro ⟨γ, rfl, hrow⟩
     exact inv_mul_map_mul_mem_lineParahoric hϖ hπ hrow
+
+/-- **Membership of an integral matrix in `t J t⁻¹`**: the image of `γ ∈ GL_ι(R)` lies in
+`t J t⁻¹` exactly when the entries `γ_{i b}` with `b ≠ i` lie in the maximal ideal. -/
+theorem map_mem_conjAct_lineParahoric_iff (hϖ : Irreducible ϖ) (hπ : algebraMap R K ϖ = π)
+    (γ : GL ι R) :
+    GeneralLinearGroup.map (algebraMap R K) γ ∈
+        ConjAct.toConjAct (diagGL (Pi.mulSingle i π)) • lineParahoric R K i ↔
+      ∀ b, b ≠ i → (γ : Matrix ι ι R) i b ∈ maximalIdeal R := by
+  rw [mem_conjAct_lineParahoric_iff hϖ hπ]
+  exact ⟨fun ⟨γ', hγ', h⟩ ↦ GeneralLinearGroup.map_injective (injective_algebraMap hϖ hπ) hγ' ▸ h,
+    fun h ↦ ⟨γ, rfl, h⟩⟩
 
 /-- Inverse transpose carries the stabiliser of the line `k eᵢ` modulo the maximal ideal onto its
 conjugate `t J t⁻¹`, the stabiliser of the hyperplane `xᵢ = 0`. -/
@@ -562,18 +502,15 @@ private noncomputable def cosetRep (π : Kˣ) (i : ι) (c : {b // b ≠ i} → R
 private theorem map_liftGL_inv_rowUnipotent_mem (c : {b // b ≠ i} → ResidueField R) :
     GeneralLinearGroup.map (algebraMap R K) (liftGL R (rowUnipotent c)⁻¹) ∈
       lineParahoric R K i :=
-  map_mem_lineParahoric (by
+  mem_lineParahoric_iff.mpr ⟨_, rfl, (map_residue_mem_lineStabilizer_iff _).mp (by
     rw [map_residue_liftGL]
-    exact inv_mem (rowUnipotent_mem_lineStabilizer c))
+    exact inv_mem (rowUnipotent_mem_lineStabilizer c))⟩
 
 /-- **The coset decomposition of `J t J`**: the `cosetRep c` are representatives of the distinct
 left cosets of `J` in `J t J`. -/
 private theorem isCosetSystem_cosetRep (hϖ : Irreducible ϖ) (hπ : algebraMap R K ϖ = π) :
     Subgroup.IsCosetSystem (lineParahoric R K i) (lineParahoric R K i)
       (diagGL (Pi.mulSingle i π)) (cosetRep R π i) := by
-  have hinj : Injective (GeneralLinearGroup.map (n := ι) (algebraMap R K)) :=
-    GeneralLinearGroup.map_injective
-      (TauCeti.IsDiscreteValuationRing.injective_of_map_ne_zero _ hϖ (hπ ▸ π.ne_zero))
   set J := lineParahoric R K i
   set t := diagGL (Pi.mulSingle i π) with ht
   refine ⟨fun c ↦ DoubleCoset.mem_doubleCoset.mpr ⟨_, map_liftGL_inv_rowUnipotent_mem c, 1,
@@ -588,8 +525,7 @@ private theorem isCosetSystem_cosetRep (hϖ : Irreducible ϖ) (hπ : algebraMap 
         ⟨(liftGL R (rowUnipotent c)⁻¹)⁻¹ * γ, by rw [map_mul, map_inv], ?_⟩
       refine (map_residue_mem_hyperplaneStabilizer_iff _).mp ?_
       rwa [map_mul, map_inv, map_residue_liftGL, inv_inv]
-    rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← ConjAct.toConjAct_inv, ConjAct.smul_def,
-      ConjAct.ofConjAct_toConjAct, inv_inv] at hconj
+    rw [Subgroup.mem_conjAct_smul_iff] at hconj
     refine Set.mem_iUnion.mpr ⟨c, mem_leftCoset_iff _ |>.mpr ?_⟩
     have heq : (cosetRep R π i c)⁻¹ * (GeneralLinearGroup.map (algebraMap R K) γ * t * b) =
         t⁻¹ * ((GeneralLinearGroup.map (algebraMap R K) (liftGL R (rowUnipotent c)⁻¹))⁻¹ *
@@ -608,14 +544,11 @@ private theorem isCosetSystem_cosetRep (hϖ : Irreducible ϖ) (hπ : algebraMap 
             GeneralLinearGroup.map (algebraMap R K) (liftGL R (rowUnipotent c')⁻¹)) * t := by
         rw [cosetRep, cosetRep, ← ht]
         group
-      rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← ConjAct.toConjAct_inv, ConjAct.smul_def,
-        ConjAct.ofConjAct_toConjAct, inv_inv, ← heq]
+      rw [Subgroup.mem_conjAct_smul_iff, ← heq]
       exact h'
-    obtain ⟨γ, hγ, hrow⟩ := (mem_conjAct_lineParahoric_iff hϖ hπ).mp hconj
-    rw [← map_inv, ← map_mul] at hγ
-    rw [hinj hγ] at hrow
+    rw [← map_inv, ← map_mul, map_mem_conjAct_lineParahoric_iff hϖ hπ] at hconj
     refine eq_of_rowUnipotent_mul_inv_mem ?_
-    have := (map_residue_mem_hyperplaneStabilizer_iff _).mpr hrow
+    have := (map_residue_mem_hyperplaneStabilizer_iff _).mpr hconj
     rwa [map_mul, map_inv, map_residue_liftGL, map_residue_liftGL, inv_inv] at this
 
 /-- **`J t J` is the union of `q^{n-1}` left cosets of `J`**, where `q` is the size of the residue
@@ -639,8 +572,7 @@ theorem relIndex_lineParahoric (hϖ : Irreducible ϖ) (hπ : algebraMap R K ϖ =
     (lineParahoric R K i).relIndex (integralGL R K ι) =
       (lineStabilizer (ResidueField R) i).index := by
   have hinj : Injective (GeneralLinearGroup.map (n := ι) (algebraMap R K)) :=
-    GeneralLinearGroup.map_injective
-      (TauCeti.IsDiscreteValuationRing.injective_of_map_ne_zero _ hϖ (hπ ▸ π.ne_zero))
+    GeneralLinearGroup.map_injective (injective_algebraMap hϖ hπ)
   rw [lineParahoric, integralGL, MonoidHom.range_eq_map,
     Subgroup.relIndex_map_map_of_injective _ _ hinj, Subgroup.relIndex_top_right,
     Subgroup.index_comap_of_surjective _
@@ -675,8 +607,7 @@ theorem inv_mul_mem_doubleCoset_inv_lineParahoric_iff (hϖ : Irreducible ϖ)
     rintro hz
     obtain ⟨a, ha, b, hb, h⟩ := DoubleCoset.mem_doubleCoset.mp hz
     have hta : t * a * t⁻¹ ∈ ConjAct.toConjAct t • J := by
-      rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← ConjAct.toConjAct_inv, ConjAct.smul_def,
-        ConjAct.ofConjAct_toConjAct, inv_inv]
+      rw [Subgroup.mem_conjAct_smul_iff]
       simpa [mul_assoc] using ha
     obtain ⟨γ₁, hγ₁, hrow⟩ := (mem_conjAct_lineParahoric_iff hϖ hπ).mp hta
     obtain ⟨γ₂, hγ₂, hcol⟩ := mem_lineParahoric_iff.mp hb
@@ -684,19 +615,20 @@ theorem inv_mul_mem_doubleCoset_inv_lineParahoric_iff (hϖ : Irreducible ϖ)
     · rw [map_mul, hγ₁, hγ₂, ← inv_mul_eq_iff_eq_mul.mpr h.symm]
       group
     · rw [← residue_ne_zero_iff_isUnit, ← GeneralLinearGroup.map_apply, map_mul]
-      exact mul_apply_self_ne_zero ((map_residue_mem_hyperplaneStabilizer_iff γ₁).mpr hrow)
+      exact mul_apply_self_ne_zero_of_mem_hyperplaneStabilizer
+        ((map_residue_mem_hyperplaneStabilizer_iff γ₁).mpr hrow)
         ((map_residue_mem_lineStabilizer_iff γ₂).mpr hcol)
   · -- conversely `z = u (u⁻¹ z)`, with `u` lifting a matrix stabilising the hyperplane `xᵢ = 0`
     rintro ⟨ξ, rfl, hξ⟩
     rw [← residue_ne_zero_iff_isUnit, ← GeneralLinearGroup.map_apply] at hξ
     obtain ⟨p', hp', hp'ξ⟩ := exists_mem_hyperplaneStabilizer_inv_mul_mem hξ
     have hu : GeneralLinearGroup.map (algebraMap R K) (liftGL R p') ∈ ConjAct.toConjAct t • J :=
-      (mem_conjAct_lineParahoric_iff hϖ hπ).mpr ⟨_, rfl,
-        (map_residue_mem_hyperplaneStabilizer_iff _).mp (by rw [map_residue_liftGL]; exact hp')⟩
-    rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← ConjAct.toConjAct_inv, ConjAct.smul_def,
-      ConjAct.ofConjAct_toConjAct, inv_inv] at hu
+      (map_mem_conjAct_lineParahoric_iff hϖ hπ _).mpr
+        ((map_residue_mem_hyperplaneStabilizer_iff _).mp (by rw [map_residue_liftGL]; exact hp'))
+    rw [Subgroup.mem_conjAct_smul_iff] at hu
     have hv : GeneralLinearGroup.map (algebraMap R K) ((liftGL R p')⁻¹ * ξ) ∈ J :=
-      map_mem_lineParahoric (by rw [map_mul, map_inv, map_residue_liftGL]; exact hp'ξ)
+      mem_lineParahoric_iff.mpr ⟨_, rfl, (map_residue_mem_lineStabilizer_iff _).mp
+        (by rw [map_mul, map_inv, map_residue_liftGL]; exact hp'ξ)⟩
     refine DoubleCoset.mem_doubleCoset.mpr ⟨_, hu, _, hv, ?_⟩
     rw [map_mul, map_inv]
     group
@@ -710,8 +642,7 @@ private theorem cosetRep_inv_mul_mem_iff (hϖ : Irreducible ϖ) (hπ : algebraMa
           (lineParahoric R K i) ↔
       (rowVec c ⬝ᵥ fun a ↦ residue R ((ξ₀ : Matrix ι ι R) a i)) ≠ 0 := by
   have hinj : Injective (GeneralLinearGroup.map (n := ι) (algebraMap R K)) :=
-    GeneralLinearGroup.map_injective
-      (TauCeti.IsDiscreteValuationRing.injective_of_map_ne_zero _ hϖ (hπ ▸ π.ne_zero))
+    GeneralLinearGroup.map_injective (injective_algebraMap hϖ hπ)
   -- `(u t)⁻¹ x = t⁻¹ (u⁻¹ x)` with `u⁻¹ x ∈ GL_ι(R)`, whose reduction is `rowUnipotent c * x`
   have hred : GeneralLinearGroup.map (residue R) ((liftGL R (rowUnipotent c)⁻¹)⁻¹ * ξ₀) =
       rowUnipotent c * GeneralLinearGroup.map (residue R) ξ₀ := by
@@ -742,9 +673,6 @@ private theorem natCard_cosetRep_inv_mul_mem [Finite (ResidueField R)] (hϖ : Ir
         Nat.card (ResidueField R) ^ (Fintype.card ι - 1) -
           Nat.card (ResidueField R) ^ (Fintype.card ι - 2)
       else 0 := by
-  have hinj : Injective (GeneralLinearGroup.map (n := ι) (algebraMap R K)) :=
-    GeneralLinearGroup.map_injective
-      (TauCeti.IsDiscreteValuationRing.injective_of_map_ne_zero _ hϖ (hπ ▸ π.ne_zero))
   by_cases hx : x ∈ integralGL R K ι
   · obtain ⟨ξ₀, rfl⟩ := hx
     set v : ι → ResidueField R := fun a ↦ residue R ((ξ₀ : Matrix ι ι R) a i)
@@ -752,9 +680,7 @@ private theorem natCard_cosetRep_inv_mul_mem [Finite (ResidueField R)] (hϖ : Ir
       ite_eq_left (c := GeneralLinearGroup.map (algebraMap R K) ξ₀ ∈ integralGL R K ι) ⟨ξ₀, rfl⟩]
     have hJ : GeneralLinearGroup.map (algebraMap R K) ξ₀ ∈ lineParahoric R K i ↔
         ∀ a, a ≠ i → v a = 0 := by
-      rw [mem_lineParahoric_iff]
-      simp only [v, residue_eq_zero_iff]
-      exact ⟨fun ⟨γ, hγ, h⟩ ↦ hinj hγ ▸ h, fun h ↦ ⟨ξ₀, rfl, h⟩⟩
+      simp only [map_mem_lineParahoric_iff (injective_algebraMap hϖ hπ), v, residue_eq_zero_iff]
     split_ifs with hxJ
     · have hv := hJ.mp hxJ
       refine card_filter_rowVec_dotProduct_ne_zero_of_forall ?_ hv

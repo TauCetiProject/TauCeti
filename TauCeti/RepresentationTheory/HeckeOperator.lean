@@ -9,9 +9,9 @@ public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.GroupTheory.DoubleCoset
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.NumberTheory.HeckeRing.CosetSystem.Basic
+public import TauCeti.RepresentationTheory.InvariantForm.Hermitian
 public import TauCeti.RepresentationTheory.WeightSpace
 import TauCeti.GroupTheory.Coset.Basic
-import TauCeti.GroupTheory.Coset.Card
 import TauCeti.GroupTheory.DoubleCoset.Basic
 import TauCeti.Topology.Algebra.Group.DoubleCoset
 
@@ -65,32 +65,6 @@ The definitions and results are adapted from grh-lean (https://github.com/lserna
 public section
 
 open Function Set
-
-namespace QuotientGroup
-
-open scoped Pointwise
-
-variable {A G : Type*} [Zero A] [One A] [Group G] {K : Subgroup G}
-
-/-- If `K ∩ g K g⁻¹` has finite index in `K`, the indicator of the double coset `K g K` is
-supported on finitely many left cosets of `K`. This is the algebraic counterpart of
-`QuotientGroup.finite_support_indicator_doubleCoset`. -/
-theorem finite_support_indicator_doubleCoset_of_isFiniteRelIndex (g : G)
-    [(ConjAct.toConjAct g • K).IsFiniteRelIndex K] :
-    (support fun q : G ⧸ K ↦ (DoubleCoset.doubleCoset g K K).indicator (1 : G → A) q.out).Finite :=
-  ((Subgroup.isCosetSystem_out_mul K K g).finite_iff.mp inferInstance).subset
-    fun q hq ↦ ⟨q.out, Set.mem_of_indicator_ne_zero hq, q.out_eq'⟩
-
-/-- The indicator of a subgroup `K'` containing `K` with finite index is supported on finitely
-many left cosets of `K`. -/
-theorem finite_support_indicator_of_le {K' : Subgroup G} (hKK' : K ≤ K')
-    [K.IsFiniteRelIndex K'] :
-    (support fun q : G ⧸ K ↦ (K' : Set G).indicator (1 : G → A) q.out).Finite :=
-  (Set.finite_of_ncard_ne_zero (s := ((↑) : G → G ⧸ K) '' K')
-    (by rw [Subgroup.ncard_image_mk_eq_relIndex hKK']; exact Subgroup.relIndex_ne_zero)).subset
-    fun q hq ↦ ⟨q.out, Set.mem_of_indicator_ne_zero hq, q.out_eq'⟩
-
-end QuotientGroup
 
 namespace Representation
 
@@ -399,7 +373,7 @@ variable [StarRing A] {B : W →ₗ⋆[A] W →ₗ[A] A}
 /-- For a `ρ`-invariant sesquilinear form `B` and `K`-invariant vectors `x`, `y`, pairing the
 double coset operator `[K g K]` in the first variable:
 `B ([K g K] x) y = [K : K ∩ g K g⁻¹] • B (g x) y`. -/
-theorem sesqForm_doubleCosetOperator_left (hB : ∀ h x y, B (ρ h x) (ρ h y) = B x y) {x y : W}
+theorem sesqForm_doubleCosetOperator_left (hB : ρ.IsInvariantSesqForm B) {x y : W}
     (hx : x ∈ weightSpace (ρ.comp K.subtype) 1) (hy : y ∈ weightSpace (ρ.comp K.subtype) 1) :
     B (ρ.doubleCosetOperator K g x) y = (ConjAct.toConjAct g • K).relIndex K • B (ρ g x) y := by
   by_cases hfin : (ConjAct.toConjAct g • K).relIndex K = 0
@@ -415,12 +389,12 @@ theorem sesqForm_doubleCosetOperator_left (hB : ∀ h x y, B (ρ h x) (ρ h y) =
   refine Finset.sum_congr rfl fun q _ ↦ ?_
   calc B (ρ (q.out * g) x) y = B (ρ q.out (ρ g x)) (ρ q.out (ρ (q.out : G)⁻¹ y)) := by
         rw [map_mul, mul_apply_eq_comp, self_inv_apply]
-    _ = B (ρ g x) y := by rw [hB, hyK _ (K.inv_mem q.out.property)]
+    _ = B (ρ g x) y := by rw [hB.apply, hyK _ (K.inv_mem q.out.property)]
 
 /-- For a `ρ`-invariant sesquilinear form `B` and `K`-invariant vectors `x`, `y`, pairing the
 double coset operator `[K g K]` in the second variable:
 `B x ([K g K] y) = [K : K ∩ g K g⁻¹] • B x (g y)`. -/
-theorem sesqForm_doubleCosetOperator_right (hB : ∀ h x y, B (ρ h x) (ρ h y) = B x y) {x y : W}
+theorem sesqForm_doubleCosetOperator_right (hB : ρ.IsInvariantSesqForm B) {x y : W}
     (hx : x ∈ weightSpace (ρ.comp K.subtype) 1) (hy : y ∈ weightSpace (ρ.comp K.subtype) 1) :
     B x (ρ.doubleCosetOperator K g y) = (ConjAct.toConjAct g • K).relIndex K • B x (ρ g y) := by
   by_cases hfin : (ConjAct.toConjAct g • K).relIndex K = 0
@@ -435,20 +409,20 @@ theorem sesqForm_doubleCosetOperator_right (hB : ∀ h x y, B (ρ h x) (ρ h y) 
   refine Finset.sum_congr rfl fun q _ ↦ ?_
   calc B x (ρ (q.out * g) y) = B (ρ q.out (ρ (q.out : G)⁻¹ x)) (ρ q.out (ρ g y)) := by
         rw [map_mul, mul_apply_eq_comp, self_inv_apply]
-    _ = B x (ρ g y) := by rw [hB, hxK _ (K.inv_mem q.out.property)]
+    _ = B x (ρ g y) := by rw [hB.apply, hxK _ (K.inv_mem q.out.property)]
 
 /-- **Adjointness of `[K g K]` and `[K g⁻¹ K]`.** If `K ∩ g K g⁻¹` and `K ∩ g⁻¹ K g` have the same
 index in `K`, that is `K g K` and `K g⁻¹ K` consist of the same number of left cosets of `K`, then
 for every `ρ`-invariant sesquilinear form `B` the double coset operators `[K g K]` and `[K g⁻¹ K]`
 are adjoint on the `K`-invariant vectors: `B ([K g K] x) y = B x ([K g⁻¹ K] y)`. For a unitary
 representation `B` is the inner product. -/
-theorem sesqForm_doubleCosetOperator_left_eq_right_inv (hB : ∀ h x y, B (ρ h x) (ρ h y) = B x y)
+theorem sesqForm_doubleCosetOperator_left_eq_right_inv (hB : ρ.IsInvariantSesqForm B)
     (hdeg : (ConjAct.toConjAct g⁻¹ • K).relIndex K = (ConjAct.toConjAct g • K).relIndex K)
     {x y : W} (hx : x ∈ weightSpace (ρ.comp K.subtype) 1)
     (hy : y ∈ weightSpace (ρ.comp K.subtype) 1) :
     B (ρ.doubleCosetOperator K g x) y = B x (ρ.doubleCosetOperator K g⁻¹ y) := by
   rw [sesqForm_doubleCosetOperator_left hB hx hy, sesqForm_doubleCosetOperator_right hB hx hy,
-    hdeg, ← hB g x, self_inv_apply]
+    hdeg, ← hB.apply g x, self_inv_apply]
 
 end InvariantForm
 

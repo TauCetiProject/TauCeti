@@ -203,7 +203,7 @@ variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
   {K : Type*} [Field K] [Algebra R K] {ϖ : R} {π : Kˣ} {n : ℕ}
 
 /-- A uniformizer of `R` mapping to a unit of `K` makes `R → K` injective. -/
-private theorem injective_algebraMap (hϖ : Irreducible ϖ) (hπ : algebraMap R K ϖ = π) :
+theorem injective_algebraMap (hϖ : Irreducible ϖ) (hπ : algebraMap R K ϖ = π) :
     Function.Injective (algebraMap R K) :=
   TauCeti.IsDiscreteValuationRing.injective_of_map_ne_zero _ hϖ (hπ ▸ π.ne_zero)
 
