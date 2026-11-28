@@ -13,6 +13,7 @@ public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 public import TauCeti.AlgebraicGeometry.Geometrically.Integral
 public import TauCeti.AlgebraicGeometry.Geometrically.Irreducible
 public import TauCeti.AlgebraicGeometry.Morphisms.OverTensorUnit
+import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
 
 /-!
 # Abelian schemes
@@ -238,9 +239,18 @@ lemma toOverHom_comp {A B C : AbelianScheme S} (f : A ⟶ B) (g : B ⟶ C) :
     toOverHom (f ≫ g) = toOverHom f ≫ toOverHom g :=
   toOverFunctor.map_comp f g
 
+/-- A homomorphism of abelian schemes is locally of finite presentation. -/
+instance locallyOfFinitePresentation_toOverHom_left {A B : AbelianScheme S} (f : A ⟶ B) :
+    LocallyOfFinitePresentation (toOverHom f).left := by
+  let g := toOverHom f
+  have : LocallyOfFinitePresentation (g.left ≫ B.toOver.hom) := by
+    rw [Over.w g]
+    infer_instance
+  exact locallyOfFinitePresentation_of_comp g.left B.toOver.hom
+
 /-- The underlying morphism of a homomorphism of abelian schemes preserves the group law. -/
 instance {A B : AbelianScheme S} (f : A ⟶ B) : IsMonHom (toOverHom f) :=
-  toGrpFunctor_map_hom_hom f ▸ inferInstanceAs (IsMonHom f.hom.hom.hom)
+  toGrpFunctor_map_hom_hom f ▸ (toGrpFunctor.map f).hom.isMonHom_hom
 
 /-- A homomorphism of abelian schemes preserves the zero section. -/
 @[reassoc]
@@ -276,18 +286,19 @@ lemma toOverHom_homMk {A B : AbelianScheme S} (f : A.toOver ⟶ B.toOver)
     toOverHom (homMk f one_f mul_f) = f :=
   (rfl)
 
+/-- Forgetting a homomorphism of abelian schemes to its underlying morphism over `S` is
+faithful. -/
+instance : (toOverFunctor (S := S)).Faithful := by
+  have : (toGrpFunctor (S := S)).Faithful := InducedCategory.faithful _
+  unfold toOverFunctor
+  infer_instance
+
 /-- Two homomorphisms of abelian schemes are equal when their underlying scheme morphisms are
 equal. -/
 @[ext]
 lemma hom_ext {A B : AbelianScheme S} {f g : A ⟶ B}
-    (h : (toOverHom f).left = (toOverHom g).left) : f = g := by
-  change f.hom.hom.hom.left = g.hom.hom.hom.left at h
-  exact InducedCategory.hom_ext (Grp.hom_ext _ _ (Over.OverMorphism.ext h))
-
-/-- Forgetting a homomorphism of abelian schemes to its underlying morphism over `S` is
-faithful. -/
-instance : (toOverFunctor (S := S)).Faithful where
-  map_injective h := hom_ext (congrArg Over.Hom.left h)
+    (h : (toOverHom f).left = (toOverHom g).left) : f = g :=
+  toOverFunctor.map_injective (Over.OverMorphism.ext h)
 
 /-- Two homomorphisms of abelian schemes with the same underlying morphism over `S` are equal. -/
 lemma toOverHom_injective {A B : AbelianScheme S} {f g : A ⟶ B}

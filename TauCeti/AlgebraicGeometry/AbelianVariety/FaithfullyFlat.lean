@@ -59,8 +59,9 @@ variable {K : Type u} [Field K] {A B : AbelianVariety K}
 theorem flat_of_surjective (f : A ⟶ B) [Surjective (Hom.toSchemeHom f)] :
     Flat (Hom.toSchemeHom f) := by
   let g := Hom.toOverHom f
-  let : IsProper (g.left ≫ B.toOver.hom) :=
-    (Over.w g).symm ▸ inferInstanceAs (IsProper A.toOver.hom)
+  have : IsProper (g.left ≫ B.toOver.hom) := by
+    rw [Over.w g]
+    infer_instance
   let : IsProper g.left := IsProper.of_comp g.left B.toOver.hom
   exact GroupScheme.flat_of_surjective g
 

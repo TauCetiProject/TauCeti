@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.AbelianScheme.AbelianVariety
 public import TauCeti.AlgebraicGeometry.AbelianVariety.Isogeny
 public import TauCeti.AlgebraicGeometry.GroupScheme.Isogeny.BaseChange
 import TauCeti.AlgebraicGeometry.GroupScheme.FaithfullyFlat
-import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
 
 /-!
 # Isogenies of abelian schemes
@@ -36,29 +35,25 @@ universe u
 
 noncomputable section
 
-variable {S T : Scheme.{u}} {A B : AbelianScheme S}
-
-/-- A homomorphism of abelian schemes is locally of finite presentation. -/
-instance locallyOfFinitePresentation_toOverHom_left (f : A ⟶ B) :
-    LocallyOfFinitePresentation (toOverHom f).left := by
-  let g := toOverHom f
-  let : LocallyOfFinitePresentation (g.left ≫ B.toOver.hom) :=
-    (Over.w g).symm ▸ inferInstanceAs (LocallyOfFinitePresentation A.toOver.hom)
-  exact locallyOfFinitePresentation_of_comp g.left B.toOver.hom
+variable {S T : Scheme.{u}} {A B C : AbelianScheme S}
 
 /-- The morphism property of being an isogeny of abelian schemes over `S`. -/
 def isogenies (S : Scheme.{u}) : MorphismProperty (AbelianScheme S) :=
   (GroupScheme.isogenies S).inverseImage toGrpFunctor
 
+/-- The abelian-scheme isogeny property is pulled back from group schemes. -/
+theorem isogenies_eq_inverseImage (S : Scheme.{u}) :
+    isogenies S = (GroupScheme.isogenies S).inverseImage toGrpFunctor := (rfl)
+
 /-- An isogeny of abelian schemes is a finite flat surjective homomorphism. -/
 abbrev IsIsogeny (f : A ⟶ B) : Prop := isogenies S f
 
 /-- Finiteness and surjectivity characterize isogenies of abelian schemes over any base. -/
-@[simp]
-theorem isIsogeny_iff_isFinite_surjective (f : A ⟶ B) :
+theorem isIsogeny_iff_isFinite_and_surjective (f : A ⟶ B) :
     IsIsogeny f ↔ IsFinite (toOverHom f).left ∧ Surjective (toOverHom f).left := by
-  change GroupScheme.IsIsogeny (toGrpFunctor.map f) ↔ _
-  rw [GroupScheme.isIsogeny_iff, toGrpFunctor_map_hom_hom]
+  rw [IsIsogeny, isogenies_eq_inverseImage, MorphismProperty.inverseImage_iff]
+  refine (GroupScheme.isIsogeny_iff (toGrpFunctor.map f)).trans ?_
+  rw [toGrpFunctor_map_hom_hom]
   exact ⟨fun h ↦ ⟨h.1, h.2.2⟩, fun ⟨hf, hs⟩ ↦
     ⟨hf, (toOverHom f).flat_left_of_finite_of_surjective, hs⟩⟩
 
@@ -72,18 +67,49 @@ instance : (isogenies S).RespectsIso := by
   unfold isogenies
   infer_instance
 
+/-- The identity homomorphism of an abelian scheme is an isogeny. -/
+@[simp]
+theorem isIsogeny_id (A : AbelianScheme S) : IsIsogeny (𝟙 A) :=
+  (isogenies S).id_mem A
+
+/-- Every isomorphism of abelian schemes is an isogeny. -/
+theorem isIsogeny_of_isIso (f : A ⟶ B) [IsIso f] : IsIsogeny f :=
+  (isogenies S).of_isIso f
+
+namespace IsIsogeny
+
+/-- The underlying scheme morphism of an abelian-scheme isogeny is finite. -/
+theorem isFinite {f : A ⟶ B} (hf : IsIsogeny f) : IsFinite (toOverHom f).left :=
+  (isIsogeny_iff_isFinite_and_surjective f).mp hf |>.1
+
+/-- The underlying scheme morphism of an abelian-scheme isogeny is flat. -/
+theorem flat {f : A ⟶ B} (hf : IsIsogeny f) : Flat (toOverHom f).left := by
+  rw [IsIsogeny, isogenies_eq_inverseImage, MorphismProperty.inverseImage_iff] at hf
+  rw [← toGrpFunctor_map_hom_hom]
+  exact GroupScheme.IsIsogeny.flat hf
+
+/-- The underlying scheme morphism of an abelian-scheme isogeny is surjective. -/
+theorem surjective {f : A ⟶ B} (hf : IsIsogeny f) : Surjective (toOverHom f).left :=
+  (isIsogeny_iff_isFinite_and_surjective f).mp hf |>.2
+
+/-- A composite of abelian-scheme isogenies is an isogeny. -/
+theorem comp {f : A ⟶ B} {g : B ⟶ C} (hf : IsIsogeny f) (hg : IsIsogeny g) :
+    IsIsogeny (f ≫ g) :=
+  (isogenies S).comp_mem f g hf hg
+
 /-- Arbitrary base change preserves isogenies of abelian schemes. -/
-theorem IsIsogeny.baseChange {f : A ⟶ B} (hf : IsIsogeny f) (p : T ⟶ S) :
-    IsIsogeny ((baseChangeFunctor p).map f) :=
-  (MorphismProperty.inverseImage_iff (GroupScheme.isogenies T) toGrpFunctor _).mpr
-    (GroupScheme.IsIsogeny.baseChange p
-      ((MorphismProperty.inverseImage_iff (GroupScheme.isogenies S) toGrpFunctor f).mp hf))
+theorem baseChange {f : A ⟶ B} (hf : IsIsogeny f) (p : T ⟶ S) :
+    IsIsogeny ((baseChangeFunctor p).map f) := by
+  simp only [IsIsogeny, isogenies_eq_inverseImage, MorphismProperty.inverseImage_iff] at hf ⊢
+  exact GroupScheme.IsIsogeny.baseChange p hf
+
+end IsIsogeny
 
 /-- The functor to abelian varieties over a field preserves and reflects isogenies. -/
 theorem isIsogeny_toAbelianVarietyFunctor_map_iff {k : Type u} [Field k]
     {X Y : AbelianScheme (Spec (.of k))} (f : X ⟶ Y) :
     AbelianVariety.IsIsogeny (toAbelianVarietyFunctor.map f) ↔ IsIsogeny f := by
-  rw [AbelianVariety.isIsogeny_iff, isIsogeny_iff_isFinite_surjective]
+  rw [AbelianVariety.isIsogeny_iff, isIsogeny_iff_isFinite_and_surjective]
   have h : AbelianVariety.Hom.toSchemeHom (toAbelianVarietyFunctor.map f) = (toOverHom f).left :=
     congrArg Over.Hom.left (toOverHom_toAbelianVarietyFunctor_map f)
   exact h ▸ Iff.rfl

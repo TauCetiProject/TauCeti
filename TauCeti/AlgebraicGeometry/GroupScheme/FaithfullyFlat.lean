@@ -84,8 +84,9 @@ theorem flat_of_surjective_of_isAlgClosed [QuasiCompact f.left] [LocallyOfFinite
   let : ModObj G H := (Mod.comapRegular f).mod
   have : JacobsonSpace H.left := LocallyOfFiniteType.jacobsonSpace H.hom
   have : IsLocallyNoetherian H.left := LocallyOfFiniteType.isLocallyNoetherian H.hom
-  have : LocallyOfFiniteType G.hom :=
-    Over.w f ▸ inferInstanceAs (LocallyOfFiniteType (f.left ≫ H.hom))
+  have : LocallyOfFiniteType G.hom := by
+    rw [← Over.w f]
+    infer_instance
   have hcomm (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) :
       (leftTranslation g).hom.left ≫ f.left = f.left ≫ (translation H g).hom.left := by
     simpa only [orbitMap_one_comapRegular] using
@@ -133,7 +134,9 @@ the base. -/
 theorem flat_left_of_finite_of_surjective {S : Scheme.{u}} {G H : Over S} [GrpObj G] [GrpObj H]
     (f : G ⟶ H) [IsMonHom f] [Flat G.hom] [GeometricallyReduced H.hom] [LocallyOfFiniteType H.hom]
     [IsFinite f.left] [LocallyOfFinitePresentation f.left] [Surjective f.left] : Flat f.left := by
-  let : Flat (f.left ≫ H.hom) := (Over.w f).symm ▸ inferInstanceAs (Flat G.hom)
+  have : Flat (f.left ≫ H.hom) := by
+    rw [Over.w f]
+    infer_instance
   refine f.left.flat_of_flat_pullback_fiberι H.hom fun s ↦ ?_
   let p := S.fromSpecResidueField s
   let F := Over.pullback p
@@ -141,8 +144,9 @@ theorem flat_left_of_finite_of_surjective {S : Scheme.{u}} {G H : Over S} [GrpOb
   let : Surjective (F.map f).left := MorphismProperty.overPullbackMap p f ‹_›
   let : LocallyOfFiniteType (F.obj H).hom :=
     TauCeti.AlgebraicGeometry.locallyOfFiniteType_over_pullback_obj_hom p H
-  let : GeometricallyReduced (F.obj H).hom :=
-    inferInstanceAs (GeometricallyReduced (pullback.snd H.hom p))
+  have : GeometricallyReduced (F.obj H).hom := by
+    simp only [F, Over.pullback_obj_hom]
+    infer_instance
   have hf : Flat (F.map f).left :=
     TauCeti.GroupScheme.flat_of_surjective (k := S.residueField s) (F.map f)
   have h := (Over.isPullback_pullback_map_left p f).flip
