@@ -10,9 +10,11 @@ public import TauCeti.Geometry.Lie.Exponential.OneParameter
 public import TauCeti.Geometry.Manifold.Instances.Unitary.Special
 
 public import TauCeti.Algebra.Lie.Orthogonal.CrossProduct
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Orbit
 
 import TauCeti.Geometry.Lie.Adjoint.Units.Basic
 import TauCeti.Geometry.Lie.Functor
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 
 /-!
@@ -43,7 +45,8 @@ homomorphism preserves brackets (`ContMDiffMonoidMorphism.groupLieAlgebraMap_lie
 
 For `n = 3`, composing with the hat map `TauCeti.soThreeEquiv` identifies the dual of the Lie
 algebra of `SO(3)` with `ℝ³` (`TauCeti.specialOrthogonalThreeDualEquiv`), and the coadjoint
-stabilizer of the functional of `m ≠ 0` is the line of infinitesimal rotations about `m`.
+stabilizer of the functional of `m ≠ 0` is the line of infinitesimal rotations about `m`. So the
+coadjoint orbits `SO(3) ⧸ SO(3)_c` of nonzero functionals `c` are two-dimensional.
 
 As for the special unitary group, matrices carry the `ℓ²` operator norm: the statements are made
 with `open scoped Matrix.Norms.L2Operator` and the local instance `Matrix.l2OpNormedAlgebraReal`.
@@ -61,6 +64,8 @@ with `open scoped Matrix.Norms.L2Operator` and the local instance `Matrix.l2OpNo
   `TauCeti.lieAnnihilator_specialOrthogonalThreeDualEquiv_eq_top_iff`: the coadjoint stabilizer of
   `ν_m` in the Lie algebra of `SO(3)` is the line of infinitesimal rotations about `m` for
   `m ≠ 0`, and all of it only for `m = 0`.
+* `TauCeti.finrank_quotientModelSpace_stabilizer_specialOrthogonalGroup`: the coadjoint orbit of a
+  nonzero functional on the Lie algebra of `SO(3)` is two-dimensional.
 
 ## References
 
@@ -313,6 +318,25 @@ theorem lieAnnihilator_specialOrthogonalThreeDualEquiv_eq_top_iff {m : Fin 3 →
     (LieSubalgebra.mem_comap _ _).2 (h ▸ LieSubalgebra.mem_top _)⟩
   obtain ⟨ξ, rfl⟩ := (specialOrthogonalLieAlgebraEquiv (Fin 3)).surjective A
   exact (LieSubalgebra.mem_comap _ _).1 (h ▸ LieSubalgebra.mem_top ξ)
+
+/-- **The coadjoint orbits of nonzero functionals on the Lie algebra of `SO(3)` are
+two-dimensional**: for `c ≠ 0` the homogeneous space `SO(3) ⧸ SO(3)_c` is modelled on a space of
+dimension `dim 𝔰𝔬(3) - dim 𝔰𝔬(3)_c = 3 - 1 = 2`. -/
+theorem finrank_quotientModelSpace_stabilizer_specialOrthogonalGroup {c : Module.Dual ℝ 𝔰𝔬₃}
+    (hc : c ≠ 0) :
+    finrank ℝ (Subgroup.QuotientModelSpace (Matrix.specialUnitaryGroup.model (Fin 3) ℝ)
+      ((Lie.coadjointRepresentation ℝ (Matrix.specialUnitaryGroup.model (Fin 3) ℝ)
+        (Matrix.specialOrthogonalGroup (Fin 3) ℝ)).stabilizer c)) = 2 := by
+  have h := c.finrank_quotientModelSpace_add_finrank_lieAnnihilator
+  -- Mathlib defines `GroupLieAlgebra I G` as an `abbrev` for the tangent space at `1`, so its
+  -- dimension is that of the model space.
+  have hT : finrank ℝ 𝔰𝔬₃ = _ :=
+    finrank_tangentSpace (1 : Matrix.specialOrthogonalGroup (Fin 3) ℝ)
+  obtain ⟨m, rfl⟩ := specialOrthogonalThreeDualEquiv.surjective c
+  rw [finrank_lieAnnihilator_specialOrthogonalThreeDualEquiv
+    (by rintro rfl; exact hc (map_zero _))] at h
+  rw [finrank_groupLieAlgebra_specialOrthogonalGroup_fin_three] at hT
+  omega
 
 end Three
 

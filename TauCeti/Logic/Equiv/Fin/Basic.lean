@@ -34,9 +34,19 @@ Finally, `TauCeti.apply_comp_finCycle` iterates a single-step rotation rule (`Fi
 anticyclic functions.
 `TauCeti.homotopyIndexEquiv` splits `Fin (n + 1) × Fin (n + 2)` into off-diagonal, diagonal, and
 superdiagonal pairs.
+`Fin.option_elim'_comp_finSuccEquiv` recovers a tuple from its first entry and tail.
 -/
 
 public section
+
+/-- Reindexing the option family formed from the first entry and tail of a tuple along
+`finSuccEquiv` recovers the tuple. -/
+theorem Fin.option_elim'_comp_finSuccEquiv {α : Type*} {n : ℕ} (a : Fin (n + 1) → α) :
+    Option.elim' (a 0) (Fin.tail a) ∘ finSuccEquiv n = a := by
+  funext i
+  cases i using Fin.cases <;>
+    simp only [Function.comp_apply, finSuccEquiv_zero, finSuccEquiv_succ, Option.elim',
+      Fin.tail_def]
 
 namespace TauCeti
 

@@ -83,7 +83,7 @@ section Range
 
 variable {k G V W : Type*} [Field k] [Group G] [Fintype G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)]
-  [AddCommGroup V] [Module k V] [FiniteDimensional k V] [AddCommGroup W] [Module k W]
+  [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
   (ρ : Representation k G V) [ρ.IsIrreducible] (σ : Representation k G W)
 
 open scoped Classical in
@@ -185,6 +185,7 @@ variable {G V W : Type*} [Group G] [Fintype G] [Invertible (Nat.card G : ℂ)]
   [AddCommGroup V] [Module ℂ V] [FiniteDimensional ℂ V] (ρ : Representation ℂ G V)
   [ρ.IsIrreducible] [NormedAddCommGroup W] [InnerProductSpace ℂ W] (σ : Representation ℂ G W)
 
+omit [Invertible (Nat.card G : ℂ)] [ρ.IsIrreducible] in
 /-- **The coefficients of a complex primitive central idempotent are conjugate-symmetric**:
 inverting the group element conjugates the coefficient, because inversion conjugates character
 values (`TauCeti.Representation.conj_char`) and the degree `χ(1)` is real. -/

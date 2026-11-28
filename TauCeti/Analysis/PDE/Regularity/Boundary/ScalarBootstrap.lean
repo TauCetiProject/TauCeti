@@ -105,7 +105,7 @@ theorem UniformlyEllipticOn.exists_value_eq_value_restrictL_of_mapsTo_of_inf
   have haD : UniformlyEllipticOn (((Omega ⊓ U : Opens E) : Set E) ∩ U) a lam Lam :=
     ha.mono_set inter_subset_left
   obtain ⟨Q, hQ⟩ := haD.exists_value_eq_value_restrictL_of_mapsTo
-    hν hHc hH hDU hsmooth k hu
+    hν hHc hH hDU k (fun i j ↦ (hsmooth i j).of_le (by simp)) hu
     (fun _ hψ hψc hψs ↦ W1p.exists_w1p0_value_ae_eq_mul_restrictL
       (subset_rfl : (U : Set E) ⊆ U) hu0 hψ hψc hψs) hV hVU
   have hVD : Omega ⊓ V ≤ (Omega ⊓ U) ⊓ V :=

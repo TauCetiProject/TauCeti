@@ -149,10 +149,7 @@ theorem isCubicalRepresentative_ofCube_upCube (m : ℕ) :
       (((cubeBoundaryPair.{u} (m + 1)).cubicalChainComplex k).homologyπ (m + 1)
         (cubeBoundaryPairCycle k m)) :=
   (TopPair.isCubicalRepresentative_iff _ _).2 ⟨_, by
-    have h := TopPair.cubicalChainOfCube_def k (P := cubeBoundaryPair.{u} (m + 1))
-      (upCube.{u} (m + 1))
-    rw [normalizedCubicalChainComplexXEquiv_symm_apply] at h
-    rw [iCycles_cubeBoundaryPairCycle, h], rfl⟩
+    rw [iCycles_cubeBoundaryPairCycle]; exact TopPair.cokernel_π_f_ofCube k _, rfl⟩
 
 /-- The map of pairs `c : (Iᵐ⁺¹, ∂Iᵐ⁺¹) ⟶ P` given by a cube `c` sends the class of the fundamental
 cycle of the cube pair to the class of `c` in relative cubical homology. -/
