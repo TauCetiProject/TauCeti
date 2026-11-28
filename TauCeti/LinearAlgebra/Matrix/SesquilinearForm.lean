@@ -15,6 +15,7 @@ import Mathlib.Tactic.Module
 import TauCeti.Algebra.Group.Hom.Defs
 import TauCeti.Algebra.Group.Pi.Lemmas
 import TauCeti.Algebra.Ring.Hom
+import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.Nondegenerate
 import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
 import TauCeti.LinearAlgebra.Span.Basic
@@ -644,10 +645,10 @@ theorem exists_comp_dotProduct_mulVec_self_eq_zero_and_eq_zero_and_ne_zero
 theorem exists_comp_dotProduct_mulVec_ne_zero_pair (hdet : Q.det ≠ 0) {x y : n → K}
     (hx : x ≠ 0) (hy : y ≠ 0) :
     ∃ u : n → K, (σ ∘ u) ⬝ᵥ (Q *ᵥ x) ≠ 0 ∧ (σ ∘ u) ⬝ᵥ (Q *ᵥ y) ≠ 0 := by
-  -- A coordinate vector pairs with `x` as the corresponding coordinate of `Q x`.
   have hne {w : n → K} (hw : w ≠ 0) : ∃ u : n → K, (σ ∘ u) ⬝ᵥ (Q *ᵥ w) ≠ 0 := by
-    obtain ⟨i, hi⟩ := Function.ne_iff.mp fun h ↦ hdet (exists_mulVec_eq_zero_iff.mp ⟨w, hw, h⟩)
-    exact ⟨Pi.single i 1, by rwa [TauCeti.map_comp_single, map_one, single_one_dotProduct]⟩
+    obtain ⟨u, hu⟩ := not_forall.mp (mt ((σ.nondegenerate_sesquilinearForm σ.injective).1 (Q *ᵥ w))
+      (fun h ↦ hdet (exists_mulVec_eq_zero_iff.mp ⟨w, hw, h⟩)))
+    exact ⟨u, by simpa [RingHom.sesquilinearForm_apply, dotProduct, mul_comm] using hu⟩
   obtain ⟨v, hv⟩ := hne hx
   obtain ⟨w, hw⟩ := hne hy
   by_cases hvy : (σ ∘ v) ⬝ᵥ (Q *ᵥ y) = 0
@@ -741,25 +742,29 @@ theorem exists_comp_dotProduct_mulVec_eq_zero_and_eq_add_smul {v : n → K}
     fun _ huv hux ↦ by simp [mulVec_sub, mulVec_smul, dotProduct_sub, dotProduct_smul, huv, hux],
     (sub_add_cancel _ _).symm⟩
 
-/-- **Extending a nonzero isotropic vector to a hyperbolic pair.** For involutive `σ` and
-invertible `ε`-Hermitian `Q` with surjective `ε`-trace, any nonzero isotropic `e` pairs with some
-nonzero isotropic `f` satisfying `B(e, f) = 1` and `B(f, e) = ε`. -/
+omit [DecidableEq n] in
+/-- **Extending an isotropic vector outside the radical to a hyperbolic pair.** For involutive
+`σ` and `ε`-Hermitian `Q` with surjective `ε`-trace, any isotropic `e` with `Q *ᵥ e ≠ 0`
+pairs with some nonzero isotropic `f` satisfying `B(e, f) = 1` and `B(f, e) = ε`. -/
 theorem exists_comp_dotProduct_mulVec_eq_zero_and_eq_one (hσ : Function.Involutive σ)
-    (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
-    (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) {e : n → K} (he₀ : e ≠ 0)
+    (hQ : (Q.map σ)ᵀ = ε • Q)
+    (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) {e : n → K} (he₀ : Q *ᵥ e ≠ 0)
     (he : (σ ∘ e) ⬝ᵥ (Q *ᵥ e) = 0) :
     ∃ f : n → K, f ≠ 0 ∧ (σ ∘ f) ⬝ᵥ (Q *ᵥ f) = 0 ∧ (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1 ∧
       (σ ∘ f) ⬝ᵥ (Q *ᵥ e) = ε := by
-  obtain ⟨u, hue, -⟩ := exists_comp_dotProduct_mulVec_ne_zero_pair (σ := σ) hdet he₀ he₀
+  classical
+  obtain ⟨w, hw⟩ := not_forall.mp (mt dotProduct_eq_zero_iff.mp he₀)
+  obtain ⟨u, rfl⟩ := hσ.surjective.comp_left w
+  have hue : (σ ∘ u) ⬝ᵥ (Q *ᵥ e) ≠ 0 := by rwa [dotProduct_comm]
   obtain ⟨c, hf₀⟩ := exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero hσ hQ htr he hue
-  set f₀ := u + c • e; have := Function.nonempty_of_ne he₀
-  have hε := mul_self_eq_one_of_trace_of_det_ne_zero hσ hQ hdet htr
+  set f₀ := u + c • e
+  have hε := mul_self_eq_one_of_trace hσ hQ htr (by rintro rfl; simp at he₀)
   have hef₀ : (σ ∘ e) ⬝ᵥ (Q *ᵥ f₀) ≠ 0 :=
     (comp_dotProduct_mulVec_ne_zero_comm hσ hQ).mpr (by simpa [f₀, he] using hue)
   let f := ((σ ∘ e) ⬝ᵥ (Q *ᵥ f₀))⁻¹ • f₀
   have hef : (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1 := by simp [f, mulVec_smul, inv_mul_cancel₀ hef₀]
   exact ⟨f, right_ne_zero_of_comp_dotProduct_mulVec_eq_one hef,
-    by simp [f, TauCeti.map_comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, hf₀], hef,
+    by rw [comp_smul_dotProduct_mulVec_smul, hf₀, mul_zero], hef,
     comp_dotProduct_mulVec_eq_of_eq_one hσ hQ hε hef⟩
 
 omit [DecidableEq n] in
@@ -812,8 +817,8 @@ theorem exists_comp_dotProduct_mulVec_eq_zero_and_eq_one_of_notMem_span
   have hfe := comp_dotProduct_mulVec_eq_of_eq_one hσ hQ hε hef
   obtain ⟨u₀, hu₀_ne, heu₀, hfu₀, hu₀_iso⟩ :=
     exists_isotropic_ne_zero_in_ortho hσ hQ hε he hfe hu₀ hw_span hu hw huw
-  obtain ⟨z, -, -, -, hzu₀⟩ := exists_comp_dotProduct_mulVec_eq_zero_and_eq_one hσ hQ hdet htr
-    hu₀_ne hu₀_iso
+  obtain ⟨z, -, -, -, hzu₀⟩ := exists_comp_dotProduct_mulVec_eq_zero_and_eq_one hσ hQ htr
+    (by simpa using (mulVec_injective_of_det_ne_zero hdet).ne hu₀_ne) hu₀_iso
   obtain ⟨z₀, hez₀, hfz₀, hz_eq⟩ := exists_eq_add_and_comp_dotProduct_mulVec_eq_zero hε he hf hef
     hfe z
   have hz₀u₀ : (σ ∘ z₀) ⬝ᵥ (Q *ᵥ u₀) = ε := by

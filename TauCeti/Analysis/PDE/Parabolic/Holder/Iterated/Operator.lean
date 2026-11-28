@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.CompLeft
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Differentiation
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Inclusion
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.LowOrder
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Restriction
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Operator
 import Mathlib.Analysis.Normed.Operator.Prod
 
@@ -55,6 +56,10 @@ is the order-`k` form of `TauCeti.ParabolicC2HolderSpace.initialDataL`.
   Lipschitz dependence on the coefficients.
 * `TauCeti.ParabolicCkHolderSpace.equivHolderSpace_parabolicOperatorL`: agreement with the
   operator on `C_b^{2+α,1+α/2}` at order zero.
+* `TauCeti.ParabolicCkHolderSpace.parabolicOperatorL_restrictL`: the operator commutes with
+  restriction to a smaller slab, as do the coordinate coefficient fields
+  (`TauCeti.ParabolicCkHolderSpace.restrictL_euclideanSecondOrderCoeff` and its first- and
+  zeroth-order analogues).
 * `TauCeti.ParabolicCkHolderSpace.continuous_initialDataL` and
   `TauCeti.ParabolicCkHolderSpace.continuousAt_inverse_initialDataL`: continuity of the
   initial-data operator, and of the inverse of an invertible one, in the coefficients.
@@ -285,6 +290,15 @@ theorem norm_parabolicOperatorL_le :
     ‖parabolicOperatorL hα A B C‖ ≤ 1 + 21 * (k + 1) ^ 2 * 2 ^ k *
       (‖A‖ + 8 * (k + 1) ^ 2 * ‖B‖ + 64 * (k + 1) ^ 2 * (k + 2) ^ 2 * ‖C‖) :=
   (norm_sub_le _ _).trans (add_le_add norm_timeDerivL_le_one (norm_spatialOperatorL_le hα A B C))
+
+/-- The parabolic operator commutes with restriction to a smaller slab: restricting `u` and the
+coefficient fields `A`, `B`, `C` to `E × [a', b']` restricts `P u`. -/
+theorem parabolicOperatorL_restrictL {a' b' : ℝ} (ha : a ≤ a') (hb : b' ≤ b) (hab' : a' < b')
+    (u : ParabolicCkHolderSpace (k + 2) α E F hab) :
+    parabolicOperatorL hα (restrictL ha hb hab' A) (restrictL ha hb hab' B)
+        (restrictL ha hb hab' C) (restrictL ha hb hab' u) =
+      restrictL ha hb hab' (parabolicOperatorL hα A B C u) :=
+  ext fun p ↦ by simp
 
 /-- The initial-data operator `u ↦ (P u, u(·, a))` from `C_{par,b}^{(k+2)+α}` to
 `C_{par,b}^{k+α} × C_b^{k+2,α}`: the forcing and the initial spatial trace of `u`. -/
@@ -680,6 +694,40 @@ theorem ellipticity_inclusionOfLEL (hα : α ≤ 1) {m : ℕ} (h : m ≤ k)
     ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
       lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ inclusionOfLEL hα h (a i j) p).toQuadraticForm' ξ := by
   simpa only [inclusionOfLEL_apply] using ha
+
+section Restriction
+
+variable {t₀' t₁' : ℝ} (h₀ : t₀ ≤ t₀') (h₁ : t₁' ≤ t₁) (ht' : t₀' < t₁')
+
+/-- Restricting the second-order coefficient field to a smaller slab restricts its scalar
+coefficients `aⁱʲ`. -/
+@[simp]
+theorem restrictL_euclideanSecondOrderCoeff
+    (a : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht) :
+    restrictL h₀ h₁ ht' (euclideanSecondOrderCoeff a) =
+      euclideanSecondOrderCoeff fun i j ↦ restrictL h₀ h₁ ht' (a i j) :=
+  ext fun _ ↦ ContinuousLinearMap.ext fun _ ↦ by simp
+
+/-- Restricting the first-order coefficient field to a smaller slab restricts its scalar
+coefficients `bⁱ`. -/
+@[simp]
+theorem restrictL_euclideanFirstOrderCoeff
+    (b : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht) :
+    restrictL h₀ h₁ ht' (euclideanFirstOrderCoeff b) =
+      euclideanFirstOrderCoeff fun i ↦ restrictL h₀ h₁ ht' (b i) :=
+  ext fun _ ↦ ContinuousLinearMap.ext fun _ ↦ by simp
+
+omit [DecidableEq ι] in
+/-- Restricting the zeroth-order coefficient field to a smaller slab restricts its scalar
+coefficient `c`. -/
+@[simp]
+theorem restrictL_euclideanZerothOrderCoeff
+    (c : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ ht) :
+    restrictL h₀ h₁ ht' (euclideanZerothOrderCoeff c) =
+      euclideanZerothOrderCoeff (restrictL h₀ h₁ ht' c) :=
+  ext fun _ ↦ ContinuousLinearMap.ext fun _ ↦ by simp
+
+end Restriction
 
 /- In the next statements, the order-zero coefficients `equivHolderSpace c` are elaborated without
 an expected type, as `(equivHolderSpace c :)`: unifying their type with that of the order-two

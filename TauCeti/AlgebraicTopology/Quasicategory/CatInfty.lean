@@ -11,7 +11,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Inner.Pu
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutProduct
 public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn.Basic
 public import TauCeti.AlgebraicTopology.SimplicialNerve.Quasicategory
-public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
+public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom.Basic
 
 /-!
 # The simplicial category of quasicategories and `Cat∞`

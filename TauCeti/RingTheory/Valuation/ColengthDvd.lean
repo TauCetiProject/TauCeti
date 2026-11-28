@@ -29,9 +29,11 @@ isomorphism `ι : ℂ ≃ PadicAlgCl ℓ`, with the absolute value of `PadicAlgC
   `O ^ ι ⊸_z L`. This rests on the Smith normal form over such a ring,
   `Matrix.exists_mul_mul_eq_diagonal_of_preValuationRing`.
 * `Submodule.colengthDvd_inf_comap_span`: for a linear form `f`, `M ⊸_a {v ∈ M : a ∣ f v}`.
-* `Submodule.colengthDvd_inf_iInf_comap_span`: the product of the divisors bounds the colength
-  when imposing finitely many such conditions.
+* `Submodule.colengthDvd_map_biInf_comap_span_pow`: the sum of the exponents bounds the
+  colength cost of finitely many divisibility conditions on coordinates defined on `M`.
 * `Submodule.colengthDvd_top_smul_top`: `O ^ ι ⊸_{a ^ #ι} a • O ^ ι`.
+* `Submodule.colengthDvd_top_smul_inf_comap_span`: combining coordinate scaling and a
+  linear congruence multiplies their colength bounds.
 * `Submodule.colengthDvd_sup_span`: `(N + span S) ⊸_{z ^ #S} (N + z • V)` for a finite set `S`.
 
 ## References
@@ -76,28 +78,17 @@ theorem colengthDvd_inf_comap_span (M : Submodule O V) (f : V →ₗ[O] O) (a : 
   rw [SetLike.mem_coe, mem_comap, h_comb]
   split_ifs <;> simp [Ideal.mem_span_singleton, hc i, mul_comm]
 
-/-- Imposing finitely many coordinate divisibility conditions on `M` costs at most the product
-of their divisors. The linear forms need not be independent. -/
-theorem colengthDvd_inf_iInf_comap_span (M : Submodule O V) (s : Finset ι)
-    (f : ι → V →ₗ[O] O) (d : ι → O) :
-    M.ColengthDvd (M ⊓ ⨅ j ∈ s, Submodule.comap (f j) (Ideal.span {d j})) (∏ j ∈ s, d j) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert j s hj ih =>
-    rw [Finset.iInf_insert, prod_insert hj, mul_comm, ← inf_assoc, inf_right_comm M]
-    exact ih.trans (colengthDvd_inf_comap_span _ (f j) (d j))
-
 /-- If coordinates are defined only on `M`, imposing divisibility by `a ^ (e j)` in those
 coordinates costs at most `a` to the sum of the exponents. -/
-theorem colengthDvd_map_iInf_comap_span_pow (M : Submodule O V) (s : Finset ι)
+theorem colengthDvd_map_biInf_comap_span_pow (M : Submodule O V) (s : Finset ι)
     (f : ι → M →ₗ[O] O) (a : O) (e : ι → ℕ) :
     M.ColengthDvd ((⨅ j ∈ s, Submodule.comap (f j) (Ideal.span {a ^ e j})).map M.subtype)
       (a ^ ∑ j ∈ s, e j) := by
   have h : (⊤ : Submodule O M).ColengthDvd
       (⨅ j ∈ s, Submodule.comap (f j) (Ideal.span {a ^ e j})) (a ^ ∑ j ∈ s, e j) := by
-    simpa only [top_inf_eq, prod_pow_eq_pow_sum] using
-      colengthDvd_inf_iInf_comap_span ⊤ s f (fun j ↦ a ^ e j)
+    rw [← prod_pow_eq_pow_sum]
+    exact s.colengthDvd_biInf fun j _ ↦
+      (colengthDvd_inf_comap_span ⊤ (f j) (a ^ e j)).mono le_rfl inf_le_right
   exact h.map M.subtype (by simp [Submodule.map_top]) le_rfl
 
 /-- **The image of a square matrix.** Over a commutative ring with total divisibility, if a square
@@ -112,6 +103,9 @@ theorem ColengthDvd.of_det_dvd [Fintype ι] [DecidableEq ι] {A : Matrix ι ι O
   obtain ⟨L₀, Q₀, d, hL₀, hQ₀, h⟩ := exists_mul_mul_eq_diagonal_of_preValuationRing A
   let f (j : ι) : (ι → O) →ₗ[O] O := .proj j ∘ₗ L₀.mulVecLin
   let S (s : Finset ι) : Submodule O (ι → O) := ⨅ j ∈ s, Submodule.comap (f j) (Ideal.span {d j})
+  have h_chain (s : Finset ι) : ColengthDvd ⊤ (S s) (∏ j ∈ s, d j) :=
+    s.colengthDvd_biInf fun j _ ↦
+      (colengthDvd_inf_comap_span ⊤ (f j) (d j)).mono le_rfl inf_le_right
   -- the last submodule lies in the image of `A = L₀⁻¹ * diagonal d * Q₀⁻¹`
   have h_image : S univ ≤ LinearMap.range A.mulVecLin := by
     intro x hx
@@ -132,9 +126,7 @@ theorem ColengthDvd.of_det_dvd [Fintype ι] [DecidableEq ι] {A : Matrix ι ι O
     rw [← det_diagonal, ← h, det_mul, det_mul, mul_comm L₀.det, mul_assoc]
     exact associated_mul_unit_right _ _ (hL₀.mul hQ₀)
   have h_prod : ∏ j, d j ∣ z := h_assoc.symm.dvd.trans h_dvd
-  have h_chain : ColengthDvd ⊤ (S univ) (∏ j, d j) := by
-    simpa only [S, top_inf_eq] using colengthDvd_inf_iInf_comap_span ⊤ univ f d
-  exact ((h_chain.trans_dvd h_prod).mono le_rfl (h_image.trans h_le))
+  simpa using ((h_chain univ).trans_dvd h_prod).trans (.of_le (h_image.trans h_le))
 
 /-- Over a commutative ring with total divisibility, `a • O ^ ι` has colength dividing `a ^ #ι` in
 `O ^ ι`. -/
@@ -144,6 +136,27 @@ theorem colengthDvd_top_smul_top [Fintype ι] (a : O) :
   refine .of_det_dvd (A := a • (1 : Matrix ι ι O)) (by simp) ?_
   rintro _ ⟨v, rfl⟩
   simpa [smul_mulVec] using smul_mem_pointwise_smul v a ⊤ mem_top
+
+/-- Over a commutative ring with total divisibility, imposing coordinate divisibility by
+`a` costs one power of `a` per coordinate, and imposing divisibility of the linear form
+`f` by `b` costs one power of `b`. Either constraint may be omitted. -/
+theorem colengthDvd_top_smul_inf_comap_span [Fintype ι] (a b : O)
+    (f : (ι → O) →ₗ[O] O) (scale test : Prop) [Decidable scale] [Decidable test] :
+    (⊤ : Submodule O (ι → O)).ColengthDvd
+      ((if scale then a • ⊤ else ⊤) ⊓ (if test then Submodule.comap f (Ideal.span {b}) else ⊤))
+      (a ^ (if scale then Fintype.card ι else 0) * b ^ (if test then 1 else 0)) := by
+  have hM : (⊤ : Submodule O (ι → O)).ColengthDvd (if scale then a • ⊤ else ⊤)
+      (a ^ (if scale then Fintype.card ι else 0)) := by
+    by_cases hs : scale
+    · simpa only [ite_eq_left hs] using colengthDvd_top_smul_top (ι := ι) a
+    · simp only [ite_eq_right hs, pow_zero, colengthDvd_self]
+  have hN (M : Submodule O (ι → O)) :
+      M.ColengthDvd (M ⊓ (if test then Submodule.comap f (Ideal.span {b}) else ⊤))
+      (b ^ (if test then 1 else 0)) := by
+    by_cases ht : test
+    · simpa only [ite_eq_left ht, pow_one] using colengthDvd_inf_comap_span M f b
+    · simp only [ite_eq_right ht, inf_top_eq, pow_zero, colengthDvd_self]
+  exact hM.trans (hN _)
 
 /-- Over a commutative ring with total divisibility, for a submodule `N` and a finite set `s` of
 vectors, the colength of `N + z • V` in `N + span s` divides `z ^ #s`. -/

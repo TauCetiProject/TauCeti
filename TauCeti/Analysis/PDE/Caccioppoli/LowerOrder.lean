@@ -52,7 +52,7 @@ estimates in terms of `f` and `u` alone.
 
 ## Main declarations
 
-All seven are in the namespace `TauCeti.PDE`.
+All eight are in the namespace `TauCeti.PDE`.
 
 * `UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_lowerOrder_of_memLp`:
   Caccioppoli's inequality for `(u - k)⁺` at an arbitrary level with an `L²` hypothesis.
@@ -68,6 +68,8 @@ All seven are in the namespace `TauCeti.PDE`.
 * `exists_setIntegral_ball_norm_gradient_sq_le_lowerOrder`: its form on concentric balls.
 * `exists_sq_toReal_eLpNorm_gradient_ball_le_lowerOrder`: the same in terms of `L²` norms on the
   balls, for coefficients controlled on the outer ball only.
+* `exists_toReal_eLpNorm_gradient_ball_le_eLpNorm_value`: its dimensionless form on
+  `B(x₀, r) ⊆ B(x₀, 2 r)`, `‖∇u‖_{L²(B(x₀, r))} ≤ C (‖u‖ / r + r ‖f‖ / λ)`.
 
 ## References
 
@@ -697,6 +699,92 @@ theorem exists_sq_toReal_eLpNorm_gradient_ball_le_lowerOrder :
   rw [hgrad, hval, hfor, ← hmG.norm_toLp_sq, ← hmV.norm_toLp_sq, ← hmF.norm_toLp_sq,
     Lp.norm_toLp, Lp.norm_toLp, Lp.norm_toLp] at hcU
   exact hcU
+
+/-- The arithmetic of Caccioppoli's inequality in dimensionless form. Under the bounds
+`Λ, r β, r² γ ≤ M λ`, the inequality from `B(x₀, r)` to `B(x₀, 2 r)`, with the norms `G` of `∇u`,
+and `U`, `F` of `u` and `f`, gives `G ≤ Q (U / r + r F / λ)` for a constant `Q` depending only on
+`M` and on the constant `C` of that inequality. -/
+private theorem exists_le_mul_div_add_mul_div_of_sq_le (M C : ℝ) :
+    ∃ Q : ℝ, 0 ≤ Q ∧ ∀ ⦃Lam lam β γ r G U F : ℝ⦄, 0 < lam → 0 < r → 0 ≤ Lam → 0 ≤ β →
+      0 ≤ G → 0 ≤ U → 0 ≤ F → Lam ≤ M * lam → r * β ≤ M * lam → r ^ 2 * γ ≤ M * lam →
+      G ^ 2 ≤ (2 * (2 * Lam / lam) ^ 2 * (C / (2 * r - r)) ^ 2 + (2 * β / lam) ^ 2 +
+        4 * γ / lam + 2 / (2 * r) ^ 2) * U ^ 2 + 2 * (2 * r / lam) ^ 2 * F ^ 2 →
+      G ≤ Q * (U / r + r * F / lam) := by
+  set Q := 8 * M ^ 2 * C ^ 2 + 4 * M ^ 2 + 4 * M + 4
+  have hQ : 3 ≤ Q := by simp only [Q]; nlinarith [sq_nonneg (M * C), sq_nonneg (2 * M + 1)]
+  refine ⟨Q, by linarith, ?_⟩
+  intro Lam lam β γ r G U F hlam hr hΛ0 hβ0 hG hU hF hΛ hβ hγ hcacc
+  have h1 : Lam / lam ≤ M := by rw [div_le_iff₀ hlam]; linarith
+  have h2 : r * β / lam ≤ M := by rw [div_le_iff₀ hlam]; linarith
+  have h3 : r ^ 2 * γ / lam ≤ M := by rw [div_le_iff₀ hlam]; linarith
+  have he : (2 * (2 * Lam / lam) ^ 2 * (C / (2 * r - r)) ^ 2 + (2 * β / lam) ^ 2 +
+      4 * γ / lam + 2 / (2 * r) ^ 2) * U ^ 2 + 2 * (2 * r / lam) ^ 2 * F ^ 2 =
+      (8 * (Lam / lam) ^ 2 * C ^ 2 + 4 * (r * β / lam) ^ 2 + 4 * (r ^ 2 * γ / lam) + 1 / 2) *
+        (U / r) ^ 2 + 8 * (r * F / lam) ^ 2 := by
+    field_simp
+    ring
+  have hP : 8 * (Lam / lam) ^ 2 * C ^ 2 + 4 * (r * β / lam) ^ 2 + 4 * (r ^ 2 * γ / lam) + 1 / 2 ≤
+      Q := by
+    have : 0 ≤ Lam / lam := by positivity
+    have : 0 ≤ r * β / lam := by positivity
+    have : (Lam / lam) ^ 2 * C ^ 2 ≤ M ^ 2 * C ^ 2 := by gcongr
+    have : (r * β / lam) ^ 2 ≤ M ^ 2 := by gcongr
+    simp only [Q]
+    linarith
+  rw [he] at hcacc
+  have hx : 0 ≤ U / r := by positivity
+  have hy : 0 ≤ r * F / lam := by positivity
+  refine (pow_le_pow_iff_left₀ hG (by positivity) two_ne_zero).1 (hcacc.trans ?_)
+  nlinarith [mul_le_mul_of_nonneg_right hP (sq_nonneg (U / r)), mul_nonneg hx hy,
+    mul_le_mul_of_nonneg_right (by nlinarith : Q ≤ Q ^ 2) (sq_nonneg (U / r)),
+    mul_le_mul_of_nonneg_right (by nlinarith : (8 : ℝ) ≤ Q ^ 2) (sq_nonneg (r * F / lam)),
+    mul_nonneg (mul_nonneg hx hy) (sq_nonneg Q)]
+
+/-- **Caccioppoli's inequality on balls, in dimensionless form.** Fix `M`. There is a constant `C`,
+depending only on the dimension `n` and on `M`, with the following property. Let `a` be measurable
+and uniformly elliptic on `B(x₀, 2 r) ⊆ Ω` with constants `λ ≤ Λ`, let `b`, `c` be measurable on
+`B(x₀, 2 r)` with `‖b‖ ≤ β` and `|c| ≤ γ` almost everywhere there, and suppose that `Λ ≤ M λ`,
+`r β ≤ M λ` and `r² γ ≤ M λ`. Let `u ∈ H¹(Ω)` be a weak solution of
+
+`-∂ᵢ(aⁱʲ ∂ⱼu) + ⟨b, ∇u⟩ + c u = f` in `Ω`, with `f ∈ L²(Ω)`
+
+and no boundary condition. Then
+
+`‖∇u‖_{L²(B(x₀, r))} ≤ C (‖u‖ / r + r ‖f‖ / λ)`,
+
+the norms on the right being those of `L²(B(x₀, 2 r))`. Both sides scale in the same way under the
+dilations `x ↦ x₀ + r x`. This is `TauCeti.PDE.exists_sq_toReal_eLpNorm_gradient_ball_le_lowerOrder`
+with `R = 2 r`. -/
+theorem exists_toReal_eLpNorm_gradient_ball_le_eLpNorm_value (M : ℝ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (mu : Measure (EuclideanSpace ℝ ι)) [mu.IsAddHaarMeasure]
+      ⦃Omega : Opens (EuclideanSpace ℝ ι)⦄ ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄
+      ⦃b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι⦄ ⦃c : EuclideanSpace ℝ ι → ℝ⦄
+      ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃r lam Lam β γ : ℝ⦄
+      ⦃f : Lp ℝ 2 (mu.restrict Omega)⦄ ⦃u : W1p mu Omega 2⦄,
+      0 < r → Metric.ball x₀ (2 * r) ⊆ Omega →
+      UniformlyEllipticOn (Metric.ball x₀ (2 * r)) a lam Lam →
+      AEStronglyMeasurable a (mu.restrict (Metric.ball x₀ (2 * r))) →
+      AEStronglyMeasurable b (mu.restrict (Metric.ball x₀ (2 * r))) →
+      AEStronglyMeasurable c (mu.restrict (Metric.ball x₀ (2 * r))) →
+      (∀ᵐ x ∂mu.restrict (Metric.ball x₀ (2 * r)), ‖b x‖ ≤ β) →
+      (∀ᵐ x ∂mu.restrict (Metric.ball x₀ (2 * r)), |c x| ≤ γ) →
+      Lam ≤ M * lam → r * β ≤ M * lam → r ^ 2 * γ ≤ M * lam →
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
+        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
+      (eLpNorm (W1p.gradient u) 2 (mu.restrict (Metric.ball x₀ r))).toReal ≤
+        C * ((eLpNorm (W1p.value u) 2 (mu.restrict (Metric.ball x₀ (2 * r)))).toReal / r +
+          r * (eLpNorm f 2 (mu.restrict (Metric.ball x₀ (2 * r)))).toReal / lam) := by
+  obtain ⟨C₂, hcacc⟩ := exists_sq_toReal_eLpNorm_gradient_ball_le_lowerOrder (ι := ι)
+  obtain ⟨Q, hQ, harith⟩ := exists_le_mul_div_add_mul_div_of_sq_le M C₂
+  refine ⟨Q, hQ, ?_⟩
+  intro mu _ Omega a b c x₀ r lam Lam β γ f u hr hΩ ha ham hbm hcm hβ hγ hMΛ hMβ hMγ hu
+  -- The ball has positive measure, so the almost everywhere bound forces `0 ≤ β`.
+  have : (ae (mu.restrict (Metric.ball x₀ (2 * r)))).NeBot :=
+    ae_restrict_neBot.2 (Metric.measure_ball_pos mu x₀ (by positivity)).ne'
+  have hβ0 : 0 ≤ β := let ⟨_, hx⟩ := hβ.exists; (norm_nonneg _).trans hx
+  exact harith ha.pos hr ha.upper_nonneg hβ0 ENNReal.toReal_nonneg ENNReal.toReal_nonneg
+    ENNReal.toReal_nonneg hMΛ hMβ hMγ
+    (hcacc mu (by positivity) (by linarith) hΩ ha ham hbm hcm hβ hγ hu)
 
 end PDE
 

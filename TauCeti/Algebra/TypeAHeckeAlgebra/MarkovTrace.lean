@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Infinite
+import TauCeti.Algebra.Ring.Units
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Markov traces on the infinite type-A Hecke algebra
@@ -46,6 +48,9 @@ uniqueness they are the Ocneanu traces for these two values of `z`.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.isMarkovTrace_indexCharacter` and
   `TauCeti.InfiniteTypeAHeckeAlgebra.isMarkovTrace_signCharacter`: the two characters are Markov
   traces.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_mul_eigenprojection` and
+  `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_mul_wenzlProjection`: the projection
+  parameter rules for the native eigenprojection and Wenzl's complementary projection.
 
 ## References
 
@@ -155,6 +160,34 @@ theorem map_mul_shift (hτ : IsMarkovTrace z τ) {a : ℕ} {x : InfiniteTypeAHec
             ← (commute_shift_of_mem_stage hx e).eq, mul_assoc, map_mul (shift R q a)]
       _ = τ x * τ (d * T q n * e) := by
           rw [hed, hτ.map_mul_T_mul hd he, mul_left_comm]
+
+variable {η : R}
+
+/-- **The projection parameter of a Markov trace.** If `z = q * η - q⁻¹ * (1 - η)`, a Markov trace
+with parameter `z` multiplies by `η` when the eigenprojection of the generator `T n` adding the
+new last strand is appended. -/
+theorem map_mul_eigenprojection (hτ : IsMarkovTrace z τ) (s : Rˣ)
+    (hs : (s : R) = q + ↑q⁻¹) (hz : z = q * η - ↑q⁻¹ * (1 - η)) {n : ℕ}
+    {x : InfiniteTypeAHeckeAlgebra R q} (hx : x ∈ stage R q (n + 1)) :
+    τ (x * (↑s⁻¹ : R) • (T q n + algebraMap R _ (↑q⁻¹ : R))) = η * τ x := by
+  have hs' : (↑s⁻¹ : R) * s = 1 := s.inv_mul
+  rw [hs] at hs'
+  rw [mul_smul_comm, map_smul, mul_add, map_add, hτ.map_mul_T hx, ← Algebra.commutes,
+    ← Algebra.smul_def, map_smul, smul_eq_mul, smul_eq_mul, hz]
+  linear_combination η * τ x * hs'
+
+/-- **Trace comparison `η_W = 1 - η`.** If `z = q * η - q⁻¹ * (1 - η)`, so that `η` is the native
+projection parameter of `τ`
+(`TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_mul_eigenprojection`), then appending Wenzl's
+projection `(1 + q ^ 2)⁻¹ • (q ^ 2 - q • T n)` to `x` in the stage on `n + 1` strands multiplies
+`τ x` by `1 - η`. -/
+theorem map_mul_wenzlProjection (hτ : IsMarkovTrace z τ) (u : Rˣ)
+    (hu : (u : R) = 1 + (q : R) ^ 2) (hz : z = q * η - ↑q⁻¹ * (1 - η)) {n : ℕ}
+    {x : InfiniteTypeAHeckeAlgebra R q} (hx : x ∈ stage R q (n + 1)) :
+    τ (x * (↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q n)) = (1 - η) * τ x := by
+  rw [wenzlProjection_eq_one_sub_eigenprojection u hu, mul_sub, mul_one, map_sub,
+    hτ.map_mul_eigenprojection (q⁻¹ * u) (Units.val_inv_mul_eq_val_add_val_inv hu) hz hx]
+  ring
 
 end IsMarkovTrace
 

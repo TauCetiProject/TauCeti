@@ -7,7 +7,9 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Basic
 public import Mathlib.CategoryTheory.Monoidal.Closed.Basic
-public import TauCeti.Topology.Convenient.GeneratedBy
+public import TauCeti.Topology.Category.TopCat.MappingSpace
+public import TauCeti.Topology.Category.TopCat.Monoidal
+public import TauCeti.Topology.Convenient.Category
 public import TauCeti.Topology.Convenient.HomSpace
 
 /-!
@@ -26,6 +28,10 @@ with the `MonoidalClosed` structure induced by `Topology.ContinuousMapGeneratedB
   `ContinuousMapGeneratedBy G Y Z`.
 * In `GeneratedByTopCat G`, the product is `WithGeneratedByTopology G (Y × Z)` and `(ihom Y).obj Z`
   is `WithGeneratedByTopology G (ContinuousMapGeneratedBy G Y Z)`.
+* The canonical product comparison `CartesianMonoidalCategory.prodComparison toTopCat Y Z` in
+  `TopCat` is the generated-topology counit on `Y × Z`
+  (`GeneratedByTopCat.prodComparison_toTopCat`), so `Y ⊗ Z ≃ₜ Y × Z` whenever `Y × Z` is
+  `G`-generated (in particular whenever either factor is locally compact).
 
 ## References
 
@@ -41,7 +47,7 @@ noncomputable section
 
 open CategoryTheory Limits MonoidalCategory Topology
 
-universe v t u
+universe w v t u
 
 namespace ContinuousGeneratedByCat
 
@@ -248,12 +254,35 @@ instance instCartesianMonoidalCategory : CartesianMonoidalCategory (GeneratedByT
 instance instBraidedCategory : BraidedCategory (GeneratedByTopCat.{v} G) :=
   .ofCartesianMonoidalCategory
 
+instance : Subsingleton ↑(𝟙_ (GeneratedByTopCat.{v} G)) :=
+  inferInstanceAs (Subsingleton PUnit.{v + 1})
+
+instance (Y Z : GeneratedByTopCat.{v} G) [T2Space Y] [T2Space Z] : T2Space ↑(Y ⊗ Z) :=
+  inferInstanceAs (T2Space (WithGeneratedByTopology G (Y × Z)))
+
+instance (Y Z : GeneratedByTopCat.{v} G) [Small.{w} Y] [Small.{w} Z] : Small.{w} ↑(Y ⊗ Z) :=
+  inferInstanceAs (Small.{w} (WithGeneratedByTopology G (Y × Z)))
+
 @[simp]
 theorem whiskerLeft_apply (X : GeneratedByTopCat.{v} G) {Y Z : GeneratedByTopCat.{v} G}
     (f : Y ⟶ Z) (p : ↑(X ⊗ Y)) :
     (X ◁ f) p = (WithGeneratedByTopology.equiv (X := G) (Y := X × Z)).symm
       ((WithGeneratedByTopology.equiv (X := G) (Y := X × Y) p).1,
         f (WithGeneratedByTopology.equiv (X := G) (Y := X × Y) p).2) := rfl
+
+@[simp]
+theorem whiskerRight_apply {Y Z : GeneratedByTopCat.{v} G} (f : Y ⟶ Z)
+    (X : GeneratedByTopCat.{v} G) (p : ↑(Y ⊗ X)) :
+    (f ▷ X) p = (WithGeneratedByTopology.equiv (X := G) (Y := Z × X)).symm
+      (f (WithGeneratedByTopology.equiv (X := G) (Y := Y × X) p).1,
+        (WithGeneratedByTopology.equiv (X := G) (Y := Y × X) p).2) := rfl
+
+@[simp]
+theorem tensorHom_apply {W₁ W₂ Y₁ Y₂ : GeneratedByTopCat.{v} G}
+    (f : W₁ ⟶ W₂) (g : Y₁ ⟶ Y₂) (p : ↑(W₁ ⊗ Y₁)) :
+    (f ⊗ₘ g) p = (WithGeneratedByTopology.equiv (X := G) (Y := W₂ × Y₂)).symm
+      (f (WithGeneratedByTopology.equiv (X := G) (Y := W₁ × Y₁) p).1,
+        g (WithGeneratedByTopology.equiv (X := G) (Y := W₁ × Y₁) p).2) := rfl
 
 @[simp]
 theorem fst_apply (Y Z : GeneratedByTopCat.{v} G) (p : ↑(Y ⊗ Z)) :
@@ -269,6 +298,70 @@ theorem snd_apply (Y Z : GeneratedByTopCat.{v} G) (p : ↑(Y ⊗ Z)) :
 protected theorem lift_apply {X Y Z : GeneratedByTopCat.{v} G} (f : X ⟶ Y) (g : X ⟶ Z) (x : X) :
     CartesianMonoidalCategory.lift f g x =
       (WithGeneratedByTopology.equiv (X := G) (Y := Y × Z)).symm (f x, g x) := rfl
+
+@[simp]
+theorem braiding_hom_apply (Y Z : GeneratedByTopCat.{v} G) (p : ↑(Y ⊗ Z)) :
+    (β_ Y Z).hom p = (WithGeneratedByTopology.equiv (X := G) (Y := Z × Y)).symm
+      ((WithGeneratedByTopology.equiv (X := G) (Y := Y × Z) p).2,
+        (WithGeneratedByTopology.equiv (X := G) (Y := Y × Z) p).1) := rfl
+
+@[simp]
+theorem braiding_inv_apply (Y Z : GeneratedByTopCat.{v} G) (p : ↑(Z ⊗ Y)) :
+    (β_ Y Z).inv p = (WithGeneratedByTopology.equiv (X := G) (Y := Y × Z)).symm
+      ((WithGeneratedByTopology.equiv (X := G) (Y := Z × Y) p).2,
+        (WithGeneratedByTopology.equiv (X := G) (Y := Z × Y) p).1) := rfl
+
+@[simp]
+theorem leftUnitor_hom_apply (Y : GeneratedByTopCat.{v} G)
+    (p : ↑(𝟙_ (GeneratedByTopCat.{v} G) ⊗ Y)) :
+    (λ_ Y).hom p = (WithGeneratedByTopology.equiv (X := G) (Y := PUnit × Y) p).2 := rfl
+
+@[simp]
+theorem leftUnitor_inv_apply (Y : GeneratedByTopCat.{v} G) (y : Y) :
+    (λ_ Y).inv y =
+      (WithGeneratedByTopology.equiv (X := G) (Y := PUnit × Y)).symm (PUnit.unit, y) := rfl
+
+@[simp]
+theorem rightUnitor_hom_apply (Y : GeneratedByTopCat.{v} G)
+    (p : ↑(Y ⊗ 𝟙_ (GeneratedByTopCat.{v} G))) :
+    (ρ_ Y).hom p = (WithGeneratedByTopology.equiv (X := G) (Y := Y × PUnit) p).1 := rfl
+
+@[simp]
+theorem rightUnitor_inv_apply (Y : GeneratedByTopCat.{v} G) (y : Y) :
+    (ρ_ Y).inv y =
+      (WithGeneratedByTopology.equiv (X := G) (Y := Y × PUnit)).symm (y, PUnit.unit) := rfl
+
+section ProdComparison
+
+variable (Y Z : GeneratedByTopCat.{v} G)
+
+/-- The canonical product comparison `toTopCat.obj (Y ⊗ Z) ⟶ toTopCat.obj Y ⊗ toTopCat.obj Z` in
+`TopCat` is the generated-topology counit on `Y × Z`. -/
+theorem prodComparison_toTopCat :
+    CartesianMonoidalCategory.prodComparison toTopCat Y Z =
+      (adjCounit (X := G)).app (Y.obj ⊗ Z.obj) :=
+  TopCat.ext fun p ↦ by rw [TopCat.prodComparison_apply]; rfl
+
+@[simp]
+theorem prodComparison_toTopCat_apply (p : ↑(Y ⊗ Z)) :
+    ConcreteCategory.hom (X := (Y ⊗ Z).obj) (Y := Y.obj ⊗ Z.obj)
+      (CartesianMonoidalCategory.prodComparison toTopCat Y Z) p =
+      WithGeneratedByTopology.equiv (X := G) (Y := Y × Z) p := by
+  rw [prodComparison_toTopCat]
+  exact adjCounit_app_apply G (Y.obj ⊗ Z.obj) p
+
+/-- The convenient product `Y ⊗ Z` has the ordinary product topology if and only if `Y × Z` is
+`G`-generated. -/
+theorem isIso_prodComparison_toTopCat_iff :
+    IsIso (CartesianMonoidalCategory.prodComparison toTopCat Y Z) ↔ IsGeneratedBy G (Y × Z) := by
+  rw [prodComparison_toTopCat]; exact isIso_adjCounit_app_iff G (Y.obj ⊗ Z.obj)
+
+/-- When `Y × Z` is `G`-generated, the product comparison in `TopCat` is an isomorphism. -/
+instance instIsIsoProdComparisonToTopCat [IsGeneratedBy G (Y × Z)] :
+    IsIso (CartesianMonoidalCategory.prodComparison toTopCat Y Z) :=
+  (isIso_prodComparison_toTopCat_iff Y Z).2 inferInstance
+
+end ProdComparison
 
 section Closed
 
@@ -424,6 +517,70 @@ theorem uncurry_apply {Y Z T : GeneratedByTopCat.{v} G} (g : Z ⟶ (ihom Y).obj 
         (WithGeneratedByTopology.equiv (X := G) (Y := Y × Z) p).1 := by
   rw [← MonoidalClosed.homEquiv_symm_apply_eq, ihom_adjunction_homEquiv]
   exact uncurryHom_apply g p
+
+/-- Evaluation in `GeneratedByTopCat G` applies the underlying `G`-continuous map to a point. -/
+@[simp]
+theorem ihom_ev_app_apply (Y Z : GeneratedByTopCat.{v} G) (p : ↑(Y ⊗ (ihom Y).obj Z)) :
+    ConcreteCategory.hom (X := Y ⊗ (ihom Y).obj Z) (Y := Z) ((ihom.ev Y).app Z) p =
+      (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z)
+        (WithGeneratedByTopology.equiv (X := G) (Y := Y × _) p).2)
+        (WithGeneratedByTopology.equiv (X := G) (Y := Y × _) p).1 := by
+  rw [← MonoidalClosed.uncurry_id_eq_ev, uncurry_apply]; rfl
+
+/-- Coevaluation in `GeneratedByTopCat G` sends `z` to the slice map `y ↦ (y, z)`. -/
+@[simp]
+theorem equiv_ihom_coev_app_apply (Y Z : GeneratedByTopCat.{v} G) (z : Z) (y : Y) :
+    (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y ↑(Y ⊗ Z))
+      (ConcreteCategory.hom (X := Z) (Y := (ihom Y).obj (Y ⊗ Z))
+        ((ihom.coev Y).app Z) z)) y =
+      (WithGeneratedByTopology.equiv (X := G) (Y := Y × Z)).symm (y, z) := by
+  rw [← MonoidalClosed.curry_id_eq_coev, equiv_curry_apply]; rfl
+
+/-- Canonical morphism from the `G`-generated refinement of the compact-open mapping space
+`C(Y, Z)` into the internal hom `(ihom Y).obj Z`. -/
+def compactOpenToIhom (Y Z : GeneratedByTopCat.{v} G) :
+    of (X := G) (WithGeneratedByTopology G C(Y, Z)) ⟶ (ihom Y).obj Z :=
+  (TopCat.toGeneratedByTopCat (X := G)).map <| TopCat.ofHom
+    ⟨ContinuousMap.toContinuousMapGeneratedBy G,
+      ContinuousMap.continuous_toContinuousMapGeneratedBy⟩
+
+@[simp]
+theorem equiv_compactOpenToIhom_apply (Y Z : GeneratedByTopCat.{v} G)
+    (f : WithGeneratedByTopology G C(Y, Z)) (y : Y) :
+    (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z)
+      (compactOpenToIhom Y Z f)) y =
+      WithGeneratedByTopology.equiv (X := G) (Y := C(Y, Z)) f y := by
+  have h : WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y Z)
+      (compactOpenToIhom Y Z f) =
+      (WithGeneratedByTopology.equiv (X := G) (Y := C(Y, Z)) f).toContinuousMapGeneratedBy G :=
+    TopCat.equiv_toGeneratedByTopCat_map_apply (G := G)
+      (TopCat.ofHom ⟨ContinuousMap.toContinuousMapGeneratedBy G,
+        ContinuousMap.continuous_toContinuousMapGeneratedBy⟩) f
+  simp [h]
+
+/-- `compactOpenToIhom Y` is natural in the target `Z`. -/
+@[reassoc]
+theorem compactOpenToIhom_naturality (Y : GeneratedByTopCat.{v} G)
+    {Z T : GeneratedByTopCat.{v} G} (f : Z ⟶ T) :
+    (toTopCat ⋙ TopCat.mappingSpace Y.obj ⋙ TopCat.toGeneratedByTopCat (X := G)).map f ≫
+        compactOpenToIhom Y T =
+      compactOpenToIhom Y Z ≫ (ihom Y).map f :=
+  ConcreteCategory.hom_ext _ _ fun _ ↦
+    (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y T)).injective <|
+      DFunLike.ext _ _ fun _ ↦ rfl
+
+/-- When every compact subset of `Y` is the continuous image of a compact subset of some generator
+`G i`, `compactOpenToIhom Y Z` is an isomorphism in `GeneratedByTopCat G`. -/
+theorem isIso_compactOpenToIhom (Y Z : GeneratedByTopCat.{v} G)
+    (hG : ∀ ⦃K : Set Y⦄, IsCompact K →
+      ∃ (i : ι) (L : Set (G i)) (p : C(G i, Y)), IsCompact L ∧ p '' L = K) :
+    IsIso (compactOpenToIhom Y Z) := by
+  have h : TopCat.ofHom ⟨ContinuousMap.toContinuousMapGeneratedBy G,
+      ContinuousMap.continuous_toContinuousMapGeneratedBy⟩ =
+      (TopCat.isoOfHomeo
+        (ContinuousMapGeneratedBy.homeomorphContinuousMap (Z := Z) hG)).inv := rfl
+  rw [compactOpenToIhom, h]
+  exact Functor.map_isIso _ _
 
 end Closed
 

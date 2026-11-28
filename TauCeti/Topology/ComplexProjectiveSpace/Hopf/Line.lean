@@ -17,8 +17,9 @@ line is the image of `ι_f : CP¹ → CPⁿ`, `[a : b] ↦ [a f₀ + b f₁]`
 embedding `S³ → S²ⁿ⁺¹`, `(a, b) ↦ a f₀ + b f₁`, of unit spheres, which commutes with unit complex
 scalars. So `ι_f` is a map of Hopf fibrations, and on the fibres over `[e₀]` and `[f₀]` it is the
 identity of the circle, read through `u ↦ u • e₀` and `u ↦ u • f₀`. Naturality of the boundary map
-of a Serre fibration (`TauCeti.TopCat.fibrationBoundary_map`) then shows that `ι_f` intertwines the
-boundary maps `π_{k+1}(CP¹) → π_k(S¹)` and `π_{k+1}(CPⁿ) → π_k(S¹)` of the two Hopf fibrations
+of the Hopf fibration (`TauCeti.ComplexProjectiveSpace.hopfBoundary_homotopyGroupMap_of_smul_comm`)
+then shows that `ι_f` intertwines the boundary maps `π_{k+1}(CP¹) → π_k(S¹)` and
+`π_{k+1}(CPⁿ) → π_k(S¹)` of the two Hopf fibrations
 (`TauCeti.ComplexProjectiveSpace.hopfBoundary_homotopyGroupMap_lineMap`).
 
 In degree two both boundary maps are isomorphisms onto `π₁(S¹)`
@@ -72,12 +73,6 @@ variable {n : ℕ} {N : Type*} (f : finiteOrthonormalFrame ℂ 2 (n + 1))
 private abbrev e₀ : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1 :=
   ⟨EuclideanSpace.single 0 1, by simp⟩
 
-/-- The square of Hopf fibrations given by the projective line of `f`. -/
-private theorem commSq_lineMap :
-    CommSq (TopCat.ofHom (lineVector f)) (hopfHom 1) (hopfHom n)
-      (TopCat.ofHom ((lineMap n).curry f)) :=
-  ⟨by ext v; exact (lineMap_mk_lineVector f v).symm⟩
-
 variable [Finite N]
 
 /-- **The projective line intertwines the Hopf boundary maps.** The projective line
@@ -90,29 +85,9 @@ theorem hopfBoundary_homotopyGroupMap_lineMap
       (mk 1 ⟨EuclideanSpace.single 0 1, by simp⟩)) :
     hopfBoundary (f.toSphere 0) N
         (HomotopyGroup.map ((lineMap n).curry f) (lineMap_mk_single_zero f) a) =
-      hopfBoundary ⟨EuclideanSpace.single 0 1, by simp⟩ N a := by
-  have hf₀ : lineVector f e₀ = f.toSphere 0 := Subtype.ext <| by simp
-  -- The map of fibres over `[e₀]` and `[f₀]` given by the embedding of unit spheres.
-  let φ : C((hopfHom 1).fiber (mk 1 e₀), (hopfHom n).fiber (mk n (f.toSphere 0))) :=
-    ⟨fun x ↦ ⟨lineVector f x.val, by
-      have hx : mk 1 x.val = mk 1 e₀ := x.property
-      -- Membership in the fibre of `hopfHom n` over `[f₀]` is the equation `[x] = [f₀]` for
-      -- the image `x` of the point; `change` unfolds the preimage and the morphism `hopfHom n`.
-      change mk n (lineVector f x.val) = mk n (f.toSphere 0)
-      rw [← lineMap_mk_lineVector, hx, lineMap_mk_lineVector, hf₀]⟩, by fun_prop⟩
-  have key := TopCat.fibrationBoundary_map_of_eq (commSq_lineMap f) (mk_mem_serreFibrations 1)
-    (mk_mem_serreFibrations n) (e := ⟨e₀, rfl⟩) (lineMap_mk_single_zero f)
-    (e' := ⟨f.toSphere 0, rfl⟩) φ (fun _ ↦ rfl) (Subtype.ext hf₀) a
-  rw [hopfBoundary_apply, hopfBoundary_apply]
-  refine (congrArg _ key).trans ?_
-  rw [HomotopyGroup.homeomorphEquivOfEq_apply, HomotopyGroup.homeomorphEquivOfEq_apply,
-    HomotopyGroup.map_comp_apply]
-  refine HomotopyGroup.map_congr (ContinuousMap.ext fun x ↦ ?_) _ _ _
-  -- On the fibre over `[e₀]`, the point `u • e₀` goes to `u • f₀`, so both sides are `u`.
-  obtain ⟨u, rfl⟩ := (hopfFiberHomeomorph e₀).surjective x
-  refine ((hopfFiberHomeomorph (f.toSphere 0)).symm_apply_eq.2 (Subtype.ext ?_)).trans
-    ((hopfFiberHomeomorph e₀).symm_apply_apply u).symm
-  simp [φ, coe_hopfFiberHomeomorph_apply, lineVector_smul, hf₀]
+      hopfBoundary ⟨EuclideanSpace.single 0 1, by simp⟩ N a :=
+  hopfBoundary_homotopyGroupMap_of_smul_comm (lineVector_smul f) (lineMap_mk_lineVector f) e₀
+    (Subtype.ext <| by simp) _ a
 
 /-- **The projective line induces an isomorphism on `π₂`.** For an orthonormal two-frame `f` of
 `ℂⁿ⁺¹`, the projective line `ι_f : CP¹ → CPⁿ` induces a bijection
