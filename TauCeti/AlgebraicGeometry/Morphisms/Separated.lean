@@ -92,6 +92,17 @@ universe u
 
 variable {X S : Scheme.{u}}
 
+/-- The base-changed diagonal in the over-category is a closed immersion if and only if
+the base-changed structure morphism is separated. -/
+theorem isClosedImmersion_overPullback_diagonal_iff {T : Scheme.{u}} (g : T ⟶ S)
+    (p : X ⟶ S) :
+    IsClosedImmersion (((Over.pullback g).map
+        (Over.homMk (pullback.diagonal p) : Over.mk p ⟶ Over.mk (pullback.snd p p ≫ p))).left) ↔
+      IsSeparated (pullback.fst g p) := by
+  rw [isSeparated_iff, diagonal_pullback_fst,
+    MorphismProperty.cancel_left_of_respectsIso (P := @IsClosedImmersion),
+    MorphismProperty.cancel_right_of_respectsIso (P := @IsClosedImmersion)]
+
 /-- **Separatedness from an open cover of the source.** If every piece `Uᵢ` of an open cover of
 `X` is separated over `S`, and for distinct pieces the canonical map `Uᵢ ×_X Uⱼ ⟶ Uᵢ ×_S Uⱼ` is a
 closed immersion, then `f : X ⟶ S` is separated. -/

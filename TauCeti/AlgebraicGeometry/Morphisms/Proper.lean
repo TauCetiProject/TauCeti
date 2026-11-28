@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
+public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 
 /-!
 # Proper morphisms, integrality over affine opens, and affine schemes
@@ -38,11 +39,38 @@ the ambient scheme is proper (`AlgebraicGeometry.Scheme.Opens.isProper_over`).
 
 public section
 
-open CategoryTheory
+open CategoryTheory Limits
 
 universe u
 
 namespace AlgebraicGeometry
+
+/-- A separated locally finite type morphism is proper if its composite with a
+surjective morphism is universally closed. -/
+theorem IsProper.of_comp_surjective {W X S : Scheme.{u}} (a : W ⟶ X) (f : X ⟶ S)
+    [Surjective a] [UniversallyClosed (a ≫ f)] [IsSeparated f] [LocallyOfFiniteType f] :
+    IsProper f := by
+  have := UniversallyClosed.of_comp_surjective a f
+  exact ⟨⟩
+
+/-- An immersion into a separated scheme over the base is closed after a base change
+on which its source is proper. -/
+theorem isClosedImmersion_overPullback_of_proper {S T : Scheme.{u}} (g : T ⟶ S)
+    {X Y : Over S} (f : X ⟶ Y) [IsImmersion f.left] [IsSeparated Y.hom]
+    [IsProper (pullback.snd X.hom g)] : IsClosedImmersion ((Over.pullback g).map f).left := by
+  have : IsSeparated ((Over.pullback g).obj Y).hom := by
+    simp only [Over.pullback_obj_hom]
+    infer_instance
+  have : IsProper (((Over.pullback g).map f).left ≫ ((Over.pullback g).obj Y).hom) := by
+    rw [Over.w]
+    simpa only [Over.pullback_obj_hom] using
+      (inferInstance : IsProper (pullback.snd X.hom g))
+  have : IsProper ((Over.pullback g).map f).left :=
+    IsProper.of_comp _ ((Over.pullback g).obj Y).hom
+  have : IsImmersion ((Over.pullback g).map f).left :=
+    MorphismProperty.overPullbackMap g f inferInstance
+  exact IsClosedImmersion.of_isPreimmersion _
+    (((Over.pullback g).map f).left.isClosedMap.isClosed_range)
 
 /-- A morphism of affine schemes `Spec S ⟶ Spec R` is proper if and only if the ring map
 `R → S` is finite. -/
