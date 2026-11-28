@@ -747,8 +747,7 @@ private theorem det_mul_hamiltonianCurvature_realChart (ω : SmoothTwoForm I M) 
         (realChart p.cylindricalEndLift w) x =
       p.endSign * deriv smoothTransition (p.endSign * w.1 - 1) * H w.2 x := by
   have hHt : DifferentiableAt ℝ (fun t ↦ H t x) w.2 :=
-    ((hHs.contMDiffAt.comp (f := fun t : ℝ ↦ (t, x)) w.2
-      (contMDiffAt_id.prodMk contMDiffAt_const)).contDiffAt).differentiableAt one_ne_zero
+    hHs.contMDiffAt.differentiableAt_slice_fst (t := w.2) (x := x) one_ne_zero
   rw [← ω.hamiltonianCurvature_perturbationPullback
       (contDiff_realChart (n := 2) p.contDiff_cylindricalEndLift).contDiffAt
       (differentiableAt_perturbation_domain hH hHs _ _ 1)
