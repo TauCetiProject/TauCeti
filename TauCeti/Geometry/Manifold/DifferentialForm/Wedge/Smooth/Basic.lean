@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Bundle
-import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 
 /-!
 # Regularity of wedge products of differential forms
@@ -18,8 +18,10 @@ pairing defines a smooth section of the bundle of bilinear maps.
 
 The relative statements use no derivative, so they hold within arbitrary subsets and at
 boundary and corner points. In particular smooth forms are closed under the paired wedge, and
-`TauCeti.SmoothForm.wedgeWith` and `TauCeti.SmoothForm.wedge` bundle the product as a bilinear
-map on smooth forms; these supply the product on de Rham cohomology.
+`TauCeti.SmoothForm.wedgeWith` and `TauCeti.SmoothForm.wedge` specialize
+`TauCeti.SmoothBundleForm.wedgeWith` (and thus `ContMDiffSection.wedgeWith` and
+`ContMDiffSection.wedge`, with conversion lemmas `wedgeWith_toContMDiffSection` and
+`wedge_toContMDiffSection`); these supply the product on de Rham cohomology.
 
 ## References
 
@@ -54,8 +56,9 @@ theorem _root_.ContMDiffWithinAt.wedgeWith_form
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin l]→L[ℝ] F₂) y (ψ y)) s x) :
     ContMDiffWithinAt I (I.prod 𝓘(ℝ, E [⋀^Fin (k + l)]→L[ℝ] F₃)) n
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin (k + l)]→L[ℝ] F₃) y (φ.wedgeWith μ ψ y)) s x := by
-  simpa only [bundleWedgeWith_trivial] using
-    ContMDiffWithinAt.bundleWedgeWith_form (fun _ ↦ μ.continuous₂)
+  rw [← bundleWedgeWith_trivial μ φ ψ]
+  simpa only [bundleWedgeWith_apply'] using
+    ContMDiffWithinAt.pairedWedge_bundle (fun _ ↦ μ.continuous₂)
       ((contMDiff_const_bundlePairing μ x).contMDiffWithinAt) hφ hψ
 
 /-- The paired wedge of two `C^n` sections of the alternating bundle is a `C^n` section on an
@@ -119,18 +122,11 @@ theorem smoothForms_wedge_mem (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M �
 
 namespace SmoothForm
 
-/-- The paired wedge of smooth fixed-coefficient forms, as a bilinear map. -/
+/-- The paired wedge of smooth fixed-coefficient forms, as a bilinear map, obtained by specializing
+`SmoothBundleForm.wedgeWith` to the constant pairing `μ`. -/
 def wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) :
     SmoothForm I M F₁ k →ₗ[ℝ] SmoothForm I M F₂ l →ₗ[ℝ] SmoothForm I M F₃ (k + l) :=
-  LinearMap.mk₂ ℝ (fun φ ψ ↦ ⟨_, smoothForms_wedgeWith_mem μ φ ψ⟩)
-    (fun φ φ' ψ ↦ Subtype.ext <| by
-      simp only [Submodule.coe_add, RoughForm.wedgeWith_add_left])
-    (fun c φ ψ ↦ Subtype.ext <| by
-      simp only [Submodule.coe_smul, RoughForm.wedgeWith_smul_left])
-    (fun φ ψ ψ' ↦ Subtype.ext <| by
-      simp only [Submodule.coe_add, RoughForm.wedgeWith_add_right])
-    (fun c φ ψ ↦ Subtype.ext <| by
-      simp only [Submodule.coe_smul, RoughForm.wedgeWith_smul_right])
+  SmoothBundleForm.wedgeWith (fun _ ↦ μ) (fun _ ↦ μ.continuous₂) (contMDiff_const_bundlePairing μ)
 
 /-- The underlying rough form of the smooth paired wedge is the rough paired wedge. -/
 @[simp]
@@ -138,7 +134,7 @@ theorem coe_wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ : SmoothForm
     (ψ : SmoothForm I M F₂ l) :
     (wedgeWith μ φ ψ : RoughForm I M F₃ (k + l)) =
       RoughForm.wedgeWith μ (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) := by
-  rw [wedgeWith, LinearMap.mk₂_apply]
+  rw [wedgeWith, SmoothBundleForm.coe_wedgeWith, bundleWedgeWith_trivial]
 
 /-- Evaluation of the smooth fixed-coefficient paired wedge. -/
 theorem wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ : SmoothForm I M F₁ k)
@@ -149,6 +145,18 @@ theorem wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ : SmoothFo
           μ (φ.val x (fun i ↦ v (σ (Fin.castAdd l i))))
             (ψ.val x (fun j ↦ v (σ (Fin.natAdd k j)))) := by
   rw [coe_wedgeWith, RoughForm.wedgeWith_apply]
+
+/-- Converting the smooth paired wedge of two forms to a section gives
+`ContMDiffSection.wedgeWith` of their converted sections. -/
+@[simp]
+theorem wedgeWith_toContMDiffSection (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ : SmoothForm I M F₁ k)
+    (ψ : SmoothForm I M F₂ l) :
+    (wedgeWith μ φ ψ).toContMDiffSection =
+      ContMDiffSection.wedgeWith (fun _ ↦ μ) (fun _ ↦ μ.continuous₂)
+        (contMDiff_const_bundlePairing μ) φ.toContMDiffSection ψ.toContMDiffSection := by
+  ext x v
+  simp only [toContMDiffSection_apply, ContMDiffSection.wedgeWith_apply_sum]
+  exact wedgeWith_apply μ φ ψ x v
 
 /-- Pairing a smooth form with a degree-zero form pairs its value with the function value. -/
 @[simp]
@@ -192,6 +200,16 @@ theorem wedge_apply (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l)
           (φ.val x (fun i ↦ v (σ (Fin.castAdd l i))) *
             ψ.val x (fun j ↦ v (σ (Fin.natAdd k j)))) := by
   rw [coe_wedge, RoughForm.wedge_apply]
+
+/-- Converting the smooth real wedge of two forms to a section gives the fibrewise wedge of their
+converted sections. -/
+@[simp]
+theorem wedge_toContMDiffSection (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) :
+    (wedge φ ψ).toContMDiffSection =
+      φ.toContMDiffSection.wedge ψ.toContMDiffSection := by
+  ext x v
+  simp only [toContMDiffSection_apply, ContMDiffSection.wedge_apply_sum]
+  exact wedge_apply φ ψ x v
 
 /-- Wedging a smooth real-valued form with a degree-zero form multiplies its value by the
 function value. -/

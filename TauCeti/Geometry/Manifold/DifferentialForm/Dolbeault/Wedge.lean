@@ -94,7 +94,7 @@ theorem wedgeWith_mem_exactForms_of_left_mem (μ : F →L[ℂ] G →L[ℂ] H) (p
       ((ofComplexManifold E M).wedgeWithType μ p q r s α ψ.val) ?_
     rw [delBar_wedgeWithType, (mem_closedForms r s ψ.val).mp ψ.property, hα]
     simp only [map_zero, smul_zero, add_zero,
-      coe_wedgeWith, coe_wedgeWithType, SmoothForm.cast_cast]
+      coe_wedgeWith, coe_wedgeWithType, LinearEquiv.cast_cast]
 
 /-- Multiplying a closed left factor by an exact right factor gives an exact form. -/
 theorem wedgeWith_mem_exactForms_of_right_mem (μ : F →L[ℂ] G →L[ℂ] H) (p q r s : ℕ)

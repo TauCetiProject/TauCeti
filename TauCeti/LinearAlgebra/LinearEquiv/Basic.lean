@@ -34,6 +34,9 @@ Conjugating an algebra homomorphism into `Module.End` by `LinearEquiv.conjAlgEqu
 pointwise intertwining (`LinearEquiv.conjAlgEquiv_toAlgHom_comp_eq_iff`).
 Following the identification of equal submodules by an inclusion is the other inclusion,
 `Submodule.subtype_comp_ofEq`.
+Index-cast equivalences `LinearEquiv.cast` satisfy generic reflexive, symmetry, and composition
+laws (`LinearEquiv.cast_refl`, `LinearEquiv.cast_refl_apply`, `LinearEquiv.cast_symm`,
+`LinearEquiv.cast_trans`, `LinearEquiv.cast_cast`).
 -/
 
 public section
@@ -111,6 +114,48 @@ theorem funCongrLeft_injective (R M : Type*) [Semiring R] [AddCommMonoid M] [Mod
   rw [funCongrLeft_apply, funCongrLeft_apply, LinearMap.funLeft_apply, LinearMap.funLeft_apply,
     Pi.single_eq_same, Pi.single_eq_of_ne (Ne.symm hne)] at hj
   exact hm hj
+
+section Cast
+
+variable {R ι : Type*} {M : ι → Type*} [Semiring R] [∀ i, AddCommMonoid (M i)]
+  [∀ i, Module R (M i)]
+
+/-- Transporting along a reflexive equality is the identity linear equivalence. -/
+@[simp]
+theorem cast_refl {i : ι} (h : i = i) :
+    LinearEquiv.cast (R := R) (M := M) h = LinearEquiv.refl R (M i) := by
+  ext x; rfl
+
+/-- Evaluating a reflexive `LinearEquiv.cast` is the identity. -/
+theorem cast_refl_apply {i : ι} (h : i = i) (x : M i) :
+    LinearEquiv.cast (R := R) (M := M) h x = x := rfl
+
+/-- Inverting a `LinearEquiv.cast` gives the cast along the symmetric equality. -/
+@[simp]
+theorem cast_symm {i j : ι} (h : i = j) :
+    (LinearEquiv.cast (R := R) (M := M) h).symm =
+      LinearEquiv.cast (R := R) (M := M) h.symm := by
+  subst h; rfl
+
+/-- Composing two `LinearEquiv.cast` equivalences yields the cast along the transitive equality. -/
+@[simp]
+theorem cast_trans {i j k : ι} (h₁ : i = j) (h₂ : j = k) :
+    (LinearEquiv.cast (R := R) (M := M) h₁).trans
+        (LinearEquiv.cast (R := R) (M := M) h₂) =
+      LinearEquiv.cast (R := R) (M := M) (h₁.trans h₂) := by
+  subst h₁ h₂; rfl
+
+/-- Applying two `LinearEquiv.cast` equivalences in succession collapses to a single cast. -/
+theorem cast_cast {i j k : ι} (h₁ : i = j) (h₂ : j = k) (x : M i) :
+    LinearEquiv.cast (R := R) (M := M) h₂ (LinearEquiv.cast (R := R) (M := M) h₁ x) =
+      LinearEquiv.cast (R := R) (M := M) (h₁.trans h₂) x := by
+  subst h₁ h₂; rfl
+
+/-- `LinearEquiv.cast` is independent of the equality proof. -/
+theorem cast_congr {i j : ι} (h₁ h₂ : i = j) (x : M i) :
+    LinearEquiv.cast (R := R) (M := M) h₁ x = LinearEquiv.cast (R := R) (M := M) h₂ x := rfl
+
+end Cast
 
 section FunCongrLeftPerm
 
