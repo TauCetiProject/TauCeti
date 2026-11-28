@@ -27,7 +27,9 @@ Finally it computes the order of the product `r₁ r₂` of two reflections `r�
 `r₂ z = z - g(z) y` from their Cartan product `c = f(y) g(x)`, with no root system or inner
 product around. If `f(y) = g(x) = 0`, or `c = 1, 2, 3`, then `(r₁ r₂)ᵐ = 1` for `m = 2, 3, 4, 6`.
 For `c = 1, 2, 3` these are the exact orders as soon as `3 ≠ 0` and `4 ≠ 0` (as far as they are
-needed), read off the `f`-coordinate of `(r₁ r₂)ⁿ x`, which avoids the value `f(x) = 2`; for
+needed), read off the `f`-coordinate of `(r₁ r₂)ⁿ x`, which avoids the value `f(x) = 2`; at `c = 2`,
+noncommutation of `r₁` and `r₂` already forces order `4` over any commutative ring, including
+characteristic `2` (`Module.orderOf_reflection_mul_reflection_eq_four_of_not_commute`). For
 `f(y) = g(x) = 0` the order is exactly `2` as soon as `2 • x ≠ 0`. Over a ring of characteristic
 zero, an integral Cartan product `c ≥ 4` gives infinite order for linearly independent `x` and `y`.
 This is the rank-two computation behind the Weyl group of a Kac–Moody realization, where the
@@ -100,6 +102,12 @@ include h in
 theorem apply_preReflection (y : M) : f (preReflection x f y) = -f y := by
   rw [preReflection_apply, map_sub, map_smul, smul_eq_mul, h]
   ring
+
+/-- A module reflection acts as negation on the span `R ∙ x` of its defining vector. -/
+theorem reflection_apply_of_mem_span {y : M} (hy : y ∈ R ∙ x) :
+    reflection h y = -y := by
+  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hy
+  rw [map_smul, reflection_apply_self, smul_neg]
 
 /-- A finite free module of positive rank has a linear automorphism of determinant `-1`, namely
 a reflection in a basis vector. -/
@@ -177,6 +185,15 @@ theorem reflection_mul_reflection_pow_two_eq_one (hfy : f y = 0) (hgx : g x = 0)
   norm_num [hfy, hgx, S_zero, S_one, S_neg_one]
   abel
 
+/-- **Two reflections commute when each fixes the other's defining vector**: if `f y = 0` and
+`g x = 0`, then `reflection hf` and `reflection hg` commute. -/
+theorem commute_reflection (hfy : f y = 0) (hgx : g x = 0) :
+    Commute (reflection hf) (reflection hg) := by
+  ext z
+  simp only [mul_apply_eq_comp, reflection_apply, map_sub, map_smul, hfy, hgx, zero_smul,
+    sub_zero]
+  exact sub_right_comm _ _ _
+
 /-- **The braid relation at Cartan product `1`**: if `f y * g x = 1`, then `(r₁ r₂)³ = 1`, the
 `A₂` configuration. -/
 theorem reflection_mul_reflection_pow_three_eq_one (h : f y * g x = 1) :
@@ -241,6 +258,27 @@ theorem reflection_mul_reflection_pow_apply_self_eq_self_iff (hxy : LinearIndepe
   obtain ⟨h₁, h₂⟩ := hxy.eq_of_pair h'
   exact ⟨h₁, by linear_combination -h₂⟩
 
+/-- **Two reflections in linearly independent vectors along nonzero functionals commute iff each
+functional vanishes on the other vector.** -/
+theorem commute_reflection_iff [NoZeroDivisors R] (hxy : LinearIndependent R ![x, y])
+    (hf0 : f ≠ 0) (hg0 : g ≠ 0) :
+    Commute (reflection hf) (reflection hg) ↔ f y = 0 ∧ g x = 0 := by
+  refine ⟨fun hcomm ↦ ?_, fun ⟨hfy, hgx⟩ ↦ commute_reflection hf hg hfy hgx⟩
+  have hpair (z : M) : g z * f y = 0 ∧ f z * g x = 0 := by
+    have hz := congr($(hcomm.eq) z)
+    simp only [mul_apply_eq_comp, reflection_apply, map_sub, map_smul] at hz
+    have hlin : (g z * f y) • x + (-(f z * g x)) • y = (0 : R) • x + (0 : R) • y := by
+      have hsub := sub_eq_zero.mpr hz
+      simp only [zero_smul, add_zero]
+      rw [← hsub]
+      module
+    have hc := hxy.eq_of_pair hlin
+    exact ⟨hc.1, neg_eq_zero.mp hc.2⟩
+  obtain ⟨z₁, hz₁⟩ : ∃ z, g z ≠ 0 := not_forall.mp fun h ↦ hg0 (LinearMap.ext h)
+  obtain ⟨z₂, hz₂⟩ : ∃ z, f z ≠ 0 := not_forall.mp fun h ↦ hf0 (LinearMap.ext h)
+  exact ⟨(mul_eq_zero.mp (hpair z₁).1).resolve_left hz₁,
+    (mul_eq_zero.mp (hpair z₂).2).resolve_left hz₂⟩
+
 /-- **The product of two reflections each fixing the other's vector has order `2`**: if
 `f y = 0`, `g x = 0` and `2 • x ≠ 0`, then `r₁ r₂` has order exactly `2`. -/
 theorem orderOf_reflection_mul_reflection_eq_two (hx : (2 : R) • x ≠ 0) (hfy : f y = 0)
@@ -264,19 +302,35 @@ theorem orderOf_reflection_mul_reflection_eq_three (h : f y * g x = 1) (h3 : (3 
   norm_num [h, S_zero, S_one] at this
   exact h3 (by linear_combination -this)
 
-/-- **At Cartan product `2` the product of two reflections has order exactly `4`**, provided
-`4 ≠ 0`. -/
-theorem orderOf_reflection_mul_reflection_eq_four (h : f y * g x = 2) (h4 : (4 : R) ≠ 0) :
+/-- **At Cartan product `2`, two noncommuting reflections have product of order `4`**, over any
+commutative ring (including characteristic `2`). -/
+theorem orderOf_reflection_mul_reflection_eq_four_of_not_commute (h : f y * g x = 2)
+    (hcomm : ¬Commute (reflection hf) (reflection hg)) :
     orderOf (reflection hf * reflection hg) = 4 := by
   refine orderOf_eq_of_pow_and_pow_div_prime
     (reflection_mul_reflection_pow_four_eq_one hf hg h) fun p hp hpd ↦ ?_
   obtain rfl : p = 2 :=
     (Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).mp (hp.dvd_of_dvd_pow (n := 2) hpd)
   intro h2
+  apply hcomm
+  have hinv := eq_inv_of_mul_eq_one_left (sq (reflection hf * reflection hg) ▸ h2)
+  rw [mul_inv_rev, reflection_inv, reflection_inv] at hinv
+  exact hinv
+
+/-- **At Cartan product `2` the product of two reflections has order exactly `4`**, provided
+`4 ≠ 0`. -/
+theorem orderOf_reflection_mul_reflection_eq_four (h : f y * g x = 2) (h4 : (4 : R) ≠ 0) :
+    orderOf (reflection hf * reflection hg) = 4 := by
+  refine orderOf_reflection_mul_reflection_eq_four_of_not_commute h fun hcomm ↦ h4 ?_
+  have h2 : (reflection hf * reflection hg) ^ 2 = 1 := by
+    rw [hcomm.mul_pow]
+    ext z
+    simp only [sq, mul_apply_eq_comp, one_apply_eq_self]
+    rw [involutive_reflection hg, involutive_reflection hf]
   -- The `f`-coordinate of `(r₁ r₂)² x` is `2 (S₂(0) + S₁(0)) = -2`, not `2`.
   have := two_mul_S_eval_add_S_eval_sub_eq_two (n := 2) h2 0 (by rw [h]; ring)
   norm_num [h, S_one, S_two] at this
-  exact h4 (by linear_combination -this)
+  linear_combination -this
 
 /-- **At Cartan product `3` the product of two reflections has order exactly `6`**, provided
 `3 ≠ 0` and `4 ≠ 0`. -/

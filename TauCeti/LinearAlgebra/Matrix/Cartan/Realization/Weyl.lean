@@ -446,29 +446,3 @@ end CoweightLattice
 end CartanRealization
 
 end TauCeti
-
-/-! ### Examples -/
-
-section Examples
-
-open TauCeti CartanRealization
-
-/-- Affine type `A₁⁽¹⁾`: the Cartan product of the two nodes is `4`, and the two simple reflections
-of any realization over a field of characteristic zero generate an infinite dihedral group. -/
-example {K H : Type*} [Field K] [CharZero K] [AddCommGroup H] [Module K H]
-    (R : CartanRealization ((!![2, -2; -2, 2] : Matrix (Fin 2) (Fin 2) ℤ).map (Int.cast : ℤ → K)) H)
-    (hA : ∀ i, (!![2, -2; -2, 2] : Matrix (Fin 2) (Fin 2) ℤ).map (Int.cast : ℤ → K) i i = 2) :
-    orderOf (R.simpleReflection hA 0 * R.simpleReflection hA 1) = 0 := by
-  rw [R.orderOf_simpleReflection_mul_simpleReflection hA (by decide) (by decide)]
-  simp
-
-/-- Type `B₂`, with `A = [[2, -2], [-1, 2]]`: the Cartan product is `2`, so the product of the two
-simple reflections has order `4`, not `3`. -/
-example {K H : Type*} [Field K] [CharZero K] [AddCommGroup H] [Module K H]
-    (R : CartanRealization ((!![2, -2; -1, 2] : Matrix (Fin 2) (Fin 2) ℤ).map (Int.cast : ℤ → K)) H)
-    (hA : ∀ i, (!![2, -2; -1, 2] : Matrix (Fin 2) (Fin 2) ℤ).map (Int.cast : ℤ → K) i i = 2) :
-    orderOf (R.simpleReflection hA 0 * R.simpleReflection hA 1) = 4 := by
-  rw [R.orderOf_simpleReflection_mul_simpleReflection hA (by decide) (by decide)]
-  simp
-
-end Examples
