@@ -70,7 +70,8 @@ private theorem resolvent_test_continuous (hA : A.IsHermitian)
   have hH (x : ι → ℝ) : (A + ∑ i, x i • B i).IsHermitian :=
     hA.add (isSelfAdjoint_sum univ fun i _ ↦ (hB i).smul (by simp [IsSelfAdjoint]))
   have hc : Continuous (fun x : ι → ℝ ↦ A + ∑ i, x i • B i) := by fun_prop
-  simpa only [Matrix.normalizedResolventTrace_def] using hc.matrix_normalizedResolventTrace hH hz
+  simpa only [Matrix.normalizedResolventTrace_def] using
+    hc.matrix_normalizedResolventTrace_of_isHermitian hH hz
 
 private theorem resolvent_test_coordinate [DecidableEq ι] (hA : A.IsHermitian)
     (hB : ∀ i, (B i).IsHermitian) (l : ℂ →L[ℝ] ℝ) {z : ℂ} (hz : z.im ≠ 0)

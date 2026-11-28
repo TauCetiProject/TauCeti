@@ -31,6 +31,21 @@ theorem addInvSqrtCardSmulEntries_def {n : Type*} [Fintype n]
     D.addInvSqrtCardSmulEntries x =
       D + (Real.sqrt (Fintype.card n))⁻¹ • Matrix.of (fun i j ↦ x (i, j)) := (rfl)
 
+/-- Each shifted entry is the corresponding deterministic entry plus the rescaled input. -/
+@[simp]
+theorem addInvSqrtCardSmulEntries_apply {n : Type*} [Fintype n]
+    (D : Matrix n n ℂ) (x : n × n → ℂ) (i j : n) :
+    D.addInvSqrtCardSmulEntries x i j = D i j + (Real.sqrt (Fintype.card n))⁻¹ • x (i, j) := by
+  rw [addInvSqrtCardSmulEntries_def, Matrix.add_apply, Matrix.smul_apply, Matrix.of_apply]
+
+/-- Shifting and rescaling an entry array acts separately on each row. -/
+theorem row_addInvSqrtCardSmulEntries {n : Type*} [Fintype n]
+    (D : Matrix n n ℂ) (x : n × n → ℂ) (i : n) :
+    (D.addInvSqrtCardSmulEntries x).row i =
+      fun j ↦ D.row i j + (Real.sqrt (Fintype.card n))⁻¹ • x (i, j) := by
+  funext j
+  simp only [Matrix.row_apply, addInvSqrtCardSmulEntries_apply]
+
 /-- Scaling an array by a fixed factor and adding a fixed shift is continuous in the entries. -/
 theorem continuous_addInvSqrtCardSmulEntries {n : Type*} [Fintype n]
     (D : Matrix n n ℂ) : Continuous D.addInvSqrtCardSmulEntries := by

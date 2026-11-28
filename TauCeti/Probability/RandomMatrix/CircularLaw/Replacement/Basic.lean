@@ -52,13 +52,6 @@ private theorem fromBlocks_add_sum_complexPerturbation_single
   simp_rw [starRingEnd_apply, ← conjTranspose_smul, smul_single, smul_eq_mul, mul_comm _ (a : ℂ)]
   rw [h, fromBlocks_add, conjTranspose_add, zero_add]
 
-private theorem normalizedResolventTrace_fromBlocks_fin_succ (k : ℕ)
-    (A : Matrix (Fin (k + 1)) (Fin (k + 1)) ℂ) (z : ℂ) :
-    (fromBlocks 0 A Aᴴ 0).normalizedResolventTrace z =
-      ((2 : ℂ) * (k + 1))⁻¹ * (fromBlocks 0 A Aᴴ 0 - z • 1)⁻¹.trace := by
-  simp only [normalizedResolventTrace_def, Fintype.card_sum, Fintype.card_fin, Nat.cast_add,
-    Nat.cast_one, two_mul]
-
 private theorem normalized_rank_factor (k : ℕ) (b : ℝ) :
     ‖((2 : ℂ) * (k + 1))⁻¹‖ * ((k + 1 : ℝ) ^ 2 * 2) *
       b ^ 3 * (2 * (Real.sqrt (k + 1))⁻¹) ^ 2 = 4 * b ^ 3 := by
@@ -99,8 +92,8 @@ theorem norm_integral_normalized_trace_inv_fromBlocks_sub_smul_one_sub_integral_
         ((∫ w, ‖w‖ ^ 2 * min (b * c * ‖w‖) 1 ∂μ) +
           ∫ w, ‖w‖ ^ 2 * min (b * c * ‖w‖) 1 ∂ν) := by
   dsimp only
-  simp only [normalizedResolventTrace_fromBlocks_fin_succ, addInvSqrtCardSmulEntries_def,
-    Fintype.card_fin, Nat.cast_add, Nat.cast_one]
+  simp only [normalizedResolventTrace_sum, addInvSqrtCardSmulEntries_def,
+    Fintype.card_fin, Nat.cast_add, Nat.cast_one, ← two_mul ((k : ℂ) + 1)]
   let b := |z.im|⁻¹
   let c := 2 * (Real.sqrt (k + 1))⁻¹
   let a : ℝ := (Real.sqrt (k + 1))⁻¹
@@ -209,7 +202,7 @@ theorem tendsto_integral_normalized_trace_inv_fromBlocks_sub_smul_one_sub_integr
       continuous_const.matrix_fromBlocks hZ hZ.matrix_conjTranspose continuous_const
     have hh (x) : (H x).IsHermitian :=
       IsHermitian.fromBlocks isHermitian_zero rfl isHermitian_zero
-    exact hH.matrix_normalizedResolventTrace hh hz
+    exact hH.matrix_normalizedResolventTrace_of_isHermitian hh hz
   have hx (k) := (hX k).integral_comp (hc k).aestronglyMeasurable
   have hy (k) := (hY k).integral_comp (hc k).aestronglyMeasurable
   simp only [Function.comp_def] at hx hy

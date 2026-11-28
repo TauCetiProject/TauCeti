@@ -35,10 +35,11 @@ open scoped Topology
 namespace TauCeti.Probability
 
 /-- At each fixed nonreal spectral parameter, the difference between normalized resolvent
-traces tends to zero on a product of measurable conull sets. Both Hermitian dilations use
-the same deterministic shifts. The fixed i.i.d. entry laws have matching finite complex means,
-complex second moments and second absolute moments. -/
-theorem exists_tendsto_normalized_trace_inv_fromBlocks_sub_smul_one_sub_of_hasLaw
+traces tends to zero on a product of measurable conull sets. For each array of size `k + 1`,
+the entries are multiplied by `1 / √(k + 1)` before adding the shared deterministic shift.
+The fixed i.i.d. entry laws have matching finite complex means, complex second moments and
+second absolute moments. -/
+theorem exists_measurableSet_mem_ae_tendsto_normalizedResolventTrace_fromBlocks_sub_of_hasLaw
     {Ω Ω' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω'] {P : Measure Ω} {Q : Measure Ω'}
     {μ ν : Measure ℂ} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     {X : (k : ℕ) → Ω → (Fin (k + 1) × Fin (k + 1) → ℂ)}
@@ -73,9 +74,10 @@ theorem exists_tendsto_normalized_trace_inv_fromBlocks_sub_smul_one_sub_of_hasLa
 
 /-- Almost-sure weak convergence of the spectral measures of shifted Hermitian dilations
 transfers between fixed i.i.d. entry laws with matching finite mixed moments through degree
-two. Both arrays use the same deterministic shift sequence and may be realized on different
-spaces. The limiting probability measure is deterministic. -/
-theorem ae_tendsto_spectralMeasure_fromBlocks_of_hasLaw
+two. For each array of size `k + 1`, the entries are multiplied by `1 / √(k + 1)` before adding
+the shared deterministic shift. The arrays may be realized on different spaces. The limiting
+probability measure is deterministic. -/
+theorem ae_tendsto_spectralMeasure_fromBlocks_of_hasLaw_of_ae_tendsto
     {Ω Ω' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω'] {P : Measure Ω} {Q : Measure Ω'}
     {μ ν : Measure ℂ} [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     {X : (k : ℕ) → Ω → (Fin (k + 1) × Fin (k + 1) → ℂ)}
@@ -102,10 +104,9 @@ theorem ae_tendsto_spectralMeasure_fromBlocks_of_hasLaw
         (fromBlocks 0 (Z k x) (Z k x)ᴴ 0).normalizedResolventTrace z := by
     have hH : (fromBlocks 0 (Z k x) (Z k x)ᴴ 0).IsHermitian :=
       IsHermitian.fromBlocks isHermitian_zero rfl isHermitian_zero
-    simpa only [L, normalizedResolventTrace_def] using
-      resolventTransform_spectralMeasure _ hH (hH.notMem_spectrum_of_im_ne_zero hz.ne')
+    exact resolventTransform_spectralMeasure _ hH (hH.notMem_spectrum_of_im_ne_zero hz.ne')
   obtain ⟨s, hs, t, ht, -, -, hreplace⟩ :=
-    exists_tendsto_normalized_trace_inv_fromBlocks_sub_smul_one_sub_of_hasLaw
+    exists_measurableSet_mem_ae_tendsto_normalizedResolventTrace_fromBlocks_sub_of_hasLaw
       hX hY hμ hν hmean hsq habs D hz.ne'
   obtain ⟨ω', hω', hω't⟩ := (hlim.and ht).exists
   filter_upwards [hs] with ω hω
