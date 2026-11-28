@@ -59,6 +59,8 @@ of `N ⟶ I ⟶ N'` are in `TauCeti/Algebra/Category/ModuleCat/AuslanderReiten/D
 
 * `ModuleCat.dualExt1EquivCostableHom_naturality`: naturality in the sequence.
 * `ModuleCat.auslanderReitenFormula_naturality`: naturality of the formula in `N`.
+* `ModuleCat.auslanderReitenFormula_comap`: naturality along a map lifted to the presentations
+  of `X` and `X'`.
 * `ModuleCat.bijective_costablePairing_auslanderReitenForm`: the pairing of the Auslander–Reiten
   form is perfect.
 
@@ -165,20 +167,14 @@ noncomputable def auslanderReitenForm :
   (dualExt1EquivCostableHom R E P (InjectivePresentation.abelian _).extension
     (InjectivePresentation.abelian _).isInjective_extension_obj).symm (𝟙 _)
 
-/-- **The Auslander–Reiten formula, as a perfect pairing.** The pairing
-`(A/ℐ)(N, τX) → D Ext¹(X, N)`, `a ↦ (ξ ↦ φ(a_* ξ))`, of the Auslander–Reiten form `φ` is
-bijective for every module `N`. -/
-theorem bijective_costablePairing_auslanderReitenForm (N : ModuleCat.{max u v w} A) :
-    Function.Bijective (costablePairing (auslanderReitenForm R E P) N) := by
-  let Q := (InjectivePresentation.abelian N).extension
+private theorem costablePairing_auslanderReitenForm_eq
+    {N N' : ModuleCat.{max u v w} A} (Q : (ExactStructure.abelian _).Extension N' N)
+    (hQ : (ExactStructure.abelian _).isInjective Q.obj) :
+    costablePairing (auslanderReitenForm R E P) N =
+      (dualExt1EquivCostableHom R E P Q hQ).symm.toLinearMap := by
   let T := (InjectivePresentation.abelian (matlisDualTranspose R E P)).extension
   have hT : (ExactStructure.abelian _).isInjective T.obj :=
     (InjectivePresentation.abelian _).isInjective_extension_obj
-  suffices h : costablePairing (auslanderReitenForm R E P) N =
-      (dualExt1EquivCostableHom R E P Q
-        (InjectivePresentation.abelian N).isInjective_extension_obj).symm.toLinearMap by
-    rw [h]
-    exact LinearEquiv.bijective _
   refine LinearMap.ext fun x ↦ ?_
   obtain ⟨a, rfl⟩ :=
     (ExactStructure.abelian _).injectivelyTrivialIdeal.quotientFunctor.map_surjective x
@@ -192,8 +188,17 @@ theorem bijective_costablePairing_auslanderReitenForm (N : ModuleCat.{max u v w}
       ((ExactStructure.abelian _).injectivelyTrivialIdeal.quotientFunctor.map a) =
         auslanderReitenForm R E P ∘ₗ Ext1.pushoutLinearMap R a :=
     LinearMap.ext fun ξ ↦ by simp
-  rw [hφ, dualExt1EquivCostableHom_naturality R E P Q _ T hT h₁ h₂, auslanderReitenForm,
+  rw [hφ, dualExt1EquivCostableHom_naturality R E P Q hQ T hT h₁ h₂, auslanderReitenForm,
     LinearEquiv.apply_symm_apply, Category.comp_id]
+
+/-- **The Auslander–Reiten formula, as a perfect pairing.** The pairing
+`(A/ℐ)(N, τX) → D Ext¹(X, N)`, `a ↦ (ξ ↦ φ(a_* ξ))`, of the Auslander–Reiten form `φ` is
+bijective for every module `N`. -/
+theorem bijective_costablePairing_auslanderReitenForm (N : ModuleCat.{max u v w} A) :
+    Function.Bijective (costablePairing (auslanderReitenForm R E P) N) := by
+  rw [costablePairing_auslanderReitenForm_eq R E P (InjectivePresentation.abelian N).extension
+    (InjectivePresentation.abelian N).isInjective_extension_obj]
+  exact LinearEquiv.bijective _
 
 /-- **The Auslander–Reiten formula.** Let `A` be an algebra over a commutative ring `R`, `E` an
 injective `R`-module and `D = Hom_R(-, E)`. For a module `X` with a presentation `P` by finitely
@@ -215,6 +220,19 @@ theorem auslanderReitenFormula_apply (N : ModuleCat.{max u v w} A)
         (matlisDualTranspose R E P)) :
     auslanderReitenFormula R E P N x = costablePairing (auslanderReitenForm R E P) N x :=
   (rfl)
+
+/-- The inverse of the Auslander–Reiten pairing is the duality obtained from the defect
+formula using any injective copresentation of the coefficient module. -/
+theorem auslanderReitenFormula_symm_eq_dualExt1EquivCostableHom
+    {N N' : ModuleCat.{max u v w} A} (e : (ExactStructure.abelian _).Extension N' N)
+    (he : (ExactStructure.abelian _).isInjective e.obj) :
+    (auslanderReitenFormula R E P N).symm = dualExt1EquivCostableHom R E P e he := by
+  suffices h : auslanderReitenFormula R E P N =
+      (dualExt1EquivCostableHom R E P e he).symm by
+    rw [h, LinearEquiv.symm_symm]
+  ext x : 1
+  rw [auslanderReitenFormula_apply, costablePairing_auslanderReitenForm_eq R E P e he,
+    LinearEquiv.coe_coe]
 
 /-- The Auslander–Reiten formula on the class of `a : N ⟶ τX` evaluates the Auslander–Reiten form
 on cobase changes along `a`. -/
@@ -239,5 +257,52 @@ theorem auslanderReitenFormula_naturality {N N'' : ModuleCat.{max u v w} A} (b :
   ext ξ
   rw [← Functor.map_comp, auslanderReitenFormula_map_apply, LinearMap.comp_apply,
     Ext1.pushoutLinearMap_apply, auslanderReitenFormula_map_apply, Ext1.pushout_pushout]
+
+variable {X' : ModuleCat.{max u v w} A} (P' : FiniteProjectivePresentation X')
+  {t : X ⟶ X'} {t₀ : P.P₀ →ₗ[A] P'.P₀} {t₁ : P.P₁ →ₗ[A] P'.P₁}
+
+/-- For a morphism lifted to finite projective presentations, the dual of pullback on
+`Ext¹(-, N)` corresponds to postcomposition with the class of `D Tr(t)`. -/
+theorem dualExt1EquivCostableHom_comap {N N' : ModuleCat.{max u v w} A}
+    (e : (ExactStructure.abelian _).Extension N' N)
+    (he : (ExactStructure.abelian _).isInjective e.obj)
+    (ht₀ : P'.π ∘ₗ t₀ = t.hom ∘ₗ P.π) (ht₁ : t₀ ∘ₗ P.p = P'.p ∘ₗ t₁)
+    (χ : (ExactStructure.abelian _).Ext1 X N →ₗ[R] E) :
+    dualExt1EquivCostableHom R E P' e he (χ ∘ₗ Ext1.pullbackLinearMap R t) =
+      dualExt1EquivCostableHom R E P e he χ ≫
+        (ExactStructure.abelian _).injectivelyTrivialIdeal.quotientFunctor.map
+          (matlisDualTransposeMap R E P P' ht₁) := by
+  have hχ : (χ ∘ₗ Ext1.pullbackLinearMap R t) ∘ₗ
+      (contravariantDefectEquivExt1 R e he X').toLinearMap =
+        (χ ∘ₗ (contravariantDefectEquivExt1 R e he X).toLinearMap) ∘ₗ
+          contravariantDefectComap R e.g.hom t.hom := by
+    simp only [LinearMap.comp_assoc, contravariantDefectEquivExt1_comap R e he t]
+  simp only [dualExt1EquivCostableHom_apply, hχ,
+    Function.Exact.dualContravariantDefectEquivCovariantDefect_comap P.exact P.surjective
+      P'.exact P'.surjective e.shortExact.moduleCat_injective_f e.shortExact.moduleCat_surjective_g
+      e.function_exact ht₀ ht₁, matlisDualTransposeMap_eq]
+  exact covariantDefectEquivCostableHom_homCokernelMap R (matlisDualTransposeEquiv R E P) e he
+    (matlisDualTransposeEquiv R E P') _ _
+
+/-- Pullback on `Ext¹(-, N)` along a morphism lifted to finite projective presentations is
+adjoint under the Auslander–Reiten pairing to postcomposition with the class of `D Tr(t)`. -/
+theorem auslanderReitenFormula_comap (N : ModuleCat.{max u v w} A)
+    (ht₀ : P'.π ∘ₗ t₀ = t.hom ∘ₗ P.π) (ht₁ : t₀ ∘ₗ P.p = P'.p ∘ₗ t₁)
+    (a : (ExactStructure.abelian _).injectivelyTrivialIdeal.quotientFunctor.obj N ⟶
+      (ExactStructure.abelian _).injectivelyTrivialIdeal.quotientFunctor.obj
+        (matlisDualTranspose R E P)) :
+    auslanderReitenFormula R E P' N
+        (a ≫ (ExactStructure.abelian _).injectivelyTrivialIdeal.quotientFunctor.map
+          (matlisDualTransposeMap R E P P' ht₁)) =
+      auslanderReitenFormula R E P N a ∘ₗ Ext1.pullbackLinearMap R t := by
+  obtain ⟨χ, rfl⟩ := (auslanderReitenFormula R E P N).symm.surjective a
+  rw [LinearEquiv.apply_symm_apply, ← LinearEquiv.eq_symm_apply,
+    auslanderReitenFormula_symm_eq_dualExt1EquivCostableHom R E P
+      (InjectivePresentation.abelian N).extension
+      (InjectivePresentation.abelian N).isInjective_extension_obj,
+    auslanderReitenFormula_symm_eq_dualExt1EquivCostableHom R E P'
+      (InjectivePresentation.abelian N).extension
+      (InjectivePresentation.abelian N).isInjective_extension_obj,
+    dualExt1EquivCostableHom_comap R E P P' _ _ ht₀ ht₁]
 
 end ModuleCat
