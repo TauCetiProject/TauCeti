@@ -181,6 +181,41 @@ theorem isArithFrobAt_iff_autToPow_eq_absNorm
       (Units.ext (hσ.trans (hτ.autToPow_eq_absNorm hζ 𝔭 hm Q).symm))
     exact heq ▸ hτ
 
+end TauCeti.NumberField
+
+namespace IsArithFrobAt
+
+open Ideal NumberField
+open IsDedekindDomain (HeightOneSpectrum)
+
+/-- Over a rational prime `p` prime to `n`, an arithmetic Frobenius acts on the `n`-th roots
+of unity by the unit `p mod n`. The roots need not generate the extension over `ℚ`. -/
+theorem autToPow_eq_unitOfCoprime {F : Type*} [Field F] [NumberField F] {p : ℕ}
+    {Q : Ideal (𝓞 F)} [Q.IsPrime] [Q.LiesOver (Ideal.span {(p : ℤ)})]
+    {σ : F ≃ₐ[ℚ] F} (hσ : IsArithFrobAt ℤ σ Q)
+    {n : ℕ} [NeZero n] {ζ : F} (hζ : IsPrimitiveRoot ζ n) (hp : p.Prime) (hn : p.Coprime n) :
+    hζ.autToPow ℚ σ = ZMod.unitOfCoprime p hn := by
+  have hQ : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot
+    (p := Ideal.span {(p : ℤ)}) (by simpa using hp.ne_zero) Q
+  let 𝔭 : HeightOneSpectrum (𝓞 ℚ) :=
+    ⟨Q.under (𝓞 ℚ), inferInstance, Ideal.IsIntegral.under_ne_bot (𝓞 ℚ) hQ⟩
+  let _ : Q.LiesOver 𝔭.asIdeal := Ideal.over_under Q
+  have hnorm : Ideal.absNorm 𝔭.asIdeal = p := by
+    rw [Ideal.absNorm_under_ringOfIntegers_rat, ← Q.over_def (Ideal.span {(p : ℤ)}),
+      Ideal.absNorm_span_singleton]
+    simp
+  have hnmem : (n : 𝓞 ℚ) ∉ 𝔭.asIdeal := by
+    rw [Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd, hnorm]
+    exact hp.coprime_iff_not_dvd.mp hn
+  exact Units.ext (by simpa only [hnorm, ZMod.coe_unitOfCoprime] using
+    ((Ideal.isArithFrobAt_ringOfIntegers_rat_iff σ Q).mpr hσ).autToPow_eq_absNorm hζ 𝔭 hnmem Q)
+
+end IsArithFrobAt
+
+namespace TauCeti.NumberField
+
+open Ideal IsCyclotomicExtension
+
 variable {n : ℕ} [NeZero n] {F : Type*} [Field F] [NumberField F]
   [IsCyclotomicExtension {n} ℚ F]
 
@@ -213,23 +248,18 @@ theorem isArithFrobAt_iff_galEquivZMod_eq_unitOfCoprime
       Rat.galEquivZMod n F σ = ZMod.unitOfCoprime p hp := by
   have hQ : Q ≠ ⊥ := Ideal.ne_bot_of_liesOver_of_ne_bot
     (p := Ideal.span {(p : ℤ)}) (by simpa using (Fact.out : p.Prime).ne_zero) Q
-  let 𝔭 : HeightOneSpectrum (𝓞 ℚ) :=
-    ⟨Q.under (𝓞 ℚ), inferInstance, Ideal.IsIntegral.under_ne_bot (𝓞 ℚ) hQ⟩
-  let _ : Q.LiesOver 𝔭.asIdeal := Ideal.over_under Q
-  have hnorm : Ideal.absNorm 𝔭.asIdeal = p := by
-    rw [Ideal.absNorm_under_ringOfIntegers_rat, ← Q.over_def (Ideal.span {(p : ℤ)}),
-      Ideal.absNorm_span_singleton]
-    simp
-  have hnmem : (n : 𝓞 ℚ) ∉ 𝔭.asIdeal := by
-    rw [Rat.HeightOneSpectrum.natCast_mem_iff_absNorm_asIdeal_dvd, hnorm]
-    exact (Fact.out : p.Prime).coprime_iff_not_dvd.mp hp
-  rw [← Ideal.isArithFrobAt_ringOfIntegers_rat_iff σ Q,
-    isArithFrobAt_iff_galEquivZMod_eq_absNorm 𝔭 hnmem Q σ, hnorm]
-  constructor
-  · intro h
-    exact Units.ext (h.trans (ZMod.coe_unitOfCoprime p hp).symm)
-  · intro h
-    exact congrArg Units.val h |>.trans (ZMod.coe_unitOfCoprime p hp)
+  let _ : Finite (𝓞 F ⧸ Q) := Ring.HasFiniteQuotients.finiteQuotient hQ
+  have : IsGalois ℚ F := IsCyclotomicExtension.isGalois {n} ℚ F
+  let τ := arithFrobAt ℤ (F ≃ₐ[ℚ] F) Q
+  have hτ : IsArithFrobAt ℤ τ Q := IsArithFrobAt.arithFrobAt _ _ _
+  have hcoord (g : F ≃ₐ[ℚ] F) : (zeta_spec n ℚ F).autToPow ℚ g = Rat.galEquivZMod n F g := by
+    rw [(zeta_spec n ℚ F).autToPow_eq_unitsMap_galEquivZMod dvd_rfl, ZMod.unitsMap_self,
+      MonoidHom.id_apply]
+  have hval : Rat.galEquivZMod n F τ = ZMod.unitOfCoprime p hp :=
+    hcoord τ ▸ hτ.autToPow_eq_unitOfCoprime (zeta_spec n ℚ F) Fact.out hp
+  refine ⟨fun h ↦ hcoord σ ▸ h.autToPow_eq_unitOfCoprime (zeta_spec n ℚ F) Fact.out hp, ?_⟩
+  intro h
+  exact ((Rat.galEquivZMod n F).injective (h.trans hval.symm)).symm ▸ hτ
 
 /-- Mathlib's chosen arithmetic Frobenius at a prime above `p` in a rational cyclotomic
 extension corresponds to the unit `p mod n`. -/
