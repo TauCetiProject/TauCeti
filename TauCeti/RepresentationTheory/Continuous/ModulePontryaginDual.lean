@@ -20,10 +20,10 @@ with a continuous `R`-linear action operator `ρ g : M →L[R] M` without assumi
 
 Joint continuity `(g, φ) ↦ ρ.contragredient E g φ` is proved separately when `G` has continuous
 inversion and `ρ` acts jointly continuously on `M`
-(`ContRepresentation.continuous_contragredient_of_discrete` for discrete `M`;
-`ContRepresentation.continuous_contragredient_of_compact` for compact `M` and discrete `E`). We also
-establish central-character inversion, and `G`-equivariant biduality and full faithfulness on the
-corresponding categories of continuous `G`-representations (with operatorwise continuity).
+(`ContRepresentation.continuous_contragredient_action_of_discrete` for discrete `M`;
+`ContRepresentation.continuous_contragredient_action_of_compact` for compact `M` and discrete `E`).
+We also establish central-character inversion, and `G`-equivariant biduality and full faithfulness
+on the corresponding categories of continuous `G`-representations (with operatorwise continuity).
 
 ## References
 
@@ -48,8 +48,8 @@ variable {R : Type u} {G : Type*} {M : Type w} {N : Type w'}
 /-- The contragredient continuous representation of `G` on `ModulePontryaginDual R E M`, given by
 `(g · φ)(x) = φ(ρ g⁻¹ x)`. Following Mathlib's `ContRepresentation`, this asserts that each
 group element acts by a continuous `R`-linear operator; for joint continuity of the `G`-action, see
-`ContRepresentation.continuous_contragredient_of_discrete` and
-`ContRepresentation.continuous_contragredient_of_compact`. -/
+`ContRepresentation.continuous_contragredient_action_of_discrete` and
+`ContRepresentation.continuous_contragredient_action_of_compact`. -/
 def ContRepresentation.contragredient (ρ : ContRepresentation R G M) (E : Type v)
     [AddCommGroup E] [Module R E] [TopologicalSpace E] [IsTopologicalAddGroup E]
     [ContinuousConstSMul R E] :
@@ -85,6 +85,21 @@ def ContIntertwiningMap.contragredient {ρ₁ : ContRepresentation R G M}
     f.contragredient E ψ x = ψ (f x) :=
   f.toContinuousLinearMap.pontryaginDualMap_apply ψ x
 
+@[simp] theorem ContIntertwiningMap.contragredient_id (ρ : ContRepresentation R G M) (E : Type v)
+    [AddCommGroup E] [Module R E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+    [ContinuousConstSMul R E] :
+    (ContIntertwiningMap.id : ρ →ⁱL ρ).contragredient E = ContIntertwiningMap.id := by
+  ext φ x; simp [ContIntertwiningMap.toContinuousLinearMap_apply]; rfl
+
+@[simp] theorem ContIntertwiningMap.contragredient_comp {P : Type*}
+    [AddCommGroup P] [Module R P] [TopologicalSpace P] [IsTopologicalAddGroup P]
+    {ρ₁ : ContRepresentation R G M} {ρ₂ : ContRepresentation R G N}
+    {ρ₃ : ContRepresentation R G P} (f : ρ₂ →ⁱL ρ₃) (g : ρ₁ →ⁱL ρ₂) (E : Type v)
+    [AddCommGroup E] [Module R E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+    [ContinuousConstSMul R E] :
+    (f.comp g).contragredient E = (g.contragredient E).comp (f.contragredient E) := by
+  ext φ x; simp [ContIntertwiningMap.toContinuousLinearMap_apply]; rfl
+
 /-- Evaluation into the double dual intertwines `ρ` with its double contragredient. -/
 theorem ContRepresentation.contragredient_contragredient_eval (ρ : ContRepresentation R G M)
     (E : Type v) [AddCommGroup E] [Module R E] [TopologicalSpace E] [IsTopologicalAddGroup E]
@@ -111,9 +126,9 @@ variable [TopologicalSpace G] [ContinuousInv G]
 
 /-- If `G` has continuous inversion, `M` is discrete, and `G` acts jointly continuously on `M`,
 then the contragredient action of `G` on `ModulePontryaginDual R E M` is jointly continuous. -/
-theorem ContRepresentation.continuous_contragredient_of_discrete (ρ : ContRepresentation R G M)
-    (E : Type v) [AddCommGroup E] [Module R E] [TopologicalSpace E] [IsTopologicalAddGroup E]
-    [ContinuousConstSMul R E] [DiscreteTopology M]
+theorem ContRepresentation.continuous_contragredient_action_of_discrete
+    (ρ : ContRepresentation R G M) (E : Type v) [AddCommGroup E] [Module R E]
+    [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousConstSMul R E] [DiscreteTopology M]
     (hρ : Continuous (fun p : G × M ↦ ρ p.1 p.2)) :
     Continuous (fun p : G × ModulePontryaginDual R E M ↦ ρ.contragredient E p.1 p.2) :=
   have heval : Continuous fun p : M × ModulePontryaginDual R E M ↦ p.2 p.1 :=
@@ -126,10 +141,10 @@ theorem ContRepresentation.continuous_contragredient_of_discrete (ρ : ContRepre
 /-- If `G` has continuous inversion, `M` is compact, `E` is discrete, and `G` acts jointly
 continuously on `M`, then the contragredient action of `G` on `ModulePontryaginDual R E M` is
 jointly continuous. -/
-theorem ContRepresentation.continuous_contragredient_of_compact (ρ : ContRepresentation R G M)
-    (E : Type v) [AddCommGroup E] [Module R E] [TopologicalSpace E] [IsTopologicalAddGroup E]
-    [ContinuousConstSMul R E] [CompactSpace M] [DiscreteTopology E]
-    (hρ : Continuous (fun p : G × M ↦ ρ p.1 p.2)) :
+theorem ContRepresentation.continuous_contragredient_action_of_compact
+    (ρ : ContRepresentation R G M) (E : Type v) [AddCommGroup E] [Module R E]
+    [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousConstSMul R E] [CompactSpace M]
+    [DiscreteTopology E] (hρ : Continuous (fun p : G × M ↦ ρ p.1 p.2)) :
     Continuous (fun p : G × ModulePontryaginDual R E M ↦ ρ.contragredient E p.1 p.2) :=
   continuous_prod_of_discrete_right.mpr fun φ ↦
     isInducing_toContinuousMap.continuous_iff.mpr <|
@@ -147,7 +162,8 @@ theorem ContRepresentation.isOpen_setOf_contragredient_eq_of_compact (ρ : ContR
     (hρ : Continuous (fun p : G × M ↦ ρ p.1 p.2))
     (φ ψ : ModulePontryaginDual R E M) : IsOpen {g : G | ρ.contragredient E g φ = ψ} :=
   (isOpen_discrete {ψ}).preimage
-    ((ρ.continuous_contragredient_of_compact E hρ).comp (continuous_id.prodMk continuous_const))
+    ((ρ.continuous_contragredient_action_of_compact E hρ).comp
+      (continuous_id.prodMk continuous_const))
 
 /-- If `G` has continuous inversion, `M` is compact, `E` is discrete, and `G` acts jointly
 continuously on `M`, then every element of `ModulePontryaginDual R E M` has an open stabilizer in
@@ -177,7 +193,7 @@ variable {R : Type u} (E : Type v) {G : Type*} {M : Type w} {N : Type w'}
 /-- Full faithfulness of `ContIntertwiningMap.contragredient` follows from bijectivity of
 `ContinuousLinearMap.pontryaginDualMap` via `ContIntertwiningMap.toContinuousLinearMap`
 injectivity. -/
-private theorem contragredient_bijective_of_pontryaginDualMap_bijective
+private theorem contIntertwiningMap_contragredient_bijective_of_pontryaginDualMap_bijective
     {ρ₁ : ContRepresentation R G M} {ρ₂ : ContRepresentation R G N}
     (hbij : Function.Bijective
       (ContinuousLinearMap.pontryaginDualMap (R := R) (E := E) (M := M) (N := N))) :
@@ -238,14 +254,14 @@ noncomputable def evalEquivOfCompactRep
 
 /-- Full faithfulness of `ContIntertwiningMap.contragredient` on compact `ContRepresentation`s
 (operatorwise continuous `G`-actions). -/
-theorem contragredient_bijective_of_compact {N₁ N₂ : Type*}
+theorem contIntertwiningMap_contragredient_bijective_of_compact {N₁ N₂ : Type*}
     [AddCommGroup N₁] [Module R N₁] [TopologicalSpace N₁] [IsTopologicalAddGroup N₁]
     [AddCommGroup N₂] [Module R N₂] [TopologicalSpace N₂] [IsTopologicalAddGroup N₂]
     (hN₁ : IsCompactModule R N₁) (hN₂ : IsCompactModule R N₂)
     (ρ₁ : ContRepresentation R G N₁) (ρ₂ : ContRepresentation R G N₂) :
     Function.Bijective
       (ContIntertwiningMap.contragredient (E := E) (ρ₁ := ρ₁) (ρ₂ := ρ₂)) :=
-  contragredient_bijective_of_pontryaginDualMap_bijective E
+  contIntertwiningMap_contragredient_bijective_of_pontryaginDualMap_bijective E
     (pontryaginDualMap_bijective_of_compact hE hN₁ hN₂)
 
 end CompactBiduality
@@ -275,7 +291,7 @@ noncomputable def evalEquivOfDiscreteRep
 
 /-- Full faithfulness of `ContIntertwiningMap.contragredient` on discrete `ContRepresentation`s
 (operatorwise continuous `G`-actions) with continuous `R`-action. -/
-theorem contragredient_bijective_of_discrete {M₁ M₂ : Type*}
+theorem contIntertwiningMap_contragredient_bijective_of_discrete {M₁ M₂ : Type*}
     [AddCommGroup M₁] [Module R M₁] [TopologicalSpace M₁] [DiscreteTopology M₁]
     [ContinuousSMul R M₁]
     [AddCommGroup M₂] [Module R M₂] [TopologicalSpace M₂] [DiscreteTopology M₂]
@@ -283,7 +299,7 @@ theorem contragredient_bijective_of_discrete {M₁ M₂ : Type*}
     (ρ₁ : ContRepresentation R G M₁) (ρ₂ : ContRepresentation R G M₂) :
     Function.Bijective
       (ContIntertwiningMap.contragredient (E := E) (ρ₁ := ρ₁) (ρ₂ := ρ₂)) :=
-  contragredient_bijective_of_pontryaginDualMap_bijective E
+  contIntertwiningMap_contragredient_bijective_of_pontryaginDualMap_bijective E
     (pontryaginDualMap_bijective_of_discrete hE)
 
 end DiscreteBiduality

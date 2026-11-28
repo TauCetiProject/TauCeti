@@ -12,18 +12,23 @@ import TauCeti.Topology.CompactOpen
 /-!
 # The compact-open topological dual of a module
 
-For a commutative topological semiring `R` and topological `R`-modules `E` and `M`,
-`TauCeti.ModulePontryaginDual R E M` is the `R`-module of continuous `R`-linear maps `M →L[R] E`
-with the compact-open topology induced from `C(M, E)`. For discrete `M` this coincides with
-pointwise convergence (`isEmbedding_coe`, which is moreover a closed embedding
-`isClosedEmbedding_coe` when `E` is Hausdorff with continuous addition and scalar action); for
-compact `M` and discrete `E` it is discrete (`instDiscreteTopology`). We provide contravariant
-(`ContinuousLinearMap.pontryaginDualMap`, `ContinuousLinearEquiv.pontryaginDualCongr`) and covariant
+For a semiring `R` and topological `R`-semimodules `E` and `M`, `TauCeti.ModulePontryaginDual R E M`
+is the type of continuous `R`-linear maps `M →L[R] E` equipped with the compact-open topology
+induced from `C(M, E)`. When `E` and `M` are additive groups with `E` a topological additive
+group, `ModulePontryaginDual R E M` is a topological additive group under pointwise operations,
+and any commuting `S`-action on `E` with `ContinuousConstSMul S E` induces a pointwise
+`S`-module structure (in particular an `R`-module structure when `R` is commutative and
+`ContinuousConstSMul R E`). For discrete `M` the compact-open topology coincides with pointwise
+convergence (`isEmbedding_coe`, which is moreover a closed embedding `isClosedEmbedding_coe` when
+`E` is Hausdorff with continuous addition and scalar action); for compact `M` and discrete `E` it
+is discrete (`instDiscreteTopology`). For commutative `R` and topological `R`-modules `E` and `M`
+as above, we provide contravariant (`ContinuousLinearMap.pontryaginDualMap`,
+`ContinuousLinearEquiv.pontryaginDualCongr`) and covariant
 (`ContinuousLinearMap.pontryaginDualMapCodomain`,
-`ContinuousLinearEquiv.pontryaginDualCongrCodomain`), transport along linear equivalences with
-continuous realizations (`LinearEquiv.pontryaginDualEquiv`), and evaluation (`eval`,
-continuous when `M` is discrete via `continuous_eval_of_discrete` or when `M` is compact and `E`
-is discrete via `continuous_eval_of_compact`).
+`ContinuousLinearEquiv.pontryaginDualCongrCodomain`) functoriality, transport along linear
+equivalences with continuous realizations (`LinearEquiv.pontryaginDualEquiv`), and evaluation
+(`eval`, continuous when `M` is discrete via `continuous_eval_of_discrete` or when `M` is compact
+and `E` is discrete via `continuous_eval_of_compact`).
 
 ## References
 

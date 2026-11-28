@@ -730,7 +730,7 @@ theorem iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_apply
     rintro ρ rfl
     simp only [eqToHom_refl, CategoryTheory.id_apply]
     rfl
-  exact key X.ρ.restrictScalarsInt (ofDiscreteModule_ρ_eq_restrictScalarsInt_obj_ρ X)
+  exact key (X.ρ.restrictScalars ℤ) (ofDiscreteModule_ρ_eq_restrictScalarsInt_obj_ρ X)
 
 /-- In degree two, `ofDiscreteModuleCocyclesRestrictScalarsIntIso` does not change the values of
 a homogeneous cocycle. -/

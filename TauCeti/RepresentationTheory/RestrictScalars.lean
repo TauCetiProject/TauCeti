@@ -18,7 +18,7 @@ observation.
 The main instance is `R = ℤ` for an additive group `V`, through
 `LinearMap.CompatibleSMul.intModule`: `ρ.restrictScalars ℤ` reads `ρ` as a representation on the
 underlying abelian group. It is the discrete counterpart of
-`ContRepresentation.restrictScalarsInt`. It is what lets a representation that is naturally
+`ContRepresentation.restrictScalars`. It is what lets a representation that is naturally
 linear over a larger ring, such as a quotient `M ⧸ r • M` of a module over the valuation ring of a
 local field, be compared with integral representations that carry no such structure, such as the
 unit group of a local field. Tate cohomology and the Herbrand quotient of such a comparison are

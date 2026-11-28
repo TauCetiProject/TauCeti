@@ -22,8 +22,9 @@ Given a uniformizer `ϖ` of `𝒪[L]`, dividing by `ϖ ^ d(L/K)` gives a continu
 equivalence `(L ⧸ 𝒪[L]) ≃L[𝒪[L]] (L ⧸ 𝒪[L]ᵛ)`
 (`TauCeti.quotientEquivTraceDualQuotientOfUniformizer`).
 
-By contrast, the naive pairing `directTracePairing : L ⧸ 𝒪[L] → Hom_𝒪[K](𝒪[L], K ⧸ 𝒪[K])` is
-injective iff `L / K` is unramified (`TauCeti.ker_directTracePairing_eq_bot_iff_isUnramified`),
+By contrast, the naive pairing
+`directTracePairing : L ⧸ 𝒪[L] →ₗ[𝒪[L]] MatlisDual 𝒪[K] (K ⧸ 𝒪[K]) 𝒪[L]`
+is injective iff `L / K` is unramified (`TauCeti.ker_directTracePairing_eq_bot_iff_isUnramified`),
 with `[ϖ⁻¹]` a nonzero kernel element whenever `L / K` is ramified
 (`TauCeti.mk_inv_uniformizer_ne_zero` and `TauCeti.mk_inv_uniformizer_mem_ker_directTracePairing`).
 
@@ -75,6 +76,15 @@ def quotientEquivTraceDualQuotientOfUniformizer {ϖ : 𝒪[L]} (hϖ : Irreducibl
       Submodule.Quotient.mk (x / ((ϖ : L) ^ differentExponent K L)) := by
   simp only [quotientEquivTraceDualQuotientOfUniformizer, ContinuousLinearEquiv.coe_mk,
     quotientEquivTraceDualQuotientOfDifferentIdealEqSpan_mk, map_pow,
+    Algebra.algebraMap_ofSubsemiring_apply]
+
+@[simp] theorem quotientEquivTraceDualQuotientOfUniformizer_symm_mk
+    {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ) (x : L) :
+    (quotientEquivTraceDualQuotientOfUniformizer K L hϖ).symm (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk (x * ((ϖ : L) ^ differentExponent K L)) := by
+  rw [← ContinuousLinearEquiv.coe_symm_toLinearEquiv]
+  simp only [quotientEquivTraceDualQuotientOfUniformizer,
+    quotientEquivTraceDualQuotientOfDifferentIdealEqSpan_symm_mk, map_pow,
     Algebra.algebraMap_ofSubsemiring_apply]
 
 /-- **Exact criterion for the naive trace pairing**: `directTracePairing` is injective if and only

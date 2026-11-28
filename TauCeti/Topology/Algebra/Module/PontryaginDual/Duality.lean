@@ -460,22 +460,21 @@ variable {R : Type u} {E : Type v}
 variable (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
 include hE
 
+omit [TopologicalSpace E] [DiscreteTopology E] [ContinuousSMul R E] in
+/-- Over a compact totally disconnected commutative local topological ring `R` and an injective
+cogenerator `E` with `length_R(Hom_R(R ⧸ 𝔪, E)) = 1`, the `I`-torsion in `E` is finite for every
+open ideal `I` of `R`. -/
+theorem finite_torsionBySet_of_isOpen {I : Ideal R} (hI : IsOpen (I : Set R)) :
+    Finite (Submodule.torsionBySet R E (I : Set R)) := by
+  have : Finite (R ⧸ I) := AddSubgroup.quotient_finite_of_isOpen I.toAddSubgroup hI
+  refine IsFiniteLength.finite ((Module.length_ne_top_iff (R := R)).mp ?_)
+  rw [← (I.quotientLinearMapEquivTorsionBySet E).length_eq, length_linearMap_of_forall_isMaximal hE]
+  exact Module.length_ne_top_iff.mpr IsFiniteLength.of_finite
+
 section SingleDiscrete
 
 variable {M : Type w} [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M]
   [ContinuousSMul R M]
-
-omit [TopologicalSpace E] [DiscreteTopology E] [ContinuousSMul R E] in
-/-- For a discrete module `M` with continuous `R`-action, the `torsionOf(m)`-torsion in `E` is
-finite. -/
-private theorem finite_torsionBySet_torsionOf (m : M) :
-    Finite (Submodule.torsionBySet R E (Ideal.torsionOf R M m : Set R)) := by
-  let I : Ideal R := Ideal.torsionOf R M m
-  have : Finite (R ⧸ I) :=
-    AddSubgroup.quotient_finite_of_isOpen I.toAddSubgroup (isOpen_torsionOf m)
-  refine IsFiniteLength.finite ((Module.length_ne_top_iff (R := R)).mp ?_)
-  rw [← (I.quotientLinearMapEquivTorsionBySet E).length_eq, length_linearMap_of_forall_isMaximal hE]
-  exact Module.length_ne_top_iff.mpr IsFiniteLength.of_finite
 
 /-- Over a compact totally disconnected commutative local topological ring `R` and a discrete
 injective cogenerator `E` with continuous `R`-action and `length_R(Hom_R(R ⧸ 𝔪, E)) = 1`, the dual
@@ -492,7 +491,7 @@ theorem isCompactModule_dual_of_discrete : IsCompactModule R (ModulePontryaginDu
   have hcoe : IsClosedEmbedding (valPi ∘ ι) := isClosedEmbedding_coe (R := R) (E := E) (M := M)
   have hclosed : IsClosedEmbedding ι := IsClosedEmbedding.of_comp hvalPi hcoe
   have (m : M) : CompactSpace (T m) :=
-    have := finite_torsionBySet_torsionOf hE m; Finite.compactSpace
+    have := finite_torsionBySet_of_isOpen hE (isOpen_torsionOf m); Finite.compactSpace
   have (m : M) : TotallyDisconnectedSpace (T m) :=
     inferInstanceAs (TotallyDisconnectedSpace {x : E // _})
   exact ⟨inferInstance, inferInstance, hclosed.compactSpace,

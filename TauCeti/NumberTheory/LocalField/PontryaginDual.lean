@@ -232,7 +232,45 @@ theorem traceDualPontryaginEquiv_smul_apply (b : 𝒪[L])
     traceDualPontryaginEquiv K L M (b • φ) m = traceDualPontryaginEquiv K L M φ (b • m) := by
   simp [traceDualPontryaginEquiv_apply, map_smul]
 
+/-- Explicit formula for `(traceDualPontryaginEquiv).symm` via any finite trace-dual family. -/
+theorem traceDualPontryaginEquiv_symm_apply_of_dualFamily {n : ℕ} (b : Fin n → 𝒪[L])
+    (y : Fin n → L) (hy : ∀ i, y i ∈ Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L))
+    (hsum : ∀ x : L, ∑ i, Algebra.trace K L (x * algebraMap 𝒪[L] L (b i)) • y i = x)
+    (ψ : ModulePontryaginDual 𝒪[K] (K ⧸ (1 : Submodule 𝒪[K] K)) M) (m : M) :
+    (traceDualPontryaginEquiv K L M).symm ψ m =
+      ∑ i, mulByTraceDualQuotientMap 𝒪[K] K 𝒪[L] L (y i) (hy i) (ψ (b i • m)) := by
+  simpa [traceDualPontryaginEquiv] using
+    traceDualLinearMapEquiv_symm_apply_of_dualFamily 𝒪[K] K 𝒪[L] L b y hy hsum
+      ψ.toContinuousLinearMap.toLinearMap m
+
 end TraceDualApply
+
+/-- Naturality of `traceDualPontryaginEquiv` under precomposition by continuous `𝒪[L]`-linear
+maps. -/
+theorem traceDualPontryaginEquiv_pontryaginDualMap {M M' : Type*} [AddCommGroup M]
+    [Module 𝒪[L] M] [Module 𝒪[K] M] [IsScalarTower 𝒪[K] 𝒪[L] M] [TopologicalSpace M]
+    [ContinuousConstSMul 𝒪[L] M] [AddCommGroup M'] [Module 𝒪[L] M'] [Module 𝒪[K] M']
+    [IsScalarTower 𝒪[K] 𝒪[L] M'] [TopologicalSpace M'] [ContinuousConstSMul 𝒪[L] M']
+    (f : M' →L[𝒪[L]] M)
+    (φ : ModulePontryaginDual 𝒪[L] (L ⧸ Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L)) M) :
+    traceDualPontryaginEquiv K L M' (f.pontryaginDualMap φ) =
+      (f.restrictScalars 𝒪[K]).pontryaginDualMap (traceDualPontryaginEquiv K L M φ) := by
+  ext m
+  simp [traceDualPontryaginEquiv_apply]
+
+/-- Bundled naturality of `traceDualPontryaginEquiv` under precomposition by continuous
+`𝒪[L]`-linear maps. -/
+theorem traceDualPontryaginEquiv_comp_pontryaginDualMap {M M' : Type*} [AddCommGroup M]
+    [Module 𝒪[L] M] [Module 𝒪[K] M] [IsScalarTower 𝒪[K] 𝒪[L] M] [TopologicalSpace M]
+    [ContinuousConstSMul 𝒪[L] M] [AddCommGroup M'] [Module 𝒪[L] M'] [Module 𝒪[K] M']
+    [IsScalarTower 𝒪[K] 𝒪[L] M'] [TopologicalSpace M'] [ContinuousConstSMul 𝒪[L] M']
+    (f : M' →L[𝒪[L]] M) :
+    (traceDualPontryaginEquiv K L M').toContinuousLinearMap.comp
+        ((f.pontryaginDualMap
+          (E := L ⧸ Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L))).restrictScalars 𝒪[K]) =
+      ((f.restrictScalars 𝒪[K]).pontryaginDualMap (E := K ⧸ (1 : Submodule 𝒪[K] K))).comp
+        (traceDualPontryaginEquiv K L M).toContinuousLinearMap :=
+  ContinuousLinearMap.ext fun φ ↦ traceDualPontryaginEquiv_pontryaginDualMap K L f φ
 
 /-- Compatibility of `traceDualPontryaginEquiv` with contragredient group representations. -/
 theorem traceDualPontryaginEquiv_contragredient {G M : Type*} [Group G]
@@ -287,7 +325,63 @@ theorem pontryaginDualEquivOfUniformizer_smul_apply (b : 𝒪[L])
       pontryaginDualEquivOfUniformizer K L hϖ M φ (b • m) := by
   simp [pontryaginDualEquivOfUniformizer_apply, map_smul]
 
+@[simp] theorem pontryaginDualEquivOfUniformizer_symm_apply
+    (ψ : ModulePontryaginDual 𝒪[K] (K ⧸ (1 : Submodule 𝒪[K] K)) M) (m : M) :
+    (pontryaginDualEquivOfUniformizer K L hϖ M).symm ψ m =
+      (quotientEquivTraceDualQuotientOfUniformizer K L hϖ).symm
+        ((traceDualPontryaginEquiv K L M).symm ψ m) := by
+  have h1 : (pontryaginDualEquivOfUniformizer K L hϖ M).symm ψ =
+      ((quotientEquivTraceDualQuotientOfUniformizer K L hϖ).symm.pontryaginDualCongrCodomain
+        (M := M)) ((traceDualPontryaginEquiv K L M).symm ψ) := by
+    apply (pontryaginDualEquivOfUniformizer K L hϖ M).injective
+    rw [ContinuousLinearEquiv.apply_symm_apply]
+    ext m'
+    rw [pontryaginDualEquivOfUniformizer_apply,
+      ContinuousLinearEquiv.pontryaginDualCongrCodomain_apply,
+      ContinuousLinearEquiv.apply_symm_apply, ← traceDualPontryaginEquiv_apply,
+      ContinuousLinearEquiv.apply_symm_apply]
+  rw [DFunLike.congr_fun h1 m, ContinuousLinearEquiv.pontryaginDualCongrCodomain_apply]
+
+/-- Explicit formula for `(pontryaginDualEquivOfUniformizer).symm` via any finite trace-dual
+family. -/
+theorem pontryaginDualEquivOfUniformizer_symm_apply_of_dualFamily {n : ℕ} (b : Fin n → 𝒪[L])
+    (y : Fin n → L) (hy : ∀ i, y i ∈ Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L))
+    (hsum : ∀ x : L, ∑ i, Algebra.trace K L (x * algebraMap 𝒪[L] L (b i)) • y i = x)
+    (ψ : ModulePontryaginDual 𝒪[K] (K ⧸ (1 : Submodule 𝒪[K] K)) M) (m : M) :
+    (pontryaginDualEquivOfUniformizer K L hϖ M).symm ψ m =
+      (quotientEquivTraceDualQuotientOfUniformizer K L hϖ).symm
+        (∑ i, mulByTraceDualQuotientMap 𝒪[K] K 𝒪[L] L (y i) (hy i) (ψ (b i • m))) := by
+  rw [pontryaginDualEquivOfUniformizer_symm_apply,
+    traceDualPontryaginEquiv_symm_apply_of_dualFamily K L b y hy hsum]
+
 end UniformizerApply
+
+/-- Naturality of `pontryaginDualEquivOfUniformizer` under precomposition by continuous
+`𝒪[L]`-linear maps. -/
+theorem pontryaginDualEquivOfUniformizer_pontryaginDualMap {M M' : Type*} [AddCommGroup M]
+    [Module 𝒪[L] M] [Module 𝒪[K] M] [IsScalarTower 𝒪[K] 𝒪[L] M] [TopologicalSpace M]
+    [ContinuousConstSMul 𝒪[L] M] [AddCommGroup M'] [Module 𝒪[L] M'] [Module 𝒪[K] M']
+    [IsScalarTower 𝒪[K] 𝒪[L] M'] [TopologicalSpace M'] [ContinuousConstSMul 𝒪[L] M']
+    (f : M' →L[𝒪[L]] M)
+    (φ : ModulePontryaginDual 𝒪[L] (L ⧸ (1 : Submodule 𝒪[L] L)) M) :
+    pontryaginDualEquivOfUniformizer K L hϖ M' (f.pontryaginDualMap φ) =
+      (f.restrictScalars 𝒪[K]).pontryaginDualMap
+        (pontryaginDualEquivOfUniformizer K L hϖ M φ) := by
+  ext m
+  simp [pontryaginDualEquivOfUniformizer_apply]
+
+/-- Bundled naturality of `pontryaginDualEquivOfUniformizer` under precomposition by continuous
+`𝒪[L]`-linear maps. -/
+theorem pontryaginDualEquivOfUniformizer_comp_pontryaginDualMap {M M' : Type*} [AddCommGroup M]
+    [Module 𝒪[L] M] [Module 𝒪[K] M] [IsScalarTower 𝒪[K] 𝒪[L] M] [TopologicalSpace M]
+    [ContinuousConstSMul 𝒪[L] M] [AddCommGroup M'] [Module 𝒪[L] M'] [Module 𝒪[K] M']
+    [IsScalarTower 𝒪[K] 𝒪[L] M'] [TopologicalSpace M'] [ContinuousConstSMul 𝒪[L] M']
+    (f : M' →L[𝒪[L]] M) :
+    (pontryaginDualEquivOfUniformizer K L hϖ M').toContinuousLinearMap.comp
+        ((f.pontryaginDualMap (E := L ⧸ (1 : Submodule 𝒪[L] L))).restrictScalars 𝒪[K]) =
+      ((f.restrictScalars 𝒪[K]).pontryaginDualMap (E := K ⧸ (1 : Submodule 𝒪[K] K))).comp
+        (pontryaginDualEquivOfUniformizer K L hϖ M).toContinuousLinearMap :=
+  ContinuousLinearMap.ext fun φ ↦ pontryaginDualEquivOfUniformizer_pontryaginDualMap K L hϖ f φ
 
 /-- Compatibility of `pontryaginDualEquivOfUniformizer` with contragredient group
 representations. -/

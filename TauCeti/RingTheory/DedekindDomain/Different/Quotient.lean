@@ -7,20 +7,23 @@ module
 
 public import TauCeti.RingTheory.DedekindDomain.Different.Basic
 public import TauCeti.RingTheory.DedekindDomain.Different.DualFamily
-import TauCeti.RingTheory.MatlisDuality.Basic
+public import TauCeti.RingTheory.MatlisDuality.Basic
 
 /-!
 # Trace-dual quotient comparison for linear maps
 
 For an integral domain `A` with fraction field `K`, a finite separable extension `L / K`, and the
 integral closure `B` of `A` in `L` with `Bᵛ = Submodule.traceDual A K (1 : Submodule B L)`, the
-trace descends to `traceDualQuotientMap : L ⧸ Bᵛ →ₗ[A] K ⧸ A`, yielding `traceDualLinearMapEquiv :
-(M →ₗ[B] (L ⧸ Bᵛ)) ≃ₗ[A] (M →ₗ[A] (K ⧸ A))` when `B` is finite projective over `A`.
+trace descends to `traceDualQuotientMap : L ⧸ Bᵛ →ₗ[A] K ⧸ A`, yielding
+`traceDualQuotientEquiv : L ⧸ Bᵛ ≃ₗ[B] MatlisDual A (K ⧸ A) B` and
+`traceDualLinearMapEquiv : (M →ₗ[B] (L ⧸ Bᵛ)) ≃ₗ[A] (M →ₗ[A] (K ⧸ A))` when `B` is finite
+projective over `A`.
 
-When `A` is integrally closed, `directTracePairing : L ⧸ B →ₗ[A] (B →ₗ[A] K ⧸ A)` has kernel the
-image of `Bᵛ` in `L ⧸ B`. When moreover `B` is a Dedekind domain (with `A` integrally closed and
-`B` torsion-free over `A`), if `differentIdeal A B` is principal then dividing by a generator
-identifies `L ⧸ B ≃ₗ[B] L ⧸ Bᵛ`, and `directTracePairing` is injective iff `differentIdeal A B = ⊤`.
+When `A` is integrally closed, `directTracePairing : L ⧸ B →ₗ[B] MatlisDual A (K ⧸ A) B` has
+kernel the image of `Bᵛ` in `L ⧸ B`. When moreover `B` is a Dedekind domain (with `A` integrally
+closed and `B` torsion-free over `A`), `directTracePairing` is injective iff
+`differentIdeal A B = ⊤`; when in addition `differentIdeal A B` is principal, dividing by a
+generator identifies `L ⧸ B ≃ₗ[B] L ⧸ Bᵛ`.
 
 ## References
 
@@ -81,51 +84,6 @@ variable (A K B L : Type*) [CommRing A] [Field K] [CommRing B] [Field L]
 
 omit [IsDomain A] [IsFractionRing A K] [FiniteDimensional K L] [Algebra.IsSeparable K L]
   [IsIntegralClosure B A L] in
-/-- Isolate scalar-tower transport `a • b = (a : K) • (b : L)` in the extension tower. -/
-private theorem algebraMap_smul_eq_smul_algebraMap (a : A) (b : B) :
-    algebraMap B L (a • b) = algebraMap A K a • algebraMap B L b := by
-  rw [Algebra.smul_def, map_mul, ← IsScalarTower.algebraMap_apply A B L,
-    IsScalarTower.algebraMap_apply A K L, ← Algebra.smul_def]
-
-omit [IsDomain A] [IsFractionRing A K] in
-/-- Reconstruct `w : B` as `∑ i, a i • b i` from its traces against a dual family `(b, y)`. -/
-private theorem sum_smul_eq_of_dualFamily {n : ℕ} (b : Fin n → B) (y : Fin n → L)
-    (hsum : ∀ x : L, ∑ i, Algebra.trace K L (x * algebraMap B L (b i)) • y i = x)
-    (w : B) (a : Fin n → A)
-    (ha : ∀ i, algebraMap A K (a i) = Algebra.trace K L (y i * algebraMap B L w)) :
-    ∑ i, a i • b i = w := by
-  apply IsIntegralClosure.algebraMap_injective B A L
-  rw [← sub_eq_zero]
-  refine (traceForm_nondegenerate K L).1 _ fun x ↦ ?_
-  have hterm (i : Fin n) :
-      Algebra.trace K L (x * algebraMap B L (a i • b i)) =
-        Algebra.trace K L (x * algebraMap B L (b i)) *
-          Algebra.trace K L (y i * algebraMap B L w) := by
-    calc Algebra.trace K L (x * algebraMap B L (a i • b i))
-      = Algebra.trace K L (algebraMap A K (a i) • (x * algebraMap B L (b i))) := by
-          rw [algebraMap_smul_eq_smul_algebraMap A K B L, mul_smul_comm]
-    _ = Algebra.trace K L (x * algebraMap B L (b i)) * algebraMap A K (a i) := by
-          rw [map_smul, smul_eq_mul, mul_comm]
-    _ = Algebra.trace K L (x * algebraMap B L (b i)) *
-          Algebra.trace K L (y i * algebraMap B L w) := by rw [ha i]
-  have htrace :
-      Algebra.trace K L (x * algebraMap B L (∑ i, a i • b i)) =
-        Algebra.trace K L (x * algebraMap B L w) := by
-    calc Algebra.trace K L (x * algebraMap B L (∑ i, a i • b i))
-      = ∑ i, Algebra.trace K L (x * algebraMap B L (a i • b i)) := by
-          simp only [map_sum, Finset.mul_sum]
-    _ = ∑ i, Algebra.trace K L (x * algebraMap B L (b i)) *
-          Algebra.trace K L (y i * algebraMap B L w) :=
-          Finset.sum_congr rfl fun i _ ↦ hterm i
-    _ = Algebra.trace K L ((∑ i, Algebra.trace K L (x * algebraMap B L (b i)) • y i) *
-          algebraMap B L w) := by
-          simp only [Finset.sum_mul, smul_mul_assoc, map_sum, map_smul, smul_eq_mul]
-    _ = Algebra.trace K L (x * algebraMap B L w) := by rw [hsum x]
-  rw [Algebra.traceForm_apply, mul_comm, mul_sub, map_sub, sub_eq_zero]
-  exact htrace
-
-omit [IsDomain A] [IsFractionRing A K] [FiniteDimensional K L] [Algebra.IsSeparable K L]
-  [IsIntegralClosure B A L] in
 /-- Action of `c : B` on `mulByTraceDualQuotientMap y hy q` under `traceDualQuotientMap`. -/
 private theorem traceDualQuotientMap_smul_mulByTraceDualQuotientMap
     (y : L) (hy : y ∈ Submodule.traceDual A K (1 : Submodule B L)) (c : B)
@@ -180,7 +138,7 @@ private theorem traceDualToMatlisDual_sum_mulBy {n : ℕ} (b : Fin n → B) (y :
     simpa [Algebra.traceForm_apply, mul_comm (y i)] using
       Submodule.mem_traceDual.mp (hy i) (algebraMap B L c) (Submodule.mem_one.mpr ⟨c, rfl⟩)
   choose a ha using hmem
-  have ha_sum : ∑ i, a i • b i = c := sum_smul_eq_of_dualFamily A K B L b y hsum c a ha
+  have ha_sum : ∑ i, a i • b i = c := sum_smul_eq_of_dualFamily A K b y hsum c a ha
   calc MatlisDual.equivLinearMap A (K ⧸ (1 : Submodule A K)) B
         (traceDualToMatlisDual A K B L
           (∑ i, mulByTraceDualQuotientMap A K B L (y i) (hy i)
@@ -201,8 +159,8 @@ section FiniteProjective
 
 variable [Module.Finite A B] [Module.Projective A B]
 
-/-- Trace-specific `B`-linear equivalence `L ⧸ Bᵛ ≃ₗ[B] MatlisDual A (K ⧸ A) B`. -/
-private def traceDualQuotientEquiv :
+/-- Canonical `B`-linear equivalence `L ⧸ Bᵛ ≃ₗ[B] MatlisDual A (K ⧸ A) B`. -/
+def traceDualQuotientEquiv :
     (L ⧸ Submodule.traceDual A K (1 : Submodule B L)) ≃ₗ[B]
       MatlisDual A (K ⧸ (1 : Submodule A K)) B :=
   LinearEquiv.ofBijective (traceDualToMatlisDual A K B L) <| by
@@ -219,6 +177,12 @@ private def traceDualQuotientEquiv :
     simp only [traceDualToMatlisDual_apply, hbi, mulByTraceDualQuotientMap_mk]
     simp_rw [← Submodule.mkQ_apply]
     rw [← map_sum, hsum x]
+
+@[simp] theorem traceDualQuotientEquiv_apply
+    (q : L ⧸ Submodule.traceDual A K (1 : Submodule B L)) (b : B) :
+    MatlisDual.equivLinearMap A (K ⧸ (1 : Submodule A K)) B
+      (traceDualQuotientEquiv A K B L q) b = traceDualQuotientMap A K B L (b • q) :=
+  traceDualToMatlisDual_apply A K B L q b
 
 /-- **Inverse-different trace comparison for linear maps**: when `B` is finite projective over `A`,
 postcomposition with `traceDualQuotientMap` gives `(M →ₗ[B] (L ⧸ Bᵛ)) ≃ₗ[A] (M →ₗ[A] (K ⧸ A))`. -/
@@ -251,6 +215,24 @@ theorem traceDualLinearMapEquiv_smul_apply {M : Type*} [AddCommGroup M] [Module 
     (φ : M →ₗ[B] (L ⧸ Submodule.traceDual A K (1 : Submodule B L))) (m : M) :
     traceDualLinearMapEquiv A K B L M (b • φ) m = traceDualLinearMapEquiv A K B L M φ (b • m) := by
   simp [traceDualLinearMapEquiv_apply, map_smul]
+
+/-- Naturality of `traceDualLinearMapEquiv` under precomposition by `B`-linear maps. -/
+theorem traceDualLinearMapEquiv_comp {M M' : Type*} [AddCommGroup M] [Module B M] [Module A M]
+    [IsScalarTower A B M] [AddCommGroup M'] [Module B M'] [Module A M'] [IsScalarTower A B M']
+    (f : M' →ₗ[B] M) (φ : M →ₗ[B] (L ⧸ Submodule.traceDual A K (1 : Submodule B L))) :
+    traceDualLinearMapEquiv A K B L M' (φ ∘ₗ f) =
+      (traceDualLinearMapEquiv A K B L M φ) ∘ₗ f.restrictScalars A :=
+  LinearMap.ext fun _ ↦ by simp
+
+/-- Bundled naturality of `traceDualLinearMapEquiv` under precomposition by `B`-linear maps. -/
+theorem traceDualLinearMapEquiv_comp_lcomp {M M' : Type*} [AddCommGroup M] [Module B M]
+    [Module A M] [IsScalarTower A B M] [AddCommGroup M'] [Module B M'] [Module A M']
+    [IsScalarTower A B M'] (f : M' →ₗ[B] M) :
+    (traceDualLinearMapEquiv A K B L M').toLinearMap ∘ₗ
+        (LinearMap.lcomp B (L ⧸ Submodule.traceDual A K (1 : Submodule B L)) f).restrictScalars A =
+      LinearMap.lcomp A (K ⧸ (1 : Submodule A K)) (f.restrictScalars A) ∘ₗ
+        (traceDualLinearMapEquiv A K B L M).toLinearMap :=
+  LinearMap.ext fun φ ↦ traceDualLinearMapEquiv_comp A K B L f φ
 
 /-- Explicit formula for `(traceDualLinearMapEquiv).symm` via any finite trace-dual family. -/
 theorem traceDualLinearMapEquiv_symm_apply_of_dualFamily {M : Type*} [AddCommGroup M] [Module B M]
@@ -330,26 +312,50 @@ def directTraceQuotientMap : (L ⧸ (1 : Submodule B L)) →ₗ[A] (K ⧸ (1 : S
     directTraceQuotientMap A K B L (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk (Algebra.trace K L x) := (rfl)
 
-/-- The direct trace pairing `L ⧸ B → (B →ₗ[A] (K ⧸ A))` sending `[x]` to `b ↦ [Tr_{L/K}(b x)]`. -/
-def directTracePairing : (L ⧸ (1 : Submodule B L)) →ₗ[A] (B →ₗ[A] (K ⧸ (1 : Submodule A K))) where
-  toFun q :=
+/-- The `B`-linear direct trace pairing `L ⧸ B →ₗ[B] MatlisDual A (K ⧸ A) B` sending `[x]` to
+`b ↦ [Tr_{L/K}(b x)]`. -/
+def directTracePairing :
+    (L ⧸ (1 : Submodule B L)) →ₗ[B] MatlisDual A (K ⧸ (1 : Submodule A K)) B where
+  toFun q := (MatlisDual.equivLinearMap A (K ⧸ (1 : Submodule A K)) B).symm
     { toFun := fun b ↦ directTraceQuotientMap A K B L (b • q)
       map_add' := fun _ _ ↦ by rw [add_smul, map_add]
       map_smul' := fun _ _ ↦ by simp only [RingHom.id_apply, smul_assoc, map_smul] }
-  map_add' _ _ := by ext; simp [smul_add, map_add]
-  map_smul' a _ := by ext b; simp [smul_comm b a, map_smul]
+  map_add' _ _ := MatlisDual.ext fun _ ↦ by simp [smul_add, map_add]
+  map_smul' b₁ q := MatlisDual.ext fun b₂ ↦ by
+    simp [MatlisDual.smul_apply, ← mul_smul, mul_comm b₂ b₁]
+
 @[simp] theorem directTracePairing_mk_apply (x : L) (b : B) :
-    directTracePairing A K B L (Submodule.Quotient.mk x) b =
+    MatlisDual.equivLinearMap A (K ⧸ (1 : Submodule A K)) B
+        (directTracePairing A K B L (Submodule.Quotient.mk x)) b =
       Submodule.Quotient.mk (Algebra.trace K L (algebraMap B L b * x)) := by
   dsimp only [directTracePairing, LinearMap.coe_mk, AddHom.coe_mk]
+  rw [(MatlisDual.equivLinearMap A (K ⧸ (1 : Submodule A K)) B).apply_symm_apply]
+  dsimp only [LinearMap.coe_mk, AddHom.coe_mk]
   rw [← Submodule.Quotient.mk_smul, directTraceQuotientMap_mk, Algebra.smul_def]
+
+/-- When `B` is finite projective over `A`, `directTracePairing` factors through the canonical
+`B`-linear equivalence `traceDualQuotientEquiv`. -/
+theorem directTracePairing_eq_traceDualQuotientEquiv_comp_factor [IsDomain A]
+    [Algebra.IsSeparable K L] [Module.Finite A B] [Module.Projective A B] :
+    directTracePairing A K B L =
+      (traceDualQuotientEquiv A K B L).toLinearMap.comp
+        (Submodule.factor Submodule.one_le_traceDual_one) := by
+  refine LinearMap.ext fun q ↦ MatlisDual.ext fun b ↦ ?_
+  simp [directTracePairing, traceDualQuotientEquiv_apply, directTraceQuotientMap, map_smul]
+
+/-- Pointwise factorization of `directTracePairing` through `traceDualQuotientEquiv`. -/
+theorem directTracePairing_apply [IsDomain A] [Algebra.IsSeparable K L]
+    [Module.Finite A B] [Module.Projective A B] (q : L ⧸ (1 : Submodule B L)) :
+    directTracePairing A K B L q =
+      traceDualQuotientEquiv A K B L (Submodule.factor Submodule.one_le_traceDual_one q) :=
+  LinearMap.congr_fun (directTracePairing_eq_traceDualQuotientEquiv_comp_factor A K B L) q
 
 /-- An element `[x] ∈ L ⧸ B` lies in the kernel of `directTracePairing` if and only if `x ∈ Bᵛ`. -/
 theorem mem_ker_directTracePairing_iff (x : L) :
     Submodule.Quotient.mk (p := (1 : Submodule B L)) x ∈
         LinearMap.ker (directTracePairing A K B L) ↔
       x ∈ Submodule.traceDual A K (1 : Submodule B L) := by
-  rw [LinearMap.mem_ker, LinearMap.ext_iff, Submodule.mem_traceDual]
+  rw [LinearMap.mem_ker, MatlisDual.ext_iff, Submodule.mem_traceDual]
   refine ⟨fun h y hy ↦ ?_, fun h b ↦ ?_⟩
   · obtain ⟨b, rfl⟩ := Submodule.mem_one.mp hy
     simpa [Algebra.traceForm_apply, mul_comm, Submodule.Quotient.mk_eq_zero,
@@ -357,12 +363,11 @@ theorem mem_ker_directTracePairing_iff (x : L) :
   · simpa [Algebra.traceForm_apply, mul_comm, Submodule.Quotient.mk_eq_zero,
       Submodule.mem_one] using h (algebraMap B L b) (Submodule.mem_one.mpr ⟨b, rfl⟩)
 
-/-- **Kernel of the naive trace pairing**: `ker(L ⧸ B → Hom_A(B, K ⧸ A))` is precisely the image
-of the inverse different `Bᵛ` in `L ⧸ B`. -/
+/-- **Kernel of the naive trace pairing**: `ker(L ⧸ B →ₗ[B] MatlisDual A (K ⧸ A) B)` is
+precisely the image of the inverse different `Bᵛ` in `L ⧸ B`. -/
 theorem ker_directTracePairing :
     LinearMap.ker (directTracePairing A K B L) =
-      ((Submodule.traceDual A K (1 : Submodule B L)).restrictScalars A).map
-        ((1 : Submodule B L).mkQ.restrictScalars A) := by
+      (Submodule.traceDual A K (1 : Submodule B L)).map (1 : Submodule B L).mkQ := by
   ext q
   obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q
   rw [mem_ker_directTracePairing_iff, Submodule.mem_map]
@@ -372,12 +377,12 @@ theorem ker_directTracePairing :
   simpa using (Submodule.traceDual A K (1 : Submodule B L)).sub_mem hy
     (Submodule.one_le_traceDual_one hxy)
 
-/-- The direct trace pairing `L ⧸ B → Hom_A(B, K ⧸ A)` is injective iff `Bᵛ = B`. -/
+/-- The direct trace pairing `L ⧸ B →ₗ[B] MatlisDual A (K ⧸ A) B` is injective iff `Bᵛ = B`. -/
 theorem ker_directTracePairing_eq_bot_iff :
     LinearMap.ker (directTracePairing A K B L) = ⊥ ↔
       Submodule.traceDual A K (1 : Submodule B L) = 1 := by
   rw [ker_directTracePairing, eq_bot_iff, Submodule.map_le_iff_le_comap, Submodule.comap_bot,
-    LinearMap.ker_restrictScalars, Submodule.ker_mkQ]
+    Submodule.ker_mkQ]
   exact ⟨fun h ↦ le_antisymm h Submodule.one_le_traceDual_one, fun h x hx ↦ h ▸ hx⟩
 
 /-- Over a Dedekind domain `B`, `directTracePairing` is injective iff `differentIdeal A B = ⊤`. -/
