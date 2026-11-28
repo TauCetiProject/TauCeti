@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Killing
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Lie.Module
 import TauCeti.Algebra.Lie.Killing.AdNilpotent
 import TauCeti.Algebra.Lie.Killing.Basic
 import TauCeti.Algebra.Lie.Solvable.Basic
@@ -26,7 +26,7 @@ invariant polynomial function with zero constant term vanishes at `x`
 the common zero locus of the invariants of positive degree.
 
 Both directions hold more generally, and are proved in
-`TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule` and `TauCeti.Algebra.Lie.TracePowerPolynomial`:
+`TauCeti.LinearAlgebra.SymmetricAlgebra.Lie.Module` and `TauCeti.Algebra.Lie.TracePowerPolynomial`:
 
 * **Invariants vanish on eigenvectors of nonzero eigenvalue.** If `M` is a Lie module and `x : M`
   satisfies `⁅y, x⁆ = a • x` for some `y : L` and some nonzero scalar `a`, then every invariant

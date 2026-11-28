@@ -28,11 +28,11 @@ entries of the original matrices.
 Nothing here needs invertibility or a square shape outside the statements about powers and
 about `I • M_n(R)` — only that the products are conformable — so the other statements are
 rectangular. Everything except the quotient comparison `Matrix.map_mk_eq_map_mk_iff`, which needs
-a `CommRing`, and the description of `I • M_n(R)`, which needs a `CommSemiring`, holds over any
-`Semiring`; the two-sided product statement asks the ideal to be two-sided
-(`Ideal.IsTwoSided`), which is automatic over a commutative semiring. These are the membership
-computations a defining-ideal closure proof performs when it propagates a relation through a
-matrix identity.
+a `CommRing`, and the description of `I • M_n(R)` and the principal-kernel criterion
+`Matrix.map_eq_zero_iff_exists_eq_smul`, which need a `CommSemiring`, holds over any `Semiring`;
+the two-sided product statement asks the ideal to be two-sided (`Ideal.IsTwoSided`), which is
+automatic over a commutative semiring. These are the membership computations a defining-ideal
+closure proof performs when it propagates a relation through a matrix identity.
 
 ## Main results
 
@@ -56,6 +56,8 @@ matrix identity.
   has `|ker f| ^ (n * n)` elements.
 * `Matrix.map_mk_eq_map_mk_iff`: two matrices agree modulo `r` exactly when they differ by `r`
   times a matrix.
+* `Matrix.map_eq_zero_iff_exists_eq_smul`: a matrix vanishes under a ring homomorphism with
+  kernel `(r)` exactly when it is `r` times a matrix.
 * `Matrix.pow_apply_mem_pow`, `Matrix.isNilpotent_of_forall_apply_mem`: the `k`-th power of a
   square matrix with entries in `I` has entries in `I ^ k`, so a square matrix with entries in a
   nilpotent ideal is nilpotent.
@@ -186,6 +188,23 @@ theorem map_mk_eq_map_mk_iff [CommRing S] {r : S} {A A' : Matrix m n S} :
   · rintro ⟨C, rfl⟩
     ext i j
     simp [Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self r)]
+
+/-- **A matrix killed by a ring homomorphism with principal kernel.** If `ker f = (r)`, a matrix
+vanishes under `f` exactly when it is `r` times a matrix. -/
+theorem map_eq_zero_iff_exists_eq_smul [CommSemiring S] {T F : Type*} [Semiring T] [FunLike F S T]
+    [RingHomClass F S T] {f : F} {r : S} (hf : RingHom.ker f = Ideal.span {r})
+    {M : Matrix m n S} : M.map f = 0 ↔ ∃ C : Matrix m n S, M = r • C := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · have hdvd (i : m) (j : n) : ∃ c, M i j = r * c := by
+      have := forall_mem_ker_iff_map_eq_zero.mpr h i j
+      rw [hf] at this
+      exact Ideal.mem_span_singleton.mp this
+    choose C hC using hdvd
+    exact ⟨of C, ext fun i j ↦ by simp [hC]⟩
+  · rintro ⟨C, rfl⟩
+    refine forall_mem_ker_iff_map_eq_zero.mp fun i j ↦ ?_
+    rw [hf, Matrix.smul_apply, smul_eq_mul]
+    exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self r)
 
 /-- **The powers of a matrix with entries in an ideal.** If every entry of a square matrix `M`
 lies in `I`, then every entry of `M ^ k` lies in `I ^ k`. -/

@@ -54,6 +54,10 @@ systems; see `TauCeti.Geometry.Manifold.Morse.DG.Coefficients`.
   continuation maps in the coefficients.
 * `TauCeti.TwistingCocycle.quasiIso_twistedCochainComplexMap`: quasi-isomorphisms of coefficients
   induce quasi-isomorphisms of twisted complexes.
+* `TauCeti.TwistingCocycle.injective_twistedCochainComplexMap_f`,
+  `TauCeti.TwistingCocycle.exists_twistedCochainComplexMap_f_eq`: an injective morphism of
+  coefficients induces injective maps of twisted complexes, whose images are the elements with all
+  coefficients in its image.
 
 ## References
 
@@ -187,6 +191,37 @@ theorem twistedCochainComplexMap_comp (f : DGRightModuleHom hM hN) (g : DGRightM
     simp only [twistedCochainComplexXEquiv_twistedCochainComplexMap_f_apply,
       DGRightModuleHom.coe_comp, HomologicalComplex.comp_f, ModuleCat.hom_comp,
       LinearMap.comp_apply, Function.comp_assoc]
+
+/-- **Injective coefficients give injective maps of twisted complexes.** An injective morphism of
+DG right modules, applied to every coefficient, is injective on each term of the twisted complex. -/
+theorem injective_twistedCochainComplexMap_f {f : DGRightModuleHom hM hN}
+    (hf : Function.Injective f) (n : ℤ) :
+    Function.Injective ((m.twistedCochainComplexMap hM hN f).f n) := fun x y hxy ↦
+  (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n).injective <| Subtype.ext <|
+    funext fun p ↦ hf <| by
+      simpa using congrFun (congrArg
+        (fun z ↦ (twistedCochainComplexXEquiv m.mem_graded m.twisting hN n z : P → N)) hxy) p
+
+/-- **Lifting elements of twisted complexes along an injective morphism.** An element of the twisted
+complex with coefficients in `𝒩` whose coefficients all lie in the image of an injective morphism
+`f : ℳ → 𝒩` of DG right modules is the image of an element of the same degree of the twisted complex
+with coefficients in `ℳ`: the preimages of its coefficients have the right degrees, since `f`
+reflects degrees. -/
+theorem exists_twistedCochainComplexMap_f_eq {f : DGRightModuleHom hM hN}
+    (hf : Function.Injective f) {n : ℤ} (x : (m.twistedCochainComplex dN hN).X n)
+    (hx : ∀ p, (twistedCochainComplexXEquiv m.mem_graded m.twisting hN n x : P → N) p ∈
+      Set.range f) :
+    ∃ x', (m.twistedCochainComplexMap hM hN f).f n x' = x := by
+  choose g hg using hx
+  have hgdeg : g ∈ twistedTotalGrading ℳ ind n := mem_twistedTotalGrading_iff.2 fun p ↦
+    f.isHomogeneous.mem_of_injective hf (by
+      simpa only [add_zero, LinearMap.coe_restrictScalars, DGRightModuleHom.coe_toLinearMap,
+        hg p] using mem_twistedTotalGrading_iff.1
+          (twistedCochainComplexXEquiv m.mem_graded m.twisting hN n x).property p)
+  refine ⟨(twistedCochainComplexXEquiv m.mem_graded m.twisting hM n).symm ⟨g, hgdeg⟩,
+    (twistedCochainComplexXEquiv m.mem_graded m.twisting hN n).injective (Subtype.ext ?_)⟩
+  rw [twistedCochainComplexXEquiv_twistedCochainComplexMap_f_apply, LinearEquiv.apply_symm_apply]
+  exact funext hg
 
 /-! ### The row-finite twisted complex -/
 

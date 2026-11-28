@@ -30,12 +30,15 @@ needs nothing beyond the definition of `gaussianReal`.
 ## Main statements
 
 * `TauCeti.Probability.gaussianPDFReal_zero_one` — `gaussianPDFReal 0 1 x = (√(2π))⁻¹ · e^{-x²/2}`.
+* `TauCeti.Probability.exp_neg_sq_div_two_eq_mul_gaussianPDFReal` — the same closed form solved
+  for the weight: `e^{-x²/2} = √(2π) · gaussianPDFReal 0 1 x`.
 * `TauCeti.Probability.gaussianPDFReal_eq_gaussianPDFReal_zero_one` — standardization:
   `gaussianPDFReal m v x = φ ((x - m) / √v) / √v` with `φ = gaussianPDFReal 0 1`.
 * `TauCeti.Probability.gaussianPDFReal_neg` and `TauCeti.Probability.gaussianPDFReal_zero_neg` —
   reflection `gaussianPDFReal m v (-x) = gaussianPDFReal (-m) v x` and evenness at zero mean.
 * `TauCeti.Probability.antitoneOn_gaussianPDFReal` — the density decreases to the right of the
-  mean.
+  mean; `TauCeti.Probability.gaussianPDFReal_le_of_sq_le` — it decreases in the squared distance
+  to the mean.
 * `TauCeti.Probability.gaussianPDFReal_self`, `TauCeti.Probability.gaussianPDFReal_le_self`,
   `TauCeti.Probability.gaussianPDFReal_le`, and `TauCeti.Probability.gaussianPDF_le` — the density
   attains its global maximum `(√(2 * π * v))⁻¹` at the mean (with both sides vanishing when
@@ -77,6 +80,13 @@ theorem gaussianPDFReal_zero_one (x : ℝ) :
     gaussianPDFReal 0 1 x = (Real.sqrt (2 * π))⁻¹ * Real.exp (-(x ^ 2 / 2)) := by
   simp [gaussianPDFReal, neg_div]
 
+/-- The standard Gaussian weight `e^{-x²/2}` is `√(2π)` times the standard normal density. -/
+theorem exp_neg_sq_div_two_eq_mul_gaussianPDFReal (x : ℝ) :
+    Real.exp (-(x ^ 2 / 2)) = √(2 * π) * gaussianPDFReal 0 1 x := by
+  have hπ : √(2 * π) ≠ 0 := by positivity
+  rw [gaussianPDFReal_zero_one]
+  field_simp
+
 /-- Standardization of the Gaussian density: the density of `N(m, v)` at `x` is
 `φ ((x - m) / √v) / √v`, where `φ = gaussianPDFReal 0 1` is the standard Gaussian density. At zero
 variance both sides vanish. -/
@@ -103,6 +113,12 @@ theorem gaussianPDFReal_zero_neg (v : ℝ≥0) (x : ℝ) :
 theorem antitoneOn_gaussianPDFReal (m : ℝ) (v : ℝ≥0) :
     AntitoneOn (gaussianPDFReal m v) (Set.Ici m) := fun x hx y _ hxy => by
   have hx : 0 ≤ x - m := sub_nonneg.2 hx
+  simp only [gaussianPDFReal]
+  gcongr
+
+/-- The Gaussian density of `N(μ, v)` decreases in the squared distance to the mean. -/
+theorem gaussianPDFReal_le_of_sq_le {μ : ℝ} {v : ℝ≥0} {x y : ℝ}
+    (h : (x - μ) ^ 2 ≤ (y - μ) ^ 2) : gaussianPDFReal μ v y ≤ gaussianPDFReal μ v x := by
   simp only [gaussianPDFReal]
   gcongr
 

@@ -88,6 +88,12 @@ theorem planarNewtonianKernel_eq_of_norm_eq {z w : ℂ} (h : ‖z‖ = ‖w‖) 
     planarNewtonianKernel z = planarNewtonianKernel w := by
   rw [planarNewtonianKernel_def, planarNewtonianKernel_def, h]
 
+/-- The norm of the planar Newtonian kernel is `(2π)⁻¹ |log ‖z‖|`. -/
+theorem norm_planarNewtonianKernel (z : ℂ) :
+    ‖planarNewtonianKernel z‖ = (2 * Real.pi)⁻¹ * |Real.log ‖z‖| := by
+  rw [planarNewtonianKernel_def, Real.norm_eq_abs, abs_mul, abs_neg, abs_inv,
+    abs_of_pos (by positivity : (0 : ℝ) < 2 * Real.pi)]
+
 /-- The planar Newtonian kernel is invariant under multiplication by a unit complex number. -/
 theorem planarNewtonianKernel_unit_mul {u z : ℂ} (hu : ‖u‖ = 1) :
     planarNewtonianKernel (u * z) = planarNewtonianKernel z := by

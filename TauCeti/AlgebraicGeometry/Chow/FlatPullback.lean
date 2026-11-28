@@ -33,6 +33,7 @@ Theory*, §1.7.
 * `Chow.coe_cyclesPullback_eq_coe_cyclesRestrict`: along an open immersion, of pure relative
   dimension zero, the pullback is the restriction `Chow.cyclesRestrict`; in particular
   `Chow.coe_cyclesPullback_id`.
+* `Chow.coe_cyclesPullback_comp`: functoriality `(g f)^* = f^* g^*` for `f` flat.
 -/
 
 public section
@@ -118,6 +119,26 @@ rewrites the cast `((0 : ℕ) : ℤ)` in the dimension `m + 0` of its left-hand 
 lemma coe_cyclesPullback_id {m : ℤ} (α : cyclesOfDimension X m) :
     (cyclesPullback k (𝟙 X) 0 α : AlgebraicCycle X ℤ) = (α : AlgebraicCycle X ℤ) := by
   rw [coe_cyclesPullback_eq_coe_cyclesRestrict, cyclesRestrict_id, AddMonoidHom.id_apply]
+
+/-- Pullback of cycles is functorial along flat morphisms: for `f : X ⟶ Y` flat of pure relative
+dimension `n`, `g : Y ⟶ Z` of pure relative dimension `n'` and `f ≫ g` of pure relative dimension
+`d` (necessarily `n + n'` when `X` is nonempty; `f ≫ g` has pure relative dimension `n + n'` by
+`TauCeti.AlgebraicGeometry.PureRelativeDimension.comp_of_generalizingMap`),
+`(g ∘ f)^* α = f^* (g^* α)` as cycles on `X`, for every `m`-cycle `α` on `Z`. This is the
+functoriality `(g f)^* = f^* g^*` of flat pullback of
+[Stacks, Section 42.14](https://stacks.math.columbia.edu/tag/02RA) and Fulton, *Intersection
+Theory*, §1.7, at the level of cycles. -/
+lemma coe_cyclesPullback_comp {Z : Scheme.{u}} [Z.Over (Spec (.of k))]
+    [LocallyOfFiniteType (Z ↘ Spec (.of k))] (f : X ⟶ Y) [Flat f] [f.IsOver (Spec (.of k))]
+    (g : Y ⟶ Z) [g.IsOver (Spec (.of k))] (n n' d : ℕ) [PureRelativeDimension n f]
+    [PureRelativeDimension n' g] [PureRelativeDimension d (f ≫ g)] {m : ℤ}
+    (α : cyclesOfDimension Z m) :
+    (cyclesPullback k (f ≫ g) d α : AlgebraicCycle X ℤ) =
+      (cyclesPullback k f n (cyclesPullback k g n' α) : AlgebraicCycle X ℤ) := by
+  have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  have := LocallyOfFiniteType.isLocallyNoetherian (Y ↘ Spec (.of k))
+  rw [coe_cyclesPullback, coe_cyclesPullback, coe_cyclesPullback,
+    AlgebraicCycle.pullback_comp, AddMonoidHom.comp_apply]
 
 end OverField
 

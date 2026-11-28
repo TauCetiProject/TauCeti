@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.ComparisonTree.Complexity
+public import TauCeti.Combinatorics.ComparisonTree.Counting
+import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Data.Fin.VecNotation
+import Mathlib.Tactic.NormNum
 
 /-!
 # Examples of comparison trees
@@ -18,6 +21,11 @@ on every input: a lower bound on the depth is weaker than a lower bound on the c
 
 For comparison complexity, a leaf does not sort two items, since it has one output and there are
 two rankings, and a problem in which every output is correct has comparison complexity `0`.
+
+For the counting bounds, the hypothesis that the outputs differ is needed: a leaf gives the
+Kraft sum `2` on two inputs. The tree that compares `(0, 1)`, then `(1, 2)` and, where needed,
+`(0, 2)` gives six different outputs on the six rankings of three items, with the costs
+`2, 3, 3, 3, 3, 2`.
 -/
 
 public section
@@ -67,5 +75,23 @@ example {n : ℕ} {α : Type*} (a : α) :
     IsComparisonComplexity (.univ : Set (Equiv.Perm (Fin n))) (fun _ (_ : α) => True) 0 :=
   ⟨⟨leaf a, solves_iff.2 fun _ _ => trivial, by simp⟩,
     fun _ _ => ⟨1, Set.mem_univ _, Nat.zero_le _⟩⟩
+
+/-- The hypothesis on the outputs of `sum_two_inv_pow_cost_le_one` is needed: a leaf gives the
+sum `2` on two inputs. -/
+example :
+    ∑ x ∈ ({![0], ![1]} : Finset (Fin 1 → ℕ)), (2⁻¹ : ℝ) ^ (leaf 0 : CompTree 1 ℕ).cost x = 2 := by
+  rw [Finset.sum_pair (by decide)]
+  norm_num [cost_leaf]
+
+/-- The tree that compares `(0, 1)`, then `(1, 2)` and, where needed, `(0, 2)` gives six different
+outputs on the six rankings of three items, with the costs `2, 3, 3, 3, 3, 2`. -/
+example (t : CompTree 3 ℕ) (ht : t = node 0 1 (node 1 2 (leaf 0) (node 0 2 (leaf 1) (leaf 2)))
+      (node 1 2 (node 0 2 (leaf 3) (leaf 4)) (leaf 5))) :
+    [![0, 1, 2], ![0, 2, 1], ![1, 2, 0], ![1, 0, 2], ![2, 0, 1], ![2, 1, 0]].map t.eval =
+        [0, 1, 2, 3, 4, 5] ∧
+      [![0, 1, 2], ![0, 2, 1], ![1, 2, 0], ![1, 0, 2], ![2, 0, 1], ![2, 1, 0]].map t.cost =
+        [2, 3, 3, 3, 3, 2] := by
+  subst ht
+  simp [eval_node, eval_leaf, cost_node, cost_leaf]
 
 end TauCeti.Examples.ComparisonTree
