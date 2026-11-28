@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.RademacherSum.Basic
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+public import TauCeti.Analysis.CStarAlgebra.SquareFunction
+public import TauCeti.Analysis.Normed.Module.RademacherSum.Signs
 import TauCeti.Analysis.CStarAlgebra.CauchySchwarz
 
 /-!
@@ -18,25 +18,26 @@ This file proves two estimates for sums of C⋆-algebra elements weighted by Rad
 **Orthogonality.** For any function `Φ` on the sign cube with values in a C⋆-algebra, its
 Rademacher coefficients `yₖ = 𝔼 εₖ Φ(ε)` satisfy
 
-`∑ k, yₖ⋆ yₖ ≤ 𝔼 Φ⋆Φ` and `∑ k, yₖ yₖ⋆ ≤ 𝔼 ΦΦ⋆`.
+`∑ k, yₖ⋆ yₖ ≤ 𝔼 Φ⋆Φ` and `∑ k, yₖ yₖ⋆ ≤ 𝔼 ΦΦ⋆`,
 
+hence `‖columnSquare (rademacherCoeff ℝ Φ)‖ ≤ C` and `‖rowSquare (rademacherCoeff ℝ Φ)‖ ≤ C`
+whenever `‖Φ ε‖ ≤ C` for all `ε`.
 Indeed `Φ - ∑ k, εₖ yₖ` has no Rademacher coefficients, so `𝔼 Φ⋆Φ` is `∑ k, yₖ⋆ yₖ` plus the
 positive element `𝔼 (Φ - ∑ k, εₖ yₖ)⋆ (Φ - ∑ k, εₖ yₖ)`.
 
-**The fourth moment.** For a finite family `x` in a ring write `S(ε) = ∑ i, εᵢ xᵢ`. Averaging a
-product of four signs keeps exactly the index patterns that match in pairs, so
-`𝔼 S⁴ = A + B + C - 2 D` with
+**The fourth moment.** For a finite family `x` in a non-unital ring write `S(ε) = ∑ i, εᵢ xᵢ`.
+Summing the fourth power over the sign cube keeps exactly the index patterns that match in pairs,
+giving the unnormalized sum identity `∑ ε, S(ε)⁴ = |ι → ℤˣ| • (A + B + C - 2 • D)`
+(`TauCeti.sum_sum_units_smul_mul_self_mul_mul_self` in `RademacherSum/Signs.lean`) with
 
 * `A = (∑ i, xᵢ²)²`,
 * `B = ∑ i, xᵢ (∑ j, xⱼ²) xᵢ`,
 * `C = ∑ i, ∑ j, xᵢ xⱼ xᵢ xⱼ`,
 * `D = ∑ i, xᵢ⁴`.
 
-This pairing expansion, `TauCeti.sum_sum_units_smul_mul_self_mul_mul_self`, holds in any
-non-unital ring and lives with the other sign-cube averages in `RademacherSum/Basic.lean`.
-
 The coefficients need not commute, so `A`, `B` and `C` differ in general. When the `xᵢ` are
-self-adjoint elements of a C⋆-algebra, `D ≥ 0` and `𝔼 S⁴ ≥ 0`, so `‖𝔼 S⁴‖ ≤ ‖A + B + C‖`. Each of
+self-adjoint elements of a C⋆-algebra, dividing by `|ι → ℤˣ|` yields the expectation identity
+`𝔼 S⁴ = A + B + C - 2 D` with `D ≥ 0` and `𝔼 S⁴ ≥ 0`, so `‖𝔼 S⁴‖ ≤ ‖A + B + C‖`. Each of
 `‖A‖` and `‖B‖` is at most `‖∑ i, xᵢ²‖²`, and the Cauchy–Schwarz bound for finite sums, applied to
 the family `xᵢ xⱼ` indexed by pairs, gives `‖C‖ ≤ ‖B‖`. Hence
 
@@ -57,6 +58,9 @@ truncation changes.
   coefficients, in column and row form.
 * `TauCeti.norm_sum_star_mul_le_of_norm_le` and `TauCeti.norm_sum_mul_star_le_of_norm_le`: their
   norm forms, `‖∑ k, yₖ⋆ yₖ‖ ≤ r²` and `‖∑ k, yₖ yₖ⋆‖ ≤ r²` when `‖Φ ε‖ ≤ r` for every `ε`.
+* `TauCeti.norm_columnSquare_rademacherCoeff_le` and
+  `TauCeti.norm_rowSquare_rademacherCoeff_le`: Bessel square-function bounds
+  `‖columnSquare (rademacherCoeff ℝ Φ)‖ ≤ C` and `‖rowSquare (rademacherCoeff ℝ Φ)‖ ≤ C`.
 * `TauCeti.norm_card_inv_smul_sum_sum_units_smul_mul_self_mul_mul_self_le`: for self-adjoint
   coefficients in a non-unital C⋆-algebra, `‖𝔼 S⁴‖ ≤ 3 ‖∑ i, xᵢ²‖²`.
 
@@ -243,6 +247,20 @@ theorem norm_sum_mul_star_le_of_norm_le {Φ : (ι → ℤˣ) → A} {r : ℝ} (h
     (sum_nonneg fun k _ ↦ mul_star_self_nonneg _)).trans (norm_card_inv_smul_sum_le fun ε ↦ ?_)
   rw [CStarRing.norm_self_mul_star, ← sq]
   exact pow_le_pow_left₀ (norm_nonneg _) (h ε) 2
+
+/-- If `‖Φ ε‖ ≤ C` for all `ε`, then `‖columnSquare (rademacherCoeff ℝ Φ)‖ ≤ C`. -/
+theorem norm_columnSquare_rademacherCoeff_le {Φ : (ι → ℤˣ) → A} {C : ℝ}
+    (hΦ : ∀ ε, ‖Φ ε‖ ≤ C) : ‖columnSquare (rademacherCoeff ℝ Φ)‖ ≤ C := by
+  rw [norm_columnSquare]
+  simpa only [rademacherCoeff_apply, Real.sqrt_sq ((norm_nonneg (Φ 1)).trans (hΦ 1))] using
+    Real.sqrt_le_sqrt (norm_sum_star_mul_le_of_norm_le hΦ)
+
+/-- If `‖Φ ε‖ ≤ C` for all `ε`, then `‖rowSquare (rademacherCoeff ℝ Φ)‖ ≤ C`. -/
+theorem norm_rowSquare_rademacherCoeff_le {Φ : (ι → ℤˣ) → A} {C : ℝ}
+    (hΦ : ∀ ε, ‖Φ ε‖ ≤ C) : ‖rowSquare (rademacherCoeff ℝ Φ)‖ ≤ C := by
+  rw [norm_rowSquare]
+  simpa only [rademacherCoeff_apply, Real.sqrt_sq ((norm_nonneg (Φ 1)).trans (hΦ 1))] using
+    Real.sqrt_le_sqrt (norm_sum_mul_star_le_of_norm_le hΦ)
 
 end CStarAlgebra
 

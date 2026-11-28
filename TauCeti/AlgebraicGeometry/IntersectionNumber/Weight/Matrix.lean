@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.IntersectionNumber.FieldTower
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Matrix
-public import TauCeti.AlgebraicGeometry.SpecialFiber.Weight
+public import TauCeti.AlgebraicGeometry.IntersectionNumber.Weight.Basic
 
 /-!
 # Weights of the components of the special fibre divide the intersection matrix
@@ -17,9 +16,6 @@ components of its special fibre, with constant fields `κᵢ = H⁰(Cᵢ, 𝒪_{
 `wᵢ = [κᵢ : k]` (`AlgebraicGeometry.Scheme.Hom.specialFiberWeight`). This file proves that `wᵢ`
 divides every entry `aᵢⱼ = (Cⱼ · Cᵢ)` in the `i`-th row of the intersection matrix of the special
 fibre, the divisibility axiom `TauCeti.NumericalType.weight_dvd` of an abstract numerical type.
-It is the constant-field divisibility of intersection numbers,
-`TauCeti.AlgebraicGeometry.LineBundleClass.finrank_cohomology_zero_trivial_dvd_intersectionNumber`,
-applied to the components.
 
 ## Main declarations
 
@@ -28,8 +24,8 @@ applied to the components.
 
 ## References
 
-* [The Stacks Project, Section 55.8](https://stacks.math.columbia.edu/tag/0C6Y) and
-  [Section 55.9](https://stacks.math.columbia.edu/tag/0C9U), for the numerical type of a regular
+* [The Stacks Project, Section 55.3](https://stacks.math.columbia.edu/tag/0C6Y) and
+  [Section 55.9](https://stacks.math.columbia.edu/tag/0C5Y), for the numerical type of a regular
   model.
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Section 9.1.
 -/
@@ -39,8 +35,7 @@ public section
 noncomputable section
 
 open CategoryTheory AlgebraicGeometry IsLocalRing Order
-open TauCeti TauCeti.AlgebraicGeometry TauCeti.AlgebraicGeometry.Scheme.Modules
-open AlgebraicGeometry.Scheme.IdealSheafData (vanishingIdeal)
+open TauCeti TauCeti.AlgebraicGeometry
 
 universe u
 
@@ -61,10 +56,8 @@ theorem specialFiberWeight_dvd_specialFiberIntersectionMatrix (hX : ∀ x : X, c
       toBase.specialFiberIntersectionMatrix hX hη i j := by
   have hi : toBase (i : CodimensionOnePoint X) = closedPoint R := (Set.Finite.mem_toFinset _).mp
       i.property
-  let := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hi)
-  rw [specialFiberWeight_def, specialFiberIntersectionMatrix_apply]
-  exact LineBundleClass.finrank_cohomology_zero_trivial_dvd_intersectionNumber (ResidueField R) _
-    (toBase.isField_globalSections_subscheme_closure_singleton hi) _
+  rw [specialFiberIntersectionMatrix_apply]
+  exact toBase.specialFiberWeight_dvd_intersectionNumber hi _ _
 
 end AlgebraicGeometry.Scheme.Hom
 

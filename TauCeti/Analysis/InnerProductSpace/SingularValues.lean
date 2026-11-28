@@ -111,6 +111,8 @@ Courant–Fischer min–max principle for their source Gram operators.
 * `ContinuousLinearMap.singularValues_comp_starProjection_range`: an operator into any finite-
   dimensional inner product space has the same singular values after a range projection as
   after the corresponding isometric trial map.
+* `LinearMap.singularValues_rpow_sum_le_mul`, `LinearMap.singularValues_rpow_sum_eq_mul`:
+  lifting pointwise singular-value comparison and scaling to rooted `Lᵖ` sums for `0 < p`.
 
 ## Diagonal models
 
@@ -700,6 +702,40 @@ theorem singularValues_smul (c : 𝕜) (A : E →ₗ[𝕜] F) :
   have h := singularValues_le_mul_of_norm_apply_le (A := c • A) (B := A) (c := ‖c‖⁻¹)
     (fun x ↦ by simp [norm_smul, inv_mul_cancel_left₀ hc'.ne']) i
   rwa [le_inv_mul_iff₀ hc'] at h
+
+/-- Lifting a pointwise singular-value bound `σᵢ(A) ≤ c * σᵢ(B)` (with `0 ≤ c`) to the rooted
+singular-value `Lᵖ` sums for any `0 < p` (including `0 < p < 1`). -/
+theorem singularValues_rpow_sum_le_mul {p : ℝ} (hp : 0 < p) (A : E →ₗ[𝕜] F) (B : E →ₗ[𝕜] G)
+    {c : ℝ} (hc : 0 ≤ c) (hσ : ∀ i : ℕ, A.singularValues i ≤ c * B.singularValues i) :
+    (A.singularValues.sum fun _ s ↦ s ^ p) ^ (1 / p) ≤
+      c * (B.singularValues.sum fun _ s ↦ s ^ p) ^ (1 / p) := by
+  have hsum : A.singularValues.sum (fun _ s ↦ s ^ p) ≤
+      c ^ p * B.singularValues.sum (fun _ s ↦ s ^ p) := by
+    rw [← A.sum_fin_singularValues (· ^ p) (Real.zero_rpow hp.ne'),
+      ← B.sum_fin_singularValues (· ^ p) (Real.zero_rpow hp.ne'), Finset.mul_sum]
+    refine Finset.sum_le_sum fun i _ ↦ ?_
+    rw [← Real.mul_rpow hc (B.singularValues_nonneg i)]
+    exact Real.rpow_le_rpow (A.singularValues_nonneg i) (hσ i) hp.le
+  have hA : 0 ≤ A.singularValues.sum (fun _ s ↦ s ^ p) :=
+    Finsupp.sum_nonneg fun i _ ↦ Real.rpow_nonneg (A.singularValues_nonneg i) _
+  have hB : 0 ≤ B.singularValues.sum (fun _ s ↦ s ^ p) :=
+    Finsupp.sum_nonneg fun i _ ↦ Real.rpow_nonneg (B.singularValues_nonneg i) _
+  refine (Real.rpow_le_rpow hA hsum (by positivity)).trans_eq ?_
+  rw [Real.mul_rpow (Real.rpow_nonneg hc _) hB, one_div, Real.rpow_rpow_inv hc hp.ne']
+
+/-- Lifting a pointwise singular-value scaling `σᵢ(A) = c * σᵢ(B)` (with `0 ≤ c`) to the rooted
+singular-value `Lᵖ` sums for any `0 < p` (including `0 < p < 1`). -/
+theorem singularValues_rpow_sum_eq_mul {p : ℝ} (hp : 0 < p) (A : E →ₗ[𝕜] F) (B : E →ₗ[𝕜] G)
+    {c : ℝ} (hc : 0 ≤ c) (hσ : ∀ i : ℕ, A.singularValues i = c * B.singularValues i) :
+    (A.singularValues.sum fun _ s ↦ s ^ p) ^ (1 / p) =
+      c * (B.singularValues.sum fun _ s ↦ s ^ p) ^ (1 / p) := by
+  rcases hc.eq_or_lt with rfl | hc_pos
+  · have hA : A.singularValues = 0 := Finsupp.ext fun i ↦ by simpa using hσ i
+    simp [hA, Real.zero_rpow (inv_ne_zero hp.ne')]
+  · refine le_antisymm (singularValues_rpow_sum_le_mul hp A B hc_pos.le fun i ↦ (hσ i).le) ?_
+    have hinv : ∀ i, B.singularValues i ≤ c⁻¹ * A.singularValues i := fun i ↦ by
+      rw [hσ i, inv_mul_cancel_left₀ hc_pos.ne']
+    exact (le_inv_mul_iff₀ hc_pos).mp (singularValues_rpow_sum_le_mul hp B A (by positivity) hinv)
 
 end Comparison
 
