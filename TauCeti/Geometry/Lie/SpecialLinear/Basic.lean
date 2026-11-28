@@ -126,17 +126,12 @@ private def nativeToClosedLieEquiv :
       rw [comparisonSmoothHom, ContinuousMonoidHom.coe_toContMDiffMonoidMorphism]
       exact h)
 
-private def slInclusionEquiv :
-    RestrictScalars ℝ 𝕜 (LieAlgebra.SpecialLinear.sl n 𝕜) ≃ₗ⁅ℝ⁆
-      ((LieAlgebra.SpecialLinear.sl n 𝕜).restrictScalarsIncl ℝ).range :=
-  LieEquiv.ofInjective _ ((LieAlgebra.SpecialLinear.sl n 𝕜).restrictScalarsIncl_injective ℝ)
-
 private def slCoordinateEquiv :
     lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜)) K ≃ₗ⁅ℝ⁆
       RestrictScalars ℝ 𝕜 (LieAlgebra.SpecialLinear.sl n 𝕜) :=
-  ((unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).ofSubalgebras _ _
-    (unitsLieAlgebraLieEquiv_map_lieSubalgebraOfSubgroup_range_toGL (n := n) (𝕂 := 𝕜))).trans
-      (slInclusionEquiv n 𝕜).symm
+  (unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).ofSubalgebrasRestrictScalars _
+    (LieAlgebra.SpecialLinear.sl n 𝕜)
+    (unitsLieAlgebraLieEquiv_map_lieSubalgebraOfSubgroup_range_toGL (n := n) (𝕂 := 𝕜))
 
 /-- The real Lie algebra of the native special linear group is the underlying real
 Lie algebra of Mathlib's trace-zero matrices. -/
@@ -156,18 +151,6 @@ private theorem comparison_comp_inclusion :
   rw [comparisonSmoothHom, ContinuousMonoidHom.coe_toContMDiffMonoidMorphism]
   exact MonoidHom.ofInjective_apply toGL_injective
 
-private theorem slCoordinateEquiv_apply
-    (X : lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜)) K) :
-    (RestrictScalars.addEquiv ℝ 𝕜 (LieAlgebra.SpecialLinear.sl n 𝕜)
-      (slCoordinateEquiv n 𝕜 X) : Matrix n n 𝕜) = unitsLieAlgebraLieEquiv X := by
-  have h := congrArg Subtype.val ((slInclusionEquiv n 𝕜).apply_symm_apply
-    ((unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).ofSubalgebras _ _
-      (unitsLieAlgebraLieEquiv_map_lieSubalgebraOfSubgroup_range_toGL
-        (n := n) (𝕂 := 𝕜)) X))
-  simpa only [slCoordinateEquiv, LieEquiv.trans_apply, slInclusionEquiv,
-    LieEquiv.ofInjective_apply, LieSubalgebra.restrictScalarsIncl_apply,
-    LieEquiv.ofSubalgebras_apply] using h
-
 /-- In matrix coordinates, the native special linear Lie equivalence is the real
 differential of the original inclusion into the general linear group. -/
 @[simp]
@@ -176,7 +159,8 @@ theorem coe_lieAlgebraLieEquiv_apply (D : LeftInvariantDerivation 𝓘(ℝ, E) S
       (lieAlgebraLieEquiv n 𝕜 D) : Matrix n n 𝕜) =
       unitsLieAlgebraLieEquiv (lieMap (toGLRealSmoothHom n 𝕜) D) := by
   simp only [lieAlgebraLieEquiv, LieEquiv.trans_apply]
-  rw [slCoordinateEquiv_apply, (closedData n 𝕜).lieEquivLieSubalgebraOfSubgroup_apply,
+  rw [slCoordinateEquiv, LieEquiv.coe_ofSubalgebrasRestrictScalars_apply,
+    (closedData n 𝕜).lieEquivLieSubalgebraOfSubgroup_apply,
     (closedData n 𝕜).lieMapSubtypeVal_apply]
   have hnative : nativeToClosedLieEquiv n 𝕜 D = lieMap (comparisonSmoothHom n 𝕜) D :=
     lieEquivOfIsLocalDiffeomorphAt_apply (comparisonSmoothHom n 𝕜) _ D

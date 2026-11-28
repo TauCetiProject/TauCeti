@@ -35,11 +35,11 @@ Lie homomorphism from quadratic Clifford elements to skew-symmetric matrices.
 * `TauCeti.CliffordAlgebra.realCliffordSpecialOrthogonalLieEquivSo` identifies the target Lie
   algebra with real skew-symmetric matrices.
 * `TauCeti.CliffordAlgebra.realCliffordSpinToSpecialOrthogonalSmoothRange` is the smooth carrier
-  projection, and `realCliffordSpinToSpecialOrthogonalRangeLieMap` is its differential.
-* `TauCeti.CliffordAlgebra.realCliffordSpinToSpecialOrthogonalCoordinateLieHom` is that
+  projection.
+* `TauCeti.CliffordAlgebra.realCliffordSpinToSpecialOrthogonalCoordinateLieHom` is its
   differential in quadratic-Clifford and skew-matrix coordinates.
-* `TauCeti.CliffordAlgebra.isQuotientMap_realCliffordSpinToSpecialOrthogonalRange` records the
-  quotient property of the continuous carrier projection.
+* `TauCeti.CliffordAlgebra.isQuotientMap_spinToSpecialOrthogonalUnitsRange_realCliffordFormZero`
+  records the quotient property of the continuous carrier projection.
 
 ## References
 
@@ -66,8 +66,7 @@ local notation "SpinUnitsRange(" n ")" =>
   MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))
 
 local notation "SpecialOrthogonalUnitsRange(" n ")" =>
-  MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-    (realCliffordForm n 0 : QuadraticForm ℝ (Fin n → ℝ)))
+  MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear (realCliffordFormZero n))
 
 local notation "SpinLieModel(" n ")" =>
   LieSubalgebra.toSubmodule (TauCeti.Lie.lieSubalgebraOfSubgroup
@@ -98,7 +97,7 @@ noncomputable def realCliffordSpecialOrthogonalEmbeddedLieSubgroupData (n : ℕ)
       (SpecialOrthogonalUnitsRange(n)) (SpecialOrthogonalLieModel(n)) :=
   TauCeti.Lie.EmbeddedLieSubgroupData.ofIsClosed (by
     rw [MonoidHom.coe_range]
-    exact QuadraticMap.isClosed_range_specialOrthogonalToGeneralLinear_realCliffordForm n)
+    exact (realCliffordFormZero n).isClosed_range_specialOrthogonalToGeneralLinear)
 
 private noncomputable def spinAmbientCoordinateLieEquiv (n : ℕ) :
     TauCeti.Lie.lieSubalgebraOfSubgroup
@@ -249,36 +248,20 @@ noncomputable def realCliffordSpinToSpecialOrthogonalSmoothRange (n : ℕ) :
     ContMDiffMonoidMorphism 𝓘(ℝ, SpinLieModel(n))
       𝓘(ℝ, SpecialOrthogonalLieModel(n)) ∞
       (SpinUnitsRange(n)) (SpecialOrthogonalUnitsRange(n)) :=
-  -- The type annotation fixes the target carrier before synthesis chooses its selected chart.
-  (show SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) from
-    realCliffordSpinToSpecialOrthogonalRange n).toContMDiffMonoidMorphism _ _
+  -- `realCliffordFormZero n` is indexed by `Fin n` while `SpinUnitsRange(n)` uses
+  -- `realCliffordForm n 0` on `Fin (n + 0)`; the `show` aligns the source carrier before upgrade.
+  ContinuousMonoidHom.toContMDiffMonoidMorphism
+    𝓘(ℝ, SpinLieModel(n)) 𝓘(ℝ, SpecialOrthogonalLieModel(n))
+    (show SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) from
+      spinToSpecialOrthogonalUnitsRange (realCliffordFormZero n))
 
 /-- The smooth carrier projection has the same underlying map as the continuous projection. -/
 @[simp]
 theorem realCliffordSpinToSpecialOrthogonalSmoothRange_apply (n : ℕ) (x : SpinUnitsRange(n)) :
     realCliffordSpinToSpecialOrthogonalSmoothRange n x =
-      realCliffordSpinToSpecialOrthogonalRange n x :=
-  by
-    rw [realCliffordSpinToSpecialOrthogonalSmoothRange]
-    exact congrFun
-      (ContinuousMonoidHom.coe_toContMDiffMonoidMorphism
-        (I := 𝓘(ℝ, SpinLieModel(n))) (I' := 𝓘(ℝ, SpecialOrthogonalLieModel(n)))
-        (show SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) from
-          realCliffordSpinToSpecialOrthogonalRange n)) x
-
-/-- The abstract Lie map of the smooth projection between the two closed range carriers. -/
-noncomputable def realCliffordSpinToSpecialOrthogonalRangeLieMap (n : ℕ) :
-    LeftInvariantDerivation 𝓘(ℝ, SpinLieModel(n)) (SpinUnitsRange(n)) →ₗ⁅ℝ⁆
-      LeftInvariantDerivation 𝓘(ℝ, SpecialOrthogonalLieModel(n))
-        (SpecialOrthogonalUnitsRange(n)) :=
-  lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n)
-
-/-- The abstract range map is the Lie functor applied to the smooth carrier projection. -/
-theorem realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_lieMap (n : ℕ) :
-    realCliffordSpinToSpecialOrthogonalRangeLieMap n =
-      lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) :=
-  by
-    simp only [realCliffordSpinToSpecialOrthogonalRangeLieMap]
+      spinToSpecialOrthogonalUnitsRange (realCliffordFormZero n) x :=
+  congrFun (ContinuousMonoidHom.coe_toContMDiffMonoidMorphism
+    (I := 𝓘(ℝ, SpinLieModel(n))) (I' := 𝓘(ℝ, SpecialOrthogonalLieModel(n))) _) x
 
 /-- The differential of the compact real Spin projection in quadratic-Clifford source
 coordinates and skew-symmetric-matrix target coordinates. -/
@@ -286,7 +269,7 @@ noncomputable def realCliffordSpinToSpecialOrthogonalCoordinateLieHom (n : ℕ) 
     quadraticLieSubalgebra (realCliffordForm n 0) →ₗ⁅ℝ⁆
       LieAlgebra.Orthogonal.so (Fin n) ℝ :=
   (realCliffordSpecialOrthogonalLieEquivSo n).toLieHom.comp
-    ((realCliffordSpinToSpecialOrthogonalRangeLieMap n).comp
+    ((lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n)).comp
       (realCliffordSpinLieEquivQuadratic n).symm.toLieHom)
 
 /-- The coordinate Lie map is the abstract differential conjugated by the source and target
@@ -296,44 +279,24 @@ theorem realCliffordSpinToSpecialOrthogonalCoordinateLieHom_apply (n : ℕ)
     (x : quadraticLieSubalgebra (realCliffordForm n 0)) :
     realCliffordSpinToSpecialOrthogonalCoordinateLieHom n x =
       realCliffordSpecialOrthogonalLieEquivSo n
-        (realCliffordSpinToSpecialOrthogonalRangeLieMap n
+        (lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n)
           ((realCliffordSpinLieEquivQuadratic n).symm x)) := by
   simp only [realCliffordSpinToSpecialOrthogonalCoordinateLieHom, LieHom.comp_apply,
     LieEquiv.coe_toLieHom]
 
 /-- The continuous projection between the closed real Spin and special-orthogonal carriers is a
 quotient map. -/
-theorem isQuotientMap_realCliffordSpinToSpecialOrthogonalRange (n : ℕ) :
-    Topology.IsQuotientMap (realCliffordSpinToSpecialOrthogonalRange n) := by
+theorem isQuotientMap_spinToSpecialOrthogonalUnitsRange_realCliffordFormZero (n : ℕ) :
+    Topology.IsQuotientMap (spinToSpecialOrthogonalUnitsRange (realCliffordFormZero n)) := by
   let p : SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) :=
-    realCliffordSpinToSpecialOrthogonalRange n
+    spinToSpecialOrthogonalUnitsRange (realCliffordFormZero n)
+  -- Retype the continuous projection to `SpinUnitsRange(n)` so `CompactSpace` matches its domain.
   change Topology.IsQuotientMap p
   let _ : CompactSpace (SpinUnitsRange(n)) :=
     Homeomorph.compactSpace
-      (realCliffordSpinContinuousMulEquivUnitsRange n).toHomeomorph
+      (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).toHomeomorph
   apply Topology.IsQuotientMap.of_surjective_continuous
-  · exact realCliffordSpinToSpecialOrthogonalRange_surjective n
+  · exact spinToSpecialOrthogonalUnitsRange_realCliffordFormZero_surjective n
   · exact p.continuous
-
-/-- The supplied differential of the compact real Spin projection is its continuous Lie map. -/
-theorem realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLieMap (n : ℕ) :
-    realCliffordSpinToSpecialOrthogonalRangeLieMap n =
-      ContinuousMonoidHom.lieMap
-        (I := 𝓘(ℝ, SpinLieModel(n)))
-        (I' := 𝓘(ℝ, SpecialOrthogonalLieModel(n)))
-        (show SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) from
-          realCliffordSpinToSpecialOrthogonalRange n) := by
-  let p : SpinUnitsRange(n) →ₜ* SpecialOrthogonalUnitsRange(n) :=
-    realCliffordSpinToSpecialOrthogonalRange n
-  -- The two APIs bundle the same function through different opaque morphism structures; expose
-  -- their selected smooth and continuous presentations before using the public defining equation.
-  change _root_.lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) =
-    ContinuousMonoidHom.lieMap p
-  rw [ContinuousMonoidHom.lieMap_def]
-  apply congrArg _root_.lieMap
-  apply DFunLike.coe_injective
-  rw [ContinuousMonoidHom.coe_toContMDiffMonoidMorphism]
-  funext x
-  exact realCliffordSpinToSpecialOrthogonalSmoothRange_apply n x
 
 end TauCeti.CliffordAlgebra

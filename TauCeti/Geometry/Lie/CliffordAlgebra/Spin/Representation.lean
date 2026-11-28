@@ -19,8 +19,8 @@ Spin-group representation with its algebraically constructed orthogonal Lie-alge
 We work with an algebra homomorphism into an arbitrary finite-dimensional normed real algebra,
 so the result applies to matrix actions as well as endomorphism actions. The group is represented
 by its closed range in Clifford units, with the established embedded Lie-group structure.
-Transport along `realCliffordSpinContinuousMulEquivUnitsRange` recovers the original Spin group.
-The final comparison uses the actual differential of the Spin-to-SO projection to identify
+Transport along `CliffordAlgebra.spinGroupContinuousMulEquivUnitsRange` recovers the original Spin
+group. The final comparison uses the actual differential of the Spin-to-SO projection to identify
 the quadratic source coordinate of a prescribed skew-symmetric matrix.
 
 ## Main results
@@ -116,7 +116,7 @@ theorem unitsLieAlgebraLieEquiv_lieMap_realCliffordSpinSmoothHom_eq_bivectorExte
       f (bivectorExterior (realCliffordForm n 0)
         ((bivectorEquivSo n ℝ).symm
           (realCliffordSpecialOrthogonalLieEquivSo n
-            (realCliffordSpinToSpecialOrthogonalRangeLieMap n X)))) := by
+            (lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) X)))) := by
   let Q := QuadraticMap.weightedSumSquares ℝ (1 : Fin n → ℝ)
   let _ := bivectorLieRing Q
   let _ := bivectorLieAlgebra Q
@@ -127,18 +127,18 @@ theorem unitsLieAlgebraLieEquiv_lieMap_realCliffordSpinSmoothHom_eq_bivectorExte
   have hzx : bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm n 0) z = x :=
     (bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm n 0)).apply_symm_apply x
   have hz : realCliffordSpecialOrthogonalLieEquivSo n
-      (realCliffordSpinToSpecialOrthogonalRangeLieMap n X) = bivectorEquivSo n ℝ z := by
+      (lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) X) = bivectorEquivSo n ℝ z := by
     calc
       _ = realCliffordSpinToSpecialOrthogonalCoordinateLieHom n x := by
         exact (congrArg (fun Y ↦ realCliffordSpecialOrthogonalLieEquivSo n
-          (realCliffordSpinToSpecialOrthogonalRangeLieMap n Y)) hx).symm.trans
+          (lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) Y)) hx).symm.trans
             (realCliffordSpinToSpecialOrthogonalCoordinateLieHom_apply n x).symm
       _ = bivectorEquivSo n ℝ z := by
         exact (congrArg (realCliffordSpinToSpecialOrthogonalCoordinateLieHom n) hzx).symm.trans
           (realCliffordSpinToSpecialOrthogonalCoordinateLieHom_eq_bivectorEquivSo n z)
   have hinv : (bivectorEquivSo n ℝ).symm
       (realCliffordSpecialOrthogonalLieEquivSo n
-        (realCliffordSpinToSpecialOrthogonalRangeLieMap n X)) = z :=
+        (lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) X)) = z :=
     (congrArg (bivectorEquivSo n ℝ).symm hz).trans
       ((bivectorEquivSo n ℝ).symm_apply_apply z)
   calc

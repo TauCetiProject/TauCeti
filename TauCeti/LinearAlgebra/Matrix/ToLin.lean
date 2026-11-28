@@ -54,6 +54,8 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   free right modules of coordinate vectors are matrices acting on column vectors.
 * `LinearMap.toMatrix_mulVec_eq_repr`: the coordinate vector of `φ (∑ j, x j • v j)` is the
   matrix of `φ` applied to `x`.
+* `LinearMap.toMatrixAlgEquiv_eq_toMatrix`: `LinearMap.toMatrixAlgEquiv b f` agrees with
+  `LinearMap.toMatrix b b f`.
 * `LinearMap.sum_toMatrix_mulVec_smul`: the vector whose coordinates are the matrix of `φ` applied
   to `x` is `φ (∑ j, x j • v j)`.
 * `LinearMap.toLin'_toMatrix_comp_equivFun` and `LinearMap.equivFun_symm_comp_toLin'_toMatrix`:
@@ -263,6 +265,13 @@ theorem toMatrix_mulVec_eq_repr {R V M ι κ : Type*} [CommSemiring R] [AddCommM
     toMatrix v b φ *ᵥ x = b.repr (φ (∑ j, x j • v j)) := by
   rw [← v.equivFun_symm_apply, ← toMatrix_mulVec_repr v b, ← v.equivFun_apply,
     LinearEquiv.apply_symm_apply]
+
+/-- `LinearMap.toMatrixAlgEquiv b f` agrees with `LinearMap.toMatrix b b f`. -/
+theorem toMatrixAlgEquiv_eq_toMatrix {R V ι : Type*} [CommSemiring R] [AddCommMonoid V]
+    [Module R V] [Fintype ι] [DecidableEq ι] (b : Module.Basis ι R V) (f : Module.End R V) :
+    toMatrixAlgEquiv b f = toMatrix b b f := by
+  ext i j
+  rw [toMatrixAlgEquiv_apply, toMatrix_apply]
 
 /-- **Vectors through the coefficient matrix.** The vector whose coordinates in the basis `b` are
 the coefficient matrix `LinearMap.toMatrix v b φ` applied to `x` is `φ (∑ j, x j • v j)`. -/

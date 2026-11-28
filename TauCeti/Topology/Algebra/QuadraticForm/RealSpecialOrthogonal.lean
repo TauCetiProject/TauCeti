@@ -39,8 +39,6 @@ transpose, so the resulting map is continuous for the induced topology.
   compact.
 * `TauCeti.QuadraticMap.instCompactSpaceSpecialOrthogonalGroupRealCliffordForm`: the associated
   special orthogonal group is compact.
-* `TauCeti.QuadraticMap.isClosed_range_specialOrthogonalToGeneralLinear_realCliffordForm`: the
-  positive-definite real special-orthogonal carrier is closed in its general-linear ambient group.
 -/
 
 public section
@@ -64,8 +62,8 @@ determinant-one sum-of-squares isometries is continuous. -/
 theorem continuous_matrixSpecialOrthogonalEquivWeightedSumSquaresOne
     (ι : Type u) [Fintype ι] :
     Continuous (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι) := by
-  rw [(isEmbedding_specialOrthogonalToGeneralLinear
-    (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))).continuous_iff]
+  rw [(_root_.QuadraticMap.weightedSumSquares ℝ
+    (1 : ι → ℝ)).isEmbedding_specialOrthogonalToGeneralLinear.continuous_iff]
   have hc : Continuous (fun (A : Matrix.specialOrthogonalGroup ι ℝ) =>
       Unitary.toUnits (⟨A, A.prop.1⟩ : Matrix.orthogonalGroup ι ℝ)) := by
     exact Unitary.continuous_toUnits.comp (continuous_subtypeVal.subtype_mk _)
@@ -182,25 +180,6 @@ theorem mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff
       (U : Matrix (Fin n) (Fin n) ℝ) ∈ Matrix.specialOrthogonalGroup (Fin n) ℝ := by
   rw [realCliffordForm_zero_eq_weightedSumSquares_one]
   exact mem_range_specialOrthogonalToGeneralLinear_weightedSumSquares_one_iff (Fin n) U
-
-/-- The real special-orthogonal carrier is closed in its general-linear ambient group. -/
-theorem isClosed_range_specialOrthogonalToGeneralLinear_realCliffordForm (n : ℕ) :
-    -- `realCliffordForm n 0` is indexed by `Fin (n + 0)`; retyping it over `Fin n` lets this
-    -- statement use the canonical `Fin n` equality and matrix-topology instances.
-    IsClosed (Set.range (specialOrthogonalToGeneralLinear
-      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0))) := by
-  have hrange : Set.range (specialOrthogonalToGeneralLinear
-      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) =
-      {U : Matrix.GeneralLinearGroup (Fin n) ℝ |
-        (U : Matrix (Fin n) (Fin n) ℝ) ∈
-        Matrix.specialOrthogonalGroup (Fin n) ℝ} := by
-    ext U
-    rw [← MonoidHom.coe_range]
-    exact mem_range_specialOrthogonalToGeneralLinear_realCliffordForm_iff n U
-  rw [hrange]
-  exact (TauCeti.Matrix.isClosed_specialOrthogonalGroup (n := Fin n) (R := ℝ)).preimage
-    (Units.continuous_val : Continuous (fun U : Matrix.GeneralLinearGroup (Fin n) ℝ =>
-      (U : Matrix (Fin n) (Fin n) ℝ)))
 
 end
 

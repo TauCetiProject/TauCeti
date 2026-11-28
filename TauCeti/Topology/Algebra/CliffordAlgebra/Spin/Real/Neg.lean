@@ -26,7 +26,7 @@ For `p = n` and `q = 0` this identifies the compact Spin group `Spin(n)`, the Sp
 positive-definite form `realCliffordForm n 0`, with the Spin group of the negative-definite form
 `realCliffordForm 0 n` used for geometric Clifford multiplication, as topological groups. The
 subtype topology on `Spin(n)` agrees with the topology it inherits from the Clifford units
-(`CliffordAlgebra.realCliffordSpinContinuousMulEquivUnitsRange`).
+(`CliffordAlgebra.spinGroupContinuousMulEquivUnitsRange`).
 
 The comparison `OrthonormalBasis.realSpinGroupEquiv b hQ` of `Spin(n)` with the Spin group of a form
 `Q v = -‖v‖²` along an orthonormal frame `b` is continuous with continuous inverse, since it is

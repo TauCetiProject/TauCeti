@@ -77,8 +77,8 @@ theorem realCliffordSpinNegSmoothHom_apply (n : ℕ)
     (g : SpinUnitsRange(n)) :
     realCliffordSpinNegSmoothHom n g =
       spinGroup.toUnits (realCliffordSpinGroupEquivNeg n 0
-        ((realCliffordSpinContinuousMulEquivUnitsRange n).symm g)) := by
-  obtain ⟨s, rfl⟩ := (realCliffordSpinContinuousMulEquivUnitsRange n).surjective g
+        ((spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).symm g)) := by
+  obtain ⟨s, rfl⟩ := (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).surjective g
   rw [ContinuousMulEquiv.symm_apply_apply]
   apply Units.ext
   rw [spinGroup.val_toUnits_apply]
@@ -87,16 +87,16 @@ theorem realCliffordSpinNegSmoothHom_apply (n : ℕ)
   apply congrArg (realCliffordEvenToNeg n 0)
   apply Subtype.ext
   rw [coe_spinGroupToEven_apply]
-  rw [realCliffordSpinContinuousMulEquivUnitsRange_apply]
+  rw [spinGroupContinuousMulEquivUnitsRange_apply]
   simp only [spinGroup.val_toUnits_apply]
 
 /-- The negative-metric realization is faithful, including in native rank zero. -/
 theorem realCliffordSpinNegSmoothHom_injective (n : ℕ) :
     Function.Injective (realCliffordSpinNegSmoothHom n) := by
   intro x y h
-  obtain ⟨s, rfl⟩ := (realCliffordSpinContinuousMulEquivUnitsRange n).surjective x
-  obtain ⟨t, rfl⟩ := (realCliffordSpinContinuousMulEquivUnitsRange n).surjective y
-  apply congrArg (realCliffordSpinContinuousMulEquivUnitsRange n)
+  obtain ⟨s, rfl⟩ := (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).surjective x
+  obtain ⟨t, rfl⟩ := (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).surjective y
+  apply congrArg (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0))
   apply (realCliffordSpinGroupEquivNeg n 0).injective
   apply spinGroup.toUnits_injective
   simpa only [realCliffordSpinNegSmoothHom_apply,
@@ -112,13 +112,13 @@ theorem realCliffordSpinNegSmoothHom_mul_ι_mul_inv (n : ℕ)
           CliffordAlgebra (realCliffordForm 0 n)) =
       ι (realCliffordForm 0 n)
         (realCliffordFormNegIsometry n 0 (spinVectorAction (realCliffordForm n 0)
-          ((realCliffordSpinContinuousMulEquivUnitsRange n).symm g) v)) := by
+          ((spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).symm g) v)) := by
   rw [realCliffordSpinNegSmoothHom_apply]
   rw [← map_inv, spinGroup.val_toUnits_apply, spinGroup.val_toUnits_apply,
     ← spinGroup.star_eq_inv, spinGroup.coe_star]
   simpa only [spinVectorAction_realCliffordSpinGroupEquivNeg] using
     (ι_spinVectorAction_apply (realCliffordForm 0 n) (realCliffordSpinGroupEquivNeg n 0
-        ((realCliffordSpinContinuousMulEquivUnitsRange n).symm g))
+        ((spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).symm g))
       (realCliffordFormNegIsometry n 0 v)).symm
 
 /-- The Lie differential of the negative-metric realization is the even-algebra

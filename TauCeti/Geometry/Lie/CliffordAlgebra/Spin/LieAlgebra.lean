@@ -58,14 +58,14 @@ open _root_.CliffordAlgebra TauCeti.Lie
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance] Matrix.linftyOpTopologicalSpace
 
-/-- The isomorphism `TauCeti.CliffordAlgebra.realCliffordSpinContinuousMulEquivUnitsRange` of
-compact `Spin(n)` with its range in the Clifford units, as a smooth homomorphism: it is the
-diffeomorphism `TauCeti.CliffordAlgebra.realSpinDiffeomorphUnitsRange`. -/
+/-- The isomorphism `CliffordAlgebra.spinGroupContinuousMulEquivUnitsRange` of compact `Spin(n)`
+with its range in the Clifford units, as a smooth homomorphism: it is the diffeomorphism
+`TauCeti.CliffordAlgebra.realSpinDiffeomorphUnitsRange`. -/
 def realSpinContMDiffMonoidMorphismUnitsRange (n : ℕ) :
     ContMDiffMonoidMorphism 𝓘(ℝ, realSpinLieModel n) 𝓘(ℝ, realSpinLieModel n) ∞
       (spinGroup (realCliffordForm n 0))
       (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) where
-  toMonoidHom := (realCliffordSpinContinuousMulEquivUnitsRange n).toMonoidHom
+  toMonoidHom := (spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0)).toMonoidHom
   contMDiff_toFun := by
     convert (realSpinDiffeomorphUnitsRange n).contMDiff using 1
     funext s
@@ -74,7 +74,7 @@ def realSpinContMDiffMonoidMorphismUnitsRange (n : ℕ) :
 @[simp]
 theorem coe_realSpinContMDiffMonoidMorphismUnitsRange (n : ℕ) :
     ⇑(realSpinContMDiffMonoidMorphismUnitsRange n) =
-      realCliffordSpinContinuousMulEquivUnitsRange n :=
+      spinGroupContinuousMulEquivUnitsRange (realCliffordForm n 0) :=
   (rfl)
 
 /-- The isomorphism of compact `Spin(n)` with its range in the Clifford units is a local
@@ -105,6 +105,6 @@ theorem realSpinLieEquivSo_apply (n : ℕ)
     realSpinLieEquivSo n X = realCliffordSpecialOrthogonalLieEquivSo n
       (lieMap ((realCliffordSpinToSpecialOrthogonalSmoothRange n).comp
         (realSpinContMDiffMonoidMorphismUnitsRange n)) X) := by
-  simp [realSpinLieEquivSo, lieMap_comp, realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_lieMap]
+  simp [realSpinLieEquivSo, lieMap_comp]
 
 end TauCeti.CliffordAlgebra

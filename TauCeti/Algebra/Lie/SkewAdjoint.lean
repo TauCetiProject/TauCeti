@@ -54,6 +54,8 @@ composite is not built here.
 
 ## Main definitions
 
+* `Matrix.skewAdjointDefect`: the linear map `A ↦ Aᵀ * J + J * A` measuring failure of
+  skew-adjointness for `J`.
 * `TauCeti.skewAdjointLieEquivOfBasis`: the basis transport from skew-adjoint matrices to
   skew-adjoint endomorphisms.
 * `TauCeti.LieAlgebra.adSkewAdjoint`: the adjoint action of a Lie algebra carrying an invariant
@@ -64,6 +66,8 @@ composite is not built here.
 
 ## Main results
 
+* `Matrix.mem_skewAdjointMatricesSubmodule_iff_skewAdjointDefect`: a matrix is skew-adjoint for
+  `J` if and only if `Matrix.skewAdjointDefect J A = 0`.
 * `TauCeti.mem_skewAdjointMatricesLieSubalgebra_toMatrix_iff`: matrix skew-adjointness for a Gram
   matrix is equivalent to basis-free skew-adjointness.
 * `TauCeti.mem_skewAdjointMatricesLieSubalgebra_iff_transposeConj_eq_neg`: for invertible `J`,
@@ -114,6 +118,35 @@ here; only from `ad_mem_skewAdjointSubmodule` on, where the adjoint action enter
 public section
 
 open LinearMap (BilinForm)
+
+namespace Matrix
+
+section Defect
+
+variable {T : Type u} [CommRing T] {n : Type v} [Fintype n] [DecidableEq n]
+
+/-- The linear map `A ↦ Aᵀ * J + J * A`, whose kernel consists of the matrices skew-adjoint for
+`J`. -/
+def skewAdjointDefect (J : Matrix n n T) : Matrix n n T →ₗ[T] Matrix n n T where
+  toFun A := Aᵀ * J + J * A
+  map_add' A B := by simp only [Matrix.transpose_add, add_mul, mul_add]; abel
+  map_smul' c A := by simp [Matrix.transpose_smul, smul_add]
+
+/-- Applying `skewAdjointDefect` evaluates `Aᵀ * J + J * A`. -/
+@[simp]
+theorem skewAdjointDefect_apply (J A : Matrix n n T) :
+    skewAdjointDefect J A = Aᵀ * J + J * A := by
+  rw [skewAdjointDefect]
+  rfl
+
+/-- A matrix is skew-adjoint for `J` if and only if its skew-adjoint defect vanishes. -/
+theorem mem_skewAdjointMatricesSubmodule_iff_skewAdjointDefect (J A : Matrix n n T) :
+    A ∈ skewAdjointMatricesSubmodule J ↔ skewAdjointDefect J A = 0 := by
+  simp [Matrix.IsSkewAdjoint, Matrix.IsAdjointPair, eq_neg_iff_add_eq_zero]
+
+end Defect
+
+end Matrix
 
 namespace TauCeti
 

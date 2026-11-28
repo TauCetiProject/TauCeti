@@ -76,6 +76,8 @@ matrix is fixed by its exponential.
   in both orientations.
 * `Matrix.trace_exp_neg_mul_mul_exp`, `Matrix.trace_exp_mul_mul_exp_neg`: conjugating by the two
   exponential weights preserves the trace, in both orientations.
+* `Matrix.hasDerivAt_exp_smul_transpose_mul_mul_exp_smul`: the derivative of the congruence curve
+  `s ↦ (exp (s • A))ᵀ * J * exp (s • A)`.
 * `Matrix.exp_neg_smul_diagonal_mul_mul_exp_smul_diagonal_apply`: conjugating by the exponential
   line of a real diagonal matrix `diagonal d` multiplies entry `(i, j)` by `e^{t (d j - d i)}`.
 * `Matrix.exp_eq_mul_exp_half`: the exponential of a matrix is the square of its half.
@@ -83,6 +85,8 @@ matrix is fixed by its exponential.
   the trace of the exponential of a Hermitian matrix and of the functional `x ↦ Tr (exp K * x)`.
 * `Matrix.IsHermitian.det_exp_eq_one_iff`: the exponential of a Hermitian matrix has determinant
   one exactly when the matrix is trace-free.
+* `LinearMap.hasDerivAt_exp_mulVec`: differentiates `t ↦ f (exp (t • A) *ᵥ v)` at `t = 0` for
+  any `ℝ`-linear map `f` into a normed space.
 
 ## References
 
@@ -277,9 +281,11 @@ variable {m : Type*} [Fintype m] [DecidableEq m]
 
 /-- The exponential of a matrix is the square of the exponential of its half,
 `exp A = exp (A / 2) * exp (A / 2)`. -/
-theorem exp_eq_mul_exp_half {𝕜 : Type*} [RCLike 𝕜] (A : Matrix m m 𝕜) :
+theorem exp_eq_mul_exp_half {𝔸 : Type*} [NormedRing 𝔸] [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
+    (A : Matrix m m 𝔸) :
     NormedSpace.exp A =
       NormedSpace.exp ((1 / 2 : ℝ) • A) * NormedSpace.exp ((1 / 2 : ℝ) • A) := by
+  let _ := TauCeti.normedAlgebraRatOfReal (R := 𝔸)
   conv_lhs => rw [← one_smul ℝ A, ← add_halves (1 : ℝ), add_smul]
   exact Matrix.exp_add_of_commute _ _ (((Commute.refl A).smul_left _).smul_right _)
 
@@ -329,6 +335,24 @@ theorem trace_exp_neg_mul_mul_exp (A x : Matrix m m 𝔸) :
 theorem trace_exp_mul_mul_exp_neg (A x : Matrix m m 𝔸) :
     (NormedSpace.exp A * x * NormedSpace.exp (-A)).trace = x.trace := by
   rw [Matrix.trace_mul_comm (NormedSpace.exp A * x) (NormedSpace.exp (-A)), exp_neg_mul_exp_mul]
+
+/-- Differentiating the exponential congruence curve `s ↦ (exp (s • A))ᵀ * J * exp (s • A)` at `t`
+yields `exp (t • Aᵀ) * (Aᵀ * J + J * A) * exp (t • A)` for arbitrary square matrices `J` and `A`. -/
+theorem hasDerivAt_exp_smul_transpose_mul_mul_exp_smul
+    {𝕂 : Type*} [RCLike 𝕂] [NormedAlgebra 𝕂 𝔸]
+    (J A : Matrix m m 𝔸) (t : 𝕂) :
+    HasDerivAt
+      (fun s : 𝕂 ↦ (exp (s • A))ᵀ * J * exp (s • A))
+      (exp (t • Aᵀ) * (Aᵀ * J + J * A) * exp (t • A)) t := by
+  have hfn : (fun s : 𝕂 ↦ (exp (s • A))ᵀ * J * exp (s • A)) =
+      fun s : 𝕂 ↦ exp (s • Aᵀ) * J * exp (s • A) := by
+    funext s
+    rw [← exp_transpose, ← IsScalarTower.algebraMap_smul 𝔸 s A, Matrix.transpose_smul,
+      IsScalarTower.algebraMap_smul]
+  rw [hfn]
+  have hleft := (hasDerivAt_exp_smul_const Aᵀ t).mul_const J
+  have hright := hasDerivAt_exp_smul_const' A t
+  exact (hleft.fun_mul hright).congr_deriv (by noncomm_ring)
 
 end CommutativeEntries
 
@@ -384,3 +408,30 @@ theorem trace_exp_pos (hK : K.IsHermitian) :
 end IsHermitian
 
 end Matrix
+
+namespace LinearMap
+
+section ExpMulVec
+
+attribute [local instance] Matrix.linftyOpTopologicalSpace
+attribute [local instance] NormedAlgebra.toNormedSpace
+attribute [local instance] TauCeti.normedAlgebraRatOfReal
+
+/-- Differentiating the linear evaluation `t ↦ f (NormedSpace.exp (t • A) *ᵥ v)` at `0`
+yields `f (A *ᵥ v)`. -/
+theorem hasDerivAt_exp_mulVec
+    {𝕜 : Type*} [NormedRing 𝕜] [NormedAlgebra ℝ 𝕜] [FiniteDimensional ℝ 𝕜]
+    {m : Type*} [Fintype m] [DecidableEq m]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (f : (m → 𝕜) →ₗ[ℝ] E) (A : Matrix m m 𝕜) (v : m → 𝕜) :
+    HasDerivAt (fun t : ℝ ↦ f (NormedSpace.exp (t • A) *ᵥ v)) (f (A *ᵥ v)) 0 := by
+  let _ : CompleteSpace 𝕜 := FiniteDimensional.completeSpace ℝ 𝕜
+  let fCLM : Matrix m m 𝕜 →L[ℝ] E :=
+    LinearMap.toContinuousLinearMap (f.comp ((Matrix.mulVecBilin ℝ ℝ).flip v))
+  have hfCLM (M : Matrix m m 𝕜) : fCLM M = f (M *ᵥ v) := rfl
+  have h := fCLM.hasFDerivAt.comp_hasDerivAt 0 (hasDerivAt_exp_smul_const A (0 : ℝ))
+  simpa only [Function.comp_def, hfCLM, zero_smul, NormedSpace.exp_zero, one_mul] using h
+
+end ExpMulVec
+
+end LinearMap

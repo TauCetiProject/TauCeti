@@ -210,38 +210,12 @@ private def symplecticLieSubalgebraToSp (l : Type*) [Fintype l] [DecidableEq l]
     (𝕜 : Type*) [RCLike 𝕜] :
     lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix (l ⊕ l) (l ⊕ l) 𝕜))
         (GLSymplectic l 𝕜) ≃ₗ⁅ℝ⁆ RestrictScalars ℝ 𝕜 (LieAlgebra.Symplectic.sp l 𝕜) :=
-  { LinearEquiv.ofSubmodules
-      (unitsLieAlgebraLieEquiv (R := Matrix (l ⊕ l) (l ⊕ l) 𝕜)).toLinearEquiv
-      _ ((LieAlgebra.Symplectic.sp l 𝕜).toSubmodule.restrictScalars ℝ) (by
-        ext A
-        simp only [Submodule.mem_map_equiv, Submodule.restrictScalars_mem]
-        exact unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_sp A) with
-    map_smul' := fun r X ↦ by
-      -- The restricted action uses `algebraMap`, and the submodule inherits the real action.
-      apply (RestrictScalars.addEquiv ℝ 𝕜 (LieAlgebra.Symplectic.sp l 𝕜)).injective
-      apply Subtype.ext
-      change unitsLieAlgebraLieEquiv
-          (r • (X : LeftInvariantDerivation 𝓘(ℝ, Matrix (l ⊕ l) (l ⊕ l) 𝕜)
-            (GL (l ⊕ l) 𝕜))) =
-        algebraMap ℝ 𝕜 r • unitsLieAlgebraLieEquiv
-          (X : LeftInvariantDerivation 𝓘(ℝ, Matrix (l ⊕ l) (l ⊕ l) 𝕜) (GL (l ⊕ l) 𝕜))
-      rw [map_smul, algebraMap_smul]
-    map_lie' := fun {x y} ↦ Subtype.ext
-      ((unitsLieAlgebraLieEquiv (R := Matrix (l ⊕ l) (l ⊕ l) 𝕜)).map_lie x y) }
-
-private theorem restrictScalarsIncl_symplecticLieSubalgebraToSp_apply
-    (l : Type*) [Fintype l] [DecidableEq l] (𝕜 : Type*) [RCLike 𝕜]
-    (X : lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix (l ⊕ l) (l ⊕ l) 𝕜))
-      (GLSymplectic l 𝕜)) :
-    (LieAlgebra.Symplectic.sp l 𝕜).restrictScalarsIncl ℝ
-      (symplecticLieSubalgebraToSp l 𝕜 X) =
-      unitsLieAlgebraLieEquiv
-        (X : LeftInvariantDerivation 𝓘(ℝ, Matrix (l ⊕ l) (l ⊕ l) 𝕜) (GL (l ⊕ l) 𝕜)) := by
-  rw [LieSubalgebra.restrictScalarsIncl_apply]
-  -- The restricted equivalence and scalar-restriction accessor retain the ambient
-  -- units-coordinate function. The scalar-linearity field supplies its proof.
-  unfold symplecticLieSubalgebraToSp
-  rfl
+  (unitsLieAlgebraLieEquiv (R := Matrix (l ⊕ l) (l ⊕ l) 𝕜)).ofSubalgebrasRestrictScalars
+    _ (LieAlgebra.Symplectic.sp l 𝕜) <| by
+      ext A
+      simp only [Submodule.mem_map_equiv, LieSubalgebra.mem_map_submodule,
+        LieSubalgebra.mem_range_restrictScalarsIncl]
+      exact unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_sp A
 
 /-- The Lie algebra of Mathlib's matrix symplectic group is its symplectic
 matrix Lie algebra viewed over the real scalars. -/
@@ -265,7 +239,8 @@ theorem restrictScalarsIncl_symplecticGroupLieAlgebraEquiv_apply
     (unitsLieAlgebraLieEquiv (R := Matrix (l ⊕ l) (l ⊕ l) 𝕜))
       (lieMap (symplecticGroupToGLSmoothHom l 𝕜) D) := by
   simp only [symplecticGroupLieAlgebraEquiv, LieEquiv.trans_apply,
-    restrictScalarsIncl_symplecticLieSubalgebraToSp_apply,
+    LieSubalgebra.restrictScalarsIncl_apply, symplecticLieSubalgebraToSp,
+    LieEquiv.coe_ofSubalgebrasRestrictScalars_apply,
     EmbeddedLieSubgroupData.lieEquivLieSubalgebraOfSubgroup_apply,
     EmbeddedLieSubgroupData.lieMapSubtypeVal_apply, symplecticNativeToCarrierLieEquiv_apply,
     symplecticGroupToGLSmoothHom, lieMap_comp, LieHom.comp_apply]

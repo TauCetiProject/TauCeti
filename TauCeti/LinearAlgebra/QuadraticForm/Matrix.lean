@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Basis
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+public import Mathlib.LinearAlgebra.QuadraticForm.Radical
+import Mathlib.LinearAlgebra.Matrix.Nonsingular
 import TauCeti.Data.Matrix.DotProduct
 import TauCeti.LinearAlgebra.Matrix.Alternating.ModIdeal
 
@@ -18,6 +20,11 @@ quadratic coefficients. The matrix of the full polarization is twice this matrix
 therefore differs from the quadratic discriminant by `2` to the dimension, including dimension
 zero. These formulas make the convention explicit when changing between bilinear and quadratic
 Gram determinants.
+
+For a nondegenerate quadratic form on a finite coordinate space `ι → R` over a commutative ring in
+which `2` is invertible, the polar bilinear form is nondegenerate, so its standard Gram matrix is
+right-separating and therefore has non-zerodivisor determinant
+(`QuadraticMap.det_toMatrix'_polarBilin_mem_nonZeroDivisors`).
 
 Without `2` invertible, a quadratic form `q` is still `x ↦ xᵀ M x` in the coordinates of a basis
 `b` indexed by a linearly ordered type, for its upper triangular *coefficient matrix* `M`
@@ -37,6 +44,8 @@ holds in characteristic two, where `q` is not determined by its polar form.
 
 * `QuadraticForm.toMatrix_polarBilin` and `QuadraticForm.det_toMatrix_polarBilin`: the full
   polar matrix and its determinant.
+* `QuadraticMap.det_toMatrix'_polarBilin_mem_nonZeroDivisors`: non-zerodivisor determinant of the
+  standard polar Gram matrix for nondegenerate `Q`.
 * `QuadraticForm.coefficientMatrix` and `QuadraticForm.coefficientMatrix_apply`: the upper
   triangular coefficient matrix of a quadratic form in an ordered basis.
 * `QuadraticForm.toMatrix_polarBilin_eq_coefficientMatrix_add_transpose`: the full polar matrix is
@@ -77,6 +86,26 @@ theorem det_toMatrix_polarBilin (Q : QuadraticForm R V) (b : Module.Basis ι R V
   rw [toMatrix_polarBilin, Matrix.det_smul, QuadraticForm.discr]
 
 end QuadraticForm
+
+namespace QuadraticMap
+
+open scoped nonZeroDivisors
+
+/-- For a nondegenerate quadratic form on `ι → R` over a commutative ring in which `2` is
+invertible, the determinant of its standard polar Gram matrix is a non-zerodivisor. -/
+theorem det_toMatrix'_polarBilin_mem_nonZeroDivisors
+    {R ι : Type*} [CommRing R] [Invertible (2 : R)] [Fintype ι] [DecidableEq ι]
+    (Q : QuadraticForm R (ι → R)) (hQ : Q.Nondegenerate) :
+    (LinearMap.BilinForm.toMatrix' Q.polarBilin).det ∈ R⁰ := by
+  have hpolar : Q.polarBilin.Nondegenerate := QuadraticMap.nondegenerate_polar_iff.mpr hQ
+  have hM : (LinearMap.BilinForm.toMatrix' Q.polarBilin).Nondegenerate :=
+    LinearMap.BilinForm.Nondegenerate.toMatrix' hpolar
+  rw [← Matrix.nonsingular_iff_det_mem_nonZeroDivisors, ← Matrix.isLeftRegular_iff_nonsingular,
+    Matrix.isLeftRegular_iff_mulVec_injective, ← Matrix.coe_mulVecLin, ← LinearMap.ker_eq_bot,
+    Matrix.ker_mulVecLin_eq_bot_iff]
+  exact fun x hx ↦ hM.separatingRight.eq_zero_of_mulVec_eq_zero hx
+
+end QuadraticMap
 
 open scoped Matrix
 

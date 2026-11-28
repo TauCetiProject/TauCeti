@@ -22,6 +22,9 @@ Lie homomorphisms defined on the underlying `R`-Lie algebra.
 * `LieSubalgebra.mem_range_restrictScalarsIncl`: its range has the original carrier.
 * `LieSubalgebra.center_range_restrictScalarsIncl_eq_bot`: a Lie subalgebra with trivial centre
   still has trivial centre after restricting scalars, for instance from `ℂ` to `ℝ`.
+* `LieEquiv.ofSubalgebrasRestrictScalars`: restricting a Lie equivalence onto a subalgebra and a
+  scalar-restricted subalgebra.
+* `LieEquiv.coe_ofSubalgebrasRestrictScalars_apply`: underlying value of that restriction.
 
 ## References
 
@@ -90,3 +93,37 @@ theorem center_range_restrictScalarsIncl_eq_bot (hK : center A K = ⊥) :
   simpa using congrArg Subtype.val hcK
 
 end LieSubalgebra
+
+namespace LieEquiv
+
+/-- Restrict an `R`-Lie equivalence `e : L₁ ≃ₗ⁅R⁆ L₂` to an `R`-Lie subalgebra `H` of `L₁` and a
+scalar-restricted `A`-Lie subalgebra `RestrictScalars R A K` of `L₂`, whenever `e` maps `H` onto
+`(K.restrictScalarsIncl R).range`. -/
+noncomputable def ofSubalgebrasRestrictScalars
+    {R A L₁ L₂ : Type*} [CommRing R] [CommRing A] [Algebra R A]
+    [LieRing L₁] [LieAlgebra R L₁] [LieRing L₂] [LieAlgebra R L₂]
+    [LieAlgebra A L₂] [IsScalarTower R A L₂]
+    (e : L₁ ≃ₗ⁅R⁆ L₂) (H : LieSubalgebra R L₁) (K : LieSubalgebra A L₂)
+    (hHK : H.map (e : L₁ →ₗ⁅R⁆ L₂) = (K.restrictScalarsIncl R).range) :
+    H ≃ₗ⁅R⁆ RestrictScalars R A K :=
+  (e.ofSubalgebras H (K.restrictScalarsIncl R).range hHK).trans
+    (LieEquiv.ofInjective (K.restrictScalarsIncl R) (K.restrictScalarsIncl_injective R)).symm
+
+/-- Evaluating `LieEquiv.ofSubalgebrasRestrictScalars` returns the underlying image under `e`. -/
+@[simp]
+theorem coe_ofSubalgebrasRestrictScalars_apply
+    {R A L₁ L₂ : Type*} [CommRing R] [CommRing A] [Algebra R A]
+    [LieRing L₁] [LieAlgebra R L₁] [LieRing L₂] [LieAlgebra R L₂]
+    [LieAlgebra A L₂] [IsScalarTower R A L₂]
+    (e : L₁ ≃ₗ⁅R⁆ L₂) (H : LieSubalgebra R L₁) (K : LieSubalgebra A L₂)
+    (hHK : H.map (e : L₁ →ₗ⁅R⁆ L₂) = (K.restrictScalarsIncl R).range) (x : H) :
+    (RestrictScalars.addEquiv R A K (e.ofSubalgebrasRestrictScalars H K hHK x) : L₂) = e x := by
+  have h := congrArg Subtype.val
+    ((LieEquiv.ofInjective (K.restrictScalarsIncl R)
+      (K.restrictScalarsIncl_injective R)).apply_symm_apply
+      (e.ofSubalgebras H (K.restrictScalarsIncl R).range hHK x))
+  simpa only [LieEquiv.ofSubalgebrasRestrictScalars, LieEquiv.trans_apply,
+    LieEquiv.ofInjective_apply, LieSubalgebra.restrictScalarsIncl_apply,
+    LieEquiv.ofSubalgebras_apply] using h
+
+end LieEquiv
