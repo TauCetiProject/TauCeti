@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.KummerPolynomial
+public import Mathlib.RingTheory.PowerBasis
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 public import TauCeti.FieldTheory.RatFunc.PowerTower
+import TauCeti.FieldTheory.IntermediateField.Adjoin.PrimitiveElement
+import TauCeti.RingTheory.LocalRing.Monogenic
 
 /-!
 # Places in a purely inseparable extension
@@ -26,6 +29,10 @@ characteristic. Such an extension is invisible to places in the following sense.
   and for `F' / F` finite, `e(P' ∣ P) · f(P' ∣ P) = [F' : F]`.
 * **The residue extension is purely inseparable**, since the residue of `z` has the residue of
   `z ^ q ^ n` as a `q ^ n`-th power.
+* **Module finiteness and prime-degree monogenicity:** because `P'` is the unique place above `P`,
+  `𝒪_{P'}` coincides with the integral closure of `𝒪_P` in `F'` and is therefore module-finite
+  over `𝒪_P`; when `[F' : F] = p` is prime, Nakayama's criterion gives a power basis of `𝒪_{P'}`
+  over `𝒪_P`.
 
 In particular, for a purely inseparable step of prime degree `p` the product `e · f` is `p`, so
 the place is either totally ramified (`e = p`, `f = 1`) or has residue degree `p` (`e = 1`,
@@ -53,6 +60,13 @@ of `t − s`, and `e(P' ∣ P) = 1`, `f(P' ∣ P) = p`: the residue field of `P`
 * `TauCeti.Place.relativeDegree_eq_one_of_isPurelyInseparable` and
   `TauCeti.Place.ramificationIdx_eq_finrank_of_isPurelyInseparable`: `f(P' ∣ P) = 1` and
   `e(P' ∣ P) = [F' : F]` when the residue extension is separable.
+* `TauCeti.Place.isIntegral_integers_restrict_iff`,
+  `TauCeti.Place.isIntegralClosure_integers`,
+  `TauCeti.Place.moduleFinite_integers_of_isPurelyInseparable`,
+  `TauCeti.Place.exists_adjoin_integers_eq_top_of_finrank_eq_prime`, and
+  `TauCeti.Place.exists_powerBasis_integers_of_finrank_eq_prime`: characterization of the integral
+  closure of `𝒪_P`, `IsIntegralClosure` identification, module finiteness, and prime-degree
+  monogenicity of `𝒪_{P'}` over `𝒪_P`.
 * `TauCeti.Place.ramificationIdx_adicOfIrreducible_X_pow_sub_C`,
   `TauCeti.Place.ord_restrict_adicOfIrreducible_X_pow_sub_C` and
   `TauCeti.Place.relativeDegree_adicOfIrreducible_X_pow_sub_C`: the counterexample
@@ -179,6 +193,102 @@ theorem ramificationIdx_eq_finrank_of_isPurelyInseparable
   simpa [relativeDegree_eq_one_of_isPurelyInseparable k F P'] using
     ramificationIdx_mul_relativeDegree_eq_finrank_of_isPurelyInseparable k F hF P'
 
+section Monogenic
+
+attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
+/-- At a place `P'` of a purely inseparable extension `F' / F`, `P'` is the unique place over
+`P = P'|_F`, so the integral closure of `𝒪_P` in `F'` coincides with `𝒪_{P'}`. -/
+theorem isIntegral_integers_restrict_iff [Algebra.IsIntegral k k']
+    (hF' : IsFunctionField k' F') (P' : Place k' F') {z : F'} :
+    IsIntegral (P'.restrict k F).integers z ↔ z ∈ P'.integers := by
+  rw [isIntegral_iff_forall_restrict_eq_mem_integers hF' (P'.restrict k F)]
+  exact ⟨fun hz ↦ hz P' rfl,
+    fun hz Q' hQ' ↦ restrict_injective_of_isPurelyInseparable k F hQ' ▸ hz⟩
+
+/-- At a place `P'` of a purely inseparable extension `F' / F`, `P'` is the unique place over
+`P = P'|_F`, so `𝒪_{P'}` is the integral closure of `𝒪_P` in `F'`. -/
+theorem isIntegralClosure_integers [Algebra.IsIntegral k k']
+    (hF' : IsFunctionField k' F') (P' : Place k' F') :
+    IsIntegralClosure P'.integers (P'.restrict k F).integers F' where
+  algebraMap_injective := Subtype.val_injective
+  isIntegral_iff {z} := (isIntegral_integers_restrict_iff hF' P').trans
+    ⟨fun hz ↦ ⟨⟨z, hz⟩, rfl⟩, fun ⟨⟨_, hw⟩, h⟩ ↦ h ▸ hw⟩
+
+/-- At any place `P'` of a finite purely inseparable extension `F' / F` of an algebraic function
+field `F / k`, `𝒪_{P'}` coincides with the integral closure of `𝒪_P` (`P = P'|_F`) in `F'` and
+is therefore module-finite over `𝒪_P`. -/
+theorem moduleFinite_integers_of_isPurelyInseparable [FiniteDimensional F F']
+    [Algebra.IsIntegral k k'] (hF : IsFunctionField k F) (hF' : IsFunctionField k' F')
+    (P' : Place k' F') :
+    Module.Finite (P'.restrict k F).integers P'.integers := by
+  let P := P'.restrict k F
+  have := moduleFinite_integralClosure_of_isFunctionField F' P hF
+  have : IsIntegralClosure P'.integers P.integers F' := isIntegralClosure_integers hF' P'
+  exact Module.Finite.equiv
+    (IsIntegralClosure.equiv P.integers (integralClosure P.integers F') F'
+      P'.integers).toLinearEquiv
+
+/-- Nakayama monogenicity of `𝒪_{P'}` over `𝒪_P` when `[F' : F] = p` is prime in a purely
+inseparable extension. -/
+theorem exists_adjoin_integers_eq_top_of_finrank_eq_prime {p : ℕ} (hp : p.Prime)
+    [Algebra.IsIntegral k k'] (hF : IsFunctionField k F) (hF' : IsFunctionField k' F')
+    (hFF' : Module.finrank F F' = p) (P' : Place k' F') :
+    ∃ β : P'.integers, Algebra.adjoin (P'.restrict k F).integers {β} = ⊤ := by
+  have : FiniteDimensional F F' := Module.finite_of_finrank_pos (hFF' ▸ hp.pos)
+  have : Module.Finite (P'.restrict k F).integers P'.integers :=
+    P'.moduleFinite_integers_of_isPurelyInseparable hF hF'
+  have hef : ramificationIdx F P' * relativeDegree k F P' = p :=
+    (ramificationIdx_mul_relativeDegree_eq_finrank_of_isPurelyInseparable k F hF P').trans hFF'
+  rw [relativeDegree_def] at hef
+  rcases hp.eq_one_or_self_of_dvd _ ⟨_, ((mul_comm _ _).trans hef).symm⟩ with hf1 | hfp
+  · obtain ⟨_, hπ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible P'.integers
+    have hsurj := (Algebra.finrank_eq_one_iff_bijective_algebraMap.1 hf1).2
+    exact ⟨_,
+      IsLocalRing.adjoin_eq_top_of_algebraMap_residueField_surjective_of_span_eq_maximalIdeal
+        hsurj hπ.maximalIdeal_eq.symm⟩
+  · have he1 : ramificationIdx F P' = 1 := by rw [hfp] at hef; nlinarith [hp.pos]
+    obtain ⟨bar_b, hbar⟩ := Field.exists_adjoin_simple_eq_top_of_finrank_prime (hfp ▸ hp)
+    obtain ⟨β, hβ⟩ := IsLocalRing.residue_surjective (R := P'.integers) bar_b
+    obtain ⟨t₀, ht₀⟩ := (P'.restrict k F).exists_isUniformizer
+    let π₀ : (P'.restrict k F).integers :=
+      ⟨t₀, (P'.restrict k F).mem_integers_iff_ord_nonneg.2 (by
+        rw [(P'.restrict k F).isUniformizer_iff_ord_eq_one.1 ht₀]; norm_num)⟩
+    have hπ₀_unif : P'.valuation.IsUniformizer
+        ((algebraMap (P'.restrict k F).integers P'.integers π₀ : P'.integers) : F') := by
+      rw [P'.isUniformizer_iff_ord_eq_one, coe_algebraMap_integers,
+        ord_algebraMap_restrict k F P', he1, Nat.cast_one, one_mul,
+        (P'.restrict k F).isUniformizer_iff_ord_eq_one.1 ht₀]
+    have hspan : Ideal.span {aeval β (C π₀)} = IsLocalRing.maximalIdeal P'.integers := by
+      rw [aeval_C]; exact (P'.irreducible_of_isUniformizer hπ₀_unif).maximalIdeal_eq.symm
+    refine ⟨β, TauCeti.IsLocalRing.adjoin_eq_top_of_span_eval_eq_maximalIdeal (g := C π₀) ?_ hspan⟩
+    rw [hβ, ← adjoin_simple_toSubalgebra_of_isAlgebraic (Algebra.IsAlgebraic.isAlgebraic bar_b),
+      hbar, IntermediateField.top_toSubalgebra]
+
+/-- **Local monogenicity at a prime purely inseparable step**: for a purely inseparable extension
+`F' / F` of prime degree `p` over an algebraic function field `F / k`, at any place `P'` of
+`F' / k'` above `P = P'|_F`, the valuation ring `𝒪_{P'}` admits a power basis of dimension `p` over
+`𝒪_P`. -/
+theorem exists_powerBasis_integers_of_finrank_eq_prime {p : ℕ} [Fact p.Prime]
+    [Algebra.IsIntegral k k'] (hF : IsFunctionField k F) (hF' : IsFunctionField k' F')
+    (hFF' : Module.finrank F F' = p) (P' : Place k' F') :
+    ∃ pb : PowerBasis (P'.restrict k F).integers P'.integers, pb.dim = p := by
+  have : FiniteDimensional F F' := Module.finite_of_finrank_pos (hFF' ▸ (Fact.out : p.Prime).pos)
+  have := P'.moduleFinite_integers_of_isPurelyInseparable hF hF'
+  obtain ⟨β, hβ⟩ := P'.exists_adjoin_integers_eq_top_of_finrank_eq_prime Fact.out hF hF' hFF'
+  have : FaithfulSMul (P'.restrict k F).integers P'.integers :=
+    (faithfulSMul_iff_algebraMap_injective _ _).2 fun _ _ hxy ↦ Subtype.ext <|
+      (algebraMap F F').injective
+        (by simpa [coe_algebraMap_integers] using congrArg Subtype.val hxy)
+  have : IsScalarTower (P'.restrict k F).integers P'.integers F' := .of_algebraMap_eq fun _ ↦ by
+    rw [IsScalarTower.algebraMap_apply _ F F', ValuationSubring.algebraMap_apply,
+      ValuationSubring.algebraMap_apply, coe_algebraMap_integers]
+  refine ⟨PowerBasis.ofAdjoinEqTop' (IsIntegral.of_finite _ β) hβ, ?_⟩
+  rw [← PowerBasis.finrank, ← IsFractionRing.finrank_eq (P'.restrict k F).integers F P'.integers F',
+    hFF']
+
+end Monogenic
+
 end Extension
 
 /-! ### An unramified place of a purely inseparable extension
@@ -199,11 +309,9 @@ omit [CharP k p] in
 private theorem ord_algebraMap_gen_sub (hs : ∀ c : k, c ^ p ≠ s) :
     (adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out hs)).ord
       (algebraMap k⟮t⟯ (_root_.RatFunc k) (AdjoinSimple.gen k t - algebraMap k k⟮t⟯ s)) = 1 := by
-  have : algebraMap k⟮t⟯ (_root_.RatFunc k) (AdjoinSimple.gen k t - algebraMap k k⟮t⟯ s) =
-      algebraMap k[X] (_root_.RatFunc k) (X ^ p - C s) := by
-    simp
-  rw [this, ord_adicOfIrreducible_algebraMap_irreducible _
-    (irreducible_X_pow_sub_C_of_prime Fact.out hs)]
+  rw [show algebraMap k⟮t⟯ (_root_.RatFunc k) (AdjoinSimple.gen k t - algebraMap k k⟮t⟯ s) =
+      algebraMap k[X] (_root_.RatFunc k) (X ^ p - C s) by simp,
+    ord_adicOfIrreducible_algebraMap_irreducible _ (irreducible_X_pow_sub_C_of_prime Fact.out hs)]
   simp
 
 omit [CharP k p] in

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Lemmas
-public import TauCeti.RingTheory.Valuation.Discrete.Order
+public import TauCeti.RingTheory.Valuation.Discrete.Order.Basic
 
 /-!
 # Orders of Frobenius powers under a discrete valuation

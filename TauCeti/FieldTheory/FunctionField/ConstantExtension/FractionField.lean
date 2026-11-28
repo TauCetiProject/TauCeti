@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.ConstantExtension.LinearDisjoint
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.LinearDisjoint.Basic
 public import TauCeti.FieldTheory.Separable.Regular
 public import TauCeti.RingTheory.TensorProduct.FractionRing
 

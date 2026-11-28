@@ -73,6 +73,9 @@ idempotent, while that of `(X - C r) ^ 2` has coordinate `0` in order `1`.
   `Polynomial.le_rootMultiplicity_iff_forall_eval_hasseDeriv_eq_zero`: `(X - r) ^ n` divides `p`
   (and for `p ≠ 0`, `n ≤ p.rootMultiplicity r`) if and only if the Hasse derivatives of `p` of
   order less than `n` vanish at `r`.
+* `Polynomial.coeff_taylor_eq_of_X_sub_C_pow_dvd_sub`,
+  `Polynomial.coeff_taylor_eq_sum_of_X_sub_C_pow_dvd_sub`: Taylor coefficient transport in degree
+  below `n` along congruences modulo `(X - r) ^ n`.
 * `Polynomial.coeff_taylor_map_algebraMap`, `Polynomial.aeval_hasseDeriv_eq_zero_of_pow_dvd`: the
   Taylor coefficients at a point `ζ` of an `R`-algebra are the values at `ζ` of Hasse derivatives,
   and those of order less than `m` vanish on multiples of `g ^ m` when `g(ζ) = 0`.
@@ -82,6 +85,10 @@ idempotent, while that of `(X - C r) ^ 2` has coordinate `0` in order `1`.
   expansion and the Hasse derivatives of a rescaled polynomial `p(a X)`.
 * `Polynomial.nextCoeff_taylor`: the subleading coefficient of the Taylor expansion of `p` at `r`
   is `p.nextCoeff + p.natDegree * p.leadingCoeff * r`, over any semiring.
+* `Polynomial.taylor_sub_C_eval_eq_X_mul_divX`, `Polynomial.coeff_taylor_sub_C_eval_pow_of_lt`,
+  `Polynomial.coeff_taylor_sub_C_eval_pow_self`: `taylor c f - C (f.eval c)` factors through `X`,
+  so its `i`-th power vanishes below degree `i` and has `i`-th coefficient
+  `(f.derivative.eval c) ^ i`.
 * `TauCeti.taylorJet_sum_smul_X_sub_C_pow`, `TauCeti.taylorJet_surjective`: the coordinates `c`
   are attained by `∑ k, c k • (X - C r) ^ k`, over any ring.
 * `TauCeti.taylorJet_eq_zero_iff`, `TauCeti.ker_taylorJet`: the Taylor coordinates of order below
@@ -206,6 +213,30 @@ theorem mem_span_X_sub_C_pow_iff_forall_eval_hasseDeriv_eq_zero {R : Type*} [Rin
     rw [taylor_mul_X_sub_C_pow, hg, (commute_X_pow g n).eq]
     simpa using congr_arg (· * X ^ n) (taylor_neg_taylor (-r) g)
 
+/-- Shifting `f` to `c` and subtracting its constant term `f.eval c` factors through `X` via
+`divX`. -/
+theorem taylor_sub_C_eval_eq_X_mul_divX {R : Type*} [Ring R] (f : R[X]) (c : R) :
+    taylor c f - C (f.eval c) = X * divX (taylor c f - C (f.eval c)) := by
+  simpa [taylor_coeff_zero] using (X_mul_divX_add (taylor c f - C (f.eval c))).symm
+
+/-- Shifting `f` to `c` and subtracting its constant term `f.eval c` yields a multiple of `X`, so
+every coefficient of `(taylor c f - C (f.eval c)) ^ i` in degree below `i` vanishes. -/
+@[simp]
+theorem coeff_taylor_sub_C_eval_pow_of_lt {R : Type*} [Ring R] (f : R[X]) (c : R) {k i : ℕ}
+    (hki : k < i) :
+    ((taylor c f - C (f.eval c)) ^ i).coeff k = 0 := by
+  rw [taylor_sub_C_eval_eq_X_mul_divX, (commute_X _).mul_pow]
+  simp [coeff_X_pow_mul', not_le_of_gt hki]
+
+/-- The `i`-th coefficient of `(taylor c f - C (f.eval c)) ^ i` is `(f.derivative.eval c) ^ i`. -/
+@[simp]
+theorem coeff_taylor_sub_C_eval_pow_self {R : Type*} [Ring R] (f : R[X]) (c : R) (i : ℕ) :
+    ((taylor c f - C (f.eval c)) ^ i).coeff i = f.derivative.eval c ^ i := by
+  rw [taylor_sub_C_eval_eq_X_mul_divX, (commute_X _).mul_pow, coeff_X_pow_mul']
+  simp only [le_refl, ↓reduceIte, tsub_self]
+  rw [← constantCoeff_apply, map_pow, constantCoeff_apply, coeff_divX]
+  simp [taylor_coeff_one]
+
 /-- The Taylor coefficients at `ζ` of the image of `p` in an `R`-algebra are the values at `ζ` of
 the Hasse derivatives of `p`. -/
 theorem coeff_taylor_map_algebraMap {R B : Type*} [CommSemiring R] [CommSemiring B] [Algebra R B]
@@ -265,6 +296,27 @@ derivative of `p` of order less than `n` vanishes at `r`. -/
 theorem le_rootMultiplicity_iff_forall_eval_hasseDeriv_eq_zero {p : R[X]} (hp : p ≠ 0) {r : R}
     {n : ℕ} : n ≤ p.rootMultiplicity r ↔ ∀ i < n, (hasseDeriv i p).eval r = 0 := by
   rw [le_rootMultiplicity_iff hp, X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero]
+
+/-- If `(X - r) ^ n` divides `p - q`, then the Taylor expansions of `p` and `q` at `r` agree in
+every degree below `n`. -/
+theorem coeff_taylor_eq_of_X_sub_C_pow_dvd_sub {p q : R[X]} {r : R} {n : ℕ}
+    (h : (X - C r) ^ n ∣ p - q) {k : ℕ} (hk : k < n) :
+    (taylor r p).coeff k = (taylor r q).coeff k := by
+  have hk0 : (hasseDeriv k (p - q)).eval r = 0 :=
+    X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero.1 h k hk
+  rw [← taylor_coeff, map_sub, coeff_sub, sub_eq_zero] at hk0
+  exact hk0
+
+/-- If `(X - r) ^ n` divides `p - ∑ j : Fin n, C (a j) * X ^ (j : ℕ)`, then for every `k < n`,
+the `k`-th Taylor coefficient of `p` at `r` is `∑ j : Fin n, ((X + C r) ^ (j : ℕ)).coeff k * a j`.
+-/
+theorem coeff_taylor_eq_sum_of_X_sub_C_pow_dvd_sub {p : R[X]} {r : R} {n : ℕ}
+    {a : Fin n → R} (h : (X - C r) ^ n ∣ p - ∑ j : Fin n, C (a j) * X ^ (j : ℕ))
+    {k : ℕ} (hk : k < n) :
+    (taylor r p).coeff k = ∑ j : Fin n, ((X + C r) ^ (j : ℕ)).coeff k * a j := by
+  rw [coeff_taylor_eq_of_X_sub_C_pow_dvd_sub h hk, map_sum, finsetSum_coeff]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [taylor_mul, taylor_C, taylor_X_pow, coeff_C_mul, mul_comm]
 
 end Polynomial
 

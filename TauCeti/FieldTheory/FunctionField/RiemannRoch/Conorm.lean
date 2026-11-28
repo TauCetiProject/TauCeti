@@ -24,9 +24,13 @@ image lies in `L(D')` for any divisor `D'` of `F'` with the coefficients `e(P' �
 conorm (`TauCeti.mem_riemannRochSpace_algebraMap_iff_of_coeff_eq`). Multiples of a pole divisor
 are an example: a function `f` of `F` lies in `L(n (z)_∞)` exactly when its image lies in
 `L(n (z)_∞)` computed in `F'` (`TauCeti.mem_riemannRochSpace_nsmul_poles_map_iff`), with no
-conorm needed, because both pole divisors are read off from the orders of `z`. For `F' = F`
-this says that `L(n (z)_∞)` does not change when the constants `k` are enlarged to an algebraic
-extension inside `F` (`TauCeti.restrictScalars_riemannRochSpace_nsmul_poles`). For a
+conorm needed, because both pole divisors are read off from the orders of `z`; similarly, an
+intermediate function field containing a basis of `L(l (z)_∞)` has at least the same dimension
+(`TauCeti.Divisor.dim_nsmul_poles_le_of_forall_exists`). For `F' = F`
+enlarging the constants inside `F` leaves every Riemann–Roch space unchanged as a set along the
+conorm (`TauCeti.restrictScalars_riemannRochSpace_conorm`,
+`TauCeti.restrictScalars_riemannRochSpace_nsmul_poles`), rescaling dimensions by `[k' : k]`
+(`TauCeti.Divisor.dim_eq_finrank_mul_dim_conorm`). For a
 transcendental `x`, descending to the rational subfield `k(x)` shows that a function of `k(x)`
 lying in `L((x)_∞)` is a polynomial of degree at most one in `x`
 (`TauCeti.mem_span_pair_of_mem_adjoin`).
@@ -121,6 +125,41 @@ theorem restrictScalars_riemannRochSpace_nsmul_poles [Algebra k' F] [IsScalarTow
   ext f
   simpa using mem_riemannRochSpace_nsmul_poles_map_iff (F' := F) hF hF' n z f
 
+omit [Algebra.IsIntegral k k'] [Algebra k k'] [Algebra k F] [Algebra k F']
+    [IsScalarTower k k' F'] [IsScalarTower k F F'] in
+/-- If an intermediate function field `(M, E)` contains a `k'`-basis of `L(l • (z)_∞)` in `F'`,
+then `ℓ(l • (z)_∞)` over `(M, E)` is at least `ℓ(l • (z)_∞)` over `(k', F')`. -/
+theorem Divisor.dim_nsmul_poles_le_of_forall_exists {M E : Type*} [Field M] [Field E]
+    [Algebra M k'] [Algebra M E] [Algebra M F'] [Algebra E F'] [IsScalarTower M k' F']
+    [IsScalarTower M E F'] [Algebra F E] [IsScalarTower F E F'] [Algebra.IsIntegral E F']
+    (hFE : IsFunctionField M E) (hF' : IsFunctionField k' F') (z : Fˣ) (l : ℕ)
+    {ι : Type*} [Finite ι]
+    (b : Module.Basis ι k' (riemannRochSpace
+      (l • Divisor.poles hF' (Units.map (algebraMap F F' : F →* F') z))))
+    (hb : ∀ i, ∃ y : E, algebraMap E F' y = b i) :
+    (l • Divisor.poles hF' (Units.map (algebraMap F F' : F →* F') z)).dim ≤
+      (l • Divisor.poles hFE (Units.map (algebraMap F E : F →* E) z)).dim := by
+  classical
+  cases nonempty_fintype ι
+  choose y hy using hb
+  have hz_eq : Units.map (algebraMap E F' : E →* F') (Units.map (algebraMap F E : F →* E) z) =
+      Units.map (algebraMap F F' : F →* F') z :=
+    Units.ext (IsScalarTower.algebraMap_apply F E F' z).symm
+  let v : ι → riemannRochSpace (l • Divisor.poles hFE (Units.map (algebraMap F E : F →* E) z)) :=
+    fun i ↦ ⟨y i, (mem_riemannRochSpace_nsmul_poles_map_iff hFE hF' l
+      (Units.map (algebraMap F E : F →* E) z) (y i)).1 (by rw [hy i, hz_eq]; exact (b i).property)⟩
+  have hcomp : ((IsScalarTower.toAlgHom M E F').toLinearMap.comp
+      (riemannRochSpace _).subtype) ∘ v = (riemannRochSpace _).subtype ∘ b :=
+    funext fun i ↦ hy i
+  have hli : LinearIndependent M v :=
+    .of_comp ((IsScalarTower.toAlgHom M E F').toLinearMap.comp (riemannRochSpace _).subtype) <|
+      hcomp.symm ▸ ((b.linearIndependent.map' (riemannRochSpace _).subtype
+        (Submodule.ker_subtype _)).restrict_scalars' M)
+  have := finiteDimensional_riemannRochSpace hFE
+    (l • Divisor.poles hFE (Units.map (algebraMap F E : F →* E) z))
+  rw [Divisor.dim_def, Divisor.dim_def, Module.finrank_eq_card_basis b]
+  exact hli.fintype_card_le_finrank
+
 /-- **A function of `k(x)` whose poles are bounded by those of `x` lies in `k + k x`**: inside the
 rational function field `k(x)`, the Riemann–Roch space of `(x)_∞` contains `1` and `x` and has
 dimension at most `deg (x)_∞ + 1 = 2`, and membership descends from `F` to `k(x)`. -/
@@ -196,6 +235,39 @@ theorem riemannRochSpace_conorm_comap (hF' : IsFunctionField k' F')
   exact mem_riemannRochSpace_conorm_iff hF' D f
 
 end FiniteFibres
+
+/-- **Enlarging the base field inside `F` preserves `L(D)` as a set**: for an integral extension
+`k' / k` inside a field `F`, the Riemann–Roch space of the conorm `Con D` in `F / k'`, viewed as a
+`k`-subspace of `F`, is `L(D)`. -/
+@[simp]
+theorem restrictScalars_riemannRochSpace_conorm [Algebra k' F] [IsScalarTower k k' F]
+    (D : Divisor k F) :
+    (riemannRochSpace (Divisor.conorm k' F D)).restrictScalars k = riemannRochSpace D := by
+  ext f
+  rcases eq_or_ne f 0 with rfl | hf; · simp
+  rw [Submodule.restrictScalars_mem, mem_riemannRochSpace_iff_neg_le_ord hf,
+    mem_riemannRochSpace_iff_neg_le_ord hf]
+  have hord (P' : Place k' F) :
+      P'.ord f = Place.ramificationIdx F P' * (P'.restrict k F).ord f := by
+    simpa using Place.ord_algebraMap_restrict k F P' f
+  refine ⟨fun h P ↦ ?_, fun h P' ↦ ?_⟩
+  · set P' : Place k' F := Place.constantsEquiv k k' F P
+    have hP' : P'.restrict k F = P := (Place.restrict_eq_iff_integers_le k F P' P).2 fun _ hx ↦
+      by simpa [P', Place.integers_constantsEquiv] using hx
+    have hbound := h P'; rw [Divisor.coeff_conorm, hP'] at hbound
+    have hord' := hord P'; rw [hP'] at hord'
+    have he : (0 : ℤ) < Place.ramificationIdx F P' := mod_cast Place.ramificationIdx_pos F P'
+    nlinarith
+  · rw [Divisor.coeff_conorm, hord]; nlinarith [h (P'.restrict k F)]
+
+/-- **Riemann–Roch dimension under base-field enlargement inside `F`**: for an integral extension
+`k' / k` inside a field `F`, `ℓ_k(D) = [k' : k] · ℓ_{k'}(Con D)`, since both Riemann–Roch spaces
+have the same underlying subset of `F`. -/
+theorem Divisor.dim_eq_finrank_mul_dim_conorm [Algebra k' F] [IsScalarTower k k' F]
+    (D : Divisor k F) :
+    D.dim = Module.finrank k k' * (Divisor.conorm k' F D).dim := by
+  rw [Divisor.dim_def, ← restrictScalars_riemannRochSpace_conorm (k' := k') D, Divisor.dim_def]
+  exact (Module.finrank_mul_finrank k k' (riemannRochSpace (Divisor.conorm k' F D))).symm
 
 variable [FiniteDimensional F F']
 

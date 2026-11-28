@@ -15,7 +15,7 @@ import TauCeti.FieldTheory.Minpoly
 import TauCeti.NumberTheory.Cyclotomic.IntegralClosure
 import TauCeti.NumberTheory.LocalField.RootsOfUnity.Cyclotomic
 import TauCeti.RingTheory.DiscreteValuationRing.IntegralClosure.Basic
-import TauCeti.RingTheory.PowerBasis
+import TauCeti.RingTheory.PowerBasis.Basic
 
 /-!
 # The local cyclotomic tower over `ℚ_p`

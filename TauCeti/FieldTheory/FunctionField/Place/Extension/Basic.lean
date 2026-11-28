@@ -506,6 +506,18 @@ theorem mem_integers_restrict_iff (f : F) :
   exact ⟨fun h ↦ mul_nonneg (by positivity) h,
     fun h ↦ nonneg_of_mul_nonneg_right h (by exact_mod_cast ramificationIdx_pos F P')⟩
 
+/-- If `f ∈ 𝒪_P` and `d ∈ 𝒪_{P'}` satisfy `algebraMap F F' f = d ^ m`, then
+`e(P' ∣ P) · (P.ord f).toNat = m · (P'.ord d).toNat`. -/
+theorem ramificationIdx_mul_toNat_ord_eq_of_algebraMap_eq_pow {f : F} {d : F'} {m : ℕ}
+    (hf : f ∈ (P'.restrict k F).integers) (hd : d ∈ P'.integers)
+    (hfd : algebraMap F F' f = d ^ m) :
+    ramificationIdx F P' * ((P'.restrict k F).ord f).toNat = m * (P'.ord d).toNat := by
+  have hval := congrArg P'.ord hfd
+  rw [ord_algebraMap_restrict k F P', P'.ord_pow d] at hval
+  refine Nat.cast_injective (R := ℤ) ?_
+  push_cast
+  rwa [Int.toNat_of_nonneg ((P'.restrict k F).mem_integers_iff_ord_nonneg.1 hf),
+    Int.toNat_of_nonneg (P'.mem_integers_iff_ord_nonneg.1 hd)]
 
 /-- **`P' ∣ P` by valuation rings** (Stichtenoth, Proposition 3.1.4): the place of `F / k` that
 `P'` lies over is the unique place whose valuation ring is carried into the valuation ring of

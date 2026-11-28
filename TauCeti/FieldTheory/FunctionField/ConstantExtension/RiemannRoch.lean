@@ -346,7 +346,6 @@ theorem Divisor.dim_nsmul_poles_le_of_linearDisjoint [Algebra.IsIntegral F F']
   have hv : LinearIndependent k' v := .of_comp (riemannRochSpace D').subtype hli
   simpa [Divisor.dim_def] using hv.fintype_card_le_finrank
 
-
 omit [Algebra.IsSeparable k k'] in
 /-- **Under linear disjointness `L(D) · k'` has dimension `ℓ(D)`**: if the image of `k'` in `F'`
 and `F` are linearly disjoint over `k`, then the `k'`-span of the image of `L(D)` in `F'` has

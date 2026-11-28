@@ -31,6 +31,8 @@ when `[F' : F] = [k' : k]` its elements are those whose coordinates in a basis o
 ## Main definitions
 
 * `TauCeti.Place.constantSpanIntegers`: the `k'`-span `𝒪_P · k'` of `𝒪_P` in `F'`.
+* `TauCeti.Place.constantSpanSubmodule`: `𝒪_P · k'` viewed as an `𝒪_P`-submodule of `𝒪_{P'}`
+  for a place `P'` lying over `P`.
 * `TauCeti.Place.integralClosureSubmodule`: the integral closure `𝒪'_P` of `𝒪_P` in `F'`.
 
 ## Main results
@@ -41,6 +43,7 @@ when `[F' : F] = [k' : k]` its elements are those whose coordinates in a basis o
   containing the image of `𝒪_P`.
 * `TauCeti.Place.mem_constantSpanIntegers_iff`: `𝒪_P · k'` in the coordinates of a basis of
   constants.
+* `TauCeti.Place.constantSpanSubmodule_eq_span`: `𝒪_P`-spanning set of `𝒪_P · k'` inside `𝒪_{P'}`.
 * `TauCeti.Place.constantSpanIntegers_le_integralClosureSubmodule`: `𝒪_P · k' ⊆ 𝒪'_P`.
 
 ## Reference
@@ -159,8 +162,7 @@ theorem mem_constantSpanIntegers_iff {ι : Type*} [Fintype ι] (b : Basis ι k k
         rw [Finset.smul_sum]
         refine Finset.sum_congr rfl fun i _ ↦ ?_
         rw [constantBasisOfFinrankEq_apply, map_mul, Algebra.smul_def, Algebra.smul_def,
-          Algebra.smul_def]
-        ring
+          Algebra.smul_def]; ring
       rw [hcx, map_sum, Finsupp.finsetSum_apply]
       refine sum_mem fun i _ ↦ ?_
       rw [map_smul, Finsupp.smul_apply, smul_eq_mul, constantBasisOfFinrankEq_repr_algebraMap]
@@ -172,6 +174,59 @@ theorem mem_constantSpanIntegers_iff {ι : Type*} [Fintype ι] (b : Basis ι k k
     exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨_, hz j, rfl⟩)
 
 end FinrankEq
+
+section Submodule
+
+variable (k F) in
+/-- At a place `P'` over `P = P'|_F`, the `(P'.restrict k F).integers`-submodule of `P'.integers`
+cut out by `P.constantSpanIntegers k' F'`. -/
+noncomputable def constantSpanSubmodule [Algebra.IsIntegral F F']
+    (P' : Place k' F') : Submodule (P'.restrict k F).integers P'.integers where
+  carrier := {x | (x : F') ∈ (P'.restrict k F).constantSpanIntegers k' F'}
+  add_mem' ha hb := by rw [Set.mem_ofPred_eq, AddMemClass.coe_add]; exact add_mem ha hb
+  zero_mem' := by rw [Set.mem_ofPred_eq, ZeroMemClass.coe_zero]; exact zero_mem _
+  smul_mem' r _ hx := by
+    rw [Set.mem_ofPred_eq, Algebra.smul_def, Subring.coe_mul, Place.coe_algebraMap_integers]
+    exact Place.mul_mem_constantSpanIntegers k' F'
+      (Place.algebraMap_mem_constantSpanIntegers k' F' r.property) hx
+
+/-- Membership in `P'.constantSpanSubmodule k F` is membership in
+`(P'.restrict k F).constantSpanIntegers k' F'`. -/
+@[simp]
+theorem mem_constantSpanSubmodule_iff [Algebra.IsIntegral F F']
+    (P' : Place k' F') {x : P'.integers} :
+    x ∈ P'.constantSpanSubmodule k F ↔
+      (x : F') ∈ (P'.restrict k F).constantSpanIntegers k' F' :=
+  Iff.rfl
+
+/-- In coordinates with respect to a `k`-basis `b` of `k'`, `P'.constantSpanSubmodule k F` is
+spanned over `𝒪_P` by the images of `b`. -/
+theorem constantSpanSubmodule_eq_span [FiniteDimensional k k']
+    [Algebra.IsIntegral F F'] (h : constantCompositum F k' F' = ⊤)
+    (hn : finrank F F' = finrank k k') (P' : Place k' F') {ι : Type*} [Finite ι]
+    (b : Basis ι k k') :
+    P'.constantSpanSubmodule k F = Submodule.span (P'.restrict k F).integers
+      (Set.range fun i ↦ (⟨algebraMap k' F' (b i), P'.algebraMap_mem_integers (b i)⟩ :
+        P'.integers)) := by
+  classical
+  cases nonempty_fintype ι
+  set P := P'.restrict k F; let cF := constantBasisOfFinrankEq h hn b
+  refine le_antisymm (fun x hx ↦ ?_) (Submodule.span_le.2 fun _ ⟨i, hi⟩ ↦ hi ▸ by
+    simp only [SetLike.mem_coe, Place.mem_constantSpanSubmodule_iff]
+    rw [← mul_one (algebraMap k' F' (b i)), ← map_one (algebraMap F F'), ← Algebra.smul_def]
+    exact Submodule.smul_mem _ (b i) (Place.algebraMap_mem_constantSpanIntegers k' F' (one_mem _)))
+  have hcoord := (P.mem_constantSpanIntegers_iff h hn b).1 ((mem_constantSpanSubmodule_iff P').1 hx)
+  rw [show x = ∑ i, (⟨cF.repr (x : F') i, hcoord i⟩ : P.integers) •
+      (⟨algebraMap k' F' (b i), P'.algebraMap_mem_integers (b i)⟩ : P'.integers) from
+      Subtype.ext <| by
+    conv_lhs => rw [← cF.sum_repr (x : F')]
+    rw [AddSubmonoidClass.coe_finsetSum]
+    exact Finset.sum_congr rfl fun i _ ↦ by
+      rw [Algebra.smul_def, Algebra.smul_def, Subring.coe_mul, Place.coe_algebraMap_integers,
+        constantBasisOfFinrankEq_apply]]
+  exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
+
+end Submodule
 
 section IntegralClosure
 

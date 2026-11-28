@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Valuation.Discrete.Order
+public import TauCeti.RingTheory.Valuation.Discrete.Order.Basic
 import TauCeti.RingTheory.Valuation.UnitGroup
 
 /-!

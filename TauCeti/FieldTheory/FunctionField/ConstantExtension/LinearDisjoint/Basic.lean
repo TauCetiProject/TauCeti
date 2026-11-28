@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Degree
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.LinearDisjoint
 import TauCeti.FieldTheory.RatFunc.Map
 import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.LinearAlgebra.Basis.Semilinear

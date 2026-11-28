@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.CharP.Lemmas
-public import TauCeti.RingTheory.Valuation.Discrete.Order
+public import TauCeti.RingTheory.Valuation.Discrete.Order.Basic
 
 /-!
 # Orders of `y ^ n - y` at a pole

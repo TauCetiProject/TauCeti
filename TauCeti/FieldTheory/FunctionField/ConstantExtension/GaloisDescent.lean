@@ -10,7 +10,7 @@ public import TauCeti.FieldTheory.FunctionField.GeometricDegree
 public import TauCeti.FieldTheory.Galois.SemilinearDescent
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Algebraic
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.LinearDisjoint
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.LinearDisjoint.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.FieldTheory.RatFunc.Transcendental
 

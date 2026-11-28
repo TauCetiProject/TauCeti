@@ -89,7 +89,9 @@ weights.
   type with only finitely many nontrivial finite free factors is the `finsum` of their ranks.
 * `LinearMap.sum_finrank_add_finrank_ker_of_surjective`: rank–nullity for a surjection from a
   finite-dimensional space onto a finite dependent product, whose factors are then finite
-  (`LinearMap.finite_of_surjective_pi`).
+  (`LinearMap.finite_of_surjective_pi`), together with the upper bound
+  `LinearMap.finrank_le_sum_finrank_add_finrank_ker` for an arbitrary linear map into a finite
+  dependent product of finite-dimensional spaces.
 * `TauCeti.exists_isRegular_single_sub_single_sub`: an ordered difference of standard coordinate
   vectors on two different coordinates and any other ordered difference differ regularly at some
   coordinate.
@@ -507,6 +509,20 @@ public theorem sum_finrank_add_finrank_ker_of_surjective {K M ι : Type*} [Divis
   have := finite_of_surjective_pi Φ hΦ
   rw [← Module.finrank_pi_fintype, ← finrank_top K, ← range_eq_top.2 hΦ]
   exact finrank_range_add_finrank_ker Φ
+
+/-- **Rank–nullity upper bound into a finite product**: for any linear map `Φ` into a finite
+dependent product of finite-dimensional spaces, the dimension of the source is at most the sum of
+the dimensions of the factors plus the dimension of the kernel of `Φ`. -/
+public theorem finrank_le_sum_finrank_add_finrank_ker {K M ι : Type*} [DivisionRing K]
+    [Fintype ι] [AddCommGroup M] [Module K M] {Q : ι → Type*}
+    [∀ i, AddCommGroup (Q i)] [∀ i, Module K (Q i)] [∀ i, FiniteDimensional K (Q i)]
+    (Φ : M →ₗ[K] (i : ι) → Q i) :
+    Module.finrank K M ≤ ∑ i, Module.finrank K (Q i) + Module.finrank K (ker Φ) := by
+  by_cases hM : FiniteDimensional K M
+  · rw [← finrank_range_add_finrank_ker Φ, add_le_add_iff_right]
+    exact (Submodule.finrank_le (range Φ)).trans (Module.finrank_pi_fintype K).le
+  · rw [Module.finrank_of_not_finite hM]
+    exact Nat.zero_le _
 
 /-- For a linear map `A` on `Fin 2 → K`, the value at `Pi.single 1 1` is the difference of the
 values at `1` and at `Pi.single 0 1`, since `1 = Pi.single 0 1 + Pi.single 1 1`. -/

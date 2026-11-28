@@ -27,6 +27,9 @@ field `F⟮α⟯` itself.
   algebraMap R F⟮α⟯ r` if and only if `α ^ n = algebraMap R E r`.
 * `IntermediateField.adjoin_adjoinSimple_gen_eq_top`: the generator of `F⟮α⟯` generates it over
   `F`.
+* `IntermediateField.restrictScalars_adjoin_eq_fieldRange_sup`: restricting scalars of
+  `adjoin k' S` to `k` inside `E / k' / k` gives the compositum of the image of `k'` and
+  `adjoin k S`.
 -/
 
 public section
@@ -55,5 +58,13 @@ theorem AdjoinSimple.gen_pow_eq_algebraMap_iff {R : Type*} [CommSemiring R] [Alg
 @[simp]
 theorem adjoin_adjoinSimple_gen_eq_top (α : E) : F⟮AdjoinSimple.gen F α⟯ = ⊤ :=
   lift_injective _ (by simp)
+
+/-- Restricting scalars of `adjoin k' S` to `k` inside an ambient extension `E / k' / k` gives the
+compositum of the image of `k'` and `adjoin k S`. -/
+theorem restrictScalars_adjoin_eq_fieldRange_sup {k k' E : Type*} [Field k] [Field k'] [Field E]
+    [Algebra k k'] [Algebra k E] [Algebra k' E] [IsScalarTower k k' E] (S : Set E) :
+    (adjoin k' S).restrictScalars k = (IsScalarTower.toAlgHom k k' E).fieldRange ⊔ adjoin k S := by
+  rw [restrictScalars_adjoin_of_algEquiv (IsScalarTower.toAlgHom k k' E).equivFieldRange
+      (by ext; simp), restrictScalars_adjoin_eq_sup]
 
 end IntermediateField

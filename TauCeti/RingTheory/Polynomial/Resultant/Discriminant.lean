@@ -20,7 +20,7 @@ public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.Polynomial.Localization
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
-import TauCeti.RingTheory.PowerBasis
+import TauCeti.RingTheory.PowerBasis.Basic
 public import TauCeti.RingTheory.Polynomial.RootEnumeration
 
 /-!

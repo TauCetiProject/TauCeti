@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.FieldTheory.IntermediateField.ScalarTower
 public import TauCeti.FieldTheory.Minpoly.IsIntegrallyClosedIn
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.PrimitiveElement
 import TauCeti.FieldTheory.IntermediateField.LinearDisjoint
 import TauCeti.FieldTheory.IntermediateField.Map
 
@@ -31,7 +33,9 @@ degree identity `[k' : k] · deg (Con D) = [F' : F] · deg D` for the conorm int
 Linear disjointness is not automatic; it is what an inseparable constant field extension can
 destroy.  It does hold whenever `k' / k` is separable and `k` is the exact constant field of `F`;
 that is `TauCeti.linearDisjoint_fieldRange_of_isIntegrallyClosedIn`, from which the degree
-equality is derived here.
+equality is derived here.  It also holds for every simple algebraic constant field extension
+`k' = k(α)` over an exact constant field — in particular, for every prime-degree extension
+regardless of separability — because `minpoly F α = (minpoly k α).map (algebraMap k F)`.
 Mathlib's predicate `IntermediateField.LinearDisjoint` also supplies the degree equality, through
 `TauCeti.finrank_constantCompositum_eq_finrank_of_linearDisjoint`.
 
@@ -47,6 +51,10 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
 * `TauCeti.constantCompositumAlgebra`: the `k'`-algebra structure on `F · k'`, with the scalar
   towers `TauCeti.isScalarTower_constantCompositum` and
   `TauCeti.isScalarTower_base_constantCompositum`.
+* `TauCeti.restrictScalarsConstantCompositumEquiv`: the `F`-algebra equivalence
+  `(F · L) · N ≃ₐ[F] F · (N.restrictScalars k)`.
+* `TauCeti.constantCompositumBotEquiv`: the `F`-algebra equivalence
+  `F ≃ₐ[F] constantCompositum F (⊥ : IntermediateField k k') F'`.
 
 ## Main results
 
@@ -56,16 +64,33 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
   gives `K(t)` as a subfield of the ambient field.
 * `TauCeti.constantCompositum_eq_top_iff`: an intermediate field into which `k'` maps is generated
   over `F` by the image of `k'` exactly when it is the compositum `F · k'`.
+* `TauCeti.constantCompositum_bot`, `TauCeti.coe_constantCompositumBotEquiv_apply`, and
+  `TauCeti.constantCompositumBotEquiv_algebraMap`: adjoining the bottom intermediate field `⊥`
+  over `k` gives `⊥`, together with the coercion and `algebraMap` compatibility of
+  `TauCeti.constantCompositumBotEquiv`.
 * `TauCeti.constantCompositum_eq_top_iff_of_range_eq`: the compositum `F · k'` depends only on
   the image of `F` in `F'`.
 * `TauCeti.constantCompositum_eq_top_of_eq_top`: if `F' = F · k'`, then `F' = E · k'` for every
   intermediate field `E` of `F' / F`.
+* `TauCeti.constantCompositum_le_of_isScalarTower` and
+  `TauCeti.constantCompositum_eq_top_of_isScalarTower`: enlarging `k'` to `k''` compatibly with
+  `F'` enlarges `F · k'` and preserves `constantCompositum F _ F' = ⊤`.
+* `TauCeti.restrictScalars_constantCompositum_eq`,
+  `TauCeti.coe_restrictScalarsConstantCompositumEquiv_apply`,
+  `TauCeti.coe_restrictScalarsConstantCompositumEquiv_symm_apply`, and
+  `TauCeti.restrictScalarsConstantCompositumEquiv_algebraMap`: the tower identity
+  `((F · L) · N).restrictScalars F = F · (N.restrictScalars k)` for intermediate fields
+  `k ⊆ L ⊆ N ⊆ k'`, together with the coercion and `algebraMap` compatibility of
+  `TauCeti.restrictScalarsConstantCompositumEquiv`.
 * `TauCeti.constantCompositum_tower_eq_top`: if `F' = F · k'` and `F'' = F' · k''` in a compatible
   square of extensions, then `F'' = F · k''`.
 * `TauCeti.constantCompositum_eq_top_iff_adjoin_range_eq_top`: `F'` is the compositum `F · k'`
   exactly when the image of `F` generates `F'` over `k'`.
 * `TauCeti.constantCompositum_eq_top_of_span_eq_top`: `F'` is the compositum `F · k'` when the
   image of `F` spans `F'` linearly over `k'`.
+* `TauCeti.exists_intermediateField_isIntegrallyClosedIn_constantCompositum`: pulling back
+  `E · M` along `k'' → F'` produces an intermediate field `M₁` of `k'' / M` that is exact in
+  `E · M` whenever `k''` is exact in `F'`.
 * `TauCeti.finrank_constantCompositum_mul_geometricDegree`: the tower law
   `[F·k' : F] · n(F'/F) = [F' : F]`.
 * `TauCeti.finrank_eq_geometricDegree_mul_finrank_of_finrank_constantCompositum_eq`:
@@ -79,6 +104,12 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
   compositum `F · k'`.
 * `TauCeti.finrank_constantCompositum_eq_finrank_of_isSeparable`: that degree equality holds for a
   separable constant field extension over an exact constant field.
+* `TauCeti.finrank_constantCompositum_eq_finrank_of_adjoin_simple_eq_top`,
+  `TauCeti.finrank_constantCompositum_eq_finrank_of_finrank_prime`, and
+  `TauCeti.finrank_eq_finrank_of_constantCompositum_eq_top_of_finrank_prime`: the degree equality
+  `[F · k' : F] = [k' : k]` holds over an exact constant field `k ⊆ F` for every simple algebraic
+  extension `k' = k(α)`, and in particular `[F' : F] = [k' : k]` when `F' = F · k'` and
+  `[k' : k]` is prime.
 * `TauCeti.linearDisjoint_fieldRange_of_isIntegrallyClosedIn` and
   `TauCeti.linearIndependent_algebraMap_comp_of_isIntegrallyClosedIn`: the stronger
   linear-disjointness and persistence-of-linear-independence statements from which that degree
@@ -198,6 +229,24 @@ theorem constantCompositum_eq_top_of_eq_top (E : IntermediateField F F')
     (constantCompositum_le_iff F k' F').2 fun c ↦ algebraMap_mem_constantCompositum E k' F' c
   rw [h] at hle
   exact eq_top_iff.2 fun z _ ↦ hle IntermediateField.mem_top
+
+variable {F k' F'} in
+/-- **Enlarging the constant field enlarges the compositum**: if `k''` receives `k'` compatibly
+with `F'`, then `F · k' ≤ F · k''`. -/
+theorem constantCompositum_le_of_isScalarTower {k'' : Type*} [CommSemiring k''] [Algebra k' k'']
+    [Algebra k'' F'] [IsScalarTower k' k'' F'] :
+    constantCompositum F k' F' ≤ constantCompositum F k'' F' :=
+  (constantCompositum_le_iff F k' F').2 fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply k' k'' F']
+    exact algebraMap_mem_constantCompositum F k'' F' (algebraMap k' k'' c)
+
+variable {F k' F'} in
+/-- **Enlarging the constant field keeps the compositum everything**: if `F' = F · k'` and `k''`
+receives `k'` compatibly with `F'`, then `F' = F · k''`. -/
+theorem constantCompositum_eq_top_of_isScalarTower {k'' : Type*} [CommSemiring k''] [Algebra k' k'']
+    [Algebra k'' F'] [IsScalarTower k' k'' F'] (h : constantCompositum F k' F' = ⊤) :
+    constantCompositum F k'' F' = ⊤ :=
+  eq_top_iff.2 (h ▸ constantCompositum_le_of_isScalarTower)
 
 variable {F k' F'} in
 /-- **Transitivity of constant composita in a tower**: if `F' = F · k'` and `F'' = F' · k''` in a
@@ -331,6 +380,57 @@ end ConstantsInBase
 
 end Compositum
 
+/-- **Adjoining the trivial intermediate field `⊥ : IntermediateField k k'` gives `⊥`**: the
+compositum of `F` with `⊥` inside `F'` is `F` itself. -/
+@[simp]
+theorem constantCompositum_bot [Field k] [Field k'] [Algebra k k'] [Algebra k F] [Algebra k F']
+    [Algebra k' F'] [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] :
+    constantCompositum F (⊥ : IntermediateField k k') F' = ⊥ := by
+  refine le_antisymm ((constantCompositum_le_iff F (⊥ : IntermediateField k k') F').2 fun c ↦ ?_)
+    bot_le
+  obtain ⟨a, ha⟩ := IntermediateField.mem_bot.1 c.property
+  rw [IsScalarTower.algebraMap_apply (⊥ : IntermediateField k k') k' F',
+    IntermediateField.algebraMap_apply, ← ha, ← IsScalarTower.algebraMap_apply k k' F',
+    IsScalarTower.algebraMap_apply k F F']
+  exact IntermediateField.algebraMap_mem _ _
+
+/-- The `F`-algebra equivalence identifying `F` with
+`constantCompositum F (⊥ : IntermediateField k k') F'`. -/
+noncomputable def constantCompositumBotEquiv (F k' F' : Type*) [Field k] [Field F] [Field k']
+    [Field F'] [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
+    [IsScalarTower k k' F'] [IsScalarTower k F F'] :
+    F ≃ₐ[F] constantCompositum F (⊥ : IntermediateField k k') F' :=
+  (IntermediateField.botEquiv F F').symm.trans
+    (IntermediateField.equivOfEq (constantCompositum_bot (k := k)).symm)
+
+/-- Coercion of `constantCompositumBotEquiv` to `F'` is `algebraMap F F'`. -/
+@[simp]
+theorem coe_constantCompositumBotEquiv_apply (F k' F' : Type*) [Field k] [Field F] [Field k']
+    [Field F'] [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
+    [IsScalarTower k k' F'] [IsScalarTower k F F'] (x : F) :
+    (constantCompositumBotEquiv F k' F' (k := k) x : F') = algebraMap F F' x := by
+  simp [constantCompositumBotEquiv]
+
+/-- Compatibility of `constantCompositumBotEquiv` with the base constant-field embeddings
+`k → F` and `⊥ → constantCompositum F ⊥ F'`. -/
+@[simp]
+theorem constantCompositumBotEquiv_algebraMap (F k' F' : Type*) [Field k] [Field F] [Field k']
+    [Field F'] [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
+    [IsScalarTower k k' F'] [IsScalarTower k F F'] (c : k) :
+    letI := constantCompositumAlgebra F (⊥ : IntermediateField k k') F'
+    constantCompositumBotEquiv F k' F' (k := k) (algebraMap k F c) =
+      algebraMap (⊥ : IntermediateField k k')
+        (constantCompositum F (⊥ : IntermediateField k k') F')
+        ((IntermediateField.botEquiv k k').symm c) := by
+  let := constantCompositumAlgebra F (⊥ : IntermediateField k k') F'
+  have := isScalarTower_constantCompositum F (⊥ : IntermediateField k k') F'
+  exact Subtype.ext <| by
+    rw [coe_constantCompositumBotEquiv_apply, ← IsScalarTower.algebraMap_apply k F F',
+      ← IntermediateField.algebraMap_apply
+        (S := constantCompositum F (⊥ : IntermediateField k k') F'),
+      ← IsScalarTower.algebraMap_apply (⊥ : IntermediateField k k') _ F']
+    exact IsScalarTower.algebraMap_apply k k' F' c
+
 /-- The compositum `F · k'` is the same subfield of `F'` whether it is formed by adjoining `k'` to
 `F` or by adjoining the image of `F` to `k'`. -/
 theorem constantCompositum_toSubfield_eq_adjoin_toSubfield (F k' F' : Type*) [Field F] [Field k']
@@ -389,6 +489,89 @@ theorem constantCompositum_eq_adjoin_of_adjoin_eq_top (S : Set k')
 
 end GeneratedCompositum
 
+section Tower
+
+variable [Field k] [Field k'] [Algebra k k'] [Algebra k' F'] [Algebra F F']
+
+/-- **Tower identity for `constantCompositum`**: forming the constant compositum in two steps
+`(F · L) · N` gives the same subfield of `F'` as forming `F · N` directly after restricting `N`
+to an intermediate field over `k`. -/
+@[simp]
+theorem restrictScalars_constantCompositum_eq (L : IntermediateField k k')
+    (N : IntermediateField L k') :
+    (constantCompositum (constantCompositum F L F') N F').restrictScalars F =
+      constantCompositum F (N.restrictScalars k) F' := by
+  let FL := constantCompositum F L F'
+  have hFL : FL ≤ constantCompositum F (N.restrictScalars k) F' :=
+    (constantCompositum_le_iff F L F').2 fun c ↦ by
+      rw [IsScalarTower.algebraMap_apply L k' F']
+      exact algebraMap_mem_constantCompositum F (N.restrictScalars k) F' ⟨c.val, N.algebraMap_mem c⟩
+  refine le_antisymm ((IntermediateField.le_extendScalars_iff hFL _).1
+    ((constantCompositum_le_iff FL N F').2 fun c ↦ ?_))
+    ((constantCompositum_le_iff F (N.restrictScalars k) F').2 fun c ↦ ?_)
+  · rw [IntermediateField.mem_extendScalars, IsScalarTower.algebraMap_apply N k' F']
+    exact algebraMap_mem_constantCompositum F (N.restrictScalars k) F' ⟨c.val, c.property⟩
+  · rw [IntermediateField.mem_restrictScalars,
+      IsScalarTower.algebraMap_apply (N.restrictScalars k) k' F']
+    exact algebraMap_mem_constantCompositum FL N F' ⟨c.val, c.property⟩
+
+section
+variable (F F')
+
+/-- The `F`-algebra equivalence `(F · L) · N ≃ₐ[F] F · (N.restrictScalars k)` behind
+`TauCeti.restrictScalars_constantCompositum_eq`. -/
+def restrictScalarsConstantCompositumEquiv (L : IntermediateField k k')
+    (N : IntermediateField L k') :
+    constantCompositum (constantCompositum F L F') N F' ≃ₐ[F]
+      constantCompositum F (N.restrictScalars k) F' :=
+  (IntermediateField.restrictScalarsAlgEquiv F _).symm.trans
+    (IntermediateField.equivOfEq (restrictScalars_constantCompositum_eq L N))
+
+/-- Coercion of `restrictScalarsConstantCompositumEquiv` to `F'` is the identity. -/
+@[simp]
+theorem coe_restrictScalarsConstantCompositumEquiv_apply (L : IntermediateField k k')
+    (N : IntermediateField L k') (x : constantCompositum (constantCompositum F L F') N F') :
+    (restrictScalarsConstantCompositumEquiv F F' L N x : F') = x := by
+  simp [restrictScalarsConstantCompositumEquiv]
+
+/-- Coercion of `(restrictScalarsConstantCompositumEquiv _ _ _ _).symm` to `F'` is the identity. -/
+@[simp]
+theorem coe_restrictScalarsConstantCompositumEquiv_symm_apply (L : IntermediateField k k')
+    (N : IntermediateField L k') (x : constantCompositum F (N.restrictScalars k) F') :
+    ((restrictScalarsConstantCompositumEquiv F F' L N).symm x : F') = x := by
+  simp [restrictScalarsConstantCompositumEquiv]
+
+/-- Compatibility of `restrictScalarsConstantCompositumEquiv` with the constant-field embeddings
+`N → (F · L) · N` and `N.restrictScalars k → F · (N.restrictScalars k)`. -/
+@[simp]
+theorem restrictScalarsConstantCompositumEquiv_algebraMap (L : IntermediateField k k')
+    (N : IntermediateField L k') (c : N) :
+    letI := constantCompositumAlgebra F L F'
+    letI := constantCompositumAlgebra (constantCompositum F L F') N F'
+    letI := constantCompositumAlgebra F (N.restrictScalars k) F'
+    restrictScalarsConstantCompositumEquiv F F' L N
+        (algebraMap N (constantCompositum (constantCompositum F L F') N F') c) =
+      algebraMap (N.restrictScalars k) (constantCompositum F (N.restrictScalars k) F')
+        ((IntermediateField.restrictScalarsAlgEquiv k N).symm c) := by
+  let := constantCompositumAlgebra F L F'
+  let := constantCompositumAlgebra (constantCompositum F L F') N F'
+  let := constantCompositumAlgebra F (N.restrictScalars k) F'
+  have := isScalarTower_constantCompositum (constantCompositum F L F') N F'
+  have := isScalarTower_constantCompositum F (N.restrictScalars k) F'
+  apply Subtype.ext
+  rw [coe_restrictScalarsConstantCompositumEquiv_apply,
+    ← IntermediateField.algebraMap_apply (S := constantCompositum (constantCompositum F L F') N F'),
+    ← IsScalarTower.algebraMap_apply N _ F',
+    ← IntermediateField.algebraMap_apply (S := constantCompositum F (N.restrictScalars k) F'),
+    ← IsScalarTower.algebraMap_apply (N.restrictScalars k) _ F',
+    IsScalarTower.algebraMap_apply N k' F',
+    IsScalarTower.algebraMap_apply (N.restrictScalars k) k' F',
+    IntermediateField.algebraMap_apply, IntermediateField.algebraMap_apply,
+    IntermediateField.coe_restrictScalarsAlgEquiv_symm_apply]
+
+end
+
+end Tower
 /-! ### The constants of the compositum over the original constants -/
 
 section ConstantCompositumAlgebra
@@ -406,6 +589,40 @@ theorem isScalarTower_base_constantCompositum :
   .of_algebraMap_eq fun c ↦ Subtype.ext (IsScalarTower.algebraMap_apply k k' F' c)
 
 end ConstantCompositumAlgebra
+
+/-- Cutting out the intersection `(E · M) ∩ k''` inside `k''`: when `k''` is exact in `F'`, the
+pullback `M₁` of `E · M` along `k'' → F'` sits as an intermediate field of `k'' / M`, acts
+compatibly on `E · M`, and is exact in `E · M`. -/
+theorem exists_intermediateField_isIntegrallyClosedIn_constantCompositum
+    {E M k'' F' : Type*} [Field E] [Field M] [Field k''] [Field F']
+    [Algebra M k''] [Algebra M F'] [Algebra k'' F'] [Algebra E F'] [IsScalarTower M k'' F']
+    (hex'' : IsIntegrallyClosedIn k'' F') :
+    let EM := constantCompositum E M F'
+    letI := constantCompositumAlgebra E M F'
+    ∃ (M₁ : IntermediateField M k'') (_ : Algebra M₁ EM),
+      IsScalarTower M M₁ EM ∧ IsScalarTower M₁ EM F' ∧ IsIntegrallyClosedIn M₁ EM := by
+  let EM := constantCompositum E M F'
+  let := constantCompositumAlgebra E M F'
+  have := isScalarTower_constantCompositum E M F'
+  let M₁ : IntermediateField M k'' :=
+    ((EM.toSubfield).comap (algebraMap k'' F')).toIntermediateField fun m ↦ by
+      rw [Subfield.mem_comap, ← IsScalarTower.algebraMap_apply M k'' F']
+      exact algebraMap_mem_constantCompositum E M F' m
+  let _ : Algebra M₁ EM := ((algebraMap M₁ F').codRestrict EM fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply M₁ k'' F', IntermediateField.algebraMap_apply]
+    exact c.property).toAlgebra
+  have hstEM : IsScalarTower M₁ EM F' := .of_algebraMap_eq fun c ↦ by
+    simp [IntermediateField.algebraMap_apply, RingHom.algebraMap_toAlgebra]
+  have hstM : IsScalarTower M M₁ EM := .of_algebraMap_eq fun m ↦ (algebraMap EM F').injective <| by
+    simp [← IsScalarTower.algebraMap_apply _ _ F']
+  refine ⟨M₁, inferInstance, hstM, hstEM,
+    isIntegrallyClosedIn_iff.2 ⟨(algebraMap M₁ EM).injective, fun {y} hy ↦ ?_⟩⟩
+  obtain ⟨c, hc⟩ := IsIntegrallyClosedIn.isIntegral_iff.1
+    ((hy.map (IsScalarTower.toAlgHom M₁ EM F')).tower_top : IsIntegral k'' (y : F'))
+  have hc' : algebraMap k'' F' c = (y : F') := hc
+  refine ⟨⟨c, show algebraMap k'' F' c ∈ EM from hc'.symm ▸ y.property⟩, Subtype.ext ?_⟩
+  rw [← IntermediateField.algebraMap_apply (S := EM), ← IsScalarTower.algebraMap_apply M₁ EM F',
+    IsScalarTower.algebraMap_apply M₁ k'' F', IntermediateField.algebraMap_apply, hc']
 
 /-! ### The degree of `F' / F` when `[F·k' : F]` is known -/
 
@@ -530,6 +747,44 @@ theorem finrank_constantCompositum_eq_finrank_of_isSeparable (hex : IsIntegrally
     Module.finrank F (constantCompositum F k' F') = Module.finrank k k' :=
   finrank_constantCompositum_eq_finrank_of_linearDisjoint F k' F'
     (linearDisjoint_fieldRange_of_isIntegrallyClosedIn hex)
+
+open scoped IntermediateField in
+/-- **Adjoining a simple algebraic constant extension to an exact constant field preserves
+finrank**: if `k` is relatively algebraically closed in `F` and `k' = k⟮α⟯` for an element
+`α : k'` integral over `k` (with no separability hypothesis), then `[F · k' : F] = [k' : k]`. -/
+theorem finrank_constantCompositum_eq_finrank_of_adjoin_simple_eq_top
+    (hex : IsIntegrallyClosedIn k F) {α : k'} (hα_int : IsIntegral k α) (hα : k⟮α⟯ = ⊤) :
+    Module.finrank F (constantCompositum F k' F') = Module.finrank k k' := by
+  have hFα : constantCompositum F k' F' = F⟮algebraMap k' F' α⟯ := by
+    rw [constantCompositum_eq_adjoin_of_adjoin_eq_top F k' F' ({α} : Set k') hα,
+      Set.image_singleton]
+  have hkα : k⟮algebraMap k' F' α⟯ = (IsScalarTower.toAlgHom k k' F').fieldRange := by
+    rw [AlgHom.fieldRange_eq_map, ← hα, IntermediateField.adjoin_map, Set.image_singleton,
+      IsScalarTower.coe_toAlgHom']
+  have hint : IsIntegral k (algebraMap k' F' α) := hα_int.map (IsScalarTower.toAlgHom k k' F')
+  rw [hFα, IntermediateField.finrank_adjoin_simple_eq_finrank_adjoin_simple_of_isIntegrallyClosedIn
+      hex hint, hkα]
+  exact (AlgEquiv.ofInjectiveField (IsScalarTower.toAlgHom k k' F')).symm.toLinearEquiv.finrank_eq
+
+/-- **Adjoining a prime-degree constant extension to an exact constant field preserves finrank**:
+if `k` is relatively algebraically closed in `F` and `[k' : k]` is prime (with no separability or
+characteristic hypothesis), then `[F · k' : F] = [k' : k]`. -/
+theorem finrank_constantCompositum_eq_finrank_of_finrank_prime
+    (hex : IsIntegrallyClosedIn k F) (hp : (Module.finrank k k').Prime) :
+    Module.finrank F (constantCompositum F k' F') = Module.finrank k k' := by
+  have : FiniteDimensional k k' := Module.finite_of_finrank_pos hp.pos
+  obtain ⟨α, hα⟩ := Field.exists_adjoin_simple_eq_top_of_finrank_prime hp
+  exact finrank_constantCompositum_eq_finrank_of_adjoin_simple_eq_top F k' F' hex
+    (Algebra.IsIntegral.isIntegral α) hα
+
+/-- **Prime-degree compositum degree**: if `k` is relatively algebraically closed in `F`,
+`[k' : k]` is prime, and `F' = F · k'`, then `[F' : F] = [k' : k]`. -/
+theorem finrank_eq_finrank_of_constantCompositum_eq_top_of_finrank_prime
+    (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤)
+    (hp : (Module.finrank k k').Prime) :
+    Module.finrank F F' = Module.finrank k k' := by
+  rw [← (IntermediateField.topEquiv (F := F) (E := F')).toLinearEquiv.finrank_eq, ← h]
+  exact finrank_constantCompositum_eq_finrank_of_finrank_prime F k' F' hex hp
 
 end LinearDisjoint
 
