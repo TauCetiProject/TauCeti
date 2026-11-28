@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.Card
-public import Mathlib.Data.Finset.Image
 public import Mathlib.Data.Nat.ModEq
 public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.Data.Set.Finite.Basic
@@ -234,7 +233,9 @@ example : primeTranslates {0, 1} = {2} := by
   by_contra hne
   have hodd : ¬Even n := fun he ↦ hne (hn.even_iff.1 he)
   have h1 : n + 1 = 2 := hn1.even_iff.1 (Nat.even_add_one.2 hodd)
-  exact Nat.not_prime_one (by rwa [show n = 1 by omega] at hn)
+  have hn_eq : n = 1 := by omega
+  rw [hn_eq] at hn
+  exact Nat.not_prime_one hn
 
 /-- One of `n`, `n + 2`, `n + 4` is divisible by `3`, so all three are prime only for `n = 3`. -/
 example : primeTranslates {0, 2, 4} = {3} := by
@@ -245,9 +246,11 @@ example : primeTranslates {0, 2, 4} = {3} := by
   have hdvd : 3 ∣ n ∨ 3 ∣ n + 2 ∨ 3 ∣ n + 4 := by omega
   rcases hdvd with h | h | h
   · exact ((Nat.prime_dvd_prime_iff_eq Nat.prime_three h0).1 h).symm
-  · have := (Nat.prime_dvd_prime_iff_eq Nat.prime_three h2).1 h
-    exact absurd h0 (by rw [show n = 1 by omega]; exact Nat.not_prime_one)
-  · have := (Nat.prime_dvd_prime_iff_eq Nat.prime_three h4).1 h
+  · have h3 := (Nat.prime_dvd_prime_iff_eq Nat.prime_three h2).1 h
+    have hn_eq : n = 1 := by omega
+    rw [hn_eq] at h0
+    exact absurd h0 Nat.not_prime_one
+  · have h3 := (Nat.prime_dvd_prime_iff_eq Nat.prime_three h4).1 h
     omega
 
 end TauCeti.SieveMaynard

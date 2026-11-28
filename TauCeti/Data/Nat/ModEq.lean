@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.Card
-public import Mathlib.Data.Finset.Image
 public import Mathlib.Data.Nat.ModEq
 import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Tactic.Ring
