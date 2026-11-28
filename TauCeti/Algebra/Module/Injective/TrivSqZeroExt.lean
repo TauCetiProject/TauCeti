@@ -34,7 +34,8 @@ variable {k V : Type*} [Field k] [AddCommGroup V] [Module k V] [Module kᵐᵒ�
   [IsCentralScalar k V]
 
 /-- The socle of the regular module of a nontrivial square-zero extension of a field is the ideal
-of elements with zero scalar component. -/
+of elements with zero scalar component. This is not a `simp` lemma: `simp` already
+unfolds torsion membership, so the `simpNF` linter rejects it. -/
 theorem mem_torsionBySet_maximalIdeal_iff_fst_eq_zero [Nontrivial V] {a : TrivSqZeroExt k V} :
     a ∈ Submodule.torsionBySet (TrivSqZeroExt k V) (TrivSqZeroExt k V)
       (maximalIdeal (TrivSqZeroExt k V)) ↔ a.fst = 0 := by
@@ -54,17 +55,17 @@ theorem mem_torsionBySet_maximalIdeal_iff_fst_eq_zero [Nontrivial V] {a : TrivSq
       simpa only [maximalIdeal_eq_bot, Ideal.mem_bot] using h
     ext <;> simp [smul_eq_mul, fst_mul, snd_mul, hr₀, ha]
 
-/-- A trivial square-zero extension of a field by a vector space of finite dimension at least
-two is not self-injective. -/
-theorem not_moduleInjective_self_of_one_lt_finrank (h : 1 < Module.finrank k V) :
+/-- A trivial square-zero extension of a field by a vector space of dimension at least two,
+possibly infinite, is not self-injective. -/
+theorem not_moduleInjective_self_of_one_lt_rank (h : 1 < Module.rank k V) :
     ¬ Module.Injective (TrivSqZeroExt k V) (TrivSqZeroExt k V) := by
   intro hinj
-  have : Nontrivial V := Module.nontrivial_of_finrank_pos (by omega : 0 < Module.finrank k V)
+  have : Nontrivial V := rank_pos_iff_nontrivial.mp (zero_lt_one.trans h)
   obtain ⟨v, hv⟩ := exists_ne (0 : V)
   have hspan : k ∙ v ≠ ⊤ := fun e ↦ by
-    have hdim := congrArg (fun U : Submodule k V ↦ Module.finrank k U) e
-    rw [finrank_span_singleton hv, finrank_top] at hdim
-    omega
+    have hle : Module.rank k (k ∙ v) ≤ 1 := (rank_span_le {v}).trans (by simp)
+    rw [e, rank_top] at hle
+    exact (not_le.mpr h) hle
   obtain ⟨w, hw⟩ := SetLike.exists_notMem_of_ne_top _ hspan
   -- Self-injectivity would put every socle element in the principal ideal of `inr v`.
   have hv' : (inr v : TrivSqZeroExt k V) ≠ 0 :=

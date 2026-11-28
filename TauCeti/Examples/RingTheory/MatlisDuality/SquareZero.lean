@@ -84,7 +84,7 @@ theorem exists_isInjectiveEnvelope_idealOfVars_sq :
     have : Module.Injective B B :=
       ((Module.Baer.of_injective hι.moduleInjective).of_equiv f.symm).injective
     have hinj := Module.Injective.of_ringEquiv e.toRingEquiv e.toRingEquiv.toSemilinearEquiv
-    exact TrivSqZeroExt.not_moduleInjective_self_of_one_lt_finrank
-      (k := k) (V := σ → k) (by simpa using hcard) hinj
+    exact TrivSqZeroExt.not_moduleInjective_self_of_one_lt_rank (k := k) (V := σ → k)
+      (Module.one_lt_rank_of_one_lt_finrank (by simpa using hcard)) hinj
 
 end TauCeti
