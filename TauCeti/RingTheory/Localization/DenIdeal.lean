@@ -55,6 +55,17 @@ lemma Algebra.denIdeal_def (x : K) :
   rw [Algebra.denIdeal, Submodule.mem_colon_singleton, Algebra.smul_def, Submodule.mem_one]
   exact exists_congr fun s ↦ eq_comm
 
+/-- The identity element lies in the denominator ideal of `x` precisely when `x` lies in the image
+of `R`. -/
+@[simp high] lemma Algebra.one_mem_denIdeal_iff {x : K} :
+    (1 : R) ∈ Algebra.denIdeal K x ↔ x ∈ Set.range (algebraMap R K) := by
+  simp [eq_comm]
+
+/-- The denominator ideal of `x` is the unit ideal precisely when `x` lies in the image of `R`. -/
+@[simp] lemma Algebra.denIdeal_eq_top_iff {x : K} :
+    Algebra.denIdeal K x = (⊤ : Ideal R) ↔ x ∈ Set.range (algebraMap R K) := by
+  rw [Ideal.eq_top_iff_one, Algebra.one_mem_denIdeal_iff]
+
 end Semiring
 
 section CommSemiring

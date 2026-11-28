@@ -22,8 +22,10 @@ proves the converse, algebraic Hartogs' principle, on an open subset `U` at whos
 rings are integrally closed, for instance an open subset of a normal scheme: a rational function
 with no poles at the codimension-one points of `U` is the germ of a regular function on `U`.
 
-The local step is that a Noetherian integrally closed domain is the intersection of its
-localizations at the primes of height one (`TauCeti.mem_range_algebraMap_of_forall_height_eq_one`),
+The local step is that a Noetherian integrally closed domain satisfies `(S_2)`
+(`TauCeti.satisfiesSerreS_two_of_isIntegrallyClosed`) and is therefore the intersection of its
+localizations at the primes of height one
+(`Module.SatisfiesSerreS.mem_range_algebraMap_of_forall_height_eq_one`),
 and the localizations of `𝒪_{X,x}` at its primes of height one are the local rings at the
 codimension-one generizations of `x`
 (`TauCeti.AlgebraicGeometry.Scheme.exists_specializes_and_comap_stalkSpecializes_maximalIdeal_eq`).
@@ -149,7 +151,8 @@ theorem exists_algebraMap_stalk_eq_of_forall_ord_nonneg {x : X}
     [IsIntegrallyClosed (X.presheaf.stalk x)] {f : X.functionField}
     (hf : ∀ y : CodimensionOnePoint X, (y : X) ⤳ x → 0 ≤ X.ord f y) :
     ∃ g : X.presheaf.stalk x, algebraMap (X.presheaf.stalk x) X.functionField g = f := by
-  refine TauCeti.mem_range_algebraMap_of_forall_height_eq_one fun Q _ hQ ↦ ?_
+  refine satisfiesSerreS_two_of_isIntegrallyClosed.mem_range_algebraMap_of_forall_height_eq_one
+    fun Q _ hQ ↦ ?_
   -- `Q` is the prime of a generization `y` of `x`, of codimension one
   obtain ⟨y, hcoh, h, rfl⟩ := exists_specializes_and_comap_stalkSpecializes_maximalIdeal_eq Q
   rw [hQ] at hcoh
