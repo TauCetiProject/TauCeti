@@ -73,7 +73,7 @@ theorem IsHermitian.integral_re_trace_exp_add_le [IsProbabilityMeasure P]
   let Y : Ω → Matrix n n 𝕜 := fun ω ↦ NormedSpace.exp (X ω)
   have hY_meas : AEMeasurable Y P :=
     (NormedSpace.exp_continuous (𝔸 := Matrix n n 𝕜)).measurable.comp_aemeasurable hmeas
-  have hY_int : Integrable Y P := TauCeti.integrable_exp_of_ae_le_smul_one hmeas hupper
+  have hY_int : Integrable Y P := hmeas.integrable_exp_of_ae_le_smul_one hupper
   have hY_bounds : ∀ᵐ ω ∂P, (Y ω).PosDef ∧ Y ω ≤ Real.exp M • (1 : Matrix n n 𝕜) :=
     hupper.mono fun _ hU ↦ ⟨(TauCeti.isHermitian_of_le_smul_one hU).posDef_exp,
       TauCeti.exp_le_exp_smul_one hU⟩
@@ -144,7 +144,7 @@ theorem IsHermitian.integral_re_trace_exp_add_le [IsProbabilityMeasure P]
     have hYε_int_eq : ∫ ω, Y ω + ε • (1 : Matrix n n 𝕜) ∂P =
         (Matrix.of fun i j ↦ ∫ ω, Y ω i j ∂P) + ε • (1 : Matrix n n 𝕜) := by
       rw [integral_add hY_int (integrable_const _), integral_const, probReal_univ, one_smul,
-        TauCeti.integral_l2Op_matrix_eq_of hY_int]
+        hY_int.integral_l2Op_matrix_eq_of]
     rwa [hYε_int_eq] at hjensen
   have htend_g {A : Matrix n n 𝕜} (hA : A.PosDef) :
       Tendsto (fun ε : ℝ ↦ g (A + ε • (1 : Matrix n n 𝕜))) (𝓝[>] 0) (𝓝 (g A)) := by
@@ -156,7 +156,7 @@ theorem IsHermitian.integral_re_trace_exp_add_le [IsProbabilityMeasure P]
         eventually_mem_nhdsWithin.mono fun ε hε ↦
           hA.add_posSemidef (PosDef.one.smul hε).posSemidef⟩
     exact (hg_cont A hA).tendsto.comp hmap
-  have hRHS := htend_g (TauCeti.posDef_integral_exp hmeas hupper)
+  have hRHS := htend_g (hmeas.posDef_integral_exp hupper)
   have hLHS : Tendsto (fun ε : ℝ ↦ ∫ ω, g (Y ω + ε • (1 : Matrix n n 𝕜)) ∂P)
       (𝓝[>] 0) (𝓝 (∫ ω, RCLike.re (NormedSpace.exp (H + X ω)).trace ∂P)) := by
     refine tendsto_integral_filter_of_dominated_convergence
@@ -204,9 +204,8 @@ private theorem IndepFun.integral_re_trace_exp_add_add_le [IsProbabilityMeasure 
   have hmap_prod := hind.map_prod_eq_prod_map_map hS_meas hX_meas
   have hφ_int_prod : Integrable φ ((P.map S).prod (P.map X)) :=
     hmap_prod ▸ (integrable_map_measure hφ_cont.aestronglyMeasurable (hS_meas.prodMk hX_meas)).2 <|
-      TauCeti.integrable_re_trace_exp_of_ae_le_smul_one
-        (((continuous_const.add continuous_fst).add continuous_snd).measurable.comp_aemeasurable
-          (hS_meas.prodMk hX_meas))
+      (((continuous_const.add continuous_fst).add continuous_snd).measurable.comp_aemeasurable
+          (hS_meas.prodMk hX_meas)).integrable_re_trace_exp_of_ae_le_smul_one
         (M := ‖H‖ + MS + MX)
         ((hS_upper.and hX_upper).mono fun _ ⟨h1, h2⟩ ↦
           ((add_le_add (add_le_add hH_le h1) h2).trans_eq
@@ -235,11 +234,12 @@ private theorem IndepFun.integral_re_trace_exp_add_add_le [IsProbabilityMeasure 
   have hL : L.IsHermitian := IsSelfAdjoint.isHermitian (cfc_predicate Real.log _)
   have hHL_le : H + L ≤ ‖H + L‖ • (1 : Matrix n n 𝕜) :=
     (hH.add hL).le_smul_one_of_l2_opNorm_le le_rfl
-  have hrhs_int := TauCeti.integrable_re_trace_exp_of_ae_le_smul_one
-    (P := P.map S) (Z := fun A ↦ (H + L) + A)
+  have hrhs_int : Integrable (fun A ↦ RCLike.re (NormedSpace.exp ((H + L) + A)).trace)
+      (P.map S) :=
     (continuous_const.add continuous_id).measurable.aemeasurable
-    (M := ‖H + L‖ + MS)
-    (hS_upper_map.mono fun _ hA ↦ (add_le_add hHL_le hA).trans_eq (add_smul _ _ _).symm)
+      |>.integrable_re_trace_exp_of_ae_le_smul_one
+      (M := ‖H + L‖ + MS)
+      (hS_upper_map.mono fun _ hA ↦ (add_le_add hHL_le hA).trans_eq (add_smul _ _ _).symm)
   rw [← integral_map (hS_meas.prodMk hX_meas) hφ_cont.aestronglyMeasurable, hmap_prod,
     integral_prod φ hφ_int_prod, ← integral_map hS_meas hrhs_cont.aestronglyMeasurable]
   exact integral_mono_ae hφ_int_prod.integral_prod_left hrhs_int hinner
@@ -264,12 +264,7 @@ theorem iIndepFun.integral_re_trace_exp_add_sum_le [IsProbabilityMeasure P]
     have hmeas_t := fun k hk ↦ hmeas k (Finset.mem_insert_of_mem hk)
     have hupper_t := fun k hk ↦ hupper k (Finset.mem_insert_of_mem hk)
     obtain ⟨Ma, hMa⟩ := hupper a (Finset.mem_insert_self a t)
-    choose M hM using hupper_t
-    have hMS : ∀ᵐ ω ∂P, ∑ k ∈ t, X k ω ≤ (∑ k ∈ t.attach, M k.val k.property) •
-        (1 : Matrix n n 𝕜) := by
-      refine ((eventually_all_finset t.attach).2 fun k _ ↦ hM k.val k.property).mono fun ω hω ↦ ?_
-      rw [Finset.sum_smul, ← Finset.sum_attach t (fun k ↦ X k ω)]
-      exact Finset.sum_le_sum fun k hk ↦ hω k hk
+    obtain ⟨MS, hMS⟩ := TauCeti.exists_ae_finsetSum_le_smul_one hupper_t
     simp_rw [Finset.sum_insert ha, ← add_assoc, add_right_comm H (X a _)]
     have hsum_fn : (fun ω ↦ ∑ k ∈ t, X k ω) = ∑ k ∈ t, X k :=
       funext fun ω ↦ (Finset.sum_apply ω t X).symm
@@ -306,13 +301,7 @@ theorem iIndepFun.measureReal_sSup_spectrum_sum_ge_le [IsProbabilityMeasure P] [
     let ⟨_, hM⟩ := hY_upper k hk
     hM.mono fun _ h ↦ TauCeti.isHermitian_of_le_smul_one h
   have hsum_herm := TauCeti.ae_isHermitian_finsetSum hY_herm
-  obtain ⟨MY, hMY⟩ : ∃ MY : ℝ, ∀ᵐ ω ∂P, ∑ k ∈ s, Y k ω ≤ MY • (1 : Matrix n n 𝕜) := by
-    classical
-    choose M hM using hY_upper
-    refine ⟨∑ k ∈ s.attach, M k.val k.property,
-      ((eventually_all_finset s.attach).2 fun k _ ↦ hM k.val k.property).mono fun ω hω ↦ ?_⟩
-    rw [Finset.sum_smul, ← Finset.sum_attach s (fun k ↦ Y k ω)]
-    exact Finset.sum_le_sum fun k hk ↦ hω k hk
+  obtain ⟨MY, hMY⟩ := TauCeti.exists_ae_finsetSum_le_smul_one hY_upper
   have hsub : {ω | t ≤ sSup (spectrum ℝ (∑ k ∈ s, X k ω))} ≤ᵐ[P]
       {ω | Real.exp (θ * t) ≤ RCLike.re (NormedSpace.exp (∑ k ∈ s, Y k ω)).trace} :=
     hsum_herm.mono fun ω hω hge ↦ by
@@ -328,8 +317,7 @@ theorem iIndepFun.measureReal_sSup_spectrum_sum_ge_le [IsProbabilityMeasure P] [
   exact (mul_le_mul_of_nonneg_left (ENNReal.toReal_mono (measure_ne_top P _) (measure_mono_ae hsub))
     (Real.exp_pos _).le).trans <|
       (mul_meas_ge_le_integral_of_nonneg (hsum_herm.mono fun _ h ↦ h.re_trace_exp_nonneg)
-        (TauCeti.integrable_re_trace_exp_of_ae_le_smul_one
-          (Finset.aemeasurable_fun_sum s hY_meas) hMY)
+        ((Finset.aemeasurable_fun_sum s hY_meas).integrable_re_trace_exp_of_ae_le_smul_one hMY)
         (Real.exp (θ * t))).trans hcgf
 
 /-- **Master matrix Laplace-transform lower tail bound** (Tropp 2012, Theorem 3.6). For independent

@@ -28,6 +28,8 @@ rather than restricting scalars, so that no algebra diamond arises.
 
 * `Matrix.l2OpNormedAlgebraReal`: `Matrix n n 𝕜` with the `ℓ²` operator norm, as a normed
   `ℝ`-algebra.
+* `TauCeti.l2OpNormedSpaceReal` and `TauCeti.l2OpEntryCLM`: `Matrix m n 𝕜` with the `ℓ²` operator
+  norm as a normed `ℝ`-vector space, and the continuous `ℝ`-linear entry projection.
 * `TauCeti.euclideanSumProdEquiv`: isometric identification of `EuclideanSpace 𝕜 (m ⊕ p)` with
   `WithLp 2 (EuclideanSpace 𝕜 p × EuclideanSpace 𝕜 m)`.
 * `Matrix.hermitianDilation`: the Hermitian dilation `fromBlocks 0 A Aᴴ 0` of a rectangular
@@ -427,24 +429,48 @@ end Matrix
 
 namespace TauCeti
 
+section L2OpSpace
+
+open scoped Matrix.Norms.L2Operator
+
+/-- `Matrix m n 𝕜` with the `ℓ²` operator norm as a normed `ℝ`-vector space, extending the native
+`ℝ`-module structure so it is definitionally equal to `Matrix.l2OpNormedAlgebraReal.toNormedSpace`
+when `m = n`. -/
+noncomputable abbrev l2OpNormedSpaceReal {m n 𝕜 : Type*} [RCLike 𝕜] [Fintype m] [Fintype n]
+    [DecidableEq n] :
+    NormedSpace ℝ (Matrix m n 𝕜) where
+  __ := (inferInstance : Module ℝ (Matrix m n 𝕜))
+  norm_smul_le r A := by
+    rw [← algebraMap_smul 𝕜 r A, norm_smul]
+    simp
+
+/-- Continuous `ℝ`-linear projection onto matrix entry `(i, j)` under `Matrix.Norms.L2Operator`. -/
+noncomputable def l2OpEntryCLM {m n 𝕜 : Type*} [RCLike 𝕜] [Fintype m] [Fintype n] [DecidableEq n]
+    (i : m) (j : n) :
+    letI : NormedSpace ℝ (Matrix m n 𝕜) := l2OpNormedSpaceReal
+    Matrix m n 𝕜 →L[ℝ] 𝕜 :=
+  letI : NormedSpace ℝ (Matrix m n 𝕜) := l2OpNormedSpaceReal
+  (Matrix.entryLinearMap ℝ 𝕜 i j).mkContinuous 1 fun A ↦ by
+    simpa only [one_mul, LinearMap.coe_mk, AddHom.coe_mk, Matrix.entryLinearMap_apply] using
+      Matrix.norm_apply_le_l2_opNorm A i j
+
+/-- Evaluating `TauCeti.l2OpEntryCLM` at a matrix `A` gives its `(i, j)` entry. -/
+@[simp]
+theorem l2OpEntryCLM_apply {m n 𝕜 : Type*} [RCLike 𝕜] [Fintype m] [Fintype n] [DecidableEq n]
+    (i : m) (j : n) (A : Matrix m n 𝕜) :
+    letI : NormedSpace ℝ (Matrix m n 𝕜) := l2OpNormedSpaceReal
+    l2OpEntryCLM i j A = A i j := by
+  rfl
+
+end L2OpSpace
+
 /-- Isometric identification of `EuclideanSpace 𝕜 (m ⊕ p)` with
 `WithLp 2 (EuclideanSpace 𝕜 p × EuclideanSpace 𝕜 m)`, matching the coordinate order of
 `LinearMap.hermitianDilation` on `A.toEuclideanLin`. -/
-@[expose]
 noncomputable def euclideanSumProdEquiv (m p 𝕜 : Type*) [RCLike 𝕜] [Fintype m] [Fintype p] :
-    EuclideanSpace 𝕜 (m ⊕ p) ≃ₗᵢ[𝕜] WithLp 2 (EuclideanSpace 𝕜 p × EuclideanSpace 𝕜 m) where
-  toFun v :=
-    WithLp.toLp 2 (WithLp.toLp 2 (v.ofLp ∘ Sum.inr), WithLp.toLp 2 (v.ofLp ∘ Sum.inl))
-  invFun z := WithLp.toLp 2 (Sum.elim z.snd.ofLp z.fst.ofLp)
-  map_add' _ _ := WithLp.ofLp_injective 2 (Prod.ext (by ext; rfl) (by ext; rfl))
-  map_smul' _ _ := WithLp.ofLp_injective 2 (Prod.ext (by ext; rfl) (by ext; rfl))
-  left_inv v := by ext k; cases k <;> rfl
-  right_inv _ := WithLp.ofLp_injective 2 (Prod.ext (by ext; rfl) (by ext; rfl))
-  norm_map' v := by
-    refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
-    dsimp
-    rw [WithLp.prod_norm_sq_eq_of_L2]
-    simp [EuclideanSpace.norm_sq_eq, Fintype.sum_sum_type, add_comm]
+    EuclideanSpace 𝕜 (m ⊕ p) ≃ₗᵢ[𝕜] WithLp 2 (EuclideanSpace 𝕜 p × EuclideanSpace 𝕜 m) :=
+  (PiLp.sumPiLpEquivProdLpPiLp 2 (fun _ : m ⊕ p ↦ 𝕜)).trans
+    (LinearIsometryEquiv.withLpProdComm 2 𝕜 (EuclideanSpace 𝕜 m) (EuclideanSpace 𝕜 p))
 
 /-- Evaluating `TauCeti.euclideanSumProdEquiv` splits a vector on `m ⊕ p` into its right and
 left summands. -/
@@ -452,14 +478,16 @@ left summands. -/
 theorem euclideanSumProdEquiv_apply {m p 𝕜 : Type*} [RCLike 𝕜] [Fintype m] [Fintype p]
     (v : EuclideanSpace 𝕜 (m ⊕ p)) :
     euclideanSumProdEquiv m p 𝕜 v =
-      WithLp.toLp 2 (WithLp.toLp 2 (v.ofLp ∘ Sum.inr), WithLp.toLp 2 (v.ofLp ∘ Sum.inl)) := rfl
+      WithLp.toLp 2 (WithLp.toLp 2 (v.ofLp ∘ Sum.inr), WithLp.toLp 2 (v.ofLp ∘ Sum.inl)) := by rfl
 
 /-- Evaluating the inverse of `TauCeti.euclideanSumProdEquiv` combines the two blocks via
 `Sum.elim`. -/
 @[simp]
 theorem euclideanSumProdEquiv_symm_apply {m p 𝕜 : Type*} [RCLike 𝕜] [Fintype m] [Fintype p]
     (z : WithLp 2 (EuclideanSpace 𝕜 p × EuclideanSpace 𝕜 m)) :
-    (euclideanSumProdEquiv m p 𝕜).symm z = WithLp.toLp 2 (Sum.elim z.snd.ofLp z.fst.ofLp) := rfl
+    (euclideanSumProdEquiv m p 𝕜).symm z = WithLp.toLp 2 (Sum.elim z.snd.ofLp z.fst.ofLp) := by
+  ext k
+  cases k <;> rfl
 
 end TauCeti
 
@@ -535,14 +563,13 @@ theorem l2_opNorm_fromBlocks_zero_diagonal {m p : Type*} [Fintype m] [Fintype p]
     _ = ‖A‖ := by rw [l2_opNorm_def A, LinearEquiv.trans_apply]
 
 /-- The Hermitian dilation `fromBlocks 0 A Aᴴ 0` of a rectangular matrix `A : Matrix m p 𝕜`. -/
-@[expose]
 noncomputable def hermitianDilation {m p : Type*} (A : Matrix m p 𝕜) :
     Matrix (m ⊕ p) (m ⊕ p) 𝕜 :=
   fromBlocks 0 A Aᴴ 0
 
 /-- Unfolding `Matrix.hermitianDilation` into a block matrix. -/
 theorem hermitianDilation_def {m p : Type*} (A : Matrix m p 𝕜) :
-    A.hermitianDilation = fromBlocks 0 A Aᴴ 0 := rfl
+    A.hermitianDilation = fromBlocks 0 A Aᴴ 0 := by rfl
 
 /-- The Hermitian dilation of the zero matrix is zero. -/
 @[simp]

@@ -14,6 +14,7 @@ import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog.Order
 import TauCeti.Analysis.Matrix.FunctionalCalculus
 import TauCeti.Analysis.Matrix.Order
+import TauCeti.Analysis.Matrix.PosDef
 import TauCeti.Analysis.Normed.Algebra.Basic
 
 /-!
@@ -50,6 +51,8 @@ topology is the native matrix topology.
 * `Matrix.PosDef.rpow_eq_exp_smul_cfc_log`: `P ^ s = exp (s • log P)` for positive definite `P`.
 * `Matrix.contDiffOn_cfc_log`, `Matrix.contDiffOn_rpow`, `Matrix.contDiffOn_sqrt`: the logarithm,
   every real power and the square root are `C^n` on the positive definite matrices.
+* `Matrix.PosDef.hasDerivWithinAt_cfc_log_one_sub_smul_add_smul_zero`: right derivative of
+  `t ↦ log ((1 - t) • 1 + t • P)` at `0`.
 
 ## References
 
@@ -220,5 +223,36 @@ theorem contDiffOn_sqrt {k : ℕ∞ω} :
   have h := CFC.contDiffOn_sqrt (𝕂 := 𝕜) (A := Matrix n n 𝕜) (n := k)
     fun X hX ↦ (isHermitian_iff_isSelfAdjoint.2 hX).isUnit_expFDeriv
   simpa only [isStrictlyPositive_iff_posDef] using h
+
+/-- Along the affine path `t ↦ (1 - t) • 1 + t • P` on `[0, 1]` into the positive definite cone,
+the matrix logarithm has right derivative `P - 1` at `0`. -/
+theorem PosDef.hasDerivWithinAt_cfc_log_one_sub_smul_add_smul_zero {P : Matrix n n 𝕜}
+    (hP : P.PosDef) :
+    HasDerivWithinAt (fun t : ℝ ↦ cfc Real.log ((1 - t) • (1 : Matrix n n 𝕜) + t • P))
+      (P - 1) (Set.Icc 0 1) 0 := by
+  let : NormedAlgebra ℝ (Matrix n n 𝕜) := Matrix.l2OpNormedAlgebraReal
+  let h : ℝ → Matrix n n 𝕜 := fun t ↦ (1 - t) • (1 : Matrix n n 𝕜) + t • P
+  have hh_pos {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) : (h t).PosDef :=
+    PosDef.one.one_sub_smul_add_smul hP ht
+  have hh_d' : HasDerivWithinAt (F := Matrix n n 𝕜) h (P - 1) (Set.Icc 0 1) 0 := by
+    convert ((((hasDerivAt_const (0 : ℝ) (1 : ℝ)).sub (hasDerivAt_id 0)).smul_const
+      (1 : Matrix n n 𝕜)).add ((hasDerivAt_id 0).smul_const P)).hasDerivWithinAt
+      (s := Set.Icc 0 1) using 1
+    · ext t; rfl
+    · simp [sub_eq_add_neg, add_comm]
+  have hh0 : h 0 = 1 := by simp [h]
+  have hlog_d := (hh0 ▸ ((contDiffOn_cfc_log (𝕜 := 𝕜) (n := n) (k := 1)).differentiableOn
+    one_ne_zero 1 PosDef.one).hasFDerivWithinAt.restrictScalars ℝ).comp_hasDerivWithinAt 0 hh_d'
+    fun _ ht ↦ hh_pos ht
+  have hlog0 : cfc Real.log (h 0) = 0 := by simp [h, cfc_apply_one]
+  have hL_val : (fderivWithin 𝕜 (cfc Real.log) {Q : Matrix n n 𝕜 | Q.PosDef} (h 0)) (P - 1) =
+      P - 1 := by
+    have h1 := ((hlog0 ▸ (TauCeti.hasFDerivAt_exp (𝕂 := 𝕜) (0 : Matrix n n 𝕜)).restrictScalars
+      ℝ).comp_hasDerivWithinAt 0 hlog_d).congr (fun t ht ↦ (hh_pos ht).exp_cfc_log.symm)
+      (hh_pos ⟨le_rfl, zero_le_one⟩).exp_cfc_log.symm
+    have hu := uniqueDiffOn_Icc zero_lt_one 0 ⟨le_rfl, zero_le_one⟩
+    simpa [hlog0, TauCeti.expFDeriv_zero] using
+      (h1.derivWithin hu).symm.trans (hh_d'.derivWithin hu)
+  simpa only [Function.comp_def, ContinuousLinearMap.coe_restrictScalars', hL_val] using hlog_d
 
 end Matrix

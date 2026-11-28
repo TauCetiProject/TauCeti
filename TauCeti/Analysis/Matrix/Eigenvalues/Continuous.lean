@@ -38,8 +38,8 @@ spectral values `sSup (spectrum ℝ A)` and `sInf (spectrum ℝ A)` are continuo
 the Hermitian subtype (`TauCeti.continuous_sSup_spectrum_real`,
 `TauCeti.continuous_sInf_spectrum_real`, `TauCeti.measurable_sSup_spectrum_real`,
 `TauCeti.measurable_sInf_spectrum_real`) and a.e. measurable when composed with an a.e. Hermitian
-matrix-valued random variable (`TauCeti.aemeasurable_sSup_spectrum_real`,
-`TauCeti.aemeasurable_sInf_spectrum_real`).
+matrix-valued random variable (`AEMeasurable.sSup_spectrum_real`,
+`AEMeasurable.sInf_spectrum_real`).
 
 ## References
 
@@ -243,9 +243,15 @@ theorem measurable_sInf_spectrum_real :
       sInf (spectrum ℝ (A : Matrix n n 𝕜))) :=
   continuous_sInf_spectrum_real.measurable
 
+end TauCeti
+
+namespace AEMeasurable
+
+variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [RCLike 𝕜] [MeasurableSpace 𝕜] [BorelSpace 𝕜]
+
 /-- Composing `sSup (spectrum ℝ ·)` with an a.e. measurable, a.e. Hermitian matrix-valued map
 yields an a.e. measurable real-valued map. -/
-theorem aemeasurable_sSup_spectrum_real {Ω : Type*} [MeasurableSpace Ω]
+theorem sSup_spectrum_real {Ω : Type*} [MeasurableSpace Ω]
     {P : MeasureTheory.Measure Ω} {X : Ω → Matrix n n 𝕜}
     (hmeas : AEMeasurable X P) (hherm : ∀ᵐ ω ∂P, (X ω).IsHermitian) :
     AEMeasurable (fun ω ↦ sSup (spectrum ℝ (X ω))) P := by
@@ -254,14 +260,15 @@ theorem aemeasurable_sSup_spectrum_real {Ω : Type*} [MeasurableSpace Ω]
     isClosed_eq continuous_id.matrix_conjTranspose continuous_id
   have hg : Measurable ({A : Matrix n n 𝕜 | A.IsHermitian}.piecewise
       (fun A ↦ sSup (spectrum ℝ A)) 0) :=
-    (continuousOn_iff_continuous_domRestrict.2 continuous_sSup_spectrum_real).measurable_piecewise
+    (continuousOn_iff_continuous_domRestrict.2
+      TauCeti.continuous_sSup_spectrum_real).measurable_piecewise
       continuousOn_const hclosed.measurableSet
   refine (hg.comp_aemeasurable hmeas).congr (hherm.mono fun ω hω ↦ ?_)
   simp [hω]
 
 /-- Composing `sInf (spectrum ℝ ·)` with an a.e. measurable, a.e. Hermitian matrix-valued map
 yields an a.e. measurable real-valued map. -/
-theorem aemeasurable_sInf_spectrum_real {Ω : Type*} [MeasurableSpace Ω]
+theorem sInf_spectrum_real {Ω : Type*} [MeasurableSpace Ω]
     {P : MeasureTheory.Measure Ω} {X : Ω → Matrix n n 𝕜}
     (hmeas : AEMeasurable X P) (hherm : ∀ᵐ ω ∂P, (X ω).IsHermitian) :
     AEMeasurable (fun ω ↦ sInf (spectrum ℝ (X ω))) P := by
@@ -270,9 +277,10 @@ theorem aemeasurable_sInf_spectrum_real {Ω : Type*} [MeasurableSpace Ω]
     isClosed_eq continuous_id.matrix_conjTranspose continuous_id
   have hg : Measurable ({A : Matrix n n 𝕜 | A.IsHermitian}.piecewise
       (fun A ↦ sInf (spectrum ℝ A)) 0) :=
-    (continuousOn_iff_continuous_domRestrict.2 continuous_sInf_spectrum_real).measurable_piecewise
+    (continuousOn_iff_continuous_domRestrict.2
+      TauCeti.continuous_sInf_spectrum_real).measurable_piecewise
       continuousOn_const hclosed.measurableSet
   refine (hg.comp_aemeasurable hmeas).congr (hherm.mono fun ω hω ↦ ?_)
   simp [hω]
 
-end TauCeti
+end AEMeasurable

@@ -20,12 +20,16 @@ families of real or complex matrices, together with almost-everywhere finite-sum
 
 * `TauCeti.posSemidef_integral`: the entrywise integral of an a.e. positive-semidefinite family of
   finite matrices over an `RCLike` field with integrable entries is positive semidefinite.
+* `TauCeti.posDef_integral`: the entrywise integral of an a.e. positive-definite family of finite
+  matrices over an `RCLike` field with integrable entries under a nonzero measure is positive
+  definite.
 * `TauCeti.isHermitian_integral_of_ae_isHermitian`: entrywise expectation preserves the Hermitian
   property.
 * `TauCeti.integral_le_integral_of_ae_le`: entrywise expectation is monotone in the Loewner order.
 * `TauCeti.nonneg_of_integral_eq_zero_of_ae_le_smul_one`: an upper scalar bound `L • 1` on a
   zero-mean random matrix forces `0 ≤ L`.
-* `TauCeti.ae_isHermitian_finsetSum`, `TauCeti.ae_posSemidef_finsetSum`, and
+* `TauCeti.ae_isHermitian_finsetSum`, `TauCeti.ae_posSemidef_finsetSum`,
+  `TauCeti.exists_ae_finsetSum_le_smul_one`, and
   `TauCeti.ae_sum_eq_zero_of_ae_posSemidef_of_ae_le_zero`: a.e. properties of finite matrix sums.
 -/
 
@@ -58,6 +62,55 @@ theorem posSemidef_integral {α ι 𝕜 : Type*} [MeasurableSpace α] {μ : Meas
       simp only [integral_mul_const]
     rw [hquad]
     exact integral_nonneg_of_ae (hM.mono fun x hx => hx.dotProduct_mulVec_nonneg c)
+
+/-- The **entrywise integral of positive-definite matrices** under a nonzero measure is positive
+definite: if `M x` is positive definite for almost every `x` and every entry of `M` is integrable,
+then the matrix of entrywise integrals is positive definite. -/
+theorem posDef_integral {α ι 𝕜 : Type*} [MeasurableSpace α] {μ : Measure α} [NeZero μ]
+    [Finite ι] [RCLike 𝕜] {M : α → Matrix ι ι 𝕜} (hM : ∀ᵐ x ∂μ, (M x).PosDef)
+    (hint : ∀ i j, Integrable (fun x => M x i j) μ) :
+    (Matrix.of fun i j => ∫ x, M x i j ∂μ).PosDef := by
+  have := Fintype.ofFinite ι
+  refine Matrix.PosDef.of_dotProduct_mulVec_pos
+    (posSemidef_integral (hM.mono fun _ h ↦ h.posSemidef) hint).isHermitian fun c hc ↦ ?_
+  have hquad : star c ⬝ᵥ ((Matrix.of fun i j => ∫ x, M x i j ∂μ) *ᵥ c) =
+      ∫ x, star c ⬝ᵥ (M x *ᵥ c) ∂μ := by
+    simp only [dotProduct, Matrix.mulVec, Matrix.of_apply]
+    rw [integral_finsetSum _ fun i _ =>
+      (integrable_finsetSum _ fun j _ => (hint i j).mul_const (c j)).const_mul _]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [integral_const_mul, integral_finsetSum _ fun j _ => (hint i j).mul_const (c j)]
+    simp only [integral_mul_const]
+  have hquad_int : Integrable (fun x => star c ⬝ᵥ (M x *ᵥ c)) μ := by
+    simp only [dotProduct, Matrix.mulVec]
+    exact integrable_finsetSum _ fun i _ =>
+      (integrable_finsetSum _ fun j _ => (hint i j).mul_const (c j)).const_mul _
+  have hpos_ae : ∀ᵐ x ∂μ, 0 < RCLike.re (star c ⬝ᵥ (M x *ᵥ c)) :=
+    hM.mono fun _ hx ↦ (RCLike.pos_iff.1 (hx.dotProduct_mulVec_pos hc)).1
+  have him_ae : ∀ᵐ x ∂μ, RCLike.im (star c ⬝ᵥ (M x *ᵥ c)) = 0 :=
+    hM.mono fun _ hx ↦ (RCLike.pos_iff.1 (hx.dotProduct_mulVec_pos hc)).2
+  have hre_pos : 0 < RCLike.re (∫ x, star c ⬝ᵥ (M x *ᵥ c) ∂μ) := by
+    rw [← RCLike.reCLM_apply, ← RCLike.reCLM.integral_comp_comm hquad_int]
+    refine (integral_pos_iff_support_of_nonneg_ae (hpos_ae.mono fun _ h ↦ h.le)
+      (RCLike.reCLM.integrable_comp hquad_int)).2 ?_
+    have hμ0 : μ {x | RCLike.re (star c ⬝ᵥ (M x *ᵥ c)) = 0} = 0 :=
+      by simpa only [not_not] using ae_iff.1 (hpos_ae.mono fun _ h ↦ h.ne')
+    by_contra hsup
+    rw [not_lt, nonpos_iff_eq_zero] at hsup
+    have huniv : μ Set.univ ≤
+        μ (Function.support fun x ↦ RCLike.re (star c ⬝ᵥ (M x *ᵥ c))) +
+          μ {x | RCLike.re (star c ⬝ᵥ (M x *ᵥ c)) = 0} := by
+      refine (measure_mono fun x _ ↦ ?_).trans (measure_union_le _ _)
+      by_cases h0 : RCLike.re (star c ⬝ᵥ (M x *ᵥ c)) = 0
+      · exact Or.inr h0
+      · exact Or.inl h0
+    rw [hsup, hμ0, add_zero] at huniv
+    exact (Measure.measure_univ_pos.2 (NeZero.ne μ)).not_ge huniv
+  have him_zero : RCLike.im (∫ x, star c ⬝ᵥ (M x *ᵥ c) ∂μ) = 0 := by
+    rw [← RCLike.imCLM_apply, ← RCLike.imCLM.integral_comp_comm hquad_int]
+    exact integral_eq_zero_of_ae him_ae
+  rw [hquad]
+  exact RCLike.pos_iff.2 ⟨hre_pos, him_zero⟩
 
 /-- Entrywise expectation preserves the Hermitian property. -/
 theorem isHermitian_integral_of_ae_isHermitian {Ω 𝕜 n : Type*} [MeasurableSpace Ω] {P : Measure Ω}
@@ -115,6 +168,19 @@ theorem ae_posSemidef_finsetSum {Ω ι n R : Type*} [MeasurableSpace Ω] {P : Me
     {X : ι → Ω → Matrix n n R} (hpsd : ∀ k ∈ s, ∀ᵐ ω ∂P, (X k ω).PosSemidef) :
     ∀ᵐ ω ∂P, (∑ k ∈ s, X k ω).PosSemidef :=
   (Filter.eventually_all_finset s).2 hpsd |>.mono fun _ hω ↦ Matrix.posSemidef_sum s hω
+
+/-- A finite sum of random matrices each bounded above almost everywhere by a scalar multiple of
+the identity is itself bounded above almost everywhere by a scalar multiple of the identity. -/
+theorem exists_ae_finsetSum_le_smul_one {Ω ι n 𝕜 : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    [RCLike 𝕜] [DecidableEq n] {s : Finset ι} {X : ι → Ω → Matrix n n 𝕜}
+    (hupper : ∀ k ∈ s, ∃ M : ℝ, ∀ᵐ ω ∂P, X k ω ≤ M • (1 : Matrix n n 𝕜)) :
+    ∃ M : ℝ, ∀ᵐ ω ∂P, ∑ k ∈ s, X k ω ≤ M • (1 : Matrix n n 𝕜) := by
+  classical
+  choose M hM using hupper
+  refine ⟨∑ k ∈ s.attach, M k.val k.property,
+    ((Filter.eventually_all_finset s.attach).2 fun k _ ↦ hM k.val k.property).mono fun ω hω ↦ ?_⟩
+  rw [Finset.sum_smul, ← Finset.sum_attach s (fun k ↦ X k ω)]
+  exact Finset.sum_le_sum fun k hk ↦ hω k hk
 
 /-- A finite family of a.e. positive semidefinite, a.e. nonpositive random matrices has zero sum
 almost everywhere. -/

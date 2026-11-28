@@ -79,7 +79,7 @@ then `Re Tr (exp A) ≤ Re Tr (exp B)`. -/
 theorem IsHermitian.re_trace_exp_le_of_le {A B : Matrix n n 𝕜} (hB : B.IsHermitian)
     (hle : A ≤ B) :
     RCLike.re (exp A).trace ≤ RCLike.re (exp B).trace := by
-  have hA := TauCeti.isHermitian_of_le hB hle
+  have hA := hB.of_le hle
   rw [hA.re_trace_exp_eq_sum_exp, hB.re_trace_exp_eq_sum_exp]
   let e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n))
   rw [← e.sum_comp, ← e.sum_comp]
@@ -179,37 +179,6 @@ theorem IsHermitian.concaveOn_re_trace_exp_add_cfc_log {H : Matrix n n 𝕜} (hH
 
 /-! ### The Golden–Thompson inequality -/
 
-/-- Along the affine path `t ↦ (1 - t) • 1 + t • P` on `[0, 1]` into the positive definite cone,
-the matrix logarithm has right derivative `P - 1` at `0`. -/
-private theorem hasDerivWithinAt_cfc_log_one_sub_smul_add_smul_zero {P : Matrix n n 𝕜}
-    (hP : P.PosDef) :
-    HasDerivWithinAt (fun t : ℝ ↦ cfc Real.log ((1 - t) • (1 : Matrix n n 𝕜) + t • P))
-      (P - 1) (Set.Icc 0 1) 0 := by
-  let : NormedAlgebra ℝ (Matrix n n 𝕜) := Matrix.l2OpNormedAlgebraReal
-  let h : ℝ → Matrix n n 𝕜 := fun t ↦ (1 - t) • (1 : Matrix n n 𝕜) + t • P
-  have hh_pos {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) : (h t).PosDef :=
-    PosDef.one.one_sub_smul_add_smul hP ht
-  have hh_d' : HasDerivWithinAt (F := Matrix n n 𝕜) h (P - 1) (Set.Icc 0 1) 0 := by
-    convert ((((hasDerivAt_const (0 : ℝ) (1 : ℝ)).sub (hasDerivAt_id 0)).smul_const
-      (1 : Matrix n n 𝕜)).add ((hasDerivAt_id 0).smul_const P)).hasDerivWithinAt
-      (s := Set.Icc 0 1) using 1
-    · ext t; rfl
-    · simp [sub_eq_add_neg, add_comm]
-  have hh0 : h 0 = 1 := by simp [h]
-  have hlog_d := (hh0 ▸ ((contDiffOn_cfc_log (𝕜 := 𝕜) (n := n) (k := 1)).differentiableOn
-    one_ne_zero 1 PosDef.one).hasFDerivWithinAt.restrictScalars ℝ).comp_hasDerivWithinAt 0 hh_d'
-    fun _ ht ↦ hh_pos ht
-  have hlog0 : cfc Real.log (h 0) = 0 := by simp [h, cfc_apply_one]
-  have hL_val : (fderivWithin 𝕜 (cfc Real.log) {Q : Matrix n n 𝕜 | Q.PosDef} (h 0)) (P - 1) =
-      P - 1 := by
-    have h1 := ((hlog0 ▸ (TauCeti.hasFDerivAt_exp (𝕂 := 𝕜) (0 : Matrix n n 𝕜)).restrictScalars
-      ℝ).comp_hasDerivWithinAt 0 hlog_d).congr (fun t ht ↦ (hh_pos ht).exp_cfc_log.symm)
-      (hh_pos ⟨le_rfl, zero_le_one⟩).exp_cfc_log.symm
-    have hu := uniqueDiffOn_Icc zero_lt_one 0 ⟨le_rfl, zero_le_one⟩
-    simpa [hlog0, TauCeti.expFDeriv_zero] using
-      (h1.derivWithin hu).symm.trans (hh_d'.derivWithin hu)
-  simpa only [Function.comp_def, ContinuousLinearMap.coe_restrictScalars', hL_val] using hlog_d
-
 /-- **The Golden–Thompson inequality** (Golden 1965; Thompson 1965). For Hermitian matrices `A` and
 `B` over any `RCLike` field, `Re Tr (exp (A + B)) ≤ Re Tr (exp A * exp B)`. -/
 theorem IsHermitian.re_trace_exp_add_le_re_trace_exp_mul_exp {A B : Matrix n n 𝕜}
@@ -231,7 +200,7 @@ theorem IsHermitian.re_trace_exp_add_le_re_trace_exp_mul_exp {A B : Matrix n n �
     simpa only [f, smul_eq_mul, haff] using
       hA.concaveOn_re_trace_exp_add_cfc_log.2 (hh_pos hs) (hh_pos ht) ha hb hab
   -- Right derivative `f'(0) = Re Tr (exp A * (exp B - 1))`.
-  have hlog_d := hasDerivWithinAt_cfc_log_one_sub_smul_add_smul_zero hB.posDef_exp
+  have hlog_d := hB.posDef_exp.hasDerivWithinAt_cfc_log_one_sub_smul_add_smul_zero
   have hA0 : A + cfc Real.log (h 0) = A := by simp [h, cfc_apply_one]
   have hf_d : HasDerivWithinAt f
       (RCLike.re (TauCeti.expFDeriv 𝕜 A (NormedSpace.exp B - 1)).trace) (Set.Icc 0 1) 0 := by

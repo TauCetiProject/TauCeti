@@ -71,32 +71,9 @@ open Matrix
 
 variable {n 𝕜 : Type*} [RCLike 𝕜]
 
-/-- The canonical complex embedding `TauCeti.toComplexStarAlgHom 𝕜` is injective. -/
-theorem toComplexStarAlgHom_injective : Function.Injective (toComplexStarAlgHom 𝕜) :=
-  (isometry_toComplexStarAlgHom 𝕜).injective
-
-/-- An `RCLike` scalar is nonnegative iff its complex image under `toComplexStarAlgHom` is
-nonnegative. -/
-theorem toComplexStarAlgHom_nonneg_iff {x : 𝕜} :
-    0 ≤ toComplexStarAlgHom 𝕜 x ↔ 0 ≤ x := by
-  rw [Complex.nonneg_iff, RCLike.nonneg_iff (K := 𝕜)]
-  simp only [toComplexStarAlgHom_apply, Complex.add_re, Complex.ofReal_re, Complex.mul_re,
-    Complex.I_re, mul_zero, Complex.I_im, mul_one, sub_zero, add_zero, Complex.add_im,
-    Complex.ofReal_im, Complex.mul_im, zero_add]
-  exact ⟨fun ⟨h1, h2⟩ ↦ ⟨h1, h2.symm⟩, fun ⟨h1, h2⟩ ↦ ⟨h1, h2.symm⟩⟩
-
-/-- An `RCLike` scalar is positive iff its complex image under `toComplexStarAlgHom` is
-positive. -/
-theorem toComplexStarAlgHom_pos_iff {x : 𝕜} :
-    0 < toComplexStarAlgHom 𝕜 x ↔ 0 < x := by
-  rw [lt_iff_le_and_ne, lt_iff_le_and_ne, toComplexStarAlgHom_nonneg_iff]
-  refine and_congr_right fun _ ↦ ?_
-  rw [ne_eq, ne_eq, eq_comm (a := (0 : ℂ)), eq_comm (a := (0 : 𝕜)),
-    ← map_zero (toComplexStarAlgHom 𝕜), toComplexStarAlgHom_injective.eq_iff]
-
 /-- The canonical entrywise embedding `Matrix n n 𝕜 →⋆ₐ[ℝ] Matrix n n ℂ` lifted from
 `TauCeti.toComplexStarAlgHom 𝕜`. -/
-@[expose] noncomputable def mapToComplexStarAlgHom [Fintype n] [DecidableEq n] :
+noncomputable def mapToComplexStarAlgHom [Fintype n] [DecidableEq n] :
     Matrix n n 𝕜 →⋆ₐ[ℝ] Matrix n n ℂ :=
   { (toComplexStarAlgHom 𝕜).toAlgHom.mapMatrix with
     map_star' := fun A ↦ by
@@ -106,7 +83,7 @@ theorem toComplexStarAlgHom_pos_iff {x : 𝕜} :
 /-- Evaluating `TauCeti.mapToComplexStarAlgHom` entrywise applies `toComplexStarAlgHom 𝕜`. -/
 @[simp]
 theorem mapToComplexStarAlgHom_apply [Fintype n] [DecidableEq n] (A : Matrix n n 𝕜) (i j : n) :
-    mapToComplexStarAlgHom A i j = toComplexStarAlgHom 𝕜 (A i j) :=
+    mapToComplexStarAlgHom A i j = toComplexStarAlgHom 𝕜 (A i j) := by
   rfl
 
 /-- The entrywise complex embedding `TauCeti.mapToComplexStarAlgHom` is continuous. -/
@@ -133,9 +110,8 @@ theorem isHermitian_mapToComplexStarAlgHom_iff [Fintype n] [DecidableEq n]
   · rw [Matrix.IsHermitian, ← Matrix.star_eq_conjTranspose, ← map_star,
       Matrix.star_eq_conjTranspose, h.eq]
 
-/-- Helper for `posSemidef_mapToComplexStarAlgHom_iff` and `posDef_mapToComplexStarAlgHom_iff`:
-quadratic form compatibility under `mapToComplexStarAlgHom`. -/
-private theorem toComplexStarAlgHom_dotProduct_mulVec [Fintype n] [DecidableEq n]
+/-- Quadratic form compatibility under `TauCeti.mapToComplexStarAlgHom`. -/
+theorem toComplexStarAlgHom_dotProduct_mulVec [Fintype n] [DecidableEq n]
     (A : Matrix n n 𝕜) (x : n → 𝕜) :
     toComplexStarAlgHom 𝕜 (star x ⬝ᵥ (A *ᵥ x)) =
       star (toComplexStarAlgHom 𝕜 ∘ x) ⬝ᵥ

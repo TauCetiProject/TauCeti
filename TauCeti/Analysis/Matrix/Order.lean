@@ -30,6 +30,8 @@ This is the compactness behind fixed-point arguments on sets of matrices such as
 * `Matrix.instCompactIccSpace`: the Loewner order on `Matrix n n 𝕜` has compact closed intervals.
 * `Matrix.PosDef.of_le`: a matrix Loewner-dominating a positive definite matrix is positive
   definite.
+* `Matrix.IsHermitian.of_le`, `TauCeti.isHermitian_of_le_smul_one`: Loewner domination by a
+  Hermitian matrix or real scalar multiple of the identity implies Hermitianness.
 * `Matrix.IsHermitian.le_smul_one_of_l2_opNorm_le`,
   `Matrix.IsHermitian.neg_smul_one_le_of_l2_opNorm_le`,
   `Matrix.PosSemidef.le_l2_opNorm_smul_one`,
@@ -76,6 +78,11 @@ instance instCompactIccSpace [Finite n] : CompactIccSpace (Matrix n n 𝕜) wher
 theorem PosDef.of_le {A B : Matrix n n 𝕜} (hA : A.PosDef) (hle : A ≤ B) : B.PosDef := by
   simpa only [add_sub_cancel] using hA.add_posSemidef (le_iff.1 hle)
 
+/-- If `B` is Hermitian and `A ≤ B` in the Loewner order, then `A` is Hermitian. -/
+theorem IsHermitian.of_le {A B : Matrix n n 𝕜} (hB : B.IsHermitian) (hle : A ≤ B) :
+    A.IsHermitian := by
+  simpa only [sub_sub_cancel] using hB.sub (le_iff.1 hle).isHermitian
+
 section L2OpNorm
 
 open scoped Matrix.Norms.L2Operator
@@ -114,6 +121,12 @@ end L2OpNorm
 end Matrix
 
 namespace TauCeti
+
+/-- Any matrix bounded above by a real scalar multiple of the identity in the Loewner order is
+Hermitian. -/
+theorem isHermitian_of_le_smul_one {n 𝕜 : Type*} [RCLike 𝕜] [DecidableEq n] {A : Matrix n n 𝕜}
+    {c : ℝ} (hU : A ≤ c • (1 : Matrix n n 𝕜)) : A.IsHermitian :=
+  (Matrix.isHermitian_one.smul (IsSelfAdjoint.all c)).of_le hU
 
 /-- The entrywise complex embedding `TauCeti.mapToComplexStarAlgHom` preserves and reflects the
 Loewner order. -/

@@ -64,7 +64,7 @@ theorem cfc_log_integral_exp_smul_le [IsProbabilityMeasure P]
   have : Nonempty n := not_isEmpty_iff.1 hn
   let : NormedAlgebra ℝ (Matrix n n 𝕜) := Matrix.l2OpNormedAlgebraReal
   have hherm : ∀ᵐ ω ∂P, (X ω).IsHermitian := hupper.mono fun _ ↦ isHermitian_of_le_smul_one
-  have hX_apply_int := integrable_apply_of_integrable_l2_opNorm_sq hmeas hsq
+  have hX_apply_int := hmeas.integrable_apply_of_integrable_l2_opNorm_sq hsq
   have hX_int : Integrable X P := integrable_l2Op_matrix_iff.2 hX_apply_int
   have hL : 0 ≤ L := nonneg_of_integral_eq_zero_of_ae_le_smul_one hX_apply_int hmean hupper
   set c : ℝ := θ ^ 2 / (2 * (1 - θ * L / 3))
@@ -74,12 +74,12 @@ theorem cfc_log_integral_exp_smul_le [IsProbabilityMeasure P]
   have hθX_meas := (continuous_const_smul θ).measurable.comp_aemeasurable hmeas
   have hθX_upper : ∀ᵐ ω ∂P, θ • X ω ≤ (θ * L) • (1 : Matrix n n 𝕜) :=
     hupper.mono fun _ h ↦ (smul_le_smul_of_nonneg_left h hθ).trans_eq (smul_smul _ _ _)
-  have hXsq_apply_int := integrable_mul_self_apply hmeas hsq
+  have hXsq_apply_int := hmeas.integrable_mul_self_apply hsq
   have hXsq_int : Integrable (fun ω ↦ X ω * X ω) P := integrable_l2Op_matrix_iff.2 hXsq_apply_int
   have hRHS_int : Integrable (fun ω ↦ (1 : Matrix n n 𝕜) + θ • X ω + c • (X ω * X ω)) P :=
     ((integrable_const (1 : Matrix n n 𝕜)).add (hX_int.smul θ)).add (hXsq_int.smul c)
   have hE_le := integral_le_integral_of_ae_le hpt
-    (integrable_exp_apply_of_ae_le_smul_one hθX_meas hθX_upper)
+    (hθX_meas.integrable_exp_apply_of_ae_le_smul_one hθX_upper)
     (integrable_l2Op_matrix_iff.1 hRHS_int)
   set V : Matrix n n 𝕜 := Matrix.of fun i j ↦ ∫ ω, (X ω * X ω) i j ∂P
   have hE_rhs : (Matrix.of fun i j ↦
@@ -91,14 +91,14 @@ theorem cfc_log_integral_exp_smul_le [IsProbabilityMeasure P]
     have hadd₂ := integral_add (f := fun _ ↦ (1 : Matrix n n 𝕜)) (g := fun ω ↦ θ • X ω)
       (integrable_const _) (hX_int.smul θ)
     have hmean0 : (Matrix.of fun i j ↦ ∫ ω, X ω i j ∂P) = 0 := by ext; simp [hmean]
-    rw [← integral_l2Op_matrix_eq_of hRHS_int, hadd₁, hadd₂, integral_const, probReal_univ,
-      one_smul, integral_smul, integral_smul, integral_l2Op_matrix_eq_of hX_int,
-      integral_l2Op_matrix_eq_of hXsq_int, hmean0, smul_zero, add_zero]
+    rw [← hRHS_int.integral_l2Op_matrix_eq_of, hadd₁, hadd₂, integral_const, probReal_univ,
+      one_smul, integral_smul, integral_smul, hX_int.integral_l2Op_matrix_eq_of,
+      hXsq_int.integral_l2Op_matrix_eq_of, hmean0, smul_zero, add_zero]
   rw [hE_rhs] at hE_le
   have hcV_herm : (c • V).IsHermitian :=
     (isHermitian_integral_of_ae_isHermitian (hherm.mono fun ω hω ↦ by
       simpa only [hω.eq] using isHermitian_conjTranspose_mul_self (X ω))).smul (IsSelfAdjoint.all c)
-  exact cfc_log_integral_exp_le_of_le_one_add hθX_meas hθX_upper hcV_herm hE_le
+  exact hθX_meas.cfc_log_integral_exp_le_of_le_one_add hθX_upper hcV_herm hE_le
 
 /-- Optimal Bernstein exponent identity: for `θ = t / (v + L * t / 3)` and
 `c = θ ^ 2 / (2 * (1 - θ * L / 3))`, `-θ * t + c * v = -(t ^ 2 / 2) / (v + L * t / 3)`. -/
@@ -135,7 +135,7 @@ private theorem re_trace_exp_sum_cfc_log_le_bernstein {ι : Type*} [IsProbabilit
     posSemidef_integral ((hupper k hk).mono fun ω hU ↦ by
       have hω := isHermitian_of_le_smul_one hU
       simpa only [hω.eq] using posSemidef_conjTranspose_mul_self (X k ω))
-      (integrable_mul_self_apply (hmeas k hk) (hsq k hk))
+      ((hmeas k hk).integrable_mul_self_apply (hsq k hk))
   have hsum_V :
       (∑ k ∈ s, c • (Matrix.of fun i j ↦ ∫ ω, (X k ω * X k ω) i j ∂P)) = c • V := by
     rw [← Finset.smul_sum, ← hV_split]
@@ -201,7 +201,7 @@ theorem iIndepFun.measureReal_sSup_spectrum_sum_ge_le_of_le [IsProbabilityMeasur
     have hsum0 : ∀ᵐ ω ∂P, ∑ k ∈ s, X k ω = 0 :=
       ((ae_ball_iff s.countable_toSet).2
         (TauCeti.ae_eq_zero_of_sum_integral_mul_self_eq_zero hherm
-          (fun k hk i ↦ TauCeti.integrable_mul_self_apply (hmeas k hk) (hsq k hk) i i)
+          (fun k hk i ↦ (hmeas k hk).integrable_mul_self_apply (hsq k hk) i i)
           (norm_eq_zero.1 hv.symm))).mono fun _ ↦ Finset.sum_eq_zero
     have hae_empty : {ω | t ≤ sSup (spectrum ℝ (∑ k ∈ s, X k ω))} =ᵐ[P] (∅ : Set Ω) :=
       hsum0.mono fun ω hω ↦
@@ -217,7 +217,7 @@ theorem iIndepFun.measureReal_sSup_spectrum_sum_ge_le_of_le [IsProbabilityMeasur
       exact hv.ne' (by simp [hV0])
     obtain ⟨k, hk⟩ := hsne
     exact TauCeti.nonneg_of_integral_eq_zero_of_ae_le_smul_one
-      (TauCeti.integrable_apply_of_integrable_l2_opNorm_sq (hmeas k hk) (hsq k hk))
+      ((hmeas k hk).integrable_apply_of_integrable_l2_opNorm_sq (hsq k hk))
       (hmean k hk) (hupper k hk)
   -- Combine the master Laplace bound and the Bernstein CGF bound at `θ = t / (v + L * t / 3)`.
   have hden : 0 < v + L * t / 3 := by positivity
@@ -248,7 +248,7 @@ theorem iIndepFun.measureReal_l2_opNorm_sum_ge_le_of_isHermitian [IsProbabilityM
         (‖Matrix.of fun i j ↦ ∑ k ∈ s, ∫ ω, (X k ω * X k ω) i j ∂P‖ + L * t / 3)) := by
   by_cases hn : Nonempty n
   · let : Nonempty n := hn
-    have hsq := fun k hk ↦ TauCeti.integrable_l2_opNorm_sq_of_ae_le (hmeas k hk) (hbdd k hk)
+    have hsq := fun k hk ↦ (hmeas k hk).integrable_l2_opNorm_sq_of_ae_le (hbdd k hk)
     have hpos := hindep.measureReal_sSup_spectrum_sum_ge_le_of_le hmeas hmean
       (fun k hk ↦ ((hherm k hk).and (hbdd k hk)).mono fun _ ⟨h1, h2⟩ ↦
         h1.le_smul_one_of_l2_opNorm_le h2) hsq ht.le
@@ -305,7 +305,7 @@ theorem iIndepFun.measureReal_l2_opNorm_sum_ge_le [IsProbabilityMeasure P]
       fun k hk ↦ (hD_bdd k hk).mono fun _ h ↦
         (Matrix.isHermitian_hermitianDilation _).le_smul_one_of_l2_opNorm_le h
     have hD_sq : ∀ k ∈ s, Integrable (fun ω ↦ ‖D k ω‖ ^ 2) P :=
-      fun k hk ↦ TauCeti.integrable_l2_opNorm_sq_of_ae_le (hD_meas k hk) (hD_bdd k hk)
+      fun k hk ↦ (hD_meas k hk).integrable_l2_opNorm_sq_of_ae_le (hD_bdd k hk)
     have hD_mean : ∀ k ∈ s, ∀ i j, ∫ ω, D k ω i j ∂P = 0 := fun k hk i j ↦ by
       cases i <;> cases j <;> simp [D, Matrix.hermitianDilation_def, hmean k hk,
         conjTranspose_apply, RCLike.star_def, integral_conj]

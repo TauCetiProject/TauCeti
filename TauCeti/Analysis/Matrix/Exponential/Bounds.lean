@@ -21,8 +21,6 @@ import TauCeti.Analysis.SpecialFunctions.Exp.QuadraticBound
 Deterministic order and operator-norm bounds for the matrix exponential `exp A` over any `RCLike`
 scalar field `𝕜` (`ℝ` or `ℂ`):
 
-* `TauCeti.isHermitian_of_le`, `TauCeti.isHermitian_of_le_smul_one`: Loewner domination by a
-  Hermitian matrix or real scalar multiple of the identity implies Hermitianness.
 * `Matrix.IsHermitian.smul_one_add_smul_eq_cfc`,
   `Matrix.IsHermitian.smul_one_add_smul_add_smul_mul_self_eq_cfc`: affine and quadratic
   functional-calculus normalizations for Hermitian matrices.
@@ -46,23 +44,6 @@ noncomputable section
 
 open NormedSpace
 open scoped ComplexOrder MatrixOrder Matrix.Norms.L2Operator
-
-namespace TauCeti
-
-variable {𝕜 n : Type*} [RCLike 𝕜]
-
-/-- If `B` is Hermitian and `A ≤ B` in the Loewner order, then `A` is Hermitian. -/
-theorem isHermitian_of_le {A B : Matrix n n 𝕜} (hB : B.IsHermitian) (hle : A ≤ B) :
-    A.IsHermitian := by
-  simpa only [sub_sub_cancel] using hB.sub (Matrix.le_iff.1 hle).isHermitian
-
-/-- Any matrix bounded above by a real scalar multiple of the identity in the Loewner order is
-Hermitian. -/
-theorem isHermitian_of_le_smul_one [DecidableEq n] {A : Matrix n n 𝕜} {c : ℝ}
-    (hU : A ≤ c • (1 : Matrix n n 𝕜)) : A.IsHermitian :=
-  isHermitian_of_le (Matrix.isHermitian_one.smul (IsSelfAdjoint.all c)) hU
-
-end TauCeti
 
 namespace Matrix
 

@@ -131,6 +131,15 @@ theorem _root_.Matrix.posDef_fin_one_iff {R : Type*} [Ring R] [PartialOrder R] [
   rw [hdiag, _root_.Matrix.posDef_diagonal_iff]
   simp
 
+/-- Extracting the `k`-th diagonal block of `Matrix.blockDiagonal M` as a principal submatrix
+recovers `M k`. -/
+@[simp]
+theorem _root_.Matrix.submatrix_blockDiagonal_same {o R : Type*} [Zero R] [DecidableEq o]
+    (M : o → _root_.Matrix n n R) (k : o) :
+    (_root_.Matrix.blockDiagonal M).submatrix (·, k) (·, k) = M k := by
+  ext i j
+  simp [_root_.Matrix.blockDiagonal_apply]
+
 /-- A block-diagonal matrix over an arbitrary index type is positive definite iff every
 diagonal block is positive definite. -/
 @[simp]
@@ -140,8 +149,7 @@ theorem _root_.Matrix.posDef_blockDiagonal_iff {o R : Type*} [Ring R] [PartialOr
   refine ⟨fun h k ↦ ?_, fun h ↦ ⟨?_, fun x hx ↦ ?_⟩⟩
   · have hsub : ((_root_.Matrix.blockDiagonal M).submatrix (·, k) (·, k)).PosDef :=
       h.submatrix fun _ _ h' ↦ (Prod.ext_iff.1 h').1
-    simpa [show (_root_.Matrix.blockDiagonal M).submatrix (·, k) (·, k) = M k by
-      ext i j; simp [_root_.Matrix.blockDiagonal_apply]] using hsub
+    rwa [_root_.Matrix.submatrix_blockDiagonal_same] at hsub
   · rw [_root_.Matrix.IsHermitian, _root_.Matrix.blockDiagonal_conjTranspose]
     exact congrArg _root_.Matrix.blockDiagonal (funext fun k ↦ (h k).isHermitian.eq)
   · classical

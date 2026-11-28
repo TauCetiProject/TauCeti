@@ -22,7 +22,6 @@ public section
 namespace TauCeti
 
 /-- The real part of the matrix trace as a continuous `ℝ`-linear map `Matrix n n 𝕜 →L[ℝ] ℝ`. -/
-@[expose]
 noncomputable def reTraceCLM (n 𝕜 : Type*) [Fintype n] [RCLike 𝕜] : Matrix n n 𝕜 →L[ℝ] ℝ where
   toLinearMap := RCLike.reLm.comp ((Matrix.traceLinearMap n 𝕜 𝕜).restrictScalars ℝ)
   cont := RCLike.continuous_re.comp continuous_id.matrix_trace
@@ -31,7 +30,7 @@ variable {n 𝕜 : Type*} [Fintype n] [RCLike 𝕜]
 
 /-- Evaluating `TauCeti.reTraceCLM` at a matrix `A` gives `RCLike.re A.trace`. -/
 @[simp]
-theorem reTraceCLM_apply (A : Matrix n n 𝕜) : reTraceCLM n 𝕜 A = RCLike.re A.trace := rfl
+theorem reTraceCLM_apply (A : Matrix n n 𝕜) : reTraceCLM n 𝕜 A = RCLike.re A.trace := by rfl
 
 /-- The real part of the matrix trace is continuous. -/
 @[continuity, fun_prop]

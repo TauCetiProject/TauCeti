@@ -69,7 +69,10 @@ A shift `s + μ` stays off the real axis when `|Im μ| < |Im s|`
 (`Complex.add_im_ne_zero_of_abs_im_lt`).
 
 The canonical embedding of an `RCLike` field into `ℂ` is bundled as
-`TauCeti.toComplexStarAlgHom`, so real star-algebra constructions can be transported to `ℂ`.
+`TauCeti.toComplexStarAlgHom`, which is injective and preserves and reflects nonnegativity and
+positivity (`TauCeti.toComplexStarAlgHom_injective`, `TauCeti.toComplexStarAlgHom_nonneg_iff`,
+`TauCeti.toComplexStarAlgHom_pos_iff`), so real star-algebra constructions can be transported to
+`ℂ`.
 
 Dividing by a natural number does not increase the norm, so `‖(a z + b) / M‖ ≤ ‖a‖ C + ‖b‖`
 whenever `‖z‖ ≤ C` (`Complex.norm_mul_add_div_natCast_le`). If `s + β` vanishes for no natural
@@ -214,6 +217,36 @@ theorem isometry_toComplexStarAlgHom (𝕜 : Type*) [RCLike 𝕜] :
 theorem continuous_toComplexStarAlgHom (𝕜 : Type*) [RCLike 𝕜] :
     Continuous (toComplexStarAlgHom 𝕜) :=
   (isometry_toComplexStarAlgHom 𝕜).continuous
+
+/-- The canonical complex embedding `TauCeti.toComplexStarAlgHom 𝕜` is injective. -/
+theorem toComplexStarAlgHom_injective {𝕜 : Type*} [RCLike 𝕜] :
+    Function.Injective (toComplexStarAlgHom 𝕜) :=
+  (isometry_toComplexStarAlgHom 𝕜).injective
+
+section Order
+
+open scoped ComplexOrder
+
+/-- An `RCLike` scalar is nonnegative iff its complex image under `toComplexStarAlgHom` is
+nonnegative. -/
+theorem toComplexStarAlgHom_nonneg_iff {𝕜 : Type*} [RCLike 𝕜] {x : 𝕜} :
+    0 ≤ toComplexStarAlgHom 𝕜 x ↔ 0 ≤ x := by
+  rw [Complex.nonneg_iff, RCLike.nonneg_iff (K := 𝕜)]
+  simp only [toComplexStarAlgHom_apply, Complex.add_re, Complex.ofReal_re, Complex.mul_re,
+    Complex.I_re, mul_zero, Complex.I_im, mul_one, sub_zero, add_zero, Complex.add_im,
+    Complex.ofReal_im, Complex.mul_im, zero_add]
+  exact ⟨fun ⟨h1, h2⟩ ↦ ⟨h1, h2.symm⟩, fun ⟨h1, h2⟩ ↦ ⟨h1, h2.symm⟩⟩
+
+/-- An `RCLike` scalar is positive iff its complex image under `toComplexStarAlgHom` is
+positive. -/
+theorem toComplexStarAlgHom_pos_iff {𝕜 : Type*} [RCLike 𝕜] {x : 𝕜} :
+    0 < toComplexStarAlgHom 𝕜 x ↔ 0 < x := by
+  rw [lt_iff_le_and_ne, lt_iff_le_and_ne, toComplexStarAlgHom_nonneg_iff]
+  refine and_congr_right fun _ ↦ ?_
+  rw [ne_eq, ne_eq, eq_comm (a := (0 : ℂ)), eq_comm (a := (0 : 𝕜)),
+    ← map_zero (toComplexStarAlgHom 𝕜), toComplexStarAlgHom_injective.eq_iff]
+
+end Order
 
 open ComplexConjugate Metric
 

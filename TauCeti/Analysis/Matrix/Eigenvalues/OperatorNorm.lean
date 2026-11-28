@@ -212,8 +212,8 @@ the `ℓ²` operator norm of `A`. -/
 @[simp]
 theorem sSup_spectrum_real_hermitianDilation {p : Type*}
     [Fintype p] [DecidableEq m] [DecidableEq p] [Nonempty (m ⊕ p)] (A : Matrix m p 𝕜) :
-    sSup (spectrum ℝ A.hermitianDilation) = ‖A‖ :=
-  A.sSup_spectrum_real_fromBlocks_zero_diagonal
+    sSup (spectrum ℝ A.hermitianDilation) = ‖A‖ := by
+  rw [hermitianDilation_def, A.sSup_spectrum_real_fromBlocks_zero_diagonal]
 
 /-- The absolute value of each ordered Hermitian eigenvalue is bounded by the Euclidean
 operator norm. -/

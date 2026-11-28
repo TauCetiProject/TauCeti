@@ -9,26 +9,27 @@ public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.Analysis.Matrix.Frobenius
-import Mathlib.MeasureTheory.SpecificCodomains.Pi
-import TauCeti.Analysis.Matrix.L2OpNorm
+public import TauCeti.Analysis.Matrix.L2OpNorm
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.MeasureTheory.Integral.IntegrableOn
 
 /-!
 # Bochner integration of finite matrices
 
-Entrywise-to-Bochner bridges for finite matrices under both the entrywise `π`-norm on `m → n → E`
-and the `ℓ²` operator norm (`Matrix.Norms.L2Operator`), together with entrywise integrability bounds
-from operator-norm or square-integrability hypotheses and the zero-second-moment vanishing lemma.
+Entrywise-to-Bochner bridges for finite matrices under the `ℓ²` operator norm
+(`Matrix.Norms.L2Operator`), together with entrywise integrability bounds from operator-norm or
+square-integrability hypotheses and the zero-second-moment vanishing lemma.
 
 ## Main results
 
-* `TauCeti.integrable_matrix_iff`, `TauCeti.matrix_integral_apply`, `TauCeti.integral_matrix_eq_of`:
-  integrability and Bochner expectation entry-by-entry under the entrywise `π`-norm on `m → n → E`.
-* `TauCeti.integrable_l2Op_matrix_iff`, `TauCeti.l2Op_matrix_integral_apply`,
-  `TauCeti.integral_l2Op_matrix_eq_of`: the same under `Matrix.Norms.L2Operator`.
-* `TauCeti.integrable_apply_of_ae_l2_opNorm_le`, `TauCeti.integrable_l2Op_of_ae_l2_opNorm_le`,
-  `TauCeti.integrable_apply_of_integrable_l2_opNorm_sq`, `TauCeti.integrable_mul_self_apply`,
-  `TauCeti.integrable_l2_opNorm_sq_of_ae_le`: entrywise and Bochner integrability under a.e.
-  operator-norm or square-integrability hypotheses.
+* `TauCeti.integrable_l2Op_matrix_iff`, `MeasureTheory.Integrable.l2Op_matrix_integral_apply`,
+  `MeasureTheory.Integrable.integral_l2Op_matrix_eq_of`: integrability and Bochner expectation
+  entry-by-entry under `Matrix.Norms.L2Operator`.
+* `AEMeasurable.integrable_apply_of_ae_l2_opNorm_le`,
+  `AEMeasurable.integrable_l2Op_of_ae_l2_opNorm_le`,
+  `AEMeasurable.integrable_apply_of_integrable_l2_opNorm_sq`,
+  `AEMeasurable.integrable_mul_self_apply`, `AEMeasurable.integrable_l2_opNorm_sq_of_ae_le`:
+  entrywise and Bochner integrability under a.e. operator-norm or square-integrability hypotheses.
 * `TauCeti.ae_eq_zero_of_sum_integral_mul_self_eq_zero`: if `∑ k ∈ s, E[X k * X k] = 0` for
   a.e. Hermitian matrices, then each `X k` vanishes almost everywhere.
 -/
@@ -40,72 +41,21 @@ noncomputable section
 open Filter Matrix MeasureTheory
 open scoped Topology
 
-namespace TauCeti
-
-section EntrywisePi
-
-variable {Ω m n E : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
-  [Fintype m] [Fintype n] [NormedAddCommGroup E]
-
-/-- Under the entrywise `π`-norm on `m → n → E`, a matrix-valued function is integrable iff all
-its entries are integrable. -/
-theorem integrable_matrix_iff {F : Ω → Matrix m n E} :
-    Integrable (fun ω (i : m) (j : n) ↦ F ω i j) μ ↔
-      ∀ i j, Integrable (fun ω ↦ F ω i j) μ := by
-  simp only [integrable_pi_iff]
-
-variable [NormedSpace ℝ E] [CompleteSpace E]
-
-/-- Under the entrywise `π`-norm on `m → n → E`, entry `(i, j)` of the Bochner integral equals
-the integral of entry `(i, j)`. -/
-theorem matrix_integral_apply {F : Ω → Matrix m n E}
-    (hF : ∀ i j, Integrable (fun ω ↦ F ω i j) μ) (i : m) (j : n) :
-    (∫ ω, (fun ω (i : m) (j : n) ↦ F ω i j) ω ∂μ) i j = ∫ ω, F ω i j ∂μ := by
-  rw [eval_integral (fun k ↦ Integrable.of_eval (hF k)) i, eval_integral (hF i) j]
-
-/-- Under the entrywise `π`-norm on `m → n → E`, `Matrix.of` of the Bochner integral equals the
-matrix of entrywise integrals. -/
-theorem integral_matrix_eq_of {F : Ω → Matrix m n E}
-    (hF : ∀ i j, Integrable (fun ω ↦ F ω i j) μ) :
-    Matrix.of (∫ ω, (fun ω (i : m) (j : n) ↦ F ω i j) ω ∂μ) =
-      Matrix.of fun i j ↦ ∫ ω, F ω i j ∂μ :=
-  Matrix.ext (matrix_integral_apply hF)
-
-end EntrywisePi
-
 section L2Operator
 
 open scoped Matrix.Norms.L2Operator
 
 variable {Ω m n 𝕜 : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [RCLike 𝕜]
 
-/-- `Matrix m n 𝕜` with the `ℓ²` operator norm as a normed `ℝ`-vector space, extending the native
-`ℝ`-module structure so it is definitionally equal to `Matrix.l2OpNormedAlgebraReal.toNormedSpace`
-when `m = n`. -/
-abbrev l2OpNormedSpaceReal [Fintype m] [Fintype n] [DecidableEq n] :
-    NormedSpace ℝ (Matrix m n 𝕜) where
-  __ := (inferInstance : Module ℝ (Matrix m n 𝕜))
-  norm_smul_le r A := by
-    rw [← algebraMap_smul 𝕜 r A, norm_smul]
-    simp
-
-/-- Continuous `ℝ`-linear projection onto matrix entry `(i, j)` under `Matrix.Norms.L2Operator`. -/
-private def l2OpEntryCLM [Fintype m] [Fintype n] [DecidableEq n] (i : m) (j : n) :
-    letI : NormedSpace ℝ (Matrix m n 𝕜) := l2OpNormedSpaceReal
-    Matrix m n 𝕜 →L[ℝ] 𝕜 :=
-  letI : NormedSpace ℝ (Matrix m n 𝕜) := l2OpNormedSpaceReal
-  (Matrix.entryLinearMap ℝ 𝕜 i j).mkContinuous 1 fun A ↦ by
-    simpa only [one_mul, LinearMap.coe_mk, AddHom.coe_mk, Matrix.entryLinearMap_apply] using
-      Matrix.norm_apply_le_l2_opNorm A i j
-
 /-- Under `Matrix.Norms.L2Operator`, a matrix-valued function is integrable iff all its entries
 are integrable. -/
-theorem integrable_l2Op_matrix_iff [Fintype m] [Fintype n] [DecidableEq n]
+theorem TauCeti.integrable_l2Op_matrix_iff [Fintype m] [Fintype n] [DecidableEq n]
     {F : Ω → Matrix m n 𝕜} :
     Integrable F μ ↔ ∀ i j, Integrable (fun ω ↦ F ω i j) μ := by
   classical
-  let : NormedSpace ℝ (Matrix m n 𝕜) := l2OpNormedSpaceReal
-  refine ⟨fun hF i j ↦ (l2OpEntryCLM i j).integrable_comp hF, fun hF ↦ ?_⟩
+  let : NormedSpace ℝ (Matrix m n 𝕜) := TauCeti.l2OpNormedSpaceReal
+  refine ⟨fun hF i j ↦ ?_, fun hF ↦ ?_⟩
+  · simpa only [TauCeti.l2OpEntryCLM_apply] using (TauCeti.l2OpEntryCLM i j).integrable_comp hF
   have hsum : F = fun ω ↦ ∑ i : m, ∑ j : n, F ω i j • Matrix.single i j (1 : 𝕜) :=
     funext fun ω ↦ by simpa [Matrix.smul_single] using Matrix.matrix_eq_sum_single (F ω)
   rw [hsum]
@@ -117,22 +67,29 @@ theorem integrable_l2Op_matrix_iff [Fintype m] [Fintype n] [DecidableEq n]
       cont := continuous_id.smul continuous_const }
   exact emb.integrable_comp (hF i j)
 
+namespace MeasureTheory.Integrable
+
 /-- Under `Matrix.Norms.L2Operator`, entry `(i, j)` of the Bochner integral equals the integral of
 entry `(i, j)`. -/
 theorem l2Op_matrix_integral_apply [Fintype m] [Fintype n] [DecidableEq n]
     {F : Ω → Matrix m n 𝕜} (hF : Integrable F μ) (i : m) (j : n) :
-    letI : NormedSpace ℝ (Matrix m n 𝕜) := l2OpNormedSpaceReal
+    letI : NormedSpace ℝ (Matrix m n 𝕜) := TauCeti.l2OpNormedSpaceReal
     (∫ ω, F ω ∂μ) i j = ∫ ω, F ω i j ∂μ := by
-  let : NormedSpace ℝ (Matrix m n 𝕜) := l2OpNormedSpaceReal
-  exact ((l2OpEntryCLM i j).integral_comp_comm hF).symm
+  let : NormedSpace ℝ (Matrix m n 𝕜) := TauCeti.l2OpNormedSpaceReal
+  simpa only [TauCeti.l2OpEntryCLM_apply] using
+    ((TauCeti.l2OpEntryCLM i j).integral_comp_comm hF).symm
 
 /-- Under `Matrix.Norms.L2Operator`, the Bochner integral of an integrable matrix-valued function
 is the matrix of entrywise integrals. -/
 theorem integral_l2Op_matrix_eq_of [Fintype m] [Fintype n] [DecidableEq n]
     {F : Ω → Matrix m n 𝕜} (hF : Integrable F μ) :
-    letI : NormedSpace ℝ (Matrix m n 𝕜) := l2OpNormedSpaceReal
+    letI : NormedSpace ℝ (Matrix m n 𝕜) := TauCeti.l2OpNormedSpaceReal
     (∫ ω, F ω ∂μ) = Matrix.of fun i j ↦ ∫ ω, F ω i j ∂μ :=
-  Matrix.ext (l2Op_matrix_integral_apply hF)
+  Matrix.ext (hF.l2Op_matrix_integral_apply)
+
+end MeasureTheory.Integrable
+
+namespace AEMeasurable
 
 /-- Entrywise integrability of an a.e. operator-norm bounded measurable random matrix. -/
 theorem integrable_apply_of_ae_l2_opNorm_le [IsFiniteMeasure μ]
@@ -149,7 +106,7 @@ theorem integrable_l2Op_of_ae_l2_opNorm_le [IsFiniteMeasure μ]
     [MeasurableSpace 𝕜] [BorelSpace 𝕜] [Fintype m] [Fintype n] [DecidableEq n]
     {F : Ω → Matrix m n 𝕜} (hmeas : AEMeasurable F μ) {M : ℝ} (hbdd : ∀ᵐ ω ∂μ, ‖F ω‖ ≤ M) :
     Integrable F μ :=
-  integrable_l2Op_matrix_iff.2 (integrable_apply_of_ae_l2_opNorm_le hmeas hbdd)
+  TauCeti.integrable_l2Op_matrix_iff.2 (hmeas.integrable_apply_of_ae_l2_opNorm_le hbdd)
 
 /-- Entrywise integrability of a square-integrable measurable random matrix on a finite measure
 space. -/
@@ -186,17 +143,21 @@ theorem integrable_l2_opNorm_sq_of_ae_le [IsFiniteMeasure μ]
     Integrable (fun ω ↦ ‖F ω‖ ^ 2) μ :=
   Integrable.of_bound
     ((continuous_norm.pow 2).measurable.comp_aemeasurable hmeas).aestronglyMeasurable
-    ((max M 0) ^ 2)
+    ((Max.max M 0) ^ 2)
     (hbdd.mono fun ω hω ↦ by
       rw [Real.norm_of_nonneg (sq_nonneg _)]
       exact sq_le_sq' (by linarith [norm_nonneg (F ω), le_max_right M 0])
         (hω.trans (le_max_left M 0)))
 
+end AEMeasurable
+
 end L2Operator
 
+namespace TauCeti
+
 /-- If the sum of expected squares `∑ k ∈ s, E[X k * X k]` of a.e. Hermitian random matrices
-with integrable squared diagonal entries vanishes, then each `X k` (`k ∈ s`) vanishes almost
-everywhere. -/
+with integrable diagonal entries of the matrix squares `X k * X k` vanishes, then each `X k`
+(`k ∈ s`) vanishes almost everywhere. -/
 theorem ae_eq_zero_of_sum_integral_mul_self_eq_zero {Ω 𝕜 n ι : Type*}
     [MeasurableSpace Ω] {μ : Measure Ω} [RCLike 𝕜] [Fintype n] {s : Finset ι}
     {X : ι → Ω → Matrix n n 𝕜}

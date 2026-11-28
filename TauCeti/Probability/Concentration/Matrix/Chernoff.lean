@@ -83,7 +83,7 @@ theorem cfc_log_integral_exp_smul_le_of_posSemidef [IsProbabilityMeasure P]
     rwa [harg, hval] at hconv
   have hY_bdd : ∀ᵐ ω ∂P, ‖Y ω‖ ≤ L :=
     (hpsd.and hupper).mono fun _ ⟨hP, hU⟩ ↦ hP.l2_opNorm_le_of_le_smul_one hL.le hU
-  have hY_int : Integrable Y P := integrable_l2Op_of_ae_l2_opNorm_le hmeas hY_bdd
+  have hY_int : Integrable Y P := hmeas.integrable_l2Op_of_ae_l2_opNorm_le hY_bdd
   have hY1_int : Integrable (fun ω ↦ (1 : Matrix n n 𝕜) + c • Y ω) P :=
     (integrable_const (1 : Matrix n n 𝕜)).add (hY_int.smul c)
   have hθY_meas := (continuous_const_smul θ).measurable.comp_aemeasurable hmeas
@@ -92,18 +92,18 @@ theorem cfc_log_integral_exp_smul_le_of_posSemidef [IsProbabilityMeasure P]
       (hP.1.smul (IsSelfAdjoint.all θ)).le_smul_one_of_l2_opNorm_le <| by
         simpa only [norm_smul, Real.norm_eq_abs] using mul_le_mul_of_nonneg_left hbdd (abs_nonneg θ)
   have hE_le := integral_le_integral_of_ae_le hpt
-    (integrable_exp_apply_of_ae_le_smul_one hθY_meas hθY_upper)
+    (hθY_meas.integrable_exp_apply_of_ae_le_smul_one hθY_upper)
     (integrable_l2Op_matrix_iff.1 hY1_int)
   have hE_rhs : (Matrix.of fun i j ↦ ∫ ω, ((1 : Matrix n n 𝕜) + c • Y ω) i j ∂P) =
       (1 : Matrix n n 𝕜) + c • (Matrix.of fun i j ↦ ∫ ω, Y ω i j ∂P) := by
     have hadd := integral_add (f := fun _ ↦ (1 : Matrix n n 𝕜)) (g := fun ω ↦ c • Y ω)
       (integrable_const _) (hY_int.smul c)
-    rw [← integral_l2Op_matrix_eq_of hY1_int, hadd, integral_const, probReal_univ, one_smul,
-      integral_smul, integral_l2Op_matrix_eq_of hY_int]
+    rw [← hY1_int.integral_l2Op_matrix_eq_of, hadd, integral_const, probReal_univ, one_smul,
+      integral_smul, hY_int.integral_l2Op_matrix_eq_of]
   rw [hE_rhs] at hE_le
   have hcM_herm : (c • (Matrix.of fun i j ↦ ∫ ω, Y ω i j ∂P)).IsHermitian :=
     (isHermitian_integral_of_ae_isHermitian (hpsd.mono fun _ h ↦ h.1)).smul (IsSelfAdjoint.all c)
-  exact cfc_log_integral_exp_le_of_le_one_add hθY_meas hθY_upper hcM_herm hE_le
+  exact hθY_meas.cfc_log_integral_exp_le_of_le_one_add hθY_upper hcM_herm hE_le
 
 end TauCeti
 
@@ -205,7 +205,7 @@ theorem iIndepFun.measureReal_l2_opNorm_sum_ge_le_of_posSemidef [IsProbabilityMe
   have hM_split : M = ∑ k ∈ s, Matrix.of fun i j ↦ ∫ ω, Y k ω i j ∂P := by ext; simp [M]
   have hM_psd : M.PosSemidef := hM_split ▸ Matrix.posSemidef_sum s fun k hk ↦
     TauCeti.posSemidef_integral (hpsd k hk)
-      (TauCeti.integrable_apply_of_ae_l2_opNorm_le (hmeas k hk)
+      ((hmeas k hk).integrable_apply_of_ae_l2_opNorm_le
         (((hpsd k hk).and (hupper k hk)).mono fun _ ⟨hP, hU⟩ ↦
           hP.l2_opNorm_le_of_le_smul_one hL.le hU))
   refine (ENNReal.toReal_mono (measure_ne_top P _) <| measure_mono_ae <|
