@@ -5,14 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Algebra.MvPolynomial.Basic
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.LinearAlgebra.Matrix.Trace
 
-import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
-import TauCeti.LinearAlgebra.Matrix.Charpoly.Amitsur
+import TauCeti.LinearAlgebra.Finsupp.LinearCombination
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Family
 
 /-!
 # Trace ideals and common Ribet elements
@@ -37,9 +36,8 @@ polynomials over `L` in variables `X_j` (`j ∈ J`): an `O`-subalgebra `S` of `Y
 
 The families `β` of interest are the determinants `x ↦ det (∑_g ω_g (u_x(g) - 1))`. They lie in
 `S` as soon as `S` contains the coefficients of the characteristic polynomials of the `u_x(g)`
-(`TauCeti.C_det_linearCombination_sub_one_mem`), by Amitsur's theorem for the image of the group
-algebra (`TauCeti.charpoly_coeff_lift_mem`), applied to the family of the `u_x` as one
-representation by matrices over the product ring `Y → L[X_j]`.
+(`TauCeti.C_det_linearCombination_sub_one_mem`, in
+`TauCeti.LinearAlgebra.Matrix.Charpoly.Family`).
 
 ## Main definitions
 
@@ -49,9 +47,6 @@ representation by matrices over the product ring `Y → L[X_j]`.
 
 ## Main results
 
-* `TauCeti.C_charpoly_coeff_lift_mem`, `TauCeti.C_det_linearCombination_sub_one_mem`: the
-  families of characteristic coefficients and of determinants of `u_x(w)`, `w` in the group
-  algebra, lie in `S`.
 * `TauCeti.IsTraceIdeal.C_smul_trace_linearCombination_mem`,
   `TauCeti.IsTraceIdeal.tie_linearCombination_mem`: a trace ideal contains the traces of `p` and
   of the ties against every `O`-linear combination of the `u_x(g)`.
@@ -67,13 +62,9 @@ representation by matrices over the product ring `Y → L[X_j]`.
   (1976), 151–162.
 * J. Bellaïche and G. Chenevier, *Families of Galois representations and Selmer groups*,
   Astérisque 324 (2009), Chapter 1.
-* S. A. Amitsur, *On the characteristic polynomial of a sum of matrices*, Linear and Multilinear
-  Algebra **8** (1980), no. 3, 177–182.
 * The definitions follow `New.Selmer.IsTraceIdeal` and `New.Selmer.IsCommonRibetElement` in the
   file `src/New/Congruences/FirstOrder/FittingBlock.lean` of grh-lean
-  (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC); the
-  determinant families there are `New.Selmer.C_det_linearCombination_mem`
-  (`src/New/Congruences/FirstOrder/RibetLemma.lean`).
+  (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC).
 -/
 
 public section
@@ -85,84 +76,7 @@ namespace TauCeti
 section Families
 
 variable {O L Y J G σ : Type*} [CommRing O] [CommRing L] [Algebra O L] [Fintype σ] [DecidableEq σ]
-
-section Monoid
-
-variable [Monoid G] {S : Subalgebra O (Y → MvPolynomial J L)}
-
-/-- The family `x ↦ U_x` of matrices, with entries read as constant polynomials, as one
-representation of `G` by matrices over the families `Y → L[X_j]`. -/
-private noncomputable def familyRep (u : Y → G →* Matrix σ σ L) :
-    G →* Matrix σ σ (Y → MvPolynomial J L) :=
-  (Matrix.piRingEquiv.symm : _ ≃+* Matrix σ σ (Y → MvPolynomial J L)).toMonoidHom.comp
-    (MonoidHom.pi fun x ↦ (MvPolynomial.C.mapMatrix : Matrix σ σ L →+* _).toMonoidHom.comp (u x))
-
-private theorem familyRep_apply (u : Y → G →* Matrix σ σ L) (g : G) (i j : σ) (x : Y) :
-    familyRep (J := J) u g i j x = MvPolynomial.C (u x g i j) :=
-  rfl
-
-private theorem lift_familyRep_apply (u : Y → G →* Matrix σ σ L) (w : MonoidAlgebra O G)
-    (i j : σ) (x : Y) :
-    MonoidAlgebra.lift O _ G (familyRep (J := J) u) w i j x =
-      MvPolynomial.C (MonoidAlgebra.lift O _ G (u x) w i j) := by
-  have hC (b : O) (l : L) :
-      MvPolynomial.C (b • l) = b • (MvPolynomial.C l : MvPolynomial J L) := by
-    simp only [Algebra.smul_def, map_mul, MvPolynomial.algebraMap_apply]
-  induction w using MonoidAlgebra.induction with
-  | zero => simp
-  | single_add a b f _ _ ih => simp [ih, familyRep_apply, hC]
-
-/-- If `S` contains the families of the coefficients of the characteristic polynomials of the
-`u_x(g)`, as constant polynomials, then it contains those of the image `u_x(w)` of every element
-`w` of the monoid algebra `O[G]`. -/
-theorem C_charpoly_coeff_lift_mem (u : Y → G →* Matrix σ σ L)
-    (hS : ∀ g n, (fun x ↦ MvPolynomial.C ((u x g).charpoly.coeff n)) ∈ S)
-    (w : MonoidAlgebra O G) (n : ℕ) :
-    (fun x ↦ MvPolynomial.C ((MonoidAlgebra.lift O _ G (u x) w).charpoly.coeff n)) ∈ S := by
-  -- The characteristic polynomial of a matrix over the product ring `Y → L[X_j]` is the family
-  -- of the characteristic polynomials of its components.
-  have hcomp (w : MonoidAlgebra O G) (n : ℕ) :
-      (MonoidAlgebra.lift O _ G (familyRep (J := J) u) w).charpoly.coeff n =
-        fun x ↦ MvPolynomial.C ((MonoidAlgebra.lift O _ G (u x) w).charpoly.coeff n) := by
-    funext x
-    have hmap : (MonoidAlgebra.lift O _ G (familyRep (J := J) u) w).map (Pi.evalRingHom _ x) =
-        (MonoidAlgebra.lift O _ G (u x) w).map MvPolynomial.C :=
-      Matrix.ext fun i j ↦ lift_familyRep_apply u w i j x
-    calc (MonoidAlgebra.lift O _ G (familyRep (J := J) u) w).charpoly.coeff n x
-        = Pi.evalRingHom _ x
-            ((MonoidAlgebra.lift O _ G (familyRep (J := J) u) w).charpoly.coeff n) :=
-          (Pi.evalRingHom_apply _ _ _).symm
-      _ = _ := by rw [← Polynomial.coeff_map, ← charpoly_map, hmap, charpoly_map,
-          Polynomial.coeff_map]
-  rw [← hcomp]
-  refine charpoly_coeff_lift_mem (fun g k ↦ ?_) w n
-  have h := hcomp (MonoidAlgebra.of O G g) k
-  simp only [MonoidAlgebra.lift_of] at h
-  rw [h]
-  exact hS g k
-
-/-- If `S` contains the families of the coefficients of the characteristic polynomials of the
-`u_x(g)`, as constant polynomials, then it contains the families of the determinants
-`x ↦ det (∑_g θ_g (u_x(g) - 1))` of all `O`-linear combinations. -/
-theorem C_det_linearCombination_sub_one_mem (u : Y → G →* Matrix σ σ L)
-    (hS : ∀ g n, (fun x ↦ MvPolynomial.C ((u x g).charpoly.coeff n)) ∈ S) (θ : G →₀ O) :
-    (fun x ↦ MvPolynomial.C
-      (Finsupp.linearCombination O (fun g ↦ u x g - 1) θ).det) ∈ S := by
-  have hw (x : Y) : Finsupp.linearCombination O (fun g ↦ u x g - 1) θ =
-      MonoidAlgebra.lift O _ G (u x)
-        (Finsupp.linearCombination O (fun g ↦ MonoidAlgebra.of O G g - 1) θ) := by
-    rw [← AlgHom.toLinearMap_apply, Finsupp.apply_linearCombination]
-    exact congrArg (fun v ↦ Finsupp.linearCombination O v θ) (funext fun g ↦ by simp)
-  have h := Subalgebra.smul_mem S (C_charpoly_coeff_lift_mem u hS
-    (Finsupp.linearCombination O (fun g ↦ MonoidAlgebra.of O G g - 1) θ) 0)
-    ((-1) ^ Fintype.card σ : O)
-  convert h using 1
-  funext x
-  simp [hw, det_eq_sign_charpoly_coeff, Algebra.smul_def, MvPolynomial.algebraMap_apply]
-
-end Monoid
-
-variable {S : Subalgebra O (Y → MvPolynomial J L)}
+  {S : Subalgebra O (Y → MvPolynomial J L)}
 
 /-- The `S`-submodule `𝒥` of the families `Y → L[X_j]` is a **trace ideal** for the matrices
 `u x g`, `p ∈ O`, the elements `τ i`, `φ i` of `G`, the indices `k i` and the polynomials
@@ -198,22 +112,6 @@ theorem mono (h : IsTraceIdeal 𝒥 u p τ φ k ε) (h𝒥 : 𝒥 ≤ 𝒥') : I
   C_smul_trace_mem g := h𝒥 (h.C_smul_trace_mem g)
   tie_mem g i := h𝒥 (h.tie_mem g i)
 
-omit [Fintype σ] [DecidableEq σ] in
-/-- An `O`-linear family `F` of maps `Matrix σ σ L → L[X_j]` that sends every `u x g` into `𝒥`
-sends every `O`-linear combination of them into `𝒥`. -/
-private theorem linearCombination_mem (F : Y → Matrix σ σ L →ₗ[O] MvPolynomial J L)
-    (hF : ∀ g, (fun x ↦ F x (u x g)) ∈ 𝒥) (θ : G →₀ O) :
-    (fun x ↦ F x (Finsupp.linearCombination O (u x) θ)) ∈ 𝒥 := by
-  induction θ using Finsupp.induction_linear with
-  | zero =>
-    simp only [map_zero]
-    exact 𝒥.zero_mem
-  | add θ θ' h h' =>
-    simp only [map_add]
-    exact 𝒥.add_mem h h'
-  | single g r =>
-    simpa [← Pi.smul_def', Pi.smul_def] using 𝒥.smul_of_tower_mem r (hF g)
-
 /-- A trace ideal contains the families of the traces of `p • ∑_g θ_g • u x g`, for every
 finitely supported `θ`. -/
 theorem C_smul_trace_linearCombination_mem (h : IsTraceIdeal 𝒥 u p τ φ k ε) (θ : G →₀ O) :
@@ -223,7 +121,11 @@ theorem C_smul_trace_linearCombination_mem (h : IsTraceIdeal 𝒥 u p τ φ k ε
       (p • Matrix.traceLinearMap σ O L)
   have hF (x : Y) (M : Matrix σ σ L) : F x M = MvPolynomial.C (p • M.trace) := by
     simp [F, MvPolynomial.algebraMap_eq]
-  simpa [hF] using linearCombination_mem F (fun g ↦ by simpa [hF] using h.C_smul_trace_mem g) θ
+  convert 𝒥.linearCombination_mem (v := fun g x ↦ F x (u x g))
+    (fun g ↦ by simpa [hF] using h.C_smul_trace_mem g) θ using 1
+  funext x
+  rw [Finsupp.linearCombination_pi_apply, ← hF x]
+  exact Finsupp.apply_linearCombination O (F x) (u x) θ
 
 /-- A trace ideal contains the families of the traces of the ties against every
 `∑_g θ_g • u x g`, for finitely supported `θ`. -/
@@ -242,7 +144,11 @@ theorem tie_linearCombination_mem (h : IsTraceIdeal 𝒥 u p τ φ k ε) (θ : G
       MvPolynomial.X (k i) * MvPolynomial.C ((Polynomial.aeval (u x (φ i))
         ((Polynomial.X - 1) * ε (k i)) * M).trace) := by
     simp [F, MvPolynomial.algebraMap_eq, mul_assoc]
-  simpa [hF] using linearCombination_mem F (fun g ↦ by simpa [hF] using h.tie_mem g i) θ
+  convert 𝒥.linearCombination_mem (v := fun g x ↦ F x (u x g))
+    (fun g ↦ by simpa [hF] using h.tie_mem g i) θ using 1
+  funext x
+  rw [Finsupp.linearCombination_pi_apply, ← hF x]
+  exact Finsupp.apply_linearCombination O (F x) (u x) θ
 
 end IsTraceIdeal
 
