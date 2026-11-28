@@ -23,6 +23,24 @@ namespace TauCeti.MvPowerSeries
 
 open _root_.MvPowerSeries Matrix
 
+/-- Substituting the rows of a compatible matrix into linear forms multiplies the matrices. -/
+private theorem subst_matrix_mulVec {R ι κ τ : Type*} [CommRing R] [Fintype κ] [Fintype τ]
+    (A : Matrix ι κ R) (B : Matrix κ τ R) (i : ι) :
+    subst (B.map C *ᵥ X) ((A.map C *ᵥ X) i) = ((A * B).map C *ᵥ X) i := by
+  have hb : HasSubst (B.map C *ᵥ X) :=
+    hasSubst_of_constantCoeff_zero fun j ↦ by simp [mulVec, dotProduct]
+  rw [← coe_substAlgHom hb]
+  change (substAlgHom hb).toRingHom ((A.map C *ᵥ X) i) = _
+  rw [RingHom.map_mulVec]
+  have hA : (A.map C).map (substAlgHom hb).toRingHom = A.map C := by
+    ext j l
+    simp
+  have hX : (substAlgHom hb).toRingHom ∘ (X : κ → MvPowerSeries κ R) =
+      B.map (C (σ := τ)) *ᵥ X := by
+    funext j
+    exact substAlgHom_X hb j
+  rw [hA, hX, mulVec_mulVec, ← Matrix.map_mul]
+
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {k m : ℕ}
   {r : Fin k → ℝ} {s : Fin m → ℝ}
 
@@ -99,18 +117,10 @@ theorem restrictedLinearSubst_injective {s : Fin k → ℝ} [∀ i, Fact (0 < s 
   have hb : HasSubst b := hasSubst_of_constantCoeff_zero fun i ↦ by simp [b]
   have hcomp : (fun i ↦ subst b (a i)) = X := by
     funext i
-    have hrow : ∀ l, (∑ j, (u : Matrix _ _ R) i j * (↑(u⁻¹) : Matrix (Fin k) (Fin k) R) j l) =
-        (1 : Matrix (Fin k) (Fin k) R) i l := by
-      intro l
-      simpa only [Matrix.mul_apply] using
-        congrArg (fun M : Matrix (Fin k) (Fin k) R ↦ M i l) u.mul_inv
-    have hc (c : R) : substAlgHom hb (C c) = C c := by rw [coe_substAlgHom, subst_C]
-    simp only [a, ← coe_substAlgHom hb, map_sum, map_mul, hc, substAlgHom_X, b,
-      Finset.mul_sum]
-    rw [Finset.sum_comm]
-    simp only [← mul_assoc, ← map_mul (C (σ := Fin k)), ← Finset.sum_mul,
-      ← map_sum (C (σ := Fin k)), hrow]
-    simp [Matrix.one_apply]
+    change subst ((↑(u⁻¹) : Matrix (Fin k) (Fin k) R).map C *ᵥ X)
+      (((u : Matrix (Fin k) (Fin k) R).map C *ᵥ X) i) = X i
+    rw [subst_matrix_mulVec, u.mul_inv]
+    simp
   intro f g hfg
   apply Subtype.ext
   have e := congrArg (fun f : IsRestricted.subring (R := R) s ↦

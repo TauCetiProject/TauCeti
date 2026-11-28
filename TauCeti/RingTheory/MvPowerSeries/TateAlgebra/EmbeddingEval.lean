@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Eval
 
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.LinearSubst
-import TauCeti.RingTheory.Trace.EmbeddingsMatrix
+import TauCeti.Analysis.Normed.Algebra.EmbeddingsMatrix
 
 /-!
 # Coefficient recovery in the coordinates of local field embeddings
@@ -66,7 +66,7 @@ theorem eq_zero_of_restrictedEval₂_algHom_eq_zero [IsUltrametricDist F]
       restrictedEval₂ (RingHom.id R) (fun i ↦ algebraMap K R (σ i y))
         (fun _ ↦ le_rfl) (hbound y hy) f = 0) :
     f = 0 := by
-  obtain ⟨b, hb, hu₀⟩ := exists_small_embedding_matrix σ hσ hk hε
+  obtain ⟨b, hb, hu₀⟩ := exists_norm_lt_isUnit_embeddingsMatrix σ hσ hk hε
   let A₀ : Matrix (Fin k) (Fin k) K := Matrix.of fun i j ↦ σ i (b j)
   let A : Matrix (Fin k) (Fin k) R := (algebraMap K R).mapMatrix A₀
   have hA : ∀ i j, ‖A i j‖ * (1 : ℝ) ≤ r i := by

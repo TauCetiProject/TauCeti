@@ -83,18 +83,13 @@ theorem coe_expansion_eq_of_char_eq [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < s 
     simpa [z] using hy.trans_lt hε1
   obtain ⟨u, hu⟩ := hu
   rw [map_sub, sub_eq_zero]
-  have ev {a : Fin k → ℝ} (hca : c ≤ a) (w : IsRestricted.subring (R := R) a) :
-      restrictedEval₂ (RingHom.id R) (fun i ↦ algebraMap K R (σ i y)) (fun _ ↦ le_rfl)
-          (hbound y hy) (restrictedRadiusHom (fun _ ↦ hε.le) hca w) =
-        restrictedEval₂ (RingHom.id R) (fun i ↦ algebraMap K R (σ i y)) (fun _ ↦ le_rfl)
-          (fun i ↦ (hbound y hy i).trans (hca i)) w := by
-    rw [restrictedEval₂_apply, restrictedEval₂_apply, coe_restrictedRadiusHom]
   calc
-    _ = κ.char u := (ev hcr _).trans
-      (κ.char_eq_restrictedEval₂ u z (fun i ↦ (hbound y hy i).trans (hcr i)) hu).symm
+    _ = κ.char u :=
+      (restrictedEval₂_restrictedRadiusHom _ hcr _ _ _ (hbound y hy) κ.expansion).trans
+        (κ.char_eq_restrictedEval₂ u z (fun i ↦ (hbound y hy i).trans (hcr i)) hu).symm
     _ = κ'.char u := DFunLike.congr_fun hchar u
     _ = _ := (κ'.char_eq_restrictedEval₂ u z (fun i ↦ (hbound y hy i).trans (hcs i)) hu).trans
-      (ev hcs _).symm
+      (restrictedEval₂_restrictedRadiusHom _ hcs _ _ _ (hbound y hy) κ'.expansion).symm
 
 /-- At fixed polyradii the local unit character determines the analytic weight, hence its
 automorphy factor and slash action. -/
