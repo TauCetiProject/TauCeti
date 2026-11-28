@@ -11,6 +11,7 @@ import TauCeti.GroupTheory.PositiveDefinite.Bounds
 import TauCeti.Analysis.RCLike.Basic
 import TauCeti.GroupTheory.PositiveDefinite.Basic
 import TauCeti.GroupTheory.PropertyT.PositiveDefinite
+import TauCeti.RepresentationTheory.Continuous.Basic
 
 /-!
 # Relative property (T) and subgroups of finite index

@@ -12,8 +12,10 @@ import Mathlib.Order.Filter.AtTopBot.CountablyGenerated
 import TauCeti.Analysis.InnerProductSpace.UnitVector
 import TauCeti.Analysis.PositiveDefinite.Kernel.Schoenberg
 import TauCeti.Analysis.RCLike.Basic
+import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 import TauCeti.GroupTheory.PositiveDefinite.Bounds
 import TauCeti.GroupTheory.PositiveDefinite.Metric
+import TauCeti.RepresentationTheory.Continuous.Basic
 import TauCeti.RepresentationTheory.Continuous.Unitary.OrbitConvexHull
 
 /-!
@@ -279,23 +281,6 @@ private theorem tendsto_cexp_neg_tsum_mul_zero {A : ℕ → Finset Γ}
         (by nlinarith [sq_pos_of_pos hε₀])
   exact squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _) hbound hexp0
 
-omit [Group Γ] in
-/-- For a finite set `F₀` and `ε > 0`, there exists `t > 0` such that `exp (-t * ψ g)` lies within
-`ε` of `1` on `F₀`. -/
-private theorem exists_pos_forall_mem_norm_cexp_neg_mul_sub_lt (F₀ : Finset Γ) (ψ : Γ → ℂ)
-    {ε : ℝ} (hε : 0 < ε) :
-    ∃ t : ℝ, 0 < t ∧ ∀ g ∈ F₀, ‖Complex.exp (-(t : ℂ) * ψ g) - 1‖ < ε := by
-  have hev : ∀ᶠ t : ℝ in 𝓝 0, ∀ g ∈ F₀, ‖Complex.exp (-(t : ℂ) * ψ g) - 1‖ < ε := by
-    refine (Filter.eventually_all_finset F₀).mpr fun g _ ↦ ?_
-    have hcont : Continuous fun t : ℝ ↦ Complex.exp (-(t : ℂ) * ψ g) := by fun_prop
-    have ht0 : Tendsto (fun t : ℝ ↦ Complex.exp (-(t : ℂ) * ψ g)) (𝓝 0) (𝓝 1) := by
-      simpa using (hcont.continuousAt (x := 0)).tendsto
-    simpa only [dist_eq_norm] using Metric.tendsto_nhds.mp ht0 ε hε
-  obtain ⟨r, hr, hr_sub⟩ := Metric.mem_nhds_iff.mp hev
-  refine ⟨r / 2, half_pos hr, hr_sub ?_⟩
-  rw [Metric.mem_ball, dist_zero_right, Real.norm_of_nonneg (half_pos hr).le]
-  exact half_lt_self hr
-
 /-- **Jolissaint – Anantharaman–Popa exponential step.** For a subgroup `Λ` of a countable group
 `Γ`, relative property (T) implies quantitative positive-definite approximation on `Λ`. -/
 private theorem posSemidef_approx_of_relativePropertyT [Countable Γ] {Λ : Subgroup Γ}
@@ -321,8 +306,8 @@ private theorem posSemidef_approx_of_relativePropertyT [Countable Γ] {Λ : Subg
       (fun k x hx ↦ (hF k x hx).le.trans (min_le_left _ _)) g
   let ψ (g : Γ) : ℂ := ∑' k : ℕ, ((k + 1 : ℝ) : ℂ) * (1 - φ k g)
   -- Choose `t > 0` small enough that `Φ = exp (-t * ψ)` is `(F₀, δ₀ ^ 2 / 2)`-close to `1`.
-  obtain ⟨t, ht, htF₀⟩ := exists_pos_forall_mem_norm_cexp_neg_mul_sub_lt F₀ ψ (by positivity :
-    0 < δ₀ ^ 2 / 2)
+  obtain ⟨t, ht, htF₀⟩ := Complex.exists_pos_forall_mem_norm_exp_mul_sub_lt F₀ (-ψ)
+    (by positivity : 0 < δ₀ ^ 2 / 2)
   let Φ (g : Γ) : ℂ := Complex.exp (-(t : ℂ) * ψ g)
   have hΦ : (Matrix.of fun a b : Γ ↦ Φ (a⁻¹ * b)).PosSemidef :=
     Matrix.posSemidef_cexp_neg_tsum_mul (K := fun k a b ↦ φ k (a⁻¹ * b))
@@ -332,7 +317,8 @@ private theorem posSemidef_approx_of_relativePropertyT [Countable Γ] {Λ : Subg
   obtain ⟨v, hv0, hvΛ⟩ := (isKazhdanPair_def Λ F₀ δ₀).mp hK
     hΦ.gnsSpace hΦ.gnsRepresentation hΦ.isUnitary_gnsRepresentation
     ⟨hΦ.gnsVector 1, hΦ.norm_gnsVector_eq_one hΦ1 1,
-      fun g hg ↦ hΦ.norm_gnsRepresentation_gnsVector_one_sub_lt hΦ1 hδ₀ (htF₀ g hg)⟩
+      fun g hg ↦ hΦ.norm_gnsRepresentation_gnsVector_one_sub_lt hΦ1 hδ₀
+        (by simpa only [Φ, Pi.neg_apply, mul_neg, neg_mul] using htF₀ g hg)⟩
   -- Exponential decay of `Φ (a⁻¹ * s n * b)` along `s n` forces `invariants = ⊥`, contradiction.
   have hbot : (hΦ.gnsRepresentation.restrict Λ.subtype).invariants = ⊥ :=
     hΦ.invariants_restrict_gnsRepresentation_eq_bot Λ.subtype (s := fun n ↦ ⟨s n, hsΛ n⟩)

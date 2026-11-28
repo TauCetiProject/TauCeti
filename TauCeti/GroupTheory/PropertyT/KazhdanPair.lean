@@ -7,9 +7,9 @@ module
 
 public import TauCeti.GroupTheory.PropertyT.Basic
 public import TauCeti.RepresentationTheory.Continuous.InvariantComplement
-public import TauCeti.RepresentationTheory.Continuous.Invariants
 public import TauCeti.RepresentationTheory.Continuous.Unitary.HilbertSum
 import Mathlib.Algebra.Group.Shrink
+import TauCeti.RepresentationTheory.Continuous.Basic
 import TauCeti.RepresentationTheory.Continuous.Unitary.PositiveDefinite
 
 /-!

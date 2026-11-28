@@ -8,14 +8,16 @@ module
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
-# Limits of the real exponential
+# Limits of the real and complex exponential
 
 Mathlib records `Real.tendsto_exp_nhds_zero_nhds_one : exp u → 1` as `u → 0`. This file adds
 the scaled form `c e^{a u} → c`, which is how a discount factor `K e^{-r τ}` approaches the
 undiscounted amount `K` as the time `τ` tends to `0`, and the first-order limit
 `(e^{a t} - 1) / t → a`, the difference quotient of `t ↦ e^{a t}` at zero, which identifies the
 generator of an exponentially rescaled semigroup. At infinity, it records that an exponentially
-decaying bound `c e^{-κ s}`, `κ > 0`, tends to zero as `s → ∞`.
+decaying bound `c e^{-κ s}`, `κ > 0`, tends to zero as `s → ∞`. For the complex exponential on a
+finite index set `s`, it records that `exp (t * f a)` is uniformly close to `1` on `s` for small
+positive `t`.
 
 ## Main declarations
 
@@ -27,6 +29,8 @@ decaying bound `c e^{-κ s}`, `κ > 0`, tends to zero as `s → ∞`.
 * `Real.isBigO_exp_comp_sub_one`: if `f → 0` and `f = O(g)` along a filter, then
   `e^f - 1 = O(g)`.
 * `Real.tendsto_const_mul_exp_neg_mul_atTop`: `c e^{-κ s} → 0` as `s → ∞`, for `κ > 0`.
+* `Complex.exists_pos_forall_mem_norm_exp_mul_sub_lt`: for a finite set `s` and `f : α → ℂ`,
+  there exists `t > 0` such that `‖exp (t * f a) - 1‖ < ε` for all `a ∈ s`.
 -/
 
 public section
@@ -80,3 +84,23 @@ theorem tendsto_const_mul_exp_neg_mul_atTop (c : ℝ) {κ : ℝ} (hκ : 0 < κ) 
   simpa using (tendsto_exp_neg_atTop_nhds_zero.comp (tendsto_id.const_mul_atTop hκ)).const_mul c
 
 end Real
+
+namespace Complex
+
+/-- For a finite set `s` and a function `f : α → ℂ`, for every `ε > 0` there exists `t > 0` such
+that `exp (t * f a)` lies within `ε` of `1` for every `a ∈ s`. -/
+theorem exists_pos_forall_mem_norm_exp_mul_sub_lt {α : Type*} (s : Finset α) (f : α → ℂ)
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ t : ℝ, 0 < t ∧ ∀ a ∈ s, ‖exp ((t : ℂ) * f a) - 1‖ < ε := by
+  have hev : ∀ᶠ t : ℝ in 𝓝 0, ∀ a ∈ s, ‖exp ((t : ℂ) * f a) - 1‖ < ε := by
+    refine (Filter.eventually_all_finset s).mpr fun a _ ↦ ?_
+    have hcont : Continuous fun t : ℝ ↦ exp ((t : ℂ) * f a) := by fun_prop
+    have ht0 : Tendsto (fun t : ℝ ↦ exp ((t : ℂ) * f a)) (𝓝 0) (𝓝 1) := by
+      simpa using (hcont.continuousAt (x := 0)).tendsto
+    simpa only [dist_eq_norm] using Metric.tendsto_nhds.mp ht0 ε hε
+  obtain ⟨r, hr, hr_sub⟩ := Metric.mem_nhds_iff.mp hev
+  refine ⟨r / 2, half_pos hr, hr_sub ?_⟩
+  rw [Metric.mem_ball, dist_zero_right, Real.norm_of_nonneg (half_pos hr).le]
+  exact half_lt_self hr
+
+end Complex
