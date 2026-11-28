@@ -51,9 +51,8 @@ theorem mumfordClass_apply (G : Over S) [MonObj G] (L : LineBundleClass G.left) 
 theorem pullback_lift_id_unit_mumfordClass (G : Over S) [MonObj G] (L : LineBundleClass G.left) :
     pullback (Limits.pullback.lift (𝟙 G.left) (G.hom ≫ η[G].left) (by simp))
       (mumfordClass G L) = 1 := by
-  have h := Over.lift_left (𝟙 G) (toUnit G ≫ η[G])
-  simp only [Over.comp_left, Over.toUnit_left, Over.id_left] at h
-  rw [← h]
+  -- `Over.lift_left` leaves the components unsimplified. Use the slice lift for the unit law.
+  change pullback (lift (𝟙 G) (toUnit G ≫ η[G])).left (mumfordClass G L) = 1
   simp only [mumfordClass_apply, div_eq_mul_inv, pullback_mul, pullback_inv, pullback_comp,
     ← Over.comp_left, MonObj.lift_comp_one_right, lift_fst, lift_snd, comp_toUnit_assoc,
     Over.id_left, pullback_id]
@@ -64,9 +63,8 @@ theorem pullback_lift_id_unit_mumfordClass (G : Over S) [MonObj G] (L : LineBund
 theorem pullback_lift_unit_id_mumfordClass (G : Over S) [MonObj G] (L : LineBundleClass G.left) :
     pullback (Limits.pullback.lift (G.hom ≫ η[G].left) (𝟙 G.left) (by simp))
       (mumfordClass G L) = 1 := by
-  have h := Over.lift_left (toUnit G ≫ η[G]) (𝟙 G)
-  simp only [Over.comp_left, Over.toUnit_left, Over.id_left] at h
-  rw [← h]
+  -- As for the first axis, the unit law applies to the slice lift.
+  change pullback (lift (toUnit G ≫ η[G]) (𝟙 G)).left (mumfordClass G L) = 1
   simp only [mumfordClass_apply, div_eq_mul_inv, pullback_mul, pullback_inv, pullback_comp,
     ← Over.comp_left, MonObj.lift_comp_one_left, lift_fst, lift_snd, comp_toUnit_assoc,
     Over.id_left, pullback_id]
