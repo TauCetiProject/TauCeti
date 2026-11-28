@@ -34,12 +34,12 @@ matching, its symmetries, and its recentered and floor/ceiling character-weight 
   `TauCeti.DiscreteSeries.isBlockRule_iff_isMatching`: one- and two-parameter gap validity,
   block-insertion and signed-matching predicates, and their equivalence on arbitrary finite index
   types.
-* `TauCeti.DiscreteSeries.HasGap.neg`, `.neg_signs`, `.shift`,
+* `TauCeti.DiscreteSeries.HasGap.neg`, `.neg_signs`, `.shift`, `.mono`,
   `TauCeti.DiscreteSeries.IsBlockRule.symm`, `.neg`, `.neg_signs`, `.shift`,
   `.shiftedEntry_ne_zero`, `TauCeti.DiscreteSeries.isBlockRule_iff_of_offsets`,
   `TauCeti.DiscreteSeries.isBlockRule_iff_of_floor`, and
-  `TauCeti.DiscreteSeries.isBlockRule_iff_of_ceil`: symmetries, nonvanishing, and recentered and
-  floor/ceiling characterizations.
+  `TauCeti.DiscreteSeries.isBlockRule_iff_of_ceil`: symmetries, monotonicity in the gap,
+  nonvanishing, and recentered and floor/ceiling characterizations.
 
 ## References
 
@@ -246,6 +246,11 @@ theorem HasGap.shift {ι : Type*} [Fintype ι] {gap : ℕ} {s : ι → ℤˣ} {l
   ⟨fun _ _ hij ↦ h.injective (by simpa using hij),
     fun i ↦ by obtain ⟨k, hk⟩ := h.parity i; exact ⟨k + u, by omega⟩,
     fun i j hne ↦ by simpa [add_sub_add_right_eq_sub] using h.gap_le i j hne⟩
+
+/-- A parameter with gap `gap` has every smaller gap `gap'`. -/
+theorem HasGap.mono {ι : Type*} [Fintype ι] {gap gap' : ℕ} {s : ι → ℤˣ} {l : ι → ℤ}
+    (h : HasGap gap s l) (hle : gap' ≤ gap) : HasGap gap' s l :=
+  ⟨h.injective, h.parity, fun i j hne ↦ le_trans (by omega) (h.gap_le i j hne)⟩
 
 /-- Two-sided parameter validity with separation `gap` between entries carrying different signs
 `s`/`t`: both `(s, l)` and `(t, l')` satisfy `HasGap`. -/

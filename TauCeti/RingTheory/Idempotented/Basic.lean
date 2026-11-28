@@ -193,6 +193,14 @@ theorem nondegeneratePart_eq_bot_iff :
     nondegeneratePart A H M = ⊥ ↔ ∀ (h : H) (m : M), (h : Unitization A H) • m = 0 := by
   simp [← le_bot_iff, nondegeneratePart_le_iff]
 
+/-- An element of the unitization `A ⊕ H` lying in `H • (A ⊕ H)` lies in `H`: the left ideal
+`H • (A ⊕ H)` is contained in the kernel of the projection `A ⊕ H → A`. -/
+theorem inr_snd_eq_of_mem_nondegeneratePart {u : Unitization A H}
+    (hu : u ∈ nondegeneratePart A H (Unitization A H)) : (u.snd : Unitization A H) = u := by
+  have hle : nondegeneratePart A H (Unitization A H) ≤ RingHom.ker (Unitization.fstHom A H) :=
+    nondegeneratePart_le_iff.2 fun h m ↦ by simp [RingHom.mem_ker]
+  exact Unitization.inr_snd_of_fst_eq_zero (RingHom.mem_ker.1 (hle hu))
+
 /-- A module homomorphism maps the nondegenerate part into the nondegenerate part. -/
 theorem map_nondegeneratePart_le {N : Type*} [AddCommMonoid N] [Module (Unitization A H) N]
     (f : M →ₗ[Unitization A H] N) :
