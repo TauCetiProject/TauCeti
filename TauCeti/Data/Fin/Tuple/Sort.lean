@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Data.Fin.Tuple.Sort
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.Fintype.Fin
@@ -34,7 +33,6 @@ deleting the entry at `k` from `b` deletes the entry at that position from the r
   injective tuple `b` is the number of entries below `b k`.
 * `Tuple.comp_succAbove_comp_sort`: deleting an entry of a tuple commutes with the increasing
   rearrangement.
-* `Tuple.sum_comp_sortDesc`: the decreasing rearrangement of a tuple has the same sum.
 -/
 
 public section
@@ -118,10 +116,5 @@ theorem comp_succAbove_comp_sort {n : ℕ} {b : Fin (n + 1) → β} (k : Fin (n 
   -- `(sort b).symm k` from it, and `h4` reindexes the left-hand side along
   -- `sort (b ∘ k.succAbove)`.
   omega
-
-/-- The sum of the decreasing rearrangement of a tuple is its sum. -/
-theorem sum_comp_sortDesc {M : Type*} [AddCommMonoid M] [LinearOrder M] (x : Fin m → M) :
-    ∑ i, (x ∘ sortDesc x) i = ∑ i, x i :=
-  Equiv.sum_comp (sortDesc x) x
 
 end Tuple

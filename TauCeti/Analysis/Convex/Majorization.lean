@@ -8,12 +8,9 @@ module
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 public import Mathlib.Data.Fin.Tuple.Basic
-public import TauCeti.Algebra.BigOperators.Finset.PartialSum
 public import TauCeti.Algebra.Order.BigOperators.Majorization
 
-import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Order.Pi
-import Mathlib.Data.Fin.Tuple.Sort
 import Mathlib.GroupTheory.Perm.Sign
 
 /-!
