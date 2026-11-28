@@ -40,6 +40,8 @@ under base change and norm.
   composition and identity laws.
 * `NumberField.infiniteAdeleExtensionAlgebra`, `NumberField.adeleExtensionAlgebra`: the induced
   algebra structures, available in the corresponding scopes.
+* `NumberField.zhatUnitsMap`: the units of the integral finite adeles `Ô_ℚ` of `ℚ` mapped to the
+  units of the finite adeles of a number field.
 
 ## Provenance
 
@@ -169,6 +171,26 @@ theorem algebraMap_infiniteAdeleExtensionAlgebra :
   RingHom.algebraMap_toAlgebra _
 
 end Infinite
+
+section IntegralUnits
+
+open IsDedekindDomain.FiniteAdeleRing
+
+variable (E : Type*) [Field E] [NumberField E]
+
+/-- The units of the integral finite adeles `Ô_ℚ` of `ℚ`, mapped to the units of the finite adeles
+of a number field `E` along `ℚ ⊆ E` by `finiteAdeleExtension`. -/
+noncomputable def zhatUnitsMap : (integralAdeles ℤ ℚ)ˣ →* (FiniteAdeleRing (𝓞 E) E)ˣ :=
+  Units.map ((finiteAdeleExtension ℤ ℚ (𝓞 E) E).comp (integralAdeles ℤ ℚ).val.toRingHom)
+
+variable {E} in
+@[simp]
+theorem coe_zhatUnitsMap (ε : (integralAdeles ℤ ℚ)ˣ) :
+    (zhatUnitsMap E ε : FiniteAdeleRing (𝓞 E) E) =
+      finiteAdeleExtension ℤ ℚ (𝓞 E) E (ε : integralAdeles ℤ ℚ) :=
+  (rfl)
+
+end IntegralUnits
 
 section Adele
 

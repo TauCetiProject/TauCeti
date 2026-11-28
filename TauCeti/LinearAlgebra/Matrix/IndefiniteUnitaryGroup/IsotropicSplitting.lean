@@ -54,6 +54,11 @@ The main results are the laws of these elements:
 * `TauCeti.IsotropicSplitting.exists_eq_unipotent_iff`: the unipotent elements are exactly the
   elements fixing `k` pointwise with core block `1`, the unipotent radical of the parabolic.
 
+Along the way, an invertible `g` with `g k = k a` acts on the frame by a unit `a`
+(`TauCeti.IsotropicSplitting.isUnit_of_mul_k`), and for `g` in the unitary group and `a = t` a unit
+the coordinate `lCoord = kᴴ A` satisfies `lCoord g = (t⁻¹)ᴴ lCoord`
+(`TauCeti.IsotropicSplitting.lCoord_mul_of_mul_k`).
+
 The parabolic subgroup itself is `TauCeti.IsotropicSplitting.parabolic`, the elements `g` with
 `g k = k a` for some `a ∈ GL_p(R)`; its elements are exactly the products `n(c, b) m(a, g₀)`
 (`TauCeti.IsotropicSplitting.mem_parabolic_iff_exists_unipotent_mul_levi`). Exchanging the frames
@@ -842,9 +847,18 @@ theorem levi_mul_unipotent_mul_inv_levi (x : GL p R × unitaryGroupOf A₀) (c :
 /-! ### The Levi decomposition -/
 
 omit [Invertible (2 : R)] in
+/-- An invertible matrix `g` acting on the frame `k` by a matrix `a` (`g k = k a`) acts by a unit:
+`kCoord g⁻¹ k` is a left inverse of `a`. -/
+theorem isUnit_of_mul_k {g : GL n R} {a : Matrix p p R}
+    (hk : (g : Matrix n n R) * D.k = D.k * a) : IsUnit a := by
+  refine IsUnit.of_mul_eq_one_right (D.kCoord * ((g⁻¹ : GL n R) : Matrix n n R) * D.k) ?_
+  rw [Matrix.mul_assoc, Matrix.mul_assoc, ← hk, ← Matrix.mul_assoc _ (g : Matrix n n R),
+    Units.inv_mul, Matrix.one_mul, kCoord_mul_k]
+
+omit [Invertible (2 : R)] in
 /-- An element of the unitary group acting on the frame `k` by `t` acts on the coordinate along
 `l` by `(t⁻¹)ᴴ`. -/
-private theorem lCoord_mul_of_mul_k (g : unitaryGroupOf A) (t : GL p R)
+theorem lCoord_mul_of_mul_k (g : unitaryGroupOf A) (t : GL p R)
     (hk : ((g : GL n R) : Matrix n n R) * D.k = D.k * (t : Matrix p p R)) :
     D.lCoord * ((g : GL n R) : Matrix n n R) = (t : Matrix p p R)⁻¹ᴴ * D.lCoord := by
   set G := ((g : GL n R) : Matrix n n R)
@@ -956,11 +970,7 @@ theorem exists_eq_unipotent_mul_levi (g : unitaryGroupOf A) {a : Matrix p p R}
       g = D.unipotent hj c b * D.levi x ∧ (x.1 : Matrix p p R) = a ∧
         ((x.2 : GL n₀ R) : Matrix n₀ n₀ R) = D.ιCoord * ((g : GL n R) : Matrix n n R) * D.ι := by
   set G := ((g : GL n R) : Matrix n n R)
-  -- `a` is invertible, with left inverse `kCoord g⁻¹ k`.
-  obtain ⟨t, rfl⟩ : IsUnit a := by
-    refine IsUnit.of_mul_eq_one_right (D.kCoord * ((g⁻¹ : GL n R) : Matrix n n R) * D.k) ?_
-    rw [Matrix.mul_assoc, Matrix.mul_assoc, ← hk, ← Matrix.mul_assoc _ G, Units.inv_mul,
-      Matrix.one_mul, kCoord_mul_k]
+  obtain ⟨t, rfl⟩ := D.isUnit_of_mul_k (g := g) hk
   let g₀ : unitaryGroupOf A₀ :=
     unitaryGroupOf.ofMatrix D.isUnit_core _ (D.core_mem_of_mul_k g t hk)
   have hg₀ : ((g₀ : GL n₀ R) : Matrix n₀ n₀ R) = D.ιCoord * G * D.ι :=

@@ -48,12 +48,8 @@ theorem isGradedEulerAdmissible_gradedArrowSum (i : Q)
     IsGradedEulerAdmissible.{t} k (GradedModuleCat.shift (integerGrade k Q))
       (gradedArrowSum k Q i) Y := by
   let _ := integerGradedAlgebra k Q
-  let hF (a : (j : Q) × (i ⟶ j)) :
-      Module.Finite (pathAlgebra k Q) ((gradedVertexProjective k Q a.1).shiftObj 1) :=
-    (gradedFiniteProjectiveModules_iff.1
-      (gradedFiniteProjectiveModules_shiftObj
-        (gradedFiniteProjectiveModules_gradedVertexProjective k Q a.1) 1)).1
-  let _ : Module.Finite (pathAlgebra k Q) (gradedArrowSum k Q i) := inferInstance
+  let _ : Module.Finite (pathAlgebra k Q) (gradedArrowSum k Q i) :=
+    gradedFiniteModules_iff.mp (gradedFiniteModules_gradedArrowSum k Q i)
   exact isGradedEulerAdmissible_of_projective k _ _ Y
     ((GradedModuleCat.hasFiniteLaurentSupport_hom_shiftObj _ Y).of_equiv
       fun j ↦ (GradedModuleCat.homShiftPowEquiv (integerGrade k Q) _ Y j).symm)

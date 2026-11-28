@@ -147,17 +147,7 @@ theorem norm_sum_Icc_changeLevel_le (χ : DirichletCharacter ℂ N) (hχ : χ.Is
     (hχ₀ : χ ≠ 1) {M : ℕ} (h : N ∣ M) (K : ℕ) :
     ‖∑ n ∈ Icc 1 K, changeLevel h χ n‖ ≤
       2 ^ ω (M / N) * (Real.sqrt N * (1 + Real.log N)) := by
-  -- At `n` prime to `M / N` but not to `M`, `n` is not prime to `N`, so `χ n = 0` already.
-  have hval (n : ℕ) : changeLevel h χ n = if n.Coprime (M / N) then χ n else 0 := by
-    rw [changeLevel_natCast]
-    split_ifs with hnM hn hn
-    · rfl
-    · exact absurd (hnM.coprime_dvd_right (Nat.div_dvd_of_dvd h)) hn
-    · refine (χ.map_nonunit fun hu ↦ hnM ?_).symm
-      rw [← Nat.mul_div_cancel' h]
-      exact Nat.Coprime.mul_right ((ZMod.isUnit_iff_coprime n N).mp hu) hn
-    · rfl
-  simp_rw [hval, ← sum_filter]
+  simp_rw [changeLevel_natCast_eq_ite_coprime_div h, ← sum_filter]
   exact χ.norm_sum_Icc_filter_coprime_le hχ hχ₀ (M / N) K
 
 /-- **Pólya–Vinogradov inequality** for an arbitrary nonprincipal complex Dirichlet character

@@ -7,17 +7,19 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Classes
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
+public import TauCeti.Analysis.Normed.Module.Essential
 import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 import TauCeti.Analysis.Normed.Module.CohenFactorization.Basic
 
 /-!
 # Cohen–Hewitt factorization for Banach left modules over C⋆-algebras
 
-Instantiates `ContinuousLinearMap.exists_apply_eq_of_mem_topologicalClosure_span` and
-`ContinuousLinearMap.coe_topologicalClosure_span_range_eq` from
+Instantiates `ContinuousLinearMap.exists_apply_eq_of_mem_essentialSubmodule` and
+`ContinuousLinearMap.coe_essentialSubmodule_eq_range` from
 `TauCeti.Analysis.Normed.Module.CohenFactorization.Basic` along the canonical approximate unit
-`CStarAlgebra.increasingApproximateUnit A`, formulated in terms of `⋃ a, Set.range (L a)` to match
-the essential-subspace convention for C⋆-algebra representations and multiplier homomorphisms.
+`CStarAlgebra.increasingApproximateUnit A`, formulated in terms of `L.essentialSubmodule` and
+`⋃ a, Set.range (L a)` to match the essential-subspace convention for C⋆-algebra representations
+and multiplier homomorphisms.
 
 ## References
 
@@ -35,31 +37,28 @@ namespace ContinuousLinearMap
 variable {A E : Type*} [NonUnitalCStarAlgebra A]
   [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
 
-/-- **Cohen–Hewitt factorization for Banach left modules over a C⋆-algebra.** Every `x` in the
-closed linear span of `⋃ a, Set.range (L a)` factors as `x = L a y` with `‖a‖ ≤ 1`,
+/-- **Cohen–Hewitt factorization for Banach left modules over a C⋆-algebra.** Every `x` in
+`L.essentialSubmodule` factors as `x = L a y` with `‖a‖ ≤ 1`,
 `y ∈ closure (Set.range fun b => L b x)`, and `‖y - x‖ < ε`. -/
-theorem exists_apply_eq_of_mem_topologicalClosure_span_iUnion (L : A →L[ℂ] E →L[ℂ] E)
+theorem exists_norm_le_one_apply_eq_of_mem_essentialSubmodule (L : A →L[ℂ] E →L[ℂ] E)
     (hL : ∀ a b z, L (a * b) z = L a (L b z)) {x : E}
-    (hx : x ∈ (Submodule.span ℂ (⋃ a, Set.range (L a))).topologicalClosure) {ε : ℝ} (hε : 0 < ε) :
+    (hx : x ∈ L.essentialSubmodule) {ε : ℝ} (hε : 0 < ε) :
     ∃ a y, ‖a‖ ≤ 1 ∧ y ∈ closure (Set.range fun b => L b x) ∧ ‖y - x‖ < ε ∧ L a y = x := by
   let := CStarAlgebra.spectralOrder A; have := CStarAlgebra.spectralOrderedRing A
   have hl := CStarAlgebra.increasingApproximateUnit A; have := hl.neBot
-  have hrange : (Set.range fun p : A × E => L p.1 p.2) = ⋃ a, Set.range (L a) :=
-    Set.ext fun _ => by simp [Prod.exists]
-  exact L.exists_apply_eq_of_mem_topologicalClosure_span hL
-    hl.eventually_norm hl.tendsto_mul_right (by rwa [hrange]) hε
+  exact L.exists_apply_eq_of_mem_essentialSubmodule hL
+    hl.eventually_norm hl.tendsto_mul_right hx hε
 
 /-- Over a C⋆-algebra `A`, the set `⋃ a, Set.range (L a)` of products for a bounded left action
-`L : A →L[ℂ] E →L[ℂ] E` on a complex Banach space `E` already equals its closed linear span. -/
-theorem coe_topologicalClosure_span_iUnion_range_eq (L : A →L[ℂ] E →L[ℂ] E)
+`L : A →L[ℂ] E →L[ℂ] E` on a complex Banach space `E` already equals `L.essentialSubmodule`. -/
+theorem coe_essentialSubmodule_eq_iUnion_range (L : A →L[ℂ] E →L[ℂ] E)
     (hL : ∀ a b z, L (a * b) z = L a (L b z)) :
-    ((Submodule.span ℂ (⋃ a, Set.range (L a))).topologicalClosure : Set E) =
-      ⋃ a, Set.range (L a) := by
+    (L.essentialSubmodule : Set E) = ⋃ a, Set.range (L a) := by
   let := CStarAlgebra.spectralOrder A; have := CStarAlgebra.spectralOrderedRing A
   have hl := CStarAlgebra.increasingApproximateUnit A; have := hl.neBot
   have hrange : (Set.range fun p : A × E => L p.1 p.2) = ⋃ a, Set.range (L a) :=
     Set.ext fun _ => by simp [Prod.exists]
   rw [← hrange]
-  exact L.coe_topologicalClosure_span_range_eq hL hl.eventually_norm hl.tendsto_mul_right
+  exact L.coe_essentialSubmodule_eq_range hL hl.eventually_norm hl.tendsto_mul_right
 
 end ContinuousLinearMap

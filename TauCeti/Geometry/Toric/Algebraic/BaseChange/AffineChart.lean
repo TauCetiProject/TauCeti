@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.OpenImmersion
 public import TauCeti.Algebra.MonoidAlgebra.Localization
 public import TauCeti.AlgebraicGeometry.MonoidAlgebra.BaseChange
 public import TauCeti.Geometry.Toric.Algebraic.DualSemigroup.Separation
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Affine toric charts over an arbitrary commutative ring
@@ -180,6 +181,15 @@ theorem faceAffineChartMap_def (hτσ : τ.IsFaceOf σ) :
     faceAffineChartMap R hi hτσ =
       Spec.map (CommRingCat.ofHom (faceAffineChartRingMap R hi hτσ).toRingHom) :=
   (rfl)
+
+/-- The chart of a face is dense in the chart of its cone. The restriction on coordinate rings
+is injective because distinct characters remain distinct under the inclusion of dual semigroups. -/
+theorem denseRange_faceAffineChartMap (hτσ : τ.IsFaceOf σ) :
+    DenseRange (faceAffineChartMap R hi hτσ) := by
+  have hinj : Function.Injective (faceAffineChartRingMap R hi hτσ) :=
+    AddMonoidAlgebra.mapDomain_injective (AddSubmonoid.inclusion_injective _)
+  rw [faceAffineChartMap_def]
+  exact RingHom.denseRange_comap_of_injective _ hinj
 
 /-- The chart morphism of a cone viewed as its own face is the identity. -/
 @[simp]
