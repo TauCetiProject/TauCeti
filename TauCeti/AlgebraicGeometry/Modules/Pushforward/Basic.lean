@@ -18,7 +18,9 @@ to its preimage. Both comparisons have formulas on sections.
 A module pushed forward from an open subscheme has only the zero section over any disjoint
 open. This supplies the vanishing factors for products supported on disjoint open sets.
 
-These comparisons use Mathlib's module pushforward and restriction API.
+These comparisons use Mathlib's module pushforward and restriction API. Site-level pushforward
+along the underlying ring-sheaf morphism of a scheme morphism is also recorded as a right adjoint
+(`AlgebraicGeometry.Scheme.Modules.isRightAdjoint_sheafOfModulesPushforward`).
 -/
 
 public section
@@ -28,6 +30,13 @@ open CategoryTheory AlgebraicGeometry
 universe u
 
 namespace AlgebraicGeometry.Scheme.Modules
+
+/-- Mathlib's site-level pushforward along a morphism of schemes is a right adjoint. Mathlib's
+statements about pullbacks of sheaves of modules ask for this by instance, while the adjunction is
+recorded for `Scheme.Modules.pushforward`, which instance search does not unfold. -/
+instance isRightAdjoint_sheafOfModulesPushforward {X Y : Scheme.{u}} (f : X ⟶ Y) :
+    (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
+  inferInstanceAs (pushforward f).IsRightAdjoint
 
 /-- A module pushed forward from an open subscheme has only the zero section over a
 disjoint open. -/

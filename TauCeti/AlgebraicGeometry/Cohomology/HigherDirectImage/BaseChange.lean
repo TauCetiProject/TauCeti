@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Quasicoherent
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Preservation
 public import TauCeti.AlgebraicGeometry.Cohomology.Pullback
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
 import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections

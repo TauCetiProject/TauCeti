@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FiniteType
 public import TauCeti.AlgebraicGeometry.Modules.FiniteType
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
+import TauCeti.AlgebraicGeometry.Modules.Pullback.Preservation
 
 /-!
 # Restriction criteria for modules of finite type on schemes

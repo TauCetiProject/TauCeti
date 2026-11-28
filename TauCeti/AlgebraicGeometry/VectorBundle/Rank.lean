@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 public import TauCeti.Topology.LocallyConstant.Fiber
+import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pullback.Restriction
 
 /-!
 # The rank of a finite locally free sheaf
@@ -198,8 +199,9 @@ rank of `E` at `f x`. -/
 theorem rank_pullback_apply {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFreeSheaf Y)
     (x : X) : ((pullback f).obj E).rank x = E.rank (f x) := by
   obtain ⟨U, hx, σ, hσ, -⟩ := E.exists_generatingSections (f x)
-  let τ := σ.mapIso (Scheme.Modules.pullbackOver f U) (Scheme.Modules.pullbackOverUnitIso f U)
-    (Scheme.Modules.pullbackOverObjIso f U E.obj)
+  let τ := σ.mapIso (SheafOfModules.pullbackOver f.toRingCatSheafHom U)
+    (SheafOfModules.pullbackOverUnitIso f.toRingCatSheafHom U)
+    ((SheafOfModules.overFunctorCompPullbackOverIso f.toRingCatSheafHom U).app E.obj)
   have hτ : Nat.card τ.I = Nat.card σ.I :=
     congrArg Nat.card (SheafOfModules.GeneratingSections.mapIso_I _ _ _ _)
   rw [E.rank_apply_eq_natCard hx σ, ← hτ]

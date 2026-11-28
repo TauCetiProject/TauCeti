@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.AffineScheme
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
+import TauCeti.AlgebraicGeometry.Modules.Pullback.Preservation
 
 /-!
 # Pullback comparisons are invertible if they are invertible on affine charts

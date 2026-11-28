@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Dual
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Preservation
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Subcategory
 
 /-!

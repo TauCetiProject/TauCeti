@@ -23,6 +23,8 @@ Since `𝟙 X` is a terminal object of the slice over `X`, a global section of t
 * `SheafOfModules.overSectionModule`: the original commutative-ring action on sections of
   a sheaf of modules restricted to a slice site;
 * `SheafOfModules.overSectionsEquiv`: global sections of `M.over X` are sections of `M` over `X`;
+* `SheafOfModules.overFunctorUnitIso`: restricting the unit sheaf of modules to a slice site
+  yields the unit sheaf of modules on the slice site.
 -/
 
 public section
@@ -83,6 +85,29 @@ theorem _root_.SheafOfModules.overSectionsEquiv_symm_apply_eval (s : M.val.obj (
   (rfl)
 
 end Sections
+
+/-- Restricting the unit sheaf of modules to the slice site over `X` yields the unit sheaf of
+modules on the slice site. -/
+def _root_.SheafOfModules.overFunctorUnitIso (R : Sheaf J RingCat.{u}) (X : C) :
+    _root_.SheafOfModules.unit (R.over X) ≅
+      (_root_.SheafOfModules.overFunctor.{u} R X).obj (_root_.SheafOfModules.unit R) :=
+  Iso.refl _
+
+/-- On sections over `Y`, `(overFunctorUnitIso R X).hom` is the identity. -/
+@[simp]
+theorem _root_.SheafOfModules.overFunctorUnitIso_hom_val_app (R : Sheaf J RingCat.{u}) (X : C)
+    (Y : (Over X)ᵒᵖ) (x : (R.over X).obj.obj Y) :
+    (_root_.SheafOfModules.overFunctorUnitIso R X).hom.val.app Y x = x := by
+  unfold _root_.SheafOfModules.overFunctorUnitIso
+  rfl
+
+/-- On sections over `Y`, `(overFunctorUnitIso R X).inv` is the identity. -/
+@[simp]
+theorem _root_.SheafOfModules.overFunctorUnitIso_inv_val_app (R : Sheaf J RingCat.{u}) (X : C)
+    (Y : (Over X)ᵒᵖ) (x : (R.over X).obj.obj Y) :
+    (_root_.SheafOfModules.overFunctorUnitIso R X).inv.val.app Y x = x := by
+  unfold _root_.SheafOfModules.overFunctorUnitIso
+  rfl
 
 end SheafOfModules
 

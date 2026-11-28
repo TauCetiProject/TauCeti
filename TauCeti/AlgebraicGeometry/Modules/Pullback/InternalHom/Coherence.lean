@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Dual
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Identity
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Preservation
 public import TauCeti.CategoryTheory.Monoidal.Closed.Functor
 
 /-!
