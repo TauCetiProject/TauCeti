@@ -25,7 +25,7 @@ theorem, which identifies the limit with the radial limit of `-log (1 - r z)`.
   `-log (1 - z)` for `‖z‖ ≤ 1` and `z ≠ 1`.
 * `Complex.norm_neg_log_one_sub_sub_sum_Icc_pow_div_le`: the remainder after the terms through
   degree `N` is bounded by `2 / ((N + 1) * ‖z - 1‖)` on the same domain, by
-  `Finset.norm_sum_range_smul_le_of_antitoneOn` and the geometric sum bound.
+  `Finset.norm_sum_range_smul_le_of_antitoneOn` and `TauCeti.norm_geom_sum_add_le`.
 -/
 
 public section
@@ -50,11 +50,8 @@ theorem tendsto_sum_range_taylorSeries_neg_log {z : ℂ} (hz : ‖z‖ ≤ 1) (h
       one_div_le_one_div_of_le (by positivity) (by exact_mod_cast Nat.succ_le_succ hab)
     have h0 : Tendsto (fun i : ℕ ↦ (1 : ℝ) / (i + 1)) atTop (𝓝 0) :=
       tendsto_one_div_add_atTop_nhds_zero_nat
-    -- the shifted geometric partial sums `∑ zⁱ⁺¹ = (∑ zⁱ) z` stay bounded
     have hbdd (n : ℕ) : ‖∑ i ∈ range n, z ^ (i + 1)‖ ≤ 2 / ‖z - 1‖ := by
-      simp_rw [pow_succ, ← sum_mul, norm_mul]
-      calc _ ≤ 2 / ‖z - 1‖ * 1 := by gcongr; exact TauCeti.norm_geom_sum_le hz hz1 n
-        _ = 2 / ‖z - 1‖ := mul_one _
+      simpa only [Nat.add_comm 1] using TauCeti.norm_geom_sum_add_le hz hz1 1 n
     convert hanti.cauchySeq_series_mul_of_tendsto_zero_of_bounded h0 hbdd using 3 with n i
     simp [hf, div_eq_inv_mul, Complex.real_smul]
   -- Abel's theorem identifies `l` with the radial limit of `-log (1 - r z) / r`
@@ -107,13 +104,6 @@ theorem norm_neg_log_one_sub_sub_sum_Icc_pow_div_le {z : ℂ} (hz : ‖z‖ ≤ 
   have hanti : Antitone fun j : ℕ ↦ (N + 1 + (j : ℝ))⁻¹ := by
     intro i j hij
     exact inv_anti₀ (by positivity) (add_le_add_right (Nat.cast_le.mpr hij) _)
-  have hgeom (L : ℕ) : ‖∑ j ∈ range L, z ^ (N + 1 + j)‖ ≤ 2 / ‖z - 1‖ := by
-    simp only [pow_add z (N + 1), ← mul_sum, norm_mul]
-    have hpow : ‖z ^ (N + 1)‖ ≤ 1 := by
-      rw [norm_pow]
-      exact pow_le_one₀ (norm_nonneg _) hz
-    exact (mul_le_of_le_one_left (norm_nonneg _) hpow).trans
-      (TauCeti.norm_geom_sum_le hz hz₁ L)
   calc
     _ = ‖∑ j ∈ range M, (N + 1 + (j : ℝ))⁻¹ • z ^ (N + 1 + j)‖ := by
       congr 1
@@ -124,7 +114,7 @@ theorem norm_neg_log_one_sub_sub_sum_Icc_pow_div_le {z : ℂ} (hz : ‖z‖ ≤ 
     _ ≤ (N + 1 : ℝ)⁻¹ * (2 / ‖z - 1‖) := by
       simpa only [Nat.cast_zero, add_zero] using
         norm_sum_range_smul_le_of_antitoneOn (hanti.antitoneOn (Set.Iio M))
-          (by positivity) (fun L _ ↦ hgeom L)
+          (by positivity) (fun L _ ↦ TauCeti.norm_geom_sum_add_le hz hz₁ (N + 1) L)
     _ = _ := by
       field_simp [norm_ne_zero_iff.mpr (sub_ne_zero.mpr hz₁)]
 

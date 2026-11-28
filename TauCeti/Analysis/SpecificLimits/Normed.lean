@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecificLimits.Normed
 public import Mathlib.Data.PNat.Basic
 import Mathlib.Tactic.Ring
+import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.Normed.Ring.InfiniteSum
 
 /-!
@@ -22,7 +23,8 @@ zero whenever `‖r‖ < 1`, which absorbs polynomial growth after shifting an i
 hypothesis `‖r‖ < 1`, in any normed ring with summable geometric series, the series
 `∑ (n + c) ^ k * r ^ n` is summable. Summability of `∑ n * f n * r ^ n` and `∑ f n * r ^ n`
 yields summability of `∑ (n + 1) * f n * r ^ (n + 1)`. On the closed unit ball away from `1`, the
-geometric partial sums are bounded by `2 / ‖x - 1‖`. **Dirichlet's test** holds for coefficients
+geometric partial sums are bounded by `2 / ‖x - 1‖`, even when the starting exponent is shifted
+(`TauCeti.norm_geom_sum_add_le`). **Dirichlet's test** holds for coefficients
 of bounded variation tending to zero: their products with a sequence of bounded partial sums have
 Cauchy partial sums.
 Quantitatively, `Finset.norm_sum_range_smul_le_of_antitoneOn` uses Mathlib's
@@ -184,6 +186,16 @@ theorem norm_geom_sum_le {D : Type*} [NormedDivisionRing D] {x : D} (hx : ‖x�
       · simp
     _ = 2 := one_add_one_eq_two
 
+/-- On the closed unit ball of a normed division ring, away from `1`, the geometric bound
+`norm_geom_sum_le` also holds for blocks starting at any exponent `k`. -/
+theorem norm_geom_sum_add_le {D : Type*} [NormedDivisionRing D] {x : D} (hx : ‖x‖ ≤ 1)
+    (hx1 : x ≠ 1) (k n : ℕ) : ‖∑ i ∈ Finset.range n, x ^ (k + i)‖ ≤ 2 / ‖x - 1‖ := by
+  simp only [pow_add x k, ← Finset.mul_sum, norm_mul]
+  have hpow : ‖x ^ k‖ ≤ 1 := by
+    rw [norm_pow]
+    exact pow_le_one₀ (norm_nonneg _) hx
+  exact (mul_le_of_le_one_left (norm_nonneg _) hpow).trans (norm_geom_sum_le hx hx1 n)
+
 /-- **Dirichlet's test** for coefficients of bounded variation. If `f n → 0`, the series of the
 differences `‖f (n + 1) - f n‖` converges, and the partial sums of `z` are bounded, then the
 partial sums of `∑ f n • z n` form a Cauchy sequence. Mathlib's
@@ -233,13 +245,12 @@ theorem _root_.Finset.norm_sum_range_smul_le_of_antitoneOn
         ‖∑ i ∈ range N, (w (i + 1) - w i) • ∑ j ∈ range (i + 1), a j‖ ≤
           (w 0 - w N) * B := by
       calc
-        _ ≤ ∑ i ∈ range N, (w i - w (i + 1)) * B := by
-          refine (norm_sum_le _ _).trans (sum_le_sum fun i hi ↦ ?_)
-          have hi' := mem_range.mp hi
-          have hstep := hdiff i hi'
-          rw [norm_smul, Real.norm_of_nonpos (sub_nonpos.mpr hstep), neg_sub]
-          exact mul_le_mul_of_nonneg_left (ha _ (Nat.succ_le_succ hi'.le)) (sub_nonneg.mpr hstep)
-        _ = _ := by rw [← sum_mul, sum_range_sub']
+        _ ≤ (∑ i ∈ range N, ‖w (i + 1) - w i‖) * B :=
+          norm_sum_smul_le_sum_norm_mul fun i hi ↦ ha _ (Nat.succ_le_succ (mem_range.mp hi).le)
+        _ = _ := by
+          have hnorm (i : ℕ) (hi : i ∈ range N) : ‖w (i + 1) - w i‖ = w i - w (i + 1) := by
+            rw [Real.norm_of_nonpos (sub_nonpos.mpr (hdiff i (mem_range.mp hi))), neg_sub]
+          rw [sum_congr rfl hnorm, sum_range_sub']
     rw [sum_range_by_parts, Nat.add_sub_cancel]
     calc
       _ ≤ w N * B + (w 0 - w N) * B := by
