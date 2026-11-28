@@ -22,11 +22,12 @@ containing `K`. The points of the Weil restriction `Res_{B/K} C` with values in 
 
 where `C_τ(Ω)` is the set of `Ω`-points of `C` for the `B`-algebra structure on `Ω` given by `τ`,
 that is, of ring maps `f : C → Ω` with `f ∘ algebraMap B C = τ`. This is the statement on
-`Ω`-points that over `Ω` the Weil restriction is the product of the conjugates of `Spec C` by the
-embeddings of `B`; the corresponding isomorphism of `Ω`-algebras is not constructed here. An
-automorphism `σ` of `Ω` over `K` acts on both sides: on points of the Weil restriction by
-postcomposition, and on the tuples by permuting the factors and applying `σ`, the `τ`-component of
-the image of a point being `σ` composed with its `σ⁻¹ • τ`-component.
+`Ω`-points that over `Ω` the Weil restriction is the product of the conjugates of `Spec C` along the
+maps `B →ₐ[K] Ω`. The coordinate-algebra isomorphism is in
+`TauCeti.RingTheory.WeilRestriction.BaseChangeSplitting`. An automorphism `σ` of `Ω` over `K` acts
+on the points of the Weil restriction by postcomposition and on the tuples by permuting the
+factors and applying `σ`. The `τ`-component of the image of a point is `σ` composed with its
+`σ⁻¹ • τ`-component.
 
 Over a separable closure, this splitting compares a Weil restriction with the product of the
 conjugates of `C`, as needed for the dimension, the reductivity and the character lattices of Weil
@@ -59,6 +60,8 @@ open scoped TensorProduct
 
 namespace TauCeti.Algebra.WeilRestriction
 
+open TauCeti.Algebra.IsFiniteSplit
+
 variable (K B C Ω : Type*) [Field K] [CommRing B] [Algebra K B] [Module.Finite K B]
   [Algebra.Etale K B] [CommRing C] [Algebra B C] [Field Ω]
   [Algebra K Ω] [IsSepClosed Ω]
@@ -72,7 +75,7 @@ Weil restriction `Res_{B/K} C` correspond to the families, indexed by the `K`-al
 noncomputable def splittingEquiv :
     (WeilRestriction K B C →ₐ[K] Ω) ≃
       ((τ : B →ₐ[K] Ω) → {f : C →+* Ω // f.comp (algebraMap B C) = τ}) :=
-  (homEquiv K B C Ω).trans (Algebra.Etale.algHomTensorProductEquivPi K Ω B C)
+  (homEquiv K B C Ω).trans (algHomTensorProductEquivPi K Ω B C Ω)
 
 variable {K B C Ω}
 
@@ -82,7 +85,9 @@ variable {K B C Ω}
 theorem splittingEquiv_apply (x : WeilRestriction K B C →ₐ[K] Ω) (τ : B →ₐ[K] Ω) (c : C) :
     (splittingEquiv K B C Ω x τ : C →+* Ω) c =
       Algebra.TensorProduct.productMap τ (AlgHom.id K Ω) (homEquiv K B C Ω x c) := by
-  rw [splittingEquiv, Equiv.trans_apply, Algebra.Etale.algHomTensorProductEquivPi_apply]
+  rw [splittingEquiv, Equiv.trans_apply, algHomTensorProductEquivPi_apply]
+  -- For the target `Ω`, the scalar map from `Ω` is the identity.
+  rfl
 
 /-- The point of `Res_{B/K} C` attached to a family `f` of points has `τ`-component `f τ`:
 following `homEquiv` of it by `b ⊗ ω ↦ τ b * ω` gives `f τ`. This is not a `simp` lemma, since
