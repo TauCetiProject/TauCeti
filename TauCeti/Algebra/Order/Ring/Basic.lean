@@ -21,11 +21,18 @@ In an ordered semiring, for `s, t ≥ 0` and `i + j ≤ M`, the product `(1 + s)
 at most `(1 + s + t) ^ M`. This combines polynomial weights in two variables into one, as in
 decay estimates in `1 + ‖ξ‖ + ‖m‖`.
 
+In an ordered semiring, `(1 + a) ^ n + a ≤ 1 + 2 ^ n a` for `0 ≤ a ≤ 1`. With subtraction this
+reads `(1 + a) ^ n ≤ 1 + (2 ^ n - 1) a`; over the reals the right side is the chord of
+`a ↦ (1 + a) ^ n` over `[0, 1]`, where that function is convex. This is the upper counterpart of
+Bernoulli's inequality `1 + n a ≤ (1 + a) ^ n`.
+
 ## Main results
 
 * `TauCeti.neg_lt_of_neg_lt_mul`: `-c < a` from `-c < a * p` for `0 ≤ c` and `1 ≤ p`.
 * `TauCeti.one_add_pow_mul_one_add_pow_le`: `(1 + s) ^ i (1 + t) ^ j ≤ (1 + s + t) ^ M` for
   `s, t ≥ 0` and `i + j ≤ M`.
+* `TauCeti.one_add_pow_add_le_one_add_two_pow_mul`: `(1 + a) ^ n + a ≤ 1 + 2 ^ n a` for
+  `0 ≤ a ≤ 1`.
 -/
 
 public section
@@ -52,5 +59,25 @@ theorem one_add_pow_mul_one_add_pow_le {α : Type*} [Semiring α] [PartialOrder 
     _ = (1 + s + t) ^ (i + j) := (pow_add _ _ _).symm
     _ ≤ (1 + s + t) ^ M :=
         pow_le_pow_right₀ ((le_add_of_nonneg_right ht).trans' (le_add_of_nonneg_right hs)) h
+
+/-- An upper bound of Bernoulli type: `(1 + a) ^ n + a ≤ 1 + 2 ^ n * a` for `0 ≤ a ≤ 1`, with
+equality at `a = 0` and at `a = 1`. Where subtraction is available this reads
+`(1 + a) ^ n ≤ 1 + (2 ^ n - 1) * a`. -/
+theorem one_add_pow_add_le_one_add_two_pow_mul {α : Type*} [Semiring α] [PartialOrder α]
+    [IsOrderedRing α] {a : α} (h0 : 0 ≤ a) (h1 : a ≤ 1) (n : ℕ) :
+    (1 + a) ^ n + a ≤ 1 + 2 ^ n * a := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have h2 : (1 + a) ^ n ≤ 2 ^ n :=
+      pow_le_pow_left₀ (add_nonneg zero_le_one h0)
+        ((add_le_add_right h1 1).trans_eq one_add_one_eq_two) n
+    calc (1 + a) ^ (n + 1) + a = (1 + a) ^ n + a + (1 + a) ^ n * a := by
+          simp only [pow_succ, mul_add, mul_one]
+          ac_rfl
+      _ ≤ 1 + 2 ^ n * a + 2 ^ n * a := add_le_add ih (mul_le_mul_of_nonneg_right h2 h0)
+      _ = 1 + 2 ^ (n + 1) * a := by
+          simp only [pow_succ, mul_two, add_mul]
+          ac_rfl
 
 end TauCeti

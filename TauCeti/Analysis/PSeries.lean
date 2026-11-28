@@ -28,9 +28,10 @@ inequalities and none of them wants `π` in the goal.
 Nothing here is specific to any application, and the file contains no number theory. The `m = 0`
 term is `0`, by the junk value of `0 ^ (-t)`.
 
-The file also records the value `π ^ 2 / 3` of `∑_{n ∈ ℤ} n⁻²`. The summability over `ℤ` of the
-shifted weights `(1 + |n|) ^ r` for `r < -1` is in `TauCeti.Analysis.PSeries.Shifted`, which
-needs none of the zeta values used here.
+The file also records the value `π ^ 2 / 3` of `∑_{n ∈ ℤ} n⁻²`, and the tail bound
+`∑_{k ∈ s} k⁻² ≤ 2 / (m + 1)` for a finite set `s` of natural numbers above `m`. The summability
+over `ℤ` of the shifted weights `(1 + |n|) ^ r` for `r < -1` is in
+`TauCeti.Analysis.PSeries.Shifted`, which needs none of the zeta values used here.
 
 A weighted family of radii with finite sublevel sets also has summable reciprocal powers
 when its weighted counts grow at a smaller exponent. The proof partitions the radii into
@@ -40,6 +41,8 @@ dyadic annuli and compares their contributions with a geometric series.
 
 * `TauCeti.tsum_nat_rpow_neg_le_two` — `∑' m : ℕ, m ^ (-t) ≤ 2` for `2 ≤ t`.
 * `TauCeti.hasSum_int_inv_sq` — `∑_{n ∈ ℤ} n⁻² = π ^ 2 / 3`.
+* `TauCeti.sum_inv_sq_le_two_div_of_forall_lt` — `∑_{k ∈ s} k⁻² ≤ 2 / (m + 1)` for a finite set
+  `s` of natural numbers `k > m`.
 * `TauCeti.summable_mul_rpow_of_count_growth` — weighted reciprocal powers are summable
   when sublevel counts grow at a smaller exponent.
 * `TauCeti.summable_norm_inv_natCast_add_one_zpow` — `∑ k : ℕ, ‖((k + 1) ^ n)⁻¹‖` converges in
@@ -84,6 +87,15 @@ theorem hasSum_int_inv_sq : HasSum (fun n : ℤ ↦ ((n : ℝ) ^ 2)⁻¹) (Real.
   convert HasSum.of_nat_of_neg (f := fun n : ℤ ↦ ((n : ℝ) ^ 2)⁻¹) h h' using 1
   simp only [Int.cast_zero, zero_pow two_ne_zero, inv_zero, sub_zero]
   ring
+
+/-- A finite set `s` of natural numbers `k > m` satisfies `∑_{k ∈ s} 1 / k ^ 2 ≤ 2 / (m + 1)`:
+Mathlib's `sum_Ioo_inv_sq_le`, for an arbitrary finite set above `m` in place of an interval. -/
+theorem sum_inv_sq_le_two_div_of_forall_lt {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {m : ℕ} {s : Finset ℕ} (hs : ∀ k ∈ s, m < k) :
+    ∑ k ∈ s, ((k : α) ^ 2)⁻¹ ≤ 2 / (m + 1) :=
+  (Finset.sum_le_sum_of_subset_of_nonneg
+    (fun k hk ↦ Finset.mem_Ioo.2 ⟨hs k hk, Nat.lt_succ_of_le (Finset.le_sup (f := id) hk)⟩)
+    fun _ _ _ ↦ by positivity).trans (sum_Ioo_inv_sq_le m (s.sup id + 1))
 
 open Filter Topology
 

@@ -13,6 +13,7 @@ import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.NumberTheory.ZetaValues
+import TauCeti.Analysis.PSeries
 import TauCeti.NumberTheory.AbelSummation
 import TauCeti.NumberTheory.ArithmeticFunction.Liouville
 
@@ -195,16 +196,14 @@ private theorem sum_abs_div_sq_le_of_rpow_lt {F : ℝ → ℝ} (hF : ∀ y, 1 �
   · rw [eq_empty_of_forall_notMem fun w hw ↦ (hw₀ w hw).not_ge (hs w hw).2]
     simp
   set k := ⌊x ^ (1 / 4 : ℝ)⌋₊
-  have hsub : s ⊆ Ioo k (s.sup id + 1) := fun w hw ↦
-    mem_Ioo.2 ⟨(hs w hw).1, Nat.lt_succ_of_le (le_sup (f := id) hw)⟩
   calc ∑ w ∈ s, |F (x / w ^ 2)| ≤ ∑ w ∈ s, x * ((w : ℝ) ^ 2)⁻¹ := by
         refine sum_le_sum fun w hw ↦ ?_
         rw [← div_eq_mul_inv]
         exact hF _ ((one_le_div₀ (hw₀ w hw)).2 (hs w hw).2)
     _ = x * ∑ w ∈ s, ((w : ℝ) ^ 2)⁻¹ := (mul_sum _ _ _).symm
-    _ ≤ x * (2 / (k + 1)) := by
-        refine mul_le_mul_of_nonneg_left ((sum_le_sum_of_subset_of_nonneg hsub
-          fun _ _ _ ↦ by positivity).trans (sum_Ioo_inv_sq_le _ _)) hx.le
+    _ ≤ x * (2 / (k + 1)) :=
+        mul_le_mul_of_nonneg_left
+          (TauCeti.sum_inv_sq_le_two_div_of_forall_lt fun w hw ↦ (hs w hw).1) hx.le
     _ ≤ x * (2 / x ^ (1 / 4 : ℝ)) := by
         gcongr
         exact (Nat.lt_floor_add_one _).le
