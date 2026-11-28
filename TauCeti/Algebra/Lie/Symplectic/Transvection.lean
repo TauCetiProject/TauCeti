@@ -53,6 +53,8 @@ for `v ∈ V` span the skew-adjoint endomorphisms
 * `LinearMap.BilinForm.smulRight_flip_add`: `N(a + b)` is `N(a) + N(b)` plus the polarization
   `x ↦ B x b • a + B x a • b`.
 * `LinearMap.BilinForm.lie_smulRight_flip`: the bracket of `N(a)` and `N(b)`.
+* `LinearMap.BilinForm.lie_smulRight_flip_lie_smulRight_flip`: bracketing twice with `N(u)`
+  extracts a scalar multiple of `N(u)` from an arbitrary endomorphism.
 * `LinearMap.BilinForm.span_smulRight_flip_eq_skewAdjointSubmodule`: for a nondegenerate form on
   a finite-dimensional space, the `N(v)` span the skew-adjoint endomorphisms.
 * `LinearMap.BilinForm.lieSpan_smulRight_flip_eq_skewAdjointLieSubalgebra`: a family of `N(δ i)`
@@ -126,6 +128,17 @@ theorem lie_smulRight_flip (hB : B.IsAlt) (a b : M) :
       B b a • ((B.flip b).smulRight a + (B.flip a).smulRight b) := by
   ext x
   simp [LieRing.of_associative_ring_bracket, ← hB.neg_eq b a, smul_smul, mul_comm, sub_eq_add_neg]
+
+/-- Bracketing an endomorphism twice with the same symplectic rank-one operator gives a
+scalar multiple of that operator. -/
+theorem lie_smulRight_flip_lie_smulRight_flip (hB : B.IsAlt) (u : M) (X : Module.End R M) :
+    ⁅(B.flip u).smulRight u, ⁅(B.flip u).smulRight u, X⁆⁆ =
+      (-(2 : R) * B (X u) u) • (B.flip u).smulRight u := by
+  ext x
+  simp only [LieRing.of_associative_ring_bracket, mul_apply_eq_comp, LinearMap.sub_apply,
+    LinearMap.smul_apply, smulRight_apply, flip_apply, map_sub, map_smul, hB.self_eq_zero,
+    smul_zero, zero_smul, zero_sub, map_zero, sub_zero]
+  module
 
 /-- The polarization `x ↦ B x b • a + B x a • b` lies in every submodule containing all the
 endomorphisms `x ↦ B x δ • δ`. -/
