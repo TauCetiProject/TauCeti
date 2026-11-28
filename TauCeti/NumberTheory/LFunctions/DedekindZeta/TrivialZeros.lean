@@ -93,4 +93,11 @@ theorem meromorphicOrderAt_dedekindZetaC_zero :
     ← WithTop.LinearOrderedAddCommGroup.coe_sub]
   exact congrArg _ (by ring)
 
+/-- The order of Dedekind zeta at zero equals the unit rank `NumberField.Units.rank K`. -/
+theorem meromorphicOrderAt_dedekindZetaC_zero_eq_rank :
+    meromorphicOrderAt (dedekindZetaC K) 0 = (NumberField.Units.rank K : ℤ) := by
+  have hrank : (nrRealPlaces K : ℤ) + nrComplexPlaces K = NumberField.Units.rank K + 1 := by
+    exact_mod_cast (NumberField.Units.rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K).symm
+  rw [meromorphicOrderAt_dedekindZetaC_zero, hrank, add_sub_cancel_right]
+
 end TauCeti.LFunctions

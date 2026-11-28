@@ -46,8 +46,6 @@ meromorphic order to every point of `closedBall c R`.
   the closed disc.
 * `DifferentiableOn.neg_one_le_meromorphicOrderAt`: a function differentiable off a closed set of
   at-worst-simple poles has meromorphic order at least `-1` throughout an open set.
-* `meromorphicOrderAt_inv_pow`, `meromorphicOrderAt_inv_pow_of_neg_one`: meromorphic order of a
-  natural power of a reciprocal function, and specialization to simple poles.
 * `AnalyticAt.meromorphicOrderAt_nonpos_iff`: at a point of analyticity the order is at most `0`
   exactly when the value is nonzero.
 * `AnalyticAt.meromorphicOrderAt_fun_sub_nonneg_iff`: subtracting `F` from a function analytic at
@@ -177,38 +175,6 @@ theorem exists_meromorphicOrderAt_eq_neg_succ_of_lt_zero (h : meromorphicOrderAt
   exact ⟨m, by simpa [Int.negSucc_eq] using hn.symm⟩
 
 end Bounded
-
-section InvPow
-
-variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
-  [NormedAlgebra 𝕜 𝕜']
-
-/-- The meromorphic order of a natural power of a reciprocal function `(f⁻¹) ^ n` is
-`-(n * meromorphicOrderAt f x)`. -/
-@[to_fun]
-theorem meromorphicOrderAt_inv_pow {f : 𝕜 → 𝕜'} {x : 𝕜} (hf : MeromorphicAt f x) {n : ℕ} :
-    meromorphicOrderAt (f⁻¹ ^ n) x = -(n * meromorphicOrderAt f x : WithTop ℤ) := by
-  rw [meromorphicOrderAt_pow hf.inv, meromorphicOrderAt_inv]
-  cases meromorphicOrderAt f x with
-  | top =>
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp
-    · simp [hn]
-  | coe a =>
-    norm_cast
-    simp [mul_neg]
-
-/-- A natural power of the reciprocal of a meromorphic function with a simple pole at `x` has
-meromorphic order `n` at `x`. -/
-@[to_fun]
-theorem meromorphicOrderAt_inv_pow_of_neg_one {f : 𝕜 → 𝕜'} {x : 𝕜} (hf : MeromorphicAt f x)
-    (hord : meromorphicOrderAt f x = (-1 : ℤ)) (n : ℕ) :
-    meromorphicOrderAt (f⁻¹ ^ n) x = (n : ℤ) := by
-  rw [meromorphicOrderAt_inv_pow hf, hord]
-  norm_cast
-  simp
-
-end InvPow
 
 section Mul
 
