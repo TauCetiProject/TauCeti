@@ -239,10 +239,13 @@ private theorem isUnit_leadingCoeff_optionSubtypeNeEquiv_depressedDiscr (A : Typ
       Nat.cast_sub (by omega), hmA, Nat.cast_one, zero_sub, ← pow_add]
     exact (isUnit_one.neg.pow _).map MvPolynomial.C
   have hle : (e (depressedDiscr A m)).natDegree ≤ m := by
-    dsimp only [e]
-    rw [MvPolynomial.optionSubtypeNeEquiv, AlgEquiv.trans_apply, MvPolynomial.renameEquiv_apply,
-      ← MvPolynomial.degreeOf_eq_natDegree, MvPolynomial.degreeOf_eq_sup, Finset.sup_le_iff]
-    exact fun d hd ↦ depressedDiscr_support_le hm hd
+    refine natDegree_le_iff_coeff_eq_zero.mpr fun k hk ↦ MvPolynomial.ext _ _ fun d ↦ ?_
+    rw [MvPolynomial.coeff_coeff_optionSubtypeNeEquiv, AddMonoidAlgebra.coeff_zero]
+    by_contra hne
+    have hle_k := depressedDiscr_support_le hm (MvPolynomial.mem_support_iff.mpr hne)
+    rw [Finsupp.mapDomain_equiv_apply, Equiv.optionSubtypeNe_symm_self,
+      Finsupp.optionElim_apply_none] at hle_k
+    omega
   have hdeg : (e (depressedDiscr A m)).natDegree = m :=
     natDegree_eq_of_le_of_coeff_ne_zero hle hunit.ne_zero
   rwa [leadingCoeff, hdeg]

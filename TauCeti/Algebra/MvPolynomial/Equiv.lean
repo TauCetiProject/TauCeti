@@ -346,7 +346,7 @@ variable {σ : Type*} [DecidableEq σ]
 
 /-- The `R`-algebra isomorphism between polynomials in variables `σ` and univariate polynomials in
 a chosen variable `X i` over polynomials in the remaining variables `{b : σ // b ≠ i}`. -/
-@[expose] noncomputable def optionSubtypeNeEquiv (R : Type*) [CommSemiring R] (i : σ) :
+noncomputable def optionSubtypeNeEquiv (R : Type*) [CommSemiring R] (i : σ) :
     MvPolynomial σ R ≃ₐ[R] Polynomial (MvPolynomial {b : σ // b ≠ i} R) :=
   (renameEquiv R (Equiv.optionSubtypeNe i).symm).trans (optionEquivLeft R {b : σ // b ≠ i})
 
