@@ -10,6 +10,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.Order.SymmDiff
 import TauCeti.Combinatorics.SimpleGraph.Basic
+import TauCeti.Combinatorics.SimpleGraph.Bipartite
 
 /-!
 # The Seidel matrix and Seidel switching
@@ -22,8 +23,9 @@ graph of negative inner products.
 
 For a set `U` of vertices, the switch `G.switch U` keeps the adjacency of `G` between two vertices
 on the same side of the partition `{U, Uᶜ}` and interchanges adjacency and nonadjacency between
-two vertices on different sides. Changing the signs of the vectors indexed by `U` switches the
-graph of negative inner products. Two graphs are switching equivalent when one is a switch of the
+two vertices on different sides. When no inner product between two distinct vectors vanishes,
+changing the signs of the vectors indexed by `U` switches the graph of negative inner products.
+Two graphs are switching equivalent when one is a switch of the
 other; since two switches compose to the switch with respect to the symmetric difference, this is
 an equivalence relation. Switching conjugates the Seidel matrix by a diagonal sign matrix, so
 switching equivalent graphs have the same Seidel spectrum.
@@ -115,18 +117,6 @@ theorem switch_compl : G.switch Uᶜ = G.switch U := by
   ext u v
   simp [Set.mem_compl_iff, not_iff_not]
 
-/-- Switching with respect to `U` and then with respect to `W` is switching with respect to the
-symmetric difference `U ∆ W`. -/
-theorem switch_switch : (G.switch U).switch W = G.switch (U ∆ W) := by
-  ext u v
-  simp only [switch_adj, Set.mem_symmDiff]
-  tauto
-
-/-- Switching twice with respect to the same set gives back the original graph. -/
-@[simp]
-theorem switch_switch_self : (G.switch U).switch U = G := by
-  rw [switch_switch, symmDiff_self, Set.bot_eq_empty, switch_empty]
-
 /-- Switching with respect to `U` is the symmetric difference with the complete bipartite graph
 between `U` and `Uᶜ`: it toggles exactly the pairs of vertices across the cut `(U, Uᶜ)`. -/
 theorem switch_eq_symmDiff_between : G.switch U = G ∆ (⊤ : SimpleGraph V).between U Uᶜ := by
@@ -134,8 +124,19 @@ theorem switch_eq_symmDiff_between : G.switch U = G ∆ (⊤ : SimpleGraph V).be
   by_cases huv : u = v
   · subst huv
     simp
-  · simp only [switch_adj, symmDiff_adj, between_adj, top_adj, Set.mem_compl_iff, Xor]
+  · simp only [symmDiff_top_between_compl_adj, switch_adj, Xor]
     tauto
+
+/-- Switching with respect to `U` and then with respect to `W` is switching with respect to the
+symmetric difference `U ∆ W`. -/
+theorem switch_switch : (G.switch U).switch W = G.switch (U ∆ W) := by
+  rw [switch_eq_symmDiff_between, switch_eq_symmDiff_between, switch_eq_symmDiff_between,
+    top_between_symmDiff, symmDiff_assoc]
+
+/-- Switching twice with respect to the same set gives back the original graph. -/
+@[simp]
+theorem switch_switch_self : (G.switch U).switch U = G := by
+  rw [switch_switch, symmDiff_self, Set.bot_eq_empty, switch_empty]
 
 /-- The complement of a switch is the switch of the complement. -/
 theorem compl_switch : (G.switch U)ᶜ = Gᶜ.switch U := by
