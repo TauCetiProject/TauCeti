@@ -71,9 +71,9 @@ theorem mul_tsum_lt_twoSidedGeom_inl (a₁ a₂ r : ℝ) (m : ℕ) :
   have hpref : HasSum (fun k : ℕ ↦ if k < m then a₁ * r ^ k else 0)
       (∑ k ∈ Finset.range m, a₁ * r ^ k) := (hasSum_subtype_iff_indicator.mp
     ((Finset.range m).hasSum fun k ↦ a₁ * r ^ k)).congr fun k ↦ by simp [Set.indicator_apply]
-  rw [(sumEquiv.tsum_eq _).symm.trans (Summable.tsum_sum
-    (f := (fun a ↦ if a < Sum.inlₗ m then twoSidedGeom a₁ a₂ r a else 0) ∘ sumEquiv)
-    (by simpa [comp_def, sumEquiv] using hpref.summable) (by simp [comp_def, sumEquiv]))]
+  rw [(sumEquiv.tsum_eq _).symm.trans (Summable.tsum_sum (f := (fun a ↦ if a < Sum.inlₗ m then
+    twoSidedGeom a₁ a₂ r a else 0) ∘ sumEquiv) (by simpa [comp_def, sumEquiv] using hpref.summable)
+    (by simp [comp_def, sumEquiv]))]
   simp [sumEquiv, hpref.tsum_eq, ← Finset.mul_sum, mul_left_comm, mul_neg_geom_sum]
 
 /-- Initial-segment sum of `twoSidedGeom a₁ a₂ r` strictly below `Sum.inrₗ (toDual m)`. -/
@@ -90,8 +90,8 @@ theorem mul_tsum_lt_twoSidedGeom_inr (a₁ a₂ : ℝ) {r : ℝ} (hr0 : 0 ≤ r)
     rw [tsum_subtype (s := (Finset.range (m + 1) : Set ℕ)ᶜ) (fun k ↦ a₂ * r ^ k), tsum_congr (g :=
       fun k ↦ if m < k then a₂ * r ^ k else 0) fun k ↦ by simp [Set.indicator_apply]] at hsplit
     linarith
-  rw [(sumEquiv.tsum_eq _).symm.trans (Summable.tsum_sum
-    (f := (fun a ↦ if a < Sum.inrₗ (toDual m) then twoSidedGeom a₁ a₂ r a else 0) ∘ sumEquiv)
+  rw [(sumEquiv.tsum_eq _).symm.trans (Summable.tsum_sum (f := (fun a ↦ if a < Sum.inrₗ (toDual m)
+    then twoSidedGeom a₁ a₂ r a else 0) ∘ sumEquiv)
     (by simpa [comp_def, sumEquiv] using hgeom.mul_left a₁)
     (by simpa [comp_def, sumEquiv] using htail_sum))]
   simp only [comp_def, sumEquiv, Equiv.trans_apply, Equiv.sumCongr_apply, Equiv.coe_refl,

@@ -37,9 +37,8 @@ theorem wenzlGtOneWeight_cycleWord_hasProd {q : ℂˣ} {Q : ℝ} (hQ : 1 < Q) (h
             (1 + (wenzlGtOneWeight Q η a : ℂ) * x))
       ((1 + ((Q - (1 + Q) * η : ℝ) : ℂ) * x) / (1 - (((1 + Q) * η - 1 : ℝ) : ℂ) * x)) := by
   have hmax : max 1 (max ‖(q : ℂ) ^ 2‖ ‖(q : ℂ) ^ 2 - 1‖) = Q := by
-    rw [hqQ, ← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real, Complex.norm_real,
-      Real.norm_of_nonneg (zero_lt_one.trans hQ).le, Real.norm_of_nonneg (sub_nonneg.mpr hQ.le),
-      max_eq_left (a := Q) (b := Q - 1) (by linarith), max_eq_right hQ.le]
+    simp only [hqQ, ← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
+    grind
   have hsx : ‖(((1 + Q) * η - 1 : ℝ) : ℂ) * x‖ < 1 := by
     have h1Q : 0 < 1 + Q := by linarith
     rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (by linarith [(div_le_iff₀ h1Q).mp hη.1])]
@@ -62,9 +61,8 @@ theorem wenzlLtOneWeight_cycleWord_hasProd {q : ℂˣ} {Q : ℝ} (hQ0 : 0 < Q) (
             (1 + (wenzlLtOneWeight Q η a : ℂ) * x))
       ((1 + ((Q - (1 + Q) * η : ℝ) : ℂ) * x) / (1 - (((1 + Q) * η - 1 : ℝ) : ℂ) * x)) := by
   have hmax : max 1 (max ‖(q : ℂ) ^ 2‖ ‖(q : ℂ) ^ 2 - 1‖) = 1 := by
-    rw [hqQ, ← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real, Complex.norm_real,
-      Real.norm_of_nonneg hQ0.le, Real.norm_of_nonpos (sub_nonpos.mpr hQ1.le), neg_sub]
-    exact max_eq_left (max_le hQ1.le (by linarith))
+    simp only [hqQ, ← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
+    grind
   have hsx : ‖(((1 + Q) * η - 1 : ℝ) : ℂ) * x‖ < 1 := by
     have h1Q : 0 < 1 + Q := by linarith
     rw [norm_mul, Complex.norm_real, Real.norm_of_nonpos (by linarith [(le_div_iff₀ h1Q).mp hη.2])]

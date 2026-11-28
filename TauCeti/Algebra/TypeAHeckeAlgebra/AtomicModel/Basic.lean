@@ -373,11 +373,13 @@ theorem atomicTrace_subtype_eq_of_eq_zero [Finite ι] (P : ι → Prop)
       atomicTrace pos q p n x := by
   classical
   cases nonempty_fintype ι
-  rw [atomicTrace_eq_sum, atomicTrace_eq_sum, ← Finset.sum_subset (Finset.subset_univ
-      (Finset.univ.image (fun (w : Fin n → {a : ι // P a}) ↦ Subtype.val ∘ w))) fun w _ hw ↦ by
-      rw [Finset.prod_eq_zero_of_not_forall Finset.univ P hp fun hP ↦ hw <| by
-        simpa only [← Finset.mem_coe, Finset.coe_image, Finset.coe_univ, Set.image_univ,
-          Set.mem_range_comp_subtype_val] using fun i ↦ hP i (Finset.mem_univ _), mul_zero],
+  have hoff : ∀ w ∈ (Finset.univ : Finset (Fin n → ι)),
+      w ∉ Finset.univ.image (fun (w : Fin n → {a : ι // P a}) ↦ Subtype.val ∘ w) →
+      signedChecked pos q x (single w 1) w * ∏ i, p (w i) = 0 := fun w _ hw ↦ by
+    rw [Finset.prod_eq_zero_of_not_forall Finset.univ P hp fun hP ↦ hw <|
+      Finset.mem_image.mpr ⟨fun i ↦ ⟨w i, hP i (Finset.mem_univ i)⟩, Finset.mem_univ _, rfl⟩,
+      mul_zero]
+  rw [atomicTrace_eq_sum, atomicTrace_eq_sum, ← Finset.sum_subset (Finset.subset_univ _) hoff,
     Finset.sum_image (Subtype.val_injective.comp_left.injOn)]
   exact Finset.sum_congr rfl fun w _ ↦ by
     rw [signedChecked_strictMono_single_apply pos q (fun a : {a : ι // P a} ↦ pos a)
@@ -403,8 +405,9 @@ theorem atomicTrace_orderIso {α β : Type*} [LinearOrder α] [LinearOrder β] [
   have := Fintype.ofFinite α; have := Fintype.ofFinite β
   rw [atomicTrace_eq_sum, atomicTrace_eq_sum, ← (Equiv.piCongrRight fun _ ↦ e.toEquiv).sum_comp]
   refine Finset.sum_congr rfl fun w _ ↦ ?_
-  rw [show (Equiv.piCongrRight fun _ ↦ e.toEquiv) w = e ∘ w from rfl,
-    signedChecked_strictMono_single_apply posβ q posα e.strictMono hpos x w w]; simp [hp]
+  have hw : (Equiv.piCongrRight fun _ ↦ e.toEquiv) w = e ∘ w :=
+    funext fun i ↦ Equiv.piCongrRight_apply (fun _ ↦ e.toEquiv) w i
+  rw [hw, signedChecked_strictMono_single_apply posβ q posα e.strictMono hpos x w w]; simp [hp]
 
 /-- **A geometric atomic model.** On `r + 1` positive letters with weights `c * Q ^ a`,
 `Q = q ^ 2`, normalized by `c * [r + 1]_Q = 1`, the atomic trace is the Ocneanu trace with

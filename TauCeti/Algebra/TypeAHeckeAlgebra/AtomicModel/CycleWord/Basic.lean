@@ -214,16 +214,14 @@ theorem map_atomicTrace_cycleWord [Finite ι] {S : Type*} [CommRing S]
         (cycleWord (Units.map f.toMonoidHom q) m) := by
   let := Fintype.ofFinite ι
   have hdiag (b c : ι) : f (crossingDiag pos q b c) =
-      crossingDiag pos (Units.map f.toMonoidHom q) b c := by
-    simp [crossingDiag, apply_ite f]
+      crossingDiag pos (Units.map f.toMonoidHom q) b c := by simp [crossingDiag, apply_ite f]
   have hlast (k : ℕ) (c : ι) : f (lastLetterSum pos q p k c) =
       lastLetterSum pos (Units.map f.toMonoidHom q) (fun a ↦ f (p a)) k c := by
     induction k generalizing c with
     | zero => simp [lastLetterSum_zero]
     | succ k ih => simp only [lastLetterSum_succ, map_mul, map_sum, hdiag, ih]
-  cases m with
-  | zero => simp
-  | succ m => simp only [atomicTrace_cycleWord_eq_sum_lastLetterSum, map_sum, hlast]
+  rcases m with _ | m <;> [simp; simp only [atomicTrace_cycleWord_eq_sum_lastLetterSum, map_sum,
+    hlast]]
 
 open PowerSeries
 

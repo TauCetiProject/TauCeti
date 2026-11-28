@@ -9,8 +9,9 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.RingTheory.PowerSeries.Exp
 public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Countable.CycleWord
 public import TauCeti.Analysis.Normed.Group.InfiniteSum
-import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
-import TauCeti.RingTheory.PowerSeries.PiTopology
+import TauCeti.Analysis.SpecialFunctions.Complex.Exp.Limits
+import TauCeti.RingTheory.PowerSeries.CoeffLimit
+import TauCeti.RingTheory.PowerSeries.Exp.Basic
 
 /-!
 # The continuous-dust limit for cycle-trace generating functions
@@ -33,8 +34,7 @@ def dustPos {ι : Type*} (pos : ι → Prop) (b : Bool) (N : ℕ) (a : ι ⊕ₗ
   Sum.elim pos (fun _ ↦ b = true) (ofLex a)
 
 instance {ι : Type*} (pos : ι → Prop) [DecidablePred pos] (b : Bool) (N : ℕ) :
-    DecidablePred (dustPos pos b N) := fun a ↦
-  match ha : ofLex a with
+    DecidablePred (dustPos pos b N) := fun a ↦ match ha : ofLex a with
   | Sum.inl i => decidable_of_iff (pos i) (by simp [dustPos, ha])
   | Sum.inr _ => decidable_of_iff (b = true) (by simp [dustPos, ha])
 
@@ -62,9 +62,7 @@ theorem tendsto_countableAtomicTrace_add_dust_cycleWord_of_sq_eq_one {𝕜 : Typ
     filter_upwards [eventually_ge_atTop 1] with N hN
     have hN0 : (N : 𝕜) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
     rw [atomicTrace_cycleWord_of_sq_eq_one _ q hq, Finset.sum_const, Finset.card_univ,
-      Fintype.card_fin, nsmul_eq_mul, div_pow, mul_left_comm, mul_div_assoc',
-      pow_succ' (N : 𝕜) m, ← div_div, mul_div_cancel_left₀ _ hN0, div_eq_mul_inv, inv_pow,
-      ← mul_assoc]
+      Fintype.card_fin, nsmul_eq_mul, div_pow, inv_pow]; field_simp; ring
   refine (tendsto_const_nhds.add (Tendsto.congr' (hev.mono fun _ h ↦ h.symm) ?_)).congr fun N ↦ ?_
   · rcases m with _ | m <;> [simp; simpa using ((tendsto_inv_atTop_nhds_zero_nat (𝕜 := 𝕜)).pow
       (m + 1)).const_mul ((if b = true then (1 : 𝕜) else -1) ^ (m + 1) * γ ^ (m + 2))]
@@ -77,16 +75,14 @@ theorem tendsto_countableAtomicTrace_add_dust_cycleWord_of_sq_eq_one {𝕜 : Typ
 private def dustFinsetEmbed {ι : Type*} (s : Finset ι) (N : ℕ) : ↥s ⊕ₗ Fin N → ι ⊕ₗ Fin N :=
   fun a ↦ match ofLex a with | Sum.inl i => Sum.inlₗ i.val | Sum.inr k => Sum.inrₗ k
 
-/-- Order isomorphism between `s ⊕ₗ Fin N` and the image finset
-`Finset.univ.image (dustFinsetEmbed s N)`. -/
+/-- Order isomorphism between `s ⊕ₗ Fin N` and `Finset.univ.image (dustFinsetEmbed s N)`. -/
 private noncomputable def dustFinsetOrderIso {ι : Type*} [LinearOrder ι] [DecidableEq ι]
     (s : Finset ι) (N : ℕ) : (↥s ⊕ₗ Fin N) ≃o ↥(Finset.univ.image (dustFinsetEmbed s N)) :=
   OrderIso.ofSurjective (OrderEmbedding.ofStrictMono
-      (fun a ↦ ⟨dustFinsetEmbed s N a, Finset.mem_image_of_mem _ (Finset.mem_univ _)⟩)
-      fun a₁ a₂ h ↦ by rcases toLex.surjective a₁ with ⟨_ | _, rfl⟩ <;>
-        rcases toLex.surjective a₂ with ⟨_ | _, rfl⟩ <;>
-        simp_all [dustFinsetEmbed, Sum.inlₗ, Sum.inrₗ])
-    fun ⟨_, ha⟩ ↦ let ⟨a, _, hga⟩ := Finset.mem_image.mp ha; ⟨a, Subtype.ext hga⟩
+    (fun a ↦ ⟨dustFinsetEmbed s N a, Finset.mem_image_of_mem _ (Finset.mem_univ _)⟩) fun a₁ a₂ h ↦
+      by rcases toLex.surjective a₁ with ⟨_ | _, rfl⟩ <;> rcases toLex.surjective a₂ with
+        ⟨_ | _, rfl⟩ <;> simp_all [dustFinsetEmbed, Sum.inlₗ, Sum.inrₗ]) fun ⟨_, ha⟩ ↦
+    let ⟨a, _, hga⟩ := Finset.mem_image.mp ha; ⟨a, Subtype.ext hga⟩
 
 private theorem tendsto_dustFinsetImage {ι : Type*} [DecidableEq ι] (N : ℕ) :
     Tendsto (fun s : Finset ι ↦ Finset.univ.image (dustFinsetEmbed s N)) atTop atTop :=
@@ -125,11 +121,12 @@ private theorem dustCycleSeries_finset_mul {𝕜 ι : Type*} [CommRing 𝕜] [Li
     have he_app (a) : (e a).val = dustFinsetEmbed s N a := rfl
     rw [← Equiv.prod_comp (toLex (α := ↥s ⊕ Fin N)), Fintype.prod_sum_type]; congr 1
     · exact Finset.prod_congr rfl fun i _ ↦ by
-        simp_rw [coe_cycleGeneratingFactor]; simp [dustPos, he_app, dustFinsetEmbed, Sum.inlₗ, pN]
+        simp only [coe_cycleGeneratingFactor]
+        simp [dustPos, he_app, dustFinsetEmbed, Sum.inlₗ, pN]
     · rw [show (1 + PowerSeries.C v * PowerSeries.X) ^ N =
-          ∏ _ : Fin N, (1 + PowerSeries.C v * PowerSeries.X) by simp]
+          ∏ _k : Fin N, (1 + PowerSeries.C v * PowerSeries.X) by simp]
       exact Finset.prod_congr rfl fun k _ ↦ by
-        simp_rw [coe_cycleGeneratingFactor]
+        simp only [coe_cycleGeneratingFactor]
         cases b <;> simp [dustPos, he_app, hv, dustFinsetEmbed, Sum.inrₗ, pN, sub_eq_add_neg]
   refine (isUnit_prod_cycleGeneratingFactor (fun a : ↥s ↦ pos a.val) (fun a ↦ p a.val) Q 1
     ).mul_right_injective ?_
@@ -162,19 +159,17 @@ private theorem dustCycleSeries_mul {𝕜 ι : Type*} [RCLike 𝕜] [LinearOrder
         (1 + PowerSeries.C ((if b then -γ else (q : 𝕜) ^ 2 * γ) / N) * PowerSeries.X) ^ N := by
   let := Classical.decEq ι; set pN : ι ⊕ₗ Fin N → 𝕜 := fun a ↦ Sum.elim p (fun _ ↦ γ / N) (ofLex a)
   set hpN : Summable fun a ↦ ‖pN a‖ := hp.sumLex (hasSum_fintype _).summable; ext k
-  have hLHS := tendsto_coeff_cycleSeries_mul ((q : 𝕜) ^ 2 - 1)
-    (fun (s : Finset ι) k ↦ atomicTrace (fun a : ↥(Finset.univ.image (dustFinsetEmbed s N)) ↦
-      dustPos pos b N a) q (fun a ↦ pN a.val) k (cycleWord q k))
-    (fun k ↦ countableAtomicTrace (dustPos pos b N) q pN hpN k (cycleWord q k))
-    (fun j ↦ (tendsto_atomicTrace_finset (dustPos pos b N) q pN hpN (j + 1)
-      (cycleWord q (j + 1))).comp (tendsto_dustFinsetImage N))
-    ((1 + PowerSeries.C ((if b then -((q : 𝕜) ^ 2 * γ) else γ) / N) * PowerSeries.X) ^ N) k
-  have hRHS := tendsto_coeff_cycleSeries_mul ((q : 𝕜) ^ 2 - 1)
-    (fun (s : Finset ι) k ↦ atomicTrace (fun a : ↥s ↦ pos a) q (fun a ↦ p a) k (cycleWord q k))
-    (fun k ↦ countableAtomicTrace pos q p hp k (cycleWord q k))
-    (fun j ↦ tendsto_atomicTrace_finset pos q p hp (j + 1) (cycleWord q (j + 1)))
-    ((1 + PowerSeries.C ((if b then -γ else (q : 𝕜) ^ 2 * γ) / N) * PowerSeries.X) ^ N) k
-  refine tendsto_nhds_unique (hLHS.congr fun s ↦ congrArg (PowerSeries.coeff k) ?_) hRHS
+  refine tendsto_nhds_unique ((tendsto_coeff_cycleSeries_mul ((q : 𝕜) ^ 2 - 1) (fun (s : Finset ι)
+      k ↦ atomicTrace (fun a : ↥(Finset.univ.image (dustFinsetEmbed s N)) ↦ dustPos pos b N a) q
+        (fun a ↦ pN a.val) k (cycleWord q k)) (fun k ↦ countableAtomicTrace (dustPos pos b N) q pN
+      hpN k (cycleWord q k)) (fun j ↦ (tendsto_atomicTrace_finset (dustPos pos b N) q pN hpN
+      (j + 1) (cycleWord q (j + 1))).comp (tendsto_dustFinsetImage N)) ((1 + PowerSeries.C ((if b
+      then -((q : 𝕜) ^ 2 * γ) else γ) / N) * PowerSeries.X) ^ N) k).congr fun s ↦ congrArg
+    (PowerSeries.coeff k) ?_) (tendsto_coeff_cycleSeries_mul ((q : 𝕜) ^ 2 - 1) (fun (s : Finset ι)
+      k ↦ atomicTrace (fun a : ↥s ↦ pos a) q (fun a ↦ p a) k (cycleWord q k)) (fun k ↦
+      countableAtomicTrace pos q p hp k (cycleWord q k)) (fun j ↦ tendsto_atomicTrace_finset pos q p
+      hp (j + 1) (cycleWord q (j + 1))) ((1 + PowerSeries.C ((if b then -γ else (q : 𝕜) ^ 2 * γ)
+      / N) * PowerSeries.X) ^ N) k)
   have h := dustCycleSeries_finset_mul pos b q p (γ / N) N s
   cases b <;> simpa [neg_div, mul_div_assoc] using h
 
@@ -206,17 +201,18 @@ theorem tendsto_countableAtomicTrace_add_dust_cycleWord {𝕜 : Type*} [RCLike �
         F_bg * PowerSeries.rescale u (PowerSeries.exp 𝕜) := by
       rw [mul_assoc, PowerSeries.exp_mul_exp_eq_exp_add,
         show (Q - 1) * γ + d = u by cases b <;> simp [d, u] <;> ring]
-    have hcoeff := PowerSeries.tendsto_coeff_of_mul_eq (dustCycleSeries_mul pos b q p hp γ) hmul₀
-      (fun _ ↦ by simp) (by rw [← PowerSeries.coeff_zero_eq_constantCoeff,
-        PowerSeries.coeff_rescale]; simp) (fun k ↦ by
-        simp_rw [PowerSeries.coeff_mul]
-        exact tendsto_finsetSum _ fun ij _ ↦
-          (PowerSeries.tendsto_coeff_one_add_div_pow u ij.snd).const_mul _)
+    have hcoeff := PowerSeries.tendsto_coeff_of_mul_eq (l := atTop)
+      (dustCycleSeries_mul pos b q p hp γ) hmul₀ (fun _ ↦ by simp)
+      (by rw [← PowerSeries.coeff_zero_eq_constantCoeff, PowerSeries.coeff_rescale]; simp)
+      (fun k ↦ by
+        simp_rw [PowerSeries.coeff_mul]; exact tendsto_finsetSum (Finset.antidiagonal k)
+          fun (ij : ℕ × ℕ) _ ↦ (PowerSeries.tendsto_coeff_one_add_div_pow u ij.2).const_mul _)
       (PowerSeries.tendsto_coeff_one_add_div_pow d) (m + 1)
-    have hL_coeff := PowerSeries.coeff_succ_one_add_mul_rescale_exp (Q - 1) γ (fun k ↦
-      countableAtomicTrace pos q p hp k (cycleWord q k)) m
-    have hQ1 : Q - 1 ≠ 0 := sub_ne_zero.mpr hq
-    simpa [Q, hQ1, F_bg, E, hL_coeff, mul_inv_cancel_left₀ hQ1] using hcoeff.const_mul (Q - 1)⁻¹
+    have hQ1 : (q : 𝕜) ^ 2 - 1 ≠ 0 := sub_ne_zero.mpr hq
+    refine ((hcoeff.const_mul (Q - 1)⁻¹).congr fun N ↦ by
+      dsimp only [Q]; simp [inv_mul_cancel_left₀ hQ1]).trans_eq (congrArg 𝓝 ?_)
+    dsimp only [F_bg, E, Q]
+    rw [PowerSeries.coeff_succ_one_add_mul_rescale_exp _ γ _ m, inv_mul_cancel_left₀ hQ1]
 
 private theorem atomicTrace_fin_eq_empty_sumLex {𝕜 : Type*} [RCLike 𝕜] (b : Bool) (q : 𝕜ˣ)
     (γ : 𝕜) (N n : ℕ) (x : TypeAHeckeAlgebra 𝕜 q n) :
@@ -237,11 +233,10 @@ theorem tendsto_atomicTrace_dust_cycleWord {𝕜 : Type*} [RCLike 𝕜] (b : Boo
       atTop (𝓝 (((q : 𝕜) ^ 2 - 1) ^ m * γ ^ (m + 1) / ((m + 1)! : 𝕜))) := by
   have hlim := tendsto_countableAtomicTrace_add_dust_cycleWord (fun _ : Empty ↦ False) b q
     (fun _ ↦ (0 : 𝕜)) summable_empty γ m
-  rw [show (PowerSeries.mk fun k ↦ countableAtomicTrace (fun _ : Empty ↦ False) q (fun _ ↦ (0 : 𝕜))
-        summable_empty (k + 1) (cycleWord q (k + 1))) = 0 from
-      PowerSeries.ext fun k ↦ by simp [countableAtomicTrace_eq_atomicTrace, atomicTrace_eq_sum],
-    zero_mul, map_zero, zero_add] at hlim
-  exact hlim.congr fun N ↦ atomicTrace_fin_eq_empty_sumLex b q γ N (m + 1) _
+  simpa [show (PowerSeries.mk fun k ↦ countableAtomicTrace (fun _ : Empty ↦ False) q
+      (fun _ ↦ (0 : 𝕜)) summable_empty (k + 1) (cycleWord q (k + 1))) = 0 from
+    PowerSeries.ext fun k ↦ by simp [countableAtomicTrace_eq_atomicTrace, atomicTrace_eq_sum]]
+    using hlim.congr fun N ↦ atomicTrace_fin_eq_empty_sumLex b q γ N (m + 1) _
 
 /-- **Pure-dust coefficientwise limit at `Q = 1`:** splitting weight `γ` across `N` letters of
 weight `γ / N` contributes `γ` in degree `1` (`m = 0`) and `0` in higher degrees (`m ≥ 1`). -/
@@ -249,19 +244,17 @@ theorem tendsto_atomicTrace_dust_cycleWord_of_sq_eq_one {𝕜 : Type*} [RCLike �
     (q : 𝕜ˣ) (hq : (q : 𝕜) ^ 2 = 1) (γ : 𝕜) (m : ℕ) :
     Tendsto (fun N : ℕ ↦ atomicTrace (fun _ : Fin N ↦ b = true) q (fun _ ↦ γ / N) (m + 1)
       (cycleWord q (m + 1))) atTop (𝓝 (if m = 0 then γ else 0)) := by
-  convert tendsto_atomicTrace_dust_cycleWord b q γ m using 1; rw [hq, sub_self]; rcases m with
-    _ | m <;> simp
+  convert tendsto_atomicTrace_dust_cycleWord b q γ m using 1; rw [hq, sub_self]
+  rcases m with _ | m <;> simp
 
 private theorem tendsto_dustFactor_pow (b : Bool) (q : ℂˣ) (γ x : ℂ) :
     Tendsto (fun N : ℕ ↦ (if b then (1 - γ * x / N) / (1 - (q : ℂ) ^ 2 * γ * x / N)
         else (1 + (q : ℂ) ^ 2 * γ * x / N) / (1 + γ * x / N)) ^ N)
       atTop (𝓝 (Complex.exp (((q : ℂ) ^ 2 - 1) * γ * x))) := by
-  have hlim (u v : ℂ) : Tendsto (fun N : ℕ ↦ (1 + u / N) ^ N / (1 + v / N) ^ N) atTop
-      (𝓝 (Complex.exp (u - v))) := Complex.exp_sub u v ▸ (Complex.tendsto_one_add_div_pow_exp u).div
-    (Complex.tendsto_one_add_div_pow_exp v) (Complex.exp_ne_zero _)
-  cases b <;> [convert hlim ((q : ℂ) ^ 2 * γ * x) (γ * x) using 1 <;> [(ext N; simp [div_pow]);
-      ring_nf]; convert hlim (-(γ * x)) (-((q : ℂ) ^ 2 * γ * x)) using 1 <;> [(ext N; simp [
-      div_pow, sub_eq_add_neg, neg_div]); ring_nf]]
+  cases b <;> [convert Complex.tendsto_one_add_div_pow_div_exp ((q : ℂ) ^ 2 * γ * x) (γ * x)
+      using 1 <;> [(ext N; simp [div_pow]); ring_nf];
+    convert Complex.tendsto_one_add_div_pow_div_exp (-(γ * x)) (-((q : ℂ) ^ 2 * γ * x))
+      using 1 <;> [(ext N; simp [div_pow, sub_eq_add_neg, neg_div]); ring_nf]]
 
 /-- **Mixed atomic-and-dust cycle-trace generating limit.** Augmenting `(ι, pos, p)` by `N` dust
 letters of sign `b` and weight `γ / N` converges as `N → ∞` to the background infinite cycle-trace

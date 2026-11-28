@@ -37,10 +37,10 @@ omit [CompleteSpace R] in
 /-- Absolute summability of the weighted diagonal coefficients of `signedChecked pos q x`. -/
 theorem summable_norm_signedChecked_mul_prod {p : ι → R} (hp : Summable fun a ↦ ‖p a‖) (n : ℕ)
     (x : TypeAHeckeAlgebra R q n) :
-    Summable fun w : Fin n → ι ↦ ‖signedChecked pos q x (single w 1) w * ∏ i, p (w i)‖ := by
-  obtain ⟨C, _, hC⟩ := exists_norm_signedChecked_single_apply_le pos q x
-  refine ((summable_norm_prod_of_summable_norm (f := fun _ : Fin n ↦ p) fun _ ↦ hp).mul_left
-    C).of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun w ↦
+    Summable fun w : Fin n → ι ↦ ‖signedChecked pos q x (single w 1) w * ∏ i, p (w i)‖ :=
+  let ⟨_, _, hC⟩ := exists_norm_signedChecked_single_apply_le pos q x
+  ((summable_norm_prod_of_summable_norm (f := fun _ : Fin n ↦ p) fun _ ↦ hp).mul_left
+    _).of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun w ↦
       (norm_mul_le _ _).trans (by gcongr; exact hC w w)
 
 /-- **The countable atomic trace** on `TypeAHeckeAlgebra R q n` for an absolutely summable weight
@@ -105,9 +105,8 @@ theorem tendsto_atomicTrace_finset (p : ι → R) (hp : Summable fun a ↦ ‖p 
   refine Finset.sum_bij (fun (w : Fin n → s) _ ↦ Subtype.val ∘ w) (fun w _ ↦
     Fintype.mem_piFinset.mpr fun i ↦ (w i).property) (fun _ _ _ _ h ↦ funext fun i ↦ Subtype.ext
     (congrFun h i)) (fun w hw ↦ ⟨fun i ↦ ⟨w i, Fintype.mem_piFinset.mp hw i⟩, Finset.mem_univ _,
-    rfl⟩) fun w _ ↦ ?_
-  rw [signedChecked_strictMono_single_apply pos q (fun a : s ↦ pos a) (fun _ _ h ↦ h)
-    fun _ ↦ Iff.rfl]; rfl
+    rfl⟩) fun w _ ↦ by rw [signedChecked_strictMono_single_apply pos q (fun a : s ↦ pos a)
+      (fun _ _ h ↦ h) fun _ ↦ Iff.rfl]; rfl
 
 /-- The countable atomic trace is tracial. -/
 theorem countableAtomicTrace_mul_comm (p : ι → R) (hp : Summable fun a ↦ ‖p a‖) {n : ℕ}

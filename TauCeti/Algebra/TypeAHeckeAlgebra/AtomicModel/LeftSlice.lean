@@ -103,9 +103,8 @@ theorem atomicTrace_T_zero_mul_tailIncl [Fintype ι] (p : ι → R) {z : R}
     atomicTrace pos q p (n + 2) (T q (0 : Fin (n + 1)) * tailIncl q (n + 1) x) =
       z * atomicTrace pos q p (n + 1) x := by
   rw [atomicTrace_mul_comm, atomicTrace_eq_sum, ← (Fin.consEquiv fun _ ↦ ι).sum_comp]
-  simp only [Fintype.sum_prod_type, Fin.consEquiv_apply,
-    signedChecked_tailIncl_mul_T_zero_single_cons_apply, Fin.prod_univ_succ (n := n + 1),
-    Fin.cons_zero, Fin.cons_succ]
+  simp only [Fintype.sum_prod_type, Fin.consEquiv_apply, Fin.prod_univ_succ (n := n + 1),
+    signedChecked_tailIncl_mul_T_zero_single_cons_apply, Fin.cons_zero, Fin.cons_succ]
   rw [Finset.sum_comm, atomicTrace_eq_sum, Finset.mul_sum]; refine Finset.sum_congr rfl fun w _ ↦ ?_
   trans ((q⁻¹ : Rˣ) : R) * signedChecked pos q x (single w 1) w * (∏ i, p (w i)) * (q * z)
   · rw [← hz (w 0), ← sum_leftSlice, Finset.mul_sum]; exact Finset.sum_congr rfl fun _ _ ↦ by ring
@@ -113,12 +112,9 @@ theorem atomicTrace_T_zero_mul_tailIncl [Fintype ι] (p : ι → R) {z : R}
 
 /-- **The atomic trace with scalar left slice is the Ocneanu trace.** -/
 theorem atomicTrace_eq_ocneanuTrace_of_leftSlice [Fintype ι] (p : ι → R) {z : R}
-    (hp : ∑ a, p a = 1)
-    (hz : ∀ b, (if pos b then (q : R) ^ 2 else -1) * p b +
-      ((q : R) ^ 2 - 1) * ∑ a with a < b, p a = q * z)
-    (x : TypeAHeckeAlgebra R q n) :
-    atomicTrace pos q p n x =
-      InfiniteTypeAHeckeAlgebra.ocneanuTrace R q z (toInfinite R q n x) :=
+    (hp : ∑ a, p a = 1) (hz : ∀ b, (if pos b then (q : R) ^ 2 else -1) * p b +
+      ((q : R) ^ 2 - 1) * ∑ a with a < b, p a = q * z) (x : TypeAHeckeAlgebra R q n) :
+    atomicTrace pos q p n x = InfiniteTypeAHeckeAlgebra.ocneanuTrace R q z (toInfinite R q n x) :=
   (InfiniteTypeAHeckeAlgebra.isMarkovTrace_ocneanuTrace z).eq_toInfinite_of_T_zero_mul_tailIncl
     (atomicTrace pos q p) (by simp [hp]) (fun _ ↦ atomicTrace_mul_comm pos q p)
     (fun _ _ ↦ atomicTrace_castAdd_mul_natAdd pos q p)
@@ -143,8 +139,8 @@ theorem atomicTrace_geometric_leftSlice_eq {r : ℕ} {c : R}
       rw [Fin.sum_univ_eq_sum_range (fun a ↦ if r - (b : ℕ) < a then ((q : R) ^ 2) ^ a else 0),
         ← Finset.sum_filter]; congr 1; ext k; simp; omega
     have hg := geom_sum_Ico_mul ((q : R) ^ 2) (by omega : r - (b : ℕ) + 1 ≤ r + 1)
-    rw [pow_succ' ((q : R) ^ 2) (r - (b : ℕ)),
-      show ((q : R) ^ 2) ^ (r + 1) = (q : R) * (q : R) ^ (2 * r + 1) by ring] at hg
+    rw [pow_succ' ((q : R) ^ 2) (r - (b : ℕ)), show ((q : R) ^ 2) ^ (r + 1) =
+      (q : R) * (q : R) ^ (2 * r + 1) by ring] at hg
     simp only [↓reduceIte, hI]; linear_combination c * hg
 
 /-- **Negative discrete geometric model in first-site R-order** (`z = -(c * q⁻¹)`). -/
@@ -158,8 +154,8 @@ theorem atomicTrace_negGeometric_eq {r : ℕ} {c : R}
         c * ∑ a ∈ Finset.range (b : ℕ), ((q : R) ^ 2) ^ a := by
       rw [← Finset.mul_sum, Finset.sum_filter]; simp only [Fin.lt_def]
       rw [Fin.sum_univ_eq_sum_range (fun a ↦ if a < (b : ℕ) then ((q : R) ^ 2) ^ a else 0),
-        ← Finset.sum_filter]; exact congrArg (c * ·) (Finset.sum_congr (by ext a; simp; omega)
-          fun _ _ ↦ rfl)
+        ← Finset.sum_filter]
+      exact congrArg (c * ·) (Finset.sum_congr (by ext a; simp; omega) fun _ _ ↦ rfl)
     simp only [↓reduceIte, hI]
     linear_combination c * geom_sum_mul ((q : R) ^ 2) b + c * Units.mul_inv q
 

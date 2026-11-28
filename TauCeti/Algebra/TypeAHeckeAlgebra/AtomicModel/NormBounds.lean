@@ -51,13 +51,15 @@ theorem exists_norm_signedChecked_single_apply_le (x : TypeAHeckeAlgebra R q n) 
     · rw [Finsupp.sum_norm_neg]; exact (hs _ _).trans (by nlinarith)
   | algebraMap r => exact ⟨‖r‖ * ‖(1 : R)‖, by positivity, fun w ↦ by
       rw [AlgHom.commutes, Module.algebraMap_end_apply]; exact hs r w⟩
-  | add _ _ _ _ hx hy => obtain ⟨Bx, hBx0, hBx⟩ := hx; obtain ⟨By, hBy0, hBy⟩ := hy; exact
-      ⟨Bx + By, add_nonneg hBx0 hBy0, fun w ↦ by
-        rw [map_add, LinearMap.add_apply]
-        exact (Finsupp.sum_norm_add_le _ _).trans (add_le_add (hBx w) (hBy w))⟩
-  | mul _ _ _ _ hx hy => obtain ⟨Bx, hBx0, hBx⟩ := hx; obtain ⟨By, hBy0, hBy⟩ := hy; exact
-      ⟨Bx * By, mul_nonneg hBx0 hBy0, fun w ↦ by
-        rw [map_mul, mul_apply_eq_comp]
-        exact (LinearMap.sum_norm_apply_le _ hBx _).trans (by gcongr; exact hBy w)⟩
+  | add _ _ _ _ hx hy =>
+    obtain ⟨Bx, hBx0, hBx⟩ := hx; obtain ⟨By, hBy0, hBy⟩ := hy
+    exact ⟨Bx + By, add_nonneg hBx0 hBy0, fun w ↦ by
+      rw [map_add, LinearMap.add_apply]
+      exact (Finsupp.sum_norm_add_le _ _).trans (add_le_add (hBx w) (hBy w))⟩
+  | mul _ _ _ _ hx hy =>
+    obtain ⟨Bx, hBx0, hBx⟩ := hx; obtain ⟨By, hBy0, hBy⟩ := hy
+    exact ⟨Bx * By, mul_nonneg hBx0 hBy0, fun w ↦ by
+      rw [map_mul, mul_apply_eq_comp]
+      exact (LinearMap.sum_norm_apply_le _ hBx _).trans (by gcongr; exact hBy w)⟩
 
 end TauCeti.TypeAHeckeAlgebra

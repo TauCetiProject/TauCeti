@@ -49,8 +49,7 @@ theorem traceRadical_atomicTrace_eq_ker_signedChecked [Finite ι] {p : ι → R}
     (n : ℕ) : (atomicTrace pos q p n).traceRadical (atomicTrace_mul_comm pos q p) =
       RingHom.ker (signedChecked pos q) := by
   ext x; simp only [LinearMap.mem_traceRadical, RingHom.mem_ker]
-  exact ⟨fun hx ↦ (atomicTrace_star_mul_self_eq_zero_iff pos q hp x).mp
-      (by rw [atomicTrace_mul_comm]; exact hx (star x)),
-    fun hx y ↦ by simp [atomicTrace_apply, hx]⟩
+  exact ⟨fun hx ↦ (atomicTrace_star_mul_self_eq_zero_iff pos q hp x).mp (by
+    rw [atomicTrace_mul_comm]; exact hx (star x)), fun hx y ↦ by simp [atomicTrace_apply, hx]⟩
 
 end TauCeti.TypeAHeckeAlgebra

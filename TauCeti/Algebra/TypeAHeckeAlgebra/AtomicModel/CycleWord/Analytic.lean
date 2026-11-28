@@ -39,8 +39,7 @@ private theorem eval_denom_ne_zero {K : Type*} [NormedField K] {ι : Type*} [Fin
     (cycleGeneratingFactor pos p ((q : K) ^ 2) 1 a).eval x ≠ 0 := by
   rw [eval_cycleGeneratingFactor]
   set M : ℝ := max 1 (max ‖(q : K) ^ 2‖ ‖(q : K) ^ 2 - 1‖)
-  have hpa : ‖p a‖ ≤ ∑ b, ‖p b‖ := Finset.single_le_sum (fun _ _ ↦ norm_nonneg _)
-    (Finset.mem_univ a)
+  have hpa : ‖p a‖ ≤ ∑ b, ‖p b‖ := Finset.single_le_sum (fun _ _ ↦ norm_nonneg _) (by simp)
   have h1M : 1 ≤ M := le_max_left _ _
   have hQM : ‖(q : K) ^ 2‖ ≤ M := (le_max_left _ _).trans (le_max_right _ _)
   split_ifs <;> intro h0
@@ -57,9 +56,8 @@ theorem atomicTrace_cycleWord_generating_eval {K : Type*} [NormedField K]
     (q : Kˣ) (p : ι → K) {x : K}
     (hx : max 1 (max ‖(q : K) ^ 2‖ ‖(q : K) ^ 2 - 1‖) * (∑ a, ‖p a‖) * ‖x‖ < 1) :
     (Summable fun m : ℕ ↦ ‖atomicTrace pos q p (m + 1) (cycleWord q (m + 1)) * x ^ (m + 1)‖) ∧
-      1 + ((q : K) ^ 2 - 1) *
-          (∑' m : ℕ, atomicTrace pos q p (m + 1) (cycleWord q (m + 1)) * x ^ (m + 1)) =
-        ∏ a, (if pos a then (1 - p a * x) / (1 - (q : K) ^ 2 * p a * x)
+      1 + ((q : K) ^ 2 - 1) * (∑' m : ℕ, atomicTrace pos q p (m + 1) (cycleWord q (m + 1)) *
+        x ^ (m + 1)) = ∏ a, (if pos a then (1 - p a * x) / (1 - (q : K) ^ 2 * p a * x)
           else (1 + (q : K) ^ 2 * p a * x) / (1 + p a * x)) := by
   have hsum := summable_norm_atomicTrace_cycleWord_mul_pow pos q p hx; refine ⟨hsum, ?_⟩
   let F : PowerSeries K := PowerSeries.mk fun m ↦

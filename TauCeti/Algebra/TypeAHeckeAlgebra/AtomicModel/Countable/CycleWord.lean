@@ -11,6 +11,7 @@ import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
 import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Countable.Slice
 import TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam
+import TauCeti.Analysis.Normed.Group.InfiniteSum
 import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
@@ -52,11 +53,6 @@ theorem countableAtomicTrace_cycleWord_of_sq_eq_one {R : Type*} [NormedCommRing 
       rw [← Finset.sum_attach s (fun a ↦ (if pos a then (1 : R) else -1) ^ m * p a ^ (m + 1)),
         ← Finset.univ_eq_attach, ← atomicTrace_cycleWord_of_sq_eq_one (fun a : s ↦ pos a) q hq]
 
-private theorem sum_subtype_norm_le_tsum {E ι : Type*} [SeminormedAddCommGroup E] {p : ι → E}
-    (hp : Summable fun a ↦ ‖p a‖) (s : Finset ι) : ∑ a : s, ‖p a‖ ≤ ∑' a, ‖p a‖ := by
-  rw [Finset.univ_eq_attach, s.sum_attach fun a ↦ ‖p a‖]; exact hp.sum_le_tsum s fun _ _ ↦
-    norm_nonneg _
-
 /-- Norm bound on the countable atomic trace of a cycle word `cycleWord (m + 1)`. -/
 theorem norm_countableAtomicTrace_cycleWord_le {R : Type*} [NormedCommRing R] [CompleteSpace R]
     {ι : Type*} [LinearOrder ι] (pos : ι → Prop) [DecidablePred pos] (q : Rˣ) (p : ι → R)
@@ -75,9 +71,8 @@ theorem summable_norm_countableAtomicTrace_cycleWord_mul_pow {K : Type*} [Normed
     (hx : max 1 (max ‖(q : K) ^ 2‖ ‖(q : K) ^ 2 - 1‖) * (∑' a, ‖p a‖) * ‖x‖ < 1) :
     Summable fun m : ℕ ↦
       ‖countableAtomicTrace pos q p hp (m + 1) (cycleWord q (m + 1)) * x ^ (m + 1)‖ :=
-  summable_norm_mul_pow_succ_of_le (by positivity) (tsum_nonneg fun _ ↦ norm_nonneg _) hx
-    fun m ↦ by
-      simpa only [norm_one, one_mul] using norm_countableAtomicTrace_cycleWord_le pos q p hp m
+  summable_norm_mul_pow_succ_of_le (by positivity) (tsum_nonneg fun _ ↦ norm_nonneg _) hx fun m ↦
+    by simpa only [norm_one, one_mul] using norm_countableAtomicTrace_cycleWord_le pos q p hp m
 
 /-- **Countable cycle-trace generating product** over any complete normed field `K` on the disk
 `max 1 (max ‖Q‖ ‖Q - 1‖) * (∑' a, ‖p a‖) * ‖x‖ < 1`. -/
@@ -94,13 +89,14 @@ theorem countableAtomicTrace_cycleWord_hasProd {K : Type*} [NormedField K]
   set M : ℝ := max 1 (max ‖(q : K) ^ 2‖ ‖(q : K) ^ 2 - 1‖); set S : ℝ := ∑' a, ‖p a‖
   have _ : 0 ≤ S := tsum_nonneg fun _ ↦ norm_nonneg _
   refine (tendsto_const_nhds.add ((tendsto_tsum_of_dominated_convergence
-    ((summable_geometric_of_lt_one (by positivity) hx).mul_left (S * ‖x‖))
-    (fun m ↦ (tendsto_atomicTrace_finset pos q p hp (m + 1) (cycleWord q (m + 1))).mul_const _)
+    ((summable_geometric_of_lt_one (by positivity) hx).mul_left (S * ‖x‖)) (fun m ↦
+      (tendsto_atomicTrace_finset pos q p hp (m + 1) (cycleWord q (m + 1))).mul_const _)
     (Eventually.of_forall fun s m ↦ norm_mul_pow_succ_le (M := M) (S := S) <|
       (norm_atomicTrace_cycleWord_le _ q _ m).trans (by
         simp only [norm_one, one_mul]; have hs := sum_subtype_norm_le_tsum hp s
-        have h0 : 0 ≤ ∑ a : s, ‖p a‖ := Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
-        gcongr))).const_mul _)).congr fun s ↦ ?_
+        have _ : 0 ≤ ∑ a : s, ‖p a‖ := Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
+        gcongr))).const_mul
+    _)).congr fun s ↦ ?_
   rw [(atomicTrace_cycleWord_generating_eval (fun a : s ↦ pos a) q (fun a : s ↦ p a)
       ((mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left (sum_subtype_norm_le_tsum hp s)
         (by positivity)) (norm_nonneg x)).trans_lt hx)).2, Finset.univ_eq_attach, s.prod_attach
@@ -122,7 +118,7 @@ theorem hasProd_ofReal_cycleWord {ι : Type*} [LinearOrder ι] (pos : ι → Pro
   have hp : Summable fun a ↦ ‖(w a : ℂ)‖ := hw.congr fun _ ↦ (Complex.norm_real _).symm
   have hnorm_sum : (∑' a, ‖(w a : ℂ)‖) = 1 := by simpa [Real.norm_of_nonneg (hw0 _)] using hsum
   have hprod := (countableAtomicTrace_cycleWord_hasProd pos q _ hp (by rwa [hnorm_sum, mul_one])).2
-  set s : ℝ := (1 + Q) * η - 1
+  set s : ℝ := (1 + Q) * η - 1 with hs
   have htr (m : ℕ) : countableAtomicTrace pos q (fun a ↦ (w a : ℂ))
       hp (m + 1) (cycleWord q (m + 1)) * x ^ (m + 1) = x * ((s : ℂ) * x) ^ m := by
     rw [countableAtomicTrace_ofReal_eq_ocneanuTrace_of_leftSlice pos hqQ hw η hsum hslice,
@@ -132,7 +128,7 @@ theorem hasProd_ofReal_cycleWord {ι : Type*} [LinearOrder ι] (pos : ι → Pro
     linarith [norm_one (α := ℂ) ▸ congrArg (‖·‖) h]
   convert hprod using 1; simp_rw [htr]
   rw [(summable_geometric_of_norm_lt_one hsx).tsum_mul_left, tsum_geometric_of_norm_lt_one hsx, hqQ,
-    show (((1 + Q) * η - 1 : ℝ) : ℂ) = s from rfl, eq_comm, eq_div_iff hne, add_mul,
-    mul_assoc (_ - 1), mul_assoc x, inv_mul_cancel₀ hne]; dsimp only [s]; push_cast; ring
+    div_eq_iff hne]; simp only [add_mul, mul_assoc, inv_mul_cancel₀ hne, mul_one]
+  rw [hs]; push_cast; ring
 
 end TauCeti.TypeAHeckeAlgebra

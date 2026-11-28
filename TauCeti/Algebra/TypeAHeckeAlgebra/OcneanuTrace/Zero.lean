@@ -90,8 +90,7 @@ theorem traceRadical_ocneanuTrace_zero {𝕜 : Type*} [RCLike 𝕜] {q : 𝕜ˣ}
     [Fact (IsSelfAdjoint (q : 𝕜))] :
     (ocneanuTrace 𝕜 q 0).traceRadical (isMarkovTrace_ocneanuTrace 0).map_mul_comm = ⊥ :=
   eq_bot_iff.mpr fun x hx ↦ (ocneanuTrace_zero_star_mul_self_eq_zero_iff x).mp <| by
-    rw [LinearMap.mem_traceRadical] at hx
-    rw [(isMarkovTrace_ocneanuTrace 0).map_mul_comm]; exact hx (star x)
+    rw [(isMarkovTrace_ocneanuTrace 0).map_mul_comm]; exact (LinearMap.mem_traceRadical _ _).1 hx _
 
 end InfiniteTypeAHeckeAlgebra
 

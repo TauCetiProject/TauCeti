@@ -41,6 +41,8 @@ the coefficients (the augmentation), and the higher coefficients are the moments
 * `PowerSeries.coeff_exp_eq_inv_factorial`: over a division ring, the coefficients `(n!)⁻¹` of
   `exp`.
 * `PowerSeries.isUnit_rescale_exp_add_rescale_neg_exp`: `e^{aX} + e^{-aX}` is a unit.
+* `PowerSeries.coeff_succ_one_add_mul_rescale_exp`: `(m + 1)`-th coefficient formula for
+  `(1 + c₁ * X * ∑ f (k + 1) X ^ k) * rescale (c₁ * c₂) (exp 𝕜)`.
 * `AddMonoidAlgebra.expAlgHom_single`: `e^m ↦ e^{φ(m) X}`.
 * `AddMonoidAlgebra.constantCoeff_expAlgHom`: the constant coefficient of the exponential
   specialization is the sum of the coefficients.
@@ -95,6 +97,21 @@ theorem expMonoidHom_ofAdd (a : R) :
 theorem coeff_exp_eq_inv_factorial {k : Type*} [DivisionRing k] [Algebra ℚ k] (n : ℕ) :
     coeff n (exp k) = (n.factorial : k)⁻¹ := by
   simp [coeff_exp]
+
+/-- Coefficient formula for `(1 + c₁ * X * ∑ f (k + 1) X ^ k) * rescale (c₁ * c₂) (exp 𝕜)`
+in degree `m + 1`. -/
+theorem coeff_succ_one_add_mul_rescale_exp {𝕜 : Type*} [Field 𝕜] [Algebra ℚ 𝕜]
+    (c₁ c₂ : 𝕜) (f : ℕ → 𝕜) (m : ℕ) :
+    coeff (m + 1) (mk (fun k ↦ if k = 0 then 1 else c₁ * f k) * rescale (c₁ * c₂) (exp 𝕜)) =
+      c₁ * (coeff m ((mk fun k ↦ f (k + 1)) * rescale (c₁ * c₂) (exp 𝕜)) +
+        c₁ ^ m * c₂ ^ (m + 1) / ((m + 1).factorial : 𝕜)) := by
+  let E := rescale (c₁ * c₂) (exp 𝕜)
+  rw [show mk (fun k ↦ if k = 0 then 1 else c₁ * f k) * E =
+      E + C c₁ * X * ((mk fun k ↦ f (k + 1)) * E) by
+    rw [show mk (fun k ↦ if k = 0 then 1 else c₁ * f k) = 1 + C c₁ * X * mk fun k ↦ f (k + 1) by
+      ext (_ | k) <;> [simp; (rw [map_add, mul_assoc, coeff_C_mul, coeff_succ_X_mul]; simp)]]; ring]
+  rw [map_add, mul_assoc, coeff_C_mul, coeff_succ_X_mul, coeff_rescale, coeff_exp, map_div₀,
+    map_one, map_natCast, mul_pow, pow_succ' c₁ m]; ring
 
 end PowerSeries
 
