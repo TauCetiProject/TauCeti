@@ -37,13 +37,13 @@ definitionally, and the statement of `complex_d` relies on this.
 * The Stacks Project, Section 10.132 (Tag 0FKF).
 -/
 
-universe u v
+universe u
 
 namespace TauCeti.DeRham
 
 open CategoryTheory
 
-variable (A : Type u) (B : Type v) [CommRing A] [CommRing B] [Algebra A B]
+variable (A B : Type u) [CommRing A] [CommRing B] [Algebra A B]
 
 public section
 
@@ -51,7 +51,7 @@ public section
 `Ω⁰ → Ω¹ → Ω² → ⋯` of differential forms `Ωⁿ = ⋀[B]^n Ω[B⁄A]`, with the de Rham
 differential. -/
 @[expose]
-noncomputable def complex : CochainComplex (ModuleCat.{v} A) ℕ :=
+noncomputable def complex : CochainComplex (ModuleCat.{u} A) ℕ :=
   CochainComplex.of (fun n => ModuleCat.of A (Forms A B n)) (fun n => ModuleCat.ofHom (d A B n))
     fun n => by
       ext ω

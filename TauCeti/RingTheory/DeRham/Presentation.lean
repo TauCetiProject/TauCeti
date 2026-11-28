@@ -101,40 +101,6 @@ theorem elementary_def (c : B) (v : Fin n → B) :
     elementary A c v = c • exteriorPower.ιMulti B n fun i => D A B (v i) :=
   (rfl)
 
-section Elementary
-
-variable {A}
-
-/-- An elementary form with unit coefficient is a pure exterior product of differentials. -/
-theorem elementary_coeff_one (v : Fin n → B) :
-    elementary A (1 : B) v = exteriorPower.ιMulti B n fun i => D A B (v i) := by
-  rw [elementary_def, one_smul]
-
-/-- Addition in the coefficient of an elementary form. -/
-theorem elementary_coeff_add (c e : B) (v : Fin n → B) :
-    elementary A (c + e) v = elementary A c v + elementary A e v := by
-  simp only [elementary_def, add_smul]
-
-/-- `A`-scalar multiplication on an elementary form acts on its coefficient. -/
-theorem base_smul_elementary (a : A) (c : B) (v : Fin n → B) :
-    a • elementary A c v = elementary A (a • c) v := by
-  simp only [elementary_def, smul_assoc]
-
-/-- An elementary form with two equal slots vanishes. -/
-theorem elementary_eq_zero_of_eq (c : B) (v : Fin n → B) {i j : Fin n}
-    (hij : i ≠ j) (hv : v i = v j) :
-    elementary A c v = 0 := by
-  rw [elementary_def,
-    (exteriorPower.ιMulti B n).map_eq_zero_of_eq _ (congrArg (D A B) hv) hij, smul_zero]
-
-/-- In degree `0`, `(exteriorPower.zeroEquiv B Ω[B⁄A]).symm c` is an elementary form. -/
-theorem elementary_zero_eq_zeroEquiv_symm (c : B) (v : Fin 0 → B) :
-    elementary A c v = (exteriorPower.zeroEquiv B Ω[B⁄A]).symm c := by
-  apply (exteriorPower.zeroEquiv B Ω[B⁄A]).injective
-  simp [elementary_def]
-
-end Elementary
-
 omit [CommRing B] [Algebra A B] in
 variable {A} in
 /-- `A`-linear maps out of the symbols agree once they agree on every basis symbol `[c; v]`. -/
@@ -280,16 +246,16 @@ private lemma symbolRelations_cons_algebraMap (c : B) (a : A) (w : Fin n → B) 
 theorem symbolRelations_le_ker : symbolRelations A B n ≤ LinearMap.ker (symbolMap A B n) := by
   refine symbolRelations_le (fun c e v => ?_) (fun a c v => ?_) (fun c v i x y => ?_)
     (fun c v i x y => ?_) (fun c v i a => ?_) (fun c v i j hv hij => ?_) <;>
-    simp only [LinearMap.mem_ker, map_sub, map_smul, symbolMap_sym]
-  · rw [elementary_coeff_add, sub_sub, sub_self]
-  · rw [base_smul_elementary, sub_self]
-  · simp only [elementary_def, apply_update (fun _ => D A B), map_add,
-      AlternatingMap.map_update_add, smul_add, sub_sub, sub_self]
-  · simp only [elementary_def, apply_update (fun _ => D A B), Derivation.leibniz,
-      AlternatingMap.map_update_add, AlternatingMap.map_update_smul, smul_add, mul_smul,
+    simp only [LinearMap.mem_ker, map_sub, map_smul, symbolMap_sym, elementary_def]
+  · rw [add_smul, sub_sub, sub_self]
+  · rw [smul_assoc, sub_self]
+  · simp only [apply_update (fun _ => D A B), map_add, AlternatingMap.map_update_add, smul_add,
       sub_sub, sub_self]
-  · simp [elementary_def, apply_update (fun _ => D A B)]
-  · exact elementary_eq_zero_of_eq c v hij hv
+  · simp only [apply_update (fun _ => D A B), Derivation.leibniz, AlternatingMap.map_update_add,
+      AlternatingMap.map_update_smul, smul_add, mul_smul, sub_sub, sub_self]
+  · simp [apply_update (fun _ => D A B)]
+  · rw [AlternatingMap.map_eq_zero_of_eq _ (fun k => D A B (v k)) (congrArg (D A B) hv) hij,
+      smul_zero]
 
 variable (A B n)
 
@@ -324,7 +290,7 @@ theorem induction_elementary {A B : Type*} [CommRing A] [CommRing B] [Algebra A 
   induction s using Finsupp.induction with
   | zero => simpa using zero
   | single_add p a s _ _ ih =>
-    rw [map_add, symbolMap_single, base_smul_elementary]
+    rw [map_add, symbolMap_single, elementary_def, ← smul_assoc]
     exact add _ _ (elem (a • p.1) p.2) ih
 
 end

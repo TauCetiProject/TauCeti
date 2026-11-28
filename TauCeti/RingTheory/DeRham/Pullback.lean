@@ -61,7 +61,7 @@ Mathlib's `RingHomCompTriple` instance for algebra homomorphisms is phrased with
 * The Stacks Project, Section 10.132 (Tag 0FKF), the functoriality of the de Rham complex.
 -/
 
-universe u v
+universe u
 
 namespace TauCeti.DeRham
 
@@ -209,7 +209,7 @@ end Pullback
 
 section ComplexMap
 
-variable {A : Type u} {B C E : Type v} [CommRing A] [CommRing B] [CommRing C] [CommRing E]
+variable {A B C E : Type u} [CommRing A] [CommRing B] [CommRing C] [CommRing E]
   [Algebra A B] [Algebra A C] [Algebra A E]
 
 public section
