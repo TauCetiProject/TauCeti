@@ -33,6 +33,8 @@ coefficients that is `O(hᵐ)` as `h → 0` has no terms of degree below `m`.
   expansions add and multiply.
 * `PowerSeries.isBigO_trunc_eval_one`, `PowerSeries.isBigO_one_of_isBigO_sub_eval_trunc`: a
   truncation or function with an expansion is bounded.
+* `PowerSeries.isBigO_trunc_eval_sub_sub_linear`: remainder estimate for evaluating a truncated
+  power series at two `O(w)` functions differing by `O(w ^ M)`.
 * `PowerSeries.isBigO_sub_eval_trunc_mk_of_isBigO_sub_sum_inv_pow`: an expansion
   `F = ∑_{q < K} f_q x^{-q} + O(x^{-K})` in inverse powers of `x` is an expansion along `w = x⁻¹`.
 * `TauCeti.eq_zero_of_isBigO_sum_pow_smul`: a polynomial `∑_{k < m} hᵏ bₖ` that is `O(hᵐ)` as
@@ -139,6 +141,58 @@ theorem isBigO_mul_sub_eval_trunc_mul (hw : Tendsto w l (𝓝 0))
   have h2 := ((isBigO_trunc_eval_one hw P N).mul hG).congr_right fun i ↦ one_mul _
   refine ((h1.add h2).add (isBigO_mul_trunc_eval_sub hw P Q N)).congr_left fun i ↦ ?_
   ring
+
+/-- Remainder estimate for evaluating a truncated power series at two `O(w)` functions differing
+by `O(w ^ M)`. -/
+theorem isBigO_trunc_eval_sub_sub_linear {s q : α → 𝕜} {M : ℕ}
+    (hw0 : Tendsto w l (𝓝 0)) (P : 𝕜⟦X⟧) (hM : 1 ≤ M)
+    (hsO : s =O[l] w) (hqO : q =O[l] w) (hrM : (fun x ↦ s x - q x) =O[l] fun x ↦ w x ^ M) :
+    (fun x ↦ ((trunc (M + 1) P).eval (s x) -
+        (trunc (M + 1) P).eval (q x)) - (s x - q x) * coeff 1 P) =O[l]
+      fun x ↦ w x ^ (M + 1) := by
+  simp_rw [eval_trunc]
+  have hrew : ∀ x : α,
+      (∑ k ∈ range (M + 1), coeff k P * s x ^ k -
+        ∑ k ∈ range (M + 1), coeff k P * q x ^ k) - (s x - q x) * coeff 1 P =
+      ∑ k ∈ Ico 2 (M + 1), (s x ^ k - q x ^ k) * coeff k P := fun x ↦ by
+    rw [← sum_sub_distrib]
+    have h2le : 2 ≤ M + 1 := by omega
+    have hsplit := sum_range_add_sum_Ico
+      (f := fun k ↦ coeff k P * s x ^ k - coeff k P * q x ^ k) h2le
+    rw [← hsplit]
+    have h01 : ∑ k ∈ range 2, (coeff k P * s x ^ k - coeff k P * q x ^ k) =
+        (s x - q x) * coeff 1 P := by
+      simp only [sum_range_succ, range_zero, sum_empty, zero_add, pow_zero, pow_one]
+      ring
+    rw [h01, add_sub_cancel_left]
+    refine sum_congr rfl fun k _ ↦ by ring
+  simp_rw [hrew]
+  refine IsBigO.fun_sum fun k hk ↦ ?_
+  have hk2 : 2 ≤ k := (mem_Ico.mp hk).1
+  have hfac : (fun x ↦ ∑ j ∈ range k, s x ^ j * q x ^ (k - 1 - j)) =O[l] w := by
+    refine IsBigO.fun_sum fun j hj ↦ ?_
+    have hjk : j < k := mem_range.mp hj
+    have hadd : j + (k - 1 - j) = k - 1 := by omega
+    have hprod : (fun x ↦ s x ^ j * q x ^ (k - 1 - j)) =O[l] fun x ↦ w x ^ (k - 1) := by
+      have h := (hsO.pow j).mul (hqO.pow (k - 1 - j))
+      refine h.congr' EventuallyEq.rfl (Eventually.of_forall fun x ↦ ?_)
+      dsimp only
+      rw [← pow_add, hadd]
+    have hpow : (fun x ↦ w x ^ (k - 1)) =O[l] w := by
+      have h1 : (fun x ↦ w x ^ (k - 2)) =O[l] fun _ ↦ (1 : 𝕜) :=
+        (((continuous_pow (k - 2)).tendsto 0).comp hw0).isBigO_one 𝕜
+      refine (h1.mul (isBigO_refl w l)).congr' (Eventually.of_forall fun x ↦ ?_)
+        (Eventually.of_forall fun _ ↦ one_mul _)
+      dsimp only
+      rw [← pow_succ, show k - 2 + 1 = k - 1 by omega]
+    exact hprod.trans hpow
+  have hdiff_k : (fun x ↦ s x ^ k - q x ^ k) =O[l] fun x ↦ w x ^ (M + 1) := by
+    have h := hfac.mul hrM
+    refine h.congr' (Eventually.of_forall fun x ↦ ?_) (Eventually.of_forall fun x ↦ ?_)
+    · exact geom_sum₂_mul (s x) (q x) k
+    · exact (pow_succ' (w x) M).symm
+  have hc := hdiff_k.const_mul_left (coeff k P)
+  exact hc.congr' (Eventually.of_forall fun x ↦ mul_comm _ _) EventuallyEq.rfl
 
 end PowerSeries
 

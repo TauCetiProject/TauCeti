@@ -129,53 +129,6 @@ theorem HasAsymptoticExpansion.isBigO_sub_trunc_eval {P : 𝕜⟦X⟧} {f : α �
   dsimp only
   rw [eval_trunc_eq_sum_smul]
 
-/-- Remainder estimate for evaluating a truncated power series at two `O(w)` functions differing
-by `O(w ^ M)`. -/
-private lemma isBigO_trunc_eval_sub_sub_linear {s q : α → 𝕜} {M : ℕ}
-    (hw0 : Tendsto w l (𝓝 0)) (P : 𝕜⟦X⟧) (hM : 1 ≤ M)
-    (hsO : s =O[l] w) (hqO : q =O[l] w) (hrM : (fun x => s x - q x) =O[l] fun x => w x ^ M) :
-    (fun x => ((PowerSeries.trunc (M + 1) P).eval (s x) -
-        (PowerSeries.trunc (M + 1) P).eval (q x)) - (s x - q x) * coeff 1 P) =O[l]
-      fun x => w x ^ (M + 1) := by
-  simp_rw [PowerSeries.eval_trunc]
-  have hrew : ∀ x : α,
-      (∑ k ∈ range (M + 1), coeff k P * s x ^ k -
-        ∑ k ∈ range (M + 1), coeff k P * q x ^ k) - (s x - q x) * coeff 1 P =
-      ∑ k ∈ Ico 2 (M + 1), (s x ^ k - q x ^ k) * coeff k P := fun x => by
-    rw [← sum_sub_distrib]
-    have h2le : 2 ≤ M + 1 := by omega
-    have hsplit := sum_range_add_sum_Ico
-      (f := fun k => coeff k P * s x ^ k - coeff k P * q x ^ k) h2le
-    rw [← hsplit]
-    have h01 : ∑ k ∈ range 2, (coeff k P * s x ^ k - coeff k P * q x ^ k) =
-        (s x - q x) * coeff 1 P := by
-      simp only [sum_range_succ, range_zero, sum_empty, zero_add, pow_zero, pow_one]
-      ring
-    rw [h01, add_sub_cancel_left]
-    refine sum_congr rfl fun k _ => by ring
-  simp_rw [hrew]
-  refine IsBigO.fun_sum fun k hk => ?_
-  have hk2 : 2 ≤ k := (mem_Ico.mp hk).1
-  have hfac : (fun x => ∑ j ∈ range k, s x ^ j * q x ^ (k - 1 - j)) =O[l] w := by
-    refine IsBigO.fun_sum fun j hj => ?_
-    have hjk : j < k := mem_range.mp hj
-    have hadd : j + (k - 1 - j) = k - 1 := by omega
-    have h1le : 1 ≤ k - 1 := by omega
-    have hprod : (fun x => s x ^ j * q x ^ (k - 1 - j)) =O[l] fun x => w x ^ (k - 1) := by
-      have h := (hsO.pow j).mul (hqO.pow (k - 1 - j))
-      refine h.congr' EventuallyEq.rfl (Eventually.of_forall fun x => ?_)
-      dsimp only
-      rw [← pow_add, hadd]
-    exact hprod.trans (by
-      simpa only [pow_one] using (isAsymptoticScale_pow hw0).isBigO_of_le h1le)
-  have hdiff_k : (fun x => s x ^ k - q x ^ k) =O[l] fun x => w x ^ (M + 1) := by
-    have h := hfac.mul hrM
-    refine h.congr' (Eventually.of_forall fun x => ?_) (Eventually.of_forall fun x => ?_)
-    · exact geom_sum₂_mul (s x) (q x) k
-    · exact (pow_succ' (w x) M).symm
-  have hc := hdiff_k.const_mul_left (coeff k P)
-  exact hc.congr' (Eventually.of_forall fun x => mul_comm _ _) EventuallyEq.rfl
-
 end Truncation
 
 /-! ### Ring operations on asymptotic power series -/
@@ -432,7 +385,7 @@ private lemma isBigO_substInv_step {σ H : β → 𝕜} {y : α → β} {P Q : �
   have hB : (fun x => (∑ k ∈ range (M + 1), s x ^ k * coeff k P -
       ∑ k ∈ range (M + 1), q x ^ k * coeff k P) - (s x - q x) * coeff 1 P) =O[l]
       fun x => w x ^ (M + 1) := by
-    refine (isBigO_trunc_eval_sub_sub_linear hw0 P hM hsO hqO hrM).congr'
+    refine (PowerSeries.isBigO_trunc_eval_sub_sub_linear hw0 P hM hsO hqO hrM).congr'
       (Eventually.of_forall fun x => ?_) EventuallyEq.rfl
     simp only [eval_trunc_eq_sum_smul, smul_eq_mul]
   have hC : (fun x => (∑ k ∈ range (M + 1), q x ^ k * coeff k P) - w x) =O[l]
