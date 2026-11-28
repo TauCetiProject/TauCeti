@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.BumpFunction.DerivativeApproximation
+public import TauCeti.Analysis.Distribution.TestFunction.Divergence
 public import Mathlib.Analysis.Distribution.TestFunction
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
 
@@ -98,6 +99,32 @@ theorem iteratedFDeriv_mollify (φ : 𝓓(Ω, F)) (μ : Measure E) [μ.IsAddHaar
       ρ.normed μ ⋆[lsmul ℝ ℝ, μ] iteratedFDeriv ℝ n (φ : E → F) := by
   rw [coe_mollify]
   exact φ.hasCompactSupport.iteratedFDeriv_normed_convolution φ.contDiff ρ (by simp)
+
+/-- Divergence commutes with mollification of test vector fields. -/
+-- Tagged `@[simp high]` so `simp` commutes divergence through mollification before
+-- `divergenceCLM_apply` expands it to a trace.
+@[simp high]
+theorem divergenceCLM_mollify (φ : 𝓓(Ω, E)) (μ : Measure E) [μ.IsAddHaarMeasure]
+    (ρ : ContDiffBump (0 : E)) (h : closedBall (0 : E) ρ.rOut + tsupport φ ⊆ (Ω : Set E))
+    (x : E) :
+    divergenceCLM (mollify φ μ ρ h) x =
+      (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] (divergenceCLM φ : E → ℝ)) x := by
+  have hL : (lsmul ℝ ℝ : ℝ →L[ℝ] E →L[ℝ] E).precompR E = lsmul ℝ ℝ := by
+    ext c T
+    simp
+  have hφ_diff : ContDiff ℝ 1 (φ : E → E) := φ.contDiff.of_le (by simp)
+  have hfderiv : fderiv ℝ (mollify φ μ ρ h : E → E) x =
+      (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] fderiv ℝ (φ : E → E)) x := by
+    rw [coe_mollify, (φ.hasCompactSupport.hasFDerivAt_convolution_right (lsmul ℝ ℝ)
+      ρ.continuous_normed.locallyIntegrable hφ_diff x).fderiv, hL]
+  have hex : ConvolutionExistsAt (ρ.normed μ) (fderiv ℝ (φ : E → E)) x (lsmul ℝ ℝ) μ :=
+    ρ.hasCompactSupport_normed.convolutionExists_left_of_continuous_right (lsmul ℝ ℝ)
+      ρ.continuous_normed.locallyIntegrable (hφ_diff.continuous_fderiv one_ne_zero) x
+  have hdiv : (fun y ↦ TauCeti.traceCLM ℝ E (fderiv ℝ (φ : E → E) y)) = divergenceCLM φ := by
+    ext y
+    simp [TauCeti.traceCLM_apply]
+  rw [divergenceCLM_apply, ← TauCeti.traceCLM_apply, hfderiv,
+    ((TauCeti.traceCLM ℝ E).convolution_lsmul_comp_comm hex).symm, hdiv]
 
 variable [CompleteSpace F]
 

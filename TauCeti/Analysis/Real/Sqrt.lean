@@ -92,6 +92,9 @@ dividing by a natural number `k`: `⌊√(x / k)⌋₊ = Nat.sqrt (⌊x⌋₊ / 
 * `Real.abs_sqrt_sub_sqrt_le`: for all reals `t` and `s`, `|√t - √s| ≤ √|t - s|`.
 * `Real.one_le_sqrt_one_add_sq`: for every real `t`, `1 ≤ √(1 + t²)`.
 * `Real.abs_div_sqrt_sq_add_le_one`: for `p ≥ 0` and every real `t`, `|t / √(t² + p)| ≤ 1`.
+* `Real.sqrt_sq_add_sq_le`, `Real.sqrt_sq_add_sq_add_sq_le`, `Real.div_sqrt_sq_add_sq_add_le`,
+  `Real.div_sqrt_sq_add_sq_add_sq_mem_Icc`, `Real.abs_sqrt_sq_add_sq_sub_sqrt_sq_add_sq_le`:
+  triangle, regularized-quotient, and coordinate-difference bounds for Euclidean square roots.
 * `Real.mul_inv_sqrt_one_add_sq_div_sqrt_one_sub_sq`: `y ↦ y / √(1 - y²)` inverts
   `t ↦ t / √(1 + t²)`.
 * `Real.sqrt_one_sub_sq_div_inv_sqrt_one_add_sq`: `y ↦ √(1 - y²) / y` recovers `|t|` from
@@ -411,6 +414,62 @@ theorem abs_div_sqrt_sq_add_le_one {p : ℝ} (hp : 0 ≤ p) (t : ℝ) :
     |t / √(t ^ 2 + p)| ≤ 1 := by
   rw [abs_div, abs_of_nonneg (sqrt_nonneg _)]
   exact div_le_one_of_le₀ (abs_le_sqrt (le_add_of_nonneg_right hp)) (sqrt_nonneg _)
+
+/-- Triangle bound for two squares: `√(x² + y²) ≤ |x| + |y|`. -/
+theorem sqrt_sq_add_sq_le (x y : ℝ) : √(x ^ 2 + y ^ 2) ≤ |x| + |y| :=
+  (sqrt_add_le_add_sqrt (x ^ 2) (y ^ 2)).trans_eq (by rw [sqrt_sq_eq_abs, sqrt_sq_eq_abs])
+
+/-- Triangle bound for three squares: `√(x² + y² + z²) ≤ |x| + |y| + |z|`. -/
+theorem sqrt_sq_add_sq_add_sq_le (x y z : ℝ) :
+    √(x ^ 2 + y ^ 2 + z ^ 2) ≤ |x| + |y| + |z| :=
+  (sqrt_add_le_add_sqrt (x ^ 2 + y ^ 2) (z ^ 2)).trans
+    (add_le_add (sqrt_sq_add_sq_le x y) (sqrt_sq_eq_abs z).le)
+
+/-- Regularized quotient bound: `(x² + y²) / √(x² + y² + p) ≤ |x| + |y|` for `p ≥ 0`. -/
+theorem div_sqrt_sq_add_sq_add_le (x y : ℝ) {p : ℝ} (hp : 0 ≤ p) :
+    (x ^ 2 + y ^ 2) / √(x ^ 2 + y ^ 2 + p) ≤ |x| + |y| := by
+  have h1 : (x ^ 2 + y ^ 2) / √(x ^ 2 + y ^ 2 + p) ≤ √(x ^ 2 + y ^ 2) := by
+    rcases eq_or_lt_of_le (add_nonneg (add_nonneg (sq_nonneg x) (sq_nonneg y)) hp) with h0 | hpos
+    · have hx : x ^ 2 = 0 := by nlinarith [sq_nonneg x, sq_nonneg y]
+      have hy : y ^ 2 = 0 := by nlinarith [sq_nonneg x, sq_nonneg y]
+      simp [hx, hy]
+    · rw [div_le_iff₀ (sqrt_pos.2 hpos)]
+      calc x ^ 2 + y ^ 2 = √(x ^ 2 + y ^ 2) * √(x ^ 2 + y ^ 2) :=
+            (mul_self_sqrt (by positivity)).symm
+        _ ≤ √(x ^ 2 + y ^ 2) * √(x ^ 2 + y ^ 2 + p) :=
+            mul_le_mul_of_nonneg_left (sqrt_le_sqrt (le_add_of_nonneg_right hp)) (sqrt_nonneg _)
+  exact h1.trans (sqrt_sq_add_sq_le x y)
+
+/-- Normalized component bound: `x / √(x² + y² + z²) ∈ [0, 1]` for `0 ≤ x`. -/
+theorem div_sqrt_sq_add_sq_add_sq_mem_Icc {x : ℝ} (hx : 0 ≤ x) (y z : ℝ) :
+    x / √(x ^ 2 + y ^ 2 + z ^ 2) ∈ Set.Icc (0 : ℝ) 1 :=
+  ⟨div_nonneg hx (sqrt_nonneg _),
+    div_le_one_of_le₀ (le_sqrt_of_sq_le (by linarith [sq_nonneg y, sq_nonneg z])) (sqrt_nonneg _)⟩
+
+/-- In any second coordinate `g`, `a ↦ √(a² + g²)` is `1`-Lipschitz:
+`|√(a² + g²) - √(b² + g²)| ≤ |a - b|`. -/
+theorem abs_sqrt_sq_add_sq_sub_sqrt_sq_add_sq_le (a b g : ℝ) :
+    |√(a ^ 2 + g ^ 2) - √(b ^ 2 + g ^ 2)| ≤ |a - b| := by
+  rcases eq_or_lt_of_le (add_nonneg (sqrt_nonneg (a ^ 2 + g ^ 2)) (sqrt_nonneg (b ^ 2 + g ^ 2)))
+      with h0 | hpos
+  · have ha : √(a ^ 2 + g ^ 2) = 0 := by
+      linarith [sqrt_nonneg (a ^ 2 + g ^ 2), sqrt_nonneg (b ^ 2 + g ^ 2)]
+    have hb : √(b ^ 2 + g ^ 2) = 0 := by
+      linarith [sqrt_nonneg (a ^ 2 + g ^ 2), sqrt_nonneg (b ^ 2 + g ^ 2)]
+    rw [ha, hb, sub_zero, abs_zero]
+    exact abs_nonneg _
+  · have hA : √(a ^ 2 + g ^ 2) ^ 2 = a ^ 2 + g ^ 2 := sq_sqrt (by positivity)
+    have hB : √(b ^ 2 + g ^ 2) ^ 2 = b ^ 2 + g ^ 2 := sq_sqrt (by positivity)
+    have hab : |a + b| ≤ √(a ^ 2 + g ^ 2) + √(b ^ 2 + g ^ 2) :=
+      (abs_add_le a b).trans (add_le_add
+        (abs_le_sqrt (le_add_of_nonneg_right (sq_nonneg g)))
+        (abs_le_sqrt (le_add_of_nonneg_right (sq_nonneg g))))
+    have hdiff : (√(a ^ 2 + g ^ 2) - √(b ^ 2 + g ^ 2)) *
+        (√(a ^ 2 + g ^ 2) + √(b ^ 2 + g ^ 2)) = (a - b) * (a + b) := by
+      linear_combination hA - hB
+    refine le_of_mul_le_mul_right ?_ hpos
+    rw [← abs_of_pos hpos, ← abs_mul, abs_of_pos hpos, hdiff, abs_mul]
+    exact mul_le_mul_of_nonneg_left hab (abs_nonneg _)
 
 /-- The map `y ↦ y / √(1 - y²)` inverts `t ↦ t / √(1 + t²)` on every real `t`. -/
 theorem mul_inv_sqrt_one_add_sq_div_sqrt_one_sub_sq (t : ℝ) :

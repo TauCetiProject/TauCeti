@@ -32,6 +32,8 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
   a filter on which `m i → m₀ > 0` and `s i → a`, for finite `M`.
 * `ENNReal.le_liminf_add` and `ENNReal.sum_liminf_le_liminf_sum`: the sum of the lower limits of
   finitely many `ℝ≥0∞`-valued families is at most the lower limit of their sum.
+* `ENNReal.mul_add_le_of_le_liminf_of_tendsto`: passing `m * uᵢ + vᵢ ≤ rᵢ` to the limit when
+  `p ≤ liminf u`, `c ≤ liminf v`, and `r → a`.
 * `ENNReal.le_add_of_forall_one_lt_le_add_mul`: if `a ≤ b + t c` for every `t > 1`, then
   `a ≤ b + c`.
 * `ENNReal.tendsto_inv_natCast_add_nhds_zero`: `((k : ℝ≥0∞) + c)⁻¹` converges to `0` as `k → ∞`.
@@ -127,6 +129,21 @@ theorem _root_.ENNReal.sum_liminf_le_liminf_sum {ι κ : Type*} {l : Filter ι} 
   | cons j s hj ih =>
     simp only [Finset.sum_cons]
     exact (add_le_add le_rfl ih).trans (ENNReal.le_liminf_add _ _)
+
+/-- If `p ≤ liminf u l`, `c ≤ liminf v l`, `m * u i + v i ≤ r i` eventually along `l`, and
+`r → a`, then `m * p + c ≤ a`. -/
+theorem _root_.ENNReal.mul_add_le_of_le_liminf_of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot]
+    {m p c a : ℝ≥0∞} {u v r : ι → ℝ≥0∞} (hp : p ≤ Filter.liminf u l)
+    (hc : c ≤ Filter.liminf v l) (hle : ∀ᶠ i in l, m * u i + v i ≤ r i)
+    (hr : Filter.Tendsto r l (𝓝 a)) : m * p + c ≤ a :=
+  calc m * p + c
+      ≤ m * Filter.liminf u l + Filter.liminf v l := add_le_add (mul_le_mul_right hp m) hc
+    _ ≤ Filter.liminf (fun i ↦ m * u i) l + Filter.liminf v l :=
+        add_le_add (by simpa only [Filter.liminf_const, Pi.mul_def] using
+          ENNReal.le_liminf_mul (u := fun _ : ι ↦ m) (v := u) (f := l)) le_rfl
+    _ ≤ Filter.liminf (fun i ↦ m * u i + v i) l := ENNReal.le_liminf_add _ _
+    _ ≤ Filter.liminf r l := Filter.liminf_le_liminf hle
+    _ = a := hr.liminf_eq
 
 /-- If `a ≤ b + t c` for every factor `t > 1`, then `a ≤ b + c`. This lets a family of estimates
 with an arbitrarily small loss factor pass to the sharp estimate. -/

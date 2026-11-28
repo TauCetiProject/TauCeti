@@ -44,6 +44,8 @@ their `L¹` distance.
 * `TauCeti.integrable_indicator_Ico_one`: the indicator function of `[a, b)` is integrable.
 * `TauCeti.setIntegral_abs_eq_sub`: the integral of `|f|` over `s` is the integral of `f` over the
   part of `s` where `f ≥ 0` minus its integral over the rest of `s`.
+* `TauCeti.integral_abs_indicator_sub_indicator`: the `L¹` distance between two constant-weighted
+  indicators `S₁.indicator c` and `S₂.indicator c` (`0 ≤ c`) equals `c * μ.real (S₁ ∆ S₂)`.
 * `TauCeti.setIntegral_pos_of_ae_pos`: an integrable function that is almost everywhere positive
   on a set of positive measure has positive integral over it.
 * `TauCeti.div_le_setIntegral_inv` and `TauCeti.setIntegral_inv_pos`: if `λ ≤ a ≤ M` almost
@@ -90,7 +92,7 @@ their `L¹` distance.
 public section
 
 open MeasureTheory Function Set
-open scoped ENNReal
+open scoped ENNReal symmDiff
 
 namespace TauCeti
 
@@ -125,6 +127,19 @@ theorem setIntegral_abs_eq_sub {α : Type*} [MeasurableSpace α] {μ : Measure �
     Measure.restrict_restrict₀ (aestronglyMeasurable_const.nullMeasurableSet_le hf.1),
     Measure.restrict_restrict₀ (hf.1.nullMeasurableSet_lt aestronglyMeasurable_const),
     inter_comm _ s, hneg]
+
+/-- The `L¹` distance between two constant-weighted indicator functions `S₁.indicator c` and
+`S₂.indicator c` (`0 ≤ c`) equals `c * μ.real (S₁ ∆ S₂)`. -/
+theorem integral_abs_indicator_sub_indicator {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {S₁ S₂ : Set α} (hS₁ : NullMeasurableSet S₁ μ)
+    (hS₂ : NullMeasurableSet S₂ μ) {c : ℝ} (hc : 0 ≤ c) :
+    ∫ x, |S₁.indicator (fun _ ↦ c) x - S₂.indicator (fun _ ↦ c) x| ∂μ =
+      c * μ.real (S₁ ∆ S₂) := by
+  have hEq : (fun x ↦ |S₁.indicator (fun _ ↦ c) x - S₂.indicator (fun _ ↦ c) x|) =
+      (S₁ ∆ S₂).indicator (fun _ ↦ c) := funext fun x ↦ by
+    by_cases h1 : x ∈ S₁ <;> by_cases h2 : x ∈ S₂ <;>
+      simp [Set.mem_symmDiff, h1, h2, abs_of_nonneg hc]
+  rw [hEq, integral_indicator₀ (hS₁.symmDiff hS₂), setIntegral_const, smul_eq_mul, mul_comm]
 
 /-- Perturbing `g` by a constant `c` changes the `L¹` distance over `S` to `f` by at most
 the `L¹` norm of `c`. -/

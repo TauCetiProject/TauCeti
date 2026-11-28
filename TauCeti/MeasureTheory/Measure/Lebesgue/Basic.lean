@@ -18,7 +18,9 @@ Mathlib's extended-radius balls and `Real.volume_eball`, and allows zero and inf
 It supplies the sectionwise contraction inequality for Steiner symmetrization. The annulus
 between two concentric open intervals of radii `0 ≤ r ≤ R` has length `2 (R - r)`
 (`TauCeti.volume_ball_sdiff_ball`), so that between radii `r` and `2r` has length `2r`
-(`TauCeti.volume_ball_two_mul_sdiff_ball`).
+(`TauCeti.volume_ball_two_mul_sdiff_ball`), and the symmetric strip
+`{t : ℝ | 0 < R - |t| ∧ R - |t| < δ}` has length at most `2 δ`
+(`TauCeti.volume_setOf_pos_sub_abs_lt_le`).
 
 An order-connected subset of the real line of positive finite volume agrees almost everywhere
 with a nonempty bounded open interval (`Set.OrdConnected.exists_ae_eq_Ioo`): finite volume
@@ -50,12 +52,16 @@ This is the uniform lower bound on the local measure of a domain under which Sob
 rectangles of unbounded length have uniform constants. In the other direction, the part of
 `[a, b]` in the interval of radius `r` about `y` has length at most `b - max a (y - r)`
 (`TauCeti.volume_Icc_inter_ball_le`).
+
+Chebyshev-style point selection on `(0, δ)` shows that if `∫⁻ r in Ioo 0 δ, f r ≤ δ * B`
+with `B ≠ ∞` and `δ > 0`, then `f r ≤ B + ENNReal.ofReal δ` for some `r ∈ Ioo 0 δ`
+(`TauCeti.exists_mem_Ioo_le_add_of_setLIntegral_le`).
 -/
 
 public section
 
 open MeasureTheory Set
-open scoped ENNReal NNReal Interval
+open scoped ENNReal NNReal Interval symmDiff
 
 namespace NNReal
 
@@ -101,6 +107,31 @@ theorem volume_eball_sdiff_le (s u : Set ℝ) :
         Metric.isOpen_eball.measurableSet.nullMeasurableSet (by rwa [hlength]), hlength, hlength]
       exact le_measure_sdiff
 
+/-- The symmetric difference of centered real `eball`s of lengths `ENNReal.ofReal a` and
+`ENNReal.ofReal b` has Lebesgue measure at most `ENNReal.ofReal |a - b|`. -/
+theorem volume_eball_ofReal_symmDiff_le (a b : ℝ) :
+    volume (Metric.eball (0 : ℝ) (ENNReal.ofReal a / 2) ∆
+        Metric.eball (0 : ℝ) (ENNReal.ofReal b / 2)) ≤ ENNReal.ofReal |a - b| := by
+  have hvol (r : ℝ) : volume (Metric.eball (0 : ℝ) (ENNReal.ofReal r / 2)) = ENNReal.ofReal r := by
+    rw [Real.volume_eball, ENNReal.mul_div_cancel (by norm_num) (by norm_num)]
+  have hofmax (r : ℝ) : ENNReal.ofReal r = ENNReal.ofReal (max r 0) := by
+    simp [ENNReal.ofReal_max]
+  have hle {x y : ℝ} (hx : 0 ≤ x) (hxy : x ≤ y) :
+      volume (Metric.eball (0 : ℝ) (ENNReal.ofReal x / 2) ∆
+          Metric.eball (0 : ℝ) (ENNReal.ofReal y / 2)) ≤ ENNReal.ofReal |x - y| := by
+    have hsub : Metric.eball (0 : ℝ) (ENNReal.ofReal x / 2) ⊆
+        Metric.eball (0 : ℝ) (ENNReal.ofReal y / 2) :=
+      Metric.eball_subset_eball (ENNReal.div_le_div_right (ENNReal.ofReal_le_ofReal hxy) 2)
+    rw [symmDiff_def, Set.sdiff_eq_empty.2 hsub, empty_union,
+      measure_sdiff hsub Metric.isOpen_eball.measurableSet.nullMeasurableSet
+        (by rw [hvol]; exact ENNReal.ofReal_ne_top),
+      hvol, hvol, ← ENNReal.ofReal_sub _ hx, abs_of_nonpos (sub_nonpos.2 hxy), neg_sub]
+  rw [hofmax a, hofmax b]
+  refine (le_total (max a 0) (max b 0) |>.elim (hle (le_max_right _ _)) fun hba ↦ ?_).trans
+    (ENNReal.ofReal_le_ofReal (abs_max_sub_max_le_abs a b 0))
+  rw [symmDiff_comm, abs_sub_comm]
+  exact hle (le_max_right _ _) hba
+
 /-- The annulus between two concentric open intervals of radii `0 ≤ r ≤ R` has length
 `2 (R - r)`. -/
 theorem volume_ball_sdiff_ball {r R : ℝ} (hr : 0 ≤ r) (hrR : r ≤ R) (x : ℝ) :
@@ -108,6 +139,26 @@ theorem volume_ball_sdiff_ball {r R : ℝ} (hr : 0 ≤ r) (hrR : r ≤ R) (x : �
   rw [measure_sdiff (Metric.ball_subset_ball hrR) measurableSet_ball.nullMeasurableSet
     measure_ball_lt_top.ne, Real.volume_ball, Real.volume_ball,
     ← ENNReal.ofReal_sub _ (by positivity), mul_sub]
+
+/-- One-dimensional strip-length bound: `{t : ℝ | 0 < R - |t| ∧ R - |t| < δ}` consists of two
+symmetric open intervals of total length at most `2 * δ`. -/
+theorem volume_setOf_pos_sub_abs_lt_le (R : ℝ) {δ : ℝ} (hδ : 0 < δ) :
+    volume {t : ℝ | 0 < R - |t| ∧ R - |t| < δ} ≤ ENNReal.ofReal (2 * δ) := by
+  have hTsub : {t : ℝ | 0 < R - |t| ∧ R - |t| < δ} ⊆
+      Ioo (R - δ) R ∪ Ioo (-R) (-(R - δ)) := by
+    intro t ht
+    simp only [mem_ofPred_eq] at ht
+    rcases ht with ⟨h1, h2⟩
+    rcases le_or_gt 0 t with ht0 | ht0
+    · rw [abs_of_nonneg ht0] at h1 h2
+      exact Or.inl ⟨by linarith, by linarith⟩
+    · rw [abs_of_neg ht0] at h1 h2
+      exact Or.inr ⟨by linarith, by linarith⟩
+  refine ((measure_mono hTsub).trans (measure_union_le _ _)).trans_eq ?_
+  rw [Real.volume_Ioo, Real.volume_Ioo]
+  have hlen1 : R - (R - δ) = δ := by ring
+  have hlen2 : -(R - δ) - -R = δ := by ring
+  rw [hlen1, hlen2, ← ENNReal.ofReal_add hδ.le hδ.le, two_mul]
 
 /-- The annulus between the open intervals of radii `r` and `2r` about a point has length `2r`. -/
 theorem volume_ball_two_mul_sdiff_ball (r x : ℝ) :
@@ -197,6 +248,23 @@ theorem ofReal_mul_ofReal_le_volume_Ioo_prod_Ioo_inter_ball {a b c d r ℓ ℓ' 
   rw [← ball_prod_same, prod_inter_prod, Measure.volume_eq_prod, Measure.prod_prod]
   exact mul_le_mul' (ofReal_le_volume_Ioo_inter_ball hℓr hℓ hz.1)
     (ofReal_le_volume_Ioo_inter_ball hℓ'r hℓ' hz.2)
+
+/-- Chebyshev-style point selection on `(0, δ)`: if `∫⁻ r in Ioo 0 δ, f r ≤ δ * B` with `δ > 0`
+and `B ≠ ∞`, then `f r ≤ B + δ` for some `r ∈ (0, δ)`. -/
+theorem exists_mem_Ioo_le_add_of_setLIntegral_le {f : ℝ → ℝ≥0∞} {B : ℝ≥0∞} (hB : B ≠ ∞)
+    {δ : ℝ} (hδ : 0 < δ) (h : ∫⁻ r in Ioo 0 δ, f r ≤ ENNReal.ofReal δ * B) :
+    ∃ r ∈ Ioo (0 : ℝ) δ, f r ≤ B + ENNReal.ofReal δ := by
+  by_contra! hgt
+  have hle : ENNReal.ofReal δ * B + ENNReal.ofReal δ * ENNReal.ofReal δ ≤ ENNReal.ofReal δ * B := by
+    have h1 : ENNReal.ofReal δ * (B + ENNReal.ofReal δ) =
+        ∫⁻ _ in Ioo 0 δ, (B + ENNReal.ofReal δ) := by
+      rw [setLIntegral_const, Real.volume_Ioo, sub_zero, mul_comm]
+    rw [← mul_add, h1]
+    exact (setLIntegral_mono' measurableSet_Ioo fun r hr ↦ (hgt r hr).le).trans h
+  have h0 : ENNReal.ofReal δ * ENNReal.ofReal δ = 0 := nonpos_iff_eq_zero.1 <|
+    WithTop.le_of_add_le_add_left (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hB)
+      (hle.trans_eq (add_zero _).symm)
+  exact mul_ne_zero (by positivity) (by positivity) h0
 
 end TauCeti
 

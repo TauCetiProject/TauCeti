@@ -25,6 +25,11 @@ It localizes the extra cost to `A`. After importing
 `TauCeti.Analysis.BoundedVariation.Slicing.Measurability`, the full family of noninterval sections
 is null-measurable, so both bounds apply to it by taking
 `hA := nullMeasurableSet_noninterval_lineSection hs hfin e he` and `hbad := .of_forall fun _ ↦ id`.
+When `s` also has finite perimeter, `D` and `A` have finite measure
+(`MeasureTheory.NullMeasurableSet.volume_setOf_pos_volume_lineSection_ne_top`,
+`MeasureTheory.NullMeasurableSet.volume_ne_top_of_noninterval_lineSection`) and the real
+section-length function is integrable
+(`MeasureTheory.NullMeasurableSet.integrable_measureReal_lineSection`).
 
 ## References
 
@@ -121,3 +126,37 @@ theorem two_mul_volume_add_two_mul_volume_le_perimeter_of_noninterval_lineSectio
   simpa using h.trans (by simpa using lintegral_perimeter_lineSection_le hs hfin e he)
 
 end TauCeti
+
+namespace MeasureTheory.NullMeasurableSet
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+
+/-- For a finite-volume, finite-perimeter set, the transverse projection of positive-length line
+sections has finite measure. -/
+theorem volume_setOf_pos_volume_lineSection_ne_top {s : Set E}
+    (hs : NullMeasurableSet s volume) (hfin : volume s ≠ ∞)
+    (hP : perimeter volume ⊤ s ≠ ∞) (e : E) (he : ‖e‖ = 1) :
+    volume {y : (ℝ ∙ e)ᗮ | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}} ≠ ∞ := by
+  have hle := two_mul_volume_add_two_mul_volume_le_perimeter_of_noninterval_lineSection
+    hs hfin e he .empty (.of_forall fun _ h ↦ False.elim h)
+  exact ne_top_of_le_ne_top hP <|
+    (le_self_add.trans_eq (two_mul _).symm).trans (le_self_add.trans hle)
+
+/-- For a finite-volume, finite-perimeter set, any null-measurable family of noninterval line
+sections has finite measure. -/
+theorem volume_ne_top_of_noninterval_lineSection {s : Set E}
+    (hs : NullMeasurableSet s volume) (hfin : volume s ≠ ∞)
+    (hP : perimeter volume ⊤ s ≠ ∞) (e : E) (he : ‖e‖ = 1)
+    {A : Set (ℝ ∙ e)ᗮ} (hA : NullMeasurableSet A volume)
+    (hbad : ∀ᵐ y : (ℝ ∙ e)ᗮ ∂volume, y ∈ A →
+      ∀ I : Set ℝ, I.OrdConnected → ¬{t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I) :
+    volume A ≠ ∞ := by
+  have hle := two_mul_volume_add_two_mul_volume_le_perimeter_of_noninterval_lineSection
+    hs hfin e he hA hbad
+  exact ne_top_of_le_ne_top hP <|
+    (le_self_add.trans_eq (two_mul _).symm).trans (le_add_self.trans hle)
+
+end MeasureTheory.NullMeasurableSet
