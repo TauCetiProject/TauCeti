@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.NoncommCoprod
-public import TauCeti.RingTheory.WittVector.Frobenius
+public import TauCeti.RingTheory.WittVector.Frobenius.Basic
 
 /-!
 # Group actions on Witt vectors
