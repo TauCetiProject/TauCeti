@@ -31,6 +31,7 @@ Conjugating an algebra homomorphism into `Module.End` by `LinearEquiv.conjAlgEqu
 pointwise intertwining (`LinearEquiv.conjAlgEquiv_toAlgHom_comp_eq_iff`).
 Following the identification of equal submodules by an inclusion is the other inclusion,
 `Submodule.subtype_comp_ofEq`.
+Semilinearly equivalent submodules are simultaneously `⊥` (`LinearEquiv.submodule_eq_bot_iff`).
 -/
 
 public section
@@ -123,6 +124,15 @@ theorem conjAlgEquiv_toAlgHom_comp_eq_iff {R S A M₁ M₂ : Type*}
       congrArg (fun f : A →ₐ[R] Module.End S M₂ ↦ f a (e t)) h
   · obtain ⟨t, rfl⟩ := e.surjective y
     simp [LinearEquiv.conjAlgEquiv_apply, h]
+
+/-- Semilinearly equivalent submodules are simultaneously `⊥`. -/
+theorem submodule_eq_bot_iff {R S M N : Type*} [Semiring R] [Semiring S]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module S N]
+    {σ : R →+* S} {σ' : S →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+    {p : Submodule R M} {q : Submodule S N} (e : p ≃ₛₗ[σ] q) :
+    p = ⊥ ↔ q = ⊥ := by
+  rw [← Submodule.subsingleton_iff_eq_bot, ← Submodule.subsingleton_iff_eq_bot]
+  exact e.toEquiv.subsingleton_congr
 
 end LinearEquiv
 

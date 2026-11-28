@@ -13,6 +13,7 @@ import TauCeti.Algebra.Group.Action.Pow
 import TauCeti.Algebra.Lie.Sl2.Associative
 import TauCeti.Algebra.Lie.Submodule.LocallyFinite
 import TauCeti.Algebra.Lie.UniversalEnveloping.Module
+import TauCeti.LinearAlgebra.LinearEquiv.Basic
 
 /-!
 # Integrable modules over Kac–Moody Lie algebras and the simple Weyl intertwiners
@@ -800,11 +801,6 @@ theorem finrank_weightSpace_sub_apply_coroot_smul_root {i : I}
       Module.finrank K (weightSpace R M μ) :=
   (simpleWeylIntertwinerWeightEquiv he hf hA μ).symm.finrank_eq
 
-omit [CharZero K] in
-private theorem submodule_eq_bot_iff {p q : Submodule K M} (e : p ≃ₗ[K] q) : p = ⊥ ↔ q = ⊥ := by
-  rw [← Submodule.subsingleton_iff_eq_bot, ← Submodule.subsingleton_iff_eq_bot]
-  exact e.toEquiv.subsingleton_congr
-
 /-- The set of weights is preserved by the simple reflection at a node `i` with `A i i = 2` where
 `eᵢ` and `fᵢ` act locally nilpotently. -/
 theorem weightSpace_sub_apply_coroot_smul_root_eq_bot_iff {i : I}
@@ -812,7 +808,7 @@ theorem weightSpace_sub_apply_coroot_smul_root_eq_bot_iff {i : I}
     (hf : ∀ m : M, ∃ k : ℕ, (negativeAction R M i ^ k) m = 0)
     (hA : A i i = 2) (μ : Dual K H) :
     weightSpace R M (μ - μ (R.coroot i) • R.root i) = ⊥ ↔ weightSpace R M μ = ⊥ :=
-  submodule_eq_bot_iff (simpleWeylIntertwinerWeightEquiv he hf hA μ).symm
+  (simpleWeylIntertwinerWeightEquiv he hf hA μ).symm.submodule_eq_bot_iff
 
 private theorem diag_eq_two_of_map (hA : ∀ j, (A.map (Int.cast : ℤ → K)) j j = 2) (i : I) :
     A i i = 2 :=
@@ -938,7 +934,7 @@ theorem weightSpace_simpleReflection_eq_bot_iff {i : I}
     (hf : ∀ m : M, ∃ k : ℕ, (negativeAction R M i ^ k) m = 0)
     (hA : ∀ j, (A.map (Int.cast : ℤ → K)) j j = 2) (μ : Dual K H) :
     weightSpace R M (R.simpleReflection hA i μ) = ⊥ ↔ weightSpace R M μ = ⊥ :=
-  submodule_eq_bot_iff (simpleWeylIntertwinerSimpleReflectionEquiv he hf hA μ).symm
+  (simpleWeylIntertwinerSimpleReflectionEquiv he hf hA μ).symm.submodule_eq_bot_iff
 
 /-- **Weyl-group equivalence of weight spaces on an integrable module.** Without asserting a group
 action on `M`, every element `w ∈ R.weylGroup hA` induces a `K`-linear equivalence between the
@@ -981,7 +977,7 @@ theorem IsIntegrable.weightSpace_eq_bot_iff_of_mem_weylGroup (hM : IsIntegrable 
     (hw : w ∈ R.weylGroup hA) (μ : Dual K H) :
     weightSpace R M (w μ) = ⊥ ↔ weightSpace R M μ = ⊥ :=
   (hM.nonempty_linearEquiv_weightSpace_of_mem_weylGroup hA hw μ).elim fun e ↦
-    submodule_eq_bot_iff e
+    e.submodule_eq_bot_iff
 
 end SimpleWeylIntertwiner
 
