@@ -51,10 +51,11 @@ identifies integer hive counts with tensor-product multiplicities and invariant 
 * `TauCeti.Hive.finrank_invariants_eq_hiveCount`: dimension of `GL n ℂ`-invariants in
   `V_lam ⊗ V_μ ⊗ V_ν` equals `hiveCount ![lam.val, μ.val, ν.val]`.
 * `TauCeti.Hive.finrank_hom_two_std_std`, `TauCeti.Hive.finrank_invariants_two_std_checks`,
+  `TauCeti.Hive.finrank_hom_three_two_one_two_one_three_two_one`,
   `TauCeti.Hive.finrank_hom_rank_one`, `TauCeti.Hive.finrank_hom_rank_zero`,
   `TauCeti.Hive.finrank_invariants_rank_zero`, and
-  `TauCeti.Hive.schur_mul_two_vars_ne_finsum_hiveCount_one`: concrete rank-`0`, rank-`1`, and
-  rank-`2` representation-theoretic and sharpness checks.
+  `TauCeti.Hive.schur_mul_two_vars_ne_finsum_hiveCount_one`: concrete rank-`0`, rank-`1`,
+  rank-`2`, and rank-`3` representation-theoretic and sharpness checks.
 
 ## References
 
@@ -407,6 +408,15 @@ theorem finrank_invariants_two_std_checks :
     exact hiveCount_two_std_std_det
   · refine hiveCount_eq_zero_of_sum_ne_zero ?_
     simp [Fin.sum_univ_three, Fin.sum_univ_two]
+
+/-- Rank-`3` multiplicity-`2` check: in `FDRep ℂ (GL (Fin 3) ℂ)`, `V_{(2, 1, 0)} ⊗ V_{(2, 1, 0)}`
+contains two copies of `V_{(3, 2, 1)}`. -/
+theorem finrank_hom_three_two_one_two_one_three_two_one :
+    Module.finrank ℂ
+        (rationalWeylFDRep ℂ 3 ⟨![3, 2, 1], by decide⟩ ⟶
+          rationalWeylFDRep ℂ 3 ⟨![2, 1, 0], by decide⟩ ⊗
+            rationalWeylFDRep ℂ 3 ⟨![2, 1, 0], by decide⟩) = 2 := by
+  rw [finrank_hom_eq_hiveCount, hiveCount_three_checks.2]
 
 private theorem shape_eq_of_one_two (w₁ : DominantWeight 1) (w₂ : DominantWeight 2)
     (h0 : w₁.val 0 = w₂.val 0) (h1 : w₂.val 1 = 0) : w₁.shape = w₂.shape := by

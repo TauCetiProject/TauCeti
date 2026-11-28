@@ -704,22 +704,29 @@ private theorem vertex_three_eq_center_of_ne_zero {p : Vertex 3}
   have := p.sum_eq
   ext <;> simp <;> omega
 
+/-- At size `3`, `(1, 1, 1)` is the unique strictly interior vertex of `Δ₃`, so a hive is
+determined by its boundary and its value at `(1, 1, 1)`. -/
+theorem eq_of_boundary_eq_of_interior_eq_three {R : Type*} [AddCommGroup R] [Preorder R]
+    {h₁ h₂ : Hive 3 R} (hb : h₁.boundary = h₂.boundary)
+    (hm : h₁ ⟨1, 1, 1, rfl⟩ = h₂ ⟨1, 1, 1, rfl⟩) : h₁ = h₂ := by
+  refine ext fun p => ?_
+  by_cases hz : p.z = 0
+  · rw [Vertex.eq_edgePoint_zero_of_z_eq_zero hz, h₁.apply_edgePoint_zero, h₂.apply_edgePoint_zero,
+      hb]
+  · by_cases hx : p.x = 0
+    · rw [Vertex.eq_edgePoint_one_of_x_eq_zero hx, h₁.apply_edgePoint_one, h₂.apply_edgePoint_one,
+        hb]
+    · by_cases hy : p.y = 0
+      · rw [Vertex.eq_edgePoint_two_of_y_eq_zero hy, h₁.apply_edgePoint_two, h₂.apply_edgePoint_two,
+          hb]
+      · rw [vertex_three_eq_center_of_ne_zero hx hy hz, hm]
+
 /-- A rank-`3` hive with fixed boundary `B` is uniquely determined by its value at the single
 interior vertex `(1, 1, 1)`. -/
 theorem fixedIntegerHive_three_ext {B : Fin 3 → Fin 3 → ℤ}
     (k₁ k₂ : FixedIntegerHive B)
-    (hmid : k₁.val ⟨1, 1, 1, rfl⟩ = k₂.val ⟨1, 1, 1, rfl⟩) : k₁ = k₂ := by
-  refine Subtype.ext <| ext fun p => ?_
-  by_cases hz : p.z = 0
-  · rw [Vertex.eq_edgePoint_zero_of_z_eq_zero hz, k₁.val.apply_edgePoint_zero,
-      k₂.val.apply_edgePoint_zero, k₁.property, k₂.property]
-  · by_cases hx : p.x = 0
-    · rw [Vertex.eq_edgePoint_one_of_x_eq_zero hx, k₁.val.apply_edgePoint_one,
-        k₂.val.apply_edgePoint_one, k₁.property, k₂.property]
-    · by_cases hy : p.y = 0
-      · rw [Vertex.eq_edgePoint_two_of_y_eq_zero hy, k₁.val.apply_edgePoint_two,
-          k₂.val.apply_edgePoint_two, k₁.property, k₂.property]
-      · rw [vertex_three_eq_center_of_ne_zero hx hy hz, hmid]
+    (hmid : k₁.val ⟨1, 1, 1, rfl⟩ = k₂.val ⟨1, 1, 1, rfl⟩) : k₁ = k₂ :=
+  Subtype.ext <| eq_of_boundary_eq_of_interior_eq_three (k₁.property.trans k₂.property.symm) hmid
 
 end IntegerFibre
 
