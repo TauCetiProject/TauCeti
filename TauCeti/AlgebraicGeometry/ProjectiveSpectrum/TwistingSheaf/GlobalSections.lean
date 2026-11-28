@@ -190,12 +190,9 @@ theorem val_baseRingToGlobalSections_apply (c : R) (x : (⊤ : (Proj 𝒜).Opens
 /-- The global sections `r / 1` of `𝒪(n)` on `Proj (Sym M)` are linear over the base ring. -/
 theorem toTwistingSheaf_top_smul {n : ℤ} {j : ℕ} (h : (j : ℤ) = n) (c : R) (r : 𝒜 j) :
     Proj.toTwistingSheaf 𝒜 h ⊤ (c • r) = c • Proj.toTwistingSheaf 𝒜 h ⊤ r := by
-  refine Proj.twistingSheaf.ext fun (x : (⊤ : (Proj 𝒜).Opens)) ↦ ?_
-  rw [Scheme.Modules.base_smul_globalSections]
-  refine Eq.trans ?_ (Proj.twistingSheaf.smul_apply _ _ x).symm
-  rw [val_baseRingToGlobalSections_apply, Proj.toTwistingSheaf_apply_apply,
-    Proj.toTwistingSheaf_apply_apply, Localization.mk_mul, one_mul, Submodule.coe_smul,
-    Algebra.smul_def]
+  rw [Scheme.Modules.base_smul_globalSections, Scheme.Modules.baseRingToGlobalSections_apply,
+    over_eq_projToSpec, projToSpec_def, ← Proj.toSpecCoeff_def,
+    Proj.toSpecCoeff_appTop_smul_toTwistingSheaf]
 
 /-- **The global sections of `𝒪(j)` on projective space are the forms of degree `j`**, as an
 `R`-linear isomorphism `A_j ≃ₗ[R] Γ(Proj A, 𝒪(j))` sending `r` to `r / 1`, for `A = Sym M` and `M`

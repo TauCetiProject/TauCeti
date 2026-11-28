@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Haar.DistribChar
 public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct.Basic
-public import TauCeti.NumberTheory.LocalField.HaarCharacter
+public import TauCeti.NumberTheory.LocalField.Haar.Character
 public import TauCeti.NumberTheory.LocalField.Topology
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.BorelSpace

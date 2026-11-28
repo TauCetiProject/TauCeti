@@ -53,7 +53,6 @@ definitionally equal to it, so the algebra maps here are assembled from the ring
 * `LaurentSeries.mem_range_expand_iff`: a Laurent series is in the image of `X ↦ X ^ d` exactly
   when all its exponents are divisible by `d`.
 * `LaurentSeries.expand_coe`: `expand` extends `PowerSeries.expand`.
-* `LaurentSeries.mapRingHom_expand`: coefficient maps commute with `expand`.
 * `LaurentSeries.valuation_expand`: over a field, expansion `X ↦ X ^ d` raises the valuation to
   the `d`-th power.
 * `LaurentSeries.continuous_expand`: expansion `X ↦ X ^ d` is continuous for the valuation
@@ -195,11 +194,11 @@ theorem expand_expand (d e : ℕ+) (f : R⸨X⸩) :
   ext k
   simp [mul_assoc]
 
-/-- Coefficient maps commute with the expansion `X ↦ X ^ d`. -/
-@[simp]
+/-- Coefficientwise ring homomorphisms commute with `LaurentSeries.expand`. -/
 theorem mapRingHom_expand {S : Type*} [CommSemiring S] (φ : R →+* S) (d : ℕ+) (f : R⸨X⸩) :
-    mapRingHom φ (expand R d f) = expand S d (mapRingHom φ f) := by
-  rw [mapRingHom_apply, expand_apply, map_embDomain, expand_apply, mapRingHom_apply]
+    HahnSeries.mapRingHom φ (expand R d f) = expand S d (HahnSeries.mapRingHom φ f) := by
+  rw [HahnSeries.mapRingHom_apply, HahnSeries.mapRingHom_apply, expand_apply, expand_apply]
+  exact HahnSeries.map_embDomain (Int.mulOrderEmbedding d) f (φ : ZeroHom R S)
 
 /-- On power series, expansion of Laurent series is Mathlib's `PowerSeries.expand`. -/
 theorem expand_coe {R : Type*} [CommRing R] (d : ℕ+) (f : R⟦X⟧) :
