@@ -15,7 +15,7 @@ import TauCeti.Analysis.Normed.Operator.Basic
 
 Let `M = ((A.coprod B).prod (C.coprod D)) : E₁ × E₂ → F₁ × F₂` be a `2 × 2` block operator
 between normed spaces whose upper left block `A : E₁ ≃L[𝕜] F₁` is invertible, with Schur complement
-`S = D - C A⁻¹ B` (`ContinuousLinearEquiv.schurComplement`). Bounds for `S` and bounds for `M` are
+`S = D - C A⁻¹ B` (`ContinuousLinearMap.schurComplement`). Bounds for `S` and bounds for `M` are
 equivalent, with explicit constants depending only on `‖A⁻¹‖`, `‖B‖` and `‖C‖`. With
 `a = ‖A⁻¹‖`, `b = ‖B‖`, `c = ‖C‖`, and the norm `‖(x₁, x₂)‖ = max ‖x₁‖ ‖x₂‖` on products:
 
@@ -90,7 +90,7 @@ private theorem norm_le_of_eq_of_norm_snd_le {s : ℝ} (hs : 0 ≤ s) {x : E₁ 
 satisfies `‖z‖ ≤ s ‖S z‖`, then the block operator satisfies
 `‖x‖ ≤ (‖A⁻¹‖ + s) (1 + ‖A⁻¹‖ ‖B‖) (1 + ‖A⁻¹‖ ‖C‖) ‖M x‖`. -/
 theorem antilipschitzWith_coprod_prod_coprod {s : ℝ≥0}
-    (hS : AntilipschitzWith s (A.schurComplement B C D)) :
+    (hS : AntilipschitzWith s ((A : E₁ →L[𝕜] F₁).schurComplement B C D)) :
     AntilipschitzWith ((‖(A.symm : F₁ →L[𝕜] E₁)‖₊ + s) *
         (1 + ‖(A.symm : F₁ →L[𝕜] E₁)‖₊ * ‖B‖₊) * (1 + ‖(A.symm : F₁ →L[𝕜] E₁)‖₊ * ‖C‖₊))
       (((A : E₁ →L[𝕜] F₁).coprod B).prod (C.coprod D)) := by
@@ -104,21 +104,21 @@ theorem antilipschitzWith_coprod_prod_coprod {s : ℝ≥0}
 operator restricts to the estimate `‖z‖ ≤ k ‖S z‖` for its Schur complement `S = D - C A⁻¹ B`. -/
 theorem antilipschitzWith_schurComplement {k : ℝ≥0}
     (hM : AntilipschitzWith k (((A : E₁ →L[𝕜] F₁).coprod B).prod (C.coprod D))) :
-    AntilipschitzWith k (A.schurComplement B C D) := by
+    AntilipschitzWith k ((A : E₁ →L[𝕜] F₁).schurComplement B C D) := by
   refine ContinuousLinearMap.antilipschitz_of_bound _ fun z ↦ ?_
   have hx : ((A : E₁ →L[𝕜] F₁).coprod B).prod (C.coprod D) (-A.symm (B z), z) =
-      (0, A.schurComplement B C D z) :=
-    (coprod_prod_coprod_apply_eq_iff A B C D).2 ⟨by simp, by simp⟩
+      (0, (A : E₁ →L[𝕜] F₁).schurComplement B C D z) :=
+    (coprod_prod_coprod_apply_eq_iff A B C D).2 ⟨by simp, by simp [inverse_equiv]⟩
   calc ‖z‖ ≤ ‖((-A.symm (B z), z) : E₁ × E₂)‖ := norm_snd_le (-A.symm (B z), z)
     _ ≤ k * ‖((A : E₁ →L[𝕜] F₁).coprod B).prod (C.coprod D) (-A.symm (B z), z)‖ :=
       hM.le_mul_norm (_root_.map_zero _) _
-    _ = k * ‖A.schurComplement B C D z‖ := by simp [hx]
+    _ = k * ‖(A : E₁ →L[𝕜] F₁).schurComplement B C D z‖ := by simp [hx]
 
 /-- **Right inverse from the Schur complement.** A right inverse `Q` of the Schur complement
 `S = D - C A⁻¹ B` yields a right inverse of the block operator, of norm at most
 `(‖A⁻¹‖ + ‖Q‖) (1 + ‖A⁻¹‖ ‖B‖) (1 + ‖A⁻¹‖ ‖C‖)`. -/
 theorem exists_rightInverse_coprod_prod_coprod {Q : F₂ →L[𝕜] E₂}
-    (hQ : A.schurComplement B C D ∘L Q = .id 𝕜 F₂) :
+    (hQ : (A : E₁ →L[𝕜] F₁).schurComplement B C D ∘L Q = .id 𝕜 F₂) :
     ∃ R : F₁ × F₂ →L[𝕜] E₁ × E₂,
       ((A : E₁ →L[𝕜] F₁).coprod B).prod (C.coprod D) ∘L R = .id 𝕜 (F₁ × F₂) ∧
         ‖R‖ ≤ (‖(A.symm : F₁ →L[𝕜] E₁)‖ + ‖Q‖) * (1 + ‖(A.symm : F₁ →L[𝕜] E₁)‖ * ‖B‖) *
@@ -126,7 +126,7 @@ theorem exists_rightInverse_coprod_prod_coprod {Q : F₂ →L[𝕜] E₂}
   -- The remaining right-hand side `y₂ - C A⁻¹ y₁` of the Schur complement equation.
   let z : F₁ × F₂ →L[𝕜] F₂ := snd 𝕜 F₁ F₂ - C ∘L (A.symm : F₁ →L[𝕜] E₁) ∘L fst 𝕜 F₁ F₂
   have hz (y : F₁ × F₂) : z y = y.2 - C (A.symm y.1) := rfl
-  have hSQ (v : F₂) : A.schurComplement B C D (Q v) = v := DFunLike.congr_fun hQ v
+  have hSQ (v : F₂) : (A : E₁ →L[𝕜] F₁).schurComplement B C D (Q v) = v := DFunLike.congr_fun hQ v
   refine ⟨((A.symm : F₁ →L[𝕜] E₁) ∘L (fst 𝕜 F₁ F₂ - B ∘L Q ∘L z)).prod (Q ∘L z),
     ContinuousLinearMap.ext fun y ↦ ?_, opNorm_le_bound _ (by positivity) fun y ↦ ?_⟩
   · rw [comp_apply, id_apply, coprod_prod_coprod_apply_eq_iff]
@@ -139,7 +139,7 @@ the right inverse `z ↦ (R (0, z)).2` of its Schur complement `S = D - C A⁻¹
 `‖R‖`. -/
 theorem exists_rightInverse_schurComplement {R : F₁ × F₂ →L[𝕜] E₁ × E₂}
     (hR : ((A : E₁ →L[𝕜] F₁).coprod B).prod (C.coprod D) ∘L R = .id 𝕜 (F₁ × F₂)) :
-    ∃ Q : F₂ →L[𝕜] E₂, A.schurComplement B C D ∘L Q = .id 𝕜 F₂ ∧ ‖Q‖ ≤ ‖R‖ := by
+    ∃ Q : F₂ →L[𝕜] E₂, (A : E₁ →L[𝕜] F₁).schurComplement B C D ∘L Q = .id 𝕜 F₂ ∧ ‖Q‖ ≤ ‖R‖ := by
   refine ⟨snd 𝕜 E₁ E₂ ∘L R ∘L inr 𝕜 F₁ F₂, ContinuousLinearMap.ext fun v ↦ ?_,
     opNorm_le_bound _ (norm_nonneg R) fun v ↦ ?_⟩
   · have h := ((coprod_prod_coprod_apply_eq_iff A B C D).1 (DFunLike.congr_fun hR (0, v))).2
@@ -155,7 +155,7 @@ with invertible upper left blocks, the Schur complements `S` and `S'` satisfy
   ‖D - D'‖ + ‖C - C'‖ ‖A⁻¹‖ ‖B‖ + ‖C'‖ ‖A'⁻¹‖ ‖A - A'‖ ‖A⁻¹‖ ‖B‖ + ‖C'‖ ‖A'⁻¹‖ ‖B - B'‖`. -/
 theorem norm_schurComplement_sub_schurComplement_le (A' : E₁ ≃L[𝕜] F₁) (B' : E₂ →L[𝕜] F₁)
     (C' : E₁ →L[𝕜] F₂) (D' : E₂ →L[𝕜] F₂) :
-    ‖A.schurComplement B C D - A'.schurComplement B' C' D'‖ ≤
+    ‖(A : E₁ →L[𝕜] F₁).schurComplement B C D - (A' : E₁ →L[𝕜] F₁).schurComplement B' C' D'‖ ≤
       ‖D - D'‖ + ‖C - C'‖ * ‖(A.symm : F₁ →L[𝕜] E₁)‖ * ‖B‖ +
         ‖C'‖ * ‖(A'.symm : F₁ →L[𝕜] E₁)‖ * ‖(A : E₁ →L[𝕜] F₁) - (A' : E₁ →L[𝕜] F₁)‖ *
           ‖(A.symm : F₁ →L[𝕜] E₁)‖ * ‖B‖ +

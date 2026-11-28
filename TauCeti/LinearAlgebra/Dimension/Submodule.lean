@@ -32,6 +32,8 @@ A subspace of dimension at least three contains `x` outside `𝕜 ∙ a` and `z`
 distinct subspace of the same dimension as `P`.
 A finite-dimensional subspace spanning the whole space together with `V`, of dimension at most the
 codimension of `V`, is a complement of `V`; here `V` itself may be infinite-dimensional.
+Dually, any subspace disjoint from a finite-codimension subspace `V` has dimension at most the
+codimension of `V`.
 
 The rank of a product `V.prod W` of free submodules is the sum of their ranks over any
 semiring satisfying the strong rank condition. Consequently, the rank of a product map
@@ -192,6 +194,13 @@ theorem isCompl_of_codisjoint_of_finrank_le {V S : Submodule 𝕜 E} [FiniteDime
   refine ⟨disjoint_def.mpr fun x hxV hxS ↦ ?_, h⟩
   have : φ ⟨x, hxS⟩ = φ 0 := by simpa [φ] using hxV
   simpa using congrArg Subtype.val (hinj this)
+
+/-- A subspace disjoint from a finite-codimension subspace `V` has dimension at most the
+codimension of `V`, because the quotient map `E → E ⧸ V` is injective on it. -/
+theorem finrank_le_finrank_quotient_of_disjoint {V W : Submodule 𝕜 E} [FiniteDimensional 𝕜 (E ⧸ V)]
+    (h : Disjoint V W) : finrank 𝕜 W ≤ finrank 𝕜 (E ⧸ V) :=
+  LinearMap.finrank_le_finrank_of_injective (f := V.mkQ.domRestrict W) <|
+    LinearMap.injective_domRestrict_iff.mpr (V.ker_mkQ.symm ▸ h.symm)
 
 /-- A subspace of rank at least `k` contains a subspace of rank exactly `k`: the span of `k`
 linearly independent vectors of it. The rank of `M` may be an infinite cardinal. -/

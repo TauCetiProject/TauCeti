@@ -65,7 +65,10 @@ The complementary projection `1 - P_U` has range `Uᗮ`, and more generally `1 -
 `(range P)ᗮ` for every star projection `P` of a complete space.
 
 A linear map agrees with its composition with the orthogonal projection onto the orthogonal
-complement of its kernel whenever the kernel admits an orthogonal projection.
+complement of its kernel whenever the kernel admits an orthogonal projection, and maps that
+orthogonal complement onto its full range. When two topological complements in an inner product
+space are mutually orthogonal, the topological projection onto one along the other agrees with
+the orthogonal projection.
 
 For `s ⊆ U`, the preimage of `s` under the orthogonal projection onto `U` is the cylinder
 `{y + z | y ∈ s, z ∈ Uᗮ}`.
@@ -84,6 +87,9 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.starProjection_starProjection_apply`: `P_U (P_U x) = P_U x`.
 * `Submodule.orthogonalProjectionOnto_comp_subtypeL`: restricting the orthogonal projection
   onto `U` to `U` itself gives the identity map.
+* `Submodule.projectionOntoL_eq_orthogonalProjectionOnto_of_isOrtho`,
+  `Submodule.projectionOntoL_orthogonal_eq_orthogonalProjectionOnto`: topological projections
+  between mutually orthogonal complements coincide with orthogonal projections.
 * `Submodule.preimage_orthogonalProjectionOnto_eq`: the preimage of `s ⊆ U` under the
   orthogonal projection onto `U` is the cylinder `{y + z | y ∈ s, z ∈ Uᗮ}`.
 * `Submodule.preimage_orthogonalProjectionOnto_setOf_inner`: for `u ∈ U` and a predicate `p`,
@@ -173,7 +179,7 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `id = P_U + P_{Uᗮ}` as linear maps.
 * `Submodule.starProjection_comp_comp_starProjection_idem`: two-sided projection compression
   `Δ ↦ P_W Δ P_K` is idempotent.
-* `LinearMap.apply_sub_starProjection_ker`,
+* `LinearMap.apply_sub_starProjection_ker`, `LinearMap.map_orthogonal_ker_eq_range`,
   `LinearMap.comp_starProjection_ker_eq_zero`,
   `LinearMap.adjoint_comp_starProjection_orthogonal_range_eq_zero`,
   `LinearMap.sub_starProjection_comp_eq_add`,
@@ -726,6 +732,34 @@ theorem starProjection_orthogonal_ker_one_sub_mul [CompleteSpace E]
 
 end Submodule
 
+namespace Submodule
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- When two topological complements in an inner product space are mutually orthogonal, the
+continuous projection onto the first along the second is the orthogonal projection. -/
+theorem projectionOntoL_eq_orthogonalProjectionOnto_of_isOrtho {U V : Submodule 𝕜 E}
+    [U.HasOrthogonalProjection] (hUV : U.IsTopCompl V) (h_ortho : U ⟂ V) :
+    U.projectionOntoL V hUV = U.orthogonalProjectionOnto := by
+  refine ContinuousLinearMap.coe_inj.mp <| LinearMap.ext_on_codisjoint hUV.isCompl.codisjoint ?_ ?_
+  · intro u hu
+    exact (U.projectionOntoL_apply_left hUV ⟨u, hu⟩).trans
+      (U.orthogonalProjectionOnto_mem_subspace_eq_self ⟨u, hu⟩).symm
+  · intro v hv
+    exact (U.projectionOntoL_apply_eq_zero_of_mem_right hUV hv).trans
+      (Submodule.orthogonalProjectionOnto_apply_of_mem_orthogonal (h_ortho.symm hv)).symm
+
+/-- The topological projection onto `Kᗮ` along `K` agrees with the orthogonal projection onto
+`Kᗮ`. -/
+@[simp]
+theorem projectionOntoL_orthogonal_eq_orthogonalProjectionOnto (K : Submodule 𝕜 E)
+    [K.HasOrthogonalProjection] :
+    Kᗮ.projectionOntoL K K.isTopCompl_orthogonal.symm = Kᗮ.orthogonalProjectionOnto :=
+  projectionOntoL_eq_orthogonalProjectionOnto_of_isOrtho
+    K.isTopCompl_orthogonal.symm K.isOrtho_orthogonal_left
+
+end Submodule
+
 namespace ContinuousLinearMap
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
@@ -974,6 +1008,17 @@ theorem apply_sub_starProjection_ker (u : E →ₗ[𝕜] F) [u.ker.HasOrthogonal
   rw [mem_ker] at hx
   simpa only [map_add, hx, add_zero] using
     congrArg u (sub_add_cancel x (u.ker.starProjection x))
+
+/-- Whenever `u.ker` admits an orthogonal projection, `u` maps `(u.ker)ᗮ` onto `u.range`.
+Unlike `Submodule.map_eq_range_iff`, this requires only `[AddCommMonoid F]` and provides a
+`@[simp]` normal form. -/
+@[simp]
+theorem map_orthogonal_ker_eq_range (u : E →ₗ[𝕜] F) [u.ker.HasOrthogonalProjection] :
+    u.kerᗮ.map u = u.range := by
+  refine le_antisymm map_le_range ?_
+  rintro _ ⟨x, rfl⟩
+  exact ⟨x - u.ker.starProjection x, u.ker.sub_starProjection_mem_orthogonal x,
+    u.apply_sub_starProjection_ker x⟩
 
 /-- Composing `Θ` on the right with the orthogonal projection onto `ker Θ` vanishes. -/
 @[simp]

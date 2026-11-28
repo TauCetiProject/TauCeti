@@ -63,6 +63,14 @@ intended throughout.
   `ContinuousLinearMap.IsFredholm.finiteDimensional_quotient_range_of_restrictScalars_eq`: a
   `𝕜'`-linear map whose underlying `𝕜`-linear map is Fredholm has finite-dimensional kernel and
   cokernel over `𝕜'`.
+* `ContinuousLinearMap.FredholmPackage.range_quasiInverse`,
+  `ContinuousLinearMap.FredholmPackage.ker_quasiInverse`,
+  `ContinuousLinearMap.FredholmPackage.quasiInverse_comp_self`,
+  `ContinuousLinearMap.FredholmPackage.self_comp_quasiInverse`,
+  `ContinuousLinearMap.FredholmPackage.isFredholm_quasiInverse`, and
+  `ContinuousLinearMap.FredholmPackage.index_quasiInverse`: range, kernel, projection
+  products, Fredholmness, and negated index of the canonical quasi-inverse of an arbitrary
+  Fredholm package.
 
 The Fredholm index and its elementary API live in
 `TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index`.
@@ -285,6 +293,92 @@ theorem IsFredholm.finiteDimensional_quotient_range_of_restrictScalars_eq {A : E
   exact Module.Finite.of_restrictScalars_finite 𝕜 𝕜' _
 
 end RestrictScalars
+
+section FredholmPackage
+
+/-- The range of the canonical quasi-inverse of a Fredholm package is the essential domain summand
+`pkg.decDom.X₁`. -/
+@[simp]
+theorem FredholmPackage.range_quasiInverse {T : E →L[𝕜] F} (pkg : T.FredholmPackage) :
+    pkg.quasiInverse.range = pkg.decDom.X₁ := by
+  simp [FredholmPackage.quasiInverse, LinearMap.range_comp]
+
+/-- The kernel of the canonical quasi-inverse of a Fredholm package is the inessential codomain
+summand `pkg.decCodom.X₀`. -/
+@[simp]
+theorem FredholmPackage.ker_quasiInverse {T : E →L[𝕜] F} (pkg : T.FredholmPackage) :
+    pkg.quasiInverse.ker = pkg.decCodom.X₀ := by
+  simp [FredholmPackage.quasiInverse, LinearMap.ker_comp]
+
+/-- Composing a Fredholm operator on the left with its package quasi-inverse gives the essential
+domain projection followed by inclusion. -/
+theorem FredholmPackage.quasiInverse_comp_self {T : E →L[𝕜] F} (pkg : T.FredholmPackage) :
+    pkg.quasiInverse ∘L T = pkg.decDom.X₁.subtypeL ∘L pkg.decDom.proj := by
+  ext x
+  have hT : T x = (pkg.equiv (pkg.decDom.proj x) : F) := by
+    simpa using DFunLike.congr_fun pkg.eq_equiv x
+  change ((pkg.equiv.symm (pkg.decCodom.proj (T x)) : pkg.decDom.X₁) : E) =
+    (pkg.decDom.proj x : pkg.decDom.X₁)
+  rw [hT]
+  simp
+
+/-- Composing a Fredholm operator on the right with its package quasi-inverse gives the essential
+codomain projection followed by inclusion. -/
+theorem FredholmPackage.self_comp_quasiInverse {T : E →L[𝕜] F} (pkg : T.FredholmPackage) :
+    T ∘L pkg.quasiInverse = pkg.decCodom.X₁.subtypeL ∘L pkg.decCodom.proj := by
+  ext y
+  have hT (x : E) : T x = (pkg.equiv (pkg.decDom.proj x) : F) := by
+    simpa using DFunLike.congr_fun pkg.eq_equiv x
+  change T ((pkg.equiv.symm (pkg.decCodom.proj y) : pkg.decDom.X₁) : E) =
+    (pkg.decCodom.proj y : pkg.decCodom.X₁)
+  rw [hT]
+  simp
+
+/-- The canonical quasi-inverse of a Fredholm package has opposite Fredholm index. -/
+@[simp]
+theorem FredholmPackage.index_quasiInverse {T : E →L[𝕜] F} (pkg : T.FredholmPackage) :
+    pkg.quasiInverse.index = -T.index := by
+  rw [ContinuousLinearMap.index_eq_finrank_sub, ContinuousLinearMap.index_eq_finrank_sub,
+    pkg.ker_quasiInverse, pkg.range_quasiInverse, pkg.ker_eq, pkg.range_eq,
+    LinearEquiv.finrank_eq
+      (pkg.decDom.X₁.quotientEquivOfIsCompl pkg.decDom.X₀ pkg.decDom.isTopCompl.isCompl),
+    LinearEquiv.finrank_eq
+      (pkg.decCodom.X₁.quotientEquivOfIsCompl pkg.decCodom.X₀ pkg.decCodom.isTopCompl.isCompl)]
+  omega
+
+private theorem isStrictMap_subtypeL_comp_equiv_comp_of_isQuotientMap
+    {X Y : Type*} [AddCommGroup X] [TopologicalSpace X] [Module 𝕜 X]
+    [AddCommGroup Y] [TopologicalSpace Y] [Module 𝕜 Y]
+    {S : Submodule 𝕜 E} (e : X ≃L[𝕜] S) {P : Y →L[𝕜] X}
+    (hP : Topology.IsQuotientMap P) :
+    Topology.IsStrictMap (S.subtypeL ∘L (e : X →L[𝕜] S) ∘L P) := by
+  simpa only [coe_comp, Submodule.coe_subtypeL, Submodule.coe_subtype,
+    ContinuousLinearEquiv.coe_coe, Function.comp_assoc] using
+    (Topology.IsEmbedding.subtypeVal.comp e.isHomeomorph.isEmbedding).isStrictMap_iff.mp
+      hP.isStrictMap
+
+/-- The canonical quasi-inverse of a Fredholm package is itself Fredholm. -/
+theorem FredholmPackage.isFredholm_quasiInverse [ContinuousSub E] [ContinuousSub F]
+    {T : E →L[𝕜] F} (pkg : T.FredholmPackage) [T1Space pkg.decDom.X₀] :
+    pkg.quasiInverse.IsFredholm where
+  isStrictMap := by
+    rw [FredholmPackage.quasiInverse]
+    exact isStrictMap_subtypeL_comp_equiv_comp_of_isQuotientMap pkg.equiv.symm
+      (Submodule.isQuotientMap_projectionOntoL pkg.decCodom.isTopCompl)
+  isClosed_range := by
+    rw [pkg.range_quasiInverse]
+    exact pkg.decDom.isTopCompl.isClosed
+  finite_ker := by
+    rw [pkg.ker_quasiInverse]
+    exact pkg.decCodom.finite_X₀
+  finite_coker := by
+    rw [pkg.range_quasiInverse]
+    exact pkg.decDom.cofg_X₁
+  closedComplemented_ker := by
+    rw [pkg.ker_quasiInverse]
+    exact pkg.decCodom.isTopCompl.symm.closedComplemented
+
+end FredholmPackage
 
 end ContinuousLinearMap
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fredholm.Prod
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.SchurComplement
+import TauCeti.LinearAlgebra.Prod
 
 /-!
 # Fredholm block operators and their Schur complements
@@ -17,7 +18,7 @@ upper left block `A : E₁ ≃L[K] F₁` is invertible, with Schur complement `S
 Up to continuous linear equivalences of domain and codomain, `M` is the block-diagonal operator
 `A ⊕ S` (`ContinuousLinearEquiv.exists_coprod_prod_coprod_eq_comp_prodMap_comp`). Hence `M` is
 Fredholm exactly when `S` is (`ContinuousLinearEquiv.isFredholm_coprod_prod_coprod_iff`), and
-then the two indices agree (`ContinuousLinearEquiv.index_coprod_prod_coprod`).
+their indices agree (`ContinuousLinearEquiv.index_coprod_prod_coprod`).
 
 This is how the Fredholm theory of an operator with an invertible *fast* block is reduced to that
 of its *slow* Schur complement.
@@ -52,23 +53,47 @@ variable (A : E₁ ≃L[K] F₁) (B : E₂ →L[K] F₁) (C : E₁ →L[K] F₂)
 complement `D - C A⁻¹ B` is. -/
 theorem isFredholm_coprod_prod_coprod_iff :
     (((A : E₁ →L[K] F₁).coprod B).prod (C.coprod D)).IsFredholm ↔
-      (A.schurComplement B C D).IsFredholm := by
+      ((A : E₁ →L[K] F₁).schurComplement B C D).IsFredholm := by
   obtain ⟨L, U, h⟩ := exists_coprod_prod_coprod_eq_comp_prodMap_comp A B C D
   have hL : (L.symm : F₁ × F₂ →L[K] F₁ × F₂) ∘L ((A : E₁ →L[K] F₁).coprod B).prod (C.coprod D) =
-      ((A : E₁ →L[K] F₁).prodMap (A.schurComplement B C D)) ∘L
+      ((A : E₁ →L[K] F₁).prodMap ((A : E₁ →L[K] F₁).schurComplement B C D)) ∘L
         (U : E₁ × E₂ →L[K] E₁ × E₂) := by
     rw [h]
     ext x <;> simp
   rw [isFredholm_iff_of_comp_eq U L.symm hL, isFredholm_prodMap_iff, and_iff_right A.isFredholm]
 
+private def prodSndOfSubsingleton {K P Q : Type*} [Ring K]
+    [AddCommGroup P] [Module K P] [Subsingleton P] [AddCommGroup Q] [Module K Q] :
+    (P × Q) ≃ₗ[K] Q where
+  toFun := Prod.snd
+  invFun q := (0, q)
+  left_inv _ := Prod.ext (Subsingleton.elim _ _) rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+omit [IsTopologicalAddGroup E₂] in
 /-- The index of a block operator with invertible upper left block `A` is the index of its Schur
-complement `D - C A⁻¹ B`, when the latter is Fredholm. -/
-theorem index_coprod_prod_coprod (hS : (A.schurComplement B C D).IsFredholm) :
+complement `D - C A⁻¹ B`. -/
+theorem index_coprod_prod_coprod :
     (((A : E₁ →L[K] F₁).coprod B).prod (C.coprod D)).index =
-      (A.schurComplement B C D).index := by
+      ((A : E₁ →L[K] F₁).schurComplement B C D).index := by
   obtain ⟨L, U, h⟩ := exists_coprod_prod_coprod_eq_comp_prodMap_comp A B C D
-  rw [h, index_equiv_comp, index_comp_equiv, A.isFredholm.index_prodMap hS,
-    A.index_eq_zero, zero_add]
+  let S := (A : E₁ →L[K] F₁).schurComplement B C D
+  have : Subsingleton (LinearMap.ker (A : E₁ →ₗ[K] F₁)) := by
+    rw [LinearMap.ker_eq_bot.mpr A.injective]
+    infer_instance
+  have : Subsingleton (F₁ ⧸ LinearMap.range (A : E₁ →ₗ[K] F₁)) := by
+    rw [LinearMap.range_eq_top.mpr A.surjective]
+    infer_instance
+  let eKer : LinearMap.ker (((A : E₁ →L[K] F₁).prodMap S) : E₁ × E₂ →ₗ[K] F₁ × F₂) ≃ₗ[K]
+      LinearMap.ker (S : E₂ →ₗ[K] F₂) :=
+    (LinearMap.kerProdMapEquiv (A : E₁ →ₗ[K] F₁) (S : E₂ →ₗ[K] F₂)).trans prodSndOfSubsingleton
+  let eCoker : ((F₁ × F₂) ⧸ LinearMap.range (((A : E₁ →L[K] F₁).prodMap S) :
+      E₁ × E₂ →ₗ[K] F₁ × F₂)) ≃ₗ[K] (F₂ ⧸ LinearMap.range (S : E₂ →ₗ[K] F₂)) :=
+    (LinearMap.cokerProdMapEquiv (A : E₁ →ₗ[K] F₁) (S : E₂ →ₗ[K] F₂)).trans prodSndOfSubsingleton
+  rw [h, index_equiv_comp, index_comp_equiv, ContinuousLinearMap.index_eq_finrank_sub,
+    ContinuousLinearMap.index_eq_finrank_sub, eKer.finrank_eq, eCoker.finrank_eq]
 
 end ContinuousLinearEquiv
 
@@ -98,10 +123,10 @@ theorem isFredholm_coprod_iff_of_isInvertible_comp (h : (P ∘L L).IsInvertible)
         (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L
           B)) := by
     ext x <;> simp [hA, snd_equivOfRightInverse_eq_projectionOntoL h]
-  have hschur : A.schurComplement (P ∘L B) 0
+  have hschur : (A : E →L[K] Y).schurComplement (P ∘L B) 0
       (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L B) =
       P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L B := by
-    simp [ContinuousLinearEquiv.schurComplement_def]
+    simp [ContinuousLinearMap.schurComplement_def]
   rw [isFredholm_iff_of_comp_eq (.refl K (E × G)) (.equivOfRightInverse P _ hr)
     (hblock.trans (comp_id _).symm), ContinuousLinearEquiv.isFredholm_coprod_prod_coprod_iff,
     hschur]
