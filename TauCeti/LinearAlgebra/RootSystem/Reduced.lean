@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.Reduced
+import Mathlib.NumberTheory.Divisors
 import Mathlib.Tactic.Module
 
 /-!
@@ -35,6 +36,8 @@ symmetric form of a simply-laced Cartan matrix.
   coroots and `2 ≠ 0`, inclusion of coroot kernels forces the indices to agree up to root negation.
 * `RootPairing.root_add_root_notMem_range_root_and_ne_zero_of_root_eq_add_of_root_eq_add`:
   if `γ = α + β` and `δ = α + γ` are roots, then `β + δ` is neither a root nor zero.
+* `RootPairing.pairingIn_pairingIn_mem_of_coxeterWeightIn_eq_four`:
+  classifies the integral pairing pair `(⟨αᵢ, αⱼ^∨⟩, ⟨αⱼ, αᵢ^∨⟩)` when the Coxeter weight is `4`.
 -/
 
 public section
@@ -155,5 +158,19 @@ theorem eq_or_eq_reflectionPerm_self_of_ker_coroot'_le [P.flip.IsReduced] {α β
     simp only [flip_root] at hneg
     rw [coroot_reflectionPerm, coreflection_apply_self]
     exact neg_eq_iff_eq_neg.mp hneg.symm
+
+omit [IsDomain R] [NeZero (2 : R)] [Module.IsTorsionFree R M] in
+/-- In a crystallographic root pairing, if the Coxeter weight of two root indices `i` and `j` is
+`4`, then their pair of integral pairings lies in
+`{(4, 1), (1, 4), (-4, -1), (-1, -4), (2, 2), (-2, -2)}`. -/
+theorem pairingIn_pairingIn_mem_of_coxeterWeightIn_eq_four [P.IsCrystallographic] {i j : ι}
+    (hcw : P.coxeterWeightIn ℤ i j = 4) :
+    (P.pairingIn ℤ i j, P.pairingIn ℤ j i) ∈
+      ({(4, 1), (1, 4), (-4, -1), (-1, -4), (2, 2), (-2, -2)} : Set (ℤ × ℤ)) := by
+  rw [coxeterWeightIn] at hcw
+  have hmem := (Int.prodMk_mem_divisorsAntidiag (by decide)).mpr hcw
+  simp only [Int.divisorsAntidiagonal_four, Finset.mem_insert, Finset.mem_singleton,
+    Set.mem_insert_iff, Set.mem_singleton_iff] at hmem ⊢
+  tauto
 
 end RootPairing
