@@ -35,11 +35,13 @@ Because differentials of page `r ≥ r₀` raise total degree by `1` and filtrat
 * a bound above `α` forces the entering differential `(E.page r hr).dTo pq` to vanish for every
   `r ≥ fil pq - α (deg pq - 1) + A.e`
   (`CategoryTheory.SpectralSequence.page_dTo_eq_zero_of_boundedAbove`);
-* together, they yield canonical survival isomorphisms `(E.page r').X pq ≅ (E.page s).X pq` for
-  all `r' ≥ s` (`CategoryTheory.SpectralSequence.pageXIsoOfBounded`).
+* together, they make all objects joined to `pq` by later differentials vanish on page `s`
+  (`CategoryTheory.SpectralSequence.isZero_page_X_of_rel_of_bounded`), yielding canonical survival
+  isomorphisms `(E.page r').X pq ≅ (E.page s).X pq` for all `r' ≥ s` via
+  `CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero`.
 
 We also derive the first-quadrant stabilization bound `r > max p (q + 1)`
-(`CategoryTheory.SpectralSequence.pageXIsoOfFirstQuadrant`), automatic boundedness for
+(`CategoryTheory.SpectralSequence.isZero_page_X_of_rel_of_firstQuadrant`), automatic boundedness for
 `CohomologicalSpectralSequenceNat` and `CohomologicalSpectralSequenceFin`, stabilization from
 finiteness in the adjacent total degrees `n - 1` and `n + 1`, and global degeneration of a
 finitely supported page (`CategoryTheory.SpectralSequence.page_d_eq_zero_of_finset_support`).
@@ -194,19 +196,11 @@ lemma exists_bound_below_of_finite (E : SpectralSequence C c r₀) (A : Bidegree
     (hfin : Set.Finite {pq : κ | A.deg pq = n ∧ ¬ IsZero ((E.page r₀ le_rfl).X pq)}) :
     ∃ β : ℤ,
       ∀ pq : κ, A.deg pq = n → β ≤ A.fil pq → IsZero ((E.page r₀ le_rfl).X pq) := by
-  let s := hfin.toFinset
-  by_cases hs : s.Nonempty
-  · refine ⟨(s.image A.fil).max' (hs.image _) + 1, fun pq hdeg hfil ↦ ?_⟩
-    by_contra hnz
-    have hmem : pq ∈ s := hfin.mem_toFinset.2 ⟨hdeg, hnz⟩
-    have hle : A.fil pq ≤ (s.image A.fil).max' (hs.image _) :=
-      Finset.le_max' _ _ (Finset.mem_image_of_mem _ hmem)
-    lia
-  · rw [Finset.not_nonempty_iff_eq_empty] at hs
-    refine ⟨0, fun pq hdeg _ ↦ ?_⟩
-    by_contra hnz
-    have : pq ∈ s := hfin.mem_toFinset.2 ⟨hdeg, hnz⟩
-    simp [hs] at this
+  obtain ⟨M, hM⟩ := (hfin.image A.fil).bddAbove
+  refine ⟨M + 1, fun pq hdeg hfil ↦ ?_⟩
+  by_contra hnz
+  have := hM ⟨pq, ⟨hdeg, hnz⟩, rfl⟩
+  lia
 
 /-- If total degree `n` has only finitely many nonzero first-page positions, then there is a lower
 bound `α` on their filtration degrees. -/
@@ -215,19 +209,11 @@ lemma exists_bound_above_of_finite (E : SpectralSequence C c r₀) (A : Bidegree
     (hfin : Set.Finite {pq : κ | A.deg pq = n ∧ ¬ IsZero ((E.page r₀ le_rfl).X pq)}) :
     ∃ α : ℤ,
       ∀ pq : κ, A.deg pq = n → A.fil pq ≤ α → IsZero ((E.page r₀ le_rfl).X pq) := by
-  let s := hfin.toFinset
-  by_cases hs : s.Nonempty
-  · refine ⟨(s.image A.fil).min' (hs.image _) - 1, fun pq hdeg hfil ↦ ?_⟩
-    by_contra hnz
-    have hmem : pq ∈ s := hfin.mem_toFinset.2 ⟨hdeg, hnz⟩
-    have hle : (s.image A.fil).min' (hs.image _) ≤ A.fil pq :=
-      Finset.min'_le _ _ (Finset.mem_image_of_mem _ hmem)
-    lia
-  · rw [Finset.not_nonempty_iff_eq_empty] at hs
-    refine ⟨0, fun pq hdeg _ ↦ ?_⟩
-    by_contra hnz
-    have : pq ∈ s := hfin.mem_toFinset.2 ⟨hdeg, hnz⟩
-    simp [hs] at this
+  obtain ⟨M, hM⟩ := (hfin.image A.fil).bddBelow
+  refine ⟨M - 1, fun pq hdeg hfil ↦ ?_⟩
+  by_contra hnz
+  have := hM ⟨pq, ⟨hdeg, hnz⟩, rfl⟩
+  lia
 
 /-- **Boundedness equals finiteness in each total degree** (Stacks Project, Tag 0BDV,
 Lemma 24.8 (3)). A spectral sequence is bounded with respect to `A` if and only if each total
@@ -261,10 +247,9 @@ theorem exists_dFrom_eq_zero_of_isBoundedBelow {E : SpectralSequence C c r₀}
     {A : BidegreeAssignment c r₀} (h : E.IsBoundedBelow A) (pq : κ) :
     ∃ s : ℤ, r₀ ≤ s ∧
       ∀ (r : ℤ) (hr : r₀ ≤ r), s ≤ r → (E.page r hr).dFrom pq = 0 := by
-  obtain ⟨β, hβ⟩ := (E.isBoundedBelow_iff A).1 h (A.deg pq + 1)
-  refine ⟨max r₀ (β - A.fil pq + A.e), le_max_left _ _, fun r hr hsr ↦ ?_⟩
-  exact E.page_dFrom_eq_zero_of_isZero_of_le_fil A le_rfl pq β hβ r hr hr
-    ((le_max_right _ _).trans hsr)
+  obtain ⟨β, hβ⟩ := (E.isBoundedBelow_iff_exists_fun A).1 h
+  exact ⟨max r₀ (β (A.deg pq + 1) - A.fil pq + A.e), le_max_left _ _, fun r hr hsr ↦
+    E.page_dFrom_eq_zero_of_boundedBelow A β hβ pq r hr ((le_max_right _ _).trans hsr)⟩
 
 /-- If `E` is bounded above with respect to `A`, then at every position `pq` all sufficiently late
 entering differentials vanish. -/
@@ -272,56 +257,19 @@ theorem exists_dTo_eq_zero_of_isBoundedAbove {E : SpectralSequence C c r₀}
     {A : BidegreeAssignment c r₀} (h : E.IsBoundedAbove A) (pq : κ) :
     ∃ s : ℤ, r₀ ≤ s ∧
       ∀ (r : ℤ) (hr : r₀ ≤ r), s ≤ r → (E.page r hr).dTo pq = 0 := by
-  obtain ⟨α, hα⟩ := (E.isBoundedAbove_iff A).1 h (A.deg pq - 1)
-  refine ⟨max r₀ (A.fil pq - α + A.e), le_max_left _ _, fun r hr hsr ↦ ?_⟩
-  exact E.page_dTo_eq_zero_of_isZero_of_fil_le A le_rfl pq α hα r hr hr
-    ((le_max_right _ _).trans hsr)
+  obtain ⟨α, hα⟩ := (E.isBoundedAbove_iff_exists_fun A).1 h
+  exact ⟨max r₀ (A.fil pq - α (A.deg pq - 1) + A.e), le_max_left _ _, fun r hr hsr ↦
+    E.page_dTo_eq_zero_of_boundedAbove A α hα pq r hr ((le_max_right _ _).trans hsr)⟩
 
-/-! ### Survival isomorphisms on later pages -/
+/-! ### Vanishing of neighbours and survival on later pages -/
 
-/-- **Survival of bounded positions.** Given a lower vanishing bound `β` in degree `A.deg pq + 1`
-and an upper vanishing bound `α` in degree `A.deg pq - 1` on the first page, once `s ≥ r₀`
-satisfies both `β - A.fil pq + A.e ≤ s` and `A.fil pq - α + A.e ≤ s`, the object at `pq`
-survives unchanged to every later page `r' ≥ s`. -/
-noncomputable def pageXIsoOfBounded (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀)
-    (pq : κ) (β α : ℤ)
-    (hβ : ∀ pq' : κ,
-      A.deg pq' = A.deg pq + 1 → β ≤ A.fil pq' → IsZero ((E.page r₀ le_rfl).X pq'))
-    (hα : ∀ pq' : κ,
-      A.deg pq' = A.deg pq - 1 → A.fil pq' ≤ α → IsZero ((E.page r₀ le_rfl).X pq'))
-    (s : ℤ) (hs : r₀ ≤ s)
-    (hsβ : β - A.fil pq + A.e ≤ s) (hsα : A.fil pq - α + A.e ≤ s)
-    (r' : ℤ) (hsr' : s ≤ r') :
-    (E.page r' (hs.trans hsr')).X pq ≅ (E.page s hs).X pq :=
-  E.pageXIsoOfLEOfIsZero hs (fun t hst pq' hrel ↦ by
-    refine E.isZero_page_X_of_le le_rfl ?_ s hs
-    rcases hrel with hrel | hrel
-    · have hdeg := A.deg_rel t (hs.trans hst) pq pq' hrel
-      have hfil := A.fil_rel t (hs.trans hst) pq pq' hrel
-      exact hβ pq' hdeg (by lia)
-    · have hdeg := A.deg_rel t (hs.trans hst) pq' pq hrel
-      have hfil := A.fil_rel t (hs.trans hst) pq' pq hrel
-      exact hα pq' (by lia) (by lia)) r' hsr'
-
-/-- `pageXIsoOfBounded` coincides with `pageXIsoOfLEOfIsZero`. -/
-lemma pageXIsoOfBounded_eq_pageXIsoOfLEOfIsZero (E : SpectralSequence C c r₀)
-    (A : BidegreeAssignment c r₀) (pq : κ) (β α : ℤ)
-    (hβ : ∀ pq' : κ,
-      A.deg pq' = A.deg pq + 1 → β ≤ A.fil pq' → IsZero ((E.page r₀ le_rfl).X pq'))
-    (hα : ∀ pq' : κ,
-      A.deg pq' = A.deg pq - 1 → A.fil pq' ≤ α → IsZero ((E.page r₀ le_rfl).X pq'))
-    (s : ℤ) (hs : r₀ ≤ s)
-    (hsβ : β - A.fil pq + A.e ≤ s) (hsα : A.fil pq - α + A.e ≤ s)
-    (h : ∀ t, s ≤ t → ∀ pq', (c t).Rel pq pq' ∨ (c t).Rel pq' pq → IsZero ((E.page s hs).X pq'))
-    (r' : ℤ) (hsr' : s ≤ r') :
-    E.pageXIsoOfBounded A pq β α hβ hα s hs hsβ hsα r' hsr' =
-      E.pageXIsoOfLEOfIsZero hs h r' hsr' := by
-  unfold pageXIsoOfBounded
-  rfl
-
-/-- On page `s` itself, `pageXIsoOfBounded` is the identity isomorphism. -/
-@[simp]
-lemma pageXIsoOfBounded_self (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀)
+/-- **Vanishing of neighbours past a bound.** Given a lower vanishing bound `β` in degree
+`A.deg pq + 1` and an upper vanishing bound `α` in degree `A.deg pq - 1` on the first page, once
+`s ≥ r₀` satisfies both `β - A.fil pq + A.e ≤ s` and `A.fil pq - α + A.e ≤ s`, every object joined
+to `pq` by a differential of any page `t ≥ s` vanishes on page `s`. Combining this with
+`CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero` yields survival isomorphisms
+`(E.page r' _).X pq ≅ (E.page s hs).X pq` for all `r' ≥ s`. -/
+lemma isZero_page_X_of_rel_of_bounded (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀)
     (pq : κ) (β α : ℤ)
     (hβ : ∀ pq' : κ,
       A.deg pq' = A.deg pq + 1 → β ≤ A.fil pq' → IsZero ((E.page r₀ le_rfl).X pq'))
@@ -329,30 +277,16 @@ lemma pageXIsoOfBounded_self (E : SpectralSequence C c r₀) (A : BidegreeAssign
       A.deg pq' = A.deg pq - 1 → A.fil pq' ≤ α → IsZero ((E.page r₀ le_rfl).X pq'))
     (s : ℤ) (hs : r₀ ≤ s)
     (hsβ : β - A.fil pq + A.e ≤ s) (hsα : A.fil pq - α + A.e ≤ s) :
-    E.pageXIsoOfBounded A pq β α hβ hα s hs hsβ hsα s le_rfl = Iso.refl _ :=
-  E.pageXIsoOfLEOfIsZero_self hs _
-
-/-- From page `r'` to page `r' + 1`, `pageXIsoOfBounded` composes with the identification of page
-`r' + 1` with the homology of page `r'` and then with `pageXIsoOfBounded` at `r'`. -/
-lemma pageXIsoOfBounded_add_one (E : SpectralSequence C c r₀) (A : BidegreeAssignment c r₀)
-    (pq : κ) (β α : ℤ)
-    (hβ : ∀ pq' : κ,
-      A.deg pq' = A.deg pq + 1 → β ≤ A.fil pq' → IsZero ((E.page r₀ le_rfl).X pq'))
-    (hα : ∀ pq' : κ,
-      A.deg pq' = A.deg pq - 1 → A.fil pq' ≤ α → IsZero ((E.page r₀ le_rfl).X pq'))
-    (s : ℤ) (hs : r₀ ≤ s)
-    (hsβ : β - A.fil pq + A.e ≤ s) (hsα : A.fil pq - α + A.e ≤ s)
-    (r' : ℤ) (hsr' : s ≤ r') :
-    E.pageXIsoOfBounded A pq β α hβ hα s hs hsβ hsα (r' + 1) (Int.le_add_one hsr') =
-      (E.iso r' (r' + 1) pq rfl (hs.trans hsr')).symm ≪≫
-        ((E.page r' (hs.trans hsr')).isoHomologyπ _ pq rfl
-          (E.page_dTo_eq_zero_of_isZero_of_fil_le A le_rfl pq α hα r' (hs.trans hsr')
-            (hs.trans hsr') (by lia))).symm ≪≫
-        (E.page r' (hs.trans hsr')).iCyclesIso pq _ rfl
-          (E.page_dFrom_eq_zero_of_isZero_of_le_fil A le_rfl pq β hβ r' (hs.trans hsr')
-            (hs.trans hsr') (by lia)) ≪≫
-        E.pageXIsoOfBounded A pq β α hβ hα s hs hsβ hsα r' hsr' :=
-  E.pageXIsoOfLEOfIsZero_add_one hs _ r' hsr'
+    ∀ t, s ≤ t → ∀ pq', (c t).Rel pq pq' ∨ (c t).Rel pq' pq → IsZero ((E.page s hs).X pq') :=
+  fun t hst pq' hrel ↦ by
+    refine E.isZero_page_X_of_le le_rfl ?_ s hs
+    rcases hrel with hrel | hrel
+    · have hdeg := A.deg_rel t (hs.trans hst) pq pq' hrel
+      have hfil := A.fil_rel t (hs.trans hst) pq pq' hrel
+      exact hβ pq' hdeg (by lia)
+    · have hdeg := A.deg_rel t (hs.trans hst) pq' pq hrel
+      have hfil := A.fil_rel t (hs.trans hst) pq' pq hrel
+      exact hα pq' (by lia) (by lia)
 
 /-- If only finitely many positions in the adjacent total degrees `A.deg pq + 1` and
 `A.deg pq - 1` are nonzero on the first page, then `pq` stabilizes at some page `s ≥ r₀`: its
@@ -370,8 +304,9 @@ theorem exists_pageXIso_of_finite (E : SpectralSequence C c r₀) (A : BidegreeA
   obtain ⟨α, hα⟩ := E.exists_bound_above_of_finite A (A.deg pq - 1) hfin_pred
   refine ⟨max r₀ (max (β - A.fil pq + A.e) (A.fil pq - α + A.e)), le_max_left _ _,
     fun r' hsr' ↦ ?_⟩
-  exact ⟨E.pageXIsoOfBounded A pq β α hβ hα _ (le_max_left _ _)
-    ((le_max_left _ _).trans (le_max_right _ _)) ((le_max_right _ _).trans (le_max_right _ _))
+  exact ⟨E.pageXIsoOfLEOfIsZero (le_max_left _ _)
+    (E.isZero_page_X_of_rel_of_bounded A pq β α hβ hα _ (le_max_left _ _)
+      ((le_max_left _ _).trans (le_max_right _ _)) ((le_max_right _ _).trans (le_max_right _ _)))
     r' hsr'⟩
 
 /-- If `E` is bounded with respect to `A`, then every position `pq` stabilizes at some page
@@ -460,14 +395,19 @@ lemma dTo_eq_zero_of_firstQuadrant (E : CohomologicalSpectralSequence C r₀)
   E.page_dTo_eq_zero_of_boundedAbove (BidegreeAssignment.cohomological r₀) (fun _ ↦ -1)
     (fun ⟨a, b⟩ h ↦ hE a b (Or.inl (by simp at h; lia))) (p, q) r hr (by simp; lia)
 
-/-- **First-quadrant stabilization.** In a first-quadrant cohomological spectral sequence, once
-`s ≥ r₀` satisfies `max p (q + 1) < s`, the object at `(p, q)` survives unchanged to every
-later page `r' ≥ s`. -/
-noncomputable def pageXIsoOfFirstQuadrant (E : CohomologicalSpectralSequence C r₀)
+/-- **First-quadrant vanishing of neighbours.** In a first-quadrant cohomological spectral
+sequence, once `s ≥ r₀` satisfies `max p (q + 1) < s`, every object joined to `(p, q)` by a
+differential of any page `t ≥ s` vanishes on page `s`, so
+`CategoryTheory.SpectralSequence.pageXIsoOfLEOfIsZero` yields survival to every later page
+`r' ≥ s`. -/
+lemma isZero_page_X_of_rel_of_firstQuadrant (E : CohomologicalSpectralSequence C r₀)
     (hE : ∀ p q : ℤ, p < 0 ∨ q < 0 → IsZero ((E.page r₀ le_rfl).X (p, q)))
-    (p q s : ℤ) (hs : r₀ ≤ s) (hspq : max p (q + 1) < s) (r' : ℤ) (hsr' : s ≤ r') :
-    (E.page r' (hs.trans hsr')).X (p, q) ≅ (E.page s hs).X (p, q) :=
-  E.pageXIsoOfBounded (BidegreeAssignment.cohomological r₀) (p, q) (p + q + 2) (-1)
+    (p q s : ℤ) (hs : r₀ ≤ s) (hspq : max p (q + 1) < s) :
+    ∀ t, s ≤ t → ∀ pq',
+      (ComplexShape.up' (⟨t, 1 - t⟩ : ℤ × ℤ)).Rel (p, q) pq' ∨
+        (ComplexShape.up' (⟨t, 1 - t⟩ : ℤ × ℤ)).Rel pq' (p, q) →
+      IsZero ((E.page s hs).X pq') :=
+  E.isZero_page_X_of_rel_of_bounded (BidegreeAssignment.cohomological r₀) (p, q) (p + q + 2) (-1)
     (fun ⟨a, b⟩ hdeg hfil ↦ by
       simp only [BidegreeAssignment.cohomological_deg, BidegreeAssignment.cohomological_fil]
         at hdeg hfil
@@ -475,43 +415,7 @@ noncomputable def pageXIsoOfFirstQuadrant (E : CohomologicalSpectralSequence C r
     (fun ⟨a, b⟩ _ hfil ↦ by
       simp only [BidegreeAssignment.cohomological_fil] at hfil
       exact hE a b (Or.inl (by lia)))
-    s hs (by simp; lia) (by simp; lia) r' hsr'
-
-/-- `pageXIsoOfFirstQuadrant` coincides with `pageXIsoOfLEOfIsZero`. -/
-lemma pageXIsoOfFirstQuadrant_eq_pageXIsoOfLEOfIsZero (E : CohomologicalSpectralSequence C r₀)
-    (hE : ∀ p q : ℤ, p < 0 ∨ q < 0 → IsZero ((E.page r₀ le_rfl).X (p, q)))
-    (p q s : ℤ) (hs : r₀ ≤ s) (hspq : max p (q + 1) < s)
-    (h : ∀ t, s ≤ t → ∀ pq',
-      (ComplexShape.up' (⟨t, 1 - t⟩ : ℤ × ℤ)).Rel (p, q) pq' ∨
-        (ComplexShape.up' (⟨t, 1 - t⟩ : ℤ × ℤ)).Rel pq' (p, q) →
-      IsZero ((E.page s hs).X pq'))
-    (r' : ℤ) (hsr' : s ≤ r') :
-    E.pageXIsoOfFirstQuadrant hE p q s hs hspq r' hsr' =
-      E.pageXIsoOfLEOfIsZero hs h r' hsr' := by
-  unfold pageXIsoOfFirstQuadrant pageXIsoOfBounded
-  rfl
-
-/-- On page `s` itself, `pageXIsoOfFirstQuadrant` is the identity isomorphism. -/
-@[simp]
-lemma pageXIsoOfFirstQuadrant_self (E : CohomologicalSpectralSequence C r₀)
-    (hE : ∀ p q : ℤ, p < 0 ∨ q < 0 → IsZero ((E.page r₀ le_rfl).X (p, q)))
-    (p q s : ℤ) (hs : r₀ ≤ s) (hspq : max p (q + 1) < s) :
-    E.pageXIsoOfFirstQuadrant hE p q s hs hspq s le_rfl = Iso.refl _ :=
-  E.pageXIsoOfBounded_self _ _ _ _ _ _ s hs _ _
-
-/-- From page `r'` to page `r' + 1`, `pageXIsoOfFirstQuadrant` composes with the identification of
-page `r' + 1` with the homology of page `r'` and then with `pageXIsoOfFirstQuadrant` at `r'`. -/
-lemma pageXIsoOfFirstQuadrant_add_one (E : CohomologicalSpectralSequence C r₀)
-    (hE : ∀ p q : ℤ, p < 0 ∨ q < 0 → IsZero ((E.page r₀ le_rfl).X (p, q)))
-    (p q s : ℤ) (hs : r₀ ≤ s) (hspq : max p (q + 1) < s) (r' : ℤ) (hsr' : s ≤ r') :
-    E.pageXIsoOfFirstQuadrant hE p q s hs hspq (r' + 1) (Int.le_add_one hsr') =
-      (E.iso r' (r' + 1) (p, q) rfl (hs.trans hsr')).symm ≪≫
-        ((E.page r' (hs.trans hsr')).isoHomologyπ _ (p, q) rfl
-          (E.dTo_eq_zero_of_firstQuadrant hE p q r' (hs.trans hsr') (by lia))).symm ≪≫
-        (E.page r' (hs.trans hsr')).iCyclesIso (p, q) _ rfl
-          (E.dFrom_eq_zero_of_firstQuadrant hE p q r' (hs.trans hsr') (by lia)) ≪≫
-        E.pageXIsoOfFirstQuadrant hE p q s hs hspq r' hsr' :=
-  E.pageXIsoOfBounded_add_one _ _ _ _ _ _ s hs _ _ r' hsr'
+    s hs (by simp; lia) (by simp; lia)
 
 /-! ### Degeneration of a finitely supported page -/
 

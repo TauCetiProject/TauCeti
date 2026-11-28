@@ -43,6 +43,7 @@ feeds the Grothendieck-group computation for finite-dimensional vector spaces.
 * `FGModuleCat.preservesMonomorphisms_ι`: a monomorphism of `FGModuleCat R` is injective.
 * `ModuleCat.isFG_isClosedUnderSubobjects`: over a left Noetherian ring, finitely generated modules
   are closed under subobjects.
+* `ModuleCat.isFG_isClosedUnderQuotients`: finitely generated modules are closed under quotients.
 * `TauCeti.FGModuleCat.homLinearEquivOfIsScalarTower`: for an algebra `R` over a field `k`,
   morphisms into `FGModuleCat.of R M` are the `R`-linear maps into `M`, `k`-linearly for the
   original `k`-action on `M` rather than the category's restricted scalar action.
@@ -273,6 +274,14 @@ instance _root_.ModuleCat.isFG_isClosedUnderSubobjects [IsNoetherianRing R] :
   prop_of_mono f _ hY := by
     rw [ModuleCat.isFG_iff] at hY ⊢
     exact Module.Finite.of_injective f.hom ((ModuleCat.mono_iff_injective f).1 inferInstance)
+
+/-- **Finitely generated modules are closed under quotients**: a quotient of a finitely generated
+module is finitely generated. -/
+instance _root_.ModuleCat.isFG_isClosedUnderQuotients :
+    (ModuleCat.isFG.{v} R).IsClosedUnderQuotients where
+  prop_of_epi f _ hX := by
+    rw [ModuleCat.isFG_iff] at hX ⊢
+    exact Module.Finite.of_surjective f.hom ((ModuleCat.epi_iff_surjective f).1 inferInstance)
 
 instance : HasFiniteBiproducts (FGModuleCat.{v} R) :=
   .of_hasFiniteProducts

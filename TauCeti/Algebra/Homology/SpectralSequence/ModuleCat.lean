@@ -10,8 +10,8 @@ public import Mathlib.Algebra.Homology.SpectralSequence.Basic
 public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.Noetherian.Defs
 
-import Mathlib.RingTheory.Noetherian.Basic
-import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
+import TauCeti.Algebra.Category.FGModuleCat.Basic
+import TauCeti.Algebra.Homology.SpectralSequence.SerreClass
 
 /-!
 # Spectral sequences of modules
@@ -37,15 +37,8 @@ page `r' ≥ r`. -/
 lemma finite_page_X_of_le (E : SpectralSequence (ModuleCat.{v} R) c r₀)
     {r : ℤ} (hr : r₀ ≤ r) {pq : κ} (h : Module.Finite R ((E.page r hr).X pq))
     (r' : ℤ) (hrr' : r ≤ r') :
-    Module.Finite R ((E.page r' (hr.trans hrr')).X pq) := by
-  induction r', hrr' using Int.leInduction with
-  | base => exact h
-  | succ t hrt ih =>
-    have : Module.Finite R (((E.page t (hr.trans hrt)).sc pq).X₂) := ih
-    have : IsNoetherian R (((E.page t (hr.trans hrt)).sc pq).X₂) :=
-      isNoetherian_of_isNoetherianRing_of_finite R _
-    have hH : Module.Finite R ((E.page t (hr.trans hrt)).homology pq) :=
-      ((E.page t (hr.trans hrt)).sc pq).finite_homology
-    exact Module.Finite.equiv (E.iso t (t + 1) pq rfl (hr.trans hrt)).toLinearEquiv
+    Module.Finite R ((E.page r' (hr.trans hrr')).X pq) :=
+  (ModuleCat.isFG_iff _).1
+    (E.prop_page_X_of_le (ModuleCat.isFG R) hr ((ModuleCat.isFG_iff _).2 h) r' hrr')
 
 end CategoryTheory.SpectralSequence

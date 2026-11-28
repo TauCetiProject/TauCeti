@@ -197,13 +197,6 @@ namespace AdditiveInvariant
 
 variable {G : Type*} [AddCommGroup G] (v : AdditiveInvariant A G)
 
-private theorem obj_eq_zero_of_isZero {X : A} (hX : IsZero X) : v.obj X = 0 := by
-  have h : (ShortComplex.mk (𝟙 X) (𝟙 X) (hX.eq_of_src _ _)).ShortExact :=
-    { exact := ShortComplex.exact_of_isZero_X₂ _ hX
-      mono_f := inferInstance
-      epi_g := inferInstance }
-  exact left_eq_add.mp (v.map_shortExact h)
-
 private theorem obj_eq_obj_kernel_add {Y Z : A} (p : Y ⟶ Z) [Epi p] :
     v.obj Y = v.obj (kernel p) + v.obj Z :=
   v.map_shortExact ((ExactStructure.abelian_conflation _).mp
@@ -260,7 +253,9 @@ theorem obj_kernel_d_eq_obj_homology (a : ℤ) [K.IsStrictlyGE a] :
     v.obj (kernel (K.d a (a + 1))) = v.obj (K.homology a) := by
   have h := obj_kernel_d_add_obj_kernel_d v K (a - 1) a (a + 1) (by omega) rfl
   have hX : IsZero (K.X (a - 1)) := K.isZero_of_isStrictlyGE a (a - 1) (by omega)
-  rw [obj_eq_zero_of_isZero v (isZero_kernel_of_isZero _ hX), obj_eq_zero_of_isZero v hX] at h
+  rw [(⊤ : ObjectProperty A).map_eq_zero_of_isZero (v.isAdditiveOn ⊤)
+      (isZero_kernel_of_isZero _ hX),
+    (⊤ : ObjectProperty A).map_eq_zero_of_isZero (v.isAdditiveOn ⊤) hX] at h
   simpa using h
 
 /-- **The Euler–Poincaré theorem for an additive invariant.** For a cochain complex that is
