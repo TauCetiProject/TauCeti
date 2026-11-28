@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import TauCeti.Analysis.Normed.Module.DoubleDual
 public import TauCeti.MeasureTheory.Function.Holder
 public import TauCeti.MeasureTheory.Function.Lp.ScalarEvaluation
+import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
@@ -258,11 +259,13 @@ theorem pettisIntegralCLM_apply_eq_integral [NormedSpace ℝ X] (φ : Lp 𝕜 q 
 
 /-- An almost everywhere strongly measurable function all of whose scalar tests lie in `Lᵖ(μ)` for
 some `1 < p ≤ ∞` has a Pettis integral over every measurable set of finite measure. -/
-theorem exists_forall_strongDual_apply_eq_setIntegral (hf : AEStronglyMeasurable f μ)
-    (hfp : ∀ x' : StrongDual 𝕜 X, MemLp (fun s ↦ x' (f s)) p μ) (hq : q ≠ ∞) {A : Set S}
+theorem exists_forall_strongDual_apply_eq_setIntegral (hp : 1 < p) (hf : AEStronglyMeasurable f μ)
+    (hfp : ∀ x' : StrongDual 𝕜 X, MemLp (fun s ↦ x' (f s)) p μ) {A : Set S}
     (hA : MeasurableSet A) (hμA : μ A ≠ ∞) :
     ∃ x : X, ∀ x' : StrongDual 𝕜 X, x' x = ∫ s in A, x' (f s) ∂μ := by
-  refine ⟨pettisIntegralCLM f hf hfp hq (indicatorConstLp q hA hμA 1), fun x' ↦ ?_⟩
+  have : Fact (1 ≤ p.conjExponent) := ⟨le_self_add⟩
+  refine ⟨pettisIntegralCLM f hf hfp (ENNReal.conjExponent_ne_top hp)
+    (indicatorConstLp p.conjExponent hA hμA 1), fun x' ↦ ?_⟩
   rw [strongDual_apply_pettisIntegralCLM, integral_indicatorConstLp_mul, one_mul]
 
 end TauCeti
