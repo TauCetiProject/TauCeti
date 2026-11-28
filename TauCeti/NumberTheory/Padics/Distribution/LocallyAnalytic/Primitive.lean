@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.Padics.Distribution.LocallyAnalytic.Derivative
 
 import TauCeti.Analysis.Normed.Field.NatCast
-import TauCeti.NumberTheory.Padics.RingHoms
+import TauCeti.Order.Filter.Cofinite.Basic
 
 /-!
 # Primitives of locally analytic functions on ℤₚ
@@ -28,7 +28,6 @@ consists of the locally constant functions. This describes the ambiguity of a pr
 * `TauCeti.AnalyticStage.derivative_primitive` computes its derivative.
 * `TauCeti.AnalyticStage.eq_primitive_iff` characterizes the normalized primitive.
 * `TauCeti.LocallyAnalytic.derivative_surjective` gives existence of locally analytic primitives.
-* `TauCeti.LocallyAnalytic.derivative_eq_zero_iff_isLocallyConstant` identifies the kernel.
 
 ## References
 
@@ -44,9 +43,10 @@ open scoped ZeroAtInfty
 namespace TauCeti
 
 variable {p : ℕ} [hp : Fact p.Prime]
-variable {K E : Type*} [NormedAddCommGroup E]
+variable {E : Type*} [NormedAddCommGroup E]
 
-local instance [Field K] [CharZero K] : NeZero (p : K) := ⟨Nat.cast_ne_zero.mpr hp.out.ne_zero⟩
+local instance {K : Type*} [Field K] [CharZero K] : NeZero (p : K) :=
+  ⟨Nat.cast_ne_zero.mpr hp.out.ne_zero⟩
 
 namespace AnalyticStage
 
@@ -62,16 +62,9 @@ private noncomputable def primitiveCoeff (c : AnalyticStage p h E)
   ((p : 𝕜) ^ (h + 1) * (i.2 : 𝕜)⁻¹) • transition 𝕜 c (i.1, i.2 - 1)
 
 private theorem tendsto_primitiveWeight :
-    Tendsto (fun n : ℕ ↦ ‖(n : 𝕜)⁻¹‖ * ‖(p : ℤ_[p])‖ ^ (n - 1)) atTop (𝓝 0) := by
-  have hq : ‖(p : ℤ_[p])‖ ≠ 0 := norm_ne_zero_iff.mpr (Nat.cast_ne_zero.mpr hp.out.ne_zero)
-  have ht := (NormedField.tendsto_norm_inv_natCast_mul_pow 𝕜 (norm_nonneg (p : ℤ_[p]))
-    (PadicInt.norm_p_lt_one (p := p))).mul_const (‖(p : ℤ_[p])‖⁻¹)
-  rw [zero_mul] at ht
-  refine ht.congr' ?_
-  filter_upwards [eventually_ge_atTop 1] with n hn
-  have hpow : ‖(p : ℤ_[p])‖ ^ n = ‖(p : ℤ_[p])‖ ^ (n - 1) * ‖(p : ℤ_[p])‖ := by
-    rw [← pow_succ, Nat.sub_add_cancel hn]
-  simp only [hpow, mul_assoc, mul_inv_cancel₀ hq, mul_one]
+    Tendsto (fun n : ℕ ↦ ‖(n : 𝕜)⁻¹‖ * ‖(p : ℤ_[p])‖ ^ (n - 1)) atTop (𝓝 0) :=
+  NormedField.tendsto_norm_inv_natCast_mul_pow_pred 𝕜
+    (norm_nonneg _) (PadicInt.norm_p_lt_one (p := p))
 
 private theorem norm_primitiveCoeff_le (c : AnalyticStage p h E)
     (i : ZMod (p ^ (h + 1)) × ℕ) :
@@ -87,45 +80,55 @@ private theorem norm_primitiveCoeff_le (c : AnalyticStage p h E)
 
 private theorem tendsto_primitiveCoeff (c : AnalyticStage p h E) :
     Tendsto (primitiveCoeff (𝕜 := 𝕜) c) cofinite (𝓝 0) := by
-  have hsnd : Tendsto (Prod.snd : ZMod (p ^ (h + 1)) × ℕ → ℕ) cofinite cofinite := by
-    refine Tendsto.cofinite_of_finite_preimage_singleton fun n ↦ ?_
-    rw [Set.preimage_snd_singleton_eq_range]
-    exact Set.finite_range _
   apply squeeze_zero_norm (norm_primitiveCoeff_le c)
   have hw := tendsto_primitiveWeight (p := p) (𝕜 := 𝕜)
   rw [← Nat.cofinite_eq_atTop] at hw
   simpa only [zero_mul, Function.comp_apply] using
-    (hw.comp hsnd).mul_const (‖(p : 𝕜) ^ (h + 1)‖ * ‖c‖)
+    (hw.comp Filter.tendsto_snd_cofinite).mul_const (‖(p : 𝕜) ^ (h + 1)‖ * ‖c‖)
+
+private noncomputable def primitiveLinearMap :
+    AnalyticStage p h E →ₗ[𝕜] AnalyticStage p (h + 1) E where
+  toFun c := ZeroAtInftyContinuousMap.mkOfDiscrete (primitiveCoeff (𝕜 := 𝕜) c)
+    (tendsto_primitiveCoeff c)
+  map_add' c d := by
+    ext i
+    simp [primitiveCoeff, smul_add]
+  map_smul' a c := by
+    ext i
+    simp [primitiveCoeff, smul_comm _ a]
+
+private theorem primitiveLinearMap_apply (c : AnalyticStage p h E)
+    (i : ZMod (p ^ (h + 1)) × ℕ) :
+    primitiveLinearMap (𝕜 := 𝕜) c i = primitiveCoeff (𝕜 := 𝕜) c i :=
+  congrFun (ZeroAtInftyContinuousMap.coe_mkOfDiscrete _ (tendsto_primitiveCoeff c)) i
 
 /-- The termwise primitive after re-expansion to level `h + 1`, with constant coefficient zero
 on each disc. In characteristic zero its derivative is the re-expanded input. -/
 noncomputable def primitive : AnalyticStage p h E →L[𝕜] AnalyticStage p (h + 1) E :=
-  let L : AnalyticStage p h E →ₗ[𝕜] AnalyticStage p (h + 1) E :=
-    { toFun c := ZeroAtInftyContinuousMap.mkOfDiscrete (primitiveCoeff (𝕜 := 𝕜) c)
-        (tendsto_primitiveCoeff c)
-      map_add' c d := by
-        ext i
-        simp [primitiveCoeff, smul_add]
-      map_smul' a c := by
-        ext i
-        simp [primitiveCoeff, smul_comm _ a] }
-  { L with
+  { primitiveLinearMap with
     cont := by
       obtain ⟨B, hB⟩ := (tendsto_primitiveWeight (p := p) (𝕜 := 𝕜)).bddAbove_range
-      refine AddMonoidHomClass.continuous_of_bound L (B * ‖(p : 𝕜) ^ (h + 1)‖) fun c ↦ ?_
+      refine AddMonoidHomClass.continuous_of_bound (primitiveLinearMap (𝕜 := 𝕜))
+        (B * ‖(p : 𝕜) ^ (h + 1)‖) fun c ↦ ?_
       have hB₀ : 0 ≤ B := by
         simpa only [Nat.cast_zero, inv_zero, norm_zero, zero_mul] using hB (Set.mem_range_self 0)
       refine (ZeroAtInftyContinuousMap.norm_le (mul_nonneg (mul_nonneg hB₀ (norm_nonneg _))
         (norm_nonneg c))).mpr fun i ↦ ?_
-      rw [mul_assoc]
-      simpa [L] using (norm_primitiveCoeff_le (𝕜 := 𝕜) c i).trans
+      rw [mul_assoc, primitiveLinearMap_apply]
+      exact (norm_primitiveCoeff_le (𝕜 := 𝕜) c i).trans
         (mul_le_mul_of_nonneg_right (hB (Set.mem_range_self i.2)) (by positivity)) }
+
+/-- The primitive integrates each positive-degree coefficient and has zero constant term. -/
+theorem primitive_apply (c : AnalyticStage p h E) (i : ZMod (p ^ (h + 1)) × ℕ) :
+    primitive (𝕜 := 𝕜) c i =
+      ((p : 𝕜) ^ (h + 1) * (i.2 : 𝕜)⁻¹) • transition 𝕜 c (i.1, i.2 - 1) :=
+  primitiveLinearMap_apply c i
 
 /-- The primitive has constant coefficient zero at every level-`h + 1` centre. -/
 @[simp]
 theorem primitive_apply_zero (c : AnalyticStage p h E) (a : ZMod (p ^ (h + 1))) :
     primitive (𝕜 := 𝕜) c (a, 0) = 0 := by
-  simp [primitive, primitiveCoeff]
+  simp [primitive_apply]
 
 /-- The coefficient in degree `n + 1` integrates the re-expanded coefficient in degree `n`.
 The factor `p^(h+1)` converts integration in the normalized coordinate to integration in `x`. -/
@@ -133,7 +136,7 @@ The factor `p^(h+1)` converts integration in the normalized coordinate to integr
 theorem primitive_apply_succ (c : AnalyticStage p h E) (a : ZMod (p ^ (h + 1))) (n : ℕ) :
     primitive (𝕜 := 𝕜) c (a, n + 1) =
       ((p : 𝕜) ^ (h + 1) * ((n + 1 : ℕ) : 𝕜)⁻¹) • transition 𝕜 c (a, n) := by
-  simp [primitive, primitiveCoeff]
+  simp [primitive_apply]
 
 /-- Differentiating the primitive gives the input function re-expanded on the smaller discs. -/
 @[simp]
@@ -184,29 +187,6 @@ theorem derivative_surjective {𝕜 : Type*} [NormedField 𝕜] [CharZero 𝕜] 
   intro f
   obtain ⟨h, c, rfl⟩ := exists_ofStage 𝕜 f
   exact ⟨ofStage 𝕜 (h + 1) (AnalyticStage.primitive (𝕜 := 𝕜) c), by simp⟩
-
-variable [Field K] [Module K E] [ContinuousConstSMul K E] [SMulCommClass ℤ_[p] K E]
-
-/-- A locally analytic function has zero derivative exactly when it is locally constant. -/
-theorem derivative_eq_zero_iff_isLocallyConstant [CharZero K] (f : LocallyAnalytic p K E) :
-    derivative K f = 0 ↔ IsLocallyConstant (eval K f) := by
-  have hpE : IsSMulRegular E (p : ℤ_[p]) := by
-    simpa only [IsSMulRegular, Nat.cast_smul_eq_nsmul] using
-      (smul_right_injective (M := E) (NeZero.ne (p : K)))
-  constructor
-  · obtain ⟨h, c, rfl⟩ := exists_ofStage K f
-    rw [derivative_ofStage, ← map_zero (ofStage K h), (ofStage_injective K hpE h).eq_iff,
-      AnalyticStage.derivative_eq_zero_iff, eval_ofStage]
-    intro hc
-    have heval : (AnalyticStage.eval K c : ℤ_[p] → E) =
-        (fun a ↦ c (a, 0)) ∘ PadicInt.toZModPow h :=
-      funext (eval_polynomial_zero K ⟨c, hc⟩)
-    rw [heval]
-    exact (IsLocallyConstant.of_discrete _).comp_continuous (PadicInt.continuous_toZModPow h)
-  · intro hf
-    obtain ⟨h, c, rfl⟩ := exists_ofStage_polynomial_zero_of_isLocallyConstant K hpE hf
-    rw [derivative_ofStage, (AnalyticStage.derivative_eq_zero_iff K c.val).mpr c.property,
-      map_zero]
 
 end LocallyAnalytic
 

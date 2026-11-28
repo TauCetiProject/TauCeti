@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Normed.Ring.Units
 import Mathlib.Data.Int.Associated
 import Mathlib.Topology.Algebra.Ring.Compact
 import TauCeti.LinearAlgebra.Quotient.Pi.SpanSingleton
+import TauCeti.Order.Filter.Cofinite.Basic
 
 /-!
 # The `p`-adic integers: units, norms and local-global statements
@@ -157,9 +158,7 @@ theorem tendsto_norm_p_pow_mul_cofinite {ι : Type*} [Finite ι] (C : ℝ) :
     Filter.Tendsto (fun i : ι × ℕ ↦ ‖(p : ℤ_[p])‖ ^ i.2 * C) Filter.cofinite (nhds 0) := by
   have hpow : Filter.Tendsto (fun n : ℕ ↦ ‖(p : ℤ_[p])‖ ^ n * C) Filter.cofinite (nhds 0) := by
     simpa using (tendsto_norm_p_pow_cofinite (p := p)).mul_const C
-  refine hpow.comp <| Filter.Tendsto.cofinite_of_finite_preimage_singleton fun n ↦ ?_
-  rw [Set.preimage_snd_singleton_eq_range]
-  exact Set.finite_range _
+  exact hpow.comp Filter.tendsto_snd_cofinite
 
 /-- In `ℤ_p`, `1 + x` is a unit whenever `p ∣ x`. -/
 theorem isUnit_one_add_of_dvd {x : ℤ_[p]} (hx : (p : ℤ_[p]) ∣ x) : IsUnit (1 + x) :=

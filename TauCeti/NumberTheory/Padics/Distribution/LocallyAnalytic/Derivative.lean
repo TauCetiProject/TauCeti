@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Padics.Distribution.LocallyAnalytic
+public import TauCeti.NumberTheory.Padics.Distribution.LocallyAnalytic.LocallyConstant
 import Mathlib.Algebra.Polynomial.Identities
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # The derivative of locally analytic functions
@@ -59,9 +60,13 @@ the coordinate are in `TauCeti.NumberTheory.Padics.Distribution.MulCoord`.
   vanishes exactly on degree-zero vectors.
 * `TauCeti.LocallyAnalytic.derivative_ofStage_eq_zero`: the derivative vanishes on stage vectors
   whose coefficients of positive degree vanish.
+* `TauCeti.LocallyAnalytic.derivative_eq_zero_iff_isLocallyConstant`: in characteristic zero,
+  the kernel consists exactly of locally constant functions.
 
 ## References
 
+* J. Kohlhaase, *The cohomology of locally analytic representations*, J. reine angew. Math.
+  651 (2011), §4, Corollary 4.3.
 * P. Colmez, *Fonctions d'une variable p-adique*, Astérisque 330 (2010), §II.4.
 -/
 
@@ -334,6 +339,36 @@ theorem derivative_ofStage_eq_zero {h : ℕ} {c : AnalyticStage p h E}
     ext ⟨a, n⟩
     simp [hc]
   rw [derivative_ofStage, hc', map_zero]
+
+section Kernel
+
+variable {K : Type*} [Field K] [Module K E] [ContinuousConstSMul K E]
+  [SMulCommClass ℤ_[p] K E]
+
+local instance [CharZero K] : NeZero (p : K) := ⟨Nat.cast_ne_zero.mpr hp.out.ne_zero⟩
+
+/-- A locally analytic function has zero derivative exactly when it is locally constant. -/
+theorem derivative_eq_zero_iff_isLocallyConstant [CharZero K] (f : LocallyAnalytic p K E) :
+    derivative K f = 0 ↔ IsLocallyConstant (eval K f) := by
+  have hpE : IsSMulRegular E (p : ℤ_[p]) := by
+    simpa only [IsSMulRegular, Nat.cast_smul_eq_nsmul] using
+      (smul_right_injective (M := E) (NeZero.ne (p : K)))
+  constructor
+  · obtain ⟨h, c, rfl⟩ := exists_ofStage K f
+    rw [derivative_ofStage, ← map_zero (ofStage K h), (ofStage_injective K hpE h).eq_iff,
+      AnalyticStage.derivative_eq_zero_iff, eval_ofStage]
+    intro hc
+    have heval : (AnalyticStage.eval K c : ℤ_[p] → E) =
+        (fun a ↦ c (a, 0)) ∘ PadicInt.toZModPow h :=
+      funext (eval_polynomial_zero K ⟨c, hc⟩)
+    rw [heval]
+    exact (IsLocallyConstant.of_discrete _).comp_continuous (PadicInt.continuous_toZModPow h)
+  · intro hf
+    obtain ⟨h, c, rfl⟩ := exists_ofStage_polynomial_zero_of_isLocallyConstant K hpE hf
+    rw [derivative_ofStage, (AnalyticStage.derivative_eq_zero_iff K c.val).mpr c.property,
+      map_zero]
+
+end Kernel
 
 /-- **The derivative differentiates the evaluated function.** For every locally analytic `f` there
 are a level `h` and a constant `C` such that the Taylor remainder of order two is quadratic on the

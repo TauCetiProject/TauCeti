@@ -295,6 +295,7 @@ theorem eval_polynomial_natCast_val_add_mul
     rw [c.property a n (by simpa using hn), smul_zero]
 
 /-- A degree-zero stage vector evaluates to the constant coefficient of the disc containing `x`. -/
+@[simp]
 theorem eval_polynomial_zero
     (c : polynomialSubmodule (p := p) (h := h) (E := E) S 0) (x : ℤ_[p]) :
     eval S c.val x = c.val (PadicInt.toZModPow h x, 0) := by
