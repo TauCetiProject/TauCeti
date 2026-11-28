@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.GroupTheory.Index
 public import TauCeti.Algebra.Group.Subgroup.Map
+import TauCeti.GroupTheory.Coset.Basic
 import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.GroupTheory.OrderOfElement
@@ -136,24 +137,12 @@ theorem compositeTransversal_spec (G : Type u) [Group G] (U V : Subgroup G) (hVU
       (QuotientGroup.mk (s v) : U ⧸ V.subgroupOf U) = v)
     (q : G ⧸ V) :
     (QuotientGroup.mk (compositeTransversal G U V hVU t ht s q) : G ⧸ V) = q := by
-  let e := Subgroup.quotientEquivProdOfLE' hVU t ht
-  let hmap : ∀ a b : U, QuotientGroup.leftRel (V.subgroupOf U) a b →
-      QuotientGroup.leftRel V (t (e q).1 * (a : G)) (t (e q).1 * (b : G)) := by
-    intro a b hab
-    rw [QuotientGroup.leftRel_apply] at hab ⊢
-    -- The inner coset relation is definitionally the ambient relation after subtype coercions.
-    change ((a : G)⁻¹ * (b : G)) ∈ V at hab
-    simpa only [mul_inv_rev, mul_assoc, inv_mul_cancel_left] using hab
-  calc
-    QuotientGroup.mk (compositeTransversal G U V hVU t ht s q) = e.symm (e q) := by
-      -- Unfold the inverse tower equivalence as a quotient map on the inner coset.
-      change QuotientGroup.mk (t (e q).1 * s (e q).2) =
-        Quotient.map' (fun b : U => t (e q).1 * b) hmap (e q).2
-      calc
-        _ = Quotient.map' (fun b : U => t (e q).1 * b) hmap
-            (QuotientGroup.mk (s (e q).2)) := rfl
-        _ = _ := congrArg _ (hs (e q).2)
-    _ = q := e.symm_apply_apply q
+  -- The inverse tower map sends the coordinates `(a, b)` of `q` back to `q`, and `b` is the coset
+  -- of its representative `s b`.
+  refine Eq.trans ?_ (quotientEquivProdOfLE'_reconstruct hVU t ht q)
+  rw [compositeTransversal]
+  conv_rhs => rw [← hs (quotientEquivProdOfLE' hVU t ht q).2]
+  rfl
 
 section
 
@@ -435,22 +424,16 @@ normal factor instead. -/
 theorem relIndex_sup_of_le_normalizer {H N : Subgroup G} (hH : H ≤ normalizer N) :
     H.relIndex (H ⊔ N) = H.relIndex N := by
   -- The inclusion `N → H ⊔ N` induces a bijection on cosets of `H`.
-  have hle : N ≤ H ⊔ N := le_sup_right
-  have key (x y : N) : QuotientGroup.leftRel (H.subgroupOf N) x y ↔
-      QuotientGroup.leftRel (H.subgroupOf (H ⊔ N)) (inclusion hle x) (inclusion hle y) := by
-    simp [QuotientGroup.leftRel_apply, mem_subgroupOf]
-  refine (Nat.card_congr (Equiv.ofBijective
-    (Quotient.map' (inclusion hle) fun x y ↦ (key x y).1) ⟨?_, ?_⟩)).symm
-  · refine Quotient.ind' fun x ↦ Quotient.ind' fun y h ↦ ?_
-    exact Quotient.sound' ((key x y).2 (Quotient.exact' h))
-  · -- Write `g = h * n` with `h ∈ H` and `n ∈ N`: then `g` lies in the coset of `h * n * h⁻¹ ∈ N`.
-    rintro ⟨g, hg⟩
-    rw [← SetLike.mem_coe, coe_mul_of_left_le_normalizer_right H N hH] at hg
-    obtain ⟨h, hh, n, hn, rfl⟩ := hg
-    refine ⟨Quotient.mk'' ⟨h * n * h⁻¹, (mem_normalizer_iff.1 (hH hh) n).1 hn⟩,
-      Quotient.sound' ?_⟩
-    rw [QuotientGroup.leftRel_apply, mem_subgroupOf]
-    simpa [mul_assoc] using hh
+  let e := quotientSubgroupOfEmbeddingOfLE H (le_sup_right : N ≤ H ⊔ N)
+  refine (Nat.card_congr (Equiv.ofBijective e ⟨e.injective, ?_⟩)).symm
+  -- Write `g = n * h` with `n ∈ N` and `h ∈ H`.
+  rintro ⟨g, hg⟩
+  rw [sup_comm, ← SetLike.mem_coe, coe_mul_of_right_le_normalizer_left N H hH] at hg
+  obtain ⟨n, hn, h, hh, rfl⟩ := hg
+  have hh' : (⟨h, (le_sup_left : H ≤ H ⊔ N) hh⟩ : ↥(H ⊔ N)) ∈ H.subgroupOf (H ⊔ N) := hh
+  refine ⟨QuotientGroup.mk ⟨n, hn⟩, ?_⟩
+  rw [quotientSubgroupOfEmbeddingOfLE_apply_mk]
+  exact (QuotientGroup.mk_mul_of_mem (⟨n, (le_sup_right : N ≤ H ⊔ N) hn⟩ : ↥(H ⊔ N)) hh').symm
 
 /-- If `H` normalizes `N` and `[G : H]` is coprime to `Nat.card N`, then `N ≤ H`. Neither
 `H.index` nor `N` need be finite (`H.index = 0` forces `Nat.card N = 1`, while `Nat.card N = 0`
