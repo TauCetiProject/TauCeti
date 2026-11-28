@@ -27,6 +27,8 @@ subgroup is the orthogonal group: these are the matrices whose transpose is a tw
   star.
 * `TauCeti.toGL_mem_unitarySubgroup_iff`: a determinant-one matrix is unitary exactly when it is
   special unitary, so the unitary subgroup cuts out `SO(n)` in `SL n ℝ`.
+* `TauCeti.mem_unitarySubgroup_GL_iff_commute`: an element of the unitary group of an invertible
+  Gram matrix `A` is unitary exactly when it commutes with `A`.
 * `TauCeti.mem_unitarySubgroup_GL_iff`: over a ring with trivial star, `g` is unitary exactly when
   `g gᵀ = 1`.
 * `TauCeti.coe_inv_eq_transpose_of_mem_unitarySubgroup` and
@@ -69,6 +71,18 @@ theorem toGL_mem_unitarySubgroup_iff {g : SpecialLinearGroup n R} :
       (g : Matrix n n R) ∈ specialUnitaryGroup n R := by
   rw [mem_unitarySubgroup_GL_iff_mem_unitaryGroup, SpecialLinearGroup.coe_GL_coe_matrix,
     mem_specialUnitaryGroup_iff, and_iff_left g.property]
+
+/-- An element `g` of the unitary group `unitaryGroupOf A` of an invertible Gram matrix `A` is
+unitary exactly when it commutes with `A`. For `A = diag(1, …, 1, -1, …, -1)` this identifies the
+unitary elements of `U(p, q)` with its block diagonal elements. -/
+theorem mem_unitarySubgroup_GL_iff_commute {A : Matrix n n R} (hA : IsUnit A)
+    (hg : g ∈ unitaryGroupOf A) : g ∈ unitarySubgroup (GL n R) ↔ Commute A (g : Matrix n n R) := by
+  have hg' : star (g : Matrix n n R) * A * g = A := mem_unitaryGroupOf_iff.1 hg
+  rw [mem_unitarySubgroup_GL_iff_mem_unitaryGroup, mem_unitaryGroup_iff']
+  refine ⟨fun h ↦ ?_, fun h ↦ hA.mul_right_cancel ?_⟩
+  · calc A * g = g * star (g : Matrix n n R) * A * g := by rw [mul_eq_one_comm.1 h, one_mul]
+      _ = g * A := by rw [Matrix.mul_assoc, Matrix.mul_assoc, ← Matrix.mul_assoc _ A, hg']
+  · rw [one_mul, Matrix.mul_assoc, ← h.eq, ← Matrix.mul_assoc, hg']
 
 variable [TrivialStar R]
 
