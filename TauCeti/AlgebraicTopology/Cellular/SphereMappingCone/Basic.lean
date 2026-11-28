@@ -371,12 +371,9 @@ theorem exists_cellularDifferential_sphereMappingCone_eq_smul (R : Type u) [Ring
   let _ := sphereCWComplex h
   let _ := sphereMappingConeCWComplex h f
   -- The cell `i` is the only cell of `Sⁿ⁺¹ ∪_f Dⁿ⁺²` in dimension `n + 1`.
-  have hi (j : cell (sphereMappingCone f) (n + 1)) : j = sphereMappingConeSphereCell h f i := by
-    have hcard := nat_card_cell_sphereCWComplex h (n + 1)
-    simp only [Nat.add_eq_zero_iff, one_ne_zero, and_false, ↓reduceIte, zero_add] at hcard
-    have := (Nat.card_eq_one_iff_unique.1 hcard).1
-    obtain ⟨j', rfl⟩ := exists_sphereMappingConeSphereCell_eq h f (by omega) j
-    rw [Subsingleton.elim j' i]
+  have hi (j : cell (sphereMappingCone f) (n + 1)) : j = sphereMappingConeSphereCell h f i :=
+    letI := uniqueCellSphereMappingConeCWComplex h f n.succ_ne_zero
+    Subsingleton.elim _ _
   have hcol : cellularBoundaryColumn (sphereMappingCone f) R (n + 1)
       (sphereMappingConeTopCell h f) =
         Finsupp.single (sphereMappingConeSphereCell h f i) ((m : R) * u) := by

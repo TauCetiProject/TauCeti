@@ -28,8 +28,9 @@ Mathlib's `Circle.eq_one_of_forall_pow_mem_centeredArc_pi_div_two` is the analog
 version here applies to characters with values in `ℂˣ` that need not be unitary.
 
 Integer norm homogeneity is expressed by `NormSMulClass ℤ A`. It holds in every real normed
-space, but also permits rings without a real scalar action. For a generic real normed space,
-the instance can be supplied locally using `norm_zsmul` from
+space, but also permits rings without a real scalar action. For bounded operators over a normed
+`ℝ`-algebra it is the instance `ContinuousLinearMap.normSMulClass_int`. For a generic real normed
+space, the instance can be supplied locally using `norm_zsmul` from
 `Mathlib.Analysis.Normed.Module.Basic`:
 
 ```lean

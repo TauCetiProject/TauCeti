@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Lie.Adjoint.InvariantForm
 public import TauCeti.Geometry.Lie.Subgroup.Weyl.AdjointOrbit
 public import TauCeti.Geometry.Lie.Subgroup.Weyl.Finite
 public import TauCeti.Geometry.Symplectic.Coadjoint.Height.RootPlane
+public import TauCeti.RepresentationTheory.OrbitSpace
+import TauCeti.Geometry.Lie.Subgroup.Weyl.OrbitSpace
 
 /-!
 # The Weyl group indexes the critical points of a regular height
@@ -86,6 +88,9 @@ holds for it
   critical set and its count for such an `X`.
 * `manifoldMorseIndex_normalizerQuotientToCoadjointOrbit_eq_two_mul_card`, in the namespace
   `TauCeti.IsRootPlaneDecomposition`: the Morse index at the critical point `[n_w]`.
+* `TauCeti.Lie.orbitRel_coadjointRepresentation_iff_mem_range_weylOrbitPoint`: for a maximal
+  torus of a compact group, a point `q ∈ t` has `B q` in the coadjoint orbit of `B (e μ)` exactly
+  when `q` is a Weyl orbit point of `μ`.
 
 ## References
 
@@ -414,6 +419,37 @@ theorem coe_weylOrbitPoint
       leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
         BoundarylessManifold.isInteriorPoint (T.weylAdjointRepresentation (I := I) w μ) :=
   (rfl)
+
+/-- **The coadjoint orbit of `μ` meets `t` in the Weyl orbit of `μ`.** Let `T` be a maximal torus
+of a compact Lie group, `B` an invariant form with trivial left radical, and `t` the image of the
+Lie algebra `𝔱` of `T` under `e`. For `μ ∈ 𝔱`, the covector `B q` of a point `q ∈ t` lies in the
+coadjoint orbit of `B (e μ)` exactly when `q` is a Weyl orbit point `w μ`. -/
+theorem orbitRel_coadjointRepresentation_iff_mem_range_weylOrbitPoint [CompactSpace G]
+    (hT : IsMaximalTorus T) (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B)
+    (hsep : B.SeparatingLeft)
+    (ht : t = (lieSubalgebraOfSubgroup (I := I) T).toSubmodule.map
+      (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+        BoundarylessManifold.isInteriorPoint).toLinearEquiv.toLinearMap)
+    (μ : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) (q : t) :
+    (coadjointRepresentation ℝ I G).orbitRel
+        (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+          BoundarylessManifold.isInteriorPoint (μ : LeftInvariantDerivation I G))) (B q) ↔
+      q ∈ Set.range (weylOrbitPoint ht μ) := by
+  refine ⟨fun hq ↦ ?_, ?_⟩
+  · -- `q = e Z` for some `Z ∈ 𝔱`, and `Z` is a Weyl translate of `μ`.
+    obtain ⟨Z, hZ, hZq⟩ := (ht ▸ q.property : (q : GroupLieAlgebra I G) ∈
+      (lieSubalgebraOfSubgroup (I := I) T).toSubmodule.map
+        (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+          BoundarylessManifold.isInteriorPoint).toLinearEquiv.toLinearMap)
+    obtain ⟨v, hv⟩ := (Representation.orbitRel_apply _).mp
+      ((hT.orbitRel_coadjointRepresentation_iff hB hsep μ ⟨Z, hZ⟩).mp (hZq ▸ hq))
+    refine ⟨v⁻¹, Subtype.ext ?_⟩
+    rw [coe_weylOrbitPoint, ← hZq, ← hv, Representation.inv_self_apply]
+    -- The linear map underlying the equivalence `e` sends `Z` to `e Z` by definition.
+    rfl
+  · rintro ⟨w, rfl⟩
+    rw [coe_weylOrbitPoint, hT.orbitRel_coadjointRepresentation_iff hB hsep]
+    exact (Representation.orbitRel_apply _).mpr ⟨w⁻¹, by simp⟩
 
 end OrbitPoint
 

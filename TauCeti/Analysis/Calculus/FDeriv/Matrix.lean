@@ -37,10 +37,11 @@ normed field. Neither completeness nor independence of the directions is require
 differentiability of a rectangular matrix field `M : E → Matrix κ ι 𝕜` also implies
 differentiability of the induced continuous-linear-map family `x ↦ (M x).mulVecCLM`
 (`Matrix.differentiableWithinAt_mulVecCLM`, `Matrix.differentiableAt_mulVecCLM`,
-`Matrix.differentiableOn_mulVecCLM`, `Matrix.differentiable_mulVecCLM`). Over `RCLike 𝕜`, the
-real entrywise derivative of a family of Hermitian matrices is Hermitian in every direction
-(`Matrix.isHermitian_fderiv_apply`). For the elementwise norm, the entries of the self-adjoint
-part `(X + Xᴴ) / 2` of a matrix are smooth real-linear functions of `X`
+`Matrix.differentiableOn_mulVecCLM`, `Matrix.differentiable_mulVecCLM`), and hence of the
+matrix-vector product with a differentiable vector field (`Matrix.differentiableAt_mulVec`).
+Over `RCLike 𝕜`, the real entrywise derivative of a family of Hermitian matrices is Hermitian in
+every direction (`Matrix.isHermitian_fderiv_apply`). For the elementwise norm, the entries of the
+self-adjoint part `(X + Xᴴ) / 2` of a matrix are smooth real-linear functions of `X`
 (`Matrix.contDiff_selfAdjointPart_apply`, `Matrix.fderiv_selfAdjointPart_apply`). The
 entries of a matrix in the real vector space of Hermitian matrices are real-linear functions of
 it, hence their own derivatives (`Matrix.hasFDerivAt_selfAdjoint_apply`), so the matrix of these
@@ -129,6 +130,15 @@ theorem differentiableAt_mulVecCLM {κ : Type*} [Finite κ]
     DifferentiableAt 𝕜 (fun y ↦ (M y).mulVecCLM) x :=
   differentiableWithinAt_univ.mp <|
     differentiableWithinAt_mulVecCLM fun i j ↦ (hM i j).differentiableWithinAt
+
+/-- If every entry of `M : E → Matrix κ ι 𝕜` and every component of `v : E → ι → 𝕜` is
+differentiable at `x`, then `y ↦ M y *ᵥ v y` is differentiable at `x`. -/
+theorem differentiableAt_mulVec {κ : Type*} [Finite κ]
+    {M : E → Matrix κ ι 𝕜} {v : E → ι → 𝕜} {x : E}
+    (hM : ∀ i j, DifferentiableAt 𝕜 (fun y ↦ M y i j) x) (hv : DifferentiableAt 𝕜 v x) :
+    DifferentiableAt 𝕜 (fun y ↦ M y *ᵥ v y) x := by
+  cases nonempty_fintype κ
+  simpa only [mulVecCLM_apply] using (differentiableAt_mulVecCLM hM).clm_apply hv
 
 /-- If every entry of `M : E → Matrix κ ι 𝕜` is differentiable on `s`, then the induced operator
 family `y ↦ (M y).mulVecCLM` is differentiable on `s`. -/
