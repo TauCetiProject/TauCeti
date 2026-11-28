@@ -65,7 +65,7 @@ half-plane.
 * `Complex.one_sub_mul_ofReal_mem_slitPlane`, `Complex.one_sub_ofReal_mul_mem_slitPlane`,
   `Complex.one_sub_sub_neg_mul_ofReal_mem_slitPlane`,
   `IsCompact.exists_le_norm_one_sub_ofReal_mul`
-* `Complex.one_sub_mem_slitPlane_of_norm_lt_one`
+* `Complex.one_sub_mem_slitPlane_iff`, `Complex.one_sub_mem_slitPlane_of_norm_lt_one`
 * `Complex.norm_div_one_sub_lt_one`
 * `Complex.isOpen_setOf_one_sub_mem_slitPlane`,
   `Complex.starConvex_setOf_one_sub_mem_slitPlane`,
@@ -529,6 +529,24 @@ theorem one_sub_ofReal_mul_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
     {t : ℝ} (ht : t ∈ Set.Icc 0 1) : 1 - t * z ∈ slitPlane := by
   rw [mul_comm]
   exact one_sub_mul_ofReal_mem_slitPlane hz ht
+
+/-- `1 - z` lies in the open slit plane `Complex.slitPlane` if and only if `z` is off the closed
+ray `[1, ∞)`, i.e. `(z.im ≠ 0 ∨ z.re ≤ 1) ∧ z ≠ 1`. -/
+theorem one_sub_mem_slitPlane_iff (z : ℂ) :
+    1 - z ∈ slitPlane ↔ (z.im ≠ 0 ∨ z.re ≤ 1) ∧ z ≠ 1 := by
+  rw [mem_slitPlane_iff]
+  constructor
+  · rintro (hre | him)
+    · rw [sub_re, one_re, sub_pos] at hre
+      exact ⟨Or.inr hre.le, fun h ↦ by simp [h] at hre⟩
+    · rw [sub_im, one_im, zero_sub, neg_ne_zero] at him
+      exact ⟨Or.inl him, fun h ↦ by simp [h] at him⟩
+  · rintro ⟨hz, hz1⟩
+    rcases hz with him | hre
+    · exact Or.inr (by simpa using him)
+    · rcases eq_or_lt_of_le hre with hre1 | hre1
+      · exact Or.inr (by simpa [ne_eq, Complex.ext_iff, hre1] using hz1)
+      · exact Or.inl (by simp [hre1])
 
 /-- On a compact subset `K` of `{z : ℂ | 1 - z ∈ Complex.slitPlane}`, the factors `1 - t * z`
 with `t ∈ [0, 1]` stay uniformly away from zero. -/

@@ -50,7 +50,8 @@ Away from the branch cut, on any vertical line `Re z = x` with `x ≥ 2`, the re
 
 Finally, Mathlib's `Complex.hasSum_taylorSeries_log` has a vanishing constant term; dropping it
 re-indexes the Taylor series of `log (1 + z)` from `0`, the form a power series without constant
-term takes.
+term takes.  Away from the disc, factoring `1 - t z = -z (t - z⁻¹)` isolates the logarithmic
+singularity of `log (1 - t z)` along a real ray into `|log |t - Re(z⁻¹)||`.
 
 ## Main results
 
@@ -72,6 +73,8 @@ term takes.
   `‖z‖ < 1`.
 * `Complex.norm_neg_one_pow_div_add_one`: the coefficients of that series have norm
   `(n + 1)⁻¹`.
+* `Complex.norm_log_one_sub_ofReal_mul_le`: for `z : ℂ` and real `t ≠ Re(z⁻¹)`, bounds
+  `‖log (1 - t * z)‖` in terms of `|log |t - Re(z⁻¹)||`.
 * `Complex.norm_log_le_of_re_mem_Icc`: an explicit principal-log norm bound on every
   positive vertical strip, including empty and singleton strips.
 * `Complex.abs_log_norm_ofReal_add_mul_I_sub_le`: for `2 ≤ x` and `t : ℝ`,
@@ -244,6 +247,47 @@ theorem norm_log_le_of_re_mem_Icc {a b : ℝ} (ha : 0 < a) {s : ℂ}
   have h := norm_le_abs_re_add_abs_im (Complex.log s)
   rw [Complex.log_re, Complex.log_im] at h
   linarith
+
+/-- Away from `t = Re(z⁻¹)`, the principal logarithm `log (1 - t * z)` has norm at most
+`log (1 + |t| * ‖z‖) + |log ‖z‖| + π + |log |t - Re(z⁻¹)||`, isolating the logarithmic singularity
+near `t = z⁻¹` into a single translated real logarithm. -/
+theorem norm_log_one_sub_ofReal_mul_le (z : ℂ) {t : ℝ} (ht : t ≠ (z⁻¹).re) :
+    ‖log (1 - t * z)‖ ≤
+      Real.log (1 + |t| * ‖z‖) + |Real.log ‖z‖| + Real.pi + |Real.log (|t - (z⁻¹).re|)| := by
+  obtain rfl | hz := eq_or_ne z 0
+  · simp only [mul_zero, sub_zero, log_one, norm_zero, Real.log_zero, abs_zero, add_zero]
+    positivity
+  have hz_pos : 0 < ‖z‖ := norm_pos_iff.mpr hz
+  have hfac : (1 : ℂ) - (t : ℂ) * z = -z * ((t : ℂ) - z⁻¹) := by
+    field_simp
+    ring
+  have hsub : |t - (z⁻¹).re| ≤ ‖(t : ℂ) - z⁻¹‖ := by
+    simpa [sub_re] using abs_re_le_norm ((t : ℂ) - z⁻¹)
+  have hlow : ‖z‖ * |t - (z⁻¹).re| ≤ ‖1 - (t : ℂ) * z‖ := by
+    rw [hfac, norm_mul, norm_neg]
+    exact mul_le_mul_of_nonneg_left hsub hz_pos.le
+  have hhigh : ‖1 - (t : ℂ) * z‖ ≤ 1 + |t| * ‖z‖ := by
+    calc ‖1 - (t : ℂ) * z‖ ≤ ‖(1 : ℂ)‖ + ‖(t : ℂ) * z‖ := norm_sub_le _ _
+      _ = 1 + |t| * ‖z‖ := by rw [norm_one, norm_mul, norm_real, Real.norm_eq_abs]
+  have hpos_abs : 0 < |t - (z⁻¹).re| := abs_pos.mpr (sub_ne_zero.mpr ht)
+  have hpos_low : 0 < ‖z‖ * |t - (z⁻¹).re| := mul_pos hz_pos hpos_abs
+  have hlog_low : Real.log ‖z‖ + Real.log (|t - (z⁻¹).re|) ≤ Real.log ‖1 - (t : ℂ) * z‖ := by
+    rw [← Real.log_mul hz_pos.ne' hpos_abs.ne']
+    exact Real.log_le_log hpos_low hlow
+  have hlog_high : Real.log ‖1 - (t : ℂ) * z‖ ≤ Real.log (1 + |t| * ‖z‖) :=
+    Real.log_le_log (hpos_low.trans_le hlow) hhigh
+  have hlog_nonneg : 0 ≤ Real.log (1 + |t| * ‖z‖) :=
+    Real.log_nonneg (by linarith [mul_nonneg (abs_nonneg t) hz_pos.le])
+  have hlog_abs : |Real.log ‖1 - (t : ℂ) * z‖| ≤
+      Real.log (1 + |t| * ‖z‖) + |Real.log ‖z‖| + |Real.log (|t - (z⁻¹).re|)| := by
+    rw [abs_le]
+    constructor <;> linarith [neg_abs_le (Real.log ‖z‖), neg_abs_le (Real.log (|t - (z⁻¹).re|)),
+      abs_nonneg (Real.log ‖z‖), abs_nonneg (Real.log (|t - (z⁻¹).re|))]
+  calc ‖log (1 - t * z)‖
+      ≤ |(log (1 - t * z)).re| + |(log (1 - t * z)).im| := norm_le_abs_re_add_abs_im _
+    _ ≤ Real.log (1 + |t| * ‖z‖) + |Real.log ‖z‖| + Real.pi + |Real.log (|t - (z⁻¹).re|)| := by
+        rw [log_re, log_im]
+        linarith [abs_arg_le_pi (1 - t * z)]
 
 /-- For `x ≥ 2`, the real part `Real.log ‖(x : ℂ) + t * I‖` of `Complex.log (x + t * I)` differs
 from `Real.log (1 + |t|)` by at most `Real.log x`, with equality at `t = 0`. The integer threshold
