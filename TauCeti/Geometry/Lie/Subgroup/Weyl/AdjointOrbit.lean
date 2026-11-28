@@ -96,8 +96,7 @@ theorem IsMaximalTorus.exists_mem_connectedComponentIn_stabilizer_mul_mem_normal
   -- `T` fixes `Y ∈ Lie(T)`, and `g T g⁻¹` fixes `Ad_g X = Y` because `T` fixes `X ∈ Lie(T)`.
   have hSK : T.map (MulAut.conj g).toMonoidHom ≤
       (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer Y := by
-    rw [← hg, ← continuousAdjointRepresentation_apply, ← ContRepresentation.toRepresentation_apply,
-      Representation.stabilizer_conj]
+    rw [← hg, stabilizer_continuousAdjointRepresentation_Ad]
     exact Subgroup.map_mono (le_stabilizer_continuousAdjointRepresentation hX)
   exact hT.exists_mem_connectedComponentIn_mul_mem_normalizer_of_le I
     (isClosed_stabilizer_continuousAdjointRepresentation Y)
@@ -204,8 +203,7 @@ theorem IsMaximalTorus.exists_mem_stabilizer_mem_normalizer_Ad_eq {T : Subgroup 
   -- `k T k⁻¹` fixes `Ad_k Z` for every `Z ∈ 𝔱`, in particular `Ad_k X = X` and `Ad_k Y = Y'`.
   have hconj {Z : LeftInvariantDerivation I G} (hZ : Z ∈ lieSubalgebraOfSubgroup (I := I) T) :
       T.map (MulAut.conj k).toMonoidHom ≤ ρ.stabilizer (Ad (I := I) k Z) := by
-    rw [← continuousAdjointRepresentation_apply, ← ContRepresentation.toRepresentation_apply,
-      Representation.stabilizer_conj]
+    rw [stabilizer_continuousAdjointRepresentation_Ad]
     exact Subgroup.map_mono (le_stabilizer_continuousAdjointRepresentation hZ)
   have hkX : Ad (I := I) k X = X := mem_stabilizer_continuousAdjointRepresentation_iff.mp hk
   -- Both `T` and `k T k⁻¹` lie in the closed subgroup `Z_G(X) ∩ Z_G(Y')`.

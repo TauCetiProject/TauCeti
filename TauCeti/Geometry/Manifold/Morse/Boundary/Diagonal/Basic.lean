@@ -63,7 +63,11 @@ rule `δ(a ∪ b) = δa ∪ b + a ∪ δb` of the cup product for the coboundary
 forms `a` and `b` (`TauCeti.morseCupProduct_comp_morseBoundary_eq_iff`); over `ZMod 2` the Koszul
 sign `(-1)^|a|` is `1`. The geometric half, that the broken Y-flow lines are the ends of the
 compactified one-dimensional spaces of Y-flow lines and so come in pairs, needs their
-compactification and gluing, and is not proved here.
+compactification and gluing, and is not proved here. For a Morse–Smale triple of Morse–Smale
+pseudo-gradients, it is proved in `TauCeti.Geometry.Manifold.Morse.Boundary.Diagonal.ChainMap`
+(in the namespace `TauCeti.IsAdaptedPseudoGradient`,
+`IsMorseSmaleTriple.even_ncard_root_add_ncard_firstLeaf_add_ncard_secondLeaf`), so the Morse
+diagonal of the Y-slices is a chain map (`IsMorseSmaleTriple.morseDiagonalMap_comp_morseBoundary`).
 
 ## Main declarations
 
@@ -75,7 +79,8 @@ compactification and gluing, and is not proved here.
 * `TauCeti.morseCupProduct`: the cup product of linear forms on the Morse chains, with
   `TauCeti.morseCupProduct_apply_single` computing it on a critical point.
 * `TauCeti.morseRootBrokenDiagonalSet`, `TauCeti.morseFirstLeafBrokenDiagonalSet`,
-  `TauCeti.morseSecondLeafBrokenDiagonalSet`: the broken Y-flow lines.
+  `TauCeti.morseSecondLeafBrokenDiagonalSet`: the broken Y-flow lines, with
+  `TauCeti.morseFirstLeafBrokenDiagonalSet_swap` exchanging the two leaves.
 * `TauCeti.morseDiagonalMap_comp_morseBoundary_eq_iff`: the diagonal is a chain map exactly when the
   broken Y-flow lines are evenly many.
 * `TauCeti.morseCupProduct_comp_morseBoundary_eq_iff`: the cup product satisfies the Leibniz rule
@@ -124,6 +129,17 @@ theorem mem_morseYSlice {p q r x : M} :
     x ∈ hX₀.morseYSlice hX₁ hX₂ p q r ↔
       x ∈ hX₀.flow.unstableSet p ∧ x ∈ hX₁.flow.stableSet q ∧ x ∈ hX₂.flow.stableSet r := by
   rw [morseYSlice, mem_inter_iff, mem_inter_iff, and_assoc]
+
+/-- The Y-slice is the intersection `W^u_{X₀}(p) ∩ W^s_{X₁}(q) ∩ W^s_{X₂}(r)`. -/
+theorem morseYSlice_def (p q r : M) :
+    hX₀.morseYSlice hX₁ hX₂ p q r =
+      hX₀.flow.unstableSet p ∩ hX₁.flow.stableSet q ∩ hX₂.flow.stableSet r :=
+  (rfl)
+
+/-- Exchanging the two leaves of a Y-slice. -/
+theorem morseYSlice_comm (p q r : M) :
+    hX₀.morseYSlice hX₂ hX₁ p r q = hX₀.morseYSlice hX₁ hX₂ p q r := by
+  rw [morseYSlice_def, morseYSlice_def, inter_right_comm]
 
 /-- **One pseudo-gradient on both leaves gives no Y-flow lines between distinct critical points.**
 The stable manifolds of distinct critical points of `X₁` are disjoint, so the Y-slice with both
@@ -219,20 +235,14 @@ the Morse chains of `f₁` and a linear form `b` on those of `f₂` is the linea
 `a ∪ b = μ ∘ (a ⊗ b) ∘ Δ` on the Morse chains of `f₀`, for the Morse diagonal `Δ` of `S` and the
 multiplication `μ` of `ZMod 2`. Its value at a critical point `p` is the sum, over the pairs
 `(q, r)` with `ind q + ind r = ind p`, of the number of points of `S p q r` modulo two times
-`a q * b r`, an infinite slice counting `0` (`TauCeti.morseCupProduct_apply_single`). It is
-bilinear in `a` and `b`. -/
+`a q * b r`, an infinite slice counting `0` (`TauCeti.morseCupProduct_apply_single`). It is the
+bilinear cup product `LinearMap.cupProduct` along the diagonal. -/
 noncomputable def morseCupProduct (hf₁ : IsMorse 𝓘(ℝ, E) f₁) (hf₂ : IsMorse 𝓘(ℝ, E) f₂)
     (S : M → M → M → Set α) :
     ((criticalPoints 𝓘(ℝ, E) f₁ →₀ ZMod 2) →ₗ[ZMod 2] ZMod 2) →ₗ[ZMod 2]
       ((criticalPoints 𝓘(ℝ, E) f₂ →₀ ZMod 2) →ₗ[ZMod 2] ZMod 2) →ₗ[ZMod 2]
         ((criticalPoints 𝓘(ℝ, E) f₀ →₀ ZMod 2) →ₗ[ZMod 2] ZMod 2) :=
-  LinearMap.mk₂ (ZMod 2)
-    (fun a b ↦ LinearMap.mul' (ZMod 2) (ZMod 2) ∘ₗ TensorProduct.map a b ∘ₗ
-      morseDiagonalMap f₀ hf₁ hf₂ S)
-    (fun a a' b ↦ by rw [TensorProduct.map_add_left, LinearMap.add_comp, LinearMap.comp_add])
-    (fun c a b ↦ by rw [TensorProduct.map_smul_left, LinearMap.smul_comp, LinearMap.comp_smul])
-    (fun a b b' ↦ by rw [TensorProduct.map_add_right, LinearMap.add_comp, LinearMap.comp_add])
-    (fun c a b ↦ by rw [TensorProduct.map_smul_right, LinearMap.smul_comp, LinearMap.comp_smul])
+  (morseDiagonalMap f₀ hf₁ hf₂ S).cupProduct
 
 /-- The cup product `a ∪ b` is `μ ∘ (a ⊗ b) ∘ Δ`. -/
 theorem morseCupProduct_apply (hf₁ : IsMorse 𝓘(ℝ, E) f₁) (hf₂ : IsMorse 𝓘(ℝ, E) f₂)
@@ -241,7 +251,7 @@ theorem morseCupProduct_apply (hf₁ : IsMorse 𝓘(ℝ, E) f₁) (hf₂ : IsMor
     morseCupProduct f₀ hf₁ hf₂ S a b =
       LinearMap.mul' (ZMod 2) (ZMod 2) ∘ₗ TensorProduct.map a b ∘ₗ
         morseDiagonalMap f₀ hf₁ hf₂ S :=
-  (rfl)
+  LinearMap.cupProduct_apply _ a b
 
 /-- **The cup product on a critical point.** The value of `a ∪ b` at a critical point `p` of `f₀`
 is the sum, over the critical points `q` of `f₁` and `r` of `f₂`, of the coefficient
@@ -255,8 +265,7 @@ theorem morseCupProduct_apply_single [Fintype (criticalPoints 𝓘(ℝ, E) f₁)
       ∑ x : criticalPoints 𝓘(ℝ, E) f₁ × criticalPoints 𝓘(ℝ, E) f₂,
         morseDiagonalCoeff f₀ f₁ f₂ S p x.1 x.2 *
           (a (Finsupp.single x.1 1) * b (Finsupp.single x.2 1)) := by
-  rw [morseCupProduct_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    LinearMap.mul'_map_apply_eq_sum]
+  rw [morseCupProduct, LinearMap.cupProduct_apply_eq_sum]
   refine Finset.sum_congr rfl fun x _ ↦ ?_
   rw [finsuppTensorFinsupp'_morseDiagonalMap_single_apply, one_mul]
 
@@ -336,6 +345,15 @@ theorem mem_morseSecondLeafBrokenDiagonalSet {p q r : M}
         manifoldMorseIndex 𝓘(ℝ, E) f₂ x.1 = manifoldMorseIndex 𝓘(ℝ, E) f₂ r + 1 ∧
           x.2.1 ∈ S p q x.1 ∧ x.2.2 ∈ hX₂.morseTrajectorySlice x.1 r :=
   Iff.rfl
+
+/-- **Exchanging the leaves.** The Y-flow lines broken at the first leaf, for the Y-slices with
+their two leaves exchanged, are those broken at the second leaf. -/
+theorem morseFirstLeafBrokenDiagonalSet_swap (p q r : M) :
+    morseFirstLeafBrokenDiagonalSet f₀ f₁ (hX₀.morseYSlice hX₂ hX₁) hX₂ p r q =
+      morseSecondLeafBrokenDiagonalSet f₀ f₁ (hX₀.morseYSlice hX₁ hX₂) hX₂ p q r := by
+  ext x
+  rw [mem_morseFirstLeafBrokenDiagonalSet, mem_morseSecondLeafBrokenDiagonalSet,
+    IsAdaptedPseudoGradient.morseYSlice_comm, add_comm (manifoldMorseIndex 𝓘(ℝ, E) f₂ x.1)]
 
 end BrokenSets
 
@@ -563,9 +581,8 @@ theorem morseCupProduct_comp_morseBoundary_eq_iff_morseDiagonalMap_comp_morseBou
             morseCupProduct f₀ hf₁ hf₂ S a (b ∘ₗ h₂.morseBoundary hf₂)) ↔
       morseDiagonalMap f₀ hf₁ hf₂ S ∘ₗ h₀.morseBoundary hf₀ =
         ((h₁.morseBoundary hf₁).rTensor _ + (h₂.morseBoundary hf₂).lTensor _) ∘ₗ
-          morseDiagonalMap f₀ hf₁ hf₂ S := by
-  simpa only [morseCupProduct_apply, LinearMap.comp_assoc] using
-    LinearMap.mul'_comp_map_comp_comp_eq_iff_comp_eq_rTensor_add_lTensor_comp _ _ _ _
+          morseDiagonalMap f₀ hf₁ hf₂ S :=
+  LinearMap.cupProduct_comp_eq_iff_comp_eq_rTensor_add_lTensor_comp _ _ _ _
 
 include h₀ hf₀ h₁ h₂ in
 /-- **The Leibniz rule of the Morse cup product holds exactly when the broken Y-flow lines come in

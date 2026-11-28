@@ -141,6 +141,15 @@ section CommMonoid
 
 variable {M : Type*} [CommMonoid M] {ψ : AddChar K M}
 
+/-- Reversing the sign of an additive character preserves its conductor exponent. -/
+@[simp]
+theorem conductorExponent_inv (ψ : AddChar K M) : ψ⁻¹.conductorExponent = ψ.conductorExponent := by
+  simp only [conductorExponent, inv_apply]
+  congr 2
+  ext m
+  exact ⟨fun h x hx ↦ by simpa using h (-x) (by simpa using hx),
+    fun h x hx ↦ h (-x) (by simpa using hx)⟩
+
 /-- **The conductor exponent of a shifted character.** For `b ∈ Kˣ`, the character
 `ψ_b = ψ.mulShift b`, `x ↦ ψ (b * x)`, has conductor exponent `ν(ψ_b) = ν(ψ) + v_K(b)`. -/
 theorem conductorExponent_mulShift (h0 : {x | ψ x = 1} ∈ 𝓝 (0 : K)) (h1 : ψ ≠ 1) (b : Kˣ) :

@@ -7,6 +7,11 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
+import TauCeti.Analysis.Calculus.Deriv.Complex
+import TauCeti.Analysis.Calculus.Deriv.ZPow
+import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.Analysis.SpecialFunctions.Pow.ParametricIntegral
 
 /-!
 # Rational integrals on the half-line
@@ -27,7 +32,8 @@ infinity.
 
 We also evaluate the shifted inverse-power family `∫_{t > 0} 1 / (a + t) ^ (j + 2) dt =
 1 / ((j + 1) * a ^ (j + 1))` for `0 ≤ a` and `j : ℕ`, characterizing integrability on `(0, ∞)` by
-`0 < a`.
+`0 < a`, as well as its complex slit-plane extension
+`∫_{u > 0} 1 / (u + z) ^ (j + 2) du = 1 / ((j + 1) * z ^ (j + 1))` for `z ∈ Complex.slitPlane`.
 
 ## Main results
 
@@ -38,7 +44,10 @@ We also evaluate the shifted inverse-power family `∫_{t > 0} 1 / (a + t) ^ (j 
   integrable on `(0, ∞)` iff `a` and `c` are not both zero;
 * `TauCeti.integral_Ioi_sq_div_sq_add_sq_mul_sq_add_sq`: the value of that integral;
 * `TauCeti.integrableOn_Ioi_one_div_add_pow_iff` and `TauCeti.integral_Ioi_one_div_add_pow`:
-  integrability criterion and exact value of `∫_{t > 0} 1 / (a + t) ^ (j + 2) dt`.
+  integrability criterion and exact value of `∫_{t > 0} 1 / (a + t) ^ (j + 2) dt`;
+* `TauCeti.integrableOn_Ioi_one_div_ofReal_add_pow` and
+  `TauCeti.integral_Ioi_one_div_ofReal_add_pow`: integrability and exact value of
+  `∫_{u > 0} 1 / (u + z) ^ (j + 2) du` on `Complex.slitPlane`.
 -/
 
 public section
@@ -203,5 +212,41 @@ theorem integral_Ioi_one_div_add_pow {a : ℝ} (ha : 0 ≤ a) (j : ℕ) :
       rpow_neg ha'.le, rpow_natCast]
     push_cast
     field_simp [ha'.ne']
+
+/-- For `z ∈ Complex.slitPlane` and `j : ℕ`, `u ↦ 1 / (u + z) ^ (j + 2)` is integrable on
+`(0, ∞)`. -/
+theorem integrableOn_Ioi_one_div_ofReal_add_pow {z : ℂ} (hz : z ∈ Complex.slitPlane) (j : ℕ) :
+    IntegrableOn (fun u : ℝ ↦ 1 / ((u : ℂ) + z) ^ (j + 2)) (Ioi 0) :=
+  integrableOn_div_ofReal_add_pow_of_norm_le aestronglyMeasurable_const (M := (1 : ℝ))
+    (Eventually.of_forall fun _ ↦ by norm_num) hz (by omega)
+
+/-- For `z ∈ Complex.slitPlane` and `j : ℕ`,
+`∫_{u > 0} 1 / (u + z) ^ (j + 2) du = 1 / ((j + 1) * z ^ (j + 1))`. -/
+theorem integral_Ioi_one_div_ofReal_add_pow {z : ℂ} (hz : z ∈ Complex.slitPlane) (j : ℕ) :
+    ∫ u in Ioi (0 : ℝ), 1 / ((u : ℂ) + z) ^ (j + 2) =
+      1 / (((j + 1 : ℕ) : ℂ) * z ^ (j + 1)) := by
+  let F : ℝ → ℂ := fun t ↦ -(((j + 1 : ℕ) : ℂ))⁻¹ / ((t : ℂ) + z) ^ (j + 1)
+  have hderiv : ∀ u ∈ Ici (0 : ℝ),
+      HasDerivAt F (1 / ((u : ℂ) + z) ^ (j + 2)) u := fun u hu ↦ by
+    have hne : (u : ℂ) + z ≠ 0 :=
+      Complex.slitPlane_ne_zero (ofReal_add_mem_slitPlane hz (mem_Ici.mp hu))
+    refine ((TauCeti.hasDerivAt_ofReal_add u z).const_div_pow hne
+      (-(((j + 1 : ℕ) : ℂ))⁻¹) (j + 1)).congr_deriv ?_
+    have hj1c : (((j + 1 : ℕ) : ℂ)) ≠ 0 := by exact_mod_cast Nat.succ_ne_zero j
+    rw [Nat.add_assoc]
+    field_simp
+  have htend : Tendsto F atTop (𝓝 0) := by
+    have hF : F = fun t : ℝ ↦
+        (-(((j + 1 : ℕ) : ℂ))⁻¹) * ((t : ℂ) + z) ^ (-(((j + 1 : ℕ) : ℝ) : ℂ)) := by
+      ext t
+      simp only [F, Complex.ofReal_natCast, Complex.cpow_neg, Complex.cpow_natCast,
+        div_eq_mul_inv]
+    rw [hF]
+    simpa using (Complex.tendsto_ofReal_add_cpow_neg z
+      (by exact_mod_cast Nat.succ_pos j : (0 : ℝ) < ((j + 1 : ℕ) : ℝ))).const_mul
+      (-(((j + 1 : ℕ) : ℂ))⁻¹)
+  have h := integral_Ioi_of_hasDerivAt_of_tendsto' hderiv
+    (integrableOn_Ioi_one_div_ofReal_add_pow hz j) htend
+  simpa [F, div_eq_mul_inv, mul_comm] using h
 
 end TauCeti
