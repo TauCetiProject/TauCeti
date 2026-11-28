@@ -22,12 +22,21 @@ The adjoint of multiplication by a variable is the corresponding formal partial
 derivative. When the multi-index factorials are units, every linear functional on
 polynomials is represented by a unique formal power series via this pairing.
 
+Conversely, a form on polynomials, linear or semilinear in its first argument, for which
+multiplication by each variable is adjoint to the corresponding partial derivative on both
+sides is determined by its value at `(1, 1)`: if that value is `0`, the form vanishes
+(`MvPolynomial.eq_zero_of_X_mul_adjoint_pderiv`). This is how a pairing is identified with the
+Fischer pairing `(p, q) ↦ (conj p)(∂) q (0)`.
+
 ## References
 
 The pairing and its basic identities adapt `New.jet` and related lemmas in ShortProof
 (`src/Lib/GLn/SchurModule/Basic.lean` in <https://github.com/lsernau/grh-lean>,
 Apache 2.0, Copyright 2026 Anthropic, PBC).
 ShortProof is Claude’s Lean rewriting of Levent Alpöge’s proof, published by Anthropic.
+`MvPolynomial.eq_zero_of_X_mul_adjoint_pderiv` is adapted from the private lemma
+`MvPolynomial.sesqForm_apply_eq_zero_of_mul_X_eq_pderiv` of the same source
+(`src/Lib/Weil/Fock/PolynomialVectors.lean`), stated there for sesquilinear forms over `ℂ`.
 -/
 
 public section
@@ -153,5 +162,29 @@ theorem coeff_jetPairingDualEquiv_symm
     smul_eq_mul, Module.Basis.constr_symm_apply, coe_basisMonomials]
 
 end CommSemiring
+
+section Adjoint
+
+variable {M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] {τ : R →+* R}
+
+/-- A form `B` on polynomials, semilinear in its first argument, for which multiplication by
+`X j` is adjoint to `∂_j` on both sides, `B (X j * p) q = B p (∂_j q)` and
+`B p (X j * q) = B (∂_j p) q`, vanishes if `B 1 1 = 0`. -/
+theorem eq_zero_of_X_mul_adjoint_pderiv {B : MvPolynomial σ R →ₛₗ[τ] MvPolynomial σ R →ₗ[R] M}
+    (h_one : B 1 1 = 0) (h_left : ∀ j p q, B (X j * p) q = B p (pderiv j q))
+    (h_right : ∀ j p q, B p (X j * q) = B (pderiv j p) q) : B = 0 := by
+  -- First `B p 1 = 0` by induction on `p`, then `B p q = 0` by induction on `q`.
+  have h_one_right (p : MvPolynomial σ R) : B p 1 = 0 := by
+    induction p using MvPolynomial.induction_on with
+    | C a => simp [C_eq_smul_one, h_one]
+    | add p p' hp hp' => simp [hp, hp']
+    | mul_X p j _ => simp [mul_comm p, h_left]
+  refine LinearMap.ext fun p ↦ LinearMap.ext fun q ↦ ?_
+  induction q using MvPolynomial.induction_on generalizing p with
+  | C a => simp [C_eq_smul_one, h_one_right]
+  | add q q' hq hq' => simp [hq, hq']
+  | mul_X q j hq => simp [mul_comm q, h_right, hq]
+
+end Adjoint
 
 end MvPolynomial

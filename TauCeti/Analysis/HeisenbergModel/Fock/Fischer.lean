@@ -42,11 +42,14 @@ values on these translates (`TauCeti.ReproducingModel.hom_ext`).
 
 * `TauCeti.Fock.innerSL_weilRep_raiseOp`, `TauCeti.Fock.innerSL_weilRep_lowerOp`: the commutation
   rules.
+* `TauCeti.Fock.innerSL_polyVector_raiseOp`, `TauCeti.Fock.innerSL_polyVector_lowerOp`: `A_i` is
+  adjoint to `ε_i B_i`, and `B_i` to `ε_i A_i`.
 * `TauCeti.Fock.innerSL_polyVector_X_mul`: `⟨v_{X_i P}, v_Q⟩ = ⟨v_P, v_{∂_i Q}⟩`.
 * `TauCeti.Fock.innerSL_polyVector`: `⟨v_P, v_Q⟩ = ((conj P)(∂) Q)(0)`.
 * `TauCeti.Fock.innerSL_polyVector_monomial`: the monomial vectors are orthogonal with squared
   norms `μ!`.
-* `TauCeti.Fock.denseRange_polyVector`: the polynomial vectors are dense.
+* `TauCeti.Fock.denseRange_polyVector`, `TauCeti.Fock.eq_zero_of_forall_innerSL_polyVector_eq_zero`:
+  the polynomial vectors are dense, so a vector orthogonal to all of them is zero.
 
 ## Provenance
 
@@ -154,16 +157,32 @@ theorem innerSL_weilRep_lowerOp (u : unitaryGroup ε) (P Q : MvPolynomial ι ℂ
         ReproducingModel.innerSL (polyVector ε (raiseOp ε i Q)) (weilRep ε u (polyVector ε P)) := by
   rw [← sub_eq_zero.1 (commutation_rules u P Q j).2, ← mul_assoc, sign_mul_sign, one_mul]
 
+/-- The raising operator `A_i` is adjoint to `ε_i B_i`:
+`⟨v_Q, v_{A_i P}⟩ = ε_i ⟨v_{B_i Q}, v_P⟩`, the case `u = 1` of the raising rule. -/
+theorem innerSL_polyVector_raiseOp (P Q : MvPolynomial ι ℂ) (i : ι) :
+    ReproducingModel.innerSL (polyVector ε Q) (polyVector ε (raiseOp ε i P)) =
+      ((ε i : ℤ) : ℂ) *
+        ReproducingModel.innerSL (polyVector ε (lowerOp ε i Q)) (polyVector ε P) := by
+  simpa [Matrix.one_apply] using innerSL_weilRep_raiseOp (ε := ε) 1 P Q i
+
+/-- The lowering operator `B_i` is adjoint to `ε_i A_i`:
+`⟨v_Q, v_{B_i P}⟩ = ε_i ⟨v_{A_i Q}, v_P⟩`, the case `u = 1` of the lowering rule. -/
+theorem innerSL_polyVector_lowerOp (P Q : MvPolynomial ι ℂ) (i : ι) :
+    ReproducingModel.innerSL (polyVector ε Q) (polyVector ε (lowerOp ε i P)) =
+      ((ε i : ℤ) : ℂ) *
+        ReproducingModel.innerSL (polyVector ε (raiseOp ε i Q)) (polyVector ε P) := by
+  simpa [Matrix.one_apply] using innerSL_weilRep_lowerOp (ε := ε) 1 P Q i
+
 /-! ### The Fischer pairing -/
 
 /-- Multiplication by `X_i` is adjoint to `∂_i`: `⟨v_{X_i P}, v_Q⟩ = ⟨v_P, v_{∂_i Q}⟩`. -/
 theorem innerSL_polyVector_X_mul (P Q : MvPolynomial ι ℂ) (i : ι) :
     ReproducingModel.innerSL (polyVector ε (X i * P)) (polyVector ε Q) =
       ReproducingModel.innerSL (polyVector ε P) (polyVector ε (pderiv i Q)) := by
-  -- The case `u = 1` of the lowering rule if `ε i = 1` and of the raising rule if `ε i = -1`.
+  -- The adjointness of `B_i` if `ε i = 1` and of `A_i` if `ε i = -1`.
   rcases Int.units_eq_one_or (ε i) with hε | hε
-  · simpa [hε, Matrix.one_apply] using (innerSL_weilRep_lowerOp (ε := ε) 1 Q P i).symm
-  · simpa [hε, Matrix.one_apply] using (innerSL_weilRep_raiseOp (ε := ε) 1 Q P i).symm
+  · simpa [hε] using (innerSL_polyVector_lowerOp (ε := ε) Q P i).symm
+  · simpa [hε] using (innerSL_polyVector_raiseOp (ε := ε) Q P i).symm
 
 /-- **The Fischer pairing**: `⟨v_P, v_Q⟩ = ((conj P)(∂) Q)(0)`, the jet pairing of `Q` with the
 polynomial `conj P` with conjugate coefficients. -/
@@ -213,5 +232,14 @@ theorem denseRange_polyVector : DenseRange (polyVector ε) := by
   intro v
   have hv : v ∈ V := (Submodule.Quotient.mk_eq_zero _).1 congr($h_zero v)
   rwa [← LinearMap.coe_range]
+
+/-- A Fock vector orthogonal to every polynomial vector is zero, since the polynomial vectors
+are dense. -/
+theorem eq_zero_of_forall_innerSL_polyVector_eq_zero {w : FockSpace ε}
+    (h : ∀ Q, ReproducingModel.innerSL (polyVector ε Q) w = 0) : w = 0 :=
+  eq_zero_of_innerSL_self <|
+    denseRange_polyVector.induction_on (p := fun v ↦ ReproducingModel.innerSL v w = 0) w
+    (isClosed_eq (ReproducingModel.innerSL.continuous.clm_apply continuous_const)
+      continuous_const) h
 
 end TauCeti.Fock
