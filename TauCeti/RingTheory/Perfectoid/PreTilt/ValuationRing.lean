@@ -9,6 +9,7 @@ public import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 public import Mathlib.RingTheory.Valuation.ValuationRing
 public import TauCeti.RingTheory.Perfectoid.PreTilt.Pi
 public import TauCeti.RingTheory.Perfectoid.Untilt
+public import TauCeti.RingTheory.Valuation.Integers
 public import TauCeti.RingTheory.Valuation.ValuationRing.Basic
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import Mathlib.Topology.Algebra.Valued.ValuedField
@@ -59,6 +60,8 @@ valuation; here `V` is any `p`-adically complete domain.
   `x ∣ y`; `PreTilt.untilt_dvd_untilt_iff_pi` is the same for a product of such domains.
 * `PreTilt.instValuationRing`: the tilt of a `p`-adically complete valuation ring is a valuation
   ring.
+* `PreTilt.norm_untilt_le_div_of_mul_eq`: for a `p`-adically complete ring of integers of a
+  rank-`≤ 1` valuation, `w * d = c * z` implies `v.norm d♯ ≤ v.norm z♯ / v.norm w♯`.
 * `PreTilt.norm_untilt_lt_one_iff`: `c ∈ O_C♭` is a nonunit iff `‖c♯‖ < 1`.
 * `PreTilt.eq_zero_of_forall_pow_dvd`: in the tilt of `O_C`, an element divisible by every power
   of a nonunit is zero.
@@ -217,6 +220,28 @@ theorem valueGroupMap_inj {a b : ValuationRing.ValueGroup (PreTilt V p) K} :
   (valueGroupMap_injective K L).eq_iff
 
 end ValueGroup
+
+section RankLeOne
+
+/-- **Valuation bound from a multiplicative relation of untilts.** Over a `p`-adically complete
+ring of integers `V` of a rank-`≤ 1` valuation `v` on `R`, if `w * d = c * z` in `V♭` and
+`v.norm (algebraMap V R w♯) > 0`, then `v.norm (algebraMap V R d♯) ≤ v.norm z♯ / v.norm w♯`. -/
+theorem norm_untilt_le_div_of_mul_eq {R Γ₀ V : Type*} [CommRing R]
+    [LinearOrderedCommGroupWithZero Γ₀] {v : Valuation R Γ₀} [Valuation.RankLeOne v] [CommRing V]
+    [Algebra V R] (hv : v.Integers V) {p : ℕ} [Fact p.Prime] [Fact ¬IsUnit (p : V)]
+    [IsAdicComplete (span {(p : V)}) V] {w d c z : PreTilt V p}
+    (hnormw : 0 < v.norm (algebraMap V R w.untilt)) (hmul : w * d = c * z) :
+    v.norm (algebraMap V R d.untilt) ≤
+      v.norm (algebraMap V R z.untilt) / v.norm (algebraMap V R w.untilt) := by
+  rw [le_div_iff₀ hnormw, mul_comm]
+  have hmul' :
+      v.norm (algebraMap V R w.untilt) * v.norm (algebraMap V R d.untilt) =
+        v.norm (algebraMap V R c.untilt) * v.norm (algebraMap V R z.untilt) := by
+    simp only [Valuation.norm_def, ← NNReal.coe_mul, ← map_mul, ← map_mul PreTilt.untilt, hmul]
+  rw [hmul']
+  exact mul_le_of_le_one_left (v.norm_nonneg _) (hv.norm_le_one c.untilt)
+
+end RankLeOne
 
 section RankOne
 

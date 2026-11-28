@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Perfectoid.Padic
 public import TauCeti.RingTheory.Perfectoid.Untilt
 public import TauCeti.RingTheory.Perfectoid.UniformTilt.IsAlgClosed
-public import TauCeti.RingTheory.Perfectoid.Cyclotomic.Period
+public import TauCeti.RingTheory.WittVector.Cyclotomic.Basic
 public import TauCeti.RingTheory.WittVector.ArtinSchreier.Basic
 
 /-!
@@ -57,7 +57,7 @@ example : IsAlgClosed (FractionRing (PreTilt 𝒪[C] p)) :=
 
 -- The Artin–Schreier–Witt equations `φ(c) - ξ ^ n * c = x` are solvable in `A_inf = W(O_C♭)`.
 example (ε : PreTilt 𝒪[C] p) (n : ℕ) (x : WittVector p (PreTilt 𝒪[C] p)) :
-    ∃ c, WittVector.frobenius c - xi p ε ^ n * c = x :=
+    ∃ c, WittVector.frobenius c - TauCeti.WittVector.cyclotomicXi p ε ^ n * c = x :=
   WittVector.surjective_frobenius_sub_mul _ x
 
 end TauCeti.Examples.TiltIsAlgClosed

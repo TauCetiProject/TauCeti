@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.RingTheory.Perfectoid.Untilt
-public import TauCeti.RingTheory.WittVector.Cyclotomic
+public import TauCeti.RingTheory.WittVector.Cyclotomic.Basic
 
 /-!
 # The residue map of a tilt and the Witt residue specialization

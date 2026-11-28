@@ -68,9 +68,11 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
   than one is a pseudouniformiser.
 * `TauCeti.Huber.isPseudoUniformizer_iff_norm_lt_one`: in a normed division ring the
   pseudouniformisers are the nonzero elements of norm less than one.
-* `TauCeti.Huber.coe_powerBoundedSubring_eq_closedBall` and
-  `TauCeti.Huber.powerBoundedSubring_eq_integer`: in an ultrametric normed field `K°` is the
-  closed unit ball, equal as a subring to `𝒪[K]`.
+* `TauCeti.Huber.coe_powerBoundedSubring_eq_closedBall`,
+  `TauCeti.Huber.powerBoundedSubring_eq_integer`, and
+  `TauCeti.Huber.integers_powerBoundedSubring`: in an ultrametric normed field `K°` is the
+  closed unit ball, equal as a subring to `𝒪[K]`, and a ring of integers for the canonical
+  valuation.
 * `TauCeti.Huber.powerBoundedSubring.dvd_iff_norm_le` and
   `TauCeti.Huber.powerBoundedSubring.isUnit_iff_norm_eq_one`: in an ultrametric normed field
   divisibility in `K°` is comparison of norms and units of `K°` are the elements of norm one.
@@ -314,6 +316,13 @@ theorem powerBoundedSubring_eq_integer : powerBoundedSubring K = 𝒪[K] := by
   rw [mem_powerBoundedSubring, isPowerBounded_iff_norm_le_one, Valuation.mem_integer_iff,
     TauCeti.NormedField.v_eq_valuation, NormedField.valuation_apply, ← NNReal.coe_le_coe,
     coe_nnNorm, NNReal.coe_one]
+
+/-- The power-bounded subring `K°` of an ultrametric normed field is a ring of integers for the
+canonical valuation `NormedField.valuation`. -/
+theorem integers_powerBoundedSubring :
+    (NormedField.valuation (K := K)).Integers (powerBoundedSubring K) := by
+  rw [powerBoundedSubring_eq_integer]
+  exact Valuation.integer.integers _
 
 /-- The canonical ring isomorphism `K° ≃+* 𝒪[K]` between the power-bounded subring and the
 valuation ring of an ultrametric normed field. -/

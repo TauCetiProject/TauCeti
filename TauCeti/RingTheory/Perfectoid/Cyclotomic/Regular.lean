@@ -5,180 +5,205 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Perfectoid.Cyclotomic.Level
-public import TauCeti.RingTheory.WittVector.RegularSequence
+public import TauCeti.RingTheory.Perfectoid.Cyclotomic.Basic
+public import TauCeti.RingTheory.WittVector.Cyclotomic.Regular
 
-import Mathlib.RingTheory.WittVector.Identities
+import TauCeti.RingTheory.Jacobson.Basic
 
 /-!
-# Regularity of the cyclotomic periods
+# Regularity of cyclotomic periods in `A_inf`
 
-Let `S` be a perfect domain of characteristic `p` and `ε ≠ 1` in `S`. The cyclotomic periods `μ`,
-`ξ`, `xiTilde = φ(ξ)` and their finite Frobenius products `ξ_r` and `xiTilde_r` are
-nonzerodivisors of `W(S)`, and `p` is a nonzerodivisor on `W(S) ⧸ (ξ)`. For a `p`-adically
-complete domain `A` and `ε ∈ A♭` such that the sharp of `ε ^ (1 / p)` is a primitive `p`-th root
-of unity, the pairs `(p, μ)`, `(p, ξ)`, `(p, xiTilde)`, `(p, ξ_r)` and `(p, xiTilde_r)` for
-`r ≥ 1` are regular sequences of `W(A♭)`.
+Let `V` be a `p`-adically complete domain in which `p` is not a unit (for instance `O_C` or `C°`
+for a complete algebraically closed extension `C` of `ℚ_p`), with tilt `V♭ = PreTilt V p` and
+`A_inf(V) = W(V♭)`.
 
-Everything is read off from zeroth Witt coordinates: the zeroth coordinate of `μ` is
-`ε - 1 ≠ 0`, and the factorizations `μ = ξ_r * φ^(-r)(μ)` and `φ^r(ξ_r) = xiTilde_r` propagate
-this to the other periods. Each of them is killed by `θ` or by the shifted map `θ ∘ φ^(-1)`, so
-it is not a unit.
+Whenever `ε : V♭` satisfies `ε ≠ 1`, `ε - 1` is a nonzerodivisor in `V♭`. Consequently `μ`, `ξ`,
+`ξ'`, `ξ_r`, and `ξ'_r` are all nonzerodivisors in `A_inf(V)`, and the quotients of `A_inf(V)` by
+each of them are `p`-torsion-free. When in addition `ε♯ = 1`, `ε - 1` lies in the Jacobson radical
+of `V♭`, hence is a nonunit, so `[p, x]` and `[x, p]` are regular sequences on `A_inf(V)` for
+`x ∈ {μ, ξ, ξ'}` and for `x ∈ {ξ_r, ξ'_r}` with `1 ≤ r`.
 
 ## Main results
 
-* `TauCeti.Perfectoid.mu_mem_nonZeroDivisors`, `TauCeti.Perfectoid.xi_mem_nonZeroDivisors`,
-  `TauCeti.Perfectoid.xiLevel_mem_nonZeroDivisors`,
-  `TauCeti.Perfectoid.xiTilde_mem_nonZeroDivisors`,
-  `TauCeti.Perfectoid.xiTildeLevel_mem_nonZeroDivisors`: over a perfect domain the periods are
-  nonzerodivisors.
-* `TauCeti.Perfectoid.mk_natCast_mem_nonZeroDivisors_quotient_span_xi`: `p` is a nonzerodivisor
-  on `W(S) ⧸ (ξ)`.
-* `PreTilt.isRegular_natCast_mu`, `PreTilt.isRegular_natCast_xi`,
-  `PreTilt.isRegular_natCast_xiTilde`, `PreTilt.isRegular_natCast_xiLevel`,
-  `PreTilt.isRegular_natCast_xiTildeLevel`: the regular pairs.
-* `PreTilt.prime_xi`: for a complete perfectoid nonarchimedean field `C`, `ξ` is a prime element
-  of `A_inf = W(O_C♭)`, since it generates the kernel of Fontaine's map onto the domain `O_C`.
-
-## Provenance
-
-The statement of `PreTilt.prime_xi` follows `New.Period.Ainf.prime_xi` in
-`src/Lib/PadicHodge/PeriodRings/Ainf.lean` of grh-lean (https://github.com/lsernau/grh-lean,
-Apache 2.0, Copyright 2026 Anthropic, PBC), where it is proved for `C = ℂ_p`.
+* `TauCeti.WittVector.cyclotomicMu_mem_nonZeroDivisors_of_ne_one`,
+  `TauCeti.WittVector.cyclotomicXi_mem_nonZeroDivisors_of_ne_one`,
+  `TauCeti.WittVector.cyclotomicXiTilde_mem_nonZeroDivisors_of_ne_one`,
+  `TauCeti.WittVector.cyclotomicXiLevel_mem_nonZeroDivisors_of_ne_one`,
+  `TauCeti.WittVector.cyclotomicXiTildeLevel_mem_nonZeroDivisors_of_ne_one`: nonzerodivisors in
+  `W(V♭)` for `ε ≠ 1`.
+* `isSMulRegular_quotient_natCast_*_of_ne_one`: `p`-torsion-freeness of `W(V♭) ⧸ (x)`.
+* `isRegular_pair_*_of_untilt_eq_one`: regular pairs `[p, x]` and `[x, p]` when `ε♯ = 1` and
+  `ε ≠ 1`.
 
 ## References
 
-* Bhatt, Morrow and Scholze, *Integral p-adic Hodge theory*, arXiv:1602.03148v3, Lemma 3.10,
-  Proposition 3.17 and Lemma 3.23.
+* B. Bhatt, M. Morrow, P. Scholze, *Integral `p`-adic Hodge theory*, Lemma 3.10,
+  Proposition 3.17, and Lemma 3.23.
 -/
 
 public section
 
-open _root_.WittVector RingTheory.Sequence
+open Ideal _root_.WittVector RingTheory.Sequence
 open scoped nonZeroDivisors
 
-namespace TauCeti.Perfectoid
+namespace TauCeti.WittVector
 
-section Domain
+section DomainRegularity
 
-variable (p : ℕ) [Fact p.Prime] {S : Type*} [CommRing S] [IsDomain S] [CharP S p]
-  [PerfectRing S p] {ε : S}
+variable {p : ℕ} [hp : Fact p.Prime] {V : Type*} [CommRing V] [IsDomain V]
+  [Fact ¬IsUnit (p : V)] [IsAdicComplete (span {(p : V)}) V]
 
-omit [PerfectRing S p] in
-/-- Over a perfect domain, `μ` is a nonzerodivisor of `W(S)` for `ε ≠ 1`. -/
-theorem mu_mem_nonZeroDivisors (hε : ε ≠ 1) : mu p ε ∈ (WittVector p S)⁰ :=
-  mem_nonZeroDivisors_of_ne_zero (mu_ne_zero p hε)
+local notation "𝕎♭" => _root_.WittVector p (PreTilt V p)
 
-/-- Over a perfect domain, `ξ` is a nonzerodivisor of `W(S)` for `ε ≠ 1`. -/
-theorem xi_mem_nonZeroDivisors (hε : ε ≠ 1) : xi p ε ∈ (WittVector p S)⁰ :=
-  mem_nonZeroDivisors_of_ne_zero (xi_ne_zero p hε)
+/-- If `ε : V♭` has `ε ≠ 1`, then `μ = [ε] - 1` is a nonzerodivisor in `W(V♭)`. -/
+theorem cyclotomicMu_mem_nonZeroDivisors_of_ne_one {ε : PreTilt V p}
+    (hne : ε ≠ 1) : cyclotomicMu p ε ∈ (𝕎♭)⁰ :=
+  cyclotomicMu_mem_nonZeroDivisors p (mem_nonZeroDivisors_iff_ne_zero.mpr (sub_ne_zero.mpr hne))
 
-/-- Over a perfect domain, every finite product `ξ_r` is a nonzerodivisor of `W(S)` for
-`ε ≠ 1`. -/
-theorem xiLevel_mem_nonZeroDivisors (hε : ε ≠ 1) (r : ℕ) : xiLevel p ε r ∈ (WittVector p S)⁰ :=
-  mem_nonZeroDivisors_of_ne_zero (xiLevel_ne_zero p hε r)
+/-- If `ε : V♭` has `ε ≠ 1`, then `ξ` is a nonzerodivisor in `W(V♭)`. -/
+theorem cyclotomicXi_mem_nonZeroDivisors_of_ne_one {ε : PreTilt V p}
+    (hne : ε ≠ 1) : cyclotomicXi p ε ∈ (𝕎♭)⁰ :=
+  cyclotomicXi_mem_nonZeroDivisors p (mem_nonZeroDivisors_iff_ne_zero.mpr (sub_ne_zero.mpr hne))
 
-/-- Over a perfect domain, `xiTilde` is a nonzerodivisor of `W(S)` for `ε ≠ 1`. -/
-theorem xiTilde_mem_nonZeroDivisors (hε : ε ≠ 1) : xiTilde p ε ∈ (WittVector p S)⁰ :=
-  mem_nonZeroDivisors_of_ne_zero (xiTilde_ne_zero p hε)
+/-- If `ε : V♭` has `ε ≠ 1`, then `ξ'` is a nonzerodivisor in `W(V♭)`. -/
+theorem cyclotomicXiTilde_mem_nonZeroDivisors_of_ne_one {ε : PreTilt V p}
+    (hne : ε ≠ 1) : cyclotomicXiTilde p ε ∈ (𝕎♭)⁰ :=
+  cyclotomicXiTilde_mem_nonZeroDivisors p
+    (mem_nonZeroDivisors_iff_ne_zero.mpr (sub_ne_zero.mpr hne))
 
-/-- Over a perfect domain, every twisted product `xiTilde_r` is a nonzerodivisor of `W(S)` for
-`ε ≠ 1`. -/
-theorem xiTildeLevel_mem_nonZeroDivisors (hε : ε ≠ 1) (r : ℕ) :
-    xiTildeLevel p ε r ∈ (WittVector p S)⁰ :=
-  mem_nonZeroDivisors_of_ne_zero (xiTildeLevel_ne_zero p hε r)
+/-- If `ε : V♭` has `ε ≠ 1`, then `ξ_r` is a nonzerodivisor in `W(V♭)`. -/
+theorem cyclotomicXiLevel_mem_nonZeroDivisors_of_ne_one {ε : PreTilt V p}
+    (hne : ε ≠ 1) (r : ℕ) : cyclotomicXiLevel p ε r ∈ (𝕎♭)⁰ :=
+  cyclotomicXiLevel_mem_nonZeroDivisors p
+    (mem_nonZeroDivisors_iff_ne_zero.mpr (sub_ne_zero.mpr hne)) r
 
-/-- Over a perfect domain, `p` is a nonzerodivisor on `W(S) ⧸ (ξ)` for `ε ≠ 1`. -/
-theorem mk_natCast_mem_nonZeroDivisors_quotient_span_xi (hε : ε ≠ 1) :
-    Ideal.Quotient.mk (Ideal.span {xi p ε}) (p : WittVector p S) ∈
-      (WittVector p S ⧸ Ideal.span {xi p ε})⁰ :=
-  mk_natCast_mem_nonZeroDivisors _ (mem_nonZeroDivisors_of_ne_zero (coeff_zero_xi_ne_zero p hε))
+/-- If `ε : V♭` has `ε ≠ 1`, then `ξ'_r` is a nonzerodivisor in `W(V♭)`. -/
+theorem cyclotomicXiTildeLevel_mem_nonZeroDivisors_of_ne_one {ε : PreTilt V p}
+    (hne : ε ≠ 1) (r : ℕ) : cyclotomicXiTildeLevel p ε r ∈ (𝕎♭)⁰ :=
+  cyclotomicXiTildeLevel_mem_nonZeroDivisors p
+    (mem_nonZeroDivisors_iff_ne_zero.mpr (sub_ne_zero.mpr hne)) r
 
-end Domain
+/-- If `ε : V♭` has `ε ≠ 1`, then `W(V♭) ⧸ (μ)` is `p`-torsion-free. -/
+theorem isSMulRegular_quotient_natCast_cyclotomicMu_of_ne_one {ε : PreTilt V p} (hne : ε ≠ 1) :
+    IsSMulRegular (𝕎♭ ⧸ span {cyclotomicMu p ε}) (p : 𝕎♭) :=
+  isSMulRegular_quotient_natCast_cyclotomicMu p
+    (mem_nonZeroDivisors_iff_ne_zero.mpr (sub_ne_zero.mpr hne))
 
-end TauCeti.Perfectoid
+/-- If `ε : V♭` has `ε ≠ 1`, then `W(V♭) ⧸ (ξ)` is `p`-torsion-free. -/
+theorem isSMulRegular_quotient_natCast_cyclotomicXi_of_ne_one {ε : PreTilt V p} (hne : ε ≠ 1) :
+    IsSMulRegular (𝕎♭ ⧸ span {cyclotomicXi p ε}) (p : 𝕎♭) :=
+  isSMulRegular_quotient_natCast_cyclotomicXi p
+    (mem_nonZeroDivisors_iff_ne_zero.mpr (sub_ne_zero.mpr hne))
 
-namespace PreTilt
+/-- If `ε : V♭` has `ε ≠ 1`, then `W(V♭) ⧸ (ξ')` is `p`-torsion-free. -/
+theorem isSMulRegular_quotient_natCast_cyclotomicXiTilde_of_ne_one {ε : PreTilt V p}
+    (hne : ε ≠ 1) :
+    IsSMulRegular (𝕎♭ ⧸ span {cyclotomicXiTilde p ε}) (p : 𝕎♭) :=
+  isSMulRegular_quotient_natCast_cyclotomicXiTilde p
+    (mem_nonZeroDivisors_iff_ne_zero.mpr (sub_ne_zero.mpr hne))
 
-open TauCeti.Perfectoid
+/-- If `ε : V♭` has `ε ≠ 1`, then `W(V♭) ⧸ (ξ_r)` is `p`-torsion-free. -/
+theorem isSMulRegular_quotient_natCast_cyclotomicXiLevel_of_ne_one {ε : PreTilt V p}
+    (hne : ε ≠ 1) (r : ℕ) :
+    IsSMulRegular (𝕎♭ ⧸ span {cyclotomicXiLevel p ε r}) (p : 𝕎♭) :=
+  isSMulRegular_quotient_natCast_cyclotomicXiLevel p
+    (mem_nonZeroDivisors_iff_ne_zero.mpr (sub_ne_zero.mpr hne)) r
 
-section RegularPairs
+/-- If `ε : V♭` has `ε ≠ 1`, then `W(V♭) ⧸ (ξ'_r)` is `p`-torsion-free. -/
+theorem isSMulRegular_quotient_natCast_cyclotomicXiTildeLevel_of_ne_one {ε : PreTilt V p}
+    (hne : ε ≠ 1) (r : ℕ) :
+    IsSMulRegular (𝕎♭ ⧸ span {cyclotomicXiTildeLevel p ε r}) (p : 𝕎♭) :=
+  isSMulRegular_quotient_natCast_cyclotomicXiTildeLevel p
+    (mem_nonZeroDivisors_iff_ne_zero.mpr (sub_ne_zero.mpr hne)) r
 
-variable {p : ℕ} [Fact p.Prime] {A : Type*} [CommRing A] [IsDomain A] [Fact ¬IsUnit (p : A)]
-  [IsAdicComplete (Ideal.span {(p : A)}) A]
+/-- If `ε : V♭` has `ε♯ = 1` and `ε ≠ 1`, then `[p, μ]` is a regular sequence on `W(V♭)`. -/
+theorem isRegular_pair_natCast_cyclotomicMu_of_untilt_eq_one {ε : PreTilt V p}
+    (hε1 : ε.untilt = 1) (hne : ε ≠ 1) :
+    IsRegular (𝕎♭) [(p : 𝕎♭), cyclotomicMu p ε] :=
+  isRegular_pair_natCast_cyclotomicMu p
+    (mem_nonZeroDivisors_iff_ne_zero.mpr (sub_ne_zero.mpr hne))
+    (TauCeti.Ring.not_isUnit_of_mem_jacobson (PreTilt.sub_one_mem_jacobson_of_untilt_eq_one hε1))
 
-/-- **The regular pair `(p, μ)`.** -/
-theorem isRegular_natCast_mu (ε : PreTilt A p)
-    (hε : IsPrimitiveRoot
-      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) :
-    IsRegular (WittVector p (PreTilt A p)) [(p : WittVector p (PreTilt A p)), mu p ε] :=
-  isRegular_natCast_cons_singleton_of_map_eq_zero _
-    (mem_nonZeroDivisors_of_ne_zero (coeff_zero_mu_ne_zero p (ε.ne_one_of_isPrimitiveRoot hε)))
-    (fontaineTheta A p) (fontaineTheta_mu_eq_zero ε (ε.untilt_eq_one_of_isPrimitiveRoot hε))
+/-- If `ε : V♭` has `ε♯ = 1` and `ε ≠ 1`, then `[μ, p]` is a regular sequence on `W(V♭)`. -/
+theorem isRegular_pair_cyclotomicMu_natCast_of_untilt_eq_one {ε : PreTilt V p}
+    (hε1 : ε.untilt = 1) (hne : ε ≠ 1) :
+    IsRegular (𝕎♭) [cyclotomicMu p ε, (p : 𝕎♭)] :=
+  isRegular_pair_cyclotomicMu_natCast p
+    (mem_nonZeroDivisors_iff_ne_zero.mpr (sub_ne_zero.mpr hne))
+    (TauCeti.Ring.not_isUnit_of_mem_jacobson (PreTilt.sub_one_mem_jacobson_of_untilt_eq_one hε1))
 
-/-- **The regular pair `(p, ξ)`.** -/
-theorem isRegular_natCast_xi (ε : PreTilt A p)
-    (hε : IsPrimitiveRoot
-      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) :
-    IsRegular (WittVector p (PreTilt A p)) [(p : WittVector p (PreTilt A p)), xi p ε] :=
-  isRegular_natCast_cons_singleton_of_map_eq_zero _
-    (mem_nonZeroDivisors_of_ne_zero (coeff_zero_xi_ne_zero p (ε.ne_one_of_isPrimitiveRoot hε)))
-    (fontaineTheta A p) (fontaineTheta_xi_eq_zero ε hε)
+/-- If `ε : V♭` has `ε♯ = 1` and `ε ≠ 1`, then `[p, ξ]` is a regular sequence on `W(V♭)`. -/
+theorem isRegular_pair_natCast_cyclotomicXi_of_untilt_eq_one {ε : PreTilt V p}
+    (hε1 : ε.untilt = 1) (hne : ε ≠ 1) :
+    IsRegular (𝕎♭) [(p : 𝕎♭), cyclotomicXi p ε] :=
+  isRegular_pair_natCast_cyclotomicXi p
+    (mem_nonZeroDivisors_iff_ne_zero.mpr (sub_ne_zero.mpr hne))
+    (TauCeti.Ring.not_isUnit_of_mem_jacobson (PreTilt.sub_one_mem_jacobson_of_untilt_eq_one hε1))
 
-/-- **The regular pairs `(p, ξ_r)`**, for `r ≥ 1`. -/
-theorem isRegular_natCast_xiLevel (ε : PreTilt A p)
-    (hε : IsPrimitiveRoot
-      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) {r : ℕ} (hr : 1 ≤ r) :
-    IsRegular (WittVector p (PreTilt A p)) [(p : WittVector p (PreTilt A p)), xiLevel p ε r] := by
-  refine isRegular_natCast_cons_singleton_of_map_eq_zero _ (mem_nonZeroDivisors_of_ne_zero
-    (coeff_zero_xiLevel_ne_zero p (ε.ne_one_of_isPrimitiveRoot hε) r)) (fontaineTheta A p) ?_
-  obtain ⟨c, hc⟩ := xi_dvd_xiLevel p ε hr
-  rw [hc, map_mul, fontaineTheta_xi_eq_zero ε hε, zero_mul]
+/-- If `ε : V♭` has `ε♯ = 1` and `ε ≠ 1`, then `[ξ, p]` is a regular sequence on `W(V♭)`. -/
+theorem isRegular_pair_cyclotomicXi_natCast_of_untilt_eq_one {ε : PreTilt V p}
+    (hε1 : ε.untilt = 1) (hne : ε ≠ 1) :
+    IsRegular (𝕎♭) [cyclotomicXi p ε, (p : 𝕎♭)] :=
+  isRegular_pair_cyclotomicXi_natCast p
+    (mem_nonZeroDivisors_iff_ne_zero.mpr (sub_ne_zero.mpr hne))
+    (TauCeti.Ring.not_isUnit_of_mem_jacobson (PreTilt.sub_one_mem_jacobson_of_untilt_eq_one hε1))
 
-/-- **The regular pair `(p, xiTilde)`.** -/
-theorem isRegular_natCast_xiTilde (ε : PreTilt A p)
-    (hε : IsPrimitiveRoot
-      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) :
-    IsRegular (WittVector p (PreTilt A p)) [(p : WittVector p (PreTilt A p)), xiTilde p ε] := by
-  refine isRegular_natCast_cons_singleton_of_map_eq_zero _ (mem_nonZeroDivisors_of_ne_zero ?_)
-    (fontaineThetaShifted A p) (fontaineThetaShifted_xiTilde_eq_zero ε hε)
-  rw [xiTilde_eq, WittVector.frobeniusEquiv_apply, coeff_frobenius_charP]
-  exact pow_ne_zero p (coeff_zero_xi_ne_zero p (ε.ne_one_of_isPrimitiveRoot hε))
+/-- If `ε : V♭` has `ε♯ = 1` and `ε ≠ 1`, then `[p, ξ']` is a regular sequence on `W(V♭)`. -/
+theorem isRegular_pair_natCast_cyclotomicXiTilde_of_untilt_eq_one {ε : PreTilt V p}
+    (hε1 : ε.untilt = 1) (hne : ε ≠ 1) :
+    IsRegular (𝕎♭) [(p : 𝕎♭), cyclotomicXiTilde p ε] :=
+  isRegular_pair_natCast_cyclotomicXiTilde p
+    (mem_nonZeroDivisors_iff_ne_zero.mpr (sub_ne_zero.mpr hne))
+    (TauCeti.Ring.not_isUnit_of_mem_jacobson (PreTilt.sub_one_mem_jacobson_of_untilt_eq_one hε1))
 
-/-- **The regular pairs `(p, xiTilde_r)`**, for `r ≥ 1`. -/
-theorem isRegular_natCast_xiTildeLevel (ε : PreTilt A p)
-    (hε : IsPrimitiveRoot
-      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) {r : ℕ} (hr : 1 ≤ r) :
-    IsRegular (WittVector p (PreTilt A p))
-      [(p : WittVector p (PreTilt A p)), xiTildeLevel p ε r] := by
-  refine isRegular_natCast_cons_singleton_of_map_eq_zero _ (mem_nonZeroDivisors_of_ne_zero ?_)
-    (fontaineThetaShifted A p) ?_
-  · rw [← iterate_frobeniusEquiv_xiLevel, WittVector.frobeniusEquiv_apply, iterate_frobenius_coeff]
-    exact pow_ne_zero _ (coeff_zero_xiLevel_ne_zero p (ε.ne_one_of_isPrimitiveRoot hε) r)
-  · obtain ⟨c, hc⟩ := xiTilde_dvd_xiTildeLevel p ε hr
-    rw [hc, map_mul, fontaineThetaShifted_xiTilde_eq_zero ε hε, zero_mul]
+/-- If `ε : V♭` has `ε♯ = 1` and `ε ≠ 1`, then `[ξ', p]` is a regular sequence on `W(V♭)`. -/
+theorem isRegular_pair_cyclotomicXiTilde_natCast_of_untilt_eq_one {ε : PreTilt V p}
+    (hε1 : ε.untilt = 1) (hne : ε ≠ 1) :
+    IsRegular (𝕎♭) [cyclotomicXiTilde p ε, (p : 𝕎♭)] :=
+  isRegular_pair_cyclotomicXiTilde_natCast p
+    (mem_nonZeroDivisors_iff_ne_zero.mpr (sub_ne_zero.mpr hne))
+    (TauCeti.Ring.not_isUnit_of_mem_jacobson (PreTilt.sub_one_mem_jacobson_of_untilt_eq_one hε1))
 
-end RegularPairs
+/-- If `ε : V♭` has `ε♯ = 1`, `ε ≠ 1`, and `1 ≤ r`, then `[p, ξ_r]` is a regular sequence on
+`W(V♭)`. -/
+theorem isRegular_pair_natCast_cyclotomicXiLevel_of_untilt_eq_one {ε : PreTilt V p}
+    (hε1 : ε.untilt = 1) (hne : ε ≠ 1) {r : ℕ} (hr : 1 ≤ r) :
+    IsRegular (𝕎♭) [(p : 𝕎♭), cyclotomicXiLevel p ε r] :=
+  isRegular_pair_natCast_cyclotomicXiLevel p
+    (mem_nonZeroDivisors_iff_ne_zero.mpr (sub_ne_zero.mpr hne))
+    (TauCeti.Ring.not_isUnit_of_mem_jacobson (PreTilt.sub_one_mem_jacobson_of_untilt_eq_one hε1))
+    hr
 
-section PerfectoidField
+/-- If `ε : V♭` has `ε♯ = 1`, `ε ≠ 1`, and `1 ≤ r`, then `[ξ_r, p]` is a regular sequence on
+`W(V♭)`. -/
+theorem isRegular_pair_cyclotomicXiLevel_natCast_of_untilt_eq_one {ε : PreTilt V p}
+    (hε1 : ε.untilt = 1) (hne : ε ≠ 1) {r : ℕ} (hr : 1 ≤ r) :
+    IsRegular (𝕎♭) [cyclotomicXiLevel p ε r, (p : 𝕎♭)] :=
+  isRegular_pair_cyclotomicXiLevel_natCast p
+    (mem_nonZeroDivisors_iff_ne_zero.mpr (sub_ne_zero.mpr hne))
+    (TauCeti.Ring.not_isUnit_of_mem_jacobson (PreTilt.sub_one_mem_jacobson_of_untilt_eq_one hε1))
+    hr
 
-open scoped NormedField Valued
+/-- If `ε : V♭` has `ε♯ = 1`, `ε ≠ 1`, and `1 ≤ r`, then `[p, ξ'_r]` is a regular sequence on
+`W(V♭)`. -/
+theorem isRegular_pair_natCast_cyclotomicXiTildeLevel_of_untilt_eq_one {ε : PreTilt V p}
+    (hε1 : ε.untilt = 1) (hne : ε ≠ 1) {r : ℕ} (hr : 1 ≤ r) :
+    IsRegular (𝕎♭) [(p : 𝕎♭), cyclotomicXiTildeLevel p ε r] :=
+  isRegular_pair_natCast_cyclotomicXiTildeLevel p
+    (mem_nonZeroDivisors_iff_ne_zero.mpr (sub_ne_zero.mpr hne))
+    (TauCeti.Ring.not_isUnit_of_mem_jacobson (PreTilt.sub_one_mem_jacobson_of_untilt_eq_one hε1))
+    hr
 
-variable {p : ℕ} [Fact p.Prime] {C : Type*} [NontriviallyNormedField C] [IsUltrametricDist C]
-  [CompleteSpace C] [IsPerfectoidTateRing p C]
-  [Fact ¬IsUnit (p : 𝒪[C])] [IsAdicComplete (Ideal.span {(p : 𝒪[C])}) (𝒪[C])]
+/-- If `ε : V♭` has `ε♯ = 1`, `ε ≠ 1`, and `1 ≤ r`, then `[ξ'_r, p]` is a regular sequence on
+`W(V♭)`. -/
+theorem isRegular_pair_cyclotomicXiTildeLevel_natCast_of_untilt_eq_one {ε : PreTilt V p}
+    (hε1 : ε.untilt = 1) (hne : ε ≠ 1) {r : ℕ} (hr : 1 ≤ r) :
+    IsRegular (𝕎♭) [cyclotomicXiTildeLevel p ε r, (p : 𝕎♭)] :=
+  isRegular_pair_cyclotomicXiTildeLevel_natCast p
+    (mem_nonZeroDivisors_iff_ne_zero.mpr (sub_ne_zero.mpr hne))
+    (TauCeti.Ring.not_isUnit_of_mem_jacobson (PreTilt.sub_one_mem_jacobson_of_untilt_eq_one hε1))
+    hr
 
-/-- **`ξ` is a prime element of `A_inf`.** For a complete perfectoid nonarchimedean field `C`
-and `ε ∈ O_C♭` such that the sharp of `ε ^ (1 / p)` is a primitive `p`-th root of unity, the
-cyclotomic period `ξ` generates the kernel of Fontaine's map onto the domain `O_C`. -/
-theorem prime_xi (ε : PreTilt (𝒪[C]) p)
-    (hε : IsPrimitiveRoot
-      (untilt ((_root_.frobeniusEquiv (PreTilt (𝒪[C]) p) p).symm ε)) p) :
-    Prime (xi p ε) := by
-  rw [← Ideal.span_singleton_prime (xi_ne_zero p (ε.ne_one_of_isPrimitiveRoot hε)),
-    ← ker_fontaineTheta_eq_span_xi ε hε]
-  exact RingHom.ker_isPrime _
+end DomainRegularity
 
-end PerfectoidField
-
-end PreTilt
+end TauCeti.WittVector
