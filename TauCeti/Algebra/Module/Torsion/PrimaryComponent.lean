@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Module.Submodule.Defs
 public import Mathlib.Algebra.Module.Torsion.PrimaryComponent
 public import Mathlib.GroupTheory.Torsion
-import TauCeti.GroupTheory.Torsion
+import TauCeti.GroupTheory.Torsion.Basic
 
 /-!
 # Primary components of modules
@@ -55,6 +55,8 @@ For finitely generated `𝔞`, the quotient `N ⧸ Γ_𝔞(N)` has no `𝔞`-pow
 * `TauCeti.injOn_pPowerTorsion_of_exact`, `TauCeti.surjOn_pPowerTorsion_of_exact`: for `p` prime,
   in an exact sequence `Z → M → N → P` whose outer terms have no `p`-power torsion and whose terms
   `Z` and `M` are torsion, `M → N` is a bijection of `p`-power torsion;
+* `TauCeti.primaryComponent_toIntSubmodule_eq`: the additive `p`-primary component agrees with
+  the primary component of the ideal `(p)` over the integers.
 * `Ideal.primaryComponent_directSum_eq_top`: direct sums of ideal-power torsion modules are torsion;
 * `Ideal.primaryComponent_quotient_pow_eq_top`: `R / Iⁿ` is `I`-power torsion;
 * `Ideal.primaryComponent_primaryComponent_eq_top`: `Γ_𝔞(N)` is `𝔞`-power torsion;
@@ -344,3 +346,17 @@ theorem primaryComponent_quotient_primaryComponent {N : Type*} [AddCommGroup N] 
   exact ⟨k + n, by rw [pow_add, mul_smul, hk]⟩
 
 end Ideal
+
+namespace TauCeti
+
+/-- The additive `p`-primary component is the `(p)`-primary submodule over the integers. -/
+theorem primaryComponent_toIntSubmodule_eq (A : Type*) [AddCommGroup A] (p : ℕ) :
+    (AddCommGroup.primaryComponent A p).toIntSubmodule =
+      (Ideal.span {(p : ℤ)}).primaryComponent A := by
+  ext x
+  -- The subgroup and its integer submodule have the same carrier.
+  change x ∈ AddCommGroup.primaryComponent A p ↔ _
+  simp only [AddCommGroup.mem_primaryComponent,
+    Ideal.mem_primaryComponent_span_singleton_iff, ← Int.natCast_pow, natCast_zsmul]
+
+end TauCeti

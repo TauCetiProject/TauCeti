@@ -13,7 +13,7 @@ import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.ZMod.Basic
 import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 import Mathlib.LinearAlgebra.Pi
-import TauCeti.GroupTheory.Torsion
+import TauCeti.GroupTheory.Torsion.Basic
 
 /-!
 # Abelianizations of closed surface groups

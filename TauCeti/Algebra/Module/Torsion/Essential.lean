@@ -25,7 +25,8 @@ In the other direction, over any commutative ring the `I`-torsion `M[I]` of an
 `I`-power-torsion module `M` is essential in `M`: a nonzero element killed by `Iⁿ` has a nonzero
 multiple killed by `I`. Hence a linear map out of such a module is injective as soon as it is
 injective on `M[I]`, the criterion by which injectivity of maps of `𝔪`-power-torsion modules over
-a local ring is tested on `𝔪`-socles.
+a local ring is tested on `𝔪`-socles. The additive-group counterpart
+`IsAddPGroup.injective_of_ker_torsionBy` is in `TauCeti.GroupTheory.Torsion.Basic`.
 
 ## References
 

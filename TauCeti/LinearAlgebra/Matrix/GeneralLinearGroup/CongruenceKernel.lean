@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.RingTheory.AdicCompletion.Basic
 import Mathlib.RingTheory.AdicCompletion.Noetherian
 import Mathlib.RingTheory.ZMod
-import TauCeti.GroupTheory.Torsion
+import TauCeti.GroupTheory.Torsion.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.AdicCompletion.Pi
 import TauCeti.RingTheory.RootsOfUnity.Congruence

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
-public import Mathlib.GroupTheory.Divisible
+public import TauCeti.GroupTheory.Divisible.Basic
 public import Mathlib.GroupTheory.Exponent
 
 import Mathlib.Algebra.Category.Grp.Injective
@@ -31,7 +31,6 @@ then `A ≃+ Div(A) × ℤ/w`.
 
 ## Main definitions
 
-* `AddSubgroup.IsDivisible`: a subgroup in which multiplication by every `n ≠ 0` is surjective.
 * `TauCeti.AddCommGroup.maxDivisible`: the supremum of the divisible subgroups.
 
 ## Main results
@@ -64,57 +63,6 @@ open Function
 
 namespace AddSubgroup
 
-section AddGroup
-
-variable {A B : Type*} [AddGroup A] [AddGroup B]
-
-/-- An additive subgroup `D` is **divisible** if every element of `D` is an `n`-fold multiple of
-an element of `D` for every `n ≠ 0`. -/
-def IsDivisible (D : AddSubgroup A) : Prop :=
-  ∀ n : ℕ, n ≠ 0 → ∀ x ∈ D, ∃ y ∈ D, n • y = x
-
-theorem isDivisible_def {D : AddSubgroup A} :
-    D.IsDivisible ↔ ∀ n : ℕ, n ≠ 0 → ∀ x ∈ D, ∃ y ∈ D, n • y = x :=
-  Iff.rfl
-
-/-- A subgroup is divisible exactly when multiplication by every `n ≠ 0` is surjective on it. -/
-theorem isDivisible_iff_surjective_nsmul {D : AddSubgroup A} :
-    D.IsDivisible ↔ ∀ n : ℕ, n ≠ 0 → Surjective fun y : D ↦ n • y := by
-  refine ⟨fun hD n hn x ↦ ?_, fun hD n hn x hx ↦ ?_⟩
-  · obtain ⟨y, hy, hyx⟩ := hD n hn x x.property
-    exact ⟨⟨y, hy⟩, Subtype.ext hyx⟩
-  · obtain ⟨y, hy⟩ := hD n hn ⟨x, hx⟩
-    exact ⟨y, y.property, congrArg Subtype.val hy⟩
-
-/-- A subgroup is divisible exactly when it carries a Mathlib `DivisibleBy _ ℕ` structure. -/
-theorem isDivisible_iff_nonempty_divisibleBy {D : AddSubgroup A} :
-    D.IsDivisible ↔ Nonempty (DivisibleBy D ℕ) := by
-  rw [isDivisible_iff_surjective_nsmul]
-  exact ⟨fun h ↦ ⟨divisibleByOfSMulRightSurj D ℕ fun hn ↦ h _ hn⟩,
-    fun ⟨_⟩ _ hn ↦ DivisibleBy.surjective_smul D ℕ hn⟩
-
-/-- The whole group is divisible exactly when multiplication by every `n ≠ 0` is surjective. -/
-theorem isDivisible_top_iff :
-    (⊤ : AddSubgroup A).IsDivisible ↔ ∀ n : ℕ, n ≠ 0 → Surjective fun x : A ↦ n • x :=
-  ⟨fun h n hn x ↦ (h n hn x trivial).imp fun _ hy ↦ hy.2,
-    fun h n hn x _ ↦ (h n hn x).imp fun _ hy ↦ ⟨trivial, hy⟩⟩
-
-@[simp]
-theorem isDivisible_bot : (⊥ : AddSubgroup A).IsDivisible := fun _ _ x hx ↦
-  ⟨0, zero_mem _, by rw [(mem_bot).1 hx, smul_zero]⟩
-
-namespace IsDivisible
-
-/-- The image of a divisible subgroup under an additive homomorphism is divisible. -/
-theorem map {D : AddSubgroup A} (hD : D.IsDivisible) (f : A →+ B) : (D.map f).IsDivisible := by
-  rintro n hn _ ⟨x, hx, rfl⟩
-  obtain ⟨y, hy, rfl⟩ := hD n hn x hx
-  exact ⟨f y, mem_map_of_mem f hy, (map_nsmul f n y).symm⟩
-
-end IsDivisible
-
-end AddGroup
-
 section AddCommGroup
 
 variable {A : Type*} [AddCommGroup A]
@@ -145,9 +93,9 @@ theorem sSup {S : Set (AddSubgroup A)} (hS : ∀ D ∈ S, D.IsDivisible) :
         obtain ⟨y, hy, rfl⟩ := ha n hn
         exact ⟨-y, neg_mem hy, smul_neg _ _⟩ }
   have hle : SupSet.sSup S ≤ K := sSup_le fun D hDS x hx n hn ↦ by
-    obtain ⟨y, hy, rfl⟩ := hS D hDS n hn x hx
+    obtain ⟨y, hy, rfl⟩ := isDivisible_def.mp (hS D hDS) n hn x hx
     exact ⟨y, le_sSup hDS hy, rfl⟩
-  exact fun n hn x hx ↦ hle hx n hn
+  exact isDivisible_def.mpr fun n hn x hx ↦ hle hx n hn
 
 /-- The sum of two divisible subgroups of an abelian group is divisible. -/
 theorem sup {D E : AddSubgroup A} (hD : D.IsDivisible) (hE : E.IsDivisible) :
@@ -234,7 +182,7 @@ theorem mem_maxDivisible_iff {x : A} :
 `n ≠ 0`. -/
 theorem exists_mem_maxDivisible_nsmul_eq {x : A} (hx : x ∈ maxDivisible A) {n : ℕ} (hn : n ≠ 0) :
     ∃ y ∈ maxDivisible A, n • y = x :=
-  isDivisible_maxDivisible A n hn x hx
+  isDivisible_def.mp (isDivisible_maxDivisible A) n hn x hx
 
 /-- The maximal divisible subgroup is the whole group exactly when the group is divisible. -/
 theorem maxDivisible_eq_top_iff :
@@ -285,6 +233,7 @@ theorem maxDivisible_quotient_eq_bot : maxDivisible (A ⧸ maxDivisible A) = ⊥
   set π := QuotientAddGroup.mk' (maxDivisible A)
   -- The preimage of the maximal divisible subgroup of the quotient is divisible.
   have hP : ((maxDivisible (A ⧸ maxDivisible A)).comap π).IsDivisible := by
+    rw [isDivisible_def]
     intro n hn x hx
     obtain ⟨y', hy', hyx⟩ := exists_mem_maxDivisible_nsmul_eq hx hn
     obtain ⟨y, rfl⟩ := QuotientAddGroup.mk'_surjective (maxDivisible A) y'
@@ -321,7 +270,7 @@ theorem maxDivisible_prod :
     maxDivisible (A × B) = (maxDivisible A).prod (maxDivisible B) := by
   refine le_antisymm (fun x hx ↦ ⟨map_mem_maxDivisible (AddMonoidHom.fst A B) hx,
     map_mem_maxDivisible (AddMonoidHom.snd A B) hx⟩) ?_
-  refine IsDivisible.le_maxDivisible fun n hn x hx ↦ ?_
+  refine IsDivisible.le_maxDivisible <| isDivisible_def.mpr fun n hn x hx ↦ ?_
   obtain ⟨a, ha, ha'⟩ := exists_mem_maxDivisible_nsmul_eq hx.1 hn
   obtain ⟨b, hb, hb'⟩ := exists_mem_maxDivisible_nsmul_eq hx.2 hn
   exact ⟨(a, b), ⟨ha, hb⟩, Prod.ext ha' hb'⟩
@@ -331,7 +280,7 @@ divisible subgroups. -/
 theorem maxDivisible_pi {ι : Type*} {A : ι → Type*} [∀ i, AddCommGroup (A i)] :
     maxDivisible (∀ i, A i) = AddSubgroup.pi Set.univ fun i ↦ maxDivisible (A i) := by
   refine le_antisymm (fun x hx i _ ↦ map_mem_maxDivisible (Pi.evalAddMonoidHom A i) hx) ?_
-  refine IsDivisible.le_maxDivisible fun n hn x hx ↦ ?_
+  refine IsDivisible.le_maxDivisible <| isDivisible_def.mpr fun n hn x hx ↦ ?_
   choose y hy hyx using fun i ↦ exists_mem_maxDivisible_nsmul_eq (hx i trivial) hn
   exact ⟨y, fun i _ ↦ hy i, funext hyx⟩
 
@@ -373,6 +322,7 @@ theorem isDivisible_range_nsmul {w : ℕ}
     (h : ∀ k : ℕ, k ≠ 0 →
       (nsmulAddMonoidHom (α := A) w).range ≤ (nsmulAddMonoidHom (α := A) (w * k)).range) :
     (nsmulAddMonoidHom (α := A) w).range.IsDivisible := by
+  rw [isDivisible_def]
   intro n hn x hx
   obtain ⟨b, rfl⟩ := h n hn hx
   refine ⟨w • b, ⟨b, rfl⟩, ?_⟩

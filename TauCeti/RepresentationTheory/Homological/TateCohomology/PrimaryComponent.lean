@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
-public import TauCeti.GroupTheory.Torsion
+public import TauCeti.GroupTheory.Torsion.Basic
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.HomologySequence
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Linear
 import TauCeti.RepresentationTheory.Homological.TateCohomology.Restriction.AllDegrees

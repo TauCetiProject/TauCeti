@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Subgroup.Simple
-public import TauCeti.GroupTheory.Torsion
+public import TauCeti.GroupTheory.Torsion.Basic
 import TauCeti.GroupTheory.OrderOfElement.Basic
 
 /-!
@@ -49,7 +49,7 @@ local analysis of a simple group through the normalizers of its subgroups.
 
 A finite group is torsion by `isMulTorsion_of_finite`. The prime-order element of a nontrivial
 normal subgroup comes from `IsMulTorsion.exists_prime_orderOf_mem` in
-`TauCeti.GroupTheory.Torsion`.
+`TauCeti.GroupTheory.Torsion.Basic`.
 -/
 
 public section

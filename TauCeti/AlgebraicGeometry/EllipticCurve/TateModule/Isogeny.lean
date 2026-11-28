@@ -24,7 +24,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Unramified
 -- Proof-only: a prime different from the residue characteristic.
 import TauCeti.Algebra.CharP.Lemmas
 -- Proof-only: a `p`-primary image of a torsion point has a `p`-primary preimage.
-import TauCeti.GroupTheory.Torsion
+import TauCeti.GroupTheory.Torsion.Basic
 -- Proof-only: a prime different from the residue characteristic is nonzero in `K^{alg}`.
 import TauCeti.NumberTheory.LocalField.NatCastValuation
 -- Proof-only: the order of the residue field is prime to the integers nonzero in it.

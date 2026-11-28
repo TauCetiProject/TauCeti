@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Rat
+public import Mathlib.GroupTheory.Divisible
+
+import TauCeti.Algebra.Module.LocalizedModule.Basic
+import Mathlib.RingTheory.Localization.FractionRing
 
 /-!
-# Rational modules: restriction to `ℚ≥0` and division by natural numbers
+# Rational modules and divisible torsion-free groups
 
 Every module over `ℚ` is a module over `ℚ≥0` by restriction of scalars along
 `algebraMap ℚ≥0 ℚ`. This is deliberately not a global instance: Mathlib already builds
@@ -22,7 +26,8 @@ Consumers activate it where they need it with
 
 Over a semiring that is a `ℚ`-module, scaling by `(n : ℚ)⁻¹` undoes multiplication by a nonzero
 natural number `n`. More generally, multiplication by a nonzero integer is bijective on any module
-over a division ring of characteristic zero.
+over a division ring of characteristic zero. Conversely, a divisible torsion-free abelian group
+admits a rational module structure, unique by `subsingleton_rat_module`.
 
 ## Main definitions
 
@@ -30,6 +35,8 @@ over a division ring of characteristic zero.
 
 ## Main statements
 
+* `TauCeti.nonempty_ratModule`: a divisible torsion-free abelian group admits a rational module
+  structure.
 * `TauCeti.inv_natCast_smul_natCast_mul`: `(n : ℚ)⁻¹ • (n * x) = x` for `n ≠ 0`.
 * `TauCeti.inv_natCast_mul_smul_nsmul`: `((n * m : ℕ) : ℚ)⁻¹ • (n • x) = (m : ℚ)⁻¹ • x` for `n ≠ 0`.
 * `TauCeti.bijective_zsmul_of_ne_zero`: multiplication by a nonzero integer is bijective on a module
@@ -64,5 +71,18 @@ theorem bijective_zsmul_of_ne_zero (K : Type*) {M : Type*} [DivisionRing K] [Cha
     [AddCommGroup M] [Module K M] {n : ℤ} (hn : n ≠ 0) : Function.Bijective fun x : M ↦ n • x := by
   simpa only [← Int.cast_smul_eq_zsmul K] using
     (Int.cast_ne_zero.mpr hn : (n : K) ≠ 0).isUnit.smul_bijective (β := M)
+
+open scoped nonZeroDivisors
+
+/-- A divisible abelian group with injective multiplication by positive integers has a
+rational vector-space structure. It is unique by `subsingleton_rat_module`. -/
+theorem nonempty_ratModule (A : Type*) [AddCommGroup A] [DivisibleBy A ℕ] [HasUniqueDiv A] :
+    Nonempty (Module ℚ A) := by
+  let : DivisibleBy A ℤ := AddGroup.divisibleByIntOfDivisibleByNat A
+  let : IsLocalizedModule ℤ⁰ (LinearMap.id : A →ₗ[ℤ] A) :=
+    isLocalizedModule_id_of_bijective_smul fun n hn ↦
+      ⟨zsmul_right_injective (nonZeroDivisors.ne_zero hn),
+        DivisibleBy.surjective_smul A ℤ (nonZeroDivisors.ne_zero hn)⟩
+  exact ⟨IsLocalizedModule.module (A := ℚ) ℤ⁰ (LinearMap.id : A →ₗ[ℤ] A)⟩
 
 end TauCeti

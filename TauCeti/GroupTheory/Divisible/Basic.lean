@@ -6,13 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.PNat.Basic
+public import Mathlib.Data.Rat.Defs
 public import Mathlib.GroupTheory.Divisible
+public import Mathlib.GroupTheory.Torsion
 
 import Mathlib.Algebra.Category.Grp.Injective
-import Mathlib.Data.Rat.Cast.CharZero
+import TauCeti.Algebra.Module.Rat
+import TauCeti.GroupTheory.Torsion.Basic
 
 /-!
-# Divisibility on `Additive` and compatible root families
+# Divisible subgroups and compatible root families
+
+`AddSubgroup.IsDivisible` expresses divisibility of a subgroup without choosing division
+operations. The torsion subgroup and prime-primary components of a divisible abelian group are
+divisible. The quotient by the torsion subgroup admits a rational module structure. This is an
+existence theorem: callers may choose that structure locally and retain their own bases.
 
 An `ℕ`-rootable monoid `G` becomes an `ℕ`-divisible additive monoid under `Additive G`:
 `Additive.instDivisibleByNat` transfers `RootableBy G ℕ` to `DivisibleBy (Additive G) ℕ`.
@@ -29,11 +37,18 @@ vanishing on `S` and sending `d` to `c`.
 
 ## Main definitions
 
+* `AddSubgroup.IsDivisible`: a subgroup in which multiplication by every `n ≠ 0` is surjective.
 * `Additive.instDivisibleByNat`: transfers `RootableBy G ℕ` on a monoid `G` to
   `DivisibleBy (Additive G) ℕ`.
 
 ## Main results
 
+* `TauCeti.nonempty_ratModule_quotient_torsion`: the torsion-free quotient of a divisible group
+  admits a rational module structure, without choosing one globally.
+
+* `TauCeti.AddCommGroup.isDivisible_torsion` and
+  `TauCeti.AddCommGroup.isDivisible_primaryComponent`: the torsion subgroup and the prime-primary
+  components of a divisible group are divisible.
 * `AddSubgroup.exists_addMonoidHom_eq_zero_and_apply_eq`,
   `TauCeti.exists_addMonoidHom_apply_eq_zero_and_apply_eq`: additive homomorphisms `L →+ A` into a
   `ℤ`-divisible group vanishing on a subgroup `S` (or on `a`) and taking a prescribed value at an
@@ -47,6 +62,63 @@ vanishing on `S` and sending `d` to `c`.
 -/
 
 public section
+
+open Function
+
+namespace AddSubgroup
+
+section AddGroup
+
+variable {A B : Type*} [AddGroup A] [AddGroup B]
+
+/-- An additive subgroup `D` is **divisible** if every element of `D` is an `n`-fold multiple of
+an element of `D` for every `n ≠ 0`. -/
+def IsDivisible (D : AddSubgroup A) : Prop :=
+  ∀ n : ℕ, n ≠ 0 → ∀ x ∈ D, ∃ y ∈ D, n • y = x
+
+theorem isDivisible_def {D : AddSubgroup A} :
+    D.IsDivisible ↔ ∀ n : ℕ, n ≠ 0 → ∀ x ∈ D, ∃ y ∈ D, n • y = x :=
+  Iff.rfl
+
+/-- A subgroup is divisible exactly when multiplication by every `n ≠ 0` is surjective on it. -/
+theorem isDivisible_iff_surjective_nsmul {D : AddSubgroup A} :
+    D.IsDivisible ↔ ∀ n : ℕ, n ≠ 0 → Surjective fun y : D ↦ n • y := by
+  refine ⟨fun hD n hn x ↦ ?_, fun hD n hn x hx ↦ ?_⟩
+  · obtain ⟨y, hy, hyx⟩ := hD n hn x x.property
+    exact ⟨⟨y, hy⟩, Subtype.ext hyx⟩
+  · obtain ⟨y, hy⟩ := hD n hn ⟨x, hx⟩
+    exact ⟨y, y.property, congrArg Subtype.val hy⟩
+
+/-- A subgroup is divisible exactly when it carries a Mathlib `DivisibleBy _ ℕ` structure. -/
+theorem isDivisible_iff_nonempty_divisibleBy {D : AddSubgroup A} :
+    D.IsDivisible ↔ Nonempty (DivisibleBy D ℕ) := by
+  rw [isDivisible_iff_surjective_nsmul]
+  exact ⟨fun h ↦ ⟨divisibleByOfSMulRightSurj D ℕ fun hn ↦ h _ hn⟩,
+    fun ⟨_⟩ _ hn ↦ DivisibleBy.surjective_smul D ℕ hn⟩
+
+/-- The whole group is divisible exactly when multiplication by every `n ≠ 0` is surjective. -/
+theorem isDivisible_top_iff :
+    (⊤ : AddSubgroup A).IsDivisible ↔ ∀ n : ℕ, n ≠ 0 → Surjective fun x : A ↦ n • x :=
+  ⟨fun h n hn x ↦ (h n hn x trivial).imp fun _ hy ↦ hy.2,
+    fun h n hn x _ ↦ (h n hn x).imp fun _ hy ↦ ⟨trivial, hy⟩⟩
+
+@[simp]
+theorem isDivisible_bot : (⊥ : AddSubgroup A).IsDivisible := fun _ _ x hx ↦
+  ⟨0, zero_mem _, by rw [(mem_bot).1 hx, smul_zero]⟩
+
+namespace IsDivisible
+
+/-- The image of a divisible subgroup under an additive homomorphism is divisible. -/
+theorem map {D : AddSubgroup A} (hD : D.IsDivisible) (f : A →+ B) : (D.map f).IsDivisible := by
+  rintro n hn _ ⟨x, hx, rfl⟩
+  obtain ⟨y, hy, rfl⟩ := hD n hn x hx
+  exact ⟨f y, mem_map_of_mem f hy, (map_nsmul f n y).symm⟩
+
+end IsDivisible
+
+end AddGroup
+
+end AddSubgroup
 
 namespace Additive
 
@@ -81,6 +153,12 @@ theorem exists_addMonoidHom_eq_zero_and_apply_eq {L A : Type*} [AddCommGroup L] 
 end AddSubgroup
 
 namespace TauCeti
+
+/-- The torsion-free quotient of a divisible abelian group admits a rational module structure.
+This existence theorem leaves callers free to choose the structure and its basis. -/
+theorem nonempty_ratModule_quotient_torsion (A : Type*) [AddCommGroup A] [DivisibleBy A ℕ] :
+    Nonempty (Module ℚ (A ⧸ AddCommGroup.torsion A)) :=
+  nonempty_ratModule _
 
 /-- If no nonzero integer multiple of `d` lies in `ℤ • a`, then any element `c` of a `ℤ`-divisible
 additive commutative group `A` is the value at `d` of an additive homomorphism `L →+ A` sending `a`
@@ -135,3 +213,35 @@ theorem exists_apply_one_eq_and_forall_pow_eq_of_rootableBy_units {M₀ : Type*}
     fun n d ↦ by simpa only [Units.val_pow_eq_pow_val] using congrArg Units.val (hyd n d)⟩
 
 end TauCeti
+
+namespace TauCeti.AddCommGroup
+
+open AddSubgroup
+
+/-- The torsion subgroup of a divisible abelian group is divisible. -/
+theorem isDivisible_torsion {A : Type*} [AddCommGroup A] [DivisibleBy A ℕ] :
+    (AddCommGroup.torsion A).IsDivisible := by
+  rw [isDivisible_def]
+  intro n hn x hx
+  obtain ⟨y, hy⟩ : ∃ y : A, n • y = x := DivisibleBy.surjective_smul A ℕ hn x
+  obtain ⟨k, hk, hkx⟩ := (AddCommGroup.mem_torsion x).mp hx |>.exists_nsmul_eq_zero
+  refine ⟨y, ?_, hy⟩
+  exact isOfFinAddOrder_iff_nsmul_eq_zero.mpr
+    ⟨k * n, Nat.mul_pos hk (Nat.pos_of_ne_zero hn), by rw [← smul_smul, hy, hkx]⟩
+
+/-- A prime-primary component of a divisible abelian group is divisible. -/
+theorem isDivisible_primaryComponent {A : Type*} [AddCommGroup A] [DivisibleBy A ℕ]
+    (p : ℕ) (hp : p.Prime) : (AddCommGroup.primaryComponent A p).IsDivisible := by
+  rw [AddSubgroup.isDivisible_def]
+  intro n hn x hx
+  obtain ⟨y, hy⟩ : ∃ y : A, n • y = x := DivisibleBy.surjective_smul A ℕ hn x
+  obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp hx
+  have hyfin : IsOfFinAddOrder y := isOfFinAddOrder_iff_nsmul_eq_zero.mpr
+    ⟨p ^ k * n, Nat.mul_pos (pow_pos hp.pos _) (Nat.pos_of_ne_zero hn), by
+      rw [← smul_smul, hy, hk]⟩
+  obtain ⟨y', hy', heq⟩ := exists_mem_primaryComponent_apply_eq
+    (nsmulAddMonoidHom (α := A) n) hp hyfin (AddCommMonoid.mem_primaryComponent.mpr ⟨k, by
+      simpa only [nsmulAddMonoidHom_apply, hy] using hk⟩)
+  exact ⟨y', hy', heq.trans hy⟩
+
+end TauCeti.AddCommGroup
