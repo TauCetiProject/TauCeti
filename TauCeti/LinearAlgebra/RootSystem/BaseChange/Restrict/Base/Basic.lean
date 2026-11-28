@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.RootSystem.Base
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced.Basic
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Basic
 import TauCeti.Algebra.Group.Submonoid.Closure
+import TauCeti.LinearAlgebra.RootSystem.BaseChange.Base
 
 /-!
 # Restriction of a base under scalar restriction
@@ -71,31 +72,21 @@ theorem mem_closure_coroot_restrictScalars'_iff {s : Set ι} {y : span K (range 
   AddSubmonoid.mem_closure_image_iff_coe (P.restrictScalars_coe_coroot K)
 
 /-- A base `b` of `P` restricts to a base of `P.restrictScalars' K` with the same support. -/
-noncomputable def Base.restrictScalars' : (P.restrictScalars' K).Base where
-  support := b.support
-  linearIndepOn_root :=
-    LinearIndependent.of_comp (span K (range P.root)).subtype
-      (b.linearIndepOn_root.restrict_scalars' K)
-  linearIndepOn_coroot :=
-    LinearIndependent.of_comp (span K (range P.coroot)).subtype
-      (b.linearIndepOn_coroot.restrict_scalars' K)
-  root_mem_or_neg_mem i := by
-    refine (b.root_mem_or_neg_mem i).imp (fun h ↦ ?_) fun h ↦ ?_ <;>
-      exact mem_closure_root_restrictScalars'_iff.mpr h
-  coroot_mem_or_neg_mem i := by
-    refine (b.coroot_mem_or_neg_mem i).imp (fun h ↦ ?_) fun h ↦ ?_ <;>
-      exact mem_closure_coroot_restrictScalars'_iff.mpr h
+noncomputable def Base.restrictScalars' : (P.restrictScalars' K).Base :=
+  b.comapOfInjective (span K (range P.root)).subtype (span K (range P.coroot)).subtype
+    Subtype.val_injective Subtype.val_injective (P.restrictScalars_coe_root K)
+    (P.restrictScalars_coe_coroot K)
 
 /-- `Base.restrictScalars'` preserves the simple-root support. -/
 @[simp]
 theorem Base.support_restrictScalars' : (b.restrictScalars' K).support = b.support :=
-  (rfl)
+  Base.support_comapOfInjective ..
 
 /-- `Base.restrictScalars'` commutes with `Base.flip`. -/
 @[simp]
 theorem Base.flip_restrictScalars' :
     (b.restrictScalars' K).flip = b.flip.restrictScalars' K :=
-  Base.ext rfl
+  Base.ext (by simp)
 
 /-- The canonical identification between the support subtype of `b.restrictScalars' K` and that of
 `b` (`Base.support_restrictScalars'`). -/

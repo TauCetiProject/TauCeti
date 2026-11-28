@@ -7,15 +7,21 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Basic
 public import TauCeti.LinearAlgebra.RootSystem.CoefficientReflection
+import TauCeti.Algebra.Group.Submonoid.Closure
 
 /-!
-# Extension of scalars of a base
+# Pullback and extension of scalars of a base
 
-A base of a root pairing extends along an injective flat ring map to a base of the tensor-product
-root pairing, with the same simple-root indices. The positive cones, integer root coefficients,
-heights and Cartan matrices are preserved. No spanning hypothesis is imposed on the roots or
-coroots: in particular this construction applies to integral reductive root data with central
-directions in their character and cocharacter lattices.
+This file provides transport operations for `RootPairing.Base`:
+
+* Pulling back a base `b : P.Base` along injective `R`-linear maps `fM : M₀ →ₗ[R] M` and
+  `fN : N₀ →ₗ[R] N` compatible with roots and coroots over a faithful `R`-algebra `S`
+  (`RootPairing.Base.comapOfInjective`, `RootPairing.Base.support_comapOfInjective`).
+* Extending a base of a root pairing along an injective flat ring map to a base of the
+  tensor-product root pairing (`RootPairing.Base.baseChange`), with the same simple-root indices.
+  The positive cones, integer root coefficients, heights and Cartan matrices are preserved. No
+  spanning hypothesis is imposed on the roots or coroots: in particular this construction applies to
+  integral reductive root data with central directions in their character and cocharacter lattices.
 
 For an integral datum, `b.baseChange ℚ` gives its chosen base over the rationals. One can then
 restrict to the rational root and coroot spans using `Base.restrictScalars'` and decompose into
@@ -26,14 +32,50 @@ Mathlib's `Module.Flat.linearIndependent_one_tmul`.
 
 ## References
 
+* M. Demazure, A. Grothendieck (eds.), *Schémas en groupes III* (SGA 3), Exposé XXI, §§6.1, 6.7.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. VI, §1.
+* J. S. Milne, *Algebraic Groups*, Cambridge Studies in Advanced Mathematics 170, Appendix C,
+  C.43 and C.51.
 -/
 
 public section
 
-open Module TensorProduct Set
+open Function Module TensorProduct Set
 
 namespace RootPairing
+
+section BaseComap
+
+variable {ι R S M₀ N₀ M N : Type*} [CommRing R] [CommRing S] [Algebra R S] [FaithfulSMul R S]
+  [AddCommGroup M₀] [Module R M₀] [AddCommGroup N₀] [Module R N₀]
+  [AddCommGroup M] [Module S M] [Module R M] [IsScalarTower R S M]
+  [AddCommGroup N] [Module S N] [Module R N] [IsScalarTower R S N]
+  {P₀ : RootPairing ι R M₀ N₀} {P : RootPairing ι S M N} (b : P.Base)
+  (fM : M₀ →ₗ[R] M) (fN : N₀ →ₗ[R] N) (hfM : Injective fM) (hfN : Injective fN)
+  (hroot : ∀ i, fM (P₀.root i) = P.root i) (hcoroot : ∀ i, fN (P₀.coroot i) = P.coroot i)
+
+/-- **Pullback of a base `b : P.Base`** along injective `R`-linear maps `fM : M₀ →ₗ[R] M` and
+`fN : N₀ →ₗ[R] N` over a faithful `R`-algebra `S` compatible with roots and coroots. -/
+noncomputable def Base.comapOfInjective : P₀.Base where
+  support := b.support
+  linearIndepOn_root :=
+    (((funext hroot : fM ∘ P₀.root = P.root).symm ▸ b.linearIndepOn_root).restrict_scalars'
+      R).of_comp fM
+  linearIndepOn_coroot :=
+    (((funext hcoroot : fN ∘ P₀.coroot = P.coroot).symm ▸ b.linearIndepOn_coroot).restrict_scalars'
+      R).of_comp fN
+  root_mem_or_neg_mem i := (fM.toAddMonoidHom.mem_closure_image_or_neg_mem_iff hfM).mp <| by
+    simpa only [← image_comp, Function.comp_def, LinearMap.toAddMonoidHom_coe, hroot] using
+      b.root_mem_or_neg_mem i
+  coroot_mem_or_neg_mem i := (fN.toAddMonoidHom.mem_closure_image_or_neg_mem_iff hfN).mp <| by
+    simpa only [← image_comp, Function.comp_def, LinearMap.toAddMonoidHom_coe, hcoroot] using
+      b.coroot_mem_or_neg_mem i
+
+/-- `Base.comapOfInjective` leaves `support` unchanged. -/
+@[simp] theorem Base.support_comapOfInjective :
+    (b.comapOfInjective fM fN hfM hfN hroot hcoroot).support = b.support := (rfl)
+
+end BaseComap
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N] (P : RootPairing ι R M N)

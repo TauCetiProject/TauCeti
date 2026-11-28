@@ -27,7 +27,11 @@ automorphisms of `P` with those of `P.restrictScalars' L`.
   of `P.Aut` with that of `(P.restrictScalars' L).Aut`.
 * `RootPairing.Equiv.weightMap_restrictScalars'_rootSpanProj`: `P.rootSpanProj` intertwines an
   equivalence of root pairings with its restriction to the spans of the roots.
-* `RootPairing.rootSpanProj_mem_dominantChamber_iff`: `P.rootSpanProj` preserves dominance.
+* `RootPairing.rootSpanProj_mem_dominantChamber_iff`,
+  `RootPairing.rootSpanProj_mem_openDominantChamber_iff`,
+  `RootPairing.preimage_rootSpanProj_dominantChamber`, and
+  `RootPairing.preimage_rootSpanProj_openDominantChamber`: `P.rootSpanProj` preserves dominance
+  and identifies the closed and open dominant chambers as cylinder preimages.
 
 ## References
 
@@ -74,5 +78,29 @@ theorem rootSpanProj_mem_dominantChamber_iff [Preorder L] (b : P.Base) {x : M} :
     P.rootSpanProj x ∈ dominantChamber (P.restrictScalars' L) (b.restrictScalars' L) ↔
       x ∈ dominantChamber P b := by
   rw [mem_dominantChamber_restrictScalars'_self_iff, coe_rootSpanProj_mem_dominantChamber_iff]
+
+/-- The projection of a vector onto the span of the roots is strictly dominant for
+`b.restrictScalars' L` exactly when the vector is strictly dominant for `b`. -/
+theorem rootSpanProj_mem_openDominantChamber_iff [Preorder L] (b : P.Base) {x : M} :
+    P.rootSpanProj x ∈ openDominantChamber (P.restrictScalars' L) (b.restrictScalars' L) ↔
+      x ∈ openDominantChamber P b := by
+  rw [mem_openDominantChamber_restrictScalars'_self_iff,
+    coe_rootSpanProj_mem_openDominantChamber_iff]
+
+/-- **Cylinder description of the closed dominant chamber**: for a balanced root pairing over a
+preordered field, `dominantChamber P b` is the preimage under `P.rootSpanProj` (projection along
+the common coroot kernel) of that in the root-span root system `P.restrictScalars' L`. -/
+theorem preimage_rootSpanProj_dominantChamber [Preorder L] (b : P.Base) :
+    P.rootSpanProj ⁻¹' dominantChamber (P.restrictScalars' L) (b.restrictScalars' L) =
+      dominantChamber P b :=
+  Set.ext fun _ ↦ P.rootSpanProj_mem_dominantChamber_iff b
+
+/-- **Cylinder description of the open dominant chamber**: for a balanced root pairing over a
+preordered field, `openDominantChamber P b` is the preimage under `P.rootSpanProj` (projection
+along the common coroot kernel) of that in the root-span root system `P.restrictScalars' L`. -/
+theorem preimage_rootSpanProj_openDominantChamber [Preorder L] (b : P.Base) :
+    P.rootSpanProj ⁻¹' openDominantChamber (P.restrictScalars' L) (b.restrictScalars' L) =
+      openDominantChamber P b :=
+  Set.ext fun _ ↦ P.rootSpanProj_mem_openDominantChamber_iff b
 
 end RootPairing

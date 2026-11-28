@@ -35,6 +35,8 @@ construction of the Langlands dual group with its Galois action.
 * `RootPairing.Hom.flip` and `RootPairing.Equiv.flip`: the flip `Q.flip → P.flip` of a morphism,
   respectively an equivalence, `P → Q` of root pairings.
 * `RootPairing.Equiv.autFlip`: the group isomorphism `P.Aut ≃* P.flip.Aut`, `f ↦ (f⁻¹).flip`.
+* `RootPairing.Equiv.forwardCoweightHom`: the covariant coweight representation
+  `P.Aut →* (N ≃ₗ[R] N)`, sending `g` to `g.coweightEquiv.symm`.
 
 ## Main results
 
@@ -56,6 +58,9 @@ construction of the Langlands dual group with its Galois action.
   of `P` and `P.flip`.
 * `RootPairing.Equiv.autFlip_mem_stabilizer_iff`: `autFlip P f` stabilizes a set of root indices,
   such as the support of a base and hence of its flip, exactly when `f` does.
+* `RootPairing.Equiv.forwardCoweightHom_apply`, `RootPairing.Equiv.forwardCoweightHom_injective`
+  and `RootPairing.Equiv.forwardCoweightHom_reflection`: evaluation, faithfulness, and action on
+  reflections of the covariant coweight representation.
 
 ## References
 
@@ -345,6 +350,27 @@ theorem autFlip_mem_weylGroup_iff {f : P.Aut} :
   have h : (autFlip P).symm (autFlip P f) ∈ P.weylGroup :=
     autFlip_mem_weylGroup (P := P.flip) hf
   simpa only [MulEquiv.symm_apply_apply] using h
+
+/-- The covariant linear representation of `P.Aut` on the coweight space `N`, sending an
+automorphism `g` to the contragredient `g.coweightEquiv.symm` of its action on weights. It is the
+weight-space representation of `P.flip` pulled back along `RootPairing.Equiv.autFlip`. -/
+noncomputable def forwardCoweightHom (P : RootPairing ι R M N) : P.Aut →* (N ≃ₗ[R] N) :=
+  (weightHom P.flip).comp (autFlip P).toMonoidHom
+
+/-- `RootPairing.Equiv.forwardCoweightHom` sends an automorphism `g` to `g.coweightEquiv.symm`. -/
+@[simp] theorem forwardCoweightHom_apply {P : RootPairing ι R M N} (g : P.Aut) :
+    forwardCoweightHom P g = g.coweightEquiv.symm := weightEquiv_autFlip g
+
+/-- An automorphism of a root pairing is determined by its forward action on coweights. -/
+theorem forwardCoweightHom_injective (P : RootPairing ι R M N) :
+    Function.Injective (forwardCoweightHom P) :=
+  (weightHom_injective P.flip).comp (autFlip P).injective
+
+/-- The forward coweight action of a root reflection is the corresponding coreflection. -/
+theorem forwardCoweightHom_reflection (P : RootPairing ι R M N) (i : ι) :
+    forwardCoweightHom P (reflection P i) = P.coreflection i := by
+  ext y; rw [forwardCoweightHom_apply, LinearEquiv.symm_apply_eq,
+    reflection_coweightEquiv, coreflection_same]
 
 end Equiv
 

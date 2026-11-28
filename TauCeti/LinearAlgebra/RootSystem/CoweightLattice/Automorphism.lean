@@ -114,36 +114,27 @@ linear) automorphisms: `g` acts by `g.coweightEquiv.symm`, the contragredient of
 weights. It carries the root functional `αᵢ` to `α_{g i}` (`RootPairing.Equiv.root'_coweightEquiv`)
 and the coroot `αᵢ^∨` to `α_{g i}^∨` (`RootPairing.Equiv.coweightEquiv_symm_coroot`). -/
 noncomputable def coweightAffineHom : P.Aut →* (N ≃ᵃ[R] N) where
-  toFun g := g.coweightEquiv.symm.toAffineEquiv
-  map_one' := AffineEquiv.ext fun x ↦ by
-    rw [LinearEquiv.coe_toAffineEquiv, LinearEquiv.symm_apply_eq]
-    exact (LinearMap.congr_fun (Equiv.coweightEquiv_one P) x).symm
-  map_mul' g h := AffineEquiv.ext fun x ↦ by
-    -- `autFlip` turns the contravariant coweight maps into a homomorphism.
-    rw [AffineEquiv.coe_mul, Function.comp_apply, LinearEquiv.coe_toAffineEquiv,
-      LinearEquiv.coe_toAffineEquiv, LinearEquiv.coe_toAffineEquiv, ← Equiv.weightEquiv_autFlip,
-      ← Equiv.weightEquiv_autFlip, ← Equiv.weightEquiv_autFlip, map_mul, Equiv.mul_eq_comp,
-      Equiv.weightEquiv_comp_toLin, LinearEquiv.trans_apply]
+  toFun g := (Equiv.forwardCoweightHom P g).toAffineEquiv
+  map_one' := by rw [map_one]; rfl
+  map_mul' g h := by rw [map_mul]; rfl
 
 /-- An automorphism `g` acts on the coweight space by `g.coweightEquiv.symm`. -/
 @[simp]
 lemma coweightAffineHom_apply (g : P.Aut) (x : N) :
     P.coweightAffineHom g x = g.coweightEquiv.symm x :=
-  (rfl)
+  DFunLike.congr_fun (Equiv.forwardCoweightHom_apply g) x
 
 /-- The action of an automorphism on the coweight space is linear. -/
 @[simp]
 lemma linear_coweightAffineHom (g : P.Aut) :
     (P.coweightAffineHom g).linear = g.coweightEquiv.symm :=
-  (rfl)
+  Equiv.forwardCoweightHom_apply g
 
 /-- The reflection in `αᵢ` acts on the coweight space by the coreflection in `αᵢ^∨`. -/
 @[simp]
 lemma coweightAffineHom_reflection (i : ι) :
     P.coweightAffineHom (Equiv.reflection P i) = (P.coreflection i).toAffineEquiv :=
-  AffineEquiv.ext fun x ↦ by
-    rw [coweightAffineHom_apply, LinearEquiv.symm_apply_eq, LinearEquiv.coe_toAffineEquiv,
-      Equiv.reflection_coweightEquiv, coreflection_same]
+  congrArg LinearEquiv.toAffineEquiv (Equiv.forwardCoweightHom_reflection P i)
 
 /-! ### The action on `P∨ / Q∨` -/
 
@@ -161,9 +152,15 @@ noncomputable def coweightQuotientHom : P.Aut →*
       fun _ hx ↦ g.coweightEquiv_symm_apply_mem_corootSpan hx
     -- Both laws hold pointwise on representatives, by those of `RootPairing.coweightAffineHom`.
     map_one' := Submodule.linearMap_qext _ <| LinearMap.ext fun x ↦
-      congrArg Submodule.Quotient.mk <| Subtype.ext congr($(map_one P.coweightAffineHom) x.val)
+      congrArg Submodule.Quotient.mk <| Subtype.ext <| by
+        have h1 := congr($(map_one P.coweightAffineHom) x.val)
+        simp only [coweightAffineHom_apply, AffineEquiv.coe_one, id_eq] at h1
+        exact h1
     map_mul' g h := Submodule.linearMap_qext _ <| LinearMap.ext fun x ↦
-      congrArg Submodule.Quotient.mk <| Subtype.ext congr($(map_mul P.coweightAffineHom g h) x.val)
+      congrArg Submodule.Quotient.mk <| Subtype.ext <| by
+        have hm := congr($(map_mul P.coweightAffineHom g h) x.val)
+        simp only [coweightAffineHom_apply, AffineEquiv.coe_mul, Function.comp_apply] at hm
+        exact hm
           }
 
 /-- An automorphism `g` acts on `P∨ / (P∨ ∩ Q∨)` by sending the class of `λ` to the class of

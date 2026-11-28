@@ -39,7 +39,8 @@ this compares base change to the fibre ring `B ⊗[R] κ(p)` with base change to
 * `Module.Basis.range_mk_one_eq_span`: the unit pure tensors are the span over the original
   semiring of a base-changed basis.
 * `TensorProduct.unitTmulEquiv`: a flat module is equivalent to its unit-tensor image
-  under a faithful scalar extension.
+  under a faithful scalar extension, and its inclusion satisfies `IsBaseChange`
+  (`TensorProduct.isBaseChange_subtype_range_mk_one`).
 * `TensorProduct.free_range_mk_one`: the unit-tensor image of a free module is free.
 * `TensorProduct.cancelBaseChangeRight` and `TensorProduct.cancelBaseChangeLeft`: cancelling
   a scalar-extended algebra identifies two iterated scalar extensions.
@@ -275,6 +276,21 @@ instance free_range_mk_one [Module.Free R M] :
   Module.Free.of_equiv (unitTmulEquiv R K M)
 
 end CommSemiring
+
+section CommSemiringBaseChange
+
+variable [CommSemiring R] [CommSemiring K] [Algebra R K] [FaithfulSMul R K]
+  [AddCommMonoid M] [Module R M] [Module.Flat R M]
+
+/-- The inclusion of the unit-tensor submodule `1 ⊗ M` into `K ⊗[R] M` is a base change along
+`R → K` whenever `M` is flat over `R` and `K` is faithful over `R`. -/
+theorem isBaseChange_subtype_range_mk_one :
+    IsBaseChange K (LinearMap.range (mk R K M 1)).subtype :=
+  IsBaseChange.of_equiv ((unitTmulEquiv R K M).symm.baseChange R K _ M) fun x ↦ by
+    rw [LinearEquiv.baseChange_tmul, ← coe_unitTmulEquiv_apply,
+      LinearEquiv.apply_symm_apply, Submodule.coe_subtype]
+
+end CommSemiringBaseChange
 
 end TensorProduct
 

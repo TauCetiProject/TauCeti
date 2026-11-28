@@ -37,6 +37,7 @@ permutations of products and powers of automorphisms is recorded.
 
 ## Main results
 
+* `RootPairing.Hom.ext_weightMap`: a morphism of root pairings is determined by its weight map.
 * `RootPairing.Equiv.self_comp_symm` and `RootPairing.Equiv.symm_comp_self`: an equivalence
   composes with its inverse to the identity, in both orders.
 * `RootPairing.Equiv.symm_comp`: the inverse of a composite is the composite of the inverses in
@@ -69,7 +70,21 @@ permutations of products and powers of automorphisms is recorded.
 
 public section
 
-namespace RootPairing.Equiv
+namespace RootPairing
+
+/-- A morphism of root pairings is determined by its weight map. This generalizes
+`RootPairing.Hom.weightHom_injective` from endomorphisms to arbitrary morphisms. -/
+theorem Hom.ext_weightMap {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
+    {P : RootPairing ι R M N} {Q : RootPairing ι₂ R M₂ N₂} {f g : P.Hom Q}
+    (h : f.weightMap = g.weightMap) : f = g := by
+  ext x
+  · exact congr($h x)
+  · exact P.flip.toPerfPair.injective <| by
+      rw [← f.weight_coweight_transpose_apply, ← g.weight_coweight_transpose_apply, h]
+  · exact Q.root.injective <| by rw [← f.root_weightMap_apply, ← g.root_weightMap_apply, h]
+
+namespace Equiv
 
 variable {ι ι₂ ι₃ R M N M₂ N₂ M₃ N₃ : Type*} [CommRing R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
@@ -271,9 +286,8 @@ theorem weightMap_pow (σ : Aut P) (n : ℕ) : (σ ^ n).toHom.weightMap = σ.toH
 
 end Pow
 
-end RootPairing.Equiv
+end Equiv
 
-namespace RootPairing
 section MapDual
 
 variable {ι ι₂ R M N M₂ : Type*} [CommRing R] [AddCommGroup M] [Module R M]
@@ -320,4 +334,5 @@ noncomputable def equivMapDual : P.Equiv (P.mapDual e f) where
 @[simp] theorem equivMapDual_indexEquiv : (P.equivMapDual e f).indexEquiv = e := by rfl
 
 end MapDual
+
 end RootPairing

@@ -1,0 +1,258 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
+public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Basic
+import TauCeti.LinearAlgebra.RootSystem.EquivComp
+
+/-!
+# Extension of scalars of root-pairing morphisms and automorphisms
+
+For root pairings `P`, `Q` over a commutative ring `R` with finite free coweight spaces and a
+faithful `R`-algebra `S`, extending the weight and coweight maps by `S ⊗[R] -` lifts morphisms
+(`Hom.baseChange`), equivalences (`Equiv.baseChange`), and automorphisms (`autBaseChangeHom`),
+identifying `P.weylGroup` with `(P.baseChange S).weylGroup` with no spanning, finiteness of `ι`,
+or reducedness hypothesis (only `N` finite free).
+
+## Main definitions
+
+* `RootPairing.Hom.baseChange`, `RootPairing.Equiv.baseChange`, `RootPairing.autBaseChangeHom`:
+  scalar extension of morphisms, equivalences, and automorphisms along a faithful algebra.
+* `RootPairing.weylGroupBaseChangeMulEquiv`: the isomorphism
+  `P.weylGroup ≃* (P.baseChange S).weylGroup`.
+
+## Main results
+
+* `RootPairing.Hom.baseChange_injective`, `RootPairing.Equiv.baseChange_injective`, and
+  `RootPairing.autBaseChangeHom_injective`: scalar extension along a faithful algebra is injective.
+* `RootPairing.weylGroup_map_autBaseChangeHom` and
+  `RootPairing.autBaseChangeHom_mem_weylGroup_iff`: `autBaseChangeHom` maps `P.weylGroup` onto
+  `(P.baseChange S).weylGroup` and reflects Weyl-group membership.
+
+## References
+
+* M. Demazure, A. Grothendieck (eds.), *Schémas en groupes III* (SGA 3), Exposé XXI, §§6.1, 6.7.
+* N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. VI, §1.
+-/
+
+public section
+
+open Function Module Set TensorProduct
+
+namespace RootPairing
+
+section BaseChange
+
+variable {ι ι₂ ι₃ R M N M₂ N₂ M₃ N₃ : Type*} [CommRing R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
+  [AddCommGroup M₃] [Module R M₃] [AddCommGroup N₃] [Module R N₃]
+  (S : Type*) [CommRing S] [Algebra R S] [FaithfulSMul R S]
+
+namespace Hom
+
+variable {P : RootPairing ι R M N} {Q : RootPairing ι₂ R M₂ N₂}
+  {T : RootPairing ι₃ R M₃ N₃}
+  [Free R N] [Module.Finite R N] [Free R N₂] [Module.Finite R N₂]
+
+/-- **Extension of scalars of a morphism of root pairings.** The weight and coweight maps are
+extended `S`-linearly to `S ⊗[R] -`, and the root-index bijection is unchanged. -/
+noncomputable def baseChange (f : P.Hom Q) : (P.baseChange S).Hom (Q.baseChange S) where
+  weightMap := f.weightMap.baseChange S
+  coweightMap := f.coweightMap.baseChange S
+  indexEquiv := f.indexEquiv
+  weight_coweight_transpose := by
+    refine AlgebraTensorModule.ext fun b n₂ ↦ AlgebraTensorModule.ext fun a m ↦ ?_
+    simpa only [LinearMap.comp_apply, LinearMap.dualMap_apply, flip_toLinearMap,
+      LinearEquiv.coe_coe, LinearMap.toPerfPair_apply, LinearMap.flip_apply,
+      baseChange_toLinearMap, LinearMap.baseChange_tmul, LinearMap.baseChangePairing_tmul_tmul]
+      using congrArg (fun r ↦ a * b * algebraMap R S r)
+        (congr($(f.weight_coweight_transpose_apply P Q n₂) m))
+  root_weightMap := by ext i; simp [f.root_weightMap_apply]
+  coroot_coweightMap := by ext i; simp [f.coroot_coweightMap_apply]
+
+/-- The weight map of `f.baseChange S` is the base change of `f.weightMap`. -/
+@[simp] theorem baseChange_weightMap (f : P.Hom Q) :
+    (f.baseChange S).weightMap = f.weightMap.baseChange S := (rfl)
+
+/-- The coweight map of `f.baseChange S` is the base change of `f.coweightMap`. -/
+@[simp] theorem baseChange_coweightMap (f : P.Hom Q) :
+    (f.baseChange S).coweightMap = f.coweightMap.baseChange S := (rfl)
+
+/-- Scalar extension leaves the root-index bijection of a morphism unchanged. -/
+@[simp] theorem baseChange_indexEquiv (f : P.Hom Q) :
+    (f.baseChange S).indexEquiv = f.indexEquiv := (rfl)
+
+omit [Free R N₂] [Module.Finite R N₂] in
+variable (P) in
+/-- Scalar extension preserves the identity morphism. -/
+@[simp] theorem baseChange_id : (Hom.id P).baseChange S = Hom.id (P.baseChange S) :=
+  ext_weightMap LinearMap.baseChange_id
+
+/-- Scalar extension preserves composition of morphisms of root pairings. -/
+@[simp] theorem baseChange_comp [Free R N₃] [Module.Finite R N₃] (g : Q.Hom T) (f : P.Hom Q) :
+    (g.comp f).baseChange S = (g.baseChange S).comp (f.baseChange S) :=
+  ext_weightMap (LinearMap.baseChange_comp f.weightMap g.weightMap)
+
+/-- Extending scalars of morphisms along a faithful algebra is injective. -/
+theorem baseChange_injective : Injective (fun f : P.Hom Q ↦ f.baseChange S) := fun _ _ hfg ↦
+  ext_weightMap <| LinearMap.ext fun m ↦ Q.tensorProduct_mk_injective S <| by
+    simpa using congr($(congrArg Hom.weightMap hfg) (1 ⊗ₜ[R] m))
+
+end Hom
+
+namespace Equiv
+
+variable {P : RootPairing ι R M N} {Q : RootPairing ι₂ R M₂ N₂} {T : RootPairing ι₃ R M₃ N₃}
+  [Free R N] [Module.Finite R N] [Free R N₂] [Module.Finite R N₂]
+
+/-- **Extension of scalars of an equivalence of root pairings.** Both the weight and coweight
+equivalences extend to `S`-linear equivalences on `S ⊗[R] -`. -/
+noncomputable def baseChange (e : P.Equiv Q) : (P.baseChange S).Equiv (Q.baseChange S) where
+  toHom := e.toHom.baseChange S
+  bijective_weightMap := (e.weightEquiv.baseChange R S M M₂).bijective
+  bijective_coweightMap := (e.coweightEquiv.baseChange R S N₂ N).bijective
+
+/-- The morphism underlying `e.baseChange S` is the base change of `e.toHom`. -/
+@[simp] theorem baseChange_toHom (e : P.Equiv Q) :
+    (e.baseChange S).toHom = e.toHom.baseChange S := (rfl)
+
+/-- The weight equivalence of `e.baseChange S` is the base change of `e.weightEquiv`. -/
+@[simp] theorem baseChange_weightEquiv (e : P.Equiv Q) :
+    (e.baseChange S).weightEquiv = e.weightEquiv.baseChange R S M M₂ :=
+  LinearEquiv.toLinearMap_injective rfl
+
+/-- The coweight equivalence of `e.baseChange S` is the base change of `e.coweightEquiv`. -/
+@[simp] theorem baseChange_coweightEquiv (e : P.Equiv Q) :
+    (e.baseChange S).coweightEquiv = e.coweightEquiv.baseChange R S N₂ N :=
+  LinearEquiv.toLinearMap_injective rfl
+
+/-- The forward coweight equivalence `(e.baseChange S).coweightEquiv.symm` is the base change of
+`e.coweightEquiv.symm`. -/
+theorem baseChange_coweightEquiv_symm (e : P.Equiv Q) :
+    (e.baseChange S).coweightEquiv.symm = e.coweightEquiv.symm.baseChange R S N N₂ := by
+  rw [baseChange_coweightEquiv, LinearEquiv.baseChange_symm]
+
+omit [Free R N₂] [Module.Finite R N₂] in
+variable (P) in
+/-- Scalar extension preserves the identity equivalence. -/
+@[simp] theorem baseChange_id : (Equiv.id P).baseChange S = Equiv.id (P.baseChange S) :=
+  weightHom_injective _ <| LinearEquiv.toLinearMap_injective LinearMap.baseChange_id
+
+/-- Scalar extension preserves composition of equivalences of root pairings. -/
+@[simp] theorem baseChange_comp [Free R N₃] [Module.Finite R N₃]
+    (g : Q.Equiv T) (f : P.Equiv Q) :
+    (Equiv.comp g f).baseChange S = Equiv.comp (g.baseChange S) (f.baseChange S) :=
+  Equiv.ext (congrArg Hom.weightMap (Hom.baseChange_comp S g.toHom f.toHom))
+    (congrArg Hom.coweightMap (Hom.baseChange_comp S g.toHom f.toHom)) rfl
+
+/-- Scalar extension commutes with inverting an equivalence of root pairings. -/
+@[simp] theorem baseChange_symm (e : P.Equiv Q) :
+    (Equiv.symm P Q e).baseChange S =
+      Equiv.symm (P.baseChange S) (Q.baseChange S) (e.baseChange S) :=
+  Equiv.ext (AlgebraTensorModule.ext fun _ _ ↦ by simp)
+    (AlgebraTensorModule.ext fun _ _ ↦ by simp) rfl
+
+omit [Free R N₂] [Module.Finite R N₂] in
+/-- Scalar extension sends the reflection in `i` to the reflection of `P.baseChange S` in `i`. -/
+@[simp] theorem baseChange_reflection (i : ι) :
+    (reflection P i).baseChange S = reflection (P.baseChange S) i :=
+  weightHom_injective (P.baseChange S) <|
+    LinearEquiv.toLinearMap_injective <| AlgebraTensorModule.ext fun _ _ ↦ by simp
+
+/-- Extending scalars of equivalences along a faithful algebra is injective. -/
+theorem baseChange_injective : Injective (fun e : P.Equiv Q ↦ e.baseChange S) := fun _ _ h ↦
+  let hhom := Hom.baseChange_injective S (congrArg Equiv.toHom h)
+  Equiv.ext (congrArg Hom.weightMap hhom) (congrArg Hom.coweightMap hhom)
+    (congrArg Hom.indexEquiv hhom)
+
+end Equiv
+
+end BaseChange
+
+section AutBaseChange
+
+variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  (P : RootPairing ι R M N) (S : Type*) [CommRing S] [Algebra R S] [FaithfulSMul R S]
+  [Free R N] [Module.Finite R N]
+
+/-- **Extension of scalars of automorphisms**, as a group homomorphism
+`P.Aut →* (P.baseChange S).Aut`. -/
+noncomputable def autBaseChangeHom : P.Aut →* (P.baseChange S).Aut where
+  toFun g := g.baseChange S
+  map_one' := Equiv.baseChange_id S P
+  map_mul' g h := Equiv.baseChange_comp S g h
+
+/-- `RootPairing.autBaseChangeHom` acts by `RootPairing.Equiv.baseChange`. -/
+theorem autBaseChangeHom_apply (g : P.Aut) : P.autBaseChangeHom S g = g.baseChange S := (rfl)
+
+/-- Scalar extension of automorphisms along a faithful algebra is injective. -/
+theorem autBaseChangeHom_injective : Injective (P.autBaseChangeHom S) :=
+  Equiv.baseChange_injective S
+
+/-- The extended automorphism acts on pure weight tensors through the original weight action. -/
+@[simp] theorem autBaseChangeHom_smul_tmul (g : P.Aut) (a : S) (m : M) :
+    P.autBaseChangeHom S g • (a ⊗ₜ[R] m) = a ⊗ₜ[R] (g • m) :=
+  congr($(Equiv.baseChange_weightEquiv S g) (a ⊗ₜ[R] m)).trans (LinearEquiv.baseChange_tmul ..)
+
+/-- The forward coweight action of the extended automorphism acts on pure tensors through the
+forward coweight action of `g`. -/
+@[simp] theorem autBaseChangeHom_coweightEquiv_symm_tmul (g : P.Aut) (a : S) (n : N) :
+    (P.autBaseChangeHom S g).coweightEquiv.symm (a ⊗ₜ[R] n) =
+      a ⊗ₜ[R] g.coweightEquiv.symm n := by
+  rw [autBaseChangeHom_apply, Equiv.baseChange_coweightEquiv_symm, LinearEquiv.baseChange_tmul]
+
+/-- Scalar extension leaves the root-index permutation of an automorphism unchanged. -/
+@[simp] theorem autBaseChangeHom_indexEquiv (g : P.Aut) :
+    (P.autBaseChangeHom S g).indexEquiv = g.indexEquiv := (rfl)
+
+/-- Scalar extension sends each root reflection to the reflection of `P.baseChange S` in `i`. -/
+@[simp] theorem autBaseChangeHom_reflection (i : ι) :
+    P.autBaseChangeHom S (Equiv.reflection P i) = Equiv.reflection (P.baseChange S) i :=
+  Equiv.baseChange_reflection S i
+
+/-- **Scalar extension carries `P.weylGroup` onto `(P.baseChange S).weylGroup`.** -/
+theorem weylGroup_map_autBaseChangeHom :
+    P.weylGroup.map (P.autBaseChangeHom S) = (P.baseChange S).weylGroup := by
+  rw [weylGroup, weylGroup, MonoidHom.map_closure, ← range_comp]
+  exact congrArg Subgroup.closure (congrArg range (funext (P.autBaseChangeHom_reflection S)))
+
+/-- An extended automorphism lies in `(P.baseChange S).weylGroup` iff `g ∈ P.weylGroup`. -/
+@[simp] theorem autBaseChangeHom_mem_weylGroup_iff {g : P.Aut} :
+    P.autBaseChangeHom S g ∈ (P.baseChange S).weylGroup ↔ g ∈ P.weylGroup := by
+  rw [← P.weylGroup_map_autBaseChangeHom S,
+    Subgroup.mem_map_iff_mem (P.autBaseChangeHom_injective S)]
+
+/-- **Scalar extension identifies the Weyl group of `P` with that of `P.baseChange S`.** -/
+noncomputable def weylGroupBaseChangeMulEquiv : P.weylGroup ≃* (P.baseChange S).weylGroup :=
+  (P.weylGroup.equivMapOfInjective (P.autBaseChangeHom S) (P.autBaseChangeHom_injective S)).trans
+    (MulEquiv.subgroupCongr (P.weylGroup_map_autBaseChangeHom S))
+
+/-- Coercing `weylGroupBaseChangeMulEquiv` to `(P.baseChange S).Aut` applies `autBaseChangeHom`. -/
+@[simp] theorem coe_weylGroupBaseChangeMulEquiv_apply (w : P.weylGroup) :
+    (P.weylGroupBaseChangeMulEquiv S w : (P.baseChange S).Aut) = P.autBaseChangeHom S w := by
+  simp [weylGroupBaseChangeMulEquiv]
+
+/-- The Weyl-group isomorphism acts on pure tensors through the Weyl action of `P`. -/
+@[simp] theorem weylGroupBaseChangeMulEquiv_smul_tmul (w : P.weylGroup) (a : S) (m : M) :
+    P.weylGroupBaseChangeMulEquiv S w • (a ⊗ₜ[R] m) = a ⊗ₜ[R] (w • m) :=
+  P.autBaseChangeHom_smul_tmul S w a m
+
+/-- Scalar extension sends the indexed reflection `ofIdx P i` to `ofIdx (P.baseChange S) i`. -/
+@[simp] theorem weylGroupBaseChangeMulEquiv_ofIdx (i : ι) :
+    P.weylGroupBaseChangeMulEquiv S (weylGroup.ofIdx P i) = weylGroup.ofIdx (P.baseChange S) i :=
+  Subtype.ext (P.autBaseChangeHom_reflection S i)
+
+/-- The inverse Weyl-group isomorphism sends `ofIdx (P.baseChange S) i` to `ofIdx P i`. -/
+@[simp] theorem weylGroupBaseChangeMulEquiv_symm_ofIdx (i : ι) :
+    (P.weylGroupBaseChangeMulEquiv S).symm (weylGroup.ofIdx (P.baseChange S) i) =
+      weylGroup.ofIdx P i := by
+  rw [← P.weylGroupBaseChangeMulEquiv_ofIdx S i, MulEquiv.symm_apply_apply]
+
+end AutBaseChange
+
+end RootPairing
