@@ -8,7 +8,8 @@ module
 public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
-public import TauCeti.Algebra.Ring.CayleyChart
+public import TauCeti.Topology.Algebra.Ring.CayleyChart
+import TauCeti.Analysis.Normed.Ring.Units
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -87,14 +88,6 @@ lemma continuousOn_cayleyParam : ContinuousOn (cayleyParam j) {η : A | IsUnit (
   have h1 : ContinuousAt (fun η : A ↦ 1 + η) η := (continuous_const.add continuous_id).continuousAt
   exact ((((NormedRing.inverse_continuousAt hη.unit).comp_of_eq h1 hη.unit_spec.symm).mul
     continuousAt_const).mul h1).continuousWithinAt
-
-/-- The Cayley coordinate is continuous where `j + J` is invertible. -/
-lemma continuousOn_cayleyCoord : ContinuousOn (cayleyCoord j) {J : A | IsUnit (j + J)} := by
-  rw [cayleyCoord_eq_fun]
-  intro J hJ
-  exact ((continuous_const.sub continuous_id).continuousAt.mul
-    ((NormedRing.inverse_continuousAt hJ.unit).comp_of_eq
-      (continuous_const.add continuous_id).continuousAt hJ.unit_spec.symm)).continuousWithinAt
 
 variable (j) in
 /-- **The Cayley chart as a homeomorphism.** For a square root `j` of `-1` in a normed ring with

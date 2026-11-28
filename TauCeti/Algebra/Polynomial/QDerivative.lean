@@ -44,6 +44,9 @@ completion:
 ## Main definitions
 
 * `Polynomial.qDerivative q`: the `q`-derivative, an `R`-linear endomorphism of `R[X]`.
+* `Polynomial.adaptedQDerivative q`: the adapted Jackson `q`-derivative `(1 - q) • qDerivative q`
+  on `R[X]`, sending `X ^ n` to `(1 - q ^ n) X ^ (n - 1)` and giving the difference identity
+  `X * D'_q p = p - p(q X)`.
 
 The definition and its linearity proof follow Mathlib's `Polynomial.derivative`, with the factor
 `n` replaced by the `q`-integer `[n]_q`.
@@ -245,6 +248,74 @@ theorem eq_qDerivative_iff (hq : IsLeftRegular (q - 1)) {f g : R[X]} :
   simp only [mul_assoc, coeff_C_mul, coeff_X_mul] at hn
   exact hq hn
 
+/-- The **adapted Jackson `q`-derivative** `D'_q = (1 - q) D_q` on polynomials, sending `X ^ n` to
+`(1 - q ^ n) X ^ (n - 1)`. -/
+def adaptedQDerivative : R[X] →ₗ[R] R[X] :=
+  (1 - q) • qDerivative q
+
+/-- Unfolding definition of `Polynomial.adaptedQDerivative`. -/
+theorem adaptedQDerivative_apply (p : R[X]) :
+    adaptedQDerivative q p = (1 - q) • qDerivative q p :=
+  (rfl)
+
+/-- Coefficient formula for `Polynomial.adaptedQDerivative`:
+`(D'_q p).coeff n = (1 - q ^ (n + 1)) * p.coeff (n + 1)`. -/
+@[simp] theorem coeff_adaptedQDerivative (p : R[X]) (n : ℕ) :
+    (adaptedQDerivative q p).coeff n = (1 - q ^ (n + 1)) * p.coeff (n + 1) := by
+  rw [adaptedQDerivative_apply, Algebra.smul_def, algebraMap_eq, coeff_C_mul, coeff_qDerivative,
+    mul_left_comm, mul_neg_geom_sum, mul_comm]
+
+/-- The adapted Jackson derivative of a constant polynomial is `0`. -/
+@[simp] theorem adaptedQDerivative_C (a : R) : adaptedQDerivative q (C a) = 0 := by
+  simp [adaptedQDerivative_apply]
+
+/-- The adapted Jackson derivative of `1` is `0`. -/
+@[simp] theorem adaptedQDerivative_one : adaptedQDerivative q (1 : R[X]) = 0 := by
+  simpa using adaptedQDerivative_C q 1
+
+/-- The adapted Jackson derivative of `X` is `C (1 - q)`. -/
+@[simp] theorem adaptedQDerivative_X : adaptedQDerivative q (X : R[X]) = C (1 - q) := by
+  simp [adaptedQDerivative_apply, Algebra.smul_def]
+
+/-- `D'_q (X ^ n) = C (1 - q ^ n) * X ^ (n - 1)`. -/
+theorem adaptedQDerivative_X_pow (n : ℕ) :
+    adaptedQDerivative q (X ^ n : R[X]) = C (1 - q ^ n) * X ^ (n - 1) := by
+  rw [adaptedQDerivative_apply, Algebra.smul_def, algebraMap_eq, qDerivative_X_pow,
+    ← mul_assoc, ← map_mul, mul_neg_geom_sum]
+
+/-- `D'_q (X ^ (n + 1)) = C (1 - q ^ (n + 1)) * X ^ n`. -/
+@[simp] theorem adaptedQDerivative_X_pow_succ (n : ℕ) :
+    adaptedQDerivative q (X ^ (n + 1) : R[X]) = C (1 - q ^ (n + 1)) * X ^ n := by
+  ext k
+  rw [coeff_adaptedQDerivative, coeff_X_pow, coeff_C_mul_X_pow]
+  by_cases h : k = n <;> simp [h]
+
+/-- At `q = 1`, the adapted Jackson derivative vanishes identically. -/
+@[simp] theorem adaptedQDerivative_base_one : adaptedQDerivative (1 : R) = 0 := by ext p n; simp
+
+/-- Difference identity: `X * D'_q p = p - p(q X)`. -/
+theorem X_mul_adaptedQDerivative (p : R[X]) :
+    X * adaptedQDerivative q p = p - p.comp (C q * X) := by
+  have h : X * adaptedQDerivative q p = -(C (q - 1) * X * qDerivative q p) := by
+    rw [adaptedQDerivative_apply, Algebra.smul_def, algebraMap_eq]
+    have hsub : C (1 - q) = -C (q - 1) := by rw [← map_neg, neg_sub]
+    rw [hsub]
+    ring
+  rw [h, C_sub_one_mul_X_mul_qDerivative, neg_sub]
+
+/-- **Twisted Leibniz rule** for the polynomial adapted Jackson derivative:
+`D'_q (p * r) = D'_q p * r + p(q X) * D'_q r`. -/
+theorem adaptedQDerivative_mul (p r : R[X]) :
+    adaptedQDerivative q (p * r) =
+      adaptedQDerivative q p * r + p.comp (C q * X) * adaptedQDerivative q r := by
+  simp only [adaptedQDerivative_apply, qDerivative_mul, smul_add, smul_mul_assoc, mul_smul_comm]
+
 end CommRing
+
+/-- The adapted Jackson derivative commutes with coefficient ring homomorphisms. -/
+@[simp]
+theorem adaptedQDerivative_map [CommRing R] [CommRing S] (φ : R →+* S) (q : R) (p : R[X]) :
+    adaptedQDerivative (φ q) (p.map φ) = (adaptedQDerivative q p).map φ := by
+  ext n; simp
 
 end Polynomial

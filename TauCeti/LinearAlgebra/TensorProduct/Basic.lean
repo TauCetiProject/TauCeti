@@ -37,6 +37,7 @@ across `M ⊗[R] N` can also be moved across `M ⊗[R] (N ⊗[K] P)`.
   of `M`.
 * `LinearMap.tmul_mem_ker_rTensor`: tensoring an element of the kernel of `f` with any `w` gives
   an element of the kernel of `f ⊗ 𝟙`.
+* `TauCeti.tensorProductMulLeft`: multiply the first two algebra factors in `S ⊗ (S ⊗ M)`.
 * `LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
 * `LinearMap.tensorComponentEquiv`: tensors as linear maps from the dual of a finite projective
   right factor.
@@ -604,6 +605,34 @@ theorem map_sum_right {ι : Type*} (s : Finset ι) (f : M →ₗ[R] P) (g : ι �
   simp only [← mapBilinear_apply, map_sum]
 
 end TensorProduct
+
+namespace TauCeti
+
+variable {R : Type*} [CommSemiring R] (S M : Type*) [Semiring S] [Algebra R S]
+  [AddCommMonoid M] [Module R M]
+
+/-- Multiply the first two factors of `S ⊗[R] (S ⊗[R] M)`, leaving the module factor fixed. -/
+noncomputable def tensorProductMulLeft : S ⊗[R] (S ⊗[R] M) →ₗ[R] S ⊗[R] M :=
+  (LinearMap.mul' R S).rTensor M ∘ₗ (TensorProduct.assoc R S S M).symm.toLinearMap
+
+/-- Express multiplication of the first two factors using reassociation and tensoring. -/
+theorem tensorProductMulLeft_def : tensorProductMulLeft (R := R) S M =
+    (LinearMap.mul' R S).rTensor M ∘ₗ (TensorProduct.assoc R S S M).symm.toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem tensorProductMulLeft_tmul (s t : S) (m : M) :
+    tensorProductMulLeft S M (s ⊗ₜ[R] (t ⊗ₜ[R] m)) = (s * t) ⊗ₜ[R] m := by
+  simp [tensorProductMulLeft]
+
+@[simp]
+theorem tensorProductMulLeft_one_tmul (x : S ⊗[R] M) :
+    tensorProductMulLeft S M (1 ⊗ₜ[R] x) = x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul s m => simp
+  | add x y hx hy => simp [tmul_add, hx, hy]
+
+end TauCeti
 
 namespace TensorProduct
 
