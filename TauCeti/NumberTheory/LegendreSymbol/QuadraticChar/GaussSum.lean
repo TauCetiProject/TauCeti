@@ -80,11 +80,25 @@ theorem sum_addChar_sq_eq_gaussSum (hF : ringChar F ≠ 2) {ψ : AddChar F R} (h
   simp only [MulChar.ringHomComp_apply, eq_intCast]
 
 /-- **The square of the quadratic Gauss sum**: for a nontrivial additive character `ψ` of a
-finite field of odd characteristic with values in a domain of characteristic other than `2`,
-`(∑_x ψ(x²))² = χ(-1) q`. -/
-theorem sum_addChar_sq_sq (hF : ringChar F ≠ 2) (hR : ringChar R ≠ 2) {ψ : AddChar F R}
-    (hψ : ψ ≠ 1) :
+finite field of odd characteristic, `(∑_x ψ(x²))² = χ(-1) q`. -/
+theorem sum_addChar_sq_sq (hF : ringChar F ≠ 2) {ψ : AddChar F R} (hψ : ψ ≠ 1) :
     (∑ x, ψ (x ^ 2)) ^ 2 = quadraticChar F (-1) * Fintype.card F := by
+  rcases eq_or_ne (ringChar R) 2 with hR | hR
+  · -- In characteristic `2`, `χ` reads as `1` off `0`, so both sides are `1`.
+    have : CharP R 2 := ringChar.of_eq hR
+    have hχ1 {a : F} (ha : a ≠ 0) : (quadraticChar F a : R) = 1 := by
+      rcases quadraticChar_dichotomy ha with h | h <;> simp [h, CharTwo.neg_eq]
+    have h0 := AddChar.sum_eq_zero_of_ne_one hψ
+    rw [← add_sum_erase _ _ (mem_univ 0), AddChar.map_zero_eq_one, add_comm,
+      ← eq_neg_iff_add_eq_zero] at h0
+    have hS : ∑ x, ψ (x ^ 2) = -1 := by
+      rw [sum_addChar_sq_eq_gaussSum hF hψ, gaussSum, ← add_sum_erase _ _ (mem_univ 0), ← h0]
+      simp only [MulChar.ringHomComp_apply, eq_intCast, quadraticChar_zero, Int.cast_zero,
+        zero_mul, zero_add]
+      exact sum_congr rfl fun a ha ↦ by rw [hχ1 (ne_of_mem_erase ha), one_mul]
+    obtain ⟨k, hk⟩ := Nat.odd_iff.mpr (FiniteField.odd_card_of_char_ne_two hF)
+    rw [hS, hχ1 (neg_ne_zero.mpr one_ne_zero), hk]
+    simp [CharTwo.two_eq_zero]
   have hχ : (quadraticChar F).ringHomComp (Int.castRingHom R) ≠ 1 := by
     obtain ⟨a, ha⟩ := quadraticChar_exists_neg_one' hF
     refine MulChar.ne_one_iff.mpr ⟨a, ?_⟩
