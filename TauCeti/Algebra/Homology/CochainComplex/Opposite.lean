@@ -25,6 +25,7 @@ namespace CochainComplex
 variable {C : Type*} [Category* C] [HasZeroMorphisms C]
 
 /-- Opposition identifies quasi-isomorphisms in degree `-i` with those in degree `i`. -/
+@[simp]
 theorem quasiIsoAt_opEquivalence_map_iff [CategoryWithHomology C]
     {K L : CochainComplex C ℤ} (f : K ⟶ L) (i : ℤ) :
     QuasiIsoAt ((opEquivalence C).functor.map f.op) i ↔ QuasiIsoAt f (-i) := by
