@@ -34,7 +34,6 @@ subgroup is the orthogonal group: these are the matrices whose transpose is a tw
   invertible matrix is inverted by its transpose.
 * `Equiv.star_reindexGL`, `Equiv.map_reindexGL_unitarySubgroup`: reindexing rows and columns
   commutes with the star and maps the unitary subgroup onto the unitary subgroup.
-* `Equiv.map_reindexGL`: reindexing commutes with a change of coefficients.
 * `Equiv.star_reindexGL_mul_reindex_mul_reindexGL`: congruence commutes with reindexing.
 * `Equiv.reindexGL_mem_unitaryGroupOf_iff`, `Equiv.map_reindexGL_unitaryGroupOf`: more generally,
   reindexing maps the unitary group `Matrix.unitaryGroupOf A` of a sesquilinear form onto that of
@@ -116,11 +115,6 @@ theorem star_reindexGL_mul_reindex_mul_reindexGL [Star R] (M : GL n R) (A : Matr
       Matrix.reindex e e (star (M : Matrix n n R) * A * (M : Matrix n n R)) := by
   simp only [coe_reindexGL, Matrix.reindex_apply, Matrix.star_eq_conjTranspose,
     Matrix.conjTranspose_submatrix, Matrix.submatrix_mul_equiv]
-
-/-- **Reindexing commutes with a change of coefficients** applied entrywise. -/
-theorem map_reindexGL {S T : Type*} [CommRing S] [CommRing T] (f : S →+* T) (M : GL n S) :
-    GeneralLinearGroup.map f (e.reindexGL S M) = e.reindexGL T (GeneralLinearGroup.map f M) :=
-  Units.ext <| by simp [Matrix.submatrix_map]
 
 variable {e R} in
 /-- **Reindexing preserves the unitary group of a form**: reindexing an invertible matrix `M` along

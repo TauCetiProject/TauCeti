@@ -307,9 +307,9 @@ theorem rationalEmbedding_reindex {δ : unitaryGroupOf (V.reindex e).gram}
     {γ : unitaryGroupOf V.gram} (hδ : (δ : GL κ E) = e.reindexGL E γ) :
     (V.reindex e).rationalEmbedding δ =
       adelicUnitaryGroup.reindexEquiv E e s (V.rationalEmbedding γ) := by
-  refine Subtype.ext (Prod.ext ?_ ?_) <;>
-  simp only [coe_rationalEmbedding, frame_reindex, hδ, Equiv.map_reindexGL,
-    adelicUnitaryGroup.coe_reindexEquiv, ← map_inv, ← map_mul]
+  refine Subtype.ext (Prod.ext (Units.ext ?_) (Units.ext ?_)) <;>
+  simp [coe_rationalEmbedding, frame_reindex, hδ, Equiv.coe_reindexGL,
+    adelicUnitaryGroup.coe_reindexEquiv, submatrix_map]
 
 /-- **The rational points of a reindexed space** are the reindexed rational points:
 `Γ_{V.reindex e}` is the image of `Γ_V` under the reindexing `G(s) ≃* G(s ∘ e.symm)`. -/
