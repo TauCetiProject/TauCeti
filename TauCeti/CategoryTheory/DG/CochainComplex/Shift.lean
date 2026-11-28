@@ -334,17 +334,6 @@ theorem dgApp_shiftAddIso_hom_add_zero (a : ℤ) (K : CochainComplex C ℤ) :
   exact congrArg Cochain.ofHom
     (CategoryTheory.shiftFunctorAdd_add_zero_hom_app a K)
 
-/-- On a native dg simplex, shift every object and apply the signed shift to each coherence. -/
-theorem shiftFunctor_mapDGNerveSimplex_coh (a : ℤ) {n : ℕ}
-    (x : DGNerve.Simplex R (CochainComplex C ℤ) n) (i j : Fin (n + 1))
-    (S : Finset (Fin (n + 1))) (d : ℤ) (hij : i ≤ j) (hS : S ⊆ Finset.Ioo i j)
-    (hd : d + S.card = 0) :
-    ((shiftFunctor R a).mapDGNerveSimplex x).coh i j S d hij hS hd =
-      (a * d).negOnePow •
-        (x.coh i j S d hij hS hd : Cochain (x.obj i) (x.obj j) d).shift a :=
-  ((shiftFunctor R a).mapDGNerveSimplex_coh x i j S d hij hS hd).trans
-    (dgMap_shiftFunctor R a _)
-
 end CochainComplexDG
 
 namespace KInjectiveDGCategory
