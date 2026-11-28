@@ -79,17 +79,29 @@ private lemma sequenceDifference_op :
         (opCoproductIsoProduct X.obj).inv :=
   rfl
 
+omit [Preadditive T] in
+@[reassoc (attr := simp)]
+private lemma opCoproductIsoProduct_inv_comp_ι_op (n : ℕ) :
+    (opCoproductIsoProduct X.obj).inv ≫ (Sigma.ι X.obj n).op =
+      Pi.π (fun k : ℕ ↦ X.op.obj (op k)) n :=
+  opCoproductIsoProduct_inv_comp_ι X.obj n
+
+omit [Preadditive T] in
+@[reassoc]
+private lemma opCoproductIsoProduct_hom_comp_π_op (n : ℕ) :
+    (opCoproductIsoProduct X.obj).hom ≫ Pi.π (fun k : ℕ ↦ X.op.obj (op k)) n =
+      (Sigma.ι X.obj n).op :=
+  opCoproductIsoProduct_hom_comp_π n
+
 @[reassoc (attr := simp)]
 lemma ι_sequenceDifference (n : ℕ) :
     Sigma.ι X.obj n ≫ X.sequenceDifference =
       Sigma.ι X.obj n - X.map (homOfLE (Nat.le_add_right n 1)) ≫ Sigma.ι X.obj (n + 1) :=
   Quiver.Hom.op_inj <| by
-    have hπ := X.op.towerDifference_π n
-    dsimp only [Functor.op_obj, Functor.op_map, Quiver.Hom.unop_op] at hπ
-    rw [op_comp, sequenceDifference_op, Category.assoc, Category.assoc,
-      opCoproductIsoProduct_inv_comp_ι (Z := X.obj), hπ, Preadditive.comp_sub,
-      opCoproductIsoProduct_hom_comp_π (Z := X.obj),
-      opCoproductIsoProduct_hom_comp_π_assoc (Z := X.obj), ← op_comp, op_sub]
+    simp only [op_comp, op_sub, sequenceDifference_op, Category.assoc,
+      opCoproductIsoProduct_inv_comp_ι_op, X.op.towerDifference_π, Preadditive.comp_sub,
+      opCoproductIsoProduct_hom_comp_π_op, opCoproductIsoProduct_hom_comp_π_op_assoc,
+      Functor.op_map, Quiver.Hom.unop_op]
 
 private lemma towerDifference_eq_zero_of_sequenceDifference_comp_eq_zero {Y : T}
     {ψ : (∐ X.obj) ⟶ Y} (w : X.sequenceDifference ≫ ψ = 0) :
@@ -104,19 +116,12 @@ lemma sequenceDifference_comp_eq_zero_iff {Y : T} (ψ : (∐ X.obj) ⟶ Y) :
     X.sequenceDifference ≫ ψ = 0 ↔
       ∀ n, X.map (homOfLE (Nat.le_add_right n 1)) ≫ Sigma.ι X.obj (n + 1) ≫ ψ =
         Sigma.ι X.obj n ≫ ψ := by
-  have hop : X.sequenceDifference ≫ ψ = 0 ↔
-      (ψ.op ≫ (opCoproductIsoProduct X.obj).hom) ≫ X.op.towerDifference = 0 := by
-    refine ⟨X.towerDifference_eq_zero_of_sequenceDifference_comp_eq_zero, fun h ↦
-      Quiver.Hom.op_inj ?_⟩
-    rw [op_comp, op_zero, sequenceDifference_op]
-    simp [← Category.assoc, h]
-  rw [hop, X.op.comp_towerDifference_eq_zero_iff]
-  refine forall_congr' fun n ↦ ?_
-  dsimp only [Functor.op_obj, Functor.op_map, Quiver.Hom.unop_op]
-  rw [Category.assoc, Category.assoc, opCoproductIsoProduct_hom_comp_π_assoc (Z := X.obj),
-    opCoproductIsoProduct_hom_comp_π (Z := X.obj), ← Category.assoc, ← op_comp, ← op_comp,
-    ← op_comp]
-  exact Quiver.Hom.op_inj.eq_iff
+  refine ⟨fun h n ↦ ?_, fun h ↦ Limits.Sigma.hom_ext _ _ fun n ↦ ?_⟩
+  · have h' := Sigma.ι X.obj n ≫= h
+    simp only [ι_sequenceDifference_assoc, Preadditive.sub_comp, Category.assoc, comp_zero,
+      sub_eq_zero] at h'
+    exact h'.symm
+  · simp [ι_sequenceDifference_assoc, Preadditive.sub_comp, h n]
 
 variable {X} in
 /-- A morphism out of `∐ X.obj` annihilating the sequence–difference map defines a cocone over
@@ -205,34 +210,10 @@ def isColimitCokernelCoforkOfIsColimit {c : Cocone X} (hc : IsColimit c) :
 lemma sequenceDifference_naturality {X Y : ℕ ⥤ T} [HasCoproduct X.obj] [HasCoproduct Y.obj]
     (α : X ⟶ Y) :
     X.sequenceDifference ≫ Limits.Sigma.map (fun n ↦ α.app n) =
-      Limits.Sigma.map (fun n ↦ α.app n) ≫ Y.sequenceDifference := by
-  apply Quiver.Hom.op_inj
-  have hpi : (Limits.Sigma.map fun n : ℕ ↦ α.app n).op ≫ (opCoproductIsoProduct X.obj).hom =
-      (opCoproductIsoProduct Y.obj).hom ≫ Limits.Pi.map fun n ↦ (α.app n).op := by
-    ext n
-    simp [opCoproductIsoProduct_hom_comp_π, opCoproductIsoProduct_hom_comp_π_assoc]
-  have hpi_inv : Limits.Pi.map (fun n ↦ (α.app n).op) ≫ (opCoproductIsoProduct X.obj).inv =
-      (opCoproductIsoProduct Y.obj).inv ≫ (Limits.Sigma.map fun n ↦ α.app n).op := by
-    rw [Iso.comp_inv_eq, Category.assoc, hpi, Iso.inv_hom_id_assoc]
-  have hnat : Y.op.towerDifference ≫ Limits.Pi.map (fun n ↦ (α.app n).op) =
-      Limits.Pi.map (fun n ↦ (α.app n).op) ≫ X.op.towerDifference :=
-    towerDifference_naturality (NatTrans.op α)
-  calc
-    (X.sequenceDifference ≫ Limits.Sigma.map fun n ↦ α.app n).op
-        = ((Limits.Sigma.map fun n ↦ α.app n).op ≫ (opCoproductIsoProduct X.obj).hom) ≫
-            X.op.towerDifference ≫ (opCoproductIsoProduct X.obj).inv := by
-          simp [op_comp, sequenceDifference_op, Category.assoc]
-    _ = (opCoproductIsoProduct Y.obj).hom ≫
-          (Limits.Pi.map (fun n ↦ (α.app n).op) ≫ X.op.towerDifference) ≫
-            (opCoproductIsoProduct X.obj).inv := by
-          rw [hpi, Category.assoc, Category.assoc]
-    _ = (opCoproductIsoProduct Y.obj).hom ≫
-          Y.op.towerDifference ≫
-            (Limits.Pi.map (fun n ↦ (α.app n).op) ≫ (opCoproductIsoProduct X.obj).inv) := by
-          rw [← hnat, Category.assoc]
-    _ = (Limits.Sigma.map (fun n ↦ α.app n) ≫ Y.sequenceDifference).op := by
-          rw [hpi_inv]
-          simp [op_comp, sequenceDifference_op, Category.assoc]
+      Limits.Sigma.map (fun n ↦ α.app n) ≫ Y.sequenceDifference :=
+  Limits.Sigma.hom_ext _ _ fun n ↦ by
+    simp [ι_sequenceDifference_assoc, Preadditive.sub_comp, Preadditive.comp_sub,
+      α.naturality_assoc]
 
 /-- An additive functor `F` maps the `n`-th summand inclusion followed by `X.sequenceDifference`
 to `F.map (Sigma.ι X.obj n) - F.map (X.map _) ≫ F.map (Sigma.ι X.obj (n + 1))`. -/
@@ -251,14 +232,14 @@ lemma sigmaComparison_comp_map_sequenceDifference {D : Type*} [Category* D] [Pre
     sigmaComparison F X.obj ≫ F.map X.sequenceDifference =
       (X ⋙ F).sequenceDifference ≫ sigmaComparison F X.obj := by
   refine Limits.Sigma.hom_ext _ _ fun n ↦ ?_
-  -- `Sigma.ι (fun b ↦ F.obj (X.obj b)) n` and `Sigma.ι (X ⋙ F).obj n` are definitionally equal
-  -- by `Functor.comp_obj` and eta, which `rw` cannot bridge across the dependent `HasCoproduct`
-  -- instance; `change` aligns both sides with `(X ⋙ F).obj`.
-  change Sigma.ι (X ⋙ F).obj n ≫ _ = Sigma.ι (X ⋙ F).obj n ≫ _
   have hι (k : ℕ) : Sigma.ι (X ⋙ F).obj k ≫ sigmaComparison F X.obj = F.map (Sigma.ι X.obj k) :=
     ι_comp_sigmaComparison F X.obj k
-  rw [ι_sequenceDifference_assoc, Preadditive.sub_comp, Category.assoc, hι, hι,
-    Functor.comp_map, ← Category.assoc, hι, map_ι_comp_map_sequenceDifference]
+  -- `Sigma.ι (fun b ↦ F.obj (X.obj b)) n` and `Sigma.ι (X ⋙ F).obj n` are definitionally equal
+  -- by `Functor.comp_obj` and eta, which `simp`/`rw` cannot bridge across the dependent
+  -- `HasCoproduct` instance; `change` aligns both sides with `(X ⋙ F).obj`.
+  change Sigma.ι (X ⋙ F).obj n ≫ _ = Sigma.ι (X ⋙ F).obj n ≫ _
+  rw [← Category.assoc, hι, map_ι_comp_map_sequenceDifference]
+  simp [ι_sequenceDifference_assoc, Preadditive.sub_comp, hι]
 
 end SequenceDifference
 

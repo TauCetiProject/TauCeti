@@ -230,7 +230,10 @@ theorem milnorObjToLim_naturality {Y : ℕ ⥤ T} [HasCoproduct Y.obj] {M' : T}
   have hcomm2 : ψ ≫ φ.hom₃ = φ.hom₂ ≫ ψ' := φ.comm₂
   have hcomm : (Sigma.ι X.obj n ≫ ψ) ≫ φ.hom₃ = α.app n ≫ Sigma.ι Y.obj n ≫ ψ' := by
     rw [Category.assoc, hcomm2, hφ₂, Sigma.ι_map_assoc]
-  simpa [-Functor.comp_obj] using F.map_op_apply_eq_of_comp_eq hcomm u
+  simp only [LinearMap.comp_apply, ModuleTower.limπ_apply, coe_milnorObjToLim_apply,
+    ModuleTower.coe_limMap_apply, ModuleTower.productMap_apply, Functor.whiskerRight_app,
+    NatTrans.op_app]
+  exact F.map_op_apply_eq_of_comp_eq hcomm u
 
 section Additive
 
@@ -303,10 +306,14 @@ theorem milnorLimOneToObj_naturality {Y : ℕ ⥤ T} [HasCoproduct Y.obj] {M' : 
         (α.app n)⟦(1 : ℤ)⟧' ≫ (Sigma.ι Y.obj n)⟦(1 : ℤ)⟧' := by
       rw [← (shiftFunctor T (1 : ℤ)).map_comp, hφ₁, Sigma.ι_map,
         (shiftFunctor T (1 : ℤ)).map_comp]
-    simpa [eY, -Functor.comp_obj, -Cofan.mk_pt] using (F.map_op_apply_eq_of_comp_eq hsq y).symm
+    simp only [ModuleTower.productMap_apply, Functor.whiskerRight_app, NatTrans.op_app,
+      eY, IsColimit.cofanOpToPiLinearEquiv_apply, Cofan.inj]
+    exact (F.map_op_apply_eq_of_comp_eq hsq y).symm
   have hL : F.milnorLimOneToObj htY (Submodule.Quotient.mk (eY y)) = F.map δ'.op y :=
     congrArg (F.map δ'.op) (eY.symm_apply_apply y)
-  simpa [hprod, hL] using (F.map_op_apply_eq_of_comp_eq φ.comm₃ y).symm
+  simp only [LinearMap.comp_apply, Submodule.mkQ_apply, hL, ModuleTower.limOneMap_mk, hprod,
+    milnorLimOneToObj_mk_map]
+  exact (F.map_op_apply_eq_of_comp_eq φ.comm₃ y).symm
 
 end Additive
 
