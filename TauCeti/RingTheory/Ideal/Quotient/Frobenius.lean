@@ -24,6 +24,12 @@ The main case is `I = (ϖ)` and `J = (ϖ ^ p)` for an element `ϖ` with `ϖ ^ p 
 (Scholze, *Étale cohomology of diamonds*, Definition 3.1). When `A` is integrally closed in a ring
 in which `ϖ` becomes a unit, this map is automatically injective.
 
+When moreover `J ≤ I`, the reduction `A ⧸ J → A ⧸ I` and `frobeniusQuot` compose, in either
+order, to the `p`-th power map. Hence the kernel `I ⧸ J` of the reduction is invisible to maps out
+of a perfect monoid or a perfect ring of characteristic `p`: such maps into `A ⧸ I` lift uniquely
+to `A ⧸ J`. This is how maps from perfect rings into `A ⧸ 𝔡`, for an ideal `𝔡` of elements whose
+`p`-th powers are divisible by `p`, reduce to maps into `A ⧸ p`.
+
 ## Main definitions
 
 * `Ideal.frobeniusQuot`: the ring homomorphism `A ⧸ I →+* A ⧸ J`, `[x] ↦ [x ^ p]`.
@@ -33,6 +39,11 @@ in which `ϖ` becomes a unit, this map is automatically injective.
 
 * `Ideal.frobeniusQuot_surjective_iff`, `Ideal.frobeniusQuot_injective_iff`: elementwise forms of
   surjectivity and injectivity.
+* `Ideal.frobeniusQuot_factor`, `Ideal.factor_frobeniusQuot`: for `J ≤ I`, both composites with
+  the reduction `A ⧸ J → A ⧸ I` are the `p`-th power maps.
+* `Ideal.bijective_factor_comp_monoidHom`, `Ideal.bijective_factor_comp_ringHom`: for `J ≤ I`,
+  composition with the reduction `A ⧸ J → A ⧸ I` is a bijection on monoid maps out of a perfect
+  monoid, and on ring maps out of a perfect ring of characteristic `p`.
 * `TauCeti.frobeniusModPow_surjective_iff`, `TauCeti.frobeniusModPow_injective_iff`: the same for
   `frobeniusModPow`, as divisibility conditions.
 * `TauCeti.frobeniusModPow_injective`: `frobeniusModPow` is injective when `A` is integrally closed
@@ -94,6 +105,62 @@ theorem frobeniusQuot_injective_iff :
   · obtain ⟨y, rfl⟩ := Quotient.mk_surjective y
     rw [frobeniusQuot_mk, Quotient.eq_zero_iff_mem] at hy
     exact Quotient.eq_zero_iff_mem.mpr (h y hy)
+
+/-! ### Maps out of perfect monoids and rings -/
+
+/-- For `J ≤ I`, reducing from `A ⧸ J` to `A ⧸ I` and then applying `frobeniusQuot` is the `p`-th
+power map of `A ⧸ J`. -/
+@[simp]
+theorem frobeniusQuot_factor (hJI : J ≤ I) (x : A ⧸ J) :
+    frobeniusQuot I J p hpJ hIJ (Quotient.factor hJI x) = x ^ p := by
+  obtain ⟨x, rfl⟩ := Quotient.mk_surjective x
+  rw [Quotient.factor_mk, frobeniusQuot_mk, map_pow]
+
+/-- For `J ≤ I`, applying `frobeniusQuot` and then reducing from `A ⧸ J` to `A ⧸ I` is the `p`-th
+power map of `A ⧸ I`. -/
+@[simp]
+theorem factor_frobeniusQuot (hJI : J ≤ I) (x : A ⧸ I) :
+    Quotient.factor hJI (frobeniusQuot I J p hpJ hIJ x) = x ^ p := by
+  obtain ⟨x, rfl⟩ := Quotient.mk_surjective x
+  rw [frobeniusQuot_mk, Quotient.factor_mk, map_pow]
+
+include hpJ hIJ in
+/-- **Monoid maps out of a perfect monoid do not see an ideal killed by Frobenius.** Let `J ≤ I`
+with `p ∈ J` and `x ^ p ∈ J` for every `x ∈ I`. For a commutative monoid `M` on which `x ↦ x ^ p`
+is bijective, composition with the reduction `A ⧸ J → A ⧸ I` is a bijection from monoid maps
+`M →* A ⧸ J` to monoid maps `M →* A ⧸ I`. The inverse sends `ψ` to
+`x ↦ frobeniusQuot (ψ (x ^ (1 / p)))`. -/
+theorem bijective_factor_comp_monoidHom (hJI : J ≤ I) {M : Type*} [CommMonoid M]
+    [PerfectRing M p] :
+    Function.Bijective fun φ : M →* A ⧸ J ↦ (Quotient.factor hJI : A ⧸ J →* A ⧸ I).comp φ := by
+  let F : A ⧸ I →* A ⧸ J := frobeniusQuot I J p hpJ hIJ
+  let r : M →* M := (powMulEquiv M p).symm.toMonoidHom
+  refine ⟨fun φ ψ h ↦ MonoidHom.ext fun x ↦ ?_, fun ψ ↦ ⟨(F.comp ψ).comp r,
+    MonoidHom.ext fun x ↦ ?_⟩⟩
+  · -- `φ` and `ψ` agree on `p`-th powers, and every element is the `p`-th power of `r x`.
+    have h' : φ (r x) ^ p = ψ (r x) ^ p := by
+      simpa [F] using congrArg (fun g : M →* A ⧸ I ↦ F (g (r x))) h
+    rw [← powMulEquiv_symm_pow_p M p x, map_pow, map_pow]
+    exact h'
+  · simp only [MonoidHom.comp_apply, F, r, MonoidHom.coe_ofClass, factor_frobeniusQuot]
+    rw [← map_pow]
+    simp
+
+include hpJ hIJ in
+/-- **Ring maps out of a perfect ring do not see an ideal killed by Frobenius.** Let `J ≤ I` with
+`p ∈ J` and `x ^ p ∈ J` for every `x ∈ I`. For a perfect ring `k` of characteristic `p`,
+composition with the reduction `A ⧸ J → A ⧸ I` is a bijection from ring maps `k →+* A ⧸ J` to ring
+maps `k →+* A ⧸ I`. The inverse sends `ψ` to `frobeniusQuot ∘ ψ ∘ Frob⁻¹`. -/
+theorem bijective_factor_comp_ringHom (hJI : J ≤ I) {k : Type*} [CommSemiring k] [ExpChar k p]
+    [PerfectRing k p] :
+    Function.Bijective fun φ : k →+* A ⧸ J ↦ (Quotient.factor hJI).comp φ := by
+  refine ⟨fun φ ψ h ↦ RingHom.toMonoidHom_injective <|
+    (bijective_factor_comp_monoidHom hpJ hIJ hJI).1 (MonoidHom.ext fun x ↦ congr($h x)),
+    fun ψ ↦ ⟨((frobeniusQuot I J p hpJ hIJ).comp ψ).comp (frobeniusEquiv k p).symm.toRingHom,
+      RingHom.ext fun x ↦ ?_⟩⟩
+  simp only [RingHom.comp_apply, factor_frobeniusQuot]
+  rw [← map_pow]
+  simp
 
 end Ideal
 

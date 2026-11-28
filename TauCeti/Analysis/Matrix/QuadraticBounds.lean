@@ -23,7 +23,11 @@ For a single matrix, `Matrix.toQuadraticForm'_eq_mul_norm_sq` identifies `A.toQu
 a one-dimensional index type with `A default default * ‖ξ‖²`, while
 `Matrix.toQuadraticForm'_le_sum_abs_mul_sq` gives the general explicit upper bound
 `A.toQuadraticForm' ξ ≤ (∑ᵢⱼ |Aᵢⱼ|) ‖ξ‖²`, so a bound on the entries of a coefficient field is an
-upper ellipticity bound (`Matrix.toQuadraticForm'_le_of_forall_abs_le`). Along the segment from
+upper ellipticity bound (`Matrix.toQuadraticForm'_le_of_forall_abs_le`). Conversely, the diagonal
+entries are values of the form (`Matrix.toQuadraticForm'_single`), so quadratic bounds
+`0 ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` give `0 ≤ tr A ≤ card ι * Λ`
+(`Matrix.trace_nonneg_of_toQuadraticForm'_nonneg`,
+`Matrix.trace_le_card_mul_of_toQuadraticForm'_le`). Along the segment from
 the identity to a matrix with bounds `λ` and `Λ`, the bounds `min 1 λ` and `max 1 Λ` hold
 (`Matrix.min_one_mul_norm_sq_le_toQuadraticForm'_lineMap` and
 `Matrix.toQuadraticForm'_lineMap_le_max_one_mul_norm_sq`); this is the ellipticity of the
@@ -93,6 +97,32 @@ theorem Matrix.toQuadraticForm'_lineMap_le_max_one_mul_norm_sq {ι : Type*} [Fin
     mul_le_mul_of_nonneg_right (le_max_right _ _) hξ
   nlinarith [mul_le_mul_of_nonneg_left hM₁ (sub_nonneg.2 hs.2),
     mul_le_mul_of_nonneg_left (hA.trans hM₂) hs.1]
+
+/-- The quadratic form of a matrix at a standard basis vector is the corresponding diagonal
+entry. -/
+@[simp]
+theorem Matrix.toQuadraticForm'_single {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
+    (A : Matrix ι ι R) (i : ι) :
+    A.toQuadraticForm' (Pi.single i 1) = A i i := by
+  simp [Matrix.toQuadraticForm'_apply]
+
+/-- A matrix whose quadratic form is nonnegative has nonnegative trace: its diagonal entries are
+values of the form. -/
+theorem Matrix.trace_nonneg_of_toQuadraticForm'_nonneg {R ι : Type*} [CommRing R] [PartialOrder R]
+    [IsOrderedAddMonoid R] [Fintype ι] [DecidableEq ι] {A : Matrix ι ι R}
+    (hA : ∀ x, 0 ≤ A.toQuadraticForm' x) : 0 ≤ A.trace :=
+  Finset.sum_nonneg fun i _ ↦ by simpa using hA (Pi.single i 1)
+
+/-- An upper quadratic bound `ξᵀ A ξ ≤ Λ ‖ξ‖²` bounds the trace of `A` by `card ι * Λ`: its
+diagonal entries are values of the form at unit vectors. -/
+theorem Matrix.trace_le_card_mul_of_toQuadraticForm'_le {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {A : Matrix ι ι ℝ} {Lam : ℝ}
+    (hA : ∀ ξ : EuclideanSpace ℝ ι, A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) :
+    A.trace ≤ Fintype.card ι * Lam := by
+  calc A.trace = ∑ i, A i i := rfl
+    _ ≤ ∑ _i : ι, Lam := Finset.sum_le_sum fun i _ ↦ by
+      simpa using hA (EuclideanSpace.single i 1)
+    _ = Fintype.card ι * Lam := by simp
 
 namespace TauCeti
 

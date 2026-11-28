@@ -27,6 +27,8 @@ matrices intertwines them.
 
 Submatrices of an outer product `vecMulVec u v` are outer products of the reindexed vectors.
 The outer product of two constant vectors is the constant matrix of their product.
+An outer product has vanishing `2 × 2` minors; conversely, a matrix with vanishing `2 × 2` minors
+and a unit entry is the outer product of a column and a rescaled row through that entry.
 
 A scalar acting on the right factor of an outer product `vecMulVec (Pi.single i 1) v` may be pulled
 out to the left without any commutativity, since the left factor has entries `0` and `1` only.
@@ -64,6 +66,11 @@ its entry covariance `∑ p, E p a b * E p c d`. If a rectangular matrix `U` int
 * `Matrix.submatrix_vecMulVec`: a submatrix of an outer product is the outer product of the
   reindexed vectors.
 * `Matrix.vecMulVec_const_const`: the outer product of constant vectors is a constant matrix.
+* `Matrix.map_vecMulVec`: a multiplicative map sends an outer product to the outer product of the
+  images of the vectors.
+* `Matrix.vecMulVec_apply_mul_vecMulVec_apply`: the `2 × 2` minors of an outer product vanish.
+* `Matrix.eq_vecMulVec_of_isUnit_apply`: conversely, a matrix with vanishing `2 × 2` minors and a
+  unit entry `A i j` is the outer product of its column `j` and its row `i` divided by `A i j`.
 * `Matrix.transpose_mul_map_op`, `Matrix.transpose_mul_map_unop`, `Matrix.op_comp_mulVec`,
   `Matrix.transpose_map_op_map_ringHom_op`: transposing a product and passing to or from the
   opposite ring reverses the factors, intertwines `mulVec` with `vecMul`, and commutes with
@@ -227,6 +234,30 @@ theorem submatrix_vecMulVec {α l m n o : Type*} [Mul α] (u : m → α) (v : n 
     (g : o → n) : (vecMulVec u v).submatrix f g = vecMulVec (u ∘ f) (v ∘ g) := by
   ext
   simp [vecMulVec_apply]
+
+/-- The entrywise image of an outer product under a multiplicative map is the outer product of the
+images of the vectors. -/
+@[simp]
+theorem map_vecMulVec {F α β m n : Type*} [Mul α] [Mul β] [FunLike F α β] [MulHomClass F α β]
+    (f : F) (u : m → α) (v : n → α) : (vecMulVec u v).map f = vecMulVec (f ∘ u) (f ∘ v) := by
+  ext
+  simp [vecMulVec_apply]
+
+/-- The `2 × 2` minors of an outer product vanish. -/
+theorem vecMulVec_apply_mul_vecMulVec_apply {α m n : Type*} [CommSemigroup α] (u : m → α)
+    (v : n → α) (i k : m) (j l : n) :
+    vecMulVec u v i j * vecMulVec u v k l = vecMulVec u v i l * vecMulVec u v k j := by
+  simp only [vecMulVec_apply]
+  ac_rfl
+
+/-- A matrix whose `2 × 2` minors vanish and whose entry `A i j` is a unit is the outer product of
+its column `j` and of its row `i` divided by `A i j`. -/
+theorem eq_vecMulVec_of_isUnit_apply {α m n : Type*} [CommMonoid α] {A : Matrix m n α}
+    (hA : ∀ i j k l, A i j * A k l = A i l * A k j) {i : m} {j : n} (h : IsUnit (A i j)) :
+    A = vecMulVec (A.col j) ((↑h.unit⁻¹ : α) • A.row i) := by
+  ext k l
+  rw [vecMulVec_apply, col_apply, Pi.smul_apply, row_apply, smul_eq_mul, mul_left_comm,
+    hA k j i l, mul_left_comm, h.val_inv_mul, mul_one]
 
 section MulOpposite
 

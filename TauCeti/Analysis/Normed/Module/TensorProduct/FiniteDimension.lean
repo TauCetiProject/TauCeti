@@ -19,6 +19,9 @@ Over a complete nontrivially normed field `𝕜`, finite dimensionality of `E` m
 `E ⊗[𝕜] F` are definite norms, and `TauCeti.ProjectiveTensor.toOperator 𝕜 E F` upgrades to a
 continuous linear equivalence `TauCeti.ProjectiveTensor.toOperatorEquiv`.
 
+Bases `b` of `E` and `c` of `F` give the basis `b i ⊗ c j` of `ProjectiveTensor 𝕜 E F`
+(`TauCeti.ProjectiveTensor.basis`).
+
 ## References
 
 * R. A. Ryan, *Introduction to Tensor Products of Banach Spaces*, Springer, 2002, §§2.1, 3.1.
@@ -111,6 +114,26 @@ instance ProjectiveTensor.instModuleFinite {𝕜 E F : Type*} [NormedField 𝕜]
     [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [Module.Finite 𝕜 F] :
     Module.Finite 𝕜 (ProjectiveTensor 𝕜 E F) :=
   Module.Finite.equiv (ProjectiveTensor.linearEquiv 𝕜 E F).symm
+
+section Basis
+
+variable {𝕜 E F ι κ : Type*} [NormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The basis `(b i ⊗ c j)` of the projective tensor product of `E` and `F` built from a basis `b`
+of `E` and a basis `c` of `F`. -/
+noncomputable def ProjectiveTensor.basis (b : Module.Basis ι 𝕜 E) (c : Module.Basis κ 𝕜 F) :
+    Module.Basis (ι × κ) 𝕜 (ProjectiveTensor 𝕜 E F) :=
+  (b.tensorProduct c).map (ProjectiveTensor.linearEquiv 𝕜 E F).symm
+
+/-- The vector of `ProjectiveTensor.basis b c` at `(i, j)` is the pure tensor `b i ⊗ c j`. -/
+@[simp]
+theorem ProjectiveTensor.basis_apply (b : Module.Basis ι 𝕜 E) (c : Module.Basis κ 𝕜 F)
+    (k : ι × κ) : ProjectiveTensor.basis b c k = ProjectiveTensor.mk (b k.1 ⊗ₜ[𝕜] c k.2) := by
+  rw [ProjectiveTensor.basis, Module.Basis.map_apply, Module.Basis.tensorProduct_apply,
+    ProjectiveTensor.linearEquiv_symm_apply]
+
+end Basis
 
 section NormedFiniteDimensional
 
