@@ -185,10 +185,10 @@ coefficients are the variables. Every model over a commutative ring is its image
 evaluation at its coefficients (`Model.map_universal`), and under no other ring homomorphism
 (`Model.map_universal_eq_iff`). -/
 noncomputable def universal (g : ℕ) : Model (MvPolynomial (Fin (2 * g + 3) ⊕ Fin (g + 2)) ℤ) g where
-  f := (universalPoly (2 * g + 2)).map (MvPolynomial.rename Sum.inl).toRingHom
-  h := (universalPoly (g + 1)).map (MvPolynomial.rename Sum.inr).toRingHom
-  natDegree_f_le := natDegree_map_le.trans (natDegree_universalPoly _).le
-  natDegree_h_le := natDegree_map_le.trans (natDegree_universalPoly _).le
+  f := (freePoly ℤ (2 * g + 2)).map (MvPolynomial.rename Sum.inl).toRingHom
+  h := (freePoly ℤ (g + 1)).map (MvPolynomial.rename Sum.inr).toRingHom
+  natDegree_f_le := natDegree_map_le.trans (natDegree_freePoly (R := ℤ)).le
+  natDegree_h_le := natDegree_map_le.trans (natDegree_freePoly (R := ℤ)).le
 
 @[simp]
 theorem coeffs_universal (g : ℕ) : (universal g).coeffs = MvPolynomial.X := by
@@ -210,10 +210,10 @@ theorem map_universal (W : Model R g) :
     (universal g).map (MvPolynomial.aeval (R := ℤ) W.coeffs : _ →+* R) = W := by
   ext : 1
   · simp only [map_f, universal, Polynomial.map_map]
-    convert map_universalPoly_of_natDegree_le W.natDegree_f_le using 2
+    convert map_aeval_coeff_freePoly (R := ℤ) W.natDegree_f_le using 2
     exact MvPolynomial.ringHom_ext (by simp) (by simp)
   · simp only [map_h, universal, Polynomial.map_map]
-    convert map_universalPoly_of_natDegree_le W.natDegree_h_le using 2
+    convert map_aeval_coeff_freePoly (R := ℤ) W.natDegree_h_le using 2
     exact MvPolynomial.ringHom_ext (by simp) (by simp)
 
 /-- **The universal property of the universal model.** A ring homomorphism specialises the
@@ -451,7 +451,7 @@ theorem Δ_of_h_eq_zero {W : Model R g} (hW : W.h = 0) :
     W.Δ = 2 ^ (4 * g) * W.f.formDiscr (2 * g + 2) := by
   -- The model `y² = Σ aᵢ xⁱ` over the domain `ℤ[a₀, …, a_{2g+2}]`, where `2` may be cancelled.
   let V : Model (MvPolynomial (Fin (2 * g + 3)) ℤ) g :=
-    ⟨universalPoly (2 * g + 2), 0, (natDegree_universalPoly _).le, by simp⟩
+    ⟨freePoly ℤ (2 * g + 2), 0, (natDegree_freePoly (R := ℤ)).le, by simp⟩
   have hV : V.Δ = 2 ^ (4 * g) * V.f.formDiscr (2 * g + 2) := by
     -- The cross term of `V` is the literal `0` in its definition.
     have hV0 : V.h = 0 := rfl
@@ -463,7 +463,7 @@ theorem Δ_of_h_eq_zero {W : Model R g} (hW : W.h = 0) :
     omega
   have hW' : V.map (MvPolynomial.aeval fun i : Fin (2 * g + 3) ↦ W.f.coeff i).toRingHom = W := by
     ext : 1
-    · exact map_universalPoly_of_natDegree_le W.natDegree_f_le
+    · exact map_aeval_coeff_freePoly (R := ℤ) W.natDegree_f_le
     · simp [V, hW]
   rw [← hW', map_Δ, hV, map_mul, map_pow, map_ofNat, map_f, formDiscr_map]
 

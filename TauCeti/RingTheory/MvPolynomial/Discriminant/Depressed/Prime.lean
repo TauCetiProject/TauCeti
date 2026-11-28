@@ -12,6 +12,7 @@ import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.RingTheory.Localization.Away.Basic
 import Mathlib.RingTheory.Prime
 import TauCeti.Algebra.MvPolynomial.Coeff
+import TauCeti.Algebra.MvPolynomial.Eval
 import TauCeti.RingTheory.MvPolynomial.Discriminant.Generic
 import TauCeti.RingTheory.MvPolynomial.Ideal
 import TauCeti.RingTheory.Polynomial.Resultant.RootCoordinates
@@ -189,28 +190,6 @@ theorem isUnit_of_C_dvd_depressedDiscr_of_three_le {R : Type*} [CommRing R] {m :
     ring
   exact hcop.isUnit_of_dvd' hdvd_m hdvd_m1
 
-/-- Evaluating an `MvPolynomial` by sending `j₀` to `Polynomial.X` and all other variables to `0`
-yields a univariate polynomial whose `X ^ k` coefficient is `P.coeff (Finsupp.single j₀ k)`. -/
-private theorem coeff_aeval_ite_X {A σ : Type*} [CommRing A] [DecidableEq σ]
-    (j₀ : σ) (P : MvPolynomial σ A) (k : ℕ) :
-    (MvPolynomial.aeval (fun j : σ ↦ if j = j₀ then (Polynomial.X : A[X]) else 0) P).coeff k =
-      P.coeff (Finsupp.single j₀ k) := by
-  induction P using MvPolynomial.induction_on generalizing k with
-  | C a =>
-    simp [Polynomial.coeff_C, MvPolynomial.coeff_C, eq_comm]
-  | add p q hp hq =>
-    simp [hp, hq]
-  | mul_X p i hp =>
-    rw [map_mul, MvPolynomial.aeval_X]
-    by_cases hi : i = j₀
-    · subst hi
-      simp only [↓reduceIte]
-      rcases k with _ | k
-      · simp [MvPolynomial.coeff_mul_X']
-      · rw [Polynomial.coeff_mul_X, hp k]
-        simp [Finsupp.single_add]
-    · simp [hi, MvPolynomial.coeff_mul_X']
-
 /-- Specializing the `X`-variable `⟨m - 3, _⟩` of `genericDepressed A m` (`3 ≤ m`) to
 `Polynomial.X` and all other variables to `0` produces `X ^ m + C X * X` over `A[X]`. -/
 private theorem map_aeval_single_X_genericDepressed (A : Type*) [CommSemiring A] {m : ℕ}
@@ -270,7 +249,8 @@ private theorem isRegular_depressedDiscr_quotient {R : Type*} [CommRing R] {m : 
       simp [u, pow_add]
     rw [← hu]
   have hunit : IsUnit ((depressedDiscr R₀ m).coeff (Finsupp.single j₀ m)) := by
-    rw [← coeff_aeval_ite_X j₀ (depressedDiscr R₀ m) m, hdiscr_val, Polynomial.coeff_monomial_same]
+    rw [← MvPolynomial.coeff_aeval_ite_X j₀ (depressedDiscr R₀ m) m, hdiscr_val,
+      Polynomial.coeff_monomial_same]
     exact u.isUnit
   exact MvPolynomial.isRegular_of_isRegular_coeff (Finsupp.single j₀ m) hunit.isRegular
 

@@ -21,7 +21,9 @@ polynomial of degree `n`), `Polynomial.freePoly R n` is the universal polynomial
 
 ## Main results
 
-* `Polynomial.coeff_freePoly`, `Polynomial.natDegree_freePoly`, `Polynomial.degree_freePoly`,
+* `Polynomial.coeff_freePoly`, `Polynomial.coeff_freePoly_fin`, `Polynomial.coeff_freePoly_zero`,
+  `Polynomial.coeff_freePoly_of_le`, `Polynomial.coeff_freePoly_of_lt`,
+  `Polynomial.natDegree_freePoly`, `Polynomial.degree_freePoly`, `Polynomial.leadingCoeff_freePoly`,
   `Polynomial.map_map_freePoly`, `Polynomial.map_freePoly_eq_iff`,
   `Polynomial.map_algHom_freePoly_eq_iff`, `Polynomial.map_aeval_coeff_freePoly`: coefficient,
   degree, base-change, and universal specialization lemmas for `Polynomial.freePoly`.
@@ -62,6 +64,26 @@ theorem coeff_freePoly (k : ℕ) :
   · exact Finset.sum_eq_zero fun i _ ↦
       ite_eq_right fun h : k = ↑i ↦ hk (h ▸ Nat.le_of_lt_succ i.isLt)
 
+/-- The `i`-th coefficient of `Polynomial.freePoly R n` is `MvPolynomial.X i`. -/
+@[simp]
+theorem coeff_freePoly_fin (i : Fin (n + 1)) :
+    (freePoly R n).coeff i = MvPolynomial.X i := by
+  rw [coeff_freePoly, dite_eq_left (Nat.lt_succ_iff.mp i.isLt)]
+
+/-- The constant coefficient of `Polynomial.freePoly R n` is `MvPolynomial.X 0`. -/
+@[simp]
+theorem coeff_freePoly_zero : (freePoly R n).coeff 0 = MvPolynomial.X 0 :=
+  coeff_freePoly_fin 0
+
+/-- The `k`-th coefficient of `Polynomial.freePoly R n` for `k ≤ n` is `MvPolynomial.X k`. -/
+theorem coeff_freePoly_of_le {k : ℕ} (hk : k ≤ n) :
+    (freePoly R n).coeff k = MvPolynomial.X ⟨k, Nat.lt_succ_of_le hk⟩ :=
+  coeff_freePoly_fin ⟨k, Nat.lt_succ_of_le hk⟩
+
+/-- `Polynomial.freePoly R n` has no coefficients beyond degree `n`. -/
+theorem coeff_freePoly_of_lt {k : ℕ} (hk : n < k) : (freePoly R n).coeff k = 0 := by
+  rw [coeff_freePoly, dite_eq_right hk.not_ge]
+
 /-- Over a nontrivial ring, `Polynomial.freePoly R n` has `natDegree` equal to `n`. -/
 @[simp]
 theorem natDegree_freePoly [Nontrivial R] : (freePoly R n).natDegree = n := by
@@ -79,6 +101,14 @@ theorem degree_freePoly [Nontrivial R] : (freePoly R n).degree = n := by
     have hc := congrArg (fun p : (MvPolynomial (Fin (n + 1)) R)[X] ↦ p.coeff n) h
     rw [coeff_freePoly, dite_eq_left le_rfl, coeff_zero] at hc
     exact MvPolynomial.X_ne_zero _ hc), natDegree_freePoly]
+
+/-- Over a nontrivial ring, the leading coefficient of `Polynomial.freePoly R n` is
+`MvPolynomial.X (Fin.last n)`. -/
+@[simp]
+theorem leadingCoeff_freePoly [Nontrivial R] :
+    (freePoly R n).leadingCoeff = MvPolynomial.X (Fin.last n) := by
+  rw [leadingCoeff, natDegree_freePoly]
+  exact coeff_freePoly_fin (Fin.last n)
 
 /-- Mapping the base ring commutes with forming `Polynomial.freePoly`. -/
 @[simp]
