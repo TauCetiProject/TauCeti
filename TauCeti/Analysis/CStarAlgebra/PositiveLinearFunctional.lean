@@ -9,12 +9,14 @@ public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import Mathlib.Analysis.Normed.Module.WeakDual
-public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
+public import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
+import Mathlib.Analysis.Normed.Operator.Mul
 import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
-# Norms of positive functionals on C⋆-algebras
+# Norms and compression of positive functionals on C⋆-algebras
 
 ## Pullback and lifting along star homomorphisms
 
@@ -70,6 +72,17 @@ These restate Mathlib's `PositiveContinuousLinearMap.norm_map_sq_le_opNorm_mul`,
 
 Finally, `WeakDual.ext_nonneg`: a functional on a C⋆-algebra is determined by its values on
 nonnegative elements, since these span the algebra.
+
+## Functional compression
+
+Compressing a weak-* dual functional `ω` by `v : A` yields `z ↦ ω (star v * z * v)` as a weak-*
+continuous linear map `TauCeti.compressFunctional v : WeakDual 𝕜 A →L[𝕜] WeakDual 𝕜 A`
+(`TauCeti.compressFunctional_apply`), defined via `WeakDual.precomp`, with composition and
+unital identity laws (`TauCeti.compressFunctional_comp`, `TauCeti.compressFunctional_one`), operator
+norm bound `TauCeti.norm_toStrongDual_compressFunctional_le`
+(`‖toStrongDual (compressFunctional v ω)‖ ≤ ‖toStrongDual ω‖ * ‖v‖ ^ 2`), preservation of
+positivity (`TauCeti.map_nonneg_compressFunctional`), and weak-* closed unit-ball preservation
+(`TauCeti.compressFunctional_mem_closedBall`).
 -/
 
 public section
@@ -360,3 +373,70 @@ theorem norm_toStrongDual_eq_map_one_of_map_nonneg {A : Type*} [CStarAlgebra A] 
     (monotone_toStrongDual_of_map_nonneg hφ)
 
 end WeakDual
+
+namespace TauCeti
+
+section Compress
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalSeminormedRing A] [StarRing A]
+  [NormedSpace 𝕜 A] [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A]
+
+/-- Compress a weak-* dual functional `ω : WeakDual 𝕜 A` by `v : A`, sending `z` to
+`ω (star v * z * v)`. -/
+noncomputable def compressFunctional (v : A) : WeakDual 𝕜 A →L[𝕜] WeakDual 𝕜 A :=
+  WeakDual.precomp (ContinuousLinearMap.mulLeftRight 𝕜 A (star v) v)
+
+/-- Compressing `ω` by `v` evaluates at `z` as `ω (star v * z * v)`. -/
+@[simp]
+theorem compressFunctional_apply (v : A) (ω : WeakDual 𝕜 A) (z : A) :
+    compressFunctional v ω z = ω (star v * z * v) := by
+  simp [compressFunctional]
+
+/-- Compressing by `v` after `w` sends `z ↦ ω (star w * (star v * z * v) * w)`, which is
+compressing by `v * w`. -/
+@[simp]
+theorem compressFunctional_comp (v w : A) :
+    (compressFunctional (𝕜 := 𝕜) v).comp (compressFunctional w) =
+      compressFunctional (v * w) :=
+  ContinuousLinearMap.ext fun ω => DFunLike.ext _ _ fun z => by
+    simp [star_mul, mul_assoc]
+
+/-- The operator norm of `compressFunctional v ω` is at most `‖toStrongDual ω‖ * ‖v‖ ^ 2`. -/
+theorem norm_toStrongDual_compressFunctional_le [NormedStarGroup A] (v : A)
+    (ω : WeakDual 𝕜 A) :
+    ‖WeakDual.toStrongDual (compressFunctional v ω)‖ ≤ ‖WeakDual.toStrongDual ω‖ * ‖v‖ ^ 2 := by
+  rw [compressFunctional, WeakDual.toStrongDual_precomp]
+  refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
+  have hmul := ContinuousLinearMap.opNorm_mulLeftRight_apply_apply_le 𝕜 A (star v) v
+  rw [norm_star v, ← sq] at hmul
+  exact mul_le_mul_of_nonneg_left hmul (norm_nonneg _)
+
+/-- Compressing a functional that is nonnegative on nonnegative elements preserves nonnegativity
+on nonnegative elements. -/
+theorem map_nonneg_compressFunctional [PartialOrder A] [StarOrderedRing A] [PartialOrder 𝕜]
+    {v : A} {ω : WeakDual 𝕜 A} (hω : ∀ z : A, 0 ≤ z → 0 ≤ ω z) {z : A} (hz : 0 ≤ z) :
+    0 ≤ compressFunctional v ω z := by
+  rw [compressFunctional_apply]
+  exact hω _ (star_left_conjugate_nonneg hz v)
+
+/-- If `‖toStrongDual ω‖ ≤ 1` and `‖v‖ ≤ 1`, then `compressFunctional v ω` lies in the weak-*
+closed unit ball `toStrongDual ⁻¹' Metric.closedBall 0 1`. -/
+theorem compressFunctional_mem_closedBall [NormedStarGroup A] {v : A} (hv : ‖v‖ ≤ 1)
+    {ω : WeakDual 𝕜 A} (hω : ‖WeakDual.toStrongDual ω‖ ≤ 1) :
+    compressFunctional v ω ∈ WeakDual.toStrongDual ⁻¹' Metric.closedBall 0 1 := by
+  simp only [Set.mem_preimage, Metric.mem_closedBall, dist_zero_right]
+  calc ‖WeakDual.toStrongDual (compressFunctional v ω)‖
+      ≤ ‖WeakDual.toStrongDual ω‖ * ‖v‖ ^ 2 := norm_toStrongDual_compressFunctional_le v ω
+    _ ≤ 1 * 1 ^ 2 := by gcongr
+    _ = 1 := by norm_num
+
+end Compress
+
+/-- In a unital ring, compressing by `1` is the identity map on `WeakDual 𝕜 A`. -/
+@[simp]
+theorem compressFunctional_one {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [SeminormedRing A]
+    [StarRing A] [NormedSpace 𝕜 A] [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A] :
+    compressFunctional (𝕜 := 𝕜) (1 : A) = ContinuousLinearMap.id 𝕜 (WeakDual 𝕜 A) :=
+  ContinuousLinearMap.ext fun ω => DFunLike.ext _ _ fun z => by simp
+
+end TauCeti

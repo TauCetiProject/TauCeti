@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Ring.Basic
+import TauCeti.Topology.MetricSpace.Equicontinuity
 import Mathlib.Algebra.Ring.Idempotent
 
 /-!
@@ -17,11 +18,13 @@ of norm `< 1` to be `0` and one within `< 1` of `1` to be `1`), including its fo
 `‖a * b‖ₑ ≤ ‖a‖ₑ * ‖b‖ₑ` for the extended norm (`TauCeti.eNorm_mul_le`), exact positive-power
 norms without `NormOneClass` (so `‖qⁿ‖ < 1 ↔ ‖q‖ < 1` for `n ≠ 0`, `TauCeti.norm_pow_lt_one_iff`),
 an estimate for `‖w - 1‖` with `‖w‖ = 1` when the norm is
-multiplicative, convergence to `0` of finite partial products when factors tend to `0` cofinitely
-(`TauCeti.tendsto_finsetProd_cofinite_zero`), and norm bounds for powers of units — including the
-shell lemma `Units.exists_lt_norm_zpow_lt` showing that the norms of integer powers of a unit `u`
-with `‖u‖ < 1` in a nontrivial normed ring visit every open interval `(a, b)` with `0 ≤ a` and
-`a * ‖u⁻¹‖ < b`.
+multiplicative, the commutator bound `‖a * b - b * a‖ ≤ 2 * ‖a‖ * ‖b‖`
+(`TauCeti.norm_commutator_le`), the density criterion for asymptotic centrality along eventually
+norm-bounded filters (`TauCeti.tendsto_commutator_of_dense`), convergence to `0` of finite partial
+products when factors tend to `0` cofinitely (`TauCeti.tendsto_finsetProd_cofinite_zero`), and norm
+bounds for powers of units — including the shell lemma `Units.exists_lt_norm_zpow_lt` showing that
+the norms of integer powers of a unit `u` with `‖u‖ < 1` in a nontrivial normed ring visit every
+open interval `(a, b)` with `0 ≤ a` and `a * ‖u⁻¹‖ < b`.
 
 The affine estimate `TauCeti.sub_mul_mem_closedBall_of_norm_le` bounds the distance of
 `w₀ - w₁ * u` from `w₀` using a bound on the norm of `u`.
@@ -331,6 +334,30 @@ theorem ne_zero_of_norm_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass 
     (hz : ‖z - 1‖ < 1) : z ≠ 0 := by
   rintro rfl
   simp at hz
+
+/-- In a nonunital seminormed ring, the norm of the ring commutator `a * b - b * a` is bounded by
+`2 * ‖a‖ * ‖b‖`. -/
+theorem norm_commutator_le {R : Type*} [NonUnitalSeminormedRing R] (a b : R) :
+    ‖a * b - b * a‖ ≤ 2 * ‖a‖ * ‖b‖ :=
+  calc ‖a * b - b * a‖ ≤ ‖a * b‖ + ‖b * a‖ := norm_sub_le _ _
+    _ ≤ ‖a‖ * ‖b‖ + ‖b‖ * ‖a‖ := add_le_add (norm_mul_le _ _) (norm_mul_le _ _)
+    _ = 2 * ‖a‖ * ‖b‖ := by rw [mul_comm ‖b‖, ← two_mul, mul_assoc]
+
+/-- If `l` is eventually norm-bounded in a nonunital seminormed ring `R` and the commutator
+`e * x - x * e` tends to `0` along `l` for every `x` in a dense set `s`, then `e * a - a * e → 0`
+along `l` for every `a : R`. -/
+theorem tendsto_commutator_of_dense {R : Type*} [NonUnitalSeminormedRing R]
+    {l : Filter R} {C : ℝ} (hC : ∀ᶠ e in l, ‖e‖ ≤ C) {s : Set R} (hs : Dense s)
+    (h : ∀ x ∈ s, Filter.Tendsto (fun e => e * x - x * e) l (nhds 0)) (a : R) :
+    Filter.Tendsto (fun e => e * a - a * e) l (nhds 0) := by
+  refine Metric.tendsto_of_dense_of_eventually_dist_le (F := fun e x => e * x - x * e)
+    (f := 0) (C := 2 * C) ?_ hs a tendsto_const_nhds h
+  refine hC.mono fun e he x y => ?_
+  rw [dist_eq_norm, dist_eq_norm]
+  have hsub : (e * x - x * e) - (e * y - y * e) = e * (x - y) - (x - y) * e := by
+    simp only [mul_sub, sub_mul]; abel
+  rw [hsub]
+  exact (norm_commutator_le e (x - y)).trans (by gcongr)
 
 /-- An element of norm less than `1` is not `1`, that is, `1 - x ≠ 0`. -/
 theorem one_sub_ne_zero_of_norm_lt_one {R : Type*} [SeminormedRing R] [NormOneClass R] {x : R}

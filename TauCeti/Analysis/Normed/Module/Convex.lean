@@ -33,6 +33,9 @@ convex set containing `ball x r`, this yields `Convex.ball_add_smul_sub_subset`.
 homothety with the opposite ratio sends it into `sᶜ ∩ ball x r`
 (`Convex.ball_sub_smul_sub_subset_compl_inter_ball`).
 
+Replacing every member of a filter by its real convex hull preserves limits of real-linear maps
+into real seminormed spaces (`Filter.Tendsto.lift'_convexHull`).
+
 Similarly, in a proper real normed space, if a set `Ω` is star-convex about every point of
 `Metric.ball x₀ ρ`, then for every strictly smaller radius `r < ρ` and every `x ∈ Ω`, the closed
 convex hull `closure (convexHull ℝ (insert x (Metric.closedBall x₀ r)))` is contained in `Ω`
@@ -182,6 +185,17 @@ theorem Convex.ball_add_smul_sub_subset {E : Type*} [SeminormedAddCommGroup E] [
     (ht₀ : 0 ≤ t) (ht : t ≤ 1) : Metric.ball (x + t • (y - x)) ((1 - t) * r) ⊆ s :=
   (TauCeti.ball_add_smul_sub_subset_interior_of_forall_starConvex
     (fun _ hz => hs.starConvex (hball hz)) (subset_closure hy) ht₀ ht).trans interior_subset
+
+/-- If an `ℝ`-linear map `f` into a real seminormed space tends to `y` along `l`, then it still
+tends to `y` along the real convexification `l.lift' (convexHull ℝ)`. -/
+theorem Filter.Tendsto.lift'_convexHull {B E : Type*} [AddCommMonoid B] [Module ℝ B]
+    [SeminormedAddCommGroup E] [NormedSpace ℝ E] {l : Filter B} {f : B →ₗ[ℝ] E} {y : E}
+    (h : Filter.Tendsto f l (nhds y)) :
+    Filter.Tendsto f (l.lift' (convexHull ℝ)) (nhds y) := by
+  rw [Metric.tendsto_nhds] at h ⊢
+  intro ε hε
+  exact Filter.eventually_of_mem (Filter.mem_lift' (h ε hε)) fun _ hx =>
+    convexHull_min subset_rfl ((convex_ball y ε).linear_preimage f) hx
 
 /-- Let `s` be a convex set containing `ball z ρ`, and let `x ∈ closure s`. For
 `‖z - x‖ + ρ ≤ R` and `0 ≤ r ≤ R`, the image of `ball z ρ` under the homothety with centre `x` and

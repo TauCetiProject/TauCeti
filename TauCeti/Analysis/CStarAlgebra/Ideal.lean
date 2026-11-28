@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.TwoSidedIdeal.Instances
-public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 public import TauCeti.Analysis.Normed.Group.Star
 public import TauCeti.RingTheory.TwoSidedIdeal.Basic
 public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal.Basic
@@ -26,7 +26,7 @@ while `(c • e) * a ∈ I` by left ideal absorption. For self-adjointness, the 
 `⋆`-subalgebra of `A`, hence a nonunital C⋆-algebra containing `star a * a` for every `a ∈ I`.
 Along the increasing approximate unit `e` of `S`, right ideal absorption gives
 `(e : A) * star a ∈ I`, while
-`Filter.IsIncreasingApproximateUnit.tendsto_mul_star_of_star_mul_self_mem` gives
+`Filter.IsApproximateUnit.tendsto_mul_right_star_of_star_mul_self_mem` gives
 `(e : A) * star a → star a` (see, e.g., Gerard J. Murphy, *C*-Algebras and Operator Theory*,
 Theorem 3.1.3, or Kenneth R. Davidson, *C*-Algebras by Example*, Theorem I.5.3).
 
@@ -119,7 +119,7 @@ theorem star_mem_of_isClosed {a : A} (ha : a ∈ I) : star a ∈ I := by
   have := hl.neBot
   have hmem : star a * a ∈ S := L.mem_starSubalgebra.mpr
     ⟨I.mul_mem_left (star a) a ha, by rw [star_mul, star_star]; exact I.mul_mem_left (star a) a ha⟩
-  refine hI.mem_of_tendsto (hl.tendsto_mul_star_of_star_mul_self_mem hmem) ?_
+  refine hI.mem_of_tendsto (hl.tendsto_mul_right_star_of_star_mul_self_mem hmem) ?_
   exact Eventually.of_forall fun e =>
     I.mul_mem_right (e : A) (star a) (L.mem_starSubalgebra.mp e.property).1
 
@@ -265,6 +265,45 @@ theorem subtype_comp_toNonUnitalStarSubalgebraEquiv :
     (NonUnitalStarSubalgebraClass.subtype I.toNonUnitalStarSubalgebra).comp
       I.toNonUnitalStarSubalgebraEquiv.toNonUnitalStarAlgHom = I.starAlgHom :=
   (rfl)
+
+/-- `I.toNonUnitalStarSubalgebraEquiv` preserves norms. -/
+theorem norm_toNonUnitalStarSubalgebraEquiv_apply (x : I) :
+    ‖I.toNonUnitalStarSubalgebraEquiv x‖ = ‖x‖ :=
+  (rfl)
+
+/-- `I.toNonUnitalStarSubalgebraEquiv.symm` preserves norms. -/
+theorem norm_toNonUnitalStarSubalgebraEquiv_symm_apply (x : I.toNonUnitalStarSubalgebra) :
+    ‖I.toNonUnitalStarSubalgebraEquiv.symm x‖ = ‖x‖ :=
+  (rfl)
+
+/-- `I.toNonUnitalStarSubalgebraEquiv` preserves and reflects the induced order. -/
+theorem toNonUnitalStarSubalgebraEquiv_le_iff [PartialOrder A] {x y : I} :
+    I.toNonUnitalStarSubalgebraEquiv x ≤ I.toNonUnitalStarSubalgebraEquiv y ↔ x ≤ y :=
+  Iff.rfl
+
+/-- `I.toNonUnitalStarSubalgebraEquiv.symm` preserves and reflects the induced order. -/
+theorem toNonUnitalStarSubalgebraEquiv_symm_le_iff [PartialOrder A]
+    {x y : I.toNonUnitalStarSubalgebra} :
+    I.toNonUnitalStarSubalgebraEquiv.symm x ≤ I.toNonUnitalStarSubalgebraEquiv.symm y ↔ x ≤ y :=
+  Iff.rfl
+
+/-- Comparison with `I.toNonUnitalStarSubalgebraEquiv.symm` corresponds to comparison with
+`I.toNonUnitalStarSubalgebraEquiv`. -/
+theorem le_toNonUnitalStarSubalgebraEquiv_symm_iff [PartialOrder A]
+    {x : I} {y : I.toNonUnitalStarSubalgebra} :
+    x ≤ I.toNonUnitalStarSubalgebraEquiv.symm y ↔ I.toNonUnitalStarSubalgebraEquiv x ≤ y :=
+  Iff.rfl
+
+/-- `I.toNonUnitalStarSubalgebraEquiv` preserves and reflects nonnegativity. -/
+theorem toNonUnitalStarSubalgebraEquiv_nonneg_iff [PartialOrder A] {x : I} :
+    0 ≤ I.toNonUnitalStarSubalgebraEquiv x ↔ 0 ≤ x :=
+  Iff.rfl
+
+/-- `I.toNonUnitalStarSubalgebraEquiv.symm` preserves and reflects nonnegativity. -/
+theorem toNonUnitalStarSubalgebraEquiv_symm_nonneg_iff [PartialOrder A]
+    {x : I.toNonUnitalStarSubalgebra} :
+    0 ≤ I.toNonUnitalStarSubalgebraEquiv.symm x ↔ 0 ≤ x :=
+  Iff.rfl
 
 /-- The nonunital continuous functional calculus of an element in a closed two-sided ideal of a
 C⋆-algebra stays in the ideal. -/

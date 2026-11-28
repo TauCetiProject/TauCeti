@@ -12,7 +12,7 @@ public import TauCeti.Algebra.Algebra.Unitization
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Contraction
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
@@ -85,7 +85,7 @@ theorem IsNPositive.unitizationLinearMap {n : ℕ} {φ : A →ₗ[ℂ] B} (hφ :
     refine tendsto_finsetSum _ fun i _ => tendsto_finsetSum _ fun j _ => ?_
     rw [CStarMatrix.map_apply, Unitization.linearMap_apply]
     refine ((tendsto_const_nhds.add ?_).const_mul _).mul_const _
-    exact (Unitization.continuous_inr.comp hcont).tendsto _ |>.comp (hl.tendsto_mul_self _)
+    exact (Unitization.continuous_inr.comp hcont).tendsto _ |>.comp (hl.tendsto_mul_mul _)
   refine ge_of_tendsto hlim ?_
   filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he0 he1
   have hee0 : 0 ≤ e * e := he0.isSelfAdjoint.mul_self_nonneg
@@ -137,7 +137,7 @@ theorem IsNPositive.tendsto_norm_nhds_opNorm {ψ : A →L[ℂ] B} (hψ : IsNPosi
       exact hs.not_ge <| ContinuousLinearMap.opNorm_le_bound _ hs0
         (hψ.norm_apply_le_of_forall_nonneg h)
     have hlim : Tendsto (fun e => ‖ψ (e * p * e)‖) l (𝓝 ‖ψ p‖) :=
-      ((continuous_norm.comp ψ.continuous).tendsto p).comp (hl.tendsto_mul_self p)
+      ((continuous_norm.comp ψ.continuous).tendsto p).comp (hl.tendsto_mul_mul p)
     filter_upwards [hlim.eventually (lt_mem_nhds hp), hl.eventually_nonneg, hl.eventually_norm]
       with e he he0 he1
     refine he.trans_le ?_

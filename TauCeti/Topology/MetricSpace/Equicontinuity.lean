@@ -35,6 +35,9 @@ form a family uniformly equicontinuous on that set.
 * `Metric.equicontinuous_of_forall_dist_le`: a family `F : ι → X → W` controlled linearly by every
   uniform `Y`-slice distance bound of a jointly continuous map `g : X × Y → Z` with `Y` compact is
   equicontinuous.
+* `Metric.tendsto_of_dense_of_eventually_dist_le`: an eventually uniformly Lipschitz family
+  of maps between pseudometric spaces that converges on a dense set `s` to a map `f` with
+  `Tendsto f (𝓝[s] x) (𝓝 (f x))` converges to `f x` at `x`.
 * `UniformEquicontinuous.exists_forall_lt_of_le_mul_add_mul`: a bound of the form
   `C (η + s L)` over a uniformly equicontinuous family gives uniform attainment as `s → 0`.
 * `LipschitzWith.uniformEquicontinuous_iterate`: the iterates of a `1`-Lipschitz map are uniformly
@@ -78,6 +81,26 @@ theorem equicontinuous_of_forall_dist_le {X Y Z W ι : Type*} [TopologicalSpace 
     _ ≤ M * δ := mul_le_mul_of_nonneg_right (le_max_left L 1) hδ.le
     _ = r / 2 := by simp only [δ]; field_simp [hM.ne']
     _ < r := half_lt_self hr
+
+/-- If a family of maps `F i : X → Y` between pseudometric spaces is eventually `C`-Lipschitz along
+a filter `l`, converges pointwise on a dense set `s` to `f : X → Y`, and `f` satisfies
+`Tendsto f (𝓝[s] x) (𝓝 (f x))`, then `F i x` converges to `f x` along `l`. -/
+theorem tendsto_of_dense_of_eventually_dist_le {ι X Y : Type*}
+    [PseudoMetricSpace X] [PseudoMetricSpace Y] {l : Filter ι} {F : ι → X → Y}
+    {f : X → Y} {s : Set X} {C : ℝ}
+    (hF : ∀ᶠ i in l, ∀ x y, dist (F i x) (F i y) ≤ C * dist x y)
+    (hs : Dense s) (x : X) (hf : Tendsto f (𝓝[s] x) (𝓝 (f x)))
+    (h : ∀ y ∈ s, Tendsto (F · y) l (𝓝 (f y))) :
+    Tendsto (F · x) l (𝓝 (f x)) := by
+  let P : Set ι := {i | ∀ x y, dist (F i x) (F i y) ≤ C * dist x y}
+  have hP : EquicontinuousAt (fun p : P => F p.val) x := by
+    refine Metric.equicontinuousAt_of_continuity_modulus (fun y => C * dist x y) ?_ _
+      (.of_forall fun y p => p.property x y)
+    simpa using ((by fun_prop : Continuous fun y => C * dist x y).tendsto x)
+  have hsub : Tendsto (fun p : P => F p.val x) (l.comap Subtype.val) (𝓝 (f x)) :=
+    hP.tendsto_of_mem_closure hf (fun y hy => (h y hy).comp tendsto_comap)
+      (hs.closure_eq ▸ Set.mem_univ x)
+  exact (tendsto_comap'_iff (m := (F · x)) (by simpa [P, Filter.Eventually] using hF)).mp hsub
 
 /-- Characterization of uniform equicontinuity on a set for families of functions between
 (pseudo) metric spaces. -/

@@ -8,18 +8,22 @@ module
 public import Mathlib.Topology.Algebra.Ring.Basic
 
 /-!
-# Induced and infimum topological ring structures, continuous ring projections
+# Induced/infimum ring topologies, commutator transport, and ring projections
 
 Mathlib provides `Topology.IsInducing.isTopologicalAddGroup`, `isTopologicalAddGroup_induced`,
 `isTopologicalAddGroup_sInf`, `isTopologicalAddGroup_iInf`, and `isTopologicalAddGroup_inf` for
 additive group topologies, while `RingTopology` bundles `CompleteLattice` operations only for
 unital associative rings. This file supplies the direct `IsTopologicalRing` counterparts for
-not-necessarily-unital, not-necessarily-associative rings:
+not-necessarily-unital, not-necessarily-associative rings, together with transport of asymptotic
+centrality along surjective ring homomorphisms:
 
 * `Topology.IsInducing.isTopologicalRing` and `TauCeti.isTopologicalRing_induced`: pulling back a
   ring topology along a ring homomorphism yields a ring topology.
 * `TauCeti.isTopologicalRing_sInf`, `TauCeti.isTopologicalRing_iInf`, and
   `TauCeti.isTopologicalRing_inf`: infima of ring topologies are ring topologies.
+* `TauCeti.tendsto_commutator_map_of_surjective`: composing `f : S → A` with a surjective
+  nonunital, not-necessarily-associative ring homomorphism continuous at `0` preserves
+  asymptotic centrality along a filter.
 
 It also states continuity of the bundled projections `RingHom.fst` and `RingHom.snd`
 (`RingHom.continuous_fst`, `RingHom.continuous_snd`), for use where continuity of a bundled ring
@@ -27,6 +31,8 @@ homomorphism is an argument.
 -/
 
 public section
+
+open Filter Topology
 
 /-- A ring homomorphism that is a topological inducing map pulls back a topological ring structure
 from its codomain to its domain. -/
@@ -72,6 +78,20 @@ theorem isTopologicalRing_inf {R : Type*} [NonUnitalNonAssocRing R]
   rw [inf_eq_iInf]
   refine isTopologicalRing_iInf fun b ↦ ?_
   cases b <;> assumption
+
+/-- Composing a map `f : S → A` with a surjective nonunital, not-necessarily-associative ring
+homomorphism `π : A → B` that is continuous at `0` preserves asymptotic centrality along `l`. -/
+theorem tendsto_commutator_map_of_surjective {S A B G : Type*}
+    [TopologicalSpace A] [NonUnitalNonAssocRing A] [TopologicalSpace B] [NonUnitalNonAssocRing B]
+    [FunLike G A B] [NonUnitalRingHomClass G A B]
+    {l : Filter S} (f : S → A) (π : G) (hπ_cont : ContinuousAt π 0)
+    (hπ_surj : Function.Surjective π)
+    (h : ∀ a : A, Tendsto (fun e => f e * a - a * f e) l (𝓝 0)) (b : B) :
+    Tendsto (fun e => π (f e) * b - b * π (f e)) l (𝓝 0) := by
+  obtain ⟨a, rfl⟩ := hπ_surj b
+  have hlim := hπ_cont.tendsto.comp (h a)
+  rw [map_zero] at hlim
+  exact hlim.congr fun e => by simp [map_sub, map_mul]
 
 end TauCeti
 

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.NonUnital
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
-public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
 import TauCeti.Analysis.Real.Sqrt
 
 /-!
@@ -87,8 +87,8 @@ theorem cuntzLE_star_mul_mul (x : A) (b : {a : A // 0 ≤ a}) :
 theorem CuntzLE.refl (a : {a : A // 0 ≤ a}) : CuntzLE a a := by
   have hl := CStarAlgebra.increasingApproximateUnit (A := A)
   have : Tendsto (fun e ↦ star e * (a : A) * e) (CStarAlgebra.approximateUnit A) (𝓝 (a : A)) :=
-    (hl.tendsto_mul_self (a : A)).congr' <| hl.eventually_star_eq.mono fun e he ↦ by
-      simp only [he]
+    (hl.toIsApproximateUnit.tendsto_mul_mul (a : A)).congr' <|
+      hl.eventually_star_eq.mono fun e he ↦ by simp only [he]
   exact mem_closure_of_tendsto this (.of_forall fun e ↦ ⟨e, rfl⟩)
 
 /-- If `b` is Cuntz subequivalent to `c`, so is every compression `x⋆ b x`. -/

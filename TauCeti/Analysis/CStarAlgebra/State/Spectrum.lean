@@ -14,7 +14,7 @@ import TauCeti.Analysis.CStarAlgebra.Multiplier.Basic
 import TauCeti.Analysis.CStarAlgebra.State.Extension
 
 /-!
-# Spectral and norm-attaining states and positive functionals
+# Spectral and norm-attaining states, and state characterizations of order and norm
 
 On a unital C⋆-algebra, every Gelfand character on `StarAlgebra.elemental ℂ a` is a state, and
 extending it via `StarSubalgebra.exists_mem_stateSpace_forall_apply_coe_eq` gives for every
@@ -50,11 +50,17 @@ and `star a * a` results directly:
 * `TauCeti.exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq` and
   `TauCeti.exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq_of_ne_zero`: assuming
   `[Nontrivial A]` (or `a ≠ 0`), a state takes the value `‖a‖ ^ 2` at `star a * a`.
-* `TauCeti.norm_eq_iSup_norm_apply_stateSpace_of_isStarNormal`: for normal `a` (without
-  `[Nontrivial A]`), `‖a‖ = ⨆ φ : stateSpace A, ‖φ.1 a‖`.
+* `TauCeti.exists_mem_stateSpace_apply_star_mul_mul_eq_norm_sq`: assuming `[Nontrivial A]`, a
+  state takes the value `‖star v * a‖ ^ 2` at `star v * (a * star a) * v`.
+* `TauCeti.norm_eq_iSup_norm_apply_stateSpace_of_isStarNormal` and
+  `TauCeti.norm_le_of_forall_mem_stateSpace`: for normal `a` (without `[Nontrivial A]`),
+  `‖a‖ = ⨆ φ : stateSpace A, ‖φ.1 a‖`, so `‖a‖ ≤ c` whenever `‖φ a‖ ≤ c` for every state `φ`.
+* `TauCeti.nonneg_iff_forall_mem_stateSpace`: an element `a` of a possibly nonunital C⋆-algebra is
+  nonnegative iff `0 ≤ φ a` for every state `φ`.
 
 ## References
 
+* B. Blackadar, *Operator Algebras*, II.6.3.3.
 * G. J. Murphy, *C⋆-Algebras and Operator Theory*, Academic Press, 1990, Theorem 3.3.6 and
   Section 3.4.
 * J. Peterson, *Notes on von Neumann algebras* (2013), Proposition 4.1.4, p. 56.
@@ -180,6 +186,8 @@ end TauCeti.CStarAlgebra
 
 namespace TauCeti
 
+open scoped ComplexStarModule
+
 section UnitalStateSpace
 
 variable {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
@@ -221,6 +229,39 @@ theorem exists_mem_stateSpace_apply_eq_of_mem_spectrum (b : B) {z : ℂ}
     simpa [x, map_sub, map_algebraMap_of_mem_stateSpace hφ] using hφx
   exact (sub_eq_zero.1 hsub).symm
 
+private theorem nonneg_of_isSelfAdjoint_of_forall_mem_stateSpace {s : B} (hs : IsSelfAdjoint s)
+    (h : ∀ φ ∈ stateSpace B, 0 ≤ φ s) : 0 ≤ s := by
+  rw [StarOrderedRing.nonneg_iff_spectrum_nonneg (R := ℝ) s hs]
+  intro r hr
+  have hrc : (r : ℂ) ∈ spectrum ℂ s := (spectrum.algebraMap_mem_iff ℂ).mpr hr
+  obtain ⟨φ, hφ, hφs⟩ := exists_mem_stateSpace_apply_eq_of_mem_spectrum s hrc
+  exact RCLike.ofReal_nonneg.mp (hφs ▸ h φ hφ)
+
+private theorem nonneg_iff_forall_mem_stateSpace_unital {a : B} :
+    0 ≤ a ↔ ∀ φ ∈ stateSpace B, 0 ≤ φ a := by
+  refine ⟨fun ha φ hφ => map_nonneg_of_mem_stateSpace hφ ha, fun h => ?_⟩
+  have hstar (φ : WeakDual ℂ B) (hφ : φ ∈ stateSpace B) : φ (star a) = φ a := by
+    have hω := map_star (StateSpace.toPositiveLinearMap ⟨φ, hφ⟩) a
+    simp only [StateSpace.toPositiveLinearMap_apply] at hω
+    exact hω.trans (h φ hφ).isSelfAdjoint.star_eq
+  have him_zero (φ : WeakDual ℂ B) (hφ : φ ∈ stateSpace B) : φ (ℑ a : B) = 0 := by
+    rw [← toStrongDual_apply, imaginaryPart_apply_coe, map_smul,
+      (toStrongDual φ).map_smul_of_tower, map_sub]
+    simp [hstar φ hφ]
+  have him_nonneg : 0 ≤ (ℑ a : B) :=
+    nonneg_of_isSelfAdjoint_of_forall_mem_stateSpace (ℑ a).property fun φ hφ => by
+      simp [him_zero φ hφ]
+  have him_nonpos : 0 ≤ -(ℑ a : B) :=
+    nonneg_of_isSelfAdjoint_of_forall_mem_stateSpace (ℑ a).property.neg fun φ hφ => by
+      rw [← toStrongDual_apply, map_neg, toStrongDual_apply, him_zero φ hφ, neg_zero]
+  have him_eq : ℑ a = 0 := Subtype.ext <| le_antisymm (neg_nonneg.mp him_nonpos) him_nonneg
+  have hre_nonneg : 0 ≤ (ℜ a : B) :=
+    nonneg_of_isSelfAdjoint_of_forall_mem_stateSpace (ℜ a).property fun φ hφ => by
+      have ha_eq : (ℜ a : B) = a := by simpa [him_eq] using realPart_add_I_smul_imaginaryPart a
+      rw [ha_eq]
+      exact h φ hφ
+  exact nonneg_iff_realPart_imaginaryPart.mpr ⟨hre_nonneg, him_eq⟩
+
 end UnitalStateSpace
 
 section NonUnitalStateSpace
@@ -256,6 +297,16 @@ theorem exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq_of_ne_zero {a : A} 
     ∃ φ ∈ stateSpace A, φ (star a * a) = ‖a‖ ^ 2 :=
   have : Nontrivial A := ⟨a, 0, ha⟩
   exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq a
+
+/-- For any elements `v` and `a` of a nontrivial C⋆-algebra, there is a state `ω` satisfying
+`ω (star v * (a * star a) * v) = ‖star v * a‖ ^ 2`. -/
+theorem exists_mem_stateSpace_apply_star_mul_mul_eq_norm_sq [Nontrivial A] (v a : A) :
+    ∃ ω ∈ stateSpace A, ω (star v * (a * star a) * v) = ((‖star v * a‖ ^ 2 : ℝ) : ℂ) := by
+  obtain ⟨ω, hω, hω_eq⟩ := exists_mem_stateSpace_apply_eq_norm_of_nonneg
+    (a := (star v * a) * star (star v * a)) (mul_star_self_nonneg _)
+  rw [CStarRing.norm_self_mul_star, ← sq] at hω_eq
+  refine ⟨ω, hω, ?_⟩
+  simpa [star_mul, mul_assoc] using hω_eq
 
 /-- **Norm attainment on normal elements.** For any nonzero normal element `a` of a possibly
 nonunital C⋆-algebra `A`, there is a state `φ ∈ stateSpace A` with `‖φ a‖ = ‖a‖`. -/
@@ -294,6 +345,45 @@ theorem norm_eq_iSup_norm_apply_stateSpace_of_isStarNormal (a : A) [IsStarNormal
     refine le_antisymm ?_ (Real.iSup_le (fun ψ => norm_apply_le_of_mem_stateSpace ψ.property a)
       (norm_nonneg a))
     exact hφa ▸ le_ciSup hbdd ⟨φ, hφ⟩
+
+/-- A normal element `a` of a C⋆-algebra has norm at most `c ≥ 0` whenever `‖φ a‖ ≤ c` for every
+state `φ`. -/
+theorem norm_le_of_forall_mem_stateSpace {a : A} [IsStarNormal a] {c : ℝ} (hc : 0 ≤ c)
+    (h : ∀ φ ∈ stateSpace A, ‖φ a‖ ≤ c) : ‖a‖ ≤ c := by
+  rw [norm_eq_iSup_norm_apply_stateSpace_of_isStarNormal]
+  exact Real.iSup_le (fun φ => h φ.val φ.property) hc
+
+/-- An element `a` of a C⋆-algebra is nonnegative if and only if `0 ≤ φ a` for every state
+`φ ∈ stateSpace A`. -/
+theorem nonneg_iff_forall_mem_stateSpace {a : A} :
+    0 ≤ a ↔ ∀ φ ∈ stateSpace A, 0 ≤ φ a := by
+  refine ⟨fun ha φ hφ => map_nonneg_of_mem_stateSpace hφ ha, fun h => ?_⟩
+  rw [← Unitization.inr_nonneg_iff ℂ, nonneg_iff_forall_mem_stateSpace_unital]
+  intro ψ hψ
+  let φ := pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ
+  rcases eq_or_ne (toStrongDual φ) 0 with h0 | hne
+  · have hφa : φ a = 0 := by rw [← toStrongDual_apply, h0, zero_apply]
+    have hψa : ψ (a : A⁺¹) = 0 := by simpa [φ] using hφa
+    exact le_of_eq hψa.symm
+  · set r := ‖toStrongDual φ‖
+    have hr : 0 < r := norm_pos_iff.mpr hne
+    let c : ℂ := (r⁻¹ : ℝ)
+    have hc : 0 ≤ c := RCLike.ofReal_nonneg.mpr (inv_nonneg.mpr hr.le)
+    have hrc : (r : ℂ) * c = 1 := by
+      rw [← Complex.ofReal_mul, mul_inv_cancel₀ hr.ne', Complex.ofReal_one]
+    have hsmul (x : A) : (c • φ) x = c * φ x := by simp
+    have hstate : c • φ ∈ stateSpace A := by
+      refine mem_stateSpace_iff.mpr ⟨fun x hx => ?_, ?_⟩
+      · rw [hsmul]
+        have hx0 : 0 ≤ φ x := by
+          simpa [φ] using map_nonneg_of_mem_stateSpace hψ (Unitization.inr_nonneg ℂ x hx)
+        exact mul_nonneg hc hx0
+      · rw [map_smul, norm_smul, Complex.norm_real, Real.norm_of_nonneg (inv_nonneg.mpr hr.le),
+          inv_mul_cancel₀ hr.ne']
+    have hle : 0 ≤ (c • φ) a := h _ hstate
+    rw [hsmul] at hle
+    have hmul := mul_nonneg (RCLike.ofReal_nonneg.mpr hr.le) hle
+    simpa [φ, ← mul_assoc, hrc] using hmul
 
 end NonUnitalStateSpace
 

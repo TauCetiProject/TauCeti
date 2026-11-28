@@ -13,9 +13,10 @@ public import Mathlib.Algebra.Order.Star.Basic
 # Coercion, equivalences, and faithfulness kernels of positive linear maps
 
 Mathlib's `PositiveLinearMap.ofClass` reinterprets an element of a type of positive linear maps as
-a bundled positive linear map, but has no lemma computing its coercion to a function. This file
-supplies the simp lemma `PositiveLinearMap.coe_ofClass`, matching `LinearMap.coe_ofClass` and
-`PositiveContinuousLinearMap.coe_ofClass`.
+a bundled positive linear map, and `PositiveLinearMap.mk₀` builds one from a linear map that
+preserves nonnegativity, but neither has an application/coercion simp lemma. This file supplies
+`PositiveLinearMap.coe_ofClass`, `PositiveLinearMap.mk₀_apply`, and
+`PositiveLinearMap.toLinearMap_mk₀`, matching `PositiveContinuousLinearMap`.
 
 An order-preserving linear equivalence `e : U ≃ₗ[R] V` induces a bijection between positive linear
 maps out of `U` and positive linear maps out of `V`, by precomposition with `e.symm` and `e`. When
@@ -29,6 +30,8 @@ A faithful positive linear map on a proper star-ordered ring vanishes on `star a
 ## Main declarations
 
 * `PositiveLinearMap.coe_ofClass`: coercion of `PositiveLinearMap.ofClass f` as a function.
+* `PositiveLinearMap.mk₀_apply`: evaluating `PositiveLinearMap.mk₀ f hf` at `x`.
+* `PositiveLinearMap.toLinearMap_mk₀`: linear map underlying `PositiveLinearMap.mk₀ f hf`.
 * `LinearEquiv.positiveLinearMapCongrLeft`: transport of positive linear maps along an
   order-preserving linear equivalence.
 * `AlgEquiv.normalizedPositiveLinearMapCongrLeft`: transport of positive linear maps taking a
@@ -55,6 +58,27 @@ theorem coe_ofClass (f : F) : ⇑(ofClass f : E₁ →ₚ[R] E₂) = f :=
   rfl
 
 end OfClass
+
+section AddGroup
+
+variable {R E₁ E₂ : Type*} [Semiring R]
+  [AddCommGroup E₁] [PartialOrder E₁] [IsOrderedAddMonoid E₁]
+  [AddCommGroup E₂] [PartialOrder E₂] [IsOrderedAddMonoid E₂]
+  [Module R E₁] [Module R E₂]
+
+/-- Evaluating `PositiveLinearMap.mk₀ f hf` at `x` gives `f x`. -/
+@[simp]
+theorem mk₀_apply (f : E₁ →ₗ[R] E₂) (hf : ∀ x, 0 ≤ x → 0 ≤ f x) (x : E₁) :
+    mk₀ f hf x = f x :=
+  rfl
+
+/-- The linear map underlying `PositiveLinearMap.mk₀ f hf` is `f`. -/
+@[simp]
+theorem toLinearMap_mk₀ (f : E₁ →ₗ[R] E₂) (hf : ∀ x, 0 ≤ x → 0 ≤ f x) :
+    (mk₀ f hf).toLinearMap = f :=
+  rfl
+
+end AddGroup
 
 /-- A faithful positive linear map on a proper star-ordered ring vanishes on `star a * a` only
 when `a = 0`. -/

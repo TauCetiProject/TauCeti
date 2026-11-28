@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 public import TauCeti.Topology.ApproximateUnit
 public import TauCeti.Topology.MetricSpace.SimultaneousApproximation
 import Mathlib.Analysis.Normed.Ring.Lemmas
+import TauCeti.Topology.MetricSpace.Equicontinuity
 
 /-!
 # Bounded approximate identities in normed rings
@@ -28,6 +29,9 @@ We prove:
 * Dixon's combination: if `(e)` is a left approximate identity bounded by `C` and `(f)` a right
   one bounded by `D`, then `e + f - f * e` is a two-sided approximate identity bounded by
   `C + D + C * D`. In the unitization, `1 - (e + f - f * e) = (1 - f) * (1 - e)`;
+* dense-set criteria: if a filter is eventually norm bounded and left- or right-approximates
+  every element of a dense set, then it does so on the whole ring
+  (`TauCeti.tendsto_mul_right_of_dense`, `TauCeti.tendsto_mul_left_of_dense`);
 * transfer under continuous multiplicative maps with dense range, provided the image of the
   approximate unit is eventually norm bounded. This allows a bounded approximate unit of a
   dense subalgebra to serve in its completion;
@@ -201,6 +205,28 @@ theorem exists_isApproximateUnit_of_left_of_right
   exact ⟨_, isApproximateUnit_map_add_sub_mul h₁ hC h₂ hD,
     eventually_map.2 (eventually_norm_add_sub_mul_le hC hD)⟩
 
+/-- If `l` is eventually norm-bounded in a nonunital seminormed ring `A` and `e * x → x` along `l`
+for every `x` in a dense set `s`, then `e * a → a` along `l` for every `a : A`. -/
+theorem tendsto_mul_right_of_dense {l : Filter A} (hC : ∀ᶠ e in l, ‖e‖ ≤ C)
+    {s : Set A} (hs : Dense s) (h : ∀ x ∈ s, Tendsto (· * x) l (𝓝 x)) (a : A) :
+    Tendsto (· * a) l (𝓝 a) := by
+  refine Metric.tendsto_of_dense_of_eventually_dist_le (F := fun e x => e * x) (f := id)
+    (C := C) ?_ hs a continuousWithinAt_id h
+  refine hC.mono fun e he x y => ?_
+  rw [dist_eq_norm, dist_eq_norm, ← mul_sub]
+  exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right he (norm_nonneg _))
+
+/-- If `l` is eventually norm-bounded in a nonunital seminormed ring `A` and `x * e → x` along `l`
+for every `x` in a dense set `s`, then `a * e → a` along `l` for every `a : A`. -/
+theorem tendsto_mul_left_of_dense {l : Filter A} (hC : ∀ᶠ e in l, ‖e‖ ≤ C)
+    {s : Set A} (hs : Dense s) (h : ∀ x ∈ s, Tendsto (x * ·) l (𝓝 x)) (a : A) :
+    Tendsto (a * ·) l (𝓝 a) := by
+  refine Metric.tendsto_of_dense_of_eventually_dist_le (F := fun e x => x * e) (f := id)
+    (C := C) ?_ hs a continuousWithinAt_id h
+  refine hC.mono fun e he x y => ?_
+  rw [dist_eq_norm, dist_eq_norm, ← sub_mul]
+  exact (norm_mul_le _ _).trans (by rw [mul_comm]; gcongr)
+
 /-- If `u` is eventually norm bounded along `l`, `u i * a → a`, and `a * v i → a`, then the
 two-sided products `u i * a * v i` tend to `a`. -/
 theorem tendsto_mul_mul_of_isBoundedUnder {ι : Type*} {l : Filter ι} {u v : ι → A} {a : A}
@@ -224,58 +250,16 @@ approximate unit of a seminormed ring, provided its image is eventually norm bou
 or additive structure on the source is needed, and the target need not be complete. -/
 theorem map_of_denseRange {l : Filter A} (hl : l.IsApproximateUnit) (f : F)
     (hf : Continuous f) (hd : DenseRange f) {C : ℝ} (hC : ∀ᶠ e in l, ‖f e‖ ≤ C) :
-    (l.map f).IsApproximateUnit := by
-  have := hl.neBot
-  have hC0 : 0 ≤ C := by
-    obtain ⟨e, he⟩ := hC.exists
-    exact (norm_nonneg _).trans he
-  have hconv (a : A) :
-      Tendsto (fun e => f e * f a) l (𝓝 (f a)) ∧
-        Tendsto (fun e => f a * f e) l (𝓝 (f a)) := by
-    constructor
-    · simpa only [Function.comp_def, map_mul] using (hf.tendsto a).comp (hl.tendsto_mul_right a)
-    · simpa only [Function.comp_def, map_mul] using (hf.tendsto a).comp (hl.tendsto_mul_left a)
-  -- Approximate a target by one element of the range; the uniform norm bound controls both
-  -- outer errors, while the approximate-unit laws control the middle errors.
-  have htarget (x : B) :
-      Tendsto (fun e => (f e * x, x * f e)) l (𝓝 (x, x)) := by
-    rw [Metric.tendsto_nhds]
-    intro ε hε
-    let δ := ε / (2 * (C + 1))
-    have hδ : 0 < δ := by positivity
-    obtain ⟨a, ha⟩ := hd.exists_dist_lt x hδ
-    have ha' : ‖x - f a‖ < δ := by simpa only [dist_eq_norm] using ha
-    have heps : (C + 1) * δ = ε / 2 := by
-      dsimp [δ]
-      field_simp
-    filter_upwards [hC,
-      (Metric.tendsto_nhds.1 (hconv a).1) (ε / 2) (half_pos hε),
-      (Metric.tendsto_nhds.1 (hconv a).2) (ε / 2) (half_pos hε)] with e he hl' hr'
-    rw [Prod.dist_eq, max_lt_iff]
-    have hleft : ‖f e * x - x‖ ≤
-        ‖f e‖ * ‖x - f a‖ + ‖f e * f a - f a‖ + ‖f a - x‖ := by
-      calc
-        _ = ‖f e * (x - f a) + (f e * f a - f a) + (f a - x)‖ := by
-          congr 1
-          simp only [mul_sub]
-          abel
-        _ ≤ _ := norm_add₃_le.trans (by gcongr; exact norm_mul_le _ _)
-    have hright : ‖x * f e - x‖ ≤
-        ‖x - f a‖ * ‖f e‖ + ‖f a * f e - f a‖ + ‖f a - x‖ := by
-      calc
-        _ = ‖(x - f a) * f e + (f a * f e - f a) + (f a - x)‖ := by
-          congr 1
-          simp only [sub_mul]
-          abel
-        _ ≤ _ := norm_add₃_le.trans (by gcongr; exact norm_mul_le _ _)
-    simp only [dist_eq_norm] at hl' hr' ⊢
-    have hax : ‖f a - x‖ < δ := by rwa [norm_sub_rev]
-    have hprod := mul_le_mul he ha'.le (norm_nonneg _) hC0
-    constructor <;> nlinarith
-  exact { tendsto_mul_left := fun x => tendsto_map'_iff.2 (by
-            simpa only [Function.comp_def] using (continuous_snd.tendsto (x, x)).comp (htarget x))
-          tendsto_mul_right := fun x => tendsto_map'_iff.2 (by
-            simpa only [Function.comp_def] using (continuous_fst.tendsto (x, x)).comp (htarget x)) }
+    (l.map f).IsApproximateUnit where
+  tendsto_mul_left :=
+    TauCeti.tendsto_mul_left_of_dense (eventually_map.mpr hC) hd fun _ ⟨a, ha⟩ => by
+      rw [← ha, tendsto_map'_iff]
+      simpa only [Function.comp_def, ← map_mul] using (hf.tendsto a).comp (hl.tendsto_mul_left a)
+  tendsto_mul_right :=
+    TauCeti.tendsto_mul_right_of_dense (eventually_map.mpr hC) hd fun _ ⟨a, ha⟩ => by
+      rw [← ha, tendsto_map'_iff]
+      simpa only [Function.comp_def, ← map_mul] using (hf.tendsto a).comp (hl.tendsto_mul_right a)
+  neBot := hl.neBot.map f
 
 /-- Squaring an eventually bounded two-sided approximate identity of a seminormed ring produces
 another two-sided approximate identity. -/
