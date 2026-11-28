@@ -208,10 +208,8 @@ theorem stoppedProcess_mem {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
     (hX : ∀ u : ι, (u : WithTop ι) ≤ τ ω → X u ω ∈ s) (t : ι) :
     stoppedProcess X τ t ω ∈ s := by
   by_cases ht : (t : WithTop ι) ≤ τ ω
-  · rw [stoppedProcess_eq_of_le ht]
-    exact hX t ht
-  · rw [stoppedProcess_eq_of_ge (le_of_not_ge ht)]
-    exact hX _ (by cases τ ω <;> simp)
+  · rw [stoppedProcess_eq_of_le ht]; exact hX t ht
+  · rw [stoppedProcess_eq_of_ge (le_of_not_ge ht)]; exact hX _ (by cases τ ω <;> simp)
 
 /-- Evaluate the stopped process restricted to the event that its random time is positive.
 No measurability or stopping-time assumption is needed. -/
@@ -271,8 +269,7 @@ theorem stoppedProcess_indicator_pos_of_map_bot {ι Ω E : Type*} [LinearOrder �
     [Zero E] {f : ι → E} (hf : f ⊥ = 0) (τ : Ω → WithTop ι) (t : ι) (ω : Ω) :
     stoppedProcess (fun u ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (fun _ ↦ f u)) τ t ω =
       f (min (t : WithTop ι) (τ ω)).untopA := by
-  rw [stoppedProcess_indicator_pos_apply]
-  split_ifs with h
+  rw [stoppedProcess_indicator_pos_apply]; split_ifs with h
   · rfl
   · rw [not_lt, le_bot_iff] at h; rw [h, min_eq_right bot_le, WithTop.untopA_bot, hf]
 
@@ -285,9 +282,7 @@ theorem stoppedProcess_apply {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
 @[simp]
 theorem stoppedProcess_bot {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
     (u : ι → Ω → E) (τ : Ω → WithTop ι) :
-    stoppedProcess u τ ⊥ = u ⊥ := by
-  ext ω
-  exact stoppedProcess_eq_of_le (by simp)
+    stoppedProcess u τ ⊥ = u ⊥ := by ext ω; exact stoppedProcess_eq_of_le (by simp)
 
 /-- If a family of random times diverges to `⊤` at `ω`, then the stopped process at fixed time `u`
 eventually agrees with `X u ω`. -/
@@ -321,12 +316,12 @@ theorem stoppedProcess_indicator_pos_stoppedProcess_of_le {ι Ω E : Type*} [Lin
           (min (t : WithTop ι) (τ ω)).untopA ω
       else 0 := by
   by_cases hω : (⊥ : WithTop ι) < τ ω
-  · have hσω : (⊥ : WithTop ι) < σ ω := lt_of_lt_of_le hω (hle ω)
-    have hmin_le : min ((min (t : WithTop ι) (τ ω)).untopA : WithTop ι) (σ ω) =
+  · have hmin_le : min ((min (t : WithTop ι) (τ ω)).untopA : WithTop ι) (σ ω) =
         min (t : WithTop ι) (τ ω) := by
       rw [WithTop.untopA_eq_untop (ne_top_of_le_ne_top WithTop.coe_ne_top (min_le_left _ _)),
         WithTop.coe_untop, min_eq_left ((min_le_right _ _).trans (hle ω))]
-    simp only [stoppedProcess_indicator_pos_apply, hω, ↓reduceIte, hσω, hmin_le]
+    simp only [stoppedProcess_indicator_pos_apply, hω, ↓reduceIte, lt_of_lt_of_le hω (hle ω),
+      hmin_le]
   · simp [stoppedProcess_indicator_pos_apply, hω]
 
 /-- Restopping an indicator-stopped process at an earlier random time `τ ≤ σ` agrees with
@@ -337,8 +332,8 @@ theorem stoppedProcess_indicator_pos_of_le {ι Ω E : Type*} [LinearOrder ι] [O
       stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator
         (stoppedProcess (fun u ↦ {ω | (⊥ : WithTop ι) < σ ω}.indicator (X u)) σ t)) τ := by
   ext t ω; by_cases hω : (⊥ : WithTop ι) < τ ω
-  · rw [stoppedProcess_indicator_pos_stoppedProcess_of_le X hle t ω]
-    simp only [stoppedProcess_indicator_pos_apply, hω, ↓reduceIte]
+  · simp [stoppedProcess_indicator_pos_stoppedProcess_of_le X hle t ω,
+      stoppedProcess_indicator_pos_apply, hω]
   · simp [stoppedProcess_indicator_pos_apply, hω]
 
 variable {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι] [Zero E] [Preorder E]
@@ -351,10 +346,8 @@ theorem ae_nonneg_stoppedProcess_indicator
     0 ≤ᵐ[P] stoppedProcess (fun u ↦ s.indicator (X u)) τ t := by
   filter_upwards [hpos] with ω hω
   by_cases ht : (t : WithTop ι) ≤ τ ω
-  · rw [stoppedProcess_eq_of_le ht]
-    exact Set.indicator_apply_nonneg (fun _ ↦ hω t)
-  · rw [stoppedProcess_eq_of_ge (le_of_not_ge ht)]
-    exact Set.indicator_apply_nonneg (fun _ ↦ hω _)
+  · rw [stoppedProcess_eq_of_le ht]; exact Set.indicator_apply_nonneg (fun _ ↦ hω t)
+  · rw [stoppedProcess_eq_of_ge (le_of_not_ge ht)]; exact Set.indicator_apply_nonneg (fun _ ↦ hω _)
 
 /-- Stopping a strongly progressive process restricted to the event that the stopping time is
 strictly above the bottom time preserves strong progressivity. -/
@@ -365,14 +358,12 @@ theorem IsStronglyProgressive.stoppedProcess_indicator_pos
     {X : ι → Ω → E} (hX : IsStronglyProgressive ℱ X) {τ : Ω → WithTop ι}
     (hτ : IsStoppingTime ℱ τ) :
     IsStronglyProgressive ℱ
-      (MeasureTheory.stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (X t)) τ) :=
-  fun T ↦ by
-  let : MeasurableSpace Ω := ℱ T
+      (MeasureTheory.stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (X t)) τ) := by
+  intro T; let : MeasurableSpace Ω := ℱ T
   have hpos : MeasurableSet[ℱ T] {ω | (⊥ : WithTop ι) < τ ω} :=
     ℱ.mono bot_le _ (hτ.measurableSet_gt ⊥)
   convert ((hX.stoppedProcess hτ) T).indicator (MeasurableSet.univ.prod hpos) using 1
-  ext ⟨t, ω⟩; rw [stoppedProcess_indicator_comm]
-  by_cases hω : (⊥ : WithTop ι) < τ ω <;> simp [hω]
+  ext ⟨t, ω⟩; rw [stoppedProcess_indicator_comm]; by_cases hω : (⊥ : WithTop ι) < τ ω <;> simp [hω]
 
 /-- If random times `τ` diverge almost surely to `⊤` along a filter `l`, then at any fixed time
 `t` the stopped process `stoppedProcess X (τ k) t` eventually agrees with `X t` almost surely. -/

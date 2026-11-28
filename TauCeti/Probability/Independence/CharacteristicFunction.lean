@@ -161,8 +161,7 @@ theorem iIndepFun.measureReal_abs_finsetSum_sub_le_le_integral_prod_norm_charFun
   have := hX.isProbabilityMeasure
   have hS : AEMeasurable (fun ω ↦ ∑ i ∈ s, X i ω) P := Finset.aemeasurable_fun_sum _ hmeas
   have hset : {ω | |∑ i ∈ s, X i ω - v| ≤ ε} = (fun ω ↦ ∑ i ∈ s, X i ω) ⁻¹' closedBall v ε := by
-    ext ω
-    simp [Real.dist_eq]
+    ext ω; simp [Real.dist_eq]
   rw [hset, ← map_measureReal_apply_of_aemeasurable hS measurableSet_closedBall]
   refine (measureReal_closedBall_le_integral_norm_charFun v hε).trans_eq ?_
   simp [hX.charFun_map_fun_finsetSum_eq_prod hmeas, Finset.prod_apply, norm_prod]
@@ -193,9 +192,8 @@ theorem iIndepFun.measureReal_abs_finsetSum_mul_sub_le_le_integral_prod_norm_cha
       hξ.comp (fun i x ↦ a i * x) fun i ↦ measurable_const_mul (a i)
   refine (hX.measureReal_abs_finsetSum_sub_le_le_integral_prod_norm_charFun
     (fun i hi ↦ (hmeas i hi).const_mul (a i)) v hε).trans_eq ?_
-  refine congrArg ((24 / 23) ^ 2 * ε * ·) (intervalIntegral.integral_congr fun t _ ↦
-    Finset.prod_congr rfl fun i hi ↦ ?_)
-  rw [charFun_map_mul_comp (hmeas i hi)]
+  exact congrArg ((24 / 23) ^ 2 * ε * ·) <| intervalIntegral.integral_congr fun t _ ↦
+    Finset.prod_congr rfl fun i hi ↦ congrArg norm (charFun_map_mul_comp (hmeas i hi) (a i) t)
 
 /-- **Esseen's inequality for independent weighted sums** over a finite index type: the
 probability that `∑ i, a i * ξ i` lies within `ε > 0` of `v` is at most `(24 / 23) ^ 2 * ε`

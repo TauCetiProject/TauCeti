@@ -97,9 +97,9 @@ theorem isFilteredPreBrownianReal_sub_initialValue [IsProbabilityMeasure P] {M :
     IsFilteredPreBrownianReal ℱ (fun t ω ↦ M t ω - M 0 ω) P :=
   have hQ1 : Locally (fun Y ↦ Martingale Y ℱ P) ℱ
       (fun t ω ↦ M t ω ^ 2 - M 0 ω ^ 2 - ((1 : ℝ≥0) : ℝ) * (t : ℝ)) P := by simpa using hQ
-  have hsub_adapt : Adapted ℱ (fun t ω ↦ M t ω - M 0 ω) := fun t ↦
-    (hA t).sub ((hA 0).mono (ℱ.mono bot_le) le_rfl)
-  hsub_adapt.isFilteredPreBrownianReal (ae_of_all P fun _ ↦ sub_self _)
+  (show Adapted ℱ (fun t ω ↦ M t ω - M 0 ω) from fun t ↦
+    (hA t).sub ((hA 0).mono (ℱ.mono bot_le) le_rfl)).isFilteredPreBrownianReal
+    (ae_of_all P fun _ ↦ sub_self _)
     (fun _ _ hst ↦ by
       simpa only [Pi.sub_def, sub_sub_sub_cancel_right, one_mul] using
         hasLaw_sub_gaussianReal hM hQ1 hcont hst)
@@ -234,8 +234,8 @@ theorem isFilteredPreBrownianReal_of_locally_martingale (hB : IsBrownianReal B P
         (Real.continuous_sqrt.continuousAt.tendsto.comp hsq_lim).mul_const √(P.real E))
   have hI2 u := (hB.integrable_pow_eval u 2).integrableOn (s := E)
   simp only [integral_sub (hI2 _) (hI2 _), integral_sub (integrable_const _).integrableOn
-    (integrable_const _).integrableOn, integral_sub (hI2 _) (integrable_const _).integrableOn]
-    at hzero ⊢; linarith
+    (integrable_const _).integrableOn, integral_sub (hI2 _)
+    (integrable_const _).integrableOn] at hzero ⊢; linarith
 
 /-- **Predictable filtered Brownian version from a Brownian local martingale.**
 Without assuming literal adaptation of `B`, if `B` is a real Brownian motion (in law) that is a

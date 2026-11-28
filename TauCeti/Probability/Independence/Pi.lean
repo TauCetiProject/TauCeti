@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Independence.Basic
+import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Data.Finset.Sort
 import Mathlib.Probability.Independence.InfinitePi
 import Mathlib.Probability.Independence.Process.Basic
 
@@ -25,7 +27,10 @@ rearranges it into the product of the two coordinate laws. Mathlib's
 
 Similarly, if a two-parameter array `(X a b)` has mutually independent rows and mutually
 independent entries within each row, then its columns `b ↦ (a ↦ X a b)` are mutually independent
-(`ProbabilityTheory.iIndepFun.swap`).
+(`ProbabilityTheory.iIndepFun.swap`). For process-independence arguments via
+`ProbabilityTheory.iIndepFun.iIndepFun_process`,
+`TauCeti.Probability.exists_measurable_factor_grid_increments` factors finite-dimensional centered
+coordinate values through measurable cumulative sums of increments along a single sorted grid.
 
 Conversely, whenever a measurable equivalence `e : E ≃ᵐ (∀ i, α i)` over a finite index type
 pushes a measure `μ` forward to a product of probability measures `Measure.pi ν`, having law `μ`
@@ -36,6 +41,7 @@ is equivalent to the `e`-coordinates being mutually independent with marginal la
 * `ProbabilityTheory.iIndepFun.indepFun_pi_of_indepFun`
 * `ProbabilityTheory.iIndepFun.swap`
 * `TauCeti.Probability.hasLaw_iff_iIndepFun_of_map_eq_pi`
+* `TauCeti.Probability.exists_measurable_factor_grid_increments`
 -/
 
 public section
@@ -143,5 +149,38 @@ theorem hasLaw_iff_iIndepFun_of_map_eq_pi {Ω E ι : Type*} {α : ι → Type*}
   have hc : ∀ i, HasLaw (fun ω ↦ e (H ω) i) (ν i) P := fun i ↦
     HasLaw.comp ⟨(measurable_pi_apply i).aemeasurable, (measurePreserving_eval ν i).map_eq⟩ h
   exact ⟨(iIndepFun_iff_hasLaw_pi_pi hc).2 h, hc⟩
+
+/-- Every finite family of coordinate time sets `J i` embeds into one sorted grid `e` containing
+`⊥`, so that the centered values `f i t - f i ⊥` (`t ∈ J i`) are measurable cumulative sums of
+the grid increments along `e`. -/
+theorem exists_measurable_factor_grid_increments {ι T E : Type*}
+    [LinearOrder T] [OrderBot T] [MeasurableSpace E] [AddCommGroup E] [MeasurableAdd₂ E]
+    (S : Finset ι) (J : S → Finset T) :
+    ∃ (m : ℕ) (e : Fin (m + 1) → T), Monotone e ∧
+      ∃ g : ∀ i : S, (Fin m → E) → (J i → E),
+        (∀ i, Measurable (g i)) ∧
+          ∀ (f : ι → T → E) (i : S) (t : J i),
+            g i (fun k ↦ f i (e k.succ) - f i (e k.castSucc)) t = f i t - f i ⊥ := by
+  classical
+  let Tset : Finset T := insert ⊥ (Finset.univ.biUnion J)
+  have h0T : (⊥ : T) ∈ Tset := Finset.mem_insert_self ⊥ _
+  let e : Fin (Tset.card - 1 + 1) ≃o Tset :=
+    Tset.orderIsoOfFin (Nat.sub_add_cancel (Finset.card_pos.2 ⟨⊥, h0T⟩)).symm
+  let idx (i : S) (t : J i) : Fin (Tset.card - 1 + 1) := e.symm ⟨t.val,
+    Finset.mem_insert_of_mem (Finset.mem_biUnion.2 ⟨i, Finset.mem_univ i, t.property⟩)⟩
+  let g (i : S) (d : Fin (Tset.card - 1) → E) (t : J i) : E :=
+    Fin.cases 0 (fun k ↦ ∑ j ∈ Finset.Iic k, d j) (idx i t)
+  refine ⟨Tset.card - 1, fun k ↦ e k, fun _ _ h ↦ e.monotone h, g, fun i ↦ measurable_pi_iff.2
+      fun t ↦ by dsimp only [g]; cases idx i t using Fin.cases with
+        | zero => exact measurable_const
+        | succ k => exact Finset.measurable_sum _ fun _ _ ↦ measurable_pi_apply _,
+    fun f i t ↦ ?_⟩
+  · have hg0 : (e 0 : T) = ⊥ := le_antisymm (Subtype.coe_le_coe.2
+      ((e.monotone (Fin.zero_le _)).trans_eq (e.apply_symm_apply ⟨⊥, h0T⟩))) bot_le
+    have ht : (e (idx i t) : T) = t.val := congrArg Subtype.val (e.apply_symm_apply _)
+    dsimp only [g]; cases hk : idx i t using Fin.cases with
+    | zero => rw [hk] at ht; simp [← ht, hg0]
+    | succ k => rw [hk] at ht; simpa only [Fin.cases_succ, ← ht, hg0] using
+        Fin.sum_Iic_sub k fun j ↦ f i (e j)
 
 end TauCeti.Probability

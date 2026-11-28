@@ -288,25 +288,21 @@ theorem setIntegral_sq_sub_eq_quadraticSum [SigmaFiniteFiltration μ ℱ] {Y : �
   have hinc_int (i : Fin n) :
       Integrable (fun ω ↦ (Y (g i.succ) ω - Y (g i.castSucc) ω) ^ 2) μ := by
     simpa only [Pi.sub_apply] using ((hmem i.succ).sub (hmem i.castSucc)).integrable_sq
-  have hstep (i : Fin n) :
-      ∫ ω in E, (Y (g i.succ) ω ^ 2 - Y (g i.castSucc) ω ^ 2) ∂μ =
-        ∫ ω in E, (Y (g i.succ) ω - Y (g i.castSucc) ω) ^ 2 ∂μ := by
+  have hstep (i : Fin n) : ∫ ω in E, (Y (g i.succ) ω ^ 2 - Y (g i.castSucc) ω ^ 2) ∂μ =
+      ∫ ω in E, (Y (g i.succ) ω - Y (g i.castSucc) ω) ^ 2 ∂μ := by
     have hEu : MeasurableSet[ℱ (g i.castSucc)] E := ℱ.mono (hg0 ▸ hg (Fin.zero_le _)) E hE
     have h1 := setIntegral_congr_ae (ℱ.le _ E hEu)
       ((hY.condExp_sq (hg (Fin.castSucc_le_succ i)) (hmem i.succ)).mono fun _ hω _ ↦ hω)
     rw [setIntegral_condExp (ℱ.le _) (hmem i.succ).integrable_sq hEu,
       integral_add (hI2 i.castSucc) integrable_condExp.integrableOn,
       setIntegral_condExp (ℱ.le _) (hinc_int i) hEu] at h1
-    rw [integral_sub (hI2 i.succ) (hI2 i.castSucc)]
-    linarith
-  have hsub_int (i : Fin n) :
-      IntegrableOn (fun ω ↦ Y (g i.succ) ω ^ 2 - Y (g i.castSucc) ω ^ 2) E μ :=
-    (hI2 i.succ).sub (hI2 i.castSucc)
+    rw [integral_sub (hI2 i.succ) (hI2 i.castSucc)]; linarith
+  have hsub_int (i : Fin n) : IntegrableOn (fun ω ↦ Y (g i.succ) ω ^ 2 - Y (g i.castSucc) ω ^ 2)
+      E μ := (hI2 i.succ).sub (hI2 i.castSucc)
   rw [quadraticSum_def, integral_finsetSum _ fun i _ ↦ (hinc_int i).integrableOn,
     ← Finset.sum_congr rfl fun i _ ↦ hstep i,
     ← integral_finsetSum Finset.univ
-      (f := fun (i : Fin n) ω ↦ Y (g i.succ) ω ^ 2 - Y (g i.castSucc) ω ^ 2)
-      fun i _ ↦ hsub_int i]
+      (f := fun (i : Fin n) ω ↦ Y (g i.succ) ω ^ 2 - Y (g i.castSucc) ω ^ 2) fun i _ ↦ hsub_int i]
   congr 1; ext ω; rw [Fin.sum_univ_succ_sub_castSucc (fun i ↦ Y (g i) ω ^ 2), hg0, hgl]
 
 /-- For a real `L²` martingale `Y` whose compensated square `Y ^ 2 - A` is a martingale with
@@ -327,8 +323,7 @@ theorem integral_mul_sub_sq_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω → �
   have hW_nbd : ∀ᵐ ω ∂μ, ‖W ω‖ ≤ C :=
     hW_bd.mono fun ω h ↦ by rwa [Real.norm_eq_abs, abs_of_nonneg (hW_nn ω)]
   have h0 := hY.setIntegral_sq_sub_smul_eq_zero hQ huv MeasurableSet.univ hW_sm.aestronglyMeasurable
-    ((((hQ.integrable v).sub (hQ.integrable u)).mul_bdd hW_asm hW_nbd).integrableOn)
-    (by
+    ((((hQ.integrable v).sub (hQ.integrable u)).mul_bdd hW_asm hW_nbd).integrableOn) (by
       have hmul : Integrable (fun ω ↦ (Y v ω - Y u ω) * Y u ω) μ := by
         convert (hYv.sub hYu).integrable_mul hYu
       simpa only [smul_eq_mul, mul_assoc] using (hmul.mul_bdd hW_asm hW_nbd).integrableOn)
@@ -360,13 +355,10 @@ theorem integral_quadraticSum_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω → 
     (hA_step : ∀ u v, u ≤ v → ∀ᵐ ω ∂μ, 0 ≤ A v ω - A u ω ∧ A v ω - A u ω ≤ c * ((v : ℝ) - u))
     {n : ℕ} {g : Fin (n + 1) → ℝ≥0} (hg : Monotone g) (hmem : ∀ k, MemLp (Y (g k)) 2 μ) :
     ∫ ω, quadraticSum Y g ω ∂μ ≤ c * ((g (Fin.last n) : ℝ) - g 0) * μ.real Set.univ := by
-  have hd_le (i : Fin n) : ∫ ω, (Y (g i.succ) ω - Y (g i.castSucc) ω) ^ 2 ∂μ ≤
-      c * ((g i.succ : ℝ) - g i.castSucc) * μ.real Set.univ :=
-    hY.integral_sub_sq_le hQ hA_step (hg (Fin.castSucc_le_succ i))
-      (hmem i.castSucc) (hmem i.succ)
   rw [quadraticSum_def, integral_finsetSum _ fun j _ ↦ by
     simpa only [Pi.sub_apply] using ((hmem j.succ).sub (hmem j.castSucc)).integrable_sq]
-  refine (Finset.sum_le_sum fun j _ ↦ hd_le j).trans_eq ?_
+  refine (Finset.sum_le_sum fun j _ ↦ hY.integral_sub_sq_le hQ hA_step (hg (Fin.castSucc_le_succ j))
+    (hmem j.castSucc) (hmem j.succ)).trans_eq ?_
   rw [← Finset.sum_mul, ← Finset.mul_sum, Fin.sum_univ_succ_sub_castSucc (fun k ↦ (g k : ℝ))]
 
 private lemma integral_quadraticSum_mul_last_sq_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω → ℝ}
@@ -401,19 +393,16 @@ private lemma integral_last_increment_pow_four_le [IsFiniteMeasure μ] {Y A : �
     ∫ ω, ((Y (g (Fin.last (n + 1))) ω - Y (g (Fin.last n).castSucc) ω) ^ 2) ^ 2 ∂μ ≤
       4 * R ^ 2 * (c * ((g (Fin.last (n + 1)) : ℝ) - g (Fin.last n).castSucc) *
         μ.real Set.univ) := by
-  let d (ω : Ω) : ℝ := (Y (g (Fin.last (n + 1))) ω - Y (g (Fin.last n).castSucc) ω) ^ 2
-  have hd_bd : ∀ᵐ ω ∂μ, d ω ≤ (2 * R) ^ 2 :=
-    ae_sq_sub_le (hYR (Fin.last (n + 1))) (hYR (Fin.last n).castSucc)
-  have hd_last : ∫ ω, d ω ∂μ ≤
-      c * ((g (Fin.last (n + 1)) : ℝ) - g (Fin.last n).castSucc) * μ.real Set.univ :=
-    hY.integral_sub_sq_le hQ hA_step hstep_le
-      (hmem (Fin.last n).castSucc) (hmem (Fin.last (n + 1)))
+  have hd_bd : ∀ᵐ ω ∂μ, (Y (g (Fin.last (n + 1))) ω - Y (g (Fin.last n).castSucc) ω) ^ 2 ≤
+      (2 * R) ^ 2 := ae_sq_sub_le (hYR (Fin.last (n + 1))) (hYR (Fin.last n).castSucc)
+  have hd_last := hY.integral_sub_sq_le hQ hA_step hstep_le
+    (hmem (Fin.last n).castSucc) (hmem (Fin.last (n + 1)))
   rw [show (4 * R ^ 2 : ℝ) = (2 * R) ^ 2 by ring]
   refine ((integral_mono_ae hd_lp.integrable_sq
-    ((hd_lp.integrable one_le_two).const_mul ((2 * R) ^ 2)) (hd_bd.mono fun _ hω ↦ by
-      dsimp only; rw [sq]; exact mul_le_mul_of_nonneg_right hω (sq_nonneg _))).trans_eq
-    (integral_const_mul _ _)).trans ?_
-  gcongr
+    ((hd_lp.integrable one_le_two).const_mul ((2 * R) ^ 2))
+    (hd_bd.mono fun _ hω ↦ (sq _).trans_le
+      (mul_le_mul_of_nonneg_right hω (sq_nonneg _)))).trans_eq
+    (integral_const_mul _ _)).trans (by gcongr)
 
 /-- Second-moment bound for the discrete quadratic sum of a uniformly bounded real martingale `Y`
 along a nondecreasing finite grid `g : Fin (n + 1) → ℝ≥0`, when `Y ^ 2 - A` is a martingale and
@@ -454,10 +443,9 @@ theorem integral_quadraticSum_sq_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω �
         (hS'_lp.integrable_sq.add h2S) hd_lp.integrable_sq,
       integral_add hS'_lp.integrable_sq h2S, integral_const_mul]
     simp only [g', Function.comp_apply, Fin.castSucc_zero] at ih'
-    have hL0 : 0 ≤ c * ((g (Fin.last n).castSucc : ℝ) - g 0) :=
-      mul_nonneg hc (sub_nonneg.2 (NNReal.coe_le_coe.2 (hg (Fin.zero_le _))))
-    have hδ0 : 0 ≤ c * ((g (Fin.last (n + 1)) : ℝ) - g (Fin.last n).castSucc) :=
-      mul_nonneg hc (sub_nonneg.2 (NNReal.coe_le_coe.2 hstep_le))
+    have hL0 :=
+      mul_nonneg hc (sub_nonneg.2 (NNReal.coe_le_coe.2 (hg (Fin.zero_le (Fin.last n).castSucc))))
+    have hδ0 := mul_nonneg hc (sub_nonneg.2 (NNReal.coe_le_coe.2 hstep_le))
     have hsplit : (g (Fin.last (n + 1)) : ℝ) - g 0 = ((g (Fin.last n).castSucc : ℝ) - g 0) +
         ((g (Fin.last (n + 1)) : ℝ) - g (Fin.last n).castSucc) := by ring
     have hμ0 : 0 ≤ μ.real Set.univ := ENNReal.toReal_nonneg

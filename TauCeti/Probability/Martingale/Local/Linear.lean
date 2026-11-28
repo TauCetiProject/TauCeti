@@ -61,13 +61,12 @@ theorem martingale_add {X Y : ℝ≥0 → Ω → E}
     Locally (fun U ↦ Martingale U ℱ P) ℱ (fun t ω ↦ X t ω + Y t ω) P := by
   have hτ := hX.isLocalizingSequence_localSeq.min hY.isLocalizingSequence_localSeq
   refine ⟨min hX.localSeq hY.localSeq, hτ, fun n ↦ ?_⟩
-  have hXn := (hX.stoppedProcess_localSeq n).stoppedProcess_indicator_of_le_of_ae_isRightContinuous
-    hXp hXc (hX.isLocalizingSequence_localSeq.isStoppingTime n) (hτ.isStoppingTime n)
-    (fun _ ↦ min_le_left _ _)
-  have hYn := (hY.stoppedProcess_localSeq n).stoppedProcess_indicator_of_le_of_ae_isRightContinuous
-    hYp hYc (hY.isLocalizingSequence_localSeq.isStoppingTime n) (hτ.isStoppingTime n)
-    (fun _ ↦ min_le_right _ _)
-  convert hXn.add hYn using 1
+  convert ((hX.stoppedProcess_localSeq n).stoppedProcess_indicator_of_le_of_ae_isRightContinuous
+      hXp hXc (hX.isLocalizingSequence_localSeq.isStoppingTime n) (hτ.isStoppingTime n)
+      (fun _ ↦ min_le_left _ _)).add
+    ((hY.stoppedProcess_localSeq n).stoppedProcess_indicator_of_le_of_ae_isRightContinuous
+      hYp hYc (hY.isLocalizingSequence_localSeq.isStoppingTime n) (hτ.isStoppingTime n)
+      (fun _ ↦ min_le_right _ _)) using 1
   ext t ω; have hadd := stoppedProcess_indicator_pos_add X Y ((hX.localSeq ⊓ hY.localSeq) n)
   rw [bot_eq_zero] at hadd; exact congrFun (congrFun hadd t) ω
 

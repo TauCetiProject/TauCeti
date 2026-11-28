@@ -41,9 +41,7 @@ theorem exists_le_and_coe_le [Preorder α] [IsCodirectedOrder α] (x : WithTop �
     ∃ b : α, b ≤ a ∧ (b : WithTop α) ≤ x := by
   induction x with
   | top => exact ⟨a, le_rfl, le_top⟩
-  | coe k =>
-    obtain ⟨b, hbk, hba⟩ := exists_le_le k a
-    exact ⟨b, hba, coe_le_coe.2 hbk⟩
+  | coe k => obtain ⟨b, hbk, hba⟩ := exists_le_le k a; exact ⟨b, hba, coe_le_coe.2 hbk⟩
 
 /-- Unwrapping the truncation `min (s : WithTop α) τ` via `WithTop.untopA` is monotone in `s`. -/
 theorem monotone_untopA_min_coe [LinearOrder α] [Nonempty α] (τ : WithTop α) :

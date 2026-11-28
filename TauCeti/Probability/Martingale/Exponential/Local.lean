@@ -62,9 +62,7 @@ private lemma stopPos_zero (X : ℝ≥0 → Ω → ℝ) (τ : Ω → WithTop ℝ
     stopPos X τ 0 ω = {ω | 0 < τ ω}.indicator (X 0) ω := by
   dsimp only [stopPos]; rw [← NNReal.bot_eq_zero, stoppedProcess_bot]
 
-variable {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
-
-variable {P : Measure Ω} [IsFiniteMeasure P]
+variable {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ} {P : Measure Ω} [IsFiniteMeasure P]
 
 private lemma tendsto_integral_stopPos_linProc (c : ℝ) {τ : ℕ → Ω → WithTop ℝ≥0}
     (hτ : IsLocalizingSequence ℱ τ P)
@@ -157,12 +155,12 @@ private lemma martingale_stopped_exp {N : ℝ≥0 → Ω → ℝ} {c : ℝ} (hc 
       · simpa only [Real.norm_eq_abs, abs_zero] using hR)
     (ae_of_all P fun ω ↦ by simp [stopPos_zero])
     (fun _ _ huv ↦ ae_of_all P fun ω ↦ by
-      simp only [stoppedProcess_indicator_linear, ← mul_sub]
-      refine ⟨mul_nonneg hc (sub_nonneg.2 (NNReal.coe_le_coe.2
-          (WithTop.monotone_untopA_min_coe _ huv))), ?_⟩
-      simp only [WithTop.map_untopA_min_coe (f := NNReal.toReal) (fun _ _ ↦ NNReal.coe_le_coe.2)]
-      exact mul_le_mul_of_nonneg_left
-        (WithTop.untopA_coe_min_sub_le ((σ ω).map NNReal.toReal) (NNReal.coe_le_coe.2 huv)) hc)
+      simp only [stoppedProcess_indicator_linear, ← mul_sub,
+        WithTop.map_untopA_min_coe (f := NNReal.toReal) (fun _ _ ↦ NNReal.coe_le_coe.2)]
+      exact ⟨mul_nonneg hc (sub_nonneg.2 (WithTop.monotone_untopA_min_coe
+          ((σ ω).map NNReal.toReal) (NNReal.coe_le_coe.2 huv))),
+        mul_le_mul_of_nonneg_left
+          (WithTop.untopA_coe_min_sub_le ((σ ω).map NNReal.toReal) (NNReal.coe_le_coe.2 huv)) hc⟩)
     α
 
 private lemma martingale_of_tendsto_stopped_exp {N : ℝ≥0 → Ω → ℝ} {c : ℝ} (hc : 0 ≤ c) (α : ℝ)
@@ -206,12 +204,11 @@ private lemma martingale_exp_predictable {N : ℝ≥0 → Ω → ℝ} {c : ℝ}
   let τ := min ρ hQN_loc.localSeq; have hτ := hρ.min hQN_loc.isLocalizingSequence_localSeq
   have hQn_mart (n : ℕ) : Martingale (fun t ω ↦
       stopPos N (τ n) t ω ^ 2 - stopPos (linProc c) (τ n) t ω) ℱ P := by
-    have hrestop := (hQN_loc.stoppedProcess_localSeq n)
+    convert (hQN_loc.stoppedProcess_localSeq n)
       |>.stoppedProcess_indicator_of_le_of_ae_isRightContinuous hQNp.isStronglyProgressive
       (hNc.mono fun _ h ↦ (by fun_prop : Continuous _).isRightContinuous)
       (hQN_loc.isLocalizingSequence_localSeq.isStoppingTime n) (hτ.isStoppingTime n)
-      (fun _ ↦ min_le_right _ _)
-    convert hrestop using 1
+      (fun _ ↦ min_le_right _ _) using 1
     simpa only [stopPos, linProc, bot_eq_zero] using
       (stoppedProcess_indicator_pos_sq_sub N (linProc c) (τ n)).symm
   have hc := nonneg_of_stopped_sq_sub_linear hP hN0 hτ hQn_mart
@@ -263,22 +260,17 @@ theorem setIntegral_exp_I_mul_sub {M : ℝ≥0 → Ω → ℝ} {c : ℝ}
   have hint_eq := integral_congr_ae (hpull.mp ((hZ.condExp_ae_eq hst).mono fun ω hm hp ↦ by
     simpa only [ContinuousLinearMap.mul_apply'] using hp.trans (congrArg (W ω * ·) hm)))
   rw [integral_condExp (ℱ.le s)] at hint_eq
-  have hW_t (ω : Ω) : W ω * expLoc N c α t ω =
-      A.indicator (fun ω ↦ exp (I * α * (N t ω - N s ω))) ω := by
+  have hW_mul (u : ℝ≥0) (ω : Ω) : W ω * expLoc N c α u ω = A.indicator (fun ω ↦
+      exp (I * α * (N u ω - N s ω) + ((α ^ 2 * c * ((u : ℝ) - t) / 2 : ℝ) : ℂ))) ω := by
     by_cases hω : ω ∈ A
     · simp only [W, b, expLoc, indicator_of_mem hω, ← Complex.exp_add]; congr 1; push_cast; ring
     · simp only [W, indicator_of_notMem hω, zero_mul]
-  have hW_s (ω : Ω) : W ω * expLoc N c α s ω =
-      A.indicator (fun _ ↦ exp (-((α ^ 2 * c * ((t : ℝ) - s) / 2 : ℝ) : ℂ))) ω := by
-    by_cases hω : ω ∈ A
-    · simp only [W, b, expLoc, indicator_of_mem hω, ← Complex.exp_add]; congr 1; push_cast; ring
-    · simp only [W, indicator_of_notMem hω, zero_mul]
-  simp_rw [hW_t, hW_s, integral_indicator (ℱ.le s A hA)] at hint_eq
-  have hinc_ae : ∀ᵐ ω ∂P, ω ∈ A →
-      exp (I * α * (M t ω - M s ω)) = exp (I * α * (N t ω - N s ω)) :=
-    hNM.mono fun ω hω _ ↦ by simp only [hω t, hω s, ← Complex.ofReal_sub, sub_sub_sub_cancel_right]
-  rw [setIntegral_congr_ae (ℱ.le s A hA) hinc_ae, hint_eq, setIntegral_const, Measure.real,
-    Complex.real_smul]
+  simp only [hW_mul, sub_self, mul_zero, zero_div, ofReal_zero, zero_add, add_zero,
+    integral_indicator (ℱ.le s A hA)] at hint_eq
+  rw [setIntegral_congr_ae (ℱ.le s A hA) (g := fun ω ↦ exp (I * α * (N t ω - N s ω)))
+      (hNM.mono fun ω hω _ ↦ by
+        simp only [hω t, hω s, ← Complex.ofReal_sub, sub_sub_sub_cancel_right]),
+    hint_eq, setIntegral_const, Measure.real, Complex.real_smul]; congr 2; push_cast; ring
 
 /-- **Conditional characteristic function of increments.**
 For an almost-surely continuous local martingale `M` whose compensated square
