@@ -110,9 +110,8 @@ variable {n} in
 /-- The square of `β_f` is `β_f(x, y)² = ψ₀(y* x)`. -/
 theorem finiteDatum_sq (x y : n → 𝔸ᶠ[E]) :
     (W.finiteDatum n x y : ℂ) ^ 2 = W.selfDualAddChar (star y ⬝ᵥ x) := by
-  rw [finiteDatum_apply, ← Circle.coe_pow, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul,
-    Nat.cast_ofNat, ← mul_assoc, ← map_ofNat (algebraMap E 𝔸ᶠ[E]) 2, ← map_mul,
-    mul_inv_cancel₀ two_ne_zero, map_one, one_mul]
+  rw [finiteDatum_apply, ← Circle.coe_pow, ← one_div, selfDualAddChar_algebraMap_div_two_mul_sq,
+    map_one, one_mul]
 
 /-- **`Ôⁿ` is self-dual for `β_f²`**: a vector `y` lies in `Ôⁿ` exactly when
 `β_f(z, y)² = ψ₀(y* z) = 1` for every `z ∈ Ôⁿ`. -/
@@ -131,8 +130,8 @@ theorem forall_finiteDatum_sq_eq_one_iff (y : n → 𝔸ᶠ[E]) :
     have h₁ := h _ hz
     rw [dotProduct_single, Pi.star_apply, Circle.coe_eq_one] at h₁
     exact h₁
-  · rw [W.selfDualAddChar_eq_one_of_mem (dotProduct_mem (fun i ↦ by
-      rw [Pi.star_apply]; exact star_mem_integralAdeles_iff.2 (hy i)) hz), Circle.coe_one]
+  · rw [W.selfDualAddChar_eq_one_of_mem
+      (dotProduct_mem (forall_star_apply_mem_integralAdeles_iff.2 hy) hz), Circle.coe_one]
 
 end Datum
 

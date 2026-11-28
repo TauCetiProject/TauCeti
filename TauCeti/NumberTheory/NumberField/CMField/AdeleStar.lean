@@ -54,7 +54,8 @@ infinite adeles only needs `E` to be an algebraic CM field.
   `NumberField.IsCMField.instStarRingInfiniteAdeleRing`: the star structures, with
   `ContinuousStar` and `StarModule E` instances, and
   `NumberField.IsCMField.instStarRingIntegralAdeles` on the integral finite adeles, which
-  conjugation preserves (`NumberField.IsCMField.star_mem_integralAdeles_iff`).
+  conjugation preserves (`NumberField.IsCMField.star_mem_integralAdeles_iff`, and coordinatewise
+  `NumberField.IsCMField.forall_star_apply_mem_integralAdeles_iff`).
 * `IsDedekindDomain.FiniteAdeleRing.finiteAdeleConj_finiteAdeleConj`,
   `NumberField.InfiniteAdeleRing.infiniteAdeleConj_infiniteAdeleConj`: the conjugations are
   involutions.
@@ -149,6 +150,12 @@ theorem star_mem_integralAdeles_iff {a : 𝔸ᶠ[E]} :
       a ∈ FiniteAdeleRing.integralAdeles (𝓞 E) E := by
   rw [← coe_finiteAdeleConj, finiteAdeleConj_def]
   exact finiteAdeleEquiv_mem_integralAdeles_iff _
+
+/-- Conjugation preserves the vectors all of whose coordinates are integral finite adeles. -/
+theorem forall_star_apply_mem_integralAdeles_iff {n : Type*} {v : n → 𝔸ᶠ[E]} :
+    (∀ i, star v i ∈ FiniteAdeleRing.integralAdeles (𝓞 E) E) ↔
+      ∀ i, v i ∈ FiniteAdeleRing.integralAdeles (𝓞 E) E := by
+  simp only [Pi.star_apply, star_mem_integralAdeles_iff]
 
 /-- The integral finite adeles `Ô` of a CM field inherit the star structure of the finite adeles:
 complex conjugation preserves `Ô` (`star_mem_integralAdeles_iff`), so `Ô` is a star subsemiring of
