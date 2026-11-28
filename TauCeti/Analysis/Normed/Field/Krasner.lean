@@ -11,30 +11,32 @@ public import Mathlib.FieldTheory.Perfect
 
 import Mathlib.Algebra.AlgebraicCard
 import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
-import Mathlib.FieldTheory.PrimitiveElement
+import Mathlib.FieldTheory.SeparableDegree
 import TauCeti.Analysis.Normed.Field.Approximation
+import TauCeti.FieldTheory.IntermediateField.Adjoin.PrimitiveElement
 
 /-!
 # Krasner approximation and countability of finite separable subextensions
 
 Let `L` be an algebraically closed normed field over a normed field `K` satisfying Krasner's lemma
 (`IsKrasner K L`), and let `k` be a field whose image in `K` is dense. Any separable element
-`x : L` over `K` generates the same extension `K⟮x⟯` as some element `β : L` algebraic over `k`:
+`x : L` over `K` generates the same extension `K⟮x⟯` as some element `β : L` separable over `k`:
 approximate `minpoly K x` by a monic polynomial `g ∈ k[X]` of the same degree whose root `β ∈ L`
 lies closer to `x` than to any other conjugate of `x`, apply `IsKrasner.krasner` to get
-`K⟮x⟯ ≤ K⟮β⟯`, and compare degrees over `K`.
+`K⟮x⟯ ≤ K⟮β⟯`, and compare degrees over `K`. Then `g.map (algebraMap k K)` is `minpoly K β`, which
+is separable since `β ∈ K⟮x⟯`, so `g` and hence `β` are separable over `k`.
 
 By the primitive element theorem, every finite separable intermediate field `E` of `L / K` has the
-form `K⟮β⟯` with `β` algebraic over `k`. When `k` is countable, the elements of `L` algebraic
-over `k` are countable, so `L / K` has only countably many finite separable subextensions (and
-hence countably many finite subextensions when `K` is perfect).
+form `K⟮β⟯` with `β` separable (and in particular algebraic) over `k`. When `k` is countable, the
+elements of `L` algebraic over `k` are countable, so `L / K` has only countably many finite
+separable subextensions (and hence countably many finite subextensions when `K` is perfect).
 
 ## Main results
 
-* `IsSeparable.exists_isAlgebraic_adjoin_simple_eq`: every separable element of `L` over `K`
-  generates the same simple extension over `K` as an element algebraic over the dense subfield `k`.
-* `IntermediateField.exists_isAlgebraic_adjoin_simple_eq`: every finite separable intermediate
-  field of `L / K` is generated over `K` by an element algebraic over `k`.
+* `IsSeparable.exists_isSeparable_adjoin_simple_eq`: every separable element of `L` over `K`
+  generates the same simple extension over `K` as an element separable over the dense subfield `k`.
+* `IntermediateField.exists_isSeparable_adjoin_simple_eq`: every finite separable intermediate
+  field of `L / K` is generated over `K` by an element separable over `k`.
 * `IntermediateField.countable_finiteDimensional_isSeparable`: when `k` is countable, `L / K` has
   only countably many finite separable intermediate fields.
 * `IntermediateField.countable_finiteDimensional`: when `K` is perfect and `k` is countable,
@@ -58,10 +60,10 @@ variable {k K L : Type*} [Field k] [NormedField K] [NormedField L] [NormedAlgebr
 
 /-- **Krasner approximation of simple separable extensions.** In an algebraically closed normed
 extension `L / K` satisfying Krasner's lemma, every separable element `x : L` over `K` generates
-the same intermediate field `K⟮x⟯` as some element `β : L` algebraic over a dense subfield `k`. -/
-theorem IsSeparable.exists_isAlgebraic_adjoin_simple_eq {x : L} (hx : IsSeparable K x)
+the same intermediate field `K⟮x⟯` as some element `β : L` separable over a dense subfield `k`. -/
+theorem IsSeparable.exists_isSeparable_adjoin_simple_eq {x : L} (hx : IsSeparable K x)
     (hk : DenseRange (algebraMap k K)) :
-    ∃ β : L, IsAlgebraic k β ∧ K⟮β⟯ = K⟮x⟯ := by
+    ∃ β : L, IsSeparable k β ∧ K⟮β⟯ = K⟮x⟯ := by
   classical
   have hint : IsIntegral K x := hx.isIntegral
   -- Choose `δ > 0` at most the distance from `x` to every other conjugate of `x` in `L`.
@@ -94,27 +96,31 @@ theorem IsSeparable.exists_isAlgebraic_adjoin_simple_eq {x : L} (hx : IsSeparabl
   have hdeg_le : Module.finrank K K⟮β⟯ ≤ Module.finrank K K⟮x⟯ := by
     rw [adjoin.finrank hβ_int, adjoin.finrank hint, ← hdeg, ← natDegree_map (algebraMap k K)]
     exact natDegree_le_of_dvd (minpoly.dvd K β hβ_evalK) (hgm.map _).ne_zero
-  exact ⟨β, ⟨g, hgm.ne_zero, hβ_eval⟩, (eq_of_le_of_finrank_le hle hdeg_le).symm⟩
+  have hEq : K⟮β⟯ = K⟮x⟯ := (eq_of_le_of_finrank_le hle hdeg_le).symm
+  -- `g.map (algebraMap k K)` is the minimal polynomial of `β` over `K`, separable as `β ∈ K⟮x⟯`.
+  have hβK : IsSeparable K β := by
+    have : Algebra.IsSeparable K K⟮β⟯ := by
+      rw [hEq]
+      exact (isSeparable_adjoin_simple_iff_isSeparable K L).mpr hx
+    exact (isSeparable_adjoin_simple_iff_isSeparable K L).mp this
+  have hmin : g.map (algebraMap k K) = minpoly K β := by
+    refine eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic hβ_int) (hgm.map _)
+      (minpoly.dvd K β hβ_evalK) ?_
+    rw [natDegree_map, hdeg, ← adjoin.finrank hint, ← hEq, adjoin.finrank hβ_int]
+  rw [IsSeparable, ← hmin, separable_map] at hβK
+  exact ⟨β, hβK.of_dvd (minpoly.dvd k β hβ_eval), hEq⟩
 
 namespace IntermediateField
 
-/-- **Every finite separable subextension is generated by an element algebraic over a dense
+/-- **Every finite separable subextension is generated by an element separable over a dense
 subfield.** In an algebraically closed normed extension `L / K` satisfying Krasner's lemma, every
-finite separable intermediate field `E` has the form `K⟮β⟯` with `β : L` algebraic over a dense
+finite separable intermediate field `E` has the form `K⟮β⟯` with `β : L` separable over a dense
 subfield `k` of `K`. -/
-theorem exists_isAlgebraic_adjoin_simple_eq (E : IntermediateField K L)
+theorem exists_isSeparable_adjoin_simple_eq (E : IntermediateField K L)
     [FiniteDimensional K E] [Algebra.IsSeparable K E] (hk : DenseRange (algebraMap k K)) :
-    ∃ β : L, IsAlgebraic k β ∧ K⟮β⟯ = E := by
-  obtain ⟨α, hα⟩ := Field.exists_primitive_element K E
-  have hα_sep : IsSeparable K (α : L) := by
-    rw [IsSeparable, ← IntermediateField.coe_val, minpoly.algHom_eq E.val E.val.injective α]
-    exact Algebra.IsSeparable.isSeparable K α
-  have hE : K⟮(α : L)⟯ = E := by
-    refine le_antisymm (adjoin_simple_le_iff.mpr α.property) fun y hy ↦ ?_
-    have hmem : y ∈ (K⟮α⟯).map E.val := ⟨⟨y, hy⟩, hα.symm ▸ mem_top, rfl⟩
-    simpa [IntermediateField.adjoin_map] using hmem
-  obtain ⟨β, hβ, hβEq⟩ := hα_sep.exists_isAlgebraic_adjoin_simple_eq hk
-  exact ⟨β, hβ, hβEq.trans hE⟩
+    ∃ β : L, IsSeparable k β ∧ K⟮β⟯ = E := by
+  obtain ⟨α, hα_sep, rfl⟩ := exists_isSeparable_primitive_element E
+  exact hα_sep.exists_isSeparable_adjoin_simple_eq hk
 
 /-- **Countably many finite separable subextensions.** If `k` is a countable dense subfield of `K`,
 an algebraically closed Krasner extension `L / K` contains only countably many finite separable
@@ -123,7 +129,8 @@ theorem countable_finiteDimensional_isSeparable [Countable k] (hk : DenseRange (
     {E : IntermediateField K L | FiniteDimensional K E ∧ Algebra.IsSeparable K E}.Countable := by
   refine ((Algebraic.countable k L).image (fun β : L ↦ K⟮β⟯)).mono ?_
   rintro E ⟨hfin, hsep⟩
-  exact exists_isAlgebraic_adjoin_simple_eq E hk
+  obtain ⟨β, hβ, hE⟩ := exists_isSeparable_adjoin_simple_eq E hk
+  exact ⟨β, hβ.isIntegral.isAlgebraic, hE⟩
 
 /-- **Countably many finite subextensions over a perfect base.** If `K` is perfect and contains a
 countable dense subfield `k`, an algebraically closed Krasner extension `L / K` contains only

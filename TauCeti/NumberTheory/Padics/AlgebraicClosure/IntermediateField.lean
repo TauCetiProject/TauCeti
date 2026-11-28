@@ -11,7 +11,6 @@ public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 
 import TauCeti.Analysis.Normed.Field.Krasner
 import TauCeti.NumberTheory.LocalField.Padic
-import TauCeti.NumberTheory.Padics.Basic
 
 /-!
 # Intermediate fields of `PadicAlgCl p`
@@ -65,13 +64,17 @@ theorem exists_isAlgebraic_adjoin_simple_eq (E : IntermediateField ℚ_[p] (Padi
     [FiniteDimensional ℚ_[p] E] :
     ∃ β : PadicAlgCl p, IsAlgebraic ℚ β ∧ ℚ_[p]⟮β⟯ = E := by
   have : Algebra.IsAlgebraic ℚ_[p] E := Algebra.IsAlgebraic.of_finite ℚ_[p] E
-  exact IntermediateField.exists_isAlgebraic_adjoin_simple_eq E (Padic.denseRange_algebraMap_rat p)
+  obtain ⟨β, hβ, hE⟩ := IntermediateField.exists_isSeparable_adjoin_simple_eq E <| by
+    rw [show ⇑(algebraMap ℚ ℚ_[p]) = Rat.cast from funext (eq_ratCast _)]
+    exact Padic.denseRange_ratCast p
+  exact ⟨β, hβ.isIntegral.isAlgebraic, hE⟩
 
 /-- **`PadicAlgCl p` has only countably many finite subextensions over `ℚ_[p]`.** -/
 theorem countable_finiteDimensional :
     {E : IntermediateField ℚ_[p] (PadicAlgCl p) | FiniteDimensional ℚ_[p] E}.Countable :=
-  IntermediateField.countable_finiteDimensional (k := ℚ) (K := ℚ_[p]) (L := PadicAlgCl p)
-    (Padic.denseRange_algebraMap_rat p)
+  IntermediateField.countable_finiteDimensional (k := ℚ) (K := ℚ_[p]) (L := PadicAlgCl p) <| by
+    rw [show ⇑(algebraMap ℚ ℚ_[p]) = Rat.cast from funext (eq_ratCast _)]
+    exact Padic.denseRange_ratCast p
 
 /-- **`PadicAlgCl p` is the union of its finite subextensions over `ℚ_[p]`.** -/
 theorem biUnion_finiteDimensional_eq_univ :

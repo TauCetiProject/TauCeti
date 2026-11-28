@@ -38,6 +38,8 @@ into a generation statement.
 * `Field.adjoin_simple_eq_top_iff_forall_natDegree_minpoly_le`: in a separable algebraic
   extension, an element generates the extension if and only if its minimal-polynomial degree is
   maximal.
+* `IntermediateField.exists_isSeparable_primitive_element`: every finite separable intermediate
+  field `E` of `L / F` is generated over `F` by a separable element of `L`.
 -/
 
 public section
@@ -84,5 +86,15 @@ theorem adjoin_simple_eq_top_iff_forall_natDegree_minpoly_le
   rw [adjoin.finrank hαint, ← (primitive_element_iff_minpoly_natDegree_eq F γ).mp hγ,
     minpoly_eq γ]
   exact hα γ
+
+/-- **A separable primitive element for a finite separable intermediate field.** Every finite
+separable intermediate field `E` of `L / F` is generated over `F` by a separable element of `L`. -/
+theorem _root_.IntermediateField.exists_isSeparable_primitive_element {F L : Type*}
+    [Field F] [Field L] [Algebra F L] (E : IntermediateField F L)
+    [FiniteDimensional F E] [Algebra.IsSeparable F E] :
+    ∃ α : L, IsSeparable F α ∧ F⟮α⟯ = E := by
+  obtain ⟨α, hα⟩ := exists_primitive_element F E
+  exact ⟨α, (Algebra.IsSeparable.isSeparable F α).map E.val E.val.injective,
+    by rw [← lift_adjoin_simple, hα, lift_top]⟩
 
 end Field

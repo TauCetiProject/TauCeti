@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Field.Subfield.Defs
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Descend
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
 /-!
 # Invertible matrices over subfields
@@ -58,26 +58,10 @@ subfield `E` if and only if all of its entries lie in `E`. -/
 theorem mem_range_map_subtype_iff (E : S) (A : GL ι L) :
     A ∈ (Matrix.GeneralLinearGroup.map (n := ι) (SubringClass.subtype E)).range ↔
       ∀ i j, (A : Matrix ι ι L) i j ∈ E := by
-  constructor
-  · rintro ⟨B, rfl⟩ i j
-    rw [Matrix.GeneralLinearGroup.map_apply, SubringClass.coe_subtype]
-    exact SetLike.coe_mem _
-  · intro hA
-    let H : Subgroup (GL ι L) :=
-      { carrier := {g | ∀ i j, (g : Matrix ι ι L) i j ∈ E}
-        one_mem' i j := by
-          simp only [Units.val_one, Matrix.one_apply]
-          split_ifs <;> [exact one_mem E; exact zero_mem E]
-        mul_mem' ha hb i j := by
-          rw [Units.val_mul, Matrix.mul_apply]
-          exact sum_mem fun k _ ↦ mul_mem (ha i k) (hb k j)
-        inv_mem' ha := inv_apply_mem E _ ha }
-    have hz : TauCeti.CoefficientDescent.entries (Subgroup.zpowers A).subtype ⊆
-        Set.range (SubringClass.subtype E) := by
-      intro x hx
-      obtain ⟨⟨g, hg⟩, i, j, rfl⟩ := TauCeti.CoefficientDescent.mem_entries_iff.mp hx
-      exact ⟨⟨(g : Matrix ι ι L) i j, (Subgroup.zpowers_le (H := H)).mpr hA hg i j⟩, rfl⟩
-    exact ⟨TauCeti.CoefficientDescent.descend Subtype.val_injective hz ⟨A, Subgroup.mem_zpowers A⟩,
-      TauCeti.CoefficientDescent.map_descend Subtype.val_injective hz ⟨A, Subgroup.mem_zpowers A⟩⟩
+  have hE (a : L) : a ∈ (SubringClass.subtype E).range ↔ a ∈ E :=
+    ⟨fun ⟨b, hb⟩ ↦ hb ▸ b.property, fun ha ↦ ⟨⟨a, ha⟩, rfl⟩⟩
+  rw [mem_range_map_iff_of_injective Subtype.val_injective]
+  simp only [hE]
+  exact ⟨And.left, fun hA ↦ ⟨hA, inv_apply_mem E A hA⟩⟩
 
 end Matrix.GeneralLinearGroup

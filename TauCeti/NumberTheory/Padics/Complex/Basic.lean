@@ -13,7 +13,6 @@ public import TauCeti.Topology.Algebra.Valued.Integer
 import Mathlib.Algebra.AlgebraicCard
 import TauCeti.Analysis.Normed.Field.Approximation
 import TauCeti.Analysis.Normed.Field.Basic
-import TauCeti.NumberTheory.Padics.Basic
 
 /-!
 # `ℂ_p` is separable and densely normed
@@ -151,12 +150,15 @@ theorem isTopologicallyNilpotent_sub_one (ζ : 𝓞_ℂ_[p]) (hζ : ζ ^ p = 1) 
 
 /-- **The algebraic numbers are dense in `ℂ_[p]`.** -/
 theorem dense_setOf_isAlgebraic : Dense {x : ℂ_[p] | IsAlgebraic ℚ x} := by
+  have hℚ : DenseRange (algebraMap ℚ ℚ_[p]) := by
+    rw [show ⇑(algebraMap ℚ ℚ_[p]) = Rat.cast from funext (eq_ratCast _)]
+    exact Padic.denseRange_ratCast p
   refine dense_closure.mp <|
     Dense.mono ?_ (UniformSpace.Completion.denseRange_coe (α := PadicAlgCl p))
   rintro _ ⟨x, rfl⟩
   rw [coe_eq]
   exact ((Algebra.IsAlgebraic.isAlgebraic x).algebraMap (A := ℂ_[p])).mem_closure_setOf_isAlgebraic
-    (Padic.denseRange_algebraMap_rat p)
+    hℚ
 
 /-- **`ℂ_[p]` is separable**: the countable set of algebraic numbers is dense. -/
 instance separableSpace : TopologicalSpace.SeparableSpace ℂ_[p] :=

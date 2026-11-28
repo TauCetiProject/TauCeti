@@ -10,14 +10,13 @@ public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.FieldTheory.SeparableClosure
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
 
-import Mathlib.Analysis.Normed.Field.Krasner
 import Mathlib.Analysis.Normed.Field.Lemmas
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
-import Mathlib.FieldTheory.PrimitiveElement
 import Mathlib.FieldTheory.PurelyInseparable.Basic
-import TauCeti.Analysis.Normed.Field.Approximation
+import TauCeti.Analysis.Normed.Field.Krasner
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
+import TauCeti.FieldTheory.IntermediateField.Adjoin.PrimitiveElement
 import TauCeti.FieldTheory.IsSepClosed
 
 /-!
@@ -61,14 +60,9 @@ here.
 
 ## Implementation notes
 
-The first result is proved in an algebraic closure of `L` with its spectral norm, after embedding
-`L⟮x⟯` there. The minimal polynomial of `x` over `L` is approximated by a monic polynomial `g` over
-`K` of the same degree with a root `y` close to `x`
-(`IsAlgebraic.exists_monic_and_natDegree_eq_and_aeval_eq_zero_and_norm_sub_lt`), Krasner's lemma
-(`IsKrasner.krasner`) gives `L⟮x⟯ ≤ L⟮y⟯`, and comparing degrees gives equality. Then
-`g.map (algebraMap K L)` is the minimal polynomial of `y` over `L`, which is separable, so `g` and
-hence `y` are separable over `K`. A trivially normed `L` is discrete, so `K` maps onto `L` and
-`y = x` works.
+The first result is proved by embedding `L⟮x⟯` into `AlgebraicClosure L`, equipping the latter
+with its spectral norm, and applying `IsSeparable.exists_isSeparable_adjoin_simple_eq`. A
+trivially normed `L` is discrete, so `K` maps onto `L` and `y = x` works.
 
 ## References
 
@@ -81,55 +75,6 @@ hence `y` are separable over `K`. A trivially normed `L` is discrete, so `K` map
 public section
 
 open IntermediateField Polynomial
-
-/-- `IsSeparable.exists_isSeparable_adjoin_simple_eq_of_denseRange` in an algebraic closure of a
-nontrivially normed `L`, which carries the spectral norm. -/
-private theorem exists_isSeparable_adjoin_simple_eq_of_isAlgClosed {K L Ω : Type*} [Field K]
-    [NontriviallyNormedField L] [CompleteSpace L] [IsUltrametricDist L] [Algebra K L] [Field Ω]
-    [Algebra L Ω] [Algebra K Ω] [IsScalarTower K L Ω] [IsAlgClosed Ω] [Algebra.IsAlgebraic L Ω]
-    (hK : DenseRange (algebraMap K L)) {x : Ω} (hx : IsSeparable L x) :
-    ∃ y : Ω, IsSeparable K y ∧ L⟮x⟯ = L⟮y⟯ := by
-  let := spectralNorm.nontriviallyNormedField L Ω
-  let := spectralNorm.normedAlgebra L Ω
-  have : IsUltrametricDist Ω := IsUltrametricDist.of_normedAlgebra L
-  have hxi : IsIntegral L x := hx.isIntegral
-  -- `δ` separates `x` from its other conjugates: the conjugates form a finite, closed set
-  obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhds_iff.mp <|
-    (((minpoly L x).rootSet_finite Ω).sdiff (t := {x})).isClosed.isOpen_compl.mem_nhds
-      (by simp : x ∉ (minpoly L x).rootSet Ω \ {x})
-  obtain ⟨g, y, hgm, hdeg, hgy, hxy⟩ :=
-    hxi.isAlgebraic.exists_monic_and_natDegree_eq_and_aeval_eq_zero_and_norm_sub_lt hK hδ
-  have hgyL : aeval y (g.map (algebraMap K L)) = 0 := by rwa [aeval_map_algebraMap]
-  have hyi : IsIntegral L y := ⟨_, hgm.map _, by rwa [← aeval_def]⟩
-  -- Krasner's lemma puts `x` in `L⟮y⟯`
-  have hle : L⟮x⟯ ≤ L⟮y⟯ := by
-    refine adjoin_simple_le_iff.mpr (IsKrasner.krasner hx (IsAlgClosed.splits _) hyi
-      fun x' hx' hne ↦ ?_)
-    have hmem : x' ∈ (minpoly L x).rootSet Ω \ {x} :=
-      ⟨(isConjRoot_iff_mem_minpoly_rootSet hxi).mp hx', Ne.symm hne⟩
-    have hδx' : δ ≤ dist x' x := by
-      by_contra! h
-      exact hball (Metric.mem_ball.mpr h) hmem
-    exact hxy.trans_le (by rwa [dist_comm, dist_eq_norm] at hδx')
-  -- `y` is a root of a polynomial of the degree of `x`, so the inclusion is an equality
-  have : FiniteDimensional L L⟮y⟯ := adjoin.finiteDimensional hyi
-  have hxy' : L⟮x⟯ = L⟮y⟯ := by
-    refine eq_of_le_of_finrank_le hle ?_
-    rw [adjoin.finrank hxi, adjoin.finrank hyi, hdeg, ← natDegree_map (algebraMap K L)]
-    exact natDegree_le_natDegree (minpoly.degree_le_of_ne_zero L y (hgm.map _).ne_zero hgyL)
-  refine ⟨y, ?_, hxy'⟩
-  -- `g.map (algebraMap K L)` is the minimal polynomial of `y` over `L`, separable as `y ∈ L⟮x⟯`
-  have hyL : IsSeparable L y := by
-    have : Algebra.IsSeparable L L⟮y⟯ := by
-      rw [← hxy']
-      exact (isSeparable_adjoin_simple_iff_isSeparable L Ω).mpr hx
-    exact (isSeparable_adjoin_simple_iff_isSeparable L Ω).mp this
-  have hmin : g.map (algebraMap K L) = minpoly L y := by
-    refine eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic hyi) (hgm.map _)
-      (minpoly.dvd L y hgyL) ?_
-    rw [natDegree_map, ← hdeg, ← adjoin.finrank hxi, hxy', adjoin.finrank hyi]
-  rw [IsSeparable, ← hmin, separable_map] at hyL
-  exact hyL.of_dvd (minpoly.dvd K y hgy)
 
 variable {K L Ω : Type*} [Field K] [NormedField L] [CompleteSpace L] [IsUltrametricDist L]
   [Algebra K L] [Field Ω] [Algebra L Ω] [Algebra K Ω] [IsScalarTower K L Ω]
@@ -148,14 +93,19 @@ theorem IsSeparable.exists_isSeparable_adjoin_simple_eq_of_denseRange {x : Ω}
     have hgx : aeval x g = 0 := by rw [← aeval_map_algebraMap L, hg, minpoly.aeval]
     exact ⟨x, ((separable_map _).mp (hg ▸ hx : (g.map (algebraMap K L)).Separable)).of_dvd
       (minpoly.dvd K x hgx), rfl⟩
-  -- embed `L⟮x⟯` into an algebraic closure of `L` and work there
+  -- embed `L⟮x⟯` into `AlgebraicClosure L` and apply Krasner approximation with spectral norm
   have : FiniteDimensional L L⟮x⟯ := adjoin.finiteDimensional hx.isIntegral
   let ψ : L⟮x⟯ →ₐ[L] AlgebraicClosure L := IsAlgClosed.lift
   set x₀ := AdjoinSimple.gen L x
   have htop : L⟮x₀⟯ = ⊤ := adjoin_adjoinSimple_gen_eq_top x
   have hsep : IsSeparable L (ψ x₀) := by
     rwa [IsSeparable, minpoly.algHom_eq ψ ψ.injective, minpoly_gen]
-  obtain ⟨y', hy', hxy'⟩ := exists_isSeparable_adjoin_simple_eq_of_isAlgClosed hK hsep
+  obtain ⟨y', hy', hxy'⟩ : ∃ y' : AlgebraicClosure L, IsSeparable K y' ∧ L⟮ψ x₀⟯ = L⟮y'⟯ := by
+    let := spectralNorm.nontriviallyNormedField L (AlgebraicClosure L)
+    let := spectralNorm.normedAlgebra L (AlgebraicClosure L)
+    have : IsUltrametricDist (AlgebraicClosure L) := IsUltrametricDist.of_normedAlgebra L
+    obtain ⟨y', hy', hxy'⟩ := hsep.exists_isSeparable_adjoin_simple_eq hK
+    exact ⟨y', hy', hxy'.symm⟩
   have hmap (w : L⟮x⟯) : L⟮ψ w⟯ = L⟮w⟯.map ψ := by
     rw [adjoin_map, Set.image_singleton]
   obtain ⟨z, rfl⟩ : ∃ z, ψ z = y' := AlgHom.mem_fieldRange.mp <| by
@@ -201,11 +151,8 @@ theorem _root_.IntermediateField.exists_isSeparable_eq_adjoin_simple_of_denseRan
     (hK : DenseRange (algebraMap K L))
     (E : IntermediateField L Ω) [FiniteDimensional L E] [Algebra.IsSeparable L E] :
     ∃ y : Ω, IsSeparable K y ∧ E = L⟮y⟯ := by
-  obtain ⟨α, hα⟩ := Field.exists_primitive_element L E
-  have hE : E = L⟮(α : Ω)⟯ := by rw [← lift_adjoin_simple, hα, lift_top]
-  obtain ⟨y, hy, hαy⟩ := ((Algebra.IsSeparable.isSeparable L α).map E.val
-    E.val.injective).exists_isSeparable_adjoin_simple_eq_of_denseRange hK
-  exact ⟨y, hy, hE.trans hαy⟩
+  obtain ⟨α, hα_sep, rfl⟩ := _root_.IntermediateField.exists_isSeparable_primitive_element E
+  exact hα_sep.exists_isSeparable_adjoin_simple_eq_of_denseRange hK
 
 variable {Kbar : Type*} [Field Kbar] [Algebra K Kbar] [IsSepClosed Kbar]
 
