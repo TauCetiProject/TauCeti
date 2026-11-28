@@ -425,22 +425,32 @@ theorem sum_edges_edgeEval {M : Type*} [AddCommMonoid M] (X : TwoComplex V) (f :
   exact sum_congr rfl fun e _ => X.edgeEval_edgePair f e
 
 /-- The finset of positively oriented vertex pairs `(u, v)` (`u < v`) forming edges of `X`. -/
-def orientedEdges [Fintype V] [LinearOrder V] (X : TwoComplex V) : Finset (V × V) :=
-  univ.filter fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges
+def orientedEdges [LinearOrder V] (X : TwoComplex V) : Finset (V × V) :=
+  X.edges.biUnion fun e => (e ×ˢ e).filter fun p => p.1 < p.2
 
 @[simp]
-theorem mem_orientedEdges [Fintype V] [LinearOrder V] (X : TwoComplex V) {p : V × V} :
+theorem mem_orientedEdges [LinearOrder V] (X : TwoComplex V) {p : V × V} :
     p ∈ X.orientedEdges ↔ p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges := by
-  simp [orientedEdges]
+  simp only [orientedEdges, mem_biUnion, mem_filter, mem_product]
+  constructor
+  · rintro ⟨e, he, ⟨hp₁, hp₂⟩, hlt⟩
+    have hsub : ({p.1, p.2} : Finset V) ⊆ e :=
+      insert_subset_iff.mpr ⟨hp₁, singleton_subset_iff.mpr hp₂⟩
+    have heq : ({p.1, p.2} : Finset V) = e :=
+      eq_of_subset_of_card_le hsub (by rw [X.edge_card e he, card_pair hlt.ne])
+    exact ⟨hlt, heq.symm ▸ he⟩
+  · rintro ⟨hlt, he⟩
+    exact ⟨{p.1, p.2}, he, ⟨by simp, by simp⟩, hlt⟩
 
 theorem orientedEdges_def [Fintype V] [LinearOrder V] (X : TwoComplex V) :
     X.orientedEdges =
-      univ.filter fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges :=
-  (rfl)
+      univ.filter fun p : V × V => p.1 < p.2 ∧ ({p.1, p.2} : Finset V) ∈ X.edges := by
+  ext p
+  simp
 
 /-- Summing a function of unoriented edges over `X.orientedEdges` equals summing over
 `X.edges`. -/
-theorem sum_orientedEdges [Fintype V] [LinearOrder V] {M : Type*} [AddCommMonoid M]
+theorem sum_orientedEdges [LinearOrder V] {M : Type*} [AddCommMonoid M]
     (X : TwoComplex V) (f : Finset V → M) :
     ∑ p ∈ X.orientedEdges, f ({p.1, p.2} : Finset V) = ∑ e ∈ X.edges, f e := by
   refine sum_bij (fun p _ => ({p.1, p.2} : Finset V)) (fun p hp => (X.mem_orientedEdges.mp hp).2)
@@ -458,7 +468,7 @@ theorem sum_orientedEdges [Fintype V] [LinearOrder V] {M : Type*} [AddCommMonoid
 
 /-- The number of positively oriented edges equals the number of unoriented edges of `X`. -/
 @[simp]
-theorem card_orientedEdges [Fintype V] [LinearOrder V] (X : TwoComplex V) :
+theorem card_orientedEdges [LinearOrder V] (X : TwoComplex V) :
     X.orientedEdges.card = X.edges.card := by
   simpa using X.sum_orientedEdges (fun _ => (1 : ℕ))
 

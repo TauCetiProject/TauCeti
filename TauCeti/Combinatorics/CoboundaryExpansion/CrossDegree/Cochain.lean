@@ -263,6 +263,7 @@ theorem exists_costErr_eq_gaugeDistErr (α : Cochain X (Perm (Fin n))) :
   simp_rw [gaugeDistErr_def, costErr_def, ← X.orientedEdges_def]
   exact X.orientedEdges.exists_eq_ciInf₂_sum_distErr_mul_inv α
 
+omit [Fintype V] in
 private theorem exists_eq_mul_inv_orientedEdges_iff_isCoboundary (α : Cochain X (Perm (Fin n))) :
     (∃ γ : V → Perm (Fin n), ∀ p ∈ X.orientedEdges, α p.1 p.2 = γ p.1 * (γ p.2)⁻¹) ↔
       α.IsCoboundary := by
