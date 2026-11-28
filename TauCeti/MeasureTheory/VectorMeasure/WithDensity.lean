@@ -255,8 +255,7 @@ theorem Measure.range_withDensityᵥ_subset (ν : Measure X) (g : X → F) :
 the set integrals of `g` over all sets, measurable or not. -/
 theorem Integrable.range_withDensityᵥ {g : X → F} (hg : Integrable g ν) :
     Set.range (ν.withDensityᵥ g) = Set.range fun A : Set X ↦ ∫ x in A, g x ∂ν := by
-  refine (ν.range_withDensityᵥ_subset g).antisymm ?_
-  rintro - ⟨A, rfl⟩
+  refine (ν.range_withDensityᵥ_subset g).antisymm (Set.range_subset_iff.2 fun A ↦ ?_)
   -- `g` vanishes off a measurable set `t` on which `ν` is σ-finite, and there `A` may be
   -- replaced by a measurable hull.
   set t := hg.aefinStronglyMeasurable.sigmaFiniteSet
@@ -264,7 +263,6 @@ theorem Integrable.range_withDensityᵥ {g : X → F} (hg : Integrable g ν) :
   have hB : MeasurableSet (toMeasurable (ν.restrict t) A ∩ t) :=
     (measurableSet_toMeasurable _ _).inter ht
   refine ⟨toMeasurable (ν.restrict t) A ∩ t, ?_⟩
-  change _ = ∫ x in A, g x ∂ν
   have hdiff : ∫ x in A \ t, g x ∂ν = 0 := integral_eq_zero_of_ae
     (ae_mono (Measure.restrict_mono (Set.sdiff_subset_compl A t) le_rfl)
       hg.aefinStronglyMeasurable.ae_eq_zero_compl)

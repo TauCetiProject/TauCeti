@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Relative compactness of the set integrals of an integrable function
@@ -20,7 +21,8 @@ Let `g` be an integrable simple function, and let `F` be the finite set of nonze
 range. Each fiber `g ⁻¹' {y}` with `y ∈ F` has finite measure. The set integrals of `g` lie in the
 compact image of the box `∏_{y ∈ F} [0, μ.real (g ⁻¹' {y})]` under `t ↦ ∑_{y ∈ F} t_y • y`.
 A general integrable function is approximated in `L¹` by such simple functions, and the set
-integrals move by at most the `L¹` distance.
+integrals move by at most the `L¹` distance, by `MeasureTheory.edist_setIntegral_le_eLpNorm_sub`
+from `TauCeti.MeasureTheory.Integral.Bochner.Set`.
 
 Completeness of `E` is not assumed: without it every Bochner integral vanishes, and all
 statements hold trivially.
@@ -29,8 +31,6 @@ statements hold trivially.
 
 * `MeasureTheory.SimpleFunc.exists_isCompact_forall_setIntegral_mem`: the set integrals of an
   integrable simple function lie in a common compact set.
-* `MeasureTheory.edist_setIntegral_le_eLpNorm_sub`: on every set, the set integrals of two
-  integrable functions differ by at most their `L¹` distance.
 * `MeasureTheory.Integrable.totallyBounded_range_setIntegral`: the set integrals of an integrable
   function form a totally bounded set.
 * `MeasureTheory.Integrable.isCompact_closure_range_setIntegral`: they form a relatively compact
@@ -70,18 +70,6 @@ theorem SimpleFunc.exists_isCompact_forall_setIntegral_mem (g : SimpleFunc S E)
       (Measure.restrict_apply_le A _)
   · rw [← SimpleFunc.integral_eq_integral g hg.restrict, SimpleFunc.integral_eq_sum_filter]
     exact Finset.sum_coe_sort F fun y ↦ (μ.restrict A).real (g ⁻¹' {y}) • y
-
-/-- On every set `A`, the set integrals of two integrable functions differ by at most the `L¹`
-distance of the functions. -/
-theorem edist_setIntegral_le_eLpNorm_sub {f g : S → E} (hf : Integrable f μ)
-    (hg : Integrable g μ) (A : Set S) :
-    edist (∫ s in A, f s ∂μ) (∫ s in A, g s ∂μ) ≤ eLpNorm (f - g) 1 μ := by
-  calc edist (∫ s in A, f s ∂μ) (∫ s in A, g s ∂μ) ≤ ∫⁻ s in A, edist (f s) (g s) ∂μ :=
-        edist_integral_le_lintegral_edist hf.restrict hg.restrict
-    _ = ∫⁻ s in A, ‖f s - g s‖ₑ ∂μ := by simp_rw [eDist_eq_eNorm_sub]
-    _ ≤ ∫⁻ s, ‖f s - g s‖ₑ ∂μ := setLIntegral_le_lintegral _ _
-    _ = eLpNorm (f - g) 1 μ :=
-        (eLpNorm_one_eq_lintegral_eNorm (hf.sub hg).aestronglyMeasurable).symm
 
 /-- The set integrals `∫ s in A, h s ∂μ` of an integrable function `h`, over all sets `A`, form a
 totally bounded set. -/
