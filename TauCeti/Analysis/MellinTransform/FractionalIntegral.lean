@@ -72,9 +72,10 @@ the identity `δ_{n+1} = x δ'_n + Γ(μ)⁻¹ (μ - 1)⋯(μ - n) x^μ f_{n+1,n
 `δ_n` built from the repeated integrals of `f_{n+1}` instead of `f_n`. It is proved by the
 fundamental theorem of calculus for the explicit primitive
 `W(t) = -(x - t)^μ ∑_{j ≤ n} C(n, j) (μ - 1)⋯(μ - j) t^(n - j) f_{n+1,j+1}(t)`. The boundary value
-`f_{n+1,n+1}(0)` is `-n! c_{n+1}`, and the difference `δ'_n - δ_n` comes from the repeated
-integrals of the single power `a_n t^{-n-α}`, which are powers again; they sum to the first term
-through the Chu–Vandermonde identity for falling factorials. The falling factorials
+`f_{n+1,n+1}(0)` is `c_{n+1}` (with `𝓜f` continued through `n + 1` terms), and the difference
+`δ'_n - δ_n` comes from the repeated integrals of the single power `a_n t^{-n-α}`, which are
+powers again; they sum to the first term through the Chu–Vandermonde identity for falling
+factorials. The falling factorials
 `μ (μ - 1) ⋯ (μ - j + 1)` are `(descPochhammer ℝ j).eval μ`; in the statement they are written
 `Γ(μ + 1) / Γ(μ + 1 - j)` as in DLMF.
 

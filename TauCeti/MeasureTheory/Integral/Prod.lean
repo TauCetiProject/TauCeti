@@ -577,10 +577,10 @@ theorem integral_Ioi_indicator_Iio_pow {t τ : ℝ} (h : t < τ) (j : ℕ) :
 theorem aestronglyMeasurable_of_integrableOn_pow_smul {g : ℝ → E} {t : ℝ} {j : ℕ}
     (hg : IntegrableOn (fun τ ↦ (τ - t) ^ j • g τ) (Ioi t)) :
     AEStronglyMeasurable g (volume.restrict (Ioi t)) := by
-  refine ((((measurable_id.sub_const t).pow_const j).inv).aestronglyMeasurable.smul
-    hg.aestronglyMeasurable).congr ?_
+  refine (aestronglyMeasurable_fun_smul_iff₀
+    ((measurable_id.sub_const t).pow_const j).aestronglyMeasurable ?_).1 hg.aestronglyMeasurable
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with τ (hτ : t < τ)
-  simp [smul_smul, inv_mul_cancel₀ (pow_ne_zero j (sub_pos.mpr hτ).ne')]
+  exact pow_ne_zero j (sub_pos.mpr hτ).ne'
 
 /-- The integrand `1_{s < τ} (τ - s)^j g(τ)` of `TauCeti.integral_Ioi_integral_Ioi_pow_smul` is
 integrable on `(t, ∞)²` when `(τ - t)^(j + 1) g(τ)` is integrable on `(t, ∞)`. -/
