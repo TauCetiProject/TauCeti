@@ -34,23 +34,13 @@ variable {C : Type u} [Category.{v} C] [Preadditive C]
 /-- A simple additive functor is finitely generated. -/
 theorem isFinitelyGeneratedFunctor_of_simple {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
     [F.Additive] [Simple F] : IsFinitelyGeneratedFunctor F := by
-  have zero_app_apply {G : Cᵒᵖ ⥤ AddCommGrpCat.{v}} (Z : Cᵒᵖ) (z : G.obj Z) :
-      (0 : G ⟶ F).app Z z = 0 := by
-    rw [Limits.zero_app]
-    exact (congrArg (fun f : _ →+ _ ↦ f z) AddCommGrpCat.hom_zero).trans
-      (AddMonoidHom.zero_apply z)
   obtain ⟨Y, x, hx⟩ : ∃ (Y : C) (x : F.obj (op Y)), x ≠ 0 := by
     by_contra! h
     apply id_ne_zero F
     ext Z z
-    simpa only [NatTrans.id_app, AddCommGrpCat.id_apply, zero_app_apply] using h Z.unop z
+    simpa using h Z.unop z
   let p : preadditiveYoneda.obj Y ⟶ F := preadditiveYonedaEquiv.symm x
-  have hp : Epi p := epi_of_ne_zero_to_simple (by
-    intro hp
-    apply hx
-    have he : preadditiveYonedaEquiv p = x := preadditiveYonedaEquiv.apply_symm_apply x
-    rw [hp, preadditiveYonedaEquiv_apply] at he
-    exact he.symm.trans (zero_app_apply (G := preadditiveYoneda.obj Y) (op Y) (𝟙 Y)))
+  have hp : Epi p := epi_of_ne_zero_to_simple (preadditiveYonedaEquiv.symm.map_ne_zero_iff.mpr hx)
   exact (isFinitelyGeneratedFunctor_preadditiveYoneda_obj Y).of_epi p
 
 variable [HasFiniteBiproducts C] [IsKrullSchmidt C]
@@ -70,7 +60,6 @@ theorem forall_isFinitelyPresentedFunctor_of_simple_iff :
     exact (isFinitelyPresentedFunctor_simpleFunctor_iff Z).mp
       (h S ((AdditiveFunctor.simple_obj_iff S).mp hs))
   · intro h F hF
-    let : F.obj.Additive := F.property
     let := (AdditiveFunctor.simple_obj_iff F).mpr hF
     obtain ⟨Z, hZ, ⟨e⟩⟩ :=
       IsKrullSchmidt.exists_iso_simpleFunctor (isFinitelyGeneratedFunctor_of_simple (F := F.obj))

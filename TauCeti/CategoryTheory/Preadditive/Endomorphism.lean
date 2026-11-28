@@ -58,6 +58,18 @@ def opRingEquiv (X : C) : (End X)ᵐᵒᵖ ≃+* End (Opposite.op X) where
   map_mul' _ _ := End.ext op_comp
   map_add' f g := End.ext (op_add C f.unop.asHom g.unop.asHom)
 
+/-- The opposite ring equivalence takes the opposite of the underlying morphism. -/
+@[simp]
+theorem opRingEquiv_apply_asHom (X : C) (f : (End X)ᵐᵒᵖ) :
+    (opRingEquiv X f).asHom = f.unop.asHom.op :=
+  (rfl)
+
+/-- The inverse of the opposite ring equivalence unopposes the underlying morphism. -/
+@[simp]
+theorem opRingEquiv_symm_apply_unop_asHom (X : C) (f : End (Opposite.op X)) :
+    ((opRingEquiv X).symm f).unop.asHom = f.asHom.unop :=
+  (rfl)
+
 end CategoryTheory.End
 
 namespace CategoryTheory.Iso

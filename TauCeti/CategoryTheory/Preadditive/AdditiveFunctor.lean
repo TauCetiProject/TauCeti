@@ -130,8 +130,8 @@ theorem additive_of_epi {F G : C ⥤ AddCommGrpCat.{v}} [F.Additive] (q : F ⟶ 
       _root_.map_add]
 
 /-- A subfunctor of an additive functor is additive. -/
-theorem additive_of_mono {F G : C ⥤ D} [HasPullbacks D] [G.Additive]
-    (i : F ⟶ G) [Mono i] : F.Additive where
+theorem additive_of_mono {F G : C ⥤ D} [G.Additive]
+    (i : F ⟶ G) [∀ Y, Mono (i.app Y)] : F.Additive where
   map_add {X Y f g} := by
     apply (cancel_mono (i.app Y)).mp
     simp only [Preadditive.add_comp, i.naturality, Functor.map_add, Preadditive.comp_add]
@@ -223,8 +223,7 @@ theorem simple_obj_iff (F : C ⥤+ D) : Simple F.obj ↔ Simple F := by
     exact (forget C D).simple_of_simple_obj F
   · intro hF
     refine ⟨fun {G} i _ ↦ ?_⟩
-    let : F.obj.Additive := F.property
-    let G' : C ⥤+ D := ⟨G, Functor.additive_of_mono i⟩
+    let G' : C ⥤+ D := ⟨G, (additiveFunctor_iff G).mpr (Functor.additive_of_mono i)⟩
     let j : G' ⟶ F := ObjectProperty.homMk i
     have hmap : (forget C D).map j = i := by
       simp only [forget_map, j, ObjectProperty.homMk_hom]
