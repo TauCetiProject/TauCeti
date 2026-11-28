@@ -14,7 +14,7 @@ public import TauCeti.LinearAlgebra.Matrix.Minor
 import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
-# Determinant estimates for matrices over ultrametric seminormed rings
+# Matrix estimates over ultrametric seminormed rings
 
 Over an ultrametric seminormed commutative ring `R` with `‖1‖ = 1`, the Leibniz expansion of a
 determinant is a sum of signed products, so the ultrametric inequality bounds the determinant by
@@ -47,8 +47,13 @@ lower bound for the sums
 The bound depends only on the differences `w i - w' i` along the diagonal, although the entry
 bounds compare a row weight with an unrelated column weight.
 
+The row bounds also control the image of an entrywise bounded vector
+(`Matrix.norm_mulVec_le_of_bound`).
+
 ## Main results
 
+* `Matrix.norm_mulVec_le_of_bound`: entrywise bounds on a matrix and a vector control their
+  matrix-vector product.
 * `Matrix.norm_det_le_prod_mul_prod`, `Matrix.norm_det_le_prod_of_norm_le`,
   `Matrix.norm_principalMinor_le`, `Matrix.norm_principalMinor_le_prod_mul`,
   `Matrix.norm_principalMinor_le_zpow`, `Matrix.norm_principalMinor_le_prod_range_mul`:
@@ -96,6 +101,19 @@ theorem norm_coeff_charpolyRev_le_of_principalMinor_le {ι R : Type*}
 end TauCeti
 
 namespace Matrix
+
+/-- If each entry in row `i` has norm bounded by `r i` after weighting by its column
+radius, then the matrix sends an `s`-bounded vector into the polydisc of radii `r`. -/
+theorem norm_mulVec_le_of_bound {ι κ R : Type*} [Fintype κ]
+    [NonUnitalSeminormedRing R] [IsUltrametricDist R]
+    {r : ι → ℝ} {s : κ → ℝ} (A : Matrix ι κ R)
+    (hr : ∀ i, 0 ≤ r i) (hA : ∀ i j, ‖A i j‖ * s j ≤ r i)
+    (x : κ → R) (hx : ∀ j, ‖x j‖ ≤ s j) (i : ι) :
+    ‖(A *ᵥ x) i‖ ≤ r i := by
+  rw [mulVec_apply_eq_sum]
+  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (hr i) fun j _ ↦ ?_
+  exact (norm_mul_le _ _).trans <|
+    (mul_le_mul_of_nonneg_left (hx j) (norm_nonneg _)).trans (hA i j)
 
 variable {ι R : Type*} [Fintype ι] [DecidableEq ι]
   [SeminormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
