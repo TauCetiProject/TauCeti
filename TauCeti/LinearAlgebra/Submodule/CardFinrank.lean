@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.SetLike.Fintype
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.RingTheory.Polynomial.GaussianBinomial
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
@@ -12,7 +13,7 @@ import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.LinearAlgebra.LinearIndependent.SpanEq
 
 /-!
-# The number of subspaces of a given dimension over a finite field
+# Counting subspaces over a finite field
 
 For a finite division ring `K` with `q` elements and a finite `K`-vector space `V` of dimension
 `n`, the number of `k`-dimensional subspaces of `V` is the Gaussian binomial coefficient
@@ -28,10 +29,13 @@ tuples spanning a given subspace `W` are exactly the linearly independent `k`-tu
 
 * `TauCeti.card_submodule_finrank_eq_gaussianBinomial`: the number of `k`-dimensional subspaces
   of `V` is `[finrank K V k]_q`.
+* `TauCeti.sum_submodule_neg_pow_mul_eq_prod`: Cauchy's finite product as a sum over all
+  subspaces, weighted by dimension.
 
 ## References
 
-* R. P. Stanley, *Enumerative Combinatorics, Volume 1*, 2nd ed., Proposition 1.7.2.
+* R. P. Stanley, *Enumerative Combinatorics, Volume 1*, 2nd ed.,
+  Proposition 1.7.2 and Equation (1.87).
 -/
 
 public section
@@ -82,5 +86,26 @@ theorem card_submodule_finrank_eq_gaussianBinomial (k : ℕ) :
   apply Nat.cast_injective (R := ℤ)
   push_cast [hG, Nat.cast_sub, hle le_rfl, hle hkn]
   exact key.symm
+
+attribute [local instance low] Fintype.ofFinite in
+/-- Cauchy's finite `q`-binomial product over a finite division ring with `q` elements,
+expressed as a sum over all subspaces of `V` by grouping them by dimension. -/
+theorem sum_submodule_neg_pow_mul_eq_prod {R : Type*} [CommRing R] (x : R) :
+    ∑ U : Submodule K V, (-x) ^ finrank K U * (Fintype.card K : R) ^ (finrank K U).choose 2 =
+      ∏ i ∈ range (finrank K V), (1 - (Fintype.card K : R) ^ i * x) := by
+  classical
+  let q := Fintype.card K
+  have hd (U : Submodule K V) (_ : U ∈ (univ : Finset (Submodule K V))) :
+      finrank K U ∈ range (finrank K V + 1) := mem_range.mpr (Nat.lt_succ_of_le U.finrank_le)
+  rw [← sum_fiberwise_of_maps_to' hd (fun k ↦ (-x) ^ k * (q : R) ^ k.choose 2)]
+  simp_rw [sub_eq_add_neg, ← mul_neg]
+  rw [prod_one_add_pow_mul_eq_sum_gaussianBinomial]
+  refine sum_congr rfl fun k _ ↦ ?_
+  rw [sum_const, nsmul_eq_mul, ← Fintype.card_subtype, ← Nat.card_eq_fintype_card,
+    card_submodule_finrank_eq_gaussianBinomial]
+  have hcast := map_gaussianBinomial (Nat.castRingHom R) q (finrank K V) k
+  change ((gaussianBinomial q (finrank K V) k : ℕ) : R) = _ at hcast
+  rw [hcast]
+  ac_rfl
 
 end TauCeti
