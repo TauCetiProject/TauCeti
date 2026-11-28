@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Exact.ExactStructure
+public import TauCeti.CategoryTheory.Exact.Opposite
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 
@@ -50,6 +50,8 @@ structure.
 * `TauCeti.ExactStructure.split_isInflation_iff` and
   `TauCeti.ExactStructure.split_isDeflation_iff`: the characteristic API of
   `TauCeti.ExactStructure.split`.
+* `TauCeti.ExactStructure.op_split`: the opposite of the split structure is split, by
+  `TauCeti.ExactStructure.op_conflation` and Mathlib's short-complex splitting duality.
 * `TauCeti.ExactStructure.split_isInflation_iff_isDeflation_unop`: split inflations of `Cᵒᵖ`
   are the opposites of split deflations of `C`.
 * `TauCeti.ExactStructure.split_isInflation_biprod_lift_id_left` and
@@ -341,6 +343,15 @@ splitting. -/
 theorem split_conflation (S : ShortComplex C) :
     (ExactStructure.split C).Conflation S ↔ Nonempty S.Splitting :=
   ConflationClass.split_conflation_iff S
+
+variable (C) in
+/-- The opposite of the split exact structure is split (Bühler, *Exact categories*, §13.1). -/
+@[simp]
+theorem op_split : (split C).op = split Cᵒᵖ := by
+  apply ExactStructure.ext
+  intro S
+  rw [op_conflation, split_conflation, split_conflation]
+  exact ⟨fun ⟨s⟩ ↦ ⟨s.op.ofIso S.unopOp⟩, fun ⟨s⟩ ↦ ⟨s.unop⟩⟩
 
 /-- **The inflations of the split exact structure are the biproduct inclusions.** -/
 @[simp]

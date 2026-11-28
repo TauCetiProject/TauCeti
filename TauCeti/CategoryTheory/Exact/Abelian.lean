@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Exact.ExactStructure
 public import TauCeti.CategoryTheory.Exact.BaseChange
+public import TauCeti.CategoryTheory.Exact.Opposite
 public import Mathlib.CategoryTheory.Abelian.Exact
 public import Mathlib.CategoryTheory.Abelian.Monomorphisms
 
@@ -47,6 +47,9 @@ of abelian categories:
 * `TauCeti.ExactStructure.abelian_conflation_of_epi`: epimorphisms yield canonical conflations.
 * `TauCeti.ExactStructure.abelian_conflation_op_iff`: duality for canonical conflations.
 * `TauCeti.ExactStructure.abelian_conflation_unop_iff`: duality for canonical conflations.
+* `TauCeti.ExactStructure.op_abelian`: the opposite of the canonical abelian structure is
+  canonical, by `TauCeti.ExactStructure.op_conflation` and
+  `TauCeti.ExactStructure.abelian_conflation_unop_iff`.
 
 ## References
 
@@ -223,6 +226,16 @@ theorem abelian_conflation_unop_iff (S : ShortComplex Cᵒᵖ) :
     (ExactStructure.abelian C).Conflation S.unop ↔
       (ExactStructure.abelian Cᵒᵖ).Conflation S :=
   (ShortComplex.shortExact_iff_unop S).symm
+
+variable (C) in
+/-- The opposite of the canonical exact structure on an abelian category is canonical
+(Bühler, *Exact categories*, §13.2). -/
+@[simp]
+theorem op_abelian : (abelian C).op = abelian Cᵒᵖ := by
+  apply ExactStructure.ext
+  intro S
+  rw [op_conflation]
+  exact abelian_conflation_unop_iff S
 
 end ExactStructure
 
