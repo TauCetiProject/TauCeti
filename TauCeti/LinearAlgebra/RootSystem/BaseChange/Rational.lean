@@ -41,16 +41,6 @@ variable {ι R M N : Type*} [CommRing R] [CharZero R]
 
 variable [P.IsCrystallographic]
 
-omit [CharZero R] in
-private lemma injective_pairingIn_support [P.IsRootSystem] :
-    Injective (fun j (k : b.support) ↦ P.pairingIn ℤ k j) := fun i j hij ↦ by
-  apply P.coroot.injective
-  apply (LinearMap.IsPerfPair.bijective_right P.toLinearMap).injective
-  refine b.toWeightBasis.ext fun k ↦ ?_
-  simp only [LinearMap.flip_apply, toWeightBasis_apply, root_coroot_eq_pairing,
-    ← P.algebraMap_pairingIn ℤ]
-  exact congrArg (algebraMap ℤ R) (congrFun hij k)
-
 private lemma pairingIn_reflectionPerm_support (i j : ι) (k : b.support) :
     P.pairingIn ℤ k (P.reflectionPerm i j) =
       P.pairingIn ℤ k j - P.pairingIn ℤ i j * P.pairingIn ℤ k i := by

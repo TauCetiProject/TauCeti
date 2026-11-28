@@ -30,11 +30,21 @@ quadratic equation `w ^ 2 + (2 - (2 cos z) ^ 2) * w + 1 = 0`.
 * `Complex.eq_pi_div_of_exp_ofReal_mul_I_pow_eq_one_of_cos_le`:
   if `0 < θ ≤ π`, `exp (θ * I) ^ (2 * n) = 1`, and `Real.cos (π / n) ≤ Real.cos θ`, then
   `θ = π / n`.
+* `Complex.exp_two_mul_ofReal_div_natCast_mul_I`:
+  `exp (2 * ((x / n : ℝ) : ℂ) * I) = exp (2 * x * I / n)` for `x : ℝ` and `n : ℕ`.
 -/
 
 public section
 
 namespace Complex
+
+/-- Normalizing `exp (2 * ((x / n : ℝ) : ℂ) * I)` to `exp (2 * x * I / n)` for real `x` and
+natural `n`. -/
+theorem exp_two_mul_ofReal_div_natCast_mul_I (x : ℝ) (n : ℕ) :
+    exp (2 * ((x / n : ℝ) : ℂ) * I) = exp (2 * x * I / n) := by
+  congr 1
+  push_cast
+  ring
 
 /-- For `z : ℂ`, `(1 + exp (2 * z * I)) ^ 2 / exp (2 * z * I) = (2 * cos z) ^ 2`. -/
 theorem one_add_exp_two_mul_mul_I_sq_div (z : ℂ) :

@@ -242,8 +242,11 @@ private lemma exists_complex_model_degrees_and_eigenvector (b : P.Base)
   let PC := rootPairingBaseChange ℂ b.rationalModel b.rationalModel_toLinearMap
   let bC := rootPairingBaseChangeBase ℂ b.rationalModel b.rationalModel_toLinearMap
     b.rationalModelBase
-  obtain ⟨hlC, hallC⟩ :=
-    b.nodup_and_forall_mem_map_supportEquivRootPairingBaseChangeRationalModel_symm ℂ hl hall
+  have hlC : (l.map (b.supportEquivRootPairingBaseChangeRationalModel ℂ).symm).Nodup :=
+    hl.map (b.supportEquivRootPairingBaseChangeRationalModel ℂ).symm.injective
+  have hallC : ∀ j, j ∈ l.map (b.supportEquivRootPairingBaseChangeRationalModel ℂ).symm :=
+    fun j ↦ List.mem_map.2 ⟨_, hall _,
+      (b.supportEquivRootPairingBaseChangeRationalModel ℂ).symm_apply_apply j⟩
   obtain ⟨g, e, hg, hgbij, hmult⟩ := P.exists_complex_bijective_aeval_degrees_eq b hf hbij
   have hordC := (b.orderOf_wordProd_rootPairingBaseChange_rationalModel ℂ l).symm
   obtain ⟨v, hv_reg, hv_eig⟩ :=
@@ -269,8 +272,11 @@ theorem degree_sub_one_lt_orderOf_wordProd (b : P.Base)
   let bC := rootPairingBaseChangeBase ℂ b.rationalModel b.rationalModel_toLinearMap
     b.rationalModelBase
   have := PC.nonempty_of_isIrreducible
-  obtain ⟨hlC, hallC⟩ :=
-    b.nodup_and_forall_mem_map_supportEquivRootPairingBaseChangeRationalModel_symm ℂ hl hall
+  have hlC : (l.map (b.supportEquivRootPairingBaseChangeRationalModel ℂ).symm).Nodup :=
+    hl.map (b.supportEquivRootPairingBaseChangeRationalModel ℂ).symm.injective
+  have hallC : ∀ j, j ∈ l.map (b.supportEquivRootPairingBaseChangeRationalModel ℂ).symm :=
+    fun j ↦ List.mem_map.2 ⟨_, hall _,
+      (b.supportEquivRootPairingBaseChangeRationalModel ℂ).symm_apply_apply j⟩
   obtain ⟨g, e, hg, hgbij, hmult⟩ := P.exists_complex_bijective_aeval_degrees_eq b hf hbij
   rcases Multiset.mem_map.1 (hmult ▸ Multiset.mem_map.2 ⟨i, Finset.mem_univ i, rfl⟩)
     with ⟨j, -, hj⟩

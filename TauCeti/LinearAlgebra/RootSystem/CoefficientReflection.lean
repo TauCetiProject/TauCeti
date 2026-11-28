@@ -35,6 +35,8 @@ the Weyl orbit of the simple root `α`, so reducedness cannot be dropped from th
 * `RootPairing.Base.coe_toWeightBasisInt_equivFun_symm_coefficientReflection`: evaluation in the
   root lattice intertwines the reflection on columns with the actual reflection.
 * `RootPairing.Base.rootCoefficients_eq_iff`: the characterization of the column of a root.
+* `RootPairing.Base.injective_pairingIn_support`: the integral pairings of the simple roots
+  against a coroot determine the coroot index.
 * `RootPairing.Base.rootCoefficients_apply_of_injective`: the column of a root, read from an
   expansion in a relabelling of some simple roots.
 * `RootPairing.Base.height_eq_sum_rootCoefficients_of_bijOn`: the height of a root, as the sum of
@@ -240,6 +242,17 @@ theorem rootCoefficients_dotProduct_pairingIn [P.IsCrystallographic] (i j : ι) 
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [map_mul, P.algebraMap_pairingIn ℤ, ← root_coroot_eq_pairing, map_zsmul,
     LinearMap.smul_apply, zsmul_eq_mul, eq_intCast]
+
+omit [CharZero R] in
+/-- Integral pairings of the simple roots against a coroot distinguish coroot indices. -/
+theorem injective_pairingIn_support [P.IsCrystallographic] [P.IsRootSystem] :
+    Injective (fun j (k : b.support) ↦ P.pairingIn ℤ k j) := fun i j hij ↦ by
+  apply P.coroot.injective
+  apply (LinearMap.IsPerfPair.bijective_right P.toLinearMap).injective
+  refine b.toWeightBasis.ext fun k ↦ ?_
+  simp only [LinearMap.flip_apply, toWeightBasis_apply, root_coroot_eq_pairing,
+    ← P.algebraMap_pairingIn ℤ]
+  exact congrArg (algebraMap ℤ R) (congrFun hij k)
 
 /-- The simple-root coefficient column of the reflected root `sᵢ(αⱼ)`. -/
 theorem rootCoefficients_reflectionPerm [P.IsCrystallographic] (i j : ι) :

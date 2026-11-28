@@ -45,9 +45,11 @@ and deduces:
 ## Main results
 
 * `RootPairing.exists_coxeterPlane_bipartite`: over `ℝ`, for a base of rank at least two
-  (`[Nontrivial b.support]`), a bipartite Coxeter element `wordProd P b l₁ * wordProd P b l₂`
-  admits linearly independent vectors `v₁, v₂` spanning the Coxeter plane, with `v₁ + v₂` in the
-  open dominant chamber and dihedral action parameter `2 * Real.cos (Real.pi / h)`.
+  (`[Nontrivial b.support]`), the bipartite Coxeter element
+  `(weylCoxeterSystem P b).bipartiteCoxeterElement col` admits linearly independent vectors `v₁, v₂`
+  spanning the Coxeter plane, with `v₁ + v₂` in the open dominant chamber and dihedral action
+  formulas for the colour-class products `(weylCoxeterSystem P b).colorClassProd col true` and
+  `false` with parameter `2 * Real.cos (Real.pi / h)`.
 * `RootPairing.exists_dihedral_colorPart_bipartite`: the same dihedral action formulas without the
   rank-two hypothesis (in rank one, one of `v₁, v₂` vanishes and `2 * Real.cos (Real.pi / 2) = 0`).
 * `RootPairing.exists_isRegularWeight_wordProd_smul_eq_inv_exp_smul`: over `ℂ`, every Coxeter
@@ -112,20 +114,6 @@ private lemma coloringBaseChangeRat_apply
     coloringBaseChangeRat P b col i =
       col (b.supportEquivRootPairingBaseChangeRationalModel ℂ i) := rfl
 
-private lemma wordProd_mul_wordProd_eq_bipartiteCoxeterElement
-    {ι K M N : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
-    [AddCommGroup N] [Module K N] (P : RootPairing ι K M N) [Finite ι]
-    [P.IsCrystallographic] [P.IsReduced] (b : P.Base)
-    (col : (coxeterMatrixOfBase P b).graph.Coloring Bool)
-    {l₁ l₂ : List b.support} (hl₁ : l₁.Nodup) (hl₂ : l₂.Nodup)
-    (hcol₁ : ∀ i : b.support, i ∈ l₁ ↔ col i = true)
-    (hcol₂ : ∀ i : b.support, i ∈ l₂ ↔ col i = false) :
-    wordProd P b l₁ * wordProd P b l₂ =
-      (weylCoxeterSystem P b).bipartiteCoxeterElement col := by
-  rw [wordProd_eq_colorClassProd_of_mem_iff P b col true hl₁ hcol₁,
-    wordProd_eq_colorClassProd_of_mem_iff P b col false hl₂ hcol₂,
-    CoxeterSystem.bipartiteCoxeterElement_def]
-
 private lemma bipartiteCoxeterElement_coloringBaseChangeRat
     {ι K M N : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M]
     [AddCommGroup N] [Module K N] (P : RootPairing ι K M N) [Finite ι]
@@ -150,8 +138,9 @@ private lemma bipartiteCoxeterElement_coloringBaseChangeRat
   have hl₂C : (l₂.map eCB.symm).Nodup := hl₂.map eCB.symm.injective
   have hmemC (x : Bool) {l : List b.support} (hlx : ∀ j, j ∈ l ↔ col j = x) (i : bC.support) :
       i ∈ l.map eCB.symm ↔ coloringBaseChangeRat P b col i = x := by
-    rw [b.mem_map_supportEquivRootPairingBaseChangeRationalModel_symm_iff ℂ,
-      coloringBaseChangeRat_apply, hlx]
+    rw [coloringBaseChangeRat_apply, ← hlx (eCB i)]
+    simpa [eCB.symm_apply_apply] using
+      List.mem_map_of_injective eCB.symm.injective (a := eCB i) (l := l)
   rw [CoxeterSystem.bipartiteCoxeterElement_def,
     ← wordProd_eq_colorClassProd_of_mem_iff PC bC (coloringBaseChangeRat P b col) true hl₁C
       (hmemC true hmem₁),
@@ -299,13 +288,6 @@ private lemma offDiagNegCartanMatrix_spec
     rw [hy i]
     ring
 
-private lemma exp_two_mul_ofReal_pi_div_mul_I (n : ℕ) :
-    Complex.exp (2 * ((Real.pi / n : ℝ) : ℂ) * Complex.I) =
-      Complex.exp (2 * Real.pi * Complex.I / n) := by
-  congr 1
-  push_cast
-  ring
-
 /-- Identifying the Perron–Frobenius dihedral parameter `2 - κ` with `2 cos (π / h)`, where `h`
 is the order of the bipartite Coxeter element, shared between the real Coxeter plane and complex
 regular-eigenvector constructions. -/
@@ -427,7 +409,7 @@ private lemma two_sub_eq_two_mul_cos_pi_div_orderOf_bipartiteCoxeterElement
       hM₁C_mul hM₂C_mul (Complex.exp_ne_zero _) hz.2 (Module.End.mem_eigenspace_iff.1 hz.1)
   have hsq : (2 * Real.cos (Real.pi / h)) ^ 2 ≤ lam ^ 2 := by
     rw [← Complex.norm_one_add_exp_two_mul_mul_I_sq_div (Real.pi / h),
-      exp_two_mul_ofReal_pi_div_mul_I h]
+      Complex.exp_two_mul_ofReal_div_natCast_mul_I Real.pi h]
     exact hbound
   have hpi_div_nonneg : 0 ≤ Real.pi / h := by positivity
   have h2le_real : (2 : ℝ) ≤ h := by exact_mod_cast h2le
@@ -474,76 +456,78 @@ omit [P.IsRootSystem] in
 left-eigenvector equation and `2 - κ = 2 cos (π / h)`. -/
 private lemma dihedral_colorPart_of_eig
     (b : P.Base) (col : (coxeterMatrixOfBase P b).graph.Coloring Bool)
-    {l₁ l₂ : List b.support} (hl₁ : l₁.Nodup) (hl₂ : l₂.Nodup)
-    (hcol₁ : ∀ i : b.support, i ∈ l₁ ↔ col i = true)
-    (hcol₂ : ∀ i : b.support, i ∈ l₂ ↔ col i = false)
     {κ : ℝ} {y : b.support → ℝ} (hy0 : ∀ i, 0 < y i) (hκ : 0 < κ)
     (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j)
-    (hlam : 2 - κ = 2 * Real.cos (Real.pi / orderOf (wordProd P b l₁ * wordProd P b l₂))) :
+    (hlam : 2 - κ = 2 * Real.cos
+      (Real.pi / orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement col))) :
     colorPart P b col y true + colorPart P b col y false ∈ openDominantChamber P b ∧
-      wordProd P b l₁ • colorPart P b col y true = -colorPart P b col y true ∧
-      wordProd P b l₁ • colorPart P b col y false = colorPart P b col y false +
-        (2 * Real.cos (Real.pi / orderOf (wordProd P b l₁ * wordProd P b l₂))) •
-          colorPart P b col y true ∧
-      wordProd P b l₂ • colorPart P b col y false = -colorPart P b col y false ∧
-      wordProd P b l₂ • colorPart P b col y true = colorPart P b col y true +
-        (2 * Real.cos (Real.pi / orderOf (wordProd P b l₁ * wordProd P b l₂))) •
-          colorPart P b col y false := by
-  have hc₁_eq : wordProd P b l₁ = (weylCoxeterSystem P b).colorClassProd col true :=
-    wordProd_eq_colorClassProd_of_mem_iff P b col true hl₁ hcol₁
-  have hc₂_eq : wordProd P b l₂ = (weylCoxeterSystem P b).colorClassProd col false :=
-    wordProd_eq_colorClassProd_of_mem_iff P b col false hl₂ hcol₂
+      (weylCoxeterSystem P b).colorClassProd col true • colorPart P b col y true =
+        -colorPart P b col y true ∧
+      (weylCoxeterSystem P b).colorClassProd col true • colorPart P b col y false =
+        colorPart P b col y false +
+          (2 * Real.cos
+            (Real.pi / orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement col))) •
+            colorPart P b col y true ∧
+      (weylCoxeterSystem P b).colorClassProd col false • colorPart P b col y false =
+        -colorPart P b col y false ∧
+      (weylCoxeterSystem P b).colorClassProd col false • colorPart P b col y true =
+        colorPart P b col y true +
+          (2 * Real.cos
+            (Real.pi / orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement col))) •
+            colorPart P b col y false := by
   have hv_dom : colorPart P b col y true + colorPart P b col y false ∈ openDominantChamber P b := by
     rw [mem_openDominantChamber]; intro i hi
     simpa [P.coroot'_colorPart_add (c := col) hy ⟨i, hi⟩] using mul_pos hκ (hy0 ⟨i, hi⟩)
-  have hc₁_v₁ : wordProd P b l₁ • colorPart P b col y true = -colorPart P b col y true := by
-    rw [hc₁_eq, P.colorClassProd_smul_colorPart (c := col) hy true true]
+  have hc₁_v₁ : (weylCoxeterSystem P b).colorClassProd col true • colorPart P b col y true =
+      -colorPart P b col y true := by
+    rw [P.colorClassProd_smul_colorPart (c := col) hy true true]
     simp only [↓reduceIte, Algebra.algebraMap_self, RingHom.id_apply, two_smul]; abel
-  have hc₁_v₂ : wordProd P b l₁ • colorPart P b col y false =
+  have hc₁_v₂ : (weylCoxeterSystem P b).colorClassProd col true • colorPart P b col y false =
       colorPart P b col y false + (2 - κ) • colorPart P b col y true := by
-    rw [hc₁_eq, P.colorClassProd_smul_colorPart (c := col) hy true false]
+    rw [P.colorClassProd_smul_colorPart (c := col) hy true false]
     simp only [Bool.false_eq_true, ↓reduceIte, Algebra.algebraMap_self, RingHom.id_apply]
     rw [sub_eq_add_neg, ← neg_smul, neg_sub]
-  have hc₂_v₂ : wordProd P b l₂ • colorPart P b col y false = -colorPart P b col y false := by
-    rw [hc₂_eq, P.colorClassProd_smul_colorPart (c := col) hy false false]
+  have hc₂_v₂ : (weylCoxeterSystem P b).colorClassProd col false • colorPart P b col y false =
+      -colorPart P b col y false := by
+    rw [P.colorClassProd_smul_colorPart (c := col) hy false false]
     simp only [↓reduceIte, Algebra.algebraMap_self, RingHom.id_apply, two_smul]; abel
-  have hc₂_v₁ : wordProd P b l₂ • colorPart P b col y true =
+  have hc₂_v₁ : (weylCoxeterSystem P b).colorClassProd col false • colorPart P b col y true =
       colorPart P b col y true + (2 - κ) • colorPart P b col y false := by
-    rw [hc₂_eq, P.colorClassProd_smul_colorPart (c := col) hy false true]
+    rw [P.colorClassProd_smul_colorPart (c := col) hy false true]
     simp only [Bool.true_eq_false, ↓reduceIte, Algebra.algebraMap_self, RingHom.id_apply]
     rw [sub_eq_add_neg, ← neg_smul, neg_sub]
   exact ⟨hv_dom, hc₁_v₁, hlam ▸ hc₁_v₂, hc₂_v₂, hlam ▸ hc₂_v₁⟩
 
 /-- **The Steinberg–Coleman Coxeter plane over `ℝ`.** For a base `b` of rank at least two
-(`[Nontrivial b.support]`) of an irreducible finite reduced crystallographic root system, every
-bipartite Coxeter element `wordProd P b l₁ * wordProd P b l₂` admits linearly independent vectors
+(`[Nontrivial b.support]`) of an irreducible finite reduced crystallographic root system and a
+two-colouring `col` of its Dynkin diagram, the bipartite Coxeter element
+`(weylCoxeterSystem P b).bipartiteCoxeterElement col` admits linearly independent vectors
 `v₁, v₂ : M` (spanning the Coxeter plane) with `v₁ + v₂` in the open dominant chamber on which
-`wordProd P b l₁`, `wordProd P b l₂` act by dihedral formulas with parameter
-`2 cos (π / orderOf (wordProd P b l₁ * wordProd P b l₂))`. -/
+`(weylCoxeterSystem P b).colorClassProd col true` and
+`(weylCoxeterSystem P b).colorClassProd col false` act by dihedral formulas with parameter
+`2 cos (π / orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement col))`. -/
 theorem exists_coxeterPlane_bipartite [P.IsIrreducible] (b : P.Base) [Nontrivial b.support]
-    (col : (coxeterMatrixOfBase P b).graph.Coloring Bool)
-    {l₁ l₂ : List b.support} (hl₁ : l₁.Nodup) (hl₂ : l₂.Nodup)
-    (hcol₁ : ∀ i : b.support, i ∈ l₁ ↔ col i = true)
-    (hcol₂ : ∀ i : b.support, i ∈ l₂ ↔ col i = false) :
+    (col : (coxeterMatrixOfBase P b).graph.Coloring Bool) :
     ∃ v₁ v₂ : M,
       LinearIndependent ℝ ![v₁, v₂] ∧
       v₁ + v₂ ∈ openDominantChamber P b ∧
-      wordProd P b l₁ • v₁ = -v₁ ∧
-      wordProd P b l₁ • v₂ = v₂ +
-        (2 * Real.cos (Real.pi / orderOf (wordProd P b l₁ * wordProd P b l₂))) • v₁ ∧
-      wordProd P b l₂ • v₂ = -v₂ ∧
-      wordProd P b l₂ • v₁ = v₁ +
-        (2 * Real.cos (Real.pi / orderOf (wordProd P b l₁ * wordProd P b l₂))) • v₂ := by
+      (weylCoxeterSystem P b).colorClassProd col true • v₁ = -v₁ ∧
+      (weylCoxeterSystem P b).colorClassProd col true • v₂ = v₂ +
+        (2 * Real.cos (Real.pi / orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement col))) •
+          v₁ ∧
+      (weylCoxeterSystem P b).colorClassProd col false • v₂ = -v₂ ∧
+      (weylCoxeterSystem P b).colorClassProd col false • v₁ = v₁ +
+        (2 * Real.cos (Real.pi / orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement col))) •
+          v₂ := by
   classical
   let := Fintype.ofFinite ι
   have : Nonempty b.support := b.nonempty_support_of_isIrreducible
   obtain ⟨κ, hκ, hκ2, y, hy0, hyC⟩ :=
     (isFiniteType_cartanMatrix b).exists_pos_vecMul_eq_smul b.cartanMatrix_isIndecomposable
   have hy := P.sum_mul_pairingIn_eq_of_vecMul_eq_smul b hyC
-  have hc_bip := wordProd_mul_wordProd_eq_bipartiteCoxeterElement P b col hl₁ hl₂ hcol₁ hcol₂
-  have hlam : 2 - κ = 2 * Real.cos (Real.pi / orderOf (wordProd P b l₁ * wordProd P b l₂)) := by
-    rw [hc_bip]
-    exact two_sub_eq_two_mul_cos_pi_div_orderOf_bipartiteCoxeterElement P b col hy hy0 hκ hκ2
+  have hlam : 2 - κ = 2 * Real.cos
+      (Real.pi / orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement col)) :=
+    two_sub_eq_two_mul_cos_pi_div_orderOf_bipartiteCoxeterElement P b col hy hy0 hκ hκ2
   set v₁ : M := colorPart P b col y true
   set v₂ : M := colorPart P b col y false
   have hli : LinearIndependent ℝ ![v₁, v₂] := by
@@ -566,43 +550,41 @@ theorem exists_coxeterPlane_bipartite [P.IsIrreducible] (b : P.Base) [Nontrivial
       exact (mul_eq_zero.1 h0).resolve_right (hy0 i_false).ne'
     intro k
     fin_cases k <;> assumption
-  exact ⟨v₁, v₂, hli, dihedral_colorPart_of_eig P b col hl₁ hl₂ hcol₁ hcol₂ hy0 hκ hy hlam⟩
+  exact ⟨v₁, v₂, hli, dihedral_colorPart_of_eig P b col hy0 hκ hy hlam⟩
 
 /-- **Dihedral colour-part action for a bipartite Coxeter element over `ℝ`.** For any base `b`
-(of arbitrary rank `≥ 1`) of an irreducible finite reduced crystallographic root system, there
-exist `v₁, v₂ : M` with `v₁ + v₂` in the open dominant chamber on which `wordProd P b l₁` and
-`wordProd P b l₂` act by dihedral formulas with parameter
-`2 cos (π / orderOf (wordProd P b l₁ * wordProd P b l₂))`.
+(of arbitrary rank `≥ 1`) of an irreducible finite reduced crystallographic root system and a
+two-colouring `col` of its Dynkin diagram, there exist `v₁, v₂ : M` with `v₁ + v₂` in the open
+dominant chamber on which `(weylCoxeterSystem P b).colorClassProd col true` and
+`(weylCoxeterSystem P b).colorClassProd col false` act by dihedral formulas with parameter
+`2 cos (π / orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement col))`.
 
 When `b.support` is nontrivial (rank `≥ 2`), `exists_coxeterPlane_bipartite` further certifies
 that `v₁` and `v₂` are linearly independent; in rank one (`Subsingleton b.support`), one of
 `v₁, v₂` is zero and `2 cos (π / 2) = 0`. -/
 theorem exists_dihedral_colorPart_bipartite [P.IsIrreducible] (b : P.Base)
-    (col : (coxeterMatrixOfBase P b).graph.Coloring Bool)
-    {l₁ l₂ : List b.support} (hl₁ : l₁.Nodup) (hl₂ : l₂.Nodup)
-    (hcol₁ : ∀ i : b.support, i ∈ l₁ ↔ col i = true)
-    (hcol₂ : ∀ i : b.support, i ∈ l₂ ↔ col i = false) :
+    (col : (coxeterMatrixOfBase P b).graph.Coloring Bool) :
     ∃ v₁ v₂ : M,
       v₁ + v₂ ∈ openDominantChamber P b ∧
-      wordProd P b l₁ • v₁ = -v₁ ∧
-      wordProd P b l₁ • v₂ = v₂ +
-        (2 * Real.cos (Real.pi / orderOf (wordProd P b l₁ * wordProd P b l₂))) • v₁ ∧
-      wordProd P b l₂ • v₂ = -v₂ ∧
-      wordProd P b l₂ • v₁ = v₁ +
-        (2 * Real.cos (Real.pi / orderOf (wordProd P b l₁ * wordProd P b l₂))) • v₂ := by
+      (weylCoxeterSystem P b).colorClassProd col true • v₁ = -v₁ ∧
+      (weylCoxeterSystem P b).colorClassProd col true • v₂ = v₂ +
+        (2 * Real.cos (Real.pi / orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement col))) •
+          v₁ ∧
+      (weylCoxeterSystem P b).colorClassProd col false • v₂ = -v₂ ∧
+      (weylCoxeterSystem P b).colorClassProd col false • v₁ = v₁ +
+        (2 * Real.cos (Real.pi / orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement col))) •
+          v₂ := by
   classical
   let := Fintype.ofFinite ι
   have : Nonempty b.support := b.nonempty_support_of_isIrreducible
   rcases subsingleton_or_nontrivial b.support with hsub | _
   · have hy := P.sum_pairingIn_eq_two_of_subsingleton b
-    have hc_bip := wordProd_mul_wordProd_eq_bipartiteCoxeterElement P b col hl₁ hl₂ hcol₁ hcol₂
-    have hlam : 2 - (2 : ℝ) =
-        2 * Real.cos (Real.pi / orderOf (wordProd P b l₁ * wordProd P b l₂)) := by
-      rw [hc_bip, orderOf_bipartiteCoxeterElement_eq_two_of_subsingleton P b col, sub_self,
+    have hlam : 2 - (2 : ℝ) = 2 * Real.cos
+        (Real.pi / orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement col)) := by
+      rw [orderOf_bipartiteCoxeterElement_eq_two_of_subsingleton P b col, sub_self,
         Nat.cast_ofNat, Real.cos_pi_div_two, mul_zero]
-    exact ⟨_, _, dihedral_colorPart_of_eig P b col hl₁ hl₂ hcol₁ hcol₂ (fun _ ↦ one_pos) two_pos
-      hy hlam⟩
-  · obtain ⟨v₁, v₂, -, h⟩ := P.exists_coxeterPlane_bipartite b col hl₁ hl₂ hcol₁ hcol₂
+    exact ⟨_, _, dihedral_colorPart_of_eig P b col (fun _ ↦ one_pos) two_pos hy hlam⟩
+  · obtain ⟨v₁, v₂, -, h⟩ := P.exists_coxeterPlane_bipartite b col
     exact ⟨v₁, v₂, h⟩
 
 end RealCoxeterPlane
@@ -650,7 +632,8 @@ theorem exists_isRegularWeight_wordProd_smul_eq_inv_exp_smul
             (Complex.exp (2 * Real.pi * Complex.I / orderOf c))⁻¹ + 1 = 0 := by
         have h := Complex.inv_exp_two_mul_mul_I_sq_add_sub_mul_add_one
           ((Real.pi / orderOf c : ℝ) : ℂ)
-        rw [exp_two_mul_ofReal_pi_div_mul_I (orderOf c), ← Complex.ofReal_cos] at h
+        rw [Complex.exp_two_mul_ofReal_div_natCast_mul_I Real.pi (orderOf c),
+          ← Complex.ofReal_cos] at h
         simpa [Complex.coe_algebraMap, hlam] using h
       exact ⟨_, P.isRegularWeight_one_add_smul_colorPart_add_smul (c := col) hy hy0 hκ hκ2 hν,
         P.bipartiteCoxeterElement_smul_one_add_smul_colorPart_add_smul (c := col) hy hν⟩

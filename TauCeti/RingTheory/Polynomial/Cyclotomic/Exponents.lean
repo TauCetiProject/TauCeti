@@ -23,22 +23,22 @@ assumed, so repeated exponents are permitted. This is the arithmetic step that t
 integral characteristic polynomials into constraints on their lists of eigenvalue exponents.
 
 Rationality also makes such a factorization independent of the primitive root (even in a second
-`ℚ`-algebra domain): a rational polynomial equal to `∏ i, (X - ζ ^ e i)` is equal to
-`∏ i, (X - ξ ^ e i)` for every primitive `h`-th root of unity `ξ`
-(`IsPrimitiveRoot.map_eq_prod_of_map_eq_prod`). Each coefficient of the product is a rational
-polynomial expression in `ζ`, and agreeing with a rational number at `ζ` it does so at every root
-of the cyclotomic polynomial, the minimal polynomial of `ζ`.
+`ℚ`-algebra domain) whenever `h > 0`: a rational polynomial equal to `∏ i, (X - ζ ^ e i)` for a
+primitive `h`-th root of unity `ζ` is equal to `∏ i, (X - ξ ^ e i)` for every primitive `h`-th root
+of unity `ξ` (`IsPrimitiveRoot.map_eq_prod_of_map_eq_prod`). Each coefficient of the product is a
+rational polynomial expression in `ζ`, and agreeing with a rational number at `ζ` it does so at
+every root of the cyclotomic polynomial, the minimal polynomial of `ζ`.
 
 The ambient ring can be any domain that is a rational algebra. The proof reuses
 `TauCeti.RingTheory.Polynomial.Cyclotomic.Roots`, which reduces both facts to Mathlib's
 `IsPrimitiveRoot.minpoly_eq_cyclotomic_of_irreducible` and irreducibility of cyclotomic
 polynomials over the rationals.
 
-Over a field, if instead the roots `ζ ^ e i` are stable under inversion with multiplicity, as
-for the eigenvalues of a linear map conjugate to its inverse, then the residues `e i` in `ZMod h`
-are negation-stable (`IsPrimitiveRoot.map_neg_natCast_eq_of_prod_X_sub_C_pow_eq`), and when no
-`e i` is divisible by `h` they pair off as `a` and `h - a`, adding up to `h / 2` per factor
-(`IsPrimitiveRoot.two_mul_sum_mod_eq_mul_card`).
+Over a field, for `h > 0`, if instead the roots `ζ ^ e i` are stable under inversion with
+multiplicity, as for the eigenvalues of a linear map conjugate to its inverse, then the residues
+`e i` in `ZMod h` are negation-stable (`IsPrimitiveRoot.map_neg_natCast_eq_of_prod_X_sub_C_pow_eq`),
+and when no `e i` is divisible by `h` they pair off as `a` and `h - a`, adding up to `h / 2` per
+factor (`IsPrimitiveRoot.two_mul_sum_mod_eq_mul_card`).
 -/
 
 public section
@@ -69,10 +69,10 @@ theorem exists_eq_of_isRoot_of_map_eq_prod {h : ℕ} {ζ ξ : K}
   have hi' : ζ ^ a = ζ ^ e i := sub_eq_zero.mp (by simpa using hi)
   exact ⟨i, (hζ.pow_inj ha (he i) hi').symm⟩
 
-/-- **A rational factorization into powers of a primitive root does not depend on the root.** If a
-rational polynomial factors as `∏ i, (X - ζ ^ e i)` for a primitive `h`-th root of unity `ζ`, then
-it factors as `∏ i, (X - ξ ^ e i)` for every primitive `h`-th root of unity `ξ` in any `ℚ`-algebra
-domain. The exponents are unrestricted and may repeat. -/
+/-- **A rational factorization into powers of a primitive root does not depend on the root.** If
+`h > 0` and a rational polynomial factors as `∏ i, (X - ζ ^ e i)` for a primitive `h`-th root of
+unity `ζ`, then it factors as `∏ i, (X - ξ ^ e i)` for every primitive `h`-th root of unity `ξ` in
+any `ℚ`-algebra domain. The exponents are unrestricted and may repeat. -/
 theorem map_eq_prod_of_map_eq_prod {h : ℕ} (hh : 0 < h) {ζ : K} {ξ : L}
     (hζ : IsPrimitiveRoot ζ h) (hξ : IsPrimitiveRoot ξ h) {p : ℚ[X]} {e : ι → ℕ}
     (hprod : p.map (algebraMap ℚ K) = ∏ i, (X - C (ζ ^ e i))) :
@@ -92,9 +92,9 @@ section Field
 
 variable {K ι : Type*} [Field K] [Fintype ι]
 
-/-- If the roots `ζ ^ e i` of `∏ i, (X - C (ζ ^ e i))`, for a primitive `h`-th root of unity `ζ`,
-are stable under inversion with multiplicity, then the exponent residues `e i : ZMod h` are stable
-under negation with multiplicity. -/
+/-- If `h > 0` and the roots `ζ ^ e i` of `∏ i, (X - C (ζ ^ e i))`, for a primitive `h`-th root
+of unity `ζ`, are stable under inversion with multiplicity, then the exponent residues
+`e i : ZMod h` are stable under negation with multiplicity. -/
 theorem map_neg_natCast_eq_of_prod_X_sub_C_pow_eq {h : ℕ} [NeZero h] {ζ : K}
     (hζ : IsPrimitiveRoot ζ h) {e : ι → ℕ}
     (hprod : ∏ i, (X - C (ζ ^ e i)) = ∏ i, (X - C (ζ⁻¹ ^ e i))) :
@@ -116,9 +116,9 @@ theorem map_neg_natCast_eq_of_prod_X_sub_C_pow_eq {h : ℕ} [NeZero h] {ζ : K}
   simpa only [Multiset.map_map, Function.comp_def, hfe, hfneg, roots_prod_X_sub_C_map] using
     (congrArg Polynomial.roots hprod).symm
 
-/-- If the roots `ζ ^ e i` of `∏ i, (X - ζ ^ e i)`, for a primitive `h`-th root of unity `ζ`,
-are stable under inversion with multiplicity, and no `e i` is divisible by `h`, then the residues
-`e i % h` add up to `h / 2` per factor: they pair off as `a` and `h - a`. -/
+/-- If `h > 0`, the roots `ζ ^ e i` of `∏ i, (X - ζ ^ e i)` for a primitive `h`-th root of unity
+`ζ` are stable under inversion with multiplicity, and no `e i` is divisible by `h`, then the
+residues `e i % h` add up to `h / 2` per factor: they pair off as `a` and `h - a`. -/
 theorem two_mul_sum_mod_eq_mul_card {h : ℕ} [NeZero h] {ζ : K} (hζ : IsPrimitiveRoot ζ h)
     {e : ι → ℕ} (he : ∀ i, ¬ h ∣ e i)
     (hprod : ∏ i, (X - C (ζ ^ e i)) = ∏ i, (X - C (ζ⁻¹ ^ e i))) :

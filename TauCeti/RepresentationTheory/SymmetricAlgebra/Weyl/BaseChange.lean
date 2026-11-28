@@ -23,10 +23,10 @@ import TauCeti.RingTheory.GradedAlgebra.Subalgebra
 
 This module specializes
 `Representation.finrank_symmetricAlgebraInvariants_baseChange_inf_homogeneousSubmodule`, which
-establishes graded invariant-dimension invariance under field extensions for an arbitrary
-representation, to the Weyl reflection representation on `Dual`: extending a coordinate root
-pairing `Q` on `σ → ℚ` to any characteristic-zero field `S` preserves the graded dimensions of
-`Sym(M*)^W`:
+establishes graded invariant-dimension invariance under field extensions for any representation of
+a finite group, to the Weyl reflection representation on `Dual`: extending a finite coordinate root
+system `Q` on `σ → ℚ` with the standard dot-product pairing to any characteristic-zero field `S`
+preserves the graded dimensions of `Sym(M*)^W`:
 `RootPairing.finrank_symmetricAlgebraInvariants_weylGroupRootRep_dual_rootPairingBaseChange`.
 Combined with `RootPairing.Base.equivBaseChangeRationalModel`, this yields the Weyl-specific
 graded comparison and multiset invariance of basic invariant degrees across characteristic-zero
@@ -43,8 +43,9 @@ open Finset Function Module Representation SymmetricAlgebra TauCeti TauCeti.Symm
 
 namespace RootPairing
 
-/-- Extending a coordinate root pairing on `σ → ℚ` to a characteristic-zero field `S` preserves
-the dimension of each graded component of the Weyl invariants in `Sym(M*)`. -/
+/-- Extending a finite coordinate root system `Q` on `σ → ℚ` with the standard dot-product
+pairing to a characteristic-zero field `S` preserves the dimension of each graded component of the
+Weyl invariants in `Sym(M*)`. -/
 theorem finrank_symmetricAlgebraInvariants_weylGroupRootRep_dual_rootPairingBaseChange
     {ι σ S : Type*} [Finite ι] [Fintype σ] [Field S] [CharZero S]
     (Q : RootPairing ι ℚ (σ → ℚ) (σ → ℚ))

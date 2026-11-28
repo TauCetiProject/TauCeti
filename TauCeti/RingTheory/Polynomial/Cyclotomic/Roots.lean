@@ -11,25 +11,27 @@ import Mathlib.FieldTheory.Minpoly.Field
 /-!
 # Roots of cyclotomic and related polynomials at primitive roots of unity
 
-A primitive `e`-th root of unity in a domain is a root of the cyclotomic polynomial `Φ_e` over any
-ring, once its coefficients are mapped into the domain along a ring homomorphism. If a rational
-polynomial vanishes at one primitive `h`-th root of unity in a `ℚ`-algebra domain, it vanishes at
-every primitive `h`-th root of unity in any `ℚ`-algebra domain. Consequently, two polynomials over
-`ℚ[X]` whose coefficients evaluate identically at one primitive `h`-th root of unity also become
-equal at any primitive `h`-th root of unity in any `ℚ`-algebra domain. In an integral domain
-containing a suitable primitive root of unity, this file also records the root multisets of
-`∑ k ∈ Finset.range (n + 1), X ^ k`, `X ^ n + 1`, and `(X ^ (n - 1) + 1) * (X + 1)`.
+A primitive `e`-th root of unity (`e > 0`) in a domain is a root of the cyclotomic polynomial `Φ_e`
+over any ring, once its coefficients are mapped into the domain along a ring homomorphism. If a
+rational polynomial vanishes at one primitive `h`-th root of unity (`h > 0`) in a `ℚ`-algebra
+domain, it vanishes at every primitive `h`-th root of unity in any `ℚ`-algebra domain. Consequently,
+two polynomials over `ℚ[X]` whose coefficients evaluate identically at one primitive `h`-th root of
+unity (`h > 0`) also become equal at any primitive `h`-th root of unity in any `ℚ`-algebra domain.
+In an integral domain containing a suitable primitive root of unity, this file also records the
+root multisets of `∑ k ∈ Finset.range (n + 1), X ^ k`, `X ^ n + 1`, and
+`(X ^ (n - 1) + 1) * (X + 1)`.
 
 ## Main results
 
-* `IsPrimitiveRoot.eval₂_cyclotomic`: a primitive `e`-th root of unity in a domain is a root of
-  `cyclotomic e S` along any ring homomorphism `S →+* R`.
+* `IsPrimitiveRoot.eval₂_cyclotomic`: a primitive `e`-th root of unity (`e > 0`) in a domain is a
+  root of `cyclotomic e S` along any ring homomorphism `S →+* R`.
 * `IsPrimitiveRoot.aeval_eq_zero_of_aeval_eq_zero`: if `p : ℚ[X]` vanishes at a primitive `h`-th
-  root of unity `ζ₀`, it vanishes at any primitive `h`-th root of unity `ζ`.
+  root of unity `ζ₀` (`h > 0`), it vanishes at any primitive `h`-th root of unity `ζ`.
 * `IsPrimitiveRoot.isRoot_map_of_isRoot_map`: root transfer across primitive `h`-th roots of unity
-  for rational polynomials.
+  (`h > 0`) for rational polynomials.
 * `Polynomial.map_aeval_eq_of_isPrimitiveRoot`: equality of `(ℚ[X])[X]` polynomials after
-  coefficientwise evaluation at one primitive `h`-th root transfers to any primitive `h`-th root.
+  coefficientwise evaluation at one primitive `h`-th root (`h > 0`) transfers to any primitive
+  `h`-th root.
 * `Polynomial.roots_sum_range_X_pow`, `Polynomial.roots_X_pow_add_one`, and
   `Polynomial.roots_X_pow_add_one_mul_X_add_one`: root multisets of `∑ k < n + 1, X ^ k`,
   `X ^ n + 1`, and `(X ^ (n - 1) + 1) * (X + 1)` over any integral domain with a primitive root of
@@ -42,8 +44,8 @@ open Polynomial
 
 namespace IsPrimitiveRoot
 
-/-- A primitive `e`-th root of unity `r` in a domain `R` is a root of the cyclotomic polynomial
-`Φ_e` over any ring, mapped to `R` along any ring homomorphism `f`. Mathlib's
+/-- A primitive `e`-th root of unity `r` (`e > 0`) in a domain `R` is a root of the cyclotomic
+polynomial `Φ_e` over any ring, mapped to `R` along any ring homomorphism `f`. Mathlib's
 `IsPrimitiveRoot.isRoot_cyclotomic` is the case of `Φ_e` taken over `R` itself. -/
 theorem eval₂_cyclotomic {e : ℕ} {S R : Type*} [Ring S] [CommRing R] [IsDomain R] [NeZero e]
     (f : S →+* R) {r : R} (hr : IsPrimitiveRoot r e) : (cyclotomic e S).eval₂ f r = 0 := by
@@ -51,8 +53,8 @@ theorem eval₂_cyclotomic {e : ℕ} {S R : Type*} [Ring S] [CommRing R] [IsDoma
   exact hr.isRoot_cyclotomic (NeZero.pos e)
 
 /-- **Rational cyclotomic evaluation transfer.** If a polynomial over `ℚ` evaluates to zero at one
-primitive `h`-th root of unity in a `ℚ`-algebra domain, then it evaluates to zero at any primitive
-`h`-th root of unity in any `ℚ`-algebra domain. -/
+primitive `h`-th root of unity (`h > 0`) in a `ℚ`-algebra domain, then it evaluates to zero at any
+primitive `h`-th root of unity in any `ℚ`-algebra domain. -/
 theorem aeval_eq_zero_of_aeval_eq_zero {K A : Type*} [CommRing K] [IsDomain K] [Algebra ℚ K]
     [CommRing A] [IsDomain A] [Algebra ℚ A] {h : ℕ} (hh : 0 < h) {ζ₀ : K}
     (hζ₀ : IsPrimitiveRoot ζ₀ h) {ζ : A} (hζ : IsPrimitiveRoot ζ h) {p : ℚ[X]}
@@ -65,9 +67,9 @@ theorem aeval_eq_zero_of_aeval_eq_zero {K A : Type*} [CommRing K] [IsDomain K] [
   obtain ⟨q, rfl⟩ := hdvd
   rw [map_mul, aeval_def, hζ.eval₂_cyclotomic (algebraMap ℚ A), zero_mul]
 
-/-- **Root transfer for rational polynomials.** If a primitive `h`-th root of unity `ζ₀` in a
-`ℚ`-algebra domain is a root of a rational polynomial `p`, then any primitive `h`-th root of unity
-`ζ` in any `ℚ`-algebra domain is also a root of `p`. -/
+/-- **Root transfer for rational polynomials.** If a primitive `h`-th root of unity `ζ₀` (`h > 0`)
+in a `ℚ`-algebra domain is a root of a rational polynomial `p`, then any primitive `h`-th root of
+unity `ζ` in any `ℚ`-algebra domain is also a root of `p`. -/
 theorem isRoot_map_of_isRoot_map {K A : Type*} [CommRing K] [IsDomain K] [Algebra ℚ K]
     [CommRing A] [IsDomain A] [Algebra ℚ A] {h : ℕ} (hh : 0 < h) {ζ₀ : K}
     (hζ₀ : IsPrimitiveRoot ζ₀ h) {ζ : A} (hζ : IsPrimitiveRoot ζ h) {p : ℚ[X]}
@@ -80,9 +82,9 @@ end IsPrimitiveRoot
 namespace Polynomial
 
 /-- **Cyclotomic transfer for `(ℚ[X])[X]` polynomials.** If two polynomials over `ℚ[X]` have equal
-images under coefficientwise evaluation at a primitive `h`-th root of unity `ζ₀` in a `ℚ`-algebra
-domain, then they have equal images under coefficientwise evaluation at any primitive `h`-th root
-of unity `ζ` in any `ℚ`-algebra domain. -/
+images under coefficientwise evaluation at a primitive `h`-th root of unity `ζ₀` (`h > 0`) in a
+`ℚ`-algebra domain, then they have equal images under coefficientwise evaluation at any primitive
+`h`-th root of unity `ζ` in any `ℚ`-algebra domain. -/
 theorem map_aeval_eq_of_isPrimitiveRoot (F₁ F₂ : (ℚ[X])[X]) {K A : Type*}
     [CommRing K] [IsDomain K] [Algebra ℚ K] [CommRing A] [IsDomain A] [Algebra ℚ A]
     {h : ℕ} (hh : 0 < h) {ζ₀ : K} (hζ₀ : IsPrimitiveRoot ζ₀ h) {ζ : A} (hζ : IsPrimitiveRoot ζ h)
