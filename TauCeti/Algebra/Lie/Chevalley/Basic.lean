@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Lie.FullCartan
 
 import Mathlib.Tactic.IntervalCases
 import TauCeti.LinearAlgebra.RootSystem.PairingInvariance
+import TauCeti.LinearAlgebra.RootSystem.Finite.DoubleChain
 
 /-!
 # The integral Chevalley Lie algebra over a full cocharacter lattice
@@ -141,6 +142,36 @@ theorem structConst_eq_natCast_or_eq_neg_natCast {i j k : ι} (h : P.root k = P.
     c.structConst i j = (P.chainBotCoeff i j + 1 : ℕ) ∨
       c.structConst i j = -((P.chainBotCoeff i j + 1 : ℕ) : ℤ) :=
   c.natAbs_structConst h ▸ Int.natAbs_eq (c.structConst i j)
+
+/-- The first bracket in a double chain of lower plus upper length at most two has
+absolute structure constant one. -/
+theorem natAbs_structConst_eq_one_of_double_chain {α β γ δ : ι}
+    (hγ : P.root γ = P.root α + P.root β)
+    (hδ : P.root δ = P.root α + P.root γ)
+    (hlen : P.chainBotCoeff α β + P.chainTopCoeff α β ≤ 2) :
+    (c.structConst α β).natAbs = 1 := by
+  rw [c.natAbs_structConst hγ,
+    P.chainBotCoeff_eq_zero_of_chainBotCoeff_add_chainTopCoeff_le_two hγ hδ hlen]
+
+/-- Along a string of lower plus upper length at most two, the bracket with its
+sum root is twice its sign (and is zero if the next root is absent). -/
+theorem structConst_eq_two_mul_sign_of_chain_le_two {α β γ : ι}
+    (hγ : P.root γ = P.root α + P.root β)
+    (hlen : P.chainBotCoeff α β + P.chainTopCoeff α β ≤ 2) :
+    c.structConst α γ = 2 * (c.structConst α γ).sign := by
+  by_cases hmem : P.root α + P.root γ ∈ Set.range P.root
+  · obtain ⟨δ, hδ⟩ := hmem
+    have hli := P.linearIndependent_of_root_eq_add_of_root_eq_add hγ hδ
+    have hbot := P.chainBotCoeff_eq_zero_of_chainBotCoeff_add_chainTopCoeff_le_two hγ hδ hlen
+    have hbotγ := P.chainBotCoeff_of_add hli (by simpa only [add_comm] using hγ)
+    have hnat := c.natAbs_structConst hδ
+    rw [hbotγ, hbot] at hnat
+    norm_num at hnat
+    have h := Int.sign_mul_natAbs (c.structConst α γ)
+    rw [hnat] at h
+    simpa only [Nat.cast_ofNat, mul_comm] using h.symm
+  · rw [c.structConst_eq_zero_of_notMem_range _ _ hmem]
+    rfl
 
 include c in
 /-- A finite integral root pairing admitting Chevalley structure constants is reduced. -/

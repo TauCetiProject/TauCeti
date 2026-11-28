@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Matrix.Cartan.Closed.Basic
 public import TauCeti.Geometry.Manifold.Immersion.Basic
 import Mathlib.Analysis.LocallyConvex.HahnBanach
-import TauCeti.Algebra.Star.Unitary
+import TauCeti.Algebra.Star.Unitary.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Star
 import TauCeti.Analysis.Matrix.Polar.Deformation
 import TauCeti.Analysis.Normed.Algebra.Exponential

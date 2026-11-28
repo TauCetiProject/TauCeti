@@ -472,14 +472,23 @@ variable (E) in
 /-- The atlas of the frame bundle consisting of the trivializations induced by the trivializations
 of `E` at each point and an isomorphism `σ : F ≃ 𝕜ⁿ`. -/
 def atlas (σ : F ≃L[𝕜] (Fin n → 𝕜)) :
-    MapFiber.Atlas (GL (Fin n) 𝕜) (proj : FrameBundle 𝕜 n F E → B) where
-  trivAt b := (trivializationAt F E b).frameBundle σ
-  mem_baseSet_trivAt b := mem_baseSet_trivializationAt F E b
+    MapFiber.Atlas (GL (Fin n) 𝕜) (proj : FrameBundle 𝕜 n F E → B) :=
+  MapFiber.Atlas.ofTrivAt
+    (fun b ↦ (trivializationAt F E b).frameBundle σ)
+    (fun b ↦ by
+      simpa only [Bundle.Trivialization.baseSet_frameBundle] using
+        mem_baseSet_trivializationAt F E b)
 
 @[simp]
 theorem atlas_trivAt (σ : F ≃L[𝕜] (Fin n → 𝕜)) (b : B) :
-    (atlas E σ).trivAt b = (trivializationAt F E b).frameBundle σ :=
-  (rfl)
+    (atlas E σ).trivAt b = (trivializationAt F E b).frameBundle σ := by
+  simp [atlas]
+
+/-- The charts of `atlas E σ` are the frame-bundle trivializations induced by
+`trivializationAt F E b` for `b : B`. -/
+theorem atlas_charts (σ : F ≃L[𝕜] (Fin n → 𝕜)) :
+    (atlas E σ).charts = range (fun b ↦ (trivializationAt F E b).frameBundle σ) :=
+  MapFiber.Atlas.charts_ofTrivAt _ _
 
 variable (E) in
 /-- **The frame bundle is a principal bundle.** For an isomorphism `σ : F ≃ 𝕜ⁿ`, the fibres of the
@@ -489,7 +498,9 @@ theorem principalBundle (σ : F ≃L[𝕜] (Fin n → 𝕜)) :
     letI := (atlas E σ).fiberBundle
     letI := MapFiber.mulAction (M := (GL (Fin n) 𝕜)ᵐᵒᵖ) (proj_smul (F := F) (E := E))
     PrincipalBundle (GL (Fin n) 𝕜) (MapFiber (proj : FrameBundle 𝕜 n F E → B)) :=
-  (atlas E σ).principalBundle proj_smul fun b _ hv g ↦
-    (trivializationAt F E b).frameBundle_smul σ hv g
+  (atlas E σ).principalBundle proj_smul (by
+    rw [atlas_charts]
+    rintro _ ⟨b, rfl⟩ _ hv g
+    exact (trivializationAt F E b).frameBundle_smul σ hv g)
 
 end TauCeti.FrameBundle
