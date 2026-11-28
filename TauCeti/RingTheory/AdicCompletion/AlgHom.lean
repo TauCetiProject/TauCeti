@@ -23,6 +23,8 @@ at a prime.
 
 * `AdicCompletion.factor_evalₐ`: the projections `evalₐ I n` are compatible with the transition
   maps `S ⧸ I ^ n → S ⧸ I ^ m`; in terms of representatives, `AdicCompletion.evalₐ_eq_mk_of_le`.
+* `AdicCompletion.toQuotient`: the projection to a quotient by an ideal containing a power
+  of the completion ideal, computed using `AdicCompletion.factor_evalₐ`.
 * `AdicCompletion.mapₐ`: the map of completions induced by an algebra homomorphism, with
   `AdicCompletion.evalₐ_mapₐ`, `AdicCompletion.mapₐ_of`, `AdicCompletion.mapₐ_congr`, and the
   functoriality laws `AdicCompletion.mapₐ_id` and `AdicCompletion.mapₐ_comp`.
@@ -44,8 +46,9 @@ public section
 
 namespace AdicCompletion
 
-variable {R S S' S'' : Type*} [CommRing R] [CommRing S] [CommRing S'] [CommRing S'']
-  [Algebra R S] [Algebra R S'] [Algebra R S''] {I : Ideal S} {I' : Ideal S'} {I'' : Ideal S''}
+section Evaluation
+
+variable {S : Type*} [CommRing S] {I : Ideal S}
 
 /-- The projections of the adic completion to `S ⧸ I ^ n` are compatible with the transition maps
 `S ⧸ I ^ n → S ⧸ I ^ m` for `m ≤ n`. -/
@@ -60,6 +63,54 @@ theorem factor_evalₐ {m n : ℕ} (hle : m ≤ n) (x : AdicCompletion I S) :
 theorem evalₐ_eq_mk_of_le {m n : ℕ} (hle : m ≤ n) {x : AdicCompletion I S} {a : S}
     (h : evalₐ I n x = Ideal.Quotient.mk _ a) : evalₐ I m x = Ideal.Quotient.mk _ a := by
   rw [← factor_evalₐ hle x, h, Ideal.Quotient.factor_mk]
+
+end Evaluation
+
+section Quotient
+
+variable {R : Type*} [CommRing R] (I : Ideal R)
+
+/-- Projection of the `I`-adic completion onto a quotient by an ideal containing a power of `I`.
+The map does not depend on the power used to construct it. -/
+noncomputable def toQuotient {K : Ideal R} (hK : ∃ n : ℕ, I ^ n ≤ K) :
+    AdicCompletion I R →+* R ⧸ K :=
+  (Ideal.Quotient.factor hK.choose_spec).comp (evalₐ I hK.choose).toRingHom
+
+/-- The projection to an open ideal quotient can be computed at any sufficiently deep level. -/
+theorem toQuotient_eq {K : Ideal R} (hK : ∃ n : ℕ, I ^ n ≤ K) {n : ℕ} (hn : I ^ n ≤ K) :
+    toQuotient I hK = (Ideal.Quotient.factor hn).comp (evalₐ I n).toRingHom := by
+  ext x
+  have h₁ := factor_evalₐ (I := I) (le_max_left hK.choose n) x
+  have h₂ := factor_evalₐ (I := I) (le_max_right hK.choose n) x
+  unfold toQuotient
+  simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
+  rw [← h₁, ← h₂, Ideal.Quotient.factor_comp_apply, Ideal.Quotient.factor_comp_apply]
+
+/-- On elements of the original ring, projection to a quotient is the quotient map. -/
+@[simp]
+theorem toQuotient_of {K : Ideal R} (hK : ∃ n : ℕ, I ^ n ≤ K) (r : R) :
+    toQuotient I hK (of I R r) = Ideal.Quotient.mk K r := by
+  simp [toQuotient]
+
+/-- Projection onto open ideal quotients commutes with reduction. -/
+@[simp]
+theorem factor_toQuotient {K L : Ideal R} (hK : ∃ n : ℕ, I ^ n ≤ K)
+    (hL : ∃ n : ℕ, I ^ n ≤ L) (hKL : K ≤ L) (x : AdicCompletion I R) :
+    Ideal.Quotient.factor hKL (toQuotient I hK x) = toQuotient I hL x := by
+  rw [toQuotient_eq I hK hK.choose_spec,
+    toQuotient_eq I hL (hK.choose_spec.trans hKL)]
+  simp only [RingHom.comp_apply, Ideal.Quotient.factor_comp_apply]
+
+/-- The projection onto a power quotient is the usual evaluation map. -/
+@[simp]
+theorem toQuotient_pow (n : ℕ) (h : ∃ k : ℕ, I ^ k ≤ I ^ n) :
+    toQuotient I h = (evalₐ I n : AdicCompletion I R →+* R ⧸ I ^ n) := by
+  simp [toQuotient_eq I h le_rfl]
+
+end Quotient
+
+variable {R S S' S'' : Type*} [CommRing R] [CommRing S] [CommRing S'] [CommRing S'']
+  [Algebra R S] [Algebra R S'] [Algebra R S''] {I : Ideal S} {I' : Ideal S'} {I'' : Ideal S''}
 
 private theorem mapₐ_aux (f : S →ₐ[R] S') (hf : I ≤ I'.comap f) {m n : ℕ} (hle : m ≤ n) :
     (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right hle)).comp
