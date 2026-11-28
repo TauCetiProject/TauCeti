@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.SimpleGraph.Cohomology.Basic
-public import Mathlib.Combinatorics.SimpleGraph.Maps
+public import TauCeti.Combinatorics.SimpleGraph.Maps
 
 /-!
 # Relabelling graph cohomology
@@ -22,12 +22,6 @@ public section
 namespace TauCeti
 
 open SimpleGraph
-
-private theorem mapDart_symm {V W : Type*} {G : SimpleGraph V} {H : SimpleGraph W}
-    (f : G →g H) (d : G.Dart) : f.mapDart d.symm = (f.mapDart d).symm := by
-  apply Dart.ext
-  cases d.toProd with
-  | mk _ _ => rfl
 
 private theorem mapDart_comp {V W X : Type*} {G : SimpleGraph V} {H : SimpleGraph W}
     {I : SimpleGraph X} (f : G →g H) (g : H →g I) (d : G.Dart) :
@@ -70,12 +64,12 @@ def oneCochainsRelabel (e : G ≃g H) : G.oneCochains A ≃* H.oneCochains A whe
   toFun σ := ⟨fun d => (σ : G.Dart → A) (e.symm.toHom.mapDart d), by
     rw [mem_oneCochains_iff]
     intro d
-    rw [mapDart_symm]
+    rw [Hom.mapDart_symm]
     exact (mem_oneCochains_iff.mp σ.property) (e.symm.toHom.mapDart d)⟩
   invFun σ := ⟨fun d => (σ : H.Dart → A) (e.toHom.mapDart d), by
     rw [mem_oneCochains_iff]
     intro d
-    rw [mapDart_symm]
+    rw [Hom.mapDart_symm]
     exact (mem_oneCochains_iff.mp σ.property) (e.toHom.mapDart d)⟩
   left_inv σ := by
     ext d

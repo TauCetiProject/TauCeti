@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Coloring.Vertex
 public import TauCeti.Combinatorics.Quiver.Reorient
 public import TauCeti.Combinatorics.SimpleGraph.AdditiveFunction
+public import TauCeti.Combinatorics.SimpleGraph.Maps
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basic
 public import TauCeti.RepresentationTheory.Quiver.Acyclic.Basic
 public import TauCeti.RepresentationTheory.Quiver.Symmetrify
@@ -134,8 +135,7 @@ is chosen exactly when its image under `f` is chosen. -/
 def comap (f : G →g H) (o : Orientation H) : Orientation G where
   carrier := {d | f.mapDart d ∈ o}
   symm_mem_iff_notMem d := by
-    have h : f.mapDart d.symm = (f.mapDart d).symm := by ext <;> simp
-    simp only [Set.mem_ofPred_eq, h]
+    simp only [Set.mem_ofPred_eq, f.mapDart_symm]
     exact o.symm_mem_iff_notMem _
 
 /-- A dart belongs to the pulled-back orientation exactly when its image belongs to the
@@ -391,7 +391,8 @@ variable {G} {W : Type*} {H : SimpleGraph W} (f : G →g H) {o₁ : Orientation 
 `f v`. For example, `f` maps the quiver of `o₂.comap f` to the quiver of `o₂`. -/
 def map (h : ∀ d ∈ o₁, f.mapDart d ∈ o₂) : OrientedQuiver G o₁ ⥤q OrientedQuiver H o₂ where
   obj i := vertex H o₂ (f ((vertexEquiv G o₁).symm i))
-  map e := arrow H o₂ (f.map_adj e.val) (h _ e.property)
+  map e := arrow H o₂ (f.map_adj e.val)
+    (by simpa only [SimpleGraph.Hom.mapDart_apply, Prod.map_apply] using h _ e.property)
 
 /-- The prefunctor `OrientedQuiver.map f h` acts on vertices by `f`. -/
 @[simp]
