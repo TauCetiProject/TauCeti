@@ -7,11 +7,18 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.PosLog
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import Mathlib.MeasureTheory.Measure.ResolventTransform
 public import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Integral
+import TauCeti.Analysis.Complex.Basic
+import TauCeti.MeasureTheory.Measure.LogarithmicPotential.Kernel
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
 import TauCeti.MeasureTheory.Integral.MinkowskiIntegral
+import TauCeti.MeasureTheory.Measure.ResolventTransform.Basic
+import Mathlib.Analysis.Calculus.ParametricIntegral
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 
 /-!
 # Logarithmic potentials of measures on the plane
@@ -23,6 +30,11 @@ Both potentials recover the measure by the distributional Laplacian when the ord
 potential has a finite logarithmic moment. The normalized potential works for any finite
 measure.
 
+Compactly supported finite real measures have integrable off-axis kernels and a complex
+logarithmic kernel integral whose derivative in the upper half-plane is minus the resolvent
+transform. Bounded real probability measures admit normalization at imaginary infinity; at
+non-atomic points their vertical boundary values converge when the real kernel is integrable.
+
 The recovery formula is the measure-theoretic form of the identity in T. Tao,
 *Topics in Random Matrix Theory*, §2.8.3. The single-pole identity used here is
 `TauCeti.integral_laplacian_mul_planarNewtonianKernel_sub`.
@@ -33,7 +45,7 @@ public section
 namespace MeasureTheory.Measure
 
 open Filter InnerProductSpace Laplacian Metric Set
-open scoped ENNReal Real
+open scoped ENNReal Real Topology
 
 noncomputable section
 
@@ -46,6 +58,160 @@ def logarithmicPotential (μ : Measure ℂ) (z : ℂ) : ℝ :=
 /-- The logarithmic potential as an integral over the locations of the poles. -/
 theorem logarithmicPotential_def (μ : Measure ℂ) (z : ℂ) :
     μ.logarithmicPotential z = ∫ w, Real.log ‖z - w‖ ∂μ := (rfl)
+
+/-- The complex logarithmic kernel is integrable off the real axis for a finite real measure
+carried by a compact set. -/
+theorem integrable_clog_sub_of_im_ne_zero (μ : Measure ℝ) [IsFiniteMeasure μ]
+    {s : Set ℝ} (hs : IsCompact s) (hμ : μ.restrict s = μ) {z : ℂ} (hz : z.im ≠ 0) :
+    Integrable (fun y : ℝ ↦ Complex.log (z - y)) μ := by
+  have h : IntegrableOn (fun y : ℝ ↦ Complex.log (z - y)) s μ :=
+    (TauCeti.continuous_log_sub_of_im_ne_zero hz).continuousOn.integrableOn_compact hs
+  rwa [IntegrableOn, hμ] at h
+
+/-- The logarithm of the norm of the kernel is integrable off the real axis for a finite real
+measure carried by a compact set. -/
+theorem integrable_log_norm_sub_of_im_ne_zero (μ : Measure ℝ) [IsFiniteMeasure μ]
+    {s : Set ℝ} (hs : IsCompact s) (hμ : μ.restrict s = μ) {z : ℂ} (hz : z.im ≠ 0) :
+    Integrable (fun y : ℝ ↦ Real.log ‖z - y‖) μ := by
+  have h := (integrable_clog_sub_of_im_ne_zero μ hs hμ hz).re
+  refine h.congr ?_
+  filter_upwards with y
+  exact Complex.log_re _
+
+/-- The real logarithmic kernel integral is the real part of the complex logarithmic kernel
+integral off the real axis. -/
+theorem integral_log_norm_sub_eq_re_of_im_ne_zero (μ : Measure ℝ) [IsFiniteMeasure μ]
+    {s : Set ℝ} (hs : IsCompact s) (hμ : μ.restrict s = μ) {z : ℂ} (hz : z.im ≠ 0) :
+    (∫ y : ℝ, Real.log ‖z - y‖ ∂μ) = (∫ y : ℝ, Complex.log (z - y) ∂μ).re := by
+  calc
+    ∫ y : ℝ, Real.log ‖z - y‖ ∂μ = ∫ y : ℝ, (Complex.log (z - y)).re ∂μ := by
+      apply integral_congr_ae
+      filter_upwards with y
+      rw [Complex.log_re]
+    _ = (∫ y : ℝ, Complex.log (z - y) ∂μ).re :=
+      integral_re (integrable_clog_sub_of_im_ne_zero μ hs hμ hz)
+
+/-- The derivative of the complex logarithmic potential off the real axis is minus
+the resolvent transform of the real measure. -/
+theorem hasDerivAt_integral_clog_sub_of_im_ne_zero (μ : Measure ℝ) [IsFiniteMeasure μ]
+    {s : Set ℝ} (hs : IsCompact s) (hμ : μ.restrict s = μ) {z : ℂ} (hz : z.im ≠ 0) :
+    HasDerivAt (fun w : ℂ ↦ ∫ y : ℝ, Complex.log (w - y) ∂μ)
+      (-MeasureTheory.resolventTransform μ z) z := by
+  have hr : 0 < |z.im| / 2 := by positivity
+  have key := hasDerivAt_integral_of_dominated_loc_of_deriv_le
+    (μ := μ) (F := fun (w : ℂ) (y : ℝ) ↦ Complex.log (w - y))
+    (F' := fun (w : ℂ) (y : ℝ) ↦ ((w - y)⁻¹ : ℂ)) (x₀ := z)
+    (bound := fun _ ↦ 2 / |z.im|) (Metric.ball_mem_nhds z hr)
+    (Filter.Eventually.of_forall fun w ↦
+      (Complex.measurable_log.comp (by fun_prop)).aestronglyMeasurable)
+    (integrable_clog_sub_of_im_ne_zero μ hs hμ hz)
+    (by fun_prop)
+    (Filter.Eventually.of_forall fun y w hw ↦ Complex.norm_sub_inv_le_of_mem_ball hw y)
+    (integrable_const _)
+    (Filter.Eventually.of_forall fun y w hw ↦ by
+      have hw' : w.im ≠ 0 := by
+        have h := Complex.abs_im_sub_lt_abs_im_of_mem_ball hw
+        have : 0 < |w.im| := by linarith
+        exact abs_pos.mp this
+      have hd : HasDerivAt (fun w : ℂ ↦ w - (y : ℂ)) 1 w := (hasDerivAt_id w).sub_const (y : ℂ)
+      have hslit : w - (y : ℂ) ∈ Complex.slitPlane := by
+        apply Complex.mem_slitPlane_iff.mpr
+        right
+        simpa using hw'
+      simpa using HasDerivAt.clog hd hslit)
+  convert key.2 using 1
+  rw [MeasureTheory.resolventTransform_eq_neg_integral_inv_sub, neg_neg]
+
+/-- A real measure dominated by a finite multiple of volume on a bounded interval has an
+integrable logarithmic kernel at every real point. -/
+theorem integrable_log_abs_sub_of_le_smul_volume_restrict (μ : Measure ℝ) (x l u : ℝ)
+    (c : ℝ≥0∞) (hc : c ≠ ∞) (hμ : μ ≤ c • volume.restrict (Icc l u)) :
+    Integrable (fun y : ℝ ↦ Real.log |x - y|) μ := by
+  have hint : IntegrableOn (fun y : ℝ ↦ Real.log |x - y|) (Icc l u) volume := by
+    simpa only [Real.norm_eq_abs] using
+      (TauCeti.locallyIntegrable_log_norm_sub (E := ℝ) (μ := volume) x).integrableOn_isCompact
+        isCompact_Icc
+  exact (hint.smul_measure hc).mono_measure hμ
+
+/-- For a finite real measure of bounded support, vertical logarithmic kernels converge to the
+real-axis kernel at a non-atomic point where the latter is integrable. -/
+theorem tendsto_integral_log_norm_sub_of_ae_abs_le (μ : Measure ℝ) [IsFiniteMeasure μ]
+    (x R : ℝ) (hR : ∀ᵐ y ∂μ, |y| ≤ R) (hne : ∀ᵐ y ∂μ, y ≠ x)
+    (hint : Integrable (fun y : ℝ ↦ Real.log |x - y|) μ) :
+    Tendsto (fun ε : ℝ ↦ ∫ y : ℝ, Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ ∂μ)
+      (𝓝[>] 0) (𝓝 (∫ y : ℝ, Real.log |x - y| ∂μ)) := by
+  let bound : ℝ → ℝ := fun y ↦ ‖Real.log |x - y|‖ + Real.log (|x| + R + 1)
+  have hbound_integrable : Integrable bound μ := by
+    have hconst := integrable_const (Real.log (|x| + R + 1)) (μ := μ)
+    simpa [bound, Real.norm_eq_abs] using hint.norm.add hconst
+  refine tendsto_integral_filter_of_dominated_convergence bound ?_ ?_ hbound_integrable ?_
+  · refine Filter.Eventually.of_forall fun ε ↦ ?_
+    have hmeas : Measurable fun y : ℝ ↦
+        Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ := by
+      fun_prop
+    exact hmeas.aestronglyMeasurable
+  · filter_upwards [self_mem_nhdsWithin,
+      mem_nhdsWithin_of_mem_nhds (Iio_mem_nhds (by norm_num : (0 : ℝ) < 1))]
+      with ε hε hε1
+    have hεpos : 0 < ε := hε
+    have hεle : ε ≤ 1 := hε1.le
+    filter_upwards [hR, hne] with y hy hxy
+    simpa [bound] using
+      Real.norm_log_norm_add_mul_I_sub_le_of_ne_of_abs_le x y ε R
+        (by rw [abs_of_pos hεpos]; exact hεle) hy hxy
+  · filter_upwards [hne] with y hxy
+    exact Real.tendsto_log_norm_add_mul_I_sub x y hxy
+
+/-- On the imaginary axis, the logarithmic kernel integral of a bounded real probability
+measure lies between `log t` and `log (t + R)`. -/
+theorem log_le_integral_log_norm_mul_I_sub_and_le_log_add (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    (R : ℝ) (hR : ∀ᵐ y ∂μ, |y| ≤ R) (t : ℝ) (ht : 0 < t) :
+    Real.log t ≤ ∫ y : ℝ, Real.log ‖(t : ℂ) * Complex.I - y‖ ∂μ ∧
+      (∫ y : ℝ, Real.log ‖(t : ℂ) * Complex.I - y‖ ∂μ) ≤ Real.log (t + R) := by
+  have hμ : μ.restrict (Icc (-R) R) = μ :=
+    Measure.restrict_eq_self_of_ae_mem (hR.mono fun _ hy ↦ abs_le.mp hy)
+  have hInt := integrable_log_norm_sub_of_im_ne_zero μ isCompact_Icc hμ
+    (z := (t : ℂ) * Complex.I) (by simpa using ht.ne')
+  have hlow : ∀ᵐ y : ℝ ∂μ, Real.log t ≤ Real.log ‖(t : ℂ) * Complex.I - y‖ := by
+    filter_upwards with y
+    apply Real.log_le_log ht
+    have h := Complex.abs_im_le_norm ((t : ℂ) * Complex.I - (y : ℂ))
+    have him : (((t : ℂ) * Complex.I - y).im) = t := by simp
+    rw [him] at h
+    simpa [abs_of_pos ht] using h
+  have hhigh : ∀ᵐ y : ℝ ∂μ,
+      Real.log ‖(t : ℂ) * Complex.I - y‖ ≤ Real.log (t + R) := by
+    filter_upwards [hR] with y hy
+    have him : (((t : ℂ) * Complex.I - (y : ℂ)).im) = t := by simp
+    have hnorm := Complex.abs_im_le_norm ((t : ℂ) * Complex.I - (y : ℂ))
+    rw [him] at hnorm
+    have hnormpos : 0 < ‖(t : ℂ) * Complex.I - y‖ :=
+      lt_of_lt_of_le ht (by simpa [abs_of_pos ht] using hnorm)
+    apply Real.log_le_log hnormpos
+    calc
+      ‖(t : ℂ) * Complex.I - (y : ℂ)‖ ≤ ‖(t : ℂ) * Complex.I‖ + ‖(y : ℂ)‖ :=
+        norm_sub_le _ _
+      _ = t + |y| := by simp [abs_of_pos ht]
+      _ ≤ t + R := add_le_add_right hy t
+  constructor
+  · simpa [integral_const] using integral_mono_ae (integrable_const (Real.log t)) hInt hlow
+  · simpa [integral_const] using integral_mono_ae hInt (integrable_const (Real.log (t + R))) hhigh
+
+/-- The logarithmic potential of a bounded real probability measure, minus `log t`, tends
+to zero along the positive imaginary axis. -/
+theorem tendsto_integral_log_norm_mul_I_sub_log_atTop (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    (R : ℝ) (hR : ∀ᵐ y ∂μ, |y| ≤ R) :
+    Tendsto (fun t : ℝ ↦ (∫ y : ℝ, Real.log ‖(t : ℂ) * Complex.I - y‖ ∂μ) -
+      Real.log t) atTop (𝓝 0) := by
+  have hlog : Tendsto (fun t : ℝ ↦ Real.log (t + R) - Real.log t) atTop (𝓝 0) := by
+    simpa using Real.tendsto_log_comp_add_sub_log R
+  refine Filter.Tendsto.squeeze' tendsto_const_nhds hlog ?_ ?_
+  · filter_upwards [eventually_gt_atTop 0] with t ht
+    have h := (log_le_integral_log_norm_mul_I_sub_and_le_log_add μ R hR t ht).1
+    linarith
+  · filter_upwards [eventually_gt_atTop 0] with t ht
+    have h := (log_le_integral_log_norm_mul_I_sub_and_le_log_add μ R hR t ht).2
+    linarith
 
 /-- The logarithmic potential of a Dirac mass is the translated logarithmic kernel. -/
 @[simp]

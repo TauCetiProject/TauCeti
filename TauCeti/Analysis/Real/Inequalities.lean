@@ -13,7 +13,7 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
 /-!
-# Inequalities between quadratic penalties over `ℝ`
+# Real inequalities
 
 ## Main results
 

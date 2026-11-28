@@ -10,6 +10,11 @@ public import TauCeti.Probability.Distributions.Semicircle.Moments
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Complex.HalfPlane
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.GCongr
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
+import TauCeti.Basic.Complex.OfRealSub
 import TauCeti.Analysis.SpecificLimits.Catalan
 
 /-!
@@ -65,6 +70,28 @@ noncomputable section
 
 open MeasureTheory Complex Set Filter
 open scoped NNReal Topology
+
+namespace Real
+
+/-- If `q = a² + b²`, `a(q + 1) = -xq`, and `x² ≤ 4`, then
+`q(1 - q)² ≤ b²(q + 1)²`. -/
+theorem mul_one_sub_sq_le_sq_mul_add_one_sq_of_sq_le_four {a b q x : ℝ}
+    (hqdef : q = a ^ 2 + b ^ 2) (hreal : a * (q + 1) = -x * q) (hx2 : x ^ 2 ≤ 4) :
+    q * (1 - q) ^ 2 ≤ b ^ 2 * (q + 1) ^ 2 := by
+  have hq : 0 ≤ q := by rw [hqdef]; exact add_nonneg (sq_nonneg a) (sq_nonneg b)
+  have hreal_sq : a ^ 2 * (q + 1) ^ 2 = x ^ 2 * q ^ 2 := by
+    have h := congrArg (fun t : ℝ ↦ t ^ 2) hreal
+    nlinarith [h]
+  have hfactor :
+      b ^ 2 * (q + 1) ^ 2 = q * ((q + 1) ^ 2 - x ^ 2 * q) := by
+    nlinarith [hreal_sq, hqdef]
+  have hfactor_le : (1 - q) ^ 2 ≤ (q + 1) ^ 2 - x ^ 2 * q := by
+    have h4x : 0 ≤ 4 - x ^ 2 := by linarith
+    nlinarith [mul_nonneg hq h4x]
+  rw [hfactor]
+  exact mul_le_mul_of_nonneg_left hfactor_le hq
+
+end Real
 
 namespace TauCeti.Probability
 
@@ -343,5 +370,231 @@ theorem resolventTransform_semicircleReal_zero_one_I :
   push_cast
   linear_combination (-1 / 4 : ℂ) * h5c + (((√5 : ℂ) - 1) / 2 * (((√5 : ℂ) - 1) / 2) +
     ((√5 : ℂ) - 1) / 2) * I_sq
+
+private def standardSemicircleResolventAt (x ε : ℝ) : ℂ :=
+  resolventTransform (semicircleReal 0 1) ((x : ℂ) + (ε : ℂ) * Complex.I)
+
+private def standardSemicircleResolventNormSq (x ε : ℝ) : ℝ :=
+  Complex.normSq (standardSemicircleResolventAt x ε)
+
+private theorem standard_boundary_identities (x ε : ℝ) (hε : 0 < ε) :
+    (standardSemicircleResolventAt x ε).re * (standardSemicircleResolventNormSq x ε + 1) =
+        -x * standardSemicircleResolventNormSq x ε ∧
+      (standardSemicircleResolventAt x ε).im * (1 - standardSemicircleResolventNormSq x ε) =
+        ε * standardSemicircleResolventNormSq x ε := by
+  let m := standardSemicircleResolventAt x ε
+  let q := standardSemicircleResolventNormSq x ε
+  have hz : 0 < ((x : ℂ) + (ε : ℂ) * Complex.I).im := by simpa using hε
+  have hmc : m * star m = (q : ℂ) := by
+    rw [Complex.star_def, Complex.mul_conj]
+    simp [m, q, standardSemicircleResolventNormSq, Complex.normSq_apply]
+  have hquad : m * m + ((x : ℂ) + (ε : ℂ) * Complex.I) * m + 1 = 0 := by
+    simpa [m, standardSemicircleResolventAt] using
+      ((eq_resolventTransform_semicircleReal_iff (a := 0) (v := 1) hz).1 rfl).2
+  have hmul := congrArg (fun w => w * star m) hquad
+  have hrelmul : (q : ℂ) * m + ((x : ℂ) + (ε : ℂ) * Complex.I) * (q : ℂ) + star m =
+      (m * m + ((x : ℂ) + (ε : ℂ) * Complex.I) * m + 1) * star m := by
+    rw [← hmc]
+    ring
+  have hrel : (q : ℂ) * m + ((x : ℂ) + (ε : ℂ) * Complex.I) * (q : ℂ) + star m = 0 := by
+    rw [hrelmul]
+    simpa using hmul
+  have hreal : q * m.re + x * q + m.re = 0 := by
+    have h := congrArg Complex.re hrel
+    simpa [Complex.star_def] using h
+  have himag : q * m.im + ε * q - m.im = 0 := by
+    have h := congrArg Complex.im hrel
+    simpa [Complex.star_def, sub_eq_add_neg] using h
+  have hresult : m.re * (q + 1) = -x * q ∧ m.im * (1 - q) = ε * q := by
+    constructor <;> nlinarith [hreal, himag]
+  simpa only [m, q] using hresult
+
+private theorem standard_boundary_normSq_lt_one {x ε : ℝ} (hε : 0 < ε) :
+    standardSemicircleResolventNormSq x ε < 1 := by
+  let b : ℝ := (standardSemicircleResolventAt x ε).im
+  let q : ℝ := standardSemicircleResolventNormSq x ε
+  have hids := standard_boundary_identities x ε hε
+  have himag : b * (1 - q) = ε * q := by simpa [b, q] using hids.2
+  have hb : 0 < b := im_resolventTransform_pos (μ := semicircleReal 0 1)
+    (IsProbabilityMeasure.ne_zero _) (by simpa using hε)
+  have hq : 0 < q := by
+    dsimp only [q, standardSemicircleResolventNormSq]
+    apply Complex.normSq_pos.mpr
+    intro hm
+    have hm_im := congrArg Complex.im hm
+    exact hb.ne' (by simpa [b] using hm_im)
+  by_contra h
+  have hle : 1 - q ≤ 0 := by linarith
+  have hnonpos := mul_nonpos_of_nonneg_of_nonpos hb.le hle
+  have hpos : 0 < ε * q := mul_pos hε hq
+  rw [himag] at hnonpos
+  linarith
+
+private theorem standard_boundary_normSq_bound_of_mem_Icc {x ε : ℝ}
+    (hx : x ∈ Icc (-2) 2) (hε : 0 < ε) :
+    (1 - standardSemicircleResolventNormSq x ε) ^ 2 ≤ 2 * ε := by
+  let a : ℝ := (standardSemicircleResolventAt x ε).re
+  let b : ℝ := (standardSemicircleResolventAt x ε).im
+  let q : ℝ := standardSemicircleResolventNormSq x ε
+  have hids := standard_boundary_identities x ε hε
+  have hreal : a * (q + 1) = -x * q := by simpa [a, q] using hids.1
+  have himag : b * (1 - q) = ε * q := by simpa [b, q] using hids.2
+  have hb : 0 < b := im_resolventTransform_pos (μ := semicircleReal 0 1)
+    (IsProbabilityMeasure.ne_zero _) (by simpa using hε)
+  have hqdef : q = a ^ 2 + b ^ 2 := by
+    dsimp only [q, standardSemicircleResolventNormSq]
+    rw [Complex.normSq_apply]
+    simp [a, b, pow_two]
+  have hq : 0 < q := by
+    dsimp only [q, standardSemicircleResolventNormSq]
+    apply Complex.normSq_pos.mpr
+    intro hm
+    have hm_im := congrArg Complex.im hm
+    exact hb.ne' (by simpa [b] using hm_im)
+  have hq_lt : q < 1 := by
+    have := standard_boundary_normSq_lt_one (x := x) hε
+    simpa [q] using this
+  have hx2 : x ^ 2 ≤ 4 := by
+    have h := sq_le_sq' hx.1 hx.2
+    norm_num at h
+    exact h
+  have hbound_b : q * (1 - q) ^ 2 ≤ b ^ 2 * (q + 1) ^ 2 := by
+    exact Real.mul_one_sub_sq_le_sq_mul_add_one_sq_of_sq_le_four hqdef hreal hx2
+  have himag_sq : b ^ 2 * (1 - q) ^ 2 = ε ^ 2 * q ^ 2 := by
+    have h := congrArg (fun t : ℝ ↦ t ^ 2) himag
+    nlinarith [h]
+  -- Multiplying the scalar bound by `(1 - q)^2` lets the imaginary identity
+  -- replace `b^2 * (1 - q)^2` by `ε^2 * q^2`.
+  have hfour : (1 - q) ^ 4 ≤ ε ^ 2 * q * (q + 1) ^ 2 := by
+    apply le_of_mul_le_mul_left ?_ hq
+    calc
+      q * (1 - q) ^ 4 ≤ b ^ 2 * (q + 1) ^ 2 * (1 - q) ^ 2 := by
+        calc
+          q * (1 - q) ^ 4 = (q * (1 - q) ^ 2) * (1 - q) ^ 2 := by ring
+          _ ≤ (b ^ 2 * (q + 1) ^ 2) * (1 - q) ^ 2 :=
+            mul_le_mul_of_nonneg_right hbound_b (sq_nonneg _)
+          _ = b ^ 2 * (q + 1) ^ 2 * (1 - q) ^ 2 := by ring
+      _ = (b ^ 2 * (1 - q) ^ 2) * (q + 1) ^ 2 := by ring
+      _ = (ε ^ 2 * q ^ 2) * (q + 1) ^ 2 := by rw [himag_sq]
+      _ = q * (ε ^ 2 * q * (q + 1) ^ 2) := by ring
+  have hprod : q * (q + 1) ^ 2 ≤ 4 := by nlinarith [hq.le, hq_lt.le]
+  have hfour' : (1 - q) ^ 4 ≤ (2 * ε) ^ 2 := by
+    calc
+      (1 - q) ^ 4 ≤ ε ^ 2 * (q * (q + 1) ^ 2) := by nlinarith [hfour]
+      _ ≤ ε ^ 2 * 4 := mul_le_mul_of_nonneg_left hprod (sq_nonneg ε)
+      _ = (2 * ε) ^ 2 := by ring
+  have hfour'' : ((1 - q) ^ 2) ^ 2 ≤ (2 * ε) ^ 2 := by
+    convert hfour' using 1
+    ring
+  exact (sq_le_sq₀ (sq_nonneg (1 - q)) (by positivity)).1 hfour''
+
+private theorem tendsto_standard_resolvent_normSq_of_mem_Icc {x : ℝ}
+    (hx : x ∈ Icc (-2) 2) :
+    Tendsto (fun ε : ℝ ↦ standardSemicircleResolventNormSq x ε) (𝓝[>] 0) (𝓝 1) := by
+  refine tendsto_order.2 ⟨fun c hc ↦ ?_, fun c hc ↦ ?_⟩
+  · have hδ : 0 < 1 - c := sub_pos.mpr hc
+    have hδsq : (0 : ℝ) < (1 - c) ^ 2 / 2 :=
+      div_pos (sq_pos_of_pos hδ) (by norm_num)
+    filter_upwards [self_mem_nhdsWithin,
+      mem_nhdsWithin_of_mem_nhds (Iio_mem_nhds hδsq)]
+      with ε hε hεsmall
+    let q : ℝ := standardSemicircleResolventNormSq x ε
+    have hqpos : 0 < 1 - q := by
+      have h := standard_boundary_normSq_lt_one (x := x) hε
+      simpa [q] using sub_pos.mpr h
+    have hqbound : (1 - q) ^ 2 ≤ 2 * ε := by
+      simpa [q] using standard_boundary_normSq_bound_of_mem_Icc hx hε
+    simp only [Set.mem_Iio] at hεsmall
+    have hεsq : 2 * ε < (1 - c) ^ 2 := by linarith
+    have hsq : (1 - q) ^ 2 < (1 - c) ^ 2 := lt_of_le_of_lt hqbound hεsq
+    have hdelta : 1 - q < 1 - c := (sq_lt_sq₀ hqpos.le hδ.le).mp hsq
+    have hqgt : c < q := by linarith
+    simpa [q] using hqgt
+  · filter_upwards [self_mem_nhdsWithin] with ε hε
+    let q : ℝ := standardSemicircleResolventNormSq x ε
+    have hqbound : q < 1 := by
+      simpa [q] using standard_boundary_normSq_lt_one (x := x) hε
+    have hc1 : 1 < c := by linarith
+    have : q < c := hqbound.trans hc1
+    simpa [q] using this
+
+/-- The real part of the standard semicircle resolvent tends to `-x / 2` on its support. -/
+private theorem tendsto_standard_resolvent_re_of_mem_Icc {x : ℝ}
+    (hx : x ∈ Icc (-2) 2) :
+    Tendsto (fun ε : ℝ ↦ (standardSemicircleResolventAt x ε).re)
+      (𝓝[>] 0) (𝓝 (-x / 2)) := by
+  let Q : ℝ → ℝ := fun ε ↦ standardSemicircleResolventNormSq x ε
+  let A : ℝ → ℝ := fun ε ↦ (standardSemicircleResolventAt x ε).re
+  let F : ℝ → ℝ := fun t ↦ -x * t / (t + 1)
+  have hQ : Tendsto Q (𝓝[>] 0) (𝓝 1) := tendsto_standard_resolvent_normSq_of_mem_Icc hx
+  have hcont : ContinuousAt F 1 := by
+    fun_prop (disch := norm_num)
+  have hF := hcont.tendsto.comp hQ
+  have hEq : ∀ᶠ ε : ℝ in 𝓝[>] 0, A ε = F (Q ε) := by
+    filter_upwards [self_mem_nhdsWithin] with ε hε
+    let a : ℝ := (standardSemicircleResolventAt x ε).re
+    let q : ℝ := standardSemicircleResolventNormSq x ε
+    have hids := standard_boundary_identities x ε hε
+    have hreal : a * (q + 1) = -x * q := by simpa [a, q] using hids.1
+    have hqnonneg : 0 ≤ q := by
+      dsimp [q, standardSemicircleResolventNormSq]
+      exact Complex.normSq_nonneg _
+    have hformula : a = -x * q / (q + 1) := by
+      have hqp : q + 1 ≠ 0 := by linarith
+      field_simp [hqp]
+      nlinarith [hreal]
+    simpa [A, F, Q, a, q, standardSemicircleResolventAt] using hformula
+  have hA := Filter.Tendsto.congr' (EventuallyEq.symm hEq) hF
+  have hF1 : F 1 = -x / 2 := by dsimp [F]; ring
+  rw [← hF1]
+  simpa [A] using hA
+
+/-- The imaginary part of the standard semicircle resolvent tends to its boundary value on the
+support. -/
+private theorem tendsto_standard_resolvent_im_of_mem_Icc {x : ℝ}
+    (hx : x ∈ Icc (-2) 2) :
+    Tendsto (fun ε : ℝ ↦ (standardSemicircleResolventAt x ε).im)
+      (𝓝[>] 0) (𝓝 (Real.sqrt (1 - x ^ 2 / 4))) := by
+  let Q : ℝ → ℝ := fun ε ↦ standardSemicircleResolventNormSq x ε
+  let A : ℝ → ℝ := fun ε ↦ (standardSemicircleResolventAt x ε).re
+  have hQ : Tendsto Q (𝓝[>] 0) (𝓝 1) :=
+    tendsto_standard_resolvent_normSq_of_mem_Icc hx
+  have hA : Tendsto A (𝓝[>] 0) (𝓝 (-x / 2)) :=
+    tendsto_standard_resolvent_re_of_mem_Icc hx
+  have hsq : Tendsto (fun ε : ℝ ↦ Q ε - A ε ^ 2) (𝓝[>] 0)
+      (𝓝 (1 - x ^ 2 / 4)) := by
+    convert hQ.sub (hA.mul hA) using 1 <;> ring_nf
+  have hroot := Real.continuous_sqrt.continuousAt.tendsto.comp hsq
+  have hEq : ∀ᶠ ε : ℝ in 𝓝[>] 0,
+      (standardSemicircleResolventAt x ε).im = Real.sqrt (Q ε - A ε ^ 2) := by
+    filter_upwards [self_mem_nhdsWithin] with ε hε
+    let a : ℝ := (standardSemicircleResolventAt x ε).re
+    let b : ℝ := (standardSemicircleResolventAt x ε).im
+    let q : ℝ := standardSemicircleResolventNormSq x ε
+    have hb : 0 < b := im_resolventTransform_pos (μ := semicircleReal 0 1)
+      (IsProbabilityMeasure.ne_zero _) (by simpa using hε)
+    have hq : q = a ^ 2 + b ^ 2 := by
+      dsimp only [q, standardSemicircleResolventNormSq]
+      rw [Complex.normSq_apply]
+      simp [a, b, pow_two]
+    have hsub : q - a ^ 2 = b ^ 2 := by nlinarith [hq]
+    have hEq' : b = Real.sqrt (q - a ^ 2) := by
+      rw [hsub, Real.sqrt_sq_eq_abs, abs_of_pos hb]
+    simpa [A, Q, a, b, q] using hEq'
+  exact Filter.Tendsto.congr' (EventuallyEq.symm hEq) hroot
+
+/-- On `[-2, 2]`, the standard semicircle resolvent has boundary value
+`-x / 2 + i √(1 - x² / 4)` when approached from the upper half-plane. -/
+theorem tendsto_resolventTransform_semicircleReal_zero_one_of_mem_Icc {x : ℝ}
+    (hx : x ∈ Icc (-2) 2) :
+    Tendsto
+      (fun ε : ℝ ↦ resolventTransform (semicircleReal 0 1)
+        ((x : ℂ) + (ε : ℂ) * Complex.I))
+      (𝓝[>] 0)
+      (𝓝 (((-x / 2 : ℝ) : ℂ) + (Real.sqrt (1 - x ^ 2 / 4) : ℂ) * Complex.I)) := by
+  have hRe := tendsto_standard_resolvent_re_of_mem_Icc hx
+  have hIm := tendsto_standard_resolvent_im_of_mem_Icc hx
+  simpa only [Complex.re_add_im, standardSemicircleResolventAt] using
+    hRe.ofReal.add (hIm.ofReal.mul_const Complex.I)
 
 end TauCeti.Probability

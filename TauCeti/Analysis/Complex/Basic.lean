@@ -79,6 +79,9 @@ whenever `‖z‖ ≤ C` (`Complex.norm_mul_add_div_natCast_le`). If `s + β` va
 number `s ≥ 1`, then `‖s + β‖ ≥ c s` for some `c > 0` and all `s ≥ 1`
 (`Complex.exists_pos_mul_le_norm_natCast_add`).
 
+The imaginary parts of a point in a ball of radius `r` around `z` have absolute value greater
+than `|z.im| - r` (`Complex.abs_im_sub_lt_abs_im_of_mem_ball`).
+
 The real coordinates `equivRealProdCLM : ℂ ≃L[ℝ] ℝ × ℝ` do not increase distances, so they map the
 disc of radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)` of `ℝ × ℝ`
 (`Complex.dist_equivRealProdCLM_le`).
@@ -131,6 +134,20 @@ lies on (`Complex.exists_ball_re_notMem_and_lt_iff`,
 public section
 
 open scoped ComplexConjugate
+
+/-- A point in a ball has imaginary part whose absolute value is greater than the absolute
+imaginary part of the center minus the radius. -/
+theorem Complex.abs_im_sub_lt_abs_im_of_mem_ball {z w : ℂ} {r : ℝ}
+    (hw : w ∈ Metric.ball z r) : |z.im| - r < |w.im| := by
+  rw [Metric.mem_ball, dist_eq_norm] at hw
+  have hdist : |w.im - z.im| < r := by
+    have h := Complex.abs_im_le_norm (w - z)
+    simp only [Complex.sub_im] at h
+    exact h.trans_lt hw
+  have hdist' : |z.im - w.im| < r := by
+    simpa [abs_sub_comm] using hdist
+  have htri := abs_sub_abs_le_abs_sub z.im w.im
+  linarith
 
 /-- A complex number and its inverse lie in the open right half-plane together. -/
 theorem Complex.inv_re_pos {z : ℂ} : 0 < z⁻¹.re ↔ 0 < z.re := by
