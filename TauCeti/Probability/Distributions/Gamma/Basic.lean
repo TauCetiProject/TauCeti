@@ -75,6 +75,9 @@ exactly the half-line on which the shifted rate is still positive.
   `r / c`;
 * `ProbabilityTheory.HasLaw.const_mul_gammaMeasure` — the corresponding transport theorem for a
   gamma random variable;
+* the results in `ProbabilityTheory.HasLaw` with the same moment or transform name transfer the
+  real-power moments, natural and inverse moments, mean, variance, exact exponential-moment
+  criterion, MGF, and CGF to every random variable with the gamma law;
 * `TauCeti.Probability.gammaMeasure_eq_withDensity_restrict_Ioi` — the law is its density against
   Lebesgue
   measure on `Ioi 0`;
@@ -524,6 +527,92 @@ end TauCeti.Probability
 namespace ProbabilityTheory.HasLaw
 
 open MeasureTheory TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} {a r : ℝ}
+
+/-- A real power of a gamma random variable is integrable exactly when its exponent is greater
+than the negative shape parameter. -/
+theorem integrable_rpow_gammaMeasure_iff (hX : HasLaw X (gammaMeasure a r) P)
+    (ha : 0 < a) (hr : 0 < r) (q : ℝ) :
+    Integrable (fun ω ↦ X ω ^ q) P ↔ -a < q := by
+  rw [← TauCeti.Probability.integrable_rpow_gammaMeasure_iff ha hr q, ← hX.map_eq,
+    integrable_map_measure (by fun_prop) hX.aemeasurable]
+  simp only [Function.comp_def]
+
+/-- The real-power moment of a gamma random variable, on its exact integrability domain. -/
+theorem integral_rpow_gammaMeasure (hX : HasLaw X (gammaMeasure a r) P)
+    (ha : 0 < a) (hr : 0 < r) {q : ℝ} (hq : -a < q) :
+    ∫ ω, X ω ^ q ∂P = r ^ (-q) * Real.Gamma (a + q) / Real.Gamma a := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ x ^ q), hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_rpow_gammaMeasure ha hr hq]
+
+/-- Every natural power of a gamma random variable is integrable. -/
+theorem integrable_pow_gammaMeasure (hX : HasLaw X (gammaMeasure a r) P)
+    (ha : 0 < a) (hr : 0 < r) (n : ℕ) : Integrable (fun ω ↦ X ω ^ n) P :=
+  hX.integrable_fun_comp (TauCeti.Probability.integrable_pow_gammaMeasure ha hr n)
+
+/-- The natural raw moments of a gamma random variable. -/
+theorem integral_pow_gammaMeasure (hX : HasLaw X (gammaMeasure a r) P)
+    (ha : 0 < a) (hr : 0 < r) (n : ℕ) :
+    ∫ ω, X ω ^ n ∂P = Real.Gamma (a + n) / (Real.Gamma a * r ^ n) := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ x ^ n), hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_pow_gammaMeasure ha hr]
+
+/-- The `n`th inverse power of a gamma random variable is integrable exactly when `n` is below
+the shape. -/
+theorem integrable_inv_pow_gammaMeasure_iff (hX : HasLaw X (gammaMeasure a r) P)
+    (ha : 0 < a) (hr : 0 < r) (n : ℕ) :
+    Integrable (fun ω ↦ (X ω ^ n)⁻¹) P ↔ (n : ℝ) < a := by
+  rw [← TauCeti.Probability.integrable_inv_pow_gammaMeasure_iff ha hr n, ← hX.map_eq,
+    integrable_map_measure (by fun_prop) hX.aemeasurable]
+  simp only [Function.comp_def]
+
+/-- The `n`th inverse moment of a gamma random variable, when `n` is below the shape. -/
+theorem integral_inv_pow_gammaMeasure (hX : HasLaw X (gammaMeasure a r) P)
+    (hr : 0 < r) (n : ℕ) (hn : (n : ℝ) < a) :
+    ∫ ω, (X ω ^ n)⁻¹ ∂P = r ^ n * Real.Gamma (a - n) / Real.Gamma a := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ (x ^ n)⁻¹), hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_inv_pow_gammaMeasure hr n hn]
+
+/-- The expectation of a gamma random variable is its shape divided by its rate. -/
+theorem integral_gammaMeasure (hX : HasLaw X (gammaMeasure a r) P)
+    (ha : 0 < a) (hr : 0 < r) : ∫ ω, X ω ∂P = a / r := by
+  rw [hX.integral_eq, TauCeti.Probability.integral_id_gammaMeasure ha hr]
+
+/-- A gamma random variable has an exponential moment of rate `t` exactly when `t` is below the
+rate parameter. -/
+theorem integrable_exp_mul_gammaMeasure_iff (hX : HasLaw X (gammaMeasure a r) P)
+    (ha : 0 < a) (hr : 0 < r) (t : ℝ) :
+    Integrable (fun ω ↦ Real.exp (t * X ω)) P ↔ t < r := by
+  rw [← Set.mem_Iio, ← TauCeti.Probability.integrableExpSet_id_gammaMeasure ha hr]
+  simp only [integrableExpSet, Set.mem_ofPred_eq, id_eq]
+  rw [← hX.map_eq, integrable_map_measure (by fun_prop) hX.aemeasurable]
+  simp only [Function.comp_def]
+
+/-- The moment-generating function of a gamma random variable on its integrability domain. -/
+theorem mgf_gammaMeasure (hX : HasLaw X (gammaMeasure a r) P)
+    (ha : 0 < a) (hr : 0 < r) {t : ℝ} (ht : t < r) :
+    mgf X P t = (1 - t / r) ^ (-a) := by
+  calc
+    mgf X P t = mgf id (gammaMeasure a r) t := by
+      simp only [mgf, id_eq]
+      rw [← Function.comp_def (f := fun x : ℝ ↦ Real.exp (t * x)),
+        hX.integral_comp (by fun_prop)]
+    _ = _ := TauCeti.Probability.mgf_id_gammaMeasure ha hr ht
+
+/-- The cumulant-generating function of a gamma random variable on its integrability domain. -/
+theorem cgf_gammaMeasure (hX : HasLaw X (gammaMeasure a r) P)
+    (ha : 0 < a) (hr : 0 < r) {t : ℝ} (ht : t < r) :
+    cgf X P t = -a * Real.log (1 - t / r) := by
+  have h : (0 : ℝ) < 1 - t / r := by
+    rw [sub_pos, div_lt_one hr]
+    exact ht
+  rw [cgf, hX.mgf_gammaMeasure ha hr ht, Real.log_rpow h]
+
+/-- The variance of a gamma random variable is its shape divided by the square of its rate. -/
+theorem variance_gammaMeasure (hX : HasLaw X (gammaMeasure a r) P)
+    (ha : 0 < a) (hr : 0 < r) : variance X P = a / r ^ 2 := by
+  rw [hX.variance_eq, TauCeti.Probability.variance_id_gammaMeasure ha hr]
 
 /-- Multiplying a gamma random variable by a positive constant divides its rate by that
 constant. -/
