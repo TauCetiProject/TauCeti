@@ -8,7 +8,9 @@ module
 public import Mathlib.RingTheory.Regular.RegularSequence
 public import TauCeti.RingTheory.FormalGroup.Height.Basic
 public import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
+import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
+import TauCeti.RingTheory.PowerSeries.Order
 import TauCeti.RingTheory.QuotSMulTop
 
 /-!
@@ -134,8 +136,7 @@ theorem coeff_nsmulSeries_mem_heightIdeal {n k : ℕ} (hk : k < p ^ n) :
 when the `p`-series of the base change of `F` along `φ` vanishes to order `pⁿ`. -/
 theorem heightIdeal_le_ker_iff {n : ℕ} (φ : R →+* S) :
     F.heightIdeal p n ≤ RingHom.ker φ ↔ ((p ^ n : ℕ) : ℕ∞) ≤ ((F.map φ).nsmulSeries p).order := by
-  simp only [heightIdeal_le_iff, RingHom.mem_ker, PowerSeries.nat_le_order_iff,
-    coeff_nsmulSeries_map]
+  rw [heightIdeal, PowerSeries.span_coeff_le_ker_iff, map_nsmulSeries]
 
 /-- The height ideal `I_n(F)` vanishes exactly when `[p]_F` vanishes to order `pⁿ`. -/
 theorem heightIdeal_eq_bot_iff {n : ℕ} :
@@ -361,9 +362,7 @@ theorem heightIdeal_eq_span (hp : p.Prime) (n : ℕ) :
   induction n with
   | zero => simp
   | succ n ih =>
-    have hI : Set.Iio (n + 1) = insert n (Set.Iio n) := by
-      ext; simp
-    rw [F.heightIdeal_succ hp, ih, hI, Set.image_insert_eq, Ideal.span_insert, sup_comm]
+    rw [F.heightIdeal_succ hp, ih, Ideal.span_image_Iio_succ, sup_comm]
 
 /-- **Landweber's generators for the infinite height ideal.** For a commutative formal group law
 `F` and a prime `p`, `⨆ n, I_n(F) = (v₀, v₁, v₂, …)`, where `v_i` is the coefficient of `X^(pⁱ)` in

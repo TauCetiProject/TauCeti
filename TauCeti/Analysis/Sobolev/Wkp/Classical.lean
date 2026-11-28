@@ -26,7 +26,9 @@ Conversely, a function that is `Cᵏ` on the domain and whose classical derivati
 `k` lie in `Lᵖ` represents an element of `W^{k,p}` (`TauCeti.Wkp.exists_value_ae_eq_of_contDiffOn`),
 whose norm is at most the sum of the `Lᵖ` seminorms of these derivatives
 (`TauCeti.Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn`); on the whole space the two
-combine into `TauCeti.Wkp.exists_value_ae_eq_and_norm_le`. In particular every constant `c` lies in
+combine into `TauCeti.Wkp.exists_value_ae_eq_and_norm_le`. So a `Cᵏ` function on the domain is a
+Sobolev function exactly when these derivatives lie in `Lᵖ`
+(`TauCeti.Wkp.exists_value_ae_eq_iff_of_contDiffOn`). In particular every constant `c` lies in
 `W^{k,∞}(Ω)` with norm at most `|c|` (`TauCeti.Wkp.exists_value_ae_eq_const`), while for finite
 `p` no nonzero constant lies in `W^{k,p}` of a space of positive dimension
 (`TauCeti.Wkp.not_value_ae_eq_const_top_of_ne_top`). On a domain in `ℝⁿ`, the weak
@@ -247,6 +249,15 @@ theorem Wkp.exists_value_ae_eq_of_contDiffOn :
             (hf.of_le (by exact_mod_cast (by omega : k + 1 ≤ k + 2))) hu).symm).congr_ae_deriv
           (by rw [← iteratedGradientChain_succ]; exact hD.coeFn_toLp.symm)
       exact ⟨mk k u _ hweak, by rw [value_mk]; exact hu⟩
+
+/-- A function that is `Cᵏ` on the open set `Ω` represents an element of `W^{k,p}(Ω)` if and only
+if its classical derivatives of orders `0` through `k` lie in `Lᵖ(Ω)`. -/
+theorem Wkp.exists_value_ae_eq_iff_of_contDiffOn {k : ℕ} {f : E → ℝ}
+    (hf : ContDiffOn ℝ k f Omega) :
+    (∃ u : Wkp mu Omega p k, (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) ↔
+      ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) p (mu.restrict Omega) :=
+  ⟨fun ⟨u, hu⟩ => memLp_iteratedFDeriv_of_contDiffOn k u hf hu,
+    exists_value_ae_eq_of_contDiffOn k hf⟩
 
 /-- **Constants are `W^{k,∞}` functions.** On every open set `Ω`, the constant function `c`
 represents an element of `W^{k,∞}(Ω)` of norm at most `|c|`. -/

@@ -15,6 +15,7 @@ import Mathlib.RingTheory.Finiteness.Basic
 import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Module.Submodule.Superfluous
+import TauCeti.RingTheory.Jacobson.TNilpotent
 import TauCeti.RingTheory.Ideal.Annihilator
 
 /-!

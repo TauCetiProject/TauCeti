@@ -170,6 +170,11 @@ theorem smul_mem (h : IsNormalDomain I M p U) (hv : v ∈ U) (ht₀ : 0 ≤ t) (
     t • v ∈ U :=
   starConvex_zero_iff.1 h.starConvex hv ht₀ ht₁
 
+/-- Every scalar in the unit interval keeps a vector of a normal domain in that domain. -/
+theorem smul_mem_Icc (h : IsNormalDomain I M p U) (hv : v ∈ U) :
+    ∀ t ∈ Icc (0 : ℝ) 1, t • v ∈ U :=
+  fun _ ht ↦ h.smul_mem hv ht.1 ht.2
+
 /-- **The radial geodesic of a normal domain is defined up to time one.**  The maximal geodesic
 from `p` with initial velocity a vector `v` of a normal domain exists on `[0, 1]`; by
 `riemannianExp_smul` its value at `t` is the exponential of `t • v`. -/

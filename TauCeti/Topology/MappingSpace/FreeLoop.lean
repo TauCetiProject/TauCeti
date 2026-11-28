@@ -11,6 +11,7 @@ public import TauCeti.Topology.Circle.Loop
 public import TauCeti.Topology.CompactOpen
 public import TauCeti.Topology.ContinuousMap.Precomp
 public import TauCeti.Topology.MappingSpace.Evaluation
+public import TauCeti.Topology.MappingSpace.Group
 public import Mathlib.Topology.Homotopy.Basic
 public import Mathlib.Topology.Homotopy.HomotopyGroup
 import TauCeti.Topology.Homotopy.Homotopic.With
@@ -25,6 +26,10 @@ compact-open topology. Precomposition with the standard quotient `unitToCircle :
 closed unit-interval paths `{p : C(I, Q) // p 0 = p 1}` (`circleMapHomeomorphClosedUnitPath`),
 compatibly with evaluation at `1 ∈ S¹`, constant loops, and the based loop fibre
 `BasedMap Circle Q 1 x ≃ₜ Path x x` (`basedMapCircleOneHomeomorphPath`).
+
+The free loop space of a topological group `G` is the product of the group and its based loop
+space at `1`, `G × ΩG ≃ₜ C(S¹, G)` (`TauCeti.circleMapGroupHomeomorphLoopSpace`), through this
+identification of loops based at `1 ∈ S¹` with paths.
 
 Its subspace `𝓛₀Q` of **contractible** loops (`TauCeti.contractibleLoops`) consists of the loops
 joined by a path in the free loop space to a constant loop, equivalently to the constant loop at
@@ -50,6 +55,9 @@ such paths in `𝓛₀Q` (`TauCeti.constLoopPathHomeomorph`).
 * `GenLoop.exists_unitAddCircle_apply_eq`: a generalized loop of dimension one is traced by a map
   from `UnitAddCircle`.
 * `TauCeti.basedMapCircleOneHomeomorphPath`: `BasedMap Circle Q 1 x ≃ₜ Path x x`.
+* `TauCeti.circleMapGroupHomeomorphLoopSpace`: `G × ΩG ≃ₜ C(S¹, G)` for a topological group `G`,
+  sending `(g, γ)` to the loop `t ↦ g γ(t)`, with the characteristic lemmas `_apply_unitToCircle`,
+  `_symm_fst` and `_symm_snd_apply`.
 * `Path.continuous_toCircle`: reading loops as circle maps is continuous.
 * `Path.joined_toCircle_iff_homotopicWith`: two loops are joined in `C(Circle, Q)` exactly when
   they are homotopic through closed paths `I → Q`.
@@ -313,6 +321,43 @@ theorem coe_basedMapCircleOneHomeomorphPath_symm (x : Q) (ω : Path x x) :
   ext z
   obtain ⟨t, rfl⟩ := unitToCircle_surjective z
   rw [basedMapCircleOneHomeomorphPath_symm_unitToCircle, ω.toCircle_unitToCircle]
+
+/-! ### The free loop space of a topological group -/
+
+section TopologicalGroup
+
+variable (G : Type*) [TopologicalSpace G] [Group G] [IsTopologicalGroup G]
+
+/-- **The free loop space of a topological group is a product**, `G × ΩG ≃ₜ C(S¹, G)`: the pair
+`(g, γ)` of a group element and a loop at `1` goes to the free loop `t ↦ g γ(t)`, read on the
+circle through `TauCeti.basedMapCircleOneHomeomorphPath`. The inverse records the value at `1 ∈ S¹`
+and translates the loop back to `1`. -/
+def circleMapGroupHomeomorphLoopSpace : G × Path (1 : G) 1 ≃ₜ C(Circle, G) :=
+  (Homeomorph.prodCongr (Homeomorph.refl G) (basedMapCircleOneHomeomorphPath (1 : G)).symm).trans
+    (mappingSpaceGroupHomeomorph 1)
+
+variable {G}
+
+/-- The free loop of `(g, γ)` at the image `unitToCircle t` of a time `t` is `g γ(t)`. -/
+@[simp]
+theorem circleMapGroupHomeomorphLoopSpace_apply_unitToCircle (g : G) (γ : Path (1 : G) 1)
+    (t : unitInterval) :
+    circleMapGroupHomeomorphLoopSpace G (g, γ) (unitToCircle t) = g * γ t := by
+  simp [circleMapGroupHomeomorphLoopSpace]
+
+/-- The group coordinate of a free loop in `G` is its value at `1 ∈ S¹`. -/
+@[simp]
+theorem circleMapGroupHomeomorphLoopSpace_symm_fst (f : C(Circle, G)) :
+    ((circleMapGroupHomeomorphLoopSpace G).symm f).1 = f 1 :=
+  mappingSpaceGroupHomeomorph_symm_fst 1 f
+
+/-- The loop coordinate of a free loop `f` in `G` is the loop `t ↦ f(1)⁻¹ f(t)` at `1`. -/
+@[simp]
+theorem circleMapGroupHomeomorphLoopSpace_symm_snd_apply (f : C(Circle, G)) (t : unitInterval) :
+    ((circleMapGroupHomeomorphLoopSpace G).symm f).2 t = (f 1)⁻¹ * f (unitToCircle t) := by
+  simp [circleMapGroupHomeomorphLoopSpace]
+
+end TopologicalGroup
 
 /-! ### Basepoint evaluation on contractible free loops -/
 

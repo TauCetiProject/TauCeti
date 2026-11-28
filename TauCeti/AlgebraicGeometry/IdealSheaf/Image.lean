@@ -171,15 +171,19 @@ lemma toImageIdealSheaf_app_sheafι (U : X.Opens) (t : Γ(M, U)) :
     φ.imageIdealSheaf.sheafι.app U (φ.toImageIdealSheaf.app U t) = φ.app U t :=
   congrArg (fun ψ ↦ ψ.app U t) φ.toImageIdealSheaf_ι
 
-/-- A quasicoherent module embedded in the structure sheaf is its image ideal sheaf. -/
-instance isIso_toImageIdealSheaf [Mono φ] : IsIso φ.toImageIdealSheaf := by
-  have : Mono φ.toImageIdealSheaf := mono_of_mono_fac φ.toImageIdealSheaf_ι
-  have : Epi φ.toImageIdealSheaf := Hom.epi_of_surjective_on_affineOpens _ fun U hU s ↦ by
+/-- A quasicoherent module maps onto its image ideal sheaf: on an affine open the ideal is the
+image on sections. -/
+instance epi_toImageIdealSheaf : Epi φ.toImageIdealSheaf :=
+  Hom.epi_of_surjective_on_affineOpens _ fun U hU s ↦ by
     have hs := φ.imageIdealSheaf.sheafι_app_mem U s
     rw [IdealSheafData.sections_eq_ideal _ ⟨U, hU⟩, imageIdealSheaf_ideal] at hs
     obtain ⟨t, ht⟩ := hs
     refine ⟨t, φ.imageIdealSheaf.sheafι_app_injective U ?_⟩
     exact (φ.toImageIdealSheaf_app_sheafι U t).trans ht
+
+/-- A quasicoherent module embedded in the structure sheaf is its image ideal sheaf. -/
+instance isIso_toImageIdealSheaf [Mono φ] : IsIso φ.toImageIdealSheaf := by
+  have : Mono φ.toImageIdealSheaf := mono_of_mono_fac φ.toImageIdealSheaf_ι
   exact isIso_of_mono_of_epi _
 
 /-- The canonical isomorphism from a quasicoherent submodule of the structure sheaf to the

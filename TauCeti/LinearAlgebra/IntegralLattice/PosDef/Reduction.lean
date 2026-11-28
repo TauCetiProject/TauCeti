@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.SuccessiveMinima
 import Mathlib.LinearAlgebra.Transvection.Basic
-import TauCeti.Algebra.Module.Primitive
+import TauCeti.Algebra.Module.Primitive.Basic
 import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
 
 /-!

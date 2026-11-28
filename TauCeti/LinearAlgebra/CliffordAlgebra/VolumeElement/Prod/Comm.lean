@@ -118,8 +118,8 @@ theorem koszulComm_complexProdTensor_complexVolume
     K (complexProdTensor hQ_VW o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q_VW o_VW) z) =
       complexProdTensor hQ_WV o₂ hQ₂ hm ρ₂ ρ₁ (complexVolume Q_WV o_WV) (K z) := by
   intro K
-  rw [complexProdTensor_complexVolume_of_map_prod hQ_VW o₁ hQ₁ hn ρ₁ ρ₂ o₂ o_VW hm hQ₂ ho_VW,
-    complexProdTensor_complexVolume_of_map_prod hQ_WV o₂ hQ₂ hm ρ₂ ρ₁ o₁ o_WV hn hQ₁ ho_WV]
+  rw [complexProdTensor_complexVolume_of_map_prod hQ_VW o₁ hQ₁ hn ρ₁ ρ₂ o₂ o_VW hm ho_VW,
+    complexProdTensor_complexVolume_of_map_prod hQ_WV o₂ hQ₂ hm ρ₂ ρ₁ o₁ o_WV hn ho_WV]
   exact Module.End.koszulComm_map _ _ _ _ z
 
 /-- Because the `L²` swap preserves even-dimensional product orientations

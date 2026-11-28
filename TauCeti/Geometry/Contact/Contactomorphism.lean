@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Contact.Pullback
 public import TauCeti.Geometry.Contact.Standard
 public import TauCeti.Geometry.Contact.Transition
 public import TauCeti.Geometry.Manifold.Distribution.Coorientation.Pullback
+import TauCeti.Geometry.Contact.Family
+import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 
 /-!
 # Contactomorphisms
@@ -42,6 +44,12 @@ and reflects contactness (`Diffeomorph.IsContactomorphism.isContactForm_iff`), a
 contactomorphism carries the Reeb vector field of `α` to that of `β`
 (`Diffeomorph.IsStrictContactomorphism.mfderiv_reebVectorField`).
 
+The differential of a map pulling `β` back to a multiple of `α` is conformally symplectic for the
+Levi forms: if a partial diffeomorphism `φ` pulls `β` back to `h α` for a pointwise multiplier `h`,
+then at each point where `α` is contact, `dβ(dφ v, dφ w) = h dα(v, w)` for `v, w ∈ ker α`
+(`PartialDiffeomorph.mextDeriv_mfderiv_eq_mul_of_mpullback_eq_smul`). The multiplier is smooth
+there, and `d(h α) = dh ∧ α + h dα` restricts to `h dα` on `ker α`.
+
 The three notions are distinct. On the standard contact space `V × V × ℝ` with the form
 `α = dz - ⟪p, dq⟫`, the linear map `(q, p, z) ↦ (q, c p, c z)` for a nonzero real `c` pulls `α`
 back to `c α`. It is a contactomorphism for every `c ≠ 0`, it preserves the coorientation exactly
@@ -68,6 +76,8 @@ when `c > 0`, and it is strict exactly when `c = 1`
   contactomorphism preserves or reverses the coorientation.
 * `Diffeomorph.preservesCoorientation_iff_pullbackCoorientation_eq`: preserving the coorientation
   is pulling back the coorientation of the hyperplane field.
+* `PartialDiffeomorph.mextDeriv_mfderiv_eq_mul_of_mpullback_eq_smul`: a partial diffeomorphism
+  pulling `β` back to a multiple of `α` is conformally symplectic for the Levi forms.
 * `TauCeti.exists_isContactomorphism_not_preservesCoorientation`,
   `TauCeti.exists_preservesCoorientation_not_isStrictContactomorphism`: the three notions differ.
 
@@ -353,6 +363,65 @@ theorem IsStrictContactomorphism.mfderiv_reebVectorField [FiniteDimensional ℝ 
 
 end Diffeomorph
 
+/-! ### Levi forms under conformal pullbacks -/
+
+namespace PartialDiffeomorph
+
+variable [FiniteDimensional ℝ E] {α : SmoothForm I M ℝ 1} {β : SmoothForm J N ℝ 1}
+
+/-- **The Levi data of a conformal pullback.** Let `φ` be a partial diffeomorphism from `M` to `N`
+which pulls `β` back to a multiple of `α` at every point of its source, and let `α` be contact at
+a point `x` of the source, where `φ^* β = h α`. Then `dβ(dφ v, dφ w) = h dα(v, w)` for `v` and `w`
+in `ker α_x`: the differential of `φ` at `x` is conformally symplectic for the Levi forms, with
+the factor `h`. -/
+theorem mextDeriv_mfderiv_eq_mul_of_mpullback_eq_smul (φ : PartialDiffeomorph I J M N ∞)
+    (hφ : ∀ y ∈ φ.source, ∃ h : ℝ, TauCeti.mpullback I J φ β.val y = h • α.val y) {x : M}
+    (hx : x ∈ φ.source) (hαx : IsContactFormAt α.val x) {h : ℝ}
+    (hh : TauCeti.mpullback I J φ β.val x = h • α.val x) {v w : TangentSpace I x}
+    (hv : v ∈ RoughForm.ker α.val x) (hw : w ∈ RoughForm.ker α.val x) :
+    mextDeriv β.val (φ x) ![mfderiv I J φ x v, mfderiv I J φ x w] =
+      h * mextDeriv α.val x ![v, w] := by
+  -- Work on the open set `W` of points of the source of `φ` at which `α` is contact.
+  let W : TopologicalSpace.Opens M := ⟨φ.source ∩ {y | IsContactFormAt α.val y},
+    φ.open_source.inter (SmoothForm.isOpen_setOf_isContactFormAt α)⟩
+  have hφW : ContMDiff I J ∞ (φ ∘ (Subtype.val : W → M)) :=
+    φ.contMDiffOn.comp_contMDiff contMDiff_subtypeVal fun z ↦ z.property.1
+  set αW := SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtypeVal α
+  set βW := SmoothForm.mpullback _ hφW β
+  have hαW (z : W) : αW.val z = α.val z := SmoothForm.coe_mpullback_subtype_val_apply α z
+  have hβW (z : W) : βW.val z = TauCeti.mpullback I J φ β.val z :=
+    SmoothForm.coe_mpullback_comp_subtypeVal_apply hφW β z
+  -- On `W`, `φ^* β` is a smooth multiple `f α` of the nowhere-vanishing form `α`.
+  obtain ⟨f, ⟨hf, hfβ⟩, -⟩ := SmoothForm.existsUnique_fun_smul_of_ker_le (α := αW) (β := βW)
+    (fun z ↦ by rw [hαW]; exact z.property.2.ne_zero) fun z u hu ↦ by
+      obtain ⟨c, hc⟩ := hφ z z.property.1
+      have hu' : α.val z ![u] = 0 := by rw [← hαW]; exact RoughForm.mem_ker.1 hu
+      -- The values of `βW` and of `c α` at `z` act on the same model space.
+      exact RoughForm.mem_ker.2 (by rw [hβW, hc]; exact (congrArg (c * ·) hu').trans (mul_zero c))
+  let z₀ : W := ⟨x, hx, hαx⟩
+  have hfz₀ : f z₀ = h := by
+    have hfh := (hfβ z₀).symm.trans (hβW z₀)
+    rw [hαW, hh] at hfh
+    exact smul_left_injective ℝ hαx.ne_zero hfh
+  -- By the Leibniz rule, `d(f α) = f dα` on `ker α_x`.
+  have hLeibniz (a b : TangentSpace I z₀) (ha : αW.val z₀ ![a] = 0) (hb : αW.val z₀ ![b] = 0) :
+      mextDeriv βW.val z₀ ![a, b] = h * mextDeriv αW.val z₀ ![a, b] := by
+    have hd := mextDeriv_fun_smul_apply ((hf z₀).mdifferentiableAt (by simp))
+      (αW.mdifferentiableAt z₀) a b
+    rwa [ha, hb, mul_zero, mul_zero, sub_zero, zero_add, hfz₀, ← funext hfβ] at hd
+  have hd := hLeibniz v w (by rw [hαW]; exact RoughForm.mem_ker.1 hv)
+    (by rw [hαW]; exact RoughForm.mem_ker.1 hw)
+  -- Read both exterior derivatives in `M` and `N`.
+  have hdαW (a b : TangentSpace I z₀) :
+      mextDeriv αW.val z₀ ![a, b] = mextDeriv α.val z₀ ![a, b] := by
+    rw [SmoothForm.mextDeriv_mpullback_apply_two, Manifold.mfderiv_subtype_val_apply,
+      Manifold.mfderiv_subtype_val_apply]
+  -- The base points `z₀` of `W` and `x` of `M` agree, and so do their tangent spaces.
+  exact (SmoothForm.mextDeriv_mpullback_comp_subtypeVal_apply_two hφW β z₀ v w).symm.trans
+    (hd.trans (congrArg (h * ·) (hdαW v w)))
+
+end PartialDiffeomorph
+
 /-! ### The standard contact form -/
 
 namespace TauCeti
@@ -368,6 +437,14 @@ theorem mpullback_innerProductContactForm_of_coe_eq {c : ℝ}
   apply Subtype.ext
   rw [SmoothForm.coe_mpullback, he, mpullback_innerProductContactForm_smul]
 
+/-- A diffeomorphism `(q, p, z) ↦ (q, c p, c z)` of the standard contact space pulls the standard
+contact form back to `c` times itself, pointwise. -/
+theorem mpullback_innerProductContactForm_apply_of_coe_eq {c : ℝ}
+    {e : (V × V × ℝ) ≃ₘ[ℝ] (V × V × ℝ)} (he : ⇑e = fun x ↦ (x.1, c • x.2)) (x : V × V × ℝ) :
+    (SmoothForm.mpullback e e.contMDiff (innerProductContactForm V)).val x =
+      c • (innerProductContactForm V).val x := by
+  rw [mpullback_innerProductContactForm_of_coe_eq he, SmoothForm.smul_toRoughForm, Pi.smul_apply]
+
 /-- For `c ≠ 0`, a diffeomorphism `(q, p, z) ↦ (q, c p, c z)` of the standard contact space is a
 contactomorphism. -/
 theorem isContactomorphism_innerProductContactForm_of_coe_eq {c : ℝ} (hc : c ≠ 0)
@@ -381,9 +458,9 @@ coorientation exactly when `c > 0`. -/
 theorem preservesCoorientation_innerProductContactForm_iff_of_coe_eq {c : ℝ}
     {e : (V × V × ℝ) ≃ₘ[ℝ] (V × V × ℝ)} (he : ⇑e = fun x ↦ (x.1, c • x.2)) :
     e.PreservesCoorientation (innerProductContactForm V) (innerProductContactForm V) ↔ 0 < c := by
-  rw [Diffeomorph.PreservesCoorientation, mpullback_innerProductContactForm_of_coe_eq he]
-  refine ⟨fun h ↦ ?_, fun hc x ↦ ⟨c, hc, by rw [SmoothForm.smul_toRoughForm, Pi.smul_apply]⟩⟩
+  refine ⟨fun h ↦ ?_, fun hc x ↦ ⟨c, hc, mpullback_innerProductContactForm_apply_of_coe_eq he x⟩⟩
   obtain ⟨d, hd, h₀⟩ := h 0
+  rw [mpullback_innerProductContactForm_apply_of_coe_eq he] at h₀
   have hcd : c = d :=
     smul_left_injective ℝ ((isContactForm_innerProductContactForm V).apply_ne_zero 0) h₀
   exact hcd ▸ hd
