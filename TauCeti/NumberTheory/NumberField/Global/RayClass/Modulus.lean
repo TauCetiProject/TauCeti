@@ -10,8 +10,9 @@ public import TauCeti.RingTheory.DedekindDomain.Ideal.Congruence
 public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 
-import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.DedekindDomain.Ideal.UnitsAway
+import TauCeti.RingTheory.DedekindDomain.SInteger.Quotient
 
 /-!
 # Moduli of a number field and multiplicative congruence
@@ -71,6 +72,8 @@ away from a finite set of primes.
 * `TauCeti.GlobalNumberFields.congruenceSubgroup_le_primeToSubgroup`: an element congruent to one
   is a unit at every prime dividing the finite part.  This is what makes the ray a subgroup of the
   prime-to ideals.
+* `TauCeti.GlobalNumberFields.exists_primeToSubgroup_eq_mul`: every fraction prime to `𝔪` is a
+  quotient of two algebraic integers prime to `𝔪`.
 * `TauCeti.GlobalNumberFields.IsCongrOne.mono` and
   `TauCeti.GlobalNumberFields.congruenceSubgroup_antitone`: congruence to one is antitone in the
   modulus, which is what makes the transition maps between ray class groups run from a larger
@@ -130,6 +133,10 @@ theorem finitePart_ne_zero (𝔪 : Modulus K) : 𝔪.finitePart ≠ 0 := fun h �
 a nonzero ideal. -/
 instance finite_quotient_finitePart (𝔪 : Modulus K) : Finite (𝓞 K ⧸ 𝔪.finitePart) :=
   Ring.HasFiniteQuotients.finiteQuotient 𝔪.finitePart_ne_bot
+
+/-- The finite part of a modulus has nonzero absolute norm. -/
+instance neZero_absNorm_finitePart (𝔪 : Modulus K) : NeZero (Ideal.absNorm 𝔪.finitePart) :=
+  ⟨Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot⟩
 
 /-- **Divisibility of moduli**: `𝔪 ∣ 𝔫` when the finite part of `𝔪` divides that of `𝔫` and the
 infinite part of `𝔪` is contained in that of `𝔫`, so that the congruence conditions imposed by
@@ -520,6 +527,22 @@ noncomputable def unitsToPrimeToSubgroup (𝔪 : Modulus K) :
     ((unitsToPrimeToSubgroup 𝔪 u : primeToSubgroup 𝔪) : Kˣ) =
       Units.map (algebraMap (𝓞 K) K).toMonoidHom u := by
   rw [unitsToPrimeToSubgroup, MonoidHom.codRestrict_apply]
+
+/-- Every element of `primeToSubgroup 𝔪` is a quotient of two algebraic integers in
+`primeToSubgroup 𝔪`. -/
+theorem exists_primeToSubgroup_eq_mul {𝔪 : Modulus K} (x : primeToSubgroup 𝔪) :
+    ∃ (a b : 𝓞 K) (xa xb : primeToSubgroup 𝔪),
+      algebraMap (𝓞 K) K a = ((xa : Kˣ) : K) ∧ algebraMap (𝓞 K) K b = ((xb : Kˣ) : K) ∧
+        xa = xb * x := by
+  have hx : (x : Kˣ) ∈ ({v : HeightOneSpectrum (𝓞 K) | v.asIdeal ∣ 𝔪.finitePart}ᶜ).unit K :=
+    fun v hv ↦ mem_primeToSubgroup.mp x.property v (by simpa using hv)
+  obtain ⟨a, b, xa, xb, ha, hb, hxeq⟩ := 𝔪.finitePart.exists_unit_eq_mul (K := K) ⟨(x : Kˣ), hx⟩
+  have hmem (y : ({v : HeightOneSpectrum (𝓞 K) | v.asIdeal ∣ 𝔪.finitePart}ᶜ).unit K) :
+      (y : Kˣ) ∈ primeToSubgroup 𝔪 :=
+    mem_primeToSubgroup.mpr fun v hv ↦ y.property v (by simpa using hv)
+  exact ⟨a, b, ⟨xa, hmem xa⟩, ⟨xb, hmem xb⟩, ha, hb,
+    Subtype.ext (congrArg (Subtype.val :
+      ({v : HeightOneSpectrum (𝓞 K) | v.asIdeal ∣ 𝔪.finitePart}ᶜ).unit K → Kˣ) hxeq)⟩
 
 /-- **The trivial modulus imposes no condition.**  Its finite part is the unit ideal, which no
 prime divides, and its infinite part is empty. -/

@@ -36,6 +36,7 @@ stalks are local rings.
 * `TauCeti.closedAnalyticSubspace.zeroLocus J`: the common zero locus `V(J)`, a closed subset.
 * `TauCeti.closedAnalyticSubspace J`: the locally ringed space `(V(J), (𝒪_X ⧸ J 𝒪_X)|_{V(J)})`.
 * `TauCeti.closedAnalyticSubspace.stalkEquiv J z`: its stalk at `z` is `𝒪_{X,z} ⧸ J_z`.
+* `TauCeti.closedAnalyticSubspace.constRingHom J`: the constant functions on it.
 
 ## Main results
 
@@ -230,6 +231,27 @@ theorem stalkEquiv_germ {z : zeroLocus J} {W : Opens (TopCat.of (zeroLocus J))} 
     stalkEquiv J z ((closedAnalyticSubspace J).presheaf.germ W z hz f) =
       (TopCat.Presheaf.quotientIdealSheaf.sectionsEquiv _ J (zeroLocus J) W f).val ⟨z, hz⟩ :=
   TopCat.Presheaf.quotientIdealSheaf.stalkEquiv_germ hz f
+
+end
+
+/-! ### Constant functions -/
+
+section
+
+variable (J : Ideal ((holomorphicStructureSheaf I X).presheaf.obj (op ⊤)))
+
+/-- The constant functions on the closed analytic subspace cut out by `J`: a complex number goes
+to the global section whose value at each point is the class of the germ of the constant
+function. -/
+def constRingHom : ℂ →+* (closedAnalyticSubspace J).presheaf.obj (op ⊤) :=
+  (TopCat.Presheaf.quotientIdealSheaf.restrictRingHom _ J (zeroLocus J) ⊤).comp
+    (algebraMap ℂ ((holomorphicStructureSheaf I X).presheaf.obj (op ⊤)))
+
+/-- The constant function `c` is the restriction of the constant holomorphic function `c`. -/
+theorem constRingHom_apply (c : ℂ) :
+    constRingHom J c = TopCat.Presheaf.quotientIdealSheaf.restrictRingHom _ J (zeroLocus J) ⊤
+      (algebraMap ℂ ((holomorphicStructureSheaf I X).presheaf.obj (op ⊤)) c) :=
+  (rfl)
 
 end
 

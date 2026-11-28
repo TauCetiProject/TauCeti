@@ -1,0 +1,266 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup
+public import TauCeti.MeasureTheory.Group.NormBall
+public import TauCeti.MeasureTheory.Integral.Lebesgue.SublevelGrowth
+import TauCeti.Analysis.Matrix.L2OpNorm
+import Mathlib.Topology.Algebra.Group.Units
+
+/-!
+# Norm balls in groups of matrices: polynomial volume growth and integrable inverse powers
+
+Let `ν` be a left-invariant measure on a group `S` and `j : S →* Eˣ` a homomorphism to the units
+of a finite-dimensional real normed algebra `E` of dimension `d`. For `y ∈ Eˣ`, the points `s`
+where `‖y * j s‖ ≤ R` and `‖(y * j s)⁻¹‖ ≤ R'` have measure at most `(1 + 2 R R' / ε) ^ d` times
+the measure of the ball `B = {s | ‖j s - 1‖ ≤ ε}`, for every `ε > 0`. Indeed, the matrices
+`y * j s` of these points lie in the ball of radius `R` of `E`, so a volume count gives an
+`ε / R'`-net of them with at most `(1 + 2 R R' / ε) ^ d` points `y * j k`; if `y * j s` lies within
+`ε / R'` of `y * j k`, then
+
+`j (k⁻¹ s) - 1 = (y * j k)⁻¹ * (y * j s - y * j k)`
+
+has norm at most `ε`, so the left translates `k B` cover the set.
+For a right-invariant measure the same bounds hold with `j s * y`.
+
+For the unitary group `unitaryGroupOf J` of a unitary Gram matrix `J`, with the operator norm,
+`‖g⁻¹‖ = ‖g‖` and `‖g‖ ≥ 1` (`Matrix.norm_val_inv_of_mem_unitaryGroupOf`,
+`Matrix.one_le_norm_val_of_mem_unitaryGroupOf`). Hence the sets `{s | ‖y * j s‖ ≤ R}` have
+measure at most `(3 R²) ^ d ν B` for `R ≥ 1` and `ε = 1`, where `d = dim_ℝ M_n(𝕜)`, which is
+`2 n²` over `ℂ` and `n²` over `ℝ`. By the layer-cake bound of
+`TauCeti.lintegral_ofReal_rpow_neg_le_of_measure_le_rpow`, the lower integral of
+`s ↦ ‖y * j s‖ ^ (-A)` is bounded uniformly in `y` for every `A > 2 d`, and likewise for
+`s ↦ ‖j s * y‖ ^ (-A)` with a right-invariant measure. For continuous `j` and `B` of finite
+measure, these functions are integrable. In particular, for a Haar measure on
+`unitaryGroupOf J` itself, such as `U(p, q)` with
+`J = diag(1, …, 1, -1, …, -1)`, every inverse power `‖g‖ ^ (-A)` with `A > 2 d` of the operator
+norm is integrable. The threshold `2 d` comes from the crude covering argument and is not sharp.
+
+## Main results
+
+* `MeasureTheory.measure_setOf_norm_le_and_norm_inv_le_le`: the covering bound for a homomorphism
+  to the units of a finite-dimensional normed algebra.
+* `Matrix.unitaryGroupOf.measure_setOf_norm_mul_le_le`: for a unitary Gram matrix `J`,
+  `ν {s | ‖y * j s‖ ≤ R} ≤ (1 + 2 R² / ε) ^ d * ν {s | ‖j s - 1‖ ≤ ε}`.
+* `Matrix.unitaryGroupOf.lintegral_norm_mul_rpow_neg_le`: for `A > 2 d`,
+  `∫⁻ ‖y * j s‖ ^ (-A) ∂ν ≤ 3 ^ d A / (A - 2 d) * ν {s | ‖j s - 1‖ ≤ 1}`.
+* `Matrix.unitaryGroupOf.measure_setOf_norm_mul_le_le_of_isMulRightInvariant` and
+  `Matrix.unitaryGroupOf.lintegral_norm_mul_rpow_neg_le_of_isMulRightInvariant`: the
+  corresponding right-invariant bounds for `j s * y`.
+* `Matrix.unitaryGroupOf.integrable_norm_mul_rpow_neg` and
+  `Matrix.unitaryGroupOf.integrable_norm_mul_rpow_neg_of_isMulRightInvariant`: integrability of
+  inverse norm powers for continuous `j` when the ball `{s | ‖j s - 1‖ ≤ 1}` has finite measure.
+* `Matrix.unitaryGroupOf.integrable_norm_rpow_neg`: for a left-invariant measure on
+  `unitaryGroupOf J` that is finite on compact sets, `g ↦ ‖g‖ ^ (-A)` is integrable for `A > 2 d`.
+
+## Provenance
+
+`MeasureTheory.measure_setOf_norm_le_and_norm_inv_le_le`,
+`Matrix.unitaryGroupOf.measure_setOf_norm_mul_le_le`,
+`Matrix.unitaryGroupOf.lintegral_norm_mul_rpow_neg_le`,
+`Matrix.unitaryGroupOf.integrable_norm_mul_rpow_neg` and
+`Matrix.unitaryGroupOf.integrable_norm_rpow_neg` are adapted from
+`New.DiscreteSeries.measure_ball_le_covering`, `New.DiscreteSeries.integral_decay_le`,
+`New.DiscreteSeries.lintegral_decay_le` and `New.DiscreteSeries.measure_ball_ne_top_of_isProperMap`
+(file `src/Lib/DiscreteSeries/Haar/TotalMass.lean`) in grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC). The source
+treats right-invariant measures, Hermitian involutions `J` and natural exponents `c > 8 n²`, and
+counts a maximal separated family. Here the measure may be left- or right-invariant and `J`
+may be any unitary matrix. The covering bound is stated for units of any finite-dimensional
+normed algebra. The net comes from the volumetric covering bound
+`TauCeti.exists_finset_isCover_of_subset_closedBall`, and the exponent is any real `A > 2 d`
+(`A > 4 n²` over `ℂ`).
+
+## References
+
+* R. Vershynin, *High-Dimensional Probability*, Cambridge University Press (2018), §4.2 (the
+  volumetric bound on nets).
+-/
+
+public section
+
+open MeasureTheory Module
+open scoped Matrix.Norms.L2Operator
+
+namespace Matrix.unitaryGroupOf
+
+variable {𝕜 : Type*} [RCLike 𝕜] {n : Type*} [Fintype n] [DecidableEq n] {J : Matrix n n 𝕜}
+
+section Covering
+
+variable {S : Type*} [Group S] [MeasurableSpace S] [MeasurableMul S]
+
+/-- **Polynomial covering bound in `unitaryGroupOf J`.** Let `J` be a unitary matrix, `ν` a
+left-invariant measure on a group `S`, `j : S →* unitaryGroupOf J` and `y ∈ unitaryGroupOf J`.
+For `ε > 0`, the set where `‖y * j s‖ ≤ R` in the operator norm has measure at most
+`(1 + 2 R² / ε) ^ d` times the measure of the ball where `‖j s - 1‖ ≤ ε`, where `d` is the real
+dimension of the matrices. -/
+theorem measure_setOf_norm_mul_le_le (ν : Measure S) [ν.IsMulLeftInvariant]
+    (hJ : J ∈ unitary (Matrix n n 𝕜)) (j : S →* unitaryGroupOf J) (y : unitaryGroupOf J)
+    {ε R : ℝ} (hε : 0 < ε) :
+    ν {s | ‖(((y * j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)‖ ≤ R} ≤
+      ENNReal.ofReal ((1 + 2 * R ^ 2 / ε) ^ finrank ℝ (Matrix n n 𝕜)) *
+        ν {s | ‖(((j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜) - 1‖ ≤ ε} := by
+  let : NormedAlgebra ℝ (Matrix n n 𝕜) := Matrix.l2OpNormedAlgebraReal
+  have hinv (s : S) := norm_val_inv_of_mem_unitaryGroupOf hJ (y * j s).property
+  simpa only [MonoidHom.coe_comp, Subgroup.coe_subtype, Function.comp_apply, ← Subgroup.coe_mul,
+    hinv, and_self, sq, ← mul_assoc] using
+    measure_setOf_norm_le_and_norm_inv_le_le ν
+      ((unitaryGroupOf J).subtype.comp j) (y : GL n 𝕜) (R := R) (R' := R) hε
+
+/-- The polynomial covering bound for the right translates `j s * y` under a right-invariant
+measure. -/
+theorem measure_setOf_norm_mul_le_le_of_isMulRightInvariant (ν : Measure S) [ν.IsMulRightInvariant]
+    (hJ : J ∈ unitary (Matrix n n 𝕜)) (j : S →* unitaryGroupOf J) (y : unitaryGroupOf J)
+    {ε R : ℝ} (hε : 0 < ε) :
+    ν {s | ‖(((j s * y : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)‖ ≤ R} ≤
+      ENNReal.ofReal ((1 + 2 * R ^ 2 / ε) ^ finrank ℝ (Matrix n n 𝕜)) *
+        ν {s | ‖(((j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜) - 1‖ ≤ ε} := by
+  let : NormedAlgebra ℝ (Matrix n n 𝕜) := Matrix.l2OpNormedAlgebraReal
+  have hinv (s : S) := norm_val_inv_of_mem_unitaryGroupOf hJ (j s * y).property
+  simpa only [MonoidHom.coe_comp, Subgroup.coe_subtype, Function.comp_apply, ← Subgroup.coe_mul,
+    hinv, and_self, sq, ← mul_assoc] using
+    measure_setOf_norm_le_and_norm_inv_le_le_of_isMulRightInvariant ν
+      ((unitaryGroupOf J).subtype.comp j) (y : GL n 𝕜) (R := R) (R' := R) hε
+
+private theorem normBallFactor_le_rpow (d : ℕ) {R : ℝ} (hR : 1 ≤ R) :
+    ENNReal.ofReal ((1 + 2 * R ^ 2 / 1) ^ d) ≤
+      ENNReal.ofReal (R ^ (2 * d : ℝ)) * ENNReal.ofReal ((3 : ℝ) ^ d) := by
+  rw [← ENNReal.ofReal_mul (by positivity), div_one]
+  gcongr
+  have hexp : (2 * d : ℝ) = ((2 * d : ℕ) : ℝ) := by norm_cast
+  rw [hexp, Real.rpow_natCast, pow_mul, ← mul_pow]
+  gcongr
+  nlinarith [one_le_pow₀ (n := 2) hR]
+
+private theorem lintegral_norm_rpow_neg_le_of_cover
+    {α : Type*} [MeasurableSpace α] (ν : Measure α) (hJ : J ∈ unitary (Matrix n n 𝕜))
+    (f : α → unitaryGroupOf J) {C : ENNReal}
+    (hcover : ∀ R : ℝ, 1 ≤ R → ν {s | ‖((f s : GL n 𝕜) : Matrix n n 𝕜)‖ ≤ R} ≤
+      ENNReal.ofReal ((1 + 2 * R ^ 2 / 1) ^ finrank ℝ (Matrix n n 𝕜)) * C)
+    {A : ℝ} (hA : 2 * finrank ℝ (Matrix n n 𝕜) < A) :
+    ∫⁻ s, ENNReal.ofReal (‖((f s : GL n 𝕜) : Matrix n n 𝕜)‖ ^ (-A)) ∂ν ≤
+      ENNReal.ofReal (3 ^ finrank ℝ (Matrix n n 𝕜) * A / (A - 2 * finrank ℝ (Matrix n n 𝕜))) *
+        C := by
+  have hA₀ : 0 < A := lt_of_le_of_lt (by positivity) hA
+  cases isEmpty_or_nonempty n
+  · simp [Subsingleton.elim (_ : Matrix n n 𝕜) 0, Real.zero_rpow (neg_ne_zero.2 hA₀.ne')]
+  refine (TauCeti.lintegral_ofReal_rpow_neg_le_of_measure_le_rpow
+    (C := ENNReal.ofReal ((3 : ℝ) ^ finrank ℝ (Matrix n n 𝕜)) * C)
+    (.of_forall fun s ↦ one_le_norm_val_of_mem_unitaryGroupOf hJ (f s).property) hA₀ hA
+    (fun R hR ↦ (hcover R hR).trans ?_)).trans_eq ?_
+  · rw [← mul_assoc]
+    exact mul_le_mul_left (normBallFactor_le_rpow _ hR) C
+  · rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity), mul_comm (A / _), mul_div_assoc]
+
+/-- For a unitary Gram matrix `J`, a right-invariant measure `ν` on a group `S`,
+`j : S →* unitaryGroupOf J` and `y : unitaryGroupOf J`, for `A > 2 d`,
+
+`∫⁻ ‖j s * y‖ ^ (-A) ∂ν ≤ 3 ^ d A / (A - 2 d) * ν {s | ‖j s - 1‖ ≤ 1}`,
+
+where `d` is the real matrix dimension. The bound is uniform in `y`. -/
+theorem lintegral_norm_mul_rpow_neg_le_of_isMulRightInvariant
+    (ν : Measure S) [ν.IsMulRightInvariant]
+    (hJ : J ∈ unitary (Matrix n n 𝕜)) (j : S →* unitaryGroupOf J) (y : unitaryGroupOf J)
+    {A : ℝ} (hA : 2 * finrank ℝ (Matrix n n 𝕜) < A) :
+    ∫⁻ s, ENNReal.ofReal (‖(((j s * y : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)‖ ^ (-A)) ∂ν ≤
+      ENNReal.ofReal (3 ^ finrank ℝ (Matrix n n 𝕜) * A / (A - 2 * finrank ℝ (Matrix n n 𝕜))) *
+        ν {s | ‖(((j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜) - 1‖ ≤ 1} := by
+  exact lintegral_norm_rpow_neg_le_of_cover ν hJ (fun s ↦ j s * y)
+    (fun _ _ ↦ measure_setOf_norm_mul_le_le_of_isMulRightInvariant ν hJ j y one_pos) hA
+
+/-- **Inverse powers of the norm on `unitaryGroupOf J`.** Let `J` be a unitary matrix, `ν` a
+left-invariant measure on a group `S`, `j : S →* unitaryGroupOf J` and `y : unitaryGroupOf J`.
+For a real `A > 2 d`, where `d` is the real dimension of the matrices,
+
+`∫⁻ ‖y * j s‖ ^ (-A) ∂ν ≤ 3 ^ d A / (A - 2 d) * ν {s | ‖j s - 1‖ ≤ 1}`
+
+in the operator norm. The bound does not depend on `y`. -/
+theorem lintegral_norm_mul_rpow_neg_le (ν : Measure S) [ν.IsMulLeftInvariant]
+    (hJ : J ∈ unitary (Matrix n n 𝕜)) (j : S →* unitaryGroupOf J) (y : unitaryGroupOf J)
+    {A : ℝ} (hA : 2 * finrank ℝ (Matrix n n 𝕜) < A) :
+    ∫⁻ s, ENNReal.ofReal (‖(((y * j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)‖ ^ (-A)) ∂ν ≤
+      ENNReal.ofReal (3 ^ finrank ℝ (Matrix n n 𝕜) * A / (A - 2 * finrank ℝ (Matrix n n 𝕜))) *
+        ν {s | ‖(((j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜) - 1‖ ≤ 1} := by
+  exact lintegral_norm_rpow_neg_le_of_cover ν hJ (fun s ↦ y * j s)
+    (fun _ _ ↦ measure_setOf_norm_mul_le_le ν hJ j y one_pos) hA
+
+variable [TopologicalSpace S]
+
+omit [MeasurableSpace S] [MeasurableMul S] in
+/-- For continuous `j`, the norm `s ↦ ‖y * j s‖` is continuous. -/
+private theorem continuous_norm_val_mul {j : S →* unitaryGroupOf J} (hj : Continuous j)
+    (y : unitaryGroupOf J) :
+    Continuous fun s ↦ ‖(((y * j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)‖ :=
+  (Units.continuous_val.comp (continuous_subtypeVal.comp (continuous_const.mul hj))).norm
+
+omit [MeasurableSpace S] [MeasurableMul S] in
+/-- For continuous `j`, the norm `s ↦ ‖j s * y‖` is continuous. -/
+private theorem continuous_norm_val_mul_right {j : S →* unitaryGroupOf J} (hj : Continuous j)
+    (y : unitaryGroupOf J) :
+    Continuous fun s ↦ ‖(((j s * y : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)‖ :=
+  (Units.continuous_val.comp (continuous_subtypeVal.comp (hj.mul continuous_const))).norm
+
+variable [OpensMeasurableSpace S]
+
+/-- **Integrability of inverse powers of the norm on `unitaryGroupOf J`.** Let `J` be a unitary
+matrix, `ν` a left-invariant measure on a topological group `S` and `j : S →* unitaryGroupOf J`
+continuous, such that the ball `{s | ‖j s - 1‖ ≤ 1}` has finite measure. Then for every
+`y ∈ unitaryGroupOf J` and every real `A > 2 d`, where `d` is the real dimension of the
+matrices, `s ↦ ‖y * j s‖ ^ (-A)` is integrable, in the operator norm. -/
+theorem integrable_norm_mul_rpow_neg (ν : Measure S) [ν.IsMulLeftInvariant]
+    (hJ : J ∈ unitary (Matrix n n 𝕜)) {j : S →* unitaryGroupOf J} (hj : Continuous j)
+    (hν : ν {s | ‖(((j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜) - 1‖ ≤ 1} ≠ ⊤)
+    (y : unitaryGroupOf J) {A : ℝ} (hA : 2 * finrank ℝ (Matrix n n 𝕜) < A) :
+    Integrable (fun s ↦ ‖(((y * j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)‖ ^ (-A)) ν := by
+  refine ⟨((continuous_norm_val_mul hj y).aemeasurable.pow_const _).aestronglyMeasurable, ?_⟩
+  rw [hasFiniteIntegral_iff_ofReal (.of_forall fun s ↦ Real.rpow_nonneg (norm_nonneg _) _)]
+  exact (lintegral_norm_mul_rpow_neg_le ν hJ j y hA).trans_lt (by finiteness)
+
+/-- **Integrability of inverse norm powers under a right-invariant measure.** Let `S` be a group
+with a topology whose open sets are measurable, `ν` a right-invariant measure on `S`, and
+`j : S →* unitaryGroupOf J` continuous, with `J` unitary. If the ball `{s | ‖j s - 1‖ ≤ 1}`
+has finite measure, then `s ↦ ‖j s * y‖ ^ (-A)` is integrable for every `A > 2 d`, where `d` is
+the real matrix dimension. -/
+theorem integrable_norm_mul_rpow_neg_of_isMulRightInvariant
+    (ν : Measure S) [ν.IsMulRightInvariant]
+    (hJ : J ∈ unitary (Matrix n n 𝕜)) {j : S →* unitaryGroupOf J} (hj : Continuous j)
+    (hν : ν {s | ‖(((j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜) - 1‖ ≤ 1} ≠ ⊤)
+    (y : unitaryGroupOf J) {A : ℝ} (hA : 2 * finrank ℝ (Matrix n n 𝕜) < A) :
+    Integrable (fun s ↦ ‖(((j s * y : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)‖ ^ (-A)) ν := by
+  refine ⟨((continuous_norm_val_mul_right hj y).aemeasurable.pow_const _).aestronglyMeasurable, ?_⟩
+  rw [hasFiniteIntegral_iff_ofReal (.of_forall fun s ↦ Real.rpow_nonneg (norm_nonneg _) _)]
+  exact (lintegral_norm_mul_rpow_neg_le_of_isMulRightInvariant ν hJ j y hA).trans_lt
+    (by finiteness)
+
+end Covering
+
+variable [MeasurableSpace (unitaryGroupOf J)] [BorelSpace (unitaryGroupOf J)]
+
+/-- **Inverse powers of the norm are integrable for a Haar measure on `unitaryGroupOf J`.** For a
+unitary matrix `J`, such as `diag(1, …, 1, -1, …, -1)` for `U(p, q)`, and a left-invariant measure
+`μ` on `unitaryGroupOf J` that is finite on compact sets, `g ↦ ‖g‖ ^ (-A)` is integrable in the
+operator norm for every real `A > 2 d`, where `d` is the real dimension of the matrices. -/
+theorem integrable_norm_rpow_neg (μ : Measure (unitaryGroupOf J)) [μ.IsMulLeftInvariant]
+    [IsFiniteMeasureOnCompacts μ] (hJ : J ∈ unitary (Matrix n n 𝕜)) {A : ℝ}
+    (hA : 2 * finrank ℝ (Matrix n n 𝕜) < A) :
+    Integrable (fun g : unitaryGroupOf J ↦ ‖((g : GL n 𝕜) : Matrix n n 𝕜)‖ ^ (-A)) μ := by
+  have : ProperSpace (Matrix n n 𝕜) := FiniteDimensional.proper_rclike 𝕜 _
+  -- The unit ball around `1` is compact, as `unitaryGroupOf J` is closed in the matrices.
+  have hcpt : IsCompact {g : unitaryGroupOf J | ‖((g : GL n 𝕜) : Matrix n n 𝕜) - 1‖ ≤ 1} := by
+    have hset : {g : unitaryGroupOf J | ‖((g : GL n 𝕜) : Matrix n n 𝕜) - 1‖ ≤ 1} =
+        (fun g : unitaryGroupOf J ↦ ((g : GL n 𝕜) : Matrix n n 𝕜)) ⁻¹'
+          Metric.closedBall 1 1 := by
+      ext g
+      exact mem_closedBall_iff_norm.symm
+    rw [hset]
+    exact (isClosedEmbedding_val (Unitary.isUnit_coe (U := ⟨J, hJ⟩))).isCompact_preimage
+      (isCompact_closedBall (1 : Matrix n n 𝕜) 1)
+  simpa using integrable_norm_mul_rpow_neg μ hJ (j := .id _) continuous_id
+    hcpt.measure_ne_top 1 hA
+
+end Matrix.unitaryGroupOf

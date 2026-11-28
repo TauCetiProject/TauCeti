@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.Algebra.Group.Action.End
 public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
+public import Mathlib.Algebra.Module.Pi
 public import Mathlib.Algebra.Module.Submodule.Equiv
 public import Mathlib.LinearAlgebra.BilinearMap
 
@@ -27,8 +28,10 @@ For coordinate transport, forgetting linearity gives the corresponding additive 
 equivalence, with the same direction on coordinates. A commutative square of linear maps with
 isomorphisms on its vertical sides transports the ranges of precomposition on hom spaces.
 Conjugating an endomorphism by a semilinear equivalence commutes with powers, moves its kernel
-and its range by the equivalence, and preserves the square-zero property, the conjugate being
-characterized by the equivalence intertwining the two endomorphisms.
+and its range by the equivalence, and preserves and reflects the square-zero property, the
+conjugate being characterized by the equivalence intertwining the two endomorphisms. In the group
+of linear automorphisms, the conjugate `e g e⁻¹` of `g` acts on `e x` and on images of submodules
+under `e` through `g`.
 
 ## Main results
 
@@ -43,7 +46,12 @@ characterized by the equivalence intertwining the two endomorphisms.
   commutes with powers and transports kernels.
 * `LinearEquiv.eq_conjRingEquiv_apply_iff`: the conjugate `f ∘ d ∘ f⁻¹` of an endomorphism
   by a semilinear equivalence is the unique endomorphism `e` with `e ∘ f = f ∘ d`; it squares
-  to zero when `d` does (`LinearEquiv.conjRingEquiv_apply_comp_self`).
+  to zero when `d` does (`LinearEquiv.conjRingEquiv_apply_comp_self`), and more generally an
+  intertwining equivalence makes either endomorphism square to zero exactly when the other does
+  (`LinearEquiv.comp_self_eq_zero_iff_of_comp_eq`).
+* `LinearEquiv.mulAut_conj_apply_apply` and `LinearEquiv.map_map_mulAut_conj`: the conjugate
+  `e g e⁻¹` of a linear automorphism sends `e x` to `e (g x)`, and the image under `e` of a
+  submodule `p` to the image under `e` of `g p`.
 * `LinearEquiv.toPermHom_smul_coe`: the permutation of the module underlying a linear
   automorphism moves the set underlying a submodule to the set underlying its image.
 * `LinearEquiv.smulOfUnit_apply`: `LinearEquiv.smulOfUnit u` acts as multiplication by `u`.
@@ -52,11 +60,44 @@ characterized by the equivalence intertwining the two endomorphisms.
   linear map.
 * `LinearEquiv.funCongrLeft_toAddMonoidHom`: forgetting linearity in coordinate transport
   gives additive coordinate transport.
+* `LinearEquiv.piCongrRightₛₗ`: a family of semilinear equivalences induces a semilinear
+  equivalence of dependent function spaces.
 -/
 
 public section
 
 namespace LinearEquiv
+
+section PiCongrRight
+
+variable {R S : Type*} [Semiring R] [Semiring S] {ι : Type*} {M N : ι → Type*}
+  [∀ i, AddCommMonoid (M i)] [∀ i, AddCommMonoid (N i)]
+  [∀ i, Module R (M i)] [∀ i, Module S (N i)]
+  {σ : R →+* S} {τ : S →+* R} [RingHomInvPair σ τ] [RingHomInvPair τ σ]
+
+/-- A family of semilinear equivalences induces a semilinear equivalence of dependent
+function spaces. -/
+def piCongrRightₛₗ (e : ∀ i, M i ≃ₛₗ[σ] N i) : (∀ i, M i) ≃ₛₗ[σ] (∀ i, N i) :=
+  { AddEquiv.piCongrRight fun i => (e i).toAddEquiv with
+    map_smul' := fun r x => by
+      ext i
+      simp only [AddEquiv.toFun_eq_coe, AddEquiv.piCongrRight_apply, coe_toAddEquiv,
+        Pi.smul_apply]
+      exact (e i).map_smulₛₗ r (x i) }
+
+/-- Pointwise semilinear transport applies the corresponding equivalence at each coordinate. -/
+@[simp]
+theorem piCongrRightₛₗ_apply (e : ∀ i, M i ≃ₛₗ[σ] N i) (x : ∀ i, M i) (i : ι) :
+    piCongrRightₛₗ e x i = e i (x i) := by
+  rfl
+
+/-- Inverse pointwise semilinear transport applies the inverse equivalence at each coordinate. -/
+@[simp]
+theorem piCongrRightₛₗ_symm_apply (e : ∀ i, M i ≃ₛₗ[σ] N i) (x : ∀ i, N i) (i : ι) :
+    (piCongrRightₛₗ e).symm x i = (e i).symm (x i) := by
+  rfl
+
+end PiCongrRight
 
 section Coordinates
 
@@ -193,6 +234,13 @@ theorem conjRingEquiv_apply_comp_self (f : M ≃ₛₗ[σ] N) {d : M →ₗ[R] M
     f.conjRingEquiv d ∘ₗ f.conjRingEquiv d = 0 := by
   rw [← Module.End.mul_eq_comp, ← map_mul, Module.End.mul_eq_comp, hd, map_zero]
 
+/-- If a semilinear equivalence `f` intertwines endomorphisms `d` and `e` (`f ∘ d = e ∘ f`), then
+`e` squares to zero exactly when `d` does. -/
+theorem comp_self_eq_zero_iff_of_comp_eq (f : M ≃ₛₗ[σ] N) {d : M →ₗ[R] M} {e : N →ₗ[S] N}
+    (hf : f.toLinearMap ∘ₛₗ d = e ∘ₛₗ f.toLinearMap) : e ∘ₗ e = 0 ↔ d ∘ₗ d = 0 := by
+  rw [(f.eq_conjRingEquiv_apply_iff d).mpr hf.symm, ← Module.End.mul_eq_comp, ← map_mul,
+    EmbeddingLike.map_eq_zero_iff, Module.End.mul_eq_comp]
+
 end ConjRingEquiv
 
 section Conj
@@ -236,6 +284,27 @@ theorem toPermHom_smul_coe (g : M ≃ₗ[R] M) (p : Submodule R M) :
     Equiv.Perm.smul_def, MulAction.toPerm_apply, LinearEquiv.smul_def, LinearEquiv.coe_coe]
 
 end PermHom
+
+section MulAutConj
+
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+
+/-- The conjugate `e g e⁻¹` of a linear automorphism `g` by a linear automorphism `e` sends
+`e x` to `e (g x)`. -/
+theorem mulAut_conj_apply_apply (e g : M ≃ₗ[R] M) (x : M) :
+    MulAut.conj e g (e x) = e (g x) := by
+  rw [MulAut.conj_apply, mul_apply_eq_comp, mul_apply_eq_comp, coe_inv, symm_apply_apply]
+
+/-- The conjugate `e g e⁻¹` maps the image under `e` of a submodule `p` to the image under `e`
+of `g p`. -/
+theorem map_map_mulAut_conj (e g : M ≃ₗ[R] M) (p : Submodule R M) :
+    (p.map (e : M →ₗ[R] M)).map (MulAut.conj e g : M →ₗ[R] M) =
+      (p.map (g : M →ₗ[R] M)).map (e : M →ₗ[R] M) := by
+  rw [← Submodule.map_comp, ← Submodule.map_comp]
+  congr 1
+  exact LinearMap.ext fun x ↦ mulAut_conj_apply_apply e g x
+
+end MulAutConj
 
 variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 

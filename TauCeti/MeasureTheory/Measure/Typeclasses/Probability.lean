@@ -29,6 +29,8 @@ simplifies totalized distribution laws that reduce to zero outside their paramet
 ## Main results
 
 * `MeasureTheory.Measure.one_sub_measure_compl_le`
+* `MeasureTheory.Measure.measure_singleton_add_measure_singleton_le`: the masses of two distinct
+  points add up to at most one.
 * `MeasureTheory.not_isProbabilityMeasure_zero`
 * `Finset.norm_prod_measureReal_le_one`: a finite product of real masses of a zero-or-probability
   measure has norm at most one.
@@ -67,6 +69,14 @@ on `s`: this is `μ univ ≤ μ s + μ sᶜ` (`MeasureTheory.measure_univ_le_add
 theorem one_sub_measure_compl_le {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω)
     [IsProbabilityMeasure μ] (s : Set Ω) : 1 - μ sᶜ ≤ μ s :=
   tsub_le_iff_right.mpr (by simpa using measure_univ_le_add_compl (μ := μ) s)
+
+/-- Under a probability measure on a space with measurable singletons, the masses of two distinct
+points add up to at most `1`. -/
+theorem measure_singleton_add_measure_singleton_le {β : Type*} [MeasurableSpace β]
+    [MeasurableSingletonClass β] (μ : Measure β) [IsProbabilityMeasure μ] {a b : β}
+    (hab : a ≠ b) : μ {a} + μ {b} ≤ 1 :=
+  (measure_union (Set.disjoint_singleton.2 hab) (measurableSet_singleton b)).symm.trans_le
+    prob_le_one
 
 /-- A nonnegative random variable that is not almost surely zero exceeds some strictly positive
 threshold with positive probability. The threshold event includes equality, and no measurability

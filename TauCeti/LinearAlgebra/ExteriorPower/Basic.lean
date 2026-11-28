@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
+import TauCeti.LinearAlgebra.LinearIndependent.Fin
 
 /-!
 # Further results on exterior powers
@@ -39,6 +40,8 @@ and moving the remaining factors by vectors of that subspace does not change the
   equivalence.
 ## Main results
 
+* `exteriorPower.mem_span_ιMulti`: every element of `⋀[R]^n M` is in the span of the
+  decomposable vectors.
 * `exteriorPower.eq_zero_of_finrank_lt` states that every element of `⋀[R]^d M` is zero when
   `Module.finrank R M < d`.
 * `exteriorPower.instProjective`: exterior powers of projective modules are projective.
@@ -50,6 +53,8 @@ and moving the remaining factors by vectors of that subspace does not change the
   exactly when the vectors are linearly independent.
 * `exteriorPower.ιMulti_comp_ne_zero_of_eq_basis`: lifts along a linear map `g` of a basis of its
   target have a nonzero exterior product.
+* `exteriorPower.ιMulti_append_subtype_ne_zero`: linearly independent families in two disjoint
+  subspaces have a nonzero joint exterior product.
 * `exteriorPower.toTensorPower_injective_of_free`: antisymmetrization is injective for free
   modules in every characteristic, without factorial invertibility.
 * `exteriorPower.range_toTensorPower`: the image of the antisymmetrization is the image of the
@@ -58,6 +63,8 @@ and moving the remaining factors by vectors of that subspace does not change the
   `exteriorPower.map_bijective`: the map induced by `f` sends a two-vector `u ∧ w` to
   `f u ∧ f w`, induced maps preserve commuting squares, and bijective maps induce bijections of
   exterior powers.
+* `exteriorPower.exists_finite_mem_range_map`: every element of an exterior power comes from
+  the exterior power of a finitely generated submodule.
 * `exteriorPower.map_smul_eq_pow_smul`: the map induced by `c • f` on the `n`th exterior power is
   `c ^ n` times the map induced by `f`.
 * `exteriorPower.ofEq_ιMulti`: the identification of exterior powers of equal degree renumbers the
@@ -122,6 +129,12 @@ universe u w
 variable {R : Type u} {M : Type w}
 
 namespace exteriorPower
+
+/-- Every element of `⋀[R]^n M` lies in the span of the decomposable vectors; this is the
+membership form of `exteriorPower.ιMulti_span`, ready for `Submodule.span_induction`. -/
+theorem mem_span_ιMulti [CommRing R] [AddCommGroup M] [Module R M] {n : ℕ} (x : ⋀[R]^n M) :
+    x ∈ Submodule.span R (Set.range (ιMulti R n)) :=
+  ιMulti_span R n M ▸ Submodule.mem_top
 
 section Vanishing
 
@@ -323,6 +336,17 @@ theorem ιMulti_comp_ne_zero_of_eq_basis {W : Type*} [AddCommGroup W] [Module K 
   rw [show g ∘ v = ⇑b from funext hv]
   exact (ιMulti_ne_zero_iff _).2 b.linearIndependent
 
+/-- A family of vectors of `p` followed by a family of vectors of `q` has a nonzero exterior
+product when both families are linearly independent and `p`, `q` are disjoint. -/
+theorem ιMulti_append_subtype_ne_zero {p q : Submodule K V} (hpq : Disjoint p q) {m n : ℕ}
+    {a : Fin m → p} {b : Fin n → q} (ha : LinearIndependent K a) (hb : LinearIndependent K b) :
+    ιMulti K (m + n) (Fin.append (p.subtype ∘ a) (q.subtype ∘ b)) ≠ 0 := by
+  rw [ιMulti_ne_zero_iff]
+  refine TauCeti.linearIndependent_fin_append.2
+    ⟨ha.map' _ p.ker_subtype, hb.map' _ q.ker_subtype, hpq.mono ?_ ?_⟩
+  · exact Submodule.span_le.2 (by rintro _ ⟨i, rfl⟩; exact (a i).property)
+  · exact Submodule.span_le.2 (by rintro _ ⟨i, rfl⟩; exact (b i).property)
+
 end Field
 
 /-! ### Induced maps -/
@@ -352,6 +376,27 @@ theorem map_bijective {n : ℕ} {f : M →ₗ[R] N} (hf : Function.Bijective f) 
     Function.Bijective (map n f) :=
   ⟨map_injective (LinearEquiv.ofBijective f hf).symm.toLinearMap (by ext; simp),
     map_surjective hf.2⟩
+
+/-- Every element of `⋀ⁿ M` lies in the image of `⋀ⁿ W → ⋀ⁿ M` for some finitely generated
+submodule `W ≤ M`. -/
+theorem exists_finite_mem_range_map {n : ℕ} (X : ⋀[R]^n M) :
+    ∃ W : Submodule R M, Module.Finite R W ∧ X ∈ LinearMap.range (map n W.subtype) := by
+  induction mem_span_ιMulti X using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨v, rfl⟩ := hx
+    refine ⟨Submodule.span R (Set.range v), Module.Finite.span_of_finite R (Set.finite_range v),
+      ιMulti R n fun i ↦ ⟨v i, Submodule.subset_span ⟨i, rfl⟩⟩, ?_⟩
+    simp [map_apply_ιMulti, Function.comp_def]
+  | zero => exact ⟨⊥, inferInstance, 0, map_zero _⟩
+  | add x y _ _ hx hy =>
+    obtain ⟨W₁, _, x₁, rfl⟩ := hx
+    obtain ⟨W₂, _, y₂, rfl⟩ := hy
+    refine ⟨W₁ ⊔ W₂, inferInstance,
+      map n (Submodule.inclusion le_sup_left) x₁ + map n (Submodule.inclusion le_sup_right) y₂, ?_⟩
+    simp [← LinearMap.comp_apply, ← map_comp, Submodule.subtype_comp_inclusion]
+  | smul r x _ hx =>
+    obtain ⟨W, hW, x₀, rfl⟩ := hx
+    exact ⟨W, hW, r • x₀, map_smul _ _ _⟩
 
 /-- Scaling a linear map by `c` scales the induced map on the `n`th exterior power by `c ^ n`. -/
 @[simp] theorem map_smul_eq_pow_smul (n : ℕ) (c : R) (f : M →ₗ[R] N) :
@@ -426,6 +471,22 @@ theorem exteriorPower_apply_ιMulti (e : M ≃ₗ[R] N) (n : ℕ) (m : Fin n →
 theorem exteriorPower_symm (e : M ≃ₗ[R] N) (n : ℕ) :
     (e.exteriorPower n).symm = e.symm.exteriorPower n :=
   (rfl)
+
+/-- The map induced by a linear equivalence `e` inverts the map induced by `e.symm`: the inverse
+law of `LinearEquiv.exteriorPower`, stated for the underlying maps. -/
+@[simp]
+theorem _root_.exteriorPower.map_map_symm {n : ℕ} (e : M ≃ₗ[R] N) (x : ⋀[R]^n N) :
+    _root_.exteriorPower.map n e.toLinearMap (_root_.exteriorPower.map n e.symm.toLinearMap x) =
+      x :=
+  (e.exteriorPower n).apply_symm_apply x
+
+/-- The map induced by `e.symm` inverts the map induced by a linear equivalence `e`: the inverse
+law of `LinearEquiv.exteriorPower`, stated for the underlying maps. -/
+@[simp]
+theorem _root_.exteriorPower.map_symm_map {n : ℕ} (e : M ≃ₗ[R] N) (x : ⋀[R]^n M) :
+    _root_.exteriorPower.map n e.symm.toLinearMap (_root_.exteriorPower.map n e.toLinearMap x) =
+      x :=
+  (e.exteriorPower n).symm_apply_apply x
 
 @[simp]
 theorem exteriorPower_refl (n : ℕ) :

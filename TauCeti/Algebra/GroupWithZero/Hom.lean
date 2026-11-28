@@ -18,10 +18,15 @@ one can then be rebundled as a unital map, for instance by `AlgHom.ofLinearMap`.
 
 This is the dichotomy that lets a type of multiplicative maps carry a zero without adjoining one.
 
+A multiplicative map that preserves `0` and sends `b` to `1` vanishes at every `e` with
+`b * e = 0`: a character taking the value `1` at an idempotent kills everything orthogonal to it.
+
 ## Main results
 
 * `MulHomClass.forall_apply_eq_zero_or_map_one`: such a map vanishes identically or sends `1`
   to `1`.
+* `MulHomClass.map_eq_zero_of_map_eq_one_of_mul_eq_zero`: if `f b = 1` and `b * e = 0`, then
+  `f e = 0`.
 
 ## Implementation notes
 
@@ -51,5 +56,12 @@ theorem map_one_of_exists_apply_ne_zero {p : G} (hp : ∃ x, p x ≠ 0) : p 1 = 
   (forall_apply_eq_zero_or_map_one p).resolve_left (not_forall.2 hp)
 
 end MulHomClass
+
+/-- **A map with value `1` at `b` vanishes at everything `b` annihilates.** If a multiplicative
+map preserving `0` sends `b` to `1` and `b * e = 0`, then it sends `e` to `0`. -/
+theorem MulHomClass.map_eq_zero_of_map_eq_one_of_mul_eq_zero {M N F : Type*} [MulZeroClass M]
+    [MulZeroOneClass N] [FunLike F M N] [MulHomClass F M N] [ZeroHomClass F M N] (f : F)
+    {b e : M} (hb : f b = 1) (h : b * e = 0) : f e = 0 := by
+  rw [← one_mul (f e), ← hb, ← map_mul, h, map_zero]
 
 end

@@ -37,6 +37,8 @@ a function of temperate growth. By duality this is the Leibniz rule for Schwartz
   tempered distributions extends multiplication by `g` on Schwartz functions.
 * `TemperedDistribution.lineDerivOp_smulLeftCLM`: the Leibniz rule for the product of a tempered
   distribution with a function of temperate growth.
+* `TemperedDistribution.lineDerivOp_smulLeftCLM_schwartzMap`: the Leibniz rule for a Schwartz
+  multiplier, with its derivative written as the Schwartz function `∂_v φ`.
 * `TemperedDistribution.smulLeftCLM_delta`: multiplication of the Dirac mass by a function of
   temperate growth, `g • δ_ξ = g(ξ) δ_ξ`.
 -/
@@ -93,6 +95,15 @@ theorem lineDerivOp_smulLeftCLM {g : E → ℂ} (hg : g.HasTemperateGrowth) (f :
       smulLeftCLM F (fun x ↦ fderiv ℝ g x v) f + smulLeftCLM F g (∂_{v} f) := by
   ext u
   simp [SchwartzMap.lineDerivOp_smulLeftCLM _ hg, ← map_add]
+
+/-- **The Leibniz rule for a Schwartz multiplier**: for a Schwartz function `φ`,
+`∂_v (φ f) = (∂_v φ) f + φ ∂_v f`, with `∂_v φ` the line derivative of `φ` as a Schwartz
+function. -/
+theorem lineDerivOp_smulLeftCLM_schwartzMap (φ : 𝓢(E, ℂ)) (f : 𝓢'(E, F)) (v : E) :
+    ∂_{v} (smulLeftCLM F (φ : E → ℂ) f) =
+      smulLeftCLM F ((∂_{v} φ : 𝓢(E, ℂ)) : E → ℂ) f + smulLeftCLM F (φ : E → ℂ) (∂_{v} f) := by
+  simp only [lineDerivOp_smulLeftCLM φ.hasTemperateGrowth,
+    ← SchwartzMap.lineDerivOp_apply_eq_fderiv]
 
 end Deriv
 

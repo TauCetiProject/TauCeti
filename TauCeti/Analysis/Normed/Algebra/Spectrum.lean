@@ -21,7 +21,9 @@ increase spectral radii: it can only shrink quasispectra.
 Finally, in a normed algebra with summable geometric series, such as a complete one, a closed set
 avoiding the spectrum of an element also avoids the spectra of all nearby elements
 (`spectrum.eventually_disjoint_of_isClosed`), a consequence of the upper hemicontinuity of the
-spectrum.
+spectrum, and the spectrum of an element `k` lies within `‖k - 1‖` of `1`
+(`spectrum.norm_sub_one_le_of_mem`). We also record injectivity and zero-character
+characterizations for `NonUnitalAlgHom.toStrongDual`.
 -/
 
 public section
@@ -46,13 +48,44 @@ theorem spectralRadius_eq_zero_iff_spectrum_subset_singleton_zero [Ring A] [Alge
 
 end TauCeti
 
+namespace NonUnitalAlgHom
+
 /-- A nonunital algebra homomorphism, not assumed continuous, does not increase spectral radii,
 since it can only shrink quasispectra. -/
-theorem NonUnitalAlgHom.spectralRadius_apply_le {F 𝕜 A B : Type*} [NormedField 𝕜]
+theorem spectralRadius_apply_le {F 𝕜 A B : Type*} [NormedField 𝕜]
     [NonUnitalRing A] [NonUnitalRing B] [Module 𝕜 A] [Module 𝕜 B] [FunLike F A B]
     [NonUnitalAlgHomClass F 𝕜 A B] (φ : F) (a : A) :
     spectralRadius 𝕜 (φ a) ≤ spectralRadius 𝕜 a :=
   biSup_mono fun _ hk ↦ NonUnitalAlgHom.quasispectrum_apply_subset φ a hk
+
+section StrongDual
+
+variable {𝕜 A : Type*} [NormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
+  [HasSummableGeomSeries A]
+
+/-- `NonUnitalAlgHom.toStrongDual` is injective. -/
+theorem toStrongDual_injective :
+    Function.Injective (toStrongDual (𝕜 := 𝕜) (A := A)) := fun _ _ h =>
+  DFunLike.ext _ _ fun a => congrArg (fun f : StrongDual 𝕜 A => f a) h
+
+@[simp]
+theorem toStrongDual_inj {φ ψ : A →ₙₐ[𝕜] 𝕜} :
+    φ.toStrongDual = ψ.toStrongDual ↔ φ = ψ :=
+  toStrongDual_injective.eq_iff
+
+@[simp]
+theorem toStrongDual_zero :
+    (0 : A →ₙₐ[𝕜] 𝕜).toStrongDual = 0 := by
+  ext; simp
+
+@[simp]
+theorem toStrongDual_eq_zero {φ : A →ₙₐ[𝕜] 𝕜} :
+    φ.toStrongDual = 0 ↔ φ = 0 := by
+  rw [← toStrongDual_zero, toStrongDual_inj]
+
+end StrongDual
+
+end NonUnitalAlgHom
 
 open Topology in
 /-- If a closed set avoids the spectrum of an element of a normed algebra with summable geometric
@@ -64,3 +97,14 @@ theorem spectrum.eventually_disjoint_of_isClosed {𝕜 A : Type*} [NormedField �
   have hmem : Fᶜ ∈ 𝓝ˢ (spectrum 𝕜 a) := hF.isOpen_compl.mem_nhdsSet.2 h.subset_compl_left
   filter_upwards [(upperHemicontinuous_spectrum 𝕜 A).upperHemicontinuousAt a _ hmem] with b hb
   exact Set.subset_compl_iff_disjoint_left.mp (subset_of_mem_nhdsSet hb)
+
+/-- The spectrum of an element `k` of a normed algebra with summable geometric series (for instance
+a complete one) lies within `‖k - 1‖` of `1`. -/
+theorem spectrum.norm_sub_one_le_of_mem {𝕜 A : Type*} [NormedField 𝕜] [NormedRing A]
+    [NormedAlgebra 𝕜 A] [HasSummableGeomSeries A] {k : A} {t : 𝕜} (ht : t ∈ spectrum 𝕜 k) :
+    ‖t - 1‖ ≤ ‖k - 1‖ := by
+  have h : t - 1 ∈ spectrum 𝕜 (k - algebraMap 𝕜 A 1) := by
+    rw [← spectrum.sub_singleton_eq]
+    exact Set.sub_mem_sub ht rfl
+  rw [map_one] at h
+  exact spectrum.norm_le_norm_of_mem h

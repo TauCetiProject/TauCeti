@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
-import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -53,7 +53,9 @@ perimeter has neither defect (`TauCeti.weightedPerimeter_compl`,
 * `TauCeti.weightedMeasure W`: the measure `e^{−W} · volume`, absolutely continuous with
   respect to `volume` (`TauCeti.weightedMeasure_absolutelyContinuous`), and, for an almost
   everywhere measurable weight, conversely
-  (`TauCeti.volume_absolutelyContinuous_weightedMeasure`).
+  (`TauCeti.volume_absolutelyContinuous_weightedMeasure`); when it is finite and `E` is
+  nontrivial, the measure of a ball is strictly increasing in the radius
+  (`TauCeti.strictMonoOn_weightedMeasure_ball`).
 * `LinearIsometryEquiv.gaussianWeight_apply`, `LinearIsometryEquiv.gaussianWeight_comp`: the
   Gaussian weight is invariant under linear isometry equivalences.
 * `TauCeti.weightedVariation_eq_iSup_trace_fderiv`: for a differentiable weight, the weighted
@@ -131,12 +133,45 @@ theorem contDiff_gaussianWeight {n : WithTop ℕ∞} : ContDiff ℝ n (gaussianW
   rw [h]
   exact ((contDiff_norm_sq ℝ).div_const _).add contDiff_const
 
+/-- The Gaussian weight has derivative `⟨x, ·⟩` at `x`. -/
+theorem hasFDerivAt_gaussianWeight (x : E) :
+    HasFDerivAt (gaussianWeight E) (innerSL ℝ x) x := by
+  have h : gaussianWeight E = fun x =>
+      ‖x‖ ^ 2 / 2 + (Module.finrank ℝ E : ℝ) / 2 * Real.log (2 * Real.pi) :=
+    funext gaussianWeight_def
+  rw [h]
+  have h2 : HasFDerivAt (fun x : E => ‖x‖ ^ 2) (2 • innerSL ℝ x) x :=
+    (hasStrictFDerivAt_norm_sq x).hasFDerivAt
+  convert (h2.mul_const (1 / 2 : ℝ)).add_const
+    ((Module.finrank ℝ E : ℝ) / 2 * Real.log (2 * Real.pi)) using 1
+  · funext y; ring
+  · ext v; simp
+
+/-- The derivative of the Gaussian weight at `x` is `⟨x, ·⟩`. -/
+@[simp]
+theorem fderiv_gaussianWeight (x : E) : fderiv ℝ (gaussianWeight E) x = innerSL ℝ x :=
+  (hasFDerivAt_gaussianWeight x).fderiv
+
+/-- The Gaussian density `e^{−W}` is continuous. -/
+theorem continuous_exp_neg_gaussianWeight : Continuous fun x => Real.exp (-gaussianWeight E x) :=
+  (contDiff_gaussianWeight (n := 0)).continuous.neg.rexp
+
 /-- The Gaussian density on the sphere of radius `r` about the origin is
 `(2π)^{−n/2} e^{−r²/2}`. -/
 theorem exp_neg_gaussianWeight_of_norm_eq {r : ℝ} {x : E} (hx : ‖x‖ = r) :
     Real.exp (-gaussianWeight E x) =
       (2 * Real.pi) ^ (-(Module.finrank ℝ E : ℝ) / 2) * Real.exp (-(r ^ 2 / 2)) := by
   rw [gaussianWeight_def, hx, Real.rpow_def_of_pos (by positivity), ← Real.exp_add]
+  congr 1
+  ring
+
+open scoped RealInnerProductSpace in
+/-- Translating the argument of the Gaussian density by `v` multiplies it by
+`e^{−⟨y, v⟩ − ‖v‖² / 2}`. -/
+theorem exp_neg_gaussianWeight_add (y v : E) :
+    Real.exp (-gaussianWeight E (y + v)) =
+      Real.exp (-(⟪y, v⟫ + ‖v‖ ^ 2 / 2)) * Real.exp (-gaussianWeight E y) := by
+  rw [← Real.exp_add, gaussianWeight_def, gaussianWeight_def, norm_add_sq_real]
   congr 1
   ring
 
@@ -220,6 +255,30 @@ theorem volume_absolutelyContinuous_weightedMeasure (hW : AEMeasurable W volume)
   rw [weightedMeasure_def]
   exact withDensity_absolutelyContinuous' hW.neg.exp.ennreal_ofReal
     (.of_forall fun x => (ENNReal.ofReal_pos.2 (Real.exp_pos _)).ne')
+
+/-- In dimension at least one, for an almost everywhere measurable weight with finite measure, the
+measure of the ball `B(x, r)` is strictly increasing in `r ≥ 0`: the shell between two radii
+contains a nonempty open set, which has positive measure since `e^{−W} > 0`. -/
+theorem strictMonoOn_weightedMeasure_ball [Nontrivial E] (hW : AEMeasurable W volume)
+    [IsFiniteMeasure (weightedMeasure W)] (x : E) :
+    StrictMonoOn (fun r => weightedMeasure W (Metric.ball x r)) (Ici 0) := by
+  intro r hr r' _ hrr
+  obtain ⟨y, hy⟩ := exists_norm_eq E (show 0 ≤ (r + r') / 2 by simp only [mem_Ici] at hr; linarith)
+  have hne : (Metric.ball x r' \ Metric.closedBall x r).Nonempty :=
+    ⟨x + y, by rw [Metric.mem_ball, dist_self_add_left, hy]; linarith,
+      by rw [Metric.mem_closedBall, dist_self_add_left, hy]; intro h; linarith⟩
+  have hpos : weightedMeasure W (Metric.ball x r' \ Metric.closedBall x r) ≠ 0 := fun h =>
+    (Metric.isOpen_ball.sdiff Metric.isClosed_closedBall).measure_ne_zero volume hne
+      (volume_absolutelyContinuous_weightedMeasure hW h)
+  calc weightedMeasure W (Metric.ball x r)
+      < weightedMeasure W (Metric.ball x r) +
+          weightedMeasure W (Metric.ball x r' \ Metric.closedBall x r) :=
+        ENNReal.lt_add_right (measure_ne_top _ _) hpos
+    _ = weightedMeasure W (Metric.ball x r ∪ (Metric.ball x r' \ Metric.closedBall x r)) :=
+        (measure_union (disjoint_sdiff_right.mono_left Metric.ball_subset_closedBall)
+          (measurableSet_ball.diff measurableSet_closedBall)).symm
+    _ ≤ weightedMeasure W (Metric.ball x r') :=
+        measure_mono (union_subset (Metric.ball_subset_ball hrr.le) sdiff_subset)
 
 /-! ### Admissible fields -/
 

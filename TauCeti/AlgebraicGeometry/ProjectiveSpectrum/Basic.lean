@@ -50,6 +50,8 @@ of the structure sheaf of `Spec` over basic opens
 * `AlgebraicGeometry.Proj.map_congr`: `Proj.map f` depends only on `f`.
 * `AlgebraicGeometry.Proj.SpecMap_awayLift_awayι_eq`: the point of `Proj A` defined by `φ` on the
   chart `D₊(f)` agrees with the one defined on the chart `D₊(g)`.
+* `AlgebraicGeometry.Proj.SpecMap_awayLift_awayι_comp_map`: `Proj.map f` sends the point defined
+  by `φ` on the chart `D₊(f s)` to the point defined by `φ ∘ f` on the chart `D₊(s)`.
 * `AlgebraicGeometry.Proj.pullback_fst_awayι_comp_eq_snd_comp`: morphisms out of two standard
   charts agree on their overlap if they agree on the chart of the product.
 * `AlgebraicGeometry.Proj.map_toSpecZero`: `Proj.map f` lies over `Spec` of the degree-zero part
@@ -109,6 +111,19 @@ theorem SpecMap_awayLift_awayι_eq {R : Type u} [CommRing R] (φ : A →+* R) {f
   -- the two charts `D₊(fg)` differ only in the order of the degree `m + m'` of `fg`
   congr 2
   exact add_comm m m'
+
+/-- The `R`-point of `Proj ℬ` with homogeneous coordinates `φ : B →+* R`, read on the standard
+chart `D₊(t)` for `t = f s`, followed by `Proj.map f`, is the point of `Proj 𝒜` with homogeneous
+coordinates `φ ∘ f`, read on the standard chart `D₊(s)`. -/
+theorem SpecMap_awayLift_awayι_comp_map {R : Type u} [CommRing R] (f : 𝒜 →+*ᵍ ℬ)
+    (hf : HomogeneousIdeal.irrelevant ℬ ≤ (HomogeneousIdeal.irrelevant 𝒜).map f) {s : A} {d : ℕ}
+    (hs : s ∈ 𝒜 d) (hd : 0 < d) {t : B} (ht : t ∈ ℬ d) (hst : f s = t) (φ : B →+* R)
+    (hφt : IsUnit (φ t)) (hφs : IsUnit ((φ.comp f.toRingHom) s)) :
+    Spec.map (CommRingCat.ofHom (Away.lift ℬ φ hφt)) ≫ awayι ℬ t ht hd ≫ map f hf =
+      Spec.map (CommRingCat.ofHom (Away.lift 𝒜 (φ.comp f.toRingHom) hφs)) ≫ awayι 𝒜 s hs hd := by
+  subst hst
+  rw [awayι_comp_map _ _ hd _ hs, ← Spec.map_comp_assoc, ← CommRingCat.ofHom_comp,
+    Away.lift_comp_map]
 
 /-- `Proj.map f` lies over `Spec` of the ring homomorphism `𝒜 0 →+* ℬ 0` induced by `f` on the
 degree-zero parts. -/

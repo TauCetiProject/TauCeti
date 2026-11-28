@@ -151,7 +151,7 @@ theorem mdifferentiableAt_schoutenTensor_apply
     MDiffAt (fun y ↦ cov.schoutenTensor y (σ y) (τ y)) x := by
   simp only [schoutenTensor_apply, TauCeti.finrank_tangentSpace, div_eq_mul_inv]
   have hS : MDiffAt cov.scalarCurvature x :=
-    cov.contMDiff_scalarCurvature.mdifferentiableAt (by simp)
+    (cov.contMDiff_scalarCurvature (n := ⊤)).mdifferentiableAt (by simp)
   exact mdifferentiableAt_const.mul ((cov.mdifferentiableAt_ricciTensor_apply hσ hτ).sub
     ((hS.mul mdifferentiableAt_const).mul (TauCeti.Manifold.mdifferentiableAt_inner hσ hτ)))
 
@@ -164,7 +164,7 @@ theorem contMDiffAt_schoutenTensor_apply
     ContMDiffAt I 𝓘(ℝ) ∞ (fun y ↦ cov.schoutenTensor y (σ y) (τ y)) x := by
   simp only [schoutenTensor_apply, TauCeti.finrank_tangentSpace, div_eq_mul_inv]
   exact contMDiffAt_const.mul ((cov.contMDiffAt_ricciTensor_apply hσ hτ).sub
-    ((cov.contMDiff_scalarCurvature.contMDiffAt.mul contMDiffAt_const).mul
+    (((cov.contMDiff_scalarCurvature (n := ⊤)).contMDiffAt.mul contMDiffAt_const).mul
       (ContMDiffAt.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x)
         (b := id) hσ hτ)))
 
