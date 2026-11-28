@@ -107,49 +107,6 @@ section ExpDerivFactor
 
 variable {K : Type*} [SeminormedCommRing K] [IsUltrametricDist K]
 
-/-- In an ultrametric seminormed commutative ring, if `‖P.coeff i‖ * r ^ i ≤ B` for `r > 0`, then
-each step of `expDerivFactor c m` multiplies the `r`-weighted coefficient bound by at most
-`max r⁻¹ ‖c‖`. -/
-theorem norm_coeff_expDerivFactor_mul_pow_le (c : K) {P : K[X]} {r B : ℝ} (hr : 0 < r)
-    (hP : ∀ i, ‖P.coeff i‖ * r ^ i ≤ B) (m i : ℕ) :
-    ‖(expDerivFactor c m P).coeff i‖ * r ^ i ≤ max r⁻¹ ‖c‖ ^ m * B := by
-  have hB : 0 ≤ B := (mul_nonneg (norm_nonneg _) (by positivity)).trans (hP 0)
-  have : 0 ≤ max r⁻¹ ‖c‖ := le_max_of_le_right (norm_nonneg c)
-  induction m generalizing i with
-  | zero => simpa using hP i
-  | succ m ih =>
-    set Q := expDerivFactor c m P
-    have hderiv : ‖Q.coeff (i + 1) * ((i : K) + 1)‖ ≤ ‖Q.coeff (i + 1)‖ := by
-      have hnsmul : Q.coeff (i + 1) * ((i : K) + 1) = (i + 1) • Q.coeff (i + 1) := by
-        rw [nsmul_eq_mul, Nat.cast_add, Nat.cast_one, mul_comm]
-      rw [hnsmul]
-      exact IsUltrametricDist.norm_nsmul_le _ _
-    rw [expDerivFactor_succ, coeff_add, coeff_derivative, coeff_C_mul]
-    refine (mul_le_mul_of_nonneg_right (IsUltrametricDist.norm_add_le_max _ _)
-      (by positivity)).trans ?_
-    rw [max_mul_of_nonneg _ _ (by positivity), pow_succ', mul_assoc]
-    refine max_le ?_ ?_
-    · calc
-        ‖Q.coeff (i + 1) * ((i : K) + 1)‖ * r ^ i
-            ≤ ‖Q.coeff (i + 1)‖ * r ^ i := by gcongr
-        _ = ‖Q.coeff (i + 1)‖ * r ^ i * (r⁻¹ * r) := by rw [inv_mul_cancel₀ hr.ne', mul_one]
-        _ = r⁻¹ * (‖Q.coeff (i + 1)‖ * r ^ (i + 1)) := by
-            rw [pow_succ]
-            ring
-        _ ≤ r⁻¹ * (max r⁻¹ ‖c‖ ^ m * B) :=
-            mul_le_mul_of_nonneg_left (ih (i + 1)) (by positivity)
-        _ ≤ max r⁻¹ ‖c‖ * (max r⁻¹ ‖c‖ ^ m * B) :=
-            mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
-    · calc
-        ‖c * Q.coeff i‖ * r ^ i
-            ≤ ‖c‖ * (‖Q.coeff i‖ * r ^ i) := by
-              rw [← mul_assoc]
-              exact mul_le_mul_of_nonneg_right (norm_mul_le _ _) (by positivity)
-        _ ≤ ‖c‖ * (max r⁻¹ ‖c‖ ^ m * B) :=
-            mul_le_mul_of_nonneg_left (ih i) (norm_nonneg c)
-        _ ≤ max r⁻¹ ‖c‖ * (max r⁻¹ ‖c‖ ^ m * B) :=
-            mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity)
-
 /-- Ultrametric evaluation bound for `expDerivFactor c m P` on the closed ball `‖x‖ ≤ r` (`r > 0`)
 from an `r`-weighted coefficient bound on `P`. -/
 theorem norm_eval_expDerivFactor_le_of_mul_pow_le (c : K) {P : K[X]} {r B : ℝ} (hr : 0 < r)

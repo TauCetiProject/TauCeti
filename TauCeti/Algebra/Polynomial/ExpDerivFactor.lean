@@ -46,8 +46,9 @@ it is shown to preserve the degree and to have trivial kernel;
   `∑_{j ≤ m} (m choose j) c ^ (m - j) P⁽ʲ⁾`.
 * `Polynomial.natDegree_expDerivFactor_le`: the degree does not grow.
 * `Polynomial.map_expDerivFactor`: compatibility with ring homomorphisms of the coefficients.
-* `Polynomial.norm_coeff_expDerivFactor_le`: over an ultrametric normed ring, coefficients
-  bounded by `B` become coefficients bounded by `max 1 ‖c‖ ^ m * B`.
+* `Polynomial.norm_coeff_expDerivFactor_mul_pow_le`, `Polynomial.norm_coeff_expDerivFactor_le`:
+  over an ultrametric normed ring, `r`-weighted (and unweighted, `r = 1`) coefficients bounded by
+  `B` become coefficients bounded by `max r⁻¹ ‖c‖ ^ m * B` (resp. `max 1 ‖c‖ ^ m * B`).
 
 ## References
 
@@ -254,31 +255,56 @@ section Ultrametric
 
 variable {K : Type*} [SeminormedCommRing K] [IsUltrametricDist K]
 
+/-- In an ultrametric seminormed commutative ring, if `‖P.coeff i‖ * r ^ i ≤ B` for `r > 0`, then
+each step of `expDerivFactor c m` multiplies the `r`-weighted coefficient bound by at most
+`max r⁻¹ ‖c‖`. -/
+theorem norm_coeff_expDerivFactor_mul_pow_le (c : K) {P : K[X]} {r B : ℝ} (hr : 0 < r)
+    (hP : ∀ i, ‖P.coeff i‖ * r ^ i ≤ B) (m i : ℕ) :
+    ‖(expDerivFactor c m P).coeff i‖ * r ^ i ≤ max r⁻¹ ‖c‖ ^ m * B := by
+  have hB : 0 ≤ B := (mul_nonneg (norm_nonneg _) (by positivity)).trans (hP 0)
+  have : 0 ≤ max r⁻¹ ‖c‖ := le_max_of_le_right (norm_nonneg c)
+  induction m generalizing i with
+  | zero => simpa using hP i
+  | succ m ih =>
+    set Q := expDerivFactor c m P
+    have hderiv : ‖Q.coeff (i + 1) * ((i : K) + 1)‖ ≤ ‖Q.coeff (i + 1)‖ := by
+      have hnsmul : Q.coeff (i + 1) * ((i : K) + 1) = (i + 1) • Q.coeff (i + 1) := by
+        rw [nsmul_eq_mul, Nat.cast_add, Nat.cast_one, mul_comm]
+      rw [hnsmul]
+      exact IsUltrametricDist.norm_nsmul_le _ _
+    rw [expDerivFactor_succ, coeff_add, coeff_derivative, coeff_C_mul]
+    refine (mul_le_mul_of_nonneg_right (IsUltrametricDist.norm_add_le_max _ _)
+      (by positivity)).trans ?_
+    rw [max_mul_of_nonneg _ _ (by positivity), pow_succ', mul_assoc]
+    refine max_le ?_ ?_
+    · calc
+        ‖Q.coeff (i + 1) * ((i : K) + 1)‖ * r ^ i
+            ≤ ‖Q.coeff (i + 1)‖ * r ^ i := by gcongr
+        _ = ‖Q.coeff (i + 1)‖ * r ^ i * (r⁻¹ * r) := by rw [inv_mul_cancel₀ hr.ne', mul_one]
+        _ = r⁻¹ * (‖Q.coeff (i + 1)‖ * r ^ (i + 1)) := by
+            rw [pow_succ]
+            ring
+        _ ≤ r⁻¹ * (max r⁻¹ ‖c‖ ^ m * B) :=
+            mul_le_mul_of_nonneg_left (ih (i + 1)) (by positivity)
+        _ ≤ max r⁻¹ ‖c‖ * (max r⁻¹ ‖c‖ ^ m * B) :=
+            mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
+    · calc
+        ‖c * Q.coeff i‖ * r ^ i
+            ≤ ‖c‖ * (‖Q.coeff i‖ * r ^ i) := by
+              rw [← mul_assoc]
+              exact mul_le_mul_of_nonneg_right (norm_mul_le _ _) (by positivity)
+        _ ≤ ‖c‖ * (max r⁻¹ ‖c‖ ^ m * B) :=
+            mul_le_mul_of_nonneg_left (ih i) (norm_nonneg c)
+        _ ≤ max r⁻¹ ‖c‖ * (max r⁻¹ ‖c‖ ^ m * B) :=
+            mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity)
+
 /-- **The coefficients of `(D + c) ^ m P` at an ultrametric absolute value.** If every
 coefficient of `P` has norm at most `B`, then every coefficient of `(D + c) ^ m P` has norm at most
 `max 1 ‖c‖ ^ m * B`: each derivative multiplies coefficients by natural numbers, which does not
 increase their norms. -/
 theorem norm_coeff_expDerivFactor_le (c : K) {P : K[X]} {B : ℝ} (hP : ∀ i, ‖P.coeff i‖ ≤ B)
     (m i : ℕ) : ‖(expDerivFactor c m P).coeff i‖ ≤ max 1 ‖c‖ ^ m * B := by
-  have hB : 0 ≤ B := (norm_nonneg _).trans (hP 0)
-  induction m generalizing i with
-  | zero => simpa using hP i
-  | succ m ih =>
-    set A := max 1 ‖c‖ ^ m * B
-    have hA : 0 ≤ A := mul_nonneg (pow_nonneg (zero_le_one.trans (le_max_left _ _)) m) hB
-    have hpow : max 1 ‖c‖ ^ (m + 1) * B = max 1 ‖c‖ * A := by ring
-    rw [expDerivFactor_succ, coeff_add, coeff_derivative, coeff_C_mul, hpow]
-    refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_)
-    · -- the derivative multiplies the coefficient by the natural number `i + 1`
-      calc ‖(expDerivFactor c m P).coeff (i + 1) * (i + 1)‖
-          = ‖(i + 1) • (expDerivFactor c m P).coeff (i + 1)‖ := by
-            congr 1
-            push_cast [nsmul_eq_mul]
-            ring
-        _ ≤ A := (IsUltrametricDist.norm_nsmul_le _ _).trans (ih _)
-        _ ≤ max 1 ‖c‖ * A := le_mul_of_one_le_left hA (le_max_left _ _)
-    · exact (norm_mul_le _ _).trans
-        (mul_le_mul (le_max_right _ _) (ih i) (norm_nonneg _) (by positivity))
+  simpa using norm_coeff_expDerivFactor_mul_pow_le c one_pos (by simpa using hP) m i
 
 end Ultrametric
 

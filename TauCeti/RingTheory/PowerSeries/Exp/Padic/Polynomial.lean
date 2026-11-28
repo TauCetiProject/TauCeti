@@ -14,7 +14,6 @@ public import TauCeti.Algebra.Polynomial.ExpDerivFactor
 public import TauCeti.RingTheory.PowerSeries.Exp.Derivative
 import Mathlib.Algebra.Algebra.Rat
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
-import TauCeti.Analysis.Polynomial.Ultra
 import TauCeti.NumberTheory.Padics.Exp.Basic
 import TauCeti.RingTheory.PowerSeries.Exp.Padic.Basic
 import TauCeti.RingTheory.PowerSeries.GaussNorm
