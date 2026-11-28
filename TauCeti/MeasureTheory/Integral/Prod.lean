@@ -88,6 +88,23 @@ public section
 
 namespace MeasureTheory
 
+open scoped ENNReal
+
+/-- Averaging a nonnegative test over a family of maps leaves its integral unchanged if the maps
+are measure preserving for almost every parameter under the averaging probability measure. -/
+theorem lintegral_eq_lintegral_lintegral_of_measurePreserving {X Y : Type*}
+    [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X} [SFinite μ]
+    {ν : Measure Y} [IsProbabilityMeasure ν] {T : X × Y → X} (hT : AEMeasurable T (μ.prod ν))
+    (hpres : ∀ᵐ y ∂ν, MeasurePreserving (fun x ↦ T (x, y)) μ μ)
+    {f : X → ℝ≥0∞} (hf : AEMeasurable f μ) :
+    (∫⁻ x, f x ∂μ) = ∫⁻ x, ∫⁻ y, f (T (x, y)) ∂ν ∂μ := by
+  have hq : QuasiMeasurePreserving T (μ.prod ν) μ :=
+    .prod_of_left hT (hpres.mono fun _ hy ↦ hy.quasiMeasurePreserving)
+  rw [lintegral_lintegral_swap (f := fun x y ↦ f (T (x, y))) (hf.comp_quasiMeasurePreserving hq)]
+  calc
+    _ = ∫⁻ _ : Y, (∫⁻ x, f x ∂μ) ∂ν := by simp
+    _ = _ := lintegral_congr_ae (hpres.mono fun _ hy ↦ (hy.lintegral_comp' hf).symm)
+
 /-- Integrating a function of the first coordinate against a difference between the two
 coordinates subtracts the product of their separate means. -/
 theorem integral_mul_sub_comp_prod_eq_sub {α : Type*} [MeasurableSpace α]
