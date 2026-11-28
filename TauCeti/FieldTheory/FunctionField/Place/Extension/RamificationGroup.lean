@@ -69,9 +69,9 @@ the characteristic needs the residue extension to be separable, and is proved in
 * `TauCeti.Place.ker_ramificationResidueHom`: **the kernel of the ramification residue is the next
   ramification group**, so `G_{i+1}(P) / G_{i+2}(P)` embeds in an additive group of functions to
   the residue field.
-* `TauCeti.Place.commutator_ramificationGroup_le` and
-  `TauCeti.Place.pow_mem_ramificationGroup_of_charP`: the quotient `G_{i+1}(P) / G_{i+2}(P)` is
-  abelian, and elementary abelian of exponent `p` in characteristic `p`.
+* `TauCeti.Place.pow_mem_ramificationGroup_of_charP`: in characteristic `p`, the `p`-th power
+  of an element of `G_{i+1}(P)` lies in `G_{i+2}(P)`, so `G_{i+1}(P) / G_{i+2}(P)` has
+  exponent `p`.
 * `TauCeti.Place.ramificationGroup_one_eq_bot`: **in characteristic zero the first ramification
   group of a place is trivial when it is finite**.
 
@@ -330,25 +330,6 @@ end Residue
 section Structure
 
 variable (F) (P : Place k F')
-
-/-- **The successive quotients of the ramification filtration are abelian**
-(Stichtenoth, Proposition 3.8.5): a commutator of `G_{i+1}(P)` lies in `G_{i+2}(P)`. -/
-theorem commutator_ramificationGroup_le (i : ℕ) :
-    ⁅ramificationGroup F P (i + 1), ramificationGroup F P (i + 1)⁆ ≤
-      ramificationGroup F P (i + 2) := by
-  obtain ⟨t, ht⟩ := P.exists_isUniformizer
-  rw [isUniformizer_iff_ord_eq_one] at ht
-  rw [Subgroup.commutator_le]
-  intro a ha b hb
-  rw [commutatorElement_def]
-  have hmem : (⟨a, ha⟩ * ⟨b, hb⟩ * ⟨a, ha⟩⁻¹ * ⟨b, hb⟩⁻¹ :
-      ramificationGroup F P (i + 1)) ∈ (ramificationResidueHom F P ht i).ker := by
-    rw [MonoidHom.mem_ker, ← toAdd_eq_zero]
-    funext x
-    simp only [map_mul, map_inv, toAdd_mul, toAdd_inv, Pi.add_apply, Pi.neg_apply, Pi.zero_apply]
-    ring
-  rw [ker_ramificationResidueHom, Subgroup.mem_subgroupOf] at hmem
-  simpa using hmem
 
 /-- **In characteristic `p` the successive quotients of the ramification filtration are killed by
 `p`** (Stichtenoth, Proposition 3.8.5): the `p`-th power of an element of `G_{i+1}(P)` lies in

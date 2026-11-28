@@ -11,6 +11,7 @@ import Mathlib.LinearAlgebra.TensorProduct.Lift
 public import TauCeti.Algebra.Algebra.SMulDistribClass
 import TauCeti.Algebra.Group.Action.MulDistribMulAction
 public import TauCeti.LinearAlgebra.TensorProduct.SMulDistribClass
+import TauCeti.GroupTheory.GroupAction.Norm
 import TauCeti.RepresentationTheory.NormInvariants
 import TauCeti.RingTheory.Invariant.Basic
 

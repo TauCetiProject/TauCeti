@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.Invariant.Free
 public import Mathlib.RingTheory.IsTensorProduct
 import Mathlib.RingTheory.TensorProduct.IncludeLeftSubRight
 public import TauCeti.RingTheory.Invariant.Basic
+import TauCeti.GroupTheory.GroupAction.Norm
 
 /-!
 # Finite étale torsors under a finite group

@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
 import Mathlib.Data.Nat.Factorial.NatCast
 import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.Algebra.MvPolynomial.Coeff
+import TauCeti.GroupTheory.GroupAction.Norm
 
 /-!
 # Finite generation of invariant algebras of finite groups
