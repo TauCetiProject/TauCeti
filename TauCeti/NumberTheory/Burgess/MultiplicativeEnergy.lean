@@ -18,6 +18,7 @@ import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import TauCeti.Data.Int.CardIntervalMod
+import TauCeti.NumberTheory.PrimeCounting
 
 /-!
 # The multiplicative energy count of Burgess's method
@@ -73,6 +74,7 @@ variable {p : ℕ}
 def burgessCount (p : ℕ) (𝒜 : Finset ℕ) (I : Finset ℤ) (x : ZMod p) : ℕ :=
   #{y ∈ 𝒜 ×ˢ I | (y.2 : ZMod p) = y.1 * x}
 
+/-- The definition of `burgessCount`. -/
 theorem burgessCount_def (𝒜 : Finset ℕ) (I : Finset ℤ) (x : ZMod p) :
     burgessCount p 𝒜 I x = #{y ∈ 𝒜 ×ˢ I | (y.2 : ZMod p) = y.1 * x} :=
   (rfl)
@@ -81,6 +83,7 @@ theorem burgessCount_def (𝒜 : Finset ℕ) (I : Finset ℤ) (x : ZMod p) :
 def burgessEnergy (p : ℕ) [NeZero p] (𝒜 : Finset ℕ) (I : Finset ℤ) : ℕ :=
   ∑ x : ZMod p, burgessCount p 𝒜 I x ^ 2
 
+/-- The definition of `burgessEnergy`. -/
 theorem burgessEnergy_def [NeZero p] (𝒜 : Finset ℕ) (I : Finset ℤ) :
     burgessEnergy p 𝒜 I = ∑ x : ZMod p, burgessCount p 𝒜 I x ^ 2 :=
   (rfl)
@@ -332,15 +335,9 @@ theorem burgessEnergy_primesLE_le [Fact p.Prime] {A : ℕ} (M : ℤ) (N : ℕ) (
       (Nat.prime_of_mem_primesLE ha₂)).mpr hne.symm, Nat.cast_one, mul_one]
   have hbelow (a : ℕ) (ha : a ∈ A.primesLE) :
       (#{b ∈ A.primesLE | b < a} : ℝ) = a.primeCounting - 1 := by
-    have haA := Nat.le_of_mem_primesLE ha
-    have hmem : a ∈ a.primesLE := Nat.mem_primesLE.2 ⟨le_rfl, Nat.prime_of_mem_primesLE ha⟩
-    have hfilter : {b ∈ A.primesLE | b < a} = a.primesLE.erase a := by
-      ext b
-      simp only [mem_filter, mem_erase, Nat.mem_primesLE]
-      exact ⟨fun ⟨⟨_, hb⟩, hba⟩ ↦ ⟨hba.ne, hba.le, hb⟩,
-        fun ⟨hne, hba, hb⟩ ↦ ⟨⟨hba.trans haA, hb⟩, lt_of_le_of_ne hba hne⟩⟩
-    rw [hfilter, card_erase_of_mem hmem, Nat.cast_sub (card_pos.2 ⟨a, hmem⟩),
-      Nat.primesLE_card_eq_primeCounting, Nat.cast_one]
+    have hp := Nat.prime_of_mem_primesLE ha
+    rw [Nat.Prime.card_primesLE_filter_lt hp (Nat.le_of_mem_primesLE ha),
+      Nat.cast_pred (Nat.pos_of_ne_zero (Nat.primeCounting_eq_zero_iff.not.2 hp.one_lt.not_ge))]
   have hsum : ∑ a ∈ A.primesLE, ((a.primeCounting : ℝ) - 1) * ((N : ℝ) / a + 1) =
       N * ∑ a ∈ A.primesLE, ((a.primeCounting : ℝ) - 1) / a +
         ∑ a ∈ A.primesLE, ((a.primeCounting : ℝ) - 1) := by

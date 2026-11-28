@@ -44,6 +44,7 @@ convergence of the cutoffs therefore transports in both directions with this exp
 ## Main results
 
 * `Nat.primesLE_filter_lt`: filtering `Nat.primesLE n` by `· < n` recovers `Nat.primesBelow n`.
+* `Nat.Prime.card_primesLE_filter_lt`: for a prime `p ≤ n`, `π p - 1` primes `q ≤ n` are below `p`.
 * `Nat.Prime.filter_dvd_primesLE`: the only prime `r ≤ n` divisible by a prime `p` is `p`.
 * `Nat.primesBelow_eq_image_nth`, `Nat.primesLE_eq_image_nth`: the primes below a bound are the
   first primes in increasing order.
@@ -78,6 +79,17 @@ theorem primesLE_filter_lt (n : ℕ) :
   ext p
   simp only [mem_filter, mem_primesLE, mem_primesBelow]
   exact ⟨fun ⟨⟨_, hp⟩, hlt⟩ ↦ ⟨hlt, hp⟩, fun ⟨hlt, hp⟩ ↦ ⟨⟨hlt.le, hp⟩, hlt⟩⟩
+
+/-- For a prime `p ≤ n`, exactly `π p - 1` of the primes `q ≤ n` are less than `p`. -/
+theorem Prime.card_primesLE_filter_lt {p n : ℕ} (hp : p.Prime) (hpn : p ≤ n) :
+    #{q ∈ primesLE n | q < p} = primeCounting p - 1 := by
+  have hmem : p ∈ primesLE p := mem_primesLE.2 ⟨le_rfl, hp⟩
+  rw [← primesLE_card_eq_primeCounting, ← card_erase_of_mem hmem]
+  congr 1
+  ext q
+  simp only [mem_filter, mem_erase, mem_primesLE]
+  exact ⟨fun ⟨⟨_, hq⟩, hqp⟩ ↦ ⟨hqp.ne, hqp.le, hq⟩,
+    fun ⟨hne, hqp, hq⟩ ↦ ⟨⟨hqp.trans hpn, hq⟩, lt_of_le_of_ne hqp hne⟩⟩
 
 /-- The only prime `r ≤ n` divisible by a prime `p` is `p` itself, present when `p ≤ n`. -/
 theorem Prime.filter_dvd_primesLE {p : ℕ} (hp : p.Prime) (n : ℕ) :
