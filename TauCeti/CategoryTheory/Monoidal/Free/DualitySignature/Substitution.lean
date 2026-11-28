@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Monoidal.Diagram.RigidObject.Substitution
 public import TauCeti.CategoryTheory.Monoidal.Free.DualitySignature.Basic
 public import TauCeti.CategoryTheory.Monoidal.Free.DualitySignature.Interpretation
+import TauCeti.CategoryTheory.Monoidal.EqToHom
 
 /-!
 # Substitution of rigid expressions for coupons
@@ -695,22 +696,6 @@ private theorem comp_lift_mapLeftDualIso (I : Interpretation T D) (σ : Substitu
   exact ((Category.id_comp _).trans (Category.comp_id _)).trans
     ((congrArg (· ≫ _) (MonoidalCategory.whiskerLeft_id _ _)).trans (Category.id_comp _)).symm
 
-private theorem eqToHom_rightDual {X Y : D} (h : X = Y) :
-    (eqToHom h)ᘁ = eqToHom (congrArg (fun Z : D ↦ Zᘁ) h.symm) := by
-  subst h
-  simp
-
-private theorem eqToHom_leftDual {X Y : D} (h : X = Y) :
-    (ᘁ(eqToHom h)) = eqToHom (congrArg (fun Z : D ↦ (ᘁZ : D)) h.symm) := by
-  subst h
-  simp
-
-omit [RigidCategory D] in
-private theorem tensorHom_eqToHom {W X Y Z : D} (h₁ : W = X) (h₂ : Y = Z) :
-    eqToHom h₁ ⊗ₘ eqToHom h₂ = eqToHom (congrArg₂ (· ⊗ ·) h₁ h₂) := by
-  subst h₁ h₂
-  simp
-
 private theorem comp_lift_obj_eq (I : Interpretation T D) (σ : Substitution S T)
     (X : RigidObject S.Obj) :
     (σ.toFunctor ⋙ FreeRigid.lift I.obj I.coupon).obj ⟨X⟩ =
@@ -739,7 +724,7 @@ private theorem mapWordIso_comp_lift (I : Interpretation T D) (σ : Substitution
   | tensor X Y ihX ihY =>
     ext
     rw [mapWordIso_tensor_hom, Functor.OplaxMonoidal.comp_δ, lift_δ, ihX, ihY, eqToIso.hom,
-      eqToIso.hom, eqToIso.hom, tensorHom_eqToHom]
+      eqToIso.hom, eqToIso.hom, eqToHom_tensorHom_eqToHom]
     -- `δ σ.toFunctor ⟨X⟩ ⟨Y⟩` is `𝟙 _`, whose endpoints agree definitionally after unfolding
     -- `lift`.
     have hδ : (FreeRigid.lift I.obj I.coupon).map
@@ -752,12 +737,12 @@ private theorem mapWordIso_comp_lift (I : Interpretation T D) (σ : Substitution
   | rightDual X ih =>
     ext
     rw [mapWordIso_rightDual_hom, comp_lift_mapRightDualIso, ih, Iso.refl_hom, eqToIso.inv,
-      eqToHom_rightDual, eqToIso.hom]
+      rightAdjointMate_eqToHom, eqToIso.hom]
     exact Category.id_comp _
   | leftDual X ih =>
     ext
     rw [mapWordIso_leftDual_hom, comp_lift_mapLeftDualIso, ih, Iso.refl_hom, eqToIso.inv,
-      eqToHom_leftDual, eqToIso.hom]
+      leftAdjointMate_eqToHom, eqToIso.hom]
     exact Category.id_comp _
 
 private def reindexGenIso (I : Interpretation T D) (σ : Substitution S T) (a : S.Obj) :
