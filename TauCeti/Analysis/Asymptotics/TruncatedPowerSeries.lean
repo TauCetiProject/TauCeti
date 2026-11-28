@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Asymptotics.Lemmas
+public import Mathlib.RingTheory.PowerSeries.Substitution
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import Mathlib.Topology.Algebra.Polynomial
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.RingTheory.Binomial
 import TauCeti.Analysis.Analytic.Binomial
+import TauCeti.RingTheory.PowerSeries.Substitution
 import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
@@ -26,6 +28,8 @@ coefficients that is `O(hᵐ)` as `h → 0` has no terms of degree below `m`.
 ## Main results
 
 * `Polynomial.isBigO_eval_of_X_pow_dvd`: if `X ^ N ∣ p`, then `p.eval ∘ w = O(w ^ N)`.
+* `Polynomial.isBigO_eval_pow_of_coeff_eq_zero`: if `p` has zero coefficients below degree `N`,
+  then `p.eval ∘ w = O(w ^ N)`.
 * `Polynomial.isBigO_eval_sub_eval_trunc_coe`: a polynomial has itself as expansion to every
   order.
 * `PowerSeries.isBigO_add_sub_eval_trunc_add`, `PowerSeries.isBigO_sum_sub_eval_trunc_sum`,
@@ -35,6 +39,8 @@ coefficients that is `O(hᵐ)` as `h → 0` has no terms of degree below `m`.
   truncation or function with an expansion is bounded.
 * `PowerSeries.isBigO_trunc_eval_sub_sub_linear`: remainder estimate for evaluating a truncated
   power series at two `O(w)` functions differing by `O(w ^ M)`.
+* `PowerSeries.isBigO_sum_trunc_substInv`: remainder estimate for substituting a truncated
+  formal inverse `Q` into a truncated power series `P` when `P.subst Q = X`.
 * `PowerSeries.isBigO_sub_eval_trunc_mk_of_isBigO_sub_sum_inv_pow`: an expansion
   `F = ∑_{q < K} f_q x^{-q} + O(x^{-K})` in inverse powers of `x` is an expansion along `w = x⁻¹`.
 * `TauCeti.eq_zero_of_isBigO_sum_pow_smul`: a polynomial `∑_{k < m} hᵏ bₖ` that is `O(hᵐ)` as
@@ -46,7 +52,7 @@ coefficients that is `O(hᵐ)` as `h → 0` has no terms of degree below `m`.
 public section
 
 open Filter Finset Asymptotics
-open scoped Topology
+open scoped Polynomial Topology
 
 variable {α 𝕜 : Type*} [NormedField 𝕜] {l : Filter α} {w : α → 𝕜}
 
@@ -59,12 +65,19 @@ theorem isBigO_eval_of_X_pow_dvd (hw : Tendsto w l (𝓝 0)) {N : ℕ} {p : 𝕜
   simpa using (isBigO_refl (fun i ↦ w i ^ N) l).mul
     (((q.continuous.tendsto 0).comp hw).isBigO_one 𝕜)
 
+/-- A polynomial whose coefficients below degree `N` vanish is `O(w ^ N)` when evaluated at
+`w → 0`. -/
+theorem isBigO_eval_pow_of_coeff_eq_zero {N : ℕ} (hw : Tendsto w l (𝓝 0))
+    (p : 𝕜[X]) (h : ∀ k < N, p.coeff k = 0) :
+    (fun i ↦ p.eval (w i)) =O[l] fun i ↦ w i ^ N :=
+  isBigO_eval_of_X_pow_dvd hw (X_pow_dvd_iff.mpr h)
+
 /-- A polynomial has itself as expansion to every order. -/
 theorem isBigO_eval_sub_eval_trunc_coe (hw : Tendsto w l (𝓝 0)) (N : ℕ) (p : 𝕜[X]) :
     (fun i ↦ p.eval (w i) - (PowerSeries.trunc N (p : PowerSeries 𝕜)).eval (w i)) =O[l]
       fun i ↦ w i ^ N := by
-  refine (isBigO_eval_of_X_pow_dvd hw (p := p - PowerSeries.trunc N (p : PowerSeries 𝕜))
-    (X_pow_dvd_iff.2 fun d hd ↦ ?_)).congr_left fun i ↦ by simp
+  refine (isBigO_eval_pow_of_coeff_eq_zero hw
+    (p - PowerSeries.trunc N (p : PowerSeries 𝕜)) fun d hd ↦ ?_).congr_left fun i ↦ by simp
   simp [PowerSeries.coeff_trunc, hd]
 
 end Polynomial
@@ -193,6 +206,23 @@ theorem isBigO_trunc_eval_sub_sub_linear {s q : α → 𝕜} {M : ℕ}
     · exact (pow_succ' (w x) M).symm
   have hc := hdiff_k.const_mul_left (coeff k P)
   exact hc.congr' (Eventually.of_forall fun x ↦ mul_comm _ _) EventuallyEq.rfl
+
+/-- If `P.subst Q = X` with `constantCoeff Q = 0`, then substituting the `N`-th truncation of
+`Q` into the `N`-th truncation of `P` matches `w` up to `O(w ^ N)` along `w → 0`. -/
+theorem isBigO_sum_trunc_substInv (hw0 : Tendsto w l (𝓝 0))
+    (hQ0 : constantCoeff Q = 0) (hPQ : P.subst Q = X) :
+    (fun x ↦ (∑ k ∈ range N, (trunc N Q).eval (w x) ^ k * coeff k P) - w x) =O[l]
+      fun x ↦ w x ^ N := by
+  set R : 𝕜[X] := (trunc N P).comp (trunc N Q) - Polynomial.X
+  have hcoeff : ∀ k < N, R.coeff k = 0 := fun k hk ↦ by
+    rw [← Polynomial.coeff_coe]
+    simp only [R, Polynomial.coeff_coe, Polynomial.coeff_sub,
+      coeff_trunc_comp_trunc P hQ0 hk hk, hPQ, coeff_X, Polynomial.coeff_X]
+    split_ifs <;> first | exact sub_self _ | omega
+  refine (Polynomial.isBigO_eval_pow_of_coeff_eq_zero hw0 R hcoeff).congr'
+    (Eventually.of_forall fun x ↦ ?_) EventuallyEq.rfl
+  simp only [R, Polynomial.eval_sub, Polynomial.eval_comp, Polynomial.eval_X, eval_trunc,
+    mul_comm]
 
 end PowerSeries
 

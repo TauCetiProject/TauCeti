@@ -97,28 +97,13 @@ private lemma eval_trunc_eq_sum_smul (N : ℕ) (P : 𝕜⟦X⟧) (y : 𝕜) :
     (PowerSeries.trunc N P).eval y = ∑ k ∈ range N, y ^ k • coeff k P := by
   simp [PowerSeries.eval_trunc, mul_comm]
 
-/-- A polynomial whose coefficients below degree `N` vanish is `O(w ^ N)` when evaluated at
-`w → 0`. -/
-private lemma isBigO_eval_pow_of_coeff_eq_zero {N : ℕ} (hw : Tendsto w l (𝓝 0))
-    (R : 𝕜[X]) (h : ∀ k < N, R.coeff k = 0) :
-    (fun x => R.eval (w x)) =O[l] fun x => w x ^ N :=
-  Polynomial.isBigO_eval_of_X_pow_dvd hw (Polynomial.X_pow_dvd_iff.mpr h)
-
 /-- A polynomial `p : 𝕜[X]` evaluated at `w → 0` has the asymptotic power series `(p : 𝕜⟦X⟧)`
 in `w`. -/
 theorem hasAsymptoticExpansion_pow_eval (hw : Tendsto w l (𝓝 0)) (p : 𝕜[X]) :
     HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n (p : 𝕜⟦X⟧))
-      (fun x => p.eval (w x)) := by
-  have hsum := HasAsymptoticExpansion.sum (range (p.natDegree + 1)) fun k _ =>
-    (isAsymptoticScale_pow hw).hasAsymptoticExpansion_single k (p.coeff k)
-  refine (hsum.congr_coeff fun n => ?_).congr' (Eventually.of_forall fun x => ?_)
-  · simp only [Finset.sum_apply, Polynomial.coeff_coe, Pi.single_apply, Finset.sum_ite_eq,
-      mem_range]
-    split_ifs with hn
-    · rfl
-    · exact (Polynomial.coeff_eq_zero_of_natDegree_lt (not_lt.mp hn)).symm
-  · simp only [Finset.sum_apply, smul_eq_mul, Polynomial.eval_eq_sum_range]
-    exact Finset.sum_congr rfl fun k _ => mul_comm _ _
+      (fun x => p.eval (w x)) :=
+  .of_isBigO fun N => by
+    simpa only [eval_trunc_eq_sum_smul] using Polynomial.isBigO_eval_sub_eval_trunc_coe hw N p
 
 /-- The remainder of an asymptotic power series `P` of `f` after degree `< N` is
 `f x - (PowerSeries.trunc N P).eval (w x) = O(w x ^ N)`. -/
@@ -291,23 +276,6 @@ theorem hasAsymptoticExpansion_pow_subst {σ H : β → 𝕜} {y : α → β} {P
   simp only [smul_eq_mul]
   abel
 
-private lemma isBigO_sum_trunc_substInv {P Q : 𝕜⟦X⟧} {M : ℕ}
-    (hw0 : Tendsto w l (𝓝 0)) (hQ0 : constantCoeff Q = 0) (hPQ : P.subst Q = X) :
-    (fun x => (∑ k ∈ range (M + 1), (PowerSeries.trunc (M + 1) Q).eval (w x) ^ k * coeff k P) -
-        w x) =O[l]
-      fun x => w x ^ (M + 1) := by
-  set R : 𝕜[X] :=
-    (PowerSeries.trunc (M + 1) P).comp (PowerSeries.trunc (M + 1) Q) - Polynomial.X
-  have hcoeff : ∀ k < M + 1, R.coeff k = 0 := fun k hk => by
-    rw [← Polynomial.coeff_coe]
-    simp only [R, Polynomial.coeff_coe, Polynomial.coeff_sub,
-      PowerSeries.coeff_trunc_comp_trunc P hQ0 hk hk, hPQ, coeff_X, Polynomial.coeff_X]
-    split_ifs <;> first | exact sub_self _ | omega
-  refine (isBigO_eval_pow_of_coeff_eq_zero hw0 R hcoeff).congr'
-    (Eventually.of_forall fun x => ?_) EventuallyEq.rfl
-  simp only [R, Polynomial.eval_sub, Polynomial.eval_comp, Polynomial.eval_X,
-    eval_trunc_eq_sum_smul, smul_eq_mul]
-
 private lemma isBigO_substInv_linear {σ H : β → 𝕜} {y : α → β} {P : 𝕜⟦X⟧}
     (hσ : Tendsto σ m (𝓝 0))
     (hH : HasAsymptoticExpansion m (fun n x => σ x ^ n) (fun n => coeff n P) H)
@@ -368,7 +336,7 @@ private lemma isBigO_substInv_step {σ H : β → 𝕜} {y : α → β} {P Q : �
     simp only [r, q, eval_trunc_eq_sum_smul, smul_eq_mul, sum_range_succ]
     ring
   have hqO : q =O[l] w := by
-    refine (isBigO_eval_pow_of_coeff_eq_zero (N := 1) hw0 (PowerSeries.trunc (M + 1) Q)
+    refine (Polynomial.isBigO_eval_pow_of_coeff_eq_zero (N := 1) hw0 (PowerSeries.trunc (M + 1) Q)
       fun k hk => ?_).congr' EventuallyEq.rfl
       (Eventually.of_forall fun _ => pow_one _)
     rw [Nat.lt_one_iff.mp hk, PowerSeries.coeff_trunc]
@@ -390,7 +358,7 @@ private lemma isBigO_substInv_step {σ H : β → 𝕜} {y : α → β} {P Q : �
     simp only [eval_trunc_eq_sum_smul, smul_eq_mul]
   have hC : (fun x => (∑ k ∈ range (M + 1), q x ^ k * coeff k P) - w x) =O[l]
       fun x => w x ^ (M + 1) :=
-    isBigO_sum_trunc_substInv hw0 hQ0 hPQ
+    PowerSeries.isBigO_sum_trunc_substInv hw0 hQ0 hPQ
   have hcomb : (fun x => r x * coeff 1 P) =O[l] fun x => w x ^ (M + 1) := by
     refine ((hA.add hB).add hC).neg_left.congr' (Eventually.of_forall fun x => ?_)
       EventuallyEq.rfl
