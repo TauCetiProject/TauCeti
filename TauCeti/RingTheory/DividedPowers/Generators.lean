@@ -121,6 +121,13 @@ theorem ofDividedPowers_inj {γ γ' : DividedPowers I} :
     ofDividedPowers γ = ofDividedPowers γ' ↔ γ = γ' :=
   ⟨fun h ↦ DividedPowers.coe_injective (I := I) (congrArg AdditivePowers.dpow h), fun h ↦ h ▸ rfl⟩
 
+/-- Transporting an `AdditivePowers` structure along an equality of ideals preserves `dpow`. -/
+@[simp]
+theorem dpow_eqRec {I₁ I₂ : Ideal A} (e : I₁ = I₂) (δ : AdditivePowers I₁) (n : ℕ) (x : A) :
+    (e ▸ δ).dpow n x = δ.dpow n x := by
+  cases e
+  rfl
+
 variable (δ : AdditivePowers I)
 
 /-- In positive degree a candidate vanishes at `0`. -/

@@ -31,6 +31,8 @@ on `I · A⟨x⟩ + A⟨x⟩₊` in a divided power polynomial algebra.
 ## Main results
 
 * `DividedPowers.convolution_eq_of_add_eq`: the convolution only depends on `x + y`.
+* `DividedPowers.eq_supPowers_iff`, `DividedPowers.supPowers_bot`, `DividedPowers.bot_supPowers`:
+  uniqueness and unit laws for `supPowers`.
 * `DividedPowers.eq_glue_iff`: `glue γ ε h` is the only divided power structure on `I ⊔ J`
   restricting to `γ` and to `ε`.
 * `DividedPowers.glue_comm`, `DividedPowers.glue_of_le_left`, `DividedPowers.glue_of_le_right`,
@@ -259,6 +261,38 @@ theorem supPowers_dpow_of_mem_right (n : ℕ) {y : A} (hy : y ∈ J) :
     (supPowers h).dpow n y = ε.dpow n y := by
   simpa using supPowers_dpow_add h n I.zero_mem hy
 
+/-- The candidate `supPowers h` is the only additive divided-power candidate on `I ⊔ J`
+restricting to `γ` on `I` and to `ε` on `J`. -/
+theorem eq_supPowers_iff (δ : TauCeti.PD.AdditivePowers (I ⊔ J)) :
+    δ = supPowers h ↔
+      (∀ n, ∀ x ∈ I, δ.dpow n x = γ.dpow n x) ∧ ∀ n, ∀ y ∈ J, δ.dpow n y = ε.dpow n y := by
+  refine ⟨?_, fun ⟨hδI, hδJ⟩ ↦ ?_⟩
+  · rintro rfl
+    exact ⟨fun n x hx ↦ supPowers_dpow_of_mem_left h n hx,
+      fun n y hy ↦ supPowers_dpow_of_mem_right h n hy⟩
+  · refine TauCeti.PD.AdditivePowers.ext fun n z hz ↦ ?_
+    obtain ⟨x, hx, y, hy, rfl⟩ := Submodule.mem_sup.mp hz
+    rw [δ.dpow_add (Ideal.mem_sup_left hx) (Ideal.mem_sup_right hy),
+      supPowers_dpow_add h n hx hy, convolution_def]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [hδI _ _ hx, hδJ _ _ hy]
+
+/-- Transporting `supPowers` along `sup_bot_eq` recovers the additive candidate underlying `γ`. -/
+@[simp]
+theorem supPowers_bot (γ : DividedPowers I) :
+    (sup_bot_eq I ▸ supPowers (coincide_on_inf_bot_right γ)) =
+      TauCeti.PD.AdditivePowers.ofDividedPowers γ := by
+  ext n x hx
+  simp [hx]
+
+/-- Transporting `supPowers` along `bot_sup_eq` recovers the additive candidate underlying `ε`. -/
+@[simp]
+theorem bot_supPowers (ε : DividedPowers J) :
+    (bot_sup_eq J ▸ supPowers (coincide_on_inf_bot_left ε)) =
+      TauCeti.PD.AdditivePowers.ofDividedPowers ε := by
+  ext n y hy
+  simp [hy]
+
 /-- The divided power structure on `I ⊔ J` glued from divided power structures `γ` on `I` and `ε`
 on `J` that agree on `I ⊓ J`. -/
 noncomputable def glue (γ : DividedPowers I) (ε : DividedPowers J)
@@ -294,22 +328,35 @@ theorem glue_dpow_add (n : ℕ) {x y : A} (hx : x ∈ I) (hy : y ∈ J) :
 @[simp]
 theorem glue_dpow_of_mem_left (n : ℕ) {x : A} (hx : x ∈ I) :
     (glue γ ε h).dpow n x = γ.dpow n x := by
-  simpa using glue_dpow_add h n hx J.zero_mem
+  rw [glue, TauCeti.PD.AdditivePowers.toDividedPowers_dpow, supPowers_dpow_of_mem_left h n hx]
 
 @[simp]
 theorem glue_dpow_of_mem_right (n : ℕ) {y : A} (hy : y ∈ J) :
     (glue γ ε h).dpow n y = ε.dpow n y := by
-  simpa using glue_dpow_add h n I.zero_mem hy
+  rw [glue, TauCeti.PD.AdditivePowers.toDividedPowers_dpow, supPowers_dpow_of_mem_right h n hy]
+
+/-- The glued structure is the only divided power structure on `I ⊔ J` restricting to `γ` on `I`
+and to `ε` on `J`. -/
+theorem eq_glue_iff (θ : DividedPowers (I ⊔ J)) :
+    θ = glue γ ε h ↔
+      (∀ n, ∀ x ∈ I, θ.dpow n x = γ.dpow n x) ∧ ∀ n, ∀ y ∈ J, θ.dpow n y = ε.dpow n y := by
+  rw [← TauCeti.PD.AdditivePowers.ofDividedPowers_inj, ofDividedPowers_glue, eq_supPowers_iff]
+  simp only [TauCeti.PD.AdditivePowers.ofDividedPowers_dpow]
+
+/-- Gluing divided power structures is symmetric as a bundled `DividedPowers` structure up to
+transport along `sup_comm`. -/
+protected theorem glue_comm :
+    (sup_comm I J ▸ glue γ ε h) =
+      glue ε γ fun m w hw ↦ (h m w ⟨hw.2, hw.1⟩).symm :=
+  (eq_glue_iff _ _).mpr
+    ⟨fun n y hy ↦ by rw [dpow_eqRec, glue_dpow_of_mem_right h n hy],
+     fun n x hx ↦ by rw [dpow_eqRec, glue_dpow_of_mem_left h n hx]⟩
 
 /-- Gluing is symmetric in the two ideals and divided power structures. -/
 theorem glue_dpow_comm (n : ℕ) (z : A) :
     (glue γ ε h).dpow n z =
       (glue ε γ fun m w hw ↦ (h m w ⟨hw.2, hw.1⟩).symm).dpow n z := by
-  by_cases hz : z ∈ I ⊔ J
-  · obtain ⟨x, hx, y, hy, rfl⟩ := Submodule.mem_sup.mp hz
-    rw [glue_dpow_add h n hx hy, add_comm x y, glue_dpow_add _ n hy hx, convolution_comm]
-  · have hz' : z ∉ J ⊔ I := by rwa [sup_comm]
-    rw [(glue γ ε h).dpow_null hz, (glue ε γ _).dpow_null hz']
+  rw [← dpow_eqRec (sup_comm I J) (glue γ ε h), DividedPowers.glue_comm h]
 
 /-- When `J ≤ I`, gluing `γ` and `ε` recovers the operations of `γ` on all of `A`. -/
 theorem glue_dpow_of_le_left (hJI : J ≤ I) (n : ℕ) (z : A) :
@@ -341,14 +388,6 @@ theorem glue_dpow_bot (γ : DividedPowers I) (n : ℕ) (z : A) :
 theorem bot_glue_dpow (ε : DividedPowers J) (n : ℕ) (z : A) :
     (glue (dividedPowersBot A) ε (coincide_on_inf_bot_left ε)).dpow n z = ε.dpow n z :=
   glue_dpow_of_le_right _ bot_le n z
-
-/-- Gluing divided power structures is symmetric as a bundled `DividedPowers` structure up to
-transport along `sup_comm`. -/
-protected theorem glue_comm :
-    (sup_comm I J ▸ glue γ ε h) =
-      glue ε γ fun m w hw ↦ (h m w ⟨hw.2, hw.1⟩).symm := by
-  ext n z _
-  rw [dpow_eqRec, glue_dpow_comm h n z]
 
 /-- When `J ≤ I`, gluing `γ` and `ε` recovers `γ` as a bundled `DividedPowers` structure up to
 transport along `sup_of_le_left`. -/
@@ -387,21 +426,6 @@ theorem bot_glue (ε : DividedPowers J) :
     (bot_sup_eq J ▸ glue (dividedPowersBot A) ε (coincide_on_inf_bot_left ε)) = ε := by
   rw [Subsingleton.elim (bot_sup_eq J) (sup_of_le_right (bot_le : (⊥ : Ideal A) ≤ J)),
     DividedPowers.glue_of_le_right _ bot_le]
-
-/-- The glued structure is the only divided power structure on `I ⊔ J` restricting to `γ` on `I`
-and to `ε` on `J`. -/
-theorem eq_glue_iff (θ : DividedPowers (I ⊔ J)) :
-    θ = glue γ ε h ↔
-      (∀ n, ∀ x ∈ I, θ.dpow n x = γ.dpow n x) ∧ ∀ n, ∀ y ∈ J, θ.dpow n y = ε.dpow n y := by
-  refine ⟨?_, fun ⟨hθI, hθJ⟩ ↦ ?_⟩
-  · rintro rfl
-    exact ⟨fun n x hx ↦ glue_dpow_of_mem_left h n hx, fun n y hy ↦ glue_dpow_of_mem_right h n hy⟩
-  · refine θ.ext _ fun n z hz ↦ ?_
-    obtain ⟨x, hx, y, hy, rfl⟩ := Submodule.mem_sup.mp hz
-    rw [θ.dpow_add (Ideal.mem_sup_left hx) (Ideal.mem_sup_right hy), glue_dpow_add h n hx hy,
-      convolution_def]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [hθI _ _ hx, hθJ _ _ hy]
 
 /-- The identity of `A` is a divided power morphism from `γ` to the glued structure. -/
 theorem isDPMorphism_glue_left : IsDPMorphism γ (glue γ ε h) (RingHom.id A) :=
