@@ -183,4 +183,34 @@ theorem trace_eq_neg_of_toMatrix_eq_neg_transpose {R M N ι : Type*} [CommRing R
     trace R N g = -trace R M f := by
   simp [trace_eq_matrix_trace R b, trace_eq_matrix_trace R b', h]
 
+
+/-- If `f : Module.End R M` on a finite free module over a reduced commutative ring satisfies
+`IsNilpotent (f - c • 1)`, then `LinearMap.trace R M f = c * Module.finrank R M`.
+
+Adapted from `grh-lean` (https://github.com/lsernau/grh-lean at commit
+`72fead102f663d5c7a407964a13dc0cf9d977207`, Apache 2.0, Copyright 2026 Anthropic, PBC), file
+`src/Lib/General/LinearAlgebra/Eigenvalues.lean` (`New.trace_restrict_ne_zero`). -/
+theorem trace_eq_mul_finrank_of_isNilpotent_sub {R M : Type*} [CommRing R] [IsReduced R]
+    [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M] {f : Module.End R M}
+    {c : R} (h : IsNilpotent (f - c • 1)) :
+    trace R M f = c * Module.finrank R M := by
+  have h_nil : IsNilpotent (f - algebraMap R (Module.End R M) c) := by
+    rwa [Module.algebraMap_end_eq_smul_id]
+  simpa [mul_comm, trace_one, ← Module.End.mul_eq_comp] using
+    trace_comp_eq_mul_of_commute_of_isNilpotent c (Commute.one_left f) h_nil
+
+/-- Over a commutative domain of characteristic zero, if `f : Module.End R M` on a nontrivial
+finite free module satisfies `IsNilpotent (f - c • 1)` with `c ≠ 0`, then
+`LinearMap.trace R M f ≠ 0`.
+
+Adapted from `grh-lean` (https://github.com/lsernau/grh-lean at commit
+`72fead102f663d5c7a407964a13dc0cf9d977207`, Apache 2.0, Copyright 2026 Anthropic, PBC), file
+`src/Lib/General/LinearAlgebra/Eigenvalues.lean` (`New.trace_restrict_ne_zero`). -/
+theorem trace_ne_zero_of_isNilpotent_sub {R M : Type*} [CommRing R] [IsDomain R] [CharZero R]
+    [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M] [Nontrivial M]
+    {f : Module.End R M} {c : R} (hc : c ≠ 0) (h : IsNilpotent (f - c • 1)) :
+    trace R M f ≠ 0 := by
+  rw [trace_eq_mul_finrank_of_isNilpotent_sub h]
+  exact mul_ne_zero hc (Nat.cast_ne_zero.mpr Module.finrank_pos.ne')
+
 end LinearMap

@@ -9,22 +9,18 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Trace
 
 import Mathlib.RingTheory.Finiteness.Nilpotent
+import TauCeti.LinearAlgebra.Trace.Basic
 
 /-!
-# Trace of an endomorphism shifted by a scalar, and on a generalized eigenspace
+# Trace of an endomorphism restricted to a generalized eigenspace
 
-If `f : Module.End R M` is an endomorphism of a finite free module `M` over a reduced commutative
-ring `R` such that `f - c • 1` is nilpotent, then `LinearMap.trace R M f = c * Module.finrank R M`.
-Over a domain of characteristic zero, this trace is nonzero whenever `c ≠ 0` and `M` is nontrivial.
-Specializing to a `b`-invariant finite free submodule `p ≤ b.maxGenEigenspace c` gives the trace
-formula and nonvanishing criterion for `b.restrict h_stable`.
+Specializing `LinearMap.trace_eq_mul_finrank_of_isNilpotent_sub` and
+`LinearMap.trace_ne_zero_of_isNilpotent_sub` to a `b`-invariant finite free submodule
+`p ≤ b.maxGenEigenspace c` gives the trace formula and nonvanishing criterion for
+`b.restrict h_stable`.
 
 ## Main results
 
-* `LinearMap.trace_eq_mul_finrank_of_isNilpotent_sub`: if `IsNilpotent (f - c • 1)`, then
-  `LinearMap.trace R M f = c * Module.finrank R M`.
-* `LinearMap.trace_ne_zero_of_isNilpotent_sub`: over a domain of characteristic zero, if
-  `IsNilpotent (f - c • 1)`, `c ≠ 0`, and `Nontrivial M`, then `LinearMap.trace R M f ≠ 0`.
 * `LinearMap.trace_restrict_eq_mul_finrank_of_le_maxGenEigenspace`: specialization to a
   `b`-invariant submodule `p ≤ b.maxGenEigenspace c`.
 * `LinearMap.trace_restrict_ne_zero_of_le_maxGenEigenspace`: nonvanishing of the restricted trace
@@ -42,27 +38,6 @@ Adapted from grh-lean (https://github.com/lsernau/grh-lean at commit
 open Module
 
 namespace LinearMap
-
-/-- If `f : Module.End R M` on a finite free module over a reduced commutative ring satisfies
-`IsNilpotent (f - c • 1)`, then `LinearMap.trace R M f = c * Module.finrank R M`. -/
-theorem trace_eq_mul_finrank_of_isNilpotent_sub {R M : Type*} [CommRing R] [IsReduced R]
-    [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M] {f : End R M} {c : R}
-    (h : IsNilpotent (f - c • 1)) :
-    trace R M f = c * finrank R M := by
-  have h_nil : IsNilpotent (f - algebraMap R (End R M) c) := by
-    rwa [Module.algebraMap_end_eq_smul_id]
-  simpa [mul_comm, trace_one, ← Module.End.mul_eq_comp] using
-    trace_comp_eq_mul_of_commute_of_isNilpotent c (Commute.one_left f) h_nil
-
-/-- Over a commutative domain of characteristic zero, if `f : Module.End R M` on a nontrivial
-finite free module satisfies `IsNilpotent (f - c • 1)` with `c ≠ 0`, then
-`LinearMap.trace R M f ≠ 0`. -/
-theorem trace_ne_zero_of_isNilpotent_sub {R M : Type*} [CommRing R] [IsDomain R] [CharZero R]
-    [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M] [Nontrivial M]
-    {f : End R M} {c : R} (hc : c ≠ 0) (h : IsNilpotent (f - c • 1)) :
-    trace R M f ≠ 0 := by
-  rw [trace_eq_mul_finrank_of_isNilpotent_sub h]
-  exact mul_ne_zero hc (Nat.cast_ne_zero.mpr finrank_pos.ne')
 
 /-- For a `b`-invariant finite free submodule `p ≤ b.maxGenEigenspace c` over a reduced commutative
 ring `R`, the trace of `b.restrict h_stable` equals `c * Module.finrank R p`. -/
