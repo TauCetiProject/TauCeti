@@ -194,7 +194,7 @@ function `φ` from the values of `ω` to `S`, that is `φ (ω x) = f x` for ever
 `#F - 1`. A Teichmüller character, which lifts the identity of a residue field along the
 reduction map, is such a character. -/
 theorem orderOf_eq_card_sub_one_of_map_apply_eq {F R S : Type*} [Field F] [Fintype F]
-    [CommMonoidWithZero R] [Semiring S] [Nontrivial S] {ω : MulChar F R} {φ : R → S}
+    [CommMonoidWithZero R] [NonAssocSemiring S] [Nontrivial S] {ω : MulChar F R} {φ : R → S}
     {f : F →+* S} (hω : ∀ x, φ (ω x) = f x) : orderOf ω = Fintype.card F - 1 := by
   classical
   rw [← Fintype.card_units]
