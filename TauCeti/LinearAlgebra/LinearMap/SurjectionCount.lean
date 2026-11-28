@@ -12,49 +12,41 @@ import TauCeti.LinearAlgebra.Matrix.Rank
 /-!
 # Counting surjective linear maps over finite fields
 
-`LinearMap.natCard_surjective` gives a product formula for the number of surjections between
-finite-dimensional vector spaces. Taking the target to be a prescribed column space gives the
-number of matrices with that image. For the corresponding independent-row count, see Mathlib's
-`card_linearIndependent`.
+`TauCeti.natCard_linearMap_surjective` counts surjective `LinearMap`s between finite-dimensional
+vector spaces. Taking the target to be a prescribed column space gives the
+number of matrices with that image. The coordinate equivalence is Mathlib's `Matrix.toLin`, and
+`card_linearIndependent` gives the independent-row count.
 -/
 
 public section
 
-namespace LinearMap
+namespace TauCeti
 
 open Module
 
 /-- Over a field of order `q`, the number of surjections from a space of dimension `n` to a
 space of dimension `r` is `∏_{i<r} (q^n - q^i)`, with subtraction in `ℕ`. -/
-theorem natCard_surjective (K V W : Type*) [Field K] [Fintype K]
+theorem natCard_linearMap_surjective (K V W : Type*) [Field K] [Finite K]
     [AddCommGroup V] [Module K V] [FiniteDimensional K V]
     [AddCommGroup W] [Module K W] [FiniteDimensional K W] :
     Nat.card {f : V →ₗ[K] W // Function.Surjective f} =
-      ∏ i : Fin (finrank K W), (Fintype.card K ^ finrank K V - Fintype.card K ^ i.val) := by
+      ∏ i : Fin (finrank K W), (Nat.card K ^ finrank K V - Nat.card K ^ i.val) := by
   classical
-  let v := (finBasis K V).equivFun
-  let w := (finBasis K W).equivFun
-  let e : (V →ₗ[K] W) ≃ₗ[K] ((Fin (finrank K V) → K) →ₗ[K] (Fin (finrank K W) → K)) :=
-    LinearEquiv.arrowCongr v w
-  have hcoords (f : V →ₗ[K] W) : Function.Surjective f ↔ Function.Surjective (e f) := by
-    have he : (e f : _ → _) = w ∘ f ∘ v.symm := funext (LinearEquiv.arrowCongr_apply v w f)
-    rw [he, Function.Surjective.of_comp_iff' w.bijective,
-      Function.Surjective.of_comp_iff _ v.symm.surjective]
-  let b := (Matrix.toLin' (R := K) (m := Fin (finrank K W)) (n := Fin (finrank K V))).toEquiv
-  have hmatrix (A : Matrix (Fin (finrank K W)) (Fin (finrank K V)) K) :
-      LinearIndependent K A.row ↔ Function.Surjective (b A) := by
-    simpa only [b, LinearEquiv.coe_toEquiv, Matrix.toLin'_apply', Matrix.coe_mulVecLin] using
-      (Matrix.mulVec_surjective_iff_linearIndependent_row (A := A)).symm
-  let surjectiveCoordinates (f : (Fin (finrank K V) → K) →ₗ[K] (Fin (finrank K W) → K)) :=
-    Function.Surjective f
-  -- A matrix presented as a function is already its family of rows.
-  have hrow (s : Fin (finrank K W) → Fin (finrank K V) → K) :
-      LinearIndependent K s ↔ LinearIndependent K (Matrix.of s).row := Iff.rfl
-  let rowEquiv := Matrix.of.subtypeEquiv
-    (q := fun A : Matrix (Fin (finrank K W)) (Fin (finrank K V)) K ↦ LinearIndependent K A.row) hrow
-  rw [Nat.card_congr (e.toEquiv.subtypeEquiv (q := surjectiveCoordinates) hcoords),
-    Nat.card_congr (b.subtypeEquiv (q := surjectiveCoordinates) hmatrix).symm,
-    Nat.card_congr rowEquiv.symm]
+  let := Fintype.ofFinite K
+  let v := finBasis K V
+  let w := finBasis K W
+  let e := (Matrix.toLin v w).toEquiv.subtypeEquiv
+    (p := fun A ↦ LinearIndependent K A.row) (q := fun f : V →ₗ[K] W ↦ Function.Surjective f)
+    (fun A ↦ by
+      have hcoords : w.equivFun ∘ Matrix.toLin v w A = A.mulVec ∘ v.equivFun := by
+        funext x
+        simpa only [Function.comp_apply, Basis.equivFun_apply] using Matrix.repr_toLin v w A x
+      rw [← Matrix.mulVec_surjective_iff_linearIndependent_row, LinearEquiv.coe_toEquiv,
+        ← Function.Surjective.of_comp_iff _ v.equivFun.surjective, ← hcoords,
+        Function.Surjective.of_comp_iff' w.equivFun.bijective])
+  let rows := (Matrix.rowEquiv (Fin (finrank K W)) (Fin (finrank K V)) K).subtypeEquiv
+    (q := fun s ↦ LinearIndependent K s) (fun A ↦ by rw [Matrix.coe_rowEquiv])
+  rw [Nat.card_congr (e.symm.trans rows), Nat.card_eq_fintype_card (α := K)]
   have hd : finrank K (Fin (finrank K V) → K) = finrank K V := by simp
   by_cases h : finrank K W ≤ finrank K V
   · simpa only [hd] using (card_linearIndependent (K := K) (V := Fin (finrank K V) → K)
@@ -68,4 +60,4 @@ theorem natCard_surjective (K V W : Type*) [Field K] [Fintype K]
     exact (Finset.prod_eq_zero (Finset.mem_univ (⟨_, hlt⟩ : Fin (finrank K W)))
       (Nat.sub_self (Fintype.card K ^ finrank K V))).symm
 
-end LinearMap
+end TauCeti

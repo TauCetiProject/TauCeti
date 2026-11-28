@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Data.Nat.Cast.Basic
 
 /-!
-# Casting natural remainders and vanishing numerals
+# Casting natural remainders and products, and vanishing numerals
 
 The remainder identity `n = c * (n / c) + n % c` can be rearranged using subtraction
 after casting to a ring, including when `c = 0`. In a semiring without zero divisors, the numeral
@@ -17,6 +18,8 @@ after casting to a ring, including when `c = 0`. In a semiring without zero divi
 ## Main results
 
 * `Nat.cast_mod_eq_sub_mul_div`: `((n % c : ℕ) : R) = n - c * (n / c : ℕ)`.
+* `Nat.cast_prod_pow_sub_pow`: cast a product of differences of powers using
+  `Nat.cast_sub` and a zero factor when the index reaches the leading exponent.
 * `TauCeti.four_eq_zero_iff_two_eq_zero`: without zero divisors, `4 = 0` if and only if `2 = 0`.
 * `TauCeti.add_natCast_ne_neg_natCast`: an element off `−ℕ` stays off `−ℕ` after adding a
   natural number.
@@ -30,6 +33,23 @@ namespace Nat
 theorem cast_mod_eq_sub_mul_div {R : Type*} [NonAssocRing R] (n c : ℕ) :
     ((n % c : ℕ) : R) = n - c * (n / c : ℕ) := by
   rw [eq_sub_iff_add_eq, ← Nat.cast_mul, ← Nat.cast_add, Nat.mod_add_div]
+
+/-- Casting `∏_{i<r} (q ^ d - q ^ i)` into a commutative ring commutes with all subtractions
+when `1 ≤ q`, even if `d < r` and individual factors cannot be cast termwise. -/
+theorem cast_prod_pow_sub_pow {R : Type*} [CommRing R] {q : ℕ} (hq : 1 ≤ q) (d r : ℕ) :
+    ((∏ i : Fin r, (q ^ d - q ^ i.val) : ℕ) : R) =
+      ∏ i : Fin r, ((q : R) ^ d - (q : R) ^ i.val) := by
+  by_cases h : d < r
+  · let i : Fin r := ⟨d, h⟩
+    have hNat : ∏ j : Fin r, (q ^ d - q ^ j.val) = 0 :=
+      Finset.prod_eq_zero (Finset.mem_univ i) (Nat.sub_self _)
+    have hRing : ∏ j : Fin r, ((q : R) ^ d - (q : R) ^ j.val) = 0 :=
+      Finset.prod_eq_zero (Finset.mem_univ i) (sub_self _)
+    rw [hNat, hRing, Nat.cast_zero]
+  · rw [Nat.cast_prod]
+    refine Finset.prod_congr rfl fun i _ ↦ ?_
+    rw [Nat.cast_sub (Nat.pow_le_pow_right hq (i.isLt.le.trans (Nat.le_of_not_gt h))),
+      Nat.cast_pow, Nat.cast_pow]
 
 end Nat
 
