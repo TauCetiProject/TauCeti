@@ -70,6 +70,8 @@ dividing by a natural number `k`: `⌊√(x / k)⌋₊ = Nat.sqrt (⌊x⌋₊ / 
 * `Real.sqrt_div_mul_mul_sqrt_div`: `√(u / t) * t * √(u / t) = u` for `0 ≤ u / t` and `t ≠ 0`.
 * `Real.sqrt_le_sqrt_two_mul`: `√x ≤ √(2 * x)`.
 * `Real.inv_sqrt_le_of_inv_sq_le`: `(√ρ)⁻¹ ≤ d` when `0 < d` and `(d ^ 2)⁻¹ ≤ ρ`.
+* `Real.sqrt_div_le_sqrt_div_add_sqrt_div`: dividing by `p ≥ 0` preserves a square-root triangle
+  inequality `√x ≤ √a + √b`.
 * `Real.inv_sqrt_pow_mul_pow`: `(√a)⁻¹ ^ n * a ^ p = (√a)⁻¹ ^ (n - 2p)` for `0 < a` and `2p ≤ n`.
 * `Real.sqrt_natCast_pow_self_pos`: `0 < √n ^ n` for every natural number `n`.
 * `Real.one_sub_sq_two_mul_sqrt_div_one_add`: the complementary square of `2√k / (1 + k)`.
@@ -236,6 +238,13 @@ theorem sqrt_le_sqrt_two_mul (x : ℝ) : √x ≤ √(2 * x) := by
   · exact sqrt_le_sqrt (by linarith)
   · rw [sqrt_eq_zero_of_nonpos h]
     positivity
+
+/-- Dividing by `p ≥ 0` preserves a square-root triangle inequality: if `√x ≤ √a + √b`, then
+`√(x / p) ≤ √(a / p) + √(b / p)`. -/
+theorem sqrt_div_le_sqrt_div_add_sqrt_div {x a b p : ℝ} (h : √x ≤ √a + √b) (hp : 0 ≤ p) :
+    √(x / p) ≤ √(a / p) + √(b / p) := by
+  rw [sqrt_div' _ hp, sqrt_div' _ hp, sqrt_div' _ hp, ← add_div]
+  exact div_le_div_of_nonneg_right h (sqrt_nonneg p)
 
 /-- Powers of `(√a)⁻¹` absorb powers of `a`: `(√a)⁻¹ ^ n * a ^ p = (√a)⁻¹ ^ (n - 2p)` for
 `0 < a` and `2p ≤ n`. -/

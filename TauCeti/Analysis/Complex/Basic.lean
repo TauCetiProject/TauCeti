@@ -37,6 +37,17 @@ half-plane (`Complex.re_one_sub_conj_mul_nonneg`; strictly inside it for `z` in 
 `Complex.re_one_sub_conj_mul_pos`), by the bound `re (conj u * e) ≤ ‖u‖ ‖e‖`
 (`Complex.re_conj_mul_le`).
 
+For `a`, `b`, `c` in the closed unit disc, the quantities `1 - re (a * conj b)` are nonnegative
+(`Complex.one_sub_re_mul_conj_nonneg`, which only needs `‖a‖ ‖b‖ ≤ 1`), they vanish exactly when
+`a = b` has modulus `1` (`Complex.re_mul_conj_eq_one_iff`), and their square roots satisfy the
+triangle inequality `√(1 - re (a * conj c)) ≤ √(1 - re (a * conj b)) + √(1 - re (b * conj c))`
+(`Complex.sqrt_one_sub_re_mul_conj_le`, with the squared form
+`Complex.one_sub_re_mul_conj_le`): indeed `2 (1 - re (a * conj b))` is
+`‖a - b‖² + (1 - ‖a‖²) + (1 - ‖b‖²)`. At the points `z`, `1`, `conj w` this reads
+`√(1 - re (z * w)) ≤ √(1 - re z) + √(1 - re w)` (`Complex.sqrt_one_sub_re_mul_le`). These are the
+pointwise inequalities behind the triangle inequalities for the pretentious distance between
+multiplicative functions.
+
 As a continuous real-linear equivalence, conjugation is its own inverse (`Complex.conjCLE_symm`,
 the counterpart of Mathlib's `Complex.conjLIE_symm`).
 
@@ -438,6 +449,93 @@ theorem re_one_sub_conj_mul_nonneg {w z : ℂ} (hw : ‖w‖ = 1) (hz : ‖z‖ 
 theorem re_one_sub_conj_mul_pos {w z : ℂ} (hw : ‖w‖ = 1) (hz : ‖z‖ < 1) :
     0 < (1 - conj w * z).re := by
   simpa [hw] using (re_conj_mul_le w z).trans_lt (by simpa [hw] using hz)
+
+/-- If `‖a‖ ‖b‖ ≤ 1`, in particular for `a`, `b` in the closed unit disc, then
+`0 ≤ 1 - Re (a * conj b)`. -/
+theorem one_sub_re_mul_conj_nonneg {a b : ℂ} (h : ‖a‖ * ‖b‖ ≤ 1) : 0 ≤ 1 - (a * conj b).re := by
+  refine sub_nonneg.2 ((re_le_norm _).trans ?_)
+  rwa [norm_mul, RCLike.norm_conj]
+
+/-- For `a`, `b` in the closed unit disc, `Re (a * conj b) = 1` exactly when `a = b` has modulus
+`1`: indeed `‖a - b‖² = ‖a‖² + ‖b‖² - 2 Re (a * conj b)`. -/
+theorem re_mul_conj_eq_one_iff {a b : ℂ} (ha : ‖a‖ ≤ 1) (hb : ‖b‖ ≤ 1) :
+    (a * conj b).re = 1 ↔ a = b ∧ ‖a‖ = 1 := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · have ha2 : normSq a ≤ 1 := by
+      rw [normSq_eq_norm_sq]
+      exact pow_le_one₀ (norm_nonneg a) ha
+    have hb2 : normSq b ≤ 1 := by
+      rw [normSq_eq_norm_sq]
+      exact pow_le_one₀ (norm_nonneg b) hb
+    have h0 : normSq (a - b) = 0 :=
+      le_antisymm (by rw [normSq_sub, h]; linarith) (normSq_nonneg _)
+    obtain rfl : a = b := sub_eq_zero.1 (normSq_eq_zero.1 h0)
+    rw [mul_conj, ofReal_re, normSq_eq_norm_sq] at h
+    exact ⟨rfl, (pow_eq_one_iff_of_nonneg (norm_nonneg a) two_ne_zero).1 h⟩
+  · rintro ⟨rfl, h1⟩
+    rw [mul_conj, ofReal_re, normSq_eq_norm_sq, h1, one_pow]
+
+/-- **Three-point inequality in the unit disc.** For `a`, `b`, `c` in the closed unit disc,
+`1 - Re (a conj c) ≤ (√(1 - Re (a conj b)) + √(1 - Re (b conj c)))²`, written out. In real
+coordinates, with `P = 1 - a · b`, `Q = 1 - b · c`, `d = (a - b) · (b - c)` and `t = 1 - |b|²`,
+the difference `(1 - a · c) - P - Q` is `d - t`, and
+`(d - t)² ≤ (|a - b|² + t) (|b - c|² + t) ≤ 4 P Q` when `d ≥ t`. -/
+theorem one_sub_re_mul_conj_le {a b c : ℂ} (ha : ‖a‖ ≤ 1) (hb : ‖b‖ ≤ 1) (hc : ‖c‖ ≤ 1) :
+    1 - (a * conj c).re ≤ (1 - (a * conj b).re) + (1 - (b * conj c).re) +
+      2 * (√(1 - (a * conj b).re) * √(1 - (b * conj c).re)) := by
+  have hsq {z : ℂ} (hz : ‖z‖ ≤ 1) : z.re * z.re + z.im * z.im ≤ 1 := by
+    rw [← normSq_apply, ← Complex.sq_norm]
+    exact pow_le_one₀ (norm_nonneg z) hz
+  have ha' := hsq ha
+  have hb' := hsq hb
+  have hc' := hsq hc
+  have hP := one_sub_re_mul_conj_nonneg ((mul_le_of_le_one_left (norm_nonneg b) ha).trans hb)
+  have hQ := one_sub_re_mul_conj_nonneg ((mul_le_of_le_one_left (norm_nonneg c) hb).trans hc)
+  simp only [mul_re, conj_re, conj_im, mul_neg, sub_neg_eq_add] at hP hQ ⊢
+  generalize a.re = a₁, a.im = a₂, b.re = b₁, b.im = b₂, c.re = c₁, c.im = c₂
+    at ha' hb' hc' hP hQ ⊢
+  have hroot := mul_nonneg (Real.sqrt_nonneg (1 - (a₁ * b₁ + a₂ * b₂)))
+    (Real.sqrt_nonneg (1 - (b₁ * c₁ + b₂ * c₂)))
+  rcases le_or_gt ((a₁ - b₁) * (b₁ - c₁) + (a₂ - b₂) * (b₂ - c₂)) (1 - (b₁ * b₁ + b₂ * b₂))
+    with hdt | hdt
+  · linarith
+  have ht : 0 ≤ 1 - (b₁ * b₁ + b₂ * b₂) := sub_nonneg.2 hb'
+  have hCS : ((a₁ - b₁) * (b₁ - c₁) + (a₂ - b₂) * (b₂ - c₂)) ^ 2 ≤
+      ((a₁ - b₁) ^ 2 + (a₂ - b₂) ^ 2) * ((b₁ - c₁) ^ 2 + (b₂ - c₂) ^ 2) := by
+    have h := Finset.sum_mul_sq_le_sq_mul_sq (Finset.univ : Finset (Fin 2))
+      ![a₁ - b₁, a₂ - b₂] ![b₁ - c₁, b₂ - c₂]
+    simpa only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one] using h
+  have h₁ : ((a₁ - b₁) * (b₁ - c₁) + (a₂ - b₂) * (b₂ - c₂) - (1 - (b₁ * b₁ + b₂ * b₂))) ^ 2 ≤
+      ((a₁ - b₁) ^ 2 + (a₂ - b₂) ^ 2 + (1 - (b₁ * b₁ + b₂ * b₂))) *
+        ((b₁ - c₁) ^ 2 + (b₂ - c₂) ^ 2 + (1 - (b₁ * b₁ + b₂ * b₂))) := by
+    nlinarith [mul_nonneg (ht.trans hdt.le) ht, mul_nonneg ht (sq_nonneg (a₁ - b₁)),
+      mul_nonneg ht (sq_nonneg (a₂ - b₂)), mul_nonneg ht (sq_nonneg (b₁ - c₁)),
+      mul_nonneg ht (sq_nonneg (b₂ - c₂))]
+  have h₂ : ((a₁ - b₁) ^ 2 + (a₂ - b₂) ^ 2 + (1 - (b₁ * b₁ + b₂ * b₂))) *
+      ((b₁ - c₁) ^ 2 + (b₂ - c₂) ^ 2 + (1 - (b₁ * b₁ + b₂ * b₂))) ≤
+        (2 * (1 - (a₁ * b₁ + a₂ * b₂))) * (2 * (1 - (b₁ * c₁ + b₂ * c₂))) :=
+    mul_le_mul (by nlinarith) (by nlinarith) (by positivity) (by positivity)
+  have h₃ : ((a₁ - b₁) * (b₁ - c₁) + (a₂ - b₂) * (b₂ - c₂) - (1 - (b₁ * b₁ + b₂ * b₂))) ^ 2 ≤
+      (2 * (√(1 - (a₁ * b₁ + a₂ * b₂)) * √(1 - (b₁ * c₁ + b₂ * c₂)))) ^ 2 := by
+    rw [mul_pow, mul_pow, Real.sq_sqrt hP, Real.sq_sqrt hQ]
+    linarith
+  have h₄ := (abs_le_of_sq_le_sq' h₃ (by positivity)).2
+  linarith
+
+/-- For `a`, `b`, `c` in the closed unit disc,
+`√(1 - Re (a conj c)) ≤ √(1 - Re (a conj b)) + √(1 - Re (b conj c))`. -/
+theorem sqrt_one_sub_re_mul_conj_le {a b c : ℂ} (ha : ‖a‖ ≤ 1) (hb : ‖b‖ ≤ 1) (hc : ‖c‖ ≤ 1) :
+    √(1 - (a * conj c).re) ≤ √(1 - (a * conj b).re) + √(1 - (b * conj c).re) := by
+  rw [Real.sqrt_le_iff, add_sq,
+    Real.sq_sqrt (one_sub_re_mul_conj_nonneg ((mul_le_of_le_one_left (norm_nonneg b) ha).trans hb)),
+    Real.sq_sqrt (one_sub_re_mul_conj_nonneg ((mul_le_of_le_one_left (norm_nonneg c) hb).trans hc))]
+  exact ⟨by positivity, by linarith [one_sub_re_mul_conj_le ha hb hc]⟩
+
+/-- For `z`, `w` in the closed unit disc, `√(1 - Re (z w)) ≤ √(1 - Re z) + √(1 - Re w)`. -/
+theorem sqrt_one_sub_re_mul_le {z w : ℂ} (hz : ‖z‖ ≤ 1) (hw : ‖w‖ ≤ 1) :
+    √(1 - (z * w).re) ≤ √(1 - z.re) + √(1 - w.re) := by
+  have h := sqrt_one_sub_re_mul_conj_le hz norm_one.le ((RCLike.norm_conj w).trans_le hw)
+  simpa only [conj_conj, map_one, mul_one, one_mul] using h
 
 /-- For a point `x` of the closed disc of radius `r` and a point `y` outside the open disc, the
 conjugate `conj x` is within `3 ‖x - y‖` of the point `r² / y`, the inversion of `y` in the circle
