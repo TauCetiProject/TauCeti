@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.AddChar
-public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup.Graded.BesselGroup
 
 /-!
