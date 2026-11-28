@@ -76,8 +76,9 @@ range, so the value is a `dite` rather than a plain application.
   the first `m` indices is injective.
 * `Fin.map_partialProd`, `Fin.comp_partialProd`: applying a monoid homomorphism entrywise commutes
   with `Fin.partialProd` (`Fin.map_partialSum` and `Fin.comp_partialSum` for `Fin.partialSum`).
-* `Fin.partialProd_last_eq_mul_tail`, `Fin.partialProd_last_eq_init_mul`: the final partial
-  product of a tuple in a monoid, split at its first or its last entry.
+* `Fin.partialProd_last_eq_mul_tail`, `Fin.partialProd_last_eq_init_mul`, `Fin.partialProd_one`,
+  `Fin.partialProd_last_eq_of_eq_one`, `Fin.partialProd_mulSingle`: the final partial product
+  of a tuple in a monoid, split at its first or its last entry or supported at a single entry.
 * `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`: how `Fin.castSucc`
   interacts with the cyclic successor and predecessor.
 * `Fin.castSucc_last_add_one`: adding one to the penultimate index gives the last index.
@@ -355,6 +356,36 @@ times its last entry. -/
 theorem partialProd_last_eq_init_mul {M : Type*} [Monoid M] {n : ℕ} (y : Fin (n + 1) → M) :
     partialProd y (last (n + 1)) = partialProd (init y) (last n) * y (last n) := by
   rw [← succ_last, partialProd_succ, partialProd_init]
+
+/-- Every partial product of the constant `1` tuple is `1`. -/
+@[simp]
+theorem partialProd_one {M : Type*} [Monoid M] {n : ℕ} (i : Fin (n + 1)) :
+    partialProd (fun _ : Fin n ↦ (1 : M)) i = 1 := by
+  simp [partialProd, List.ofFn_const]
+
+/-- The final partial product of a tuple equal to `1` away from `j` is its `j`-th entry. -/
+theorem partialProd_last_eq_of_eq_one {M : Type*} [Monoid M] :
+    ∀ {n : ℕ} {f : Fin n → M} {j : Fin n}, (∀ i, i ≠ j → f i = 1) →
+      partialProd f (last n) = f j
+  | 0, _, j, _ => j.elim0
+  | n + 1, f, j, hf => by
+    rw [partialProd_last_eq_init_mul]
+    induction j using Fin.lastCases with
+    | last =>
+      have hinit : init f = fun _ ↦ 1 := funext fun i ↦ hf i.castSucc (Fin.castSucc_ne_last i)
+      rw [hinit, partialProd_one, one_mul]
+    | cast j =>
+      have hinit : ∀ i, i ≠ j → init f i = 1 := fun i hi ↦
+        hf i.castSucc (mt (fun h ↦ Fin.castSucc_inj.mp h) hi)
+      rw [partialProd_last_eq_of_eq_one hinit, hf (last n) (Fin.castSucc_ne_last j).symm, mul_one,
+        init_def]
+
+/-- The final partial product of `Pi.mulSingle j a` in a monoid is `a`. -/
+@[simp]
+theorem partialProd_mulSingle {M : Type*} [Monoid M] {n : ℕ} (j : Fin n) (a : M) :
+    partialProd (Pi.mulSingle j a) (last n) = a := by
+  simpa using partialProd_last_eq_of_eq_one (f := Pi.mulSingle j a) (j := j)
+    fun i hi ↦ Pi.mulSingle_eq_of_ne (M := fun _ ↦ M) hi a
 
 /-- The last entry of a tuple cancels against the inverse of `g` times the final partial
 product. -/

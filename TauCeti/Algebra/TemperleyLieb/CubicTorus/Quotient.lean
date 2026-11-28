@@ -5,16 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.TemperleyLieb.CubicTorus.Projection
 public import TauCeti.Algebra.TemperleyLieb.CubicTorus.Star
 public import TauCeti.Algebra.TemperleyLieb.CubicTorus.Trace
 public import TauCeti.Algebra.TemperleyLieb.Star
 public import TauCeti.Algebra.TemperleyLieb.Trace.Radical
+public import TauCeti.Algebra.TemperleyLieb.Trace.Star
 -- Private: positive trace quotients and `√3` arithmetic are used only inside proofs.
 import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.RingTheory.TraceFunctional.Positive
 
 /-!
-# The kernel of the cubic comparison map at `δ = √3`
+# The Jones quotient at `δ = √3` is the inversion-fixed cubic quantum torus
 
 Let `F_m = cubicHom m : TemperleyLieb ℂ (√3 : ℂ) m →ₐ[ℂ] C_(m-1)` be the comparison map of
 `TauCeti.Algebra.TemperleyLieb.CubicTorus.Basic` into the inversion-fixed cubic quantum torus,
@@ -26,12 +28,15 @@ Temperley–Lieb algebra with the adjoint of the cubic quantum torus (`coe_cubic
 `s_N` is a faithful positive functional (`nullSubmodule_cubicStarPositiveFunctional`), an element
 `x` of the trace radical `R_m = {x | ∀ y, tr m (x * y) = 0}` satisfies
 `s(F_m(x)⋆ F_m(x)) = 0`, hence `F_m x = 0`; conversely `F_m x = 0` kills every `tr m (x * y)`. So
-the kernel of `F_m` is exactly the trace radical (`IsMarkovTrace.traceRadical_eq_ker_cubicHom`),
-without any use of surjectivity, and `F_m` induces an injective algebra map from the Jones quotient
-`TL_m ⧸ R_m` into `C_(m-1)` carrying the quotient trace to `(√3) ^ m s_(m-1)`
-(`IsMarkovTrace.quotientCubicHom`). Since the quantum integers at `√3 = 2 cos (π / 6)` are
-`1, √3, 2, √3, 1, 0`, the Jones–Wenzl projection on five strands is negligible, and `F_5`
-annihilates it (`cubicHom_jonesWenzl_five`).
+the kernel of `F_m` is exactly the trace radical (`IsMarkovTrace.traceRadical_eq_ker_cubicHom`).
+Together with surjectivity and the dimension formula `dim C_N = (3 ^ N + 1) / 2` from
+`TauCeti.Algebra.TemperleyLieb.CubicTorus.Projection`, `F_m` induces a `ℂ`-algebra isomorphism
+`IsMarkovTrace.quotientCubicFixedEquiv` between `TL_m(√3) ⧸ R_m` and `C_(m-1)` of complex
+dimension `(3 ^ (m - 1) + 1) / 2` (`finrank_quotient_traceRadical_sqrt_three`), intertwining `star`,
+the tower inclusions, and the trace
+(`quotientTrace_eq_mul_cubicScalarCoefficient_quotientCubicFixedEquiv`).
+Since the quantum integers at `√3 = 2 cos (π / 6)` are `1, √3, 2, √3, 1, 0`, the Jones–Wenzl
+projection on five strands is negligible, and `F_5` annihilates it (`cubicHom_jonesWenzl_five`).
 
 ## Main definitions
 
@@ -39,6 +44,8 @@ annihilates it (`cubicHom_jonesWenzl_five`).
   with values in the star subalgebra `cubicFixedStarSubalgebra (m - 1)`.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.quotientCubicHom`: the injective algebra map from the
   trace-radical quotient of `TemperleyLieb ℂ (√3 : ℂ) m` into `cubicFixed (m - 1)`.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.quotientCubicFixedEquiv`: the `ℂ`-algebra equivalence
+  between the trace-radical quotient of `TemperleyLieb ℂ (√3 : ℂ) m` and `cubicFixed (m - 1)`.
 
 ## Main results
 
@@ -46,17 +53,22 @@ annihilates it (`cubicHom_jonesWenzl_five`).
 * `TauCeti.TemperleyLieb.IsMarkovTrace.traceRadical_eq_ker_cubicHom` and
   `TauCeti.TemperleyLieb.IsMarkovTrace.cubicHom_eq_zero_iff`: the kernel of `F_m` is the trace
   radical.
-* `TauCeti.TemperleyLieb.IsMarkovTrace.quotientCubicHom_injective`: the induced map on the Jones
-  quotient is injective.
-* `TauCeti.TemperleyLieb.IsMarkovTrace.quotientTrace_eq_mul_cubicScalarCoefficient_quotientCubicHom`
-  : it carries the quotient trace to `(√3) ^ m` times the scalar coefficient.
-* `TauCeti.TemperleyLieb.cubicHom_jonesWenzl_five`: `F_5` annihilates the five-strand Jones–Wenzl
-  projection.
+* `TauCeti.TemperleyLieb.IsMarkovTrace.quotientCubicHom_injective` and
+  `TauCeti.TemperleyLieb.IsMarkovTrace.finrank_quotient_traceRadical_sqrt_three`: injectivity of
+  `quotientCubicHom` and dimension `(3 ^ (m - 1) + 1) / 2` of the Jones quotient.
+* `IsMarkovTrace.quotientTrace_eq_mul_cubicScalarCoefficient_quotientCubicHom` and
+  `IsMarkovTrace.quotientTrace_eq_mul_cubicScalarCoefficient_quotientCubicFixedEquiv`:
+  carrying the quotient trace to `(√3) ^ m` times the scalar coefficient.
+* `TauCeti.TemperleyLieb.exists_cubicFixedModel` and
+  `TauCeti.TemperleyLieb.cubicHom_jonesWenzl_five`: packaged cubic fixed-point model and
+  annihilation of the five-strand Jones–Wenzl projection.
 
 ## References
 
-* V. F. R. Jones, *A polynomial invariant for knots via von Neumann algebras*, Bull. Amer. Math.
-  Soc. 12 (1985), 103–111, p. 107.
+* V. F. R. Jones, *Index for subfactors*, Invent. Math. 72 (1983), 1–25; *A polynomial invariant
+  for knots via von Neumann algebras*, Bull. Amer. Math. Soc. 12 (1985), 103–111, p. 107.
+* F. M. Goodman, P. de la Harpe, and V. F. R. Jones, *Coxeter Graphs and Towers of Algebras*,
+  MSRI Publications 14, Springer (1989).
 * D. Penneys, *Unitary Quantum Symmetries Lite*, Chapter 4, Sections 4.3–4.5, for trace radicals
   and the Jones quotients.
 -/
@@ -94,6 +106,16 @@ theorem cubicStarAlgHom_mem {m : ℕ} (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ)
 namespace IsMarkovTrace
 
 variable {tr : ∀ n : ℕ, TemperleyLieb ℂ (Real.sqrt 3 : ℂ) n →ₗ[ℂ] ℂ}
+
+/-- At `δ = √3`, `tr m (star x * x) = 0` if and only if `cubicHom m x = 0`. -/
+theorem map_star_mul_self_eq_zero_iff_cubicHom_eq_zero
+    (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) {m : ℕ}
+    {x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m} :
+    tr m (star x * x) = 0 ↔ cubicHom m x = 0 := by
+  rw [htr.apply_eq_mul_cubicScalarCoefficient_cubicHom, map_mul,
+    Subalgebra.coe_mul, coe_cubicHom_star, mul_eq_zero,
+    or_iff_right (pow_ne_zero m sqrt_three_ne_zero),
+    cubicScalarCoefficient_star_mul_self_eq_zero_iff, ZeroMemClass.coe_eq_zero]
 
 /-- **The kernel of the cubic comparison map is the trace radical**: for every Markov trace `tr`
 at `δ = √3`, `RingHom.ker (cubicHom m)` is the radical of the trace form of `tr m`. -/
@@ -155,7 +177,118 @@ theorem quotientTrace_eq_mul_cubicScalarCoefficient_quotientCubicHom
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
   simp [htr.apply_eq_mul_cubicScalarCoefficient_cubicHom]
 
+/-- **The Jones quotient at `δ = √3` is isomorphic to `cubicFixed (m - 1)`.** -/
+noncomputable def quotientCubicFixedEquiv
+    (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) (m : ℕ) :
+    (TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m ⧸ (tr m).traceRadical (htr.map_mul_comm m)) ≃ₐ[ℂ]
+      cubicFixed (m - 1) :=
+  (Ideal.quotientEquivAlgOfEq ℂ (htr.traceRadical_eq_ker_cubicHom m)).trans
+    (Ideal.quotientKerAlgEquivOfSurjective (cubicHom_surjective m))
+
+@[simp] theorem quotientCubicFixedEquiv_mk
+    (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) (m : ℕ)
+    (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m) :
+    htr.quotientCubicFixedEquiv m
+        (Ideal.Quotient.mk ((tr m).traceRadical (htr.map_mul_comm m)) x) =
+      cubicHom m x := by
+  simp [quotientCubicFixedEquiv, Ideal.quotientEquivAlgOfEq_mk]
+
+/-- `quotientCubicFixedEquiv` intertwines the quotient `star` with `star` on `CubicTorus`. -/
+@[simp] theorem coe_quotientCubicFixedEquiv_star
+    (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) (m : ℕ)
+    [((tr m).traceRadical (htr.map_mul_comm m)).IsStar]
+    (q : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m ⧸ (tr m).traceRadical (htr.map_mul_comm m)) :
+    (htr.quotientCubicFixedEquiv m (star q) : CubicTorus (m - 1)) =
+      star (htr.quotientCubicFixedEquiv m q : CubicTorus (m - 1)) := by
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
+  simp
+
+/-- `quotientCubicFixedEquiv` intertwines `quotientStrandIncl` with `cubicFixedIncl`. -/
+theorem quotientCubicFixedEquiv_quotientStrandIncl
+    (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) (n : ℕ)
+    (q : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) (n + 1) ⧸
+      (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) :
+    htr.quotientCubicFixedEquiv (n + 2) (htr.quotientStrandIncl n q) =
+      cubicFixedIncl n (htr.quotientCubicFixedEquiv (n + 1) q) := by
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
+  rw [htr.quotientStrandIncl_mk, htr.quotientCubicFixedEquiv_mk, htr.quotientCubicFixedEquiv_mk,
+    cubicHom_strandIncl_eq_cubicFixedIncl]
+
+@[simp] theorem quotientCubicFixedEquiv_symm_cubicHom
+    (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) (m : ℕ)
+    (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m) :
+    (htr.quotientCubicFixedEquiv m).symm (cubicHom m x) =
+      Ideal.Quotient.mk ((tr m).traceRadical (htr.map_mul_comm m)) x :=
+  (htr.quotientCubicFixedEquiv m).injective (by simp)
+
+/-- `(quotientCubicFixedEquiv _).symm` intertwines `star` with the quotient `star`. -/
+@[simp] theorem quotientCubicFixedEquiv_symm_star
+    (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) (m : ℕ)
+    [((tr m).traceRadical (htr.map_mul_comm m)).IsStar]
+    (y : cubicFixed (m - 1)) :
+    (htr.quotientCubicFixedEquiv m).symm
+        ⟨star (y : CubicTorus (m - 1)), star_mem_cubicFixed y.property⟩ =
+      star ((htr.quotientCubicFixedEquiv m).symm y) :=
+  (htr.quotientCubicFixedEquiv m).injective (Subtype.ext (by simp))
+
+/-- `(quotientCubicFixedEquiv _).symm` intertwines `cubicFixedIncl` with `quotientStrandIncl`. -/
+theorem quotientCubicFixedEquiv_symm_cubicFixedIncl
+    (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) (n : ℕ) (y : cubicFixed n) :
+    (htr.quotientCubicFixedEquiv (n + 2)).symm (cubicFixedIncl n y) =
+      htr.quotientStrandIncl n ((htr.quotientCubicFixedEquiv (n + 1)).symm y) :=
+  (htr.quotientCubicFixedEquiv (n + 2)).injective <| by
+    rw [AlgEquiv.apply_symm_apply, htr.quotientCubicFixedEquiv_quotientStrandIncl,
+      AlgEquiv.apply_symm_apply]
+
+/-- The induced trace on the `m`-strand quotient at `δ = √3` is `(√3 : ℂ) ^ m` times
+`cubicScalarCoefficient (m - 1)` under `quotientCubicFixedEquiv`. -/
+theorem quotientTrace_eq_mul_cubicScalarCoefficient_quotientCubicFixedEquiv
+    (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) (m : ℕ)
+    (q : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m ⧸
+      (tr m).traceRadical (htr.map_mul_comm m)) :
+    (tr m).quotientTrace (htr.map_mul_comm m) q =
+      (Real.sqrt 3 : ℂ) ^ m *
+        cubicScalarCoefficient (m - 1) (htr.quotientCubicFixedEquiv m q) := by
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
+  simp [htr.apply_eq_mul_cubicScalarCoefficient_cubicHom]
+
+@[simp] theorem quotientTrace_quotientCubicFixedEquiv_symm
+    (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) (m : ℕ) (x : cubicFixed (m - 1)) :
+    (tr m).quotientTrace (htr.map_mul_comm m) ((htr.quotientCubicFixedEquiv m).symm x) =
+      (Real.sqrt 3 : ℂ) ^ m * cubicScalarCoefficient (m - 1) x := by
+  simp [htr.quotientTrace_eq_mul_cubicScalarCoefficient_quotientCubicFixedEquiv]
+
+/-- The `m`-strand trace quotient at `δ = √3` has complex dimension `(3 ^ (m - 1) + 1) / 2`. -/
+@[simp] theorem finrank_quotient_traceRadical_sqrt_three
+    (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) (m : ℕ) :
+    Module.finrank ℂ
+        (TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m ⧸ (tr m).traceRadical (htr.map_mul_comm m)) =
+      (3 ^ (m - 1) + 1) / 2 := by
+  rw [(htr.quotientCubicFixedEquiv m).toLinearEquiv.finrank_eq, finrank_cubicFixed]
+
 end IsMarkovTrace
+
+/-- **The cubic quantum torus model of `TemperleyLieb ℂ (√3 : ℂ) m`.** For every Markov trace `tr`
+at loop value `√3` and every `m : ℕ`, there is a surjective `ℂ`-algebra homomorphism
+`F : TemperleyLieb ℂ (√3 : ℂ) m →ₐ[ℂ] cubicFixed (m - 1)` sending `e j` to
+`(√3 : ℂ) • cubicProjection (m - 1) j`, intertwining `star`, expressing `tr m` via
+`cubicScalarCoefficient (m - 1)`, and having kernel `(tr m).traceRadical`. -/
+theorem exists_cubicFixedModel
+    {tr : ∀ n : ℕ, TemperleyLieb ℂ (Real.sqrt 3 : ℂ) n →ₗ[ℂ] ℂ}
+    (htr : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) tr) (m : ℕ) :
+    ∃ F : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m →ₐ[ℂ] cubicFixed (m - 1),
+      Function.Surjective F ∧
+      (∀ j : Fin (m - 1),
+        (F (e (Real.sqrt 3 : ℂ) j) : CubicTorus (m - 1)) =
+          (Real.sqrt 3 : ℂ) • cubicProjection (m - 1) j) ∧
+      (∀ x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m,
+        (F (star x) : CubicTorus (m - 1)) = star (F x : CubicTorus (m - 1))) ∧
+      (∀ x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m,
+        tr m x = (Real.sqrt 3 : ℂ) ^ m * cubicScalarCoefficient (m - 1) (F x)) ∧
+      RingHom.ker F = (tr m).traceRadical (htr.map_mul_comm m) :=
+  ⟨cubicHom m, cubicHom_surjective m, coe_cubicHom_e m, coe_cubicHom_star,
+    htr.apply_eq_mul_cubicScalarCoefficient_cubicHom m,
+    (htr.traceRadical_eq_ker_cubicHom m).symm⟩
 
 /-- At `δ = √3`, the cubic comparison map annihilates the five-strand Jones–Wenzl projection: the
 quantum integers `[1], …, [5]` are `1, √3, 2, √3, 1`, and `[6] = 0`. -/

@@ -194,6 +194,13 @@ theorem sqrt_two_mem_jonesLoopParameters : √2 ∈ jonesLoopParameters := by
   rw [Nat.cast_ofNat, cos_pi_div_four]
   ring
 
+/-- `√3 = 2 cos (π / 6)` is an admissible loop parameter. -/
+@[simp]
+theorem sqrt_three_mem_jonesLoopParameters : √3 ∈ jonesLoopParameters := by
+  convert two_mul_cos_pi_div_mem_jonesLoopParameters (m := 6) (by omega) using 1
+  rw [Nat.cast_ofNat, cos_pi_div_six]
+  ring
+
 /-- `2` is an admissible loop parameter. -/
 @[simp]
 theorem two_mem_jonesLoopParameters : (2 : ℝ) ∈ jonesLoopParameters :=

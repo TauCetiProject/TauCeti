@@ -29,12 +29,15 @@ particular the spin-model `markovTrace`, is this one.
 
 ## Main definitions
 
-* `TauCeti.TemperleyLieb.cubicIncl`: the inclusion `G_N →ₐ[ℂ] G_(N+1)`, `W(a) ↦ W(a, 0)`.
+* `TauCeti.TemperleyLieb.cubicIncl` and `TauCeti.TemperleyLieb.cubicFixedIncl`: the inclusions
+  `G_N →ₐ[ℂ] G_(N+1)` and `C_N →ₐ[ℂ] C_(N+1)`, `W(a) ↦ W(a, 0)`.
 * `TauCeti.TemperleyLieb.cubicTrace`: the Markov trace `x ↦ (√3) ^ m s_(m-1)(F_m x)`.
 
 ## Main results
 
-* `TauCeti.TemperleyLieb.cubicHom_strandIncl`: `F_(n+2) ∘ strandIncl = I_n ∘ F_(n+1)`.
+* `TauCeti.TemperleyLieb.cubicHom_strandIncl` and
+  `TauCeti.TemperleyLieb.cubicHom_strandIncl_eq_cubicFixedIncl`:
+  `F_(n+2) ∘ strandIncl = I_n ∘ F_(n+1)`.
 * `TauCeti.TemperleyLieb.cubicScalarCoefficient_cubicIncl_mul_cubicProjection_last`:
   `s_(N+1)(I_N(x) p_N) = 3⁻¹ s_N(x)`.
 * `TauCeti.TemperleyLieb.isMarkovTrace_cubicTrace`,
@@ -60,36 +63,58 @@ public section
 
 namespace TauCeti.TemperleyLieb
 
-open TwistedMonoidAlgebra
+open Multiplicative TwistedMonoidAlgebra
 
 /-! ### The tower inclusions -/
 
 section Inclusion
 
+/-- Extending `a : Fin N → ZMod 3` by a zero last coordinate, as a group homomorphism into
+`Multiplicative (Fin (N + 1) → ZMod 3)`. -/
+def cubicExtendHom (N : ℕ) :
+    Multiplicative (Fin N → ZMod 3) →* Multiplicative (Fin (N + 1) → ZMod 3) where
+  toFun a := ofAdd (Fin.snoc a.toAdd 0)
+  map_one' := toAdd.injective (funext fun i ↦ Fin.lastCases (by simp) (fun _ ↦ by simp) i)
+  map_mul' _ _ := toAdd.injective (funext fun i ↦ Fin.lastCases (by simp) (fun _ ↦ by simp) i)
+
+@[simp]
+theorem cubicExtendHom_apply (N : ℕ) (a : Multiplicative (Fin N → ZMod 3)) :
+    cubicExtendHom N a = ofAdd (Fin.snoc a.toAdd 0) :=
+  (rfl)
+
+theorem cubicExtendHom_injective (N : ℕ) : Function.Injective (cubicExtendHom N) :=
+  fun _ _ h ↦ toAdd.injective (funext fun i ↦ by
+    simpa using congrFun (congrArg toAdd h) i.castSucc)
+
+theorem cubicFactor_cubicExtendHom (N : ℕ) (a b : Multiplicative (Fin N → ZMod 3)) :
+    cubicFactor (N + 1) (cubicExtendHom N a) (cubicExtendHom N b) = cubicFactor N a b := by
+  rw [cubicFactor_apply, cubicFactor_apply]
+  exact congrArg (fun z ↦ cubeRootPow (2 * z)) (chainForm_snoc_zero a.toAdd b.toAdd)
+
 variable (N : ℕ)
 
 /-- The **inclusion** `I_N : G_N →ₐ[ℂ] G_(N+1)` of cubic quantum tori, `W(a) ↦ W(a, 0)`: extending
-by a zero last coordinate preserves the chain form (`chainForm_snoc_zero`). -/
+by a zero last coordinate preserves the chain form (`cubicFactor_cubicExtendHom`). -/
 noncomputable def cubicIncl : CubicTorus N →ₐ[ℂ] CubicTorus (N + 1) :=
-  TwistedMonoidAlgebra.lift (fun g ↦ weyl (N + 1) (Fin.snoc g.toAdd 0))
-    (by
-      have h : (Fin.snoc (0 : Fin N → ZMod 3) 0 : Fin (N + 1) → ZMod 3) = 0 := by
-        funext i
-        refine Fin.lastCases ?_ (fun i ↦ ?_) i <;> simp
-      simp [h])
-    fun g h ↦ by
-      have hadd : (Fin.snoc g.toAdd 0 + Fin.snoc h.toAdd 0 : Fin (N + 1) → ZMod 3) =
-          Fin.snoc (g * h).toAdd 0 := by
-        funext i
-        refine Fin.lastCases ?_ (fun i ↦ ?_) i <;> simp
-      rw [weyl_mul_weyl, chainForm_snoc_zero, hadd, cubicFactor_apply]
+  TwistedMonoidAlgebra.mapDomain (cubicExtendHom N) (cubicFactor_cubicExtendHom N)
+
+theorem cubicIncl_eq_mapDomain :
+    cubicIncl N =
+      TwistedMonoidAlgebra.mapDomain (cubicExtendHom N) (cubicFactor_cubicExtendHom N) :=
+  (rfl)
+
+theorem cubicIncl_injective : Function.Injective (cubicIncl N) := by
+  rw [cubicIncl_eq_mapDomain]
+  exact TwistedMonoidAlgebra.mapDomain_injective (cubicFactor_cubicExtendHom N)
+    (cubicExtendHom_injective N)
 
 variable {N}
 
 @[simp]
 theorem cubicIncl_weyl (a : Fin N → ZMod 3) :
     cubicIncl N (weyl N a) = weyl (N + 1) (Fin.snoc a 0) := by
-  rw [weyl_def, cubicIncl, TwistedMonoidAlgebra.lift_of, toAdd_ofAdd]
+  rw [weyl_def, cubicIncl_eq_mapDomain, TwistedMonoidAlgebra.mapDomain_of,
+    cubicExtendHom_apply, toAdd_ofAdd, of_eq_weyl, toAdd_ofAdd]
 
 @[simp]
 theorem cubicIncl_cubicSite (j : Fin N) :
@@ -118,17 +143,10 @@ theorem cubicInversion_cubicIncl (x : CubicTorus N) :
 @[simp]
 theorem cubicScalarCoefficient_cubicIncl (x : CubicTorus N) :
     cubicScalarCoefficient (N + 1) (cubicIncl N x) = cubicScalarCoefficient N x := by
-  have h : cubicScalarCoefficient (N + 1) ∘ₗ (cubicIncl N).toLinearMap =
-      cubicScalarCoefficient N :=
-    (basis ℂ _ (cubicFactor N)).ext fun g ↦ by
-      have hzero : (Fin.snoc g.toAdd 0 : Fin (N + 1) → ZMod 3) = 0 ↔ g.toAdd = 0 := by
-        refine ⟨fun h ↦ funext fun i ↦ by simpa using congrFun h i.castSucc, fun h ↦ ?_⟩
-        rw [h]
-        funext i
-        refine Fin.lastCases ?_ (fun i ↦ ?_) i <;> simp
-      rw [LinearMap.comp_apply, basis_apply, of_eq_weyl]
-      simp [hzero]
-  exact LinearMap.congr_fun h x
+  rw [cubicScalarCoefficient_eq_scalarTrace, cubicScalarCoefficient_eq_scalarTrace,
+    cubicIncl_eq_mapDomain]
+  exact scalarTrace_mapDomain_of_injective (cubicFactor_cubicExtendHom N)
+    (cubicExtendHom_injective N) x
 
 /-- Multiplying an included element by a nontrivial power of the new site unitary `U_N` kills its
 scalar coefficient: every basis element in the product has last coordinate `n ≠ 0`. -/
@@ -153,6 +171,22 @@ theorem cubicScalarCoefficient_cubicIncl_mul_cubicProjection_last (x : CubicToru
   rw [pow_one] at h1
   simp [cubicProjection_def, mul_add, h1, h2]
 
+theorem cubicIncl_mem_cubicFixed {x : CubicTorus N} (hx : x ∈ cubicFixed N) :
+    cubicIncl N x ∈ cubicFixed (N + 1) := by
+  rw [mem_cubicFixed, cubicInversion_cubicIncl, mem_cubicFixed.mp hx]
+
+/-- **The restricted tower inclusion** `cubicFixed N →ₐ[ℂ] cubicFixed (N + 1)`. -/
+noncomputable def cubicFixedIncl (N : ℕ) : cubicFixed N →ₐ[ℂ] cubicFixed (N + 1) :=
+  ((cubicIncl N).comp (cubicFixed N).val).codRestrict (cubicFixed (N + 1))
+    fun x ↦ cubicIncl_mem_cubicFixed x.property
+
+@[simp]
+theorem coe_cubicFixedIncl (N : ℕ) (x : cubicFixed N) :
+    (cubicFixedIncl N x : CubicTorus (N + 1)) = cubicIncl N x := (rfl)
+
+theorem cubicFixedIncl_injective (N : ℕ) : Function.Injective (cubicFixedIncl N) :=
+  fun _ _ h ↦ Subtype.ext (cubicIncl_injective N (congrArg Subtype.val h))
+
 end Inclusion
 
 /-! ### The Markov trace -/
@@ -174,6 +208,12 @@ theorem cubicHom_strandIncl (n : ℕ) (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ)
       (Real.sqrt 3 : ℂ) • cubicProjection (n + 1) i.castSucc =
         cubicIncl n ((Real.sqrt 3 : ℂ) • cubicProjection n i))
   exact AlgHom.congr_fun hhom x
+
+/-- `cubicHom` intertwines `TemperleyLieb.strandIncl` with `cubicFixedIncl`. -/
+theorem cubicHom_strandIncl_eq_cubicFixedIncl (n : ℕ)
+    (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) (n + 1)) :
+    cubicHom (n + 2) (strandIncl x) = cubicFixedIncl n (cubicHom (n + 1) x) :=
+  Subtype.ext (cubicHom_strandIncl n x)
 
 /-- The unnormalized Markov trace on `TemperleyLieb ℂ (√3 : ℂ) m` obtained by pulling back
 `(√3) ^ m` times the scalar coefficient along the cubic comparison map. -/
