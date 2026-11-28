@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Order.Filter.Extr
 public import Mathlib.Order.SupClosed
+import Mathlib.Data.Finset.Card
 
 /-!
 # Submodular functions on lattices
@@ -26,6 +27,8 @@ or network representation.
 * `TauCeti.IsSubmodular.comp_latticeHom`: precomposition by a lattice homomorphism preserves
   submodularity.
 * `TauCeti.isSubmodular_finsetSum`: summing fixed vertex weights over a finite set is submodular.
+* `TauCeti.isSubmodular_neg_iff_forall_insert`: supermodularity on finite sets is equivalent to
+  increasing increments under insertion.
 * `TauCeti.IsSubmodular.isMinOn_sup_inf`: uncrossing by join and meet. If `IsMinOn f s a` and
   `IsMinOn f t b` (with no membership `a ∈ s` or `b ∈ t` required), `a ⊓ b ∈ s` and `a ⊔ b ∈ t`,
   then `f` attains its minimum over `t` at `a ⊔ b` and over `s` at `a ⊓ b`.
@@ -131,6 +134,46 @@ theorem isSublattice_minimizers [Add K] [Preorder K] [AddLeftMono K] [AddRightMo
       (hf.isMinOn_sup_inf hamin hbmin (hs.supClosed ha hb) (hs.infClosed ha hb)).2⟩
 
 end IsSubmodular
+
+open Finset in
+/-- A function on finite sets is supermodular precisely when the increment under insertion
+increases with the set into which the element is inserted. -/
+theorem isSubmodular_neg_iff_forall_insert {ι : Type*} [DecidableEq ι]
+    [AddCommGroup K] [Preorder K] [IsOrderedAddMonoid K] (v : Finset ι → K) :
+    IsSubmodular (-v) ↔
+      ∀ S T : Finset ι, S ⊆ T → ∀ i, i ∉ T → v (insert i S) - v S ≤ v (insert i T) - v T := by
+  constructor
+  · intro hv S T hST i hi
+    have hunion : insert i S ∪ T = insert i T := by
+      rw [insert_union, union_eq_right.mpr hST]
+    have hinter : insert i S ∩ T = S := by
+      rw [insert_inter_of_notMem hi, inter_eq_left.mpr hST]
+    apply sub_le_sub_iff.mpr
+    simpa only [hunion, hinter, Pi.neg_apply, ← neg_add, neg_le_neg_iff] using
+      hv.apply (insert i S) T
+  · intro hv
+    rw [isSubmodular_def]
+    intro S T
+    simp only [Pi.neg_apply, ← neg_add, neg_le_neg_iff]
+    induction S using Finset.strongInductionOn with
+    | _ S ih =>
+      by_cases hST : S ⊆ T
+      · simp [union_eq_right.mpr hST, inter_eq_left.mpr hST, add_comm]
+      -- Removing an element outside T leaves the intersection unchanged.
+      obtain ⟨i, hiS, hiT⟩ := not_subset.mp hST
+      have hgain := hv (S.erase i) (S.erase i ∪ T) subset_union_left i
+        (notMem_union.mpr ⟨notMem_erase _ _, hiT⟩)
+      have herase := ih (S.erase i) (erase_ssubset hiS)
+      rw [← insert_union, insert_erase hiS] at hgain
+      rw [erase_inter, erase_eq_of_notMem (fun hi ↦ hiT (mem_inter.mp hi).2)] at herase
+      rw [add_comm (v (S ∪ T)), ← sub_le_sub_iff]
+      calc
+        v S - v (S ∪ T) ≤ v (S.erase i) - v (S.erase i ∪ T) := by
+          apply sub_le_sub_iff.mpr
+          simpa only [add_comm (v (S ∪ T))] using sub_le_sub_iff.mp hgain
+        _ ≤ v (S ∩ T) - v T := by
+          apply sub_le_sub_iff.mpr
+          simpa only [add_comm (v (S ∩ T))] using herase
 
 namespace IsSymmSubmodular
 
