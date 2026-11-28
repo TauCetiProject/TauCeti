@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.Caratheodory
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousSubstitution.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
@@ -46,8 +49,12 @@ so that `N_P(t, s) y` is the value at `t` of the Carathéodory solution of `x' =
 * `TauCeti.absolutelyContinuousOnInterval_propagator_left`,
   `TauCeti.ae_hasDerivAt_propagator_left`: `t ↦ N_P(t, s)` is absolutely continuous, with
   derivative `P(t) N_P(t, s)` at almost every `t`.
-* `TauCeti.ae_hasDerivAt_propagator_right`: `s ↦ N_P(t, s)` has derivative `-N_P(t, s) P(s)` at
-  almost every `s`.
+* `TauCeti.absolutelyContinuousOnInterval_propagator_right`,
+  `TauCeti.ae_hasDerivAt_propagator_right`: `s ↦ N_P(t, s)` is absolutely continuous, with
+  derivative `-N_P(t, s) P(s)` at almost every `s`.
+* `TauCeti.propagator_eq_one_add_integral_right`: the backward integral equation
+  `N_P(t, s) = 1 + ∫ r in s..t, N_P(t, r) ∘L P r`, whose integrand is interval integrable by
+  `TauCeti.intervalIntegrable_propagator_comp_right`.
 * `TauCeti.propagator_congr_ae`: the propagator depends only on `P` almost everywhere on the
   interval between `s` and `t`.
 * `TauCeti.norm_propagator_sub_propagator_le`, `TauCeti.tendstoUniformlyOn_propagator`:
@@ -440,6 +447,25 @@ theorem absolutelyContinuousOnInterval_propagator_left (hP : IntegrableOn P (Icc
     hM integrableOn_zero (continuousOn_propagator_left hP hs) fun r hr ↦
       (propagator_eq_one_add_integral hP hs hr).trans (picard_mul P _ s r).symm
 
+/-- **Absolute continuity in the initial time.** If `P` is integrable on `[a, b]` and
+`t ∈ [a, b]`, then `s ↦ N_P(t, s)` is absolutely continuous on `[a, b]`. -/
+theorem absolutelyContinuousOnInterval_propagator_right (hP : IntegrableOn P (Icc a b))
+    (ht : t ∈ Icc a b) : AbsolutelyContinuousOnInterval (fun s ↦ propagator P t s) a b := by
+  have hab : a ≤ b := ht.1.trans ht.2
+  have ha : a ∈ Icc a b := ⟨le_rfl, hab⟩
+  have hmem {r : ℝ} (hr : r ∈ uIcc a b) : r ∈ Icc a b := by rwa [uIcc_of_le hab] at hr
+  -- `s ↦ N_P(a, s)` is the inverse of the absolutely continuous `s ↦ N_P(s, a)`.
+  have hinv : AbsolutelyContinuousOnInterval (fun s ↦ propagator P a s) a b := by
+    refine ((absolutelyContinuousOnInterval_propagator_left hP ha).comp_of_contDiffAt
+      (φ := Ring.inverse) ?_).congr fun r hr ↦ ringInverse_propagator hP ha (hmem hr)
+    rintro _ ⟨r, hr, rfl⟩
+    obtain ⟨u, hu⟩ := isUnit_propagator hP ha (hmem hr)
+    simp only [← hu]
+    exact (contDiffAt_ringInverse 𝕜 u).restrict_scalars ℝ
+  refine ((contDiffOn_const (c := propagator P t a)).absolutelyContinuousOnInterval.fun_mul'
+    hinv).congr fun r hr ↦ ?_
+  exact propagator_comp_propagator hP ha (hmem hr) ht
+
 /-- **The derivative in the final time.** `t ↦ N_P(t, s)` has derivative `P(t) N_P(t, s)` at
 almost every `t ∈ (a, b)`. -/
 theorem ae_hasDerivAt_propagator_left (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b) :
@@ -479,6 +505,33 @@ theorem ae_hasDerivAt_propagator_right (hP : IntegrableOn P (Icc a b)) (ht : t �
       ContinuousLinearMap.compL_apply]
     rw [ringInverse_propagator hP ha (Ioo_subset_Icc_self hr),
       propagator_comp_propagator hP ha (Ioo_subset_Icc_self hr) ht]
+
+/-- The integrand `r ↦ N_P(t, r) ∘L P r` of the backward integral equation is interval integrable
+between any two points `s, t` of `[a, b]`. -/
+theorem intervalIntegrable_propagator_comp_right (hP : IntegrableOn P (Icc a b))
+    (hs : s ∈ Icc a b) (ht : t ∈ Icc a b) :
+    IntervalIntegrable (fun r ↦ propagator P t r ∘L P r) volume s t :=
+  ((IntegrableOn.continuousOn_mul (continuousOn_propagator_right hP ht) hP
+    isCompact_Icc).mono_set (uIcc_subset_Icc hs ht)).intervalIntegrable
+
+/-- **The backward integral equation.** If `P` is integrable on `[a, b]` and `s, t ∈ [a, b]`, then
+`N_P(t, s) = 1 + ∫ r in s..t, N_P(t, r) ∘L P r`. -/
+theorem propagator_eq_one_add_integral_right (hP : IntegrableOn P (Icc a b)) (hs : s ∈ Icc a b)
+    (ht : t ∈ Icc a b) :
+    propagator P t s = 1 + ∫ r in s..t, propagator P t r ∘L P r := by
+  have hac := (absolutelyContinuousOnInterval_propagator_right hP ht).mono
+    (uIcc_subset_uIcc (mem_uIcc_of_le hs.1 hs.2) (mem_uIcc_of_le ht.1 ht.2))
+  have hV : ∀ᵐ r, r ∈ uIoc s t →
+      HasDerivAt (fun r ↦ propagator P t r) (-(propagator P t r ∘L P r)) r := by
+    filter_upwards [ae_hasDerivAt_propagator_right hP ht, Measure.ae_ne volume a,
+      Measure.ae_ne volume b] with r hr hra hrb hmem
+    have hr' := uIcc_subset_Icc hs ht (uIoc_subset_uIcc hmem)
+    exact hr ⟨lt_of_le_of_ne hr'.1 (Ne.symm hra), lt_of_le_of_ne hr'.2 hrb⟩
+  have hint := hac.integral_eq_sub_of_ae_hasDerivAt_of_intervalIntegrable hV
+    (intervalIntegrable_propagator_comp_right hP hs ht).neg
+  rw [propagator_self, intervalIntegral.integral_neg] at hint
+  rw [← neg_neg (∫ r in s..t, propagator P t r ∘L P r), hint]
+  abel
 
 /-- The difference `D(r) = N_{P'}(r, s) - N_P(r, s)` of two propagators solves
 `D(r) = ∫ u in s..r, (P u ∘L D u + (P' u - P u) ∘L N_{P'}(u, s))` on `[a, b]`. -/

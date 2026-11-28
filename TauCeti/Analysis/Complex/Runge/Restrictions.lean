@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Germ.HolomorphicRestrictions.Basic
 public import TauCeti.Analysis.Complex.Runge.Approximation
+import TauCeti.Analysis.Complex.Runge.Basic
 
 /-!
 # Runge density in the algebra of holomorphic restrictions
@@ -46,8 +47,8 @@ theorem isFilledIn_iff_denseRange_restrictToHolomorphicRestrictions {U : Opens �
   · intro hfill φ ε hε
     obtain ⟨V, f, hV, hKV, hf, hfφ⟩ :=
       mem_holomorphicRestrictions_iff_exists_open.mp φ.property
-    have hRunge := isRungeCompactPair_iff.mpr ⟨U.isOpen, hK, hKU, hfill⟩
-    obtain ⟨g, hg, hfg⟩ := hRunge.exists_differentiableOn_norm_sub_lt hV hKV hf hε
+    obtain ⟨g, hg, hfg⟩ :=
+      hfill.exists_differentiableOn_norm_sub_lt hK hKU hV hKV hf hε
     refine ⟨HolomorphicFunctions.of U g hg, ?_⟩
     rw [Subtype.dist_eq, ContinuousMap.dist_lt_iff hε]
     intro x

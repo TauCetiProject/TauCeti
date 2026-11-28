@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.YangMills.GaugeIdentities
 public import TauCeti.Geometry.Lie.Subgroup.Unitary.TangentSpace
-import TauCeti.Algebra.Star.Unitary
+import TauCeti.Algebra.Star.Unitary.Basic
 
 /-!
 # Gauge transformations with values in a closed subgroup of `U(n)`

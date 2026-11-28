@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Norm.Defs
-public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Norm
+public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Norm.Basic
 import TauCeti.Algebra.Module.LinearMap.End
 import TauCeti.LinearAlgebra.Determinant.SMul.TensorProduct
 import TauCeti.RingTheory.NormTrace.BaseChange

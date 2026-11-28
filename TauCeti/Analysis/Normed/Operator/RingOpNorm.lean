@@ -196,6 +196,13 @@ theorem ringOpNorm_le_bound (f : E →SL[σ] F) {M : ℝ} (hMp : 0 ≤ M)
     (hM : ∀ x, ‖f x‖ ≤ M * ‖x‖) : ‖f‖ ≤ M :=
   csInf_le ringOpNorm_bounds_bddBelow ⟨hMp, hM⟩
 
+/-- If `f` has no uniform bound, its ring-scalar operator norm is zero. -/
+theorem ringOpNorm_eq_zero_of_not_exists_bound (f : E →SL[σ] F)
+    (h : ¬ ∃ C, ∀ x, ‖f x‖ ≤ C * ‖x‖) : ‖f‖ = 0 := by
+  have hempty : {c : ℝ | 0 ≤ c ∧ ∀ x, ‖f x‖ ≤ c * ‖x‖} = ∅ :=
+    Set.eq_empty_iff_forall_notMem.mpr fun c hc ↦ h ⟨c, hc.2⟩
+  rw [ringOpNorm_def, hempty, Real.sInf_empty]
+
 /-- **The bound at the infimum**: if `f` has some uniform bound, then its operator norm is its
 least nonnegative uniform bound. -/
 theorem isLeast_ringOpNorm (f : E →SL[σ] F) (h : ∃ C, ∀ x, ‖f x‖ ≤ C * ‖x‖) :
