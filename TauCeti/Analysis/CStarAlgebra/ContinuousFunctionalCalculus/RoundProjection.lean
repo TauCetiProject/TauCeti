@@ -13,6 +13,7 @@ import Mathlib.Algebra.Star.NonUnitalSubalgebra
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 import TauCeti.Analysis.CStarAlgebra.Basic
+import TauCeti.Analysis.Normed.Algebra.Star
 import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.Topology.Algebra.Indicator
 

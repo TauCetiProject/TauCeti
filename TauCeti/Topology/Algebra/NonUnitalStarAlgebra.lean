@@ -100,17 +100,18 @@ end OfClass
 
 section Corner
 variable {R A : Type*} [CommSemiring R] [NonUnitalSemiring A] [StarRing A] [Module R A]
-  [IsScalarTower R A A] [SMulCommClass R A A] [TopologicalSpace A] [T2Space A] [ContinuousMul A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [TopologicalSpace A] [T2Space A]
+  [SeparatelyContinuousMul A]
 /-- The fixed corner `s.corner hp` of a closed nonunital `⋆`-subalgebra is closed. -/
 instance isClosed_corner (s : NonUnitalStarSubalgebra R A) [hs : IsClosed (s : Set A)]
     {p : A} (hp : IsSelfAdjoint p) : IsClosed (s.corner hp : Set A) :=
-  coe_corner s hp ▸ hs.and ((isClosed_eq (continuous_const.mul continuous_id) continuous_id).and
-    (isClosed_eq (continuous_id.mul continuous_const) continuous_id))
+  coe_corner s hp ▸ hs.and ((isClosed_eq (continuous_const_mul p) continuous_id).and
+    (isClosed_eq (continuous_mul_const p) continuous_id))
 /-- The orthogonal corner `s.orthoCorner hp` of a closed nonunital `⋆`-subalgebra is closed. -/
 instance isClosed_orthoCorner (s : NonUnitalStarSubalgebra R A) [hs : IsClosed (s : Set A)]
     {p : A} (hp : IsSelfAdjoint p) : IsClosed (s.orthoCorner hp : Set A) :=
-  coe_orthoCorner s hp ▸ hs.and ((isClosed_eq (continuous_const.mul continuous_id)
-    continuous_const).and (isClosed_eq (continuous_id.mul continuous_const) continuous_const))
+  coe_orthoCorner s hp ▸ hs.and ((isClosed_eq (continuous_const_mul p)
+    continuous_const).and (isClosed_eq (continuous_mul_const p) continuous_const))
 end Corner
 end NonUnitalStarSubalgebra
 

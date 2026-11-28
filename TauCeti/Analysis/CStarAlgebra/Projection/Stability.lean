@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.Orthogonal
-public import Mathlib.Analysis.CStarAlgebra.Projection
 public import TauCeti.Analysis.CStarAlgebra.Basic
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.RoundProjection
-import Mathlib.Algebra.Order.Star.Projection
 import Mathlib.Algebra.Star.NonUnitalSubalgebra
 import TauCeti.Algebra.Star.Projection.Family
 import TauCeti.Analysis.Normed.Algebra.Star
@@ -29,7 +27,7 @@ projections in `TauCeti.Analysis.CStarAlgebra.MatrixUnits.Stability`.
 
 ## Main results
 
-* `IsStarProjection.eq_of_le_of_norm_sub_lt_one`, `TauCeti.exists_isStarProjection_mem_of_approx`,
+* `TauCeti.exists_isStarProjection_mem_of_approx`,
   `TauCeti.exists_pos_forall_exists_isStarProjection_mem_norm_sub_lt`,
   `TauCeti.exists_pos_forall_exists_isStarProjection_norm_sub_lt`,
   `TauCeti.exists_pos_forall_exists_pairwise_isStarOrtho_isStarProjection_mem_norm_sub_lt`,
@@ -45,14 +43,6 @@ projections in `TauCeti.Analysis.CStarAlgebra.MatrixUnits.Stability`.
 public section
 
 open Function
-
-/-- Star projections `p ≤ q` in a star-ordered normed star ring with proper star and `‖p - q‖ < 1`
-are equal. -/
-theorem IsStarProjection.eq_of_le_of_norm_sub_lt_one {A : Type*} [NonUnitalNormedRing A]
-    [StarRing A] [IsProperStar A] [PartialOrder A] [StarOrderedRing A] {p q : A}
-    (hp : IsStarProjection p) (hq : IsStarProjection q) (hle : p ≤ q) (h : ‖p - q‖ < 1) :
-    p = q :=
-  hp.eq_of_mul_eq_left_of_norm_sub_lt_one hq ((hp.le_iff_mul_eq_left hq).mp hle) h
 
 namespace TauCeti
 section

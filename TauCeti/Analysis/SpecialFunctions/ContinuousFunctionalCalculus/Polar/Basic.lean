@@ -315,26 +315,6 @@ theorem coe_polarUnitary_map {B : Type*} [PartialOrder B] [Ring B] [StarRing B]
     _ (map_nonneg φ (CFC.sqrt_nonneg ((a : A) * star (a : A))))
     (by simp [← map_mul, sqrt_mul_star_mul_polarUnitary]))
 
-/-- **The unitary factor intertwines what `a` intertwines.** If `a x = y a` for self-adjoint `x`
-and `y`, then also `u x = y u` for the unitary factor `u = a.polarUnitary`. In particular, if `a`
-conjugates a projection `p` to a projection `q`, then so does the unitary `u`. -/
-theorem polarUnitary_mul_eq_mul_polarUnitary {x y : A}
-    (hx : IsSelfAdjoint x) (hy : IsSelfAdjoint y) (h : (a : A) * x = y * a) :
-    (a.polarUnitary : A) * x = y * a.polarUnitary := by
-  -- `y` commutes with `a a⋆`, hence with its square root and the inverse of that square root.
-  have h' : x * star (a : A) = star (a : A) * y := by
-    simpa only [star_mul, hx.star_eq, hy.star_eq] using congrArg star h
-  have hc : Commute ((a : A) * star (a : A)) y := by
-    rw [Commute, SemiconjBy, mul_assoc, ← h', ← mul_assoc, h, mul_assoc]
-  obtain ⟨s, hs⟩ := (isStrictlyPositive_sqrt_mul_star a).isUnit
-  have hinv : Commute (CFC.sqrt ((a : A) * star (a : A)))⁻¹ʳ y := by
-    rw [← hs, inverse_unit]
-    have hsq : Commute (CFC.sqrt ((a : A) * star (a : A))) y := by
-      rw [CFC.sqrt_eq_cfc, cfc_nnreal_eq_real _ _ (mul_star_self_nonneg _)]
-      exact (IsSelfAdjoint.mul_star_self (a : A)).commute_cfc hc _
-    exact (hs ▸ hsq).units_inv_left
-  rw [coe_polarUnitary, mul_assoc, h, ← mul_assoc, hinv.eq, mul_assoc]
-
 /-- Right CFC formula `(a.polarUnitary : A) = a * cfc (fun x : ℝ ↦ (√x)⁻¹) (star a * a)`. -/
 theorem coe_polarUnitary_eq_mul_cfc_inv_sqrt :
     (a.polarUnitary : A) = (a : A) * cfc (fun x : ℝ ↦ (√x)⁻¹) (star (a : A) * a) := by
@@ -354,6 +334,16 @@ theorem mul_polarUnitary_eq_polarUnitary_mul {x y : A}
     rw [Commute, SemiconjBy, mul_assoc, ← h1, ← mul_assoc, h2, mul_assoc]
   rw [a.coe_polarUnitary_eq_mul_cfc_inv_sqrt, ← mul_assoc, h1, mul_assoc,
     ((star_mul_self_nonneg _).isSelfAdjoint.commute_cfc hcomm _).symm.eq, ← mul_assoc]
+
+/-- **The unitary factor intertwines what `a` intertwines.** If `a x = y a` for self-adjoint `x`
+and `y`, then also `u x = y u` for the unitary factor `u = a.polarUnitary`. In particular, if `a`
+conjugates a projection `p` to a projection `q`, then so does the unitary `u`. -/
+theorem polarUnitary_mul_eq_mul_polarUnitary {x y : A}
+    (hx : IsSelfAdjoint x) (hy : IsSelfAdjoint y) (h : (a : A) * x = y * a) :
+    (a.polarUnitary : A) * x = y * a.polarUnitary := by
+  have h2 : star (a : A) * y = x * star (a : A) := by
+    simpa only [star_mul, hx.star_eq, hy.star_eq] using (congrArg star h).symm
+  exact (a.mul_polarUnitary_eq_polarUnitary_mul h.symm h2).symm
 
 /-- Adjoint-compatible intertwining gives `(a.polarUnitary : A) * x * star a.polarUnitary = y`. -/
 theorem conjugate_polarUnitary {x y : A}

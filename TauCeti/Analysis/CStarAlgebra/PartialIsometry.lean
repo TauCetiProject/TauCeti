@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Classes
+public import TauCeti.Algebra.Star.PartialIsometry
 public import TauCeti.Analysis.CStarAlgebra.Basic
 import Mathlib.Algebra.Star.NonUnitalSubalgebra
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.RoundProjection
@@ -15,6 +16,7 @@ import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
 /-!
 # Norm stability of partial isometries in C⋆-algebras
 
+Every partial isometry in a C⋆-ring has norm at most `1` (`TauCeti.IsPartialIsometry.norm_le_one`).
 For star projections `p, q` and a corner-compressed element `z` (`q * z = z`, `z * p = z`) with
 `‖star z * z - p‖ < η`, `‖z * star z - q‖ < η` (`η ≤ 1 / 32`), polar normalization yields a partial
 isometry `v` (`star v * v = p`, `v * star v = q`, `‖v - z‖ < 10 * η`) in every closed non-unital
@@ -22,7 +24,8 @@ isometry `v` (`star v * v = p`, `v * star v = q`, `‖v - z‖ < 10 * η`) in ev
 
 ## Main results
 
-* `TauCeti.exists_isPartialIsometry_mem_of_approx`, `TauCeti.exists_isPartialIsometry_of_approx`.
+* `TauCeti.IsPartialIsometry.norm_le_one`,
+  `TauCeti.exists_isPartialIsometry_mem_of_approx`, `TauCeti.exists_isPartialIsometry_of_approx`.
 
 ## References
 
@@ -32,6 +35,13 @@ isometry `v` (`star v * v = p`, `v * star v = q`, `‖v - z‖ < 10 * η`) in ev
 public section
 open NonUnitalStarSubalgebra (mem_corner mem_ofClass)
 namespace TauCeti
+
+/-- Every partial isometry in a C⋆-ring has norm at most `1`. -/
+theorem IsPartialIsometry.norm_le_one {E : Type*} [NonUnitalNormedRing E] [StarRing E]
+    [CStarRing E] {v : E} (hv : IsPartialIsometry v) : ‖v‖ ≤ 1 := by
+  have hle : ‖star v * v‖ ≤ 1 := hv.isStarProjection_star_mul_self.norm_le _
+  rw [CStarRing.norm_star_mul_self] at hle; nlinarith [norm_nonneg v]
+
 variable {A : Type*} [NonUnitalCStarAlgebra A]
 /-- **Quantitative polar perturbation of an approximate partial isometry** in a closed non-unital
 `𝕜'`-`⋆`-subalgebra `s` (scalar monoid `𝕜'` over `ℝ`): for star projections `p, q` and `z ∈ s`

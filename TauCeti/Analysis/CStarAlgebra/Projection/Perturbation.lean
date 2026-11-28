@@ -38,11 +38,6 @@ stabilization, from `p ⊕ 0` to `0 ⊕ q`.
 
 ## Main statements
 
-* `IsStarProjection.exists_mem_unitary_mul_mul_star_eq_of_norm_sub_lt_one`: projections `p` and
-  `q` of a unital C⋆-algebra with `‖p - q‖ < 1` are conjugate by a unitary `u` with
-  `‖u - 1‖ ≤ √2 * ‖p - q‖`.
-* `IsStarProjection.exists_joined_one_mul_mul_star_eq_of_norm_sub_lt_one`: the conjugating
-  unitary can be chosen in the path component of `1`.
 * `IsStarProjection.exists_star_mul_self_eq_of_norm_sub_lt_one`: in a C⋆-algebra, possibly
   without unit, projections with `‖p - q‖ < 1` are Murray–von Neumann equivalent.
 * `Continuous.exists_joined_one_mul_mul_star_eq`: the values of a continuous family of projections
@@ -67,30 +62,6 @@ public section
 
 namespace IsStarProjection
 
-section Unital
-
-variable {A : Type*} [CStarAlgebra A] {p q : A}
-
-/-- **Nearby projections are unitarily equivalent.** Star projections `p` and `q` of a unital
-C⋆-algebra with `‖p - q‖ < 1` are conjugate, `u * p * star u = q`, by a unitary `u` with
-`‖u - 1‖ ≤ √2 * ‖p - q‖`. -/
-theorem exists_mem_unitary_mul_mul_star_eq_of_norm_sub_lt_one (hp : IsStarProjection p)
-    (hq : IsStarProjection q) (hpq : ‖p - q‖ < 1) :
-    ∃ u ∈ unitary A, u * p * star u = q ∧ ‖u - 1‖ ≤ √2 * ‖p - q‖ :=
-  ⟨_, (hp.projectionConjugacyUnitary hq hpq).property,
-    hp.conjugate_projectionConjugacyUnitary hq hpq,
-    hp.norm_projectionConjugacyUnitary_sub_one_le hq hpq⟩
-
-/-- **Nearby projections are homotopic through unitaries.** Star projections `p` and `q` of a
-unital C⋆-algebra with `‖p - q‖ < 1` are conjugate by a unitary in the path component of `1`. -/
-theorem exists_joined_one_mul_mul_star_eq_of_norm_sub_lt_one (hp : IsStarProjection p)
-    (hq : IsStarProjection q) (hpq : ‖p - q‖ < 1) :
-    ∃ u : unitary A, Joined 1 u ∧ (u : A) * p * star (u : A) = q :=
-  ⟨_, hp.joined_one_projectionConjugacyUnitary hq hpq,
-    hp.conjugate_projectionConjugacyUnitary hq hpq⟩
-
-end Unital
-
 section NonUnital
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] {p q : A}
@@ -103,9 +74,9 @@ theorem exists_star_mul_self_eq_of_norm_sub_lt_one (hp : IsStarProjection p)
   have hp' := hp.map (Unitization.inrNonUnitalStarAlgHom ℂ A)
   have hq' := hq.map (Unitization.inrNonUnitalStarAlgHom ℂ A)
   rw [Unitization.inrNonUnitalStarAlgHom_apply] at hp' hq'
-  obtain ⟨u, hu, hupq, -⟩ := hp'.exists_mem_unitary_mul_mul_star_eq_of_norm_sub_lt_one hq'
+  obtain ⟨u, -, hupq, -⟩ := hp'.exists_unitary_conjugate_of_norm_sub_lt_one hq'
     (by rwa [← Unitization.inr_sub, Unitization.norm_inr])
-  exact hp.exists_star_mul_self_eq_of_mem_unitary_unitization hu hupq
+  exact hp.exists_star_mul_self_eq_of_mem_unitary_unitization u.property hupq
 
 end NonUnital
 
@@ -130,9 +101,10 @@ theorem Continuous.exists_joined_one_mul_mul_star_eq {A : Type*} [CStarAlgebra A
     (fun x ↦ ?_) ⟨fun a b c ⟨u, hu, hab⟩ ⟨v, hv, hbc⟩ ↦ ⟨v * u, ?_, ?_⟩⟩ x y
   · filter_upwards [hf.continuousAt.eventually (Metric.ball_mem_nhds (f x) one_pos)] with y hy
     rw [dist_eq_norm] at hy
-    exact ⟨(hfp x).exists_joined_one_mul_mul_star_eq_of_norm_sub_lt_one (hfp y)
-      (by rwa [norm_sub_rev]), (hfp y).exists_joined_one_mul_mul_star_eq_of_norm_sub_lt_one
-      (hfp x) hy⟩
+    obtain ⟨u, hu, heq, -⟩ :=
+      (hfp x).exists_unitary_conjugate_of_norm_sub_lt_one (hfp y) (by rwa [norm_sub_rev])
+    obtain ⟨v, hv, heq', -⟩ := (hfp y).exists_unitary_conjugate_of_norm_sub_lt_one (hfp x) hy
+    exact ⟨⟨u, hu, heq⟩, ⟨v, hv, heq'⟩⟩
   · simpa using hv.mul hu
   · rw [Submonoid.coe_mul, star_mul, ← hbc, ← hab]
     simp only [mul_assoc]

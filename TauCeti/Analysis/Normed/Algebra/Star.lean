@@ -6,15 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Invertible
+public import Mathlib.Algebra.Order.Star.Basic
 public import Mathlib.Algebra.Star.Module
 public import Mathlib.Analysis.CStarAlgebra.Basic
 public import TauCeti.Analysis.Normed.Ring.Basic
+import Mathlib.Algebra.Order.Star.Projection
 
 /-!
 # Normed star algebra perturbation and symmetrization bounds
 
 Elementary norm estimates for self-adjoint symmetrization (`selfAdjointPart`), self-adjointness
-defects under perturbation, and star-product defects in seminormed star rings and star modules.
+defects under perturbation, star-product defects, and projection norm rigidity in seminormed star
+rings and star modules.
 
 ## Main results
 
@@ -25,6 +28,9 @@ defects under perturbation, and star-product defects in seminormed star rings an
   starred-product perturbation bounds.
 * `TauCeti.norm_star_mul_self_sub_le`, `TauCeti.norm_star_mul_self_sub_lt_of_norm_le`:
   star-product perturbation bounds separating approximation and defect terms.
+* `IsStarProjection.eq_of_mul_eq_left_of_norm_sub_lt_one`,
+  `IsStarProjection.eq_of_mul_eq_right_of_norm_sub_lt_one`,
+  `IsStarProjection.eq_of_le_of_norm_sub_lt_one`: norm rigidity for comparable star projections.
 -/
 
 public section
@@ -91,7 +97,7 @@ theorem norm_star_mul_sub_star_mul_le {A : Type*} [NonUnitalSeminormedRing A] [S
 /-- Star-product defect bound for `star z * z - p` via an approximation `y` of `z`, an
 approximation `y'` of `star y`, and a target `d` near `y' * y`:
 `‖star z * z - p‖ ≤ (‖z‖ + ‖y‖) * ‖z - y‖ + ‖star y - y'‖ * ‖y‖ + ‖y' * y - d‖ + ‖p - d‖`. -/
-theorem norm_star_mul_self_sub_le {A : Type*} [NonUnitalSeminormedRing A] [StarRing A]
+theorem norm_star_mul_self_sub_le {A : Type*} [NonUnitalSeminormedRing A] [StarAddMonoid A]
     [NormedStarGroup A] (z y y' d p : A) :
     ‖star z * z - p‖ ≤
       (‖z‖ + ‖y‖) * ‖z - y‖ + ‖star y - y'‖ * ‖y‖ + ‖y' * y - d‖ + ‖p - d‖ := by
@@ -107,10 +113,10 @@ theorem norm_star_mul_self_sub_le {A : Type*} [NonUnitalSeminormedRing A] [StarR
 
 /-- Strict star-product defect bound with variable norm bounds `‖z‖ ≤ M₁` and `‖y‖ ≤ M₂`:
 `‖star z * z - p‖ < (M₁ + M₂) * α + (M₂ + 1) * δ + β`. -/
-theorem norm_star_mul_self_sub_lt_of_norm_le {A : Type*} [NonUnitalSeminormedRing A] [StarRing A]
-    [NormedStarGroup A] {z y y' d p : A} {M₁ M₂ α δ β : ℝ} (hz : ‖z‖ ≤ M₁) (hy : ‖y‖ ≤ M₂)
-    (hzy : ‖z - y‖ ≤ α) (hstar : ‖star y - y'‖ < δ) (hmul : ‖y' * y - d‖ < δ)
-    (hpd : ‖p - d‖ < β) :
+theorem norm_star_mul_self_sub_lt_of_norm_le {A : Type*} [NonUnitalSeminormedRing A]
+    [StarAddMonoid A] [NormedStarGroup A] {z y y' d p : A} {M₁ M₂ α δ β : ℝ}
+    (hz : ‖z‖ ≤ M₁) (hy : ‖y‖ ≤ M₂) (hzy : ‖z - y‖ ≤ α) (hstar : ‖star y - y'‖ < δ)
+    (hmul : ‖y' * y - d‖ < δ) (hpd : ‖p - d‖ < β) :
     ‖star z * z - p‖ < (M₁ + M₂) * α + (M₂ + 1) * δ + β := by
   have hδ : 0 < δ := (norm_nonneg _).trans_lt hmul
   have h1 : (‖z‖ + ‖y‖) * ‖z - y‖ ≤ (M₁ + M₂) * α :=
@@ -120,3 +126,30 @@ theorem norm_star_mul_self_sub_lt_of_norm_le {A : Type*} [NonUnitalSeminormedRin
   linarith [norm_star_mul_self_sub_le z y y' d p]
 
 end TauCeti
+
+namespace IsStarProjection
+
+variable {E : Type*} [NonUnitalNormedRing E] [StarRing E]
+
+/-- Star projections `p, q` in a star normed ring with `p * q = p` and `‖p - q‖ < 1` satisfy
+`p = q`. -/
+theorem eq_of_mul_eq_left_of_norm_sub_lt_one {p q : E} (hp : IsStarProjection p)
+    (hq : IsStarProjection q) (hpq : p * q = p) (h : ‖p - q‖ < 1) : p = q :=
+  (sub_eq_zero.mp ((hp.sub_of_mul_eq_left hq hpq).isIdempotentElem.eq_zero_of_norm_lt_one
+    (norm_sub_rev p q ▸ h))).symm
+
+/-- Star projections `p, q` in a star normed ring with `q * p = p` and `‖p - q‖ < 1` satisfy
+`p = q`. -/
+theorem eq_of_mul_eq_right_of_norm_sub_lt_one {p q : E} (hp : IsStarProjection p)
+    (hq : IsStarProjection q) (hqp : q * p = p) (h : ‖p - q‖ < 1) : p = q :=
+  (sub_eq_zero.mp ((hp.sub_of_mul_eq_right hq hqp).isIdempotentElem.eq_zero_of_norm_lt_one
+    (norm_sub_rev p q ▸ h))).symm
+
+/-- Star projections `p ≤ q` in a star-ordered normed star ring with proper star and `‖p - q‖ < 1`
+are equal. -/
+theorem eq_of_le_of_norm_sub_lt_one [IsProperStar E] [PartialOrder E] [StarOrderedRing E]
+    {p q : E} (hp : IsStarProjection p) (hq : IsStarProjection q) (hle : p ≤ q)
+    (h : ‖p - q‖ < 1) : p = q :=
+  hp.eq_of_mul_eq_left_of_norm_sub_lt_one hq ((hp.le_iff_mul_eq_left hq).mp hle) h
+
+end IsStarProjection

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Star.MatrixUnits
 public import TauCeti.Analysis.CStarAlgebra.Unitary.Polar
-import TauCeti.Analysis.CStarAlgebra.Basic
+import TauCeti.Analysis.CStarAlgebra.PartialIsometry
 
 /-!
 # Unitary conjugacy of nearby systems of matrix units in a C⋆-algebra

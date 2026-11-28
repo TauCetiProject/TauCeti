@@ -20,8 +20,7 @@ a C⋆-algebra, possibly without unit, by exact ones.
 
 * **Rounding.** A self-adjoint element `x` with `‖x - x * x‖ ≤ δ < 1/4` is within `2δ` of a star
   projection (`TauCeti.exists_isStarProjection_norm_sub_le`): the spectral projection
-  `χ_{[1/2, ∞)}(x)`, computed in the unitization and lying in the algebra since the indicator
-  vanishes at `0`.
+  `TauCeti.roundProjection x = χ_{[1/2, ∞)}(x)`, computed directly in `A` via `cfcₙ`.
 * **Approximate partial isometries.** Let `p` and `q` be star projections and `w = q w p` with
   `‖w⋆w - p‖ < 1` and `‖ww⋆ - q‖ < 1`. Then `p` and `q` are Murray–von Neumann equivalent
   (`IsStarProjection.exists_star_mul_self_eq_of_norm_star_mul_self_sub_lt_one`). In the
@@ -63,18 +62,9 @@ variable {A : Type*} [NonUnitalCStarAlgebra A]
 possibly without unit, with `‖x - x * x‖ ≤ δ < 1/4` is within `2δ` of a star projection. -/
 theorem exists_isStarProjection_norm_sub_le {x : A} (hx : IsSelfAdjoint x) {δ : ℝ}
     (hδ : ‖x - x * x‖ ≤ δ) (hδ4 : δ < 1 / 4) :
-    ∃ p : A, IsStarProjection p ∧ ‖x - p‖ ≤ 2 * δ := by
-  set g : ℝ → ℝ := (Set.Ici (1 / 2 : ℝ)).indicator 1 with hg
-  have hg0 : g 0 = 0 := Set.indicator_of_notMem (by norm_num) _
-  have hinr : ((cfcₙ g x : A) : Unitization ℂ A) = roundProjection (x : Unitization ℂ A) := by
-    rw [roundProjection_eq_cfc, ← hg, Unitization.real_cfcₙ_eq_cfc_inr x g hg0]
-  refine ⟨cfcₙ g x, ?_, ?_⟩
-  · rw [← Unitization.isStarProjection_inr_iff (R := ℂ), hinr]
-    exact isStarProjection_roundProjection _
-  · have hδ' : ‖(x : Unitization ℂ A) - (x : Unitization ℂ A) ^ 2‖ ≤ δ := by
-      rwa [sq, ← Unitization.inr_mul, ← Unitization.inr_sub, Unitization.norm_inr]
-    have := norm_sub_roundProjection_le (hx.inr ℂ) hδ' hδ4
-    rwa [← hinr, ← Unitization.inr_sub, Unitization.norm_inr] at this
+    ∃ p : A, IsStarProjection p ∧ ‖x - p‖ ≤ 2 * δ :=
+  ⟨roundProjection x, isStarProjection_roundProjection x,
+    by simpa only [norm_sub_rev] using hx.norm_sub_roundProjection_le (by rwa [norm_sub_rev]) hδ4⟩
 
 end Rounding
 

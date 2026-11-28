@@ -393,21 +393,22 @@ theorem toSubmodule_range_nonUnitalStarAlgHom [NonUnitalSemiring R] [StarRing R]
 
 /-- Over a field, `he.nonUnitalStarAlgHom 𝕜` is injective iff no nonempty block vanishes. -/
 theorem injective_nonUnitalStarAlgHom_iff {𝕜 : Type*} [Field 𝕜] [StarRing 𝕜]
-    [NonUnitalRing R] [StarRing R] [Module 𝕜 R] [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R]
+    [NonUnitalSemiring R] [StarRing R] [Module 𝕜 R] [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R]
     [StarModule 𝕜 R] {e : ∀ r : κ, n r → n r → R} (he : IsMatrixUnitSystem e) :
     Function.Injective (he.nonUnitalStarAlgHom 𝕜) ↔ ∀ r (i : n r), e r i i ≠ 0 := by
   classical
-  refine ⟨fun hinj r i hzero ↦ ?_, fun hne ↦ (injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_⟩
+  refine ⟨fun hinj r i hzero ↦ ?_, fun hne x y hxy ↦ ?_⟩
   · have hpi : (Pi.single r (Matrix.single i i (1 : 𝕜)) : ∀ s, Matrix (n s) (n s) 𝕜) = 0 :=
       hinj ((he.nonUnitalStarAlgHom_piSingle_matrixSingle 𝕜 r i i).trans
         (hzero.trans (map_zero _).symm))
     simpa using congrFun (congrFun (congrFun hpi r) i) i
   · funext r i j
     by_contra hne_entry
-    have hmul : e r i i * he.nonUnitalStarAlgHom 𝕜 x * e r j j = x r i j • e r i j := by
-      have hsingle : Pi.single r (Matrix.single i i (1 : 𝕜)) * x *
+    have hmul (z : ∀ r, Matrix (n r) (n r) 𝕜) :
+        e r i i * he.nonUnitalStarAlgHom 𝕜 z * e r j j = z r i j • e r i j := by
+      have hsingle : Pi.single r (Matrix.single i i (1 : 𝕜)) * z *
           Pi.single r (Matrix.single j j (1 : 𝕜)) =
-          x r i j • Pi.single r (Matrix.single i j (1 : 𝕜)) := by
+          z r i j • Pi.single r (Matrix.single i j (1 : 𝕜)) := by
         funext s a b
         by_cases hrs : s = r
         · subst hrs
@@ -416,15 +417,20 @@ theorem injective_nonUnitalStarAlgHom_iff {𝕜 : Type*} [Field 𝕜] [StarRing 
         · simp [Pi.single_eq_of_ne hrs]
       have h1 := congrArg (he.nonUnitalStarAlgHom 𝕜) hsingle
       simpa only [map_mul, map_smul, he.nonUnitalStarAlgHom_piSingle_matrixSingle] using h1
+    have hcoeff : x r i j • e r i j = y r i j • e r i j := by
+      rw [← hmul x, ← hmul y, hxy]
+    have hdiff : (x r i j - y r i j) • e r i j = 0 := by
+      have hadd := congrArg (· + (-y r i j) • e r i j) hcoeff
+      simpa only [← add_smul, add_neg_cancel, zero_smul, ← sub_eq_add_neg] using hadd
     have hzero_entry : e r i j = 0 := by
-      rw [← one_smul 𝕜 (e r i j), ← inv_mul_cancel₀ hne_entry, mul_smul, ← hmul, hx, mul_zero,
-        zero_mul, smul_zero]
+      rw [← one_smul 𝕜 (e r i j), ← inv_mul_cancel₀ (sub_ne_zero.mpr hne_entry), mul_smul, hdiff,
+        smul_zero]
     exact hne r i (by rw [← he.mul_same r i j i, hzero_entry, zero_mul])
 
 /-- Over a field, `he.nonUnitalStarAlgHom 𝕜` is injective when every nonempty block has
 `e r i i ≠ 0`. -/
 theorem injective_nonUnitalStarAlgHom {𝕜 : Type*} [Field 𝕜] [StarRing 𝕜]
-    [NonUnitalRing R] [StarRing R] [Module 𝕜 R] [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R]
+    [NonUnitalSemiring R] [StarRing R] [Module 𝕜 R] [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R]
     [StarModule 𝕜 R] {e : ∀ r : κ, n r → n r → R} (he : IsMatrixUnitSystem e)
     (hne : ∀ r (i : n r), e r i i ≠ 0) :
     Function.Injective (he.nonUnitalStarAlgHom 𝕜) :=
@@ -500,7 +506,7 @@ theorem toSubmodule_range_starAlgHom {𝕜 : Type*} [CommSemiring 𝕜] [StarRin
     he.toNonUnitalStarAlgHom_starAlgHom]
 
 /-- Over a field, `he.starAlgHom 𝕜` is injective iff no nonempty block vanishes. -/
-theorem injective_starAlgHom_iff {𝕜 : Type*} [Field 𝕜] [StarRing 𝕜] [Ring R] [StarRing R]
+theorem injective_starAlgHom_iff {𝕜 : Type*} [Field 𝕜] [StarRing 𝕜] [Semiring R] [StarRing R]
     [Algebra 𝕜 R] [StarModule 𝕜 R] [∀ r, DecidableEq (n r)]
     {e : ∀ r : κ, n r → n r → R} (he : IsUnitalMatrixUnitSystem e) :
     Function.Injective (he.starAlgHom 𝕜) ↔ ∀ r (i : n r), e r i i ≠ 0 := by
@@ -508,7 +514,7 @@ theorem injective_starAlgHom_iff {𝕜 : Type*} [Field 𝕜] [StarRing 𝕜] [Ri
   exact he.toIsMatrixUnitSystem.injective_nonUnitalStarAlgHom_iff
 
 /-- Over a field, `he.starAlgHom 𝕜` is injective when every nonempty block has `e r i i ≠ 0`. -/
-theorem injective_starAlgHom {𝕜 : Type*} [Field 𝕜] [StarRing 𝕜] [Ring R] [StarRing R]
+theorem injective_starAlgHom {𝕜 : Type*} [Field 𝕜] [StarRing 𝕜] [Semiring R] [StarRing R]
     [Algebra 𝕜 R] [StarModule 𝕜 R] [∀ r, DecidableEq (n r)]
     {e : ∀ r : κ, n r → n r → R} (he : IsUnitalMatrixUnitSystem e)
     (hne : ∀ r (i : n r), e r i i ≠ 0) :
