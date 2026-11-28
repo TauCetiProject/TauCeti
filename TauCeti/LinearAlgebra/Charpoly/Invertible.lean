@@ -8,12 +8,14 @@ module
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Newton
 
 /-!
-# Recovering invertible operators from traces of positive powers
+# Recovering rank and characteristic polynomial from traces of positive powers
 
 Traces of positive powers do not see zero eigenvalues, so in general they do not determine
 the dimension. For an operator with nonzero determinant, the degree of `det (1 - X A)` is
 the dimension. Over an additively torsion-free ring, Newton's identities therefore recover both
 the dimension and the characteristic polynomial, even when comparing different finite free modules.
+Only the dimension and characteristic polynomial are recovered, not the operator itself, and the
+hypothesis is a nonzero determinant rather than a unit one.
 
 This is the characteristic polynomial step in the determinant method of grh-lean
 (https://github.com/lsernau/grh-lean, commit `72fead102f663d5c7a407964a13dc0cf9d977207`),

@@ -13,7 +13,8 @@ public import Mathlib.LinearAlgebra.Projection
 
 For an idempotent `e`, the operator `1 + c e` acts by `1 + c` on its range and by `1` on
 its kernel. Its determinant is therefore `(1 + c) ^ dim (range e)`.
-This formula lets a determinant recover the rank of a projection.
+When the powers of `1 + c` are pairwise distinct (for instance when `1 + c` is a positive real
+number other than `1`), this determinant recovers the rank of the projection.
 -/
 
 public section
