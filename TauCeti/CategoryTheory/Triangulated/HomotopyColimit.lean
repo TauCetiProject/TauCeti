@@ -267,6 +267,15 @@ def milnorLimOneToObj (ht : Triangle.mk X.sequenceDifference ψ δ ∈ distTrian
     rintro _ ⟨y, rfl⟩
     exact LinearMap.congr_fun (F.map_δ_comp_cofanOpToPiLinearEquiv_symm_shift ht) y
 
+/-- Evaluation of `milnorLimOneToObj` on a quotient representative `Submodule.Quotient.mk x`. -/
+theorem milnorLimOneToObj_mk (ht : Triangle.mk X.sequenceDifference ψ δ ∈ distTriang T)
+    [PreservesLimit (Discrete.functor fun n ↦ op ((X ⋙ shiftFunctor T (1 : ℤ)).obj n)) F]
+    (x : ModuleTower.Product ((X ⋙ shiftFunctor T (1 : ℤ)).op ⋙ F)) :
+    F.milnorLimOneToObj ht (Submodule.Quotient.mk x) =
+      F.map δ.op (((isColimitShiftedCoproductCofan X).cofanOpToPiLinearEquiv F).symm x) := by
+  rw [milnorLimOneToObj, Submodule.liftQ_apply, LinearMap.comp_apply,
+    LinearEquiv.coe_toLinearMap]
+
 @[simp]
 theorem milnorLimOneToObj_mk_map (ht : Triangle.mk X.sequenceDifference ψ δ ∈ distTriang T)
     [PreservesLimit (Discrete.functor fun n ↦ op ((X ⋙ shiftFunctor T (1 : ℤ)).obj n)) F]
@@ -277,8 +286,7 @@ theorem milnorLimOneToObj_mk_map (ht : Triangle.mk X.sequenceDifference ψ δ �
   let e₁ := (isColimitShiftedCoproductCofan X).cofanOpToPiLinearEquiv F
   have he₁ : (fun n ↦ F.map ((Sigma.ι X.obj n)⟦(1 : ℤ)⟧').op y) = e₁ y :=
     funext fun n ↦ ((isColimitShiftedCoproductCofan X).cofanOpToPiLinearEquiv_apply F y n).symm
-  rw [he₁]
-  exact congrArg (F.map δ.op) (e₁.symm_apply_apply y)
+  rw [he₁, F.milnorLimOneToObj_mk ht, e₁.symm_apply_apply]
 
 /-- Naturality of the connecting map `lim¹ F((Xₙ)⟦1⟧) →ₗ[R] F(M)` with respect to any morphism
 of Milnor triangles extending a morphism of sequences `α : X ⟶ Y`. -/
@@ -309,8 +317,8 @@ theorem milnorLimOneToObj_naturality {Y : ℕ ⥤ T} [HasCoproduct Y.obj] {M' : 
     simp only [ModuleTower.productMap_apply, Functor.whiskerRight_app, NatTrans.op_app,
       eY, IsColimit.cofanOpToPiLinearEquiv_apply, Cofan.inj]
     exact (F.map_op_apply_eq_of_comp_eq hsq y).symm
-  have hL : F.milnorLimOneToObj htY (Submodule.Quotient.mk (eY y)) = F.map δ'.op y :=
-    congrArg (F.map δ'.op) (eY.symm_apply_apply y)
+  have hL : F.milnorLimOneToObj htY (Submodule.Quotient.mk (eY y)) = F.map δ'.op y := by
+    rw [F.milnorLimOneToObj_mk htY, eY.symm_apply_apply]
   simp only [LinearMap.comp_apply, Submodule.mkQ_apply, hL, ModuleTower.limOneMap_mk, hprod,
     milnorLimOneToObj_mk_map]
   exact (F.map_op_apply_eq_of_comp_eq φ.comm₃ y).symm
@@ -384,13 +392,13 @@ theorem exact_milnorLimOneToObj_milnorObjToLim
       rw [coe_milnorObjToLim_apply, map_op_comp_apply] at hcoord
       dsimp only [e]; rw [IsColimit.cofanOpToPiLinearEquiv_apply]; exact hcoord
     obtain ⟨y, hy⟩ := exact_op_milnor₂₃ F ht hψ
-    exact ⟨Submodule.Quotient.mk (e₁ y), (congrArg (F.map δ.op) (e₁.symm_apply_apply y)).trans hy⟩
+    refine ⟨Submodule.Quotient.mk (e₁ y), ?_⟩
+    rw [F.milnorLimOneToObj_mk ht, e₁.symm_apply_apply, hy]
   · rintro ⟨z, rfl⟩
     obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ z
     have hψδ : ψ ≫ δ = 0 := comp_distTriang_mor_zero₂₃ _ ht
     ext n
-    simp only [ModuleTower.limπ_apply, coe_milnorObjToLim_apply, milnorLimOneToObj,
-      Submodule.liftQ_apply, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+    simp only [ModuleTower.limπ_apply, coe_milnorObjToLim_apply, F.milnorLimOneToObj_mk ht,
       ZeroMemClass.coe_zero, Pi.zero_apply]
     rw [← map_op_comp_apply, Category.assoc, hψδ, comp_zero, op_zero, F.map_zero]
     simp
