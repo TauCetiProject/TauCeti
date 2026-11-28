@@ -347,19 +347,18 @@ theorem MonoidHom.eq_one_of_isOfFinOrder_of_map_eq_one {H : Type*} [MulOneClass 
   have hy : IsOfFinOrder y := f.ker.subtype_injective.isOfFinOrder_iff.mp hx
   simpa only [Subgroup.coe_subtype, Subgroup.coe_one, y] using congrArg f.ker.subtype hy.eq_one'
 
-/-- **Injectivity on torsion subgroups.** A group homomorphism whose kernel is torsion-free is
-injective on every torsion subgroup: two elements with the same image differ by an element of the
-kernel, which has finite order when the subgroup is torsion. -/
-@[to_additive /-- An additive group homomorphism whose kernel is torsion-free is injective on
-every torsion subgroup. -/]
+/-- **Injectivity on torsion subgroups.** A homomorphism from a group into a `MulOneClass`
+with torsion-free kernel is injective on every torsion subgroup. -/
+@[to_additive /-- A homomorphism from an additive group into an `AddZeroClass` with
+torsion-free kernel is injective on every torsion subgroup. -/]
 theorem MonoidHom.injective_domRestrict_of_isMulTorsion {H : Type*} [MulOneClass H] (f : G →* H)
     [IsMulTorsionFree f.ker] {K : Subgroup G} (hK : IsMulTorsion K) :
     Function.Injective (f.domRestrict K) := by
   exact (injective_iff_map_eq_one _).mpr fun x hx ↦ Subtype.ext
     (f.eq_one_of_isOfFinOrder_of_map_eq_one (K.subtype_injective.isOfFinOrder_iff.mpr (hK x)) hx)
 
-/-- For a group homomorphism into a finite codomain with torsion-free kernel, the `Nat.card` of
-every source subgroup is at most the cardinality of the target. -/
+/-- For a homomorphism from a group into a finite `MulOneClass` with torsion-free kernel, the
+`Nat.card` of every source subgroup is at most the cardinality of the target. -/
 theorem MonoidHom.natCard_le_of_isMulTorsionFree_ker {H : Type*} [MulOneClass H] (f : G →* H)
     [IsMulTorsionFree f.ker] [Finite H] (K : Subgroup G) : Nat.card K ≤ Nat.card H := by
   cases finite_or_infinite K with

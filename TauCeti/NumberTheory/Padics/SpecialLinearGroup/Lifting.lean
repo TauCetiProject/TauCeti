@@ -16,6 +16,7 @@ import TauCeti.Algebra.Ring.SubOnePow
 import TauCeti.Data.ZMod.Ico
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Commutator
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
+import TauCeti.LinearAlgebra.Matrix.IdealEntries
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Adjoint
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Lift
@@ -221,15 +222,16 @@ theorem exists_mem_eq_add_pow_smul_of_map_eq_top {R : Type*} [CommRing R] (f : �
     ∃ h ∈ H, ∃ Z, (g : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) = h + ℓ ^ n • Z := by
   obtain ⟨h, hh, hgh⟩ : SpecialLinearGroup.map f g ∈ H.map (SpecialLinearGroup.map f) :=
     hmap ▸ Subgroup.mem_top _
-  have hdvd (i j : Fin 2) : (ℓ : ℤ_[ℓ]) ^ n ∣ (g : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) i j - h i j := by
-    refine hf _ ?_
-    have := congrFun (congrFun (congrArg Subtype.val hgh) i) j
-    simp only [SpecialLinearGroup.map_apply_coe, Matrix.map_apply] at this
-    rw [map_sub, this, sub_self]
-  choose Z hZ using hdvd
-  refine ⟨h, hh, of Z, ?_⟩
-  ext i j
-  simp [← hZ i j, nsmul_eq_mul]
+  have hker : RingHom.ker f ≤ Ideal.span {((ℓ : ℤ_[ℓ]) ^ n)} :=
+    fun x hx ↦ Ideal.mem_span_singleton.mpr (hf x (RingHom.mem_ker.mp hx))
+  have hdiff : ((g : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) - h).map f = 0 := by
+    have heq := congrArg Subtype.val hgh
+    simp only [SpecialLinearGroup.map_apply_coe] at heq
+    rw [Matrix.map_sub f (map_sub f), heq, sub_self]
+  obtain ⟨Z, hZ⟩ := Matrix.exists_eq_smul_of_map_eq_zero hker hdiff
+  refine ⟨h, hh, Z, ?_⟩
+  rw [← Nat.cast_smul_eq_nsmul ℤ_[ℓ], Nat.cast_pow]
+  exact sub_eq_iff_eq_add'.mp hZ
 
 /-- If every element of `SL₂(ℤ_ℓ)` is congruent modulo `ℓ ^ (k + 1)` to an element of `H`, then `H`
 surjects onto `SL₂(𝔽_ℓ)`. -/

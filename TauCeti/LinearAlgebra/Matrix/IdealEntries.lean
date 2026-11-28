@@ -178,21 +178,6 @@ theorem _root_.RingHom.natCard_ker_mapMatrix {R : Type*} [Semiring R] [Semiring 
       right_inv _ := rfl }
   rw [Nat.card_congr e, card_matrix, Nat.card_eq_fintype_card (α := n)]
 
-/-- Two matrices have the same image modulo `r` exactly when they differ by `r` times a
-matrix. -/
-theorem map_mk_eq_map_mk_iff [CommRing S] {r : S} {A A' : Matrix m n S} :
-    A'.map (Ideal.Quotient.mk (Ideal.span {r})) = A.map (Ideal.Quotient.mk (Ideal.span {r})) ↔
-      ∃ C : Matrix m n S, A' = A + r • C := by
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · have (i : m) (j : n) : ∃ c, A' i j = A i j + r * c := by
-      obtain ⟨c, hc⟩ := Ideal.mem_span_singleton.mp (Ideal.Quotient.eq.mp (congr_fun₂ h i j))
-      exact ⟨c, by rw [← hc, add_sub_cancel]⟩
-    choose c hc using this
-    exact ⟨of c, ext fun i j ↦ by simp [hc]⟩
-  · rintro ⟨C, rfl⟩
-    ext i j
-    simp [Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self r)]
-
 /-- If the kernel of `f` is contained in `(r)`, a matrix that vanishes under `f` is `r` times
 another matrix of the same shape. -/
 theorem exists_eq_smul_of_map_eq_zero [CommSemiring S] {T F : Type*} [Semiring T]
@@ -215,6 +200,14 @@ theorem map_eq_zero_iff_exists_eq_smul [CommSemiring S] {T F : Type*} [Semiring 
   refine forall_mem_ker_iff_map_eq_zero.mp fun i j ↦ ?_
   rw [hf, Matrix.smul_apply, smul_eq_mul]
   exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self r)
+
+/-- Two matrices have the same image modulo `r` exactly when they differ by `r` times a
+matrix. -/
+theorem map_mk_eq_map_mk_iff [CommRing S] {r : S} {A A' : Matrix m n S} :
+    A'.map (Ideal.Quotient.mk (Ideal.span {r})) = A.map (Ideal.Quotient.mk (Ideal.span {r})) ↔
+      ∃ C : Matrix m n S, A' = A + r • C := by
+  simpa only [Matrix.map_sub _ (map_sub _), sub_eq_iff_eq_add', add_zero] using
+    (map_eq_zero_iff_exists_eq_smul (M := A' - A) (Ideal.mk_ker (I := Ideal.span {r})))
 
 /-- If the kernel of `f` is contained in `(r)` and `M` vanishes under `f`, then the scalar
 matrix `r` divides `M`. -/

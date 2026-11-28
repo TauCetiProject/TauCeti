@@ -112,8 +112,7 @@ theorem isMulTorsionFree_ker_map {ℓ k : ℕ} (hℓ : ℓ.Prime) (hk : 3 ≤ �
   rintro ⟨g, hg⟩ hne hfin
   refine hne ?_
   have hgφ : φ.mapMatrix (g : Matrix n n R) = 1 := by
-    simpa only [Matrix.GeneralLinearGroup.map, Units.coe_map, RingHom.toMonoidHom_eq_coe,
-      MonoidHom.coe_ofClass, Units.val_one] using congrArg
+    simpa only [val_map_apply, Units.val_one, RingHom.mapMatrix_apply] using congrArg
       (Units.val : GL n S → Matrix n n S) (MonoidHom.mem_ker.mp hg)
   have hgφ' : ((g : Matrix n n R) - 1).map φ = 0 := by
     rw [← RingHom.mapMatrix_apply, map_sub, map_one, hgφ, sub_self]
@@ -170,12 +169,9 @@ theorem isMulTorsionFree_ker_map_toZMod (hp : Odd p) :
     IsMulTorsionFree (map (n := n) (PadicInt.toZMod : ℤ_[p] →+* ZMod p)).ker := by
   have hprime : p.Prime := Fact.out
   have hlevel : 3 ≤ p ^ 1 := by simpa only [pow_one] using hprime.odd_iff.mp hp
-  let e := ZMod.ringEquivCongr (pow_one p)
-  have he : Continuous e := continuous_of_discreteTopology
-  have hcomp : PadicInt.toZMod = e.toRingHom.comp (PadicInt.toZModPow 1) :=
-    PadicInt.ringHom_ext_of_continuous PadicInt.continuous_toZMod
-      (he.comp (PadicInt.continuous_toZModPow 1))
-  rw [hcomp, map_comp, MonoidHom.ker_comp_of_injective _ _ (map_injective e.injective)]
+  rw [← PadicInt.ringEquivCongr_comp_toZModPow_one, map_comp,
+    MonoidHom.ker_comp_of_injective _ _
+      (map_injective (ZMod.ringEquivCongr (pow_one p)).injective)]
   exact isMulTorsionFree_ker_map_toZModPow hlevel
 
 /-- For an odd prime `p`, reduction `GL n ℤ_[p] → GL n (ZMod p)` is injective on every
