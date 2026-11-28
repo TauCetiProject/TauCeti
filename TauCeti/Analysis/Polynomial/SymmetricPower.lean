@@ -17,6 +17,7 @@ import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Linear
 import Mathlib.Analysis.Analytic.Polynomial
 import Mathlib.Topology.Algebra.MvPolynomial
+import TauCeti.Analysis.Polynomial.Monic.RootBound
 
 /-!
 # The elementary symmetric chart is a homeomorphism
@@ -226,18 +227,10 @@ theorem norm_le_norm_coeffEquiv_ofFn_add_one (f : Fin n → K) :
   have hmonic : (toMonic (Sym.ofFn f) : K[X]).Monic := monic_toMonic _
   have hroot : (toMonic (Sym.ofFn f) : K[X]).IsRoot (f j) :=
     mem_iff_isRoot.1 (Sym.mem_coe.2 (Sym.mem_ofFn.2 ⟨j, rfl⟩))
-  have hcauchy := hroot.norm_lt_cauchyBound hmonic.ne_zero
-  have hbound : cauchyBound (toMonic (Sym.ofFn f) : K[X]) ≤ ‖coeffEquiv K n (Sym.ofFn f)‖₊ + 1 := by
-    have hsup : ((Finset.range n).sup fun i => ‖(toMonic (Sym.ofFn f) : K[X]).coeff i‖₊)
-        ≤ ‖coeffEquiv K n (Sym.ofFn f)‖₊ := by
-      refine Finset.sup_le fun i hi => ?_
-      rw [Finset.mem_range] at hi
-      have hcoord := nnNorm_le_pi_nnNorm (coeffEquiv K n (Sym.ofFn f)) ⟨i, hi⟩
-      rwa [coeffEquiv_apply_eq_coeff] at hcoord
-    rw [cauchyBound, hmonic.leadingCoeff, nnNorm_one, div_one, natDegree_toMonic]
-    exact add_le_add hsup le_rfl
-  have : ‖f j‖₊ < ‖coeffEquiv K n (Sym.ofFn f)‖₊ + 1 := hcauchy.trans_le hbound
-  simpa using (NNReal.coe_lt_coe.2 this).le
+  refine (hroot.norm_lt_add_one hmonic fun i hi => ?_).le
+  rw [natDegree_toMonic] at hi
+  have hcoord := norm_le_pi_norm (coeffEquiv K n (Sym.ofFn f)) ⟨i, hi⟩
+  rwa [coeffEquiv_apply_eq_coeff] at hcoord
 
 variable [ProperSpace K]
 

@@ -1,0 +1,166 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import Mathlib.Analysis.SpecialFunctions.Exp
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+
+import Mathlib.Analysis.Calculus.ParametricIntegral
+import TauCeti.MeasureTheory.Integral.Exp.Decay
+
+/-!
+# Real Laplace integrals: moments, parametric differentiation, and Abelian limits
+
+This file establishes basic analytic properties of one-sided real Laplace integrals
+`p ↦ ∫ t in Ioi 0, exp (-(p * t)) • f t ∂μ` and their polynomial moments
+`p ↦ ∫ t in Ioi 0, (exp (-(p * t)) * t ^ j) • f t ∂μ` for functions `f : ℝ → E` into a real normed
+space `E` (taking `E` to be a real Banach space for the rescaled Abelian limit).
+
+The parametric differentiation results hold for an arbitrary measure `μ : Measure ℝ` (using
+`TauCeti.integrableOn_exp_neg_mul_mul_pow_smul_of_lt` from
+`TauCeti.MeasureTheory.Integral.Exp.Decay` for exponential-weight moment integrability), while the
+rescaled Abelian limit
+`TauCeti.tendsto_pow_succ_smul_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero` is a
+Lebesgue-measure (`volume`) result for a Banach target space `E`.
+
+## Main results
+
+* `TauCeti.hasDerivAt_integral_exp_neg_mul_mul_pow_smul` and
+  `TauCeti.iteratedDeriv_integral_exp_neg_mul_smul`: when `t ↦ exp (-(q * t)) • f t` is integrable
+  on `(0, ∞)` with respect to `μ`, differentiation under the Laplace integral and its moments on
+  `{p | q < p}` for any measure `μ`.
+* `TauCeti.tendsto_pow_succ_smul_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero`: for Lebesgue
+  measure `volume` and a real Banach space `E`, if `h : ℝ → E` is locally integrable on `[0, ∞)`
+  and `h t → L` as `t → ∞`, then
+  `p ^ (j + 1) • ∫ t in Ioi 0, (exp (-(p * t)) * t ^ j) • h t → j ! • L` as `p → 0⁺`.
+-/
+
+public section
+
+noncomputable section
+
+open Filter MeasureTheory Set Topology
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Derivative of the Laplace-moment kernel `r ↦ exp (-(r * t)) * t ^ k` with respect to the
+rate `r`. -/
+theorem hasDerivAt_exp_neg_mul_mul_pow_left (r t : ℝ) (k : ℕ) :
+    HasDerivAt (fun p : ℝ ↦ Real.exp (-(p * t)) * t ^ k)
+      (-(Real.exp (-(r * t)) * t ^ (k + 1))) r := by
+  refine ((((hasDerivAt_id r).mul_const t).neg.exp).mul_const (t ^ k)).congr_deriv ?_
+  simp only [Pi.neg_apply, id_eq, one_mul, pow_succ]
+  ring
+
+/-- Derivative of the Laplace-moment kernel `t ↦ exp (-(p * t)) * t ^ k` with respect to `t`. -/
+theorem hasDerivAt_exp_neg_mul_mul_pow_right (p s : ℝ) (k : ℕ) :
+    HasDerivAt (fun t : ℝ ↦ Real.exp (-(p * t)) * t ^ k)
+      ((k : ℝ) * (Real.exp (-(p * s)) * s ^ (k - 1)) - p * (Real.exp (-(p * s)) * s ^ k)) s := by
+  refine ((((hasDerivAt_id s).const_mul p).neg.exp).mul (hasDerivAt_pow k s)).congr_deriv ?_
+  simp only [Pi.neg_apply, id_eq, mul_one]
+  ring
+
+/-- When `t ↦ exp (-(q * t)) • f t` is integrable on `(0, ∞)` with respect to `μ`, the `j`-th
+Laplace moment `r ↦ ∫ t in Ioi 0, (exp (-(r * t)) * t ^ j) • f t ∂μ` has derivative
+`-(∫ t in Ioi 0, (exp (-(p * t)) * t ^ (j + 1)) • f t ∂μ)` at every `p > q`. -/
+theorem hasDerivAt_integral_exp_neg_mul_mul_pow_smul {μ : Measure ℝ} {f : ℝ → E} {q p : ℝ}
+    (hqp : q < p) (hf : IntegrableOn (fun t : ℝ ↦ Real.exp (-(q * t)) • f t) (Ioi 0) μ) (j : ℕ) :
+    HasDerivAt (fun r : ℝ ↦ ∫ t in Ioi 0, (Real.exp (-(r * t)) * t ^ j) • f t ∂μ)
+      (-(∫ t in Ioi 0, (Real.exp (-(p * t)) * t ^ (j + 1)) • f t ∂μ)) p := by
+  let m := (q + p) / 2
+  have hqm : q < m := by dsimp [m]; linarith
+  have hmp : m < p := by dsimp [m]; linarith
+  have hdom := hasDerivAt_integral_of_dominated_loc_of_deriv_le (s := Ioi m)
+    (F := fun r t ↦ (Real.exp (-(r * t)) * t ^ j) • f t)
+    (F' := fun r t ↦ -((Real.exp (-(r * t)) * t ^ (j + 1)) • f t))
+    (bound := fun t ↦ ‖(Real.exp (-(m * t)) * t ^ (j + 1)) • f t‖) (Ioi_mem_nhds hmp)
+    (by filter_upwards [Ioi_mem_nhds hqp] with r (hr : q < r) using
+      (integrableOn_exp_neg_mul_mul_pow_smul_of_lt hr hf j).aestronglyMeasurable)
+    (integrableOn_exp_neg_mul_mul_pow_smul_of_lt hqp hf j)
+    (integrableOn_exp_neg_mul_mul_pow_smul_of_lt hqp hf (j + 1)).neg.aestronglyMeasurable ?_
+    (integrableOn_exp_neg_mul_mul_pow_smul_of_lt hqm hf (j + 1)).norm ?_
+  · simpa [integral_neg] using hdom.2
+  · filter_upwards [self_mem_ae_restrict measurableSet_Ioi] with t (ht : 0 < t) r (hr : m < r)
+    simp only [norm_neg, norm_smul,
+      Real.norm_of_nonneg (mul_nonneg (Real.exp_pos _).le (pow_nonneg ht.le _))]
+    exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right
+      (Real.exp_le_exp.mpr (by nlinarith)) (pow_nonneg ht.le _)) (norm_nonneg _)
+  · filter_upwards [self_mem_ae_restrict measurableSet_Ioi] with t _ r _
+    exact ((hasDerivAt_exp_neg_mul_mul_pow_left r t j).smul_const (f t)).congr_deriv
+      (neg_smul _ _)
+
+/-- Formula for the `n`-th derivative of the Laplace integral
+`r ↦ ∫ t in Ioi 0, exp (-(r * t)) • f t ∂μ` at any `p > q` where `t ↦ exp (-(q * t)) • f t` is
+integrable on `(0, ∞)`. -/
+theorem iteratedDeriv_integral_exp_neg_mul_smul {μ : Measure ℝ} {f : ℝ → E} {q p : ℝ} (hqp : q < p)
+    (hf : IntegrableOn (fun t : ℝ ↦ Real.exp (-(q * t)) • f t) (Ioi 0) μ) (n : ℕ) :
+    iteratedDeriv n (fun r : ℝ ↦ ∫ t in Ioi 0, Real.exp (-(r * t)) • f t ∂μ) p =
+      (-1 : ℝ) ^ n • ∫ t in Ioi 0, (Real.exp (-(p * t)) * t ^ n) • f t ∂μ := by
+  induction n generalizing p with
+  | zero => simp
+  | succ n ih =>
+    rw [iteratedDeriv_succ]
+    have heq : (iteratedDeriv n fun r : ℝ ↦ ∫ t in Ioi 0, Real.exp (-(r * t)) • f t ∂μ) =ᶠ[𝓝 p]
+        ((-1 : ℝ) ^ n • fun r : ℝ ↦ ∫ t in Ioi 0, (Real.exp (-(r * t)) * t ^ n) • f t ∂μ) := by
+      filter_upwards [Ioi_mem_nhds hqp] with r hr using ih hr
+    rw [heq.deriv_eq,
+      ((hasDerivAt_integral_exp_neg_mul_mul_pow_smul hqp hf n).const_smul ((-1 : ℝ) ^ n)).deriv]
+    simp [pow_succ, mul_smul]
+
+/-- **Abelian limit for rescaled Lebesgue-measure Laplace moments.** If `E` is a real Banach space,
+`h : ℝ → E` is locally integrable on `[0, ∞)` with respect to Lebesgue measure `volume`, and
+`h t → L` as `t → ∞`, then
+`p ^ (j + 1) • ∫ t in Ioi 0, (exp (-(p * t)) * t ^ j) • h t → j ! • L` as `p → 0⁺`. -/
+theorem tendsto_pow_succ_smul_integral_exp_neg_mul_mul_pow_smul_nhdsGT_zero [CompleteSpace E]
+    {h : ℝ → E} {L : E} (hh : LocallyIntegrableOn h (Ici 0)) (hh_top : Tendsto h atTop (𝓝 L))
+    (j : ℕ) :
+    Tendsto (fun p : ℝ ↦ p ^ (j + 1) • ∫ t in Ioi 0, (Real.exp (-(p * t)) * t ^ j) • h t)
+      (𝓝[>] 0) (𝓝 ((j.factorial : ℝ) • L)) := by
+  have hj_pos : (0 : ℝ) < j.factorial := Nat.cast_pos.mpr j.factorial_pos
+  rw [Metric.tendsto_nhds]
+  intro δ hδ
+  set c := δ / (2 * j.factorial)
+  have hc : 0 < c := by positivity
+  obtain ⟨T₀, hT₀⟩ := eventually_atTop.mp (hh_top.eventually (Metric.closedBall_mem_nhds L hc))
+  set T := max T₀ 0
+  set K := T ^ j * ∫ t in Ioc 0 T, ‖h t - L‖
+  have hsmall : ∀ᶠ p : ℝ in 𝓝[>] 0, p ^ (j + 1) * K < δ / 2 :=
+    (((tendsto_nhdsWithin_of_tendsto_nhds tendsto_id).pow (j + 1)).mul_const K).eventually_lt_const
+      (by simpa using half_pos hδ)
+  filter_upwards [hsmall, self_mem_nhdsWithin] with p hpK (hp : 0 < p)
+  obtain ⟨hint_sub, hnorm⟩ := integrableOn_and_norm_integral_exp_neg_mul_mul_pow_smul_le
+    (h := fun t ↦ h t - L) hp (le_max_right T₀ 0) j (hh.sub (locallyIntegrableOn_const L))
+    fun t ht ↦ by simpa [dist_eq_norm] using hT₀ t ((le_max_left T₀ 0).trans (mem_Ioi.mp ht).le)
+  have hw : IntegrableOn (fun t : ℝ ↦ Real.exp (-(p * t)) * t ^ j) (Ioi 0) :=
+    (integrableOn_pow_mul_exp_neg_mul_Ioi j hp).congr_fun
+      (fun t _ ↦ mul_comm (t ^ j) (Real.exp (-(p * t)))) measurableSet_Ioi
+  have hw_int : ∫ t in Ioi (0 : ℝ), Real.exp (-(p * t)) * t ^ j = j.factorial / p ^ (j + 1) := by
+    rw [setIntegral_congr_fun measurableSet_Ioi
+      (fun t _ ↦ mul_comm (Real.exp (-(p * t))) (t ^ j))]
+    exact integral_pow_mul_exp_neg_mul_Ioi j hp
+  have hw_eq : p ^ (j + 1) * ∫ t in Ioi (0 : ℝ), Real.exp (-(p * t)) * t ^ j = j.factorial := by
+    rw [hw_int, mul_div_cancel₀ _ (pow_pos hp _).ne']
+  have hfun : (fun t : ℝ ↦ (Real.exp (-(p * t)) * t ^ j) • h t) = fun t ↦
+      (Real.exp (-(p * t)) * t ^ j) • (h t - L) + (Real.exp (-(p * t)) * t ^ j) • L := by
+    ext t; rw [← smul_add, sub_add_cancel]
+  have hsplit : p ^ (j + 1) • ∫ t in Ioi 0, (Real.exp (-(p * t)) * t ^ j) • h t =
+      p ^ (j + 1) • (∫ t in Ioi 0, (Real.exp (-(p * t)) * t ^ j) • (h t - L)) +
+        (j.factorial : ℝ) • L := by
+    rw [hfun, integral_add hint_sub (hw.smul_const L), integral_smul_const, smul_add, smul_smul,
+      hw_eq]
+  rw [dist_eq_norm, hsplit, add_sub_cancel_right, norm_smul,
+    Real.norm_of_nonneg (pow_nonneg hp.le _)]
+  calc p ^ (j + 1) * ‖∫ t in Ioi 0, (Real.exp (-(p * t)) * t ^ j) • (h t - L)‖
+      ≤ p ^ (j + 1) * (K + c * (j.factorial / p ^ (j + 1))) := by gcongr
+    _ = p ^ (j + 1) * K + δ / 2 := by
+        rw [mul_add]; congr 1; simp only [c]; field_simp [hp.ne', hj_pos.ne']
+    _ < δ := by linarith
+
+end TauCeti

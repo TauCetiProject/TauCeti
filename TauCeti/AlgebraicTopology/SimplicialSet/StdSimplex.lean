@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Boundary
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
 public import Mathlib.Data.Finset.Sort
+import Mathlib.CategoryTheory.Functor.KanExtension.DenseAtYoneda
 
 /-!
 # Complements on standard simplices
@@ -29,6 +30,9 @@ faces of the increasing enumeration of a set `J` enumerate the sets `J` with one
   simplices.
 * `SSet.stdSimplex.const_app_apply`: the constant map at a vertex of `Δ[n]` sends every simplex
   to the constant simplex at that vertex.
+* `SSet.stdSimplex.map_const`: simplicial operators fix the constant simplices of `Δ[n]`.
+* `SSet.stdSimplex.asOrderHom_monotone_functor_eq_const`: a simplex of `Δ[n]` all of whose
+  vertices are `b` is, as a functor of finite linear orders, the constant functor at `b`.
 * `SSet.stdSimplex.δ_objMk_orderEmbOfFin`: the faces of the increasing enumeration of a set of
   vertices.
 * `SSet.stdSimplex.objMk_orderEmbOfFin_image`: an injective simplex is the increasing enumeration
@@ -88,6 +92,13 @@ the vertex function of the morphism `objEquiv x : ⦋d⦌ ⟶ ⦋n⦌` of the si
 lemma coe_asOrderHom {n d : ℕ} (x : (Δ[n] : SSet.{u}) _⦋d⦌) : ⇑(asOrderHom x) = ⇑x :=
   rfl
 
+/-- A simplex `s` of `Δ[n]` all of whose vertices are `b`, seen through its vertex map as a functor
+`Fin (m + 1) ⥤ Fin (n + 1)`, is the constant functor at `b`. -/
+lemma asOrderHom_monotone_functor_eq_const {n : ℕ} {m : SimplexCategoryᵒᵖ}
+    (s : (Δ[n] : SSet.{u}).obj m) (b : Fin (n + 1)) (hs : ∀ k, asOrderHom s k = b) :
+    (asOrderHom s).monotone.functor = (Functor.const _).obj b :=
+  CategoryTheory.Functor.ext hs fun _ _ _ ↦ Subsingleton.elim _ _
+
 /-- The `i`-th face of the simplex of `Δ[n]` enumerating a set `J` of vertices in increasing order
 enumerates `J` with its `i`-th smallest element removed. -/
 lemma δ_objMk_orderEmbOfFin {n m : ℕ} (J : Finset (Fin (n + 1))) (h : #J = m + 2)
@@ -125,6 +136,14 @@ lemma yonedaEquiv_id_apply (n : ℕ) (j : Fin (n + 1)) : yonedaEquiv (𝟙 (Δ[n
 @[simp]
 lemma const_apply (n : ℕ) (k : Fin (n + 1)) (d : ℕ) (t : Fin (d + 1)) :
     stdSimplex.const n k (op ⦋d⦌) t = k :=
+  (rfl)
+
+/-- Simplicial operators fix the constant simplices of `Δ[n]`: the image of the simplex
+concentrated in the vertex `k` is again concentrated in `k`. -/
+@[simp]
+lemma map_const (n : ℕ) (k : Fin (n + 1)) {m m' : SimplexCategoryᵒᵖ} (f : m ⟶ m') :
+    Δ[n].map f (stdSimplex.const n k m) = stdSimplex.const n k m' :=
+  -- `Δ[n].map f` precomposes with `f.unop`, and a constant map precomposed is constant.
   (rfl)
 
 /-- The vertices of the image of a simplex `x` of `Δ[n]` under a simplicial operator `f` are the
@@ -276,6 +295,9 @@ noncomputable def contraction (n : ℕ) :
     ext ⟨⟨m⟩⟩ p
     rfl
   rel := by ext _ ⟨⟨_, ⟨⟩⟩, _⟩
+
+/-- The standard simplex functor `SimplexCategory ⥤ SSet` is dense. -/
+instance isDense : stdSimplex.{u}.IsDense := inferInstanceAs uliftYoneda.{u}.IsDense
 
 end SSet.stdSimplex
 

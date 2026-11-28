@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Ideles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Real
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocalUnits
 public import TauCeti.Topology.Algebra.Group.Units
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
@@ -198,11 +199,9 @@ theorem NumberField.InfinitePlace.ideleInfiniteCoord_ofFiniteIdele
 @[simp]
 theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele
     (v : HeightOneSpectrum R) (a : (FiniteAdeleRing R K)ˣ) :
-    v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele R K a) =
-      Units.map (RestrictedProduct.evalMonoidHom _ v) a :=
+    v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele R K a) = FiniteAdeleRing.unitsProj K v a :=
   Units.ext <| by
-    rw [coe_ideleFiniteCoord, IdeleGroup.coe_ofFiniteIdele]
-    exact (Units.coe_map (RestrictedProduct.evalMonoidHom _ v) a).symm
+    rw [coe_ideleFiniteCoord, IdeleGroup.coe_ofFiniteIdele, FiniteAdeleRing.coe_unitsProj_apply]
 
 /-- The finite coordinate of the idele built from the principal finite idele of `x ∈ Kˣ` is the
 image of `x` in the completion. -/
