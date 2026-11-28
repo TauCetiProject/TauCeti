@@ -208,6 +208,15 @@ def singularHomologyCubeBoundaryPairIso : (cubeBoundaryPair.{w} n).singularHomol
       (TopPair.toSSetPair.mapIso (diskBoundaryPairIsoCube n)).symm ≪≫
     singularHomologyDiskBoundaryPairIso R n
 
+/-- `TauCeti.singularHomologyCubeBoundaryPairIso` is the map induced by the inverse of
+`TauCeti.diskBoundaryPairIsoCube`, followed by `TauCeti.singularHomologyDiskBoundaryPairIso`. -/
+lemma singularHomologyCubeBoundaryPairIso_hom :
+    (singularHomologyCubeBoundaryPairIso R n).hom =
+      TopPair.singularHomologyMap (diskBoundaryPairIsoCube.{w} n).inv R n ≫
+        (singularHomologyDiskBoundaryPairIso R n).hom :=
+  -- This is the composite defining `singularHomologyCubeBoundaryPairIso`.
+  (rfl)
+
 /-- The generator of `Hₙ(Iⁿ, ∂Iⁿ; R)` is the image of the generator of `Hₙ(Dⁿ, Sⁿ⁻¹; R)` under
 `TauCeti.diskBoundaryPairToCube`. -/
 lemma singularHomologyCubeBoundaryPairIso_inv :

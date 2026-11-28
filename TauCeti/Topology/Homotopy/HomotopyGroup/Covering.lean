@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Homotopy.Cube.Basic
 public import TauCeti.Topology.Homotopy.GenLoop.Covering
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
+public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
 
 /-!
 # A covering map induces isomorphisms on higher homotopy groups
@@ -42,6 +43,8 @@ The conclusion is packaged as a multiplicative equivalence `π_n(E, e) ≃* π_n
 * `IsCoveringMap.homotopyGroupMulEquiv`: the isomorphism
   `HomotopyGroup N E e ≃* HomotopyGroup N X (p e)` for `[Nontrivial N]`.
 * `IsCoveringMap.homotopyGroupPiMulEquiv`: its `π_(n + 2)` form.
+* `IsCoveringMap.bijective_homotopyGroupMap_comp`: a weak homotopy equivalence followed by a
+  covering map is bijective on homotopy groups in dimensions `≥ 2`.
 
 ## References
 
@@ -149,5 +152,18 @@ theorem _root_.IsCoveringMap.homotopyGroupPiMulEquiv_apply (hp : _root_.IsCoveri
     IsCoveringMap.homotopyGroupPiMulEquiv hp e n a =
       HomotopyGroup.map (⟨p, hp.continuous⟩ : C(E, X)) rfl a :=
   (rfl)
+
+/-- **A weak homotopy equivalence followed by a covering map is bijective on homotopy groups in
+dimensions `≥ 2`.** If `f y = p (s y)` for every `y`, where `s` is a weak homotopy equivalence and
+`p` a covering map, then `f` induces a bijection `π_N(Y, y) → π_N(X, f y)` whenever `N` has at
+least two elements. -/
+theorem _root_.IsCoveringMap.bijective_homotopyGroupMap_comp [Finite N] [Nontrivial N]
+    {Y : Type*} [TopologicalSpace Y] (hp : _root_.IsCoveringMap p) {s : C(Y, E)}
+    (hs : s.IsWeakHomotopyEquivalence) {f : C(Y, X)} (hf : ∀ y, f y = p (s y)) (y : Y) :
+    Function.Bijective (HomotopyGroup.map (N := N) f (rfl : f y = f y)) := by
+  have h := (HomotopyGroup.map_bijective (N := N) hp (rfl : p (s y) = p (s y))).comp
+    (hs.map_bijective N y)
+  rw [HomotopyGroup.map_comp_map] at h
+  exact (HomotopyGroup.bijective_map_congr (ContinuousMap.ext fun y' ↦ (hf y').symm) _ _).1 h
 
 end TauCeti

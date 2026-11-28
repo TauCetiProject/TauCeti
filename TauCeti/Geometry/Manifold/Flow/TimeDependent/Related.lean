@@ -17,8 +17,9 @@ of solutions it intertwines the two flows,
 
 `f (φ^X_{s,t} x) = φ^Y_{s,t} (f x)`
 
-(`MDifferentiable.apply_timeDependentFlowOf`), wherever the flow of `X` is defined. No
-completeness is needed. As for autonomous flows
+(`MDifferentiable.apply_timeDependentFlowOf`), wherever the flow of `X` is defined; there the flow
+of `Y` is defined at `f x` (`MDifferentiable.mem_timeDependentFlowDomain`). No completeness is
+needed. As for autonomous flows
 (`TauCeti.Geometry.Manifold.Flow.Related`), no inverse of `f` is needed.
 
 For instance, when a group acts on `M` by maps `y ↦ g • y` whose differentials carry `X u` to
@@ -51,6 +52,41 @@ variable {E H M E' H' M' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [To
   {X : ℝ → (x : M) → TangentSpace I x} {Y : ℝ → (y : M') → TangentSpace I' y} {f : M → M'}
   {s t : ℝ} {x : M}
 
+omit [T2Space M'] [IsManifold I' 1 M'] [BoundarylessManifold I' M'] in
+/-- If `f` relates `X` to `Y`, the image under `f` of a curve of the flow of `X` solves the equation
+of `Y` wherever that curve is defined. -/
+private theorem hasMFDerivAt_apply_timeDependentFlowOf (hf : MDifferentiable I I' f)
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    (hXY : ∀ u x, mfderiv I I' f x (X u x) = Y u (f x)) {u : ℝ}
+    (hu : ((s, u), x) ∈ timeDependentFlowDomain X) :
+    HasMFDerivAt 𝓘(ℝ, ℝ) I' (fun u ↦ f (timeDependentFlowOf X s u x)) u
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (Y u (f (timeDependentFlowOf X s u x)))) := by
+  have hder : (mfderiv I I' f (timeDependentFlowOf X s u x)).comp
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (X u (timeDependentFlowOf X s u x))) =
+        (1 : ℝ →L[ℝ] ℝ).smulRight (Y u (f (timeDependentFlowOf X s u x))) := by
+    rw [ContinuousLinearMap.smulRight_one_eq_toSpanSingleton,
+      ContinuousLinearMap.smulRight_one_eq_toSpanSingleton,
+      ContinuousLinearMap.comp_toSpanSingleton, hXY]
+  rw [← hder]
+  exact (hf _).hasMFDerivAt.comp u (hasMFDerivAt_timeDependentFlowOf hX hu)
+
+omit [T2Space M'] [IsManifold I' 1 M'] [BoundarylessManifold I' M'] in
+/-- **Related maps preserve the domain of time-dependent flows.** Let `f` be a differentiable map
+whose differential carries the field `X u` to the field `Y u` at every time `u`, with `X` jointly
+`C¹`. Wherever the time-dependent flow of `X` from time `s` to time `t` is defined at `x`, the flow
+of `Y` from time `s` to time `t` is defined at `f x`. -/
+theorem mem_timeDependentFlowDomain (hf : MDifferentiable I I' f)
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    (hXY : ∀ u x, mfderiv I I' f x (X u x) = Y u (f x))
+    (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
+    ((s, t), f x) ∈ timeDependentFlowDomain Y := by
+  obtain ⟨a, b, hs, ht, hab⟩ := exists_Ioo_of_mem_timeDependentFlowDomain h
+  have h' := mem_timeDependentFlowDomain_of_hasMFDerivAt
+    (fun u hu ↦ hasMFDerivAt_apply_timeDependentFlowOf hf hX hXY (hab u hu)) hs ht
+  rwa [timeDependentFlowOf_self] at h'
+
 /-- **Time-dependent flows of related fields are intertwined.** Let `f` be a differentiable map
 whose differential carries the field `X u` to the field `Y u` at every time `u`, with `X` and `Y`
 jointly `C¹`. Wherever the time-dependent flow of `X` from time `s` to time `t` is defined at `x`,
@@ -66,18 +102,8 @@ theorem apply_timeDependentFlowOf (hf : MDifferentiable I I' f)
   obtain ⟨a, b, hs, ht, hab⟩ := exists_Ioo_of_mem_timeDependentFlowDomain h
   -- On a common interval of existence, the image under `f` of the curve of the flow of `X` solves
   -- the equation of `Y`.
-  have hγ (u : ℝ) (hu : u ∈ Ioo a b) :
-      HasMFDerivAt 𝓘(ℝ, ℝ) I' (fun u ↦ f (timeDependentFlowOf X s u x)) u
-        ((1 : ℝ →L[ℝ] ℝ).smulRight (Y u (f (timeDependentFlowOf X s u x)))) := by
-    have hder : (mfderiv I I' f (timeDependentFlowOf X s u x)).comp
-        ((1 : ℝ →L[ℝ] ℝ).smulRight (X u (timeDependentFlowOf X s u x))) =
-          (1 : ℝ →L[ℝ] ℝ).smulRight (Y u (f (timeDependentFlowOf X s u x))) := by
-      rw [ContinuousLinearMap.smulRight_one_eq_toSpanSingleton,
-        ContinuousLinearMap.smulRight_one_eq_toSpanSingleton,
-        ContinuousLinearMap.comp_toSpanSingleton, hXY]
-    rw [← hder]
-    exact (hf _).hasMFDerivAt.comp u (hasMFDerivAt_timeDependentFlowOf hX (hab u hu))
-  have h' := timeDependentFlowOf_eq_of_hasMFDerivAt hY hγ hs ht
+  have h' := timeDependentFlowOf_eq_of_hasMFDerivAt hY
+    (fun u hu ↦ hasMFDerivAt_apply_timeDependentFlowOf hf hX hXY (hab u hu)) hs ht
   rwa [timeDependentFlowOf_self, eq_comm] at h'
 
 end MDifferentiable

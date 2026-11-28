@@ -5,8 +5,8 @@ Authors: Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.CMType.InfinitePlace
-public import TauCeti.NumberTheory.NumberField.Cyclotomic.InfinitePlace
+public import TauCeti.NumberTheory.NumberField.CMType.Basic
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.InfinitePlace.Basic
 
 /-!
 # Cyclotomic labels of CM type representatives
@@ -59,12 +59,12 @@ cyclotomic automorphism of exponent `a`. -/
 theorem coe_equivUnitsZMod_symm_apply (Φ : CMType K) (φ : Φ.induced (algebraMap K L))
     (h : Irreducible (cyclotomic n K)) (a : (ZMod n)ˣ) :
     ((Φ.equivUnitsZMod φ h).symm a).val = φ.val.comp ((autEquivPow L h).symm a) := by
-  rw [equivUnitsZMod, Equiv.symm_trans_apply]
-  apply (coe_equivInfinitePlace_symm_apply_eq_iff _ _ _).mpr
-  refine ⟨mem_induced.mpr ?_, (InfinitePlace.equivUnitsZMod_symm_apply_mk ..).symm⟩
+  rw [equivUnitsZMod, Equiv.symm_trans_apply, coe_equivInfinitePlace_symm_apply,
+    InfinitePlace.equivUnitsZMod_symm_apply_mk]
+  apply embedding_mk
   have hcomp : (((autEquivPow L h).symm a : L ≃ₐ[K] L) : L →+* L).comp (algebraMap K L) =
       algebraMap K L := RingHom.ext ((autEquivPow L h).symm a).commutes
-  rw [RingHom.comp_assoc, hcomp]
+  rw [mem_induced, RingHom.comp_assoc, hcomp]
   exact mem_induced.mp φ.property
 
 /-- Right multiplication of cyclotomic labels corresponds to precomposition of the

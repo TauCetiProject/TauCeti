@@ -152,18 +152,16 @@ theorem integral_inner_sobolevGaugeFixedOperator (hx : Continuous x) (hax : a =�
   · set Y := testField φ
     have hY : ContDiff ℝ 1 Y := (contDiff_testField φ).of_le (by simp)
     have hYc : HasCompactSupport Y := hasCompactSupport_testField φ
-    have hvalue (j : Fin 4) : W1p.value (W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)) =ᵐ[μ⊤]
-        fun z ↦ Y z j :=
-      (W1p.value_ofTestFunctionₗ_ae (p := 2) (φ j)).mono fun z hz ↦ by simp [Y, hz]
     have hT := (sobolevGaugeFixedOperator_ae_eq_gaugeFixedOperator hax
-      (y := Pi.map (fun _ ↦ W1p.ofTestFunctionₗ volume ⊤ 2) φ) hY hvalue).filter_mono
+      (y := Pi.map (fun _ ↦ W1p.ofTestFunctionₗ volume ⊤ 2) φ) hY
+      (value_ofTestFunctionₗ_ae_eq_testField φ)).filter_mono
         (ae_mono (Measure.restrict_coe_opens_top _).ge)
     rw [← hpair, ← integral_inner_value_eq_sum hLj,
       integral_congr_ae (hT.mono fun z hz ↦ by rw [hz]),
       integral_inner_gaugeFixedOperator hY hη (.inl hYc)]
     refine integral_congr_ae ?_
-    filter_upwards [ae_all_iff.2 fun j ↦ ae_mono (Measure.restrict_coe_opens_top _).ge (hvalue j)]
-      with z hz
+    filter_upwards [ae_all_iff.2 fun j ↦ ae_mono (Measure.restrict_coe_opens_top _).ge
+      (value_ofTestFunctionₗ_ae_eq_testField φ j)] with z hz
     simp only [Pi.map_apply, hz, Y, testField_apply]
 
 /-- **The weak equation of the realization.** At a continuous field `x` with `L∞` class `a`, the
