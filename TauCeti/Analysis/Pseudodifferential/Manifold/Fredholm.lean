@@ -142,7 +142,7 @@ theorem isCompactOperator_chartSobolevExtension_comp_sub_one_of_mem {m' r : ℝ}
   have hS := chartSobolevExtension_toChartSobolevSpace_of_mem (hc' := hc) (φ := ψ) hQ hφ hs
   have hext : chartSobolevExtension hc ψ hc ψ (Q ∘ₗ P - LinearMap.id) s s =
       chartSobolevExtension hc' φ hc ψ Q t s ∘L chartSobolevExtension hc ψ hc' φ P s t - 1 :=
-    chartSobolevExtension_eq _ fun u ↦ by simp [hT, hS]
+    LinearMap.rangeClosureExtension_eq _ fun u ↦ by simp [hT, hS]
   rw [← hext]
   exact isCompactOperator_chartSobolevExtension_of_mem hQP hψ (by linarith)
 
@@ -183,15 +183,19 @@ theorem IsClassicalElliptic.ker_chartSobolevExtension [CompactSpace M]
   have hR : chartSobolevExtension hc ψ hc ψ (Q ∘ₗ P - LinearMap.id) s s =
       chartSobolevExtension hc' φ hc ψ Q (s - m) s ∘L
         chartSobolevExtension hc ψ hc' φ P s (s - m) - 1 :=
-    chartSobolevExtension_eq _ fun u ↦ by simp [hT, hS]
+    LinearMap.rangeClosureExtension_eq _ fun u ↦ by simp [hT, hS]
   refine le_antisymm (fun x hx ↦ ?_) ?_
   · rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hx
     -- `x = -R x`, and `R` maps `H^s(M)` into every `H^t(M)`, so `x` is smooth.
     have hxt (t : ℝ) (ht : s ≤ t) : x ∈ Set.range (chartSobolevInclusion hc ψ ht) := by
       refine ⟨-chartSobolevExtension hc ψ hc ψ (Q ∘ₗ P - LinearMap.id) s t x, ?_⟩
-      rw [map_neg, ← ContinuousLinearMap.comp_apply,
-        chartSobolevInclusion_comp_chartSobolevExtension ht (exists_norm_chartReading_apply_le
-          ((mem_smoothingPseudodifferentialOperators_iff.1 hQP) (s - t)) hψ (by linarith)), hR]
+      have hRt : chartSobolevInclusion hc ψ ht ∘L
+          chartSobolevExtension hc ψ hc ψ (Q ∘ₗ P - LinearMap.id) s t =
+            chartSobolevExtension hc ψ hc ψ (Q ∘ₗ P - LinearMap.id) s s :=
+        LinearMap.rangeClosureMap_comp_rangeClosureExtension (piMap_inclusion_chartReading hc ψ ht)
+          (exists_norm_chartReading_apply_le
+            ((mem_smoothingPseudodifferentialOperators_iff.1 hQP) (s - t)) hψ (by linarith))
+      rw [map_neg, ← ContinuousLinearMap.comp_apply, hRt, hR]
       simp [hx]
     obtain ⟨u, rfl⟩ := (mem_range_toChartSobolevSpace_iff hc ψ hψ x).2 hxt
     refine ⟨u, ?_, rfl⟩
@@ -294,20 +298,23 @@ theorem IsClassicalElliptic.exists_chartSobolevInclusion_eq [CompactSpace M]
   have hRs : chartSobolevExtension hc ψ hc ψ (Q ∘ₗ P - LinearMap.id) s s =
       chartSobolevExtension hc' φ hc ψ Q (s - m) s ∘L chartSobolevExtension hc ψ hc' φ P s (s - m) -
         1 :=
-    chartSobolevExtension_eq _ fun u ↦ by
-      simp [chartSobolevExtension_toChartSobolevSpace hQs,
+    LinearMap.rangeClosureExtension_eq _ fun u ↦ by
+      simp [LinearMap.rangeClosureExtension_toRangeClosure hQs,
         chartSobolevExtension_toChartSobolevSpace_of_mem (hc' := hc') (φ := φ) hP hψ le_rfl]
   -- Included into `H^s(M)`, `Q y` is `Q (P x)` and `R x` is the extension of `R` to `H^s(M)`.
   have hQy : chartSobolevInclusion hc ψ hst (chartSobolevExtension hc' φ hc ψ Q (t - m) t y) =
       chartSobolevExtension hc' φ hc ψ Q (s - m) s
         (chartSobolevExtension hc ψ hc' φ P s (s - m) x) := by
     rw [hxy, ← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.comp_apply,
-      chartSobolevInclusion_comp_chartSobolevExtension hst hQt,
-      chartSobolevExtension_comp_chartSobolevInclusion _ hQs]
+      LinearMap.rangeClosureMap_comp_rangeClosureExtension (piMap_inclusion_chartReading hc ψ hst)
+        hQt,
+      LinearMap.rangeClosureExtension_comp_rangeClosureMap
+        (piMap_inclusion_chartReading hc' φ (by linarith : s - m ≤ t - m)) hQs]
   have hRx : chartSobolevInclusion hc ψ hst
       (chartSobolevExtension hc ψ hc ψ (Q ∘ₗ P - LinearMap.id) s t x) =
         chartSobolevExtension hc ψ hc ψ (Q ∘ₗ P - LinearMap.id) s s x :=
-    DFunLike.congr_fun (chartSobolevInclusion_comp_chartSobolevExtension hst hRt) x
+    DFunLike.congr_fun (LinearMap.rangeClosureMap_comp_rangeClosureExtension
+      (piMap_inclusion_chartReading hc ψ hst) hRt) x
   rw [map_sub, hQy, hRx, hRs]
   simp
 
@@ -357,7 +364,7 @@ theorem IsClassicalElliptic.index_chartSobolevExtension_eq [CompactSpace M]
   exact (hPe.isFredholm_chartSobolevExtension hP hψ hφ s).index_eq_of_regularity
     (chartSobolevExtension_chartSobolevInclusion_apply hP hψ hst)
     (chartSobolevInclusion_injective hc ψ hst) (chartSobolevInclusion_injective hc' φ _)
-    (denseRange_chartSobolevInclusion hc' φ _)
+    (LinearMap.denseRange_rangeClosureMap (piMap_inclusion_chartReading hc' φ _))
     fun _ _ h ↦ hPe.exists_chartSobolevInclusion_eq hP hψ hφ hst h
 
 /-- **The index does not depend on the chart partitions.** Let `P` be a classical pseudodifferential

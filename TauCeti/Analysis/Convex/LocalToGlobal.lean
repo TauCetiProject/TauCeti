@@ -83,6 +83,8 @@ norm to a Euclidean one.
   Hausdorff space has convex image.
 * `IsProperMap.isPreconnected_preimage_singleton_of_isConvexChart`: its fibres are preconnected,
   so connected over points of the image.
+* `IsProperMap.isMinOn_of_isLocalMin_of_isConvexChart`: a proper locally convex function to `ℝ`
+  on a connected Hausdorff space attains its minimum at each of its local minima.
 
 ## References
 
@@ -882,5 +884,66 @@ theorem isPreconnected_preimage_singleton_of_isConvexChart (hf : IsProperMap f)
   convert h using 1
   ext x
   simp
+
+/-- **Local minima of locally convex functions are global.** A proper function `g` from a connected
+Hausdorff space to `ℝ`, every point of which lies in a convexity chart, attains its minimum at each
+of its local minima. -/
+theorem isMinOn_of_isLocalMin_of_isConvexChart {g : X → ℝ} (hg : IsProperMap g)
+    (hloc : ∀ x, ∃ U, x ∈ U ∧ IsConvexChart g U) {x : X} (hx : IsLocalMin g x) :
+    IsMinOn g univ x := by
+  -- Write `c = g x`. The points near which `g ≥ c` form an open set `O`.
+  set c := g x
+  set O : Set X := {y | ∀ᶠ z in 𝓝 y, c ≤ g z}
+  have hO : IsOpen O := isOpen_setOfPred_eventually_nhds
+  -- A convexity chart `U` meeting `O` at a point `y` of the level `c` lies in `{c ≤ g}`: otherwise
+  -- the interval `g '' U` contains values below `c`, and a neighbourhood of `y` on which `g ≥ c`
+  -- would not be mapped onto a relative neighbourhood of `c`.
+  have key {U : Set X} (hU : IsConvexChart g U) {y : X} (hyU : y ∈ U) (hyO : y ∈ O)
+      (hyc : g y = c) {z : X} (hzU : z ∈ U) : c ≤ g z := by
+    by_contra! hlt
+    obtain ⟨N, hNsub, hNo, hyN⟩ := mem_nhds_iff.1 (inter_mem (hU.isOpen.mem_nhds hyU) hyO)
+    have hN := hU.image_mem_nhdsWithin N (hNsub.trans inter_subset_left) hNo y hyN
+    rw [hyc] at hN
+    obtain ⟨ε, hε, hball⟩ := Metric.mem_nhdsWithin_iff.1 hN
+    set t := max (g z) (c - ε / 2)
+    have htc : t < c := max_lt hlt (by linarith)
+    have htU : t ∈ g '' U := hU.convex_image.segment_subset ⟨z, hzU, rfl⟩ ⟨y, hyU, hyc⟩
+      (by rw [segment_eq_Icc hlt.le]; exact ⟨le_max_left _ _, htc.le⟩)
+    have htball : t ∈ Metric.ball c ε := by
+      rw [Metric.mem_ball, Real.dist_eq, abs_sub_lt_iff]
+      constructor <;> linarith [le_max_right (g z) (c - ε / 2)]
+    obtain ⟨w, hwN, hw⟩ := hball ⟨htball, htU⟩
+    have hcw : c ≤ g w := (hNsub hwN).2
+    rw [hw] at hcw
+    exact hcw.not_gt htc
+  -- Hence the preconnected level `g ⁻¹' {c}` lies in `O`.
+  set V : Set X := {y | ∃ U, IsConvexChart g U ∧ y ∈ U ∧ ∃ z ∈ U, g z < c}
+  have hV : IsOpen V := isOpen_iff_forall_mem_open.2 fun y ⟨U, hU, hyU, hz⟩ ↦
+    ⟨U, fun y' hy' ↦ ⟨U, hU, hy', hz⟩, hU.isOpen, hyU⟩
+  have hcover : g ⁻¹' {c} ⊆ O ∪ V := fun y _ ↦ by
+    obtain ⟨U, hyU, hU⟩ := hloc y
+    by_cases hz : ∃ z ∈ U, g z < c
+    · exact Or.inr ⟨U, hU, hyU, hz⟩
+    · push Not at hz
+      exact Or.inl (Filter.mem_of_superset (hU.isOpen.mem_nhds hyU) hz)
+  have hdisj : g ⁻¹' {c} ∩ (O ∩ V) = ∅ := by
+    refine eq_empty_iff_forall_notMem.2 fun y ⟨hyc, hyO, U, hU, hyU, z, hzU, hz⟩ ↦ ?_
+    exact (key hU hyU hyO hyc hzU).not_gt hz
+  have hlevel : g ⁻¹' {c} ⊆ O := by
+    rcases isPreconnected_iff_subset_of_disjoint.1
+      (hg.isPreconnected_preimage_singleton_of_isConvexChart hloc c) O V hO hV hcover hdisj with
+      h | h
+    · exact h
+    · exact absurd hdisj (ne_empty_iff_nonempty.2 ⟨x, rfl, hx, h rfl⟩)
+  -- Hence `{c ≤ g} = O` is open and closed, so it is everything.
+  have hS : {y | c ≤ g y} = O := by
+    refine Subset.antisymm (fun y hy ↦ ?_) fun y hy ↦ hy.self_of_nhds
+    have hy' : c ≤ g y := hy
+    rcases hy'.lt_or_eq with hlt | heq
+    · exact (hg.continuous.continuousAt.eventually (lt_mem_nhds hlt)).mono fun _ ↦ le_of_lt
+    · exact hlevel heq.symm
+  have huniv : {y | c ≤ g y} = univ :=
+    IsClopen.eq_univ ⟨isClosed_le continuous_const hg.continuous, hS ▸ hO⟩ ⟨x, le_refl c⟩
+  exact isMinOn_univ_iff.2 fun y ↦ (huniv ▸ mem_univ y : y ∈ {y | c ≤ g y})
 
 end IsProperMap

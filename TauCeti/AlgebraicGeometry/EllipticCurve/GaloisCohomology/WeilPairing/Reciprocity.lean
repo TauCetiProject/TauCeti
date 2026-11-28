@@ -31,13 +31,17 @@ by `k ↦ k/n`, sum to zero (in the namespace `TauCeti.Isogeny`,
 `finsum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero`).
 Here `b` is restricted into the kernel of the dual of the base change of `φ`
 (`TauCeti.Isogeny.dualKerRes`), on which the local pairings of the base change are defined. The
-degree of the base change of `φ` to `K_v` equals `n` only propositionally, so this form is stated
-in `ℚ/ℤ` only. At a place where both classes satisfy the Selmer local conditions, their local
-pairing vanishes (`TauCeti.Isogeny.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero`, in
-`WeilPairing/Orthogonality`). So if `a` and `b` satisfy them at every place outside a finite set
-`S` of places, finite or infinite, the pairings at the places of `S` sum to zero (in the namespace
+degree of the base change of `φ` to `K_v` equals `n` only propositionally, so the all-places
+reciprocity in `ℚ/ℤ` is stated using `ZMod.toRatAddCircle`. At a place where both classes
+satisfy the Selmer local conditions, their local pairing vanishes
+(`TauCeti.Isogeny.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero`, in `WeilPairing/Orthogonality`).
+So if `a` and `b` satisfy them at every place outside a finite set `S` of places, finite or
+infinite, the pairings at the places of `S` sum to zero in `ℚ/ℤ` (in the namespace
 `TauCeti.Isogeny`,
-`sum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero`).
+`sum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero`, and for
+finite places `sum_toRatAddCircle_localTateKerWeilPairing_eq_zero`) and in `ℤ/(deg φ)ℤ`
+(`sum_ringEquivCongr_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero`, and for
+finite places `TauCeti.Isogeny.sum_ringEquivCongr_localTateKerWeilPairing_eq_zero`).
 
 This is the reciprocity input for comparing global Selmer conditions with their orthogonals; in
 the isogeny form it is the global duality input of Cassels' comparison of the `φ`- and
@@ -56,8 +60,11 @@ applying the Brauer sum formula
 * `finsum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero`,
   in the namespace `TauCeti.Isogeny`: global reciprocity for the isogeny Weil cup product.
 * `sum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero`,
-  in the namespace `TauCeti.Isogeny`: global classes satisfying the Selmer local conditions outside
-  a finite set `S` of places have local pairings at the places of `S` summing to zero.
+  `sum_toRatAddCircle_localTateKerWeilPairing_eq_zero`,
+  `sum_ringEquivCongr_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero`, and
+  `sum_ringEquivCongr_localTateKerWeilPairing_eq_zero`, in the namespace `TauCeti.Isogeny`: global
+  classes satisfying the Selmer local conditions outside a finite set `S` of places have local
+  pairings at the places of `S` summing to zero in `ℚ/ℤ` and in `ℤ/(deg φ)ℤ`.
 
 ## References
 
@@ -292,6 +299,97 @@ theorem sum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPa
       rw [(φ.baseChange w.Completion).toRatAddCircle_infiniteTateKerWeilPairing
           (isUnit_natCast_of_ne_zero ℚ (φ.baseChange w.Completion).degree_ne_zero),
         φ.kerWeilBrauerPairing_kerRes_dualKerRes_eq_zero _ _ (ha' w hw) (hb' w hw), map_zero]] at h
+
+/-- **Orthogonality of global classes satisfying the Selmer local conditions outside `S` in
+`ℤ/(deg φ)ℤ`.** Under the same hypotheses as
+`sum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero`, the
+finite sum over the finite places of `S` of the local Tate pairings and the infinite places of `S`
+of the archimedean local Tate pairings, transported from `ZMod (deg (φ.baseChange K_v))` to
+`ZMod (deg φ)` along `φ.degree_baseChange`, is zero. -/
+theorem sum_ringEquivCongr_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero
+    (τ : ∀ v : HeightOneSpectrum (𝓞 K),
+      SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    (τ' : ∀ w : InfinitePlace K, SeparableClosure K →ₐ[K] SeparableClosure w.Completion)
+    (S : Finset (GlobalNumberFields.Place K))
+    (ha : ∀ v, .inl v ∉ S → W₁.pointRes (τ v)
+      (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology a) = 0)
+    (hb : ∀ v, .inl v ∉ S → W₂.pointRes (τ v)
+      (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology b) = 0)
+    (ha' : ∀ w, .inr w ∉ S → W₁.pointRes (τ' w)
+      (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology a) = 0)
+    (hb' : ∀ w, .inr w ∉ S → W₂.pointRes (τ' w)
+      (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology b) = 0) :
+    ∑ v ∈ S.toLeft,
+        ZMod.ringEquivCongr (φ.degree_baseChange (K := v.adicCompletion K))
+          ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
+            (isUnit_natCast_of_ne_zero ℚ (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
+            (φ.kerRes (τ v) a) (φ.dualKerRes (τ v) b)) +
+      ∑ w ∈ S.toRight,
+        ZMod.ringEquivCongr (φ.degree_baseChange (K := w.Completion))
+          ((φ.baseChange w.Completion).infiniteTateKerWeilPairing
+            (φ.kerRes (τ' w) a) (φ.dualKerRes (τ' w) b)) = 0 := by
+  apply ZMod.toRatAddCircle_injective φ.degree
+  rw [map_zero, _root_.map_add, map_sum, map_sum]
+  simp_rw [ZMod.toRatAddCircle_ringEquivCongr]
+  exact φ.sum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero
+    a b τ τ' S ha hb ha' hb'
+
+/-- **Orthogonality of global classes satisfying the Selmer local conditions outside a finite set
+`S` of finite places in `ℚ/ℤ`.** Specialisation of
+`sum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero` to
+`S.disjSum ∅` when the classes are locally trivial at every infinite place. -/
+theorem sum_toRatAddCircle_localTateKerWeilPairing_eq_zero
+    (τ : ∀ v : HeightOneSpectrum (𝓞 K),
+      SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    (τ' : ∀ w : InfinitePlace K, SeparableClosure K →ₐ[K] SeparableClosure w.Completion)
+    (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (ha : ∀ v ∉ S, W₁.pointRes (τ v)
+      (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology a) = 0)
+    (hb : ∀ v ∉ S, W₂.pointRes (τ v)
+      (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology b) = 0)
+    (ha' : ∀ w, W₁.pointRes (τ' w)
+      (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology a) = 0)
+    (hb' : ∀ w, W₂.pointRes (τ' w)
+      (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology b) = 0) :
+    ∑ v ∈ S,
+      ZMod.toRatAddCircle (φ.baseChange (v.adicCompletion K)).degree
+        ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
+          (isUnit_natCast_of_ne_zero ℚ (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
+          (φ.kerRes (τ v) a) (φ.dualKerRes (τ v) b)) = 0 := by
+  have h :=
+    φ.sum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero
+      a b τ τ' (S.disjSum ∅)
+      (fun v hv ↦ ha v (by simpa using hv)) (fun v hv ↦ hb v (by simpa using hv))
+      (fun w _ ↦ ha' w) (fun w _ ↦ hb' w)
+  rwa [Finset.toLeft_disjSum, Finset.toRight_disjSum, Finset.sum_empty, add_zero] at h
+
+/-- **Orthogonality of global classes satisfying the Selmer local conditions outside a finite set
+`S` of finite places in `ℤ/(deg φ)ℤ`.** Under the same hypotheses as
+`sum_toRatAddCircle_localTateKerWeilPairing_eq_zero`, the sum over `S` of the local Tate pairings,
+transported from `ZMod (deg (φ.baseChange K_v))` to `ZMod (deg φ)` along `φ.degree_baseChange`, is
+zero. -/
+theorem sum_ringEquivCongr_localTateKerWeilPairing_eq_zero
+    (τ : ∀ v : HeightOneSpectrum (𝓞 K),
+      SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    (τ' : ∀ w : InfinitePlace K, SeparableClosure K →ₐ[K] SeparableClosure w.Completion)
+    (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (ha : ∀ v ∉ S, W₁.pointRes (τ v)
+      (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology a) = 0)
+    (hb : ∀ v ∉ S, W₂.pointRes (τ v)
+      (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology b) = 0)
+    (ha' : ∀ w, W₁.pointRes (τ' w)
+      (explicitCoeff1 _ _ (ofIsogeny φ).kerCoeffIncl continuous_of_discreteTopology a) = 0)
+    (hb' : ∀ w, W₂.pointRes (τ' w)
+      (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology b) = 0) :
+    ∑ v ∈ S,
+      ZMod.ringEquivCongr (φ.degree_baseChange (K := v.adicCompletion K))
+        ((φ.baseChange (v.adicCompletion K)).localTateKerWeilPairing
+          (isUnit_natCast_of_ne_zero ℚ (φ.baseChange (v.adicCompletion K)).degree_ne_zero)
+          (φ.kerRes (τ v) a) (φ.dualKerRes (τ v) b)) = 0 := by
+  apply ZMod.toRatAddCircle_injective φ.degree
+  rw [map_zero, map_sum]
+  simp_rw [ZMod.toRatAddCircle_ringEquivCongr]
+  exact φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero a b τ τ' S ha hb ha' hb'
 
 end TauCeti.Isogeny
 

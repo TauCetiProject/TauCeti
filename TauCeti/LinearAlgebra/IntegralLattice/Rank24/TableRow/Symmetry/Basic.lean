@@ -39,7 +39,7 @@ four components of `D₆⁴`.  In the row `A₅⁴ D₄` the rotation of the thr
 in `[2(024)0]` does not preserve the glue subgroup: it carries `[33001]` to `[30301]`, whose
 difference with `[30302]` is the nonzero word `[00003]` of shortest norm `1`.  That row's rotation
 acts on its lattice only when combined with triality on the `D₄` component; see
-`TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.A5FourthD4`.  To lift such a block
+`TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.A5FourthD4.Basic`.  To lift such a block
 permutation in general one couples it with componentwise root-lattice self-isometries acting
 nontrivially on the glue alphabets (`coupledLatticeIsometry`,
 `apply_piGlueAlphabetCongr_mem_glueSubgroup_iff_of_glueWords`).
@@ -210,14 +210,9 @@ theorem apply_piGlueAlphabetCongr_mem_glueSubgroup_iff_of_glueWords
       congrArg (φ k) (((r.componentType k).glueLabelEquiv
         (r.isSimplyLaced_componentType k)).apply_symm_apply _).symm
     rw [hψ_apply, hk, hδ k]
-    refine congrArg (δ k) ?_
-    have hpsi0 := congrArg (fun l : List ℕ ↦ l.getD k 0)
-      (encodeGlueWord_piGlueAlphabetCongr_eq_ofFn r.componentType r.isSimplyLaced_componentType
-        r.isSimplyLaced_componentType g hg v)
-    rw [List.getD_eq_getElem _ _ (by simp), getElem_encodeGlueWord,
-      List.getD_eq_getElem _ _ (by simp), List.getElem_ofFn, Fin.eta] at hpsi0
-    exact hpsi0.trans
-      ((List.getD_eq_getElem _ _ (by simp)).trans (getElem_encodeGlueWord _ _ v (g k))).symm
+    exact congrArg (δ k)
+      (val_glueLabelEquiv_symm_piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType
+        r.isSimplyLaced_componentType g hg v k)
   have hmap_le : r.glueSubgroup.map (ψ : r.glueModule →+ r.glueModule) ≤ r.glueSubgroup := by
     rw [glueSubgroup_def, AddMonoidHom.map_closure, AddSubgroup.closure_le,
       AddMonoidHom.coe_ofClass]

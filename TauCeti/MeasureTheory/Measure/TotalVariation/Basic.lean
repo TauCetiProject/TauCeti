@@ -34,6 +34,8 @@ estimates into total-variation estimates.
 
 * `MeasureTheory.abs_measureReal_sub_le_tvDist`: the real masses of a measurable event
   differ by at most `tvDist μ ν`;
+* `MeasureTheory.abs_measureReal_sub_le_tvDist_div_two`: for measures of the same finite total
+  mass, the masses of every set differ by at most half the total variation distance;
 * `MeasureTheory.sum_abs_measureReal_sub_le_tvDist`: the sum of the absolute differences
   over a finite measurable partition is at most `tvDist μ ν`;
 * `MeasureTheory.tvDist_div_two_le_one`: the normalized distance between probability measures
@@ -197,6 +199,29 @@ theorem etvDist_le_two_mul_iff (h : μ univ = ν univ) {c : ℝ≥0∞} :
     etvDist μ ν ≤ 2 * c ↔ ∀ A, MeasurableSet A → μ A ≤ ν A + c := by
   rw [etvDist_eq_two_mul_iSup_sub h, ENNReal.mul_le_mul_iff_right two_ne_zero ENNReal.ofNat_ne_top]
   simp only [iSup_le_iff, tsub_le_iff_left]
+
+omit [IsFiniteMeasure ν] in
+/-- For a finite measure and a measure of the same total mass (e.g. two probability measures), the
+real masses of a set, measurable or not, differ by at most half the total variation distance: this
+is the statistical normalization `sup_A |μ A - ν A|` of the distance. -/
+theorem abs_measureReal_sub_le_tvDist_div_two (h : μ univ = ν univ) (s : Set α) :
+    |μ.real s - ν.real s| ≤ tvDist μ ν / 2 := by
+  have : IsFiniteMeasure ν := ⟨h ▸ measure_lt_top μ univ⟩
+  have key : ∀ (μ ν : Measure α) [IsFiniteMeasure μ] [IsFiniteMeasure ν], μ univ = ν univ →
+      μ.real s ≤ ν.real s + tvDist μ ν / 2 := by
+    intro μ ν _ _ h
+    -- Each measurable excess is at most half the distance, hence so is the excess on `s`.
+    have h2 : μ s ≤ ν s + etvDist μ ν / 2 := measure_le_add_of_iSup_sub_le (by
+      rw [etvDist_eq_two_mul_iSup_sub h, mul_div_assoc,
+        ENNReal.mul_div_cancel two_ne_zero ENNReal.ofNat_ne_top]) s
+    have hc : etvDist μ ν / 2 ≠ ∞ := ENNReal.div_ne_top (etvDist_ne_top μ ν) two_ne_zero
+    have h3 := ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨measure_ne_top ν s, hc⟩) h2
+    rwa [ENNReal.toReal_add (measure_ne_top ν s) hc, ENNReal.toReal_div, ENNReal.toReal_ofNat,
+      ← tvDist, ← measureReal_def, ← measureReal_def] at h3
+  have h₁ := key μ ν h
+  have h₂ := key ν μ h.symm
+  rw [tvDist_comm] at h₂
+  exact abs_le.2 ⟨by linarith, by linarith⟩
 
 omit [IsFiniteMeasure ν] in
 /-- The total variation distance from a point mass to a probability measure is twice the
