@@ -9,9 +9,6 @@ public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import Mathlib.LinearAlgebra.Semisimple
 
 import Mathlib.FieldTheory.Finite.GaloisField
-import Mathlib.LinearAlgebra.Dimension.Constructions
-import Mathlib.RingTheory.AdjoinRoot
-import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # Conjugacy of endomorphisms annihilated by an irreducible polynomial over finite fields
