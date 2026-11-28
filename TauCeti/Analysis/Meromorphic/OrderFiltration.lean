@@ -112,13 +112,7 @@ theorem coordinate_ne_zero (a : 𝕜) : coordinate a ≠ 0 := by
 /-- Integer powers of the coordinate have their indicated order, also for poles. -/
 @[simp]
 theorem order_coordinate_zpow (a : 𝕜) (n : ℤ) : order (coordinate a ^ n) = n := by
-  have hm : MeromorphicAt (fun z : 𝕜 ↦ (z - a) ^ n) a :=
-    ((MeromorphicAt.id a).sub (.const a a)).zpow n
-  have heq : coordinate a ^ n = mk (fun z : 𝕜 ↦ (z - a) ^ n) hm := by
-    apply Subtype.ext
-    rw [coe_zpow, coe_coordinate, coe_mk]
-    exact (Germ.coe_pow (fun z : 𝕜 ↦ z - a) n).symm
-  rw [heq, order_mk]
+  rw [coordinate_zpow_eq_mk, order_mk]
   exact meromorphicOrderAt_zpow_id_sub_const
 
 /-- Multiplying by a coordinate power shifts the order bound by that integer. -/

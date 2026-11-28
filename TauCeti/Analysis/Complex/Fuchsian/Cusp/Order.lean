@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Laurent
 public import TauCeti.Analysis.Complex.UpperHalfPlane.QExpansion.Order
+import TauCeti.Analysis.Meromorphic.LaurentSeries
 
 /-!
 # Cusp orders from Laurent q-expansions
@@ -17,9 +18,8 @@ growth of a function holomorphic sufficiently high ensures this analyticity. Bot
 are infinite for the zero germ. Thus vanishing of the coefficients below an integer characterizes
 an order bound, and the first nonzero coefficient gives the exact order, for poles and zeros alike.
 
-The comparison uses the q-expansion order comparison for the twisted q-extension and
-Mathlib's Hahn-series order API. It connects the formal Laurent series to local
-orders of descended meromorphic functions, rather than defining another notion of cusp order.
+The comparison identifies the Laurent q-expansion with the formal expansion of the
+meromorphic cusp germ and uses the order comparison for meromorphic germs.
 
 ## References
 
@@ -36,6 +36,8 @@ namespace TauCeti.Subgroup.CuspDatum
 
 variable {Γ : Subgroup PSL(2, ℝ)}
 
+open meromorphicGerms
+
 /-- The meromorphic order of the cusp extension is the least exponent with a nonzero Laurent
 coefficient, with value `⊤` when all coefficients vanish, provided the twisted extension is
 analytic at zero. It is independent of the valid integer twist used to construct the series. -/
@@ -43,34 +45,21 @@ theorem meromorphicOrderAt_cuspExtension_eq_orderTop_laurentQExpansion
     (D : Γ.CuspDatum) (k : ℤ) (f : ℍ → ℂ)
     (han : AnalyticAt ℂ (twistedExtension D k f) 0) :
     meromorphicOrderAt (cuspExtension D f) 0 = (laurentQExpansion D k f).orderTop := by
-  have hord : (twistedQExpansion D k f).order =
-      analyticOrderAt (twistedExtension D k f) 0 := by
-    rw [twistedQExpansion_def, twistedExtension_def, cuspExtension_def]
-    rw [twistedExtension_def, cuspExtension_def] at han
-    exact TauCeti.qExpansion_order_eq_analyticOrderAt_cuspFunction han
-  rw [meromorphicOrderAt_cuspExtension_eq_neg_add_analyticOrderAt_twistedExtension D k f han,
-    laurentQExpansion_def, HahnSeries.orderTop_mul, HahnSeries.orderTop_single one_ne_zero,
-    ← hord]
-  congr 1
-  cases ho : (twistedQExpansion D k f).order with
-  | top =>
-    have hzero := PowerSeries.order_eq_top.mp ho
-    simp [hzero]
-  | coe n =>
-    obtain ⟨hnonzero, hvanish⟩ := PowerSeries.order_eq_nat.mp ho
-    simp only [ENat.map_natCast]
-    symm
-    apply le_antisymm
-    · exact HahnSeries.orderTop_le_of_coeff_ne_zero
-        (by simpa only [LaurentSeries.coeff_coe_powerSeries] using hnonzero)
-    · apply HahnSeries.le_orderTop_iff_forall.mpr
-      intro j hj
-      rw [PowerSeries.coeff_coe]
-      split_ifs with hjneg
-      · rfl
-      · exact hvanish j.natAbs (by
-          have := WithTop.coe_lt_coe.mp hj
-          omega)
+  have hshift := cuspExtension_eventuallyEq_zpow_mul_twistedExtension D k f
+  have hf : MeromorphicAt (cuspExtension D f) 0 :=
+    (((MeromorphicAt.id 0).zpow (-k)).mul han.meromorphicAt).congr hshift.symm
+  have hrep : mk (cuspExtension D f) hf =
+      meromorphicGerms.coordinate 0 ^ (-k) * mk (twistedExtension D k f) han.meromorphicAt := by
+    rw [coordinate_zpow_eq_mk, ← mk_mul, mk_eq_mk_iff]
+    exact hshift.mono fun q hq ↦ by simpa only [Pi.mul_apply, sub_zero] using hq
+  have hTaylor : twistedQExpansion D k f = taylorSeries (twistedExtension D k f) 0 := by
+    ext n
+    rw [twistedQExpansion_coeff, ← han.factorial_smul_coeff_taylorSeries, nsmul_eq_mul,
+      inv_mul_cancel_left₀ (Nat.cast_ne_zero.mpr n.factorial_ne_zero)]
+  have hexp : laurentSeries 0 (mk (cuspExtension D f) hf) = laurentQExpansion D k f := by
+    rw [hrep, map_mul, map_zpow₀, laurentSeries_coordinate, ← RatFunc.single_zpow,
+      laurentSeries_mk_of_analyticAt han, laurentQExpansion_def, hTaylor]
+  rw [← hexp, orderTop_laurentSeries, order_mk]
 
 /-- A meromorphic cusp order is at least `m` exactly when every Laurent coefficient of exponent
 less than `m` vanishes. The bound may be positive, zero, or negative. -/
