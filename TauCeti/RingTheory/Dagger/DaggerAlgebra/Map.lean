@@ -62,6 +62,12 @@ identifies the completion of `W_σ` with `T_σ`
   `TauCeti.Dagger.IsDaggerAlgebra.supSeminorm_eq_zero_iff`,
   `TauCeti.Dagger.IsDaggerAlgebra.isReduced_iff_supSeminorm_eq_zero`: the completion map preserves
   `supSeminorm`, morphisms of dagger algebras contract it, and its kernel is the nilradical.
+* `TauCeti.Dagger.IsDaggerAlgebra.pointNorm_mul`,
+  `TauCeti.Dagger.IsDaggerAlgebra.isUnit_iff_forall_pointNorm_ne_zero`,
+  `TauCeti.Dagger.IsDaggerAlgebra.supSeminorm_mul_inverse_le_one_iff`: computed on the completion,
+  the absolute values at classical points are multiplicative and vanish exactly on the point, the
+  units are the elements without zeros, and for a unit `c`, `|b c⁻¹|sup ≤ 1` iff
+  `|b(x)| ≤ |c(x)|` at every classical point `x`.
 
 ## References
 
@@ -513,6 +519,58 @@ characteristic. -/
 theorem isReduced_iff_supSeminorm_eq_zero :
     IsReduced A ↔ ∀ a : A, supSeminorm K a = 0 → a = 0 := by
   simp_rw [supSeminorm_eq_zero_iff, isReduced_iff]
+
+/-- On a dagger algebra, `|a|sup ≤ r` for `r ≥ 0` iff `|a(x)| ≤ r` at every classical point. -/
+theorem supSeminorm_le_iff {a : A} {r : ℝ} (hr : 0 ≤ r) :
+    supSeminorm K a ≤ r ↔ ∀ x : MaximalSpectrum A, pointNorm K x a ≤ r :=
+  ⟨fun h x ↦ (pointNorm_le_supSeminorm x a).trans h, supSeminorm_le hr⟩
+
+/-- On a dagger algebra the absolute value at a classical point is multiplicative:
+`|(a * b)(x)| = |a(x)| * |b(x)|`. -/
+theorem pointNorm_mul (x : MaximalSpectrum A) (a b : A) :
+    pointNorm K x (a * b) = pointNorm K x a * pointNorm K x b := by
+  -- Compute at the classical point of the completion above `x`.
+  obtain ⟨y, rfl⟩ := (maximalSpectrumComap_toCompletion_bijective (K := K) (A := A)).surjective x
+  simp only [IsAffinoidAlgebra.pointNorm_maximalSpectrumComap, map_mul,
+    (isAffinoidAlgebra_completion (K := K) (A := A)).pointNorm_mul]
+
+/-- On a dagger algebra the absolute value `|a(x)|` vanishes exactly when `a` lies in the maximal
+ideal `x`. -/
+theorem pointNorm_eq_zero_iff {x : MaximalSpectrum A} {a : A} :
+    pointNorm K x a = 0 ↔ a ∈ x.asIdeal := by
+  -- Compute at the classical point of the completion above `x`.
+  obtain ⟨y, rfl⟩ := (maximalSpectrumComap_toCompletion_bijective (K := K) (A := A)).surjective x
+  rw [IsAffinoidAlgebra.pointNorm_maximalSpectrumComap,
+    (isAffinoidAlgebra_completion (K := K) (A := A)).pointNorm_eq_zero_iff,
+    IsAffinoidAlgebra.maximalSpectrumComap_asIdeal, Ideal.mem_comap]
+
+/-- **The units of a dagger algebra are the functions without zeros**: `a` is a unit if and only
+if `|a(x)| ≠ 0` at every classical point `x`. -/
+theorem isUnit_iff_forall_pointNorm_ne_zero {a : A} :
+    IsUnit a ↔ ∀ x : MaximalSpectrum A, pointNorm K x a ≠ 0 := by
+  -- Units and classical points are both detected on the completion.
+  rw [isUnit_iff_isUnit_completion K,
+    (isAffinoidAlgebra_completion (K := K) (A := A)).isUnit_iff_forall_pointNorm_ne_zero,
+    (maximalSpectrumComap_toCompletion_bijective (K := K) (A := A)).surjective.forall]
+  simp only [IsAffinoidAlgebra.pointNorm_maximalSpectrumComap]
+
+/-- On a dagger algebra the absolute value of the inverse of a unit is the inverse absolute value:
+`|u⁻¹(x)| = |u(x)|⁻¹`. -/
+theorem pointNorm_inverse (x : MaximalSpectrum A) {u : A} (hu : IsUnit u) :
+    pointNorm K x (Ring.inverse u) = (pointNorm K x u)⁻¹ :=
+  eq_inv_of_mul_eq_one_left <| by
+    rw [← pointNorm_mul, Ring.inverse_mul_cancel u hu, pointNorm_one]
+
+/-- **Ratios in the unit ball.** In a dagger algebra, for a unit `c`, the ratio `b c⁻¹` has
+supremum seminorm at most `1` if and only if `|b(x)| ≤ |c(x)|` at every classical point `x`. -/
+theorem supSeminorm_mul_inverse_le_one_iff {b c : A} (hc : IsUnit c) :
+    supSeminorm K (b * Ring.inverse c) ≤ 1 ↔
+      ∀ x : MaximalSpectrum A, pointNorm K x b ≤ pointNorm K x c := by
+  rw [supSeminorm_le_iff zero_le_one]
+  refine forall_congr' fun x ↦ ?_
+  have hpos : 0 < pointNorm K x c :=
+    (pointNorm_nonneg c).lt_of_ne' (isUnit_iff_forall_pointNorm_ne_zero.mp hc x)
+  rw [pointNorm_mul, pointNorm_inverse x hc, ← div_eq_mul_inv, div_le_one hpos]
 
 end IsDaggerAlgebra
 
