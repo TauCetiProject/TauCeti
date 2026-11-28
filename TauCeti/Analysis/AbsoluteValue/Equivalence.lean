@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.AbsoluteValue.Equivalence
 public import Mathlib.NumberTheory.Ostrowski
 
+import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
+
 /-!
 # Weak approximation for absolute values restricting to standard ones on `ℚ`
 
@@ -64,6 +66,14 @@ theorem _root_.AbsoluteValue.IsEquiv.eq_of_apply_eq {F : Type*} [Field F]
   have hc1 : c = 1 := (Real.rpow_right_inj (v.pos hx) hv).mp h1
   ext y
   rw [← congrFun hcw y, hc1, Real.rpow_one]
+
+/-- Equivalent absolute values restricting to the same nontrivial absolute value are equal. -/
+theorem _root_.AbsoluteValue.IsEquiv.eq_of_liesOver {K L : Type*} [CommSemiring K] [Field L]
+    [Algebra K L] [FaithfulSMul K L] {v : AbsoluteValue K ℝ} {w w' : AbsoluteValue L ℝ}
+    [w.LiesOver v] [w'.LiesOver v]
+    (h : w.IsEquiv w') (hv : v.IsNontrivial) : w = w' := by
+  obtain ⟨x, hx₀, hx⟩ := hv.exists_apply_algebraMap_ne_one w
+  exact h.eq_of_apply_eq hx₀ hx (by simp only [AbsoluteValue.LiesOver.apply_algebraMap v])
 
 /-- The standard absolute values on `ℚ`: the real one and the `q`-adic ones. -/
 def _root_.Rat.AbsoluteValue.IsStandard (a : AbsoluteValue ℚ ℝ) : Prop :=

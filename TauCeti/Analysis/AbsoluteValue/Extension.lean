@@ -1,0 +1,458 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
+public import Mathlib.RingTheory.Artinian.Module
+public import Mathlib.RingTheory.TensorProduct.Basic
+public import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
+public import TauCeti.Analysis.Normed.Field.WithAbs
+import Mathlib.RingTheory.TensorProduct.Nontrivial
+import TauCeti.Analysis.AbsoluteValue.Equivalence
+import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.FieldNorm
+import TauCeti.RingTheory.NormTrace.BaseChange
+import TauCeti.RingTheory.NormTrace.Pi
+
+/-!
+# Extensions of a nonarchimedean absolute value
+
+For a finite field extension `L/K` and a nontrivial nonarchimedean absolute value `v` on
+`K`, the absolute values on `L` restricting to `v` correspond to the maximal ideals of
+`K_v ⊗[K] L`. The residue field at such an ideal is the corresponding completion of `L`.
+The description uses the spectral norm on each residue field. When the completed scalar
+extension is reduced, it is the product of these completions. The local degrees then sum
+to `[L : K]` and the product of the degree-normalized extensions is the base absolute value
+of the field norm. This normalization composes in towers and is used for relative heights.
+
+## References
+
+* B. Conrad, *Chow's K/k-image and K/k-trace, and the Lang–Néron theorem*, §8, pp. 28–29.
+-/
+
+public section
+
+open scoped TensorProduct
+
+namespace AbsoluteValue.Completion
+
+variable {K L : Type*} [Field K] [Field L] [Algebra K L]
+  (v : AbsoluteValue K ℝ)
+
+attribute [local instance] algebraOfLiesOver
+
+variable {v} (w : AbsoluteValue L ℝ) [w.LiesOver v]
+
+/-- The comparison from scalar extension to the completion at an absolute value extending
+`v`. It sends `a ⊗ x` to the product of the images of `a` and `x`. -/
+noncomputable def tensorToCompletion :
+    v.Completion ⊗[K] L →ₐ[v.Completion] w.Completion :=
+  AlgHom.liftEquiv K v.Completion L w.Completion
+    { toRingHom := algebraMap L w.Completion
+      commutes' x := by
+        -- Expose the ring homomorphism application hidden by the structure literal.
+        change algebraMap L w.Completion (algebraMap K L x) = algebraMap K w.Completion x
+        rw [algebraMap_apply_eq_coe, algebraMap_def, WithAbs.algebraMap_right_apply] }
+
+/-- The completion comparison multiplies the two scalar images on pure tensors. -/
+@[simp]
+theorem tensorToCompletion_tmul (a : v.Completion) (x : L) :
+    tensorToCompletion w (a ⊗ₜ[K] x) =
+      algebraMap v.Completion w.Completion a * algebraMap L w.Completion x := by
+  simp only [tensorToCompletion, AlgHom.liftEquiv_tmul, Algebra.smul_def, AlgHom.coe_mk]
+
+variable [FiniteDimensional K L]
+
+/-- For a finite field extension, scalar extension onto a completion above `v` is surjective. -/
+theorem tensorToCompletion_surjective (hv : v.IsNontrivial) :
+    Function.Surjective (tensorToCompletion w (v := v)) := by
+  let := nontriviallyNormedField v hv
+  let := normedAlgebraOfLiesOver w (v := v)
+  let f := (tensorToCompletion w (v := v)).toLinearMap
+  have : FiniteDimensional v.Completion f.range := Module.Finite.range f
+  have hd : Dense (f.range : Set w.Completion) :=
+    (denseRange_algebraMap w).mono <| Set.range_subset_iff.mpr fun y ↦
+      ⟨1 ⊗ₜ[K] y, by simp [f]⟩
+  rw [dense_iff_closure_eq, f.range.isClosed_of_finiteDimensional.closure_eq] at hd
+  exact LinearMap.range_eq_top.mp (SetLike.coe_injective hd)
+
+/-- The completion at an extending absolute value is finite over the base completion. -/
+theorem finiteDimensional_of_liesOver (hv : v.IsNontrivial) :
+    FiniteDimensional v.Completion w.Completion :=
+  Module.Finite.of_surjective (tensorToCompletion w).toLinearMap
+    (tensorToCompletion_surjective w hv)
+
+end AbsoluteValue.Completion
+
+namespace AbsoluteValue
+
+open Completion Algebra.TensorProduct
+
+attribute [local instance] Completion.algebraOfLiesOver Ideal.Quotient.field
+
+section Factors
+
+variable {K L : Type*} [Field K] [Field L] [Algebra K L] (v : AbsoluteValue K ℝ)
+
+local notation "A" => v.Completion ⊗[K] L
+
+private noncomputable def toFactor (m : MaximalSpectrum A) : L →+* A ⧸ m.asIdeal :=
+  (Ideal.Quotient.mk m.asIdeal).comp (includeRight : L →ₐ[K] A).toRingHom
+
+@[simp]
+private theorem toFactor_apply (m : MaximalSpectrum A) (x : L) :
+    toFactor v m x = Ideal.Quotient.mk m.asIdeal (1 ⊗ₜ[K] x) :=
+  (rfl)
+
+variable {v} [FiniteDimensional K L]
+
+/-- The extension of a nonarchimedean absolute value obtained by pulling back the spectral norm
+of the residue field at a maximal ideal of `K_v ⊗[K] L`. -/
+noncomputable def ofCompletionFactor (hv : IsNonarchimedean v)
+    (m : MaximalSpectrum A) : AbsoluteValue L ℝ :=
+  letI := Completion.isUltrametricDist v hv
+  letI := TauCeti.spectralNormedField v.Completion (A ⧸ m.asIdeal)
+  (NormedField.toAbsoluteValue (A ⧸ m.asIdeal)).comp (f := toFactor v m) (toFactor v m).injective
+
+/-- The extension given by a completion factor is computed by its spectral norm. -/
+theorem ofCompletionFactor_apply (hv : IsNonarchimedean v) (m : MaximalSpectrum A) (x : L) :
+    ofCompletionFactor hv m x =
+      spectralNorm v.Completion (A ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal (1 ⊗ₜ[K] x)) := by
+  simp only [ofCompletionFactor, AbsoluteValue.comp_apply, NormedField.toAbsoluteValue_apply,
+    TauCeti.norm_spectralNormedField, toFactor_apply]
+
+/-- The absolute value obtained from a completion factor restricts to the base absolute value. -/
+instance liesOver_ofCompletionFactor (hv : IsNonarchimedean v) (m : MaximalSpectrum A) :
+    (ofCompletionFactor hv m).LiesOver v := by
+  refine ⟨AbsoluteValue.ext fun x ↦ ?_⟩
+  rw [under_def, comp_apply, ofCompletionFactor_apply,
+    ← Algebra.TensorProduct.algebraMap_apply', Ideal.Quotient.mk_algebraMap,
+    IsScalarTower.algebraMap_apply K v.Completion (A ⧸ m.asIdeal),
+    spectralNorm_extends, Completion.norm_algebraMap]
+
+/-- The kernel of the map to the completion at an extension of `v`, as a maximal ideal of
+`K_v ⊗[K] L`. -/
+noncomputable def completionMaximalIdeal (hv : v.IsNontrivial)
+    (w : AbsoluteValue L ℝ) [w.LiesOver v] : MaximalSpectrum A :=
+  ⟨RingHom.ker (tensorToCompletion w (v := v)).toRingHom,
+    RingHom.ker_isMaximal_of_surjective _ (tensorToCompletion_surjective w hv)⟩
+
+/-- The ideal associated to an extending absolute value is the kernel of the comparison. -/
+@[simp]
+theorem completionMaximalIdeal_asIdeal (hv : v.IsNontrivial) (w : AbsoluteValue L ℝ)
+    [w.LiesOver v] :
+    (completionMaximalIdeal hv w).asIdeal = RingHom.ker (tensorToCompletion w).toRingHom :=
+  (rfl)
+
+/-- The residue field of the kernel of the completion comparison is the completion itself. -/
+noncomputable def completionQuotientEquiv (hv : v.IsNontrivial)
+    (w : AbsoluteValue L ℝ) [w.LiesOver v] :
+    (A ⧸ (completionMaximalIdeal hv w).asIdeal) ≃ₐ[v.Completion] w.Completion :=
+  Ideal.quotientKerAlgEquivOfSurjective (tensorToCompletion_surjective w hv)
+
+/-- The quotient comparison sends a residue class to the image of its representative. -/
+@[simp]
+theorem completionQuotientEquiv_mk (hv : v.IsNontrivial) (w : AbsoluteValue L ℝ)
+    [w.LiesOver v] (x : A) :
+    completionQuotientEquiv hv w (Ideal.Quotient.mk _ x) = tensorToCompletion w x :=
+  Ideal.quotientKerAlgEquivOfSurjective_mk _ x
+
+/-- Recover an extending absolute value from the kernel of its completion comparison. -/
+@[simp]
+theorem ofCompletionFactor_completionMaximalIdeal (hv : v.IsNontrivial)
+    (hna : IsNonarchimedean v) (w : AbsoluteValue L ℝ) [w.LiesOver v] :
+    ofCompletionFactor hna (completionMaximalIdeal hv w) = w := by
+  let := Completion.isUltrametricDist v hna
+  let := Completion.normedAlgebraOfLiesOver w (v := v)
+  let e := completionQuotientEquiv hv w
+  have := finiteDimensional_of_liesOver w hv
+  ext x
+  rw [ofCompletionFactor_apply, ← e.toAlgHom.spectralNorm_map,
+    AlgEquiv.coe_toAlgHom, completionQuotientEquiv_mk, tensorToCompletion_tmul,
+    map_one, one_mul,
+    ← TauCeti.norm_eq_spectralNorm v.Completion (Algebra.IsAlgebraic.isAlgebraic _),
+    Completion.norm_algebraMap]
+
+/-- Extend the map from `L` to the residue field by continuity at its induced absolute value. -/
+private noncomputable def completionToFactor (hv : v.IsNontrivial)
+    (hna : IsNonarchimedean v) (m : MaximalSpectrum A) :
+    (ofCompletionFactor hna m).Completion →+* A ⧸ m.asIdeal := by
+  let := Completion.nontriviallyNormedField v hv
+  let := Completion.isUltrametricDist v hna
+  let F := A ⧸ m.asIdeal
+  let : NormedField F := TauCeti.spectralNormedField v.Completion F
+  let : CompleteSpace F := spectralNorm.completeSpace v.Completion F
+  let w := ofCompletionFactor hna m
+  let f : WithAbs w →+* F := (toFactor v m).comp (WithAbs.equiv w).toRingHom
+  have hf : Isometry f := AddMonoidHomClass.isometry_of_norm _ fun y ↦ by
+    simp only [f, w, F, WithAbs.norm_eq_apply_ofAbs, ofCompletionFactor_apply,
+      TauCeti.norm_spectralNormedField, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
+      RingEquiv.coe_toRingHom, WithAbs.equiv_apply, toFactor_apply]
+  exact (UniformSpace.Completion.extensionHom f hf.continuous).comp
+    (Completion.toCompletion (v := w))
+
+private theorem completionToFactor_algebraMap (hv : v.IsNontrivial)
+    (hna : IsNonarchimedean v) (m : MaximalSpectrum A) (x : L) :
+    completionToFactor hv hna m (algebraMap L (ofCompletionFactor hna m).Completion x) =
+      toFactor v m x := by
+  rw [completionToFactor, Completion.algebraMap_apply_eq_coe,
+    RingHom.comp_apply, toCompletion_coe, @UniformSpace.Completion.extensionHom_coe]
+  simp
+
+private theorem continuous_completionToFactor (hv : v.IsNontrivial)
+    (hna : IsNonarchimedean v) (m : MaximalSpectrum A) :
+    letI := Completion.isUltrametricDist v hna
+    letI := TauCeti.spectralNormedField v.Completion (A ⧸ m.asIdeal)
+    Continuous (completionToFactor hv hna m) := by
+  let := Completion.nontriviallyNormedField v hv
+  let := Completion.isUltrametricDist v hna
+  let := TauCeti.spectralNormedField v.Completion (A ⧸ m.asIdeal)
+  let : CompleteSpace (A ⧸ m.asIdeal) := spectralNorm.completeSpace v.Completion (A ⧸ m.asIdeal)
+  dsimp only [completionToFactor, RingHom.coe_comp]
+  exact UniformSpace.Completion.continuous_extension.comp
+    (continuous_toCompletion (ofCompletionFactor hna m))
+
+private theorem completionToFactor_comp_tensorToCompletion (hv : v.IsNontrivial)
+    (hna : IsNonarchimedean v) (m : MaximalSpectrum A) :
+    (completionToFactor hv hna m).comp (tensorToCompletion (ofCompletionFactor hna m)).toRingHom =
+      Ideal.Quotient.mk m.asIdeal := by
+  let := Completion.isUltrametricDist v hna
+  let F := A ⧸ m.asIdeal
+  let : NormedField F := TauCeti.spectralNormedField v.Completion F
+  let := TauCeti.spectralNormedAlgebra v.Completion F
+  let w := ofCompletionFactor hna m
+  have hscalar : (completionToFactor hv hna m).comp (map v w) = algebraMap v.Completion F := by
+    refine DFunLike.ext' (Completion.ext ((continuous_completionToFactor hv hna m).comp
+      (continuous_map v w))
+      (continuous_algebraMap _ _) fun x ↦ ?_)
+    have hx : algebraMap L w.Completion (algebraMap K L x.ofAbs) =
+        (WithAbs.map v w (algebraMap K L) x : w.Completion) := by
+      rw [Completion.algebraMap_apply_eq_coe, WithAbs.map_apply]
+    rw [RingHom.comp_apply, map_coe, ← hx, completionToFactor_algebraMap]
+    -- The scalar and the element of L represent the same tensor over K.
+    rw [toFactor_apply, ← Algebra.TensorProduct.algebraMap_apply',
+      IsScalarTower.algebraMap_apply K v.Completion A, Ideal.Quotient.mk_algebraMap,
+      Completion.algebraMap_apply_eq_coe, WithAbs.toAbs_ofAbs]
+  apply Algebra.TensorProduct.ringHom_ext
+  · ext a
+    -- On the left tensor factor both maps agree with the `K_v`-algebra map.
+    have ha : Ideal.Quotient.mk m.asIdeal (a ⊗ₜ[K] (1 : L)) =
+        algebraMap v.Completion F a := by
+      rw [← Ideal.Quotient.mk_algebraMap (R₁ := v.Completion),
+        Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self_apply]
+    simpa only [RingHom.comp_apply, includeLeftRingHom_apply, AlgHom.toRingHom_eq_coe,
+      RingHom.coe_coe, tensorToCompletion_tmul, map_one, mul_one, algebraMap_apply_of_liesOver,
+      ha] using DFunLike.congr_fun hscalar a
+  · ext x
+    -- On the right tensor factor both maps restrict to the original map from `L`.
+    simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, includeRight_apply,
+      tensorToCompletion_tmul, map_one, one_mul, toFactor_apply] using
+      completionToFactor_algebraMap hv hna m x
+
+/-- The completion of the absolute value belonging to a factor recovers its maximal ideal. -/
+@[simp]
+theorem completionMaximalIdeal_ofCompletionFactor (hv : v.IsNontrivial)
+    (hna : IsNonarchimedean v) (m : MaximalSpectrum A) :
+    completionMaximalIdeal hv (ofCompletionFactor hna m) = m := by
+  apply MaximalSpectrum.ext
+  refine (completionMaximalIdeal hv (ofCompletionFactor hna m)).isMaximal.eq_of_le
+    m.isMaximal.ne_top fun x hx ↦ ?_
+  rw [← Ideal.Quotient.eq_zero_iff_mem, ← completionToFactor_comp_tensorToCompletion hv hna m,
+    RingHom.comp_apply, RingHom.mem_ker.mp hx, map_zero]
+
+/-- Maximal ideals of the completed scalar extension classify the absolute values on `L`
+restricting to the given nontrivial nonarchimedean absolute value on `K`. -/
+noncomputable def maximalSpectrumEquivLiesOver (hv : v.IsNontrivial)
+    (hna : IsNonarchimedean v) : MaximalSpectrum A ≃ {w : AbsoluteValue L ℝ // w.LiesOver v} where
+  toFun m := ⟨ofCompletionFactor hna m, inferInstance⟩
+  invFun w := completionMaximalIdeal hv w.val
+  left_inv m := completionMaximalIdeal_ofCompletionFactor hv hna m
+  right_inv w := Subtype.ext (ofCompletionFactor_completionMaximalIdeal hv hna w.val)
+
+/-- The forward correspondence takes the spectral norm of the residue field. -/
+@[simp]
+theorem maximalSpectrumEquivLiesOver_apply (hv : v.IsNontrivial)
+    (hna : IsNonarchimedean v) (m : MaximalSpectrum A) :
+    (maximalSpectrumEquivLiesOver hv hna m).val = ofCompletionFactor hna m :=
+  (rfl)
+
+/-- The inverse correspondence takes the kernel of the completion comparison. -/
+@[simp]
+theorem maximalSpectrumEquivLiesOver_symm_apply (hv : v.IsNontrivial)
+    (hna : IsNonarchimedean v) (w : AbsoluteValue L ℝ) [hw : w.LiesOver v] :
+    (maximalSpectrumEquivLiesOver hv hna).symm ⟨w, hw⟩ = completionMaximalIdeal hv w :=
+  (rfl)
+
+/-- A finite field extension has only finitely many absolute values restricting to a given
+nontrivial nonarchimedean absolute value. -/
+theorem finite_liesOver (hv : v.IsNontrivial) (hna : IsNonarchimedean v) :
+    Finite {w : AbsoluteValue L ℝ // w.LiesOver v} := by
+  let : IsArtinianRing A := IsArtinianRing.of_finite v.Completion A
+  exact Finite.of_equiv _ (maximalSpectrumEquivLiesOver hv hna)
+
+/-- A nontrivial nonarchimedean absolute value extends to every finite field extension. -/
+theorem nonempty_liesOver (hv : v.IsNontrivial) (hna : IsNonarchimedean v) :
+    Nonempty {w : AbsoluteValue L ℝ // w.LiesOver v} :=
+  (inferInstance : Nonempty (MaximalSpectrum A)).map (maximalSpectrumEquivLiesOver hv hna)
+
+/-- The local degree of a finite extension of a nontrivial absolute value is positive. -/
+theorem degree_pos_of_liesOver (w : AbsoluteValue L ℝ) [w.LiesOver v] (hv : v.IsNontrivial) :
+    0 < w.degree K := by
+  have := finiteDimensional_of_liesOver w hv
+  rw [degree_eq v w]
+  exact Module.finrank_pos
+
+/-- The height normalization of an extension of a nonarchimedean absolute value raises it to
+its local degree. -/
+noncomputable def degreeNormalized (w : AbsoluteValue L ℝ) [w.LiesOver v]
+    (hv : v.IsNontrivial) (hna : IsNonarchimedean v) : AbsoluteValue L ℝ :=
+  w.nonarchRpow (isNonarchimedean_of_liesOver hna) (Nat.cast_pos.mpr (degree_pos_of_liesOver w hv))
+
+/-- Evaluate the degree-normalized extension as an ordinary natural power. -/
+@[simp]
+theorem degreeNormalized_apply (w : AbsoluteValue L ℝ) [w.LiesOver v]
+    (hv : v.IsNontrivial) (hna : IsNonarchimedean v) (x : L) :
+    w.degreeNormalized (v := v) hv hna x = w x ^ w.degree K := by
+  rw [degreeNormalized, nonarchRpow_apply, Real.rpow_natCast]
+
+/-- The normalized extension restricts to the base absolute value raised to the local degree. -/
+theorem degreeNormalized_algebraMap (w : AbsoluteValue L ℝ) [w.LiesOver v]
+    (hv : v.IsNontrivial) (hna : IsNonarchimedean v) (x : K) :
+    w.degreeNormalized (v := v) hv hna (algebraMap K L x) = v x ^ w.degree K := by
+  rw [degreeNormalized_apply, LiesOver.apply_algebraMap v]
+
+/-- Degree normalization preserves the equivalence class of the extending absolute value. -/
+theorem isEquiv_degreeNormalized (w : AbsoluteValue L ℝ) [w.LiesOver v]
+    (hv : v.IsNontrivial) (hna : IsNonarchimedean v) :
+    w.IsEquiv (w.degreeNormalized (v := v) hv hna) := by
+  rw [degreeNormalized]
+  exact isEquiv_nonarchRpow _ _ _
+
+/-- A degree-normalized extension of a nonarchimedean absolute value remains nonarchimedean. -/
+theorem isNonarchimedean_degreeNormalized (w : AbsoluteValue L ℝ) [w.LiesOver v]
+    (hv : v.IsNontrivial) (hna : IsNonarchimedean v) :
+    IsNonarchimedean (w.degreeNormalized (v := v) hv hna) := by
+  rw [degreeNormalized]
+  exact isNonarchimedean_nonarchRpow _ _ _
+
+/-- Distinct extensions give inequivalent absolute values after degree normalization. -/
+theorem pairwise_not_isEquiv_degreeNormalized (hv : v.IsNontrivial) (hna : IsNonarchimedean v) :
+    Pairwise fun w w' : {w : AbsoluteValue L ℝ // w.LiesOver v} ↦
+      ¬ (w.val.degreeNormalized (v := v) hv hna).IsEquiv
+        (w'.val.degreeNormalized (v := v) hv hna) := by
+  intro w w' hne h
+  have he := (isEquiv_degreeNormalized w.val hv hna).trans
+    (h.trans (isEquiv_degreeNormalized w'.val hv hna).symm)
+  exact hne (Subtype.ext (he.eq_of_liesOver hv))
+
+/-- Degree normalization commutes with raising the base and extending absolute values to the
+same positive real power. -/
+theorem degreeNormalized_nonarchRpow (w : AbsoluteValue L ℝ) [w.LiesOver v]
+    (hv : v.IsNontrivial) (hna : IsNonarchimedean v) {t : ℝ} (ht : 0 < t) :
+    let hwa : IsNonarchimedean w := isNonarchimedean_of_liesOver hna
+    let w' := w.nonarchRpow hwa ht
+    letI := liesOver_nonarchRpow (w := w) ht hwa hna
+    w'.degreeNormalized (v := v.nonarchRpow hna ht) ((v.isEquiv_nonarchRpow hna ht).isNontrivial hv)
+        (v.isNonarchimedean_nonarchRpow hna ht) =
+      (w.degreeNormalized (v := v) hv hna).nonarchRpow
+        (isNonarchimedean_degreeNormalized w hv hna) ht := by
+  dsimp only
+  have hd : w.degree K = (w.nonarchRpow (isNonarchimedean_of_liesOver hna) ht).degree K :=
+    (w.isEquiv_nonarchRpow (isNonarchimedean_of_liesOver hna) ht).degree_eq
+  ext x
+  simp only [degreeNormalized_apply, ← hd, nonarchRpow_apply, ← Real.rpow_natCast,
+    ← Real.rpow_mul (w.nonneg x)]
+  rw [mul_comm t]
+
+section Reduced
+
+variable [IsReduced (v.Completion ⊗[K] L)]
+
+/-- If the scalar extension of `L` to the completion at `v` is reduced, it is the product of
+the completions of `L` at the absolute values restricting to `v`. -/
+noncomputable def semilocalEquiv (hv : v.IsNontrivial) (hna : IsNonarchimedean v) :
+    A ≃ₐ[v.Completion] (w : {w : AbsoluteValue L ℝ // w.LiesOver v}) → w.val.Completion :=
+  letI : IsArtinianRing A := IsArtinianRing.of_finite v.Completion A
+  let e := maximalSpectrumEquivLiesOver (L := L) hv hna
+  ((IsArtinianRing.equivPi A).restrictScalars v.Completion).trans <|
+    (AlgEquiv.piCongrLeft' v.Completion (fun m : MaximalSpectrum A ↦ A ⧸ m.asIdeal) e).trans <|
+      AlgEquiv.piCongrRight fun w ↦ completionQuotientEquiv hv w.val
+
+/-- Each coordinate of the product decomposition is the comparison to that completion. -/
+@[simp]
+theorem semilocalEquiv_apply (hv : v.IsNontrivial) (hna : IsNonarchimedean v)
+    (y : A) (w : {w : AbsoluteValue L ℝ // w.LiesOver v}) :
+    semilocalEquiv hv hna y w = tensorToCompletion w.val y := by
+  simp only [semilocalEquiv, AlgEquiv.trans_apply, AlgEquiv.restrictScalars_apply,
+    AlgEquiv.piCongrLeft'_apply]
+  exact completionQuotientEquiv_mk hv w.val y
+
+/-- The local degrees over a nonarchimedean absolute value add up to the global degree when
+the completed scalar extension is reduced. -/
+theorem finsum_degree_liesOver (hv : v.IsNontrivial) (hna : IsNonarchimedean v) :
+    ∑ᶠ w : {w : AbsoluteValue L ℝ // w.LiesOver v}, w.val.degree K = Module.finrank K L := by
+  have := finite_liesOver (L := L) hv hna
+  let : Fintype {w : AbsoluteValue L ℝ // w.LiesOver v} := Fintype.ofFinite _
+  let (w : {w : AbsoluteValue L ℝ // w.LiesOver v}) :
+      FiniteDimensional v.Completion w.val.Completion := finiteDimensional_of_liesOver w.val hv
+  simp_rw [finsum_eq_sum_of_fintype, degree_eq v]
+  rw [← Module.finrank_pi_fintype, ← (semilocalEquiv (L := L) hv hna).toLinearEquiv.finrank_eq,
+    Module.finrank_baseChange]
+
+/-- The product of the degree-normalized extensions evaluated at an element of `L` equals
+the value of its field norm at the base absolute value. -/
+theorem finprod_degreeNormalized_eq (hv : v.IsNontrivial) (hna : IsNonarchimedean v) (x : L) :
+    ∏ᶠ w : {w : AbsoluteValue L ℝ // w.LiesOver v}, w.val.degreeNormalized (v := v) hv hna x =
+      v (Algebra.norm K x) := by
+  have := finite_liesOver (L := L) hv hna
+  let : Fintype {w : AbsoluteValue L ℝ // w.LiesOver v} := Fintype.ofFinite _
+  let (w : {w : AbsoluteValue L ℝ // w.LiesOver v}) :
+      FiniteDimensional v.Completion w.val.Completion := finiteDimensional_of_liesOver w.val hv
+  let := Completion.isUltrametricDist v hna
+  rw [finprod_eq_prod_of_fintype, ← Completion.norm_algebraMap,
+    ← TauCeti.Algebra.norm_baseChange_tmul, ← Algebra.norm_eq_of_algEquiv (semilocalEquiv hv hna),
+    TauCeti.Algebra.norm_pi, norm_prod]
+  refine Finset.prod_congr rfl fun w _ ↦ ?_
+  let := Completion.normedAlgebraOfLiesOver w.val (v := v)
+  rw [semilocalEquiv_apply, tensorToCompletion_tmul, map_one, one_mul,
+    TauCeti.norm_algebraNorm_eq_spectralNorm_pow_finrank, degreeNormalized_apply, degree_eq v w.val,
+    ← TauCeti.norm_eq_spectralNorm v.Completion (Algebra.IsAlgebraic.isAlgebraic _),
+    Completion.norm_algebraMap]
+
+end Reduced
+
+end Factors
+
+section Tower
+
+variable {K L M : Type*} [Field K] [Field L] [Field M]
+  [Algebra K L] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
+  [FiniteDimensional K L] [FiniteDimensional L M]
+  {v : AbsoluteValue K ℝ} (w : AbsoluteValue L ℝ) (u : AbsoluteValue M ℝ)
+  [w.LiesOver v] [u.LiesOver w]
+
+/-- In a tower, normalize the middle absolute value and rescale the top one by the same
+power before normalizing again. This gives the direct normalization from the bottom field. -/
+theorem degreeNormalized_trans (hv : v.IsNontrivial) (hna : IsNonarchimedean v) :
+    letI := LiesOver.trans v w u
+    letI := FiniteDimensional.trans K L M
+    let hw := hv.of_liesOver w
+    let hwa : IsNonarchimedean w := isNonarchimedean_of_liesOver hna
+    let ht : (0 : ℝ) < w.degree K := Nat.cast_pos.mpr (degree_pos_of_liesOver w hv)
+    let u' := u.nonarchRpow (isNonarchimedean_of_liesOver hwa) ht
+    letI := liesOver_nonarchRpow (w := u) ht (isNonarchimedean_of_liesOver hwa) hwa
+    u'.degreeNormalized (v := w.nonarchRpow hwa ht) ((w.isEquiv_nonarchRpow hwa ht).isNontrivial hw)
+        (w.isNonarchimedean_nonarchRpow hwa ht) =
+      u.degreeNormalized (v := v) hv hna := by
+  intro hw hwa ht u'
+  dsimp only [u']
+  rw [degreeNormalized_nonarchRpow u hw hwa ht]
+  ext x
+  simp only [nonarchRpow_apply, degreeNormalized_apply, Real.rpow_natCast, ← pow_mul]
+  rw [mul_comm, degree_mul_degree (v := w)]
+
+end Tower
+
+end AbsoluteValue
