@@ -44,6 +44,7 @@ and `e^T - 1`.
 
 ## Main definitions
 
+* `FormalGroup.derivZeroX`: the power series `F_X(0, T) = P(T)⁻¹`.
 * `FormalGroup.invariantDifferential`: the coefficient `P(T)` of the normalised invariant
   differential `ω = P(T) dT` of `F`.
 * `FormalGroup.invariantDerivation`: the dual derivation `F_X(0, T) d/dT`.
@@ -62,12 +63,14 @@ and `e^T - 1`.
   invariant**, `P(F(X, Y)) · F_X(X, Y) = P(X)`.
 * `FormalGroup.subst_invariantDifferential_mul_pderiv_one`: for commutative `F`, the same in the
   second variable, `P(F(X, Y)) · F_Y(X, Y) = P(Y)`.
+* `FormalGroup.subst_invariantDifferential_mul_derivZeroX`: `P(F(X, Y)) · F_X(0, F(X, Y)) = 1`.
 * `FormalGroup.invariantDifferential_mul_invariantDerivation`: multiplying the invariant
   derivative by `P(T)` recovers the ordinary derivative.
 * `FormalGroup.invariantDerivation_log`: the invariant derivative of `log_F` is `1`.
 * `FormalGroup.map_invariantDerivation`: the invariant derivation commutes with coefficient maps.
-* `FormalGroup.map_invariantDifferential` and `FormalGroup.coeff_invariantDifferential_map`:
-  the invariant differential and its coefficients commute with coefficient maps.
+* `FormalGroup.map_invariantDifferential`, `FormalGroup.map_derivZeroX`, and
+  `FormalGroup.coeff_invariantDifferential_map`: the invariant differential, its coefficients, and
+  `F_X(0, T)` commute with coefficient maps.
 * `FormalGroup.natCast_mul_coeff_log_mem_range`: each logarithm coefficient becomes integral
   after multiplication by its degree.
 * `FormalGroup.subst_toPowerSeries_eq_add_of_derivative_eq`: over a ring without additive
@@ -110,10 +113,16 @@ variable {R : Type*} [CommRing R] (F : FormalGroup R)
 /-! ### The invariant differential -/
 
 /-- `F_X(0, T)`, the partial derivative of `F` in its first variable, restricted to `X = 0`. -/
-private noncomputable abbrev derivZeroX : PowerSeries R :=
+noncomputable def derivZeroX : PowerSeries R :=
   subst ![0, PowerSeries.X] (pderiv 0 F.toPowerSeries)
 
-private theorem constantCoeff_derivZeroX : PowerSeries.constantCoeff F.derivZeroX = 1 := by
+/-- Unfolding formula for `FormalGroup.derivZeroX`. -/
+theorem derivZeroX_def : F.derivZeroX = subst ![0, PowerSeries.X] (pderiv 0 F.toPowerSeries) :=
+  (rfl)
+
+/-- The constant coefficient of `F_X(0, T)` is `1`. -/
+@[simp]
+theorem constantCoeff_derivZeroX : PowerSeries.constantCoeff F.derivZeroX = 1 := by
   have hD : constantCoeff (pderiv 0 F.toPowerSeries) = 1 := by
     rw [← coeff_zero_eq_constantCoeff_apply, coeff_pderiv, _root_.zero_add, F.lin_coeff_X]
     simp
@@ -125,11 +134,11 @@ private theorem constantCoeff_derivZeroX : PowerSeries.constantCoeff F.derivZero
     coe_substAlgHom] at this
 
 /-- Substituting `g` into `F_X(0, T)` is substituting `(0, g)` into `F_X`. -/
-private theorem subst_derivZeroX {σ : Type*} {g : MvPowerSeries σ R}
+theorem subst_derivZeroX {σ : Type*} {g : MvPowerSeries σ R}
     (hg : PowerSeries.HasSubst g) :
     PowerSeries.subst g F.derivZeroX = subst ![0, g] (pderiv 0 F.toPowerSeries) := by
   have ha : HasSubst (![0, PowerSeries.X] : Fin 2 → PowerSeries R) := HasSubst.zero_X
-  rw [derivZeroX, PowerSeries.subst_def, subst_comp_subst_apply ha hg.const]
+  rw [derivZeroX_def, PowerSeries.subst_def, subst_comp_subst_apply ha hg.const]
   congr 1
   funext s
   fin_cases s
@@ -188,10 +197,25 @@ theorem constantCoeff_invariantDifferential :
     PowerSeries.constantCoeff F.invariantDifferential = 1 := by
   simp [invariantDifferential, PowerSeries.constantCoeff_invOfUnit]
 
-/-- `P(T) · F_X(0, T) = 1`: the defining property of the invariant differential. -/
-theorem invariantDifferential_mul_subst_pderiv :
-    F.invariantDifferential * subst ![0, PowerSeries.X] (pderiv 0 F.toPowerSeries) = 1 :=
-  PowerSeries.invOfUnit_mul _ _ (by simp [constantCoeff_derivZeroX])
+/-- `P(T) · F_X(0, T) = 1`: multiplying the invariant differential by `F_X(0, T)` gives `1`. -/
+theorem invariantDifferential_mul_derivZeroX :
+    F.invariantDifferential * F.derivZeroX = 1 :=
+  PowerSeries.invOfUnit_mul _ _ (by simp)
+
+/-- Substituting any substitutable series `g` into `P(T) · F_X(0, T) = 1` gives
+`P(g) · F_X(0, g) = 1`. -/
+theorem subst_invariantDifferential_mul_derivZeroX {σ : Type*} {g : MvPowerSeries σ R}
+    (hg : PowerSeries.HasSubst g) :
+    PowerSeries.subst g F.invariantDifferential * PowerSeries.subst g F.derivZeroX = 1 := by
+  rw [← PowerSeries.subst_mul hg, invariantDifferential_mul_derivZeroX,
+    ← PowerSeries.coe_substAlgHom hg, map_one]
+
+/-- `F_X(0, T)` commutes with change of coefficients. -/
+@[simp]
+theorem map_derivZeroX {S : Type*} [CommRing S] (f : R →+* S) :
+    PowerSeries.map f F.derivZeroX = (F.map f).derivZeroX := by
+  ext n
+  simp [derivZeroX_def, PowerSeries.coeff_map, coeff_subst_zero_X, coeff_pderiv]
 
 /-- The invariant derivation `F_X(0, T) d/dT` of a formal group law. Its dual invariant
 differential is `dT / F_X(0, T)`. -/
@@ -210,24 +234,18 @@ theorem invariantDerivation_apply (g : PowerSeries R) :
 theorem map_invariantDerivation {S : Type*} [CommRing S] (f : R →+* S) (g : PowerSeries R) :
     PowerSeries.map f (F.invariantDerivation g) =
       (F.map f).invariantDerivation (PowerSeries.map f g) := by
-  have hA : PowerSeries.map f (subst ![(0 : PowerSeries R), PowerSeries.X]
-      (pderiv 0 F.toPowerSeries)) =
-      subst ![(0 : PowerSeries S), PowerSeries.X] (pderiv 0 (F.map f).toPowerSeries) := by
-    ext n
-    simp [PowerSeries.coeff_map, coeff_subst_zero_X, coeff_pderiv]
-  simp only [invariantDerivation_apply, map_mul, PowerSeries.derivative_map, hA]
+  rw [invariantDerivation_apply, invariantDerivation_apply, ← F.derivZeroX_def,
+    ← (F.map f).derivZeroX_def]
+  simp
 
 /-- The invariant differential commutes with change of coefficients. -/
 @[simp]
 theorem map_invariantDifferential {S : Type*} [CommRing S] (f : R →+* S) :
     PowerSeries.map f F.invariantDifferential = (F.map f).invariantDifferential := by
-  have hD := F.map_invariantDerivation f PowerSeries.X
-  simp only [invariantDerivation_apply, PowerSeries.derivative_X, mul_one,
-    PowerSeries.map_X] at hD
-  have hleft := congrArg (PowerSeries.map f) F.invariantDifferential_mul_subst_pderiv
-  rw [map_mul, map_one, hD] at hleft
+  have hleft := congrArg (PowerSeries.map f) F.invariantDifferential_mul_derivZeroX
+  rw [map_mul, map_one, map_derivZeroX] at hleft
   exact left_inv_eq_right_inv hleft
-    (by simpa [mul_comm] using (F.map f).invariantDifferential_mul_subst_pderiv)
+    (by simpa [mul_comm] using (F.map f).invariantDifferential_mul_derivZeroX)
 
 /-- The coefficients of the invariant differential commute with change of coefficients. -/
 @[simp]
@@ -240,7 +258,8 @@ theorem coeff_invariantDifferential_map {S : Type*} [CommRing S] (f : R →+* S)
 recovers the ordinary derivative. -/
 theorem invariantDifferential_mul_invariantDerivation (g : PowerSeries R) :
     F.invariantDifferential * F.invariantDerivation g = PowerSeries.derivative g := by
-  rw [invariantDerivation_apply, ← mul_assoc, invariantDifferential_mul_subst_pderiv, one_mul]
+  rw [invariantDerivation_apply, ← F.derivZeroX_def, ← mul_assoc,
+    invariantDifferential_mul_derivZeroX, one_mul]
 
 /-- **The invariant differential is invariant** (Silverman IV.4.2): `ω(F(X, Y)) = ω(X)`, that is
 `P(F(X, Y)) · F_X(X, Y) = P(X)`. -/
@@ -249,17 +268,13 @@ theorem subst_invariantDifferential_mul_pderiv :
       PowerSeries.subst (X 0) F.invariantDifferential := by
   have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
   have hX := PowerSeries.HasSubst.X (S := R) (0 : Fin 2)
-  -- `P(g) · F_X(0, g) = 1` for every `g`
-  have h₁ (g : MvPowerSeries (Fin 2) R) (hg : PowerSeries.HasSubst g) :
-      PowerSeries.subst g F.invariantDifferential * PowerSeries.subst g F.derivZeroX = 1 := by
-    rw [← PowerSeries.subst_mul hg, invariantDifferential_mul_subst_pderiv,
-      ← PowerSeries.coe_substAlgHom hg, map_one]
   calc _ = PowerSeries.subst F.toPowerSeries F.invariantDifferential *
         (pderiv 0 F.toPowerSeries * PowerSeries.subst (X 0) F.derivZeroX) *
           PowerSeries.subst (X 0) F.invariantDifferential := by
-        rw [mul_assoc, mul_assoc, mul_comm (PowerSeries.subst (X 0) F.derivZeroX), h₁ _ hX,
-          mul_one]
-    _ = _ := by rw [pderiv_mul_subst_derivZeroX, h₁ _ hF, one_mul]
+        rw [mul_assoc, mul_assoc, mul_comm (PowerSeries.subst (X 0) F.derivZeroX),
+          F.subst_invariantDifferential_mul_derivZeroX hX, mul_one]
+    _ = _ := by
+        rw [pderiv_mul_subst_derivZeroX, F.subst_invariantDifferential_mul_derivZeroX hF, one_mul]
 
 /-- **The invariant differential is invariant in the second variable** for a commutative formal
 group law: `P(F(X, Y)) · F_Y(X, Y) = P(Y)`, where `F_Y` is the partial derivative of `F` in its
@@ -289,8 +304,8 @@ theorem subst_invariantDifferential_mul_pderiv_one [F.IsComm] :
 theorem invariantDifferential_𝔾ₐ : (𝔾ₐ (R := R)).invariantDifferential = 1 := by
   have ha : HasSubst (![0, PowerSeries.X] : Fin 2 → PowerSeries R) := HasSubst.zero_X
   have hD : pderiv 0 (𝔾ₐ (R := R)).toPowerSeries = 1 := by simp [pderiv_X_of_ne]
-  have h := (𝔾ₐ (R := R)).invariantDifferential_mul_subst_pderiv
-  rwa [hD, ← coe_substAlgHom ha, map_one, mul_one] at h
+  have h := (𝔾ₐ (R := R)).invariantDifferential_mul_derivZeroX
+  rwa [derivZeroX_def, hD, ← coe_substAlgHom ha, map_one, mul_one] at h
 
 /-- The invariant differential of the multiplicative formal group law `X + Y + XY` is
 `dT / (1 + T) = (1 - T + T² - ⋯) dT`. -/
@@ -299,8 +314,8 @@ theorem invariantDifferential_𝔾ₘ :
     (𝔾ₘ (R := R)).invariantDifferential = PowerSeries.mk fun n ↦ (-1) ^ n := by
   have ha : HasSubst (![0, PowerSeries.X] : Fin 2 → PowerSeries R) := HasSubst.zero_X
   have hD : pderiv 0 (𝔾ₘ (R := R)).toPowerSeries = 1 + X 1 := by simp [pderiv_X_of_ne]
-  have h := (𝔾ₘ (R := R)).invariantDifferential_mul_subst_pderiv
-  rw [hD, ← coe_substAlgHom ha, map_add, map_one, coe_substAlgHom, subst_X ha] at h
+  have h := (𝔾ₘ (R := R)).invariantDifferential_mul_derivZeroX
+  rw [derivZeroX_def, hD, ← coe_substAlgHom ha, map_add, map_one, coe_substAlgHom, subst_X ha] at h
   -- `P(T) · (1 + T) = 1`, and `1 - T + T² - ⋯` is the inverse of `1 + T`
   refine left_inv_eq_right_inv (by simpa using h) ?_
   rw [mul_comm, PowerSeries.mk_neg_one_pow_mul_one_add_eq_one]
@@ -382,8 +397,8 @@ theorem natCast_mul_coeff_log_mem_range {S : Type*} [CommRing S] [Algebra ℚ S]
 /-- The invariant derivative of the formal logarithm is one. -/
 @[simp]
 theorem invariantDerivation_log : F.invariantDerivation F.log = 1 := by
-  rw [invariantDerivation_apply, derivative_log, mul_comm,
-    invariantDifferential_mul_subst_pderiv]
+  rw [invariantDerivation_apply, derivative_log, ← F.derivZeroX_def, mul_comm,
+    invariantDifferential_mul_derivZeroX]
 
 /-- **The logarithm is additive along `F`** (Silverman IV.5.2):
 `log_F(F(X, Y)) = log_F(X) + log_F(Y)`. -/
@@ -428,11 +443,11 @@ theorem subst_toPowerSeries_eq_add_iff {g : PowerSeries R} :
       rw [Matrix.cons_val_zero, PowerSeries.subst_zero_eq_C_constantCoeff,
         Algebra.algebraMap_self, map_id, RingHom.id_apply,
         ← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_derivative] at this
-      have hP := F.invariantDifferential_mul_subst_pderiv
+      have hP := F.invariantDifferential_mul_derivZeroX
       calc PowerSeries.derivative g
           _ = PowerSeries.derivative g * subst ![0, PowerSeries.X] (pderiv 0 F.toPowerSeries) *
               F.invariantDifferential := by
-            rw [mul_assoc, mul_comm _ F.invariantDifferential, hP, mul_one]
+            rw [← F.derivZeroX_def, mul_assoc, mul_comm _ F.invariantDifferential, hP, mul_one]
           _ = _ := by
             rw [this, MvPowerSeries.smul_eq_C_mul]
             simp
@@ -510,8 +525,8 @@ theorem derivative_exp :
       PowerSeries.derivative F.exp = 1 := by
     rw [← F.derivative_log, ← PowerSeries.derivative_subst hsub, F.subst_exp_log]
     exact PowerSeries.derivative_X
-  have hi := congrArg (PowerSeries.subst F.exp) F.invariantDifferential_mul_subst_pderiv
-  rw [PowerSeries.subst_mul hsub, PowerSeries.subst_one] at hi
+  have hi := congrArg (PowerSeries.subst F.exp) F.invariantDifferential_mul_derivZeroX
+  rw [PowerSeries.subst_mul hsub, PowerSeries.subst_one, derivZeroX_def] at hi
   calc
     PowerSeries.derivative F.exp =
         (PowerSeries.subst F.exp F.invariantDifferential *
@@ -675,18 +690,17 @@ theorem subst_invariantDifferential_mul_derivative (f : FormalGroupHom F G) :
     Matrix.cons_val_zero, PowerSeries.subst_zero_eq_C_constantCoeff] at h
   simp only [Algebra.algebraMap_self, MvPowerSeries.map_id, RingHom.id_apply,
     ← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_derivative,
-    zero_add, Nat.cast_zero, mul_one] at h
+    zero_add, Nat.cast_zero, mul_one, ← F.derivZeroX_def] at h
   have hG : PowerSeries.subst f.toPowerSeries G.invariantDifferential *
-      PowerSeries.subst f.toPowerSeries G.derivZeroX = 1 := by
-    rw [← PowerSeries.subst_mul f.hasSubst, G.invariantDifferential_mul_subst_pderiv,
-      PowerSeries.subst_one]
+      PowerSeries.subst f.toPowerSeries G.derivZeroX = 1 :=
+    G.subst_invariantDifferential_mul_derivZeroX f.hasSubst
   calc PowerSeries.subst f.toPowerSeries G.invariantDifferential *
         PowerSeries.derivative f.toPowerSeries
     _ = PowerSeries.subst f.toPowerSeries G.invariantDifferential *
           (PowerSeries.derivative f.toPowerSeries * F.derivZeroX) *
           F.invariantDifferential := by
-        rw [mul_assoc, mul_assoc, mul_comm F.derivZeroX,
-          F.invariantDifferential_mul_subst_pderiv, mul_one]
+        rw [mul_assoc, mul_assoc, mul_comm F.derivZeroX, F.invariantDifferential_mul_derivZeroX,
+          mul_one]
     _ = (PowerSeries.subst f.toPowerSeries G.invariantDifferential *
           PowerSeries.subst f.toPowerSeries G.derivZeroX) *
           (C (PowerSeries.coeff 1 f.toPowerSeries) * F.invariantDifferential) := by
@@ -703,9 +717,8 @@ theorem derivative_eq_zero_iff (f : FormalGroupHom F G) :
   have h := f.subst_invariantDifferential_mul_derivative
   rw [hf, zero_smul] at h
   have hG : PowerSeries.subst f.toPowerSeries G.derivZeroX *
-      PowerSeries.subst f.toPowerSeries G.invariantDifferential = 1 := by
-    rw [← PowerSeries.subst_mul f.hasSubst, mul_comm, G.invariantDifferential_mul_subst_pderiv,
-      PowerSeries.subst_one]
+      PowerSeries.subst f.toPowerSeries G.invariantDifferential = 1 :=
+    (mul_comm _ _).trans (G.subst_invariantDifferential_mul_derivZeroX f.hasSubst)
   calc PowerSeries.derivative f.toPowerSeries
     _ = (PowerSeries.subst f.toPowerSeries G.derivZeroX *
           PowerSeries.subst f.toPowerSeries G.invariantDifferential) *

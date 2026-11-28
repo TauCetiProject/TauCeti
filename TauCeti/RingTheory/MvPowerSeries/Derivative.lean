@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.MvPowerSeries.Derivative
 public import Mathlib.RingTheory.MvPowerSeries.Order
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Substitution
+import TauCeti.RingTheory.MvPolynomial.FirstJet
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
@@ -31,6 +32,11 @@ continuous in `f` for the coefficientwise topology, in which polynomials are den
 one-variable case of Mathlib, `PowerSeries.derivative_subst`, substitutes into a one-variable
 series only; here the substituted series may have any number of variables.
 
+When a substitutable family `a` is perturbed by a family `h` whose entries pairwise multiply to
+zero, such as series with coefficients in an ideal of square zero, substitution obeys the
+**first-order Taylor formula** `f ∘ (a + h) = f ∘ a + ∑ᵢ hᵢ · (∂ᵢ f ∘ a)`, extending
+`PowerSeries.subst_add_of_sq_eq_zero` to finitely many variables.
+
 ## Main results
 
 * `MvPowerSeries.le_order_pderiv`: if `n + 1 ≤ f.order` then `n ≤ (pderiv i f).order`.
@@ -45,6 +51,8 @@ series only; here the substituted series may have any number of variables.
   coefficientwise topology.
 * `MvPowerSeries.pderiv_subst`: the chain rule for substitution into a multivariate power series.
 * `MvPowerSeries.pderiv_substAlgHom`: the chain rule for substitution over a coefficient algebra.
+* `MvPowerSeries.subst_add_of_mul_eq_zero`, `MvPowerSeries.subst_X_add_of_mul_eq_zero`: the
+  first-order Taylor formula for perturbations whose entries pairwise multiply to zero.
 * `PowerSeries.pderiv_subst`: the chain rule for substitution of a multivariate power series into
   a one-variable power series.
 -/
@@ -194,6 +202,58 @@ theorem pderiv_substAlgHom {S : Type*} [CommRing R] [CommRing S] [Algebra R S]
     [Fintype σ] {a : σ → MvPowerSeries τ S} (ha : HasSubst a) (f : MvPowerSeries σ R) (i : τ) :
     pderiv i (substAlgHom ha f) = ∑ j, substAlgHom ha (pderiv j f) * pderiv i (a j) := by
   simp only [substAlgHom_apply_eq_subst_map, pderiv_subst ha, pderiv_map]
+
+open WithPiTopology in
+/-- **The first-order Taylor formula** for multivariate power series: if `a` can be substituted
+and the perturbations `h i` pairwise multiply to zero, then
+`f(a + h) = f(a) + ∑ᵢ hᵢ · (∂ᵢ f)(a)`. -/
+theorem subst_add_of_mul_eq_zero {S : Type*} [CommRing R] [CommRing S] [Algebra R S] [Fintype σ]
+    {a h : σ → MvPowerSeries τ S} (ha : HasSubst a) (hh : ∀ i j, h i * h j = 0)
+    (f : MvPowerSeries σ R) :
+    subst (a + h) f = subst a f + ∑ i, h i * subst a (pderiv i f) := by
+  classical
+  let : UniformSpace R := ⊥; have : DiscreteUniformity R := ⟨rfl⟩
+  let : UniformSpace S := ⊥; have : DiscreteUniformity S := ⟨rfl⟩
+  have hah : HasSubst (a + h) := ha.add (.of_sq_eq_zero fun i ↦ by rw [sq, hh])
+  revert f
+  rw [← funext_iff]
+  refine Continuous.ext_on denseRange_toMvPowerSeries (continuous_subst hah)
+    ((continuous_subst ha).add (continuous_finsetSum _ fun i _ ↦
+      continuous_const.mul ((continuous_subst ha).comp (continuous_pderiv i)))) ?_
+  rintro _ ⟨p, rfl⟩
+  let T := MvPowerSeries τ S
+  let L : (σ → T) →ₗ[T] T := LinearMap.lsum T (fun _ ↦ T) T (fun i ↦ LinearMap.mulRight T (h i))
+  have hL : ∀ u v, L u * L v = 0 := fun u v ↦ by
+    simp only [L, LinearMap.lsum_apply, LinearMap.sum_apply, LinearMap.comp_apply,
+      LinearMap.proj_apply, LinearMap.mulRight_apply, Finset.sum_mul, Finset.mul_sum]
+    exact Finset.sum_eq_zero fun i _ ↦ Finset.sum_eq_zero fun j _ ↦ by
+      rw [mul_mul_mul_comm, hh, mul_zero]
+  let φ : TrivSqZeroExt T (σ → T) →ₐ[T] T := TrivSqZeroExt.liftEquivOfComm ⟨L, hL⟩
+  have hcomp : φ.comp (TauCeti.jetAlgebra a) = MvPolynomial.aeval (a + h) :=
+    MvPolynomial.algHom_ext fun i ↦ by
+      simp [φ, L, TrivSqZeroExt.liftEquivOfComm_apply, LinearMap.lsum_piSingle,
+        -LinearMap.lsum_apply]
+  let pT : MvPolynomial σ T := MvPolynomial.map (algebraMap R T) p
+  have hlhs : subst (a + h) (p : MvPowerSeries σ R) = MvPolynomial.aeval (a + h) pT := by
+    simp [subst_coe, MvPolynomial.aeval_def, pT, MvPolynomial.eval₂_map, T]
+  have hrhs := congrArg φ (TauCeti.jetAlgebra_apply a pT)
+  rw [← AlgHom.comp_apply, hcomp, ← hlhs] at hrhs
+  refine hrhs.trans ?_
+  simp only [φ, map_add, TrivSqZeroExt.liftEquivOfComm_apply, TrivSqZeroExt.lift_apply_inl,
+    TrivSqZeroExt.lift_apply_inr, Algebra.ofId_apply, Algebra.algebraMap_self, RingHom.id_apply,
+    L, LinearMap.lsum_apply, LinearMap.sum_apply, LinearMap.comp_apply, LinearMap.proj_apply,
+    LinearMap.mulRight_apply, pT, MvPolynomial.eval_map, MvPolynomial.pderiv_map]
+  congr 1
+  · rw [← MvPolynomial.aeval_def, ← subst_coe]
+  · refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [mul_comm, ← MvPolynomial.aeval_def, ← subst_coe, pderiv_coe]
+
+/-- **The first-order Taylor formula at `X`**: if the perturbations `h i` pairwise multiply to
+zero, then `f(X + h) = f + ∑ᵢ hᵢ · ∂ᵢ f`. -/
+theorem subst_X_add_of_mul_eq_zero [CommRing R] [Fintype σ] {h : σ → MvPowerSeries σ R}
+    (hh : ∀ i j, h i * h j = 0) (f : MvPowerSeries σ R) :
+    subst (X + h) f = f + ∑ i, h i * pderiv i f := by
+  rw [subst_add_of_mul_eq_zero HasSubst.X hh, subst_self]; simp
 
 end MvPowerSeries
 

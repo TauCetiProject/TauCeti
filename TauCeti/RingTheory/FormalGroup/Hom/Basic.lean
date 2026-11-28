@@ -31,7 +31,9 @@ The defect of `X` is the difference `F - G` (`FormalGroup.homDefect_X`), which v
 degree `2` (`FormalGroup.two_le_order_homDefect_X`).
 Towards the additive formal group law the defect is linear in `f`
 (`FormalGroup.homDefect_𝔾ₐ_add`, `FormalGroup.homDefect_𝔾ₐ_sub`,
-`FormalGroup.homDefect_𝔾ₐ_smul`), has constant coefficient `-f(0)`
+`FormalGroup.homDefect_𝔾ₐ_smul`, `FormalGroup.homDefect_𝔾ₐ_sum`,
+`FormalGroup.homDefect_𝔾ₐ_sum_smul`), commutes with base change
+(`FormalGroup.map_homDefect_𝔾ₐ`), has constant coefficient `-f(0)`
 (`FormalGroup.constantCoeff_homDefect_𝔾ₐ`), is the additivity defect
 `f(F(x, y)) - f(x) - f(y)` at any substitutable `x, y` (`FormalGroup.subst_homDefect_𝔾ₐ`), and
 vanishes to the order of `f` (`FormalGroup.le_order_homDefect_𝔾ₐ`). If `p` is a prime with
@@ -143,6 +145,33 @@ theorem homDefect_𝔾ₐ_smul (c : R) (g : PowerSeries R) :
   rw [F.homDefect_𝔾ₐ, F.homDefect_𝔾ₐ, PowerSeries.subst_smul hF,
     PowerSeries.subst_smul (PowerSeries.HasSubst.X _),
     PowerSeries.subst_smul (PowerSeries.HasSubst.X _), smul_sub, smul_sub]
+
+/-- The homomorphism defect towards the additive formal group law commutes with finite sums. -/
+theorem homDefect_𝔾ₐ_sum {ι : Type*} (s : Finset ι) (g : ι → PowerSeries R) :
+    F.homDefect 𝔾ₐ (∑ i ∈ s, g i) = ∑ i ∈ s, F.homDefect 𝔾ₐ (g i) := by
+  classical
+  induction s using Finset.induction with
+  | empty => simp [homDefect_𝔾ₐ]
+  | insert x s hx ih =>
+    rw [Finset.sum_insert hx, Finset.sum_insert hx, F.homDefect_𝔾ₐ_add, ih]
+
+/-- The homomorphism defect towards the additive formal group law commutes with finite
+`R`-linear combinations. -/
+theorem homDefect_𝔾ₐ_sum_smul {ι : Type*} (s : Finset ι) (b : ι → R) (g : ι → PowerSeries R) :
+    F.homDefect 𝔾ₐ (∑ i ∈ s, b i • g i) = ∑ i ∈ s, b i • F.homDefect 𝔾ₐ (g i) := by
+  rw [F.homDefect_𝔾ₐ_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ F.homDefect_𝔾ₐ_smul (b i) (g i)
+
+/-- Base change along a ring homomorphism commutes with the homomorphism defect towards the
+additive formal group law. -/
+@[simp]
+theorem map_homDefect_𝔾ₐ {S : Type*} [CommRing S] (φ : R →+* S) (f : PowerSeries R) :
+    MvPowerSeries.map φ (F.homDefect 𝔾ₐ f) = (F.map φ).homDefect 𝔾ₐ (PowerSeries.map φ f) := by
+  rw [homDefect_𝔾ₐ, homDefect_𝔾ₐ, map_sub, map_sub,
+    PowerSeries.map_subst (.of_constantCoeff_zero F.zero_constantCoeff),
+    PowerSeries.map_subst (PowerSeries.HasSubst.X 0),
+    PowerSeries.map_subst (PowerSeries.HasSubst.X 1),
+    ← FormalGroup.map_toPowerSeries, map_X, map_X]
 
 /-- The homomorphism defect towards the additive formal group law, at substitutable `x, y`, is the
 additivity defect `g(F(x, y)) - g(x) - g(y)`. Unlike `FormalGroup.subst_homDefect`, this needs no

@@ -247,13 +247,13 @@ theorem invariantDifferential_rescale :
     (F.rescale s).invariantDifferential = PowerSeries.rescale s F.invariantDifferential := by
   -- `F^s_X(0, T) = F_X(0, s T)`: the coefficient of `Tⁿ` on either side is `sⁿ` times that of
   -- `X Yⁿ` in `F`.
-  have hD : subst ![0, PowerSeries.X] (pderiv 0 (F.rescale s).toPowerSeries) =
-      PowerSeries.rescale s (subst ![0, PowerSeries.X] (pderiv 0 F.toPowerSeries)) := by
+  have hD : (F.rescale s).derivZeroX = PowerSeries.rescale s F.derivZeroX := by
     ext n
-    simp [PowerSeries.coeff_rescale, coeff_subst_zero_X, coeff_pderiv, Finsupp.degree_single]
-  have h := congrArg (PowerSeries.rescale s) F.invariantDifferential_mul_subst_pderiv
+    simp [FormalGroup.derivZeroX_def, PowerSeries.coeff_rescale, coeff_subst_zero_X, coeff_pderiv,
+      Finsupp.degree_single]
+  have h := congrArg (PowerSeries.rescale s) F.invariantDifferential_mul_derivZeroX
   rw [map_mul, map_one, ← hD, mul_comm] at h
-  exact left_inv_eq_right_inv (F.rescale s).invariantDifferential_mul_subst_pderiv h
+  exact left_inv_eq_right_inv (F.rescale s).invariantDifferential_mul_derivZeroX h
 
 /-- **Changing coordinates by a homothety is rescaling**: transporting `F` along `X ↦ u X` gives
 `u F(u⁻¹ X, u⁻¹ Y)`, the rescaling of `F` by `u⁻¹`. -/

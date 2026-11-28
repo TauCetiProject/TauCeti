@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Basic
+public import TauCeti.RingTheory.MvPowerSeries.Basic
 import Mathlib.RingTheory.PowerSeries.Trunc
 import Mathlib.Tactic.LinearCombination
 
@@ -15,7 +16,8 @@ import Mathlib.Tactic.LinearCombination
 Mathlib's `PowerSeries.constantCoeff` is the constant coefficient `S⟦X⟧ → S` as a ring
 homomorphism. This file records it as a homomorphism of `A`-algebras for any commutative semiring
 `A` over which `S` is an algebra: evaluation at `X = 0`. It also records how a change of
-coefficients `map f` acts on the constant coefficient.
+coefficients `map f` acts on the constant coefficient, how multiplication splits into constant
+and positive-degree terms, and a univariate bridge for coefficientwise membership.
 
 ## Main definitions
 
@@ -34,6 +36,8 @@ coefficients `map f` acts on the constant coefficient.
 * `PowerSeries.mk_mul_one_sub_X_eq`: if `b d + a (d + 1) = a d + c (d + 1)` for all integers `d`
   and `a`, `b` vanish at `d₀ - 1`, then the series of `a`, `b`, `c` from degree `d₀` satisfy
   `(1 - X) H_a = H_c - X H_b`.
+* `PowerSeries.mvCoeff_mem_of_coeff_mem`: converts univariate coefficient membership
+  `∀ n, coeff n f ∈ I` to multivariate coefficient membership `∀ d, MvPowerSeries.coeff d f ∈ I`.
 * `PowerSeries.coeff_mul_of_ne_zero`: for `k ≠ 0`, the `Xᵏ`-coefficient of `f * g` is
   `f₀ * gₖ + fₖ * g₀ + Σ_{0 < i < k} fᵢ * g_{k - i}`.
 * `PowerSeries.coeff_succ_mul_eq_add_sum`: the `Xⁿ⁺¹`-coefficient of `f * g` is
@@ -178,6 +182,13 @@ end OneSubX
 section Coeff
 
 variable {R : Type*} [Semiring R]
+
+/-- If every univariate coefficient of `f : R⟦X⟧` lies in `I`, then so does every multivariate
+coefficient `MvPowerSeries.coeff d f` (`d : Unit →₀ ℕ`). -/
+theorem mvCoeff_mem_of_coeff_mem {C : Type*} [SetLike C R] {I : C} {f : R⟦X⟧}
+    (hf : ∀ n, coeff n f ∈ I) (d : Unit →₀ ℕ) : MvPowerSeries.coeff d f ∈ I := by
+  rw [← coeff_def (s := d) rfl]
+  exact hf (d ())
 
 /-- For `k ≠ 0`, the `Xᵏ`-coefficient of `f * g` splits into the two end terms `f₀ * gₖ` and
 `fₖ * g₀` and the terms `fᵢ * g_{k - i}` with `0 < i < k`. -/

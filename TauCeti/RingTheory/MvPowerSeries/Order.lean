@@ -36,8 +36,9 @@ finite sums of these polynomial components
 polynomial evaluated at the linear parts of the `a i`
 (`MvPowerSeries.homogeneousComponent_subst_eq_coe_aeval`). In degree one no order hypothesis is
 needed, since a constant term contributes nothing (`MvPowerSeries.homogeneousComponent_one_subst`).
-Homogeneous components and total-degree truncations also commute with variable renaming
-(`MvPowerSeries.rename_homogeneousComponent`, `MvPowerSeries.rename_homogeneousComponentPolynomial`,
+Homogeneous components and total-degree truncations also commute with ring homomorphisms and
+variable renaming (`MvPowerSeries.map_homogeneousComponent`,
+`MvPowerSeries.rename_homogeneousComponent`, `MvPowerSeries.rename_homogeneousComponentPolynomial`,
 `MvPowerSeries.rename_truncTotal`).
 
 Products and powers of close series are close: the order of `x y - x' y'` is bounded through
@@ -61,11 +62,13 @@ A series with order at least some `n ≠ 0` has zero constant coefficient
 (`MvPowerSeries.constantCoeff_eq_zero_of_le_order`).
 A common lower bound on the orders of two series bounds the orders of their sum and difference
 (`MvPowerSeries.le_order_add`, `MvPowerSeries.le_order_sub`), and one on finitely many series
-bounds the order of their sum (`MvPowerSeries.le_order_sum`). A sequence whose `n`-th and
-`(n + 1)`-st terms agree below degree `n` converges: some series agrees with its `n`-th term below
-degree `n` for every `n` (`MvPowerSeries.exists_forall_le_order_sub`). Over a commutative ring,
-if `f` and `g` have zero constant coefficient, then `f ^ n - g ^ n` has order larger than that of
-`f - g` for `n ≥ 2` (`MvPowerSeries.order_sub_add_one_le_order_pow_sub_pow`).
+bounds the order of their sum (`MvPowerSeries.le_order_sum`), while a lower bound on the order of
+either factor bounds the order of a product (`MvPowerSeries.le_order_mul_of_le_left`,
+`MvPowerSeries.le_order_mul_of_le_right`). A sequence whose `n`-th and `(n + 1)`-st terms agree
+below degree `n` converges: some series agrees with its `n`-th term below degree `n` for every `n`
+(`MvPowerSeries.exists_forall_le_order_sub`). Over a commutative ring, if `f` and `g` have zero
+constant coefficient, then `f ^ n - g ^ n` has order larger than that of `f - g` for `n ≥ 2`
+(`MvPowerSeries.order_sub_add_one_le_order_pow_sub_pow`).
 The degree-zero component of a series is its constant term
 (`MvPowerSeries.homogeneousComponent_zero`), a constant series has no component in positive degree
 (`MvPowerSeries.homogeneousComponent_C_of_ne_zero`), over a nontrivial semiring every coordinate
@@ -117,6 +120,16 @@ theorem le_order_sub [Ring R] {f g : MvPowerSeries σ R} (hf : n ≤ f.order)
     (hg : n ≤ g.order) : n ≤ (f - g).order := by
   rw [sub_eq_add_neg]
   exact le_order_add hf (by rwa [order_neg])
+
+/-- A lower bound on the order of the left factor bounds the order of a product. -/
+theorem le_order_mul_of_le_left [Semiring R] {f g : MvPowerSeries σ R} (hf : n ≤ f.order) :
+    n ≤ (f * g).order :=
+  (_root_.add_zero n).symm.le.trans ((add_le_add hf zero_le).trans le_order_mul)
+
+/-- A lower bound on the order of the right factor bounds the order of a product. -/
+theorem le_order_mul_of_le_right [Semiring R] {f g : MvPowerSeries σ R} (hg : n ≤ g.order) :
+    n ≤ (f * g).order :=
+  (_root_.zero_add n).symm.le.trans ((add_le_add zero_le hg).trans le_order_mul)
 
 /-- **Limits of Cauchy sequences for the order.** If consecutive terms of a sequence of
 multivariate power series agree below total degree `n`, then there is a power series agreeing with
@@ -267,6 +280,15 @@ theorem homogeneousComponent_C_of_ne_zero {p : ℕ} (hp : p ≠ 0) (r : R) :
   ext d
   rw [coeff_homogeneousComponent, coeff_C, map_zero]
   split_ifs with hd h0 <;> simp_all
+
+/-- Homogeneous component extraction commutes with coefficient ring homomorphisms. -/
+theorem map_homogeneousComponent {S : Type*} [Semiring S] (φ : R →+* S) (p : ℕ)
+    (f : MvPowerSeries σ R) :
+    (homogeneousComponent p f).map φ = homogeneousComponent p (f.map φ) := by
+  classical
+  ext d
+  simp only [coeff_map, coeff_homogeneousComponent]
+  split_ifs <;> simp
 
 end Components
 

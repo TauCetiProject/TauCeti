@@ -490,8 +490,8 @@ end Universal
 differential of `Ê` (Silverman IV.4). No ellipticity is needed. -/
 theorem invariantDifferential_formalGroup_mul_formalInvariantDifferentialDenom :
     (formalGroup W).invariantDifferential * W.formalInvariantDifferentialDenom = 1 := by
-  have h := (formalGroup Universal.curve).invariantDifferential_mul_subst_pderiv
-  rw [subst_pderiv_formalGroup_universal] at h
+  have h := (formalGroup Universal.curve).invariantDifferential_mul_derivZeroX
+  rw [FormalGroup.derivZeroX_def, subst_pderiv_formalGroup_universal] at h
   have := congrArg (PowerSeries.map W.specialize) h
   rw [map_mul, map_one, FormalGroup.map_invariantDifferential, map_specialize_formalGroup,
     ← map_formalInvariantDifferentialDenom] at this
@@ -502,7 +502,8 @@ theorem invariantDifferential_formalGroup_mul_formalInvariantDifferentialDenom :
 theorem subst_pderiv_formalGroup :
     subst ![0, PowerSeries.X] (pderiv 0 (formalGroup W).toPowerSeries) =
       W.formalInvariantDifferentialDenom := by
-  have h₁ := (formalGroup W).invariantDifferential_mul_subst_pderiv
+  have h₁ := (formalGroup W).invariantDifferential_mul_derivZeroX
+  rw [FormalGroup.derivZeroX_def] at h₁
   have h₂ := W.invariantDifferential_formalGroup_mul_formalInvariantDifferentialDenom
   linear_combination W.formalInvariantDifferentialDenom * h₁ -
     subst ![0, PowerSeries.X] (pderiv 0 (formalGroup W).toPowerSeries) * h₂

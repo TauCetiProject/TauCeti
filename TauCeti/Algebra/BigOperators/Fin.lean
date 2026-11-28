@@ -75,9 +75,30 @@ For a multi-index `α : Fin n → ℕ`, the blocks of lengths `αᵢ` give the w
 (`TauCeti.card_filter_multiIndexWord_eq`); a product over its letters is the monomial
 `∏ᵢ gᵢ ^ αᵢ` (`TauCeti.prod_multiIndexWord`), and a sum over its letters is `∑ᵢ αᵢ • gᵢ`
 (`TauCeti.sum_multiIndexWord`).
+
+Products and sums over `Finset.Ico a b` or `Finset.Ioo 0 n` reindex over `Fin (b - a)` or
+`Fin (n - 1)` (`Finset.prod_Ico_eq_prod_fin`, `Finset.sum_Ico_eq_sum_fin`,
+`Finset.prod_Ioo_zero_eq_prod_fin`, `Finset.sum_Ioo_zero_eq_sum_fin`).
 -/
 
 public section
+
+namespace Finset
+
+/-- Reindexing a product over `Finset.Ico a b` via `j ↦ a + j` on `Fin (b - a)`. -/
+@[to_additive /-- Reindexing a sum over `Finset.Ico a b` via `j ↦ a + j` on `Fin (b - a)`. -/]
+theorem prod_Ico_eq_prod_fin {M : Type*} [CommMonoid M] (a b : ℕ) (f : ℕ → M) :
+    ∏ i ∈ Ico a b, f i = ∏ j : Fin (b - a), f (a + j) := by
+  rw [Finset.prod_Ico_eq_prod_range, Fin.prod_univ_eq_prod_range (fun k ↦ f (a + k))]
+
+/-- Reindexing a product over `Finset.Ioo 0 n` via `j ↦ j + 1` on `Fin (n - 1)`. -/
+@[to_additive /-- Reindexing a sum over `Finset.Ioo 0 n` via `j ↦ j + 1` on `Fin (n - 1)`. -/]
+theorem prod_Ioo_zero_eq_prod_fin {M : Type*} [CommMonoid M] (n : ℕ) (f : ℕ → M) :
+    ∏ i ∈ Ioo 0 n, f i = ∏ j : Fin (n - 1), f (j + 1) := by
+  rw [← Ico_succ_left_eq_Ioo, Order.succ_eq_add_one, Nat.zero_add, prod_Ico_eq_prod_fin]
+  simp_rw [Nat.add_comm 1]
+
+end Finset
 
 namespace Fin
 
