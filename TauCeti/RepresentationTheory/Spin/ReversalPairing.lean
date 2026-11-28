@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.ReversalPairing
-public import TauCeti.RepresentationTheory.InvariantForm
+public import TauCeti.RepresentationTheory.InvariantForm.Basic
 public import TauCeti.RepresentationTheory.Spin.Representation
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 

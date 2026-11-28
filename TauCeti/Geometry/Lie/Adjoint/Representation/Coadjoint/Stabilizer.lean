@@ -12,7 +12,7 @@ public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Embedded
 public import TauCeti.Geometry.Lie.Subgroup.OneParameter
-public import TauCeti.RepresentationTheory.InvariantForm
+public import TauCeti.RepresentationTheory.InvariantForm.Basic
 
 import TauCeti.Algebra.Lie.Coadjoint
 import TauCeti.Geometry.Lie.Adjoint.Representation.Stabilizer

@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.CharacterTable.Table
+public import TauCeti.RepresentationTheory.CharacterTable.IrreducibleClassification
+import Mathlib.RepresentationTheory.Equiv
 import TauCeti.RepresentationTheory.AsModule
-import TauCeti.RepresentationTheory.CharacterTable.IrreducibleClassification
+import TauCeti.RepresentationTheory.Maschke
 import TauCeti.RepresentationTheory.Rep.DirectSum.Basic
 import TauCeti.RingTheory.Semisimple.Multiplicity
-import TauCeti.RepresentationTheory.Maschke
-import Mathlib.RepresentationTheory.Equiv
 import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
@@ -72,6 +71,8 @@ non-isomorphic.
   multiplicities are congruent modulo `p`.
 * `Representation.intrinsicMultiplicity_leftRegular`: `Zᵢ` occurs in the left regular
   representation with multiplicity its degree.
+* `TauCeti.SimpleClasses.finrankHom_equivFinCardConjClasses_symm`: compatibility between
+  `TauCeti.SimpleClasses.finrankHom` and `Representation.intrinsicMultiplicity`.
 
 ## References
 
@@ -304,5 +305,14 @@ theorem intrinsicMultiplicity_leftRegular (i : Fin (Nat.card (ConjClasses G))) :
   have := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
   rw [intrinsicMultiplicity_def, finrank_intertwiningMap_comm,
     (leftRegularMapEquiv (irreducibleRepresentation k i)).finrank_eq, finrank_fin_fun]
+
+/-- `SimpleClasses.finrankHom` at row `i` of `equivFinCardConjClasses` agrees with
+`Representation.intrinsicMultiplicity`. -/
+theorem _root_.TauCeti.SimpleClasses.finrankHom_equivFinCardConjClasses_symm
+    (W : FDRep k G) (i : Fin (Nat.card (ConjClasses G))) :
+    ((SimpleClasses.equivFinCardConjClasses k G).symm i).finrankHom W =
+      intrinsicMultiplicity W.ρ i := by
+  rw [SimpleClasses.equivFinCardConjClasses_symm_apply, SimpleClasses.finrankHom_classOf,
+    FDRep.intrinsicMultiplicity_ρ_eq_finrank_hom]
 
 end Representation

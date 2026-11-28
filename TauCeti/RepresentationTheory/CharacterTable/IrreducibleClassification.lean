@@ -8,10 +8,12 @@ module
 public import TauCeti.RepresentationTheory.CharacterTable.BlockRepresentation
 public import TauCeti.RepresentationTheory.CharacterTable.Completeness
 public import TauCeti.RepresentationTheory.CharacterTable.Table
+public import TauCeti.RepresentationTheory.Simple.Basic
 public import TauCeti.RingTheory.Semisimple.Wedderburn.Blocks
 import Mathlib.RingTheory.SimpleRing.Matrix
 import TauCeti.RepresentationTheory.AsModule
 import TauCeti.RepresentationTheory.OfModule
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # The Wedderburn blocks of `k[G]` classify its irreducible representations
@@ -48,6 +50,9 @@ the invariance statements it unlocks.
   irreducible models `Zᵢ = TauCeti.irreducibleRepresentation k i`.
 * `TauCeti.existsUnique_nonempty_linearEquiv_irreducibleRepresentation`: the same lookup for simple
   `k[G]`-modules. This is the lookup assigning its class to a simple summand of a representation.
+* `TauCeti.SimpleClasses.equivFinCardConjClasses`, `TauCeti.SimpleClasses.finiteFDRep`, and
+  `TauCeti.card_simpleClasses_fdRep`: bijection from `SimpleClasses (FDRep k G)` onto
+  `Fin (Nat.card (ConjClasses G))`, finiteness, and the resulting cardinality equality.
 
 ## Implementation notes
 
@@ -225,5 +230,77 @@ theorem existsUnique_nonempty_linearEquiv_irreducibleRepresentation (N : Type w)
   exact ⟨fun ⟨e⟩ ↦ ⟨eN ≪≫ₗ e⟩, fun ⟨e⟩ ↦ ⟨eN.symm ≪≫ₗ e⟩⟩
 
 end Models
+
+section SimpleClasses
+
+variable (k : Type u) (G : Type v) [Field k] [IsAlgClosed k] [Group G]
+  [Invertible (Nat.card G : k)]
+
+/-- **The isomorphism classes of simple objects of `FDRep k G` are indexed by the rows of the
+character table**: over an algebraically closed field in which `|G|` is invertible, sending each
+row `i` to the class of `FDRep.of (irreducibleRepresentation k i)` is a bijection, inverted here so
+that each class maps to its row. -/
+noncomputable def SimpleClasses.equivFinCardConjClasses :
+    SimpleClasses (FDRep k G) ≃ Fin (Nat.card (ConjClasses G)) :=
+  (Equiv.ofBijective
+    (fun i : Fin (Nat.card (ConjClasses G)) ↦
+      SimpleClasses.classOf (FDRep.of (irreducibleRepresentation k i)))
+    ⟨fun i j hij ↦ by
+      rw [SimpleClasses.classOf_eq_iff_nonempty_iso, nonempty_fdRepIso_iff, FDRep.of_ρ',
+        FDRep.of_ρ', Representation.nonempty_equiv_iff_eq _
+          (pairwise_isEmpty_equiv_irreducibleRepresentation k)] at hij
+      exact hij,
+     fun S ↦ by
+      have : Finite G := finite_of_natCast_card_ne_zero (Invertible.ne_zero (Nat.card G : k))
+      induction S using SimpleClasses.ind with
+      | h X =>
+        have : _root_.Representation.IsIrreducible X.ρ := FDRep.isIrreducible_of_simple X
+        obtain ⟨i, ⟨φ⟩, -⟩ :=
+          _root_.Representation.existsUnique_nonempty_equiv_irreducibleRepresentation X.ρ
+        exact ⟨i, (SimpleClasses.classOf_eq_iff_nonempty_iso _ _).mpr
+          (nonempty_fdRepIso_iff.mpr ⟨by rw [FDRep.of_ρ']; exact φ.symm⟩)⟩⟩).symm
+
+/-- The inverse of `TauCeti.SimpleClasses.equivFinCardConjClasses` sends row `i` to the class
+of the `i`-th irreducible model. -/
+@[simp]
+theorem SimpleClasses.equivFinCardConjClasses_symm_apply
+    (i : Fin (Nat.card (ConjClasses G))) :
+    (SimpleClasses.equivFinCardConjClasses k G).symm i =
+      SimpleClasses.classOf (FDRep.of (irreducibleRepresentation k i)) :=
+  (rfl)
+
+variable {k G} in
+/-- Evaluating `TauCeti.SimpleClasses.equivFinCardConjClasses` on the class of the `i`-th
+irreducible model recovers `i`. -/
+@[simp]
+theorem SimpleClasses.equivFinCardConjClasses_classOf_irreducibleRepresentation
+    (i : Fin (Nat.card (ConjClasses G))) :
+    SimpleClasses.equivFinCardConjClasses k G
+      (SimpleClasses.classOf (FDRep.of (irreducibleRepresentation k i))) = i :=
+  (SimpleClasses.equivFinCardConjClasses k G).apply_symm_apply i
+
+variable {k G} in
+/-- A simple object `X` of `FDRep k G` belongs to row `i` of the character table exactly when `X.ρ`
+is equivalent to `irreducibleRepresentation k i`. -/
+theorem SimpleClasses.equivFinCardConjClasses_classOf_eq_iff (X : FDRep k G)
+    [CategoryTheory.Simple X] (i : Fin (Nat.card (ConjClasses G))) :
+    SimpleClasses.equivFinCardConjClasses k G (SimpleClasses.classOf X) = i ↔
+      Nonempty (_root_.Representation.Equiv X.ρ (irreducibleRepresentation k i)) := by
+  rw [← Equiv.eq_symm_apply, eq_comm, equivFinCardConjClasses_symm_apply,
+    SimpleClasses.classOf_eq_iff_nonempty_iso, nonempty_fdRepIso_iff, FDRep.of_ρ']
+  exact ⟨fun ⟨e⟩ ↦ ⟨e.symm⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩⟩
+
+/-- Over an algebraically closed field in which `|G|` is invertible, `FDRep k G` has only finitely
+many isomorphism classes of simple objects. -/
+instance SimpleClasses.finiteFDRep : Finite (SimpleClasses (FDRep k G)) :=
+  .of_equiv _ (equivFinCardConjClasses k G).symm
+
+/-- **Over an algebraically closed field in which `|G|` is invertible, `FDRep k G` has as many
+simple isomorphism classes as `G` has conjugacy classes.** -/
+theorem card_simpleClasses_fdRep :
+    Nat.card (SimpleClasses (FDRep k G)) = Nat.card (ConjClasses G) :=
+  (Nat.card_congr (SimpleClasses.equivFinCardConjClasses k G)).trans (Nat.card_fin _)
+
+end SimpleClasses
 
 end TauCeti

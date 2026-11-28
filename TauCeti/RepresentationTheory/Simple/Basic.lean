@@ -5,12 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Simple
 public import Mathlib.RepresentationTheory.FDRep
 public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.RepresentationTheory.Rep.Iso
-public import TauCeti.CategoryTheory.Skeletal
+public import TauCeti.CategoryTheory.Simple.Classes
 public import TauCeti.RepresentationTheory.Rep.Subrepresentation
+import TauCeti.CategoryTheory.Action.Monoidal
+import TauCeti.CategoryTheory.Action.Restriction
+import TauCeti.CategoryTheory.Linear.Biproduct
+import TauCeti.RepresentationTheory.AsModule
+import TauCeti.RepresentationTheory.FDRep.Basic
+import TauCeti.RepresentationTheory.Irreducible
 
 /-!
 # Simple objects of `Rep k G` and `FDRep k G`, and their isomorphism classes
@@ -48,14 +55,14 @@ that module as simple whenever `X.ρ` is irreducible. The single composite
 `Simple X` alone suffices for the module-level API.
 
 A classification statement is valued in a type of *isomorphism classes*, and for simple objects of
-`FDRep k G` that type needs no device: unlike abstract simple modules, which range over every
-universe, the objects of `FDRep k G` already form a type, and Mathlib already quotients the objects
-of a category by isomorphism. `TauCeti.SimpleFDRepClasses` is that quotient, namely
-`CategoryTheory.Skeleton` of the full subcategory of simple objects, together with the constructor,
-eliminator and lift a consumer needs. It lives here rather than beside its comparison with the
-module-level quotient (`TauCeti.SimpleFDRepClasses.toSimpleSubmoduleClasses`, in
-`TauCeti.RepresentationTheory.Simple.FDRepClasses`) so that naming the isomorphism classes does not
-drag in the semisimple isotypic-component theory that only the comparison needs.
+`FDRep k G` that canonical type is `TauCeti.SimpleClasses (FDRep k G)` (defined in
+`TauCeti.CategoryTheory.Simple.Classes`). This file supplies its `FDRep`-specific operations:
+the dimension `SimpleClasses.finrank`, the trivial class `SimpleClasses.trivial`, the
+Hom-dimension `SimpleClasses.finrankHom` over a field, and naturality of `SimpleClasses.equiv`
+along `CategoryTheory.Action.resEquiv`. It lives here rather than beside its comparison with the
+module-level quotient (`TauCeti.SimpleClasses.toSimpleSubmoduleClasses`, in
+`TauCeti.RepresentationTheory.Simple.FDRepClasses`) so that working with `SimpleClasses (FDRep k G)`
+does not drag in the semisimple isotypic-component theory that only the comparison needs.
 
 ## Main results
 
@@ -64,15 +71,17 @@ drag in the semisimple isotypic-component theory that only the comparison needs.
 * `Rep.simple_of_isIrreducible` and `Rep.isIrreducible_of_simple`: the two directions as an
   instance and a theorem, respectively.
 * `FDRep.simple_iff_isIrreducible`: the same for `FDRep k G`.
-* `FDRep.simple_of_isIrreducible` and `FDRep.isIrreducible_of_simple`: the corresponding instance
-  and theorem for `FDRep`.
+* `FDRep.simple_of_isIrreducible`, `FDRep.simple_of`, `FDRep.simple_of_trivial`,
+  `FDRep.simple_tensorUnit`, and `FDRep.isIrreducible_of_simple`: the corresponding instances (for
+  an object of `FDRep k G`, `FDRep.of ρ`, the trivial representation, and `𝟙_ (FDRep k G)`) and
+  theorem for `FDRep`.
 * `FDRep.isSimpleModule_asModule_of_simple`: the instance making Mathlib's simple-module API on
   `X.ρ.asModule` available from `Simple X` alone.
-* `TauCeti.SimpleFDRepClasses`: the isomorphism classes of simple objects of `FDRep k G`.
-* `TauCeti.SimpleFDRepClasses.mk_eq_mk_iff`: two simple objects have the same class exactly when
-  they are isomorphic in `FDRep k G`.
-* `TauCeti.SimpleFDRepClasses.ind` and `TauCeti.SimpleFDRepClasses.lift`: the eliminator and the
-  lift of an isomorphism-invariant function.
+* `TauCeti.SimpleClasses.equiv_actionResEquiv_symm` and friends: behaviour of
+  `SimpleClasses.equiv (Action.resEquiv (FGModuleCat k) φ)` on simple classes of `FDRep`.
+* `TauCeti.SimpleClasses.finrank`, `TauCeti.SimpleClasses.trivial` (with `classOf_tensorUnit` and
+  `classOf_eq_trivial_iff`), and `TauCeti.SimpleClasses.finrankHom` (with `finrankHom_zero`,
+  `finrankHom_biprod`, and `finrankHom_simple`).
 -/
 
 public section
@@ -160,6 +169,12 @@ instance FDRep.simple_of_isIrreducible (X : FDRep k G)
     [Representation.IsIrreducible X.ρ] : Simple X :=
   (FDRep.simple_iff_isIrreducible X).mpr ‹_›
 
+/-- Bundling an irreducible finite-dimensional representation with `FDRep.of` produces a simple
+object of `FDRep k G`. -/
+instance FDRep.simple_of {V : Type u} [AddCommGroup V] [Module k V] [FiniteDimensional k V]
+    (ρ : Representation k G V) [ρ.IsIrreducible] : Simple (FDRep.of ρ) :=
+  (FDRep.simple_iff_isIrreducible (FDRep.of ρ)).mpr ((FDRep.of_ρ' ρ).symm ▸ ‹_›)
+
 /-- A simple object of `FDRep k G` carries an irreducible representation. -/
 theorem FDRep.isIrreducible_of_simple (X : FDRep k G) [Simple X] :
     Representation.IsIrreducible X.ρ :=
@@ -173,62 +188,233 @@ instance FDRep.isSimpleModule_asModule_of_simple (X : FDRep k G) [Simple X] :
   haveI := FDRep.isIrreducible_of_simple X
   inferInstance
 
+/-- The one-dimensional trivial representation on `k` is a simple object of `FDRep k G`. -/
+instance FDRep.simple_of_trivial :
+    Simple (FDRep.of (_root_.Representation.trivial k G k)) :=
+  FDRep.simple_of _
+
+open MonoidalCategory in
+/-- The monoidal unit `𝟙_ (FDRep k G)` is a simple object of `FDRep k G`. -/
+instance FDRep.simple_tensorUnit : Simple (𝟙_ (FDRep k G)) :=
+  FDRep.of_trivial k G ▸ FDRep.simple_of_trivial
+
 end FDRep
 
 namespace TauCeti
 
-attribute [local instance] isIsomorphicSetoid
+section ResEquiv
 
-section Classes
+variable {k : Type u} {G₁ : Type v} {G₂ : Type w} [Ring k] [Monoid G₁] [Monoid G₂]
 
-variable (k : Type u) (G : Type v) [Ring k] [Monoid G]
+/-- Restricting a simple object of `FDRep k G₂` along a monoid isomorphism yields a simple
+object of `FDRep k G₁`. -/
+instance _root_.FDRep.simple_res (φ : G₁ ≃* G₂) (X : FDRep k G₂) [Simple X] :
+    Simple ((Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).obj X) :=
+  _root_.CategoryTheory.simple_obj (Action.resEquiv (FGModuleCat.{u} k) φ).functor X
 
-/-- **The isomorphism classes of simple objects of `FDRep k G`**: the skeleton of the full
-subcategory they span. -/
-def SimpleFDRepClasses : Type _ :=
-  Skeleton (ObjectProperty.FullSubcategory (Simple : ObjectProperty (FDRep k G)))
+namespace SimpleClasses
 
-variable {k G}
+/-- Applying `(SimpleClasses.equiv (Action.resEquiv (FGModuleCat.{u} k) φ)).symm` equals
+applying `SimpleClasses.equiv (Action.resEquiv (FGModuleCat.{u} k) φ.symm)`. -/
+theorem equiv_actionResEquiv_symm_apply (φ : G₁ ≃* G₂) (S : SimpleClasses (FDRep k G₁)) :
+    (equiv (Action.resEquiv (FGModuleCat.{u} k) φ)).symm S =
+      equiv (Action.resEquiv (FGModuleCat.{u} k) φ.symm) S := by
+  induction S using SimpleClasses.ind with
+  | h Y =>
+    apply (equiv (Action.resEquiv (FGModuleCat.{u} k) φ)).injective
+    simp only [Equiv.apply_symm_apply, equiv_apply_classOf]
+    have : Simple ((Action.resEquiv (FGModuleCat.{u} k) φ.symm).functor.obj Y) :=
+      _root_.CategoryTheory.simple_obj (Action.resEquiv (FGModuleCat.{u} k) φ.symm).functor Y
+    have : Simple ((Action.resEquiv (FGModuleCat.{u} k) φ).functor.obj
+        ((Action.resEquiv (FGModuleCat.{u} k) φ.symm).functor.obj Y)) :=
+      _root_.CategoryTheory.simple_obj (Action.resEquiv (FGModuleCat.{u} k) φ).functor _
+    exact (classOf_eq_iff_nonempty_iso _ _).mpr
+      ⟨((Action.resEquiv (FGModuleCat.{u} k) φ).counitIso.app Y).symm⟩
 
-namespace SimpleFDRepClasses
-
-/-- The isomorphism class of a simple object of `FDRep k G`. -/
-def mk (X : FDRep k G) [Simple X] : SimpleFDRepClasses k G :=
-  toSkeleton (⟨X, inferInstance⟩ :
-    ObjectProperty.FullSubcategory (Simple : ObjectProperty (FDRep k G)))
-
-/-- Two simple objects have the same class exactly when they are isomorphic. -/
+/-- The inverse equivalence of `SimpleClasses.equiv (Action.resEquiv (FGModuleCat.{u} k) φ)` is
+`SimpleClasses.equiv (Action.resEquiv (FGModuleCat.{u} k) φ.symm)`. -/
 @[simp]
-theorem mk_eq_mk_iff (X Y : FDRep k G) [Simple X] [Simple Y] :
-    mk X = mk Y ↔ Nonempty (X ≅ Y) :=
-  ObjectProperty.toSkeleton_eq_toSkeleton_iff_nonempty_iso
-    (Simple : ObjectProperty (FDRep k G)) _ _
+theorem equiv_actionResEquiv_symm (φ : G₁ ≃* G₂) :
+    (equiv (Action.resEquiv (FGModuleCat.{u} k) φ)).symm =
+      equiv (Action.resEquiv (FGModuleCat.{u} k) φ.symm) :=
+  Equiv.ext (equiv_actionResEquiv_symm_apply φ)
 
-/-- To prove a property of every simple-object class, it suffices to prove it on the class of each
-simple object. -/
-@[elab_as_elim]
-theorem ind {motive : SimpleFDRepClasses k G → Prop}
-    (h : ∀ (X : FDRep k G) (hX : Simple X), motive (@mk k G _ _ X hX))
-    (c : SimpleFDRepClasses k G) :
-    motive c :=
-  Quotient.ind (fun X ↦ h X.obj X.property) c
-
-/-- Define a function on simple-object classes from an isomorphism-invariant function on simple
-objects. -/
-noncomputable def lift {α : Sort*} (f : ∀ (X : FDRep k G) [Simple X], α)
-    (h : ∀ (X Y : FDRep k G) [Simple X] [Simple Y], Nonempty (X ≅ Y) → f X = f Y) :
-    SimpleFDRepClasses k G → α :=
-  ObjectProperty.skeletonLift _ (fun X ↦ @f X.obj X.property)
-    fun X Y e ↦ @h X.obj Y.obj X.property Y.property e
-
-/-- The lift of an isomorphism-invariant function, evaluated at the class of a simple object. -/
+/-- Restricting along the identity monoid isomorphism is the identity equivalence on simple
+isomorphism classes. -/
 @[simp]
-theorem lift_mk {α : Sort*} {f : ∀ (X : FDRep k G) [Simple X], α} {h}
-    (X : FDRep k G) [Simple X] : lift f h (mk X) = f X :=
-  ObjectProperty.skeletonLift_toSkeleton _ _
+theorem equiv_actionResEquiv_refl :
+    equiv (Action.resEquiv (FGModuleCat.{u} k) (MulEquiv.refl G₁)) =
+      Equiv.refl (SimpleClasses (FDRep k G₁)) := by
+  refine Equiv.ext fun S ↦ ?_
+  induction S using SimpleClasses.ind with
+  | h X =>
+    simp only [equiv_apply_classOf, Equiv.refl_apply]
+    rw [classOf_eq_iff_nonempty_iso]
+    refine ⟨eqToIso ?_⟩
+    change (Action.res (FGModuleCat.{u} k) (MulEquiv.refl G₁ : G₁ →* G₁)).obj X = X
+    rw [MulEquiv.toMonoidHom_refl, MonoidHom.actionRes_id, Functor.id_obj]
 
-end SimpleFDRepClasses
+/-- Restricting along a composite monoid isomorphism is contravariant in the equivalence. -/
+@[simp]
+theorem equiv_actionResEquiv_trans {G₃ : Type*} [Monoid G₃] (φ : G₁ ≃* G₂) (ψ : G₂ ≃* G₃) :
+    equiv (Action.resEquiv (FGModuleCat.{u} k) (φ.trans ψ)) =
+      (equiv (Action.resEquiv (FGModuleCat.{u} k) ψ)).trans
+        (equiv (Action.resEquiv (FGModuleCat.{u} k) φ)) := by
+  refine Equiv.ext fun S ↦ ?_
+  induction S using SimpleClasses.ind with
+  | h X =>
+    simp only [equiv_apply_classOf, Equiv.trans_apply]
+    rw [classOf_eq_iff_nonempty_iso]
+    refine ⟨eqToIso ?_⟩
+    change (Action.res (FGModuleCat.{u} k) (φ.trans ψ : G₁ →* G₃)).obj X =
+      (Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).obj
+        ((Action.res (FGModuleCat.{u} k) (ψ : G₂ →* G₃)).obj X)
+    rw [MulEquiv.toMonoidHom_trans, MonoidHom.actionRes_comp, Functor.comp_obj]
 
-end Classes
+end SimpleClasses
+
+end ResEquiv
+
+namespace SimpleClasses
+
+section Field
+
+variable {k : Type u} {G : Type v} [Field k] [Monoid G]
+
+/-- The vector-space dimension of a simple isomorphism class in `FDRep k G`. -/
+noncomputable def finrank (S : SimpleClasses (FDRep k G)) : ℕ :=
+  Module.finrank k S.repr
+
+@[simp]
+theorem finrank_classOf (X : FDRep k G) [Simple X] :
+    (classOf X).finrank = Module.finrank k X :=
+  (FDRep.isoToLinearEquiv (classOfReprIso X)).finrank_eq
+
+/-- Every simple isomorphism class has positive dimension. -/
+theorem finrank_pos (S : SimpleClasses (FDRep k G)) : 0 < S.finrank :=
+  (FDRep.isIrreducible_of_simple S.repr).finrank_pos
+
+section
+open MonoidalCategory
+variable (k G)
+
+/-- The isomorphism class of the one-dimensional trivial representation in `FDRep k G`. -/
+noncomputable def trivial : SimpleClasses (FDRep k G) :=
+  classOf (𝟙_ (FDRep k G))
+
+end
+
+open MonoidalCategory in
+theorem trivial_def : trivial k G = classOf (𝟙_ (FDRep k G)) := (rfl)
+
+open MonoidalCategory in
+@[simp]
+theorem classOf_tensorUnit : classOf (𝟙_ (FDRep k G)) = trivial k G := (rfl)
+
+@[simp]
+theorem finrank_trivial : (trivial k G).finrank = 1 := by
+  rw [trivial_def, finrank_classOf, ← FDRep.of_trivial k G, FDRep.finrank_of, Module.finrank_self]
+
+/-- **Characterization of the trivial class.** Over any field `k` and monoid `G`, a simple object
+`X : FDRep k G` represents `SimpleClasses.trivial k G` if and only if every `g : G` acts as `1` on
+`X`. -/
+-- `TauCeti.RepresentationTheory.LinearCharacter.Basic` imports this file, so we prove this
+-- directly via `LinearMap.toSpanSingleton` and Schur's lemma rather than `ofLinearCharacter 1`.
+theorem classOf_eq_trivial_iff (X : FDRep k G) [Simple X] :
+    classOf X = trivial k G ↔ ∀ g : G, X.ρ g = 1 := by
+  rw [trivial_def, classOf_eq_iff_nonempty_iso, ← FDRep.of_trivial k G, nonempty_fdRepIso_iff,
+    FDRep.of_ρ']
+  refine ⟨fun ⟨e⟩ g ↦ LinearMap.ext fun x ↦ e.injective
+    (by simpa using LinearMap.congr_fun (e.isIntertwining' g) x), fun h ↦ ?_⟩
+  let := FDRep.isIrreducible_of_simple X
+  have := (FDRep.isIrreducible_of_simple X).nontrivial
+  obtain ⟨v, hv⟩ := exists_ne (0 : X)
+  let f : _root_.Representation.IntertwiningMap (_root_.Representation.trivial k G k) X.ρ :=
+    (LinearMap.toSpanSingleton k X v).intertwiningMap_of_isIntertwiningMap _ _ fun g c ↦ by
+      simp [h g]
+  have hf : f ≠ 0 := fun h0 ↦ hv (by simpa [f] using DFunLike.congr_fun h0 1)
+  exact ⟨(f.ofBijective ((_root_.Representation.IsIrreducible.bijective_or_eq_zero f).resolve_right
+    hf)).symm⟩
+
+/-- The dimension `dim_k Hom_G(S.repr, W)` of morphisms from a simple class `S` to
+`W : FDRep k G`. Over a split semisimple category (for instance, for a finite group over an
+algebraically closed field in which `|G|` is invertible), this is the multiplicity of `S` in
+`W`. -/
+noncomputable def finrankHom (S : SimpleClasses (FDRep k G)) (W : FDRep k G) : ℕ :=
+  Module.finrank k (S.repr ⟶ W)
+
+@[simp]
+theorem finrankHom_classOf (X : FDRep k G) [Simple X] (W : FDRep k G) :
+    (classOf X).finrankHom W = Module.finrank k (X ⟶ W) :=
+  (Linear.homCongr k (classOfReprIso X) (Iso.refl W)).finrank_eq
+
+/-- `SimpleClasses.finrankHom` is invariant under isomorphism in the target object. -/
+theorem finrankHom_congr (S : SimpleClasses (FDRep k G)) {W₁ W₂ : FDRep k G} (iso : W₁ ≅ W₂) :
+    S.finrankHom W₁ = S.finrankHom W₂ :=
+  (Linear.homCongr k (Iso.refl S.repr) iso).finrank_eq
+
+open scoped ZeroObject in
+@[simp]
+theorem finrankHom_zero (S : SimpleClasses (FDRep k G)) :
+    S.finrankHom (0 : FDRep k G) = 0 := by
+  have : Subsingleton (S.repr ⟶ (0 : FDRep k G)) :=
+    ⟨fun f g ↦ (Limits.isZero_zero (FDRep k G)).eq_of_tgt f g⟩
+  exact Module.finrank_zero_of_subsingleton
+
+open Limits in
+@[simp]
+theorem finrankHom_biprod (S : SimpleClasses (FDRep k G)) (W₁ W₂ : FDRep k G) :
+    S.finrankHom (W₁ ⊞ W₂) = S.finrankHom W₁ + S.finrankHom W₂ :=
+  TauCeti.finrank_homTo_biprod k S.repr W₁ W₂
+
+/-- Over an algebraically closed field, `S.finrankHom Y` at a simple object `Y` is `1` at
+`classOf Y` and `0` elsewhere (Schur's lemma). -/
+theorem finrankHom_simple [IsAlgClosed k] [DecidableEq (SimpleClasses (FDRep k G))]
+    (S : SimpleClasses (FDRep k G)) (Y : FDRep k G) [Simple Y] :
+    S.finrankHom Y = if S = classOf Y then 1 else 0 := by
+  rw [finrankHom, FDRep.finrank_hom_simple_simple S.repr Y]
+  exact ite_congr (propext ((eq_iff_nonempty_iso S (classOf Y)).trans
+    ⟨fun ⟨e⟩ ↦ ⟨e.trans (classOfReprIso Y)⟩,
+     fun ⟨e⟩ ↦ ⟨e.trans (classOfReprIso Y).symm⟩⟩).symm) (fun _ ↦ rfl) (fun _ ↦ rfl)
+
+end Field
+
+section ResEquivField
+
+variable {k : Type u} {G₁ : Type v} {G₂ : Type w} [Field k] [Monoid G₁] [Monoid G₂]
+
+/-- Restricting along a monoid isomorphism preserves `SimpleClasses.finrank`. -/
+@[simp]
+theorem finrank_equiv_actionResEquiv (φ : G₁ ≃* G₂) (S : SimpleClasses (FDRep k G₂)) :
+    (equiv (Action.resEquiv (FGModuleCat.{u} k) φ) S).finrank = S.finrank := by
+  induction S using SimpleClasses.ind with
+  | h X =>
+    simp only [equiv_apply_classOf, finrank_classOf]
+    exact congrArg (fun M : FGModuleCat.{u} k ↦ Module.finrank k M)
+      (Action.res_obj_V (FGModuleCat.{u} k) (φ : G₁ →* G₂) X)
+
+/-- Restricting along a monoid isomorphism maps the trivial simple class to the trivial simple
+class. -/
+@[simp]
+theorem equiv_actionResEquiv_trivial (φ : G₁ ≃* G₂) :
+    equiv (Action.resEquiv (FGModuleCat.{u} k) φ) (trivial k G₂) = trivial k G₁ := by
+  rw [← classOf_tensorUnit, ← classOf_tensorUnit, equiv_apply_classOf, classOf_eq_iff_nonempty_iso]
+  exact ⟨(Functor.Monoidal.εIso (Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂))).symm⟩
+
+/-- Restricting along a monoid isomorphism preserves `SimpleClasses.finrankHom`. -/
+@[simp]
+theorem finrankHom_equiv_actionResEquiv (φ : G₁ ≃* G₂) (S : SimpleClasses (FDRep k G₂))
+    (W : FDRep k G₂) :
+    (equiv (Action.resEquiv (FGModuleCat.{u} k) φ) S).finrankHom
+        ((Action.res (FGModuleCat.{u} k) (φ : G₁ →* G₂)).obj W) =
+      S.finrankHom W := by
+  induction S using SimpleClasses.ind with
+  | h X =>
+    simp only [equiv_apply_classOf, finrankHom_classOf]
+    exact MonoidHom.finrank_hom_actionRes_of_surjective (φ : G₁ →* G₂) φ.surjective X W
+
+end ResEquivField
+
+end SimpleClasses
 
 end TauCeti

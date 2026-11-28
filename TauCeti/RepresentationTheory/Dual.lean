@@ -65,10 +65,8 @@ are the intertwiners into `ρ.dual`, so counting them is counting invariants of 
   representations.
 * `Representation.dualTprodEquivTrivial`: for an invertible module `V`, such as a line, the
   contraction `Dual V ⊗ V → k` is an equivalence onto the trivial representation.
-* `FDRep.finrank_invariants_dual_tprod`: the intertwiners `X → Y` are as many as the invariants
-  of `Dual X ⊗ Y`.
-* `FDRep.finrank_hom_comm`: when `|G|` is invertible in `k`, there are as many
-  intertwiners `X → Y` as `Y → X`.
+* `FDRep.finrank_invariants_dual_tprod` and `FDRep.finrank_hom_comm`: the intertwiners `X → Y` are
+  as many as the invariants of `Dual X ⊗ Y`, and as many as `Y → X` when `|G|` is invertible in `k`.
 -/
 
 public section
@@ -367,9 +365,9 @@ namespace FDRep
 
 open CategoryTheory Module
 
-universe u
+universe u v
 
-variable {k G : Type u} [Field k] [Group G]
+variable {k : Type u} {G : Type v} [Field k] [Group G]
 
 /-- **The intertwiners `X → Y` are as many as the invariants of `Dual X ⊗ Y`**: Mathlib's
 contraction `Representation.Equiv.dualTensorHom` identifies `Dual X ⊗ Y` with `Hom_k(X, Y)` as

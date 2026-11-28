@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.SesquilinearForm.Complex
-public import TauCeti.RepresentationTheory.InvariantForm
+public import TauCeti.RepresentationTheory.InvariantForm.Basic
 
 /-!
 # Invariant sesquilinear forms on a representation

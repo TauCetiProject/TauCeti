@@ -10,6 +10,9 @@ public import Mathlib.RepresentationTheory.Maschke
 public import Mathlib.RepresentationTheory.FDRep
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
+public import TauCeti.CategoryTheory.Semisimple.Basic
+import TauCeti.Algebra.Category.FGModuleCat.Semisimple
+import TauCeti.CategoryTheory.Semisimple.Split
 import TauCeti.RepresentationTheory.AsModule
 import TauCeti.RingTheory.Semisimple.HomDimension
 
@@ -23,7 +26,8 @@ Mathlib's dictionary `Representation.IntertwiningMap.equivLinearMapAsModule` bet
 maps and `k[G]`-linear maps of the attached modules, so that it applies to representations as they
 are usually given, without passing to `Representation.asModule`. It also gives a splitting of every
 short exact sequence in `Rep k G` and `FDRep k G`, the categorical form used to compare split and
-exact Grothendieck rings.
+exact Grothendieck rings, and registers `FDRep k G` as a finite semisimple category
+(`TauCeti.FDRep.instIsFiniteSemisimpleCategory`).
 
 The form recorded here is the one used to compare the two meanings of "a constituent of `ρ`": an
 irreducible `σ` that embeds in `ρ` is also a quotient of `ρ`, because the embedding splits.
@@ -34,6 +38,8 @@ irreducible `σ` that embeds in `ρ` is also a quotient of `ρ`, because the emb
   has an intertwining left inverse.
 * `TauCeti.Rep.nonempty_splitting_of_shortExact`: a short exact sequence in `Rep` splits.
 * `TauCeti.FDRep.nonempty_splitting_of_shortExact`: a short exact sequence in `FDRep` splits.
+* `TauCeti.FDRep.instIsFiniteSemisimpleCategory`: `FDRep k G` is a finite semisimple category when
+  `NeZero (Nat.card G : k)`.
 * `Representation.finrank_intertwiningMap_comm`: intertwining-space dimension is symmetric for
   finite-dimensional representations.
 
@@ -137,6 +143,19 @@ theorem nonempty_splitting_of_shortExact {S : ShortComplex (FDRep k G)}
   apply F.map_injective
   rw [F.map_comp, F.map_preimage, F.map_id]
   exact s.f_r
+
+/-- Finite-dimensional representations of `G` over `k` form a finite semisimple category when
+the order of `G` is nonzero in `k`. -/
+instance instIsFiniteSemisimpleCategory : IsFiniteSemisimpleCategory (FDRep k G) :=
+  have : SplitMonoCategory (FDRep k G) := ⟨fun {X Y} f hf ↦ by
+    let S : ShortComplex (FDRep k G) := ShortComplex.mk f (cokernel.π f) (cokernel.condition f)
+    have hS : S.ShortExact :=
+      { exact := ShortComplex.exact_cokernel f
+        mono_f := hf
+        epi_g := inferInstance }
+    obtain ⟨sp⟩ := nonempty_splitting_of_shortExact hS
+    exact ⟨⟨sp.r, sp.f_r⟩⟩⟩
+  IsFiniteSemisimpleCategory.of_faithful (Action.forget (FGModuleCat k) G)
 
 end FDRep
 

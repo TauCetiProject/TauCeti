@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.SpecialUnitary
 public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower.Basic
 public import TauCeti.RepresentationTheory.SU2.Basic
 import TauCeti.Algebra.GroupWithZero.Units.Basic
@@ -33,12 +32,10 @@ rank-two evaluation `TauCeti.eval_hsymm_fin_two`: the geometric-looking sum `∑
 
 ## Main definitions
 
-* `TauCeti.SU2.toGL`: `SU(2)` as a subgroup of `GL₂(ℂ)`.
 * `TauCeti.SU2.symPower`: the `d`-th symmetric power of the standard representation of `SU(2)`.
 
 ## Main results
 
-* `TauCeti.SU2.toGL_comp_toSL`: the inclusion in `GL₂(ℂ)` factors through `SL₂(ℂ)`.
 * `TauCeti.SU2.character_symPower_torusHom` and
   `TauCeti.SU2.character_symPower_torusHom_zpow`: the character of `Symᵈ` on the maximal torus is
   the weight string `∑_{i ≤ d} z^{2i - d}`.
@@ -62,39 +59,6 @@ namespace TauCeti
 /-! ### The symmetric powers of the standard representation -/
 
 namespace SU2
-
-/-- `SU(2)` as a subgroup of `GL₂(ℂ)`: an element of the group `SU(2)` is a unit there, and a unit
-of a submonoid of the matrices is a unit of the matrices. -/
-def toGL : SU2 →* GL (Fin 2) ℂ :=
-  (Units.map (Submonoid.subtype _)).comp toUnits.toMonoidHom
-
-@[simp]
-theorem coe_toGL (g : SU2) :
-    (toGL g : Matrix (Fin 2) (Fin 2) ℂ) = (g : Matrix (Fin 2) (Fin 2) ℂ) := (rfl)
-
-/-- The inclusion of `SU(2)` into `GL₂(ℂ)` is injective: it does not move the underlying matrix. -/
-theorem toGL_injective : Function.Injective (toGL : SU2 → GL (Fin 2) ℂ) := fun g h hgh =>
-  Subtype.ext (by rw [← coe_toGL, ← coe_toGL, hgh])
-
-/-- The inclusion of `SU(2)` in `GL₂(ℂ)` factors through `SL₂(ℂ)`. -/
-@[simp]
-theorem toGL_comp_toSL :
-    (SpecialLinearGroup.toGL (n := Fin 2) (R := ℂ)).comp
-      Matrix.specialUnitaryGroup.toSL = toGL := by
-  ext g i j
-  simp only [MonoidHom.comp_apply, SpecialLinearGroup.coe_GL_coe_matrix,
-    Matrix.specialUnitaryGroup.coe_toSL, coe_toGL]
-
-/-- **The maximal torus of `SU(2)` inside the diagonal torus of `GL₂(ℂ)`**: `torusHom z` is the
-diagonal matrix `diag(z, z⁻¹)`. -/
-theorem toGL_torusHom (z : Circle) :
-    toGL (torusHom z) = diagGL ![Circle.toUnits z, (Circle.toUnits z)⁻¹] := by
-  refine Units.ext (Matrix.ext fun i j => ?_)
-  rw [coe_toGL, coe_torusHom, diagGL_coe]
-  fin_cases i <;> fin_cases j <;>
-    simp [torusMatrix_apply_zero_zero, torusMatrix_apply_zero_one, torusMatrix_apply_one_zero,
-      torusMatrix_apply_one_one, Matrix.diagonal_apply_eq, Matrix.diagonal_apply_ne,
-      Units.val_inv_eq_inv_val]
 
 variable (d : ℕ)
 

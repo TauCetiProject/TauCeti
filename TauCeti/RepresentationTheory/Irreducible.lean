@@ -100,6 +100,8 @@ an algebra are those of the whole algebra.
   a nonzero space are multiplicative.
 * `Representation.IsIrreducible.exists_unit_smul_of_intertwines`: two equivariant isomorphisms
   out of an irreducible representation differ by a unit scalar.
+* `Representation.exists_isCompl_finrank_eq_one_of_not_isIrreducible`: a reducible semisimple
+  two-dimensional representation splits into two complementary one-dimensional subrepresentations.
 -/
 
 public section
@@ -219,7 +221,8 @@ theorem isIrreducible_of_asAlgebraHom_surjective [Nontrivial V] (ρ : Representa
     isSimpleModule_iff_toSpanSingleton_surjective]
   refine ⟨ρ.asModuleEquiv.toEquiv.nontrivial, fun x hx y => ?_⟩
   obtain ⟨T, hT⟩ := IsSimpleModule.toSpanSingleton_surjective (Module.End k V)
-    (m := ρ.asModuleEquiv x) (by simpa using hx) (ρ.asModuleEquiv y)
+    (m := ρ.asModuleEquiv x) (fun h => hx (ρ.asModuleEquiv.map_eq_zero_iff.mp h))
+    (ρ.asModuleEquiv y)
   rw [LinearMap.toSpanSingleton_apply, Module.End.smul_def] at hT
   obtain ⟨r, rfl⟩ := h T
   refine ⟨r, ρ.asModuleEquiv.injective ?_⟩
@@ -515,5 +518,26 @@ theorem exists_isIrreducible_subrepresentation [FiniteDimensional k V] [Nontrivi
     ∃ σ : Subrepresentation ρ, σ ≠ ⊥ ∧ σ.toRepresentation.IsIrreducible :=
   let ⟨v, hv⟩ := exists_ne (0 : V)
   exists_isIrreducible_subrepresentation_of_isGFinite (IsGFinite.of_finiteDimensional v) hv
+
+/-- **A reducible semisimple two-dimensional representation splits into two invariant lines.** -/
+theorem exists_isCompl_finrank_eq_one_of_not_isIrreducible {ρ : Representation k G V}
+    [ρ.IsSemisimpleRepresentation] (hdim : Module.finrank k V = 2) (hρ : ¬ ρ.IsIrreducible) :
+    ∃ W W' : Subrepresentation ρ,
+      IsCompl W W' ∧ Module.finrank k W.toSubmodule = 1 ∧ Module.finrank k W'.toSubmodule = 1 := by
+  have : Nontrivial V := Module.nontrivial_of_finrank_pos (hdim ▸ zero_lt_two)
+  have : FiniteDimensional k V := Module.finite_of_finrank_pos (hdim ▸ zero_lt_two)
+  obtain ⟨W, hW_bot, hW_top⟩ : ∃ W : Subrepresentation ρ, W ≠ ⊥ ∧ W ≠ ⊤ := by
+    by_contra! hall; exact hρ ⟨fun W ↦ or_iff_not_imp_left.mpr (hall W)⟩
+  obtain ⟨W', hWW'⟩ := exists_isCompl W
+  have hW_pos : 0 < Module.finrank k W.toSubmodule := by
+    simpa using Submodule.finrank_lt_finrank_of_lt
+      (Subrepresentation.toSubmodule_lt_toSubmodule.mpr (bot_lt_iff_ne_bot.mpr hW_bot))
+  have hW_lt : Module.finrank k W.toSubmodule < 2 := by
+    simpa [hdim] using Submodule.finrank_lt_finrank_of_lt
+      (Subrepresentation.toSubmodule_lt_toSubmodule.mpr (lt_top_iff_ne_top.mpr hW_top))
+  have hW1 : Module.finrank k W.toSubmodule = 1 := by omega
+  have hsum := (Subrepresentation.equivProdOfIsCompl hWW').toLinearEquiv.finrank_eq
+  rw [hdim, Module.finrank_prod, hW1] at hsum
+  exact ⟨W, W', hWW', hW1, by omega⟩
 
 end Representation

@@ -79,6 +79,8 @@ A `2 × 2` matrix acts linearly on pairs `K × K` by `Matrix.toLinProd` via
   product with a vector whose entries are at least `1`.
 * `Matrix.mulVec_pos`: if row `i` of `A` is strictly positive, then `A` sends a nonzero
   nonnegative vector to one whose coordinate `i` is strictly positive.
+* `Matrix.apply_eq_zero_of_mulVec_apply_eq_mul`: if a nonnegative weighted row sum equals a single
+  term, all other entries in that row with nonzero weight vanish.
 * `Matrix.submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero`: a right null vector with unit last
   coordinate lets the submatrix omitting the last column reproduce `A *ᵥ x`.
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
@@ -218,6 +220,21 @@ theorem mulVec_mono (hA : ∀ i j, 0 ≤ A i j) (hxy : x ≤ y) : A *ᵥ x ≤ A
 /-- An entrywise nonnegative matrix sends nonnegative vectors to nonnegative vectors. -/
 theorem mulVec_nonneg (hA : ∀ i j, 0 ≤ A i j) (hx : 0 ≤ x) : 0 ≤ A *ᵥ x := fun i =>
   dotProduct_nonneg_of_nonneg (hA i) hx
+
+/-- If row `i` of `A` and the vector `v` are entrywise nonnegative and `(A *ᵥ v) i` equals the
+single weighted entry `A i j₀ * v j₀`, then `A i j = 0` for every `j ≠ j₀` with `v j ≠ 0`. -/
+theorem apply_eq_zero_of_mulVec_apply_eq_mul [IsCancelAdd R] [NoZeroDivisors R] {i : m} {j₀ : n}
+    (hA : ∀ k, 0 ≤ A i k) {v : n → R} (hv : ∀ k, 0 ≤ v k)
+    (hsum : (A *ᵥ v) i = A i j₀ * v j₀) {j : n} (hj : j ≠ j₀) (hvj : v j ≠ 0) :
+    A i j = 0 := by
+  classical
+  have hrest : ∑ k ∈ Finset.univ.erase j₀, A i k * v k = 0 := by
+    rw [mulVec, dotProduct, ← Finset.add_sum_erase _ _ (Finset.mem_univ j₀)] at hsum
+    exact add_left_cancel (hsum.trans (add_zero _).symm)
+  have hj0 : A i j * v j = 0 :=
+    (Finset.sum_eq_zero_iff_of_nonneg fun k _ ↦ mul_nonneg (hA k) (hv k)).mp hrest j
+      (Finset.mem_erase.mpr ⟨hj, Finset.mem_univ j⟩)
+  exact (mul_eq_zero.mp hj0).resolve_right hvj
 
 /-- A coordinate of a nonnegative vector `x` is at most its dot product with a vector `w` whose
 entries are at least `1`. -/

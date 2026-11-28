@@ -7,6 +7,11 @@ module
 
 public import TauCeti.Combinatorics.SimpleGraph.SingularCartanMatrix
 public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.AffineSubgraph
+import TauCeti.LinearAlgebra.Matrix.Connected
+import TauCeti.LinearAlgebra.Matrix.MulVec
+import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.IntegralNullVector
+import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.SpecialNodes
+import TauCeti.Logic.Equiv.Fin.Basic
 
 /-!
 # Recognition of the affine simply-laced diagrams
@@ -28,16 +33,22 @@ already told apart by their numbers of nodes, of leaves and of trivalent nodes.
 
 Away from `Ã₁` this is Kac's characterisation of the connected affine diagrams by a positive null
 vector, read on simple graphs; the double edge of `Ã₁` is not a simple-graph edge, so `Ã₁` is not
-recognised here.
+recognised by the simple-graph statement. Allowing non-negative integer off-diagonal entries brings
+`Ã₁` back on equal footing: any symmetric, loop-free, connected matrix `M : Matrix ι ι ℕ` carrying
+a positive vector `δ` with `δ i₀ = 1` and `M *ᵥ δ = 2 • δ` is isomorphic to `2I - t.cartanMatrix`
+for a valid `t : AffineDynkinType`, with `δ` matching `t.marks` and `i₀` carried to `t.affineNode`
+(`Matrix.exists_affineDynkinType_of_isSymm_of_diag_eq_zero_of_mulVec_eq_two_smul`).
 
 ## Main results
 
 * `SimpleGraph.Connected.exists_sum_eq_two_mul_iff_existsUnique_affineDynkinType_iso`: **the
-  recognition theorem**.
+  simple-graph recognition theorem** away from `Ã₁`.
 * `SimpleGraph.Connected.posSemidef_and_det_eq_zero_iff_existsUnique_affineDynkinType_iso`: its
   semidefinite form, where the weight is replaced by the condition that `2I - A` is positive
   semidefinite and singular
   (`SimpleGraph.Preconnected.exists_sum_eq_two_mul_iff_posSemidef_and_det_eq_zero`).
+* `Matrix.exists_affineDynkinType_of_isSymm_of_diag_eq_zero_of_mulVec_eq_two_smul`: **matrix
+  recognition** including `Ã₁`, with marks and affine-node normalization.
 
 ## References
 
@@ -110,3 +121,143 @@ theorem Connected.posSemidef_and_det_eq_zero_iff_existsUnique_affineDynkinType_i
   exact hG.exists_sum_eq_two_mul_iff_existsUnique_affineDynkinType_iso
 
 end SimpleGraph
+
+namespace Matrix
+
+open Finset TauCeti
+
+section MatrixRecognition
+
+variable {ι : Type*} [Fintype ι]
+
+private abbrev IsAffineMatrixLabelling (M : Matrix ι ι ℕ) (i₀ : ι) (δ : ι → ℕ)
+    (t : AffineDynkinType) (e : ι ≃ Fin t.nodes) : Prop :=
+  t.Valid ∧
+    (∀ x y : ι, (M x y : ℤ) = 2 * (if e x = e y then 1 else 0) - t.cartanMatrix (e x) (e y)) ∧
+    (∀ x : ι, (δ x : ℤ) = t.marks (e x)) ∧
+    e i₀ = t.affineNode
+
+/-- Multi-edge branch (`2 ≤ M a b`): additive balance forces two vertices with a double edge. -/
+private theorem exists_affineDynkinType_A_one_of_two_le
+    (M : Matrix ι ι ℕ) (hSymm : M.IsSymm) (hLoop : ∀ i, M i i = 0) (i₀ : ι)
+    (hReach : ∀ x y : ι, Relation.ReflTransGen (fun x y ↦ x ≠ y ∧ 0 < M x y) x y)
+    (δ : ι → ℕ) (hδ_pos : ∀ i, 0 < δ i) (hδ_one : δ i₀ = 1)
+    (hδ_sum : ∀ i, ∑ j, M i j * δ j = 2 * δ i) {a b : ι} (hab2 : 2 ≤ M a b) :
+    ∃ (t : AffineDynkinType) (e : ι ≃ Fin t.nodes), IsAffineMatrixLabelling M i₀ δ t e := by
+  classical
+  -- Step 1: Balance on `(a, b)` forces `δ a = δ b` and `M a b = M b a = 2`.
+  have hab : a ≠ b := fun h ↦ by rw [h, hLoop b] at hab2; omega
+  have hle (x y : ι) : M x y * δ y ≤ 2 * δ x :=
+    hδ_sum x ▸ single_le_sum (f := fun j ↦ M x j * δ j) (fun _ _ ↦ Nat.zero_le _) (mem_univ y)
+  have hδ_le1 : 2 * δ b ≤ 2 * δ a := (Nat.mul_le_mul_right (δ b) hab2).trans (hle a b)
+  have hδ_le2 : 2 * δ a ≤ 2 * δ b :=
+    (Nat.mul_le_mul_right (δ a) (hSymm.apply a b ▸ hab2)).trans (hle b a)
+  have hδ_ab : δ a = δ b := by omega
+  have hMab_eq : M a b = 2 := by
+    have := hδ_pos b
+    have := Nat.mul_le_mul_right (δ b) hab2
+    have : M a b * δ b ≤ 2 * δ b := hδ_ab ▸ hle a b
+    nlinarith
+  have hMba_eq : M b a = 2 := (hSymm.apply a b).trans hMab_eq
+  -- Step 2: All other entries in rows `a` and `b` vanish, so connectivity confines `ι` to `{a, b}`.
+  have hMa_other (j : ι) (hjb : j ≠ b) : M a j = 0 :=
+    Matrix.apply_eq_zero_of_mulVec_apply_eq_mul (fun _ ↦ Nat.zero_le _) (fun _ ↦ Nat.zero_le _)
+      (by simpa [Matrix.mulVec, dotProduct, hMab_eq, hδ_ab] using hδ_sum a) hjb (hδ_pos j).ne'
+  have hMb_other (j : ι) (hja : j ≠ a) : M b j = 0 :=
+    Matrix.apply_eq_zero_of_mulVec_apply_eq_mul (fun _ ↦ Nat.zero_le _) (fun _ ↦ Nat.zero_le _)
+      (by simpa [Matrix.mulVec, dotProduct, hMba_eq, hδ_ab] using hδ_sum b) hja (hδ_pos j).ne'
+  have hall_ab (k : ι) : k = a ∨ k = b := by
+    refine M.mem_of_reflTransGen_ne_and_pos (s := {a, b}) (fun u hu v _ huv ↦ ?_) (hReach a k)
+      (by simp)
+    rcases hu with rfl | rfl
+    · exact Or.inr (by_contra fun hvb ↦ huv.ne' (hMa_other v hvb))
+    · exact Or.inl (by_contra fun hva ↦ huv.ne' (hMb_other v hva))
+  -- Step 3: Reorient `{a, b}` around `i₀` and build the `Ã₁` labelling.
+  obtain ⟨c, hc_ne, hc_all, hMic, hMci, hδc⟩ :
+      ∃ c : ι, i₀ ≠ c ∧ (∀ k : ι, k = i₀ ∨ k = c) ∧ M i₀ c = 2 ∧ M c i₀ = 2 ∧ δ c = 1 := by
+    rcases hall_ab i₀ with rfl | rfl
+    · exact ⟨b, hab, hall_ab, hMab_eq, hMba_eq, hδ_ab.symm.trans hδ_one⟩
+    · exact ⟨a, hab.symm, fun k ↦ (hall_ab k).symm, hMba_eq, hMab_eq, hδ_ab.trans hδ_one⟩
+  let e : ι ≃ Fin (AffineDynkinType.A 1).nodes := equivFinTwoOfPair hc_ne hc_all
+  refine ⟨AffineDynkinType.A 1, e, AffineDynkinType.valid_A.mpr le_rfl, fun x y ↦ ?_,
+    fun x ↦ ?_, ?_⟩
+  · rw [AffineDynkinType.cartanMatrix_A_one_apply]; simp only [e.injective.eq_iff]
+    rcases hc_all x with rfl | rfl <;> rcases hc_all y with rfl | rfl <;>
+      simp [hLoop, hc_ne, hc_ne.symm, hMic, hMci]
+  · rw [AffineDynkinType.marks_A_apply]; rcases hc_all x with rfl | rfl <;> simp [hδ_one, hδc]
+  · rw [AffineDynkinType.affineNode_A]; dsimp only [e]; exact equivFinTwoOfPair_left hc_ne hc_all
+
+/-- `{0, 1}` graphical branch: recognized by Kac's theorem and normalized at `i₀`. -/
+private theorem exists_affineDynkinType_of_le_one
+    (M : Matrix ι ι ℕ) (hSymm : M.IsSymm) (hLoop : ∀ i, M i i = 0) (i₀ : ι)
+    (hReach : ∀ x y : ι, Relation.ReflTransGen (fun x y ↦ x ≠ y ∧ 0 < M x y) x y)
+    (δ : ι → ℕ) (hδ_one : δ i₀ = 1) (hδ_sum : ∀ i, ∑ j, M i j * δ j = 2 * δ i)
+    (hM_le1 : ∀ x y : ι, M x y ≤ 1) :
+    ∃ (t : AffineDynkinType) (e : ι ≃ Fin t.nodes), IsAffineMatrixLabelling M i₀ δ t e := by
+  classical
+  let G : SimpleGraph ι :=
+    { Adj x y := M x y ≠ 0
+      symm := ⟨fun x y hxy ↦ by rwa [← hSymm.apply x y] at hxy⟩
+      loopless := ⟨fun x hx ↦ hx (hLoop x)⟩ }
+  have hM_ite (x y : ι) : M x y = if G.Adj x y then 1 else 0 := by
+    have := hM_le1 x y; dsimp [G]; split_ifs <;> omega
+  have _ : Nonempty ι := ⟨i₀⟩
+  have hG_conn : G.Connected := ⟨fun x y ↦ by
+    induction hReach x y with
+    | refl => exact SimpleGraph.Reachable.refl (G := G) _
+    | tail _ hstep ih => exact ih.trans (SimpleGraph.Adj.reachable hstep.2.ne')⟩
+  have hG_sum (i : ι) : ∑ j ∈ G.neighborFinset i, δ j = 2 * δ i := by
+    rw [← hδ_sum i, SimpleGraph.neighborFinset_eq_filter, Finset.sum_filter]
+    exact Finset.sum_congr rfl fun j _ ↦ by by_cases hadj : G.Adj i j <;> simp [hM_ite, hadj]
+  obtain ⟨t, ⟨ht, hg, ⟨iso⟩⟩, -⟩ :=
+    hG_conn.exists_sum_eq_two_mul_iff_existsUnique_affineDynkinType_iso.mp
+      ⟨δ, fun h ↦ by simp [h] at hδ_one, hG_sum⟩
+  have hgcd : univ.gcd δ = 1 := Nat.dvd_one.mp (hδ_one ▸ univ.gcd_dvd (f := δ) (mem_univ i₀))
+  have hmarks_iso (x : ι) : (δ x : ℤ) = t.marks (iso x) := by
+    simpa [hgcd] using congrFun (iso.eq_gcd_smul_marks_comp ht hg hG_sum) x
+  obtain ⟨σ, hσ⟩ := AffineDynkinType.exists_graph_iso_apply_eq_affineNode ht
+    (by rw [← hmarks_iso i₀, hδ_one, Nat.cast_one] : t.marks (iso i₀) = 1)
+  let e_iso : G ≃g t.graph := iso.trans σ
+  refine ⟨t, e_iso.toEquiv, ht, fun x y ↦ ?_, fun x ↦ ?_, hσ⟩
+  · rw [AffineDynkinType.cartanMatrix_apply hg]
+    simp only [RelIso.coe_fn_toEquiv, e_iso.injective.eq_iff, e_iso.map_adj_iff, hM_ite]
+    by_cases hxy : x = y
+    · subst hxy; simp
+    · simp only [hxy, ↓reduceIte]; split_ifs <;> norm_num
+  · simp only [e_iso, RelIso.coe_fn_toEquiv, RelIso.trans_apply,
+      AffineDynkinType.marks_graph_iso_apply, hmarks_iso]
+
+/-- **Matrix recognition of the affine simply-laced diagrams.** Any symmetric, loop-free, connected
+matrix `M : Matrix ι ι ℕ` admitting a positive vector `δ` with `δ i₀ = 1` and `M *ᵥ δ = 2 • δ` is
+isomorphic to `2I - t.cartanMatrix` for a valid `t : AffineDynkinType`, with `δ` matching `t.marks`
+and `i₀` mapped to `t.affineNode`. -/
+theorem exists_affineDynkinType_of_isSymm_of_diag_eq_zero_of_mulVec_eq_two_smul
+    (M : Matrix ι ι ℕ) (hSymm : M.IsSymm) (hLoop : ∀ i, M i i = 0)
+    (i₀ : ι) (hConn : ∀ i, Relation.ReflTransGen (fun x y ↦ x ≠ y ∧ 0 < M x y) i i₀)
+    (δ : ι → ℕ) (hδ_pos : ∀ i, 0 < δ i) (hδ_one : δ i₀ = 1)
+    (hδ_sum : M *ᵥ δ = 2 • δ) :
+    ∃ (t : AffineDynkinType) (e : ι ≃ Fin t.nodes),
+      t.Valid ∧
+        (∀ x y : ι,
+          (M x y : ℤ) = 2 * (if e x = e y then 1 else 0) - t.cartanMatrix (e x) (e y)) ∧
+        (∀ x : ι, (δ x : ℤ) = t.marks (e x)) ∧
+        e i₀ = t.affineNode := by
+  classical
+  have hδ_sum' (i : ι) : ∑ j, M i j * δ j = 2 * δ i := by
+    simpa [Matrix.mulVec, dotProduct] using congrFun hδ_sum i
+  let r : ι → ι → Prop := fun x y ↦ x ≠ y ∧ 0 < M x y
+  have hsymm_rtg {x y : ι} (h : Relation.ReflTransGen r x y) : Relation.ReflTransGen r y x :=
+    Relation.ReflTransGen.mono (fun _ _ hxy ↦ ⟨hxy.1.symm, hSymm.apply _ _ ▸ hxy.2⟩) y x
+      (Relation.reflTransGen_swap.mpr h)
+  have hReach (x y : ι) : Relation.ReflTransGen r x y := (hConn x).trans (hsymm_rtg (hConn y))
+  if hMult : ∃ a b : ι, 2 ≤ M a b then
+    obtain ⟨a, b, hab2⟩ := hMult
+    exact exists_affineDynkinType_A_one_of_two_le M hSymm hLoop i₀ hReach δ hδ_pos hδ_one hδ_sum'
+      hab2
+  else
+    exact exists_affineDynkinType_of_le_one M hSymm hLoop i₀ hReach δ hδ_one hδ_sum'
+      fun x y ↦ Nat.le_of_not_lt fun h ↦ hMult ⟨x, y, h⟩
+
+end MatrixRecognition
+
+end Matrix

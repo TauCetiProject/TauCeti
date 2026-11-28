@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import TauCeti.Geometry.Symplectic.ExistsCompatible
 public import TauCeti.Geometry.Symplectic.Lagrangian.Constructions
-public import TauCeti.RepresentationTheory.InvariantForm
+public import TauCeti.RepresentationTheory.InvariantForm.Basic
 public import TauCeti.RepresentationTheory.Subrepresentation.Semisimple
 
 import TauCeti.Algebra.Lie.SkewAdjoint

@@ -6,18 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.RCLike.Basic
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
-public import Mathlib.LinearAlgebra.UnitaryGroup
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.SpecialLinear
 import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 
 /-!
 # The projective special unitary group inside `PSL(n, 𝕜)`
 
-A special unitary matrix has determinant one, so the special unitary group
-`Matrix.specialUnitaryGroup n α` is a subgroup of the special linear group `SL(n, α)`
-(`Matrix.specialUnitaryGroup.toSL`). Composing with the quotient map gives a homomorphism
-`Matrix.specialUnitaryGroup.toPSL` to the projective special linear group
+Composing the inclusion `Matrix.specialUnitaryGroup.toSL : SU(n, α) →* SL(n, α)` with the quotient
+map gives a homomorphism `Matrix.specialUnitaryGroup.toPSL` to the projective special linear group
 `PSL(n, α) = SL(n, α) ⧸ Z(SL(n, α))`. Its range is the projective special unitary group
 `PSU(n)`, and its kernel consists of the special unitary matrices that are central in `SL(n, α)`.
 
@@ -32,8 +29,6 @@ sphere.
 
 ## Main declarations
 
-* `Matrix.specialUnitaryGroup.toSL`: the inclusion `SU(n) → SL(n)`.
-* `Matrix.specialUnitaryGroup.toGL_toSL`: in `GL(n)`, it agrees with the unitary units.
 * `Matrix.specialUnitaryGroup.toPSL`: the homomorphism `SU(n) → PSL(n)`, whose range is `PSU(n)`.
 * `Matrix.specialUnitaryGroup.ker_toPSL`: its kernel is the preimage of the center of `SL(n)`.
 * `Matrix.specialUnitaryGroup.mk_mem_range_toPSL_iff`: over `ℝ` or `ℂ`, the class of a matrix of
@@ -56,37 +51,6 @@ namespace Matrix
 namespace specialUnitaryGroup
 
 variable {n : Type*} [DecidableEq n] [Fintype n] {α : Type*} [CommRing α] [StarRing α]
-
-/-- The inclusion of the special unitary group into the special linear group: a special unitary
-matrix has determinant one. -/
-def toSL : specialUnitaryGroup n α →* SpecialLinearGroup n α where
-  toFun A := ⟨A, (mem_specialUnitaryGroup_iff.mp A.property).2⟩
-  map_one' := rfl
-  map_mul' _ _ := rfl
-
-@[simp]
-theorem coe_toSL (A : specialUnitaryGroup n α) :
-    ((toSL A : SpecialLinearGroup n α) : Matrix n n α) = A :=
-  (rfl)
-
-/-- A special unitary matrix, viewed in `GL(n, α)`, is the unit of the corresponding unitary
-matrix. -/
-theorem toGL_toSL (A : specialUnitaryGroup n α) :
-    SpecialLinearGroup.toGL (toSL A) =
-      Unitary.toUnits (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup A) :=
-  Units.ext (rfl)
-
-theorem toSL_injective : Function.Injective (toSL : specialUnitaryGroup n α →* _) :=
-  fun A B h => Subtype.ext <| by
-    simpa using congrArg (fun M : SpecialLinearGroup n α => (M : Matrix n n α)) h
-
-/-- A matrix of the special linear group comes from the special unitary group exactly when it is
-unitary. -/
-theorem mem_range_toSL_iff {A : SpecialLinearGroup n α} :
-    A ∈ (toSL : specialUnitaryGroup n α →* _).range ↔ (A : Matrix n n α) ∈ unitaryGroup n α := by
-  refine ⟨?_, fun hA => ⟨⟨A, hA, A.property⟩, rfl⟩⟩
-  rintro ⟨B, rfl⟩
-  exact (mem_specialUnitaryGroup_iff.mp B.property).1
 
 /-- The homomorphism from the special unitary group to the projective special linear group,
 the inclusion into `SL(n, α)` followed by the quotient by its center. Its range is the projective
@@ -149,7 +113,8 @@ matrix of `SL(n, 𝕜)` lies in the range `PSU(n)` of `SU(n)` exactly when the m
 theorem mk_mem_range_toPSL_iff {A : SpecialLinearGroup n 𝕜} :
     (A : ProjectiveSpecialLinearGroup n 𝕜) ∈ (toPSL : specialUnitaryGroup n 𝕜 →* _).range ↔
       (A : Matrix n n 𝕜) ∈ unitaryGroup n 𝕜 := by
-  refine ⟨?_, fun hA => ⟨⟨A, hA, A.property⟩, rfl⟩⟩
+  refine ⟨?_, fun hA =>
+    ⟨⟨A, hA, A.property⟩, by rw [toPSL_apply]; congr 1; exact Subtype.ext (coe_toSL _)⟩⟩
   rintro ⟨B, hB⟩
   have hcen : (toSL B)⁻¹ * A ∈ (toSL : specialUnitaryGroup n 𝕜 →* _).range :=
     center_le_range_toSL (QuotientGroup.eq.mp hB)

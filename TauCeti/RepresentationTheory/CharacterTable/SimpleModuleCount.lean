@@ -40,7 +40,7 @@ supply the injection and the count of conjugacy classes.
 * `TauCeti.card_simpleSubmoduleClasses_le_card_conjClasses`: over a field with `k[G]` semisimple,
   the isomorphism classes of simple `k[G]`-modules are at most the conjugacy classes of `G`.
 * `TauCeti.SimpleSubmoduleClasses.bijective_of_injective_of_card_conjClasses_le` and
-  `TauCeti.SimpleFDRepClasses.bijective_of_injective_of_card_conjClasses_le`: an injection into the
+  `TauCeti.SimpleClasses.bijective_of_injective_of_card_conjClasses_le`: an injection into the
   isomorphism classes of simple modules, resp. of simple objects of `FDRep k G`, from a type with
   at least as many elements as `G` has conjugacy classes, is a bijection.
 
@@ -83,16 +83,16 @@ theorem SimpleSubmoduleClasses.bijective_of_injective_of_card_conjClasses_le {ι
 
 /-- **Enough pairwise non-isomorphic simple objects are all of them**, the same count read in
 `FDRep k G`: the isomorphism classes of simple objects inject into the isomorphism classes of the
-`k[G]`-modules they carry (`TauCeti.SimpleFDRepClasses.toSimpleSubmoduleClasses_injective`), so the
+`k[G]`-modules they carry (`TauCeti.SimpleClasses.toSimpleSubmoduleClasses_injective`), so the
 conjugacy classes bound them too. -/
-theorem SimpleFDRepClasses.bijective_of_injective_of_card_conjClasses_le {ι : Type*}
-    {f : ι → SimpleFDRepClasses k G} (hf : Function.Injective f)
+theorem SimpleClasses.bijective_of_injective_of_card_conjClasses_le {ι : Type*}
+    {f : ι → SimpleClasses (FDRep k G)} (hf : Function.Injective f)
     (h : Nat.card (ConjClasses G) ≤ Nat.card ι) : Function.Bijective f :=
-  have : Finite (SimpleFDRepClasses k G) :=
-    .of_injective _ SimpleFDRepClasses.toSimpleSubmoduleClasses_injective
+  have : Finite (SimpleClasses (FDRep k G)) :=
+    .of_injective _ SimpleClasses.toSimpleSubmoduleClasses_injective
   hf.bijective_of_nat_card_le
     (((Nat.card_le_card_of_injective _
-      SimpleFDRepClasses.toSimpleSubmoduleClasses_injective).trans
+      SimpleClasses.toSimpleSubmoduleClasses_injective).trans
         (card_simpleSubmoduleClasses_le_card_conjClasses k G)).trans h)
 
 end TauCeti

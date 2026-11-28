@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.SymplecticGroup
-public import TauCeti.RepresentationTheory.InvariantForm
+public import TauCeti.RepresentationTheory.InvariantForm.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.InvariantForm
 import TauCeti.LinearAlgebra.BilinearForm.Isotropic
 

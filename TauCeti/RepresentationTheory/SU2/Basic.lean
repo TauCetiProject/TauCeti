@@ -12,6 +12,8 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 import TauCeti.Algebra.Field.Basic
 import TauCeti.Algebra.Group.Subgroup.Centralizer
 import TauCeti.LinearAlgebra.Matrix.Adjugate.FinTwo
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.SpecialLinear
 public import TauCeti.LinearAlgebra.UnitaryGroup
 public import TauCeti.Topology.Algebra.UnitaryGroup
 
@@ -57,6 +59,7 @@ inversion. That the trace is a *complete* conjugacy invariant is proved in
 ## Main definitions
 
 * `TauCeti.SU2`: the group `SU(2)`.
+* `TauCeti.SU2.toGL`: the inclusion `SU(2) →* GL₂(ℂ)`.
 * `TauCeti.SU2.torusHom`: the circle parametrisation `z ↦ diag (z, z⁻¹)` of the maximal torus.
 * `TauCeti.SU2.torus`: the maximal torus of `SU(2)`, the range of `torusHom`.
 * `TauCeti.SU2.torusContinuousMulEquiv`: the isomorphism of topological groups `Circle ≃ₜ* T`.
@@ -104,6 +107,28 @@ theorem trace_eq_of_isConj {g h : SU2} (hgh : IsConj g h) :
   simpa using
     (Matrix.trace_units_conj (Units.map (Submonoid.subtype _) (toUnits u))
       (g : Matrix (Fin 2) (Fin 2) ℂ)).symm
+
+/-- `SU(2)` as a subgroup of `GL₂(ℂ)`: an element of the group `SU(2)` is a unit there, and a unit
+of a submonoid of the matrices is a unit of the matrices. -/
+def toGL : SU2 →* GL (Fin 2) ℂ :=
+  (Units.map (Submonoid.subtype _)).comp toUnits.toMonoidHom
+
+@[simp]
+theorem coe_toGL (g : SU2) :
+    (toGL g : Matrix (Fin 2) (Fin 2) ℂ) = (g : Matrix (Fin 2) (Fin 2) ℂ) := (rfl)
+
+/-- The inclusion of `SU(2)` into `GL₂(ℂ)` is injective: it does not move the underlying matrix. -/
+theorem toGL_injective : Function.Injective (toGL : SU2 → GL (Fin 2) ℂ) := fun g h hgh =>
+  Subtype.ext (by rw [← coe_toGL, ← coe_toGL, hgh])
+
+/-- The inclusion of `SU(2)` in `GL₂(ℂ)` factors through `SL₂(ℂ)`. -/
+@[simp]
+theorem toGL_comp_toSL :
+    (Matrix.SpecialLinearGroup.toGL (n := Fin 2) (R := ℂ)).comp
+      Matrix.specialUnitaryGroup.toSL = toGL := by
+  ext g i j
+  simp only [MonoidHom.comp_apply, Matrix.SpecialLinearGroup.coe_GL_coe_matrix,
+    Matrix.specialUnitaryGroup.coe_toSL, coe_toGL]
 
 /-! ### The diagonal matrices `diag (z, z⁻¹)` -/
 
@@ -194,6 +219,17 @@ noncomputable def torusHom : Circle →* SU2 where
 -- be `@[expose]`d, so the definition stays opaque downstream. Likewise below.
 @[simp]
 theorem coe_torusHom (z : Circle) : (torusHom z : Matrix (Fin 2) (Fin 2) ℂ) = torusMatrix z := (rfl)
+
+/-- **The maximal torus of `SU(2)` inside the diagonal torus of `GL₂(ℂ)`**: `torusHom z` is the
+diagonal matrix `diag(z, z⁻¹)`. -/
+theorem toGL_torusHom (z : Circle) :
+    toGL (torusHom z) = diagGL ![Circle.toUnits z, (Circle.toUnits z)⁻¹] := by
+  refine Units.ext (Matrix.ext fun i j => ?_)
+  rw [coe_toGL, coe_torusHom, diagGL_coe]
+  fin_cases i <;> fin_cases j <;>
+    simp [torusMatrix_apply_zero_zero, torusMatrix_apply_zero_one, torusMatrix_apply_one_zero,
+      torusMatrix_apply_one_one, Matrix.diagonal_apply_eq, Matrix.diagonal_apply_ne,
+      Units.val_inv_eq_inv_val]
 
 theorem continuous_torusHom : Continuous torusHom :=
   continuous_induced_rng.mpr continuous_torusMatrix

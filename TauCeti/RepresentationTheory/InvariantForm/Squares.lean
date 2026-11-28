@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.BilinearForm.Squares
 public import TauCeti.RepresentationTheory.Dual
 public import TauCeti.RepresentationTheory.ExteriorPower
-public import TauCeti.RepresentationTheory.InvariantForm
+public import TauCeti.RepresentationTheory.InvariantForm.Basic
 public import TauCeti.RepresentationTheory.SymmetricPower
 
 /-!
@@ -46,8 +46,8 @@ the character formula for the indicator.
 
 The last count combines the two square counts with the count of the invariant forms by the
 invariant symmetric and alternating forms together, in
-`TauCeti/RepresentationTheory/InvariantForm.lean`, which holds in every characteristic not dividing
-`|G|`, including characteristic two, where the two kinds of form overlap.
+`TauCeti/RepresentationTheory/InvariantForm/Basic.lean`, which holds in every characteristic not
+dividing `|G|`, including characteristic two, where the two kinds of form overlap.
 
 ## Implementation notes
 

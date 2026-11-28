@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.PiTensorProduct.Finite
 public import Mathlib.RepresentationTheory.Character
+public import TauCeti.LinearAlgebra.PiTensorProduct.Fin
 public import TauCeti.LinearAlgebra.PiTensorProduct.Map
 public import TauCeti.LinearAlgebra.TensorPower.Basic
 public import TauCeti.RepresentationTheory.FDRep.Basic
@@ -23,14 +24,20 @@ the character.
 ## Main definitions
 
 * `Representation.tensorPower` is the diagonal action on `⨂[R]^d M`.
-* `FDRep.tensorPower` is its bundled finite-dimensional form.
-* `Representation.tensorPowerAddEquiv` identifies the tensor product of the `d`-th and `e`-th
-  tensor-power representations with the `(d + e)`-th one.
+* `FDRep.tensorPower` is its bundled finite-dimensional form, with carrier equivalence
+  `FDRep.tensorPowerEquiv`.
+* `Representation.oneEquivTensorPower`, `Representation.tensorPowerAddEquiv`, and
+  `Representation.tensorPowerSuccEquiv` identify the `1`-st, `(d + e)`-th, and `(n + 1)`-th
+  tensor-power representations.
+* `FDRep.tensorPowerZeroIsoTensorUnit` and `FDRep.tensorPowerSuccIso` are the bundled `FDRep`
+  isomorphisms `V.tensorPower 0 ≅ 𝟙_ (FDRep k G)` and
+  `V.tensorPower (n + 1) ≅ V ⊗ V.tensorPower n`.
 
 ## Main results
 
-* `Representation.char_tensorPower`: the character of the `d`-th tensor power is the `d`-th
-  power of the character.
+* `Representation.char_tensorPower` and `FDRep.char_tensorPower`: the character of the `d`-th
+  tensor power is the `d`-th power of the character.
+* `FDRep.finrank_tensorPower`: the dimension of the `n`-fold tensor power is `(dim V) ^ n`.
 -/
 
 public section
@@ -67,6 +74,18 @@ theorem tensorPower_zero_apply (ρ : Representation R G M) (g : G) :
     ρ.tensorPower 0 g = LinearMap.id := by
   simp
 
+/-- A representation is equivalent to its `1`-fold tensor power via
+`(TauCeti.TensorPower.oneEquiv R M).symm`. -/
+noncomputable def oneEquivTensorPower (ρ : Representation R G M) :
+    ρ.Equiv (ρ.tensorPower 1) :=
+  .mk (TauCeti.TensorPower.oneEquiv R M).symm fun g => by
+    simpa only [tensorPower_apply] using TauCeti.TensorPower.oneEquiv_symm_comp (ρ g)
+
+@[simp]
+theorem toLinearEquiv_oneEquivTensorPower (ρ : Representation R G M) :
+    ρ.oneEquivTensorPower.toLinearEquiv = (TauCeti.TensorPower.oneEquiv R M).symm :=
+  (rfl)
+
 /-- Splitting the factors gives an equivalence from the tensor product of two tensor-power
 representations to the tensor power indexed by their sum. -/
 noncomputable def tensorPowerAddEquiv (ρ : Representation R G M) (d e : ℕ) :
@@ -74,6 +93,56 @@ noncomputable def tensorPowerAddEquiv (ρ : Representation R G M) (d e : ℕ) :
   .mk TensorPower.mulEquiv fun g => by
     simpa only [tprod_apply, tensorPower_apply] using
       TauCeti.TensorPower.mulEquiv_comp_map_const d e (ρ g)
+
+@[simp]
+theorem toLinearEquiv_tensorPowerAddEquiv (ρ : Representation R G M) (d e : ℕ) :
+    (ρ.tensorPowerAddEquiv d e).toLinearEquiv = TensorPower.mulEquiv :=
+  (rfl)
+
+/-- Splitting off the first factor identifies the `(n + 1)`-fold tensor-power representation with
+`ρ.tprod (ρ.tensorPower n)`. -/
+noncomputable def tensorPowerSuccEquiv (ρ : Representation R G M) (n : ℕ) :
+    (ρ.tensorPower (n + 1)).Equiv (ρ.tprod (ρ.tensorPower n)) :=
+  .mk (PiTensorProduct.finConsEquiv R fun _ : Fin (n + 1) => M).symm fun g => by
+    refine PiTensorProduct.ext <| MultilinearMap.ext fun f => ?_
+    simp [tensorPower_apply, tprod_apply, Fin.tail_def]
+
+/-- The underlying linear equivalence of `tensorPowerSuccEquiv` is the inverse of
+`PiTensorProduct.finConsEquiv`. -/
+@[simp]
+theorem toLinearEquiv_tensorPowerSuccEquiv (ρ : Representation R G M) (n : ℕ) :
+    (ρ.tensorPowerSuccEquiv n).toLinearEquiv =
+      (PiTensorProduct.finConsEquiv R fun _ : Fin (n + 1) => M).symm :=
+  (rfl)
+
+/-- Underlying function evaluation of `tensorPowerSuccEquiv`. -/
+theorem tensorPowerSuccEquiv_apply (ρ : Representation R G M) (n : ℕ) (x : ⨂[R]^(n + 1) M) :
+    ρ.tensorPowerSuccEquiv n x =
+      (PiTensorProduct.finConsEquiv R fun _ : Fin (n + 1) => M).symm x := by
+  rw [← Equiv.coe_toIntertwiningMap, ← Equiv.toLinearEquiv_apply,
+    toLinearEquiv_tensorPowerSuccEquiv]
+
+/-- Underlying function evaluation of `(tensorPowerSuccEquiv n).symm`. -/
+theorem tensorPowerSuccEquiv_symm_apply (ρ : Representation R G M) (n : ℕ)
+    (x : M ⊗[R] (⨂[R]^n M)) :
+    (ρ.tensorPowerSuccEquiv n).symm x =
+      PiTensorProduct.finConsEquiv R (fun _ : Fin (n + 1) => M) x := by
+  rw [← Equiv.coe_symm, toLinearEquiv_tensorPowerSuccEquiv, LinearEquiv.symm_symm]
+
+/-- Splitting off the first factor of a pure tensor via `tensorPowerSuccEquiv`. -/
+@[simp]
+theorem tensorPowerSuccEquiv_tprod (ρ : Representation R G M) (n : ℕ) (f : Fin (n + 1) → M) :
+    ρ.tensorPowerSuccEquiv n (PiTensorProduct.tprod R f) =
+      f 0 ⊗ₜ[R] PiTensorProduct.tprod R (Fin.tail f) := by
+  simp [tensorPowerSuccEquiv_apply, PiTensorProduct.finConsEquiv_symm_tprod]
+
+/-- Prepending a factor to a pure tensor via `(tensorPowerSuccEquiv n).symm`. -/
+@[simp]
+theorem tensorPowerSuccEquiv_symm_tmul (ρ : Representation R G M) (n : ℕ)
+    (v : M) (f : Fin n → M) :
+    (ρ.tensorPowerSuccEquiv n).symm (v ⊗ₜ[R] PiTensorProduct.tprod R f) =
+      PiTensorProduct.tprod R (Fin.cons v f) := by
+  simp [tensorPowerSuccEquiv_symm_apply, PiTensorProduct.finConsEquiv_tmul]
 
 end CommSemiring
 
@@ -91,18 +160,16 @@ theorem char_tensorPower (ρ : Representation R G M) (d : ℕ) (g : G) :
       (PiTensorProduct.isEmptyEquiv (Fin 0)).finrank_eq, Module.finrank_self, Nat.cast_one,
       pow_zero]
   | succ d ih =>
-    have h_one : (ρ.tensorPower 1).character g = ρ.character g := by
-      rw [character, character, ← LinearMap.trace_conj' _ (TauCeti.TensorPower.oneEquiv R M)]
-      congr 1
-      ext x
-      simp [LinearEquiv.conj_apply]
-    rw [← char_iso (ρ.tensorPowerAddEquiv d 1), char_tensor, Pi.mul_apply, ih, h_one, pow_succ]
+    rw [← char_iso (ρ.tensorPowerAddEquiv d 1), char_tensor, Pi.mul_apply, ih,
+      ← char_iso ρ.oneEquivTensorPower, pow_succ]
 
 end Field
 
 end Representation
 
 namespace FDRep
+
+open CategoryTheory MonoidalCategory
 
 variable {k : Type u} {G : Type v} [Field k] [Monoid G]
 
@@ -116,6 +183,142 @@ Together with `FDRep.of_ρ'`, this recovers the action without unfolding `tensor
 theorem tensorPower_def (V : FDRep k G) (n : ℕ) :
     V.tensorPower n = FDRep.of (Representation.tensorPower V.ρ n) :=
   (rfl)
+
+/-- The representation equivalence identifying the carrier of `V.tensorPower n` with
+`Representation.tensorPower V.ρ n`. -/
+noncomputable def tensorPowerEquiv (V : FDRep k G) (n : ℕ) :
+    _root_.Representation.Equiv (V.tensorPower n).ρ (Representation.tensorPower V.ρ n) :=
+  isoToEquiv (eqToIso (tensorPower_def V n))
+
+/-- The linear equivalence underlying `V.tensorPowerEquiv n` is `isoToLinearEquiv` of the
+defining equality. -/
+@[simp]
+theorem toLinearEquiv_tensorPowerEquiv (V : FDRep k G) (n : ℕ) :
+    (V.tensorPowerEquiv n).toLinearEquiv = isoToLinearEquiv (eqToIso (tensorPower_def V n)) :=
+  toLinearEquiv_isoToEquiv (eqToIso (tensorPower_def V n))
+
+/-- `V.tensorPower 0` is isomorphic in `FDRep k G` to the monoidal unit `𝟙_ (FDRep k G)`. -/
+noncomputable def tensorPowerZeroIsoTensorUnit (V : FDRep k G) :
+    V.tensorPower 0 ≅ 𝟙_ (FDRep k G) :=
+  eqToIso (tensorPower_def V 0) ≪≫
+    (PiTensorProduct.isEmptyEquiv (Fin 0)).toFDRepIso fun g x ↦ by
+      rw [FDRep.of_ρ', FDRep.tensorUnit_ρ, Representation.tensorPower_zero_apply,
+        LinearMap.id_apply, LinearMap.id_apply]
+
+private theorem tensorPowerEquiv_symm_coe (V : FDRep k G) (n : ℕ) (x : ⨂[k]^n V) :
+    (V.tensorPowerEquiv n).symm x = (V.tensorPowerEquiv n).toLinearEquiv.symm x :=
+  (congrFun (_root_.Representation.Equiv.coe_symm (V.tensorPowerEquiv n)) x).symm
+
+private theorem toLinearEquiv_tensorPowerSuccEquiv_apply (V : FDRep k G) (n : ℕ)
+    (x : ⨂[k]^(n + 1) V) :
+    (Representation.tensorPowerSuccEquiv V.ρ n).toLinearEquiv x =
+      Representation.tensorPowerSuccEquiv V.ρ n x :=
+  _root_.Representation.Equiv.toLinearEquiv_apply _ x
+
+private theorem isoToLinearEquiv_eqToIso_tensorPower_def_symm (V : FDRep k G) (n : ℕ)
+    (x : ⨂[k]^n V) :
+    isoToLinearEquiv (eqToIso (tensorPower_def V n)).symm x = (V.tensorPowerEquiv n).symm x := by
+  rw [isoToLinearEquiv_symm, ← toLinearEquiv_tensorPowerEquiv, tensorPowerEquiv_symm_coe]
+
+/-- Underlying linear equivalence of `tensorPowerZeroIsoTensorUnit`, phrased via
+`V.tensorPowerEquiv 0`. -/
+private theorem isoToLinearEquiv_tensorPowerZeroIsoTensorUnit (V : FDRep k G) :
+    isoToLinearEquiv V.tensorPowerZeroIsoTensorUnit =
+      (V.tensorPowerEquiv 0).toLinearEquiv.trans (PiTensorProduct.isEmptyEquiv (Fin 0)) := by
+  simp [tensorPowerZeroIsoTensorUnit]
+
+/-- Evaluating `tensorPowerZeroIsoTensorUnit` on an empty pure tensor gives `1 : k`. -/
+-- Match before `Action.tensorUnit_V` rewrites `(𝟙_ (FDRep k G)).V`.
+@[simp↓]
+theorem isoToLinearEquiv_tensorPowerZeroIsoTensorUnit_tprod (V : FDRep k G) (f : Fin 0 → V) :
+    isoToLinearEquiv V.tensorPowerZeroIsoTensorUnit
+        ((V.tensorPowerEquiv 0).symm (PiTensorProduct.tprod k f)) = (1 : k) := by
+  rw [isoToLinearEquiv_tensorPowerZeroIsoTensorUnit, LinearEquiv.trans_apply,
+    tensorPowerEquiv_symm_coe, LinearEquiv.apply_symm_apply,
+    PiTensorProduct.isEmptyEquiv_apply_tprod]
+
+/-- The inverse of `tensorPowerZeroIsoTensorUnit` scales the empty pure tensor. -/
+-- Match before `Action.tensorUnit_V` rewrites `(𝟙_ (FDRep k G)).V`.
+@[simp↓]
+theorem isoToLinearEquiv_tensorPowerZeroIsoTensorUnit_symm_apply (V : FDRep k G) (c : k) :
+    (isoToLinearEquiv V.tensorPowerZeroIsoTensorUnit).symm c =
+      c • (V.tensorPowerEquiv 0).symm (PiTensorProduct.tprod k (@isEmptyElim _ _ _)) := by
+  refine (isoToLinearEquiv V.tensorPowerZeroIsoTensorUnit).injective ?_
+  have hmap : isoToLinearEquiv V.tensorPowerZeroIsoTensorUnit
+      (c • (V.tensorPowerEquiv 0).symm (PiTensorProduct.tprod k (@isEmptyElim _ _ _))) =
+      c • isoToLinearEquiv V.tensorPowerZeroIsoTensorUnit
+        ((V.tensorPowerEquiv 0).symm (PiTensorProduct.tprod k (@isEmptyElim _ _ _))) :=
+    (isoToLinearEquiv V.tensorPowerZeroIsoTensorUnit).map_smul c _
+  rw [LinearEquiv.apply_symm_apply, hmap, isoToLinearEquiv_tensorPowerZeroIsoTensorUnit_tprod,
+    smul_eq_mul, mul_one]
+
+/-- `V.tensorPower (n + 1)` is isomorphic in `FDRep k G` to `V ⊗ V.tensorPower n`. -/
+noncomputable def tensorPowerSuccIso (V : FDRep k G) (n : ℕ) :
+    V.tensorPower (n + 1) ≅ (V ⊗ V.tensorPower n : FDRep k G) :=
+  let e : _root_.Representation.Equiv (Representation.tensorPower V.ρ (n + 1))
+      ((V ⊗ FDRep.of (Representation.tensorPower V.ρ n) : FDRep k G)).ρ :=
+    (Representation.tensorPowerSuccEquiv V.ρ n).trans
+      (FDRep.tprodEquiv V (FDRep.of (Representation.tensorPower V.ρ n))).symm
+  eqToIso (tensorPower_def V (n + 1)) ≪≫
+    (e.toLinearEquiv.toFDRepIso fun g x ↦ by
+      rw [FDRep.of_ρ']
+      exact LinearMap.congr_fun (e.isIntertwining' g) x) ≪≫
+    whiskerLeftIso V (eqToIso (tensorPower_def V n)).symm
+
+/-- Underlying linear equivalence of `tensorPowerSuccIso`, phrased via
+`V.tensorPowerEquiv (n + 1)`. -/
+private theorem isoToLinearEquiv_tensorPowerSuccIso (V : FDRep k G) (n : ℕ) :
+    isoToLinearEquiv (V.tensorPowerSuccIso n) =
+      (V.tensorPowerEquiv (n + 1)).toLinearEquiv.trans
+        ((Representation.tensorPowerSuccEquiv V.ρ n).toLinearEquiv.trans
+          (isoToLinearEquiv (whiskerLeftIso V (eqToIso (tensorPower_def V n)).symm))) := by
+  ext x
+  simp only [tensorPowerSuccIso, isoToLinearEquiv_trans, isoToLinearEquiv_toFDRepIso,
+    LinearEquiv.trans_apply, toLinearEquiv_tensorPowerEquiv,
+    _root_.Representation.Equiv.toLinearEquiv_apply,
+    _root_.Representation.Equiv.coe_toIntertwiningMap]
+  refine congrArg (isoToLinearEquiv (whiskerLeftIso V (eqToIso (tensorPower_def V n)).symm)) ?_
+  exact (_root_.Representation.Equiv.trans_apply (Representation.tensorPowerSuccEquiv V.ρ n)
+    (V.tprodEquiv (FDRep.of (Representation.tensorPower V.ρ n))).symm _).trans
+    (FDRep.tprodEquiv_symm_apply V (FDRep.of (Representation.tensorPower V.ρ n)) _)
+
+/-- Splitting off the first factor of a pure tensor via `tensorPowerSuccIso`. -/
+-- Match before `Action.tensorObj_V` rewrites `(V ⊗ V.tensorPower n).V`.
+@[simp↓]
+theorem isoToLinearEquiv_tensorPowerSuccIso_tprod (V : FDRep k G) (n : ℕ)
+    (f : Fin (n + 1) → V) :
+    isoToLinearEquiv (V.tensorPowerSuccIso n)
+        ((V.tensorPowerEquiv (n + 1)).symm (PiTensorProduct.tprod k f)) =
+      f 0 ⊗ₜ[k] (V.tensorPowerEquiv n).symm (PiTensorProduct.tprod k (Fin.tail f)) := by
+  rw [isoToLinearEquiv_tensorPowerSuccIso, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    tensorPowerEquiv_symm_coe, LinearEquiv.apply_symm_apply,
+    toLinearEquiv_tensorPowerSuccEquiv_apply, _root_.Representation.tensorPowerSuccEquiv_tprod,
+    FDRep.isoToLinearEquiv_whiskerLeftIso_tmul, isoToLinearEquiv_eqToIso_tensorPower_def_symm]
+
+/-- Prepending a factor to a pure tensor via the inverse of `tensorPowerSuccIso`. -/
+-- Match before `Action.tensorObj_V` rewrites `(V ⊗ V.tensorPower n).V`.
+@[simp↓]
+theorem isoToLinearEquiv_tensorPowerSuccIso_symm_tmul (V : FDRep k G) (n : ℕ)
+    (v : V) (f : Fin n → V) :
+    (isoToLinearEquiv (V.tensorPowerSuccIso n)).symm
+        (v ⊗ₜ[k] (V.tensorPowerEquiv n).symm (PiTensorProduct.tprod k f)) =
+      (V.tensorPowerEquiv (n + 1)).symm (PiTensorProduct.tprod k (Fin.cons v f)) := by
+  refine (isoToLinearEquiv (V.tensorPowerSuccIso n)).injective ?_
+  have hcon := (isoToLinearEquiv (V.tensorPowerSuccIso n)).apply_symm_apply
+    (v ⊗ₜ[k] (V.tensorPowerEquiv n).symm (PiTensorProduct.tprod k f))
+  exact hcon.trans (isoToLinearEquiv_tensorPowerSuccIso_tprod V n (Fin.cons v f)).symm
+
+/-- The dimension of the `n`-fold tensor power is `(dim V) ^ n`. -/
+@[simp]
+theorem finrank_tensorPower (V : FDRep k G) (n : ℕ) :
+    Module.finrank k (V.tensorPower n) = Module.finrank k V ^ n := by
+  induction n with
+  | zero =>
+    rw [(isoToLinearEquiv V.tensorPowerZeroIsoTensorUnit).finrank_eq,
+      ← FDRep.of_trivial k G, FDRep.finrank_of, Module.finrank_self, pow_zero]
+  | succ n ih =>
+    rw [(isoToLinearEquiv (V.tensorPowerSuccIso n)).finrank_eq,
+      FDRep.finrank_tensor, ih, pow_succ']
 
 /-- The character of the bundled tensor power is the corresponding power of the character. -/
 @[simp]

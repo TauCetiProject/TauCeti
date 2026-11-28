@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.OrbitSpace
 public import TauCeti.Geometry.Lie.Adjoint.Representation.OrbitSpace
 public import TauCeti.Geometry.Lie.Subgroup.Weyl.AdjointOrbit
-public import TauCeti.RepresentationTheory.InvariantForm
+public import TauCeti.RepresentationTheory.InvariantForm.Basic
 import TauCeti.Geometry.Lie.Adjoint.InvariantForm
 import TauCeti.LinearAlgebra.SesquilinearForm.Separating
 import TauCeti.RepresentationTheory.Continuous.Basic
