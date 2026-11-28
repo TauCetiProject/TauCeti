@@ -50,13 +50,15 @@ end TauCeti
 namespace MeasureTheory
 
 /-- Countably many almost everywhere finitely strongly measurable functions have a common
-measurable support on which the measure is sigma-finite: the union of the supports of the simple
-approximants of their finitely strongly measurable representatives. -/
+support: a measurable set on which the measure is sigma-finite and outside which each of the
+functions vanishes almost everywhere. -/
 theorem AEFinStronglyMeasurable.exists_set_sigmaFinite_of_countable {α ι E : Type*}
     [MeasurableSpace α] [TopologicalSpace E] [T2Space E] [Zero E] [Countable ι]
     {μ : Measure α} {g : ι → α → E} (hg : ∀ i, AEFinStronglyMeasurable (g i) μ) :
     ∃ t, MeasurableSet t ∧ (∀ i, g i =ᵐ[μ.restrict tᶜ] 0) ∧ SigmaFinite (μ.restrict t) := by
   classical
+  -- The common support is the union of the supports of the simple approximants of the finitely
+  -- strongly measurable representatives.
   have hu i : FinStronglyMeasurable ((hg i).mk (g i)) μ := (hg i).finStronglyMeasurable_mk
   let T (p : ι × ℕ) := Function.support ((hu p.1).approx p.2)
   let t := ⋃ p, T p

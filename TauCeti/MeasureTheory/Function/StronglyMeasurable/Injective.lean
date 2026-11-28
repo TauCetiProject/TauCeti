@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
-public import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteSupport
+public import TauCeti.MeasureTheory.Function.StronglyMeasurable.Finite.Support
 
 /-!
 # Recovering strong measurability through injective operators

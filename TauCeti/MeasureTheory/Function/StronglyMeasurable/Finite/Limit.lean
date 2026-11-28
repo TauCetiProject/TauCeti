@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteSupport
+public import TauCeti.MeasureTheory.Function.StronglyMeasurable.Finite.Support
 
 /-!
 # Almost everywhere limits with finite-measure simple approximants

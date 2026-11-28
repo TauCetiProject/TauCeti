@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteSupport
+public import TauCeti.MeasureTheory.Function.StronglyMeasurable.Finite.Support
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.ContinuousOn
 public import TauCeti.MeasureTheory.Function.StronglyMeasurable.AEScalarTests
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
