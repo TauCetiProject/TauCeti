@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Cartesian.Basic
-public import Mathlib.CategoryTheory.Monoidal.Closed.Basic
 public import TauCeti.Topology.Category.TopCat.MappingSpace
 public import TauCeti.Topology.Category.TopCat.Monoidal
 public import TauCeti.Topology.Convenient.Category
@@ -339,8 +337,11 @@ variable (Y Z : GeneratedByTopCat.{v} G)
 `TopCat` is the generated-topology counit on `Y × Z`. -/
 theorem prodComparison_toTopCat :
     CartesianMonoidalCategory.prodComparison toTopCat Y Z =
-      (adjCounit (X := G)).app (Y.obj ⊗ Z.obj) :=
-  TopCat.ext fun p ↦ by rw [TopCat.prodComparison_apply]; rfl
+      (adjCounit (X := G)).app (Y.obj ⊗ Z.obj) := by
+  refine TopCat.ext fun p ↦ ?_
+  rw [TopCat.prodComparison_apply]
+  exact (Prod.ext (fst_apply Y Z p) (snd_apply Y Z p)).trans
+    (adjCounit_app_apply G (Y.obj ⊗ Z.obj) p).symm
 
 @[simp]
 theorem prodComparison_toTopCat_apply (p : ↑(Y ⊗ Z)) :
@@ -564,10 +565,30 @@ theorem compactOpenToIhom_naturality (Y : GeneratedByTopCat.{v} G)
     {Z T : GeneratedByTopCat.{v} G} (f : Z ⟶ T) :
     (toTopCat ⋙ TopCat.mappingSpace Y.obj ⋙ TopCat.toGeneratedByTopCat (X := G)).map f ≫
         compactOpenToIhom Y T =
-      compactOpenToIhom Y Z ≫ (ihom Y).map f :=
-  ConcreteCategory.hom_ext _ _ fun _ ↦
+      compactOpenToIhom Y Z ≫ (ihom Y).map f := by
+  refine ConcreteCategory.hom_ext _ _ fun g ↦
     (WithGeneratedByTopology.equiv (X := G) (Y := ContinuousMapGeneratedBy G Y T)).injective <|
-      DFunLike.ext _ _ fun _ ↦ rfl
+      DFunLike.ext _ _ fun y ↦ ?_
+  have h1 := CategoryTheory.comp_apply
+    ((toTopCat ⋙ TopCat.mappingSpace Y.obj ⋙ TopCat.toGeneratedByTopCat (X := G)).map f)
+    (compactOpenToIhom Y T) g
+  have h2 := CategoryTheory.comp_apply (compactOpenToIhom Y Z) ((ihom Y).map f) g
+  have h3 := equiv_compactOpenToIhom_apply Y T
+    ((TopCat.toGeneratedByTopCat (X := G)).map
+      ((TopCat.mappingSpace Y.obj).map (toTopCat.map f)) g) y
+  have h4 := TopCat.equiv_toGeneratedByTopCat_map_apply (G := G)
+    ((TopCat.mappingSpace Y.obj).map (toTopCat.map f)) g
+  have h5 := TopCat.mappingSpace_map_hom_apply (Y := Y.obj) (toTopCat.map f)
+    (WithGeneratedByTopology.equiv (X := G)
+      (Y := (TopCat.mappingSpace Y.obj).obj (toTopCat.obj Z)) g)
+  have h6 := ihomFunctor_map_apply f (compactOpenToIhom Y Z g) y
+  have h7 := equiv_compactOpenToIhom_apply Y Z g y
+  exact (congrArg (fun h ↦ (WithGeneratedByTopology.equiv (X := G)
+      (Y := ContinuousMapGeneratedBy G Y T) h) y) h1).trans <|
+    h3.trans <| (congrArg (fun k : C(Y, T) ↦ k y) (h4.trans h5)).trans <|
+      ((congrArg f h7.symm).trans h6.symm).trans <|
+      congrArg (fun h ↦ (WithGeneratedByTopology.equiv (X := G)
+        (Y := ContinuousMapGeneratedBy G Y T) h) y) h2.symm
 
 /-- When every compact subset of `Y` is the continuous image of a compact subset of some generator
 `G i`, `compactOpenToIhom Y Z` is an isomorphism in `GeneratedByTopCat G`. -/
@@ -578,7 +599,9 @@ theorem isIso_compactOpenToIhom (Y Z : GeneratedByTopCat.{v} G)
   have h : TopCat.ofHom ⟨ContinuousMap.toContinuousMapGeneratedBy G,
       ContinuousMap.continuous_toContinuousMapGeneratedBy⟩ =
       (TopCat.isoOfHomeo
-        (ContinuousMapGeneratedBy.homeomorphContinuousMap (Z := Z) hG)).inv := rfl
+        (ContinuousMapGeneratedBy.homeomorphContinuousMap (Z := Z) hG)).inv := by
+    refine TopCat.ext fun g ↦ ?_
+    exact (ContinuousMapGeneratedBy.homeomorphContinuousMap_symm_apply (Z := Z) hG g).symm
   rw [compactOpenToIhom, h]
   exact Functor.map_isIso _ _
 

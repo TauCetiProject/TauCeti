@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Cartesian.Basic
 public import Mathlib.CategoryTheory.Monoidal.Closed.InternalCurrying
 public import TauCeti.Topology.Category.CompactlyGenerated.Coreflection
 public import TauCeti.Topology.Category.TopCat.MappingSpace
@@ -204,8 +203,11 @@ variable (X Y : CompactlyGenerated.{u, w})
 compact-generation counit on `X × Y`. -/
 theorem prodComparison_compactlyGeneratedToTop :
     CartesianMonoidalCategory.prodComparison compactlyGeneratedToTop.{u, w} X Y =
-      adj.{u, w}.counit.app (X.toTop ⊗ Y.toTop) :=
-  TopCat.ext fun p ↦ by rw [TopCat.prodComparison_apply, adj_counit]; rfl
+      adj.{u, w}.counit.app (X.toTop ⊗ Y.toTop) := by
+  refine TopCat.ext fun p ↦ ?_
+  rw [TopCat.prodComparison_apply, adj_counit]
+  exact (Prod.ext (fst_apply X Y p) (snd_apply X Y p)).trans
+    (adjCounit_app_apply.{u, w} (X.toTop ⊗ Y.toTop) p).symm
 
 @[simp]
 theorem prodComparison_compactlyGeneratedToTop_apply (p : ↑(X ⊗ Y)) :
@@ -497,8 +499,31 @@ theorem compactOpenToIhom_naturality (Y : CompactlyGenerated.{u, w})
     {Z T : CompactlyGenerated.{u, w}} (f : Z ⟶ T) :
     (compactlyGeneratedToTop.{u, w} ⋙ TopCat.mappingSpace Y.toTop ⋙
         TopCat.toCompactlyGenerated.{u, w}).map f ≫ compactOpenToIhom Y T =
-      compactOpenToIhom Y Z ≫ (ihom Y).map f :=
-  ConcreteCategory.hom_ext _ _ fun _ ↦ DFunLike.ext _ _ fun _ ↦ rfl
+      compactOpenToIhom Y Z ≫ (ihom Y).map f := by
+  refine ConcreteCategory.hom_ext _ _ fun g ↦ DFunLike.ext _ _ fun y ↦ ?_
+  let g₀ : C(Y, Z) := g
+  let fg : TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(Y, T)) :=
+    (compactlyGeneratedToTop.{u, w} ⋙ TopCat.mappingSpace Y.toTop ⋙
+      TopCat.toCompactlyGenerated.{u, w}).map f g
+  have h1 :
+      (((compactlyGeneratedToTop.{u, w} ⋙ TopCat.mappingSpace Y.toTop ⋙
+          TopCat.toCompactlyGenerated.{u, w}).map f ≫ compactOpenToIhom Y T) g) y =
+        (compactOpenToIhom Y T fg) y :=
+    congrArg (fun h : ↑((ihom Y).obj T) ↦ h y)
+      (CategoryTheory.comp_apply _ (compactOpenToIhom Y T) g)
+  have h2 : (compactOpenToIhom Y T fg) y = (fg : C(Y, T)) y :=
+    compactOpenToIhom_apply Y T fg y
+  have h3 : (fg : C(Y, T)) y = f (g₀ y) :=
+    congrArg (fun k : C(Y, T) ↦ k y)
+      ((TopCat.toCompactlyGenerated_map_apply.{u, w}
+        ((TopCat.mappingSpace Y.toTop).map (compactlyGeneratedToTop.{u, w}.map f)) g).trans
+        (TopCat.mappingSpace_map_hom_apply (Y := Y.toTop) (compactlyGeneratedToTop.{u, w}.map f) g))
+  have h4 : ((compactOpenToIhom Y Z ≫ (ihom Y).map f) g) y = f (g₀ y) :=
+    (congrArg (fun h : ↑((ihom Y).obj T) ↦ h y)
+      (CategoryTheory.comp_apply (compactOpenToIhom Y Z) ((ihom Y).map f) g)).trans
+      ((ihom_map_apply f (compactOpenToIhom Y Z g) y).trans
+        (congrArg f (compactOpenToIhom_apply Y Z g y)))
+  exact h1.trans (h2.trans (h3.trans h4.symm))
 
 instance (Y Z : CompactlyGenerated.{u, w}) :
     FunLike ↑((compactlyGeneratedToTop.{u, w} ⋙ TopCat.mappingSpace Y.toTop ⋙
