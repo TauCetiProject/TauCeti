@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Tensor
-public import TauCeti.CategoryTheory.Monoidal.Rigid.LeftDualFunctor
+public import TauCeti.CategoryTheory.Monoidal.Rigid.MixedDualFunctor
 
 /-!
 # Left and right duals in a pivotal category
@@ -30,9 +30,11 @@ whose left duals are the right duals, and the comparison `ᘁX ≅ Xᘁ` for it 
 * `TauCeti.leftDualIsoRightDual`: the isomorphism `ᘁX ≅ Xᘁ` in a pivotal category, characterized
   by `TauCeti.whiskerLeft_leftDualIsoRightDual_hom_comp_evaluation` and
   `TauCeti.rightMate_leftDualIsoRightDual_inv`, natural by
-  `TauCeti.leftAdjointMate_comp_leftDualIsoRightDual_hom`, and compatible with the unit and tensor
+  `TauCeti.leftAdjointMate_comp_leftDualIsoRightDual_hom`, compatible with the unit and tensor
   comparisons by `TauCeti.leftDualIsoRightDual_unit_inv` and
-  `TauCeti.leftDualIsoRightDual_tensor_inv`;
+  `TauCeti.leftDualIsoRightDual_tensor_inv`, and related to the mixed-dual cancellations by
+  `TauCeti.rightAdjointMate_leftDualIsoRightDual_inv_comp_pivotalIsoApp_inv` and
+  `TauCeti.leftDualIsoRightDual_rightDual_hom_comp_pivotalIsoApp_inv`;
 * `TauCeti.dualFunctorIso`: the natural isomorphism `leftDualFunctor C ≅ rightDualFunctor C`,
   monoidal by `TauCeti.dualFunctorIso_isMonoidal`;
 * `TauCeti.leftDualIsoRightDual_pivotalCategoryOfRightRigid`: for the pivotal structure
@@ -126,6 +128,33 @@ theorem rightAdjointMate_comp_leftDualIsoRightDual_inv {X Y : C} (f : X ⟶ Y) :
     fᘁ ≫ (leftDualIsoRightDual X).inv = (leftDualIsoRightDual Y).inv ≫ (ᘁf) := by
   rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
     leftAdjointMate_comp_leftDualIsoRightDual_hom]
+
+/-- The right adjoint mate of `(leftDualIsoRightDual X).inv : Xᘁ ⟶ ᘁX` (with respect to the
+chosen right duals), followed by `(pivotalIsoApp X).inv : Xᘁᘁ ⟶ X`, is the mixed-dual
+cancellation `(rightDualLeftDualIso C).hom.app X : (ᘁX)ᘁ ⟶ X`. -/
+@[reassoc]
+theorem rightAdjointMate_leftDualIsoRightDual_inv_comp_pivotalIsoApp_inv (X : C) :
+    @rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual _)
+        (RightRigidCategory.rightDual _) (leftDualIsoRightDual X).inv ≫
+      (pivotalIsoApp X).inv = (rightDualLeftDualIso C).hom.app X := by
+  refine (((@rightAdjointMate_eq_rightMate C _ _ _ _ (RightRigidCategory.rightDual _)
+    (RightRigidCategory.rightDual _) (leftDualIsoRightDual X).inv) =≫ _).trans ?_).trans
+      (rightDualLeftDualIso_hom_app X).symm
+  rw [Iso.comp_inv_eq, ← rightMate_leftDualIsoRightDual_inv X, rightDualIso_hom, ← comp_rightMate,
+    Category.comp_id]
+
+/-- At a chosen right dual `Xᘁ`, the comparison `(leftDualIsoRightDual Xᘁ).hom : ᘁ(Xᘁ) ⟶ Xᘁᘁ`
+followed by `(pivotalIsoApp X).inv : Xᘁᘁ ⟶ X` is the mixed-dual cancellation
+`(leftDualRightDualIso C).hom.app X : ᘁ(Xᘁ) ⟶ X`. -/
+@[reassoc]
+theorem leftDualIsoRightDual_rightDual_hom_comp_pivotalIsoApp_inv (X : C) :
+    (leftDualIsoRightDual Xᘁ).hom ≫ (pivotalIsoApp X).inv =
+      (leftDualRightDualIso C).hom.app X := by
+  refine @leftDualHom_ext C _ _ X Xᘁ _ (RightRigidCategory.rightDual X).exact _ _ ?_
+  rw [leftDualRightDualIso_hom_app, leftDualIso_hom, leftMate_comp_evaluation, id_whiskerRight,
+    Category.id_comp, MonoidalCategory.whiskerLeft_comp_assoc,
+    ← rightAdjointMate_comp_evaluation (pivotalIsoApp X).inv, ← pivotalIsoApp_rightDual X]
+  exact whiskerLeft_leftDualIsoRightDual_hom_comp_evaluation Xᘁ
 
 /-- The comparison at the unit: the inverse of `leftDualIsoRightDual (𝟙_ C)`, followed by the
 identification of the left dual of `𝟙_ C` with `𝟙_ C`, is the identification of the right dual of

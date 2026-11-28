@@ -53,7 +53,8 @@ a trivialization of the double right dual is the extra datum of a pivotal struct
   `TauCeti.rightDualLeftDualFunctor_ε` and `TauCeti.rightDualLeftDualFunctor_μ` written as
   right mates;
 * `TauCeti.rightDualLeftDualIso`: the natural isomorphism `(ᘁX)ᘁ ≅ X`, monoidal by
-  `TauCeti.rightDualLeftDualIso_isMonoidal`.
+  `TauCeti.rightDualLeftDualIso_isMonoidal`, and related to `TauCeti.leftDualRightDualIso` by
+  `TauCeti.rightAdjointMate_leftDualRightDualIso_inv_app`.
 
 ## References
 
@@ -356,6 +357,15 @@ instance rightDualLeftDualIso_isMonoidal :
     refine Eq.trans ?_ (rightMate_tensorHom _ _ _ _ _ _)
     rw [tensorHom_id, id_whiskerRight, leftDualTensorIso]
     exact rightMate_leftDualIso_hom _ _ _
+
+/-- The right adjoint mate of `(leftDualRightDualIso C).inv.app X : X ⟶ ᘁ(Xᘁ)` is the component
+`(rightDualLeftDualIso C).hom.app Xᘁ : (ᘁ(Xᘁ))ᘁ ⟶ Xᘁ`. -/
+theorem rightAdjointMate_leftDualRightDualIso_inv_app (X : C) :
+    ((leftDualRightDualIso C).inv.app X)ᘁ = (rightDualLeftDualIso C).hom.app Xᘁ := by
+  refine (@rightAdjointMate_eq_rightMate C _ _ _ _ (RightRigidCategory.rightDual _)
+    (RightRigidCategory.rightDual _) ((leftDualRightDualIso C).inv.app X)).trans ?_
+  rw [leftDualRightDualIso_inv_app, rightDualLeftDualIso_hom_app]
+  exact rightMate_leftDualIso_inv _ _ _
 
 end RightDualLeftDual
 
