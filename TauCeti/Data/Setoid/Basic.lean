@@ -23,6 +23,9 @@ This file records small generic additions to Mathlib's `Setoid` API.
   saturation of a set described via `SetRel.preimage` and via the projections of the graph subtype.
 * `Setoid.preimage_image_quotientMk_setOfPred_rel`: every equivalence class `{y | r x y}` is
   saturated under `Quotient.mk r`.
+* `Quotient.congrRight_mk`, `Quotient.rel_out_congrRight_out`: `Quotient.congrRight` sends the
+  class of `a` to the class of `a`, so a representative and the representative of its image are
+  related.
 -/
 
 public section
@@ -87,3 +90,21 @@ theorem preimage_image_quotientMk_setOfPred_rel {α : Type*} (r : Setoid α) (x 
   exact ⟨fun ⟨z, hxz, hzy⟩ ↦ r.trans hxz hzy, fun hxy ↦ ⟨y, hxy, r.refl y⟩⟩
 
 end Setoid
+
+namespace Quotient
+
+variable {α : Type*} {r r' : Setoid α} (e : ∀ a b, r a b ↔ r' a b)
+
+/-- `Quotient.congrRight` sends the class of `a` to the class of `a`. -/
+@[simp]
+theorem congrRight_mk (a : α) :
+    Quotient.congrRight e (Quotient.mk'' a : Quotient r) = (Quotient.mk'' a : Quotient r') :=
+  rfl
+
+/-- The representative of a class and the representative of its image under
+`Quotient.congrRight` are related by the target relation. -/
+theorem rel_out_congrRight_out (q : Quotient r) : r' q.out (Quotient.congrRight e q).out := by
+  refine Quotient.exact' ?_
+  rw [Quotient.out_eq', ← congrRight_mk e, Quotient.out_eq']
+
+end Quotient

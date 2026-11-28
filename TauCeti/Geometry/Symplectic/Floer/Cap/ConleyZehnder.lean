@@ -216,18 +216,11 @@ private theorem IsSmoothBasedCap.frameConleyZehnderIndex_eq_sub_two_mul_firstChe
   have hφJ' (t : unitInterval) (v : G) : φ' t (Complex.I • v) = J (γ t) (φ' t v) := by
     rw [hφχ', hφχ']
     exact hu'.apply_zero_I_smul hχJ' t v
-  -- So they differ by the complex-linear maps `k t = φ'(t)⁻¹ ∘ φ(t)`.
-  let k : unitInterval → G ≃L[ℂ] G := fun t ↦
-    ((φ t).trans (φ' t).symm).complexOfMapISmul
-      (SmoothAlmostComplexStructure.trans_symm_I_smul (hφJ t) (hφJ' t))
-  have hk_apply (t : unitInterval) (v : G) : k t v = (φ' t).symm (φ t v) :=
-    ContinuousLinearEquiv.complexOfMapISmul_apply _ _ v
+  -- So they differ by complex-linear maps `k t`, with `φ(t) = φ'(t) ∘ k(t)`.
+  obtain ⟨k, hk, hφk⟩ := J.exists_continuous_complex_frame_change hφ.continuous hφ'.continuous
+    hφJ hφJ'
   have hχk (t : unitInterval) (v : G) : χ (0, t) v = χ' (0, t) (k t v) := by
-    rw [← hφχ, ← hφχ', hk_apply, ContinuousLinearEquiv.apply_symm_apply]
-  have hk : Continuous fun t ↦ (k t : G →L[ℂ] G) :=
-    (ContinuousLinearMap.restrictScalarsIsometry ℂ G G ℝ ℝ).isometry.isUniformInducing
-      |>.isInducing.continuous_iff.2 ((continuous_trans_symm_of_continuous_frame hφ.continuous
-        hφ'.continuous).congr fun t ↦ ContinuousLinearMap.ext fun v ↦ (hk_apply t v).symm)
+    rw [← hφχ, ← hφχ', hφk]
   -- A continuous lift `θ` of the normalized determinant of `k` computes the first Chern number.
   obtain ⟨θ, hθ⟩ := Circle.exists_lift
     (⟨⟨fun t ↦ (k t).normalizedDet, hk.normalizedDet⟩, rfl, rfl⟩ : Path _ _)
@@ -237,26 +230,13 @@ private theorem IsSmoothBasedCap.frameConleyZehnderIndex_eq_sub_two_mul_firstChe
   have hc := hu.firstChernHom_homotopyClass_vsub_homotopyClass_mul_two_pi_eq h hJ hu' hχ hχ' hχJ
     hχJ' hχ₀ hχ₀' hχk θ.continuous hθk
   -- The change of frame along the loop is a loop, since both frames are constant on the edges
-  -- `t = 0` and `t = 1` of the caps.
+  -- `t = 0` and `t = 1` of the caps; it changes the index by twice the winding of `det k`.
   have hper := trans_symm_zero_eq_trans_symm_one (apply_zero_eq_apply_one_of_eq_on_edges hχ₀ hφχ)
     (apply_zero_eq_apply_one_of_eq_on_edges hχ₀' hφχ')
-  -- The change of frame is the loop `k⁻¹` of unitary maps, whose Maslov index is the winding of
-  -- `det k`, lifted by `θ`.
-  have hm := SymplecticForm.maslovIndex_imInnerSymplecticForm_mul_two_pi_eq
-    (transitionLoop hφ.continuous hφ'.continuous hper) (apply_transitionLoop_apply hφ hφ' hper)
-    (k := fun t ↦ (k t).symm)
-    (fun t v ↦ by
-      simp only [k, transitionLoop_apply, ContinuousLinearEquiv.complexOfMapISmul_symm_apply,
-        ContinuousLinearEquiv.symm_trans_apply, ContinuousLinearEquiv.symm_symm])
-    (θ := fun t ↦ -θ t) θ.continuous.neg
-    fun t ↦ by rw [Circle.exp_neg, hθk, ContinuousLinearEquiv.normalizedDet_symm]
-  have hmc : (SymplecticForm.maslovIndex (imInnerSymplecticForm G)
-      (transitionLoop hφ.continuous hφ'.continuous hper)
-      (apply_transitionLoop_apply hφ hφ' hper) : ℝ) =
-      -(h.firstChernHom x (hu'.homotopyClass -ᵥ hu.homotopyClass) : ℝ) :=
-    mul_right_cancel₀ (by positivity : (2 * Real.pi : ℝ) ≠ 0) (by linarith)
-  rw [frameConleyZehnderIndex_eq_add_maslovIndex hφ hφ' hper hΦ hΦσ, hmc]
-  ring
+  have hm := frameConleyZehnderIndex_mul_two_pi_eq_of_complex hφ hφ' hper hφk θ.continuous hθk hΦ
+    hΦσ
+  refine mul_right_cancel₀ (by positivity : (2 * Real.pi : ℝ) ≠ 0) ?_
+  linear_combination hm + 2 * hc
 
 /-- **The recapping law for the Conley–Zehnder index.** Let `u` and `u'` be smooth based caps of a
 loop `γ` at `x`, in a manifold with a fiberwise nondegenerate two-form `σ` taming an almost complex
@@ -332,33 +312,13 @@ private theorem frameConleyZehnderIndex_eq_of_eq_on_edges_aux
     -- are cancelled by explicit terms rather than `rw`.
     exact ((χ _).apply_symm_apply _).trans
       ((hχ₀ _ _ s.property t.property hst _).trans ((χ (1, 0)).apply_symm_apply _)).symm
-  have hper := trans_symm_zero_eq_trans_symm_one (apply_zero_eq_apply_one_of_eq_on_edges hχ₀ hφχ)
-    (apply_zero_eq_apply_one_of_eq_on_edges hχ₀' hφχ')
-  rw [frameConleyZehnderIndex_eq_add_maslovIndex hφ hφ' hper]
-  suffices hm : ω₀.maslovIndex (transitionLoop hφ.continuous hφ'.continuous hper)
-      (apply_transitionLoop_apply hφ hφ' hper) = 0 by
-    rw [hm, Int.cast_zero, mul_zero, add_zero]
-  -- The change of frame over the square is a homotopy through loops from the change of frame
-  -- along `γ` to the constant loop at the corner `(1, 0)`.
-  let F : C(unitInterval × unitInterval, W →L[ℝ] W) :=
-    ⟨fun p ↦ ((χ' ((p.1 : ℝ), (p.2 : ℝ))).trans (χ ((p.1 : ℝ), (p.2 : ℝ))).symm : W ≃L[ℝ] W),
-      (continuous_trans_symm_of_continuous_frame hχ'.continuous hχ.continuous).comp
-        ((continuous_subtypeVal.comp continuous_fst).prodMk
-          (continuous_subtypeVal.comp continuous_snd))⟩
-  have hF (p : unitInterval × unitInterval) (v w : W) : ω₀ (F p v) (F p w) = ω₀ v w :=
-    hχ'.apply_trans_symm_apply hχ _ v w
-  -- Along the edge `s = 0` it is the change of frame from `φ` to `φ'`.
-  have hF₀ (t : unitInterval) : F (0, t) = transitionLoop hφ.continuous hφ'.continuous hper t := by
-    ext v
-    rw [transitionLoop_apply, hφχ']
-    apply (φ t).injective
-    exact ((hφχ t _).trans ((χ (0, t)).apply_symm_apply _)).trans ((φ t).apply_symm_apply _).symm
-  exact (ω₀.maslovIndex_eq_of_homotopy _
-    (Path.refl (((χ' (1, 0)).trans (χ (1, 0)).symm : W ≃L[ℝ] W) : W →L[ℝ] W)) F hF hF₀
-    (fun t ↦ congrArg (fun e : W ≃L[ℝ] W ↦ (e : W →L[ℝ] W)) (hedge 1 t (Or.inl rfl)))
-    (fun s ↦ congrArg (fun e : W ≃L[ℝ] W ↦ (e : W →L[ℝ] W))
-      ((hedge s 0 (Or.inr (Or.inl rfl))).trans (hedge s 1 (Or.inr (Or.inr rfl))).symm))).trans
-    (ω₀.maslovIndex_refl _ _)
+  -- The change of frame over the square is a loop on every segment `s = const` and is constant
+  -- along the edge `s = 1`.
+  have hsq : Continuous fun p : unitInterval × unitInterval ↦ ((p.1 : ℝ), (p.2 : ℝ)) := by
+    fun_prop
+  exact frameConleyZehnderIndex_eq_of_square hφ hφ' (hχ.comp hsq) (hχ'.comp hsq) hφχ hφχ'
+    (fun s ↦ (hedge s 0 (Or.inr (Or.inl rfl))).trans (hedge s 1 (Or.inr (Or.inr rfl))).symm)
+    (fun t ↦ (hedge 1 t (Or.inl rfl)).trans (hedge 1 0 (Or.inl rfl)).symm) hΦ hΦσ
 
 omit [T2Space M] [SigmaCompactSpace M] in
 /-- **The index over a cap does not depend on the frame.** Let `χ` and `χ'` be symplectic frames

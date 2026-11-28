@@ -66,6 +66,8 @@ For a finite group, a sum can also be split over the left or right cosets of a s
   contains a nontrivial subgroup meeting `Z` trivially.
 * `QuotientGroup.out_mul_out_mul_inv_mem`: the defect of the representatives chosen by
   `Quotient.out` from preserving multiplication lies in the subgroup.
+* `QuotientGroup.op_out_inv_smul_injective`: distinct left cosets `t` of `H` give distinct right
+  cosets `H t.out⁻¹`.
 * `QuotientGroup.mk_list_prod`: the class of a list product is the product of the classes.
 * `QuotientGroup.inv_mul_mul_list_prod_map_mul_mem`: central corrections can be absorbed into the
   two tail products of a word, modulo a normal subgroup.
@@ -75,6 +77,8 @@ For a finite group, a sum can also be split over the left or right cosets of a s
 * `QuotientGroup.image_mk_eq_univ_iff`: a set `K` meets every left coset of `Γ` exactly when
   `K * Γ = G`.
 * `QuotientAddGroup.image_mk_eq_univ_iff`: the additive form, `K + Γ = G`.
+* `QuotientGroup.mk'_bot_injective` and `QuotientAddGroup.mk'_bot_injective`: the quotient map by
+  the trivial subgroup is injective.
 -/
 
 public section
@@ -261,6 +265,15 @@ theorem _root_.QuotientGroup.out_mul_out_mul_inv_mem (N : Subgroup G) [N.Normal]
   rw [← div_eq_mul_inv, ← QuotientGroup.eq_iff_div_mem, QuotientGroup.mk_mul,
     QuotientGroup.out_eq', QuotientGroup.out_eq', QuotientGroup.out_eq']
 
+/-- Distinct left cosets `t` of `H` give distinct right cosets `H t.out⁻¹`. -/
+theorem _root_.QuotientGroup.op_out_inv_smul_injective (H : Subgroup G) :
+    Function.Injective fun t : G ⧸ H ↦ MulOpposite.op ((t.out)⁻¹ : G) • (H : Set G) := by
+  intro t s hts
+  have h := (rightCoset_eq_iff H).1 hts
+  rw [inv_inv] at h
+  rw [← QuotientGroup.out_eq' t, ← QuotientGroup.out_eq' s]
+  exact (QuotientGroup.eq.2 h).symm
+
 /-- The class modulo a normal subgroup of a list product is the product of the classes. -/
 @[simp]
 theorem _root_.QuotientGroup.mk_list_prod (K : Subgroup G) [K.Normal] (l : List G) :
@@ -370,5 +383,10 @@ theorem image_mk_eq_univ_iff {K : Set G} :
   refine ⟨fun h ↦ by rw [h, preimage_univ], fun h ↦ eq_univ_of_forall fun x ↦ ?_⟩
   obtain ⟨g, rfl⟩ := mk_surjective x
   exact (h ▸ mem_univ g : g ∈ _)
+
+/-- The quotient map of a group by its trivial subgroup is injective. -/
+@[to_additive /-- The quotient map of an additive group by its trivial subgroup is injective. -/]
+theorem mk'_bot_injective : Function.Injective (mk' (⊥ : Subgroup G)) :=
+  (mk' ⊥).ker_eq_bot_iff.mp (ker_mk' ⊥)
 
 end QuotientGroup

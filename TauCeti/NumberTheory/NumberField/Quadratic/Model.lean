@@ -70,13 +70,6 @@ theorem omega_sq_eq_algebraMap_int :
   rw [sq, omega_mul_omega_eq_mk]
   ext <;> simp
 
-private theorem integralSqrt_mul_self :
-    (integralSqrt (omega_sq_eq_algebraMap_int (d := d)) *
-        integralSqrt (omega_sq_eq_algebraMap_int (d := d)) : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)) =
-      d • 1 + (0 : ℤ) • integralSqrt (omega_sq_eq_algebraMap_int (d := d)) := by
-  rw [← sq, integralSqrt_sq]
-  simp
-
 /-- The generator `ω` of the model, as an algebraic integer, has minimal polynomial `X ^ 2 - d`
 over `ℤ`. This is the hypothesis `minpoly ℤ θ = X ^ 2 - C d` of the intrinsic quadratic API in
 `TauCeti.NumberTheory.NumberField.Quadratic`. -/
@@ -95,45 +88,27 @@ theorem adjoin_integralSqrt_omega :
 
 section ModFourNeOne
 
-/-- The integral model `ℤ[√d]` maps into the ring of integers by `ω ↦ √d`. -/
-private noncomputable def toRingOfIntegers :
-    QuadraticAlgebra ℤ d 0 →ₐ[ℤ] 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0) :=
-  lift ⟨integralSqrt (omega_sq_eq_algebraMap_int (d := d)), integralSqrt_mul_self⟩
-
-private theorem coe_toRingOfIntegers (z : QuadraticAlgebra ℤ d 0) :
-    (toRingOfIntegers z : QuadraticAlgebra ℚ (d : ℚ) 0) = ⟨z.re, z.im⟩ := by
-  ext <;> simp [toRingOfIntegers, zsmul_eq_mul]
-
-private theorem toRingOfIntegers_bijective (hsf : Squarefree d) (hd4 : d % 4 ≠ 1) :
-    Function.Bijective (toRingOfIntegers (d := d)) := by
-  refine ⟨fun z w h => ?_, ?_⟩
-  · have h' := congrArg (fun x : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0) =>
-      (x : QuadraticAlgebra ℚ (d : ℚ) 0)) h
-    simp only [coe_toRingOfIntegers, QuadraticAlgebra.mk.injEq, Int.cast_inj] at h'
-    exact QuadraticAlgebra.ext h'.1 h'.2
-  · rw [toRingOfIntegers, lift_surjective_iff]
-    exact adjoin_gen_eq_top_of_mod_four_ne_one minpoly_integralSqrt_omega
-      adjoin_integralSqrt_omega hsf hd4
-
 /-- **The ring of integers of `ℚ(√d)` for `d ≢ 1 (mod 4)`.** For squarefree `d` with
 `d % 4 ≠ 1`, the ring of integers of the model `QuadraticAlgebra ℚ d 0` is the integral model
 `QuadraticAlgebra ℤ d 0 = ℤ[√d]`, with the same coordinates (`ringOfIntegersEquiv_symm_apply_coe`,
 `ringOfIntegersEquiv_apply_re`, `ringOfIntegersEquiv_apply_im`). -/
 noncomputable def ringOfIntegersEquiv (hsf : Squarefree d) (hd4 : d % 4 ≠ 1) :
     𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0) ≃ₐ[ℤ] QuadraticAlgebra ℤ d 0 :=
-  (AlgEquiv.ofBijective toRingOfIntegers (toRingOfIntegers_bijective hsf hd4)).symm
+  TauCeti.NumberField.ringOfIntegersAlgEquivGen minpoly_integralSqrt_omega
+    adjoin_integralSqrt_omega hsf hd4
 
 variable (hsf : Squarefree d) (hd4 : d % 4 ≠ 1)
 
 /-- The inverse of `ringOfIntegersEquiv` is the inclusion of `ℤ[√d]` into `ℚ(√d)`. -/
 @[simp] theorem ringOfIntegersEquiv_symm_apply_coe (z : QuadraticAlgebra ℤ d 0) :
-    ((ringOfIntegersEquiv hsf hd4).symm z : QuadraticAlgebra ℚ (d : ℚ) 0) = ⟨z.re, z.im⟩ :=
-  coe_toRingOfIntegers z
+    ((ringOfIntegersEquiv hsf hd4).symm z : QuadraticAlgebra ℚ (d : ℚ) 0) = ⟨z.re, z.im⟩ := by
+  rw [ringOfIntegersEquiv, TauCeti.NumberField.ringOfIntegersAlgEquivGen_symm_apply]
+  ext <;> simp [zsmul_eq_mul]
 
 /-- The generator `√d` of `ℤ[√d]` corresponds to the intrinsic square root `ω` of `ℚ(√d)`. -/
 theorem ringOfIntegersEquiv_symm_omega :
     (ringOfIntegersEquiv hsf hd4).symm ω = integralSqrt (omega_sq_eq_algebraMap_int (d := d)) := by
-  ext <;> simp
+  simp [ringOfIntegersEquiv]
 
 /-- The generator of `ℤ[√d]` has minimal polynomial `X ^ 2 - d` in the ring of integers. -/
 theorem minpoly_ringOfIntegersEquiv_symm_omega :
@@ -204,54 +179,6 @@ section ModFourEqOne
 
 variable (hsf : Squarefree d) (hd4 : d % 4 = 1)
 
-private theorem coe_halfGen_sqrt : algebraMap (𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0))
-    (QuadraticAlgebra ℚ (d : ℚ) 0) (halfGen minpoly_integralSqrt_omega hd4) =
-      ⟨1 / 2, 1 / 2⟩ := by
-  rw [← RingOfIntegers.coe_eq_algebraMap, coe_halfGen, div_eq_iff two_ne_zero]
-  ext <;> simp
-
-private theorem halfGen_mul_self :
-    (halfGen minpoly_integralSqrt_omega hd4 * halfGen minpoly_integralSqrt_omega hd4 :
-      𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0)) =
-      ((d - 1) / 4) • 1 + (1 : ℤ) • halfGen minpoly_integralSqrt_omega hd4 := by
-  have h := TauCeti.sq_one_add_div_two_sub_self (coe_gen_sq minpoly_integralSqrt_omega) hd4
-  rw [← coe_halfGen minpoly_integralSqrt_omega hd4, show d / 4 = (d - 1) / 4 by omega] at h
-  apply FaithfulSMul.algebraMap_injective (𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0))
-    (QuadraticAlgebra ℚ (d : ℚ) 0)
-  rw [eq_intCast] at h
-  rw [map_mul, map_add, map_zsmul, map_zsmul, map_one, one_smul,
-    ← RingOfIntegers.coe_eq_algebraMap, ← sq, zsmul_one]
-  linear_combination h
-
-/-- The integral model `ℤ[(1 + √d)/2]` maps into the ring of integers by `ω ↦ (1 + √d)/2`. -/
-private noncomputable def toRingOfIntegersHalf :
-    QuadraticAlgebra ℤ ((d - 1) / 4) 1 →ₐ[ℤ] 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0) :=
-  lift ⟨halfGen minpoly_integralSqrt_omega hd4, halfGen_mul_self hd4⟩
-
-private theorem coe_toRingOfIntegersHalf (z : QuadraticAlgebra ℤ ((d - 1) / 4) 1) :
-    (toRingOfIntegersHalf hd4 z : QuadraticAlgebra ℚ (d : ℚ) 0) =
-      ⟨z.re + z.im / 2, z.im / 2⟩ := by
-  rw [RingOfIntegers.coe_eq_algebraMap, toRingOfIntegersHalf, lift_apply_apply, map_add,
-    map_zsmul, map_zsmul, map_one, coe_halfGen_sqrt hd4]
-  ext <;> simp [zsmul_eq_mul, div_eq_mul_inv]
-
-include hsf in
-private theorem toRingOfIntegersHalf_bijective :
-    Function.Bijective (toRingOfIntegersHalf hd4) := by
-  refine ⟨fun z w h => ?_, ?_⟩
-  · have h' := congrArg (fun x : 𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0) =>
-      (x : QuadraticAlgebra ℚ (d : ℚ) 0)) h
-    simp only [coe_toRingOfIntegersHalf] at h'
-    have hre := congrArg QuadraticAlgebra.re h'
-    have him := congrArg QuadraticAlgebra.im h'
-    dsimp only at hre him
-    have him' : (z.im : ℚ) = w.im := by linarith
-    have hre' : (z.re : ℚ) = w.re := by linarith
-    exact QuadraticAlgebra.ext (by exact_mod_cast hre') (by exact_mod_cast him')
-  · rw [toRingOfIntegersHalf, lift_surjective_iff]
-    exact adjoin_halfGen_eq_top_of_mod_four_eq_one minpoly_integralSqrt_omega
-      adjoin_integralSqrt_omega hsf hd4
-
 /-- **The ring of integers of `ℚ(√d)` for `d ≡ 1 (mod 4)`.** For squarefree `d` with
 `d % 4 = 1`, the ring of integers of the model `QuadraticAlgebra ℚ d 0` is the integral model
 `QuadraticAlgebra ℤ ((d - 1) / 4) 1 = ℤ[(1 + √d)/2]`, whose generator `ω` corresponds to
@@ -259,13 +186,15 @@ private theorem toRingOfIntegersHalf_bijective :
 `ringOfIntegersEquivHalf_apply_im`). -/
 noncomputable def ringOfIntegersEquivHalf :
     𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0) ≃ₐ[ℤ] QuadraticAlgebra ℤ ((d - 1) / 4) 1 :=
-  (AlgEquiv.ofBijective (toRingOfIntegersHalf hd4) (toRingOfIntegersHalf_bijective hsf hd4)).symm
+  TauCeti.NumberField.ringOfIntegersAlgEquivHalfGen minpoly_integralSqrt_omega
+    adjoin_integralSqrt_omega hsf hd4
 
 /-- The inverse of `ringOfIntegersEquivHalf` sends `a + b ω` to `a + b (1 + √d)/2`. -/
 @[simp] theorem ringOfIntegersEquivHalf_symm_apply_coe (z : QuadraticAlgebra ℤ ((d - 1) / 4) 1) :
     ((ringOfIntegersEquivHalf hsf hd4).symm z : QuadraticAlgebra ℚ (d : ℚ) 0) =
-      ⟨z.re + z.im / 2, z.im / 2⟩ :=
-  coe_toRingOfIntegersHalf hd4 z
+      ⟨z.re + z.im / 2, z.im / 2⟩ := by
+  rw [ringOfIntegersEquivHalf, TauCeti.NumberField.ringOfIntegersAlgEquivHalfGen_symm_apply]
+  ext <;> simp [zsmul_eq_mul, QuadraticAlgebra.norm_def] <;> ring
 
 /-- The generator of `ℤ[(1 + √d)/2]` corresponds to `(1 + √d)/2`. -/
 theorem ringOfIntegersEquivHalf_symm_omega_coe :
@@ -276,9 +205,7 @@ theorem ringOfIntegersEquivHalf_symm_omega_coe :
 `NumberField.halfGen` of `ℚ(√d)`. -/
 theorem ringOfIntegersEquivHalf_symm_omega :
     (ringOfIntegersEquivHalf hsf hd4).symm ω = halfGen minpoly_integralSqrt_omega hd4 := by
-  apply FaithfulSMul.algebraMap_injective (𝓞 (QuadraticAlgebra ℚ (d : ℚ) 0))
-    (QuadraticAlgebra ℚ (d : ℚ) 0)
-  rw [coe_halfGen_sqrt, ← RingOfIntegers.coe_eq_algebraMap, ringOfIntegersEquivHalf_symm_omega_coe]
+  simp [ringOfIntegersEquivHalf]
 
 /-- The generator of `ℤ[(1 + √d)/2]` has minimal polynomial `X ^ 2 - X - (d - 1)/4` in the ring
 of integers. -/

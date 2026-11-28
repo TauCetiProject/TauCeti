@@ -41,6 +41,8 @@ to the source is a strong epimorphism. This uses Mathlib's `StrongEpi.llp` and `
   can be checked after base change if the projection to the source is a strong epimorphism.
 * `CategoryTheory.Over.pullbackRightPullbackFstIso_inv_comp_pullback_map`: the identification
   `T ×_S X ≅ T ×_{S'} (S' ×_S X)` is natural in `T` over `S'`.
+* `CategoryTheory.Over.mapSection`: a section of a presheaf on `Over S` over `T` restricts to a
+  section of its restriction along `Over.map T.hom`.
 * `CategoryTheory.isPullback_overPost_iff`: for `F : C ⥤ D` and `X : C`, a square in
   `Over (F.obj X)` with a side `(Over.post F).map snd` is a pullback square exactly when the
   underlying square in `D` is.
@@ -126,6 +128,27 @@ theorem exists_comp_pullback_map_eq_iff {C : Type u} [Category.{v} C]
       simpa only [comp_left, homMk_left] using sq.fac_right
   · rintro ⟨g, rfl⟩
     exact ⟨(Over.pullback p).map g, ((Over.pullback p).map_comp g i).symm⟩
+
+/-- A section `ξ` of a presheaf `F` on `Over S` over an object `T` restricts to every object
+`(Over.map T.hom).obj T'` for `T'` over `T.left`, along the morphism `T'` itself; these
+restrictions form a section of the presheaf `(Over.map T.hom).op ⋙ F` on `Over T.left`. -/
+def mapSection {C : Type u} [Category.{v} C] {S : C} (F : (Over S)ᵒᵖ ⥤ Type*) {T : Over S}
+    (ξ : F.obj (Opposite.op T)) : ((Over.map T.hom).op ⋙ F).sections where
+  val T' := F.map (Over.homMk T'.unop.hom : (Over.map T.hom).obj T'.unop ⟶ T).op ξ
+  property {T₁ T₂} f := by
+    dsimp
+    rw [← Functor.map_comp_apply, ← op_comp]
+    congr 3
+    ext
+    simp
+
+/-- The section `mapSection F ξ` over `T'` is the restriction of `ξ` along `T'`. -/
+@[simp]
+lemma mapSection_coe {C : Type u} [Category.{v} C] {S : C} (F : (Over S)ᵒᵖ ⥤ Type*) {T : Over S}
+    (ξ : F.obj (Opposite.op T)) (T' : (Over T.left)ᵒᵖ) :
+    (mapSection F ξ).val T' =
+      F.map (Over.homMk T'.unop.hom : (Over.map T.hom).obj T'.unop ⟶ T).op ξ :=
+  (rfl)
 
 end Over
 
