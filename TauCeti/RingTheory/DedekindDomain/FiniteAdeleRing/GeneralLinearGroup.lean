@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Instances.Matrix
-public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.IntegralGL
 
 /-!
 # Matrices over the finite adeles, place by place
@@ -38,9 +38,9 @@ are built, such as the embedding of `GL_n(E_w)` in the finite adelic unitary gro
 
 ## Main results
 
-* `IsDedekindDomain.FiniteAdeleRing.matrix_ext`,
-  `IsDedekindDomain.FiniteAdeleRing.generalLinearGroup_ext`: matrices and invertible matrices over
-  `𝔸ᶠ` are determined by their components.
+* `IsDedekindDomain.FiniteAdeleRing.matrix_ext`: matrices over `𝔸ᶠ` are determined by their
+  components. For invertible matrices, this file uses
+  `IsDedekindDomain.FiniteAdeleRing.generalLinearGroup_ext` from `IntegralGL`.
 * `IsDedekindDomain.FiniteAdeleRing.map_proj_ofAdicCompletionGL_self`,
   `IsDedekindDomain.FiniteAdeleRing.map_proj_ofAdicCompletionGL_of_ne`: the components of
   `ofAdicCompletionGL K v g`.
@@ -80,14 +80,6 @@ theorem matrix_ext {m n : Type*} {X Y : Matrix m n (FiniteAdeleRing R K)}
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- **Invertible matrices over the finite adeles are determined by their components** in
-`GL_n(K_v)` at every finite place `v`. -/
-theorem generalLinearGroup_ext {x y : GL ι (FiniteAdeleRing R K)}
-    (h : ∀ v : HeightOneSpectrum R,
-      GeneralLinearGroup.map (proj K v : _ →+* v.adicCompletion K) x =
-        GeneralLinearGroup.map (proj K v : _ →+* v.adicCompletion K) y) : x = y :=
-  Units.ext <| matrix_ext fun v ↦ congrArg Units.val (h v)
-
 /-- Two elements of `GL_n(𝔸ᶠ)` **commute when at every place one of them has component `1`**,
 for instance two elements trivial away from two different places. -/
 theorem commute_of_forall_map_proj_eq_one_or {x y : GL ι (FiniteAdeleRing R K)}
@@ -95,6 +87,8 @@ theorem commute_of_forall_map_proj_eq_one_or {x y : GL ι (FiniteAdeleRing R K)}
       GeneralLinearGroup.map (proj K v : _ →+* v.adicCompletion K) x = 1 ∨
         GeneralLinearGroup.map (proj K v : _ →+* v.adicCompletion K) y = 1) : Commute x y :=
   generalLinearGroup_ext fun v ↦ by
+    change GeneralLinearGroup.map (proj K v : _ →+* v.adicCompletion K) (x * y) =
+      GeneralLinearGroup.map (proj K v : _ →+* v.adicCompletion K) (y * x)
     rw [map_mul, map_mul]
     rcases h v with hv | hv <;> rw [hv, one_mul, mul_one]
 
@@ -210,7 +204,9 @@ theorem range_ofAdicCompletionGL (v : HeightOneSpectrum R) :
     generalLinearGroup_ext fun u ↦ ?_⟩⟩
   · rintro ⟨g, rfl⟩ u hu
     exact map_proj_ofAdicCompletionGL_of_ne hu g
-  · rcases eq_or_ne u v with rfl | hu
+  · change GeneralLinearGroup.map (proj K u : FiniteAdeleRing R K →+* u.adicCompletion K) _ =
+      GeneralLinearGroup.map (proj K u : _ →+* u.adicCompletion K) x
+    rcases eq_or_ne u v with rfl | hu
     · exact map_proj_ofAdicCompletionGL_self u _
     · rw [map_proj_ofAdicCompletionGL_of_ne hu, hx u hu]
 
