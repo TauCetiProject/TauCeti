@@ -12,19 +12,17 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 /-!
 # The Minkowski bound for the class group
 
-The Minkowski constant `minkowskiConstant` is positive and at most one. This gives
-`minkowskiClassBound_le_sqrt_abs_discr`, which bounds the exact ideal-class cutoff by the
-square root of the absolute discriminant. The proof splits the factorial using Mathlib's
-`Nat.factorial_mul_descFactorial`. The lower bound `one_le_minkowskiClassBound` uses
-Mathlib's `NumberField.exists_ideal_in_class_of_norm_le` for the trivial class.
+The Minkowski constant `minkowskiConstant` is positive and at most one. The real ideal-class
+cutoff `minkowskiClassBound` lies between one and the square root of the absolute discriminant
+(`one_le_minkowskiClassBound` and `minkowskiClassBound_le_sqrt_abs_discr`).
 
 Every ideal class of a number field contains a nonzero integral ideal of norm at most the
 Minkowski bound, so the class number is at most the number of such ideals
 (`TauCeti.NumberField.classNumber_le_card_idealsLE`).
 
 The classes of prime ideals of norm at most the Minkowski bound generate the class group of
-any number field. The bound may be replaced by a larger real number, allowing a numerical
-upper bound to supply the generators for a class-group presentation.
+any number field (`closure_classGroupMk_image_absNorm_le_eq_top`). Both the ideal count and
+the generating set can use the square root of the absolute discriminant as a norm cutoff.
 
 The proof uses Mathlib's `NumberField.exists_ideal_in_class_of_norm_le` and the prime-support
 criterion `ClassGroup.mk0_mem_closure_of_count_eq`: every prime factor of a small integral
