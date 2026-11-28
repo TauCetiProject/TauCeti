@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.FinitePrese
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.FiniteLocallyFree
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Closed
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
+import Mathlib.CategoryTheory.Monoidal.Rigid.Braided
 
 /-!
 # Finite locally free sheaves of modules are dualizable
@@ -19,7 +20,10 @@ Let `M` be a locally free sheaf of modules of finite type. Its dual-tensor compa
 `𝓗om(M, 𝒪) ⊗ N ⟶ 𝓗om(M, N)` is an isomorphism for every `N`
 (`SheafOfModules.isIso_dualTensorIhom_of_isLocallyFree`). By the dual-basis criterion
 `TauCeti.exactPairingOfIsIsoDualTensorIhom`, `𝓗om(M, 𝒪)` is therefore a left dual of `M`, with
-evaluation the evaluation of the internal Hom.
+evaluation the evaluation of the internal Hom. Symmetry of the monoidal structure turns this exact
+pairing into a right adjunction for `tensorLeft M`
+(`SheafOfModules.isRightAdjoint_tensorLeft_of_isLocallyFree`), showing that every locally free
+sheaf of modules of finite type is flat.
 
 Whether a morphism of sheaves is invertible can be checked on a cover
 (`SheafOfModules.isIso_of_coversTop`). Take a cover by charts on which `M` is finite free; there
@@ -87,6 +91,15 @@ instance _root_.SheafOfModules.isIso_dualTensorIhom_of_isLocallyFree
     infer_instance
   have := hq i
   exact Functor.isIso_map_dualTensorIhom_app (overFunctor (ringCatSheaf R) (q.X i)) M Z
+
+/-- Tensoring on the left with a locally free sheaf of modules of finite type is a right adjoint,
+and in particular exact (flat): its internal-Hom dual yields an exact pairing, which by symmetry
+makes `tensorLeft M` right adjoint to tensoring with the dual. -/
+instance _root_.SheafOfModules.isRightAdjoint_tensorLeft_of_isLocallyFree
+    [M.IsLocallyFree] [M.IsFiniteType] : (tensorLeft M).IsRightAdjoint :=
+  letI : ExactPairing ((ihom M).obj (𝟙_ _)) M := exactPairingOfIsIsoDualTensorIhom
+  letI : ExactPairing M ((ihom M).obj (𝟙_ _)) := BraidedCategory.exactPairing_swap _ _
+  (tensorLeftAdjunction M ((ihom M).obj (𝟙_ _))).isRightAdjoint
 
 variable [∀ X Y, HasSheafify ((J.over X).over Y) AddCommGrpCat.{u}]
   [∀ X Y, ((J.over X).over Y).WEqualsLocallyBijective AddCommGrpCat.{u}]

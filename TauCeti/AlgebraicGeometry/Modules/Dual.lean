@@ -24,6 +24,8 @@ by `TauCeti.exactPairingOfIsIsoDualTensorIhom`.
   self-dual;
 * `AlgebraicGeometry.Scheme.Modules.isIso_dualTensorIhom_of_isLocallyFree`: the dual-tensor
   comparison of a locally free `𝒪_X`-module of finite type is an isomorphism;
+* `AlgebraicGeometry.Scheme.Modules.isRightAdjoint_tensorLeft_of_isLocallyFree`: tensoring on the
+  left with a locally free `𝒪_X`-module of finite type is a right adjoint (hence exact/flat);
 * `AlgebraicGeometry.Scheme.Modules.dualHomUnitEquiv`: for such a module `M`, linear functionals
   `𝓗om(M, 𝒪_X) ⟶ 𝒪_X` on the dual are global sections `𝒪_X ⟶ M`, a section corresponding to
   evaluation at it.
@@ -66,6 +68,13 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isIso_dualTensorIhom_of_isLocal
     {X : Scheme.{u}} (M : X.Modules) [M.IsLocallyFree] [M.IsFiniteType] :
     IsIso (dualTensorIhom M) :=
   _root_.SheafOfModules.isIso_dualTensorIhom_of_isLocallyFree (R := X.sheaf) M
+
+/-- Tensoring on the left with a locally free `𝒪_X`-module of finite type is a right adjoint, so
+it preserves all limits and in particular is exact (flat). -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isRightAdjoint_tensorLeft_of_isLocallyFree
+    {X : Scheme.{u}} (M : X.Modules) [M.IsLocallyFree] [M.IsFiniteType] :
+    (tensorLeft M).IsRightAdjoint :=
+  _root_.SheafOfModules.isRightAdjoint_tensorLeft_of_isLocallyFree (R := X.sheaf) M
 
 section DualHomUnitEquiv
 

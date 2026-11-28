@@ -43,6 +43,9 @@ whose cones are acyclic.
   homotopy equivalence is contractible.
 * `CochainComplex.quasiIso_iff_acyclic_mappingCone`: in an abelian category, a morphism is a
   quasi-isomorphism exactly when its mapping cone is acyclic.
+* `CochainComplex.exactAt_mappingCone_iff`: in an abelian category, the mapping cone of `φ` is
+  exact at degree `n` exactly when `φ` induces an epimorphism on `H^n` and a monomorphism on
+  `H^{n+1}`.
 * `CochainComplex.mappingCone.isIso_map_f`: the map of mapping cones induced by a commutative
   square is an isomorphism in each degree where the vertical maps are.
 * `CochainComplex.mappingCone.mapHomotopy`: homotopies of the vertical maps of a commutative
@@ -585,6 +588,35 @@ theorem quasiIso_iff_acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K �
     ← HomotopyCategory.quotient_obj_mem_subcategoryAcyclic_iff_acyclic]
   exact ObjectProperty.trW_iff_of_distinguished _ _
     (HomotopyCategory.mappingCone_triangleh_distinguished φ)
+
+/-- The mapping cone of `φ : K ⟶ L` is exact at degree `n` if and only if `φ` induces an
+epimorphism on `H^n` and a monomorphism on `H^{n+1}`. -/
+theorem exactAt_mappingCone_iff {K L : CochainComplex C ℤ} (φ : K ⟶ L) (n : ℤ) :
+    (mappingCone φ).ExactAt n ↔
+      Epi (HomologicalComplex.homologyMap φ n) ∧
+        Mono (HomologicalComplex.homologyMap φ (n + 1)) := by
+  let F := HomotopyCategory.homologyFunctor C (ComplexShape.up ℤ) 0
+  have hT := HomotopyCategory.mappingCone_triangleh_distinguished φ
+  have h₁ := (F.homologySequence_exact₃ _ hT n (n + 1) rfl).isZero_X₂_iff
+  have h₂ := F.homologySequence_mono_shift_map_mor₁_iff _ hT n (n + 1) rfl
+  have h₃ := F.homologySequence_epi_shift_map_mor₁_iff _ hT n
+  have hshift (k : ℤ) : F.shift k = HomotopyCategory.homologyFunctor C (ComplexShape.up ℤ) k := rfl
+  have hnat (k : ℤ) := HomotopyCategory.homologyFunctorFactors C (ComplexShape.up ℤ) k
+  have hzero : IsZero ((F.shift n).obj (mappingCone.triangleh φ).obj₃) ↔
+      (mappingCone φ).ExactAt n := by
+    rw [HomologicalComplex.exactAt_iff_isZero_homology, hshift]
+    exact ((hnat n).app (mappingCone φ)).isZero_iff
+  have hepi : Epi ((F.shift n).map (mappingCone.triangleh φ).mor₁) ↔
+      Epi (HomologicalComplex.homologyMap φ n) := by
+    rw [hshift]
+    exact (MorphismProperty.epimorphisms C).arrow_mk_iso_iff
+      (Arrow.isoOfNatIso (hnat n) (Arrow.mk φ))
+  have hmono : Mono ((F.shift (n + 1)).map (mappingCone.triangleh φ).mor₁) ↔
+      Mono (HomologicalComplex.homologyMap φ (n + 1)) := by
+    rw [hshift]
+    exact (MorphismProperty.monomorphisms C).arrow_mk_iso_iff
+      (Arrow.isoOfNatIso (hnat (n + 1)) (Arrow.mk φ))
+  rw [← hzero, h₁, ← h₂, ← h₃, hepi, hmono, and_comm]
 
 end CochainComplex
 
