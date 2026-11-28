@@ -381,6 +381,18 @@ theorem mem_jacobsonRadical_iff_not_isIso {f : X ⟶ Y} :
       simpa only [mem_jacobsonRadical_iff_not_isSplitEpi, not_not] using hrad
     exact hf (isIso_of_mono_of_isSplitEpi f)
 
+omit [IsLocalRing (End Y)] in
+/-- A split epimorphism from an object with a local endomorphism ring to a nonzero object is an
+isomorphism. -/
+theorem _root_.CategoryTheory.IsSplitEpi.isIso_of_isLocalRing_end [Nontrivial (End Y)]
+    {f : X ⟶ Y} (hf : IsSplitEpi f) : IsIso f := by
+  have : IsSplitMono f := by
+    by_contra hs
+    have hY := isZero_of_isSplitEpi_of_mem_jacobsonRadical
+      (mem_jacobsonRadical_iff_not_isSplitMono.mpr hs)
+    exact one_ne_zero (α := End Y) (End.ext ((Limits.IsZero.iff_id_eq_zero Y).mp hY))
+  exact isIso_of_mono_of_isSplitEpi f
+
 /-- **All morphisms between non-isomorphic objects with local endomorphism rings are radical.** -/
 theorem jacobsonRadical_eq_top (h : IsEmpty (X ≅ Y)) : jacobsonRadical X Y = ⊤ := by
   refine eq_top_iff.2 fun f _ => mem_jacobsonRadical_iff_not_isIso.2 fun hf => ?_
