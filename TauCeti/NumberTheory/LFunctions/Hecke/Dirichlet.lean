@@ -28,9 +28,10 @@ their continued `L`-functions, meromorphic orders, divisors, and zero counts:
 
 ## Main results
 
-* `TauCeti.LFunctions.heckeLFunctionC_eventuallyEq_LFunction` and
-  `TauCeti.LFunctions.heckeLFunctionC_eq_LFunction`: comparison of `heckeLFunctionC` over
-  `ℚ` with `DirichletCharacter.LFunction`.
+* `TauCeti.LFunctions.heckeLFunctionC_eventuallyEq_LFunction`,
+  `TauCeti.LFunctions.heckeLFunctionC_eq_LFunction`, and
+  `TauCeti.LFunctions.analyticAt_heckeLFunctionC_rat_iff`: comparison of `heckeLFunctionC` over
+  `ℚ` with `DirichletCharacter.LFunction` and its analyticity characterization.
 * `TauCeti.LFunctions.LFunction_toDirichletCharacter_ratDirichletEquiv_symm`,
   `TauCeti.LFunctions.heckeLFunctionC_ratDirichletEquiv_symm_eventuallyEq`, and
   `TauCeti.LFunctions.heckeLFunctionC_ratDirichletEquiv_symm`: identifications with
@@ -92,6 +93,25 @@ theorem heckeLFunctionC_eq_LFunction (η : RayClassCharacter 𝔪) {s : ℂ} (hs
   rw [heckeLFunctionC_eq_toMeromorphicNFOn_LFunction,
     toMeromorphicNFOn_apply_of_analyticAt η.toDirichletCharacter.meromorphic_LFunction
       (η.toDirichletCharacter.analyticAt_LFunction hs')]
+
+/-- **Over `ℚ`, `heckeLFunctionC η` is analytic at `s` iff `s ≠ 1` or `η ≠ 1`.** -/
+@[simp]
+theorem analyticAt_heckeLFunctionC_rat_iff (η : RayClassCharacter 𝔪) (s : ℂ) :
+    AnalyticAt ℂ (heckeLFunctionC η) s ↔ s ≠ 1 ∨ η ≠ 1 := by
+  have hnf : MeromorphicNFAt (heckeLFunctionC η) s :=
+    meromorphicNFOn_heckeLFunctionC η (mem_univ s)
+  rw [← hnf.meromorphicOrderAt_nonneg_iff_analyticAt,
+    meromorphicOrderAt_congr (heckeLFunctionC_eventuallyEq_LFunction η s)]
+  constructor
+  · intro h
+    by_contra! h'
+    obtain ⟨rfl, rfl⟩ := h'
+    rw [map_one, ← LFunctionTrivChar, meromorphicOrderAt_LFunctionTrivChar_one] at h
+    exact absurd h (by decide)
+  · intro hs
+    have hs' : s ≠ 1 ∨ η.toDirichletCharacter ≠ 1 :=
+      hs.imp_right (mt (RayClassCharacter.toDirichletCharacter_eq_one_iff η).mp)
+    exact (η.toDirichletCharacter.analyticAt_LFunction hs').meromorphicOrderAt_nonneg
 
 /-- On `Re s > 1`, a rational presented Hecke L-function agrees with its defining `LSeries`. -/
 theorem heckeLFunctionC_rat_eq_LSeries (η : RayClassCharacter 𝔪) {s : ℂ} (hs : 1 < s.re) :

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Basic
 public import TauCeti.Analysis.Meromorphic.Counting.Basic
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Basic
 
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Primitive
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Basic
 
 /-!
@@ -207,10 +208,8 @@ theorem toNat_divisor_dirichletData_entireCompletion_eq_LFunction {s : ℂ} (hs 
     (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ s).toNat =
       (MeromorphicOn.divisor χ.LFunction Set.univ s).toNat := by
   rcases eq_or_ne χ 1 with rfl | hne
-  · have hN : N = 1 := hχ.eq_one_iff.mp rfl
-    subst hN
-    rw [dirichletData_entireCompletion_eq_zetaEntireCompletion_of_eq_one _ hχ rfl,
-      DirichletCharacter.LFunction_modOne_eq]
+  · rw [dirichletData_entireCompletion_eq_zetaEntireCompletion_of_eq_one _ hχ rfl,
+      DirichletCharacter.LFunction_eq_riemannZeta_of_eq_one (hχ.eq_one_iff.mp rfl)]
     exact toNat_divisor_zetaEntireCompletion_eq_riemannZeta hs
   · exact congrArg Int.toNat
       (divisor_dirichletData_entireCompletion_eq_LFunction χ hχ hs (.inr hne))

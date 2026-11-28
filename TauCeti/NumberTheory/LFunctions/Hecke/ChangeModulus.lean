@@ -66,10 +66,10 @@ theorem meromorphicOrderAt_heckeLFunctionC_induced_of_eulerCorrection_ne_zero (h
   rw [meromorphicOrderAt_congr hev,
     meromorphicOrderAt_mul_of_ne_zero ((χ.differentiable_eulerCorrection 𝔫).analyticAt s) hs]
 
-/-- Wherever the deleted Euler correction is nonzero, inducing does not change the divisor of
-`heckeLFunctionC` on any domain `U`. -/
-theorem divisor_heckeLFunctionC_induced_of_eulerCorrection_ne_zero (h : 𝔪 ∣ 𝔫)
-    (χ : RayClassCharacter 𝔪) (U : Set ℂ) {s : ℂ} (hs : χ.eulerCorrection 𝔫 s ≠ 0) :
+/-- Pointwise divisor equality for `heckeLFunctionC (χ.induced h)` and `heckeLFunctionC χ` on
+`U`, assuming `χ.eulerCorrection 𝔫 s ≠ 0` when `s ∈ U`. -/
+private theorem divisor_heckeLFunctionC_induced_of_mem_imp (h : 𝔪 ∣ 𝔫)
+    (χ : RayClassCharacter 𝔪) (U : Set ℂ) {s : ℂ} (hs : s ∈ U → χ.eulerCorrection 𝔫 s ≠ 0) :
     MeromorphicOn.divisor (heckeLFunctionC (χ.induced h)) U s =
       MeromorphicOn.divisor (heckeLFunctionC χ) U s := by
   by_cases hsU : s ∈ U
@@ -77,8 +77,16 @@ theorem divisor_heckeLFunctionC_induced_of_eulerCorrection_ne_zero (h : 𝔪 ∣
         (fun z _ ↦ (meromorphicNFOn_heckeLFunctionC _).meromorphicOn z (mem_univ z)) hsU,
       MeromorphicOn.divisor_apply
         (fun z _ ↦ (meromorphicNFOn_heckeLFunctionC _).meromorphicOn z (mem_univ z)) hsU,
-      meromorphicOrderAt_heckeLFunctionC_induced_of_eulerCorrection_ne_zero h χ hs]
+      meromorphicOrderAt_heckeLFunctionC_induced_of_eulerCorrection_ne_zero h χ (hs hsU)]
   · simp only [Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hsU]
+
+/-- Wherever the deleted Euler correction is nonzero, inducing does not change the divisor of
+`heckeLFunctionC` on any domain `U`. -/
+theorem divisor_heckeLFunctionC_induced_of_eulerCorrection_ne_zero (h : 𝔪 ∣ 𝔫)
+    (χ : RayClassCharacter 𝔪) (U : Set ℂ) {s : ℂ} (hs : χ.eulerCorrection 𝔫 s ≠ 0) :
+    MeromorphicOn.divisor (heckeLFunctionC (χ.induced h)) U s =
+      MeromorphicOn.divisor (heckeLFunctionC χ) U s :=
+  divisor_heckeLFunctionC_induced_of_mem_imp h χ U fun _ ↦ hs
 
 /-- Off the imaginary axis, inducing does not change the divisor of `heckeLFunctionC` on any
 domain `U`. -/
@@ -95,10 +103,8 @@ theorem divisorCount_heckeLFunctionC_induced_of_eulerCorrection_ne_zero (h : �
     (χ : RayClassCharacter 𝔪) {U R : Set ℂ} (hR : ∀ s ∈ R ∩ U, χ.eulerCorrection 𝔫 s ≠ 0) :
     divisorCount (heckeLFunctionC (χ.induced h)) U R =
       divisorCount (heckeLFunctionC χ) U R :=
-  divisorCount_congr_divisor fun s hsR ↦ by
-    by_cases hsU : s ∈ U
-    · rw [divisor_heckeLFunctionC_induced_of_eulerCorrection_ne_zero h χ U (hR s ⟨hsR, hsU⟩)]
-    · simp only [Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hsU]
+  divisorCount_congr_divisor fun s hsR ↦
+    divisor_heckeLFunctionC_induced_of_mem_imp h χ U fun hsU ↦ hR s ⟨hsR, hsU⟩
 
 /-- On any region `R` and divisor domain `U` whose intersection avoids the imaginary axis, inducing
 does not change the signed divisor count of `heckeLFunctionC`. -/
@@ -115,10 +121,8 @@ theorem zeroCount_heckeLFunctionC_induced_of_eulerCorrection_ne_zero (h : 𝔪 �
     (χ : RayClassCharacter 𝔪) {U R : Set ℂ} (hR : ∀ s ∈ R ∩ U, χ.eulerCorrection 𝔫 s ≠ 0) :
     zeroCount (heckeLFunctionC (χ.induced h)) U R =
       zeroCount (heckeLFunctionC χ) U R :=
-  zeroCount_congr_divisor_toNat fun s hsR ↦ by
-    by_cases hsU : s ∈ U
-    · rw [divisor_heckeLFunctionC_induced_of_eulerCorrection_ne_zero h χ U (hR s ⟨hsR, hsU⟩)]
-    · simp only [Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hsU]
+  zeroCount_congr_divisor_toNat fun s hsR ↦
+    congrArg Int.toNat (divisor_heckeLFunctionC_induced_of_mem_imp h χ U fun hsU ↦ hR s ⟨hsR, hsU⟩)
 
 /-- On any region `R` and divisor domain `U` whose intersection avoids the imaginary axis, inducing
 does not change the zero count of `heckeLFunctionC`. -/

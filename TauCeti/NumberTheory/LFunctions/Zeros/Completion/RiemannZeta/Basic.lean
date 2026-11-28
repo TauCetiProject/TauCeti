@@ -24,8 +24,8 @@ conjugation symmetries `zetaEntireCompletion (1 - s) = zetaEntireCompletion s` a
 `zetaEntireCompletion (conj s) = conj (zetaEntireCompletion s)` (hence is real on the real axis),
 along with the matching logarithmic-derivative symmetries `logDeriv_zetaEntireCompletion_conj`,
 `logDeriv_zetaEntireCompletion_one_sub`, and `im_logDeriv_zetaEntireCompletion_ofReal`.
-On the positive half-plane its zero counts agree with those of `riemannZeta` (even across `1`),
-and away from `1` their divisors agree.
+On the positive half-plane `0 < Re s`, its zero counts agree with those of `riemannZeta` (even
+across `1`), and on `0 < Re s` away from `1` their divisors agree.
 
 The identity `riemannZetaData_entireCompletion` connects this explicit formula to the general
 pole-clearing construction `riemannZetaData.entireCompletion`. Combining nonvanishing of
