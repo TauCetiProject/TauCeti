@@ -652,6 +652,32 @@ theorem horizontalGlobularFunctor_map_cell (F : StrictDoubleFunctor D₁ D₂) {
       (F.map α.cell).cast rfl rfl (F.vMap_id a) (F.vMap_id b) :=
   (rfl)
 
+/-- A strict double functor preserves composition of horizontal globular cells, allowing
+independently specified target cells with equal horizontal boundaries. -/
+theorem map_horizontalGlobular_comp_cell_heq (F : StrictDoubleFunctor D₁ D₂) {a b : O₁}
+    {p q r : D₁.HorizontalGlobular a b} (α : p ⟶ q) (β : q ⟶ r)
+    {p' q' r' : D₂.HorizontalGlobular (F.obj a) (F.obj b)} (α' : p' ⟶ q') (β' : q' ⟶ r')
+    (hp : F.hMap p.edge = p'.edge) (hq : F.hMap q.edge = q'.edge)
+    (hr : F.hMap r.edge = r'.edge) (hα : F.map α.cell ≍ α'.cell) (hβ : F.map β.cell ≍ β'.cell) :
+    F.map (α ≫ β).cell ≍ (α' ≫ β').cell := by
+  simp only [HorizontalGlobular.comp_cell]
+  simp only [map_cast, map_vComp]
+  grind [Cell.cast_heq, F.vMap_id]
+
+/-- A strict double functor preserves right whiskering of horizontal globular cells.
+The boundary equalities allow the target edge and cell to be given independently, and the
+heterogeneous cell equality absorbs the transports of the vertical identity boundaries. -/
+theorem map_hWhiskerRight_cell_heq (F : StrictDoubleFunctor D₁ D₂) {a b c : O₁}
+    (r : Edge H₁ b c) {p q : D₁.HorizontalGlobular a b} (α : p ⟶ q)
+    {r' : Edge H₂ (F.obj b) (F.obj c)}
+    {p' q' : D₂.HorizontalGlobular (F.obj a) (F.obj b)} (β : p' ⟶ q')
+    (hr : F.hMap r = r') (hp : F.hMap p.edge = p'.edge)
+    (hq : F.hMap q.edge = q'.edge) (hα : F.map α.cell ≍ β.cell) :
+    F.map ((D₁.hWhiskerRight r).map α).cell ≍ ((D₂.hWhiskerRight r').map β).cell := by
+  simp only [hWhiskerRight_map_cell, hWhiskerRight_obj]
+  simp only [map_hComp, map_vId]
+  grind [Cell.cast_heq, F.vMap_id, F.hMap_comp]
+
 /-- The identity double functor acts identically on each globular hom-category. -/
 @[simp]
 theorem id_horizontalGlobularFunctor (a b : O₁) :

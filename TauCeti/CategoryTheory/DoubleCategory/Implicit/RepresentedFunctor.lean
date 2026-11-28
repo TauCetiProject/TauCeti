@@ -115,26 +115,26 @@ theorem map_repIso_hom {a b : O₁} (p : @Quiver.Path O₁ H₁ a b) :
         ((Cell.cast_heq _ _ _ _ _).trans (hc _ _ (F.hMap_toPath f)))
     | cons p g =>
       dsimp only [Prefunctor.mapPath_cons, Prefunctor.mapPath_nil]
+      dsimp only [Prefunctor.mapPath_cons] at ih
       rw [HorizontalRepresentation.repIso_cons_cons, HorizontalRepresentation.repIso_cons_cons]
-      erw [Iso.trans_hom, Iso.trans_hom]
-      erw [HorizontalGlobular.comp_cell, HorizontalGlobular.comp_cell]
-      erw [Functor.mapIso_hom, Functor.mapIso_hom]
-      erw [hWhiskerRight_map_cell, hWhiskerRight_map_cell]
-      erw [StrictDoubleFunctor.map_cast, StrictDoubleFunctor.map_vComp,
-        StrictDoubleFunctor.map_hComp, StrictDoubleFunctor.map_vId, hF.map_mulIso_hom]
-      -- Normalize the object maps of whiskering and path concatenation before transport.
-      dsimp only [hWhiskerRight, hCompFunctor, Functor.comp_obj, Prod.sectL] at *
-      simp only [Cell.cast_cast]
-      apply HEq.trans (Cell.cast_heq _ _ _ _ _)
-      apply HEq.trans ?_ (Cell.cast_heq _ _ _ _ _).symm
-      congr 2 <;> try grind [StrictDoubleFunctor.vMap_id, StrictDoubleFunctor.hMap_comp,
-        F.hMap_toPath, F.hMap_eq_mapPath, hF.map_rep,
-        HorizontalRepresentation.rep_cons_cons, Prefunctor.mapPath_cons]
+      -- Whisker the induction hypothesis, then identify the binary comparison's generator.
+      have hw := F.toStrictDoubleFunctor.map_hWhiskerRight_cell_heq
+        (@Quiver.Hom.toPath O₁ H₁ _ _ f) (R₁.repIso (@Quiver.Path.cons O₁ H₁ _ _ _ p g)).hom
+        (R₂.repIso (@Prefunctor.mapPath O₁ H₁ O₂ H₂ F.hPrefunctor a b
+          (@Quiver.Path.cons O₁ H₁ _ _ _ p g))).hom (F.hMap_toPath f)
+        (F.hMap_eq_mapPath _) (by simp only [F.hMap_toPath, hF.map_rep, F.hMap_eq_mapPath]) ih
+      dsimp only [Prefunctor.mapPath_cons] at hw
+      have hm := ((heq_of_eq
+        (hF.map_mulIso_hom (R₁.rep (@Quiver.Path.cons O₁ H₁ _ _ _ p g)) f)).trans
+          (Cell.cast_heq _ _ _ _ _)).trans
+            (congr_arg_heq (fun x ↦ (R₂.mulIso x (F.hGenerator f)).hom.cell)
+              ((hF.map_rep _).trans (congrArg R₂.rep (F.hMap_eq_mapPath _))))
+      dsimp only [Prefunctor.mapPath_cons] at hm
+      -- Compose the preserved cells, transporting their vertical identity boundaries in the lemma.
+      erw [Iso.trans_hom, Iso.trans_hom, Functor.mapIso_hom, Functor.mapIso_hom]
+      refine F.toStrictDoubleFunctor.map_horizontalGlobular_comp_cell_heq _ _ _ _ ?_ ?_ ?_ hw hm
       all_goals
-        apply HEq.trans (Cell.cast_heq _ _ _ _ _)
-        congr 2 <;> grind [StrictDoubleFunctor.vMap_id, F.hMap_toPath,
-          F.hMap_eq_mapPath, hF.map_rep, HorizontalRepresentation.rep_cons_cons,
-          Prefunctor.mapPath_cons, Cell.cast_heq]
+        simp [hWhiskerRight_obj, hF.map_rep, hF.map_mul]
 
 include hF in
 /-- Preservation of a path comparison as an isomorphism of globular paths. The final
