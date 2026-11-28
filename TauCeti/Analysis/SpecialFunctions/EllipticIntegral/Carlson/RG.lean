@@ -12,6 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Beta.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.AtTop
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!

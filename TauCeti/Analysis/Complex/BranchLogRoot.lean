@@ -12,6 +12,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Complex.CoveringMap
+import Mathlib.Analysis.Complex.ReImTopology
 import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 import Mathlib.Analysis.Normed.Module.Connected
@@ -96,17 +97,27 @@ vanishes identically near `z₀`, of order `⊤`, is its own `n`-th root.
 * `TauCeti.exists_differentiableOn_eqOn_exp_comp_le_re` — a holomorphic logarithm on an open
   half-plane `a < re s` extends to an open neighbourhood of the closed half-plane `a ≤ re s` when
   the function is holomorphic and zero-free there.
+* `TauCeti.exists_analyticAt_eq_exp_of_re_eq` and
+  `TauCeti.exists_tendsto_nhdsWithin_Ioi_of_analyticAt_of_ne_zero` — local analytic logarithm
+  extension and radial boundary limit at a single nonvanishing boundary point.
+* `TauCeti.ne_zero_of_continuousOn_eqOn_exp_comp_le_re`,
+  `TauCeti.exists_differentiableOn_eqOn_exp_comp_le_re_iff`, and
+  `TauCeti.exists_continuousOn_eqOn_le_re_iff` — zero-freeness on the entire closed half-plane
+  `a ≤ re s` is both necessary and sufficient for extending a half-plane logarithm across `re s = a`
+  (even merely continuously to `a ≤ re s`).
 
 ## Extending a logarithm across a vertical line
 
-The last statement is the local patching used to continue the logarithm of a Dirichlet `L`-function
+The half-plane patching theorem continues the logarithm of a Dirichlet `L`-function
 from its half-plane of absolute convergence across the line `re s = 1`. No branch on a simply
 connected neighbourhood of the whole closed half-plane is needed. Each point of the boundary line
 `re s = a` is the centre of a disc on which the function is zero-free; on that disc it has a branch
 of the logarithm, normalized to agree with the given logarithm on the right half of the disc. Each
 such disc is its own mirror image in the line, so the intersection of two overlapping ones meets the
 open half-plane, where both branches agree with the given logarithm; being convex, the intersection
-is connected, so the branches agree on all of it and glue.
+is connected, so the branches agree on all of it and glue. Conversely, any continuous extension of
+the logarithm to `a ≤ re s` still exponentiates to `g` on the boundary line by density of
+`a < re s`, so a single zero on `re s = a` rules out even a continuous boundary extension.
 -/
 
 public section
@@ -458,6 +469,102 @@ theorem exists_differentiableOn_eqOn_exp_comp_le_re {a : ℝ} {V : Set ℂ} {f g
     · simpa only [Function.comp_apply, hFH hs] using hfg hs
     · obtain ⟨y, hy⟩ := mem_iUnion.mp hs
       simpa only [Function.comp_apply, hFB y hy] using hLexp y hy
+
+/-- **Local boundary extension of a half-plane logarithm at a nonvanishing boundary point.**
+If `f` is a holomorphic logarithm of `g` on the open half-plane `a < re s`, and `g` is analytic and
+nonzero at a boundary point `s₀` with `re s₀ = a`, then `f` agrees near `s₀` inside `a < re s` with
+a function `L` analytic at `s₀` satisfying `exp ∘ L = g` near `s₀`. -/
+theorem exists_analyticAt_eq_exp_of_re_eq {a : ℝ} {s₀ : ℂ} (hs₀ : s₀.re = a) {f g : ℂ → ℂ}
+    (hg : AnalyticAt ℂ g s₀) (hg₀ : g s₀ ≠ 0)
+    (hf : DifferentiableOn ℂ f {s : ℂ | a < s.re})
+    (hfg : EqOn (Complex.exp ∘ f) g {s : ℂ | a < s.re}) :
+    ∃ L : ℂ → ℂ, AnalyticAt ℂ L s₀ ∧ (∀ᶠ s in nhds s₀, Complex.exp (L s) = g s) ∧
+      ∀ᶠ s in nhdsWithin s₀ {s : ℂ | a < s.re}, L s = f s := by
+  have hloc : ∀ᶠ s in nhds s₀, AnalyticAt ℂ g s ∧ g s ≠ 0 :=
+    hg.eventually_analyticAt.and (hg.continuousAt.eventually_ne hg₀)
+  obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff.mp hloc
+  have hs₀_eq : (⟨a, s₀.im⟩ : ℂ) = s₀ := Complex.ext hs₀.symm rfl
+  have hgd : DifferentiableOn ℂ g (Metric.ball ⟨a, s₀.im⟩ r) := fun s hs ↦
+    (hball (hs₀_eq ▸ Metric.mem_ball.mp hs)).1.differentiableAt.differentiableWithinAt
+  have hgnz : ∀ s ∈ Metric.ball (⟨a, s₀.im⟩ : ℂ) r, g s ≠ 0 := fun s hs ↦
+    (hball (hs₀_eq ▸ Metric.mem_ball.mp hs)).2
+  obtain ⟨L, hLd, hLexp, hLf⟩ := exists_differentiableOn_eqOn_exp_comp_ball hr hgd hgnz hf hfg
+  rw [hs₀_eq] at hLd hLexp hLf
+  have hmem : Metric.ball s₀ r ∈ nhds s₀ := Metric.ball_mem_nhds s₀ hr
+  refine ⟨L, hLd.analyticAt hmem, ?_, ?_⟩
+  · filter_upwards [hmem] with s hs
+    exact hLexp hs
+  · filter_upwards [nhdsWithin_le_nhds hmem, self_mem_nhdsWithin] with s hsB hsH
+    exact hLf ⟨hsB, hsH⟩
+
+/-- **Radial boundary limit of a half-plane logarithm at a nonvanishing real boundary point.**
+If `f` is a holomorphic logarithm of `g` on `a < re s`, and `g` is analytic and nonzero at
+`(a : ℂ)`, then `f σ` converges as `σ → a⁺` to a complex number `w` with `exp w = g a`. -/
+theorem exists_tendsto_nhdsWithin_Ioi_of_analyticAt_of_ne_zero {a : ℝ} {f g : ℂ → ℂ}
+    (hg : AnalyticAt ℂ g a) (hg₀ : g a ≠ 0)
+    (hf : DifferentiableOn ℂ f {s : ℂ | a < s.re})
+    (hfg : EqOn (Complex.exp ∘ f) g {s : ℂ | a < s.re}) :
+    ∃ w : ℂ, Complex.exp w = g a ∧
+      Filter.Tendsto (fun σ : ℝ ↦ f σ) (nhdsWithin a (Ioi a)) (nhds w) := by
+  obtain ⟨L, hLa, hLexp, hLf⟩ :=
+    exists_analyticAt_eq_exp_of_re_eq (Complex.ofReal_re a) hg hg₀ hf hfg
+  have hmap : Filter.Tendsto (fun σ : ℝ ↦ (σ : ℂ)) (nhdsWithin a (Ioi a))
+      (nhdsWithin (a : ℂ) {s : ℂ | a < s.re}) := by
+    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+      (Complex.continuous_ofReal.continuousAt.tendsto.mono_left nhdsWithin_le_nhds) ?_
+    filter_upwards [self_mem_nhdsWithin] with σ hσ
+    simpa using hσ
+  refine ⟨L a, hLexp.self_of_nhds, ?_⟩
+  exact ((hLa.continuousAt.tendsto.mono_left nhdsWithin_le_nhds).comp hmap).congr'
+    (hmap.eventually hLf)
+
+/-- **Any continuous boundary logarithm forces nonvanishing on the closed half-plane.** If `F` and
+`g` are continuous on the closed half-plane `a ≤ re s` and `exp ∘ F` agrees with `g` on the open
+half-plane `a < re s`, then `g` has no zeros anywhere on `a ≤ re s`. -/
+theorem ne_zero_of_continuousOn_eqOn_exp_comp_le_re {a : ℝ} {F g : ℂ → ℂ}
+    (hF : ContinuousOn F {s : ℂ | a ≤ s.re}) (hg : ContinuousOn g {s : ℂ | a ≤ s.re})
+    (hFg : EqOn (Complex.exp ∘ F) g {s : ℂ | a < s.re}) :
+    ∀ s : ℂ, a ≤ s.re → g s ≠ 0 := by
+  have hEq : EqOn (Complex.exp ∘ F) g {s : ℂ | a ≤ s.re} :=
+    EqOn.of_subset_closure hFg (Complex.continuous_exp.comp_continuousOn hF) hg
+      (fun _ hs ↦ mem_ofPred.mpr (le_of_lt hs)) (by rw [Complex.closure_setOfPred_lt_re])
+  intro s hs
+  rw [← hEq hs, Function.comp_apply]
+  exact Complex.exp_ne_zero (F s)
+
+/-- **Necessary and sufficient condition for holomorphic logarithm continuation across a vertical
+line.** For `g` holomorphic on an open neighbourhood of the closed half-plane `a ≤ re s` and a
+holomorphic logarithm `f` of `g` on `a < re s`, `f` extends to a holomorphic logarithm of `g` on
+some open neighbourhood of `a ≤ re s` if and only if `g` is zero-free on the entire closed
+half-plane `a ≤ re s`. -/
+theorem exists_differentiableOn_eqOn_exp_comp_le_re_iff {a : ℝ} {V : Set ℂ} {f g : ℂ → ℂ}
+    (hV : IsOpen V) (hcover : {s : ℂ | a ≤ s.re} ⊆ V) (hg : DifferentiableOn ℂ g V)
+    (hf : DifferentiableOn ℂ f {s : ℂ | a < s.re})
+    (hfg : EqOn (Complex.exp ∘ f) g {s : ℂ | a < s.re}) :
+    (∃ Ω : Set ℂ, IsOpen Ω ∧ {s : ℂ | a ≤ s.re} ⊆ Ω ∧ ∃ F : ℂ → ℂ, DifferentiableOn ℂ F Ω ∧
+      EqOn (Complex.exp ∘ F) g Ω ∧ EqOn F f {s : ℂ | a < s.re}) ↔
+      ∀ s : ℂ, a ≤ s.re → g s ≠ 0 := by
+  refine ⟨fun ⟨_, _, hΩ, F, _, hFexp, _⟩ s hs ↦ ?_, fun hg₀ ↦
+    exists_differentiableOn_eqOn_exp_comp_le_re hV hcover hg hg₀ hf hfg⟩
+  rw [← hFexp (hΩ hs), Function.comp_apply]
+  exact Complex.exp_ne_zero (F s)
+
+/-- **Continuous boundary extendability of a half-plane logarithm is equivalent to closed-half-plane
+nonvanishing.** Under the same hypotheses on `g` and `f`, `f` extends continuously to the closed
+half-plane `a ≤ re s` (even without assuming holomorphy or `exp ∘ F = g` on the boundary line) if
+and only if `g` is zero-free on `a ≤ re s`. -/
+theorem exists_continuousOn_eqOn_le_re_iff {a : ℝ} {V : Set ℂ} {f g : ℂ → ℂ}
+    (hV : IsOpen V) (hcover : {s : ℂ | a ≤ s.re} ⊆ V) (hg : DifferentiableOn ℂ g V)
+    (hf : DifferentiableOn ℂ f {s : ℂ | a < s.re})
+    (hfg : EqOn (Complex.exp ∘ f) g {s : ℂ | a < s.re}) :
+    (∃ F : ℂ → ℂ, ContinuousOn F {s : ℂ | a ≤ s.re} ∧ EqOn F f {s : ℂ | a < s.re}) ↔
+      ∀ s : ℂ, a ≤ s.re → g s ≠ 0 := by
+  refine ⟨fun ⟨F, hFc, hFf⟩ ↦ ne_zero_of_continuousOn_eqOn_exp_comp_le_re hFc
+    (hg.continuousOn.mono hcover) (fun s hs ↦ ?_), fun hg₀ ↦ ?_⟩
+  · simpa only [Function.comp_apply, hFf hs] using hfg hs
+  · obtain ⟨_, _, hΩ, F, hFd, _, hFf⟩ :=
+      exists_differentiableOn_eqOn_exp_comp_le_re hV hcover hg hg₀ hf hfg
+    exact ⟨F, hFd.continuousOn.mono hΩ, hFf⟩
 
 end TauCeti
 

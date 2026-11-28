@@ -60,6 +60,9 @@ Siegel's theorem on real zeros.
 * `TauCeti.measurable_riemannZeta`: the Riemann zeta function is measurable.
 * `TauCeti.LSeries_neg_one_pow_add_one_eq_mul_riemannZeta`: the alternating series
   `∑ (-1) ^ (n + 1) n⁻ˢ` is `(1 - 2 ^ (1 - s)) ζ(s)` for `Re s > 1`.
+* `TauCeti.hasSum_nat_add_one_cpow_neg_riemannZeta` and
+  `TauCeti.tendsto_sum_Icc_cpow_neg_riemannZeta`: on `Re s > 1`, `∑ (n + 1) ^ (-s)` sums to `ζ(s)`
+  and the partial sums `∑ n ∈ Icc 1 N, n ^ (-s)` tend to `ζ(s)`.
 * `TauCeti.hasSum_two_mul_add_one_cpow_neg_riemannZeta`: the odd terms `∑ (2 k + 1) ^ (-s)` of the
   zeta series sum to `(1 - 2 ^ (-s)) ζ(s)` for `Re s > 1`.
 * `TauCeti.one_sub_two_cpow_mul_riemannZeta_eq_mul_integral`: the partial-summation integral of
@@ -202,17 +205,30 @@ theorem LSeries_neg_one_pow_add_one_eq_mul_riemannZeta {s : ℂ} (hs : 1 < s.re)
   rw [hχ, hL, hχζ, h2]
   ring
 
+/-- On `Re s > 1`, the complex Dirichlet series `∑ (n + 1) ^ (-s)` sums to `riemannZeta s`. -/
+theorem hasSum_nat_add_one_cpow_neg_riemannZeta {s : ℂ} (hs : 1 < s.re) :
+    HasSum (fun n : ℕ ↦ ((n : ℂ) + 1) ^ (-s)) (riemannZeta s) := by
+  have hsum : Summable fun n : ℕ ↦ ((n : ℂ) + 1) ^ (-s) := by
+    simpa [cpow_neg] using
+      (summable_nat_add_iff 1).mpr (Complex.summable_one_div_nat_cpow.mpr hs)
+  rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs]
+  simpa [cpow_neg] using hsum.hasSum
+
+/-- On `Re s > 1`, the partial sums `∑ n ∈ Icc 1 N, n ^ (-s)` converge to `riemannZeta s` as
+`N → ∞`. -/
+theorem tendsto_sum_Icc_cpow_neg_riemannZeta {s : ℂ} (hs : 1 < s.re) :
+    Tendsto (fun N : ℕ ↦ ∑ n ∈ Icc 1 N, (n : ℂ) ^ (-s)) atTop (𝓝 (riemannZeta s)) := by
+  refine (hasSum_nat_add_one_cpow_neg_riemannZeta hs).tendsto_sum_nat.congr fun N ↦ ?_
+  rw [← Finset.Ico_add_one_right_eq_Icc, Finset.sum_Ico_eq_sum_range, Nat.add_sub_cancel]
+  refine Finset.sum_congr rfl fun n _ ↦ ?_
+  rw [Nat.cast_add, Nat.cast_one, add_comm]
+
 /-- **The odd terms of the zeta series.** On `Re s > 1`, `∑ (2 k + 1) ^ (-s) = (1 - 2 ^ (-s)) ζ(s)`:
 the even terms `(2 (k + 1)) ^ (-s)` of `ζ(s) = ∑ (m + 1) ^ (-s)` contribute `2 ^ (-s) ζ(s)`. -/
 theorem hasSum_two_mul_add_one_cpow_neg_riemannZeta {s : ℂ} (hs : 1 < s.re) :
     HasSum (fun k : ℕ ↦ (2 * (k : ℂ) + 1) ^ (-s)) ((1 - 2 ^ (-s)) * riemannZeta s) := by
   -- `ζ(s) = ∑ (m + 1) ^ (-s)`, split into the terms with `m` even and `m` odd.
-  have hζ : HasSum (fun m : ℕ ↦ ((m : ℂ) + 1) ^ (-s)) (riemannZeta s) := by
-    have hsum : Summable fun m : ℕ ↦ ((m : ℂ) + 1) ^ (-s) := by
-      simpa [cpow_neg] using
-        (summable_nat_add_iff 1).mpr (Complex.summable_one_div_nat_cpow.mpr hs)
-    rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs]
-    simpa [cpow_neg] using hsum.hasSum
+  have hζ := hasSum_nat_add_one_cpow_neg_riemannZeta hs
   have hodd : HasSum (fun k : ℕ ↦ (((2 * k + 1 : ℕ) : ℂ) + 1) ^ (-s))
       ((2 : ℂ) ^ (-s) * riemannZeta s) := by
     refine (hζ.mul_left _).congr_fun fun k ↦ ?_

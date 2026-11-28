@@ -111,10 +111,6 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `Complex.ofReal_cpow_neg_one_half` -- for `x ≥ 0`, `x ^ (-1 / 2) = (√x)⁻¹`.
 * `HasDerivAt.cpow_half` -- derivative of `w ↦ f w ^ (1/2)` in the slit plane over any
   nontrivially normed field `𝕜` with `[NormedAlgebra 𝕜 ℂ]`.
-* `Complex.tendsto_ofReal_add_cpow_neg` -- for any complex `x` and real `s > 0`,
-  `(t + x) ^ (-s)` tends to `0` as the real number `t` tends to `∞`.
-* `Complex.tendsto_natCast_cpow_neg_atTop` -- for `0 < re y`, `N ^ (-y)` tends to `0` along the
-  natural numbers.
 * `Complex.continuousAt_neg_two_cpow_half_mul_inv`,
   `Complex.hasDerivAt_neg_two_cpow_half_mul_inv`,
   `Complex.tendsto_neg_two_cpow_half_mul_inv_atTop` -- continuity at `0`, derivative on `(0, ∞)` and
@@ -773,30 +769,6 @@ theorem ofReal_cpow_neg_one_half {x : ℝ} (hx : 0 ≤ x) :
 theorem cpow_neg_half_mul_eq_cpow_half (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w = w ^ (1 / 2 : ℂ) := by
   rw [← TauCeti.cpow_add_one' (by norm_num)]
   norm_num
-
-/-- For any complex `x` and real `s > 0`, `(t + x) ^ (-s)` tends to `0` as the real number `t`
-tends to `∞`. -/
-theorem tendsto_ofReal_add_cpow_neg (x : ℂ) {s : ℝ} (hs : 0 < s) :
-    Tendsto (fun t : ℝ => ((t : ℂ) + x) ^ (-(s : ℂ))) atTop (𝓝 0) := by
-  -- `‖t + x‖ ≥ t - ‖x‖` by the triangle inequality.
-  have hnorm : Tendsto (fun t : ℝ => ‖(t : ℂ) + x‖) atTop atTop := by
-    refine tendsto_atTop_mono' atTop ?_ (tendsto_atTop_add_const_right atTop (-‖x‖) tendsto_id)
-    filter_upwards [eventually_ge_atTop 0] with t ht
-    have h := norm_add_le ((t : ℂ) + x) (-x)
-    rw [add_neg_cancel_right, norm_neg, Complex.norm_real, Real.norm_of_nonneg ht] at h
-    simp only [id]
-    linarith
-  refine tendsto_zero_iff_norm_tendsto_zero.mpr ?_
-  simp only [← Complex.ofReal_neg, Complex.norm_cpow_real]
-  exact (tendsto_rpow_neg_atTop hs).comp hnorm
-
-/-- For `0 < re y`, `N ^ (-y)` tends to `0` along the natural numbers. -/
-theorem tendsto_natCast_cpow_neg_atTop {y : ℂ} (hy : 0 < y.re) :
-    Tendsto (fun N : ℕ => (N : ℂ) ^ (-y)) atTop (𝓝 0) := by
-  rw [tendsto_zero_iff_norm_tendsto_zero]
-  refine ((tendsto_rpow_neg_atTop hy).comp tendsto_natCast_atTop_atTop).congr' ?_
-  filter_upwards [eventually_gt_atTop 0] with N hN
-  rw [norm_natCast_cpow_of_pos hN, neg_re, Function.comp_apply]
 
 /-- The function `t ↦ -2 (t + x)^(1/2) (t + y)⁻¹` is continuous at `0`, even when
 `x = 0` (as `re (1/2) > 0`). -/

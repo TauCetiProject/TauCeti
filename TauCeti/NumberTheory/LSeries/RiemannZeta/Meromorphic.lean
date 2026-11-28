@@ -45,6 +45,8 @@ other zero lies in the open critical strip `0 < Re s < 1`.
   the open critical strip `0 < Re s < 1`.
 * `TauCeti.one_le_toNat_analyticOrderAt_riemannZeta`: at a zero of `riemannZeta` the analytic
   order is a positive natural number.
+* `TauCeti.riemannZeta₁_ne_zero_of_one_le_re` and `TauCeti.re_lt_one_of_riemannZeta₁_eq_zero`:
+  the entire factor `riemannZeta₁` of `(s - 1) ζ(s)` has no zeros on `1 ≤ Re s`.
 
 ## References
 
@@ -145,5 +147,19 @@ theorem one_le_toNat_analyticOrderAt_riemannZeta {ρ : ℂ} (hρ : riemannZeta �
   | coe n =>
     simp only [h, ENat.map_natCast] at hpos
     simpa using Nat.one_le_iff_ne_zero.mpr (by exact_mod_cast hpos.ne')
+
+/-- The entire regularized factor `riemannZeta₁` of `(s - 1) ζ(s)` has no zeros on the closed
+half-plane `1 ≤ Re s`: at `s = 1` it equals `1`, and away from `s = 1` it is `(s - 1) ζ(s)`. -/
+theorem riemannZeta₁_ne_zero_of_one_le_re {s : ℂ} (hs : 1 ≤ s.re) : riemannZeta₁ s ≠ 0 := by
+  rcases eq_or_ne s 1 with rfl | hs₁
+  · simp
+  · intro h0
+    exact riemannZeta_ne_zero_of_one_le_re hs
+      (by rw [riemannZeta_eq_inv_sub_mul hs₁, h0, mul_zero])
+
+/-- Every zero of the entire regularized factor `riemannZeta₁` lies in the open half-plane
+`Re s < 1`. -/
+theorem re_lt_one_of_riemannZeta₁_eq_zero {s : ℂ} (h : riemannZeta₁ s = 0) : s.re < 1 :=
+  not_le.mp fun hs ↦ riemannZeta₁_ne_zero_of_one_le_re hs h
 
 end TauCeti
