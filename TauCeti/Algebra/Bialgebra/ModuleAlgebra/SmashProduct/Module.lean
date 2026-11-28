@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Bialgebra.ModuleAlgebra.Compatibility
+public import TauCeti.Algebra.Bialgebra.ModuleAlgebra.SmashProduct
 public import TauCeti.Algebra.Module.LinearMap.Equivariant
 
 /-!
@@ -114,20 +114,18 @@ theorem includeH_smul (h : H) (m : M) : SmashProduct.includeH (μ := μ) h • m
 /-- An `R`-compatible `IsSmashModule` satisfies `IsCompatibleAction`. -/
 instance toIsCompatibleAction [Module R M] [IsScalarTower R A M] [IsScalarTower R H M] :
     μ.IsCompatibleAction M := by
-  rw [μ.isCompatibleAction_iff_sum M (ℛ R)]
-  intro h a m
-  calc h • (a • m)
-      = SmashProduct.includeH (μ := μ) h • (SmashProduct.includeA (μ := μ) a • m) := by
-          rw [includeH_smul, includeA_smul]
-    _ = (SmashProduct.includeH (μ := μ) h * SmashProduct.includeA a) • m := (mul_smul _ _ _).symm
-    _ = (∑ i ∈ (ℛ R h).index,
-          SmashProduct.includeA (μ := μ) (μ.action ((ℛ R h).left i) a) *
-            SmashProduct.includeH ((ℛ R h).right i)) • m := by
-          rw [SmashProduct.includeH_mul_includeA (ℛ R h) a]
-    _ = ∑ i ∈ (ℛ R h).index, μ.action ((ℛ R h).left i) a • ((ℛ R h).right i • m) := by
-          rw [Finset.sum_smul]
-          refine Finset.sum_congr rfl fun i _ => ?_
-          rw [mul_smul, includeA_smul, includeH_smul]
+  let _ : IsScalarTower R (SmashProduct μ) M := IsScalarTower.of_algebraMap_smul fun r m => by
+    rw [← AlgHom.commutes (SmashProduct.includeA (μ := μ)) r, includeA_smul, algebraMap_smul]
+  have hc := SmashProduct.smashCompatible_includeA_includeH.comp
+    (Algebra.lsmul R (A := SmashProduct μ) R M)
+  have hA : (Algebra.lsmul R (A := SmashProduct μ) R M).comp SmashProduct.includeA =
+      Algebra.lsmul R (A := A) R M :=
+    AlgHom.ext fun a => LinearMap.ext fun m => includeA_smul a m
+  have hH : (Algebra.lsmul R (A := SmashProduct μ) R M).comp SmashProduct.includeH =
+      Algebra.lsmul R (A := H) R M :=
+    AlgHom.ext fun h => LinearMap.ext fun m => includeH_smul h m
+  rw [hA, hH] at hc
+  exact ⟨hc⟩
 
 end IsSmashModule
 

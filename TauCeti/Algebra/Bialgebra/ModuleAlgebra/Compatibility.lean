@@ -5,18 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Bialgebra.ModuleAlgebra.SmashProduct
+public import TauCeti.Algebra.Bialgebra.ModuleAlgebra.Basic
 
 /-!
 # Covariance and compatible actions for left module algebras
 
-This file extends `TauCeti.LeftModuleAlgebra.SmashCompatible` with closure under right tensoring
-via comultiplication and defines compatible `A`- and `H`-module structures on an `R`-module `M`
-(`TauCeti.LeftModuleAlgebra.IsCompatibleAction`), expressing the smash-product Leibniz law
-`h • (a • m) = ∑ (h₁ · a) • (h₂ • m)` independently of the smash-product construction.
+This file defines the covariance relation `TauCeti.LeftModuleAlgebra.SmashCompatible`, proves its
+closure under postcomposition and right tensoring via comultiplication, and defines compatible `A`-
+and `H`-module structures on an `R`-module `M` (`TauCeti.LeftModuleAlgebra.IsCompatibleAction`),
+expressing the smash-product Leibniz law `h • (a • m) = ∑ (h₁ · a) • (h₂ • m)` independently of
+the smash-product construction.
 
 ## Main definitions
 
+* `TauCeti.LeftModuleAlgebra.SmashCompatible`: the covariance relation
+  `fH(h) fA(a) = Σ fA(h₁ · a) fH(h₂)` for a pair of algebra maps.
 * `TauCeti.LeftModuleAlgebra.IsCompatibleAction`: predicate on `R`-compatible `Module A M` and
   `Module H M` instances expressing the smash-product Leibniz law via `SmashCompatible`.
 
@@ -52,7 +55,45 @@ section Semiring
 variable {R : Type u} {H : Type v} {A : Type w}
   [CommSemiring R] [Semiring H] [Bialgebra R H] [Semiring A] [Algebra R A]
 
-/-! ### Additional covariance lemmas -/
+/-! ### Smash compatibility -/
+
+section SmashCompatible
+
+variable (μ : LeftModuleAlgebra R H A) {C D : Type*}
+  [Semiring C] [Algebra R C] [Semiring D] [Algebra R D]
+
+/-- A pair of algebra maps out of `A` and `H` is smash-compatible when it satisfies the
+covariance relation `fH(h) fA(a) = Σ fA(h₁ · a) fH(h₂)`, stated without a choice of
+representation of `Δ h`. These are the pairs that factor through the smash product. -/
+def SmashCompatible (fA : A →ₐ[R] C) (fH : H →ₐ[R] C) : Prop :=
+  ∀ h a, fH h * fA a = LinearMap.mul' R C (TensorProduct.map
+    (fA.toLinearMap ∘ₗ LinearMap.applyₗ a ∘ₗ μ.action.toLinearMap) fH.toLinearMap (comul h))
+
+variable {μ}
+
+/-- The covariance relation in any representation of `Δ h`. -/
+theorem SmashCompatible.mul_eq_sum {fA : A →ₐ[R] C} {fH : H →ₐ[R] C}
+    (hc : μ.SmashCompatible fA fH) {h : H} {ι : Type*} (r : Repr R h ι) (a : A) :
+    fH h * fA a = ∑ i ∈ r.index, fA (μ.action (r.left i) a) * fH (r.right i) := by
+  simp [hc h a, ← r.eq, map_sum]
+
+/-- Smash compatibility is the covariance relation in any family of finite representations of
+`Δ h`. -/
+theorem smashCompatible_iff {fA : A →ₐ[R] C} {fH : H →ₐ[R] C}
+    {ι : H → Type*} (r : ∀ h, Repr R h (ι h)) :
+    μ.SmashCompatible fA fH ↔ ∀ h a,
+      fH h * fA a = ∑ i ∈ (r h).index, fA (μ.action ((r h).left i) a) * fH ((r h).right i) :=
+  ⟨fun hc h a => hc.mul_eq_sum (r h) a, fun hc h a => by
+    simp [hc h a, ← (r h).eq, map_sum]⟩
+
+/-- Smash-compatible pairs are stable under postcomposition. -/
+theorem SmashCompatible.comp {fA : A →ₐ[R] C} {fH : H →ₐ[R] C}
+    (hc : μ.SmashCompatible fA fH) (g : C →ₐ[R] D) :
+    μ.SmashCompatible (g.comp fA) (g.comp fH) :=
+  (smashCompatible_iff (ℛ R)).mpr fun h a => by
+    simp [← map_mul, hc.mul_eq_sum (ℛ R h) a, map_sum]
+
+end SmashCompatible
 
 /-- Tensoring a `SmashCompatible` pair `(fA, fH)` on the right with an `R`-algebra homomorphism
 `gH : H →ₐ[R] D` via the comultiplication of `H` yields a `SmashCompatible` pair in `C ⊗[R] D`. -/
