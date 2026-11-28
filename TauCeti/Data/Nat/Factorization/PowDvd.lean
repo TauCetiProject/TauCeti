@@ -21,6 +21,7 @@ tensor-power argument turns `χ(1)^m ∣ |Z| · |H : Z|^m` for all `m` into `χ(
 
 * `Nat.dvd_of_forall_pow_dvd_mul_pow`: if `d ^ (m + 1) ∣ c * i ^ (m + 1)` for every `m`, with
   `c ≠ 0`, then `d ∣ i`.
+* `Nat.pow_dvd_of_pow_add_dvd_mul`: if `ℓ ^ (n + d) ∣ d * e` with `d ≠ 0`, then `ℓ ^ n ∣ e`.
 -/
 
 public section
@@ -45,5 +46,25 @@ theorem dvd_of_forall_pow_dvd_mul_pow {d c i : ℕ} (hc : c ≠ 0)
   simp only [Finsupp.smul_apply, smul_eq_mul, Finsupp.add_apply] at hm
   by_contra hlt
   nlinarith [not_le.mp hlt]
+
+/-- **A fixed factor is absorbed by its own size.** If `ℓ ^ (n + d) ∣ d * e` with `d ≠ 0`, then
+`ℓ ^ n ∣ e`: at each prime `p`, the exponent of `p` in `d` is less than `d`. -/
+theorem pow_dvd_of_pow_add_dvd_mul {ℓ n d e : ℕ} (hd : d ≠ 0)
+    (h : ℓ ^ (n + d) ∣ d * e) : ℓ ^ n ∣ e := by
+  rcases eq_or_ne e 0 with rfl | he
+  · exact dvd_zero _
+  rcases eq_or_ne ℓ 0 with rfl | hℓ
+  · rw [zero_pow (by omega), zero_dvd_iff, mul_eq_zero] at h
+    exact absurd (h.resolve_left hd) he
+  rw [← factorization_le_iff_dvd (pow_ne_zero _ hℓ) he]
+  rw [← factorization_le_iff_dvd (pow_ne_zero _ hℓ) (mul_ne_zero hd he)] at h
+  intro p
+  have hp := h p
+  have hdp := factorization_lt p hd
+  simp only [factorization_pow, factorization_mul hd he, Finsupp.smul_apply, smul_eq_mul,
+    Finsupp.add_apply] at hp ⊢
+  rcases eq_zero_or_pos (ℓ.factorization p) with h0 | h0
+  · simp [h0]
+  nlinarith
 
 end Nat

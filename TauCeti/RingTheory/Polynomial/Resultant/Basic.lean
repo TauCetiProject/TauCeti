@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Jacobson.Ideal
+public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
+import Mathlib.RingTheory.Polynomial.GaussLemma
 import TauCeti.Algebra.Polynomial.Degree.Operations
+import TauCeti.Algebra.Polynomial.RingDivision
 
 /-!
 # Resultant lemmas
@@ -19,7 +23,9 @@ companion for the *reversed* polynomial `C x - X`, which is the shape that arise
 
 The file also normalizes bounded resultants with a monic left argument. This makes the resultant
 independent of the chosen valid right degree bound, as needed when comparing resultant-based
-discriminant formulas that use different bounds.
+discriminant formulas that use different bounds, and makes `f.resultant` multiplicative in its
+right argument with no leading-coefficient assumption on the right factors. Over an integrally
+closed domain, vanishing of `f.resultant g` for a monic irreducible `f` is equivalent to `f ∣ g`.
 
 That absence is the point. `C x - X` is `C (-1) * (X - C x)`, which contributes `(-1) ^ m`, and
 `resultant_X_sub_C_right` contributes another `(-1) ^ m`, so the two cancel.
@@ -55,12 +61,27 @@ polynomial lifts from the reductions modulo an ideal in the Jacobson radical.
   resultant by `(-1) ^ (m * n)`.
 * `Polynomial.resultant_map_of_natDegree_eq`: resultants at the actual degrees commute with a
   coefficient map that preserves both degrees.
-* `Polynomial.Monic.resultant_of_le`: for a monic left argument, the resultant is independent of
-  the valid degree bound supplied for the right argument.
+* `Polynomial.Monic.resultant_of_le`, `Polynomial.Monic.resultant_mul_right`,
+  `Polynomial.Monic.resultant_prod_right`: for a monic left argument, the resultant is independent
+  of the valid degree bound supplied for the right argument, and hence multiplicative in the right
+  argument.
+* `Polynomial.Monic.resultant_eq_zero_iff_dvd`: over an integrally closed domain, for a monic
+  irreducible `f`, `f.resultant g = 0` iff `f ∣ g`.
+* `Polynomial.resultant_sub_mem_of_map_eq`: polynomials congruent modulo an ideal have congruent
+  resultants.
+* `Polynomial.Monic.resultant_ne_zero_of_not_dvd`: over an integrally closed domain, a monic
+  irreducible polynomial has nonzero resultant against every polynomial it does not divide.
 * `Polynomial.resultant_congr_of_coeff_eq`: the resultant at degree bounds `m` and `n` only sees
   the coefficients of index at most `m` and `n`.
+* `Polynomial.resultant_C_mul_X_add_C_C_mul_X_add_C`: `Res_{1,1}(a X + b, c X + e) = a e - b c`.
+* `Polynomial.exists_mul_add_mul_eq_C_resultant_mul`: for `f`, `g` of degrees at most `m`, `n` and
+  any `P` of degree less than `m + n` there are `p`, `q` of degrees less than `n`, `m` with
+  `f p + g q = Res_{m,n}(f, g) P`.
 * `Polynomial.isCoprime_of_isCoprime_map`: a monic polynomial and any polynomial whose reductions
   modulo an ideal in the Jacobson radical are coprime are themselves coprime.
+* `Polynomial.IsDistinguishedAt.isUnit_resultant_of_isUnit_coeff_zero`: a polynomial distinguished
+  at an ideal contained in the Jacobson radical has unit resultant with every polynomial whose
+  constant coefficient is a unit.
 
 ## Provenance
 
@@ -276,6 +297,34 @@ namespace Polynomial
 
 variable {R : Type*} [CommRing R]
 
+/-- For monic `f`, `Res(f, g₁ * g₂) = Res(f, g₁) * Res(f, g₂)` at the actual degrees, with no
+hypothesis on the leading coefficients of `g₁` and `g₂`. -/
+protected theorem Monic.resultant_mul_right {f g₁ g₂ : R[X]} (hf : f.Monic) :
+    f.resultant (g₁ * g₂) = f.resultant g₁ * f.resultant g₂ := by
+  rw [← hf.resultant_of_le natDegree_mul_le, Polynomial.resultant_mul_right _ _ _ _ le_rfl]
+
+/-- For monic `f`, `Res(f, ∏ gᵢ) = ∏ Res(f, gᵢ)` at the actual degrees, with no hypothesis on the
+leading coefficients of the factors `gᵢ`. -/
+protected theorem Monic.resultant_prod_right {ι : Type*} (s : Finset ι) {f : R[X]} (hf : f.Monic)
+    (g : ι → R[X]) :
+    f.resultant (∏ i ∈ s, g i) = ∏ i ∈ s, f.resultant (g i) := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons a s ha ih => rw [Finset.prod_cons, Finset.prod_cons, hf.resultant_mul_right, ih]
+
+/-- Over an integrally closed domain, the resultant of a monic irreducible polynomial `f` with `g`
+vanishes if and only if `f` divides `g`. -/
+protected theorem Monic.resultant_eq_zero_iff_dvd [IsDomain R] [IsIntegrallyClosed R] {f g : R[X]}
+    (hf : f.Monic) (hirr : Irreducible f) : f.resultant g = 0 ↔ f ∣ g := by
+  let φ := algebraMap R (FractionRing R)
+  have hφ : Function.Injective φ := IsFractionRing.injective R (FractionRing R)
+  have hirr' : Irreducible (f.map φ) := hf.irreducible_iff_irreducible_map_fraction_map.mp hirr
+  rw [← map_eq_zero_iff φ hφ,
+    ← resultant_map_of_natDegree_eq φ (natDegree_map_eq_of_injective hφ f)
+      (natDegree_map_eq_of_injective hφ g),
+    resultant_eq_zero_iff, and_iff_right (Or.inl (hf.map φ).ne_zero),
+    ← hirr'.dvd_iff_not_isCoprime, map_dvd_map φ hφ hf]
+
 /-- **Coprimality lifts along the Jacobson radical.** If `g` is monic and the reductions of `g`
 and `h` modulo an ideal `I` in the Jacobson radical are coprime, then `g` and `h` are coprime. -/
 theorem isCoprime_of_isCoprime_map {I : Ideal R} (hI : I ≤ Ring.jacobson R) {g h : R[X]}
@@ -290,6 +339,21 @@ theorem isCoprime_of_isCoprime_map {I : Ideal R} (hI : I ≤ Ring.jacobson R) {g
     rwa [← isUnit_resultant_iff_isCoprime (hg.map _),
       ← (hg.map _).resultant_of_le (natDegree_map_le (f := Ideal.Quotient.mk I) (p := h)),
       hg.natDegree_map, resultant_map_map] at hgh
+
+/-- A polynomial distinguished at an ideal `I` contained in the Jacobson radical has unit resultant
+with every polynomial whose constant coefficient is a unit: modulo `I` the distinguished polynomial
+reduces to `X ^ d`, which is coprime to any polynomial with unit constant term. -/
+theorem IsDistinguishedAt.isUnit_resultant_of_isUnit_coeff_zero {I : Ideal R} {P Q : R[X]}
+    (hP : P.IsDistinguishedAt I) (hI : I ≤ Ring.jacobson R) (hQ : IsUnit (Q.coeff 0)) :
+    IsUnit (P.resultant Q) := by
+  nontriviality R
+  rw [isUnit_resultant_iff_isCoprime hP.monic]
+  refine isCoprime_of_isCoprime_map hI hP.monic ?_
+  rw [hP.map_eq_X_pow]
+  have heval : IsUnit ((Q.map (Ideal.Quotient.mk I)).eval 0) := by
+    rw [← coeff_zero_eq_eval_zero, coeff_map]
+    exact hQ.map _
+  simpa using ((isCoprime_X_sub_C_iff_isUnit_eval _ (a := 0)).mpr heval).pow_left
 
 /-- The resultant with degree bounds `m` and `n` only involves the coefficients of index at most
 `m` of the first polynomial and at most `n` of the second. -/
@@ -310,5 +374,52 @@ theorem resultant_congr_of_coeff_eq {f f' g g' : R[X]} {m n : ℕ}
     split_ifs with h
     · exact hf _ (by simp only [Set.mem_Icc] at h; omega)
     · rfl
+
+/-- **Resultants of congruent polynomials are congruent.** If `f ≡ f'` and `g ≡ g'` modulo an
+ideal `I`, then the resultants at the same degree bounds are congruent modulo `I`. -/
+theorem resultant_sub_mem_of_map_eq {I : Ideal R} {f f' g g' : R[X]}
+    (hf : f.map (Ideal.Quotient.mk I) = f'.map (Ideal.Quotient.mk I))
+    (hg : g.map (Ideal.Quotient.mk I) = g'.map (Ideal.Quotient.mk I)) (m n : ℕ) :
+    f.resultant g m n - f'.resultant g' m n ∈ I := by
+  rw [← Ideal.Quotient.eq, ← resultant_map_map, ← resultant_map_map, hf, hg]
+
+/-- **A monic irreducible non-divisor has nonzero resultant.** Over an integrally closed domain,
+if a monic irreducible `g` does not divide `f`, then `Res(f, g) ≠ 0`: by Gauss's lemma `g` stays
+irreducible over the fraction field, where it is therefore coprime to `f`. -/
+theorem Monic.resultant_ne_zero_of_not_dvd [IsDomain R] [IsIntegrallyClosed R] {f g : R[X]}
+    (hg : g.Monic) (hirr : Irreducible g) (hdvd : ¬g ∣ f) : f.resultant g ≠ 0 := by
+  rw [resultant_comm, mul_ne_zero_iff]
+  exact ⟨pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero),
+    (hg.resultant_eq_zero_iff_dvd hirr).not.mpr hdvd⟩
+
+/-- The resultant of two linear polynomials is the determinant of their coefficient matrix:
+`Res_{1,1}(a X + b, c X + e) = a e - b c`. -/
+@[simp]
+theorem resultant_C_mul_X_add_C_C_mul_X_add_C (a b c e : R) :
+    (C a * X + C b).resultant (C c * X + C e) 1 1 = a * e - b * c := by
+  -- The Sylvester matrix has the coefficients of `c X + e` in its first column and those of
+  -- `a X + b` in its second.
+  have h : sylvester (C a * X + C b) (C c * X + C e) 1 1 = !![e, b; c, a] := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [sylvester, Fin.addCases]
+  rw [resultant, h, Matrix.det_fin_two_of, mul_comm e a]
+
+/-- **Bézout identity for the resultant with an arbitrary right-hand side.** For `f` and `g` of
+degrees at most `m` and `n` and any `P` of degree less than `m + n`, there are `p` and `q` of
+degrees less than `n` and `m` with `f p + g q = Res_{m,n}(f, g) P`. Mathlib's
+`Polynomial.exists_mul_add_mul_eq_C_resultant` is the case `P = 1`; the proof is the same, applying
+the adjugate `Polynomial.adjSylvester` of the Sylvester map to `P` instead of to `1`. -/
+theorem exists_mul_add_mul_eq_C_resultant_mul {f g : R[X]} {m n : ℕ} (hf : f.natDegree ≤ m)
+    (hg : g.natDegree ≤ n) {P : R[X]} (hP : P.degree < ↑(m + n)) :
+    ∃ p q : R[X], p.degree < n ∧ q.degree < m ∧ f * p + g * q = C (f.resultant g m n) * P := by
+  let P' : R[X]_(m + n) := ⟨P, mem_degreeLT.mpr hP⟩
+  let pq := adjSylvester f g P'
+  have key : sylvesterMap f g hf hg pq = f.resultant g m n • P' := by
+    rw [← LinearMap.comp_apply, sylvesterMap_comp_adjSylvester, LinearMap.smul_apply,
+      LinearMap.id_apply]
+  refine ⟨pq.2, pq.1, mem_degreeLT.mp pq.2.property, mem_degreeLT.mp pq.1.property, ?_⟩
+  -- By definition, `sylvesterMap f g hf hg` sends `(p, q)` to `f q + g p`.
+  have hval : (sylvesterMap f g hf hg pq : R[X]) = f * pq.2 + g * pq.1 := rfl
+  rw [← hval, key, Submodule.coe_smul, smul_eq_C_mul]
 
 end Polynomial

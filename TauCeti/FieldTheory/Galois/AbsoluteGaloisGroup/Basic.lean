@@ -222,6 +222,23 @@ theorem _root_.IntermediateField.fixedField_fixingSubgroup_inf_separableClosure
     IntermediateField.fixedField_fixingSubgroup_lift_inf_separableClosure
       (IntermediateField.restrict hM)
 
+/-- For a separable intermediate field `N` of a normal extension, containment in an arbitrary
+intermediate field `M` is equivalent to reverse containment of their fixing subgroups. -/
+theorem _root_.IntermediateField.fixingSubgroup_le_iff_of_le_separableClosure
+    {M N : IntermediateField F E} (hN : N ≤ separableClosure F E) :
+    M.fixingSubgroup ≤ N.fixingSubgroup ↔ N ≤ M := by
+  refine ⟨fun h ↦ ?_, fun h ↦ IntermediateField.fixingSubgroup_antitone h⟩
+  have hM := IntermediateField.fixedField_fixingSubgroup_inf_separableClosure
+    (inf_le_right : M ⊓ separableClosure F E ≤ separableClosure F E)
+  rw [IntermediateField.fixingSubgroup_inf_separableClosure] at hM
+  calc
+    N = IntermediateField.fixedField N.fixingSubgroup ⊓ separableClosure F E :=
+      (IntermediateField.fixedField_fixingSubgroup_inf_separableClosure hN).symm
+    _ ≤ IntermediateField.fixedField M.fixingSubgroup ⊓ separableClosure F E :=
+      inf_le_inf_right _ (IntermediateField.fixedField_le h)
+    _ = M ⊓ separableClosure F E := hM
+    _ ≤ M := inf_le_left
+
 /-- **A closed subgroup of `Gal(E/F)` is the fixing subgroup of its fixed field**, for `E/F`
 normal. -/
 theorem fixingSubgroup_fixedField {H : Subgroup Gal(E/F)}

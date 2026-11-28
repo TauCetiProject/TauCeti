@@ -20,7 +20,11 @@ smooth manifold with tangent vectors.
 The factor `hadamardFactor f x y`, the averaged derivative of `f` along the segment from `x` to
 `y`, depends smoothly on `x` and `y` jointly. Since `hadamardFactor f x x` is the derivative of `f`
 at `x`, it is invertible for all `x` and `y` near a point where the derivative of `f` is
-invertible (`ContDiff.exists_mem_nhds_isUnit_hadamardFactor`).
+invertible (`ContDiff.exists_mem_nhds_isUnit_hadamardFactor`), and it stays within `C` of a linear
+map `A` when the derivative of `f` does along the segment (`norm_hadamardFactor_sub_le`).
+For a family `Φ : P × ℝ → F` it gives Hadamard division in the real variable,
+`Φ (p, h) - Φ (p, 0) = h • D (p, h)` with `D` jointly `C^k` when `Φ` is `C^(k + 1)`
+(`ContDiff.exists_contDiff_sub_eq_smul`).
 
 Its higher-order analogue is `TauCeti.taylorRemainderFactor n f x y`, the averaged `(n + 1)`-st
 derivative of `f` along the segment from `x` to `y` with the weight of Taylor's integral remainder.
@@ -115,6 +119,24 @@ theorem hadamardFactor_self [CompleteSpace F] (f : E → F) (x : E) :
     hadamardFactor f x x = fderiv ℝ f x := by
   simp [hadamardFactor]
 
+/-- If the derivative of `f` stays within `C` of a fixed linear map `A` along the segment from `x`
+to `y`, then so does its average, the Hadamard factor. -/
+theorem norm_hadamardFactor_sub_le [CompleteSpace F] {f : E → F} {x y : E}
+    (hf : ContinuousOn (fderiv ℝ f) (segment ℝ x y)) {A : E →L[ℝ] F} {C : ℝ}
+    (hC : ∀ z ∈ segment ℝ x y, ‖fderiv ℝ f z - A‖ ≤ C) : ‖hadamardFactor f x y - A‖ ≤ C := by
+  have hseg : ∀ t ∈ Set.Icc (0 : ℝ) 1, x + t • (y - x) ∈ segment ℝ x y := fun t ht ↦ by
+    rw [segment_eq_image']
+    exact Set.mem_image_of_mem _ ht
+  have hcont : ContinuousOn (fun t : ℝ ↦ fderiv ℝ f (x + t • (y - x))) (Set.uIcc 0 1) :=
+    hf.comp (by fun_prop) fun t ht ↦ hseg t (by rwa [Set.uIcc_of_le zero_le_one] at ht)
+  have h : hadamardFactor f x y - A = ∫ t in (0 : ℝ)..1, (fderiv ℝ f (x + t • (y - x)) - A) := by
+    rw [intervalIntegral.integral_sub hcont.intervalIntegrable intervalIntegrable_const]
+    simp [hadamardFactor, segmentAverage]
+  rw [h]
+  refine (intervalIntegral.norm_integral_le_of_norm_le_const (C := C) fun t ht ↦
+    hC _ (hseg t (Set.Ioc_subset_Icc_self ?_))).trans (by simp)
+  rwa [Set.uIoc_of_le zero_le_one] at ht
+
 /-- If `f` is `n + 1` times continuously differentiable, its Hadamard factor is `n` times
 continuously differentiable in the endpoint. -/
 theorem ContDiff.contDiff_hadamardFactor_of_succ
@@ -166,6 +188,20 @@ the basepoint and the endpoint jointly. -/
 theorem ContDiff.contDiff_hadamardFactor_uncurry (f : E → F) (hf : ContDiff ℝ ∞ f) :
     ContDiff ℝ ∞ (fun p : E × E ↦ hadamardFactor f p.1 p.2) := by
   simpa using ContDiff.contDiff_hadamardFactor_uncurry_of_succ (⊤ : ℕ∞) f (by simpa using hf)
+
+/-- **Hadamard division in a real variable, with parameters.** If `Φ : P × ℝ → F` is `C^(k + 1)`,
+then `Φ (p, h) - Φ (p, 0) = h • D (p, h)` for a function `D` that is `C^k` jointly in the parameter
+`p` and the variable `h`. -/
+theorem ContDiff.exists_contDiff_sub_eq_smul [CompleteSpace F]
+    {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] {k : ℕ∞} {Φ : P × ℝ → F}
+    (hΦ : ContDiff ℝ (k + 1 : ℕ∞) Φ) :
+    ∃ D : P × ℝ → F, ContDiff ℝ k D ∧ ∀ p h, Φ (p, h) - Φ (p, 0) = h • D (p, h) := by
+  refine ⟨fun q ↦ hadamardFactor Φ (q.1, 0) q ((0 : P), (1 : ℝ)), ?_, fun p h ↦ ?_⟩
+  · exact ((ContDiff.contDiff_hadamardFactor_uncurry_of_succ k Φ hΦ).comp
+      (by fun_prop : ContDiff ℝ k fun q : P × ℝ ↦ ((q.1, (0 : ℝ)), q))).clm_apply contDiff_const
+  · have hd : ((p, h) : P × ℝ) - (p, 0) = h • ((0 : P), (1 : ℝ)) := by ext <;> simp
+    rw [ContDiff.sub_eq_hadamardFactor_apply Φ (hΦ.of_le (by exact_mod_cast le_add_self)) (p, 0)
+      (p, h), hd, map_smul]
 
 /-- Near a point where the derivative of a `C¹` map `f : E → E` is invertible, the averaged
 derivative `hadamardFactor f y x` is invertible for all basepoints `y` and endpoints `x`. -/

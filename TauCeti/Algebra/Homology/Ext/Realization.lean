@@ -87,6 +87,16 @@ theorem exists_hom_iff_extClass_comp_eq {T : ShortComplex C}
     · apply (DerivedCategory.singleFunctor C 0).map_injective
       simpa only [Functor.map_comp, hb₀, singleTriangle_mor₂] using hb₂.symm
 
+/-- Short exact sequences with the same end terms have equal extension classes precisely
+when there is a morphism between them that fixes both end terms. -/
+theorem exists_hom_iff_extClass_eq {X Y E F : C} {i : Y ⟶ E} {p : E ⟶ X}
+    {j : Y ⟶ F} {q : F ⟶ X} {hip : i ≫ p = 0} {hjq : j ≫ q = 0}
+    (hS : (ShortComplex.mk i p hip).ShortExact) (hT : (ShortComplex.mk j q hjq).ShortExact) :
+    (∃ φ : ShortComplex.mk i p hip ⟶ ShortComplex.mk j q hjq, φ.τ₁ = 𝟙 Y ∧ φ.τ₃ = 𝟙 X) ↔
+      hS.extClass = hT.extClass := by
+  simpa only [Ext.comp_mk₀_id, Ext.mk₀_id_comp] using
+    hS.exists_hom_iff_extClass_comp_eq hT (𝟙 Y) (𝟙 X)
+
 /-- Isomorphisms on the endpoints extend to an isomorphism of short exact sequences if
 and only if they respect the associated degree-one extension classes. -/
 theorem exists_iso_iff_extClass_comp_eq {T : ShortComplex C}

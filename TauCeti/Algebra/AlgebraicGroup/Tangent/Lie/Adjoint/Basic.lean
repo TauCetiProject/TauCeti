@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Hopf.PointConjugation
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Adjoint
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Map
+import TauCeti.Algebra.AlgebraicGroup.Tangent.Conjugation
 
 /-!
 # The adjoint action respects the Lie bracket
@@ -14,7 +17,8 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
 `Derivation.adDerivation` conjugates a tangent vector by a point of the Hopf algebra.
 `Tangent.Adjoint` shows that this is an action by linear automorphisms; this file adds the
 Lie-bracket compatibility and bundles each `Ad g` as a Lie automorphism rather than merely
-an automorphism of the module.
+an automorphism of the module. It also records that the Lie differential of conjugation by a
+rational point is the corresponding adjoint Lie automorphism.
 
 It is kept out of `Tangent.Adjoint` so that the non-Lie tangent aggregator does not re-export
 the Lie-algebra structure.
@@ -24,6 +28,8 @@ the Lie-algebra structure.
 * `Derivation.adDerivation_lie`: `Ad g ⁅d₁, d₂⁆ = ⁅Ad g d₁, Ad g d₂⁆`.
 * `Derivation.adDerivationLieEquiv`: the adjoint action on counit-valued derivations,
   bundled as a Lie automorphism.
+* `TauCeti.derivationCompLieHom_pointConjugationBialgEquiv`: the Lie differential of conjugation
+  by a rational point is `Derivation.adDerivationLieEquiv`.
 -/
 
 public section
@@ -48,8 +54,8 @@ bracket of tangent vectors. -/
 theorem adDerivation_lie (g : WithConv (A →ₐ[R] Bialgebra.CounitAlgebra R A B))
     (d₁ d₂ : Derivation R A (Bialgebra.CounitAlgebra R A B)) :
     adDerivation B g ⁅d₁, d₂⁆ = ⁅adDerivation B g d₁, adDerivation B g d₂⁆ := by
-  have hinv : toConv ((g⁻¹).ofConv.toLinearMap) * toConv g.ofConv.toLinearMap = 1 := by
-    rw [← AlgHom.toLinearMap_convMul, inv_mul_cancel, AlgHom.toLinearMap_convOne]
+  have hinv : toConv ((g⁻¹).ofConv.toLinearMap) * toConv g.ofConv.toLinearMap = 1 :=
+    WithConv.algHom_toConv_inv_mul_toConv g
   have hbr : ∀ e₁ e₂ : Derivation R A (Bialgebra.CounitAlgebra R A B),
       toConv (↑⁅e₁, e₂⁆ : A →ₗ[R] Bialgebra.CounitAlgebra R A B) =
         toConv (↑e₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B) *
@@ -103,5 +109,16 @@ theorem adDerivationLieEquiv_apply
     ((adRepresentation B).asGroupHom g) d = _
   simp only [LinearMap.GeneralLinearGroup.coe_toLinearEquiv,
     Representation.asGroupHom_apply, adRepresentation_apply]
+
+/-- **The Lie differential of conjugation by a rational point is the adjoint Lie automorphism.** -/
+theorem _root_.TauCeti.derivationCompLieHom_pointConjugationBialgEquiv
+    (g : WithConv (A →ₐ[R] R)) :
+    derivationCompLieHom (B := B) (HopfAlgebra.pointConjugationBialgEquiv g).toBialgHom =
+      (adDerivationLieEquiv B
+        (AlgHom.mapValue (H := A)
+          (Algebra.ofId R (Bialgebra.CounitAlgebra R A B)) g)).toLieHom := by
+  ext d x
+  rw [derivationCompLieHom_apply, LieEquiv.coe_toLieHom, adDerivationLieEquiv_apply,
+    derivationComp_pointConjugationBialgEquiv]
 
 end Derivation

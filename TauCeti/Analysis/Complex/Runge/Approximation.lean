@@ -8,17 +8,16 @@ module
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Analysis.Complex.Runge.Hull
-public import TauCeti.Analysis.Complex.Runge.Operator
+public import TauCeti.Analysis.Complex.Runge.CompactPair
 public import TauCeti.Analysis.Normed.Module.Exhaustion
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.SummableUniformlyOn
-import Mathlib.Analysis.Normed.Module.DoubleDual
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
-import TauCeti.Analysis.Complex.PowerSeries.Approximation
+import TauCeti.Analysis.Complex.Runge.Basic
 import TauCeti.Analysis.Complex.Runge.SimpleFraction
 import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.Analysis.Normed.Module.FilledIn
+import TauCeti.LinearAlgebra.Complex.Finrank
 
 /-!
 # Runge's approximation theorem and holomorphic hulls
@@ -32,12 +31,12 @@ exhaustions `TauCeti.filledExhaustion Ω` (`TauCeti.Analysis.Normed.Module.Exhau
 equivalences provide the compact-to-global patching step for constructing global holomorphic
 functions on arbitrary open plane sets.
 
-From scalar Runge approximation we identify `TauCeti.holomorphicHull Ω K` with
-`TauCeti.fillIn K Ω`, the union of `K` and all relatively compact connected components of `Ω \ K` in
-`Ω` (`TauCeti.holomorphicHull_eq_fill`), establishing `holomorphicHull Ω K = K ↔ IsFilledIn K Ω`.
-Specializing to `Ω = Set.univ` links `TauCeti.holomorphicHull Set.univ K = TauCeti.filledHull K`,
-polynomial convexity in dimension one, and uniform polynomial approximation on compact sets with
-connected complement.
+Building on the forward approximation theorems in `TauCeti.Analysis.Complex.Runge.Basic`, we
+identify `TauCeti.holomorphicHull Ω K` with `TauCeti.fillIn K Ω`, the union of `K` and all
+relatively compact connected components of `Ω \ K` in `Ω` (`TauCeti.holomorphicHull_eq_fill`),
+establishing `holomorphicHull Ω K = K ↔ IsFilledIn K Ω`. Specializing to `Ω = Set.univ` links
+`TauCeti.holomorphicHull Set.univ K = TauCeti.filledHull K`, polynomial convexity in dimension one,
+and uniform polynomial approximation on compact sets with connected complement.
 
 ## Main results
 
@@ -45,25 +44,23 @@ connected complement.
   `IsOpen.exists_subset_interior_and_isRungeCompactPair`: holomorphic hulls of compact subsets and
   stages of `TauCeti.filledExhaustion` form Runge compact pairs with `Ω`, which absorb every compact
   subset of `Ω` into their interior.
-* `TauCeti.IsRungeCompactPair.exists_differentiableOn_norm_sub_lt` and
-  `TauCeti.isRungeCompactPair_iff_approximation`: forward uniform Runge approximation of functions
-  with values in a complex normed space, and the full domain-relative Runge equivalence.
 * `TauCeti.differentiableOn_tsum_of_forall_norm_le_filledExhaustion`: a series of holomorphic
   functions whose `k`-th term is bounded on the `k`-th stage by a summable sequence has a
   holomorphic sum.
+* `TauCeti.isRungeCompactPair_iff_approximation`: the full domain-relative Runge equivalence.
 * `TauCeti.holomorphicHull_eq_fill` and `TauCeti.holomorphicHull_eq_self_iff_isFilledIn`:
   topological characterization of `TauCeti.holomorphicHull Ω K` for open `Ω` and compact `K ⊆ Ω`.
 * `TauCeti.isRungeCompactPair_iff_holomorphicHull_eq` and
-  `TauCeti.isRungeCompactPair_iff_forall_mem_sdiff_exists_differentiableOn_one_lt_norm_le`:
-  holomorphic-hull and point-separation criteria for Runge compact pairs.
+  `TauCeti.isRungeCompactPair_iff_forall_mem_sdiff_exists_differentiableOn_norm_lt_one_lt`:
+  holomorphic-hull and strict point-separation criteria for Runge compact pairs.
 * `TauCeti.holomorphicHull_univ_eq_filledHull`,
-  `IsCompact.isConnected_compl_iff_isPolynomiallyConvex`, and
+  `IsCompact.isPolynomiallyConvex_image_const_iff_isConnected_compl`, and
   `IsCompact.isConnected_compl_iff_forall_differentiableOn_exists_polynomial_norm_sub_lt`:
   specialization to `Ω = Set.univ` and the polynomial Runge theorem on `ℂ`.
 
 ## References
 
-* A. Rainer, *Advanced Complex Analysis*, Theorem 11.1 and Lemma 11.3.
+* A. Rainer, *Advanced Complex Analysis*, §11 (Theorem 11.1, Lemma 11.3, Theorem 11.7).
 * L. Hörmander, *An Introduction to Complex Analysis in Several Variables*, 3rd ed.,
   Theorems 1.3.1 and 1.3.9.
 * W. Rudin, *Real and Complex Analysis*, 3rd ed., Theorem 13.5.
@@ -71,7 +68,7 @@ connected complement.
 
 public section
 
-open Metric Set
+open Filter Metric Polynomial Set
 open scoped NNReal Topology
 
 namespace TauCeti
@@ -100,35 +97,7 @@ theorem _root_.IsOpen.exists_subset_interior_and_isRungeCompactPair {Ω K : Set 
   obtain ⟨n, hn⟩ := hΩ.exists_subset_interior_filledExhaustion hK hKΩ
   exact ⟨filledExhaustion Ω n, hn, hΩ.isRungeCompactPair_filledExhaustion n⟩
 
-/-- Forward Runge approximation for a `IsRungeCompactPair`: every function with values in a complex
-normed space that is holomorphic on an open neighbourhood `U` of `K` can be approximated uniformly
-on `K` by functions holomorphic on `Ω`. -/
-theorem IsRungeCompactPair.exists_differentiableOn_norm_sub_lt {W : Type*} [NormedAddCommGroup W]
-    [NormedSpace ℂ W] {Ω K U : Set ℂ} (hRunge : IsRungeCompactPair Ω K) (hU : IsOpen U)
-    (hKU : K ⊆ U) {f : ℂ → W} (hf : DifferentiableOn ℂ f U) {ε : ℝ} (hε : 0 < ε) :
-    ∃ g : ℂ → W, DifferentiableOn ℂ g Ω ∧ ∀ z ∈ K, ‖f z - g z‖ < ε := by
-  obtain ⟨L, hL, -, hLUO, hop⟩ := exists_finite_rank_runge_operator hRunge hU hKU
-  obtain ⟨M, hM⟩ :=
-    hL.bddAbove_image (hf.continuousOn.mono (hLUO.trans inter_subset_left)).norm
-  set B : ℝ := max M 1
-  have hB1 : 0 < B := zero_lt_one.trans_le (le_max_right _ _)
-  have hLB : ∀ z ∈ L, ‖f z‖ ≤ B := fun z hz =>
-    (hM ⟨z, hz, rfl⟩).trans (le_max_left _ _)
-  obtain ⟨N, ζ, w, g, -, hg_diff, hbound⟩ := hop (ε / 2 / B) (by positivity)
-  refine ⟨fun z => ∑ j : Fin N, (w j * g j z) • f (ζ j), ?_, fun z hz => ?_⟩
-  · exact DifferentiableOn.fun_sum fun j _ => ((hg_diff j).const_mul (w j)).smul_const (f (ζ j))
-  -- The scalar estimate for `φ ∘ f`, for every continuous linear functional `φ`, bounds the norm.
-  refine (NormedSpace.norm_le_dual_bound ℂ _ (by positivity) fun φ => ?_).trans_lt
-    ((div_mul_cancel₀ _ hB1.ne').trans_lt (half_lt_self hε))
-  have hφ := hbound (fun z => φ (f z)) (φ.differentiable.comp_differentiableOn hf)
-    (‖φ‖ * B) (by positivity) (fun z hz => (φ.le_opNorm _).trans (by gcongr; exact hLB z hz)) z hz
-  calc ‖φ (f z - ∑ j : Fin N, (w j * g j z) • f (ζ j))‖
-      = ‖φ (f z) - ∑ j : Fin N, w j * φ (f (ζ j)) * g j z‖ := by
-        simp only [map_sub, map_sum, map_smul, smul_eq_mul]
-        congr 2
-        exact Finset.sum_congr rfl fun j _ => by ring
-    _ ≤ ε / 2 / B * (‖φ‖ * B) := hφ
-    _ = ε / 2 / B * B * ‖φ‖ := by ring
+/-! ### Domain-relative Runge theorem and holomorphic hulls -/
 
 /-- A series of functions holomorphic on an open set `Y ⊆ Ω`, whose `k`-th term is bounded by
 `u k` on the stage `filledExhaustion Ω k` for a summable `u`, has a holomorphic sum on `Y`: each
@@ -162,7 +131,9 @@ theorem isRungeCompactPair_iff_approximation {Ω K : Set ℂ}
         ∀ ε > 0, ∃ g : ℂ → ℂ, DifferentiableOn ℂ g Ω ∧
           ∀ z ∈ K, ‖f z - g z‖ < ε := by
   refine ⟨fun hRunge U hU hKU f hf ε hε =>
-    hRunge.exists_differentiableOn_norm_sub_lt hU hKU hf hε, fun happrox => ?_⟩
+    hRunge.isFilledIn.exists_differentiableOn_norm_sub_lt
+      hRunge.isCompact hRunge.subset hU hKU hf hε,
+    fun happrox => ?_⟩
   refine isRungeCompactPair_iff.mpr ⟨hΩ, hK, hKΩ,
     isFilledIn_of_forall_exists_differentiableOn_norm_inv_sub_lt hΩ fun a ha ↦
       happrox {a}ᶜ isOpen_compl_singleton (fun z hz hza ↦ ha.2 (hza ▸ hz)) _
@@ -183,8 +154,7 @@ theorem holomorphicHull_eq_fill {Ω K : Set ℂ}
   have hRunge₁ : IsRungeCompactPair Ω (insert z Ktilde) :=
     isRungeCompactPair_iff.mpr ⟨hΩ, hKt_cpt.insert z,
       insert_subset_iff.mpr ⟨holomorphicHull_subset_left _ _ hz, fillIn_subset hKΩ⟩,
-      (isFilledIn_fillIn K Ω).insert (by simp [Complex.rank_real_complex])
-        (hΩ.sdiff hKt_cpt.isClosed) z⟩
+      (isFilledIn_fillIn K Ω).insert Complex.one_lt_rank_real_complex (hΩ.sdiff hKt_cpt.isClosed) z⟩
   -- Step 2: Separate `z` from `Ktilde` by a `0`/`1` function on disjoint open sets.
   obtain ⟨r, hr, hr_ball⟩ := Metric.isOpen_iff.mp hKt_cpt.isClosed.isOpen_compl z hzKt
   set r' : ℝ := r / 2
@@ -204,7 +174,8 @@ theorem holomorphicHull_eq_fill {Ω K : Set ℂ}
       hU₁ isOpen_ball
   -- Step 3: Approximate `f` on `insert z Ktilde` via Runge and contradict the hull bound at `z`.
   obtain ⟨g, hg_diff, hg_lt⟩ :=
-    hRunge₁.exists_differentiableOn_norm_sub_lt (hU₁.union isOpen_ball)
+    hRunge₁.isFilledIn.exists_differentiableOn_norm_sub_lt hRunge₁.isCompact hRunge₁.subset
+      (hU₁.union isOpen_ball)
       (insert_subset_iff.mpr ⟨Or.inr (mem_ball_self hr'), hKtU₁.trans subset_union_left⟩)
       hf_diff (by norm_num : (0 : ℝ) < 1 / 3)
   have hgK : ∀ w ∈ K, ‖g w‖ ≤ (1 / 3 : ℝ) := fun w hwK => by
@@ -240,40 +211,14 @@ theorem isRungeCompactPair_iff_holomorphicHull_eq {Ω K : Set ℂ}
     (holomorphicHull_eq_self_iff_isFilledIn hΩ hK hKΩ).mp h⟩
 
 /-- Point-separation criterion for Runge compact pairs: for an open set `Ω ⊆ ℂ` and a compact
-subset `K ⊆ Ω`, `IsRungeCompactPair Ω K` holds if and only if every `z ∈ Ω \ K` is separated from
-`K` by an `Ω`-holomorphic function bounded by `1` on `K` and exceeding `1` in norm at `z`. -/
-theorem isRungeCompactPair_iff_forall_mem_sdiff_exists_differentiableOn_one_lt_norm_le
+subset `K ⊆ Ω`, `IsRungeCompactPair Ω K` holds if and only if every `z ∈ Ω \ K` is strictly
+separated from `K` by an `Ω`-holomorphic function of modulus `< 1` on `K` and `> 1` at `z`. -/
+theorem isRungeCompactPair_iff_forall_mem_sdiff_exists_differentiableOn_norm_lt_one_lt
     {Ω K : Set ℂ} (hΩ : IsOpen Ω) (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     IsRungeCompactPair Ω K ↔
-      ∀ z ∈ Ω \ K, ∃ f : ℂ → ℂ, DifferentiableOn ℂ f Ω ∧ 1 < ‖f z‖ ∧ ∀ w ∈ K, ‖f w‖ ≤ 1 := by
-  rw [isRungeCompactPair_iff_holomorphicHull_eq hΩ hK]
-  constructor
-  · intro hhull z hz
-    rcases K.eq_empty_or_nonempty with rfl | ⟨w₀, hw₀⟩
-    · exact ⟨fun _ => 2, differentiableOn_const 2, by norm_num, fun _ h => h.elim⟩
-    have hz' : z ∉ holomorphicHull Ω K := by
-      rw [hhull]
-      exact hz.2
-    rw [mem_holomorphicHull_iff] at hz'
-    push Not at hz'
-    obtain ⟨f, hf, B, hKB, hfz⟩ := hz' hz.1
-    have hB0 : 0 ≤ B := (norm_nonneg (f w₀)).trans (hKB w₀ hw₀)
-    let t : ℝ := (B + ‖f z‖) / 2
-    have ht0 : 0 < t := by dsimp only [t]; linarith [norm_nonneg (f z)]
-    have hBt : B < t := by dsimp only [t]; linarith
-    refine ⟨fun w => (t⁻¹ : ℂ) * f w, hf.const_mul _, ?_, fun w hw => ?_⟩
-    · rw [norm_mul, norm_inv, Complex.norm_real, Real.norm_of_nonneg ht0.le, inv_mul_eq_div,
-        lt_div_iff₀ ht0]
-      dsimp only [t]
-      linarith
-    · rw [norm_mul, norm_inv, Complex.norm_real, Real.norm_of_nonneg ht0.le, inv_mul_eq_div,
-        div_le_one ht0]
-      exact (hKB w hw).trans hBt.le
-  · intro hsep
-    refine Subset.antisymm (fun z hz => ?_) (subset_holomorphicHull hKΩ)
-    by_contra hzK
-    obtain ⟨f, hf, hfz, hKB⟩ := hsep z ⟨holomorphicHull_subset_left _ _ hz, hzK⟩
-    exact hfz.not_ge (norm_le_of_mem_holomorphicHull hz hf hKB)
+      ∀ z ∈ Ω \ K, ∃ f : ℂ → ℂ, DifferentiableOn ℂ f Ω ∧ (∀ w ∈ K, ‖f w‖ < 1) ∧ 1 < ‖f z‖ := by
+  rw [isRungeCompactPair_iff_holomorphicHull_eq hΩ hK,
+    holomorphicHull_eq_self_iff_forall_mem_sdiff_exists_differentiableOn_norm_lt_one_lt hKΩ]
 
 /-- Every stage of `TauCeti.filledExhaustion Ω` equals its own holomorphic hull in `Ω`. -/
 @[simp]
@@ -288,17 +233,14 @@ theorem holomorphicHull_univ_eq_filledHull {K : Set ℂ} (hK : IsCompact K) :
     holomorphicHull Set.univ K = filledHull K := by
   rw [holomorphicHull_eq_fill isOpen_univ hK (subset_univ K), fillIn_univ]
 
-/-- For compact `K ⊆ ℂ`, the complement `Kᶜ` is connected if and only if the image of `K` in
-`Fin 1 → ℂ` under the diagonal embedding is polynomially convex. -/
-theorem _root_.IsCompact.isConnected_compl_iff_isPolynomiallyConvex {K : Set ℂ}
-    (hK : IsCompact K) :
-    IsConnected Kᶜ ↔ IsPolynomiallyConvex (Function.const (Fin 1) '' K) := by
+/-- For compact `K ⊆ ℂ` and any nonempty index type `ι`, `Function.const ι '' K` is polynomially
+convex if and only if `Kᶜ` is connected. -/
+theorem _root_.IsCompact.isPolynomiallyConvex_image_const_iff_isConnected_compl
+    {ι : Type*} [Nonempty ι] {K : Set ℂ} (hK : IsCompact K) :
+    IsPolynomiallyConvex (Function.const ι '' K) ↔ IsConnected Kᶜ := by
   rw [← hK.isBounded.holomorphicHull_univ_eq_self_iff_isPolynomiallyConvex,
-    holomorphicHull_univ_eq_filledHull hK]
-  refine ⟨fun hconn => filledHull_eq_self hconn.isPreconnected fun hb =>
-    NormedSpace.unbounded_univ ℝ ℂ (by simpa using hb.union hK.isBounded), fun hfill => ?_⟩
-  simpa only [hfill] using
-    isConnected_compl_filledHull (by simp [Complex.rank_real_complex]) hK.isBounded
+    holomorphicHull_univ_eq_filledHull hK,
+    filledHull_eq_self_iff_isConnected_compl Complex.one_lt_rank_real_complex hK.isBounded]
 
 /-- **Polynomial Runge theorem**: a compact set `K ⊆ ℂ` has connected complement `Kᶜ` if and only
 if every holomorphic function on an open neighbourhood `U ⊇ K` can be approximated uniformly on `K`
@@ -309,22 +251,13 @@ theorem _root_.IsCompact.isConnected_compl_iff_forall_differentiableOn_exists_po
       ∀ U : Set ℂ, IsOpen U → K ⊆ U →
       ∀ f : ℂ → ℂ, DifferentiableOn ℂ f U →
         ∀ ε > 0, ∃ p : Polynomial ℂ, ∀ z ∈ K, ‖f z - p.eval z‖ < ε := by
-  rw [hK.isConnected_compl_iff_isPolynomiallyConvex,
-    ← hK.isBounded.holomorphicHull_univ_eq_self_iff_isPolynomiallyConvex,
-    ← isRungeCompactPair_iff_holomorphicHull_eq isOpen_univ hK,
-    isRungeCompactPair_iff_approximation isOpen_univ hK (subset_univ K)]
-  constructor
-  · intro h U hU hKU f hf ε hε
-    obtain ⟨g, hg_diff, hg_lt⟩ := h U hU hKU f hf (ε / 2) (half_pos hε)
-    obtain ⟨p, hp_lt⟩ := (differentiableOn_univ.mp hg_diff).exists_polynomial_norm_sub_lt
-      hK.isBounded (half_pos hε)
-    refine ⟨p, fun z hz => ?_⟩
-    calc ‖f z - p.eval z‖
-        ≤ ‖f z - g z‖ + ‖g z - p.eval z‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
-      _ < ε / 2 + ε / 2 := add_lt_add (hg_lt z hz) (hp_lt z hz)
-      _ = ε := add_halves ε
-  · intro h U hU hKU f hf ε hε
-    obtain ⟨p, hp_lt⟩ := h U hU hKU f hf ε hε
-    exact ⟨fun z => p.eval z, p.differentiable.differentiableOn, hp_lt⟩
+  rw [← filledHull_eq_self_iff_isConnected_compl Complex.one_lt_rank_real_complex hK.isBounded,
+    ← fillIn_univ K, fillIn_eq_self_iff_isFilledIn]
+  refine ⟨fun hfill U hU hKU f hf ε hε =>
+    hfill.exists_polynomial_norm_sub_lt hK hU hKU hf hε, fun h => ?_⟩
+  exact ((isRungeCompactPair_iff_approximation isOpen_univ hK (subset_univ K)).mpr
+    fun U hU hKU f hf ε hε =>
+      let ⟨p, hp⟩ := h U hU hKU f hf ε hε
+      ⟨fun z => p.eval z, p.differentiable.differentiableOn, hp⟩).isFilledIn
 
 end TauCeti

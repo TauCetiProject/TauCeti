@@ -51,6 +51,8 @@ unique `p`-th root of `a` in `Ω` is fixed by every automorphism of `Ω` over `K
 * `TauCeti.IsAlgClosed.mem_range_algebraMap_iff_fixed`,
   `TauCeti.IsAlgClosed.fixedField_top_eq_bot`: the fixed field of all automorphisms of `Ω` over
   a perfect field `K` is `K`.
+* `TauCeti.IsAlgClosed.finsum_apply_mem_range_algebraMap`: in characteristic zero, the sum of the
+  values at a point of all ring maps into `Ω` is rational.
 
 ## References
 
@@ -126,6 +128,17 @@ theorem exists_algEquiv_apply_algebraMap {K : Type*} [CommRing K] [Algebra K R] 
   rw [IsScalarTower.algebraMap_apply K R Ω, hτ]
   exact congrArg (algebraMap R Ω) (σ.commutes k)
 
+/-- Restriction onto a normal subfield is surjective when the ambient field is algebraically
+closed, including when the ambient extension is transcendental. -/
+theorem restrictNormalHom_surjective_of_isAlgClosed {F K Ω : Type*} [Field F] [Field K]
+    [Field Ω] [Algebra F K] [Algebra F Ω] [Algebra K Ω] [IsScalarTower F K Ω]
+    [Normal F K] [IsAlgClosed Ω] :
+    Function.Surjective (restrictNormalHom (F := F) (K₁ := Ω) K) := by
+  intro σ
+  obtain ⟨τ, hτ⟩ := σ.exists_algEquiv_apply_algebraMap (Ω := Ω)
+  exact ⟨τ, AlgEquiv.ext fun x ↦ (algebraMap K Ω).injective
+    ((restrictNormal_commutes τ K x).trans (hτ x))⟩
+
 end AlgEquiv
 
 namespace Transcendental
@@ -182,5 +195,22 @@ theorem fixedField_top_eq_bot :
   ext x
   simpa [IntermediateField.mem_fixedField_iff, IntermediateField.mem_bot] using
     (mem_range_algebraMap_iff_fixed (K := K) x).symm
+
+/-- For a commutative ring `E` and an algebraically closed field `Ω` of characteristic zero, the
+sum `∑ᶠ φ : E →+* Ω, φ a` of the values at `a` of all ring maps `E → Ω` is rational: every
+automorphism of `Ω` permutes these maps, so fixes the sum. For a number field `E` and `Ω = ℂ`
+this is the rationality of the trace. -/
+theorem finsum_apply_mem_range_algebraMap [CharZero Ω] {E : Type*} [CommRing E] (a : E) :
+    ∑ᶠ φ : E →+* Ω, φ a ∈ Set.range (algebraMap ℚ Ω) := by
+  refine (mem_range_algebraMap_iff_fixed _).mpr fun τ ↦ ?_
+  let e : (E →+* Ω) ≃ (E →+* Ω) :=
+    { toFun := fun φ ↦ (τ : Ω →+* Ω).comp φ
+      invFun := fun φ ↦ (τ.symm : Ω →+* Ω).comp φ
+      left_inv := fun φ ↦ RingHom.ext fun x ↦ by simp
+      right_inv := fun φ ↦ RingHom.ext fun x ↦ by simp }
+  calc τ (∑ᶠ φ : E →+* Ω, φ a) = ∑ᶠ φ : E →+* Ω, τ (φ a) :=
+        AddEquivClass.map_finsum τ _
+    _ = ∑ᶠ φ : E →+* Ω, e φ a := finsum_congr fun φ ↦ by simp [e]
+    _ = ∑ᶠ φ : E →+* Ω, φ a := finsum_comp_equiv e (f := fun φ : E →+* Ω ↦ φ a)
 
 end TauCeti.IsAlgClosed

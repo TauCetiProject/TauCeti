@@ -365,13 +365,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_capping_pl
   have hψs (k : ℕ) : ContDiff ℝ 3 (ψ k) := contDiff_realChart_plumbingMap one (L k)
   -- The window `D'` lies outside the circle `s_∞ = -Lₖ/2`, and `ψₖ` carries it into `ℂ ∖ {0}`.
   have hwL (k : ℕ) {w : ℝ × ℝ} (hw : w ∈ D') :
-      inf.endSign * (inf.endCoord (equivRealProdCLM.symm w)).re ≤ L k / 2 := by
-    rw [endSign_inf, neg_one_mul]
-    have hρ' : 2 * Real.exp (2 * π * ρ) ≤ 2 * Real.exp (2 * π * max ρ 0) := by
-      gcongr
-      exact le_max_left ρ 0
-    exact (neg_re_endCoord_inf_le (le_max_right ρ 0) ((hD'ρ w hw).trans hρ')).trans
-      (max_le (by linarith [hLρ k]) (by linarith [hL4 k]))
+      inf.endSign * (inf.endCoord (equivRealProdCLM.symm w)).re ≤ L k / 2 :=
+    endSign_mul_re_endCoord_inf_le (by linarith [hL4 k]) (hLρ k) (hD'ρ w hw)
   have hψP (k : ℕ) {w : ℝ × ℝ} (hw : w ∈ D') : ψ k w ∈ P := by
     simp only [P, ψ, mem_ofPred_eq, equivRealProdCLM_symm_realChart]
     exact plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le (by linarith [hL4 k]) (hwL k hw)

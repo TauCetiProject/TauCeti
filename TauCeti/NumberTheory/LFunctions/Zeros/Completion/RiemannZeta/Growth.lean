@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.FiniteOrder
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Basic
 
-import TauCeti.NumberTheory.LSeries.HurwitzZetaGrowth
+import TauCeti.NumberTheory.LSeries.HurwitzZeta.Growth
 
 /-!
 # Growth order of the entire completion of the Riemann zeta function

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-import TauCeti.Analysis.Normed.Lp.PiLp
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 
 /-!
 # Bochner integral moment identities and bounds for `PiLp`

@@ -115,6 +115,12 @@ theorem constVectorField_apply (v z : E) :
   (rfl)
 
 omit [FiniteDimensional ℝ E] in
+/-- The constant vector field with value `v` is the constant function `v`, each tangent space of
+`E` being `E` itself. -/
+theorem constVectorField_eq (v : E) : constVectorField v = fun _ ↦ v :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] in
 /-- The section `z ↦ ⟨z, v⟩` of the tangent bundle of the model space with constant value `v` is
 smooth. This is `contMDiff_constVectorField` stated for the bare pair, for use where the body of
 `constVectorField` is not exposed. -/

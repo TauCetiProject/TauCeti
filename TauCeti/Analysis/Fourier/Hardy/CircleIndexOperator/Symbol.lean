@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.Hardy.CircleIndexOperator.Basic
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Basic
 import TauCeti.Analysis.Fourier.Uniqueness
 import TauCeti.Analysis.Fredholm.FiniteRank
 

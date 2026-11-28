@@ -8,17 +8,19 @@ module
 public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.Complex.TaylorSeries
+import Mathlib.Analysis.Normed.Group.FunctionSeries
 import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 
 /-!
-# Iterated derivatives of holomorphic functions of one complex variable
+# Iterated derivatives of holomorphic functions and series of one complex variable
 
 This file records that every iterated derivative of a complex differentiable function
 `g : ℂ → E` is again complex differentiable (`Differentiable.iteratedDeriv`), the iterated form of
@@ -33,10 +35,16 @@ its degree. It also computes the norms of the real iterated derivatives of the p
 
 On an open set `U`, the iterated derivatives over any field below `ℂ`, such as `ℝ`, of a map
 holomorphic on `U` are the restrictions of scalars of its complex iterated derivatives
-(`DifferentiableOn.iteratedFDeriv_eq_restrictScalars`). Weierstrass's theorem upgrades locally
-uniform convergence of holomorphic maps on `U` to locally uniform convergence of all iterated
-derivatives (`TendstoLocallyUniformlyOn.iteratedDeriv`), and hence of all real iterated derivatives
-(`TendstoLocallyUniformlyOn.iteratedFDeriv`).
+(`DifferentiableOn.iteratedFDeriv_eq_restrictScalars`). Moreover, a function holomorphic on an
+open subset `U ⊆ ℂ` that agrees with `(g · : ℂ)` on a real subset restricts to a `C^n` real
+function `g` whose real iterated derivatives coerce to its complex iterated derivatives
+(`DifferentiableOn.contDiffOn_ofReal`, `DifferentiableOn.iteratedDeriv_comp_ofReal`,
+`DifferentiableOn.iteratedDeriv_ofReal`). Weierstrass's theorem upgrades locally uniform
+convergence of holomorphic maps on `U` to locally uniform convergence of all iterated derivatives
+(`TendstoLocallyUniformlyOn.iteratedDeriv`), and hence of all real iterated derivatives
+(`TendstoLocallyUniformlyOn.iteratedFDeriv`). It also records the resulting Weierstrass M-test
+formulas for differentiating holomorphic series (`Complex.hasDerivAt_tsum_of_summable_norm`,
+`Complex.hasSum_iteratedDeriv_of_summable_norm`).
 
 For a family `f t` of maps holomorphic on `U`, depending on a real variable `t` with derivative
 `f' t` in `t`, Weierstrass's theorem applied to the difference quotients
@@ -50,6 +58,8 @@ complex variable is assumed.
 -/
 
 public section
+
+open scoped ContDiff Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
 
@@ -155,6 +165,83 @@ theorem TendstoLocallyUniformlyOn.iteratedFDeriv (𝕜 : Type*) [NontriviallyNor
     (hF.mono fun n hn z hz => .of_eq ?_)).congr_right fun z hz => ?_
   · exact (hn.iteratedFDeriv_eq_restrictScalars 𝕜 hU k hz).symm
   · exact (hf'.iteratedFDeriv_eq_restrictScalars 𝕜 hU k hz).symm
+
+/-- A function holomorphic on an open set `U ⊆ ℂ` that agrees with `(g · : ℂ)` on a real subset
+`s` with `(↑) '' s ⊆ U` restricts to a `C^n` real function `g` on `s`. -/
+theorem DifferentiableOn.contDiffOn_ofReal {f : ℂ → ℂ} {g : ℝ → ℝ} {U : Set ℂ} {s : Set ℝ}
+    {n : WithTop ℕ∞} (hf : DifferentiableOn ℂ f U) (hU : IsOpen U)
+    (hmaps : Set.MapsTo ((↑) : ℝ → ℂ) s U) (hfg : ∀ x ∈ s, f (x : ℂ) = (g x : ℂ)) :
+    ContDiffOn ℝ n g s := by
+  have hf_cd : ContDiffOn ℝ n f U := (hf.contDiffOn hU).restrict_scalars ℝ
+  have hcomp : ContDiffOn ℝ n (fun x : ℝ ↦ Complex.reCLM (f (Complex.ofRealCLM x))) s :=
+    Complex.reCLM.contDiff.contDiffOn.comp
+      (hf_cd.comp Complex.ofRealCLM.contDiff.contDiffOn hmaps) (Set.mapsTo_univ _ _)
+  exact hcomp.congr fun x hx ↦ by
+    simp only [Complex.reCLM_apply, Complex.ofRealCLM_apply, hfg x hx, Complex.ofReal_re]
+
+/-- If `f : ℂ → E` is holomorphic on an open set `U ⊆ ℂ` and `(x : ℂ) ∈ U`, then the real
+iterated derivative of `t ↦ f (t : ℂ)` at `x` equals the complex iterated derivative of `f` at
+`x`. -/
+theorem DifferentiableOn.iteratedDeriv_comp_ofReal {f : ℂ → E} {U : Set ℂ}
+    (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (k : ℕ) {x : ℝ} (hx : (x : ℂ) ∈ U) :
+    iteratedDeriv k (fun t : ℝ ↦ f (t : ℂ)) x = iteratedDeriv k f (x : ℂ) := by
+  have hpre : IsOpen (Complex.ofRealCLM ⁻¹' U) := hU.preimage Complex.ofRealCLM.continuous
+  have hcomp := Complex.ofRealCLM.iteratedFDerivWithin_comp_right
+    ((hf.contDiffOn (n := k) hU).restrict_scalars ℝ) hU.uniqueDiffOn hpre.uniqueDiffOn
+    (by simpa using hx) le_rfl (i := k)
+  have h1 := congrArg (fun M : ContinuousMultilinearMap ℝ (fun _ : Fin k ↦ ℝ) E ↦ M fun _ ↦ 1) hcomp
+  simp only [← iteratedDerivWithin_eq_iteratedFDerivWithin, iteratedDerivWithin_of_isOpen hpre hx,
+    ContinuousMultilinearMap.compContinuousLinearMap_apply,
+    iteratedFDerivWithin_of_isOpen k hU hx,
+    hf.iteratedFDeriv_eq_restrictScalars ℝ hU k hx,
+    ContinuousMultilinearMap.coe_restrictScalars, Complex.ofRealCLM_apply,
+    Complex.ofReal_one] at h1
+  simpa [ContinuousMultilinearMap.piFieldEquiv, Function.comp_def] using h1
+
+/-- If `f : ℂ → ℂ` is holomorphic on an open set `U ⊆ ℂ` and agrees with `(g · : ℂ)` on an open
+real set `s` mapped into `U`, then every complex iterated derivative of `f` on `s` is the coercion
+of the real iterated derivative of `g`. -/
+theorem DifferentiableOn.iteratedDeriv_ofReal {f : ℂ → ℂ} {g : ℝ → ℝ} {U : Set ℂ} {s : Set ℝ}
+    (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (hs : IsOpen s)
+    (hmaps : Set.MapsTo ((↑) : ℝ → ℂ) s U) (hfg : ∀ x ∈ s, f (x : ℂ) = (g x : ℂ))
+    (k : ℕ) {x : ℝ} (hx : x ∈ s) :
+    iteratedDeriv k f (x : ℂ) = ((iteratedDeriv k g x : ℝ) : ℂ) := by
+  have hev : (fun t : ℝ ↦ f (t : ℂ)) =ᶠ[𝓝 x] Complex.ofRealCLM ∘ g :=
+    Filter.eventually_of_mem (hs.mem_nhds hx) fun t ht ↦ hfg t ht
+  have hcomp := Complex.ofRealCLM.iteratedFDeriv_comp_left
+    ((hf.contDiffOn_ofReal hU hmaps hfg).contDiffAt (hs.mem_nhds hx)) le_rfl (i := k)
+  have h1 := congrArg (fun M : ContinuousMultilinearMap ℝ (fun _ : Fin k ↦ ℝ) ℂ ↦ M fun _ ↦ 1) hcomp
+  rw [← iteratedDeriv_eq_iteratedFDeriv, ← hev.iteratedDeriv_eq,
+    hf.iteratedDeriv_comp_ofReal hU k (hmaps hx)] at h1
+  simpa only [ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
+    Complex.ofRealCLM_apply, ← iteratedDeriv_eq_iteratedFDeriv] using h1
+
+namespace Complex
+
+/-- If holomorphic functions `F i` on an open set `U ⊆ ℂ` satisfy a uniform summable norm bound
+`‖F i w‖ ≤ u i`, then their sum has derivative `∑' i, deriv (F i) z` at every `z ∈ U`. -/
+theorem hasDerivAt_tsum_of_summable_norm {ι : Type*} {F : ι → ℂ → E} {U : Set ℂ} {u : ι → ℝ}
+    (hu : Summable u) (hF : ∀ i, DifferentiableOn ℂ (F i) U) (hU : IsOpen U)
+    (hF_le : ∀ i, ∀ w ∈ U, ‖F i w‖ ≤ u i) {z : ℂ} (hz : z ∈ U) :
+    HasDerivAt (fun w => ∑' i, F i w) (∑' i, deriv (F i) z) z := by
+  have hd := ((Complex.differentiableOn_tsum_of_summable_norm hu hF hU hF_le).differentiableAt
+    (hU.mem_nhds hz)).hasDerivAt
+  rwa [← (Complex.hasSum_deriv_of_summable_norm hu hF hU hF_le hz).tsum_eq] at hd
+
+/-- If holomorphic functions `F i` on an open set `U ⊆ ℂ` satisfy a uniform summable norm bound
+`‖F i w‖ ≤ u i`, then for every `k : ℕ` and `z ∈ U`, the `k`-th iterated derivatives
+`iteratedDeriv k (F i) z` sum to `iteratedDeriv k (fun w => ∑' i, F i w) z`. -/
+theorem hasSum_iteratedDeriv_of_summable_norm {ι : Type*} {F : ι → ℂ → E} {U : Set ℂ}
+    {u : ι → ℝ} (hu : Summable u) (hF : ∀ i, DifferentiableOn ℂ (F i) U) (hU : IsOpen U)
+    (hF_le : ∀ i, ∀ w ∈ U, ‖F i w‖ ≤ u i) (k : ℕ) {z : ℂ} (hz : z ∈ U) :
+    HasSum (fun i => iteratedDeriv k (F i) z) (iteratedDeriv k (fun w => ∑' i, F i w) z) := by
+  rw [HasSum]
+  have hc := (tendstoUniformlyOn_tsum hu hF_le).tendstoLocallyUniformlyOn
+  refine ((hc.iteratedDeriv (Filter.Eventually.of_forall fun s =>
+    DifferentiableOn.fun_sum fun i _ => hF i) hU k).tendsto_at hz).congr fun s => ?_
+  exact iteratedDeriv_fun_sum fun i _ => ((hF i).analyticOnNhd hU z hz).contDiffAt
+
+end Complex
 
 namespace TauCeti
 

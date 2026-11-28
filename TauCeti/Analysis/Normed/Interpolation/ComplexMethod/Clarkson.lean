@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.PiLp
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Symmetry
 import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.MeanInequalitiesPow
-import TauCeti.Analysis.Normed.Lp.PiLp
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 
 /-!
 # Boas–Kosaki–McCarthy–Clarkson inequalities via complex interpolation
@@ -41,7 +41,7 @@ open scoped ENNReal
 
 namespace TauCeti.CompatibleCouple.ComplexMethodSpace
 
-/-! ### Exponent arithmetic and compatibility on `CompatibleCouple.piLp` -/
+/-! ### Exponent arithmetic and compatibility on `CompatibleCouple.piLpFamily` -/
 
 private instance : Fact (1 ≤ (2 : ℝ≥0∞)) := ⟨one_le_two⟩
 
@@ -71,26 +71,27 @@ private def swapOfSubEq (C : CompatibleCouple ℂ X₀ X₁ V) {θ η : ℝ} (h 
 
 omit [T1Space V] in
 private theorem clarksonPair_compat (C : CompatibleCouple ℂ X₀ X₁ V)
-    (x : (piLp 1 2 fun _ : Fin 2 ↦ C).inter) :
-    (piLp ∞ 2 fun _ : Fin 2 ↦ C).fstToSum
-        (PiLp.clarksonPairCLM 1 ∞ ℂ X₀ ((piLp 1 2 fun _ : Fin 2 ↦ C).interFst x)) =
-      (piLp ∞ 2 fun _ : Fin 2 ↦ C).sndToSum
-        (PiLp.clarksonPairCLM 2 2 ℂ X₁ ((piLp 1 2 fun _ : Fin 2 ↦ C).interSnd x)) := by
+    (x : (piLpFamily 1 2 fun _ : Fin 2 ↦ C).inter) :
+    (piLpFamily ∞ 2 fun _ : Fin 2 ↦ C).fstToSum
+        (PiLp.clarksonPairCLM 1 ∞ ℂ X₀ ((piLpFamily 1 2 fun _ : Fin 2 ↦ C).interFst x)) =
+      (piLpFamily ∞ 2 fun _ : Fin 2 ↦ C).sndToSum
+        (PiLp.clarksonPairCLM 2 2 ℂ X₁ ((piLpFamily 1 2 fun _ : Fin 2 ↦ C).interSnd x)) := by
   have h (j : Fin 2) : C.embed₀ (x.val.1 j) = C.embed₁ (x.val.2 j) := by
-    simpa using congr_fun ((piLp 1 2 fun _ : Fin 2 ↦ C).embed₀_interFst x) j
-  refine (piLp ∞ 2 fun _ : Fin 2 ↦ C).sumSpace_ext (funext fun i ↦ ?_)
-  simp only [sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, piLp_embed₀_apply, piLp_embed₁_apply,
-    PiLp.clarksonPairCLM_apply]
+    simpa using congr_fun ((piLpFamily 1 2 fun _ : Fin 2 ↦ C).embed₀_interFst x) j
+  refine (piLpFamily ∞ 2 fun _ : Fin 2 ↦ C).sumSpace_ext (funext fun i ↦ ?_)
+  simp only [sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, piLpFamily_embed₀_apply,
+    piLpFamily_embed₁_apply, PiLp.clarksonPairCLM_apply]
   split_ifs <;> simp [h 0, h 1]
 
 private theorem piLpCoord_map_clarksonPair {θ : ℝ} {C : CompatibleCouple ℂ X₀ X₁ V}
-    {w : (piLp 1 2 fun _ : Fin 2 ↦ C).ComplexMethodSpace θ} {u v : C.ComplexMethodSpace θ}
+    {w : (piLpFamily 1 2 fun _ : Fin 2 ↦ C).ComplexMethodSpace θ} {u v : C.ComplexMethodSpace θ}
     (hu : piLpCoord θ (fun _ : Fin 2 ↦ C) 0 w = u)
     (hv : piLpCoord θ (fun _ : Fin 2 ↦ C) 1 w = v) (i : Fin 2) :
     piLpCoord θ (fun _ : Fin 2 ↦ C) i
       (map θ (PiLp.clarksonPairCLM 1 ∞ ℂ X₀) (PiLp.clarksonPairCLM 2 2 ℂ X₁)
         (clarksonPair_compat C) w) = if i = 0 then u + v else u - v := by
-  obtain ⟨x₀, x₁, hx⟩ := (piLp 1 2 fun _ : Fin 2 ↦ C).exists_fstToSum_add_sndToSum_eq (toSum w)
+  obtain ⟨x₀, x₁, hx⟩ :=
+    (piLpFamily 1 2 fun _ : Fin 2 ↦ C).exists_fstToSum_add_sndToSum_eq (toSum w)
   have hu' : C.sumSpaceEmbed (toSum u) = C.embed₀ (x₀ 0) + C.embed₁ (x₁ 0) := by
     rw [← hu, sumSpaceEmbed_toSum_piLpCoord θ (fun _ : Fin 2 ↦ C) 0]; simp [← hx]
   have hv' : C.sumSpaceEmbed (toSum v) = C.embed₀ (x₀ 1) + C.embed₁ (x₁ 1) := by

@@ -8,16 +8,23 @@ module
 public import Mathlib.Topology.Separation.Hausdorff
 
 /-!
-# Closed equalizers and relatively compact images in Hausdorff spaces
+# Closed equalizers, limits of coincidences and relatively compact images in Hausdorff spaces
 
 Mathlib's `isClosed_eq` shows that the locus `{ x : X | f x = g x }` where two continuous maps into
 a Hausdorff space agree is closed. Intersecting over one or two arbitrary index types (possibly
 propositions, for bounded quantifiers) shows that the simultaneous agreement locus of a singly or
-doubly indexed family of pairs of continuous maps into Hausdorff spaces is closed.
+doubly indexed family of pairs of continuous maps into Hausdorff spaces is closed. In the same
+vein, if the values of a map `g` near `b` keep meeting the image under a map `f` of every
+neighbourhood of `a`, then `g b = f a` when both maps are continuous there and the target is
+Hausdorff.
 
 Mathlib's `image_closure_of_isCompact` identifies the image of a compact closure with the closure
 of the image; consequently a map into a Hausdorff space that is continuous on the closure of a
 relatively compact set sends it to a relatively compact set (`IsCompact.closure_image`).
+
+Mathlib's `ContinuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE` upgrades agreement on a punctured
+neighbourhood of a non-isolated point to agreement on a neighbourhood; evaluating at the point gives
+`ContinuousAt.eq_of_eventuallyEq_nhdsNE`.
 
 ## Main results
 
@@ -25,11 +32,17 @@ relatively compact set sends it to a relatively compact set (`IsCompact.closure_
   into Hausdorff spaces.
 * `TauCeti.isClosed_forall₂_eq`: `{ x : X | ∀ i j, f i j x = g i j x }` is closed for doubly
   indexed continuous maps into Hausdorff spaces.
+* `TauCeti.eq_of_frequently_mem_image`: if `g y` keeps meeting `f` of every neighbourhood of `a`
+  as `y → b`, then `g b = f a` for maps into a Hausdorff space continuous at `a` and `b`.
 * `IsCompact.closure_image`: a map into a Hausdorff space, continuous on the closure of `s`, sends
   a set `s` with compact closure to a set with compact closure.
+* `ContinuousAt.eq_of_eventuallyEq_nhdsNE`: two maps into a Hausdorff space continuous at a
+  non-isolated point `x` that agree on a punctured neighbourhood of `x` agree at `x`.
 -/
 
 public section
+
+open Filter Topology
 
 namespace TauCeti
 
@@ -52,6 +65,19 @@ theorem isClosed_forall₂_eq {X : Type*} [TopologicalSpace X] {ι : Sort*} {κ 
   rw [Set.ofPred_forall]
   exact isClosed_iInter fun i => isClosed_forall_eq (hf i) (hg i)
 
+/-- If, for every neighbourhood `s` of `a`, there are points `y` arbitrarily close to `b` with
+`g y ∈ f '' s`, then `g b = f a`, for maps `f` and `g` into a Hausdorff space continuous at `a` and
+`b`. -/
+theorem eq_of_frequently_mem_image {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    [TopologicalSpace Z] [T2Space Z] {f : X → Z} {g : Y → Z} {a : X} {b : Y}
+    (hf : ContinuousAt f a) (hg : ContinuousAt g b)
+    (hacc : ∀ s ∈ 𝓝 a, ∃ᶠ y in 𝓝 b, g y ∈ f '' s) : g b = f a := by
+  by_contra hne
+  obtain ⟨V, W, hV, hW, hbV, haW, hVW⟩ := t2_separation hne
+  obtain ⟨y, ⟨x, hx, hxy⟩, hyV⟩ := ((hacc _ (hf.preimage_mem_nhds (hW.mem_nhds haW))).and_eventually
+    (hg.preimage_mem_nhds (hV.mem_nhds hbV))).exists
+  exact Set.disjoint_left.1 hVW hyV (hxy ▸ hx)
+
 end TauCeti
 
 /-- A map into a Hausdorff space that is continuous on the closure of `s` sends a set `s` with
@@ -61,3 +87,10 @@ theorem IsCompact.closure_image {X Y : Type*} [TopologicalSpace X] [TopologicalS
     (hf : ContinuousOn f (closure s)) : IsCompact (closure (f '' s)) := by
   rw [← image_closure_of_isCompact hs hf]
   exact hs.image_of_continuousOn hf
+
+/-- Two maps into a Hausdorff space continuous at a non-isolated point `x` that agree on a punctured
+neighbourhood of `x` agree at `x`. -/
+theorem ContinuousAt.eq_of_eventuallyEq_nhdsNE {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [T2Space Y] {f g : X → Y} {x : X} [(𝓝[≠] x).NeBot]
+    (hf : ContinuousAt f x) (hg : ContinuousAt g x) (h : f =ᶠ[𝓝[≠] x] g) : f x = g x :=
+  ((hf.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hg).1 h).self_of_nhds

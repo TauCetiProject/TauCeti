@@ -10,9 +10,14 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.AddCircle
 public import Mathlib.Topology.Covering.FundamentalGroupCircle
 public import TauCeti.AlgebraicTopology.Singular.AddCircle
 public import TauCeti.AlgebraicTopology.Cohomology.AddCircle
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
+import TauCeti.Algebra.Ring.Periodic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
-# The periods of the time form of a circle
+# The time form of a circle in de Rham cohomology
 
 For a positive real `p`, the time form `dt_p` of the circle `AddCircle p = ℝ / pℤ`
 (`AddCircle.timeForm p`) integrates to `p` along one circuit. Since the fundamental group of the
@@ -29,6 +34,13 @@ The winding number of a class is its value on the angular class `θ_p ∈ H¹(�
 is the integral singular class of `dt_p / p`, and for `p = 1` that of the angle form `ds` of
 `(ℝ / ℤ)_s`.
 
+Every one-form on the circle is a multiple `g dt_p` of the time form by a smooth function `g`, and
+its de Rham class is that of the constant multiple `(⨍ g) dt_p`, for the mean
+`⨍ g = p⁻¹ ∫₀ᵖ g` of `g` over one period: the function `g - ⨍ g` lifts to a `p`-periodic function
+on `ℝ` with integral zero over a period, whose primitive is again `p`-periodic and descends to a
+smooth function on the circle with differential `(g - ⨍ g) dt_p`
+(`AddCircle.funSMulₗ_timeForm_sub_smul_timeForm_mem_exactForms`).
+
 ## Main results
 
 * `AddCircle.periodHom_timeForm`: the period of `dt_p` along a loop class is `windingNumber · p`.
@@ -39,6 +51,8 @@ is the integral singular class of `dt_p / p`, and for `p = 1` that of the angle 
   `H₁(ℝ / pℤ; ℤ)` lie in `pℤ`.
 * `AddCircle.homologyPeriodHom_timeForm_eq_singularKronecker_angularClass_mul`: the angular class
   is the class of `dt_p / p`.
+* `AddCircle.funSMulₗ_timeForm_sub_smul_timeForm_mem_exactForms`: `g dt_p` differs from
+  `(⨍ g) dt_p` by an exact form.
 -/
 
 public section
@@ -108,5 +122,53 @@ theorem homologyPeriodHom_timeForm_eq_singularKronecker_angularClass_mul
     homologyPeriodHom (timeForm p).val c =
       ((TopCat.of (AddCircle p)).singularKronecker ℤ 1 (angularClass p) c : ℤ) * p := by
   rw [homologyPeriodHom_timeForm, singularKronecker_angularClass]
+
+/-! ### The class of a one-form on the circle -/
+
+/-- **The de Rham class of a one-form on the circle is fixed by its mean.** For a smooth function
+`g` on `AddCircle p`, the one-form `g dt_p` differs by an exact form from the constant multiple
+`(⨍ g) dt_p` of the time form, where `⨍ g = p⁻¹ ∫₀ᵖ g` is the mean of `g` over one period. -/
+theorem funSMulₗ_timeForm_sub_smul_timeForm_mem_exactForms (g : C^∞⟮𝓘(ℝ), AddCircle p; ℝ⟯) :
+    SmoothForm.funSMulₗ g (timeForm p) - (p⁻¹ * ∫ s in (0)..p, g s) • timeForm p ∈
+      exactForms 𝓘(ℝ) (AddCircle p) 1 := by
+  set m := p⁻¹ * ∫ s in (0)..p, g s
+  -- The lift `f` of `g - m` to `ℝ` is smooth, `p`-periodic and has integral zero over a period.
+  set f : ℝ → ℝ := fun s ↦ g s - m
+  have hg : ContDiff ℝ ∞ fun s : ℝ ↦ g s :=
+    contMDiff_iff_contDiff.1 (g.contMDiff.comp (contMDiff_coe p ∞))
+  have hf : ContDiff ℝ ∞ f := hg.sub contDiff_const
+  have hfp : Function.Periodic f p := fun s ↦ by simp [f]
+  have hfi (a b : ℝ) : IntervalIntegrable f MeasureTheory.volume a b :=
+    hf.continuous.intervalIntegrable a b
+  have hf0 : ∫ s in (0)..p, f s = 0 := by
+    rw [intervalIntegral.integral_sub (hg.continuous.intervalIntegrable 0 p)
+      intervalIntegrable_const, intervalIntegral.integral_const, sub_zero, smul_eq_mul, ← mul_assoc,
+      mul_inv_cancel₀ (Fact.out : 0 < p).ne', one_mul, sub_self]
+  -- Its primitive `F` is therefore `p`-periodic and smooth, with derivative `f`.
+  set F : ℝ → ℝ := fun s ↦ ∫ u in (0)..s, f u
+  have hFd (s : ℝ) : HasDerivAt F (f s) s :=
+    (hf.continuous.integral_hasStrictDerivAt 0 s).hasDerivAt
+  have hFp : Function.Periodic F p := fun s ↦ by
+    simp only [F, hfp.intervalIntegral_add_eq_add 0 s hfi, zero_add, hf0, add_zero]
+  have hF : ContDiff ℝ ∞ F := by simpa using hf.contDiff_add_one_integral (k := ⊤) 0
+  -- It descends to a smooth function `G` on the circle, whose differential is `(g - m) dt_p`.
+  let G : C^∞⟮𝓘(ℝ), AddCircle p; ℝ⟯ := ⟨hFp.lift, hFp.contMDiff_lift hF⟩
+  rw [exactForms_succ]
+  refine ⟨SmoothForm.ofFunction G, Subtype.ext (funext fun y ↦ ?_)⟩
+  obtain ⟨s, rfl⟩ := QuotientAddGroup.mk_surjective y
+  have hG : mvfderiv 𝓘(ℝ) G (s : AddCircle p) = (1 : ℝ →L[ℝ] ℝ).smulRight (f s) :=
+    mvfderiv_eq_smulRight_of_hasDerivAt
+      (by rw [show ⇑G ∘ (↑) = F from hFp.lift_comp_coe]; exact hFd s)
+  have hR : (SmoothForm.funSMulₗ g (timeForm p) - m • timeForm p).val (s : AddCircle p) =
+      f s • (timeForm p).val (s : AddCircle p) := by
+    simp only [Submodule.coe_sub, Submodule.coe_smul, SmoothForm.coe_funSMulₗ, Pi.sub_apply,
+      Pi.smul_apply, f, sub_smul]
+  rw [hR]
+  refine ContinuousAlternatingMap.ext fun v ↦ ?_
+  simp only [mextDerivₗ_apply, SmoothForm.coe_ofFunction, mextDeriv_ofFunction,
+    hG, ContinuousAlternatingMap.smul_apply, timeForm_apply]
+  -- Tangent vectors of `AddCircle p` are real numbers: the left side is `(1 (v 0)) • f s`, that is
+  -- `v 0 * f s`, by the definitions of `ofSubsingleton` and `smulRight`.
+  exact mul_comm (G := ℝ) (v 0) (f s)
 
 end AddCircle

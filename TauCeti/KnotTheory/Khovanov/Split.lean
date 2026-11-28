@@ -188,6 +188,11 @@ theorem fiberwiseSplit_equiv (e : σ ≃ τ) :
   have he : (l = fun i ↦ k (e.symm i)) ↔ l ∘ e = k := e.eq_comp_symm l k
   simp only [Equiv.symm_symm, he]
 
+/-- Along a bijection the split map sends each circle tensor to its inverse reindexing. -/
+theorem fiberwiseSplit_equiv_apply (e : σ ≃ τ) (x : CircleTensor R τ) :
+    fiberwiseSplit (R := R) e x = reindex R (fun _ ↦ R[ε]) e.symm x := by
+  rw [fiberwiseSplit_equiv, LinearEquiv.coe_coe]
+
 /-- The split map is natural in the index map: reindexing along bijections of the source and
 target carries the split along `f` to the split along `f'` when the square `eτ ∘ f = f' ∘ eσ`
 commutes. -/

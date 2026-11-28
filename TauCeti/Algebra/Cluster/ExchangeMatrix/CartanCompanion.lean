@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation
+public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation.Basic
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 
 import Mathlib.Algebra.Order.Ring.Abs
@@ -51,6 +51,13 @@ theorem cartanCompanion_apply_self (B : Matrix K K ℤ) (i : K) :
 @[simp]
 theorem cartanCompanion_apply_of_ne (B : Matrix K K ℤ) {i j : K} (hij : i ≠ j) :
     B.cartanCompanion i j = -|B i j| := by simp [cartanCompanion_apply, hij]
+
+/-- The product of transposed off-diagonal companion entries is the absolute value of the
+original entry product. -/
+theorem cartanCompanion_apply_mul_apply_of_ne (B : Matrix K K ℤ) {i j : K} (hij : i ≠ j) :
+    B.cartanCompanion i j * B.cartanCompanion j i = |B i j * B j i| := by
+  simp only [cartanCompanion_apply_of_ne _ hij, cartanCompanion_apply_of_ne _ hij.symm,
+    neg_mul_neg, abs_mul]
 
 /-- A companion entry vanishes exactly at an off-diagonal zero of the original matrix. -/
 @[simp]

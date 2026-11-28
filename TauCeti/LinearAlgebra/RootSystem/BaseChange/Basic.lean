@@ -122,6 +122,27 @@ theorem baseChange_root (i : ι) : (P.baseChange S).root i = 1 ⊗ₜ P.root i :
 theorem baseChange_coroot (i : ι) : (P.baseChange S).coroot i = 1 ⊗ₜ P.coroot i :=
   (rfl)
 
+/-- An original weight belongs to the additive cone of a family of roots exactly when its
+image belongs to the corresponding cone after extension of scalars. -/
+theorem mem_closure_root_baseChange_iff {s : Set ι} {x : M} :
+    (1 : S) ⊗ₜ[R] x ∈ AddSubmonoid.closure ((P.baseChange S).root '' s) ↔
+      x ∈ AddSubmonoid.closure (P.root '' s) := by
+  have himage : (TensorProduct.mk R S M 1).toAddMonoidHom '' (P.root '' s) =
+      (P.baseChange S).root '' s := by
+    simp only [image_image, baseChange_root, LinearMap.toAddMonoidHom_coe, TensorProduct.mk_apply]
+  rw [← himage, ← AddMonoidHom.map_mclosure]
+  exact AddSubmonoid.mem_map_iff_mem (P.tensorProduct_mk_injective S)
+
+/-- The analogous comparison of additive cones for coroots. -/
+theorem mem_closure_coroot_baseChange_iff {s : Set ι} {y : N} :
+    (1 : S) ⊗ₜ[R] y ∈ AddSubmonoid.closure ((P.baseChange S).coroot '' s) ↔
+      y ∈ AddSubmonoid.closure (P.coroot '' s) := by
+  have himage : (TensorProduct.mk R S N 1).toAddMonoidHom '' (P.coroot '' s) =
+      (P.baseChange S).coroot '' s := by
+    simp only [image_image, baseChange_coroot, LinearMap.toAddMonoidHom_coe, TensorProduct.mk_apply]
+  rw [← himage, ← AddMonoidHom.map_mclosure]
+  exact AddSubmonoid.mem_map_iff_mem (P.flip.tensorProduct_mk_injective S)
+
 @[simp]
 theorem baseChange_reflectionPerm : (P.baseChange S).reflectionPerm = P.reflectionPerm :=
   (rfl)
@@ -176,10 +197,16 @@ instance isValuedIn_baseChange [P.IsValuedIn T] : (P.baseChange S).IsValuedIn T 
 /-- The `T`-valued pairings of the extension are those of `P`; for `T = ℤ` these are the
 Cartan integers. -/
 @[simp]
-theorem baseChange_pairingIn [FaithfulSMul T S] [P.IsValuedIn T] (i j : ι) :
+theorem baseChange_pairingIn [P.IsValuedIn T] (i j : ι) :
     (P.baseChange S).pairingIn T i j = P.pairingIn T i j := by
-  apply FaithfulSMul.algebraMap_injective T S
-  simp [IsScalarTower.algebraMap_apply T R S]
+  -- Without injectivity of the maps from T, the chosen preimage need not be unique.
+  -- Unfold pairingIn to compare the predicates from which it chooses; injectivity of
+  -- R → S identifies those predicates, so their chosen values agree.
+  simp only [pairingIn]
+  congr! 1
+  ext t
+  rw [baseChange_pairing, IsScalarTower.algebraMap_apply T R S,
+    (FaithfulSMul.algebraMap_injective R S).eq_iff]
 
 end IsValuedIn
 

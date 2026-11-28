@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Module
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.Matrix.ToLin
+import Mathlib.LinearAlgebra.Basis.VectorSpace
+import Mathlib.LinearAlgebra.Dimension.Constructions
+import Mathlib.LinearAlgebra.Dimension.Finite
 
 /-!
 # Matrix modules
@@ -23,6 +27,15 @@ The scoped column action on `ι → R` agrees with the matrix-to-endomorphism al
 equivalence; in particular its action map is bijective. This identifies the matrix module
 used by matrix Morita equivalence with the usual full endomorphism representation.
 
+The `Mₙ(R)`-linear map `f.mapMatrixModule ι : Mⁿ → Nⁿ` induced by `f : M → N` is, as an
+`R`-linear map, `f.compLeft ι`, so Mathlib's API for `LinearMap.compLeft` (for instance
+`LinearMap.range_compLeft`) applies to it; and it is injective when `f` is.
+
+The graph `Matrix.piGraph u P = {(x, u • x) : x ∈ P^ι}` of the action of a square matrix `u` on
+`V^ι`, over the coordinatewise power of a submodule `P`, is isomorphic to `P^ι`. When `2` and `u`
+are invertible, the graphs of `u` and `-u` meet only in zero: a vector `x` with `u • x = -u • x`
+satisfies `2 • u • x = 0`.
+
 Changing a family `v` by the rows of a matrix, `vⱼ ↦ ∑ i, A j i • vᵢ`, is compatible with matrix
 multiplication: changing by `A` and then by `B` is changing by `B * A`.
 
@@ -32,6 +45,12 @@ multiplication: changing by `A` and then by `B` is changing by `B * A`.
   soon as `1 - B` is a unit.
 * `Matrix.sum_mul_apply_smul`: two successive changes of a family by matrices `A` and then `B`
   are the change by `B * A`.
+* `LinearMap.restrictScalars_mapMatrixModule`, `LinearMap.mapMatrixModule_injective`: the map
+  `f.mapMatrixModule ι` is `f` applied in each coordinate, and is injective when `f` is.
+* `Matrix.piGraph`, `Matrix.mem_piGraph_iff`: the graph of a matrix action over `P^ι`.
+* `Matrix.disjoint_piGraph_neg`: the graphs of an invertible matrix and of its negative meet only
+  in zero when `2` is invertible.
+* `Matrix.finrank_piGraph`: the graph over `P^ι` has dimension `card ι * dim P`.
 
 ## References
 
@@ -85,3 +104,91 @@ theorem lsmul_bijective :
   exact Matrix.toLinAlgEquiv'.bijective
 
 end Matrix.Module
+
+namespace LinearMap
+
+variable {R ι M N : Type*} [Ring R] [Fintype ι] [DecidableEq ι] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N]
+
+/-- As an `R`-linear map, the `Mₙ(R)`-linear map `f.mapMatrixModule ι` is `f.compLeft ι`: `f`
+applied in each coordinate. -/
+@[simp]
+theorem restrictScalars_mapMatrixModule (f : M →ₗ[R] N) :
+    (f.mapMatrixModule ι).restrictScalars R = f.compLeft ι :=
+  (rfl)
+
+/-- Applying an injective map in each coordinate is injective. -/
+theorem mapMatrixModule_injective {f : M →ₗ[R] N} (hf : Function.Injective f) :
+    Function.Injective (f.mapMatrixModule ι) :=
+  fun _ _ h ↦ funext fun i ↦ hf (by simpa using congr_fun h i)
+
+end LinearMap
+
+namespace Matrix
+
+section CommRing
+
+variable {ι k V : Type*} [Fintype ι] [DecidableEq ι] [CommRing k] [AddCommGroup V] [Module k V]
+
+/-- The graph `{(x, u • x) : x ∈ P^ι}` of the action of a square matrix `u` on `V^ι`, restricted
+to the coordinatewise power `P^ι` of a submodule `P`. -/
+def piGraph (u : Matrix ι ι k) (P : Submodule k V) : Submodule k ((ι → V) × (ι → V)) :=
+  (Submodule.pi Set.univ fun _ ↦ P).map (LinearMap.id.prod (Algebra.lsmul k k (ι → V) u))
+
+/-- A pair lies in the graph of `u` over `P^ι` when its first component lies in `P^ι` and its
+second is the image of the first under `u`. -/
+@[simp]
+theorem mem_piGraph_iff {u : Matrix ι ι k} {P : Submodule k V} {p : (ι → V) × (ι → V)} :
+    p ∈ u.piGraph P ↔ (∀ i, p.1 i ∈ P) ∧ p.2 = u • p.1 := by
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    exact ⟨fun i ↦ hx i trivial, rfl⟩
+  · rintro ⟨hp, h⟩
+    exact ⟨p.1, fun i _ ↦ hp i, Prod.ext rfl h.symm⟩
+
+/-- When `2` is invertible, the graphs of an invertible matrix and of its negative meet only in
+zero. -/
+theorem disjoint_piGraph_neg [Invertible (2 : k)] {u : Matrix ι ι k} (hu : IsUnit u)
+    (P Q : Submodule k V) : Disjoint (u.piGraph P) ((-u).piGraph Q) := by
+  rw [Submodule.disjoint_def]
+  rintro p hp hq
+  rw [mem_piGraph_iff] at hp hq
+  have h : u • p.1 = -(u • p.1) := hp.2.symm.trans (hq.2.trans (neg_smul u p.1))
+  have h2 : (2 : k) • u • p.1 = 0 := by
+    rw [two_smul]
+    exact eq_neg_iff_add_eq_zero.mp h
+  have hu' : u • p.1 = 0 := by
+    simpa using congr(⅟(2 : k) • $h2)
+  have h1 : p.1 = 0 := (hu.smul_left_cancel).mp (hu'.trans (smul_zero u).symm)
+  exact Prod.ext h1 (hp.2.trans hu')
+
+end CommRing
+
+section Field
+
+variable {ι k V : Type*} [Fintype ι] [DecidableEq ι] [Field k] [AddCommGroup V] [Module k V]
+
+/-- The graph of a matrix action over `P^ι` has dimension `card ι * dim P`. -/
+theorem finrank_piGraph (u : Matrix ι ι k) (P : Submodule k V) :
+    Module.finrank k (u.piGraph P) = Fintype.card ι * Module.finrank k P := by
+  have hinj : Function.Injective (LinearMap.id.prod (Algebra.lsmul k k (ι → V) u)) :=
+    fun x y h ↦ congr_arg Prod.fst h
+  have hsub : Function.Injective (P.subtype.compLeft ι) :=
+    fun x y h ↦ funext fun i ↦ P.subtype_injective (congr_fun h i)
+  have hpi : Submodule.pi Set.univ (fun _ : ι ↦ P) = LinearMap.range (P.subtype.compLeft ι) := by
+    rw [LinearMap.range_compLeft, P.range_subtype]
+  rw [piGraph, ← (Submodule.equivMapOfInjective _ hinj _).finrank_eq, hpi,
+    LinearMap.finrank_range_of_inj hsub]
+  by_cases hP : Module.Finite k P
+  · rw [Module.finrank_pi_fintype, Finset.sum_const, Finset.card_univ, smul_eq_mul]
+  · -- `P` is infinite-dimensional, and so is `P^ι` when `ι` is nonempty: both sides are `0`.
+    rcases isEmpty_or_nonempty ι with hι | hι
+    · simp [Module.finrank_zero_of_subsingleton]
+    · obtain ⟨i⟩ := hι
+      have hfin : ¬Module.Finite k (ι → P) := fun h ↦
+        hP (.of_surjective _ (LinearMap.proj_surjective (R := k) (φ := fun _ ↦ P) i))
+      rw [Module.finrank_of_not_finite hP, mul_zero, Module.finrank_of_not_finite hfin]
+
+end Field
+
+end Matrix

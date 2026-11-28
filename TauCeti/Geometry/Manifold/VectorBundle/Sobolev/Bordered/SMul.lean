@@ -56,6 +56,8 @@ is again an element of `W^{k,p}(V)`.
   `TauCeti.BorderedSobolevSection.contMDiffSMulL_add`,
   `TauCeti.BorderedSobolevSection.contMDiffSMulL_mul`: multiplication by constants, additivity
   and multiplicativity in the multiplier.
+* `TauCeti.BorderedSobolevSection.sum_contMDiffSMulL_eq_self_of_sum_eq_one`: a partition of unity
+  splits every element into the products with its functions.
 * `TauCeti.BorderedSobolevSection.lowerOrderL_contMDiffSMulL`: multiplication commutes with the
   inclusion `W^{k+1,p}(V) → W^{k,p}(V)`.
 
@@ -182,6 +184,22 @@ theorem contMDiffSMulL_mul (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) 
     contMDiffSMulL A p k (hφ.mul hψ) =
       (contMDiffSMulL A p k hφ).comp (contMDiffSMulL A p k hψ) :=
   A.halfSectionChartData.contDiffOnSMulL_mul volume p k _ _ _ _ _ _ _
+
+/-- Smooth multiplication is additive in the multiplier over finite sums. -/
+theorem contMDiffSMulL_finsetSum {ι : Type*} (s : Finset ι) {φ : ι → M → ℝ}
+    (hφ : ∀ i, ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ (φ i)) :
+    contMDiffSMulL A p k (contMDiff_finsetSum (t := s) fun i _ ↦ hφ i) =
+      ∑ i ∈ s, contMDiffSMulL A p k (hφ i) :=
+  A.halfSectionChartData.contDiffOnSMulL_finsetSum volume p k _ _ _ s _ _
+
+/-- **Partition of unity.** If smooth functions `φ i`, finitely many, sum to one at every point,
+then `w` is the sum of the products `φ i • w`. -/
+theorem sum_contMDiffSMulL_eq_self_of_sum_eq_one {ι : Type*} [Fintype ι] {φ : ι → M → ℝ}
+    (hφ : ∀ i, ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ (φ i)) (h1 : ∀ x, ∑ i, φ i x = 1)
+    (w : BorderedSobolevSection A p k) :
+    ∑ i, contMDiffSMulL A p k (hφ i) w = w :=
+  A.halfSectionChartData.sum_contDiffOnSMulL_eq_self_of_sum_eq_one volume p k _ _ _ _ _
+    (fun _ _ ↦ h1 _) w
 
 /-- Smooth multiplication commutes with the inclusion `W^{k+1,p}(V) → W^{k,p}(V)`. -/
 theorem lowerOrderL_contMDiffSMulL (hφ : ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ) ∞ φ)

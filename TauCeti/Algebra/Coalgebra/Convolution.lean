@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Bialgebra.Convolution
+public import Mathlib.RingTheory.Coalgebra.GroupLike
 public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
@@ -48,6 +49,8 @@ this controls the binomial expansion of the powers of `x`.
 * `LinearMap.ofConv_one_eq_counit`: the convolution dual's `1` is the counit.
 * `LinearMap.convMul_eq_comp_tensorComponent`: convolution-dual multiplication as contraction.
 * `LinearMap.tensorComponent_lTensor_comul`: successive contractions on the right tensor factor.
+* `IsGroupLikeElem.ofConv_convMul_apply`: at a group-like element, a convolution product is the
+  product of the values.
 * `TauCeti.Coalgebra.comul_eq_convMul_includeLeft_includeRight`: comultiplication as the
   convolution product of the two tensor inclusions.
 * `TauCeti.Bialgebra.comulPoint_eq_include_mul`: the corresponding identity for the
@@ -58,7 +61,7 @@ this controls the binomial expansion of the powers of `x`.
 * `AlgHom.map_comp_comulAlgHom_of_mul`: an algebra map into a commutative bialgebra respects
   the comultiplications when pre-composition with it is multiplicative on points.
 * `WithConv.mulTensor`: the exterior convolution product, with its
-  normalization rules and `WithConv.mulTensor_convMul`.
+  normalization rules, `WithConv.mulTensor_convMul` and `WithConv.mulTensor_one_one`.
 * `NonUnitalAlgHom.toConv_coe_comp_mul'`: a non-unital algebra map composed with
   multiplication is its own exterior square, with the algebra-map form
   `AlgHom.toConv_toLinearMap_comp_mul'`.
@@ -104,6 +107,13 @@ theorem tensorComponent_lTensor_comul {M : Type*} [AddCommMonoid M] [Module R M]
   simp [lTensor_def, convMul_eq_comp_tensorComponent, comp_assoc]
 
 end LinearMap
+
+/-- A convolution product evaluated at a group-like element is the product of the values. -/
+theorem IsGroupLikeElem.ofConv_convMul_apply {R C A : Type*} [CommSemiring R] [AddCommMonoid C]
+    [Module R C] [Coalgebra R C] [Semiring A] [Algebra R A] {c : C} (hc : IsGroupLikeElem R c)
+    (f g : WithConv (C →ₗ[R] A)) : (f * g).ofConv c = f.ofConv c * g.ofConv c := by
+  rw [LinearMap.convMul_apply, hc.comul_eq_tmul_self, TensorProduct.map_tmul,
+    LinearMap.mul'_apply]
 
 namespace TauCeti
 
@@ -360,6 +370,29 @@ lemma mulTensor_convMul
 end WithConv
 
 end ExteriorConvolution
+
+section ExteriorConvolutionUnit
+
+open WithConv
+
+variable {R C M N : Type*} [CommSemiring R] [CommSemiring C] [Algebra R C]
+  [AddCommMonoid M] [Module R M] [Coalgebra R M]
+  [AddCommMonoid N] [Module R N] [Coalgebra R N]
+
+namespace WithConv
+
+/-- The exterior product of the two counits is the counit of the tensor product. -/
+@[simp]
+theorem mulTensor_one_one :
+    mulTensor (1 : WithConv (M →ₗ[R] C)) (1 : WithConv (N →ₗ[R] C)) = 1 := by
+  apply ofConv_injective
+  apply TensorProduct.ext
+  ext m n
+  simp [mul_comm]
+
+end WithConv
+
+end ExteriorConvolutionUnit
 
 section CoefficientChange
 

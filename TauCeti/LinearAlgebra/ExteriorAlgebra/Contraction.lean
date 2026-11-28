@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.Order.Fin.Tuple
+import TauCeti.Data.Finset.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Reverse
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
@@ -29,6 +30,8 @@ the wrong side of that move. Creation after contraction at distinct coordinates 
 replaces an occupied coordinate with an unoccupied one, with the product of their shuffle signs.
 Two creations after contractions at distinct coordinates, in reverse order, project onto the
 exterior basis vectors containing both coordinates.
+Removing two distinct coordinates from an index set in the two possible orders gives opposite
+products of shuffle signs (`TauCeti.ExteriorAlgebra.basisEraseSign_mul_basisEraseSign_erase`).
 
 The grade involution is diagonal for the exterior basis as well: it multiplies an exterior
 monomial, and so the basis vector indexed by `s`, by the parity of its degree.
@@ -59,8 +62,12 @@ Koszul complex.
 In degree at least the rank, contraction loses no information: if `d m = 1` and
 `finrank R M ≤ n`, every `x ∈ ⋀ⁿ M` is `m ∧ (d ⌋ x)`. Hence two forms killed by `d` multiply to
 zero once their degrees add up to the rank, and in rank at most four a two-form `x` satisfies
-`x ∧ x = 2 x ∧ m ∧ (d ⌋ x)`. This is the algebra behind the splitting of a two-form on a product
-`ℝ × Y` along the unit normal of the factor `Y`.
+`x ∧ x = 2 x ∧ m ∧ (d ⌋ x)`. The decomposable two-forms `m ∧ a` square to zero
+(`TauCeti.ExteriorAlgebra.ι_mul_ι_mul_self_eq_zero`), and two-forms are central
+(`TauCeti.ExteriorAlgebra.mem_center_of_mem_of_even`), so for a two-form `b` with
+`d ⌋ b = 0`, `(m ∧ a + b) ∧ (m ∧ a + b) = 2 (m ∧ a) ∧ b`
+(`TauCeti.ExteriorAlgebra.ι_mul_ι_add_mul_self`). This is the algebra behind the splitting of a
+two-form on a product `ℝ × Y` along the unit normal of the factor `Y`.
 
 On `M × R`, with `e = (0, 1)`, every element `z` of the exterior algebra splits as `a + e ∧ b`,
 where `a` and `b` are the images in `⋀ M` of `z` and of its contraction by the second coordinate
@@ -208,6 +215,15 @@ theorem basisEraseSign_eq_neg_one_pow_card_filter_lt {I : Type w} [LinearOrder I
     rw [← hsign, ← hfilter]
     exact basisEraseSign_eq_neg_one_pow_card_filter_lt_of_mem i (insert i s)
       (Finset.mem_insert_self i s)
+
+/-- The two orders of removing distinct indices `j` and `k` from `J` carry opposite products of
+shuffle signs. -/
+theorem basisEraseSign_mul_basisEraseSign_erase {I : Type w} [LinearOrder I] {J : Finset I}
+    {j k : I} (hj : j ∈ J) (hk : k ∈ J) (hjk : j ≠ k) :
+    basisEraseSign j J * basisEraseSign k (J.erase j) =
+      -(basisEraseSign k J * basisEraseSign j (J.erase k)) := by
+  simp only [basisEraseSign_eq_neg_one_pow_card_filter_lt]
+  exact Finset.neg_one_pow_card_filter_lt_mul_erase hj hk hjk
 
 /-- The exterior-basis vector indexed by a singleton is the image of the corresponding basis
 vector under the exterior-algebra generator. -/
@@ -537,6 +553,17 @@ open _root_.ExteriorAlgebra
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
+/-! ### Decomposable two-forms -/
+
+/-- **The square of a decomposable two-form vanishes**: `(m ∧ a) ∧ (m ∧ a) = 0`. This is the
+case `Q = 0` of `CliffordAlgebra.ι_mul_ι_mul_self_of_isOrtho`, which is downstream of this file. -/
+theorem ι_mul_ι_mul_self_eq_zero (m a : M) : ι R m * ι R a * (ι R m * ι R a) = 0 := by
+  have h := ι_add_mul_swap (R := R) a m
+  rw [add_eq_zero_iff_eq_neg] at h
+  calc ι R m * ι R a * (ι R m * ι R a) = ι R m * (ι R a * ι R m) * ι R a := by
+        simp only [mul_assoc]
+    _ = 0 := by rw [h, mul_neg, ← mul_assoc, ι_sq_zero, zero_mul, neg_zero, zero_mul]
+
 /-! ### Contraction in degree at least the rank -/
 
 variable [Module.Free R M] [Module.Finite R M]
@@ -564,46 +591,43 @@ theorem mul_eq_zero_of_contractLeft_eq_zero {d : Module.Dual R M} {m : M} (hdm :
   rw [eq_ι_mul_contractLeft_of_finrank_le hdm hkl (SetLike.mul_mem_graded hx hy), contractLeft_mul,
     hdx, hdy, zero_mul, mul_zero, add_zero, mul_zero]
 
+/-- **The square of a split two-form in rank at most four.** If `d m = 1`,
+`finrank R M ≤ 4` and `b` is a two-form with `d ⌋ b = 0`, then
+`(m ∧ a + b) ∧ (m ∧ a + b) = 2 (m ∧ a) ∧ b`. -/
+theorem ι_mul_ι_add_mul_self {d : Module.Dual R M} {m : M} (hdm : d m = 1)
+    (h4 : Module.finrank R M ≤ 4) (a : M) {b : _root_.ExteriorAlgebra R M} (hb : b ∈ ⋀[R]^2 M)
+    (hdb : contractLeft (Q := (0 : QuadraticForm R M)) d b = 0) :
+    (ι R m * ι R a + b) * (ι R m * ι R a + b) = 2 • (ι R m * ι R a * b) := by
+  -- The squares of `m ∧ a` and of `b` vanish, and the two-form `b` is central.
+  rw [add_mul, mul_add, mul_add, ι_mul_ι_mul_self_eq_zero,
+    mul_eq_zero_of_contractLeft_eq_zero hdm (by omega) hb hb hdb hdb,
+    Subalgebra.mem_center_iff.1 (mem_center_of_mem_of_even hb even_two) (ι R m * ι R a),
+    two_smul]
+  abel
+
 /-- **The square of a two-form in rank at most four.** If `d m = 1` and `finrank R M ≤ 4`, a
 two-form `x` satisfies `x ∧ x = 2 x ∧ m ∧ (d ⌋ x)`. -/
 theorem mul_self_eq_two_smul_mul_ι_mul_contractLeft {d : Module.Dual R M} {m : M}
     (hdm : d m = 1) (h4 : Module.finrank R M ≤ 4) {x : _root_.ExteriorAlgebra R M}
     (hx : x ∈ ⋀[R]^2 M) :
     x * x = 2 • (x * (ι R m * contractLeft (Q := (0 : QuadraticForm R M)) d x)) := by
-  -- Write `x = m ∧ a + b` with `a = d ⌋ x`. Then `d ⌋ b = 0`, so `b ∧ b = 0` in rank at most
-  -- four; also `(m ∧ a) ∧ (m ∧ a) = 0`, and the two-forms `m ∧ a` and `b` commute.
+  -- Write `x = m ∧ a + b` with `a = d ⌋ x`. Then `b` is a two-form with `d ⌋ b = 0`.
   -- The contraction `d ⌋ x` is a vector `a`.
   obtain ⟨a, ha⟩ : ∃ a, ι R a = contractLeft (Q := (0 : QuadraticForm R M)) d x :=
     ⟨_, ι_ιInv_of_mem_exteriorPower_one (contractLeft_mem_exteriorPower d (n := 1) hx)⟩
   rw [← ha]
-  set g := ι R m * ι R a with hg
-  have hgmem : g ∈ ⋀[R]^2 M :=
+  have hgmem : ι R m * ι R a ∈ ⋀[R]^2 M :=
     SetLike.mul_mem_graded (ι_mem_exteriorPower_one m) (ι_mem_exteriorPower_one a)
   -- The remainder `b = x - m ∧ a` is a two-form killed by `d`.
-  set b := x - g with hb
-  have hbmem : b ∈ ⋀[R]^2 M := sub_mem hx hgmem
-  have hdb : contractLeft (Q := (0 : QuadraticForm R M)) d b = 0 := by
+  have hbmem : x - ι R m * ι R a ∈ ⋀[R]^2 M := sub_mem hx hgmem
+  have hdb : contractLeft (Q := (0 : QuadraticForm R M)) d (x - ι R m * ι R a) = 0 := by
     have hda : contractLeft (Q := (0 : QuadraticForm R M)) d (ι R a) = 0 := by
       rw [ha, contractLeft_contractLeft]
-    rw [hb, map_sub, hg, contractLeft_ι_mul, hdm, one_smul, hda, mul_zero, sub_zero, ha,
-      sub_self]
-  have hbb : b * b = 0 :=
-    mul_eq_zero_of_contractLeft_eq_zero hdm (by omega) hbmem hbmem hdb hdb
-  have hgg : g * g = 0 := by
-    have h := ι_add_mul_swap (R := R) a m
-    rw [add_eq_zero_iff_eq_neg] at h
-    calc g * g = ι R m * (ι R a * ι R m) * ι R a := by simp only [hg, mul_assoc]
-      _ = 0 := by rw [h, mul_neg, ← mul_assoc, ι_sq_zero, zero_mul, neg_zero, zero_mul]
-  -- A two-form is fixed by the grade involution, so it commutes with the two-form `g`.
-  have hinv : involute (Q := (0 : QuadraticForm R M)) b = b := by
-    rw [involute_of_mem_exteriorPower hbmem]
-    simp
-  have hcomm : g * b = b * g := by
-    rw [hg, mul_assoc, ι_mul_eq_involute_mul a b, hinv, ← mul_assoc, ι_mul_eq_involute_mul m b,
-      hinv, mul_assoc]
-  have hx' : x = b + g := (sub_add_cancel x g).symm
-  rw [hx', add_mul, mul_add, mul_add, hbb, hgg, hcomm, add_mul, hgg, two_smul]
-  abel
+    rw [map_sub, contractLeft_ι_mul, hdm, one_smul, hda, mul_zero, sub_zero, ha, sub_self]
+  have h := ι_mul_ι_add_mul_self hdm h4 a hbmem hdb
+  rw [add_sub_cancel] at h
+  rw [h, Subalgebra.mem_center_iff.1 (mem_center_of_mem_of_even hbmem even_two) (ι R m * ι R a),
+    sub_mul, ι_mul_ι_mul_self_eq_zero, sub_zero]
 
 end TauCeti.ExteriorAlgebra
 

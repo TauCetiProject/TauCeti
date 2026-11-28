@@ -12,7 +12,7 @@ public import Mathlib.RingTheory.Polynomial.UniqueFactorization
 import Mathlib.RingTheory.KrullDimension.Polynomial
 import TauCeti.AlgebraicGeometry.CartierDivisor.Factorial
 import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
-import TauCeti.AlgebraicGeometry.StructureSheaf.Stalk
+import TauCeti.AlgebraicGeometry.StructureSheaf.Stalk.Basic
 
 /-!
 # Chow groups of affine spaces in codimension one

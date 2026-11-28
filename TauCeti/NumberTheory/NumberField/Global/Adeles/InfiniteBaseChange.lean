@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Places.Semilocal
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Extension
+import TauCeti.NumberTheory.NumberField.Global.Adeles.LocallyCompact
 import Mathlib.Topology.Algebra.Group.OpenMapping
 import Mathlib.Topology.Baire.LocallyCompactRegular
 
@@ -178,13 +179,26 @@ theorem infiniteAdeleBaseChangeAlgEquiv_toAlgHom :
     (infiniteAdeleBaseChangeAlgEquiv K L).toAlgHom = infiniteAdeleBaseChangeHom K L :=
   (rfl)
 
+/-- The algebraic comparison sends a pure tensor to the extended adele times the diagonal
+field element. -/
+@[simp]
+theorem infiniteAdeleBaseChangeAlgEquiv_tmul (a : InfiniteAdeleRing K) (x : L) :
+    infiniteAdeleBaseChangeAlgEquiv K L (a ⊗ₜ x) =
+      infiniteAdeleExtension K L a * algebraMap L (InfiniteAdeleRing L) x :=
+  infiniteAdeleBaseChangeHom_tmul K L a x
+
 /-- The algebraic inverse comparison sends a diagonal field element to `1 ⊗ x`. -/
 @[simp]
 theorem infiniteAdeleBaseChangeAlgEquiv_symm_algebraMap (x : L) :
     (infiniteAdeleBaseChangeAlgEquiv K L).symm
       (algebraMap L (InfiniteAdeleRing L) x) = 1 ⊗ₜ[K] x := by
   apply (infiniteAdeleBaseChangeAlgEquiv K L).injective
-  simp [infiniteAdeleBaseChangeAlgEquiv]
+  simp
+
+/-- The algebraic comparison sends `1 ⊗ x` to the diagonal field element. -/
+theorem infiniteAdeleBaseChangeAlgEquiv_one_tmul (x : L) :
+    infiniteAdeleBaseChangeAlgEquiv K L (1 ⊗ₜ[K] x) = algebraMap L (InfiniteAdeleRing L) x := by
+  simp
 
 end
 
@@ -205,8 +219,6 @@ def infiniteAdeleBaseChangeEquiv :
   -- sigma-compact infinite adele rings. The additive open mapping theorem then gives the inverse.
   letI := IsModuleTopology.isTopologicalAddGroup (InfiniteAdeleRing K)
     (InfiniteAdeleRing K ⊗[K] L)
-  letI : SecondCountableTopology (InfiniteAdeleRing K) :=
-    (InfiniteAdeleRing.homeomorphMixedSpace K).secondCountableTopology
   let b := (Module.finBasis K L).baseChange (InfiniteAdeleRing K)
   have hs := isSigmaCompact_range
     (IsModuleTopology.continuous_of_linearMap b.equivFun.symm.toLinearMap)
@@ -230,11 +242,13 @@ field element. -/
 @[simp]
 theorem infiniteAdeleBaseChangeEquiv_tmul (a : InfiniteAdeleRing K) (x : L) :
     infiniteAdeleBaseChangeEquiv K L (a ⊗ₜ x) =
-      infiniteAdeleExtension K L a * algebraMap L (InfiniteAdeleRing L) x := by
-  have h : (infiniteAdeleBaseChangeEquiv K L).toAlgHom =
-      infiniteAdeleBaseChangeHom K L := by simp
-  exact (AlgHom.congr_fun h (a ⊗ₜ[K] x)).trans
-    (infiniteAdeleBaseChangeHom_tmul K L a x)
+      infiniteAdeleExtension K L a * algebraMap L (InfiniteAdeleRing L) x :=
+  infiniteAdeleBaseChangeAlgEquiv_tmul K L a x
+
+/-- The continuous comparison sends `1 ⊗ x` to the diagonal field element. -/
+theorem infiniteAdeleBaseChangeEquiv_one_tmul (x : L) :
+    infiniteAdeleBaseChangeEquiv K L (1 ⊗ₜ[K] x) = algebraMap L (InfiniteAdeleRing L) x := by
+  simp
 
 /-- At a place of `L`, the continuous comparison evaluates a pure tensor using the completion
 map from the place below it and the local embedding of the field element. -/
@@ -269,5 +283,34 @@ theorem infiniteAdeleBaseChangeEquiv_tower (M : Type*) [Field M] [NumberField M]
       infiniteAdeleBaseChangeEquiv L M (infiniteAdeleBaseChangeEquiv K L (a ⊗ₜ 1) ⊗ₜ z) := by
   simp only [infiniteAdeleBaseChangeEquiv_tmul, map_one, mul_one]
   rw [← infiniteAdeleExtension_comp K L M, RingHom.comp_apply]
+
+/-- Evaluating `infiniteAdeleBaseChangeEquiv K L s` at a place `w ∣ v` of `L` agrees with
+applying the archimedean semilocal comparison at `v` to the `v`-component tensor of `s`. -/
+theorem infiniteAdeleBaseChangeEquiv_apply_of_liesOver (v : InfinitePlace K)
+    [TopologicalSpace (v.Completion ⊗[K] L)]
+    [IsModuleTopology v.Completion (v.Completion ⊗[K] L)]
+    (s : InfiniteAdeleRing K ⊗[K] L) (w : {w : InfinitePlace L // w.LiesOver v}) :
+    infiniteAdeleBaseChangeEquiv K L s w.val =
+      infiniteSemilocalContinuousEquiv L v
+        (Algebra.TensorProduct.rTensor L
+          (Pi.evalAlgHom K (fun v' : InfinitePlace K ↦ v'.Completion) v) s) w := by
+  induction s using TensorProduct.inductionOn with
+  | tmul a x =>
+    obtain ⟨w, hw⟩ := w
+    obtain rfl : w.comap (algebraMap K L) = v := InfinitePlace.LiesOver.comap_eq w v
+    simp [AbsoluteValue.Completion.algebraMap_apply_of_liesOver]
+  | add s₁ s₂ hs₁ hs₂ =>
+    simp only [map_add, Pi.add_apply]
+    exact congrArg₂ (· + ·) hs₁ hs₂
+
+/-- Pure-tensor form of `infiniteAdeleBaseChangeEquiv_apply_of_liesOver`. -/
+theorem infiniteAdeleBaseChangeEquiv_tmul_apply_of_liesOver (v : InfinitePlace K)
+    [TopologicalSpace (v.Completion ⊗[K] L)]
+    [IsModuleTopology v.Completion (v.Completion ⊗[K] L)]
+    (a : InfiniteAdeleRing K) (x : L) (w : {w : InfinitePlace L // w.LiesOver v}) :
+    infiniteAdeleBaseChangeEquiv K L (a ⊗ₜ[K] x) w.val =
+      infiniteSemilocalContinuousEquiv L v (a v ⊗ₜ[K] x) w := by
+  simpa only [Algebra.TensorProduct.rTensor, Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
+    Pi.evalAlgHom_apply] using infiniteAdeleBaseChangeEquiv_apply_of_liesOver K L v (a ⊗ₜ[K] x) w
 
 end TauCeti.GlobalNumberFields
