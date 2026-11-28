@@ -70,7 +70,6 @@ theorem IsProjectiveCover.exists_isInjectiveEnvelope_nakayama {q : P →ₗ[A] S
     apply hj
     simpa [i] using congrArg (fun g : S →ₗ[A] MatlisDual R E (Module.Dual A P) ↦
       equivLinearMap R E _ (g (q (b j))) (φ j)) heq
-  exact ⟨i, inferInstance, LinearMap.injective_of_ne_zero hi,
-    hI.isEssential_of_ne_bot (LinearMap.range_eq_bot.not.mpr hi)⟩
+  exact ⟨i, hI.isInjectiveEnvelope_of_injective (LinearMap.injective_of_ne_zero hi)⟩
 
 end TauCeti

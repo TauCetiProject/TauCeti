@@ -69,9 +69,7 @@ theorem exists_isAtom_isLeftAlmostSplit_ofHom_mkQ [IsArtinian A N] [IsLocalRing 
   have hN : IsIndecomposableModule A N := isIndecomposableModule_of_isLocalRing_end
   have := hN.nontrivial
   obtain ⟨S, hS⟩ := IsAtomic.exists_atom (Submodule A N)
-  have hess := hN.isEssential_of_ne_bot hS.1
-  refine ⟨S, hS, isLeftAlmostSplit_ofHom_mkQ hS.1 fun U hU ↦ ?_⟩
-  exact inf_eq_left.mp ((hS.le_iff.mp inf_le_left).resolve_left
-    (fun h ↦ hU (isEssential_iff.mp hess U h)))
+  exact ⟨S, hS, isLeftAlmostSplit_ofHom_mkQ hS.1 fun U hU ↦
+    (hN.isEssential_of_ne_bot hU).atom_le hS⟩
 
 end TauCeti

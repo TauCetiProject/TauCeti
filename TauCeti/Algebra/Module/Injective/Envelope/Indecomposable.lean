@@ -11,8 +11,10 @@ public import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 /-!
 # Envelopes inside indecomposable injective modules
 
-Any nonzero submodule of an indecomposable injective module is essential. An injective envelope
-inside the ambient module is a nonzero direct summand and hence fills that module.
+Any nonzero submodule of an indecomposable injective module is essential
+(`TauCeti.IsIndecomposableModule.isEssential_of_ne_bot`). Hence every embedding of a nonzero
+module into an indecomposable injective module is an injective envelope
+(`TauCeti.IsIndecomposableModule.isInjectiveEnvelope_of_injective`).
 -/
 
 public section
@@ -41,5 +43,14 @@ theorem IsIndecomposableModule.isEssential_of_ne_bot (hI : IsIndecomposableModul
   have hessential := henv.isEssential_range
   rw [LinearMap.range_codRestrict, Submodule.range_subtype] at hessential
   exact isEssential_comap_subtype_iff.mp hessential x (ht ▸ Submodule.mem_top) hx
+
+/-- An embedding of a nonzero module into an indecomposable injective module is an injective
+envelope. -/
+theorem IsIndecomposableModule.isInjectiveEnvelope_of_injective (hI : IsIndecomposableModule A I)
+    {M : Type*} [AddCommGroup M] [Module A M] [Nontrivial M] {f : M →ₗ[A] I}
+    (hf : Function.Injective f) : IsInjectiveEnvelope f :=
+  ⟨inferInstance, hf, hI.isEssential_of_ne_bot fun h ↦ by
+    obtain ⟨x, hx⟩ := exists_ne (0 : M)
+    exact hx (hf (by simp [LinearMap.range_eq_bot.mp h]))⟩
 
 end TauCeti
