@@ -9,6 +9,7 @@ public import Mathlib.Data.ZMod.Defs
 public import TauCeti.NumberTheory.SelbergSieve.FiniteFamily
 import Mathlib.Data.ZMod.Basic
 import TauCeti.Data.Nat.Squarefree
+import TauCeti.NumberTheory.ArithmeticFunction.Misc
 import TauCeti.NumberTheory.ArithmeticFunction.Moebius
 import TauCeti.NumberTheory.SelbergSieve.Legendre
 
@@ -67,6 +68,12 @@ private theorem prime_of_mem_filter {Q : Finset ℕ} (hQ : ∀ p ∈ Q, p.Prime)
     [DecidablePred S] : ∀ q ∈ {q ∈ Q | S q}, q.Prime :=
   fun q hq ↦ hQ q (mem_filter.1 hq).1
 
+/-- A prime dividing the product of the primes `q ∈ Q` with `Ω q` nonempty is such a prime. -/
+private theorem mem_and_nonempty_of_dvd_prod {Q : Finset ℕ} (hQ : ∀ p ∈ Q, p.Prime)
+    {Ω : (p : ℕ) → Finset (ZMod p)} {p : ℕ} (hp : p.Prime)
+    (hdvd : p ∣ ∏ q ∈ Q with (Ω q).Nonempty, q) : p ∈ Q ∧ (Ω p).Nonempty :=
+  mem_filter.1 ((Nat.Prime.dvd_prod_iff_mem (prime_of_mem_filter hQ _) hp).1 hdvd)
+
 /-- The sieve removing, at each prime `p ∈ Q`, the residue classes `Ω p` from the integers `x a`
 of a weighted finite family. The sieving primes are the `p ∈ Q` with `Ω p` nonempty, the density
 is `ν(d) = ∏_{p ∣ d} #(Ω p) / p` for `d ≠ 0` with `ν(0) = 0`, the approximate mass is `X`, and
@@ -82,16 +89,12 @@ noncomputable def ofResidueClasses : BoundingSieve :=
       nu := prodPrimeFactors fun p ↦ (#(Ω p) : ℝ) / p
       nu_mult := IsMultiplicative.prodPrimeFactors _
       nu_pos_of_prime := fun p hp hdvd ↦ by
-        have hmem :=
-          mem_filter.1 ((Nat.Prime.dvd_prod_iff_mem (prime_of_mem_filter hQ _) hp).1 hdvd)
-        rw [prodPrimeFactors_apply hp.ne_zero, hp.primeFactors, prod_singleton]
-        exact div_pos (Nat.cast_pos.2 hmem.2.card_pos) (Nat.cast_pos.2 hp.pos)
+        rw [prodPrimeFactors_apply_prime _ hp]
+        exact div_pos (Nat.cast_pos.2 (mem_and_nonempty_of_dvd_prod hQ hp hdvd).2.card_pos)
+          (Nat.cast_pos.2 hp.pos)
       nu_lt_one_of_prime := fun p hp hdvd ↦ by
-        have hmem :=
-          mem_filter.1 ((Nat.Prime.dvd_prod_iff_mem (prime_of_mem_filter hQ _) hp).1 hdvd)
-        rw [prodPrimeFactors_apply hp.ne_zero, hp.primeFactors, prod_singleton,
-          div_lt_one (Nat.cast_pos.2 hp.pos)]
-        exact_mod_cast hΩ p hmem.1 }
+        rw [prodPrimeFactors_apply_prime _ hp, div_lt_one (Nat.cast_pos.2 hp.pos)]
+        exact_mod_cast hΩ p (mem_and_nonempty_of_dvd_prod hQ hp hdvd).1 }
     A (fun a ↦ ∏ q ∈ Q with (x a : ZMod q) ∈ Ω q, q) w hw
 
 /-- The support is the set of residue labels of the family. -/
@@ -125,7 +128,7 @@ theorem ofResidueClasses_nu :
 /-- At every prime, inside or outside `Q`, the density is the proportion of removed classes. -/
 @[simp] theorem ofResidueClasses_nu_apply_prime {p : ℕ} (hp : p.Prime) :
     (ofResidueClasses A x w hw Q hQ Ω hΩ X).nu p = #(Ω p) / p := by
-  rw [ofResidueClasses_nu, prodPrimeFactors_apply hp.ne_zero, hp.primeFactors, prod_singleton]
+  rw [ofResidueClasses_nu, prodPrimeFactors_apply_prime _ hp]
 
 /-- A prime at which no residue class is removed is not a sieving prime. -/
 theorem not_dvd_ofResidueClasses_prodPrimes {p : ℕ} (hp : p.Prime) (hΩp : Ω p = ∅) :
@@ -152,7 +155,7 @@ theorem multSum_ofResidueClasses {d : ℕ}
 
 /-- The sifted sum is the weight of the indices whose integer avoids the removed classes at every
 prime of `Q`. -/
-theorem siftedSum_ofResidueClasses :
+@[simp] theorem siftedSum_ofResidueClasses :
     (ofResidueClasses A x w hw Q hQ Ω hΩ X).siftedSum =
       ∑ a ∈ A with ∀ p ∈ Q, (x a : ZMod p) ∉ Ω p, w a := by
   rw [ofResidueClasses, siftedSum_ofFiniteFamily]
@@ -216,7 +219,7 @@ theorem sum_filter_forall_notMem_eq_mul_prod_add_sum_moebius_mul {ι : Type*} (A
     have hdP : d ∣ s.prodPrimes := by
       rw [ofResidueClasses_prodPrimes]
       exact Nat.dvd_of_mem_divisors hd
-    rw [rem, multSum_ofResidueClasses _ _ _ _ _ _ _ _ _ hdP, ofResidueClasses_totalMass,
+    rw [rem, multSum_ofResidueClasses (hd := hdP), ofResidueClasses_totalMass,
       ofResidueClasses_nu,
       prodPrimeFactors_apply (ne_zero_of_dvd_ne_zero s.prodPrimes_ne_zero hdP), mul_comm Y]
   -- Then split `w` into its positive and negative parts, both nonnegative.
