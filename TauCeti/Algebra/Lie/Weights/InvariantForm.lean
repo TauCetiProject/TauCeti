@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Weights.RootSystem
 public import Mathlib.LinearAlgebra.RootSystem.RootPositive
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # The invariant form on the weights of a Killing Lie algebra
@@ -58,8 +59,9 @@ be stated.
   `⟨λ, α^∨⟩ ⟨α, α⟩ = 2 ⟨λ, α⟩`.
 * `TauCeti.invForm_weylGroup_smul_left`: the Weyl invariance of the form, in the shape
   `⟨w λ, μ⟩ = ⟨λ, w⁻¹ μ⟩`.
-* `TauCeti.weylGroupCorootRep_cartanEquivDual_symm`: the Killing duality is Weyl-equivariant, the
-  Weyl group acting on `H` through the coroot representation.
+* `TauCeti.weylGroupCorootRep_cartanEquivDual_symm` and `TauCeti.cartanEquivDual_coweightEquiv`:
+  the Killing duality is Weyl-equivariant, the Weyl group acting on `H` through the coroot
+  representation (`coweightEquiv`).
 * `TauCeti.traceForm_coroot_self_mul_invForm_self_eq_four`: `⟨α^∨, α^∨⟩ ⟨α, α⟩ = 4`, so a long
   root has a short coroot.
 * `TauCeti.killingExtend_apply_cartan` and `TauCeti.killingExtend_apply_eq_zero`: the extension of
@@ -302,6 +304,15 @@ theorem weylGroupCorootRep_cartanEquivDual_symm (w : (rootSystem H).weylGroup)
   -- on coweights, here `H`, through `coweightEquiv`, and the evaluation pairing of `rootSystem H`
   -- makes this their transposition law
   exact (RootPairing.Equiv.toLinearMap_weightEquiv (w : (rootSystem H).Aut) nu _).symm
+
+/-- Under `LieAlgebra.IsKilling.cartanEquivDual`, the coweight action of `w` on `H` corresponds to
+the linear action of `w⁻¹` on `H*`. -/
+theorem cartanEquivDual_coweightEquiv (w : (rootSystem H).weylGroup) (h : H) :
+    cartanEquivDual H ((w : (rootSystem H).Aut).coweightEquiv h) =
+      w⁻¹ • cartanEquivDual H h := by
+  have hrep := weylGroupCorootRep_cartanEquivDual_symm w (cartanEquivDual H h)
+  rw [LinearEquiv.symm_apply_apply, RootPairing.weylGroupCorootRep_equivOp_apply] at hrep
+  simpa only [LinearEquiv.apply_symm_apply] using congrArg (cartanEquivDual H) hrep
 
 /-- **The length of a coroot**: `⟨α^∨, α^∨⟩ ⟨α, α⟩ = 4`, so a long root has a short coroot.
 

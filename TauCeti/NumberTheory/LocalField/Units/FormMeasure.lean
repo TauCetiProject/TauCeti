@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.ConvergenceFactor
 public import TauCeti.NumberTheory.LocalField.Units.Haar
+import TauCeti.MeasureTheory.Group.Units
 import TauCeti.NumberTheory.LocalField.Topology
 
 /-!
@@ -62,27 +63,12 @@ theorem unitsFormMeasure_apply (s : Set Kˣ) :
 /-- The pushforward of the form measure along `Units.val` is the measure `|x|_K⁻¹ μ` on `K`. -/
 theorem map_val_unitsFormMeasure :
     (unitsFormMeasure K μ).map Units.val =
-      μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹ := by
-  rw [unitsFormMeasure, Units.measurableEmbedding_val₀.map_comap]
-  refine restrict_eq_self_of_ae_mem ?_
-  filter_upwards [measure_eq_zero_iff_ae_notMem.1
-    (withDensity_absolutelyContinuous μ _ (measure_singleton 0))] with x hx
-  exact ⟨Units.mk0 x hx, rfl⟩
+      μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹ :=
+  Units.map_val_comap_val
 
-instance isMulLeftInvariant_unitsFormMeasure : (unitsFormMeasure K μ).IsMulLeftInvariant := by
-  refine ⟨fun u ↦ Measure.ext fun s hs ↦ ?_⟩
-  have himage : Units.val '' ((u * ·) ⁻¹' s) = ((u : K) • ·) ⁻¹' (Units.val '' s) := by
-    ext x
-    constructor
-    · rintro ⟨v, hv, rfl⟩
-      exact ⟨u * v, hv, rfl⟩
-    · rintro ⟨w, hw, hwx⟩
-      refine ⟨u⁻¹ * w, by simpa using hw, ?_⟩
-      simp [hwx]
-  rw [map_apply (measurable_const_mul u) hs, unitsFormMeasure_apply, unitsFormMeasure_apply,
-    himage, ← map_apply (measurable_const_smul _)
-      (Units.measurableEmbedding_val₀.measurableSet_image' hs),
-    map_smul_withDensity_inv_normalizedAbsoluteValue μ u.ne_zero]
+instance isMulLeftInvariant_unitsFormMeasure : (unitsFormMeasure K μ).IsMulLeftInvariant :=
+  Units.isMulLeftInvariant_comap_val fun u ↦
+    map_smul_withDensity_inv_normalizedAbsoluteValue μ u.ne_zero
 
 instance sigmaFinite_unitsFormMeasure : SigmaFinite (unitsFormMeasure K μ) := by
   have : SigmaFinite (μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹) := by

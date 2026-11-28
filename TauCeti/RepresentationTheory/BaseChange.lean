@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Finiteness
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.TensorProduct.Hom
@@ -16,6 +17,9 @@ public import TauCeti.RepresentationTheory.RestrictScalars
 -- of finite products (`TensorProduct.piRight`) are used only to construct the invariant and
 -- intertwiner comparisons.
 import Mathlib.RingTheory.Flat.Equalizer
+import TauCeti.GroupTheory.GroupAction.Closure
+-- Non-public: the finite-product tensor criterion is used only in the fixed-vector proof.
+import TauCeti.LinearAlgebra.TensorProduct.Pi
 -- Non-public: bijectivity of the base-changed quotient map (`QuotSMulTop.baseChange_mkQ_bijective`)
 -- is used only to construct `Representation.baseChangeQuotSMulTopEquiv`.
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
@@ -46,10 +50,10 @@ extension commutes with that kernel (`LinearMap.tensorKerEquiv`). The version fo
 free coefficient algebra, and the resulting invariance of intertwiner dimensions over a field, are
 in `TauCeti.RepresentationTheory.BaseChange.Intertwiner`.
 
-For a finite group, the whole invariant submodule also commutes with a flat scalar extension.
-Indeed, invariants are the kernel of the finite family of maps `ρ(g) - 1`; flatness preserves that
-kernel, and the finite product comparison identifies the base-changed family with the invariance
-conditions after extending scalars.
+For a group finitely generated as a monoid, the invariant submodule commutes with flat scalar
+extension of commutative rings. Invariants are the kernel of the finite family of maps
+`ρ(g) - 1` indexed by a generating set. Flatness preserves that kernel, and the finite product
+comparison identifies the base-changed family with the invariance conditions after scalar extension.
 For an arbitrary group the natural comparison map `A ⊗_R V^G → (A ⊗_R V)^G` is still injective
 when `A` is flat over `R`, since it is the scalar extension of the inclusion `V^G → V`.
 
@@ -72,10 +76,13 @@ to torsion modules and do not require the coefficient algebra to be flat.
 * `Representation.baseChange`: scalar extension of a representation.
 * `Representation.ker_baseChange`: scalar extension to a faithful algebra keeps the kernel of a
   representation on a flat module.
-* `Representation.invariantsBaseChangeEquiv`: flat scalar extension commutes with taking the
-  invariants of a finite group.
-* `Representation.invariantsBaseChangeMap`: the comparison map `A ⊗_R V^G → (A ⊗_R V)^G`,
-  injective for flat `A` (`Representation.invariantsBaseChangeMap_injective`).
+* `Representation.asAlgebraHom_baseChange_mapAlgHom`: an element of `R[G]`, with its coefficients
+  mapped to `A`, acts on `A ⊗_R V` as the base change of its action on `V`.
+* `Representation.invariantsBaseChangeEquiv`: flat scalar extension of commutative rings
+  commutes with taking the invariants of a group finitely generated as a monoid.
+* `Representation.invariantsBaseChangeMap`: the comparison map `A ⊗_R V^G → (A ⊗_R V)^G`
+  for commutative rings, injective for flat `A`
+  (`Representation.invariantsBaseChangeMap_injective`).
 * `Representation.averageMap_baseChange`: the averaging projection commutes with scalar
   extension.
 * `Representation.equivFinsuppOfBasisLeft_apply_fixed_of_baseChange`: the coordinates of a fixed
@@ -176,103 +183,73 @@ theorem ker_baseChange {G : Type*} [Group G] (A : Type v) [Semiring A] [Algebra 
 
 end BaseChange
 
+section AsAlgebraHom
+
+variable {R : Type u} {A : Type v} [CommSemiring R] [CommSemiring A] [Algebra R A]
+variable [AddCommMonoid V] [Module R V]
+
+/-- An element of `R[G]`, read in `A[G]` by mapping its coefficients to `A`, acts on the base
+change of `ρ` as the base change of its action on `V`. -/
+@[simp]
+theorem asAlgebraHom_baseChange_mapAlgHom (ρ : Representation R G V) (a : MonoidAlgebra R G) :
+    (baseChange A ρ).asAlgebraHom (MonoidAlgebra.mapAlgHom G (Algebra.ofId R A) a) =
+      (ρ.asAlgebraHom a).baseChange A := by
+  induction a using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add a b ha hb => simp only [map_add, ha, hb, LinearMap.baseChange_add]
+  | single g c => simp [asAlgebraHom_single, LinearMap.baseChange_smul, algebraMap_smul]
+
+end AsAlgebraHom
+
+/-- A vector fixed by the elements of a monoid generating set is fixed by the whole monoid. -/
+private theorem fixed_iff_of_closure_eq_top {k : Type*} [Semiring k] [AddCommMonoid V]
+    [Module k V] (ρ : Representation k G V) {T : Set G}
+    (hT : Submonoid.closure T = ⊤) (v : V) :
+    (∀ g : T, ρ g v = v) ↔ ∀ g, ρ g v = v := by
+  let _ : MulAction G V := MulAction.compHom V ρ
+  have h := TauCeti.Submonoid.forall_smul_eq_self_iff_of_closure_eq_top hT (x := v)
+  exact ⟨fun hv ↦ h.mpr (fun g hg ↦ hv ⟨g, hg⟩), fun hv g ↦ hv g⟩
+
+section FixedVectors
+
+variable {R : Type u} {A : Type v} [CommRing R] [Ring A] [Algebra R A]
+variable [AddCommGroup V] [Module R V]
+
+/-- If membership in a submodule is characterized by fixedness under a finitely generated monoid
+action, then after flat scalar extension to a possibly noncommutative algebra, the range of the
+tensored inclusion is exactly the submodule of fixed vectors. -/
+theorem mem_range_lTensor_subtype_iff_fixed_baseChange_of_fg [Module.Flat R A] [Monoid.FG G]
+    (ρ : Representation R G V) (P : Submodule R V)
+    (hP : ∀ v, v ∈ P ↔ ∀ g, ρ g v = v) {x : A ⊗[R] V} :
+    x ∈ LinearMap.range (P.subtype.lTensor A) ↔ ∀ g, baseChange A ρ g x = x := by
+  obtain ⟨T, hT, hfinite⟩ := Monoid.fg_iff.mp (inferInstance : Monoid.FG G)
+  have : Finite T := hfinite
+  let defect : V →ₗ[R] (T → V) := LinearMap.pi fun g ↦ ρ g - LinearMap.id
+  have hEq : LinearMap.ker defect = P := by
+    ext v
+    rw [hP, ← ρ.fixed_iff_of_closure_eq_top hT v]
+    simp only [defect, LinearMap.mem_ker, LinearMap.pi_apply, funext_iff, Pi.zero_apply,
+      LinearMap.sub_apply, LinearMap.id_apply, sub_eq_zero]
+  have hPi := TensorProduct.lTensor_pi_eq_tmul_iff
+    (fun g : T ↦ ρ g - LinearMap.id) x (0 : A) (0 : T → V)
+  simp only [zero_tmul, ← LinearMap.baseChange_eq_lTensor, LinearMap.baseChange_sub,
+    LinearMap.baseChange_id, LinearMap.sub_apply, LinearMap.id_apply, sub_eq_zero,
+    ← baseChange_apply] at hPi
+  have hmem : x ∈ LinearMap.ker (AlgebraTensorModule.lTensor R A defect) ↔
+      ∀ g, baseChange A ρ g x = x := by
+    rw [LinearMap.mem_ker, AlgebraTensorModule.coe_lTensor,
+      ← (ρ.baseChange A).fixed_iff_of_closure_eq_top hT x]
+    exact hPi
+  rw [Module.Flat.ker_lTensor_eq, hEq] at hmem
+  simpa only [LinearMap.mem_range, AlgebraTensorModule.coe_lTensor] using hmem
+
+end FixedVectors
+
 section Invariants
 
 variable {G : Type w} [Group G]
 variable {R : Type u} {A : Type v} [CommRing R] [CommRing A] [Algebra R A]
-variable [Module.Flat R A] [AddCommGroup V] [Module R V]
-
-/-- The simultaneous defect of invariance: its `g`-coordinate sends `x` to `ρ(g)x - x`.
-Its kernel is the invariant submodule. -/
-private def invariantDefect (ρ : Representation R G V) :
-    V →ₗ[R] (G → V) :=
-  LinearMap.pi fun g ↦ ρ g - LinearMap.id
-
-private theorem mem_ker_invariantDefect {ρ : Representation R G V} {x : V} :
-    x ∈ LinearMap.ker ρ.invariantDefect ↔ x ∈ ρ.invariants := by
-  rw [LinearMap.mem_ker, funext_iff]
-  simp [invariantDefect, mem_invariants, sub_eq_zero]
-
-/-- The invariants of a representation are its simultaneous invariance kernel. -/
-private def invariantsEquivKerInvariantDefect (ρ : Representation R G V) :
-    ρ.invariants ≃ₗ[R] LinearMap.ker ρ.invariantDefect where
-  toFun x := ⟨x, mem_ker_invariantDefect.mpr x.property⟩
-  invFun x := ⟨x, mem_ker_invariantDefect.mp x.property⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-@[simp]
-private theorem coe_invariantsEquivKerInvariantDefect
-    (ρ : Representation R G V) (x : ρ.invariants) :
-    (ρ.invariantsEquivKerInvariantDefect x : V) = x :=
-  rfl
-
-@[simp]
-private theorem coe_invariantsEquivKerInvariantDefect_symm
-    (ρ : Representation R G V) (x : LinearMap.ker ρ.invariantDefect) :
-    (ρ.invariantsEquivKerInvariantDefect.symm x : V) = x :=
-  rfl
-
-omit [Module.Flat R A] in
-private theorem ker_invariantDefect_baseChange [Finite G] (ρ : Representation R G V) :
-    LinearMap.ker (baseChange A ρ).invariantDefect =
-      LinearMap.ker (TensorProduct.AlgebraTensorModule.lTensor A A ρ.invariantDefect) := by
-  classical
-  let _ := Fintype.ofFinite G
-  ext x
-  rw [LinearMap.mem_ker, LinearMap.mem_ker]
-  have hDefect :
-      (baseChange A ρ).invariantDefect x =
-        TensorProduct.piRight R A A (fun _ : G ↦ V)
-          (TensorProduct.AlgebraTensorModule.lTensor A A ρ.invariantDefect x) := by
-    induction x with
-    | add x y hx hy => simp [hx, hy]
-    | tmul a x =>
-        ext g
-        simp only [invariantDefect, LinearMap.pi_apply, LinearMap.sub_apply,
-          LinearMap.id_apply, LinearMap.add_apply, LinearMap.neg_apply,
-          baseChange_apply, LinearMap.baseChange_tmul,
-          TensorProduct.AlgebraTensorModule.lTensor_tmul,
-          TensorProduct.piRight_apply, TensorProduct.piRightHom_tmul, sub_eq_add_neg]
-        rw [TensorProduct.tmul_add, TensorProduct.tmul_neg]
-  rw [hDefect]
-  exact (TensorProduct.piRight R A A (fun _ : G ↦ V)).map_eq_zero_iff
-
-/-- **Flat scalar extension commutes with finite-group invariants.** If `A` is flat over `R` and
-`G` is finite, the scalar extension of the invariant submodule of `ρ` is naturally linearly
-equivalent to the invariants of the scalar-extended representation.
-
-Finiteness of `G` is used only to identify the scalar extension of `G → V` with
-`G → A ⊗[R] V`; flatness then makes scalar extension commute with the resulting kernel. -/
-noncomputable def invariantsBaseChangeEquiv [Finite G] (ρ : Representation R G V) :
-    A ⊗[R] ρ.invariants ≃ₗ[A] (baseChange A ρ).invariants := by
-  let eKer :
-      LinearMap.ker (TensorProduct.AlgebraTensorModule.lTensor A A ρ.invariantDefect) ≃ₗ[A]
-        LinearMap.ker (baseChange A ρ).invariantDefect :=
-    LinearEquiv.ofEq _ _ ρ.ker_invariantDefect_baseChange.symm
-  exact (AlgebraTensorModule.congr (LinearEquiv.refl A A)
-      ρ.invariantsEquivKerInvariantDefect).trans <|
-    (LinearMap.tensorKerEquiv A A ρ.invariantDefect).trans <|
-      eKer.trans (baseChange A ρ).invariantsEquivKerInvariantDefect.symm
-
-/-- The base-change equivalence is the canonical scalar extension of the inclusion of the
-invariant submodule into the ambient representation. -/
-@[simp]
-theorem coe_invariantsBaseChangeEquiv [Finite G]
-    (ρ : Representation R G V) (x : A ⊗[R] ρ.invariants) :
-    ((ρ.invariantsBaseChangeEquiv (A := A) x :
-        (baseChange A ρ).invariants) : A ⊗[R] V) =
-      ρ.invariants.subtype.lTensor A x := by
-  induction x with
-  | add x y hx hy => simpa only [map_add, Submodule.coe_add] using congrArg₂ (· + ·) hx hy
-  | tmul a x =>
-      simp only [invariantsBaseChangeEquiv, LinearEquiv.trans_apply,
-        AlgebraTensorModule.congr_tmul, LinearEquiv.refl_apply,
-        coe_invariantsEquivKerInvariantDefect_symm, LinearEquiv.coe_ofEq_apply,
-        LinearMap.tensorKerEquiv_apply, LinearMap.tensorKer_tmul,
-        coe_invariantsEquivKerInvariantDefect, LinearMap.lTensor_tmul, Submodule.subtype_apply]
+variable [AddCommGroup V] [Module R V] [Module.Flat R A]
 
 omit [Module.Flat R A] in
 /-- The natural comparison map `A ⊗_R V^G → (A ⊗_R V)^G`, the base change of the inclusion of the
@@ -308,19 +285,38 @@ theorem invariantsBaseChangeMap_injective (ρ : Representation R G V) :
   exact Module.Flat.lTensor_preserves_injective_linearMap (M := A) ρ.invariants.subtype
     ρ.invariants.injective_subtype h'
 
-/-- For a finite group, the base-change equivalence of invariants is the comparison map. -/
-@[simp]
-theorem toLinearMap_invariantsBaseChangeEquiv [Finite G] (ρ : Representation R G V) :
-    (ρ.invariantsBaseChangeEquiv (A := A)).toLinearMap = ρ.invariantsBaseChangeMap :=
-  LinearMap.ext fun x ↦ Subtype.ext <|
-    (ρ.coe_invariantsBaseChangeEquiv x).trans (ρ.coe_invariantsBaseChangeMap x).symm
-
-/-- **The comparison map is bijective for flat coefficients and a finite group**: it is the map
-underlying `Representation.invariantsBaseChangeEquiv`. -/
-theorem invariantsBaseChangeMap_bijective [Finite G] (ρ : Representation R G V) :
+/-- For a group finitely generated as a monoid and a flat extension of commutative rings,
+the invariant comparison map is bijective. -/
+theorem invariantsBaseChangeMap_bijective [Monoid.FG G] (ρ : Representation R G V) :
     Function.Bijective (ρ.invariantsBaseChangeMap (A := A)) := by
-  rw [← toLinearMap_invariantsBaseChangeEquiv]
-  exact (ρ.invariantsBaseChangeEquiv (A := A)).bijective
+  refine ⟨ρ.invariantsBaseChangeMap_injective, fun y ↦ ?_⟩
+  obtain ⟨x, hx⟩ := (ρ.mem_range_lTensor_subtype_iff_fixed_baseChange_of_fg
+    ρ.invariants (mem_invariants ρ)).2 ((mem_invariants _ _).1 y.property)
+  exact ⟨x, Subtype.ext ((ρ.coe_invariantsBaseChangeMap x).trans hx)⟩
+
+/-- For a flat extension of commutative rings `R → A` and a group `G` finitely generated as a
+monoid, the canonical comparison identifies the scalar extension of the invariant submodule
+of `ρ` with the invariants of the scalar-extended representation. -/
+noncomputable def invariantsBaseChangeEquiv [Monoid.FG G] (ρ : Representation R G V) :
+    A ⊗[R] ρ.invariants ≃ₗ[A] (baseChange A ρ).invariants :=
+  LinearEquiv.ofBijective _ ρ.invariantsBaseChangeMap_bijective
+
+/-- The flat base-change equivalence of invariants has the canonical comparison as its
+linear map. -/
+@[simp]
+theorem toLinearMap_invariantsBaseChangeEquiv [Monoid.FG G] (ρ : Representation R G V) :
+    (ρ.invariantsBaseChangeEquiv (A := A)).toLinearMap = ρ.invariantsBaseChangeMap :=
+  LinearMap.ext (LinearEquiv.ofBijective_apply _)
+
+/-- The base-change equivalence is the canonical scalar extension of the inclusion of the
+invariant submodule into the ambient representation. -/
+@[simp]
+theorem coe_invariantsBaseChangeEquiv [Monoid.FG G]
+    (ρ : Representation R G V) (x : A ⊗[R] ρ.invariants) :
+    ((ρ.invariantsBaseChangeEquiv (A := A) x :
+        (baseChange A ρ).invariants) : A ⊗[R] V) =
+      ρ.invariants.subtype.lTensor A x := by
+  rw [← LinearEquiv.coe_coe, toLinearMap_invariantsBaseChangeEquiv, coe_invariantsBaseChangeMap]
 
 end Invariants
 

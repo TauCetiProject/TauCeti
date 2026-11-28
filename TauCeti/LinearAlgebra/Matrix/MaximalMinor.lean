@@ -22,7 +22,9 @@ determinant `det (A.submatrix id e)` of the square submatrix on all the rows and
 picked out by an embedding `e : m ↪ n`. Over an integral domain the rows of `A` are linearly
 independent exactly when some maximal minor is nonzero, by the criterion in
 `TauCeti.LinearAlgebra.Matrix.Rank`. That module also proves invariance of row independence under
-scalar extension between domains.
+scalar extension between domains. Full-column row selections of `A.fromRows (a • 1)` are treated
+in `TauCeti.LinearAlgebra.Matrix.RowLattice`, with their valuation and kernel-length formula in
+`TauCeti.RingTheory.DiscreteValuationRing.KernelLength`.
 
 A matrix `A` whose maximal minor `A.submatrix id s` on the columns picked out by an injective `s`
 is invertible is surjective (`Matrix.mulVec_surjective_of_isUnit_det_submatrix`): the inverse of

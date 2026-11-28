@@ -5,7 +5,7 @@ Authors: Bastiaan J Braams
 -/
 module
 
-public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
+public import TauCeti.Analysis.Asymptotics.Expansion.Basic
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.LaplaceTransform.Basic
 import TauCeti.Analysis.LaplaceTransform.Remainder

@@ -6,40 +6,37 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import TauCeti.LinearAlgebra.ExteriorAlgebra.HermitianMetric
+public import TauCeti.LinearAlgebra.ExteriorPower.SesquilinearForm
 
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
-# The Gram hermitian form on exterior powers of an inner product space
+# Symmetry and positivity of the exterior-power Gram form
 
-Let `V` be a finite-dimensional inner product space over `𝕜 = ℝ` or `ℂ`. Its exterior power
-`⋀[𝕜]^n V` carries the hermitian form `exteriorPower.gramSesqForm n`, conjugate-linear in the
-first argument, whose value on decomposable vectors is the Gram determinant
+Let `V` be an inner product space over `𝕜 = ℝ` or `ℂ` (not necessarily finite-dimensional). Its
+exterior power `⋀[𝕜]^n V` carries the basis-free Gram hermitian form
+`(innerₛₗ 𝕜).sesqExteriorPower n`, conjugate-linear in the first argument, whose value on
+decomposable vectors is the Gram determinant `det (⟪vᵢ, wⱼ⟫)`
+(`LinearMap.sesqExteriorPower_ιMulti_ιMulti`). Over `ℂ` it is the complex counterpart of Mathlib's
+inner product on the exterior powers of a real inner product space.
 
-  `⟪v₁ ∧ ⋯ ∧ vₙ, w₁ ∧ ⋯ ∧ wₙ⟫ = det (⟪vᵢ, wⱼ⟫)`
-
-(`exteriorPower.gramSesqForm_ιMulti_ιMulti`). It is hermitian and positive definite, and these
-values determine it (`exteriorPower.eq_gramSesqForm_of_ιMulti`). Over `ℂ` it is the complex
-counterpart of Mathlib's inner product on the exterior powers of a real inner product space.
-For a vector bundle with a hermitian metric, it gives the metric on exterior powers, in
-particular on the determinant line, fibre by fibre.
-
-The form is built from an orthonormal basis `b` of `V`: it is the restriction to `⋀[𝕜]^n V` of
-the hermitian form on the exterior algebra for which the increasing wedges of `b` are orthonormal.
-By the Gram-determinant formula the result does not depend on `b`.
-
-## Main definitions
-
-* `exteriorPower.gramSesqForm n`: the Gram hermitian form on `⋀[𝕜]^n V`.
+This module proves that `(innerₛₗ 𝕜).sesqExteriorPower n` is hermitian and positive definite
+without any finite-dimensionality assumption on `V`, by reducing to a finitely generated submodule
+and identifying `(innerₛₗ 𝕜).sesqExteriorPower n` with the wedge-basis form of its standard
+orthonormal basis.
 
 ## Main results
 
-* `exteriorPower.gramSesqForm_ιMulti_ιMulti`: the Gram-determinant formula.
-* `exteriorPower.isSymm_gramSesqForm`: the form is hermitian.
-* `exteriorPower.gramSesqForm_self_pos`: the form is positive definite.
-* `exteriorPower.eq_gramSesqForm_of_ιMulti`: a sesquilinear form on `⋀[𝕜]^n V` with the
-  Gram-determinant values is `exteriorPower.gramSesqForm n`.
+* `exteriorPower.isSymm_sesqExteriorPower_innerₛₗ`: `(innerₛₗ 𝕜).sesqExteriorPower n` is
+  hermitian.
+* `exteriorPower.sesqExteriorPower_innerₛₗ_self_nonneg`:
+  `0 ≤ (innerₛₗ 𝕜).sesqExteriorPower n x x`.
+* `exteriorPower.sesqExteriorPower_innerₛₗ_self_eq_zero_iff`:
+  `(innerₛₗ 𝕜).sesqExteriorPower n x x = 0 ↔ x = 0`.
+* `exteriorPower.sesqExteriorPower_innerₛₗ_self_pos`:
+  `0 < (innerₛₗ 𝕜).sesqExteriorPower n x x` for `x ≠ 0`.
 
 ## References
 
@@ -53,61 +50,44 @@ open scoped InnerProductSpace ComplexOrder
 namespace exteriorPower
 
 variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
-  [FiniteDimensional 𝕜 V]
 
-variable (𝕜 V) in
-/-- The hermitian form on the exterior algebra for which the increasing wedges of the standard
-orthonormal basis of `V` are orthonormal. -/
-private def wedgeBasisForm :
-    ExteriorAlgebra 𝕜 V →ₗ⋆[𝕜] ExteriorAlgebra 𝕜 V →ₗ[𝕜] 𝕜 :=
-  Matrix.toLinearMapₛₗ₂ (starRingEnd 𝕜) (stdOrthonormalBasis 𝕜 V).toBasis.ExteriorAlgebra
-    (stdOrthonormalBasis 𝕜 V).toBasis.ExteriorAlgebra 1
+/-- The exterior-power Gram form `(innerₛₗ 𝕜).sesqExteriorPower n` is hermitian. -/
+theorem isSymm_sesqExteriorPower_innerₛₗ (n : ℕ) :
+    ((innerₛₗ 𝕜 : V →ₗ⋆[𝕜] V →ₗ[𝕜] 𝕜).sesqExteriorPower n).IsSymm :=
+  LinearMap.IsSymm.sesqExteriorPower star_involutive
+    (LinearMap.isSymm_def.mpr fun x y ↦ by simp [inner_conj_symm]) n
 
-/-- The **Gram hermitian form** on the exterior power `⋀[𝕜]^n V` of a finite-dimensional inner
-product space, conjugate-linear in the first argument, with
-`⟪v₁ ∧ ⋯ ∧ vₙ, w₁ ∧ ⋯ ∧ wₙ⟫ = det (⟪vᵢ, wⱼ⟫)` (`exteriorPower.gramSesqForm_ιMulti_ιMulti`). -/
-def gramSesqForm (n : ℕ) : ⋀[𝕜]^n V →ₗ⋆[𝕜] ⋀[𝕜]^n V →ₗ[𝕜] 𝕜 :=
-  (wedgeBasisForm 𝕜 V ∘ₛₗ (⋀[𝕜]^n V).subtype).compl₂ (⋀[𝕜]^n V).subtype
-
-private theorem gramSesqForm_apply (n : ℕ) (x y : ⋀[𝕜]^n V) :
-    gramSesqForm n x y = wedgeBasisForm 𝕜 V x y :=
-  (rfl)
-
-/-- **The Gram-determinant formula**: `⟪v₁ ∧ ⋯ ∧ vₙ, w₁ ∧ ⋯ ∧ wₙ⟫ = det (⟪vᵢ, wⱼ⟫)`. -/
-@[simp]
-theorem gramSesqForm_ιMulti_ιMulti (n : ℕ) (v w : Fin n → V) :
-    gramSesqForm n (ιMulti 𝕜 n v) (ιMulti 𝕜 n w) = (Matrix.of fun i j ↦ ⟪v i, w j⟫_𝕜).det := by
-  rw [gramSesqForm_apply, ιMulti_apply_coe, ιMulti_apply_coe, wedgeBasisForm,
-    ExteriorAlgebra.toLinearMapₛₗ₂_ιMulti_ιMulti,
-    OrthonormalBasis.toLinearMapₛₗ₂_one_eq_innerₛₗ]
-  simp only [innerₛₗ_apply_apply]
-
-/-- The Gram form is hermitian. -/
-theorem isSymm_gramSesqForm (n : ℕ) : (gramSesqForm (𝕜 := 𝕜) (V := V) n).IsSymm :=
-  LinearMap.isSymm_def.mpr fun x y ↦ by
-    rw [gramSesqForm_apply, gramSesqForm_apply, starRingEnd_apply, wedgeBasisForm,
-      Matrix.star_toLinearMapₛₗ₂_one_apply]
-
-theorem gramSesqForm_self_nonneg (n : ℕ) (x : ⋀[𝕜]^n V) : 0 ≤ gramSesqForm n x x := by
-  rw [gramSesqForm_apply, wedgeBasisForm]
+/-- The exterior-power Gram form `(innerₛₗ 𝕜).sesqExteriorPower n` is positive semidefinite
+(without any finite-dimensionality assumption on `V`). -/
+theorem sesqExteriorPower_innerₛₗ_self_nonneg (n : ℕ) (x : ⋀[𝕜]^n V) :
+    0 ≤ (innerₛₗ 𝕜).sesqExteriorPower n x x := by
+  obtain ⟨W, _, y, rfl⟩ := exists_finite_mem_range_map x
+  let b := stdOrthonormalBasis 𝕜 W
+  have hsub : ∀ u v : W, innerₛₗ 𝕜 (W.subtype u) (W.subtype v) = innerₛₗ 𝕜 u v :=
+    fun u v ↦ by simp [Submodule.coe_inner]
+  rw [LinearMap.sesqExteriorPower_map_map hsub, ← b.toLinearMapₛₗ₂_one_eq_innerₛₗ,
+    ← b.toBasis.toLinearMapₛₗ₂_exteriorPower_one]
   exact Matrix.toLinearMapₛₗ₂_one_self_nonneg _ _
 
+/-- The exterior-power Gram form `(innerₛₗ 𝕜).sesqExteriorPower n` is definite: an element
+has zero self-pairing if and only if it is zero (without any finite-dimensionality assumption on
+`V`). -/
 @[simp]
-theorem gramSesqForm_self_eq_zero_iff {n : ℕ} {x : ⋀[𝕜]^n V} : gramSesqForm n x x = 0 ↔ x = 0 := by
-  rw [gramSesqForm_apply, wedgeBasisForm, Matrix.toLinearMapₛₗ₂_one_self_eq_zero_iff,
-    Submodule.coe_eq_zero]
+theorem sesqExteriorPower_innerₛₗ_self_eq_zero_iff {n : ℕ} {x : ⋀[𝕜]^n V} :
+    (innerₛₗ 𝕜).sesqExteriorPower n x x = 0 ↔ x = 0 := by
+  obtain ⟨W, _, y, rfl⟩ := exists_finite_mem_range_map x
+  let b := stdOrthonormalBasis 𝕜 W
+  have hsub : ∀ u v : W, innerₛₗ 𝕜 (W.subtype u) (W.subtype v) = innerₛₗ 𝕜 u v :=
+    fun u v ↦ by simp [Submodule.coe_inner]
+  rw [LinearMap.sesqExteriorPower_map_map hsub, ← b.toLinearMapₛₗ₂_one_eq_innerₛₗ,
+    ← b.toBasis.toLinearMapₛₗ₂_exteriorPower_one, Matrix.toLinearMapₛₗ₂_one_self_eq_zero_iff,
+    ← (map_injective_field W.subtype_injective).eq_iff, map_zero]
 
-/-- The Gram form is positive definite. -/
-theorem gramSesqForm_self_pos {n : ℕ} {x : ⋀[𝕜]^n V} (hx : x ≠ 0) : 0 < gramSesqForm n x x :=
-  (gramSesqForm_self_nonneg n x).lt_of_ne' (gramSesqForm_self_eq_zero_iff.not.mpr hx)
-
-/-- **The Gram form is determined by its values on decomposable vectors**: a sesquilinear form on
-`⋀[𝕜]^n V` with `B (v₁ ∧ ⋯ ∧ vₙ) (w₁ ∧ ⋯ ∧ wₙ) = det (⟪vᵢ, wⱼ⟫)` is the Gram form. -/
-theorem eq_gramSesqForm_of_ιMulti {n : ℕ} (B : ⋀[𝕜]^n V →ₗ⋆[𝕜] ⋀[𝕜]^n V →ₗ[𝕜] 𝕜)
-    (hB : ∀ v w : Fin n → V,
-      B (ιMulti 𝕜 n v) (ιMulti 𝕜 n w) = (Matrix.of fun i j ↦ ⟪v i, w j⟫_𝕜).det) :
-    B = gramSesqForm n :=
-  LinearMap.ext_on_range (ιMulti_span 𝕜 n V) fun v ↦ LinearMap.ext_on_range (ιMulti_span 𝕜 n V)
-    fun w ↦ by rw [hB, gramSesqForm_ιMulti_ιMulti]
+/-- The exterior-power Gram form `(innerₛₗ 𝕜).sesqExteriorPower n` is positive definite (without
+any finite-dimensionality assumption on `V`). -/
+theorem sesqExteriorPower_innerₛₗ_self_pos {n : ℕ} {x : ⋀[𝕜]^n V} (hx : x ≠ 0) :
+    0 < (innerₛₗ 𝕜).sesqExteriorPower n x x :=
+  (sesqExteriorPower_innerₛₗ_self_nonneg n x).lt_of_ne'
+    (sesqExteriorPower_innerₛₗ_self_eq_zero_iff.not.mpr hx)
 
 end exteriorPower

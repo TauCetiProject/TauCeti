@@ -1,0 +1,192 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+public import TauCeti.RingTheory.PowerSeries.Binomial
+
+/-!
+# Formal complex powers of power series
+
+For a complex power series `P : ℂ⟦X⟧` whose constant coefficient is `Complex.exp ℓ`, this file
+defines the formal complex power `P.formalCpow ℓ r` (`P ^ r` on the branch specified by `ℓ`) by
+writing `P = Complex.exp ℓ * (1 + U)` with `constantCoeff U = 0` and taking the formal binomial
+power `PowerSeries.binomialPow`:
+
+`P.formalCpow ℓ r = C (Complex.exp (r * ℓ)) * (C (Complex.exp (-ℓ)) * P).binomialPow r`.
+
+The branch parameter `ℓ` fixes the constant term to `Complex.exp (r * ℓ)`, makes
+`fun r => P.formalCpow ℓ r` a homomorphism in the exponent `r` (`formalCpow_add`,
+`formalCpow_zero`, `formalCpow_one`, `formalCpow_natCast`, `formalCpow_neg`), and shifts by
+`cexp (2πir)` when `ℓ` is shifted by `2πi`.
+
+## Main definitions
+
+* `PowerSeries.formalCpow`: the formal power `P ^ r` of `P : ℂ⟦X⟧` whose constant coefficient is
+  `Complex.exp ℓ`, with constant term fixed to `Complex.exp (r * ℓ)`.
+
+## Main results
+
+* `PowerSeries.constantCoeff_C_cexp_neg_mul`, `PowerSeries.constantCoeff_C_cexp_neg_mul_sub_one`,
+  `PowerSeries.constantCoeff_formalCpow`: rescaling and constant-term normalization for
+  `formalCpow`.
+* `PowerSeries.formalCpow_zero`, `PowerSeries.formalCpow_one`, `PowerSeries.formalCpow_add`,
+  `PowerSeries.formalCpow_natCast`, `PowerSeries.formalCpow_intCast`, `PowerSeries.formalCpow_neg`:
+  exponent laws for `formalCpow`.
+* `PowerSeries.formalCpow_C_cexp`, `PowerSeries.formalCpow_mul`: base-side rules for constant
+  series and products with compatible branch parameters.
+* `PowerSeries.formalCpow_one_add_X_branch_zero`: on `1 + X` with branch `ℓ = 0`, `formalCpow`
+  reduces to `PowerSeries.binomialSeries ℂ r`.
+* `PowerSeries.formalCpow_add_two_pi_mul_I`: shifting `ℓ` by `2πi` multiplies `P.formalCpow ℓ r` by
+  `cexp (2πir)`.
+
+## References
+
+* [DLMF] *NIST Digital Library of Mathematical Functions*, §2.1(iii),
+  <https://dlmf.nist.gov/2.1#iii>.
+* F. W. J. Olver, *Asymptotics and Special Functions*, Academic Press, 1974, Chapter 1, §8.
+-/
+
+public section
+
+open scoped Real
+
+namespace PowerSeries
+
+/-- The formal complex power `P ^ r` of a power series `P : ℂ⟦X⟧` whose constant term is
+`Complex.exp ℓ`, with the branch fixed so that the constant term of `P.formalCpow ℓ r` is
+`Complex.exp (r * ℓ)` (DLMF §2.1(iii)). -/
+noncomputable def formalCpow (P : ℂ⟦X⟧) (ℓ r : ℂ) : ℂ⟦X⟧ :=
+  C (Complex.exp (r * ℓ)) * (C (Complex.exp (-ℓ)) * P).binomialPow r
+
+/-- Definitional equation for `formalCpow`. -/
+theorem formalCpow_def (P : ℂ⟦X⟧) (ℓ r : ℂ) :
+    P.formalCpow ℓ r =
+      C (Complex.exp (r * ℓ)) * (C (Complex.exp (-ℓ)) * P).binomialPow r := by
+  rfl
+
+/-- Rescaling a power series `P` with constant coefficient `Complex.exp ℓ` by `Complex.exp (-ℓ)`
+yields a power series with constant coefficient `1`. -/
+theorem constantCoeff_C_cexp_neg_mul {ℓ : ℂ} {P : ℂ⟦X⟧}
+    (hP : constantCoeff P = Complex.exp ℓ) :
+    constantCoeff (C (Complex.exp (-ℓ)) * P) = 1 := by
+  rw [map_mul, constantCoeff_C, hP, ← Complex.exp_add, neg_add_cancel, Complex.exp_zero]
+
+/-- Rescaling a power series `P` with constant coefficient `Complex.exp ℓ` by `Complex.exp (-ℓ)`
+and subtracting `1` yields a power series with constant coefficient `0`. -/
+theorem constantCoeff_C_cexp_neg_mul_sub_one {P : ℂ⟦X⟧} {ℓ : ℂ}
+    (hP : constantCoeff P = Complex.exp ℓ) :
+    constantCoeff (C (Complex.exp (-ℓ)) * P - 1) = 0 := by
+  rw [map_sub, map_one, constantCoeff_C_cexp_neg_mul hP, sub_self]
+
+/-- The constant term of `P.formalCpow ℓ r` is `Complex.exp (r * ℓ)` when
+`constantCoeff P = Complex.exp ℓ`. -/
+@[simp]
+theorem constantCoeff_formalCpow {P : ℂ⟦X⟧} {ℓ : ℂ} (hP : constantCoeff P = Complex.exp ℓ)
+    (r : ℂ) :
+    constantCoeff (P.formalCpow ℓ r) = Complex.exp (r * ℓ) := by
+  rw [formalCpow_def, map_mul, constantCoeff_C,
+    constantCoeff_binomialPow (constantCoeff_C_cexp_neg_mul hP), mul_one]
+
+/-- The formal complex power of a constant series `C (Complex.exp ℓ)` on branch `ℓ` is
+`C (Complex.exp (r * ℓ))`. -/
+@[simp]
+theorem formalCpow_C_cexp (ℓ r : ℂ) :
+    (C (Complex.exp ℓ)).formalCpow ℓ r = C (Complex.exp (r * ℓ)) := by
+  rw [formalCpow_def, ← map_mul, ← Complex.exp_add, neg_add_cancel, Complex.exp_zero, map_one,
+    binomialPow_one_left, mul_one]
+
+/-- The zeroth formal complex power of any power series is `1`. -/
+@[simp]
+theorem formalCpow_zero (P : ℂ⟦X⟧) (ℓ : ℂ) : P.formalCpow ℓ 0 = 1 := by
+  rw [formalCpow_def, zero_mul, Complex.exp_zero, map_one, one_mul, binomialPow_zero]
+
+/-- The first formal complex power recovers `P` when `constantCoeff P = Complex.exp ℓ`. -/
+@[simp]
+theorem formalCpow_one {P : ℂ⟦X⟧} {ℓ : ℂ} (hP : constantCoeff P = Complex.exp ℓ) :
+    P.formalCpow ℓ 1 = P := by
+  rw [formalCpow_def, one_mul, binomialPow_one (constantCoeff_C_cexp_neg_mul hP), ← mul_assoc,
+    ← map_mul, ← Complex.exp_add, add_neg_cancel, Complex.exp_zero, map_one, one_mul]
+
+/-- Exponent addition law for formal complex powers with a fixed branch `ℓ`. -/
+theorem formalCpow_add {P : ℂ⟦X⟧} {ℓ : ℂ} (hP : constantCoeff P = Complex.exp ℓ) (r r' : ℂ) :
+    P.formalCpow ℓ (r + r') = P.formalCpow ℓ r * P.formalCpow ℓ r' := by
+  rw [formalCpow_def, formalCpow_def, formalCpow_def, add_mul, Complex.exp_add, map_mul,
+    binomialPow_add (constantCoeff_C_cexp_neg_mul hP)]
+  ring
+
+/-- Multiplicativity of formal complex powers in the base with compatible branch parameters:
+if `constantCoeff P = Complex.exp ℓ₁` and `constantCoeff Q = Complex.exp ℓ₂`, then
+`(P * Q).formalCpow (ℓ₁ + ℓ₂) r = P.formalCpow ℓ₁ r * Q.formalCpow ℓ₂ r`. -/
+theorem formalCpow_mul {P Q : ℂ⟦X⟧} {ℓ₁ ℓ₂ : ℂ}
+    (hP : constantCoeff P = Complex.exp ℓ₁) (hQ : constantCoeff Q = Complex.exp ℓ₂) (r : ℂ) :
+    (P * Q).formalCpow (ℓ₁ + ℓ₂) r = P.formalCpow ℓ₁ r * Q.formalCpow ℓ₂ r := by
+  have hP1 : constantCoeff (C (Complex.exp (-ℓ₁)) * P) = 1 := constantCoeff_C_cexp_neg_mul hP
+  have hQ1 : constantCoeff (C (Complex.exp (-ℓ₂)) * Q) = 1 := constantCoeff_C_cexp_neg_mul hQ
+  have hmul : C (Complex.exp (-(ℓ₁ + ℓ₂))) * (P * Q) =
+      (C (Complex.exp (-ℓ₁)) * P) * (C (Complex.exp (-ℓ₂)) * Q) := by
+    rw [neg_add, Complex.exp_add, map_mul]
+    ring
+  rw [formalCpow_def, formalCpow_def, formalCpow_def, hmul, binomialPow_mul hP1 hQ1,
+    mul_add, Complex.exp_add, map_mul]
+  ring
+
+/-- Natural formal complex powers agree with ordinary powers in `ℂ⟦X⟧`. -/
+@[simp]
+theorem formalCpow_natCast {P : ℂ⟦X⟧} {ℓ : ℂ} (hP : constantCoeff P = Complex.exp ℓ) (n : ℕ) :
+    P.formalCpow ℓ (n : ℂ) = P ^ n := by
+  rw [formalCpow_def, binomialPow_natCast (constantCoeff_C_cexp_neg_mul hP), mul_pow, ← map_pow,
+    ← Complex.exp_natCast_mul, ← mul_assoc, ← map_mul, ← Complex.exp_add]
+  simp
+
+/-- Negating the exponent in `formalCpow` gives the reciprocal power series. -/
+@[simp]
+theorem formalCpow_neg {P : ℂ⟦X⟧} {ℓ : ℂ} (hP : constantCoeff P = Complex.exp ℓ) (r : ℂ) :
+    P.formalCpow ℓ (-r) = (P.formalCpow ℓ r)⁻¹ := by
+  refine (PowerSeries.eq_inv_iff_mul_eq_one ?_).mpr ?_
+  · rw [constantCoeff_formalCpow hP]
+    exact Complex.exp_ne_zero _
+  · rw [← formalCpow_add hP (-r) r, neg_add_cancel, formalCpow_zero]
+
+/-- For a unit `u : ℂ⟦X⟧ˣ` with compatible branch `constantCoeff (u : ℂ⟦X⟧) = Complex.exp ℓ`,
+the formal complex power at an integer exponent `(z : ℂ)` agrees with the coerced unit power
+`↑(u ^ z)`. -/
+@[simp]
+theorem formalCpow_intCast {u : ℂ⟦X⟧ˣ} {ℓ : ℂ}
+    (hu : constantCoeff (u : ℂ⟦X⟧) = Complex.exp ℓ) (z : ℤ) :
+    (u : ℂ⟦X⟧).formalCpow ℓ (z : ℂ) = ↑(u ^ z) := by
+  cases z with
+  | ofNat n =>
+    simp [hu]
+  | negSucc n =>
+    rw [Int.cast_negSucc, formalCpow_neg hu, formalCpow_natCast hu (n + 1), zpow_negSucc]
+    refine ((PowerSeries.eq_inv_iff_mul_eq_one ?_).mpr ?_).symm
+    · rw [map_pow, hu, ← Complex.exp_natCast_mul]
+      exact Complex.exp_ne_zero _
+    · rw [← Units.val_pow_eq_pow_val, ← Units.val_mul, inv_mul_cancel, Units.val_one]
+
+/-- On `1 + X` with branch `ℓ = 0`, `formalCpow` reduces to `PowerSeries.binomialSeries ℂ r`. -/
+@[simp]
+theorem formalCpow_one_add_X_branch_zero (r : ℂ) :
+    (1 + X : ℂ⟦X⟧).formalCpow 0 r = PowerSeries.binomialSeries ℂ r := by
+  rw [formalCpow_def, mul_zero, neg_zero, Complex.exp_zero, map_one, one_mul, one_mul,
+    binomialPow_one_add_X]
+
+/-- Shifting the branch parameter `ℓ` by `2πi` multiplies `P.formalCpow ℓ r` by `cexp (2πir)`. -/
+theorem formalCpow_add_two_pi_mul_I (P : ℂ⟦X⟧) (ℓ r : ℂ) :
+    P.formalCpow (ℓ + 2 * π * Complex.I) r =
+      C (Complex.exp (2 * π * Complex.I * r)) * P.formalCpow ℓ r := by
+  have hexp_neg : Complex.exp (-(ℓ + 2 * π * Complex.I)) = Complex.exp (-ℓ) := by
+    rw [neg_add, Complex.exp_add, Complex.exp_neg (2 * π * Complex.I), Complex.exp_two_pi_mul_I,
+      inv_one, mul_one]
+  have hexp_pos : Complex.exp (r * (ℓ + 2 * π * Complex.I)) =
+      Complex.exp (2 * π * Complex.I * r) * Complex.exp (r * ℓ) := by
+    rw [← Complex.exp_add]
+    congr 1
+    ring
+  rw [formalCpow_def, formalCpow_def, hexp_neg, hexp_pos, map_mul, mul_assoc]
+
+end PowerSeries

@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.MvPowerSeries.Derivative
 public import Mathlib.RingTheory.MvPowerSeries.Order
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Substitution
+import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
 # Partial derivatives of multivariate power series: order and the chain rule
@@ -33,6 +34,7 @@ series only; here the substituted series may have any number of variables.
 ## Main results
 
 * `MvPowerSeries.le_order_pderiv`: if `n + 1 ≤ f.order` then `n ≤ (pderiv i f).order`.
+* `MvPowerSeries.pderiv_map`: partial differentiation commutes with a change of coefficients.
 * `MvPowerSeries.coeff_pderiv_mem`: partial derivatives keep the coefficients in an additive
   submonoid, such as a subring.
 * `MvPowerSeries.succ_le_order_iff`: `n + 1 ≤ f.order` if and only if the constant coefficient of
@@ -42,6 +44,7 @@ series only; here the substituted series may have any number of variables.
 * `MvPowerSeries.WithPiTopology.continuous_pderiv`: a partial derivative is continuous for the
   coefficientwise topology.
 * `MvPowerSeries.pderiv_subst`: the chain rule for substitution into a multivariate power series.
+* `MvPowerSeries.pderiv_substAlgHom`: the chain rule for substitution over a coefficient algebra.
 * `PowerSeries.pderiv_subst`: the chain rule for substitution of a multivariate power series into
   a one-variable power series.
 -/
@@ -69,6 +72,14 @@ theorem coeff_pderiv_mem [CommSemiring R] {S : Type*} [SetLike S R] [AddSubmonoi
     coeff m (pderiv i f) ∈ s := by
   rw [coeff_pderiv, ← Nat.cast_succ, mul_comm, ← nsmul_eq_mul]
   exact nsmul_mem (hf _) _
+
+/-- Partial differentiation commutes with a change of coefficients. -/
+@[simp]
+theorem pderiv_map {S : Type*} [CommSemiring R] [CommSemiring S]
+    (φ : R →+* S) (i : σ) (f : MvPowerSeries σ R) :
+    pderiv i (f.map φ) = (pderiv i f).map φ := by
+  ext n
+  simp only [coeff_pderiv, coeff_map, map_mul, map_add, map_natCast, map_one]
 
 variable [CommSemiring R] [IsAddTorsionFree R]
 
@@ -177,6 +188,12 @@ theorem pderiv_subst [CommRing R] [Fintype σ] {a : σ → MvPowerSeries τ R} (
       Derivation.leibniz, smul_eq_mul, subst_add ha] at hp ⊢
     simp [hp, pderiv_X, add_mul, Finset.sum_add_distrib, mul_assoc, ← Finset.mul_sum,
       Pi.single_apply, apply_ite (subst a), h0, h1]
+
+/-- The chain rule for a substitution into series over a coefficient algebra. -/
+theorem pderiv_substAlgHom {S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    [Fintype σ] {a : σ → MvPowerSeries τ S} (ha : HasSubst a) (f : MvPowerSeries σ R) (i : τ) :
+    pderiv i (substAlgHom ha f) = ∑ j, substAlgHom ha (pderiv j f) * pderiv i (a j) := by
+  simp only [substAlgHom_apply_eq_subst_map, pderiv_subst ha, pderiv_map]
 
 end MvPowerSeries
 

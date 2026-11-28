@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
@@ -68,6 +69,35 @@ instance isLocalHom_algebraMap : IsLocalHom (algebraMap R (TrivSqZeroExt R M)) :
   ⟨fun r h ↦ by rwa [algebraMap_eq_inl, isUnit_inl_iff] at h⟩
 
 end LocalRing
+
+section Field
+
+variable {k V : Type*} [Field k] [AddCommGroup V] [Module k V] [Module kᵐᵒᵖ V]
+  [IsCentralScalar k V]
+
+-- Not a `simp` lemma: `simp` already unfolds torsion membership, so `simpNF` rejects it.
+/-- The socle of the regular module of a nontrivial square-zero extension of a field is the ideal
+of elements with zero scalar component. -/
+theorem mem_torsionBySet_maximalIdeal_iff_fst_eq_zero [Nontrivial V] {a : TrivSqZeroExt k V} :
+    a ∈ Submodule.torsionBySet (TrivSqZeroExt k V) (TrivSqZeroExt k V)
+      (maximalIdeal (TrivSqZeroExt k V)) ↔ a.fst = 0 := by
+  rw [Submodule.mem_torsionBySet_iff]
+  constructor
+  · intro ha
+    obtain ⟨x, hx⟩ := exists_ne (0 : V)
+    have hxmem : (inr x : TrivSqZeroExt k V) ∈ maximalIdeal (TrivSqZeroExt k V) :=
+      mem_maximalIdeal_iff.mpr (by simp)
+    have h := congrArg snd (ha ⟨inr x, hxmem⟩)
+    simp only [smul_eq_mul, snd_mul, fst_inr, snd_inr, zero_smul, op_smul_eq_smul,
+      zero_add, snd_zero] at h
+    exact (smul_eq_zero.mp h).resolve_right hx
+  · rintro ha ⟨r, hr⟩
+    have hr₀ : r.fst = 0 := by
+      have h := mem_maximalIdeal_iff.mp hr
+      simpa only [maximalIdeal_eq_bot, Ideal.mem_bot] using h
+    ext <;> simp [smul_eq_mul, fst_mul, snd_mul, hr₀, ha]
+
+end Field
 
 /-- The trivial square-zero extension by a finite module is a finite algebra. -/
 instance [Module.Finite R M] : Module.Finite R (TrivSqZeroExt R M) :=

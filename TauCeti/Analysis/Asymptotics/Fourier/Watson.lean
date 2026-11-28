@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.RingTheory.Polynomial.Pochhammer
-public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
+public import TauCeti.Analysis.Asymptotics.Expansion.Basic
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.Asymptotics.Fourier.Endpoint
 import TauCeti.Analysis.Asymptotics.Lemmas

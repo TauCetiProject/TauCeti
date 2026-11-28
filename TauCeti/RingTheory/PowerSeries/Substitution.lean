@@ -12,10 +12,12 @@ public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.PiTopology
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import Mathlib.RingTheory.PowerSeries.Trunc
+public import TauCeti.RingTheory.PowerSeries.Jet
 -- Proof-only: lowest homogeneous components of powers.
 import TauCeti.RingTheory.MvPowerSeries.Order
 -- Proof-only: algebra maps out of `R⟦X⟧` agree with `aeval` on polynomials.
 import TauCeti.RingTheory.PowerSeries.Evaluation
+import TauCeti.RingTheory.PowerSeries.Order
 import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 import Mathlib.RingTheory.PowerSeries.Inverse
 
@@ -67,8 +69,8 @@ of a completed group algebra attached to two topological generators.
 
 ## Main results
 
-* `PowerSeries.coeff_subst_eq_sum_range`: a finite coefficient formula when the inner series
-  has zero constant coefficient.
+* `PowerSeries.coeff_subst_eq_sum_range`, `PowerSeries.coeff_subst_eq_sum_range_of_lt`: finite
+  coefficient formulas when the inner series has zero constant coefficient.
 * `Continuous.powerSeries_subst`: substitution is jointly continuous in coefficientwise
   continuous families whose inner series have zero constant coefficient.
 * `PowerSeries.HasSubst.C`: a nilpotent constant can be substituted.
@@ -94,11 +96,17 @@ of a completed group algebra attached to two topological generators.
 * `PowerSeries.coeff_succ_subst_X_mul`: the `(n + 1)`-st coefficient of `f (X * M)` is
   `[X^n](M * g (X * M))`, where `g` is the shift of `f`.
 * `PowerSeries.X_pow_dvd_subst`: substitution preserves divisibility by `X ^ n`.
+* `PowerSeries.jetSubstAlgHom`: substitution of a zero-constant series descends to finite jets.
+* `PowerSeries.jetSubstAlgHom_comp`: composition of these maps is substitution by the composite
+  series.
 * `PowerSeries.X_pow_dvd_subst_sub_subst`: substitution respects congruence modulo `X ^ n` of
   the substituted series.
 * `PowerSeries.homogeneousComponent_subst_of_le_order`: if `f` has order at least `n`, the
   degree-`n` homogeneous component of `f (φ)` is `c φ₁ ^ n`, for `c` the coefficient of `Xⁿ` in
   `f` and `φ₁` the linear part of `φ`.
+* `PowerSeries.hasSubst_subst_X` and `PowerSeries.coeff_subst_subst_X_of_le_order`: the family
+  `i ↦ g(Xᵢ)` can be substituted, and for `g = c X + ⋯` the coefficient of `D(g(X₁), g(X₂), …)` in
+  a degree `m` at most the order of `D` is `cᵐ` times that of `D`.
 * `PowerSeries.coeff_subst_eq_sum_range_degree`: the coefficient of `X^d` in `f (a)`, for `a` of
   zero constant coefficient, is the finite sum `∑_{n ≤ |d|} fₙ [X^d] aⁿ`.
 * `PowerSeries.coeff_subst_mem`: if `f` and `a` have coefficients in a subring, so does `f (a)`.
@@ -137,8 +145,17 @@ theorem coeff_subst_eq_sum_range {R S : Type*} [CommRing R] [CommRing S]
   rw [Function.mem_support] at hk
   simp only [Finset.coe_range, Set.mem_Iio]
   by_contra h
-  exact hk (by rw [coeff_of_lt_order _ ((Nat.cast_lt.mpr (by omega : n < k)).trans_le
-    (le_order_pow_of_constantCoeff_eq_zero k hg)), smul_zero])
+  exact hk (by rw [coeff_pow_eq_zero_of_lt hg (by omega : n < k), smul_zero])
+
+/-- When the inner series has zero constant coefficient, the coefficient of degree `n` of a
+substitution equals the finite sum over `Finset.range N` for any `N > n`. -/
+theorem coeff_subst_eq_sum_range_of_lt {R S : Type*} [CommRing R] [CommRing S]
+    [Algebra R S] (f : R⟦X⟧) {g : S⟦X⟧} (hg : constantCoeff g = 0) {n N : ℕ} (hn : n < N) :
+    coeff n (f.subst g) = ∑ k ∈ Finset.range N, coeff k f • coeff n (g ^ k) := by
+  rw [coeff_subst_eq_sum_range f hg n]
+  refine Finset.sum_subset (Finset.range_subset_range.mpr hn) fun k _ hk ↦ ?_
+  rw [Finset.mem_range] at hk
+  rw [coeff_pow_eq_zero_of_lt hg (by omega : n < k), smul_zero]
 
 /-- When the inner series has zero constant coefficient, composing the truncation of the outer
 series below degree `M` with the truncation of the inner series below degree `N` computes the
@@ -155,8 +172,7 @@ theorem coeff_trunc_comp_trunc {R : Type*} [CommRing R] (f : R⟦X⟧) {g : R⟦
   simp only [Polynomial.coeff_C_mul, hpow, smul_eq_mul]
   -- The coefficient of `X ^ k` in `g ^ n` vanishes for `n > k`.
   refine (Finset.sum_subset (Finset.range_subset_range.mpr hM) fun n _ hn ↦ ?_).symm
-  rw [coeff_of_lt_order _ ((Nat.cast_lt.mpr (by grind : k < n)).trans_le
-    (le_order_pow_of_constantCoeff_eq_zero n hg)), mul_zero]
+  rw [coeff_pow_eq_zero_of_lt hg (by grind : k < n), mul_zero]
 
 /-- A nilpotent constant can be substituted into a power series. -/
 theorem HasSubst.C {R : Type*} [CommRing R] {x : R} (hx : IsNilpotent x) :
@@ -419,6 +435,45 @@ theorem X_pow_dvd_subst {a : S⟦X⟧} (ha : constantCoeff a = 0) {n : ℕ} {f :
   rw [subst_mul ha', subst_pow ha', subst_X ha']
   exact (pow_dvd_pow_of_dvd (X_dvd_iff.mpr ha) n).mul_right _
 
+open scoped Polynomial
+
+/-- Substitution by a series of zero constant coefficient descends to each finite jet algebra. -/
+noncomputable def jetSubstAlgHom (N : ℕ) (a : R⟦X⟧) (ha : constantCoeff a = 0) :
+    AdjoinRoot (Polynomial.X ^ N : R[X]) →ₐ[R] AdjoinRoot (Polynomial.X ^ N : R[X]) :=
+  AlgHom.liftOfSurjective (jet R N) jet_surjective
+    ((jet R N).comp (substAlgHom (.of_constantCoeff_zero' ha))) fun f hf ↦ by
+      rw [RingHom.mem_ker]
+      -- The kernel exposes the `toRingHom` projection, so `AlgHom.comp_apply` cannot
+      -- rewrite it. Expose the definitionally equal algebra-hom application instead.
+      change (jet R N) ((substAlgHom (.of_constantCoeff_zero' ha)) f) = 0
+      rw [coe_substAlgHom, jet_eq_zero_iff]
+      exact X_pow_dvd_subst ha (jet_eq_zero_iff.mp hf)
+
+@[simp]
+theorem jetSubstAlgHom_jet (N : ℕ) (a : R⟦X⟧) (ha : constantCoeff a = 0) (f : R⟦X⟧) :
+    jetSubstAlgHom N a ha (jet R N f) = jet R N (f.subst a) := by
+  simp [jetSubstAlgHom, coe_substAlgHom]
+
+/-- The root is sent to the jet of the substituted series. -/
+@[simp]
+theorem jetSubstAlgHom_root (N : ℕ) (a : R⟦X⟧) (ha : constantCoeff a = 0) :
+    jetSubstAlgHom N a ha (AdjoinRoot.root (Polynomial.X ^ N : R[X])) = jet R N a := by
+  rw [← jet_X, jetSubstAlgHom_jet, subst_X (.of_constantCoeff_zero' ha)]
+
+/-- Substitution by `X` induces the identity on every jet algebra. -/
+@[simp]
+theorem jetSubstAlgHom_X {R : Type*} [CommRing R] (N : ℕ) :
+    jetSubstAlgHom N (X : R⟦X⟧) constantCoeff_X = AlgHom.id R _ :=
+  AdjoinRoot.algHom_ext (by simp)
+
+/-- Composing truncated substitutions is substitution by the composite series. -/
+theorem jetSubstAlgHom_comp {R : Type*} [CommRing R] (N : ℕ) (a b : R⟦X⟧)
+    (ha : constantCoeff a = 0) (hb : constantCoeff b = 0) :
+    (jetSubstAlgHom N b hb).comp (jetSubstAlgHom N a ha) =
+      jetSubstAlgHom N (a.subst b)
+        (by simp [constantCoeff_subst_of_constantCoeff_zero' hb, ha]) :=
+  AdjoinRoot.algHom_ext (by simp)
+
 /-- Substitution respects congruence modulo `X ^ n` of the substituted series: if `a ≡ b` modulo
 `X ^ n`, then `f (a) ≡ f (b)` modulo `X ^ n`. For `n ≠ 0` the congruence forces `b` to have
 zero constant coefficient as well, so only `a` needs it. -/
@@ -462,6 +517,40 @@ theorem homogeneousComponent_subst_of_le_order {σ : Type*} {φ : MvPowerSeries 
   simp only [add_zero, mul_one] at hmul hpow
   rw [subst_mul hφ', subst_pow hφ', subst_X hφ', hmul, hpow]
   simp [mul_comm, constantCoeff_subst_of_constantCoeff_zero hφ, coeff_mul_X_pow']
+
+/-- The family `i ↦ g(Xᵢ)` of a series `g` of zero constant coefficient can be substituted into
+series in finitely many variables. -/
+theorem hasSubst_subst_X {σ : Type*} [Finite σ] {g : R⟦X⟧} (hg : constantCoeff g = 0) :
+    MvPowerSeries.HasSubst fun i : σ ↦ g.subst (MvPowerSeries.X i : MvPowerSeries σ S) :=
+  MvPowerSeries.hasSubst_of_constantCoeff_zero fun i ↦
+    constantCoeff_subst_eq_zero (MvPowerSeries.constantCoeff_X (R := S) i) g hg
+
+/-- **Low-degree coefficients of `D(g(X₁), g(X₂), …)`.** Let `g = c X + ⋯` have zero constant
+coefficient. In every degree `m` at most the order of `D`, the coefficient of
+`D(g(X₁), g(X₂), …)` is `cᵐ` times that of `D`. -/
+theorem coeff_subst_subst_X_of_le_order {σ : Type*} [Finite σ] {g : R⟦X⟧}
+    (hg : constantCoeff g = 0) {D : MvPowerSeries σ S} {e : σ →₀ ℕ}
+    (he : (e.degree : ℕ∞) ≤ D.order) :
+    MvPowerSeries.coeff e (D.subst fun i ↦ g.subst (MvPowerSeries.X i : MvPowerSeries σ S)) =
+      algebraMap R S (coeff 1 g) ^ e.degree * MvPowerSeries.coeff e D := by
+  -- the linear part of `g(Xᵢ)` is `c Xᵢ`, and the degree-`m` part of the substitution only sees
+  -- the degree-`m` part of `D` and these linear parts
+  have hlin : (fun i ↦ MvPowerSeries.homogeneousComponent 1
+      (g.subst (MvPowerSeries.X i : MvPowerSeries σ S))) =
+      Function.const σ (algebraMap R S (coeff 1 g)) • MvPowerSeries.X := by
+    funext i
+    rw [homogeneousComponent_subst_of_le_order (MvPowerSeries.constantCoeff_X i)
+      (order_ne_zero_iff_constCoeff_eq_zero.mpr hg |> Order.one_le_iff_ne_zero.mpr),
+      MvPowerSeries.homogeneousComponent_one_X, pow_one, Pi.smul_apply', Function.const_apply,
+      MvPowerSeries.smul_eq_C_mul]
+  have h := congrArg (MvPowerSeries.coeff e)
+    (MvPowerSeries.homogeneousComponent_subst_of_le_order he (hasSubst_subst_X hg)
+      fun i ↦ constantCoeff_subst_eq_zero (MvPowerSeries.constantCoeff_X (R := S) i) g hg)
+  rw [MvPowerSeries.coeff_homogeneousComponent, ite_eq_left rfl, hlin,
+    ← MvPowerSeries.rescale_eq_subst, MvPowerSeries.coeff_rescale,
+    MvPowerSeries.coeff_homogeneousComponent, ite_eq_left rfl] at h
+  simp only [h, Finsupp.prod, Function.const_apply, Finset.prod_pow_eq_pow_sum,
+    Finsupp.degree_apply]
 
 /-- The coefficient of `X^d` in `f (a)`, for `a` of zero constant coefficient, is the finite sum
 `∑_{n ≤ |d|} fₙ [X^d] aⁿ`: the powers `aⁿ` with `n > |d|` have order greater than `|d|`. This is the
