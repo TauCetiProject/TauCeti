@@ -261,6 +261,10 @@ theorem supPowers_dpow_of_mem_right (n : ℕ) {y : A} (hy : y ∈ J) :
     (supPowers h).dpow n y = ε.dpow n y := by
   simpa using supPowers_dpow_add h n I.zero_mem hy
 
+private theorem sup_eq_span_union (I J : Ideal A) :
+    I ⊔ J = Ideal.span ((I : Set A) ∪ (J : Set A)) := by
+  rw [Ideal.span_union, Ideal.span_eq, Ideal.span_eq]
+
 /-- The candidate `supPowers h` is the only additive divided-power candidate on `I ⊔ J`
 restricting to `γ` on `I` and to `ε` on `J`. -/
 theorem eq_supPowers_iff (δ : TauCeti.PD.AdditivePowers (I ⊔ J)) :
@@ -270,12 +274,10 @@ theorem eq_supPowers_iff (δ : TauCeti.PD.AdditivePowers (I ⊔ J)) :
   · rintro rfl
     exact ⟨fun n x hx ↦ supPowers_dpow_of_mem_left h n hx,
       fun n y hy ↦ supPowers_dpow_of_mem_right h n hy⟩
-  · refine TauCeti.PD.AdditivePowers.ext fun n z hz ↦ ?_
-    obtain ⟨x, hx, y, hy, rfl⟩ := Submodule.mem_sup.mp hz
-    rw [δ.dpow_add (Ideal.mem_sup_left hx) (Ideal.mem_sup_right hy),
-      supPowers_dpow_add h n hx hy, convolution_def]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [hδI _ _ hx, hδJ _ _ hy]
+  · refine (supPowers h).dpow_eq_from_gens δ (sup_eq_span_union I J) ?_
+    rintro n s (hs | hs)
+    · rw [supPowers_dpow_of_mem_left h n hs, hδI n s hs]
+    · rw [supPowers_dpow_of_mem_right h n hs, hδJ n s hs]
 
 /-- Transporting `supPowers` along `sup_bot_eq` recovers the additive candidate underlying `γ`. -/
 @[simp]
@@ -292,10 +294,6 @@ theorem bot_supPowers (ε : DividedPowers J) :
       TauCeti.PD.AdditivePowers.ofDividedPowers ε := by
   ext n y hy
   simp [hy]
-
-private theorem sup_eq_span_union (I J : Ideal A) :
-    I ⊔ J = Ideal.span ((I : Set A) ∪ (J : Set A)) := by
-  rw [Ideal.span_union, Ideal.span_eq, Ideal.span_eq]
 
 /-- The divided power structure on `I ⊔ J` glued from divided power structures `γ` on `I` and `ε`
 on `J` that agree on `I ⊓ J`. -/

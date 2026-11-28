@@ -140,11 +140,6 @@ theorem dpow_add' {n : ℕ} {x y : A} (hx : x ∈ I) (hy : y ∈ I) :
     δ.dpow n (x + y) = ∑ k ∈ range (n + 1), δ.dpow k x * δ.dpow (n - k) y := by
   rw [δ.dpow_add hx hy, sum_antidiagonal_eq_sum_range_succ_mk]
 
-/-- Scalar homogeneity with the scalar on the right. -/
-theorem dpow_mul_right {n : ℕ} {a x : A} (hx : x ∈ I) :
-    δ.dpow n (x * a) = δ.dpow n x * a ^ n := by
-  rw [mul_comm, δ.dpow_mul hx, mul_comm]
-
 /-- If two additive divided-power candidates on `I` agree on a generating set of `I`, then they
 are equal. -/
 theorem dpow_eq_from_gens (δ' : AdditivePowers I) {S : Set A} (hS : I = Ideal.span S)
@@ -488,6 +483,19 @@ theorem toDividedPowers_generators {S' : Set A} (hS : I = Ideal.span S) (hS' : I
       δ.dpow m (δ.dpow n s) = uniformBell m n * δ.dpow (m * n) s) :
     δ.toDividedPowers hS hmul hcomp = δ.toDividedPowers hS' hmul' hcomp' :=
   DividedPowers.ext _ _ fun _ _ ↦ by simp
+
+omit hS in
+/-- Rebuilding a divided power structure from `ofDividedPowers γ` recovers `γ`. -/
+@[simp]
+theorem toDividedPowers_ofDividedPowers (γ : DividedPowers I) {S : Set A} (hS : I = Ideal.span S)
+    (hmul : ∀ s ∈ S, ∀ m n,
+      (ofDividedPowers γ).dpow m s * (ofDividedPowers γ).dpow n s =
+        ((m + n).choose m : A) * (ofDividedPowers γ).dpow (m + n) s)
+    (hcomp : ∀ s ∈ S, ∀ m n, n ≠ 0 →
+      (ofDividedPowers γ).dpow m ((ofDividedPowers γ).dpow n s) =
+        (uniformBell m n : A) * (ofDividedPowers γ).dpow (m * n) s) :
+    (ofDividedPowers γ).toDividedPowers hS hmul hcomp = γ :=
+  (toDividedPowers_unique _ hS hmul hcomp rfl).symm
 
 end Generators
 
