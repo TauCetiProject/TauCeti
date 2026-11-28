@@ -19,6 +19,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Order.Hom.Set
 import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Topology.Instances.AddCircle.Lift
 
@@ -36,6 +37,8 @@ the derivative of a lift is a Lipschitz constant of the circle map for the quoti
 
 * `AddCircle.periodic_of_hasDerivAt_of_lift`: the derivative of a lift, or more generally of any
   `F` with `F (x + T) = F x + c`, is `T`-periodic.
+* `AddCircle.iteratedFDeriv_lift_add_zsmul`: the iterated derivatives of positive order of a
+  continuous lift of a map `AddCircle p → AddCircle q` are `p`-periodic.
 * `AddCircle.derivOfLift`: the derivative `F'` of a lift, as a continuous complex function on the
   circle; it is smooth when `F'` is (`AddCircle.contDiff_derivOfLift`).
 * `AddCircle.hasDerivAt_add_mul_sub`, `AddCircle.one_sub_add_mul_pos`: for a weight
@@ -66,6 +69,19 @@ variable {T : ℝ} {F F' : ℝ → ℝ}
 theorem periodic_of_hasDerivAt_of_lift {c : ℝ} (hF : ∀ x, HasDerivAt F (F' x) x)
     (hper : ∀ x, F (x + T) = F x + c) : Function.Periodic F' T :=
   funext (fun x ↦ (hF x).deriv) ▸ TauCeti.periodic_deriv_of_apply_add_eq_add hper
+
+/-- The iterated derivatives of positive order of a continuous lift `F` of a circle map
+`f : AddCircle p → AddCircle q` are `p`-periodic: `F (· + j • p)` differs from `F` by a
+constant. -/
+theorem iteratedFDeriv_lift_add_zsmul {p q : ℝ} {f : AddCircle p → AddCircle q}
+    (hF : Continuous F) (hfF : ∀ x : ℝ, f x = F x) {m : ℕ} (hm : m ≠ 0) (j : ℤ) (v : ℝ) :
+    iteratedFDeriv ℝ m F (v + j • p) = iteratedFDeriv ℝ m F v := by
+  obtain ⟨c, hc⟩ := exists_forall_eq_add_of_lift (T := q) (F₁ := fun v ↦ F (v + j • p))
+    (by fun_prop) hF fun v ↦ by rw [← hfF, ← hfF, coe_add, coe_zsmul, coe_period, smul_zero,
+      add_zero]
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hm
+  have hshift : (fun v ↦ F (v + j • p)) = fun v ↦ F v + c := funext hc
+  rw [← iteratedFDeriv_comp_add_right, hshift, TauCeti.iteratedFDeriv_succ_add_const]
 
 /-- The derivative `F'` of a lift `F`, `F (x + T) = F x + T`, regarded as a continuous complex
 function on the circle; it is well defined since `F'` is `T`-periodic

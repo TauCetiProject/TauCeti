@@ -68,6 +68,11 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
   `AddCircle.extChartAt_symm_apply`: the extended charts are local lifts, and their inverses are
   the quotient map on their targets. On a torus `∀ i, AddCircle (p i)`, the inverses of the
   extended charts are the coordinatewise quotient map (`AddCircle.extChartAt_pi_symm_apply`).
+* `AddCircle.exists_extChartAt_coe_self_eq_add_zsmul`,
+  `AddCircle.exists_eventually_extChartAt_coe_eq_add_zsmul`: read along the quotient map, an
+  extended chart is near each point a translation by an integer multiple of the period. So a map
+  of circles with a continuous lift `F`, read in charts, is near each point `F` plus such a
+  multiple (`AddCircle.exists_extChartAt_comp_eventuallyEq_add_zsmul`).
 * `AddCircle.contDiffAt_chartAt_comp_coe`, `AddCircle.hasFDerivAt_chartAt_comp_coe`: a map out of
   `AddCircle p`, lifted to `ℝ` and read in a chart of its target, keeps its smoothness and its
   derivative.
@@ -566,6 +571,38 @@ theorem extChartAt_pi_symm_apply {ι : Type*} [Fintype ι] {p : ι → ℝ} [∀
   exact funext fun i ↦ extChartAt_symm_apply (x i) (hy i (Set.mem_univ i))
 
 variable {p} in
+/-- The extended chart of `AddCircle p` at the class of `w` sends it to a representative
+`w + j • p` of that class. -/
+theorem exists_extChartAt_coe_self_eq_add_zsmul (w : ℝ) :
+    ∃ j : ℤ, extChartAt 𝓘(ℝ) (w : AddCircle p) w = w + j • p := by
+  obtain ⟨j, hj⟩ := AddSubgroup.mem_zmultiples_iff.mp
+    (QuotientAddGroup.eq.mp (coe_extChartAt_self (w : AddCircle p)))
+  exact ⟨-j, by rw [neg_smul, hj]; abel⟩
+
+variable {p} in
+/-- An extended chart of `AddCircle p`, read along the quotient map `ℝ → AddCircle p`, is near
+each point of the preimage of its source a translation by an integer multiple of the period. -/
+theorem exists_eventually_extChartAt_coe_eq_add_zsmul (y : AddCircle p) {u : ℝ}
+    (hu : (u : AddCircle p) ∈ (extChartAt 𝓘(ℝ) y).source) :
+    ∃ k : ℤ, ∀ᶠ v : ℝ in 𝓝 u, extChartAt 𝓘(ℝ) y (v : AddCircle p) = v + k • p := by
+  -- Compare the chart with the local inverse of the quotient map on `(u - p / 2, u + p / 2)`.
+  have hp : (0 : ℝ) < p := Fact.out
+  set e := openPartialHomeomorphCoe p (u - p / 2)
+  have hu' : u ∈ e.source := ⟨by linarith, by linarith⟩
+  have hsrc : e u ∈ (chartAt ℝ y).source := by
+    rwa [← extChartAt_source 𝓘(ℝ)]
+  obtain ⟨k, hk⟩ := exists_eventuallyEq_add_zsmul (c := e.symm) (c' := chartAt ℝ y)
+    (fun a _ ↦ by rw [openPartialHomeomorphCoe_symm_apply, coe_equivIco])
+    (fun a ha ↦ coe_apply_of_mem_atlas (chart_mem_atlas ℝ y) ha)
+    (e.map_source hu') hsrc
+  refine ⟨k, ?_⟩
+  filter_upwards [continuous_quotient_mk'.continuousAt.eventually hk,
+    e.open_source.mem_nhds hu'] with v hv hve
+  have hinv : e.symm (v : AddCircle p) = v := e.left_inv hve
+  rw [extChartAt_coe, Function.comp_apply, modelWithCornersSelf_coe, id]
+  exact hv.trans (congrArg (· + k • p) hinv)
+
+variable {p} in
 /-- At each point of its target, the inverse of an extended chart of `AddCircle p` has derivative
 the identity of `ℝ`: near that point it is the quotient map `ℝ → AddCircle p`. -/
 theorem mfderiv_extChartAt_symm (x : AddCircle p) {z : ℝ}
@@ -612,6 +649,23 @@ theorem hasFDerivAt_chartAt_comp_coe {E' N : Type*} [NormedAddCommGroup E'] [Nor
 section Lift
 
 variable {p} {q : ℝ} [Fact (0 < q)]
+
+/-- **Circle maps read in charts.** Read in the extended charts at `x` and `y`, a map `f` of
+circles with a continuous lift `F` is near each tested point `F` plus an integer multiple of the
+period of the target. -/
+theorem exists_extChartAt_comp_eventuallyEq_add_zsmul {f : AddCircle p → AddCircle q}
+    {F : ℝ → ℝ} (hF : Continuous F) (hfF : ∀ x : ℝ, f x = F x) {x : AddCircle p}
+    {y : AddCircle q} {z : ℝ} (hz : z ∈ (extChartAt 𝓘(ℝ) x).target)
+    (hy : f z ∈ (extChartAt 𝓘(ℝ) y).source) :
+    ∃ k : ℤ, extChartAt 𝓘(ℝ) y ∘ f ∘ (extChartAt 𝓘(ℝ) x).symm =ᶠ[𝓝 z]
+      fun w ↦ F w + k • q := by
+  rw [hfF] at hy
+  obtain ⟨k, hk⟩ := exists_eventually_extChartAt_coe_eq_add_zsmul y hy
+  refine ⟨k, ?_⟩
+  filter_upwards [(isOpen_extChartAt_target x).mem_nhds hz, hF.continuousAt.eventually hk]
+    with w hw hwk
+  rw [Function.comp_apply, Function.comp_apply, extChartAt_symm_apply x hw, hfF]
+  exact hwk
 
 /-- A map `g : AddCircle p → AddCircle q` lifting a `C^n` map `f : ℝ → ℝ`, in the sense that
 `g ∘ (↑) = (↑) ∘ f`, is `C^n`. -/

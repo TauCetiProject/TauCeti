@@ -37,9 +37,10 @@ Iterating the `C¹` statement gives **Arzelà–Ascoli in `Cᵏ`**
 order at most `k + 1` of the `uₙ` are bounded on each compact subset of `Ω`, uniformly in `n`,
 then along a subsequence the `uₙ` converge to a `Cᵏ` map together with their derivatives of order
 at most `k`, locally uniformly on `Ω`. Locally uniform convergence of the derivatives of order `0`
-is that of the maps themselves (`TauCeti.tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff`), and
-locally uniform convergence of the derivatives of orders at most `ℓ` of `C^ℓ` maps bounds them on
-compact sets uniformly along the sequence
+is that of the maps themselves (`TauCeti.tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff`, and
+on the whole space `TauCeti.tendstoLocallyUniformly_iteratedFDeriv_zero_iff`), and locally uniform
+convergence of the derivatives of orders at most `ℓ` of `C^ℓ` maps bounds them on compact sets
+uniformly along the sequence
 (`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_tendstoLocallyUniformly`).
 
 For `1`-periodic curves on `ℝ`, a bound on the velocities over one period suffices: such curves in
@@ -65,6 +66,16 @@ theorem tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff {𝕜 E F ι : Type*}
   simp only [iteratedFDeriv_zero_eq_comp]
   refine ⟨fun h ↦ ?_, e.symm.isometry.uniformContinuous.comp_tendstoLocallyUniformlyOn⟩
   simpa [Function.comp_def, e] using e.isometry.uniformContinuous.comp_tendstoLocallyUniformlyOn h
+
+/-- Locally uniform convergence of the derivatives of order `0` on the whole space is locally
+uniform convergence of the maps themselves: the case `s = univ` of
+`TauCeti.tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff`. -/
+theorem tendstoLocallyUniformly_iteratedFDeriv_zero_iff {𝕜 E F ι : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {u : ι → E → F} {v : E → F} {l : Filter ι} :
+    TendstoLocallyUniformly (fun n ↦ iteratedFDeriv 𝕜 0 (u n)) (iteratedFDeriv 𝕜 0 v) l ↔
+      TendstoLocallyUniformly u v l := by
+  simp only [← tendstoLocallyUniformlyOn_univ, tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff]
 
 /-- **Uniform `C^ℓ` bounds from `C^ℓ` convergence.** If maps `u n` of class `C^ℓ` have derivatives
 of orders at most `ℓ` converging locally uniformly, then on every compact set `K` those
