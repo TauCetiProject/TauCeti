@@ -42,6 +42,8 @@ projection onto the equatorial hyperplane, which is `y ↦ σ⁻¹(2 y)`, the fa
   of the stereographic chart `stereographic' n v`, read in `E`.
 * `TauCeti.inner_mfderiv_stereographic'_symm`: the round metric pulled back along the inverse of
   the stereographic chart `stereographic' n v`.
+* `TauCeti.contMDiff_stereographic'_symm_smul_sub`: smoothness of the rescaled inverse
+  stereographic projection `y ↦ σ⁻¹((2 / t) (y - b))`.
 * `TauCeti.inner_mvfderiv_subtypeVal_sphere`: at the centre of the preferred chart, the differential
   of the inclusion of the sphere is an isometry from the chart coordinates.
 
@@ -56,7 +58,7 @@ projection onto the equatorial hyperplane, which is `y ↦ σ⁻¹(2 y)`, the fa
 public section
 
 open Bundle Metric Module
-open scoped InnerProductSpace Manifold
+open scoped ContDiff InnerProductSpace Manifold
 
 noncomputable section
 
@@ -168,6 +170,14 @@ theorem inner_mfderiv_stereographic'_symm (v : sphere (0 : E) 1)
     -- `NormedSpace.fromTangentSpace y` is the identity of the model space, by definition.
     rfl
   rw [inner_tangentSpace_sphere, hd a, hd b, inner_fderiv_subtypeVal_comp_stereographic'_symm]
+
+/-- **Smoothness of rescaled inverse stereographic projection.** For any scale `t : ℝ` and centre
+`b : ℝⁿ`, the map `x ↦ σ⁻¹((2 / t) (x - b))` into the unit sphere is `C^k` for every `k : ℕ∞ω`. -/
+theorem contMDiff_stereographic'_symm_smul_sub {k : ℕ∞ω} (v : sphere (0 : E) 1) (t : ℝ)
+    (b : EuclideanSpace ℝ (Fin n)) :
+    ContMDiff (𝓡 n) (𝓡 n) k ((stereographic' n v).symm ∘ fun y ↦ (2 / t) • (y - b)) :=
+  (isSmoothEmbedding_stereographic'_symm v).contMDiff.comp
+    ((contDiff_id.sub contDiff_const).const_smul (2 / t)).contMDiff
 
 /-- **The preferred chart is isometric at its centre.** The preferred chart of the unit sphere at
 `x` is stereographic projection from `-x`, which sends `x` to the origin, where the conformal factor

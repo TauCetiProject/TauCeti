@@ -46,11 +46,10 @@ on `Sⁿ`, become integrals over `ℝⁿ` weighted by bubbles.
 * `TauCeti.Yamabe.bubbleMetric`, `TauCeti.Yamabe.bubbleMetric_def`,
   `TauCeti.Yamabe.bubbleMetric_inner`, and `TauCeti.Yamabe.conformalLaplacian_bubbleMetric`:
   the bubble conformal metric on `ℝⁿ` and its conformal Laplacian rescaling formula.
-* `TauCeti.Yamabe.contMDiff_stereographic'_symm_smul_sub`,
-  `TauCeti.Yamabe.inner_mfderiv_stereographic'_symm_smul_sub`, and
-  `TauCeti.Yamabe.isLocalRiemannianIsometry_stereographic'_symm_smul_sub`: smoothness of
-  `x ↦ σ⁻¹((2 / t) (x - b))`, the pullback of the round metric as `U_{t,b} ^ (4 / (n - 2)) δ`, and
-  the local Riemannian isometry from `WithMetric (bubbleMetric ht b)` to `Sⁿ`.
+* `TauCeti.Yamabe.inner_mfderiv_stereographic'_symm_smul_sub` and
+  `TauCeti.Yamabe.isLocalRiemannianIsometry_stereographic'_symm_smul_sub`: the pullback of the
+  round metric along `x ↦ σ⁻¹((2 / t) (x - b))` as `U_{t,b} ^ (4 / (n - 2)) δ`, and the local
+  Riemannian isometry from `WithMetric (bubbleMetric ht b)` to `Sⁿ`.
 * `TauCeti.Yamabe.riemannianJacobian_stereographic'_symm_smul_sub`: the Riemannian Jacobian of
   `x ↦ σ⁻¹((2 / t) (x - b))` is `U_{t,b} ^ pₙ`.
 * `TauCeti.Yamabe.map_stereographic'_symm_smul_sub_withDensity_eq_restrict_riemannianVolume` and
@@ -141,14 +140,6 @@ section Metric
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
-
-/-- **Smoothness of rescaled inverse stereographic projection.** For any scale `t : ℝ` and centre
-`b : ℝⁿ`, the map `x ↦ σ⁻¹((2 / t) (x - b))` into the unit sphere is `C^k` for every `k : ℕ∞ω`. -/
-theorem contMDiff_stereographic'_symm_smul_sub {k : ℕ∞ω} (v : sphere (0 : E) 1) (t : ℝ)
-    (b : EuclideanSpace ℝ (Fin n)) :
-    ContMDiff (𝓡 n) (𝓡 n) k ((stereographic' n v).symm ∘ fun y ↦ (2 / t) • (y - b)) :=
-  (isSmoothEmbedding_stereographic'_symm v).contMDiff.comp
-    ((contDiff_id.sub contDiff_const).const_smul (2 / t)).contMDiff
 
 /-- The derivative of the rescaled inverse stereographic chart `x ↦ σ⁻¹((2 / t) (x - b))`. -/
 private theorem hasMFDerivAt_stereographic'_symm_smul_sub (v : sphere (0 : E) 1) (t : ℝ)
