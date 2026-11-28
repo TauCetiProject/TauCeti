@@ -23,6 +23,13 @@ decomposition `a = ℜ a + I • ℑ a`.
 * `TauCeti.OrderUnit.cstarStateSpaceHomeomorph`: the weak-* homeomorphism
   `TauCeti.stateSpace A ≃ₜ TauCeti.OrderUnit.stateSpace (1 : selfAdjoint A)`.
 
+## Main results
+
+* `TauCeti.OrderUnit.cstarStateSpaceHomeomorph_pullback`,
+  `TauCeti.OrderUnit.cstarStateSpaceHomeomorph_symm_pullback`: naturality of the dictionary
+  with respect to pulling back states along a unital star homomorphism and its real restriction
+  to self-adjoint parts.
+
 ## References
 
 * R. V. Kadison, *A representation theory for commutative topological algebra*, Mem. Amer. Math.
@@ -162,6 +169,52 @@ theorem cstarStateSpaceHomeomorph_symm_apply (φ : OrderUnit.stateSpace (1 : sel
     ((cstarStateSpaceHomeomorph A).symm φ).val a =
       (φ.val (ℜ a) : ℂ) + Complex.I * (φ.val (ℑ a) : ℂ) :=
   cstarStateExtend_apply A φ a
+
+/-- **Naturality of the C⋆/order-unit state dictionary:** `cstarStateSpaceHomeomorph` commutes
+with pulling back states along a unital star homomorphism `f : A → B` and its real restriction
+`T : selfAdjoint A →L[ℝ] selfAdjoint B`. -/
+theorem cstarStateSpaceHomeomorph_pullback {B F : Type*} [CStarAlgebra B] [PartialOrder B]
+    [StarOrderedRing B] [FunLike F A B] [AlgHomClass F ℂ A B] [StarHomClass F A B]
+    (f : F) (T : selfAdjoint A →L[ℝ] selfAdjoint B)
+    (hTf : ∀ a : selfAdjoint A, (T a : B) = f a) (ψ : TauCeti.stateSpace B) :
+    cstarStateSpaceHomeomorph A
+        ⟨pullbackFunctional A f ψ.val,
+          (by exact mapsTo_pullbackFunctional_stateSpace f ψ.property)⟩ =
+      OrderUnit.statePullback T
+        (by
+          intro a b hab
+          simpa only [← Subtype.coe_le_coe, hTf] using
+            OrderHomClass.mono f (Subtype.coe_le_coe.mpr hab))
+        (by exact Subtype.ext (by simp only [hTf, selfAdjoint.val_one, map_one]))
+        (cstarStateSpaceHomeomorph B ψ) := by
+  refine Subtype.ext <| DFunLike.ext _ _ fun a => ?_
+  rw [cstarStateSpaceHomeomorph_apply, OrderUnit.statePullback_apply,
+    cstarStateSpaceHomeomorph_apply, hTf]
+  simp [pullbackFunctional_apply]
+
+/-- Inverse form of `cstarStateSpaceHomeomorph_pullback`: `(cstarStateSpaceHomeomorph _).symm`
+intertwines `OrderUnit.statePullback` along the real restriction `T` with `pullbackFunctional`
+along `f`. -/
+theorem cstarStateSpaceHomeomorph_symm_pullback {B F : Type*} [CStarAlgebra B] [PartialOrder B]
+    [StarOrderedRing B] [FunLike F A B] [AlgHomClass F ℂ A B] [StarHomClass F A B]
+    (f : F) (T : selfAdjoint A →L[ℝ] selfAdjoint B)
+    (hTf : ∀ a : selfAdjoint A, (T a : B) = f a)
+    (φ : OrderUnit.stateSpace (1 : selfAdjoint B)) :
+    (cstarStateSpaceHomeomorph A).symm
+        (OrderUnit.statePullback T
+          (by
+            intro a b hab
+            simpa only [← Subtype.coe_le_coe, hTf] using
+              OrderHomClass.mono f (Subtype.coe_le_coe.mpr hab))
+          (by exact Subtype.ext (by simp only [hTf, selfAdjoint.val_one, map_one])) φ) =
+      ⟨pullbackFunctional A f ((cstarStateSpaceHomeomorph B).symm φ).val,
+        (by
+          exact mapsTo_pullbackFunctional_stateSpace f
+            ((cstarStateSpaceHomeomorph B).symm φ).property)⟩ := by
+  symm
+  rw [(cstarStateSpaceHomeomorph A).eq_symm_apply]
+  simpa using cstarStateSpaceHomeomorph_pullback A f T hTf
+    ((cstarStateSpaceHomeomorph B).symm φ)
 
 end CStarStates
 

@@ -332,8 +332,39 @@ theorem extend_unique {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [Co
   (ContinuousLinearMap.extend_unique T (e := (coe he).toContinuousLinearMap) (denseRange_coe he)
     (Isometry.isUniformInducing (coe he).isometry) S (ContinuousLinearMap.ext hS)).symm
 
+/-- Extending the zero map gives the zero map. -/
+@[simp]
+theorem extend_zero {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] :
+    extend he (0 : E →L[ℝ] F) = 0 :=
+  (extend_unique (0 : E →L[ℝ] F) fun _ => by simp).symm
+
+/-- Continuous linear extension to `OrderUnitCompletion he` is additive in the map. -/
+@[simp]
+theorem extend_add {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    (T₁ T₂ : E →L[ℝ] F) : extend he (T₁ + T₂) = extend he T₁ + extend he T₂ :=
+  (extend_unique (T₁ + T₂) fun _ => by simp).symm
+
+/-- Continuous linear extension to `OrderUnitCompletion he` preserves negation. -/
+@[simp]
+theorem extend_neg {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    (T : E →L[ℝ] F) : extend he (-T) = -extend he T :=
+  (extend_unique (-T) fun _ => by simp).symm
+
+/-- Continuous linear extension to `OrderUnitCompletion he` preserves subtraction. -/
+@[simp]
+theorem extend_sub {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    (T₁ T₂ : E →L[ℝ] F) : extend he (T₁ - T₂) = extend he T₁ - extend he T₂ :=
+  (extend_unique (T₁ - T₂) fun _ => by simp).symm
+
+/-- Continuous linear extension to `OrderUnitCompletion he` is ℝ-homogeneous in the map. -/
+@[simp]
+theorem extend_smul {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    (r : ℝ) (T : E →L[ℝ] F) : extend he (r • T) = r • extend he T :=
+  (extend_unique (r • T) fun _ => by simp).symm
+
 /-- Continuous linear extension to `OrderUnitCompletion he` preserves the operator norm:
 `‖extend he T‖ = ‖T‖`. -/
+@[simp]
 theorem opNorm_extend {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
     (T : E →L[ℝ] F) : ‖extend he T‖ = ‖T‖ := by
   refine le_antisymm ?_ ?_
