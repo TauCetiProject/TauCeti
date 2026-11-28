@@ -294,8 +294,17 @@ private lemma offDiagNegCartanMatrix_spec
         2 * y i - ∑ j : b.support, y j * (b.cartanMatrix j i : ℝ) := by
       rw [← h2, ← Finset.sum_sub_distrib]
       exact Finset.sum_congr rfl fun j _ ↦ by by_cases hij : i = j <;> simp [hij, mul_comm]
-    rw [hsum, show ∑ j : b.support, y j * (b.cartanMatrix j i : ℝ) = κ * y i from hy i]
+    rw [hsum]
+    simp_rw [Base.cartanMatrix, Base.cartanMatrixIn_def]
+    rw [hy i]
     ring
+
+private lemma exp_two_mul_ofReal_pi_div_mul_I (n : ℕ) :
+    Complex.exp (2 * ((Real.pi / n : ℝ) : ℂ) * Complex.I) =
+      Complex.exp (2 * Real.pi * Complex.I / n) := by
+  congr 1
+  push_cast
+  ring
 
 /-- Identifying the Perron–Frobenius dihedral parameter `2 - κ` with `2 cos (π / h)`, where `h`
 is the order of the bipartite Coxeter element, shared between the real Coxeter plane and complex
@@ -416,14 +425,15 @@ private lemma two_sub_eq_two_mul_cos_pi_div_orderOf_bipartiteCoxeterElement
   have hbound : ‖(1 + ω₀) ^ 2 / ω₀‖ ≤ lam ^ 2 :=
     Matrix.norm_one_add_sq_div_le_sq_of_mulVec_eq_smul A hA_nonneg hA_same hy0 hA_eig
       hM₁C_mul hM₂C_mul (Complex.exp_ne_zero _) hz.2 (Module.End.mem_eigenspace_iff.1 hz.1)
-  have hω₀_eq : ω₀ = Complex.exp (2 * ((Real.pi / h : ℝ) : ℂ) * Complex.I) := by
-    dsimp only [ω₀]; congr 1; push_cast; ring
   have hsq : (2 * Real.cos (Real.pi / h)) ^ 2 ≤ lam ^ 2 := by
-    rwa [hω₀_eq, Complex.norm_one_add_exp_two_mul_mul_I_sq_div] at hbound
+    rw [← Complex.norm_one_add_exp_two_mul_mul_I_sq_div (Real.pi / h),
+      exp_two_mul_ofReal_pi_div_mul_I h]
+    exact hbound
+  have hpi_div_nonneg : 0 ≤ Real.pi / h := by positivity
+  have h2le_real : (2 : ℝ) ≤ h := by exact_mod_cast h2le
   have hcos_nonneg : 0 ≤ Real.cos (Real.pi / h) :=
-    Real.cos_nonneg_of_mem_Icc ⟨by linarith [Real.pi_pos, show (0 : ℝ) ≤ Real.pi / h by positivity],
-      (div_le_iff₀ (Nat.cast_pos.mpr hh_pos)).2 (by
-        nlinarith [Real.pi_pos, show (2 : ℝ) ≤ h by exact_mod_cast h2le])⟩
+    Real.cos_nonneg_of_mem_Icc ⟨by linarith [Real.pi_pos, hpi_div_nonneg],
+      (div_le_iff₀ (Nat.cast_pos.mpr hh_pos)).2 (by nlinarith [Real.pi_pos, h2le_real])⟩
   have hcos_le : Real.cos (Real.pi / h) ≤ Real.cos θ := by nlinarith
   have hθ_eq : θ = Real.pi / h :=
     Complex.eq_pi_div_of_exp_ofReal_mul_I_pow_eq_one_of_cos_le
@@ -589,7 +599,7 @@ theorem exists_dihedral_colorPart_bipartite [P.IsIrreducible] (b : P.Base)
     have hlam : 2 - (2 : ℝ) =
         2 * Real.cos (Real.pi / orderOf (wordProd P b l₁ * wordProd P b l₂)) := by
       rw [hc_bip, orderOf_bipartiteCoxeterElement_eq_two_of_subsingleton P b col, sub_self,
-        show Real.pi / ((2 : ℕ) : ℝ) = Real.pi / 2 by norm_num, Real.cos_pi_div_two, mul_zero]
+        Nat.cast_ofNat, Real.cos_pi_div_two, mul_zero]
     exact ⟨_, _, dihedral_colorPart_of_eig P b col hl₁ hl₂ hcol₁ hcol₂ (fun _ ↦ one_pos) two_pos
       hy hlam⟩
   · obtain ⟨v₁, v₂, -, h⟩ := P.exists_coxeterPlane_bipartite b col hl₁ hl₂ hcol₁ hcol₂
@@ -627,8 +637,8 @@ theorem exists_isRegularWeight_wordProd_smul_eq_inv_exp_smul
       have hμ_ne_one : μ ≠ 1 := hμ_prim.ne_one (hord ▸ by norm_num)
       have hμ_eq_neg_one : μ = -1 := (sq_eq_one_iff.1 hμ_sq).resolve_left hμ_ne_one
       have hexp_eq : (Complex.exp (2 * Real.pi * Complex.I / orderOf c))⁻¹ = -1 := by
-        rw [hord, show (2 : ℂ) * Real.pi * Complex.I / ((2 : ℕ) : ℂ) = Real.pi * Complex.I by
-          push_cast; ring, Complex.exp_pi_mul_I, inv_neg, inv_one]
+        rw [hord, Nat.cast_ofNat, mul_assoc, mul_div_cancel_left₀ _ two_ne_zero,
+          Complex.exp_pi_mul_I, inv_neg, inv_one]
       exact ⟨v, hv_reg, by rwa [hμ_eq_neg_one, ← hexp_eq] at hv_eig⟩
     · obtain ⟨κ, hκ, hκ2, y, hy0, hyC⟩ :=
         (isFiniteType_cartanMatrix b).exists_pos_vecMul_eq_smul b.cartanMatrix_isIndecomposable
@@ -640,9 +650,7 @@ theorem exists_isRegularWeight_wordProd_smul_eq_inv_exp_smul
             (Complex.exp (2 * Real.pi * Complex.I / orderOf c))⁻¹ + 1 = 0 := by
         have h := Complex.inv_exp_two_mul_mul_I_sq_add_sub_mul_add_one
           ((Real.pi / orderOf c : ℝ) : ℂ)
-        rw [show (2 * ((Real.pi / orderOf c : ℝ) : ℂ) * Complex.I) =
-            2 * Real.pi * Complex.I / orderOf c by push_cast; ring,
-          ← Complex.ofReal_cos] at h
+        rw [exp_two_mul_ofReal_pi_div_mul_I (orderOf c), ← Complex.ofReal_cos] at h
         simpa [Complex.coe_algebraMap, hlam] using h
       exact ⟨_, P.isRegularWeight_one_add_smul_colorPart_add_smul (c := col) hy hy0 hκ hκ2 hν,
         P.bipartiteCoxeterElement_smul_one_add_smul_colorPart_add_smul (c := col) hy hν⟩

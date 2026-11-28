@@ -64,7 +64,8 @@ theorem exp_two_mul_mul_I_sq_add_sub_mul_add_one (z : ℂ) :
   set μ : ℂ := exp (z * I)
   have hμ_ne : μ ≠ 0 := exp_ne_zero _
   have hμ_sum : μ + μ⁻¹ = 2 * cos z := by
-    rw [show μ⁻¹ = exp (-z * I) by simp [μ, ← exp_neg, neg_mul], ← two_cos]
+    dsimp only [μ]
+    rw [← exp_neg, ← neg_mul, ← two_cos]
   have hζ_eq : exp (2 * z * I) = μ ^ 2 := by
     simp only [μ, sq, ← exp_add]
     congr 1

@@ -342,7 +342,7 @@ end CommSemiring
 /-- An equivariant linear equivalence of representations preserves the dimension of each graded
 component of the symmetric-algebra invariants. -/
 theorem finrank_symmetricAlgebraInvariants_inf_homogeneousSubmodule_of_equiv
-    {R G₁ G₂ V₁ V₂ : Type*} [CommRing R] [Monoid G₁] [Monoid G₂]
+    {R G₁ G₂ V₁ V₂ : Type*} [CommSemiring R] [Monoid G₁] [Monoid G₂]
     [AddCommMonoid V₁] [Module R V₁] [AddCommMonoid V₂] [Module R V₂]
     (ρ₁ : Representation R G₁ V₁) {ρ₂ : Representation R G₂ V₂}
     (eG : G₁ ≃* G₂) (eV : V₁ ≃ₗ[R] V₂)

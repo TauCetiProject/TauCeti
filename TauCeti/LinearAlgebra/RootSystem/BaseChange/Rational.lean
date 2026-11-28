@@ -160,10 +160,12 @@ private lemma linearIndependent_rationalModel_coroot :
       simpa [Matrix.row_apply, A] using congrFun ha k
     simp only [toWeightBasis_apply, map_zero, LinearMap.zero_apply, map_sum, map_zsmul,
       LinearMap.sum_apply, LinearMap.smul_apply, LinearMap.flip_apply, root_coroot_eq_pairing]
-    rw [show ∑ j : b.support, a j • P.pairing k j =
-        algebraMap ℤ R (∑ j : b.support, a j * P.pairingIn ℤ k j) by
-      rw [map_sum]; exact Finset.sum_congr rfl fun j _ ↦ by
-        rw [map_mul, P.algebraMap_pairingIn ℤ, zsmul_eq_mul, eq_intCast], hk, map_zero]
+    have hsum : ∑ j : b.support, a j • P.pairing k j =
+        algebraMap ℤ R (∑ j : b.support, a j * P.pairingIn ℤ k j) := by
+      rw [map_sum]
+      exact Finset.sum_congr rfl fun j _ ↦ by
+        rw [map_mul, P.algebraMap_pairingIn ℤ, zsmul_eq_mul, eq_intCast]
+    rw [hsum, hk, map_zero]
   exact Fintype.linearIndependent_iff.1 (b.linearIndepOn_coroot.restrict_scalars' ℤ) a hN
 
 private lemma rationalModel_root_eq_sum_nat (f : ι → ℕ) {i' : ι}
