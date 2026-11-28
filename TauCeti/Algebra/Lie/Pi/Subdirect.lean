@@ -24,6 +24,8 @@ public section
 
 namespace LieSubalgebra
 
+open LieAlgebra (derivedSeries_def derivedSeriesOfIdeal_succ derivedSeriesOfIdeal_zero)
+
 variable {ι R : Type*} {L : ι → Type*} [CommRing R] [∀ i, LieRing (L i)]
   [∀ i, LieAlgebra R (L i)]
 
@@ -39,6 +41,7 @@ theorem exists_apply_eq_and_forall_apply_eq_zero (S : LieSubalgebra R (∀ i, L 
   have heval (j) : ⇑(p j) = fun x : S => x.val j := funext fun x => LieHom.proj_apply j x.val
   have hsurj : Function.Surjective (p i) := heval i ▸ hproj
   let K (j : ι) := (p j).ker
+  rw [derivedSeries_def, derivedSeriesOfIdeal_succ, derivedSeriesOfIdeal_zero] at hperf
   have hmeet : (t.inf K).map (p i) = ⊤ := by
     induction t using Finset.induction_on with
     | empty => rw [Finset.inf_empty, ← LieHom.idealRange_eq_map,
@@ -53,9 +56,9 @@ theorem exists_apply_eq_and_forall_apply_eq_zero (S : LieSubalgebra R (∀ i, L 
         exact LieIdeal.mem_map ((p j).mem_ker.mpr (by simpa only [heval] using hz))
       have hrec := ih (fun k hkt => hlift k (Finset.mem_insert_of_mem hkt))
       have hle := LieIdeal.map_mono (f := p i) (LieSubmodule.lie_le_inf (K j) (t.inf K))
-      rw [LieIdeal.map_bracket_eq _ hsurj, hk, hrec] at hle
+      rw [LieIdeal.map_bracket_eq _ hsurj, hk, hrec, hperf] at hle
       rw [Finset.inf_insert]
-      exact top_unique (hperf ▸ hle)
+      exact top_unique hle
   obtain ⟨x, hxa⟩ := LieIdeal.mem_map_of_surjective (f := p i) hsurj
     (hmeet ▸ LieSubmodule.mem_top a : a ∈ (t.inf K).map (p i))
   refine ⟨x.val, by simpa only [heval] using hxa, fun j hj => ?_⟩
@@ -99,6 +102,7 @@ theorem eq_top_of_pairwise_surjective_of_isSimple [Finite ι] [∀ i, LieAlgebra
     S = ⊤ := by
   apply S.eq_top_of_pairwise_surjective_of_perfect _ hproj hpair
   intro i
+  rw [derivedSeries_def, derivedSeriesOfIdeal_succ, derivedSeriesOfIdeal_zero]
   have h := LieAlgebra.IsSimple.isAtom_top R (L i)
   exact lie_eq_self_of_isAtom_of_nonabelian _ h (LieAlgebra.IsSemisimple.non_abelian_of_isAtom _ h)
 
