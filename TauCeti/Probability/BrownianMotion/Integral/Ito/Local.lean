@@ -10,7 +10,6 @@ public import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Stopping
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
-import TauCeti.Probability.BrownianMotion.Integral.Ito.Substitution
 import TauCeti.Probability.BrownianMotion.Integral.Progressive
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 import TauCeti.Probability.Martingale.Local.Congruence
@@ -31,11 +30,8 @@ the local-martingale property on a raw filtration
 progressive continuous local-martingale Itô integral whenever `W` has a.s. continuous paths.
 
 It also characterizes the domain of Brownian Itô integration
-(`exists_isItoIntegral_iff_locallyBrownianIntegrable`), handles strongly progressive inputs via
-predictable representatives (`exists_isItoIntegral_of_isStronglyProgressive`), and provides
-deterministic `(s, t]` interval restriction and left-measurable multiplier rules
-(`TauCeti.Probability.IsFilteredPreBrownianReal.isItoIntegral_stoppedProcess_sub`,
-`TauCeti.Probability.IsItoIntegral.mul_ite_Ioc`).
+(`exists_isItoIntegral_iff_locallyBrownianIntegrable`) and handles strongly progressive inputs via
+predictable representatives (`exists_isItoIntegral_of_isStronglyProgressive`).
 
 ## Main results
 
@@ -49,9 +45,6 @@ deterministic `(s, t]` interval restriction and left-measurable multiplier rules
 * `TauCeti.Probability.IsFilteredPreBrownianReal.exists_isItoIntegral_of_isStronglyProgressive`:
   strongly progressive integrands with a.s. finite pathwise square energy admit a predictable
   representative and local-martingale Itô integral.
-* `TauCeti.Probability.IsFilteredPreBrownianReal.isItoIntegral_stoppedProcess_sub` and
-  `TauCeti.Probability.IsItoIntegral.mul_ite_Ioc`: deterministic `(s, t]` restriction and
-  left-measurable multiplier rule on `(s, t]`.
 
 ## References
 
@@ -259,69 +252,6 @@ theorem IsFilteredPreBrownianReal.exists_isItoIntegral_of_isStronglyProgressive
     rwa [NNReal.comap_volume_restrict_Ioc, ← timeMeasure_def] at h
   obtain ⟨I, hIito, hIprog, hIloc⟩ := hH'loc.exists_isItoIntegral hW hcont
   exact ⟨H', I, hH'loc, hprod, hIito, hIprog, hIloc⟩
-
-/-- **Deterministic-interval restriction for local Brownian Itô integrals.** For `s ≤ t`, the
-difference of stopped integrals `u ↦ I (min u t) - I (min u s)` is an Itô integral of the
-`(s, t]` restriction `1_{(s, t]} · H`, without assuming path continuity of `W`. -/
-theorem IsFilteredPreBrownianReal.isItoIntegral_stoppedProcess_sub
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    {H I : ℝ≥0 → Ω → ℝ} (hI : IsItoIntegral ℱ P W H I) {s t : ℝ≥0} (hst : s ≤ t) :
-    IsItoIntegral ℱ P W (fun u ω ↦ if s < u ∧ u ≤ t then H u ω else 0)
-      (fun u ω ↦ I (min u t) ω - I (min u s) ω) := by
-  have hH_eq : (fun (u : ℝ≥0) ω ↦ if s < u ∧ u ≤ t then H u ω else 0) =
-      fun (u : ℝ≥0) ω ↦ if (s : WithTop ℝ≥0) < u ∧ (u : WithTop ℝ≥0) ≤ t then H u ω else 0 := by
-    ext u ω
-    simp only [WithTop.coe_lt_coe, WithTop.coe_le_coe]
-  rw [hH_eq]
-  exact (hI.ite_Ioc hW (isStoppingTime_const ℱ s) (isStoppingTime_const ℱ t)
-    fun _ ↦ WithTop.coe_le_coe.mpr hst).congr (.of_forall fun ω u ↦ by
-      simp only [Pi.sub_apply, MeasureTheory.stoppedProcess_const_time])
-
-/-- **Left-measurable multiplier rule for local interval integrals** stated directly for any
-Itô integral `J` of the `(s, t]` cutoff `1_{(s, t]} · H`, without assuming path continuity of
-`W` or boundedness of `ξ`. -/
-theorem IsItoIntegral.mul_ite_Ioc
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    {s t : ℝ≥0} (hst : s ≤ t)
-    (hJ : IsItoIntegral ℱ P W (fun u ω ↦ if s < u ∧ u ≤ t then H u ω else 0) J)
-    {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) :
-    IsItoIntegral ℱ P W (fun u ω ↦ if s < u ∧ u ≤ t then ξ ω * H u ω else 0)
-      (fun u ω ↦ ξ ω * J u ω) := by
-  have hJs : MeasureTheory.stoppedProcess J (fun _ ↦ (s : WithTop ℝ≥0)) ≡ᵐ[P] 0 := by
-    have hstop := hJ.stoppedProcess hW (isStoppingTime_const ℱ s)
-    have hzero : (fun (u : ℝ≥0) ω ↦ if (u : WithTop ℝ≥0) ≤ s then
-        (if s < u ∧ u ≤ t then H u ω else 0) else 0) = 0 := by
-      ext u ω
-      split_ifs with h1 h2
-      · exact absurd (WithTop.coe_le_coe.mp h1) h2.1.not_ge
-      all_goals simp only [Pi.zero_apply]
-    rw [hzero] at hstop
-    exact isItoIntegral_unique hW hstop (IsItoIntegral.zero)
-  have hJt : MeasureTheory.stoppedProcess J (fun _ ↦ (t : WithTop ℝ≥0)) ≡ᵐ[P] J := by
-    have hstop := hJ.stoppedProcess hW (isStoppingTime_const ℱ t)
-    have hid : (fun (u : ℝ≥0) ω ↦ if (u : WithTop ℝ≥0) ≤ t then
-        (if s < u ∧ u ≤ t then H u ω else 0) else 0) =
-        fun (u : ℝ≥0) ω ↦ if s < u ∧ u ≤ t then H u ω else 0 := by
-      ext u ω
-      by_cases h : s < u ∧ u ≤ t
-      · simp only [h, (by exact_mod_cast h.2 : (u : WithTop ℝ≥0) ≤ t), ↓reduceIte]
-      · simp only [h, ↓reduceIte, ite_self]
-    rw [hid] at hstop
-    exact isItoIntegral_unique hW hstop hJ
-  have hmul := hJ.mul_sub_min hW hst hξ
-  have hK : (fun (u : ℝ≥0) ω ↦ (Set.Ioc s t).indicator (fun _ ↦ ξ ω) u *
-      (if s < u ∧ u ≤ t then H u ω else 0)) =
-      fun (u : ℝ≥0) ω ↦ if s < u ∧ u ≤ t then ξ ω * H u ω else 0 := by
-    ext u ω
-    by_cases h : s < u ∧ u ≤ t <;> simp [h]
-  rw [hK] at hmul
-  refine hmul.congr ?_
-  filter_upwards [hJs, hJt] with ω hsω htω u
-  have hJu : J (min t u) ω = J u ω := by
-    simpa only [MeasureTheory.stoppedProcess_const_time, min_comm] using htω u
-  have hJs0 : J (min s u) ω = 0 := by
-    simpa only [MeasureTheory.stoppedProcess_const_time, Pi.zero_apply, min_comm] using hsω u
-  rw [hJu, hJs0, sub_zero]
 
 end Probability
 

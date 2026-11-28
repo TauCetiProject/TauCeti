@@ -26,9 +26,9 @@ by the sum of the original absolute heights; thus boundedness and Lᵖ control s
 without additional moment assumptions.
 `exists_simpleHolding_simpleGains_eq_sub` specializes this to the difference of two simple
 strategies on monotone grids, subtracting both their holdings and their gains.
-`stronglyMeasurable_clip_Ioc_mul`, `simpleHolding_clip_Ioc_mul`, and `simpleGains_clip_Ioc_mul`
-clip a simple strategy to `(s, t]` via `Set.projIcc s t hst ∘ τ` and multiply by an
-`ℱ s`-measurable height `ξ`, factoring `ξ` out of the `(s, t]` gain difference.
+`MeasureTheory.Filtration.stronglyMeasurable_clip_Ioc_mul`, `simpleHolding_clip_Ioc_mul`, and
+`simpleGains_clip_Ioc_mul` clip a simple strategy to `(s, t]` via `Set.projIcc s t hst ∘ τ` and
+multiply by an `ℱ s`-measurable height `ξ`, factoring `ξ` out of the `(s, t]` gain difference.
 
 A finite family of elementary predictable holdings can also be refined simultaneously while
 preserving each holding and its gains separately, not just their sum. Tagging each strategy with
@@ -241,25 +241,6 @@ theorem exists_simpleHolding_simpleGains_eq_sub [OrderBot ι] {mΩ : MeasurableS
   · rw [hhold t ω, simpleHolding_smul, neg_one_mul, ← sub_eq_add_neg]
   · rw [hgain X t ω, simpleGains_smul, neg_one_mul, ← sub_eq_add_neg]
 
-/-- Clipping left-measurable heights to `(s, t]` via `Set.projIcc s t hst ∘ τ` and multiplying by
-an `ℱ s`-measurable function `ξ` preserves left-measurability at the clipped dates. -/
-theorem stronglyMeasurable_clip_Ioc_mul {mΩ : MeasurableSpace Ω} (ℱ : Filtration ι mΩ)
-    {τ : ℕ → ι} {n : ℕ} {a : ℕ → Ω → ℝ}
-    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
-    {s t : ι} (hst : s ≤ t) {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) :
-    ∀ j < n, StronglyMeasurable[ℱ (Set.projIcc s t hst (τ j) : ι)]
-      (fun ω ↦ if τ j ≤ t then ξ ω * a j ω else 0) := by
-  intro j hj
-  by_cases hjt : τ j ≤ t
-  · simp only [hjt, ite_true]
-    have hsσ : s ≤ (Set.projIcc s t hst (τ j) : ι) := (Set.projIcc s t hst (τ j)).property.1
-    have hτσ : τ j ≤ (Set.projIcc s t hst (τ j) : ι) := by
-      rw [Set.coe_projIcc]
-      exact le_max_of_le_right (le_min hjt le_rfl)
-    exact (hξ.mono (ℱ.mono hsσ)).mul ((ha j hj).mono (ℱ.mono hτσ))
-  · simp only [hjt, ite_false]
-    exact stronglyMeasurable_zero
-
 /-- Clipping a simple holding `(τ, n, a)` to `(s, t]` via `Set.projIcc s t hst ∘ τ` and
 multiplying by `ξ` yields `1_{(s, t]} · ξ · simpleHolding τ n a`. -/
 theorem simpleHolding_clip_Ioc_mul {τ : ℕ → ι} {n : ℕ} {a : ℕ → Ω → ℝ}
@@ -295,6 +276,31 @@ end TauCeti.Finance
 namespace MeasureTheory.Filtration
 
 open TauCeti.Finance
+
+section
+
+variable {Ω ι : Type*} [LinearOrder ι]
+
+/-- Clipping left-measurable heights to `(s, t]` via `Set.projIcc s t hst ∘ τ` and multiplying by
+an `ℱ s`-measurable function `ξ` preserves left-measurability at the clipped dates. -/
+theorem stronglyMeasurable_clip_Ioc_mul {mΩ : MeasurableSpace Ω} (ℱ : Filtration ι mΩ)
+    {τ : ℕ → ι} {n : ℕ} {a : ℕ → Ω → ℝ}
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    {s t : ι} (hst : s ≤ t) {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) :
+    ∀ j < n, StronglyMeasurable[ℱ (Set.projIcc s t hst (τ j) : ι)]
+      (fun ω ↦ if τ j ≤ t then ξ ω * a j ω else 0) := by
+  intro j hj
+  by_cases hjt : τ j ≤ t
+  · simp only [hjt, ite_true]
+    have hsσ : s ≤ (Set.projIcc s t hst (τ j) : ι) := (Set.projIcc s t hst (τ j)).property.1
+    have hτσ : τ j ≤ (Set.projIcc s t hst (τ j) : ι) := by
+      rw [Set.coe_projIcc]
+      exact le_max_of_le_right (le_min hjt le_rfl)
+    exact (hξ.mono (ℱ.mono hsσ)).mul ((ha j hj).mono (ℱ.mono hτσ))
+  · simp only [hjt, ite_false]
+    exact stronglyMeasurable_zero
+
+end
 
 variable {Ω ι κ : Type*} [LinearOrder ι] [OrderBot ι] [Finite κ]
 

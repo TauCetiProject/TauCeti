@@ -14,6 +14,7 @@ import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 import TauCeti.Probability.Martingale.ContinuousLimit
 import TauCeti.Probability.Martingale.LpLimit
+import TauCeti.Probability.StochasticIntegral.Density
 
 /-!
 # Existence of the Itô integral for square-integrable integrands and the Itô isometry
@@ -27,10 +28,7 @@ constructs the Itô integral of `H` against `W` and proves the Itô isometry.
   `H` has an Itô integral which is a predictable martingale, approximated simultaneously on every
   finite horizon by one sequence of bounded simple strategies in `L²`, uniformly in probability on
   `[0, T]`, and along a subsequence a.s. uniformly on `[0, T]`.
-* `TauCeti.Probability.exists_elementaryIntegrand_eLpNorm_sub_lt`,
-  `TauCeti.Probability.exists_seq_elementaryIntegrand_tendsto_eLpNorm`, and
-  `TauCeti.Probability.IsFilteredPreBrownianReal.eLpNorm_simpleGains_sub_l2Integral`: `L²`
-  approximation of predictable integrands by bounded `ElementaryIntegrand`s and the fixed-horizon
+* `TauCeti.Probability.IsFilteredPreBrownianReal.eLpNorm_simpleGains_sub_l2Integral`: fixed-horizon
   simple-gains/l2Integral `L²` distance identity.
 * `TauCeti.Probability.IsFilteredPreBrownianReal.ae_eq_l2Integral_of_memLp`,
   `TauCeti.Probability.IsItoIntegral.ae_eq_l2Integral`, and
@@ -222,41 +220,6 @@ theorem _root_.TauCeti.BrownianIntegrable.exists_isItoIntegral (hH : BrownianInt
   obtain ⟨h⟩ := exists_itoIntegralApprox hW hWc hH
   exact ⟨h.I, h.isItoIntegral, h.isStronglyPredictable, h.martingale⟩
 
-/-- On each finite horizon, a predictable integrand with finite expected square energy can be
-approximated arbitrarily closely in `L²((timeMeasure t).prod P)` by a bounded
-`ElementaryIntegrand`. -/
-theorem exists_elementaryIntegrand_eLpNorm_sub_lt (ℱ : Filtration ℝ≥0 mΩ)
-    (P : Measure Ω) [IsFiniteMeasure P] (t : ℝ≥0) {H : ℝ≥0 → Ω → ℝ}
-    (hHp : IsStronglyPredictable ℱ H)
-    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P))
-    {ε : ℝ≥0∞} (hε : 0 < ε) :
-    ∃ K : ElementaryIntegrand ℱ,
-      eLpNorm (fun p : ℝ≥0 × Ω ↦ K.toProcess p.1 p.2 - H p.1 p.2) 2
-        ((timeMeasure t).prod P) < ε := by
-  obtain ⟨n, τ, a, C, -, hτ, ha, hb, herr⟩ :=
-    ℱ.exists_simpleHolding_eLpNorm_sub_lt_timeMeasure P t hHp hH hε
-  let K : ElementaryIntegrand ℱ := ElementaryIntegrand.ofSimpleHolding hτ.monotoneOn ha
-    fun j hj ↦ ⟨C, fun ω ↦ by simpa [Real.norm_eq_abs] using hb j hj ω⟩
-  refine ⟨K, ?_⟩
-  simpa only [K, ElementaryIntegrand.toProcess_ofSimpleHolding] using herr
-
-/-- For a predictable integrand in `L²((timeMeasure t).prod P)`, there is a sequence of bounded
-`ElementaryIntegrand`s whose represented processes converge to it in
-`L²((timeMeasure t).prod P)`. -/
-theorem exists_seq_elementaryIntegrand_tendsto_eLpNorm (ℱ : Filtration ℝ≥0 mΩ)
-    (P : Measure Ω) [IsFiniteMeasure P] (t : ℝ≥0) {H : ℝ≥0 → Ω → ℝ}
-    (hHp : IsStronglyPredictable ℱ H)
-    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) :
-    ∃ K : ℕ → ElementaryIntegrand ℱ,
-      Tendsto (fun k ↦ eLpNorm
-        (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2 - H p.1 p.2) 2
-        ((timeMeasure t).prod P)) atTop (𝓝 0) := by
-  choose K hK using fun k : ℕ ↦ exists_elementaryIntegrand_eLpNorm_sub_lt ℱ P t hHp hH
-    (ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top (k + 1)))
-  refine ⟨K, tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1))
-    (fun _ ↦ zero_le) fun k ↦ (hK k).le⟩
-
 /-- The `L²(P)` distance between an elementary Brownian integral and `hW.l2Integral t` of a
 predictable integrand in `L²((timeMeasure t).prod P)` equals the time-product `L²` distance between
 their integrands. -/
@@ -290,7 +253,7 @@ theorem IsFilteredPreBrownianReal.ae_eq_l2Integral_of_memLp
       (((ℱ.memLp_predictableMeasure_iff P hI.isStronglyPredictable t 2).mpr hH).toLp
         (Function.uncurry H)) := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨K, hKlim⟩ := exists_seq_elementaryIntegrand_tendsto_eLpNorm ℱ P t
+  obtain ⟨K, hKlim⟩ := ℱ.exists_seq_elementaryIntegrand_tendsto_eLpNorm P t
     hI.isStronglyPredictable hH
   refine hI.ae_eq_of_tendstoInMeasure_elementaryIntegrand hW
     (fun _ hε ↦ IsStronglyPredictable.tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm

@@ -38,8 +38,10 @@ times `σ ≤ τ`, `stoppedProcess I τ - stoppedProcess I σ` is an Itô integr
   stopping time `σ` integrates `H · 1_{[0, σ]}`.
 * `TauCeti.Probability.IsFilteredPreBrownianReal.stoppedProcess_ae_eq_l2Integral`: `L²`
   identification of the stopped Itô integral for `BrownianIntegrable` integrands.
-* `TauCeti.Probability.IsItoIntegral.ite_Ioc`: restricting an integrand to `(σ, τ]` for stopping
-  times `σ ≤ τ` integrates to `stoppedProcess I τ - stoppedProcess I σ`.
+* `TauCeti.Probability.IsItoIntegral.ite_Ioc` and
+  `TauCeti.Probability.IsFilteredPreBrownianReal.isItoIntegral_stoppedProcess_sub`: restricting an
+  integrand to `(σ, τ]` for stopping times `σ ≤ τ` (or deterministic `(s, t]`) integrates to
+  `stoppedProcess I τ - stoppedProcess I σ`.
 * `TauCeti.Probability.IsItoIntegral.add_Ioc_stopping`,
   `TauCeti.Probability.IsItoIntegral.add_Ioc`, `TauCeti.Probability.IsItoIntegral.add_le_Ioc`:
   concatenation of adjacent interval Itô integrals.
@@ -279,5 +281,22 @@ theorem add_le_Ioc {σ τ : Ω → WithTop ℝ≥0} (hστ : σ ≤ τ)
     IsItoIntegral ℱ P W (fun u ω ↦ if (u : WithTop ℝ≥0) ≤ τ ω then H u ω else 0) (I₁ + I₂) := by
   rw [TauCeti.ite_le_eq_add_ite_Ioc hστ H]
   exact hI₁.add hI₂
+
+/-- **Deterministic-interval restriction for local Brownian Itô integrals.** For `s ≤ t`, the
+difference of stopped integrals `u ↦ I (min u t) - I (min u s)` is an Itô integral of the
+`(s, t]` restriction `1_{(s, t]} · H`, without assuming path continuity of `W`. -/
+theorem _root_.TauCeti.Probability.IsFilteredPreBrownianReal.isItoIntegral_stoppedProcess_sub
+    (hW : IsFilteredPreBrownianReal ℱ W P)
+    {H I : ℝ≥0 → Ω → ℝ} (hI : IsItoIntegral ℱ P W H I) {s t : ℝ≥0} (hst : s ≤ t) :
+    IsItoIntegral ℱ P W (fun u ω ↦ if s < u ∧ u ≤ t then H u ω else 0)
+      (fun u ω ↦ I (min u t) ω - I (min u s) ω) := by
+  have hH_eq : (fun (u : ℝ≥0) ω ↦ if s < u ∧ u ≤ t then H u ω else 0) =
+      fun (u : ℝ≥0) ω ↦ if (s : WithTop ℝ≥0) < u ∧ (u : WithTop ℝ≥0) ≤ t then H u ω else 0 := by
+    ext u ω
+    simp only [WithTop.coe_lt_coe, WithTop.coe_le_coe]
+  rw [hH_eq]
+  exact (hI.ite_Ioc hW (isStoppingTime_const ℱ s) (isStoppingTime_const ℱ t)
+    fun _ ↦ WithTop.coe_le_coe.mpr hst).congr (.of_forall fun ω u ↦ by
+      simp only [Pi.sub_apply, MeasureTheory.stoppedProcess_const_time])
 
 end TauCeti.Probability.IsItoIntegral

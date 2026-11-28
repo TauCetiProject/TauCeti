@@ -426,7 +426,7 @@ def clipIocMul {s t : ℝ≥0} (hst : s ≤ t)
   ofSimpleHolding (τ := fun j ↦ (Set.projIcc s t hst (K.dates j) : ℝ≥0))
     (((Subtype.mono_coe _).comp (Set.monotone_projIcc hst)).comp_monotoneOn
       (K.monotone_dates.monotoneOn _))
-    (Finance.stronglyMeasurable_clip_Ioc_mul ℱ K.measurable_positions hst hξ)
+    (ℱ.stronglyMeasurable_clip_Ioc_mul K.measurable_positions hst hξ)
     fun j _ ↦ by
       obtain ⟨C, hC⟩ := K.exists_bound_positions
       refine ⟨max Cξ 0 * max C 0, fun ω ↦ ?_⟩
