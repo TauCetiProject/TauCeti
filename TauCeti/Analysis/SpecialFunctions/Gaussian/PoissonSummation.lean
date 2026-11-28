@@ -13,7 +13,6 @@ public import TauCeti.Analysis.SpecialFunctions.Gaussian.LatticeSum
 import TauCeti.Analysis.Fourier.Poisson.Periodic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Harmonic
-import TauCeti.Data.ZMod.FinEquiv
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
@@ -273,26 +272,23 @@ theorem hasSum_periodic_gaussian_residue_sum {N : ℕ} [NeZero N] (Φ : ZMod N �
   have hsummable := summable_periodic_gaussian Φ j ht
   convert hsummable.hasSum using 1
   symm
-  rw [TauCeti.tsum_int_eq_sum_fin_tsum hsummable N]
-  rw [mul_sum, ← (finEquiv N).toEquiv.sum_comp]
-  have hfin (a : Fin N) : (finEquiv N).toEquiv a = (a.val : ZMod N) := finEquiv_apply a
-  simp only [hfin]
+  rw [hsummable.tsum_int_eq_sum_zmod_tsum N, mul_sum]
   refine sum_congr rfl fun a _ ↦ ?_
-  have hcast (n : ℤ) : ((n * N + (a : ℤ) : ℤ) : ZMod N) = (a.val : ZMod N) := by simp
-  have hs (n : ℤ) : (n + ((a : ℕ) / (N : ℝ))) * (N * t) =
-      ((n * (N : ℤ) + (a : ℤ) : ℤ) : ℝ) * t := by
+  have hcast (n : ℤ) : ((n * N + (a.val : ℤ) : ℤ) : ZMod N) = a := by simp
+  have hs (n : ℤ) : (n + (a.val / (N : ℝ))) * (N * t) =
+      ((n * (N : ℤ) + (a.val : ℤ) : ℤ) : ℝ) * t := by
     push_cast
     field_simp
-  simp only [hcast, toAddCircle_apply, val_cast_of_lt a.isLt]
+  simp only [hcast, toAddCircle_apply]
   interval_cases j
   · simp only [pow_zero, ite_true, one_mul]
-    rw [← (hasSum_ofReal.mpr (hasSum_int_evenKernel ((a : ℕ) / (N : ℝ)) hsq)).tsum_eq,
+    rw [← (hasSum_ofReal.mpr (hasSum_int_evenKernel (a.val / (N : ℝ)) hsq)).tsum_eq,
       ← tsum_mul_left]
     refine tsum_congr fun n ↦ ?_
     rw [← hs n, mul_pow, ofReal_exp]
     simp [mul_assoc]
   · simp only [pow_one, one_ne_zero, ite_false]
-    rw [← (hasSum_ofReal.mpr (hasSum_int_oddKernel ((a : ℕ) / (N : ℝ)) hsq)).tsum_eq,
+    rw [← (hasSum_ofReal.mpr (hasSum_int_oddKernel (a.val / (N : ℝ)) hsq)).tsum_eq,
       ← tsum_mul_left, ← tsum_mul_left]
     refine tsum_congr fun n ↦ ?_
     rw [← hs n, mul_pow]
@@ -316,7 +312,7 @@ theorem tsum_periodic_gaussian_eq_invDFT {N : ℕ} [NeZero N] (Φ : ZMod N → �
     rw [hw]
     by_cases h : j = 0
     · simp only [f, ite_eq_left h, SchwartzMap.gaussian_apply, h, pow_zero, one_mul]
-    · have h₁ : j = 1 := by omega
+    · have h₁ : j = 1 := by lia
       simp only [f, ite_eq_right h, SchwartzMap.innerMulGaussian_apply,
         h₁, pow_one, Real.inner_apply,
         mul_one]
@@ -325,10 +321,13 @@ theorem tsum_periodic_gaussian_eq_invDFT {N : ℕ} [NeZero N] (Φ : ZMod N → �
       TauCeti.fourier_pow_mul_cexp_neg_mul_norm_sq_real hb hj]
     have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
     have harg : -(π : ℂ) ^ 2 * ‖x‖ ^ 2 / π = -(π : ℂ) * ‖x‖ ^ 2 := by field_simp
+    -- The normalized Gaussian has parameter `π` on both sides, so the power factor is one.
     rw [div_self hπ, one_cpow, one_mul, harg, hw, mul_assoc]
   have h := (f.dilate ht.ne').tsum_mul_periodic_eq_tsum_invDFT_fourier Φ
-  simp_rw [SchwartzMap.dilate_apply, hf, SchwartzMap.fourier_dilate_apply, hfourier,
-    Complex.real_smul, abs_of_pos ht, ofReal_inv] at h
+  -- Substitute the Gaussian transform and express real dilations by division.
+  simp_rw [SchwartzMap.dilate_apply, SchwartzMap.fourier_dilate_apply, hfourier, hf,
+    Module.finrank_self, pow_one, Complex.real_smul, abs_of_pos ht, ofReal_inv,
+    smul_eq_mul, ← div_eq_inv_mul] at h
   calc
     _ = ∑' n : ℤ, Φ n * W j (t * (n : ℝ)) := tsum_congr fun n ↦ by rw [mul_comm t]
     _ = _ := h.trans ?_

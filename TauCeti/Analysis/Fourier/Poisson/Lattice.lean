@@ -11,7 +11,6 @@ public import TauCeti.Algebra.Module.ZLattice.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.SchwartzSpace.ZLattice
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.Monomial
-import TauCeti.LinearAlgebra.Basis.RestrictScalars
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
 /-!
@@ -116,8 +115,7 @@ private theorem mFourier_toTorus (n : ι → ℤ) (x : E) :
     mFourier n (o.toTorus x) = 𝐞 ⟪x, (o.latticeEquiv n : E)⟫ := by
   have h : ⟪x, (o.latticeEquiv n : E)⟫ = ∑ i, o.repr x i * n i := by
     rw [← o.sum_inner_mul_inner]
-    simp only [real_inner_comm _ x, ← o.repr_apply_apply, ← o.coe_toBasis_repr_apply,
-      o.latticeEquiv_def, Basis.repr_restrictScalars_equivFun_symm, eq_intCast]
+    simp only [real_inner_comm _ x, ← o.repr_apply_apply, o.repr_latticeEquiv]
   rw [h, toTorus_def, TauCeti.UnitAddTorus.mFourier_coe_apply, Real.fourierChar_apply]
   congr 1
   push_cast

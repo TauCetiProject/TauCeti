@@ -35,10 +35,12 @@ namespace SchwartzMap
 the Fourier transform at `n / N`, with prefactor the quadratic Gauss sum divided by `N`.
 This is the bilateral Schwartz form of Heath-Brown's Lemma 11. -/
 theorem tsum_jacobiSym_mul_eq_gaussSum_mul_tsum_fourier (f : 𝓢(ℝ, ℂ))
-    {N : ℕ} [NeZero N] (hN : Odd N) (hs : Squarefree N) :
+    {N : ℕ} (hN : Odd N) (hs : Squarefree N) :
     (∑' n : ℤ, (jacobiSym n N : ℂ) * f n) =
-      (gaussSum (TauCeti.jacobiChar ℂ N) ZMod.stdAddChar / (N : ℂ)) *
+      (@gaussSum (ZMod N) _ (@ZMod.fintype N ⟨hs.ne_zero⟩) ℂ _
+        (@TauCeti.jacobiChar ℂ _ N ⟨hs.ne_zero⟩) (@ZMod.stdAddChar N ⟨hs.ne_zero⟩) / (N : ℂ)) *
         ∑' n : ℤ, (jacobiSym n N : ℂ) * (𝓕 f) ((n : ℝ) / N) := by
+  let : NeZero N := ⟨hs.ne_zero⟩
   have hp := TauCeti.isPrimitive_jacobiChar_of_odd_squarefree (R := ℂ) (by norm_num) hN hs
   simpa only [TauCeti.jacobiChar_isQuadratic.inv, TauCeti.jacobiChar_intCast] using
     f.tsum_mul_dirichletCharacter_eq_gaussSum_mul_tsum_fourier hp
@@ -47,11 +49,14 @@ theorem tsum_jacobiSym_mul_eq_gaussSum_mul_tsum_fourier (f : 𝓢(ℝ, ℂ))
 The weighted summand vanishes for nonpositive integers `n`. The dual Fourier transform
 is sampled at `M n / N`, with the dilation factor `|M|`. -/
 theorem tsum_pnat_jacobiSym_mul_eq_gaussSum_mul_tsum_fourier (f : 𝓢(ℝ, ℂ))
-    {N : ℕ} [NeZero N] (hN : Odd N) (hs : Squarefree N) {M : ℝ}
+    {N : ℕ} (hN : Odd N) (hs : Squarefree N) {M : ℝ}
     (hf : ∀ n : ℤ, n ≤ 0 → (jacobiSym n N : ℂ) * f ((n : ℝ) / M) = 0) :
     (∑' n : ℕ+, (jacobiSym (n : ℤ) N : ℂ) * f ((n : ℝ) / M)) =
-      (((|M| : ℝ) : ℂ) * gaussSum (TauCeti.jacobiChar ℂ N) ZMod.stdAddChar / (N : ℂ)) *
+      (((|M| : ℝ) : ℂ) *
+        @gaussSum (ZMod N) _ (@ZMod.fintype N ⟨hs.ne_zero⟩) ℂ _
+        (@TauCeti.jacobiChar ℂ _ N ⟨hs.ne_zero⟩) (@ZMod.stdAddChar N ⟨hs.ne_zero⟩) / (N : ℂ)) *
         ∑' n : ℤ, (jacobiSym n N : ℂ) * (𝓕 f) (M * n / N) := by
+  let : NeZero N := ⟨hs.ne_zero⟩
   rcases eq_or_ne M 0 with rfl | hM
   · have hneg : (jacobiSym (-1) N : ℂ) ≠ 0 := by
       norm_cast
@@ -60,10 +65,10 @@ theorem tsum_pnat_jacobiSym_mul_eq_gaussSum_mul_tsum_fourier (f : 𝓢(ℝ, ℂ)
       exact (mul_eq_zero.mp (by simpa only [div_zero] using hf (-1) (by decide))).resolve_left hneg
     simp [hz]
   let g := f.dilate (inv_ne_zero hM)
-  have hg (x : ℝ) : g x = f (x / M) := by rw [dilate_apply, div_eq_inv_mul]
+  have hg (x : ℝ) : g x = f (x / M) := by rw [dilate_apply, smul_eq_mul, div_eq_inv_mul]
   have hfourier (y : ℝ) : (𝓕 g) y = ((|M| : ℝ) : ℂ) * (𝓕 f) (M * y) := by
     rw [fourier_dilate_apply, Complex.real_smul]
-    simp only [abs_inv, inv_inv, div_eq_inv_mul]
+    simp only [Module.finrank_self, pow_one, abs_inv, inv_inv, smul_eq_mul]
   have hleft :
       (∑' n : ℕ+, (jacobiSym (n : ℤ) N : ℂ) * f ((n : ℝ) / M)) =
         ∑' n : ℤ, (jacobiSym n N : ℂ) * g n := by

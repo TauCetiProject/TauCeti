@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Fourier.LpSpace
+public import TauCeti.Analysis.Distribution.SchwartzSpace.Dilation
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
@@ -16,6 +17,9 @@ import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Derivatives of Schwartz functions on the Fourier side
+
+`SchwartzMap.fourier_dilate_apply` gives the Fourier transform of a nonzero scalar dilation
+using `TauCeti.fourier_comp_smul`.
 
 The Fourier transform turns the directional derivative `∂_v` on Schwartz space into
 multiplication by `2πi ⟪ξ, v⟫` (Mathlib's `SchwartzMap.fourier_lineDerivOp_eq`). This file
@@ -758,26 +762,12 @@ end SchwartzMap
 
 namespace SchwartzMap
 
-open scoped SchwartzMap FourierTransform
-
-/-- Precompose a Schwartz function on `ℝ` with multiplication by a nonzero real number `c`. -/
-noncomputable def dilate {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (f : 𝓢(ℝ, F)) {c : ℝ} (hc : c ≠ 0) : 𝓢(ℝ, F) :=
-  compCLMOfContinuousLinearEquiv ℝ (ContinuousLinearEquiv.unitsEquivAut ℝ (Units.mk0 c hc)) f
-
-/-- A dilated Schwartz function is evaluated at the rescaled argument. -/
-@[simp] theorem dilate_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (f : 𝓢(ℝ, F)) {c : ℝ} (hc : c ≠ 0) (x : ℝ) : f.dilate hc x = f (c * x) := by
-  simp only [dilate, compCLMOfContinuousLinearEquiv_apply, Function.comp_apply,
-    ContinuousLinearEquiv.unitsEquivAut_apply, Units.val_mk0, mul_comm]
-
-/-- Dilation by `c` rescales the Fourier argument by `1 / c` and the value by `1 / |c|`. -/
-theorem fourier_dilate_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
-    (f : 𝓢(ℝ, F)) {c : ℝ} (hc : c ≠ 0) (y : ℝ) :
-    𝓕 (f.dilate hc) y = |c|⁻¹ • 𝓕 f (y / c) := by
-  have he : (f.dilate hc : ℝ → F) = fun x ↦ f (c • x) :=
-    funext fun x ↦ by rw [dilate_apply, smul_eq_mul]
-  rw [fourier_coe, he, TauCeti.fourier_comp_smul, ← fourier_coe]
-  simp only [Module.finrank_self, pow_one, smul_eq_mul, div_eq_inv_mul]
+/-- In finite dimension, dilation by `c ≠ 0` rescales the Fourier argument by `c⁻¹`
+and the value by the inverse absolute determinant of the dilation. -/
+theorem fourier_dilate_apply {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    [NormedAddCommGroup F] [NormedSpace ℂ F] (f : 𝓢(E, F)) {c : ℝ} (hc : c ≠ 0) (y : E) :
+    𝓕 (f.dilate hc) y = |c ^ Module.finrank ℝ E|⁻¹ • 𝓕 f (c⁻¹ • y) := by
+  rw [fourier_coe, f.coe_dilate, TauCeti.fourier_comp_smul, ← fourier_coe]
 
 end SchwartzMap

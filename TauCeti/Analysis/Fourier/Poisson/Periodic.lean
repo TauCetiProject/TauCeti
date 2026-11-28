@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Fourier.ZMod
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.SchwartzSpace.ZLattice
 import TauCeti.Analysis.Fourier.ZMod
-import TauCeti.Data.ZMod.FinEquiv
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
@@ -47,10 +46,13 @@ theorem tsum_apply_int_mul_add_eq_tsum_fourier (f : 𝓢(ℝ, ℂ)) (T a : ℝ) 
   calc
     _ = ∑' n : ℤ, f.dilate hT (a / T + n) := by
       refine tsum_congr fun n ↦ ?_
-      rw [dilate_apply, mul_add, mul_div_cancel₀ _ hT, mul_comm T, add_comm]
+      -- Undo the normalization of the shift by `T`.
+      rw [dilate_apply, smul_eq_mul, mul_add, mul_div_cancel₀ _ hT, mul_comm T, add_comm]
     _ = _ := by
       rw [(f.dilate hT).tsum_eq_tsum_fourier]
-      simp_rw [fourier_dilate_apply, Complex.real_smul]
+      -- In dimension one the inverse determinant is `|T|⁻¹`.
+      simp_rw [fourier_dilate_apply, Module.finrank_self, pow_one, Complex.real_smul,
+        smul_eq_mul, ← div_eq_inv_mul]
 
 /-- Poisson summation for a Schwartz function weighted by a periodic family of complex numbers.
 The dual series is sampled at integer multiples of `1 / N`. -/
@@ -59,39 +61,31 @@ theorem tsum_mul_periodic_eq_tsum_invDFT_fourier (f : 𝓢(ℝ, ℂ))
     (∑' n : ℤ, Φ n * f n) = ∑' n : ℤ, (ZMod.dft.symm Φ) n * (𝓕 f) ((n : ℝ) / N) := by
   classical
   have hN : 0 < (N : ℝ) := Nat.cast_pos.mpr (NeZero.pos N)
-  have hSchwartz (g : 𝓢(ℝ, ℂ)) : Summable (fun n : ℤ ↦ ‖g (n : ℝ)‖) := by
-    have h := g.summable_norm_apply_sum_intCast_smul (OrthonormalBasis.singleton Unit ℝ)
-    have hinj : Function.Injective (fun (n : ℤ) (_ : Unit) ↦ n) := fun _ _ hn ↦ congrFun hn ()
-    simpa only [Function.comp_def, Finset.univ_unique, OrthonormalBasis.singleton_apply,
-      smul_eq_mul, mul_one, Finset.sum_singleton] using h.comp_injective hinj
   have hs : Summable fun n : ℤ ↦ Φ n * f (n : ℝ) := by
-    refine ((hSchwartz f).mul_left (∑ a : ZMod N, ‖Φ a‖)).of_norm_bounded ?_
+    refine (f.summable_norm_apply_intCast.mul_left (∑ a : ZMod N, ‖Φ a‖)).of_norm_bounded ?_
     intro n
     rw [norm_mul]
     gcongr
     exact Finset.single_le_sum (fun a _ ↦ norm_nonneg (Φ a)) (Finset.mem_univ (n : ZMod N))
   let g := (𝓕 f).dilate (inv_ne_zero hN.ne')
   have hg (n : ℤ) : g n = (𝓕 f) ((n : ℝ) / N) := by
-    rw [dilate_apply, div_eq_inv_mul]
+    rw [dilate_apply, smul_eq_mul, div_eq_inv_mul]
   have hd (a : ZMod N) : Summable fun n : ℤ ↦
       Φ a * ((N : ℂ)⁻¹ * (𝓕 f) ((n : ℝ) / N) * stdAddChar (a * (n : ZMod N))) := by
-    refine ((hSchwartz g).mul_left (‖Φ a‖ * ‖(N : ℂ)⁻¹‖)).of_norm_bounded ?_
+    refine (g.summable_norm_apply_intCast.mul_left (‖Φ a‖ * ‖(N : ℂ)⁻¹‖)).of_norm_bounded ?_
     intro n
     simp only [norm_mul, AddChar.norm_apply, mul_one, hg, mul_assoc, le_refl]
-  rw [TauCeti.tsum_int_eq_sum_fin_tsum hs N]
+  rw [hs.tsum_int_eq_sum_zmod_tsum N]
   -- Rewrite each residue-class sum using the shifted Poisson formula.
   calc
     _ = ∑ a : ZMod N, ∑' n : ℤ,
         Φ a * ((N : ℂ)⁻¹ * (𝓕 f) ((n : ℝ) / N) * stdAddChar (a * (n : ZMod N))) := by
-      rw [← (finEquiv N).toEquiv.sum_comp]
       refine Finset.sum_congr rfl fun a _ ↦ ?_
       push_cast
-      simp only [natCast_self, mul_zero, zero_add]
+      simp only [natCast_self, mul_zero, zero_add, natCast_zmod_val]
       have ha := f.tsum_apply_int_mul_add_eq_tsum_fourier N (a.val : ℝ)
       simp_rw [abs_of_pos hN, Complex.ofReal_inv, Complex.ofReal_natCast] at ha
-      have heq : (finEquiv N).toEquiv a = (a.val : ZMod N) := finEquiv_apply a
-      simpa only [heq, tsum_mul_left, ← fourier_val_div_eq_stdAddChar,
-        val_cast_of_lt a.isLt] using congrArg (Φ (a.val : ZMod N) * ·) ha
+      simpa only [tsum_mul_left, ← fourier_val_div_eq_stdAddChar] using congrArg (Φ a * ·) ha
     _ = _ := by
       rw [← Summable.tsum_finsetSum fun a _ ↦ hd a]
       refine tsum_congr fun n ↦ ?_
