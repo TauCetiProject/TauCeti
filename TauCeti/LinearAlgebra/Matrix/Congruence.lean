@@ -30,6 +30,8 @@ one factor after the other.
 * `Matrix.det_one_add_smul_transpose_mul_mul`,
   `Matrix.det_one_sub_smul_transpose_mul_mul` — the corresponding determinant pencil identities,
   instances of the Weinstein--Aronszajn identity `Matrix.det_one_add_mul_comm`.
+* `Matrix.submatrix_mul_mul_submatrix` — restricting the rows of the first factor and the columns
+  of the last factor of a triple product restricts the product.
 * `Matrix.submatrix_one_mul_mul_submatrix_one` — congruence by a selection matrix is the
   corresponding submatrix.
 * `Matrix.det_one_add_vecMulVec_single_add_single` and
@@ -87,6 +89,16 @@ theorem det_one_sub_smul_transpose_mul_mul {m n R : Type*} [Fintype m] [Fintype 
   simpa only [sub_eq_add_neg, neg_smul] using
     det_one_add_smul_transpose_mul_mul (-c) B M A
 
+/-- **A product restricted to some rows and columns** is the product of the first factor
+restricted to those rows and the last factor restricted to those columns:
+`(X A Y).submatrix f g = X.submatrix f id * A * Y.submatrix id g`. -/
+theorem submatrix_mul_mul_submatrix {l m n o a b R : Type*} [Fintype m] [Fintype n] [Mul R]
+    [AddCommMonoid R] (X : Matrix l m R) (A : Matrix m n R) (Y : Matrix n o R)
+    (f : a → l) (g : b → o) :
+    X.submatrix f id * A * Y.submatrix id g = (X * A * Y).submatrix f g := by
+  rw [submatrix_mul _ _ _ id _ Function.bijective_id, submatrix_mul _ _ _ id _
+    Function.bijective_id, submatrix_id_id]
+
 /-- **Congruence by a selection matrix reads off a submatrix.** The matrix
 `(1 : Matrix n n R).submatrix f id` keeps the rows named by `f` and its transpose
 `(1 : Matrix n n R).submatrix id f` keeps the columns, so congruating with it keeps exactly the
@@ -96,8 +108,7 @@ theorem submatrix_one_mul_mul_submatrix_one {m n R : Type*} [Fintype n] [Decidab
     [NonAssocSemiring R] (f : m → n) (A : Matrix n n R) :
     (1 : Matrix n n R).submatrix f id * A * (1 : Matrix n n R).submatrix id f =
       A.submatrix f f := by
-  ext i j
-  simp [Matrix.mul_apply, Matrix.one_apply, Finset.sum_ite_eq, Finset.sum_ite_eq']
+  rw [submatrix_mul_mul_submatrix, Matrix.one_mul, Matrix.mul_one]
 
 /-- **Congruence from a double expansion of the weights.** Pushing a matrix `M` through both
 indices of a doubly indexed family `T` in a module turns the weight matrix `A` into the congruate
