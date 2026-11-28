@@ -386,8 +386,12 @@ section Bifunctor
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RightRigidCategory C]
 
-/-- The bifunctor `Cᵒᵖ ⥤ C ⥤ C` sending `(Y', Y)` to `Y ⊗ X ⊗ Y'ᘁ`, whose end and coend are
-both `inductionObj X`. -/
+/-- The bifunctor `Cᵒᵖ ⥤ C ⥤ C` sending `(Y', Y)` to `Y ⊗ X ⊗ Y'ᘁ`. When `C` is a finite
+semisimple right rigid `k`-linear abelian monoidal category over an algebraically closed field `k`,
+with finitely many simple isomorphism classes and finite-dimensional simple endomorphism spaces,
+its end (`CategoryTheory.Center.isLimitInductionWedge`) and coend
+(`CategoryTheory.Center.isColimitInductionCowedge` in
+`TauCeti.CategoryTheory.Monoidal.Center.Induction.Coend`) are both `inductionObj X`. -/
 @[expose] def inductionBifunctor (X : C) : Cᵒᵖ ⥤ C ⥤ C :=
   (rightDualFunctor C ⋙ unmopFunctor Cᵒᵖ).leftOp ⋙
     tensorLeft X ⋙ (curriedTensor C).flip
