@@ -20,7 +20,7 @@ states whose free output vanishes at every time. It is the largest `A`-invariant
 By `Matrix.exists_pow_card_add_sum_eq_sum`, the Cayley–Hamilton theorem (transferred via universal
 multivariate polynomials to any commutative semiring) shows that powers `A ^ k` with
 `k ≥ Fintype.card n` add no further constraints, so the unobservable subspace is already the kernel
-of `(ctrbMatrix Aᵀ Cᵀ)ᵀ`. Over a commutative
+of `(ctrbMatrix Aᵀ Cᵀ).vecMulLinear`. Over a commutative
 ring this identifies observability with injectivity of the finite-horizon output map
 `x ↦ (k ↦ (C * A ^ k) *ᵥ x)` for `k < Fintype.card n`; over a field, rank–nullity and
 `Matrix.rank_transpose` yield Kalman duality: `(A, C)` is observable if and only if `(Aᵀ, Cᵀ)`
@@ -37,8 +37,8 @@ is controllable.
   submodule lying in `ker C`.
 * `Matrix.unobservableSubspace_eq_iInf_fin_card`: the powers `A ^ k` with `k < Fintype.card n`
   already determine the unobservable subspace.
-* `Matrix.ker_mulVecLin_transpose_ctrbMatrix`: the kernel of `(ctrbMatrix Aᵀ Cᵀ)ᵀ` is the
-  unobservable subspace of `(A, C)`.
+* `Matrix.ker_vecMulLinear_transpose_ctrbMatrix`: the kernel of
+  `(ctrbMatrix Aᵀ Cᵀ).vecMulLinear` is the unobservable subspace of `(A, C)`.
 * `Matrix.isObservable_iff_free_outputs_eq_zero`: observability is equivalent to the only state
   whose free output vanishes at every time being zero.
 * `Matrix.isObservable_iff_injective`: over a commutative ring, `(A, C)` is observable if and only
@@ -169,9 +169,9 @@ theorem unobservableSubspace_eq_iInf_fin_card (A : Matrix n n R) (C : Matrix p n
         hkd, hlt, smul_zero, Finset.sum_const_zero, add_zero] at hmul
       exact hmul
 
-/-- The kernel of `(ctrbMatrix Aᵀ Cᵀ)ᵀ` is the unobservable subspace of `(A, C)`. -/
+/-- The kernel of `(ctrbMatrix Aᵀ Cᵀ).vecMulLinear` is the unobservable subspace of `(A, C)`. -/
 @[simp]
-theorem ker_mulVecLin_transpose_ctrbMatrix (A : Matrix n n R) (C : Matrix p n R) :
+theorem ker_vecMulLinear_transpose_ctrbMatrix (A : Matrix n n R) (C : Matrix p n R) :
     LinearMap.ker (ctrbMatrix Aᵀ Cᵀ).vecMulLinear = unobservableSubspace A C := by
   rw [← mulVecLin_transpose]
   rw [unobservableSubspace_eq_iInf_fin_card]
@@ -191,7 +191,7 @@ theorem isObservable_iff_injective :
     IsObservable A C ↔
       Function.Injective fun x : n → R => fun k : Fin (Fintype.card n) =>
         (C * A ^ (k : ℕ)) *ᵥ x := by
-  rw [isObservable_iff, ← ker_mulVecLin_transpose_ctrbMatrix, LinearMap.ker_eq_bot,
+  rw [isObservable_iff, ← ker_vecMulLinear_transpose_ctrbMatrix, LinearMap.ker_eq_bot,
     ← mulVecLin_transpose]
   have hcomp :
       (fun x : n → R => fun k : Fin (Fintype.card n) => (C * A ^ (k : ℕ)) *ᵥ x) =
@@ -212,7 +212,7 @@ theorem isObservable_iff_isControllable_transpose :
     IsObservable A C ↔ IsControllable Aᵀ Cᵀ := by
   have h := (ctrbMatrix Aᵀ Cᵀ)ᵀ.mulVecLin.finrank_range_add_finrank_ker
   rw [finrank_range_mulVecLin, rank_transpose, mulVecLin_transpose,
-    ker_mulVecLin_transpose_ctrbMatrix, finrank_fintype_fun_eq_card] at h
+    ker_vecMulLinear_transpose_ctrbMatrix, finrank_fintype_fun_eq_card] at h
   rw [isObservable_iff, isControllable_iff_rank_ctrbMatrix, ← Submodule.finrank_eq_zero]
   omega
 
