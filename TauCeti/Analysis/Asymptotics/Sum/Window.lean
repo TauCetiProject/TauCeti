@@ -31,6 +31,8 @@ This is the summation step of Chebyshev-type bounds, where a local estimate on w
   `O(x)`.
 * `TauCeti.exists_sum_Icc_le_mul_of_isBigO`: partial sums that are `O(x)` are bounded by `C N`
   at every natural cutoff `N`, with one constant `C`.
+* `TauCeti.exists_sum_range_le_mul_of_isBigO`: the same uniform linear bound on
+  `Finset.range N`, absorbing the zeroth term.
 -/
 
 public section
@@ -156,5 +158,25 @@ theorem exists_sum_Icc_le_mul_of_isBigO {f : ℕ → ℝ}
         fun _ _ _ ↦ norm_nonneg _
       _ ≤ B * N := le_mul_of_one_le_right hBnn hN1
       _ ≤ max c B * N := mul_le_mul_of_nonneg_right (le_max_right _ _) hN0
+
+/-- **A uniform linear bound on `Finset.range` from linear growth.** If the partial sums
+`∑_{1 ≤ n ≤ x} f n` are `O(x)`, then a single constant `C` bounds `∑_{n < N} f n` by `C N`
+at every natural cutoff `N`. -/
+theorem exists_sum_range_le_mul_of_isBigO {f : ℕ → ℝ}
+    (h : (fun x : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, f n) =O[atTop] fun x ↦ x) :
+    ∃ C : ℝ, ∀ N : ℕ, ∑ n ∈ Finset.range N, f n ≤ C * N := by
+  obtain ⟨C₀, hC₀⟩ := exists_sum_Icc_le_mul_of_isBigO h
+  refine ⟨max C₀ 0 + max (f 0) 0, fun N ↦ ?_⟩
+  rcases N with _ | m
+  · simp
+  rw [Finset.sum_range_eq_add_Ico f m.succ_pos, Nat.succ_eq_add_one,
+    Finset.Ico_add_one_right_eq_Icc]
+  have hm := hC₀ m
+  have hmax : 0 ≤ max C₀ 0 := le_max_right _ _
+  have hf0 : 0 ≤ max (f 0) 0 := le_max_right _ _
+  have hC0m : C₀ * m ≤ max C₀ 0 * m := mul_le_mul_of_nonneg_right (le_max_left _ _) m.cast_nonneg
+  have hf0' : f 0 ≤ max (f 0) 0 := le_max_left _ _
+  push_cast
+  nlinarith
 
 end TauCeti
