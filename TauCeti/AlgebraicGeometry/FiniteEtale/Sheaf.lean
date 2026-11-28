@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Functor.ReflectsIso.Limits
 public import Mathlib.CategoryTheory.Sites.Point.Skyscraper
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Exactness
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Category
+public import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
 public import TauCeti.CategoryTheory.Sites.Point.Representable
 
@@ -48,6 +49,9 @@ finite coproducts, quotients by finite groups and epimorphisms.
   étale site of `S`.
 * `TauCeti.FiniteEtaleScheme.toEtaleObjOfHomIso s`: for a finite étale `s : X ⟶ S`, this
   object is `Scheme.Etale.mk s`.
+* `TauCeti.FiniteEtaleScheme.toEtaleSpecObjIso R A`: for a finite étale `R`-algebra `A`, the
+  finite étale spectrum of `A` in the small étale site of `Spec R` is
+  `Scheme.Etale.mk (Spec.algebraMap R A)`.
 * `TauCeti.FiniteEtaleScheme.toSheaf S`: the étale sheaf of sections of a finite étale
   `S`-scheme.
 * `TauCeti.FiniteEtaleScheme.toSheafCompSheafFiberIso x`: the stalk at a geometric point `x` of
@@ -60,8 +64,8 @@ finite coproducts, quotients by finite groups and epimorphisms.
 * `TauCeti.FiniteEtaleScheme.preservesColimit_toSheaf`,
   `TauCeti.FiniteEtaleScheme.preservesLimit_toSheaf`: the sheaf-of-sections functor preserves
   the colimits and finite limits preserved by all geometric fibre functors.
-* Instances: `toSheaf S` preserves finite limits, finite coproducts, quotients by finite groups
-  and epimorphisms.
+* Instances: `toEtale S` preserves finite limits and is representably flat; `toSheaf S`
+  preserves finite limits, finite coproducts, quotients by finite groups and epimorphisms.
 
 ## References
 
@@ -110,6 +114,18 @@ noncomputable def toEtaleObjOfHomIso {X : Scheme.{u}} (s : X ⟶ S) [IsFinite s]
   -- Both have underlying scheme over `S` equal to `Over.mk s`.
   (Scheme.Etale.forgetFullyFaithful S).preimageIso (eqToIso (ofHom_obj s))
 
+/-- The finite étale spectrum of a finite étale `R`-algebra `A`, regarded in the small étale site
+of `Spec R`, is the étale `Spec R`-scheme `Spec.algebraMap R A`. -/
+noncomputable def toEtaleSpecObjIso (R : CommRingCat.{u}) (A : CommAlgCat.FiniteEtale.{u} R) :
+    (toEtale (Spec R)).obj ((spec R).obj (op A)) ≅ Scheme.Etale.mk (Spec.algebraMap R A.obj) :=
+  (Scheme.Etale.forgetFullyFaithful _).preimageIso (specObjObjIso R A)
+
+/-- The morphism over `Spec R` underlying `toEtaleSpecObjIso` is `specObjObjIso`. -/
+@[simp]
+theorem forget_map_toEtaleSpecObjIso_hom (R : CommRingCat.{u}) (A : CommAlgCat.FiniteEtale.{u} R) :
+    (Scheme.Etale.forget _).map (toEtaleSpecObjIso R A).hom = (specObjObjIso R A).hom :=
+  (Scheme.Etale.forgetFullyFaithful _).map_preimage _
+
 /-- Finite étale `S`-schemes form a full subcategory of the small étale site of `S`. -/
 noncomputable def toEtaleFullyFaithful : (toEtale S).FullyFaithful :=
   Functor.FullyFaithful.ofCompFaithful (G := Scheme.Etale.forget S)
@@ -118,6 +134,18 @@ noncomputable def toEtaleFullyFaithful : (toEtale S).FullyFaithful :=
 instance : (toEtale S).Full := (toEtaleFullyFaithful S).full
 
 instance : (toEtale S).Faithful := (toEtaleFullyFaithful S).faithful
+
+/-- The inclusion of finite étale `S`-schemes into the small étale site of `S` preserves finite
+limits: followed by the fully faithful forgetful functor of the étale site it is the inclusion of
+finite étale `S`-schemes among `S`-schemes, which preserves them. -/
+instance preservesFiniteLimits_toEtale : PreservesFiniteLimits (toEtale S) :=
+  have : PreservesFiniteLimits (toEtale S ⋙ Scheme.Etale.forget S) := by
+    rw [toEtale_comp_forget]
+    infer_instance
+  preservesFiniteLimits_of_reflects_of_preserves (toEtale S) (Scheme.Etale.forget S)
+
+instance representablyFlat_toEtale : RepresentablyFlat (toEtale S) :=
+  flat_of_preservesFiniteLimits _
 
 /-- The étale sheaf of sections of a finite étale `S`-scheme `X`: its value on a scheme `U`
 étale over `S` is the set of morphisms `U ⟶ X` over `S`. -/

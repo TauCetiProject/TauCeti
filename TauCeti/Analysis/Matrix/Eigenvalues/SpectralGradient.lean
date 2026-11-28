@@ -6,10 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralFunction.Basic
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Pow
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
 import TauCeti.Analysis.Matrix.Spectrum
+import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
@@ -62,6 +66,8 @@ adjugate `adj A`, which is `det(A) A⁻¹` at an invertible `A`.
   `Matrix.IsHermitian.spectralGradient_prod`: the gradients of `tr`, `tr(A²)` and `det`, the
   last being the adjugate; `Matrix.IsHermitian.spectralGradient_prod_eq_of_mul_eq` identifies the
   gradient of `det` at an invertible `A` with any `B` satisfying `B A = det A • 1`.
+* `Matrix.IsHermitian.spectralGradient_comp`, `Matrix.IsHermitian.spectralGradient_log`: the
+  chain rule `∇F_{g ∘ f}(A) = g'(f(λ(A))) ∇F_f(A)`, and `∇ log F_f = ∇F_f / F_f`.
 
 ## References
 
@@ -372,6 +378,39 @@ theorem spectralGradient_prod_eq_of_mul_eq (hA : A.IsHermitian) (h : IsUnit A.de
 theorem spectralGradient_prod_eq_det_smul_inv (hA : A.IsHermitian) (h : IsUnit A.det) :
     hA.spectralGradient (fun μ ↦ ∏ k, μ k) = A.det • A⁻¹ :=
   hA.spectralGradient_prod_eq_of_mul_eq h (by rw [Matrix.smul_mul, nonsing_inv_mul A h])
+
+/-! ### Composition with a real function -/
+
+/-- **The chain rule for the gradient**: if `f` is differentiable at `λ(A)` and `g : ℝ → ℝ` is
+differentiable at `f(λ(A))`, then `∇F_{g ∘ f}(A) = g'(f(λ(A))) ∇F_f(A)`. -/
+theorem spectralGradient_comp (hA : A.IsHermitian) {f : (Fin (Fintype.card ι) → ℝ) → ℝ}
+    {g : ℝ → ℝ} (hg : DifferentiableAt ℝ g (f hA.eigenvalues₀))
+    (hf : DifferentiableAt ℝ f hA.eigenvalues₀) :
+    hA.spectralGradient (fun μ ↦ g (f μ)) =
+      ((deriv g (f hA.eigenvalues₀) : ℝ) : 𝕜) • hA.spectralGradient f := by
+  have hd := (hg.hasDerivAt.comp_hasFDerivAt hA.eigenvalues₀ hf.hasFDerivAt).fderiv
+  rw [Function.comp_def] at hd
+  have hw : (fun i ↦ (hA.spectralGradientWeights (fun μ ↦ g (f μ)) i : 𝕜)) =
+      ((deriv g (f hA.eigenvalues₀) : ℝ) : 𝕜) • fun i ↦ (hA.spectralGradientWeights f i : 𝕜) := by
+    funext i
+    simp only [spectralGradientWeights_def, Pi.smul_apply, smul_eq_mul]
+    rw [hd, smul_apply, smul_eq_mul, RCLike.ofReal_mul]
+  rw [spectralGradient_def, spectralGradient_def, hw, diagonal_smul, Matrix.mul_smul,
+    Matrix.smul_mul]
+
+/-- **The gradient of `log F_f`** is `∇F_f / F_f`: if `f` is differentiable at `λ(A)`, then
+`∇F_{log ∘ f}(A) = f(λ(A))⁻¹ ∇F_f(A)`. Where `f(λ(A)) = 0` both sides vanish, with the
+conventions `log 0 = 0` and `0⁻¹ = 0`. -/
+theorem spectralGradient_log (hA : A.IsHermitian) {f : (Fin (Fintype.card ι) → ℝ) → ℝ}
+    (hf : DifferentiableAt ℝ f hA.eigenvalues₀) :
+    hA.spectralGradient (fun μ ↦ Real.log (f μ)) =
+      ((f hA.eigenvalues₀)⁻¹ : 𝕜) • hA.spectralGradient f := by
+  by_cases hf0 : f hA.eigenvalues₀ = 0
+  · rw [spectralGradient_def]
+    simp [hf0, spectralGradientWeights_def,
+      TauCeti.fderiv_log_comp_eq_zero_of_continuousAt hf.continuousAt hf0]
+  rw [hA.spectralGradient_comp (Real.differentiableAt_log hf0) hf, Real.deriv_log,
+    RCLike.ofReal_inv]
 
 end IsHermitian
 

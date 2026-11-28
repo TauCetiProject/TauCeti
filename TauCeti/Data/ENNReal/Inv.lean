@@ -20,11 +20,14 @@ for `p = ∞`.
 
 The file also records exhaustion of an extended nonnegative function by its positive level sets,
 and the absorption step of elliptic estimates: a finite quantity bounded by `b` plus half of itself
-is at most `2 b`.
+is at most `2 b`. Finally, an upper bound `x ≤ y` may be checked against the finite values above
+`y`, dually to Mathlib's `ENNReal.le_of_forall_nnreal_lt`.
 
 ## Main declarations
 
 * `ENNReal.toReal_one_sub_div`: `(1 - a / b).toReal = 1 - a.toReal / b.toReal` for `a ≤ b`.
+* `ENNReal.toReal_one_sub_descFactorial_div_pow`:
+  `(1 - n.descFactorial m / n ^ m).toReal = 1 - (n.descFactorial m : ℝ) / n ^ m` for any `n m : ℕ`.
 * `ENNReal.one_sub_one_div_toReal_nonneg`: for `1 ≤ p`, the Hölder exponent `1 - 1 / p.toReal`
   is nonnegative.
 * `ENNReal.one_le_toReal_sub_one`: a finite exponent `2 ≤ r` has `1 ≤ r.toReal - 1`.
@@ -56,6 +59,8 @@ is at most `2 b`.
   nonzero.
 * `ENNReal.inv_mul_inv_mul_cancel`: the Hölder exponent `(c * (p * c)⁻¹)⁻¹` of `c` factors in
   `L^(p * c)` is `p`, for `c` finite and nonzero.
+* `ENNReal.le_of_forall_nnreal_gt`: `x ≤ y` follows from `x ≤ r` for every finite `r > y`, the
+  dual of Mathlib's `ENNReal.le_of_forall_nnreal_lt`.
 -/
 
 public section
@@ -91,6 +96,16 @@ theorem iSup_indicator_inv_natCast_add_one_le {X : Type*} (f : X → ℝ≥0∞)
 theorem toReal_one_sub_div {a b : ℝ≥0∞} (hab : a ≤ b) :
     (1 - a / b).toReal = 1 - a.toReal / b.toReal := by
   rw [toReal_sub_of_le (div_le_of_le_mul (by simpa using hab)) one_ne_top, toReal_div, toReal_one]
+
+/-- For any `n m : ℕ`, the real value of `1 - n.descFactorial m / n ^ m` in `ℝ≥0∞` is
+`1 - (n.descFactorial m : ℝ) / n ^ m`. -/
+@[simp]
+theorem toReal_one_sub_descFactorial_div_pow (n m : ℕ) :
+    (1 - (n.descFactorial m : ℝ≥0∞) / (n : ℝ≥0∞) ^ m).toReal =
+      1 - (n.descFactorial m : ℝ) / (n : ℝ) ^ m := by
+  have hle : (n.descFactorial m : ℝ≥0∞) ≤ (n : ℝ≥0∞) ^ m := by
+    exact_mod_cast Nat.descFactorial_le_pow n m
+  simp [hle]
 
 /-- For `a < b`, the difference `1 - a / b` is positive, even after truncation to `ℝ≥0`. -/
 theorem toNNReal_one_sub_div_pos {a b : ℝ≥0∞} (hab : a < b) : 0 < (1 - a / b).toNNReal :=
@@ -293,5 +308,13 @@ theorem inv_mul_inv_mul_cancel {c : ℝ≥0∞} (hc₀ : c ≠ 0) (hc : c ≠ �
     (c * (p * c)⁻¹)⁻¹ = p := by
   rw [ENNReal.mul_inv (.inr hc) (.inr hc₀), mul_left_comm, ENNReal.mul_inv_cancel hc₀ hc, mul_one,
     inv_inv]
+
+/-- An upper bound in `ℝ≥0∞` may be checked against the finite values above it: `x ≤ y` follows
+from `x ≤ r` for every `r : ℝ≥0` with `y < r`. This is the dual of
+`ENNReal.le_of_forall_nnreal_lt`. -/
+theorem le_of_forall_nnreal_gt {x y : ℝ≥0∞} (h : ∀ r : ℝ≥0, y < r → x ≤ r) : x ≤ y :=
+  le_of_forall_gt_imp_ge_of_dense fun b hb ↦ by
+    obtain ⟨r, hyr, hrb⟩ := lt_iff_exists_nnreal_btwn.1 hb
+    exact (h r hyr).trans hrb.le
 
 end ENNReal

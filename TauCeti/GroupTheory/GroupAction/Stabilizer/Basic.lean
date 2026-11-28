@@ -69,6 +69,8 @@ normality of it is equivalent to freeness of the action of the image.
 
 ## Main results
 
+* `MulAction.finiteIndex_stabilizer`: the stabilizer of a point of a finite type has finite
+  index.
 * `MonoidHom.stabilizerMap`: restriction of a compatible homomorphism to point stabilizers,
   with `MonoidHom.stabilizerMap_surjective` and `MonoidHom.ker_stabilizerMap` describing its
   surjectivity and kernel.
@@ -85,8 +87,15 @@ normality of it is equivalent to freeness of the action of the image.
   inverse map the set into itself.
 * `TauCeti.smul_eq_smul_iff_inv_mul_mem_stabilizer`: two group elements carry `x₀` to the same
   point exactly when they differ on the right by an element of the stabilizer of `x₀`.
-* `TauCeti.stabilizer_finset_eq_bot_of_prime_card`: a group of prime order acts freely by
-  translation on its nonempty proper finite subsets.
+* `TauCeti.smul_left_inj_of_smul_eq_self_imp`,
+  `TauCeti.op_smul_left_inj_of_op_smul_eq_self_imp`: pointwise orbit cancellation from
+  trivial stabilizer at a point, for left and right (`Gᵐᵒᵖ`) actions.
+* `TauCeti.smul_eq_self_imp_of_smul`,
+  `TauCeti.op_smul_eq_self_imp_of_op_smul`: trivial stabilizer is preserved along an orbit, for
+  left and right (`Gᵐᵒᵖ`) actions.
+* `TauCeti.stabilizer_finset_eq_bot_of_prime_card_of_isPretransitive`: a transitive group of
+  prime order acts freely on the nonempty proper finite subsets, with
+  `TauCeti.stabilizer_finset_eq_bot_of_prime_card` the case of translation on the group itself.
 * `TauCeti.card_stabilizer_of_orbitRel`: the stabiliser order is an invariant of the orbit,
   with `TauCeti.card_stabilizer_smul` the translate-presented corollary.
 * `TauCeti.cardStabilizerOnOrbit`: that order as a function on the orbit space, with
@@ -240,9 +249,51 @@ theorem mul_inv_mem_stabilizer_of_smul_eq (g h : G) {x y : α}
 
 /-- Two group elements carry `x₀` to the same point exactly when they differ on the right by an
 element of the stabilizer of `x₀`. -/
+@[to_additive /-- Two additive-group elements carry `x₀` to the same point exactly when they differ
+by an element of the additive stabilizer of `x₀`. -/]
 theorem smul_eq_smul_iff_inv_mul_mem_stabilizer (x₀ : α) (a b : G) :
     a • x₀ = b • x₀ ↔ a⁻¹ * b ∈ MulAction.stabilizer G x₀ := by
   rw [MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff, eq_comm]
+
+/-- Pointwise cancellation: trivial stabilizer at `x` implies `g • x = h • x ↔ g = h`. -/
+@[to_additive /-- Pointwise additive cancellation: trivial stabilizer at `x` implies
+`g +ᵥ x = h +ᵥ x ↔ g = h`. -/]
+theorem smul_left_inj_of_smul_eq_self_imp {x : α}
+    (hfree : ∀ g : G, g • x = x → g = 1) {g h : G} : g • x = h • x ↔ g = h :=
+  (smul_eq_smul_iff_inv_mul_mem_stabilizer x g h).trans
+    ⟨fun hm ↦ inv_mul_eq_one.1 (hfree _ hm), fun e ↦ by simp [e]⟩
+
+/-- Right-action (`MulAction Gᵐᵒᵖ α`) pointwise cancellation: trivial stabilizer at `x` implies
+`op g • x = op h • x ↔ g = h`. -/
+@[to_additive /-- Right additive-action (`AddAction Gᵃᵒᵖ α`) pointwise cancellation: trivial
+stabilizer at `x` implies `op g +ᵥ x = op h +ᵥ x ↔ g = h`. -/]
+theorem op_smul_left_inj_of_op_smul_eq_self_imp {G α : Type*} [Group G] [MulAction Gᵐᵒᵖ α]
+    {x : α} (hfree : ∀ g : G, MulOpposite.op g • x = x → g = 1) {g h : G} :
+    MulOpposite.op g • x = MulOpposite.op h • x ↔ g = h :=
+  (smul_left_inj_of_smul_eq_self_imp (G := Gᵐᵒᵖ) fun k hk ↦ MulOpposite.unop_injective
+    ((hfree k.unop (k.op_unop.symm ▸ hk)).trans MulOpposite.unop_one.symm)).trans
+    MulOpposite.op_injective.eq_iff
+
+/-- Trivial stabilizer is preserved along an orbit: if `x` has trivial stabilizer under `G`,
+so does `h • x` for every `h : G`. -/
+@[to_additive /-- Trivial stabilizer is preserved along an orbit: if `x` has trivial stabilizer
+under `G`, so does `h +ᵥ x` for every `h : G`. -/]
+theorem smul_eq_self_imp_of_smul {x : α} (hfree : ∀ g : G, g • x = x → g = 1) (h : G) :
+    ∀ g : G, g • (h • x) = h • x → g = 1 :=
+  fun g hg ↦ conj_eq_one_iff.1
+    (hfree (h⁻¹ * g * (h⁻¹)⁻¹) (by rw [inv_inv, mul_smul, mul_smul, hg, inv_smul_smul]))
+
+/-- Trivial stabilizer is preserved along a right (`MulAction Gᵐᵒᵖ α`) orbit: if `x` has trivial
+stabilizer under `Gᵐᵒᵖ`, so does `op h • x` for every `h : G`. -/
+@[to_additive /-- Trivial stabilizer is preserved along a right (`AddAction Gᵃᵒᵖ α`) orbit:
+if `x` has trivial stabilizer under `Gᵃᵒᵖ`, so does `op h +ᵥ x` for every `h : G`. -/]
+theorem op_smul_eq_self_imp_of_op_smul {G α : Type*} [Group G] [MulAction Gᵐᵒᵖ α] {x : α}
+    (hfree : ∀ g : G, MulOpposite.op g • x = x → g = 1) (h : G) :
+    ∀ g : G, MulOpposite.op g • (MulOpposite.op h • x) = MulOpposite.op h • x → g = 1 :=
+  fun g hg ↦ MulOpposite.op_injective (smul_eq_self_imp_of_smul (G := Gᵐᵒᵖ)
+    (fun k hk ↦ MulOpposite.unop_injective
+      ((hfree k.unop (k.op_unop.symm ▸ hk)).trans MulOpposite.unop_one.symm))
+    (MulOpposite.op h) (MulOpposite.op g) hg)
 
 end TauCeti
 
@@ -353,6 +404,26 @@ theorem cardStabilizerOnOrbit_dvd_card (q : MulAction.orbitRel.Quotient G α) :
 theorem cardStabilizerOnOrbit_le_card [Finite G] (q : MulAction.orbitRel.Quotient G α) :
     cardStabilizerOnOrbit q ≤ Nat.card G :=
   Nat.le_of_dvd Nat.card_pos (cardStabilizerOnOrbit_dvd_card q)
+
+/-- **Stabilisers are finite in a subgroup of finite index exactly when they are finite in the
+larger group.** For `V ≤ U` of finite index, the stabiliser of `x` in `V` is the intersection of
+its stabiliser in `U` with `V`, which has finite index in it. Finiteness is stated as
+`Nat.card ≠ 0`. -/
+theorem natCard_stabilizer_ne_zero_iff_of_le {V U : Subgroup G} (hle : V ≤ U)
+    [V.IsFiniteRelIndex U] (x : α) :
+    Nat.card (MulAction.stabilizer V x) ≠ 0 ↔ Nat.card (MulAction.stabilizer U x) ≠ 0 := by
+  set H : Subgroup U := V.subgroupOf U
+  -- `H ⊓ stabilizer U x` is the stabiliser of `x` in `V`, read inside `U`
+  have he : (H ⊓ MulAction.stabilizer U x : Subgroup U) ≃ MulAction.stabilizer V x :=
+    { toFun u := ⟨⟨u.val.val, Subgroup.mem_subgroupOf.mp (Subgroup.mem_inf.mp u.property).1⟩,
+        (Subgroup.mem_inf.mp u.property).2⟩
+      invFun v := ⟨⟨v.val.val, hle v.val.property⟩, Subgroup.mem_inf.mpr
+        ⟨Subgroup.mem_subgroupOf.mpr v.val.property, v.property⟩⟩
+      left_inv _ := rfl
+      right_inv _ := rfl }
+  have := Subgroup.isFiniteRelIndex_of_finiteIndex (H := H) (K := MulAction.stabilizer U x)
+  rw [← Subgroup.relIndex_mul_card (H := H) (K := MulAction.stabilizer U x), Nat.card_congr he]
+  exact ⟨mul_ne_zero Subgroup.relIndex_ne_zero, right_ne_zero_of_mul⟩
 
 section Congr
 
@@ -556,20 +627,30 @@ section PrimeCard
 
 open scoped Pointwise
 
-/-- **Translation by a group of prime order is free on the nonempty proper subsets.** If `G` has
-prime order, the stabiliser of a nonempty finset `S ≠ univ` of `G` under translation is
-trivial. -/
-theorem stabilizer_finset_eq_bot_of_prime_card {G : Type*} [Group G] [Fintype G] [DecidableEq G]
-    (hG : (Nat.card G).Prime) {S : Finset G} (hne : S.Nonempty) (hS : S ≠ Finset.univ) :
+/-- **A transitive group of prime order acts freely on the nonempty proper subsets.** If `G` has
+prime order and acts transitively on a finite type `α`, the setwise stabiliser of a nonempty
+finset `S ≠ univ` of `α` is trivial. -/
+theorem stabilizer_finset_eq_bot_of_prime_card_of_isPretransitive {G α : Type*} [Group G]
+    [MulAction G α] [MulAction.IsPretransitive G α] [Fintype α] [DecidableEq α]
+    (hG : (Nat.card G).Prime) {S : Finset α} (hne : S.Nonempty) (hS : S ≠ Finset.univ) :
     MulAction.stabilizer G S = ⊥ := by
   have := Fact.mk hG
   refine (Subgroup.eq_bot_or_eq_top_of_prime_card _).resolve_right fun htop ↦ hS ?_
   obtain ⟨a, ha⟩ := hne
   refine Finset.eq_univ_of_forall fun b ↦ ?_
-  have hb : b * a⁻¹ ∈ MulAction.stabilizer G S := htop ▸ Subgroup.mem_top _
-  rw [MulAction.mem_stabilizer_iff] at hb
-  have hmem := Finset.smul_mem_smul_finset (a := b * a⁻¹) ha
-  rwa [hb, smul_eq_mul, inv_mul_cancel_right] at hmem
+  obtain ⟨g, rfl⟩ := MulAction.exists_smul_eq G a b
+  have hg : g ∈ MulAction.stabilizer G S := htop ▸ Subgroup.mem_top _
+  rw [MulAction.mem_stabilizer_iff] at hg
+  rw [← hg]
+  exact Finset.smul_mem_smul_finset ha
+
+/-- **Translation by a group of prime order is free on the nonempty proper subsets.** If `G` has
+prime order, the stabiliser of a nonempty finset `S ≠ univ` of `G` under translation is
+trivial. -/
+theorem stabilizer_finset_eq_bot_of_prime_card {G : Type*} [Group G] [Fintype G] [DecidableEq G]
+    (hG : (Nat.card G).Prime) {S : Finset G} (hne : S.Nonempty) (hS : S ≠ Finset.univ) :
+    MulAction.stabilizer G S = ⊥ :=
+  stabilizer_finset_eq_bot_of_prime_card_of_isPretransitive hG hne hS
 
 end PrimeCard
 
@@ -627,5 +708,18 @@ theorem normal_comap_stabilizer_iff_isCancelSMul (ρ : G →* Perm α)
     infer_instance
 
 end MonoidHom
+
+namespace MulAction
+
+open scoped Pointwise
+
+/-- The stabilizer of any point under a group action on a finite type has finite index. -/
+theorem finiteIndex_stabilizer {G X : Type*} [Group G] [MulAction G X] [Finite X] (x : X) :
+    (stabilizer G x).FiniteIndex := by
+  have : Finite (G ⧸ stabilizer G x) :=
+    Finite.of_equiv (orbit G x) (orbitEquivQuotientStabilizer G x)
+  exact Subgroup.finiteIndex_of_finite_quotient
+
+end MulAction
 
 end
