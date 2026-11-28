@@ -85,6 +85,11 @@ blocks pair the first and the last `ϱ` indices, `T` is the middle block, all el
 def splitGram (T : Matrix μ μ R) : Matrix (SplitIndex ϱ μ) (SplitIndex ϱ μ) R :=
   fromBlocks 0 (fromCols 0 1) (fromRows 0 1) (fromBlocks T 0 0 0)
 
+/-- The split Gram matrix as nested block matrices, with the outer identity blocks
+pairing the two isotropic summands. -/
+theorem splitGram_eq_fromBlocks (r : ℕ) (T : Matrix μ μ R) :
+    splitGram r T = fromBlocks 0 (fromCols 0 1) (fromRows 0 1) (fromBlocks T 0 0 0) := (rfl)
+
 variable {ϱ} (T : Matrix μ μ R)
 
 @[simp] lemma splitGram_inl_inl (a b : Fin ϱ) :
@@ -113,6 +118,18 @@ theorem isHermitian_splitGram {R : Type*} [Semiring R] [StarRing R] {ϱ : ℕ} {
     {T : Matrix μ μ R} (hT : T.IsHermitian) : (splitGram ϱ T).IsHermitian := by
   ext (a | i | a) (b | j | b) <;>
     simp [hT.apply, (isHermitian_one (n := Fin ϱ) (α := R)).apply]
+
+/-- The product of two split Gram matrices is the identity on the hyperbolic summands and
+has middle block `A * B`. -/
+theorem splitGram_mul_splitGram {R : Type*} [Semiring R] {μ : Type*} [Fintype μ]
+    (ϱ : ℕ) (A B : Matrix μ μ R) :
+    splitGram ϱ A * splitGram ϱ B =
+      fromBlocks 1 0 0 (fromBlocks (A * B) 0 0 1) := by
+  simp only [splitGram_eq_fromBlocks, fromBlocks_multiply, fromCols_mul_fromRows,
+    fromCols_mul_fromBlocks, fromBlocks_mul_fromRows, mul_fromCols, Matrix.mul_zero,
+    Matrix.zero_mul, Matrix.mul_one, add_zero, zero_add, fromCols_zero, fromRows_zero]
+  congr 1
+  ext (i | i) (j | j) <;> simp
 
 section MiddleGram
 
