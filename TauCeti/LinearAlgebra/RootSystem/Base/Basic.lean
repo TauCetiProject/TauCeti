@@ -107,11 +107,8 @@ variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
   (hb : ∀ i, i ∈ b.support ↔ e.indexEquiv i ∈ b'.support)
 
 /-- The bijection `b.support ≃ b'.support` induced by a base-preserving equivalence. -/
-def Equiv.supportEquiv : b.support ≃ b'.support where
-  toFun i := ⟨e.indexEquiv i, (hb i).mp i.property⟩
-  invFun j := ⟨e.indexEquiv.symm j, (hb _).mpr (by simp [j.property])⟩
-  left_inv i := Subtype.ext (e.indexEquiv.symm_apply_apply i)
-  right_inv j := Subtype.ext (e.indexEquiv.apply_symm_apply j)
+def Equiv.supportEquiv : b.support ≃ b'.support :=
+  e.indexEquiv.subtypeEquiv hb
 
 /-- `Equiv.supportEquiv` acts on root indices by `e.indexEquiv`. -/
 @[simp] theorem Equiv.coe_supportEquiv_apply (i : b.support) :

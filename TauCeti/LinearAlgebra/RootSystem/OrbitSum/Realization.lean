@@ -72,46 +72,22 @@ namespace Base
 
 variable {P : RootPairing ι R M N} [P.IsRootSystem] (b : P.Base) {σ : P.Aut}
 
-private theorem equivFun_comp_weightMap (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) :
-    b.toWeightBasis.equivFun.toLinearMap ∘ₗ σ.weightMap =
-      (LinearEquiv.funCongrLeft R R (b.supportPerm hσ).symm).toLinearMap ∘ₗ
-        b.toWeightBasis.equivFun.toLinearMap := by
-  refine b.toWeightBasis.ext fun i ↦ funext fun j ↦ ?_
-  classical
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Module.Basis.equivFun_apply,
-    b.toWeightBasis_apply i, Hom.root_weightMap_apply P P i σ.toHom,
-    LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply]
-  have hπ : P.root (σ.indexEquiv i) = b.toWeightBasis (b.supportPerm hσ i) := by
-    rw [← b.coe_supportPerm_apply hσ i, b.toWeightBasis_apply]
-  rw [hπ, ← b.toWeightBasis_apply i, Module.Basis.repr_self, Module.Basis.repr_self,
-    Finsupp.single_apply, Finsupp.single_apply]
-  exact if_congr (b.supportPerm hσ).eq_symm_apply.symm rfl rfl
-
 /-- **The simple-orbit basis of the `σ`-fixed weight submodule**, indexed by the `σ`-cycles of
 `b.support`. -/
 noncomputable def fixedSubmoduleBasis (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) :
     Module.Basis (Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ))) R
       (LinearMap.fixedSubmodule σ.weightMap) :=
-  let qCongr : Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ)⁻¹) ≃
-      Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ)) :=
-    Quotient.congr (_root_.Equiv.refl _) fun _ _ ↦ Equiv.Perm.sameCycle_inv
-  ((Equiv.Perm.permutationFixedBasis (R := R) (b.supportPerm hσ)⁻¹).reindex qCongr).map
-    (b.toWeightBasis.equivFun.fixedSubmoduleCongr (b.equivFun_comp_weightMap hσ)).symm
+  (Equiv.Perm.basisPermFixedBasis b.toWeightBasis σ.weightEquiv (b.supportPerm hσ) fun j ↦ by
+    rw [Equiv.weightEquiv_apply, b.toWeightBasis_apply, Hom.root_weightMap_apply P P _ σ.toHom,
+      b.toWeightBasis_apply, b.coe_supportPerm_apply]).map
+    (LinearEquiv.ofEq _ _ (congrArg LinearMap.fixedSubmodule (LinearMap.ext σ.weightEquiv_apply)))
 
 /-- The coordinate of a `σ`-fixed vector on the simple orbit of `j` is its `b.toWeightBasis`
 coordinate at `j`. -/
 @[simp] theorem fixedSubmoduleBasis_repr (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
     (x : LinearMap.fixedSubmodule σ.weightMap) (j : b.support) :
     (b.fixedSubmoduleBasis hσ).repr x (Quotient.mk _ j) = b.toWeightBasis.repr (x : M) j := by
-  let qCongr : Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ)⁻¹) ≃
-      Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ)) :=
-    Quotient.congr (_root_.Equiv.refl b.support) fun _ _ ↦ Equiv.Perm.sameCycle_inv
-  have hq : qCongr.symm (Quotient.mk _ j) = Quotient.mk _ j := rfl
-  simp only [fixedSubmoduleBasis, Module.Basis.map_repr, LinearEquiv.trans_apply,
-    Module.Basis.repr_reindex_apply]
-  rw [hq, Equiv.Perm.permutationFixedBasis_repr]
-  exact congrFun (LinearEquiv.fixedSubmoduleCongr_apply b.toWeightBasis.equivFun
-    (b.equivFun_comp_weightMap hσ) x) j
+  simp [fixedSubmoduleBasis]
 
 /-- The coordinate of a `σ`-fixed vector on a simple cycle `O` is its `b.toWeightBasis` coordinate
 at `O.out`. -/

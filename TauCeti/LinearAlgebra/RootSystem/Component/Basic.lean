@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.RootSystem.Hom
 public import Mathlib.LinearAlgebra.RootSystem.Irreducible
 public import Mathlib.LinearAlgebra.RootSystem.RootPositive
 public import TauCeti.LinearAlgebra.RootSystem.EquivComp
+import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Dynamics.PeriodicPts.Basic
 
 /-!
@@ -323,17 +324,10 @@ theorem componentProj_apply_of_ne {C D : P.Component} (hCD : D ≠ C) {x : M}
 theorem decompose_componentSpace_eq_componentProj [DecidableEq P.Component]
     [DirectSum.Decomposition P.componentSpace] (C : P.Component) (x : M) :
     DirectSum.decompose P.componentSpace x C = P.componentProj C x := by
-  induction x using DirectSum.Decomposition.inductionOn P.componentSpace with
-  | zero => simp
-  | @homogeneous D y =>
-    apply Subtype.ext
-    by_cases hDC : D = C
-    · subst hDC
-      rw [DirectSum.decompose_of_mem_same P.componentSpace y.property,
-        componentProj_apply_of_mem y.property]
-    · rw [DirectSum.decompose_of_mem_ne P.componentSpace y.property hDC,
-        componentProj_apply_of_ne hDC y.property, ZeroMemClass.coe_zero]
-  | add x y hx hy => simp [hx, hy]
+  rw [DirectSum.IsInternal.decompose_eq_ofBijective_symm P.isInternal_componentSpace x]
+  have hdec : (‹DecidableEq P.Component›) = Classical.decEq P.Component := Subsingleton.elim _ _
+  subst hdec
+  rfl
 
 /-- The projection of a root onto its own component space. -/
 @[simp]
@@ -456,6 +450,11 @@ theorem Equiv.componentEquiv_symm_componentOf (e : P.Equiv Q) (i : ι₂) :
     e.componentEquiv.symm (Q.componentOf i) = P.componentOf (e.indexEquiv.symm i) :=
   e.componentEquiv.symm_apply_eq.mpr (by simp)
 
+/-- `P.componentOf` semiconjugates `σ.indexEquiv` to `σ.componentEquiv`. -/
+theorem semiconj_componentOf (P : RootPairing ι R M N) (σ : P.Aut) :
+    Function.Semiconj P.componentOf σ.indexEquiv σ.componentEquiv :=
+  fun j ↦ (σ.componentEquiv_componentOf j).symm
+
 /-- The component bijection of the identity equivalence is the identity. -/
 @[simp] theorem Equiv.componentEquiv_id :
     (Equiv.id P).componentEquiv = _root_.Equiv.refl P.Component :=
@@ -519,11 +518,8 @@ theorem Equiv.indexEquiv_mem_supp_iff (e : P.Equiv Q) {C : P.Component} {i : ι}
     e.componentEquiv.apply_eq_iff_eq]
 
 /-- The bijection `C.supp ≃ (e.componentEquiv C).supp` induced by an equivalence. -/
-def Equiv.suppEquiv (e : P.Equiv Q) (C : P.Component) : C.supp ≃ (e.componentEquiv C).supp where
-  toFun i := ⟨e.indexEquiv i, e.indexEquiv_mem_supp_iff.mpr i.property⟩
-  invFun j := ⟨e.indexEquiv.symm j, e.indexEquiv_mem_supp_iff.mp (by simp)⟩
-  left_inv i := Subtype.ext (e.indexEquiv.symm_apply_apply i)
-  right_inv j := Subtype.ext (e.indexEquiv.apply_symm_apply j)
+def Equiv.suppEquiv (e : P.Equiv Q) (C : P.Component) : C.supp ≃ (e.componentEquiv C).supp :=
+  e.indexEquiv.subtypeEquiv fun _ ↦ e.indexEquiv_mem_supp_iff.symm
 
 /-- `Equiv.suppEquiv` acts on root indices by `e.indexEquiv`. -/
 @[simp] theorem Equiv.coe_suppEquiv_apply (e : P.Equiv Q) (C : P.Component) (i : C.supp) :
