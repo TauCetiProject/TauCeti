@@ -230,6 +230,14 @@ theorem coe_zpow (φ : meromorphicGerms 𝕜 a) (n : ℤ) :
   | ofNat n => rw [Int.ofNat_eq_natCast, zpow_natCast, zpow_natCast, SubmonoidClass.coe_pow]
   | negSucc n => rw [zpow_negSucc, zpow_negSucc, coe_inv, SubmonoidClass.coe_pow]
 
+/-- An integer power of the coordinate is represented by the corresponding pointwise power. -/
+theorem coordinate_zpow_eq_mk (a : 𝕜) (n : ℤ) :
+    coordinate a ^ n =
+      mk (fun z ↦ (z - a) ^ n) (((MeromorphicAt.id a).sub (.const a a)).zpow n) := by
+  apply Subtype.ext
+  rw [coe_zpow, coe_coordinate, coe_mk]
+  exact (Germ.coe_pow (fun z : 𝕜 ↦ z - a) n).symm
+
 end meromorphicGerms
 
 end TauCeti

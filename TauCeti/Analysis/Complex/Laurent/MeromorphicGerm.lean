@@ -22,7 +22,9 @@ The representative `f` is any function whose germ on the punctured neighbourhood
 its value at `a` plays no role. The radius bound is uniform in `n`: a single eventual statement in
 `ρ → 0⁺` gives the equality for all integer orders at once, so one small circle computes every
 Laurent coefficient of `φ`. On each such circle, vanishing of all coefficients below an integer
-characterizes that integer as a lower bound on the meromorphic order.
+characterizes that integer as a lower bound on the meromorphic order. The coefficients of a
+product are finite convolutions of the factor coefficients on the same sufficiently small
+circles, with summation limits given by lower bounds on the orders of the factors.
 
 ## References
 
@@ -93,3 +95,20 @@ theorem MeromorphicAt.eventually_le_meromorphicOrderAt_iff_circleLaurentCoeff_eq
   filter_upwards [eventually_coeff_laurentSeries_eq_circleLaurentCoeff (coe_mk f hf)] with ρ hρ m
   simp only [← hρ, ← order_mk f hf, ← orderTop_laurentSeries, le_orderTop_iff_forall,
     WithTop.coe_lt_coe]
+
+/-- On every sufficiently small circle, the Laurent coefficient of degree `n` of a product is
+the convolution over `[l, n - r]` for any lower bounds `l` and `r` on the factor orders. -/
+theorem MeromorphicAt.eventually_circleLaurentCoeff_mul_eq_sum
+    {a : ℂ} {f g : ℂ → ℂ} (hf : MeromorphicAt f a) (hg : MeromorphicAt g a) :
+    ∀ᶠ ρ in 𝓝[>] (0 : ℝ), ∀ {l r : ℤ}, (l : WithTop ℤ) ≤ meromorphicOrderAt f a →
+      (r : WithTop ℤ) ≤ meromorphicOrderAt g a → ∀ n : ℤ,
+      circleLaurentCoeff (f * g) a ρ n =
+        ∑ i ∈ Finset.Icc l (n - r),
+          circleLaurentCoeff f a ρ i * circleLaurentCoeff g a ρ (n - i) := by
+  filter_upwards [eventually_coeff_laurentSeries_eq_circleLaurentCoeff (coe_mk f hf),
+    eventually_coeff_laurentSeries_eq_circleLaurentCoeff (coe_mk g hg),
+    eventually_coeff_laurentSeries_eq_circleLaurentCoeff (coe_mk (f * g) (hf.mul hg))] with
+    ρ hρf hρg hρfg l r hl hr n
+  simp only [← hρfg, mk_mul hf hg, ← hρf, ← hρg]
+  exact coeff_laurentSeries_mul_eq_sum
+    (by simpa only [order_mk] using hl) (by simpa only [order_mk] using hr) n

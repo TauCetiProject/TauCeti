@@ -12,7 +12,7 @@ public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 public import TauCeti.RingTheory.LaurentSeries.BoundedDenominators
 public import TauCeti.RingTheory.LaurentSeries.Ramified
 import Mathlib.Analysis.Complex.TaylorSeries
-import TauCeti.Analysis.Complex.UpperHalfPlane.QExpansion.Order
+import TauCeti.Analysis.Meromorphic.LaurentSeries
 import TauCeti.NumberTheory.ModularForms.QExpansion.Order
 import TauCeti.RingTheory.LaurentSeries.Basic
 
@@ -293,6 +293,7 @@ theorem laurentQExpansion_coeff_eq_zero_of_lt_neg {k : ℕ}
 
 /-! ### The order at `i∞` -/
 
+open meromorphicGerms in
 /-- **The order at `i∞`.** The order of the Laurent `q`-expansion is the order at `0` of the cusp
 function, with value `⊤` exactly for the zero expansion. -/
 theorem orderTop_laurentQExpansion (hf : MeromorphicAt (cuspFunction h f) 0) :
@@ -302,18 +303,24 @@ theorem orderTop_laurentQExpansion (hf : MeromorphicAt (cuspFunction h f) 0) :
       (cuspFunction_eventuallyEq_const_of_nonpos hh f).filter_mono nhdsWithin_le_nhds
     rw [laurentQExpansion_of_nonpos hh, meromorphicOrderAt_congr hc, meromorphicOrderAt_const]
     by_cases hc0 : f (Classical.choice inferInstance) = 0 <;> simp [hc0]
-  have hk := neg_cuspPoleOrder_le h f
-  have han := analyticAt_cuspFunction_qParam_pow_mul hf hk
-  rw [laurentQExpansion, HahnSeries.orderTop_mul, HahnSeries.orderTop_single one_ne_zero,
-    PowerSeries.orderTop_coe, TauCeti.qExpansion_order_eq_analyticOrderAt_cuspFunction han,
-    ← han.meromorphicOrderAt_eq,
-    meromorphicOrderAt_congr (cuspFunction_qParam_pow_mul_eventuallyEq hh _ f),
-    meromorphicOrderAt_pow_mul_cuspFunction hf]
-  cases hn : meromorphicOrderAt (cuspFunction h f) 0 using WithTop.recTopCoe with
-  | top => simp
-  | coe n =>
-    norm_cast
-    omega
+  set k := cuspPoleOrder h f
+  let g : ℍ → ℂ := fun τ ↦ 𝕢 h τ ^ k * f τ
+  have han : AnalyticAt ℂ (cuspFunction h g) 0 :=
+    analyticAt_cuspFunction_qParam_pow_mul hf (neg_cuspPoleOrder_le h f)
+  have hrep : cuspFunction h f =ᶠ[𝓝[≠] 0] fun q ↦ (q ^ k)⁻¹ * cuspFunction h g q := by
+    filter_upwards [cuspFunction_qParam_pow_mul_eventuallyEq hh k f, self_mem_nhdsWithin]
+      with q hq (hq0 : q ≠ 0)
+    rw [show cuspFunction h g q = q ^ k * cuspFunction h f q from hq,
+      inv_mul_cancel_left₀ (pow_ne_zero k hq0)]
+  have hTaylor : qExpansion h g = taylorSeries (cuspFunction h g) 0 := by
+    ext n
+    rw [qExpansion_coeff, ← han.factorial_smul_coeff_taylorSeries, nsmul_eq_mul,
+      inv_mul_cancel_left₀ (Nat.cast_ne_zero.mpr n.factorial_ne_zero)]
+  have hexp : laurentSeries 0 (mk (cuspFunction h f) hf) = laurentQExpansion h f := by
+    rw [laurentSeries_eq han (N := k) (by
+      rw [meromorphicGerms.coe_mk, Germ.coe_eq]
+      simpa only [sub_zero] using hrep), laurentQExpansion, hTaylor]
+  rw [← hexp, orderTop_laurentSeries, order_mk]
 
 /-- **Uniqueness of the Laurent `q`-expansion.** The Laurent `q`-expansion vanishes exactly when
 the cusp function vanishes on a punctured neighbourhood of `0`. -/
