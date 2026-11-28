@@ -16,6 +16,12 @@ public import Mathlib.RingTheory.MatrixAlgebra
 -- body, which is why that is not imported again here.
 public import TauCeti.Algebra.TensorProduct.BaseChange
 public import Mathlib.LinearAlgebra.Dimension.Finrank
+-- `AlgHom.fromBlocks`, the block-diagonal representation, appears in the statement of
+-- `TauCeti.Algebra.matrixBaseChangeAlgEquiv_map_fromBlocks`.
+public import TauCeti.Data.Matrix.Block
+-- `Matrix.BlockTriangular` appears in the statement of
+-- `TauCeti.Algebra.blockTriangular_matrixBaseChangeAlgEquiv_map`.
+public import Mathlib.LinearAlgebra.Matrix.Block
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
@@ -36,7 +42,11 @@ Both directions are characterized on generators by the `simp` lemmas
 `TauCeti.Algebra.matrixBaseChangeAlgEquiv_tmul` and
 `TauCeti.Algebra.matrixBaseChangeAlgEquiv_symm_single`, so the definition need never be unfolded.
 The isomorphism is natural in `S`: an `R`-algebra map `S → S'` acts on the matrices entrywise
-(`TauCeti.Algebra.matrixBaseChangeAlgEquiv_rTensor`).
+(`TauCeti.Algebra.matrixBaseChangeAlgEquiv_rTensor`). Base change of the block-diagonal
+representation `AlgHom.fromBlocks ρ₁ ρ₂` is block diagonal with the base changes of `ρ₁` and `ρ₂`
+as blocks (`TauCeti.Algebra.matrixBaseChangeAlgEquiv_map_fromBlocks`), and base change of a
+representation with block-triangular image is block triangular
+(`TauCeti.Algebra.blockTriangular_matrixBaseChangeAlgEquiv_map`).
 
 The same statement with an arbitrary, possibly noncommutative, coefficient algebra `A` in place of
 `R` is `TauCeti.Algebra.matrixCoeffBaseChangeAlgEquiv`:
@@ -93,6 +103,38 @@ theorem matrixBaseChangeAlgEquiv_rTensor {S' : Type*} [CommSemiring S'] [Algebra
   induction x using TensorProduct.inductionOn with
   | tmul s M => ext i j; simp
   | add x y hx hy => simp [hx, hy, Matrix.map_add]
+
+variable {R} in
+/-- **Scalar extension commutes with block sums**: after extending scalars to `S`, the
+block-diagonal representation `AlgHom.fromBlocks ρ₁ ρ₂` is block diagonal, with the scalar
+extensions of `ρ₁` and `ρ₂` as its blocks. -/
+@[simp]
+theorem matrixBaseChangeAlgEquiv_map_fromBlocks {A : Type*} [Semiring A] [Algebra R A]
+    {n₁ n₂ : Type*} [Fintype n₁] [Fintype n₂] [DecidableEq n₁] [DecidableEq n₂]
+    (ρ₁ : A →ₐ[R] Matrix n₁ n₁ R) (ρ₂ : A →ₐ[R] Matrix n₂ n₂ R) (x : S ⊗[R] A) :
+    matrixBaseChangeAlgEquiv R S (n₁ ⊕ n₂)
+        (Algebra.TensorProduct.map (AlgHom.id R S) (ρ₁.fromBlocks ρ₂) x) =
+      Matrix.fromBlocks
+        (matrixBaseChangeAlgEquiv R S n₁ (Algebra.TensorProduct.map (AlgHom.id R S) ρ₁ x)) 0 0
+        (matrixBaseChangeAlgEquiv R S n₂ (Algebra.TensorProduct.map (AlgHom.id R S) ρ₂ x)) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul s r => simp [Matrix.fromBlocks_map, Matrix.fromBlocks_smul]
+  | add x y hx hy => simp only [map_add, hx, hy, Matrix.fromBlocks_add, add_zero]
+
+variable {R S n} in
+/-- **Scalar extension preserves block-triangular image**: if every matrix `ρ a` is block
+triangular for `b : n → α`, then so is every matrix of the extension of `ρ` to `S`. Upper
+triangular image is the case `b = id`. -/
+theorem blockTriangular_matrixBaseChangeAlgEquiv_map {A : Type*} [Semiring A] [Algebra R A]
+    {α : Type*} [LT α] {b : n → α} (ρ : A →ₐ[R] Matrix n n R) (hρ : ∀ a, (ρ a).BlockTriangular b)
+    (x : S ⊗[R] A) :
+    (matrixBaseChangeAlgEquiv R S n
+      (Algebra.TensorProduct.map (AlgHom.id R S) ρ x)).BlockTriangular b := by
+  induction x using TensorProduct.inductionOn with
+  | tmul s a =>
+    intro i j hij
+    simp [hρ a hij]
+  | add x y hx hy => simpa using hx.add hy
 
 variable (A : Type*) [Semiring A] [Algebra R A]
 

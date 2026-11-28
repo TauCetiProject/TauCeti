@@ -47,9 +47,8 @@ theorem _root_.AEMeasurable.resolventTransform_spectralMeasure {Ω : Type*}
     (hA : AEMeasurable A P) (hHerm : ∀ ω, (A ω).IsHermitian) {z : ℂ} (hz : z.im ≠ 0) :
     AEMeasurable (fun ω ↦ resolventTransform ((A ω).spectralMeasure (hHerm ω) : Measure ℝ) z)
       P := by
-  have ht : Measurable (fun B : Matrix n n ℂ ↦ (Fintype.card n : ℂ)⁻¹ *
-      ((B - z • 1)⁻¹).trace) := by
-    simp only [Matrix.trace, Matrix.diag]
+  have ht : Measurable (fun B : Matrix n n ℂ ↦ B.normalizedResolventTrace z) := by
+    simp only [Matrix.normalizedResolventTrace_def, Matrix.trace, Matrix.diag]
     fun_prop
   simp_rw [fun ω ↦ Matrix.resolventTransform_spectralMeasure (A ω) (hHerm ω)
     ((hHerm ω).notMem_spectrum_of_im_ne_zero hz)]
@@ -76,8 +75,8 @@ theorem norm_resolventTransform_spectralMeasure_sub_le
       resolventTransform (B.spectralMeasure hB : Measure ℝ) w‖ ≤
         |z.im|⁻¹ * (‖B - A‖ + ‖z - w‖) * |w.im|⁻¹ := by
   rw [resolventTransform_spectralMeasure A hA (hA.notMem_spectrum_of_im_ne_zero hz),
-    resolventTransform_spectralMeasure B hB (hB.notMem_spectrum_of_im_ne_zero hw),
-    ← mul_sub, ← Matrix.trace_sub]
+    resolventTransform_spectralMeasure B hB (hB.notMem_spectrum_of_im_ne_zero hw)]
+  simp only [normalizedResolventTrace_def, ← mul_sub, ← Matrix.trace_sub]
   exact (norm_normalized_trace_le_l2_opNorm _).trans
     (hA.norm_inv_sub_smul_one_sub_inv_sub_smul_one_le_add hB hz hw)
 

@@ -66,9 +66,10 @@ holds whenever `A` is a Tate ring (`TauCeti.AdicSpace.IsAnalytic.spa`).
 * `TauCeti.AdicSpace.isAnalytic_analyticLocus` and `TauCeti.AdicSpace.isIso_analyticLocus_ι_iff`:
   the analytic locus `X_a` is analytic, and `X_a ⟶ X` is an isomorphism if and only if `X` is
   analytic.
-* `TauCeti.AdicSpace.IsAnalytic.of_isOpenImmersion`, `TauCeti.AdicSpace.isAnalytic_spa_iff` and
-  `TauCeti.AdicSpace.IsAnalytic.spa`: open immersions, general affinoid spectra and Tate affinoid
-  spectra.
+* `TauCeti.AdicSpace.IsAnalytic.of_isOpenImmersion`,
+  `TauCeti.AdicSpace.IsAnalytic.of_jointly_surjective`, `TauCeti.AdicSpace.isAnalytic_spa_iff` and
+  `TauCeti.AdicSpace.IsAnalytic.spa`: open immersions, open-immersion covers, general affinoid
+  spectra and Tate affinoid spectra.
 
 ## References
 
@@ -335,6 +336,16 @@ theorem IsAnalytic.of_isOpenImmersion (f : Y ⟶ X) [IsOpenImmersion f.hom] (hX 
   exists_mem_propOpens_of_iso isTateAffinoid (IsOpenImmersion.isoRestrict f.hom)
     (exists_mem_propOpens_restrict f.hom.isOpenEmbedding isTateAffinoid
       hX.isBasis_tateAffinoidOpens)
+
+/-- **An adic space covered by open immersions from analytic adic spaces is analytic.** -/
+theorem IsAnalytic.of_jointly_surjective {ι : Type*} {U : ι → AdicSpace.{u}}
+    (f : ∀ i, U i ⟶ X) [∀ i, IsOpenImmersion (f i).hom] (hU : ∀ i, (U i).IsAnalytic)
+    (hf : ∀ x : X.obj, ∃ (i : ι) (y : (U i).obj), (f i).hom.base y = x) : X.IsAnalytic := by
+  rw [isAnalytic_iff_analyticPoints_eq_univ, Set.eq_univ_iff_forall]
+  intro x
+  obtain ⟨i, y, rfl⟩ := hf x
+  exact Set.mem_preimage.mp
+    ((preimage_analyticPoints_of_isOpenImmersion (f i).hom).symm ▸ (hU i).mem_analyticPoints y)
 
 /-- Analyticity is carried back along an isomorphism of adic spaces. -/
 theorem IsAnalytic.of_iso (e : Y ≅ X) (hX : X.IsAnalytic) : Y.IsAnalytic :=

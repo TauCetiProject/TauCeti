@@ -38,7 +38,13 @@ A complex differential operator between sections of complex bundles, of finite o
 Grothendieck's sense for commutators with multiplication by elements of `A_ℂ`, is local: `P s`
 vanishes near every point near which `s` vanishes
 (`TauCeti.complexDifferentialOperators_section_apply_eq_zero_of_eventuallyEq`). In particular an
-`A_ℂ`-linear operator is local (`TauCeti.apply_eq_zero_of_map_smul`).
+`A_ℂ`-linear operator is local (`TauCeti.apply_eq_zero_of_map_smul`). When the real structures of
+the fibres are those underlying their complex structures, a real function acts on sections as its
+complex inclusion does, so such an operator is also, as a real-linear operator, a differential
+operator of the same order for commutators with real-valued functions
+(`TauCeti.restrictScalars_mem_differentialOperators_of_complex`), and its iterated commutators with
+a real function are those of the complex operator with the function's complex inclusion
+(`TauCeti.smulCommutator_pow_restrictScalars_ofReal`).
 
 ## References
 
@@ -81,6 +87,21 @@ theorem complexSmoothConstants_smul (z : ℂ) (s : Cₛ^n⟮I; F, V⟯) :
   ext fun x ↦ by simp
 
 variable [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] [∀ x, IsScalarTower ℝ ℂ (V x)]
+
+omit [∀ x, IsScalarTower ℝ ℂ (V x)] in
+/-- **Splitting a section by a partition of unity.** If real-valued smooth functions `ρ i` add up
+to `1` on a set `K` containing the support of a section `σ`, then `σ` is the sum of the products
+`ρ i · σ`. This is the section version of `ContMDiffMap.eq_sum_mulLeft_ofReal`. -/
+theorem eq_sum_ofReal_smul {ι : Type*} (s : Finset ι) (ρ : ι → C^n⟮I, M; ℝ⟯) {K : Set M}
+    {σ : Cₛ^n⟮I; F, V⟯} (hσ : σ.tsupport ⊆ K) (hρ : ∀ x ∈ K, ∑ i ∈ s, ρ i x = 1) :
+    σ = ∑ i ∈ s, ContMDiffMap.ofReal (ρ i) • σ := by
+  rw [← Finset.sum_smul, ← map_sum]
+  ext x
+  rw [smul_apply_of_normedAlgebra, ContMDiffMap.ofReal_apply, ContMDiffMap.coe_sum,
+    Finset.sum_apply]
+  by_cases hx : x ∈ K
+  · rw [hρ x hx, Complex.ofReal_one, one_smul]
+  · rw [σ.eq_zero_of_notMem_tsupport fun h ↦ hx (hσ h), smul_zero]
 
 /-- A real function, viewed as a complex function, acts on sections by the real function
 action. -/
@@ -234,5 +255,49 @@ theorem apply_eq_zero_of_map_smul {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℂ] Cₛ^�
     P s x = 0 :=
   complexDifferentialOperators_section_apply_eq_zero_of_eventuallyEq (m := 0)
     (mem_differentialOperators_zero_iff.2 hP) hs
+
+end TauCeti
+
+/-! ### Complex differential operators as real differential operators -/
+
+namespace TauCeti
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] {V : M → Type*}
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)] [FiberBundle F V]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)]
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [VectorBundle ℝ F V] [VectorBundle ℂ F V]
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℂ F'] {W : M → Type*}
+  [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace F' W)] [FiberBundle F' W]
+  [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, Module ℂ (W x)]
+  [∀ x, IsScalarTower ℝ ℂ (W x)] [VectorBundle ℝ F' W] [VectorBundle ℂ F' W] {n : ℕ∞ω}
+
+/-- **Complex differential operators are real differential operators.** Let the real structures
+of the fibres of `V` and `W` be those underlying their complex structures. A complex-linear
+operator `P` between the `C^n` sections of `V` and `W` which is a differential operator of order
+at most `m` in Grothendieck's sense, for commutators with multiplication by complex-valued `C^n`
+functions, is, as a real-linear operator, a differential operator of order at most `m` for
+commutators with multiplication by real-valued `C^n` functions. Indeed a real function acts on
+sections as its complex inclusion does (`ContMDiffSection.ofReal_smul`). -/
+theorem restrictScalars_mem_differentialOperators_of_complex {m : ℕ}
+    {P : Cₛ^n⟮I; F, V⟯ →ₗ[ℂ] Cₛ^n⟮I; F', W⟯}
+    (hP : P ∈ differentialOperators ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ Cₛ^n⟮I; F, V⟯ Cₛ^n⟮I; F', W⟯ m) :
+    P.restrictScalars ℝ ∈ differentialOperators ℝ C^n⟮I, M; ℝ⟯ Cₛ^n⟮I; F, V⟯ Cₛ^n⟮I; F', W⟯ m :=
+  comp_comp_mem_differentialOperators (ρ := LinearMap.id) (σ := LinearMap.id)
+    (fun b ↦ ⟨ContMDiffMap.ofReal b, fun s ↦ by simp, fun s ↦ by simp⟩)
+    (restrictScalars_mem_differentialOperators hP)
+
+/-- The `k`-fold commutator with a real function `f` of the real operator underlying `P` is the
+real operator underlying the `k`-fold commutator of `P` with `f` viewed as a complex function,
+since real functions act on sections through their complex inclusions. -/
+theorem smulCommutator_pow_restrictScalars_ofReal {k : ℕ}
+    (P : Cₛ^n⟮I; F, V⟯ →ₗ[ℂ] Cₛ^n⟮I; F', W⟯) (f : C^n⟮I, M; ℝ⟯) :
+    (smulCommutator ℝ f ^ k) (P.restrictScalars ℝ) =
+      ((smulCommutator ℂ (ContMDiffMap.ofReal f) ^ k) P).restrictScalars ℝ := by
+  have h : (smulCommutator ℝ (ContMDiffMap.ofReal f) :
+      Module.End ℝ (Cₛ^n⟮I; F, V⟯ →ₗ[ℝ] Cₛ^n⟮I; F', W⟯)) = smulCommutator ℝ f :=
+    LinearMap.ext fun D ↦ LinearMap.ext fun s ↦ by simp
+  rw [← h, smulCommutator_pow_restrictScalars]
 
 end TauCeti

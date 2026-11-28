@@ -272,14 +272,14 @@ theorem exists_mvfderiv_apply_eq_of_flowOut {n : ℕ∞} (hn : 1 ≤ n) [IsManif
           |>.preimage_mem_nhds (e.open_source.mem_nhds (by simpa using hps))
       have h₂ : ∀ᶠ σ in 𝓝 (0 : ℝ), (σ, x) ∈ flowDomain v :=
         (continuous_id.prodMk continuous_const).continuousAt.preimage_mem_nhds
-          ((isOpen_flowDomain hv₁).mem_nhds (mem_flowDomain_zero hv₁ x))
+          ((isOpen_flowDomain hv₁).mem_nhds (mem_flowDomain_zero (hv₁ x)))
       filter_upwards [h₁, h₂] with σ hσ₁ hσ₂
       rw [← hxp, hpe] at hσ₂ ⊢
       have hadd := flowOf_add hv₁ hpdom hσ₂
       rw [hadd.2, ← (he _ hσ₁).2, comp_apply, hGe _ hσ₁, hG]
       exact flowIntegral_add hv₁ hf₁.continuous hpdom hσ₂
     have hderiv : HasDerivAt (fun σ ↦ (G ∘ e.toPartialEquiv.symm) (flowOf v σ x)) (f x) 0 := by
-      have h := (hasDerivAt_flowIntegral hv₁ hf₁.continuous (mem_flowDomain_zero hv₁ x)).const_add
+      have h := (hasDerivAt_flowIntegral hv₁ hf₁.continuous (mem_flowDomain_zero (hv₁ x))).const_add
         (flowIntegral v f p.1 (ι p.2))
       rw [flowOf_zero] at h
       exact h.congr_of_eventuallyEq hev
@@ -287,7 +287,7 @@ theorem exists_mvfderiv_apply_eq_of_flowOut {n : ℕ∞} (hn : 1 ≤ n) [IsManif
       rw [flowOf_zero]
       exact (hsmooth.contMDiffAt (e.open_target.mem_nhds hx)).mdifferentiableAt
         (by simpa using (lt_of_lt_of_le zero_lt_one hn).ne')
-    have hcomp := hasDerivAt_comp_flowOf hv₁ (mem_flowDomain_zero hv₁ x) hmd
+    have hcomp := hasDerivAt_comp_flowOf hv₁ (mem_flowDomain_zero (hv₁ x)) hmd
     rw [flowOf_zero] at hcomp
     exact hcomp.unique hderiv
 

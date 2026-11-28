@@ -18,7 +18,10 @@ splitting assumptions on the polynomial family.
 
 We also count the root zero: it occurs in `f.roots` with multiplicity the order of vanishing
 `f.natTrailingDegree`, so the roots satisfying a predicate that holds at zero number
-`f.natTrailingDegree` plus the nonzero roots satisfying it. Over any integral domain, summing
+`f.natTrailingDegree` plus the nonzero roots satisfying it. Over any ring, zero is a simple
+root, that is `f.natTrailingDegree = 1`, exactly when the constant coefficient vanishes and
+the linear one does not (`Polynomial.natTrailingDegree_eq_one_iff`,
+`Polynomial.rootMultiplicity_zero_eq_one_iff`). Over any integral domain, summing
 `f.rootMultiplicity` over any finite set of points never exceeds `f.natDegree`
 (`Polynomial.sum_rootMultiplicity_le_natDegree`), including for `f = 0`, and summing it over the
 distinct roots gives the number of roots counted with multiplicity
@@ -32,7 +35,12 @@ powers `(X - a) ^ f.rootMultiplicity a` at such points are pairwise coprime, so 
 divides `f` (`Polynomial.sum_rootMultiplicity_le_natDegree_of_pairwise_isUnit_sub`).
 
 Finally, a nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a`
-occurs at least `k` times in `E` (`Polynomial.X_sub_C_pow_dvd_smul_multiset_prod_iff`).
+occurs at least `k` times in `E` (`Polynomial.X_sub_C_pow_dvd_smul_multiset_prod_iff`), the root
+multiplicity of a multiset product of nonzero polynomials is the sum of the root multiplicities of
+its factors (`Polynomial.rootMultiplicity_multiset_prod`), and pushing a factorization
+`P = C c * s.prod` forward along `φ : A →+* K` gives the nonvanishing criterion
+`Polynomial.map_ne_zero_iff_of_eq_C_mul_multiset_prod` and root-multiplicity sum formula
+`Polynomial.rootMultiplicity_map_eq_sum`.
 -/
 
 public section
@@ -132,6 +140,28 @@ theorem sum_rootMultiplicity_le_natDegree_of_pairwise_isUnit_sub {ι : Type*} {s
         simp only [(monic_X_sub_C _).natDegree_pow, natDegree_X_sub_C, mul_one]
     _ ≤ f.natDegree := (monic_prod_of_monic _ _ hmonic).natDegree_le_of_dvd hf hdvd
 
+/-- Over an integral domain, if `f : α → R` is injective on a finite set `s : Finset α`, then the
+number of points `x ∈ s` at which a nonzero polynomial `c : R[X]` vanishes at `f x` is at most
+`c.natDegree`. -/
+theorem card_filter_eval_comp_eq_zero_le {α : Type*} [DecidableEq R] {c : R[X]} (hc0 : c ≠ 0)
+    {s : Finset α} {f : α → R} (hinj : Set.InjOn f (s : Set α)) :
+    (s.filter fun x ↦ c.eval (f x) = 0).card ≤ c.natDegree := by
+  let s₀ : Finset α := s.filter fun x ↦ c.eval (f x) = 0
+  have hinj₀ : Set.InjOn f (s₀ : Set α) :=
+    hinj.mono (Finset.coe_subset.mpr (Finset.filter_subset _ s))
+  rw [← Finset.card_image_of_injOn hinj₀]
+  refine card_le_degree_of_subset_roots fun b hb ↦ ?_
+  obtain ⟨x, hx, rfl⟩ := Finset.mem_image.mp (Finset.mem_val.mp hb)
+  exact (mem_roots hc0).mpr (Finset.mem_filter.mp hx).2
+
+/-- Over an integral domain, the root multiplicity of a multiset product of nonzero polynomials is
+the sum of the root multiplicities of its factors. -/
+theorem rootMultiplicity_multiset_prod (a : R) (s : Multiset R[X]) (hs : ∀ p ∈ s, p ≠ 0) :
+    s.prod.rootMultiplicity a = (s.map fun p ↦ p.rootMultiplicity a).sum := by
+  classical
+  rw [← count_roots, roots_multiset_prod s fun h0 ↦ hs 0 h0 rfl, Multiset.count_bind]
+  simp [count_roots]
+
 /-- A nonzero multiple of `∏_{b ∈ E} (X - b)` is divisible by `(X - a)^k` exactly when `a` occurs
 at least `k` times in `E`. -/
 theorem X_sub_C_pow_dvd_smul_multiset_prod_iff [DecidableEq R] {E : Multiset R} {a c : R}
@@ -139,5 +169,70 @@ theorem X_sub_C_pow_dvd_smul_multiset_prod_iff [DecidableEq R] {E : Multiset R} 
     (X - C a) ^ k ∣ c • (E.map fun b ↦ X - C b).prod ↔ k ≤ E.count a := by
   rw [← le_rootMultiplicity_iff (smul_ne_zero hc (monic_multisetProd_X_sub_C E).ne_zero),
     ← count_roots, roots_smul_of_ne_zero _ hc, roots_multiset_prod_X_sub_C]
+
+end Polynomial
+
+namespace Polynomial
+
+/-- Given `P = C c * s.prod`, the mapped factorization
+`P.map φ = C (φ c) * (s.map (mapRingHom φ)).prod` is unconditional; if the target `K` has no zero
+divisors, then `P.map φ ≠ 0` if and only if `φ c ≠ 0` and `F.map φ ≠ 0` for every factor
+`F ∈ s`. -/
+theorem map_ne_zero_iff_of_eq_C_mul_multiset_prod {A K : Type*} [CommSemiring A] [CommSemiring K]
+    [NoZeroDivisors K] {φ : A →+* K} {P : A[X]} {c : A} {s : Multiset A[X]}
+    (hPeq : P = C c * s.prod) :
+    P.map φ ≠ 0 ↔ φ c ≠ 0 ∧ ∀ F ∈ s, F.map φ ≠ 0 := by
+  rw [hPeq, Polynomial.map_mul, map_C, ← coe_mapRingHom, map_multiset_prod,
+    mul_ne_zero_iff, C_ne_zero]
+  refine and_congr_right fun hcp ↦ ⟨fun h F hF h0 ↦ ?_, fun h ↦ ?_⟩
+  · exact h (Multiset.prod_eq_zero (Multiset.mem_map.mpr ⟨F, hF, h0⟩))
+  · have : Nontrivial K := ⟨⟨φ c, 0, hcp⟩⟩
+    exact Multiset.prod_ne_zero fun h0 ↦
+      let ⟨F, hF, hFeq⟩ := Multiset.mem_map.mp h0
+      h F hF hFeq
+
+/-- Over an integral domain `K`, if `P = C c * s.prod` in `A[X]` and `P.map φ ≠ 0` for a ring
+homomorphism `φ : A →+* K`, then the root multiplicity of `P.map φ` at `a` equals the sum of the
+root multiplicities of `F.map φ` at `a` over `F ∈ s`. -/
+theorem rootMultiplicity_map_eq_sum {A K : Type*} [CommSemiring A] [CommRing K] [IsDomain K]
+    {φ : A →+* K} {P : A[X]} {c : A} {s : Multiset A[X]}
+    (hPeq : P = C c * s.prod) (hPmap : P.map φ ≠ 0) (a : K) :
+    (P.map φ).rootMultiplicity a =
+      (s.map fun F ↦ (F.map φ).rootMultiplicity a).sum := by
+  rw [hPeq, Polynomial.map_mul, map_C, ← coe_mapRingHom, map_multiset_prod] at hPmap ⊢
+  have hc0 : C (φ c) ≠ 0 := left_ne_zero_of_mul hPmap
+  have hprod_ne : (s.map (mapRingHom φ)).prod ≠ 0 := right_ne_zero_of_mul hPmap
+  have hmap_ne : ∀ p ∈ s.map (mapRingHom φ), p ≠ 0 := fun p hp h0 ↦
+    hprod_ne (Multiset.prod_eq_zero (h0 ▸ hp))
+  rw [rootMultiplicity_mul (mul_ne_zero hc0 hprod_ne),
+    rootMultiplicity_eq_zero (by simpa using C_ne_zero.mp hc0), zero_add,
+    rootMultiplicity_multiset_prod a _ hmap_ne, Multiset.map_map]
+  simp only [Function.comp_apply, coe_mapRingHom]
+
+end Polynomial
+
+namespace Polynomial
+
+/-- The order of vanishing of `p` at `0` is `1` exactly when the constant coefficient of `p`
+vanishes and its linear coefficient does not. -/
+theorem natTrailingDegree_eq_one_iff {R : Type*} [Semiring R] {p : R[X]} :
+    p.natTrailingDegree = 1 ↔ p.coeff 0 = 0 ∧ p.coeff 1 ≠ 0 := by
+  refine ⟨fun h ↦ ⟨coeff_eq_zero_of_lt_natTrailingDegree (by omega), ?_⟩, fun ⟨h0, h1⟩ ↦ ?_⟩
+  · have hp : p ≠ 0 := by
+      rintro rfl
+      simp at h
+    have h_lead : p.trailingCoeff ≠ 0 := mt trailingCoeff_eq_zero.1 hp
+    rwa [trailingCoeff, h] at h_lead
+  · refine le_antisymm (natTrailingDegree_le_of_ne_zero h1) (le_natTrailingDegree ?_ fun m hm ↦ ?_)
+    · rintro rfl
+      exact h1 (coeff_zero 1)
+    · obtain rfl : m = 0 := by omega
+      exact h0
+
+/-- **Simple root at zero.** Over any ring, `0` is a simple root of `p` exactly when the constant
+coefficient of `p` vanishes and its linear coefficient does not. -/
+theorem rootMultiplicity_zero_eq_one_iff {R : Type*} [Ring R] {p : R[X]} :
+    p.rootMultiplicity 0 = 1 ↔ p.coeff 0 = 0 ∧ p.coeff 1 ≠ 0 := by
+  rw [rootMultiplicity_eq_natTrailingDegree', natTrailingDegree_eq_one_iff]
 
 end Polynomial

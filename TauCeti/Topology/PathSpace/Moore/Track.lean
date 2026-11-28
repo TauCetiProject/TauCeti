@@ -41,6 +41,8 @@ continuation cocycles comparing the twisting cocycles built from homotopic colla
 ## Main definitions
 
 * `ContinuousMap.Homotopy.mooreTrack`: the track `t ↦ H (t, b)` of a homotopy at a point.
+* `ContinuousMap.Homotopy.mooreTrackLoop`: the track at a point which both maps send to `x`, as a
+  Moore loop at `x`.
 * `TauCeti.MoorePath.mapSplit`: a Moore path mapped by `θ₀` before a time and by `θ₁` after it.
 
 ## References
@@ -94,6 +96,16 @@ theorem source_mooreTrack : (H.mooreTrack b).source = θ₀ b := by
 @[simp]
 theorem target_mooreTrack : (H.mooreTrack b).target = θ₁ b := by
   rw [mooreTrack_eq_toMoorePath, Path.target_toMoorePath]
+
+/-- The **track loop** of a homotopy `H` from `θ₀` to `θ₁` at a point `b` which both maps send to
+`x`: the track `t ↦ H (t, b)`, as a Moore loop at `x` of length one. -/
+def mooreTrackLoop {b : B} {x : X} (h₀ : θ₀ b = x) (h₁ : θ₁ b = x) : TauCeti.MooreLoopSpace X x :=
+  ⟨H.mooreTrack b, by simp [h₀], by simp [h₁]⟩
+
+@[simp]
+theorem toMoorePath_mooreTrackLoop {b : B} {x : X} (h₀ : θ₀ b = x) (h₁ : θ₁ b = x) :
+    (H.mooreTrackLoop h₀ h₁).toMoorePath = H.mooreTrack b :=
+  (rfl)
 
 end ContinuousMap.Homotopy
 

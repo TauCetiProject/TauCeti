@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.LFunctions.Theta.Mellin.Kernel
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Volume
 public import TauCeti.NumberTheory.LSeries.FEPairWithLevel
 import TauCeti.Analysis.MellinTransform.Basic
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 /-!
 # The Mellin pair of the theta kernel of a lattice
@@ -22,7 +23,8 @@ functional-equation pair.
 
 * `TauCeti.LFunctions.mellinConstant`: the constant term `a₀ = 2^(r-1) R / w` of the kernel over
   a unit fundamental domain, the same for every such domain by the volume computation
-  `surfaceHaar_of_isUnitFundamentalDomain` (Neukirch (5.6)).
+  `surfaceHaar_of_isUnitFundamentalDomain` (Neukirch (5.6)), with `two_mul_mellinConstant` giving
+  `2 a₀ = 2^r R / w`.
 * `TauCeti.LFunctions.mellinKernelFEPair`: the kernels of `L` over `D` and of the Euclidean dual
   `L^∨` over `D⁻¹` as a `TauCeti.FEPairWithLevel` of level `1`, weight `1/2`, root number `1`
   and both constant terms `a₀`. Every hypothesis of the Mellin principle is discharged from the
@@ -100,6 +102,15 @@ theorem mellinConstant_pos : 0 < mellinConstant K := by
 variable (K) in
 @[simp]
 theorem mellinConstant_ne_zero : mellinConstant K ≠ 0 := (mellinConstant_pos K).ne'
+
+variable (K) in
+/-- Twice Neukirch's constant term `a₀ = mellinConstant K` is `2^(r₁ + r₂) R / w`. -/
+theorem two_mul_mellinConstant :
+    2 * mellinConstant K =
+      2 ^ (nrRealPlaces K + nrComplexPlaces K) * regulator K / torsionOrder K := by
+  rw [mellinConstant_def]
+  conv_rhs => rw [← Nat.sub_add_cancel (nrRealPlaces_add_nrComplexPlaces_pos K), pow_succ]
+  ring
 
 /-- Over a unit fundamental domain `D` the constant term `(2^r₂ / w) vol(D)` of the Mellin kernel
 is `a₀ = 2^(r-1) R / w`, independently of `D`. -/
