@@ -30,6 +30,8 @@ isomorphism `ι : ℂ ≃ PadicAlgCl ℓ`, with the absolute value of `PadicAlgC
   `Matrix.exists_mul_mul_eq_diagonal_of_preValuationRing`.
 * `Submodule.colengthDvd_inf_comap_span`: for a linear form `f`, `M ⊸_a {v ∈ M : a ∣ f v}`.
 * `Submodule.colengthDvd_top_smul_top`: `O ^ ι ⊸_{a ^ #ι} a • O ^ ι`.
+* `Submodule.colengthDvd_top_smul_inf_comap_span`: combining coordinate scaling and a
+  linear congruence multiplies their colength bounds.
 * `Submodule.colengthDvd_sup_span`: `(N + span S) ⊸_{z ^ #S} (N + z • V)` for a finite set `S`.
 
 ## References
@@ -118,6 +120,27 @@ theorem colengthDvd_top_smul_top [Fintype ι] (a : O) :
   refine .of_det_dvd (A := a • (1 : Matrix ι ι O)) (by simp) ?_
   rintro _ ⟨v, rfl⟩
   simpa [smul_mulVec] using smul_mem_pointwise_smul v a ⊤ mem_top
+
+/-- Over a commutative ring with total divisibility, imposing coordinate divisibility by
+`a` costs one power of `a` per coordinate, and imposing divisibility of the linear form
+`f` by `b` costs one power of `b`. Either constraint may be omitted. -/
+theorem colengthDvd_top_smul_inf_comap_span [Fintype ι] (a b : O)
+    (f : (ι → O) →ₗ[O] O) (scale test : Prop) [Decidable scale] [Decidable test] :
+    (⊤ : Submodule O (ι → O)).ColengthDvd
+      ((if scale then a • ⊤ else ⊤) ⊓ (if test then Submodule.comap f (Ideal.span {b}) else ⊤))
+      (a ^ (if scale then Fintype.card ι else 0) * b ^ (if test then 1 else 0)) := by
+  have hM : (⊤ : Submodule O (ι → O)).ColengthDvd (if scale then a • ⊤ else ⊤)
+      (a ^ (if scale then Fintype.card ι else 0)) := by
+    by_cases hs : scale
+    · simpa only [ite_eq_left hs] using colengthDvd_top_smul_top (ι := ι) a
+    · simp only [ite_eq_right hs, pow_zero, colengthDvd_self]
+  have hN (M : Submodule O (ι → O)) :
+      M.ColengthDvd (M ⊓ (if test then Submodule.comap f (Ideal.span {b}) else ⊤))
+      (b ^ (if test then 1 else 0)) := by
+    by_cases ht : test
+    · simpa only [ite_eq_left ht, pow_one] using colengthDvd_inf_comap_span M f b
+    · simp only [ite_eq_right ht, inf_top_eq, pow_zero, colengthDvd_self]
+  exact hM.trans (hN _)
 
 /-- Over a commutative ring with total divisibility, for a submodule `N` and a finite set `s` of
 vectors, the colength of `N + z • V` in `N + span s` divides `z ^ #s`. -/

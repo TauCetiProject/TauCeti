@@ -11,22 +11,24 @@ import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 /-!
 # Weighted products of conditional factors
 
-`TauCeti.prod_prod_ite_mul_pow` splits a weighted double product of two singleton-supported
-factors into one product per selected index. The indices may coincide, so overlapping
-contributions can be collected without a case split.
+`Finset.prod_prod_ite_mul_pow` splits a weighted double product of two singleton-supported
+factors into one product per selected index, using `Finset.prod_comm` and `Finset.prod_ite_eq'`.
+The indices may coincide, and an index outside the outer finset contributes `1`.
 -/
 
 public section
 
-namespace TauCeti
+namespace Finset
 
-/-- If each of two factors is `1` off its selected index, the double product of their
-weighted powers splits into two products at the selected indices, even if they coincide. -/
-theorem prod_prod_ite_mul_pow {M ι κ : Type*} [CommMonoid M] [Fintype ι]
-    [DecidableEq ι] [Fintype κ] (u v : ι) (f g : κ → M) (a : ι → κ → ℕ) :
-    (∏ i, ∏ j, ((if i = u then f j else 1) * (if i = v then g j else 1)) ^ a i j) =
-      (∏ j, f j ^ a u j) * ∏ j, g j ^ a v j := by
-  rw [Finset.prod_comm]
-  simp_rw [mul_pow, Finset.prod_mul_distrib, ite_pow, one_pow, Fintype.prod_ite_eq']
+/-- The double product of two weighted singleton-supported factors splits into one
+product for each selected index that belongs to `s`, even if the indices coincide. -/
+theorem prod_prod_ite_mul_pow {M ι κ : Type*} [CommMonoid M] [DecidableEq ι]
+    (s : Finset ι) (t : Finset κ) (u v : ι) (f g : κ → M) (a : ι → κ → ℕ) :
+    (∏ i ∈ s, ∏ j ∈ t, ((if i = u then f j else 1) * (if i = v then g j else 1)) ^ a i j) =
+      (if u ∈ s then ∏ j ∈ t, f j ^ a u j else 1) *
+      (if v ∈ s then ∏ j ∈ t, g j ^ a v j else 1) := by
+  rw [prod_comm]
+  simp_rw [mul_pow, prod_mul_distrib, ite_pow, one_pow, prod_ite_eq', prod_ite_irrel,
+    prod_const_one]
 
-end TauCeti
+end Finset

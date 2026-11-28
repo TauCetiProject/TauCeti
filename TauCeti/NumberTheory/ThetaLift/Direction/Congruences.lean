@@ -40,32 +40,6 @@ namespace TauCeti
 
 variable {R ι n : Type*} [CommRing R]
 
-section LocalConstraints
-
-variable [PreValuationRing R]
-
-/-- One linear congruence costs one power of the modulus; requiring all coordinates to be
-multiples of the modulus costs one power per coordinate. Both may be imposed together. -/
-private theorem directionConstraints (k : ℕ) (d : R) (f : (Fin k → R) →ₗ[R] R)
-    (scale test : Prop) [Decidable scale] [Decidable test] :
-    let M := if scale then d • (⊤ : Submodule R (Fin k → R)) else ⊤
-    let N := if test then Submodule.comap f (Ideal.span {d}) else ⊤
-    (⊤ : Submodule R (Fin k → R)).ColengthDvd (M ⊓ N)
-      (d ^ ((if scale then k else 0) + (if test then 1 else 0))) := by
-  intro M N
-  have hM : (⊤ : Submodule R (Fin k → R)).ColengthDvd M (d ^ (if scale then k else 0)) := by
-    by_cases hs : scale
-    · simpa [M, hs] using Submodule.colengthDvd_top_smul_top (ι := Fin k) d
-    · simp [M, hs]
-  have hN : M.ColengthDvd (M ⊓ N) (d ^ (if test then 1 else 0)) := by
-    by_cases ht : test
-    · simpa [N, ht] using Submodule.colengthDvd_inf_comap_span M f d
-    · simp [N, ht]
-  rw [pow_add]
-  exact hM.trans hN
-
-end LocalConstraints
-
 section PairedDirections
 
 variable [Fintype n] {height : ι → ℕ}
@@ -103,14 +77,8 @@ private theorem dvd_of_direction_cover {p e : ℕ} (hp : p.Prime) {d : R}
     exact dvd_mul_right ..
   · have hy : Z none y = y (0 : Fin 1) • Z none 1 := oneDirection (Z none) y
     rw [hy, dotProduct_smul, smul_eq_mul]
-    have hdiff : d ^ (p ^ e) ∣
-        (fun i ↦ (Y h x i) ^ (p ^ e)) ⬝ᵥ Z none 1 -
-          (fun i ↦ (Y h x i) ^ (p ^ e)) ⬝ᵥ (fun i ↦ root i ^ (p ^ e)) := by
-      rw [← dotProduct_sub]
-      exact Finset.dvd_sum fun i _ ↦ (hroot i).mul_left _
     rw [dotProduct_comm] at hx
-    exact dvd_mul_of_dvd_right ((dvd_iff_dvd_of_dvd_sub hdiff).2
-      (pow_dvd_dotProduct_pow hp hd hx)) _
+    exact dvd_mul_of_dvd_right (pow_dvd_dotProduct_pow_of_dvd_sub_pow hp hd hroot hx) _
   · have hx : Y none x = x (0 : Fin 1) • Y none 1 := oneDirection (Y none) x
     rw [hx, scalePow, smul_dotProduct, smul_eq_mul]
     exact dvd_mul_of_dvd_right hy _
@@ -125,6 +93,11 @@ source place or a marked partner place with a distinguished partner block. -/
 @[grind =] theorem directionPairExempt_def (markL markR : Bool) (h j : Option ι) :
     DirectionPairExempt markL markR h j ↔ h = none ∧ (markL = true ∨ j = none ∧ markR = true) :=
   Iff.rfl
+
+/-- Exemption is decidable by testing the marks and whether each label is `none`. -/
+instance instDecidableDirectionPairExempt (markL markR : Bool) (h j : Option ι) :
+    Decidable (DirectionPairExempt markL markR h j) :=
+  decidable_of_iff _ (directionPairExempt_def markL markR h j).symm
 
 /-- An ordinary source block is never exempt. -/
 @[simp] theorem directionPairExempt_some_left (markL markR : Bool) (i : ι) (j : Option ι) :
@@ -264,8 +237,12 @@ theorem exists_colengthDvd_frobenius_pairing [PreValuationRing R] [Fintype ι]
     (if h.isSome then 1 else 0)
   let r (h : Option ι) := (if sR h then directionBlockSize height h else 0) +
     (if tR h then 1 else 0)
-  refine ⟨L, M, l, r, fun h ↦ directionConstraints _ d (fL h) (sL h = true) (h.isSome = true),
-    fun h ↦ directionConstraints _ (d ^ q) (fR h) (sR h = true) (tR h = true), ?_, ?_⟩
+  refine ⟨L, M, l, r, fun h ↦ ?_, fun h ↦ ?_, ?_, ?_⟩
+  · simpa only [Fintype.card_fin, ← pow_add] using
+      Submodule.colengthDvd_top_smul_inf_comap_span d d (fL h) (sL h = true) (h.isSome = true)
+  · simpa only [Fintype.card_fin, ← pow_add] using
+      Submodule.colengthDvd_top_smul_inf_comap_span (d ^ q) (d ^ q) (fR h)
+        (sR h = true) (tR h = true)
   · have hl (h : Option ι) : l h = h.elim (if !markL && decide leftOne then 1 else 0)
         (fun i ↦ (if leftTall then height i else 0) + 1) := by
       cases h <;> simp [l, sL, directionBlockSize]
@@ -279,15 +256,11 @@ theorem exists_colengthDvd_frobenius_pairing [PreValuationRing R] [Fintype ι]
       simpa [eq_comm] using (Submodule.mem_smul_pointwise_iff_exists y (d ^ q) ⊤).mp
         (by simpa only [hs, ite_true] using (Submodule.mem_inf.mp hy).1)
     have htL (ht : h.isSome = true) : d ∣ root ⬝ᵥ Y h x := by
-      have hmem : fL h x ∈ Ideal.span {d} := by
-        simpa only [ht, ite_true, Submodule.mem_comap] using (Submodule.mem_inf.mp hx).2
-      simpa only [fL, LinearMap.comp_apply, dotProductBilin_apply_apply] using
-        Ideal.mem_span_singleton.mp hmem
+      simpa only [← Ideal.mem_span_singleton, ht, ite_true, Submodule.mem_comap,
+        fL, LinearMap.comp_apply, dotProductBilin_apply_apply] using (Submodule.mem_inf.mp hx).2
     have htR (ht : tR j = true) : d ^ q ∣ (fun i ↦ Y none 1 i ^ q) ⬝ᵥ Z j y := by
-      have hmem : fR j y ∈ Ideal.span {d ^ q} := by
-        simpa only [ht, ite_true, Submodule.mem_comap] using (Submodule.mem_inf.mp hy).2
-      simpa only [fR, LinearMap.comp_apply, dotProductBilin_apply_apply] using
-        Ideal.mem_span_singleton.mp hmem
+      simpa only [← Ideal.mem_span_singleton, ht, ite_true, Submodule.mem_comap,
+        fR, LinearMap.comp_apply, dotProductBilin_apply_apply] using (Submodule.mem_inf.mp hy).2
     rcases directionChoices_cover markL markR (decide leftOne) (decide leftTall) h j he with
       hs | hs | ⟨hj, ht⟩ | ⟨hh, ht⟩
     · exact .inl (hsL hs)

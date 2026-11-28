@@ -99,6 +99,7 @@ theorem exists_direction_matrices_with_dvd_frobenius_pairings
     _ = _ := by
       refine Finset.prod_congr rfl fun i _ ↦ Finset.prod_congr rfl fun u _ ↦ ?_
       rw [← hcost i u, prod_prod_ite_mul_pow]
+      simp only [mem_univ, ite_true]
       simp_rw [← pow_mul (d i ^ (p ^ e i)), Nat.mul_comm (r i u _) (a (partner i u) _),
         Finset.prod_pow_eq_pow_sum]
       simp_rw [← pow_mul, Nat.mul_comm (l i u _) (a u _), Finset.prod_pow_eq_pow_sum, ← pow_add]
