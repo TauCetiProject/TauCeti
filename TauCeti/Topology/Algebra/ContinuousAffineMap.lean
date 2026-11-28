@@ -115,4 +115,39 @@ theorem homogenize_apply_of_ne_zero
       ContinuousAffineMap.coe_contLinear] using g.map_vadd 0 (t⁻¹ • x)
   rw [heval, homogenize_apply, smul_add, smul_inv_smul₀ ht]
 
+open scoped Topology in
+/-- The nonvanishing set of a nonzero continuous affine map over a division ring with `0` not
+isolated is dense. -/
+theorem dense_setOf_ne_zero {𝕜 E F : Type*} [DivisionRing 𝕜] [TopologicalSpace 𝕜]
+    [Filter.NeBot (𝓝[≠] (0 : 𝕜))] [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+    [ContinuousAdd E] [ContinuousSMul 𝕜 E] [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
+    {g : E →ᴬ[𝕜] F} (hg : g ≠ 0) : Dense {x : E | g x ≠ 0} := by
+  have hex : ∃ y : E, g y ≠ 0 := by
+    by_contra! h
+    exact hg (ContinuousAffineMap.ext h)
+  obtain ⟨y, hy⟩ := hex
+  rw [dense_iff_closure_eq]
+  refine Set.eq_univ_of_forall fun x => ?_
+  by_cases hx : g x ≠ 0
+  · exact subset_closure hx
+  · rw [not_not] at hx
+    let γ : 𝕜 → E := fun t => t • (y - x) + x
+    have hγ_cont : Continuous γ := by fun_prop
+    have hγ0 : γ 0 = x := by simp [γ]
+    have hmem : ∀ᶠ t in 𝓝[≠] (0 : 𝕜), γ t ∈ {z : E | g z ≠ 0} := by
+      filter_upwards [self_mem_nhdsWithin] with t (ht : t ≠ 0)
+      have hval : g (γ t) = t • g y := by
+        have hlin : g.toAffineMap.linear (y - x) = g y := by
+          have := g.toAffineMap.map_vadd x (y - x)
+          simpa [vadd_eq_add, sub_add_cancel, hx] using this.symm
+        have := g.toAffineMap.map_vadd x (t • (y - x))
+        simpa [γ, vadd_eq_add, hx, hlin] using this
+      rw [hval]
+      intro h0
+      exact hy (by simpa [ht] using congrArg (t⁻¹ • ·) h0)
+    have htend : Filter.Tendsto γ (𝓝[≠] (0 : 𝕜)) (𝓝 x) := by
+      rw [← hγ0]
+      exact hγ_cont.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
+    exact mem_closure_of_tendsto htend hmem
+
 end ContinuousAffineMap
