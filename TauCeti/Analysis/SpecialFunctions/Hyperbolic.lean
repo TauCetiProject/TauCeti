@@ -79,6 +79,11 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
   exponentially small below its centre.
 * `Real.one_sub_exp_neg_div_le_exp` — `(1 - exp (-l)) / l ≤ exp (-(l / 2) + l ^ 2 / 24)`: the
   resulting bound on that exponential moment, for every real `l`.
+* `Complex.hasDerivAt_tanh` — the derivative of `Complex.tanh` is `1 / cosh z ^ 2` where
+  `cosh z ≠ 0`.
+* `Complex.isEquivalent_tanh` — `tanh z ∼ z` as `z → 0` in `ℂ` (DLMF 2.1.4). It follows
+  the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
+  `DLMF/AsymptoticApproximations/Basics/OrderSymbols.lean`.
 
 The formula `Real.tanh_add` is the quotient of the other two, both sides carrying the factor
 `cosh a * cosh b`, which is nonzero because `Real.cosh` is positive.
@@ -461,5 +466,27 @@ theorem norm_cosh_mul_le (z w : ℂ) : ‖cosh z * w‖ ≤ (‖exp z * w‖ + �
         gcongr
         exact norm_cosh_le z
     _ = _ := by rw [norm_mul, norm_mul]; ring
+
+/-- The derivative of the complex hyperbolic tangent at a point `z` with `cosh z ≠ 0` is
+`1 / cosh z ^ 2`, as for `Real.hasDerivAt_tanh`. -/
+theorem hasDerivAt_tanh (z : ℂ) (hz : cosh z ≠ 0) : HasDerivAt tanh (1 / cosh z ^ 2) z := by
+  have h : HasDerivAt (fun y ↦ sinh y / cosh y) _ z :=
+    (hasDerivAt_sinh z).div (hasDerivAt_cosh z) hz
+  rw [← funext tanh_eq_sinh_div_cosh] at h
+  convert h using 1
+  rw [← sq, ← sq, cosh_sq_sub_sinh_sq]
+
+open Asymptotics Topology in
+/-- `tanh z ∼ z` as `z → 0` in `ℂ` (DLMF 2.1.4), along the full neighbourhood filter: `tanh` has
+derivative `1` at `0`, where both sides vanish. It parallels Mathlib's `Complex.isEquivalent_sinh`
+and `Complex.isEquivalent_sin`. -/
+theorem isEquivalent_tanh : tanh ~[𝓝 0] id := by
+  refine IsLittleO.isEquivalent ?_
+  -- At `0` the derivative remainder `tanh z - tanh 0 - (z - 0) • (1 / cosh 0 ^ 2)` is
+  -- `tanh z - z`, since `tanh 0 = 0` and `cosh 0 = 1`; the goal `(tanh - id) =o[𝓝 0] id` is
+  -- that statement with `Pi.sub` and `id` unfolded.
+  have h : (fun z ↦ tanh z - z) =o[𝓝 0] fun z ↦ z := by
+    simpa using (hasDerivAt_tanh 0 (by simp)).isLittleO
+  exact h
 
 end Complex

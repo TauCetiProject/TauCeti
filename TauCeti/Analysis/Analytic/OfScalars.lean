@@ -56,6 +56,12 @@ every nonzero point of the disc of convergence (`TauCeti.hasDerivAt_tsum_div_mul
 Shifting also yields
 analyticity on the shifted open ball of convergence unconditionally, even when that ball is empty
 (`TauCeti.analyticOnNhd_ofScalarsSum_sub`).
+
+Over any nontrivially normed field, if `∑ aₛ zˢ` converges for all `z` near `0`, the tail
+`∑_{s ≥ n} aₛ zˢ` is `O(zⁿ)` as `z → 0` (`TauCeti.tsum_tail_isBigO_pow`, DLMF 2.1.8). It is the
+scalar-series form of Mathlib's `HasFPowerSeriesAt.isBigO_sub_partialSum_pow`. It follows the
+lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/AsymptoticApproximations/Basics/OrderSymbols.lean`.
 -/
 
 public section
@@ -493,5 +499,33 @@ theorem analyticOnNhd_ofScalarsSum_sub {𝕜 E : Type*} [NontriviallyNormedField
   (FormalMultilinearSeries.ofScalars E c).analyticOnNhd.comp
     (analyticOnNhd_id.sub analyticOnNhd_const) fun z hz ↦ by
       simpa [Metric.mem_eball, edist_zero_right, eDist_eq_eNorm_sub] using hz
+
+section Tail
+
+open Filter Asymptotics
+open scoped Topology
+
+/-- DLMF 2.1.8: if `∑ aₛ zˢ` converges for all `z` near `0`, then for each `n` the tail
+`∑_{s ≥ n} aₛ zˢ` is `O(zⁿ)` as `z → 0`. -/
+theorem tsum_tail_isBigO_pow {𝕜 : Type*} [NontriviallyNormedField 𝕜] {a : ℕ → 𝕜}
+    (ha : ∀ᶠ z in 𝓝 0, Summable fun s ↦ a s * z ^ s) (n : ℕ) :
+    (fun z : 𝕜 ↦ ∑' s, a (s + n) * z ^ (s + n)) =O[𝓝 0] fun z ↦ z ^ n := by
+  set p := FormalMultilinearSeries.ofScalars 𝕜 a with hp
+  -- The scalar series is the power series of its sum at `0`.
+  have hfps : HasFPowerSeriesAt (fun z : 𝕜 ↦ ∑' s, a s * z ^ s) p 0 :=
+    hasFPowerSeriesAt_iff.mpr <| ha.mono fun z hz ↦ by
+      simpa [hp, FormalMultilinearSeries.coeff_ofScalars, zero_add, smul_eq_mul, mul_comm]
+        using hz.hasSum
+  have h := hfps.isBigO_sub_partialSum_pow n
+  -- Near `0` the remainder after `n` terms is the tail of the scalar series.
+  have heq : (fun z : 𝕜 ↦ (∑' s, a s * (0 + z) ^ s) - p.partialSum n z) =ᶠ[𝓝 0]
+      fun z ↦ ∑' s, a (s + n) * z ^ (s + n) := by
+    filter_upwards [ha] with z hz
+    rw [zero_add, ← hz.sum_add_tsum_nat_add n]
+    simp [FormalMultilinearSeries.partialSum, hp, mul_comm (_ ^ _)]
+  refine (h.congr' heq EventuallyEq.rfl).trans ?_
+  simpa [norm_pow] using (isBigO_refl (fun z : 𝕜 ↦ z ^ n) (𝓝 0)).norm_left
+
+end Tail
 
 end TauCeti
