@@ -59,6 +59,8 @@ together into a single outer composition equality (`RingHom.comp_comp_comp_eq_co
   `b = x² - a y²`.
 * `RingHom.comp_comp_comp_eq_comp_of_comp_eq`: paste a four-step chain of commuting squares and
   triangles of ring homomorphisms into a single outer composition identity.
+* `RingHom.toMonoidHom_comp`: converting a composite ring homomorphism to a monoid homomorphism
+  gives the composite of the converted monoid homomorphisms.
 -/
 
 public section
@@ -184,5 +186,12 @@ theorem comp_comp_comp_eq_comp_of_comp_eq
     _ = (ρ.comp (θ.comp ι₂₃)).comp (π.comp ι₀) := by simp only [comp_assoc]
     _ = (ρ.comp ι₂₄).comp f := by rw [hθ, hπ]
     _ = g.comp f := by rw [hρ]
+
+/-- Viewing a composite ring homomorphism as a monoid homomorphism gives the composite of the
+converted monoid homomorphisms. -/
+theorem toMonoidHom_comp {R S T : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
+    [NonAssocSemiring T] (g : S →+* T) (f : R →+* S) :
+    (g.comp f).toMonoidHom = g.toMonoidHom.comp f.toMonoidHom :=
+  MonoidHom.ext fun _ ↦ by simp [RingHom.toMonoidHom_eq_coe]
 
 end RingHom

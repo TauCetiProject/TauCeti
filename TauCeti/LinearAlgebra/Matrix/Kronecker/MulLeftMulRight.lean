@@ -10,8 +10,8 @@ public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.Kronecker
 public import Mathlib.LinearAlgebra.UnitaryGroup
-import Mathlib.LinearAlgebra.Matrix.StdBasis
 import TauCeti.LinearAlgebra.Complex.Determinant
+import TauCeti.LinearAlgebra.Matrix.StdBasis
 
 /-!
 # The determinant of `X ↦ A * X * B`
@@ -21,7 +21,9 @@ On the square matrices `Matrix n n R` over a commutative ring, the `R`-linear ma
 (`Matrix.toMatrix_stdBasis_mulLeft_comp_mulRight`), so its determinant is
 `det A ^ n * det B ^ n` (`Matrix.det_mulLeft_comp_mulRight`). For `B = Aᴴ` this computes the
 determinant of the congruence action of `GL_n` on matrices. In particular, unitary conjugation
-has determinant one, including over the real scalars for complex matrices.
+has determinant one, including over the real scalars for complex matrices, and left
+multiplication by a complex matrix `P` has real determinant `|det P| ^ (2 n)`
+(`Matrix.det_mulLeft_complex`).
 -/
 
 public section
@@ -37,10 +39,8 @@ Kronecker product `A ⊗ₖ Bᵀ` as its matrix. -/
 theorem toMatrix_stdBasis_mulLeft_comp_mulRight (A B : Matrix n n R) :
     LinearMap.toMatrix (stdBasis R n n) (stdBasis R n n)
       (LinearMap.mulLeft R A ∘ₗ LinearMap.mulRight R B) = A ⊗ₖ Bᵀ := by
-  have hrepr (X : Matrix n n R) (p : n × n) : (stdBasis R n n).repr X p = X p.1 p.2 := by
-    simp [stdBasis]
   ext ⟨i, j⟩ ⟨k, l⟩
-  simp [LinearMap.toMatrix_apply, stdBasis_eq_single, hrepr, Matrix.mul_apply,
+  simp [LinearMap.toMatrix_apply, stdBasis_eq_single, Matrix.mul_apply,
     Matrix.single_apply, ite_and, Finset.sum_ite_eq]
 
 /-- **The determinant of two-sided multiplication**: the `R`-linear map `X ↦ A * X * B` on
@@ -55,6 +55,17 @@ theorem det_mulLeft_comp_mulRight (A B : Matrix n n R) :
 theorem det_mulLeft_comp_mulRight_of_mul_eq_one (A B : Matrix n n R) (h : A * B = 1) :
     LinearMap.det (LinearMap.mulLeft R A ∘ₗ LinearMap.mulRight R B) = 1 := by
   rw [det_mulLeft_comp_mulRight, ← mul_pow, ← det_mul, h, det_one, one_pow]
+
+/-- **The real determinant of left multiplication** on complex matrices: `X ↦ P * X` on `n × n`
+complex matrices has real determinant `|det P| ^ (2 n)`, written `normSq (det P) ^ n`. -/
+theorem det_mulLeft_complex (P : Matrix n n ℂ) :
+    LinearMap.det (LinearMap.mulLeft ℝ P : Matrix n n ℂ →ₗ[ℝ] Matrix n n ℂ) =
+      Complex.normSq P.det ^ Fintype.card n := by
+  have h : (LinearMap.mulLeft ℝ P : Matrix n n ℂ →ₗ[ℝ] Matrix n n ℂ) =
+      (LinearMap.mulLeft ℂ P ∘ₗ LinearMap.mulRight ℂ 1).restrictScalars ℝ :=
+    LinearMap.ext fun Z ↦ by simp
+  rw [h, LinearMap.det_restrictScalars_eq_normSq, det_mulLeft_comp_mulRight, det_one, one_pow,
+    mul_one, map_pow]
 
 namespace UnitaryGroup
 

@@ -67,12 +67,7 @@ theorem IsSeparator.exists_epi_sigmaDesc_comp (hG : IsSeparator G) {Z P : C} (r 
   let φ : I → (G ⟶ Z) := fun i ↦
     if h : ∃ φ : G ⟶ Z, ¬ (e i).Factors (φ ≫ r) then h.choose else 0
   refine ⟨φ, ?_⟩
-  suffices hg : imageSubobject (Sigma.desc φ ≫ r) = ⊤ by
-    have : IsIso (imageSubobject (Sigma.desc φ ≫ r)).arrow := by
-      rw [Subobject.isIso_arrow_iff_eq_top]
-      exact hg
-    rw [← imageSubobject_arrow_comp (Sigma.desc φ ≫ r)]
-    exact epi_comp _ _
+  rw [← imageSubobject_eq_top_iff_epi]
   by_contra hne
   obtain ⟨i, hi⟩ := he (imageSubobject (Sigma.desc φ ≫ r))
   have h : ∃ φ : G ⟶ Z, ¬ (e i).Factors (φ ≫ r) := hi ▸ hG.exists_not_factors_comp r hne
@@ -112,9 +107,7 @@ theorem IsSeparator.exists_sigma_lift (hG : IsSeparator G) {B M N Q : C} (q : B 
     (π : M ⟶ Q) [Epi π] (ι : N ⟶ Q) {I : Type*} [HasCoproduct fun _ : I ↦ G]
     (e : I → Subobject B) (he : Function.Surjective e) :
     ∃ (g : (∐ fun _ : I ↦ G) ⟶ M) (e' : (∐ fun _ : I ↦ G) ⟶ N), Epi e' ∧ g ≫ π = e' ≫ ι := by
-  have htop : imageSubobject q = ⊤ := by
-    have : Epi (imageSubobject q).arrow := epi_of_epi_fac (imageSubobject_arrow_comp q)
-    exact (Subobject.isIso_arrow_iff_eq_top _).1 (isIso_of_mono_of_epi _)
+  have htop : imageSubobject q = ⊤ := (imageSubobject_eq_top_iff_epi q).2 inferInstance
   obtain ⟨φ, hφ⟩ := hG.exists_epi_sigmaDesc_comp (pullback.snd π ι)
     (fun i ↦ imageSubobject ((e i).arrow ≫ q)) (fun Y' ↦ by
       obtain ⟨i, hi⟩ := he ((Subobject.pullback q).obj Y')

@@ -233,6 +233,36 @@ theorem mem_chainLeTwoIndex {m n : ℕ} {p : ℕ × ℕ} :
   simp only [chainLeTwoIndex, Finset.mem_filter, Finset.mem_product, Finset.mem_range]
   omega
 
+/-- The three exponent pairs in double-chain collection at degrees two and one. -/
+theorem chainLeTwoIndex_two_one : chainLeTwoIndex 2 1 = {(0, 0), (1, 0), (0, 1)} := by
+  ext ⟨b, k⟩
+  simp only [mem_chainLeTwoIndex, mem_insert, mem_singleton, Prod.mk.injEq]
+  omega
+
+/-- Expand a sum over the three double-chain indices at degrees two and one. -/
+theorem sum_chainLeTwoIndex_two_one {B : Type*} [AddCommMonoid B] (f : ℕ × ℕ → B) :
+    ∑ p ∈ chainLeTwoIndex 2 1, f p = f (0, 0) + f (1, 0) + f (0, 1) := by
+  simp [chainLeTwoIndex_two_one, add_assoc]
+
+/-- Each nonleading double-chain term has strictly smaller total degree. -/
+theorem chainLeTwoIndex_degree_lt {m n : ℕ} {p : ℕ × ℕ}
+    (hp : p ∈ (chainLeTwoIndex m n).erase (0, 0)) :
+    (n - p.1 - p.2) + p.1 + p.2 + (m - p.1 - 2 * p.2) < m + n := by
+  obtain ⟨hne, hp⟩ := mem_erase.mp hp
+  have := mem_chainLeTwoIndex.mp hp
+  have : p.1 ≠ 0 ∨ p.2 ≠ 0 := by
+    by_contra h
+    push Not at h
+    exact hne (Prod.ext h.1 h.2)
+  omega
+
+/-- Reversing the factors of a double-chain correction preserves its degree decrease. -/
+theorem chainLeTwoIndex_reverse_degree_lt {m n : ℕ} {p : ℕ × ℕ}
+    (hp : p ∈ (chainLeTwoIndex n m).erase (0, 0)) :
+    (n - p.1 - 2 * p.2) + p.2 + p.1 + (m - p.1 - p.2) < m + n := by
+  have := chainLeTwoIndex_degree_lt hp
+  omega
+
 /-- **Coefficient-one normal ordering along the chain `β`, `α + β`, `2α + β`.** Suppose
 
 ```text

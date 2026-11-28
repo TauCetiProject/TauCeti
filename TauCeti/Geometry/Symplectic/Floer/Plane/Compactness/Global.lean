@@ -13,8 +13,8 @@ import TauCeti.Geometry.Symplectic.Floer.Tameness
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.MeasureTheory.Measure.BubblingSet
-import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence.Compact
 
 /-!
 # Compactness of PSS planes on the whole plane in a closed manifold
@@ -440,13 +440,10 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_pssPl
       (hwin hu hfl ha hA)
   rw [iUnion_window, ← compl_eq_univ_sdiff] at hconv
   -- The limit is continuous, and it is read back in `M` through the embedding `e`.
-  have hg : ContinuousOn g (↑Z)ᶜ := hconv.continuousOn (Eventually.of_forall fun n ↦
-    (he.continuous.comp (hu (φ n)).continuous).continuousOn).frequently
-  obtain ⟨v, hv, -, hev, hpt⟩ := isCompact_univ.exists_tendsto_of_tendsto_comp
-    he.continuous.continuousOn he_inj.injOn (fun _ _ ↦ .of_forall fun _ ↦ mem_univ _) hg
-    fun z hz ↦ hconv.tendsto_at hz
+  obtain ⟨v, hv, hev, hpt⟩ := hconv.exists_tendsto_of_comp he.continuous he_inj
+    (.of_forall fun n ↦ (he.continuous.comp (hu (φ n)).continuous).continuousOn)
   refine ⟨φ, Z, v, hφ, (ENNReal.natCast_mul_ofReal_le_ofReal_iff (hEb 0).1).1 hcard,
-    fun z hz ε hε ↦ ?_, hv, hconv.congr_right hev.symm, hpt⟩
+    fun z hz ε hε ↦ ?_, hv, hev, hpt⟩
   -- The energy measure of a disc is the energy over the disc.
   have hX (w : ℂ) : ContinuousOn (fun q : (ℝ × ℝ) × M ↦ (⟨q.2, ω.hamiltonianVectorField
       (fun y ↦ p.perturbation H (equivRealProdCLM.symm q.1) y w) q.2⟩ : TangentBundle I M))

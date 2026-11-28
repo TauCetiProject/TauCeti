@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Map
 import TauCeti.Geometry.Manifold.Morse.Submersion
 import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Map
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 
 /-!
 # Negative normal bundles of Morse–Bott submanifolds along maps
@@ -36,7 +36,8 @@ space of `g'`. The two metrics need not correspond under `σ`. When `σ` is `C^{
 `C^{k+2}` along `i'` and the metrics are `C^k`, these isomorphisms form a `C^k` diffeomorphism of
 the total spaces of the negative normal bundles
 (`IsNondegenerateCriticalSubmanifold.exists_bundleDiffeomorph_negativeNormalSpace_of_comp`). Hence
-the orientation local systems `o(ν⁻)` of the two negative normal bundles are isomorphic
+the orientation local systems `o(ν⁻)` of the two negative normal bundles are isomorphic, whatever
+local frames define their bundle structures
 (`IsNondegenerateCriticalSubmanifold.negativeNormalSpaceSignLocalSystemIsoOfComp`), and one bundle
 is orientable exactly when the other is
 (`nonempty_vectorBundleOrientation_negativeNormalSpace_iff_of_comp`, in the namespace
@@ -44,10 +45,11 @@ is orientable exactly when the other is
 
 Across a critical level, the relative homology of the sublevels is the homology of the critical
 submanifolds twisted by these orientation local systems and shifted by their indices. So the
-isomorphisms of orientation local systems here are the input needed to identify the twisted
-homology of the critical submanifolds of `f ∘ σ` with that of the corresponding critical
-submanifolds of `f`, as the diffeomorphism invariance of the critical-band spectral sequence
-requires; this file does not state that homology comparison.
+isomorphisms of orientation local systems here identify the twisted homology of the critical
+submanifolds of `f ∘ σ` with that of the corresponding critical submanifolds of `f`, over every
+ring, as the diffeomorphism invariance of the critical-band spectral sequence requires; that
+homology comparison is `TauCeti.IsMorseBottFamily.twistedHomologyIsoCompDiffeomorph`, in
+`TauCeti.Geometry.Manifold.Morse.Bott.Diffeomorph`.
 
 ## Main definitions
 
@@ -69,6 +71,8 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 * `contMDiff_negativeNormalSpaceEquivOfComp` and
   `exists_bundleDiffeomorph_negativeNormalSpace_of_comp`: the fibrewise isomorphisms form a `C^k`
   diffeomorphism of total spaces.
+* `continuous_negativeNormalSpaceEquivOfComp_symm`: their inverses are continuous for the subbundle
+  topologies, whatever local frames and model fibres are chosen.
 * `nonempty_vectorBundleOrientation_negativeNormalSpace_iff_of_comp`: the two negative normal
   bundles are orientable together.
 
@@ -142,17 +146,12 @@ def negativeNormalSpaceEquivOfComp :
         (i.normalMap i' (u := fun s ↦ s) hn hn' (.of_eq hσi)).toLinearMap ∘ₗ
           (h.negativeNormalSpace hn g s).subtype).codRestrict _
       fun v ↦ h'.negativeNormalProjection_apply_mem hn' g' _)
-    (by
-      rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-      rintro ⟨v, hv⟩ hv0
-      by_contra hne
-      have hpos : i.normalMap i' (u := fun s ↦ s) hn hn' (.of_eq hσi) v ∈
-          h'.positiveNormalSpace hn' g' s :=
-        (h'.negativeNormalProjection_apply_eq_zero_iff hn' g').1 (congrArg Subtype.val hv0)
-      have hneg := h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g hv
-        fun hv ↦ hne (Subtype.ext hv)
-      rw [← h.normalHessian_normalMap hn hn' hσi h'.toIsCriticalSubmanifold hσ] at hneg
-      exact hneg.not_ge (h'.normalHessian_apply_self_nonneg_of_mem_positiveNormalSpace hn' g' hpos))
+    (.of_comp (f := Subtype.val) <| h'.injective_negativeNormalProjection_comp hn' g' _
+      fun v hv0 ↦ by
+        rw [LinearMap.comp_apply, Submodule.subtype_apply, ContinuousLinearMap.coe_coe,
+          h.normalHessian_normalMap hn hn' hσi h'.toIsCriticalSubmanifold hσ]
+        exact h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g v.property
+          fun hv ↦ hv0 (Subtype.ext hv))
     (by
       have hσis : σ (i s) = i' s := congrFun hσi s
       rw [h.finrank_negativeNormalSpace hn g, h'.finrank_negativeNormalSpace hn' g',
@@ -438,6 +437,74 @@ theorem contMDiff_negativeNormalSpaceEquivOfComp_symm
     ((h.contMDiff_negativeNormalSpaceEquivOfComp hn hn' hσi h' hk hk' hσ hσs hf hdim hdim' g g'
       hr).congr fun v ↦ by simp)
 
+/-- The inverses of the identifications `negativeNormalSpaceEquivOfComp` of the negative normal
+spaces along a map are continuous on the total spaces of the negative normal bundles, whatever
+local frames define their bundle structures and whatever model fibre `F''` labels their total
+spaces: their topologies are the subbundle topologies, which depend only on the subbundles
+(`contMDiff_negativeNormalSpaceEquivOfComp_symm`, `TauCeti.subbundleTotalSpaceModelHomeomorph`). -/
+theorem continuous_negativeNormalSpaceEquivOfComp_symm
+    (h : i.IsNondegenerateCriticalSubmanifold (f ∘ σ))
+    (h' : i'.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n) (hk' : k + 1 ≤ n')
+    (hσ : ContMDiff I I' (k + 2) σ) (hσs : ∀ s, IsRegularPoint I I' σ (i s))
+    (hf : ∀ s, ContMDiffAt I' 𝓘(ℝ) (k + 2) f (i' s))
+    (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ F)
+    (hdim' : finrank ℝ P' = finrank ℝ E' - finrank ℝ F)
+    (g : haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J k P fun s ↦ i.isImmersion.NormalSpace s hn)
+    (g' : haveI : IsManifold I' 1 M' := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i'.normalSpaceFiberBundle hn' hdim'
+      letI := i'.normalSpaceVectorBundle hn' hdim'
+      ContMDiffRiemannianMetric J k P' fun s ↦ i'.isImmersion.NormalSpace s hn') {r : ℕ}
+    (hr : ∀ s, manifoldMorseIndex I' f (i' s) = r) {F'' : Type*} :
+    haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+    haveI : IsManifold I' 2 M' := .of_le (n := k + 2) le_add_self
+    haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+    haveI : IsManifold I' 1 M' := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+    haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    letI := i'.normalSpaceFiberBundle hn' hdim'
+    letI := i'.normalSpaceVectorBundle hn' hdim'
+    letI := subbundleTopology P (F' := F'') (h.negativeNormalSpace hn g.toRiemannianMetric)
+    letI := subbundleTopology P' (F' := F'') (h'.negativeNormalSpace hn' g'.toRiemannianMetric)
+    Continuous fun v : TotalSpace F'' (fun s ↦ h'.negativeNormalSpace hn' g'.toRiemannianMetric s) ↦
+      TotalSpace.mk' F'' (E := fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s)
+        v.proj ((h.negativeNormalSpaceEquivOfComp hn hn' hσi h' g.toRiemannianMetric
+          g'.toRiemannianMetric ((hσ (i v.proj)).of_le le_add_self)
+            (hσs v.proj)).toContinuousLinearEquiv.symm v.snd) := by
+  have : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+  have : IsManifold I' 2 M' := .of_le (n := k + 2) le_add_self
+  have : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+  have : IsManifold I' 1 M' := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+  have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  let := i'.normalSpaceFiberBundle hn' hdim'
+  let := i'.normalSpaceVectorBundle hn' hdim'
+  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+  let := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace_of_comp hn hσi
+    h'.toIsCriticalSubmanifold hk (fun s ↦ hσ (i s)) hσs hf hdim g hr).fiberBundle
+  let := subbundleTopology P' (F' := Fin r → ℝ) (h'.negativeNormalSpace hn' g'.toRiemannianMetric)
+  let := (h'.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn' hk' hf hdim' g'
+    hr).fiberBundle
+  let := subbundleTopology P (F' := F'') (h.negativeNormalSpace hn g.toRiemannianMetric)
+  let := subbundleTopology P' (F' := F'') (h'.negativeNormalSpace hn' g'.toRiemannianMetric)
+  -- Both total spaces carry the topology induced from the ambient normal bundle, whatever their
+  -- model fibre, so the map for `F''` is continuous because the one for `Fin r → ℝ` is.
+  have hφ := (h.contMDiff_negativeNormalSpaceEquivOfComp_symm hn hn' hσi h' hk hk' hσ hσs hf hdim
+    hdim' g g' hr).continuous
+  exact ((subbundleTotalSpaceModelHomeomorph P (Fin r → ℝ) F''
+    (h.negativeNormalSpace hn g.toRiemannianMetric)).continuous.comp
+      (hφ.comp (subbundleTotalSpaceModelHomeomorph P' F'' (Fin r → ℝ)
+        (h'.negativeNormalSpace hn' g'.toRiemannianMetric)).continuous)).congr
+    fun v ↦ by
+      rw [Function.comp_apply, Function.comp_apply, subbundleTotalSpaceModelHomeomorph_apply,
+        subbundleTotalSpaceModelHomeomorph_apply]
+
 /-- **The negative normal bundles along a map are orientable together.** In the setting of
 `contMDiff_negativeNormalSpaceEquivOfComp`, the negative normal bundle of `i` relative to `g` is
 orientable if and only if that of `i'` relative to `g'` is. -/
@@ -536,13 +603,15 @@ variable {E : Type u} {H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [
 variable (R : Type*) [Ring R]
 
 /-- **The orientation local systems of the negative normal bundles along a map are isomorphic.**
-In the setting of `contMDiff_negativeNormalSpaceEquivOfComp`, the orientation local systems
-`o(ν⁻)` of the negative normal bundle of `i` relative to `g` and of `i'` relative to `g'` are
-isomorphic: the fibrewise isomorphisms `negativeNormalSpaceEquivOfComp` transport orientations of
-fibres. For a diffeomorphism `σ`, this is what is needed to identify the homology with
-coefficients in the orientation local system of the negative normal bundle of the critical
-submanifold `i'` of `f` with that of its preimage `i` under `σ`, a critical submanifold of
-`f ∘ σ`. -/
+In the setting of `contMDiff_negativeNormalSpaceEquivOfComp`, let the negative normal spaces of `i`
+relative to `g` and of `i'` relative to `g'` have continuous local frames indexed by a finite type
+`κ`, so that they form the negative normal bundles `ν⁻` and `ν'⁻`. Then the orientation local
+systems `o(ν⁻)` and `o(ν'⁻)` are isomorphic: the fibrewise isomorphisms
+`negativeNormalSpaceEquivOfComp` transport orientations of fibres. For a diffeomorphism `σ`, this
+identifies the homology with coefficients in the orientation local system of the negative normal
+bundle of the critical submanifold `i'` of `f` with that of its preimage `i` under `σ`, a critical
+submanifold of `f ∘ σ`
+(`TauCeti.IsMorseBottFamily.twistedHomologyIsoCompDiffeomorph`). -/
 def negativeNormalSpaceSignLocalSystemIsoOfComp
     (h : i.IsNondegenerateCriticalSubmanifold (f ∘ σ))
     (h' : i'.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n) (hk' : k + 1 ≤ n')
@@ -559,8 +628,20 @@ def negativeNormalSpaceSignLocalSystemIsoOfComp
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i'.normalSpaceFiberBundle hn' hdim'
       letI := i'.normalSpaceVectorBundle hn' hdim'
-      ContMDiffRiemannianMetric J k P' fun s ↦ i'.isImmersion.NormalSpace s hn') {r : ℕ}
-    (hr : ∀ s, manifoldMorseIndex I' f (i' s) = r) :
+      ContMDiffRiemannianMetric J k P' fun s ↦ i'.isImmersion.NormalSpace s hn')
+    {κ : Type*} [Fintype κ]
+    (hV : haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+      haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      HasLocalSubbundleFrames P κ (h.negativeNormalSpace hn g.toRiemannianMetric))
+    (hV' : haveI : IsManifold I' 2 M' := .of_le (n := k + 2) le_add_self
+      haveI : IsManifold I' 1 M' := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i'.normalSpaceFiberBundle hn' hdim'
+      letI := i'.normalSpaceVectorBundle hn' hdim'
+      HasLocalSubbundleFrames P' κ (h'.negativeNormalSpace hn' g'.toRiemannianMetric)) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I' 2 M' := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
@@ -570,23 +651,18 @@ def negativeNormalSpaceSignLocalSystemIsoOfComp
     letI := i.normalSpaceVectorBundle hn hdim
     letI := i'.normalSpaceFiberBundle hn' hdim'
     letI := i'.normalSpaceVectorBundle hn' hdim'
-    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
-    letI := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace_of_comp hn hσi
-      h'.toIsCriticalSubmanifold hk (fun s ↦ hσ (i s)) hσs hf hdim g hr).fiberBundle
-    haveI := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace_of_comp hn hσi
-      h'.toIsCriticalSubmanifold hk (fun s ↦ hσ (i s)) hσs hf hdim g hr).vectorBundle
-    letI := subbundleTopology P' (F' := Fin r → ℝ)
-      (h'.negativeNormalSpace hn' g'.toRiemannianMetric)
-    letI := (h'.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn' hk' hf hdim' g'
-      hr).fiberBundle
-    haveI := (h'.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn' hk' hf hdim' g'
-      hr).vectorBundle
-    VectorBundleOrientationCover.signLocalSystem (Fin r → ℝ)
+    letI := subbundleTopology P (F' := κ → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+    letI := hV.fiberBundle
+    haveI := hV.vectorBundle
+    letI := subbundleTopology P' (F' := κ → ℝ) (h'.negativeNormalSpace hn' g'.toRiemannianMetric)
+    letI := hV'.fiberBundle
+    haveI := hV'.vectorBundle
+    VectorBundleOrientationCover.signLocalSystem (κ → ℝ)
         (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) R
-        (ι := Fin r) (by simp) ≅
-      VectorBundleOrientationCover.signLocalSystem (Fin r → ℝ)
+        (finrank_fintype_fun_eq_card ℝ).symm ≅
+      VectorBundleOrientationCover.signLocalSystem (κ → ℝ)
         (fun s ↦ h'.negativeNormalSpace hn' g'.toRiemannianMetric s) R
-        (ι := Fin r) (by simp) :=
+        (finrank_fintype_fun_eq_card ℝ).symm :=
   haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
   haveI : IsManifold I' 2 M' := .of_le (n := k + 2) le_add_self
   haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
@@ -596,23 +672,19 @@ def negativeNormalSpaceSignLocalSystemIsoOfComp
   letI := i.normalSpaceVectorBundle hn hdim
   letI := i'.normalSpaceFiberBundle hn' hdim'
   letI := i'.normalSpaceVectorBundle hn' hdim'
-  letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
-  letI := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace_of_comp hn hσi
-    h'.toIsCriticalSubmanifold hk (fun s ↦ hσ (i s)) hσs hf hdim g hr).fiberBundle
-  haveI := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace_of_comp hn hσi
-    h'.toIsCriticalSubmanifold hk (fun s ↦ hσ (i s)) hσs hf hdim g hr).vectorBundle
-  letI := subbundleTopology P' (F' := Fin r → ℝ)
-    (h'.negativeNormalSpace hn' g'.toRiemannianMetric)
-  letI := (h'.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn' hk' hf hdim' g'
-    hr).fiberBundle
-  haveI := (h'.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn' hk' hf hdim' g'
-    hr).vectorBundle
-  VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise R (F := Fin r → ℝ)
-    (F' := Fin r → ℝ) (ι := Fin r) (φ := fun s ↦ (h.negativeNormalSpaceEquivOfComp hn hn' hσi h'
-      g.toRiemannianMetric g'.toRiemannianMetric ((hσ (i s)).of_le le_add_self)
-        (hσs s)).toContinuousLinearEquiv.symm) (by simp) (by simp)
-    (h.contMDiff_negativeNormalSpaceEquivOfComp_symm hn hn' hσi h' hk hk' hσ hσs hf hdim hdim' g
-      g' hr).continuous
+  letI := subbundleTopology P (F' := κ → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+  letI := hV.fiberBundle
+  haveI := hV.vectorBundle
+  letI := subbundleTopology P' (F' := κ → ℝ) (h'.negativeNormalSpace hn' g'.toRiemannianMetric)
+  letI := hV'.fiberBundle
+  haveI := hV'.vectorBundle
+  VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise R (F := κ → ℝ) (F' := κ → ℝ)
+    (φ := fun s ↦ (h.negativeNormalSpaceEquivOfComp hn hn' hσi h' g.toRiemannianMetric
+      g'.toRiemannianMetric ((hσ (i s)).of_le le_add_self) (hσs s)).toContinuousLinearEquiv.symm)
+    (finrank_fintype_fun_eq_card ℝ).symm (finrank_fintype_fun_eq_card ℝ).symm
+    (h.continuous_negativeNormalSpaceEquivOfComp_symm hn hn' hσi h' hk hk' hσ hσs hf hdim
+      hdim' g g' (h'.manifoldMorseIndex_eq_card_of_hasLocalSubbundleFrames hn'
+        g'.toRiemannianMetric hV'))
 
 /-- The isomorphism of orientation local systems of the negative normal bundles along a map is the
 one induced by the inverses of the fibrewise isomorphisms `negativeNormalSpaceEquivOfComp`
@@ -634,8 +706,20 @@ theorem negativeNormalSpaceSignLocalSystemIsoOfComp_def
       haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
       letI := i'.normalSpaceFiberBundle hn' hdim'
       letI := i'.normalSpaceVectorBundle hn' hdim'
-      ContMDiffRiemannianMetric J k P' fun s ↦ i'.isImmersion.NormalSpace s hn') {r : ℕ}
-    (hr : ∀ s, manifoldMorseIndex I' f (i' s) = r) :
+      ContMDiffRiemannianMetric J k P' fun s ↦ i'.isImmersion.NormalSpace s hn')
+    {κ : Type*} [Fintype κ]
+    (hV : haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
+      haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      HasLocalSubbundleFrames P κ (h.negativeNormalSpace hn g.toRiemannianMetric))
+    (hV' : haveI : IsManifold I' 2 M' := .of_le (n := k + 2) le_add_self
+      haveI : IsManifold I' 1 M' := .of_le (n := k + 2) (one_le_two.trans le_add_self)
+      haveI : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
+      letI := i'.normalSpaceFiberBundle hn' hdim'
+      letI := i'.normalSpaceVectorBundle hn' hdim'
+      HasLocalSubbundleFrames P' κ (h'.negativeNormalSpace hn' g'.toRiemannianMetric)) :
     haveI : IsManifold I 2 M := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I' 2 M' := .of_le (n := k + 2) le_add_self
     haveI : IsManifold I 1 M := .of_le (n := k + 2) (one_le_two.trans le_add_self)
@@ -645,25 +729,22 @@ theorem negativeNormalSpaceSignLocalSystemIsoOfComp_def
     letI := i.normalSpaceVectorBundle hn hdim
     letI := i'.normalSpaceFiberBundle hn' hdim'
     letI := i'.normalSpaceVectorBundle hn' hdim'
-    letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
-    letI := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace_of_comp hn hσi
-      h'.toIsCriticalSubmanifold hk (fun s ↦ hσ (i s)) hσs hf hdim g hr).fiberBundle
-    haveI := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace_of_comp hn hσi
-      h'.toIsCriticalSubmanifold hk (fun s ↦ hσ (i s)) hσs hf hdim g hr).vectorBundle
-    letI := subbundleTopology P' (F' := Fin r → ℝ)
-      (h'.negativeNormalSpace hn' g'.toRiemannianMetric)
-    letI := (h'.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn' hk' hf hdim' g'
-      hr).fiberBundle
-    haveI := (h'.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn' hk' hf hdim' g'
-      hr).vectorBundle
+    letI := subbundleTopology P (F' := κ → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+    letI := hV.fiberBundle
+    haveI := hV.vectorBundle
+    letI := subbundleTopology P' (F' := κ → ℝ) (h'.negativeNormalSpace hn' g'.toRiemannianMetric)
+    letI := hV'.fiberBundle
+    haveI := hV'.vectorBundle
     h.negativeNormalSpaceSignLocalSystemIsoOfComp hn hn' hσi R h' hk hk' hσ hσs hf hdim hdim' g g'
-        hr =
-      VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise R (F := Fin r → ℝ)
-        (F' := Fin r → ℝ) (ι := Fin r) (φ := fun s ↦ (h.negativeNormalSpaceEquivOfComp hn hn' hσi
-          h' g.toRiemannianMetric g'.toRiemannianMetric ((hσ (i s)).of_le le_add_self)
-            (hσs s)).toContinuousLinearEquiv.symm) (by simp) (by simp)
-        (h.contMDiff_negativeNormalSpaceEquivOfComp_symm hn hn' hσi h' hk hk' hσ hσs hf hdim hdim'
-          g g' hr).continuous :=
+        hV hV' =
+      VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise R (F := κ → ℝ) (F' := κ → ℝ)
+        (φ := fun s ↦ (h.negativeNormalSpaceEquivOfComp hn hn' hσi h' g.toRiemannianMetric
+          g'.toRiemannianMetric ((hσ (i s)).of_le le_add_self)
+            (hσs s)).toContinuousLinearEquiv.symm)
+        (finrank_fintype_fun_eq_card ℝ).symm (finrank_fintype_fun_eq_card ℝ).symm
+        (h.continuous_negativeNormalSpaceEquivOfComp_symm hn hn' hσi h' hk hk' hσ hσs hf hdim
+          hdim' g g' (h'.manifoldMorseIndex_eq_card_of_hasLocalSubbundleFrames hn'
+            g'.toRiemannianMetric hV')) :=
   (rfl)
 
 end TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold
