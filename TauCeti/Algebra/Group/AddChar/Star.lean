@@ -33,17 +33,18 @@ public section
 
 namespace AddChar
 
-variable {A M : Type*} [AddCommGroup A] [StarAddMonoid A] [CommGroup M]
+variable {A M : Type*} [Monoid M]
 
 /-- A character invariant under `star` takes the value `1` at `b - star b`. -/
-theorem map_sub_star_eq_one (ψ : AddChar A M) (hψ : ∀ a, ψ (star a) = ψ a) (b : A) :
-    ψ (b - star b) = 1 := by
-  rw [map_sub_eq_div, hψ, div_self']
+theorem map_sub_star_eq_one [AddGroup A] [Star A] (ψ : AddChar A M)
+    (hψ : ∀ a, ψ (star a) = ψ a) (b : A) : ψ (b - star b) = 1 := by
+  rw [sub_eq_add_neg, map_add_eq_mul, ← hψ b, ← map_add_eq_mul, add_neg_cancel, map_zero_eq_one]
 
 /-- A character invariant under `star` of a module `A` over a semiring `R` in which `2` is
 invertible is trivial on the skew-adjoint elements `star a = -a`: such an `a` is `b - star b` for
 `b = ⅟2 • a`. -/
-theorem map_eq_one_of_mem_skewAdjoint (R : Type*) [Semiring R] [Invertible (2 : R)] [Module R A]
+theorem map_eq_one_of_mem_skewAdjoint [AddCommGroup A] [StarAddMonoid A] (R : Type*) [Semiring R]
+    [Invertible (2 : R)] [Module R A]
     (ψ : AddChar A M) (hψ : ∀ a, ψ (star a) = ψ a) {a : A} (ha : a ∈ skewAdjoint A) :
     ψ a = 1 := by
   have hhalf : (⅟2 : R) • a + (⅟2 : R) • a = a := by

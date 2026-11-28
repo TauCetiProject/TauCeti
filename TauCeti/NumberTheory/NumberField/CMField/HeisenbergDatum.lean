@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.HeisenbergModel.OrthogonalSum
 public import TauCeti.Analysis.HeisenbergModel.SkewHermitian
 public import TauCeti.NumberTheory.NumberField.CMField.AdeleStar
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.AddChar

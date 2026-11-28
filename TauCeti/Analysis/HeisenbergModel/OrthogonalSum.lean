@@ -22,15 +22,14 @@ which `e` is a vacuum, and the tensor product `(v ⊗ w) (φ (x₁, x₂)) = v x
 bilinear map `M(β₁, e₁) × M(β₂, e₂) → M(β, e)`, multiplicative for norms and for `⟨·, ·⟩`,
 compatible with the Heisenberg operators and with the Weil representations of product actions.
 
-The product `β₁ ⊠ β₂ ((x₁, x₂), (y₁, y₂)) = β₁ x₁ y₁ * β₂ x₂ y₂` of two Heisenberg data is a
-Heisenberg datum on `W₁ × W₂`, and with the product vacuum it is their orthogonal sum along the
-identity.
+The product `β₁ ⊠ β₂` of two Heisenberg data (`TauCeti.HeisenbergDatum.prod`), with the product
+vacuum, is their orthogonal sum along the identity.
 
 ## Main definitions
 
 * `TauCeti.HeisenbergDatum.OrthogonalSum`: an orthogonal sum of Heisenberg data with vacua.
-* `TauCeti.HeisenbergDatum.prod`, `TauCeti.HeisenbergDatum.OrthogonalSum.prod`: the product of two
-  Heisenberg data, and its orthogonal sum structure.
+* `TauCeti.HeisenbergDatum.OrthogonalSum.prod`: the orthogonal sum structure of the product of two
+  Heisenberg data.
 * `TauCeti.HeisenbergDatum.OrthogonalSum.tmul`: the tensor product of model vectors.
 
 ## Main results
@@ -79,25 +78,6 @@ structure OrthogonalSum (β : HeisenbergDatum W) (β₁ : HeisenbergDatum W₁)
   equiv : W₁ × W₂ ≃ₜ+ W
   apply_equiv_equiv (x y : W₁ × W₂) : β (equiv x) (equiv y) = β₁ x.1 y.1 * β₂ x.2 y.2
   vacuum_equiv (x : W₁ × W₂) : e (equiv x) = e₁ x.1 * e₂ x.2
-
-/-- The product `β₁ ⊠ β₂ ((x₁, x₂), (y₁, y₂)) = β₁ x₁ y₁ * β₂ x₂ y₂` of two Heisenberg data, a
-Heisenberg datum on `W₁ × W₂`. -/
-def prod (β₁ : HeisenbergDatum W₁) (β₂ : HeisenbergDatum W₂) : HeisenbergDatum (W₁ × W₂) where
-  toFun x y := β₁ x.1 y.1 * β₂ x.2 y.2
-  map_add_left' x x' y := by
-    rw [Prod.fst_add, Prod.snd_add, map_add_left, map_add_left]
-    ring
-  map_add_right' x y y' := by
-    rw [Prod.fst_add, Prod.snd_add, map_add_right, map_add_right]
-    ring
-  apply_self' x := by rw [apply_self, apply_self, mul_one]
-  norm_apply' x y := by rw [norm_mul, norm_apply, norm_apply, mul_one]
-  continuous_uncurry' := by fun_prop
-
-@[simp]
-theorem prod_apply (β₁ : HeisenbergDatum W₁) (β₂ : HeisenbergDatum W₂) (x y : W₁ × W₂) :
-    β₁.prod β₂ x y = β₁ x.1 y.1 * β₂ x.2 y.2 :=
-  (rfl)
 
 /-- The product of two Heisenberg data, with the product vacuum, is their orthogonal sum along the
 identity of `W₁ × W₂`. -/
