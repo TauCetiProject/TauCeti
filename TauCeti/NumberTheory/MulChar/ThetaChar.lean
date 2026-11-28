@@ -17,9 +17,13 @@ of unity `x ∈ K` maps under `T` to a `(Q - 1)`-th root of unity in `ℂ`, henc
 `(Q - 1)`-th roots of unity used to parameterize Green's cuspidal functions `τ_P` on `GL_n(k)` by
 irreducible polynomials `P`.
 
-* `MulChar.thetaExponent`: chosen natural number `j` with `T x = exp (2πi / (Q - 1)) ^ j`.
+* `MulChar.thetaExponent`: the unique natural number `j < Q - 1` with
+  `T x = exp (2πi / (Q - 1)) ^ j` (when `x ^ (Q - 1) = 1`).
+* `MulChar.thetaExponent_lt`: `T.thetaExponent Q x < Q - 1` for `2 ≤ Q` and `x ^ (Q - 1) = 1`.
 * `MulChar.apply_eq_exp_pow_thetaExponent`: `T x = exp (2πi / (Q - 1)) ^ T.thetaExponent Q x`
   for `2 ≤ Q` and `x ^ (Q - 1) = 1`.
+* `MulChar.thetaExponent_eq_iff`: uniqueness characterization `T.thetaExponent Q x = j ↔
+  T x = exp (2πi / (Q - 1)) ^ j` for `x ^ (Q - 1) = 1` and `j < Q - 1`.
 * `MulChar.thetaChar`: the multiplicative character `T ^ T.thetaExponent Q x`.
 * `MulChar.thetaChar_def`: defining equation `T.thetaChar Q x = T ^ T.thetaExponent Q x`.
 * `MulChar.thetaChar_apply_pow`: symmetry `T.thetaChar Q x (z ^ m) = (T ^ a) x`.
@@ -49,19 +53,40 @@ namespace MulChar
 
 variable {K : Type*} [CommMonoidWithZero K] (T : MulChar K ℂ) {Q m : ℕ} {x y z : K}
 
-/-- A chosen natural number `j` with `T x = exp (2πi / (Q - 1)) ^ j` (arbitrary if none
-exists). -/
+/-- The canonical natural number `j < Q - 1` with `T x = exp (2πi / (Q - 1)) ^ j`
+(defaulting to `0` if none exists). -/
 noncomputable def thetaExponent (Q : ℕ) (x : K) : ℕ :=
-  Classical.epsilon fun j : ℕ ↦ T x = exp (2 * Real.pi * I / (Q - 1 : ℕ)) ^ j
+  Classical.epsilon fun j : ℕ ↦ j < Q - 1 ∧ T x = exp (2 * Real.pi * I / (Q - 1 : ℕ)) ^ j
+
+private lemma thetaExponent_spec (hQ : 2 ≤ Q) (hx : x ^ (Q - 1) = 1) :
+    T.thetaExponent Q x < Q - 1 ∧
+      T x = exp (2 * Real.pi * I / (Q - 1 : ℕ)) ^ T.thetaExponent Q x := by
+  have : NeZero (Q - 1) := ⟨Nat.sub_ne_zero_of_lt hQ⟩
+  have h_root : T x ^ (Q - 1) = 1 := by rw [← map_pow, hx, map_one]
+  obtain ⟨j, hj_lt, hj⟩ :=
+    (Complex.isPrimitiveRoot_exp (Q - 1) (NeZero.ne _)).eq_pow_of_pow_eq_one h_root
+  exact Classical.epsilon_spec (p := fun j : ℕ ↦ j < Q - 1 ∧ T x = _ ^ j) ⟨j, hj_lt, hj.symm⟩
+
+/-- If `2 ≤ Q` and `x ^ (Q - 1) = 1`, then `T.thetaExponent Q x < Q - 1`. -/
+theorem thetaExponent_lt (hQ : 2 ≤ Q) (hx : x ^ (Q - 1) = 1) :
+    T.thetaExponent Q x < Q - 1 :=
+  (T.thetaExponent_spec hQ hx).1
 
 /-- If `2 ≤ Q` and `x ^ (Q - 1) = 1`, then `T x = exp (2πi / (Q - 1)) ^ T.thetaExponent Q x`. -/
 theorem apply_eq_exp_pow_thetaExponent (hQ : 2 ≤ Q) (hx : x ^ (Q - 1) = 1) :
-    T x = exp (2 * Real.pi * I / (Q - 1 : ℕ)) ^ T.thetaExponent Q x := by
-  have : NeZero (Q - 1) := ⟨Nat.sub_ne_zero_of_lt hQ⟩
-  have h_root : T x ^ (Q - 1) = 1 := by rw [← map_pow, hx, map_one]
-  obtain ⟨j, -, hj⟩ :=
-    (Complex.isPrimitiveRoot_exp (Q - 1) (NeZero.ne _)).eq_pow_of_pow_eq_one h_root
-  exact Classical.epsilon_spec (p := fun j : ℕ ↦ T x = _ ^ j) ⟨j, hj.symm⟩
+    T x = exp (2 * Real.pi * I / (Q - 1 : ℕ)) ^ T.thetaExponent Q x :=
+  (T.thetaExponent_spec hQ hx).2
+
+/-- Uniqueness characterization of `MulChar.thetaExponent`: for `x ^ (Q - 1) = 1` and
+`j < Q - 1`, `T.thetaExponent Q x = j` iff `T x = exp (2πi / (Q - 1)) ^ j`. -/
+theorem thetaExponent_eq_iff (hx : x ^ (Q - 1) = 1) {j : ℕ} (hj : j < Q - 1) :
+    T.thetaExponent Q x = j ↔ T x = exp (2 * Real.pi * I / (Q - 1 : ℕ)) ^ j := by
+  have hQ : 2 ≤ Q := by omega
+  refine ⟨by rintro rfl; exact T.apply_eq_exp_pow_thetaExponent hQ hx, fun h ↦ ?_⟩
+  exact (Complex.isPrimitiveRoot_exp (Q - 1) (by omega)).injOn_pow
+    (mem_coe.mpr (mem_range.mpr (T.thetaExponent_lt hQ hx)))
+    (mem_coe.mpr (mem_range.mpr hj))
+    ((T.apply_eq_exp_pow_thetaExponent hQ hx).symm.trans h)
 
 /-- The multiplicative character `θ_x = T ^ (T.thetaExponent Q x)`. -/
 noncomputable def thetaChar (Q : ℕ) (x : K) : MulChar K ℂ :=
