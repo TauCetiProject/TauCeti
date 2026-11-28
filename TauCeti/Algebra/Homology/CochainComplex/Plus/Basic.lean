@@ -153,4 +153,14 @@ instance isIso_mapCochainComplexPlus {A : Type u₁} [Category.{v₁} A] [Preadd
     by rw [← mapCochainComplexPlus_comp, IsIso.hom_inv_id, mapCochainComplexPlus_id],
     by rw [← mapCochainComplexPlus_comp, IsIso.inv_hom_id, mapCochainComplexPlus_id]⟩
 
+/-- The inverse of `τ.mapCochainComplexPlus` for a natural isomorphism `τ` is
+`(inv τ).mapCochainComplexPlus`. -/
+@[simp]
+lemma inv_mapCochainComplexPlus {A : Type u₁} [Category.{v₁} A] [Preadditive A]
+    {B : Type u₂} [Category.{v₂} B] [Preadditive B]
+    {F₁ F₂ : A ⥤ B} [F₁.Additive] [F₂.Additive] (τ : F₁ ⟶ F₂) [IsIso τ] :
+    inv τ.mapCochainComplexPlus = (inv τ).mapCochainComplexPlus :=
+  IsIso.inv_eq_of_hom_inv_id
+    (by rw [← mapCochainComplexPlus_comp, IsIso.hom_inv_id, mapCochainComplexPlus_id])
+
 end CategoryTheory.NatTrans

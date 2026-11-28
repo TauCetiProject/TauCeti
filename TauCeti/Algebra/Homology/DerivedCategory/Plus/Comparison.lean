@@ -114,20 +114,14 @@ private def rightDerivedCompIso :
     U.mapCochainComplexPlus ⋙ F₂.mapCochainComplexPlus ≅
       F₁.mapCochainComplexPlus ⋙ V.mapCochainComplexPlus :=
   U.mapCochainComplexPlusCompIso F₂ ≪≫
-    { hom := e.inv.mapCochainComplexPlus
-      inv := e.hom.mapCochainComplexPlus
-      hom_inv_id := by
-        rw [← NatTrans.mapCochainComplexPlus_comp, e.inv_hom_id,
-          NatTrans.mapCochainComplexPlus_id]
-      inv_hom_id := by
-        rw [← NatTrans.mapCochainComplexPlus_comp, e.hom_inv_id,
-          NatTrans.mapCochainComplexPlus_id] } ≪≫
+    asIso e.inv.mapCochainComplexPlus ≪≫
     (F₁.mapCochainComplexPlusCompIso V).symm
 
 private instance : NatTrans.CommShift (rightDerivedCompIso F₁ F₂ U V e).hom ℤ := by
   have : NatTrans.CommShift (U.mapCochainComplexPlusCompIso F₂).hom ℤ := inferInstance
   have : NatTrans.CommShift e.inv.mapCochainComplexPlus ℤ := inferInstance
   have : NatTrans.CommShift (F₁.mapCochainComplexPlusCompIso V).inv ℤ := inferInstance
+  -- Unfold `rightDerivedCompIso` and `asIso` to expose the `CommShift`-compatible components.
   dsimp [rightDerivedCompIso]
   infer_instance
 
@@ -141,6 +135,13 @@ private def rightDerivedCompNatTrans :
     U.mapDerivedCategoryPlusFactors.inv
     F₂.rightDerivedFunctorPlusUnit
     (rightDerivedCompUnit₁ F₁ V)
+
+private instance : NatTrans.CommShift (rightDerivedCompNatTrans F₁ F₂ U V e) ℤ := by
+  have := isRightDerivedFunctor_comp₁ F₁ V
+  -- `rightDerivedCompNatTrans` wraps `Functor.natTransOfIsRightDerivedFunctorComp`; unfold it
+  -- inside its defining module so Mathlib's `RightDerivedCompositionCommShift` instance applies.
+  dsimp [rightDerivedCompNatTrans]
+  infer_instance
 
 include hU in
 private lemma isIso_rightDerivedCompNatTrans :
@@ -186,6 +187,16 @@ def rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso :
   asIso (rightDerivedCompNatTrans F₁ F₂ U V e)
 
 include hU in
+/-- Characterization of `(rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso F₁ F₂ U V e hU).hom`
+as `rightDerivedCompNatTrans`. -/
+private lemma rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso_hom :
+    (rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso F₁ F₂ U V e hU).hom =
+      rightDerivedCompNatTrans F₁ F₂ U V e :=
+  -- `rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso` is defined via `asIso` on
+  -- `rightDerivedCompNatTrans`, so `.hom` reduces definitionally within this module.
+  rfl
+
+include hU in
 /-- Universal-property characterization of `rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso`:
 it intertwines `F₁.rightDerivedFunctorPlusUnit` and `F₂.rightDerivedFunctorPlusUnit` along
 `e : F₁ ⋙ V ≅ U ⋙ F₂`. -/
@@ -212,21 +223,13 @@ lemma rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso_hom_fac_app
     (rightDerivedCompUnit₁ F₁ V) K
   rw [rightDerivedCompUnit₁_app, Category.assoc] at h
   rw [← cancel_epi (V.mapDerivedCategoryPlusFactors.inv.app (F₁.mapCochainComplexPlus.obj K)),
-    Iso.inv_hom_id_app_assoc]
-  simpa [rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso, rightDerivedCompNatTrans,
-    rightDerivedCompIso] using h
+    Iso.inv_hom_id_app_assoc, rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso_hom]
+  simpa [rightDerivedCompNatTrans, rightDerivedCompIso] using h
 
 include hU in
 instance : NatTrans.CommShift
     (rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso F₁ F₂ U V e hU).hom ℤ := by
-  have := isRightDerivedFunctor_comp₁ F₁ V
-  change NatTrans.CommShift (Functor.natTransOfIsRightDerivedFunctorComp
-    (rightDerivedCompIso F₁ F₂ U V e)
-    DerivedCategory.Plus.Q DerivedCategory.Plus.Q DerivedCategory.Plus.Q
-    (CochainComplex.Plus.quasiIso C₁)
-    U.mapDerivedCategoryPlusFactors.inv
-    F₂.rightDerivedFunctorPlusUnit
-    (rightDerivedCompUnit₁ F₁ V)) ℤ
+  rw [rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso_hom]
   infer_instance
 
 include hU in
