@@ -334,7 +334,8 @@ morphisms between the objects of `ContFDRep 𝕜 G` given by two continuous repr
 finite-dimensional normed spaces are the continuous intertwining maps between them. -/
 noncomputable def homOfContRepresentationLinearEquiv (hπ : Continuous π) (hρ : Continuous ρ) :
     (ofContRepresentation π hπ ⟶ ofContRepresentation ρ hρ) ≃ₗ[𝕜] (π →ⁱL ρ) :=
-  InducedCategory.homLinearEquiv ≪≫ₗ FDRep.homLinearEquiv _ _ ≪≫ₗ
+  InducedCategory.homLinearEquiv ≪≫ₗ (FDRep.forget₂HomLinearEquiv _ _).symm ≪≫ₗ
+    Rep.homLinearEquiv _ _ ≪≫ₗ
     (ofContRepresentationEquiv hπ).intertwiningMapCongr (ofContRepresentationEquiv hρ) ≪≫ₗ
     ContRepresentation.intertwiningMapEquiv.symm
 
@@ -344,13 +345,10 @@ theorem homOfContRepresentationLinearEquiv_apply_apply (hπ : Continuous π) (h�
     (f : ofContRepresentation π hπ ⟶ ofContRepresentation ρ hρ) (v : V) :
     homOfContRepresentationLinearEquiv hπ hρ f v =
       ofContRepresentationEquiv hρ (f.hom.hom.hom.hom ((ofContRepresentationEquiv hπ).symm v)) := by
-  rw [homOfContRepresentationLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    intertwiningMapEquiv_symm_apply_apply, Representation.Equiv.intertwiningMapCongr_apply]
-  -- `InducedCategory.homLinearEquiv` uses `Preadditive.inducedCategory` while `ContFDRep` uses
-  -- `Preadditive.fullSubcategory`, so unfolding `InducedCategory.homLinearEquiv` needs `default`
-  -- transparency.
-  erw [LinearEquiv.trans_apply, FDRep.homLinearEquiv_apply]
-  rfl
+  rw [homOfContRepresentationLinearEquiv, LinearEquiv.trans_apply,
+    intertwiningMapEquiv_symm_apply_apply]
+  exact Representation.Equiv.intertwiningMapCongr_apply (ofContRepresentationEquiv hπ)
+    (ofContRepresentationEquiv hρ) _ v
 
 /-- The morphism of a continuous intertwiner acts by the intertwiner on the underlying
 carriers. -/
@@ -359,14 +357,10 @@ theorem homOfContRepresentationLinearEquiv_symm_apply_hom (hπ : Continuous π)
     (hρ : Continuous ρ) (f : π →ⁱL ρ) (v : (ofContRepresentation π hπ).obj) :
     ((homOfContRepresentationLinearEquiv hπ hρ).symm f).hom.hom.hom.hom v =
       (ofContRepresentationEquiv hρ).symm (f (ofContRepresentationEquiv hπ v)) := by
-  rw [homOfContRepresentationLinearEquiv, LinearEquiv.symm_trans_apply,
-    LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm, intertwiningMapEquiv_apply]
-  -- `InducedCategory.homLinearEquiv` uses `Preadditive.inducedCategory` while `ContFDRep` uses
-  -- `Preadditive.fullSubcategory`, so unfolding `(InducedCategory.homLinearEquiv).symm` needs
-  -- `default` transparency.
-  erw [LinearEquiv.symm_trans_apply, FDRep.homLinearEquiv_symm_apply,
-    Representation.Equiv.intertwiningMapCongr_symm_apply]
-  rfl
+  rw [homOfContRepresentationLinearEquiv, LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm,
+    intertwiningMapEquiv_apply]
+  exact Representation.Equiv.intertwiningMapCongr_symm_apply (ofContRepresentationEquiv hπ)
+    (ofContRepresentationEquiv hρ) f.toIntertwiningMap v
 
 /-- The morphisms between the objects of `ContFDRep 𝕜 G` given by two continuous representations
 on finite-dimensional normed spaces form a space of the same dimension as the continuous

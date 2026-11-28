@@ -116,19 +116,20 @@ private theorem unit_coordinates_action (g : G) (z : E) :
   exact LinearMap.congr_fun (b.balancedTensorProductEquiv_map ((V).ρ g) hg) z
 
 private def unitCoordinate (f : Representation.IntertwiningMap (V).ρ ρ) (i : ι) : End A :=
-  End.of ((homLinearEquiv A A).symm
+  End.of (forget₂HomLinearEquiv A A ((Rep.homLinearEquiv V V).symm
     { toLinearMap := (Finsupp.lapply i).comp ((e).toLinearMap.comp f.toLinearMap)
       isIntertwining' := fun g => by
         ext x
         have h := congrArg (fun z => e z i) (f.isIntertwining _ _ g x)
-        simp only [unit_coordinates_action A ρ hρ, Finsupp.mapRange_apply, forget₂_ρ] at h
-        exact h })
+        simpa only [LinearMap.comp_apply, Finsupp.lapply_apply, LinearEquiv.coe_coe,
+          unit_coordinates_action A ρ hρ, Finsupp.mapRange_apply,
+          Representation.IntertwiningMap.coe_toLinearMap] using h }))
 
 private theorem unitCoordinate_apply (f : Representation.IntertwiningMap (V).ρ ρ)
     (i : ι) (x : V) :
     ((F).map (unitCoordinate A ρ hρ b f i).asHom).hom x = e (f x) i := by
-  rw [unitCoordinate, Functor.comp_map, Rep.forget₂_moduleCat_map]
-  exact homLinearEquiv_symm_apply A A _ x
+  simp [unitCoordinate, Functor.comp_map, forget₂_map_forget₂HomLinearEquiv,
+    Rep.homLinearEquiv]
 
 include b in
 private theorem unit_injective_of_basis :

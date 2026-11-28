@@ -57,15 +57,14 @@ private local instance : IsScalarTower k (End A) V := (F).endModule_isScalarTowe
 variable [Simple A]
 
 private def unitLinearEquiv : M ≃ₗ[k] (A ⟶ resW) :=
-  (cliffordReconstructionUnitEquiv A s hs U).trans (homLinearEquiv A resW).symm
+  (cliffordReconstructionUnitEquiv A s hs U).trans
+    ((Rep.homLinearEquiv _ _).symm.trans (forget₂HomLinearEquiv A resW))
 
 private theorem unitLinearEquiv_apply (m : M) (x : A) :
     (unitLinearEquiv A s hs U m).hom.hom.hom x =
       BalancedTensorProduct.tmul k (End A) (N := V) m x := by
-  rw [unitLinearEquiv]
-  -- `cliffordReconstructionUnitEquiv` targets `(R.obj A).ρ` and the restricted
-  -- representation rather than `A.ρ` and `resW.ρ` syntactically.
-  erw [LinearEquiv.trans_apply, homLinearEquiv_symm_apply]
+  -- The forgetful Hom equivalences repackage the same underlying linear map.
+  change cliffordReconstructionUnitEquiv A s hs U m x = _
   rw [cliffordReconstructionUnitEquiv_apply]
   -- The FDRep and forgotten Rep carriers agree, but rewriting needs full transparency.
   erw [balancedTensorUnit_apply]

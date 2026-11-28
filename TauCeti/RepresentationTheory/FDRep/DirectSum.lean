@@ -11,7 +11,7 @@ public import TauCeti.RepresentationTheory.Rep.DirectSum.Basic
 /-!
 # Morphisms into finite direct sums in `FDRep`
 
-Combining `FDRep.homLinearEquiv` and
+Combining `FDRep.forget₂HomLinearEquiv`, `Rep.homLinearEquiv`, and
 `Representation.IntertwiningMap.directSumLinearEquiv`, an unbundled equivalence
 `e : Representation.Equiv Y.ρ (Representation.directSum fun i ↦ (Z i).ρ)` identifies the space of
 morphisms `X ⟶ Y` in `FDRep R G` `R`-linearly with the product `∀ i, X ⟶ Z i`
@@ -53,10 +53,11 @@ decomposes morphisms `X ⟶ Y` in `FDRep R G` `R`-linearly into families of comp
 noncomputable def homLinearEquivOfEquivDirectSum (X Y : FDRep R G) (Z : ι → FDRep R G)
     (e : Representation.Equiv Y.ρ (Representation.directSum fun i ↦ (Z i).ρ)) :
     (X ⟶ Y) ≃ₗ[R] ∀ i, X ⟶ Z i :=
-  (homLinearEquiv X Y).trans <|
+  ((forget₂HomLinearEquiv X Y).symm.trans (Rep.homLinearEquiv _ _)).trans <|
     (Representation.Equiv.intertwiningMapCongr (.refl X.ρ) e).trans <|
     (Representation.IntertwiningMap.directSumLinearEquiv X.ρ (fun i ↦ (Z i).ρ)).trans <|
-    LinearEquiv.piCongrRight fun i ↦ (homLinearEquiv X (Z i)).symm
+    LinearEquiv.piCongrRight fun i ↦
+      ((forget₂HomLinearEquiv X (Z i)).symm.trans (Rep.homLinearEquiv _ _)).symm
 
 /-- Evaluating the `i`-th component of `homLinearEquivOfEquivDirectSum` applies `e` and reads off
 summand `i`. -/
@@ -64,13 +65,10 @@ summand `i`. -/
 theorem homLinearEquivOfEquivDirectSum_apply_hom_hom_hom (X Y : FDRep R G) (Z : ι → FDRep R G)
     (e : Representation.Equiv Y.ρ (Representation.directSum fun i ↦ (Z i).ρ))
     (φ : X ⟶ Y) (i : ι) (x : X) :
-    (homLinearEquivOfEquivDirectSum X Y Z e φ i).hom.hom.hom x = e (φ.hom.hom.hom x) i := by
-  simp only [homLinearEquivOfEquivDirectSum, LinearEquiv.trans_apply,
-    LinearEquiv.piCongrRight_apply, homLinearEquiv_symm_apply,
-    Representation.IntertwiningMap.directSumLinearEquiv_apply,
-    Representation.Equiv.intertwiningMapCongr_apply, homLinearEquiv_apply]
-  rw [← Representation.Equiv.refl_apply (ρ := X.ρ) ((Representation.Equiv.refl X.ρ).symm x),
-    Representation.Equiv.apply_symm_apply]
+    (homLinearEquivOfEquivDirectSum X Y Z e φ i).hom.hom.hom x = e (φ.hom.hom.hom x) i :=
+  (Representation.IntertwiningMap.directSumLinearEquiv_apply _ _ _ i x).trans <|
+    congrArg (fun y : DirectSum ι fun j ↦ ↥(Z j) ↦ y i)
+      (Representation.Equiv.intertwiningMapCongr_apply _ _ _ x)
 
 /-- Applying `e` to the inverse of `homLinearEquivOfEquivDirectSum` recovers each supplied
 component morphism. -/

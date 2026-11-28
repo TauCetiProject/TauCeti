@@ -219,11 +219,11 @@ theorem finrank_hom_indFDRep_trivial_parts_two_two {k : Type*} [Field k] [CharZe
         (i.cast numClasses_symmetricGroupFourClassData.symm) j : k)) :
     Module.finrank k (V ⟶ indFDRep (FDRep.of (Representation.trivial k (youngSubgroup μ) k))) =
       (![1, 0, 1, 1, 0] : Fin 5 → ℕ) i := by
-  rw [(homLinearEquiv V _).finrank_eq]
+  rw [((forget₂HomLinearEquiv V _).symm ≪≫ₗ Rep.homLinearEquiv _ _).finrank_eq]
   refine symmetricGroupFourClassData.finrank_intertwiningMap_of_character_rep
     (symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm))
     (fun j ↦ ![6, 2, 2, 0, 0] (j.cast numClasses_symmetricGroupFourClassData)) _ hV (fun j ↦ ?_) ?_
-  · rw [character_ρ, character_indFDRep_trivial_parts_two_two μ hμ]
+  · rw [character_forget₂_obj, character_indFDRep_trivial_parts_two_two μ hμ]
     generalize j.cast numClasses_symmetricGroupFourClassData = j
     fin_cases j <;> simp
   · simp only [symmetricGroupFourCharacterTable_apply, Fintype.card_perm, Fintype.card_fin]
@@ -239,11 +239,11 @@ theorem finrank_hom_indFDRep_trivial_parts_two_one_one {k : Type*} [Field k] [Ch
         (i.cast numClasses_symmetricGroupFourClassData.symm) j : k)) :
     Module.finrank k (V ⟶ indFDRep (FDRep.of (Representation.trivial k (youngSubgroup μ) k))) =
       (![1, 0, 1, 2, 1] : Fin 5 → ℕ) i := by
-  rw [(homLinearEquiv V _).finrank_eq]
+  rw [((forget₂HomLinearEquiv V _).symm ≪≫ₗ Rep.homLinearEquiv _ _).finrank_eq]
   refine symmetricGroupFourClassData.finrank_intertwiningMap_of_character_rep
     (symmetricGroupFourCharacterTable (i.cast numClasses_symmetricGroupFourClassData.symm))
     (fun j ↦ ![12, 2, 0, 0, 0] (j.cast numClasses_symmetricGroupFourClassData)) _ hV (fun j ↦ ?_) ?_
-  · rw [character_ρ, character_indFDRep_trivial_parts_two_one_one μ hμ]
+  · rw [character_forget₂_obj, character_indFDRep_trivial_parts_two_one_one μ hμ]
     generalize j.cast numClasses_symmetricGroupFourClassData = j
     fin_cases j <;> simp
   · simp only [symmetricGroupFourCharacterTable_apply, Fintype.card_perm, Fintype.card_fin]

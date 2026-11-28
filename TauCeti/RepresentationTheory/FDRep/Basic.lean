@@ -24,10 +24,7 @@ statement about the object it started from.
 
 `FDRep.forget₂Rep` supplies the canonical forgetful functor over any ring, extending Mathlib's
 commutative-ring instance with the same underlying construction. It preserves addition of
-intertwiners over any ring, by `FDRep.forget₂_additive`. Over a commutative ring,
-`FDRep.homLinearEquiv` packages the canonical linear equivalence identifying morphisms `X ⟶ Y` in
-`FDRep R G` with intertwining maps `Representation.IntertwiningMap X.ρ Y.ρ`, matching Mathlib's
-`Rep.homLinearEquiv`.
+intertwiners over any ring, by `FDRep.forget₂_additive`.
 
 It also records the character of a trivial representation, the constant `finrank`, in both the
 `Representation` and the `FDRep.of` spellings in which consumers meet it.
@@ -60,8 +57,6 @@ of `Representation.Equiv` apply to isomorphic objects.
 
 ## Main definitions
 
-* `FDRep.homLinearEquiv`: linear equivalence identifying morphisms `X ⟶ Y` in `FDRep R G` with
-  intertwining maps `Representation.IntertwiningMap X.ρ Y.ρ`.
 * `FDRep.ofShrink`: a module-finite representation on a carrier in an arbitrary universe, as an
   object of `FDRep k G`.
 * `LinearEquiv.toFDRepIso`: an isomorphism in `FDRep R G` from an equivariant linear
@@ -223,28 +218,6 @@ theorem forget₂_map_forget₂HomLinearEquiv {R : Type u} {G : Type v}
       (forget₂ (FDRep R G) (Rep R G)).obj Y) :
     (forget₂ (FDRep R G) (Rep R G)).map (forget₂HomLinearEquiv X Y f) = f :=
   (forget₂HomLinearEquiv X Y).symm_apply_apply f
-
-/-- Linear equivalence identifying morphisms in `FDRep R G` with intertwining maps between their
-carried representations. This is the `FDRep` counterpart of Mathlib's `Rep.homLinearEquiv`,
-combining `FDRep.forget₂HomLinearEquiv` and `Rep.homLinearEquiv`. -/
-noncomputable def homLinearEquiv {R : Type u} {G : Type v} [CommRing R] [Monoid G]
-    (X Y : FDRep R G) :
-    (X ⟶ Y) ≃ₗ[R] Representation.IntertwiningMap X.ρ Y.ρ :=
-  (forget₂HomLinearEquiv X Y).symm.trans (Rep.homLinearEquiv _ _)
-
-/-- Evaluating `FDRep.homLinearEquiv X Y f` gives the underlying action of `f`. -/
-@[simp]
-theorem homLinearEquiv_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G]
-    (X Y : FDRep R G) (f : X ⟶ Y) (x : X) :
-    homLinearEquiv X Y f x = f.hom.hom.hom x :=
-  (rfl)
-
-/-- Evaluating the inverse of `FDRep.homLinearEquiv` recovers the underlying intertwining map. -/
-@[simp]
-theorem homLinearEquiv_symm_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G]
-    (X Y : FDRep R G) (f : Representation.IntertwiningMap X.ρ Y.ρ) (x : X) :
-    ((homLinearEquiv X Y).symm f).hom.hom.hom x = f x :=
-  (rfl)
 
 /-- Forgetting finite generation keeps the finite-generation instance on the carrier. -/
 instance moduleFinite_forget₂_obj {R : Type u} {G : Type v} [Ring R] [Monoid G]
