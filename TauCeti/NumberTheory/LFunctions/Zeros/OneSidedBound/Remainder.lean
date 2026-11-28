@@ -149,6 +149,18 @@ end Remainder
 
 section Bounds
 
+/-- The weight vanishes when the Legendre prime divides the progression modulus: any
+`n ≡ 1 (mod q)` is then `1` modulo `d`, so its Legendre symbol is `1`. -/
+theorem primeWeight_eq_zero_of_dvd_level {d q : ℕ} [Fact d.Prime] (hdq : d ∣ q) (n : ℕ) :
+    primeWeight d q n = 0 := by
+  by_cases hn : (n : ZMod q) = 1
+  · have hnd : (n : ZMod d) = 1 := by
+      have hm := congrArg (ZMod.castHom hdq (ZMod d)) hn
+      rw [map_one, ZMod.castHom_apply, ZMod.cast_natCast hdq] at hm
+      exact hm
+    simp [primeWeight_def, hn, legendreSym, hnd]
+  · simp [primeWeight_def, hn]
+
 variable (d : ℕ) [Fact d.Prime] (q : ℕ)
 
 /-- The weight `λ_q` is nonnegative. -/

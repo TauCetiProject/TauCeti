@@ -10,9 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.SummatoryTail
 import TauCeti.NumberTheory.Chebyshev.ResidueClass
-import TauCeti.NumberTheory.DirichletCharacter.Conductor
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.ResidueClass
-import TauCeti.NumberTheory.DirichletCharacter.Quadratic
+import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Laplace
 
 /-!
 # Summatory tails for the signed prime remainder
@@ -29,46 +27,12 @@ in [lsernau/grh-lean](https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7
 
 public section
 
-open Complex DirichletCharacter Filter MeasureTheory Set
+open Complex Filter MeasureTheory Set
 open scoped Finset Topology
 
 namespace TauCeti.OneSidedBound
 
 variable {d q : ℕ} [Fact d.Prime] [NeZero q]
-
-open Classical in
-private theorem sum_logDeriv_entireLFunction_eq (s : ℂ) :
-    ∑ ψ : DirichletCharacter ℂ q, logDeriv ψ.entireLFunction s =
-      logDeriv (LFunctionTrivChar₁ q) s +
-        ∑ ψ ∈ ({1}ᶜ : Finset (DirichletCharacter ℂ q)), logDeriv ψ.LFunction s := by
-  classical
-  rw [← Finset.sum_add_sum_compl ({1} : Finset (DirichletCharacter ℂ q))]
-  simp only [Finset.sum_singleton, entireLFunction_one]
-  congr 1
-  exact Finset.sum_congr rfl fun ψ hψ ↦ by
-    rw [entireLFunction_of_ne_one (by simpa using hψ)]
-
-private theorem logDeriv_mul_quadraticChar_eq (ψ : DirichletCharacter ℂ q)
-    (hcond : ¬ conductor ((quadraticChar (ZMod d)).ringHomComp (Int.castRingHom ℂ)) ∣ q) :
-    have : NeZero (q.lcm d) := ⟨fun h ↦ NeZero.ne q (Nat.lcm_eq_zero_iff.mp h |>.resolve_right
-      (Fact.out : d.Prime).ne_zero)⟩
-    have : NeZero (q * d) := ⟨Nat.mul_ne_zero (NeZero.ne q) (Fact.out : d.Prime).ne_zero⟩
-    logDeriv (ψ.mul ((quadraticChar (ZMod d)).ringHomComp (Int.castRingHom ℂ))).LFunction 1 =
-      logDeriv (quadraticTwist d ψ).entireLFunction 1 := by
-  let ξ : DirichletCharacter ℂ d := (quadraticChar (ZMod d)).ringHomComp (Int.castRingHom ℂ)
-  have hcop : q.Coprime d := ((Fact.out : d.Prime).coprime_iff_not_dvd.mpr
-    (fun hdq ↦ hcond (ξ.conductor_dvd_level.trans hdq))).symm
-  have htw : ∀ (m : ℕ) [NeZero m] (h : q.lcm d = m),
-      logDeriv (ψ.mul ξ).LFunction 1 =
-        logDeriv (changeLevel (h ▸ Nat.dvd_lcm_left q d) ψ *
-          changeLevel (h ▸ Nat.dvd_lcm_right q d) ξ).entireLFunction 1 := by
-    intro m hm h
-    subst m
-    have hne : ψ.mul ξ ≠ 1 :=
-      fun h ↦ hcond ((ξ.exists_mul_eq_one_iff_conductor_dvd (q := q)).mp ⟨ψ, h⟩)
-    rw [← entireLFunction_of_ne_one hne, DirichletCharacter.mul]
-  rw [quadraticTwist_def]
-  exact htw (q * d) hcop.lcm_eq_mul
 
 /-- The boundary value in the signed remainder is the right-hand limit of the compensated
 Dirichlet series of its coefficients. -/
@@ -76,49 +40,19 @@ private theorem tendsto_compensated_primeWeight (hd : d ≠ 2) (hdq : ¬ d ∣ q
     (∀ᶠ σ : ℝ in 𝓝[>] 1, LSeriesSummable (fun n ↦ (primeWeight d q n : ℂ)) (σ : ℂ)) ∧
     Tendsto (fun σ : ℝ ↦ LSeries (fun n ↦ (primeWeight d q n : ℂ)) (σ : ℂ) -
       (q.totient : ℂ)⁻¹ * σ / ((σ : ℂ) - 1)) (𝓝[>] 1) (𝓝 (logDerivMean d q 1)) := by
-  classical
-  have hp : d.Prime := Fact.out
-  let : NeZero d := ⟨hp.ne_zero⟩
-  let : NeZero (q * d) := ⟨Nat.mul_ne_zero (NeZero.ne q) hp.ne_zero⟩
-  let ξ : DirichletCharacter ℂ d := (quadraticChar (ZMod d)).ringHomComp (Int.castRingHom ℂ)
-  have hξ : ¬ ξ.conductor ∣ q := by
-    have h := conductor_changeLevel_quadraticChar (p := d) (R := ℂ) (by simp) hd (dvd_refl d)
-    rw [changeLevel_self] at h
-    exact fun hdiv ↦ hdq (h ▸ hdiv)
-  let F (s : ℂ) := ArithmeticFunction.vonMangoldt.LFunctionResidueClassAux (1 : ZMod q) s +
-    (q.totient : ℂ)⁻¹ * (∑ ψ : DirichletCharacter ℂ q,
-      ψ (1 : ZMod q)⁻¹ * logDeriv (ψ.mul ξ).LFunction s) - (q.totient : ℂ)⁻¹
-  have hs {s : ℂ} (hre : 1 < s.re) :
-      LSeriesHasSum (fun n ↦ (primeWeight d q n : ℂ)) s
-        (s / ((q.totient : ℂ) * (s - 1)) + F s) := by
-    have h := ArithmeticFunction.vonMangoldt.LSeriesHasSum_residueClass_mul_one_sub
-      (isUnit_one : IsUnit (1 : ZMod q)) ξ hre
-    refine (LSeriesHasSum_congr s _ ?_).mp h
-    intro n _
-    by_cases hn : (n : ZMod q) = 1 <;>
-      simp [primeWeight_def, ArithmeticFunction.vonMangoldt.residueClass, ξ,
-        MulChar.ringHomComp_apply, legendreSym, hn]
-  have hF : AnalyticAt ℂ F 1 :=
-    ArithmeticFunction.vonMangoldt.analyticAt_residueClass_mul_one_sub_logDeriv_one _ ξ hξ
-  have hlim : Tendsto (fun σ : ℝ ↦ F (σ : ℂ)) (𝓝[>] 1) (𝓝 (F 1)) := by
-    exact (hF.continuousAt.tendsto.comp (continuous_ofReal.tendsto (1 : ℝ))).mono_left
+  have hcop : q.Coprime d := ((Fact.out : d.Prime).coprime_iff_not_dvd.mpr hdq).symm
+  have hs {σ : ℝ} (hσ : 1 < σ) := LSeriesHasSum_primeWeight hd hcop (s := (σ : ℂ)) (by simpa)
+  have hF : AnalyticAt ℂ (logDerivMean d q) 1 := analyticAt_logDerivMean_of_one_le_re (by simp)
+  have hlim : Tendsto (fun σ : ℝ ↦ logDerivMean d q (σ : ℂ)) (𝓝[>] 1)
+      (𝓝 (logDerivMean d q 1)) :=
+    (hF.continuousAt.tendsto.comp (continuous_ofReal.tendsto (1 : ℝ))).mono_left
       nhdsWithin_le_nhds
-  have hval : F 1 = logDerivMean d q 1 := by
-    -- Coprimality identifies the least-common-multiple level with the product level.
-    have he (ψ : DirichletCharacter ℂ q) : logDeriv (ψ.mul ξ).LFunction 1 =
-        logDeriv (quadraticTwist d ψ).entireLFunction 1 := logDeriv_mul_quadraticChar_eq ψ hξ
-    rw [logDerivMean_def, Finset.sum_sub_distrib, sum_logDeriv_entireLFunction_eq]
-    simp only [F, ArithmeticFunction.vonMangoldt.LFunctionResidueClassAux, ZMod.inv_one,
-      MulChar.map_one, one_mul, he]
-    simp only [logDeriv_apply, div_eq_mul_inv]
-    ring
   constructor
   · filter_upwards [self_mem_nhdsWithin] with σ (hσ : 1 < σ)
-    exact (hs (by simpa using hσ)).LSeriesSummable
-  · rw [← hval]
-    refine hlim.congr' ?_
+    exact (hs hσ).LSeriesSummable
+  · refine hlim.congr' ?_
     filter_upwards [self_mem_nhdsWithin] with σ (hσ : 1 < σ)
-    rw [(hs (by simpa using hσ)).LSeries_eq, div_mul_eq_div_div, mul_comm _ (σ : ℂ),
+    rw [(hs hσ).LSeries_eq, div_mul_eq_div_div, mul_comm _ (σ : ℂ),
       div_eq_mul_inv (σ : ℂ) (q.totient : ℂ), add_sub_cancel_left]
 
 private theorem not_integrableOn_of_primeWeight_sum_small
@@ -145,17 +79,6 @@ private theorem not_integrableOn_of_primeWeight_sum_small
          _ ≤ (q.totient : ℝ)⁻¹ * t - ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, primeWeight d q n := by
            linarith
   exact not_integrableOn_Ioi_inv ((integrable_smul_iff hc.ne' (fun t : ℝ ↦ t⁻¹)).mp hmajor)
-
-omit [NeZero q] in
-private theorem primeWeight_eq_zero_of_dvd_level (hdq : d ∣ q) (n : ℕ) :
-    primeWeight d q n = 0 := by
-  by_cases hn : (n : ZMod q) = 1
-  · have hnd : (n : ZMod d) = 1 := by
-      have hm := congrArg (ZMod.castHom hdq (ZMod d)) hn
-      rw [map_one, ZMod.castHom_apply, ZMod.cast_natCast hdq] at hm
-      exact hm
-    simp [primeWeight_def, hn, legendreSym, hnd]
-  · simp [primeWeight_def, hn]
 
 omit [NeZero q] in
 private theorem sum_primeWeight_two_le_log {t : ℝ} (ht : 1 ≤ t) :
@@ -200,16 +123,9 @@ private theorem primeRemainder_eq_neg_integral_tail_of_one_le
     exact (sum_primeWeight_two_le_log (q := q) ht₁).trans ((le_abs_self _).trans ht)
   obtain ⟨hs, hc⟩ := tendsto_compensated_primeWeight (q := q) hd hdq
   have h := rieszSum_div_sub_log_sub_eq_neg_integral_of_tendsto hs hEc hc hy
+  rw [← div_eq_inv_mul, ← ofReal_primeRemainder_eq] at h
   simp_rw [he, integral_complex_ofReal] at h
-  have hsum : rieszSum (fun n ↦ (primeWeight d q n : ℂ)) y / (y : ℂ) =
-      ((∑ n ∈ Finset.Icc 1 ⌊y⌋₊, primeWeight d q n * (1 / (n : ℝ) - 1 / y) : ℝ) : ℂ) := by
-    rw [rieszSum_def, Finset.sum_div, ofReal_sum]
-    refine Finset.sum_congr rfl fun n _ ↦ ?_
-    push_cast
-    field_simp [ofReal_ne_zero.mpr (zero_lt_one.trans_le hy).ne']
-  rw [hsum] at h
-  simpa only [primeRemainder_def, sub_re, neg_re, ofReal_re, ← ofReal_natCast,
-    ← ofReal_log, ← ofReal_inv, ← ofReal_mul, div_eq_inv_mul] using congrArg Complex.re h
+  simpa only [ofReal_re, neg_re] using congrArg Complex.re h
 
 /-- The signed prime remainder at a positive cutoff is minus the tail of the summatory
 error weighted by `t⁻²`, provided the weighted error is absolutely integrable on `(1, ∞)`. -/
@@ -260,7 +176,7 @@ theorem primeRemainder_eq_neg_integral_tail
 
 /-- Absolute integrability of the weighted summatory error makes the signed prime remainder
 converge to zero at infinity. -/
-theorem tendsto_primeRemainder (hE : IntegrableOn (fun t : ℝ ↦
+theorem tendsto_primeRemainder_of_integrableOn (hE : IntegrableOn (fun t : ℝ ↦
     ((∑ n ∈ Finset.Icc 1 ⌊t⌋₊, primeWeight d q n) - (q.totient : ℝ)⁻¹ * t) / t ^ 2) (Ioi 1)) :
     Tendsto (primeRemainder d q) atTop (𝓝 0) := by
   have ht := (tendsto_integral_Ioi_zero (μ := volume) (f := fun t : ℝ ↦
