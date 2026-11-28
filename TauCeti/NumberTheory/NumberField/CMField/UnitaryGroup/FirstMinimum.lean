@@ -146,19 +146,21 @@ theorem norm_inv_frame_mulVec_apply_le_vectorLength (y : ι → E) (i : ι) (w :
 theorem finite_setOf_mem_lattice_vectorLength_le (R : ℝ) :
     {y : ι → E | y ∈ V.lattice ∧ V.vectorLength y ≤ R}.Finite := by
   let B : Set (ι → InfiniteAdeleRing E) :=
-    Set.pi univ fun _ ↦ Set.pi univ fun w : InfinitePlace E ↦ {z : w.Completion | ‖z‖ ≤ R}
+    Set.pi univ fun _ ↦ Set.pi univ fun w : InfinitePlace E ↦
+      Metric.closedBall (0 : w.Completion) R
   have hB : IsCompact B := by
     apply isCompact_univ_pi
     intro _
     apply isCompact_univ_pi
     intro w
-    have h := (InfinitePlace.Completion.isometry_extensionEmbedding w).isClosedEmbedding
+    rw [← (InfinitePlace.Completion.isometry_extensionEmbedding w).preimage_closedBall
+      (0 : w.Completion) R, map_zero]
+    exact (InfinitePlace.Completion.isometry_extensionEmbedding w).isClosedEmbedding
       |>.isCompact_preimage (isCompact_closedBall (0 : ℂ) R)
-    simpa only [Metric.closedBall, preimage_ofPred_eq, dist_zero_right,
-      (InfinitePlace.Completion.isometry_extensionEmbedding w).norm_map_of_map_zero (map_zero _)]
-      using h
   let C : Set (ι → 𝔸ᶠ[E]) := Set.pi univ fun _ ↦ FiniteAdeleRing.integralAdeles (𝓞 E) E
   have hC : IsCompact C := isCompact_univ_pi fun _ ↦ FiniteAdeleRing.isCompact_integralAdeles
+  -- AdeleRing is defined as the product of the infinite and finite adele rings, so a pair
+  -- constructs the adele with the prescribed components.
   let T (p : (ι → InfiniteAdeleRing E) × (ι → 𝔸ᶠ[E])) : ι → 𝔸[E] := fun i ↦
     (((↑V.frame.1 : Matrix ι ι (InfiniteAdeleRing E)) *ᵥ p.1) i,
       ((↑V.frame.2 : Matrix ι ι 𝔸ᶠ[E]) *ᵥ p.2) i)
@@ -170,7 +172,7 @@ theorem finite_setOf_mem_lattice_vectorLength_le (R : ℝ) :
     (algebraMap E (InfiniteAdeleRing E) ∘ y)
   let v := (↑V.frame.2⁻¹ : Matrix ι ι 𝔸ᶠ[E]) *ᵥ (algebraMap E 𝔸ᶠ[E] ∘ y)
   have hu : u ∈ B := fun i _ w _ ↦
-    (V.norm_inv_frame_mulVec_apply_le_vectorLength y i w).trans hy.2
+    mem_closedBall_zero_iff.2 ((V.norm_inv_frame_mulVec_apply_le_vectorLength y i w).trans hy.2)
   have hv : v ∈ C := fun i _ ↦ (V.mem_lattice_iff.1 hy.1) i
   refine ⟨(u, v), ⟨hu, hv⟩, ?_⟩
   have hu_inv : (↑V.frame.1 : Matrix ι ι (InfiniteAdeleRing E)) *ᵥ u =
@@ -179,7 +181,8 @@ theorem finite_setOf_mem_lattice_vectorLength_le (R : ℝ) :
   have hv_inv : (↑V.frame.2 : Matrix ι ι 𝔸ᶠ[E]) *ᵥ v = algebraMap E 𝔸ᶠ[E] ∘ y := by
     simp only [v, mulVec_mulVec, ← Units.val_mul, mul_inv_cancel, Units.val_one, one_mulVec]
   funext i
-  exact Prod.ext (congrFun hu_inv i) (congrFun hv_inv i)
+  rw [Prod.ext_iff, AdeleRing.algebraMap_fst_def, AdeleRing.algebraMap_snd_def]
+  exact ⟨congrFun hu_inv i, congrFun hv_inv i⟩
 
 /-- The first minimum of the rational lattice, truncated at one. In rank zero it is one. -/
 def firstMinimum : ℝ :=
