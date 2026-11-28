@@ -19,7 +19,9 @@ factor set, `TauCeti.FactorSet.isHaarMeasure_prodMeasure` gives left Haar measur
 quotient acts by measure-preserving maps on the coefficients.
 `TauCeti.FactorSet.isMulRightInvariant_prodMeasure` gives right invariance for right invariant
 factor measures and measurable orbit maps. Both apply to bilinear Heisenberg extensions with
-additive Haar measures. The translation proofs use Mathlib's
+additive Haar measures. `TauCeti.FactorSet.measurePreserving_prodMeasure` transfers
+measure preservation from product coordinates to the extension via Mathlib's
+`MeasureTheory.MeasurePreserving.comp`. The translation proofs use Mathlib's
 `MeasureTheory.MeasurePreserving.skew_product` and `TauCeti.measurePreserving_skew_mul_right`.
 
 ## References
@@ -116,6 +118,19 @@ theorem prodMeasure_smul_right (α : FactorSet G M) (μ : Measure M) (ν : Measu
   rw [prodMeasure_def, prodMeasure_def, Measure.prod_smul_right, Measure.map_smul _
     (measurableEquivProd α).symm.measurable.aemeasurable]
 
+/-- A map preserves the extension's product measure if it intertwines the coordinate
+equivalence with a map preserving the product of the factor measures. -/
+theorem measurePreserving_prodMeasure (α : FactorSet G M) {μ : Measure M} {ν : Measure G}
+    {f : α.Extension → α.Extension} {g : M × G → M × G}
+    (hg : MeasurePreserving g (μ.prod ν) (μ.prod ν))
+    (hf : ∀ x, g (measurableEquivProd α x) = measurableEquivProd α (f x)) :
+    MeasurePreserving f (α.prodMeasure μ ν) (α.prodMeasure μ ν) := by
+  have hcoord := α.measurePreserving_measurableEquivProd μ ν
+  have h := (hcoord.symm _).comp (hg.comp hcoord)
+  convert h using 1
+  funext x
+  simp only [Function.comp_apply, hf, MeasurableEquiv.symm_apply_apply]
+
 /-- A map preserves the extension's product measure if its expression in swapped coordinates
 preserves the swapped product measure. -/
 theorem measurePreserving_prodMeasure_of_swap (α : FactorSet G M) (μ : Measure M)
@@ -123,13 +138,10 @@ theorem measurePreserving_prodMeasure_of_swap (α : FactorSet G M) (μ : Measure
     {g : G × M → G × M} (hg : MeasurePreserving g (ν.prod μ) (ν.prod μ))
     (hf : ∀ x, g (x.right, x.left) = ((f x).right, (f x).left)) :
     MeasurePreserving f (α.prodMeasure μ ν) (α.prodMeasure μ ν) := by
-  have hcoord := α.measurePreserving_measurableEquivProd μ ν
-  have h := (hcoord.symm _).comp
-    (Measure.measurePreserving_swap.comp (hg.comp (Measure.measurePreserving_swap.comp hcoord)))
-  convert h using 1
-  funext x
-  simp only [Function.comp_def, measurableEquivProd_apply, Prod.swap, hf,
-    measurableEquivProd_symm_apply]
+  apply α.measurePreserving_prodMeasure
+    (Measure.measurePreserving_swap.comp (hg.comp Measure.measurePreserving_swap))
+  intro x
+  simp only [Function.comp_apply, measurableEquivProd_apply, Prod.swap, hf]
 
 variable [MeasurableMul G] [MeasurableMul₂ M]
 
