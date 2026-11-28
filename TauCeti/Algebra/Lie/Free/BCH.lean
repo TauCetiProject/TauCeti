@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Algebra.Lie.Free.Enveloping
 public import TauCeti.Algebra.Lie.UniversalEnveloping.BCH
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Completion.Exp
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Embedding
 public import TauCeti.RingTheory.Nilpotent.BCH
-import TauCeti.RingTheory.Ideal.Maps
+
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # The universal Baker–Campbell–Hausdorff element
@@ -20,10 +22,15 @@ augmentation ideal of its enveloping algebra. In the truncated enveloping algebr
 `exp X * exp Y` is the exponential of the image of a unique element of the free nilpotent Lie
 algebra `𝔣 ⧸ lowerCentralSeries c` of class at most `c`. This element is the Baker–Campbell–
 Hausdorff element `bchElement c`; equivalently, its image is the finite logarithm
-`log (exp X * exp Y)`. The elements of different classes are compatible under the quotient maps
-between free nilpotent Lie algebras, and through degree three `bchElement 3` is the familiar
-polynomial `X + Y + ½ ⁅X, Y⁆ + 1/12 (⁅X, ⁅X, Y⁆⁆ + ⁅Y, ⁅Y, X⁆⁆)`. These elements are the universal
-formulas for the group law of a nilpotent Lie algebra over a rational algebra.
+`log (exp X * exp Y)`. In the word-length completion of `𝔣`, pulling back the product of the
+completed exponentials of `X` and `Y` along `completedLieExpEquiv` produces the completed
+Baker–Campbell–Hausdorff series `bchCompleted`, so that `completedExp` of
+`completedLieToU naturals 𝓛 bchCompleted` is `completedExp X * completedExp Y`, and the finite
+projections of `bchCompleted` agree with `bchElement c` after transport along the identification
+of the degree ideals with the lower central series.
+The elements of different classes are compatible under the quotient maps between free nilpotent
+Lie algebras, and through degree three `bchElement` is given explicitly (`bchElement_zero`,
+`bchElement_one`, `bchElement_two`, `bchElement_three`).
 
 Existence holds for any two Lie elements of the free Lie algebra on any set of generators
 (`TauCeti.FreeLieAlgebra.exists_exp_ι_eq_exp_mul_exp`); it is the case of the word-length
@@ -34,6 +41,8 @@ of the canonical map from the free nilpotent Lie algebra into the truncated enve
 ## Main definitions
 
 * `TauCeti.FreeLieAlgebra.bchElement`: the Baker–Campbell–Hausdorff element of class `c`.
+* `TauCeti.FreeLieAlgebra.bchCompleted`: the completed Baker–Campbell–Hausdorff series in the
+  word-length completion of `𝔣`.
 
 ## Main results
 
@@ -45,7 +54,14 @@ of the canonical map from the free nilpotent Lie algebra into the truncated enve
 * `TauCeti.FreeLieAlgebra.eq_bchElement_iff`: this property characterizes `bchElement c`.
 * `TauCeti.FreeLieAlgebra.lowerCentralQuotientι_bchElement`: the image of `bchElement c` is
   `log (exp X * exp Y)`.
+* `TauCeti.FreeLieAlgebra.completedExp_completedLieToU_bchCompleted`: in `completedEnveloping`,
+  `completedExp` of `completedLieToU naturals 𝓛 bchCompleted` is the product of the completed
+  exponentials of `X` and `Y`.
+* `TauCeti.FreeLieAlgebra.quotEquivOfEq_completionProjection_bchCompleted`: transporting the
+  order-`c` projection of `bchCompleted` along the identification of degree ideals with lower
+  central terms gives `bchElement c`.
 * `TauCeti.FreeLieAlgebra.factor_bchElement`: the elements of different classes are compatible.
+* `TauCeti.FreeLieAlgebra.bchElement_zero`: the element of class zero is `0`.
 * `TauCeti.FreeLieAlgebra.bchElement_one`: the element of class one is `X + Y`.
 * `TauCeti.FreeLieAlgebra.bchElement_three`: the element of class three is the cubic
   Baker–Campbell–Hausdorff polynomial.
@@ -84,7 +100,17 @@ theorem exists_exp_ι_eq_exp_mul_exp (c : ℕ) (x y : F) :
         IsNilpotent.exp (Ideal.Quotient.mk (J ^ (c + 1)) (ι y)) := by
   -- Transport the graded statement along the equality of the word-length filtration with the
   -- augmentation powers.
-  have h := degreeFiltration_eq_augmentation_pow ℚ S (c + 1)
+  have h : (UniversalEnvelopingAlgebra.degreeFiltration (homogeneousSubmodule ℚ S)
+      (Nat.castAddMonoidHom ℤ)
+      (fun n hn => absurd hn (not_lt.mpr (Int.natCast_nonneg n)))).ideal (c + 1) =
+      J ^ (c + 1) := by
+    have htr : ∀ (d : ℕ →+ ℤ) (hneg : ∀ n, d n < 0 → homogeneousSubmodule ℚ S n = ⊥),
+        d = PositiveDegrees.naturals.degree →
+          (UniversalEnvelopingAlgebra.degreeFiltration (homogeneousSubmodule ℚ S) d hneg).ideal
+            (c + 1) = J ^ (c + 1) := by
+      rintro _ _ rfl
+      exact degreeFiltration_eq_augmentation_pow ℚ S (c + 1)
+    exact htr _ _ (AddMonoidHom.ext PositiveDegrees.naturals_degree).symm
   obtain ⟨b, hb⟩ := UniversalEnvelopingAlgebra.exists_exp_ι_eq_exp_mul_exp
     (homogeneousSubmodule ℚ S) (homogeneousSubmodule_zero ℚ S) c x y
   have he : ∀ z : F, IsNilpotent.exp (Ideal.Quotient.mk (J ^ (c + 1)) (ι z)) =
@@ -151,6 +177,108 @@ theorem factor_bchElement {c d : ℕ} (h : c ≤ d) :
     map_mul, (isNilpotent_mk_ι ℚ 𝔣 d X).map_exp, (isNilpotent_mk_ι ℚ 𝔣 d Y).map_exp,
     Ideal.Quotient.factor_mk, Ideal.Quotient.factor_mk]
 
+section Completed
+
+open PositiveDegrees (naturals)
+
+local notation "𝓛" => homogeneousSubmodule ℚ (Fin 2)
+local notation "𝓕" => degreeFiltration 𝓛 naturals.degree (naturals.eq_bot_of_degree_neg 𝓛)
+
+private noncomputable def bchGroupLikeFactor (i : Fin 2) :=
+  completedLieExpEquiv naturals 𝓛
+    (LieIdeal.toCompletion (naturals.degreeIdeal 𝓛) (naturals.degreeIdeal_antitone 𝓛)
+      (_root_.FreeLieAlgebra.of ℚ i))
+
+/-- The completed Baker–Campbell–Hausdorff series in the word-length completion of `𝔣`,
+obtained by pulling back the product of the completed exponentials of the two free generators. -/
+noncomputable def bchCompleted : naturals.completedLie 𝓛 :=
+  (completedLieExpEquiv naturals 𝓛).symm ⟨(bchGroupLikeFactor 0).val * (bchGroupLikeFactor 1).val,
+    (bchGroupLikeFactor 0).property.mul (bchGroupLikeFactor 1).property⟩
+
+/-- In the completed enveloping algebra of `𝔣`, the completed exponential of
+`completedLieToU naturals 𝓛 bchCompleted` is the product of the completed exponentials of the two
+canonical generators. -/
+theorem completedExp_completedLieToU_bchCompleted :
+    (𝓕).completedExp ⟨completedLieToU naturals 𝓛 bchCompleted,
+        completedLieToU_mem_completionIdeal_one naturals 𝓛 bchCompleted⟩ =
+      (𝓕).completedExp ⟨(𝓕).toCompletion (ι X), toCompletion_ι_mem_completionIdeal_one
+        𝓛 naturals.degree (naturals.eq_bot_of_degree_nonpos 𝓛) X⟩ *
+      (𝓕).completedExp ⟨(𝓕).toCompletion (ι Y), toCompletion_ι_mem_completionIdeal_one
+        𝓛 naturals.degree (naturals.eq_bot_of_degree_nonpos 𝓛) Y⟩ := by
+  have happ := congrArg Subtype.val <| (completedLieExpEquiv naturals 𝓛).apply_symm_apply
+    ⟨_, (bchGroupLikeFactor 0).property.mul (bchGroupLikeFactor 1).property⟩
+  simp only [bchCompleted, bchGroupLikeFactor, coe_completedLieExpEquiv_apply,
+    completedLieToU_toCompletion] at happ ⊢
+  exact happ
+
+private noncomputable abbrev bchEnvEquiv (c : ℕ) :=
+  Ideal.quotientEquivAlgOfEq ℚ (degreeFiltration_eq_augmentation_pow ℚ (Fin 2) (c + 1))
+
+private theorem bchEnvEquiv_projection_completedExp (c : ℕ) (x : (𝓕).completionIdeal 1) :
+    bchEnvEquiv c ((𝓕).projection c ((𝓕).completedExp x)) =
+      IsNilpotent.exp (bchEnvEquiv c ((𝓕).projection c x)) := by
+  rw [(𝓕).projection_completedExp x c,
+    ((𝓕).isNilpotent_projection x.property c).map_exp (bchEnvEquiv c)]
+
+/-- Identifying the degree ideal with the lower central series sends the order-`c` projection of
+`bchCompleted` to `bchElement c`. -/
+@[simp]
+theorem quotEquivOfEq_completionProjection_bchCompleted (c : ℕ) :
+    ((naturals.degreeIdeal 𝓛 c).quotEquivOfEq _
+        (naturals_degreeIdeal_eq_lowerCentralSeries ℚ (Fin 2) c))
+      (LieIdeal.completionProjection (naturals.degreeIdeal 𝓛)
+        (naturals.degreeIdeal_antitone 𝓛) c bchCompleted) = bchElement c := by
+  rw [eq_bchElement_iff]
+  calc
+    IsNilpotent.exp (lowerCentralQuotientι ℚ 𝔣 c _)
+      = IsNilpotent.exp (bchEnvEquiv c (truncatedLieToU naturals 𝓛 c
+          (LieIdeal.completionProjection (naturals.degreeIdeal 𝓛)
+            (naturals.degreeIdeal_antitone 𝓛) c bchCompleted))) := by
+        rw [quotientEquivAlgOfEq_truncatedLieToU]
+    _ = IsNilpotent.exp (bchEnvEquiv c ((𝓕).projection c
+          (completedLieToU naturals 𝓛 bchCompleted))) := by
+        rw [projection_completedLieToU]
+    _ = bchEnvEquiv c ((𝓕).projection c ((𝓕).completedExp
+          ⟨completedLieToU naturals 𝓛 bchCompleted,
+            completedLieToU_mem_completionIdeal_one naturals 𝓛 bchCompleted⟩)) := by
+        rw [bchEnvEquiv_projection_completedExp]
+    _ = bchEnvEquiv c ((𝓕).projection c
+          ((𝓕).completedExp ⟨(𝓕).toCompletion (ι X), toCompletion_ι_mem_completionIdeal_one
+              𝓛 naturals.degree (naturals.eq_bot_of_degree_nonpos 𝓛) X⟩ *
+            (𝓕).completedExp ⟨(𝓕).toCompletion (ι Y), toCompletion_ι_mem_completionIdeal_one
+              𝓛 naturals.degree (naturals.eq_bot_of_degree_nonpos 𝓛) Y⟩)) := by
+        rw [completedExp_completedLieToU_bchCompleted]
+    _ = bchEnvEquiv c ((𝓕).projection c
+          ((𝓕).completedExp ⟨(𝓕).toCompletion (ι X), toCompletion_ι_mem_completionIdeal_one
+            𝓛 naturals.degree (naturals.eq_bot_of_degree_nonpos 𝓛) X⟩)) *
+        bchEnvEquiv c ((𝓕).projection c
+          ((𝓕).completedExp ⟨(𝓕).toCompletion (ι Y), toCompletion_ι_mem_completionIdeal_one
+            𝓛 naturals.degree (naturals.eq_bot_of_degree_nonpos 𝓛) Y⟩)) := by
+        rw [map_mul, map_mul]
+    _ = IsNilpotent.exp (Ideal.Quotient.mk (J ^ (c + 1)) (ι X)) *
+        IsNilpotent.exp (Ideal.Quotient.mk (J ^ (c + 1)) (ι Y)) := by
+        rw [bchEnvEquiv_projection_completedExp, bchEnvEquiv_projection_completedExp]
+        simp [bchEnvEquiv]
+
+/-- The order-`c` projection of `bchCompleted` is `bchElement c` transported back along the
+identification of degree ideals with lower central terms. -/
+theorem completionProjection_bchCompleted (c : ℕ) :
+    LieIdeal.completionProjection (naturals.degreeIdeal 𝓛)
+        (naturals.degreeIdeal_antitone 𝓛) c bchCompleted =
+      ((naturals.degreeIdeal 𝓛 c).quotEquivOfEq _
+          (naturals_degreeIdeal_eq_lowerCentralSeries ℚ (Fin 2) c)).symm (bchElement c) := by
+  rw [← quotEquivOfEq_completionProjection_bchCompleted c, LieEquiv.symm_apply_apply]
+
+end Completed
+
+/-! ### Explicit formulas in low nilpotency class -/
+
+/-- At class `0`, `bchElement 0` vanishes. -/
+@[simp] theorem bchElement_zero : bchElement 0 = 0 := by
+  obtain ⟨x, hx⟩ := LieIdeal.surjective_mkQ _ (bchElement 0)
+  rw [← hx, LieIdeal.mkQ_eq_zero]
+  simp only [LieModule.lowerCentralSeries_zero, LieSubmodule.mem_top]
+
 /-- The Baker–Campbell–Hausdorff element of class one is `X + Y`: modulo brackets, the product
 of exponentials is the exponential of the sum. -/
 theorem bchElement_one : bchElement 1 = LieSubmodule.Quotient.mk (X + Y) := by
@@ -172,8 +300,7 @@ theorem bchElement_three :
       (1 / 12 : ℚ) • (⁅X, ⁅X, Y⁆⁆ + ⁅Y, ⁅Y, X⁆⁆)) := by
   -- The classes of the augmentation ideal form an ideal with vanishing fourth power.
   have hI : Ideal.map (Ideal.Quotient.mk (J ^ (3 + 1))) J ^ 4 = ⊥ :=
-    le_bot_iff.mp ((Ideal.pow_map_le_map_pow_of_surjective Ideal.Quotient.mk_surjective J 4).trans
-      (Ideal.map_quotient_self _).le)
+    Ideal.map_mk_pow_self J 4
   have hmem : ∀ z : 𝔣, Ideal.Quotient.mk (J ^ (3 + 1)) (ι z) ∈ Ideal.map (Ideal.Quotient.mk _) J :=
     fun z => Ideal.mem_map_of_mem _ (HopfIdeal.mem_toIdeal.mpr (ι_mem_augmentation ℚ 𝔣 z))
   symm

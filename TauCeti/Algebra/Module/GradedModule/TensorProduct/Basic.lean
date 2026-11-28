@@ -103,28 +103,43 @@ variable {R : Type u} [CommSemiring R]
 variable {M : Type v} {N : Type w}
 variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 
-/-- The bidegree-`(p, q)` submodule in a tensor product of internally graded modules. -/
-private def tensorProductBidegreePiece {ι : Type*} [DecidableEq ι]
-    (G : InternalGrading R M ι) (H : InternalGrading R N ι)
-    (d : ι × ι) : Submodule R (M ⊗[R] N) :=
-  Submodule.map₂ (TensorProduct.mk R M N) (G.piece d.1) (H.piece d.2)
+/-- The bidegree-`(p, q)` submodule in a tensor product of submodule families. -/
+def tensorProductBidegreePiece {ι κ : Type*}
+    (G : ι → Submodule R M) (H : κ → Submodule R N)
+    (d : ι × κ) : Submodule R (M ⊗[R] N) :=
+  Submodule.map₂ (TensorProduct.mk R M N) (G d.1) (H d.2)
 
-private def tensorProductPiece {ι : Type*} [DecidableEq ι] [Add ι]
-    (G : InternalGrading R M ι) (H : InternalGrading R N ι) (n : ι) :
+/-- Unfolding characterization of `tensorProductBidegreePiece`. -/
+theorem tensorProductBidegreePiece_def {ι κ : Type*}
+    (G : ι → Submodule R M) (H : κ → Submodule R N) (d : ι × κ) :
+    tensorProductBidegreePiece G H d =
+      Submodule.map₂ (TensorProduct.mk R M N) (G d.1) (H d.2) := by
+  simp only [tensorProductBidegreePiece]
+
+/-- The total-degree-`n` submodule in a tensor product of submodule families. -/
+def tensorProductPiece {ι : Type*} [Add ι]
+    (G : ι → Submodule R M) (H : ι → Submodule R N) (n : ι) :
     Submodule R (M ⊗[R] N) :=
   ⨆ d : ι × ι, ⨆ _ : d.1 + d.2 = n, tensorProductBidegreePiece G H d
 
-private theorem tensorProductPiece_eq_iSup {ι : Type*} [DecidableEq ι] [AddCommGroup ι]
-    (G : InternalGrading R M ι) (H : InternalGrading R N ι) (n : ι) :
+/-- Unfolding characterization of `tensorProductPiece`. -/
+theorem tensorProductPiece_def {ι : Type*} [Add ι]
+    (G : ι → Submodule R M) (H : ι → Submodule R N) (n : ι) :
     tensorProductPiece G H n =
-      ⨆ p : ι, Submodule.map₂ (TensorProduct.mk R M N) (G.piece p) (H.piece (n - p)) := by
+      ⨆ d : ι × ι, ⨆ _ : d.1 + d.2 = n, tensorProductBidegreePiece G H d := by
+  simp only [tensorProductPiece]
+
+private theorem tensorProductPiece_eq_iSup {ι : Type*} [AddCommGroup ι]
+    (G : ι → Submodule R M) (H : ι → Submodule R N) (n : ι) :
+    tensorProductPiece G H n =
+      ⨆ p : ι, Submodule.map₂ (TensorProduct.mk R M N) (G p) (H (n - p)) := by
   apply le_antisymm
   · refine iSup_le fun d ↦ iSup_le fun hd ↦ ?_
     refine le_iSup_of_le d.1 ?_
     have hdeg : d.2 = n - d.1 := by rw [← hd, add_sub_cancel_left]
     simpa only [tensorProductBidegreePiece, hdeg] using
-      (le_rfl : Submodule.map₂ (TensorProduct.mk R M N) (G.piece d.1)
-        (H.piece (n - d.1)) ≤ _)
+      (le_rfl : Submodule.map₂ (TensorProduct.mk R M N) (G d.1)
+        (H (n - d.1)) ≤ _)
   · refine iSup_le fun p ↦ ?_
     refine le_iSup_of_le (p, n - p) ?_
     refine le_iSup_of_le (add_sub_cancel p n) ?_
@@ -142,7 +157,7 @@ variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 noncomputable def tensorProduct {ι : Type*} [DecidableEq ι] [Add ι]
     (G : InternalGrading R M ι) (H : InternalGrading R N ι) :
     InternalGrading R (M ⊗[R] N) ι where
-  piece := tensorProductPiece G H
+  piece := tensorProductPiece G.piece H.piece
   -- `tensorProductPiece` is by definition the supremum of the bidegree pieces over each fiber of
   -- the total-degree map, which is the form produced by `DirectSum.IsInternal.iSup_fiber`.
   isInternal :=
@@ -182,7 +197,7 @@ theorem tensorProduct_piece_eq_iSup {ι : Type*} [DecidableEq ι] [AddCommGroup 
     (G : InternalGrading R M ι) (H : InternalGrading R N ι) (n : ι) :
     (G.tensorProduct H).piece n =
       ⨆ p : ι, Submodule.map₂ (TensorProduct.mk R M N) (G.piece p) (H.piece (n - p)) :=
-  tensorProductPiece_eq_iSup G H n
+  tensorProductPiece_eq_iSup G.piece H.piece n
 
 /-- A submodule containing every pure tensor of homogeneous elements of total degree `n` contains
 the whole degree-`n` piece of the tensor-product grading. -/

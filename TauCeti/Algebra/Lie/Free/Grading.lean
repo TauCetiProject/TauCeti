@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Loop
 public import TauCeti.Algebra.Lie.Presentation.Basic
+public import TauCeti.Algebra.PositiveDegrees.Grading
 
 /-!
 # Word-length grading of a free Lie algebra
@@ -194,5 +195,14 @@ theorem homogeneousSubmodule_one :
       omega
   · rintro ⟨s, rfl⟩
     exact ⟨FreeMagma.of s, rfl, word_of R s⟩
+
+/-- Word length is a positive Lie grading of `FreeLieAlgebra R S` over
+`PositiveDegrees.naturals`. -/
+instance isPositiveGrading_homogeneousSubmodule :
+    IsPositiveGrading PositiveDegrees.naturals (homogeneousSubmodule R S) where
+  eq_bot n hn := by
+    rcases hn with hmem | rfl
+    · exact (hmem PositiveDegrees.mem_naturals_monoid).elim
+    · exact homogeneousSubmodule_zero R S
 
 end TauCeti.FreeLieAlgebra

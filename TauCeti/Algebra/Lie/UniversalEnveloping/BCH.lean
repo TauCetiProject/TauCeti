@@ -10,6 +10,8 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Primitive
 public import TauCeti.RingTheory.Nilpotent.Exp.Ideal
 public import TauCeti.RingTheory.Nilpotent.Log
 
+import TauCeti.Algebra.Lie.UniversalEnveloping.FilteredBialgebra
+
 /-!
 # Baker–Campbell–Hausdorff products in truncated enveloping algebras
 
@@ -77,9 +79,8 @@ theorem exists_ι_sub_mem_of_comul_sub_mem {u : U} {k : ℕ}
   -- Every homogeneous component of degree below `k` is primitive, hence a Lie element.
   have hprim : ∀ n : Fin k, ∃ x : L, _root_.UniversalEnvelopingAlgebra.ι R x = π n u := fun n =>
     (_root_.UniversalEnvelopingAlgebra.isPrimitiveElem_iff_mem_range_ι (π n u)).mp
-      (isPrimitiveElem_proj ℒ fun i j hij => by
-        rw [← sub_eq_zero, ← map_sub]
-        exact map_proj_eq_zero_of_mem_tensorProduct_ideal ℒ hu (by omega))
+      (isPrimitiveElem_proj_of_comul_sub_mem ℒ (Nat.castAddMonoidHom ℤ) _ hu
+        (by simp))
   choose f hf using hprim
   refine ⟨∑ n, f n, (mem_degreeFiltration_ideal_iff ℒ _ _).mpr fun m hm => ?_⟩
   have hmk : m < k := by simpa using hm
@@ -192,7 +193,7 @@ theorem exists_exp_ι_eq_exp_mul_exp (hpos : ℒ 0 = ⊥) (c : ℕ) (x y : L) :
     (IsNilpotent.exp (Ideal.Quotient.mk ((𝓕).ideal (c + 1)) (ι x)) *
       IsNilpotent.exp (Ideal.Quotient.mk ((𝓕).ideal (c + 1)) (ι y))))
   obtain ⟨b, hb⟩ := exists_ι_sub_mem_of_comul_sub_mem ℒ (comul_sub_mem_of_mk_eq_log _ _
-    (fun _ ha => comul_mem_tensorProduct_ideal ℒ ha)
+    (degreeFiltration_le_comap_comulAlgHom ℒ (Nat.castAddMonoidHom ℤ) _ (c + 1))
     ((𝓕).ideal_le_comap_includeLeft ℚ 𝓕 (c + 1)) ((𝓕).ideal_le_comap_includeRight ℚ 𝓕 (c + 1))
     (hJ _ (hιJ x)) (hJ _ (hιJ y)) hg hu)
   refine ⟨b, ?_⟩

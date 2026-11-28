@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.Lie.UniversalEnveloping
 public import Mathlib.GroupTheory.GroupAction.Ring
@@ -24,6 +25,9 @@ additional structures such as filtrations, bialgebras, or antipodes.
   generators that the previous statement supplies.
 * `TauCeti.UniversalEnvelopingAlgebra.instFiniteType`: a universal enveloping algebra is an algebra
   of finite type over the base ring as soon as the Lie algebra is finite as a module.
+* `TauCeti.UniversalEnvelopingAlgebra.instAlgebraRat` and
+  `TauCeti.UniversalEnvelopingAlgebra.instIsScalarTowerRat`: the canonical `ℚ`-algebra and scalar
+  tower structures on `U(L)` when the base ring is a commutative `ℚ`-algebra.
 * `TauCeti.UniversalEnvelopingAlgebra.representation`: the algebra homomorphism `U(L) → End M`
   attached to a Lie module `M`, in particular the adjoint action of `U(L)` on `L` at `M = L`.
 * `TauCeti.UniversalEnvelopingAlgebra.representation_lie_of_mem_center`: a central element of
@@ -345,5 +349,30 @@ theorem ad_ι_pow_apply_ι (x y : L) (n : ℕ) :
       mul_apply_eq_comp, LieAlgebra.ad_apply]
 
 end Center
+
+section RationalScalarTower
+
+/-- A universal enveloping algebra over a commutative `ℚ`-algebra inherits its canonical
+`ℚ`-algebra structure from the `RingCon` quotient construction. -/
+-- Low-priority so `UniversalEnvelopingAlgebra.instAlgebra` wins for `Algebra R U`,
+-- and at `R = ℚ` the two instances remain definitionally equal.
+instance (priority := low) instAlgebraRat {R L : Type*} [CommRing R] [Algebra ℚ R]
+    [LieRing L] [LieAlgebra R L] :
+    Algebra ℚ (_root_.UniversalEnvelopingAlgebra R L) :=
+  letI : Algebra ℚ (TensorAlgebra R L) :=
+    inferInstanceAs (Algebra ℚ (RingCon.Quotient (TensorAlgebra.ringCon R L)))
+  inferInstanceAs (Algebra ℚ (RingCon.Quotient (_root_.UniversalEnvelopingAlgebra.ringCon R L)))
+
+/-- The canonical `ℚ`-algebra structure on `U(L)` is compatible with the `R`-algebra structure
+when `R` is a commutative `ℚ`-algebra. -/
+instance (priority := low) instIsScalarTowerRat {R L : Type*} [CommRing R] [Algebra ℚ R]
+    [LieRing L] [LieAlgebra R L] :
+    IsScalarTower ℚ R (_root_.UniversalEnvelopingAlgebra R L) :=
+  letI : Algebra ℚ (TensorAlgebra R L) :=
+    inferInstanceAs (Algebra ℚ (RingCon.Quotient (TensorAlgebra.ringCon R L)))
+  inferInstanceAs
+    (IsScalarTower ℚ R (RingCon.Quotient (_root_.UniversalEnvelopingAlgebra.ringCon R L)))
+
+end RationalScalarTower
 
 end TauCeti.UniversalEnvelopingAlgebra

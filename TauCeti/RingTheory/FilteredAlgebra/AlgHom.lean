@@ -103,6 +103,13 @@ theorem mapCompletionₐ_mem_completionIdeal (k : ℕ) {x : F.completion}
     F.mapCompletionₐ G f l hl hf x ∈ G.completionIdeal (k + 1) :=
   F.mapCompletion_mem_completionIdeal G (f : A →+* B) l hl hf k hx
 
+/-- A filtered algebra map preserving the first original ideal preserves the first completed
+ideal, even when its chosen cutoff modulus does not send zero to zero. -/
+theorem mapCompletionₐ_mem_first (h₁ : F.ideal 1 ≤ (G.ideal 1).comap f)
+    {x : F.completion} (hx : x ∈ F.completionIdeal 1) :
+    F.mapCompletionₐ G f l hl hf x ∈ G.completionIdeal 1 :=
+  F.mapCompletion_mem_first G (f : A →+* B) l hl hf h₁ hx
+
 /-- Any two valid cutoff moduli induce the same algebra homomorphism on completions. -/
 theorem mapCompletionₐ_eq (m : ℕ → ℕ) (hm : Monotone m)
     (hfm : ∀ k, F.ideal (m k + 1) ≤ (G.ideal (k + 1)).comap f) :

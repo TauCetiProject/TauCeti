@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.Algebra.Module.SpanRank
 
+import TauCeti.RingTheory.Ideal.Maps
+
 /-!
 # Operations on ideal quotients
 
@@ -57,6 +59,11 @@ map is multiplication by `p`, is exact (`Ideal.exact_mulLeft_mkₐ_span_singleto
 
 A linear endomorphism commuting with multiplication by each element of a set `s` induces an
 endomorphism of the quotient by `Ideal.span s` (`Ideal.exists_quotient_linearMap_of_map_mul`).
+
+In the quotient of a possibly noncommutative ring by `I ^ n` (or any two-sided ideal containing
+`I ^ n`), the `n`-th power of the image of `I` vanishes (`Ideal.map_mk_pow_self` and
+`Ideal.map_mk_pow_eq_bot_of_le`).
+
 Left scalar multiplication on a residue class is multiplication of representatives
 (`Ideal.Quotient.smul_mk`).
 -/
@@ -238,6 +245,20 @@ theorem exact_mulLeft_mkₐ_span_singleton {R B : Type*} [CommSemiring R] [CommR
   convert hexact using 1 <;> ext b
   · simp [mul_comm]
   · simp [Quotient.mkₐ_eq_mk, ← Quotient.mk_eq_mk]
+
+/-- In the quotient of a possibly noncommutative ring by a two-sided ideal containing `I ^ n`,
+the `n`-th power of the image of `I` vanishes. -/
+theorem map_mk_pow_eq_bot_of_le {A : Type*} [Ring A] {I J : Ideal A} [J.IsTwoSided]
+    {n : ℕ} (h : I ^ n ≤ J) : (I.map (Quotient.mk J)) ^ n = ⊥ := by
+  rw [← map_pow_of_surjective (Quotient.mk J) Quotient.mk_surjective]
+  exact map_mk_eq_bot_of_le h
+
+/-- In the quotient of a possibly noncommutative ring by `I ^ n`, the `n`-th power of the image
+of `I` vanishes. -/
+@[simp]
+theorem map_mk_pow_self {A : Type*} [Ring A] (I : Ideal A) [I.IsTwoSided] (n : ℕ) :
+    (I.map (Quotient.mk (I ^ n))) ^ n = ⊥ :=
+  map_mk_pow_eq_bot_of_le le_rfl
 
 end Ideal
 

@@ -139,11 +139,22 @@ noncomputable def completionProjection (k : ℕ) : completion I hI →ₗ⁅R⁆
   __ := projectionLinear I hI k
   map_lie' := projectionLinear_bracket I hI k _ _
 
+private theorem completionProjection_apply (k : ℕ) (x : completion I hI) :
+    completionProjection I hI k x = projectionLinear I hI k x := rfl
+
 /-- Completed Lie elements are determined by their quotient projections. -/
 @[ext]
 theorem completion_ext {x y : completion I hI}
     (h : ∀ k, completionProjection I hI k x = completionProjection I hI k y) : x = y :=
   completion_ext_aux I hI h
+
+/-- Any representative of the order-`k` module projection computes the Lie projection. -/
+theorem completionProjection_of_representative (k : ℕ) (x : completion I hI) (a : L)
+    (ha : ModuleTower.quotientsπ Js hs k a = (ModuleTower.quotients Js hs).limπ k x) :
+    completionProjection I hI k x = (I k).mkQ a := by
+  rw [completionProjection_apply]
+  simp only [projectionLinear, LinearMap.comp_apply, LinearEquiv.coe_coe, ← ha,
+    quotientEquiv_π, LieIdeal.mkQ_apply]
 
 /-- Quotient representatives compute the module projection of a completed bracket. -/
 theorem limπ_bracket_of_representatives (k : ℕ) (x y : completion I hI) (a b : L)
@@ -153,11 +164,11 @@ theorem limπ_bracket_of_representatives (k : ℕ) (x y : completion I hI) (a b 
   apply (quotientEquiv I hI k).injective
   rw [quotientEquiv_π, LieSubmodule.Quotient.mk_bracket]
   have hx : projectionLinear I hI k x = LieSubmodule.Quotient.mk a := by
-    simp only [projectionLinear, LinearMap.comp_apply, LinearEquiv.coe_coe, ← ha,
-      quotientEquiv_π]
+    rw [← completionProjection_apply, completionProjection_of_representative I hI k x a ha,
+      LieIdeal.mkQ_apply]
   have hy : projectionLinear I hI k y = LieSubmodule.Quotient.mk b := by
-    simp only [projectionLinear, LinearMap.comp_apply, LinearEquiv.coe_coe, ← hb,
-      quotientEquiv_π]
+    rw [← completionProjection_apply, completionProjection_of_representative I hI k y b hb,
+      LieIdeal.mkQ_apply]
   exact (projectionLinear_bracket I hI k x y).trans (congrArg₂ Bracket.bracket hx hy)
 
 /-- Completed Lie projections commute with all quotient transitions. -/

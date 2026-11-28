@@ -5,18 +5,18 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.RingTheory.FilteredAlgebra.AlgHom
 public import TauCeti.RingTheory.FilteredAlgebra.Exp.Basic
-public import TauCeti.RingTheory.FilteredAlgebra.Map
 
 /-!
 # Naturality of completed exponentials and logarithms
 
-A filtered ring map preserving the first ideal induces a map of exponential
+A filtered ring or algebra map preserving the first ideal induces a map of exponential
 coordinates. The cutoff modulus may change orders. Preservation of the first
 ideal is a separate hypothesis: continuity alone need not preserve that ideal.
 
-We use the existing completion map and naturality of finite nilpotent
-exponentials and logarithms. All statements allow noncommutative rational
+We use the existing completion maps (`mapCompletion` and `mapCompletionₐ`) and naturality of
+finite nilpotent exponentials and logarithms. All statements allow noncommutative rational
 algebras and noninjective maps.
 
 Adapted from `Mei/RingTheory/FilteredAlgebra/Exp/Map.lean` in
@@ -63,5 +63,37 @@ theorem mapCompletion_completedLog
   have hu : IsNilpotent (F.projection (l k) u - 1) := by
     simpa only [map_sub, map_one] using F.isNilpotent_projection u.property (l k)
   exact hu.map_log _
+
+section AlgHom
+
+variable {R A B : Type*} [CommRing R] [Ring A] [Algebra R A] [Ring B] [Algebra R B]
+  (F : AlgFiltration A) (G : AlgFiltration B)
+  (f : A →ₐ[R] B) (l : ℕ → ℕ) (hl : Monotone l)
+  (hf : ∀ k, F.ideal (l k + 1) ≤ (G.ideal (k + 1)).comap f)
+  (h₁ : F.ideal 1 ≤ (G.ideal 1).comap f)
+
+variable [Algebra ℚ A] [Algebra ℚ B]
+
+/-- Completed exponentiation commutes with filtered algebra maps preserving the first ideal. -/
+@[simp]
+theorem mapCompletionₐ_completedExp (x : F.completionIdeal 1) :
+    F.mapCompletionₐ G f l hl hf (F.completedExp x) =
+      G.completedExp ⟨F.mapCompletionₐ G f l hl hf x,
+        F.mapCompletionₐ_mem_first G f l hl hf h₁ x.property⟩ := by
+  simpa only [← F.coe_mapCompletionₐ G f l hl hf, AlgHom.coe_toRingHom] using
+    F.mapCompletion_completedExp G (f : A →+* B) l hl hf h₁ x
+
+/-- Completed logarithms commute with filtered algebra maps preserving the first ideal. -/
+@[simp]
+theorem mapCompletionₐ_completedLog
+    (u : {u : F.completion // u - 1 ∈ F.completionIdeal 1}) :
+    F.mapCompletionₐ G f l hl hf (F.completedLog u) =
+      G.completedLog ⟨F.mapCompletionₐ G f l hl hf u, by
+        simpa only [map_sub, map_one] using
+          F.mapCompletionₐ_mem_first G f l hl hf h₁ u.property⟩ := by
+  simpa only [← F.coe_mapCompletionₐ G f l hl hf, AlgHom.coe_toRingHom] using
+    F.mapCompletion_completedLog G (f : A →+* B) l hl hf h₁ u
+
+end AlgHom
 
 end TauCeti.AlgFiltration

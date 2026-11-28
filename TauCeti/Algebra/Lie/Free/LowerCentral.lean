@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.DirectSum.DegreeTail
 public import TauCeti.Algebra.Lie.Free.Grading
+public import TauCeti.Algebra.Lie.Graded.Truncation
 public import TauCeti.Algebra.Lie.LowerCentralSeries
 
 /-!
@@ -126,6 +127,18 @@ theorem degreeTail_eq_lowerCentralSeries (c : ℕ) :
   refine iSup_congr fun n => iSup_congr_Prop ?_ fun _ => rfl
   simp only [Nat.coe_castAddMonoidHom]
   omega
+
+/-- For the word-length grading over `PositiveDegrees.naturals`, the degree ideal at cutoff `c` is
+the `c`-th term of the lower central series. -/
+theorem naturals_degreeIdeal_eq_lowerCentralSeries (S : Type*) (c : ℕ) :
+    PositiveDegrees.naturals.degreeIdeal (homogeneousSubmodule R S) c =
+      LieModule.lowerCentralSeries R (_root_.FreeLieAlgebra R S)
+        (_root_.FreeLieAlgebra R S) c := by
+  apply LieSubmodule.toSubmodule_injective
+  rw [PositiveDegrees.degreeIdeal_toSubmodule, PositiveDegrees.degreeSubmodule_eq_degreeTail,
+    show PositiveDegrees.naturals.degree = Nat.castAddMonoidHom ℤ from
+      AddMonoidHom.ext PositiveDegrees.naturals_degree,
+    degreeTail_eq_lowerCentralSeries]
 
 section ClassTwo
 

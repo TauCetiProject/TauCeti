@@ -45,6 +45,11 @@ variable (d : PositiveDegrees N) (ℒ : N → Submodule R M)
 def degreeSubmodule (k : ℕ) : Submodule R M :=
   DirectSum.degreeTail ℒ d.degree (k + 1)
 
+/-- The degree submodule is the degree tail above `k + 1`. -/
+theorem degreeSubmodule_eq_degreeTail (k : ℕ) :
+    d.degreeSubmodule ℒ k = DirectSum.degreeTail ℒ d.degree (k + 1) :=
+  (rfl)
+
 /-- The defining sum for the degree submodule. -/
 theorem degreeSubmodule_def (k : ℕ) :
     d.degreeSubmodule ℒ k = ⨆ n : {n : N // (k : ℤ) < d.degree n}, ℒ n := by
@@ -122,6 +127,11 @@ theorem eq_bot_of_degree_nonpos (n : N) (hn : d.degree n ≤ 0) : ℒ n = ⊥ :=
   by_cases h : n ∈ d.monoid ∧ n ≠ 0
   · exact absurd (d.degree_pos h.1 h.2) (not_lt.mpr hn)
   · exact IsPositiveGrading.eq_bot (d := d) (ℒ := ℒ) n (by tauto)
+
+omit [DecidableEq N] [DirectSum.Decomposition ℒ] in
+/-- A positive grading has no pieces of negative degree. -/
+theorem eq_bot_of_degree_neg (n : N) (hn : d.degree n < 0) : ℒ n = ⊥ :=
+  d.eq_bot_of_degree_nonpos ℒ n hn.le
 
 /-- All of a positively graded module lies above the zero cutoff. -/
 @[simp]
