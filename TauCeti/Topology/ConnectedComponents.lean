@@ -34,6 +34,8 @@ space by them.
   exactly when it has at most one connected component.
 * `ConnectedComponents.carrierIn`: the ambient carrier of a connected component of a subtype,
   together with its characterization, connectedness, and partition properties.
+* `TauCeti.finite_connectedComponents_iff_finite_image_connectedComponentIn`: a subspace has
+  finitely many components exactly when there are finitely many distinct ambient carriers.
 
 * `ConnectedComponents.instMulActionOfContinuousConstSMul`: an action by continuous maps descends
   to connected components.
@@ -114,6 +116,8 @@ space by them.
   its connected components.
 * `TauCeti.finite_connectedComponents_of_finite_irreducibleComponents`: finiteness of the
   irreducible components implies finiteness of the connected components.
+* `Continuous.finite_connectedComponents_of_surjective`: a continuous surjection preserves
+  finiteness of the connected-component quotient.
 * `TauCeti.isClopen_of_finite_pairwiseDisjoint_closed_cover`: each member of a finite pairwise
   disjoint closed cover is clopen.
 * `TauCeti.natCard_connectedComponents_eq_of_iUnion_eq_univ`: a space covered by finitely many
@@ -284,6 +288,14 @@ theorem iUnion_carrierIn : (⋃ c : ConnectedComponents s, c.carrierIn) = s := b
     exact ⟨ConnectedComponents.mk ⟨x, hx⟩, hx, rfl⟩
 
 end Carrier
+
+/-- A subspace has finitely many connected components exactly when its points determine
+only finitely many distinct ambient component sets. -/
+theorem _root_.TauCeti.finite_connectedComponents_iff_finite_image_connectedComponentIn
+    {s : Set X} : Finite (ConnectedComponents s) ↔ (connectedComponentIn s '' s).Finite := by
+  rw [← finite_range_iff (carrierIn_injective (s := s)),
+    ← (surjective_coe (α := s)).range_comp carrierIn, image_eq_range]
+  simp [Function.comp_def]
 
 /-- A clopen subset is saturated for the connected-components equivalence relation: pulling its
 image in `ConnectedComponents X` back along `ConnectedComponents.mk` recovers `s`. -/
@@ -1020,17 +1032,8 @@ theorem _root_.Set.Finite.isOpen_preimage_connectedComponentIn {s : Set X}
     IsOpen ((Subtype.val : s → X) ⁻¹' connectedComponentIn s x) := by
   classical
   by_cases hx : x ∈ s
-  · let j : ConnectedComponents s → Set X :=
-      fun C ↦ connectedComponentIn s (Quotient.out C).val
-    have hj : Injective j := by
-      intro C D hCD
-      have h := (ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq
-        (Quotient.out C).property (Quotient.out D).property).2 hCD
-      exact (Quotient.out_eq' C).symm.trans (h.trans (Quotient.out_eq' D))
-    have hfin : (range j).Finite := hs.subset <| by
-      rintro _ ⟨C, rfl⟩
-      exact ⟨(Quotient.out C).val, (Quotient.out C).property, rfl⟩
-    have : Finite (ConnectedComponents s) := (finite_range_iff hj).1 hfin
+  · have : Finite (ConnectedComponents s) :=
+      finite_connectedComponents_iff_finite_image_connectedComponentIn.2 hs
     have hopen := ConnectedComponents.discreteTopology_iff.1
       (inferInstance : DiscreteTopology (ConnectedComponents s)) (⟨x, hx⟩ : s)
     simpa only [connectedComponentIn_eq_image hx,
@@ -1082,6 +1085,14 @@ theorem connectedComponentsSigmaHomeomorph_symm_apply
     connectedComponentsSigmaHomeomorph.symm x =
       ⟨ConnectedComponents.mk x, ⟨x, Set.mem_singleton _⟩⟩ :=
   (rfl)
+
+/-- A continuous surjection from a space with finitely many connected components has a target
+with finitely many connected components. -/
+theorem _root_.Continuous.finite_connectedComponents_of_surjective
+    {Y : Type*} [TopologicalSpace Y] {f : X → Y} (hf : Continuous f)
+    (hsurj : Surjective f) [Finite (ConnectedComponents X)] :
+    Finite (ConnectedComponents Y) :=
+  Finite.of_surjective _ (hf.connectedComponentsMap_surjective hsurj)
 
 /-- A space with finitely many irreducible components has finitely many connected components. -/
 theorem finite_connectedComponents_of_finite_irreducibleComponents

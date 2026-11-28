@@ -64,11 +64,7 @@ theorem finite_connectedComponents_of_isCompact_frontier [LocallyConnectedSpace 
     obtain ⟨w, hwN, hwC⟩ := mem_closure_iff.1 hz.1 _ isOpen_interior hzx
     refine .inl ⟨w, ⟨_, ⟨x, hxt, rfl⟩, interior_subset hwN,
       connectedComponentIn_subset s y hwC⟩, (connectedComponentIn_eq hwC).symm⟩
-  have : Finite (range (ConnectedComponents.carrierIn (s := s))) :=
-    ((hfin.union (finite_singleton univ)).subset (range_subset_iff.2 fun c ↦ by
-      obtain ⟨y, rfl⟩ := ConnectedComponents.surjective_coe c
-      rw [ConnectedComponents.carrierIn_mk]
-      exact hcomp y)).to_subtype
-  exact Finite.of_injective_finite_range ConnectedComponents.carrierIn_injective
+  apply finite_connectedComponents_iff_finite_image_connectedComponentIn.2
+  exact (hfin.union (finite_singleton univ)).subset (image_subset_iff.2 fun y hy ↦ hcomp ⟨y, hy⟩)
 
 end TauCeti

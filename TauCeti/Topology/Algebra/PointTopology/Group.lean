@@ -60,6 +60,8 @@ its adelic points.
   or open embedding of coefficient rings.
 * `AlgHom.isClosed_range_mapValue` and `AlgHom.isDiscrete_range_mapValue`: change of
   coefficients along an injective map with closed, respectively discrete, image.
+* `BialgHom.isEmbedding_mapDomain_of_surjective`: a surjection of coordinate bialgebras induces
+  an embedding of point spaces.
 * `BialgHom.isClosedEmbedding_mapDomain_of_surjective`: a closed immersion of affine groups induces
   a closed embedding of groups of points over a T1 ring.
 * `ContinuousAlgEquiv.mapValueContinuousMulEquiv`: change of coefficients along an isomorphism of
@@ -141,6 +143,21 @@ theorem BialgHom.continuous_mapDomain (φ : H₁ →ₐc[k] H₂) :
   continuous_withConv_iff.2 fun h ↦ by
     simp only [BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply]
     exact continuous_eval_ofConv _
+
+omit [TopologicalSpace R] in
+private theorem BialgHom.ofConv_comp_mapDomain (φ : H₁ →ₐc[k] H₂) :
+    ofConv ∘ mapDomain (A := R) φ =
+      (fun x : H₂ →ₐ[k] R ↦ x.comp (φ : H₁ →ₐ[k] H₂)) ∘ ofConv := by
+  funext x
+  simp only [Function.comp_apply, BialgHom.mapDomain_apply, ofConv_toConv]
+
+/-- Precomposition with a surjective bialgebra map embeds the points of its codomain into the
+points of its domain in the evaluation topology. -/
+theorem BialgHom.isEmbedding_mapDomain_of_surjective (φ : H₁ →ₐc[k] H₂)
+    (hφ : Function.Surjective φ) : IsEmbedding (mapDomain (A := R) φ) := by
+  rw [← isHomeomorph_ofConv.isEmbedding.of_comp_iff, ofConv_comp_mapDomain]
+  exact (isEmbedding_comap_of_surjective (φ : H₁ →ₐ[k] H₂) hφ).comp
+    isHomeomorph_ofConv.isEmbedding
 
 /-- Postcomposition with a continuous algebra map `ψ : R → R'` of coefficients is a continuous
 homomorphism from the points with values in `R` to those with values in `R'`. -/
@@ -317,11 +334,7 @@ open Topology TauCeti.PointTopology
 that is, a closed immersion of affine groups, is a closed embedding of groups of points. -/
 theorem BialgHom.isClosedEmbedding_mapDomain_of_surjective {φ : H₁ →ₐc[k] H₂}
     (hφ : Function.Surjective φ) : IsClosedEmbedding (mapDomain (A := R) φ) := by
-  have hcomp : ofConv ∘ mapDomain (A := R) φ =
-      (fun x : H₂ →ₐ[k] R ↦ x.comp (φ : H₁ →ₐ[k] H₂)) ∘ ofConv := by
-    funext x
-    simp [BialgHom.mapDomain_apply]
-  rw [← (isHomeomorph_ofConv (k := k) (A := H₁) (R := R)).isClosedEmbedding.of_comp_iff, hcomp]
+  rw [← isHomeomorph_ofConv.isClosedEmbedding.of_comp_iff, ofConv_comp_mapDomain]
   exact (isClosedEmbedding_comap_of_surjective (φ : H₁ →ₐ[k] H₂) hφ).comp
     (isHomeomorph_ofConv (k := k) (A := H₂) (R := R)).isClosedEmbedding
 

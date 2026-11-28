@@ -83,6 +83,13 @@ lemma quotientPointsHom_apply (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R
       toConv (f.ofConv.comp ((mkQuotient H I).hom : H →ₐ[R] quotient H I)) :=
   CommHopfAlgCat.Hom.mapPointsFunctor_app_apply (mkQuotient H I) A f
 
+/-- As a function on points, `quotientPointsHom` is precomposition by the quotient bialgebra map. -/
+theorem coe_quotientPointsHom (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H)
+    (A : CommAlgCat.{w} R) :
+    ⇑(quotientPointsHom H I A) = BialgHom.mapDomain (A := A) (mkQuotient H I).hom := by
+  funext f
+  rw [quotientPointsHom_apply, BialgHom.mapDomain_apply]
+
 /-- Pointwise form of `CommHopfAlgCat.quotientPointsHom_apply`. -/
 @[simp]
 lemma quotientPointsHom_apply_apply (H : _root_.CommHopfAlgCat.{v} R)
@@ -327,14 +334,8 @@ theorem _root_.CommHopfAlgCat.range_mapDomain_mkQuotient (H : _root_.CommHopfAlg
     Set.range (BialgHom.mapDomain (A := A) (mkQuotient H I).hom) =
       (quotientPointsSubgroup H I (CommAlgCat.of R A) :
         Set (HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R A))) := by
-  have hfun : (BialgHom.mapDomain (A := A) (mkQuotient H I).hom :
-        HopfAlgebra.points (R := R) (H := quotient H I) (CommAlgCat.of R A) →
-          HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R A)) =
-      quotientPointsHom H I (CommAlgCat.of R A) := by
-    funext f
-    rw [BialgHom.mapDomain_apply, quotientPointsHom_apply]
   ext g
-  rw [hfun, SetLike.mem_coe]
+  rw [← coe_quotientPointsHom H I (CommAlgCat.of R A), SetLike.mem_coe]
   exact (mem_range_quotientPointsHom_iff H I (CommAlgCat.of R A) g).trans
     (mem_quotientPointsSubgroup_iff H I (CommAlgCat.of R A) g).symm
 

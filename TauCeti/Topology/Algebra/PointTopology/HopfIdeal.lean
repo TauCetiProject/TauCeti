@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Topology.Algebra.PointTopology.Basic
+import TauCeti.Topology.Algebra.PointTopology.Group
 
 /-!
 # Closed subgroups cut out by Hopf ideals in the point topology
@@ -19,6 +20,8 @@ zero sets of the continuous evaluations at the elements of `I`.
 
 ## Main declarations
 
+* `TauCeti.PointTopology.isEmbedding_quotientPointsHom`: the point topology on a quotient
+  coordinate algebra agrees with the subspace topology on its image.
 * `TauCeti.PointTopology.isClosed_quotientPointsSubgroup`.
 -/
 
@@ -31,7 +34,17 @@ universe u
 namespace TauCeti.PointTopology
 
 variable {R : Type*} [CommRing R] (A : Type*) [CommRing A] [Algebra R A] [TopologicalSpace A]
-  [T1Space A]
+
+open Topology in
+/-- The points of the quotient coordinate algebra embed in the ambient point group for the
+evaluation topology, for any topology on the coefficient ring. -/
+theorem isEmbedding_quotientPointsHom (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
+    IsEmbedding (quotientPointsHom H I (CommAlgCat.of R A)) := by
+  rw [coe_quotientPointsHom]
+  exact (CommHopfAlgCat.mkQuotient H I).hom.isEmbedding_mapDomain_of_surjective
+    (CommHopfAlgCat.mkQuotient_surjective H I)
+
+variable [T1Space A]
 
 /-- Over a T1 topological algebra `A`, the `A`-points of the closed subgroup scheme cut out by a
 Hopf ideal `I` form a closed subgroup of the `A`-points of `Spec H`. -/
