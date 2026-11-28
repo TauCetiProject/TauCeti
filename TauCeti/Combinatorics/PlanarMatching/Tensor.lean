@@ -269,14 +269,14 @@ theorem coe_insertBlock_val_natAdd (x : PlanarMatching (a + b)) (y : PlanarMatch
 
 private theorem contractFn_apply (a : ℕ) (φ : ℕ → ℕ) (q : ℕ) :
     contractFn a φ q = unskipN a (rejoin φ a (φ (skipN a q))) := by
-  have hs : skipN a q ≠ a ∧ skipN a q ≠ a + 1 := by simp only [skipN]; split_ifs <;> omega
+  have hs := (skipN_lt_and_ne (a := a) (Nat.lt_succ_self q)).2
   rw [contractFn, erasePair_apply, splice_of_ne _ hs.1 hs.2]
 
 /-- Contracting a pair of consecutive points never produces a point of that pair, for a
 fixed-point-free involution. -/
 private theorem rejoin_ne {K : ℕ} (x : PlanarMatching K) {c q : ℕ} (hc : c + 1 < K) :
     rejoin (pv x) c (pv x (skipN c q)) ≠ c ∧ rejoin (pv x) c (pv x (skipN c q)) ≠ c + 1 := by
-  have hs : skipN c q ≠ c ∧ skipN c q ≠ c + 1 := by simp only [skipN]; split_ifs <;> omega
+  have hs := (skipN_lt_and_ne (a := c) (Nat.lt_succ_self q)).2
   have h := splice_ne (pv_pv_eq x) (pv_ne x (by omega : c < K)) (pv_ne x hc) hs.1 hs.2
   rwa [splice_of_ne _ hs.1 hs.2] at h
 
@@ -730,6 +730,58 @@ theorem insertBlock_right_injective (x : PlanarMatching (a + b)) :
     Function.Injective fun y : PlanarMatching l => x.insertBlock y :=
   fun _ _ h => (insertBlock_eq_insertBlock_iff.mp h).2
 
+/-- Inserting two points uses the same reindexing as skipping the contracted pair. -/
+private theorem ins_two_eq_skipN (a q : ℕ) : ins a 2 q = skipN a q := by
+  by_cases h : q < a
+  · rw [ins_of_lt h, skipN_of_lt h]
+  · have h' : a ≤ q := Nat.le_of_not_gt h
+    rw [ins_of_le h', skipN_of_le h']
+
+/-- Contracting an adjacent arc only reindexes the partners of the surviving points. -/
+private theorem skipN_contractFn_of_arc {K c : ℕ} (x : PlanarMatching K)
+    (harc : pv x c = c + 1) (q : ℕ) :
+    skipN c (contractFn c (pv x) q) = pv x (skipN c q) := by
+  have hc : c < K := by
+    by_contra! h
+    have := (pv_of_le x h).symm.trans harc
+    omega
+  have hc' : c + 1 < K := harc ▸ pv_lt x hc
+  have hback : pv x (c + 1) = c := harc ▸ pv_pv_eq x c
+  have hr := rejoin_ne x (c := c) (q := q) hc'
+  rw [contractFn_apply, skipN_unskipN hr.1 hr.2]
+  by_cases h : pv x (skipN c q) = c
+  · rw [rejoin_of_eq_left _ h, hback, h]
+  by_cases h' : pv x (skipN c q) = c + 1
+  · rw [rejoin_of_eq_right _ h', harc, h']
+  exact rejoin_of_ne _ h h'
+
+/-- Contracting at the insertion point deletes the inserted single arc. -/
+@[simp]
+theorem contract_cast_insertBlock_nested_one (x : PlanarMatching (a + b)) :
+    ((x.insertBlock (nested 1)).cast (by lia : a + 2 + b = (a + b) + 2)).contract
+      ⟨a, by lia⟩ = x := by
+  apply eq_of_pv_eq
+  rw [pv_contract_eq, pv_cast_eq, pv_insertBlock]
+  have h := (contractFn_insFn_add (c := a) (j := 0) (pv x) (nested 1) (by decide)).1
+  rw [Nat.add_zero, Nat.sub_self, insFn_zero] at h
+  exact h
+
+/-- Reinserting a single arc at the position of a contracted arc recovers the matching. -/
+@[simp]
+theorem insertBlock_nested_one_contract_cast (x : PlanarMatching (a + 2 + b))
+    (harc : (x.val.val ⟨a, by lia⟩ : ℕ) = a + 1) :
+    ((x.cast (by lia : a + 2 + b = (a + b) + 2)).contract ⟨a, by lia⟩).insertBlock
+      (nested 1) = x := by
+  have hf : pv x a = a + 1 := (pv_of_lt x (by lia)).trans harc
+  have hb : pv x (a + 1) = a := hf ▸ pv_pv_eq x a
+  refine ext_pv fun q _ => ?_
+  rw [pv_insertBlock]
+  rcases exists_eq_ins_or_add a 2 q with ⟨u, rfl⟩ | ⟨v, hv, rfl⟩
+  · rw [insFn_ins, pv_contract_eq, pv_cast_eq, ins_two_eq_skipN, ins_two_eq_skipN]
+    exact skipN_contractFn_of_arc x hf u
+  · rw [insFn_add _ _ hv, pv_nested 1 hv]
+    grind
+
 /-- Inserting a single arc after the first `a` points identifies matchings on `a + b` points
 with matchings on `a + 2 + b` points that join `a` to `a + 1`. The inverse deletes that arc
 by contraction. -/
@@ -737,72 +789,40 @@ def insertAdjacentArcEquiv (a b : ℕ) :
     PlanarMatching (a + b) ≃
       {x : PlanarMatching (a + 2 + b) // (x.val.val ⟨a, by lia⟩ : ℕ) = a + 1} where
   toFun x := ⟨x.insertBlock (nested 1), by
-    rw [← pv_of_lt _ (by lia : a < a + 2 + b), pv_insertBlock]
-    have h := insFn_add (c := a) (pv x) (pv (nested 1)) (by decide : 0 < 1 + 1)
+    have h := congrArg Fin.val (insertBlock_val_castAdd_natAdd x (nested 1) (0 : Fin 2))
     have hzero : pv (nested 1) 0 = 1 := pv_nested 1 (by decide)
-    simpa only [hzero, Nat.add_zero] using h⟩
+    simpa only [Fin.val_castAdd, Fin.val_natAdd, ← pv_coe, Fin.val_zero, Nat.add_zero, hzero]
+      using h⟩
   invFun x := (x.val.cast (by lia)).contract ⟨a, by lia⟩
-  left_inv x := by
-    apply eq_of_pv_eq
-    rw [pv_contract_eq, pv_cast_eq, pv_insertBlock]
-    have h := (contractFn_insFn_add (c := a) (j := 0) (pv x) (nested 1) (by decide)).1
-    rw [Nat.add_zero, Nat.sub_self, insFn_zero] at h
-    exact h
-  right_inv x := by
-    apply Subtype.ext
-    have harc : pv x.val a = a + 1 := (pv_of_lt _ (by lia)).trans x.property
-    have hback : pv x.val (a + 1) = a :=
-      (congrArg (pv x.val) harc.symm).trans (pv_pv_eq x.val a)
-    have houtside (q : ℕ) :
-        skipN a (contractFn a (pv x.val) q) = pv x.val (skipN a q) := by
-      have hne : skipN a q ≠ a ∧ skipN a q ≠ a + 1 := by
-        simp only [skipN]
-        split_ifs <;> lia
-      have hne₁ : pv x.val (skipN a q) ≠ a := fun h => hne.2 <| by
-        rw [← pv_pv_eq x.val (skipN a q), h, harc]
-      have hne₂ : pv x.val (skipN a q) ≠ a + 1 := fun h => hne.1 <| by
-        rw [← pv_pv_eq x.val (skipN a q), h, hback]
-      rw [contractFn_apply, rejoin_of_ne _ hne₁ hne₂, skipN_unskipN hne₁ hne₂]
-    refine ext_pv fun q _ => ?_
-    rw [pv_insertBlock]
-    rcases exists_eq_ins_or_add a 2 q with ⟨u, rfl⟩ | ⟨v, hv, rfl⟩
-    · have hskip : ins a 2 = skipN a := (rfl)
-      rw [insFn_ins, pv_contract_eq, pv_cast_eq, hskip]
-      exact houtside u
-    · rw [insFn_add _ _ hv, pv_nested 1 hv]
-      have hv' : v = 0 ∨ v = 1 := by lia
-      rcases hv' with rfl | rfl
-      · simp only [Nat.add_zero, harc]
-      · rw [hback]
-        lia
+  left_inv := contract_cast_insertBlock_nested_one
+  right_inv x := Subtype.ext (insertBlock_nested_one_contract_cast x.val x.property)
 
 /-- The underlying matching of the forward map is block insertion of the single arc. -/
 @[simp]
-theorem insertAdjacentArcEquiv_apply_coe (x : PlanarMatching (a + b)) :
+theorem insertAdjacentArcEquiv_apply_val (x : PlanarMatching (a + b)) :
     (insertAdjacentArcEquiv a b x).val = x.insertBlock (nested 1) := (rfl)
 
 /-- The inverse deletes the adjacent arc using the canonical contraction. -/
+@[simp]
 theorem insertAdjacentArcEquiv_symm_apply
     (x : {x : PlanarMatching (a + 2 + b) // (x.val.val ⟨a, by lia⟩ : ℕ) = a + 1}) :
     (insertAdjacentArcEquiv a b).symm x =
       (x.val.cast (by lia)).contract ⟨a, by lia⟩ := (rfl)
 
-/-- Every matching on `k + 2` points is obtained from a smaller matching by inserting a single
+/-- Every nonempty planar matching is obtained from a smaller matching by inserting a single
 arc. This is the adjacent-cup reduction for the Temperley–Lieb diagram presentation. -/
-theorem exists_eq_insertBlock_nested_one (x : PlanarMatching (k + 2)) :
-    ∃ (a b : ℕ) (h : a + 2 + b = k + 2) (y : PlanarMatching (a + b)),
+theorem exists_eq_insertBlock_nested_one (x : PlanarMatching k) (hk : k ≠ 0) :
+    ∃ (a b : ℕ) (h : a + 2 + b = k) (y : PlanarMatching (a + b)),
       x = (y.insertBlock (nested 1)).cast h := by
-  obtain ⟨i, hi⟩ := x.exists_val_apply_eq_val_add_one (by lia)
-  have he : (i : ℕ) + 2 + (k - i) = k + 2 := by lia
-  let z : PlanarMatching (i + 2 + (k - i)) := x.cast he.symm
+  obtain ⟨i, hi⟩ := x.exists_val_apply_eq_val_add_one hk
+  have hnext : (i : ℕ) + 1 < k := hi ▸ (x.val.val i).isLt
+  have he : (i : ℕ) + 2 + (k - (i + 2)) = k := Nat.add_sub_of_le (Nat.succ_le_of_lt hnext)
+  let z : PlanarMatching (i + 2 + (k - (i + 2))) := x.cast he.symm
   have hz : (z.val.val ⟨i, by lia⟩ : ℕ) = i + 1 := by
     rw [← pv_of_lt _ (by lia), pv_cast, pv_coe]
     exact hi
-  let e := insertAdjacentArcEquiv i (k - i)
-  refine ⟨i, k - i, he, e.symm ⟨z, hz⟩, ?_⟩
-  have h : (e (e.symm ⟨z, hz⟩)).val = z := congrArg Subtype.val (e.apply_symm_apply ⟨z, hz⟩)
-  rw [insertAdjacentArcEquiv_apply_coe] at h
-  rw [h, cast_cast, cast_refl, Equiv.refl_apply]
+  refine ⟨i, k - (i + 2), he, (z.cast (by lia)).contract ⟨i, by lia⟩, ?_⟩
+  rw [insertBlock_nested_one_contract_cast z hz, cast_cast, cast_refl, Equiv.refl_apply]
 
 end PlanarMatching
 
