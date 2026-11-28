@@ -34,6 +34,8 @@ the base case of the induction on dimension through the suspension isomorphism.
 * `TauCeti.exists_homeomorph_apply_eq_of_finrank_eq_one`: a homeomorphism onto the closed unit
   ball carrying exactly the image of an injection of the unit sphere onto the sphere can be chosen
   to invert that injection.
+* `TauCeti.exists_range_eq_sphere_of_finrank_eq_one`: in a one-dimensional real normed space, the
+  image of any map of the unit sphere is a round sphere, of positive radius when injective.
 -/
 
 public section
@@ -180,5 +182,44 @@ theorem exists_homeomorph_apply_eq_of_finrank_eq_one {X : Type*} [TopologicalSpa
       have hxu : x = u := hτ (hz.symm.trans (congrArg Subtype.val hzz))
       exact absurd (hxu ▸ hx) (ne_neg_of_mem_unit_sphere ℝ u ∘ Subtype.ext)
     · rw [hzu, hx]
+
+/-- In a one-dimensional real normed space, the image of any map of the unit sphere is a round
+sphere, of positive radius when the map is injective. -/
+theorem exists_range_eq_sphere_of_finrank_eq_one (hE : finrank ℝ E = 1)
+    (f : sphere (0 : E) 1 → E) :
+    ∃ (c : E) (ρ : ℝ), 0 ≤ ρ ∧ (Function.Injective f → 0 < ρ) ∧ Set.range f = sphere c ρ := by
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hE
+  obtain ⟨u⟩ : Nonempty (sphere (0 : E) 1) := (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
+  have hsph : ∀ x : sphere (0 : E) 1, x = u ∨ x = -u := fun x => by
+    simpa [Subtype.ext_iff] using
+      (sphere_eq_pair_of_finrank_eq_one hE u.property).subset x.property
+  set p := f u
+  set q := f (-u)
+  set c := (2 : ℝ)⁻¹ • (p + q)
+  set ρ := ‖p - q‖ / 2
+  have hp : p - c = (2 : ℝ)⁻¹ • (p - q) := by simp only [c]; module
+  have hq : q - c = -((2 : ℝ)⁻¹ • (p - q)) := by simp only [c]; module
+  have hnorm_p : ‖p - c‖ = ρ := by
+    rw [hp, norm_smul, Real.norm_of_nonneg (by positivity)]
+    ring
+  have hnorm_q : ‖q - c‖ = ρ := by
+    rw [hq, norm_neg, norm_smul, Real.norm_of_nonneg (by positivity)]
+    ring
+  refine ⟨c, ρ, by positivity, fun hf => ?_, ?_⟩
+  · have hpq : p ≠ q := fun h =>
+      ne_neg_of_mem_unit_sphere ℝ u (hf h)
+    exact half_pos (norm_pos_iff.mpr (sub_ne_zero.mpr hpq))
+  ext y
+  constructor
+  · rintro ⟨x, rfl⟩
+    rcases hsph x with rfl | rfl
+    · rwa [mem_sphere, dist_eq_norm]
+    · rwa [mem_sphere, dist_eq_norm]
+  · intro hy
+    rw [mem_sphere, dist_eq_norm, ← hnorm_p] at hy
+    rcases eq_or_eq_neg_of_norm_eq_of_finrank_eq_one hE hy with h | h
+    · exact ⟨u, sub_left_inj.mp h |>.symm⟩
+    · have hyq : y - c = q - c := h.trans (by rw [hp, hq])
+      exact ⟨-u, sub_left_inj.mp hyq |>.symm⟩
 
 end TauCeti

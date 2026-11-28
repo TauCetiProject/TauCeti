@@ -60,6 +60,11 @@ splitting off the first coordinate identifies the closed unit ball with the cube
   ball of the sup norm carries `Cube.boundary N` onto the unit sphere.
 * `TauCeti.closedBallHomeomorphProd`: the closed unit ball of the sup norm on `Fin (n + 1) → ℝ` is
   homeomorphic to `I × I^(Fin n)`, carrying the unit sphere onto `Cube.prodBoundary (Fin n)`.
+* `TauCeti.squareHomeomorphClosedBall`, `TauCeti.coe_squareHomeomorphClosedBall_apply`, and
+  `TauCeti.norm_squareHomeomorphClosedBall_eq_one_iff`:
+  identification of `I × I` with the closed unit ball of any two-dimensional real normed space,
+  carrying `TauCeti.squareBoundary` onto the unit sphere, inducing
+  `TauCeti.squareBoundaryHomeomorphSphere` and `TauCeti.coe_squareBoundaryHomeomorphSphere_apply`.
 -/
 
 public section
@@ -419,5 +424,56 @@ theorem closedBallHomeomorphProd_mem_prodBoundary_iff {n : ℕ}
     rw [← norm_cubeHomeomorphClosedBall_eq_one_iff, Homeomorph.apply_symm_apply]
   rw [mem_sphere_zero_iff_norm, hx, closedBallHomeomorphProd, Homeomorph.trans_apply,
     cubeSplitHomeomorph_mem_prodBoundary_iff]
+
+/-- Identification of the unit square `I × I` with the closed unit ball of any two-dimensional real
+normed space, carrying the boundary of the square onto the unit sphere. -/
+def squareHomeomorphClosedBall {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (hF : Module.finrank ℝ F = 2) :
+    (I × I) ≃ₜ Metric.closedBall (0 : F) 1 :=
+  haveI : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
+  Homeomorph.finTwoArrow.symm.trans <|
+    (cubeHomeomorphClosedBall (Fin 2)).trans <|
+      closedBallHomeomorphOfFinrankEq (by simp [hF])
+
+/-- `TauCeti.squareHomeomorphClosedBall` acts as the composition of
+`Homeomorph.finTwoArrow.symm`, `TauCeti.cubeHomeomorphClosedBall`, and
+`TauCeti.closedBallHomeomorphOfFinrankEq`. -/
+theorem coe_squareHomeomorphClosedBall_apply {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (hF : Module.finrank ℝ F = 2) (p : I × I) :
+    (squareHomeomorphClosedBall hF p : F) =
+      (haveI : FiniteDimensional ℝ F := .of_finrank_pos (by omega);
+        closedBallHomeomorphOfFinrankEq (E := Fin 2 → ℝ) (F := F) (by simp [hF])
+          (cubeHomeomorphClosedBall (Fin 2) (Homeomorph.finTwoArrow.symm p)) : F) := by
+  rfl
+
+/-- `TauCeti.squareHomeomorphClosedBall` carries a point of the unit square onto the unit sphere
+exactly when it lies on `TauCeti.squareBoundary`. -/
+@[simp]
+theorem norm_squareHomeomorphClosedBall_eq_one_iff {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (hF : Module.finrank ℝ F = 2) (p : I × I) :
+    ‖(squareHomeomorphClosedBall hF p : F)‖ = 1 ↔ p ∈ squareBoundary := by
+  have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
+  rw [coe_squareHomeomorphClosedBall_apply, norm_closedBallHomeomorphOfFinrankEq_eq_one_iff,
+    norm_cubeHomeomorphClosedBall_eq_one_iff, ← Set.mem_preimage,
+    ← squareBoundary_eq_preimage_cubeBoundary]
+
+/-- Restricting `TauCeti.squareHomeomorphClosedBall` to the boundary of the unit square gives a
+homeomorphism `TauCeti.squareBoundary ≃ₜ Metric.sphere (0 : F) 1`. -/
+def squareBoundaryHomeomorphSphere {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (hF : Module.finrank ℝ F = 2) : squareBoundary ≃ₜ Metric.sphere (0 : F) 1 :=
+  ((squareHomeomorphClosedBall hF).subtype fun p =>
+    (norm_squareHomeomorphClosedBall_eq_one_iff hF p).symm.trans
+      mem_sphere_zero_iff_norm.symm).trans
+    (Topology.IsEmbedding.subtypeVal.homeomorphOfSubsetRange fun _ hx =>
+      ⟨⟨_, Metric.sphere_subset_closedBall hx⟩, rfl⟩)
+
+/-- Coercing the image of a boundary point under `TauCeti.squareBoundaryHomeomorphSphere` to the
+ambient space gives the same point as `TauCeti.squareHomeomorphClosedBall`. -/
+@[simp]
+theorem coe_squareBoundaryHomeomorphSphere_apply {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (hF : Module.finrank ℝ F = 2) (p : squareBoundary) :
+    (squareBoundaryHomeomorphSphere hF p : F) = squareHomeomorphClosedBall hF p := by
+  dsimp [squareBoundaryHomeomorphSphere]
+  exact Topology.IsEmbedding.homeomorphOfSubsetRange_apply_coe _ _ _
 
 end TauCeti

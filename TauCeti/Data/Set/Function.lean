@@ -30,6 +30,8 @@ public import Mathlib.Data.Set.Function
   outside the pair `{f b, f c}`.
 * `Function.Injective.val_mem_of_subset_insert`: an injective map into a set `T ⊆ insert z₀ S`
   sends every point other than a preimage of `z₀` into `S`.
+* `Function.Injective.eq_of_apply_eq_of_range_inter_subset_singleton`: if `f` is injective,
+  `range f ∩ range g ⊆ {z}`, `f x₀ = z`, and `f x = g y`, then `x = x₀`.
 -/
 
 public section
@@ -104,5 +106,11 @@ theorem val_mem_of_subset_insert {α : Sort*} {β : Type*} {T S : Set β} {z₀ 
     (he : Injective e) (hT : T ⊆ insert z₀ S) {a₀ a : α} (he₀ : (e a₀).val = z₀)
     (ha : a ≠ a₀) : (e a).val ∈ S :=
   mem_of_mem_insert_of_ne (hT (e a).property) fun h ↦ ha (he (Subtype.ext (h.trans he₀.symm)))
+
+/-- If `f` is injective, `range f ∩ range g ⊆ {z}`, `f x₀ = z`, and `f x = g y`, then `x = x₀`. -/
+theorem eq_of_apply_eq_of_range_inter_subset_singleton {α β : Sort*} {γ : Type*}
+    {f : α → γ} {g : β → γ} (hf : Injective f) {z : γ} {x₀ x : α} {y : β}
+    (hfg : range f ∩ range g ⊆ {z}) (hx₀ : f x₀ = z) (h : f x = g y) : x = x₀ :=
+  hf ((mem_singleton_iff.mp (hfg ⟨mem_range_self x, h ▸ mem_range_self y⟩)).trans hx₀.symm)
 
 end Function.Injective
