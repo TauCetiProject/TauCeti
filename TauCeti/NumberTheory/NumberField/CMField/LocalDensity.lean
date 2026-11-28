@@ -29,17 +29,18 @@ series in Siegel's formula for the vectors of a given norm in a definite hermiti
 Weil).
 
 The measure `μ` is a parameter: the density scales by `c ^ |ι|` when `μ` is scaled by `c`
-(`TauCeti.normDensity_smul_measure`), so any normalisation of the Haar measure of `𝔸_f` may be
-plugged in. The integrals are Bochner integrals; `δ` is the iterated integral, with no claim of
-absolute convergence of the double integral.
+(`MeasureTheory.Measure.normDensity_smul_measure`), so any normalisation of the Haar measure of
+`𝔸_f` may be plugged in. The integrals are Bochner integrals; `δ` is the iterated integral, with
+no claim of absolute convergence of the double integral.
 
 ## Main declarations
 
 * `TauCeti.normDensity`: the density `δ(Φ₀, α)`.
-* `TauCeti.normDensity_smul`: `δ` is homogeneous in `Φ₀`.
-* `TauCeti.normDensity_smul_measure`: scaling `μ` by `c` scales `δ` by `c ^ |ι|`.
-* `TauCeti.conj_normDensity`: the complex conjugate of `δ(Φ₀, α)` is `δ(conj ∘ Φ₀, α)`; so
-  `δ(Φ₀, α)` is real for real `Φ₀` (`TauCeti.im_normDensity_ofReal`).
+* `MeasureTheory.Measure.normDensity_smul`: `δ` is homogeneous in `Φ₀`.
+* `MeasureTheory.Measure.normDensity_smul_measure`: scaling `μ` by `c` scales `δ` by `c ^ |ι|`.
+* `MeasureTheory.Measure.conj_normDensity`: the complex conjugate of `δ(Φ₀, α)` is
+  `δ(conj ∘ Φ₀, α)`; so `δ(Φ₀, α)` is real for real `Φ₀`
+  (`MeasureTheory.Measure.im_normDensity_ofReal`).
 
 ## References
 
@@ -69,7 +70,13 @@ def normDensity (μ : Measure 𝔸ᶠ[E]) (Φ₀ : (ι → 𝔸ᶠ[E]) → ℂ) 
   ∫ z, ∫ x, Φ₀ x * finiteAdeleAddChar E ((2 : E)⁻¹ • ((z : 𝔸ᶠ[E]) * (star x ⬝ᵥ x - α)))
     ∂Measure.pi (fun _ ↦ μ) ∂selfAdjointFiniteAdeleHaar E
 
-variable {E}
+end TauCeti
+
+open TauCeti
+
+namespace MeasureTheory.Measure
+
+variable {E : Type*} [Field E] [NumberField E] [IsCMField E] {ι : Type*} [Fintype ι]
 
 /-- Unfolding `normDensity` into its iterated integral. -/
 theorem normDensity_def (μ : Measure 𝔸ᶠ[E]) (Φ₀ : (ι → 𝔸ᶠ[E]) → ℂ) (α : 𝔸ᶠ[E]) :
@@ -125,4 +132,4 @@ theorem im_normDensity_ofReal (μ : Measure 𝔸ᶠ[E]) (Φ₀ : (ι → 𝔸ᶠ
   rw [← Complex.conj_eq_iff_im, conj_normDensity]
   simp
 
-end TauCeti
+end MeasureTheory.Measure

@@ -10,9 +10,8 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Constructions
 public import TauCeti.NumberTheory.NumberField.CMField.AdeleStar
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.AddChar
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.BorelSpace
-public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocallyCompact
+public import TauCeti.Topology.Algebra.Star.SelfAdjoint
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
-import TauCeti.RingTheory.DedekindDomain.Countable
 import TauCeti.NumberTheory.NumberField.Countable
 
 /-!
@@ -45,7 +44,7 @@ density of a function at a norm of the standard hermitian form (`TauCeti.normDen
 * `TauCeti.selfAdjointFiniteAdeleHaar`: the Haar measure of `𝔸_f⁺` with `vol(𝔡) = 1`
   (`TauCeti.selfAdjointFiniteAdeleHaar_selfAdjointFiniteAdeleDual`), characterised among the
   Haar measures by this normalisation
-  (`TauCeti.eq_selfAdjointFiniteAdeleHaar_of_apply_selfAdjointFiniteAdeleDual_eq_one`).
+  (`Measure.eq_selfAdjointFiniteAdeleHaar_of_apply_selfAdjointFiniteAdeleDual_eq_one`).
 
 ## References
 
@@ -62,15 +61,6 @@ open scoped NumberField.AdeleRing nonZeroDivisors
 namespace TauCeti
 
 variable (E : Type*) [Field E] [NumberField E] [IsCMField E]
-
-/-- The self-adjoint finite adeles are a locally compact group: they are closed in the locally
-compact finite adeles. -/
-instance : LocallyCompactSpace (selfAdjoint 𝔸ᶠ[E]) :=
-  (isClosed_setOfPred_isSelfAdjoint (α := 𝔸ᶠ[E])).isClosedEmbedding_subtypeVal.locallyCompactSpace
-
-/-- The self-adjoint finite adeles are second countable, as a subspace of the finite adeles. -/
-instance : SecondCountableTopology (selfAdjoint 𝔸ᶠ[E]) :=
-  TopologicalSpace.Subtype.secondCountableTopology _
 
 /-- The **dual lattice** `𝔡 = {z ∈ 𝔸_f⁺ : ψ_f(zÔ) = 1}` of the self-adjoint finite adeles of a CM
 field: the self-adjoint finite adeles `z` with `ψ_f (z u) = 1` for every integral finite adele
@@ -171,7 +161,13 @@ theorem selfAdjointFiniteAdeleHaar_selfAdjointFiniteAdeleDual :
   rw [selfAdjointFiniteAdeleHaar_def, ← coe_selfAdjointFiniteAdeleDualPositiveCompacts]
   exact addHaarMeasure_self
 
-variable {E}
+end TauCeti
+
+open TauCeti
+
+namespace MeasureTheory.Measure
+
+variable {E : Type*} [Field E] [NumberField E] [IsCMField E]
 
 /-- A Haar measure on `𝔸_f⁺` giving the dual lattice `𝔡` measure one is the Haar measure
 `selfAdjointFiniteAdeleHaar`. -/
@@ -181,4 +177,4 @@ theorem eq_selfAdjointFiniteAdeleHaar_of_apply_selfAdjointFiniteAdeleDual_eq_one
   rw [addHaarMeasure_unique μ (selfAdjointFiniteAdeleDualPositiveCompacts E),
     coe_selfAdjointFiniteAdeleDualPositiveCompacts, hμ, one_smul, selfAdjointFiniteAdeleHaar_def]
 
-end TauCeti
+end MeasureTheory.Measure
