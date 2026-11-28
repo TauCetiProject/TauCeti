@@ -29,6 +29,10 @@ measure across `gaussianReal μ v = volume.withDensity (gaussianPDF μ v)`.
 Mathlib's `memLp_id_gaussianReal'` (Fernique) and Gaussian density API
 (`gaussianReal_of_var_ne_zero`, `measurable_gaussianPDF`, `gaussianPDFReal_def`) are consumed, not
 re-derived.
+
+The companion `ProbabilityTheory.HasLaw.integrable_abs_sub_pow_gaussianReal` and
+`ProbabilityTheory.HasLaw.integrable_sub_pow_gaussianReal` transport centered-power integrability
+to random variables with a real Gaussian law.
 -/
 
 public section
@@ -121,3 +125,30 @@ theorem integrable_eval_mul_exp_neg_sq (q : ℝ[X]) :
   simpa only [sub_zero, he, div_one] using h
 
 end TauCeti
+
+namespace ProbabilityTheory.HasLaw
+
+open MeasureTheory
+open scoped ENNReal NNReal
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0}
+
+/-- Every natural power of the absolute deviation of a real Gaussian random variable from its
+mean is integrable. -/
+theorem integrable_abs_sub_pow_gaussianReal (hX : HasLaw X (gaussianReal m v) P) (n : ℕ) :
+    Integrable (fun ω ↦ |X ω - m| ^ n) P := by
+  let _ : IsProbabilityMeasure P := hX.isProbabilityMeasure
+  have hmem : MemLp (fun ω ↦ X ω - m) (n : ℝ≥0∞) P :=
+    (ProbabilityTheory.gaussianReal_sub_const hX m).memLp
+      (memLp_id_gaussianReal' (n : ℝ≥0∞) (by simp))
+  simpa only [Real.norm_eq_abs] using hmem.integrable_norm_pow'
+
+/-- Every natural power of the deviation of a real Gaussian random variable from its mean is
+integrable. -/
+theorem integrable_sub_pow_gaussianReal (hX : HasLaw X (gaussianReal m v) P) (n : ℕ) :
+    Integrable (fun ω ↦ (X ω - m) ^ n) P := by
+  rw [← integrable_norm_iff
+    ((hX.aemeasurable.sub_const m).pow_const n).aestronglyMeasurable]
+  simpa only [Real.norm_eq_abs, norm_pow] using hX.integrable_abs_sub_pow_gaussianReal n
+
+end ProbabilityTheory.HasLaw

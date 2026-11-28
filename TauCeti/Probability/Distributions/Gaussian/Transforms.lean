@@ -31,6 +31,10 @@ measurable, including sigma algebras larger than the Borel sigma algebra.
 
 ## Main results
 
+* `ProbabilityTheory.HasLaw.integrable_exp_mul_gaussianReal` states that every real exponential
+  moment of a real Gaussian random variable is integrable.
+* `ProbabilityTheory.HasLaw.integrableExpSet_gaussianReal` identifies its exact
+  exponential-integrability domain with all of `ℝ`.
 * `ProbabilityTheory.IsGaussian.integrableExpSet_dual` identifies the exponential-integrability
   domain of an almost everywhere measurable continuous linear functional of a Gaussian measure
   with all of `ℝ`.
@@ -76,6 +80,26 @@ open MeasureTheory
 open scoped NNReal
 
 namespace ProbabilityTheory
+
+namespace HasLaw
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0}
+
+/-- Every real exponential moment of a real Gaussian random variable is integrable. -/
+theorem integrable_exp_mul_gaussianReal (hX : HasLaw X (gaussianReal m v) P) (t : ℝ) :
+    Integrable (fun ω ↦ Real.exp (t * X ω)) P := by
+  simpa only [Function.comp_def] using
+    hX.integrable_comp (ProbabilityTheory.integrable_exp_mul_gaussianReal t)
+
+/-- The exact exponential-integrability domain of a real Gaussian random variable is all of the
+real line. -/
+theorem integrableExpSet_gaussianReal (hX : HasLaw X (gaussianReal m v) P) :
+    integrableExpSet X P = Set.univ := by
+  ext t
+  simp only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
+  exact hX.integrable_exp_mul_gaussianReal t
+
+end HasLaw
 
 namespace IsGaussian
 
