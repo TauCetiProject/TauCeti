@@ -91,6 +91,12 @@ private theorem filter_neighborFinset (H : SimpleGraph V) [DecidableRel H.Adj] (
   ext z
   simp [and_comm]
 
+/-- A vertex has at most `|X_i|` neighbours in the cell `X_i`. -/
+theorem card_neighborFinset_filter_le_card_cell (H : SimpleGraph V) [DecidableRel H.Adj] (y : V)
+    (i : ι) : #{z ∈ H.neighborFinset y | P.cell z = some i} ≤ #{z | P.cell z = some i} := by
+  rw [filter_neighborFinset]
+  exact card_filter_le _ _
+
 /-- Every cell `X_i` has positive size. -/
 theorem card_cell_pos (i : ι) : 0 < #{z | P.cell z = some i} := by
   obtain ⟨x, hx⟩ := P.nonempty i
@@ -198,9 +204,7 @@ def toSwitch : P.switch.GodsilMcKayPartition ι where
       P.card_switch_neighborFinset_filter_of_cell_eq_some hx', P.equitable x x' i j hx hx']
   outside y i hy := by
     rw [P.card_switch_neighborFinset_filter_of_cell_eq_none hy]
-    have hle : #{z ∈ G.neighborFinset y | P.cell z = some i} ≤ #{z | P.cell z = some i} := by
-      rw [filter_neighborFinset]
-      exact card_filter_le _ _
+    have hle := P.card_neighborFinset_filter_le_card_cell G y i
     rcases P.outside y i hy with h | h | h <;> split_ifs <;> omega
 
 /-- The partition `P.toSwitch` of the switched graph has the cells of `P`. -/
@@ -218,9 +222,7 @@ theorem toSwitch_flips_iff {y x : V} : P.toSwitch.Flips y x ↔ P.Flips y x := b
     refine and_congr_right fun hy ↦ ?_
     simp only [toSwitch_cell]
     rw [P.card_switch_neighborFinset_filter_of_cell_eq_none hy]
-    have hle : #{z ∈ G.neighborFinset y | P.cell z = some i} ≤ #{z | P.cell z = some i} := by
-      rw [filter_neighborFinset]
-      exact card_filter_le _ _
+    have hle := P.card_neighborFinset_filter_le_card_cell G y i
     split_ifs <;> omega
 
 /-- **Switching twice returns the original graph.** -/
@@ -344,6 +346,11 @@ theorem conjMatrix_mul_self : P.conjMatrix R * P.conjMatrix R = 1 := by
     · rw [P.sum_cell_conjMatrix hm]
       split_ifs <;> ring
 
+/-- Conjugation by `Q` preserves the characteristic polynomial. -/
+theorem charpoly_conjMatrix_mul_mul_conjMatrix (M : Matrix V V R) :
+    (P.conjMatrix R * M * P.conjMatrix R).charpoly = M.charpoly := by
+  rw [mul_assoc, charpoly_mul_comm, mul_assoc, conjMatrix_mul_self, mul_one]
+
 variable [CharZero R]
 
 omit [DecidableEq V] in
@@ -451,16 +458,16 @@ matrix. -/
 theorem charpoly_adjMatrix_switch [DecidableEq V] (R : Type*) [CommRing R] :
     (P.switch.adjMatrix R).charpoly = (G.adjMatrix R).charpoly := by
   refine charpoly_adjMatrix_eq_of_charpoly_rat_eq ?_
-  rw [← P.conjMatrix_conj, mul_assoc, charpoly_mul_comm, mul_assoc, conjMatrix_mul_self, mul_one]
+  rw [← P.conjMatrix_conj, charpoly_conjMatrix_mul_mul_conjMatrix]
 
 /-- **Godsil–McKay switching preserves the characteristic polynomial of the complement.** -/
 theorem charpoly_adjMatrix_compl_switch [DecidableEq V] (R : Type*) [CommRing R] :
     (P.switchᶜ.adjMatrix R).charpoly = (Gᶜ.adjMatrix R).charpoly := by
   refine charpoly_adjMatrix_eq_of_charpoly_rat_eq ?_
   have h : P.switchᶜ.adjMatrix ℚ = P.conjMatrix ℚ * Gᶜ.adjMatrix ℚ * P.conjMatrix ℚ := by
-    rw [adjMatrix_compl, adjMatrix_compl, mul_sub, sub_mul, mul_sub, sub_mul, mul_one,
-      conjMatrix_mul_self, conjMatrix_mul_of_one, of_one_mul_conjMatrix, conjMatrix_conj]
-  rw [h, mul_assoc, charpoly_mul_comm, mul_assoc, conjMatrix_mul_self, mul_one]
+    simp only [adjMatrix_compl, mul_sub, sub_mul, mul_one, conjMatrix_mul_self,
+      conjMatrix_mul_of_one, of_one_mul_conjMatrix, conjMatrix_conj]
+  rw [h, charpoly_conjMatrix_mul_mul_conjMatrix]
 
 end GodsilMcKayPartition
 

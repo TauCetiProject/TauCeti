@@ -94,12 +94,10 @@ theorem IsRegularOfDegree.adjMatrix_sub_smul_one_mul_of_one [Fintype V] [Decidab
   simp [sub_mul, hd.adjMatrix_mul_of_one]
 
 /-- The adjacency matrix of the complement is `J - I - A`, where `J` is the all-ones matrix. -/
-theorem adjMatrix_compl [DecidableEq V] [AddGroupWithOne R] :
-    Gᶜ.adjMatrix R = Matrix.of (fun _ _ ↦ (1 : R)) - 1 - G.adjMatrix R := by
-  ext v w
-  obtain rfl | h := eq_or_ne v w
-  · simp
-  · by_cases hvw : G.Adj v w <;> simp [h, hvw]
+theorem adjMatrix_compl [DecidableEq V] [AddGroup R] [One R] :
+    Gᶜ.adjMatrix R = Matrix.of (fun _ _ ↦ (1 : R)) - 1 - G.adjMatrix R :=
+  eq_sub_of_add_eq <| (IsCompl.adjMatrix_add_adjMatrix_eq_adjMatrix_completeGraph R
+    isCompl_compl.symm).trans (adjMatrix_completeGraph_eq_of_one_sub_one R V)
 
 /-- The characteristic polynomial of an adjacency matrix is determined over `ℚ`: two graphs whose
 rational adjacency matrices have the same characteristic polynomial have the same characteristic
