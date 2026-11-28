@@ -17,6 +17,8 @@ their shared real-part parameter `TauCeti.circleParam : sphere (0 : ℂ) 1 → u
 
 ## Main declarations
 
+* `TauCeti.semicircleCoord`: the affine homeomorphism `t ↦ 1 - 2 * t` from `unitInterval` onto
+  `[-1, 1]`.
 * `TauCeti.upperSemicirclePath`, `TauCeti.lowerSemicirclePath`: the upper and lower semicircle
   paths from `1` to `-1` in `ℂ`, both injective, covering `sphere (0 : ℂ) 1` and meeting only
   at `{1, -1}`.
@@ -33,6 +35,30 @@ noncomputable section
 namespace TauCeti
 
 open Complex Metric Set
+
+/-- The affine homeomorphism `t ↦ 1 - 2 * t` from `unitInterval` onto `[-1, 1]`. -/
+def semicircleCoord : unitInterval ≃ₜ Set.Icc (-1 : ℝ) 1 :=
+  unitInterval.symmHomeomorph.trans (iccHomeoI (-1 : ℝ) 1 (by norm_num)).symm
+
+theorem coe_semicircleCoord (t : unitInterval) :
+    (semicircleCoord t : ℝ) = 1 - 2 * (t : ℝ) := by
+  simp only [semicircleCoord, Homeomorph.trans_apply, unitInterval.symmHomeomorph_apply,
+    iccHomeoI_symm_apply_coe, unitInterval.coe_symm_eq]
+  ring
+
+theorem coe_semicircleCoord_symm (x : Set.Icc (-1 : ℝ) 1) :
+    (semicircleCoord.symm x : ℝ) = (1 - (x : ℝ)) / 2 := by
+  have h := congrArg Subtype.val (semicircleCoord.apply_symm_apply x)
+  rw [coe_semicircleCoord] at h
+  linarith
+
+@[simp]
+theorem coe_semicircleCoord_zero : (semicircleCoord 0 : ℝ) = 1 := by
+  simp [coe_semicircleCoord]
+
+@[simp]
+theorem coe_semicircleCoord_one : (semicircleCoord 1 : ℝ) = -1 := by
+  simp [coe_semicircleCoord]; norm_num
 
 /-- The upper semicircle path from `1` to `-1` in `ℂ`. -/
 def upperSemicirclePath : Path (1 : ℂ) (-1 : ℂ) where

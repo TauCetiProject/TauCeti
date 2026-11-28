@@ -31,9 +31,6 @@ The subdivision of the unit interval into `r` equal arcs `[i/r, (i+1)/r]` is des
 `unitInterval.arcPoint r i a`, the point `(i + a) / r` at parameter `a` of the `i`-th arc, and
 conversely by `unitInterval.arcIndex r s` and `unitInterval.arcParam r s`, the arc containing a
 point `s` and the position of `s` in it, the end point `1` being counted in the last arc.
-
-Finally, `TauCeti.semicircleCoord` gives the affine homeomorphism `t ↦ 1 - 2 * t` from
-`unitInterval` onto `[-1, 1]`.
 -/
 
 -- Ported from https://github.com/leanprover-community/mathlib4/pull/44183.
@@ -259,31 +256,3 @@ theorem arcParam_one {r : ℕ} (hr : 0 < r) : arcParam r 1 = 1 := by
   ring
 
 end unitInterval
-
-namespace TauCeti
-
-/-- The affine homeomorphism `t ↦ 1 - 2 * t` from `unitInterval` onto `[-1, 1]`. -/
-noncomputable def semicircleCoord : unitInterval ≃ₜ Set.Icc (-1 : ℝ) 1 :=
-  unitInterval.symmHomeomorph.trans (iccHomeoI (-1 : ℝ) 1 (by norm_num)).symm
-
-theorem coe_semicircleCoord (t : unitInterval) :
-    (semicircleCoord t : ℝ) = 1 - 2 * (t : ℝ) := by
-  simp only [semicircleCoord, Homeomorph.trans_apply, unitInterval.symmHomeomorph_apply,
-    iccHomeoI_symm_apply_coe, unitInterval.coe_symm_eq]
-  ring
-
-theorem coe_semicircleCoord_symm (x : Set.Icc (-1 : ℝ) 1) :
-    (semicircleCoord.symm x : ℝ) = (1 - (x : ℝ)) / 2 := by
-  have h := congrArg Subtype.val (semicircleCoord.apply_symm_apply x)
-  rw [coe_semicircleCoord] at h
-  linarith
-
-@[simp]
-theorem coe_semicircleCoord_zero : (semicircleCoord 0 : ℝ) = 1 := by
-  simp [coe_semicircleCoord]
-
-@[simp]
-theorem coe_semicircleCoord_one : (semicircleCoord 1 : ℝ) = -1 := by
-  simp [coe_semicircleCoord]; norm_num
-
-end TauCeti
