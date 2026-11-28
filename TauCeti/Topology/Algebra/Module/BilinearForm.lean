@@ -347,16 +347,14 @@ theorem convex_setOfPred_symm_pos_isVonNBounded :
     rcases eq_or_ne v 0 with rfl | hv
     · simp
     · exact (hg v hv).le
-  rintro g ⟨hgs, hgp, hgb⟩ g' ⟨hgs', hgp', hgb'⟩ a b ha hb hab
+  rw [convex_iff_forall_pos]
+  rintro g ⟨hgs, hgp, hgb⟩ g' ⟨hgs', hgp', -⟩ a b ha hb -
   have hab' (v : V) : (a • g + b • g') v v = a * g v v + b * g' v v := by simp
-  obtain ⟨hs, hp⟩ := convex_setOfPred_symm_pos ⟨hgs, hgp⟩ ⟨hgs', hgp'⟩ ha hb hab
-  refine ⟨hs, hp, ?_⟩
-  -- One of the two coefficients is at least `1 / 2`, and that term dominates.
-  rcases le_total (1 / 2 : ℝ) a with ha' | hb'
-  · exact isVonNBounded_setOfPred_lt_one_of_le one_half_pos (fun v ↦ by
-      rw [hab']; nlinarith [nonneg hgp v, mul_nonneg hb (nonneg hgp' v)]) hgb
-  · exact isVonNBounded_setOfPred_lt_one_of_le one_half_pos (fun v ↦ by
-      rw [hab']; nlinarith [nonneg hgp' v, mul_nonneg ha (nonneg hgp v)]) hgb'
+  refine ⟨fun v w ↦ by simp [hgs v w, hgs' v w], fun v hv ↦ ?_, ?_⟩
+  · rw [hab']
+    exact add_pos (mul_pos ha (hgp v hv)) (mul_pos hb (hgp' v hv))
+  · exact isVonNBounded_setOfPred_lt_one_of_le ha (fun v ↦ by
+      rw [hab']; nlinarith [nonneg hgp' v, mul_nonneg hb.le (nonneg hgp' v)]) hgb
 
 omit [ContinuousConstSMul ℝ V] in
 /-- A continuous bilinear form that reads as the inner product of a real inner product space
