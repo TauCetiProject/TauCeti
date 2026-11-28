@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 
 /-!
@@ -27,9 +28,14 @@ Over a commutative ring and for invertible `A`, the inverse of `g ∈ unitaryGro
 `A⁻¹ * star g * A`, so every matrix preserving the form is invertible
 (`Matrix.unitaryGroupOf.ofMatrix`).
 
+For a hermitian Gram matrix `A`, skew-adjointness for its form is equivalent to
+skew-hermiticity of `A * X`. Multiplication by `A⁻¹` sends skew-hermitian matrices
+to skew-adjoint matrices, including for singular `A`, whose totalized inverse is zero.
+These coordinates are used in Cayley charts and approximation of unitary groups.
+
 These are the facts shared by the indefinite unitary groups `U(p, q)`
 (`TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup`), the topology of the unitary groups
-(`TauCeti.Topology.Algebra.Matrix.UnitaryGroup`) and the adelic unitary groups of a CM field.
+(`TauCeti.Topology.Algebra.Matrix.UnitaryGroup.Basic`) and the adelic unitary groups of a CM field.
 
 ## Main definitions
 
@@ -190,5 +196,29 @@ theorem val_ofMatrix (hA : IsUnit A) (M : Matrix n n R) (hM : star M * A * M = A
 end unitaryGroupOf
 
 end CommRing
+
+section Skew
+
+omit [DecidableEq n] in
+/-- For a hermitian Gram matrix `A`, a matrix `X` is skew-adjoint for the form of `A`
+exactly when `A * X` is skew-hermitian. -/
+theorem star_mul_add_mul_eq_zero_iff {R : Type*} [Ring R] [StarRing R]
+    {A X : Matrix n n R} (hA : A.IsHermitian) :
+    star X * A + A * X = 0 ↔ star (A * X) = -(A * X) := by
+  rw [star_mul, star_eq_conjTranspose A, hA.eq, add_eq_zero_iff_eq_neg]
+
+/-- For hermitian `A` and skew-hermitian `Y`, `A⁻¹ * Y` is skew-adjoint for
+its form. For singular `A`, the totalized inverse is zero. -/
+theorem star_inv_mul_mul_add {R : Type*} [CommRing R] [StarRing R]
+    {A Y : Matrix n n R} (hA : A.IsHermitian) (hY : star Y = -Y) :
+    star (A⁻¹ * Y) * A + A * (A⁻¹ * Y) = 0 := by
+  by_cases hA' : IsUnit A
+  · rw [star_mul_add_mul_eq_zero_iff hA,
+      mul_nonsing_inv_cancel_left _ _ ((isUnit_iff_isUnit_det _).1 hA')]
+    exact hY
+  · rw [nonsing_inv_apply_not_isUnit A (mt (isUnit_iff_isUnit_det A).2 hA')]
+    simp
+
+end Skew
 
 end Matrix

@@ -27,6 +27,10 @@ Pointwise, `MDifferentiableAt.trivializationAt_mfderiv_apply` reads the differen
 in the target tangent trivialization at `f x₀` as the Fréchet derivative of the coordinate
 expression `writtenInExtChartAt I I' x₀ f` at the chart image of `x`.
 
+On a boundaryless source this operator family is the derivative of the coordinate expression of
+`f` in the charts at `x₀` and `f x₀`, at every point of the chart overlap
+(`MDifferentiableAt.fderiv_writtenInExtChartAt_eq_inTangentCoordinates`).
+
 Reuse Mathlib's `ContMDiffAt.mfderiv_const` for regularity in charts centred at
 the evaluation point, and its smooth tangent-bundle transitions to change centres.
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition, the
@@ -126,3 +130,45 @@ theorem MDifferentiableAt.trivializationAt_mfderiv_apply [IsManifold I 1 M] [IsM
   exact (DFunLike.congr_fun (mfderiv_comp x (mdifferentiableAt_extChartAt hfx) hf) w).symm.trans
     (DFunLike.congr_fun
       (TauCeti.mfderiv_eq_fderiv_comp_mfderiv_extChartAt (f := extChartAt I' (f x₀) ∘ f) hx hd) w)
+
+section Chart
+
+variable [IsManifold I 1 M] [IsManifold I' 1 M'] [I.Boundaryless]
+
+/-- On a boundaryless source, the derivative of the coordinate expression of `f` in the extended
+charts at `x₀` and `f x₀`, at the chart image of a point `x` of the source chart with `f x` in the
+target chart, is the derivative of `f` at `x` in the tangent coordinates at `x₀` and `f x₀`. -/
+theorem MDifferentiableAt.fderiv_writtenInExtChartAt_eq_inTangentCoordinates
+    (hf : MDifferentiableAt I I' f x) (hx : x ∈ (chartAt H x₀).source)
+    (hy : f x ∈ (chartAt H' (f x₀)).source) :
+    fderiv 𝕜 (writtenInExtChartAt I I' x₀ f) (extChartAt I x₀ x) =
+      inTangentCoordinates I I' id f (mfderiv I I' f) x₀ x := by
+  have hx' : x ∈ (extChartAt I x₀).source := by rwa [extChartAt_source]
+  have hz : extChartAt I x₀ x ∈ (extChartAt I x₀).target := (extChartAt I x₀).map_source hx'
+  have hsymm : MDifferentiableAt 𝓘(𝕜, E) I (extChartAt I x₀).symm (extChartAt I x₀ x) :=
+    (mdifferentiableWithinAt_extChartAt_symm hz).mdifferentiableAt
+      (by simp [I.range_eq_univ])
+  have hfx : MDifferentiableAt 𝓘(𝕜, E) I' (f ∘ (extChartAt I x₀).symm) (extChartAt I x₀ x) := by
+    refine MDifferentiableAt.comp _ ?_ hsymm
+    rwa [(extChartAt I x₀).left_inv hx']
+  have hchart : MDifferentiableAt I' 𝓘(𝕜, E') (extChartAt I' (f x₀))
+      ((f ∘ (extChartAt I x₀).symm) (extChartAt I x₀ x)) := by
+    rw [Function.comp_apply, (extChartAt I x₀).left_inv hx']
+    exact mdifferentiableAt_extChartAt hy
+  have key : mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E') (writtenInExtChartAt I I' x₀ f) (extChartAt I x₀ x) =
+      inTangentCoordinates I I' id f (mfderiv I I' f) x₀ x := by
+    rw [inTangentCoordinates_eq_mfderiv_comp_abuse (f := id) hx hy, writtenInExtChartAt,
+      mfderiv_comp _ hchart hfx, mfderiv_comp _ (by rwa [(extChartAt I x₀).left_inv hx']) hsymm,
+      I.range_eq_univ, mfderivWithin_univ]
+    -- The point `φ⁻¹ (φ x)` occurs in the types of the tangent spaces, so it is replaced by `x`
+    -- through the equation, not by rewriting.
+    have e := (extChartAt I x₀).left_inv hx'
+    simp only [Function.comp_apply, id]
+    generalize (extChartAt I x₀).symm (extChartAt I x₀ x) = y at e ⊢
+    subst e
+    rfl
+  rw [mfderiv_eq_fderiv] at key
+  ext v
+  exact congr($key v)
+
+end Chart

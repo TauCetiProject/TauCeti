@@ -86,6 +86,10 @@ theorem eq_of_isConj (f : ClassFunction k G) {g h : G} (hgh : IsConj g h) :
   obtain ⟨x, rfl⟩ := isConj_iff.mp hgh
   exact (apply_conj f x g).symm
 
+/-- A class function is invariant under cyclic permutation of two factors. -/
+theorem apply_mul_comm (f : ClassFunction k G) (x y : G) : f.val (x * y) = f.val (y * x) :=
+  eq_of_isConj f (isConj_iff.mpr ⟨y, by simp [mul_assoc]⟩)
+
 /-- Evaluate a class function on a conjugacy class. -/
 noncomputable def toConjClasses (f : ClassFunction k G) : ConjClasses G → k :=
   Quotient.lift f.val fun _ _ h => eq_of_isConj f h
@@ -136,6 +140,13 @@ def comap {H : Type w} [Group H] (φ : H →* G) :
 theorem comap_apply {H : Type w} [Group H] (φ : H →* G) (f : ClassFunction k G) (x : H) :
     (comap φ f).val x = f.val (φ x) :=
   (rfl)
+
+/-- Pullback along a surjection determines the original class function. -/
+theorem comap_injective {H : Type*} [Group H] {π : G →* H} (hπ : Function.Surjective π) :
+    Function.Injective (comap (k := k) π) := by
+  intro f g h
+  exact Subtype.ext (funext (hπ.forall.mpr fun x ↦
+    by simpa only [comap_apply] using congrArg (fun a : ClassFunction k G ↦ a.val x) h))
 
 /-- Pulling back along the identity homomorphism changes nothing. -/
 @[simp]
