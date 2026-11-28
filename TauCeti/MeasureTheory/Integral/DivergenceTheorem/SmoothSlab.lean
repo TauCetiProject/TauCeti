@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Analysis.Distribution.TestFunction.Divergence
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.Divergence
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem.CompactSupport
@@ -51,6 +52,8 @@ over the smooth symmetric slab `{ (y : E) + t • e | |t| < ℓ y / 2 }`.
   (matching the set integral over the smooth symmetric slab when `0 ≤ ℓ y` almost everywhere).
 * `TauCeti.norm_sq_slabBoundaryAvg_le_one`: when `‖ψ₀‖ ≤ 1`, the horizontal average and vertical
   half-difference satisfy `‖slabHorizAvg e he ψ₀ hℓ y‖ ^ 2 + d y ^ 2 ≤ 1`.
+* `TauCeti.abs_slabVerticalDiff_le`: pointwise cutoff bound `min 1 (Mψ * |t|)` for the vertical
+  boundary half-difference when `‖ψ₀‖ ≤ 1` and `‖D⟪e, ψ₀ ·⟫‖ ≤ Mψ`.
 -/
 
 public section
@@ -142,6 +145,37 @@ theorem norm_sq_slabBoundaryAvg_le_one (e : E) (he : ‖e‖ = 1) (ψ₀ : 𝓓(
     linarith [norm_add_le ((u1 : E) + v1 • e) ((u2 : E) + (-v2) • e)]
   rw [← norm_add_smul_sq e he]
   exact pow_le_one₀ (norm_nonneg z) hz1
+
+/-- Pointwise bound `|(2 : ℝ)⁻¹ * (⟪e, ψ₀ (y + (t / 2) • e)⟫ - ⟪e, ψ₀ (y - (t / 2) • e)⟫)| ≤
+min 1 (Mψ * |t|)` for the vertical boundary half-difference of a test vector field `ψ₀` with
+`‖ψ₀‖ ≤ 1` and `‖D⟪e, ψ₀ ·⟫‖ ≤ Mψ`. -/
+theorem abs_slabVerticalDiff_le (e : E) (he : ‖e‖ = 1) (ψ₀ : 𝓓(⊤, E))
+    (hψ1 : ∀ x, ‖ψ₀ x‖ ≤ 1) {Mψ : ℝ}
+    (hMψ : ∀ x, ‖fderiv ℝ (fun z : E => ⟪e, ψ₀ z⟫) x‖ ≤ Mψ)
+    (y : (ℝ ∙ e)ᗮ) (t : ℝ) :
+    |(2 : ℝ)⁻¹ * (⟪e, ψ₀ ((y : E) + (t / 2) • e)⟫ -
+        ⟪e, ψ₀ ((y : E) + (-(t / 2)) • e)⟫)| ≤
+      min 1 (Mψ * |t|) := by
+  have hM0 : 0 ≤ Mψ := (norm_nonneg _).trans (hMψ 0)
+  set f : E → ℝ := fun z => ⟪e, ψ₀ z⟫
+  have hf : Differentiable ℝ f := ((innerSL ℝ e).contDiff.comp ψ₀.contDiff).differentiable (by simp)
+  have hlip := Convex.norm_image_sub_le_of_norm_fderiv_le (fun x _ => hf x)
+    (fun x _ => hMψ x) convex_univ (mem_univ ((y : E) + (-(t / 2)) • e))
+    (mem_univ ((y : E) + (t / 2) • e))
+  have hdiff : ((y : E) + (t / 2) • e) - ((y : E) + (-(t / 2)) • e) = t • e := by
+    simp only [neg_smul]; module
+  rw [hdiff, norm_smul, Real.norm_eq_abs, he, mul_one, Real.norm_eq_abs] at hlip
+  have h1 : |(2 : ℝ)⁻¹ * (f ((y : E) + (t / 2) • e) - f ((y : E) + (-(t / 2)) • e))| ≤ 1 := by
+    have ha (x : E) : |f x| ≤ 1 :=
+      (abs_real_inner_le_norm e (ψ₀ x)).trans (by rw [he, one_mul]; exact hψ1 x)
+    rw [abs_mul, abs_of_pos (by positivity)]
+    linarith [abs_sub (f ((y : E) + (t / 2) • e)) (f ((y : E) + (-(t / 2)) • e)),
+      ha ((y : E) + (t / 2) • e), ha ((y : E) + (-(t / 2)) • e)]
+  have h2 : |(2 : ℝ)⁻¹ * (f ((y : E) + (t / 2) • e) - f ((y : E) + (-(t / 2)) • e))| ≤
+      Mψ * |t| := by
+    rw [abs_mul, abs_of_pos (by positivity)]
+    linarith [mul_nonneg hM0 (abs_nonneg t)]
+  exact le_min h1 h2
 
 end
 

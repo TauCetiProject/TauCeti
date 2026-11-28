@@ -70,10 +70,8 @@ section
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-- Pointwise bound `|(2 : ℝ)⁻¹ * (⟪e, ψ₀ (y + (t / 2) • e)⟫ - ⟪e, ψ₀ (y - (t / 2) • e)⟫)| ≤
-min 1 (Mψ * L) + Mψ * |t - L|` for the vertical boundary half-difference of a test vector field `ψ₀`
-with `‖ψ₀‖ ≤ 1` and `‖D⟪e, ψ₀ ·⟫‖ ≤ Mψ`, for any `t ≥ 0` and real comparison value `L`. -/
-private theorem abs_slabVerticalDiff_le (e : E) (he : ‖e‖ = 1) (ψ₀ : 𝓓(⊤, E))
+/-- Steiner mollification comparison bound for the vertical boundary half-difference. -/
+private theorem abs_slabVerticalDiff_le_add_abs_sub (e : E) (he : ‖e‖ = 1) (ψ₀ : 𝓓(⊤, E))
     (hψ1 : ∀ x, ‖ψ₀ x‖ ≤ 1) {Mψ : ℝ}
     (hMψ : ∀ x, ‖fderiv ℝ (fun z : E => ⟪e, ψ₀ z⟫) x‖ ≤ Mψ)
     (y : (ℝ ∙ e)ᗮ) {t : ℝ} (ht : 0 ≤ t) (L : ℝ) :
@@ -81,25 +79,9 @@ private theorem abs_slabVerticalDiff_le (e : E) (he : ‖e‖ = 1) (ψ₀ : 𝓓
         ⟪e, ψ₀ ((y : E) + (-(t / 2)) • e)⟫)| ≤
       min 1 (Mψ * L) + Mψ * |t - L| := by
   have hM0 : 0 ≤ Mψ := (norm_nonneg _).trans (hMψ 0)
-  set f : E → ℝ := fun z => ⟪e, ψ₀ z⟫
-  have hf : Differentiable ℝ f := ((innerSL ℝ e).contDiff.comp ψ₀.contDiff).differentiable (by simp)
-  have hlip := Convex.norm_image_sub_le_of_norm_fderiv_le (fun x _ => hf x)
-    (fun x _ => hMψ x) convex_univ (mem_univ ((y : E) + (-(t / 2)) • e))
-    (mem_univ ((y : E) + (t / 2) • e))
-  have hdiff : ((y : E) + (t / 2) • e) - ((y : E) + (-(t / 2)) • e) = t • e := by
-    simp only [neg_smul]; module
-  rw [hdiff, norm_smul, Real.norm_of_nonneg ht, he, mul_one, Real.norm_eq_abs] at hlip
-  have h1 : |(2 : ℝ)⁻¹ * (f ((y : E) + (t / 2) • e) - f ((y : E) + (-(t / 2)) • e))| ≤ 1 := by
-    have ha (x : E) : |f x| ≤ 1 :=
-      (abs_real_inner_le_norm e (ψ₀ x)).trans (by rw [he, one_mul]; exact hψ1 x)
-    rw [abs_mul, abs_of_pos (by positivity)]
-    linarith [abs_sub (f ((y : E) + (t / 2) • e)) (f ((y : E) + (-(t / 2)) • e)),
-      ha ((y : E) + (t / 2) • e), ha ((y : E) + (-(t / 2)) • e)]
-  have h2 : |(2 : ℝ)⁻¹ * (f ((y : E) + (t / 2) • e) - f ((y : E) + (-(t / 2)) • e))| ≤
-      Mψ * t := by
-    rw [abs_mul, abs_of_pos (by positivity)]
-    linarith [mul_nonneg hM0 ht]
-  refine (le_min h1 h2).trans ?_
+  have hcore := abs_slabVerticalDiff_le e he ψ₀ hψ1 hMψ y t
+  rw [abs_of_nonneg ht] at hcore
+  refine hcore.trans ?_
   rcases le_total 1 (Mψ * L) with hb | hb
   · rw [min_eq_left hb]
     exact (min_le_left 1 _).trans (le_add_of_nonneg_right (mul_nonneg hM0 (abs_nonneg _)))
@@ -182,7 +164,7 @@ private theorem symmSlab_integral_le_variational_add_err (e : E) (he : ‖e‖ =
   have hL_err : Integrable (L_ρ - L) volume :=
     ((ρ.integrable_normed (μ := volume)).integrable_convolution (lsmul ℝ ℝ) hLi).sub hLi
   have hd_le (y : (ℝ ∙ e)ᗮ) : |d y| ≤ min 1 (Mψ * L y) + Mψ * |L_ρ y - L y| :=
-    abs_slabVerticalDiff_le e he ψ₀ hψ1 hMψ y (hLρ0 y) (L y)
+    abs_slabVerticalDiff_le_add_abs_sub e he ψ₀ hψ1 hMψ y (hLρ0 y) (L y)
   have hg0 (z : (ℝ ∙ e)ᗮ) (hz : z ∈ Dᶜ) : min 1 (Mψ * L z) = 0 := by
     have hz0 : volume {t : ℝ | (z : E) + t • e ∈ s} = 0 := by simpa [D] using hz
     simp [hL_def, measureReal_def, hz0]
