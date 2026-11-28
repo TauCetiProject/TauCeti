@@ -13,8 +13,9 @@ public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Parabo
 For a commutative ring `R` with involution `σ` and `ε = ±1`, the hyperbolic signed hermitian space
 `H^ι` on `(ι → R) × (ι → R)` has the first coordinate subspace `L = {(x, 0)}` as a Lagrangian
 (`TauCeti.SignedHermitianSpace.isLagrangian_range_inl_hyperbolic`), and every finite-dimensional
-Lagrangian of a signed hermitian space over a field is the image of `L` under a complete hyperbolic
-splitting (`TauCeti.SignedHermitianSpace.IsLagrangian.exists_isometryEquiv_map_range_inl_eq`).
+Lagrangian of a signed hermitian space over a field with nontrivial involution `σ` is the image
+of `L` under a complete hyperbolic splitting
+(`TauCeti.SignedHermitianSpace.IsLagrangian.exists_isometryEquiv_map_range_inl_eq`).
 The stabilizer of `L` in the unitary group is the Siegel parabolic subgroup of the splitting. This
 file constructs its unipotent radical and proves the Levi decomposition.
 
@@ -26,7 +27,8 @@ file constructs its unipotent radical and proves the Levi decomposition.
 * The Levi elements `m(a)` (`TauCeti.SignedHermitianSpace.hyperbolicLevi`) normalize the radical:
   `m(a) n(β) m(a)⁻¹ = n(A β a⁻¹)` with `A = (σ(a⁻¹))ᵀ` the action of `m(a)` on `L`.
 * **Levi decomposition**: an isometry of `H^ι` preserves `L` exactly when it is `n(β) m(a)` for a
-  `(-ε)`-hermitian `β` and some `a ∈ GL_ι(R)`, and `β` and `a` are then unique.
+  `(-ε)`-hermitian `β` and some `a ∈ GL_ι(R)`, and `β` and `a` are then unique. If the prescribed
+  action on `L` is `A`, the Levi parameter is instead `(σ(A⁻¹))ᵀ`.
 
 Transport along a complete hyperbolic splitting `e : H^ι ≅ H` gives the radical elements
 `TauCeti.SignedHermitianSpace.IsometryEquiv.radical` of the parabolic subgroup stabilizing the
@@ -424,6 +426,34 @@ theorem exists_eq_radical_mul_levi_iff (e : IsometryEquiv (hyperbolic R σ ε ι
     rw [map_mul, Subgroup.coe_mul, coe_isometryGroupCongr_symm_radical,
       coe_isometryGroupCongr_symm_levi]
     exact h₀
+
+/-- An isometry acting by `a` on the first coordinate subspace factors as a radical element
+and the Levi element with parameter `(σ(a⁻¹))ᵀ`. This converts the action on the Lagrangian
+frame to the second-coordinate parameter used by `levi`. -/
+theorem exists_eq_radical_mul_levi_of_apply_inl
+    (e : IsometryEquiv (hyperbolic R σ ε ι) H) (g : H.form.isometryGroup) (a : GL ι R)
+    (ha : ∀ x, (g : V ≃ₗ[R] V) (e (x, 0)) = e ((a : Matrix ι ι R) *ᵥ x, 0)) :
+    ∃ β, g = e.radical β *
+      e.levi (GeneralLinearGroup.inverseTranspose (GeneralLinearGroup.map σ a)) := by
+  obtain ⟨β, b, hb⟩ := (e.exists_eq_radical_mul_levi_iff g).2 (fun x ↦ by simp [ha])
+  have hab : (((b⁻¹ : GL ι R) : Matrix ι ι R).map σ)ᵀ = (a : Matrix ι ι R) := by
+    apply mulVec_injective
+    funext x
+    have hx := ha x
+    rw [hb] at hx
+    simpa [mul_apply_eq_comp] using
+      congrArg (fun v ↦ (e.symm v).1) hx
+  have hba : b = GeneralLinearGroup.inverseTranspose (GeneralLinearGroup.map σ a) := by
+    have h := congrArg (fun M : Matrix ι ι R ↦ (M.map σ)ᵀ) hab
+    have hinv : ((b⁻¹ : GL ι R) : Matrix ι ι R) =
+        ((GeneralLinearGroup.map σ a : GL ι R) : Matrix ι ι R)ᵀ := by
+      ext i j
+      simpa using congrArg (fun M : Matrix ι ι R ↦ M i j) h
+    have hu : b⁻¹ = (GeneralLinearGroup.inverseTranspose (GeneralLinearGroup.map σ a))⁻¹ := by
+      apply Units.ext
+      simpa [GeneralLinearGroup.coe_inverseTranspose, ← map_inv] using hinv
+    exact inv_injective hu
+  exact ⟨β, hb.trans (congrArg (fun c ↦ e.radical β * e.levi c) hba)⟩
 
 /-- The Levi decomposition in a complete hyperbolic splitting is unique. -/
 theorem radical_mul_levi_inj (e : IsometryEquiv (hyperbolic R σ ε ι) H)
