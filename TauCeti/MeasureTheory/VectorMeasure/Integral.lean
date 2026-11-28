@@ -30,6 +30,9 @@ indefinite integral, including all its observation times, with one error estimat
 * `MeasureTheory.VectorMeasure.integral_fun_smul_of_smul_left` and
   `MeasureTheory.VectorMeasure.integral_smul_vectorMeasure_of_smul_right`: homogeneity in the
   integrand and in the measure.
+* `MeasureTheory.VectorMeasure.transpose_lsmul_apply` and
+  `MeasureTheory.VectorMeasure.dominatedFinMeasAdditive_transpose_lsmul`: the set function
+  `s ↦ (c ↦ c • μ s)` underlying integration of scalar functions, and its domination.
 * `MeasureTheory.VectorMeasure.tendstoUniformly_setIntegral_of_L1`: uniform convergence of
   set integrals under L¹ convergence for the variation measure.
 -/
@@ -106,6 +109,28 @@ theorem integral_smul_vectorMeasure_of_smul_right [NormedField 𝕜] [NormedAlge
       rwa [VectorMeasure.Integrable, variation_smul, ENNReal.smul_def,
         integrable_smul_measure (by simpa using hc) ENNReal.coe_ne_top]
     rw [integral_undef hf, integral_undef hf', smul_zero]
+
+section lsmul
+
+variable [NormedRing 𝕜] [NormedAlgebra ℝ 𝕜] [Module 𝕜 F] [IsBoundedSMul 𝕜 F]
+  [IsScalarTower ℝ 𝕜 F] (μ : VectorMeasure X F)
+
+/-- Transposing `μ` against the scalar multiplication `lsmul` gives the set function
+`s ↦ (c ↦ c • μ s)`. -/
+@[simp]
+theorem transpose_lsmul_apply (s : Set X) (c : 𝕜) : μ.transpose (lsmul ℝ 𝕜) s c = c • μ s := by
+  rw [transpose_eq_cbmApplyMeasure, cbmApplyMeasure_apply, lsmul_apply]
+
+/-- If `|μ| ≤ C ν`, the set function `s ↦ (c ↦ c • μ s)` is dominated by `C ν`, up to the factor
+`‖lsmul ℝ 𝕜‖`. -/
+theorem dominatedFinMeasAdditive_transpose_lsmul {ν : Measure X} {C : ℝ≥0}
+    (hμ : μ.variation ≤ C • ν) :
+    DominatedFinMeasAdditive ν (μ.transpose (lsmul ℝ 𝕜))
+      (C * ‖(lsmul ℝ 𝕜 : 𝕜 →L[ℝ] F →L[ℝ] F)‖) := by
+  simpa using (dominatedFinMeasAdditive_cbmApplyMeasure μ (lsmul ℝ 𝕜)).of_measure_le_smul
+    ENNReal.coe_ne_top (by simpa only [ENNReal.smul_def] using hμ) (by positivity)
+
+end lsmul
 
 end MeasureTheory.VectorMeasure
 
