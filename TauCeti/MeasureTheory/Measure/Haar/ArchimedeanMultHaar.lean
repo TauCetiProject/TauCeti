@@ -7,6 +7,10 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Haar.DistribChar
 public import TauCeti.MeasureTheory.Measure.Haar.MultHaar
+public import TauCeti.MeasureTheory.Constructions.Polish.Units
+import Mathlib.MeasureTheory.Constructions.HaarToSphere
+import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.MeasureTheory.Group.Units
 import TauCeti.MeasureTheory.Integral.Circle.LIntegral
 
 /-!
@@ -34,6 +38,13 @@ the annulus `a ≤ |z| ≤ b` mass `2 · 2π · (log b - log a)`
 (`TauCeti.complexMultHaar_setOf_norm_mem_Icc`). In particular `[1, e]` has mass one
 (`TauCeti.realMultHaar_Icc_one_exp_one`) and the annulus `1 ≤ |z| ≤ e` has mass `4π`
 (`TauCeti.complexMultHaar_setOf_norm_mem_Icc_one_exp_one`).
+
+Their pullbacks along `Units.val` are the Haar measures `TauCeti.realUnitsMultHaar` on `ℝˣ` and
+`TauCeti.complexUnitsMultHaar` on `ℂˣ`. Since `0` is null, integrals of functions of `x : ℝ` or
+`z : ℂ` over the units are the integrals over `ℝ` or `ℂ` (`TauCeti.integral_realUnitsMultHaar`,
+`TauCeti.integral_complexUnitsMultHaar`). Radial integrals reduce to `dt / t` on `(0, ∞)`: by
+`2` on `ℝ` (`TauCeti.integral_realMultHaar_comp_abs`) and by the annulus mass `4π` on `ℂ`
+(`TauCeti.integral_complexMultHaar_comp_norm`).
 
 ## References
 
@@ -234,5 +245,129 @@ theorem complexMultHaar_setOf_norm_mem_Icc_one_exp_one :
     complexMultHaar {z | ‖z‖ ∈ Icc 1 (Real.exp 1)} = ENNReal.ofReal (4 * π) := by
   rw [complexMultHaar_setOf_norm_mem_Icc one_pos (Real.one_le_exp zero_le_one), Real.log_exp,
     Real.log_one, sub_zero, mul_one]
+
+/-! ### The multiplicative Haar measures on the units of `ℝ` and `ℂ` -/
+
+/-- The multiplicative Haar measure `dx / |x|` of `ℝˣ`: the pullback of `TauCeti.realMultHaar`
+along `ℝˣ → ℝ`. -/
+noncomputable def realUnitsMultHaar : Measure ℝˣ :=
+  realMultHaar.comap Units.val
+
+/-- The defining formula of `dx / |x|` on `ℝˣ`. -/
+theorem realUnitsMultHaar_def : realUnitsMultHaar = realMultHaar.comap Units.val := (rfl)
+
+/-- The pushforward of `dx / |x|` on `ℝˣ` to `ℝ` is `TauCeti.realMultHaar`. -/
+theorem map_val_realUnitsMultHaar : realUnitsMultHaar.map Units.val = realMultHaar :=
+  Units.map_val_comap_val
+
+/-- The multiplicative Haar measure `2 dx dy / |z|_ℂ` of `ℂˣ`: the pullback of
+`TauCeti.complexMultHaar` along `ℂˣ → ℂ`. -/
+noncomputable def complexUnitsMultHaar : Measure ℂˣ :=
+  complexMultHaar.comap Units.val
+
+/-- The defining formula of `2 dx dy / |z|_ℂ` on `ℂˣ`. -/
+theorem complexUnitsMultHaar_def : complexUnitsMultHaar = complexMultHaar.comap Units.val := (rfl)
+
+/-- The pushforward of `2 dx dy / |z|_ℂ` on `ℂˣ` to `ℂ` is `TauCeti.complexMultHaar`. -/
+theorem map_val_complexUnitsMultHaar : complexUnitsMultHaar.map Units.val = complexMultHaar :=
+  Units.map_val_comap_val
+
+section UnitsIntegral
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Integrating a function of `x : ℝ` against `dx / |x|` over `ℝˣ` is integrating it against
+`TauCeti.realMultHaar` over `ℝ`. -/
+theorem integral_realUnitsMultHaar (g : ℝ → E) :
+    ∫ x : ℝˣ, g x ∂realUnitsMultHaar = ∫ y, g y ∂realMultHaar :=
+  Units.integral_comap_val g
+
+omit [NormedSpace ℝ E] in
+/-- A function of `x : ℝ` is integrable against `dx / |x|` over `ℝˣ` exactly when it is
+integrable against `TauCeti.realMultHaar` over `ℝ`. -/
+theorem integrable_realUnitsMultHaar_iff {g : ℝ → E} :
+    Integrable (fun x : ℝˣ ↦ g x) realUnitsMultHaar ↔ Integrable g realMultHaar :=
+  Units.integrable_comap_val_iff
+
+/-- Integrating a function of `z : ℂ` against `2 dx dy / |z|_ℂ` over `ℂˣ` is integrating it
+against `TauCeti.complexMultHaar` over `ℂ`. -/
+theorem integral_complexUnitsMultHaar (g : ℂ → E) :
+    ∫ z : ℂˣ, g z ∂complexUnitsMultHaar = ∫ w, g w ∂complexMultHaar :=
+  Units.integral_comap_val g
+
+omit [NormedSpace ℝ E] in
+/-- A function of `z : ℂ` is integrable against `2 dx dy / |z|_ℂ` over `ℂˣ` exactly when it is
+integrable against `TauCeti.complexMultHaar` over `ℂ`. -/
+theorem integrable_complexUnitsMultHaar_iff {g : ℂ → E} :
+    Integrable (fun z : ℂˣ ↦ g z) complexUnitsMultHaar ↔ Integrable g complexMultHaar :=
+  Units.integrable_comap_val_iff
+
+end UnitsIntegral
+
+instance : realUnitsMultHaar.IsMulLeftInvariant :=
+  Units.isMulLeftInvariant_comap_val fun b ↦ map_realMultHaar_mul_left b.ne_zero
+
+instance : complexUnitsMultHaar.IsMulLeftInvariant :=
+  Units.isMulLeftInvariant_comap_val fun b ↦ map_complexMultHaar_mul_left b.ne_zero
+
+instance : realUnitsMultHaar.IsHaarMeasure := by
+  have : IsFiniteMeasureOnCompacts realUnitsMultHaar := by
+    rw [realUnitsMultHaar_def, realMultHaar_def]
+    exact Units.isFiniteMeasureOnCompacts_comap_val_withDensity volume
+      (continuous_abs.continuousOn.inv₀ fun x hx ↦ abs_ne_zero.2 hx)
+  have : realUnitsMultHaar.IsOpenPosMeasure := by
+    rw [realUnitsMultHaar_def, realMultHaar_def]
+    exact Units.isOpenPosMeasure_comap_val_withDensity volume continuous_abs.measurable.inv
+      fun x hx ↦ inv_pos.2 (abs_pos.2 hx)
+  exact {}
+
+instance : complexUnitsMultHaar.IsHaarMeasure := by
+  have : IsFiniteMeasureOnCompacts complexUnitsMultHaar := by
+    rw [complexUnitsMultHaar_def, complexMultHaar_def]
+    exact Units.isFiniteMeasureOnCompacts_comap_val_withDensity volume
+      (continuousOn_const.mul ((continuous_norm.pow 2).continuousOn.inv₀ fun z hz ↦
+        pow_ne_zero 2 (norm_ne_zero_iff.2 hz)))
+  have : complexUnitsMultHaar.IsOpenPosMeasure := by
+    rw [complexUnitsMultHaar_def, complexMultHaar_def]
+    exact Units.isOpenPosMeasure_comap_val_withDensity volume
+      (measurable_const.mul (measurable_norm.pow_const 2).inv)
+      fun z hz ↦ mul_pos two_pos (inv_pos.2 (pow_pos (norm_pos_iff.2 hz) 2))
+  exact {}
+
+/-! ### Radial integrals -/
+
+section Radial
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A radial integral against `dx / |x|` is twice the corresponding integral against `dt / t`. -/
+theorem integral_realMultHaar_comp_abs (G : ℝ → E) :
+    ∫ y, G |y| ∂realMultHaar = (2 : ℝ) • ∫ t, G t ∂multHaar := by
+  have h := integral_fun_norm_addHaar (volume : Measure ℝ) (fun r ↦ r⁻¹ • G r)
+  simp only [Real.norm_eq_abs, Module.finrank_self, one_smul, pow_zero, tsub_self] at h
+  rw [integral_realMultHaar, h, integral_multHaar_eq_setIntegral]
+  norm_num
+
+/-- A radial integral against `2 dx dy / |z|_ℂ` is `4π` times the corresponding integral against
+`dt / t`. -/
+theorem integral_complexMultHaar_comp_norm (G : ℝ → E) :
+    ∫ z, G ‖z‖ ∂complexMultHaar = (4 * π) • ∫ t, G t ∂multHaar := by
+  have h := integral_fun_norm_addHaar (volume : Measure ℂ) (fun r ↦ (2 * (r ^ 2)⁻¹) • G r)
+  have hball : (volume : Measure ℂ).real (Metric.ball 0 1) = π := by
+    rw [Measure.real, Complex.volume_ball, ENNReal.ofReal_one, one_pow, one_mul,
+      ENNReal.coe_toReal, NNReal.coe_real_pi]
+  have hint : ∫ y in Ioi (0 : ℝ), y ^ (2 - 1) • (2 * (y ^ 2)⁻¹) • G y =
+      (2 : ℝ) • ∫ y in Ioi (0 : ℝ), y⁻¹ • G y := by
+    rw [← integral_smul]
+    refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
+    simp only [smul_smul]
+    congr 1
+    field_simp
+    ring
+  rw [integral_complexMultHaar, h, integral_multHaar_eq_setIntegral, Complex.finrank_real_complex,
+    hball, hint]
+  module
+
+end Radial
 
 end TauCeti

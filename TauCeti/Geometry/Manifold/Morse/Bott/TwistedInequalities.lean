@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.Inequalities
 public import TauCeti.Topology.VectorBundle.Orientation.BettiNumber
 public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.TwistedHomology
 import TauCeti.Algebra.Category.ModuleCat.Finrank
+import TauCeti.CategoryTheory.ObjectProperty.Extensions
 import TauCeti.Geometry.Manifold.Topology
 
 /-!
@@ -50,6 +51,18 @@ its dimension is the sum of their twisted Betti numbers
 The inequalities of the filtration of `M` by sublevels at a cut of the values of `f`
 (`TauCeti.IsMorseBottFamily.exists_cut_sum_finrank_sublevelPair_eq_sum`) then give the result.
 
+Over any commutative ring `K`, `ℤ` included, the weak inequalities hold modulo a Serre class `Q`
+of `K`-modules: if every twisted group `H_{n - r j}(S j; o(ν⁻ j) ⊗ K)` of a piece of index at most
+`n` lies in `Q`, then so does `Hₙ(M; K)`
+(`TauCeti.IsMorseBottFamily.prop_singularHomology_of_forall_prop_twistedHomology`). Each band with
+one critical value has the homology of the finite coproduct of these groups over the pieces on its
+level, and a Serre class passes along the filtration of `M` by the sublevels of the cut
+(`TauCeti.prop_singularHomology_of_forall_sublevelPair`). For the zero modules this is a vanishing
+criterion for `Hₙ(M; K)`, proved directly in `TauCeti.Geometry.Manifold.Morse.Bott.Vanishing`
+(`TauCeti.IsMorseBottFamily.isZero_singularHomology_of_forall_isZero_twistedHomology`). Over `ℤ`
+it sees the torsion of the twisted groups, which the Betti numbers over a field of characteristic
+zero miss.
+
 The twisted counts `cₙ` reduce to the untwisted ones where the twist is invisible. The twisted Betti
 numbers of a piece are its ordinary Betti numbers over `K` when its negative normal bundle is
 oriented, when the piece is simply connected, and when `2 = 0` in `K`
@@ -69,6 +82,9 @@ The hypothesis `hV` gives the negative normal spaces local frames of size `r j`,
 vector bundle of rank `r j`; such frames exist exactly when `r j` is the Morse index of `f` along
 `S j` (in the namespace `TauCeti.SmoothEmbedding`,
 `IsNondegenerateCriticalSubmanifold.hasLocalContMDiffSubbundleFrames_negativeNormalSpace`).
+The negative normal spaces depend on the fibre metrics `g j`, but the twisted Betti numbers do
+not: the negative normal bundles of two metrics are isomorphic, and so are their orientation local
+systems (`twistedBettiNumber_congr_metric`). So the counts `cₙ` do not depend on the metrics.
 The manifolds, the pieces, the model space `E` of `M` and the coefficient field lie in one
 universe. The band computation reads `ν⁻ j` through frames relabelled by `ULift (Fin (r j))`, whose
 model fibre lies in that universe, and the relabelling changes neither the orientation local system
@@ -80,6 +96,7 @@ nor its homology
 In the namespace `TauCeti.IsMorseBottFamily`:
 
 * `twistedBettiNumber`: the twisted Betti numbers `dim Hₖ(S j; o(ν⁻ j) ⊗ K)` of the pieces.
+* `twistedBettiNumber_congr_metric`: the twisted Betti numbers do not depend on the fibre metrics.
 * `finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber`: the dimension of the
   homology of a band with a single critical value.
 * `bettiNumber_le_sum_twistedBettiNumber`,
@@ -101,6 +118,8 @@ In the namespace `TauCeti.IsMorseBottFamily`:
   counts are the Morse–Bott counts, and for a Morse function they are the critical counts.
 * `bettiNumber_eq_sum_twistedBettiNumber_of_forall_eq_zero_or_eq_zero`: the lacunary principle
   with twisted coefficients.
+* `prop_singularHomology_of_forall_prop_twistedHomology`: over any commutative ring, the weak
+  Morse–Bott inequalities modulo a Serre class.
 
 ## References
 
@@ -109,6 +128,8 @@ In the namespace `TauCeti.IsMorseBottFamily`:
   Society 7 (1982), 331–358, Section 1.
 * R. L. Cohen, K. Iga and P. Norbury, *Topics in Morse theory: lecture notes*, 2006,
   Theorems 15.4 and 15.6.
+* J.-P. Serre, *Groupes d'homotopie et classes de groupes abéliens*, Annals of Mathematics 58
+  (1953), 258–294 (classes of abelian groups).
 -/
 
 public section
@@ -207,6 +228,54 @@ theorem twistedBettiNumber_def (j : ι) (k : ℕ) :
       (fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
         (g j).toRiemannianMetric s) K ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) k) :=
   (rfl)
+
+omit [T2Space M] [SecondCountableTopology M] [CompactSpace M] [Fintype ι]
+  [∀ j, (J j).Boundaryless] in
+/-- **The twisted Betti numbers do not depend on the fibre metrics.** For two families `g` and
+`g'` of smooth fibre metrics on the normal bundles of the pieces, each making the negative normal
+spaces a vector bundle of rank `r j`, the twisted Betti numbers `dim Hₖ(S j; o(ν⁻ j) ⊗ K)`
+computed from `g` and from `g'` agree. The negative normal bundles of `g` and `g'` are different
+subbundles, but they are isomorphic, so their orientation local systems are isomorphic. -/
+theorem twistedBettiNumber_congr_metric
+    (g' : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+        fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+        fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn)
+    (hV' : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+        fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+        fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+      ∀ j, HasLocalSubbundleFrames (P j) (Fin (r j))
+        ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g' j).toRiemannianMetric))
+    (j : ι) (k : ℕ) :
+    h.twistedBettiNumber hn hdim g hV K j k = h.twistedBettiNumber hn hdim g' hV' K j k := by
+  let _ : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+    fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+  let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+    fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+  have : IsManifold I (∞ + 2) M := .of_le (n := ∞) (by simp)
+  have : IsManifold (J j) (∞ + 1) (S j) := by
+    simpa using (inferInstance : IsManifold (J j) ∞ (S j))
+  set h' := h.isNondegenerateCriticalSubmanifold j
+  let _ := subbundleTopology (P j) (F' := Fin (r j) → ℝ)
+    (h'.negativeNormalSpace hn (g j).toRiemannianMetric)
+  let _ := (hV j).fiberBundle
+  have := (hV j).vectorBundle
+  let _ := subbundleTopology (P j) (F' := Fin (r j) → ℝ)
+    (h'.negativeNormalSpace hn (g' j).toRiemannianMetric)
+  let _ := (hV' j).fiberBundle
+  have := (hV' j).vectorBundle
+  rw [twistedBettiNumber_def, twistedBettiNumber_def]
+  -- Projecting along the positive normal spaces of `g` identifies the two negative normal bundles,
+  -- hence their orientation local systems.
+  exact (asIso (twistedHomologyCoefficientMap (signLocalSystemIsoOfFiberwise K _ _
+    (φ := fun s ↦ (h'.negativeNormalSpaceEquiv hn (g' j).toRiemannianMetric
+      (g j).toRiemannianMetric s).toContinuousLinearEquiv)
+    (h'.continuous_negativeNormalSpaceEquiv hn (k := ∞) (by simp)
+      (fun s ↦ (h.contMDiff (i j s)).of_le (by simp)) (hdim j) (g j) (g' j)
+      (h'.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ (hV j)))).hom
+    k)).toLinearEquiv.finrank_eq
 
 omit [T2Space M] [SecondCountableTopology M] [CompactSpace M] [Fintype ι]
   [∀ j, (J j).Boundaryless] in
@@ -479,5 +548,93 @@ theorem sum_twistedBettiNumber_eq_criticalCount (hf : IsMorse I f) (n : ℕ) :
   exact h.sum_twistedBettiNumber_eq_morseBottCount_of_orientation hn hdim g hV K
     (fun p ↦ ((h.isNondegenerateCriticalSubmanifold p).nonempty_negativeNormalBundleOrientation hn
       h.contMDiff (hdim p) (g p) _).some) n
+
+end TauCeti.IsMorseBottFamily
+
+/-! ### The weak inequalities over any ring, modulo a Serre class -/
+
+namespace TauCeti.IsMorseBottFamily
+
+variable {E M : Type u} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+  [SecondCountableTopology M] [CompactSpace M]
+  {ι : Type*} {E' H' P : ι → Type*} {S : ι → Type u}
+  [∀ j, NormedAddCommGroup (E' j)] [∀ j, NormedSpace ℝ (E' j)] [∀ j, FiniteDimensional ℝ (E' j)]
+  [∀ j, TopologicalSpace (H' j)] {J : ∀ j, ModelWithCorners ℝ (E' j) (H' j)}
+  [∀ j, (J j).Boundaryless] [∀ j, TopologicalSpace (S j)] [∀ j, ChartedSpace (H' j) (S j)]
+  [∀ j, IsManifold (J j) ∞ (S j)] [∀ j, NormedAddCommGroup (P j)] [∀ j, NormedSpace ℝ (P j)]
+  [∀ j, FiniteDimensional ℝ (P j)] {f : M → ℝ} {i : ∀ j, SmoothEmbedding (J j) I ∞ (S j) M}
+  (hn : (∞ : ℕ∞ω) ≠ 0) (h : IsMorseBottFamily i f)
+  (hdim : ∀ j, finrank ℝ (P j) = finrank ℝ E - finrank ℝ (E' j))
+  (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+    ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn)
+  {κ : ι → Type u} [∀ j, Fintype (κ j)]
+  (hV : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+    ∀ j, HasLocalSubbundleFrames (P j) (κ j)
+      ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric))
+  (K : Type u) [CommRing K]
+
+/-- **The weak Morse–Bott inequalities over any ring, modulo a Serre class.** Let the family
+`i j : S j → M` exhibit `f` as a Morse–Bott function on a compact boundaryless manifold, with
+pieces modelled on boundaryless models, let `g j` be smooth fibre metrics on the normal bundles of
+the pieces, and let the negative normal spaces relative to `g j` have continuous local frames
+indexed by a finite type `κ j`, so that they form the negative normal bundle `ν⁻ j` of rank `|κ j|`,
+the index of the piece. Let `K` be a commutative ring, for instance `ℤ`, and let `Q` be a Serre
+class of `K`-modules, for instance the zero modules. If every twisted homology group
+`H_{n - |κ j|}(S j; o(ν⁻ j) ⊗ K)` of a piece of index at most `n` lies in `Q`, then so does
+`Hₙ(M; K)`. No orientation of the bundles `ν⁻ j` is assumed.
+
+This is the counterpart over any ring of the weak inequality `bₙ ≤ cₙ` over a field
+(`TauCeti.IsMorseBottFamily.bettiNumber_le_sum_twistedBettiNumber`). Over `ℤ` the twisted groups
+can be nonzero torsion groups, such as `H₀(S¹; o(ν⁻)) ≅ ℤ/2` for a critical circle with Möbius
+negative normal line, which the twisted Betti numbers over `ℚ` do not see. -/
+theorem prop_singularHomology_of_forall_prop_twistedHomology (Q : ObjectProperty (ModuleCat.{u} K))
+    [Q.IsSerreClass] (n : ℕ)
+    (hQ : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+        fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+        fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+      letI : ∀ j, TopologicalSpace (TotalSpace (κ j → ℝ)
+          fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+            (g j).toRiemannianMetric s) :=
+        fun j ↦ subbundleTopology (P j)
+          ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+            (g j).toRiemannianMetric)
+      letI : ∀ j, FiberBundle (κ j → ℝ) fun s ↦
+          (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+            (g j).toRiemannianMetric s :=
+        fun j ↦ (hV j).fiberBundle
+      haveI : ∀ j, VectorBundle ℝ (κ j → ℝ) fun s ↦
+          (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+            (g j).toRiemannianMetric s :=
+        fun j ↦ (hV j).vectorBundle
+      ∀ j, Fintype.card (κ j) ≤ n → Q (twistedHomology (signLocalSystem (κ j → ℝ)
+        (fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+          (g j).toRiemannianMetric s) K
+        ((Fintype.card_fin _).trans (finrank_fintype_fun_eq_card ℝ).symm))
+        (n - Fintype.card (κ j)))) :
+    Q (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} K) n).obj
+      (ModuleCat.of K K)).obj (TopCat.of M)) := by
+  -- Cut the values of `f` into compact bands, each containing at most one critical value.
+  obtain ⟨s, N, hs, hs₀, hsN, hband, -⟩ :=
+    exists_monotone_isCriticalBand_of_finite_image_criticalPoints h.contMDiff.continuous
+      (h.finite_image_criticalPoints hn)
+  refine prop_singularHomology_of_forall_sublevelPair hs hs₀ hsN _ Q n fun j _ ↦ ?_
+  -- The homology of each band is the coproduct of the twisted homologies of the pieces on its
+  -- critical level, each of which lies in `Q`.
+  obtain ⟨c, hc, hcrit⟩ := (hband j).exists_mem_Ioo_forall_eq
+  obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_sigma_twistedHomology hn hc.1 hc.2
+    (hband j).isCompact hcrit hdim g hV K n
+  have : Finite {j' // (∀ s, f (i j' s) = c) ∧ Fintype.card (κ j') ≤ n} :=
+    h.finite_subtype_of_forall_apply_eq (hband j).isCompact (Ioo_subset_Icc_self hc)
+      fun _ ↦ And.left
+  exact Q.prop_of_iso e.symm (Q.prop_coproduct fun j' ↦ hQ j'.val j'.property.2)
 
 end TauCeti.IsMorseBottFamily

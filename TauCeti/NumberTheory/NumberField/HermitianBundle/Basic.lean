@@ -17,6 +17,7 @@ public import TauCeti.RingTheory.FractionalIdeal.LinearEquiv
 
 import Mathlib.LinearAlgebra.Dimension.Localization
 import Mathlib.RingTheory.Localization.BaseChange
+import TauCeti.LinearAlgebra.TensorProduct.Separation
 
 /-!
 # Hermitian vector bundles over the ring of integers of a number field
@@ -44,6 +45,8 @@ conjugate-linear in the first argument as in Mathlib.
 * `TauCeti.HermitianMetric.toCore`: the form at `σ` as an inner product core on the complex
   fibre at `σ`.
 * `TauCeti.HermitianMetric.norm`: the norm `‖u‖_σ` of a vector in the complex fibre at `σ`.
+* `TauCeti.HermitianMetric.genericNorm`: the norm of a generic-fibre vector after scalar
+  extension to the complex fibre at `σ`.
 * `TauCeti.HermitianMetric.fiberConj`: complex conjugation `c ⊗ x ↦ conj c ⊗ x` from the complex
   fibre at `σ` to the one at `conj σ`; it is antiunitary
   (`TauCeti.HermitianMetric.form_fiberConj`).
@@ -250,6 +253,49 @@ theorem norm_form_le (σ : K →+* ℂ) (u v : Codomain σ ⊗[𝓞 K] E) :
 theorem norm_conjugate_tmul (σ : K →+* ℂ) (x : E) :
     h.norm (conjugate σ) (1 ⊗ₜ x) = h.norm σ (1 ⊗ₜ x) := by
   rw [norm_def, norm_def, h.form_conjugate_tmul, Complex.conj_re]
+
+/-- The norm of a generic-fibre vector after scalar extension to the complex embedding `σ`. -/
+def genericNorm (σ : K →+* ℂ) (t : K ⊗[𝓞 K] E) : ℝ :=
+  h.norm σ (((TensorProduct.AlgebraTensorModule.cancelBaseChange (𝓞 K) K (Codomain σ)
+    (Codomain σ) E).restrictScalars ℂ) (1 ⊗ₜ[K] t))
+
+/-- The generic norm is the complex-fibre norm of the scalar extension of `t` at `σ`. -/
+theorem genericNorm_def (σ : K →+* ℂ) (t : K ⊗[𝓞 K] E) :
+    h.genericNorm σ t =
+      h.norm σ (((TensorProduct.AlgebraTensorModule.cancelBaseChange (𝓞 K) K (Codomain σ)
+        (Codomain σ) E).restrictScalars ℂ) (1 ⊗ₜ[K] t)) :=
+  (rfl)
+
+/-- For an integral section, its generic norm is the norm of its image in the complex fibre. -/
+@[simp]
+theorem genericNorm_one_tmul (σ : K →+* ℂ) (x : E) :
+    h.genericNorm σ (1 ⊗ₜ[𝓞 K] x) = h.norm σ (1 ⊗ₜ[𝓞 K] x) := by
+  simp [genericNorm_def, LinearEquiv.restrictScalars_apply]
+
+/-- Multiplying a generic vector by `a` multiplies its norm at `σ` by `|σ(a)|`. -/
+@[simp]
+theorem genericNorm_smul (σ : K →+* ℂ) (a : K) (t : K ⊗[𝓞 K] E) :
+    h.genericNorm σ (a • t) = ‖σ a‖ * h.genericNorm σ t := by
+  have hσ : a • (1 : Codomain σ) = σ a • (1 : Codomain σ) := by
+    rw [Algebra.smul_def, Algebra.smul_def, ← Codomain.equiv_algebraMap σ a,
+      Codomain.algebraMap_equiv]
+  rw [genericNorm_def, ← TensorProduct.smul_tmul, hσ, ← TensorProduct.smul_tmul', map_smul,
+    norm_smul, genericNorm_def]
+
+/-- The zero generic vector has norm zero at every embedding. -/
+@[simp]
+theorem genericNorm_zero (σ : K →+* ℂ) : h.genericNorm σ 0 = 0 := by
+  simp [genericNorm_def]
+
+/-- A generic vector has strictly positive norm at every embedding exactly when it is nonzero. -/
+@[simp]
+theorem genericNorm_pos_iff (σ : K →+* ℂ) {t : K ⊗[𝓞 K] E} :
+    0 < h.genericNorm σ t ↔ t ≠ 0 := by
+  constructor
+  · rintro hp rfl
+    simp at hp
+  · intro ht
+    exact h.norm_pos ((LinearEquiv.map_ne_zero_iff _).2 (TauCeti.tmul_ne_zero one_ne_zero ht))
 
 /-- At a real embedding, the form takes real values on vectors of `E`: it is the
 complexification of a real inner product on `E ⊗_σ ℝ`. -/

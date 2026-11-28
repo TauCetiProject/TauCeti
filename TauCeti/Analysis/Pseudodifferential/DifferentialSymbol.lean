@@ -98,6 +98,16 @@ theorem differentialSymbol_add (s : Finset ι) (v : ∀ i, Fin (k i) → E)
       differentialSymbol s v b p + differentialSymbol s v c p := by
   simp [differentialSymbol, smul_add, Finset.sum_add_distrib]
 
+/-- The symbol of a differential expression of order at most `N` is the sum over `j ≤ N` of the
+symbols of its summands of order `j`. -/
+theorem differentialSymbol_eq_sum_range_filter (N : ℕ) (s : Finset ι)
+    (v : ∀ i, Fin (k i) → E) (b : ι → E → V →L[ℂ] W) (hk : ∀ i ∈ s, k i ≤ N) (p : E × E) :
+    differentialSymbol s v b p =
+      ∑ j ∈ Finset.range (N + 1), differentialSymbol {i ∈ s | k i = j} v b p := by
+  simp only [differentialSymbol_def]
+  exact (Finset.sum_fiberwise_of_maps_to
+    (fun i hi => Finset.mem_range_succ_iff.2 (hk i hi)) _).symm
+
 @[simp]
 theorem differentialSymbol_smul (s : Finset ι) (v : ∀ i, Fin (k i) → E)
     (z : ℂ) (b : ι → E → V →L[ℂ] W) :
@@ -256,5 +266,29 @@ theorem support_quantizeSchwartzValue_differentialSymbol_subset (s : Finset ι)
     image_eq_zero_of_notMem_tsupport fun hx' ↦
       h (SchwartzMap.tsupport_iteratedLineDerivOp_subset (v i) u hx')
   simp [hzero]
+
+
+/-- **Second-order symbols on the line.** The quantization of `c₂(x) ξ² + c₁(x) i ξ` on `ℝ` is the
+differential operator `-c₂ ∂² + c₁ ∂`; it is the explicit one-dimensional case of
+`quantizeSchwartzValue_differentialSymbol_eq_sum_iteratedFDeriv`. -/
+theorem quantizeSchwartzValue_mul_sq_add_mul_I_mul (c₂ c₁ : ℝ → ℂ) (u : 𝓢(ℝ, ℂ)) (x : ℝ) :
+    quantizeSchwartzValue (fun p : ℝ × ℝ ↦
+      (c₂ p.1 * (p.2 : ℂ) ^ 2 + c₁ p.1 * (Complex.I * p.2)) • (1 : ℂ →L[ℂ] ℂ)) u x =
+      -c₂ x * deriv (deriv u) x + c₁ x * deriv u x := by
+  have hsym : (fun p : ℝ × ℝ ↦ (c₂ p.1 * (p.2 : ℂ) ^ 2 + c₁ p.1 * (Complex.I * p.2)) •
+      (1 : ℂ →L[ℂ] ℂ)) = differentialSymbol (ι := Fin 2) (k := ![2, 1]) Finset.univ
+      (fun _ _ ↦ (1 : ℝ))
+      ![fun y ↦ (-c₂ y) • (1 : ℂ →L[ℂ] ℂ), fun y ↦ c₁ y • (1 : ℂ →L[ℂ] ℂ)] := by
+    funext p
+    simp [differentialSymbol_def, Fin.sum_univ_two, Complex.I_sq, mul_pow]
+    module
+  rw [hsym, quantizeSchwartzValue_differentialSymbol_eq_sum_iteratedFDeriv]
+  simp [Fin.sum_univ_two, iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod, iteratedDeriv_succ]
+
+/-- The quantization of `c(x) ξ²` on `ℝ` is the differential operator `-c ∂²`. -/
+theorem quantizeSchwartzValue_mul_sq (c : ℝ → ℂ) (u : 𝓢(ℝ, ℂ)) (x : ℝ) :
+    quantizeSchwartzValue (fun p : ℝ × ℝ ↦ (c p.1 * (p.2 : ℂ) ^ 2) • (1 : ℂ →L[ℂ] ℂ)) u x =
+      -c x * deriv (deriv u) x := by
+  simpa using quantizeSchwartzValue_mul_sq_add_mul_I_mul c 0 u x
 
 end TauCeti

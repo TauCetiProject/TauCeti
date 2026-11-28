@@ -36,7 +36,8 @@ compact Spin group `Spin(n)`. This is the frame identification of the Spin group
 ## Main results
 
 * `OrthonormalBasis.negRealCliffordFormIsometryEquiv_apply`: the isometry sends `x` to
-  `∑ i, x i • b i`.
+  `∑ i, x i • b i`, that is, to `b.repr.symm x`
+  (`OrthonormalBasis.negRealCliffordFormIsometryEquiv_apply_eq_repr_symm`).
 * `OrthonormalBasis.negRealCliffordFormIsometryEquiv_single`: it sends the `i`-th coordinate vector
   to `b i`.
 * `OrthonormalBasis.negRealCliffordFormIsometryEquiv_symm_apply`: its inverse takes coordinates in
@@ -84,6 +85,14 @@ def negRealCliffordFormIsometryEquiv : (-realCliffordForm n 0).IsometryEquiv Q w
 theorem negRealCliffordFormIsometryEquiv_apply (x : Fin (n + 0) → ℝ) :
     b.negRealCliffordFormIsometryEquiv hQ x = ∑ i, x i • b i :=
   (b.toBasis.equivFun_symm_apply x).trans (by simp)
+
+/-- `OrthonormalBasis.negRealCliffordFormIsometryEquiv` is the inverse `b.repr.symm` of the
+coordinates in `b`, read on `ℝⁿ`. -/
+theorem negRealCliffordFormIsometryEquiv_apply_eq_repr_symm (x : Fin (n + 0) → ℝ) :
+    b.negRealCliffordFormIsometryEquiv hQ x = b.repr.symm (WithLp.toLp 2 x) := by
+  rw [negRealCliffordFormIsometryEquiv_apply, ← b.sum_repr_symm]
+  -- The two sums differ only in their index types `Fin (n + 0)` and `Fin n`.
+  rfl
 
 /-- `OrthonormalBasis.negRealCliffordFormIsometryEquiv` sends the `i`-th coordinate vector to
 `b i`. -/

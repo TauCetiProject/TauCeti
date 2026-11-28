@@ -27,6 +27,10 @@ The scoped column action on `ι → R` agrees with the matrix-to-endomorphism al
 equivalence; in particular its action map is bijective. This identifies the matrix module
 used by matrix Morita equivalence with the usual full endomorphism representation.
 
+The `Mₙ(R)`-linear map `f.mapMatrixModule ι : Mⁿ → Nⁿ` induced by `f : M → N` is, as an
+`R`-linear map, `f.compLeft ι`, so Mathlib's API for `LinearMap.compLeft` (for instance
+`LinearMap.range_compLeft`) applies to it; and it is injective when `f` is.
+
 The graph `Matrix.piGraph u P = {(x, u • x) : x ∈ P^ι}` of the action of a square matrix `u` on
 `V^ι`, over the coordinatewise power of a submodule `P`, is isomorphic to `P^ι`. When `2` and `u`
 are invertible, the graphs of `u` and `-u` meet only in zero: a vector `x` with `u • x = -u • x`
@@ -41,6 +45,8 @@ multiplication: changing by `A` and then by `B` is changing by `B * A`.
   soon as `1 - B` is a unit.
 * `Matrix.sum_mul_apply_smul`: two successive changes of a family by matrices `A` and then `B`
   are the change by `B * A`.
+* `LinearMap.restrictScalars_mapMatrixModule`, `LinearMap.mapMatrixModule_injective`: the map
+  `f.mapMatrixModule ι` is `f` applied in each coordinate, and is injective when `f` is.
 * `Matrix.piGraph`, `Matrix.mem_piGraph_iff`: the graph of a matrix action over `P^ι`.
 * `Matrix.disjoint_piGraph_neg`: the graphs of an invertible matrix and of its negative meet only
   in zero when `2` is invertible.
@@ -98,6 +104,25 @@ theorem lsmul_bijective :
   exact Matrix.toLinAlgEquiv'.bijective
 
 end Matrix.Module
+
+namespace LinearMap
+
+variable {R ι M N : Type*} [Ring R] [Fintype ι] [DecidableEq ι] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N]
+
+/-- As an `R`-linear map, the `Mₙ(R)`-linear map `f.mapMatrixModule ι` is `f.compLeft ι`: `f`
+applied in each coordinate. -/
+@[simp]
+theorem restrictScalars_mapMatrixModule (f : M →ₗ[R] N) :
+    (f.mapMatrixModule ι).restrictScalars R = f.compLeft ι :=
+  (rfl)
+
+/-- Applying an injective map in each coordinate is injective. -/
+theorem mapMatrixModule_injective {f : M →ₗ[R] N} (hf : Function.Injective f) :
+    Function.Injective (f.mapMatrixModule ι) :=
+  fun _ _ h ↦ funext fun i ↦ hf (by simpa using congr_fun h i)
+
+end LinearMap
 
 namespace Matrix
 

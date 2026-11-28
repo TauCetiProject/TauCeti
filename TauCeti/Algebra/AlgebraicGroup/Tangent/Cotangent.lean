@@ -329,6 +329,14 @@ noncomputable def dualCotangentMap (φ : A →ₐc[R] A') :
       Module.Dual R (Bialgebra.CotangentSpace R A) :=
   (Bialgebra.cotangentSpaceMap φ).dualMap
 
+/-- The differential of `φ` evaluates a functional on the cotangent class of `φ a`. -/
+@[simp]
+lemma dualCotangentMap_apply_cotangentMap (φ : A →ₐc[R] A')
+    (y : Module.Dual R (Bialgebra.CotangentSpace R A')) (a : A) :
+    dualCotangentMap φ y (Bialgebra.cotangentMap R A a) =
+      y (Bialgebra.cotangentMap R A' (φ a)) := by
+  rw [dualCotangentMap, LinearMap.dualMap_apply, Bialgebra.cotangentSpaceMap_cotangentMap]
+
 /-- Under cotangent duality, precomposition with the cotangent map of `φ` is precomposition of
 derivations along `φ`. -/
 lemma cotangentLinearEquiv_comp_cotangentSpaceMap [Ring B] [Algebra R B] (φ : A →ₐc[R] A')
@@ -349,6 +357,19 @@ lemma cotangentLinearEquiv_dualCotangentMap (φ : A →ₐc[R] A')
       derivationComp (B := R) φ (cotangentLinearEquiv (R := R) (A := A') (B := R) y) := by
   rw [dualCotangentMap, LinearMap.dualMap_apply']
   exact cotangentLinearEquiv_comp_cotangentSpaceMap φ y
+
+/-- **The differential of a section.** If `φ ∘ χ` is the identity and pulling the tangent vector
+`w` back along `φ` gives `y`, then the differential of `χ` sends `y` to `w`. -/
+lemma dualCotangentMap_eq_of_derivationComp_cotangentLinearEquiv (φ : A →ₐc[R] A')
+    (χ : A' →ₐc[R] A) (h : φ.comp χ = BialgHom.id R A')
+    {y : Module.Dual R (Bialgebra.CotangentSpace R A)}
+    {w : Module.Dual R (Bialgebra.CotangentSpace R A')}
+    (hw : derivationComp (B := R) φ (cotangentLinearEquiv (R := R) (A := A') (B := R) w) =
+      cotangentLinearEquiv (R := R) (A := A) (B := R) y) :
+    dualCotangentMap χ y = w := by
+  apply (cotangentLinearEquiv (R := R) (A := A') (B := R)).injective
+  rw [cotangentLinearEquiv_dualCotangentMap, ← hw,
+    derivationComp_derivationComp_eq_self_of_comp_eq_id φ χ h]
 
 /-- A surjective coordinate map induces an injective differential on cotangent duals. -/
 lemma _root_.BialgHom.dualCotangentMap_injective_of_surjective (φ : A →ₐc[R] A')
@@ -512,6 +533,16 @@ theorem tangentScalarExtensionEquiv_tmul
       (algebraMap R B (f (Bialgebra.cotangentMap R A a)) :
         Bialgebra.CounitAlgebra R A B)]
   exact algEquivSelf_tangentScalarExtensionEquivBase_tmul_apply b f a
+
+/-- Over the base ring itself, scalar extension sends `1 ⊗ₜ f` to `cotangentLinearEquiv f`. -/
+theorem tangentScalarExtensionEquiv_one_tmul_self
+    (f : Module.Dual R (Bialgebra.CotangentSpace R A)) :
+    tangentScalarExtensionEquiv (R := R) (A := A) (B := R) (1 ⊗ₜ[R] f) =
+      cotangentLinearEquiv (R := R) (A := A) (B := R) f := by
+  ext a
+  apply (Bialgebra.CounitAlgebra.algEquivSelf R A R).injective
+  rw [tangentScalarExtensionEquiv_tmul, TauCeti.algEquivSelf_derivation_smul_apply,
+    one_mul, Algebra.ofId_self, mapValue_id, LinearMap.id_apply]
 
 /-- Scalar extension of tangent vectors intertwines the differential of `φ : A →ₐc[R] A'` on
 cotangent duals with precomposition of `B`-valued derivations. -/

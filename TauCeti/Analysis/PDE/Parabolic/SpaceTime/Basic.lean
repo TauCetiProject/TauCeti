@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.ProdLp
+public import Mathlib.Topology.MetricSpace.Holder
 public import Mathlib.Topology.MetricSpace.Snowflaking
 
 /-!
@@ -37,6 +38,9 @@ distances. The topology is the ordinary product topology on `E × ℝ`.
 * `TauCeti.ParabolicSpaceTime.slab`: the closed time slab `E × [a, b]`.
 * `TauCeti.ParabolicSpaceTime.spatialSlice`, `TauCeti.ParabolicSpaceTime.timeSlice`: the
   continuous inclusions of a fixed-time spatial slice and of a fixed-position time slice.
+* `TauCeti.ParabolicSpaceTime.holderWith_slabTime` and
+  `TauCeti.ParabolicSpaceTime.holderWith_timeSlice`: the slab time coordinate is `2`-Hölder and
+  each time slice is `(1 / 2)`-Hölder with constant `1`.
 * `TauCeti.ParabolicSpaceTime.iccTimeReverse` and `TauCeti.ParabolicSpaceTime.slabTimeReverse`:
   the time reversal `t ↦ T - t`, as an isometry from the interval `[T - b, T - a]` onto `[a, b]`
   and from the slab `E × [T - b, T - a]` onto `E × [a, b]`.
@@ -405,6 +409,29 @@ theorem isClosed_slab (a b : ℝ) : IsClosed (slab (E := E) a b) :=
   isClosed_Icc.preimage continuous_time
 
 end TopologicalSpace
+
+section PseudoEMetricSpaceMaps
+
+variable [PseudoEMetricSpace E]
+
+/-- The slab time projection is `2`-Hölder with constant `1`. -/
+theorem holderWith_slabTime {a b : ℝ} :
+    HolderWith 1 2 (slabTime : slab (E := E) a b → Icc a b) := by
+  intro p q
+  rw [ENNReal.coe_one, one_mul, Subtype.edist_eq, coe_slabTime, coe_slabTime, NNReal.coe_ofNat]
+  calc edist (p : ParabolicSpaceTime E).time (q : ParabolicSpaceTime E).time
+      = (edist (p : ParabolicSpaceTime E).time (q : ParabolicSpaceTime E).time ^ (1 / 2 : ℝ)) ^
+          (2 : ℝ) := by
+        rw [← ENNReal.rpow_mul, one_div_mul_cancel two_ne_zero, ENNReal.rpow_one]
+    _ ≤ edist p q ^ (2 : ℝ) :=
+        ENNReal.rpow_le_rpow (edist_time_rpow_le (p : ParabolicSpaceTime E) q) two_pos.le
+
+/-- Every fixed-space time slice `t ↦ (x, t)` of a slab is `(1 / 2)`-Hölder with constant `1`. -/
+theorem holderWith_timeSlice {a b : ℝ} (x : E) :
+    HolderWith 1 (1 / 2) (timeSlice (E := E) (a := a) (b := b) x) := fun t s ↦ by
+  simpa [timeSlice_apply] using (edist_slabMk_same_space_rpow x t s 1).le
+
+end PseudoEMetricSpaceMaps
 
 /-! ### Time reversal -/
 
