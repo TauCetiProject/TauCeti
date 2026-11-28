@@ -24,9 +24,14 @@ convergence criterion for reciprocal natural powers.
 `TauCeti.hasSum_one_div_sub_pow_add_one_div_add_pow` uses this criterion to split the paired
 series into the nearest term and the remaining paired tail.
 
+The tails `∑ᵢ (i + k)^{-(N + 2)}` of the `p`-series with a natural exponent `N + 2` are `O(k^{-N})`,
+by a termwise comparison with `(i + 1)^{-2} k^{-N}`.
+
 ## Main results
 
 * `TauCeti.summable_one_add_abs_int_rpow` — `∑ n : ℤ, (1 + |n|) ^ r` converges for `r < -1`.
+* `TauCeti.tsum_inv_natCast_add_pow_le` — the tails `∑ᵢ (i + k)^{-(N + 2)}` of the `p`-series with
+  natural exponent `N + 2` are at most `(∑ᵢ (i + 1)^{-2}) k^{-N}` for `k ≥ 1`.
 -/
 
 public section
@@ -87,5 +92,23 @@ theorem summable_one_add_abs_int_rpow {r : ℝ} (hr : r < -1) :
   rw [neg_neg] at h
   exact h.const_add_rpow (by linarith) ((Filter.eventually_cofinite_ne 0).mono fun n hn ↦
     abs_pos.2 (Int.cast_ne_zero.2 hn)) 1
+
+/-- **Tails of `∑ k^{-(N + 2)}` are `O(k^{-N})`.** For `k ≥ 1`,
+`∑ᵢ (i + k)^{-(N + 2)} ≤ (∑ᵢ (i + 1)^{-2}) k^{-N}`. -/
+theorem tsum_inv_natCast_add_pow_le (N : ℕ) {k : ℕ} (hk : 1 ≤ k) :
+    ∑' i : ℕ, (((i + k : ℕ) : ℝ) ^ (N + 2))⁻¹ ≤
+      (∑' i : ℕ, (((i : ℝ) + 1) ^ 2)⁻¹) * ((k : ℝ) ^ N)⁻¹ := by
+  have hS : Summable fun i : ℕ ↦ (((i : ℝ) + 1) ^ 2)⁻¹ := by
+    simpa using (summable_nat_add_iff 1).2 (Real.summable_nat_pow_inv.2 one_lt_two)
+  rw [← tsum_mul_right]
+  refine Summable.tsum_le_tsum (fun i ↦ ?_) ((summable_nat_add_iff k).2
+    (Real.summable_nat_pow_inv.2 (by omega))) (hS.mul_right _)
+  have hk' : (1 : ℝ) ≤ k := by exact_mod_cast hk
+  rw [← mul_inv, Nat.cast_add]
+  refine inv_anti₀ (by positivity) ?_
+  calc ((i : ℝ) + 1) ^ 2 * (k : ℝ) ^ N ≤ ((i : ℝ) + k) ^ 2 * ((i : ℝ) + k) ^ N := by
+        gcongr
+        linarith
+    _ = ((i : ℝ) + k) ^ (N + 2) := by ring
 
 end TauCeti

@@ -45,6 +45,10 @@ underlying Pincherle's theorem for explicit recurrence solutions.
 * `TauCeti.casoratian_of_recurrence`, `TauCeti.casoratian_contFrac_contsAux_b` — the Casoratian
   identities for general solutions and against the denominator continuants.
 * `TauCeti.contFrac_contsAux_b_div_sub` — the reduction-of-order telescoping sum for `Bₙ₋₁ / f(n)`.
+* `TauCeti.casoratian_add_one_of_difference_eq_zero` — for two solutions of
+  `w(n + 2) + fₙ w(n + 1) + gₙ w(n) = 0`, each step multiplies the Casoratian by `gₙ`.
+* `TauCeti.norm_casoratian_add_le_of_difference_eq_zero` — if moreover `‖gₙ‖ ≤ γ` for `n ≥ n₁`,
+  the Casoratian at `n₁ + k` is at most `γᵏ` times its value at `n₁`.
 * `TauCeti.exists_eventuallyEq_const_mul_of_casoratian` — if `w₁` is eventually nonzero and the
   Casoratian of `w₁` and `w` eventually vanishes, then `w` is eventually a constant multiple
   of `w₁`.
@@ -234,6 +238,36 @@ theorem contFrac_contsAux_b_div_sub {a b f : ℕ → K}
   linear_combination hcas
 
 /-! ### Proportional solutions and backward extension -/
+
+/-- **One step of the Casoratian.** If `w` and `v` both satisfy
+`y (n + 2) + f n * y (n + 1) + g n * y n = 0` at `n`, then their Casoratian
+`w n * v (n + 1) - w (n + 1) * v n` is multiplied by `g n` from `n` to `n + 1`. -/
+theorem casoratian_add_one_of_difference_eq_zero {R : Type*} [CommRing R] {f g w v : ℕ → R}
+    {n : ℕ} (hw : w (n + 2) + f n * w (n + 1) + g n * w n = 0)
+    (hv : v (n + 2) + f n * v (n + 1) + g n * v n = 0) :
+    w (n + 1) * v (n + 1 + 1) - w (n + 1 + 1) * v (n + 1) =
+      g n * (w n * v (n + 1) - w (n + 1) * v n) := by
+  linear_combination w (n + 1) * hv - v (n + 1) * hw
+
+/-- **Geometric bound on the Casoratian.** If `w` and `v` both satisfy
+`y (n + 2) + f n * y (n + 1) + g n * y n = 0` for `n ≥ n₁`, where `‖g n‖ ≤ γ`, then their
+Casoratian `w n * v (n + 1) - w (n + 1) * v n` at `n₁ + k` is at most `γ ^ k` times its value
+at `n₁`. -/
+theorem norm_casoratian_add_le_of_difference_eq_zero {R : Type*} [SeminormedCommRing R]
+    {f g w v : ℕ → R} {γ : ℝ} {n₁ : ℕ}
+    (hw : ∀ n, n₁ ≤ n → w (n + 2) + f n * w (n + 1) + g n * w n = 0)
+    (hv : ∀ n, n₁ ≤ n → v (n + 2) + f n * v (n + 1) + g n * v n = 0)
+    (hg : ∀ n, n₁ ≤ n → ‖g n‖ ≤ γ) (k : ℕ) :
+    ‖w (n₁ + k) * v (n₁ + k + 1) - w (n₁ + k + 1) * v (n₁ + k)‖ ≤
+      γ ^ k * ‖w n₁ * v (n₁ + 1) - w (n₁ + 1) * v n₁‖ := by
+  have hγ0 : 0 ≤ γ := (norm_nonneg _).trans (hg n₁ le_rfl)
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [← add_assoc, casoratian_add_one_of_difference_eq_zero (hw _ (by omega)) (hv _ (by omega)),
+      pow_succ, mul_right_comm]
+    exact (norm_mul_le _ _).trans <|
+      (mul_le_mul (hg _ (by omega)) ih (norm_nonneg _) hγ0).trans_eq (by ring)
 
 /-- If `w₁` is eventually nonzero and the Casoratian `w₁ n * w (n + 1) - w₁ (n + 1) * w n`
 eventually vanishes, then `w` is eventually a constant multiple of `w₁`. -/

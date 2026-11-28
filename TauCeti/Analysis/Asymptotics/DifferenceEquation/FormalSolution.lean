@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
 public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.RingTheory.Binomial
+public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
 import TauCeti.Analysis.Asymptotics.TruncatedPowerSeries
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.RingTheory.PowerSeries.Trunc
@@ -59,6 +60,11 @@ term is the residual estimated here (Wong and Li); for the root of smaller modul
   `N` terms differ by `O(|ρ|ⁿ n^{Re α - N})`.
 * `TauCeti.isEquivalent_formalDifferenceSolution`: for `M ≥ 1` and `a₀ = 1`, the truncation
   after `M` terms is asymptotic to `ρⁿ n^α`.
+* `TauCeti.isEquivalent_of_isBigO_sub_formalDifferenceSolution_one`: for `a₀ = 1`, a sequence
+  within `O(|ρ|ⁿ n^{Re α - 1})` of the leading term is asymptotic to `ρⁿ n^α`.
+* `TauCeti.hasAsymptoticExpansion_of_isBigO_sub_formalDifferenceSolution`: a sequence within
+  `O(|ρ|ⁿ n^{Re α - N})` of the truncation after `N` terms, for every `N`, has the asymptotic
+  expansion `ρⁿ n^α ∑ aₛ n⁻ˢ`.
 * `TauCeti.isBigO_formalDifferenceSolution_residual_sub`: for arbitrary coefficients `a`, the
   residual of the truncation after `N + 1` terms is
   `ρⁿ n^α ∑_{t ≤ N} (differenceResidualCoeff fs gs ρ α a t) n⁻ᵗ + O(|ρ|ⁿ n^{Re α - N - 1})`.
@@ -315,6 +321,28 @@ theorem isEquivalent_formalDifferenceSolution {a : ℕ → ℂ} (ha : a 0 = 1) (
   rw [hu₁, Nat.cast_one] at h
   exact h.trans_isLittleO (isLittleO_norm_pow_mul_rpow_pow_mul_cpow ρ (sub_one_lt α.re))
 
+/-- For `a₀ = 1`, a sequence that differs from the truncation after one term, `ρⁿ n^α`, by
+`O(|ρ|ⁿ n^{Re α - 1})` is asymptotic to `ρⁿ n^α`. -/
+theorem isEquivalent_of_isBigO_sub_formalDifferenceSolution_one {a v : ℕ → ℂ} (ha : a 0 = 1)
+    {ρ α : ℂ} (hv : (fun n ↦ v n - formalDifferenceSolution a ρ α 1 n) =O[atTop]
+      fun n ↦ ‖ρ‖ ^ n * (n : ℝ) ^ (α.re - 1)) :
+    v ~[atTop] fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α :=
+  (hv.trans_isLittleO (isLittleO_norm_pow_mul_rpow_pow_mul_cpow ρ (sub_one_lt α.re))).congr_left
+    fun n ↦ by simp [formalDifferenceSolution_def, ha]
+
+/-- If, for every `N`, `w` differs from the truncation `ρⁿ n^α ∑_{s < N} aₛ n⁻ˢ` by
+`O(|ρ|ⁿ n^{Re α - N})`, then `w` has the asymptotic expansion `ρⁿ n^α ∑ aₛ n⁻ˢ`. -/
+theorem hasAsymptoticExpansion_of_isBigO_sub_formalDifferenceSolution {a w : ℕ → ℂ} {ρ α : ℂ}
+    (h : ∀ N, (fun n ↦ w n - formalDifferenceSolution a ρ α N n) =O[atTop]
+      fun n ↦ ‖ρ‖ ^ n * (n : ℝ) ^ (α.re - N)) :
+    HasAsymptoticExpansion atTop (fun s (n : ℕ) ↦ ρ ^ n * (n : ℂ) ^ α * (n : ℂ)⁻¹ ^ s) a w := by
+  refine .of_isBigO fun N ↦ ((h N).trans (IsBigO.of_bound 1 ?_)).congr_left fun n ↦ ?_
+  · filter_upwards [eventually_ge_atTop 1] with n hn
+    rw [one_mul, norm_pow_mul_cpow_mul_inv_pow ρ α N (by omega),
+      Real.norm_of_nonneg (by positivity)]
+  · simp only [formalDifferenceSolution_def, mul_sum, smul_eq_mul]
+    exact congrArg _ (sum_congr rfl fun s _ ↦ by ring)
+
 /-- **Residual of a truncated formal solution.** Let `f` and `g` have the expansions
 `f n = ∑_{q ≤ N} f_q n^{-q} + O(n^{-N-1})` and `g n = ∑_{q ≤ N} g_q n^{-q} + O(n^{-N-1})`. For
 any coefficients `a`, the truncation `w n = ρⁿ n^α ∑_{s ≤ N} aₛ n⁻ˢ` satisfies
@@ -431,6 +459,18 @@ theorem mul_differenceCoeff {fs gs : ℕ → ℂ} {ρ : ℂ} (hρ₀ : ρ * (fs 
   | succ s =>
     rw [differenceCoeff_succ, ← mul_assoc, Nat.cast_succ,
       mul_inv_cancel₀ (mul_ne_zero hρ₀ (Nat.cast_add_one_ne_zero s)), one_mul]
+
+/-- A root `ρ` of `ρ² + f₀ ρ + g₀ = 0` whose modulus differs from that of the other root `g₀ / ρ`,
+that is `‖ρ‖ ^ 2 ≠ ‖g₀‖`, is nonzero and simple: `ρ (f₀ + 2ρ) ≠ 0`, as
+`TauCeti.mul_differenceCoeff` requires. -/
+theorem mul_ne_zero_of_norm_sq_ne {fs gs : ℕ → ℂ} {ρ : ℂ} (hρ : ρ ^ 2 + fs 0 * ρ + gs 0 = 0)
+    (hne : ‖ρ‖ ^ 2 ≠ ‖gs 0‖) : ρ * (fs 0 + 2 * ρ) ≠ 0 := by
+  refine mul_ne_zero (fun h ↦ hne ?_) fun h ↦ hne ?_
+  · subst h
+    have : gs 0 = 0 := by linear_combination hρ
+    simp [this]
+  · have : gs 0 = ρ ^ 2 := by linear_combination hρ - ρ * h
+    rw [this, norm_pow]
 
 /-- For an equation with constant coefficients, `f n = f₀` and `g n = g₀`, and `α = 0`, all the
 coefficients `aₛ` with `s ≥ 1` vanish, for every `ρ`. So when `ρ` is a root of the characteristic

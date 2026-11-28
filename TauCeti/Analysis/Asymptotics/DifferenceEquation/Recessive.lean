@@ -63,8 +63,9 @@ over `k` is dominated by a geometric series in `|ρ|² / γ`, so that
 the expansion needs its own `M`; the solutions so obtained coincide, because the Casoratian of two
 solutions is multiplied by `g n` at each step and so cannot be `O((r ^ 2)ⁿ)` without vanishing.
 
-The solution for the root of larger modulus, and the case of roots of equal modulus, are not
-treated here.
+The solution for the root of larger modulus is constructed in
+`TauCeti.Analysis.Asymptotics.DifferenceEquation.Dominant`; the case of roots of equal modulus is
+not treated.
 
 ## References
 
@@ -435,7 +436,7 @@ theorem exists_eventuallyEq_const_mul_of_isBigO_pow {𝕜 : Type*} [NormedField 
     (hw₁0 : ∀ᶠ n in atTop, w₁ n ≠ 0) (hw₁r : w₁ =O[atTop] fun n ↦ r ^ n)
     (hwr : w =O[atTop] fun n ↦ r ^ n) :
     ∃ c : 𝕜, w =ᶠ[atTop] fun n ↦ c * w₁ n := by
-  set C : ℕ → 𝕜 := fun n ↦ w₁ n * w (n + 1) - w₁ (n + 1) * w n with hC_def
+  set C : ℕ → 𝕜 := fun n ↦ w₁ n * w (n + 1) - w₁ (n + 1) * w n
   have hγ0 : 0 < γ := (sq_nonneg r).trans_lt hrγ
   -- the Casoratian is `o(γ ^ n)`
   have hshift {v : ℕ → 𝕜} (hv : v =O[atTop] fun n ↦ r ^ n) :
@@ -448,10 +449,8 @@ theorem exists_eventuallyEq_const_mul_of_isBigO_pow {𝕜 : Type*} [NormedField 
     exact hCO.trans_isLittleO (isLittleO_pow_pow_of_lt_left (sq_nonneg r) hrγ)
   -- beyond `n₁` the Casoratian is multiplied by `g n` with `‖g n‖ ≥ γ`
   obtain ⟨n₁, hn₁⟩ := eventually_atTop.1 (hw₁.and (hw.and hgγ))
-  have hCrec (n : ℕ) (hn : n₁ ≤ n) : C (n + 1) = g n * C n := by
-    obtain ⟨h₁, h₂, -⟩ := hn₁ n hn
-    simp only [hC_def]
-    linear_combination w₁ (n + 1) * h₂ - w (n + 1) * h₁
+  have hCrec (n : ℕ) (hn : n₁ ≤ n) : C (n + 1) = g n * C n :=
+    casoratian_add_one_of_difference_eq_zero (hn₁ n hn).1 (hn₁ n hn).2.1
   have hCgrowth (n : ℕ) (hn : n₁ ≤ n) (k : ℕ) : γ ^ k * ‖C n‖ ≤ ‖C (n + k)‖ := by
     induction k with
     | zero => simp
@@ -492,10 +491,7 @@ theorem difference_solution_unique_of_norm_sq_lt {f g w w' : ℕ → ℂ} {g₀ 
       filter_upwards [isLittleO_zero_right_iff.1 (hv.congr' .rfl hφz), hφz] with n h₁ h₂
       simpa [h₂] using h₁
     exact (hz hwl).trans (hz hw'l).symm
-  have hφ0 : ∀ᶠ n in atTop, φ n ≠ 0 := by
-    filter_upwards [eventually_ge_atTop 1] with n hn
-    exact mul_ne_zero (pow_ne_zero _ hρ) (norm_ne_zero_iff.1
-      (Complex.norm_natCast_cpow_pos_of_pos hn α).ne')
+  have hφ0 : ∀ᶠ n in atTop, φ n ≠ 0 := eventually_pow_mul_cpow_ne_zero α hρ
   -- `w` is eventually nonzero, and `w` and `w'` are `O(φ)`
   have hw0 : ∀ᶠ n in atTop, w n ≠ 0 := by
     filter_upwards [hwl.bound (by norm_num : (0 : ℝ) < 1 / 2), hφ0] with n hn hφn h0
@@ -526,18 +522,6 @@ theorem difference_solution_unique_of_norm_sq_lt {f g w w' : ℕ → ℂ} {g₀ 
 
 /-! ### The recessive solution -/
 
-/-- The characteristic root `ρ` with `‖ρ‖ ^ 2 < ‖g₀‖` is nonzero and simple. -/
-private lemma mul_ne_zero_of_norm_sq_lt {fs gs : ℕ → ℂ} {ρ : ℂ} (hρ : ρ ^ 2 + fs 0 * ρ + gs 0 = 0)
-    (hlt : ‖ρ‖ ^ 2 < ‖gs 0‖) : ρ * (fs 0 + 2 * ρ) ≠ 0 := by
-  refine mul_ne_zero (fun h ↦ ?_) fun h ↦ ?_
-  · subst h
-    have : gs 0 = 0 := by linear_combination hρ
-    rw [this, norm_zero] at hlt
-    exact (sq_nonneg _).not_gt hlt
-  · have : gs 0 = ρ ^ 2 := by linear_combination hρ - ρ * h
-    rw [this, norm_pow] at hlt
-    exact lt_irrefl _ hlt
-
 /-- For `M ≥ 1` and `a₀ = 1`, the truncation `ρⁿ n^α ∑_{s < M} aₛ n⁻ˢ` is eventually between
 half and twice `|ρ|ⁿ n^{Re α}` in norm. -/
 private lemma eventually_norm_formalDifferenceSolution {a : ℕ → ℂ} (ha : a 0 = 1) (ρ α : ℂ)
@@ -566,7 +550,7 @@ private theorem exists_eventually_solution_isBigO {f g fs gs : ℕ → ℂ} {ρ 
       ∀ N' ≤ N, (fun n ↦ w n - formalDifferenceSolution (differenceCoeff fs gs ρ α) ρ α N' n)
         =O[atTop] fun n ↦ ‖ρ‖ ^ n * (n : ℝ) ^ (α.re - N') := by
   set a := differenceCoeff fs gs ρ α
-  have hρ₀ := mul_ne_zero_of_norm_sq_lt hρ hlt
+  have hρ₀ := mul_ne_zero_of_norm_sq_ne hρ hlt.ne
   have hR : 0 < ‖ρ‖ := norm_pos_iff.2 (left_ne_zero_of_mul hρ₀)
   -- the comparison function `u` is the truncation after `M` terms
   set M := N + ⌈α.re + 3 * |α.re|⌉₊ + 1
@@ -630,33 +614,23 @@ theorem exists_eventually_difference_solution_of_norm_sq_lt {f g fs gs : ℕ →
     ∃ w : ℕ → ℂ, (∀ᶠ n in atTop, w (n + 2) + f n * w (n + 1) + g n * w n = 0) ∧
       HasAsymptoticExpansion atTop (fun s (n : ℕ) ↦ ρ ^ n * (n : ℂ) ^ α * (n : ℂ)⁻¹ ^ s)
         (differenceCoeff fs gs ρ α) w := by
-  set a := differenceCoeff fs gs ρ α
-  have hg₀ : Tendsto g atTop (𝓝 (gs 0)) := by
-    have h := (hg.isBigO 1).trans_tendsto
-      (by simpa using tendsto_inv_atTop_nhds_zero_nat (𝕜 := ℂ))
-    simpa using h.add_const (gs 0)
+  have hg₀ := hg.tendsto_coeff_zero_of_pow tendsto_inv_atTop_nhds_zero_nat
   -- a remainder `O(|ρ|ⁿ n^{Re α - 1})` after the leading term is `o(ρⁿ n^α)`
   have hlead {v : ℕ → ℂ}
-      (hv : (fun n ↦ v n - formalDifferenceSolution a ρ α 1 n) =O[atTop]
+      (hv : (fun n ↦ v n - formalDifferenceSolution (differenceCoeff fs gs ρ α) ρ α 1 n) =O[atTop]
         fun n ↦ ‖ρ‖ ^ n * (n : ℝ) ^ (α.re - (1 : ℕ))) :
-      (fun n ↦ v n - ρ ^ n * (n : ℂ) ^ α) =o[atTop] fun n ↦ ρ ^ n * (n : ℂ) ^ α := by
-    refine (hv.trans_isLittleO (isLittleO_norm_pow_mul_rpow_pow_mul_cpow ρ ?_)).congr_left
-      fun n ↦ ?_
-    · simp
-    · simp [formalDifferenceSolution_def, a]
+      (fun n ↦ v n - ρ ^ n * (n : ℂ) ^ α) =o[atTop] fun n ↦ ρ ^ n * (n : ℂ) ^ α :=
+    (isEquivalent_of_isBigO_sub_formalDifferenceSolution_one (differenceCoeff_zero fs gs ρ α)
+      (by simpa using hv)).isLittleO
   obtain ⟨w, hw, hwO⟩ := exists_eventually_solution_isBigO hf hg hg₀ hρ hα hlt 1
-  refine ⟨w, hw, .of_isBigO fun N ↦ ?_⟩
+  refine ⟨w, hw, hasAsymptoticExpansion_of_isBigO_sub_formalDifferenceSolution fun N ↦ ?_⟩
   -- the solution built to order `N + 1` is `w`
   obtain ⟨w', hw', hw'O⟩ := exists_eventually_solution_isBigO hf hg hg₀ hρ hα hlt (N + 1)
   have heq := difference_solution_unique_of_norm_sq_lt hg₀ hlt hw hw' (hlead (hwO 1 le_rfl))
     (hlead (hw'O 1 (by omega)))
-  refine ((hw'O N (by omega)).trans (IsBigO.of_bound 1 ?_)).congr' ?_ EventuallyEq.rfl
-  · filter_upwards [eventually_ge_atTop 1] with n hn
-    rw [one_mul, norm_pow_mul_cpow_mul_inv_pow ρ α N (by omega),
-      Real.norm_of_nonneg (by positivity)]
-  · filter_upwards [heq] with n hn
-    rw [hn, formalDifferenceSolution_def, mul_sum]
-    exact congrArg _ (sum_congr rfl fun s _ ↦ by rw [smul_eq_mul]; ring)
+  refine (hw'O N (by omega)).congr' ?_ EventuallyEq.rfl
+  filter_upwards [heq] with n hn
+  rw [hn]
 
 /-- **The recessive solution of a difference equation** (DLMF 2.9.8). Under the hypotheses of
 `TauCeti.exists_eventually_difference_solution_of_norm_sq_lt`, if moreover `g` vanishes nowhere,
