@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Int.Parity
 public import Mathlib.Dynamics.PeriodicPts.Defs
 
 /-!
@@ -12,8 +13,9 @@ public import Mathlib.Dynamics.PeriodicPts.Defs
 
 For a group `G` acting on `α`, the period of `g : G` at a point (the least `n > 0` with
 `g ^ n • a = a`) is constant along the orbit of `a` under the powers of `g`
-(`MulAction.minimalPeriod_zpow_smul`). Mathlib has `MulAction.period` and its divisibility API
-(`MulAction.pow_smul_eq_iff_minimalPeriod_dvd`) but not this invariance.
+(`MulAction.minimalPeriod_zpow_smul`).
+For a point fixed by `g ^ 2`, `MulAction.zpow_smul_eq_ite_of_sq_smul_eq` reads the translated
+point off the parity of the exponent. It uses Mathlib's `MulAction.zpow_smul_eq_iff_period_dvd`.
 -/
 
 public section
@@ -33,5 +35,20 @@ theorem minimalPeriod_zpow_smul {G α : Type*} [Group G] [MulAction G α] (g : G
   refine Nat.dvd_antisymm (key a j) ?_
   have h := key (g ^ j • a) (-j)
   rwa [← mul_smul, ← zpow_add, neg_add_cancel, zpow_zero, one_smul] at h
+
+/-- If `g ^ 2` fixes `a`, then an even power of `g` fixes `a` and an odd power of `g` sends
+it to `g • a`. -/
+theorem zpow_smul_eq_ite_of_sq_smul_eq {G α : Type*} [Group G] [MulAction G α] (g : G)
+    {a : α} (ha : g ^ 2 • a = a) (n : ℤ) : g ^ n • a = if Even n then a else g • a := by
+  have hperiod : (period g a : ℤ) ∣ 2 :=
+    zpow_smul_eq_iff_period_dvd.mp (by simpa only [zpow_ofNat] using ha)
+  have hfix (k : ℤ) : g ^ (2 * k) • a = a :=
+    zpow_smul_eq_iff_period_dvd.mpr (hperiod.trans (dvd_mul_right _ _))
+  rcases Int.even_or_odd' n with ⟨k, rfl | rfl⟩
+  · rw [ite_eq_left (even_two_mul k), hfix]
+  · have hk : Odd (2 * k + 1) := ⟨k, rfl⟩
+    have hpow : g ^ (2 * k + 1) = g * g ^ (2 * k) := by
+      rw [add_comm (2 * k) 1, zpow_add, zpow_one]
+    rw [ite_eq_right (Int.not_even_iff_odd.mpr hk), hpow, mul_smul, hfix]
 
 end MulAction
