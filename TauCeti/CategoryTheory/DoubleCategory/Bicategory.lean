@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Bicategory.CatEnriched
 public import Mathlib.CategoryTheory.Bicategory.Functor.StrictPseudofunctor
-public import TauCeti.CategoryTheory.DoubleCategory.Globular
+public import TauCeti.CategoryTheory.DoubleCategory.Globular.Basic
 
 /-!
 # The globular strict bicategories of a double category

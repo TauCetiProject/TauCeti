@@ -21,6 +21,11 @@ If `p` has smaller degree than `q`, then the largest degree at which the coeffic
 `Polynomial.exists_coeff_iff_of_degree_lt` records this in the form in which it decides a
 lexicographic comparison of coefficient sequences, starting from the top degree.
 
+Over an ordered semiring, products of polynomials with nonnegative coefficients retain
+nonnegative coefficients (`Polynomial.coeff_mul_nonneg`), and multiplying on the right by a
+polynomial with nonnegative coefficients and constant term at least `1` does not decrease any
+coefficient (`Polynomial.coeff_le_coeff_mul`).
+
 For a bivariate polynomial `P : R[X][X]`, every coefficient `(P.coeff j).coeff i` is either zero
 or lies in the finite union `P.support.biUnion fun j ↦ (P.coeff j).coeffs`
 (`Polynomial.coeff_eq_zero_or_mem_biUnion_coeffs`).
@@ -64,6 +69,25 @@ theorem exists_coeff_iff_of_degree_lt {R : Type*} [Semiring R] {r : R → R → 
   · rwa [hp, coeff_natDegree] at hpqi
   · rw [hpq i hgt] at hpqi
     exact absurd hpqi (hr _)
+
+/-- The product of two polynomials with nonnegative coefficients has nonnegative coefficients. -/
+theorem coeff_mul_nonneg {R : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
+    {p q : R[X]} (hp : ∀ d, 0 ≤ p.coeff d) (hq : ∀ d, 0 ≤ q.coeff d) (d : ℕ) :
+    0 ≤ (p * q).coeff d := by
+  rw [coeff_mul]
+  exact Finset.sum_nonneg fun _ _ ↦ mul_nonneg (hp _) (hq _)
+
+/-- Multiplying a polynomial with nonnegative coefficients on the right by a polynomial with
+nonnegative coefficients and constant term at least `1` does not decrease any coefficient. -/
+theorem coeff_le_coeff_mul {R : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
+    {p q : R[X]} (hp : ∀ d, 0 ≤ p.coeff d) (hq : ∀ d, 0 ≤ q.coeff d) (hq0 : 1 ≤ q.coeff 0)
+    (d : ℕ) : p.coeff d ≤ (p * q).coeff d := by
+  rw [coeff_mul]
+  calc p.coeff d ≤ p.coeff d * q.coeff 0 := le_mul_of_one_le_right (hp d) hq0
+    _ ≤ ∑ x ∈ Finset.antidiagonal d, p.coeff x.1 * q.coeff x.2 :=
+      Finset.single_le_sum (f := fun x : ℕ × ℕ ↦ p.coeff x.1 * q.coeff x.2)
+        (a := (d, 0)) (fun x _ ↦ mul_nonneg (hp x.1) (hq x.2))
+        (Finset.mem_antidiagonal.mpr (add_zero d))
 
 /-- Every coefficient `(P.coeff j).coeff i` of a bivariate polynomial `P : R[X][X]` is either `0`
 or belongs to the finite set `P.support.biUnion fun j ↦ (P.coeff j).coeffs`. -/

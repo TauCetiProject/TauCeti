@@ -90,12 +90,13 @@ no such change of generators, is not treated.
 * `TauCeti.BalancedProjectionAlgebra.heckeEquiv_e` and
   `TauCeti.BalancedProjectionAlgebra.heckeEquiv_symm_T`: the isomorphism on generators.
 * `TauCeti.BalancedProjectionAlgebra.map_stage_heckeEquiv`: the isomorphism matches the stages.
+* `TauCeti.BalancedProjectionAlgebra.indexCharacter_heckeEquiv` and
+  `TauCeti.BalancedProjectionAlgebra.signCharacter_heckeEquiv`: the index and sign characters
+  correspond to `e i ↦ 1` and `e i ↦ 0`.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_heckeEquiv_mul_e`: the projection parameter
   of a Hecke Markov trace.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.T_eq_smul_eigenprojection_sub_smul` and
-  `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_mul_eigenprojection`: the eigenprojection
-  decomposition of a generator, and the projection parameter of a Markov trace in terms of the
-  eigenprojection.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.T_eq_smul_eigenprojection_sub_smul`: the eigenprojection
+  decomposition of a generator.
 
 ## References
 
@@ -583,7 +584,7 @@ section HeckeEquiv
 
 /-! ### The isomorphism with the infinite type-A Hecke algebra -/
 
-open InfiniteTypeAHeckeAlgebra (T)
+open InfiniteTypeAHeckeAlgebra (T indexCharacter signCharacter)
 
 variable {q : Rˣ}
 
@@ -694,6 +695,28 @@ theorem heckeEquiv_mem_stage_iff {n : ℕ} {w : BalancedProjectionAlgebra R τ} 
   rw [← map_stage_heckeEquiv hτ, Subalgebra.mem_map]
   exact ⟨fun ⟨v, hv, h⟩ ↦ (heckeEquiv q hτ).injective h ▸ hv, fun h ↦ ⟨w, h, rfl⟩⟩
 
+/-- Under the native isomorphism `heckeEquiv`, the index character `T i ↦ q` corresponds to the
+scalar character `e i ↦ 1`. -/
+@[simp]
+theorem indexCharacter_heckeEquiv (w : BalancedProjectionAlgebra R τ) :
+    indexCharacter R q (heckeEquiv q hτ w) = character 1 .one w := by
+  have h : (indexCharacter R q).comp (heckeEquiv q hτ : BalancedProjectionAlgebra R τ →ₐ[R] _) =
+      character 1 .one := hom_ext fun i ↦ by
+    simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, heckeEquiv_e, map_smul, map_add,
+      InfiniteTypeAHeckeAlgebra.indexCharacter_T, AlgHom.commutes, Algebra.algebraMap_self,
+      RingHom.id_apply, smul_eq_mul, character_e]
+    linear_combination hτ
+  exact DFunLike.congr_fun h w
+
+/-- Under the native isomorphism `heckeEquiv`, the sign character `T i ↦ -q⁻¹` corresponds to the
+scalar character `e i ↦ 0`. -/
+@[simp]
+theorem signCharacter_heckeEquiv (w : BalancedProjectionAlgebra R τ) :
+    signCharacter R q (heckeEquiv q hτ w) = character 0 .zero w := by
+  have h : (signCharacter R q).comp (heckeEquiv q hτ : BalancedProjectionAlgebra R τ →ₐ[R] _) =
+      character 0 .zero := hom_ext fun i ↦ by simp [heckeEquiv_e]
+  exact DFunLike.congr_fun h w
+
 end HeckeEquiv
 
 end BalancedProjectionAlgebra
@@ -760,21 +783,6 @@ theorem val_inv_unitT_eq_smul_eigenprojection_sub_smul (hs : (s : R) = q + ↑q�
   match_scalars
   · linear_combination -hs'
   · linear_combination -(↑q⁻¹ : R) * hs'
-
-variable {z η : R} {μ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R}
-
-/-- **The projection parameter of a Markov trace.** If `z = q * η - q⁻¹ * (1 - η)`, a Markov trace
-with parameter `z` multiplies by `η` when the eigenprojection of the generator `T n` adding the
-new last strand is appended. -/
-theorem IsMarkovTrace.map_mul_eigenprojection (hμ : IsMarkovTrace z μ)
-    (hs : (s : R) = q + ↑q⁻¹) (hz : z = q * η - ↑q⁻¹ * (1 - η)) {n : ℕ}
-    {x : InfiniteTypeAHeckeAlgebra R q} (hx : x ∈ stage R q (n + 1)) :
-    μ (x * (↑s⁻¹ : R) • (T q n + algebraMap R _ (↑q⁻¹ : R))) = η * μ x := by
-  have hs' : (↑s⁻¹ : R) * s = 1 := s.inv_mul
-  rw [hs] at hs'
-  rw [mul_smul_comm, map_smul, mul_add, map_add, hμ.map_mul_T hx, ← Algebra.commutes,
-    ← Algebra.smul_def, map_smul, smul_eq_mul, smul_eq_mul, hz]
-  linear_combination η * μ x * hs'
 
 end InfiniteTypeAHeckeAlgebra
 

@@ -112,28 +112,6 @@ private theorem isWeakSolutionDirichlet_one_zero_const_iff (c : ℝ)
           ⟪f, W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ :=
   isWeakSolutionDirichlet_iff_inner f u
 
-/-- Distinct sine modes of `(a, b)` have distinct Dirichlet eigenvalues. -/
-private theorem sq_natCast_mul_pi_div_ne (hab : a < b) {j k : ℕ} (h : j ≠ k) :
-    (j * π / (b - a)) ^ 2 ≠ (k * π / (b - a)) ^ 2 := by
-  have hba : 0 < b - a := sub_pos.2 hab
-  rw [Ne, pow_left_inj₀ (by positivity) (by positivity) two_ne_zero,
-    div_left_inj₀ hba.ne', mul_left_inj' Real.pi_ne_zero, Nat.cast_inj]
-  exact h
-
-/-- Integrating against the `j`-th sine mode is the `L²` pairing with its `H¹₀` representative. -/
-private theorem setIntegral_mul_sin_eq_inner
-    (F : Lp ℝ 2 (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))))
-    {s : W1p0 volume (intervalDomain a b) 2} {j : ℕ}
-    (hs : W1p.value (s : W1p volume (intervalDomain a b) 2)
-      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
-        fun x ↦ Real.sin (j * π * (x 0 - a) / (b - a))) :
-    ∫ x in intervalDomain a b, F x * Real.sin (j * π * (x 0 - a) / (b - a)) =
-      ⟪F, W1p.value (s : W1p volume (intervalDomain a b) 2)⟫_ℝ := by
-  rw [← dirichletForcing_apply, dirichletForcing_apply_eq_setIntegral]
-  refine integral_congr_ae ?_
-  filter_upwards [hs] with x hx
-  rw [hx]
-
 /-- An eigenfunction `u` for the `k`-th eigenvalue with `⟪u, s_k⟫ = t ⟪s_k, s_k⟫` is `t s_k`: their
 difference is orthogonal to every sine mode. -/
 private theorem value_eq_smul_of_inner_eq (hab : a < b) {k : ℕ}

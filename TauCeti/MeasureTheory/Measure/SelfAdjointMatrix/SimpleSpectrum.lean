@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Matrix.Spectrum
+public import TauCeti.Analysis.Matrix.Eigenvalues.Basic
 public import TauCeti.MeasureTheory.Measure.SelfAdjointMatrix.Basic
 import TauCeti.Analysis.Matrix.Eigenvalues.Discriminant
 import TauCeti.MeasureTheory.Measure.Matrix.CharpolyDiscriminant
@@ -48,5 +48,19 @@ theorem ae_injective_eigenvalues_selfAdjoint [MeasurableSpace 𝕜] [BorelSpace 
   filter_upwards [ae_discr_ne_zero μ hμ
     (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜)).subtype.toAffineMap hD] with A hA
   exact (selfAdjoint.isHermitian_coe A).discr_ne_zero_iff.mp hA
+
+/-- Absolutely continuous self-adjoint matrix laws have strictly decreasing ordered eigenvalues
+almost surely. -/
+theorem ae_strictAnti_orderedEigenvalues [MeasurableSpace 𝕜] [BorelSpace 𝕜]
+    {ν : Measure (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜))} [ν.IsAddHaarMeasure]
+    (μ : Measure (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜))) (hμ : μ ≪ ν) :
+    ∀ᵐ A ∂μ, StrictAnti (selfAdjoint.orderedEigenvalues A) := by
+  filter_upwards [ae_injective_eigenvalues_selfAdjoint μ hμ] with A hA
+  have hinj : Function.Injective (selfAdjoint.isHermitian_coe A).eigenvalues₀ := by
+    intro i j hij
+    apply (Fintype.equivOfCardEq (β := Fin n) (Fintype.card_fin _)).injective
+    exact hA (by simpa only [Matrix.IsHermitian.eigenvalues, Equiv.symm_apply_apply] using hij)
+  exact (selfAdjoint.orderedEigenvalues_antitone A).strictAnti_of_injective
+    (hinj.comp (Fin.cast_injective (Fintype.card_fin n).symm))
 
 end MeasureTheory.Measure

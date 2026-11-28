@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Instances.Real
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.PL.HalfSpace
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.ChartedSpace
 public import TauCeti.Geometry.Manifold.PLGroupoid.Transition
+public import TauCeti.Geometry.Manifold.PLGroupoid.Transport
 
 /-!
 # PL structures on combinatorial manifolds
@@ -22,6 +24,12 @@ barycentric formulas of the charts on overlapping stars.
 
 No finiteness or countability of the ambient complex is required. Each link is finite,
 so its closed star supplies the local simplex model.
+
+Both atlases are then read in Mathlib's models, the Euclidean half-space `𝓡∂ (n + 1)` and the
+Euclidean space `𝓡 (n + 1)`, through linear isomorphisms of the model spaces
+(`Homeomorph.hasGroupoid_PLGroupoid_chartedSpaceComp`). These are the models of smooth manifolds,
+in which the PL structure of a smoothly triangulated manifold is to be compared with its smooth
+structure.
 
 ## References
 
@@ -58,6 +66,26 @@ theorem exists_chartedSpace_hasGroupoid_of_isCombinatorialSphere_link
     exact K.openStarRealization_subset_closedStarRealization v
   · simpa only [image_eq_range] using hF v
   · simpa using hG v
+
+/-- Sphere links at every vertex give the weak realization a PL structure without boundary,
+modelled on Mathlib's Euclidean space `𝓡 (n + 1)`. The atlas is that of
+`AbstractSimplicialComplex.exists_chartedSpace_hasGroupoid_of_isCombinatorialSphere_link`
+followed by the linear isomorphism `EuclideanSpace.equiv` of the two coordinate spaces. -/
+theorem exists_chartedSpace_euclideanSpace_hasGroupoid_of_isCombinatorialSphere_link
+    {ι : Type*} [DecidableEq ι] (K : AbstractSimplicialComplex ι) {n : ℕ}
+    (h : ∀ v, IsCombinatorialSphere (link K.toPreAbstractSimplicialComplex {v}) n) :
+    ∃ C : ChartedSpace (EuclideanSpace ℝ (Fin (n + 1))) (Realization K),
+      let := C
+      HasGroupoid (Realization K) (PLGroupoid (𝓡 (n + 1))) := by
+  obtain ⟨C, hC⟩ := K.exists_chartedSpace_hasGroupoid_of_isCombinatorialSphere_link h
+  let := C
+  let L := (EuclideanSpace.equiv (Fin (n + 1)) ℝ).symm
+  refine ⟨_, L.toHomeomorph.hasGroupoid_PLGroupoid_chartedSpaceComp
+    (I := 𝓘(ℝ, Fin (n + 1) → ℝ)) ?_ ?_ (Realization K)⟩
+  · exact (isPLOn_continuousAffineMap (L : _ →L[ℝ] _).toContinuousAffineMap _).congr
+      fun _ _ => by simp
+  · exact (isPLOn_continuousAffineMap (L.symm : _ →L[ℝ] _).toContinuousAffineMap _).congr
+      fun _ _ => by simp
 
 end AbstractSimplicialComplex
 
@@ -102,5 +130,22 @@ theorem IsCombinatorialManifold.exists_chartedSpace_hasGroupoid_PLGroupoid
   · simpa only [image_eq_range] using hf v
   · simpa only [modelWithCornersHalfSpace_apply] using hfc v
   · simpa only [modelWithCornersHalfSpace_apply] using hgc v
+
+/-- The weak realization of a positive-dimensional combinatorial manifold is a PL manifold,
+possibly with boundary, modelled on Mathlib's Euclidean half-space `𝓡∂ (n + 1)`. The atlas is the
+half-space atlas of `IsCombinatorialManifold.exists_chartedSpace_hasGroupoid_PLGroupoid` followed
+by the linear isomorphism `(v, t) ↦ (t, v)` of the two half-spaces,
+`TauCeti.halfSpaceHomeomorphEuclideanHalfSpace`. -/
+theorem IsCombinatorialManifold.exists_chartedSpace_euclideanHalfSpace_hasGroupoid_PLGroupoid
+    {ι : Type*} [DecidableEq ι] {K : AbstractSimplicialComplex ι} {n : ℕ}
+    (h : IsCombinatorialManifold K.toPreAbstractSimplicialComplex (n + 1)) :
+    ∃ C : ChartedSpace (EuclideanHalfSpace (n + 1)) (Realization K),
+      let := C
+      HasGroupoid (Realization K) (PLGroupoid (𝓡∂ (n + 1))) := by
+  obtain ⟨C, hC⟩ := h.exists_chartedSpace_hasGroupoid_PLGroupoid
+  let := C
+  exact ⟨_, (halfSpaceHomeomorphEuclideanHalfSpace n).hasGroupoid_PLGroupoid_chartedSpaceComp
+    (isPLOn_halfSpaceHomeomorphEuclideanHalfSpace n)
+    (isPLOn_halfSpaceHomeomorphEuclideanHalfSpace_symm n) (Realization K)⟩
 
 end PreAbstractSimplicialComplex

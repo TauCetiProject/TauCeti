@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Algebra.Amenable
+public import TauCeti.Analysis.Normed.Algebra.Amenable.Diagonal
 public import TauCeti.Analysis.Normed.Ring.Quotient.Basic
 
 /-!

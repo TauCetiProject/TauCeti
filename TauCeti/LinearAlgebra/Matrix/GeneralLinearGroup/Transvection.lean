@@ -706,6 +706,28 @@ theorem transvectionWeylElement_mul_diagGL_mul_inv (hij : i ≠ j) (t : Fin N �
     by_cases hbi : b = i <;> by_cases hbj : b = j <;>
       subst_vars <;> simp_all [Matrix.diagonal_apply, Equiv.swap_apply_def, eq_comm]
 
+/-- The matrix factorisation
+`s * x_{ab}(u) = x_{ab}(u⁻¹) * diag(-u⁻¹, u) * x_{ba}(u⁻¹)` for the transposition `s = swap a b`,
+distinct indices `a ≠ b`, and a unit `u : Aˣ` of any ring `A`.
+Adapted from grh-lean (`src/Lib/LocalGL/Iwahori/QuadraticRelation.lean`,
+`New.swap_mul_transvectionGL`, Apache 2.0, Copyright 2026 Anthropic PBC). -/
+theorem permutationGL_swap_mul_transvectionUnit {A : Type*} [Ring A] {m : Type*} [DecidableEq m]
+    [Fintype m] {a b : m} (h : a ≠ b) (u : Aˣ) :
+    permutationGL (Equiv.swap a b) * transvectionUnit h (u : A) =
+      transvectionUnit h ((u⁻¹ : Aˣ) : A) *
+        diagGL (Pi.mulSingle a (-u⁻¹) * Pi.mulSingle b u) *
+        transvectionUnit h.symm ((u⁻¹ : Aˣ) : A) := by
+  ext i j
+  by_cases hia : i = a <;> by_cases hib : i = b <;>
+    by_cases hja : j = a <;> by_cases hjb : j = b <;>
+      subst_vars <;>
+      (first
+        | exact absurd rfl h
+        | simp_all [Units.val_mul, permutationGL_coe, PEquiv.toMatrix_mul_apply,
+            coe_transvectionUnit_eq_one_add_single, diagGL_coe, mul_add, add_mul,
+            Matrix.single_apply, Matrix.one_apply, Matrix.diagonal_apply, apply_ite Units.val,
+            Pi.mulSingle_apply, Equiv.swap_apply_def, eq_comm])
+
 end Torus
 
 end TauCeti

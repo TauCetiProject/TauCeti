@@ -112,7 +112,10 @@ theorem exists_comp_dotProduct_mulVec_eq_zero_and_eq_one_of_nonempty_isotropicPo
       (σ ∘ e) ⬝ᵥ (Q *ᵥ f) = 1 ∧ (σ ∘ f) ⬝ᵥ (Q *ᵥ e) = ε := by
   obtain ⟨p₀⟩ := ‹Nonempty (Q.isotropicPoints σ)›
   obtain ⟨f, hf₀, hf, hef, hfe⟩ := exists_comp_dotProduct_mulVec_eq_zero_and_eq_one hσ hQ
-    hdet htr (p₀ : ℙ K (n → K)).rep_ne_zero (comp_rep_dotProduct_mulVec_rep p₀)
+    htr (by
+      simpa using
+        (mulVec_injective_of_det_ne_zero hdet).ne (p₀ : ℙ K (n → K)).rep_ne_zero)
+    (comp_rep_dotProduct_mulVec_rep p₀)
   exact ⟨_, f, (p₀ : ℙ K (n → K)).rep_ne_zero, hf₀, comp_rep_dotProduct_mulVec_rep p₀, hf, hef,
     hfe⟩
 
