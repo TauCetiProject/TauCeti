@@ -439,10 +439,8 @@ theorem snd_twoInf_zpow_mul (k : ℤ) (a : 𝔸[K]) :
 theorem norm_fst_twoInf_zpow_mul_apply (k : ℤ) (a : 𝔸[K]) (w : InfinitePlace K) :
     ‖(((twoInf K ^ k : 𝔸[K]ˣ) : 𝔸[K]) * a).1 w‖ = 2 ^ k * ‖a.1 w‖ := by
   have h2 : w 2 = 2 := by exact_mod_cast w.map_natCast 2
-  rw [coe_twoInf_zpow]
-  -- Normalize the product projection before rewriting at the dependent coordinate `w`.
-  change ‖algebraMap K (InfiniteAdeleRing K) (2 ^ k) w * a.1 w‖ = _
-  rw [norm_mul, InfiniteAdeleRing.norm_algebraMap_apply, map_zpow₀, h2]
+  rw [coe_twoInf_zpow, Prod.fst_mul, InfiniteAdeleRing.mul_apply, norm_mul,
+    InfiniteAdeleRing.norm_algebraMap_apply, map_zpow₀, h2]
 
 /-- Multiplying a diagonal adele by `2_∞ ^ k` multiplies its absolute value at every infinite
 place by `2 ^ k`. -/
@@ -473,9 +471,6 @@ theorem _root_.NumberField.InfinitePlace.ideleInfiniteCoord_twoInf (w : Infinite
   apply Units.ext
   rw [InfinitePlace.coe_ideleInfiniteCoord, coe_twoInf, Units.coe_map, Units.val_mk0,
     RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, map_ofNat]
-  -- The goal is `(2, 1).1 w = 2`. `rfl` reduces the `Prod.fst` projection and evaluates the numeral
-  -- `2` of `InfiniteAdeleRing K`, a product of the completions, at `w`, where it is `2` by
-  -- definition. Mathlib has no evaluation lemma for numerals of the infinite adeles.
-  rfl
+  simp only [InfiniteAdeleRing.ofNat_apply]
 
 end TauCeti.GlobalNumberFields

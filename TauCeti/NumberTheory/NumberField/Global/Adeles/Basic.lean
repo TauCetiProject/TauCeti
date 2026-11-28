@@ -94,6 +94,20 @@ theorem InfiniteAdeleRing.add_apply (x y : InfiniteAdeleRing K) (w : InfinitePla
     (x + y) w = x w + y w :=
   rfl
 
+/-- Infinite adeles are multiplied place by place: the ring structure of `InfiniteAdeleRing K` is
+that of the product of the completions. -/
+@[simp]
+theorem InfiniteAdeleRing.mul_apply (x y : InfiniteAdeleRing K) (w : InfinitePlace K) :
+    (x * y) w = x w * y w :=
+  rfl
+
+/-- A numeral of the infinite adeles is that numeral at every infinite place: the ring structure
+of `InfiniteAdeleRing K` is that of the product of the completions. -/
+@[simp]
+theorem InfiniteAdeleRing.ofNat_apply (n : ℕ) [n.AtLeastTwo] (w : InfinitePlace K) :
+    (ofNat(n) : InfiniteAdeleRing K) w = ofNat(n) :=
+  rfl
+
 variable {K} in
 /-- The norm at an infinite place `w` of the diagonal image of `x : K` in the infinite adeles is
 `w x`. It is not a `simp` lemma: `simp` first rewrites the coordinate with
