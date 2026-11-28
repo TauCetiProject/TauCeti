@@ -65,16 +65,14 @@ private theorem partitionSummand_nonneg (ρ : PartitionOfUnity M M univ) (x₀ i
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [IsManifold I 1 M]
   [MeasurableSpace M] [BorelSpace M] in
-private theorem partitionSummand_locallyFinite (ρ : PartitionOfUnity M M univ) (x₀ : M)
-    {y : E} (hy : y ∈ (extChartAt I x₀).target) :
-    ∃ N ∈ 𝓝[(extChartAt I x₀).target] y,
-      {i : M | (N ∩ Function.support (partitionSummand (I := I) ρ x₀ i)).Nonempty}.Finite := by
-  obtain ⟨W, hW, hWfin⟩ := ρ.locallyFinite ((extChartAt I x₀).symm y)
-  refine ⟨(extChartAt I x₀).symm ⁻¹' W,
-    (continuousOn_extChartAt_symm x₀ y hy).preimage_mem_nhdsWithin hW, hWfin.subset ?_⟩
-  rintro i ⟨z, hzW, hzh⟩
-  refine ⟨(extChartAt I x₀).symm z, fun hzero ↦ hzh ?_, hzW⟩
-  exact indicator_apply_eq_zero.2 fun _ ↦ by rw [hzero, mul_zero]
+private theorem locallyFinite_partitionSummand (ρ : PartitionOfUnity M M univ) (x₀ : M) :
+    LocallyFinite fun i : M ↦
+      {y : (extChartAt I x₀).target | partitionSummand (I := I) ρ x₀ i y.val ≠ 0} := by
+  refine (ρ.locallyFinite.preimage_continuous
+    (continuousOn_iff_continuous_domRestrict.1 (continuousOn_extChartAt_symm x₀))).subset ?_
+  intro i y hy
+  exact fun hzero ↦ hy (indicator_apply_eq_zero.2 fun _ ↦ by
+    rw [domRestrict_apply] at hzero; rw [hzero, mul_zero])
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [MeasurableSpace M]
   [BorelSpace M] in
@@ -88,11 +86,8 @@ private theorem continuousOn_finsum_partitionSummand (ρ : PartitionOfUnity M M 
       (fun i ↦ continuousOn_iff_continuous_domRestrict.1
         ((chartAt H x₀).continuousOn_abs_det_fderivWithin_extendCoordChange_mul (chartAt H i)
           I (IsManifold.chart_mem_maximalAtlas x₀) (IsManifold.chart_mem_maximalAtlas i)
-          (ρ i).continuous (hρ i))) fun y ↦ ?_
-  obtain ⟨N, hN, hNfin⟩ := partitionSummand_locallyFinite (I := I) ρ x₀ y.property
-  refine ⟨Subtype.val ⁻¹' N, ?_, hNfin.subset fun i ⟨z, hzh, hzN⟩ ↦ ⟨z.val, hzN, hzh⟩⟩
-  rw [nhds_subtype_eq_comap_nhdsWithin]
-  exact Filter.preimage_mem_comap hN
+          (ρ i).continuous (hρ i))) ?_
+  exact locallyFinite_partitionSummand (I := I) ρ x₀
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [MeasurableSpace M]
   [BorelSpace M] in
@@ -100,9 +95,8 @@ private theorem finsum_partitionSummand_pos (ρ : PartitionOfUnity M M univ)
     (hρ : ρ.IsSubordinate fun x : M ↦ (chartAt H x).source) (x₀ : M)
     {y : E} (hy : y ∈ (extChartAt I x₀).target) :
     0 < ∑ᶠ i : M, partitionSummand (I := I) ρ x₀ i y := by
-  obtain ⟨N, hN, hNfin⟩ := partitionSummand_locallyFinite (I := I) ρ x₀ hy
   have hfin : (Function.support fun i ↦ partitionSummand (I := I) ρ x₀ i y).Finite :=
-    hNfin.subset fun i hi ↦ ⟨y, mem_of_mem_nhdsWithin hy hN, hi⟩
+    (locallyFinite_partitionSummand (I := I) ρ x₀).point_finite ⟨y, hy⟩
   obtain ⟨i, hi_pos⟩ := ρ.exists_pos (mem_univ ((extChartAt I x₀).symm y))
   have hyΦ : y ∈ (I.extendCoordChange (chartAt H x₀) (chartAt H i)).source :=
     I.mem_extendCoordChange_source (extChartAt_eq_extend (I := I) x₀ ▸ hy)
@@ -122,21 +116,18 @@ omit [MeasurableSpace E] [BorelSpace E] [IsManifold I 1 M] [MeasurableSpace M] [
 private theorem countable_support_partitionSummand (ρ : PartitionOfUnity M M univ) (x₀ : M) :
     {i : M | ((extChartAt I x₀).target ∩
       Function.support (partitionSummand (I := I) ρ x₀ i)).Nonempty}.Countable := by
-  have hnhds : ∀ y ∈ (extChartAt I x₀).target, ∃ O, IsOpen O ∧ y ∈ O ∧
-      {i : M | ((O ∩ (extChartAt I x₀).target) ∩
-        Function.support (partitionSummand (I := I) ρ x₀ i)).Nonempty}.Finite := fun y hy ↦ by
-    obtain ⟨N, hN, hNfin⟩ := partitionSummand_locallyFinite (I := I) ρ x₀ hy
-    obtain ⟨O, hO, hyO, hON⟩ := mem_nhdsWithin.1 hN
-    exact ⟨O, hO, hyO, hNfin.subset fun i ⟨z, hz, hzh⟩ ↦ ⟨z, hON hz, hzh⟩⟩
-  choose O hO hyO hOfin using hnhds
-  obtain ⟨t, ht, hsub⟩ :=
-    (HereditarilyLindelofSpace.isLindelof (extChartAt I x₀).target).elim_countable_subcover
-      (fun y : (extChartAt I x₀).target ↦ O y.val y.property) (fun y ↦ hO y.val y.property)
-      fun y hy ↦ mem_iUnion.2 ⟨⟨y, hy⟩, hyO y hy⟩
-  refine (ht.biUnion fun y _ ↦ (hOfin y.val y.property).countable).mono ?_
-  rintro i ⟨z, hzT, hzh⟩
-  obtain ⟨y, hyt, hzy⟩ := mem_iUnion₂.1 (hsub hzT)
-  exact mem_iUnion₂.2 ⟨y, hyt, ⟨z, ⟨hzy, hzT⟩, hzh⟩⟩
+  have := ProperSpace.of_locallyCompactSpace ℝ (E := E)
+  have : SigmaCompactSpace (extChartAt I x₀).target :=
+    sigmaCompactSpace_of_locallyCompact_secondCountable
+  set S := {i : M | ((extChartAt I x₀).target ∩
+    Function.support (partitionSummand (I := I) ρ x₀ i)).Nonempty}
+  have hlf : LocallyFinite fun i : S ↦
+      {y : (extChartAt I x₀).target | partitionSummand (I := I) ρ x₀ i.val y.val ≠ 0} :=
+    (locallyFinite_partitionSummand (I := I) ρ x₀).comp_injective Subtype.val_injective
+  have hne : ∀ i : S,
+      {y : (extChartAt I x₀).target | partitionSummand (I := I) ρ x₀ i.val y.val ≠ 0}.Nonempty :=
+    fun ⟨_, y, hyT, hy⟩ ↦ ⟨⟨y, hyT⟩, hy⟩
+  exact Set.countable_coe_iff.1 (countable_univ_iff.1 (hlf.countable_univ hne))
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [IsManifold I 1 M]
   [MeasurableSpace M] [BorelSpace M] in
@@ -146,29 +137,16 @@ private theorem tsum_ofReal_partitionSummand (ρ : PartitionOfUnity M M univ) (x
         Function.support (partitionSummand (I := I) ρ x₀ i)).Nonempty},
         ENNReal.ofReal (partitionSummand (I := I) ρ x₀ i.val y) =
       ENNReal.ofReal (∑ᶠ i : M, partitionSummand (I := I) ρ x₀ i y) := by
-  classical
-  set S := {i : M | ((extChartAt I x₀).target ∩
-    Function.support (partitionSummand (I := I) ρ x₀ i)).Nonempty}
-  obtain ⟨N, hN, hNfin⟩ := partitionSummand_locallyFinite (I := I) ρ x₀ hy
   have hfin : (Function.support fun i : M ↦ partitionSummand (I := I) ρ x₀ i y).Finite :=
-    hNfin.subset fun i hi ↦ ⟨y, mem_of_mem_nhdsWithin hy hN, hi⟩
-  have hfinS : (Function.support fun i : S ↦
-      ENNReal.ofReal (partitionSummand (I := I) ρ x₀ i.val y)).Finite :=
-    (hfin.preimage Subtype.val_injective.injOn).subset fun i hi h0 ↦ hi (by simp [h0])
-  rw [tsum_eq_sum (s := hfinS.toFinset) fun i hi ↦
-      notMem_support.1 fun h' ↦ hi (hfinS.mem_toFinset.2 h'),
-    ← ENNReal.ofReal_sum_of_nonneg fun i _ ↦ partitionSummand_nonneg (I := I) ρ x₀ i.val y,
-    finsum_eq_sum_of_support_subset _ (s := hfin.toFinset) fun i hi ↦ hfin.mem_toFinset.2 hi]
-  congr 1
-  refine Finset.sum_bij (fun i _ ↦ i.val) (fun i hi ↦ ?_) (fun _ _ _ _ h ↦ Subtype.ext h)
-    (fun i hi ↦ ?_) (fun _ _ ↦ rfl)
-  · have hne := hfinS.mem_toFinset.1 hi
-    exact hfin.mem_toFinset.2 fun h0 ↦ hne (by simp [h0])
-  · have hiS : i ∈ S := ⟨y, hy, hfin.mem_toFinset.1 hi⟩
-    refine ⟨⟨i, hiS⟩, ?_, rfl⟩
-    simp only [Set.Finite.mem_toFinset, Function.mem_support, ne_eq, ENNReal.ofReal_eq_zero, not_le]
-    exact lt_of_le_of_ne (partitionSummand_nonneg (I := I) ρ x₀ i y)
-      (Ne.symm (hfin.mem_toFinset.1 hi))
+    (locallyFinite_partitionSummand (I := I) ρ x₀).point_finite ⟨y, hy⟩
+  rw [tsum_subtype_eq_of_support_subset
+      (s := {i : M | ((extChartAt I x₀).target ∩
+        Function.support (partitionSummand (I := I) ρ x₀ i)).Nonempty})
+      (f := fun i ↦ ENNReal.ofReal (partitionSummand (I := I) ρ x₀ i y))
+      (fun i hi ↦ ⟨y, hy, fun h0 ↦ hi (by simp [h0])⟩),
+    ← ENNReal.ofReal_tsum_of_nonneg (fun i ↦ partitionSummand_nonneg (I := I) ρ x₀ i y)
+      (summable_of_hasFiniteSupport hfin),
+    tsum_eq_finsum hfin]
 
 /-- Pushing the partition-of-unity sum of local chart measures forward into chart `x₀` yields
 the finsum density `∑ᶠ i, partitionSummand ρ x₀ i`. -/

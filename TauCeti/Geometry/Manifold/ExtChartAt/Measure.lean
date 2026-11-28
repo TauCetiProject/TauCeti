@@ -79,14 +79,15 @@ theorem image_extend_preimage_inter (e₀ e₁ : OpenPartialHomeomorph M H)
   ext z
   refine ⟨fun ⟨x, ⟨⟨hxA, hx0⟩, hx1⟩, hxz⟩ ↦ ?_, fun ⟨y, ⟨hyA, hyΦ⟩, hyz⟩ ↦ ?_⟩
   · refine ⟨e₀.extend I x, ⟨hxA, I.extend_mem_extendCoordChange_source hx0 hx1⟩, ?_⟩
-    rw [I.extendCoordChange_extend_apply hx0]
+    simp only [OpenPartialHomeomorph.extend_coe, Function.comp_apply,
+      I.extendCoordChange_apply hx0] at hxz ⊢
     exact hxz
   · have hyT : y ∈ (e₀.extend I).target := hyΦ.1
     have hx1 : (e₀.extend I).symm y ∈ e₁.source := e₁.extend_source (I := I) ▸ hyΦ.2
     refine ⟨(e₀.extend I).symm y,
       ⟨⟨by rw [Set.mem_preimage, (e₀.extend I).right_inv hyT]; exact hyA,
-        e₀.extend_symm_mem_source hyT⟩, hx1⟩, ?_⟩
-    rw [← I.extendCoordChange_apply_eq]
+        e₀.extend_source (I := I) ▸ (e₀.extend I).map_target hyT⟩, hx1⟩, ?_⟩
+    rw [ModelWithCorners.extendCoordChange, PartialEquiv.trans_apply] at hyz
     exact hyz
 
 /-- Evaluation of the pushforward of a measure restricted to a chart source along the
@@ -99,6 +100,31 @@ theorem map_restrict_extend_apply [MeasurableSpace E] [BorelSpace E]
       (((e.continuousOn_extend (I := I)).mono (e.extend_source (I := I)).ge).aemeasurable
         e.open_source.measurableSet) hA,
     Measure.restrict_apply' e.open_source.measurableSet]
+
+/-- Factor `(μ.restrict e.source).map (e.extend I)` through the subtype `e.source`. -/
+private theorem map_restrict_extend_eq_map_comap [MeasurableSpace E] [BorelSpace E]
+    [MeasurableSpace M] [BorelSpace M] (e : OpenPartialHomeomorph M H)
+    (I : ModelWithCorners 𝕜 E H) (μ : Measure M) :
+    (μ.restrict e.source).map (e.extend I) =
+      (μ.comap Subtype.val).map (e.source.domRestrict (e.extend I)) := by
+  have hR := e.measurableEmbedding_extend_restrict I
+  have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
+    .subtypeVal e.open_source.measurableSet
+  ext A hA
+  rw [e.map_restrict_extend_apply I μ hA, hR.map_apply, hval.comap_apply]
+  congr 1
+  ext z
+  simp only [mem_inter_iff, mem_preimage, mem_image, domRestrict_apply, Subtype.exists,
+    exists_and_right, exists_eq_right]
+  tauto
+
+/-- Preimage of `e.extend I '' s` under `e.source.domRestrict (e.extend I)` for `s ⊆ e.source`. -/
+private theorem preimage_domRestrict_extend_image {e : OpenPartialHomeomorph M H}
+    {I : ModelWithCorners 𝕜 E H} {s : Set M} (hsub : s ⊆ e.source) :
+    e.source.domRestrict (e.extend I) ⁻¹' (e.extend I '' s) = Subtype.val ⁻¹' s := by
+  ext z
+  exact (e.extend I).injOn.mem_image_iff (by rw [e.extend_source]; exact hsub)
+    (by rw [e.extend_source]; exact z.property)
 
 /-- **Integration in an extended chart.** Over a subset `s` of `e.source`, the lower integral of
 `f` against `μ` is the lower integral, over `e.extend I '' s`, of `f ∘ (e.extend I).symm` against
@@ -113,27 +139,15 @@ theorem setLIntegral_eq_setLIntegral_map_extend [MeasurableSpace E] [BorelSpace 
   have hsrc : MeasurableSet e.source := e.open_source.measurableSet
   have hR := e.measurableEmbedding_extend_restrict I
   have hval : MeasurableEmbedding (Subtype.val : e.source → M) := .subtypeVal hsrc
-  have hmap : (μ.restrict e.source).map (e.extend I) =
-      (μ.comap Subtype.val).map (e.source.domRestrict (e.extend I)) := by
-    ext A hA
-    rw [e.map_restrict_extend_apply I μ hA, hR.map_apply, hval.comap_apply]
-    congr 1
-    ext z
-    simp only [mem_inter_iff, mem_preimage, mem_image, domRestrict_apply, Subtype.exists,
-      exists_and_right, exists_eq_right]
-    tauto
   have hf : ∀ z : e.source, f ((e.extend I).symm (e.source.domRestrict (e.extend I) z)) = f z :=
     fun z ↦ by
       rw [domRestrict_apply, (e.extend I).left_inv (by rw [e.extend_source]; exact z.property)]
-  have hpre : e.source.domRestrict (e.extend I) ⁻¹' (e.extend I '' s) = Subtype.val ⁻¹' s := by
-    ext z
-    exact (e.extend I).injOn.mem_image_iff (by rw [e.extend_source]; exact hsub)
-      (by rw [e.extend_source]; exact z.property)
   have hleft : ((μ.comap (Subtype.val : e.source → M)).restrict (Subtype.val ⁻¹' s)).map
       Subtype.val = μ.restrict s := by
     rw [hval.restrict_comap, hval.map_comap, Subtype.range_coe, Measure.restrict_restrict hsrc,
       Subtype.image_preimage_coe, inter_eq_right.2 hsub, inter_eq_right.2 hsub]
-  rw [hmap, hR.restrict_map, hR.lintegral_map, hpre, ← hleft, hval.lintegral_map]
+  rw [e.map_restrict_extend_eq_map_comap I μ, hR.restrict_map, hR.lintegral_map,
+    preimage_domRestrict_extend_image hsub, ← hleft, hval.lintegral_map]
   simp only [hf]
 
 /-- Converting a chart pushforward `withDensity` identity into a coordinate Lebesgue integral over
@@ -173,7 +187,6 @@ theorem measure_eq_zero_iff_image_extend_of_map_restrict_eq [MeasurableSpace E] 
       (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w y))
     {s : Set M} (hsub : s ⊆ e.source) :
     μ s = 0 ↔ ν (e.extend I '' s) = 0 := by
-  have hsrc : MeasurableSet e.source := e.open_source.measurableSet
   have htgt : MeasurableSet (e.extend I).target := e.measurableSet_extend_target I
   have hzero : ∀ A ⊆ (e.extend I).target,
       (μ.restrict e.source).map (e.extend I) A = 0 ↔ ν A = 0 := fun A hA ↦ by
@@ -186,26 +199,14 @@ theorem measure_eq_zero_iff_image_extend_of_map_restrict_eq [MeasurableSpace E] 
     exact ⟨fun h ↦ h.1.2, fun hy ↦ ⟨⟨(ENNReal.ofReal_pos.2 (hwpos y (hA hy))).ne', hy⟩, hA hy⟩⟩
   have himage : e.extend I '' s ⊆ (e.extend I).target :=
     (e.extend I).image_source_eq_target ▸ image_mono (by rwa [e.extend_source])
-  rw [← hzero _ himage]
-  constructor
-  · intro hs
-    let t := toMeasurable μ s ∩ e.source
-    have ht : MeasurableSet t := (measurableSet_toMeasurable μ s).inter hsrc
-    have hst : s ⊆ t := fun y hy ↦ ⟨subset_toMeasurable μ s hy, hsub hy⟩
-    refine measure_mono_null (image_mono hst) ?_
-    rw [e.map_restrict_extend_apply I μ (e.measurableSet_image_extend I ht inter_subset_right),
-      ← e.extend_source (I := I),
-      (e.extend I).injOn.preimage_image_inter (e.extend_source (I := I) ▸ inter_subset_right)]
-    exact measure_mono_null inter_subset_left (by rwa [measure_toMeasurable])
-  · intro hs
-    have hle := Measure.le_map_apply
-      (((e.continuousOn_extend (I := I)).mono (e.extend_source (I := I)).ge).aemeasurable
-        (μ := μ) hsrc)
-      (e.extend I '' s)
-    rw [hs, nonpos_iff_eq_zero, Measure.restrict_apply' hsrc] at hle
-    have hs' : s ⊆ e.extend I ⁻¹' (e.extend I '' s) ∩ e.source :=
-      fun y hy ↦ ⟨mem_image_of_mem _ hy, hsub hy⟩
-    exact measure_mono_null hs' hle
+  have hR := e.measurableEmbedding_extend_restrict I
+  have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
+    .subtypeVal e.open_source.measurableSet
+  have hμs : (μ.restrict e.source).map (e.extend I) (e.extend I '' s) = μ s := by
+    rw [e.map_restrict_extend_eq_map_comap I μ, hR.map_apply,
+      preimage_domRestrict_extend_image hsub, hval.comap_apply,
+      Subtype.image_preimage_coe, inter_eq_right.2 hsub]
+  rw [← hμs, hzero _ himage]
 
 /-- Pull a measure `ν` on the model space weighted by `ENNReal.ofReal ∘ f ∘ (e.extend I).symm` back
 along the extended chart `e.extend I` to a measure supported on `e.source`. -/

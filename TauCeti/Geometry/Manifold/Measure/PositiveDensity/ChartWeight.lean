@@ -97,7 +97,7 @@ private theorem atlasPullbackWeight_eq {μ : Measure M} {ν : Measure E} [ν.IsA
       |(fderivWithin ℝ (I.extendCoordChange e (φ j)) (range I) y).det| *
         w j (I.extendCoordChange e (φ j) y) := by
   set x := (e.extend I).symm y
-  have hxe : x ∈ e.source := e.extend_symm_mem_source hyi.1
+  have hxe : x ∈ e.source := e.extend_source (I := I) ▸ (e.extend I).map_target hyi.1
   have hxi : x ∈ (φ i).source := (φ i).extend_source (I := I) ▸ hyi.2
   have hxj : x ∈ (φ j).source := (φ j).extend_source (I := I) ▸ hyj.2
   have hzij : (φ i).extend I x ∈ (I.extendCoordChange (φ i) (φ j)).source :=
@@ -107,13 +107,14 @@ private theorem atlasPullbackWeight_eq {μ : Measure M} {ν : Measure E} [ν.IsA
     (hw_map i) (hw_map j) hzij
   dsimp only at htr
   have hchain := I.abs_det_fderivWithin_extendCoordChange_comp he (hφ i) (hφ j) hxe hxi hxj
-  have hΦij : I.extendCoordChange (φ i) (φ j) ((φ i).extend I x) = (φ j).extend I x :=
-    I.extendCoordChange_extend_apply hxi
+  have hΦij : I.extendCoordChange (φ i) (φ j) ((φ i).extend I x) = (φ j).extend I x := by
+    simp only [OpenPartialHomeomorph.extend_coe, Function.comp_apply,
+      I.extendCoordChange_apply hxi]
   have hyx : e.extend I x = y := (e.extend I).right_inv hyi.1
   have hΦi : I.extendCoordChange e (φ i) y = (φ i).extend I x :=
-    I.extendCoordChange_apply_eq e (φ i) y
+    PartialEquiv.trans_apply (e.extend I).symm ((φ i).extend I)
   have hΦj : I.extendCoordChange e (φ j) y = (φ j).extend I x :=
-    I.extendCoordChange_apply_eq e (φ j) y
+    PartialEquiv.trans_apply (e.extend I).symm ((φ j).extend I)
   rw [hΦi, hΦj, htr, hΦij, ← hyx, hchain]
   ring
 
@@ -128,33 +129,36 @@ private theorem atlasPullback_map_eq {μ : Measure M} {ν : Measure E}
     (μ.restrict e.source).map (e.extend I) =
       (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w0 y) := by
   have hT_meas := e.measurableSet_extend_target I
-  obtain ⟨t, ht, htcover'⟩ := I.exists_countable_coordChange_cover e hcov_e
-  ext A hA
-  rw [withDensity_apply _ hA, Measure.restrict_restrict hA]
-  have hAT_eq : ((μ.restrict e.source).map (e.extend I)) A =
-      ((μ.restrict e.source).map (e.extend I)) (A ∩ (e.extend I).target) := by
-    rw [e.map_restrict_extend_apply I μ hA, e.map_restrict_extend_apply I μ (hA.inter hT_meas)]
+  obtain ⟨t, ht, htcover⟩ := I.exists_countable_coordChange_cover e hcov_e
+  have hunion : ⋃ i ∈ t, (I.extendCoordChange e (φ i)).source = (e.extend I).target :=
+    Subset.antisymm (iUnion₂_subset fun _ _ _ hy ↦ hy.1) htcover
+  have hμT : ((μ.restrict e.source).map (e.extend I)).restrict (e.extend I).target =
+      (μ.restrict e.source).map (e.extend I) := by
+    ext A hA
+    rw [Measure.restrict_apply hA, e.map_restrict_extend_apply I μ (hA.inter hT_meas),
+      e.map_restrict_extend_apply I μ hA]
     congr 1; ext x
-    refine ⟨fun ⟨hxA, hxe⟩ ↦ ⟨⟨hxA, ?_⟩, hxe⟩, fun ⟨⟨hxA, _⟩, hxe⟩ ↦ ⟨hxA, hxe⟩⟩
-    exact (e.extend I).map_source (by rwa [e.extend_source])
-  rw [hAT_eq]
-  rcases t.eq_empty_or_nonempty with rfl | htne
-  · have hTe : (e.extend I).target = ∅ := subset_empty_iff.1 (by simpa using htcover')
-    rw [hTe, inter_empty, measure_empty, Measure.restrict_empty, lintegral_zero_measure]
-  obtain ⟨f, rfl⟩ := ht.exists_eq_range htne
-  set U : ℕ → Set E := fun n ↦ (I.extendCoordChange e (φ (f n))).source
-  have hU_meas (n : ℕ) : MeasurableSet (U n) := I.measurableSet_extendCoordChange_source e _
-  set d : ℕ → Set E := fun n ↦ A ∩ (e.extend I).target ∩ disjointed U n
-  have hd_meas (n : ℕ) : MeasurableSet (d n) :=
-    (hA.inter hT_meas).inter (MeasurableSet.disjointed hU_meas n)
-  have hd_disj : Pairwise (Disjoint on d) :=
-    (disjoint_disjointed U).mono fun _ _ hmn ↦ hmn.mono inter_subset_right inter_subset_right
-  have hd_union : ⋃ n, d n = A ∩ (e.extend I).target := by
-    rw [← inter_iUnion, iUnion_disjointed, inter_eq_left]
-    exact inter_subset_right.trans (by simpa only [biUnion_range] using htcover')
-  rw [← hd_union, measure_iUnion hd_disj hd_meas, lintegral_iUnion hd_meas hd_disj]
-  exact tsum_congr fun n ↦
-    hpiece (f n) (hd_meas n) (inter_subset_right.trans (disjointed_subset U n))
+    exact ⟨fun ⟨⟨hxA, _⟩, hxe⟩ ↦ ⟨hxA, hxe⟩,
+      fun ⟨hxA, hxe⟩ ↦ ⟨⟨hxA, (e.extend I).map_source (e.extend_source (I := I) ▸ hxe)⟩, hxe⟩⟩
+  have hνT : ((ν.restrict (e.extend I).target).withDensity
+      fun y ↦ ENNReal.ofReal (w0 y)).restrict (e.extend I).target =
+      (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w0 y) := by
+    rw [← restrict_withDensity hT_meas, Measure.restrict_restrict hT_meas, inter_self]
+  have hrest : ∀ i ∈ t,
+      ((μ.restrict e.source).map (e.extend I)).restrict (I.extendCoordChange e (φ i)).source =
+        ((ν.restrict (e.extend I).target).withDensity
+          fun y ↦ ENNReal.ofReal (w0 y)).restrict (I.extendCoordChange e (φ i)).source := by
+    intro i _
+    have hU := I.measurableSet_extendCoordChange_source e (φ i)
+    have hUsub : (I.extendCoordChange e (φ i)).source ⊆ (e.extend I).target := fun _ hy ↦ hy.1
+    ext A hA
+    rw [Measure.restrict_apply hA, hpiece i (hA.inter hU) inter_subset_right,
+      Measure.restrict_apply hA, withDensity_apply _ (hA.inter hU),
+      Measure.restrict_restrict (hA.inter hU),
+      inter_eq_left.2 (inter_subset_right.trans hUsub)]
+  have hbi := (Measure.restrict_biUnion_congr ht).2 hrest
+  rw [hunion, hμT, hνT] at hbi
+  exact hbi
 
 /-- Pulling positive continuous chart densities from any covering `C¹` atlas to an arbitrary
 chart of the maximal atlas and an arbitrary additive Haar measure. -/

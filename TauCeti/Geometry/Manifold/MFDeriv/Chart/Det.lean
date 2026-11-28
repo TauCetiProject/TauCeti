@@ -104,7 +104,9 @@ theorem abs_det_fderivWithin_extendCoordChange_comp
     I.extend_mem_extendCoordChange_source hxe hxe'
   have hz_e'e'' : z ∈ (I.extendCoordChange e' e'').source :=
     I.extend_mem_extendCoordChange_source hxe' hxe''
-  have hΦy : I.extendCoordChange e e' y = z := I.extendCoordChange_extend_apply hxe
+  have hΦy : I.extendCoordChange e e' y = z := by
+    simp only [y, z, OpenPartialHomeomorph.extend_coe, Function.comp_apply,
+      I.extendCoordChange_apply hxe]
   have hd1 : DifferentiableWithinAt ℝ (I.extendCoordChange e e') (Set.range I) y :=
     (I.contDiffWithinAt_extendCoordChange he he' hy_ee').differentiableWithinAt one_ne_zero
   have hd2 : DifferentiableWithinAt ℝ (I.extendCoordChange e' e'') (Set.range I) z :=
@@ -121,13 +123,14 @@ theorem abs_det_fderivWithin_extendCoordChange_comp
       Filter.inter_mem (I.extendCoordChange_source_mem_nhdsWithin' hxe hxe')
         (I.extendCoordChange_source_mem_nhdsWithin' hxe hxe'')
     filter_upwards [hmem] with w hw
-    rw [Function.comp_apply, I.extendCoordChange_apply_eq e e',
-      I.extendCoordChange_extend_apply (e'.extend_source (I := I) ▸ hw.1.2),
-      I.extendCoordChange_apply_eq]
+    rw [Function.comp_apply, PartialEquiv.trans_apply (e.extend I).symm (e'.extend I),
+      OpenPartialHomeomorph.extend_coe, Function.comp_apply,
+      I.extendCoordChange_apply (e'.extend_source (I := I) ▸ hw.1.2)]
+    rfl
   have heq0 : I.extendCoordChange e e'' y =
       (I.extendCoordChange e' e'' ∘ I.extendCoordChange e e') y := by
-    rw [Function.comp_apply, I.extendCoordChange_extend_apply hxe,
-      I.extendCoordChange_extend_apply hxe, I.extendCoordChange_extend_apply hxe']
+    simp only [y, Function.comp_apply, OpenPartialHomeomorph.extend_coe,
+      I.extendCoordChange_apply hxe, I.extendCoordChange_apply hxe']
   rw [heq.fderivWithin_eq heq0, fderivWithin_comp y (hΦy ▸ hd2) hd1 hmaps hU, hΦy]
   simp only [ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_comp, LinearMap.det_comp,
     abs_mul]
