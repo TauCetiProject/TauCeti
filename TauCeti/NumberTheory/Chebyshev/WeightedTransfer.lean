@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Chebyshev
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
+import TauCeti.Analysis.Calculus.Deriv.Extension
 
 /-!
 # Weighted prime sums and the Chebyshev remainder
@@ -44,44 +44,6 @@ namespace TauCeti
 open Finset MeasureTheory Set Filter
 open scoped Topology
 
-/-- Extend a weight by its tangent lines at the endpoints for Mathlib's Abel summation
-formula, which requires two-sided derivatives on the closed interval. -/
-private theorem exists_hasDerivAt_extension {g g' : ℝ → ℝ} {a b : ℝ} (hab : a < b)
-    (hg : ∀ t ∈ Icc a b, HasDerivWithinAt g (g' t) (Icc a b) t) :
-    ∃ G : ℝ → ℝ, EqOn G g (Icc a b) ∧ ∀ t ∈ Icc a b, HasDerivAt G (g' t) t := by
-  let L (t : ℝ) := g a + g' a * (t - a)
-  let R (t : ℝ) := g b + g' b * (t - b)
-  let G (t : ℝ) := if t < a then L t else if b < t then R t else g t
-  have hG : EqOn G g (Icc a b) := fun t ht ↦
-    by simp [G, not_lt_of_ge ht.1, not_lt_of_ge ht.2]
-  have hD (t : ℝ) (ht : t ∈ Icc a b) :
-      HasDerivWithinAt G (g' t) (Icc a b) t := (hg t ht).congr_of_mem hG ht
-  refine ⟨G, hG, fun t ht ↦ ?_⟩
-  obtain hat | hat := ht.1.eq_or_lt
-  · subst t
-    have hL : HasDerivAt L (g' a) a := by
-      simpa [L] using (((hasDerivAt_id a).sub_const a).const_mul (g' a)).const_add (g a)
-    have hleft : HasDerivWithinAt G (g' a) (Iic a) a :=
-      hL.hasDerivWithinAt.congr_of_mem (fun y hy ↦ by
-        obtain hy | rfl := hy.lt_or_eq
-        · simp [G, hy]
-        · simp [G, L, hab.not_gt]) le_rfl
-    have hright := (hD a ⟨le_rfl, hab.le⟩).mono_of_mem_nhdsWithin (Icc_mem_nhdsGE hab)
-    simpa only [Iic_union_Ici, hasDerivWithinAt_univ] using hleft.union hright
-  obtain htb | htb := ht.2.eq_or_lt
-  · subst t
-    have hR : HasDerivAt R (g' b) b := by
-      simpa [R] using (((hasDerivAt_id b).sub_const b).const_mul (g' b)).const_add (g b)
-    have hright : HasDerivWithinAt G (g' b) (Ici b) b :=
-      hR.hasDerivWithinAt.congr_of_mem (fun y hy ↦ by
-        obtain hy | hy := hy.eq_or_lt
-        · subst y
-          simp [G, hab.not_gt, R]
-        · simp [G, hy, (hab.trans hy).not_gt]) le_rfl
-    have hleft := (hD b ⟨hab.le, le_rfl⟩).mono_of_mem_nhdsWithin (Icc_mem_nhdsLE hab)
-    simpa only [Iic_union_Ici, hasDerivWithinAt_univ] using hleft.union hright
-  exact (hD t ht).hasDerivAt (Icc_mem_nhds hat htb)
-
 /-- The uncentered Abel identity for a weight with within-interval derivatives. -/
 private theorem sum_primesLE_mul_log_eq_sub_integral {g g' : ℝ → ℝ} {x : ℝ} (hx : 2 ≤ x)
     (hg : ∀ t ∈ Icc 2 x, HasDerivWithinAt g (g' t) (Icc 2 x) t)
@@ -113,7 +75,8 @@ private theorem sum_primesLE_mul_log_eq_sub_integral {g g' : ℝ → ℝ} {x : �
         rw [(hD t (uIcc_of_le hx ▸ ht)).deriv]
 
 /-- Partial summation with the Chebyshev main term removed. The sum includes the prime `2`
-and any prime at `x`; this accounts for the term `2 * g 2`. -/
+and any prime at `x`. The term `2 * g 2` is the lower boundary contribution from
+integrating `t * g' t` by parts. -/
 theorem sum_primesLE_mul_log_eq_integral_add {g g' : ℝ → ℝ} {x : ℝ} (hx : 2 ≤ x)
     (hg : ∀ t ∈ Icc 2 x, HasDerivWithinAt g (g' t) (Icc 2 x) t)
     (hg' : IntervalIntegrable g' volume 2 x) :
