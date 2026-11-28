@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Monomial
 public import TauCeti.Algebra.Homology.SpectralObject.Finrank
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic
+public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.SerreClass
 public import TauCeti.AlgebraicTopology.Singular.Triple.Finrank
 import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 import TauCeti.Algebra.Homology.EulerCharacteristic.MorseInequalities
@@ -60,6 +61,11 @@ coefficient of the polynomial measuring the failure of the Morse inequalities to
 a sum of ranks of connecting maps along the resulting filtration by sublevels. A coarser
 filtration can hide cancellations within a piece, and then these ranks need not recover the
 coefficients.
+
+Over any abelian coefficient category, membership in a Serre class `Q` passes along an
+`ℕ`-indexed filtration: if every step `Hᵢ(A (j + 1), A j)` lies in `Q`, so does
+`Hᵢ(A (N + 1), A 0)` (`TauCeti.prop_singularHomology_ofInclusion_of_monotone`). For `Q` the zero
+objects this is the vanishing case of the weak inequalities.
 
 The `ℕ`-indexed filtrations also have the statements above, with the steps finite-dimensional in
 every degree: finiteness (`TauCeti.finite_singularHomology_ofInclusion_of_monotone`), the weak and

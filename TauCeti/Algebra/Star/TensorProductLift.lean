@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.Prod
 public import Mathlib.Algebra.Star.StarAlgHom
 public import Mathlib.RingTheory.TensorProduct.Basic
 
@@ -33,11 +34,15 @@ star version of Mathlib's `Algebra.TensorProduct.map`.
   `Algebra.TensorProduct.mapNonUnitalStarAlgHom_comp`.
 * `Algebra.TensorProduct.commNonUnitalStarAlgHom`: the flip `a ⊗ b ↦ b ⊗ a` as a star
   homomorphism `A ⊗[R] B → B ⊗[R] A`.
+* `Algebra.TensorProduct.isStarOrtho_mapNonUnitalStarAlgHom_inl_inr`: the images of
+  `A ⊗[R] B` and `A' ⊗[R] B` in `(A × A') ⊗[R] B` are star-orthogonal.
+* `Algebra.TensorProduct.mapNonUnitalStarAlgHom_fst_inl` and its siblings: the composites of
+  `inl ⊗ id`, `inr ⊗ id` with `fst ⊗ id`, `snd ⊗ id` are the identity or zero.
 -/
 
 public section
 
-open scoped TensorProduct
+open scoped TensorProduct StarRing
 
 namespace Algebra.TensorProduct
 
@@ -311,5 +316,88 @@ theorem commNonUnitalStarAlgHom_comp_commNonUnitalStarAlgHom :
   NonUnitalStarAlgHom.ext fun x ↦ TensorProduct.comm_comm R B A x
 
 end Comm
+
+section Prod
+
+variable {R A A' B : Type*} [CommSemiring R] [StarRing R]
+  [NonUnitalSemiring A] [Module R A] [StarRing A] [SMulCommClass R A A] [IsScalarTower R A A]
+  [StarModule R A] [NonUnitalSemiring A'] [Module R A'] [StarRing A'] [SMulCommClass R A' A']
+  [IsScalarTower R A' A'] [StarModule R A'] [NonUnitalSemiring B] [Module R B] [StarRing B]
+  [SMulCommClass R B B] [IsScalarTower R B B] [StarModule R B]
+
+/-- The images of `A ⊗[R] B` and `A' ⊗[R] B` in `(A × A') ⊗[R] B` under `inl ⊗ id` and
+`inr ⊗ id` are star-orthogonal. -/
+theorem isStarOrtho_mapNonUnitalStarAlgHom_inl_inr (y : A ⊗[R] B) (z : A' ⊗[R] B) :
+    mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inl R A A') (NonUnitalStarAlgHom.id R B) y ⋆⟂
+      mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inr R A A') (NonUnitalStarAlgHom.id R B) z := by
+  set f := mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inl R A A') (NonUnitalStarAlgHom.id R B)
+  set g := mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inr R A A') (NonUnitalStarAlgHom.id R B)
+  have inl_mul_inr (y : A ⊗[R] B) (z : A' ⊗[R] B) : f y * g z = 0 := by
+    induction y using TensorProduct.inductionOn with
+    | add y₁ y₂ ih₁ ih₂ => rw [map_add, add_mul, ih₁, ih₂, add_zero]
+    | tmul a b =>
+      induction z using TensorProduct.inductionOn with
+      | add z₁ z₂ ih₁ ih₂ => rw [map_add, mul_add, ih₁, ih₂, add_zero]
+      | tmul a' b' => simp [f, g, ← Prod.zero_eq_mk]
+  rw [isStarOrtho_iff, ← map_star]
+  refine ⟨inl_mul_inr y (star z), ?_⟩
+  rw [← star_star (g (star z) * f y), star_mul, ← map_star, ← map_star, inl_mul_inr, star_zero]
+
+/-- Every `x ∈ (A × A') ⊗[R] B` is `(inl ⊗ id)(fst ⊗ id) x + (inr ⊗ id)(snd ⊗ id) x`. -/
+theorem mapNonUnitalStarAlgHom_inl_fst_add_inr_snd (x : (A × A') ⊗[R] B) :
+    mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inl R A A') (NonUnitalStarAlgHom.id R B)
+        (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.fst R A A') (NonUnitalStarAlgHom.id R B) x) +
+      mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inr R A A') (NonUnitalStarAlgHom.id R B)
+        (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.snd R A A') (NonUnitalStarAlgHom.id R B) x) =
+      x := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => rw [map_add, map_add, map_add, map_add, add_add_add_comm, hx, hy]
+  | tmul a b =>
+    simp only [mapNonUnitalStarAlgHom_tmul, NonUnitalStarAlgHom.inl_apply,
+      NonUnitalStarAlgHom.inr_apply, NonUnitalStarAlgHom.fst_apply, NonUnitalStarAlgHom.snd_apply,
+      NonUnitalStarAlgHom.coe_id, id_eq, ← TensorProduct.add_tmul, Prod.mk_add_mk, add_zero,
+      zero_add]
+
+/-- `(fst ⊗ id) ∘ (inl ⊗ id)` is the identity of `A ⊗[R] B`. -/
+@[simp]
+theorem mapNonUnitalStarAlgHom_fst_inl (y : A ⊗[R] B) :
+    mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.fst R A A') (NonUnitalStarAlgHom.id R B)
+      (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inl R A A') (NonUnitalStarAlgHom.id R B) y) =
+      y := by
+  induction y using TensorProduct.inductionOn with
+  | add x y hx hy => rw [map_add, map_add, hx, hy]
+  | tmul a b => simp
+
+/-- `(snd ⊗ id) ∘ (inr ⊗ id)` is the identity of `A' ⊗[R] B`. -/
+@[simp]
+theorem mapNonUnitalStarAlgHom_snd_inr (z : A' ⊗[R] B) :
+    mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.snd R A A') (NonUnitalStarAlgHom.id R B)
+      (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inr R A A') (NonUnitalStarAlgHom.id R B) z) =
+      z := by
+  induction z using TensorProduct.inductionOn with
+  | add x y hx hy => rw [map_add, map_add, hx, hy]
+  | tmul a b => simp
+
+/-- `(fst ⊗ id) ∘ (inr ⊗ id)` vanishes on `A' ⊗[R] B`. -/
+@[simp]
+theorem mapNonUnitalStarAlgHom_fst_inr (z : A' ⊗[R] B) :
+    mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.fst R A A') (NonUnitalStarAlgHom.id R B)
+      (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inr R A A') (NonUnitalStarAlgHom.id R B) z) =
+      0 := by
+  induction z using TensorProduct.inductionOn with
+  | add x y hx hy => rw [map_add, map_add, hx, hy, add_zero]
+  | tmul a b => simp
+
+/-- `(snd ⊗ id) ∘ (inl ⊗ id)` vanishes on `A ⊗[R] B`. -/
+@[simp]
+theorem mapNonUnitalStarAlgHom_snd_inl (y : A ⊗[R] B) :
+    mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.snd R A A') (NonUnitalStarAlgHom.id R B)
+      (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inl R A A') (NonUnitalStarAlgHom.id R B) y) =
+      0 := by
+  induction y using TensorProduct.inductionOn with
+  | add x y hx hy => rw [map_add, map_add, hx, hy, add_zero]
+  | tmul a b => simp
+
+end Prod
 
 end Algebra.TensorProduct

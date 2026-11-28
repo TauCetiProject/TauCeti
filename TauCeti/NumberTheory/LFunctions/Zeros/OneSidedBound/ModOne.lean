@@ -133,11 +133,8 @@ theorem hasLaplace_exp_mul_primeRemainder_one (hd : d ≠ 2) {s : ℂ} (hs : 1 <
         rieszRemainderMellin (jacobiChar ℂ d).LFunction s) := by
   have h := ((1 : PrimitiveDirichletCharacter).hasLaplace_rieszRemainder_comp_exp hs).sub
     ((PrimitiveDirichletCharacter.of (jacobiChar ℂ d)).hasLaplace_rieszRemainder_comp_exp hs)
-  have hzeta : (1 : PrimitiveDirichletCharacter).character.LFunction = riemannZeta := by
-    rw [PrimitiveDirichletCharacter.character_one]
-    exact LFunction_modOne_eq
   have h := h.congr_ae (Filter.Eventually.of_forall fun u ↦
     (mul_primeRemainder_one_eq_rieszRemainder_sub d hd (Real.exp u)).symm)
-  rwa [hzeta, of_jacobiChar_eq d hd] at h
+  rwa [PrimitiveDirichletCharacter.LFunction_character_one, of_jacobiChar_eq d hd] at h
 
 end TauCeti.OneSidedBound
