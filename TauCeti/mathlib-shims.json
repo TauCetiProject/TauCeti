@@ -207,5 +207,18 @@
     "modules": [
       "Mathlib.AlgebraicGeometry.Group.Smooth"
     ]
+  },
+  {
+    "note": "Vendored from mathlib4#39574 (Christoph Spiegel), https://github.com/leanprover-community/mathlib4/pull/39574: the global definition and its first consequences, with the pull request's names. When it lands, delete this source and point TauCeti/Analysis/Calculus/LipschitzSmooth/Operations.lean and Gradient.lean at Mathlib's definition",
+    "sources": [
+      "TauCeti/Analysis/Calculus/LipschitzSmooth/Basic.lean"
+    ],
+    "declarations": [
+      "LipschitzSmoothWith",
+      "LipschitzSmoothWith.of_hasFDerivAt",
+      "LipschitzSmoothWith.fderiv_descent_le",
+      "LipschitzSmoothWith.fderiv_descent_ge",
+      "lipschitzSmoothWith_iff_inner_gradient"
+    ]
   }
 ]
