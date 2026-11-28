@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.LeftRight.PushoutProduct
-public import TauCeti.AlgebraicTopology.SimplicialSet.StdSimplex
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
 
 /-!
 # Lifting homotopies along left and right fibrations
@@ -52,19 +52,6 @@ open modelCategoryQuillen
 private noncomputable def cylinderEnd (Z : SSet.{u}) (k : Fin 2) : Z ⟶ Z ⊗ Δ[1] :=
   lift (𝟙 Z) (const (stdSimplex.obj₀Equiv.symm k))
 
-private lemma cylinderEnd_zero (Z : SSet.{u}) : cylinderEnd Z 0 = ι₀ :=
-  CartesianMonoidalCategory.hom_ext _ _ (by simp [cylinderEnd]) (by simp [cylinderEnd])
-
-private lemma cylinderEnd_one (Z : SSet.{u}) : cylinderEnd Z 1 = ι₁ :=
-  CartesianMonoidalCategory.hom_ext _ _ (by simp [cylinderEnd]) (by simp [cylinderEnd])
-
-/-- The product of `Z` with the inclusion of the horn `Λ[1, k]`, which is the vertex `k`, factors
-through the end `Z ⊗ {k}` of the cylinder. -/
-private lemma whiskerLeft_horn_one_ι (Z : SSet.{u}) (k : Fin 2) :
-    Z ◁ Λ[1, k].ι = fst _ _ ≫ cylinderEnd Z k :=
-  CartesianMonoidalCategory.hom_ext _ _ (by simp [cylinderEnd])
-    (by simp [cylinderEnd, horn_one_ι_eq_const, comp_const])
-
 /-- The end `Z ⊗ {k}` of the cylinder factors through `Z ⊗ Λ[1, k]` by a section of the
 projection to `Z`. -/
 private lemma exists_section_whiskerLeft_horn_one_ι (Z : SSet.{u}) (k : Fin 2) :
@@ -84,29 +71,31 @@ private lemma hasLiftingProperty_cylinderEnd (Z : SSet.{u}) (k : Fin 2)
   refine ⟨fun {f g} sq ↦ ?_⟩
   -- Lift against `Z ⊗ Λ[1, k] ⟶ Z ⊗ Δ[1]` and restrict along the section `s`.
   have sq' : CommSq (fst _ _ ≫ f) (Z ◁ Λ[1, k].ι) p g :=
-    ⟨by rw [whiskerLeft_horn_one_ι, Category.assoc, sq.w, Category.assoc]⟩
+    ⟨by rw [whiskerLeft_horn_one_ι, ← cylinderEnd, Category.assoc, sq.w, Category.assoc]⟩
   exact ⟨⟨{ l := sq'.lift
             fac_left := by rw [← hs₂, Category.assoc, sq'.fac_left, reassoc_of% hs₁] }⟩⟩
 
 /-- The start `Z ⊗ {0}` of the cylinder `Z ⊗ Δ[1]` is a left anodyne extension. -/
 lemma leftAnodyneExtensions_ι₀ (Z : SSet.{u}) :
     leftAnodyneExtensions (ι₀ : Z ⟶ Z ⊗ Δ[1]) := by
-  rw [← cylinderEnd_zero, leftAnodyneExtensions_eq_llp]
+  rw [leftAnodyneExtensions_eq_llp]
   intro E B p hp
   have : LeftFibration p := ⟨hp⟩
   have := leftAnodyneExtensions.hasLiftingProperty
     ((leftAnodyneExtensions.horn_ι (n := 1) (i := 0) (by decide)).whiskerLeft Z) p
-  exact hasLiftingProperty_cylinderEnd Z 0 p
+  simpa only [cylinderEnd, lift_const_zero_eq_comp_ι₀, Category.id_comp] using
+    hasLiftingProperty_cylinderEnd Z 0 p
 
 /-- The end `Z ⊗ {1}` of the cylinder `Z ⊗ Δ[1]` is a right anodyne extension. -/
 lemma rightAnodyneExtensions_ι₁ (Z : SSet.{u}) :
     rightAnodyneExtensions (ι₁ : Z ⟶ Z ⊗ Δ[1]) := by
-  rw [← cylinderEnd_one, rightAnodyneExtensions_eq_llp]
+  rw [rightAnodyneExtensions_eq_llp]
   intro E B p hp
   have : RightFibration p := ⟨hp⟩
   have := rightAnodyneExtensions.hasLiftingProperty
     ((rightAnodyneExtensions.horn_ι (n := 1) (i := 1) (by decide)).whiskerLeft Z) p
-  exact hasLiftingProperty_cylinderEnd Z 1 p
+  simpa only [cylinderEnd, lift_const_one_eq_comp_ι₁, Category.id_comp] using
+    hasLiftingProperty_cylinderEnd Z 1 p
 
 /-- The end `Z ⊗ {0}` of the cylinder `Z ⊗ Δ[1]` is an anodyne extension. -/
 lemma anodyneExtensions_ι₀ (Z : SSet.{u}) : anodyneExtensions (ι₀ : Z ⟶ Z ⊗ Δ[1]) :=
@@ -132,10 +121,10 @@ private lemma exists_lift_cylinderEnd {A B X Y : SSet.{u}} (k : Fin 2) (i : A �
   let P := Functor.PushoutObjObj.ofHasPushout (curriedTensor SSet.{u}) i Λ[1, k].ι
   let φ : P.pt ⟶ X := P.isPushout.desc (fst _ _ ≫ g) L (by
     dsimp
-    rw [whiskerLeft_horn_one_ι, Category.assoc, ← hgL, whiskerRight_fst_assoc])
+    rw [whiskerLeft_horn_one_ι, ← cylinderEnd, Category.assoc, ← hgL, whiskerRight_fst_assoc])
   have sq : CommSq φ P.ι p H := ⟨P.hom_ext
     (by simp only [φ, IsPushout.inl_desc_assoc, P.inl_ι_assoc, curriedTensor_obj_map,
-      whiskerLeft_horn_one_ι, Category.assoc, hg])
+      whiskerLeft_horn_one_ι, cylinderEnd, Category.assoc, hg])
     (by simp [φ, hL])⟩
   obtain ⟨s, hs₁, hs₂⟩ := exists_section_whiskerLeft_horn_one_ι B k
   refine ⟨sq.lift, ?_, ?_, sq.fac_right⟩
@@ -157,8 +146,10 @@ theorem exists_lift_cylinder_ι₀_of_mono {A B X Y : SSet.{u}} (i : A ⟶ B) [M
   have := (leftAnodyneExtensions_pushoutObjObjι
     (Functor.PushoutObjObj.ofHasPushout (curriedTensor SSet.{u}) i Λ[1, 0].ι)
     (.horn_ι (by decide))).hasLiftingProperty p
-  simp only [← cylinderEnd_zero] at hg hgL ⊢
-  exact exists_lift_cylinderEnd 0 i p H g L hg hL hgL
+  simpa only [cylinderEnd, lift_const_zero_eq_comp_ι₀, Category.id_comp] using
+    exists_lift_cylinderEnd 0 i p H g L
+      (by simpa only [cylinderEnd, lift_const_zero_eq_comp_ι₀, Category.id_comp] using hg)
+      hL (by simpa only [cylinderEnd, lift_const_zero_eq_comp_ι₀, Category.id_comp] using hgL)
 
 /-- The covering homotopy extension property of a right fibration `p : X ⟶ Y` with respect to a
 monomorphism `i : A ⟶ B`, backwards in time: a homotopy `H : B ⊗ Δ[1] ⟶ Y` lifts along `p`,
@@ -171,7 +162,9 @@ theorem exists_lift_cylinder_ι₁_of_mono {A B X Y : SSet.{u}} (i : A ⟶ B) [M
   have := (rightAnodyneExtensions_pushoutObjObjι
     (Functor.PushoutObjObj.ofHasPushout (curriedTensor SSet.{u}) i Λ[1, 1].ι)
     (.horn_ι (by decide))).hasLiftingProperty p
-  simp only [← cylinderEnd_one] at hg hgL ⊢
-  exact exists_lift_cylinderEnd 1 i p H g L hg hL hgL
+  simpa only [cylinderEnd, lift_const_one_eq_comp_ι₁, Category.id_comp] using
+    exists_lift_cylinderEnd 1 i p H g L
+      (by simpa only [cylinderEnd, lift_const_one_eq_comp_ι₁, Category.id_comp] using hg)
+      hL (by simpa only [cylinderEnd, lift_const_one_eq_comp_ι₁, Category.id_comp] using hgL)
 
 end SSet

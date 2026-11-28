@@ -204,6 +204,15 @@ theorem vertexJoin_map_succ {m n : SimplexCategory} (f : m ⟶ n) (i : Fin (m.le
   rw [rev_map_apply, Fin.rev_rev]
   exact (Fin.rev_castSucc _).trans (congrArg Fin.succ (Fin.rev_rev _))
 
+/-- A morphism out of `⦋m.len + 1⦌` is determined by its values on the initial vertex and on the
+other `m.len + 1` vertices. -/
+theorem hom_ext_zero_succ {m n : SimplexCategory} {f g : ⦋m.len + 1⦌ ⟶ n}
+    (h₀ : f.toOrderHom 0 = g.toOrderHom 0)
+    (h : ∀ i : Fin (m.len + 1), f.toOrderHom i.succ = g.toOrderHom i.succ) : f = g := by
+  ext i : 3
+  cases i using Fin.cases
+  exacts [h₀, h _]
+
 /-- The join with an initial vertex preserves the initial vertex. -/
 @[reassoc]
 theorem const_zero_comp_vertexJoin_map {x : SimplexCategory} {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) :
@@ -235,6 +244,213 @@ theorem vertexJoin_map_σ {n : ℕ} (i : Fin (n + 1)) :
   cases j using Fin.cases with
   | zero => exact (vertexJoin_map_zero (σ i)).trans (Fin.predAbove_right_zero (i := i.succ)).symm
   | succ j => exact (vertexJoin_map_succ (σ i) j).trans (Fin.succ_predAbove_succ i j).symm
+
+/-- Reversal takes a constant ordinal map to the constant map at the reversed vertex. -/
+lemma rev_map_const (m n : SimplexCategory) (i : Fin (n.len + 1)) :
+    rev.map (const m n i) = const m n i.rev := by
+  -- Both sides evaluate to the same constant vertex function.
+  ext j : 3
+  rfl
+
+/-- The retraction `i ↦ min i j` of a finite ordinal onto its initial segment through `j`. -/
+def minRetraction {m : SimplexCategory} (j : Fin (m.len + 1)) : m ⟶ m :=
+  Hom.mk ⟨fun i ↦ min i j, fun _ _ h ↦ min_le_min_right j h⟩
+
+/-- The vertex map of the initial-segment retraction is minimum with its endpoint. -/
+@[simp]
+lemma minRetraction_apply {m : SimplexCategory} (j i : Fin (m.len + 1)) :
+    (minRetraction j).toOrderHom i = min i j :=
+  (rfl)
+
+/-- The retraction `i ↦ max i j` of a finite ordinal onto its final segment starting at `j`. -/
+def maxRetraction {m : SimplexCategory} (j : Fin (m.len + 1)) : m ⟶ m :=
+  rev.map (minRetraction j.rev)
+
+/-- The final-segment retraction is obtained by reversing the initial-segment retraction. -/
+lemma maxRetraction_def {m : SimplexCategory} (j : Fin (m.len + 1)) :
+    maxRetraction j = rev.map (minRetraction j.rev) :=
+  (rfl)
+
+/-- The vertex map of the final-segment retraction is maximum with its endpoint. -/
+@[simp]
+lemma maxRetraction_apply {m : SimplexCategory} (j i : Fin (m.len + 1)) :
+    (maxRetraction j).toOrderHom i = max i j := by
+  simp only [maxRetraction, rev_map_apply, minRetraction_apply, Fin.rev_anti.map_min, Fin.rev_rev]
+
+/-- The monotone self-map of `Fin (n + 2)` attached to a simplex `e : ⦋n⦌ ⟶ ⦋1⦌` of `Δ[1]`: it
+fixes the `i < n + 1` with `e i = 0` and sends the other elements to the last one. -/
+private def joinVertexCollapseOrderHom {n : ℕ} (e : ⦋n⦌ ⟶ ⦋1⦌) : Fin (n + 2) →o Fin (n + 2) where
+  toFun i := if h : i = Fin.last _ then i else
+    if e.toOrderHom (i.castPred h) = 0 then i else Fin.last _
+  monotone' a b hab := by
+    dsimp only
+    by_cases hb : b = Fin.last _
+    · subst hb
+      split_ifs <;> exact Fin.le_last _
+    · have ha : a ≠ Fin.last _ := fun ha ↦ hb (le_antisymm (Fin.le_last _) (ha ▸ hab))
+      simp only [ha, hb, ↓reduceDIte]
+      split_ifs with h₁ h₂ h₂
+      · exact hab
+      · exact Fin.le_last _
+      · exact absurd (le_antisymm (h₂ ▸ e.toOrderHom.monotone
+          (Fin.castPred_le_castPred_iff.2 hab)) (Fin.zero_le _)) h₁
+      · exact le_rfl
+
+/-- The self-map of `⦋n⦌ ⋆ ⦋0⦌` attached to a simplex `e : ⦋n⦌ ⟶ ⦋1⦌` of `Δ[1]`: it fixes the
+vertices `i` of `⦋n⦌` with `e i = 0` and sends the other vertices to the final vertex. -/
+def joinVertexCollapse {n : ℕ} (e : ⦋n⦌ ⟶ ⦋1⦌) :
+    joinVertex.obj ⦋n⦌ ⟶ joinVertex.obj ⦋n⦌ :=
+  SimplexCategory.Hom.mk (joinVertexCollapseOrderHom e)
+
+/-- The final-vertex collapse fixes an uncollapsed vertex and otherwise sends it to the last
+vertex. -/
+@[simp]
+lemma joinVertexCollapse_castSucc {n : ℕ} (e : ⦋n⦌ ⟶ ⦋1⦌) (i : Fin (n + 1)) :
+    (joinVertexCollapse e).toOrderHom i.castSucc =
+      if e.toOrderHom i = 0 then i.castSucc else Fin.last (n + 1) := by
+  -- `Hom.mk` packages precisely the monotone vertex map defining the collapse.
+  change joinVertexCollapseOrderHom e i.castSucc =
+    if e.toOrderHom i = 0 then i.castSucc else Fin.last (n + 1)
+  by_cases h : e.toOrderHom i = 0
+    <;> simp [joinVertexCollapseOrderHom, h]
+
+/-- The final-vertex collapse fixes the last vertex. -/
+@[simp]
+lemma joinVertexCollapse_last {n : ℕ} (e : ⦋n⦌ ⟶ ⦋1⦌) :
+    (joinVertexCollapse e).toOrderHom (Fin.last (n + 1)) = Fin.last (n + 1) := by
+  -- `Hom.mk` packages precisely the monotone vertex map defining the collapse.
+  change joinVertexCollapseOrderHom e (Fin.last (n + 1)) = Fin.last (n + 1)
+  simp [joinVertexCollapseOrderHom]
+
+/-- The collapse commutes with simplicial restriction. -/
+lemma joinVertexCollapse_comp_joinVertex_map {n n' : ℕ} (f : ⦋n'⦌ ⟶ ⦋n⦌) (e : ⦋n⦌ ⟶ ⦋1⦌) :
+    joinVertexCollapse (f ≫ e) ≫ joinVertex.map f = joinVertex.map f ≫ joinVertexCollapse e := by
+  refine hom_ext_castSucc_last (m := ⦋n'⦌) (fun i ↦ ?_) ?_
+  · -- Normalize the join object to the finite ordinal expected by the vertex extensionality
+    -- lemma; rewriting `comp_toOrderHom` alone cannot match these dependent source types.
+    change (joinVertex.map f).toOrderHom ((joinVertexCollapse (f ≫ e)).toOrderHom i.castSucc) =
+      (joinVertexCollapse e).toOrderHom ((joinVertex.map f).toOrderHom i.castSucc)
+    rw [joinVertexCollapse_castSucc, joinVertex_map_castSucc, joinVertexCollapse_castSucc]
+    -- Normalize the join object to the finite ordinal expected by the vertex extensionality
+    -- lemma; rewriting `comp_toOrderHom` alone cannot match these dependent source types.
+    change (joinVertex.map f).toOrderHom (if e.toOrderHom (f.toOrderHom i) = 0 then _ else _) = _
+    by_cases h : e.toOrderHom (f.toOrderHom i) = 0
+    · simp only [h, ↓reduceIte]
+      exact joinVertex_map_castSucc f i
+    · simp only [h, ↓reduceIte]
+      exact joinVertex_map_last f
+  · have h₁ : (joinVertex.map f).toOrderHom (Fin.last (n' + 1)) = Fin.last (n + 1) :=
+      joinVertex_map_last f
+    -- Normalize the join object to the finite ordinal expected by the vertex extensionality
+    -- lemma; rewriting `comp_toOrderHom` alone cannot match these dependent source types.
+    change (joinVertex.map f).toOrderHom
+        ((joinVertexCollapse (f ≫ e)).toOrderHom (Fin.last (n' + 1))) =
+      (joinVertexCollapse e).toOrderHom ((joinVertex.map f).toOrderHom (Fin.last (n' + 1)))
+    rw [joinVertexCollapse_last, h₁, joinVertexCollapse_last]
+
+/-- The final-vertex collapse fixes the distinguished final vertex. -/
+lemma joinVertexInr_comp_joinVertexCollapse {n : ℕ} (e : ⦋n⦌ ⟶ ⦋1⦌) :
+    joinVertexInr ⦋n⦌ ≫ joinVertexCollapse e = joinVertexInr ⦋n⦌ := by
+  rw [joinVertexInr_mk]
+  exact Hom.ext_zero_left _ _ (joinVertexCollapse_last e)
+
+/-- At time zero the final-vertex collapse is the identity. -/
+@[simp]
+lemma joinVertexCollapse_const_zero (n : ℕ) : joinVertexCollapse (SimplexCategory.const ⦋n⦌ ⦋1⦌ 0) =
+      𝟙 _ := by
+  refine hom_ext_castSucc_last (m := ⦋n⦌) (fun i ↦ ?_) (joinVertexCollapse_last _)
+  exact (joinVertexCollapse_castSucc _ i).trans (by
+    simp only [SimplexCategory.const_apply]
+    -- Identity and constant simplex maps evaluate to their defining vertex functions.
+    rfl)
+
+/-- At time one the final-vertex collapse factors through the final vertex. -/
+@[simp]
+lemma joinVertexCollapse_const_one (n : ℕ) :
+    joinVertexCollapse (SimplexCategory.const ⦋n⦌ ⦋1⦌ 1) =
+      SimplexCategory.const _ ⦋0⦌ 0 ≫ joinVertexInr ⦋n⦌ := by
+  rw [joinVertexInr_mk]
+  refine hom_ext_castSucc_last (m := ⦋n⦌) (fun i ↦ ?_) (joinVertexCollapse_last _)
+  exact (joinVertexCollapse_castSucc _ i).trans (by
+    simp only [SimplexCategory.const_apply]
+    -- Identity and constant simplex maps evaluate to their defining vertex functions.
+    rfl)
+
+/-- The self-map of `⦋0⦌ ⋆ ⦋n⦌` attached to a simplex `e : ⦋n⦌ ⟶ ⦋1⦌` of `Δ[1]`: it fixes the
+vertices `i` of `⦋n⦌` with `e i = 1` and sends the other vertices to the initial vertex. -/
+def vertexJoinCollapse {n : ℕ} (e : ⦋n⦌ ⟶ ⦋1⦌) :
+    vertexJoin.obj ⦋n⦌ ⟶ vertexJoin.obj ⦋n⦌ :=
+  rev.map (joinVertexCollapse (rev.map e))
+
+/-- The initial-vertex collapse is obtained by reversing the final-vertex collapse. -/
+lemma vertexJoinCollapse_def {n : ℕ} (e : ⦋n⦌ ⟶ ⦋1⦌) :
+    vertexJoinCollapse e = rev.map (joinVertexCollapse (rev.map e)) :=
+  (rfl)
+
+/-- The initial-vertex collapse fixes an uncollapsed vertex and otherwise sends it to zero. -/
+@[simp]
+lemma vertexJoinCollapse_succ {n : ℕ} (e : ⦋n⦌ ⟶ ⦋1⦌) (i : Fin (n + 1)) :
+    (vertexJoinCollapse e).toOrderHom i.succ = if e.toOrderHom i = 1 then i.succ else 0 := by
+  -- Reversal exchanges successors with the nonfinal vertices of the right-hand collapse.
+  change (rev.map (joinVertexCollapse (rev.map e))).toOrderHom i.succ = _
+  change ((joinVertexCollapse (rev.map e)).toOrderHom i.succ.rev).rev = _
+  rw [Fin.rev_succ]
+  refine (congrArg Fin.rev (joinVertexCollapse_castSucc (rev.map e) i.rev)).trans ?_
+  rw [rev_map_apply, Fin.rev_rev]
+  by_cases h : e.toOrderHom i = 1
+  · simp only [h, show (1 : Fin 2).rev = 0 from rfl, ↓reduceIte]
+    exact (Fin.rev_castSucc i.rev).trans (congrArg Fin.succ (Fin.rev_rev i))
+  · have h' : (e.toOrderHom i).rev ≠ 0 := by simpa [Fin.rev_eq_iff] using h
+    simp only [h, h', ↓reduceIte]
+    exact Fin.rev_last _
+
+/-- The initial-vertex collapse fixes zero. -/
+@[simp]
+lemma vertexJoinCollapse_zero {n : ℕ} (e : ⦋n⦌ ⟶ ⦋1⦌) : (vertexJoinCollapse e).toOrderHom 0 =
+      0 := by
+  -- Reversal identifies this endpoint with the fixed final vertex.
+  exact (congrArg Fin.rev (joinVertexCollapse_last (rev.map e))).trans (Fin.rev_last _)
+
+/-- The collapse commutes with simplicial restriction. -/
+lemma vertexJoinCollapse_comp_vertexJoin_map {n n' : ℕ} (f : ⦋n'⦌ ⟶ ⦋n⦌) (e : ⦋n⦌ ⟶ ⦋1⦌) :
+    vertexJoinCollapse (f ≫ e) ≫ vertexJoin.map f = vertexJoin.map f ≫ vertexJoinCollapse e := by
+  exact (rev.map_comp _ _).symm.trans
+    ((congrArg (fun g ↦ rev.map g)
+      (by simpa only [Functor.map_comp] using
+        joinVertexCollapse_comp_joinVertex_map (rev.map f) (rev.map e))).trans
+      (rev.map_comp _ _))
+
+/-- The initial-vertex collapse fixes the distinguished initial vertex. -/
+lemma const_zero_comp_vertexJoinCollapse {n : ℕ} (e : ⦋n⦌ ⟶ ⦋1⦌) :
+    SimplexCategory.const ⦋0⦌ (vertexJoin.obj ⦋n⦌) 0 ≫ vertexJoinCollapse e =
+      SimplexCategory.const ⦋0⦌ (vertexJoin.obj ⦋n⦌) 0 :=
+  Hom.ext_zero_left _ _ (vertexJoinCollapse_zero e)
+
+/-- At time one the initial-vertex collapse is the identity. -/
+@[simp]
+lemma vertexJoinCollapse_const_one (n : ℕ) : vertexJoinCollapse (SimplexCategory.const ⦋n⦌ ⦋1⦌ 1) =
+      𝟙 _ := by
+  -- Reversal exchanges the two interval endpoints.
+  change rev.map (joinVertexCollapse (rev.map (SimplexCategory.const ⦋n⦌ ⦋1⦌ 1))) = _
+  rw [rev_map_const]
+  change rev.map (joinVertexCollapse (SimplexCategory.const ⦋n⦌ ⦋1⦌ 0)) = _
+  rw [joinVertexCollapse_const_zero]
+  exact rev.map_id _
+
+/-- At time zero the initial-vertex collapse factors through the initial vertex. -/
+@[simp]
+lemma vertexJoinCollapse_const_zero (n : ℕ) :
+    vertexJoinCollapse (SimplexCategory.const ⦋n⦌ ⦋1⦌ 0) =
+      SimplexCategory.const _ ⦋0⦌ 0 ≫ SimplexCategory.const ⦋0⦌ (vertexJoin.obj ⦋n⦌) 0 := by
+  -- The collapsing endpoint is the reverse of the final-vertex endpoint.
+  change rev.map (joinVertexCollapse (rev.map (SimplexCategory.const ⦋n⦌ ⦋1⦌ 0))) = _
+  rw [rev_map_const]
+  change rev.map (joinVertexCollapse (SimplexCategory.const ⦋n⦌ ⦋1⦌ 1)) = _
+  rw [joinVertexCollapse_const_one, joinVertexInr_mk]
+  -- Normalize the joined ordinal before functoriality rewrites its composite maps.
+  change rev.map (const ⦋n + 1⦌ ⦋0⦌ 0 ≫ const ⦋0⦌ ⦋n + 1⦌ (Fin.last (n + 1))) = _
+  rw [Functor.map_comp, rev_map_const, rev_map_const, Fin.rev_last]
+  rfl
 
 end SimplexCategory
 

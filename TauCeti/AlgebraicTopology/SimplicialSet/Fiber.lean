@@ -26,6 +26,7 @@ base, such as the sections of an inner fibration, are fibers of this kind.
 
 * `SSet.fiber q y`: the fiber of `q : X ⟶ Y` over the vertex `y`, as a subcomplex of `X`.
 * `SSet.fiber.map g hg y`: the map of fibers over `y` induced by a map `g` over `Y`.
+* `SSet.fiber.mapIso e he y`: transport of fibers along an isomorphism over `Y`.
 * `SSet.fiber.lift`: a morphism to `X` whose composite with `q` is constant at `y`, as a morphism
   to the fiber.
 * `SSet.fiber.basePoint`: a vertex of `X` over `y`, as a vertex of the fiber.
@@ -206,6 +207,30 @@ lemma fiber.map_comp {X' X'' : SSet.{u}} {q : X ⟶ Y} {q' : X' ⟶ Y} {q'' : X'
       fiber.map g hg y ≫ fiber.map g' hg' y := by
   rw [← cancel_mono (fiber q'' y).ι]
   simp
+
+/-- An isomorphism over the base induces an isomorphism on each fiber. -/
+def fiber.mapIso {X' : SSet.{u}} {q : X ⟶ Y} {q' : X' ⟶ Y}
+    (e : X ≅ X') (he : e.hom ≫ q' = q) (y : Y _⦋0⦌) :
+    (fiber q y : SSet) ≅ (fiber q' y : SSet) where
+  hom := fiber.map e.hom he y
+  inv := fiber.map e.inv (by rw [← he, e.inv_hom_id_assoc]) y
+  hom_inv_id := by simp [← fiber.map_comp]
+  inv_hom_id := by simp [← fiber.map_comp]
+
+/-- The fiber isomorphism is induced by the forward map of the given isomorphism. -/
+@[simp]
+lemma fiber.mapIso_hom {X' : SSet.{u}} {q : X ⟶ Y} {q' : X' ⟶ Y}
+    (e : X ≅ X') (he : e.hom ≫ q' = q) (y : Y _⦋0⦌) :
+    (fiber.mapIso e he y).hom = fiber.map e.hom he y :=
+  (rfl)
+
+/-- The inverse fiber isomorphism is induced by the inverse map over the base. -/
+@[simp]
+lemma fiber.mapIso_inv {X' : SSet.{u}} {q : X ⟶ Y} {q' : X' ⟶ Y}
+    (e : X ≅ X') (he : e.hom ≫ q' = q) (y : Y _⦋0⦌) :
+    (fiber.mapIso e he y).inv =
+      fiber.map e.inv (by rw [← he, e.inv_hom_id_assoc]) y :=
+  (rfl)
 
 /-- The fibers of an isomorphism are terminal. -/
 noncomputable def fiber.isTerminalOfIsIso (q : X ⟶ Y) [IsIso q] (y : Y _⦋0⦌) :

@@ -9,7 +9,9 @@ public import Mathlib.AlgebraicTopology.Quasicategory.Nerve
 public import Mathlib.AlgebraicTopology.SimplicialSet.Boundary
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
+public import Mathlib.AlgebraicTopology.SimplicialSet.StdSimplexOne
 public import Mathlib.Data.Finset.Sort
+public import TauCeti.AlgebraicTopology.SimplexCategory.JoinVertex
 import Mathlib.CategoryTheory.Functor.KanExtension.DenseAtYoneda
 
 /-!
@@ -53,7 +55,11 @@ faces of the increasing enumeration of a set `J` enumerate the sets `J` with one
 * `SSet.stdSimplex.quasicategory`: standard simplices are quasicategories.
 * `SSet.stdSimplex.isConnected`: standard simplices are connected.
 * `SSet.stdSimplex.contraction`: the homotopy from the constant map at the initial vertex of
-  `Δ[n]` to its identity.
+  `Δ[n]` to its identity, which fixes the initial vertex
+  (`SSet.stdSimplex.lift_const_zero_contraction_h`); for `n = 1` it is the minimum of the two
+  coordinates of `Δ[1] ⊗ Δ[1]`.
+* `SSet.stdSimplex.objEquiv_objMk₁_zero`, `SSet.stdSimplex.objEquiv_objMk₁_last`: the extreme
+  simplices `objMk₁ 0` and `objMk₁ (Fin.last _)` of `Δ[1]` are constant.
 * `SSet.horn_one_ι_eq_const`: each horn `Λ[1, i]` of `Δ[1]` is the vertex `i`.
 * `SSet.Edge.yonedaEquiv_symm_edge_app_zero`, `SSet.Edge.yonedaEquiv_symm_edge_app_one`: the map
   `Δ[1] ⟶ X` given by an edge sends the vertices `0` and `1` to its source and target.
@@ -71,6 +77,40 @@ open CategoryTheory Finset Opposite Simplicial MonoidalCategory CartesianMonoida
 universe u
 
 namespace SSet.stdSimplex
+
+/-- Restricting the cut simplex at `j + 1` to the initial segment through `j` is constant zero. -/
+@[simp]
+lemma minRetraction_comp_objMk₁ {n : ℕ} (j : Fin (n + 1)) :
+    SimplexCategory.minRetraction j ≫ objEquiv (objMk₁.{u} j.succ) =
+      SimplexCategory.const ⦋n⦌ ⦋1⦌ 0 := by
+  ext i : 3
+  simp only [SimplexCategory.comp_toOrderHom, OrderHom.comp_coe, Function.comp_apply,
+    SimplexCategory.minRetraction_apply, objEquiv_toOrderHom_apply, SimplexCategory.const_apply]
+  rw [objMk₁_apply_eq_zero_iff, Fin.castSucc_lt_succ_iff]
+  exact min_le_right i j
+
+/-- Reversal exchanges the zero and one segments of an interval cut simplex. -/
+@[simp]
+lemma rev_map_objEquiv_objMk₁ {n : ℕ} (j : Fin (n + 2)) :
+    dsimp% SimplexCategory.rev.map (objEquiv (objMk₁.{u} j)) = objEquiv (objMk₁.{u} j.rev) := by
+  ext i : 3
+  -- Normalize the source and target ordinals before reversing their vertex functions.
+  change (objMk₁.{u} j i.rev).rev = objMk₁.{u} j.rev i
+  rw [objMk₁_apply, objMk₁_apply]
+  split_ifs <;> apply Fin.ext <;>
+    simp_all only [Fin.val_zero, Fin.val_one, Fin.val_rev, Fin.val_castSucc,
+      Fin.lt_def] <;> omega
+
+/-- Restricting the cut simplex at `j` to the final segment starting at `j` is constant one. -/
+@[simp]
+lemma maxRetraction_comp_objMk₁ {n : ℕ} (j : Fin (n + 1)) :
+    SimplexCategory.maxRetraction j ≫ objEquiv (objMk₁.{u} j.castSucc) =
+      SimplexCategory.const ⦋n⦌ ⦋1⦌ 1 := by
+  have h := congrArg (fun f ↦ SimplexCategory.rev.map f)
+    (minRetraction_comp_objMk₁.{u} j.rev)
+  simpa only [Functor.map_comp, SimplexCategory.maxRetraction_def, rev_map_objEquiv_objMk₁,
+    Fin.rev_succ, Fin.rev_rev, SimplexCategory.rev_map_const,
+    show (0 : Fin 2).rev = 1 from rfl] using h
 
 /-- A map of standard simplices `q : Δ[m] ⟶ Δ[n]` sends a simplex `x` of `Δ[m]` to the simplex
 whose `j`-th vertex is the image of the `j`-th vertex of `x` under the vertex map of `q`. -/
@@ -295,6 +335,86 @@ noncomputable def contraction (n : ℕ) :
     ext ⟨⟨m⟩⟩ p
     rfl
   rel := by ext _ ⟨⟨_, ⟨⟩⟩, _⟩
+
+/-- Vertexwise evaluation of the standard simplex contraction. -/
+@[simp]
+lemma contraction_h_app_apply {n m : ℕ} (σ : Δ[n] _⦋m⦌) (e : Δ[1] _⦋m⦌)
+    (i : Fin (m + 1)) :
+    dsimp% (contraction n).h.app (op ⦋m⦌) (σ, e) i = if e i = 0 then 0 else σ i :=
+  (rfl)
+
+/-- The contraction of `Δ[n]` onto its initial vertex fixes that vertex. -/
+@[reassoc]
+lemma lift_const_zero_contraction_h {Z : SSet.{u}} (n : ℕ) (f : Z ⟶ Δ[1]) :
+    lift (SSet.const (obj₀Equiv.symm 0)) f ≫ (contraction n).h =
+      SSet.const (obj₀Equiv.symm 0) := by
+  ext ⟨⟨m⟩⟩ z i
+  -- Evaluate the pairing, keeping the contraction behind its component API.
+  refine congrArg Fin.val ((contraction_h_app_apply
+    ((SSet.const (obj₀Equiv.symm (0)) : Z ⟶ Δ[n]).app _ z) (f.app _ z) i).trans ?_)
+  have hc : (SSet.const (obj₀Equiv.symm (0)) : Z ⟶ Δ[n]).app _ z i = 0 :=
+    const_app_apply _ z i
+  simp only [hc, ite_self]
+  exact hc.symm
+
+/-- The `m`-simplex of `Δ[1]` taking `0` times the value `0` is constant at `1`. -/
+@[simp]
+lemma objEquiv_objMk₁_zero (m : ℕ) :
+    dsimp% objEquiv (objMk₁.{u} (0 : Fin (m + 2))) = SimplexCategory.const ⦋m⦌ ⦋1⦌ 1 := by
+  ext i : 3
+  exact (objMk₁_apply_eq_one_iff.{u} (0 : Fin (m + 2)) i).2 (Fin.zero_le _)
+
+/-- The `m`-simplex of `Δ[1]` taking `m + 1` times the value `0` is constant at `0`. -/
+@[simp]
+lemma objEquiv_objMk₁_last (m : ℕ) :
+    dsimp% objEquiv (objMk₁.{u} (Fin.last (m + 1))) = SimplexCategory.const ⦋m⦌ ⦋1⦌ 0 := by
+  ext i : 3
+  exact (objMk₁_apply_eq_zero_iff.{u} (Fin.last (m + 1)) i).2 (Fin.castSucc_lt_last i)
+
+open SimplexCategory in
+/-- The join collapse of a cut simplex is unchanged by restriction to its uncollapsed segment. -/
+lemma joinVertexCollapse_comp_joinVertex_map_minRetraction {n : ℕ} (j : Fin (n + 1)) :
+    joinVertexCollapse (stdSimplex.objEquiv (stdSimplex.objMk₁.{u} j.succ)) ≫
+        joinVertex.map (minRetraction j) =
+      joinVertexCollapse (stdSimplex.objEquiv (stdSimplex.objMk₁.{u} j.succ)) := by
+  refine hom_ext_castSucc_last (m := ⦋n⦌) (fun i ↦ ?_) ?_
+  · -- Normalize the join object to the finite ordinal expected by the vertex extensionality
+    -- lemma; rewriting `comp_toOrderHom` alone cannot match these dependent source types.
+    change (joinVertex.map (minRetraction j)).toOrderHom ((joinVertexCollapse _).toOrderHom
+      i.castSucc) =
+      (joinVertexCollapse _).toOrderHom i.castSucc
+    rw [joinVertexCollapse_castSucc]
+    simp only [stdSimplex.objEquiv_toOrderHom_apply (stdSimplex.objMk₁.{u} j.succ) i]
+    by_cases h : stdSimplex.objMk₁.{u} j.succ i = 0
+    · simp only [h, ↓reduceIte]
+      refine (joinVertex_map_castSucc _ i).trans
+        (congrArg Fin.castSucc ((minRetraction_apply j i).trans (min_eq_left ?_)))
+      rwa [stdSimplex.objMk₁_apply_eq_zero_iff, Fin.castSucc_lt_succ_iff] at h
+    · simp only [h, ↓reduceIte]
+      exact joinVertex_map_last _
+  · -- Normalize the join object to the finite ordinal expected by the vertex extensionality
+    -- lemma; rewriting `comp_toOrderHom` alone cannot match these dependent source types.
+    change (joinVertex.map (minRetraction j)).toOrderHom ((joinVertexCollapse _).toOrderHom
+      (Fin.last (n + 1))) =
+      (joinVertexCollapse _).toOrderHom (Fin.last (n + 1))
+    rw [joinVertexCollapse_last]
+    exact joinVertex_map_last _
+
+open SimplexCategory in
+/-- The join collapse of a cut simplex is unchanged by restriction to its uncollapsed segment. -/
+lemma vertexJoinCollapse_comp_vertexJoin_map_maxRetraction {n : ℕ} (j : Fin (n + 1)) :
+    vertexJoinCollapse (stdSimplex.objEquiv (stdSimplex.objMk₁.{u} j.castSucc)) ≫
+        vertexJoin.map (maxRetraction j) =
+      vertexJoinCollapse (stdSimplex.objEquiv (stdSimplex.objMk₁.{u} j.castSucc)) := by
+  have h := congrArg (fun f ↦ rev.map f)
+    (joinVertexCollapse_comp_joinVertex_map_minRetraction.{u} j.rev)
+  -- Normalize the shifted ordinal so reversal can rewrite the composite.
+  change rev.map (joinVertexCollapse (objEquiv (objMk₁.{u} j.rev.succ)) ≫
+      joinVertex.map (minRetraction j.rev)) =
+    rev.map (joinVertexCollapse (objEquiv (objMk₁.{u} j.rev.succ))) at h
+  simpa only [Functor.map_comp, vertexJoinCollapse_def, vertexJoin, Functor.comp_map,
+    rev_map_objEquiv_objMk₁, Fin.rev_castSucc, Fin.rev_rev, maxRetraction_def,
+    rev_map_rev_map] using h
 
 /-- The standard simplex functor `SimplexCategory ⥤ SSet` is dense. -/
 instance isDense : stdSimplex.{u}.IsDense := inferInstanceAs uliftYoneda.{u}.IsDense

@@ -35,8 +35,8 @@ The two models are compared by a natural monomorphism `Hom^R_X(x, y) ⟶ Hom_X(x
 For a quasicategory it is moreover a bijection on connected components. An edge of `Hom_X(x, y)` is
 a square `Δ[1] ⊗ Δ[1] ⟶ X` with degenerate vertical sides; its two `2`-simplices, together with the
 coincidence of the left and right homotopy relations in a quasicategory, show that its endpoints are
-joined in `Hom^R_X(x, y)`. That the comparison is a homotopy equivalence of Kan complexes
-(HTT, §4.2.1) is not proved here.
+joined in `Hom^R_X(x, y)`. That the comparison is a weak homotopy equivalence (HTT, §4.2.1) is
+proved in `TauCeti.AlgebraicTopology.Quasicategory.MappingSpace.RightComparison`.
 
 Dually, the left mapping space `Hom^L_X(x, y)` of
 `TauCeti.AlgebraicTopology.Quasicategory.LeftMappingSpace` is compared with `Hom_X(x, y)` by a
@@ -45,6 +45,8 @@ natural monomorphism `Hom^L_X(x, y) ⟶ Hom_X(x, y)`, precomposition with the co
 (`SSet.prodStdSimplex.toVertexJoin`). It is again the identity of the edges from `x` to `y` on
 vertices and, for a quasicategory, a bijection on connected components, since the components of
 both `Hom^L_X(x, y)` and `Hom^R_X(x, y)` are the morphisms from `x` to `y` in the homotopy category.
+That it is a weak homotopy equivalence is proved in
+`TauCeti.AlgebraicTopology.Quasicategory.MappingSpace.LeftComparison`.
 
 ## Main definitions
 
@@ -174,6 +176,24 @@ lemma whiskerRight_δ_one_uncurry_comp_ι {Z : SSet.{u}} (g : Z ⟶ (X.mappingSp
 lemma whiskerRight_δ_zero_uncurry_comp_ι {Z : SSet.{u}} (g : Z ⟶ (X.mappingSpace x y : SSet.{u})) :
     stdSimplex.δ 0 ▷ Z ≫ uncurry (g ≫ (X.mappingSpace x y).ι) = const y := by
   rw [uncurry_natural_left, ← whisker_exchange_assoc, whiskerRight_δ_zero_uncurry_ι, comp_const]
+
+/-- The uncurried inclusion of `Hom_X(x, y)`, on the cylinder `Hom_X(x, y) ⊗ Δ[1]`, is constant
+at `x` on its end `Hom_X(x, y) ⊗ {0}`. -/
+@[reassoc (attr := simp)]
+lemma ι₀_braiding_uncurry_ι :
+    ι₀ ≫ (β_ _ Δ[1]).hom ≫ uncurry (X.mappingSpace x y).ι = const x := by
+  rw [← fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_one, Category.assoc,
+    BraidedCategory.braiding_naturality_right_assoc, whiskerRight_δ_one_uncurry_ι,
+    comp_const, comp_const]
+
+/-- The uncurried inclusion of `Hom_X(x, y)`, on the cylinder `Hom_X(x, y) ⊗ Δ[1]`, is constant
+at `y` on its end `Hom_X(x, y) ⊗ {1}`. -/
+@[reassoc (attr := simp)]
+lemma ι₁_braiding_uncurry_ι :
+    ι₁ ≫ (β_ _ Δ[1]).hom ≫ uncurry (X.mappingSpace x y).ι = const y := by
+  rw [← fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_zero, Category.assoc,
+    BraidedCategory.braiding_naturality_right_assoc, whiskerRight_δ_zero_uncurry_ι,
+    comp_const, comp_const]
 
 /-- The mapping spaces of a quasicategory are quasicategories: `Hom_X(x, y)` is a fibre of the
 restriction `Fun(Δ[1], X) ⟶ Fun(∂Δ[1], X)`, which is an inner fibration. -/
