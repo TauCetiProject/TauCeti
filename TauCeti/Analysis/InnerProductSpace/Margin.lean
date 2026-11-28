@@ -9,12 +9,13 @@ public import Mathlib.Analysis.Convex.Hull
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
 
--- Proof-only: compactness of the convex hull of a finite set, the variational inequality of a
--- nearest point of a convex set, and the normalized vector in the unit ball.
+-- Proof-only: compactness of the convex hull of a finite set, the convexity of a closed
+-- half-space, the variational inequality of a nearest point of a convex set, and the normalized
+-- vector in the unit ball.
 import Mathlib.Analysis.Convex.Topology
-import Mathlib.Analysis.InnerProductSpace.Projection.Minimal
 import Mathlib.Analysis.Normed.Module.RCLike.Real
-import TauCeti.Topology.MetricSpace.HausdorffDistance
+import TauCeti.Analysis.InnerProductSpace.HalfSpace
+import TauCeti.Analysis.InnerProductSpace.Projection.MetricProj
 
 /-!
 # The maximum margin is the distance to the convex hull
@@ -94,8 +95,7 @@ theorem margin_le_inner_of_mem_convexHull (a : ι → E) (w : E) {c : E}
     (hc : c ∈ convexHull ℝ (range a)) : margin a w ≤ ⟪w, c⟫ := by
   refine convexHull_min (t := {z | margin a w ≤ ⟪w, z⟫})
     (range_subset_iff.2 (margin_le_inner a w)) ?_ hc
-  exact convex_halfSpace_ge ⟨fun x y => inner_add_right w x y,
-    fun r x => real_inner_smul_right w x r⟩ _
+  simpa only [real_inner_comm w] using convex_setOf_le_inner w (margin a w)
 
 /-- A direction in the closed unit ball has margin at most the norm of each point of the convex
 hull of the family. -/
@@ -123,9 +123,8 @@ theorem margin_inv_norm_smul_eq (a : ι → E) {c : E} (hc : c ∈ convexHull �
     (hnorm : ‖c‖ = infDist 0 (convexHull ℝ (range a))) : margin a (‖c‖⁻¹ • c) = ‖c‖ := by
   refine le_antisymm (margin_le_norm_of_mem_convexHull a ?_ hc) (le_margin_iff.2 fun i => ?_)
   · exact mem_closedBall_zero_iff.1 (inv_norm_smul_mem_unitClosedBall c)
-  · have hvar := (norm_eq_iInf_iff_real_inner_le_zero (convex_convexHull ℝ (range a)) hc).1
-      ((by rwa [zero_sub, norm_neg] : ‖0 - c‖ = _).trans infDist_eq_iInf_norm_sub) (a i)
-      (subset_convexHull ℝ (range a) (mem_range_self i))
+  · have hvar := inner_sub_sub_nonpos_of_norm_sub_eq_infDist (convex_convexHull ℝ (range a)) hc
+      (by rwa [zero_sub, norm_neg]) (a i) (subset_convexHull ℝ (range a) (mem_range_self i))
     have hle : ‖c‖ ^ 2 ≤ ⟪c, a i⟫ := by
       rw [zero_sub, inner_neg_left, inner_sub_right, real_inner_self_eq_norm_sq] at hvar
       linarith
