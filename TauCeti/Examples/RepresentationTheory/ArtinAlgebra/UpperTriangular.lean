@@ -7,12 +7,12 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.ValuedQuiver
 public import TauCeti.RepresentationTheory.Quiver.AuslanderReiten.A2.Basic
-public import TauCeti.RepresentationTheory.Quiver.Kronecker.UpperTriangular
-import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
+public import TauCeti.RepresentationTheory.Quiver.Kronecker.UpperTriangular.Representation
 import TauCeti.CategoryTheory.AlmostSplit.Equivalence
 import TauCeti.CategoryTheory.AlmostSplit.Uniqueness
 import TauCeti.RepresentationTheory.Quiver.AuslanderReiten.A2.Translation
 import TauCeti.RepresentationTheory.Quiver.Kronecker.AlmostSplit
+import Mathlib.CategoryTheory.ObjectProperty.Equivalence
 
 /-!
 # The valued Auslander–Reiten quiver of upper-triangular `2 × 2` matrices
@@ -48,89 +48,58 @@ local notation "T₂" => Matrix.blockTriangularSubalgebra k k (id : Fin 2 → Fi
 local notation "Q" => Quiver.Kronecker Unit
 local notation "IsFiniteModule" => (fun M : ModuleCat.{_} T₂ ↦ Module.Finite T₂ M)
 
-local notation "matrixEquiv" => AlgEquiv.toRingEquiv (upperTriangularAlgEquiv (A := Unit) k)
-
-/-- The module category of upper-triangular `2 × 2` matrices is equivalent to representations
-of the one-arrow quiver. The off-diagonal matrix unit acts as the arrow map. -/
-noncomputable def upperTriangularRepEquivalence :
-    ModuleCat.{u} T₂ ≌ QuiverRep.{u, 0, 0, u} k Q :=
-  (restrictScalarsEquivalenceOfRingEquiv matrixEquiv).trans
-    (quiverRepFunctor k Q).asEquivalence
-
 local notation "e" => upperTriangularRepEquivalence k
 local notation "vertex" => IrreducibleMorphismQuiver.of
 
-/-- The forward functor reads the representation of the path-algebra module obtained by
-restricting scalars along the upper-triangular algebra identification. -/
-theorem upperTriangularRepEquivalence_functor :
-    (e).functor = restrictScalars (RingEquiv.toRingHom matrixEquiv) ⋙ quiverRepFunctor k Q :=
-  (rfl)
+private noncomputable def upperTriangularIndecomposableEquivalence :
+    ObjectProperty.FullSubcategory (fun M : ModuleCat.{u} T₂ ↦
+      IsFiniteModule M ∧ Indecomposable M) ≌
+    ObjectProperty.FullSubcategory (fun M : QuiverRep.{u, 0, 0, u} k Q ↦
+      IsFinDim k Q M ∧ Indecomposable M) := by
+  letI : ObjectProperty.IsClosedUnderIsomorphisms
+      (fun M : QuiverRep.{u, 0, 0, u} k Q ↦ IsFinDim k Q M ∧ Indecomposable M) :=
+    ⟨fun i h ↦ ⟨h.1.of_iso i, h.2.of_iso i⟩⟩
+  refine (e).congrFullSubcategory (funext fun M ↦ propext ?_)
+  exact (isFinDim_upperTriangularRep_iff k M).and ((e).indecomposable_functor_obj_iff M)
 
-instance : (e).functor.Additive :=
-  inferInstanceAs <| Functor.Additive
-    ((restrictScalarsEquivalenceOfRingEquiv matrixEquiv).functor ⋙ quiverRepFunctor k Q)
-
-instance : (e).functor.Linear k :=
-  inferInstanceAs <| Functor.Linear k
-    ((restrictScalarsEquivalenceOfRingEquiv matrixEquiv).functor ⋙ quiverRepFunctor k Q)
-
-/-- Finite generation of an upper-triangular module is equivalent to finite dimensionality of
-both vertex spaces in the corresponding representation. -/
-theorem isFinDim_upperTriangularRep_iff (M : ModuleCat.{u} T₂) :
-    IsFinDim k Q ((e).functor.obj M) ↔ Module.Finite T₂ M := by
-  let a := upperTriangularAlgEquiv (A := Unit) k
-  let N := (restrictScalars a.toRingEquiv.toRingHom).obj M
-  have hN := a.toRingEquiv.toRingHom.finite_restrictScalars_iff a.surjective M
-  rw [upperTriangularRepEquivalence_functor, Functor.comp_obj, ← hN]
-  constructor
-  · intro h
-    have : Module.Finite (pathAlgebra k Q)
-        (((quiverRepEquivalence k Q).inverse ⋙ (quiverRepEquivalence k Q).functor).obj N) :=
-      module_finite_pathAlgebra_quiverRepEquivalenceFunctorObj_of_isFinDim k Q _
-        (by rwa [quiverRepEquivalence_inverse])
-    exact Module.Finite.equiv ((quiverRepEquivalence k Q).counitIso.app N).toLinearEquiv
-  · intro h
-    exact isFinDim_quiverRepFunctor_obj k Q N (Module.Finite.trans (pathAlgebra k Q) N)
-
-private noncomputable def upperTriangularRepVertex
-    (x : IrreducibleMorphismQuiver k IsFiniteModule) :
-    IrreducibleMorphismQuiver k (IsFinDim.{u, 0, 0, u} k Q) :=
-  vertex k ((isFinDim_upperTriangularRep_iff k _).2 x.representative_property.1)
-    ((e).indecomposable_functor_obj x.representative_property.2)
+private noncomputable def upperTriangularRepVertex :
+    IrreducibleMorphismQuiver k IsFiniteModule ≃
+      IrreducibleMorphismQuiver k (IsFinDim.{u, 0, 0, u} k Q) :=
+  equivSkeleton.trans <|
+    (upperTriangularIndecomposableEquivalence k).skeletonIsoCat.objEquiv.trans equivSkeleton.symm
 
 private theorem upperTriangularRepVertex_of {M : ModuleCat.{u} T₂}
     (hM : Module.Finite T₂ M) (hi : Indecomposable M) :
     upperTriangularRepVertex k (vertex k hM hi) =
-      vertex k ((isFinDim_upperTriangularRep_iff k M).2 hM) ((e).indecomposable_functor_obj hi) :=
-  (of_eq_of_iff _ _ _ _).2 ⟨(e).functor.mapIso (representativeIso (P := IsFiniteModule) k hM hi)⟩
+      vertex k ((isFinDim_upperTriangularRep_iff k M).2 hM)
+        ((e).indecomposable_functor_obj hi) := by
+  let X : ObjectProperty.FullSubcategory (fun N : ModuleCat.{u} T₂ ↦
+      IsFiniteModule N ∧ Indecomposable N) := ⟨M, hM, hi⟩
+  let E := upperTriangularIndecomposableEquivalence k
+  have h : E.skeletonIsoCat.objEquiv (toSkeleton X) = toSkeleton (E.functor.obj X) :=
+    E.functor.mapSkeleton_obj_toSkeleton X
+  simp only [upperTriangularRepVertex, Equiv.trans_apply, equivSkeleton_apply, isoClass_of]
+  rw [h, equivSkeleton_symm_toSkeleton, of_eq_of_iff]
+  -- The full subcategory restriction applies the original functor to the underlying object.
+  exact ⟨Iso.refl _⟩
 
-private theorem bijective_upperTriangularRepVertex :
-    Function.Bijective (upperTriangularRepVertex k) := by
-  constructor
-  · intro x y h
-    rw [upperTriangularRepVertex, upperTriangularRepVertex, of_eq_of_iff] at h
-    simpa only [of_representative] using (of_eq_of_iff (k := k) (P := IsFiniteModule)
-      x.representative_property.1 x.representative_property.2 y.representative_property.1
-      y.representative_property.2).2 (h.map (e).functor.preimageIso)
-  · intro x
-    let M := (e).inverse.obj x.representative
-    let i : (e).functor.obj M ≅ x.representative := (e).counitIso.app _
-    have hM := (isFinDim_upperTriangularRep_iff k M).1
-      (ObjectProperty.prop_of_iso (IsFinDim k Q) i.symm x.representative_property.1)
-    have hi := (e).symm.indecomposable_functor_obj x.representative_property.2
-    refine ⟨vertex k hM hi, ?_⟩
-    rw [upperTriangularRepVertex_of, ← of_representative x]
-    exact (of_eq_of_iff _ _ _ _).2 ⟨i⟩
+private theorem upperTriangularRepVertex_eq_of_representative
+    (x : IrreducibleMorphismQuiver k IsFiniteModule) :
+    upperTriangularRepVertex k x =
+      vertex k ((isFinDim_upperTriangularRep_iff k _).2 x.representative_property.1)
+        ((e).indecomposable_functor_obj x.representative_property.2) :=
+  (congrArg (upperTriangularRepVertex k) (of_representative x).symm).trans
+    (upperTriangularRepVertex_of k x.representative_property.1 x.representative_property.2)
 
 /-- The three indecomposable vertices of the upper-triangular algebra, ordered as the source
 simple, target simple and source projective under the one-arrow representation equivalence. -/
 noncomputable def upperTriangularARVertexEquiv :
     Fin 3 ≃ IrreducibleMorphismQuiver k IsFiniteModule :=
-  (a2VertexEquiv k Unit).trans (Equiv.ofBijective _ (bijective_upperTriangularRepVertex k)).symm
+  (a2VertexEquiv k Unit).trans (upperTriangularRepVertex k).symm
 
 private theorem upperTriangularRepVertex_vertexEquiv (i : Fin 3) :
     upperTriangularRepVertex k (upperTriangularARVertexEquiv k i) = a2VertexEquiv k Unit i :=
-  (Equiv.ofBijective _ (bijective_upperTriangularRepVertex k)).apply_symm_apply _
+  (upperTriangularRepVertex k).apply_symm_apply _
 
 /-- The index of an indecomposable module is determined by its image in the one-arrow
 representation category. -/
@@ -138,7 +107,7 @@ theorem upperTriangularARVertexEquiv_eq_of_iff (i : Fin 3) {M : ModuleCat.{u} T�
     (hM : Module.Finite T₂ M) (hI : Indecomposable M) :
     upperTriangularARVertexEquiv k i = vertex k (M := M) hM hI ↔
       Nonempty ((a2VertexEquiv k Unit i).representative ≅ (e).functor.obj M) := by
-  rw [← (bijective_upperTriangularRepVertex k).injective.eq_iff,
+  rw [← (upperTriangularRepVertex k).injective.eq_iff,
     upperTriangularRepVertex_vertexEquiv, upperTriangularRepVertex_of]
   conv_lhs => rw [← of_representative (a2VertexEquiv k Unit i)]
   exact of_eq_of_iff _ _ _ _
@@ -146,7 +115,8 @@ theorem upperTriangularARVertexEquiv_eq_of_iff (i : Fin 3) {M : ModuleCat.{u} T�
 private theorem card_arrows_upperTriangularRepVertex
     (a b : IrreducibleMorphismQuiver k IsFiniteModule) :
     Nat.card (upperTriangularRepVertex k a ⟶ upperTriangularRepVertex k b) = Nat.card (a ⟶ b) := by
-  rw [upperTriangularRepVertex, upperTriangularRepVertex, card_arrows_of, card_arrows]
+  rw [upperTriangularRepVertex_eq_of_representative, upperTriangularRepVertex_eq_of_representative,
+    card_arrows_of, card_arrows]
   exact ((e).irreducibleMorphismSpaceEquiv k a.representative b.representative).finrank_eq.symm
 
 /-- The complete valuation matrix for upper-triangular `2 × 2` matrices. The arrows `1 ⟶ 2`
@@ -182,9 +152,8 @@ private theorem projective_upperTriangularARVertexEquiv_iff (i : Fin 3) :
   refine ((TauCeti.arTranslation k Q).translate_of_eq_none_iff (k := k)
     ((isFinDim_upperTriangularRep_iff k _).2 a.representative_property.1)
     ((e).indecomposable_functor_obj a.representative_property.2)).symm.trans ?_
-  -- Express the image class via the vertex map so that the one-arrow formula applies.
-  change (TauCeti.arTranslation k Q).translate (upperTriangularRepVertex k a) = none ↔ i ≠ 0
-  rw [upperTriangularRepVertex_vertexEquiv, translate_a2VertexEquiv]
+  rw [← upperTriangularRepVertex_eq_of_representative k a, upperTriangularRepVertex_vertexEquiv,
+    translate_a2VertexEquiv]
   by_cases hi : i = 0 <;> simp [hi]
 
 local notation "translate" =>
@@ -207,11 +176,11 @@ private theorem translate_upperTriangularARVertexEquiv_zero :
   let S : ShortComplex (QuiverRep.{u, 0, 0, u} k Q) := kroneckerARSequence k Unit
   have h₀ : Nonempty ((e).functor.obj a.representative ≅ S.X₃) := by
     have h := upperTriangularRepVertex_vertexEquiv k 0
-    rw [upperTriangularRepVertex, a2VertexEquiv_zero, of_eq_of_iff] at h
+    rw [upperTriangularRepVertex_eq_of_representative, a2VertexEquiv_zero, of_eq_of_iff] at h
     simpa only [a, S, kroneckerARSequence_X₃] using h
   have h₁ : Nonempty ((e).functor.obj b.representative ≅ S.X₁) := by
     have h := upperTriangularRepVertex_vertexEquiv k 1
-    rw [upperTriangularRepVertex, a2VertexEquiv_one, of_eq_of_iff] at h
+    rw [upperTriangularRepVertex_eq_of_representative, a2VertexEquiv_one, of_eq_of_iff] at h
     simpa only [b, S, kroneckerARSequence_X₁] using h
   obtain ⟨Y, f, g, hfg, _, hT⟩ := exists_isAlmostSplit_arTranslate k k
     (length_quotient_linearMap_self_eq_one k) a.representative a.representative_property.2 hp
