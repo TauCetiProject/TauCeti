@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.AlmostSplit
-public import TauCeti.CategoryTheory.Preadditive.ModCat.Basic
+public import TauCeti.CategoryTheory.Preadditive.ModCat.SimpleFunctor
 
 /-!
 # Simple additive functors and finite presentation
@@ -35,21 +34,24 @@ variable {C : Type u} [Category.{v} C] [Preadditive C]
 /-- A simple additive functor is finitely generated. -/
 theorem isFinitelyGeneratedFunctor_of_simple {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
     [F.Additive] [Simple F] : IsFinitelyGeneratedFunctor F := by
-  obtain ⟨Y, x, hx⟩ : ∃ (Y : Cᵒᵖ) (x : F.obj Y), x ≠ 0 := by
+  have zero_app_apply {G : Cᵒᵖ ⥤ AddCommGrpCat.{v}} (Z : Cᵒᵖ) (z : G.obj Z) :
+      (0 : G ⟶ F).app Z z = 0 := by
+    rw [Limits.zero_app]
+    exact (congrArg (fun f : _ →+ _ ↦ f z) AddCommGrpCat.hom_zero).trans
+      (AddMonoidHom.zero_apply z)
+  obtain ⟨Y, x, hx⟩ : ∃ (Y : C) (x : F.obj (op Y)), x ≠ 0 := by
     by_contra! h
     apply id_ne_zero F
-    ext Y x
-    simpa using h Y x
-  let p : preadditiveYoneda.obj Y.unop ⟶ F := preadditiveYonedaEquiv.symm x
+    ext Z z
+    simpa only [NatTrans.id_app, AddCommGrpCat.id_apply, zero_app_apply] using h Z.unop z
+  let p : preadditiveYoneda.obj Y ⟶ F := preadditiveYonedaEquiv.symm x
   have hp : Epi p := epi_of_ne_zero_to_simple (by
     intro hp
     apply hx
     have he : preadditiveYonedaEquiv p = x := preadditiveYonedaEquiv.apply_symm_apply x
-    rw [hp, preadditiveYonedaEquiv_apply, Limits.zero_app] at he
-    refine he.symm.trans ?_
-    exact (congrArg (fun f : _ →+ _ ↦ f (𝟙 Y.unop)) AddCommGrpCat.hom_zero).trans
-      (AddMonoidHom.zero_apply _))
-  exact (isFinitelyGeneratedFunctor_preadditiveYoneda_obj Y.unop).of_epi p
+    rw [hp, preadditiveYonedaEquiv_apply] at he
+    exact he.symm.trans (zero_app_apply (G := preadditiveYoneda.obj Y) (op Y) (𝟙 Y)))
+  exact (isFinitelyGeneratedFunctor_preadditiveYoneda_obj Y).of_epi p
 
 variable [HasFiniteBiproducts C] [IsKrullSchmidt C]
 
@@ -64,7 +66,7 @@ theorem forall_isFinitelyPresentedFunctor_of_simple_iff :
   · intro h Z hZ
     let := (IsKrullSchmidt.indecomposable_iff_isLocalRing_end Z).mp hZ
     have hs := simple_comp_preadditiveYoneda_obj_quotientFunctor_jacobsonRadicalIdeal Z
-    let S := AdditiveFunctor.of (simpleFunctor Z)
+    let S := ModCat.simple Z
     exact (isFinitelyPresentedFunctor_simpleFunctor_iff Z).mp
       (h S ((AdditiveFunctor.simple_obj_iff S).mp hs))
   · intro h F hF

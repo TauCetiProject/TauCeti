@@ -44,6 +44,8 @@ target is different.
 
 ## Main definitions
 
+* `CategoryTheory.Equivalence.additiveCongrLeft`: precomposition with the inverse of an additive
+  equivalence induces an equivalence of additive functor categories.
 * `CategoryTheory.AdditiveFunctor.smulEnd R r G : G ⟶ G`: the action of `r ∈ R` on an additive
   functor `G` out of an `R`-linear category.
 * `CategoryTheory.AdditiveFunctor.sourceToCatCenter R : R →+* CatCenter (D ⥤+ A)`: this action as
@@ -373,3 +375,63 @@ theorem sourceLinear_smul_int [Linear ℤ D] (n : ℤ) {F G : D ⥤+ A} (φ : F 
   int_smul_eq_zsmul ((sourceLinear ℤ).homModule F G) n φ
 
 end CategoryTheory.AdditiveFunctor
+
+namespace CategoryTheory.Equivalence
+
+variable {C : Type*} [Category* C] [Preadditive C] {D : Type*} [Category* D] [Preadditive D]
+  {E : Type*} [Category* E] [Preadditive E] (e : C ≌ D) [e.functor.Additive]
+
+/-- Precomposition with an additive equivalence `e : C ≌ D` induces an equivalence of
+additive functor categories: a functor `F` out of `C` goes to `e.inverse ⋙ F`. -/
+@[expose] def additiveCongrLeft : (C ⥤+ E) ≌ (D ⥤+ E) :=
+  letI : (additiveFunctor D E).IsClosedUnderIsomorphisms :=
+    ⟨fun i h ↦ by
+      have := (additiveFunctor_iff _).1 h
+      exact Functor.additive_of_iso i⟩
+  (e.congrLeft (E := E)).congrFullSubcategory <| by
+    ext F
+    refine ⟨fun (_ : (e.inverse ⋙ F).Additive) ↦ ?_, fun (_ : F.Additive) ↦ ?_⟩
+    · exact Functor.additive_of_iso (e.funInvIdAssoc F)
+    · exact (inferInstance : (e.inverse ⋙ F).Additive)
+
+/-- The functor of `e.additiveCongrLeft` precomposes an additive functor out of `C`
+with `e.inverse`. -/
+@[simp]
+theorem additiveCongrLeft_functor_obj_obj (F : C ⥤+ E) :
+    (e.additiveCongrLeft.functor.obj F).obj = e.inverse ⋙ F.obj :=
+  rfl
+
+/-- The functor of `e.additiveCongrLeft` whiskers a natural transformation out of `C`
+by `e.inverse`. -/
+@[simp]
+theorem additiveCongrLeft_functor_map_hom {F G : C ⥤+ E} (φ : F ⟶ G) :
+    (e.additiveCongrLeft.functor.map φ).hom = Functor.whiskerLeft e.inverse φ.hom :=
+  rfl
+
+/-- Precomposition along an additive equivalence preserves addition of natural transformations. -/
+instance : (e.additiveCongrLeft (E := E)).functor.Additive where
+  map_add {_ _ f g} := by
+    ext X
+    rw [additiveCongrLeft_functor_map_hom, Functor.whiskerLeft_app]
+    -- Addition in each full subcategory is inherited from natural transformations.
+    change (f.hom + g.hom).app (e.inverse.obj X) =
+      ((e.additiveCongrLeft.functor.map f).hom + (e.additiveCongrLeft.functor.map g).hom).app X
+    rw [NatTrans.app_add, NatTrans.app_add]
+    simp only [additiveCongrLeft_functor_map_hom, Functor.whiskerLeft_app]
+    rfl
+
+/-- The inverse of `e.additiveCongrLeft` precomposes an additive functor out of `D`
+with `e.functor`. -/
+@[simp]
+theorem additiveCongrLeft_inverse_obj_obj (F : D ⥤+ E) :
+    (e.additiveCongrLeft.inverse.obj F).obj = e.functor ⋙ F.obj :=
+  rfl
+
+/-- The inverse of `e.additiveCongrLeft` whiskers a natural transformation out of `D`
+by `e.functor`. -/
+@[simp]
+theorem additiveCongrLeft_inverse_map_hom {F G : D ⥤+ E} (φ : F ⟶ G) :
+    (e.additiveCongrLeft.inverse.map φ).hom = Functor.whiskerLeft e.functor φ.hom :=
+  rfl
+
+end CategoryTheory.Equivalence

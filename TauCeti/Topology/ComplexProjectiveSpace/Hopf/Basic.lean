@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Normed.Module.Ball.Action
 public import TauCeti.Analysis.Normed.Module.Normalize
 public import TauCeti.Topology.Algebra.GroupAction.OrbitTrivialization
 public import TauCeti.Topology.ComplexProjectiveSpace.Charts
+public import TauCeti.Topology.Homotopy.HurewiczFibration.LocallyTrivial
 public import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
 import all TauCeti.Topology.ComplexProjectiveSpace.Basic
 
@@ -20,7 +21,9 @@ import all TauCeti.Topology.ComplexProjectiveSpace.Basic
 Complex projective space `CPⁿ` is the quotient of the unit sphere `S²ⁿ⁺¹` of `ℂⁿ⁺¹` by the unit
 complex numbers (`TauCeti.ComplexProjectiveSpace`), and the quotient map
 `TauCeti.ComplexProjectiveSpace.mk` is the **Hopf fibration**. This file shows that it is a locally
-trivial bundle with fibre the unit circle `S¹ ⊆ ℂ`, and hence a Serre fibration.
+trivial bundle with fibre the unit circle `S¹ ⊆ ℂ`, and hence a Serre fibration. Since `CPⁿ` is
+compact Hausdorff, hence normal and paracompact, it is moreover a Hurewicz fibration: it lifts
+homotopies from every space, not only from discs.
 
 The charts live over the standard affine opens `{X_k ≠ 0}`. Over such an open, the direction
 `v_k / |v_k|` of the `k`th coordinate is a continuous map to the unit circle that is equivariant
@@ -42,6 +45,8 @@ giving the chart `v ↦ ([v], v_k / |v_k|)` (`TauCeti.ComplexProjectiveSpace.hop
   with fibre the unit circle.
 * `TauCeti.ComplexProjectiveSpace.mk_mem_serreFibrations`: the Hopf fibration is a Serre
   fibration.
+* `TauCeti.ComplexProjectiveSpace.isHurewiczFibration_mk`: the Hopf fibration is a Hurewicz
+  fibration.
 
 ## References
 
@@ -52,6 +57,8 @@ giving the chart `v ↦ ([v], v_k / |v_k|)` (`TauCeti.ComplexProjectiveSpace.hop
 public section
 
 noncomputable section
+
+universe w
 
 open Metric Set Topology
 
@@ -133,6 +140,13 @@ variable (n) in
 unit circle. -/
 theorem mk_mem_serreFibrations : TopCat.serreFibrations (hopfHom n) :=
   TopCat.mem_serreFibrations_of_exists_trivialization (exists_trivialization_mk n)
+
+variable (n) in
+/-- **The Hopf fibration `S²ⁿ⁺¹ → CPⁿ` is a Hurewicz fibration**, for test spaces in every
+universe: it is locally trivial with fibre the unit circle, and `CPⁿ` is compact Hausdorff, hence
+normal and paracompact. -/
+theorem isHurewiczFibration_mk : IsHurewiczFibration.{w} (mk n) :=
+  isHurewiczFibration_of_exists_trivialization (exists_trivialization_mk n)
 
 /-! ### The fibre -/
 

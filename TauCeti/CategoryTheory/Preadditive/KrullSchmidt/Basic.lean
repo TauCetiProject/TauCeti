@@ -205,16 +205,8 @@ instance isKrullSchmidt_op [IsKrullSchmidt C] : IsKrullSchmidt Cᵒᵖ where
     refine ⟨n, fun i ↦ Opposite.op (P i), fun i ↦ ?_,
       ⟨e.symm.op ≪≫ (biproduct.isoCoproduct P).symm.op ≪≫
         opCoproductIsoProduct P ≪≫ (biproduct.isoProduct _).symm⟩⟩
-    have := hP i
-    -- Taking the opposite reverses composition and hence endomorphism multiplication.
-    let φ : (End (P i))ᵐᵒᵖ ≃+* End (Opposite.op (P i)) :=
-      { toFun := fun f ↦ End.of f.unop.asHom.op
-        invFun := fun f ↦ MulOpposite.op (End.of f.asHom.unop)
-        left_inv := fun _ ↦ rfl
-        right_inv := fun _ ↦ rfl
-        map_mul' := fun _ _ ↦ End.ext op_comp
-        map_add' := fun f g ↦ End.ext (op_add C f.unop.asHom g.unop.asHom) }
-    exact φ.isLocalRing
+    let := hP i
+    exact (End.opRingEquiv (P i)).isLocalRing
 
 /-- **A Krull-Schmidt category is idempotent complete.** -/
 instance isIdempotentComplete_of_isKrullSchmidt [IsKrullSchmidt C] : IsIdempotentComplete C where

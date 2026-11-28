@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LSeries.DirichletContinuation
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
+public import TauCeti.NumberTheory.LSeries.GaussianTheta.Basic
 import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.MellinTransform.Basic
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Theta
 import TauCeti.NumberTheory.LSeries.HurwitzZeta.Basic
 
 /-!
@@ -118,5 +120,28 @@ theorem hasMellin_gaussianTheta_residue_sum {N : ℕ} [NeZero N] (χ : Dirichlet
   refine (TauCeti.hasMellin_congr (fun u _ ↦ ?_)).mp hm
   simp only [F, mul_comm u (N : ℝ), Real.rpow_two, cpow_natCast, ofReal_pow]
   ring
+
+/-- The normalized Gaussian theta series of a nonprincipal character, at its matching
+parity, has absolutely convergent Mellin transform `Λ(s, χ) / 2` at `s - 1/2`. -/
+theorem hasMellin_gaussianThetaSeries_completedLFunction {N : ℕ} [NeZero N]
+    (χ : DirichletCharacter ℂ N) (hχ : χ ≠ 1) {j : Fin 2}
+    (hpar : χ (-1) = (-1) ^ j.val) (s : ℂ) :
+    HasMellin (TauCeti.gaussianThetaSeries j (fun n ↦ χ n)) (s - 1 / 2)
+      (χ.completedLFunction s / 2) := by
+  have hN : N ≠ 1 := by
+    rintro rfl
+    exact hχ χ.level_one
+  have hj : (j.val = 0 ∧ χ.Even) ∨ (j.val = 1 ∧ χ.Odd) := by
+    fin_cases j
+    · exact Or.inl ⟨rfl, by simpa [Even] using hpar⟩
+    · exact Or.inr ⟨rfl, by simpa [Odd] using hpar⟩
+  have hθ := (TauCeti.hasMellin_congr
+    (χ.eqOn_gaussianDirichletTheta_hurwitz_sum hN (Nat.le_of_lt_succ j.isLt) hpar)).mpr
+    (χ.hasMellin_gaussianTheta_residue_sum hχ hj s)
+  have h := HasMellin.cpow_smul (s := s - 1 / 2) (a := 1 / 2)
+    (by rw [sub_add_cancel]; exact hθ)
+  refine (TauCeti.hasMellin_congr (fun u (hu : 0 < u) ↦ ?_)).mp h
+  simp only [TauCeti.gaussianThetaSeries_def, TauCeti.gaussianTheta_eq_gaussianDirichletTheta,
+    smul_eq_mul, Real.sqrt_eq_rpow, ofReal_cpow hu.le, ofReal_div, ofReal_one, ofReal_ofNat]
 
 end DirichletCharacter

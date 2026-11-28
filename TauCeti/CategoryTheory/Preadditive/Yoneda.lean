@@ -28,8 +28,9 @@ For a preadditive category `C`, the preadditive Yoneda embedding sends `Y : C` t
 it, and its restriction to a full subcategory.
 
 * The embedding is itself additive: `preadditiveYoneda.map (f + g)` is the sum of the images.
-* A natural transformation out of `(-, Y)` is determined by its value on `𝟙 Y`, by the Yoneda
-  lemma. No additivity of the target functor is needed.
+* A natural transformation `α` out of `(-, Y)` is determined by its value on `𝟙 Y`, by the
+  Yoneda lemma: it sends `g : X ⟶ Y` to `G(g)` of `α (𝟙 Y)`. No additivity of the target
+  functor is needed.
 * A morphism `(-, Y) ⟶ G` lifts along every epimorphism `F ⟶ G` out of an additive functor `F`.
   So representable functors are projective among additive functors. In particular a morphism
   `(-, Y) ⟶ F` lifts along every epimorphism `(-, Y') ⟶ F` to the image of a morphism `Y ⟶ Y'`,
@@ -66,6 +67,8 @@ which is moreover additive.
 * `CategoryTheory.preadditiveYoneda_additive`: the preadditive Yoneda embedding is additive.
 * `CategoryTheory.preadditiveYoneda_obj_hom_ext`: morphisms out of `(-, Y)` agreeing on `𝟙 Y`
   are equal.
+* `CategoryTheory.preadditiveYoneda_obj_hom_app_apply`: a morphism `α` out of `(-, Y)` sends
+  `g : X ⟶ Y` to `G(g)` of `α (𝟙 Y)`.
 * `CategoryTheory.preadditiveYonedaEquiv`: maps from a representable to an additive functor
   correspond to elements of its value at the representing object.
 * `CategoryTheory.exists_comp_eq_preadditiveYoneda_obj_of_epi`: lifting along an epimorphism out of
@@ -124,27 +127,42 @@ theorem preadditiveYoneda_obj_hom_ext {Y : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}
   ((Functor.whiskeringRight Cᵒᵖ _ _).obj (forget AddCommGrpCat)).map_injective
     (yonedaEquiv.injective h)
 
+/-- The preadditive Yoneda embedding `Y ↦ (-, Y)` is an additive functor. -/
+instance preadditiveYoneda_additive :
+    (preadditiveYoneda : C ⥤ Cᵒᵖ ⥤ AddCommGrpCat.{v}).Additive where
+  map_add {_ _ f g} := by
+    -- An element of `(preadditiveYoneda.obj X).obj Z` is a morphism `h : Z.unop ⟶ X` and
+    -- `(-, f)` sends it to `h ≫ f` (`preadditiveYoneda_map_app_apply`), so additivity is
+    -- distributivity of composition.
+    ext Z (h : Z.unop ⟶ _)
+    exact Preadditive.comp_add _ _ _ h f g
+
+/-- A morphism `α : (-, Y) ⟶ G` sends `g : X ⟶ Y` to `G(g)` of the image of `𝟙 Y`. -/
+theorem preadditiveYoneda_obj_hom_app_apply {Y : C} {G : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
+    (α : preadditiveYoneda.obj Y ⟶ G) {X : C} (g : X ⟶ Y) :
+    α.app (op X) g = G.map g.op (α.app (op Y) (𝟙 Y)) := by
+  simpa using NatTrans.naturality_apply α g.op (𝟙 Y)
+
 /-- The preadditive Yoneda lemma. A map from the representable functor `(-, Y)` to an
 additive functor `F` corresponds to an element of `F(Y)`. -/
 def preadditiveYonedaEquiv {Y : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}} [F.Additive] :
-    (preadditiveYoneda.obj Y ⟶ F) ≃ F.obj (op Y) where
-  toFun α := α.app (op Y) (𝟙 Y)
-  invFun x :=
-    { app Z := AddCommGrpCat.ofHom (
-        { toFun h := F.map h.op x
-          map_zero' := by simp
-          map_add' a b := by simp } : (Z.unop ⟶ Y) →+ F.obj Z)
+    (preadditiveYoneda.obj Y ⟶ F) ≃ F.obj (op Y) :=
+  let fromElement (x : F.obj (op Y)) : preadditiveYoneda.obj Y ⟶ F :=
+    { app Z := AddCommGrpCat.ofHom
+        ({ toFun h := F.map h.op x
+           map_zero' := by simp
+           map_add' a b := by simp } : (Z.unop ⟶ Y) →+ F.obj Z)
       naturality Z Z' h := by
         ext (a : Z.unop ⟶ Y)
         exact ConcreteCategory.congr_hom (F.map_comp a.op h) x }
-  left_inv α := preadditiveYoneda_obj_hom_ext (by
-    -- Unfold the component of the Yoneda morphism at the identity.
-    change F.map (𝟙 Y).op (α.app (op Y) (𝟙 Y)) = _
-    simp)
-  right_inv x := by
-    -- The inverse correspondence applies the functor to the given morphism.
-    change F.map (𝟙 Y).op x = x
-    simp
+  have fromElement_id (x : F.obj (op Y)) : (fromElement x).app (op Y) (𝟙 Y) = x := by
+    calc
+      _ = F.map (𝟙 Y).op x := rfl
+      _ = x := by simp only [op_id, Functor.map_id, AddCommGrpCat.id_apply]
+  { toFun α := α.app (op Y) (𝟙 Y)
+    invFun := fromElement
+    left_inv α := preadditiveYoneda_obj_hom_ext (fromElement_id _)
+    right_inv := fromElement_id }
 
 /-- The Yoneda correspondence evaluates the natural transformation on the identity. -/
 theorem preadditiveYonedaEquiv_apply {Y : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}} [F.Additive]
@@ -164,18 +182,11 @@ theorem preadditiveYonedaEquiv_comp {Y : C} {F G : Cᵒᵖ ⥤ AddCommGrpCat.{v}
 @[simp]
 theorem preadditiveYonedaEquiv_symm_app_apply {Y : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
     [F.Additive] (x : F.obj (op Y)) (Z : Cᵒᵖ) (h : Z.unop ⟶ Y) :
-    (preadditiveYonedaEquiv.symm x).app Z h = F.map h.op x :=
-  (rfl)
-
-/-- The preadditive Yoneda embedding `Y ↦ (-, Y)` is an additive functor. -/
-instance preadditiveYoneda_additive :
-    (preadditiveYoneda : C ⥤ Cᵒᵖ ⥤ AddCommGrpCat.{v}).Additive where
-  map_add {_ _ f g} := by
-    -- An element of `(preadditiveYoneda.obj X).obj Z` is a morphism `h : Z.unop ⟶ X` and
-    -- `(-, f)` sends it to `h ≫ f` (`preadditiveYoneda_map_app_apply`), so additivity is
-    -- distributivity of composition.
-    ext Z (h : Z.unop ⟶ _)
-    exact Preadditive.comp_add _ _ _ h f g
+    (preadditiveYonedaEquiv.symm x).app Z h = F.map h.op x := by
+  calc
+    _ = F.map h.op ((preadditiveYonedaEquiv.symm x).app (op Y) (𝟙 Y)) :=
+      preadditiveYoneda_obj_hom_app_apply (preadditiveYonedaEquiv.symm x) h
+    _ = F.map h.op x := by rw [← preadditiveYonedaEquiv_apply, Equiv.apply_symm_apply]
 
 /-- A morphism from a representable functor `(-, Y)` to `G` lifts along any epimorphism
 `F ⟶ G` out of an additive functor `F`. -/
