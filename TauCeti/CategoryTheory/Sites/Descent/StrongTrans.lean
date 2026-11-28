@@ -17,8 +17,11 @@ Let `η : F ⟶ G` be a strong transformation between pseudofunctors
 `F` has an image `f₁^* (η M₁) ⟶ f₂^* (η M₂)`, the image `η φ` conjugated by the naturality
 isomorphisms of `η` (`Pseudofunctor.StrongTrans.mapPullHom`). It is compatible with composition,
 identities and Mathlib's pullback `LocallyDiscreteOpToCat.pullHom` of such morphisms
-(`Pseudofunctor.StrongTrans.mapPullHom_pullHom`). So `η` sends descent data for `F` along a family
-of morphisms `f i : X i ⟶ S` to descent data for `G` (`Pseudofunctor.StrongTrans.mapDescentData`),
+(`Pseudofunctor.StrongTrans.mapPullHom_pullHom`). Pullbacks of morphisms conjugated by two
+strong-transformation naturality isomorphisms are computed by
+`Pseudofunctor.StrongTrans.pullHom_naturalityObjIso`. So `η` sends descent data for `F` along a
+family of morphisms `f i : X i ⟶ S` to descent data for `G`
+(`Pseudofunctor.StrongTrans.mapDescentData`),
 compatibly with the functors from the fibres over `S` up to the naturality isomorphisms of `η`
 (`Pseudofunctor.StrongTrans.toDescentDataCompMapDescentDataIso`). This is compatible with
 identities and composites of strong transformations (`StrongTrans.mapDescentDataId`,
@@ -29,13 +32,22 @@ transformations.
 
 When the components of `η` are fully faithful, so is `η.mapDescentData f`, and a descent datum for
 `G` whose objects are isomorphic to images under `η` lifts to a descent datum for `F`
-(`Pseudofunctor.StrongTrans.liftDescentData`). When the components of `η` are equivalences of
-categories, `η.mapDescentData f` is an equivalence. Comparing the descent functors of `F` and `G`
-through it shows that the descent of morphisms and effective descent along a presieve transfer
-along `η`, so that `F` is a prestack, respectively a stack, if and only if `G` is
-(`Pseudofunctor.isPrestack_iff_of_isEquivalence`, `Pseudofunctor.isStack_iff_of_isEquivalence`).
-The descent of morphisms already transfers from `G` to `F` when the components of `η` are only
-fully faithful (`Pseudofunctor.isPrestack_source_of_fullyFaithful`).
+(`Pseudofunctor.StrongTrans.liftDescentData`). Its gluing isomorphisms are the unique lifts of the
+*target overlaps* `η (F(a) (M i)) ≅ η (F(b) (M j))`: the gluing isomorphisms of `D` conjugated by
+the isomorphisms `η (M i) ≅ D.obj i` and the naturality isomorphisms of `η`
+(`Pseudofunctor.StrongTrans.targetOverlapIso`,
+`Pseudofunctor.StrongTrans.mapIso_liftDescentData_iso`), which satisfy the identity and cocycle
+laws (`Pseudofunctor.StrongTrans.targetOverlapIso_self`,
+`Pseudofunctor.StrongTrans.targetOverlapIso_trans`). Hence if `F` has effective descent and `G`
+descent of morphisms along a family, an object of `G` whose pullbacks along the family are in the
+essential image of `η` is itself in it (`Pseudofunctor.StrongTrans.mem_essImage_of_toDescentData`).
+When the components of `η` are equivalences of categories, `η.mapDescentData f` is an equivalence.
+Comparing the descent functors of `F` and `G` through it shows that the descent of morphisms and
+effective descent along a presieve transfer along `η`, so that `F` is a prestack, respectively a
+stack, if and only if `G` is (`Pseudofunctor.isPrestack_iff_of_isEquivalence`,
+`Pseudofunctor.isStack_iff_of_isEquivalence`). The descent of morphisms already transfers from
+`G` to `F` when the components of `η` are only fully faithful
+(`Pseudofunctor.isPrestack_source_of_fullyFaithful`).
 
 The descent data, prestacks and stacks are Mathlib's `Pseudofunctor.DescentData`,
 `Pseudofunctor.IsPrestack` and `Pseudofunctor.IsStack`, by Joël Riou and Christian Merten.
@@ -46,6 +58,8 @@ The descent data, prestacks and stacks are Mathlib's `Pseudofunctor.DescentData`
   by a strong transformation.
 * `CategoryTheory.Pseudofunctor.StrongTrans.isEquivalence_mapDescentData`: it is an equivalence
   when the components are.
+* `CategoryTheory.Pseudofunctor.StrongTrans.mem_essImage_of_toDescentData`: descent of the
+  essential image along a transformation with fully faithful components.
 * `CategoryTheory.Pseudofunctor.isPrestack_iff_of_isEquivalence`,
   `CategoryTheory.Pseudofunctor.isStack_iff_of_isEquivalence`: being a prestack, respectively a
   stack, is invariant under strong transformations whose components are equivalences.
@@ -167,6 +181,29 @@ lemma mapPullHom_mapComp'_inv ⦃X Y Z : C⦄ (f : Y ⟶ X) (g : Z ⟶ Y) (fg : 
   -- As in `mapPullHom_mapComp'_hom`, the identity is over a composite in `Cat`.
   erw [CategoryTheory.Functor.map_id]
   simp
+
+/-- The pullback `pullHom` along `h` of a morphism `g^* (Φ A) ⟶ g^* (Φ' A)` written through the
+naturality isomorphisms of `Φ` and `Φ'` at `g`. -/
+lemma pullHom_naturalityObjIso
+    {P G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat} (Φ Φ' : P ⟶ G) {U T T' : C} (g : T ⟶ U) (h : T' ⟶ T)
+    (A : P.obj (.mk (op U)))
+    (z : (Φ.app (.mk (op T))).toFunctor.obj ((P.map g.op.toLoc).toFunctor.obj A) ⟶
+      (Φ'.app (.mk (op T))).toFunctor.obj ((P.map g.op.toLoc).toFunctor.obj A)) :
+    pullHom ((Φ.naturalityObjIso g.op.toLoc A).inv ≫ z ≫ (Φ'.naturalityObjIso g.op.toLoc A).hom)
+        h (h ≫ g) (h ≫ g) =
+      (Φ.naturalityObjIso (h ≫ g).op.toLoc A).inv ≫
+        (Φ.app _).toFunctor.map (P.compIso g.op h.op (h ≫ g).op op_comp.symm A).hom ≫
+          (Φ.naturalityObjIso h.op.toLoc _).hom ≫ (G.map h.op.toLoc).toFunctor.map z ≫
+            (Φ'.naturalityObjIso h.op.toLoc _).inv ≫
+              (Φ'.app _).toFunctor.map (P.compIso g.op h.op (h ≫ g).op op_comp.symm A).inv ≫
+                (Φ'.naturalityObjIso (h ≫ g).op.toLoc A).hom := by
+  rw [pullHom_eq_compIso]
+  simp only [Functor.map_comp, Category.assoc]
+  rw [compIso_hom, compIso_inv, naturalityObjIso_inv, naturalityObjIso_hom]
+  rw [← reassoc_of% (Φ.mapPullHom_mapComp'_hom g h (h ≫ g) rfl A),
+    ← Φ'.mapPullHom_mapComp'_inv g h (h ≫ g) rfl A]
+  simp only [mapPullHom_def, naturalityObjIso_hom, naturalityObjIso_inv,
+    compIso_hom, compIso_inv, Category.assoc]
 
 /-- `StrongTrans.mapPullHom` for the identity strong transformation is the identity. -/
 @[simp]
@@ -505,6 +542,99 @@ lemma mapDescentDataLiftDescentDataIso_inv_hom (i : ι) :
     (η.mapDescentDataLiftDescentDataIso f hη D e).inv.hom i = (e i).inv :=
   (rfl)
 
+/-- The **target overlap** of isomorphisms `e i : η (M i) ≅ D.obj i` on a common refinement
+`q = a ≫ f i = b ≫ f j`: the isomorphism `η_Y (F(a) (M i)) ≅ η_Y (F(b) (M j))` through
+`c_a(M i)`, `G(a)(e i)`, the gluing isomorphism `G(a) (D.obj i) ≅ G(b) (D.obj j)` of `D`
+(`DescentData.iso`), `G(b)(e j)⁻¹` and `c_b(M j)⁻¹`. -/
+noncomputable def targetOverlapIso ⦃Y : C⦄ (q : Y ⟶ S) ⦃i j : ι⦄ (a : Y ⟶ X i) (b : Y ⟶ X j)
+    (ha : a ≫ f i = q) (hb : b ≫ f j = q) :
+    (η.app (.mk (op Y))).toFunctor.obj ((F.map a.op.toLoc).toFunctor.obj (M i)) ≅
+      (η.app (.mk (op Y))).toFunctor.obj ((F.map b.op.toLoc).toFunctor.obj (M j)) :=
+  η.naturalityObjIso a.op.toLoc (M i) ≪≫ (G.map a.op.toLoc).toFunctor.mapIso (e i) ≪≫
+    D.iso q a b ha hb ≪≫
+      ((G.map b.op.toLoc).toFunctor.mapIso (e j)).symm ≪≫ (η.naturalityObjIso b.op.toLoc (M j)).symm
+
+/-- The forward arrow of the target overlap, as the composite of its five factors. -/
+lemma targetOverlapIso_hom ⦃Y : C⦄ (q : Y ⟶ S) ⦃i j : ι⦄ (a : Y ⟶ X i) (b : Y ⟶ X j)
+    (ha : a ≫ f i = q) (hb : b ≫ f j = q) :
+    (η.targetOverlapIso f D e q a b ha hb).hom =
+      (η.naturalityObjIso a.op.toLoc (M i)).hom ≫ (G.map a.op.toLoc).toFunctor.map (e i).hom ≫
+        D.hom q a b ha hb ≫
+          (G.map b.op.toLoc).toFunctor.map (e j).inv ≫ (η.naturalityObjIso b.op.toLoc (M j)).inv :=
+  (rfl)
+
+/-- On the diagonal, the target overlap is the identity. -/
+@[simp]
+lemma targetOverlapIso_self ⦃Y : C⦄ (q : Y ⟶ S) ⦃i : ι⦄ (a : Y ⟶ X i) (ha : a ≫ f i = q) :
+    η.targetOverlapIso f D e q a a ha ha = Iso.refl _ := by
+  ext
+  simp [targetOverlapIso_hom, D.hom_self q a ha]
+
+/-- **The cocycle condition** for the forward arrows of target overlaps on a common
+refinement. -/
+@[reassoc (attr := simp)]
+lemma targetOverlapIso_hom_comp_hom ⦃Y : C⦄ (q : Y ⟶ S) ⦃i j k : ι⦄ (a : Y ⟶ X i)
+    (b : Y ⟶ X j) (c : Y ⟶ X k) (ha : a ≫ f i = q) (hb : b ≫ f j = q) (hc : c ≫ f k = q) :
+    (η.targetOverlapIso f D e q a b ha hb).hom ≫ (η.targetOverlapIso f D e q b c hb hc).hom =
+      (η.targetOverlapIso f D e q a c ha hc).hom := by
+  simp [targetOverlapIso_hom]
+
+/-- **The cocycle condition** for target overlaps on a common refinement. -/
+@[simp]
+lemma targetOverlapIso_trans ⦃Y : C⦄ (q : Y ⟶ S) ⦃i j k : ι⦄ (a : Y ⟶ X i) (b : Y ⟶ X j)
+    (c : Y ⟶ X k) (ha : a ≫ f i = q) (hb : b ≫ f j = q) (hc : c ≫ f k = q) :
+    η.targetOverlapIso f D e q a b ha hb ≪≫ η.targetOverlapIso f D e q b c hb hc =
+      η.targetOverlapIso f D e q a c ha hc :=
+  Iso.ext (η.targetOverlapIso_hom_comp_hom f D e q a b c ha hb hc)
+
+/-- The inverse arrow of the target overlap is the forward arrow of the target overlap with the
+two maps interchanged. -/
+@[simp]
+lemma targetOverlapIso_inv ⦃Y : C⦄ (q : Y ⟶ S) ⦃i j : ι⦄ (a : Y ⟶ X i) (b : Y ⟶ X j)
+    (ha : a ≫ f i = q) (hb : b ≫ f j = q) :
+    (η.targetOverlapIso f D e q a b ha hb).inv = (η.targetOverlapIso f D e q b a hb ha).hom :=
+  Iso.inv_ext (by simp)
+
+/-- Interchanging the two maps inverts the target overlap. -/
+@[simp]
+lemma targetOverlapIso_symm ⦃Y : C⦄ (q : Y ⟶ S) ⦃i j : ι⦄ (a : Y ⟶ X i) (b : Y ⟶ X j)
+    (ha : a ≫ f i = q) (hb : b ≫ f j = q) :
+    (η.targetOverlapIso f D e q a b ha hb).symm = η.targetOverlapIso f D e q b a hb ha :=
+  Iso.ext (η.targetOverlapIso_inv f D e q a b ha hb)
+
+/-- The image under `η_Y` of the gluing morphism of the lift of `D` along `e` is the forward
+arrow of the target overlap. The objects of the lift are the `M i` only by definition, so the
+statement names the domain `F(a) (M i)` and codomain `F(b) (M j)` of the arrow. -/
+@[simp, reassoc]
+lemma map_liftDescentData_hom ⦃Y : C⦄ (q : Y ⟶ S) ⦃i j : ι⦄ (a : Y ⟶ X i) (b : Y ⟶ X j)
+    (ha : a ≫ f i = q) (hb : b ≫ f j = q) :
+    (η.app (.mk (op Y))).toFunctor.map (X := (F.map a.op.toLoc).toFunctor.obj (M i))
+        (Y := (F.map b.op.toLoc).toFunctor.obj (M j))
+        ((η.liftDescentData f hη D e).hom q a b ha hb) =
+      (η.targetOverlapIso f D e q a b ha hb).hom := by
+  -- `mapPullHom_liftDescentData_hom`, with the naturality isomorphisms at the `M i` rather than
+  -- at the objects of the lift, which are only definitionally equal to them.
+  have h : (η.naturality a.op.toLoc).inv.toNatTrans.app (M i) ≫
+      (η.app (.mk (op Y))).toFunctor.map (X := (F.map a.op.toLoc).toFunctor.obj (M i))
+        (Y := (F.map b.op.toLoc).toFunctor.obj (M j))
+        ((η.liftDescentData f hη D e).hom q a b ha hb) ≫
+        (η.naturality b.op.toLoc).hom.toNatTrans.app (M j) =
+      η.liftDescentDataHom f D e q a b ha hb :=
+    (η.mapPullHom_def _).symm.trans (η.mapPullHom_liftDescentData_hom f hη D e q a b ha hb)
+  rw [targetOverlapIso_hom, ← η.liftDescentDataHom_comp_assoc f D e q a b ha hb, ← h]
+  simp
+
+/-- The image under `η_Y` of the gluing isomorphism of the lift of `D` along `e` is the target
+overlap. -/
+@[simp]
+lemma mapIso_liftDescentData_iso ⦃Y : C⦄ (q : Y ⟶ S) ⦃i j : ι⦄ (a : Y ⟶ X i) (b : Y ⟶ X j)
+    (ha : a ≫ f i = q) (hb : b ≫ f j = q) :
+    (η.app (.mk (op Y))).toFunctor.mapIso (X := (F.map a.op.toLoc).toFunctor.obj (M i))
+        (Y := (F.map b.op.toLoc).toFunctor.obj (M j))
+        ((η.liftDescentData f hη D e).iso q a b ha hb) =
+      η.targetOverlapIso f D e q a b ha hb :=
+  Iso.ext (η.map_liftDescentData_hom f hη D e q a b ha hb)
+
 end lift
 
 /-- If the components of `η` are fully faithful and those over the `X i` are essentially
@@ -525,6 +655,25 @@ lemma isEquivalence_mapDescentData
   have := (η.fullyFaithfulMapDescentData f hff).full
   have := (η.fullyFaithfulMapDescentData f hff).faithful
   { }
+
+/-- **Descent of the essential image.** Let the components of `η : F ⟶ G` be fully faithful, and
+let `F` have effective descent and `G` descent of morphisms along a family `f i : X i ⟶ S`. If the
+pullback of `z` along every `f i` is in the essential image of `η`, then so is `z`: the lift of the
+descent datum of `z` descends to an object of `F` over `S`, whose image has the descent datum of
+`z`. -/
+lemma mem_essImage_of_toDescentData
+    (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.FullyFaithful)
+    [(F.toDescentData f).EssSurj] (hG : (G.toDescentData f).FullyFaithful)
+    (z : G.obj (.mk (op S)))
+    (hz : ∀ i, (η.app (.mk (op (X i)))).toFunctor.essImage
+      ((G.map (f i).op.toLoc).toFunctor.obj z)) :
+    (η.app (.mk (op S))).toFunctor.essImage z := by
+  choose M e using hz
+  let D := η.liftDescentData f hη ((G.toDescentData f).obj z) (fun i ↦ (e i).some)
+  exact ⟨(F.toDescentData f).objPreimage D, ⟨hG.preimageIso
+    ((η.toDescentDataCompMapDescentDataIso f).symm.app _ ≪≫
+      (η.mapDescentData f).mapIso ((F.toDescentData f).objObjPreimageIso D) ≪≫
+      η.mapDescentDataLiftDescentDataIso f hη _ _)⟩⟩
 
 end CategoryTheory.Pseudofunctor.StrongTrans
 

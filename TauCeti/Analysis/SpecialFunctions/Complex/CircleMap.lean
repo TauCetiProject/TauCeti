@@ -16,6 +16,7 @@ import Mathlib.MeasureTheory.Integral.CircleIntegral
 
 ## Main results
 
+* `TauCeti.circleMap_zero_one`: the unit circle about `0` is `θ ↦ e^{iθ}`.
 * `TauCeti.norm_circleMap_sub_center`: the circle of radius `R ≥ 0` about `c` has distance `R`
   from `c`.
 * `TauCeti.one_sub_mul_circleMap_ne_zero`: a scaled circle subtracted from `1` avoids zero
@@ -56,6 +57,10 @@ namespace TauCeti
 
 open Complex Metric Set
 open scoped Real
+
+/-- The unit circle about `0` is `θ ↦ e^{iθ}`. -/
+theorem circleMap_zero_one (θ : ℝ) : circleMap 0 1 θ = exp (θ * I) := by
+  rw [circleMap_zero, ofReal_one, one_mul]
 
 /-- The circle of radius `R ≥ 0` about `c` has distance `R` from `c`. -/
 theorem norm_circleMap_sub_center (c : ℂ) {R : ℝ} (hR : 0 ≤ R) (θ : ℝ) :

@@ -46,7 +46,9 @@ has least period `d`.
 Tau Ceti's topological mapping torus `TauCeti.MappingTorus` of a homeomorphism `ψ` identifies
 `(ψ x, t + 1)` with `(x, t)`. The smooth mapping torus of `φ` is homeomorphic to the topological
 mapping torus of `φ⁻¹` (`TauCeti.SmoothMappingTorus.homeomorphMappingTorus`), compatibly with the
-projections to the circle, so the topological results for `TauCeti.MappingTorus` apply to `Y_φ`.
+projections to the circle, so the topological results for `TauCeti.MappingTorus` apply to `Y_φ`;
+for instance, `Y_φ` is path-connected when `M` is
+(`TauCeti.SmoothMappingTorus.instPathConnectedSpace`).
 
 ## Main definitions
 
@@ -95,6 +97,9 @@ projections to the circle, so the topological results for `TauCeti.MappingTorus`
   is the kernel of the differential of the projection.
 * `TauCeti.SmoothMappingTorus.mfderiv_mk_add_intCast`: the seam identity
   `d(ι_(t + k)) = d(ι_t) ∘ dφ^k` for the differentials of the fibre inclusions `ι_t : x ↦ [t, x]`.
+  At a fixed point `x` of `φ`, where `[t + 1, x] = [t, x]`
+  (`TauCeti.SmoothMappingTorus.mk_add_one_eq_mk_iff`), it reads `d(ι_(t + 1))_x = d(ι_t)_x ∘ dφ_x`
+  (`TauCeti.SmoothMappingTorus.mfderiv_mk_add_one_of_apply_eq`).
 
 ## References
 
@@ -342,6 +347,11 @@ theorem mk_injective (t : ℝ) : Function.Injective (mk φ t) := fun x y h ↦ b
   obtain ⟨k, hk, rfl⟩ := (mk_eq_mk_iff φ).1 h
   obtain rfl : k = 0 := by exact_mod_cast (add_eq_left.mp hk.symm)
   simp
+
+/-- Going once around the circle returns `[t, x]` to itself exactly when `x` is a fixed point of
+`φ`. -/
+theorem mk_add_one_eq_mk_iff (t : ℝ) (x : M) : mk φ (t + 1) x = mk φ t x ↔ φ x = x := by
+  rw [mk_add_one, (mk_injective φ t).eq_iff]
 
 /-- Every point of the mapping torus is the class of a point of `[0, 1] × M`: shift the real
 coordinate by its integer part. -/
@@ -656,6 +666,12 @@ theorem proj_homeomorphMappingTorus (z : SmoothMappingTorus φ) :
   obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
   simp
 
+/-- The mapping torus of a diffeomorphism of a path-connected manifold is path-connected. -/
+instance instPathConnectedSpace [PathConnectedSpace M] :
+    PathConnectedSpace (SmoothMappingTorus φ) :=
+  (homeomorphMappingTorus φ).symm.surjective.pathConnectedSpace
+    (homeomorphMappingTorus φ).symm.continuous
+
 /-- The projection of the mapping torus to the circle is continuous. -/
 theorem continuous_proj : Continuous (proj φ) := by
   have h : proj φ = MappingTorus.proj _ ∘ homeomorphMappingTorus φ :=
@@ -749,6 +765,15 @@ theorem mfderiv_mk_add_one (hn : n ≠ 0) (t : ℝ) (x : M) (v : TangentSpace I 
       mfderiv I (𝓘(ℝ).prod I) (mk φ t) (φ x) (mfderiv I I φ x v) := by
   have h := mfderiv_mk_add_natCast φ hn t 1 x v
   rwa [Nat.cast_one, Function.iterate_one] at h
+
+/-- The seam identity at a fixed point `x` of `φ`, where `[t + 1, x] = [t, x]`: the differentials
+of the fibre inclusions satisfy `d(ι_(t + 1))_x = d(ι_t)_x ∘ dφ_x`. -/
+theorem mfderiv_mk_add_one_of_apply_eq (hn : n ≠ 0) {x : M} (hx : φ x = x) (t : ℝ)
+    (v : TangentSpace I x) :
+    mfderiv I (𝓘(ℝ).prod I) (mk φ (t + 1)) x v =
+      mfderiv I (𝓘(ℝ).prod I) (mk φ t) x (mfderiv I I φ x v) :=
+  (mfderiv_mk_add_one φ hn t x v).trans
+    (congrArg (fun T : E →L[ℝ] ℝ × E ↦ T _) (mfderiv_congr_point hx))
 
 end
 
