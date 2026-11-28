@@ -16,7 +16,7 @@ import TauCeti.RingTheory.AdicCompletion.Algebra
 import TauCeti.RingTheory.AdicCompletion.Regular.Basic
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.Perfectoid.Cyclotomic.Regular
-import TauCeti.RingTheory.WittVector.Frobenius
+import TauCeti.RingTheory.WittVector.Frobenius.Basic
 
 /-!
 # Colmez's period rings `A_max`, `B⁺_max` and `B_max`
