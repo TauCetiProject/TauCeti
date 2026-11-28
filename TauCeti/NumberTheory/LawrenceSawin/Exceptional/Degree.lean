@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Nat.Choose.Basic
 public import TauCeti.NumberTheory.LawrenceSawin.Exceptional.Pair
 import Mathlib.Tactic.Linarith
+import TauCeti.Data.Nat.Choose.Basic
 
 /-!
 # Exceptional threefold degrees
@@ -23,28 +24,13 @@ public section
 
 namespace TauCeti
 
-private theorem choose_mul_endpoints {a b : ℕ} (ha : 0 < a) :
-    (a + b).choose a * (a * b) =
-      ((a + b) * (a + b - 1)) * (a + b - 2).choose (a - 1) := by
-  by_cases hbase : a + b = 1
-  · simp [show a = 1 by omega, show b = 0 by omega]
-  have h₁ := Nat.add_one_mul_choose_eq (a + b - 1) (a - 1)
-  rw [show a + b - 1 + 1 = a + b by omega, show a - 1 + 1 = a by omega] at h₁
-  have h₂ := Nat.choose_mul_succ_eq (a + b - 2) (a - 1)
-  rw [show a + b - 2 + 1 = a + b - 1 by omega,
-    show a + b - 1 - (a - 1) = b by omega] at h₂
-  calc
-    _ = ((a + b).choose a * a) * b := by rw [Nat.mul_assoc]
-    _ = (a + b) * ((a + b - 1).choose (a - 1) * b) := by rw [← h₁, Nat.mul_assoc]
-    _ = _ := by rw [← h₂]; ac_rfl
-
 /-- For positive endpoints, the six-to-one binomial ratio is equivalent to the
 inhomogeneous Pell equation of Lawrence and Sawin. -/
 theorem choose_eq_six_mul_iff_pell {a b : ℕ} (ha : 0 < a) (hb : 0 < b) :
     (a + b).choose a = 6 * (a + b - 2).choose (a - 1) ↔
       (a : ℤ) ^ 2 - 4 * a * b + (b : ℤ) ^ 2 = a + b := by
   have hp : 0 < (a + b - 2).choose (a - 1) := Nat.choose_pos (by omega)
-  have hratio := choose_mul_endpoints (b := b) ha
+  have hratio := Nat.add_choose_mul_mul_eq_mul_pred_mul_choose (b := b) ha
   have hsub : (↑(a + b - 1) : ℤ) = a + b - 1 := by omega
   have hprod : (a + b) * (a + b - 1) = 6 * (a * b) ↔
       (a : ℤ) ^ 2 - 4 * a * b + (b : ℤ) ^ 2 = a + b := by
@@ -103,17 +89,18 @@ theorem exceptionalDegree_pos (j : ℕ) : 0 < exceptionalDegree j := by
 
 /-- The seed contributes degree one at exponent one. -/
 theorem exceptionalDegree_zero : exceptionalDegree 0 = 1 := by
+  rw [exceptionalDegree_eq_choose, exceptionalPair_zero]
   decide
 
 /-- The first geometric exception has normalized degree 8855. -/
 theorem exceptionalDegree_one : exceptionalDegree 1 = 8855 := by
-  change Nat.choose 25 5 / 6 = 8855
+  rw [exceptionalDegree_eq_choose, exceptionalPair_one]
   rw [Nat.choose_eq_factorial_div_factorial (by decide)]
   decide
 
 /-- The next exceptional pair `(20, 76)` has the indicated normalized degree. -/
 theorem exceptionalDegree_two : exceptionalDegree 2 = 36030431772522503316 := by
-  change Nat.choose 96 20 / 6 = 36030431772522503316
+  rw [exceptionalDegree_eq_choose, exceptionalPair_two]
   rw [Nat.choose_eq_factorial_div_factorial (by decide)]
   decide
 

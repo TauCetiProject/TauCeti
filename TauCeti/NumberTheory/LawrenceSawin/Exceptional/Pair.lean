@@ -40,6 +40,16 @@ namespace TauCeti
 theorem exceptionalPair_succ (j : ℕ) : exceptionalPair (j + 1) =
     ((exceptionalPair j).2, 4 * (exceptionalPair j).2 + 1 - (exceptionalPair j).1) := rfl
 
+/-- The first successor of the seed is the pair `(5, 20)`. -/
+@[simp] theorem exceptionalPair_one : exceptionalPair 1 = (5, 20) := by
+  rw [exceptionalPair_succ, exceptionalPair_zero]
+  decide
+
+/-- The second successor of the seed is the pair `(20, 76)`. -/
+@[simp] theorem exceptionalPair_two : exceptionalPair 2 = (20, 76) := by
+  rw [exceptionalPair_succ, exceptionalPair_one]
+  decide
+
 private theorem exceptionalPair_order (j : ℕ) :
     0 < (exceptionalPair j).1 ∧ (exceptionalPair j).1 < (exceptionalPair j).2 := by
   induction j with
@@ -94,8 +104,8 @@ private theorem exceptionalPair_descent {a b : ℕ} (ha : 1 < a) (hab : a ≤ b)
     (heq : (a : ℤ) ^ 2 - 4 * a * b + (b : ℤ) ^ 2 = a + b) :
     ∃ c : ℕ, 0 < c ∧ c < a ∧ c + b = 4 * a + 1 ∧
       (c : ℤ) ^ 2 - 4 * c * a + (a : ℤ) ^ 2 = c + a := by
-  have hnat : a ^ 2 + b ^ 2 = 4 * a * b + a + b := by
-    exact_mod_cast (show (a : ℤ) ^ 2 + (b : ℤ) ^ 2 = 4 * a * b + a + b by linarith)
+  have hsumSq : (a : ℤ) ^ 2 + (b : ℤ) ^ 2 = 4 * a * b + a + b := by linarith only [heq]
+  have hnat : a ^ 2 + b ^ 2 = 4 * a * b + a + b := by exact_mod_cast hsumSq
   have hasq : a * 1 < a * a := Nat.mul_lt_mul_of_pos_left ha (by omega)
   have hb : b < 4 * a + 1 := by
     by_contra! hlarge
@@ -108,7 +118,7 @@ private theorem exceptionalPair_descent {a b : ℕ} (ha : 1 < a) (hab : a ≤ b)
     nlinarith [Nat.mul_le_mul hab hlarge]
   refine ⟨c, Nat.sub_pos_of_lt hb, hca, hsum, ?_⟩
   have hsumZ : (c : ℤ) + b = 4 * a + 1 := by exact_mod_cast hsum
-  rw [show (c : ℤ) = 4 * a + 1 - b by linarith only [hsumZ]]
+  rw [eq_sub_of_add_eq hsumZ]
   nlinarith only [heq]
 
 private theorem exists_exceptionalPair {a b : ℕ} (ha : 0 < a) (hab : a ≤ b)

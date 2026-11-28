@@ -61,6 +61,7 @@ the summation index. The weighted sum is again a single binomial coefficient,
   falling factorial of the summation index.
 * `Nat.add_choose_mul_choose_mul_choose`: choosing `r` of `i` objects and `s` of `j` objects
   factors through choosing `r + s` of all `i + j` objects.
+* `Nat.add_choose_mul_mul_eq_mul_pred_mul_choose`: marking one element in each block of a partition.
 * `Nat.add_ascFactorial_mul_multichoose`: a rising factorial absorbed into a multiset
   coefficient, `(r + k)⁽ᵐ⁾ * multichoose r k = r⁽ᵐ⁾ * multichoose (r + m) k`.
 * `Nat.mem_filter_range_not_dvd_choose`: among `k ≤ n`, the condition `p ∤ n choose k` alone
@@ -312,6 +313,20 @@ theorem add_choose_mul_choose_mul_choose {i j r s : ℕ} (hs : s ≤ j) :
   rw [choose_mul hr, choose_symm_of_eq_add (by omega : i + j - r = i - r + j), mul_assoc,
     choose_mul hs, ← mul_assoc, choose_mul (le_add_right r s),
     Nat.add_sub_cancel_left, Nat.sub_sub]
+
+/-- Marking one member of an `a`-element subset and one member of its `b`-element complement
+gives the same count as first choosing the two marked elements in order, then choosing the
+remaining `a - 1` members of the subset. -/
+theorem add_choose_mul_mul_eq_mul_pred_mul_choose {a b : ℕ} (ha : 0 < a) :
+    (a + b).choose a * (a * b) =
+      ((a + b) * (a + b - 1)) * (a + b - 2).choose (a - 1) := by
+  have hblocks := add_choose_mul_choose_mul_choose (i := b) (r := 1) (s := 1) ha
+  have htwo : 2 * (a + b).choose 2 = (a + b) * (a + b - 1) := by
+    simpa using two_mul_choose_two_add_mul (a + b) 0
+  rw [Nat.add_comm b a, ← choose_symm_add (a := a)] at hblocks
+  simp only [choose_one_right, Nat.reduceAdd] at hblocks
+  rw [Nat.mul_comm _ 2, htwo] at hblocks
+  simpa only [Nat.mul_assoc, Nat.mul_comm b a] using hblocks
 
 /-- Membership in the set of `k ≤ n` with `p ∤ n choose k` only depends on the divisibility:
 `n choose k = 0` is divisible by `p` for `k > n`. -/
