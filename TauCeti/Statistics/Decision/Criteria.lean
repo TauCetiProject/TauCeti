@@ -18,12 +18,19 @@ allows the same criteria to be used for deterministic and randomized procedures.
 Admissibility concerns pointwise domination, Bayes optimality concerns integrated risk, and
 minimax optimality concerns worst-case risk.
 
+Blyth's method (`TauCeti.isAdmissibleRisk_of_blyth`) proves admissibility of a rule with
+continuous risk from Bayes rules for a sequence of measures that charge every ball uniformly,
+when the excess Bayes risk of the rule tends to `0`;
+`TauCeti.isAdmissibleRisk_of_blyth_of_dominating` asks for continuity and integrability only of
+the rule and of the rules that dominate it. It is adapted from
+`CKSD.isAdmissibleRisk_of_blyth` in lean-CKSD, `CKSD/Inference/Decision.lean`.
+
 ## References
 
 * T. S. Ferguson, *Mathematical Statistics: A Decision Theoretic Approach*, Academic Press
   (1967), §§1.6, 2.1, 2.3, 2.11.
 * J. O. Berger, *Statistical Decision Theory and Bayesian Analysis*, 2nd ed., Springer
-  (1985), Theorems 8, 9, and 17.
+  (1985), Theorems 8 and 9 (pp. 253–254), Theorem 17 (p. 350), and Theorem 13 (p. 547).
 -/
 
 public section
@@ -122,6 +129,63 @@ theorem IsMinimaxRule.of_isBayesRule_of_risk_le [IsProbabilityMeasure π]
     exact (hBayes.integral_le δ hδ').trans (havg hδ' hle)
 
 end Bayes
+
+section Blyth
+
+open Filter Topology
+
+/-- **Blyth's method**, with regularity required only of the rules that dominate `δ₀`. On a
+pseudometric parameter space, let `δₙ n` be a Bayes rule for `π n`, and let `δ₀` and every rule
+`δ` with `R δ ≤ R δ₀` have continuous risk, integrable for each `π n`. Suppose that for every
+ball about a point there is `c > 0` with `c ≤ π n (ball)` for all large `n`. If the excess Bayes
+risk `∫ R δ₀ dπ n - ∫ R (δₙ n) dπ n` of `δ₀` tends to `0`, then `δ₀` is admissible. -/
+theorem isAdmissibleRisk_of_blyth_of_dominating [PseudoMetricSpace Θ] [MeasurableSpace Θ]
+    (R : D → Θ → ℝ) (δ₀ : D) (hR : ∀ δ, R δ ≤ R δ₀ → Continuous (R δ))
+    (π : ℕ → Measure Θ) (δₙ : ℕ → D) (hbayes : ∀ n, IsBayesRule R (π n) (δₙ n))
+    (hint : ∀ n δ, R δ ≤ R δ₀ → Integrable (R δ) (π n))
+    (hmass : ∀ θ, ∀ r > 0, ∃ c > 0, ∀ᶠ n in atTop, c ≤ (π n).real (Metric.ball θ r))
+    (hlim : Tendsto (fun n ↦ ∫ θ, R δ₀ θ ∂π n - ∫ θ, R (δₙ n) θ ∂π n) atTop (𝓝 0)) :
+    IsAdmissibleRisk R δ₀ := by
+  rw [isAdmissibleRisk_iff]
+  rintro ⟨δ', hle, θ₁, hlt⟩
+  -- on a ball about `θ₁` the risk of `δ₀` exceeds that of `δ'` by more than `ε`
+  obtain ⟨ε, hε, hεlt⟩ := exists_between (sub_pos.2 hlt)
+  obtain ⟨ρ, hρ, hball⟩ := Metric.eventually_nhds_iff_ball.1 <|
+    ((hR δ₀ le_rfl).sub (hR δ' hle)).continuousAt.eventually (lt_mem_nhds hεlt)
+  obtain ⟨c, hc, hcn⟩ := hmass θ₁ ρ hρ
+  have hint₀ (n : ℕ) : Integrable (R δ₀) (π n) := hint n δ₀ le_rfl
+  have hint' (n : ℕ) : Integrable (R δ') (π n) := hint n δ' hle
+  have hlower : ∀ᶠ n in atTop, ε * c ≤ ∫ θ, R δ₀ θ ∂π n - ∫ θ, R (δₙ n) θ ∂π n := by
+    filter_upwards [hcn] with n hn
+    have hdiff := (hint₀ n).sub (hint' n)
+    -- Markov's inequality for the nonnegative risk difference, on the ball
+    calc ε * c ≤ ε * (π n).real {θ | ε ≤ R δ₀ θ - R δ' θ} := by
+          gcongr
+          exact hn.trans (measureReal_mono (fun θ hθ ↦ (hball θ hθ).le)
+            (hdiff.measure_ge_lt_top hε).ne)
+      _ ≤ ∫ θ, (R δ₀ θ - R δ' θ) ∂π n :=
+        mul_meas_ge_le_integral_of_nonneg (ae_of_all _ fun θ ↦ sub_nonneg.2 (hle θ)) hdiff ε
+      _ ≤ ∫ θ, R δ₀ θ ∂π n - ∫ θ, R (δₙ n) θ ∂π n := by
+        rw [integral_sub (hint₀ n) (hint' n)]
+        linarith [(hbayes n).integral_le δ' (hint' n)]
+  exact (mul_pos hε hc).not_ge (ge_of_tendsto hlim hlower)
+
+/-- **Blyth's method.** On a pseudometric parameter space, let every rule have continuous risk,
+integrable for each of the measures `π n`, and let `δₙ n` be a Bayes rule for `π n`. Suppose that
+for every ball about a point there is `c > 0` with `c ≤ π n (ball)` for all large `n`. If the
+excess Bayes risk `∫ R δ₀ dπ n - ∫ R (δₙ n) dπ n` of `δ₀` tends to `0`, then `δ₀` is
+admissible. -/
+theorem isAdmissibleRisk_of_blyth [PseudoMetricSpace Θ] [MeasurableSpace Θ]
+    (R : D → Θ → ℝ) (hR : ∀ δ, Continuous (R δ))
+    (π : ℕ → Measure Θ) (δₙ : ℕ → D) (hbayes : ∀ n, IsBayesRule R (π n) (δₙ n))
+    (hint : ∀ n δ, Integrable (R δ) (π n))
+    (hmass : ∀ θ, ∀ r > 0, ∃ c > 0, ∀ᶠ n in atTop, c ≤ (π n).real (Metric.ball θ r))
+    (δ₀ : D) (hlim : Tendsto (fun n ↦ ∫ θ, R δ₀ θ ∂π n - ∫ θ, R (δₙ n) θ ∂π n) atTop (𝓝 0)) :
+    IsAdmissibleRisk R δ₀ :=
+  isAdmissibleRisk_of_blyth_of_dominating R δ₀ (fun δ _ ↦ hR δ) π δₙ hbayes
+    (fun n δ _ ↦ hint n δ) hmass hlim
+
+end Blyth
 
 section Kernel
 
