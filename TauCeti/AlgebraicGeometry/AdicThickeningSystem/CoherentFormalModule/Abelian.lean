@@ -67,7 +67,10 @@ variable {𝔛 𝔜 : AdicThickeningSystem.{u}}
 /-- The abelian structure on coherent formal modules on `𝔛`, transported from that on an
 isomorphic adic thickening system `𝔜` along the equivalence given by pullback along `e.inv`. It
 extends the preadditive structure of `CoherentFormalModule 𝔛`. -/
-@[instance_reducible]
+-- `@[expose]` lets instance search see that this abelian structure extends the preadditive
+-- structure of `CoherentFormalModule 𝔛`; otherwise `Balanced` and `HasHomology`, which are derived
+-- from it, are not found in importing modules.
+@[expose, instance_reducible]
 def abelianOfIso (e : 𝔛 ≅ 𝔜) [Abelian (CoherentFormalModule 𝔜)] :
     Abelian (CoherentFormalModule 𝔛) :=
   abelianOfEquivalence (pullback e.inv)
