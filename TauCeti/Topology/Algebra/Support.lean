@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.Algebra.Group.Basic
 public import Mathlib.Topology.Algebra.Support
 public import Mathlib.Topology.MetricSpace.ProperSpace
+import Mathlib.Topology.Order.Compact
+import Mathlib.Topology.Order.ProjIcc
 
 /-!
 # Topological support of a translate
@@ -67,6 +69,8 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
 * `TauCeti.apply_sum_smul_eq_sum_sq_mul_of_notMem_tsupport`: a functional that depends only on
   the germ at `x` and is quadratic under scaling does not mix functions whose topological
   supports at `x` are disjoint.
+* `TauCeti.exists_continuous_abs_le_fun_smul_eq`: a continuous scalar function multiplying a
+  compactly supported function can be replaced by a globally bounded continuous one.
 -/
 
 public section
@@ -314,5 +318,28 @@ theorem apply_sum_smul_eq_sum_sq_mul_of_notMem_tsupport {X R M κ : Type*} [Topo
     refine hzero _ ((Filter.eventually_all.2 fun j ↦
       notMem_tsupport_iff_eventuallyEq.1 (hx j)).mono fun y hy ↦ ?_)
     simp [Finset.sum_apply, hy]
+
+/-- For a continuous real scalar function `g` and a function `f` with compact topological support,
+there exists a globally bounded continuous function `g'` (with `0 ≤ C` and `∀ x, |g' x| ≤ C`) such
+that `(fun x ↦ g' x • f x) = fun x ↦ g x • f x`, obtained by clamping `g` with `Set.projIcc`. -/
+theorem exists_continuous_abs_le_fun_smul_eq {X V : Type*} [TopologicalSpace X]
+    [AddCommMonoid V] [Module ℝ V] {f : X → V} (hf : IsCompact (tsupport f))
+    {g : X → ℝ} (hg : Continuous g) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∃ g' : X → ℝ, Continuous g' ∧ (∀ x, |g' x| ≤ C) ∧
+      (fun x ↦ g' x • f x) = fun x ↦ g x • f x := by
+  obtain ⟨C₁, hC₁⟩ := hf.bddAbove_image hg.continuousOn
+  obtain ⟨C₂, hC₂⟩ := hf.bddBelow_image hg.continuousOn
+  set C := max C₁ (max (-C₂) 0)
+  have hC0 : 0 ≤ C := (le_max_right _ _).trans (le_max_right _ _)
+  have hC : -C ≤ C := neg_le_self hC0
+  refine ⟨C, hC0, fun x ↦ Set.projIcc (-C) C hC (g x),
+    continuous_subtypeVal.comp (continuous_projIcc.comp hg),
+    fun x ↦ abs_le.2 (Set.projIcc (-C) C hC (g x)).property, funext fun x ↦ ?_⟩
+  by_cases hx : x ∈ tsupport f
+  · refine congrArg (· • f x) (congrArg Subtype.val (Set.projIcc_of_mem hC ⟨?_, ?_⟩))
+    · exact neg_le.1 ((le_max_left (-C₂) 0).trans (le_max_right _ _)) |>.trans
+        (hC₂ (Set.mem_image_of_mem _ hx))
+    · exact (hC₁ (Set.mem_image_of_mem _ hx)).trans (le_max_left _ _)
+  · simp [image_eq_zero_of_notMem_tsupport hx]
 
 end TauCeti

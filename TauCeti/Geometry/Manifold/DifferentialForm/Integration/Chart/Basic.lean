@@ -96,6 +96,19 @@ theorem eqOn_signedInChartAt_image {φ ψ : RoughForm I M ℝ k} {s : Set M} (h 
   rw [signedInChartAt_apply_of_mem_source _ _ _ _ (hs hx),
     signedInChartAt_apply_of_mem_source _ _ _ _ (hs hx), hc]
 
+/-- The signed coefficient of a form vanishes at the coordinates of a chart-source point outside
+the topological support of the form. -/
+theorem signedInChartAt_eq_zero_of_notMem_tsupport (φ : RoughForm I M ℝ k)
+    (b : Module.Basis (Fin k) ℝ E) (α : M)
+    (σ : {x : M // x ∈ (extChartAt I α).source} → ℤˣ) {x : M}
+    (hx : x ∈ (extChartAt I α).source)
+    (hφ : x ∉ _root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) :
+    φ.signedInChartAt b α σ (extChartAt I α x) = 0 := by
+  have h0 : φ x = 0 := _root_.image_eq_zero_of_notMem_tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) hφ
+  rw [signedInChartAt_apply_of_mem_source _ _ _ _ hx, inChartAt_apply,
+    (extChartAt I α).left_inv hx, h0]
+  simp
+
 variable [MeasurableSpace E] [BorelSpace E]
 
 /-- Signed preferred-chart integrals and integrability agree on an actual overlap. The

@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartCutoffs
 public import TauCeti.Geometry.Manifold.VectorBundle.FirstJet.Basic
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Geometry.Manifold.Density.Regularity
 import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.ExtChartAt.Image
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -122,25 +123,15 @@ theorem RoughDensity.inChartAt_pairing (φ : (x : M) → W x →L[ℝ] DensityBu
     RoughDensity.inChartAt (fun x ↦ φ x (u x)) (Module.finBasis ℝ E) α y =
       (𝒯 α ⟨(extChartAt I α).symm y, φ ((extChartAt I α).symm y)⟩).2
         (trivializationAt G W α ⟨(extChartAt I α).symm y, u ((extChartAt I α).symm y)⟩).2 := by
-  have hx : (extChartAt I α).symm y ∈ (chartAt H α).source := by
-    simpa only [extChartAt_source] using (extChartAt I α).map_target hy
   have hxd : (extChartAt I α).symm y ∈ (trivializationAt ℝ (DensityBundle I M) α).baseSet := by
-    simpa [TauCeti.Density.trivializationAt_eq] using hx
-  rw [RoughDensity.inChartAt_of_mem_target _ _ _ hy, hom_trivializationAt_apply,
+    simpa [TauCeti.Density.trivializationAt_eq, ← extChartAt_source] using
+      (extChartAt I α).map_target hy
+  rw [RoughDensity.inChartAt_finBasis_eq_trivializationAt _ α hy, hom_trivializationAt_apply,
     ContinuousLinearMap.inCoordinates_eq hyb hxd,
     Trivialization.apply_eq_prod_continuousLinearEquivAt ℝ _ _ hyb]
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     ContinuousLinearEquiv.symm_apply_apply]
-  rw [Trivialization.continuousLinearEquivAt_apply, TauCeti.Density.trivializationAt_eq]
-  beta_reduce
-  rw [Trivialization.density_apply]
-  congr 1
-  funext i
-  rw [← Trivialization.symmL_apply (R := ℝ) _ (by simpa using hx),
-    TangentBundle.symmL_trivializationAt hx, (extChartAt I α).right_inv hy]
-  -- The two sides differ only in reading `Module.finBasis ℝ E i` as a vector of
-  -- `TangentSpace 𝓘(ℝ, E) y`, which unfolds to `E`.
-  rfl
+  rw [Trivialization.continuousLinearEquivAt_apply]
 
 section Measure
 

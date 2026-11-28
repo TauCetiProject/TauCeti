@@ -8,14 +8,12 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Chart
 public import TauCeti.Geometry.Manifold.Boundary.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
-public import Mathlib.Topology.PartitionOfUnity
-import Mathlib.Topology.Compactness.LocallyFinite
 
 /-!
 # Topological support of rough differential forms
 
 This file establishes how the topological support of a rough differential form behaves under
-scalar multiplication, pullback, exterior differentiation and finite partition localization.
+scalar multiplication, pullback, exterior differentiation and finite decompositions.
 Pullback along a continuous open map with invertible derivative carries the support to its
 preimage.
 A form supported in the source of an open partial homeomorphism `e` and agreeing there with the
@@ -27,8 +25,7 @@ function whose fibre at `x` is
 `TangentSpace I x [⋀^Fin k]→L[ℝ] F`, so Mathlib's `tsupport` is used with the model-space codomain
 `E [⋀^Fin k]→L[ℝ] F` supplied explicitly.
 
-A locally finite partition of unity has only finitely many terms meeting a compact form support.
-The weights give a finite decomposition; containment in charts requires subordination separately.
+Weights summing to one on the support of a form give a finite form decomposition.
 Extension by zero in a chart preserves compact support when the form is supported inside that
 chart; on its target the extension has the same germ within the model range.
 
@@ -349,37 +346,6 @@ theorem isCompact_tsupport_mextDeriv {φ : RoughForm I M F k}
     (φ.tsupport_mextDeriv_subset)
 
 variable {ι : Type*}
-
-/-- A partition of unity localizes any compactly supported rough form into finitely many
-actual terms. All terms outside the chosen finite set vanish identically. -/
-theorem exists_finset_partition_eq (φ : RoughForm I M F k) (hc : IsCompact
-    (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ))
-    (ρ : PartitionOfUnity ι M univ) :
-    ∃ s : Finset ι,
-      φ = (fun x ↦ ∑ i ∈ s, ρ i x • φ x) ∧
-        ∀ i ∉ s, (fun x ↦ ρ i x • φ x : RoughForm I M F k) = 0 := by
-  classical
-  have hfin := ρ.locallyFinite_tsupport.finite_nonempty_inter_compact hc
-  let s := hfin.toFinset
-  have hmem (i : ι) (x : M) (hρ : ρ i x ≠ 0) (hφ : φ x ≠ 0) : i ∈ s := by
-    exact hfin.mem_toFinset.mpr ⟨x, subset_tsupport (ρ i) hρ,
-    _root_.subset_tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ hφ⟩
-  refine ⟨s, ?_, ?_⟩
-  · funext x
-    by_cases hx : φ x = 0
-    · simp [hx]
-    · have hs : ρ.finsupport x ⊆ s := by
-        intro i hi
-        exact hmem i x (by simpa only [PartitionOfUnity.mem_finsupport, mem_support] using hi) hx
-      rw [← Finset.sum_smul, ρ.sum_finsupport' (mem_univ x) hs, one_smul]
-  · intro i hi
-    funext x
-    by_cases hφ : φ x = 0
-    · simp [hφ]
-    · have hρ : ρ i x = 0 := by
-        by_contra h
-        exact hi (hmem i x h hφ)
-      simp [hρ]
 
 /-- Weights summing to one on the support give an actual finite form decomposition. -/
 theorem eq_sum_fun_smul [Fintype ι] (φ : RoughForm I M F k) (ρ : ι → M → ℝ)

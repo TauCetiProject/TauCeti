@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Topology.Sets.Opens
 import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 import TauCeti.Geometry.Manifold.DifferentialForm.Support
+import TauCeti.Topology.PartitionOfUnity.Basic
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 
 /-!
@@ -197,12 +198,13 @@ theorem exists_sum_extendByZero [FiniteDimensional ℝ E] [IsManifold I ∞ M]
       (_root_.tsupport_smul_subset_left (ρ i)
         (show W → E [⋀^Fin k]→L[ℝ] ℝ from φ.val.val)).trans (hρ i)
   choose ψ hψ using hθ
-  obtain ⟨s, hs, -⟩ := RoughForm.exists_finset_partition_eq φ.val.val
-    ((mem_compactlySupportedForms I).mp φ.property) ρ.toPartitionOfUnity
+  obtain ⟨s, hs, -⟩ := ρ.toPartitionOfUnity.exists_finset_eq_sum_smul
+    (show W → E [⋀^Fin k]→L[ℝ] ℝ from φ.val.val)
+    ((mem_compactlySupportedForms I).mp φ.property) (Set.subset_univ _)
   refine ⟨s, ψ, ?_⟩
   simp_rw [hψ]
-  refine Subtype.ext <| Subtype.ext ?_
-  exact hs.trans (by ext x; simp [θ])
+  refine Subtype.ext <| Subtype.ext <| funext fun x ↦ ?_
+  exact (congrFun hs x).trans (by simp [θ]; rfl)
 
 /-- Extension by zero of compactly supported forms commutes with the exterior derivative. -/
 theorem mextDerivₗ_extendByZero [IsManifold I 2 M] {U W : Opens M} (h : U ≤ W) (k : ℕ)

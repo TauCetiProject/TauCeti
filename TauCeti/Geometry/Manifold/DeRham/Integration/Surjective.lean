@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
+import TauCeti.Geometry.Manifold.ExtChartAt.Integral
 import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 

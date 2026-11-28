@@ -5,53 +5,45 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Density.Basic
-public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
-import TauCeti.Geometry.Manifold.DifferentialForm.Chart
-import TauCeti.Geometry.Manifold.DifferentialForm.Integration.CompactSupport
-import TauCeti.Geometry.Manifold.ExtChartAt
-import TauCeti.Geometry.Manifold.ExtChartAt.Integral
-import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
-import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+public import TauCeti.Geometry.Manifold.Density.Chart
+public import TauCeti.Geometry.Manifold.ExtChartAt.Integral
+public import TauCeti.Geometry.Manifold.Measure
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
-import TauCeti.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Order.Disjointed
 
 /-!
 # Integration of densities on manifolds
 
-A rough density `μ` of degree `m` is read in a preferred chart through a model basis `b`: its
-coefficient `μ.inChartAt b α y` is the value of `μ` at `(extChartAt I α).symm y` on the image of
-`b` under the derivative of the inverse chart, extended by zero outside the chart target. On a
-chart overlap two coefficients differ by the absolute determinant of the transition derivative,
-and two bases change the coefficient by their absolute change-of-basis determinant. The absolute
-Jacobian change-of-variables formula therefore makes the chartwise integrals independent of
-chart, basis and cover, with no orientation.
+A rough density `μ` of degree `m` is read in a preferred chart through a model basis `b` via
+`TauCeti.RoughDensity.inChartAt`. On a chart overlap two coefficients differ by the absolute
+determinant of the transition derivative, and two bases change the coefficient by their absolute
+change-of-basis determinant. The absolute Jacobian change-of-variables formula therefore makes the
+chartwise integrals independent of chart, basis and cover, with no orientation.
 
 `TauCeti.integralDensity μ` is the integral of a compactly supported integrable rough density:
 the sum of its chart integrals over the disjointed pieces of a finite open chart cover of its
 support. `TauCeti.integralDensity_eq_sum_disjointed_chart_integrals` computes it with any
 finite chart-measurable chart cover of the points where the density is nonzero, and any model
-basis. On an oriented manifold the integral of a top form is the integral of its density
-(`TauCeti.integralTopForm_eq_integralDensity`).
+basis.
 
 As for top forms, the manifold needs no Hausdorff assumption or measurable structure, and may
 have boundary or corners: only the model carries its Borel measurable structure.
 
 ## Main definitions
 
-* `TauCeti.RoughDensity.inChartAt`: the coefficient of a rough density in a preferred chart.
 * `TauCeti.IntegrableDensity`: compact support and integrable coefficients in every chart.
 * `TauCeti.integralDensity`: the integral of a rough density.
 
 ## Main results
 
-* `TauCeti.RoughDensity.inChartAt_changeChart`: the absolute determinant law on chart overlaps.
 * `TauCeti.integralDensity_eq_sum_disjointed_chart_integrals`: independence of chart, basis and
   cover.
-* `TauCeti.integralTopForm_eq_integralDensity`: `∫_o φ = ∫ φ.toDensity o`.
 * `TauCeti.integralDensity_modelSpace`: on the model space the integral is the Lebesgue integral
   of the value on a model basis.
+* `TauCeti.integralDensity_eq_sum_chooseChartCover`,
+  `TauCeti.integralDensity_eq_integral_inChartAt_of_ae_support`: chosen-cover and almost-everywhere
+  single-chart formulas.
+* `TauCeti.integralDensity_real_eq_integral`: real-line specialization.
 
 ## References
 
@@ -71,153 +63,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {m : ℕ}
 
 namespace RoughDensity
-
-/-- The coefficient of a rough density in the preferred chart at `α` and a model basis `b`: the
-value of the density on the image of `b` under the derivative of the inverse chart, extended by
-zero outside the chart target. -/
-def inChartAt (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E) (α : M) (y : E) : ℝ := by
-  classical
-  exact if y ∈ (extChartAt I α).target then
-    μ ((extChartAt I α).symm y)
-      (fun i ↦ mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) y (b i))
-  else 0
-
-/-- In the chart target, the chart coefficient is the value of the density on the transported
-model basis. -/
-theorem inChartAt_of_mem_target (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E) (α : M)
-    {y : E} (hy : y ∈ (extChartAt I α).target) :
-    μ.inChartAt b α y = μ ((extChartAt I α).symm y)
-      (fun i ↦ mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) y (b i)) := by
-  unfold inChartAt
-  exact ite_eq_left hy
-
-/-- Outside the chart target, the chart coefficient is zero. -/
-theorem inChartAt_of_notMem_target (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E) (α : M)
-    {y : E} (hy : y ∉ (extChartAt I α).target) : μ.inChartAt b α y = 0 := by
-  unfold inChartAt
-  exact ite_eq_right hy
-
-@[simp]
-theorem inChartAt_zero (b : Basis (Fin m) ℝ E) (α : M) :
-    (0 : RoughDensity I M m).inChartAt b α = 0 := by
-  funext y
-  by_cases hy : y ∈ (extChartAt I α).target
-  · rw [inChartAt_of_mem_target _ b α hy, Pi.zero_apply, Density.zero_apply, Pi.zero_apply]
-  · rw [inChartAt_of_notMem_target _ b α hy, Pi.zero_apply]
-
-@[simp]
-theorem inChartAt_add (μ ν : RoughDensity I M m) (b : Basis (Fin m) ℝ E) (α : M) :
-    (μ + ν).inChartAt b α = μ.inChartAt b α + ν.inChartAt b α := by
-  funext y
-  by_cases hy : y ∈ (extChartAt I α).target
-  · rw [Pi.add_apply, inChartAt_of_mem_target _ b α hy, inChartAt_of_mem_target _ b α hy,
-      inChartAt_of_mem_target _ b α hy, Pi.add_apply, Density.add_apply]
-  · rw [Pi.add_apply, inChartAt_of_notMem_target _ b α hy, inChartAt_of_notMem_target _ b α hy,
-      inChartAt_of_notMem_target _ b α hy, add_zero]
-
-/-- Multiplying a density by a function multiplies its chart coefficient by the value of the
-function at the chart preimage. -/
-theorem inChartAt_fun_smul (f : M → ℝ) (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E)
-    (α : M) (y : E) :
-    inChartAt (I := I) (fun x ↦ f x • μ x) b α y =
-      f ((extChartAt I α).symm y) * μ.inChartAt b α y := by
-  by_cases hy : y ∈ (extChartAt I α).target
-  · rw [inChartAt_of_mem_target _ b α hy, inChartAt_of_mem_target _ b α hy, Density.smul_apply,
-      smul_eq_mul]
-  · rw [inChartAt_of_notMem_target _ b α hy, inChartAt_of_notMem_target _ b α hy, mul_zero]
-
-@[simp]
-theorem inChartAt_smul (c : ℝ) (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E) (α : M) :
-    (c • μ).inChartAt b α = c • μ.inChartAt b α :=
-  funext (inChartAt_fun_smul (fun _ ↦ c) μ b α)
-
-/-- The chart coefficients of the negative of a density are the negatives of its coefficients. -/
-@[simp]
-theorem inChartAt_neg (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E) (α : M) :
-    (-μ).inChartAt b α = -μ.inChartAt b α := by
-  rw [← neg_one_smul ℝ μ, inChartAt_smul, neg_one_smul]
-
-/-- The chart coefficients of a difference of densities are the differences of their
-coefficients. -/
-@[simp]
-theorem inChartAt_sub (μ ν : RoughDensity I M m) (b : Basis (Fin m) ℝ E) (α : M) :
-    (μ - ν).inChartAt b α = μ.inChartAt b α - ν.inChartAt b α := by
-  rw [sub_eq_add_neg, inChartAt_add, inChartAt_neg, ← sub_eq_add_neg]
-
-/-- The constant top form given by the determinant of a model basis. Its chart coefficients
-are the determinants of the derivatives of the inverse charts. -/
-private def detForm (b : Basis (Fin m) ℝ E) : RoughForm I M ℝ m :=
-  have := Module.Finite.of_basis b
-  fun _ ↦ AlternatingMap.toContinuousAlternatingMap b.det
-
-private theorem detForm_apply (b : Basis (Fin m) ℝ E) (x : M) (v : Fin m → TangentSpace I x) :
-    (detForm b : RoughForm I M ℝ m) x v = b.det v := by
-  have := Module.Finite.of_basis b
-  simp only [detForm]
-  exact congrFun (AlternatingMap.coe_toContinuousAlternatingMap b.det) v
-
-/-- In the chart target, the coefficient of a density is its value on the model basis, at the
-chart preimage, times the absolute determinant of the derivative of the inverse chart. -/
-private theorem inChartAt_eq_abs_det_mul (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E)
-    (α : M) {y : E} (hy : y ∈ (extChartAt I α).target) :
-    μ.inChartAt b α y =
-      |(detForm b : RoughForm I M ℝ m).inChartAt α y b| * μ ((extChartAt I α).symm y) b := by
-  rw [inChartAt_of_mem_target μ b α hy, RoughForm.inChartAt_apply, detForm_apply]
-  exact (μ _).apply_eq_abs_det_mul b _
-
-/-- In its own chart at the chart point, the coefficient of a density is its value on the
-model basis. -/
-theorem inChartAt_self [IsManifold I 1 M] (μ : RoughDensity I M m) (b : Basis (Fin m) ℝ E)
-    (x : M) : μ.inChartAt b x (extChartAt I x x) = μ x b := by
-  rw [inChartAt_of_mem_target μ b x (mem_extChartAt_target x), mfderivWithin_range_extChartAt_symm,
-    extChartAt_to_inv]
-  -- The derivative of the inverse chart at the chart point is the identity, applied pointwise.
-  rfl
-
-/-- On the model space, the coefficient of a density in any chart is its value on the model
-basis. -/
-@[simp]
-theorem inChartAt_modelSpace (μ : RoughDensity 𝓘(ℝ, E) E m)
-    (b : Basis (Fin m) ℝ E) (α : E) : μ.inChartAt b α = fun y ↦ μ y b := by
-  funext y
-  -- All charts of the model space are the identity chart, so this is `inChartAt_self` at `y`.
-  exact μ.inChartAt_self b y
-
-/-- On an overlap of two preferred charts, the chart coefficients of a density differ by the
-absolute determinant of the within-range transition derivative. This includes boundary and
-corner points. -/
-theorem inChartAt_changeChart [IsManifold I 1 M] (μ : RoughDensity I M m)
-    (b : Basis (Fin m) ℝ E) {α β x : M} (hα : x ∈ (extChartAt I α).source)
-    (hβ : x ∈ (extChartAt I β).source) :
-    μ.inChartAt b α (extChartAt I α x) =
-      |(fderivWithin ℝ (extChartAt I β ∘ (extChartAt I α).symm) (range I)
-        (extChartAt I α x)).toLinearMap.det| * μ.inChartAt b β (extChartAt I β x) := by
-  have hc := (detForm b : RoughForm I M ℝ m).inChartAt_apply_basis_eq_det_mul b
-    ((extChartAt I α).map_source hα) (x := β) (by rwa [(extChartAt I α).left_inv hα])
-  rw [(extChartAt I α).left_inv hα] at hc
-  rw [inChartAt_eq_abs_det_mul μ b α ((extChartAt I α).map_source hα),
-    inChartAt_eq_abs_det_mul μ b β ((extChartAt I β).map_source hβ), hc, abs_mul,
-    (extChartAt I α).left_inv hα, (extChartAt I β).left_inv hβ, mul_assoc]
-
-/-- Changing the model basis multiplies the chart coefficient of a density by the absolute
-change-of-basis determinant. -/
-theorem inChartAt_basis_change (μ : RoughDensity I M m) (b b' : Basis (Fin m) ℝ E) (α : M)
-    (y : E) : μ.inChartAt b' α y = |b.det b'| * μ.inChartAt b α y := by
-  by_cases hy : y ∈ (extChartAt I α).target
-  · -- Both tangent spaces of the inverse chart derivative are the model space, so the
-    -- density transformation law applies to it as an endomorphism of `E`.
-    let L : E →L[ℝ] E := mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) y
-    let ν := μ ((extChartAt I α).symm y)
-    have hL (v : Fin m → E) : ν (fun i ↦ L (v i)) = |LinearMap.det (L : E →ₗ[ℝ] E)| * ν v :=
-      ν.comp_apply _ v
-    rw [inChartAt_of_mem_target μ b' α hy, inChartAt_of_mem_target μ b α hy]
-    calc ν (fun i ↦ L (b' i))
-        = |LinearMap.det (L : E →ₗ[ℝ] E)| * ν b' := hL b'
-      _ = |b.det b'| * (|LinearMap.det (L : E →ₗ[ℝ] E)| * ν b) := by
-        rw [mul_left_comm]
-        exact congrArg _ (ν.apply_eq_abs_det_mul b b')
-      _ = |b.det b'| * ν (fun i ↦ L (b i)) := by rw [hL b]
-  · rw [inChartAt_of_notMem_target μ b' α hy, inChartAt_of_notMem_target μ b α hy, mul_zero]
 
 variable [MeasurableSpace E] [BorelSpace E]
 
@@ -515,6 +360,42 @@ theorem integralDensity_eq_integral_inChartAt [IsManifold I 1 M] [MeasurableSpac
   refine setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ ?_
   exact μ.inChartAt_of_notMem_target b α hy
 
+/-- The integral of an integrable density is the sum of its chart integrals over the disjointed
+pieces of `chooseChartCover` for its support. -/
+theorem integralDensity_eq_sum_chooseChartCover [IsManifold I 1 M]
+    [MeasurableSpace E] [BorelSpace E] {μ : RoughDensity I M m} (hi : IntegrableDensity μ)
+    (b : Basis (Fin m) ℝ E) :
+    let c := chooseChartCover (I := I) (_root_.tsupport (α := Density E m) μ) hi.isCompact
+    integralDensity μ =
+      ∑ i, ∫ y in (extChartAt I (c.center i)) '' disjointed c.domain i,
+        μ.inChartAt b (c.center i) y ∂b.addHaar := by
+  let c := chooseChartCover (I := I) (_root_.tsupport (α := Density E m) μ) hi.isCompact
+  exact integralDensity_eq_sum_disjointed_chart_integrals hi b c.center c.domain
+    (fun i ↦ (c.isOpen_domain i).isChartMeasurable) c.domain_subset
+    fun x hx ↦ c.covers (subset_closure hx)
+
+/-- A single preferred chart computes `integralDensity` whenever `μ` vanishes outside that chart up
+to a chartwise null set. -/
+theorem integralDensity_eq_integral_inChartAt_of_ae_support [IsManifold I 1 M]
+    [MeasurableSpace E] [BorelSpace E] {μ : RoughDensity I M m} (hi : IntegrableDensity μ)
+    (b : Basis (Fin m) ℝ E) (α : M) (hs : IsNullSet I ({x | μ x ≠ 0} \ (extChartAt I α).source)) :
+    integralDensity μ = ∫ y, μ.inChartAt b α y ∂b.addHaar := by
+  have : FiniteDimensional ℝ E := Module.Finite.of_basis b
+  let : LocallyCompactSpace H := I.locallyCompactSpace
+  let c := chooseChartCover (I := I) (_root_.tsupport (α := Density E m) μ) hi.isCompact
+  rw [integralDensity_eq_sum_chooseChartCover hi b]
+  simp_rw [← ChartCover.piece_def]
+  refine sum_setIntegral_image_extChartAt_piece_eq_integral c α (hi.integrable_inChartAt b α)
+    (μ.support_inChartAt_subset_target b α)
+    (fun _ hx hn ↦ μ.inChartAt_eq_zero_of_notMem_tsupport b α hx hn)
+    (fun i s hsub hsm ↦ (μ.setIntegral_inChartAt_changeChart b (c.center i) α hsub
+      (hsm.image_extChartAt (c.center i) (hsub.trans inter_subset_left)) b.addHaar).1)
+    fun i ↦ ?_
+  filter_upwards [hs.ae_extChartAt_symm_notMem_of_sdiff_source (c.center i) b.addHaar] with y hy
+  intro hxo ⟨x, hx, hxy⟩
+  exact μ.inChartAt_eq_zero_of_apply_eq_zero b (c.center i)
+    (not_not.mp (hy hxo (hxy ▸ (extChartAt I (c.center i)).map_source (c.piece_subset i hx))))
+
 /-- On the model space, the integral of an integrable density is the Lebesgue integral of its
 value on a model basis, for the Haar measure of that basis. -/
 theorem integralDensity_modelSpace [MeasurableSpace E] [BorelSpace E]
@@ -522,6 +403,39 @@ theorem integralDensity_modelSpace [MeasurableSpace E] [BorelSpace E]
     integralDensity μ = ∫ y, μ y b ∂b.addHaar := by
   rw [integralDensity_eq_integral_inChartAt hi b 0 (by simp),
     RoughDensity.inChartAt_modelSpace]
+
+/-- On a model normed space `E`, `μ` is integrable iff `tsupport μ` is compact and `x ↦ μ x b` is
+Haar-integrable against `b.addHaar` in any model basis `b`. -/
+theorem integrableDensity_modelSpace_iff [MeasurableSpace E] [BorelSpace E]
+    {μ : RoughDensity 𝓘(ℝ, E) E m} (b : Basis (Fin m) ℝ E) :
+    IntegrableDensity μ ↔
+      IsCompact (_root_.tsupport (α := Density E m) μ) ∧ Integrable (fun x ↦ μ x b) b.addHaar := by
+  refine ⟨fun hi ↦ ⟨hi.isCompact, ?_⟩, fun ⟨hc, hint⟩ ↦ ?_⟩
+  · rw [← μ.inChartAt_modelSpace b 0]
+    exact hi.integrable_inChartAt b 0
+  · refine (μ.integrableDensity_iff_of_tsupport_subset_chart b 0 hc (by simp)).mpr ?_
+    rwa [μ.inChartAt_modelSpace b 0]
+
+/-- Evaluating a `1`-density on `ℝ` at `Basis.singleton (Fin 1) ℝ` agrees with evaluating it on the
+constant tuple `fun _ ↦ 1`. -/
+private theorem apply_basis_singleton (μ : RoughDensity 𝓘(ℝ, ℝ) ℝ 1) (t : ℝ) :
+    μ t (Basis.singleton (Fin 1) ℝ) = μ t (fun _ ↦ (1 : ℝ)) :=
+  congrArg (μ t) (by rw [Basis.coe_singleton, Pi.one_def])
+
+/-- On `ℝ`, a `1`-density `μ` is integrable iff `tsupport μ` is compact and
+`t ↦ μ t (fun _ ↦ 1)` is Lebesgue-integrable. -/
+theorem integrableDensity_real_iff {μ : RoughDensity 𝓘(ℝ, ℝ) ℝ 1} :
+    IntegrableDensity μ ↔
+      IsCompact (_root_.tsupport (α := Density ℝ 1) μ) ∧
+        Integrable (fun t ↦ μ t (fun _ ↦ (1 : ℝ))) := by
+  simp only [integrableDensity_modelSpace_iff (Basis.singleton (Fin 1) ℝ),
+    Basis.addHaar_singleton, apply_basis_singleton]
+
+/-- On `ℝ`, the integral of an integrable `1`-density is `∫ t, μ t (fun _ ↦ 1)`. -/
+theorem integralDensity_real_eq_integral {μ : RoughDensity 𝓘(ℝ, ℝ) ℝ 1}
+    (hi : IntegrableDensity μ) : integralDensity μ = ∫ t, μ t (fun _ ↦ (1 : ℝ)) := by
+  simp only [integralDensity_modelSpace hi (Basis.singleton (Fin 1) ℝ),
+    Basis.addHaar_singleton, apply_basis_singleton]
 
 /-- The zero density has zero integral. -/
 @[simp]
@@ -600,92 +514,5 @@ theorem integralDensity_sub [IsManifold I 1 M] {μ ν : RoughDensity I M m}
     (hμ : IntegrableDensity μ) (hν : IntegrableDensity ν) :
     integralDensity (μ - ν) = integralDensity μ - integralDensity ν := by
   rw [sub_eq_add_neg, integralDensity_add hμ hν.neg, integralDensity_neg, ← sub_eq_add_neg]
-
-section TopForm
-
-variable [FiniteDimensional ℝ E] [IsManifold I 1 M]
-
-/-- In a preferred chart, the coefficient of the density of a top form is its signed coefficient
-against an orientation lift, weighted by the relative sign of the model basis. -/
-theorem RoughDensity.inChartAt_toDensity (l : Manifold.OrientationLift I M (Fin m))
-    (φ : RoughForm I M ℝ m) (b : Basis (Fin m) ℝ E) (α : M) (y : E) :
-    (φ.toDensity (Manifold.Orientation.mk l)).inChartAt b α y =
-      (Orientation.signBasis l.modelOrientation b : ℝ) *
-        φ.signedInChartAt b α (fun x ↦ l.signAt α x) y := by
-  by_cases hy : y ∈ (extChartAt I α).target
-  · rw [← (extChartAt I α).right_inv hy]
-    set x := (extChartAt I α).symm y
-    have hx : x ∈ (extChartAt I α).source := (extChartAt I α).map_target hy
-    have hα : x ∈ (chartAt H α).source := by rwa [extChartAt_source] at hx
-    have hxx : x ∈ (chartAt H x).source := mem_chart_source H x
-    let D := fderivWithin ℝ (extChartAt I x ∘ (extChartAt I α).symm) (range I)
-      (extChartAt I α x)
-    -- The orientation lift relates the chart signs at `x` through the transition determinant.
-    have hdet : (l.signAt α x : ℝ) * D.toLinearMap.det =
-        |D.toLinearMap.det| * (l.signAt x x : ℝ) := by
-      simpa only [l.signAt_of_mem hα, l.signAt_of_mem hxx] using l.sign_mul_det α x x hα hxx
-    -- The value of the density at `x` on the model basis.
-    have hval : (φ.toDensity (Manifold.Orientation.mk l)) x b =
-        (Orientation.signBasis l.modelOrientation b : ℝ) * l.signAt x x * φ x b := by
-      have hs := congrArg (fun u : ℤˣ ↦ ((u : ℤ) : ℝ)) (l.signBasis_orientationAt b x)
-      simp only [Units.val_mul, Int.cast_mul] at hs
-      rw [← hs, ← Manifold.Orientation.orientationAt_mk]
-      exact φ.toDensity_apply_basis _ x b
-    -- The form coefficient changes to the chart at `x` with the signed determinant.
-    have hcoef := φ.inChartAt_apply_basis_eq_det_mul b ((extChartAt I α).map_source hx)
-      (x := x) (by rw [(extChartAt I α).left_inv hx]; exact mem_extChartAt_source x)
-    rw [(extChartAt I α).left_inv hx, RoughForm.inChartAt_extChartAt_self] at hcoef
-    rw [RoughDensity.inChartAt_changeChart _ b hx (mem_extChartAt_source x),
-      RoughDensity.inChartAt_self, hval, RoughForm.signedInChartAt_apply_of_mem_source _ _ _ _ hx,
-      hcoef]
-    linear_combination (-((Orientation.signBasis l.modelOrientation b : ℝ) * φ x b)) * hdet
-  · rw [RoughDensity.inChartAt_of_notMem_target _ b α hy, RoughForm.signedInChartAt_apply,
-      dite_eq_right hy, mul_zero]
-
-/-- On an oriented manifold, a top form is integrable exactly when its density is. -/
-@[simp]
-theorem integrableDensity_toDensity_iff (o : Manifold.Orientation I M (Fin m))
-    (φ : RoughForm I M ℝ m) : IntegrableDensity (φ.toDensity o) ↔ IntegrableTopForm φ := by
-  let : MeasurableSpace E := borel E
-  have : BorelSpace E := ⟨rfl⟩
-  obtain ⟨l, rfl⟩ := o.exists_lift
-  rw [integrableDensity_iff, integrableTopForm_iff, RoughForm.tsupport_toDensity]
-  refine and_congr Iff.rfl (and_congr Iff.rfl (forall_congr' fun b ↦ forall_congr' fun α ↦ ?_))
-  have heq : (φ.toDensity (Manifold.Orientation.mk l)).inChartAt b α = fun y ↦
-      (Orientation.signBasis l.modelOrientation b : ℝ) *
-        φ.signedInChartAt b α (fun x ↦ l.signAt α x) y :=
-    funext (RoughDensity.inChartAt_toDensity l φ b α)
-  have hu : IsUnit ((Orientation.signBasis l.modelOrientation b : ℤ) : ℝ) :=
-    isUnit_iff_ne_zero.mpr (abs_pos.mp (by rw [abs_unit_intCast]; exact one_pos))
-  rw [heq, integrable_const_mul_iff hu]
-  apply φ.integrable_signedInChartAt_iff_unsigned b α (fun x ↦ l.signAt α x) ?_ b.addHaar
-  apply continuousOn_iff_continuous_domRestrict.mp
-  simpa only [extChartAt_source] using l.continuousOn_signAt α
-
-/-- On an oriented manifold, the integral of a top form is the integral of its density. -/
-theorem integralTopForm_eq_integralDensity (o : Manifold.Orientation I M (Fin m))
-    (φ : RoughForm I M ℝ m) : integralTopForm o φ = integralDensity (φ.toDensity o) := by
-  let : MeasurableSpace E := borel E
-  have : BorelSpace E := ⟨rfl⟩
-  let : LocallyCompactSpace H := I.locallyCompactSpace
-  by_cases hi : IntegrableTopForm φ
-  · have hd := (integrableDensity_toDensity_iff o φ).mpr hi
-    obtain ⟨l, rfl⟩ := o.exists_lift
-    let b := Module.finBasisOfFinrankEq ℝ E (by simpa using l.card_eq.symm)
-    obtain ⟨n, α, u, _, hp, hc⟩ := exists_finite_precompact_chart_cover (I := I) hi.isCompact
-    rw [integralTopForm_eq_sum_disjointed_chart_integrals l φ hi b α u (fun i ↦ (hp i).1)
-        (fun i ↦ (hp i).2.1) hc,
-      integralDensity_eq_sum_disjointed_chart_integrals hd b α u
-        (fun i ↦ (hp i).1.isChartMeasurable) (fun i ↦ (hp i).2.1)
-        (fun x hx ↦ hc (by rw [← RoughForm.tsupport_toDensity]; exact subset_closure hx)),
-      Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [← integral_const_mul]
-    exact integral_congr_ae (Filter.Eventually.of_forall fun y ↦
-      (RoughDensity.inChartAt_toDensity l φ b (α i) y).symm)
-  · rw [integralTopForm_eq_zero_of_not_integrable o φ hi,
-      integralDensity_eq_zero_of_not_integrable (mt (integrableDensity_toDensity_iff o φ).mp hi)]
-
-end TopForm
 
 end TauCeti

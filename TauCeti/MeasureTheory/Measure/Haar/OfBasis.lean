@@ -35,6 +35,8 @@ carries the normalized Haar measure of the first to that of the second.
   product of the additive Haar measures of the factors.
 * `Module.Basis.addHaar_eq_dirac` — the additive Haar measure of a basis indexed by an empty type
   is the Dirac mass at `0`.
+* `Module.Basis.setIntegral_addHaar_of_subsingleton` — on a subsingleton normed space, the set
+  integral against `b.addHaar` over any nonempty set is evaluation at any point.
 * `Module.Basis.addHaar_withDensity_eq_of_eq_abs_det_mul` — Haar measures weighted by densities
   that scale by the absolute determinant of a change of basis agree.
 * `Module.Basis.setLIntegral_prod_of_addHaar_withDensity_eq` — a weighted Haar integral over a
@@ -121,6 +123,16 @@ theorem addHaar_eq_dirac {V ι : Type*} [NormedAddCommGroup V] [NormedSpace ℝ 
   rcases s.eq_empty_or_nonempty with rfl | hs
   · simp
   · rw [hs.eq_univ, Measure.dirac_apply_of_mem (Set.mem_univ 0), ← hp, addHaar_self]
+
+/-- On a subsingleton normed space, the set integral of a function against the normalized Haar
+measure of any basis over a nonempty set equals its value at any point `x`. -/
+theorem setIntegral_addHaar_of_subsingleton {V ι F : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [MeasurableSpace V] [BorelSpace V] [Subsingleton V]
+    [Fintype ι] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    (b : Basis ι ℝ V) (f : V → F) {s : Set V} (hs : s.Nonempty) (x : V) :
+    (∫ y in s, f y ∂b.addHaar) = f x := by
+  have : IsEmpty ι := (linearIndependent_subsingleton_iff (R := ℝ) (⇑b)).mp b.linearIndependent
+  rw [hs.eq_univ, Measure.restrict_univ, addHaar_eq_dirac, integral_dirac, Subsingleton.elim 0 x]
 
 section ChangeBasis
 

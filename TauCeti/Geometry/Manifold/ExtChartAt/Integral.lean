@@ -18,10 +18,12 @@ image of a chart-measurable subset of a chart source splits along these pieces
 (`TauCeti.setIntegral_image_extChartAt_eq_sum_disjointed`), and two finite chart-measurable covers
 of a set give the same sum of chart integrals for chart coefficients that agree on chart overlaps
 (`TauCeti.sum_setIntegral_image_extChartAt_disjointed_eq`). This is the cover-independence step
-in the integration of top forms and of densities. Chart coefficients related by the absolute
-Jacobian of the transition map have equal integrals over the two coordinate images of a subset
-of a chart overlap (`TauCeti.setIntegral_image_extChartAt_changeChart`). Only the model carries a
-measurable structure. The coefficients take values in any real normed space.
+in the integration of top forms and of densities; when the integrand vanishes almost everywhere
+outside one preferred chart, the cover sum reduces to that single chart's global integral
+(`TauCeti.sum_setIntegral_image_extChartAt_piece_eq_integral`). Chart coefficients related by the
+absolute Jacobian of the transition map have equal integrals over the two coordinate images of a
+subset of a chart overlap (`TauCeti.setIntegral_image_extChartAt_changeChart`). Only the model
+carries a measurable structure. The coefficients take values in any real normed space.
 
 A coefficient in a preferred chart is integrable when it vanishes off the chart target and at the
 coordinates of the points outside a compact set, and is integrable on the coordinate images of the
@@ -29,6 +31,11 @@ pieces of an open cover of that set (`TauCeti.integrable_of_isCompact_of_open_co
 
 A finite open chart cover of a set, `TauCeti.ChartCover`, is chosen for each compact set by
 `TauCeti.chooseChartCover`; the integrals of top forms and of densities are defined through it.
+
+A nonnegative function that is integrable and continuous on a chart target and positive at one
+target point—including boundary points—has positive integral there
+(`TauCeti.setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target`). This is the positivity step for
+integrals of top forms and of densities.
 -/
 
 public section
@@ -95,6 +102,45 @@ theorem piece_covers : s ⊆ ⋃ i, c.piece i := by
 theorem pairwise_disjoint : Pairwise (fun i j ↦ Disjoint (c.piece i) (c.piece j)) :=
   disjoint_disjointed c.domain
 
+/-- Prepend the full preferred chart at `x₀` to a chart cover of `s`. -/
+@[expose, reducible]
+noncomputable def cons (x₀ : M) (c : ChartCover I s) : ChartCover I s where
+  n := c.n + 1
+  center := Fin.cons x₀ c.center
+  domain := Fin.cons (extChartAt I x₀).source c.domain
+  isOpen_domain := Fin.cases (isOpen_extChartAt_source x₀) c.isOpen_domain
+  domain_subset := Fin.cases Subset.rfl c.domain_subset
+  covers := c.covers.trans (iUnion_subset fun i ↦
+    subset_iUnion (Fin.cons (extChartAt I x₀).source c.domain) i.succ)
+
+@[simp]
+theorem cons_n (x₀ : M) (c : ChartCover I s) : (c.cons x₀).n = c.n + 1 := rfl
+
+@[simp]
+theorem cons_center_zero (x₀ : M) (c : ChartCover I s) : (c.cons x₀).center 0 = x₀ := rfl
+
+@[simp]
+theorem cons_center_succ (x₀ : M) (c : ChartCover I s) (i : Fin c.n) :
+    (c.cons x₀).center i.succ = c.center i := rfl
+
+@[simp]
+theorem cons_domain_zero (x₀ : M) (c : ChartCover I s) :
+    (c.cons x₀).domain 0 = (extChartAt I x₀).source := rfl
+
+@[simp]
+theorem cons_domain_succ (x₀ : M) (c : ChartCover I s) (i : Fin c.n) :
+    (c.cons x₀).domain i.succ = c.domain i := rfl
+
+@[simp]
+theorem piece_cons_zero (x₀ : M) (c : ChartCover I s) :
+    (c.cons x₀).piece 0 = (extChartAt I x₀).source := by
+  rw [piece, ← bot_eq_zero, disjointed_bot, bot_eq_zero, cons_domain_zero]
+
+/-- The coordinate image of the zeroth piece of `c.cons x₀` is the full chart target at `x₀`. -/
+theorem image_extChartAt_piece_cons_zero (x₀ : M) (c : ChartCover I s) :
+    (extChartAt I ((c.cons x₀).center 0)) '' (c.cons x₀).piece 0 = (extChartAt I x₀).target := by
+  rw [cons_center_zero, piece_cons_zero, (extChartAt I x₀).image_source_eq_target]
+
 variable [MeasurableSpace E] [OpensMeasurableSpace E]
 
 theorem isChartMeasurable_piece (i : Fin c.n) : IsChartMeasurable I (c.piece i) :=
@@ -105,6 +151,20 @@ theorem measurableSet_image_piece (i : Fin c.n) :
   (c.isChartMeasurable_piece i).image_extChartAt (c.center i) (c.piece_subset i)
 
 end ChartCover
+
+omit [NormedSpace ℝ F] in
+/-- A compact set has a finite open `ChartCover` on whose chart-domain images any family of
+functions continuous on each chart target is integrable. -/
+theorem exists_chartCover_integrableOn [MeasurableSpace E] [OpensMeasurableSpace E]
+    [LocallyCompactSpace H] {ν : Measure E} [IsFiniteMeasureOnCompacts ν]
+    {s : Set M} (hs : IsCompact s) {f : M → E → F}
+    (hf : ∀ α, ContinuousOn (f α) (extChartAt I α).target) :
+    ∃ c : ChartCover I s,
+      ∀ i, IntegrableOn (f (c.center i)) ((extChartAt I (c.center i)) '' c.domain i) ν := by
+  obtain ⟨n, α, u, B, hu, hcover⟩ := exists_finite_precompact_chart_cover (I := I) hs
+  exact ⟨⟨n, α, u, fun i ↦ (hu i).1, fun i ↦ (hu i).2.1, hcover⟩, fun i ↦
+    (((hf (α i)).mono (hu i).2.2.2.1).integrableOn_compact (hu i).2.2.1).mono_set
+      (hu i).2.2.2.2⟩
 
 omit [NormedSpace ℝ F] in
 /-- A coefficient in the preferred chart at `α` is integrable when it vanishes off the chart
@@ -202,6 +262,56 @@ theorem sum_setIntegral_image_extChartAt_disjointed_eq [MeasurableSpace E]
       (Finset.sum_congr rfl fun j _ ↦
         hsplit (β j) (IsChartMeasurable.disjointed hv j) (hpv j) (hfv j) hu hc).symm
 
+/-- If a `ChartCover` `c` covers `S`, and chart coefficients `f : M → E → F` vanish off the chart
+target, vanish at coordinates outside `S`, agree in integral on chart overlaps, and vanish almost
+everywhere outside `(extChartAt I α).source` on each piece of `c`, then the cover sum equals the
+global integral of `f α`. -/
+theorem sum_setIntegral_image_extChartAt_piece_eq_integral [MeasurableSpace E]
+    [OpensMeasurableSpace E] {ν : Measure E} {f : M → E → F} {S : Set M} (c : ChartCover I S)
+    (α : M) (hfα : Integrable (f α) ν)
+    (ht : Function.support (f α) ⊆ (extChartAt I α).target)
+    (hz : ∀ x ∈ (extChartAt I α).source, x ∉ S → f α (extChartAt I α x) = 0)
+    (hchange : ∀ (i : Fin c.n) (s : Set M),
+      s ⊆ (extChartAt I (c.center i)).source ∩ (extChartAt I α).source →
+        IsChartMeasurable I s →
+          (∫ y in (extChartAt I (c.center i)) '' s, f (c.center i) y ∂ν) =
+            ∫ y in (extChartAt I α) '' s, f α y ∂ν)
+    (hae : ∀ i : Fin c.n, ∀ᵐ y ∂ν,
+      y ∉ (extChartAt I (c.center i)) ''
+          ((extChartAt I (c.center i)).source ∩ (extChartAt I α).source) →
+        y ∈ (extChartAt I (c.center i)) '' c.piece i → f (c.center i) y = 0) :
+    ∑ i, (∫ y in (extChartAt I (c.center i)) '' c.piece i, f (c.center i) y ∂ν) =
+      ∫ y, f α y ∂ν := by
+  have hα_full : (∫ y, f α y ∂ν) =
+      ∫ y in (extChartAt I α) '' (extChartAt I α).source, f α y ∂ν := by
+    rw [(extChartAt I α).image_source_eq_target]
+    exact (setIntegral_eq_integral_of_forall_compl_eq_zero fun _ hy ↦
+      Function.notMem_support.mp fun hn ↦ hy (ht hn)).symm
+  have hα_split := setIntegral_image_extChartAt_eq_sum_disjointed α hfα.integrableOn
+    (isOpen_extChartAt_source (I := I) α).isChartMeasurable Subset.rfl
+    (fun i ↦ (c.isOpen_domain i).isChartMeasurable)
+    fun x hx hn ↦ hz x hx fun hS ↦ hn (c.covers hS)
+  rw [hα_full, hα_split]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hpiece_meas := c.isChartMeasurable_piece i
+  have hα_meas : IsChartMeasurable I (extChartAt I α).source :=
+    (isOpen_extChartAt_source α).isChartMeasurable
+  have hch := hchange i (c.piece i ∩ (extChartAt I α).source)
+    (fun _ hx ↦ ⟨c.piece_subset i hx.1, hx.2⟩) (hpiece_meas.inter hα_meas)
+  rw [inter_comm ((extChartAt I α).source) (disjointed c.domain i)]
+  simp_rw [← ChartCover.piece_def]
+  rw [← hch]
+  refine setIntegral_eq_of_subset_of_ae_sdiff_eq_zero
+    (c.measurableSet_image_piece i).nullMeasurableSet
+    (image_mono (inter_subset_left : c.piece i ∩ (extChartAt I α).source ⊆ c.piece i)) ?_
+  have hinter : (extChartAt I (c.center i)) '' (c.piece i ∩ (extChartAt I α).source) =
+      (extChartAt I (c.center i)) '' c.piece i ∩ (extChartAt I (c.center i)) ''
+        ((extChartAt I (c.center i)).source ∩ (extChartAt I α).source) := by
+    rw [← (extChartAt I (c.center i)).injOn.image_inter (c.piece_subset i) inter_subset_left,
+      ← inter_assoc, inter_eq_self_of_subset_left (c.piece_subset i)]
+  filter_upwards [hae i] with y hy ⟨hy_piece, hy_not⟩
+  exact hy (fun hy_ov ↦ hy_not (hinter ▸ ⟨hy_piece, hy_ov⟩)) hy_piece
+
 /-- Chart coefficients that satisfy the absolute Jacobian law on a chart overlap have equal
 integrals over the coordinate images of a subset of the overlap, and are integrable there
 together. This is the change of variables shared by top forms and densities; the derivatives are
@@ -232,5 +342,28 @@ theorem setIntegral_image_extChartAt_changeChart [MeasurableSpace E] [BorelSpace
     exact setIntegral_congr_fun hs fun y hy ↦ (hcoef y hy).symm
   · rw [← himage, integrableOn_image_iff_integrableOn_abs_det_fderiv_smul μ hs hderiv hinj]
     exact (integrableOn_congr_fun (fun y hy ↦ hcoef y hy) hs).symm
+
+/-- A nonnegative function continuous on a chart target has positive integral on that target
+for any measure positive on nonempty open sets, if it is integrable there and positive at one
+target point. This also applies at boundary points, since the interior of the target is dense
+in the target. -/
+theorem setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target
+    [MeasurableSpace E] {μ : Measure E} [μ.IsOpenPosMeasure] (α : M) {g : E → ℝ}
+    (hnn : ∀ y, 0 ≤ g y) (hint : IntegrableOn g (extChartAt I α).target μ)
+    (hcont : ContinuousOn g (extChartAt I α).target) {y₀ : E}
+    (hy₀ : y₀ ∈ (extChartAt I α).target) (hg₀ : 0 < g y₀) :
+    0 < ∫ y in (extChartAt I α).target, g y ∂μ := by
+  rw [setIntegral_pos_iff_support_of_nonneg_ae (Filter.Eventually.of_forall hnn) hint]
+  -- Positivity reaches an open subset of the interior, including from a boundary point.
+  let V := interior (extChartAt I α).target ∩ g ⁻¹' Ioi 0
+  have hV : IsOpen V :=
+    (hcont.mono interior_subset).isOpen_inter_preimage isOpen_interior isOpen_Ioi
+  obtain ⟨U, hUo, hxU, hUg⟩ := mem_nhdsWithin.mp
+    ((hcont.continuousWithinAt hy₀).eventually (lt_mem_nhds hg₀))
+  obtain ⟨z, hzU, hz⟩ := mem_closure_iff.mp
+    (extChartAt_target_subset_closure_interior hy₀) U hUo hxU
+  have hVne : V.Nonempty := ⟨z, hz, hUg ⟨hzU, interior_subset hz⟩⟩
+  refine (hV.measure_pos μ hVne).trans_le (measure_mono fun y hy ↦ ?_)
+  exact ⟨(ne_of_gt hy.2 : g y ≠ 0), interior_subset hy.1⟩
 
 end TauCeti
