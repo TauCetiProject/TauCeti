@@ -42,8 +42,9 @@ The specialization to the trivial abelian variety is in
 gets imported.
 
 The endomorphism ring packages multiplication-by-integer maps and provides a common codomain
-for comparing homomorphisms obtained from the universal property of the Abel–Jacobi map. Proving
-that `[n]` is an isogeny additionally requires dimension and torsion results. The ring uses
+for comparing homomorphisms obtained from the universal property of the Abel–Jacobi map.
+The lemma `AbelianVariety.toOverHom_mulBy` identifies `[n]` as a morphism of schemes over `K`,
+as used to take the fibre at the identity in the study of torsion. The ring uses
 Tau Ceti's homomorphism-group API and Mathlib's `Additive` type synonym, with distributivity
 supplied by `AbelianVariety.Hom.mul_comp` and `AbelianVariety.Hom.comp_mul`.
 -/
@@ -246,6 +247,15 @@ variable {A B : AbelianVariety K}
 /-- `[n]` is the `n`-th power map for the pointwise group law on endomorphisms. -/
 lemma mulBy_eq_zpow (A : AbelianVariety K) (n : ℤ) : mulBy A n = 𝟙 A ^ n :=
   End.toHom_intCast n
+
+open scoped CategoryTheory.MonObj in
+/-- The underlying morphism of `[n]` is the `n`-th power map of the group scheme. -/
+@[simp] lemma toOverHom_mulBy (A : AbelianVariety K) (n : ℤ) :
+    Hom.toOverHom (mulBy A n) = 𝟙 A.toOver ^ n := by
+  simp only [mulBy_eq_zpow, toOverHom_eq_forget₂Grp_map, CommGrp.forget₂Grp_map_hom]
+  rw [← Hom.homMulEquiv_apply, map_zpow, Grp.Hom.hom_hom_zpow]
+  simpa only [Hom.homMulEquiv_apply, toOverHom_eq_forget₂Grp_map, CommGrp.forget₂Grp_map_hom]
+    using congrArg (· ^ n) (Hom.toOverHom_id A)
 
 /-- `[0]` is the constant endomorphism through the unit section, the identity of the pointwise
 group law. -/
