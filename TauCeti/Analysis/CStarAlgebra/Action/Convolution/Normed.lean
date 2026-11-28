@@ -19,15 +19,21 @@ public import Mathlib.MeasureTheory.Measure.OpenPos
 measure.
 
 This file adds the algebraic norm bounds and star-isometry structure for `ConvolutionAlgebra α μ`:
-for a left-invariant measure the convolution estimate makes it a `NonUnitalSeminormedRing` (and a
-`NonUnitalNormedRing` for full-support measures), and the twisted involution is an `L¹` isometry
-(`NormedStarGroup`), because the modular weight in `f*(s) = c(s) • α s (star (f s⁻¹))`
-is the density of the inverted Haar measure.
+for a left-invariant `[MeasurableMul G]` measure finite on compact sets on a topological group `G`,
+the convolution estimate makes it a `NonUnitalSeminormedRing` (and a `NonUnitalNormedRing` for
+full-support measures). When `G` is a locally compact topological group with a left-invariant Borel
+measure finite on compact sets, the twisted involution is an `L¹` isometry (`NormedStarGroup`),
+because the modular weight in `f*(s) = c(s) • α s (star (f s⁻¹))` is the density of the inverted
+Haar measure, and the completion `UniformSpace.Completion (ConvolutionAlgebra α μ)` is the twisted
+`L¹` Banach ⋆-algebra (Williams's `L¹(G, A)`). The instances of
+`TauCeti.Analysis.Normed.Ring.Completion`, `TauCeti.Topology.Algebra.UniformRing`, and
+`TauCeti.Analysis.CStarAlgebra.Completion` make this completion a complete nonunital normed ring
+and ⋆-ring with isometric star.
 
-The completion `UniformSpace.Completion (ConvolutionAlgebra α μ)` is the twisted L¹ Banach
-⋆-algebra, Williams's `L¹(G, A)`. The instances of `TauCeti.Analysis.Normed.Ring.Completion`,
-`TauCeti.Topology.Algebra.UniformRing` and `TauCeti.Analysis.CStarAlgebra.Completion` make it a
-complete nonunital normed ring and ⋆-ring with isometric star.
+Separately, the linear `L¹` completion identification in
+`TauCeti.MeasureTheory.Function.Lp.CompactlySupported.L1Completion` requires only a weakly locally
+compact `R₁` Borel space with a measure finite on compact sets and inner regular on sets of finite
+measure, without local compactness or left invariance.
 
 The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter 2.
 -/

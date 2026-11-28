@@ -378,6 +378,15 @@ theorem extension_mul {E F : Type*} [UniformSpace E] [Mul E] [ContinuousMul E]
   | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
   | ih a b => simp only [← coe_mul', extension_coe hf, hmul]
 
+/-- Mapping a uniformly continuous multiplicative map to completions preserves multiplication. -/
+protected theorem map_mul {E F : Type*} [UniformSpace E] [Mul E] [ContinuousMul E]
+    [ContinuousMul (Completion E)] [UniformSpace F] [Mul F] [ContinuousMul F]
+    [ContinuousMul (Completion F)] {f : E → F} (hf : UniformContinuous f)
+    (hmul : ∀ a b : E, f (a * b) = f a * f b) (x y : Completion E) :
+    Completion.map f (x * y) = Completion.map f x * Completion.map f y :=
+  extension_mul (uniformContinuous_coe F |>.comp hf)
+    (fun a b => by simp only [Function.comp_apply, hmul, coe_mul']) x y
+
 variable [NonUnitalNonAssocRing α] [IsTopologicalRing α] [IsUniformAddGroup α]
 
 /-- Multiplication on the completion of a nonunital topological ring is continuous. -/

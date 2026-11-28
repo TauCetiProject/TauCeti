@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Completion
-public import Mathlib.Analysis.Normed.Operator.Extend
 public import Mathlib.MeasureTheory.Integral.CompactlySupported
-public import TauCeti.MeasureTheory.Function.Lp.CompactlySupported
-import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
+public import TauCeti.MeasureTheory.Function.Lp.CompactlySupported.Basic
 
 /-!
 # Tagged `L¹` spaces of compactly supported continuous functions
@@ -22,25 +19,27 @@ share the same underlying function space `C_c(X, E)` and the same Bochner `L¹` 
 We develop once for all tagged spaces:
 * the wrapper equivalence, `AddCommGroup`, and `Module 𝕜` API (`ofFun`, `toFun`, `equiv`,
   `addEquiv`, `linearEquiv`);
-* the Bochner `L¹` seminorm (`SeminormedAddCommGroup`, `NormedSpace`), realization `toL1` and
-  linear isometry `toL1LI` into `Lp E 1 μ`, separation (`NormedAddCommGroup`) for full-support
-  measures, and the isometric identification `completionEquivL1` of
-  `UniformSpace.Completion (CompactlySupportedL1 tag E μ)` with `Lp E 1 μ` for a complete real
-  normed-space target `E` on a weakly locally compact `R₁` Borel space with `μ` finite on
-  compact sets and inner regular for compact sets on sets of finite measure;
+* the Bochner `L¹` seminorm (`SeminormedAddCommGroup`, `IsBoundedSMul`, `NormedSpace`),
+  realization `toL1` and linear isometry `toL1LI` into `Lp E 1 μ`, separation
+  (`NormedAddCommGroup`) for full-support measures, and the postcomposition norm bounds
+  `norm_ofFun_compLeft_le_of_bound` and `norm_ofFun_compLeft_le`;
 * builder helpers (`nonUnitalNonAssocRingOf`, `nonUnitalRingOf`, `norm_mul_le_of`, `starRingOf`,
   `normedStarGroupOf`, …) turning convolution and involution laws on `C_c(X, E)` into algebraic
   and normed structures on `CompactlySupportedL1 tag E μ`;
 * `CompactlySupportedL1.liftCLM`, bundling a `𝕜`-linear map on `C_c(X, E)` with an `L¹` bound
   `‖Φ f‖ ≤ C * ∫ s, ‖f s‖ ∂μ` into a bounded linear map `CompactlySupportedL1 tag E μ →L[𝕜] B`
   of operator norm at most `C` when `0 ≤ C` (`norm_liftCLM_le`, contractive when `0 ≤ C ≤ 1`).
+
+Density of `toL1` and the isometric completion equivalence `completionEquivL1` with `Lp E 1 μ`
+are proved separately in
+`TauCeti.MeasureTheory.Function.Lp.CompactlySupported.L1Completion`.
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory UniformSpace
+open MeasureTheory
 open scoped CompactlySupported
 
 namespace TauCeti
@@ -240,11 +239,15 @@ theorem norm_def (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul
     (f : CompactlySupportedL1 tag E μ) : ‖f‖ = ‖toL1 𝕜 f‖ :=
   congrArg norm (toL1_eq_toL1AddMonoidHom 𝕜 f).symm
 
-instance {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 E] :
-    NormedSpace 𝕜 (CompactlySupportedL1 tag E μ) where
-  norm_smul_le c f := by
+instance {𝕜 : Type*} [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] :
+    IsBoundedSMul 𝕜 (CompactlySupportedL1 tag E μ) :=
+  .of_norm_smul_le fun c f => by
     rw [norm_def 𝕜, norm_def 𝕜, map_smul]
     exact norm_smul_le c (toL1 𝕜 f)
+
+instance {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 E] :
+    NormedSpace 𝕜 (CompactlySupportedL1 tag E μ) where
+  norm_smul_le c f := norm_smul_le c f
 
 /-- The norm of `f : CompactlySupportedL1 tag E μ` is its integral norm `∫ s, ‖f.toFun s‖ ∂μ`. -/
 theorem norm_eq_integral_norm (f : CompactlySupportedL1 tag E μ) :
@@ -256,6 +259,26 @@ theorem norm_eq_integral_norm (f : CompactlySupportedL1 tag E μ) :
 theorem norm_ofFun (f : C_c(X, E)) :
     ‖(ofFun f : CompactlySupportedL1 tag E μ)‖ = ∫ s, ‖f s‖ ∂μ :=
   norm_eq_integral_norm _
+
+/-- Postcomposing `f : C_c(X, E)` by a zero-preserving continuous map `T : C(E, F)` satisfying
+`‖T e‖ ≤ C * ‖e‖` yields a tagged `L¹` element of norm at most `C * ‖ofFun f‖`. -/
+theorem norm_ofFun_compLeft_le_of_bound {ι' : Type*} {tag' : ι'} {F : Type*}
+    [NormedAddCommGroup F] (T : C(E, F)) (hT0 : T 0 = 0) {C : ℝ}
+    (hT : ∀ e : E, ‖T e‖ ≤ C * ‖e‖) (f : C_c(X, E)) :
+    ‖(ofFun (f.compLeft T) : CompactlySupportedL1 tag' F μ)‖ ≤
+      C * ‖(ofFun f : CompactlySupportedL1 tag E μ)‖ := by
+  simp only [norm_ofFun, ← integral_const_mul]
+  exact integral_mono (f.compLeft T).integrable.norm (f.integrable.norm.const_mul _)
+    fun s => by simpa [CompactlySupportedContinuousMap.compLeft_apply hT0] using hT (f s)
+
+/-- Postcomposing `f : C_c(X, E)` by a bounded linear map `T : E →L[𝕜] F` multiplies the `L¹` norm
+by at most `‖T‖`. -/
+theorem norm_ofFun_compLeft_le {ι' : Type*} {tag' : ι'} {𝕜 F : Type*}
+    [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (T : E →L[𝕜] F) (f : C_c(X, E)) :
+    ‖(ofFun (f.compLeft ⟨T, T.continuous⟩) : CompactlySupportedL1 tag' F μ)‖ ≤
+      ‖T‖ * ‖(ofFun f : CompactlySupportedL1 tag E μ)‖ :=
+  norm_ofFun_compLeft_le_of_bound ⟨T, T.continuous⟩ (map_zero T) (fun e => T.le_opNorm e) f
 
 variable (tag E μ) in
 /-- The linear isometry from `CompactlySupportedL1 tag E μ` with its `L¹` seminorm to Bochner
@@ -304,61 +327,6 @@ instance : NormedAddCommGroup (CompactlySupportedL1 tag E μ) :=
     exact norm_eq_zero.1 hf
 
 end FullSupport
-
-section CompletionEquiv
-
-variable [R1Space X] [WeaklyLocallyCompactSpace X] [BorelSpace X] [NormedSpace ℝ E]
-  [μ.InnerRegularCompactLTTop]
-
-section DenseRange
-
-variable (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
-
-/-- `CompactlySupportedL1` has dense image in `Lp E 1 μ` on a weakly locally compact `R₁` Borel
-space for a real normed space `E` and a measure finite on compact sets and inner regular for
-compact sets on sets of finite measure. -/
-theorem denseRange_toL1 : DenseRange (toL1 (tag := tag) (E := E) (μ := μ) 𝕜) := by
-  refine (CompactlySupportedContinuousMap.denseRange_toLp ENNReal.one_ne_top μ 𝕜).mono ?_
-  rintro _ ⟨f, rfl⟩
-  exact ⟨ofFun f, rfl⟩
-
-/-- `toL1LI` has dense range in `Lp E 1 μ`. -/
-theorem denseRange_toL1LI : DenseRange (toL1LI tag E μ 𝕜) :=
-  denseRange_toL1 𝕜
-
-end DenseRange
-
-section Complete
-
-variable (𝕜 : Type*) [NormedField 𝕜] [NormedSpace 𝕜 E] [CompleteSpace E]
-
-variable (tag E μ) in
-/-- **Identification of the abstract `L¹` completion with Bochner `L¹`**: `toL1` extends to a
-`𝕜`-linear isometric equivalence between `UniformSpace.Completion (CompactlySupportedL1 tag E μ)`
-and `Lp E 1 μ`. -/
-def completionEquivL1 : Completion (CompactlySupportedL1 tag E μ) ≃ₗᵢ[𝕜] Lp E 1 μ :=
-  (LinearEquiv.refl 𝕜 _).extendOfIsometry Completion.toComplₗᵢ.toLinearMap (toL1 𝕜)
-    Completion.denseRange_coe (denseRange_toL1 𝕜) (by simp [norm_def 𝕜])
-
-@[simp]
-theorem completionEquivL1_coe (f : CompactlySupportedL1 tag E μ) :
-    completionEquivL1 tag E μ 𝕜 f = toL1 𝕜 f :=
-  LinearEquiv.extendOfIsometry_eq _ _ _ _ _ _ f
-
-@[simp]
-theorem completionEquivL1_symm_toL1 (f : CompactlySupportedL1 tag E μ) :
-    (completionEquivL1 tag E μ 𝕜).symm (toL1 𝕜 f) = f :=
-  LinearEquiv.extendOfIsometry_symm_eq _ _ _ _ _ _ f
-
-@[simp]
-theorem completionEquivL1_symm_toLp (f : C_c(X, E)) :
-    (completionEquivL1 tag E μ 𝕜).symm (CompactlySupportedContinuousMap.toLp 1 μ 𝕜 f) =
-      ((ofFun f : CompactlySupportedL1 tag E μ) : Completion (CompactlySupportedL1 tag E μ)) := by
-  rw [← toL1_eq_toLp 𝕜 (ofFun f), completionEquivL1_symm_toL1]
-
-end Complete
-
-end CompletionEquiv
 
 end L1Norm
 
@@ -485,9 +453,9 @@ section LiftCLM
 
 variable {ι : Type*} {tag : ι} {X E 𝕜 B : Type*}
   [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
-  [NormedAddCommGroup E] [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup E] [Ring 𝕜] [Module 𝕜 E] [ContinuousConstSMul 𝕜 E]
   {μ : Measure X} [IsFiniteMeasureOnCompacts μ]
-  [SeminormedAddCommGroup B] [NormedSpace 𝕜 B]
+  [SeminormedAddCommGroup B] [Module 𝕜 B]
 
 /-- Bundle a `𝕜`-linear map `Φ : C_c(X, E) →ₗ[𝕜] B` satisfying an `L¹` bound `‖Φ f‖ ≤ C * ‖f‖₁`
 as a continuous linear map on `CompactlySupportedL1 tag E μ`. -/
@@ -505,13 +473,24 @@ theorem liftCLM_apply (Φ : C_c(X, E) →ₗ[𝕜] B) {C : ℝ}
     liftCLM (tag := tag) (E := E) (μ := μ) Φ C hΦ f = Φ f.toFun :=
   (rfl)
 
+end LiftCLM
+
+section NormLiftCLM
+
+variable {ι : Type*} {tag : ι} {X E 𝕜 B : Type*}
+  [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+  [NormedAddCommGroup E] [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
+  {μ : Measure X} [IsFiniteMeasureOnCompacts μ]
+  [SeminormedAddCommGroup B] [NormedSpace 𝕜 B]
+
 /-- The operator norm of `liftCLM Φ C hΦ` is at most `C` when `0 ≤ C`. -/
-theorem norm_liftCLM_le (Φ : C_c(X, E) →ₗ[𝕜] B) {C : ℝ} (hC : 0 ≤ C)
+theorem norm_liftCLM_le
+    (Φ : C_c(X, E) →ₗ[𝕜] B) {C : ℝ} (hC : 0 ≤ C)
     (hΦ : ∀ f : C_c(X, E), ‖Φ f‖ ≤ C * ∫ s, ‖f s‖ ∂μ) :
     ‖liftCLM (tag := tag) (E := E) (μ := μ) Φ C hΦ‖ ≤ C :=
   LinearMap.mkContinuous_norm_le _ hC _
 
-end LiftCLM
+end NormLiftCLM
 
 end CompactlySupportedL1
 

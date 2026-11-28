@@ -8,13 +8,12 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.CStarAlgebra.Hom
 public import Mathlib.MeasureTheory.Group.Measure
-public import Mathlib.MeasureTheory.Group.ModularCharacter
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import Mathlib.MeasureTheory.Integral.CompactlySupported
-public import TauCeti.MeasureTheory.Function.Lp.CompactlySupportedL1
+public import TauCeti.MeasureTheory.Function.Lp.CompactlySupported.L1
+public import TauCeti.MeasureTheory.Group.ModularCharacter
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Prod
-import TauCeti.MeasureTheory.Group.ModularCharacter
 
 /-!
 # Vector-valued integration along Hilbert-space representations
@@ -56,8 +55,8 @@ construction.
   right-covariance formulas.
 * `NonUnitalStarAlgHom.integratedOperator_eq_mul`: multiplicativity for convolution-type integrals
   against a left-invariant measure.
-* `NonUnitalStarAlgHom.integratedOperator_eq_star`: adjoint identity for coefficients satisfying a
-  pointwise modular-weighted adjoint relation.
+* `NonUnitalStarAlgHom.integratedOperator_eq_star`: adjoint identity for coefficients satisfying an
+  almost-everywhere modular-weighted adjoint relation.
 * `NonUnitalStarAlgHom.integratedOperatorCLM`: continuous linear map on
   `CompactlySupportedL1 tag A μ` when `‖U x‖ ≤ C` for all `x`, with operator norm at most `C` when
   `0 ≤ C` (contractive when `0 ≤ C ≤ 1`).
@@ -299,9 +298,12 @@ theorem integratedOperator_eq_star (hU : ∀ v : H, Continuous fun g => U g v)
         ∫ s, (Measure.modularCharacter s : ℝ) • ⟪v, π (f s⁻¹) (U s⁻¹ w)⟫_ℂ ∂μ := by
       refine integral_congr_ae ?_
       filter_upwards [hstar] with s hs
-      rw [inner_conj_symm, ← mul_apply_eq_comp, hs, smul_apply, ← Complex.coe_algebraMap,
-        RCLike.algebraMap_eq_ofReal]
-      simp only [inner_smul_real_left, ContinuousLinearMap.star_eq_adjoint,
+      have hgv : π (g s) (U s v) =
+          (Measure.modularCharacter s : ℝ) •
+            ContinuousLinearMap.adjoint (π (f s⁻¹) * U s⁻¹) v := by
+        simpa only [mul_apply_eq_comp, smul_apply, ContinuousLinearMap.star_eq_adjoint,
+          ← Complex.coe_smul] using congrArg (fun T => T v) hs
+      simp only [inner_conj_symm, hgv, RCLike.real_smul_eq_coe_smul (K := ℂ), inner_smul_real_left,
         ContinuousLinearMap.adjoint_inner_left, mul_apply_eq_comp]
     _ = ∫ s, ⟪v, π (f s) (U s w)⟫_ℂ ∂μ :=
       TauCeti.integral_modularCharacter_smul_inv_eq_self (μ := μ)

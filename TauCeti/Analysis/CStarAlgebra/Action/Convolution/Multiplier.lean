@@ -44,9 +44,25 @@ variable [IsFiniteMeasureOnCompacts μ]
 /-- Left multiplication by a coefficient `a` multiplies the L¹ norm by at most `‖a‖`. -/
 private theorem norm_ofFun_smul_le (a : A) (f : ConvolutionAlgebra α μ) :
     ‖(CompactlySupportedL1.ofFun (a • f.toFun) : ConvolutionAlgebra α μ)‖ ≤ ‖a‖ * ‖f‖ := by
-  simp only [CompactlySupportedL1.norm_eq_integral_norm, ← integral_const_mul]
-  exact integral_mono (a • f.toFun).integrable.norm (f.toFun.integrable.norm.const_mul _)
-    fun s => norm_mul_le a (f.toFun s)
+  have hcomp :
+      f.toFun.compLeft
+          ⟨ContinuousLinearMap.mul ℂ A a, (ContinuousLinearMap.mul ℂ A a).continuous⟩ =
+        a • f.toFun := by
+    ext s
+    rw [CompactlySupportedContinuousMap.compLeft_apply (map_zero (ContinuousLinearMap.mul ℂ A a))]
+    rfl
+  calc
+    ‖(CompactlySupportedL1.ofFun (a • f.toFun) : ConvolutionAlgebra α μ)‖
+        = ‖(CompactlySupportedL1.ofFun
+            (f.toFun.compLeft
+              ⟨ContinuousLinearMap.mul ℂ A a, (ContinuousLinearMap.mul ℂ A a).continuous⟩) :
+              ConvolutionAlgebra α μ)‖ := by rw [hcomp]
+    _ ≤ ‖ContinuousLinearMap.mul ℂ A a‖ * ‖f‖ := by
+        simpa only [CompactlySupportedL1.ofFun_toFun] using
+          CompactlySupportedL1.norm_ofFun_compLeft_le
+            (tag := α) (tag' := α) (μ := μ) (ContinuousLinearMap.mul ℂ A a) f.toFun
+    _ ≤ ‖a‖ * ‖f‖ :=
+        mul_le_mul_of_nonneg_right (ContinuousLinearMap.opNorm_mul_apply_le ℂ A a) (norm_nonneg f)
 
 /-- The canonical left coefficient multiplier, as a bounded operator for the L¹ norm. -/
 def coefficientMul (a : A) : ConvolutionAlgebra α μ →L[ℂ] ConvolutionAlgebra α μ :=

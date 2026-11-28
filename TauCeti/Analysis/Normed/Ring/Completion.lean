@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Completion
-public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Hom
 public import TauCeti.Topology.Algebra.UniformRing
 
 /-!
@@ -23,8 +22,7 @@ to the completion by `UniformSpace.Completion.instNormedStarGroup` in
 power-bounded elements of a normed ring with a pseudouniformizer: they are exactly the elements
 of norm at most one (`TauCeti.Huber.IsPseudoUniformizer.isPowerBounded_iff_norm_le_one`).
 Linear norm bounds on continuous nonunital algebra homomorphisms into complete Hausdorff targets
-also pass to their extensions on completions (`NonUnitalAlgHom.norm_fromCompletion_le` and
-`ContinuousLinearMap.norm_fromCompletion_toNonUnitalAlgHomOfMul_le`).
+also pass to their extensions on completions (`NonUnitalAlgHom.norm_fromCompletion_le`).
 
 ## Main results
 
@@ -39,8 +37,6 @@ also pass to their extensions on completions (`NonUnitalAlgHom.norm_fromCompleti
 * `UniformSpace.Completion.isBounded_coeRingHom`: the embedding of a seminormed ring into its
   completion is a bounded ring homomorphism.
 * `NonUnitalAlgHom.norm_fromCompletion_le`: linear norm bounds on `E` pass to `f.fromCompletion`.
-* `ContinuousLinearMap.norm_fromCompletion_toNonUnitalAlgHomOfMul_le`: an operator-norm bound on
-  a multiplicative continuous linear map passes to the completion of `toNonUnitalAlgHomOfMul`.
 -/
 
 public section
@@ -110,22 +106,3 @@ theorem norm_fromCompletion_le {R S E F : Type*} [Monoid R] [Monoid S] {φ : R �
   | ih a => simpa only [fromCompletion_apply_coe, Completion.norm_coe] using hC a
 
 end NonUnitalAlgHom
-
-namespace ContinuousLinearMap
-
-/-- An operator-norm bound `‖f‖ ≤ C` on a multiplicative continuous linear map into a complete
-Hausdorff nonunital seminormed algebra passes to the completion extension of
-`f.toNonUnitalAlgHomOfMul`. -/
-theorem norm_fromCompletion_toNonUnitalAlgHomOfMul_le
-    {R E F : Type*} [NontriviallyNormedField R]
-    [NonUnitalSeminormedRing E] [NormedSpace R E]
-    [NonUnitalSeminormedRing F] [NormedSpace R F] [T0Space F] [CompleteSpace F]
-    (f : E →L[R] F) (hf_mul : ∀ a b : E, f (a * b) = f a * f b)
-    {C : ℝ} (hC : ‖f‖ ≤ C) (x : Completion E) :
-    ‖(f.toNonUnitalAlgHomOfMul hf_mul).fromCompletion
-      (f.continuous_toNonUnitalAlgHomOfMul hf_mul) x‖ ≤ C * ‖x‖ :=
-  (f.toNonUnitalAlgHomOfMul hf_mul).norm_fromCompletion_le
-    (f.continuous_toNonUnitalAlgHomOfMul hf_mul)
-    (fun a => by simpa only [toNonUnitalAlgHomOfMul_apply] using f.le_of_opNorm_le hC a) x
-
-end ContinuousLinearMap

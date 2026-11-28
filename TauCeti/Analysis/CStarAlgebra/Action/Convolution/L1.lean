@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Multiplier
 public import TauCeti.Analysis.CStarAlgebra.Completion
 public import TauCeti.Analysis.Normed.Operator.Completion
-public import TauCeti.MeasureTheory.Function.Lp.CompactlySupported
+public import TauCeti.MeasureTheory.Function.Lp.CompactlySupported.L1Completion
 public import TauCeti.MeasureTheory.Function.Lp.GroupConvolution
 public import TauCeti.MeasureTheory.Function.Lp.Star
 public import TauCeti.Topology.Algebra.UniformRing
@@ -27,19 +27,21 @@ Let `α : CStarAction G A` be a point-norm continuous action of a topological gr
 possibly nonunital complex C⋆-algebra `A`. In
 `TauCeti.Analysis.CStarAlgebra.Action.Convolution.Normed` and `TauCeti.CompactlySupportedL1`, the
 compact-support convolution algebra `CStarAction.ConvolutionAlgebra α μ` carries the `L¹` seminorm
-pulled back along `CompactlySupportedL1.toL1 ℂ : ConvolutionAlgebra α μ →ₗ[ℂ] Lp A 1 μ`, and its
-abstract completion `UniformSpace.Completion (ConvolutionAlgebra α μ)` is the twisted `L¹` Banach
-⋆-algebra.
+pulled back along `CompactlySupportedL1.toL1 ℂ : ConvolutionAlgebra α μ →ₗ[ℂ] Lp A 1 μ`. For a
+locally compact topological group `G` with a left-invariant Borel measure `μ` finite on compact
+sets, `ConvolutionAlgebra α μ` is a `NonUnitalSeminormedRing` (`NonUnitalNormedRing` when `μ` has
+full support) with isometric star (`NormedStarGroup`), so its abstract completion
+`UniformSpace.Completion (ConvolutionAlgebra α μ)` is the twisted `L¹` Banach ⋆-algebra.
 
-When `G` is a weakly locally compact `R₁` Borel space and `μ` is finite on compact sets and inner
-regular for compact sets on sets of finite measure (`IsFiniteMeasureOnCompacts μ` and
-`μ.InnerRegularCompactLTTop`), compactly supported continuous functions are dense in `Lp A 1 μ`.
-Consequently `CompactlySupportedL1.toL1 ℂ` has dense range and extends to a linear isometric
-equivalence
+Separately, for the linear `L¹` identification, when `G` is only a weakly locally compact `R₁`
+Borel space and `μ` is finite on compact sets and inner regular for compact sets on sets of finite
+measure (`IsFiniteMeasureOnCompacts μ` and `μ.InnerRegularCompactLTTop`), compactly supported
+continuous functions are dense in `Lp A 1 μ`. Consequently `CompactlySupportedL1.toL1 ℂ` has dense
+range and extends to a linear isometric equivalence
 `CompactlySupportedL1.completionEquivL1 α A μ ℂ` from `Completion (ConvolutionAlgebra α μ)`
-to `Lp A 1 μ`. This holds without separability of `A`, second countability of `G`,
-σ-finiteness of `μ`, unitality of `A`, or full support of `μ`, including zero algebras and the zero
-measure.
+to `Lp A 1 μ`. This linear identification holds without local compactness of `G`, separability of
+`A`, second countability of `G`, σ-finiteness of `μ`, unitality of `A`, or full support of `μ`,
+including zero algebras and the zero measure.
 
 On `Lp A p μ` and `Lp A 1 μ` we construct the concrete dynamical operations and show that they match
 those of `Completion (ConvolutionAlgebra α μ)` across `CompactlySupportedL1.completionEquivL1`:

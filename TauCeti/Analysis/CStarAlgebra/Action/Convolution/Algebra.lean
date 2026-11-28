@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Basic
 public import TauCeti.Analysis.CStarAlgebra.Action.Involution
-public import TauCeti.MeasureTheory.Function.Lp.CompactlySupportedL1
+public import TauCeti.MeasureTheory.Function.Lp.CompactlySupported.L1
 
 /-!
 # The convolution ⋆-algebra of a C⋆-dynamical system

@@ -29,6 +29,8 @@ the underlying isometric `ℂ`-linear ring equivalence.
 
 * `TauCeti.CStarAction.TwistedConvolutionAlgebra`: the `ω`-twisted convolution ⋆-algebra on
   `C_c(G, A)` with its `L¹` topology.
+* `TauCeti.CStarAction.TwistedConvolutionAlgebra.untwistLIE`: isometric `ℂ`-linear equivalence
+  `TwistedConvolutionAlgebra (1 : CentralCocycle α) μ ≃ₗᵢ[ℂ] ConvolutionAlgebra α μ`.
 * `TauCeti.CStarAction.TwistedConvolutionAlgebra.untwistRingEquiv`: isometric `ℂ`-linear ring
   equivalence `TwistedConvolutionAlgebra (1 : CentralCocycle α) μ ≃+* ConvolutionAlgebra α μ`
   without local compactness.
@@ -179,6 +181,32 @@ instance : NormedStarGroup (TwistedConvolutionAlgebra ω μ) :=
 end NormedStar
 
 /-! ### Comparison with the untwisted convolution algebra at `ω = 1` -/
+
+section UntwistedLIE
+
+variable (α μ) [OpensMeasurableSpace G] [IsFiniteMeasureOnCompacts μ]
+
+/-- For the trivial cocycle `1 : CentralCocycle α`, the canonical identification of underlying
+functions is a complex linear isometric equivalence
+`TwistedConvolutionAlgebra 1 μ ≃ₗᵢ[ℂ] ConvolutionAlgebra α μ`, without requiring group
+continuity of the topology or local compactness. -/
+def untwistLIE :
+    TwistedConvolutionAlgebra (1 : CentralCocycle α) μ ≃ₗᵢ[ℂ] ConvolutionAlgebra α μ where
+  toFun f := CompactlySupportedL1.ofFun f.toFun
+  invFun f := CompactlySupportedL1.ofFun f.toFun
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := by ext1; simp
+  map_smul' _ _ := by ext1; simp
+  norm_map' f := by simp [CompactlySupportedL1.norm_eq_integral_norm]
+
+@[simp] theorem toFun_untwistLIE (f : TwistedConvolutionAlgebra (1 : CentralCocycle α) μ) :
+    (untwistLIE α μ f).toFun = f.toFun := (rfl)
+
+@[simp] theorem toFun_untwistLIE_symm (f : ConvolutionAlgebra α μ) :
+    ((untwistLIE α μ).symm f).toFun = f.toFun := (rfl)
+
+end UntwistedLIE
 
 section Untwisted
 

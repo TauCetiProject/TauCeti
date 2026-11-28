@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import Mathlib.MeasureTheory.Measure.Regular
 public import Mathlib.Topology.UrysohnsLemma
-public import TauCeti.MeasureTheory.Function.Lp.CompactlySupported
+public import TauCeti.MeasureTheory.Function.Lp.CompactlySupported.Basic
 
 /-!
 # `Lᵖ` functions on a locally compact space

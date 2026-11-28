@@ -27,9 +27,11 @@ Here we construct the integrated form directly on the Bochner space `Lp A 1 μ` 
 vector integration,
 `(P.integratedOperatorBochnerL1 μ f) v = ∫ g, P.coefficient (f g) (P.group g v) ∂μ`,
 for any inner-regular Borel measure (`[R1Space G] [BorelSpace G] [μ.InnerRegularCompactLTTop]`),
-and prove that it matches `P.integratedOperatorL1 μ` across
-`CompactlySupportedL1.completionEquivL1`. The vector-integral operator construction, covariance
-identities, and elementary-tensor comparison
+without local compactness, left invariance, or finiteness on compact sets. Separately, under
+`[LocallyCompactSpace G] [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop]` and
+`[μ.IsMulLeftInvariant]`, `P.integratedOperatorBochnerL1 μ` agrees with `P.integratedOperatorL1 μ`
+across `CompactlySupportedL1.completionEquivL1`. The vector-integral operator construction,
+covariance identities, and elementary-tensor comparison
 closely adapt the scalar integrated representation `ContRepresentation.integratedOperatorL1` in
 `TauCeti.RepresentationTheory.Continuous.Integrated.Basic` and the compact-support covariant form
 `CovariantRepresentation.integratedOperator` /
