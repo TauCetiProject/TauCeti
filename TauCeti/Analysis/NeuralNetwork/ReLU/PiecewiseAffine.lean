@@ -89,7 +89,7 @@ piecewise affine. -/
 theorem isPiecewiseAffineOn_of_reluNetRealizes {n m L : ℕ} {d : Fin (L + 1) → ℕ}
     {f : (Fin n → ℝ) → (Fin m → ℝ)} (hf : ReLUNetRealizes d f) :
     IsPiecewiseAffineOn f (univ : Set (Fin n → ℝ)) := by
-  obtain ⟨h0, hL, θ, hθ⟩ := hf
+  obtain ⟨h0, hL, θ, hθ⟩ := reluNetRealizes_iff.mp hf
   have h0' : (reluSpec d).width 0 = n := (congrFun (reluSpec_width d) 0).trans h0
   have hL' : (reluSpec d).width (Fin.last L) = m :=
     (congrFun (reluSpec_width d) (Fin.last L)).trans hL

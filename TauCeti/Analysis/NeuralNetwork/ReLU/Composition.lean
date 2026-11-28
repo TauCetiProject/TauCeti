@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.NeuralNetwork.ReLU.Basic
+import TauCeti.Geometry.Neuromanifold.MLP.Composition
+import TauCeti.Geometry.Neuromanifold.MLP.Congr
 
 /-!
 # Composition and depth padding for ReLU networks
@@ -42,28 +44,37 @@ open Neuromanifold
 
 /-- The width tuple obtained by merging the output affine layer of a depth-`(L₁ + 1)` network
 with the input affine layer of a depth-`(L₂ + 1)` network, producing depth `L₁ + L₂ + 1`. -/
-@[expose] def compWidths {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 2) → ℕ) (d₂ : Fin (L₂ + 2) → ℕ) :
+def compWidths {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 2) → ℕ) (d₂ : Fin (L₂ + 2) → ℕ) :
     Fin (L₁ + L₂ + 2) → ℕ :=
   fun i =>
     if _ : i.val ≤ L₁ then d₁ ⟨i.val, by omega⟩ else d₂ ⟨i.val - L₁, by omega⟩
+
+/-- On indices `i` with `i.val ≤ L₁`, `compWidths d₁ d₂ i` agrees with `d₁`. -/
+theorem compWidths_of_le {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 2) → ℕ)
+    (d₂ : Fin (L₂ + 2) → ℕ) {i : Fin (L₁ + L₂ + 2)} (hi : i.val ≤ L₁) :
+    compWidths d₁ d₂ i = d₁ ⟨i.val, by omega⟩ := by
+  simp only [compWidths, hi, ↓reduceDIte]
+
+/-- On indices `i` with `L₁ < i.val`, `compWidths d₁ d₂ i` agrees with `d₂` shifted by `L₁`. -/
+theorem compWidths_of_lt {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 2) → ℕ)
+    (d₂ : Fin (L₂ + 2) → ℕ) {i : Fin (L₁ + L₂ + 2)} (hi : L₁ < i.val) :
+    compWidths d₁ d₂ i = d₂ ⟨i.val - L₁, by omega⟩ := by
+  have hnot : ¬ i.val ≤ L₁ := Nat.not_le_of_lt hi
+  simp only [compWidths, hnot, ↓reduceDIte]
 
 /-- On indices `i : Fin (L₁ + 1)` below the merge layer, `compWidths` agrees with `d₁`. -/
 @[simp]
 theorem compWidths_left {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 2) → ℕ)
     (d₂ : Fin (L₂ + 2) → ℕ) (i : Fin (L₁ + 1)) :
-    compWidths d₁ d₂ ⟨i.val, by omega⟩ = d₁ i.castSucc := by
-  have hi : i.val ≤ L₁ := Nat.le_of_lt_succ i.isLt
-  simp only [compWidths, hi, ↓reduceDIte]
-  exact congrArg d₁ (Fin.ext rfl)
+    compWidths d₁ d₂ ⟨i.val, by omega⟩ = d₁ i.castSucc :=
+  compWidths_of_le d₁ d₂ (Nat.le_of_lt_succ i.isLt)
 
 /-- On shifted indices `L₁ + 1 + i` above the merge layer, `compWidths` agrees with `d₂ i.succ`. -/
 @[simp]
 theorem compWidths_right {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 2) → ℕ)
     (d₂ : Fin (L₂ + 2) → ℕ) (i : Fin (L₂ + 1)) :
-    compWidths d₁ d₂ ⟨L₁ + 1 + i.val, by omega⟩ = d₂ i.succ := by
-  have hi : ¬ (L₁ + 1 + i.val ≤ L₁) := by omega
-  simp only [compWidths, hi, ↓reduceDIte]
-  exact congrArg d₂ (Fin.ext (by simp; omega))
+    compWidths d₁ d₂ ⟨L₁ + 1 + i.val, by omega⟩ = d₂ i.succ :=
+  (compWidths_of_lt d₁ d₂ (by simp; omega)).trans (congrArg d₂ (Fin.ext (by simp; omega)))
 
 /-- The input width of `compWidths d₁ d₂` is `d₁ 0`. -/
 @[simp]
@@ -82,266 +93,142 @@ theorem compWidths_last {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 2) → ℕ)
   rw [hlast]
   exact compWidths_right d₁ d₂ (Fin.last L₂)
 
-private theorem width_compWidths_of_le {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 2) → ℕ)
-    (d₂ : Fin (L₂ + 2) → ℕ) {i : Fin (L₁ + L₂ + 2)} {j : Fin (L₁ + 2)}
-    (hi : i.val ≤ L₁) (hij : i.val = j.val) :
-    (reluSpec (compWidths d₁ d₂)).width i = (reluSpec d₁).width j := by
-  simp only [reluSpec_width, compWidths, hi, ↓reduceDIte]
-  exact congrArg d₁ (Fin.ext hij)
+private theorem reluNetRealizes_congr_depth {n m L L' : ℕ} (hL : L = L')
+    {d : Fin (L + 1) → ℕ} {d' : Fin (L' + 1) → ℕ}
+    (hd : ∀ i : Fin (L + 1), d i = d' (Fin.cast (congrArg (· + 1) hL) i))
+    {f : (Fin n → ℝ) → (Fin m → ℝ)} (hf : ReLUNetRealizes d f) :
+    ReLUNetRealizes d' f := by
+  subst hL
+  exact hf.of_width_eq (funext hd)
 
-private theorem width_compWidths_of_lt {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 2) → ℕ)
-    (d₂ : Fin (L₂ + 2) → ℕ) {i : Fin (L₁ + L₂ + 2)} {j : Fin (L₂ + 2)}
-    (hi : L₁ < i.val) (hij : i.val - L₁ = j.val) :
-    (reluSpec (compWidths d₁ d₂)).width i = (reluSpec d₂).width j := by
-  have hnot : ¬ i.val ≤ L₁ := Nat.not_le_of_lt hi
-  simp only [reluSpec_width, compWidths, hnot, ↓reduceDIte]
-  exact congrArg d₂ (Fin.ext hij)
+private def reluConsParams {L : ℕ} (d : Fin (L + 2) → ℕ) {d' : Fin (L + 1) → ℕ}
+    (ht : Fin.tail d = d')
+    (θ₀ : Matrix (Fin ((reluSpec d).width 1)) (Fin ((reluSpec d).width 0)) ℝ ×
+      (Fin ((reluSpec d).width 1) → ℝ))
+    (θ' : (reluSpec d').Parameters) : (reluSpec d).Parameters :=
+  Fin.cons θ₀
+    (cast (congrArg MLPSpec.Parameters ((tail_reluSpec d).trans (congrArg reluSpec ht)).symm) θ')
 
-private def compParams {m L₁ L₂ : ℕ} {d₁ : Fin (L₁ + 2) → ℕ}
-    {d₂ : Fin (L₂ + 2) → ℕ} (hm₁ : (reluSpec d₁).width (Fin.last (L₁ + 1)) = m)
-    (hm₂ : (reluSpec d₂).width 0 = m)
-    (θ₁ : (reluSpec d₁).Parameters) (θ₂ : (reluSpec d₂).Parameters) :
-    (reluSpec (compWidths d₁ d₂)).Parameters := fun i =>
-  if hi : i.val < L₁ then
-    let k : Fin L₁ := ⟨i.val, hi⟩
-    have hr : (reluSpec (compWidths d₁ d₂)).width i.succ =
-        (reluSpec d₁).width k.castSucc.succ :=
-      width_compWidths_of_le d₁ d₂ (by simp; omega) (by simp [k])
-    have hc : (reluSpec (compWidths d₁ d₂)).width i.castSucc =
-        (reluSpec d₁).width k.castSucc.castSucc :=
-      width_compWidths_of_le d₁ d₂ (by simp; omega) (by simp [k])
-    (fun r c => (θ₁ k.castSucc).1 (Fin.cast hr r) (Fin.cast hc c),
-     fun r => (θ₁ k.castSucc).2 (Fin.cast hr r))
-  else if heq : i.val = L₁ then
-    let W₁ := (θ₁ (Fin.last L₁)).1
-    let b₁ := (θ₁ (Fin.last L₁)).2
-    let W₂ := (θ₂ 0).1
-    let b₂ := (θ₂ 0).2
-    have hr : (reluSpec (compWidths d₁ d₂)).width i.succ =
-        (reluSpec d₂).width (0 : Fin (L₂ + 1)).succ :=
-      width_compWidths_of_lt d₁ d₂ (by simp; omega) (by simp [heq])
-    have hc : (reluSpec (compWidths d₁ d₂)).width i.castSucc =
-        (reluSpec d₁).width (Fin.last L₁).castSucc :=
-      width_compWidths_of_le d₁ d₂ (by simp; omega) (by simp [heq])
-    let W₂' := W₂.submatrix (finCongr hr) (finCongr hm₂).symm
-    let W₁' := W₁.submatrix (finCongr hm₁).symm (finCongr hc)
-    (W₂' * W₁', W₂' *ᵥ (b₁ ∘ (finCongr hm₁).symm) + b₂ ∘ finCongr hr)
-  else
-    let k : Fin L₂ := ⟨i.val - (L₁ + 1), by omega⟩
-    have hr : (reluSpec (compWidths d₁ d₂)).width i.succ = (reluSpec d₂).width k.succ.succ :=
-      width_compWidths_of_lt d₁ d₂ (by simp; omega) (by simp [k]; omega)
-    have hc : (reluSpec (compWidths d₁ d₂)).width i.castSucc =
-        (reluSpec d₂).width k.succ.castSucc :=
-      width_compWidths_of_lt d₁ d₂ (by simp; omega) (by simp [k]; omega)
-    (fun r c => (θ₂ k.succ).1 (Fin.cast hr r) (Fin.cast hc c),
-     fun r => (θ₂ k.succ).2 (Fin.cast hr r))
+private theorem reluSpec_cons_realize {L : ℕ} (d : Fin (L + 2) → ℕ) {d' : Fin (L + 1) → ℕ}
+    (ht : Fin.tail d = d')
+    (θ₀ : Matrix (Fin ((reluSpec d).width 1)) (Fin ((reluSpec d).width 0)) ℝ ×
+      (Fin ((reluSpec d).width 1) → ℝ))
+    (θ' : (reluSpec d').Parameters)
+    (x : Fin ((reluSpec d).width 0) → ℝ)
+    (j : Fin ((reluSpec d).width (Fin.last (L + 1)))) :
+    (reluSpec d).realize (reluConsParams d ht θ₀ θ') x j =
+      (reluSpec d').realize θ'
+        (fun i => Neuromanifold.activation ((reluSpec d).layerActivation 0) ()
+          (Neuromanifold.dense θ₀ x) (Fin.cast (congrArg (· 0) ht.symm) i))
+        (Fin.cast (congrArg (fun f => f (Fin.last L)) ht) j) := by
+  have htail : reluSpec d' = (reluSpec d).tail :=
+    ((tail_reluSpec d).trans (congrArg reluSpec ht)).symm
+  have hreal := congrFun (congrFun (MLPSpec.realize_cons (reluSpec d) θ₀
+    (cast (congrArg MLPSpec.Parameters htail) θ')) x) j
+  have hcast := MLPSpec.realize_cast htail θ'
+    (Neuromanifold.activation ((reluSpec d).layerActivation 0) () (Neuromanifold.dense θ₀ x)) j
+  exact (hreal.trans hcast).trans (congrArg₂ ((reluSpec d').realize θ')
+    (funext fun _ => congrArg _ (Fin.ext rfl)) (Fin.ext rfl))
 
-private theorem compParams_lt {m L₁ L₂ : ℕ} {d₁ : Fin (L₁ + 2) → ℕ}
-    {d₂ : Fin (L₂ + 2) → ℕ} (hm₁ : (reluSpec d₁).width (Fin.last (L₁ + 1)) = m)
-    (hm₂ : (reluSpec d₂).width 0 = m)
-    (θ₁ : (reluSpec d₁).Parameters) (θ₂ : (reluSpec d₂).Parameters) (k : Fin L₁) :
-    let i : Fin (L₁ + L₂ + 1) := ⟨k.val, by omega⟩
-    have hr : (reluSpec (compWidths d₁ d₂)).width i.succ =
-        (reluSpec d₁).width k.castSucc.succ :=
-      width_compWidths_of_le d₁ d₂ (by dsimp [i]; omega) (by dsimp [i])
-    have hc : (reluSpec (compWidths d₁ d₂)).width i.castSucc =
-        (reluSpec d₁).width k.castSucc.castSucc :=
-      width_compWidths_of_le d₁ d₂ (by dsimp [i]; omega) (by dsimp [i])
-    (∀ r c, (compParams hm₁ hm₂ θ₁ θ₂ i).1 r c =
-        (θ₁ k.castSucc).1 (Fin.cast hr r) (Fin.cast hc c)) ∧
-      (∀ r, (compParams hm₁ hm₂ θ₁ θ₂ i).2 r =
-        (θ₁ k.castSucc).2 (Fin.cast hr r)) := by
-  intro i hr hc
-  have hi : i.val < L₁ := k.isLt
-  simp [compParams, hi, i]
-
-private theorem compParams_eq {m L₁ L₂ : ℕ} {d₁ : Fin (L₁ + 2) → ℕ}
-    {d₂ : Fin (L₂ + 2) → ℕ} (hm₁ : (reluSpec d₁).width (Fin.last (L₁ + 1)) = m)
-    (hm₂ : (reluSpec d₂).width 0 = m)
-    (θ₁ : (reluSpec d₁).Parameters) (θ₂ : (reluSpec d₂).Parameters)
-    (hr : (reluSpec (compWidths d₁ d₂)).width
-        (⟨L₁, by omega⟩ : Fin (L₁ + L₂ + 1)).succ =
-        (reluSpec d₂).width (0 : Fin (L₂ + 1)).succ)
-    (hc : (reluSpec (compWidths d₁ d₂)).width
-        (⟨L₁, by omega⟩ : Fin (L₁ + L₂ + 1)).castSucc =
-        (reluSpec d₁).width (Fin.last L₁).castSucc) :
-    compParams hm₁ hm₂ θ₁ θ₂ ⟨L₁, by omega⟩ =
-      let W₂' := (θ₂ 0).1.submatrix (finCongr hr) (finCongr hm₂).symm
-      let W₁' := (θ₁ (Fin.last L₁)).1.submatrix (finCongr hm₁).symm (finCongr hc)
-      (W₂' * W₁', W₂' *ᵥ ((θ₁ (Fin.last L₁)).2 ∘ (finCongr hm₁).symm) +
-        (θ₂ 0).2 ∘ finCongr hr) := by
-  simp [compParams]
-
-private theorem compParams_gt {m L₁ L₂ : ℕ} {d₁ : Fin (L₁ + 2) → ℕ}
-    {d₂ : Fin (L₂ + 2) → ℕ} (hm₁ : (reluSpec d₁).width (Fin.last (L₁ + 1)) = m)
-    (hm₂ : (reluSpec d₂).width 0 = m)
-    (θ₁ : (reluSpec d₁).Parameters) (θ₂ : (reluSpec d₂).Parameters) (k : Fin L₂) :
-    let i : Fin (L₁ + L₂ + 1) := ⟨L₁ + 1 + k.val, by omega⟩
-    have hr : (reluSpec (compWidths d₁ d₂)).width i.succ = (reluSpec d₂).width k.succ.succ :=
-      width_compWidths_of_lt d₁ d₂ (by dsimp [i]; omega) (by dsimp [i]; omega)
-    have hc : (reluSpec (compWidths d₁ d₂)).width i.castSucc =
-        (reluSpec d₂).width k.succ.castSucc :=
-      width_compWidths_of_lt d₁ d₂ (by dsimp [i]; omega) (by dsimp [i]; omega)
-    (∀ r c, (compParams hm₁ hm₂ θ₁ θ₂ i).1 r c =
-        (θ₂ k.succ).1 (Fin.cast hr r) (Fin.cast hc c)) ∧
-      (∀ r, (compParams hm₁ hm₂ θ₁ θ₂ i).2 r = (θ₂ k.succ).2 (Fin.cast hr r)) := by
-  intro i hr hc
-  have hi : ¬ (i.val < L₁) := by dsimp [i]; omega
-  have heq : i.val ≠ L₁ := by dsimp [i]; omega
-  have hfn : ∀ (k' : Fin L₂) (_ : k' = k)
-      (hr' : (reluSpec (compWidths d₁ d₂)).width i.succ = (reluSpec d₂).width k'.succ.succ)
-      (hc' : (reluSpec (compWidths d₁ d₂)).width i.castSucc =
-        (reluSpec d₂).width k'.succ.castSucc),
-      (∀ r c, (θ₂ k'.succ).1 (Fin.cast hr' r) (Fin.cast hc' c) =
-          (θ₂ k.succ).1 (Fin.cast hr r) (Fin.cast hc c)) ∧
-        (∀ r, (θ₂ k'.succ).2 (Fin.cast hr' r) = (θ₂ k.succ).2 (Fin.cast hr r)) := by
-    rintro _ rfl _ _
-    exact ⟨fun _ _ => rfl, fun _ => rfl⟩
-  simp only [compParams, hi, ↓reduceDIte, heq]
-  exact hfn ⟨i.val - (L₁ + 1), by dsimp [i]; omega⟩ (Fin.ext (by dsimp [i]; omega)) _ _
-
-private theorem compParams_evalPrefix_lt {n m L₁ L₂ : ℕ}
-    {d₁ : Fin (L₁ + 2) → ℕ} {d₂ : Fin (L₂ + 2) → ℕ}
-    (h0c : (reluSpec (compWidths d₁ d₂)).width 0 = n)
-    (h0₁ : (reluSpec d₁).width 0 = n)
-    (hm₁ : (reluSpec d₁).width (Fin.last (L₁ + 1)) = m) (hm₂ : (reluSpec d₂).width 0 = m)
-    (θ₁ : (reluSpec d₁).Parameters) (θ₂ : (reluSpec d₂).Parameters)
-    (x : Fin n → ℝ) (k : Fin (L₁ + 1))
-    (r : Fin ((reluSpec (compWidths d₁ d₂)).width ⟨k.val, by omega⟩)) :
-    (reluSpec (compWidths d₁ d₂)).evalPrefix (compParams hm₁ hm₂ θ₁ θ₂)
-        (fun i => x (Fin.cast h0c i)) ⟨k.val, by omega⟩ r =
-      (reluSpec d₁).evalPrefix θ₁ (fun i => x (Fin.cast h0₁ i)) k.castSucc
-        (Fin.cast (width_compWidths_of_le d₁ d₂ (Nat.le_of_lt_succ k.isLt) rfl) r) := by
-  induction k using Fin.induction with
-  | zero =>
-    have hzero₁ : (⟨(0 : Fin (L₁ + 1)).val, by omega⟩ : Fin (L₁ + L₂ + 2)) = 0 := Fin.ext rfl
-    rw [MLPSpec.evalPrefix_cast _ _ _ hzero₁, MLPSpec.evalPrefix_zero,
-      MLPSpec.evalPrefix_cast (reluSpec d₁) _ _ (Fin.castSucc_zero :
-        (0 : Fin (L₁ + 1)).castSucc = 0), MLPSpec.evalPrefix_zero]
-    exact congrArg x (Fin.ext rfl)
-  | succ k ih =>
-    let i : Fin (L₁ + L₂ + 1) := ⟨k.val, by omega⟩
-    have hlayer : (reluSpec (compWidths d₁ d₂)).layerActivation i =
-        (reluSpec d₁).layerActivation k.castSucc :=
-      layerActivation_reluSpec_eq _ _ (by simp [i]; omega)
-    have hsucc : (⟨k.succ.val, by omega⟩ : Fin (L₁ + L₂ + 2)) = i.succ := Fin.ext rfl
-    have hk_cast : k.succ.castSucc = k.castSucc.succ := Fin.ext rfl
-    rw [MLPSpec.evalPrefix_cast _ _ _ hsucc, MLPSpec.evalPrefix_succ_apply, hlayer,
-      MLPSpec.evalPrefix_cast (reluSpec d₁) _ _ hk_cast, MLPSpec.evalPrefix_succ_apply]
-    apply congrArg ((reluSpec d₁).layerActivation k.castSucc)
-    obtain ⟨hW, hb⟩ := compParams_lt hm₁ hm₂ θ₁ θ₂ k
-    dsimp only [i]
-    simp only [Matrix.mulVec, dotProduct, hW, hb]
-    congr 1
-    let hc : (reluSpec (compWidths d₁ d₂)).width i.castSucc =
-        (reluSpec d₁).width k.castSucc.castSucc :=
-      width_compWidths_of_le d₁ d₂ (by simp [i]) rfl
-    refine Fintype.sum_equiv (finCongr hc) _ _ fun c => ?_
-    simp only [finCongr_apply]
-    congr 1
-    exact ih c
-
-private theorem compParams_evalPrefix_mid {n m L₁ L₂ : ℕ}
-    {d₁ : Fin (L₁ + 2) → ℕ} {d₂ : Fin (L₂ + 2) → ℕ}
-    (h0c : (reluSpec (compWidths d₁ d₂)).width 0 = n)
-    (h0₁ : (reluSpec d₁).width 0 = n)
-    (hm₁ : (reluSpec d₁).width (Fin.last (L₁ + 1)) = m) (hm₂ : (reluSpec d₂).width 0 = m)
-    (θ₁ : (reluSpec d₁).Parameters) (θ₂ : (reluSpec d₂).Parameters)
-    (g : (Fin n → ℝ) → (Fin m → ℝ)) (x : Fin n → ℝ)
-    (hθ₁ : ∀ k : Fin m,
-      (reluSpec d₁).realize θ₁ (fun i => x (Fin.cast h0₁ i)) (Fin.cast hm₁.symm k) = g x k)
-    (r : Fin ((reluSpec (compWidths d₁ d₂)).width ⟨L₁ + 1, by omega⟩)) :
-    (reluSpec (compWidths d₁ d₂)).evalPrefix (compParams hm₁ hm₂ θ₁ θ₂)
-        (fun i => x (Fin.cast h0c i)) ⟨L₁ + 1, by omega⟩ r =
-      (reluSpec d₂).evalPrefix θ₂ (fun u => g x (Fin.cast hm₂ u)) 1
-        (Fin.cast (width_compWidths_of_lt d₁ d₂ (by simp) (by simp)) r) := by
-  let i_mid : Fin (L₁ + L₂ + 1) := ⟨L₁, by omega⟩
-  have hsucc_mid : (⟨L₁ + 1, by omega⟩ : Fin (L₁ + L₂ + 2)) = i_mid.succ := Fin.ext rfl
-  have hlayer : (reluSpec (compWidths d₁ d₂)).layerActivation i_mid =
-      (reluSpec d₂).layerActivation 0 :=
-    layerActivation_reluSpec_eq _ _ (by simp [i_mid]; omega)
-  have h0₂ : (reluSpec d₂).evalPrefix θ₂ (fun u => g x (Fin.cast hm₂ u))
-      (0 : Fin (L₂ + 1)).castSucc = fun u => g x (Fin.cast hm₂ u) := by simp
-  rw [MLPSpec.evalPrefix_cast _ _ _ hsucc_mid, MLPSpec.evalPrefix_succ_apply, hlayer,
-    MLPSpec.evalPrefix_cast (reluSpec d₂) _ _ (Fin.ext rfl : (1 : Fin (L₂ + 2)) = (0 : Fin _).succ),
-    MLPSpec.evalPrefix_succ_apply, h0₂]
-  apply congrArg ((reluSpec d₂).layerActivation 0)
-  have hr_mid : (reluSpec (compWidths d₁ d₂)).width i_mid.succ =
-      (reluSpec d₂).width (0 : Fin (L₂ + 1)).succ :=
-    width_compWidths_of_lt d₁ d₂ (by simp [i_mid]) (by simp [i_mid])
-  have hc_mid : (reluSpec (compWidths d₁ d₂)).width i_mid.castSucc =
-      (reluSpec d₁).width (Fin.last L₁).castSucc :=
-    width_compWidths_of_le d₁ d₂ (by simp [i_mid]) (by simp [i_mid])
-  let v₁ := (reluSpec d₁).evalPrefix θ₁ (fun i => x (Fin.cast h0₁ i)) (Fin.last L₁).castSucc
-  have hv : (reluSpec (compWidths d₁ d₂)).evalPrefix (compParams hm₁ hm₂ θ₁ θ₂)
-      (fun i => x (Fin.cast h0c i)) i_mid.castSucc = v₁ ∘ finCongr hc_mid :=
-    funext fun c => compParams_evalPrefix_lt h0c h0₁ hm₁ hm₂ θ₁ θ₂ x (Fin.last L₁) c
-  have hθ₁_vec : ((θ₁ (Fin.last L₁)).1 *ᵥ v₁) ∘ ⇑(finCongr hm₁).symm +
-      (θ₁ (Fin.last L₁)).2 ∘ ⇑(finCongr hm₁).symm = g x :=
-    funext fun k => by simpa [MLPSpec.realize_succ] using hθ₁ k
-  have hm₁' : (reluSpec d₁).width (Fin.last L₁).succ = m := hm₁
+private theorem reluNetRealizes_comp_one {n m p L₂ : ℕ}
+    {d₁ : Fin 2 → ℕ} {d₂ : Fin (L₂ + 2) → ℕ}
+    {g : (Fin n → ℝ) → (Fin m → ℝ)} {h : (Fin m → ℝ) → (Fin p → ℝ)}
+    (hg : ReLUNetRealizes d₁ g) (hh : ReLUNetRealizes d₂ h) :
+    ReLUNetRealizes (fun i : Fin (L₂ + 2) => if i = 0 then d₁ 0 else d₂ i) (h ∘ g) := by
+  obtain ⟨h0₁, hm₁, θ₁, hθ₁⟩ := reluNetRealizes_iff.mp hg
+  obtain ⟨hm₂, hp₂, θ₂, hθ₂⟩ := reluNetRealizes_iff.mp hh
+  let d : Fin (L₂ + 2) → ℕ := fun i => if i = 0 then d₁ 0 else d₂ i
+  have hd0 : d 0 = n := by simpa [d] using h0₁
+  have hd0_w : (reluSpec d).width 0 = n := hd0
+  have hdL : d (Fin.last (L₂ + 1)) = p := by simpa [d, Fin.succ_ne_zero] using hp₂
+  have ht : Fin.tail d = Fin.tail d₂ := funext fun i => by simp [Fin.tail, d, Fin.succ_ne_zero]
+  have h0₁' : (reluSpec d₁).width (0 : Fin 1).castSucc = n := h0₁
+  have hm₁' : (reluSpec d₁).width (0 : Fin 1).succ = m := hm₁
   have hm₂' : (reluSpec d₂).width (0 : Fin (L₂ + 1)).castSucc = m := hm₂
-  have hvec :
-      let W₂' := (θ₂ 0).1.submatrix (finCongr hr_mid) (finCongr hm₂').symm
-      let W₁' := (θ₁ (Fin.last L₁)).1.submatrix (finCongr hm₁').symm (finCongr hc_mid)
-      (W₂' * W₁') *ᵥ (v₁ ∘ finCongr hc_mid) +
-          (W₂' *ᵥ ((θ₁ (Fin.last L₁)).2 ∘ (finCongr hm₁').symm) + (θ₂ 0).2 ∘ finCongr hr_mid) =
-        ((θ₂ 0).1 *ᵥ (fun u => g x (Fin.cast hm₂' u)) + (θ₂ 0).2) ∘ finCongr hr_mid := by
-    intro W₂' W₁'
-    have hW₁v :
-        W₁' *ᵥ (v₁ ∘ finCongr hc_mid) = ((θ₁ (Fin.last L₁)).1 *ᵥ v₁) ∘ (finCongr hm₁').symm := by
-      dsimp only [W₁']
-      rw [Matrix.submatrix_mulVec_equiv (θ₁ (Fin.last L₁)).1 _ (finCongr hm₁').symm
-          (finCongr hc_mid), Function.comp_assoc, Equiv.self_comp_symm, Function.comp_id]
-    have hW₂v : W₂' *ᵥ g x = ((θ₂ 0).1 *ᵥ (fun u => g x (Fin.cast hm₂' u))) ∘ finCongr hr_mid := by
-      dsimp only [W₂']
-      rw [Matrix.submatrix_mulVec_equiv (θ₂ 0).1 _ (finCongr hr_mid) (finCongr hm₂').symm]; rfl
-    rw [← Matrix.mulVec_mulVec, hW₁v, ← add_assoc, ← Matrix.mulVec_add, hθ₁_vec, hW₂v]; rfl
-  dsimp only [i_mid] at hv hr_mid hc_mid hvec ⊢
-  rw [compParams_eq hm₁ hm₂ θ₁ θ₂ hr_mid hc_mid, hv]
-  exact (congrFun hvec (Fin.cast (congrArg (reluSpec (compWidths d₁ d₂)).width hsucc_mid) r)).trans
-    (congrArg (fun j => ((θ₂ 0).1 *ᵥ (fun u => g x (Fin.cast hm₂ u)) + (θ₂ 0).2) j)
-      (Fin.ext (by simp only [Fin.val_cast, finCongr_apply])))
+  have hd1' : (reluSpec d).width 1 = (reluSpec d₂).width (0 : Fin (L₂ + 1)).succ := by simp [d]
+  have hd0' : (reluSpec d).width 0 = (reluSpec d₁).width (0 : Fin 1).castSucc := rfl
+  let W₂' := (θ₂ 0).1.submatrix (finCongr hd1') (finCongr hm₂').symm
+  let W₁' := (θ₁ 0).1.submatrix (finCongr hm₁').symm (finCongr hd0')
+  let θ₀ :=
+    (W₂' * W₁', W₂' *ᵥ ((θ₁ 0).2 ∘ (finCongr hm₁').symm) + (θ₂ 0).2 ∘ finCongr hd1')
+  let θ₂_tail := cast (congrArg MLPSpec.Parameters (tail_reluSpec d₂)) (Fin.tail θ₂)
+  refine reluNetRealizes_iff.mpr ⟨hd0, hdL, reluConsParams d ht θ₀ θ₂_tail, fun x j => ?_⟩
+  have hlayer1 : (θ₁ 0).1 *ᵥ (fun i => x (Fin.cast h0₁' i)) + (θ₁ 0).2 =
+      fun k => g x (Fin.cast hm₁' k) := funext fun k => by
+    have h1 := hθ₁ x (Fin.cast hm₁' k); rw [MLPSpec.realize_depth_one] at h1; exact h1
+  have hdense : Neuromanifold.dense θ₀ (fun i => x (Fin.cast hd0_w i)) =
+      Neuromanifold.dense (θ₂ 0) (fun u => g x (Fin.cast hm₂' u)) ∘ finCongr hd1' := by
+    rw [Neuromanifold.dense_apply, Neuromanifold.dense_apply]; dsimp only [θ₀, W₂', W₁']
+    rw [← Matrix.mulVec_mulVec,
+      Matrix.submatrix_mulVec_equiv (θ₁ 0).1 _ (finCongr hm₁').symm _]
+    have hx : (fun i => x (Fin.cast hd0_w i)) ∘ (finCongr hd0').symm = _ := rfl
+    rw [hx, ← add_assoc, ← Matrix.mulVec_add]
+    change W₂' *ᵥ (((θ₁ 0).1 *ᵥ (fun i => x (Fin.cast h0₁' i)) + (θ₁ 0).2) ∘
+      (finCongr hm₁').symm) + (θ₂ 0).2 ∘ finCongr hd1' = _
+    rw [hlayer1, Matrix.submatrix_mulVec_equiv]; rfl
+  have hreal := reluSpec_cons_realize d ht θ₀ θ₂_tail (fun i => x (Fin.cast hd0_w i))
+    (Fin.cast hdL.symm j)
+  have hcast₂ := MLPSpec.realize_cast (tail_reluSpec d₂) (Fin.tail θ₂)
+    (fun i => Neuromanifold.activation ((reluSpec d).layerActivation 0) ()
+      (Neuromanifold.dense θ₀ fun i => x (Fin.cast hd0_w i))
+      (Fin.cast (congrArg (· 0) ht.symm) i))
+    (Fin.cast (congrArg (fun f => f (Fin.last L₂)) ht) (Fin.cast hdL.symm j))
+  have hreal₂ := congrFun (congrFun (MLPSpec.realize_eq_tail_comp (reluSpec d₂) θ₂)
+    (fun u => g x (Fin.cast hm₂' u))) (Fin.cast hp₂.symm j)
+  dsimp only [Function.comp_def] at hreal₂; refine (hreal.trans hcast₂).trans (Eq.trans ?_
+    (hreal₂.symm.trans (hθ₂ (g x) j)))
+  refine congrArg₂ ((reluSpec d₂).tail.realize (Fin.tail θ₂)) (funext fun u => ?_) (Fin.ext rfl)
+  simp only [Function.comp_apply, hdense, Neuromanifold.activation_apply,
+    layerActivation_reluSpec_eq d d₂ (i₁ := 0) (i₂ := 0) Iff.rfl]
+  exact congrArg ((reluSpec d₂).layerActivation 0)
+    (congrArg (Neuromanifold.dense (θ₂ 0) fun u => g x (Fin.cast hm₂' u)) (Fin.ext rfl))
 
-private theorem compParams_evalPrefix_gt {n m L₁ L₂ : ℕ}
-    {d₁ : Fin (L₁ + 2) → ℕ} {d₂ : Fin (L₂ + 2) → ℕ}
-    (h0c : (reluSpec (compWidths d₁ d₂)).width 0 = n)
-    (h0₁ : (reluSpec d₁).width 0 = n)
-    (hm₁ : (reluSpec d₁).width (Fin.last (L₁ + 1)) = m) (hm₂ : (reluSpec d₂).width 0 = m)
-    (θ₁ : (reluSpec d₁).Parameters) (θ₂ : (reluSpec d₂).Parameters)
-    (g : (Fin n → ℝ) → (Fin m → ℝ)) (x : Fin n → ℝ)
-    (hθ₁ : ∀ k : Fin m,
-      (reluSpec d₁).realize θ₁ (fun i => x (Fin.cast h0₁ i)) (Fin.cast hm₁.symm k) = g x k)
-    (k : Fin (L₂ + 1))
-    (r : Fin ((reluSpec (compWidths d₁ d₂)).width ⟨L₁ + 1 + k.val, by omega⟩)) :
-    (reluSpec (compWidths d₁ d₂)).evalPrefix (compParams hm₁ hm₂ θ₁ θ₂)
-        (fun i => x (Fin.cast h0c i)) ⟨L₁ + 1 + k.val, by omega⟩ r =
-      (reluSpec d₂).evalPrefix θ₂ (fun u => g x (Fin.cast hm₂ u)) k.succ
-        (Fin.cast (width_compWidths_of_lt d₁ d₂ (by simp; omega) (by simp; omega)) r) := by
-  induction k using Fin.induction with
-  | zero =>
-    exact compParams_evalPrefix_mid h0c h0₁ hm₁ hm₂ θ₁ θ₂ g x hθ₁ r
-  | succ k ih =>
-    let i : Fin (L₁ + L₂ + 1) := ⟨L₁ + 1 + k.val, by omega⟩
-    have hsucc : (⟨L₁ + 1 + k.succ.val, by omega⟩ : Fin (L₁ + L₂ + 2)) = i.succ :=
-      Fin.ext (by simp [i]; omega)
-    have hlayer : (reluSpec (compWidths d₁ d₂)).layerActivation i =
-        (reluSpec d₂).layerActivation k.succ :=
-      layerActivation_reluSpec_eq _ _ (by simp [i]; omega)
-    rw [MLPSpec.evalPrefix_cast _ _ _ hsucc, MLPSpec.evalPrefix_succ_apply, hlayer,
-      MLPSpec.evalPrefix_succ_apply]
-    apply congrArg ((reluSpec d₂).layerActivation k.succ)
-    obtain ⟨hW, hb⟩ := compParams_gt hm₁ hm₂ θ₁ θ₂ k
-    dsimp only [i]
-    simp only [Matrix.mulVec, dotProduct, hW, hb]
-    congr 1
-    have hcast_c : (reluSpec (compWidths d₁ d₂)).width i.castSucc =
-        (reluSpec d₂).width k.succ.castSucc :=
-      width_compWidths_of_lt d₁ d₂ (by simp [i]; omega) (by simp [i]; omega)
-    refine Fintype.sum_equiv (finCongr hcast_c) _ _ fun c => ?_
-    simp only [finCongr_apply]
-    congr 1
-    exact ih c
+private theorem reluNetRealizes_comp_succ {n m p L₁ L₂ : ℕ}
+    {d₁ : Fin ((L₁ + 1) + 2) → ℕ} {d₂ : Fin (L₂ + 2) → ℕ}
+    {g : (Fin n → ℝ) → (Fin m → ℝ)} {h : (Fin m → ℝ) → (Fin p → ℝ)}
+    (ih : ∀ {g' : (Fin (d₁ 1) → ℝ) → (Fin m → ℝ)},
+      ReLUNetRealizes (Fin.tail d₁) g' → ReLUNetRealizes (compWidths (Fin.tail d₁) d₂) (h ∘ g'))
+    (hg : ReLUNetRealizes d₁ g) :
+    ReLUNetRealizes (Fin.cons (d₁ 0) (compWidths (Fin.tail d₁) d₂)) (h ∘ g) := by
+  obtain ⟨h0₁, hm₁, θ₁, hθ₁⟩ := reluNetRealizes_iff.mp hg
+  let θ₁_tail : (reluSpec (Fin.tail d₁)).Parameters :=
+    cast (congrArg MLPSpec.Parameters (tail_reluSpec d₁)) (Fin.tail θ₁)
+  let g_tail : (Fin (d₁ 1) → ℝ) → (Fin m → ℝ) :=
+    fun v j => (reluSpec (Fin.tail d₁)).realize θ₁_tail v (Fin.cast hm₁.symm j)
+  obtain ⟨hd1, hp, θ', hθ'⟩ := reluNetRealizes_iff.mp
+    (ih (reluNetRealizes_iff.mpr ⟨rfl, hm₁, θ₁_tail, fun _ _ => rfl⟩))
+  let d : Fin (L₁ + L₂ + 3) → ℕ := Fin.cons (d₁ 0) (compWidths (Fin.tail d₁) d₂)
+  have hd0_w : (reluSpec d).width 0 = n := h0₁
+  have hd1' : (reluSpec d).width 1 = (reluSpec d₁).width (0 : Fin (L₁ + 2)).succ := hd1
+  have hd0' : (reluSpec d).width 0 = (reluSpec d₁).width (0 : Fin (L₁ + 2)).castSucc := rfl
+  let θ₀ : Matrix (Fin ((reluSpec d).width 1)) (Fin ((reluSpec d).width 0)) ℝ ×
+      (Fin ((reluSpec d).width 1) → ℝ) :=
+    ((θ₁ 0).1.submatrix (finCongr hd1') (finCongr hd0'), (θ₁ 0).2 ∘ finCongr hd1')
+  refine reluNetRealizes_iff.mpr ⟨h0₁, hp, reluConsParams d rfl θ₀ θ', fun x j => ?_⟩
+  let u₁ := Neuromanifold.activation ((reluSpec d₁).layerActivation 0) ()
+    (Neuromanifold.dense (θ₁ 0) (fun i => x (Fin.cast h0₁ i)))
+  have hu : Neuromanifold.activation ((reluSpec d).layerActivation 0) ()
+      (Neuromanifold.dense θ₀ (fun i => x (Fin.cast hd0_w i))) = u₁ ∘ finCongr hd1' := by
+    funext k
+    simp only [u₁, Neuromanifold.activation_apply, Neuromanifold.dense_apply,
+      layerActivation_reluSpec_eq d d₁ (i₁ := 0) (i₂ := 0) (by simp), θ₀]
+    rw [Matrix.submatrix_mulVec_equiv (θ₁ 0).1 _ (finCongr hd1') (finCongr hd0')]
+    have hx : (fun i => x (Fin.cast hd0_w i)) ∘ (finCongr hd0').symm =
+        fun i => x (Fin.cast h0₁ i) := rfl
+    rw [hx]
+    simp only [Function.comp_apply, Neuromanifold.activation_apply, Pi.add_apply]; rfl
+  have hg_eq : g_tail u₁ = g x := funext fun k => by
+    have h1 := congrFun (congrFun (MLPSpec.realize_eq_tail_comp (reluSpec d₁) θ₁)
+      (fun i => x (Fin.cast h0₁ i))) (Fin.cast hm₁.symm k)
+    have h2 := MLPSpec.realize_cast (tail_reluSpec d₁) (Fin.tail θ₁) u₁ (Fin.cast hm₁.symm k)
+    exact ((h2.trans (congrArg₂ ((reluSpec d₁).tail.realize (Fin.tail θ₁))
+      (funext fun _ => congrArg u₁ (Fin.ext rfl)) (Fin.ext rfl))).trans h1.symm).trans
+      (hθ₁ x k)
+  have hreal := reluSpec_cons_realize d (ht := rfl) θ₀ θ' (fun i => x (Fin.cast hd0_w i))
+    (Fin.cast (hp : d (Fin.last (L₁ + L₂ + 2)) = p).symm j)
+  refine hreal.trans (Eq.trans ?_ ((hθ' u₁ j).trans (congrFun (congrArg h hg_eq) j)))
+  exact congrArg₂ ((reluSpec (compWidths (Fin.tail d₁) d₂)).realize θ')
+    (funext fun i => by rw [hu]; rfl) (Fin.ext rfl)
 
 /-- Merging the affine output layer of a depth-`(L₁ + 1)` network realizing `g` with the affine
 input layer of a depth-`(L₂ + 1)` network realizing `h` gives a depth-`(L₁ + L₂ + 1)` network
@@ -351,51 +238,26 @@ theorem ReLUNetRealizes.comp {n m p L₁ L₂ : ℕ}
     {g : (Fin n → ℝ) → (Fin m → ℝ)} {h : (Fin m → ℝ) → (Fin p → ℝ)}
     (hg : ReLUNetRealizes d₁ g) (hh : ReLUNetRealizes d₂ h) :
     ReLUNetRealizes (compWidths d₁ d₂) (h ∘ g) := by
-  -- Track `evalPrefix` in three stages: `compParams_evalPrefix_lt` below `L₁`,
-  -- `compParams_evalPrefix_mid` at the merged affine layer `L₁ + 1`, and
-  -- `compParams_evalPrefix_gt` from `L₁ + 1` to the output.
-  obtain ⟨h0₁, hm₁, θ₁, hθ₁⟩ := hg
-  obtain ⟨hm₂, hp₂, θ₂, hθ₂⟩ := hh
-  have h0₁' : (reluSpec d₁).width 0 = n := (congrFun (reluSpec_width d₁) 0).trans h0₁
-  have hm₁' : (reluSpec d₁).width (Fin.last (L₁ + 1)) = m :=
-    (congrFun (reluSpec_width d₁) (Fin.last (L₁ + 1))).trans hm₁
-  have hm₂' : (reluSpec d₂).width 0 = m := (congrFun (reluSpec_width d₂) 0).trans hm₂
-  have hp₂' : (reluSpec d₂).width (Fin.last (L₂ + 1)) = p :=
-    (congrFun (reluSpec_width d₂) (Fin.last (L₂ + 1))).trans hp₂
-  have h0c : compWidths d₁ d₂ 0 = n := by simp [h0₁]
-  have h0c' : (reluSpec (compWidths d₁ d₂)).width 0 = n :=
-    (congrFun (reluSpec_width _) 0).trans h0c
-  have hpc : compWidths d₁ d₂ (Fin.last (L₁ + L₂ + 1)) = p := by simp [hp₂]
-  have hpc' : (reluSpec (compWidths d₁ d₂)).width (Fin.last (L₁ + L₂ + 1)) = p :=
-    (congrFun (reluSpec_width _) _).trans hpc
-  refine ⟨h0c, hpc, compParams hm₁' hm₂' θ₁ θ₂, fun x j => ?_⟩
-  have hθ₁' : ∀ k : Fin m,
-      (reluSpec d₁).realize θ₁ (fun i => x (Fin.cast h0₁' i)) (Fin.cast hm₁'.symm k) = g x k :=
-    fun k => hθ₁ x k
-  have hlast_idx : (Fin.last (L₁ + L₂ + 1) : Fin (L₁ + L₂ + 2)) =
-      ⟨L₁ + 1 + (Fin.last L₂).val, by omega⟩ := Fin.ext (by simp; omega)
-  have hp_eq :
-      (reluSpec (compWidths d₁ d₂)).width ⟨L₁ + 1 + (Fin.last L₂).val, by omega⟩ = p :=
-    (width_compWidths_of_lt d₁ d₂ (by simp; omega) (by simp; omega)).trans hp₂'
-  have hlast := compParams_evalPrefix_gt h0c' h0₁' hm₁' hm₂' θ₁ θ₂ g x hθ₁' (Fin.last L₂)
-    (Fin.cast hp_eq.symm j)
-  have hrealize_eq :
-      (reluSpec (compWidths d₁ d₂)).evalPrefix (compParams hm₁' hm₂' θ₁ θ₂)
-          (fun i => x (Fin.cast h0c i)) (Fin.last (L₁ + L₂ + 1)) (Fin.cast hpc.symm j) =
-        (reluSpec (compWidths d₁ d₂)).evalPrefix (compParams hm₁' hm₂' θ₁ θ₂)
-          (fun i => x (Fin.cast h0c' i)) (Fin.last (L₁ + L₂ + 1)) (Fin.cast hpc'.symm j) := rfl
-  rw [MLPSpec.realize_def]
-  refine hrealize_eq.trans ?_
-  rw [MLPSpec.evalPrefix_cast _ _ _ hlast_idx]
-  have h_eq : Fin.cast (congrArg (reluSpec (compWidths d₁ d₂)).width hlast_idx)
-      (Fin.cast hpc'.symm j) = Fin.cast hp_eq.symm j := Fin.ext (by simp only [Fin.val_cast])
-  rw [h_eq, hlast, MLPSpec.evalPrefix_cast (reluSpec d₂) _ _ (Fin.succ_last L₂),
-    ← MLPSpec.realize_def]
-  have hcast_p : Fin.cast (congrArg (reluSpec d₂).width (Fin.succ_last L₂))
-      (Fin.cast (width_compWidths_of_lt d₁ d₂ (by simp; omega) (by simp; omega))
-        (Fin.cast hp_eq.symm j)) = Fin.cast hp₂'.symm j := Fin.ext (by simp only [Fin.val_cast])
-  rw [hcast_p]
-  exact hθ₂ (g x) j
+  induction L₁ generalizing n with
+  | zero =>
+    refine reluNetRealizes_congr_depth (by omega) (fun i => ?_) (reluNetRealizes_comp_one hg hh)
+    rcases Fin.eq_zero_or_eq_succ i with rfl | ⟨k, rfl⟩
+    · simp [compWidths_of_le]
+    · simp only [Fin.succ_ne_zero, ↓reduceIte]
+      rw [compWidths_of_lt _ _ (by simp)]
+      exact congrArg d₂ (Fin.ext (by simp))
+  | succ L₁ ih =>
+    refine reluNetRealizes_congr_depth (by omega) (fun i => ?_)
+      (reluNetRealizes_comp_succ (fun hg' => ih hg') hg)
+    rcases Fin.eq_zero_or_eq_succ i with rfl | ⟨k, rfl⟩
+    · simp only [Fin.cons_zero, Fin.cast_zero, compWidths_zero]
+    · simp only [Fin.cons_succ]
+      by_cases hk : k.val ≤ L₁
+      · rw [compWidths_of_le _ _ hk, compWidths_of_le _ _ (by simp; omega)]
+        rfl
+      · have hlt : L₁ < k.val := Nat.lt_of_not_le hk
+        rw [compWidths_of_lt _ _ hlt, compWidths_of_lt _ _ (by simp; omega)]
+        exact congrArg d₂ (Fin.ext (by simp))
 
 /-- Merging a depth-`(L₁ + 1)` network realizing `g : ℝⁿ → ℝᵐ` with a depth-`(L₂ + 1)`
 network computing `h : ℝᵐ → ℝ` yields a depth-`(L₁ + L₂ + 1)` network computing
@@ -422,16 +284,17 @@ theorem ReLUNetRealizes.pad {n m L : ℕ} {d : Fin (L + 2) → ℕ}
   refine hcomp.of_width_eq ?_
   ext i
   by_cases hi : i.val ≤ L
-  · simp [compWidths, hi]
-  · by_cases hiL : i = Fin.last (L + 2)
+  · simp [compWidths_of_le, hi]
+  · have hlt : L < i.val := Nat.lt_of_not_le hi
+    rw [compWidths_of_lt _ _ hlt]
+    by_cases hiL : i = Fin.last (L + 2)
     · subst hiL
-      have h1 : ¬ (L + 2 ≤ L) := by omega
-      simp [compWidths, h1]
+      simp
     · have hi1 : i.val = L + 1 := by
         have := i.isLt
         have : i.val ≠ L + 2 := fun h => hiL (Fin.ext h)
         omega
-      simp [compWidths, hiL, hi1]
+      simp [hiL, hi1]
 
 /-- Appending a two-unit hidden layer preserves scalar computation, increasing depth by one. -/
 theorem ReLUNetComputes.pad {n L : ℕ} {d : Fin (L + 2) → ℕ} {f : (Fin n → ℝ) → ℝ}
@@ -476,7 +339,7 @@ theorem exists_reluNetComputes_of_le {n L₁ L₂ : ℕ} (hL : L₁ ≤ L₂)
   rcases Nat.eq_zero_or_pos L₁ with rfl | hL₁
   · rcases Nat.eq_zero_or_pos L₂ with rfl | hL₂
     · exact ⟨d₁, hf⟩
-    · obtain ⟨h0, h1, θ, hθ⟩ := hf
+    · obtain ⟨h0, h1, θ, hθ⟩ := reluNetComputes_iff.mp hf
       have hn : n = 1 := h0.symm.trans h1
       subst hn
       have haff : f =

@@ -13,6 +13,7 @@ import Mathlib.Data.Matrix.ColumnRowPartitioned
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.Order.Interval.Finset.Fin
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Geometry.Neuromanifold.MLP.Composition
 
 /-!
 # ReLU multilayer perceptrons
@@ -98,22 +99,38 @@ theorem tail_reluSpec {L : ℕ} (d : Fin (L + 2) → ℕ) :
 
 /-- The ReLU network with widths `d` realizes `f : (Fin n → ℝ) → (Fin m → ℝ)`: its input
 width is `n`, its output width is `m`, and for some parameters its realization agrees with `f`. -/
-@[expose] def ReLUNetRealizes {n m L : ℕ} (d : Fin (L + 1) → ℕ)
+def ReLUNetRealizes {n m L : ℕ} (d : Fin (L + 1) → ℕ)
     (f : (Fin n → ℝ) → (Fin m → ℝ)) : Prop :=
   ∃ (h0 : d 0 = n) (hL : d (Fin.last L) = m) (θ : (reluSpec d).Parameters),
     ∀ x j, (reluSpec d).realize θ (fun i => x (Fin.cast h0 i)) (Fin.cast hL.symm j) = f x j
 
 /-- The ReLU network with widths `d` computes `f : (Fin n → ℝ) → ℝ`: its input width is `n`,
 its output width is `1`, and for some parameters its realization agrees with `f` everywhere. -/
-@[expose] def ReLUNetComputes {n L : ℕ} (d : Fin (L + 1) → ℕ) (f : (Fin n → ℝ) → ℝ) : Prop :=
-  ∃ (h0 : d 0 = n) (hL : d (Fin.last L) = 1) (θ : (reluSpec d).Parameters),
-    ∀ x, (reluSpec d).realize θ (fun i => x (Fin.cast h0 i)) (Fin.cast hL.symm 0) = f x
+def ReLUNetComputes {n L : ℕ} (d : Fin (L + 1) → ℕ) (f : (Fin n → ℝ) → ℝ) : Prop :=
+  ReLUNetRealizes d (fun x (_ : Fin 1) => f x)
+
+/-- A ReLU network with widths `d` realizes `f` if and only if its input and output widths match
+`n` and `m` and some parameters realize `f` up to the endpoint casts. -/
+theorem reluNetRealizes_iff {n m L : ℕ} {d : Fin (L + 1) → ℕ}
+    {f : (Fin n → ℝ) → (Fin m → ℝ)} :
+    ReLUNetRealizes d f ↔
+      ∃ (h0 : d 0 = n) (hL : d (Fin.last L) = m) (θ : (reluSpec d).Parameters),
+        ∀ x j, (reluSpec d).realize θ (fun i => x (Fin.cast h0 i)) (Fin.cast hL.symm j) = f x j :=
+  Iff.rfl
 
 /-- Scalar computation by a ReLU network is realization of the one-coordinate vector map. -/
 theorem reluNetComputes_iff_reluNetRealizes {n L : ℕ} {d : Fin (L + 1) → ℕ}
     {f : (Fin n → ℝ) → ℝ} :
-    ReLUNetComputes d f ↔ ReLUNetRealizes d (fun x (_ : Fin 1) => f x) := by
-  simp only [ReLUNetComputes, ReLUNetRealizes, Fin.forall_fin_one]
+    ReLUNetComputes d f ↔ ReLUNetRealizes d (fun x (_ : Fin 1) => f x) :=
+  Iff.rfl
+
+/-- A ReLU network with widths `d` computes `f` if and only if its input width is `n`, its output
+width is `1`, and some parameters realize `f` at output coordinate `0`. -/
+theorem reluNetComputes_iff {n L : ℕ} {d : Fin (L + 1) → ℕ} {f : (Fin n → ℝ) → ℝ} :
+    ReLUNetComputes d f ↔
+      ∃ (h0 : d 0 = n) (hL : d (Fin.last L) = 1) (θ : (reluSpec d).Parameters),
+        ∀ x, (reluSpec d).realize θ (fun i => x (Fin.cast h0 i)) (Fin.cast hL.symm 0) = f x := by
+  simp only [reluNetComputes_iff_reluNetRealizes, reluNetRealizes_iff, Fin.forall_fin_one]
 
 /-- A network realizing a map into `Fin m → ℝ` has input width `n`. -/
 theorem ReLUNetRealizes.width_zero {n m L : ℕ} {d : Fin (L + 1) → ℕ}
@@ -128,12 +145,12 @@ theorem ReLUNetRealizes.width_last {n m L : ℕ} {d : Fin (L + 1) → ℕ}
 /-- A network computing a scalar function on `Fin n → ℝ` has input width `n`. -/
 theorem ReLUNetComputes.width_zero {n L : ℕ} {d : Fin (L + 1) → ℕ}
     {f : (Fin n → ℝ) → ℝ} (hf : ReLUNetComputes d f) : d 0 = n :=
-  hf.choose
+  (reluNetComputes_iff_reluNetRealizes.mp hf).width_zero
 
 /-- A network computing a scalar function has output width `1`. -/
 theorem ReLUNetComputes.width_last {n L : ℕ} {d : Fin (L + 1) → ℕ}
     {f : (Fin n → ℝ) → ℝ} (hf : ReLUNetComputes d f) : d (Fin.last L) = 1 :=
-  hf.choose_spec.choose
+  (reluNetComputes_iff_reluNetRealizes.mp hf).width_last
 
 /-- Transporting `ReLUNetRealizes` along equal width functions. -/
 theorem ReLUNetRealizes.of_width_eq {n m L : ℕ} {d d' : Fin (L + 1) → ℕ}
@@ -145,7 +162,8 @@ theorem ReLUNetRealizes.of_width_eq {n m L : ℕ} {d d' : Fin (L + 1) → ℕ}
 theorem ReLUNetComputes.of_width_eq {n L : ℕ} {d d' : Fin (L + 1) → ℕ}
     {f : (Fin n → ℝ) → ℝ} (hf : ReLUNetComputes d f) (hd : d = d') :
     ReLUNetComputes d' f :=
-  hd ▸ hf
+  reluNetComputes_iff_reluNetRealizes.mpr
+    ((reluNetComputes_iff_reluNetRealizes.mp hf).of_width_eq hd)
 
 /-- The hidden layers of a network of depth `L`: the indices strictly between the input `0` and
 the output `Fin.last L`. -/
@@ -218,35 +236,29 @@ private theorem reluNetRealizes_depth_two {a b c : ℕ}
     (f : (Fin a → ℝ) → (Fin c → ℝ))
     (hf : ∀ x j, (W₁ *ᵥ (fun k => max 0 ((W₀ *ᵥ x) k + b₀ k)) + b₁) j = f x j) :
     ReLUNetRealizes ![a, b, c] f := by
-  let θ : (reluSpec ![a, b, c]).Parameters :=
-    Fin.cons (W₀, b₀) (Fin.cons (W₁, b₁) fun i => i.elim0)
-  have ha : (reluSpec ![a, b, c]).width 0 = a := rfl
-  have hb : (reluSpec ![a, b, c]).width (0 : Fin 2).succ = b := rfl
-  refine ⟨rfl, rfl, θ, fun x j => ?_⟩
-  have h1 : ∀ (x₀ : Fin ((reluSpec ![a, b, c]).width 0) → ℝ),
-      (∀ i, x₀ i = x (Fin.cast ha i)) → ∀ (k : Fin b),
-      (reluSpec ![a, b, c]).evalPrefix θ x₀ (0 : Fin 2).succ (Fin.cast hb.symm k) =
-        max 0 ((W₀ *ᵥ x) k + b₀ k) := fun x₀ hx₀ k => by
-    have h0 : (reluSpec ![a, b, c]).evalPrefix θ x₀ (0 : Fin 2).castSucc = x₀ := by simp
-    rw [MLPSpec.evalPrefix_succ_apply, (reluSpec ![a, b, c]).layerActivation_of_lt 0 (by decide),
-      h0, reluSpec_activation]
-    congr 1
-    simp only [θ, Fin.cons_zero, Matrix.mulVec, dotProduct]
-    congr 1
-    refine Fintype.sum_equiv (finCongr ha) _ _ fun i => ?_
-    simp only [hx₀, finCongr_apply]
+  let θ₁ : (reluSpec ![a, b, c]).tail.Parameters := Fin.cons (W₁, b₁) fun i => i.elim0
+  let θ₀ : Matrix (Fin ((reluSpec ![a, b, c]).width 1)) (Fin ((reluSpec ![a, b, c]).width 0)) ℝ ×
+      (Fin ((reluSpec ![a, b, c]).width 1) → ℝ) := (W₀, b₀)
+  refine ⟨rfl, rfl, Fin.cons θ₀ θ₁, fun x j => ?_⟩
+  let x₀ : Fin ((reluSpec ![a, b, c]).width 0) → ℝ := fun i => x (Fin.cast rfl i)
+  have hact : ∀ k : Fin b,
+      Neuromanifold.activation ((reluSpec ![a, b, c]).layerActivation 0) ()
+        (Neuromanifold.dense θ₀ x₀) (Fin.cast rfl k) = max 0 ((W₀ *ᵥ x) k + b₀ k) := fun k => by
+    rw [Neuromanifold.activation_apply, Neuromanifold.dense_apply, layerActivation_reluSpec]
     rfl
-  rw [MLPSpec.realize_succ]
-  -- Unfold `(θ (Fin.last 1))` and `mulVec`/`dotProduct` at depth 2 with `h0 = rfl`, `hc = rfl`.
-  have hlhs : ∀ (x₀ : Fin ((reluSpec ![a, b, c]).width 0) → ℝ),
-      ((θ (Fin.last 1)).1 *ᵥ (reluSpec ![a, b, c]).evalPrefix θ x₀ (Fin.last 1).castSucc +
-        (θ (Fin.last 1)).2) (Fin.cast (rfl : ![a, b, c] (Fin.last 2) = c).symm j) =
-      (W₁ *ᵥ (fun k => (reluSpec ![a, b, c]).evalPrefix θ
-        x₀ (0 : Fin 2).succ (Fin.cast hb.symm k)) + b₁) j := fun _ =>
-    rfl
-  refine (hlhs (fun i => x (Fin.cast ha i))).trans ?_
-  simp_rw [h1 _ fun _ => rfl]
-  exact hf x j
+  have hreal := congrFun (congrFun (MLPSpec.realize_cons (reluSpec ![a, b, c]) θ₀ θ₁) x₀)
+    (Fin.cast rfl j)
+  rw [Function.comp_apply, Function.comp_apply, MLPSpec.realize_depth_one_eq_dense,
+    Neuromanifold.dense_apply] at hreal
+  refine hreal.trans ?_
+  have hmid :
+      ((θ₁ 0).1 *ᵥ Neuromanifold.activation ((reluSpec ![a, b, c]).layerActivation 0) ()
+          (Neuromanifold.dense θ₀ x₀) + (θ₁ 0).2) (Fin.cast rfl j) =
+        (W₁ *ᵥ (fun k => max 0 ((W₀ *ᵥ x) k + b₀ k)) + b₁) j := by
+    change (W₁ *ᵥ (fun k => Neuromanifold.activation ((reluSpec ![a, b, c]).layerActivation 0) ()
+        (Neuromanifold.dense θ₀ x₀) (Fin.cast rfl k)) + b₁) j = _
+    simp_rw [hact]
+  exact hmid.trans (hf x j)
 
 /-- A depth-2 ReLU network of hidden width `2 * m` realizes the identity on `Fin m → ℝ` via
 `t = max 0 t - max 0 (-t)`. -/
@@ -281,6 +293,7 @@ theorem ReLUNetRealizes.id_depth_two (m : ℕ) :
 /-- A depth-zero ReLU network on `ℝ` computes only the identity `x ↦ x 0`. -/
 theorem reluNetComputes_depth_zero_iff {f : (Fin 1 → ℝ) → ℝ} :
     ReLUNetComputes ![1] f ↔ f = fun x => x 0 := by
+  rw [reluNetComputes_iff]
   constructor
   · rintro ⟨h0, hL, θ, hθ⟩
     ext x
@@ -298,7 +311,8 @@ theorem reluNetComputes_depth_one_iff {n : ℕ} {f : (Fin n → ℝ) → ℝ} :
     (∃ d : Fin 2 → ℕ, ReLUNetComputes d f) ↔
       ∃ A : (Fin n → ℝ) →ᴬ[ℝ] ℝ, f = ⇑A := by
   constructor
-  · rintro ⟨d, h0, hL, θ, hθ⟩
+  · rintro ⟨d, hd⟩
+    obtain ⟨h0, hL, θ, hθ⟩ := reluNetComputes_iff.mp hd
     have h0' : (reluSpec d).width 0 = n := (congrFun (reluSpec_width d) 0).trans h0
     have hL' : (reluSpec d).width (Fin.last 1) = 1 :=
       (congrFun (reluSpec_width d) (Fin.last 1)).trans hL

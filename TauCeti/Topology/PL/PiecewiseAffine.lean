@@ -135,15 +135,9 @@ theorem IsPiecewiseAffineOn.finset_sup'_apply {ι : Type*} (s : Finset ι) (hs :
 theorem IsPiecewiseAffineOn.finset_inf'_apply {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
     {φ : ι → E → ℝ} (hφ : ∀ i ∈ s, IsPiecewiseAffineOn (φ i) V) :
     IsPiecewiseAffineOn (fun x => s.inf' hs (fun i => φ i x)) V := by
-  have hneg : (fun x => s.inf' hs (fun i => φ i x)) =
-      -(fun x => s.sup' hs (fun i => (-φ i) x)) := by
-    ext x
-    have h := congrArg OrderDual.ofDual (map_finset_inf' (OrderIso.neg ℝ) hs (fun i => φ i x))
-    rw [Finset.ofDual_inf'] at h
-    simp only [Function.comp_def, OrderIso.neg_apply, OrderDual.ofDual_toDual] at h
-    exact neg_eq_iff_eq_neg.mp h
-  rw [hneg]
-  exact (IsPiecewiseAffineOn.finset_sup'_apply s hs fun i hi => (hφ i hi).neg).neg
+  simpa only [← Finset.inf'_apply] using
+    Finset.inf'_induction (p := fun g => IsPiecewiseAffineOn g V) hs φ
+      (fun _ ha _ hb => ha.inf hb) hφ
 
 end TauCeti
 

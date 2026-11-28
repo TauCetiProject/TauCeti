@@ -158,12 +158,18 @@ theorem evalPrefix_succ_apply (A : MLPSpec K L) (θ : A.Parameters) (x : Fin (A.
       A.layerActivation i (((θ i).1 *ᵥ A.evalPrefix θ x i.castSucc) j + (θ i).2 j) :=
   congrFun (A.evalPrefix_succ θ x i) j
 
+/-- Transporting a prefix evaluation function along an equality of layer indices. -/
+theorem evalPrefix_cast_eq_comp (A : MLPSpec K L) (θ : A.Parameters) (x : Fin (A.width 0) → K)
+    {i j : Fin (L + 1)} (hij : i = j) :
+    A.evalPrefix θ x i = A.evalPrefix θ x j ∘ Fin.cast (congrArg A.width hij) := by
+  subst hij
+  rfl
+
 /-- Transporting a prefix evaluation coordinate along an equality of layer indices. -/
 theorem evalPrefix_cast (A : MLPSpec K L) (θ : A.Parameters) (x : Fin (A.width 0) → K)
     {i j : Fin (L + 1)} (hij : i = j) (r : Fin (A.width i)) :
-    A.evalPrefix θ x i r = A.evalPrefix θ x j (Fin.cast (congrArg A.width hij) r) := by
-  subst hij
-  rfl
+    A.evalPrefix θ x i r = A.evalPrefix θ x j (Fin.cast (congrArg A.width hij) r) :=
+  congrFun (A.evalPrefix_cast_eq_comp θ x hij) r
 
 /-- The output layer is affine. -/
 theorem evalPrefix_succ_of_val_add_one_eq (A : MLPSpec K L) (θ : A.Parameters)
