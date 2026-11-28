@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.HahnBanach
-import Mathlib.Analysis.RCLike.Lemmas
 import Mathlib.Topology.Algebra.Module.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Submodule
+import TauCeti.Analysis.Normed.Operator.Norming
 
 /-!
 # Spaces with a separable dual
@@ -20,10 +20,10 @@ Separability of the dual is the hypothesis of the theorem that separable dual sp
 Radon–Nikodým property. Its proof tests dual-valued functions against a countable dense subset of
 the predual, whose existence is the theorem proved here.
 
-For a dense sequence `yₙ` of functionals, pick unit vectors `xₙ` with `‖yₙ‖ / 2 ≤ ‖yₙ xₙ‖`. A
-nonzero functional `f` vanishing on the closed span of the `xₙ` would be close to some `yₙ`, which
-is impossible since `f xₙ = 0`; by the Hahn–Banach theorem the closed span of the `xₙ` is therefore
-the whole space.
+A separable dual has a countable norming set `t` in the closed unit ball of the predual
+(`TopologicalSpace.IsSeparable.exists_countable_norming`). A functional vanishing on the closed
+span of `t` therefore has norm zero; by the Hahn–Banach theorem this closed span is the whole
+space.
 
 ## References
 
@@ -33,7 +33,7 @@ the whole space.
 
 public section
 
-open TopologicalSpace
+open Set TopologicalSpace
 
 namespace TauCeti
 
@@ -42,45 +42,27 @@ variable (𝕜 E : Type*) [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜
 /-- A real or complex normed space whose dual is separable is separable. -/
 theorem separableSpace_of_separableSpace_strongDual [SeparableSpace (StrongDual 𝕜 E)] :
     SeparableSpace E := by
-  obtain ⟨y, hy⟩ := exists_dense_seq (StrongDual 𝕜 E)
-  -- Each `y n` nearly attains its norm, up to a factor `2`, on the closed unit ball.
-  have hx (n : ℕ) : ∃ x : E, ‖x‖ ≤ 1 ∧ ‖y n‖ / 2 ≤ ‖y n x‖ := by
-    rcases eq_or_ne (y n) 0 with h | h
-    · exact ⟨0, by simp, by simp [h]⟩
-    · obtain ⟨x, hx₁, hx⟩ := (y n).exists_lt_apply_of_lt_opNorm
-        (half_lt_self (norm_pos_iff.2 h))
-      exact ⟨x, hx₁.le, hx.le⟩
-  choose x hx₁ hxy using hx
-  set K := (Submodule.span 𝕜 (Set.range x)).topologicalClosure
-  -- A functional vanishing on `K` is far from every `y n`, so it is zero.
+  obtain ⟨t, ht, htne, -, hnorm⟩ :=
+    (isSeparable_univ_iff.2 ‹SeparableSpace (StrongDual 𝕜 E)›).exists_countable_norming
+  set K := (Submodule.span 𝕜 t).topologicalClosure
+  -- A functional vanishing on `K` vanishes on the norming set `t`, so it is zero.
   have hK : ∀ z, z ∈ K := by
     by_contra! ⟨z, hz⟩
     obtain ⟨f, hf₀, hfz⟩ :=
       Submodule.exists_dual_forall_mem_eq_zero_eq_one
-        (Submodule.span 𝕜 (Set.range x)).isClosed_topologicalClosure hz
-    have hf : 0 < ‖f‖ := norm_pos_iff.2 fun h ↦ by simp [h] at hfz
-    obtain ⟨n, hn⟩ := Metric.denseRange_iff.1 hy f (‖f‖ / 3) (by positivity)
-    have hfx : f (x n) = 0 :=
-      hf₀ _ (Submodule.le_topologicalClosure _ (Submodule.subset_span ⟨n, rfl⟩))
-    have h₁ : ‖y n (x n)‖ ≤ ‖f‖ / 3 :=
-      calc ‖y n (x n)‖ = ‖(y n - f) (x n)‖ := by simp [hfx]
-        _ ≤ ‖y n - f‖ * ‖x n‖ := (y n - f).le_opNorm _
-        _ ≤ ‖f‖ / 3 * 1 := by
-          gcongr
-          · rw [← dist_eq_norm, dist_comm]
-            exact hn.le
-          · exact hx₁ n
-        _ = ‖f‖ / 3 := mul_one _
-    have h₂ : ‖f‖ - ‖y n‖ < ‖f‖ / 3 := by
-      have := norm_sub_norm_le f (y n)
-      rw [← dist_eq_norm] at this
-      linarith
-    linarith [hxy n]
+        (Submodule.span 𝕜 t).isClosed_topologicalClosure hz
+    have hft : (fun x ↦ ‖f x‖) '' t = {0} := by
+      rw [← htne.image_const 0]
+      exact image_congr fun x hx ↦ by
+        simp [hf₀ x (Submodule.le_topologicalClosure _ (Submodule.subset_span hx))]
+    have hf : f = 0 := norm_eq_zero.1 <| by rw [hnorm f (mem_univ f), hft, csSup_singleton]
+    simp [hf] at hfz
   have hsep : IsSeparable (K : Set E) := by
     have : ProperSpace 𝕜 := FiniteDimensional.proper_rclike 𝕜 𝕜
     rw [Submodule.topologicalClosure_coe]
-    exact (Set.countable_range x).isSeparable.span.closure
-  rw [show (K : Set E) = Set.univ from Set.eq_univ_of_forall hK] at hsep
+    exact ht.isSeparable.span.closure
+  have hKu : (K : Set E) = univ := eq_univ_of_forall hK
+  rw [hKu] at hsep
   exact isSeparable_univ_iff.1 hsep
 
 end TauCeti
