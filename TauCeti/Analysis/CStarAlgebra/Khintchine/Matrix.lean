@@ -5,24 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.BigOperators.Expect
 public import TauCeti.Analysis.CStarAlgebra.Matrix.Schatten
-public import TauCeti.Analysis.CStarAlgebra.SquareFunction
 public import TauCeti.Analysis.Normed.Module.RademacherSum.Basic
-public import TauCeti.Analysis.Normed.Module.RademacherSum.Moment
 
 import TauCeti.Algebra.Group.Pi.Lemmas
 import TauCeti.Analysis.CStarAlgebra.Khintchine.Dual
-import TauCeti.Analysis.CStarAlgebra.Matrix.TraceDuality
+import TauCeti.Analysis.CStarAlgebra.Matrix.Trace.Duality
+import TauCeti.Analysis.CStarAlgebra.RademacherSum
 import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
 
 /-!
 # The `p = 1` noncommutative Khintchine inequality for matrices
 
-For a finite family `a : ι → CStarMatrix m m ℂ`, the Rademacher `Lᵖ` sum gauge and the infimal
-row/column sum gauge are
+For a finite family `a : ι → CStarMatrix m m ℂ` and `0 < p`, the Rademacher `Lᵖ` sum gauge and
+the infimal row/column sum gauge are
 `randomSumGauge p a = (|2^ι|⁻¹ ∑_ε ‖∑_k (±1)_{ε_k} a_k‖_{S^p}^p)^(1/p)` and
 `rowColumnSumGauge p a = inf_{a = b + c} (‖columnSquare b‖_{S^p} + ‖rowSquare c‖_{S^p})`.
+At `p = 0`, `randomSumGauge 0 a = 1` and `rowColumnSumGauge 0 a = 2` are totalization conventions
+inherited from `matrixLpGauge 0 _ = 1` (via `1 / 0 = 0` and `r ^ 0 = 1`), rather than `L⁰` or
+Schatten-`0` gauges.
 
 At `p = 1`, Lust-Piquard and Pisier proved uniform equivalence of these norms, and Haagerup–Musat /
 Pisier established the explicit universal lower constant `(√3)⁻¹` (with upper constant `1`). We
@@ -32,8 +33,8 @@ prove this by combining:
 2. Column/row trace-pairing duality from `TauCeti.Analysis.CStarAlgebra.Matrix.Schatten` lifted to
    `rowColumnSumGauge 1`.
 3. `Seminorm.exists_dual_apply_eq_and_norm_le`, `CStarMatrix.existsUnique_sum_trace_mul_eq`, and
-   `TauCeti.exists_rademacherCoeff_eq_and_norm_le` for `(√3)⁻¹`, plus sign-cube Bessel duality for
-   `1`.
+   `TauCeti.exists_rademacherCoeff_eq_and_norm_le` for `(√3)⁻¹`, plus sign-cube Bessel duality
+   (`TauCeti.norm_rowSquare_rademacherCoeff_le`) for `1`.
 
 ## Main declarations
 
@@ -73,7 +74,8 @@ section RandomSumGauge
 
 variable {ι m : Type*} [Fintype ι] [DecidableEq ι] [Fintype m]
 
-/-- The Rademacher `Lᵖ` sum gauge `(𝔼_ε ‖∑_k (±1)_{ε_k} a_k‖_p^p)^(1/p)` over `ι → Bool`. -/
+/-- For `0 < p`, the Rademacher `Lᵖ` sum gauge `(𝔼_ε ‖∑_k (±1)_{ε_k} a_k‖_p^p)^(1/p)` over
+`ι → Bool`. At `p = 0`, it evaluates to `1` by totalization (`1 / 0 = 0` and `r ^ 0 = 1`). -/
 def randomSumGauge (p : ℝ≥0) (a : ι → CStarMatrix m m ℂ) : ℝ :=
   ((∑ ε : ι → Bool, matrixLpGauge p (∑ k, (if ε k then (1 : ℂ) else -1) • a k) ^ (p : ℝ)) /
     (Fintype.card (ι → Bool) : ℝ)) ^ (1 / (p : ℝ))
@@ -101,7 +103,8 @@ theorem randomSumGauge_eq_expect_units (p : ℝ≥0) (a : ι → CStarMatrix m m
       congr 2; exact Finset.sum_congr rfl fun k _ => by
         cases h : ε k <;> simp [h, e, Units.smul_def]]
 
-/-- At exponent `0`, `randomSumGauge 0 a` evaluates to `1` through `1 / 0 = 0` and `r ^ 0 = 1`. -/
+/-- At exponent `0`, `randomSumGauge 0 a` evaluates to `1` as a totalization convention
+(`1 / 0 = 0` and `r ^ 0 = 1`). -/
 @[simp] theorem randomSumGauge_zero_left (a : ι → CStarMatrix m m ℂ) : randomSumGauge 0 a = 1 := by
   simp [randomSumGauge_eq_expect_units]
 
@@ -240,8 +243,9 @@ section RowColumnSumGauge
 
 variable {ι m : Type*} [Fintype ι] [Fintype m]
 
-/-- The infimal row/column `Lᵖ` sum gauge
-`inf {matrixLpGauge p (columnSquare b) + matrixLpGauge p (rowSquare c) | a = b + c}`. -/
+/-- For `0 < p`, the infimal row/column `Lᵖ` sum gauge
+`inf {matrixLpGauge p (columnSquare b) + matrixLpGauge p (rowSquare c) | a = b + c}`. At `p = 0`,
+it evaluates to `2` by totalization (`matrixLpGauge 0 _ = 1`). -/
 def rowColumnSumGauge (p : ℝ≥0) (a : ι → CStarMatrix m m ℂ) : ℝ :=
   sInf {r : ℝ | ∃ b c : ι → CStarMatrix m m ℂ, a = b + c ∧
     r = matrixLpGauge p (columnSquare b) + matrixLpGauge p (rowSquare c)}
@@ -251,8 +255,8 @@ theorem rowColumnSumGauge_def (p : ℝ≥0) (a : ι → CStarMatrix m m ℂ) :
     rowColumnSumGauge p a = sInf {r : ℝ | ∃ b c : ι → CStarMatrix m m ℂ, a = b + c ∧
       r = matrixLpGauge p (columnSquare b) + matrixLpGauge p (rowSquare c)} := (rfl)
 
-/-- At exponent `0`, `rowColumnSumGauge 0 a` evaluates to `2` because both `L⁰` gauges equal `1`.
--/
+/-- At exponent `0`, `rowColumnSumGauge 0 a` evaluates to `2` as a totalization convention,
+because `matrixLpGauge 0 _ = 1` for both summands. -/
 @[simp] theorem rowColumnSumGauge_zero_left (a : ι → CStarMatrix m m ℂ) :
     rowColumnSumGauge 0 a = 2 := by
   have hset : {r : ℝ | ∃ b c : ι → CStarMatrix m m ℂ, a = b + c ∧

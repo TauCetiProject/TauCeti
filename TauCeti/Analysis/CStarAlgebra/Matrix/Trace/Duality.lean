@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
-import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 import TauCeti.LinearAlgebra.Matrix.Trace.Duality
 
 /-!

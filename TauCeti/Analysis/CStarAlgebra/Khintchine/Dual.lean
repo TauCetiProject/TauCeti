@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.SquareFunction
-public import TauCeti.Analysis.Normed.Module.RademacherSum.Basic
+public import TauCeti.Analysis.Normed.Module.RademacherSum.Signs
 
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.Topology.Algebra.InfiniteSum.Constructions
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Analysis.CStarAlgebra.Matrix.HermitianDilation
 import TauCeti.Analysis.CStarAlgebra.RademacherSum
@@ -22,18 +21,16 @@ This file proves the dual `L^∞` Rademacher factorization in arbitrary non-unit
 underlying the `p = 1` noncommutative Khintchine inequality with the explicit Haagerup–Musat /
 Pisier constant `√3`:
 
-1. **Square-function Bessel bounds**: using the sign-cube orthogonality bounds from
-   `TauCeti.Analysis.CStarAlgebra.RademacherSum`, Rademacher Fourier coefficients
-   `y_k = rademacherCoeff ℝ Φ k` satisfy `max ‖columnSquare y‖ ‖rowSquare y‖ ≤ sup_ε ‖Φ(ε)‖`.
-2. **Iterative truncation and `2 × 2` Hermitian dilation**: using the fourth-moment estimate
-   `TauCeti.norm_card_inv_smul_sum_sum_units_smul_mul_self_mul_mul_self_le`, for self-adjoint `x`
+1. **Iterative truncation**: using the fourth-moment estimate
+   `TauCeti.norm_card_inv_smul_sum_sum_units_smul_mul_self_mul_mul_self_le` and the Bessel
+   square-function bounds from `TauCeti.Analysis.CStarAlgebra.RademacherSum`, for self-adjoint `x`
    normalized by `‖∑_i x_i^2‖ ≤ 1`, truncating `∑_i ε_i • x_i` at `√3 / 2` leaves a remainder `r`
-   with `‖∑_i r_i^2‖ ≤ 1 / 4`, whose rescaled iterates form a geometric series; `2 × 2` Hermitian
-   dilation then extends the factorization with constant `√3` to arbitrary `x : ι → A`.
+   with `‖∑_i r_i^2‖ ≤ 1 / 4`, whose rescaled iterates form a geometric series.
+2. **`2 × 2` Hermitian dilation**: extends the factorization with constant `√3` to arbitrary
+   `x : ι → A`.
 
 ## Main declarations
 
-* `TauCeti.norm_columnSquare_rademacherCoeff_le`, `TauCeti.norm_rowSquare_rademacherCoeff_le`
 * `TauCeti.exists_isSelfAdjoint_rademacherCoeff_eq_and_norm_le`,
   `TauCeti.exists_rademacherCoeff_eq_and_norm_le`
 
@@ -55,29 +52,6 @@ open Filter Topology
 open scoped BigOperators ComplexStarModule
 
 namespace TauCeti
-
-/-! ### Square-function Bessel bounds on the sign cube -/
-
-section Bessel
-
-variable {ι A : Type*} [Fintype ι] [DecidableEq ι] [NonUnitalCStarAlgebra A]
-  [PartialOrder A] [StarOrderedRing A]
-
-/-- If `‖Φ ε‖ ≤ C` for all `ε`, then `‖columnSquare (rademacherCoeff ℝ Φ)‖ ≤ C`. -/
-theorem norm_columnSquare_rademacherCoeff_le {Φ : (ι → ℤˣ) → A} {C : ℝ}
-    (hΦ : ∀ ε, ‖Φ ε‖ ≤ C) : ‖columnSquare (rademacherCoeff ℝ Φ)‖ ≤ C := by
-  rw [norm_columnSquare]
-  simpa only [rademacherCoeff_apply, Real.sqrt_sq ((norm_nonneg (Φ 1)).trans (hΦ 1))] using
-    Real.sqrt_le_sqrt (norm_sum_star_mul_le_of_norm_le hΦ)
-
-/-- If `‖Φ ε‖ ≤ C` for all `ε`, then `‖rowSquare (rademacherCoeff ℝ Φ)‖ ≤ C`. -/
-theorem norm_rowSquare_rademacherCoeff_le {Φ : (ι → ℤˣ) → A} {C : ℝ}
-    (hΦ : ∀ ε, ‖Φ ε‖ ≤ C) : ‖rowSquare (rademacherCoeff ℝ Φ)‖ ≤ C := by
-  rw [norm_rowSquare]
-  simpa only [rademacherCoeff_apply, Real.sqrt_sq ((norm_nonneg (Φ 1)).trans (hΦ 1))] using
-    Real.sqrt_le_sqrt (norm_sum_mul_star_le_of_norm_le hΦ)
-
-end Bessel
 
 /-! ### Functional-calculus truncation and dual Rademacher factorization -/
 

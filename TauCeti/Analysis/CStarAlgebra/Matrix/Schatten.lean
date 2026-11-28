@@ -7,32 +7,27 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
-public import TauCeti.Analysis.CStarAlgebra.Matrix.EuclideanCLM
-public import TauCeti.Analysis.CStarAlgebra.SquareFunction
-public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
+public import TauCeti.Analysis.CStarAlgebra.Matrix.SquareFunction
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Schatten
 
-import Mathlib.Analysis.InnerProductSpace.SingularValues
-import TauCeti.Analysis.CStarAlgebra.Matrix.TraceDuality
+import TauCeti.Analysis.CStarAlgebra.Matrix.Trace.Duality
 import TauCeti.Analysis.InnerProductSpace.FunctionalCalculusComparison
-import TauCeti.Analysis.InnerProductSpace.Polar.Finite
-import TauCeti.Analysis.InnerProductSpace.SingularValues
-import TauCeti.Analysis.InnerProductSpace.Trace.Free
 import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.EckartYoung
 
 /-!
 # The Schatten `p`-gauge on matrix C⋆-algebras
 
-For a finite type `n`, the **Schatten `p`-gauge** on `CStarMatrix n n ℂ` is
+For a finite type `n` and `0 < p`, the **Schatten `p`-gauge** on `CStarMatrix n n ℂ` is
 `matrixLpGauge p x = (tr(|x|^p)).re ^ (1 / p)` with `|x| = √(x⋆ x)`. Via
 `CStarMatrix.toEuclideanCLM` and the right singular basis, `matrixLpGauge p x = (∑ᵢ σᵢ(x)^p)^(1/p)`
-for `0 < p`. Star invariance holds for all `p`; faithfulness, complex homogeneity, operator-norm
-comparison, and the two-sided ideal bounds hold for `0 < p`; for `1 ≤ p`, agreement with
-`UnitarilyInvariantSeminorm.schatten` gives subadditivity and `matrixLpSeminorm`. At `p = 1`, we
-prove trace-norm duality. We also expose the column stacking map `columnEuclideanLM`, its
-modulus identification `operatorAbs_columnEuclideanLM`, the Schatten realizations, subadditivity,
-homogeneity, and restriction bounds of `columnSquare` and `rowSquare`, and their trace-pairing
-duality at `p = 1`.
+for `0 < p`; at `p = 0`, `matrixLpGauge 0 x = 1` is a totalization convention from Lean's
+`1 / 0 = 0` and `r ^ 0 = 1`. Star invariance holds for all `p`; faithfulness, complex homogeneity,
+operator-norm comparison, and the two-sided ideal bounds hold for `0 < p`; for `1 ≤ p`, agreement
+with `UnitarilyInvariantSeminorm.schatten` gives subadditivity and `matrixLpSeminorm`. At `p = 1`,
+we prove trace-norm duality. Using the column stacking operator `columnEuclideanLM` from
+`TauCeti.Analysis.CStarAlgebra.Matrix.SquareFunction`, we also establish the Schatten realizations,
+subadditivity, homogeneity, and restriction bounds of `columnSquare` and `rowSquare`, and their
+trace-pairing duality at `p = 1`.
 
 ## Main declarations
 
@@ -45,16 +40,13 @@ duality at `p = 1`.
   `TauCeti.matrixLpGauge_le_mul_of_norm_apply_le`
 * `TauCeti.norm_trace_mul_le_norm_mul_matrixLpGauge_one`,
   `TauCeti.exists_norm_le_one_and_trace_mul_eq_matrixLpGauge_one`
-* `TauCeti.columnEuclideanLM`, `TauCeti.norm_columnSquare_apply_sq_eq`,
-  `TauCeti.norm_rowSquare_apply_sq_eq`, `TauCeti.matrixLpGauge_columnSquare_eq_schatten`,
+* `TauCeti.matrixLpGauge_columnSquare_eq_schatten`,
   `TauCeti.matrixLpGauge_rowSquare_eq_schatten`, `TauCeti.matrixLpGauge_columnSquare_add_le`,
   `TauCeti.matrixLpGauge_columnSquare_smul`, `TauCeti.matrixLpGauge_rowSquare_add_le`,
   `TauCeti.matrixLpGauge_rowSquare_smul`, `TauCeti.matrixLpGauge_columnSquare_comp_le`,
   `TauCeti.matrixLpGauge_rowSquare_comp_le`, `TauCeti.matrixLpGauge_two_columnSquare_sq`,
-  `TauCeti.matrixLpGauge_two_rowSquare_sq`, `TauCeti.star_toEuclideanCLM_symm_rankOne_mul_self`,
-  `TauCeti.matrixLpGauge_columnSquare_rankOne`
-* `TauCeti.exists_mul_columnSquare_and_norm_columnSquare_le_one`,
-  `TauCeti.norm_sum_trace_mul_le_norm_rowSquare_mul_matrixLpGauge_one_columnSquare`,
+  `TauCeti.matrixLpGauge_two_rowSquare_sq`, `TauCeti.matrixLpGauge_columnSquare_rankOne`
+* `TauCeti.norm_sum_trace_mul_le_norm_rowSquare_mul_matrixLpGauge_one_columnSquare`,
   `TauCeti.norm_sum_trace_mul_le_norm_columnSquare_mul_matrixLpGauge_one_rowSquare`,
   `TauCeti.norm_rowSquare_le_of_forall_norm_sum_trace_mul_le`,
   `TauCeti.norm_columnSquare_le_of_forall_norm_sum_trace_mul_le`
@@ -78,8 +70,9 @@ section Gauge
 
 variable {n : Type*} [Fintype n]
 
-/-- The Schatten `p`-gauge `(tr(|x|^p)).re ^ (1 / p)` of `x : CStarMatrix n n ℂ` with respect to
-the unnormalized matrix trace, where `|x| = √(x⋆ x)`. -/
+/-- For `0 < p`, the Schatten `p`-gauge `(tr(|x|^p)).re ^ (1 / p)` of `x : CStarMatrix n n ℂ`
+with respect to the unnormalized matrix trace, where `|x| = √(x⋆ x)`. At `p = 0`, it evaluates
+to `1` by totalization (`1 / 0 = 0` and `r ^ 0 = 1`). -/
 def matrixLpGauge (p : ℝ≥0) (x : CStarMatrix n n ℂ) : ℝ :=
   (Matrix.trace (CStarMatrix.ofMatrix.symm
     (CFC.nnrpow (CFC.sqrt (star x * x)) p))).re ^ (1 / (p : ℝ))
@@ -405,77 +398,6 @@ section ColumnRow
 
 variable {ι m : Type*} [Fintype m] [DecidableEq m]
 
-/-- Stacking a finite family of `m × m` C⋆-matrices into a column operator
-`EuclideanSpace ℂ m →ₗ[ℂ] PiLp 2 (fun _ : ι => EuclideanSpace ℂ m)`. -/
-def columnEuclideanLM :
-    (ι → CStarMatrix m m ℂ) →ₗ[ℂ]
-      (EuclideanSpace ℂ m →ₗ[ℂ] PiLp 2 fun _ : ι => EuclideanSpace ℂ m) where
-  toFun b := (WithLp.linearEquiv 2 ℂ (ι → EuclideanSpace ℂ m)).symm.toLinearMap.comp
-    (LinearMap.pi fun k => (CStarMatrix.toEuclideanCLM (b k)).toLinearMap)
-  map_add' _ _ := by ext v k; simp
-  map_smul' _ _ := by ext v k; simp
-
-/-- Applying `columnEuclideanLM b` to `v` and evaluating at coordinate `k` applies
-`CStarMatrix.toEuclideanCLM (b k)` to `v`. -/
-@[simp] theorem columnEuclideanLM_apply (b : ι → CStarMatrix m m ℂ) (v : EuclideanSpace ℂ m)
-    (k : ι) : (columnEuclideanLM b v).ofLp k = CStarMatrix.toEuclideanCLM (b k) v := (rfl)
-
-/-- Stacking the coordinate projections of an operator `T` into `PiLp` via `columnEuclideanLM`
-recovers `T`. -/
-theorem columnEuclideanLM_projₗ
-    (T : EuclideanSpace ℂ m →ₗ[ℂ] PiLp 2 fun _ : ι => EuclideanSpace ℂ m) :
-    columnEuclideanLM (fun k => CStarMatrix.toEuclideanCLM.symm
-      ((PiLp.projₗ 2 (fun _ : ι => EuclideanSpace ℂ m) k).comp T).toContinuousLinearMap) = T := by
-  ext v k
-  simp
-
-/-- The column Gram operator `(columnEuclideanLM b).adjoint ∘ₗ columnEuclideanLM b` agrees with
-the Euclidean operator of `∑ k, star (b k) * b k`. -/
-theorem adjoint_comp_columnEuclideanLM [Fintype ι] (b : ι → CStarMatrix m m ℂ) :
-    (columnEuclideanLM b).adjoint ∘ₗ columnEuclideanLM b =
-      (CStarMatrix.toEuclideanCLM (∑ k, star (b k) * b k)).toLinearMap :=
-  LinearMap.ext fun _ => ext_inner_left ℂ fun _ => by
-    simp only [LinearMap.comp_apply, LinearMap.adjoint_inner_right, PiLp.inner_apply,
-      columnEuclideanLM_apply, map_sum, ContinuousLinearMap.coe_coe, sum_apply, inner_sum, map_mul,
-      map_star, mul_apply_eq_comp, ContinuousLinearMap.star_eq_adjoint,
-      ContinuousLinearMap.adjoint_inner_right]
-
-/-- The operator modulus `|columnEuclideanLM b|` agrees with the Euclidean operator of
-`columnSquare b`. -/
-theorem operatorAbs_columnEuclideanLM [Fintype ι] (b : ι → CStarMatrix m m ℂ) :
-    (columnEuclideanLM b).operatorAbs =
-      (CStarMatrix.toEuclideanCLM (columnSquare b)).toLinearMap := by
-  set T := CStarMatrix.toEuclideanCLM (columnSquare b)
-  have hnonneg : 0 ≤ T := map_zero (CStarMatrix.toEuclideanCLM (n := m)) ▸
-    OrderHomClass.mono CStarMatrix.toEuclideanCLM (columnSquare_nonneg b)
-  have hsq : T * T = (columnEuclideanLM b).adjoint.toContinuousLinearMap ∘L
-      (columnEuclideanLM b).toContinuousLinearMap := by
-    rw [← map_mul, columnSquare_mul_self]
-    apply ContinuousLinearMap.coe_inj.mp
-    rw [ContinuousLinearMap.toLinearMap_comp, LinearMap.coe_toContinuousLinearMap,
-      LinearMap.coe_toContinuousLinearMap, adjoint_comp_columnEuclideanLM b]
-  exact LinearMap.ext fun v => DFunLike.congr_fun
-    ((LinearMap.toContinuousLinearMap_operatorAbs _).trans (CFC.sqrt_unique hsq hnonneg)) v
-
-/-- Pointwise Euclidean norm of `columnSquare b`:
-`‖toEuclideanCLM (columnSquare b) ξ‖ ^ 2 = ∑ k, ‖toEuclideanCLM (b k) ξ‖ ^ 2`. -/
-theorem norm_columnSquare_apply_sq_eq [Fintype ι] (b : ι → CStarMatrix m m ℂ)
-    (ξ : EuclideanSpace ℂ m) :
-    ‖CStarMatrix.toEuclideanCLM (columnSquare b) ξ‖ ^ 2 =
-      ∑ k, ‖CStarMatrix.toEuclideanCLM (b k) ξ‖ ^ 2 := by
-  have h : CStarMatrix.toEuclideanCLM (columnSquare b) ξ = (columnEuclideanLM b).operatorAbs ξ := by
-    rw [← ContinuousLinearMap.coe_coe, operatorAbs_columnEuclideanLM]
-  rw [h, LinearMap.norm_operatorAbs_apply, PiLp.norm_sq_eq_of_L2]
-  simp
-
-/-- Pointwise Euclidean norm of `rowSquare x`:
-`‖toEuclideanCLM (rowSquare x) ξ‖ ^ 2 = ∑ k, ‖toEuclideanCLM (star (x k)) ξ‖ ^ 2`. -/
-theorem norm_rowSquare_apply_sq_eq [Fintype ι] (x : ι → CStarMatrix m m ℂ)
-    (ξ : EuclideanSpace ℂ m) :
-    ‖CStarMatrix.toEuclideanCLM (rowSquare x) ξ‖ ^ 2 =
-      ∑ k, ‖CStarMatrix.toEuclideanCLM (star (x k)) ξ‖ ^ 2 := by
-  rw [rowSquare_eq_columnSquare_star, norm_columnSquare_apply_sq_eq]
-
 /-- For `1 ≤ p`, `matrixLpGauge p (columnSquare b)` equals the Schatten `p`-seminorm of the column
 stacking operator `columnEuclideanLM b`. -/
 theorem matrixLpGauge_columnSquare_eq_schatten [Fintype ι] (p : ℝ≥0) [Fact (1 ≤ (p : ℝ≥0∞))]
@@ -586,17 +508,6 @@ theorem matrixLpGauge_rowSquare_unique [Fintype ι] [Unique ι] (p : ℝ≥0)
     matrixLpGauge p (rowSquare a) = matrixLpGauge p (a default) := by
   rw [rowSquare_eq_columnSquare_star, matrixLpGauge_columnSquare_unique, matrixLpGauge_star]
 
-/-- **Rank-one Gram identity** in `CStarMatrix`:
-`star (rankOne ℂ η ξ) * rankOne ℂ η ξ = (‖η‖ ^ 2) • rankOne ℂ ξ ξ` under `toEuclideanCLM`. -/
-theorem star_toEuclideanCLM_symm_rankOne_mul_self (η ξ : EuclideanSpace ℂ m) :
-    star (CStarMatrix.toEuclideanCLM.symm (InnerProductSpace.rankOne ℂ η ξ)) *
-      CStarMatrix.toEuclideanCLM.symm (InnerProductSpace.rankOne ℂ η ξ) =
-      (‖η‖ ^ 2) • CStarMatrix.toEuclideanCLM.symm (InnerProductSpace.rankOne ℂ ξ ξ) := by
-  refine EquivLike.injective CStarMatrix.toEuclideanCLM ?_
-  rw [map_mul, map_star, ← algebraMap_smul ℂ (‖η‖ ^ 2), map_smul]
-  simp [ContinuousLinearMap.star_eq_adjoint, InnerProductSpace.adjoint_rankOne,
-    ContinuousLinearMap.mul_def, InnerProductSpace.rankOne_comp_rankOne]
-
 /-- For `0 < p`, the Schatten `p`-gauge of `columnSquare` of a family of rank-one operators with
 common unit source vector `ξ` is `√(∑ k, ‖η k‖ ^ 2)`. -/
 theorem matrixLpGauge_columnSquare_rankOne [Fintype ι] {p : ℝ≥0} (hp : 0 < p)
@@ -614,7 +525,7 @@ theorem matrixLpGauge_columnSquare_rankOne [Fintype ι] {p : ℝ≥0} (hp : 0 < 
     rw [smul_mul_assoc, mul_smul_comm, smul_smul, ← sq, Real.sq_sqrt (by positivity),
       hP.isIdempotentElem.eq, Finset.sum_smul]
     exact (Finset.sum_congr rfl fun k _ =>
-      star_toEuclideanCLM_symm_rankOne_mul_self (η k) ξ).symm)
+      CStarMatrix.star_toEuclideanCLM_symm_rankOne_mul_self (η k) ξ).symm)
     (smul_nonneg hs_nonneg hP.nonneg)
   have htrP : Matrix.trace (CStarMatrix.ofMatrix.symm P) = 1 := by
     rw [← CStarMatrix.trace_toEuclideanCLM, StarAlgEquiv.apply_symm_apply,
@@ -624,35 +535,6 @@ theorem matrixLpGauge_columnSquare_rankOne [Fintype ι] {p : ℝ≥0} (hp : 0 < 
     rw [matrixLpGauge_of_isStarProjection hp hP, htrP, Complex.one_re, Real.one_rpow]
   rw [hcol, ← algebraMap_smul ℂ s P, Complex.coe_algebraMap, matrixLpGauge_smul hp,
     Complex.norm_real, Real.norm_of_nonneg hs_nonneg, hP_gauge, mul_one]
-
-omit [DecidableEq m] in
-/-- Polar decomposition through `columnSquare`: `b k = u k * columnSquare b` with
-`‖columnSquare u‖ ≤ 1`. -/
-theorem exists_mul_columnSquare_and_norm_columnSquare_le_one [Fintype ι]
-    (b : ι → CStarMatrix m m ℂ) :
-    ∃ u : ι → CStarMatrix m m ℂ, (∀ k, b k = u k * columnSquare b) ∧ ‖columnSquare u‖ ≤ 1 := by
-  classical
-  set A := columnEuclideanLM b
-  let U := A.polarFactor
-  let u : ι → CStarMatrix m m ℂ := fun k => CStarMatrix.toEuclideanCLM.symm
-    ((PiLp.projₗ 2 (fun _ : ι => EuclideanSpace ℂ m) k).comp U).toContinuousLinearMap
-  have hu_eq : columnEuclideanLM u = U := columnEuclideanLM_projₗ U
-  have hu (k : ι) (v : EuclideanSpace ℂ m) :
-      CStarMatrix.toEuclideanCLM (u k) v = (U v).ofLp k := by
-    rw [← columnEuclideanLM_apply u v k, hu_eq]
-  have hgram : CStarMatrix.toEuclideanCLM (∑ k, star (u k) * u k) =
-      (U.adjoint ∘ₗ U).toContinuousLinearMap := by
-    apply ContinuousLinearMap.coe_inj.mp
-    rw [LinearMap.coe_toContinuousLinearMap, ← hu_eq, adjoint_comp_columnEuclideanLM u]
-  refine ⟨u, fun k => EquivLike.injective CStarMatrix.toEuclideanCLM <|
-      ContinuousLinearMap.ext fun v => ?_, ?_⟩
-  · have hpol := congrArg (fun w : PiLp 2 fun _ : ι => EuclideanSpace ℂ m => w.ofLp k)
-      (A.polarFactor_operatorAbs_apply v)
-    rw [operatorAbs_columnEuclideanLM, columnEuclideanLM_apply] at hpol
-    rw [map_mul, mul_apply_eq_comp, hu]; exact hpol.symm
-  · rw [norm_columnSquare, Real.sqrt_le_one, ← CStarMatrix.norm_toEuclideanCLM, hgram]
-    exact (LinearMap.isStarProjection_toContinuousLinearMap_iff.mpr
-      A.isPartialIsometry_polarFactor.isStarProjection_adjoint_comp_self).norm_le
 
 omit [DecidableEq m] in
 /-- **Column-row trace-pairing Hölder inequality**:
