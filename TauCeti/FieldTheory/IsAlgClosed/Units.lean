@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.GroupTheory.Divisible
+public import TauCeti.GroupTheory.Divisible.Units
 
 /-!
 # Divisibility of the units of an algebraically closed field
@@ -25,11 +26,7 @@ variable (k : Type*) [Field k] [IsAlgClosed k]
 
 /-- The unit group of an algebraically closed field is divisible. -/
 noncomputable instance unitsRootableByNat : RootableBy kˣ ℕ :=
-  rootableByOfPowLeftSurj kˣ ℕ fun {n} hn a ↦ by
-    obtain ⟨z, hz⟩ := IsAlgClosed.exists_pow_nat_eq (a : k) (Nat.pos_of_ne_zero hn)
-    have hz0 : z ≠ 0 := by
-      rintro rfl
-      exact a.ne_zero (by simpa [zero_pow hn] using hz.symm)
-    exact ⟨Units.mk0 z hz0, Units.ext hz⟩
+  unitsRootableByNatOfExistsPow fun _ hn a ↦
+    IsAlgClosed.exists_pow_nat_eq (a : k) (Nat.pos_of_ne_zero hn)
 
 end TauCeti.IsAlgClosed

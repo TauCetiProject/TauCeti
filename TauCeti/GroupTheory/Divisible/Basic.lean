@@ -9,7 +9,9 @@ public import Mathlib.Data.PNat.Basic
 public import Mathlib.GroupTheory.Divisible
 
 import Mathlib.Algebra.Category.Grp.Injective
+import Mathlib.Data.Nat.GCD.Basic
 import Mathlib.Data.Rat.Cast.CharZero
+import TauCeti.GroupTheory.Divisible.Rat
 
 /-!
 # Divisibility on `Additive` and compatible root families
@@ -17,12 +19,11 @@ import Mathlib.Data.Rat.Cast.CharZero
 An `ℕ`-rootable monoid `G` becomes an `ℕ`-divisible additive monoid under `Additive G`:
 `Additive.instDivisibleByNat` transfers `RootableBy G ℕ` to `DivisibleBy (Additive G) ℕ`.
 
-In an `ℕ`-divisible additive commutative group `A`, injectivity of `A` as a `ℤ`-module
-(`Module.Baer.of_divisible`) extends the map `1 ↦ x` along `ℤ ↪ ℚ`, yielding a compatible family
-`y : ℕ+ → A` with `y 1 = x` and `d • y (n * d) = y n` for all `n d : ℕ+`. Transporting along
-`Additive` gives the multiplicative counterpart for `ℕ`-rootable commutative groups `G`, and
+In an `ℕ`-rootable monoid `G`, the successive roots `TauCeti.factorialRoots` of `x` yield a
+compatible family `y : ℕ+ → G` with `y 1 = x` and `y (n * d) ^ d = y n` for all `n d : ℕ+`.
+Passing to `Multiplicative` gives the additive counterpart for `ℕ`-divisible additive monoids, and
 handling zero separately extends this to commutative groups with zero `M₀` whose unit group `M₀ˣ`
-is `ℕ`-rootable. More generally, for a `ℤ`-divisible additive commutative group `A` and an element
+is `ℕ`-rootable. For a `ℤ`-divisible additive commutative group `A` and an element
 `d` of an additive commutative group `L` with no nonzero integer multiple in an additive subgroup
 `S`, Baer's criterion extends `1 ↦ c` along `ℤ ↪ L ⧸ S` to an additive homomorphism `L →+ A`
 vanishing on `S` and sending `d` to `c`.
@@ -39,9 +40,9 @@ vanishing on `S` and sending `d` to `c`.
   `ℤ`-divisible group vanishing on a subgroup `S` (or on `a`) and taking a prescribed value at an
   element `d` with no nonzero integer multiple in `S` (or in `ℤ • a`).
 * `TauCeti.exists_apply_one_eq_and_forall_nsmul_eq`: compatible `ℕ+`-indexed multiples in an
-  `ℕ`-divisible additive commutative group.
+  `ℕ`-divisible additive monoid.
 * `TauCeti.exists_apply_one_eq_and_forall_pow_eq`: compatible `ℕ+`-indexed roots in an `ℕ`-rootable
-  commutative group.
+  monoid.
 * `TauCeti.exists_apply_one_eq_and_forall_pow_eq_of_rootableBy_units`: compatible `ℕ+`-indexed roots
   in a commutative group with zero whose unit group is `ℕ`-rootable.
 -/
@@ -95,32 +96,36 @@ theorem exists_addMonoidHom_apply_eq_zero_and_apply_eq {L A : Type*} [AddCommGro
       exact hd n k hn hk.symm) c
   exact ⟨w, hwS a (AddSubgroup.mem_zmultiples a), hwd⟩
 
-/-- Every element of an `ℕ`-divisible additive commutative group admits a compatible `ℕ+`-indexed
+/-- Every element of an `ℕ`-rootable monoid admits a compatible `ℕ+`-indexed family of
+roots: `y 1 = x` and `y (n * d) ^ (d : ℕ) = y n` for all `n d : ℕ+`. -/
+theorem exists_apply_one_eq_and_forall_pow_eq {G : Type*} [Monoid G] [RootableBy G ℕ] (x : G) :
+    ∃ y : ℕ+ → G, y 1 = x ∧ ∀ n d : ℕ+, y (n * d) ^ (d : ℕ) = y n := by
+  -- `y n = z n ^ (n! / n)` for the factorial roots `z` of `x`: an `n`-th root of `z 0 = x`.
+  refine ⟨fun n ↦ factorialRoots x n ^ (Nat.factorial n / n),
+    by simpa using factorialRoots_succ_pow x 0, fun n d ↦ ?_⟩
+  have hle : (n : ℕ) ≤ n * d := Nat.le_mul_of_pos_right _ d.pos
+  have hN : (n : ℕ) * d ∣ Nat.factorial (n * d) :=
+    Nat.dvd_factorial (Nat.mul_pos n.pos d.pos) le_rfl
+  -- Both sides are `z (n * d) ^ ((n * d)! / n)`.
+  beta_reduce
+  rw [PNat.mul_coe, ← pow_factorial_div_factorial_eq (factorialRoots_succ_pow x) hle, ← pow_mul,
+    ← pow_mul, Nat.div_mul_div (Nat.factorial_dvd_factorial hle)
+      (Nat.dvd_factorial n.pos le_rfl), ← Nat.div_div_eq_div_mul,
+    Nat.div_mul_cancel (Nat.dvd_div_of_mul_dvd hN)]
+
+/-- Every element of an `ℕ`-divisible additive monoid admits a compatible `ℕ+`-indexed
 family of divisions: `y 1 = x` and `d • y (n * d) = y n` for all `n d : ℕ+`. -/
-theorem exists_apply_one_eq_and_forall_nsmul_eq {A : Type*} [AddCommGroup A] [DivisibleBy A ℕ]
+theorem exists_apply_one_eq_and_forall_nsmul_eq {A : Type*} [AddMonoid A] [DivisibleBy A ℕ]
     (x : A) :
     ∃ y : ℕ+ → A, y 1 = x ∧ ∀ n d : ℕ+, (d : ℕ) • y (n * d) = y n := by
-  let : DivisibleBy A ℤ := AddGroup.divisibleByIntOfDivisibleByNat A
-  obtain ⟨χ, hχ⟩ := (Module.Baer.of_divisible A).extension_property_addMonoidHom
-    (Int.castAddHom ℚ) Int.cast_injective (zmultiplesHom A x)
-  refine ⟨fun n ↦ χ (1 / (n : ℚ)), ?_, fun n d ↦ ?_⟩
-  · have h1 := DFunLike.congr_fun hχ 1
-    simp only [AddMonoidHom.comp_apply, Int.coe_castAddHom, Int.cast_one, zmultiplesHom_apply,
-      one_smul] at h1
-    simp [h1]
-  · have hq : (d : ℕ) • (1 / ((n * d : ℕ+) : ℚ)) = 1 / (n : ℚ) := by
-      have hd : ((d : ℕ) : ℚ) ≠ 0 := by exact_mod_cast d.ne_zero
-      rw [nsmul_eq_mul, PNat.mul_coe, Nat.cast_mul, mul_one_div, div_mul_eq_div_div_swap,
-        div_self hd]
-    simpa only [map_nsmul] using congrArg χ hq
-
-/-- Every element of an `ℕ`-rootable commutative group admits a compatible `ℕ+`-indexed family of
-roots: `y 1 = x` and `y (n * d) ^ (d : ℕ) = y n` for all `n d : ℕ+`. -/
-theorem exists_apply_one_eq_and_forall_pow_eq {G : Type*} [CommGroup G] [RootableBy G ℕ] (x : G) :
-    ∃ y : ℕ+ → G, y 1 = x ∧ ∀ n d : ℕ+, y (n * d) ^ (d : ℕ) = y n := by
-  obtain ⟨y, hy1, hyd⟩ := exists_apply_one_eq_and_forall_nsmul_eq (Additive.ofMul x)
-  exact ⟨fun n ↦ (y n).toMul, congrArg Additive.toMul hy1,
-    fun n d ↦ by simpa only [toMul_nsmul] using congrArg Additive.toMul (hyd n d)⟩
+  -- `Multiplicative A` is `ℕ`-rootable; apply `exists_apply_one_eq_and_forall_pow_eq` there.
+  let : RootableBy (Multiplicative A) ℕ := rootableByOfPowLeftSurj _ ℕ fun {n} hn a ↦
+    ⟨.ofAdd (DivisibleBy.div a.toAdd n), by
+      beta_reduce
+      rw [← ofAdd_nsmul, DivisibleBy.div_cancel _ hn, ofAdd_toAdd]⟩
+  obtain ⟨y, hy1, hyd⟩ := exists_apply_one_eq_and_forall_pow_eq (Multiplicative.ofAdd x)
+  exact ⟨fun n ↦ (y n).toAdd, congrArg Multiplicative.toAdd hy1,
+    fun n d ↦ by simpa only [toAdd_pow] using congrArg Multiplicative.toAdd (hyd n d)⟩
 
 /-- Every element of a commutative group with zero whose unit group is `ℕ`-rootable admits a
 compatible `ℕ+`-indexed family of roots: `y 1 = x` and `y (n * d) ^ (d : ℕ) = y n` for all
