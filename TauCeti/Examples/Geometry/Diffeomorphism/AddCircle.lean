@@ -24,7 +24,7 @@ They tend to the identity in the `C¹` topology, since `sin (k θ) / k²` and it
 `cos (k θ) / k` tend to `0` uniformly (`TauCeti.tendsto_sinPerturbation_one`). They do not tend to
 the identity in the `C^n` topology for any `n ≥ 2`, in particular not in `Diff(S¹)` with its `C^∞`
 weak Whitney topology (`TauCeti.not_tendsto_sinPerturbation_one`): their second derivatives
-`-sin (k θ)` have supremum `1`, attained at `θ = π / (2 k)`, which tends to `0`
+`-sin (k θ)` have absolute value `1` at `θ = π / (2 k)`, which tends to `0`
 (`TauCeti.iteratedDeriv_two_sinPerturbationLift`).
 
 The convergence and its failure are read off the normalized lifts through
@@ -197,8 +197,8 @@ theorem not_tendsto_sinPerturbation_one {n : ℕ∞ω} (hn : 2 ≤ n) :
   obtain ⟨k, hk₁, hk₂⟩ := (hev.and (hx.eventually (Metric.ball_mem_nhds 0 hδ))).exists
   have hk := hk₁ _ (hball hk₂)
   have hk0 : (0 : ℝ) < k + 2 := by positivity
-  rw [dist_comm, dist_iteratedFDeriv_two_sinPerturbationLift,
-    show ((k : ℝ) + 2) * (π / (2 * ((k : ℝ) + 2))) = π / 2 by field_simp, sin_pi_div_two,
+  have harg : ((k : ℝ) + 2) * (π / (2 * ((k : ℝ) + 2))) = π / 2 := by field_simp
+  rw [dist_comm, dist_iteratedFDeriv_two_sinPerturbationLift, harg, sin_pi_div_two,
     abs_one] at hk
   exact lt_irrefl _ hk
 

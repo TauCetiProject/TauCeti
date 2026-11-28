@@ -83,8 +83,8 @@ theorem iteratedFDeriv_lift_add_zsmul {f : AddCircle p → AddCircle q} {F : ℝ
     (by fun_prop) hF fun v ↦ by rw [← hfF, ← hfF, coe_add, coe_zsmul, coe_period, smul_zero,
       add_zero]
   obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hm
-  rw [← iteratedFDeriv_comp_add_right, show (fun v ↦ F (v + j • p)) = fun v ↦ F v + c from
-    funext hc, TauCeti.iteratedFDeriv_succ_add_const]
+  have hshift : (fun v ↦ F (v + j • p)) = fun v ↦ F v + c := funext hc
+  rw [← iteratedFDeriv_comp_add_right, hshift, TauCeti.iteratedFDeriv_succ_add_const]
 
 end AddCircle
 
@@ -363,7 +363,8 @@ theorem tendstoLocallyUniformly_lift_sub_lift_zero (hn : 1 ≤ n) (hF : ∀ i, C
       exact (hi u hu).le
   have hmv := (convex_closedBall (0 : ℝ) R).norm_image_sub_le_of_norm_fderiv_le hd hb
     (mem_closedBall_self hR.le) hv
-  rw [Real.dist_eq, show G v - G 0 - (F i v - F i 0) = (G v - F i v) - (G 0 - F i 0) by ring]
+  have hsub : G v - G 0 - (F i v - F i 0) = (G v - F i v) - (G 0 - F i 0) := by ring
+  rw [Real.dist_eq, hsub]
   rw [mem_closedBall_zero_iff] at hv
   calc |(G v - F i v) - (G 0 - F i 0)| ≤ ε / (R + 1) * ‖v - 0‖ := hmv
     _ ≤ ε / (R + 1) * R := by gcongr; simpa using hv
