@@ -8,8 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Operator.Compact.Ehrling
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.Lp.Norm
-import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
-import Mathlib.Topology.MetricSpace.Equicontinuity
+import TauCeti.Topology.ContinuousMap.Bounded.ArzelaAscoli
 
 /-!
 # The Aubin–Lions compactness theorem
@@ -39,16 +38,16 @@ with exponent `1 - 1 / r > 0`. Their values are also uniformly close to a compac
 subinterval of length `h` containing `t`, the first moment method gives a time `s` with
 `vₙ s = j (i (uₙ s))` and `‖uₙ s‖ ≤ h⁻¹ ‖uₙ‖_{L¹(a, b)}`, so `vₙ t` lies within `O(h ^ (1 - 1 / r))`
 of the image under `j ∘ i` of a ball of `X₀`, which is relatively compact. By the Arzelà–Ascoli
-theorem a subsequence of `vₙ` converges uniformly on `[a, b]`. Ehrling's inequality
+theorem (`TauCeti.exists_subseq_uniformCauchySeqOn_of_continuity_modulus`) a subsequence of `vₙ`
+converges uniformly on `[a, b]`. Ehrling's inequality
 `‖i x‖ ≤ ε ‖x‖ + C_ε ‖j (i x)‖`, integrated in time
 (`IsCompactOperator.exists_eLpNorm_le_mul_eLpNorm_add_mul_eLpNorm`), then shows that this
 subsequence of `i ∘ uₙ` is Cauchy in `Lᵖ(a, b; X)`.
 
 ## Main declarations
 
-* `IsCompactOperator.exists_eLpNorm_le_mul_eLpNorm_add_mul_eLpNorm`: Ehrling's inequality in
-  `Lᵖ`, `‖i ∘ f‖_p ≤ ε ‖f‖_p + C_ε ‖j ∘ i ∘ f‖_p`.
-* `TauCeti.exists_subseq_tendsto_eLpNorm_of_hasWeakLineDerivOn`: the Aubin–Lions theorem.
+* `IsCompactOperator.exists_subseq_tendsto_eLpNorm_of_hasWeakLineDerivOn`: the Aubin–Lions
+  theorem.
 
 ## References
 
@@ -66,83 +65,7 @@ open scoped ENNReal NNReal Interval BoundedContinuousFunction
 variable {X₀ X X₁ : Type*} [NormedAddCommGroup X₀] [NormedSpace ℝ X₀]
   [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup X₁] [NormedSpace ℝ X₁]
 
-namespace IsCompactOperator
-
-variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {i : X₀ →L[ℝ] X} {j : X →L[ℝ] X₁}
-
-/-- **Ehrling's inequality in `Lᵖ`.** If `i : X₀ → X` is a compact operator and `j : X → X₁` is
-an injective continuous linear map, then for every `ε > 0` there is `C ≥ 0` with
-`‖i ∘ f‖_p ≤ ε ‖f‖_p + C ‖j ∘ i ∘ f‖_p` for every `1 ≤ p ≤ ∞` and every `f : α → X₀`. -/
-theorem exists_eLpNorm_le_mul_eLpNorm_add_mul_eLpNorm (hi : IsCompactOperator i)
-    (hj : Function.Injective j) {ε : ℝ} (hε : 0 < ε) :
-    ∃ C, 0 ≤ C ∧ ∀ {p : ℝ≥0∞}, 1 ≤ p → ∀ f : α → X₀,
-      eLpNorm (fun x ↦ i (f x)) p μ ≤ ENNReal.ofReal ε * eLpNorm f p μ +
-        ENNReal.ofReal C * eLpNorm (fun x ↦ j (i (f x))) p μ := by
-  obtain ⟨C, hC, h⟩ := exists_norm_le_mul_norm_add_mul_norm (i := (i : X₀ →ₗ[ℝ] X)) hi hj hε
-  refine ⟨C, hC, fun {p} hp f ↦ ?_⟩
-  by_cases! hf : ¬ AEStronglyMeasurable f μ
-  · simp [eLpNorm_of_not_aestronglyMeasurable hf, ENNReal.mul_top (ENNReal.ofReal_pos.2 hε).ne']
-  have hjf : AEStronglyMeasurable (fun x ↦ j (i (f x))) μ :=
-    (j.comp i).continuous.comp_aestronglyMeasurable hf
-  calc eLpNorm (fun x ↦ i (f x)) p μ
-      ≤ eLpNorm ((ε • fun x ↦ ‖f x‖) + C • fun x ↦ ‖j (i (f x))‖) p μ :=
-        eLpNorm_mono_real (i.continuous.comp_aestronglyMeasurable hf) fun x ↦ by
-          simpa [smul_eq_mul] using h (f x)
-    _ ≤ eLpNorm (ε • fun x ↦ ‖f x‖) p μ + eLpNorm (C • fun x ↦ ‖j (i (f x))‖) p μ :=
-        eLpNorm_add_le hp
-    _ = _ := by
-        rw [eLpNorm_const_smul, eLpNorm_const_smul, eLpNorm_norm _ hf, eLpNorm_norm _ hjf,
-          Real.eNorm_of_nonneg hε.le, Real.eNorm_of_nonneg hC]
-
-end IsCompactOperator
-
 namespace TauCeti
-
-omit [NormedSpace ℝ X₁] in
-/-- A sequence of functions on `Icc a b`, uniformly Hölder continuous and with values uniformly
-close to compact sets, has a uniformly Cauchy subsequence. This is the Arzelà–Ascoli theorem in the
-form used for the continuous representatives in the Aubin–Lions theorem. -/
-private theorem exists_subseq_uniformCauchy [CompleteSpace X₁] {a b α K : ℝ} (hα : 0 < α)
-    {v : ℕ → ℝ → X₁} (hv : ∀ n, ContinuousOn (v n) (Icc a b))
-    (hmod : ∀ n, ∀ s ∈ Icc a b, ∀ t ∈ Icc a b, ‖v n t - v n s‖ ≤ |t - s| ^ α * K)
-    (happrox : ∀ δ > 0, ∃ Q, IsCompact Q ∧ ∀ n, ∀ t ∈ Icc a b, ∃ q ∈ Q, ‖v n t - q‖ ≤ δ) :
-    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ δ > 0, ∃ N, ∀ m ≥ N, ∀ n ≥ N, ∀ t ∈ Icc a b,
-      ‖v (φ m) t - v (φ n) t‖ < δ := by
-  have : CompactSpace (Icc a b) := isCompact_iff_compactSpace.1 isCompact_Icc
-  let F : ℕ → Icc a b →ᵇ X₁ := fun n ↦
-    BoundedContinuousFunction.mkOfCompact ⟨fun t : Icc a b ↦ v n t, (hv n).domRestrict⟩
-  have hF : ∀ n (t : Icc a b), F n t = v n t := fun _ _ ↦ rfl
-  -- The set of all values of all the `F n` is totally bounded, so its closure is compact.
-  have hV : TotallyBounded (⋃ n, range (F n)) := by
-    refine Metric.totallyBounded_iff.2 fun ε hε ↦ ?_
-    obtain ⟨Q, hQ, hQv⟩ := happrox (ε / 2) (half_pos hε)
-    obtain ⟨T, -, hT, hQT⟩ := finite_cover_balls_of_compact hQ (half_pos hε)
-    refine ⟨T, hT, ?_⟩
-    rintro _ ⟨_, ⟨n, rfl⟩, ⟨t, rfl⟩⟩
-    obtain ⟨q, hq, hqv⟩ := hQv n t t.property
-    obtain ⟨y, hy, hqy⟩ := mem_iUnion₂.1 (hQT hq)
-    refine mem_iUnion₂.2 ⟨y, hy, Metric.mem_ball.2 ?_⟩
-    calc dist (F n t) y ≤ dist (F n t) q + dist q y := dist_triangle _ _ _
-      _ < ε / 2 + ε / 2 := by
-          rw [hF, dist_eq_norm]; exact add_lt_add_of_le_of_lt hqv (Metric.mem_ball.1 hqy)
-      _ = ε := add_halves ε
-  -- The family `F` has the common modulus of continuity `d ↦ d ^ α * K`.
-  have heq : Equicontinuous ((↑) : range F → Icc a b → X₁) := by
-    refine Metric.equicontinuous_of_continuity_modulus (fun d ↦ d ^ α * K) ?_ _ ?_
-    · simpa [Real.zero_rpow hα.ne'] using
-        (Real.continuousAt_rpow_const 0 α (Or.inr hα.le)).tendsto.mul_const K
-    · rintro x y ⟨_, n, rfl⟩
-      rw [dist_eq_norm, hF, hF, Subtype.dist_eq, Real.dist_eq]
-      exact hmod n y y.property x x.property
-  obtain ⟨G, -, φ, hφ, hlim⟩ := (BoundedContinuousFunction.arzela_ascoli _
-    (hV.closure.isCompact_of_isClosed isClosed_closure) (range F)
-    (by rintro _ t ⟨n, rfl⟩; exact subset_closure (mem_iUnion.2 ⟨n, t, rfl⟩)) heq).tendsto_subseq
-    (fun n ↦ subset_closure ⟨n, rfl⟩)
-  refine ⟨φ, hφ, fun δ hδ ↦ ?_⟩
-  obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.1 hlim.cauchySeq δ hδ
-  refine ⟨N, fun m hm n hn t ht ↦ ?_⟩
-  rw [← dist_eq_norm, ← hF _ ⟨t, ht⟩, ← hF _ ⟨t, ht⟩]
-  exact (BoundedContinuousFunction.dist_coe_le_dist _).trans_lt (hN m hm n hn)
 
 /-- The value at `t` of the continuous representative `v` of `j ∘ i ∘ u` is within
 `h ^ α * K` of `j (i x)` for some `x` with `‖x‖ ≤ h⁻¹ ‖u‖_{L¹(a, b)}`, provided `v` has the
@@ -181,20 +104,24 @@ private theorem exists_norm_le_and_norm_sub_le {i : X₀ →L[ℝ] X} {j : X →
     rw [abs_le]
     constructor <;> linarith [hsN.1.1, hsN.1.2, htc.1, htc.2]
 
+end TauCeti
+
+namespace IsCompactOperator
+
 /-- The uniform part of the Aubin–Lions theorem: under its hypotheses, the continuous
 representatives `v n` of `j ∘ i ∘ u n` have a subsequence converging uniformly on `Icc a b`. -/
-private theorem exists_subseq_uniformCauchy_of_hasWeakLineDerivOn [CompleteSpace X₁]
+private theorem exists_subseq_uniformCauchySeqOn_of_hasWeakLineDerivOn [CompleteSpace X₁]
     {i : X₀ →L[ℝ] X} (hi : IsCompactOperator i) {j : X →L[ℝ] X₁} {r : ℝ≥0∞} (hr : 1 < r)
     {a b : ℝ} (hab : a < b) {C₁ : ℝ} {M' : ℝ≥0} {u : ℕ → ℝ → X₀} {u' v : ℕ → ℝ → X₁}
     (hu : ∀ n, IntegrableOn (fun t ↦ ‖u n t‖) (Ioo a b))
     (huC : ∀ n, ∫ t in Ioo a b, ‖u n t‖ ≤ C₁)
-    (hderiv : ∀ n, HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t ↦ j (i (u n t))) (u' n) 1)
+    (hderiv : ∀ n, TauCeti.HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩
+      (fun t ↦ j (i (u n t))) (u' n) 1)
     (hu' : ∀ n, MemLp (u' n) r (volume.restrict (Ioo a b)))
     (hu'M : ∀ n, eLpNorm (u' n) r (volume.restrict (Ioo a b)) ≤ M')
     (hv : ∀ n, ContinuousOn (v n) (Icc a b))
     (hae : ∀ n, (fun t ↦ j (i (u n t))) =ᵐ[volume.restrict (Ioo a b)] v n) :
-    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ δ > 0, ∃ N, ∀ m ≥ N, ∀ n ≥ N, ∀ t ∈ Icc a b,
-      ‖v (φ m) t - v (φ n) t‖ < δ := by
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ UniformCauchySeqOn (fun n ↦ v (φ n)) atTop (Icc a b) := by
   set α := 1 - 1 / r.toReal
   have hα : 0 < α := by
     rcases eq_or_ne r ∞ with rfl | hrt
@@ -208,32 +135,35 @@ private theorem exists_subseq_uniformCauchy_of_hasWeakLineDerivOn [CompleteSpace
       ht).trans (mul_le_mul_of_nonneg_left
         (ENNReal.toReal_le_of_le_ofReal M'.coe_nonneg (by simpa using hu'M n))
         (Real.rpow_nonneg (abs_nonneg _) _))
-  refine exists_subseq_uniformCauchy hα hv hmod fun δ hδ ↦ ?_
-  -- A subinterval length `h` with `h ^ α * M' ≤ δ`.
-  have hlim : Tendsto (fun h : ℝ ↦ h ^ α * M') (𝓝[>] 0) (𝓝 0) := by
+  have hlim : Tendsto (fun h : ℝ ↦ h ^ α * M') (𝓝 0) (𝓝 0) := by
     simpa [Real.zero_rpow hα.ne'] using
-      ((Real.continuousAt_rpow_const 0 α (Or.inr hα.le)).tendsto.mul_const (M' : ℝ)).mono_left
-        nhdsWithin_le_nhds
+      (Real.continuousAt_rpow_const 0 α (Or.inr hα.le)).tendsto.mul_const (M' : ℝ)
+  refine TauCeti.exists_subseq_uniformCauchySeqOn_of_continuity_modulus isCompact_Icc hlim
+    (fun n s hs t ht ↦ by rw [dist_eq_norm, Real.dist_eq]; exact hmod n t ht s hs)
+    fun δ hδ ↦ ?_
+  -- A subinterval length `h` with `h ^ α * M' ≤ δ`.
   obtain ⟨h, hhδ, hh0, hhb⟩ :=
-    ((hlim.eventually (ge_mem_nhds hδ)).and (Ioo_mem_nhdsGT (sub_pos.2 hab))).exists
+    (((hlim.mono_left nhdsWithin_le_nhds).eventually (ge_mem_nhds hδ)).and
+      (Ioo_mem_nhdsGT (sub_pos.2 hab))).exists
   -- The values are within `δ` of the image of a ball of `X₀`, which `j ∘ i` maps into a compact.
   obtain ⟨S, hS, hSsub⟩ :=
     IsCompactOperator.image_closedBall_subset_compact (f := (i : X₀ →ₗ[ℝ] X)) hi (C₁ / h)
   refine ⟨j '' S, hS.image j.continuous, fun n t ht ↦ ?_⟩
   obtain ⟨x, hx, hxv⟩ :=
-    exists_norm_le_and_norm_sub_le hα M'.coe_nonneg hh0 hhb.le (hu n) (hae n) (hmod n) ht
+    TauCeti.exists_norm_le_and_norm_sub_le hα M'.coe_nonneg hh0 hhb.le (hu n) (hae n) (hmod n) ht
   exact ⟨j (i x), mem_image_of_mem j (hSsub (mem_image_of_mem i (mem_closedBall_zero_iff.2
-    (hx.trans (div_le_div_of_nonneg_right (huC n) hh0.le))))), hxv.trans hhδ⟩
+    (hx.trans (div_le_div_of_nonneg_right (huC n) hh0.le))))), by
+      rw [dist_eq_norm]; exact hxv.trans hhδ⟩
 
 /-- In the setting of the Aubin–Lions theorem, a sequence `i ∘ u n` is Cauchy in `Lᵖ(a, b; X)` if
 `u n` is bounded in `Lᵖ(a, b; X₀)` and the continuous representatives `v n` of `j ∘ i ∘ u n` are
 uniformly Cauchy on `Icc a b`. -/
-private theorem cauchySeq_toLp_of_uniformCauchy {i : X₀ →L[ℝ] X} (hi : IsCompactOperator i)
+private theorem cauchySeq_toLp_of_uniformCauchySeqOn {i : X₀ →L[ℝ] X} (hi : IsCompactOperator i)
     {j : X →L[ℝ] X₁} (hj : Function.Injective j) {p : ℝ≥0∞} [Fact (1 ≤ p)] {a b : ℝ} {M : ℝ≥0}
     {u : ℕ → ℝ → X₀} {v : ℕ → ℝ → X₁} (hu : ∀ n, MemLp (u n) p (volume.restrict (Ioo a b)))
     (huM : ∀ n, eLpNorm (u n) p (volume.restrict (Ioo a b)) ≤ M)
     (hae : ∀ n, (fun t ↦ j (i (u n t))) =ᵐ[volume.restrict (Ioo a b)] v n)
-    (hunif : ∀ δ > 0, ∃ N, ∀ m ≥ N, ∀ n ≥ N, ∀ t ∈ Icc a b, ‖v m t - v n t‖ < δ) :
+    (hunif : UniformCauchySeqOn v atTop (Icc a b)) :
     CauchySeq fun n ↦ (i.comp_memLp' (hu n)).toLp := by
   set μ := volume.restrict (Ioo a b)
   refine EMetric.cauchySeq_iff_NNReal.2 fun ε hε ↦ ?_
@@ -242,7 +172,7 @@ private theorem cauchySeq_toLp_of_uniformCauchy {i : X₀ →L[ℝ] X} (hi : IsC
   set L := (μ univ ^ p.toReal⁻¹).toReal
   have hL : μ univ ^ p.toReal⁻¹ = ENNReal.ofReal L :=
     (ENNReal.ofReal_toReal (ENNReal.rpow_ne_top_of_nonneg (by positivity) (by simp [μ]))).symm
-  obtain ⟨N, hN⟩ := hunif (ε / (4 * (C * L + 1))) (by positivity)
+  obtain ⟨N, hN⟩ := Metric.uniformCauchySeqOn_iff.1 hunif (ε / (4 * (C * L + 1))) (by positivity)
   refine ⟨N, fun n hn ↦ ?_⟩
   rw [Lp.edist_toLp_toLp]
   have hsub : AEStronglyMeasurable (u n - u N) μ :=
@@ -256,6 +186,7 @@ private theorem cauchySeq_toLp_of_uniformCauchy {i : X₀ →L[ℝ] X} (hi : IsC
     refine eLpNorm_le_of_ae_bound ((j.comp i).continuous.comp_aestronglyMeasurable hsub) ?_
     filter_upwards [hae n, hae N, ae_restrict_mem measurableSet_Ioo] with t hn' hN' ht
     simp only [Pi.sub_apply, map_sub, hn', hN']
+    rw [← dist_eq_norm]
     exact (hN n hn N le_rfl t (Ioo_subset_Icc_self ht)).le
   have hreal : (ε : ℝ) / (4 * ((M : ℝ) + 1)) * (2 * M) +
       C * (L * (ε / (4 * (C * L + 1)))) < ε := by
@@ -288,7 +219,8 @@ theorem exists_subseq_tendsto_eLpNorm_of_hasWeakLineDerivOn [CompleteSpace X] [C
     {i : X₀ →L[ℝ] X} (hi : IsCompactOperator i) {j : X →L[ℝ] X₁} (hj : Function.Injective j)
     {p r : ℝ≥0∞} (hp : 1 ≤ p) (hr : 1 < r) {a b : ℝ} {M M' : ℝ≥0} {u : ℕ → ℝ → X₀}
     {u' : ℕ → ℝ → X₁} (huM : ∀ n, eLpNorm (u n) p (volume.restrict (Ioo a b)) ≤ M)
-    (hderiv : ∀ n, HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t ↦ j (i (u n t))) (u' n) 1)
+    (hderiv : ∀ n, TauCeti.HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩
+      (fun t ↦ j (i (u n t))) (u' n) 1)
     (hu'M : ∀ n, eLpNorm (u' n) r (volume.restrict (Ioo a b)) ≤ M') :
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ g : ℝ → X, MemLp g p (volume.restrict (Ioo a b)) ∧
       Tendsto (fun n ↦ eLpNorm (fun t ↦ i (u (φ n) t) - g t) p (volume.restrict (Ioo a b)))
@@ -308,14 +240,13 @@ theorem exists_subseq_tendsto_eLpNorm_of_hasWeakLineDerivOn [CompleteSpace X] [C
       (by simpa using huM n)) ENNReal.toReal_nonneg
   -- The continuous representatives converge uniformly along a subsequence.
   choose v hv hae using fun n ↦ (hderiv n).exists_continuousOn_ae_eq ((hu' n).integrable hr.le)
-  obtain ⟨φ, hφ, hunif⟩ := exists_subseq_uniformCauchy_of_hasWeakLineDerivOn hi hr hab
+  obtain ⟨φ, hφ, hunif⟩ := exists_subseq_uniformCauchySeqOn_of_hasWeakLineDerivOn hi hr hab
     (fun n ↦ ((hu n).integrable hp).norm) huC hderiv hu' hu'M hv hae
   -- Ehrling's inequality turns this into a Cauchy sequence in `Lᵖ(a, b; X)`.
-  obtain ⟨G, hG⟩ := cauchySeq_tendsto_of_complete (cauchySeq_toLp_of_uniformCauchy hi hj
-    (fun n ↦ hu (φ n)) (fun n ↦ huM (φ n)) (fun n ↦ hae (φ n)) fun δ hδ ↦
-      (hunif δ hδ).imp fun N hN m hm n hn ↦ hN m hm n hn)
+  obtain ⟨G, hG⟩ := cauchySeq_tendsto_of_complete (cauchySeq_toLp_of_uniformCauchySeqOn hi hj
+    (fun n ↦ hu (φ n)) (fun n ↦ huM (φ n)) (fun n ↦ hae (φ n)) hunif)
   refine ⟨φ, hφ, G, Lp.memLp G, ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ G).1 hG).congr
     fun n ↦ eLpNorm_congr_ae ?_⟩
   exact (i.comp_memLp' (hu (φ n))).coeFn_toLp.sub EventuallyEq.rfl
 
-end TauCeti
+end IsCompactOperator

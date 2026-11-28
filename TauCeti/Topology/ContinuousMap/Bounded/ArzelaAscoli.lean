@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Topology.ContinuousMap.Bounded.Basic
 public import Mathlib.Topology.UniformSpace.Equicontinuity
 import TauCeti.Topology.ContinuousMap.Ascoli
+import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
+import Mathlib.Topology.MetricSpace.Equicontinuity
 
 /-!
 # Compact operators into spaces of bounded continuous functions
@@ -24,11 +26,15 @@ soon as a neighborhood of `0` gives a family that is equicontinuous on `K` with 
 relatively compact values there (`IsCompact.isCompactOperator_of_equicontinuousOn`). For spaces
 of bounded holomorphic functions, Cauchy estimates give the equicontinuity, and the result is
 Montel's theorem.
+
+In sequential form, a sequence of functions on a compact set `S` with a common modulus of
+continuity, whose values on `S` are uniformly close to compact sets, has a subsequence that is
+uniformly Cauchy on `S` (`TauCeti.exists_subseq_uniformCauchySeqOn_of_continuity_modulus`).
 -/
 
 public section
 
-open BoundedContinuousFunction Set
+open BoundedContinuousFunction Set Filter
 open scoped Topology
 
 variable {E α β F : Type*} [TopologicalSpace E] [Zero E] [TopologicalSpace α]
@@ -48,6 +54,47 @@ theorem isCompactOperator_of_equicontinuous [CompactSpace α] {T : E → α →�
     hT fun x => let ⟨Q, hQ, hTQ⟩ := hTV x; ⟨Q, hQ, fun f => hTQ f f.property⟩
   refine ⟨_, h.image e.continuous, Filter.mem_of_superset hV fun f hf => ?_⟩
   exact ⟨_, subset_closure ⟨⟨f, hf⟩, rfl⟩, e.apply_symm_apply _⟩
+
+/-- **Arzelà–Ascoli for sequences.** Let `S` be a compact set in a pseudometric space and let the
+functions `v n` have the common modulus of continuity `b` on `S`, with `b d → 0` as `d → 0`. If for
+every `δ > 0` the values of all `v n` on `S` lie within `δ` of some compact set, then a subsequence
+of `v n` is uniformly Cauchy on `S`. -/
+theorem exists_subseq_uniformCauchySeqOn_of_continuity_modulus {T G : Type*}
+    [PseudoMetricSpace T] [MetricSpace G] [CompleteSpace G] {S : Set T} (hS : IsCompact S)
+    {b : ℝ → ℝ} (hb : Tendsto b (𝓝 0) (𝓝 0)) {v : ℕ → T → G}
+    (hmod : ∀ n, ∀ s ∈ S, ∀ t ∈ S, dist (v n s) (v n t) ≤ b (dist s t))
+    (happrox : ∀ δ > 0, ∃ Q, IsCompact Q ∧ ∀ n, ∀ t ∈ S, ∃ q ∈ Q, dist (v n t) q ≤ δ) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ UniformCauchySeqOn (fun n ↦ v (φ n)) atTop S := by
+  have : CompactSpace S := isCompact_iff_compactSpace.1 hS
+  have hcont : Equicontinuous fun n (t : S) ↦ v n t :=
+    Metric.equicontinuous_of_continuity_modulus b hb _ fun s t n ↦ hmod n s s.property t t.property
+  let F : ℕ → S →ᵇ G := fun n ↦ mkOfCompact ⟨fun t ↦ v n t, hcont.continuous n⟩
+  have hF : ∀ n (t : S), F n t = v n t := fun _ _ ↦ rfl
+  -- The set of all values of all the `F n` is totally bounded, so its closure is compact.
+  have hV : TotallyBounded (⋃ n, range (F n)) := by
+    refine Metric.totallyBounded_iff.2 fun ε hε ↦ ?_
+    obtain ⟨Q, hQ, hQv⟩ := happrox (ε / 2) (half_pos hε)
+    obtain ⟨R, -, hR, hQR⟩ := finite_cover_balls_of_compact hQ (half_pos hε)
+    refine ⟨R, hR, ?_⟩
+    rintro _ ⟨_, ⟨n, rfl⟩, ⟨t, rfl⟩⟩
+    obtain ⟨q, hq, hqv⟩ := hQv n t t.property
+    obtain ⟨y, hy, hqy⟩ := mem_iUnion₂.1 (hQR hq)
+    refine mem_iUnion₂.2 ⟨y, hy, Metric.mem_ball.2 ?_⟩
+    calc dist (F n t) y ≤ dist (F n t) q + dist q y := dist_triangle _ _ _
+      _ < ε / 2 + ε / 2 := add_lt_add_of_le_of_lt hqv (Metric.mem_ball.1 hqy)
+      _ = ε := add_halves ε
+  have heq : Equicontinuous ((↑) : range F → S → G) :=
+    Metric.equicontinuous_of_continuity_modulus b hb _ fun s t ⟨_, n, hn⟩ ↦ by
+      subst hn; exact hmod n s s.property t t.property
+  obtain ⟨H, -, φ, hφ, hlim⟩ := (BoundedContinuousFunction.arzela_ascoli _
+    (hV.closure.isCompact_of_isClosed isClosed_closure) (range F)
+    (by rintro _ t ⟨n, rfl⟩; exact subset_closure (mem_iUnion.2 ⟨n, t, rfl⟩)) heq).tendsto_subseq
+    (fun n ↦ subset_closure ⟨n, rfl⟩)
+  refine ⟨φ, hφ, Metric.uniformCauchySeqOn_iff.2 fun δ hδ ↦ ?_⟩
+  obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.1 hlim.cauchySeq δ hδ
+  refine ⟨N, fun m hm n hn t ht ↦ ?_⟩
+  rw [← hF _ ⟨t, ht⟩, ← hF _ ⟨t, ht⟩]
+  exact (BoundedContinuousFunction.dist_coe_le_dist _).trans_lt (hN m hm n hn)
 
 end TauCeti
 
