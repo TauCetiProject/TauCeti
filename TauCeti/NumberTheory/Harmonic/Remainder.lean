@@ -42,6 +42,7 @@ the remainder is `-log X - γ` and is bounded by elementary inequalities for the
 * `TauCeti.harmonic_sub_log_sub_eulerMascheroniConstant_le`: `R₁(n) ≤ 1 / (2n)`.
 * `TauCeti.one_div_two_mul_add_le_harmonic_sub_log_sub_eulerMascheroniConstant`:
   `1 / (2n + 2/5) ≤ R₁(n)` for `n ≥ 1`.
+* `TauCeti.harmonic_sub_eulerMascheroniConstant_le_log`: `Hₙ - γ ≤ (1/2) log (n² + n + 1/2)`.
 * `TauCeti.eulerMascheroniConstant_gt_d5`: `0.57721 < γ`.
 * `TauCeti.harmonicRemainder_le`: `R₁(X) ≤ 1 / (2X)` for every real `X > 0`.
 * `TauCeti.abs_harmonicRemainder_le`: `|R₁(X)| ≤ 6 / (11 X)` for every real `X ≥ 1`.
@@ -149,6 +150,58 @@ theorem harmonic_sub_log_sub_eulerMascheroniConstant_le (n : ℕ) :
       ring
     rw [he]
     linarith
+
+/-- A logarithmic upper bound for the harmonic numbers:
+`Hₙ - γ ≤ (1/2) log (n² + n + 1/2)`. This form controls the maximum of the smooth remainder
+in the fractional-part version of Dirichlet's hyperbola identity. -/
+theorem harmonic_sub_eulerMascheroniConstant_le_log (n : ℕ) :
+    (harmonic n : ℝ) - eulerMascheroniConstant ≤ log ((n : ℝ) ^ 2 + n + 1 / 2) / 2 := by
+  let f (k : ℕ) := (harmonic k : ℝ) - log ((k : ℝ) ^ 2 + k + 1 / 2) / 2
+  have hlim : Tendsto f atTop (𝓝 eulerMascheroniConstant) := by
+    have hinv : Tendsto (fun k : ℕ ↦ (k : ℝ)⁻¹) atTop (𝓝 0) :=
+      tendsto_natCast_atTop_atTop.inv_tendsto_atTop
+    have ht : Tendsto (fun k : ℕ ↦ 1 + (k : ℝ)⁻¹ + (k : ℝ)⁻¹ ^ 2 / 2) atTop (𝓝 1) := by
+      simpa only [add_zero, zero_pow two_ne_zero, zero_div] using
+        (hinv.const_add 1).add ((hinv.pow 2).div_const 2)
+    have hl := (ht.log one_ne_zero).div_const 2
+    have hl' := tendsto_harmonic_sub_log.sub hl
+    simp only [log_one, zero_div, sub_zero] at hl'
+    refine hl'.congr' ?_
+    filter_upwards [eventually_ge_atTop (1 : ℕ)] with k hk
+    have hkr : (0 : ℝ) < k := Nat.cast_pos'.mpr hk
+    have he : (k : ℝ) ^ 2 + k + 1 / 2 = (k : ℝ) ^ 2 *
+        (1 + (k : ℝ)⁻¹ + (k : ℝ)⁻¹ ^ 2 / 2) := by field
+    dsimp only [f]
+    rw [he, log_mul (pow_ne_zero _ hkr.ne') (by positivity), log_pow]
+    ring
+  have hmono : Monotone f := monotone_nat_of_le_succ fun k ↦ by
+    let t : ℝ := (k : ℝ) + 1
+    have ht : 0 < t := Nat.cast_add_one_pos k
+    have ha : 0 < t ^ 2 - t + 1 / 2 := by nlinarith [sq_nonneg (t - 1 / 2)]
+    have hb : 0 < t ^ 2 + t + 1 / 2 := by positivity
+    have hTaylor : 1 + 2 / t + (2 / t) ^ 2 / 2 + (2 / t) ^ 3 / 6 ≤ exp (2 / t) := by
+      simpa only [Finset.sum_range_succ, Finset.sum_range_zero, pow_zero, pow_one, Nat.factorial,
+        Nat.succ_eq_add_one, Nat.reduceAdd, Nat.reduceMul, Nat.cast_ofNat, Nat.cast_one, div_one,
+        zero_add] using sum_le_exp_of_nonneg (div_nonneg (by norm_num) ht.le) 4
+    have hquot : (t ^ 2 + t + 1 / 2) / (t ^ 2 - t + 1 / 2) ≤ exp (2 / t) := by
+      refine (div_le_iff₀ ha).2 (le_trans ?_ (mul_le_mul_of_nonneg_right hTaylor ha.le))
+      have he : (1 + 2 / t + (2 / t) ^ 2 / 2 + (2 / t) ^ 3 / 6) * (t ^ 2 - t + 1 / 2) -
+          (t ^ 2 + t + 1 / 2) = (t ^ 2 - t + 2) / (3 * t ^ 3) := by field
+      have hnonneg := div_nonneg (by linarith : 0 ≤ t ^ 2 - t + 2)
+        (by positivity : 0 ≤ 3 * t ^ 3)
+      linarith
+    have hlog := (log_le_iff_le_exp (div_pos hb ha)).2 hquot
+    have ha' : t ^ 2 - t + 1 / 2 = (k : ℝ) ^ 2 + k + 1 / 2 := by dsimp [t]; ring
+    rw [log_div hb.ne' ha.ne', ha'] at hlog
+    have hstep : f (k + 1) - f k =
+        t⁻¹ - (log (t ^ 2 + t + 1 / 2) - log ((k : ℝ) ^ 2 + k + 1 / 2)) / 2 := by
+      simp only [f, t, harmonic_succ, Rat.cast_add, Rat.cast_inv, Rat.cast_natCast, Nat.cast_add,
+        Nat.cast_one]
+      ring
+    grind
+  have hn : (harmonic n : ℝ) - log ((n : ℝ) ^ 2 + n + 1 / 2) / 2 ≤
+      eulerMascheroniConstant := hmono.ge_of_tendsto hlim n
+  linarith
 
 /-- The upper integer bound in the form `n R₁(n) ≤ 1/2`. -/
 private theorem natCast_mul_harmonicRemainder_natCast_le (n : ℕ) :
