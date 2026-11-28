@@ -26,9 +26,10 @@ for all `a ∈ S` and `k < m a`
 (`TauCeti.IsFilledIn.exists_differentiableOn_norm_sub_lt_and_iteratedDeriv_eq`).
 
 The proof factors `f - P = (∏ a ∈ S, (z - a) ^ m a) * q` via
-`AnalyticOnNhd.exists_hermite_quotient`, approximates the analytic quotient `q` on `K` using
-rational Runge approximation (`IsCompact.exists_rational_norm_sub_lt`), and verifies jet vanishing
-for the remainder via `TauCeti.iteratedDeriv_prod_pow_sub_smul_eq_zero`.
+`AnalyticOnNhd.exists_polynomial_sub_eq_prod_pow_mul_and_iteratedDeriv_eq`, approximates the
+analytic quotient `q` on `K` using rational Runge approximation
+(`IsCompact.exists_rational_norm_sub_lt`), and verifies jet vanishing for the remainder via
+`TauCeti.iteratedDeriv_prod_pow_sub_smul_eq_zero`.
 
 ## Main results
 
@@ -58,7 +59,7 @@ theorem IsFilledIn.exists_differentiableOn_norm_sub_lt_and_iteratedDeriv_eq
     ∃ g : ℂ → ℂ, DifferentiableOn ℂ g Ω ∧ (∀ z ∈ K, ‖f z - g z‖ < ε) ∧
       ∀ a ∈ S, ∀ k < m a, iteratedDeriv k g a = iteratedDeriv k f a := by
   obtain ⟨P, U', q, hU', hKU', hq_an, hq_eq, hP⟩ :=
-    ((hf.analyticOnNhd hU).mono hKU).exists_hermite_quotient S m
+    ((hf.analyticOnNhd hU).mono hKU).exists_polynomial_sub_eq_prod_pow_mul_and_iteratedDeriv_eq S m
   set Q : ℂ → ℂ := fun z ↦ ∏ a ∈ S, (z - a) ^ m a
   have hQ_diff : Differentiable ℂ Q := by fun_prop
   obtain ⟨M₀, hM₀⟩ := hK.bddAbove_image hQ_diff.continuous.norm.continuousOn

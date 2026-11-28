@@ -25,8 +25,8 @@ an open neighbourhood `U' ⊇ K` (obtained from `{z | AnalyticAt 𝕜 f z} \ (S 
 
 ## Main results
 
-* `AnalyticOnNhd.exists_hermite_quotient`: existence of the interpolating polynomial `P` and
-  analytic quotient `q` on an open neighbourhood `U'` of `K`.
+* `AnalyticOnNhd.exists_polynomial_sub_eq_prod_pow_mul_and_iteratedDeriv_eq`: existence of the
+  interpolating polynomial `P` and analytic quotient `q` on an open neighbourhood `U'` of `K`.
 -/
 
 public section
@@ -38,7 +38,8 @@ open Polynomial Set
 there exist a polynomial `P : 𝕜[X]`, an open neighbourhood `U'` of `K`, and a function `q` analytic
 on `U'` such that `P.eval` matches the jets `iteratedDeriv k f a` for `a ∈ S` and `k < m a`, and
 `f z - P.eval z = (∏ a ∈ S, (z - a) ^ m a) * q z` for all `z ∈ U'`. -/
-theorem AnalyticOnNhd.exists_hermite_quotient {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+theorem AnalyticOnNhd.exists_polynomial_sub_eq_prod_pow_mul_and_iteratedDeriv_eq
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     [CharZero 𝕜] [CompleteSpace 𝕜] {K : Set 𝕜} {f : 𝕜 → 𝕜}
     (hf : AnalyticOnNhd 𝕜 f K) (S : Finset 𝕜) (m : 𝕜 → ℕ) :
     ∃ (P : 𝕜[X]) (U' : Set 𝕜) (q : 𝕜 → 𝕜), IsOpen U' ∧ K ⊆ U' ∧ AnalyticOnNhd 𝕜 q U' ∧
