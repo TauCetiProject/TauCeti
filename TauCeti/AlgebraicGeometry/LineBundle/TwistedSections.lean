@@ -262,6 +262,26 @@ theorem eventually_exists_map_eq_tmulRight_tensorPowSection [F.IsQuasicoherent] 
   refine ⟨ψ.app U (tmulRight (F ⊗ tensorPow L N) (tensorPowSection s m) t'), ?_⟩
   rw [hψ, map_tmulRight, ht', map_tensorPowSection, ← tmulRight_tensorPowSection_add]
 
+/-- A regular function over the nonvanishing locus of a line-bundle section extends after
+multiplication by every sufficiently large tensor power of that section. -/
+theorem eventually_exists_map_eq_smul_tensorPowSection {U : X.Opens}
+    (hU : IsCompact (U : Set X)) (hU' : IsQuasiSeparated (U : Set X)) (s : Γ(L, U))
+    (t : Γ(X, L.nonvanishingLocus s)) :
+    ∀ᶠ n in Filter.atTop, ∃ t' : Γ(tensorPow L n, U),
+      (tensorPow L n).presheaf.map (homOfLE (L.nonvanishingLocus_le s)).op t' =
+        t • tensorPowSection (L.presheaf.map (homOfLE (L.nonvanishingLocus_le s)).op s) n := by
+  filter_upwards [eventually_exists_map_eq_tmulRight_tensorPowSection (𝟙_ X.Modules)
+    hU hU' s t] with n hn
+  obtain ⟨t', ht'⟩ := hn
+  refine ⟨(λ_ (tensorPow L n)).hom.app U t', ?_⟩
+  have hnat : (tensorPow L n).presheaf.map
+      (homOfLE (L.nonvanishingLocus_le s)).op ((λ_ (tensorPow L n)).hom.app U t') =
+      (λ_ (tensorPow L n)).hom.app _
+        ((𝟙_ X.Modules ⊗ tensorPow L n).presheaf.map
+          (homOfLE (L.nonvanishingLocus_le s)).op t') :=
+    ((λ_ (tensorPow L n)).hom.mapPresheaf.naturality_apply _ t').symm
+  rw [hnat, ht', leftUnitor_hom_app_tmulRight]
+
 /-- **Serre's theorem on global generation of twists.** Let `X` be a quasi-compact scheme and
 `L` an invertible sheaf on `X` such that `X` is covered by affine nonvanishing loci of global
 sections of `L`; on a projective scheme over a ring, the sheaf `𝒪(1)` is the motivating example.

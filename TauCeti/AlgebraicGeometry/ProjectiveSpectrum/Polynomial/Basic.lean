@@ -37,6 +37,12 @@ universe u
 
 variable (R σ : Type u) [CommRing R]
 
+/-- The standard coordinate opens cover polynomial projective space. -/
+theorem iSup_basicOpen_X_eq_top :
+    ⨆ i : σ, basicOpen (MvPolynomial.homogeneousSubmodule σ R) (MvPolynomial.X i) = ⊤ :=
+  iSup_basicOpen_eq_top (MvPolynomial.homogeneousSubmodule σ R) MvPolynomial.X
+    (MvPolynomial.irrelevant_eq_span_X σ R).le
+
 section Singleton
 
 variable [Unique σ]
@@ -44,8 +50,7 @@ variable [Unique σ]
 /-- The standard open for the only variable is the entire polynomial projective spectrum. -/
 theorem basicOpen_X_eq_top :
     basicOpen (MvPolynomial.homogeneousSubmodule σ R) (MvPolynomial.X default) = ⊤ := by
-  have h := iSup_basicOpen_eq_top (MvPolynomial.homogeneousSubmodule σ R)
-    (MvPolynomial.X : σ → MvPolynomial σ R) (MvPolynomial.irrelevant_eq_span_X σ R).le
+  have h := iSup_basicOpen_X_eq_top R σ
   rwa [iSup_unique] at h
 
 /-- Polynomial projective space on one homogeneous coordinate is its affine base. -/

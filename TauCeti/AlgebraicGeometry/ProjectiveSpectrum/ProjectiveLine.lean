@@ -764,20 +764,7 @@ theorem chartSectionsEquiv_awayToSection (i : Fin 2) (a : Away 𝒜 (coord R i))
       ← CommRingCat.comp_apply (Proj.awayToSection 𝒜 _), h, Iso.inv_hom_id_apply]
     rw [← image_awayι_top]
     exact (Scheme.Hom.preimage_image_eq _ _).ge
-  -- `awayToSection` is invertible, and a left inverse is `awayι` followed by `Γ(Spec -) ≅ -`
-  intro e
-  have := (Proj.basicOpenIsoAway 𝒜 _ (coord_mem R i) one_pos).isIso_hom
-  rw [Proj.basicOpenIsoAway_hom] at this
-  rw [← IsIso.eq_inv_comp, Iso.eq_comp_inv]
-  refine IsIso.eq_inv_of_inv_hom_id ?_
-  rw [← cancel_mono (Proj.basicOpen 𝒜 (coord R i)).topIso.inv]
-  simp only [Category.assoc, Category.id_comp]
-  rw [← Proj.basicOpenToSpec_app_top, ← Proj.basicOpenIsoSpec_hom 𝒜 _ (coord_mem R i) one_pos,
-    Scheme.Hom.app_eq_appLE]
-  -- composing the chart with `D₊(Xᵢ) ≅ Spec R[X₀, X₁]_(Xᵢ)` gives the inclusion of `D₊(Xᵢ)`
-  refine (Scheme.Hom.appLE_comp_appLE _ (awayι R i) _ ⊤ _ e le_rfl).trans ?_
-  simp only [awayι, Proj.awayι, Iso.hom_inv_id_assoc]
-  rfl
+  exact fun _ ↦ Proj.awayToSection_comp_awayι_appLE (coord_mem R i) one_pos
 
 /-- On the chart `D₊(Xᵢ)`, the functions on `Spec R` pulled back along the structure morphism are
 the fractions `c / 1` of the constants. -/

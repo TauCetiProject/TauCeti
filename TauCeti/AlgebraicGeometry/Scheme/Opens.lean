@@ -109,6 +109,22 @@ noncomputable section
 
 variable {X : Scheme.{u}} {U : X.Opens}
 
+/-- Pullback along an inclusion of open subschemes restricts the corresponding ambient
+structure-sheaf section. -/
+theorem _root_.AlgebraicGeometry.Scheme.homOfLE_appTop_topIso_inv
+    {U V : X.Opens} (h : U ≤ V) (a : Γ(X, V)) :
+    (X.homOfLE h).appTop (V.topIso.inv a) =
+      U.topIso.inv (X.presheaf.map (homOfLE h).op a) := by
+  simp only [Scheme.homOfLE_appTop, Scheme.Opens.topIso_inv]
+  -- Identify sections on the open subschemes with ambient structure-sheaf sections.
+  change X.presheaf.map _ (X.presheaf.map _ a) =
+    X.presheaf.map _ (X.presheaf.map _ a)
+  calc
+    _ = X.presheaf.map (_ ≫ _) a := (Functor.map_comp_apply _ _ _ a).symm
+    _ = X.presheaf.map (_ ≫ _) a := congrArg
+      (fun f : _ ⟶ _ ↦ X.presheaf.map f a) (Subsingleton.elim _ _)
+    _ = _ := Functor.map_comp_apply _ _ _ a
+
 /-- The preimages of two opens covering the target cover the source. -/
 lemma _root_.AlgebraicGeometry.Scheme.Hom.preimage_sup_eq_top {Y : Scheme.{u}}
     (f : X ⟶ Y) {U V : Y.Opens} (hUV : U ⊔ V = ⊤) :

@@ -41,6 +41,12 @@ namespace SheafOfModules
 
 variable {C : Type u₁} [Category.{v₁} C] {J : GrothendieckTopology C}
 
+/-- Composition of morphisms of sheaves of modules acts sectionwise by composition. -/
+theorem _root_.SheafOfModules.comp_val_app_apply {R : Sheaf J RingCat.{u}}
+    {M N P : _root_.SheafOfModules.{v} R} (f : M ⟶ N) (g : N ⟶ P)
+    (Y : Cᵒᵖ) (m : M.val.obj Y) :
+    (f ≫ g).val.app Y m = g.val.app Y (f.val.app Y m) := rfl
+
 /-- Every sheaf of modules over a sheaf of rings all of whose rings of sections are trivial is a
 zero object. -/
 theorem isZero_of_forall_subsingleton {S : Sheaf J RingCat.{u}}
