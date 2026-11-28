@@ -156,10 +156,13 @@ private theorem e24_neg_three : e24 (-3) = cexp (-(π * I / 4)) := by
   ring
 
 /-- `e(6 / 24) = i`. -/
+@[simp]
 theorem e24_six : e24 6 = I := by
-  rw [e24, show 2 * π * I * ((6 : ℤ) : ℂ) / 24 = π / 2 * I by push_cast; ring, exp_pi_div_two_mul_I]
+  have h : 2 * π * I * ((6 : ℤ) : ℂ) / 24 = π / 2 * I := by push_cast; ring
+  rw [e24, h, exp_pi_div_two_mul_I]
 
 /-- `e(-6 / 24) = -i`. -/
+@[simp]
 theorem e24_neg_six : e24 (-6) = -I := by
   rw [e24_congr (show (-6 : ℤ) ≡ 12 * (1 : ℕ) + 6 [ZMOD 24] by decide), e24_add, e24_twelve_mul,
     e24_six, pow_one, neg_one_mul]
@@ -173,8 +176,9 @@ theorem exp_pi_mul_I_mul_div_six (m : ℤ) : cexp (π * I * m / 6) = e24 (2 * m)
 
 /-- `-e(m / 24) = e((m + 12 (2 k + 1)) / 24)`. -/
 theorem neg_e24 (m k : ℤ) : -e24 m = e24 (m + 12 * (2 * k + 1)) := by
-  rw [e24_add, e24_congr (show 12 * (2 * k + 1) ≡ 12 * (1 : ℕ) [ZMOD 24] from
-    Int.modEq_iff_dvd.2 ⟨-k, by push_cast; ring⟩), e24_twelve_mul, pow_one, mul_neg_one]
+  have h : 12 * (2 * k + 1) ≡ 12 * (1 : ℕ) [ZMOD 24] :=
+    Int.modEq_iff_dvd.2 ⟨-k, by push_cast; ring⟩
+  rw [e24_add, e24_congr h, e24_twelve_mul, pow_one, mul_neg_one]
 
 /-! ### Congruences modulo `24` -/
 

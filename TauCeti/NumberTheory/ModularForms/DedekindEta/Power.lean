@@ -125,13 +125,17 @@ theorem etaMultiplier_neg_sq (γ : SL(2, ℤ)) : etaMultiplier (-γ) ^ 2 = -etaM
 
 /-- `ε(S)² = -i` for `S = (0 -1; 1 0)`. -/
 theorem etaMultiplier_S_sq : etaMultiplier S ^ 2 = -I := by
-  rw [etaMultiplier_S, ← Complex.exp_natCast_mul,
-    show ((2 : ℕ) : ℂ) * -(π * I / 4) = -π / 2 * I by push_cast; ring, exp_neg_pi_div_two_mul_I]
+  rw [etaMultiplier_S, ← Complex.exp_natCast_mul, ← exp_neg_pi_div_two_mul_I]
+  congr 1
+  push_cast
+  ring
 
 /-- `ε(T)² = e^{π i / 6}` for `T = (1 1; 0 1)`. -/
 theorem etaMultiplier_T_sq : etaMultiplier T ^ 2 = cexp (π * I / 6) := by
-  rw [etaMultiplier_T, ← Complex.exp_natCast_mul,
-    show ((2 : ℕ) : ℂ) * (π * I / 12) = π * I / 6 by push_cast; ring]
+  rw [etaMultiplier_T, ← Complex.exp_natCast_mul]
+  congr 1
+  push_cast
+  ring
 
 /-- Passing to `-γ`: since `ε(γ)² = -ε(-γ)²`, a value `ε(-γ)² = e(m / 24)` gives
 `ε(γ)² = e(n / 24)` for every `n ≡ m + 12 (mod 24)`. -/
