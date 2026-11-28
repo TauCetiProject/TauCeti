@@ -19,8 +19,9 @@ the invariant algebra, using Mathlib's `MvPolynomial.aeval`.
 `Representation.isBasicInvariants_iff` characterizes a system over a ring in terms of homogeneity,
 algebraic independence and generation by `Algebra.adjoin`.
 
-For a representation on `V`, the contragredient gives formal invariants in `Sym(V*)`. Pointwise
-evaluation on `V` can identify distinct formal invariants, for instance over finite fields.
+For a group representation on `V`, the contragredient gives formal invariants in `Sym(V*)`.
+Pointwise evaluation on `V` can identify distinct formal invariants, for instance over
+finite fields.
 
 See L. Smith, *Polynomial Invariants of Finite Groups*, A K Peters (1995), Chapter 2.
 -/
@@ -80,8 +81,8 @@ theorem IsBasicInvariants.aeval_aevalEquiv_symm (h : ρ.IsBasicInvariants f d)
 /-- The inverse presentation sends a basic invariant to its corresponding variable. -/
 @[simp]
 theorem IsBasicInvariants.aevalEquiv_symm_apply_generator (h : ρ.IsBasicInvariants f d) (i : ι) :
-    h.aevalEquiv.symm (f i) = X i := by
-  rw [← aeval_X (R := R) f i, h.aevalEquiv_symm_aeval]
+    h.aevalEquiv.symm (f i) = X i :=
+  h.aevalEquiv.symm_apply_eq.mpr (by simp)
 
 end CommSemiring
 
