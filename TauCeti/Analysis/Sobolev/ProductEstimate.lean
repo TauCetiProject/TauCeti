@@ -13,7 +13,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.Basic
 import Mathlib.MeasureTheory.Function.Holder
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.FunctionalSpaces.SobolevInequality
-import TauCeti.Analysis.Sobolev.GagliardoNirenberg
+import TauCeti.Analysis.Sobolev.GagliardoNirenberg.Basic
 import TauCeti.Analysis.Sobolev.Morrey.Basic
 import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
