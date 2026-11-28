@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
-public import TauCeti.RingTheory.Deformation.Lift
+public import TauCeti.RingTheory.Deformation.Lift.Basic
 
 /-!
 # Restriction of lifts and of strict classes

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Deformation.Lift
+public import TauCeti.RingTheory.Deformation.Lift.Basic
 
 /-!
 # Framed lifts and framed deformations

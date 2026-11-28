@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
-public import TauCeti.RingTheory.Deformation.Lift
+public import TauCeti.RingTheory.Deformation.Lift.Basic
 
 /-!
 # Schur residual representations: strict and full conjugacy agree

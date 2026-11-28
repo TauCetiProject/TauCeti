@@ -118,17 +118,18 @@ theorem mem_strictKernel_iff_apply {A : ArtinLocalAlg Λ k} {a : GL n A.obj.left
 
 /-- Strict-kernel membership is preserved and reflected by any coefficient morphism,
 since the morphism commutes with the augmentations. -/
-theorem mem_strictKernel_iff_map_mem {A B : ArtinLocalAlg Λ k} (f : A ⟶ B)
+@[simp↓]
+theorem map_mem_strictKernel_iff {A B : ArtinLocalAlg Λ k} (f : A ⟶ B)
     {a : GL n A.obj.left} :
-    a ∈ A.strictKernel n ↔
-      GeneralLinearGroup.map (f.hom.left.hom : A.obj.left →+* B.obj.left) a ∈ B.strictKernel n := by
+    GeneralLinearGroup.map (f.hom.left.hom : A.obj.left →+* B.obj.left) a ∈ B.strictKernel n ↔
+      a ∈ A.strictKernel n := by
   rw [mem_strictKernel_iff, mem_strictKernel_iff, map_augmentation_map]
 
 /-- A morphism of `C_Λ` maps the strict kernel of its source into that of its target. -/
 theorem map_mem_strictKernel {A B : ArtinLocalAlg Λ k} (f : A ⟶ B) {a : GL n A.obj.left}
     (ha : a ∈ A.strictKernel n) :
     GeneralLinearGroup.map (f.hom.left.hom : A.obj.left →+* B.obj.left) a ∈ B.strictKernel n :=
-  (mem_strictKernel_iff_map_mem f).mp ha
+  (map_mem_strictKernel_iff f).mpr ha
 
 variable (n) in
 /-- The homomorphism `Γ̂ₙ(A) →* Γ̂ₙ(B)` of strict kernels induced by a morphism `f : A ⟶ B` of
@@ -158,10 +159,11 @@ theorem strictKernelMap_surjective {A B : ArtinLocalAlg Λ k}
     (f : A ⟶ B) (hf : Function.Surjective f.hom.left.hom) :
     Function.Surjective (strictKernelMap n f) := by
   intro a
-  obtain ⟨b, hb⟩ :=
-    GeneralLinearGroup.map_surjective (f.hom.left.hom : A.obj.left →+* B.obj.left) hf a.val
-  have hb' : b ∈ A.strictKernel n := (mem_strictKernel_iff_map_mem f).mpr (hb.symm ▸ a.property)
-  exact ⟨⟨b, hb'⟩, Subtype.ext ((coe_strictKernelMap_apply f _).trans hb)⟩
+  obtain ⟨b, hb, hba⟩ :=
+    (GeneralLinearGroup.map_surjective (f.hom.left.hom : A.obj.left →+* B.obj.left)
+      hf).surjOn_preimage (t := (B.strictKernel n : Set (GL n B.obj.left))) a.property
+  exact ⟨⟨b, (map_mem_strictKernel_iff f).mp hb⟩,
+    Subtype.ext ((coe_strictKernelMap_apply f _).trans hba)⟩
 
 /-- Over the residue field the strict kernel is trivial: reduction to `k` is the identity. -/
 @[simp]

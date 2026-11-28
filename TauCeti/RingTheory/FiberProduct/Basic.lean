@@ -44,13 +44,6 @@ open CategoryTheory
 
 namespace RingHom
 
-/-- Elements of the ring pullback are determined by their two projections. -/
-theorem pullback_ext {B C D : Type*} [Ring B] [Semiring C] [Ring D]
-    {p : B →+* C} {q : D →+* C} {x y : p.pullback q}
-    (hfst : p.pullbackFst q x = p.pullbackFst q y)
-    (hsnd : p.pullbackSnd q x = p.pullbackSnd q y) : x = y :=
-  Subtype.ext (Prod.ext hfst hsnd)
-
 /-- The first projection identifies the second projection's kernel with `ker p`.
 The latter carries scalars through the first projection. This is the elementwise
 counterpart of `RingHom.map_pullbackSnd_ker_pullbackFst_eq`, with the factors swapped. -/
