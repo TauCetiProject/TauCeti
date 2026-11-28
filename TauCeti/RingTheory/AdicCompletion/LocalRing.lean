@@ -209,12 +209,6 @@ namespace RingHom
 variable {T T' : Type*} [CommRing T] [CommRing T'] [IsLocalRing T] [IsLocalRing T']
   (f : T →+* T') {J : Ideal T} (hJ : J ≤ maximalIdeal T) (hbij : f.QuotientMapPowBijective J)
 
-omit [IsLocalRing T] [IsLocalRing T'] in
-private theorem toRingHom_ofId_toAlgebra :
-    letI : Algebra T T' := f.toAlgebra
-    (Algebra.ofId T T').toRingHom = f :=
-  RingHom.ext fun x ↦ by simp [RingHom.algebraMap_toAlgebra]
-
 /-- The canonical ring isomorphism between the maximal-ideal-adic completions of local rings `T`
 and `T'` induced by a ring homomorphism `f : T →+* T'` that is an isomorphism modulo `J ^ n`
 for an ideal `J ≤ 𝔪_T` and every `n ≥ 1`. -/
@@ -228,7 +222,8 @@ noncomputable def adicCompletionMaximalIdealRingEquivOfQuotientMap :
     (mapₐ (Algebra.ofId T T') hle)
     (AdicCompletion.mapₐ_maximalIdeal_bijective_of_quotientMap_pow_bijective
       (Algebra.ofId T T') hle hJ
-      (fun n hn ↦ f.quotientMap_bijective_congr (toRingHom_ofId_toAlgebra f).symm rfl rfl
+      (fun n hn ↦ f.quotientMap_bijective_congr
+        ((Algebra.toRingHom_ofId T').trans (RingHom.algebraMap_toAlgebra f)).symm rfl rfl
         (hbij n hn)))).toRingEquiv
 
 /-- Modulo `𝔪_{T'} ^ n`, `adicCompletionMaximalIdealRingEquivOfQuotientMap f` is the quotient map
@@ -246,7 +241,8 @@ theorem evalₐ_adicCompletionMaximalIdealRingEquivOfQuotientMap (n : ℕ)
     AlgEquiv.ofBijective_apply, evalₐ_mapₐ]
   obtain ⟨t, ht⟩ := Ideal.Quotient.mk_surjective (evalₐ (maximalIdeal T) n x)
   rw [← ht, Ideal.quotientMap_mk, Ideal.quotientMap_mk]
-  exact congrArg (Ideal.Quotient.mk _) (RingHom.congr_fun (toRingHom_ofId_toAlgebra f) t)
+  exact congrArg (Ideal.Quotient.mk _)
+    (RingHom.congr_fun ((Algebra.toRingHom_ofId T').trans (RingHom.algebraMap_toAlgebra f)) t)
 
 /-- On elements of `T`, `adicCompletionMaximalIdealRingEquivOfQuotientMap f` applies `f`. -/
 @[simp]
@@ -256,7 +252,8 @@ theorem adicCompletionMaximalIdealRingEquivOfQuotientMap_of (x : T) :
   let : Algebra T T' := f.toAlgebra
   rw [adicCompletionMaximalIdealRingEquivOfQuotientMap, AlgEquiv.coe_toRingEquiv,
     AlgEquiv.ofBijective_apply, mapₐ_of]
-  exact congrArg (of (maximalIdeal T') T') (RingHom.congr_fun (toRingHom_ofId_toAlgebra f) x)
+  exact congrArg (of (maximalIdeal T') T')
+    (RingHom.congr_fun ((Algebra.toRingHom_ofId T').trans (RingHom.algebraMap_toAlgebra f)) x)
 
 /-- Composing two maximal-ideal completion ring isomorphisms induced by `f` and `g` yields the
 isomorphism induced by `h = g.comp f`. -/
