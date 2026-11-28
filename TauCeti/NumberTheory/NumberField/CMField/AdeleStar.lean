@@ -61,6 +61,8 @@ infinite adeles only needs `E` to be an algebraic CM field.
   finite adele.
 * `NumberField.InfiniteAdeleRing.extensionEmbedding_star_apply`: the components of the conjugate
   of an infinite adele.
+* `NumberField.InfiniteAdeleRing.norm_apply_le_one_of_star_dotProduct_self_eq_one`: the entries
+  of a vector `u` over the infinite adeles with `u* u = 1` have norm at most one at every place.
 
 ## References
 
@@ -336,5 +338,29 @@ theorem extensionEmbedding_star_apply (a : InfiniteAdeleRing E) (w : InfinitePla
       exact complexEmbedding_complexConj E w.embedding _
   rw [star_apply_eq_of_apply_eq (hsw (a w)).symm]
   exact congr_fun key (a w)
+
+open Matrix in
+variable {ι : Type*} [Fintype ι] in
+/-- **The entries of a unit vector over the infinite adeles have norm at most one.** If
+`u* u = 1` for a vector `u` over the infinite adeles of a CM field, then every entry of `u` has
+norm at most one at every infinite place `w`: read in `ℂ` through the embedding attached to `w`,
+which turns conjugation into complex conjugation, `u` becomes a complex unit vector. -/
+theorem norm_apply_le_one_of_star_dotProduct_self_eq_one {u : ι → InfiniteAdeleRing E}
+    (hu : star u ⬝ᵥ u = 1) (j : ι) (w : InfinitePlace E) : ‖u j w‖ ≤ 1 := by
+  -- Evaluation at `w` followed by the embedding `E_w → ℂ`, as a ring homomorphism.
+  let ψ : InfiniteAdeleRing E →+* ℂ :=
+    (InfinitePlace.Completion.extensionEmbedding w).comp (Pi.evalRingHom _ w)
+  have hψ (a : InfiniteAdeleRing E) : ψ (star a) = conj (ψ a) :=
+    extensionEmbedding_star_apply a w
+  have hsum : ∑ i, ‖ψ (u i)‖ ^ 2 = 1 := by
+    have h := congrArg ψ hu
+    simp only [dotProduct, Pi.star_apply, map_sum, map_mul, hψ, Complex.conj_mul',
+      map_one] at h
+    exact_mod_cast h
+  have hj : ‖ψ (u j)‖ ^ 2 ≤ 1 :=
+    hsum ▸ Finset.single_le_sum (fun i _ ↦ sq_nonneg ‖ψ (u i)‖) (Finset.mem_univ j)
+  rw [← (InfinitePlace.Completion.isometry_extensionEmbedding w).norm_map_of_map_zero
+    (map_zero _) (u j w)]
+  exact (sq_le_one_iff₀ (norm_nonneg _)).1 hj
 
 end NumberField.InfiniteAdeleRing
