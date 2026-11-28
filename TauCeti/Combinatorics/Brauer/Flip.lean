@@ -25,10 +25,9 @@ diagram-level operation an anti-automorphism `(x y)* = y* x*` of the Brauer alge
 read off from; the algebra itself is not built here, and nothing below is a map of algebras.
 Reflection is therefore a symmetry of the relations of that stacking: each relation between
 diagrams has a mirror, the same stack turned upside down, and reflection carries one to the other.
-A cap-cup diagram is its own reflection (`TauCeti.BrauerDiagram.flip_capCup`, stated beside
-`TauCeti.capCup` in `TauCeti/Combinatorics/Brauer/Generator.lean`), so the relations between
-cap-cup and permutation diagrams in `TauCeti/Combinatorics/Brauer/Relations.lean` come in mirror
-pairs.
+A cap-cup diagram is its own reflection (`TauCeti.BrauerDiagram.flip_capCup`), so the relations
+between cap-cup and permutation diagrams in `TauCeti/Combinatorics/Brauer/Relations.lean` come in
+mirror pairs.
 
 Reflection is an involution, exchanges caps with cups, inverts a permutation diagram, and on a
 relabelled diagram exchanges the two renamings.
@@ -58,6 +57,7 @@ graph (`TauCeti.middleAdj_flip`) with the same interior vertices
   caps and cups, with `TauCeti.BrauerDiagram.bottomCap_flip` and
   `TauCeti.BrauerDiagram.topCup_flip` the same statements on the boundary `Finset`s.
 * `TauCeti.BrauerDiagram.flip_permToBrauer`: reflection inverts a permutation diagram,
+  `TauCeti.BrauerDiagram.flip_capCup`: a cap-cup diagram is its own reflection,
   `TauCeti.BrauerDiagram.flip_relabel`: it exchanges the two renamings of a relabelling, and
   `TauCeti.BrauerDiagram.flip_reconnect`: it commutes with reconnecting two arcs.
 * `TauCeti.flip_composeDiagram`: **reflection reverses stacking.**
@@ -201,6 +201,17 @@ chosen endpoints. -/
 theorem flip_reconnect (x y : Fin k ⊕ Fin k) :
     flip (D.reconnect x y) = D.flip.reconnect x.swap y.swap := by
   simp only [flip_def, PerfectMatching.congr_reconnect, Equiv.sumComm_apply]
+
+/-- **A cap-cup diagram is its own reflection**: its cap and its cup are the same pair `{a, b}`,
+so turning the diagram upside down exchanges them and changes nothing. With
+`TauCeti.flip_composeDiagram` and `TauCeti.middleLoopCount_flip`, reflection therefore carries
+each Brauer relation on cap-cup diagrams to its mirror, the same stack read upside down. -/
+@[simp]
+theorem flip_capCup (a b : Fin k) : (capCup a b).flip = capCup a b := by
+  rcases eq_or_ne a b with rfl | hab
+  · rw [capCup_self, flip_permToBrauer, inv_one]
+  exact (eq_capCup_iff hab).mpr ⟨by simp [capCup_val_inr_left hab],
+    by simp [capCup_val_inl_left hab], fun i hia hib => by simp [capCup_val_inr_of_ne hia hib]⟩
 
 end BrauerDiagram
 

@@ -18,9 +18,10 @@ module also characterizes it by vanishing of the exterior derivatives of the cha
 (and hence of ordinary `extDeriv` on the interior of any chart target,
 `TauCeti.SmoothForm.IsClosed.extDeriv_inChartAt_eq_zero`).
 It also restates closedness through the bundled derivative `mextDerivₗ` and shows that
-exterior derivatives are closed, as is a one-form equal to a constant multiple of a differential
-(`TauCeti.SmoothForm.isClosed_of_degreeOneEquiv_eq_smul_mfderiv`, with the coordinate form
-`TauCeti.SmoothForm.isClosed_of_degreeOneEquiv_eq_mul_mfderiv_apply`).
+exterior derivatives are closed, as is a form differing from a closed form by an exterior
+derivative (`TauCeti.SmoothForm.IsClosed.of_mextDeriv_eq_sub`) and a one-form equal to a constant
+multiple of a differential (`TauCeti.SmoothForm.isClosed_of_degreeOneEquiv_eq_smul_mfderiv`,
+with the coordinate form `TauCeti.SmoothForm.isClosed_of_degreeOneEquiv_eq_mul_mfderiv_apply`).
 The degree-two specialization in `TwoForm.Closed` supplies a constant-form convenience theorem.
 Since pullback commutes with the exterior derivative, smooth pullback sends closed forms to closed
 forms (`TauCeti.SmoothForm.IsClosed.mpullback`).
@@ -178,6 +179,14 @@ theorem isClosed_iff_mextDerivₗ_eq_zero (form : SmoothForm I M F k) :
 theorem isClosed_mextDerivₗ (form : SmoothForm I M F k) :
     (mextDerivₗ I k form).IsClosed := by
   rw [isClosed_def, mextDerivₗ_apply, SmoothForm.mextDeriv_mextDeriv]
+
+/-- If `σ₀` is closed and `σ₁ - σ₀ = dβ`, then `σ₁ = σ₀ + dβ` is closed. -/
+theorem IsClosed.of_mextDeriv_eq_sub {σ₀ σ₁ : SmoothForm I M F (k + 1)} (h₀ : σ₀.IsClosed)
+    {β : SmoothForm I M F k} (hβ : mextDeriv β.val = (σ₁ - σ₀).val) : σ₁.IsClosed := by
+  have h : (σ₁ - σ₀).IsClosed := by
+    rw [isClosed_def, ← hβ]
+    exact SmoothForm.mextDeriv_mextDeriv β
+  simpa using h₀.add h
 
 /-- A one-form whose values are a constant multiple `c • df` of the differential of a smooth
 function `f` is closed. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Perfectoid.Integral.Tilt
-public import TauCeti.RingTheory.WittVector.Frobenius
+public import TauCeti.RingTheory.WittVector.Frobenius.Basic
 
 /-!
 # The Frobenius-shifted Fontaine map

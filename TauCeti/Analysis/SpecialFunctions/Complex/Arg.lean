@@ -63,6 +63,8 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.abs_arg_div_comm`: swapping numerator and denominator preserves `|arg (x / y)|`.
 * `Complex.exists_norm_eq_one_mul_sq_eq_neg_norm`: every `c` has a unit `ω` with `c ω² = -‖c‖`.
 * `Complex.exp_arg_mul_I`: `exp (i arg z) = z / |z|` for `z ≠ 0`.
+* `Complex.conj_div_eq_exp_of_eq_norm_mul_exp`: `conj w / w = exp (-2 i θ)` for
+  `w = ‖w‖ · exp (i θ) ≠ 0`.
 * `Complex.contDiffOn_div_norm_pow`: `(z / |z|)^m` is smooth away from the origin.
 * `TauCeti.image_polar_rectangle_eq`: in polar coordinates about `v`, rotated and scaled by `b`,
   the punctured truncated sector `{|arg ((z - v) / b)| < α}` is the image of an open rectangle.
@@ -78,6 +80,10 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
   `Complex.one_add_ofReal_mul_exp_mul_I_mem_slitPlane`: along polar rays `1 + r e^{iθ}`,
   the norm lies between `(1 + r) cos (θ / 2)` and `1 + |r|`, and `1 + r e^{iθ} ∈ slitPlane`
   when `|θ| < π` and `0 ≤ r`.
+* `Complex.sq_norm_ofReal_add_mul_exp`, `Complex.norm_ofReal_add_mul_exp_lt_iff`,
+  `Complex.lt_norm_ofReal_add_mul_exp_iff`: for real `x`, `y`,
+  `‖x + y e^{iθ}‖² = x² + y² + 2 x y cos θ`, so for `x, y, r > 0` which of `‖x + y e^{iθ}‖` and
+  `r` is larger is decided by comparing `cos θ` with `(r² − y² − x²) / (2 y x)`.
 * `Complex.re_mul_exp_ofReal_mul_I_eq_norm_mul_cos`,
   `Complex.re_mul_exp_neg_arg_div_two_mul_I_pos`,
   `Complex.abs_arg_add_lt_pi_div_two_of_abs_le_of_re_mul_exp_mul_I_pos`,
@@ -247,6 +253,20 @@ theorem exp_arg_mul_I {z : ℂ} (hz : z ≠ 0) : exp (arg z * I) = z / (‖z‖ 
   rw [eq_div_iff (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)), mul_comm]
   exact norm_mul_exp_arg_mul_I z
 
+open ComplexConjugate in
+/-- **The phase of `conj w / w`.** If `w = ‖w‖ · exp (i θ)` is nonzero, then
+`conj w / w = exp (-2 i θ)`. -/
+theorem conj_div_eq_exp_of_eq_norm_mul_exp {w : ℂ} (hw : w ≠ 0) {θ : ℝ}
+    (h : w = ‖w‖ * exp (I * θ)) : conj w / w = exp (-2 * I * θ) := by
+  have he : conj (exp (I * θ)) = exp (-2 * I * θ) * exp (I * θ) := by
+    rw [← exp_conj, map_mul, conj_I, conj_ofReal, ← exp_add]
+    ring_nf
+  rw [div_eq_iff hw]
+  conv_lhs => rw [h]
+  conv_rhs => rw [h]
+  rw [map_mul, conj_ofReal, he]
+  ring
+
 /-- The unit direction `z / |z|` is homogeneous of degree `0` under positive dilations. -/
 theorem smul_div_norm_smul {t : ℝ} (ht : 0 < t) (z : ℂ) :
     t • z / (‖t • z‖ : ℂ) = z / (‖z‖ : ℂ) := by
@@ -369,6 +389,32 @@ theorem one_add_mul_cos_div_two_le_norm_one_add_ofReal_mul_exp_mul_I (θ r : ℝ
 theorem norm_one_add_ofReal_mul_exp_mul_I_le (θ r : ℝ) :
     ‖1 + (r : ℂ) * exp ((θ : ℂ) * I)‖ ≤ 1 + |r| :=
   (norm_add_le _ _).trans_eq (by simp [norm_exp_ofReal_mul_I])
+
+/-- `‖x + y e^{iθ}‖² = x² + y² + 2 x y cos θ` for real `x`, `y`. -/
+theorem sq_norm_ofReal_add_mul_exp (x y θ : ℝ) :
+    ‖(x : ℂ) + y * exp (θ * I)‖ ^ 2 = x ^ 2 + y ^ 2 + 2 * x * y * Real.cos θ := by
+  rw [Complex.sq_norm, normSq_apply]
+  simp only [add_re, add_im, mul_re, mul_im, ofReal_re, ofReal_im, exp_ofReal_mul_I_re,
+    exp_ofReal_mul_I_im, zero_mul, sub_zero, add_zero, zero_add]
+  linear_combination y ^ 2 * Real.sin_sq_add_cos_sq θ
+
+/-- For `x, y, r > 0`, `‖x + y e^{iθ}‖ < r` if and only if
+`cos θ < (r² − y² − x²) / (2 y x)`. -/
+theorem norm_ofReal_add_mul_exp_lt_iff {x y r : ℝ} (hx : 0 < x) (hy : 0 < y) (hr : 0 < r)
+    (θ : ℝ) :
+    ‖(x : ℂ) + y * exp (θ * I)‖ < r ↔ Real.cos θ < (r ^ 2 - y ^ 2 - x ^ 2) / (2 * y * x) := by
+  rw [← pow_lt_pow_iff_left₀ (norm_nonneg _) hr.le two_ne_zero, sq_norm_ofReal_add_mul_exp,
+    lt_div_iff₀ (by positivity)]
+  constructor <;> intro h <;> linarith
+
+/-- For `x, y, r > 0`, `r < ‖x + y e^{iθ}‖` if and only if
+`(r² − y² − x²) / (2 y x) < cos θ`. -/
+theorem lt_norm_ofReal_add_mul_exp_iff {x y r : ℝ} (hx : 0 < x) (hy : 0 < y) (hr : 0 < r)
+    (θ : ℝ) :
+    r < ‖(x : ℂ) + y * exp (θ * I)‖ ↔ (r ^ 2 - y ^ 2 - x ^ 2) / (2 * y * x) < Real.cos θ := by
+  rw [← pow_lt_pow_iff_left₀ hr.le (norm_nonneg _) two_ne_zero, sq_norm_ofReal_add_mul_exp,
+    div_lt_iff₀ (by positivity)]
+  constructor <;> intro h <;> linarith
 
 /-- Along any ray avoiding the negative real axis (`|θ| < π`, `0 ≤ r`), `1 + r * exp (θ * I)` lies
 in the slit plane. -/

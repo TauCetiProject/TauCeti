@@ -119,11 +119,8 @@ theorem mfderiv_flowOf_hamiltonianVectorField {t : ℝ} {x : M} (hx : (t, x) ∈
       one_ne_zero
   -- `dφₜ` is onto: the differential of `φ_{-t}` at `φₜ x` is a right inverse.
   have hrange : σ.hamiltonianVectorField F (flowOf Z t x) ∈
-      (mfderiv I I (flowOf Z t) x).range := by
-    have h := mfderiv_flowOf_add_apply hZ (neg_mem_flowDomain_flowOf hZ hx)
-      (flowOf_neg_flowOf hZ hx) hx (σ.hamiltonianVectorField F (flowOf Z t x))
-    rw [neg_add_cancel] at h
-    exact ⟨_, h.trans (mfderiv_flowOf_zero_apply_eq_self Z _ _)⟩
+      (mfderiv I I (flowOf Z t) x).range :=
+    ⟨_, mfderiv_flowOf_mfderiv_flowOf_neg_apply hZ hx _⟩
   -- `dφₜ` pulls `σ` back to `eᵗ σ` at `x`.
   have hD (u v : TangentSpace I x) : SmoothBundleForm.eval₂ σ (flowOf Z t x)
       (mfderiv I I (flowOf Z t) x u) (mfderiv I I (flowOf Z t) x v) =

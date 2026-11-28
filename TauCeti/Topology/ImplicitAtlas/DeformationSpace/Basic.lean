@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Data.Finset.Pi
 public import TauCeti.Topology.ImplicitAtlas.Basic
+public import TauCeti.Topology.Sets.Compacts
 import TauCeti.Algebra.Group.Pi.Finset
 import TauCeti.Topology.Constructions.Pi
 
@@ -40,8 +41,14 @@ This file defines `D_(I,J,B)` (`TauCeti.ImplicitAtlas.deformationSpace`) as a su
   continuous action of `Γ_B` (`TauCeti.ImplicitAtlas.instMulActionDeformationSpace`).
 * **The supports** (`TauCeti.ImplicitAtlas.deformationSupport`): for `K ⊆ X`, the set
   `Z_K ⊆ D_(I,J,B)` of the points with `e = 0` and `ψ_∅J(x) ∈ K`. It is monotone in `K`
-  (`TauCeti.ImplicitAtlas.deformationSupport_mono`), closed when `K` is
-  (`TauCeti.ImplicitAtlas.isClosed_deformationSupport`) and invariant under `Γ_B`
+  (`TauCeti.ImplicitAtlas.deformationSupport_mono`), takes the empty set, unions and
+  intersections to the same (`TauCeti.ImplicitAtlas.deformationSupport_empty`,
+  `TauCeti.ImplicitAtlas.deformationSupport_union`,
+  `TauCeti.ImplicitAtlas.deformationSupport_inter`), closed when `K` is
+  (`TauCeti.ImplicitAtlas.isClosed_deformationSupport`), continuous along the compact
+  neighbourhoods of a compact `K` when `X` is locally compact Hausdorff
+  (`TauCeti.ImplicitAtlas.exists_mem_compactNhds_disjoint_deformationSupport`), and invariant under
+  `Γ_B`
   (`TauCeti.ImplicitAtlas.deformationAction_mem_deformationSupport_iff`). For `I ⊆ J`, the
   supports lie over the intersection `V_I ∩ V_J` of the regular footprints, and every point of
   `V_I ∩ V_J` lies under one of them, so `Z_K` is nonempty exactly when `K` meets `V_I ∩ V_J`
@@ -330,23 +337,90 @@ theorem deformationSupport_mono {I J B : Finset A} {hJB : J ⊆ B} {K L : Set X}
     𝒜.deformationSupport I hJB K ⊆ 𝒜.deformationSupport I hJB L :=
   fun _ ⟨he, hx, hK⟩ ↦ ⟨he, hx, h hK⟩
 
+/-- The support of the empty set is empty. -/
+@[simp]
+theorem deformationSupport_empty {I J B : Finset A} {hJB : J ⊆ B} :
+    𝒜.deformationSupport I hJB ∅ = ∅ :=
+  eq_empty_of_forall_notMem fun _ hp ↦ (mem_deformationSupport.1 hp).2.2
+
+/-- The support of a union is the union of the supports. -/
+@[simp]
+theorem deformationSupport_union {I J B : Finset A} {hJB : J ⊆ B} (K L : Set X) :
+    𝒜.deformationSupport I hJB (K ∪ L) =
+      𝒜.deformationSupport I hJB K ∪ 𝒜.deformationSupport I hJB L :=
+  Subset.antisymm (fun _ ⟨he, hx, h⟩ ↦ h.imp (fun h ↦ ⟨he, hx, h⟩) fun h ↦ ⟨he, hx, h⟩)
+    (union_subset (deformationSupport_mono subset_union_left)
+      (deformationSupport_mono subset_union_right))
+
+/-- The support of an intersection is the intersection of the supports. -/
+@[simp]
+theorem deformationSupport_inter {I J B : Finset A} {hJB : J ⊆ B} (K L : Set X) :
+    𝒜.deformationSupport I hJB (K ∩ L) =
+      𝒜.deformationSupport I hJB K ∩ 𝒜.deformationSupport I hJB L :=
+  Subset.antisymm
+    (subset_inter (deformationSupport_mono inter_subset_left)
+      (deformationSupport_mono inter_subset_right))
+    fun _ ⟨⟨he, hx, h⟩, ⟨_, _, h'⟩⟩ ↦ ⟨he, hx, h, h'⟩
+
+variable (𝒜) in
+/-- The base point `ψ_∅J(x) ∈ X` of a point `(0, t, x)` of `D_(I,J,B)`, defined on the closed set
+of points with `e = 0`, where all Kuranishi maps vanish. -/
+private def supportBase (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) :
+    {p : 𝒜.deformationSpace I hJB | (p : ((α : B) → E α) × (B → ℝ) × T J).1 = 0} → X :=
+  fun p ↦ 𝒜.baseHomeomorph (𝒜.footprintMap (Finset.empty_subset J)
+    ⟨_, mem_kuranishiZeroSet_empty_of_eq_zero p.val.property p.property⟩)
+
+variable (𝒜) in
+private theorem continuous_supportBase (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) :
+    Continuous (supportBase 𝒜 I hJB) :=
+  𝒜.baseHomeomorph.continuous.comp <| (𝒜.continuous_footprintMap _).comp <|
+    (continuous_snd.comp (continuous_snd.comp
+      (continuous_subtypeVal.comp continuous_subtypeVal))).subtype_mk _
+
+variable (𝒜) in
+private theorem isClosed_eq_zero (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) :
+    IsClosed {p : 𝒜.deformationSpace I hJB | (p : ((α : B) → E α) × (B → ℝ) × T J).1 = 0} :=
+  isClosed_eq (continuous_fst.comp continuous_subtypeVal) continuous_const
+
+variable (𝒜) in
+/-- The support `Z_K` is the set of points with `e = 0` whose base point lies in `K`. -/
+private theorem deformationSupport_eq_image_preimage_supportBase (I : Finset A) {J B : Finset A}
+    (hJB : J ⊆ B) (K : Set X) :
+    𝒜.deformationSupport I hJB K = (↑) '' (supportBase 𝒜 I hJB ⁻¹' K) := by
+  ext p
+  exact ⟨fun h ↦ ⟨⟨p, h.1⟩, (mem_deformationSupport_iff_of_eq_zero h.1).1 h, rfl⟩,
+    fun ⟨q, hq, hqp⟩ ↦ hqp ▸ (mem_deformationSupport_iff_of_eq_zero q.property).2 hq⟩
+
 /-- The support `Z_K` of a closed set `K` is closed in `D_(I,J,B)`. It need not be compact. -/
 theorem isClosed_deformationSupport {I J B : Finset A} {hJB : J ⊆ B} {K : Set X}
     (hK : IsClosed K) : IsClosed (𝒜.deformationSupport I hJB K) := by
-  set W : Set (𝒜.deformationSpace I hJB) := {p | (p : ((α : B) → E α) × (B → ℝ) × T J).1 = 0}
-  have hW : IsClosed W := isClosed_eq (continuous_fst.comp continuous_subtypeVal) continuous_const
-  let f : W → X := fun p ↦ 𝒜.baseHomeomorph (𝒜.footprintMap (Finset.empty_subset J)
-    ⟨_, mem_kuranishiZeroSet_empty_of_eq_zero p.val.property p.property⟩)
-  have hf : Continuous f := 𝒜.baseHomeomorph.continuous.comp <|
-    (𝒜.continuous_footprintMap _).comp <|
-      (continuous_snd.comp (continuous_snd.comp
-        (continuous_subtypeVal.comp continuous_subtypeVal))).subtype_mk _
-  have heq : 𝒜.deformationSupport I hJB K = (↑) '' (f ⁻¹' K) := by
-    ext p
-    exact ⟨fun h ↦ ⟨⟨p, h.1⟩, (mem_deformationSupport_iff_of_eq_zero h.1).1 h, rfl⟩,
-      fun ⟨q, hq, hqp⟩ ↦ hqp ▸ (mem_deformationSupport_iff_of_eq_zero q.property).2 hq⟩
-  rw [heq]
-  exact hW.isClosedMap_subtypeVal _ (hK.preimage hf)
+  rw [deformationSupport_eq_image_preimage_supportBase]
+  exact (isClosed_eq_zero 𝒜 I hJB).isClosedMap_subtypeVal _
+    (hK.preimage (continuous_supportBase 𝒜 I hJB))
+
+/-- **The supports are continuous along compact neighbourhoods.** On a locally compact Hausdorff
+space `X`, a compact subset `S` of `D_(I,J,B)` disjoint from the support `Z_K` of a compact set `K`
+is disjoint from the support `Z_L` of some compact neighbourhood `L` of `K`: the points of `S` with
+`e = 0` lie over a compact subset of `X` disjoint from `K`, which some compact neighbourhood of `K`
+misses. -/
+theorem exists_mem_compactNhds_disjoint_deformationSupport [T2Space X] [LocallyCompactSpace X]
+    {I J B : Finset A} {hJB : J ⊆ B} (K : TopologicalSpace.Compacts X)
+    {S : Set (𝒜.deformationSpace I hJB)}
+    (hS : IsCompact S) (hSK : Disjoint S (𝒜.deformationSupport I hJB K)) :
+    ∃ L ∈ K.compactNhds, Disjoint S (𝒜.deformationSupport I hJB L) := by
+  -- the base points of the points of `S` with `e = 0` form a compact set disjoint from `K`
+  have hC : IsCompact (supportBase 𝒜 I hJB '' ((↑) ⁻¹' S)) :=
+    ((isClosed_eq_zero 𝒜 I hJB).isClosedEmbedding_subtypeVal.isCompact_preimage hS).image
+      (continuous_supportBase 𝒜 I hJB)
+  have hKC : Disjoint (K : Set X) (supportBase 𝒜 I hJB '' ((↑) ⁻¹' S)) := by
+    refine Set.disjoint_left.2 fun y hyK ⟨p, hpS, hpy⟩ ↦ Set.disjoint_left.1 hSK hpS ?_
+    rw [deformationSupport_eq_image_preimage_supportBase]
+    exact ⟨p, Set.mem_preimage.2 (hpy ▸ hyK), rfl⟩
+  obtain ⟨L, hL, hLC⟩ := K.exists_mem_compactNhds_disjoint hC.isClosed hKC
+  refine ⟨L, hL, Set.disjoint_left.2 fun p hpS hpL ↦ ?_⟩
+  rw [deformationSupport_eq_image_preimage_supportBase] at hpL
+  obtain ⟨q, hqL, rfl⟩ := hpL
+  exact Set.disjoint_left.1 hLC hqL ⟨q, hpS, rfl⟩
 
 /-- The supports are invariant under `Γ_B`. -/
 @[simp]

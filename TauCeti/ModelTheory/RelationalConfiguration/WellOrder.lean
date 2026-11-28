@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.LanguageMap
+public import TauCeti.SetTheory.Cardinal.AlephOne
 public import TauCeti.SetTheory.Descriptive.Tree.Descending
 
 /-!
@@ -222,11 +223,7 @@ theorem exists_mem_wellOrderClass_type_eq [Countable V] [Infinite V] (lt : L.Rel
     {β : Ordinal.{w}} (hωβ : ω ≤ β) (hβ : β < ω₁) :
     ∃ c : RelationalConfiguration L V, ∃ hc : c ∈ wellOrderClass lt,
       @Ordinal.type V (codeRel lt c) (mem_wellOrderClass.1 hc) = β := by
-  have : Countable β.ToType := Cardinal.countable_toType_of_lt_omega_one hβ
-  have : Infinite β.ToType := Cardinal.infinite_iff.2 <| by
-    simpa [Cardinal.mk_toType] using Ordinal.card_le_card hωβ
-  obtain ⟨e⟩ : Nonempty (β.ToType ≃ V) :=
-    Cardinal.eq.1 (by rw [Cardinal.mk_eq_aleph0, Cardinal.mk_eq_aleph0])
+  obtain ⟨e⟩ := nonempty_toType_equiv_of_omega0_le_of_lt_omega_one (V := V) hωβ hβ
   -- Code the order of `β.ToType` transported to `V` along `e`.
   let r : V → V → Prop := fun x y => e.symm x < e.symm y
   let S := relStructure lt r (Classical.arbitrary V)

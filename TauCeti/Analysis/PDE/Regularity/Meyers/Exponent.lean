@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Regularity.Meyers.Example
+public import TauCeti.Analysis.PDE.Regularity.Meyers.Cylinder
 
 /-!
 # The exponent in Meyers' theorem degenerates with the ellipticity ratio
@@ -14,24 +14,30 @@ Meyers' theorem (`TauCeti.PDE.exists_memLp_gradient_ball_divergence`) gives, for
 the ellipticity ratio, an exponent gain `ε₀ > 0` such that every weak solution of
 `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ` with measurable coefficients, uniformly elliptic with constants
 `λ ≤ Λ ≤ K λ`, has gradient in `L^{2 + ε}` on half balls whenever `F` is, for `0 < ε ≤ ε₀`. This
-file shows that in the plane every such gain satisfies
+file shows that in every dimension every such gain satisfies
 
 `ε (√K - 1) < 2`,
 
 so the gain tends to `0` as the ellipticity ratio tends to infinity, and no higher integrability
 exponent above `2` works for all measurable uniformly elliptic coefficients at once.
 
-The witness is Meyers' example (`TauCeti.Analysis.PDE.Regularity.Meyers.Example`). For `0 < μ ≤ 1`
-the coefficient field `a = TauCeti.PDE.meyersCoefficient μ` on `ℝ^{n+2}` is uniformly elliptic
-with constants `κ = μ (μ + n) / (n + 1)` and `1`, and `u(x) = ‖x‖ ^ (μ - 1) x₀` is a weak solution
-of `div(a ∇u) = 0` lying in `H¹` of every bounded open set, whose gradient is `p`-integrable near
-the origin only for `p (1 - μ) < n + 2`
-(`TauCeti.PDE.toReal_mul_one_sub_lt_of_memLp_gradient_meyersSolution`). Take for `μ` the positive
-root of `μ (μ + n) = (n + 1) λ / Λ` and the field `Λ a`, whose constants are `Λ κ = λ` and `Λ`.
-This shows that an exponent `p` for which every weak solution has `p`-integrable gradient near the
-origin satisfies `p (1 - μ) < n + 2`. In the plane, `n = 0`, the root is `μ = √(λ / Λ)`, and the
-bound `p (1 - √(λ / Λ)) < 2` tends to `p ≤ 2` as `Λ / λ` tends to infinity. In higher dimensions the
-point singularity of Meyers' example only bounds `p` by a quantity tending to the dimension.
+Two witnesses bound the exponent. Meyers' example (`TauCeti.Analysis.PDE.Regularity.Meyers.Example`)
+is singular at a point: for `0 < μ ≤ 1` the coefficient field `a = TauCeti.PDE.meyersCoefficient μ`
+on `ℝ^{n+2}` is uniformly elliptic with constants `κ = μ (μ + n) / (n + 1)` and `1`, and
+`u(x) = ‖x‖ ^ (μ - 1) x₀` is a weak solution of `div(a ∇u) = 0` lying in `H¹` of every bounded
+open set, whose gradient is `p`-integrable near the origin only for `p (1 - μ) < n + 2`
+(`TauCeti.PDE.toReal_mul_one_sub_lt_of_memLp_gradient_meyersSolution`). Taking for `μ` the
+positive root of `μ (μ + n) = (n + 1) λ / Λ` and the field `Λ a`, whose constants are `Λ κ = λ` and
+`Λ`, shows that an exponent `p` for which every weak solution has `p`-integrable gradient near the
+origin satisfies `p (1 - μ) < n + 2`. This bound tends to the dimension `n + 2`, not to `2`, as the
+ellipticity ratio tends to infinity.
+
+The planar example extended to be constant in the last `n` coordinates
+(`TauCeti.Analysis.PDE.Regularity.Meyers.Cylinder`) is singular along the codimension-two subspace
+`x₀ = x₁ = 0`, and its gradient is `p`-integrable near the origin only for `p (1 - μ) < 2`, where
+now `μ² = λ / Λ`. So in every dimension an admissible exponent satisfies `p (1 - √(λ / Λ)) < 2`, a
+bound tending to `p ≤ 2` as `Λ / λ` tends to infinity. In the plane, `n = 0`, the two witnesses
+coincide.
 
 ## Main declarations
 
@@ -39,12 +45,13 @@ point singularity of Meyers' example only bounds `p` by a quantity tending to th
   `Ω ⊆ ℝ^{n+2}` containing the origin, every weak solution with measurable coefficients, uniformly
   elliptic with constants `λ, Λ`, has gradient `p`-integrable on a fixed neighbourhood of the
   origin, then `p (1 - μ) < n + 2` whenever `μ > 0` and `μ (μ + n) / (n + 1) = λ / Λ`.
-* `TauCeti.PDE.toReal_mul_one_sub_sqrt_lt_two_of_forall_memLp_gradient`: in the plane the bound
-  reads `p (1 - √(λ / Λ)) < 2`.
-* `TauCeti.PDE.mul_sqrt_sub_one_lt_two_of_forall_memLp_gradient_ball`: in the plane, every gain `ε`
-  with the property stated by Meyers' theorem for the ratio bound `K` satisfies `ε (√K - 1) < 2`.
-* `TauCeti.PDE.tendsto_atTop_nhds_zero_of_forall_memLp_gradient_ball`: in the plane, any choice of
-  such gains `ε(K) ≥ 0` tends to `0` as `K` tends to infinity.
+* `TauCeti.PDE.toReal_mul_one_sub_sqrt_lt_two_of_forall_memLp_gradient`: under the same hypothesis,
+  `p (1 - √(λ / Λ)) < 2`, in every dimension.
+* `TauCeti.PDE.mul_sqrt_sub_one_lt_two_of_forall_memLp_gradient_ball`: in every dimension, every
+  gain `ε` with the property stated by Meyers' theorem for the ratio bound `K` satisfies
+  `ε (√K - 1) < 2`.
+* `TauCeti.PDE.tendsto_atTop_nhds_zero_of_forall_memLp_gradient_ball`: in every dimension, any
+  choice of such gains `ε(K) ≥ 0` tends to `0` as `K` tends to infinity.
 
 ## References
 
@@ -110,55 +117,76 @@ theorem toReal_mul_one_sub_lt_of_forall_memLp_gradient {n : ℕ} {lam Lam : ℝ}
     (inter_mem hs (Ω.isOpen.mem_nhds h0))
     ((hmem.mono_measure (Measure.restrict_mono inter_subset_left le_rfl)).ae_eq hg)
 
-/-- **The integrability exponent of the gradient of weak solutions in the plane.** Let
-`0 < λ` and `0 < Λ`, let `Ω ⊆ ℝ²` be a bounded open set containing the origin and let `s` be a
-neighbourhood of the origin. Suppose that for every measurable coefficient field `a`, uniformly
+/-- **The integrability exponent of the gradient of weak solutions, in every dimension.** Let
+`0 < λ` and `0 < Λ`, let `Ω ⊆ ℝ^{n+2}` be a bounded open set containing the origin and let `s` be
+a neighbourhood of the origin. Suppose that for every measurable coefficient field `a`, uniformly
 elliptic on `Ω` with constants `λ, Λ`, every weak solution `u ∈ H¹(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0` on
 `Ω` has `p`-integrable gradient on `s`. Then `p (1 - √(λ / Λ)) < 2`, that is
 `p < 2 / (1 - √(λ / Λ))` when `p < ∞` and `λ < Λ`; this bound tends to `2` as `Λ / λ` tends to
-infinity. For `p = ∞` the conclusion is trivial, since `p.toReal = 0`. If `λ > Λ` no coefficient
-field qualifies, and the bound holds trivially. -/
-theorem toReal_mul_one_sub_sqrt_lt_two_of_forall_memLp_gradient {lam Lam : ℝ} (hlam : 0 < lam)
-    (hLam : 0 < Lam) {Ω : Opens (EuclideanSpace ℝ (Fin 2))}
-    (hb : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ (Fin 2))))
-    (h0 : (0 : EuclideanSpace ℝ (Fin 2)) ∈ Ω) {s : Set (EuclideanSpace ℝ (Fin 2))}
+infinity, in every dimension. For `p = ∞` the conclusion is trivial, since `p.toReal = 0`. If
+`λ > Λ` no coefficient field qualifies, and the bound holds trivially.
+
+The witness is Meyers' planar example extended to be constant in the last `n` coordinates
+(`TauCeti.PDE.cylindricalMeyersSolution`), for the field `Λ a` with
+`a = TauCeti.PDE.cylindricalMeyersCoefficient (√(λ / Λ))`. Its singular set `x₀ = x₁ = 0` has
+codimension two, which is why the bound is that of the plane. -/
+theorem toReal_mul_one_sub_sqrt_lt_two_of_forall_memLp_gradient {n : ℕ} {lam Lam : ℝ}
+    (hlam : 0 < lam) (hLam : 0 < Lam) {Ω : Opens (EuclideanSpace ℝ (Fin (n + 2)))}
+    (hb : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ (Fin (n + 2)))))
+    (h0 : (0 : EuclideanSpace ℝ (Fin (n + 2))) ∈ Ω) {s : Set (EuclideanSpace ℝ (Fin (n + 2)))}
     (hs : s ∈ 𝓝 0) {p : ℝ≥0∞}
-    (h : ∀ (a : EuclideanSpace ℝ (Fin 2) → Matrix (Fin 2) (Fin 2) ℝ) (u : W1p volume Ω 2),
-      UniformlyEllipticOn (Ω : Set (EuclideanSpace ℝ (Fin 2))) a lam Lam →
-      AEStronglyMeasurable a (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin 2)))) →
+    (h : ∀ (a : EuclideanSpace ℝ (Fin (n + 2)) → Matrix (Fin (n + 2)) (Fin (n + 2)) ℝ)
+      (u : W1p volume Ω 2),
+      UniformlyEllipticOn (Ω : Set (EuclideanSpace ℝ (Fin (n + 2)))) a lam Lam →
+      AEStronglyMeasurable a (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 2))))) →
       (∀ v : W1p0 volume Ω 2, energyFormH1 a 0 0 u (v : W1p volume Ω 2) = 0) →
       MemLp (W1p.gradient u) p (volume.restrict s)) :
     p.toReal * (1 - √(lam / Lam)) < 2 := by
   have hκ : 0 < lam / Lam := div_pos hlam hLam
-  have := toReal_mul_one_sub_lt_of_forall_memLp_gradient (n := 0) hlam hb h0 hs h
-    (Real.sqrt_pos.2 hκ) (by rw [meyersEigenvalue_zero, Real.sq_sqrt hκ.le])
-  simpa only [Nat.cast_zero, zero_add] using this
+  set μ := √(lam / Lam)
+  have hμ0 : 0 < μ := Real.sqrt_pos.2 hκ
+  rcases le_or_gt 1 μ with hμ1 | hμ1
+  · nlinarith [ENNReal.toReal_nonneg (a := p)]
+  -- For `μ < 1` the ratio `λ / Λ = μ²` lies in `(0, 1)`, so `λ < Λ`.
+  have hμ2 : μ ^ 2 = lam / Lam := Real.sq_sqrt hκ.le
+  have hLam' : lam ≤ Lam := by
+    have : lam / Lam ≤ 1 := by rw [← hμ2]; nlinarith
+    rwa [div_le_one hLam] at this
+  -- The cylindrical Meyers solution for the field `Λ a`, with constants `Λ μ² = λ` and `Λ`.
+  obtain ⟨u, hu⟩ := exists_w1p_value_ae_eq_cylindricalMeyersSolution hμ0 (p := 2) (by norm_num)
+    hb (by simp only [ENNReal.toReal_ofNat]; linarith)
+  exact toReal_mul_one_sub_lt_two_of_memLp_gradient_cylindricalMeyersSolution hμ0 u hu h0 hs
+    (h _ u (uniformlyEllipticOn_smul_cylindricalMeyersCoefficient hμ0 hlam hLam' hμ2 _)
+      (stronglyMeasurable_cylindricalMeyersCoefficient.const_smul Lam).aestronglyMeasurable
+      (energyFormH1_smul_cylindricalMeyersCoefficient_eq_zero hμ0 Lam u hu))
 
-/-- **The gain in Meyers' theorem degenerates with the ellipticity ratio.** In the plane, let
+/-- **The gain in Meyers' theorem degenerates with the ellipticity ratio.** In `ℝ^{n+2}`, let
 `ε ≥ 0` have the property stated by Meyers' theorem
 (`TauCeti.PDE.exists_memLp_gradient_ball_divergence`) for the bound `K` on the ellipticity ratio:
-for every open `Ω ⊆ ℝ²`, every measurable `a`, uniformly elliptic on `Ω` with constants
-`λ ≤ Λ ≤ K λ`, every `F ∈ L²(Ω; ℝ²)` and every weak solution `u ∈ H¹(Ω)` of
+for every open `Ω ⊆ ℝ^{n+2}`, every measurable `a`, uniformly elliptic on `Ω` with constants
+`λ ≤ Λ ≤ K λ`, every `F ∈ L²(Ω; ℝ^{n+2})` and every weak solution `u ∈ H¹(Ω)` of
 `-∂ᵢ(aⁱʲ ∂ⱼu) = ∂ᵢFⁱ`, if `B(x₀, R) ⊆ Ω` and `F ∈ L^{2 + ε}(B(x₀, R))` then
-`∇u ∈ L^{2 + ε}(B(x₀, R/2))`. Then `ε (√K - 1) < 2`, that is `ε < 2 / (√K - 1)` for `K > 1`. -/
-theorem mul_sqrt_sub_one_lt_two_of_forall_memLp_gradient_ball {K ε : ℝ} (hε : 0 ≤ ε)
-    (h : ∀ {Omega : Opens (EuclideanSpace ℝ (Fin 2))}
-      {a : EuclideanSpace ℝ (Fin 2) → Matrix (Fin 2) (Fin 2) ℝ}
-      {lam Lam : ℝ} {F : EuclideanSpace ℝ (Fin 2) → EuclideanSpace ℝ (Fin 2)}
-      {u : W1p volume Omega 2} {x₀ : EuclideanSpace ℝ (Fin 2)} {R : ℝ},
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin 2))) a lam Lam → Lam ≤ K * lam →
-      AEStronglyMeasurable a (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin 2)))) →
-      MemLp F 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin 2)))) →
+`∇u ∈ L^{2 + ε}(B(x₀, R/2))`. Then `ε (√K - 1) < 2`, that is `ε < 2 / (√K - 1)` for `K > 1`, in
+every dimension. -/
+theorem mul_sqrt_sub_one_lt_two_of_forall_memLp_gradient_ball {n : ℕ} {K ε : ℝ} (hε : 0 ≤ ε)
+    (h : ∀ {Omega : Opens (EuclideanSpace ℝ (Fin (n + 2)))}
+      {a : EuclideanSpace ℝ (Fin (n + 2)) → Matrix (Fin (n + 2)) (Fin (n + 2)) ℝ}
+      {lam Lam : ℝ} {F : EuclideanSpace ℝ (Fin (n + 2)) → EuclideanSpace ℝ (Fin (n + 2))}
+      {u : W1p volume Omega 2} {x₀ : EuclideanSpace ℝ (Fin (n + 2))} {R : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 2)))) a lam Lam →
+      Lam ≤ K * lam →
+      AEStronglyMeasurable a (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 2))))) →
+      MemLp F 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 2))))) →
       (∀ v : W1p0 volume Omega 2, energyFormH1 a 0 0 u (v : W1p volume Omega 2) =
         -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p volume Omega 2) x⟫_ℝ) →
-      ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ (Fin 2))) →
+      ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ (Fin (n + 2)))) →
       MemLp F (ENNReal.ofReal (2 + ε)) (volume.restrict (ball x₀ R)) →
       MemLp (W1p.gradient u) (ENNReal.ofReal (2 + ε)) (volume.restrict (ball x₀ (R / 2)))) :
     ε * (√K - 1) < 2 := by
   rcases le_or_gt K 1 with hK | hK
   · nlinarith [Real.sqrt_le_one.2 hK]
   -- Apply the local form with `λ = 1`, `Λ = K`, on `Ω = B(0, 2)` with `s = B(0, 1)` and `F = 0`.
-  let Ω : Opens (EuclideanSpace ℝ (Fin 2)) := ⟨ball 0 2, isOpen_ball⟩
+  let Ω : Opens (EuclideanSpace ℝ (Fin (n + 2))) := ⟨ball 0 2, isOpen_ball⟩
   have := toReal_mul_one_sub_sqrt_lt_two_of_forall_memLp_gradient one_pos (one_pos.trans hK)
     (Ω := Ω) isBounded_ball (mem_ball_self two_pos) (ball_mem_nhds 0 one_pos)
     (p := ENNReal.ofReal (2 + ε)) fun a u ha ham hu => by
@@ -173,21 +201,23 @@ theorem mul_sqrt_sub_one_lt_two_of_forall_memLp_gradient_ball {K ε : ℝ} (hε 
   nlinarith [mul_lt_mul_of_pos_right this ht]
 
 /-- **The gain in Meyers' theorem tends to zero as the ellipticity ratio tends to infinity.** In
-the plane, let `ε(K) ≥ 0` have, for every `K`, the property stated by Meyers' theorem
+`ℝ^{n+2}`, let `ε(K) ≥ 0` have, for every `K`, the property stated by Meyers' theorem
 (`TauCeti.PDE.exists_memLp_gradient_ball_divergence`) for the bound `K` on the ellipticity ratio,
 as in `TauCeti.PDE.mul_sqrt_sub_one_lt_two_of_forall_memLp_gradient_ball`. Then `ε(K) → 0` as
-`K → ∞`. -/
-theorem tendsto_atTop_nhds_zero_of_forall_memLp_gradient_ball {ε : ℝ → ℝ} (hε : ∀ K, 0 ≤ ε K)
-    (h : ∀ K, ∀ {Omega : Opens (EuclideanSpace ℝ (Fin 2))}
-      {a : EuclideanSpace ℝ (Fin 2) → Matrix (Fin 2) (Fin 2) ℝ}
-      {lam Lam : ℝ} {F : EuclideanSpace ℝ (Fin 2) → EuclideanSpace ℝ (Fin 2)}
-      {u : W1p volume Omega 2} {x₀ : EuclideanSpace ℝ (Fin 2)} {R : ℝ},
-      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin 2))) a lam Lam → Lam ≤ K * lam →
-      AEStronglyMeasurable a (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin 2)))) →
-      MemLp F 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin 2)))) →
+`K → ∞`, in every dimension. -/
+theorem tendsto_atTop_nhds_zero_of_forall_memLp_gradient_ball {n : ℕ} {ε : ℝ → ℝ}
+    (hε : ∀ K, 0 ≤ ε K)
+    (h : ∀ K, ∀ {Omega : Opens (EuclideanSpace ℝ (Fin (n + 2)))}
+      {a : EuclideanSpace ℝ (Fin (n + 2)) → Matrix (Fin (n + 2)) (Fin (n + 2)) ℝ}
+      {lam Lam : ℝ} {F : EuclideanSpace ℝ (Fin (n + 2)) → EuclideanSpace ℝ (Fin (n + 2))}
+      {u : W1p volume Omega 2} {x₀ : EuclideanSpace ℝ (Fin (n + 2))} {R : ℝ},
+      UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 2)))) a lam Lam →
+      Lam ≤ K * lam →
+      AEStronglyMeasurable a (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 2))))) →
+      MemLp F 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 2))))) →
       (∀ v : W1p0 volume Omega 2, energyFormH1 a 0 0 u (v : W1p volume Omega 2) =
         -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p volume Omega 2) x⟫_ℝ) →
-      ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ (Fin 2))) →
+      ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ (Fin (n + 2)))) →
       MemLp F (ENNReal.ofReal (2 + ε K)) (volume.restrict (ball x₀ R)) →
       MemLp (W1p.gradient u) (ENNReal.ofReal (2 + ε K)) (volume.restrict (ball x₀ (R / 2)))) :
     Tendsto ε atTop (𝓝 0) := by

@@ -42,6 +42,8 @@ indexed by.
   pairwise-disjoint open cover is clopen.
 * `TopologicalSpace.Opens.isCompl_comap_iff` : the preimages of two open sets under a continuous
   map are complementary exactly when the range lies in their union and misses their intersection.
+* `TopologicalSpace.Opens.coe_comap_prodSwap` : pulling back an open set `s ×ˢ t` along the swap
+  of factors gives `t ×ˢ s`.
 * `TopologicalSpace.Opens.instLocallyCompactSpace` : an open subset of a locally compact space is
   locally compact.
 * `TopologicalSpace.Opens.sigmaCompactSpace_top` : the open subset `⊤` of a σ-compact space is
@@ -157,6 +159,14 @@ theorem isCompl_comap_iff {Y : Type*} [TopologicalSpace Y] {f : C(X, Y)} (U V : 
   simp only [coe_inf, coe_sup, coe_comap, ← Set.preimage_inter, ← Set.preimage_union,
     Set.preimage_eq_empty_iff, Set.preimage_eq_univ_iff]
   exact and_comm.trans (and_congr_right' disjoint_comm)
+
+/-- Pulling back an open set `V = s ×ˢ t` of `X × Y` along the swap `Y × X → X × Y` gives
+`t ×ˢ s`. -/
+theorem coe_comap_prodSwap {Y : Type*} [TopologicalSpace Y] {V : Opens (X × Y)} {s : Set X}
+    {t : Set Y} (hV : (V : Set (X × Y)) = s ×ˢ t) :
+    (comap ContinuousMap.prodSwap V : Set (Y × X)) = t ×ˢ s := by
+  ext ⟨y, x⟩
+  simp [hV, and_comm]
 
 /-- An open subset of a locally compact space is locally compact. -/
 instance instLocallyCompactSpace [LocallyCompactSpace X] (U : Opens X) : LocallyCompactSpace U :=
