@@ -7,7 +7,10 @@ module
 
 public import TauCeti.AlgebraicGeometry.AbelianVariety.End.Basic
 public import TauCeti.AlgebraicGeometry.AbelianVariety.Hom.BaseChange
+import TauCeti.AlgebraicGeometry.Descent.MorphismProperty
 import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Descent
+import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # Isogenies of abelian varieties
@@ -25,8 +28,8 @@ a homomorphism.
 ## Main results
 
 * `AbelianVariety.IsIsogeny.comp` composes isogenies;
-* `AbelianVariety.IsIsogeny.baseChange` shows that an isogeny remains one after extending the
-  ground field;
+* `AbelianVariety.isIsogeny_baseChange_iff` shows that field extension preserves and reflects
+  isogenies;
 * `AbelianVariety.isIsogeny_mulBy_neg_one` supplies the multiplication-by-negative-one isogeny.
 
 That multiplication by every nonzero integer `n` is an isogeny requires torsion theory that is
@@ -140,6 +143,26 @@ lemma baseChange (hf : IsIsogeny f) (L : Type u) [Field L] [Algebra K L] :
   exact ⟨baseChange_property @IsFinite hf.1 L, baseChange_property @Surjective hf.2 L⟩
 
 end IsIsogeny
+
+/-- A homomorphism of abelian varieties is an isogeny exactly when its base change along a field
+extension is an isogeny. -/
+lemma isIsogeny_baseChange_iff {A B : AbelianVariety K} (f : A ⟶ B)
+    (L : Type u) [Field L] [Algebra K L] : IsIsogeny (Hom.baseChange f L) ↔ IsIsogeny f := by
+  refine ⟨?_, fun hf ↦ hf.baseChange L⟩
+  intro hf
+  -- Finiteness and surjectivity descend along the pullback of the field extension.
+  let P : MorphismProperty Scheme.{u} := @IsFinite ⊓ @Surjective
+  have : P.RespectsIso := MorphismProperty.RespectsIso.inf _ _
+  have : P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @QuasiCompact) :=
+    MorphismProperty.DescendsAlong.inf (P := @IsFinite) (W := @Surjective)
+  have hg : P (Hom.toSchemeHom (Hom.baseChange f L)) := (isIsogeny_iff _).mp hf
+  rw [Hom.toSchemeHom_baseChange] at hg
+  simp only [Over.comp_left, Over.eqToHom_left] at hg
+  rw [P.cancel_left_of_respectsIso, P.cancel_right_of_respectsIso] at hg
+  have hpb := Over.isPullback_pullback_map_left
+    (Spec.map (CommRingCat.ofHom (algebraMap K L))) (Hom.toOverHom f)
+  exact (isIsogeny_iff f).mpr
+    (MorphismProperty.of_isPullback_of_surjective_of_flat_of_quasiCompact hpb hg)
 
 /-! ### A multiplication isogeny -/
 
