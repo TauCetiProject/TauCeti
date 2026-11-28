@@ -25,6 +25,7 @@ convergence estimates.
 * `Real.pow_le_pow_iff_logb_le_div_of_base_lt_one`: `b ^ m ≤ x ^ n ↔ logb b x ≤ m / n`.
 * `Real.le_floor_logb_iff_zpow_le_of_base_lt_one`: `n ≤ ⌊logb b x⌋ ↔ x ≤ b ^ n` for `n : ℤ`.
 * `Real.logb_zpow_self`: `logb b (b ^ n) = n` for `n : ℤ` and a base `b > 0`, `b ≠ 1`.
+* `Real.le_natFloor_logb_iff_pow_le`: `n ≤ ⌊logb b x⌋₊ ↔ b ^ n ≤ x` for `1 < b` and `1 ≤ x`.
 * `Real.pow_natFloor_logb_le_self`: `b ^ ⌊logb b x⌋₊ ≤ x` for `1 < b` and `1 ≤ x`.
 * `Real.lt_pow_natFloor_logb_add_one`: `x < b ^ (⌊logb b x⌋₊ + 1)` for `1 < b` and `0 < x`.
 * `Real.natFloor_logb_eq_natLog_natFloor`: `⌊logb b x⌋₊ = Nat.log b ⌊x⌋₊` for `b : ℕ` and
@@ -62,6 +63,13 @@ theorem pow_le_pow_iff_logb_le_div_of_base_lt_one (b_pos : 0 < b) (b_lt_one : b 
 theorem le_floor_logb_iff_zpow_le_of_base_lt_one (b_pos : 0 < b) (b_lt_one : b < 1)
     (hx : 0 < x) (n : ℤ) : n ≤ ⌊logb b x⌋ ↔ x ≤ b ^ n := by
   rw [Int.le_floor, le_logb_iff_rpow_le_of_base_lt_one b_pos b_lt_one hx, rpow_intCast]
+
+/-- For `b > 1` and `x ≥ 1`, the floor `⌊logb b x⌋₊` is the largest natural number `n` with
+`b ^ n ≤ x`. -/
+theorem le_natFloor_logb_iff_pow_le (hb : 1 < b) (hx : 1 ≤ x) (n : ℕ) :
+    n ≤ ⌊logb b x⌋₊ ↔ b ^ n ≤ x := by
+  rw [Nat.le_floor_iff (logb_nonneg hb hx), le_logb_iff_rpow_le hb (zero_lt_one.trans_le hx),
+    rpow_natCast]
 
 /-- For `b > 1` and `x ≥ 1`, the power of `b` at the natural floor of `logb b x` is at most
 `x`. -/

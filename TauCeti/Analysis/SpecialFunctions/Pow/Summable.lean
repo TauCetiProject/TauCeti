@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
 import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
+import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Topology.Algebra.InfiniteSum.Group
 
 /-!
@@ -27,6 +28,10 @@ probabilities decaying polynomially in a sequence index. A union bound over `N ^
 of `q` events, each with the Markov tail `C / (N ^ a) ^ m`, takes this form through the identity
 `N ^ (q + 1) * (C / (N ^ a) ^ m) ^ q = C ^ q * N ^ (q + 1 - a m q)` for `N > 0`.
 
+For any real exponent `p` and geometric ratio `|r| < 1`, the polynomial-geometric series
+`∑ n ^ p * r ^ n` converges (`TauCeti.summable_rpow_mul_geometric_of_abs_lt_one`), extending
+`summable_pow_mul_geometric_of_norm_lt_one` from natural-number powers to arbitrary real powers.
+
 ## Main results
 
 * `TauCeti.tendsto_cofinite_zero_of_summable_rpow` — a nonnegative family with a summable positive
@@ -37,6 +42,8 @@ of `q` events, each with the Markov tail `C / (N ^ a) ^ m`, takes this form thro
   `∑' n : ℕ, ENNReal.ofReal (C * (n + 1) ^ e) < ∞` for `e < -1`.
 * `TauCeti.pow_add_one_mul_div_rpow_pow_pow` —
   `N ^ (q + 1) * (C / (N ^ a) ^ m) ^ q = C ^ q * N ^ (q + 1 - a m q)` for `N > 0`.
+* `TauCeti.summable_rpow_mul_geometric_of_abs_lt_one` — `∑ n ^ p * r ^ n` converges for any
+  `p : ℝ` and `|r| < 1`.
 -/
 
 public section
@@ -97,5 +104,17 @@ theorem pow_add_one_mul_div_rpow_pow_pow {N : ℝ} (hN : 0 < N) (C a : ℝ) (m q
     mul_div_left_comm, ← Real.rpow_sub hN]
   push_cast
   ring_nf
+
+/-- For any real exponent `p` and `r : ℝ` with `|r| < 1`, the polynomial-geometric series
+`∑ n ^ p * r ^ n` is summable. -/
+theorem summable_rpow_mul_geometric_of_abs_lt_one (p : ℝ) {r : ℝ} (hr : |r| < 1) :
+    Summable fun n : ℕ ↦ (n : ℝ) ^ p * r ^ n := by
+  refine (summable_pow_mul_geometric_of_norm_lt_one ⌈p⌉₊ (r := |r|)
+    (by simpa using hr)).of_norm_bounded_eventually_nat ?_
+  filter_upwards [Filter.eventually_ge_atTop 1] with n hn
+  rw [Real.norm_eq_abs, abs_mul, abs_pow, abs_of_nonneg (Real.rpow_nonneg n.cast_nonneg p),
+    ← Real.rpow_natCast (n : ℝ) ⌈p⌉₊]
+  exact mul_le_mul_of_nonneg_right
+    (Real.rpow_le_rpow_of_exponent_le (Nat.one_le_cast.2 hn) (Nat.le_ceil p)) (by positivity)
 
 end TauCeti
