@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.SimpleGraph.LapMatrix.Eigenvalues
 import TauCeti.Analysis.Matrix.Eigenvalues.Basic
-import TauCeti.Combinatorics.SimpleGraph.AdjMatrix
+import TauCeti.Combinatorics.SimpleGraph.AdjMatrix.Basic
 
 /-!
 # Laplacian eigenvalues under adding edges

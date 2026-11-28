@@ -765,7 +765,7 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 
 /-- The eigenvalues of the restriction of a symmetric operator to a finite-dimensional invariant
 subspace `U` lie in the restricted point spectrum on `U`. -/
-private theorem eigenvalues_restrict_mem (hA : A.IsSymmetric) (hU : ∀ x ∈ U, A x ∈ U)
+theorem eigenvalues_restrict_mem (hA : A.IsSymmetric) (hU : ∀ x ∈ U, A x ∈ U)
     (i : Fin (Module.finrank 𝕜 U)) :
     (hA.restrict_invariant hU).eigenvalues rfl i ∈ A.restrictedPointSpectrum U := by
   set hB := hA.restrict_invariant hU

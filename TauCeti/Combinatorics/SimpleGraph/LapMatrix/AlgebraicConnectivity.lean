@@ -11,7 +11,7 @@ import TauCeti.Analysis.InnerProductSpace.CourantFischer
 import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Matrix.Eigenvalues.Basic
 import TauCeti.Analysis.Matrix.EuclideanLin
-import TauCeti.Combinatorics.SimpleGraph.AdjMatrix
+import TauCeti.Combinatorics.SimpleGraph.AdjMatrix.Basic
 import TauCeti.Combinatorics.SimpleGraph.LapMatrix.Complement
 
 /-!
