@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
 public import Mathlib.RingTheory.Norm.Defs
-public import TauCeti.NumberTheory.Cyclotomic.CompatibleTower
+public import TauCeti.NumberTheory.Cyclotomic.CompatibleTower.Basic
 
 import Mathlib.RingTheory.Norm.Transitivity
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Eval
@@ -62,7 +62,10 @@ family `c` is not torsion.
   is not a root of unity.
 * `TauCeti.CompatibleCyclotomicTower.norm_extendedCyclotomicNumber_mul_of_dvd` and
   `TauCeti.CompatibleCyclotomicTower.norm_extendedCyclotomicNumber_mul_eq_div`: the norm from level
-  `mℓ` to `m` over `ℚ`, with the inverse arithmetic Frobenius factor when `ℓ ∤ mp`.
+  `mℓ` to `m`, with the inverse arithmetic Frobenius factor when `ℓ` is prime,
+  `ℓ ∤ mp`, and `mp > 1`, assuming the relevant cyclotomic polynomials are irreducible.
+  They specialize `IsPrimitiveRoot.norm_norm_one_sub_of_dvd` and
+  `IsPrimitiveRoot.norm_norm_one_sub_eq_div_autEquivPow_symm_inv_apply`.
 
 ## References
 
@@ -181,81 +184,113 @@ theorem not_isOfFinOrder_extendedCyclotomicNumber_pow [CharZero K] [Fact p.Prime
   have := (Fact.out : p.Prime).one_lt
   omega
 
-section Rat
+section NormRelations
 
-variable [CharZero Ω] {m} {ℓ : ℕ} [NeZero ℓ]
-
-open IsCyclotomicExtension.Rat
+variable {m} {ℓ : ℕ}
 
 /-- Compatibility of the roots across the top of the norm square, in the conductor order
 used by `extendedCyclotomicNumber`. -/
-private theorem algebraMap_zeta_extended_mul :
-    letI := T.fieldAlgebra ℚ (Nat.mul_dvd_mul_right (dvd_mul_right m ℓ) p)
-    algebraMap (T.field ℚ (m * p)) (T.field ℚ (m * ℓ * p)) (T.zeta ℚ (m * p)) =
-      T.zeta ℚ (m * ℓ * p) ^ ℓ := by
+private theorem algebraMap_zeta_extended_mul [NeZero ℓ] :
+    letI := T.fieldAlgebra K (Nat.mul_dvd_mul_right (dvd_mul_right m ℓ) p)
+    algebraMap (T.field K (m * p)) (T.field K (m * ℓ * p)) (T.zeta K (m * p)) =
+      T.zeta K (m * ℓ * p) ^ ℓ := by
   have h : m * ℓ * p / (m * p) = ℓ := by
     rw [mul_right_comm m ℓ p, Nat.mul_div_cancel_left _ (NeZero.pos _)]
-  rw [T.algebraMap_zeta ℚ, h]
+  rw [T.algebraMap_zeta K, h]
+
+section
+
+/-- The inclusion from level `m` to level `mℓ` in the extended-number norm square. -/
+private local instance normSquareAlgebraMul [NeZero ℓ] :
+    Algebra (T.field K m) (T.field K (m * ℓ)) :=
+  T.fieldAlgebra K (dvd_mul_right m ℓ)
+
+/-- The inclusion from level `m` to level `mp` in the extended-number norm square. -/
+private local instance normSquareAlgebraExtend : Algebra (T.field K m) (T.field K (m * p)) :=
+  T.fieldAlgebra K (dvd_mul_right m p)
+
+/-- The inclusion from level `mℓ` to the top of the extended-number norm square. -/
+private local instance normSquareAlgebraMulExtend [NeZero ℓ] :
+    Algebra (T.field K (m * ℓ)) (T.field K (m * ℓ * p)) :=
+  T.fieldAlgebra K (dvd_mul_right (m * ℓ) p)
+
+/-- The inclusion from level `mp` to the top of the extended-number norm square. -/
+private local instance normSquareAlgebraExtendMul [NeZero ℓ] :
+    Algebra (T.field K (m * p)) (T.field K (m * ℓ * p)) :=
+  T.fieldAlgebra K (Nat.mul_dvd_mul_right (dvd_mul_right m ℓ) p)
+
+/-- The direct inclusion from level `m` to the top of the norm square. -/
+private local instance normSquareAlgebraTop [NeZero ℓ] :
+    Algebra (T.field K m) (T.field K (m * ℓ * p)) :=
+  T.fieldAlgebra K (dvd_mul_of_dvd_left (dvd_mul_right m ℓ) p)
+
+/-- The path through level `mℓ` is a scalar tower. -/
+private local instance normSquareTowerMul [NeZero ℓ] :
+    IsScalarTower (T.field K m) (T.field K (m * ℓ))
+    (T.field K (m * ℓ * p)) :=
+  T.isScalarTower_fieldAlgebra_fieldAlgebra K (dvd_mul_right m ℓ) (dvd_mul_right (m * ℓ) p)
+
+/-- The path through level `mp` is a scalar tower. -/
+private local instance normSquareTowerExtend [NeZero ℓ] :
+    IsScalarTower (T.field K m) (T.field K (m * p))
+    (T.field K (m * ℓ * p)) :=
+  T.isScalarTower_fieldAlgebra_fieldAlgebra K (dvd_mul_right m p)
+    (Nat.mul_dvd_mul_right (dvd_mul_right m ℓ) p)
+
+/-- The upper inclusion in the norm square respects the base field. -/
+private local instance normSquareBaseTowerTop [NeZero ℓ] :
+    IsScalarTower K (T.field K (m * p)) (T.field K (m * ℓ * p)) :=
+  T.isScalarTower_fieldAlgebra K (Nat.mul_dvd_mul_right (dvd_mul_right m ℓ) p)
+
+/-- The extension from level `m` to level `mp` respects the base field. -/
+private local instance normSquareBaseTowerExtend :
+    IsScalarTower K (T.field K m) (T.field K (m * p)) :=
+  T.isScalarTower_fieldAlgebra K (dvd_mul_right m p)
+
+/-- The top field is cyclotomic in the conductor order used by the norm relations. -/
+private local instance normSquareCyclotomicExtension [NeZero ℓ] :
+    IsCyclotomicExtension {m * p * ℓ} K (T.field K (m * ℓ * p)) := by
+  simpa only [mul_right_comm m ℓ p] using
+    (inferInstance : IsCyclotomicExtension {m * ℓ * p} K (T.field K (m * ℓ * p)))
+
+private theorem isPrimitiveRoot_zeta_extended_mul [NeZero ℓ] :
+    IsPrimitiveRoot (T.zeta K (m * ℓ * p)) (m * p * ℓ) :=
+  (mul_right_comm m ℓ p) ▸ T.isPrimitiveRoot_zeta K (m * ℓ * p)
 
 /-- If `ℓ ∣ mp`, the norm of the extended cyclotomic number from level `mℓ` to level `m`
-is the extended cyclotomic number at level `m`. This includes the step `ℓ = p`. -/
-theorem norm_extendedCyclotomicNumber_mul_of_dvd (h : ℓ ∣ m * p) :
-    letI := T.fieldAlgebra ℚ (dvd_mul_right m ℓ)
-    Algebra.norm (T.field ℚ m) (T.extendedCyclotomicNumber ℚ p (m * ℓ)) =
-      T.extendedCyclotomicNumber ℚ p m := by
-  let := T.fieldAlgebra ℚ (dvd_mul_right m ℓ)
-  let := T.fieldAlgebra ℚ (dvd_mul_right m p)
-  let := T.fieldAlgebra ℚ (dvd_mul_right (m * ℓ) p)
-  let := T.fieldAlgebra ℚ (Nat.mul_dvd_mul_right (dvd_mul_right m ℓ) p)
-  let := T.fieldAlgebra ℚ (dvd_mul_of_dvd_left (dvd_mul_right m ℓ) p)
-  have : IsScalarTower (T.field ℚ m) (T.field ℚ (m * ℓ)) (T.field ℚ (m * ℓ * p)) :=
-    IsScalarTower.of_algebraMap_eq' rfl
-  have : IsScalarTower (T.field ℚ m) (T.field ℚ (m * p)) (T.field ℚ (m * ℓ * p)) :=
-    IsScalarTower.of_algebraMap_eq' rfl
-  have := T.isScalarTower_fieldAlgebra ℚ
-    (Nat.mul_dvd_mul_right (dvd_mul_right m ℓ) p)
-  have : IsCyclotomicExtension {m * p * ℓ} ℚ (T.field ℚ (m * ℓ * p)) := by
-    simpa only [mul_right_comm m ℓ p] using
-      (inferInstance : IsCyclotomicExtension {m * ℓ * p} ℚ (T.field ℚ (m * ℓ * p)))
-  have hζ : IsPrimitiveRoot (T.zeta ℚ (m * ℓ * p)) (m * p * ℓ) :=
-    (mul_right_comm m ℓ p) ▸ T.isPrimitiveRoot_zeta ℚ (m * ℓ * p)
+is the extended cyclotomic number at level `m`, assuming `Φ_{mℓp}` is irreducible over `K`.
+This includes the step `ℓ = p`. -/
+theorem norm_extendedCyclotomicNumber_mul_of_dvd [NeZero ℓ]
+    (hirr : Irreducible (cyclotomic (m * ℓ * p) K)) (h : ℓ ∣ m * p) :
+    letI := T.fieldAlgebra K (dvd_mul_right m ℓ)
+    Algebra.norm (T.field K m) (T.extendedCyclotomicNumber K p (m * ℓ)) =
+      T.extendedCyclotomicNumber K p m := by
   rw [T.extendedCyclotomicNumber_def, T.extendedCyclotomicNumber_def]
-  exact IsPrimitiveRoot.norm_norm_one_sub_of_dvd (F := ℚ)
-    (cyclotomic.irreducible_rat (NeZero.pos _)) hζ (T.algebraMap_zeta_extended_mul) h
+  exact IsPrimitiveRoot.norm_norm_one_sub_of_dvd (F := K)
+    (by simpa only [mul_right_comm m ℓ p] using hirr)
+    (T.isPrimitiveRoot_zeta_extended_mul K) (T.algebraMap_zeta_extended_mul K) h
 
 /-- At a prime `ℓ` coprime to `mp`, the norm of the extended cyclotomic number from level
-`mℓ` to `m` is the quotient by its inverse arithmetic Frobenius conjugate. -/
+`mℓ` to `m` is the quotient by its inverse arithmetic Frobenius conjugate, provided `mp > 1`
+and `Φ_{mℓp}` and `Φ_m` are irreducible over `K`. -/
 theorem norm_extendedCyclotomicNumber_mul_eq_div [Fact ℓ.Prime]
-    (hcop : ℓ.Coprime (m * p)) (hmp : 1 < m * p) :
-    letI := T.fieldAlgebra ℚ (dvd_mul_right m ℓ)
-    Algebra.norm (T.field ℚ m) (T.extendedCyclotomicNumber ℚ p (m * ℓ)) =
-      T.extendedCyclotomicNumber ℚ p m /
-        (galEquivZMod m (T.field ℚ m)).symm
+    (hirr : Irreducible (cyclotomic (m * ℓ * p) K))
+    (hm : Irreducible (cyclotomic m K)) (hcop : ℓ.Coprime (m * p)) (hmp : 1 < m * p) :
+    letI := T.fieldAlgebra K (dvd_mul_right m ℓ)
+    Algebra.norm (T.field K m) (T.extendedCyclotomicNumber K p (m * ℓ)) =
+      T.extendedCyclotomicNumber K p m /
+        (IsCyclotomicExtension.autEquivPow (T.field K m) hm).symm
           (ZMod.unitOfCoprime ℓ (hcop.coprime_dvd_right (dvd_mul_right m p)))⁻¹
-          (T.extendedCyclotomicNumber ℚ p m) := by
-  let := T.fieldAlgebra ℚ (dvd_mul_right m ℓ)
-  let := T.fieldAlgebra ℚ (dvd_mul_right m p)
-  let := T.fieldAlgebra ℚ (dvd_mul_right (m * ℓ) p)
-  let := T.fieldAlgebra ℚ (Nat.mul_dvd_mul_right (dvd_mul_right m ℓ) p)
-  let := T.fieldAlgebra ℚ (dvd_mul_of_dvd_left (dvd_mul_right m ℓ) p)
-  have : IsScalarTower (T.field ℚ m) (T.field ℚ (m * ℓ)) (T.field ℚ (m * ℓ * p)) :=
-    IsScalarTower.of_algebraMap_eq' rfl
-  have : IsScalarTower (T.field ℚ m) (T.field ℚ (m * p)) (T.field ℚ (m * ℓ * p)) :=
-    IsScalarTower.of_algebraMap_eq' rfl
-  have := T.isScalarTower_fieldAlgebra ℚ
-    (Nat.mul_dvd_mul_right (dvd_mul_right m ℓ) p)
-  have := T.isScalarTower_fieldAlgebra ℚ (dvd_mul_right m p)
-  have : IsCyclotomicExtension {m * p * ℓ} ℚ (T.field ℚ (m * ℓ * p)) := by
-    simpa only [mul_right_comm m ℓ p] using
-      (inferInstance : IsCyclotomicExtension {m * ℓ * p} ℚ (T.field ℚ (m * ℓ * p)))
-  have hζ : IsPrimitiveRoot (T.zeta ℚ (m * ℓ * p)) (m * p * ℓ) :=
-    (mul_right_comm m ℓ p) ▸ T.isPrimitiveRoot_zeta ℚ (m * ℓ * p)
+          (T.extendedCyclotomicNumber K p m) := by
   rw [T.extendedCyclotomicNumber_def, T.extendedCyclotomicNumber_def]
+  have hζ := T.isPrimitiveRoot_zeta_extended_mul K (p := p) (m := m) (ℓ := ℓ)
   exact hζ.norm_norm_one_sub_eq_div_autEquivPow_symm_inv_apply
-    (cyclotomic.irreducible_rat (NeZero.pos _)) (T.algebraMap_zeta_extended_mul)
-    (cyclotomic.irreducible_rat (NeZero.pos m)) (dvd_mul_right m p) hcop hmp
+    (by simpa only [mul_right_comm m ℓ p] using hirr) (T.algebraMap_zeta_extended_mul K) hm
+    (dvd_mul_right m p) hcop hmp
 
-end Rat
+end
+
+end NormRelations
 
 end TauCeti.CompatibleCyclotomicTower
 

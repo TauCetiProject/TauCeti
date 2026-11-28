@@ -256,14 +256,28 @@ abbrev fieldAlgebra {m n : ℕ} [NeZero m] [NeZero n] (h : m ∣ n) :
 theorem isScalarTower_fieldAlgebra {m n : ℕ} [NeZero m] [NeZero n] (h : m ∣ n) :
     letI := T.fieldAlgebra K h
     IsScalarTower K (T.field K m) (T.field K n) :=
-  letI := T.fieldAlgebra K h
+  let := T.fieldAlgebra K h
   IsScalarTower.of_algebraMap_eq' rfl
+
+/-- Canonical inclusions along a divisibility chain form a scalar tower. -/
+theorem isScalarTower_fieldAlgebra_fieldAlgebra {m n k : ℕ}
+    [NeZero m] [NeZero n] [NeZero k] (hmn : m ∣ n) (hnk : n ∣ k) :
+    letI := T.fieldAlgebra K hmn
+    letI := T.fieldAlgebra K hnk
+    letI := T.fieldAlgebra K (hmn.trans hnk)
+    IsScalarTower (T.field K m) (T.field K n) (T.field K k) := by
+  let := T.fieldAlgebra K hmn
+  let := T.fieldAlgebra K hnk
+  let := T.fieldAlgebra K (hmn.trans hnk)
+  apply IsScalarTower.of_algebraMap_eq
+  intro x
+  exact (inclusion_inclusion (T.field_le K hmn) (T.field_le K hnk) x).symm
 
 theorem finite_fieldAlgebra {m n : ℕ} [NeZero m] [NeZero n] (h : m ∣ n) :
     letI := T.fieldAlgebra K h
     Module.Finite (T.field K m) (T.field K n) :=
-  letI := T.fieldAlgebra K h
-  haveI := T.isScalarTower_fieldAlgebra K h
+  let := T.fieldAlgebra K h
+  have := T.isScalarTower_fieldAlgebra K h
   Module.Finite.of_restrictScalars_finite K _ _
 
 /-- Along the inclusion algebra `K(ζ_m) → K(ζ_n)`, for `m ∣ n`, the image of `ζ_m` is
@@ -292,8 +306,8 @@ theorem autToPow_restrictNormal {m n : ℕ} [NeZero m] [NeZero n] (h : m ∣ n)
     haveI := T.isScalarTower_fieldAlgebra K h
     (T.isPrimitiveRoot_zeta K m).autToPow K (σ.restrictNormal (T.field K m)) =
       ZMod.unitsMap h ((T.isPrimitiveRoot_zeta K n).autToPow K σ) :=
-  letI := T.fieldAlgebra K h
-  haveI := T.isScalarTower_fieldAlgebra K h
+  let := T.fieldAlgebra K h
+  have := T.isScalarTower_fieldAlgebra K h
   (T.isPrimitiveRoot_zeta K n).autToPow_restrictNormal h (T.isPrimitiveRoot_zeta K m)
     (T.inclusion_zeta K h) σ
 
