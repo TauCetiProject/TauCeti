@@ -52,7 +52,7 @@ the union of all strictly smaller nilpotent orbits
 
 The infinitesimal adjoint action of `x ∈ 𝔤` on `O(𝔤)` is the coadjoint action of `x` by
 derivations (`TauCeti.differential_adjointPolynomialComoduleAlgebra`), so every group invariant is
-a Lie invariant `S(𝔤*)^𝔤`. For a connected group over an algebraically closed field of
+a Lie invariant `S(𝔤*)^𝔤`. For a connected group over a field of
 characteristic zero, a vector is fixed by the group exactly when the Lie algebra kills it, and the
 two rings of invariants coincide (`TauCeti.adjointInvariantPolynomials_eq_lieInvariants`). When
 the Killing form of `𝔤` is nondegenerate, the Lie-invariant functions of positive degree cut out the
@@ -63,8 +63,8 @@ rational orbits of these `k`-points are precisely the nilpotent `G`-orbits
 (`TauCeti.image_vectorOrbit_mk_setOf_nilpotentConeIdeal_le_ker_lift_eval`). Each inclusion holds
 under weaker hypotheses:
 `ad`-nilpotent elements lie on the cone for every group with nondegenerate Killing form in
-characteristic zero, and points of the cone are `ad`-nilpotent for every connected group over an
-algebraically closed field of characteristic zero.
+characteristic zero, and points of the cone are `ad`-nilpotent for every connected group over a
+field of characteristic zero.
 
 When `𝔤` is only reductive, `𝔤 = Z(𝔤) ⊕ ⁅𝔤, 𝔤⁆`, the linear functions vanishing on `⁅𝔤, 𝔤⁆` are
 invariants of degree one, and the cone is cut out inside `⁅𝔤, 𝔤⁆`: its `k`-points are the
@@ -77,7 +77,7 @@ central element and a point of the cone
 
 The cone is not reduced in general, so the statement about `k`-points does not by itself say
 anything about points with values in a nonreduced ring. For a connected affine group of finite
-type over an algebraically closed field of characteristic zero, the trace-power polynomials
+type over a field of characteristic zero, the trace-power polynomials
 `x ↦ tr (ρ_M(x) ^ m)` of positive degree of a `d`-dimensional module `M` over `𝔤` lie in the ideal
 of the cone. Over the coordinate ring of the cone, which is a `ℚ`-algebra, Newton's identities
 then make the characteristic polynomial of the matrix `A` of the universal element acting on `M`
@@ -96,7 +96,7 @@ matrix of the point acting on `M` has characteristic polynomial `T ^ d`.
 * `TauCeti.adjointInvariantPolynomials`: the invariant polynomial functions `O(𝔤)^G`.
 * `TauCeti.adjointInvariantPolynomials_le_lieInvariants` and
   `TauCeti.adjointInvariantPolynomials_eq_lieInvariants`: they are Lie invariants, and for
-  connected `G` over an algebraically closed field of characteristic zero they are all of them.
+  connected `G` over a field of characteristic zero they are all of them.
 * `TauCeti.lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials` and
   `TauCeti.lift_eval_basePointsRepresentation_of_mem_lieInvariants`: invariant polynomial
   functions (and, for connected `G`, Lie-invariant polynomial functions) are constant on rational
@@ -492,15 +492,15 @@ end Coinvariants
 
 section Connected
 
-variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
+variable {k : Type u} [Field k] [CharZero k]
   {H : FiniteTypeCommHopfAlgCat.{u, u} k} [ConnectedSpace (PrimeSpectrum H)]
 
 attribute [local instance] adjointPolynomialComoduleAlgebra
 
 local notation "𝔤" => Module.Dual k (Bialgebra.CotangentSpace k H)
 
-/-- **Group and Lie invariants coincide.** For a connected affine group over an algebraically
-closed field of characteristic zero, a polynomial function on the Lie algebra is invariant under
+/-- **Group and Lie invariants coincide.** For a connected affine group over a
+field of characteristic zero, a polynomial function on the Lie algebra is invariant under
 the adjoint action exactly when it is killed by the coadjoint action of the Lie algebra. -/
 theorem adjointInvariantPolynomials_eq_lieInvariants :
     adjointInvariantPolynomials k H = SymmetricAlgebra.lieInvariants k 𝔤 (Module.Dual k 𝔤) :=
@@ -511,7 +511,7 @@ theorem adjointInvariantPolynomials_eq_lieInvariants :
       exact SymmetricAlgebra.mem_lieInvariants.mp hp _
 
 /-- **Points of the nilpotent cone are the common zeros of the Lie invariants.** For a connected
-affine group over an algebraically closed field of characteristic zero, a ring homomorphism `f`
+affine group over a field of characteristic zero, a ring homomorphism `f`
 out of the polynomial functions on the Lie algebra kills the ideal of the nilpotent cone exactly
 when it kills every polynomial function that is killed by the coadjoint action and vanishes at the
 origin. For `f` the evaluation at an element `x` of the Lie algebra, this says that `x` lies on the
@@ -525,8 +525,8 @@ theorem nilpotentConeIdeal_le_ker_iff {S F : Type*} [Semiring S]
   simp only [nilpotentConeIdeal_le_iff, adjointInvariantPolynomials_eq_lieInvariants,
     RingHom.mem_ker]
 
-/-- **The nilpotent cone lies in the derived ideal.** For a connected affine group over an
-algebraically closed field of characteristic zero, a linear function on the Lie algebra vanishing on
+/-- **The nilpotent cone lies in the derived ideal.** For a connected affine group over a
+field of characteristic zero, a linear function on the Lie algebra vanishing on
 all brackets, that is on the derived ideal `⁅𝔤, 𝔤⁆`, lies in the ideal of the nilpotent cone. So the
 cone is a closed subscheme of the linear subspace `⁅𝔤, 𝔤⁆`. Only when `𝔤` is reductive does this
 say that the cone has zero central coordinate
@@ -538,16 +538,16 @@ theorem ι_mem_nilpotentConeIdeal {φ : Module.Dual k 𝔤} (hφ : ∀ x y : �
   rw [adjointInvariantPolynomials_eq_lieInvariants]
   exact SymmetricAlgebra.ι_mem_lieInvariants_iff_apply_lie_eq_zero.mpr hφ
 
-/-- **Points of the nilpotent cone lie in the derived ideal.** For a connected affine group over an
-algebraically closed field of characteristic zero, if evaluation at an element `x` of the Lie
+/-- **Points of the nilpotent cone lie in the derived ideal.** For a connected affine group over a
+field of characteristic zero, if evaluation at an element `x` of the Lie
 algebra kills the ideal of the nilpotent cone, then `x ∈ ⁅𝔤, 𝔤⁆`. -/
 theorem mem_derivedSeries_of_nilpotentConeIdeal_le_ker_lift_eval {x : 𝔤}
     (hx : nilpotentConeIdeal k H ≤ RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x))) :
     x ∈ LieAlgebra.derivedSeries k 𝔤 1 :=
   mem_derivedSeries_of_forall_lift_eval_eq_zero (nilpotentConeIdeal_le_ker_iff.mp hx)
 
-/-- **Points of the nilpotent cone act nilpotently.** For a connected affine group over an
-algebraically closed field of characteristic zero, if evaluation at an element `x` of the Lie
+/-- **Points of the nilpotent cone act nilpotently.** For a connected affine group over a
+field of characteristic zero, if evaluation at an element `x` of the Lie
 algebra kills the ideal of the nilpotent cone, then `x` acts nilpotently on every
 finite-dimensional module over the Lie algebra. -/
 theorem isNilpotent_toEnd_of_nilpotentConeIdeal_le_ker_lift_eval (M : Type*) [AddCommGroup M]
@@ -556,16 +556,16 @@ theorem isNilpotent_toEnd_of_nilpotentConeIdeal_le_ker_lift_eval (M : Type*) [Ad
     IsNilpotent (LieModule.toEnd k 𝔤 M x) :=
   isNilpotent_toEnd_of_forall_lift_eval_eq_zero M (nilpotentConeIdeal_le_ker_iff.mp hx)
 
-/-- **Points of the nilpotent cone are nilpotent.** For a connected affine group over an
-algebraically closed field of characteristic zero, if evaluation at an element `x` of the Lie
+/-- **Points of the nilpotent cone are nilpotent.** For a connected affine group over a
+field of characteristic zero, if evaluation at an element `x` of the Lie
 algebra kills the ideal of the nilpotent cone, then `ad x` is nilpotent. -/
 theorem isNilpotent_ad_of_nilpotentConeIdeal_le_ker_lift_eval {x : 𝔤}
     (hx : nilpotentConeIdeal k H ≤ RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x))) :
     IsNilpotent (LieAlgebra.ad k 𝔤 x) :=
   isNilpotent_toEnd_of_nilpotentConeIdeal_le_ker_lift_eval 𝔤 hx
 
-/-- **The rational points of the nilpotent cone.** For a connected affine group over an
-algebraically closed field of characteristic zero whose Lie algebra has nondegenerate Killing form,
+/-- **The rational points of the nilpotent cone.** For a connected affine group over a
+field of characteristic zero whose Lie algebra has nondegenerate Killing form,
 an element `x` of the Lie algebra lies on the nilpotent cone, that is evaluation at `x` kills its
 ideal, exactly when `ad x` is nilpotent. -/
 theorem nilpotentConeIdeal_le_ker_lift_eval_iff [LieAlgebra.IsKilling k 𝔤] {x : 𝔤} :
@@ -575,7 +575,7 @@ theorem nilpotentConeIdeal_le_ker_lift_eval_iff [LieAlgebra.IsKilling k 𝔤] {x
     nilpotentConeIdeal_le_ker_lift_eval_of_isNilpotent⟩
 
 /-- **The rational points of the nilpotent cone of a group with reductive Lie algebra.** For a
-connected affine group over an algebraically closed field of characteristic zero whose Lie algebra
+connected affine group over a field of characteristic zero whose Lie algebra
 is reductive, an element `x` of the Lie algebra lies on the nilpotent cone, that is evaluation at
 `x` kills its ideal, exactly when `x` lies in the derived ideal `⁅𝔤, 𝔤⁆` and `ad x` is nilpotent.
 
@@ -590,7 +590,7 @@ theorem nilpotentConeIdeal_le_ker_lift_eval_iff_mem_derivedSeries_and_isNilpoten
     mem_derivedSeries_and_isNilpotent_ad_iff_forall_lift_eval_eq_zero]
 
 /-- **The nilpotent cone of a group with reductive Lie algebra has zero central coordinate.** For a
-connected affine group over an algebraically closed field of characteristic zero whose Lie algebra
+connected affine group over a field of characteristic zero whose Lie algebra
 `𝔤` is reductive, let `z` be central and `y ∈ ⁅𝔤, 𝔤⁆`. Then `z + y` lies on the nilpotent cone
 exactly when the central coordinate `z` is zero and `ad y` is nilpotent. -/
 theorem nilpotentConeIdeal_le_ker_lift_eval_add_iff [LieAlgebra.HasCentralRadical k 𝔤] {z y : 𝔤}
@@ -600,7 +600,7 @@ theorem nilpotentConeIdeal_le_ker_lift_eval_add_iff [LieAlgebra.HasCentralRadica
   rw [nilpotentConeIdeal_le_ker_iff, forall_lift_eval_add_eq_zero_iff hz hy]
 
 /-- **The `ad`-nilpotent elements of a group with reductive Lie algebra.** For a connected affine
-group over an algebraically closed field of characteristic zero whose Lie algebra `𝔤` is reductive,
+group over a field of characteristic zero whose Lie algebra `𝔤` is reductive,
 `ad x` is nilpotent exactly when `x = z + y` with `z` central and `y` on the nilpotent cone. So the
 `ad`-nilpotent locus `Z(𝔤) × 𝒩(⁅𝔤, 𝔤⁆)` is larger than the cone as soon as `𝔤` has nonzero
 centre. -/
@@ -616,7 +616,7 @@ theorem isNilpotent_ad_iff_exists_mem_center_add_nilpotentConeIdeal_le_ker_lift_
 
 section GenericActionMatrix
 
-/-- For a connected affine group of finite type over an algebraically closed field of
+/-- For a connected affine group of finite type over a field of
 characteristic zero, the trace-power polynomials `x ↦ tr (ρ_M(x) ^ m)` of positive degree of every
 finite-dimensional module `M` over its Lie algebra lie in the ideal of the nilpotent cone. -/
 theorem tracePowerPolynomial_mem_nilpotentConeIdeal {M : Type*} [AddCommGroup M] [Module k M]
@@ -636,7 +636,7 @@ variable {M : Type*} [AddCommGroup M] [Module k M]
   {κ : Type*} [Fintype κ] [DecidableEq κ]
 
 /-- **The universal element of the nilpotent cone is nilpotent.** For a connected affine group of
-finite type over an algebraically closed field of characteristic zero and a basis `c` of size `d`
+finite type over a field of characteristic zero and a basis `c` of size `d`
 of a module `M` over its Lie algebra, every entry of the `d`-th power of the generic action matrix
 lies in the ideal of the nilpotent cone. That is, `A ^ d = 0` in the coordinate ring of the cone,
 where `A` is the matrix of the universal element of the cone acting on `M`. -/
@@ -654,7 +654,7 @@ theorem _root_.Module.Basis.genericActionMatrix_pow_card_apply_mem_nilpotentCone
   exact Ideal.Quotient.eq_zero_iff_mem.mp hpq
 
 /-- **Points of the nilpotent cone act nilpotently, with a uniform bound.** For a connected affine
-group of finite type over an algebraically closed field of characteristic zero, let
+group of finite type over a field of characteristic zero, let
 `φ : O(𝔤) → B` be a point of the nilpotent cone with values in any semiring, possibly nonreduced:
 a ring homomorphism killing the ideal of the cone. Let `A` be the generic action matrix of a module
 `M` over the Lie algebra in a basis of size `d`. Then the matrix `φ A` of the point acting on `M`
@@ -669,7 +669,7 @@ theorem map_genericActionMatrix_pow_card_eq_zero_of_nilpotentConeIdeal_le_ker {B
   exact hφ (c.genericActionMatrix_pow_card_apply_mem_nilpotentConeIdeal p q)
 
 /-- **The characteristic polynomial of a module on the nilpotent cone.** For a connected affine
-group over an algebraically closed field of characteristic zero, let `M` be a Lie module over its
+group over a field of characteristic zero, let `M` be a Lie module over its
 Lie algebra with a basis `c` of size `N`. At every point of the nilpotent cone with values in a
 commutative ring, that is after applying any ring homomorphism `f` killing the ideal of the cone,
 the generic action matrix of `M` has characteristic polynomial `X ^ N`: its other characteristic
@@ -694,7 +694,7 @@ end Connected
 
 section ConnectedUnbundled
 
-variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
+variable {k : Type u} [Field k] [CharZero k]
   {H : Type u} [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
   [ConnectedSpace (PrimeSpectrum H)]
 
@@ -807,7 +807,7 @@ end Comodule.VectorOrbit
 
 section NilpotentCone
 
-variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
+variable {k : Type u} [Field k] [CharZero k]
   (H : Type u) [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
   [ConnectedSpace (PrimeSpectrum H)]
   [LieAlgebra.IsKilling k (Module.Dual k (Bialgebra.CotangentSpace k H))]

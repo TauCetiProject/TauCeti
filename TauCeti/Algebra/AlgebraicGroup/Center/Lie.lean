@@ -12,7 +12,7 @@ import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central.Tangent
 /-!
 # The Lie algebra of the center in characteristic zero
 
-For a connected affine group of finite type over an algebraically closed field of
+For a connected affine group of finite type over a field of
 characteristic zero, the Lie algebra of its scheme-theoretic center is the center of its
 Lie algebra. Connectedness ensures that a Lie-central vector is fixed by the whole adjoint
 representation. This identifies the kernel of the differential of the center quotient.
@@ -34,13 +34,13 @@ namespace TauCeti.FiniteTypeCommHopfAlgCat
 
 universe u
 
-variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
+variable {k : Type u} [Field k] [CharZero k]
 variable (H : FiniteTypeCommHopfAlgCat.{u, u} k) [ConnectedSpace (PrimeSpectrum H)]
 
 attribute [local instance] Derivation.adjointComodule
 
-/-- The Lie algebra of the scheme-theoretic center of a connected affine group over an
-algebraically closed field of characteristic zero is the center of the tangent Lie algebra. -/
+/-- The Lie algebra of the scheme-theoretic center of a connected affine group over a
+field of characteristic zero is the center of the tangent Lie algebra. -/
 @[simp]
 theorem lieSubalgebra_centerDefiningIdeal_eq_center :
     (CommHopfAlgCat.centerDefiningIdeal H.obj).lieSubalgebra (B := k) =

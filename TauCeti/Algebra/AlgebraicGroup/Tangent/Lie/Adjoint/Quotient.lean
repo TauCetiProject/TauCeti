@@ -14,7 +14,7 @@ public import TauCeti.Algebra.Lie.Solvable.Basic
 /-!
 # The adjoint representation modulo a Lie ideal
 
-For a connected affine group over an algebraically closed field of characteristic zero,
+For a connected affine group over a field of characteristic zero,
 every Lie ideal is an adjoint subrepresentation. The quotient therefore carries a rational
 representation whose differential is the induced Lie bracket. If the quotient Lie algebra
 has zero center, the scheme-theoretic kernel of this representation has precisely the given
@@ -40,7 +40,7 @@ namespace LieIdeal
 
 universe u
 
-variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
+variable {k : Type u} [Field k] [CharZero k]
 variable {H : FiniteTypeCommHopfAlgCat.{u, u} k} [ConnectedSpace (PrimeSpectrum H)]
 
 attribute [local instance] Derivation.adjointComodule
@@ -126,7 +126,7 @@ namespace TauCeti.FiniteTypeCommHopfAlgCat
 
 universe u
 
-variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
+variable {k : Type u} [Field k] [CharZero k]
 
 /-- The solvable radical of the tangent Lie algebra of a connected affine group in
 characteristic zero is the Lie algebra of a closed normal subgroup. The subgroup can be

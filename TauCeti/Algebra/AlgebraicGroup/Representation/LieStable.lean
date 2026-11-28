@@ -15,11 +15,11 @@ import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
 /-!
 # Lie-stable subspaces in characteristic zero
 
-Let `G` be a connected affine group of finite type over an algebraically closed field `k` of
+Let `G` be a connected affine group of finite type over a field `k` of
 characteristic zero, and `M` a representation of `G`, that is, a comodule over its coordinate
 Hopf algebra `H`. A subspace `W ≤ M` is a subrepresentation exactly when it is stable under the
-differentiated action of the Lie algebra `Lie(G)` (and likewise over any characteristic-zero field
-when `G` is geometrically connected).
+differentiated action of the Lie algebra `Lie(G)`. Connectedness and geometric connectedness
+agree for affine group schemes over a field.
 
 One direction holds over any base ring: subcomodules are stable under the differentiated action.
 For the converse, the Lie algebra of the stabilizer `G_W` of `W` consists of the tangent vectors
@@ -50,7 +50,7 @@ exactly when every `Lie(G)`-stable subspace has a `Lie(G)`-stable complement.
 * `Submodule.coact_mem_range_of_forall_differential_mem`,
   `Submodule.exists_subcomodule_iff_forall_differential_mem`, and
   `TauCeti.Comodule.isCompletelyReducible_iff_forall_differential_mem`: specializations to
-  connected finite-type affine groups over an algebraically closed field of characteristic zero.
+  connected finite-type affine groups over a field of characteristic zero.
 
 ## References
 
@@ -96,7 +96,7 @@ theorem exists_subcomodule_iff_forall_differential_mem_of_geometricallyConnected
 
 end GeometricallyConnected
 
-variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
+variable {k : Type u} [Field k] [CharZero k]
 variable {H : FiniteTypeCommHopfAlgCat.{u, u} k} [ConnectedSpace (PrimeSpectrum H)]
 variable {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M]
 
@@ -112,8 +112,8 @@ theorem coact_mem_range_of_forall_differential_mem (W : Submodule k M)
   W.coact_mem_range_of_forall_differential_mem_of_geometricallyConnected
     ((geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace k H.obj).mpr inferInstance) hW hw
 
-/-- In characteristic zero, a subspace of a representation of a connected group over an
-algebraically closed field is a subrepresentation exactly when it is stable under the
+/-- In characteristic zero, a subspace of a representation of a connected group over a
+field is a subrepresentation exactly when it is stable under the
 differentiated action of the Lie algebra. -/
 theorem exists_subcomodule_iff_forall_differential_mem (W : Submodule k M) :
     (∃ N : Subcomodule k H M, N.toSubmodule = W) ↔
@@ -155,11 +155,11 @@ theorem isCompletelyReducible_iff_forall_differential_mem_of_geometricallyConnec
 
 end GeometricallyConnected
 
-variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
+variable {k : Type u} [Field k] [CharZero k]
 variable {H : FiniteTypeCommHopfAlgCat.{u, u} k} [ConnectedSpace (PrimeSpectrum H)]
 variable {M : Type w} [AddCommGroup M] [Module k M] [Comodule k H M]
 
-/-- In characteristic zero, a representation of a connected group over an algebraically closed
+/-- In characteristic zero, a representation of a connected group over a
 field is completely reducible exactly when every subspace stable under the differentiated action
 of the Lie algebra has a complement that is again stable under it. -/
 theorem isCompletelyReducible_iff_forall_differential_mem :

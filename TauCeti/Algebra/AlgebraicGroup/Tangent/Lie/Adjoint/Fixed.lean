@@ -12,7 +12,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
 /-!
 # The invariant vectors of the adjoint representation
 
-For a connected affine group over an algebraically closed field of characteristic zero,
+For a connected affine group over a field of characteristic zero,
 the invariant vectors of its rational adjoint representation are exactly the center of
 its tangent Lie algebra. Thus the entire group fixes each central tangent vector after
 extension to any commutative value algebra, even one with nilpotents.
@@ -35,12 +35,12 @@ namespace TauCeti.FiniteTypeCommHopfAlgCat
 
 universe u
 
-variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
+variable {k : Type u} [Field k] [CharZero k]
 variable (H : FiniteTypeCommHopfAlgCat.{u, u} k) [ConnectedSpace (PrimeSpectrum H)]
 
 attribute [local instance] Derivation.adjointComodule
 
-/-- For a connected group over an algebraically closed field of characteristic zero,
+/-- For a connected group over a field of characteristic zero,
 a tangent vector is rationally fixed under the adjoint action exactly when it lies in the
 center of the tangent Lie algebra. -/
 theorem coact_adjointComodule_eq_tmul_one_iff_mem_center
@@ -57,7 +57,7 @@ theorem coact_adjointComodule_eq_tmul_one_iff_mem_center
     exact hx _
 
 /-- Every algebra-valued point fixes the scalar extension of each central tangent vector
-of a connected affine group over an algebraically closed field of characteristic zero.
+of a connected affine group over a field of characteristic zero.
 The value algebra may be nonreduced. -/
 theorem endOfPoint_tmul_of_mem_center
     (x : Module.Dual k (Bialgebra.CotangentSpace k H))
