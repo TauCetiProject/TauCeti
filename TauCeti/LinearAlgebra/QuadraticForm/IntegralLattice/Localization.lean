@@ -12,7 +12,6 @@ import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
 import Mathlib.RingTheory.LocalProperties.Submodule
 import TauCeti.Algebra.Module.Lattice.BaseChange
 import TauCeti.Algebra.Module.LocalizedModule.Submodule
-import TauCeti.LinearAlgebra.QuadraticForm.Restriction
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
@@ -136,8 +135,7 @@ noncomputable def localizeIsometryEquiv (e : L.integralForm.IsometryEquiv M.inte
 theorem localizeIsometryEquiv_toLocalize (e : L.integralForm.IsometryEquiv M.integralForm)
     (x : L.carrier) :
     L.localizeIsometryEquiv S hS M e (L.toLocalize S hS x) = M.toLocalize S hS (e x) := by
-  change (IsLocalizedModule.mapEquiv S (L.toLocalize S hS) (M.toLocalize S hS) Rₛ
-    e.toLinearEquiv) (L.toLocalize S hS x) = _
+  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv, localizeIsometryEquiv]
   simp only [IsLocalizedModule.mapEquiv_apply, IsLocalizedModule.map_apply,
     LinearEquiv.coe_coe, QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
 
@@ -166,10 +164,14 @@ theorem localizeIsometryEquiv_trans {U : Type*} [AddCommGroup U] [Module R U] [M
   refine DFunLike.congr_fun (LinearMap.ext_on_range
     (IsLocalizedModule.isBaseChange S Rₛ (L.toLocalize S hS)).span_range_eq_top ?_) x
   intro y
-  change L.localizeIsometryEquiv S hS N (e.trans f) (L.toLocalize S hS y) =
-    M.localizeIsometryEquiv S hS N f (L.localizeIsometryEquiv S hS M e (L.toLocalize S hS y))
-  simp only [localizeIsometryEquiv_toLocalize]
-  rfl
+  -- The composite is defined on the underlying linear equivalences, where `trans_apply` applies.
+  change (L.localizeIsometryEquiv S hS N (e.trans f)).toLinearEquiv (L.toLocalize S hS y) =
+    ((L.localizeIsometryEquiv S hS M e).toLinearEquiv.trans
+      (M.localizeIsometryEquiv S hS N f).toLinearEquiv) (L.toLocalize S hS y)
+  simp only [LinearEquiv.trans_apply, QuadraticMap.IsometryEquiv.coe_toLinearEquiv,
+    localizeIsometryEquiv_toLocalize]
+  exact congrArg (N.toLocalize S hS)
+    (LinearEquiv.trans_apply (e₁₂ := e.toLinearEquiv) (e₂₃ := f.toLinearEquiv) y)
 
 /-- Localization commutes with inversion of integral isometric equivalences. -/
 @[simp]

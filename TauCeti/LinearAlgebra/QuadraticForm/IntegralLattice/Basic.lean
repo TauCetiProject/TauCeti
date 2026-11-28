@@ -10,7 +10,6 @@ public import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
 import TauCeti.Algebra.Module.LocalizedModule.Submodule
-import TauCeti.LinearAlgebra.QuadraticForm.Restriction
 
 /-!
 # Integral lattices in a quadratic space

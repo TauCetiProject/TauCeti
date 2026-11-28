@@ -15,7 +15,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.MvPolynomial
 public import TauCeti.LinearAlgebra.TensorProduct.Pi
 import Mathlib.LinearAlgebra.QuadraticForm.Basis
 import TauCeti.Algebra.Algebra.Pi
-import TauCeti.LinearAlgebra.QuadraticForm.Restriction
+import TauCeti.LinearAlgebra.QuadraticForm.Basic
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
 /-!
