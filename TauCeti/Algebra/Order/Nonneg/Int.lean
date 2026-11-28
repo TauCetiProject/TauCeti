@@ -41,7 +41,7 @@ end TauCeti
 
 namespace Nonneg
 
-theorem intOrderAddMonoidIsoNat_apply (n : Nonneg ℤ) :
+theorem nonnegIntOrderAddMonoidIsoNat_apply (n : Nonneg ℤ) :
     TauCeti.nonnegIntOrderAddMonoidIsoNat n = n.val.toNat :=
   by
     rw [TauCeti.nonnegIntOrderAddMonoidIsoNat, ← OrderAddMonoidIso.invFun_eq_symm]

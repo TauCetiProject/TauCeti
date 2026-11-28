@@ -229,7 +229,7 @@ nonnegative arrow values of an integer flow to its natural arrow values. -/
 theorem nonnegAssignment_map_nonnegIntOrderAddMonoidIsoNat (f : Flow cap s t) :
     f.nonnegAssignment.map nonnegIntOrderAddMonoidIsoNat = f.natAssignment := by
   funext x y e
-  simp only [Assignment.map_apply, Nonneg.intOrderAddMonoidIsoNat_apply, natAssignment_apply]
+  simp only [Assignment.map_apply, Nonneg.nonnegIntOrderAddMonoidIsoNat_apply, natAssignment_apply]
   rw [coe_nonnegAssignment]
 
 end Flow
