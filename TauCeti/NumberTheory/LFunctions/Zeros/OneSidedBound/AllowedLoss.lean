@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.NumberTheory.LegendreSymbol.Basic
+import TauCeti.NumberTheory.Harmonic.Basic
 import TauCeti.NumberTheory.Harmonic.Progressions
 
 /-!
@@ -33,10 +34,20 @@ modulo `m`. The divisibility tests implement these classes for primes `p`. -/
 noncomputable def primeLoss (m f a b p : ℕ) : ℝ :=
   (f : ℝ) * a * Real.log b ^ 2 * ((if m ∣ p - 1 ∨ m ∣ p + 1 then (m : ℝ) else 1) / p)
 
-/-- The two cases of the local loss. -/
+/-- The defining formula for the local loss. -/
 theorem primeLoss_def (m f a b p : ℕ) :
     primeLoss m f a b p =
       (f : ℝ) * a * Real.log b ^ 2 * ((if m ∣ p - 1 ∨ m ∣ p + 1 then (m : ℝ) else 1) / p) := (rfl)
+
+/-- The local loss has the factor `m / p` when `m` divides `p - 1` or `p + 1`. -/
+@[simp] theorem primeLoss_of_dvd {m p : ℕ} (f a b : ℕ) (h : m ∣ p - 1 ∨ m ∣ p + 1) :
+    primeLoss m f a b p = (f : ℝ) * a * Real.log b ^ 2 * ((m : ℝ) / p) := by
+  simp [primeLoss_def, h]
+
+/-- The local loss is unamplified when `m` divides neither `p - 1` nor `p + 1`. -/
+@[simp] theorem primeLoss_of_not_dvd {m p : ℕ} (f a b : ℕ) (h : ¬(m ∣ p - 1 ∨ m ∣ p + 1)) :
+    primeLoss m f a b p = (f : ℝ) * a * Real.log b ^ 2 / p := by
+  simp only [primeLoss_def, ite_eq_right h, mul_one_div]
 
 /-- The local loss is nonnegative. -/
 theorem primeLoss_nonneg (m f a b p : ℕ) : 0 ≤ primeLoss m f a b p := by
@@ -110,9 +121,9 @@ private theorem sum_primeLoss_mul_log_le (U : Finset ℕ) (x₁ m f a b : ℕ) :
       obtain ⟨hp, hd⟩ := mem_filter.mp hp
       exact ⟨(hS p hp).1, (hS p hp).2, by exact_mod_cast hd⟩
   have hbase : ∑ p ∈ S, (p : ℝ)⁻¹ ≤ (harmonic x₁ : ℝ) := by
-    simp only [harmonic_eq_sum_Icc, Rat.cast_sum, Rat.cast_inv, Rat.cast_natCast]
-    exact sum_le_sum_of_subset_of_nonneg (fun p hp ↦ mem_Icc.mpr
-      ⟨le_trans (by decide) (hS p hp).1, (hS p hp).2.le⟩) (by intros; positivity)
+    rw [cast_harmonic_eq_sum_Ioc]
+    exact sum_le_sum_of_subset_of_nonneg (fun p hp ↦ mem_Ioc.mpr
+      ⟨zero_lt_two.trans_le (hS p hp).1, (hS p hp).2.le⟩) (by intros; positivity)
   have hsum : ∑ p ∈ S, w p ≤ 5 * (1 + Real.log x₁) := by
     calc
       _ ≤ (∑ p ∈ S, (p : ℝ)⁻¹) +
@@ -122,8 +133,10 @@ private theorem sum_primeLoss_mul_log_le (U : Finset ℕ) (x₁ m f a b : ℕ) :
         refine sum_le_sum fun p _ ↦ ?_
         have hm₀ : 0 ≤ (m : ℝ) / p := by positivity
         have hp₀ : 0 ≤ (p : ℝ)⁻¹ := by positivity
-        by_cases hm : m ∣ p - 1 <;> by_cases hp : m ∣ p + 1 <;>
-          simp [w, hm, hp, one_div]; linarith
+        by_cases hm : m ∣ p - 1 <;> by_cases hp : m ∣ p + 1
+        · simp only [w, hm, hp, true_or, ite_true]
+          linarith only [hm₀, hp₀]
+        all_goals simp [w, hm, hp, one_div]
       _ ≤ _ := by linarith [harmonic_le_one_add_log x₁]
   let C : ℝ := (f : ℝ) * a * Real.log b ^ 2
   have hC : 0 ≤ C := by dsimp [C]; positivity
@@ -157,17 +170,9 @@ private theorem sum_allowedLoss_mul_log_le_harmonic (d : ℕ) [Fact d.Prime]
         2 * (primeLoss m f a b p * Real.log p) else 0) +
         if p = N then 2 * (m : ℝ) * f * b * Real.log p else 0) := by
       refine sum_le_sum fun p _ ↦ ?_
-      by_cases hp : p.Prime ∧ p < x₁ ∧ legendreSym d p ≠ 1
-      · simp only [allowedLoss, ite_eq_left hp, mul_assoc]
-        exact le_add_of_nonneg_right (by split_ifs <;> positivity)
-      · simp only [allowedLoss, ite_eq_right hp, zero_add]
-        by_cases he : p = N
-        · rw [ite_eq_left he]
-          by_cases hr : p.Prime
-          · rw [ite_eq_left ⟨he, hr⟩]
-          · rw [ite_eq_right fun h ↦ hr h.2, zero_mul]
-            positivity
-        · rw [ite_eq_right he, ite_eq_right fun h ↦ he h.1, zero_mul]
+      have hlevel : 0 ≤ 2 * (m : ℝ) * f * b * Real.log p := by positivity
+      unfold allowedLoss
+      split_ifs <;> simp_all [mul_assoc]
     _ = 2 * (∑ p ∈ S, primeLoss m f a b p * Real.log p) +
         (if N ∈ U then 2 * (m : ℝ) * f * b * Real.log N else 0) := by
       rw [sum_add_distrib, sum_ite_eq', ← sum_filter]

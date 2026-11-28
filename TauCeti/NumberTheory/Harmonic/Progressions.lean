@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Harmonic.Bounds
+import TauCeti.NumberTheory.Harmonic.Basic
 
 /-!
 # Harmonic bounds for short shifts of the multiples of a modulus
@@ -43,9 +44,7 @@ theorem sum_natCast_div_le_two_mul_harmonic_of_dvd_add {S : Finset ℕ} {m B : �
     apply Nat.pos_of_ne_zero
     intro hc
     exact (hbounds p hp).1.ne' (by simpa [hc] using (hmul p hp).symm)
-  have hcast : (harmonic B : ℝ) = ∑ i ∈ Icc 1 B, (i : ℝ)⁻¹ := by
-    simp only [harmonic_eq_sum_Icc, Rat.cast_sum, Rat.cast_inv, Rat.cast_natCast]
-  rw [hcast, mul_sum]
+  rw [cast_harmonic_eq_sum_Ioc, mul_sum]
   refine sum_le_sum_of_injOn c ?_ ?_ ?_ (by intros; positivity)
   · intro p hp q hq heq
     have h := (hmul p hp).symm.trans (congrArg (m * ·) heq) |>.trans (hmul q hq)
@@ -53,7 +52,7 @@ theorem sum_natCast_div_le_two_mul_harmonic_of_dvd_add {S : Finset ℕ} {m B : �
     omega
   · intro i hi
     obtain ⟨p, hp, rfl⟩ := mem_image.mp hi
-    exact mem_Icc.mpr ⟨hcpos p hp, (Nat.le_of_dvd (hbounds p hp).1
+    exact mem_Ioc.mpr ⟨hcpos p hp, (Nat.le_of_dvd (hbounds p hp).1
       ⟨m, by rw [mul_comm, hmul p hp]⟩).trans (hbounds p hp).2.1⟩
   · intro p hp
     have h : m * c p ≤ 2 * p := (hmul p hp).trans_le (hbounds p hp).2.2
