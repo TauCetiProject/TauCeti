@@ -410,6 +410,16 @@ def endStarAlgEquiv (X : HilbertCat.{u, v} 𝕜) : End X ≃⋆ₐ[𝕜] (X →L
 theorem norm_endStarAlgEquiv (X : HilbertCat.{u, v} 𝕜) (a : End X) :
     ‖X.endStarAlgEquiv a‖ = ‖a‖ := (rfl)
 
+/-- The spectral order on `End.of` in `HilbertCat ℂ` matches the Loewner order on `X →L[ℂ] X`. -/
+@[simp] theorem end_of_le_iff {X : HilbertCat.{0, v} ℂ} {f g : X →L[ℂ] X} :
+    End.of (X := X) f ≤ End.of g ↔ f ≤ g :=
+  (map_le_map_iff X.endStarAlgEquiv).symm
+
+/-- Spectral positivity on `End.of` in `HilbertCat ℂ` matches Loewner positivity on `X →L[ℂ] X`. -/
+@[simp] theorem end_of_nonneg_iff {X : HilbertCat.{0, v} ℂ} {f : X →L[ℂ] X} :
+    0 ≤ End.of (X := X) f ↔ 0 ≤ f := by
+  simpa only [End.of_zero] using end_of_le_iff (X := X) (f := 0) (g := f)
+
 /-- Finite-dimensional Hilbert spaces, as an object property on `HilbertCat 𝕜`. -/
 abbrev isFiniteDimensional (𝕜 : Type u) [RCLike 𝕜] : ObjectProperty (HilbertCat.{u, v} 𝕜) :=
   fun H => FiniteDimensional 𝕜 H
@@ -447,10 +457,8 @@ abbrev of (𝕜 : Type u) [RCLike 𝕜] (E : Type v) [NormedAddCommGroup E]
 
 /-- The operator norms on Hom spaces of `FDHilbertCat 𝕜` satisfy the normed-space axioms. -/
 theorem normedSpaceCore (X Y : FDHilbertCat.{u, v} 𝕜) : NormedSpace.Core 𝕜 (X ⟶ Y) :=
-  (HilbertCat.normedSpaceCore X.obj Y.obj).induced
-    (InducedCategory.homLinearEquiv (R := 𝕜) (F := ObjectProperty.FullSubcategory.obj)
-      (X := X) (Y := Y)).toLinearMap
-    InducedCategory.homLinearEquiv.injective fun _ => rfl
+  InducedCategory.normedSpaceCoreOf ObjectProperty.FullSubcategory.obj
+    (HilbertCat.normedSpaceCore X.obj Y.obj)
 
 /-- Hom spaces in `FDHilbertCat 𝕜` carry the normed group structure of their underlying
 continuous linear maps. -/
@@ -475,10 +483,6 @@ instance instFiniteDimensionalHom (X Y : FDHilbertCat.{u, v} 𝕜) :
 /-- Hom spaces in `FDHilbertCat 𝕜` are complete. -/
 instance (X Y : FDHilbertCat.{u, v} 𝕜) : CompleteSpace (X ⟶ Y) :=
   FiniteDimensional.completeSpace 𝕜 _
-
--- Ambient isometric identification of `FDHilbertCat 𝕜` Hom spaces over arbitrary `RCLike 𝕜`.
-example (X Y : FDHilbertCat.{u, v} 𝕜) : (X ⟶ Y) ≃ₗᵢ[𝕜] (X.obj ⟶ Y.obj) :=
-  ObjectProperty.homLinearIsometryEquiv X Y
 
 /-- An object of `FDHilbertCat 𝕜` is a categorical zero object if and only if its carrier is a
 subsingleton. -/
@@ -524,6 +528,20 @@ def endStarAlgEquiv (X : FDHilbertCat.{u, v} 𝕜) : End X ≃⋆ₐ[𝕜] (X �
 theorem norm_endStarAlgEquiv (X : FDHilbertCat.{u, v} 𝕜) (a : End X) :
     ‖X.endStarAlgEquiv a‖ = ‖a‖ := by
   rw [endStarAlgEquiv_apply, End.norm_def, ObjectProperty.norm_def]
+
+/-- The spectral order on `End.of` in `FDHilbertCat ℂ` matches the Loewner order on underlying
+operators in `X →L[ℂ] X`. -/
+@[simp] theorem end_of_le_iff {X : FDHilbertCat.{0, v} ℂ} {a b : X ⟶ X} :
+    End.of a ≤ End.of b ↔ @LE.le (X →L[ℂ] X) _ a.hom b.hom := by
+  simpa only [endStarAlgEquiv_apply] using
+    (map_le_map_iff X.endStarAlgEquiv (a := End.of a) (b := End.of b)).symm
+
+/-- Spectral positivity on `End.of` in `FDHilbertCat ℂ` matches Loewner positivity on underlying
+operators in `X →L[ℂ] X`. -/
+@[simp] theorem end_of_nonneg_iff {X : FDHilbertCat.{0, v} ℂ} {a : X ⟶ X} :
+    0 ≤ End.of a ↔ @LE.le (X →L[ℂ] X) _ 0 a.hom := by
+  rw [← End.of_zero]
+  exact end_of_le_iff
 
 /-- The topology on Hom spaces of `FDHilbertCat ℂ` induced by `CStarCategory` agrees with the
 native normed-space topology. -/

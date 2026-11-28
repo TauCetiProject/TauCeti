@@ -136,11 +136,6 @@ spaces. -/
 @[simp] theorem nnNorm_map [F.Faithful] {X Y : C} (f : X ⟶ Y) : ‖F.map f‖₊ = ‖f‖₊ :=
   Subtype.ext (F.norm_map f)
 
-/-- A faithful `ℂ`-linear dagger functor induces an isometry on every Hom space. -/
-theorem isometry_map [F.Faithful] (X Y : C) :
-    Isometry (F.map : (X ⟶ Y) → (F.obj X ⟶ F.obj Y)) :=
-  AddMonoidHomClass.isometry_of_norm (F.mapLinearMap ℂ) F.norm_map
-
 /-- The Hom-space action of a faithful `ℂ`-linear dagger functor bundled as a `ℂ`-linear
 isometry. -/
 def mapLinearIsometry [F.Faithful] (X Y : C) :
@@ -160,6 +155,11 @@ def mapLinearIsometry [F.Faithful] (X Y : C) :
 /-- Forgetting continuity from `F.mapLinearIsometry` recovers `F.mapLinearMap ℂ`. -/
 @[simp] theorem mapLinearIsometry_toLinearMap [F.Faithful] (X Y : C) :
     (F.mapLinearIsometry X Y).toLinearMap = F.mapLinearMap ℂ := (rfl)
+
+/-- A faithful `ℂ`-linear dagger functor induces an isometry on every Hom space. -/
+theorem isometry_map [F.Faithful] (X Y : C) :
+    Isometry (F.map : (X ⟶ Y) → (F.obj X ⟶ F.obj Y)) :=
+  (F.mapLinearIsometry X Y).isometry
 
 /-- A `ℂ`-linear dagger functor between C*-categories is faithful if and only if it preserves the
 norm of every morphism. -/
@@ -200,6 +200,12 @@ def mapLinearIsometryEquiv [F.Full] [F.Faithful] (X Y : C) :
   apply (F.mapLinearIsometryEquiv X Y).injective
   simp
 
+/-- Taking `F.preimage` along a fully faithful `ℂ`-linear dagger functor preserves norms. -/
+@[simp] theorem norm_preimage [F.Full] [F.Faithful] {X Y : C} (g : F.obj X ⟶ F.obj Y) :
+    ‖F.preimage g‖ = ‖g‖ := by
+  simpa only [mapLinearIsometryEquiv_symm_apply] using
+    (F.mapLinearIsometryEquiv X Y).symm.norm_map g
+
 /-- Forgetting invertibility from `F.mapLinearIsometryEquiv` recovers `F.mapLinearIsometry`. -/
 @[simp] theorem mapLinearIsometryEquiv_toLinearIsometry [F.Full] [F.Faithful] (X Y : C) :
     (F.mapLinearIsometryEquiv X Y).toLinearIsometry = F.mapLinearIsometry X Y := by
@@ -208,11 +214,6 @@ def mapLinearIsometryEquiv [F.Full] [F.Faithful] (X Y : C) :
 /-- Forgetting the norm from `F.mapLinearIsometryEquiv` recovers `F.homLinearEquiv ℂ`. -/
 @[simp] theorem mapLinearIsometryEquiv_toLinearEquiv [F.Full] [F.Faithful] (X Y : C) :
     (F.mapLinearIsometryEquiv X Y).toLinearEquiv = F.homLinearEquiv ℂ X Y := (rfl)
-
-/-- Taking `F.preimage` along a fully faithful `ℂ`-linear dagger functor preserves norms. -/
-@[simp] theorem norm_preimage [F.Full] [F.Faithful] {X Y : C} (g : F.obj X ⟶ F.obj Y) :
-    ‖F.preimage g‖ = ‖g‖ := by
-  rw [← F.norm_map (F.preimage g), F.map_preimage]
 
 end CategoryTheory.Functor
 

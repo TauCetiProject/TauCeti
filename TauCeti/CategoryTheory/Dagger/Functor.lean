@@ -9,9 +9,9 @@ public import Mathlib.Algebra.Star.StarAlgHom
 public import Mathlib.CategoryTheory.Conj
 public import Mathlib.CategoryTheory.NatIso
 public import TauCeti.CategoryTheory.Dagger.Basic
+public import TauCeti.CategoryTheory.Functor.RingEquivEnd
 public import TauCeti.CategoryTheory.Linear.Endomorphism
 public import TauCeti.CategoryTheory.Preadditive.Endomorphism
-import TauCeti.CategoryTheory.Functor.RingEquivEnd
 
 /-!
 # Dagger-preserving functors and natural transformations
@@ -130,6 +130,12 @@ noncomputable def mapEndStarAlgEquiv (X : C) :
   { (FullyFaithful.ofFullyFaithful F).ringEquivEnd X with
     map_smul' r f := by ext; simp
     map_star' f := by ext; simp }
+
+/-- Forgetting linearity and star from `CategoryTheory.Functor.mapEndStarAlgEquiv` recovers
+`CategoryTheory.Functor.FullyFaithful.ringEquivEnd`. -/
+@[simp] theorem toRingEquiv_mapEndStarAlgEquiv (X : C) :
+    (F.mapEndStarAlgEquiv R X).toRingEquiv = (FullyFaithful.ofFullyFaithful F).ringEquivEnd X :=
+  (rfl)
 
 /-- Forward evaluation of `CategoryTheory.Functor.mapEndStarAlgEquiv` on underlying arrows. -/
 @[simp, grind =] theorem mapEndStarAlgEquiv_apply_asHom (X : C) (f : End X) :
@@ -250,6 +256,11 @@ def endStarAlgEquiv {X Y : C} (e : X ≅ Y) (he : IsUnitary e.hom) :
   map_star' f := by
     ext
     simp [← e.dagger_hom_eq_inv_of_isUnitary he]
+
+/-- Forgetting linearity and star from `CategoryTheory.Iso.endStarAlgEquiv` recovers
+`CategoryTheory.Iso.endRingEquiv`. -/
+@[simp] theorem toRingEquiv_endStarAlgEquiv {X Y : C} (e : X ≅ Y) (he : IsUnitary e.hom) :
+    (e.endStarAlgEquiv R he).toRingEquiv = e.endRingEquiv := (rfl)
 
 /-- Conjugation by a unitary isomorphism acts as `dagger e.hom ≫ f.asHom ≫ e.hom`. -/
 @[simp, grind =] theorem endStarAlgEquiv_apply_asHom {X Y : C} (e : X ≅ Y)

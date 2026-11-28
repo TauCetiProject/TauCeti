@@ -63,21 +63,6 @@ variable {X Y Z : C}
     ‖dagger f‖₊ = ‖f‖₊ :=
   Subtype.ext (norm_dagger f)
 
-/-- Taking the dagger preserves distances on Hom spaces under the norm-induced metric. -/
-@[simp] theorem dist_dagger (f g : X ⟶ Y) :
-    dist (dagger f) (dagger g) = dist f g := by
-  rw [dist_eq_norm, dist_eq_norm, ← dagger_sub, norm_dagger]
-
-/-- Taking the dagger is an isometry between opposite Hom spaces. -/
-theorem isometry_dagger (X Y : C) :
-    Isometry (dagger : (X ⟶ Y) → (Y ⟶ X)) :=
-  Isometry.of_dist_eq dist_dagger
-
-/-- Taking the dagger is continuous on Hom spaces. -/
-@[fun_prop] theorem continuous_dagger (X Y : C) :
-    Continuous (dagger : (X ⟶ Y) → (Y ⟶ X)) :=
-  (isometry_dagger X Y).continuous
-
 /-- The dagger bundled as a conjugate-linear isometric equivalence between opposite Hom spaces. -/
 def daggerLinearIsometryEquiv (X Y : C) :
     (X ⟶ Y) ≃ₗᵢ⋆[ℂ] (Y ⟶ X) where
@@ -98,6 +83,22 @@ def daggerLinearIsometryEquiv (X Y : C) :
 /-- Forgetting the norm from `daggerLinearIsometryEquiv` recovers `daggerLinearEquiv ℂ`. -/
 @[simp] theorem daggerLinearIsometryEquiv_toLinearEquiv (X Y : C) :
     (daggerLinearIsometryEquiv X Y).toLinearEquiv = daggerLinearEquiv ℂ X Y := (rfl)
+
+/-- Taking the dagger preserves distances on Hom spaces under the norm-induced metric. -/
+@[simp] theorem dist_dagger (f g : X ⟶ Y) :
+    dist (dagger f) (dagger g) = dist f g := by
+  simpa only [daggerLinearIsometryEquiv_apply] using (daggerLinearIsometryEquiv X Y).dist_map f g
+
+/-- Taking the dagger is an isometry between opposite Hom spaces. -/
+theorem isometry_dagger (X Y : C) :
+    Isometry (dagger : (X ⟶ Y) → (Y ⟶ X)) := by
+  simpa only [show (daggerLinearIsometryEquiv X Y : (X ⟶ Y) → (Y ⟶ X)) = dagger from
+    funext daggerLinearIsometryEquiv_apply] using (daggerLinearIsometryEquiv X Y).isometry
+
+/-- Taking the dagger is continuous on Hom spaces. -/
+@[fun_prop] theorem continuous_dagger (X Y : C) :
+    Continuous (dagger : (X ⟶ Y) → (Y ⟶ X)) :=
+  (isometry_dagger X Y).continuous
 
 /-! ### Continuous bilinear composition, annihilators, and intertwiners -/
 
@@ -135,7 +136,8 @@ def leftCompCLM (Z : C) (f : X ⟶ Y) : (Y ⟶ Z) →L[ℂ] (X ⟶ Z) :=
 
 /-- The operator norm of pre-composition by `f` is bounded by `‖f‖`. -/
 theorem norm_leftCompCLM_le (Z : C) (f : X ⟶ Y) : ‖leftCompCLM Z f‖ ≤ ‖f‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg f) fun g => norm_comp_le f g
+  ((compCLM X Y Z).le_opNorm f).trans
+    (mul_le_of_le_one_left (norm_nonneg f) (norm_compCLM_le X Y Z))
 
 /-- Pre-composition `(Y ⟶ X) →L[ℂ] (X ⟶ X)` by `f : X ⟶ Y` has operator norm equal to `‖f‖`. -/
 @[simp] theorem norm_leftCompCLM_self (f : X ⟶ Y) : ‖leftCompCLM X f‖ = ‖f‖ := by
@@ -165,8 +167,9 @@ def rightCompCLM (X : C) (g : Y ⟶ Z) : (X ⟶ Y) →L[ℂ] (X ⟶ Z) :=
 
 /-- The operator norm of post-composition by `g` is bounded by `‖g‖`. -/
 theorem norm_rightCompCLM_le (X : C) (g : Y ⟶ Z) : ‖rightCompCLM X g‖ ≤ ‖g‖ :=
-  ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg g) fun f => by
-    simpa [mul_comm] using norm_comp_le f g
+  ((compCLM X Y Z).flip.le_opNorm g).trans <| by
+    rw [ContinuousLinearMap.opNorm_flip]
+    exact mul_le_of_le_one_left (norm_nonneg g) (norm_compCLM_le X Y Z)
 
 /-- Post-composition `(Z ⟶ Y) →L[ℂ] (Z ⟶ Z)` by `g : Y ⟶ Z` has operator norm equal to `‖g‖`. -/
 @[simp] theorem norm_rightCompCLM_self (g : Y ⟶ Z) : ‖rightCompCLM Z g‖ = ‖g‖ := by
@@ -213,14 +216,6 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [Linear ℂ C]
   [DaggerCategory C] [DaggerPreadditive C] [DaggerLinear ℂ C]
   [∀ X Y : C, Norm (X ⟶ Y)] [CStarCategory C]
 
-/-- Distance on underlying arrows agrees with distance in `End X`. -/
-@[simp] theorem dist_asHom {X : C} (a b : End X) : dist a.asHom b.asHom = dist a b := by
-  rw [dist_eq_norm, dist_eq_norm, End.norm_def, End.sub_asHom]
-
-/-- Bundling endomorphism arrows preserves distance. -/
-@[simp] theorem dist_of {X : C} (f g : X ⟶ X) : dist (End.of f) (End.of g) = dist f g := by
-  rw [dist_eq_norm, dist_eq_norm, ← End.of_sub, End.norm_of]
-
 /-- `End.asHom` and `End.of` form a `ℂ`-linear isometric equivalence between `End X` and
 `X ⟶ X` (with its norm-induced structure). -/
 def linearIsometryEquiv (X : C) : End X ≃ₗᵢ[ℂ] (X ⟶ X) :=
@@ -240,5 +235,13 @@ def linearIsometryEquiv (X : C) : End X ≃ₗᵢ[ℂ] (X ⟶ X) :=
 @[simp] theorem linearIsometryEquiv_toLinearEquiv (X : C) :
     (linearIsometryEquiv X).toLinearEquiv = End.linearEquiv :=
   linearIsometryEquivOf_toLinearEquiv _
+
+/-- Distance on underlying arrows agrees with distance in `End X`. -/
+@[simp] theorem dist_asHom {X : C} (a b : End X) : dist a.asHom b.asHom = dist a b := by
+  simpa only [linearIsometryEquiv_apply] using (linearIsometryEquiv X).dist_map a b
+
+/-- Bundling endomorphism arrows preserves distance. -/
+@[simp] theorem dist_of {X : C} (f g : X ⟶ X) : dist (End.of f) (End.of g) = dist f g := by
+  simpa only [linearIsometryEquiv_symm_apply] using (linearIsometryEquiv X).symm.dist_map f g
 
 end CategoryTheory.End
