@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Algebra.Polynomial.Eval.Degree
 import Mathlib.Algebra.Polynomial.FieldDivision
+import TauCeti.Algebra.Polynomial.Eval.Sign
 import TauCeti.Data.Nat.Factorial.NatCast
 
 /-!
@@ -66,6 +67,10 @@ Over a `ℚ≥0`-algebra, such as a division ring of characteristic zero, the de
 (`Polynomial.derivative_surjective`): every polynomial has an antiderivative. In positive
 characteristic `p` it is not (`Polynomial.derivative_not_surjective_of_charP`), as `X ^ (p - 1)`
 has no antiderivative.
+
+Over an ordered semiring, iterated formal derivatives preserve nonnegativity of coefficients and
+hence take nonnegative values at nonnegative points (`Polynomial.coeff_iterate_derivative_nonneg`,
+`Polynomial.eval_iterate_derivative_nonneg`).
 
 As linear endomorphisms of `R[X]`, the derivative and multiplication by `X` satisfy the Weyl
 relation `d x = x d + 1` (`Polynomial.derivative_mul_mulLeft_X`).
@@ -375,6 +380,21 @@ theorem derivative_not_surjective_of_charP {R : Type*} [Semiring R] [Nontrivial 
   rw [← Nat.cast_add_one, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr (NeZero.ne p)),
     CharP.cast_eq_zero, mul_zero] at this
   exact zero_ne_one this
+
+/-- Every iterated formal derivative of a polynomial with nonnegative coefficients also has
+nonnegative coefficients. -/
+theorem coeff_iterate_derivative_nonneg {R : Type*} [Semiring R] [PartialOrder R]
+    [IsOrderedRing R] {p : R[X]} (hp : ∀ d, 0 ≤ p.coeff d) (k d : ℕ) :
+    0 ≤ (derivative^[k] p).coeff d := by
+  rw [coeff_iterate_derivative]
+  exact nsmul_nonneg (hp (d + k)) _
+
+/-- Evaluating any iterated formal derivative of a polynomial with nonnegative coefficients at a
+nonnegative element yields a nonnegative value. -/
+theorem eval_iterate_derivative_nonneg {R : Type*} [Semiring R] [PartialOrder R]
+    [IsOrderedRing R] {p : R[X]} (hp : ∀ d, 0 ≤ p.coeff d) (k : ℕ) {x : R} (hx : 0 ≤ x) :
+    0 ≤ (derivative^[k] p).eval x :=
+  eval_nonneg_of_coeff_nonneg (coeff_iterate_derivative_nonneg hp k) hx
 
 /-- **The derivative of a power, without commutativity.**  Over any semiring, the derivative of
 `f ^ n` is the sum over the `n` positions of the factor that is differentiated. Over a commutative

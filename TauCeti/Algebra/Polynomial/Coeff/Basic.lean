@@ -26,6 +26,11 @@ lexicographic comparison of coefficient sequences, starting from the top degree.
 For `p > 0`, multiplying `(B * X ^ (p * m)).coeff j` or `(B * (X ^ p + C p * A) ^ h).coeff j` by
 `j!` produces a multiple of `p ^ m` or `p ^ h` (`Polynomial.pow_dvd_factorial_mul_coeff_mul_X_pow`
 and `Polynomial.pow_dvd_factorial_mul_coeff_mul_X_pow_add_C_mul`).
+
+Over an ordered semiring, products of polynomials with nonnegative coefficients retain
+nonnegative coefficients (`Polynomial.coeff_mul_nonneg`), and multiplying on the right by a
+polynomial with nonnegative coefficients and constant term at least `1` does not decrease any
+coefficient (`Polynomial.coeff_le_coeff_mul`).
 -/
 
 public section
@@ -99,5 +104,24 @@ theorem pow_dvd_factorial_mul_coeff_mul_X_pow_add_C_mul {R : Type*} [CommSemirin
   rw [hterm, coeff_C_mul, mul_left_comm]
   conv_lhs => rw [← Nat.sub_add_cancel hm_le, pow_add]
   exact mul_dvd_mul_left _ (pow_dvd_factorial_mul_coeff_mul_X_pow hp m j B')
+
+/-- The product of two polynomials with nonnegative coefficients has nonnegative coefficients. -/
+theorem coeff_mul_nonneg {R : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
+    {p q : R[X]} (hp : ∀ d, 0 ≤ p.coeff d) (hq : ∀ d, 0 ≤ q.coeff d) (d : ℕ) :
+    0 ≤ (p * q).coeff d := by
+  rw [coeff_mul]
+  exact Finset.sum_nonneg fun _ _ ↦ mul_nonneg (hp _) (hq _)
+
+/-- Multiplying a polynomial with nonnegative coefficients on the right by a polynomial with
+nonnegative coefficients and constant term at least `1` does not decrease any coefficient. -/
+theorem coeff_le_coeff_mul {R : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
+    {p q : R[X]} (hp : ∀ d, 0 ≤ p.coeff d) (hq : ∀ d, 0 ≤ q.coeff d) (hq0 : 1 ≤ q.coeff 0)
+    (d : ℕ) : p.coeff d ≤ (p * q).coeff d := by
+  rw [coeff_mul]
+  calc p.coeff d ≤ p.coeff d * q.coeff 0 := le_mul_of_one_le_right (hp d) hq0
+    _ ≤ ∑ x ∈ Finset.antidiagonal d, p.coeff x.1 * q.coeff x.2 :=
+      Finset.single_le_sum (f := fun x : ℕ × ℕ ↦ p.coeff x.1 * q.coeff x.2)
+        (a := (d, 0)) (fun x _ ↦ mul_nonneg (hp x.1) (hq x.2))
+        (Finset.mem_antidiagonal.mpr (add_zero d))
 
 end Polynomial

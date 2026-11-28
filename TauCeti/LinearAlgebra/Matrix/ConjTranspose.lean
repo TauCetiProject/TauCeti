@@ -19,6 +19,7 @@ back to that of `B` (`star x * A * x = B`) carries pairings for `B` to pairings 
 ## Main results
 
 * `Matrix.map_star_eq_map_starRingEnd`: `M.map star = M.map (starRingEnd α)`.
+* `Matrix.transpose_map_starRingEnd`: `(M.map (starRingEnd α))ᵀ = Mᴴ`.
 * `Matrix.conjTranspose_map_intCast`: an integral matrix, viewed as a matrix over a star ring
   such as `ℂ`, has `Xᴴ = Xᵀ`.
 * `Matrix.conjTranspose_mul_mul_mul_of_star_mul_mul_eq`: if `star x * A * x = B`, then
@@ -37,6 +38,13 @@ variable {l m α : Type*} [CommSemiring α] [StarRing α]
 theorem map_star_eq_map_starRingEnd (M : Matrix l m α) : M.map star = M.map (starRingEnd α) := by
   ext
   exact (starRingEnd_apply _).symm
+
+/-- The transpose of the entrywise conjugate of a matrix, written with the ring homomorphism
+`starRingEnd α`, is its conjugate transpose. -/
+@[simp]
+theorem transpose_map_starRingEnd (M : Matrix l m α) : (M.map (starRingEnd α))ᵀ = Mᴴ := by
+  ext
+  simp [starRingEnd_apply]
 
 /-- An integral matrix, viewed as a matrix over a star ring, has `Xᴴ = Xᵀ`. -/
 @[simp]

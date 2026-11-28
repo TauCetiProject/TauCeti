@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.IntegralGL
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup.Basic
 import Mathlib.Topology.Algebra.Group.Matrix
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
@@ -520,10 +521,8 @@ def adelicUnitaryGroup.ofMatrix {s : ι → ℤˣ} (M : Matrix ι ι (InfiniteAd
     (hM : star M * diagonal (fun i ↦ ((s i : ℤ) : InfiniteAdeleRing E)) * M =
       diagonal (fun i ↦ ((s i : ℤ) : InfiniteAdeleRing E)))
     (N : Matrix ι ι 𝔸ᶠ[E]) (hN : star N * N = 1) : adelicUnitaryGroup E s :=
-  have hs : IsUnit (diagonal fun i ↦ ((s i : ℤ) : InfiniteAdeleRing E)) :=
-    isUnit_diagonal.2 (Pi.isUnit_iff.2 fun i ↦ (s i).isUnit.map (Int.castRingHom _))
   have hN' : star N * 1 * N = 1 := by rwa [Matrix.mul_one]
-  ⟨((unitaryGroupOf.ofMatrix hs M hM : GL ι _),
+  ⟨((unitaryGroupOf.ofMatrix (isUnit_diagonal_intCast_units s) M hM : GL ι _),
       (unitaryGroupOf.ofMatrix isUnit_one N hN' : GL ι _)),
     (unitaryGroupOf.ofMatrix _ M hM).property,
     unitaryGroupOf_one.le (unitaryGroupOf.ofMatrix _ N hN').property⟩

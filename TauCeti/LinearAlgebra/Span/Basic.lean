@@ -38,7 +38,9 @@ multiplication, the additive subgroup underlying its span equals the additive su
 generates (`Submodule.span_eq_addSubgroupClosure_of_smul_mem`). If `r ↦ r • x` is injective, then
 `r ↦ r • x` identifies `R` with the line `R ∙ x`
 (`LinearEquiv.toSpanSingletonOfInjective`); for instance a non-zero-divisor `x` of a commutative
-ring identifies the ring with the principal ideal it generates.
+ring identifies the ring with the principal ideal it generates. Over a Dedekind-finite semiring,
+scaling a vector with trivial scalar stabilizer preserves its singleton span iff the scalar is a
+unit (`Submodule.span_singleton_smul_eq_iff_isUnit`).
 -/
 
 public section
@@ -84,6 +86,15 @@ theorem add_smul_ne_zero_of_notMem_span_singleton {R M : Type*} [Ring R] [AddCom
     [Module R M] {v y : M} (hy : y ∉ R ∙ v) (r : R) : y + r • v ≠ 0 := fun h ↦
   hy <| (Submodule.add_mem_iff_left _ (smul_mem _ r (mem_span_singleton_self v))).mp
     (h ▸ zero_mem _)
+
+/-- Scaling a generator `v` with trivial scalar stabilizer (`∀ a : R, a • v = v → a = 1`) by `c`
+yields the same singleton span as `v` if and only if `c` is a unit. -/
+theorem span_singleton_smul_eq_iff_isUnit {R M : Type*} [Semiring R] [IsDedekindFiniteMonoid R]
+    [AddCommMonoid M] [Module R M] {v : M} (hv : ∀ a : R, a • v = v → a = 1) (c : R) :
+    R ∙ (c • v) = R ∙ v ↔ IsUnit c := by
+  refine ⟨fun h ↦ isUnit_iff_exists_inv'.mpr ?_, fun hc ↦ span_singleton_smul_eq hc v⟩
+  obtain ⟨u, hu⟩ := mem_span_singleton.mp (h.symm ▸ mem_span_singleton_self v)
+  exact ⟨u, hv (u * c) (by rwa [mul_smul])⟩
 
 variable {K V : Type*} [DivisionSemiring K] [AddCommMonoid V] [Module K V]
 
