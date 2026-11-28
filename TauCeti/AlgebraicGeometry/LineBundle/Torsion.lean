@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.Torsion.ZMod
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
+import TauCeti.Algebra.Module.LinearMap.Defs
 
 /-!
 # `N`-torsion of line-bundle classes and linear pullback
@@ -53,21 +54,6 @@ universe u
 
 variable {X Y Z : Scheme.{u}}
 
-private lemma toAddMonoidHom_linearMap_id (R M : Type*) [Semiring R] [AddCommMonoid M]
-    [Module R M] :
-    (LinearMap.id (R := R) (M := M)).toAddMonoidHom = AddMonoidHom.id M := by
-  ext x
-  rw [LinearMap.toAddMonoidHom_coe, LinearMap.id_apply, AddMonoidHom.id_apply]
-
-private lemma toAddMonoidHom_linearMap_comp {R M₁ M₂ M₃ : Type*} [Semiring R]
-    [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommMonoid M₃]
-    [Module R M₁] [Module R M₂] [Module R M₃]
-    (f : M₂ →ₗ[R] M₃) (g : M₁ →ₗ[R] M₂) :
-    (f ∘ₗ g).toAddMonoidHom = f.toAddMonoidHom.comp g.toAddMonoidHom := by
-  ext x
-  rw [LinearMap.toAddMonoidHom_coe, LinearMap.comp_apply, AddMonoidHom.comp_apply,
-    LinearMap.toAddMonoidHom_coe, LinearMap.toAddMonoidHom_coe]
-
 /-- Pullback of `N`-torsion line-bundle classes along a scheme morphism `f : X ⟶ Y`, packaged as a
 `ZMod N`-linear map `Pic(Y)[N] →ₗ[ZMod N] Pic(X)[N]`. -/
 def picardPullbackTorsionLinearMap (f : X ⟶ Y) (N : ℕ) :
@@ -89,7 +75,7 @@ lemma coe_picardPullbackTorsionLinearMap_apply (f : X ⟶ Y) (N : ℕ)
 @[simp]
 lemma picardPullbackTorsionLinearMap_id (X : Scheme.{u}) (N : ℕ) :
     picardPullbackTorsionLinearMap (𝟙 X) N = LinearMap.id := by
-  rw [picardPullbackTorsionLinearMap, picardPullbackLinearMap_id, toAddMonoidHom_linearMap_id]
+  rw [picardPullbackTorsionLinearMap, picardPullbackLinearMap_id, LinearMap.toAddMonoidHom_id]
   exact AddMonoidHom.torsionByZModLinearMap_id N
 
 /-- `picardPullbackTorsionLinearMap` is contravariantly functorial under composition of scheme
@@ -99,7 +85,7 @@ lemma picardPullbackTorsionLinearMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) (N : ℕ) 
     picardPullbackTorsionLinearMap (f ≫ g) N =
       f.picardPullbackTorsionLinearMap N ∘ₗ g.picardPullbackTorsionLinearMap N := by
   rw [picardPullbackTorsionLinearMap, picardPullbackTorsionLinearMap,
-    picardPullbackTorsionLinearMap, picardPullbackLinearMap_comp, toAddMonoidHom_linearMap_comp]
+    picardPullbackTorsionLinearMap, picardPullbackLinearMap_comp, LinearMap.toAddMonoidHom_comp]
   exact AddMonoidHom.torsionByZModLinearMap_comp
     f.picardPullbackLinearMap.toAddMonoidHom g.picardPullbackLinearMap.toAddMonoidHom N
 
@@ -110,7 +96,7 @@ lemma torsionByZModLinearMap_comp_picardPullbackTorsionLinearMap {A : Type*} [Ad
     (φ : Additive (LineBundleClass X) →ₗ[ℤ] A) (g : X ⟶ Y) :
     φ.toAddMonoidHom.torsionByZModLinearMap N ∘ₗ g.picardPullbackTorsionLinearMap N =
       (φ ∘ₗ g.picardPullbackLinearMap).toAddMonoidHom.torsionByZModLinearMap N := by
-  rw [picardPullbackTorsionLinearMap, toAddMonoidHom_linearMap_comp]
+  rw [picardPullbackTorsionLinearMap, LinearMap.toAddMonoidHom_comp]
   exact (AddMonoidHom.torsionByZModLinearMap_comp φ.toAddMonoidHom
     g.picardPullbackLinearMap.toAddMonoidHom N).symm
 
@@ -122,7 +108,7 @@ open TauCeti.AlgebraicGeometry (LineBundleClass)
 
 universe u
 
-variable {X Y : Scheme.{u}}
+variable {X Y Z : Scheme.{u}}
 
 /-- The underlying additive homomorphism of `MulEquiv.toAdditive (LineBundleClass.pullbackEquiv e)`
 agrees with `e.hom.picardPullbackLinearMap.toAddMonoidHom`. -/
@@ -142,6 +128,7 @@ def picardPullbackTorsionLinearEquiv (e : X ≅ Y) (N : ℕ) :
 
 /-- The underlying `ZMod N`-linear map of `e.picardPullbackTorsionLinearEquiv N` is
 `e.hom.picardPullbackTorsionLinearMap N`. -/
+@[simp]
 lemma toLinearMap_picardPullbackTorsionLinearEquiv (e : X ≅ Y) (N : ℕ) :
     (e.picardPullbackTorsionLinearEquiv N).toLinearMap =
       e.hom.picardPullbackTorsionLinearMap N := by
@@ -168,6 +155,22 @@ lemma picardPullbackTorsionLinearEquiv_symm (e : X ≅ Y) (N : ℕ) :
   ext a
   apply Additive.toMul.injective
   simp
+
+/-- `picardPullbackTorsionLinearEquiv` of the identity scheme isomorphism is the identity
+`ZMod N`-linear equivalence. -/
+@[simp]
+lemma picardPullbackTorsionLinearEquiv_refl (X : Scheme.{u}) (N : ℕ) :
+    picardPullbackTorsionLinearEquiv (Iso.refl X) N = LinearEquiv.refl (ZMod N) _ := by
+  ext a
+  simp
+
+/-- `picardPullbackTorsionLinearEquiv` reverses composition of scheme isomorphisms. -/
+@[simp]
+lemma picardPullbackTorsionLinearEquiv_trans (e : X ≅ Y) (f : Y ≅ Z) (N : ℕ) :
+    picardPullbackTorsionLinearEquiv (e ≪≫ f) N =
+      (f.picardPullbackTorsionLinearEquiv N).trans (e.picardPullbackTorsionLinearEquiv N) := by
+  ext a
+  simp [LineBundleClass.pullback_comp]
 
 end CategoryTheory.Iso
 

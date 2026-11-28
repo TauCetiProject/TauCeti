@@ -39,7 +39,7 @@ Taking degrees on proper curves gives the numerical triviality of the special fi
 
 ## References
 
-* [The Stacks Project, Section 55.9](https://stacks.math.columbia.edu/tag/0C9U), where the special
+* [The Stacks Project, Section 55.9](https://stacks.math.columbia.edu/tag/0C5Y), where the special
   fibre of a regular model is the effective Cartier divisor of a uniformizer.
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Section 9.1, on the special fibre as a
   principal divisor on a regular fibred surface.

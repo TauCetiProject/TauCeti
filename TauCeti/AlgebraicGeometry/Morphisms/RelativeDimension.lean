@@ -79,7 +79,7 @@ over the field `κ(z)`, so the inequality bounds its dimension by `e + d`.
   compose to relative dimension at most `d + e` for morphisms locally of finite type.
 * `AlgebraicGeometry.Scheme.Hom.coheight_le_add_of_relativeDimensionLE`,
   `AlgebraicGeometry.Scheme.Hom.coheight_le_add_of_krullDimLE`, and
-  `AlgebraicGeometry.Scheme.Hom.coheight_le_succ_of_relativeDimensionLE`: point codimension bounds
+  `AlgebraicGeometry.Scheme.Hom.coheight_le_add_one_of_krullDimLE`: point codimension bounds
   from `RelativeDimensionLE d` and a finite Krull-dimension bound on the base.
 
 ## References
@@ -448,7 +448,7 @@ theorem coheight_le_add_of_krullDimLE {R : Type u} [CommRing R] [IsNoetherianRin
 
 /-- Every point of a locally Noetherian scheme of relative dimension at most `d` over a Noetherian
 ring of Krull dimension at most one has codimension at most `d + 1`. -/
-theorem coheight_le_succ_of_relativeDimensionLE {R : Type u} [CommRing R] [IsNoetherianRing R]
+theorem coheight_le_add_one_of_krullDimLE {R : Type u} [CommRing R] [IsNoetherianRing R]
     [Ring.KrullDimLE 1 R] {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [IsLocallyNoetherian X]
     {d : ℕ} [TauCeti.AlgebraicGeometry.RelativeDimensionLE d toBase] (x : X) :
     Order.coheight x ≤ d + 1 :=

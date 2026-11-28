@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Dimension.Localization
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Basic
 import TauCeti.LinearAlgebra.Matrix.MulVec
-import TauCeti.LinearAlgebra.Span.Basic
+import TauCeti.LinearAlgebra.Span.Primitive
 
 /-!
 # Rank of the Picard group of a numerical type

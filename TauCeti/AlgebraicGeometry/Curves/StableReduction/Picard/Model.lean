@@ -28,10 +28,10 @@ the special fibre, write `T = M.numericalType hX hC`.
   `TauCeti.Model.totalPicSpecialization_comp_verticalLineBundleLinear`,
   `TauCeti.Model.ker_totalPicSpecialization`, and
   `TauCeti.Model.totalPicSpecialization_ofMul_eq_zero_iff`: kernel characterization of
-  `M.totalPicSpecialization`
-  ([Stacks, Lemma 55.10.1 (Tag 0CDG)](https://stacks.math.columbia.edu/tag/0CDG)), with the
-  numerical Picard quotient from
-  [Stacks, Definition 55.4.1 (Tag 0C7H)](https://stacks.math.columbia.edu/tag/0C7H).
+  `M.totalPicSpecialization` (the total-space counterpart of
+  [Stacks, Lemma 55.13.2 (Tag 0CAC)](https://stacks.math.columbia.edu/tag/0CAC), which states the
+  corresponding kernel characterization on the generic fibre), with the numerical Picard quotient
+  from [Stacks, Definition 55.4.1 (Tag 0C7H)](https://stacks.math.columbia.edu/tag/0C7H).
 * `TauCeti.Model.multiplicity_mem_ker_verticalLineBundleLinear`,
   `TauCeti.Model.finrank_ker_verticalLineBundleLinear`,
   `TauCeti.Model.ker_verticalLineBundleLinear_eq_span_of_gcd_eq_one`,
@@ -42,8 +42,9 @@ the special fibre, write `T = M.numericalType hX hC`.
 ## References
 
 * [The Stacks Project, Definition 55.4.1 (Tag 0C7H)](https://stacks.math.columbia.edu/tag/0C7H),
-  [Section 55.9 (Tag 0C5Y)](https://stacks.math.columbia.edu/tag/0C5Y), and
-  [Lemma 55.10.1 (Tag 0CDG)](https://stacks.math.columbia.edu/tag/0CDG).
+  [Section 55.9 (Tag 0C5Y)](https://stacks.math.columbia.edu/tag/0C5Y)
+  ([Lemma 55.9.5 (Tag 0C63)](https://stacks.math.columbia.edu/tag/0C63)), and
+  [Lemma 55.13.2 (Tag 0CAC)](https://stacks.math.columbia.edu/tag/0CAC).
 -/
 
 public section
@@ -88,23 +89,17 @@ theorem map_specialFiberMultidegree_range_verticalLineBundleLinear :
     TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
     M.isPreconnected_preimage_closedPoint
 
-/-- Vertical combinations of special-fibre components of `M` map to `0` in `Pic`. -/
+/-- Vertical combinations of special-fibre components of `M` map to `0` under
+`M.totalPicSpecialization` in the numerical quotient `(𝒯ₘ).Pic`. -/
 @[simp] theorem totalPicSpecialization_comp_verticalLineBundleLinear :
     (M.totalPicSpecialization hX hC).toIntLinearMap ∘ₗ M.toBase.verticalLineBundleLinear hX
         (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R)) =
       0 := by
-  ext v
-  simp only [LinearMap.comp_apply, AddMonoidHom.coe_toIntLinearMap, LinearMap.zero_apply,
-    M.totalPicSpecialization_apply hX hC]
-  refine (Submodule.Quotient.mk_eq_zero _).mpr ?_
-  rw [M.toBase.specialFiberMultidegree_verticalLineBundleLinear]
-  change _ ∈ (M.toBase.specialFiberNumericalType hX
-      (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R)) hC
-      TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
-      TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
-      M.isPreconnected_preimage_closedPoint).principalDivisors
-  rw [M.toBase.specialFiberNumericalType_principalDivisors]
-  exact ⟨v, rfl⟩
+  rw [M.totalPicSpecialization_eq hX hC]
+  exact M.toBase.totalSpecialFiberPicSpecialization_comp_verticalLineBundleLinear hX _ hC
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
+    M.isPreconnected_preimage_closedPoint
 
 /-- Pointwise form of `M.totalPicSpecialization_comp_verticalLineBundleLinear`. -/
 @[simp high] lemma totalPicSpecialization_verticalLineBundleLinear (v : (𝒯ₘ).Component → ℤ) :
@@ -113,10 +108,11 @@ theorem map_specialFiberMultidegree_range_verticalLineBundleLinear :
       0 :=
   LinearMap.congr_fun (M.totalPicSpecialization_comp_verticalLineBundleLinear hX hC) v
 
-/-- **Kernel of `M.totalPicSpecialization`**
-([Stacks, Lemma 55.10.1 (Tag 0CDG)](https://stacks.math.columbia.edu/tag/0CDG)):
+/-- **Kernel of `M.totalPicSpecialization`**:
 `ker M.totalPicSpecialization.toIntLinearMap =
-  ker specialFiberMultidegree.toIntLinearMap ⊔ range verticalLineBundleLinear`. -/
+  ker specialFiberMultidegree.toIntLinearMap ⊔ range verticalLineBundleLinear`
+(cf. `AlgebraicGeometry.Scheme.Hom.ker_totalSpecialFiberPicSpecialization` and
+[Stacks, Lemma 55.13.2 (Tag 0CAC)](https://stacks.math.columbia.edu/tag/0CAC)). -/
 theorem ker_totalPicSpecialization :
     LinearMap.ker (M.totalPicSpecialization hX hC).toIntLinearMap =
       LinearMap.ker (M.toBase.specialFiberMultidegree hX
@@ -125,17 +121,11 @@ theorem ker_totalPicSpecialization :
           hC.finiteDimensional_one).toIntLinearMap ⊔
         LinearMap.range (M.toBase.verticalLineBundleLinear hX
           (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))) := by
-  have hcomp :
-      (M.totalPicSpecialization hX hC).toIntLinearMap =
-        (𝒯ₘ).principalDivisors.mkQ ∘ₗ (M.toBase.specialFiberMultidegree hX
-          (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
-          M.toBase.specialFiberCohomologyFiniteDimensional_zero
-          hC.finiteDimensional_one).toIntLinearMap :=
-    LinearMap.ext fun x ↦ M.totalPicSpecialization_apply hX hC x
-  refine (congrArg LinearMap.ker hcomp).trans ?_
-  refine (LinearMap.ker_comp _ _).trans ?_
-  rw [Submodule.ker_mkQ, ← M.map_specialFiberMultidegree_range_verticalLineBundleLinear hX hC]
-  exact (Submodule.comap_map_eq _ _).trans (sup_comm _ _)
+  rw [M.totalPicSpecialization_eq hX hC]
+  exact M.toBase.ker_totalSpecialFiberPicSpecialization hX _ hC
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
+    M.isPreconnected_preimage_closedPoint
 
 /-- **Pointwise kernel characterization of `M.totalPicSpecialization`**: a class `a` on `M.total`
 maps to `0` in `(𝒯ₘ).Pic` iff some vertical twist has degree zero on every component `Cⱼ`. -/
@@ -149,30 +139,11 @@ theorem totalPicSpecialization_ofMul_eq_zero_iff (a : LineBundleClass M.total) :
             (a * ∏ i : (𝒯ₘ).Component,
               (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
                 hX i.val.property).toInvertibleSheaf)⁻¹ ^ v i)) = 0 := by
-  let vlin := M.toBase.verticalLineBundleLinear hX
-    (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R))
-  have hbmul (w : (𝒯ₘ).Component → ℤ) :
-      (Additive.ofMul a + vlin w).toMul =
-        a * ∏ i : (𝒯ₘ).Component,
-          (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-            hX i.val.property).toInvertibleSheaf)⁻¹ ^ w i := by
-    rw [toMul_add, toMul_ofMul]
-    exact congrArg (a * ·) (M.toBase.toMul_verticalLineBundleLinear_apply hX _ w)
-  change Additive.ofMul a ∈ LinearMap.ker (M.totalPicSpecialization hX hC).toIntLinearMap ↔ _
-  rw [ker_totalPicSpecialization, Submodule.mem_sup]
-  refine ⟨?_, ?_⟩
-  · rintro ⟨b, hb, _, ⟨v, rfl⟩, hbv⟩
-    have hb' : Additive.ofMul a + vlin (-v) = b := by
-      rw [map_neg, ← hbv, add_neg_cancel_right]
-    rw [← hb', LinearMap.mem_ker, AddMonoidHom.coe_toIntLinearMap, ← ofMul_toMul
-      (Additive.ofMul a + vlin (-v)), M.toBase.specialFiberMultidegree_eq_zero_iff] at hb
-    exact ⟨-v, fun j ↦ by rw [← hbmul (-v)]; exact hb j⟩
-  · rintro ⟨v, hv⟩
-    have hneg : vlin (-v) = -vlin v := map_neg _ _
-    refine ⟨Additive.ofMul a + vlin v, ?_, vlin (-v), ⟨-v, rfl⟩, by rw [hneg, add_neg_cancel_right]⟩
-    rw [LinearMap.mem_ker, AddMonoidHom.coe_toIntLinearMap, ← ofMul_toMul
-      (Additive.ofMul a + vlin v), M.toBase.specialFiberMultidegree_eq_zero_iff]
-    exact fun j ↦ by rw [hbmul v]; exact hv j
+  rw [M.totalPicSpecialization_eq hX hC]
+  exact M.toBase.totalSpecialFiberPicSpecialization_ofMul_eq_zero_iff hX _ hC
+    TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
+    TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
+    M.isPreconnected_preimage_closedPoint a
 
 /-- The multiplicity vector `i ↦ ((𝒯ₘ).multiplicity i : ℤ)` of `M` lies in
 `ker verticalLineBundleLinear`. -/

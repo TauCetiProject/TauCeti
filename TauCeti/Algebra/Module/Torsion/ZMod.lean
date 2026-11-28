@@ -116,8 +116,12 @@ injective. -/
 theorem injective_torsionByZModLinearMap {f : A →+ B} (hf : Function.Injective f) (n : ℕ)
     [Module (ZMod n) (AddSubgroup.torsionBy A (n : ℤ))]
     [Module (ZMod n) (AddSubgroup.torsionBy B (n : ℤ))] :
-    Function.Injective (f.torsionByZModLinearMap n) :=
-  TauCeti.injective_torsionByMap (f := f.toIntLinearMap) hf
+    Function.Injective (f.torsionByZModLinearMap n) := by
+  intro x y h
+  apply Subtype.ext
+  apply hf
+  have hval := congrArg Subtype.val h
+  rwa [coe_torsionByZModLinearMap_apply, coe_torsionByZModLinearMap_apply] at hval
 
 end AddMonoidHom
 

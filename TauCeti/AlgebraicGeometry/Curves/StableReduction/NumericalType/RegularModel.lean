@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Basic
-public import TauCeti.AlgebraicGeometry.IntersectionNumber.Weight
+public import TauCeti.AlgebraicGeometry.IntersectionNumber.Weight.Matrix
 import TauCeti.AlgebraicGeometry.SpecialFiber.Reduced
 
 /-!
@@ -37,8 +37,8 @@ then defines a numerical type in the sense of
 
 The axioms of a numerical type are the properties of these data proved in
 `TauCeti.AlgebraicGeometry.IntersectionNumber.Matrix` and
-`TauCeti.AlgebraicGeometry.IntersectionNumber.Weight`: the intersection matrix is symmetric with
-nonnegative off-diagonal entries and kills the multiplicity vector, its graph is connected
+`TauCeti.AlgebraicGeometry.IntersectionNumber.Weight.Matrix`: the intersection matrix is symmetric
+with nonnegative off-diagonal entries and kills the multiplicity vector, its graph is connected
 because the special fibre is, and `wᵢ` divides its `i`-th row. The component set is nonempty by
 `AlgebraicGeometry.Scheme.Hom.nonempty_setOf_base_eq_closedPoint`.
 
@@ -166,7 +166,7 @@ theorem exists_specialFiberNumericalType_component_iff (x : CodimensionOnePoint 
     fun hx ↦ ⟨⟨x, (Set.Finite.mem_toFinset _).mpr hx⟩, rfl⟩⟩
 
 /-- Every component of `specialFiberNumericalType` maps to `closedPoint R`. -/
-theorem base_specialFiberNumericalType_component
+theorem base_eq_closedPoint_of_specialFiberNumericalType
     (i : (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).Component) :
     toBase i.val = closedPoint R :=
   (Set.Finite.mem_toFinset _).mp i.property
@@ -268,14 +268,14 @@ degree-`2` truncated Euler characteristic `dim_k H⁰ - dim_k H¹` over the resi
 theorem specialFiberNumericalType_weight_mul_genus_sub_one
     (i : (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).Component) :
     letI := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-      (toBase.base_specialFiberNumericalType_component hX hη hC hπ hreg hconn i))
+      (toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hη hC hπ hreg hconn i))
     ((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).weight i : ℤ) *
         (((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).genus i : ℤ) - 1) =
       -eulerCharBelow (ResidueField R)
         (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme
         (InvertibleSheaf.trivial
           (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme).obj 2 := by
-  have hi := toBase.base_specialFiberNumericalType_component hX hη hC hπ hreg hconn i
+  have hi := toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hη hC hπ hreg hconn i
   let := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hi)
   have := toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton hi
   have := hC.finiteDimensional_one i.val hi
@@ -302,7 +302,7 @@ theorem sum_specialFiberNumericalType_multiplicity_mul_weight_mul_genus_sub_one 
         ((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).multiplicity i : ℤ) *
           (letI := subschemeOverResidueField
             (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-              (toBase.base_specialFiberNumericalType_component hX hη hC hπ hreg hconn i))
+              (toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hη hC hπ hreg hconn i))
           eulerCharBelow (ResidueField R)
             (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme
             (InvertibleSheaf.trivial
@@ -319,7 +319,7 @@ theorem specialFiberNumericalType_arithmeticGenus_eulerCharBelow_selfIntersectio
           ((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).multiplicity i : ℤ) *
             (letI := subschemeOverResidueField
               (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-                (toBase.base_specialFiberNumericalType_component hX hη hC hπ hreg hconn i))
+                (toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hη hC hπ hreg hconn i))
             eulerCharBelow (ResidueField R)
               (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme
               (InvertibleSheaf.trivial
@@ -341,7 +341,7 @@ theorem two_mul_specialFiberNumericalType_arithmeticGenus_eulerCharBelow_selfInt
           ((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).multiplicity i : ℤ) *
             (letI := subschemeOverResidueField
               (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-                (toBase.base_specialFiberNumericalType_component hX hη hC hπ hreg hconn i))
+                (toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hη hC hπ hreg hconn i))
             eulerCharBelow (ResidueField R)
               (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme
               (InvertibleSheaf.trivial

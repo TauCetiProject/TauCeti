@@ -27,8 +27,10 @@ homomorphism `AlgebraicGeometry.Scheme.Hom.verticalLineBundleLinear` from
 * `AlgebraicGeometry.Scheme.Hom.ker_totalSpecialFiberPicSpecialization`:
   `ker totalSpecialFiberPicSpecialization.toIntLinearMap =
     ker specialFiberMultidegree.toIntLinearMap ⊔ range verticalLineBundleLinear`
-  ([Stacks, Lemma 55.10.1 (Tag 0CDG)](https://stacks.math.columbia.edu/tag/0CDG)), together with its
-  pointwise vertical-twist characterization
+  (the total-space counterpart of
+  [Stacks, Lemma 55.13.2 (Tag 0CAC)](https://stacks.math.columbia.edu/tag/0CAC), which states the
+  corresponding kernel characterization after restricting to the generic fibre `Pic(C) → Pic(T)`),
+  together with its pointwise vertical-twist characterization
   `AlgebraicGeometry.Scheme.Hom.totalSpecialFiberPicSpecialization_ofMul_eq_zero_iff`.
 * `AlgebraicGeometry.Scheme.Hom.finrank_ker_verticalLineBundleLinear`,
   `AlgebraicGeometry.Scheme.Hom.ker_verticalLineBundleLinear_eq_span_of_gcd_eq_one`,
@@ -44,8 +46,9 @@ in `TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Model`.
 ## References
 
 * [The Stacks Project, Definition 55.4.1 (Tag 0C7H)](https://stacks.math.columbia.edu/tag/0C7H),
-  [Section 55.9 (Tag 0C5Y)](https://stacks.math.columbia.edu/tag/0C5Y), and
-  [Lemma 55.10.1 (Tag 0CDG)](https://stacks.math.columbia.edu/tag/0CDG).
+  [Section 55.9 (Tag 0C5Y)](https://stacks.math.columbia.edu/tag/0C5Y)
+  ([Lemma 55.9.5 (Tag 0C63)](https://stacks.math.columbia.edu/tag/0C63)), and
+  [Lemma 55.13.2 (Tag 0CAC)](https://stacks.math.columbia.edu/tag/0CAC).
 -/
 
 public section
@@ -74,7 +77,7 @@ variable {R : Type u} [CommRing R] [IsLocalRing R] [Ring.DimensionLEOne R]
 
 local notation "𝒯" => toBase.specialFiberNumericalType hX hη hC hπ hreg hconn
 local notation "hbase" =>
-  toBase.base_specialFiberNumericalType_component hX hη hC hπ hreg hconn
+  toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hη hC hπ hreg hconn
 
 /-! ### Vertical Cartier divisors and kernel of numerical Picard specialization -/
 
@@ -110,10 +113,12 @@ theorem map_specialFiberMultidegree_range_verticalLineBundleLinear :
     (toBase.totalSpecialFiberPicSpecialization_comp_verticalLineBundleLinear hX hη hC hπ hreg hconn)
     v
 
-/-- **Kernel of `totalSpecialFiberPicSpecialization`**
-([Stacks, Lemma 55.10.1 (Tag 0CDG)](https://stacks.math.columbia.edu/tag/0CDG)):
+/-- **Kernel of `totalSpecialFiberPicSpecialization`**:
 `ker totalSpecialFiberPicSpecialization.toIntLinearMap =
-  ker specialFiberMultidegree.toIntLinearMap ⊔ range verticalLineBundleLinear`. -/
+  ker specialFiberMultidegree.toIntLinearMap ⊔ range verticalLineBundleLinear`.
+This is the total-space counterpart of
+[Stacks, Lemma 55.13.2 (Tag 0CAC)](https://stacks.math.columbia.edu/tag/0CAC), which characterizes
+the kernel of `Pic(C) → Pic(T)` on the generic fibre. -/
 theorem ker_totalSpecialFiberPicSpecialization :
     LinearMap.ker
         (toBase.totalSpecialFiberPicSpecialization hX hη hC hπ hreg hconn).toIntLinearMap =
@@ -159,9 +164,8 @@ theorem totalSpecialFiberPicSpecialization_ofMul_eq_zero_iff (a : LineBundleClas
           (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
             hX i.val.property).toInvertibleSheaf)⁻¹ ^ w i := by
     rw [toMul_add, toMul_ofMul, hprod]
-  change Additive.ofMul a ∈ LinearMap.ker
-      (toBase.totalSpecialFiberPicSpecialization hX hη hC hπ hreg hconn).toIntLinearMap ↔ _
-  rw [ker_totalSpecialFiberPicSpecialization, Submodule.mem_sup]
+  rw [← AddMonoidHom.coe_toIntLinearMap, ← LinearMap.mem_ker,
+    ker_totalSpecialFiberPicSpecialization, Submodule.mem_sup]
   refine ⟨?_, ?_⟩
   · rintro ⟨b, hb, _, ⟨v, rfl⟩, hbv⟩
     have hb' : Additive.ofMul a + toBase.verticalLineBundleLinear hX hη (-v) = b := by

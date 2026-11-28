@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.IntersectionNumber.FieldTower
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Matrix
-public import TauCeti.AlgebraicGeometry.SpecialFiber.Weight
+public import TauCeti.AlgebraicGeometry.IntersectionNumber.Weight.Basic
 
 /-!
 # Weights of the components of the special fibre divide the intersection matrix
@@ -17,22 +16,16 @@ components of its special fibre, with constant fields `κᵢ = H⁰(Cᵢ, 𝒪_{
 `wᵢ = [κᵢ : k]` (`AlgebraicGeometry.Scheme.Hom.specialFiberWeight`). This file proves that `wᵢ`
 divides every entry `aᵢⱼ = (Cⱼ · Cᵢ)` in the `i`-th row of the intersection matrix of the special
 fibre, the divisibility axiom `TauCeti.NumericalType.weight_dvd` of an abstract numerical type.
-It is the constant-field divisibility of intersection numbers,
-`TauCeti.AlgebraicGeometry.LineBundleClass.finrank_cohomology_zero_trivial_dvd_intersectionNumber`,
-applied to the components.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Hom.specialFiberWeight_dvd_intersectionNumber`: the weight of the
-  reduced closure of any point in the special fibre divides its intersection number with any line
-  bundle.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberWeight_dvd_specialFiberIntersectionMatrix`: the
   weight of the `i`-th component divides the `i`-th row of the intersection matrix.
 
 ## References
 
 * [The Stacks Project, Section 55.8](https://stacks.math.columbia.edu/tag/0C6Y) and
-  [Section 55.9](https://stacks.math.columbia.edu/tag/0C9U), for the numerical type of a regular
+  [Section 55.9](https://stacks.math.columbia.edu/tag/0C5Y), for the numerical type of a regular
   model.
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Section 9.1.
 -/
@@ -42,30 +35,11 @@ public section
 noncomputable section
 
 open CategoryTheory AlgebraicGeometry IsLocalRing Order
-open TauCeti TauCeti.AlgebraicGeometry TauCeti.AlgebraicGeometry.Scheme.Modules
-open AlgebraicGeometry.Scheme.IdealSheafData (vanishingIdeal)
+open TauCeti TauCeti.AlgebraicGeometry
 
 universe u
 
 namespace AlgebraicGeometry.Scheme.Hom
-
-/-- **The weight of a component divides any intersection number on it.** For a proper scheme `X`
-over a local ring `R` and a point `x` of the special fibre with reduced closure `C`, the weight
-`w = dim_k H⁰(C, 𝒪_C)` divides `(a · C)_k` along any morphism `ι : C ⟶ Y`. -/
-theorem specialFiberWeight_dvd_intersectionNumber {R : Type u} [CommRing R] [IsLocalRing R]
-    {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [IsProper toBase] {x : X}
-    (hx : toBase x = closedPoint R) {Y : Scheme.{u}}
-    (ι : (vanishingIdeal ⟨closure {x}, isClosed_closure⟩).subscheme ⟶ Y)
-    (a : LineBundleClass Y) :
-    letI := subschemeOverResidueField
-      (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hx)
-    (toBase.specialFiberWeight hx : ℤ) ∣
-      LineBundleClass.intersectionNumber (ResidueField R) ι a := by
-  let := subschemeOverResidueField
-    (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hx)
-  rw [specialFiberWeight_def]
-  exact LineBundleClass.finrank_cohomology_zero_trivial_dvd_intersectionNumber (ResidueField R) ι
-    (toBase.isField_globalSections_subscheme_closure_singleton hx) a
 
 variable {R : Type u} [CommRing R] [IsLocalRing R] [Ring.DimensionLEOne R] {X : Scheme.{u}}
   [IsIntegral X] [IsNoetherian X] [TauCeti.AlgebraicGeometry.IsRegular X]

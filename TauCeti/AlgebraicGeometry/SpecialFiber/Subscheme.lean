@@ -67,7 +67,7 @@ factorization criterion for morphisms from reduced schemes
 
 ## References
 
-* [The Stacks Project, Section 55.9](https://stacks.math.columbia.edu/tag/0C9U), the special fibre
+* [The Stacks Project, Section 55.9](https://stacks.math.columbia.edu/tag/0C5Y), the special fibre
   of a regular model as the divisor of a uniformizer.
 -/
 
