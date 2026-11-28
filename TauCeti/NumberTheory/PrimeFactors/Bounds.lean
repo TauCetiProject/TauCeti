@@ -17,9 +17,10 @@ import TauCeti.NumberTheory.Chebyshev.Mertens
 For every fixed `C ≥ 1` and `ε > 0`, the product `C ^ ω(n)` is at most `A n ^ ε`, with `A`
 independent of the positive integer `n`, where `ω(n)` counts distinct prime divisors. This controls
 finite Euler corrections whose local factors are uniformly bounded; the elementary argument
-separates the finitely many primes for which `p ^ ε < C`. On `Re s ≥ 0`, each Euler factor
-`1 - p⁻ˢ` at a prime divisor `p ∣ N` has norm at most `2 ≤ p`, giving the linear bound
-`‖∏_{p ∣ N} (1 - p⁻ˢ)‖ ≤ N` for `N ≠ 0`.
+separates the finitely many primes for which `p ^ ε < C`. On `Re s ≥ -d`, each Euler factor
+`1 - a(p) p⁻ˢ` with `|a(p)| ≤ 1` at a prime divisor `p ∣ N` has norm at most `p ^ (d + 1)`,
+giving the polynomial bound `‖∏_{p ∣ N} (1 - a(p) p⁻ˢ)‖ ≤ N ^ (d + 1)` for `N ≠ 0`; the case
+`d = 0` is the linear bound `‖∏_{p ∣ N} (1 - p⁻ˢ)‖ ≤ N`.
 
 On the logarithmic side, since `∏_{p ∣ n} p ≤ n` for `n ≠ 0`, the unweighted prime-divisor sum
 satisfies `∑_{p ∣ n} log p ≤ log n`. Splitting the primes dividing `n` at the threshold `log n`
@@ -34,6 +35,8 @@ contribution to logarithmic derivatives `-L'/L(s, χ)` of imprimitive Dirichlet 
 ## Main results
 
 * `TauCeti.exists_pow_card_primeFactors_le_mul_rpow`: `C ^ ω(n) ≤ A n ^ ε` for `n ≠ 0`.
+* `TauCeti.norm_prod_primeFactors_one_sub_mul_cpow_neg_le_pow`:
+  `‖∏_{p ∣ N} (1 - a(p) p⁻ˢ)‖ ≤ N ^ (d + 1)` for `N ≠ 0`, `|a| ≤ 1` and `Re s ≥ -d`.
 * `TauCeti.norm_prod_primeFactors_one_sub_cpow_neg_le`: `‖∏_{p ∣ N} (1 - p⁻ˢ)‖ ≤ N` for `N ≠ 0` and
   `Re s ≥ 0`.
 * `Nat.sum_primeFactors_log_le`, `Nat.sum_primeFactors_log_div_le`: elementary bounds
@@ -86,25 +89,45 @@ theorem exists_pow_card_primeFactors_le_mul_rpow {C ε : ℝ} (hC : 1 ≤ C) (h�
       exact fun _ _ ↦ Nat.cast_nonneg _
     _ ≤ C ^ P * (n : ℝ) ^ ε := by gcongr
 
+/-- On `Re s ≥ -d`, a finite Euler-factor product `∏ p ∈ N.primeFactors, (1 - a p * p⁻ˢ)` with
+coefficients of norm at most `1` has norm at most `N ^ (d + 1)`, since each factor at a prime
+`p ∣ N` has norm at most `1 + p ^ d ≤ p ^ (d + 1)`. The coefficients may be the values of an
+arbitrary Dirichlet character, of any level. -/
+theorem norm_prod_primeFactors_one_sub_mul_cpow_neg_le_pow {N : ℕ} [NeZero N] (a : ℕ → ℂ)
+    (ha : ∀ p, ‖a p‖ ≤ 1) (d : ℕ) {s : ℂ} (hs : -(d : ℝ) ≤ s.re) :
+    ‖∏ p ∈ N.primeFactors, (1 - a p * (p : ℂ) ^ (-s))‖ ≤ (N : ℝ) ^ (d + 1) := by
+  rw [norm_prod]
+  calc
+    _ ≤ ∏ p ∈ N.primeFactors, (p : ℝ) ^ (d + 1) := by
+      refine Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun p hp ↦ ?_
+      have hprime := Nat.prime_of_mem_primeFactors hp
+      have hp₁ : (1 : ℝ) ≤ p := by exact_mod_cast hprime.one_lt.le
+      have hpow : (p : ℝ) ^ (-s).re ≤ (p : ℝ) ^ d := by
+        rw [← Real.rpow_natCast, Complex.neg_re]
+        exact Real.rpow_le_rpow_of_exponent_le hp₁ (by linarith)
+      calc
+        _ ≤ ‖(1 : ℂ)‖ + ‖a p * (p : ℂ) ^ (-s)‖ := norm_sub_le _ _
+        _ ≤ (p : ℝ) ^ d + (p : ℝ) ^ d := by
+          rw [norm_one, norm_mul, Complex.norm_natCast_cpow_of_pos hprime.pos]
+          gcongr
+          · exact one_le_pow₀ hp₁
+          · exact (mul_le_of_le_one_left (by positivity) (ha p)).trans hpow
+        _ ≤ (p : ℝ) ^ (d + 1) := by
+          rw [pow_succ, ← two_mul, mul_comm]
+          gcongr
+          exact_mod_cast hprime.two_le
+    _ ≤ _ := by
+      rw [Finset.prod_pow, ← Nat.cast_prod]
+      gcongr
+      exact_mod_cast Nat.le_of_dvd (NeZero.pos N) (Nat.prod_primeFactors_dvd N)
+
 /-- On the closed right half-plane `Re s ≥ 0`, the finite Euler-factor product
-`∏ p ∈ N.primeFactors, (1 - p⁻ˢ)` for `N ≠ 0` has norm at most `N`, since each factor at a prime
-`p ∣ N` has norm at most `1 + p^{-Re s} ≤ 2 ≤ p`. -/
+`∏ p ∈ N.primeFactors, (1 - p⁻ˢ)` for `N ≠ 0` has norm at most `N`. This is the case `a = 1`,
+`d = 0` of `TauCeti.norm_prod_primeFactors_one_sub_mul_cpow_neg_le_pow`. -/
 theorem norm_prod_primeFactors_one_sub_cpow_neg_le {N : ℕ} [NeZero N] {s : ℂ} (hs : 0 ≤ s.re) :
     ‖∏ p ∈ N.primeFactors, (1 - (p : ℂ) ^ (-s))‖ ≤ N := by
-  rw [norm_prod]
-  calc ∏ p ∈ N.primeFactors, ‖(1 : ℂ) - (p : ℂ) ^ (-s)‖
-      ≤ ∏ p ∈ N.primeFactors, (p : ℝ) := by
-        refine Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun p hp ↦ ?_
-        have hprime := Nat.prime_of_mem_primeFactors hp
-        have hp2 : (2 : ℝ) ≤ p := by exact_mod_cast hprime.two_le
-        have hcpow : ‖(p : ℂ) ^ (-s)‖ ≤ 1 := by
-          rw [Complex.norm_natCast_cpow_of_pos hprime.pos, Complex.neg_re]
-          exact Real.rpow_le_one_of_one_le_of_nonpos (by linarith) (by linarith)
-        calc ‖(1 : ℂ) - (p : ℂ) ^ (-s)‖ ≤ ‖(1 : ℂ)‖ + ‖(p : ℂ) ^ (-s)‖ := norm_sub_le _ _
-          _ ≤ 2 := by rw [norm_one]; linarith
-          _ ≤ p := hp2
-    _ = ((∏ p ∈ N.primeFactors, p : ℕ) : ℝ) := by push_cast; rfl
-    _ ≤ N := by exact_mod_cast Nat.le_of_dvd (NeZero.pos N) (Nat.prod_primeFactors_dvd N)
+  simpa using norm_prod_primeFactors_one_sub_mul_cpow_neg_le_pow (N := N) (fun _ ↦ 1)
+    (fun _ ↦ norm_one.le) 0 (s := s) (by simpa using hs)
 
 end TauCeti
 

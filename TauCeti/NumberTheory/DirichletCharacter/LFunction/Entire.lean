@@ -42,6 +42,8 @@ is not principal, so its `E` is its L-function.
 * `DirichletCharacter.differentiable_entireLFunction`,
   `DirichletCharacter.entireLFunction_ne_zero_of_one_le_re`: `E_χ` is entire and has no zero on
   `Re s ≥ 1`.
+* `DirichletCharacter.entireLFunction_one_eq_LFunctionTrivChar₁_one_mul_prod`: for principal `χ`
+  of level `N`, `E_χ(s) = (s - 1) ζ(s) ∏_{p ∣ N} (1 - p⁻ˢ)`, including at `s = 1`.
 * `DirichletCharacter.LSeriesHasSum_twist_vonMangoldt`: the Dirichlet series of `χ Λ` is
   `δ_χ / (s - 1) - E_χ' / E_χ` on `Re s > 1`.
 * `DirichletCharacter.tendsto_sub_mul_logDeriv_entireLFunction`: the residue of `E_χ' / E_χ` at
@@ -74,6 +76,18 @@ theorem entireLFunction_one_apply (hs : s ≠ 1) :
     (1 : DirichletCharacter ℂ N).entireLFunction s =
       (s - 1) * (1 : DirichletCharacter ℂ N).LFunction s := by
   rw [entireLFunction_one, LFunctionTrivChar₁_apply_of_ne_one N hs, LFunctionTrivChar]
+
+/-- The pole-cleared L-function of a principal character is the pole-cleared zeta function
+`LFunctionTrivChar₁ 1` with the Euler factors at primes dividing the level removed. This
+identity includes `s = 1`. -/
+theorem entireLFunction_one_eq_LFunctionTrivChar₁_one_mul_prod :
+    (1 : DirichletCharacter ℂ N).entireLFunction s =
+      LFunctionTrivChar₁ 1 s * ∏ p ∈ N.primeFactors, (1 - (p : ℂ) ^ (-s)) := by
+  obtain rfl | hs := eq_or_ne s 1
+  · simp [entireLFunction_one, LFunctionTrivChar₁, cpow_neg_one]
+  rw [entireLFunction_one, LFunctionTrivChar₁_apply_of_ne_one N hs,
+    LFunctionTrivChar_eq_mul_riemannZeta hs, LFunctionTrivChar₁_one_apply_of_ne_one hs]
+  ring
 
 /-- `E_χ` is entire. -/
 @[fun_prop]
