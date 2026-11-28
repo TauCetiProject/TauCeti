@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Normed.Module.Ball
@@ -19,11 +20,23 @@ in a positive-dimensional real inner product space. The identity applies to arbi
 sets and infinite outer volumes, and supplies the scaling law for volume inequalities.
 
 An affine map of a finite-dimensional real normed space multiplies every additive Haar measure
-by the absolute value of the determinant of its linear part
-(`MeasureTheory.Measure.addHaar_image_affineMap`, and
-`MeasureTheory.Measure.addHaar_image_affineEquiv` for affine equivalences), the affine form of
-Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap`. The affine dilation
-`y ↦ x + r • y`, `r ≠ 0`, is quasi-measure-preserving for every additive Haar measure
+by the absolute value of the determinant of its linear part on images
+(`MeasureTheory.Measure.addHaar_image_affineMap`,
+`MeasureTheory.Measure.addHaar_image_affineEquiv`) and by the reciprocal factor on preimages when
+its linear part has nonzero determinant (`MeasureTheory.Measure.addHaar_preimage_affineMap`,
+`MeasureTheory.Measure.addHaar_eq_abs_det_mul_addHaar_preimage_affineMap`,
+`MeasureTheory.Measure.abs_det_eq_toReal_addHaar_div_preimage_affineMap`), the affine forms of
+Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap` and
+`MeasureTheory.Measure.addHaar_preimage_linearMap`. Between possibly distinct real normed spaces,
+an invertible affine map `x ↦ B x + b` pushes forward `μ.restrict ((fun x ↦ B x + b) ⁻¹' t)` to
+`addHaarScalarFactor (μ.map B) ν • ν.restrict t`
+(`MeasureTheory.Measure.map_restrict_preimage_continuousLinearEquiv_add_eq_smul_restrict`), and for
+any `MapsTo` pair `(s, t)` pushes forward `μ.restrict s` to at most that scaled target measure
+(`MeasureTheory.Measure.map_restrict_continuousLinearEquiv_add_le_smul_restrict`), so it is
+quasi-measure-preserving globally and on `MapsTo` pairs
+(`MeasureTheory.Measure.quasiMeasurePreserving_continuousLinearEquiv_add`,
+`MeasureTheory.Measure.quasiMeasurePreserving_continuousLinearEquiv_add_restrict`). The affine
+dilation `y ↦ x + r • y`, `r ≠ 0`, is quasi-measure-preserving for every additive Haar measure
 (`MeasureTheory.Measure.quasiMeasurePreserving_add_smul`), and it scales measures by the
 inverse dimension power of `|r|` (`MeasureTheory.Measure.addHaar_preimage_add_smul`,
 `MeasureTheory.Measure.ofReal_abs_pow_mul_addHaar_preimage_add_smul`), in particular the measure
@@ -168,6 +181,37 @@ theorem addHaar_image_affineEquiv (f : F ≃ᵃ[ℝ] F) (s : Set F) :
     μ (f '' s) = ENNReal.ofReal |LinearMap.det (f.linear : F →ₗ[ℝ] F)| * μ s :=
   addHaar_image_affineMap μ (f : F →ᵃ[ℝ] F) s
 
+/-- The preimage of a set under an affine map whose linear part has nonzero determinant has Haar
+measure equal to `|(det f.linear)⁻¹|` times the measure of the set. -/
+theorem addHaar_preimage_affineMap (f : F →ᵃ[ℝ] F) (hf : LinearMap.det f.linear ≠ 0) (s : Set F) :
+    μ (f ⁻¹' s) = ENNReal.ofReal |(LinearMap.det f.linear)⁻¹| * μ s := by
+  have hpre : f ⁻¹' s = f.linear ⁻¹' ((fun y ↦ y + f 0) ⁻¹' s) := by
+    ext x
+    simpa [mem_preimage] using congrArg (· ∈ s) (f.map_vadd 0 x)
+  rw [hpre, addHaar_preimage_linearMap μ hf, measure_preimage_add_right]
+
+/-- For every set `s` (including `∅` and sets of infinite measure) and affine map `f` whose linear
+part has nonzero determinant, the Haar measure of `s` equals `|det f.linear|` times the Haar
+measure of its preimage `f ⁻¹' s`. -/
+theorem addHaar_eq_abs_det_mul_addHaar_preimage_affineMap (f : F →ᵃ[ℝ] F)
+    (hf : LinearMap.det f.linear ≠ 0) (s : Set F) :
+    μ s = ENNReal.ofReal |LinearMap.det f.linear| * μ (f ⁻¹' s) := by
+  rw [addHaar_preimage_affineMap μ f hf, ← mul_assoc, ← ENNReal.ofReal_mul (abs_nonneg _),
+    ← abs_mul, mul_inv_cancel₀ hf, abs_one, ENNReal.ofReal_one, one_mul]
+
+/-- When the preimage `f ⁻¹' s` under an affine map `f` whose linear part has nonzero determinant
+has positive finite Haar measure, `|det f.linear|` equals the volume ratio
+`(μ s).toReal / (μ (f ⁻¹' s)).toReal`. -/
+theorem abs_det_eq_toReal_addHaar_div_preimage_affineMap (f : F →ᵃ[ℝ] F)
+    (hf : LinearMap.det f.linear ≠ 0) {s : Set F}
+    (hs₀ : μ (f ⁻¹' s) ≠ 0) (hstop : μ (f ⁻¹' s) ≠ ∞) :
+    |LinearMap.det f.linear| = (μ s).toReal / (μ (f ⁻¹' s)).toReal := by
+  have hpos : 0 < (μ (f ⁻¹' s)).toReal := ENNReal.toReal_pos hs₀ hstop
+  have hmul : (μ s).toReal = |LinearMap.det f.linear| * (μ (f ⁻¹' s)).toReal := by
+    conv_lhs => rw [addHaar_eq_abs_det_mul_addHaar_preimage_affineMap μ f hf s]
+    rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (abs_nonneg _)]
+  rw [hmul, mul_div_cancel_right₀ _ hpos.ne']
+
 /-- The affine dilation `y ↦ x + r • y` with `r ≠ 0` is quasi-measure-preserving for an additive
 Haar measure, so preimages under it of null-measurable sets are null-measurable. -/
 theorem quasiMeasurePreserving_add_smul (x : F) {r : ℝ} (hr : r ≠ 0) :
@@ -246,6 +290,115 @@ theorem addHaar_preimage_add_smul_inter_closedBall (x : F) {r : ℝ} (hr : r ≠
   rw [← hball, ← preimage_inter, addHaar_preimage_add_smul μ x hr]
 
 end Affine
+
+section AffinePushforward
+
+variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [LocallyCompactSpace E'] [SecondCountableTopology E']
+  [MeasurableSpace E'] [BorelSpace E']
+
+/-- Pushing forward an additive Haar measure `μ` along an invertible affine map `x ↦ B x + b`
+yields `addHaarScalarFactor (μ.map B) ν • ν`. -/
+theorem map_continuousLinearEquiv_add_eq_smul (μ : Measure E) [μ.IsAddHaarMeasure]
+    (ν : Measure E') [ν.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E') :
+    μ.map (fun x ↦ B x + b) = (addHaarScalarFactor (μ.map B) ν : ℝ≥0∞) • ν := by
+  have hcomp : (fun x ↦ B x + b) = (· + b) ∘ B := rfl
+  rw [hcomp, ← map_map (measurable_add_const b) B.continuous.measurable, map_add_right_eq_self]
+  exact isAddLeftInvariant_eq_smul (μ.map B) ν
+
+/-- Pushing forward `μ.restrict ((fun x ↦ B x + b) ⁻¹' t)` along an invertible affine map
+`x ↦ B x + b` yields `addHaarScalarFactor (μ.map B) ν • ν.restrict t` for any set `t`, without
+requiring `t` to be measurable. -/
+theorem map_restrict_preimage_continuousLinearEquiv_add_eq_smul_restrict (μ : Measure E)
+    [μ.IsAddHaarMeasure] (ν : Measure E') [ν.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E')
+    (t : Set E') :
+    (μ.restrict ((fun x ↦ B x + b) ⁻¹' t)).map (fun x ↦ B x + b) =
+      (addHaarScalarFactor (μ.map B) ν : ℝ≥0∞) • ν.restrict t := by
+  have he : MeasurableEmbedding (fun x ↦ B x + b) :=
+    (B.toHomeomorph.trans (Homeomorph.addRight b)).measurableEmbedding
+  rw [← he.restrict_map, map_continuousLinearEquiv_add_eq_smul μ ν B b, restrict_smul]
+
+/-- If an invertible affine map `x ↦ B x + b` maps `s` into `t` (for arbitrary sets `s` and `t`),
+then pushing forward `μ.restrict s` along `x ↦ B x + b` is bounded by
+`addHaarScalarFactor (μ.map B) ν • ν.restrict t`. -/
+theorem map_restrict_continuousLinearEquiv_add_le_smul_restrict (μ : Measure E) [μ.IsAddHaarMeasure]
+    (ν : Measure E') [ν.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E') {s : Set E} {t : Set E'}
+    (hst : MapsTo (fun x ↦ B x + b) s t) :
+    (μ.restrict s).map (fun x ↦ B x + b) ≤
+      (addHaarScalarFactor (μ.map B) ν : ℝ≥0∞) • ν.restrict t := by
+  have hmeas : Measurable (fun x ↦ B x + b) := (B.continuous.add continuous_const).measurable
+  exact (map_mono (restrict_mono hst.subset_preimage le_rfl) hmeas).trans_eq
+    (map_restrict_preimage_continuousLinearEquiv_add_eq_smul_restrict μ ν B b t)
+
+/-- An invertible affine map `x ↦ B x + b` is quasi-measure-preserving between any additive Haar
+measures on its domain and codomain. -/
+theorem quasiMeasurePreserving_continuousLinearEquiv_add (μ : Measure E) [μ.IsAddHaarMeasure]
+    (ν : Measure E') [ν.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E') :
+    QuasiMeasurePreserving (fun x ↦ B x + b) μ ν :=
+  ⟨(B.continuous.add continuous_const).measurable.aemeasurable,
+    (map_continuousLinearEquiv_add_eq_smul μ ν B b) ▸ smul_absolutelyContinuous⟩
+
+/-- If an invertible affine map `x ↦ B x + b` maps `s` into `t`, then it is
+quasi-measure-preserving from `μ.restrict s` to `ν.restrict t` for any additive Haar measures `μ`
+and `ν`. Neither `s` nor `t` needs to be measurable. -/
+theorem quasiMeasurePreserving_continuousLinearEquiv_add_restrict (μ : Measure E)
+    [μ.IsAddHaarMeasure] (ν : Measure E') [ν.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E')
+    {s : Set E} {t : Set E'} (hst : MapsTo (fun x ↦ B x + b) s t) :
+    QuasiMeasurePreserving (fun x ↦ B x + b) (μ.restrict s) (ν.restrict t) :=
+  (quasiMeasurePreserving_continuousLinearEquiv_add μ ν B b).restrict hst
+
+/-- The Haar pushforward factor along `B.symm` from `ν` to `μ` is the reciprocal of the Haar
+pushforward factor along `B` from `μ` to `ν`. -/
+theorem addHaarScalarFactor_map_continuousLinearEquiv_symm [LocallyCompactSpace E]
+    [SecondCountableTopology E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    (ν : Measure E') [ν.IsAddHaarMeasure] (B : E ≃L[ℝ] E') :
+    addHaarScalarFactor (ν.map B.symm) μ = (addHaarScalarFactor (μ.map B) ν)⁻¹ := by
+  have hB : (μ.map B).IsAddHaarMeasure := B.isAddHaarMeasure_map μ
+  have hB' : (ν.map B.symm).IsAddHaarMeasure := B.symm.isAddHaarMeasure_map ν
+  have h1 : μ.map B = (addHaarScalarFactor (μ.map B) ν : ℝ≥0∞) • ν := by
+    simpa using map_continuousLinearEquiv_add_eq_smul μ ν B 0
+  have h2 : ν.map B.symm = (addHaarScalarFactor (ν.map B.symm) μ : ℝ≥0∞) • μ := by
+    simpa using map_continuousLinearEquiv_add_eq_smul ν μ B.symm 0
+  have hmap : μ =
+      ((addHaarScalarFactor (μ.map B) ν * addHaarScalarFactor (ν.map B.symm) μ : _) :
+        ℝ≥0∞) • μ := by
+    have h1' := congrArg (Measure.map B.symm) h1
+    rw [map_map B.symm.continuous.measurable B.continuous.measurable,
+      show (B.symm ∘ B : E → E) = id from funext B.symm_apply_apply, map_id,
+      Measure.map_smul, h2, smul_smul, ← ENNReal.coe_mul] at h1'
+    · exact h1'
+    · exact B.symm.continuous.measurable.aemeasurable
+  obtain ⟨⟨f, hf_cont⟩, hf_comp, hf_nonneg, hf_zero⟩ := exists_continuous_nonneg_pos (0 : E)
+  have hint_pos : ∫ x, f x ∂μ ≠ 0 :=
+    (hf_cont.integral_pos_of_hasCompactSupport_nonneg_ne_zero hf_comp hf_nonneg hf_zero).ne'
+  have hint := congrArg (∫ x, f x ∂·) hmap
+  simp only [integral_smul_measure, ENNReal.coe_toReal, smul_eq_mul, NNReal.coe_mul] at hint
+  have hmul : (addHaarScalarFactor (μ.map B) ν : ℝ) *
+      (addHaarScalarFactor (ν.map B.symm) μ : ℝ) = 1 :=
+    mul_left_cancel₀ hint_pos (by nlinarith)
+  exact NNReal.coe_injective (by
+    rw [NNReal.coe_inv]
+    exact eq_inv_of_mul_eq_one_right hmul)
+
+/-- On the same finite-dimensional real normed space, the Haar pushforward factor along a linear
+automorphism `B` with respect to `μ` is `|det B|⁻¹`. -/
+theorem addHaarScalarFactor_map_continuousLinearEquiv [FiniteDimensional ℝ E]
+    (μ : Measure E) [μ.IsAddHaarMeasure] (B : E ≃L[ℝ] E) :
+    (addHaarScalarFactor (μ.map B) μ : ℝ) = |LinearMap.det (B : E →ₗ[ℝ] E)|⁻¹ := by
+  have hB : (μ.map B).IsAddHaarMeasure := B.isAddHaarMeasure_map μ
+  have hdet : LinearMap.det (B : E →ₗ[ℝ] E) ≠ 0 :=
+    (LinearEquiv.isUnit_det' B.toLinearEquiv).ne_zero
+  have h1 : μ.map B = (addHaarScalarFactor (μ.map B) μ : ℝ≥0∞) • μ := by
+    simpa using map_continuousLinearEquiv_add_eq_smul μ μ B 0
+  have h2 : μ.map B = ENNReal.ofReal |(LinearMap.det (B : E →ₗ[ℝ] E))⁻¹| • μ := by
+    simpa using map_linearMap_addHaar_eq_smul_addHaar μ hdet
+  have h := congrArg (· (Metric.ball (0 : E) 1)) (h1.symm.trans h2)
+  simp only [smul_apply, smul_eq_mul] at h
+  have hfac := (ENNReal.mul_left_inj (Metric.measure_ball_pos μ 0 one_pos).ne'
+    measure_ball_lt_top.ne).1 h
+  simpa [ENNReal.toReal_ofReal (abs_nonneg _), abs_inv] using congrArg ENNReal.toReal hfac
+
+end AffinePushforward
 
 section Diameter
 

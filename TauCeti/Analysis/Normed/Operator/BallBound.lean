@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Analysis.Normed.Module.RCLike.Basic
+public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 
 /-!
 # Operator norms from bounds on a ball
@@ -22,8 +24,25 @@ first bounded by `2 A` on the ball of radius `ρ` about `0`, through
 `B z z = (B (d + z) (d + z) + B (d - z) (d - z)) / 2 - B d d`, and then `B` is bounded on pairs of
 vectors by the polarization identity `4 B v w = B (v + w) (v + w) - B (v - w) (v - w)`.
 
-These bounds turn estimates of first and second derivatives in the directions of a cone, which is
-all that is available at a boundary point of a domain, into estimates of the full derivatives.
+More generally over `ℝ` or `ℂ` (`RCLike 𝕜`), if an affine perturbation `x ↦ B x + b` of a
+continuous linear map `B : E →L[𝕜] F` maps an open ball `Metric.ball y ρ` of positive radius `ρ`
+into a bounded set `s ⊆ F`, then `‖B‖ ≤ Metric.diam s / (2 * ρ)`
+(`ContinuousLinearMap.opNorm_le_diam_div_two_mul_of_mapsTo_add_ball` and its linear specialization
+`ContinuousLinearMap.opNorm_le_diam_div_two_mul_of_mapsTo_ball`), and when `B` is a continuous
+linear equivalence with `(B · + b) ⁻¹' w ⊆ s` for a bounded set `s ⊆ E` (`Bornology.IsBounded s`)
+and `ball z ρ ⊆ w` for `0 < ρ`, the inverse satisfies
+`‖(B.symm : F →L[𝕜] E)‖ ≤ Metric.diam s / (2 * ρ)`
+(`ContinuousLinearEquiv.opNorm_symm_le_diam_div_two_mul_of_ball_subset`).
+
+These bounds turn estimates of first and second derivatives in the directions of a cone into
+estimates of full derivatives, and in finite-element analysis relate the derivative factors of
+affine changes of variables to element diameters and inradii.
+
+## References
+
+* P. G. Ciarlet, *The Finite Element Method for Elliptic Problems*, Studies in Mathematics and its
+  Applications, Vol. 4, North-Holland, 1978, §3.1, Theorem 3.1.3 (ball-to-diameter bounds, stated
+  there with diameters of inscribed spheres in place of radii).
 -/
 
 public section
@@ -96,3 +115,84 @@ theorem opNorm_le_of_forall_mem_closedBall_norm_apply_self_le {B : E →L[ℝ] E
   linarith
 
 end ContinuousLinearMap
+
+section BallDiam
+
+open Metric Set
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- **Ball-to-diameter operator-norm bound.** If `x ↦ B x + b` maps an open ball of positive
+radius `ρ` into a bounded set `s`, then `‖B‖ ≤ Metric.diam s / (2 * ρ)`. -/
+theorem opNorm_le_diam_div_two_mul_of_mapsTo_add_ball (B : E →L[𝕜] F) {b : F} {y : E} {ρ : ℝ}
+    {s : Set F} (hρ : 0 < ρ) (hs : Bornology.IsBounded s)
+    (h : MapsTo (fun x ↦ B x + b) (ball y ρ) s) :
+    ‖B‖ ≤ diam s / (2 * ρ) := by
+  refine B.opNorm_le_of_unit_norm (div_nonneg diam_nonneg (by positivity)) fun u hu ↦ ?_
+  rcases eq_or_lt_of_le (norm_nonneg (B u)) with hBu0 | hBu
+  · rw [← hBu0]
+    exact div_nonneg diam_nonneg (by positivity)
+  -- Test on antipodal points `y ± (t : 𝕜) • u` inside `ball y ρ` for `0 < t < ρ`.
+  suffices hle : ρ ≤ diam s / (2 * ‖B u‖) by
+    rw [le_div_iff₀ (by positivity)] at hle
+    rw [le_div_iff₀ (by positivity)]
+    linarith
+  refine le_of_forall_lt_imp_le_of_dense fun t ht ↦ ?_
+  rcases le_or_gt t 0 with ht0 | ht0
+  · exact ht0.trans (by positivity)
+  let v : E := (t : 𝕜) • u
+  have hv : ‖v‖ = t := by
+    rw [norm_smul, RCLike.norm_ofReal, abs_of_pos ht0, hu, mul_one]
+  have hplus : B (y + v) + b ∈ s := h (by simpa [dist_eq_norm, hv] using ht)
+  have hminus : B (y - v) + b ∈ s := h (by simpa [dist_eq_norm, hv] using ht)
+  have hdist : dist (B (y + v) + b) (B (y - v) + b) ≤ diam s :=
+    dist_le_diam_of_mem hs hplus hminus
+  have hdiff : (B (y + v) + b) - (B (y - v) + b) = ((2 * t : ℝ) : 𝕜) • B u := by
+    have hv2 : (y + v) - (y - v) = ((2 * t : ℝ) : 𝕜) • u := by
+      calc (y + v) - (y - v) = v + v := by abel
+        _ = ((t : 𝕜) + (t : 𝕜)) • u := (add_smul (t : 𝕜) (t : 𝕜) u).symm
+        _ = ((2 * t : ℝ) : 𝕜) • u := by
+          congr 1
+          push_cast
+          ring
+    calc (B (y + v) + b) - (B (y - v) + b) = B ((y + v) - (y - v)) := by
+          rw [add_sub_add_right_eq_sub, ← map_sub]
+      _ = ((2 * t : ℝ) : 𝕜) • B u := by rw [hv2, map_smul]
+  rw [dist_eq_norm, hdiff, norm_smul, RCLike.norm_ofReal,
+    abs_of_pos (by positivity)] at hdist
+  rw [le_div_iff₀ (by positivity)]
+  linarith
+
+/-- If a continuous linear map `B` sends an open ball of positive radius `ρ` into a bounded set
+`s`, then `‖B‖ ≤ Metric.diam s / (2 * ρ)`. -/
+theorem opNorm_le_diam_div_two_mul_of_mapsTo_ball (B : E →L[𝕜] F) {y : E} {ρ : ℝ} {s : Set F}
+    (hρ : 0 < ρ) (hs : Bornology.IsBounded s) (h : MapsTo B (ball y ρ) s) :
+    ‖B‖ ≤ diam s / (2 * ρ) :=
+  B.opNorm_le_diam_div_two_mul_of_mapsTo_add_ball (b := 0) hρ hs (by simpa using h)
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearEquiv
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- **Inverse operator-norm bound from an inscribed target ball.** If `ball z ρ ⊆ w` with `0 < ρ`
+and the preimage `(fun x ↦ B x + b) ⁻¹' w` lies in a bounded set `s`, then
+`‖(B.symm : F →L[𝕜] E)‖ ≤ Metric.diam s / (2 * ρ)`. -/
+theorem opNorm_symm_le_diam_div_two_mul_of_ball_subset (B : E ≃L[𝕜] F) {b : F} {z : F} {ρ : ℝ}
+    {s : Set E} {w : Set F} (hρ : 0 < ρ) (hs : Bornology.IsBounded s)
+    (hsw : (fun x ↦ B x + b) ⁻¹' w ⊆ s) (hz : ball z ρ ⊆ w) :
+    ‖(B.symm : F →L[𝕜] E)‖ ≤ diam s / (2 * ρ) := by
+  refine (B.symm : F →L[𝕜] E).opNorm_le_diam_div_two_mul_of_mapsTo_add_ball
+    (b := -B.symm b) (y := z) hρ hs fun y hy ↦ hsw ?_
+  simp only [mem_preimage, ContinuousLinearEquiv.coe_coe, ← sub_eq_add_neg, ← map_sub,
+    B.apply_symm_apply, sub_add_cancel]
+  exact hz hy
+
+end ContinuousLinearEquiv
+
+end BallDiam

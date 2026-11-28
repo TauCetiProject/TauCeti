@@ -749,6 +749,42 @@ theorem W1p.norm_apply_sq_ae (u : W1p mu Omega p) :
   rw [hv, hg]
   exact WithLp.prod_norm_sq_eq_of_L2 _
 
+/-- Almost-everywhere pointwise bounds on the value and weak gradient of `v` in terms of
+`M * ‖W1p.value u (Φ x)‖` and `M * ‖W1p.gradient u (Φ x)‖` (`0 ≤ M`) along a
+quasi-measure-preserving map `Φ` yield the pointwise bound on the Sobolev jet. -/
+theorem W1p.ae_norm_coe_le_mul_of_ae_le {E' : Type*} [NormedAddCommGroup E']
+    [InnerProductSpace ℝ E'] [MeasurableSpace E'] [OpensMeasurableSpace E']
+    {ν : Measure E'} [ν.IsAddHaarMeasure] {W : Opens E'} {Φ : E → E'}
+    (hΦ : QuasiMeasurePreserving Φ (mu.restrict Omega) (ν.restrict W))
+    {v : W1p mu Omega p} {u : W1p ν W p} {M : ℝ} (hM : 0 ≤ M)
+    (hv : ∀ᵐ x ∂mu.restrict Omega, ‖W1p.value v x‖ ≤ M * ‖W1p.value u (Φ x)‖)
+    (hg : ∀ᵐ x ∂mu.restrict Omega, ‖W1p.gradient v x‖ ≤ M * ‖W1p.gradient u (Φ x)‖) :
+    ∀ᵐ x ∂mu.restrict Omega,
+      ‖(v : Sobolev1JetLp mu Omega p) x‖ ≤ M * ‖(u : Sobolev1JetLp ν W p) (Φ x)‖ := by
+  filter_upwards [W1p.norm_apply_sq_ae v, hΦ.ae (W1p.norm_apply_sq_ae u), hv, hg]
+    with x h1 h2 hxv hxg
+  refine le_of_pow_le_pow_left₀ two_ne_zero (mul_nonneg hM (norm_nonneg _)) ?_
+  rw [h1, mul_pow, h2, mul_add, ← mul_pow, ← mul_pow]
+  exact add_le_add (pow_le_pow_left₀ (norm_nonneg _) hxv 2)
+    (pow_le_pow_left₀ (norm_nonneg _) hxg 2)
+
+/-- Almost-everywhere pointwise norm equalities for the value and weak gradient of `v` and
+`u ∘ Φ` along a quasi-measure-preserving map `Φ` yield the pointwise norm equality for the
+Sobolev jets. -/
+theorem W1p.ae_norm_coe_eq_of_ae_eq {E' : Type*} [NormedAddCommGroup E']
+    [InnerProductSpace ℝ E'] [MeasurableSpace E'] [OpensMeasurableSpace E']
+    {ν : Measure E'} [ν.IsAddHaarMeasure] {W : Opens E'} {Φ : E → E'}
+    (hΦ : QuasiMeasurePreserving Φ (mu.restrict Omega) (ν.restrict W))
+    {v : W1p mu Omega p} {u : W1p ν W p}
+    (hv : ∀ᵐ x ∂mu.restrict Omega, ‖W1p.value v x‖ = ‖W1p.value u (Φ x)‖)
+    (hg : ∀ᵐ x ∂mu.restrict Omega, ‖W1p.gradient v x‖ = ‖W1p.gradient u (Φ x)‖) :
+    ∀ᵐ x ∂mu.restrict Omega,
+      ‖(v : Sobolev1JetLp mu Omega p) x‖ = ‖(u : Sobolev1JetLp ν W p) (Φ x)‖ := by
+  filter_upwards [W1p.norm_apply_sq_ae v, hΦ.ae (W1p.norm_apply_sq_ae u), hv, hg]
+    with x h1 h2 hxv hxg
+  refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
+  rw [h1, h2, hxv, hxg]
+
 /-- The ambient jet of a Sobolev function is almost everywhere its value-gradient pair. -/
 theorem W1p.coe_ae_eq_toLp_value_gradient (u : W1p mu Omega p) :
     (u : Sobolev1JetLp mu Omega p) =ᵐ[mu.restrict Omega]

@@ -13,6 +13,7 @@ import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 
 import TauCeti.Analysis.InnerProductSpace.Trace.OpNorm
 import TauCeti.Analysis.PDE.Regularity.Hessian.VariableCoefficient
+import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Affine
 import TauCeti.Analysis.Sobolev.Wkp.Laplacian
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
@@ -76,7 +77,7 @@ automorphism `e` whose adjoint maps the normal `(1, 0)` to a positive multiple `
 (`ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_of_isSymmetric`). Then `e`
 maps the half-space `{a / c < x.fst}` onto `H`, and `v = u ∘ e` lies in `W^{2,p}` of that
 half-space, with zero boundary values and weak Hessian `e† ∘ D²u(e ·) ∘ e`
-(`TauCeti.Wkp.exists_value_ae_eq_comp_continuousLinearEquiv`). Its trace is
+(`TauCeti.Wkp.compAffineEquiv`). Its trace is
 `tr (D²u(e ·) e e†) = tr (S D²u) ∘ e = f ∘ e`, so the estimate for the Laplacian applies to `v`.
 Since `‖e⁻¹‖ ≤ λ^(-1/2)`, `‖D²u ∘ e‖ ≤ λ⁻¹ ‖D²v‖` pointwise, and changing variables multiplies
 the `Lᵖ` norms of `D²u ∘ e` and of `f ∘ e` by the same Jacobian factor
@@ -355,9 +356,11 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_comp_eq_of_normalHa
   -- A linear change of variables `e` with `e e† = (A + A†) / 2` maps the half-space
   -- `{a / c < x.fst}` onto `{a < x.fst}` and turns the equation into Poisson's equation.
   obtain ⟨e, c, hee, he, hH⟩ := exists_continuousLinearEquiv_preimage_normalHalfSpace hlam hA
-  obtain ⟨v, -, hD, h0⟩ := Wkp.exists_value_ae_eq_comp_continuousLinearEquiv hp_top e (hH a) u
+  set v := Wkp.compAffineEquiv volume e 0 (by simpa using hH a) 2 u
+  have hD := Wkp.iteratedGradient_one_compAffineEquiv_zero_ae volume e (by simpa using hH a) u
+  have h0 := Wkp.firstOrder_compAffineEquiv_mem_w1p0Submodule volume e 0 (by simpa using hH a) 1 hu
   refine Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp e hee he (hH a) hD ?_
-    fun g hg => hC (a / c) v g (h0 hu) hg
+    fun g hg => hC (a / c) v g h0 hg
   filter_upwards [hf, Wkp.adjoint_iteratedGradient_one_ae_eq u] with x h1 h2
   rw [A.traceCLM_symmPart_comp _ h2, h1]
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
+public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Affine
 public import TauCeti.Analysis.Sobolev.Wkp.Exponent
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
@@ -25,7 +26,6 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.Gluing
-import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
 import TauCeti.Topology.Algebra.Module.Determinant
@@ -34,8 +34,10 @@ import TauCeti.Topology.Algebra.Module.Determinant
 # Changes of variables in higher-order Sobolev spaces `W^{k,p}`
 
 This file develops changes of variables in the weak Sobolev spaces `TauCeti.Wkp` on open subsets
-of a finite-dimensional real inner product space `E`. Linear changes of variables in `W^{2,p}` are
-in `TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear`.
+of a finite-dimensional real inner product space `E`. Linear and affine precomposition
+(`TauCeti.Wkp.compAffineEquiv`) is in `TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Affine`,
+while linear Hessian-estimate transfer in `W^{2,p}` is in
+`TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear`.
 
 1. **General `Cᵏ` changes of variables in `W^{k,p}`** (`1 ≤ p ≤ ∞`): if `Φ` is a change of
    variables of order `k` from `U` into `V` (`TauCeti.Wkp.IsChangeOfVariables`) — `Cᵏ`,
@@ -72,8 +74,9 @@ via `TauCeti.Wkp.ofExponentLEL`, passing `q → ∞` with
 
 * `TauCeti.Wkp.IsChangeOfVariables`: bundled `Cᵏ` change-of-variables hypotheses, including
   `IsChangeOfVariables.of_leftInvOn`.
-* `TauCeti.Wkp.compL`, `TauCeti.Wkp.compLEquiv`: bounded precomposition and diffeomorphism
-  invariance on `W^{k,p}` for `1 ≤ p ≤ ∞`.
+* `TauCeti.Wkp.compL`, `TauCeti.Wkp.compLEquiv`, `TauCeti.Wkp.compAffineL_eq_compL`: bounded
+  precomposition, diffeomorphism invariance on `W^{k,p}` for `1 ≤ p ≤ ∞`, and agreement with
+  `TauCeti.Wkp.compAffineL`.
 * `TauCeti.Wkp.IsChangeOfVariables.ofReal_pow_mul_eLpNorm_iteratedFDeriv_comp_le`: the Faà di
   Bruno bound in `Lᵖ` for derivatives of `f ∘ Φ` measured in units of a length scale `h`.
 * `TauCeti.Wkp.compOfLeftInvOnL`, `TauCeti.Wkp.exists_norm_comp_le`: precomposition and uniform
@@ -105,9 +108,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set Filter TopologicalSpace
-open scoped InnerProductSpace
-
-open scoped ENNReal ContDiff Topology
+open scoped InnerProductSpace ENNReal ContDiff Topology
 
 namespace TauCeti.Wkp
 
@@ -507,8 +508,7 @@ theorem IsChangeOfVariables.ofReal_pow_mul_eLpNorm_iteratedFDeriv_comp_le
     _ = ENNReal.ofReal (max 1 B ^ i) * eLpNorm (∑ π : OrderedFinpartition i,
           h ^ π.length • fun x => ‖iteratedFDeriv ℝ π.length f (Φ x)‖) p (mu.restrict U) := by
         rw [← Real.eNorm_of_nonneg (pow_nonneg (max_one_pos B).le i), ← eLpNorm_const_smul]
-        congr 1 with x
-        simp [Finset.sum_apply]
+        congr 1 with x; simp [Finset.sum_apply]
     _ ≤ _ := by
         gcongr
         refine (eLpNorm_sum_le Fact.out).trans (Finset.sum_le_sum fun π _ => ?_)
@@ -544,8 +544,7 @@ theorem IsChangeOfVariables.ofReal_pow_mul_eLpNorm_iteratedFDeriv_comp_le_of_le
     _ = _ := by
         rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, ← ENNReal.ofReal_natCast,
           ← ENNReal.ofReal_mul (Nat.cast_nonneg _), ← ENNReal.ofReal_mul (by positivity)]
-        congr 1
-        ring
+        congr 1; ring
 
 /-- If `u ∈ W^{k,p}(V)` has a `Cᵏ` representative `f`, every derivative of `f ∘ Φ` through order
 `k` has `Lᵖ(U)` seminorm at most `max 1 L ^ i · #{ordered partitions of i} · c^(-1/p) · ‖u‖`. -/
@@ -574,17 +573,14 @@ private theorem exists_comp_of_contDiffOn (h : IsChangeOfVariables k U V Φ L c)
     (hbound i hi).trans_lt ENNReal.ofReal_lt_top
   obtain ⟨w, hw⟩ := exists_value_ae_eq_of_contDiffOn k hfΦ hmem
   refine ⟨w, ?_, ?_⟩
-  · filter_upwards [hw, h.ae_comp hu] with x hx hux
-    rw [hx, Function.comp_apply, hux]
+  · filter_upwards [hw, h.ae_comp hu] with x hx hux; rw [hx, Function.comp_apply, hux]
   · refine (norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn k w hfΦ hw).trans ?_
     calc ∑ i ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ i (f ∘ Φ)) p (mu.restrict U)
         ≤ ∑ i ∈ Finset.range (k + 1), max 1 L ^ i * Fintype.card (OrderedFinpartition i) *
             c⁻¹ ^ (1 / p).toReal * ‖u‖ := by
           refine Finset.sum_le_sum fun i hi => ENNReal.toReal_le_of_le_ofReal ?_
             (hbound i (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)))
-          have := h.pos
-          have := max_one_pow_mul_card_nonneg L i
-          positivity
+          have := h.pos; have := max_one_pow_mul_card_nonneg L i; positivity
       _ = compLBound p k L c * ‖u‖ := by
           rw [compLBound_def, Finset.mul_sum, Finset.sum_mul]
           exact Finset.sum_congr rfl fun i _ => by ring
@@ -653,9 +649,7 @@ private theorem norm_iteratedGradient_compSmooth_le (h : IsChangeOfVariables (k 
   rw [norm_iteratedGradient_eq_lpNorm_of_contDiffOn k (compSmooth h u) hfΦ hw]
   refine ENNReal.toReal_le_of_le_ofReal ?_
     (eLpNorm_iteratedFDeriv_comp_le_norm h (u : Wkp mu V p (k + 1)) hf hu le_rfl)
-  have := h.pos
-  have := max_one_pow_mul_card_nonneg L (k + 1)
-  positivity
+  have := h.pos; have := max_one_pow_mul_card_nonneg L (k + 1); positivity
 
 /-- Precomposition with `Φ` on the elements with a `Cᵏ` representative, as a linear map. -/
 private def compSmoothₗ (h : IsChangeOfVariables k U V Φ L c) :
@@ -1155,6 +1149,14 @@ theorem compL_comp (hΦ : IsChangeOfVariables k V W Φ L c)
   filter_upwards [value_compL_ae hΦΨ u, hΨ.ae_comp (value_compL_ae hΦ u)] with x h1 h2
   rw [h1, h2, Function.comp_apply]
 
+/-- On a single space, `compAffineL` agrees with `TauCeti.Wkp.compL`. -/
+theorem compAffineL_eq_compL {mu : Measure E} [mu.IsAddHaarMeasure] {U V : Opens E} {k : ℕ}
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] {L c : ℝ} (B : E ≃L[ℝ] E) (b : E)
+    (h : IsChangeOfVariables k U V (fun x ↦ B x + b) L c) :
+    compAffineL (ν := mu) (p := p) mu B b h.mapsTo k = compL h := by
+  ext1 u
+  exact ((compL_eq_iff h u _).2 (value_compAffineL_ae mu B b h.mapsTo k u)).symm
+
 end Compatibility
 
 /-! ### Diffeomorphism invariance -/
@@ -1183,19 +1185,15 @@ def compLEquiv (hΦ : IsChangeOfVariables k U V Φ L c) (hΨ : IsChangeOfVariabl
     (ContinuousLinearMap.ext (compL_compL_of_rightInvOn hΨ hΦ hΨΦ))
     (ContinuousLinearMap.ext (compL_compL_of_rightInvOn hΦ hΨ hΦΨ))
 
-@[simp]
-theorem compLEquiv_apply (hΦ : IsChangeOfVariables k U V Φ L c)
+@[simp] theorem compLEquiv_apply (hΦ : IsChangeOfVariables k U V Φ L c)
     (hΨ : IsChangeOfVariables k V U Ψ L' c') (hΦΨ : RightInvOn Ψ Φ V)
     (hΨΦ : LeftInvOn Ψ Φ U) (u : Wkp mu V p k) :
-    compLEquiv hΦ hΨ hΦΨ hΨΦ u = compL hΦ u :=
-  (rfl)
+    compLEquiv hΦ hΨ hΦΨ hΨΦ u = compL hΦ u := (rfl)
 
-@[simp]
-theorem compLEquiv_symm_apply (hΦ : IsChangeOfVariables k U V Φ L c)
+@[simp] theorem compLEquiv_symm_apply (hΦ : IsChangeOfVariables k U V Φ L c)
     (hΨ : IsChangeOfVariables k V U Ψ L' c') (hΦΨ : RightInvOn Ψ Φ V)
     (hΨΦ : LeftInvOn Ψ Φ U) (u : Wkp mu U p k) :
-    (compLEquiv hΦ hΨ hΦΨ hΨΦ).symm u = compL hΨ u :=
-  (rfl)
+    (compLEquiv hΦ hΨ hΦΨ hΨΦ).symm u = compL hΨ u := (rfl)
 
 end Equiv
 

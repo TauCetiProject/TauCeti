@@ -12,7 +12,7 @@ import Mathlib.Topology.MetricSpace.Contracting
 import TauCeti.Analysis.InnerProductSpace.Positive.Definite
 import TauCeti.Analysis.InnerProductSpace.Trace.Free
 import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear
+import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Affine
 import TauCeti.Analysis.Sobolev.Wkp.Chain
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 import TauCeti.MeasureTheory.Function.Lp.Dilation
@@ -326,9 +326,14 @@ theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_le
   have hMN : (e : E →L[ℝ] E) ∘L (e.symm : E →L[ℝ] E) = ContinuousLinearMap.id ℝ E := by
     ext x; simp
   -- `w = u ∘ e ∈ W^{2,p}(E)` has weak Hessian `e† D²u(e ·) e`.
-  obtain ⟨w, hwv, hwD, -⟩ := Wkp.exists_value_ae_eq_comp_continuousLinearEquiv hp_top e
-    (U := ⊤) (W := ⊤) (by simp) u
-  rw [Measure.ae_restrict_coe_opens_top] at hwv hwD
+  set w := Wkp.compAffineEquiv (U := ⊤) volume e 0 (by simp) 2 u
+  have hwv : (Wkp.value 2 w : E → ℝ) =ᵐ[volume] fun x ↦ Wkp.value 2 u (e x) := by
+    simpa [Measure.ae_restrict_coe_opens_top] using
+      Wkp.value_compAffineEquiv_ae (U := ⊤) volume e 0 (by simp) 2 u
+  have hwD : Wkp.iteratedGradient 1 w =ᵐ[volume] fun x ↦
+      (e : E →L[ℝ] E).adjoint ∘L Wkp.iteratedGradient 1 u (e x) ∘L (e : E →L[ℝ] E) :=
+    Measure.ae_restrict_coe_opens_top (volume : Measure E) ▸
+      Wkp.iteratedGradient_one_compAffineEquiv_zero_ae (U := ⊤) volume e (by simp) u
   have hadj := hqe.ae ((Measure.ae_restrict_coe_opens_top (volume : Measure E)) ▸
     Wkp.adjoint_iteratedGradient_one_ae_eq u)
   -- It solves `tr (b D²w) = f ∘ e` with `b(y) = e⁻¹ ((a + a†) / 2)(e y) e⁻†` close to `1`.
@@ -347,10 +352,12 @@ theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_le
         ContinuousLinearMap.traceCLM_conj_symmPart_comp_of_comp_eq_id hMN _ _ h₂, traceCLM_apply,
         h₃])
   -- Composing back with `e⁻¹` gives `v ∈ W^{2,r}(E)` with value `u`.
-  obtain ⟨v, hv⟩ := Wkp.exists_value_ae_eq_of_value_ae_eq_comp_continuousLinearEquiv hr_top e
-    (U := ⊤) (W := ⊤) (by simp) (g := Wkp.value 2 u)
-    (by rw [Measure.ae_restrict_coe_opens_top]; exact hv'.trans hwv)
-  rw [Measure.ae_restrict_coe_opens_top] at hv
+  set v := (Wkp.compAffineEquiv (ν := volume) (U := ⊤) (W := ⊤) (p := r) volume e 0
+    (by simp) 2).symm v'
+  have hv : (Wkp.value 2 v : E → ℝ) =ᵐ[volume] Wkp.value 2 u := by
+    simpa only [Measure.ae_restrict_coe_opens_top] using
+      Wkp.value_compAffineEquiv_symm_ae_of_ae_eq (U := ⊤) (W := ⊤) volume e 0 (by simp) 2
+        (by simpa only [Measure.ae_restrict_coe_opens_top, add_zero] using hv'.trans hwv)
   exact ⟨v, hv, iteratedGradient_ae_eq_of_value_ae_eq hv⟩
 
 end TauCeti

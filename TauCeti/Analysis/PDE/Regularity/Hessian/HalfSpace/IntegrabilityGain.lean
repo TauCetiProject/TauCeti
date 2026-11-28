@@ -12,7 +12,7 @@ import TauCeti.Analysis.InnerProductSpace.Trace.Free
 import TauCeti.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.Analysis.Sobolev.Trace.OddReflection
 import TauCeti.Analysis.Sobolev.Wkp.Chain
-import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Linear
+import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Affine
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -337,7 +337,13 @@ theorem exists_wkp_value_ae_eq_of_traceCLM_comp_eq_of_norm_sub_le_of_normalHalfS
       (e.symm : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) = ContinuousLinearMap.id ℝ _ := by
     ext x; simp
   -- `w = u ∘ e ∈ W^{2,p}(H')` has zero boundary values and weak Hessian `e† D²u(e ·) e`.
-  obtain ⟨w, hwv, hwD, hw0⟩ := Wkp.exists_value_ae_eq_comp_continuousLinearEquiv hp_top e (hH a) u
+  set w := Wkp.compAffineEquiv volume e 0 (by simpa using hH a) 2 u
+  have hwv : (Wkp.value 2 w : WithLp 2 (ℝ × E) → ℝ)
+      =ᵐ[(volume : Measure (WithLp 2 (ℝ × E))).restrict (normalHalfSpace (E := E) (a / c))]
+      fun x => Wkp.value 2 u (e x) := by
+    simpa using Wkp.value_compAffineEquiv_ae volume e 0 (by simpa using hH a) 2 u
+  have hwD := Wkp.iteratedGradient_one_compAffineEquiv_zero_ae volume e (by simpa using hH a) u
+  have hw0 := Wkp.firstOrder_compAffineEquiv_mem_w1p0Submodule volume e 0 (by simpa using hH a) 1 hu
   -- It solves `tr (B D²w) = f ∘ e` with `B(y) = e⁻¹ ((b + b†) / 2)(e y) e⁻†` close to `1`.
   obtain ⟨v', hv', -⟩ := hid (a / c)
     (b := fun y => (e.symm : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
@@ -348,15 +354,20 @@ theorem exists_wkp_value_ae_eq_of_traceCLM_comp_eq_of_norm_sub_le_of_normalHalfS
     (by
       filter_upwards [hq.ae hbA] with y hy
       exact ContinuousLinearMap.norm_conj_symmPart_sub_id_le_of_norm_sub_le hlam e hee he hy)
-    w (hw0 hu) (hH a ▸ hf.comp_continuousLinearEquiv_restrict_preimage e)
+    w hw0 (hH a ▸ hf.comp_continuousLinearEquiv_restrict_preimage e)
     ((hH a ▸ hur.comp_continuousLinearEquiv_restrict_preimage e).ae_eq hwv.symm)
     (by
       filter_upwards [hwD, hq.ae (Wkp.adjoint_iteratedGradient_one_ae_eq u), hq.ae htr]
         with y h₁ h₂ h₃
       rw [h₁, ContinuousLinearMap.traceCLM_conj_symmPart_comp_of_comp_eq_id hMN _ _ h₂, h₃])
   -- Composing back with `e⁻¹` returns to `u`.
-  obtain ⟨v, hvu⟩ := Wkp.exists_value_ae_eq_of_value_ae_eq_comp_continuousLinearEquiv hr_top e
-    (hH a) (hv'.trans hwv)
+  set v := (Wkp.compAffineEquiv (ν := volume) (p := r) volume e 0
+    (by simpa using hH a) 2).symm v'
+  have hvu : (Wkp.value 2 v : WithLp 2 (ℝ × E) → ℝ)
+      =ᵐ[(volume : Measure (WithLp 2 (ℝ × E))).restrict (normalHalfSpace (E := E) a)]
+      Wkp.value 2 u :=
+    Wkp.value_compAffineEquiv_symm_ae_of_ae_eq volume e 0 (by simpa using hH a) 2
+      (by simpa only [add_zero] using hv'.trans hwv)
   exact ⟨v, hvu, Wkp.iteratedGradient_ae_eq_of_value_ae_eq 1 hvu⟩
 
 end TauCeti

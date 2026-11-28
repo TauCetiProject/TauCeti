@@ -221,7 +221,7 @@ for almost every `x ∈ U` and all directions `f` and `g`. Here `D²u` is the we
 `TauCeti.Wkp.iteratedGradient 1 u` and `∇u` the weak gradient
 `TauCeti.Wkp.iteratedGradient 0 (TauCeti.Wkp.lowerOrder 1 u)`; `DΦ` and `D²Φ` are the classical
 derivatives. For a linear `Φ` the last term vanishes
-(`TauCeti.Wkp.exists_value_ae_eq_comp_continuousLinearEquiv`). -/
+(`TauCeti.Wkp.iteratedGradient_compAffineEquiv_ae`). -/
 theorem inner_iteratedGradient_compL_ae (h : IsChangeOfVariables 2 U V Φ L c) (hp : p ≠ ⊤)
     (u : Wkp mu V p 2) :
     ∀ᵐ x ∂mu.restrict U, ∀ f g : E,

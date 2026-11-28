@@ -74,6 +74,10 @@ The projections below are sealed instead, and are used through their characteris
   the sum of the almost-everywhere values of the summands.
 * `TauCeti.Wkp.tendsto_eLpNorm_sub_of_tendsto`: convergence in `W^{k,p}(Ω)` gives convergence in
   `Lᵖ(Ω)` of any almost-everywhere representatives of the values.
+* `TauCeti.Wkp.norm_le_mul_pow_of_ae_le`,
+  `TauCeti.Wkp.norm_map_eq_of_measurePreserving_of_ae_norm_eq`:
+  inductive `W^{k,p}` norm bounds and isometry criteria along quasi-measure-preserving and
+  measure-preserving maps.
 
 ## References
 
@@ -950,6 +954,120 @@ theorem hasWeakFDerivOn_iteratedGradient_toOrderL {j k : ℕ} (h : j + 2 ≤ k)
       (iteratedGradient (j + 1) (toOrderL h u)) := by
   rw [← lowerOrder_toOrderL h u]
   exact hasWeakFDerivOn_iteratedGradient j (toOrderL h u)
+
+/-- **Inductive `W^{k,p}` norm bound along a quasi-measure-preserving map.** Suppose a family of
+maps `T k : W^{k,p}(W) → W^{k,p}(Ω)` commutes with `lowerOrder`, with `0 ≤ C` and `1 ≤ M`, and
+satisfies:
+* at order zero, the norm upper bound `‖T 0 u‖ ≤ C * ‖u‖`;
+* at order one, a.e. pointwise upper bounds by `M` on the value and first weak gradient of `T 1 u`
+  relative to `u ∘ Φ`, together with an `Lᵖ` jet norm comparison giving `‖f‖ ≤ C * M * ‖g‖` from
+  `‖f x‖ ≤ M * ‖g (Φ x)‖` a.e.;
+* at orders `k + 2`, the highest weak-derivative norm upper bound
+  `‖iteratedGradient (k + 1) (T (k + 2) u)‖ ≤ C * M ^ (k + 2) * ‖iteratedGradient (k + 1) u‖`.
+Then `‖T k u‖ ≤ C * M ^ k * ‖u‖` for every order `k`. -/
+theorem norm_le_mul_pow_of_ae_le {E' : Type*} [MeasurableSpace E'] [NormedAddCommGroup E']
+    [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E'] [BorelSpace E']
+    {ν : Measure E'} [ν.IsAddHaarMeasure] {W : Opens E'}
+    {Φ : E → E'} (hΦ : QuasiMeasurePreserving Φ (mu.restrict Omega) (ν.restrict W))
+    (T : ∀ k, Wkp ν W p k → Wkp mu Omega p k)
+    (hlow : ∀ k (u : Wkp ν W p (k + 1)), lowerOrder k (T (k + 1) u) = T k (lowerOrder k u))
+    {C M : ℝ} (hC : 0 ≤ C) (hM : 1 ≤ M)
+    (h0 : ∀ u : Wkp ν W p 0, ‖T 0 u‖ ≤ C * ‖u‖)
+    (hjet : ∀ (f : Sobolev1JetLp mu Omega p) (g : Sobolev1JetLp ν W p),
+      (∀ᵐ x ∂mu.restrict Omega, ‖f x‖ ≤ M * ‖g (Φ x)‖) → ‖f‖ ≤ C * M * ‖g‖)
+    (hval₁ : ∀ u : Wkp ν W p 1,
+      ∀ᵐ x ∂mu.restrict Omega, ‖value 1 (T 1 u) x‖ ≤ M * ‖value 1 u (Φ x)‖)
+    (hgrad₁ : ∀ u : Wkp ν W p 1,
+      ∀ᵐ x ∂mu.restrict Omega,
+        ‖iteratedGradient 0 (T 1 u) x‖ ≤ M * ‖iteratedGradient 0 u (Φ x)‖)
+    (hgrad : ∀ k (u : Wkp ν W p (k + 2)),
+      ‖iteratedGradient (k + 1) (T (k + 2) u)‖ ≤
+        C * M ^ (k + 2) * ‖iteratedGradient (k + 1) u‖) :
+    ∀ (k : ℕ) (u : Wkp ν W p k), ‖T k u‖ ≤ C * M ^ k * ‖u‖
+  | 0, u => by simpa only [pow_zero, mul_one] using h0 u
+  | 1, u => by
+      have hpt := W1p.ae_norm_coe_le_mul_of_ae_le hΦ
+        (v := firstOrder 0 (T 1 u)) (u := firstOrder 0 u) (zero_le_one.trans hM)
+        (by
+          filter_upwards [hval₁ u] with x hx
+          rwa [value_firstOrder, value_firstOrder])
+        (by
+          filter_upwards [hgrad₁ u] with x hx
+          rwa [firstOrder_zero, firstOrder_zero, ← iteratedGradient_zero, ← iteratedGradient_zero])
+      have h1 := hjet _ _ hpt
+      rwa [Submodule.norm_coe, Submodule.norm_coe, firstOrder_zero, firstOrder_zero,
+        ← pow_one M] at h1
+  | k + 2, u => by
+      have hlow' : ‖lowerOrder (k + 1) (T (k + 2) u)‖ ≤
+          C * M ^ (k + 2) * ‖lowerOrder (k + 1) u‖ := by
+        rw [hlow]
+        exact (norm_le_mul_pow_of_ae_le hΦ T hlow hC hM h0 hjet hval₁ hgrad₁ hgrad (k + 1)
+          (lowerOrder (k + 1) u)).trans <|
+          mul_le_mul_of_nonneg_right
+            (mul_le_mul_of_nonneg_left (pow_le_pow_right₀ hM (Nat.le_succ _)) hC) (norm_nonneg _)
+      have hgrad' := hgrad k u
+      refine le_of_pow_le_pow_left₀ two_ne_zero
+        (mul_nonneg (mul_nonneg hC (pow_nonneg (zero_le_one.trans hM) _)) (norm_nonneg _)) ?_
+      rw [norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k (T (k + 2) u),
+        mul_pow, norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u, mul_add,
+        ← mul_pow, ← mul_pow]
+      exact add_le_add (pow_le_pow_left₀ (norm_nonneg _) hlow' 2)
+        (pow_le_pow_left₀ (norm_nonneg _) hgrad' 2)
+
+/-- **Inductive `W^{k,p}` norm equality along a measure-preserving map.** If `T k` commutes with
+`lowerOrder` and preserves the pointwise norms of the value at orders zero and one and of the
+highest weak derivative almost everywhere along a measure-preserving map `Φ`, then `‖T k u‖ = ‖u‖`
+for every order `k`. -/
+theorem norm_map_eq_of_measurePreserving_of_ae_norm_eq {E' : Type*} [MeasurableSpace E']
+    [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E'] [BorelSpace E']
+    {ν : Measure E'} [ν.IsAddHaarMeasure] {W : Opens E'}
+    {Φ : E → E'} (hΦ : MeasurePreserving Φ (mu.restrict Omega) (ν.restrict W))
+    (T : ∀ k, Wkp ν W p k → Wkp mu Omega p k)
+    (hlow : ∀ k (u : Wkp ν W p (k + 1)), lowerOrder k (T (k + 1) u) = T k (lowerOrder k u))
+    (hval₀ : ∀ u : Wkp ν W p 0,
+      ∀ᵐ x ∂mu.restrict Omega, ‖value 0 (T 0 u) x‖ = ‖value 0 u (Φ x)‖)
+    (hval₁ : ∀ u : Wkp ν W p 1,
+      ∀ᵐ x ∂mu.restrict Omega, ‖value 1 (T 1 u) x‖ = ‖value 1 u (Φ x)‖)
+    (hgrad : ∀ k (u : Wkp ν W p (k + 1)),
+      ∀ᵐ x ∂mu.restrict Omega,
+        ‖iteratedGradient k (T (k + 1) u) x‖ = ‖iteratedGradient k u (Φ x)‖) :
+    ∀ (k : ℕ) (u : Wkp ν W p k), ‖T k u‖ = ‖u‖
+  | 0, u => by
+      rw [← value_zero (T 0 u)]
+      conv_rhs => rw [← value_zero u]
+      refine (Lp.norm_eq_norm_of_ae_eq ?_).trans (Lp.norm_compMeasurePreserving (value 0 u) hΦ)
+      filter_upwards [hval₀ u, Lp.coeFn_compMeasurePreserving (value 0 u) hΦ] with x hx hcomp
+      rw [hx, hcomp, Function.comp_apply]
+  | 1, u => by
+      have hpt := W1p.ae_norm_coe_eq_of_ae_eq hΦ.quasiMeasurePreserving
+        (v := firstOrder 0 (T 1 u)) (u := firstOrder 0 u)
+        (by
+          filter_upwards [hval₁ u] with x hx
+          rwa [value_firstOrder, value_firstOrder])
+        (by
+          filter_upwards [hgrad 0 u] with x hx
+          rwa [firstOrder_zero, firstOrder_zero, ← iteratedGradient_zero, ← iteratedGradient_zero])
+      have h1 := (Lp.norm_eq_norm_of_ae_eq <| by
+        filter_upwards [hpt,
+          Lp.coeFn_compMeasurePreserving (firstOrder 0 u : Sobolev1JetLp ν W p) hΦ]
+          with x hx hcomp
+        rw [hx, hcomp, Function.comp_apply]).trans
+        (Lp.norm_compMeasurePreserving (firstOrder 0 u : Sobolev1JetLp ν W p) hΦ)
+      rwa [Submodule.norm_coe, Submodule.norm_coe, firstOrder_zero, firstOrder_zero] at h1
+  | k + 2, u => by
+      have hlow' : ‖lowerOrder (k + 1) (T (k + 2) u)‖ = ‖lowerOrder (k + 1) u‖ := by
+        rw [hlow]
+        exact norm_map_eq_of_measurePreserving_of_ae_norm_eq hΦ T hlow hval₀ hval₁ hgrad (k + 1)
+          (lowerOrder (k + 1) u)
+      have hgrad' : ‖iteratedGradient (k + 1) (T (k + 2) u)‖ = ‖iteratedGradient (k + 1) u‖ := by
+        refine (Lp.norm_eq_norm_of_ae_eq ?_).trans
+          (Lp.norm_compMeasurePreserving (iteratedGradient (k + 1) u) hΦ)
+        filter_upwards [hgrad (k + 1) u,
+          Lp.coeFn_compMeasurePreserving (iteratedGradient (k + 1) u) hΦ] with x hx hcomp
+        rw [hx, hcomp, Function.comp_apply]
+      refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
+      rw [norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k (T (k + 2) u),
+        norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u, hlow', hgrad']
 
 end Wkp
 

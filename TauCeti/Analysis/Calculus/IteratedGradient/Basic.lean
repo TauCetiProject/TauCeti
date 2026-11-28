@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
--- Private: the composition and derivative rules for `ContDiffAt` are used only in the proofs.
+-- Private: the composition and derivative rules for `ContDiffAt` and translations are used only
+-- in the proofs.
 import Mathlib.Analysis.Calculus.ContDiff.Comp
+import Mathlib.Analysis.Calculus.FDeriv.Add
 
 /-!
 # Iterated gradients of a scalar function
@@ -121,6 +123,20 @@ theorem iteratedGradientChain_zero (f : F → ℝ) :
 theorem iteratedGradientChain_succ (f : F → ℝ) (j : ℕ) :
     iteratedGradientChain f (j + 1) = fderiv ℝ (iteratedGradientChain f j) :=
   (rfl)
+
+/-- Classical iterated gradients commute with right translation; no differentiability hypothesis is
+needed. -/
+theorem iteratedGradientChain_comp_add_right (f : F → ℝ) (b : F) (j : ℕ) (x : F) :
+    iteratedGradientChain (fun y ↦ f (y + b)) j x = iteratedGradientChain f j (x + b) := by
+  induction j generalizing x with
+  | zero =>
+      simp only [iteratedGradientChain_zero, gradient, fderiv_comp_add_right]
+  | succ j ih =>
+      simp only [iteratedGradientChain_succ]
+      have hfun : iteratedGradientChain (fun y ↦ f (y + b)) j =
+          fun y ↦ iteratedGradientChain f j (y + b) :=
+        funext ih
+      rw [hfun, fderiv_comp_add_right]
 
 /-- The inner-product characterization of the order-one iterated-gradient field: it is the second
 derivative of `f`. -/

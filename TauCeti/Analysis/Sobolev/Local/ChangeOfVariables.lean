@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.MeasureTheory.Function.MemLpLoc.ChangeOfVariables
 
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+import TauCeti.Analysis.Sobolev.WeakDeriv.Affine
 
 /-!
 # Change of variables in local Sobolev classes on planar sets
@@ -28,8 +29,8 @@ and the weak derivative itself comes from the chain rule
 In particular a `C¹` diffeomorphism of half-discs preserving the real axis and the upper
 half-plane preserves the half-disc classes. For real-affine maps `z ↦ A z + b` every order is
 preserved, by induction on the order from the first-order formula `Du (A z + b) ∘ A`
-(`TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add`). The dilation `z ↦ 2 z` scales the
-weak derivative of order `i` by `2 ^ i`, read on the iterated weak gradients
+(`TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add_of_isAddHaarMeasure`). The dilation
+`z ↦ 2 z` scales the weak derivative of order `i` by `2 ^ i`, read on the iterated weak gradients
 (`TauCeti.HasWeakFDerivOn.iteratedGradient_comp_two_mul`), and the reflection `z ↦ -conj z`
 preserves the half-disc classes. The rotation `z ↦ i z` does not preserve the real axis
 (`TauCeti.not_mapsTo_I_mul_setOf_im_eq_zero`), and does not preserve the half-disc classes; the
@@ -132,7 +133,7 @@ theorem MemLpLoc.comp_continuousLinearEquiv_add {u : ℂ → F} (hu : MemLpLoc p
 /-- **Real-affine changes of variables preserve every order.** For `A : ℂ ≃L[ℝ] ℂ`, `b : ℂ` and
 `z ↦ A z + b` mapping `U` into `V`, precomposition maps `MemWkpLoc p V k` into
 `MemWkpLoc p U k`. The first weak derivative is given by
-`TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add`. -/
+`TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add_of_isAddHaarMeasure`. -/
 theorem MemWkpLoc.comp_continuousLinearEquiv_add {u : ℂ → F} (hu : MemWkpLoc p V k u)
     (A : ℂ ≃L[ℝ] ℂ) (b : ℂ) (hmaps : MapsTo (fun z => A z + b) U V) :
     MemWkpLoc p U k (fun z => u (A z + b)) := by
@@ -153,7 +154,8 @@ theorem MemWkpLoc.comp_continuousLinearEquiv_add {u : ℂ → F} (hu : MemWkpLoc
       fun z => ((ContinuousLinearMap.compL ℝ ℂ ℂ F).flip (A : ℂ →L[ℝ] ℂ)) (D (Φ z)), ?_,
       (ih hk).clm_comp _⟩
     simpa only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply, Φ] using
-      hD.comp_continuousLinearEquiv_add (U := Opens.interior U) A b (by simpa using hint)
+      hD.comp_continuousLinearEquiv_add_of_isAddHaarMeasure (U := Opens.interior U) volume A b
+        (by simpa using hint)
 
 /-! ### Checks -/
 
@@ -177,7 +179,7 @@ theorem HasWeakFDerivOn.comp_two_mul {u : ℂ → F} {Du : ℂ → ℂ →L[ℝ]
     HasWeakFDerivOn volume U (fun z => u (2 * z)) (fun z => (2 : ℝ) • Du (2 * z)) := by
   set A : ℂ ≃L[ℝ] ℂ := (LinearEquiv.smulOfNeZero ℝ ℂ 2 two_ne_zero).toContinuousLinearEquiv
   have hA : ∀ z, A z = 2 * z := fun z => by simp [A, Complex.real_smul]
-  have h := hu.comp_continuousLinearEquiv_add (U := U) A 0 fun z hz => by
+  have h := hu.comp_continuousLinearEquiv_add_of_isAddHaarMeasure (U := U) volume A 0 fun z hz => by
     simpa [hA] using hUV hz
   convert h using 2 with z
   · simp [hA]

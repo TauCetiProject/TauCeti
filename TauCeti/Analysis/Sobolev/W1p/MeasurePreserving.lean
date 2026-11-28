@@ -150,24 +150,21 @@ private theorem norm_compAux_le (hΦ : MeasurePreserving Φ μ ν)
   rw [← Submodule.norm_coe, ← Submodule.norm_coe u,
     ← Lp.norm_compMeasurePreserving (u : Sobolev1JetLp ν V p) hres]
   refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
-  filter_upwards [W1p.norm_apply_sq_ae (compAux hΦ hUV hΦl hM u),
-    value_compAux_ae hΦ hUV hΦl hM u, gradient_compAux_ae hΦ hUV hΦl hM u,
-    hres.quasiMeasurePreserving.ae (W1p.norm_apply_sq_ae u),
-    Lp.coeFn_compMeasurePreserving (u : Sobolev1JetLp ν V p) hres,
-    ae_restrict_mem U.isOpen.measurableSet] with x h1 h2 h3 h4 h5 hx
-  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM x hx)
-  have hadj : ‖ContinuousLinearMap.adjoint (fderiv ℝ Φ x) (W1p.gradient u (Φ x))‖ ≤
-      M * ‖W1p.gradient u (Φ x)‖ :=
-    ((ContinuousLinearMap.adjoint (fderiv ℝ Φ x)).le_opNorm _).trans <| by
+  have hpt := W1p.ae_norm_coe_le_mul_of_ae_le hres.quasiMeasurePreserving
+    (zero_le_one.trans (le_max_left 1 M))
+    (by
+      filter_upwards [value_compAux_ae hΦ hUV hΦl hM u] with x hx
+      rw [hx]
+      exact le_mul_of_one_le_left (norm_nonneg _) (le_max_left 1 M))
+    (by
+      filter_upwards [gradient_compAux_ae hΦ hUV hΦl hM u,
+        ae_restrict_mem U.isOpen.measurableSet] with x hx hmem
+      rw [hx]
+      refine ((ContinuousLinearMap.adjoint (fderiv ℝ Φ x)).le_opNorm _).trans ?_
       rw [LinearIsometryEquiv.norm_map]
-      exact mul_le_mul_of_nonneg_right (hM x hx) (norm_nonneg _)
-  have h1M : 1 ≤ max 1 M := le_max_left _ _
-  have hMM : M ≤ max 1 M := le_max_right _ _
-  rw [← pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero, h1, mul_pow, h5,
-    Function.comp_apply, h4, h2, h3]
-  nlinarith [pow_le_pow_left₀ (norm_nonneg _) hadj 2, sq_nonneg ‖W1p.value u (Φ x)‖,
-    sq_nonneg ‖W1p.gradient u (Φ x)‖, mul_le_mul hMM hMM hM0 (by positivity),
-    mul_le_mul h1M h1M zero_le_one (by positivity)]
+      exact mul_le_mul_of_nonneg_right ((hM x hmem).trans (le_max_right 1 M)) (norm_nonneg _))
+  filter_upwards [hpt, Lp.coeFn_compMeasurePreserving (u : Sobolev1JetLp ν V p) hres] with x hx h5
+  rwa [h5, Function.comp_apply]
 
 /-- **Precomposition with a measure-preserving Lipschitz map on `W^{1,p}`.** If
 `U = Φ⁻¹(V)` and `Φ` is locally Lipschitz on `U` with `‖fderiv ℝ Φ‖ ≤ M` there, then

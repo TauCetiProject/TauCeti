@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Bases
 public import Mathlib.Topology.Clopen
 public import Mathlib.Topology.Compactness.SigmaCompact
+public import Mathlib.Topology.Order.Basic
 public import Mathlib.Topology.Sets.Opens
 public import Mathlib.Topology.Separation.Regular
 import TauCeti.Topology.Compactness.Compact
@@ -48,6 +49,7 @@ indexed by.
   locally compact.
 * `TopologicalSpace.Opens.sigmaCompactSpace_top` : the open subset `⊤` of a σ-compact space is
   σ-compact.
+* `TopologicalSpace.Opens.Ioo` : the open interval `Set.Ioo a b` bundled as an open set.
 * `TopologicalSpace.Opens.IsBasis.exists_finset_sup_le_of_isCompact` : a compact subset of an
   open set has a neighbourhood inside it which is a finite union of basis members.
 * `IsCompact.preimage_val_of_pairwise_disjoint` : a compact set covered by open sets meeting it in
@@ -175,6 +177,26 @@ instance instLocallyCompactSpace [LocallyCompactSpace X] (U : Opens X) : Locally
 /-- The open subset `⊤` of a σ-compact space is σ-compact, being a closed subspace. -/
 instance sigmaCompactSpace_top [SigmaCompactSpace X] : SigmaCompactSpace (⊤ : Opens X) :=
   IsClosed.sigmaCompactSpace (by simp)
+
+section Order
+
+variable {α : Type*} [TopologicalSpace α] [Preorder α] [OrderTopology α]
+
+/-- The open interval `Set.Ioo a b` bundled as an element of `TopologicalSpace.Opens α`. -/
+def Ioo (a b : α) : Opens α :=
+  ⟨Set.Ioo a b, isOpen_Ioo' a b⟩
+
+/-- The underlying set of `TopologicalSpace.Opens.Ioo a b` is `Set.Ioo a b`. -/
+@[simp, norm_cast]
+theorem coe_Ioo (a b : α) : (Opens.Ioo a b : Set α) = Set.Ioo a b :=
+  (rfl)
+
+/-- Membership in `TopologicalSpace.Opens.Ioo a b` is `a < x ∧ x < b`. -/
+@[simp]
+theorem mem_Ioo {a b x : α} : x ∈ Opens.Ioo a b ↔ a < x ∧ x < b :=
+  Iff.rfl
+
+end Order
 
 end TopologicalSpace.Opens
 
