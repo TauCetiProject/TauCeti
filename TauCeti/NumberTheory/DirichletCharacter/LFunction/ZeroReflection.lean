@@ -110,11 +110,11 @@ theorem meromorphicOrderAt_LFunction_one_sub {s : ℂ} (hs0 : 0 < s.re) (hs1 : s
   calc meromorphicOrderAt χ.LFunction (1 - s)
       = meromorphicOrderAt χ.primitiveCharacter.LFunction (1 - s) := by
         conv_lhs => rw [← χ.changeLevel_primitiveCharacter]
-        exact meromorphicOrderAt_LFunction_changeLevel _ hdvd (by simpa using hs1)
+        exact meromorphicOrderAt_LFunction_changeLevel _ hdvd (by simpa using (sub_pos.mpr hs1).ne')
     _ = meromorphicOrderAt χ.primitiveCharacter⁻¹.LFunction s :=
         χ.primitiveCharacter_isPrimitive.meromorphicOrderAt_LFunction_one_sub hs0 hs1
     _ = meromorphicOrderAt χ⁻¹.LFunction s := by
-        rw [← meromorphicOrderAt_LFunction_changeLevel _ hdvd hs0, map_inv,
+        rw [← meromorphicOrderAt_LFunction_changeLevel _ hdvd hs0.ne', map_inv,
           changeLevel_primitiveCharacter]
 
 /-- For `0 < re s < 1`, `χ.LFunction` vanishes at `1 - s` exactly when `χ⁻¹.LFunction` vanishes

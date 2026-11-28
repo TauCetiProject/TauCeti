@@ -71,6 +71,9 @@ its principal symbol is `∑ᵢ χᵢ(x)² s(x, ξ) = s(x, ξ)`
 * `TauCeti.classicalPrincipalSymbolLinearMap_surjective`: on a σ-compact manifold, the principal
   symbol map onto the smooth positively homogeneous functions of degree `m` on the cotangent bundle
   is surjective.
+* `TauCeti.exists_mem_classicalPseudodifferentialOperators_classicalPrincipalSymbol_pos`: on a
+  σ-compact manifold there are operators of every real order with real positive principal symbol,
+  the symmetric patched quantizations of `‖η‖ ^ m`.
 * `TauCeti.classicalPrincipalSymbol_mulLeft_comp_comp_mulLeft`: localizing an operator by chart
   cutoffs `φ` and `ψ` multiplies its principal symbol by `φ ψ`.
 * `TauCeti.sub_locallyFiniteSum_mulLeft_comp_comp_mulLeft_mem_classicalPseudodifferentialOperators`:
@@ -155,9 +158,7 @@ private theorem contDiffOn_chartHomogeneousSymbol (ρ : 𝓓(⟨e.target, e.open
     {s : (x : M) → (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → ℂ}
     (hs : s ∈ homogeneousCotangentSymbols n M m) :
     ContDiffOn ℝ ∞ (fun p : CoordinateSpace n × CoordinateSpace n ↦
-      ((ρ p.1 : ℂ) * s (e.symm p.1)
-        ((innerSL ℝ p.2).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm p.1)))) •
-          ContinuousLinearMap.id ℂ ℂ) {p | p.2 ≠ 0} := by
+      ((ρ p.1 : ℂ) * chartCotangentSymbol s e p) • ContinuousLinearMap.id ℂ ℂ) {p | p.2 ≠ 0} := by
   rintro ⟨y, η⟩ hη
   refine ContDiffAt.contDiffWithinAt ?_
   by_cases hy : y ∈ e.target
@@ -182,17 +183,16 @@ def chartHomogeneousSymbol (ρ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     {s : (x : M) → (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → ℂ}
     (hs : s ∈ homogeneousCotangentSymbols n M m) :
     HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) ℂ ℂ m where
-  coefficient p := ((ρ p.1 : ℂ) * s (e.symm p.1)
-    ((innerSL ℝ p.2).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm p.1)))) •
-      ContinuousLinearMap.id ℂ ℂ
-  zero_covector y := by simp [(mem_homogeneousCotangentSymbols_iff.1 hs).1]
+  coefficient p := ((ρ p.1 : ℂ) * chartCotangentSymbol s e p) • ContinuousLinearMap.id ℂ ℂ
+  zero_covector y := by
+    simp [chartCotangentSymbol_apply, (mem_homogeneousCotangentSymbols_iff.1 hs).1]
   contDiffOn_coefficient := contDiffOn_chartHomogeneousSymbol he ρ hs
   homogeneous y η t ht := by
     have hη : innerSL ℝ (t • η) = t • innerSL ℝ η := by
       ext v
       simp
     refine ContinuousLinearMap.ext_ring ?_
-    simp only [hη, ContinuousLinearMap.smul_comp,
+    simp only [chartCotangentSymbol_apply, hη, ContinuousLinearMap.smul_comp,
       (mem_homogeneousCotangentSymbols_iff.1 hs).2.1 _ _ t ht, FunLike.coe_smul, Pi.smul_apply,
       ContinuousLinearMap.id_apply, Complex.real_smul, smul_eq_mul]
     ring
@@ -203,9 +203,7 @@ theorem chartHomogeneousSymbol_coefficient (ρ : 𝓓(⟨e.target, e.open_target
     {s : (x : M) → (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → ℂ}
     (hs : s ∈ homogeneousCotangentSymbols n M m) (y η : CoordinateSpace n) :
     (e.chartHomogeneousSymbol he ρ hs).coefficient (y, η) =
-      ((ρ y : ℂ) * s (e.symm y)
-        ((innerSL ℝ η).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm y)))) •
-          ContinuousLinearMap.id ℂ ℂ :=
+      ((ρ y : ℂ) * chartCotangentSymbol s e (y, η)) • ContinuousLinearMap.id ℂ ℂ :=
   (rfl)
 
 /-- **The principal symbol of a quantized homogeneous function.** The chart quantization, localized
@@ -223,7 +221,8 @@ theorem classicalPrincipalSymbol_chartQuantization_ofHomogeneous
         ℂ) * s x ξ := by
   by_cases hx : x ∈ e.source
   · rw [classicalPrincipalSymbol_chartQuantization he _ _ _ hx,
-      ClassicalSymbol.principal_ofHomogeneous, chartHomogeneousSymbol_coefficient, e.left_inv hx,
+      ClassicalSymbol.principal_ofHomogeneous, chartHomogeneousSymbol_coefficient,
+      chartCotangentSymbol_apply, e.left_inv hx,
       innerSL_toDual_symm_comp_inverse_mvfderiv
         (IsManifold.maximalAtlas_subset_of_le (by simp) he) hx]
     simp [cutoffPullback_one_apply_of_mem he _ hx, mul_assoc]
@@ -267,13 +266,13 @@ def principalSymbolQuantization :
     refine Finset.sum_congr rfl fun i _ ↦ (c i).chartQuantization_eq_add (hc i) _ _ ?_
     funext ⟨y, η⟩
     refine ContinuousLinearMap.ext_ring ?_
-    simp [mul_add]
+    simp [chartCotangentSymbol_apply, mul_add]
   map_smul' a s := by
     rw [RingHom.id_apply, Finset.smul_sum]
     refine Finset.sum_congr rfl fun i _ ↦ (c i).chartQuantization_eq_smul (hc i) _ _ a ?_
     funext ⟨y, η⟩
     refine ContinuousLinearMap.ext_ring ?_
-    simp [mul_left_comm]
+    simp [chartCotangentSymbol_apply, mul_left_comm]
 
 omit [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
 /-- Unfolding `TauCeti.principalSymbolQuantization`. -/
@@ -363,10 +362,9 @@ private theorem finsum_cutoffPullback_sq_mul {ι : Type*}
     (hsq : ∀ y, ∑ᶠ i, (e i).cutoffPullback (he i) (χ i) 1 y ^ 2 = 1) (x : M) (z : ℂ) :
     ∑ᶠ i, (((e i).cutoffPullback (he i) (χ i) 1 x ^ 2 : ℝ) : ℂ) * z = z := by
   -- Only the finitely many charts whose cutoff supports contain `x` contribute.
-  have hfin := hS.point_finite x
+  have hfin := finite_support_cutoffPullback he hS x
   have hr : Function.support (fun i ↦ (e i).cutoffPullback (he i) (χ i) 1 x) ⊆ hfin.toFinset :=
-    fun i hi ↦ hfin.mem_toFinset.2 <|
-      ((e i).tsupport_cutoffPullback_one (he i) (χ i)).subset (subset_tsupport _ hi)
+    fun i hi ↦ hfin.mem_toFinset.2 hi
   have hsq' := hsq x
   rw [finsum_eq_sum_of_support_subset _ fun i hi ↦ hr (by simpa using hi)] at hsq'
   rw [finsum_eq_sum_of_support_subset _ fun i hi ↦ hr fun h ↦ hi (by simp [h]),
@@ -411,6 +409,59 @@ theorem classicalPrincipalSymbolLinearMap_surjective [SigmaCompactSpace M] :
         (fun z hz ↦ (hθ i).1.self_of_nhdsSet z hz), sq]
   rw [classicalPrincipalSymbol_patchedQuantization, finsum_congr hterm,
     finsum_cutoffPullback_sq_mul he hχ hsq]
+
+open scoped ComplexOrder in
+/-- **Operators of every order with positive principal symbol.** On a σ-compact manifold, for every
+real `m` there is a classical pseudodifferential operator of order `m` whose principal symbol is
+real and positive at every nonzero covector. It is the symmetric patched quantization
+`∑ᵢ χᵢ Op(‖η‖ ^ m) χᵢ` over chart cutoffs `χᵢ` whose squares sum to `1`, with principal symbol
+`∑ᵢ χᵢ(x)² ‖ηᵢ‖ ^ m`, where `ηᵢ` is the frequency of `ξ` in the `i`-th chart. -/
+theorem exists_mem_classicalPseudodifferentialOperators_classicalPrincipalSymbol_pos
+    [SigmaCompactSpace M] (m : ℝ) :
+    ∃ P ∈ classicalPseudodifferentialOperators (n := n) (M := M) m,
+      ∀ x (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ), ξ ≠ 0 →
+        0 < classicalPrincipalSymbol m P x ξ := by
+  obtain ⟨ι, c, χ, hχ, hsq⟩ :=
+    exists_locallyFinite_finsum_sq_cutoffPullback_eq_one (E := CoordinateSpace n) (M := M)
+  set e := fun i ↦ chartAt (CoordinateSpace n) (c i)
+  have he (i : ι) : e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M :=
+    IsManifold.chart_mem_maximalAtlas (c i)
+  have hS : LocallyFinite fun i ↦ (e i).symm '' (tsupport (χ i) ∪ tsupport (χ i)) := by
+    simpa only [union_self] using hχ
+  set a : ι → ClassicalSymbol n ℂ ℂ m := fun _ ↦ ClassicalSymbol.ofHomogeneous default
+    (HomogeneousSymbol.normRpow (CoordinateSpace n) (CoordinateSpace n) ℂ m)
+  refine ⟨patchedQuantization he χ χ a hS,
+    patchedQuantization_mem_classicalPseudodifferentialOperators he χ χ a hS, fun y ξ hξ ↦ ?_⟩
+  -- The cutoff `χᵢ` read on `M`, and the frequency of `ξ` in the `i`-th chart.
+  set r := fun i ↦ (e i).cutoffPullback (he i) (χ i) 1 y
+  set η := fun i ↦ (InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
+    (ξ.comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) (e i) y).inverse)
+  -- Over the chart source the frequency of `ξ ≠ 0` is nonzero.
+  have hη {i : ι} (hy : y ∈ (e i).source) : η i ≠ 0 :=
+    toDual_symm_comp_inverse_mvfderiv_ne_zero
+      (IsManifold.maximalAtlas_subset_of_le (by simp) (he i)) hy hξ
+  -- Each chart contributes `χᵢ(eᵢ y)² ‖ηᵢ‖ ^ m`, or `0` when `y` is outside its source.
+  have hterm (i : ι) : classicalPrincipalSymbol m ((e i).chartQuantization (he i) (χ i) (χ i)
+      (a i)) y ξ = ((r i ^ 2 * ‖η i‖ ^ m : ℝ) : ℂ) := by
+    by_cases hy : y ∈ (e i).source
+    · rw [OpenPartialHomeomorph.classicalPrincipalSymbol_chartQuantization (he i) _ _ _ hy]
+      simp [a, r, η, hη hy, OpenPartialHomeomorph.cutoffPullback_one_apply_of_mem (he i) _ hy, sq]
+    · simp [r, OpenPartialHomeomorph.cutoffPullback_apply_of_notMem (he i) _ _ hy,
+        OpenPartialHomeomorph.classicalPrincipalSymbol_chartQuantization_of_notMem (he i) _ _ _ hy]
+  rw [classicalPrincipalSymbol_patchedQuantization, finsum_congr hterm]
+  -- Some cutoff `χᵢ` is nonzero at `y`, since their squares sum to `1`; then `y` lies in the
+  -- source of the `i`-th chart and its term is positive.
+  obtain ⟨i, hi⟩ : ∃ i, r i ≠ 0 := by
+    by_contra! h
+    simpa [r, h] using hsq y
+  have hy : y ∈ (e i).source := by
+    by_contra hy
+    exact hi (OpenPartialHomeomorph.cutoffPullback_apply_of_notMem (he i) _ _ hy)
+  refine finsum_pos (fun j ↦ Complex.zero_le_real.2 (by positivity))
+    ⟨i, Complex.zero_lt_real.2 (mul_pos (pow_pos (abs_pos.2 hi) 2 |>.trans_eq (sq_abs _))
+      (Real.rpow_pos_of_pos (norm_pos_iff.2 (hη hy)) m))⟩ ?_
+  -- Only the charts whose cutoff supports contain `y` contribute.
+  exact (finite_support_cutoffPullback he hχ y).subset fun j hj h ↦ hj (by simp [r, h])
 
 /-! ### Symmetric localization -/
 

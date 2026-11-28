@@ -77,6 +77,8 @@ The completed lattice homology is the homology of the completed differential, as
   `TauCeti.PlumbingGraph.completedCovectorDifferential_apply_eq_sum`: the components of the
   completed differential.
 * `TauCeti.PlumbingGraph.completedCovectorDifferential_comp_self`: `∂ ∘ ∂ = 0`.
+* `TauCeti.PlumbingGraph.completedCovectorDifferential_single_mk_empty`: a completed chain
+  supported at a generator `[K, ∅]` with no directions is a cycle.
 * `TauCeti.PlumbingGraph.completedCovectorDifferential_covectorChainToCompleted`: the coefficient
   change is a chain map; `TauCeti.PlumbingGraph.covectorChainToCompleted_injective`: it is
   injective.
@@ -205,6 +207,13 @@ theorem completedCovectorDifferential_single [DecidableEq P.CovectorCube] (C : P
     Finset.sum_eq_single_of_mem C (Finset.mem_union_left _ (Finset.mem_singleton_self C))
       fun B _ hB => by rw [Pi.single_eq_of_ne hB, mul_zero],
     Pi.single_eq_same, mul_comm]
+
+/-- A completed chain supported at a single generator `[K, ∅]` with no directions is a cycle. -/
+theorem completedCovectorDifferential_single_mk_empty [DecidableEq P.CovectorCube]
+    (K : P.characteristicVectors) (φ : PowerSeries (ZMod 2)) :
+    P.completedCovectorDifferential (Pi.single ⟨K, ∅⟩ φ) = 0 := by
+  funext D
+  simp
 
 /-- **The completed differential squares to zero.** -/
 theorem completedCovectorDifferential_comp_self :

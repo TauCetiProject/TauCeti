@@ -116,14 +116,14 @@ theorem hasDerivAt_mfderiv_flowOf_of_eq_zero
   -- In the preferred chart at `p`, the flow is a jointly `C²` family fixing `p` at time `0`.
   have hG := Manifold.contDiffAt_extChartAt_family (flowOf_zero v p)
     ((contMDiffOn_flowOf one_le_two hv).contMDiffAt
-      ((isOpen_flowDomain hv1).mem_nhds (mem_flowDomain_zero hv1 p)))
+      ((isOpen_flowDomain hv1).mem_nhds (mem_flowDomain_zero (hv1 p))))
   -- In the chart, the trajectories start with the coordinate velocity of `v`.
   have hV := eventually_hasDerivAt_extChartAt_family (ψ := fun u x ↦ flowOf v u x) (V := v)
     (t := 0) (y := p) (Eventually.of_forall fun x ↦ flowOf_zero v x)
     (Eventually.of_forall fun x ↦
       ((isMIntegralCurveOn_flowOf hv1 x).isMIntegralCurveAt
         (((isOpen_flowDomain hv1).preimage (continuous_id.prodMk continuous_const)).mem_nhds
-          (mem_flowDomain_zero hv1 x))).hasMFDerivAt)
+          (mem_flowDomain_zero (hv1 x)))).hasMFDerivAt)
   refine (ContDiffAt.hasDerivAt_fderiv_slice_of_eventually_hasDerivAt
       (by rw [minSmoothness_of_isRCLikeNormedField]; exact_mod_cast hG) hV)
     |>.congr_of_eventuallyEq (Eventually.of_forall fun t ↦ ?_)

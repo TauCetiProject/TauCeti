@@ -42,8 +42,13 @@ complexes. The argument has two steps.
 * **Invariants.** When the order of `Γ_B` is a unit of `k`, averaging over `Γ_B` retracts the
   chains onto the invariant chains, naturally in the pair
   (`CategoryTheory.Limits.SingleObj.limRetract`). So `R_IJ` is a retract of the K-presheaf of all
-  chains (`TauCeti.ImplicitAtlas.partialVirtualComplexRetract`), and a retract of a homotopy
+  chains (`TauCeti.ImplicitAtlas.invariantChainsRetract`), and a retract of a homotopy
   K-sheaf is a homotopy K-sheaf (`TopCat.KPresheaf.IsHomotopyKSheaf.of_retract`).
+
+The same holds for the invariant chains placed in the cochain degrees `n - •` for any integer `n`
+(`TauCeti.ImplicitAtlas.isHomotopyKSheaf_deformationPairPresheaf_comp_invariantChainsFunctor`).
+In the flag total of the virtual cochain complex, a flag of length `p` reads the partial complexes
+in cochain degrees `d + m_B - p - •`.
 
 The purity of the partial complexes of a locally orientable atlas, and their uniform lower bound,
 are not treated here.
@@ -52,8 +57,11 @@ are not treated here.
 
 * `TauCeti.ImplicitAtlas.deformationPairChainsIso`: before taking invariants, the chains of the
   deformation pairs are the relative chains along the supports `Z_K`.
-* `TauCeti.ImplicitAtlas.partialVirtualComplexRetract`: the partial virtual complex is a retract of
-  the K-presheaf of relative chains along the supports.
+* `TauCeti.ImplicitAtlas.invariantChainsRetract`: the invariant chains of the deformation pairs,
+  in particular the partial virtual complex, are a retract of the K-presheaf of relative chains
+  along the supports.
+* `TauCeti.ImplicitAtlas.isHomotopyKSheaf_deformationPairPresheaf_comp_invariantChainsFunctor`:
+  the invariant chains of the deformation pairs, in any cochain degrees, are a homotopy K-sheaf.
 * `TauCeti.ImplicitAtlas.isHomotopyKSheaf_partialVirtualComplex`: the partial virtual complex is a
   homotopy K-sheaf.
 
@@ -128,28 +136,47 @@ def deformationPairChainsIso (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) (n 
 
 variable {k} (hΓ : ∀ α, IsUnit (Nat.card (Γ α) : k))
 
-/-- **The partial virtual complex is a retract of the relative chains along the supports.** When
-the orders of the isotropy groups are units of `k`, averaging over `Γ_B` retracts the relative
-chains `C_(d + m_B - •)(D_(I,J,B), D_(I,J,B) ∖ Z_K; o_(E_B)^∨)` onto the invariant chains
-`R_IJ(K)`, naturally in the compact set `K`. -/
-def partialVirtualComplexRetract (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) :
-    Retract (𝒜.partialVirtualComplex k I hJB)
+/-- **The invariant chains of the deformation pairs are a retract of the relative chains along the
+supports.** When the orders of the isotropy groups are units of `k`, averaging over `Γ_B` retracts
+the relative chains `C_(n - •)(D_(I,J,B), D_(I,J,B) ∖ Z_K; o_(E_B)^∨)` onto the invariant chains,
+naturally in the compact set `K`, in the cochain degrees `n - •` for every integer `n`. For
+`n = d + m_B` the invariant chains are the partial virtual complex `R_IJ`. -/
+def invariantChainsRetract (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) (n : ℤ) :
+    Retract (𝒜.deformationPairPresheaf I hJB ⋙ invariantChainsFunctor ρ k B n)
       (localChainKPresheaf ((partialVirtualCoefficients ρ k B).obj (SingleObj.star _))
-        (𝒜.deformationSupportHom I hJB) (d + ∑ α ∈ B, (finrank ℝ (E α) : ℤ))) :=
+        (𝒜.deformationSupportHom I hJB) n) :=
   letI := Fintype.ofFinite ((α : B) → Γ α)
   let Φ := 𝒜.deformationPairPresheaf I hJB ⋙
     TopPair.diagonalChainActionFunctor (partialVirtualCoefficients ρ k B)
-  let ext := (ComplexShape.embeddingUpIntLE (d + ∑ α ∈ B, (finrank ℝ (E α) : ℤ))).extendFunctor
-    (ModuleCat.{u} k)
+  let ext := (ComplexShape.embeddingUpIntLE n).extendFunctor (ModuleCat.{u} k)
   -- the order of `Γ_B = ∏_(α ∈ B) Γ_α` is a unit, as the orders of the `Γ_α` are
   have hB : IsUnit (Fintype.card ((α : B) → Γ α) : k) := by
     rw [← Nat.card_eq_fintype_card, Nat.card_pi, Nat.cast_prod]
     exact IsUnit.prod_univ_iff.2 fun α ↦ hΓ α
   let r := SingleObj.limRetract (C := ChainComplex (ModuleCat.{u} k) ℕ) hB
-  -- the source is `(Φ ⋙ lim) ⋙ ext` by the definition of `partialVirtualComplex`
+  -- the source is `(Φ ⋙ lim) ⋙ ext` by the definition of `invariantChainsFunctor`
   ((r.map ((Functor.whiskeringLeft _ _ _).obj Φ)).map
     ((Functor.whiskeringRight _ _ _).obj ext)).trans
-      (Retract.ofIso (𝒜.deformationPairChainsIso k I hJB _))
+      (Retract.ofIso (𝒜.deformationPairChainsIso k I hJB n))
+
+include hΓ in
+/-- **The invariant chains of the deformation pairs are homotopy K-sheaves.** For an implicit
+atlas on a locally compact Hausdorff space and coefficients in a commutative ring in which the
+orders of the isotropy groups are units, the invariant relative chains
+`K ↦ C_(n - •)(D_(I,J,B), D_(I,J,B) ∖ Z_K; o_(E_B)^∨)^(Γ_B)`, in the cochain degrees `n - •`
+for any integer `n`, form a homotopy K-sheaf: they are a retract of the relative chains along the
+supports `Z_K`, which form one by Pardon's Lemma A.6.3. -/
+theorem isHomotopyKSheaf_deformationPairPresheaf_comp_invariantChainsFunctor [T2Space X]
+    [LocallyCompactSpace X] (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) (n : ℤ) :
+    TopCat.KPresheaf.IsHomotopyKSheaf
+      (𝒜.deformationPairPresheaf I hJB ⋙ invariantChainsFunctor ρ k B n) :=
+  (isHomotopyKSheaf_localChainKPresheaf ((partialVirtualCoefficients ρ k B).obj (SingleObj.star _))
+      (𝒜.deformationSupportHom I hJB) _
+      deformationSupport_empty (fun K L ↦ (deformationSupport_union (K : Set X) L).subset)
+      (fun K L ↦ (deformationSupport_inter (K : Set X) L).superset)
+      (fun K ↦ isClosed_deformationSupport K.isCompact.isClosed)
+      fun K _ hS hSK ↦ 𝒜.exists_mem_compactNhds_disjoint_deformationSupport K hS hSK
+    ).of_retract (𝒜.invariantChainsRetract hΓ I hJB n)
 
 include hΓ in
 /-- **The partial virtual complexes are homotopy K-sheaves** (Pardon, Section 4.3). For an implicit
@@ -161,13 +188,7 @@ Lemma A.6.3. -/
 theorem isHomotopyKSheaf_partialVirtualComplex [T2Space X] [LocallyCompactSpace X]
     (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) :
     (𝒜.partialVirtualComplex k I hJB).IsHomotopyKSheaf :=
-  (isHomotopyKSheaf_localChainKPresheaf ((partialVirtualCoefficients ρ k B).obj (SingleObj.star _))
-      (𝒜.deformationSupportHom I hJB) _
-      deformationSupport_empty (fun K L ↦ (deformationSupport_union (K : Set X) L).subset)
-      (fun K L ↦ (deformationSupport_inter (K : Set X) L).superset)
-      (fun K ↦ isClosed_deformationSupport K.isCompact.isClosed)
-      fun K _ hS hSK ↦ 𝒜.exists_mem_compactNhds_disjoint_deformationSupport K hS hSK
-    ).of_retract (𝒜.partialVirtualComplexRetract hΓ I hJB)
+  𝒜.isHomotopyKSheaf_deformationPairPresheaf_comp_invariantChainsFunctor hΓ I hJB _
 
 end Complexes
 

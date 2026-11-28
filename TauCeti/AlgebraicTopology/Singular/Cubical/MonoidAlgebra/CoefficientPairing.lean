@@ -109,6 +109,19 @@ theorem coefficientPairing_mapRange_cubicalChainModuleLinearMap {X' : Type uX}
     rw [Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_single, coefficientPairing_single,
       coefficientPairing_single, cubicalChainPairing_cubicalChainModuleLinearMap_left]
 
+/-- **The pairing preserves support**: if `f : X × Y → Z` sends `X × T` into `S` and `c x` is
+supported in `T` for every generator `x` in the support of the coefficient vector `u`, then
+`coefficientPairing c f u` is supported in `S`. -/
+theorem coefficientPairing_mem_cubicalChainModuleSupportedIn {c : P → cubicalChainModule Y K R}
+    {f : C(X × Y, Z)} {T : Set Y} {S : Set Z} (hf : ∀ x, ∀ y ∈ T, f (x, y) ∈ S)
+    {u : P →₀ cubicalChainModule X G R}
+    (hu : ∀ x ∈ u.support, c x ∈ cubicalChainModuleSupportedIn K R T) :
+    coefficientPairing c f u ∈ cubicalChainModuleSupportedIn K R S := by
+  rw [coefficientPairing, Finsupp.lsum_apply]
+  exact Submodule.finsuppSum_mem _ _ _ _ fun x hx ↦
+    cubicalChainPairing_mem_cubicalChainModuleSupportedIn hf _
+      (hu x (Finsupp.mem_support_iff.2 hx))
+
 variable [Monoid G] [TopologicalSpace G] [ContinuousMul G] [MulAction Gᵐᵒᵖ X]
   [ContinuousSMul Gᵐᵒᵖ X] [MulAction G Y] [ContinuousSMul G Y] {ind : P → ℤ}
 

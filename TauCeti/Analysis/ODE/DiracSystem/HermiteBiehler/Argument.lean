@@ -63,18 +63,6 @@ namespace TauCeti
 
 variable {q : ℝ → ℂ} {t T : ℝ}
 
-/-- `E(t, z)` does not vanish in the closed upper half-plane `0 ≤ Im z`. -/
-theorem diracHermiteBiehler_ne_zero (hq : LocallyIntegrableOn q (Ici 0)) (ht : 0 ≤ t) {z : ℂ}
-    (hz : 0 ≤ z.im) : diracHermiteBiehler q t z ≠ 0 := by
-  rw [diracHermiteBiehler_def]
-  exact diracFundamentalMatrix_sub_I_mul_ne_zero hq ht hz 0
-
-/-- `E~(t, z)` does not vanish in the closed upper half-plane `0 ≤ Im z`. -/
-theorem diracHermiteBiehlerDirichlet_ne_zero (hq : LocallyIntegrableOn q (Ici 0)) (ht : 0 ≤ t)
-    {z : ℂ} (hz : 0 ≤ z.im) : diracHermiteBiehlerDirichlet q t z ≠ 0 := by
-  rw [diracHermiteBiehlerDirichlet_def]
-  exact diracFundamentalMatrix_sub_I_mul_ne_zero hq ht hz 1
-
 /-- **Continuous arguments of `E` on the real axis.** For real `x`, the curve `t ↦ E(t, x)` has a
 continuous argument on `[0, T]` vanishing at `0`. -/
 theorem exists_continuousOn_diracHermiteBiehler_eq_norm_mul_exp
