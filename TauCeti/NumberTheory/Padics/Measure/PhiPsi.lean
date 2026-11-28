@@ -13,6 +13,7 @@ public import TauCeti.NumberTheory.Padics.Measure.Multiples
 public import TauCeti.NumberTheory.Padics.Measure.Pushforward
 import TauCeti.NumberTheory.Padics.MahlerBasis.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
+import TauCeti.RingTheory.PowerSeries.Order
 
 /-!
 # The operators `φ` and `ψ` on measures on `ℤ_p`
@@ -142,8 +143,7 @@ theorem amiceTransform_map_mulLeft_natCast (m : ℕ) (μ : D(ℤ_[p], R)) :
     rw [Finset.coe_range, Set.mem_Iio]
     by_contra h
     refine hk ?_
-    rw [coeff_of_lt_order _ ((Nat.cast_lt.mpr (by lia : n < k)).trans_le
-      (le_order_pow_of_constantCoeff_eq_zero k hG)), smul_zero]
+    rw [coeff_pow_eq_zero_of_lt hG (by lia : n < k), smul_zero]
 
 /-- **The Amice transform of `φ μ`** is the Amice transform of `μ` composed with
 `T ↦ (1 + T) ^ p - 1`: `A_(φ μ) (T) = A_μ ((1 + T) ^ p - 1)`. -/

@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Enriched.Basic
-public import Mathlib.CategoryTheory.Sites.CartesianMonoidal
-public import Mathlib.CategoryTheory.Sites.Over
-public import TauCeti.CategoryTheory.Sites.Descent.IsPrestack
+public import TauCeti.CategoryTheory.Sites.Descent.PresheafHomMap
+public import TauCeti.CategoryTheory.Sites.Over.SheafifySections
 
 /-!
 # The fibres of the Hom-sheafification of a pseudofunctor
@@ -25,23 +24,27 @@ sections over the terminal object `Over.mk (𝟙 U)` of the sheafification of `F
 for `J.over U`. Composition is induced by composition of local morphisms, through the
 compatibility of sheafification with finite products. Concretely, the presheaves
 `F.presheafHom M N` enrich the fibre of `F` over `U` in presheaves of types on `Over U`
-(`HomEnriched`), the functor `sheafifySections J U` (sheafify, then take sections over the
-terminal object) preserves finite products and so is monoidal, and the fibre `Fiber J F U` is the
-category obtained by transporting the enrichment along it (Mathlib's `TransportEnrichment`).
+(`HomEnriched`), the functor `J.sheafifySections U` (sheafify, then take sections over the
+terminal object, `CategoryTheory.GrothendieckTopology.sheafifySections`) preserves finite products
+and so is monoidal, and the fibre `Fiber J F U` is the category obtained by transporting the
+enrichment along it (Mathlib's `TransportEnrichment`).
 
 The comparison functor `toFiber J F U` from the fibre of `F` is the identity on objects and sends
 a morphism to its image in the sheafification. For a prestack it is an equivalence
-(`toFiberEquivalence`).
+(`toFiberEquivalence`). These fibres form a pseudofunctor, the Hom-sheafification of `F`, in
+`TauCeti.CategoryTheory.Sites.Descent.Stackification.Prestackification`.
 
 ## Main declarations
 
 * `TauCeti.Stack.Prestackification.HomEnriched`: the fibre of `F` over `U`, enriched in
   presheaves of types on `Over U` by `F.presheafHom`.
-* `TauCeti.Stack.Prestackification.sheafifySections`: sheafification followed by sections over
-  the terminal object, a monoidal functor.
 * `TauCeti.Stack.Prestackification.Fiber`: the fibre over `U` of the Hom-sheafification of `F`.
 * `TauCeti.Stack.Prestackification.Fiber.homMk`: the morphism given by a local morphism, and
   `Fiber.homMk_comp`, `Fiber.homMk_id`, which compute composition and identities.
+* `TauCeti.Stack.Prestackification.Fiber.homEquiv_comp_toFiber_map` and
+  `Fiber.homEquiv_toFiber_map_comp`: composing with the image of a morphism of `F` is induced by
+  composing local morphisms with its pullbacks (`Pseudofunctor.presheafHomPostcomp`,
+  `Pseudofunctor.presheafHomPrecomp`).
 * `TauCeti.Stack.Prestackification.toFiber`: the comparison functor from the fibre of `F`, and
   `toFiberEquivalence`, the equivalence it gives for a prestack.
 
@@ -99,47 +102,18 @@ instance instEnrichedCategoryHomEnriched (U : C) :
         rw [presheafHomComp_app_apply N P Q T (g, h)]
       _ = _ := (presheafHomComp_app_apply M N Q T (f, _)).symm
 
-section
-
-variable (U : C) [HasSheafify (J.over U) (Type v')]
-
-/-- The functor sending a presheaf of types on `Over U` to the sections of its sheafification
-over the terminal object `Over.mk (𝟙 U)`. -/
--- The body is exposed so that its values are the sections of a sheafification.
-@[expose] def sheafifySections : ((Over U)ᵒᵖ ⥤ Type v') ⥤ Type v' :=
-  sheafification (J.over U) (Type v') ⋙ (evaluation _ _).obj (op (Over.mk (𝟙 U)))
-
-instance preservesFiniteProducts_sheafifySections :
-    PreservesFiniteProducts (sheafifySections J U) := by
-  dsimp [sheafifySections]
-  infer_instance
-
-/-- The monoidal structure of `sheafifySections J U`, from its preservation of finite products. -/
-instance monoidalSheafifySections : (sheafifySections J U).Monoidal := .ofChosenFiniteProducts _
-
-/-- The value at the terminal object of the unit of sheafification. -/
-def toSheafifySections : (evaluation _ _).obj (op (Over.mk (𝟙 U))) ⟶ sheafifySections J U :=
-  Functor.whiskerRight (toSheafification (J.over U) (Type v'))
-    ((evaluation _ _).obj (op (Over.mk (𝟙 U))))
-
-@[simp]
-lemma toSheafifySections_app (P : (Over U)ᵒᵖ ⥤ Type v') :
-    (toSheafifySections J U).app P = (toSheafify (J.over U) P).app (op (Over.mk (𝟙 U))) := (rfl)
-
-end
-
 /-- The fibre over `U` of the Hom-sheafification of `F`: its objects are those of `F` over `U`,
 and its morphisms from `M` to `N` are the sections over the terminal object of the
 sheafification of `F.presheafHom M N`. -/
 -- The body is exposed so that the enriched category structure of `TransportEnrichment` and the
 -- objects of `F` over `U` can be used for it.
 @[expose] def Fiber (U : C) [HasSheafify (J.over U) (Type v')] : Type u' :=
-  TransportEnrichment (sheafifySections J U) (HomEnriched F U)
+  TransportEnrichment (J.sheafifySections U) (HomEnriched F U)
 
 instance instEnrichedCategoryFiber (U : C) [HasSheafify (J.over U) (Type v')] :
     EnrichedCategory (Type v') (Fiber J F U) :=
   inferInstanceAs (EnrichedCategory (Type v')
-    (TransportEnrichment (sheafifySections J U) (HomEnriched F U)))
+    (TransportEnrichment (J.sheafifySections U) (HomEnriched F U)))
 
 instance instCategoryFiber (U : C) [HasSheafify (J.over U) (Type v')] :
     Category.{v'} (Fiber J F U) :=
@@ -162,51 +136,26 @@ lemma Fiber.mk_obj (M : Fiber J F U) : Fiber.mk M.obj = M := (rfl)
 
 open Functor.LaxMonoidal Functor.OplaxMonoidal
 
-/-- The monoidal structure of `sheafifySections J U` is compatible with the unit of
-sheafification: the pair of images of `x` and `y` corresponds to the image of `(x, y)`. -/
-lemma μ_toSheafifySections {P Q : (Over U)ᵒᵖ ⥤ Type v'} (x : P.obj (op (Over.mk (𝟙 U))))
-    (y : Q.obj (op (Over.mk (𝟙 U)))) :
-    μ (sheafifySections J U) P Q ((toSheafifySections J U).app P x,
-      (toSheafifySections J U).app Q y) =
-      (toSheafifySections J U).app (P ⊗ Q) ((x, y) : (P ⊗ Q).obj (op (Over.mk (𝟙 U)))) := by
-  -- Evaluation at the terminal object preserves finite products, so `toSheafifySections J U` is
-  -- a monoidal natural transformation (`NatTrans.IsMonoidal.of_cartesianMonoidalCategory`), and
-  -- the monoidal structure of evaluation is the identity on pairs.
-  let _ : ((evaluation _ (Type v')).obj (op (Over.mk (𝟙 U)))).Monoidal := .ofChosenFiniteProducts _
-  have hδ : δ ((evaluation _ (Type v')).obj (op (Over.mk (𝟙 U)))) P Q = 𝟙 _ := by
-    apply CartesianMonoidalCategory.hom_ext
-    · exact (Functor.OplaxMonoidal.δ_fst _ P Q).trans (Category.id_comp _).symm
-    · exact (Functor.OplaxMonoidal.δ_snd _ P Q).trans (Category.id_comp _).symm
-  have hμ : μ ((evaluation _ (Type v')).obj (op (Over.mk (𝟙 U)))) P Q = 𝟙 _ := by
-    have h := Functor.Monoidal.μ_δ ((evaluation _ (Type v')).obj (op (Over.mk (𝟙 U)))) P Q
-    rw [hδ] at h
-    exact (Category.comp_id _).symm.trans h
-  have := ConcreteCategory.congr_hom (NatTrans.IsMonoidal.tensor (τ := toSheafifySections J U) P Q)
-    (show P.obj (op (Over.mk (𝟙 U))) × Q.obj (op (Over.mk (𝟙 U))) from (x, y))
-  simp only [evaluation_obj_obj, Monoidal.tensorObj_obj, hμ, toSheafifySections_app,
-    ConcreteCategory.comp_apply] at this
-  exact this.symm
-
 /-- The morphisms of the fibre of the Hom-sheafification are the sections over the terminal
 object of the sheafified presheaves of morphisms of `F`. -/
 def Fiber.homEquiv (M N : Fiber J F U) :
-    (M ⟶ N) ≃ (sheafifySections J U).obj (F.presheafHom M.obj N.obj) :=
+    (M ⟶ N) ≃ (J.sheafifySections U).obj (F.presheafHom M.obj N.obj) :=
   Equiv.refl _
 
 lemma Fiber.homEquiv_comp {M N P : Fiber J F U} (f : M ⟶ N) (g : N ⟶ P) :
-    Fiber.homEquiv M P (f ≫ g) = (μ (sheafifySections J U) _ _ ≫ (sheafifySections J U).map
+    Fiber.homEquiv M P (f ≫ g) = (μ (J.sheafifySections U) _ _ ≫ (J.sheafifySections U).map
       (presheafHomComp M.obj N.obj P.obj)) ((Fiber.homEquiv M N f, Fiber.homEquiv N P g) :
         (_ ⊗ _)) := (rfl)
 
 /-- The identity of `M` in the fibre of the Hom-sheafification is the image of `PUnit.unit` under
-the unit morphism `ε` of the monoidal functor `sheafifySections J U` followed by the image of the
+the unit morphism `ε` of the monoidal functor `J.sheafifySections U` followed by the image of the
 identities of local morphisms. -/
 -- This holds by definition of the category obtained by transporting the enrichment
 -- (`TransportEnrichment`) and of the category of a type-enriched category
 -- (`categoryOfEnrichedCategoryType`).
 lemma Fiber.homEquiv_id (M : Fiber J F U) :
     Fiber.homEquiv M M (𝟙 M) =
-      (ε (sheafifySections J U) ≫ (sheafifySections J U).map (presheafHomId M.obj))
+      (ε (J.sheafifySections U) ≫ (J.sheafifySections U).map (presheafHomId M.obj))
         PUnit.unit := (rfl)
 
 @[ext]
@@ -218,13 +167,13 @@ lemma Fiber.hom_ext {M N : Fiber J F U} {f g : M ⟶ N}
 written as a section over the terminal object of `F.presheafHom M N`. -/
 def Fiber.homMk {M N : Fiber J F U} (x : (F.presheafHom M.obj N.obj).obj (op (Over.mk (𝟙 U)))) :
     M ⟶ N :=
-  (Fiber.homEquiv M N).symm ((toSheafifySections J U).app _ x)
+  (Fiber.homEquiv M N).symm ((J.toSheafifySections U).app _ x)
 
 @[simp]
 lemma Fiber.homEquiv_homMk {M N : Fiber J F U}
     (x : (F.presheafHom M.obj N.obj).obj (op (Over.mk (𝟙 U)))) :
     Fiber.homEquiv M N (Fiber.homMk x) =
-      (toSheafifySections J U).app (F.presheafHom M.obj N.obj) x :=
+      (J.toSheafifySections U).app (F.presheafHom M.obj N.obj) x :=
   Equiv.apply_symm_apply _ _
 
 /-- The composite of the morphisms given by local morphisms `x` and `y` is the morphism given by
@@ -236,27 +185,21 @@ lemma Fiber.homMk_comp {M N P : Fiber J F U}
     Fiber.homMk x ≫ Fiber.homMk y = Fiber.homMk (M := M) (N := P) (x ≫ y) := by
   ext
   rw [Fiber.homEquiv_comp, ConcreteCategory.comp_apply, Fiber.homEquiv_homMk,
-    Fiber.homEquiv_homMk, Fiber.homEquiv_homMk, μ_toSheafifySections]
-  refine (ConcreteCategory.congr_hom ((toSheafifySections J U).naturality
+    Fiber.homEquiv_homMk, Fiber.homEquiv_homMk, GrothendieckTopology.μ_toSheafifySections]
+  refine (ConcreteCategory.congr_hom ((J.toSheafifySections U).naturality
     (presheafHomComp M.obj N.obj P.obj))
     ((x, y) : (F.presheafHom M.obj N.obj ⊗ F.presheafHom N.obj P.obj).obj _)).symm.trans ?_
-  exact congrArg ((toSheafifySections J U).app _)
+  exact congrArg ((J.toSheafifySections U).app _)
     (presheafHomComp_app_apply M.obj N.obj P.obj _ (x, y))
 
 /-- The morphism given by the identity local morphism is the identity. -/
 lemma Fiber.homMk_id (M : Fiber J F U) : Fiber.homMk (𝟙 _) = 𝟙 M := by
   ext
-  -- `toSheafifySections J U` is compatible with the units, as a monoidal natural transformation
-  -- (`NatTrans.IsMonoidal.of_cartesianMonoidalCategory`).
-  let _ : ((evaluation _ (Type v')).obj (op (Over.mk (𝟙 U)))).Monoidal := .ofChosenFiniteProducts _
-  have hε : ε (sheafifySections J U) PUnit.unit =
-      (toSheafifySections J U).app (𝟙_ ((Over U)ᵒᵖ ⥤ Type v')) PUnit.unit :=
-    (ConcreteCategory.congr_hom (NatTrans.IsMonoidal.unit (τ := toSheafifySections J U))
-      PUnit.unit).symm
-  rw [Fiber.homEquiv_homMk, Fiber.homEquiv_id, ConcreteCategory.comp_apply, hε]
-  exact (congrArg ((toSheafifySections J U).app _)
+  rw [Fiber.homEquiv_homMk, Fiber.homEquiv_id, ConcreteCategory.comp_apply,
+    GrothendieckTopology.ε_toSheafifySections]
+  exact (congrArg ((J.toSheafifySections U).app _)
     (presheafHomId_app_apply M.obj _ PUnit.unit)).symm.trans
-    (ConcreteCategory.congr_hom ((toSheafifySections J U).naturality (presheafHomId M.obj)) _)
+    (ConcreteCategory.congr_hom ((J.toSheafifySections U).naturality (presheafHomId M.obj)) _)
 
 variable (J F U) in
 /-- The comparison functor from the fibre of `F` over `U` to the fibre of its
@@ -279,6 +222,42 @@ lemma toFiber_obj (M : F.obj (.mk (op U))) : (toFiber J F U).obj M = Fiber.mk M 
 lemma toFiber_map {M N : F.obj (.mk (op U))} (φ : M ⟶ N) :
     (toFiber J F U).map φ = Fiber.homMk (F.presheafHomObjHomEquiv φ) := (rfl)
 
+/-- Composing with the image under `toFiber` of a morphism `ψ` of `F` is induced by
+postcomposition of local morphisms with the pullbacks of `ψ`. -/
+lemma Fiber.homEquiv_comp_toFiber_map {M : Fiber J F U} {N P : F.obj (.mk (op U))}
+    (x : M ⟶ Fiber.mk N) (ψ : N ⟶ P) :
+    Fiber.homEquiv M (Fiber.mk P) (x ≫ (toFiber J F U).map ψ) =
+      (J.sheafifySections U).map (F.presheafHomPostcomp M.obj ψ)
+        (Fiber.homEquiv M (Fiber.mk N) x) := by
+  rw [presheafHomPostcomp_eq_lift_comp_presheafHomComp, Functor.map_comp,
+    ← Functor.Monoidal.lift_μ_assoc]
+  refine (Fiber.homEquiv_comp x ((toFiber J F U).map ψ)).trans ?_
+  exact congrArg (μ (J.sheafifySections U) _ _ ≫
+    (J.sheafifySections U).map (presheafHomComp M.obj N P))
+      (Prod.ext (ConcreteCategory.congr_hom ((J.sheafifySections U).map_id _) _).symm
+        ((Fiber.homEquiv_homMk _).trans
+          ((GrothendieckTopology.sheafifySections_map_toUnit_comp _ _).trans
+            (congrArg _ ((presheafHomGlobalSection_app_apply ψ _ _).trans
+              (presheafHomObjHomEquiv_eq_map F ψ).symm))).symm))
+
+/-- Composing on the left with the image under `toFiber` of a morphism `φ` of `F` is induced by
+precomposition of local morphisms with the pullbacks of `φ`. -/
+lemma Fiber.homEquiv_toFiber_map_comp {M M' : F.obj (.mk (op U))} {N : Fiber J F U}
+    (φ : M' ⟶ M) (x : Fiber.mk M ⟶ N) :
+    Fiber.homEquiv (Fiber.mk M') N ((toFiber J F U).map φ ≫ x) =
+      (J.sheafifySections U).map (F.presheafHomPrecomp φ N.obj)
+        (Fiber.homEquiv (Fiber.mk M) N x) := by
+  rw [presheafHomPrecomp_eq_lift_comp_presheafHomComp, Functor.map_comp,
+    ← Functor.Monoidal.lift_μ_assoc]
+  refine (Fiber.homEquiv_comp ((toFiber J F U).map φ) x).trans ?_
+  exact congrArg (μ (J.sheafifySections U) _ _ ≫
+    (J.sheafifySections U).map (presheafHomComp M' M N.obj))
+      (Prod.ext ((Fiber.homEquiv_homMk _).trans
+          ((GrothendieckTopology.sheafifySections_map_toUnit_comp _ _).trans
+            (congrArg _ ((presheafHomGlobalSection_app_apply φ _ _).trans
+              (presheafHomObjHomEquiv_eq_map F φ).symm))).symm)
+        (ConcreteCategory.congr_hom ((J.sheafifySections U).map_id _) _).symm)
+
 instance essSurj_toFiber : (toFiber J F U).EssSurj where
   mem_essImage M := ⟨M.obj, ⟨Iso.refl _⟩⟩
 
@@ -286,8 +265,8 @@ instance essSurj_toFiber : (toFiber J F U).EssSurj where
 lemma toFiber_map_bijective [F.IsPrestack J] (M N : F.obj (.mk (op U))) :
     Function.Bijective ((toFiber J F U).map : (M ⟶ N) → _) := by
   have := isIso_toSheafify (J.over U) (IsPrestack.isSheaf J M N)
-  have hη : Function.Bijective ((toSheafifySections J U).app (F.presheafHom M N)) := by
-    rw [toSheafifySections_app]
+  have hη : Function.Bijective ((J.toSheafifySections U).app (F.presheafHom M N)) := by
+    rw [GrothendieckTopology.toSheafifySections_app]
     exact (isIso_iff_bijective _).1 (NatIso.isIso_app_of_isIso _ _)
   exact (Fiber.homEquiv (Fiber.mk M) (Fiber.mk N)).symm.bijective.comp
     (hη.comp F.presheafHomObjHomEquiv.bijective)

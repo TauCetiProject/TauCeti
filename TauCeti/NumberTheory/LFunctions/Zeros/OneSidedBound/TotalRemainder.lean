@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.PlacePrimeSum
+public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Place.PrimeSum
 import TauCeti.Data.ZMod.PrincipalUnits
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.PlaceAverage
 import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Laplace

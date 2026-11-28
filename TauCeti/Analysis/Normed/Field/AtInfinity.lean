@@ -28,6 +28,7 @@ of `w - z` behaves like `w` to the total exponent at infinity.
 * `TauCeti.tendsto_sub_div_of_tendsto_cobounded`: `(ζ - c) / b` tends to infinity with `ζ`.
 * `TauCeti.tendsto_cobounded_div_of_tendsto_nhdsNE_zero`: `(q + g⁻¹ - c) / b` tends to infinity
   as `g` tends to `0` without vanishing.
+* `TauCeti.eventually_inv_pow_ne_zero_cobounded`: `(z ^ n)⁻¹ ≠ 0` eventually along `cobounded 𝕜`.
 * `Finset.tendsto_prod_one_sub_mul_inv_pow`: `∏ z ∈ s, (1 - z * w⁻¹) ^ n z → 1` at infinity.
 -/
 
@@ -66,6 +67,12 @@ theorem tendsto_cobounded_div_of_tendsto_nhdsNE_zero {α : Type*} {l : Filter α
     Tendsto (fun a => (q + (g a)⁻¹ - c) / b) l (cobounded 𝕜) :=
   tendsto_sub_div_of_tendsto_cobounded hb
     ((tendsto_const_add_cobounded q).comp (tendsto_inv₀_nhdsNE_zero.comp hg))
+
+/-- Along `Bornology.cobounded 𝕜`, the inverse powers `(z ^ n)⁻¹` are eventually nonzero. -/
+theorem eventually_inv_pow_ne_zero_cobounded (𝕜 : Type*) [NormedDivisionRing 𝕜] (n : ℕ) :
+    ∀ᶠ z : 𝕜 in cobounded 𝕜, (z ^ n)⁻¹ ≠ 0 := by
+  filter_upwards [eventually_ne_cobounded (0 : 𝕜)] with z hz
+  exact inv_ne_zero (pow_ne_zero n hz)
 
 end NormedDivisionRing
 

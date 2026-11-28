@@ -179,23 +179,27 @@ section DiagonalStabilizer
 variable {ι R : Type*} [Fintype ι] [DecidableEq ι]
   [CommSemiring R] [IsLeftCancelMulZero R] [StarRing R]
 
+omit [IsLeftCancelMulZero R] in
+/-- A diagonal unitary fixes every diagonal matrix under conjugation. -/
+theorem conjStarAlgAut_diagonal_eq_of_isDiag (d : ι → R) (U : unitary (Matrix ι ι R))
+    (h : Matrix.IsDiag (U : Matrix ι ι R)) :
+    Unitary.conjStarAlgAut ℕ _ U (diagonal d) = diagonal d := by
+  have hcomm : Commute (U : Matrix ι ι R) (diagonal d) := by
+    rw [← h.diagonal_diag]
+    exact Matrix.commute_diagonal _ _
+  rw [Unitary.conjStarAlgAut_apply, hcomm.eq]
+  simp [Matrix.mul_assoc]
+
 /-- A diagonal with distinct entries has exactly the diagonal unitary frames in its stabilizer. -/
 theorem conjStarAlgAut_diagonal_eq_iff {d : ι → R} (hd : Function.Injective d)
     (U : unitary (Matrix ι ι R)) :
     Unitary.conjStarAlgAut ℕ _ U (diagonal d) = diagonal d ↔ Matrix.IsDiag (U : Matrix ι ι R) := by
-  rw [Unitary.conjStarAlgAut_apply]
-  constructor
-  · intro h
-    apply TauCeti.isDiag_of_commute_diagonal hd
-    calc
-      diagonal d * (U : Matrix ι ι R) = (U * diagonal d * (star U : Matrix ι ι R)) * U := by rw [h]
-      _ = U * diagonal d := by simp [Matrix.mul_assoc]
-  · intro h
-    have hcomm : Commute (U : Matrix ι ι R) (diagonal d) := by
-      rw [← h.diagonal_diag]
-      exact Matrix.commute_diagonal _ _
-    rw [hcomm.eq]
-    simp [Matrix.mul_assoc]
+  refine ⟨fun h ↦ ?_, conjStarAlgAut_diagonal_eq_of_isDiag d U⟩
+  rw [Unitary.conjStarAlgAut_apply] at h
+  apply TauCeti.isDiag_of_commute_diagonal hd
+  calc
+    diagonal d * (U : Matrix ι ι R) = (U * diagonal d * (star U : Matrix ι ι R)) * U := by rw [h]
+    _ = U * diagonal d := by simp [Matrix.mul_assoc]
 
 /-- Two frames give the same conjugate of a simple diagonal exactly when they differ
 by a right diagonal unitary. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Commutator
 public import Mathlib.GroupTheory.Coprod.Basic
+public import Mathlib.GroupTheory.OrderOfElement
 import TauCeti.GroupTheory.Coprod.Factors
 
 /-!
@@ -21,12 +22,16 @@ Consequently a pair of homomorphisms `f : M →* M'`, `g : N →* N'` keeps a no
 `M ∗ N` away from `1` as soon as it keeps every letter of one of its reduced words away from `1`:
 the image under `Monoid.Coprod.map f g` of the word is again a nonempty reduced word. For instance,
 in a free product `G ∗ K` of groups the commutator `[x, z y z⁻¹]` of nontrivial `x, y ∈ G` and
-`z ∈ K` is a nonempty reduced word.
+`z ∈ K` is a nonempty reduced word. Moreover, for nontrivial `x : M` and `y : N`, the powers
+`(inl x * inr y) ^ (n + 1)` are images of alternating nonempty reduced words, so `inl x * inr y` has
+infinite order.
 
 ## Main results
 
 * `Monoid.Coprod.mk_ofList_inj`: two reduced words with the same image in `M ∗ N` are equal.
 * `Monoid.Coprod.mk_ofList_ne_one`: the image of a nonempty reduced word is not `1`.
+* `Monoid.Coprod.not_isOfFinOrder_inl_mul_inr`: `inl x * inr y` has infinite order whenever `x ≠ 1`
+  and `y ≠ 1`.
 * `Monoid.Coprod.map_mk_ofList_ne_one`: `Monoid.Coprod.map f g` sends a nonempty reduced word
   to an element other than `1` when `f` and `g` send none of its letters to `1`.
 * `Monoid.Coprod.commutatorElement_inl_conj_ne_one`: `[x, z y z⁻¹] ≠ 1` in `G ∗ K` for
@@ -125,6 +130,47 @@ and whose consecutive letters lie in different factors, is not `1`. -/
 theorem mk_ofList_ne_one {L : List (M ⊕ N)} (hL : L ≠ []) (hc : (L.map Sum.isRight).IsChain (· ≠ ·))
     (h₁ : Sum.inl 1 ∉ L) (h₂ : Sum.inr 1 ∉ L) : (mk (FreeMonoid.ofList L) : M ∗ N) ≠ 1 := fun h =>
   hL ((mk_ofList_inj (L' := []) hc h₁ h₂ (by simp) (by simp) (by simp)).1 (by simpa using h))
+
+/-- Alternating word `[.inl x, .inr y, ..., .inl x, .inr y]` of length `2 * (n + 1)`. -/
+private def alternatingList (x : M) (y : N) : ℕ → List (M ⊕ N)
+  | 0 => [.inl x, .inr y]
+  | n + 1 => .inl x :: .inr y :: alternatingList x y n
+
+/-- In a free product `M ∗ N` of monoids, the product `inl x * inr y` of two nontrivial elements
+`x ≠ 1` and `y ≠ 1` has infinite order. -/
+theorem not_isOfFinOrder_inl_mul_inr {x : M} {y : N} (hx : x ≠ 1) (hy : y ≠ 1) :
+    ¬IsOfFinOrder (inl x * inr y : M ∗ N) := by
+  have hne (n : ℕ) : alternatingList x y n ≠ [] := by
+    cases n <;> simp [alternatingList]
+  have hchain (n : ℕ) : ((alternatingList x y n).map Sum.isRight).IsChain (· ≠ ·) ∧
+      ∃ t, (alternatingList x y n).map Sum.isRight = false :: t := by
+    induction n with
+    | zero => exact ⟨by simp [alternatingList], [true], by simp [alternatingList]⟩
+    | succ n ih =>
+      obtain ⟨hc, t, ht⟩ := ih
+      refine ⟨?_, true :: false :: t, by simp [alternatingList, ht]⟩
+      rw [alternatingList, List.map_cons, List.map_cons, Sum.isRight_inl, Sum.isRight_inr, ht]
+      exact List.IsChain.cons_cons (by decide)
+        (List.IsChain.cons_cons (by decide) (ht ▸ hc))
+  have hinl (n : ℕ) : Sum.inl 1 ∉ alternatingList x y n := by
+    induction n with
+    | zero => simp [alternatingList, hx.symm]
+    | succ n ih => simp [alternatingList, hx.symm, ih]
+  have hinr (n : ℕ) : Sum.inr 1 ∉ alternatingList x y n := by
+    induction n with
+    | zero => simp [alternatingList, hy.symm]
+    | succ n ih => simp [alternatingList, hy.symm, ih]
+  have hprod (n : ℕ) :
+      (mk (FreeMonoid.ofList (alternatingList x y n)) : M ∗ N) = (inl x * inr y) ^ (n + 1) := by
+    induction n with
+    | zero => simp [alternatingList, FreeMonoid.ofList_cons]
+    | succ n ih =>
+      rw [pow_succ', ← ih]
+      simp [alternatingList, FreeMonoid.ofList_cons, mul_assoc]
+  rw [isOfFinOrder_iff_pow_eq_one]
+  rintro ⟨n, hn, hpow⟩
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
+  exact mk_ofList_ne_one (hne k) (hchain k).1 (hinl k) (hinr k) ((hprod k).trans hpow)
 
 end Monoid
 

@@ -79,6 +79,43 @@ attribute [instance] PrimePadicIso.fact_prime
 
 namespace PrimePadicIso
 
+/-- The prime of an embedding, as an element of the type of rational primes. -/
+def primeIndex (ι : PrimePadicIso) : Nat.Primes := ⟨ι.prime, ι.fact_prime.out⟩
+
+/-- The natural number underlying the prime index is the prime of the embedding. -/
+@[simp] theorem coe_primeIndex (ι : PrimePadicIso) : (ι.primeIndex : ℕ) = ι.prime := (rfl)
+
+/-- The prime-adic embedding precomposed with complex conjugation. -/
+noncomputable def conj (ι : PrimePadicIso) : PrimePadicIso :=
+  { ι with iso := Complex.conjAe.toRingEquiv.trans ι.iso }
+
+/-- The conjugate embedding keeps the prime and precomposes the isomorphism with conjugation. -/
+theorem conj_def (ι : PrimePadicIso) :
+    ι.conj = { ι with iso := Complex.conjAe.toRingEquiv.trans ι.iso } := (rfl)
+
+/-- Conjugation does not change the prime. -/
+@[simp] theorem conj_prime (ι : PrimePadicIso) : ι.conj.prime = ι.prime := (rfl)
+
+/-- The conjugate embedding has the same index in the type of rational primes. -/
+@[simp] theorem conj_primeIndex (ι : PrimePadicIso) : ι.conj.primeIndex = ι.primeIndex := (rfl)
+
+/-- After transport to the original target field, the conjugate embedding applies the
+original embedding to `star z`. -/
+@[simp] theorem conj_iso_apply (ι : PrimePadicIso) (z : ℂ) :
+    (cast (by simp only [conj_prime]) (ι.conj.iso z) : PadicAlgCl ι.prime) = ι.iso (star z) := (rfl)
+
+/-- Norms at the conjugate embedding are norms of conjugate scalars at the original one. -/
+@[simp] theorem norm_conj_iso (ι : PrimePadicIso) (z : ℂ) :
+    ‖ι.conj.iso z‖ = ‖ι.iso (star z)‖ := (rfl)
+
+/-- Precomposing with complex conjugation twice gives back the original embedding. -/
+@[simp] theorem conj_conj (ι : PrimePadicIso) : ι.conj.conj = ι := by
+  rcases ι with @⟨p, hp, e⟩
+  have he : Complex.conjAe.toRingEquiv.trans (Complex.conjAe.toRingEquiv.trans e) = e := by
+    ext z
+    exact congrArg e (star_star z)
+  exact congrArg (fun f ↦ @PrimePadicIso.mk p hp f) he
+
 /-- The subring of complex numbers that are integral at the given prime-adic embedding. -/
 noncomputable def integers (ι : PrimePadicIso) : Subring ℂ :=
   (Valued.v.comap ι.iso.toRingHom).integer
@@ -89,6 +126,12 @@ theorem mem_integers {ι : PrimePadicIso} {z : ℂ} : z ∈ ι.integers ↔ ‖�
   rw [integers, Valuation.mem_integer_iff, Valuation.comap_apply, ← PadicAlgCl.valuation_coe,
     NNReal.coe_le_one]
   simp only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom]
+
+/-- A scalar is integral at the conjugate embedding exactly when its conjugate is integral at the
+original embedding. -/
+theorem mem_integers_conj {ι : PrimePadicIso} {z : ℂ} :
+    z ∈ ι.conj.integers ↔ star z ∈ ι.integers := by
+  simp only [mem_integers, norm_conj_iso]
 
 /-- A local integer is a unit exactly when its image has norm one. -/
 @[simp]

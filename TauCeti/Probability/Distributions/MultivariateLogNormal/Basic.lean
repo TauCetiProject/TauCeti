@@ -50,6 +50,13 @@ instance isProbabilityMeasure_multivariateLogNormalMeasure (m : EuclideanSpace �
   rw [multivariateLogNormalMeasure_def]
   infer_instance
 
+/-- On an empty coordinate type, the multivariate log-normal law is the point mass at the unique
+vector. -/
+@[simp high]
+theorem multivariateLogNormalMeasure_of_isEmpty [IsEmpty ι] (m : EuclideanSpace ℝ ι)
+    (S : Matrix ι ι ℝ) : multivariateLogNormalMeasure m S = Measure.dirac 0 :=
+  Measure.eq_dirac_of_subsingleton _ _
+
 /-- Invalid covariance parameters give a Dirac law. -/
 theorem multivariateLogNormalMeasure_of_not_posSemidef (m : EuclideanSpace ℝ ι)
     {S : Matrix ι ι ℝ} (hS : ¬ S.PosSemidef) :

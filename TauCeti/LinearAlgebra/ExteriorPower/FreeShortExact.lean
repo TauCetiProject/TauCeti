@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Basis.Exact
 public import TauCeti.LinearAlgebra.ExteriorPower.Basis
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Determinants of exact sequences of finite free modules
@@ -64,12 +65,10 @@ private lemma equivOfLifts_wedge (v : Fin n → M) (z : Fin r → N) :
       exteriorPower.ιMulti R (n + r) (Fin.append (f ∘ v) z) := by
   apply ((Module.Basis.ofExactLift hf he b c lifts hlifts).reindex
     finSumFinEquiv).exteriorPowerTopEquiv.injective
-  have happend : Fin.append (f ∘ v) z ∘ finSumFinEquiv = Sum.elim (f ∘ v) z := by
-    funext i
-    cases i <;> simp
   simp only [equivOfLifts, LinearEquiv.trans_apply, TensorProduct.congr_tmul,
     Module.Basis.exteriorPowerTopEquiv_apply_ιMulti, TensorProduct.lid_tmul,
-    smul_eq_mul, LinearEquiv.apply_symm_apply, Module.Basis.det_reindex, happend]
+    smul_eq_mul, LinearEquiv.apply_symm_apply, Module.Basis.det_reindex,
+    Fin.append_comp_finSumFinEquiv]
   exact (Module.Basis.ofExactLift_det_eq_mul hf he b c lifts hlifts v (q ∘ z)
     (Sum.elim (f ∘ v) z) (fun _ ↦ rfl) (fun _ ↦ rfl)).symm
 

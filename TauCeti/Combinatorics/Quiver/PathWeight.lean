@@ -24,6 +24,8 @@ by a prefix.
 
 ## Main results
 
+* `Quiver.Path.weight_inv_mul_mul`: multiplying each arrow weight by vertex factors on
+  both ends leaves only the corresponding factors at the path endpoints.
 * `Quiver.Path.addWeight_const`: the constant weight `c` gives a path the weight `p.length • c`.
 * `Prefunctor.addWeight_mapPath`: the weight of a pushed path is the pulled-back weight of the
   original path.
@@ -81,6 +83,17 @@ theorem map_weight {N P F : Type*} [Monoid N] [Monoid P] [FunLike F N P] [Monoid
   induction p with
   | nil => simp
   | cons p e ih => simp [ih]
+
+/-- Multiplying each arrow weight by vertex factors on both ends gives the path weight
+with the corresponding factors at its endpoints. -/
+theorem weight_inv_mul_mul {G : Type*} [Group G]
+    (t : V → G) (w : ∀ {x y : V}, (x ⟶ y) → G) {x y : V} (p : Quiver.Path x y) :
+    p.weight (fun {a b} e => (t a)⁻¹ * w e * t b) = (t x)⁻¹ * p.weight w * t y := by
+  induction p with
+  | nil => simp
+  | cons p e ih =>
+    rw [weight_cons, weight_cons, ih]
+    simp [mul_assoc]
 
 end Quiver.Path
 

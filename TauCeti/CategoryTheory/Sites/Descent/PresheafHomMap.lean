@@ -20,10 +20,13 @@ with identities and composition, and for isomorphisms `e : M ≅ M'` and `e' : N
 isomorphism of presheaves `F.presheafHom M N ≅ F.presheafHom M' N'`
 (`Pseudofunctor.presheafHomIso`), and of sheaves when `F` is a prestack
 (`Pseudofunctor.sheafHomIso`), compatible with identities, composites and inverses of
-isomorphisms.
+isomorphisms. The functors `presheafHomBifunctor` and `sheafHomBifunctor` package this action
+in both endpoints.
 
 ## Main declarations
 
+* `CategoryTheory.Pseudofunctor.presheafHomBifunctor` and
+  `CategoryTheory.Pseudofunctor.sheafHomBifunctor`: the functors of both endpoints.
 * `CategoryTheory.Pseudofunctor.presheafHomPrecomp φ N`, with `presheafHomPrecomp_app_apply` and
   `presheafHomPrecomp_id`.
 * `CategoryTheory.Pseudofunctor.presheafHomMap φ ψ`, with `presheafHomMap_app_apply`,
@@ -61,6 +64,24 @@ theorem presheafHomPrecomp_app_apply {M M' : F.obj (.mk (op S))} (φ : M' ⟶ M)
     (N : F.obj (.mk (op S))) (T : (Over S)ᵒᵖ) (p : (F.presheafHom M N).obj T) :
     (F.presheafHomPrecomp φ N).app T p = (F.map T.unop.hom.op.toLoc).toFunctor.map φ ≫ p :=
   (rfl)
+
+variable {F} in
+/-- Precomposition with the pullbacks of `φ` is composition of the global section
+`presheafHomGlobalSection φ` with local morphisms. -/
+lemma presheafHomPrecomp_eq_lift_comp_presheafHomComp {M' M N : F.obj (.mk (op S))}
+    (φ : M' ⟶ M) :
+    F.presheafHomPrecomp φ N = CartesianMonoidalCategory.lift
+      (CartesianMonoidalCategory.toUnit _ ≫ presheafHomGlobalSection φ) (𝟙 _) ≫
+        presheafHomComp M' M N := by
+  refine NatTrans.ext (funext fun T ↦ ConcreteCategory.hom_ext _ _ fun a ↦ ?_)
+  rw [presheafHomPrecomp_app_apply, NatTrans.comp_app, ConcreteCategory.comp_apply,
+    presheafHomComp_app_apply]
+  -- There is no component lemma for Cartesian lift in this functor category. The change
+  -- computes its pointwise pairing: the first projection evaluates the composite through
+  -- toUnit at the unique terminal element, and the second evaluates the identity at a.
+  -- The component lemmas above do not rewrite these projections of the pairing.
+  change _ = (presheafHomGlobalSection φ).app T _ ≫ a
+  rw [presheafHomGlobalSection_app_apply]
 
 @[simp]
 theorem presheafHomPrecomp_id (M N : F.obj (.mk (op S))) :
@@ -181,5 +202,51 @@ theorem sheafHomIso_symm (J : GrothendieckTopology C) [F.IsPrestack J]
     {M M' N N' : F.obj (.mk (op S))} (e : M ≅ M') (e' : N ≅ N') :
     (F.sheafHomIso J e e').symm = F.sheafHomIso J e.symm e'.symm :=
   (rfl)
+
+variable (S) in
+/-- The presheaves of local morphisms, contravariant in the source and covariant in the target.
+The map on local sections is precomposition and postcomposition by the restricted arrows. -/
+-- Exposed, like `presheafHomFunctor`, so that its values have the existing local morphisms
+-- as their sections, without equality transports.
+@[expose] def presheafHomBifunctor :
+    (F.obj (.mk (op S)))ᵒᵖ × F.obj (.mk (op S)) ⥤ (Over S)ᵒᵖ ⥤ Type v' where
+  obj p := F.presheafHom p.1.unop p.2
+  map f := F.presheafHomMap f.1.unop f.2
+  map_id p := F.presheafHomMap_id p.1.unop p.2
+  map_comp f g := F.presheafHomMap_comp f.1.unop g.1.unop f.2 g.2
+
+@[simp]
+lemma presheafHomBifunctor_obj (p : (F.obj (.mk (op S)))ᵒᵖ × F.obj (.mk (op S))) :
+    (F.presheafHomBifunctor S).obj p = F.presheafHom p.1.unop p.2 := (rfl)
+
+/-- The Hom bifunctor restricts both endpoint arrows before composing. -/
+@[simp]
+lemma presheafHomBifunctor_map_app {p q : (F.obj (.mk (op S)))ᵒᵖ × F.obj (.mk (op S))}
+    (f : p ⟶ q) (T : (Over S)ᵒᵖ) (h : (F.presheafHom p.1.unop p.2).obj T) :
+    ((F.presheafHomBifunctor S).map f).app T h =
+      (F.map T.unop.hom.op.toLoc).toFunctor.map f.1.unop ≫ h ≫
+        (F.map T.unop.hom.op.toLoc).toFunctor.map f.2 :=
+  F.presheafHomMap_app_apply f.1.unop f.2 T h
+
+/-- The sheaves of local morphisms of a prestack, as a functor of both endpoints. -/
+-- Exposed for the same sectionwise identification as `sheafHomFunctor`.
+@[expose] def sheafHomBifunctor (J : GrothendieckTopology C) [F.IsPrestack J] (S : C) :
+    (F.obj (.mk (op S)))ᵒᵖ × F.obj (.mk (op S)) ⥤ Sheaf (J.over S) (Type v') :=
+  ObjectProperty.lift _ (F.presheafHomBifunctor S) fun p ↦ IsPrestack.isSheaf J p.1.unop p.2
+
+@[simp]
+lemma sheafHomBifunctor_obj (J : GrothendieckTopology C) [F.IsPrestack J]
+    (p : (F.obj (.mk (op S)))ᵒᵖ × F.obj (.mk (op S))) :
+    (F.sheafHomBifunctor J S).obj p = F.sheafHom J p.1.unop p.2 := (rfl)
+
+/-- The map of local Hom sheaves sends `h` to `e|_T ≫ h ≫ f|_T`. -/
+@[simp]
+lemma sheafHomBifunctor_map_hom_app (J : GrothendieckTopology C) [F.IsPrestack J]
+    {p q : (F.obj (.mk (op S)))ᵒᵖ × F.obj (.mk (op S))} (f : p ⟶ q)
+    (T : (Over S)ᵒᵖ) (h : (F.presheafHom p.1.unop p.2).obj T) :
+    ((F.sheafHomBifunctor J S).map f).hom.app T h =
+      (F.map T.unop.hom.op.toLoc).toFunctor.map f.1.unop ≫ h ≫
+        (F.map T.unop.hom.op.toLoc).toFunctor.map f.2 :=
+  F.presheafHomBifunctor_map_app f T h
 
 end CategoryTheory.Pseudofunctor

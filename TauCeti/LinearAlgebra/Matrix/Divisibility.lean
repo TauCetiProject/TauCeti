@@ -47,6 +47,9 @@ proves the uniqueness of the Smith normal form, from one diagonal factor to two.
   `P * A * Q`.
 * `Matrix.dvd_mulVec_apply`: a common divisor of the coordinates of `v` divides every
   coordinate of `N *ᵥ v`.
+* `Matrix.pow_dvd_dotProduct_pow_of_dvd_sub_pow`: the Frobenius dot-product divisibility
+  from `Matrix.pow_dvd_dotProduct_pow` still holds for a right vector congruent to a vector
+  of powers modulo `d^(p^e)`.
 * `Matrix.dvd_diag_of_dvd_entries`: if `L * A * R` is `Matrix.diagonal d`, then a common
   divisor of the entries of `A` divides every `d k`.
 * `Matrix.forall_dvd_apply_iff_of_mul_eq_mul`: if `W * B = A * W`, then an element coprime to
@@ -117,6 +120,22 @@ theorem pow_dvd_dotProduct_pow {R : Type*} [CommRing R] [Fintype n] {p e : ℕ}
   apply (h0 _).1
   simpa only [dotProduct, map_sum, map_mul, map_pow, ← mul_pow, ← sum_pow_char_pow p e]
     using hpow
+
+/-- If `d^(p^e)` divides the prime `p`, `y` is a coordinatewise root of `z` modulo
+`d^(p^e)`, and `d` divides `x ⬝ᵥ y`, then `d^(p^e)` divides the dot product of the
+entrywise `p^e`-th powers of `x` with `z`. This is the modular-root variant of
+`Matrix.pow_dvd_dotProduct_pow`, as in `New.dvd_sum_pow_mul_of_root_dvd` in
+`grh/src/New/Derivatives/Divisibility/NullFrames.lean` of grh-lean at `72fead1`. -/
+theorem pow_dvd_dotProduct_pow_of_dvd_sub_pow {R : Type*} [CommRing R] [Fintype n] {p e : ℕ}
+    (hp : p.Prime) {d : R} (hd : d ^ (p ^ e) ∣ (p : R)) {x y z : n → R}
+    (hroot : ∀ i, d ^ (p ^ e) ∣ z i - y i ^ (p ^ e)) (h : d ∣ x ⬝ᵥ y) :
+    d ^ (p ^ e) ∣ (fun i ↦ x i ^ (p ^ e)) ⬝ᵥ z := by
+  have hdiff : d ^ (p ^ e) ∣
+      (fun i ↦ x i ^ (p ^ e)) ⬝ᵥ z -
+        (fun i ↦ x i ^ (p ^ e)) ⬝ᵥ (fun i ↦ y i ^ (p ^ e)) := by
+    rw [← dotProduct_sub]
+    exact Finset.dvd_sum fun i _ ↦ (hroot i).mul_left _
+  exact (dvd_iff_dvd_of_dvd_sub hdiff).2 (pow_dvd_dotProduct_pow hp hd h)
 
 /-- **Every common divisor of the entries divides every diagonal entry.** Each `d k` is the
 `(k, k)` entry of `L * A * R`, hence an `S`-combination of the entries of `A`. -/

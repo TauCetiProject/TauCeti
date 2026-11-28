@@ -9,7 +9,7 @@ public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Closed
 public import Mathlib.Topology.Covering.Basic
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
-import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering.Basic
 
 /-!
 # The real Spin projection on closed unit-group carriers

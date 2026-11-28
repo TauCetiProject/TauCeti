@@ -11,12 +11,13 @@ public import Mathlib.RingTheory.ClassGroup.Basic
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.Ideal.GoingUp
 public import Mathlib.RingTheory.Ideal.Int
+public import Mathlib.RingTheory.RamificationInertia.Inertia
 import Mathlib.RingTheory.DedekindDomain.Factorization
 import Mathlib.RingTheory.KrullDimension.Basic
 import Mathlib.RingTheory.RamificationInertia.Basic
-import Mathlib.RingTheory.RamificationInertia.Inertia
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.RamificationInertia.Inert
+import TauCeti.RingTheory.Ideal.Span
 
 /-!
 # Prime ideals of rings of integers
@@ -34,6 +35,9 @@ prime into them.
   ideals above it, packaged for `ClassGroup.mk0`.
 * `TauCeti.NumberField.heightOneSpectrumOfLiesOver`: a prime of `𝓞 K` above a rational prime,
   as a height-one prime.
+* `TauCeti.NumberField.heightOneSpectrumPrimesOverFinset`: the finite set of height-one primes
+  of `𝓞 K` above a rational prime `p`, with membership (`mem_heightOneSpectrumPrimesOverFinset_iff`)
+  and product reindexing (`prod_primesOverFinset_eq_prod_heightOneSpectrumPrimesOverFinset`).
 * `TauCeti.NumberField.eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton`: if a single
   prime lies above `p`, it is the only height-one prime containing `p`.
 * `TauCeti.NumberField.absNorm_eq_pow_finrank_of_primesOver_eq_singleton`: an unramified prime
@@ -44,6 +48,10 @@ prime into them.
   lie over a nonzero prime of `ℤ`.
 * `TauCeti.NumberField.span_natCast_eq_prod_primesOverFinset`: a rational prime unramified in
   `K` generates the squarefree product of the primes of `𝓞 K` above it.
+* `TauCeti.NumberField.natCast_dvd_iff_forall_mem_primesOver`: divisibility by an unramified
+  rational prime is equivalent to membership in all the primes above it.
+* `Ideal.under_eq_span_natCast_of_inertiaDeg_ne_zero`: if `(p)` has nonzero residue degree in
+  `𝓞 K`, any ideal in an extension lying over `(p)` contracts to `(p)` in `𝓞 K`.
 * `TauCeti.NumberField.isPrime_span_natCast_iff_of_eq_prod_primesOverFinset_pow`: if a rational
   prime generates a power `e` of the product of the primes above it, it stays prime iff a single
   prime lies above it and `e = 1`.
@@ -120,14 +128,19 @@ theorem heightOneSpectrumOfLiesOver_asIdeal (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrim
   rw [heightOneSpectrumOfLiesOver]
 
 omit [NumberField K] in
+/-- An ideal `𝔭` of `𝓞 K` different from `⊤` lies over `span {(p : ℤ)}` iff `(p : 𝓞 K) ∈ 𝔭`. -/
+theorem liesOver_span_natCast_iff {𝔭 : Ideal (𝓞 K)} (h𝔭 : 𝔭 ≠ ⊤) :
+    𝔭.LiesOver (span {(p : ℤ)}) ↔ (p : 𝓞 K) ∈ 𝔭 := by
+  simpa using liesOver_span_iff h𝔭 (Nat.prime_iff_prime_int.mp hp.out)
+
+omit [NumberField K] in
 /-- A finite set of height-one primes containing the primes above `p` contains every height-one
 prime to which `p` belongs. -/
 theorem mem_of_natCast_mem_asIdeal {T : Finset (HeightOneSpectrum (𝓞 K))}
     (hT : ∀ P : HeightOneSpectrum (𝓞 K),
       P.asIdeal ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) → P ∈ T)
     (P : HeightOneSpectrum (𝓞 K)) (hP : (p : 𝓞 K) ∈ P.asIdeal) : P ∈ T :=
-  hT P ⟨P.isPrime, (liesOver_span_iff P.isPrime.ne_top (Nat.prime_iff_prime_int.mp hp.out)).mpr
-    (by simpa using hP)⟩
+  hT P ⟨P.isPrime, (liesOver_span_natCast_iff P.isPrime.ne_top).mpr hP⟩
 
 /-- If `𝔭` is the only prime above `p`, it is the only height-one prime to which `p` belongs. -/
 theorem eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton (𝔭 : Ideal (𝓞 K))
@@ -138,6 +151,74 @@ theorem eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton (𝔭 : Ideal 
   Finset.mem_singleton.mp <| mem_of_natCast_mem_asIdeal (fun Q hQ ↦ by
     rw [hT, Set.mem_singleton_iff] at hQ
     exact Finset.mem_singleton.mpr (HeightOneSpectrum.ext hQ)) P hP
+
+/-- An ideal `𝔭` of `𝓞 K` belongs to `primesOverFinset (span {(p : ℤ)}) (𝓞 K)` iff `𝔭` is
+prime and `(p : 𝓞 K) ∈ 𝔭`. -/
+theorem mem_primesOverFinset_span_natCast_iff {𝔭 : Ideal (𝓞 K)} :
+    𝔭 ∈ primesOverFinset (span {(p : ℤ)}) (𝓞 K) ↔ 𝔭.IsPrime ∧ (p : 𝓞 K) ∈ 𝔭 := by
+  rw [mem_primesOverFinset_iff (span_singleton_natCast_ne_bot hp.out.ne_zero) (𝓞 K)]
+  exact and_congr_right fun h𝔭 ↦ liesOver_span_natCast_iff h𝔭.ne_top
+
+variable (K p) in
+/-- The finite set of height-one primes of `𝓞 K` lying above the rational prime `p`. -/
+noncomputable def heightOneSpectrumPrimesOverFinset : Finset (HeightOneSpectrum (𝓞 K)) :=
+  (primesOverFinset (span {(p : ℤ)}) (𝓞 K)).attach.map
+    ⟨fun q ↦
+      have hq := (mem_primesOverFinset_iff
+        (span_singleton_natCast_ne_bot hp.out.ne_zero) (𝓞 K)).mp q.property
+      have := hq.1
+      have := hq.2
+      heightOneSpectrumOfLiesOver p q.val,
+    by
+      intro q₁ q₂ h
+      exact Subtype.ext
+        (by simpa only [heightOneSpectrumOfLiesOver_asIdeal] using
+          congrArg HeightOneSpectrum.asIdeal h)⟩
+
+/-- Mapping `heightOneSpectrumPrimesOverFinset K p` by `HeightOneSpectrum.asIdeal` recovers
+`primesOverFinset (span {(p : ℤ)}) (𝓞 K)`. -/
+@[simp]
+theorem map_asIdeal_heightOneSpectrumPrimesOverFinset :
+    (heightOneSpectrumPrimesOverFinset K p).map
+        ⟨HeightOneSpectrum.asIdeal, HeightOneSpectrum.asIdeal_injective⟩ =
+      primesOverFinset (span {(p : ℤ)}) (𝓞 K) := by
+  rw [heightOneSpectrumPrimesOverFinset, Finset.map_map]
+  conv_rhs => rw [← (primesOverFinset (span {(p : ℤ)}) (𝓞 K)).attach_map_val]
+  refine congrArg (fun e ↦ Finset.map e _) (Function.Embedding.ext fun q ↦ ?_)
+  have hq := (mem_primesOverFinset_iff
+    (span_singleton_natCast_ne_bot hp.out.ne_zero) (𝓞 K)).mp q.property
+  have := hq.1
+  have := hq.2
+  dsimp only [Function.Embedding.trans_apply, Function.Embedding.coeFn_mk,
+    Function.Embedding.subtype_apply]
+  exact heightOneSpectrumOfLiesOver_asIdeal p q.val
+
+/-- A height-one prime `P` belongs to `heightOneSpectrumPrimesOverFinset K p` iff
+`(p : 𝓞 K) ∈ P.asIdeal`. -/
+@[simp]
+theorem mem_heightOneSpectrumPrimesOverFinset_iff {P : HeightOneSpectrum (𝓞 K)} :
+    P ∈ heightOneSpectrumPrimesOverFinset K p ↔ (p : 𝓞 K) ∈ P.asIdeal := by
+  rw [← Finset.mem_map' ⟨HeightOneSpectrum.asIdeal, HeightOneSpectrum.asIdeal_injective⟩,
+    Function.Embedding.coeFn_mk, map_asIdeal_heightOneSpectrumPrimesOverFinset,
+    mem_primesOverFinset_span_natCast_iff]
+  exact and_iff_right P.isPrime
+
+/-- Every member of `heightOneSpectrumPrimesOverFinset K p` lies over `span {(p : ℤ)}`. -/
+theorem liesOver_of_mem_heightOneSpectrumPrimesOverFinset {P : HeightOneSpectrum (𝓞 K)}
+    (hP : P ∈ heightOneSpectrumPrimesOverFinset K p) :
+    P.asIdeal.LiesOver (span {(p : ℤ)}) :=
+  (liesOver_span_natCast_iff P.isPrime.ne_top).mpr (mem_heightOneSpectrumPrimesOverFinset_iff.mp hP)
+
+/-- Reindexing a product over `primesOverFinset (span {(p : ℤ)}) (𝓞 K)` to a product over
+`heightOneSpectrumPrimesOverFinset K p`. -/
+@[to_additive /-- Reindexing a sum over `primesOverFinset (span {(p : ℤ)}) (𝓞 K)` to a sum over
+`heightOneSpectrumPrimesOverFinset K p`. -/]
+theorem prod_primesOverFinset_eq_prod_heightOneSpectrumPrimesOverFinset
+    {M : Type*} [CommMonoid M] (f : Ideal (𝓞 K) → M) :
+    ∏ 𝔭 ∈ primesOverFinset (span {(p : ℤ)}) (𝓞 K), f 𝔭 =
+      ∏ P ∈ heightOneSpectrumPrimesOverFinset K p, f P.asIdeal := by
+  rw [← map_asIdeal_heightOneSpectrumPrimesOverFinset]
+  simp only [Finset.prod_map, Function.Embedding.coeFn_mk]
 
 end HeightOne
 
@@ -224,6 +305,49 @@ theorem span_natCast_eq_prod_primesOverFinset {p : ℕ} [Fact p.Prime]
   have := hun P
   rw [← Ideal.ramificationIdx_ringOfIntegers_rat_eq_int P,
     Ideal.ramificationIdx_eq_one_of_isUnramifiedAt, pow_one]
+
+/-- At an unramified rational prime, an algebraic integer is divisible by `p` if and only if
+it belongs to every prime above `p`. -/
+theorem natCast_dvd_iff_forall_mem_primesOver {p : ℕ} [Fact p.Prime]
+    (hun : ∀ (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})],
+      Algebra.IsUnramifiedAt (𝓞 ℚ) Q) (x : 𝓞 K) :
+    (p : 𝓞 K) ∣ x ↔ ∀ Q ∈ (span {(p : ℤ)}).primesOver (𝓞 K), x ∈ Q := by
+  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
+    simpa using (Fact.out : p.Prime).ne_zero
+  have hmem {Q : Ideal (𝓞 K)} := IsDedekindDomain.mem_primesOverFinset_iff hp0 (𝓞 K) (P := Q)
+  rw [← mem_span_singleton, span_natCast_eq_prod_primesOverFinset hun,
+    prod_eq_iInf_of_pairwise_isCoprime (J := fun Q ↦ Q)]
+  · simp only [mem_iInf, hmem]
+  · intro I hI J hJ hne
+    obtain ⟨hIp, hIo⟩ := hmem.mp hI
+    obtain ⟨hJp, hJo⟩ := hmem.mp hJ
+    exact (heightOneSpectrumOfLiesOver p I).isCoprime_of_ne (heightOneSpectrumOfLiesOver p J)
+      (fun h ↦ hne (congrArg IsDedekindDomain.HeightOneSpectrum.asIdeal h))
+
+/-- If the principal ideal `(p)` has nonzero residue degree over `ℤ` in `𝓞 K`, then every
+ideal `Q` in an extension lying over `(p)` in `ℤ` contracts to `(p)` in `𝓞 K`. -/
+theorem _root_.Ideal.under_eq_span_natCast_of_inertiaDeg_ne_zero {E : Type*} [Field E]
+    [Algebra K E] {p : ℕ} (Q : Ideal (𝓞 E)) [Q.LiesOver (span {(p : ℤ)})]
+    (hf : (span {(p : 𝓞 K)}).inertiaDeg ℤ ≠ 0) :
+    Q.under (𝓞 K) = span {(p : 𝓞 K)} := by
+  obtain rfl | hp := eq_or_ne p 0
+  · have : Q.LiesOver (⊥ : Ideal ℤ) := by simpa using ‹Q.LiesOver (span {(↑(0 : ℕ) : ℤ)})›
+    simp [Q.eq_bot_of_liesOver_bot ℤ, Ideal.under_bot]
+  have hprime : (span {(p : 𝓞 K)}).IsPrime := by
+    by_contra h
+    exact hf (inertiaDeg_of_not_isPrime _ _ h)
+  have hmax := hprime.isMaximal (by simpa using hp)
+  have hQ : (Q.under (𝓞 K)).LiesOver (span {(p : ℤ)}) := LiesOver.tower_bot Q _ _
+  have hne : Q.under (𝓞 K) ≠ ⊤ := by
+    intro htop
+    have hover := hQ.over
+    rw [htop, under_top] at hover
+    have hmap := congrArg (Ideal.map (algebraMap ℤ (𝓞 K))) hover
+    exact hprime.ne_top (by
+      simpa only [map_span, Set.image_singleton, map_natCast, Ideal.map_top] using hmap)
+  refine (hmax.eq_of_le hne ?_).symm
+  rw [span_singleton_le_iff_mem, mem_under, map_natCast]
+  simpa using (mem_of_liesOver Q (span {(p : ℤ)}) (p : ℤ)).mp (mem_span_singleton_self _)
 
 /-- **Primes above distinct rational primes are distinct.** The finsets of primes of `𝓞 K` lying
 over two distinct rational primes are disjoint, since a prime lies over exactly one of them. -/
