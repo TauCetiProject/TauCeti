@@ -46,12 +46,23 @@ the criterion is restated for natural point representations in
 
 A regular one-cochain `b : V ⊗[R] H` can likewise be evaluated at any point by pushing its
 `H`-factor through the point. Evaluation at the universal tensor-factor points recovers the
-tensor expressions in the regular cocycle identity.
+tensor expressions in the regular cocycle identity. For a Hopf algebra, applying the antipode
+to the coordinate factor inverts the point argument.
 
 ## Main declarations
 
 * `TauCeti.Comodule.pointCochain`: evaluation of a regular one-cochain at a point.
 * `TauCeti.Comodule.rTensor_pointCochain`: this evaluation is natural in the value algebra.
+* `LinearMap.baseChange_pointCochain`: evaluation is natural in the coefficient module.
+* `TauCeti.Comodule.pointCochain_lTensor_antipode`: the coordinate antipode inverts the point.
+* `TauCeti.Comodule.liftBaseChange_pointCochain_pointCochain`: evaluation at two points agrees
+  with evaluation at their tensor-product point.
+* `TauCeti.Comodule.liftBaseChange_pointCochain_pointCochain_includeLeft_includeRight`:
+  evaluation at the universal pair recovers the reassociated tensor.
+* `TauCeti.Comodule.liftBaseChange_pointCochain_rTensor_coact`: evaluating a coacted cochain
+  gives the point action on its value.
+* `TauCeti.Comodule.liftBaseChange_pointCochain_rTensor_comul`: evaluating a comultiplied
+  coordinate gives convolution of points.
 * `TauCeti.Comodule.pointCochain_includeLeft` and
   `TauCeti.Comodule.endOfPoint_includeLeft_pointCochain_includeRight`: cochain evaluation at the
   universal pair of points.
@@ -89,6 +100,8 @@ tensor expressions in the regular cocycle identity.
 
 ## References
 
+* J. C. Jantzen, *Representations of Algebraic Groups I*, SFB/MPI 85-9 (1985),
+  §§3.3–3.4, pp. 52–54, for inversion of the regular-function convention.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.8 and I.2.10, for the fixed vectors
   of a comodule as the vectors fixed by all points.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §3.1–3.2.
@@ -148,8 +161,68 @@ theorem rTensor_pointCochain {B : Type*} [CommSemiring B] [Algebra R B] (φ : A 
   | tmul v h => simp
   | add b₁ b₂ h₁ h₂ => simp only [map_add, h₁, h₂]
 
+/-- Evaluation of regular cochains is natural in the coefficient module. -/
+@[simp]
+theorem _root_.LinearMap.baseChange_pointCochain {W : Type*} [AddCommMonoid W] [Module R W]
+    (f : V →ₗ[R] W) (g : H →ₐ[R] A) (b : V ⊗[R] H) :
+    f.baseChange A (pointCochain V g b) = pointCochain W g (f.rTensor H b) := by
+  simp only [pointCochain_apply, LinearMap.baseChange_eq_lTensor, LinearMap.lTensor_comm]
+  congr 1
+  rw [← LinearMap.comp_apply, ← LinearMap.comp_apply,
+    LinearMap.rTensor_comp_lTensor, LinearMap.lTensor_comp_rTensor]
+
+variable (V) in
+/-- Evaluating both coordinate factors agrees with evaluating at their tensor-product point.
+The value algebra is commutative, so the two point images commute. -/
+theorem liftBaseChange_pointCochain_pointCochain {D : Type*} [Semiring D] [Algebra R D]
+    (h : D →ₐ[R] A) (g : H →ₐ[R] A) (z : (V ⊗[R] D) ⊗[R] H) :
+    (LinearMap.liftBaseChange A (pointCochain V h)) (pointCochain (V ⊗[R] D) g z) =
+      pointCochain V (Algebra.TensorProduct.lift h g (fun _ _ ↦ Commute.all _ _))
+        (TensorProduct.assoc R V D H z) := by
+  induction z using TensorProduct.inductionOn with
+  | add z z' hz hz' => simp only [map_add, hz, hz']
+  | tmul vd c =>
+    induction vd using TensorProduct.inductionOn with
+    | add z z' hz hz' => simp only [add_tmul, map_add, hz, hz']
+    | tmul v d => simp [TensorProduct.smul_tmul', mul_comm]
+
 end Cochain
 
+section Hopf
+
+variable {R H V A : Type*} [CommSemiring R] [Semiring H] [HopfAlgebra R H]
+  [AddCommMonoid V] [Module R V] [CommSemiring A] [Algebra R A]
+
+variable (V) in
+/-- The antipode on the coordinate factor represents inversion of the point argument.
+This changes between the two regular-function conventions of Jantzen, I.3.3–I.3.4. -/
+@[simp]
+theorem pointCochain_lTensor_antipode (g : WithConv (H →ₐ[R] A)) (t : V ⊗[R] H) :
+    pointCochain V g.ofConv ((HopfAlgebraStruct.antipode R).lTensor V t) =
+      pointCochain V (g⁻¹).ofConv t := by
+  induction t using TensorProduct.inductionOn with
+  | add t t' ht ht' => simp only [map_add, ht, ht']
+  | tmul v h => simp
+
+end Hopf
+
+section CochainUniversal
+
+variable {R H V : Type*} [CommSemiring R] [CommSemiring H] [Algebra R H]
+  [AddCommMonoid V] [Module R V]
+
+variable (V) in
+/-- Evaluation at the two universal tensor-factor points recovers the reassociated tensor. -/
+theorem liftBaseChange_pointCochain_pointCochain_includeLeft_includeRight {D : Type*}
+    [CommSemiring D] [Algebra R D] (z : (V ⊗[R] D) ⊗[R] H) :
+    LinearMap.liftBaseChange (D ⊗[R] H)
+        (pointCochain V (Algebra.TensorProduct.includeLeft (S := R)))
+        (pointCochain (V ⊗[R] D) Algebra.TensorProduct.includeRight z) =
+      TensorProduct.comm R V (D ⊗[R] H) (TensorProduct.assoc R V D H z) := by
+  rw [liftBaseChange_pointCochain_pointCochain, Algebra.TensorProduct.lift_includeLeft_includeRight]
+  simp [pointCochain_apply]
+
+end CochainUniversal
 
 section Coalgebra
 
@@ -225,20 +298,11 @@ is functorial in the comodule. -/
 lemma baseChange_comp_endOfPoint (f : Hom R H V W) (g : H →ₐ[R] A) :
     f.toLinearMap.baseChange A ∘ₗ endOfPoint V g =
       endOfPoint W g ∘ₗ f.toLinearMap.baseChange A := by
-  have hcol : (f.toLinearMap.baseChange A).restrictScalars R ∘ₗ
-      (TensorProduct.comm R V A).toLinearMap ∘ₗ LinearMap.lTensor V g.toLinearMap =
-      (TensorProduct.comm R W A).toLinearMap ∘ₗ LinearMap.lTensor W g.toLinearMap ∘ₗ
-        TensorProduct.map f.toLinearMap LinearMap.id := by
-    refine TensorProduct.ext' fun w x => ?_
-    simp
-  apply LinearMap.restrictScalars_injective R
-  refine TensorProduct.ext' fun a v => ?_
-  have hc := DFunLike.congr_fun hcol (coact (R := R) (C := H) v)
-  simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
-    LinearEquiv.coe_toLinearMap] at hc
-  simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
-    endOfPoint_tmul, map_smul, LinearMap.baseChange_tmul, hc, Hom.map_coact_apply,
-    Hom.coe_toLinearMap]
+  apply TensorProduct.AlgebraTensorModule.ext
+  intro a v
+  simp only [LinearMap.comp_apply, endOfPoint_tmul, map_smul, LinearMap.baseChange_tmul]
+  rw [← pointCochain_apply, LinearMap.baseChange_pointCochain,
+    LinearMap.rTensor_def, Hom.map_coact_apply, Hom.coe_toLinearMap, pointCochain_apply]
 
 /-- An injective comodule morphism preserves and reflects the stabilizer of a subspace
 after flat scalar extension. Thus a subspace has the same stabilizer in a subrepresentation
@@ -257,7 +321,58 @@ theorem Hom.map_endOfPoint_baseChange_eq_iff [Module.Flat R A]
 
 end Functorial
 
+variable (V) in
+/-- Evaluating the coordinate factors of a coacted cochain is the action on its value. -/
+theorem liftBaseChange_pointCochain_rTensor_coact {C : Type*} [Semiring C] [Algebra R C]
+    (h : H →ₐ[R] A) (g : C →ₐ[R] A) (t : V ⊗[R] C) :
+    LinearMap.liftBaseChange A (pointCochain V h)
+        (pointCochain (V ⊗[R] H) g ((coact (R := R) (C := H) (M := V)).rTensor C t)) =
+      endOfPoint V h (pointCochain V g t) := by
+  induction t using TensorProduct.inductionOn with
+  | add t s ht hs => simp only [map_add, ht, hs]
+  | tmul v c =>
+    simp only [LinearMap.rTensor_tmul, pointCochain_tmul,
+      LinearMap.liftBaseChange_tmul, endOfPoint_tmul]
+    rw [pointCochain_apply]
+
 end Coalgebra
+
+section CochainConvolution
+
+variable {R C D V A : Type*} [CommSemiring R] [Semiring C] [Bialgebra R C]
+  [Semiring D] [Algebra R D] [AddCommMonoid V] [Module R V]
+  [CommSemiring A] [Algebra R A]
+
+variable (V) in
+/-- Evaluation of a comultiplied coordinate is convolution of the two points,
+with the left coordinate first mapped along an algebra homomorphism. -/
+theorem liftBaseChange_pointCochain_rTensor_comul (f : C →ₐ[R] D)
+    (h : D →ₐ[R] A) (g : C →ₐ[R] A) (t : V ⊗[R] C) :
+    LinearMap.liftBaseChange A (pointCochain V h)
+        (pointCochain (V ⊗[R] D) g ((TensorProduct.assoc R V D C).symm
+          ((f.toLinearMap.rTensor C ∘ₗ Coalgebra.comul).lTensor V t))) =
+      pointCochain V (toConv (h.comp f) * toConv g).ofConv t := by
+  rw [liftBaseChange_pointCochain_pointCochain, LinearEquiv.apply_symm_apply]
+  have he : (Algebra.TensorProduct.lift h g (fun _ _ ↦ Commute.all _ _)).toLinearMap ∘ₗ
+      f.toLinearMap.rTensor C =
+        LinearMap.mul' R A ∘ₗ TensorProduct.map (h.comp f).toLinearMap g.toLinearMap := by
+    ext c d
+    simp
+  have hm : (toConv (h.comp f) * toConv g).ofConv.toLinearMap =
+      LinearMap.mul' R A ∘ₗ TensorProduct.map (h.comp f).toLinearMap g.toLinearMap ∘ₗ
+        Coalgebra.comul := by
+    have hm := AlgHom.toLinearMap_convMul (toConv (h.comp f)) (toConv g)
+    rw [LinearMap.convMul_def] at hm
+    exact toConv_injective hm
+  have hc : (Algebra.TensorProduct.lift h g (fun _ _ ↦ Commute.all _ _)).toLinearMap ∘ₗ
+      (f.toLinearMap.rTensor C ∘ₗ Coalgebra.comul) =
+        (toConv (h.comp f) * toConv g).ofConv.toLinearMap := by
+    rw [hm, ← LinearMap.comp_assoc, he, LinearMap.comp_assoc]
+  simp only [pointCochain_apply]
+  congr 1
+  rw [← LinearMap.comp_apply, ← LinearMap.lTensor_comp, hc]
+
+end CochainConvolution
 
 section Fixed
 
@@ -547,90 +662,25 @@ lemma endOfPoint_convOne :
     map_one] at hv
   simp [endOfPoint_tmul, hv, TensorProduct.smul_tmul', smul_eq_mul]
 
-omit [Comodule R H V] in
-/-- The coact-free shuffle underlying `endOfPoint_convMul`: with the two coaction
-columns already peeled off, the two ways of multiplying the pushed coefficients agree,
-by commutativity of the value algebra. -/
-private lemma shuffle (g h : WithConv (H →ₐ[R] A)) :
-    (TensorProduct.lift ((Algebra.lsmul R R (A ⊗[R] V)).toLinearMap)).comp
-        ((TensorProduct.comm R (A ⊗[R] V) A).toLinearMap.comp
-          ((TensorProduct.map (TensorProduct.comm R V A).toLinearMap LinearMap.id).comp
-            ((TensorProduct.map (LinearMap.lTensor V (g.ofConv).toLinearMap)
-                LinearMap.id).comp
-              (LinearMap.lTensor (V ⊗[R] H) (h.ofConv).toLinearMap)))) =
-      (TensorProduct.comm R V A).toLinearMap.comp
-        ((LinearMap.lTensor V (LinearMap.mul' R A)).comp
-          ((LinearMap.lTensor V
-              (TensorProduct.map (g.ofConv).toLinearMap (h.ofConv).toLinearMap)).comp
-            (TensorProduct.assoc R V H H).toLinearMap)) := by
-  refine TensorProduct.ext (TensorProduct.ext' fun w x => LinearMap.ext fun y => ?_)
-  simp [Algebra.lsmul_coe, TensorProduct.smul_tmul', smul_eq_mul, mul_comm]
-
-/-- Restricting the endomorphism of a point along the flip is scalar collapse against
-the one-column form of the action: the pure-tensor characterization of `endOfPoint`,
-as a composite. -/
-private lemma endOfPoint_comp_comm (g : WithConv (H →ₐ[R] A)) :
-    (endOfPoint V g.ofConv).restrictScalars R ∘ₗ (TensorProduct.comm R V A).toLinearMap =
-      (TensorProduct.lift ((Algebra.lsmul R R (A ⊗[R] V)).toLinearMap)).comp
-        ((TensorProduct.comm R (A ⊗[R] V) A).toLinearMap.comp
-          (TensorProduct.map
-            ((TensorProduct.comm R V A).toLinearMap.comp
-              ((LinearMap.lTensor V (g.ofConv).toLinearMap).comp
-                (coact (R := R) (C := H))))
-            LinearMap.id)) := by
-  refine TensorProduct.ext' fun w c => ?_
-  simp [endOfPoint_tmul, Algebra.lsmul_coe]
-
 variable (V) in
 /-- Convolution products act as composites: the coassociativity law of the comodule. -/
 @[simp]
 lemma endOfPoint_convMul (g h : WithConv (H →ₐ[R] A)) :
     endOfPoint V ((g * h).ofConv) = endOfPoint V g.ofConv ∘ₗ endOfPoint V h.ofConv := by
-  have hmul : ((g * h).ofConv).toLinearMap =
-      LinearMap.mul' R A ∘ₗ
-        TensorProduct.map (g.ofConv).toLinearMap (h.ofConv).toLinearMap ∘ₗ comul := by
-    have hb := AlgHom.toLinearMap_convMul g h
-    rw [LinearMap.convMul_def] at hb
-    exact toConv_injective hb
-  apply LinearMap.restrictScalars_injective R
-  refine TensorProduct.ext' fun a v => ?_
-  -- the endomorphism of the point `g`, evaluated on the flip of the `h`-column
-  have c1 := DFunLike.congr_fun (endOfPoint_comp_comm (V := V) g)
-    (LinearMap.lTensor V (h.ofConv).toLinearMap (coact (R := R) (C := H) v))
-  -- peel the coaction column off the `g`-leg: a composite of Mathlib's tensor-map
-  -- composition lemmas
-  have c2 := DFunLike.congr_fun (show
-      TensorProduct.map
-          ((TensorProduct.comm R V A).toLinearMap.comp
-            ((LinearMap.lTensor V (g.ofConv).toLinearMap).comp (coact (R := R) (C := H))))
-          LinearMap.id ∘ₗ
-        LinearMap.lTensor V (h.ofConv).toLinearMap =
-      (TensorProduct.map (TensorProduct.comm R V A).toLinearMap LinearMap.id).comp
-          ((TensorProduct.map (LinearMap.lTensor V (g.ofConv).toLinearMap)
-              LinearMap.id).comp
-            (LinearMap.lTensor (V ⊗[R] H) (h.ofConv).toLinearMap)) ∘ₗ
-        (coact (R := R) (C := H) (M := V)).rTensor H from by
-    -- Assembled from the tensor-map composition lemmas (`map_comp`, `lTensor_def`,
-    -- `rTensor_def`); stated inline as a `show` because it is single-use, and the goal
-    -- is not otherwise reachable by rewriting: the composite must be produced before
-    -- it can be evaluated at the opaque coaction value below.
-    simp only [LinearMap.lTensor_def, LinearMap.rTensor_def, ← TensorProduct.map_comp,
-      LinearMap.comp_id, LinearMap.id_comp, LinearMap.comp_assoc])
+  apply TensorProduct.AlgebraTensorModule.ext
+  intro a v
+  simp only [LinearMap.comp_apply, endOfPoint_tmul, map_smul]
+  congr 1
+  rw [← pointCochain_apply, ← pointCochain_apply, ← liftBaseChange_pointCochain_rTensor_coact,
+    liftBaseChange_pointCochain_pointCochain]
+  have hc := LinearMap.congr_fun (coassoc (R := R) (C := H) (M := V)) v
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap] at hc
+  rw [hc]
+  have he := liftBaseChange_pointCochain_rTensor_comul V (AlgHom.id R H) g.ofConv h.ofConv
     (coact (R := R) (C := H) v)
-  -- the coact-free shuffle at the doubled coaction
-  have c3 := DFunLike.congr_fun (shuffle (V := V) g h)
-    ((coact (R := R) (C := H) (M := V)).rTensor H (coact (R := R) (C := H) v))
-  -- coassociativity, valuewise
-  have c4 := DFunLike.congr_fun (coassoc (R := R) (C := H) (M := V)) v
-  -- fold the convolution product back together, valuewise at the coaction
-  have c5 := DFunLike.congr_fun
-    (congrArg (LinearMap.lTensor V) hmul) (coact (R := R) (C := H) v)
-  simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.restrictScalars_apply,
-    LinearEquiv.coe_toLinearMap] at c1 c2 c3 c4 c5
-  rw [LinearMap.lTensor_comp, LinearMap.lTensor_comp] at c5
-  simp only [LinearMap.coe_comp, Function.comp_apply] at c5
-  simp only [LinearMap.restrictScalars_apply, LinearMap.coe_comp, Function.comp_apply,
-    endOfPoint_tmul, map_smul, c1, c2, c3, c4, c5]
+  simpa only [AlgHom.comp_id, toConv_ofConv, AlgHom.toLinearMap_id, LinearMap.rTensor_id,
+    LinearMap.id_comp, liftBaseChange_pointCochain_pointCochain,
+    LinearEquiv.apply_symm_apply] using he.symm
 
 variable (V) in
 /-- If two points whose convolution product is one both preserve a submodule, the first
