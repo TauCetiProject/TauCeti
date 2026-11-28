@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Basic
+public import Mathlib.Analysis.Convex.Body
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
@@ -37,10 +37,11 @@ the domain is the set of points of the module whose coordinatewise mixed embeddi
 The body is convex and symmetric (`TauCeti.NumberField.convex_approxBody`,
 `TauCeti.NumberField.neg_mem_approxBody`), compact when the forms at each infinite place are
 linearly independent (`TauCeti.NumberField.isCompact_approxBody`), and a neighbourhood of `0` for
-`0 < Q` (`TauCeti.NumberField.approxBody_mem_nhds_zero`). It is balanced over every completion at
-once: multiplying a point by an element of `mixedSpace K` of norm at most `1` at every infinite
-place keeps it in the body (`TauCeti.NumberField.mul_mem_approxBody`). When the forms at the places
-of `S₀` are linearly independent the module is finitely generated
+`0 < Q` (`TauCeti.NumberField.approxBody_mem_nhds_zero`); with both, it is a convex body with `0`
+in its interior (`TauCeti.NumberField.exists_convexBody_eq_approxBody`). It is balanced over every
+completion at once: multiplying a point by an element of `mixedSpace K` of norm at most `1` at
+every infinite place keeps it in the body (`TauCeti.NumberField.mul_mem_approxBody`). When the
+forms at the places of `S₀` are linearly independent the module is finitely generated
 (`TauCeti.NumberField.fg_approxModule`), and for `Q ≠ 0` it spans `ι → K`
 (`TauCeti.NumberField.span_approxModule_eq_top`). Its mixed image is therefore discrete
 (`TauCeti.NumberField.discreteTopology_mixedImage_approxModule`) and, for `Q ≠ 0`, a full lattice
@@ -142,6 +143,16 @@ theorem mem_approxModule [NumberField K] {S₀ : Finset (FinitePlace K)}
     x ∈ approxModule S₀ L c Q ↔ (∀ v ∈ S₀, ∀ i : ι, v (L v.val i x) ≤ |Q| ^ c v.val i) ∧
       ∀ v : FinitePlace K, v ∉ S₀ → ∀ j : ι, v (x j) ≤ 1 :=
   Iff.rfl
+
+/-- **An approximation domain lies in its finite part**, at every real level `Q`: the bounds
+`Q ^ c v i` at the places of `S₀` are at most `|Q| ^ c v i`. -/
+theorem approxDomain_subset_approxModule [NumberField K] {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)} {c : AbsoluteValue K ℝ → ι → ℝ} {Q : ℝ} :
+    approxDomain S₀ L c Q ⊆ approxModule S₀ L c Q := by
+  intro x hx
+  obtain ⟨-, hfin, hout⟩ := mem_approxDomain.1 hx
+  exact mem_approxModule.2 ⟨fun v hv i ↦ (hfin v hv i).trans
+    ((le_abs_self _).trans (Real.abs_rpow_le_abs_rpow _ _)), hout⟩
 
 variable [Fintype ι]
 
@@ -315,6 +326,19 @@ theorem isCompact_approxBody [NumberField K] {L : AbsoluteValue K ℝ → ι →
   exact Metric.isCompact_of_isClosed_isBounded (isClosed_approxBody L c Q)
     (isBounded_approxBody hL c Q)
 
+/-- For forms independent at every infinite place and `0 < Q`, the approximation body
+`approxBody L c Q` is a convex body with `0` in its interior. This packages the body for the
+convex-body API of successive minima over `K`. -/
+theorem exists_convexBody_eq_approxBody [NumberField K]
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hL : ∀ w : InfinitePlace K, LinearIndependent K (L w.val)) (c : AbsoluteValue K ℝ → ι → ℝ)
+    {Q : ℝ} (hQ : 0 < Q) :
+    ∃ B : ConvexBody (ι → mixedSpace K), (B : Set (ι → mixedSpace K)) = approxBody L c Q ∧
+      0 ∈ interior (B : Set (ι → mixedSpace K)) :=
+  ⟨⟨approxBody L c Q, convex_approxBody L c Q, isCompact_approxBody hL c Q,
+      ⟨0, mem_of_mem_nhds (approxBody_mem_nhds_zero L c hQ)⟩⟩, rfl,
+    mem_interior_iff_mem_nhds.2 (approxBody_mem_nhds_zero L c hQ)⟩
+
 omit [Fintype ι]
 
 /-- **The finite part of an approximation domain is finitely generated** when the forms are
@@ -439,10 +463,8 @@ theorem finite_approxDomain {S₀ : Finset (FinitePlace K)}
     Function.Injective.piMap fun _ ↦ mixedEmbedding_injective K
   refine (hfinite.preimage hinj.injOn).subset ?_
   intro x hx
-  obtain ⟨hinf, hfin, hout⟩ := mem_approxDomain.mp hx
-  refine ⟨(mixedEmbedding_mem_approxBody_iff).2 hinf,
-    Submodule.mem_mixedImage.mpr ⟨x, mem_approxModule.2 ⟨fun v hv i ↦ ?_, hout⟩, rfl⟩⟩
-  exact (hfin v hv i).trans ((le_abs_self _).trans (Real.abs_rpow_le_abs_rpow _ _))
+  exact ⟨(mixedEmbedding_mem_approxBody_iff).2 (mem_approxDomain.mp hx).1,
+    Submodule.mem_mixedImage.mpr ⟨x, approxDomain_subset_approxModule hx, rfl⟩⟩
 
 omit [Finite ι] in
 /-- A domain at a level between two positive bounds is contained in one fixed domain with

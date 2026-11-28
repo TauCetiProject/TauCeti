@@ -5,50 +5,82 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.LinearIndependent.Defs
+public import Mathlib.LinearAlgebra.LinearIndependent.Basic
+import Mathlib.Data.Finsupp.NeLocus
 import Mathlib.Order.Preorder.Finite
 
 /-!
-# Unitriangular changes of a family
+# Linear independence under a unitriangular change
 
-Let `x` and `z` be families of vectors indexed by a preorder, such that every `z j` is `x j` plus
-a combination of the earlier `x l`. Such corrections occur when a basis is improved one vector at
-a time, as in Evertse's lemma. Then `z` is linearly independent when `x` is
-(`LinearIndependent.of_sub_mem_span`), over any ring: in a relation among the `z j`, the
-coefficient of `x m` for a maximal index `m` of its support is the coefficient of `z m`. When the
-order is well founded, `z` also spans what `x` spans
-(`Submodule.span_range_eq_span_range_of_sub_mem_span`).
+Let `x` be a family indexed by a preorder, and let every `z j` be `x j` plus a combination of the
+earlier `x l`. If `x` is linearly independent, then so is `z`. The family `x` need not span the
+ambient module, the index type is any preorder, and no subtraction is needed: over a semiring with
+cancellative addition, write `z j = x j + ∑ l, d j l • x l` with `d j` supported below `j`. Two
+combinations of the `z l` with equal values give, by independence of `x`, equal coefficient
+families `f + ∑ l, f l • d l` and `g + ∑ l, g l • d l`. At a maximal index `j` where `f` and `g`
+differ, the two sums have the same coefficient at `j`, so cancelling it gives `f j = g j`.
+
+These corrections occur in Evertse's lemma. Over a ring and a well-founded order they also
+preserve the span of the family (`Submodule.span_range_eq_span_range_of_sub_mem_span`).
+
+## Main results
+
+* `LinearIndependent.of_eq_add_mem_span_image_Iio`: a unitriangular change of a linearly
+  independent family is linearly independent.
+
+## Attribution
+
+The statement is adapted from Tau Ceti pull request
+[#34591](https://github.com/TauCetiProject/TauCeti/pull/34591).
 -/
 
 public section
 
 open Submodule
 
-variable {R M ι : Type*} [Ring R] [AddCommGroup M] [Module R M] [Preorder ι] {x z : ι → M}
+variable {R M ι : Type*} [Semiring R] [IsCancelAdd R] [AddCommMonoid M] [Module R M]
+  [Preorder ι]
 
-/-- A family in which every `z j` is `x j` plus a combination of the earlier `x l` is linearly
-independent when `x` is. -/
-theorem LinearIndependent.of_sub_mem_span (hx : LinearIndependent R x)
-    (h : ∀ j, z j - x j ∈ span R (x '' Set.Iio j)) : LinearIndependent R z := by
+/-- **A unitriangular change of a linearly independent family is linearly independent.** Let `x`
+be a family indexed by a preorder and let every `z j` be `x j` plus a combination of the earlier
+`x l`. If `x` is linearly independent, then so is `z`. -/
+theorem LinearIndependent.of_eq_add_mem_span_image_Iio {x z : ι → M}
+    (hx : LinearIndependent R x) (h : ∀ j, ∃ u ∈ span R (x '' Set.Iio j), z j = x j + u) :
+    LinearIndependent R z := by
   classical
-  rw [linearIndependent_iff']
-  intro s g hg i hi
+  -- Write `z j = x j + ∑ l, d j l • x l` with `d j` supported below `j`.
+  have h' (j : ι) : ∃ d ∈ Finsupp.supported R R (Set.Iio j),
+      z j = x j + Finsupp.linearCombination R x d := by
+    obtain ⟨u, hu, hzu⟩ := h j
+    obtain ⟨d, hd, rfl⟩ := (Finsupp.mem_span_image_iff_linearCombination R).1 hu
+    exact ⟨d, hd, hzu⟩
+  choose d hd hdz using h'
+  -- The combinations of `z` are those of `x` after the change `f ↦ f + ∑ l, f l • d l`.
+  have hz : Finsupp.linearCombination R z =
+      Finsupp.linearCombination R x ∘ₗ (LinearMap.id + Finsupp.linearCombination R d) := by
+    ext j
+    simp [hdz]
+  intro f g hfg
+  simp only [hz, LinearMap.comp_apply, LinearMap.add_apply, LinearMap.id_apply] at hfg
+  have hfg' := hx hfg
   by_contra hne
-  obtain ⟨m, hm, hmax⟩ := (s.filter (g · ≠ 0)).exists_maximal ⟨i, Finset.mem_filter.2 ⟨hi, hne⟩⟩
-  rw [Finset.mem_filter] at hm
-  -- No index of the relation lies above `m`, so the corrections avoid `x m`.
-  have hsub (j : ι) (hj : j ∈ s) (hgj : g j ≠ 0) : x '' Set.Iio j ⊆ x '' (Set.univ \ {m}) :=
-    Set.image_mono fun l (hl : l < j) ↦ Set.mem_sdiff_singleton.2 ⟨trivial, fun hlm ↦
-      (hlm ▸ hl).not_ge (hmax (Finset.mem_filter.2 ⟨hj, hgj⟩) (hlm ▸ hl).le)⟩
-  have hz : ∑ j ∈ s, g j • z j =
-      ∑ j ∈ s, g j • (z j - x j) + (g m • x m + ∑ j ∈ s.erase m, g j • x j) := by
-    rw [Finset.add_sum_erase s (fun j ↦ g j • x j) hm.1, ← Finset.sum_add_distrib]
-    exact Finset.sum_congr rfl fun j _ ↦ by rw [← smul_add, sub_add_cancel]
-  rw [hg, add_left_comm] at hz
-  refine hm.2 (hx.eq_zero_of_smul_mem_span m (g m) ?_)
-  rw [eq_neg_of_add_eq_zero_left hz.symm]
-  refine neg_mem (add_mem (sum_mem fun j hj ↦ ?_) (sum_mem fun j hj ↦ smul_mem _ _ <|
-    subset_span ⟨j, Set.mem_sdiff_singleton.2 ⟨trivial, Finset.ne_of_mem_erase hj⟩, rfl⟩))
-  by_cases hgj : g j = 0
-  · simp [hgj]
-  · exact smul_mem _ _ (span_mono (hsub j hj hgj) (h j))
+  set s := f.support ∪ g.support
+  -- A maximal index `j` where `f` and `g` differ.
+  obtain ⟨j, hjmax⟩ := (f.neLocus g).exists_maximal (Finsupp.nonempty_neLocus_iff.2 hne)
+  have hsum (h : ι →₀ R) (hs : h.support ⊆ s) :
+      Finsupp.linearCombination R d h j = ∑ l ∈ s, h l * d l j := by
+    rw [Finsupp.linearCombination_apply_of_mem_supported R (Finset.coe_subset.2 hs),
+      Finsupp.finsetSum_apply]
+    simp
+  -- The changes of `f` and `g` agree at `j`: above `j` the coefficients agree, and `d l` vanishes
+  -- at `j` unless `j < l`.
+  have hd_eq : Finsupp.linearCombination R d f j = Finsupp.linearCombination R d g j := by
+    rw [hsum f Finset.subset_union_left, hsum g Finset.subset_union_right]
+    refine Finset.sum_congr rfl fun l _ ↦ ?_
+    by_cases hjl : j < l
+    · have hfl : f l = g l := Finsupp.notMem_neLocus.1 fun hl ↦ hjmax.not_gt hl hjl
+      rw [hfl]
+    · rw [(Finsupp.mem_supported' _ _).1 (hd l) j hjl, mul_zero, mul_zero]
+  have hj' := DFunLike.congr_fun hfg' j
+  rw [Finsupp.add_apply, Finsupp.add_apply, hd_eq] at hj'
+  exact Finsupp.mem_neLocus.1 hjmax.prop (add_right_cancel hj')
