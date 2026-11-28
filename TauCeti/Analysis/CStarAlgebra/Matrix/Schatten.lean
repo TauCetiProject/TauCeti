@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 public import TauCeti.Analysis.CStarAlgebra.Matrix.SquareFunction
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Schatten
@@ -26,9 +25,10 @@ for `0 < p`; at `p = 0`, `matrixLpGauge 0 x = 1` is a totalization convention fr
 operator-norm comparison, and the two-sided ideal bounds hold for `0 < p`; for `1 ≤ p`, agreement
 with `UnitarilyInvariantSeminorm.schatten` gives subadditivity and `matrixLpSeminorm`. At `p = 1`,
 we prove trace-norm duality. Using the column stacking operator `columnEuclideanLM` from
-`TauCeti.Analysis.CStarAlgebra.Matrix.SquareFunction`, we also establish the Schatten realizations,
-subadditivity, homogeneity, and restriction bounds of `columnSquare` and `rowSquare`, and their
-trace-pairing duality at `p = 1`.
+`TauCeti.Analysis.CStarAlgebra.Matrix.SquareFunction`, we also establish the Schatten realizations
+(`1 ≤ p`), subadditivity (`1 ≤ p`), homogeneity (`0 < p`), and restriction bounds (`0 < p`) of
+`matrixLpGauge p ∘ columnSquare` and `matrixLpGauge p ∘ rowSquare`, and their trace-pairing duality
+at `p = 1`.
 
 ## Main declarations
 

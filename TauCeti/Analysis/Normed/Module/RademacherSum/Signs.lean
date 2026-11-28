@@ -30,8 +30,10 @@ introducing normed-group moments or inner product spaces:
   when all four indices agree, giving the pairing expansion of the fourth power of a Rademacher sum
   in a non-unital ring (`TauCeti.sum_sum_units_smul_mul_self_mul_mul_self`).
 * **First Rademacher Fourier coefficients**: `TauCeti.rademacherCoeff` sends `Φ : (ι → ℤˣ) → M`
-  to `k ↦ |ι → ℤˣ|⁻¹ • ∑ ε, ε k • Φ ε`, recovers `x` from `ε ↦ ∑ j, ε j • x j`, commutes with
-  linear maps and `star`, and satisfies the bilinear coefficient transfer identities
+  to `k ↦ |ι → ℤˣ|⁻¹ • ∑ ε, ε k • Φ ε`, recovers `x` from `ε ↦ ∑ j, ε j • x j` over a
+  characteristic-zero division semiring, commutes with linear maps and (under compatible
+  `StarAddMonoid`/`StarModule` structures over a trivially starred division semiring) with `star`,
+  and satisfies the bilinear coefficient transfer identities
   (`TauCeti.sum_bilinear_rademacherCoeff`, `TauCeti.sum_bilinear_rademacherCoeff_eq_expect`).
 
 ## Main declarations

@@ -12,9 +12,10 @@ import TauCeti.LinearAlgebra.Matrix.Trace.Duality
 # Trace duality on `CStarMatrix`
 
 This file proves linear trace duality on `CStarMatrix`
-(`CStarMatrix.existsUnique_trace_mul_eq` and `CStarMatrix.existsUnique_sum_trace_mul_eq`) and
-records adjoint invariance of the trace pairing (`CStarMatrix.trace_star_mul_star` and
-`CStarMatrix.norm_sum_trace_star_mul_star`).
+(`CStarMatrix.existsUnique_trace_mul_eq` and `CStarMatrix.existsUnique_sum_trace_mul_eq`),
+records that taking both adjoints conjugates the trace pairing (`CStarMatrix.trace_star_mul_star`:
+`tr(x⋆ * y⋆) = (tr(x * y))⋆`), and deduces adjoint invariance of the trace-pairing norm
+(`CStarMatrix.norm_sum_trace_star_mul_star`).
 -/
 
 public section

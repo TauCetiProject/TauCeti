@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import TauCeti.Analysis.CStarAlgebra.SquareFunction
 public import TauCeti.Analysis.Normed.Module.RademacherSum.Signs
 import TauCeti.Analysis.CStarAlgebra.CauchySchwarz
@@ -26,20 +25,19 @@ whenever `‖Φ ε‖ ≤ C` for all `ε`.
 Indeed `Φ - ∑ k, εₖ yₖ` has no Rademacher coefficients, so `𝔼 Φ⋆Φ` is `∑ k, yₖ⋆ yₖ` plus the
 positive element `𝔼 (Φ - ∑ k, εₖ yₖ)⋆ (Φ - ∑ k, εₖ yₖ)`.
 
-**The fourth moment.** For a finite family `x` in a ring write `S(ε) = ∑ i, εᵢ xᵢ`. Averaging a
-product of four signs keeps exactly the index patterns that match in pairs, so
-`𝔼 S⁴ = A + B + C - 2 D` with
+**The fourth moment.** For a finite family `x` in a non-unital ring write `S(ε) = ∑ i, εᵢ xᵢ`.
+Summing the fourth power over the sign cube keeps exactly the index patterns that match in pairs,
+giving the unnormalized sum identity `∑ ε, S(ε)⁴ = |ι → ℤˣ| • (A + B + C - 2 • D)`
+(`TauCeti.sum_sum_units_smul_mul_self_mul_mul_self` in `RademacherSum/Signs.lean`) with
 
 * `A = (∑ i, xᵢ²)²`,
 * `B = ∑ i, xᵢ (∑ j, xⱼ²) xᵢ`,
 * `C = ∑ i, ∑ j, xᵢ xⱼ xᵢ xⱼ`,
 * `D = ∑ i, xᵢ⁴`.
 
-This pairing expansion, `TauCeti.sum_sum_units_smul_mul_self_mul_mul_self`, holds in any
-non-unital ring and lives with the other sign-cube averages in `RademacherSum/Signs.lean`.
-
 The coefficients need not commute, so `A`, `B` and `C` differ in general. When the `xᵢ` are
-self-adjoint elements of a C⋆-algebra, `D ≥ 0` and `𝔼 S⁴ ≥ 0`, so `‖𝔼 S⁴‖ ≤ ‖A + B + C‖`. Each of
+self-adjoint elements of a C⋆-algebra, dividing by `|ι → ℤˣ|` yields the expectation identity
+`𝔼 S⁴ = A + B + C - 2 D` with `D ≥ 0` and `𝔼 S⁴ ≥ 0`, so `‖𝔼 S⁴‖ ≤ ‖A + B + C‖`. Each of
 `‖A‖` and `‖B‖` is at most `‖∑ i, xᵢ²‖²`, and the Cauchy–Schwarz bound for finite sums, applied to
 the family `xᵢ xⱼ` indexed by pairs, gives `‖C‖ ≤ ‖B‖`. Hence
 

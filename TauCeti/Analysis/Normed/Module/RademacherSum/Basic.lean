@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.Normed.Group.SeparationQuotient
 public import TauCeti.Analysis.Normed.Module.RademacherSum.Moment
-public import TauCeti.Analysis.Normed.Module.RademacherSum.Signs
 
 /-!
 # Second moments of finite Rademacher sums
