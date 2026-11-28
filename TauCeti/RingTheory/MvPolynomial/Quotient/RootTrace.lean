@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
+public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import TauCeti.RingTheory.MvPolynomial.Cartier
 public import TauCeti.RingTheory.MvPolynomial.Quotient.NormalCrossing
@@ -13,9 +13,10 @@ public import TauCeti.RingTheory.MvPolynomial.Quotient.NormalCrossing
 /-!
 # Projection traces for normal-crossing hypersurfaces
 
-For a finite nonempty coordinate type, consider the quotient of a polynomial ring over the
-prime field by the product of the variables. The root stage is the regular module with scalars
-restricted along an iterated Frobenius.
+The additive root stage `MonomialRootAlgebra.rootStage` is a copy of the quotient of
+the polynomial ring over `ZMod p` by the product of the variables. For prime `p` and
+a finite nonempty coordinate type, restricting scalars along iterated Frobenius equips
+the stage with the module structure bundled by `MonomialRootAlgebra.rootModule`.
 The projection trace retains the monomials whose exponents are divisible by `p ^ m` and divides
 their exponents by `p ^ m` (`MonomialRootAlgebra.projectionTrace_toRoot_monomialClass`).
 It retracts the base inclusion (`MonomialRootAlgebra.projectionTrace_comp_rootTransition_zero`)
@@ -73,109 +74,96 @@ local notation "A" => MonomialRootAlgebra (ZMod p) σ
 local notation "J" => Ideal.span {∏ i : σ, (X i : P)}
 local notation "π" => Ideal.Quotient.mk J
 
+/-- The additive carrier of the `m`-th root stage for any natural number `p`. -/
+def rootStage (_m : ℕ) : Type _ := A
+
+noncomputable instance (m : ℕ) : AddCommGroup (rootStage (p := p) (σ := σ) m) :=
+  inferInstanceAs (AddCommGroup A)
+
+/-- Regard a class in the hypersurface as an element of the `m`-th root stage. -/
+noncomputable def toRoot (m : ℕ) : A ≃+ rootStage (p := p) (σ := σ) m :=
+  AddEquiv.refl _
+
+local notation "Stage" => rootStage (p := p) (σ := σ)
+
 section Prime
 
 variable [Nonempty σ] [Fact p.Prime]
 
-/-- The `m`-th root stage, with scalars restricted along the `m`-fold Frobenius. -/
-noncomputable def rootModule (m : ℕ) : ModuleCat A :=
-  (ModuleCat.restrictScalars (iterateFrobenius A p m)).obj (ModuleCat.of A A)
+/-- The root-stage action is the regular action restricted along the `m`-fold Frobenius. -/
+noncomputable instance (m : ℕ) : Module A (rootStage (p := p) (σ := σ) m) :=
+  letI := Module.compHom A (iterateFrobenius A p m)
+  (toRoot m).symm.module A
 
-/-- Regard a class in the hypersurface as an element of the `m`-th root stage. -/
-noncomputable def toRoot (m : ℕ) : A ≃+ rootModule (p := p) (σ := σ) m :=
-  AddEquiv.refl _
-
-private theorem smul_toRoot_iterate (m : ℕ) (a b : A) :
-    a • toRoot m b = toRoot m (iterateFrobenius A p m a * b) := by
-  -- Restriction of scalars leaves the underlying additive group and the identification unchanged.
-  calc
-    _ = toRoot m (iterateFrobenius A p m a • b) :=
-      ModuleCat.restrictScalars.smul_def' _ (M := ModuleCat.of A A) a b
-    _ = _ := by rw [smul_eq_mul]
+/-- The `m`-th root stage as a bundled module over the hypersurface. -/
+noncomputable abbrev rootModule (m : ℕ) : ModuleCat A :=
+  ModuleCat.of A (rootStage (p := p) (σ := σ) m)
 
 /-- Scalars act by the `p ^ m`-th power on the root stage. -/
 @[simp]
 theorem smul_toRoot (m : ℕ) (a b : A) :
     a • toRoot m b = toRoot m (a ^ p ^ m * b) := by
-  rw [smul_toRoot_iterate, iterateFrobenius_def]
+  -- Expose the transferred action on the quotient to apply the Frobenius power formula.
+  change toRoot m (iterateFrobenius A p m a • (toRoot m).symm (toRoot m b)) = _
+  rw [AddEquiv.symm_apply_apply, iterateFrobenius_def, smul_eq_mul]
 
 /-- At stage zero the underlying additive identification is linear over the base ring. -/
-noncomputable def toRootZero : A ≃ₗ[A] rootModule (p := p) (σ := σ) 0 :=
-  (ModuleCat.restrictScalarsId'App (iterateFrobenius A p 0)
-    (iterateFrobenius_zero A p) (ModuleCat.of A A)).symm.toLinearEquiv
+noncomputable def toRootZero : A ≃ₗ[A] Stage 0 :=
+  (toRoot 0).toLinearEquiv (fun a b ↦ by
+    rw [smul_toRoot]
+    simp only [pow_zero, pow_one, smul_eq_mul])
 
 /-- The stage-zero linear identification sends an element to its underlying quotient class. -/
 @[simp]
 theorem toRootZero_apply (a : A) : toRootZero a = toRoot 0 a :=
-  (rfl)
+  congrFun (AddEquiv.coe_toLinearEquiv _ _) a
 
-/-- The transition from stage `m` to stage `m + k` applies the `k`-fold Frobenius to the
+/-- The transition from stage `m` to stage `r` applies the `(r - m)`-fold Frobenius to the
 underlying classes. -/
-noncomputable def rootTransition (m k : ℕ) :
-    rootModule (p := p) (σ := σ) m →ₗ[A] rootModule (p := p) (σ := σ) (m + k) :=
-  ((ModuleCat.restrictScalarsComp'App (iterateFrobenius A p m)
-    (iterateFrobenius A p k) (iterateFrobenius A p (m + k))
-    (by rw [Nat.add_comm m k, iterateFrobenius_add]) (ModuleCat.of A A)).inv.hom).comp
-    (((ModuleCat.restrictScalars (iterateFrobenius A p m)).map
-      (ModuleCat.semilinearMapAddEquiv (iterateFrobenius A p k) (ModuleCat.of A A)
-        (ModuleCat.of A A) (LinearMap.iterateFrobenius A A p k))).hom)
+noncomputable def rootTransition (m r : ℕ) (h : m ≤ r) :
+    Stage m →ₗ[A] Stage r :=
+  { toFun := fun x ↦ toRoot r (iterateFrobenius A p (r - m) ((toRoot m).symm x))
+    map_add' := fun x y ↦ by rw [map_add, map_add, map_add]
+    map_smul' := by
+      intro a x
+      obtain ⟨b, rfl⟩ := (toRoot m).surjective x
+      rw [smul_toRoot, AddEquiv.symm_apply_apply, AddEquiv.symm_apply_apply,
+        smul_toRoot, iterateFrobenius_def, mul_pow, ← pow_mul, ← pow_add,
+        Nat.add_sub_of_le h]
+      rw [RingHom.id_apply, iterateFrobenius_def] }
 
-/-- On quotient classes the stage transition raises to the `p ^ k`-th power. -/
+/-- On quotient classes the stage transition raises to the `p ^ (r - m)`-th power. -/
 @[simp]
-theorem rootTransition_toRoot (m k : ℕ) (a : A) :
-    rootTransition m k (toRoot m a) = toRoot (m + k) (a ^ p ^ k) := by
-  -- Restriction and its comparison isomorphism retain the underlying additive carrier.
-  unfold rootTransition rootModule toRoot
-  rfl
+theorem rootTransition_toRoot (m r : ℕ) (h : m ≤ r) (a : A) :
+    rootTransition m r h (toRoot m a) = toRoot r (a ^ p ^ (r - m)) := by
+  simp only [rootTransition, LinearMap.coe_mk, AddHom.coe_mk, AddEquiv.symm_apply_apply,
+    iterateFrobenius_def]
 
-/-- The transition with zero increment is the identity. -/
+/-- The transition from a stage to itself is the identity. -/
 @[simp]
-theorem rootTransition_zero (m : ℕ) :
-    rootTransition (p := p) (σ := σ) m 0 = LinearMap.id := by
+theorem rootTransition_self (m : ℕ) :
+    rootTransition (p := p) (σ := σ) m m le_rfl = LinearMap.id := by
   ext x
   obtain ⟨a, rfl⟩ := (toRoot m).surjective x
-  exact (rootTransition_toRoot m 0 a).trans (by simp)
+  rw [rootTransition_toRoot, Nat.sub_self, pow_zero, pow_one, LinearMap.id_apply]
 
-/-- Successive transitions apply the Frobenius for the sum of their increments. -/
-theorem rootTransition_comp_apply (m k l : ℕ) (x : rootModule (p := p) (σ := σ) m) :
-    rootTransition (m + k) l (rootTransition m k x) =
-      toRoot (m + k + l) ((toRoot m).symm x ^ p ^ (k + l)) := by
-  obtain ⟨a, rfl⟩ := (toRoot m).surjective x
-  rw [rootTransition_toRoot, rootTransition_toRoot, AddEquiv.symm_apply_apply,
-    pow_add, pow_mul]
-
-/-- Composing stage transitions gives the transition for the sum of their increments,
-after transporting the target along associativity of addition. -/
-theorem rootTransition_comp (m k l : ℕ) :
-    (rootTransition (p := p) (σ := σ) (m + k) l).comp (rootTransition m k) =
-      (LinearEquiv.cast (M := fun n ↦ rootModule (p := p) (σ := σ) n)
-        (Nat.add_assoc m k l).symm).toLinearMap.comp (rootTransition m (k + l)) := by
-  ext x
-  rw [LinearMap.comp_apply, rootTransition_comp_apply, LinearMap.comp_apply,
-    LinearEquiv.coe_coe]
-  obtain ⟨a, rfl⟩ := (toRoot m).surjective x
-  rw [rootTransition_toRoot, AddEquiv.symm_apply_apply]
-  have hcast (i j : ℕ) (h : i = j) (b : A) :
-      LinearEquiv.cast (R := A) (M := fun n ↦ rootModule (p := p) (σ := σ) n) h (toRoot i b) =
-        toRoot j b := by
-    subst j
-    rfl
-  exact (hcast _ _ _ _).symm
-
-/-- A linear map out of a root stage is determined by its values on the monomial classes. -/
-theorem rootModule_linearMap_ext {m : ℕ} {M : Type*} [AddCommMonoid M] [Module A M]
-    {L K : rootModule (p := p) (σ := σ) m →ₗ[A] M}
-    (h : ∀ (d : σ →₀ ℕ) (c : ZMod p), L (toRoot m (monomialClass d c)) =
-      K (toRoot m (monomialClass d c))) : L = K := by
+/-- Composing stage transitions gives the transition between their endpoints. -/
+theorem rootTransition_comp (m r s : ℕ) (hmr : m ≤ r) (hrs : r ≤ s) :
+    (rootTransition (p := p) (σ := σ) r s hrs).comp (rootTransition m r hmr) =
+      rootTransition m s (hmr.trans hrs) := by
   ext x
   obtain ⟨a, rfl⟩ := (toRoot m).surjective x
-  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective a
-  induction f using MvPolynomial.induction_on' with
-  | monomial d c => simpa only [monomialClass_eq_mk] using h d c
-  | add f g hf hg => simp only [map_add, hf, hg]
+  simp only [LinearMap.comp_apply, rootTransition_toRoot, ← iterateFrobenius_def (R := A) p,
+    ← iterateFrobenius_add_apply, Nat.sub_add_sub_cancel hrs hmr]
+
+omit [Nonempty σ] in
+private theorem mk_expand (m : ℕ) (f : P) : π (expand (p ^ m) f) = (π f) ^ p ^ m := by
+  rw [← map_pow]
+  congr 1
+  simpa only [ZMod.card] using FiniteField.MvPolynomial.expand_card_pow m f
 
 /-- The root-stage projection onto integral exponents, as a linear map over the base ring. -/
-noncomputable def projectionTrace (m : ℕ) : rootModule (p := p) (σ := σ) m →ₗ[A] A :=
+noncomputable def projectionTrace (m : ℕ) : Stage m →ₗ[A] A :=
   { toFun := fun x ↦ projection (p ^ m) ((toRoot m).symm x)
     map_add' := fun x y ↦ by rw [map_add, map_add]
     map_smul' := by
@@ -183,9 +171,7 @@ noncomputable def projectionTrace (m : ℕ) : rootModule (p := p) (σ := σ) m �
       obtain ⟨b, rfl⟩ := (toRoot m).surjective x
       obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective a
       obtain ⟨g, rfl⟩ := Ideal.Quotient.mk_surjective b
-      have hexpand (h : P) : expand (p ^ m) h = h ^ p ^ m := by
-        simpa only [ZMod.card] using FiniteField.MvPolynomial.expand_card_pow m h
-      rw [smul_toRoot, AddEquiv.symm_apply_apply, ← map_pow π, ← hexpand, ← map_mul]
+      rw [smul_toRoot, AddEquiv.symm_apply_apply, ← mk_expand, ← map_mul]
       simp only [AddEquiv.symm_apply_apply, projection_mk, RingHom.id_apply, smul_eq_mul]
       rw [cartier_expand_mul (r := 0) (by simp [Nat.pos_of_neZero]), map_mul] }
 
@@ -238,9 +224,7 @@ recovers the stage `m` projection. -/
 theorem projectionTrace_add_toRoot_pow (m k : ℕ) (a : A) :
     projectionTrace (m + k) (toRoot (m + k) (a ^ p ^ k)) = projectionTrace m (toRoot m a) := by
   obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective a
-  have hexpand : expand (p ^ k) f = f ^ p ^ k := by
-    simpa only [ZMod.card] using FiniteField.MvPolynomial.expand_card_pow k f
-  rw [← map_pow π, ← hexpand, projectionTrace_toRoot_mk, projectionTrace_toRoot_mk]
+  rw [← mk_expand, projectionTrace_toRoot_mk, projectionTrace_toRoot_mk]
   congr 1
   ext d
   simp [pow_add, mul_comm (p ^ m), mul_smul,
@@ -248,17 +232,20 @@ theorem projectionTrace_add_toRoot_pow (m k : ℕ) (a : A) :
 
 /-- The higher-stage trace composed with the stage transition is the lower-stage trace. -/
 @[simp]
-theorem projectionTrace_comp_rootTransition (m k : ℕ) :
-    (projectionTrace (p := p) (σ := σ) (m + k)).comp (rootTransition m k) = projectionTrace m := by
-  apply rootModule_linearMap_ext
-  intro d c
-  simp only [LinearMap.comp_apply, rootTransition_toRoot, projectionTrace_add_toRoot_pow]
+theorem projectionTrace_comp_rootTransition (m r : ℕ) (h : m ≤ r) :
+    (projectionTrace (p := p) (σ := σ) r).comp (rootTransition m r h) = projectionTrace m := by
+  ext x
+  obtain ⟨a, rfl⟩ := (toRoot m).surjective x
+  rw [LinearMap.comp_apply, rootTransition_toRoot]
+  have htrace := projectionTrace_add_toRoot_pow m (r - m) a
+  rw [Nat.add_sub_of_le h] at htrace
+  exact htrace
 
 /-- The projection trace splits the linear inclusion from the base ring. -/
 @[simp]
 theorem projectionTrace_comp_rootTransition_zero (m : ℕ) :
-    (projectionTrace (p := p) (σ := σ) (0 + m)).comp
-      ((rootTransition 0 m).comp toRootZero.toLinearMap) = LinearMap.id := by
+    (projectionTrace (p := p) (σ := σ) m).comp
+      ((rootTransition 0 m (Nat.zero_le m)).comp toRootZero.toLinearMap) = LinearMap.id := by
   rw [← LinearMap.comp_assoc, projectionTrace_comp_rootTransition]
   apply LinearMap.ext
   intro a
@@ -266,15 +253,15 @@ theorem projectionTrace_comp_rootTransition_zero (m : ℕ) :
     toRootZero_apply, projectionTrace_zero_toRoot]
 
 /-- The transitions between finite root stages are injective. -/
-theorem rootTransition_injective (m k : ℕ) :
-    Function.Injective (rootTransition (p := p) (σ := σ) m k) := by
-  intro x y h
+theorem rootTransition_injective (m r : ℕ) (h : m ≤ r) :
+    Function.Injective (rootTransition (p := p) (σ := σ) m r h) := by
+  apply Function.LeftInverse.injective (g := fun x ↦
+    toRoot m (projectionTrace (r - m) (toRoot (r - m) ((toRoot r).symm x))))
+  intro x
   obtain ⟨a, rfl⟩ := (toRoot m).surjective x
-  obtain ⟨b, rfl⟩ := (toRoot m).surjective y
-  simp only [rootTransition_toRoot, EmbeddingLike.apply_eq_iff_eq] at h
-  apply congrArg (toRoot m)
-  simpa only [projectionTrace_toRoot_pow] using
-    congrArg (fun c ↦ projectionTrace k (toRoot k c)) h
+  rw [rootTransition_toRoot]
+  dsimp only
+  rw [AddEquiv.symm_apply_apply, projectionTrace_toRoot_pow]
 
 end Prime
 
@@ -287,29 +274,25 @@ private noncomputable def topExp (q : ℕ) : σ →₀ ℕ :=
 
 variable [Nonempty σ] [Fact p.Prime]
 
-omit [Nonempty σ] in
-private theorem prod_X_ne_zero : (t : P) ≠ 0 :=
-  Finset.prod_ne_zero_iff.mpr fun i _ ↦ X_ne_zero i
-
 private noncomputable def rootMul (m : ℕ) :
-    rootModule (p := p) (σ := σ) m →ₗ[A] rootModule (p := p) (σ := σ) m →ₗ[A]
-      rootModule (p := p) (σ := σ) m :=
+    Stage m →ₗ[A] Stage m →ₗ[A] Stage m :=
   let alg := (iterateFrobenius A p m).toAlgebra
-  @LinearMap.mul A A _ _ alg.toModule
-    (@Algebra.to_smulCommClass A A _ _ alg) (@IsScalarTower.right A A _ _ alg)
+  letI : Module A A := alg.toModule
+  let e := (toRoot m).symm.linearEquiv A
+  ((@LinearMap.mul A A _ _ alg.toModule
+    (@Algebra.to_smulCommClass A A _ _ alg) (@IsScalarTower.right A A _ _ alg)).compl₁₂
+      e.toLinearMap e.toLinearMap).compr₂ₛₗ e.symm.toLinearMap
 
 /-- Under the additive identification, root-stage multiplication multiplies quotient classes. -/
 private theorem rootMul_toRoot (m : ℕ) (a b : A) :
     rootMul m (toRoot m a) (toRoot m b) = toRoot m (a * b) := by
-  -- The restricted module and `toRoot` use the underlying quotient type.
-  unfold rootMul
-  let alg := (iterateFrobenius A p m).toAlgebra
-  exact @LinearMap.mul_apply' A A _ _ alg.toModule
-    (@Algebra.to_smulCommClass A A _ _ alg) (@IsScalarTower.right A A _ _ alg) a b
+  simp only [rootMul, LinearMap.compr₂ₛₗ_apply, LinearMap.compl₁₂_apply,
+    LinearEquiv.coe_coe, AddEquiv.linearEquiv_apply, AddEquiv.linearEquiv_symm_apply,
+    AddEquiv.symm_apply_apply, LinearMap.mul_apply', AddEquiv.symm_symm]
 
 /-- Multiplication followed by the root-stage projection trace, as a bilinear pairing. -/
 noncomputable def projectionPairing (m : ℕ) :
-    rootModule (p := p) (σ := σ) m →ₗ[A] rootModule (p := p) (σ := σ) m →ₗ[A] A :=
+    Stage m →ₗ[A] Stage m →ₗ[A] A :=
   (rootMul m).compr₂ₛₗ (projectionTrace m)
 
 /-- The value of the pairing on the underlying quotient classes. -/
@@ -325,10 +308,10 @@ theorem projectionPairing_flip (m : ℕ) :
   ext x y
   obtain ⟨a, rfl⟩ := (toRoot m).surjective x
   obtain ⟨b, rfl⟩ := (toRoot m).surjective y
-  simp [mul_comm]
+  rw [LinearMap.flip_apply, projectionPairing_toRoot, projectionPairing_toRoot, mul_comm a b]
 
 private theorem exists_cartier_top_representer (m : ℕ)
-    (φ : rootModule (p := p) (σ := σ) m →ₗ[A] A) :
+    (φ : Stage m →ₗ[A] A) :
     ∃ f : P, ∀ g : P,
       π (cartier (ZMod p) (p ^ m) (Finsupp.equivFunOnFinite.symm (fun _ : σ ↦ p ^ m - 1))
         (f * g)) = φ (toRoot m (π g)) := by
@@ -343,9 +326,7 @@ private theorem exists_cartier_top_representer (m : ℕ)
   simp only [map_sum, map_mul, ha]
   apply Finset.sum_congr rfl
   intro β _
-  have hexpand (h : P) : expand q h = h ^ p ^ m := by
-    simpa only [ZMod.card] using FiniteField.MvPolynomial.expand_card_pow m h
-  conv_rhs => rw [hexpand, map_pow, mul_comm, ← smul_toRoot,
+  conv_rhs => rw [mk_expand, mul_comm, ← smul_toRoot,
     LinearMap.map_smul, smul_eq_mul]
 
 private theorem projectionPairing_toRoot_mk (m : ℕ) (f g : P) :
@@ -368,12 +349,14 @@ private theorem projectionPairing_injective (m : ℕ) :
     intro g
     apply Ideal.Quotient.eq_zero_iff_mem.mp
     have hg := DFunLike.congr_fun hx (toRoot m (π g))
-    simpa only [projectionPairing_toRoot_mk, LinearMap.zero_apply, mul_assoc, topExp] using hg
+    rw [projectionPairing_toRoot_mk, LinearMap.zero_apply] at hg
+    simpa only [mul_assoc, topExp] using hg
   have hq : q - 1 + 1 = q := Nat.sub_add_cancel (Nat.pos_of_neZero q)
   conv at h =>
     lhs
     rw [← hq, pow_succ]
-  rw [mul_dvd_mul_iff_left (pow_ne_zero _ prod_X_ne_zero)] at h
+  have ht := isRegular_prod_X (R := ZMod p) (Finset.univ : Finset σ)
+  rw [mul_dvd_mul_iff_left (ht.pow _).ne_zero] at h
   exact (toRoot m).map_eq_zero_iff.mpr
     (Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton.mpr h))
 
@@ -393,7 +376,8 @@ private theorem projectionPairing_surjective (m : ℕ) :
   conv at hz =>
     lhs
     rw [← hq, pow_succ']
-  rw [mul_dvd_mul_iff_left prod_X_ne_zero] at hz
+  have ht := isRegular_prod_X (R := ZMod p) (Finset.univ : Finset σ)
+  rw [mul_dvd_mul_iff_left ht.ne_zero] at hz
   obtain ⟨f', rfl⟩ := hz
   refine ⟨toRoot m (π f'), ?_⟩
   ext x
