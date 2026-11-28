@@ -20,7 +20,7 @@ its degree-`i` homology. The consequence for left derived functors,
 `CategoryTheory.ObjectProperty.prop_leftDerived_obj`, is in
 `TauCeti.CategoryTheory.Abelian.LeftDerived`.
 
-More generally, a nonempty property closed under kernels and cokernels — for instance a weak Serre
+More generally, a property closed under kernels and cokernels — for instance a weak Serre
 class — passes to the homology of a short complex whenever all three objects of the short complex
 lie in the class, since the homology is isomorphic to `cokernel (kernel.lift S.g S.f S.zero)`.
 
@@ -30,8 +30,8 @@ lie in the class, since the homology is isomorphic to `cokernel (kernel.lift S.g
   in a class closed under subobjects and quotients if its middle object does.
 * `CategoryTheory.ObjectProperty.prop_homology`: the same for the homology of a complex.
 * `CategoryTheory.ObjectProperty.prop_shortComplex_homology_of_isClosedUnderKernels`: the homology
-  of a short complex lies in a nonempty class closed under kernels and cokernels if all three
-  terms of the short complex do.
+  of a short complex lies in a class closed under kernels and cokernels if all three terms of the
+  short complex do.
 * `CategoryTheory.ObjectProperty.prop_homology_of_isClosedUnderKernels`: the same for the homology
   of a homological complex.
 -/
@@ -70,9 +70,9 @@ end SubobjectsQuotients
 section KernelsCokernels
 
 variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] (P : ObjectProperty C)
-  [P.Nonempty] [P.IsClosedUnderKernels] [P.IsClosedUnderCokernels]
+  [P.IsClosedUnderKernels] [P.IsClosedUnderCokernels]
 
-/-- The homology of a short complex lies in a nonempty class of objects closed under kernels and
+/-- The homology of a short complex lies in a class of objects closed under kernels and
 cokernels, such as a weak Serre class, whenever all three terms of the short complex do: the
 homology identifies with `cokernel (kernel.lift S.g S.f S.zero)`. -/
 lemma prop_shortComplex_homology_of_isClosedUnderKernels {S : ShortComplex C} [S.HasHomology]
@@ -81,7 +81,7 @@ lemma prop_shortComplex_homology_of_isClosedUnderKernels {S : ShortComplex C} [S
   P.prop_of_iso S.homologyIsoCokernelLift.symm
     (P.prop_cokernel (kernel.lift S.g S.f S.zero) h₁ (P.prop_kernel S.g h₂ h₃))
 
-/-- A nonempty property closed under kernels and cokernels passes to the degree-`i` homology of a
+/-- A property closed under kernels and cokernels passes to the degree-`i` homology of a
 homological complex whenever the terms at `c.prev i`, `i`, and `c.next i` lie in the class. -/
 lemma prop_homology_of_isClosedUnderKernels {ι : Type*} {c : ComplexShape ι}
     (K : HomologicalComplex C c) (i : ι) [K.HasHomology i]

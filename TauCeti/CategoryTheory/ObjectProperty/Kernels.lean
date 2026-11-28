@@ -13,7 +13,7 @@ public import Mathlib.CategoryTheory.Preadditive.LeftExact
 /-!
 # Full subcategories closed under kernels or cokernels
 
-Let `C` be a category with zero morphisms, and let `P : ObjectProperty C` be nonempty. If `P` is
+Let `C` be a category with zero morphisms, and let `P : ObjectProperty C`. If `P` is
 closed under kernels (or under cokernels), then `P` is closed under isomorphisms
 (`CategoryTheory.ObjectProperty.isClosedUnderIsomorphisms_of_isClosedUnderKernels`,
 `CategoryTheory.ObjectProperty.isClosedUnderIsomorphisms_of_isClosedUnderCokernels`), since any
@@ -43,27 +43,25 @@ section IsClosedUnderIsomorphisms
 
 variable {C : Type*} [Category* C] [HasZeroMorphisms C] (P : ObjectProperty C)
 
-/-- A nonempty property of objects closed under kernels is closed under isomorphisms: if `Z` lies
-in `P` and `e : X ≅ Y`, then `Y` is a kernel of the zero morphism `X ⟶ Z` via `e.inv`. -/
-instance (priority := 100) isClosedUnderIsomorphisms_of_isClosedUnderKernels [P.Nonempty]
+/-- A property of objects closed under kernels is closed under isomorphisms: if `X` lies
+in `P` and `e : X ≅ Y`, then `Y` is a kernel of the zero morphism `X ⟶ X` via `e.inv`. -/
+instance (priority := 100) isClosedUnderIsomorphisms_of_isClosedUnderKernels
     [P.IsClosedUnderKernels] : P.IsClosedUnderIsomorphisms where
-  of_iso {X Y} e hX := by
-    obtain ⟨Z, hZ⟩ := P.exists_prop_of_nonempty
-    exact P.prop_of_isLimit_kernelFork
-      (IsKernel.isoKernel (0 : X ⟶ Z) e.inv (KernelFork.IsLimit.ofId (0 : X ⟶ Z) rfl) e.symm
+  of_iso {X Y} e hX :=
+    P.prop_of_isLimit_kernelFork
+      (IsKernel.isoKernel (0 : X ⟶ X) e.inv (KernelFork.IsLimit.ofId (0 : X ⟶ X) rfl) e.symm
         (by simp))
-      hX hZ
+      hX hX
 
-/-- A nonempty property of objects closed under cokernels is closed under isomorphisms: if `Z` lies
-in `P` and `e : X ≅ Y`, then `Y` is a cokernel of the zero morphism `Z ⟶ X` via `e.hom`. -/
-instance (priority := 100) isClosedUnderIsomorphisms_of_isClosedUnderCokernels [P.Nonempty]
+/-- A property of objects closed under cokernels is closed under isomorphisms: if `X` lies
+in `P` and `e : X ≅ Y`, then `Y` is a cokernel of the zero morphism `X ⟶ X` via `e.hom`. -/
+instance (priority := 100) isClosedUnderIsomorphisms_of_isClosedUnderCokernels
     [P.IsClosedUnderCokernels] : P.IsClosedUnderIsomorphisms where
-  of_iso {X Y} e hX := by
-    obtain ⟨Z, hZ⟩ := P.exists_prop_of_nonempty
-    exact P.prop_of_isColimit_cokernelCofork
-      (IsCokernel.cokernelIso (0 : Z ⟶ X) e.hom (CokernelCofork.IsColimit.ofId (0 : Z ⟶ X) rfl) e
+  of_iso {X Y} e hX :=
+    P.prop_of_isColimit_cokernelCofork
+      (IsCokernel.cokernelIso (0 : X ⟶ X) e.hom (CokernelCofork.IsColimit.ofId (0 : X ⟶ X) rfl) e
         (by simp))
-      hZ hX
+      hX hX
 
 end IsClosedUnderIsomorphisms
 

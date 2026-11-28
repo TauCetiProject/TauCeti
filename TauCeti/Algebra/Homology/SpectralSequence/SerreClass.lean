@@ -24,7 +24,7 @@ spectral sequence on which those computations rest.
   of those of every earlier page. Hence an object which lies in `P` on some page lies in `P` on
   every later page (`CategoryTheory.SpectralSequence.prop_page_X_of_le`). For the Serre class of
   zero objects this is `CategoryTheory.SpectralSequence.isZero_page_X_of_le`. More generally, for
-  a nonempty class closed under kernels and cokernels (such as a weak Serre class), if every object
+  a class closed under kernels and cokernels (such as a weak Serre class), if every object
   on a page lies in `P` (in particular, if the page vanishes outside a finite set whose terms lie
   in `P`), then every object on every later page lies in `P`
   (`CategoryTheory.SpectralSequence.prop_page_X_of_forall`,
@@ -52,7 +52,7 @@ spectral sequence on which those computations rest.
 * `CategoryTheory.SpectralSequence.prop_page_X_of_le`: an object in `P` stays in `P` on later
   pages; this only uses closure under subobjects and quotients.
 * `CategoryTheory.SpectralSequence.prop_page_X_of_forall`,
-  `CategoryTheory.SpectralSequence.prop_page_X_of_finset`: an entire page in a nonempty class
+  `CategoryTheory.SpectralSequence.prop_page_X_of_finset`: an entire page in a class
   closed under kernels and cokernels stays in the class on later pages.
 * `CategoryTheory.SpectralSequence.prop_page_X_of_prop_page_X_add_one`: an object whose
   neighbours on the page `s` lie in `P` lies in `P` if it does on the page `s + 1`.
@@ -91,9 +91,9 @@ lemma prop_page_X_of_le [P.IsClosedUnderSubobjects] [P.IsClosedUnderQuotients] {
       (P.prop_homology_of_prop_X₂ (S := (E.page r' (hr.trans hrr')).sc pq) ih)
 
 /-- **Persistence of a kernel/cokernel-closed class across pages.** If every object of page `r`
-lies in a nonempty class `P` closed under kernels and cokernels (such as a weak Serre class), then
+lies in a class `P` closed under kernels and cokernels (such as a weak Serre class), then
 every object of every later page `r' ≥ r` lies in `P`. -/
-lemma prop_page_X_of_forall [P.Nonempty] [P.IsClosedUnderKernels] [P.IsClosedUnderCokernels]
+lemma prop_page_X_of_forall [P.IsClosedUnderKernels] [P.IsClosedUnderCokernels]
     {r : ℤ} (hr : r₀ ≤ r) (h : ∀ pq : κ, P ((E.page r hr).X pq))
     (r' : ℤ) (hrr' : r ≤ r') (pq : κ) :
     P ((E.page r' (hr.trans hrr')).X pq) := by

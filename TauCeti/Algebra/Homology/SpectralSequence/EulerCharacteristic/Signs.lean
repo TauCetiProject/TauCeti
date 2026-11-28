@@ -58,8 +58,12 @@ instance eulerCharSignsUp'Homological (r : ℤ) :
 @[simp↓]
 lemma eulerCharSignsUp'Homological_χ (r : ℤ) (pq : ℤ × ℤ) :
     (up' (⟨-r, r - 1⟩ : ℤ × ℤ)).χ pq = (pq.1 + pq.2).negOnePow := by
-  change (-pq.1 - pq.2).negOnePow = (pq.1 + pq.2).negOnePow
-  rw [show -pq.1 - pq.2 = -(pq.1 + pq.2) by lia, Int.negOnePow_neg]
+  -- Unfold `eulerCharSignsUp'Homological` to its `BidegreeAssignment.eulerCharSigns` instance.
+  change @EulerCharSigns.χ _ _
+    ((TauCeti.BidegreeAssignment.homological r).eulerCharSigns r le_rfl) pq = _
+  rw [TauCeti.BidegreeAssignment.eulerCharSigns_χ (TauCeti.BidegreeAssignment.homological r) r
+    le_rfl, TauCeti.BidegreeAssignment.homological_deg, sub_eq_add_neg, ← neg_add,
+    Int.negOnePow_neg]
 
 /-- Alternating total-degree signs `(p, q) ↦ (-1)^(p + q)` for the `r`th page shape
 `ComplexShape.spectralSequenceNat (r, 1 - r)` of a first-quadrant cohomological spectral
@@ -82,8 +86,12 @@ instance eulerCharSignsSpectralSequenceNatHomological (r : ℤ) :
 @[simp↓]
 lemma eulerCharSignsSpectralSequenceNatHomological_χ (r : ℤ) (pq : ℕ × ℕ) :
     (spectralSequenceNat ⟨-r, r - 1⟩).χ pq = ((pq.1 : ℤ) + (pq.2 : ℤ)).negOnePow := by
-  change (-(pq.1 : ℤ) - (pq.2 : ℤ)).negOnePow = ((pq.1 : ℤ) + (pq.2 : ℤ)).negOnePow
-  rw [show -(pq.1 : ℤ) - (pq.2 : ℤ) = -((pq.1 : ℤ) + (pq.2 : ℤ)) by lia, Int.negOnePow_neg]
+  -- Unfold `eulerCharSignsSpectralSequenceNatHomological` to `BidegreeAssignment.eulerCharSigns`.
+  change @EulerCharSigns.χ _ _
+    ((TauCeti.BidegreeAssignment.homologicalNat r).eulerCharSigns r le_rfl) pq = _
+  rw [TauCeti.BidegreeAssignment.eulerCharSigns_χ
+      (TauCeti.BidegreeAssignment.homologicalNat r) r le_rfl,
+    TauCeti.BidegreeAssignment.homologicalNat_deg, sub_eq_add_neg, ← neg_add, Int.negOnePow_neg]
 
 /-- Alternating total-degree signs `(p, q) ↦ (-1)^(p + q)` for the `r`th page shape
 `ComplexShape.spectralSequenceFin l (r, 1 - r)` of a cohomological spectral sequence on `l`
