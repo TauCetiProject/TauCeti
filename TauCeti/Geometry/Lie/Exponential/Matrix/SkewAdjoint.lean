@@ -12,7 +12,6 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.Geometry.Lie.Exponential.OneParameter
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
-import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Lie.SkewAdjoint
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 import TauCeti.LinearAlgebra.QuadraticForm.Matrix
@@ -118,8 +117,7 @@ theorem det_exp_eq_one_of_mem_skewAdjointMatricesLieSubalgebra
         (1 / 2 : ℝ)
     have hdet := congrArg Matrix.det hs
     rw [Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose, mul_right_comm, ← sq] at hdet
-    have hzero : ((exp ((1 / 2 : ℝ) • A)).det ^ 2 - 1) * J.det = 0 := by linear_combination hdet
-    exact sub_eq_zero.mp (mem_nonZeroDivisors_iff_right.mp hJ _ hzero)
+    exact (mul_cancel_right_mem_nonZeroDivisors hJ).mp (hdet.trans (one_mul _).symm)
   have hdouble : exp A = exp ((1 / 2 : ℝ) • A) ^ 2 := by
     rw [pow_two]
     exact Matrix.exp_eq_mul_exp_half A

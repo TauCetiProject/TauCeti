@@ -143,18 +143,6 @@ theorem spinToSpecialOrthogonalUnitsRange_apply (Q : QuadraticForm R (n → R))
   simp only [spinToSpecialOrthogonalUnitsRange, ContinuousMonoidHom.coe_comp,
     Function.comp_apply, ContinuousMonoidHom.coe_coe, ContinuousMonoidHom.coe_mk]
 
--- Not `@[simp]`: `spinToSpecialOrthogonalUnitsRange_apply`,
--- `spinGroupContinuousMulEquivUnitsRange_symm_apply`, and
--- `QuadraticMap.specialOrthogonalContinuousMulEquivRange_apply` already normalize both sides.
-/-- Evaluating the range-carrier Spin projection on the canonical unit representative of a Spin
-element applies `spinToSpecialOrthogonal Q` and embeds the result in `GL(n, R)`. -/
-theorem spinToSpecialOrthogonalUnitsRange_apply_toUnits (Q : QuadraticForm R (n → R))
-    [IsModuleTopology R (n → R)] [ContinuousMul (CliffordAlgebra Q)]
-    (x : spinGroup Q) :
-    spinToSpecialOrthogonalUnitsRange Q ⟨spinGroup.toUnits x, ⟨x, rfl⟩⟩ =
-      Q.specialOrthogonalContinuousMulEquivRange (spinToSpecialOrthogonal Q x) := by
-  rw [spinToSpecialOrthogonalUnitsRange_apply, spinGroupContinuousMulEquivUnitsRange_symm_apply]
-
 end CoordinateProjection
 
 section Kernel

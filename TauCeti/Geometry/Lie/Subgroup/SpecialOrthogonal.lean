@@ -176,14 +176,6 @@ def complexSpecialOrthogonalEmbeddedLieSubgroupData (Q : QuadraticForm ℂ (Fin 
     rw [MonoidHom.coe_range]
     exact Q.isClosed_range_specialOrthogonalToGeneralLinear)
 
-/-- The canonical real model of the complex `SO(Q)` range carrier is finite-dimensional. -/
-instance complexSpecialOrthogonalLieModelFiniteDimensional :
-    FiniteDimensional ℝ SpecialOrthogonalLieModel := by
-  let _ : FiniteDimensional ℝ
-      (LeftInvariantDerivation 𝓘(ℝ, Matrix (Fin n) (Fin n) ℂ) (Matrix (Fin n) (Fin n) ℂ)ˣ) :=
-    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
-  exact FiniteDimensional.finiteDimensional_submodule _
-
 /-- The charted-space structure on the complex `SO(Q)` range carrier selected by Cartan's
 theorem. -/
 instance complexSpecialOrthogonalUnitsRangeChartedSpace :
@@ -280,9 +272,8 @@ theorem coe_complexSpecialOrthogonalLieEquivSkewAdjoint_apply_apply [Fact Q.Nond
         Matrix (Fin n) (Fin n) ℂ) *ᵥ v := by
   have htoLin (A : Matrix (Fin n) (Fin n) ℂ) :
       Matrix.toLinAlgEquiv (Pi.basisFun ℂ (Fin n)) A = Matrix.toLin' A := by
-    apply (LinearMap.toMatrixAlgEquiv (Pi.basisFun ℂ (Fin n))).injective
-    rw [LinearMap.toMatrixAlgEquiv_toLinAlgEquiv, ← Matrix.toLin_eq_toLin',
-      LinearMap.toMatrixAlgEquiv_eq_toMatrix, LinearMap.toMatrix_toLin]
+    change Matrix.toLin (Pi.basisFun ℂ (Fin n)) (Pi.basisFun ℂ (Fin n)) A = Matrix.toLin' A
+    rw [Matrix.toLin_eq_toLin']
   rw [coe_complexSpecialOrthogonalLieEquivSkewAdjoint]
   simp only [TauCeti.coe_skewAdjointLieEquivOfBasis_apply, htoLin, Matrix.toLin'_apply]
 

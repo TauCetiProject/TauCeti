@@ -57,13 +57,6 @@ def complexSpinEmbeddedLieSubgroupData (hQ : Q.Nondegenerate) :
     apply TauCeti.Lie.nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed
     simpa only [MonoidHom.coe_range] using isClosed_range_spinGroup_toUnits Q hQ)
 
-/-- The canonical model of the complex Spin range is finite-dimensional over the reals. -/
-instance complexSpinLieModelFiniteDimensional : FiniteDimensional ℝ SpinLieModel := by
-  let _ : FiniteDimensional ℝ
-      (LeftInvariantDerivation 𝓘(ℝ, CliffordAlgebra Q) (CliffordAlgebra Q)ˣ) :=
-    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
-  exact FiniteDimensional.finiteDimensional_submodule _
-
 /-- The charted-space structure on the complex Spin range selected by Cartan's theorem. -/
 instance complexSpinUnitsRangeChartedSpace [Fact Q.Nondegenerate] :
     ChartedSpace SpinLieModel SpinUnitsRange :=
