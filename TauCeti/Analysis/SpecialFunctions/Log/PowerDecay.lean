@@ -15,6 +15,10 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 Decay faster than every inverse power of the logarithm becomes power decay at all arguments
 whose logarithms are bounded below by a positive power of the reference scale, even with a
 fixed additive loss in that lower bound.
+
+Any fixed multiple of a power of `log x` is eventually at most any positive power of `x`
+(`TauCeti.eventually_mul_log_pow_le_rpow`), the inequality form of Mathlib's
+`isLittleO_log_rpow_rpow_atTop`.
 -/
 
 public section
@@ -22,6 +26,15 @@ public section
 open Filter Real
 
 namespace TauCeti
+
+/-- A fixed multiple of `(log x) ^ k` is eventually at most any positive power of `x`. -/
+theorem eventually_mul_log_pow_le_rpow (c : ℝ) (k : ℕ) {δ : ℝ} (hδ : 0 < δ) :
+    ∀ᶠ x : ℝ in atTop, c * log x ^ k ≤ x ^ δ := by
+  filter_upwards [eventually_ge_atTop (0 : ℝ),
+    ((isLittleO_log_rpow_rpow_atTop (k : ℝ) hδ).const_mul_left c).bound zero_lt_one]
+    with x hx₀ hx
+  rw [one_mul, norm_of_nonneg (rpow_nonneg hx₀ δ), rpow_natCast] at hx
+  exact (le_norm_self _).trans hx
 
 /-- An inverse-logarithmic power bound with exponent `B` gives an upper bound `x^r` at all
 positive arguments `y` with `log y ≥ x^δ - 1`, provided `r ≥ -δ B / 2` and `δ > 0`. -/
