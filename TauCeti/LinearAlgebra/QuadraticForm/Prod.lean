@@ -76,6 +76,9 @@ the two summands gives an orthogonal family of the orthogonal sum.
   `orthogonalGroupProd` and `specialOrthogonalGroupProd` under `IsometryEquiv.prod`,
   `IsometryEquiv.uniqueProd`, `IsometryEquiv.prodUnique`, `IsometryEquiv.prodAssoc`, and
   `IsometryEquiv.prodComm`.
+* `QuadraticMap.equivalent_pi_succ_prod`, `QuadraticMap.equivalent_pi_zero_prod`: splitting off
+  the first summand of an orthogonal sum indexed by `Fin (n + 1)`, and deleting an empty one, next
+  to a further orthogonal summand.
 * `QuadraticMap.isOrthoᵢ_associated_prod`: orthogonal families of the summands concatenate to an
   orthogonal family of `Q₁.prod Q₂`.
 * `QuadraticMap.polar_pi_single_left`, `QuadraticMap.polar_pi_single_right`,
@@ -421,6 +424,21 @@ theorem IsometryEquiv.consPi_apply {n : ℕ} {M : Fin (n + 1) → Type*} [∀ i,
     [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P) (x : M 0) (y : ∀ i : Fin n, M i.succ) :
     IsometryEquiv.consPi Q (x, y) = Fin.cons x y :=
   (rfl)
+
+/-- Splitting off the first summand of an orthogonal sum indexed by `Fin (n + 1)` that sits next to
+a further summand `A`. -/
+theorem equivalent_pi_succ_prod {n : ℕ} {M : Fin (n + 1) → Type*} [∀ i, AddCommMonoid (M i)]
+    [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P) (A : QuadraticMap R M₁ P) :
+    ((QuadraticMap.pi Q).prod A).Equivalent
+      ((Q 0).prod ((QuadraticMap.pi fun i : Fin n ↦ Q i.succ).prod A)) :=
+  ⟨((IsometryEquiv.consPi Q).symm.prod (IsometryEquiv.refl A)).trans
+    (IsometryEquiv.prodAssoc _ _ _)⟩
+
+/-- An empty orthogonal sum indexed by `Fin 0` may be deleted from an orthogonal product. -/
+theorem equivalent_pi_zero_prod {M : Fin 0 → Type*} [∀ i, AddCommMonoid (M i)]
+    [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P) (A : QuadraticMap R M₁ P) :
+    ((QuadraticMap.pi Q).prod A).Equivalent A :=
+  ⟨IsometryEquiv.uniqueProd _ A⟩
 
 /-- The orthogonal sum of isometric equivalences acts coordinatewise. -/
 @[simp]

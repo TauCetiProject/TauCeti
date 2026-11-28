@@ -14,7 +14,7 @@ import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Points
 import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 import TauCeti.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 import TauCeti.RingTheory.Valuation.LtAddSubgroup
-import TauCeti.RingTheory.Valuation.ValuationRing
+import TauCeti.RingTheory.Valuation.ValuationRing.Basic
 import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
