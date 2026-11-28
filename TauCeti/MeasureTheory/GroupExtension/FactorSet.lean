@@ -19,7 +19,9 @@ factor set, `TauCeti.FactorSet.isHaarMeasure_prodMeasure` gives left Haar measur
 quotient acts by measure-preserving maps on the coefficients.
 `TauCeti.FactorSet.isMulRightInvariant_prodMeasure` gives right invariance for right invariant
 factor measures and measurable orbit maps. Both apply to bilinear Heisenberg extensions with
-additive Haar measures. The translation proofs use Mathlib's
+additive Haar measures. `TauCeti.FactorSet.measurePreserving_prodMeasure` transfers
+measure preservation from product coordinates to a map between extensions via Mathlib's
+`MeasureTheory.MeasurePreserving.comp_left_iff`. The translation proofs use Mathlib's
 `MeasureTheory.MeasurePreserving.skew_product` and `TauCeti.measurePreserving_skew_mul_right`.
 
 ## References
@@ -116,20 +118,36 @@ theorem prodMeasure_smul_right (α : FactorSet G M) (μ : Measure M) (ν : Measu
   rw [prodMeasure_def, prodMeasure_def, Measure.prod_smul_right, Measure.map_smul _
     (measurableEquivProd α).symm.measurable.aemeasurable]
 
-/-- A map preserves the extension's product measure if its expression in swapped coordinates
-preserves the swapped product measure. -/
-theorem measurePreserving_prodMeasure_of_swap (α : FactorSet G M) (μ : Measure M)
-    (ν : Measure G) [SFinite μ] [SFinite ν] {f : α.Extension → α.Extension}
-    {g : G × M → G × M} (hg : MeasurePreserving g (ν.prod μ) (ν.prod μ))
+section Transport
+
+variable {H N : Type*} [Group H] [CommGroup N] [MulDistribMulAction H N]
+  [MeasurableSpace H] [MeasurableSpace N]
+  {μ : Measure M} {ν : Measure G} {μ' : Measure N} {ν' : Measure H}
+
+/-- A map between extensions preserves their transported product measures if its coordinate
+expression preserves the product of the factor measures. -/
+theorem measurePreserving_prodMeasure (α : FactorSet G M) {β : FactorSet H N}
+    {f : α.Extension → β.Extension} {g : M × G → N × H}
+    (hg : MeasurePreserving g (μ.prod ν) (μ'.prod ν'))
+    (hf : ∀ x, g (measurableEquivProd α x) = measurableEquivProd β (f x)) :
+    MeasurePreserving f (α.prodMeasure μ ν) (β.prodMeasure μ' ν') := by
+  apply (β.measurePreserving_measurableEquivProd μ' ν').comp_left_iff.mp
+  have hcomp : g ∘ measurableEquivProd α = measurableEquivProd β ∘ f := funext hf
+  rw [← hcomp]
+  exact hg.comp (α.measurePreserving_measurableEquivProd μ ν)
+
+/-- For s-finite factor measures, a map between extensions preserves their transported
+product measures if its expression in swapped coordinates preserves the swapped products. -/
+theorem measurePreserving_prodMeasure_of_swap (α : FactorSet G M) {β : FactorSet H N}
+    [SFinite μ] [SFinite ν] [SFinite μ'] [SFinite ν'] {f : α.Extension → β.Extension}
+    {g : G × M → H × N} (hg : MeasurePreserving g (ν.prod μ) (ν'.prod μ'))
     (hf : ∀ x, g (x.right, x.left) = ((f x).right, (f x).left)) :
-    MeasurePreserving f (α.prodMeasure μ ν) (α.prodMeasure μ ν) := by
-  have hcoord := α.measurePreserving_measurableEquivProd μ ν
-  have h := (hcoord.symm _).comp
-    (Measure.measurePreserving_swap.comp (hg.comp (Measure.measurePreserving_swap.comp hcoord)))
-  convert h using 1
-  funext x
-  simp only [Function.comp_def, measurableEquivProd_apply, Prod.swap, hf,
-    measurableEquivProd_symm_apply]
+    MeasurePreserving f (α.prodMeasure μ ν) (β.prodMeasure μ' ν') :=
+  α.measurePreserving_prodMeasure
+    (Measure.measurePreserving_swap.comp (hg.comp Measure.measurePreserving_swap))
+    (fun x ↦ by simp only [Function.comp_apply, measurableEquivProd_apply, Prod.swap, hf])
+
+end Transport
 
 variable [MeasurableMul G] [MeasurableMul₂ M]
 
@@ -154,7 +172,7 @@ theorem isMulLeftInvariant_prodMeasure (α : FactorSet G M) (μ : Measure M) (ν
     (Filter.Eventually.of_forall fun g ↦ by
       simpa only [mul_comm (α (x.right, g))] using
         (((hsmul x.right).mul_left μ x.left).mul_left μ (α (x.right, g))).map_eq)
-  exact (measurePreserving_prodMeasure_of_swap α μ ν hskew (by
+  exact (α.measurePreserving_prodMeasure_of_swap hskew (by
     intro y
     simp only [mul_left, mul_right])).map_eq
 
@@ -173,7 +191,7 @@ theorem isMulRightInvariant_prodMeasure (α : FactorSet G M) (μ : Measure M) (�
   have hshift : Measurable fun g : G ↦ (g • x.left) * α (g, x.right) :=
     (hsmul x.left).mul (hα.comp (measurable_id.prodMk measurable_const))
   have hskew := measurePreserving_skew_mul_right ν μ x.right hshift
-  exact (measurePreserving_prodMeasure_of_swap α μ ν hskew (by
+  exact (α.measurePreserving_prodMeasure_of_swap hskew (by
     intro y
     simp only [mul_left, mul_right, mul_assoc])).map_eq
 

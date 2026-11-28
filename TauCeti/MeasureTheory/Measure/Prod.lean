@@ -53,6 +53,10 @@ For a countable first factor with measurable singletons, the converse is charact
 then gives a measure bind (`MeasureTheory.Measure.map_uncurry_prod_eq_bind_map`), with evaluation
 specializations for function-valued and product laws.
 
+`MeasureTheory.MeasurePreserving.prodMap_right_self` combines a measure-preserving map on the
+first factor and a measure-preserving self-map on the second, without s-finiteness assumptions,
+using Mathlib’s `MeasureTheory.Measure.map_prod_map`.
+
 Finally, for a measurable map `f` into an additive group, the law of `f z.1 - f z.2` under
 `μ.prod μ` is symmetric (`MeasureTheory.Measure.map_neg_map_sub_prod_self`): swapping the two
 identical factors negates the difference.
@@ -74,6 +78,22 @@ measure (`MeasureTheory.Measure.snd_map_prodMk_id₀` and `MeasureTheory.Measure
 public section
 
 open scoped ENNReal
+
+namespace MeasureTheory.MeasurePreserving
+
+/-- A measure-preserving map on the first factor and a measure-preserving self-map on the
+second preserve the product measures. If the second measure is not s-finite, both products
+are zero. -/
+theorem prodMap_right_self {α β γ : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    [MeasurableSpace γ] {μ : Measure α} {μ' : Measure β} {ν : Measure γ}
+    {f : α → β} {g : γ → γ} (hf : MeasurePreserving f μ μ') (hg : MeasurePreserving g ν ν) :
+    MeasurePreserving (Prod.map f g) (μ.prod ν) (μ'.prod ν) := by
+  refine ⟨hf.measurable.prodMap hg.measurable, ?_⟩
+  by_cases hν : SFinite ν
+  · rw [← Measure.map_prod_map _ _ hf.measurable hg.measurable, hf.map_eq, hg.map_eq]
+  · simp only [Measure.prod_eq_zero_of_not_sfinite hν, Measure.map_zero]
+
+end MeasureTheory.MeasurePreserving
 
 namespace MeasureTheory.Measure
 

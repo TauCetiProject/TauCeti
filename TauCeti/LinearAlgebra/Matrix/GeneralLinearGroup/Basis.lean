@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Basis.Fin
+public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Algebra.Module.Equiv.Basic
 import TauCeti.LinearAlgebra.LinearEquiv.Basic
@@ -27,6 +28,9 @@ the composite, which sends a linear automorphism to its invertible matrix in the
 * `Module.Basis.toLin'_toGL`: reading the matrix back through `toLin'` recovers the automorphism.
 * `Module.Basis.coe_toGL`: the matrix of `f` is `LinearMap.toMatrix b b f`, so its `(i, j)` entry
   is the `i`-th coordinate of `f (b j)`.
+* `Module.Basis.det_toGL` and `Module.Basis.toGL_smul_equivFun`: the matrix preserves the
+  determinant and acts in basis coordinates, using `LinearMap.det_toMatrix` and
+  `LinearMap.toMatrix_mulVec_repr`.
 * `Module.Basis.toGL_map`: mapping the basis by a linear automorphism conjugates the matrix,
   using `LinearMap.toMatrix_map_left` and `LinearMap.toMatrix_map_right`.
 * `Module.Basis.toGL_smulOfUnit`: multiplication by a unit has the scalar matrix of that unit.
@@ -71,6 +75,21 @@ theorem coe_toGL (b : Module.Basis ι k V) (f : V ≃ₗ[k] V) :
   have h := Matrix.GeneralLinearGroup.toLin'_apply b (b.toGL f) v
   rw [toLin'_toGL, hf] at h
   simpa [Matrix.toLin_apply, Fintype.linearCombination_apply] using h.symm
+
+/-- The determinant of the invertible matrix of an automorphism in a finite basis is the
+determinant of the automorphism. -/
+@[simp]
+theorem det_toGL (b : Module.Basis ι k V) (f : V ≃ₗ[k] V) : (b.toGL f).det = f.det := by
+  apply Units.ext
+  rw [Matrix.GeneralLinearGroup.val_det_apply, coe_toGL, LinearMap.det_toMatrix,
+    LinearEquiv.coe_det]
+
+/-- The invertible matrix of an automorphism acts on the coordinate vector of `x` by sending it
+to the coordinate vector of the image of `x`. -/
+theorem toGL_smul_equivFun (b : Module.Basis ι k V) (f : V ≃ₗ[k] V) (x : V) :
+    b.toGL f • b.equivFun x = b.equivFun (f x) := by
+  simpa only [Units.smul_def, Matrix.smul_eq_mulVec, coe_toGL, equivFun_apply,
+    LinearEquiv.coe_coe] using LinearMap.toMatrix_mulVec_repr b b f.toLinearMap x
 
 /-- In the basis obtained by applying `e` to `b`, the matrix of `f` is conjugated by the inverse
 of the matrix of `e` in `b`. -/
