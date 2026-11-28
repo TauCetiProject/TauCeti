@@ -174,6 +174,12 @@ theorem ext_succ_of_totalArrow {F G : ComposableArrows C (n + 1)} (h : F.δ₀ =
   obtain ⟨h₀, h₁, hw⟩ := Quiver.Total.mk.inj w
   exact ext_succ h₀ h ((conj_eqToHom_iff_heq _ _ h₀ h₁).2 hw)
 
+/-- Applying `Φ.mapComposableArrows n` to a string `F` postcomposes `F` with `Φ`. -/
+theorem _root_.CategoryTheory.Functor.mapComposableArrows_obj {D : Type*} [Category D]
+    (Φ : C ⥤ D) (n : ℕ) (F : ComposableArrows C n) :
+    (Φ.mapComposableArrows n).obj F = F ⋙ Φ :=
+  (rfl)
+
 /-- Applying a functor to a string with a prepended arrow prepends the image of that arrow to the
 image of the string. -/
 @[simp]
@@ -185,6 +191,13 @@ theorem _root_.CategoryTheory.Functor.mapComposableArrows_obj_precomp {D : Type*
   rw [totalArrow_mapComposableArrows_obj, totalArrow_def, totalArrow_def]
   -- By definition of `precomp`, both first arrows are `Φ.map f`.
   rfl
+
+/-- Applying a functor to a single-morphism string sends `mk₁ f` to `mk₁ (Φ.map f)`. -/
+@[simp]
+theorem _root_.CategoryTheory.Functor.mapComposableArrows_obj_mk₁
+    {D : Type*} [Category D] (Φ : C ⥤ D) {X Y : C} (f : X ⟶ Y) :
+    (Φ.mapComposableArrows 1).obj (mk₁ f) = mk₁ (Φ.map f) :=
+  ext₁ rfl rfl (by simp)
 
 section Postcomp
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Homotopy.Contractible
 public import Mathlib.Topology.Homotopy.TopCat.ToSSet
 public import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplex.One
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
@@ -14,6 +15,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.WeakEquivalence
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.Finset.PartialSum
 import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplex.Basic
+import TauCeti.AlgebraicTopology.SimplicialSet.Realization.Basic
 import TauCeti.Data.Set.Function
 import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
@@ -21,9 +23,11 @@ import TauCeti.Geometry.Convex.ConvexSpace.Defs
 # Geometric realization of simplicial homotopies
 
 A homotopy of simplicial sets `H : X ⊗ Δ[1] ⟶ Y` from `f` to `g` realizes to a homotopy from `|f|`
-to `|g|` (`SSet.Homotopy.toTop`). Consequently simplicial homotopy equivalences, and in particular
-the trivial fibrations of the Kan–Quillen model structure (the maps with the right lifting property
-with respect to all monomorphisms), are weak equivalences
+to `|g|` (`SSet.Homotopy.toTop`), and a contracting simplicial homotopy on `X` yields
+`ContractibleSpace |X|` (`SSet.contractibleSpace_toTop_of_homotopy`,
+`SSet.contractibleSpace_toTop_of_homotopy_id_const`). Consequently simplicial homotopy equivalences,
+and in particular the trivial fibrations of the Kan–Quillen model structure (the maps with the right
+lifting property with respect to all monomorphisms), are weak equivalences
 (`SSet.modelCategoryQuillen.weakEquivalence_of_homotopyEquiv`,
 `SSet.modelCategoryQuillen.weakEquivalence_of_rlp_monomorphisms`). This is the converse direction
 to Mathlib's `TopCat.Homotopy.toSSet`. Together, the two directions show that two maps from `X` to
@@ -55,7 +59,10 @@ coupling of `s` with the distribution `(1 - t, t)` on `Fin 2`, which is natural 
 * `SSet.toTopCylinder X`: the triangulation `|X| × I → |X ⊗ Δ[1]|` of the realized cylinder.
 * `SSet.toTopCylinder_toTopObjMk_verticalEdge`: over a vertex `v`, the triangulation traces the
   vertical edge `{v} × Δ[1]`, so a realized homotopy moves `v` along the image of that edge.
-* `SSet.Homotopy.toTop`: the realization of a simplicial homotopy.
+* `SSet.Homotopy.toTop`: the realization of a simplicial homotopy, with vertex track given by
+  `SSet.Homotopy.toTop_toTopPoint`.
+* `SSet.contractibleSpace_toTop_of_homotopy`, `SSet.contractibleSpace_toTop_of_homotopy_id_const`:
+  contracting simplicial homotopies realize to contractible spaces.
 * `SSet.toTopHomotopyEquiv`: the realization of a simplicial homotopy equivalence.
 * `SSet.nonempty_homotopy_iff_homotopic_homEquiv_symm`: maps into a singular simplicial set are
   homotopic exactly when their adjoints are.
@@ -473,32 +480,56 @@ lemma prism_one (s : StdSimplex ℝ (Fin (p + 1))) :
     (funext fun i ↦ Prod.ext (prodStdSimplex.objEquiv_apply_fst _ i)
       (prodStdSimplex.objEquiv_apply_snd _ i)) s
 
-/-- Over the `0`-simplex, the triangulation of the prism is the vertical edge `{0} × Δ[1]`: the
-point `(s, t)` has barycentric coordinates `(1 - t, t)` in it. -/
-private lemma prism_zero_eq (s : StdSimplex ℝ (Fin 1)) (t : I) :
-    prism.{u} 0 (s, t) = toTopObjMk (verticalEdge (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌)))
-      (StdSimplex.homeomorphI.symm t) := by
-  have hb (b : Fin 2) : prodStdSimplex.objEquiv
-      (verticalEdge (X := Δ[0]) (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌))) b = (0, b) := by
-    refine Prod.ext (Subsingleton.elim (α := Fin 1) _ _)
-      ((prodStdSimplex.objEquiv_apply_snd _ b).trans ?_)
-    rw [verticalEdge_snd (X := Δ[0]) (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌))]
-    fin_cases b <;> rfl
-  have hinj : Function.Injective (prodStdSimplex.objEquiv
-      (verticalEdge (X := Δ[0]) (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌)))) := fun i j h ↦ by
-    rw [hb, hb] at h
-    exact congrArg Prod.snd h
+/-- Over the `0`-dimensional simplex, the prism is the vertical edge `Δ[0] ⊗ Δ[1]` parametrized by
+`StdSimplex.homeomorphI.symm`. -/
+@[simp]
+lemma prism_zero_dim (s : StdSimplex ℝ (Fin 1)) (t : I) :
+    prism.{u} 0 (s, t) =
+      toTopObjMk (verticalEdge (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌)))
+        (StdSimplex.homeomorphI.symm t) := by
+  have hobj : ⇑(prodStdSimplex.objEquiv
+      (verticalEdge (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌)) : (Δ[0] ⊗ Δ[1] : SSet.{u}) _⦋1⦌)) =
+      fun b ↦ (0, b) := funext fun b ↦
+    Prod.ext (Fin.eq_zero _) ((prodStdSimplex.objEquiv_apply_snd _ b).trans
+      (congrArg (fun φ : ⦋1⦌ ⟶ ⦋1⦌ ↦ φ b)
+        (objEquiv_verticalEdge_snd (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌)))))
   refine prism_eq _ _ ?_
-  rw [← StdSimplex.weights_inj]
-  ext ⟨i, b⟩
-  obtain rfl := Subsingleton.elim (α := Fin 1) i 0
-  have h₁ : prefixSum 1 s.weights = 1 := by
+  rw [hobj, ← StdSimplex.weights_inj]; ext ⟨i, b⟩
+  obtain rfl : i = 0 := Fin.eq_zero i
+  have htot : prefixSum 1 s.weights = 1 := by
     rw [TauCeti.prefixSum_of_le le_rfl, StdSimplex.total_of_fintype]
-  rw [← hb, StdSimplex.weights_map_apply_of_injective hinj, hb, prismMeasure_weights]
-  simp only [prismWeights, Fin.val_zero, zero_add, h₁, TauCeti.prefixSum_zero]
-  fin_cases b
-  · simp [min_eq_right (sub_le_self 1 t.property.1), min_eq_left (sub_nonneg.2 t.property.2)]
-  · simp [max_eq_left (sub_le_self 1 t.property.1), max_eq_right (sub_nonneg.2 t.property.2)]
+  fin_cases b <;>
+    rw [StdSimplex.weights_map_apply_of_injective (fun _ _ h ↦ congrArg Prod.snd h),
+      prismMeasure_weights, prismWeights]
+  · simp [clamp_zero, htot, min_eq_right (sub_le_self (1 : ℝ) t.property.1),
+      min_eq_left (sub_nonneg.2 t.property.2)]
+  · simp [clamp_one, TauCeti.prefixSum_zero, htot,
+      max_eq_left (sub_le_self (1 : ℝ) t.property.1), max_eq_right (sub_nonneg.2 t.property.2)]
+
+/-- Rewrapping the two factors of a simplex of `Δ[p] ⊗ Δ[1]` in another universe leaves its vertex
+coordinates unchanged: both `prodStdSimplex.objEquiv` and `stdSimplex.objEquiv` act definitionally
+as the underlying `Fin (n + 1) → Fin (p + 1) × Fin 2` map across universes. -/
+private lemma prodStdSimplex_objEquiv_symm_eq.{v} {p n : ℕ}
+    (x : (Δ[p] ⊗ Δ[1] : SSet.{v}) _⦋n⦌) :
+    ⇑(prodStdSimplex.objEquiv.{u}
+        (stdSimplex.objEquiv.symm (stdSimplex.objEquiv x.1),
+          stdSimplex.objEquiv.symm (stdSimplex.objEquiv x.2))) =
+      ⇑(prodStdSimplex.objEquiv.{v} x) :=
+  rfl
+
+/-- For any `(s, t)` in `Δᵖ × I`, a single pair `α : ⦋n⦌ ⟶ ⦋p⦌`, `β : ⦋n⦌ ⟶ ⦋1⦌` and weights `w`
+represent `prism p (s, t)` simultaneously in two universes `u` and `v`. -/
+lemma exists_prism_eq_toTopObjMk.{v} (p : ℕ) (s : StdSimplex ℝ (Fin (p + 1))) (t : I) :
+    ∃ (n : ℕ) (α : ⦋n⦌ ⟶ ⦋p⦌) (β : ⦋n⦌ ⟶ ⦋1⦌) (w : StdSimplex ℝ (Fin (n + 1))),
+      prism.{u} p (s, t) = toTopObjMk (X := (Δ[p] ⊗ Δ[1] : SSet.{u}))
+        (stdSimplex.objEquiv.symm α, stdSimplex.objEquiv.symm β) w ∧
+      prism.{v} p (s, t) = toTopObjMk (X := (Δ[p] ⊗ Δ[1] : SSet.{v}))
+        (stdSimplex.objEquiv.symm α, stdSimplex.objEquiv.symm β) w := by
+  obtain ⟨k, hk⟩ := exists_mem_piece (s, t); let x₀ := (nonDegenerateEquiv.{0} k).val
+  refine ⟨p + 1, stdSimplex.objEquiv x₀.1, stdSimplex.objEquiv x₀.2,
+    pieceWeights.{0} k (s, t) hk, ?_, ?_⟩ <;>
+  · refine prism_eq _ _ ?_
+    rw [prodStdSimplex_objEquiv_symm_eq, map_pieceWeights.{0} k (s, t) hk]
 
 end prodStdSimplex₁
 
@@ -556,19 +587,49 @@ lemma toTopCylinder_toTopObjMk {n : ℕ} (x : X _⦋n⦌) (w : StdSimplex ℝ (F
   rw [Equiv.apply_symm_apply] at h
   exact DFunLike.congr_fun h t
 
+/-- Given a simplicial representation of a prism point `prism p (s, t)` via `α : ⦋n⦌ ⟶ ⦋p⦌` and
+`β : ⦋n⦌ ⟶ ⦋1⦌`, the realized cylinder at `(toTopObjMk x s, t)` is the simplex point
+`(X.map α.op x, stdSimplex.objEquiv.symm β)`. -/
+lemma toTopCylinder_toTopObjMk_of_prism {p n : ℕ} (x : X _⦋p⦌) (s : StdSimplex ℝ (Fin (p + 1)))
+    (t : I) {α : ⦋n⦌ ⟶ ⦋p⦌} {β : ⦋n⦌ ⟶ ⦋1⦌} {w : StdSimplex ℝ (Fin (n + 1))}
+    (hprism : prodStdSimplex₁.prism.{u} p (s, t) =
+      toTopObjMk (X := (Δ[p] ⊗ Δ[1] : SSet.{u}))
+        (stdSimplex.objEquiv.symm α, stdSimplex.objEquiv.symm β) w) :
+    toTopCylinder X (toTopObjMk x s, t) =
+      toTopObjMk (X := X ⊗ Δ[1]) (X.map α.op x, stdSimplex.objEquiv.symm β) w := by
+  rw [toTopCylinder_toTopObjMk, hprism]
+  let p₀ : (Δ[p] ⊗ Δ[1] : SSet.{u}) _⦋n⦌ :=
+    (stdSimplex.objEquiv.symm α, stdSimplex.objEquiv.symm β)
+  let p₁ : (X ⊗ Δ[1]) _⦋n⦌ := (X.map α.op x, stdSimplex.objEquiv.symm β)
+  have hp : (yonedaEquiv.symm x ▷ Δ[1]).app (Opposite.op ⦋n⦌) p₀ = p₁ :=
+    (SSet.whiskerRight_app_apply (yonedaEquiv.symm x) Δ[1] p₀).trans
+      (congrArg (·, p₀.2) (yonedaEquiv_symm_app_objEquiv_symm x α))
+  exact (toTop_map_toTopObjMk (yonedaEquiv.symm x ▷ Δ[1]) p₀ w).trans
+    (congrArg (toTopObjMk (X := X ⊗ Δ[1]) · w) hp)
+
+@[simp] lemma toTopCylinder_toTopPoint (v : X _⦋0⦌) (t : I) :
+    toTopCylinder X (toTopPoint v, t) =
+      toTopObjMk (verticalEdge v) (StdSimplex.homeomorphI.symm t) := by
+  rw [← toTopObjMk_eq_toTopPoint v (StdSimplex.single 0)]
+  have hprism : prodStdSimplex₁.prism.{u} 0 (StdSimplex.single 0, t) =
+      toTopObjMk (X := (Δ[0] ⊗ Δ[1] : SSet.{u}))
+        (stdSimplex.objEquiv.symm (SimplexCategory.σ 0), stdSimplex.objEquiv.symm (𝟙 ⦋1⦌))
+        (StdSimplex.homeomorphI.symm t) :=
+    (prodStdSimplex₁.prism_zero_dim _ t).trans <| congrArg (toTopObjMk · _) <| Prod.ext
+      (stdSimplex.ext _ _ fun _ ↦ Fin.ext (by omega))
+      (stdSimplex.objEquiv.injective <|
+        (objEquiv_verticalEdge_snd _).trans (Equiv.apply_symm_apply _ _).symm)
+  refine (toTopCylinder_toTopObjMk_of_prism v _ t hprism).trans <| congrArg (toTopObjMk · _) ?_
+  exact Prod.ext (verticalEdge_fst v).symm <| stdSimplex.objEquiv.injective <|
+    (Equiv.apply_symm_apply _ _).trans (objEquiv_verticalEdge_snd v).symm
+
 /-- Over a vertex `v` of `X`, the triangulation of the realized cylinder traces the vertical edge
 `{v} × Δ[1]`: at time `t` it is the point of `SSet.verticalEdge v` with barycentric coordinates
 `(1 - t, t)`. -/
 lemma toTopCylinder_toTopObjMk_verticalEdge (v : X _⦋0⦌) (w : StdSimplex ℝ (Fin 1)) (t : I) :
     toTopCylinder X (toTopObjMk v w, t) =
       toTopObjMk (verticalEdge v) (StdSimplex.homeomorphI.symm t) := by
-  rw [toTopCylinder_toTopObjMk, prodStdSimplex₁.prism_zero_eq, toTop_map_toTopObjMk]
-  congr 1
-  refine (whiskerRight_app_apply _ _ _).trans
-    (Prod.ext ?_ ((verticalEdge_snd _).trans (verticalEdge_snd v).symm))
-  refine (congrArg _ (verticalEdge_fst _)).trans ((σ_naturality_apply _ 0 _).trans ?_)
-  rw [verticalEdge_fst, yonedaEquiv_symm_app_objEquiv_symm, op_id, CategoryTheory.Functor.map_id,
-    types_id_apply]
+  rw [toTopObjMk_eq_toTopPoint, toTopCylinder_toTopPoint]
 
 /-- If at the end `t` the triangulation of every prism is the realization of `j`, for a natural
 family `j : Z ⟶ Z ⊗ Δ[1]`, then so is the triangulation of the realized cylinder. -/
@@ -594,6 +655,18 @@ lemma toTopCylinder_zero (z : |X|) : toTopCylinder X (z, 0) = toTop.map ι₀ z 
 lemma toTopCylinder_one (z : |X|) : toTopCylinder X (z, 1) = toTop.map ι₁ z :=
   toTopCylinder_of_prism ι₁ ι₁_comp (fun _ ↦ prodStdSimplex₁.prism_one) z
 
+@[simp]
+lemma toTopCylinder_naturality_apply (f : X ⟶ Y) (z : |X|) (t : I) :
+    toTopCylinder Y (toTop.map f z, t) = toTop.map (f ▷ Δ[1]) (toTopCylinder X (z, t)) := by
+  refine ConcreteCategory.congr_hom (toTop_hom_ext
+    (g₁ := TopCat.ofHom ((toTopCylinder Y).comp ⟨fun z ↦ (toTop.map f z, t), by fun_prop⟩))
+    (g₂ := TopCat.ofHom (((toTop.map (f ▷ Δ[1])).hom.comp (toTopCylinder X)).comp
+      ⟨fun z ↦ (z, t), by fun_prop⟩)) fun n x w ↦ ?_) z
+  simp only [TopCat.hom_ofHom, ContinuousMap.comp_apply, ContinuousMap.coe_mk,
+    toTop_map_toTopObjMk, toTopCylinder_toTopObjMk]
+  rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← MonoidalCategory.comp_whiskerRight,
+    yonedaEquiv_symm_comp]
+
 /-- The realization of a simplicial homotopy `H` between `f` and `g`: the homotopy between `|f|` and
 `|g|` given by the realization of `H.h : X ⊗ Δ[1] ⟶ Y` composed with the triangulation of the
 realized cylinder. -/
@@ -613,6 +686,44 @@ applied to the triangulation of the realized cylinder. -/
 lemma Homotopy.toTop_apply {f g : X ⟶ Y} (H : Homotopy f g) (t : I) (z : |X|) :
     H.toTop (t, z) = SSet.toTop.map H.h (toTopCylinder X (z, t)) :=
   (rfl)
+
+lemma Homotopy.toTop_apply_of_h {f₀ g₀ f₁ g₁ : X ⟶ Y} {H₀ : Homotopy f₀ g₀} {H₁ : Homotopy f₁ g₁}
+    (hh : H₀.h = H₁.h) (t : I) (z : |X|) : H₀.toTop (t, z) = H₁.toTop (t, z) := by
+  rw [Homotopy.toTop_apply, Homotopy.toTop_apply, hh]
+
+lemma Homotopy.toTop_precomp_apply {W : SSet.{u}} {f g : X ⟶ Y} (H : Homotopy f g) (e : W ⟶ X)
+    (t : I) (z : |W|) :
+    (H.precomp e).toTop (t, z) = H.toTop (t, SSet.toTop.map e z) := by
+  rw [Homotopy.toTop_apply, Homotopy.toTop_apply, Homotopy.precomp_h,
+    CategoryTheory.Functor.map_comp, ConcreteCategory.comp_apply, toTopCylinder_naturality_apply]
+
+lemma Homotopy.toTop_postcomp_apply {Z : SSet.{u}} {f g : X ⟶ Y} (H : Homotopy f g) (e : Y ⟶ Z)
+    (t : I) (z : |X|) :
+    (H.postcomp e).toTop (t, z) = SSet.toTop.map e (H.toTop (t, z)) := by
+  rw [Homotopy.toTop_apply, Homotopy.toTop_apply, Homotopy.postcomp_h,
+    CategoryTheory.Functor.map_comp, ConcreteCategory.comp_apply]
+
+lemma Homotopy.toTop_toTopPoint {f g : X ⟶ Y} (H : Homotopy f g) (t : I) (v : X _⦋0⦌) :
+    H.toTop (t, toTopPoint v) =
+      toTopObjMk (H.h.app (Opposite.op ⦋1⦌) (verticalEdge v)) (StdSimplex.homeomorphI.symm t) := by
+  rw [Homotopy.toTop_apply, toTopCylinder_toTopPoint, toTop_map_toTopObjMk]
+
+private lemma contractibleSpace_toTop_of_topHomotopy (x : X _⦋0⦌)
+    (H : ContinuousMap.Homotopy (toTop.map (𝟙 X)).hom
+      (toTop.map (SSet.const x : X ⟶ X)).hom) : ContractibleSpace |X| := by
+  rw [contractible_iff_id_nullhomotopic]
+  rw [toTop_map_const_hom, CategoryTheory.Functor.map_id, TopCat.hom_id] at H
+  exact ⟨toTopPoint x, ⟨H⟩⟩
+
+/-- If `SSet.const x` is simplicially homotopic to `𝟙 X`, then `|X|` is contractible. -/
+lemma contractibleSpace_toTop_of_homotopy {x : X _⦋0⦌}
+    (H : SSet.Homotopy (SSet.const x) (𝟙 X)) : ContractibleSpace |X| :=
+  contractibleSpace_toTop_of_topHomotopy x H.toTop.symm
+
+/-- If `𝟙 X` is simplicially homotopic to `SSet.const x`, then `|X|` is contractible. -/
+lemma contractibleSpace_toTop_of_homotopy_id_const {x : X _⦋0⦌}
+    (H : SSet.Homotopy (𝟙 X) (SSet.const x)) : ContractibleSpace |X| :=
+  contractibleSpace_toTop_of_topHomotopy x H.toTop
 
 /-- Two maps from `X` to the singular simplicial set of a space `T` are simplicially homotopic
 exactly when their adjoint maps `|X| ⟶ T` are homotopic. -/

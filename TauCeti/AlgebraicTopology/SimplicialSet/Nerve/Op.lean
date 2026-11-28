@@ -33,6 +33,10 @@ terminal vertices of nerves to results about initial vertices of nerves by duali
   same descriptions for the inverse isomorphism.
 * `CategoryTheory.nerve.opIso_hom_app_nerveEquiv_symm`: on vertices, the isomorphism is the
   identification of the objects of `Cᵒᵖ` with those of `C`.
+* `CategoryTheory.nerve.opIso_hom_app_mk₁`: on `1`-simplices, the isomorphism sends
+  `ComposableArrows.mk₁ f.op` to the opposite of `ComposableArrows.mk₁ f`.
+* `CategoryTheory.nerve.opIso_hom_naturality`: naturality of `opIso` with respect to functors
+  `F : C ⥤ D`.
 -/
 
 public section
@@ -105,5 +109,22 @@ lemma opIso_hom_app_nerveEquiv_symm (x : Cᵒᵖ) :
     (opIso C).hom.app (op ⦋0⦌) (nerveEquiv.symm x) =
       (SSet.opObjEquiv (X := nerve C) (n := op ⦋0⦌)).symm (nerveEquiv.symm x.unop) :=
   ComposableArrows.ext₀ rfl
+
+/-- On `1`-simplices, `opIso` sends `mk₁ f.op` to the opposite of `mk₁ f`. -/
+@[simp] lemma opIso_hom_app_mk₁ {x y : C} (f : x ⟶ y) :
+    (opIso C).hom.app (op ⦋1⦌) (ComposableArrows.mk₁ f.op) =
+      (SSet.opObjEquiv (X := nerve C) (n := op ⦋1⦌)).symm (ComposableArrows.mk₁ f) :=
+  (SSet.opObjEquiv (X := nerve C) (n := op ⦋1⦌)).injective <|
+    (ComposableArrows.ext₁ (opIso_hom_app_obj C _ 0) (opIso_hom_app_obj C _ 1)
+      (opIso_hom_app_map C _ (by decide : (0 : Fin 2) ≤ 1))).trans
+      (Equiv.apply_symm_apply _ (ComposableArrows.mk₁ f)).symm
+
+/-- `opIso` is natural with respect to functors `F : C ⥤ D`. -/
+lemma opIso_hom_naturality {C D : Type u} [Category.{v} C] [Category.{v} D] (F : C ⥤ D) :
+    nerveMap F.op ≫ (opIso D).hom = (opIso C).hom ≫ SSet.opFunctor.map (nerveMap F) := by
+  ext ⟨m⟩ G : 4; induction m using SimplexCategory.rec with | _ m =>
+  -- `F.op` followed by `opIso` and `opObjEquiv` agrees definitionally on objects and morphisms
+  -- with applying `F` after `opIso` and `opObjEquiv`.
+  exact (nerve D).opObjEquiv.injective <| Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl
 
 end CategoryTheory.nerve

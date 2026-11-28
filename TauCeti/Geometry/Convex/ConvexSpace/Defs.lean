@@ -37,10 +37,12 @@ with no weight away from `x` is the vertex `x`. A linear map carrying the standa
 standard simplex preserves coordinate sums.
 
 The prefix sums `TauCeti.prefixSum N x.weights` of the weights of a point `x` of
-`StdSimplex R (Fin n)` lie between `0` and `1`. Scalar pushforward `StdSimplex.mapRange` along an
-additive homomorphism sending `1` to `1` and nonnegative elements to nonnegative elements applies
-the homomorphism to each weight, and over strict ordered semirings on both scalar types it commutes
-with `StdSimplex.map` (`StdSimplex.mapRange_map`).
+`StdSimplex R (Fin n)` lie between `0` and `1`. Weighted sums against `x.map f` pull back along
+`f` (`StdSimplex.sum_weights_map_smul`, `StdSimplex.sum_weights_map_mul`), and reversing the
+vertices of `Fin n` is an involution on `StdSimplex R (Fin n)` (`StdSimplex.map_rev_rev`). Scalar
+pushforward `StdSimplex.mapRange` along an additive homomorphism sending `1` to `1` and nonnegative
+elements to nonnegative elements applies the homomorphism to each weight, and over strict ordered
+semirings on both scalar types it commutes with `StdSimplex.map` (`StdSimplex.mapRange_map`).
 -/
 
 public section
@@ -204,6 +206,23 @@ theorem comap_map {f : X → Y} (x : StdSimplex R X)
   by_cases ha : f a ∈ (x.map f).weights.support
   · rw [weights_map, Finsupp.mapDomain_apply' _ _ hS hf.injOn ha]
   · rw [Finsupp.notMem_support_iff.mp ha, Finsupp.notMem_support_iff.mp fun h ↦ ha (hS h)]
+
+/-- Integrating a function against the weights of a mapped simplex pulls back along the map. -/
+theorem sum_weights_map_smul [Fintype X] [Fintype Y] {M : Type*} [AddCommMonoid M] [Module R M]
+    (f : X → Y) (x : StdSimplex R X) (g : Y → M) :
+    ∑ y : Y, (x.map f).weights y • g y = ∑ a : X, x.weights a • g (f a) := by
+  rw [weights_map,
+    ← Finsupp.sum_fintype (Finsupp.mapDomain f x.weights) (fun y r ↦ r • g y) (by simp),
+    Finsupp.sum_mapDomain_index (by simp) (fun _ _ _ ↦ add_smul _ _ _),
+    Finsupp.sum_fintype _ _ (by simp)]
+
+theorem sum_weights_map_mul [Fintype X] [Fintype Y] (f : X → Y) (x : StdSimplex R X) (g : Y → R) :
+    ∑ y : Y, (x.map f).weights y * g y = ∑ a : X, x.weights a * g (f a) :=
+  sum_weights_map_smul f x g
+
+@[simp] theorem map_rev_rev {n : ℕ} (x : StdSimplex R (Fin n)) :
+    (x.map Fin.rev).map Fin.rev = x := by
+  rw [← map_comp]; convert map_id x; exact funext Fin.rev_rev
 
 /-- A point of a standard simplex lies on the facet opposite `j` exactly when its `j`-th weight
 vanishes. -/

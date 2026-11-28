@@ -11,7 +11,7 @@ public import Mathlib.CategoryTheory.Limits.Shapes.Terminal
 public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Category.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.NatTrans
-public import TauCeti.AlgebraicTopology.SimplicialSet.PrismRealization
+public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.Prism
 
 /-!
 # Homotopies of classifying spaces induced by natural transformations

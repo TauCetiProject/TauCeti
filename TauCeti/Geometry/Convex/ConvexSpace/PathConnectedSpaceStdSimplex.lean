@@ -13,9 +13,10 @@ public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 Values of Mathlib's homeomorphism `Convexity.StdSimplex.homeomorphI` between the standard
 `1`-simplex and the unit interval: it is the last weight (`homeomorphI_apply_eq_mk`), its inverse
-has weights `1 - t` and `t` (`homeomorphI_symm_weights_zero`, `homeomorphI_symm_weights_one`), and
-it sends the two faces of the standard `1`-simplex, its vertices, to `1` and `0`
-(`homeomorphI_map_succAbove_zero`, `homeomorphI_map_succAbove_one`).
+has weights `1 - t` and `t` (`homeomorphI_symm_weights_zero`, `homeomorphI_symm_weights_one`), it
+sends the two faces of the standard `1`-simplex, its vertices, to `1` and `0`
+(`homeomorphI_map_succAbove_zero`, `homeomorphI_map_succAbove_one`), and reversing the vertices of
+`Fin 2` corresponds to `unitInterval.symm` (`map_rev_homeomorphI_symm`).
 
 Through this parametrization, a pair of points `f 0` and `f 1` of `M` gives the path
 `Convexity.StdSimplex.edgePath f` in the standard simplex on `M` from the vertex `f 0` to the
@@ -59,6 +60,13 @@ lemma homeomorphI_map_succAbove_zero (w : StdSimplex ℝ (Fin 1)) :
 lemma homeomorphI_map_succAbove_one (w : StdSimplex ℝ (Fin 1)) :
     homeomorphI (map (Fin.succAbove (1 : Fin 2)) w) = 0 := by
   simp [Subsingleton.elim w (single 0)]
+
+@[simp] lemma map_rev_homeomorphI_symm (t : unitInterval) :
+    map Fin.rev (homeomorphI.symm t) = homeomorphI.symm (unitInterval.symm t) := by
+  apply homeomorphI.injective; ext
+  have h1 : (1 : Fin 2) = Fin.rev 0 := rfl
+  rw [homeomorphI_apply_coe, Homeomorph.apply_symm_apply, unitInterval.coe_symm_eq, h1,
+    weights_map_apply_of_injective Fin.rev_injective, homeomorphI_symm_weights_zero]
 
 /-- The path in the standard simplex on `M` from the vertex `f 0` to the vertex `f 1`: the
 standard `1`-simplex, parametrized by the unit interval through `homeomorphI`, followed by

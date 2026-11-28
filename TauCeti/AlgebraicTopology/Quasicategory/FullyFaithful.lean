@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.Quasicategory.Isom
 public import TauCeti.AlgebraicTopology.Quasicategory.PointwiseEquivalence
 public import TauCeti.AlgebraicTopology.Quasicategory.RightMappingSpace
 public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.PiZero
-public import TauCeti.AlgebraicTopology.SimplicialSet.PrismRealization
+public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.Prism
 public import TauCeti.AlgebraicTopology.SimplicialSet.WeakHomotopyEquivalence.TrivialFibration
 
 /-!

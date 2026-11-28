@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Factorization
-public import TauCeti.AlgebraicTopology.SimplicialSet.PrismRealization
+public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.Prism
 public import TauCeti.AlgebraicTopology.Spectra.Colimits
 public import TauCeti.AlgebraicTopology.Spectra.Limits
 public import TauCeti.AlgebraicTopology.Spectra.Suspension

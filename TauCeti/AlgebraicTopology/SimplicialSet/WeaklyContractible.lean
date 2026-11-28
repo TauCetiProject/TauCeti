@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutProduct
-public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
 public import Mathlib.CategoryTheory.SingleObj
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Groupoid
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.SingleObj
 public import TauCeti.AlgebraicTopology.SimplicialSet.PiZero
@@ -25,12 +25,13 @@ internal hom is a simplicial homotopy equivalence. It appears in Joyal's Theorem
 4.1.3.1, Kerodon Theorem 7.2.3.1): a map `K ⟶ L` to a quasicategory is right cofinal exactly when
 its fibre products with the coslices of `L` are weakly contractible.
 
-A simplicial set with a homotopy from a constant map to its identity, such as a standard simplex
-(`SSet.stdSimplex.contraction`), is weakly contractible: evaluation at the vertex is a homotopy
-inverse. Conversely, a weakly contractible simplicial set is nonempty, since `Fun(K, Z)` has a
-vertex when `K` is empty, while the empty simplicial set is a Kan complex without vertices. Every
-map from it to a Kan complex is homotopic to a constant map, and testing this against its map to
-the discrete simplicial set on its connected components shows that it is connected.
+A simplicial set with a homotopy between a constant map and its identity, such as a standard
+simplex (`SSet.stdSimplex.contraction`), is weakly contractible: evaluation at the vertex is a
+homotopy inverse, via precomposition `SSet.Homotopy.pre`. Conversely, a weakly contractible
+simplicial set is nonempty, since `Fun(K, Z)` has a vertex when `K` is empty, while the empty
+simplicial set is a Kan complex without vertices. Every map from it to a Kan complex is homotopic
+to a constant map, and testing this against its map to the discrete simplicial set on its
+connected components shows that it is connected.
 
 Connectedness does not suffice: the boundary `∂Δ[2]` is connected, but the map from it to the
 nerve of the group `ℤ`, viewed as a category with one object, which sends the edges `0 → 1` and
@@ -49,11 +50,12 @@ Kan–Quillen model structure and is not proved here.
 
 * `SSet.constMaps K Z`: the constant maps `Z ⟶ Fun(K, Z)`, and `SSet.evalAt x Z`, evaluation at a
   vertex `x`, which is a retraction of it (`SSet.constMaps_evalAt`); `SSet.curry_evalAt`
-  evaluates curried maps, and `SSet.ihomObj₀Equiv_constMaps_app` identifies the vertices of the
-  constant maps.
+  evaluates curried maps, `SSet.pre_const_app` identifies precomposition with a constant map, and
+  `SSet.ihomObj₀Equiv_constMaps_app` identifies the vertices of the constant maps.
 * `SSet.IsWeaklyContractible`: weakly contractible simplicial sets.
-* `SSet.IsWeaklyContractible.of_homotopy`: contractible simplicial sets are weakly contractible;
-  in particular every standard simplex `Δ[n]` is.
+* `SSet.IsWeaklyContractible.of_homotopy`, `SSet.IsWeaklyContractible.of_homotopy_id_const`:
+  contractible simplicial sets are weakly contractible; in particular every standard simplex `Δ[n]`
+  is.
 * `SSet.IsWeaklyContractible.of_iso`: invariance under isomorphism.
 * `SSet.IsWeaklyContractible.nonempty`: the empty simplicial set is not weakly contractible.
 * `SSet.IsWeaklyContractible.exists_homotopy_const`: maps to Kan complexes are homotopic to
@@ -153,52 +155,43 @@ lemma evalAt_constMaps (x : K _⦋0⦌) (Z : SSet.{u}) :
     evalAt x Z ≫ constMaps K Z = curry (snd K _ ≫ evalAt x Z) := by
   rw [constMaps, ← curry_natural_left, whiskerLeft_snd]
 
-section
+@[simp, reassoc] lemma pre_const_app {L : SSet.{u}} (x : K _⦋0⦌) (Z : SSet.{u}) :
+    (pre (const x : L ⟶ K)).app Z = evalAt x Z ≫ constMaps L Z := by
+  apply uncurry_injective
+  rw [uncurry_pre, constMaps, uncurry_natural_left, uncurry_curry, whiskerLeft_snd, evalAt,
+    comp_lift_assoc]
+  refine congrArg (· ≫ _) ?_; ext : 1 <;> simp [comp_const]
 
-variable (h : K ⊗ Δ[1] ⟶ K) (Z : SSet.{u})
-
-/-- The map `Fun(K, Z) ⊗ Δ[1] ⟶ Fun(K, Z)` precomposing with a map `h : K ⊗ Δ[1] ⟶ K`. -/
-private noncomputable def contractingMap : (ihom K).obj Z ⊗ Δ[1] ⟶ (ihom K).obj Z :=
-  curry (lift (lift (fst _ _) (snd _ _ ≫ snd _ _) ≫ h) (snd _ _ ≫ fst _ _) ≫ (ihom.ev K).app Z)
-
-/-- Over a vertex `i` of `Δ[1]`, `contractingMap h Z` precomposes with the restriction of `h`
-to `i`. -/
-private lemma lift_const_contractingMap (i : Δ[1] _⦋0⦌) :
-    lift (𝟙 _) (const i) ≫ contractingMap h Z =
-      curry (lift (fst _ _ ≫ lift (𝟙 K) (const i) ≫ h) (snd _ _) ≫ (ihom.ev K).app Z) := by
-  have hi : K ◁ lift (𝟙 ((ihom K).obj Z)) (const i) ≫ lift (fst _ _) (snd _ _ ≫ snd _ _) =
-      fst _ _ ≫ lift (𝟙 K) (const i) := by
-    ext : 1 <;> simp
-  rw [contractingMap, ← curry_natural_left]
-  simp [comp_lift_assoc, reassoc_of% hi]
-
-private lemma ι₀_contractingMap {x : K _⦋0⦌} (h₀ : ι₀ ≫ h = const x) :
-    ι₀ ≫ contractingMap h Z = evalAt x Z ≫ constMaps K Z := by
-  rw [ι₀, lift_const_contractingMap, ← ι₀, h₀, evalAt_constMaps, evalAt, comp_lift_assoc]
-  simp
-
-private lemma ι₁_contractingMap (h₁ : ι₁ ≫ h = 𝟙 K) : ι₁ ≫ contractingMap h Z = 𝟙 _ := by
-  rw [ι₁, lift_const_contractingMap, ← ι₁, h₁]
-  simp [← uncurry_id_eq_ev]
-
-end
+private noncomputable def homotopyPreOfEq {f g : K ⟶ K} (H : Homotopy f g) (Z : SSet.{u})
+    {φ ψ : (ihom K).obj Z ⟶ (ihom K).obj Z}
+    (hφ : (pre f).app Z = φ) (hψ : (pre g).app Z = ψ) : Homotopy φ ψ :=
+  Homotopy.mk' (H.pre Z).h (by rw [← hφ, (H.pre Z).h₀]) (by rw [← hψ, (H.pre Z).h₁])
 
 /-- A homotopy from a constant map to the identity of `K` contracts the mapping spaces out of `K`
 onto their values at the vertex. -/
 noncomputable def homotopyEvalAtConstMaps {x : K _⦋0⦌} (H : Homotopy (const x) (𝟙 K))
-    (Z : SSet.{u}) : Homotopy (evalAt x Z ≫ constMaps K Z) (𝟙 _) where
-  h := contractingMap H.h Z
-  h₀ := ι₀_contractingMap H.h Z H.h₀
-  h₁ := ι₁_contractingMap H.h Z H.h₁
-  rel := by ext _ ⟨⟨_, ⟨⟩⟩, _⟩
+    (Z : SSet.{u}) : Homotopy (evalAt x Z ≫ constMaps K Z) (𝟙 _) :=
+  homotopyPreOfEq H Z (pre_const_app x Z) (by simp)
 
 namespace IsWeaklyContractible
 
+private lemma of_evalAt_homotopy {x : K _⦋0⦌}
+    (h : ∀ Z : SSet.{u}, [KanComplex Z] →
+      Nonempty (Homotopy (evalAt x Z ≫ constMaps K Z) (𝟙 _))) :
+    IsWeaklyContractible K where
+  exists_homotopyInverse Z _ :=
+    ⟨evalAt x Z, ⟨.ofEq (congrArg _ (constMaps_evalAt K x Z))⟩, h Z⟩
+
 /-- A simplicial set with a homotopy from a constant map to its identity is weakly
 contractible. -/
-lemma of_homotopy {x : K _⦋0⦌} (H : Homotopy (const x) (𝟙 K)) : IsWeaklyContractible K where
-  exists_homotopyInverse Z _ :=
-    ⟨evalAt x Z, ⟨.ofEq (congrArg _ (constMaps_evalAt K x Z))⟩, ⟨homotopyEvalAtConstMaps H Z⟩⟩
+lemma of_homotopy {x : K _⦋0⦌} (H : Homotopy (const x) (𝟙 K)) : IsWeaklyContractible K :=
+  of_evalAt_homotopy fun Z ↦ ⟨homotopyEvalAtConstMaps H Z⟩
+
+/-- A simplicial set with a homotopy from `𝟙 K` to `SSet.const x` is weakly contractible. -/
+lemma of_homotopy_id_const {x : K _⦋0⦌} (H : Homotopy (𝟙 K) (const x)) :
+    IsWeaklyContractible K :=
+  of_evalAt_homotopy fun Z ↦
+    (homotopyPreOfEq H Z (by simp) (pre_const_app x Z)).nonempty_symm
 
 instance (n : ℕ) : IsWeaklyContractible Δ[n] :=
   of_homotopy (stdSimplex.contraction n)
@@ -305,8 +298,7 @@ private noncomputable def boundaryLoop (g : G) : (∂Δ[2] : SSet.{u}) ⟶ nerve
   -- The value on a simplex only depends on its vertices, so it commutes with reindexing.
   naturality n m θ := by
     ext s
-    exact CategoryTheory.Functor.ext (fun _ ↦ rfl)
-      (fun _ _ _ ↦ by simp only [eqToHom_refl, Category.id_comp, Category.comp_id]; rfl)
+    exact CategoryTheory.Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ .rfl
 
 /-- The boundary `∂Δ[2]` is connected (`SSet.boundary.isConnected`) but not weakly contractible:
 its map to the nerve of `ℤ` sending the edge from `0` to `2` to `1` and the other edges to `0` is
