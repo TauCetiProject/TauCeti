@@ -7,11 +7,11 @@ module
 
 public import Mathlib.Analysis.Normed.Module.WeakDual
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
-public import TauCeti.Analysis.Normed.Order.OrderUnit
+public import TauCeti.Analysis.Normed.Order.OrderUnit.Basic
+public import TauCeti.Analysis.Normed.Order.PositiveLinearMap
+public import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.Convex.Cone.PositiveDual
-import TauCeti.Analysis.Normed.Order.PositiveLinearMap
-import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!
 # States of an order-unit space
@@ -28,8 +28,8 @@ normalized positive continuous linear functionals `E →P[ℝ] ℝ`. When the no
 order-unit norm of `e` (`TauCeti.IsOrderUnitNorm e`):
 
 * a functional is a state exactly when `‖φ‖ = φ e = 1`;
-* states exist, by the Hahn–Banach theorem, and every state of a subspace containing `e` extends
-  to a state of `E`;
+* states exist, by the Hahn–Banach theorem (state extension from subspaces and along unital
+  isometries is in `TauCeti.Analysis.Normed.Order.OrderUnit.State.Extension`);
 * the state space is weak-* compact, by the Banach–Alaoglu theorem;
 * states detect the order and the norm: `0 ≤ a` exactly when `0 ≤ φ a` for every state `φ`, and
   `‖a‖ = sup_φ |φ a|`, by separating `a` from the closed positive cone with a monotone
@@ -41,29 +41,33 @@ C⋆-algebra, normalized by the norm rather than by a unit, is `TauCeti.stateSpa
 ## Main definitions
 
 * `TauCeti.OrderUnit.stateSpace e`: the monotone functionals in `WeakDual ℝ E` with `φ e = 1`.
+* `TauCeti.OrderUnit.stateSpaceEquivPositiveContinuousLinearMap`: bijection between `stateSpace e`
+  and `{ω : E →P[ℝ] ℝ // ω e = 1}`.
 
 ## Main results
 
 * `TauCeti.OrderUnit.convex_stateSpace`, `TauCeti.OrderUnit.isClosed_stateSpace`: the state space
   is convex and weak-* closed.
-* `TauCeti.OrderUnit.mem_stateSpace_iff_exists_positiveContinuousLinearMap`: states are the
-  normalized positive continuous linear functionals.
-* `TauCeti.OrderUnit.toWeakDual_comp_mem_stateSpace`: states pull back along unital monotone
-  continuous linear maps; in particular they restrict to subspaces containing `e`.
+* `TauCeti.OrderUnit.mem_stateSpace_iff_exists_positiveContinuousLinearMap`,
+  `TauCeti.IsOrderUnitNorm.mem_stateSpace_iff_exists_positiveLinearMap`: states are the
+  normalized positive (continuous) linear functionals.
+* `TauCeti.OrderUnit.toWeakDual_comp_mem_stateSpace`,
+  `ContinuousLinearMap.mapsTo_pullbackFunctional_stateSpace`: states pull back along unital
+  monotone continuous linear maps; in particular they restrict to subspaces containing `e`.
 * `TauCeti.OrderUnit.toWeakDual_inv_smul_mem_stateSpace`: a monotone functional `g` with
   `0 < g e` normalizes to a state.
 * `TauCeti.IsOrderUnitNorm.mem_stateSpace_iff_norm_eq_one_and_apply_eq_one`: `φ` is a state iff
   `‖φ‖ = φ e = 1`.
 * `TauCeti.IsOrderUnitNorm.stateSpace_nonempty`: existence of states.
-* `TauCeti.IsOrderUnitNorm.exists_extension_mem_stateSpace`: extension of states from subspaces
-  containing `e`.
-* `TauCeti.IsOrderUnitNorm.isCompact_stateSpace`: weak-* compactness.
+* `TauCeti.IsOrderUnitNorm.isCompact_stateSpace`,
+  `TauCeti.IsOrderUnitNorm.compactSpace_stateSpace`: weak-* compactness.
 * `TauCeti.IsOrderUnitNorm.nonneg_iff_forall_mem_stateSpace`,
   `TauCeti.IsOrderUnitNorm.le_iff_forall_mem_stateSpace`,
   `TauCeti.IsOrderUnitNorm.eq_iff_forall_mem_stateSpace`: states detect the order and separate
   points.
 * `TauCeti.IsOrderUnitNorm.norm_le_iff_forall_mem_stateSpace`,
   `TauCeti.IsOrderUnitNorm.norm_eq_iSup_states`: the norm is the supremum of `|φ a|` over states.
+* `TauCeti.OrderUnit.stateSpace_one_real`: the unique state of `(ℝ, 1)`.
 
 ## References
 
@@ -133,6 +137,15 @@ theorem toWeakDual_comp_mem_stateSpace {F : Type*} [AddCommGroup F] [Module ℝ 
   ⟨by simpa [StrongDual.coe_toWeakDual, ContinuousLinearMap.coe_comp, coe_toStrongDual] using
     hφ.1.comp hT, by simpa [hTe] using hφ.2⟩
 
+/-- Composing a state with a unital positive continuous linear map via `pullbackFunctional`
+yields a state. -/
+theorem _root_.ContinuousLinearMap.mapsTo_pullbackFunctional_stateSpace {F : Type*}
+    [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] [Preorder F] {f : F} (T : E →L[ℝ] F)
+    (hT : Monotone T) (hTe : T e = f) :
+    MapsTo T.pullbackFunctional (stateSpace f) (stateSpace e) := fun φ hφ => by
+  rw [← toWeakDual_toStrongDual (T.pullbackFunctional φ), T.toStrongDual_pullbackFunctional]
+  exact toWeakDual_comp_mem_stateSpace hT hTe hφ
+
 /-- **Normalization.** A monotone continuous linear functional `g` with `0 < g e`, divided by its
 value at `e`, is a state. -/
 theorem toWeakDual_inv_smul_mem_stateSpace {g : StrongDual ℝ E} (hg : Monotone g)
@@ -172,6 +185,31 @@ theorem mem_stateSpace_iff_exists_positiveContinuousLinearMap :
       cont := (toStrongDual φ).cont }
   exact ⟨ω, hφ.2, toWeakDual_toStrongDual φ⟩
 
+/-- The canonical bijection between `stateSpace e` and normalized positive continuous linear
+functionals `{ω : E →P[ℝ] ℝ // ω e = 1}`. -/
+noncomputable def stateSpaceEquivPositiveContinuousLinearMap (e : E) :
+    stateSpace e ≃ {ω : E →P[ℝ] ℝ // ω e = 1} where
+  toFun φ := ⟨⟨⟨(toStrongDual φ.val).toLinearMap, by simpa [coe_toStrongDual] using φ.property.1⟩,
+    (toStrongDual φ.val).cont⟩, φ.property.2⟩
+  invFun ω := ⟨StrongDual.toWeakDual (ω.val : E →L[ℝ] ℝ),
+    toWeakDual_mem_stateSpace_iff.2 ω.property⟩
+  left_inv _ := Subtype.ext (DFunLike.ext _ _ fun _ => rfl)
+  right_inv _ := Subtype.ext (DFunLike.ext _ _ fun _ => rfl)
+
+/-- Evaluating `stateSpaceEquivPositiveContinuousLinearMap` at `a` gives `φ.val a`. -/
+@[simp]
+theorem stateSpaceEquivPositiveContinuousLinearMap_apply (e : E) (φ : stateSpace e) (a : E) :
+    (stateSpaceEquivPositiveContinuousLinearMap e φ).val a = φ.val a :=
+  (rfl)
+
+/-- Evaluating the inverse of `stateSpaceEquivPositiveContinuousLinearMap` at `a` gives
+`ω.val a`. -/
+@[simp]
+theorem stateSpaceEquivPositiveContinuousLinearMap_symm_apply (e : E)
+    (ω : {ω : E →P[ℝ] ℝ // ω e = 1}) (a : E) :
+    ((stateSpaceEquivPositiveContinuousLinearMap e).symm ω).val a = ω.val a :=
+  (rfl)
+
 end PartialOrder
 
 end OrderUnit
@@ -200,6 +238,25 @@ theorem isCompact_stateSpace (h : IsOrderUnitNorm e) : IsCompact (OrderUnit.stat
   (WeakDual.isCompact_closedBall 0 1).of_isClosed_subset OrderUnit.isClosed_stateSpace
     fun φ hφ => by simp [h.norm_toStrongDual_of_mem_stateSpace hφ]
 
+/-- `CompactSpace` witness for `OrderUnit.stateSpace e` as a subtype of `WeakDual ℝ E`. -/
+theorem compactSpace_stateSpace (h : IsOrderUnitNorm e) : CompactSpace (OrderUnit.stateSpace e) :=
+  isCompact_iff_compactSpace.mp h.isCompact_stateSpace
+
+/-- States correspond to normalized positive linear functionals `E →ₚ[ℝ] ℝ`, via automatic
+continuity. -/
+theorem mem_stateSpace_iff_exists_positiveLinearMap (he : IsOrderUnitNorm e)
+    {φ : WeakDual ℝ E} :
+    φ ∈ OrderUnit.stateSpace e ↔ ∃ ω : E →ₚ[ℝ] ℝ, ω e = 1 ∧
+      StrongDual.toWeakDual (he.toPositiveContinuousLinearMap isOrderUnitNorm_real_one ω :
+        E →L[ℝ] ℝ) = φ := by
+  refine ⟨fun hφ => ?_, fun ⟨ω, hω, h⟩ =>
+    h ▸ OrderUnit.toWeakDual_mem_stateSpace_iff.2 (by simpa using hω)⟩
+  let ω : E →ₚ[ℝ] ℝ :=
+    { toLinearMap := (toStrongDual φ).toLinearMap
+      monotone' := by simpa [coe_toStrongDual] using hφ.1 }
+  have hω_apply (a : E) : ω a = toStrongDual φ a := rfl
+  exact ⟨ω, hφ.2, DFunLike.ext _ _ fun a => by simp [hω_apply]⟩
+
 variable [IsOrderedAddMonoid E]
 
 /-- A continuous linear functional on an order-unit space is a state exactly when
@@ -219,18 +276,6 @@ theorem stateSpace_nonempty (h : IsOrderUnitNorm e) : (OrderUnit.stateSpace e).N
   obtain ⟨g, hg, hge⟩ := exists_dual_vector ℝ e (by simp [h.norm_eq_one])
   exact ⟨StrongDual.toWeakDual g, h.mem_stateSpace_iff_norm_eq_one_and_apply_eq_one.2
     ⟨hg, by simpa [h.norm_eq_one] using hge⟩⟩
-
-/-- **Extension of states.** Every state of a subspace `p` containing `e` extends to a state of
-`E`, by the Hahn–Banach theorem. The extension need not be unique. -/
-theorem exists_extension_mem_stateSpace (h : IsOrderUnitNorm e) (p : Submodule ℝ E)
-    (hp : e ∈ p) {ψ : WeakDual ℝ p} (hψ : ψ ∈ OrderUnit.stateSpace (⟨e, hp⟩ : p)) :
-    ∃ φ ∈ OrderUnit.stateSpace e, ∀ x : p, φ x = ψ x := by
-  obtain ⟨g, hgx, hg⟩ := exists_extension_norm_eq p (toStrongDual ψ)
-  refine ⟨StrongDual.toWeakDual g, h.mem_stateSpace_iff_norm_eq_one_and_apply_eq_one.2 ⟨?_, ?_⟩,
-    fun x => by simpa [StrongDual.toWeakDual_apply, toStrongDual_apply] using hgx x⟩
-  · rw [StrongDual.toStrongDual_toWeakDual, hg]
-    exact (h.submodule p hp).norm_toStrongDual_of_mem_stateSpace hψ
-  · simpa using (hgx ⟨e, hp⟩).trans hψ.2
 
 /-- **States detect the order.** A vector of an order-unit space is nonnegative exactly when every
 state is nonnegative on it. -/
@@ -288,5 +333,19 @@ theorem norm_eq_iSup_states (h : IsOrderUnitNorm e) (a : E) :
 end State
 
 end IsOrderUnitNorm
+
+namespace OrderUnit
+
+/-- The only state of `(ℝ, 1)` is the identity functional. -/
+theorem stateSpace_one_real :
+    stateSpace (1 : ℝ) = {StrongDual.toWeakDual (ContinuousLinearMap.id ℝ ℝ)} := by
+  ext φ
+  rw [mem_stateSpace_iff, mem_singleton_iff]
+  refine ⟨fun ⟨_, h1⟩ => DFunLike.ext _ _ fun r => ?_, ?_⟩
+  · simpa [h1] using (toStrongDual φ).map_smul r (1 : ℝ)
+  · rintro rfl
+    exact ⟨fun _ _ h => h, rfl⟩
+
+end OrderUnit
 
 end TauCeti

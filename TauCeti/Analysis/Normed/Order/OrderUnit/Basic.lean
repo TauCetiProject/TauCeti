@@ -44,9 +44,11 @@ recovered from the norm and `e`: `0 ≤ a ↔ ‖‖a‖ • e - a‖ ≤ ‖a�
 order is then compatible with nonnegative scalars. A unital linear order embedding
 between two such spaces is isometric, and every positive linear map `T` between them is
 automatically bounded, with operator norm `‖T e‖`. The predicate is stable under restriction to a
-subspace containing `e` and under finite nonempty products with the coordinatewise order and the
-supremum norm, and `ℝ` and `C(K, ℝ)` for nonempty compact `K`, with `e = 1`, satisfy it. The
-self-adjoint part of a unital C⋆-algebra is treated in `TauCeti.Analysis.CStarAlgebra.OrderUnit`.
+subspace containing `e`, pullback along unital isometric order embeddings, and finite nonempty
+products with the coordinatewise order and the supremum norm; `ℝ`, `ι → ℝ` for finite nonempty
+`ι`, and `C(K, ℝ)` for nonempty compact `K`, with `e = 1`, satisfy it. The self-adjoint part of a
+unital C⋆-algebra is treated in `TauCeti.Analysis.CStarAlgebra.OrderUnit`, and the norm completion
+of an order-unit space in `TauCeti.Analysis.Normed.Order.OrderUnit.Completion`.
 
 ## Main definitions
 
@@ -57,6 +59,8 @@ self-adjoint part of a unital C⋆-algebra is treated in `TauCeti.Analysis.CStar
   `TauCeti.IsArchimedeanOrderUnit.normedSpace`: the normed space structure of the order-unit
   norm.
 * `TauCeti.IsOrderUnitNorm e`: a given norm is the order-unit norm of `e`.
+* `TauCeti.IsOrderUnitNorm.linearIsometryEquivOfLEIff`: unital linear order isomorphisms
+  as linear isometry equivalences.
 
 ## Main results
 
@@ -68,9 +72,15 @@ self-adjoint part of a unital C⋆-algebra is treated in `TauCeti.Analysis.CStar
   non-Archimedean cones.
 * `TauCeti.IsOrderUnitNorm.norm_eq_orderUnitSeminorm`: an order-unit norm is the order-unit
   seminorm of its unit.
-* `TauCeti.IsOrderUnitNorm.nonneg_iff_norm_smul_sub_le`: recovery of the order from the norm.
-* `TauCeti.IsOrderUnitNorm.norm_map`: unital linear order embeddings are isometric.
+* `TauCeti.IsOrderUnitNorm.nontrivial`, `norm_eq_zero_iff`, `norm_le_iff_of_nonneg`,
+  `norm_le_norm_of_le_of_nonneg`, `norm_le_norm_of_neg_le_of_le`, `nonneg_iff_norm_smul_sub_le`,
+  `nonneg_iff_exists_norm_smul_sub_le`, `le_iff_norm_smul_sub_le`: recovery of order and
+  norm-definiteness properties from an order-unit norm.
+* `TauCeti.IsOrderUnitNorm.norm_map`, `of_linearIsometry`: unital linear order embeddings are
+  isometric, and `IsOrderUnitNorm` pulls back along unital isometric order embeddings.
 * `TauCeti.IsOrderUnitNorm.isClosed_nonneg`, `TauCeti.IsOrderUnitNorm.orderClosedTopology`,
+  `TauCeti.IsOrderUnitNorm.closedBall_subset_Ici_zero`,
+  `TauCeti.IsOrderUnitNorm.ball_subset_Ici_zero`,
   `TauCeti.IsOrderUnitNorm.mem_interior_Ici_zero`: the positive cone is closed and has `e` as an
   interior point.
 * `TauCeti.IsOrderUnitNorm.posSMulMono`: for a homogeneous norm, the cone is stable under
@@ -81,8 +91,8 @@ self-adjoint part of a unital C⋆-algebra is treated in `TauCeti.Analysis.CStar
   continuous with operator norm `‖T e‖`, and it has norm one when unital.
 * `TauCeti.IsOrderUnitNorm.submodule`, `TauCeti.IsOrderUnitNorm.prod`,
   `TauCeti.IsOrderUnitNorm.pi`, `TauCeti.isOrderUnitNorm_real_one`,
-  `TauCeti.isOrderUnitNorm_continuousMap_one`: subspaces, finite nonempty products and
-  examples.
+  `TauCeti.isOrderUnitNorm_pi_one`, `TauCeti.isOrderUnitNorm_continuousMap_one`: subspaces,
+  finite nonempty products and examples.
 
 ## References
 
@@ -296,6 +306,17 @@ theorem ne_zero (h : IsOrderUnitNorm e) : e ≠ 0 := by
   rintro rfl
   simpa using h.norm_eq_one
 
+/-- A space carrying an order-unit norm is nontrivial. -/
+theorem nontrivial (he : IsOrderUnitNorm e) : Nontrivial E :=
+  ⟨⟨e, 0, he.ne_zero⟩⟩
+
+/-- An order-unit seminorm is automatically definite (`‖a‖ = 0 ↔ a = 0`). -/
+theorem norm_eq_zero_iff (he : IsOrderUnitNorm e) {a : E} : ‖a‖ = 0 ↔ a = 0 := by
+  refine ⟨fun h => ?_, fun h => by simp [h]⟩
+  obtain ⟨hlo, hhi⟩ := (he.norm_le_iff le_rfl).mp h.le
+  simp only [neg_zero, zero_smul] at hlo hhi
+  exact le_antisymm hhi hlo
+
 /-- The unit of an order-unit norm is an order unit. -/
 theorem isOrderUnit (h : IsOrderUnitNorm e) : IsOrderUnit e :=
   ⟨fun a => ⟨‖a‖ + 1, by positivity, (h.norm_le_iff (by positivity)).1 (by linarith)⟩⟩
@@ -316,10 +337,15 @@ theorem monotone_smul_right (h : IsOrderUnitNorm e) : Monotone fun r : ℝ => r 
     rw [← sub_smul]
     exact h.smul_nonneg (sub_nonneg.2 hrs)
 
+/-- The closed unit ball around the order unit `e` lies inside the positive cone. -/
+theorem closedBall_subset_Ici_zero (he : IsOrderUnitNorm e) :
+    closedBall e 1 ⊆ Ici 0 := fun a ha => by
+  have hlo := ((he.norm_le_iff zero_le_one).mp (mem_closedBall_iff_norm.mp ha)).1
+  rwa [one_smul, neg_le_sub_iff_le_add, le_add_iff_nonneg_left] at hlo
+
 /-- The open unit ball about the unit of an order-unit norm consists of nonnegative vectors. -/
-theorem ball_subset_Ici_zero (h : IsOrderUnitNorm e) : ball e 1 ⊆ Ici 0 := fun a ha => by
-  have := ((h.norm_le_iff zero_le_one).1 (mem_ball_iff_norm.1 ha).le).1
-  rwa [one_smul, neg_le_sub_iff_le_add, le_add_iff_nonneg_left] at this
+theorem ball_subset_Ici_zero (h : IsOrderUnitNorm e) : ball e 1 ⊆ Ici 0 :=
+  ball_subset_closedBall.trans h.closedBall_subset_Ici_zero
 
 /-- The unit of an order-unit norm is an interior point of the positive cone. -/
 theorem mem_interior_Ici_zero (h : IsOrderUnitNorm e) : e ∈ interior (Ici 0) :=
@@ -347,12 +373,25 @@ theorem norm_eq_orderUnitSeminorm [PosSMulMono ℝ E] (h : IsOrderUnitNorm e) (a
     rw [h.norm_le_iff hr, h.isArchimedeanOrderUnit.orderUnitSeminorm_le_iff hr]
   exact le_antisymm ((key _ (apply_nonneg _ a)).2 le_rfl) ((key _ (norm_nonneg a)).1 le_rfl)
 
+/-- For a nonnegative element `a`, `‖a‖ ≤ r` is equivalent to `a ≤ r • e`. -/
+theorem norm_le_iff_of_nonneg (he : IsOrderUnitNorm e) {a : E} (ha : 0 ≤ a) {r : ℝ} (hr : 0 ≤ r) :
+    ‖a‖ ≤ r ↔ a ≤ r • e := by
+  rw [he.norm_le_iff hr, and_iff_right_iff_imp]
+  intro _
+  exact (neg_nonpos.mpr (he.smul_nonneg hr)).trans ha
+
+/-- Monotonicity of the order-unit norm on symmetric order intervals: `-b ≤ a ≤ b` implies
+`‖a‖ ≤ ‖b‖`. -/
+theorem norm_le_norm_of_neg_le_of_le (he : IsOrderUnitNorm e) {a b : E} (hlo : -b ≤ a)
+    (hhi : a ≤ b) : ‖a‖ ≤ ‖b‖ := by
+  refine (he.norm_le_iff (norm_nonneg b)).mpr ⟨?_, hhi.trans (he.le_norm_smul b)⟩
+  have h : -(‖b‖ • e) ≤ -b := neg_le_neg (he.le_norm_smul b)
+  exact h.trans hlo
+
 /-- An order-unit norm is monotone on the positive cone. -/
 theorem norm_le_norm_of_le_of_nonneg (h : IsOrderUnitNorm e) (hab : a ≤ b) (ha : 0 ≤ a) :
     ‖a‖ ≤ ‖b‖ :=
-  (h.norm_le_iff (norm_nonneg b)).2
-    ⟨(neg_nonpos.2 (h.smul_nonneg (norm_nonneg b))).trans ha,
-      hab.trans (h.le_norm_smul b)⟩
+  h.norm_le_norm_of_neg_le_of_le ((neg_nonpos.2 (ha.trans hab)).trans ha) hab
 
 /-- The order is recovered from an order-unit norm and its unit: `a` is nonnegative exactly when
 `‖‖a‖ • e - a‖ ≤ ‖a‖`. -/
@@ -360,6 +399,19 @@ theorem nonneg_iff_norm_smul_sub_le (h : IsOrderUnitNorm e) : 0 ≤ a ↔ ‖‖
   rw [h.norm_le_iff (norm_nonneg a), neg_le_sub_iff_le_add, sub_le_self_iff]
   exact ⟨fun ha => ⟨(h.le_norm_smul a).trans
     (le_add_of_nonneg_left (h.smul_nonneg (norm_nonneg a))), ha⟩, And.right⟩
+
+/-- An element `a` is nonnegative iff `‖r • e - a‖ ≤ r` for some `r ≥ 0`. -/
+theorem nonneg_iff_exists_norm_smul_sub_le (he : IsOrderUnitNorm e) {a : E} :
+    0 ≤ a ↔ ∃ r : ℝ, 0 ≤ r ∧ ‖r • e - a‖ ≤ r := by
+  refine ⟨fun ha => ⟨‖a‖, norm_nonneg a, he.nonneg_iff_norm_smul_sub_le.mp ha⟩,
+    fun ⟨r, hr, hle⟩ => ?_⟩
+  have hhi := ((he.norm_le_iff hr).mp hle).2
+  exact (le_add_iff_nonneg_right (r • e)).mp (sub_le_iff_le_add.mp hhi)
+
+/-- Recovery of the partial order from the norm and the order unit. -/
+theorem le_iff_norm_smul_sub_le (he : IsOrderUnitNorm e) {a b : E} :
+    a ≤ b ↔ ‖‖b - a‖ • e - (b - a)‖ ≤ ‖b - a‖ := by
+  rw [← sub_nonneg, he.nonneg_iff_norm_smul_sub_le]
 
 /-- The positive cone of an order-unit norm is closed. -/
 theorem isClosed_nonneg (h : IsOrderUnitNorm e) : IsClosed {a : E | 0 ≤ a} := by
@@ -404,14 +456,6 @@ namespace IsOrderUnitNorm
 
 variable {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E] [PartialOrder E] {e : E}
 
-/-- An order-unit norm restricts to an order-unit norm on every subspace containing the unit. -/
-theorem submodule (h : IsOrderUnitNorm e) (p : Submodule ℝ E) (hp : e ∈ p) :
-    IsOrderUnitNorm (⟨e, hp⟩ : p) where
-  norm_eq_one := h.norm_eq_one
-  norm_le_iff {a} _ hr := by
-    rw [← Subtype.coe_le_coe, ← Subtype.coe_le_coe]
-    exact h.norm_le_iff hr
-
 /-- A linear order embedding between spaces with order-unit norms which maps unit to unit is
 isometric. -/
 theorem norm_map {F : Type*} [SeminormedAddCommGroup F] [Module ℝ F] [PartialOrder F] {f : F}
@@ -420,6 +464,47 @@ theorem norm_map {F : Type*} [SeminormedAddCommGroup F] [Module ℝ F] [PartialO
   have key (r : ℝ) (hr : 0 ≤ r) : ‖T a‖ ≤ r ↔ ‖a‖ ≤ r := by
     rw [hf.norm_le_iff hr, he.norm_le_iff hr, ← hTe, ← map_smul, ← map_neg, hT, hT]
   exact le_antisymm ((key _ (norm_nonneg a)).2 le_rfl) ((key _ (norm_nonneg _)).1 le_rfl)
+
+section Maps
+
+variable {F : Type*} [SeminormedAddCommGroup F] [Module ℝ F] [PartialOrder F]
+
+/-- A unital linear order isomorphism between order-unit spaces is automatically a linear
+isometry equivalence. -/
+def linearIsometryEquivOfLEIff {e : E} {f : F} (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f)
+    (T : E ≃ₗ[ℝ] F) (hTe : T e = f) (hT : ∀ a b : E, T a ≤ T b ↔ a ≤ b) : E ≃ₗᵢ[ℝ] F where
+  toLinearEquiv := T
+  norm_map' := he.norm_map hf T.toLinearMap hTe hT
+
+/-- Evaluating `linearIsometryEquivOfLEIff` agrees with the underlying linear equivalence. -/
+@[simp]
+theorem linearIsometryEquivOfLEIff_apply {e : E} {f : F} (he : IsOrderUnitNorm e)
+    (hf : IsOrderUnitNorm f) (T : E ≃ₗ[ℝ] F) (hTe : T e = f)
+    (hT : ∀ a b : E, T a ≤ T b ↔ a ≤ b) (a : E) :
+    he.linearIsometryEquivOfLEIff hf T hTe hT a = T a :=
+  (rfl)
+
+/-- Evaluating the inverse of `linearIsometryEquivOfLEIff` agrees with `T.symm`. -/
+@[simp]
+theorem linearIsometryEquivOfLEIff_symm_apply {e : E} {f : F} (he : IsOrderUnitNorm e)
+    (hf : IsOrderUnitNorm f) (T : E ≃ₗ[ℝ] F) (hTe : T e = f)
+    (hT : ∀ a b : E, T a ≤ T b ↔ a ≤ b) (b : F) :
+    (he.linearIsometryEquivOfLEIff hf T hTe hT).symm b = T.symm b :=
+  (rfl)
+
+/-- Transport of `IsOrderUnitNorm` back along a linear isometric order embedding. -/
+theorem of_linearIsometry {e : E} {f : F} (hf : IsOrderUnitNorm f) (T : E →ₗᵢ[ℝ] F)
+    (hTe : T e = f) (hT : ∀ a b : E, T a ≤ T b ↔ a ≤ b) : IsOrderUnitNorm e where
+  norm_eq_one := by rw [← T.norm_map e, hTe, hf.norm_eq_one]
+  norm_le_iff {a r} hr := by
+    rw [← T.norm_map a, hf.norm_le_iff hr, ← hTe, ← map_smul, ← map_neg, hT, hT]
+
+end Maps
+
+/-- An order-unit norm restricts to an order-unit norm on every subspace containing the unit. -/
+theorem submodule (h : IsOrderUnitNorm e) (p : Submodule ℝ E) (hp : e ∈ p) :
+    IsOrderUnitNorm (⟨e, hp⟩ : p) :=
+  h.of_linearIsometry p.subtypeₗᵢ rfl fun _ _ => Subtype.coe_le_coe
 
 /-- The product of two order-unit norms, with the coordinatewise order and the maximum norm, is
 the order-unit norm of the pair of units. -/
@@ -445,6 +530,11 @@ theorem pi {ι : Type*} [Fintype ι] [Nonempty ι] {E : ι → Type*}
       Pi.smul_apply, forall_and]
 
 end IsOrderUnitNorm
+
+/-- Finite-dimensional `ℓ∞(ι, ℝ)` with `e = 1` is an order-unit space. -/
+theorem isOrderUnitNorm_pi_one {ι : Type*} [Fintype ι] [Nonempty ι] :
+    IsOrderUnitNorm (1 : ι → ℝ) :=
+  IsOrderUnitNorm.pi fun _ => isOrderUnitNorm_real_one
 
 namespace IsOrderUnitNorm
 
