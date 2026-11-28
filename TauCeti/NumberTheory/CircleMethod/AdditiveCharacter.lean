@@ -9,8 +9,9 @@ public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Group.AddCircle
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
+import TauCeti.Analysis.Normed.Group.AddCircle.Trigonometric
 
 /-!
 # The additive character `e(α) = exp(2πiα)` and geometric sums
@@ -27,7 +28,7 @@ This file sets up the additive toolkit of the Hardy–Littlewood circle method o
 * `TauCeti.distInt α = ‖α‖ = |α - round α|`, the distance from `α` to the nearest integer. It is
   the norm of `α` in `UnitAddCircle` (`TauCeti.distInt_eq_norm`), hence `1`-periodic, even and at
   most `1 / 2`, and it controls the sine: `2‖α‖ ≤ |sin (πα)|`
-  (`TauCeti.two_mul_distInt_le_abs_sin`).
+  (`Real.two_mul_norm_unitAddCircle_le_abs_sin`).
 * `TauCeti.sum_expTwoPiI_eq`: the geometric sum
   `∑_{n=1}^N e(nβ) = e(β) (e(Nβ) - 1) / (e(β) - 1)` off the integers,
   `TauCeti.norm_sum_Ioc_expTwoPiI_eq` for its exact modulus `|sin (πNβ)| / |sin (πβ)|`, and
@@ -293,19 +294,6 @@ theorem one_div_le_distInt_intCast_div {q : ℕ} {k : ℤ} (hk : ¬(q : ℤ) ∣
     push_cast; field_simp, abs_div, abs_of_pos hq']
   exact div_le_div_of_nonneg_right h1 hq'.le
 
-/-- `2‖α‖ ≤ |sin (πα)|`, from Jordan's inequality `2|x| / π ≤ |sin x|` for `|x| ≤ π / 2`. -/
-theorem two_mul_distInt_le_abs_sin (α : ℝ) : 2 * distInt α ≤ |Real.sin (π * α)| := by
-  -- `|sin (π ·)|` is `1`-periodic, so it is unchanged when `α` is replaced by `r = α - round α`.
-  set r := α - round α with hr
-  have hsin : |Real.sin (π * α)| = |Real.sin (π * r)| := by
-    rw [show π * α = π * r + (round α : ℤ) * π by rw [hr]; ring]
-    simp [Real.sin_add_int_mul_pi, abs_mul]
-  have hr' : |r| ≤ 1 / 2 := abs_sub_round α
-  rw [hsin, distInt_def, ← hr]
-  have := Real.mul_abs_le_abs_sin (x := π * r)
-    (by rw [abs_mul, abs_of_pos Real.pi_pos]; nlinarith [Real.pi_pos])
-  rwa [abs_mul, abs_of_pos Real.pi_pos, ← mul_assoc, div_mul_cancel₀ _ Real.pi_ne_zero] at this
-
 /-! ### Geometric sums -/
 
 /-- At an integer `β`, `∑_{n=1}^N e(nβ) = N`. -/
@@ -334,7 +322,8 @@ theorem norm_sum_expTwoPiI_le_one_div (N : ℕ) {β : ℝ} (hβ : distInt β ≠
   have hpos : 0 < 2 * distInt β := by
     have := distInt_nonneg β
     positivity
-  have hsin := two_mul_distInt_le_abs_sin β
+  have hsin : 2 * distInt β ≤ |Real.sin (π * β)| :=
+    distInt_eq_norm β ▸ Real.two_mul_norm_unitAddCircle_le_abs_sin β
   have hden : 0 < ‖expTwoPiI β - 1‖ := by
     rw [norm_expTwoPiI_sub_one]
     linarith

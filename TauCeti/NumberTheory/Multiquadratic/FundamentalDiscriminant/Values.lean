@@ -151,6 +151,33 @@ theorem fundamentalDiscriminantChar_neg_three (hD : Int.IsFundamentalDiscr (-3))
   have : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
   fundamentalDiscriminantChar_oddPrimeDiscriminant (p := 3) (by decide) n
 
+/-- The character of `-4` vanishes at `2`. -/
+theorem fundamentalDiscriminantChar_neg_four_two (hD : Int.IsFundamentalDiscr (-4)) :
+    fundamentalDiscriminantChar (-4) hD 2 = 0 := by
+  rw [fundamentalDiscriminantChar_two]
+  decide
+
+/-- The character of `-4` takes the value `-1` at `3`. -/
+theorem fundamentalDiscriminantChar_neg_four_three (hD : Int.IsFundamentalDiscr (-4)) :
+    fundamentalDiscriminantChar (-4) hD 3 = -1 := by
+  have h := fundamentalDiscriminantChar_neg_four 3
+  rw [Int.cast_ofNat] at h
+  exact h.trans (by decide)
+
+/-- The character of `-3` takes the value `-1` at `2`. -/
+theorem fundamentalDiscriminantChar_neg_three_two (hD : Int.IsFundamentalDiscr (-3)) :
+    fundamentalDiscriminantChar (-3) hD 2 = -1 := by
+  rw [fundamentalDiscriminantChar_two]
+  decide
+
+/-- The character of `-3` vanishes at `3`. -/
+theorem fundamentalDiscriminantChar_neg_three_three (hD : Int.IsFundamentalDiscr (-3)) :
+    fundamentalDiscriminantChar (-3) hD 3 = 0 := by
+  have h := fundamentalDiscriminantChar_neg_three hD 3
+  rw [Int.cast_ofNat] at h
+  rw [h]
+  norm_num
+
 /-- The character of `8` is `χ₈` at every integer. -/
 @[simp↓ high]
 theorem fundamentalDiscriminantChar_eight (n : ℤ) :
