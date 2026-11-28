@@ -72,6 +72,8 @@ pass to vectors with coefficients in any `E`-algebra, such as the finite adeles.
   `gradedGram X s N * M`.
 * `TauCeti.two_mul_splitLevel_gradedSplitEquiv`: along this reordering, the level of the split
   form is `ϱ - grade / 2`.
+* `TauCeti.gradedGram_eq_of_even`: for even length the Gram matrix is independent of `N`,
+  Hermitian and unimodular.
 * `TauCeti.gradedGram_eq_submatrix_splitGram`, `TauCeti.reindex_gradedGram`: for odd length the
   graded Gram matrix is the split form `splitGram ϱ (middleGram N)`, reordered.
 * `TauCeti.raisesDegree_gradedShift`, `TauCeti.stringMap_apply_eq_zero_of_ne`: the shift lowers
@@ -373,6 +375,42 @@ theorem isUnit_det_gradedGram [CommRing R] {N : R} (hN : IsUnit N) :
   exact isUnit_det_of_right_inverse (gradedGram_mul_gradedGram u.mul_inv)
 
 end Gram
+
+/-! ### Even strings -/
+
+section Even
+
+variable {X : Type*} {s : ℕ} [DecidableEq X]
+
+/-- For an even string there is no middle coordinate, so the graded Gram matrix does not
+depend on the middle parameter. -/
+theorem gradedGram_eq_of_even [Zero R] [One R] [Neg R] (hs : Even s) (N N' : R) :
+    gradedGram X s N = gradedGram X s N' := by
+  obtain ⟨r, rfl⟩ := hs
+  ext (x | i) (y | j)
+  · simp
+  · simp
+  · simp
+  · by_cases hij : i = j
+    · subst j
+      have hi : i.rev ≠ i := by grind
+      simp [hi]
+    · simp only [gradedGram_inr_inr, ite_eq_right hij]
+
+/-- The graded Gram matrix of an even string is Hermitian for any middle parameter. -/
+theorem isHermitian_gradedGram_of_even [Ring R] [StarRing R] (hs : Even s) (N : R) :
+    (gradedGram X s N).IsHermitian := by
+  rw [gradedGram_eq_of_even (X := X) hs N 1]
+  exact isHermitian_gradedGram (star_one R)
+
+/-- For an even string the graded Gram matrix is unimodular, with no unit hypothesis on
+the unused middle parameter. -/
+theorem isUnit_det_gradedGram_of_even [CommRing R] [Fintype X] (hs : Even s) (N : R) :
+    IsUnit (gradedGram X s N).det := by
+  rw [gradedGram_eq_of_even (X := X) hs N 1]
+  exact isUnit_det_gradedGram isUnit_one
+
+end Even
 
 /-! ### Odd strings and the split form -/
 
