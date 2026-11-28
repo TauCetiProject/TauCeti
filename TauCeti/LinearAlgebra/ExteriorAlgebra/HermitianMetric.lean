@@ -209,11 +209,6 @@ theorem IsSymm.sesqExteriorAlgebra {B : M →ₛₗ[σ] M →ₗ[R] R} (hσ : Fu
         x.property]
   exact isSymm_def.mpr fun s t ↦ LinearMap.congr_fun₂ hF t s
 
-private theorem ι_mul_ιMulti (x : M) (p : ℕ) (u : Fin p → M) :
-    _root_.ExteriorAlgebra.ι R x * _root_.ExteriorAlgebra.ιMulti R p u =
-      _root_.ExteriorAlgebra.ιMulti R (p + 1) (Matrix.vecCons x u) := by
-  rw [_root_.ExteriorAlgebra.ιMulti_succ_apply, Matrix.cons_val_zero, Matrix.tail_cons]
-
 private theorem sesqExteriorAlgebra_ιMulti_contractLeft_eq_zero (B : M →ₛₗ[σ] M →ₗ[R] R)
     (f : Module.Dual R M) {p q : ℕ} (hpq : p + 1 ≠ q) (u : Fin p → M) (v : Fin q → M) :
     B.sesqExteriorAlgebra (_root_.ExteriorAlgebra.ιMulti R p u)
@@ -249,16 +244,17 @@ theorem sesqExteriorAlgebra_ι_mul_left (B : M →ₛₗ[σ] M →ₗ[R] R) (x :
       B.sesqExteriorAlgebra.compl₂ (contractLeft (Q := (0 : QuadraticForm R M)) (B x)) := by
     refine LinearMap.ext_on_range (_root_.ExteriorAlgebra.ιMulti_span R M) fun ⟨p, u⟩ ↦ ?_
     refine LinearMap.ext_on_range (_root_.ExteriorAlgebra.ιMulti_span R M) fun ⟨q, v⟩ ↦ ?_
-    simp only [LinearMap.comp_apply, LinearMap.compl₂_apply, LinearMap.mulLeft_apply, ι_mul_ιMulti]
+    simp only [LinearMap.comp_apply, LinearMap.compl₂_apply, LinearMap.mulLeft_apply,
+      _root_.ExteriorAlgebra.ι_mul_ιMulti]
     rcases eq_or_ne (p + 1) q with rfl | hpq
     · rw [sesqExteriorAlgebra_ιMulti_ιMulti, Matrix.det_succ_row_zero, contractLeft_ιMulti, map_sum]
       refine Finset.sum_congr rfl fun j _ ↦ ?_
       have hsub : (Matrix.of fun i k : Fin (p + 1) ↦
-          B (Matrix.vecCons x u i) (v k)).submatrix Fin.succ j.succAbove =
+          B ((Fin.cons x u : Fin (p + 1) → M) i) (v k)).submatrix Fin.succ j.succAbove =
             Matrix.of fun i k ↦ B (u i) (j.removeNth v k) := by
         ext i k; simp [Fin.removeNth_apply]
       rw [map_smul, sesqExteriorAlgebra_ιMulti_ιMulti, smul_eq_mul, hsub]
-      simp only [Matrix.of_apply, Matrix.cons_val_zero]
+      simp only [Matrix.of_apply, Fin.cons_zero]
     · rw [B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq
           (_root_.ExteriorAlgebra.ιMulti_range R (p + 1) ⟨_, rfl⟩)
           (_root_.ExteriorAlgebra.ιMulti_range R q ⟨v, rfl⟩),
@@ -275,18 +271,19 @@ theorem sesqExteriorAlgebra_ι_mul_right {B : M →ₛₗ[σ] M →ₗ[R] R} (hB
       B.sesqExteriorAlgebra.comp (contractLeft (Q := (0 : QuadraticForm R M)) (B x)) := by
     refine LinearMap.ext_on_range (_root_.ExteriorAlgebra.ιMulti_span R M) fun ⟨p, u⟩ ↦ ?_
     refine LinearMap.ext_on_range (_root_.ExteriorAlgebra.ιMulti_span R M) fun ⟨q, v⟩ ↦ ?_
-    simp only [LinearMap.comp_apply, LinearMap.compl₂_apply, LinearMap.mulLeft_apply, ι_mul_ιMulti]
+    simp only [LinearMap.comp_apply, LinearMap.compl₂_apply, LinearMap.mulLeft_apply,
+      _root_.ExteriorAlgebra.ι_mul_ιMulti]
     rcases eq_or_ne p (q + 1) with rfl | hpq
     · rw [sesqExteriorAlgebra_ιMulti_ιMulti, Matrix.det_succ_column_zero, contractLeft_ιMulti,
         map_sum, LinearMap.sum_apply]
       refine Finset.sum_congr rfl fun i _ ↦ ?_
       have hsub : (Matrix.of fun j k : Fin (q + 1) ↦
-          B (u j) (Matrix.vecCons x v k)).submatrix i.succAbove Fin.succ =
+          B (u j) ((Fin.cons x v : Fin (q + 1) → M) k)).submatrix i.succAbove Fin.succ =
             Matrix.of fun j k ↦ B (i.removeNth u j) (v k) := by
         ext j k; simp [Fin.removeNth_apply]
       rw [map_smulₛₗ, LinearMap.smul_apply, sesqExteriorAlgebra_ιMulti_ιMulti, smul_eq_mul,
         map_mul, map_pow, map_neg, map_one, hB.eq x (u i), hsub]
-      simp only [Matrix.of_apply, Matrix.cons_val_zero]
+      simp only [Matrix.of_apply, Fin.cons_zero]
     · rw [B.sesqExteriorAlgebra_eq_zero_of_mem_exteriorPower_of_ne hpq
           (_root_.ExteriorAlgebra.ιMulti_range R p ⟨u, rfl⟩)
           (_root_.ExteriorAlgebra.ιMulti_range R (q + 1) ⟨_, rfl⟩),

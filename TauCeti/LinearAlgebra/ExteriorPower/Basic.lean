@@ -100,6 +100,7 @@ and moving the remaining factors by vectors of that subspace does not change the
   `v ↦ m ∧ v` with values in degree `n + 1`; it squares to zero
   (`TauCeti.ExteriorAlgebra.wedgeLeft_comp_wedgeLeft`), and
   `TauCeti.ExteriorAlgebra.wedgeLeftₗ` is exterior multiplication as a bilinear map.
+* `ExteriorAlgebra.ι_mul_ιMulti`: prepending a vector to a pure wedge in `ExteriorAlgebra R M`.
 * `ExteriorAlgebra.basis_mem_exteriorPower`: every wedge-basis element `b.ExteriorAlgebra S`
   lies in `⋀[R]^S.card M`.
 * `TauCeti.ExteriorAlgebra.linearMap_ext_exteriorPower` and
@@ -644,6 +645,13 @@ theorem _root_.ExteriorAlgebra.ιMulti_mul_ιMulti_mul_eq_neg_one_pow_smul {i j 
         (_root_.ExteriorAlgebra.ιMulti R j v * (_root_.ExteriorAlgebra.ιMulti R i u * x)) := by
   rw [← mul_assoc, TauCeti.ExteriorAlgebra.ιMulti_mul_ιMulti_eq_neg_one_pow_smul, smul_mul_assoc,
     mul_assoc]
+
+/-- Prepending a vector `m` to a pure wedge `v₀ ∧ ⋯ ∧ vₙ₋₁` in `ExteriorAlgebra R M` yields the
+pure wedge of `Fin.cons m v`. -/
+theorem _root_.ExteriorAlgebra.ι_mul_ιMulti (m : M) {n : ℕ} (v : Fin n → M) :
+    _root_.ExteriorAlgebra.ι R m * _root_.ExteriorAlgebra.ιMulti R n v =
+      _root_.ExteriorAlgebra.ιMulti R (n + 1) (Fin.cons m v) := by
+  rw [_root_.ExteriorAlgebra.ιMulti_succ_apply, Fin.cons_zero, Matrix.vecTail, Fin.cons_comp_succ]
 
 /-- Inside the exterior algebra, the image of the `n`th exterior power under the map induced by
 `f` is the `n`th power of the degree-one image of the range of `f`. -/

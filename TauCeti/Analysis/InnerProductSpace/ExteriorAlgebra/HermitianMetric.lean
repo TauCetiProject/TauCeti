@@ -38,16 +38,19 @@ spinor tensors (`AlgEquiv.cliffordFormsEquivTensor`):
 
 * `OrthonormalBasis.toLinearMap₂_toBasis_exteriorAlgebra_one`: the wedge-basis real bilinear form
   of a finite orthonormal basis `b` is `(innerₗ V).sesqExteriorAlgebra`.
-* `ExteriorAlgebra.isSymm_sesqExteriorAlgebra_innerₗ` and
-  `ExteriorAlgebra.posDef_toQuadraticMap_sesqExteriorAlgebra_innerₗ`: symmetry and positive
-  definiteness of `(innerₗ V).sesqExteriorAlgebra` without finite-dimensionality on `V`.
+* `ExteriorAlgebra.isSymm_sesqExteriorAlgebra_innerₗ`,
+  `ExteriorAlgebra.posDef_toQuadraticMap_sesqExteriorAlgebra_innerₗ`, and
+  `ExteriorAlgebra.sesqExteriorAlgebra_innerₗ_self_eq_zero_iff`: symmetry, positive definiteness,
+  and definiteness of `(innerₗ V).sesqExteriorAlgebra` without finite-dimensionality on `V`.
 * `OrthonormalBasis.toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_one` and
   `OrthonormalBasis.toLinearMapₛₗ₂_baseChange_complex_exteriorAlgebra_baseChangeEquiv`:
   identification of the complexified orthonormal wedge-basis form with the complexified
   Euclidean exterior Gram metric.
-* `ExteriorAlgebra.isSymm_sesqComplexification_sesqExteriorAlgebra_innerₗ` and
-  `ExteriorAlgebra.sesqComplexification_sesqExteriorAlgebra_innerₗ_self_pos`: Hermitian symmetry
-  and strict positive definiteness of the complexified Euclidean exterior Gram metric.
+* `ExteriorAlgebra.isSymm_sesqComplexification_sesqExteriorAlgebra_innerₗ`,
+  `ExteriorAlgebra.sesqComplexification_sesqExteriorAlgebra_innerₗ_self_pos`, and
+  `ExteriorAlgebra.sesqComplexification_sesqExteriorAlgebra_innerₗ_self_eq_zero_iff`: Hermitian
+  symmetry, strict positive definiteness, and definiteness of the complexified Euclidean exterior
+  Gram metric.
 
 ## References
 
@@ -130,6 +133,15 @@ theorem posDef_toQuadraticMap_sesqExteriorAlgebra_innerₗ :
   exact (Matrix.toLinearMapₛₗ₂_one_self_nonneg b.toBasis.ExteriorAlgebra y).lt_of_ne'
     ((Matrix.toLinearMapₛₗ₂_one_self_eq_zero_iff b.toBasis.ExteriorAlgebra).not.mpr hy)
 
+/-- The real Euclidean exterior Gram form `(innerₗ V).sesqExteriorAlgebra` is definite: an element
+has zero self-pairing if and only if it is zero. -/
+@[simp]
+theorem sesqExteriorAlgebra_innerₗ_self_eq_zero_iff {x : ExteriorAlgebra ℝ V} :
+    (innerₗ V).sesqExteriorAlgebra x x = 0 ↔ x = 0 :=
+  ⟨fun h0 ↦ by_contra fun hx ↦
+    (posDef_toQuadraticMap_sesqExteriorAlgebra_innerₗ x hx).ne' h0,
+    by rintro rfl; simp⟩
+
 /-- The complexified Euclidean exterior Gram metric is Hermitian. -/
 theorem isSymm_sesqComplexification_sesqExteriorAlgebra_innerₗ :
     (LinearMap.BilinForm.sesqComplexification (innerₗ V).sesqExteriorAlgebra).IsSymm :=
@@ -143,5 +155,15 @@ theorem sesqComplexification_sesqExteriorAlgebra_innerₗ_self_pos
   LinearMap.BilinForm.sesqComplexification_self_pos
     (B := (innerₗ V).sesqExteriorAlgebra)
     (isSymm_sesqExteriorAlgebra_innerₗ (V := V)) posDef_toQuadraticMap_sesqExteriorAlgebra_innerₗ hx
+
+/-- The complexified Euclidean exterior Gram metric is definite: an element has zero self-pairing
+if and only if it is zero. -/
+@[simp]
+theorem sesqComplexification_sesqExteriorAlgebra_innerₗ_self_eq_zero_iff
+    {x : ℂ ⊗[ℝ] ExteriorAlgebra ℝ V} :
+    LinearMap.BilinForm.sesqComplexification (innerₗ V).sesqExteriorAlgebra x x = 0 ↔ x = 0 :=
+  ⟨fun h0 ↦ by_contra fun hx ↦
+    (sesqComplexification_sesqExteriorAlgebra_innerₗ_self_pos hx).ne' h0,
+    by rintro rfl; simp⟩
 
 end ExteriorAlgebra
