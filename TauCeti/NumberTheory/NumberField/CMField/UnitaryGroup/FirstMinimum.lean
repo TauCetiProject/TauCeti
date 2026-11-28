@@ -259,6 +259,7 @@ theorem firstMinimum_eq_one_iff : V.firstMinimum = 1 ↔
     and_iff_right le_rfl]
 
 /-- A lattice vector shorter than the first minimum must be zero; zero is always shorter. -/
+@[simp]
 theorem vectorLength_lt_firstMinimum_iff {y : ι → E} (hy : y ∈ V.lattice) :
     V.vectorLength y < V.firstMinimum ↔ y = 0 := by
   constructor
