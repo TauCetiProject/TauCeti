@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Spectra.Cotensor
-public import Mathlib.CategoryTheory.Adjunction.Parametrized
+public import TauCeti.CategoryTheory.Adjunction.Parametrized
 
 import Mathlib.CategoryTheory.Adjunction.ParametrizedLimits
 
@@ -176,23 +176,6 @@ lemma levelSmashMappingSpaceAdjunction₂_adj (X : SymmetricSpectrum) :
     levelSmashMappingSpaceAdjunction₂.adj X = levelSmashMappingSpaceAdjunction X :=
   (rfl)
 
-/-- Specializing naturality of `levelSmashMappingSpaceAdjunction` to the counit at `Y` turns
-precomposition with `f` into `mappingSpaceBifunctor.map f.op`. -/
-lemma levelSmashMappingSpaceAdjunction_homEquiv_levelSmashRight_counit
-    {X Y : SymmetricSpectrum} (f : X ⟶ Y) (E : SymmetricSpectrum) :
-    (levelSmashMappingSpaceAdjunction X).homEquiv ((mappingSpace Y).obj E) E
-        ((levelSmashRight ((mappingSpace Y).obj E)).map f ≫
-          (levelSmashMappingSpaceAdjunction Y).counit.app E) =
-      (mappingSpaceBifunctor.map f.op).app E := by
-  have hrhs :
-      (levelSmashMappingSpaceAdjunction Y).homEquiv ((mappingSpace Y).obj E) E
-          ((levelSmashMappingSpaceAdjunction Y).counit.app E) = 𝟙 _ := by
-    rw [Adjunction.homEquiv_unit, Adjunction.right_triangle_components]
-  exact (levelSmashMappingSpaceAdjunction₂.homEquiv_naturality_one f
-    ((levelSmashMappingSpaceAdjunction Y).counit.app E)).trans
-      ((congrArg (fun g : ((mappingSpace Y).obj E ⟶ (mappingSpace Y).obj E) ↦
-        g ≫ (mappingSpaceBifunctor.map f.op).app E) hrhs).trans (Category.id_comp _))
-
 private lemma free_map_hom (n : ℕ) {K K' : PointedSSet.{0}} (f : K ⟶ K') :
     ((free n).map f).hom = SymmetricSequence.sphere ◁ (SymmetricSequence.free n).map f := (rfl)
 
@@ -225,28 +208,6 @@ lemma levelSmashFreeIso_hom_app_naturality (n : ℕ) {K K' : PointedSSet.{0}}
       ((levelSmashFreeIso n K').app L).symm.hom
       ((levelSmashRight L).map ((free n).map f))).vert_inv.w
 
-private lemma evaluation_map_eq (n : ℕ) {X Y : SymmetricSpectrum} (f : X ⟶ Y) :
-    (evaluation n).map f = f.hom.natTrans.app (FiniteBijection.mk n) := (rfl)
-
-private lemma evaluation_map_levelSmashRight_map (n : ℕ) (L : PointedSSet.{0})
-    {X Y : SymmetricSpectrum} (f : X ⟶ Y) :
-    (evaluation n).map ((levelSmashRight L).map f) =
-      (f.hom ▷ (SymmetricSequence.free 0).obj L).natTrans.app (FiniteBijection.mk n) := (rfl)
-
-private lemma evaluation_map_levelSmashRight_comp_aux (n : ℕ) {K K' : PointedSSet.{0}}
-    (f : K ⟶ K') (L : PointedSSet.{0}) {X Y E : SymmetricSpectrum} (φ : X ⟶ Y)
-    (ιX : K ⟶ (evaluation n).obj X) (ιY : K' ⟶ (evaluation n).obj Y)
-    (hι : ιX ≫ (evaluation n).map φ = f ≫ ιY) (g : (levelSmash Y).obj L ⟶ E) :
-    ιX ▷ L ≫
-        SymmetricSequence.tensorFreeZeroι X.X L n ≫
-        (evaluation n).map ((levelSmashRight L).map φ ≫ g) =
-      f ▷ L ≫ ιY ▷ L ≫
-        SymmetricSequence.tensorFreeZeroι Y.X L n ≫ (evaluation n).map g := by
-  rw [Functor.map_comp, evaluation_map_levelSmashRight_map,
-    ← Category.assoc (X.X.tensorFreeZeroι L n),
-    ← SymmetricSequence.tensorFreeZeroι_naturality_left φ.hom L n, Category.assoc,
-    ← evaluation_map_eq, ← comp_whiskerRight_assoc, hι, comp_whiskerRight_assoc]
-
 /-- The free mapping-space comparison `(mappingSpaceFreeIso n K).hom.app E` is natural in the
 generating pointed simplicial set `K`, intertwining precomposition along `F_n f` with
 precomposition along `f`. -/
@@ -256,21 +217,19 @@ lemma mappingSpaceFreeIso_hom_app_naturality (n : ℕ) {K K' : PointedSSet.{0}}
     (mappingSpaceBifunctor.map ((free n).map f).op).app E ≫
         (mappingSpaceFreeIso n K).hom.app E =
       (mappingSpaceFreeIso n K').hom.app E ≫ (MonoidalClosed.pre f).app ((evaluation n).obj E) := by
-  have h :
-      (levelSmashMappingSpaceAdjunction ((free n).obj K)).homEquiv
-          ((mappingSpace ((free n).obj K')).obj E) E
-          ((levelSmashRight ((mappingSpace ((free n).obj K')).obj E)).map ((free n).map f) ≫
-            (levelSmashMappingSpaceAdjunction ((free n).obj K')).counit.app E) ≫
-        (mappingSpaceFreeIso n K).hom.app E =
-      (mappingSpaceFreeIso n K').hom.app E ≫ (MonoidalClosed.pre f).app ((evaluation n).obj E) := by
-    rw [homEquiv_comp_mappingSpaceFreeIso_hom_app]
-    apply MonoidalClosed.uncurry_injective
-    rw [MonoidalClosed.uncurry_curry, MonoidalClosed.uncurry_pre_app,
-      uncurry_mappingSpaceFreeIso_hom_app]
-    exact evaluation_map_levelSmashRight_comp_aux n f _ ((free n).map f) (freeι n K)
-      (freeι n K') (freeι_naturality f).symm _
-  rw [← levelSmashMappingSpaceAdjunction_homEquiv_levelSmashRight_counit ((free n).map f) E]
-  exact h
+  rw [← levelSmashMappingSpaceAdjunction₂.homEquiv_map_app_counit_app ((free n).map f) E]
+  change ((free n).obj K).levelSmashMappingSpaceAdjunction.homEquiv
+        (((free n).obj K').mappingSpace.obj E) E
+        ((levelSmashRight (((free n).obj K').mappingSpace.obj E)).map ((free n).map f) ≫
+          ((free n).obj K').levelSmashMappingSpaceAdjunction.counit.app E) ≫
+      (mappingSpaceFreeIso n K).hom.app E = _
+  rw [homEquiv_comp_mappingSpaceFreeIso_hom_app]
+  apply MonoidalClosed.uncurry_injective
+  rw [MonoidalClosed.uncurry_curry, MonoidalClosed.uncurry_pre_app,
+    uncurry_mappingSpaceFreeIso_hom_app, Functor.map_comp,
+    ← Category.assoc (SymmetricSequence.tensorFreeZeroι _ _ n),
+    tensorFreeZeroι_comp_evaluation_map_levelSmashRight_map, Category.assoc,
+    ← comp_whiskerRight_assoc, ← freeι_naturality, comp_whiskerRight_assoc]
 
 /-- The inverse free mapping-space comparison `(mappingSpaceFreeIso n K).inv.app E` is natural in
 the generating pointed simplicial set `K`. -/

@@ -236,20 +236,15 @@ private lemma freeι_comp_freeZeroUnitHom :
 /-- The map `G₀ S⁰ ⟶ 𝟙` is an isomorphism: in level zero it is `S⁰ ≅ 𝟙₀` after the generator, and
 in positive levels both symmetric sequences are the point. -/
 private lemma isIso_freeZeroUnitHom : IsIso freeZeroUnitHom := by
-  have hn : ∀ c : FiniteBijection, IsIso (freeZeroUnitHom.natTrans.app c) := by
-    rintro ⟨_ | m⟩
-    · have : IsIso (freeι 0 (𝟙_ PointedSSet.{0}) ≫
-          freeZeroUnitHom.natTrans.app (FiniteBijection.mk 0)) := by
-        rw [freeι_comp_freeZeroUnitHom]
-        infer_instance
-      exact IsIso.of_isIso_comp_left (freeι 0 (𝟙_ PointedSSet.{0})) _
-    · exact Limits.isIso_of_isInitial (isInitialFreeObj _ (Nat.succ_ne_zero m))
-        (isInitialUnitObj m) _
-  have : IsIso ((DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor.map
-      freeZeroUnitHom) := by
-    rw [DayFunctor.equiv_functor_map]
-    exact @NatIso.isIso_of_isIso_app _ _ _ _ _ _ _ hn
-  exact isIso_of_reflects_iso _ (DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor
+  refine DayFunctor.isIso_of_isIso_app freeZeroUnitHom ?_
+  rintro ⟨_ | m⟩
+  · have : IsIso (freeι 0 (𝟙_ PointedSSet.{0}) ≫
+        freeZeroUnitHom.natTrans.app (FiniteBijection.mk 0)) := by
+      rw [freeι_comp_freeZeroUnitHom]
+      infer_instance
+    exact IsIso.of_isIso_comp_left (freeι 0 (𝟙_ PointedSSet.{0})) _
+  · exact Limits.isIso_of_isInitial (isInitialFreeObj _ (Nat.succ_ne_zero m))
+      (isInitialUnitObj m) _
 
 /-- The free symmetric sequence `G₀ S⁰` on the unit `S⁰` in level zero is the unit of the Day
 convolution. On the generator it is the identification `S⁰ ≅ 𝟙₀` of level zero of the unit

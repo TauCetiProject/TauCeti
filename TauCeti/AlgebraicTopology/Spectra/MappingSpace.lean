@@ -34,9 +34,11 @@ hand. Write `G₀ K` for the free symmetric sequence `(SymmetricSequence.free 0)
 The level formula `X_n ∧ K ≅ (X ∧ K)_n` holds for the Day convolution `X ⊗ G₀ K` of any symmetric
 sequence `X`, and is an instance of the wedge formula for Day convolution: in the wedge over the
 subsets `S` of `Fin n` of `X_{#S} ∧ (G₀ K)_{#Sᶜ}`, every summand with `S ≠ Fin n` is the point.
-Pairing this with uniqueness of right adjoints yields the free smash comparisons
-`(F_n K) ∧ L ≅ F_n (K ∧ L)` and `F_n S⁰ ∧ L ≅ F_n L` and the free mapping-space identifications
-`Map(F_n K, E) ≅ Map_*(K, E_n)` and `Map(F_n S⁰, E) ≅ E_n`.
+Together with the coproduct formula for free symmetric sequences, this yields the free
+symmetric-sequence comparison `G_n K ⊗ G₀ L ≅ G_n (K ∧ L)` and hence the free spectrum smash
+comparisons `(F_n K) ∧ L ≅ F_n (K ∧ L)` and `F_n S⁰ ∧ L ≅ F_n L`. Uniqueness of right adjoints
+then yields the free mapping-space identifications `Map(F_n K, E) ≅ Map_*(K, E_n)` and
+`Map(F_n S⁰, E) ≅ E_n`.
 
 ## Main definitions
 
@@ -240,19 +242,9 @@ private lemma isIso_freeTensorFreeZeroHom_app (n m : ℕ) (K L : PointedSSet.{0}
   infer_instance
 
 private lemma isIso_freeTensorFreeZeroHom (n : ℕ) (K L : PointedSSet.{0}) :
-    IsIso (freeTensorFreeZeroHom n K L) := by
-  have : ∀ c : FiniteBijection,
-      IsIso (((DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor.map
-        (freeTensorFreeZeroHom n K L)).app c) := by
-    rintro ⟨m⟩
-    rw [DayFunctor.equiv_functor_map]
-    exact isIso_freeTensorFreeZeroHom_app n m K L
-  have : IsIso ((DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor.map
-      (freeTensorFreeZeroHom n K L)) :=
-    NatIso.isIso_of_isIso_app
-      ((DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor.map
-        (freeTensorFreeZeroHom n K L))
-  exact isIso_of_reflects_iso _ (DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor
+    IsIso (freeTensorFreeZeroHom n K L) :=
+  DayFunctor.isIso_of_isIso_app (freeTensorFreeZeroHom n K L) fun ⟨m⟩ ↦
+    isIso_freeTensorFreeZeroHom_app n m K L
 
 private lemma freeTensorFreeZeroHom_naturality (n : ℕ) (K : PointedSSet.{0})
     {L L' : PointedSSet.{0}} (f : L ⟶ L') :
@@ -469,100 +461,17 @@ lemma unitHomMappingSpaceEquiv_symm_apply (X Y : SymmetricSpectrum) (f : X ⟶ Y
       (levelSmashMappingSpaceAdjunction X).homEquiv _ _ ((levelSmashUnitIso X).hom ≫ f) := by
   simp [unitHomMappingSpaceEquiv]
 
-/-! ### Structure maps of levelwise smash -/
+/-! ### Naturality and structure maps of levelwise smash -/
 
-/-- Unfold the degree-one sphere action on the level-`n` smash,
-`(α_ _ _ _).hom ≫ S¹ ◁ tensorFreeZeroι X.X L n ≫ (X ∧ L).dayStructureMap (mk 1) (mk n)`,
-into `freeι 0 L` followed by the Day-convolution and associator composite. -/
-private lemma whiskerLeft_tensorFreeZeroι_comp_levelSmash_dayStructureMap
-    (X : SymmetricSpectrum) (L : PointedSSet.{0}) (n : ℕ) :
-    (α_ (SymmetricSequence.sphere.functor.obj (FiniteBijection.mk 1))
-          (X.X.functor.obj (FiniteBijection.mk n)) L).hom ≫
-        SymmetricSequence.sphere.functor.obj (FiniteBijection.mk 1) ◁
-          SymmetricSequence.tensorFreeZeroι X.X L n ≫
-        ((levelSmash X).obj L).dayStructureMap (FiniteBijection.mk 1) (FiniteBijection.mk n) =
-      (SymmetricSequence.sphere.functor.obj (FiniteBijection.mk 1) ⊗
-          X.X.functor.obj (FiniteBijection.mk n)) ◁ SymmetricSequence.freeι 0 L ≫
-        ((α_ (SymmetricSequence.sphere.functor.obj (FiniteBijection.mk 1))
-            (X.X.functor.obj (FiniteBijection.mk n))
-            (((SymmetricSequence.free 0).obj L).functor.obj (FiniteBijection.mk 0))).hom ≫
-          SymmetricSequence.sphere.functor.obj (FiniteBijection.mk 1) ◁
-            (DayFunctor.η X.X ((SymmetricSequence.free 0).obj L)).app
-              (FiniteBijection.mk n, FiniteBijection.mk 0) ≫
-          SymmetricSequence.sphere.functor.obj (FiniteBijection.mk 1) ◁
-            (X.X ⊗ (SymmetricSequence.free 0).obj L).functor.map
-              (ρ_ (FiniteBijection.mk n)).hom ≫
-          (DayFunctor.η SymmetricSequence.sphere
-              (X.X ⊗ (SymmetricSequence.free 0).obj L)).app
-            (FiniteBijection.mk 1, FiniteBijection.mk n) ≫
-          (α_ SymmetricSequence.sphere X.X
-              ((SymmetricSequence.free 0).obj L)).inv.natTrans.app
-            (FiniteBijection.mk 1 ⊗ FiniteBijection.mk n) ≫
-          (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷
-            (SymmetricSequence.free 0).obj L).natTrans.app
-            (FiniteBijection.mk 1 ⊗ FiniteBijection.mk n)) := by
-  simp only [SymmetricSequence.tensorFreeZeroι_def, Mod.dayStructureMap_def,
-    Mod.tensorLeft_smul, DayFunctor.comp_natTrans, NatTrans.comp_app,
-    whiskerLeft_comp, Category.assoc]
-  rw [← associator_naturality_right_assoc]
-
-/-- Passing across `tensorFreeZeroι` intertwines the Day structure map of `X` with that of
-`X ∧ L`. -/
-private lemma tensorFreeZeroι_comp_levelSmash_dayStructureMap_aux
-    (X : SymmetricSpectrum) (L : PointedSSet.{0}) (p q : FiniteBijection) :
-    (α_ (SymmetricSequence.sphere.functor.obj p) (X.X.functor.obj q)
-        (((SymmetricSequence.free 0).obj L).functor.obj (FiniteBijection.mk 0))).hom ≫
-        SymmetricSequence.sphere.functor.obj p ◁
-          (DayFunctor.η X.X ((SymmetricSequence.free 0).obj L)).app (q, FiniteBijection.mk 0) ≫
-        SymmetricSequence.sphere.functor.obj p ◁
-          (X.X ⊗ (SymmetricSequence.free 0).obj L).functor.map (ρ_ q).hom ≫
-        (DayFunctor.η SymmetricSequence.sphere (X.X ⊗ (SymmetricSequence.free 0).obj L)).app
-          (p, q) ≫
-        (α_ SymmetricSequence.sphere X.X ((SymmetricSequence.free 0).obj L)).inv.natTrans.app
-          (p ⊗ q) ≫
-        (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷
-          (SymmetricSequence.free 0).obj L).natTrans.app (p ⊗ q) =
-      (DayFunctor.η SymmetricSequence.sphere X.X).app (p, q) ▷
-          ((SymmetricSequence.free 0).obj L).functor.obj (FiniteBijection.mk 0) ≫
-        (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X)).natTrans.app (p ⊗ q) ▷
-          ((SymmetricSequence.free 0).obj L).functor.obj (FiniteBijection.mk 0) ≫
-        (DayFunctor.η X.X ((SymmetricSequence.free 0).obj L)).app (p ⊗ q, FiniteBijection.mk 0) ≫
-        (X.X ⊗ (SymmetricSequence.free 0).obj L).functor.map (ρ_ (p ⊗ q)).hom := by
-  have hday :
-      (α_ (SymmetricSequence.sphere.functor.obj p) (X.X.functor.obj q)
-          (((SymmetricSequence.free 0).obj L).functor.obj (FiniteBijection.mk 0))).hom ≫
-        SymmetricSequence.sphere.functor.obj p ◁
-          (DayFunctor.η X.X ((SymmetricSequence.free 0).obj L)).app (q, FiniteBijection.mk 0) ≫
-        SymmetricSequence.sphere.functor.obj p ◁
-          (X.X ⊗ (SymmetricSequence.free 0).obj L).functor.map (ρ_ q).hom ≫
-        (DayFunctor.η SymmetricSequence.sphere (X.X ⊗ (SymmetricSequence.free 0).obj L)).app
-          (p, q) ≫
-        (α_ SymmetricSequence.sphere X.X ((SymmetricSequence.free 0).obj L)).inv.natTrans.app
-          (p ⊗ q) ≫
-        (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷
-          (SymmetricSequence.free 0).obj L).natTrans.app (p ⊗ q) =
-      (DayFunctor.η SymmetricSequence.sphere X.X).app (p, q) ▷
-          ((SymmetricSequence.free 0).obj L).functor.obj (FiniteBijection.mk 0) ≫
-        (DayFunctor.η (SymmetricSequence.sphere ⊗ X.X) ((SymmetricSequence.free 0).obj L)).app
-          (p ⊗ q, FiniteBijection.mk 0) ≫
-        ((SymmetricSequence.sphere ⊗ X.X) ⊗ (SymmetricSequence.free 0).obj L).functor.map
-          (ρ_ (p ⊗ q)).hom ≫
-        (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷
-          (SymmetricSequence.free 0).obj L).natTrans.app (p ⊗ q) :=
-    open DayFunctor in
-    associator_hom_whiskerLeft_η_app_comp_rightUnitor_comp_associator_inv_natTrans_app_assoc
-      SymmetricSequence.sphere X.X ((SymmetricSequence.free 0).obj L) p q _
-  have hnat :
-      ((SymmetricSequence.sphere ⊗ X.X) ⊗ (SymmetricSequence.free 0).obj L).functor.map
-          (ρ_ (p ⊗ q)).hom ≫
-        (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷
-          (SymmetricSequence.free 0).obj L).natTrans.app (p ⊗ q) =
-      (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷
-          (SymmetricSequence.free 0).obj L).natTrans.app ((p ⊗ q) ⊗ FiniteBijection.mk 0) ≫
-        (X.X ⊗ (SymmetricSequence.free 0).obj L).functor.map (ρ_ (p ⊗ q)).hom :=
-    (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X) ▷
-      (SymmetricSequence.free 0).obj L).natTrans.naturality (ρ_ (p ⊗ q)).hom
-  rw [hday, hnat, DayFunctor.η_app_comp_whiskerRight_natTrans_app_assoc]
+/-- Passing across `tensorFreeZeroι` is natural in the pointed simplicial set under
+`levelSmash X`. -/
+@[reassoc]
+lemma tensorFreeZeroι_comp_evaluation_map_levelSmash_map (X : SymmetricSpectrum)
+    {K L : PointedSSet.{0}} (f : K ⟶ L) (n : ℕ) :
+    SymmetricSequence.tensorFreeZeroι X.X K n ≫
+        (evaluation n).map ((levelSmash X).map f) =
+      (evaluation n).obj X ◁ f ≫ SymmetricSequence.tensorFreeZeroι X.X L n :=
+  (SymmetricSequence.tensorFreeZeroι_naturality_right X.X f n).symm
 
 /-- Passing across `tensorFreeZeroι` intertwines the structure map of `X` with the structure map
 of `X ∧ L`. -/
@@ -581,12 +490,13 @@ lemma tensorFreeZeroι_comp_levelSmash_smashPowStructureMap
         ((levelSmash X).obj L).dayStructureMap (FiniteBijection.mk 1) (FiniteBijection.mk n) =
       X.dayStructureMap (FiniteBijection.mk 1) (FiniteBijection.mk n) ▷ L ≫
         SymmetricSequence.tensorFreeZeroι X.X L (1 + n) := by
-    rw [whiskerLeft_tensorFreeZeroι_comp_levelSmash_dayStructureMap,
-      tensorFreeZeroι_comp_levelSmash_dayStructureMap_aux,
-      ← comp_whiskerRight_assoc, ← Mod.dayStructureMap_def, whisker_exchange_assoc,
-      ← SymmetricSequence.tensorFreeZeroι_def]
-    -- `(FiniteBijection.mk 1 ⊗ FiniteBijection.mk n).len` is definitionally `1 + n`.
-    rfl
+    simp only [SymmetricSequence.tensorFreeZeroι_def, Mod.dayStructureMap_def,
+      Mod.tensorLeft_smul]
+    exact
+      DayFunctor.associator_hom_whiskerLeft_comp_rightUnitor_action
+        SymmetricSequence.sphere X.X ((SymmetricSequence.free 0).obj L)
+        (ModObj.smul (M := SymmetricSequence.sphere) (X := X.X))
+        (SymmetricSequence.freeι 0 L) (FiniteBijection.mk 1) (FiniteBijection.mk n)
   rw [Mod.smashPowStructureMap_def, Mod.smashPowStructureMap_def, comp_whiskerRight,
     Category.assoc, hday.symm, associator_naturality_left_assoc, whisker_exchange_assoc]
 
@@ -611,9 +521,6 @@ lemma levelSmashFreeIso_inv_app_hom (n : ℕ) (K L : PointedSSet.{0}) :
           ((SymmetricSequence.free 0).obj L)).inv := by
   simp [levelSmashFreeIso]
 
-private lemma evaluation_map_eq (n : ℕ) {X Y : SymmetricSpectrum} (f : X ⟶ Y) :
-    (evaluation n).map f = f.hom.natTrans.app (FiniteBijection.mk n) := rfl
-
 /-- On the generating level `n`, `(levelSmashFreeIso n K).inv.app L` sends the generator
 `K ∧ L` into `(F_n K)_n ∧ L ≅ (F_n K ∧ L)_n`. -/
 @[reassoc (attr := simp)]
@@ -626,7 +533,8 @@ lemma freeι_comp_evaluation_map_levelSmashFreeIso_inv_app (n : ℕ) (K L : Poin
       ((Mod.tensorLeftFreeIso (A := SymmetricSequence.sphere)
         ((SymmetricSequence.free n).obj K)).inv.app ((SymmetricSequence.free 0).obj L)).hom := by
     simp [levelSmashFreeIso]
-  rw [evaluation_map_eq, hcomp, freeι_eq, DayFunctor.comp_natTrans, NatTrans.comp_app,
+  dsimp only [evaluation]
+  rw [hcomp, freeι_eq, DayFunctor.comp_natTrans, NatTrans.comp_app,
     Category.assoc, Mod.tensorLeftFreeIso_inv_app_hom]
   have hmod : (freeModι SymmetricSequence.sphere ((SymmetricSequence.free n).obj (K ⊗ L))) ≫
       ((freeMod SymmetricSequence.sphere).map
