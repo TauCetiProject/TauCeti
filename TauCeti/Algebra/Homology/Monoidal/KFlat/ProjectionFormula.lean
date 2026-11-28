@@ -12,15 +12,17 @@ import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 /-!
 # Preservation of K-flatness from a projection formula
 
-Let `G : C ⥤ D` preserve zero morphisms and let `L : D ⥤ C` be exact and additive between
-abelian monoidal categories. If `G ∘ L ≅ Id` and `L (G X ⊗ Y) ≅ X ⊗ L Y` naturally,
-and `L` preserves the diagonal coproducts, then applying `G` degreewise preserves
-K-flat complexes.
-This criterion applies to restriction with exact extension by zero; neither an
-adjunction nor a monoidal structure on either functor is needed.
+Let `G : C ⥤ D` preserve zero morphisms and let `L : D ⥤ C` be faithful, exact and additive
+between abelian monoidal categories with biadditive tensors. Assume both categories admit
+total tensor products for every pair of integer cochain complexes.
+If `L (G X ⊗ Y) ≅ X ⊗ L Y` naturally and `L` preserves the diagonal coproducts, then
+applying `G` degreewise preserves K-flat complexes.
 
-Exactness is expressed by preservation of homology. In particular the criterion
-applies to additive functors preserving finite limits and finite colimits.
+Exactness is expressed by `L.PreservesHomology`; preservation of finite limits and finite
+colimits by the additive functor `L` supplies this instance. A splitting `L ⋙ G ≅ 𝟭 D`
+supplies faithfulness of `L`. Thus restriction with exact extension by zero is an application
+once its projection formula and diagonal-coproduct preservation are established; neither an
+adjunction nor a monoidal structure on either functor is needed.
 
 ## References
 
@@ -39,14 +41,15 @@ variable {C D : Type*} [Category* C] [Category* D] [Abelian C] [Abelian D]
   [∀ K E : CochainComplex C ℤ, HasTensor K E]
   [∀ K E : CochainComplex D ℤ, HasTensor K E]
 
-/-- A functor preserving zero morphisms with an exact section satisfying the projection formula
-preserves K-flat complexes, if the section preserves the diagonal coproducts.
-Only the section needs to be exact. -/
+/-- A zero-morphism-preserving functor preserves K-flat cochain complexes if it admits a
+projection formula with a faithful additive functor `L` preserving homology and the diagonal
+coproducts. Both abelian categories must have biadditive tensors and total tensors for every
+pair of integer cochain complexes. Only `L` needs to preserve homology. -/
 theorem isKFlat_mapHomologicalComplex_obj_of_projectionFormula
     (G : C ⥤ D) (L : D ⥤ C) [G.PreservesZeroMorphisms] [L.Additive]
-    [L.PreservesHomology]
+    [L.PreservesHomology] [L.Faithful]
     (e : G.prod (𝟭 D) ⋙ tensor D ⋙ L ≅ (𝟭 C).prod L ⋙ tensor C)
-    (r : L ⋙ G ≅ 𝟭 D) (K : CochainComplex C ℤ) [K.IsKFlat]
+    (K : CochainComplex C ℤ) [K.IsKFlat]
     [∀ (E : CochainComplex D ℤ) (n : ℤ), PreservesColimit (Discrete.functor
       (fun pq : { pq : ℤ × ℤ // pq.1 + pq.2 = n } ↦
         G.obj (K.X pq.val.1) ⊗ E.X pq.val.2)) L] :
@@ -58,8 +61,7 @@ theorem isKFlat_mapHomologicalComplex_obj_of_projectionFormula
   have hT := CochainComplex.IsKFlat.acyclic_tensor (K := K) _ hLE
   have hLT : ((L.mapHomologicalComplex (.up ℤ)).obj
       (tensorObj ((G.mapHomologicalComplex (.up ℤ)).obj K) E)).Acyclic := fun n ↦
-    ExactAt.of_iso (hT n) (L.projectionFormulaCochainIso G e K E).symm
-  let : L.Faithful := Functor.Faithful.of_comp_iso r
+    ExactAt.of_iso (hT n) (L.projectionFormulaHomologicalComplexIso G e K E).symm
   exact fun n ↦ ((tensorObj ((G.mapHomologicalComplex (.up ℤ)).obj K) E).sc n
     |>.exact_map_iff_of_faithful L).1
       ((L.mapHomologicalComplex_obj_exactAt_iff _ n).1 (hLT n))
