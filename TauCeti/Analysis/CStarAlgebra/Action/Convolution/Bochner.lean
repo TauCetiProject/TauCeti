@@ -41,7 +41,8 @@ second-countability hypotheses are required on non-σ-compact groups.
 
 * `TauCeti.CStarAction.ae_integrable_bochnerConvolution_integrand`,
   `TauCeti.CStarAction.integrable_bochnerConvolution`,
-  `TauCeti.CStarAction.convolutionL1_toL1_eq_bochnerConvolution`, and
+  `TauCeti.CStarAction.convolutionL1_toL1_eq_bochnerConvolution`,
+  `TauCeti.CStarAction.convolutionL1_toL1_ae_eq_bochnerConvolution`, and
   `TauCeti.CStarAction.coeFn_convolutionL1_eq_bochnerConvolution`: on a locally compact group with
   a left-invariant Borel measure finite on compact sets, inner regular with respect to compact sets
   on finite-measure sets, and satisfying `μ.inv ≪ μ` (with no second-countability assumption on
@@ -445,6 +446,16 @@ theorem integral_norm_bochnerConvolution_le
     ← L1.norm_of_fun_eq_integral_norm hg, ← α.convolutionL1_toL1_eq_bochnerConvolution hinv hf hg]
   exact α.norm_convolutionL1_apply_le _ _
 
+/-- On a locally compact group with a left-invariant Borel measure `μ` finite on compact sets,
+inner regular with respect to compact sets on finite-measure sets, and satisfying `μ.inv ≪ μ`
+(with no second-countability assumption on `G`), `convolutionL1` of the `L¹` classes of integrable
+functions `f` and `g` is represented `μ`-almost everywhere by `α.bochnerConvolution μ f g`. -/
+theorem convolutionL1_toL1_ae_eq_bochnerConvolution
+    (hinv : μ.inv ≪ μ) {f g : G → A} (hf : Integrable f μ) (hg : Integrable g μ) :
+    α.convolutionL1 μ (hf.toL1 f) (hg.toL1 g) =ᵐ[μ] α.bochnerConvolution μ f g := by
+  rw [α.convolutionL1_toL1_eq_bochnerConvolution hinv hf hg]
+  exact Integrable.coeFn_toL1 _
+
 /-- For arbitrary `u, v : Lp A 1 μ` on a locally compact group with a left-invariant Borel measure
 `μ` finite on compact sets, inner regular with respect to compact sets on finite-measure sets, and
 satisfying `μ.inv ≪ μ` (with no second-countability assumption on `G`), `α.convolutionL1 μ u v` is
@@ -454,9 +465,8 @@ theorem coeFn_convolutionL1_eq_bochnerConvolution (hinv : μ.inv ≪ μ) (u v : 
   have hu : (L1.integrable_coeFn u).toL1 u = u := Integrable.toL1_coeFn u (L1.integrable_coeFn u)
   have hv : (L1.integrable_coeFn v).toL1 v = v := Integrable.toL1_coeFn v (L1.integrable_coeFn v)
   conv_lhs => rw [← hu, ← hv]
-  rw [α.convolutionL1_toL1_eq_bochnerConvolution hinv
-    (L1.integrable_coeFn u) (L1.integrable_coeFn v)]
-  exact Integrable.coeFn_toL1 _
+  exact α.convolutionL1_toL1_ae_eq_bochnerConvolution hinv
+    (L1.integrable_coeFn u) (L1.integrable_coeFn v)
 
 omit [μ.InnerRegularCompactLTTop] in
 /-- On a locally compact group, the twisted involution on `C_c(G, A)` preserves the `ℝ≥0∞` `L¹`

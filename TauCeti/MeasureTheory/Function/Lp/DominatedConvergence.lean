@@ -18,16 +18,20 @@ import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 /-!
 # Dominated convergence in `Lᵖ`
 
-For a finite exponent `q`, if the functions `f n` converge to `g` almost everywhere
-and the errors `‖f n - g‖ₑ` are eventually dominated by a fixed nonnegative multiple of the
-enorm of a `MemLp` function, then `f n → g` in the `Lᵖ` seminorm. Likewise, if the terms `f n`
-themselves are eventually dominated almost everywhere by a `MemLp` function, then for any exponent
-`q` along a `NeBot` filter the limit `g` lies in `L^q` (`TauCeti.memLp_of_ae_tendsto`), and for
-`1 ≤ q < ∞` the classes `(hf n).toLp (f n)` converge to `hg.toLp g` in `Lp F q m`
+For a countably generated filter `l` and a finite exponent `q`, if functions `f n` are eventually
+a.e. strongly measurable, converge to `g` almost everywhere along `l`, and have errors
+`‖f n - g‖ₑ` eventually dominated almost everywhere by a fixed nonnegative multiple of the enorm of
+a `MemLp` function, then `f n → g` in the `Lᵖ` seminorm
+(`TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto`). Likewise, if eventually a.e. strongly measurable
+functions `f n` are eventually dominated almost everywhere by a `MemLp` function, then for any
+exponent `q` along a countably generated `NeBot` filter the limit `g` lies in `L^q`
+(`TauCeti.memLp_of_ae_tendsto`), and when `1 ≤ q < ∞` with `f n` and `g` in `L^q` (`MemLp`), the
+classes `(hf n).toLp (f n)` converge to `hg.toLp g` in `Lp F q m`
 (`TauCeti.tendsto_toLp_of_ae_tendsto`, and its specialization
-`TauCeti.tendsto_toLp_of_ae_tendsto_of_norm_le` when the dominating function is the limit itself).
-In particular, this applies when truncating a function by cutoffs that are eventually `1` on every
-bounded set. The dominating function's codomain only needs a topology and an extended norm.
+`TauCeti.tendsto_toLp_of_ae_tendsto_of_norm_le` when `v =ᵐ[μ] u` and `‖us n x‖ ≤ ‖u x‖` a.e. for
+every `n`). In particular, this applies when truncating a function by cutoffs that are eventually
+`1` on every bounded set. The dominating function's codomain only needs a topology and an extended
+norm.
 
 The file also records the reverse Fatou lemma for `Lᵖ` seminorms over sets: the `Lᵖ` seminorms of
 a function over measurable sets `s n` have limit superior at most its `Lᵖ` seminorm over
