@@ -21,8 +21,7 @@ import Mathlib.Order.Interval.Finset.Fin
 For a finite field `k` and an index `r : Fin N`, the finset `TauCeti.echelonRows k r` consists of
 the row vectors `u : Fin N → k` with `u r = 1` and `u i = 0` for all `i < r`. Counting how many
 such echelon rows lie in a subspace `L ≤ (Fin N → k)` whose elements vanish on coordinates `< r`
-is a core combinatorial step in computing Iwahori–Hecke partial sums and Satake's formula
-(ShortGRH `IntegralRepresentationsOfGeneralLinearGroups` §6.5(b)).
+is a core combinatorial step in computing Iwahori–Hecke partial sums and Satake's formula).
 
 * `TauCeti.echelonRows`: the finset of echelon row vectors with pivot `1` at `r : Fin N`.
 * `TauCeti.mem_echelonRows`: membership characterization `u r = 1 ∧ ∀ i < r, u i = 0`.
