@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Multiplier.Nondegenerate
 public import TauCeti.Topology.Algebra.Star.Idealizer
-import TauCeti.Analysis.CStarAlgebra.Ideal
 import TauCeti.Analysis.CStarAlgebra.Quotient
+import TauCeti.Analysis.Normed.Algebra.Multiplier.Ideal
 
 /-!
 # Essential-ideal universal property and concrete idealizer models of multiplier algebras
@@ -17,7 +17,7 @@ This file establishes two structural characterizations of the multiplier algebra
 C⋆-algebra (complementing `DoubleCentralizer.ofUnitalAlgEquiv`,
 `DoubleCentralizer.ofUnitalStarAlgEquiv`, `DoubleCentralizer.ofUnitalLinearIsometryEquiv`, and the
 canonical essential ideal `DoubleCentralizer.coeTwoSidedIdeal` in
-`TauCeti.Analysis.Normed.Algebra.DoubleCentralizer`):
+`TauCeti.Analysis.Normed.Algebra.Multiplier.Basic`):
 
 1. **Universal property among essential ideal extensions**
    (`NonUnitalStarAlgHom.idealToMultiplier`).

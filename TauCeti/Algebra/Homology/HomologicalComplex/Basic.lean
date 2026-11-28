@@ -19,9 +19,11 @@ import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology
 /-!
 # Additional API for homological complexes
 
-This file records additivity of the cycles functor, degreewise recursion for powers of a
-complex endomorphism, and the existence of coproducts of complexes, computed degreewise. It also
-records the basic properties of the maps
+This file records additivity of the cycles functor, that components and homology maps of a
+finite sum of morphisms of complexes are the sums of those of the summands
+(`HomologicalComplex.sum_f`, `HomologicalComplex.homologyMap_sum`), degreewise recursion for
+powers of a complex endomorphism, and the existence of coproducts of complexes, computed
+degreewise. It also records the basic properties of the maps
 `K.toCycles i j : K.X i ⟶ K.cycles j` induced by the differentials: they kill the cycles in degree
 `i`, commute with morphisms of complexes, vanish after a morphism from a complex concentrated in
 degree `i`, and are epimorphisms in degrees where the complex is exact; consequently, a morphism of
@@ -416,6 +418,20 @@ instance cyclesFunctor_additive [CategoryWithHomology C] (i : ι) :
     -- `cyclesFunctor` is opaque, so expose its defining map before applying the map-level API.
     change cyclesMap (f + g) i = cyclesMap f i + cyclesMap g i
     exact cyclesMap_add f g i
+
+/-- The components of a finite sum of morphisms of complexes are the sums of the components. -/
+@[simp]
+lemma sum_f {κ : Type*} (s : Finset κ) (φ : κ → (K ⟶ L)) (i : ι) :
+    (∑ a ∈ s, φ a).f i = ∑ a ∈ s, (φ a).f i :=
+  map_sum (Hom.fAddMonoidHom i) φ s
+
+/-- Taking homology commutes with finite sums of morphisms of complexes. -/
+@[simp]
+lemma homologyMap_sum {κ : Type*} (s : Finset κ) (φ : κ → (K ⟶ L)) (i : ι) [K.HasHomology i]
+    [L.HasHomology i] :
+    homologyMap (∑ a ∈ s, φ a) i = ∑ a ∈ s, homologyMap (φ a) i :=
+  map_sum (AddMonoidHom.mk' (fun ψ : K ⟶ L ↦ homologyMap ψ i) fun ψ ψ' ↦ homologyMap_add ψ ψ' i)
+    φ s
 
 section HomologyIsoSc'
 

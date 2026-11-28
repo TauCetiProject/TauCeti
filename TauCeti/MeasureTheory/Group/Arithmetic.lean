@@ -21,7 +21,8 @@ inherits `MeasurableMul`, `MeasurableMul₂`, and `MeasurableInv` (and their add
 from the ambient measurable space with respect to the subtype σ-algebra. Likewise the restriction of
 a jointly measurable action to an invariant subset (a `SubMulAction`) is jointly measurable, and
 the diagonal action on a product of spaces with measurable constant scalar multiplications has
-measurable constant scalar multiplications.
+measurable constant scalar multiplications. An action on configurations `I → S` induced by an
+action on the index set, `(g • ω) i = ω (g⁻¹ • i)`, is by measurable maps.
 
 ## Main declarations
 
@@ -41,6 +42,8 @@ measurable constant scalar multiplications.
   gives jointly measurable addition.
 * `TauCeti.measurableEmbedding_divLeft₀`: division of a nonzero constant by the variable is a
   measurable embedding on a group with zero.
+* `TauCeti.measurableConstSMul_of_smul_apply`: an action on `I → S` given by
+  `(g • ω) i = ω (g⁻¹ • i)` has measurable constant scalar multiplications.
 -/
 
 public section
@@ -110,5 +113,15 @@ theorem measurableEmbedding_divLeft₀ {G₀ : Type*} [GroupWithZero G₀] [Meas
     MeasurableEmbedding (c / ·) := by
   simpa only [Function.comp_def, smul_eq_mul, div_eq_mul_inv] using
     (measurableEmbedding_const_smul₀ (α := G₀) hc).comp measurableEmbedding_inv
+
+/-- An action on configurations given by `(g • ω) i = ω (g⁻¹ • i)`, such as Mathlib's
+`arrowAction`, is by measurable maps. -/
+theorem measurableConstSMul_of_smul_apply {Γ I S : Type*} [Group Γ] [MulAction Γ I]
+    [MeasurableSpace S] [SMul Γ (I → S)] (hσ : ∀ (g : Γ) (ω : I → S) i, (g • ω) i = ω (g⁻¹ • i)) :
+    MeasurableConstSMul Γ (I → S) where
+  measurable_const_smul g := by
+    rw [show (fun ω : I → S => g • ω) = fun ω i => ω (g⁻¹ • i) from
+      funext fun ω => funext (hσ g ω)]
+    exact Measurable.of_eval fun i => measurable_pi_apply _
 
 end TauCeti

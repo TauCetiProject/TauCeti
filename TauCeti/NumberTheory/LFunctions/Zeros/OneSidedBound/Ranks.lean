@@ -62,10 +62,10 @@ theorem exists_admissible_ranks {x : ℕ} (hx : 1 < x) :
 `log x ≥ 6`. -/
 theorem towerExponent_le {x : ℝ} {s : ℕ} (hlog : 6 ≤ log x)
     (hs : (2 : ℝ) ^ s ≤ 2 ^ 22 * x ^ 11) : (s : ℝ) ≤ 32 * log x := by
-  have hodd : Odd (11 : ℕ) := by decide
-  have hx : 0 < x := hodd.pow_pos_iff.mp
-    (pos_of_mul_pos_right ((by positivity : (0 : ℝ) < 2 ^ s).trans_le hs) (by positivity))
-  have h := log_le_log (by positivity) hs
+  have hx : x ≠ 0 := by
+    rintro rfl
+    norm_num at hlog
+  have h := log_le_log (x := (2 : ℝ) ^ s) (by positivity) hs
   simp only [log_mul (by positivity : (2 : ℝ) ^ 22 ≠ 0) (by positivity : x ^ 11 ≠ 0),
     log_pow, Nat.cast_ofNat] at h
   have hslope : (s : ℝ) / 2 ≤ s * log 2 := by
@@ -122,8 +122,9 @@ private theorem sparseCutoff_le {x r m : ℕ} (hx : 0 < x) (hm : 0 < m) (hr : r 
 
 /-- At the prescribed ranks, the tower exponent `s = 22 e` eventually satisfies the logarithmic
 bound, the cyclotomic order `q₁` is positive and at most `x ^ 12`, and the prime-search modulus
-`q₂` is at most `x ^ (33 * q₀ * d)`. The dyadic order `2 ^ s` also exceeds the threshold for
-avoiding short relations at the primes up to `k t`, where `k = r + 1 - m` and `t = 5 r`. -/
+`q₂` is at most `x ^ (33 * q₀ * d)`. The dyadic order `2 ^ s` is at least `x ^ 11` and
+exceeds the threshold for avoiding short relations at the primes up to `k t`, where
+`k = r + 1 - m` and `t = 5 r`. -/
 theorem eventually_exists_admissible_ranks (q₀ d : ℕ) (hq₀ : 0 < q₀) :
     ∀ᶠ x : ℕ in atTop, ∃ e e' : ℕ,
       let m : ℕ := 2 ^ e
@@ -135,7 +136,7 @@ theorem eventually_exists_admissible_ranks (q₀ d : ℕ) (hq₀ : 0 < q₀) :
         IsLeast {u : ℕ | (∃ i : ℕ, u = 2 ^ i) ∧ √(x : ℝ) ≤ u} m ∧
         IsLeast {u : ℕ | (∃ i : ℕ, u = 3 ^ i) ∧ x ^ 5 ≤ u} r ∧
         (m : ℝ) < 2 * √(x : ℝ) ∧ r < 3 * x ^ 5 ∧
-        (s : ℝ) ≤ 32 * log (x : ℝ) ∧ 0 < q₁ ∧ q₁ ≤ x ^ 12 ∧
+        (s : ℝ) ≤ 32 * log (x : ℝ) ∧ x ^ 11 ≤ 2 ^ s ∧ 0 < q₁ ∧ q₁ ≤ x ^ 12 ∧
         (q₀ * d) ^ (s + 6) ≤ x ^ (33 * (q₀ * d)) ∧
         2 * l₀ * ((r + 1 - m) * (5 * r) + 1) < 2 ^ s := by
   -- One logarithmic bound absorbs the extra factor `l₀` in both tower comparisons.
@@ -167,7 +168,7 @@ theorem eventually_exists_admissible_ranks (q₀ d : ℕ) (hq₀ : 0 < q₀) :
       _ ≤ (C : ℝ) * (81 * (32 * log (x : ℝ))) := by gcongr
       _ = _ := by ring
     exact_mod_cast hle.trans_lt hsmall
-  refine ⟨e, e', he, he', hm, hr, hm₂, hr₃, hslog, by positivity, ?_,
+  refine ⟨e, e', he, he', hm, hr, hm₂, hr₃, hslog, hdyadic.1, by positivity, ?_,
     primeSearchModulus_le _ hlog hslog, ?_⟩
   · calc
       q₀ * (3 * l₀ * 2 ^ s) ≤ q₀ * (3 * l₀ * (2 ^ 22 * x ^ 11)) := by gcongr; exact hdyadic.2

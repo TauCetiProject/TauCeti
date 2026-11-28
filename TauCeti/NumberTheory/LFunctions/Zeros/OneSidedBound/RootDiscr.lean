@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Parameters
-public import TauCeti.NumberTheory.NumberField.Cyclotomic.RootDiscr
+public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Ranks
+import TauCeti.NumberTheory.NumberField.Cyclotomic.RootDiscr
+import TauCeti.NumberTheory.NumberField.Discriminant.Basic
 
 /-!
 # Upper root-discriminant bound at the prime-sum scale
@@ -79,26 +81,17 @@ theorem d_mul_q₁_le_pow_twelve (P : Parameters) {s : ℕ} {x : ℝ}
 The logarithmic separation follows from `1 < b`, `(log b)^100 ≤ x`, and
 `log (log b) ≥ 10^12 * max q₀ d`. -/
 theorem rootDiscr_le_pow_twelve (P : Parameters) (K E : Type*) [Field K] [Field E]
-    [NumberField K] [NumberField E] [Algebra K E] [IsScalarTower ℚ K E]
+    [NumberField K] [NumberField E] [Algebra K E]
     {s : ℕ} [IsCyclotomicExtension {P.q₁ s} K E] (hK : (discr K).natAbs = P.d) {x : ℝ}
     (hlog : 10 ^ 14 * max (P.q₀ : ℝ) P.d ≤ log x)
     (hdyadic : (2 : ℝ) ^ s ≤ 2 ^ 22 * x ^ 11) : rootDiscr E ≤ x ^ 12 := by
-  have hd₁ : (1 : ℝ) ≤ P.d := by exact_mod_cast P.prime_d.one_le
-  have hbase : rootDiscr K ≤ P.d := by
-    rw [rootDiscr_def, Int.abs_eq_natAbs, hK, ← Real.rpow_one (P.d : ℝ)]
-    exact Real.rpow_le_rpow_of_exponent_le hd₁
-      (inv_le_one_of_one_le₀ (by exact_mod_cast Module.finrank_pos (R := ℚ) (M := K)))
   have hq : (discr K).natAbs.Coprime (P.q₁ s) := hK ▸ (P.coprime_q₁_d s).symm
+  have hbase : rootDiscr K ≤ P.d := hK ▸ TauCeti.NumberField.rootDiscr_le_natAbs_discr K
   rw [IsCyclotomicExtension.rootDiscr_eq_mul_of_coprime_level K E (P.q₁ s) hq]
-  have : NeZero (P.q₁ s : ℚ) := ⟨Nat.cast_ne_zero.mpr (NeZero.ne _)⟩
-  let n := P.q₁ s
-  let F := CyclotomicField n ℚ
-  have hcycl : IsCyclotomicExtension {n} ℚ F := CyclotomicField.isCyclotomicExtension n ℚ
-  have hc : rootDiscr F ≤ n := by
-    rw [rootDiscr_def, @IsCyclotomicExtension.Rat.finrank n F _ _ _ hcycl, Int.abs_eq_natAbs,
-      @IsCyclotomicExtension.Rat.natAbs_discr n F _ _ _ hcycl,
-      ← Real.pow_rpow_inv_natCast (Nat.cast_nonneg n) (Nat.totient_pos.mpr (P.q₁_pos s)).ne']
-    exact Real.rpow_le_rpow (by positivity) (by exact_mod_cast Nat.div_le_self _ _) (by positivity)
+  have : NeZero (P.q₁ s : ℚ) := ⟨Nat.cast_ne_zero.mpr (P.q₁_pos s).ne'⟩
+  have : IsCyclotomicExtension {P.q₁ s} ℚ (CyclotomicField (P.q₁ s) ℚ) :=
+    CyclotomicField.isCyclotomicExtension (P.q₁ s) ℚ
+  have hc := IsCyclotomicExtension.Rat.rootDiscr_le (P.q₁ s) (CyclotomicField (P.q₁ s) ℚ)
   exact (mul_le_mul hbase hc (by rw [rootDiscr_def]; positivity) (Nat.cast_nonneg _)).trans
     (P.d_mul_q₁_le_pow_twelve hlog hdyadic)
 

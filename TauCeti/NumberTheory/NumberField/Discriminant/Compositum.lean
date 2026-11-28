@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Discriminant.Different
+public import Mathlib.NumberTheory.NumberField.Discriminant.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.NumberTheory.NumberField.Discriminant.Different
 
 /-!
 # Root discriminants of composita
@@ -24,12 +25,6 @@ open Module
 namespace TauCeti.NumberField
 
 open _root_.NumberField (discr rootDiscr rootDiscr_def)
-
-/-- The root discriminant is invariant under field isomorphisms. -/
-theorem _root_.RingEquiv.rootDiscr_eq {K L : Type*} [Field K] [Field L]
-    [NumberField K] [NumberField L] (e : K ≃+* L) : rootDiscr K = rootDiscr L := by
-  rw [rootDiscr_def, rootDiscr_def, _root_.NumberField.discr_eq_discr_of_ringEquiv K e,
-    e.toRatAlgEquiv.toLinearEquiv.finrank_eq]
 
 /-- A compositum of two number fields of coprime discriminants, one Galois, has root
 discriminant equal to the product of their root discriminants. -/
