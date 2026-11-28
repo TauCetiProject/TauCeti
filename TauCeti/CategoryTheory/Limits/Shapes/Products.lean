@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Idempotents.Basic
 public import Mathlib.CategoryTheory.Limits.Shapes.Products
 public import Mathlib.CategoryTheory.Limits.Shapes.ZeroMorphisms
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
@@ -367,6 +368,35 @@ theorem isSplitMono_id_sub (hh : ∀ s, h (e s) = h s + 1) {t : c.pt ⟶ c.pt}
   IsSplitMono.mk' ⟨shiftRetraction hc e h, id_sub_comp_shiftRetraction hc hh ht⟩
 
 end Shift
+
+/-- A family of retracts has a coproduct whenever the original family does and idempotents split.
+The coproduct is obtained by splitting the endomorphism induced by the individual idempotents. -/
+theorem hasCoproduct_of_splitMono {C : Type*} [Category* C] [IsIdempotentComplete C]
+    {J : Type*} {A B : J → C} [HasCoproduct B] (ι : ∀ j, A j ⟶ B j)
+    [∀ j, IsSplitMono (ι j)] : HasCoproduct A := by
+  let e : (∐ B) ⟶ ∐ B := Sigma.desc fun j ↦ retraction (ι j) ≫ ι j ≫ Sigma.ι B j
+  have he (j : J) : Sigma.ι B j ≫ e = retraction (ι j) ≫ ι j ≫ Sigma.ι B j := by
+    simp [e]
+  have h : e ≫ e = e := by
+    apply Sigma.hom_ext
+    intro j
+    simp only [reassoc_of% he j, he, IsSplitMono.id_assoc]
+  obtain ⟨X, i, r, hir, hri⟩ := IsIdempotentComplete.idempotents_split _ e h
+  refine ⟨⟨Cofan.mk X (fun j ↦ ι j ≫ Sigma.ι B j ≫ r),
+    Cofan.IsColimit.mk _ (fun s ↦ i ≫ Sigma.desc fun j ↦ retraction (ι j) ≫ s.inj j)
+      (fun s j ↦ ?_) (fun s f hf ↦ ?_)⟩⟩
+  · simp only [cofan_mk_inj, Category.assoc, reassoc_of% hri, reassoc_of% he j,
+      Sigma.ι_comp_desc, IsSplitMono.id_assoc]
+  · have hfac : r ≫ f = Sigma.desc fun j ↦ retraction (ι j) ≫ s.inj j := by
+      apply Sigma.hom_ext
+      intro j
+      have hfix : Sigma.ι B j ≫ r = Sigma.ι B j ≫ e ≫ r := by
+        rw [← hri, Category.assoc, hir, Category.comp_id]
+      rw [Sigma.ι_comp_desc, ← Category.assoc, hfix, ← Category.assoc, he]
+      simpa only [cofan_mk_inj, Category.assoc] using retraction (ι j) ≫= hf j
+    calc
+      f = (i ≫ r) ≫ f := by rw [hir, Category.id_comp]
+      _ = _ := by rw [Category.assoc, hfac]
 
 section FiniteSupport
 
