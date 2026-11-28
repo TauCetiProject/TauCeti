@@ -278,6 +278,10 @@ theorem coordinateMap_def :
         (definingHopfIdeal R l) := by
   rw [coordinateMap]
 
+-- In the next three proofs, unfolding the local quotient map and ideal also identifies
+-- their dependent codomains. A direct equality with the special coordinate map does not
+-- elaborate across the unexposed definitions; `coordinateMap_def` then supplies its public API.
+
 /-- The coordinate morphism of `SO_l^J` sends an ambient coordinate to its quotient class. -/
 theorem coordinateMap_apply (h : GeneralLinear.coordinateHopfAlgebra R l) :
     (coordinateMap R l).hom h = Ideal.Quotient.mkₐ R (definingHopfIdeal R l).toIdeal h := by

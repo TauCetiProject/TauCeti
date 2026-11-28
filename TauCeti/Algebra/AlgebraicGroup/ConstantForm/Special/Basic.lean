@@ -19,6 +19,16 @@ convention of `TauCeti.ConstantForm`.
 The identity and antidiagonal forms give the standard and antidiagonal special orthogonal
 groups. Congruence of forms induces conjugation on the matrix groups, through the constant-form
 congruence theorem for the defining ideals.
+
+The join presentation follows `TauCeti.SpecialOrthogonal.definingHopfIdeal`. The base-change
+transport follows `TauCeti.Symplectic.coordinateHopfAlgebraBaseChangeIso`, generalized here
+from the standard and antidiagonal special orthogonal constructions to an arbitrary form.
+
+## References
+
+* The Stacks Project, [Tag 022W](https://stacks.math.columbia.edu/tag/022W), for the ambient
+  general linear group scheme, and [Tag 01JO](https://stacks.math.columbia.edu/tag/01JO), for
+  base change of affine schemes.
 -/
 
 public section

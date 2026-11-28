@@ -27,8 +27,9 @@ Conjugation by `P` preserves determinants, so it identifies the determinant-one 
 of the two congruent forms: for every congruence `P C Pᵀ = C'`, the coordinate automorphism of
 conjugation pulls the join of the constant-form Hopf ideal of `C'` and the determinant kernel back
 to the corresponding join for `C`
-(`TauCeti.ConstantForm.Special.coordinateHopfAlgebraCongr`). Hence the
-coordinate Hopf algebras are isomorphic,
+(`TauCeti.ConstantForm.sup_specialLinear_comapOfSurjective_conjCoordinateIso_inv`). Hence
+`TauCeti.ConstantForm.Special.coordinateHopfAlgebraCongr` gives an isomorphism of coordinate
+Hopf algebras,
 
 `O(SO_l^J) ≅ O(SO_l)`
 
@@ -183,15 +184,9 @@ matrix on the coordinates of `GL_l`. -/
 theorem coordinateMap_comp_coordinateHopfAlgebraIsoSpecialOrthogonal_inv (hi : i * i = -1) :
     SpecialOrthogonal.coordinateMap R l ≫ (coordinateHopfAlgebraIsoSpecialOrthogonal l hi).inv =
       (GeneralLinear.conjCoordinateIso (congrUnit l hi)).hom ≫ coordinateMap R l := by
-  rw [coordinateMap_def, SpecialOrthogonal.coordinateMap_def,
-    coordinateHopfAlgebraIsoSpecialOrthogonal_def, Iso.trans_inv, Iso.trans_inv, eqToIso.inv,
-    eqToIso.inv, ← Category.assoc, ← Category.assoc,
-    CommHopfAlgCat.mkQuotient_comp_eqToHom
-      (SpecialOrthogonal.definingHopfIdeal_eq_special R l).symm,
-    ← ConstantForm.Special.coordinateMap_def,
-    ConstantForm.Special.coordinateMap_comp_coordinateHopfAlgebraCongr_inv,
-    ConstantForm.Special.coordinateMap_def, Category.assoc,
-    CommHopfAlgCat.mkQuotient_comp_eqToHom (definingHopfIdeal_eq_special R l)]
+  rw [Iso.comp_inv_eq, Category.assoc,
+    coordinateMap_comp_coordinateHopfAlgebraIsoSpecialOrthogonal_hom,
+    GeneralLinear.conjCoordinateIso_inv, Iso.symm_hom, Iso.hom_inv_id_assoc]
 
 /-- **`SO_l^J` is smooth** over a ring containing `1/2` and a square root of `-1`. -/
 theorem smooth_coordinateHopfAlgebra (hi : i * i = -1) :

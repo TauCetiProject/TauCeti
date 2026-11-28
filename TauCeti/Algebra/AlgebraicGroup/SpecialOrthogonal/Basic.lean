@@ -129,6 +129,10 @@ theorem coordinateMap_def :
         (definingHopfIdeal R n) := by
   rw [coordinateMap]
 
+-- In the next three proofs, unfolding the local quotient map and ideal also identifies
+-- their dependent codomains. A direct equality with the special coordinate map does not
+-- elaborate across the unexposed definitions; `coordinateMap_def` then supplies its public API.
+
 /-- The special orthogonal coordinate morphism sends an ambient coordinate to its quotient
 class. -/
 theorem coordinateMap_apply (h : GeneralLinear.coordinateHopfAlgebra R n) :

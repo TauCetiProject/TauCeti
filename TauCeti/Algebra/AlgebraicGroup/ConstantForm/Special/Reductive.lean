@@ -16,6 +16,17 @@ Over a field of characteristic different from two, the determinant-one subgroup 
 nonsingular symmetric matrix is reductive. Over an algebraic closure the matrix is congruent
 to the identity, so the geometric fibre is the standard special orthogonal group. This uses
 the standard reductivity theorem in every rank and descends reductivity to the base field.
+
+The argument follows the antidiagonal `SO_l^J` descent and uses
+`TauCeti.SpecialOrthogonal.reductiveCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra`
+for the standard group.
+
+## References
+
+* J. S. Milne, *Algebraic Groups* (2017), §§ 4.a, 19.b, and 21.
+* T. A. Springer, *Linear Algebraic Groups*, §§ 2.2, 2.4, and Chapter 8.
+* Formal descent architecture:
+  `TauCeti.Algebra.AlgebraicGroup.AntidiagonalSpecialOrthogonal.Reductive`.
 -/
 
 public section

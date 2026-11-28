@@ -55,6 +55,7 @@ special-orthogonal coordinate Hopf algebra over the new base. -/
 noncomputable def coordinateHopfAlgebraBaseChangeIso :
     CommHopfAlgCat.baseChange (K := K) (coordinateHopfAlgebra R n) ≅
       coordinateHopfAlgebra K n :=
+  -- The imported standard-form definitions are unexposed, so use their public object equalities.
   eqToIso (congrArg (CommHopfAlgCat.baseChange (K := K))
       (coordinateHopfAlgebra_eq_special R n)) ≪≫
     ConstantForm.Special.coordinateHopfAlgebraBaseChangeIso
@@ -132,6 +133,7 @@ variable (R K : Type u) [CommRing R] [CommRing K] [Algebra R K] (n : ℕ)
 noncomputable def groupSchemeBaseChangeIso :
     (Over.pullback (AlgebraicGeometry.Spec.map (CommRingCat.ofHom (algebraMap R K)))).mapGrp.obj
         (groupScheme R n) ≅ groupScheme K n :=
+  -- The imported named schemes need the same explicit transport as the coordinate objects.
   (Over.pullback (AlgebraicGeometry.Spec.map (CommRingCat.ofHom (algebraMap R K)))).mapGrp.mapIso
       (eqToIso ((groupScheme_def R n).trans (congrArg (CommHopfAlgCat.quotientSpec _)
         (definingHopfIdeal_eq_special R n)))) ≪≫
