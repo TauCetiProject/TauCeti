@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.CoherentIso
 public import Mathlib.AlgebraicTopology.SimplicialSet.NerveCodiscrete
 public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Cylinder
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.NatTrans
 
 /-!
 # The standard edge in the coherent isomorphism
@@ -68,38 +69,15 @@ instance : Mono edgeInclusion.{u} := by
   generalize ht : t k = b at hk ⊢
   fin_cases a <;> fin_cases b <;> simp_all
 
-/-- Contraction of the coherent isomorphism to its initial vertex. -/
-def contraction : Homotopy (const x₀) (𝟙 coherentIso.{u}) where
-  h :=
-    { app n := ↾fun p ↦ Codiscrete.equivFun.symm fun k ↦
-        if stdSimplex.asOrderHom p.2 k = 0 then ULift.up false else (p.1.obj k).as
-      naturality n m f := by
-        apply ConcreteCategory.hom_ext
-        intro p
-        apply Codiscrete.equivFun.injective
-        rfl }
-  h₀ := by
-    ext ⟨⟨n⟩⟩ : 1
-    apply ConcreteCategory.hom_ext
-    intro p
-    apply Codiscrete.equivFun.injective
-    funext k
-    -- Unwrap the anonymous homotopy component and the constant simplex's nerve reindexing;
-    -- neither has an object-evaluation lemma available here.
-    change (if (ι₀.app _ p).2 k = 0 then ULift.up false else
-      ((ι₀.app _ p).1.obj k).as) = ULift.up false
-    simp
-  h₁ := by
-    ext ⟨⟨n⟩⟩ : 1
-    apply ConcreteCategory.hom_ext
-    intro p
-    apply Codiscrete.equivFun.injective
-    funext k
-    -- Unwrap the anonymous homotopy component so the cylinder computations apply.
-    change (if (ι₁.app _ p).2 k = 0 then ULift.up false else
-      ((ι₁.app _ p).1.obj k).as) = (p.obj k).as
-    simp
-  rel := by ext _ ⟨⟨_, ⟨⟩⟩, _⟩
+/-- Contraction of the coherent isomorphism to its initial vertex, induced by the
+unique natural transformation from the constant functor to the identity. -/
+noncomputable def contraction : Homotopy (const x₀) (𝟙 coherentIso.{u}) :=
+  let H := (Codiscrete.natTrans
+    (F := (Functor.const WalkingIso).obj WalkingIso.zero) (G := 𝟭 WalkingIso)).nerveHomotopy
+  Homotopy.mk' H.h
+    (by simpa only [TauCeti.nerveMap_const, nerve.objEquiv_symm_eq,
+      nerveEquiv_symm_eq_mk₀, x₀] using H.h₀)
+    (H.h₁.trans (nerveFunctor.map_id (Cat.of WalkingIso)))
 
 /-- On vertex lists the contraction replaces a vertex by the initial object when the
 interval coordinate is zero. -/
@@ -107,8 +85,16 @@ interval coordinate is zero. -/
 lemma contraction_h_app_obj {n : ℕ}
     (p : coherentIso.{u} _⦋n⦌ × (Δ[1] : SSet.{u}) _⦋n⦌) (k : Fin (n + 1)) :
     dsimp% ((contraction.h.app _ p).obj k).as =
-      if p.2 k = 0 then ULift.up false else (p.1.obj k).as :=
-  (rfl)
+      if p.2 k = 0 then ULift.up false else (p.1.obj k).as := by
+  dsimp only [contraction, Homotopy.mk'_h]
+  -- The concrete-function wrapper of the cylinder component needs default transparency.
+  erw [NatTrans.nerveHomotopy_h_app]
+  -- Evaluate the uncurried functor on objects; the order-hom coercion and product
+  -- wrappers prevent rewriting this evaluation at implicit transparency.
+  change ((ComposableArrows.Mk₁.obj ((Functor.const WalkingIso).obj WalkingIso.zero)
+    (𝟭 WalkingIso) (p.2 k)).obj (p.1.obj k)).as = _
+  generalize hs : p.2 k = a
+  fin_cases a <;> rfl
 
 /-- The contractions of the standard edge and coherent isomorphism agree on the edge. -/
 @[reassoc]
