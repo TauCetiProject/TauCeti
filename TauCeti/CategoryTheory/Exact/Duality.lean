@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.CategoryTheory.Exact.Equivalence
-public import TauCeti.CategoryTheory.Exact.Split
 public import TauCeti.CategoryTheory.Preadditive.Opposite
 
 /-!
@@ -14,12 +13,12 @@ public import TauCeti.CategoryTheory.Preadditive.Opposite
 
 `TauCeti.ExactStructure.transport_opOpEquivalence` identifies the double opposite with the
 original exact structure along Mathlib's `CategoryTheory.opOpEquivalence`.
-`TauCeti.ExactStructure.op_split` and `TauCeti.ExactStructure.op_abelian` identify the opposites
-of the split and canonical abelian structures. These comparisons use
-`TauCeti.ExactStructure.transport_conflation_iff`, Mathlib's duality for short-complex
-splittings, and `TauCeti.ExactStructure.abelian_conflation_unop_iff`.
+`TauCeti.ExactStructure.transport_opOpEquivalence_symm` gives the inverse comparison.
+At the level of conflations, these comparisons combine
+`TauCeti.ExactStructure.transport_conflation_iff` and `TauCeti.ExactStructure.op_conflation`.
+`TauCeti.ExactStructure.transport_symm` relates the two directions.
 
-See Bühler, *Exact categories*, Remarks 2.2–2.8 and Sections 13.1–13.2.
+See Bühler, *Exact categories*, Remarks 2.2–2.8.
 -/
 
 public section
@@ -28,11 +27,7 @@ open CategoryTheory CategoryTheory.Limits
 
 namespace TauCeti.ExactStructure
 
-variable {C : Type*} [Category* C]
-
-section
-
-variable [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
+variable {C : Type*} [Category* C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
 
 /-- Transport along the canonical equivalence from the double opposite recovers the original
 exact structure (Bühler, *Exact categories*, Remarks 2.2–2.8).
@@ -53,25 +48,5 @@ theorem transport_opOpEquivalence_symm (E : ExactStructure C) :
     E.transport (opOpEquivalence C).symm = E.op.op := by
   have h := E.op.op.transport_symm (opOpEquivalence C)
   rwa [transport_opOpEquivalence] at h
-
-/-- The opposite of the split exact structure is split (Bühler, *Exact categories*, §13.1). -/
-@[simp]
-theorem op_split (C : Type*) [Category* C] [Preadditive C] [HasZeroObject C]
-    [HasBinaryBiproducts C] : (split C).op = split Cᵒᵖ := by
-  apply ExactStructure.ext
-  intro S
-  rw [op_conflation, split_conflation, split_conflation]
-  exact ⟨fun ⟨s⟩ ↦ ⟨s.op.ofIso S.unopOp⟩, fun ⟨s⟩ ↦ ⟨s.unop⟩⟩
-
-end
-
-/-- The opposite of the canonical exact structure on an abelian category is canonical
-(Bühler, *Exact categories*, §13.2). -/
-@[simp]
-theorem op_abelian (C : Type*) [Category* C] [Abelian C] : (abelian C).op = abelian Cᵒᵖ := by
-  apply ExactStructure.ext
-  intro S
-  rw [op_conflation]
-  exact abelian_conflation_unop_iff S
 
 end TauCeti.ExactStructure
