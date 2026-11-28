@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.LocalArtin.Frobenius
-public import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius.Basic
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 

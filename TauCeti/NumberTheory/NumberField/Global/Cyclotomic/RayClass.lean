@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Rat
 public import TauCeti.NumberTheory.NumberField.Ideal.ArtinMap
 
-import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius
+import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius.Basic
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 
 /-!
