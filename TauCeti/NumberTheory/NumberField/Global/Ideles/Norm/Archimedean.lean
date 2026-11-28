@@ -156,6 +156,15 @@ theorem normOneWeightCharacter_apply (e : InfinitePlace E → ℤ) (x : U) :
   rw [normOneWeightCharacter_apply (0 : InfinitePlace E → ℤ) x]
   simp
 
+/-- Integer multiplication of a weight raises its archimedean character to that power. -/
+theorem normOneWeightCharacter_zsmul (n : ℤ) (e : InfinitePlace E → ℤ) :
+    normOneWeightCharacter (n • e) = normOneWeightCharacter e ^ n := by
+  apply ContinuousMonoidHom.ext
+  intro x
+  rw [ContinuousMonoidHom.zpow_apply, normOneWeightCharacter_apply,
+    normOneWeightCharacter_apply, ← Finset.prod_zpow]
+  exact Finset.prod_congr rfl fun w _ ↦ by simp [Pi.smul_apply, zpow_mul']
+
 /-- At a rational norm-one point the archimedean character is the product of the powers
 of the corresponding field embeddings. This is the infinite factor of the compatibility
 condition for extending a prescribed character of the integral ideles. -/
