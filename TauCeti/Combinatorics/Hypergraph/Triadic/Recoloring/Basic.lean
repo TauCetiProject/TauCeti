@@ -728,7 +728,8 @@ theorem TopRegularOverMostPolyads.exists_approximates3_of_polyadEnergy_sub_le [F
         rw [nsmul_eq_mul]
         exact mul_le_mul_of_nonneg_right (Nat.cast_le.2 (card_le_univ s₁)) hN₀_pos.le
     have hirr_D : ∑ Q ∈ s₂, (#Q.support : ℝ) ≤ μ * (Fintype.card V).descFactorial 3 := by
-      simpa only [s₂] using h.sum_card_support_univ_le hD
+      simpa only [s₂] using
+        (topRegularOverMostPolyads_iff_sum_card_support_univ_le hD h.nonneg).mp h
     rw [hunion]
     exact (Finset.sum_union_le fun Q _ ↦ (Nat.cast_nonneg #Q.support : (0 : ℝ) ≤ _)).trans
       ((add_le_add hsmall_sum hirr_D).trans_eq (add_comm _ _))

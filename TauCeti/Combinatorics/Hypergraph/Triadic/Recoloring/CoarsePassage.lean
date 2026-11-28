@@ -15,8 +15,11 @@ import TauCeti.Combinatorics.Hypergraph.Polyad.Density
 /-!
 # Coarse top-regularity from good fine children
 
-Given a fine refinement `D` of a coarse triadic complex `C` with coarse parent projection
-`Q.coarsen hV f`, suppose `0 < δ`, `0 ≤ τ`, `2 * (τ + θ) ≤ δ ^ 2`, a coloring `H'` tracks
+Given a fine complex `D` whose vertex partition refines that of a coarse triadic complex `C`
+(`D.skeleton.vertexPart ≤ C.skeleton.vertexPart`) and a pair-color projection `f` such that
+projecting the fine color of every ordered distinct pair recovers its coarse color
+(`∀ p, C.skeleton.pairColors.color p = f (D.skeleton.pairColors.color p)`), with coarse parent
+projection `Q.coarsen hV f`, suppose `0 < δ`, `0 ≤ τ`, `2 * (τ + θ) ≤ δ ^ 2`, a coloring `H'` tracks
 `H.relativeDensity c P` within `τ * #Q.support` across subpolyads of every good fine child `Q` of
 a coarse polyad `P` in `Keep`, and the remaining fine children of `P` carry at most a `θ`-fraction
 of `#P.support`. Then `H'` is `(δ, 1)`-top-regular over `P`. When `C` is a polyad decomposition,
@@ -44,7 +47,9 @@ variable {κ V : Type*} [Fintype V] [DecidableEq V] [DecidableEq κ]
 
 open Classical in
 /-- Aggregating subpolyad discrepancy of `H'` against `H.relativeDensity c P` across good fine
-children of `P`, charging bad fine children trivially by `#Q.support`, for `0 ≤ τ`. -/
+children of `P` (under `D.skeleton.vertexPart ≤ C.skeleton.vertexPart` and
+`∀ p, C.skeleton.pairColors.color p = f (D.skeleton.pairColors.color p)`), charging bad fine
+children trivially by `#Q.support`, for `0 ≤ τ`. -/
 private theorem abs_relDensityOn_sub_coarse_mul_card_le_of_good_children
     (H H' : Colored3Graph κ V) {C D : TriadicComplex3 V}
     (hV : D.skeleton.vertexPart ≤ C.skeleton.vertexPart)
@@ -100,9 +105,10 @@ private theorem abs_relDensityOn_sub_coarse_mul_card_le_of_good_children
     _ ≤ (τ + θ) * #P.support := by linarith
 
 open Classical in
-/-- Rank-one coarse top regularity over `P` from good fine children with subpolyad discrepancy at
-most `τ * #Q.support` and bad-child mass at most `θ * #P.support`, when `0 < δ`, `0 ≤ τ`, and
-`2 * (τ + θ) ≤ δ²`. -/
+/-- Rank-one coarse top regularity over `P` from good fine children (when the fine vertex
+partition refines the coarse one and projecting the fine color of every ordered distinct pair via
+`f` recovers its coarse color) with subpolyad discrepancy at most `τ * #Q.support` and bad-child
+mass at most `θ * #P.support`, when `0 < δ`, `0 ≤ τ`, and `2 * (τ + θ) ≤ δ²`. -/
 private theorem isTopRegularOverPolyad_of_good_children
     (H H' : Colored3Graph κ V) {C D : TriadicComplex3 V}
     (hV : D.skeleton.vertexPart ≤ C.skeleton.vertexPart)
@@ -138,11 +144,14 @@ private theorem isTopRegularOverPolyad_of_good_children
   linarith
 
 open Classical in
-/-- Over a polyad decomposition `C`, if `0 < δ`, `0 ≤ τ`, `0 < θ`, `0 ≤ ε'`,
-`2 * (τ + θ) ≤ δ ^ 2`, `H'` tracks `H.relativeDensity c P` within `τ * #Q.support` on subpolyads of
-`Good` fine children `Q` of `Keep` coarse polyads `P`, non-kept coarse mass is at most `repMass`,
-`Keep`-parent `¬Good` child mass is at most `badMass`, and
-`repMass + badMass / θ ≤ ε' * (|V|)₃` whenever `0 < (|V|)₃`, then
+/-- Over a polyad decomposition `C`, when the fine vertex partition `D.skeleton.vertexPart`
+refines `C.skeleton.vertexPart` and projecting the fine color of every ordered distinct pair via
+`f` recovers its coarse color
+(`∀ p, C.skeleton.pairColors.color p = f (D.skeleton.pairColors.color p)`),
+if `0 < δ`, `0 ≤ τ`, `0 < θ`, `0 ≤ ε'`, `2 * (τ + θ) ≤ δ ^ 2`, `H'` tracks `H.relativeDensity c P`
+within `τ * #Q.support` on subpolyads of `Good` fine children `Q` of `Keep` coarse polyads `P`,
+non-kept coarse mass is at most `repMass`, `Keep`-parent `¬Good` child mass is at most `badMass`,
+and `repMass + badMass / θ ≤ ε' * (|V|)₃` whenever `0 < (|V|)₃`, then
 `H'.TopRegularOverMostPolyads C δ ε' 1`. -/
 theorem topRegularOverMostPolyads_of_good_children
     {H H' : Colored3Graph κ V} {C D : TriadicComplex3 V}

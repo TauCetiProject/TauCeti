@@ -73,9 +73,8 @@ exceptional mass instead.
 * `TauCeti.TriadicComplex3.VertexCellsControlled.card_le`: controlled cells are small.
 * `TauCeti.TriadicComplex3.VertexCellsControlled.le_card`: control at `t₀` needs at least `t₀`
   vertices.
-* `TauCeti.Colored3Graph.topRegularOverMostPolyads_iff_sum_card_support_le`,
-  `TauCeti.Colored3Graph.topRegularOverMostPolyads_iff_sum_card_support_univ_le`, and
-  `TauCeti.Colored3Graph.TopRegularOverMostPolyads.sum_card_support_univ_le`: the support of
+* `TauCeti.Colored3Graph.topRegularOverMostPolyads_iff_sum_card_support_le` and
+  `TauCeti.Colored3Graph.topRegularOverMostPolyads_iff_sum_card_support_univ_le`: the support of
   the irregular polyads is at most an `ε`-proportion of the selected support (and over all polyads
   of a decomposition).
 * `TauCeti.Colored3Graph.topRegularOverMostPolyads_of_sum_charge_le`: charging bound for top
@@ -483,15 +482,6 @@ theorem TopRegularOverMostPolyads.sum_card_support_le (h : H.TopRegularOverMostP
   refine ((topRegularOverMostPolyads_iff_sum_card_support_le h.nonneg).1 h).trans ?_
   rw [← Nat.cast_sum]
   exact mul_le_mul_of_nonneg_left (by exact_mod_cast C.sum_card_support_le) h.nonneg
-
-open Classical in
-/-- Over a polyad decomposition, the irregular polyads among all polyads of the skeleton carry at
-most `ε |V| (|V| - 1) (|V| - 2)` injective triples. -/
-theorem TopRegularOverMostPolyads.sum_card_support_univ_le
-    (h : H.TopRegularOverMostPolyads C η ε r) (hC : C.IsPolyadDecomposition) :
-    ∑ P : Polyad3 C.skeleton with ¬H.IsTopRegularOverPolyad P η r, (#P.support : ℝ) ≤
-      ε * (Fintype.card V).descFactorial 3 :=
-  (topRegularOverMostPolyads_iff_sum_card_support_univ_le hC h.nonneg).1 h
 
 open Classical in
 /-- Over a polyad decomposition `C`, if `0 ≤ ε`, every `(η, r)`-irregular polyad `P` has

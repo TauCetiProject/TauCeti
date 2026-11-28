@@ -119,9 +119,10 @@ private theorem exceptionalPolyadMass_le_of_sum_charge_le
     ∑ Q : Polyad3 D.skeleton with π Q = P ∧ ¬H.IsTopRegularOverPolyad Q η r, (#Q.support : ℝ)
   have hirr : ∑ P, irr P =
       ∑ Q : Polyad3 D.skeleton with ¬H.IsTopRegularOverPolyad Q η r, (#Q.support : ℝ) := by
-    rw [sum_filter, ← sum_fiberwise univ π]
-    refine sum_congr rfl fun P _ ↦ ?_
-    rw [← sum_filter, filter_filter]
+    have h := Finset.sum_fiberwise_of_maps_to
+      (s := univ.filter fun Q : Polyad3 D.skeleton ↦ ¬H.IsTopRegularOverPolyad Q η r)
+      (t := univ) (g := π) (f := fun Q ↦ (#Q.support : ℝ)) (fun _ _ ↦ mem_univ _)
+    simpa only [irr, filter_filter, and_comm] using h
   refine topRegularOverMostPolyads_iff.1 (topRegularOverMostPolyads_of_sum_charge_le hC
     (fun P ↦ (irr P + charge P) / θ)
     (fun P ↦ div_nonneg (add_nonneg (sum_nonneg fun _ _ ↦ Nat.cast_nonneg _) (hcharge₀ P)) hθ.le)
