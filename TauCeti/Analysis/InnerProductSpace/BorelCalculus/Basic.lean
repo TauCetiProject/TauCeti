@@ -44,7 +44,8 @@ commutes with every spectral projection, equivalently with every value of the Bo
 * `ContinuousLinearMap.borelCalculus a`: the Borel functional calculus of `a`, the integral
   against `a.spectralPVM`.
 * `ContinuousLinearMap.borelCalculus_ofContinuousMap`: the Borel calculus extends `cfcHom`.
-* `ContinuousLinearMap.borelCalculus_restrict_id`: the coordinate function recovers `a`.
+* `ContinuousLinearMap.spectrumId` and `ContinuousLinearMap.borelCalculus_restrict_id`: the
+  coordinate function on the spectrum and its Borel calculus recovering `a`.
 * `ContinuousLinearMap.borelCalculus_indicator`: indicators give the spectral projections.
 * `ContinuousLinearMap.exists_seq_tendsto_borelCalculus_ofSimpleFunc`: `a` is the norm limit of
   finite sums `∑ c • P(B_c)` of spectral projections with `c` in the spectrum.
@@ -73,6 +74,18 @@ open MeasureTheory TauCeti Filter Topology
 open scoped InnerProductSpace
 
 namespace ContinuousLinearMap
+
+/-- The coordinate (identity) function `z ↦ z` on `spectrum ℂ a` as a bounded Borel function. -/
+def spectrumId {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+    (a : E →L[ℂ] E) : BoundedBorelFunction (spectrum ℂ a) :=
+  BoundedBorelFunction.ofContinuousMap ((ContinuousMap.id ℂ).restrict (spectrum ℂ a))
+
+/-- The coordinate function `spectrumId a` evaluates to the subtype coercion `(z : ℂ)`. -/
+@[simp]
+theorem spectrumId_apply {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+    (a : E →L[ℂ] E) (z : spectrum ℂ a) :
+    a.spectrumId z = z := by
+  simp [spectrumId]
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   (a : H →L[ℂ] H) [IsStarNormal a]
@@ -122,9 +135,8 @@ theorem borelCalculus_ofContinuousMap_domRestrict (f : ℂ → ℂ)
 /-- **Spectral theorem for normal operators.** The Borel calculus of the coordinate function on
 the spectrum is `a` itself, that is, `a = ∫ z dP(z)`. -/
 theorem borelCalculus_restrict_id :
-    a.borelCalculus (BoundedBorelFunction.ofContinuousMap
-      ((ContinuousMap.id ℂ).restrict (spectrum ℂ a))) = a := by
-  rw [borelCalculus_ofContinuousMap, cfcHom_id]
+    a.borelCalculus a.spectrumId = a := by
+  rw [spectrumId, borelCalculus_ofContinuousMap, cfcHom_id]
 
 /-- The Borel calculus of the indicator of a Borel set `B` is the spectral projection `P(B)`. -/
 @[simp]
@@ -149,9 +161,8 @@ theorem exists_seq_tendsto_borelCalculus_ofSimpleFunc :
   -- The simple approximants of the coordinate function converge to it uniformly.
   have hlim : Tendsto (fun n ↦ BoundedBorelFunction.ofSimpleFunc
       (SimpleFunc.approxOn Subtype.val measurable_subtypeVal _ y₀ h₀ n)) atTop
-      (𝓝 (BoundedBorelFunction.ofContinuousMap
-        ((ContinuousMap.id ℂ).restrict (spectrum ℂ a)))) := by
-    simp only [BoundedBorelFunction.tendsto_iff_tendstoUniformly,
+      (𝓝 a.spectrumId) := by
+    simp only [spectrumId, BoundedBorelFunction.tendsto_iff_tendstoUniformly,
       BoundedBorelFunction.coe_ofSimpleFunc, BoundedBorelFunction.coe_ofContinuousMap,
       ContinuousMap.coe_restrict, ContinuousMap.coe_id]
     exact SimpleFunc.tendstoUniformly_approxOn measurable_subtypeVal h₀
@@ -269,14 +280,12 @@ theorem mul_spectralPVM_proj_preimage_singleton (z : ℂ) :
         (measurableSet_preimage_val_singleton z) := by
   have hS := measurableSet_preimage_val_singleton (p := (· ∈ spectrum ℂ a)) z
   -- On the preimage of `{z}` the coordinate function is the constant `z`.
-  have hmul : BoundedBorelFunction.ofContinuousMap
-      ((ContinuousMap.id ℂ).restrict (spectrum ℂ a)) * BoundedBorelFunction.indicator _ hS 1 =
+  have hmul : a.spectrumId * BoundedBorelFunction.indicator _ hS 1 =
       z • BoundedBorelFunction.indicator _ hS 1 := by
     ext w
     by_cases hw : (w : ℂ) = z <;> simp [hw]
   calc a * a.spectralPVM.proj _ hS
-      = a.borelCalculus (BoundedBorelFunction.ofContinuousMap
-          ((ContinuousMap.id ℂ).restrict (spectrum ℂ a))) *
+      = a.borelCalculus a.spectrumId *
         a.borelCalculus (BoundedBorelFunction.indicator _ hS 1) := by
         rw [borelCalculus_restrict_id, borelCalculus_indicator]
     _ = z • a.spectralPVM.proj _ hS := by
@@ -291,9 +300,8 @@ theorem spectralPVM_proj_preimage_singleton_apply_eq_self_iff (z : ℂ) (ξ : H)
   refine ⟨fun h => ?_, fun h => ?_⟩
   · simpa [h] using congr($(a.mul_spectralPVM_proj_preimage_singleton z) ξ)
   -- Conversely, `(w - z)(a) ξ = 0`, so the diagonal measure of `ξ` lives on the point `z`.
-  have hf : a.spectralPVM.integral (BoundedBorelFunction.ofContinuousMap
-      ((ContinuousMap.id ℂ).restrict (spectrum ℂ a)) - z • 1) ξ = 0 := by
-    simp [integral_spectralPVM, h]
+  have hf : a.spectralPVM.integral (a.spectrumId - z • 1) ξ = 0 := by
+    simp [integral_spectralPVM, borelCalculus_restrict_id, h]
   rw [ProjValMeasure.integral_apply_eq_zero_iff] at hf
   have hc : a.spectralPVM.diag ξ (Subtype.val ⁻¹' {z})ᶜ = 0 :=
     ae_iff.mp (hf.mono fun w hw => by simpa [sub_eq_zero] using hw)

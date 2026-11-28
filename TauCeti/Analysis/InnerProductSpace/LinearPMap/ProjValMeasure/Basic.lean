@@ -226,8 +226,7 @@ theorem _root_.IsSelfAdjoint.integral_spectralPVM_eq_resolvent (hA : IsSelfAdjoi
     ContinuousLinearMap.integral_spectralPVM]
   set g := BoundedBorelFunction.compStarAlgHom'
     (fun w : _root_.spectrum ℂ U => inverseCayleyCoord w) (by fun_prop) f
-  set w : BoundedBorelFunction (_root_.spectrum ℂ U) :=
-    BoundedBorelFunction.ofContinuousMap ((ContinuousMap.id ℂ).restrict (_root_.spectrum ℂ U))
+  set w : BoundedBorelFunction (_root_.spectrum ℂ U) := U.spectrumId
   have hw : U.borelCalculus w = U := U.borelCalculus_restrict_id
   -- On the Cayley side `z - A` has the symbol `w ↦ (z - i) - (z + i) w`, and `g` times this symbol
   -- is `1 - w` away from the null point `1`.
