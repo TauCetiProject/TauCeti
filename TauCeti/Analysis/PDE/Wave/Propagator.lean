@@ -66,15 +66,24 @@ identity and Duhamel's formula.
 * `TauCeti.waveSinPropagator_sub`, `TauCeti.waveCosPropagator_sub_apply`: the subtraction
   formulas `D⁻¹ sin((t - s)D) = D⁻¹ sin(tD) cos(sD) - cos(tD) D⁻¹ sin(sD)` and, on the domain of
   the Laplacian, `cos((t - s)D) φ = cos(sD) cos(tD) φ - D⁻¹ sin(sD) D⁻¹ sin(tD) Δφ`.
+* `TauCeti.waveSinPropagator_neg`, `TauCeti.waveCosPropagator_neg`: `D⁻¹ sin(tD)` is odd in `t`
+  and `cos(tD)` is even.
 * `TauCeti.waveCosPropagator_eq_halfWavePropagator`: `cos(tD) = (W₊(t) + W₋(t)) / 2`, so
   `(t, f) ↦ cos(tD) f` is jointly continuous (`TauCeti.continuous_waveCosPropagator_uncurry`).
 * `TauCeti.norm_waveSinPropagator_sub_le`: `t ↦ D⁻¹ sin(tD)` is `1`-Lipschitz in operator norm,
   and `TauCeti.continuous_waveSinPropagator_uncurry`: `(t, g) ↦ D⁻¹ sin(tD) g` is jointly
-  continuous. Hence the retarded Duhamel integral `t ↦ ∫_{s < t} D⁻¹ sin((t - s)D) G(s) ds` is
-  almost everywhere strongly measurable whenever `G` is
+  continuous. Hence the retarded integrand `(t, s) ↦ D⁻¹ sin((t - s)D) G(s)` is almost everywhere
+  strongly measurable whenever `G` is, jointly
+  (`TauCeti.aestronglyMeasurable_waveSinPropagator_sub_prod`) and at each fixed `t`
+  (`MeasureTheory.AEStronglyMeasurable.waveSinPropagator_sub_apply`), so is the retarded Duhamel
+  integral `t ↦ ∫_{s < t} D⁻¹ sin((t - s)D) G(s) ds`
   (`TauCeti.aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub`), and, for fixed `t`, the
   integrand `τ ↦ D⁻¹ sin((t - τ)D) G(τ)` is integrable between `t₀` and `t` whenever `G` is
   (`IntervalIntegrable.waveSinPropagator_sub_apply`).
+* `TauCeti.norm_waveSinPropagator_sub_apply_le`: `‖D⁻¹ sin((t - s)D) g‖ ≤ |t| ‖g‖ +
+  ‖D⁻¹ sin(sD) g‖`, so the retarded integrand `s ↦ D⁻¹ sin((t - s)D) G(s)` is integrable on the
+  whole line whenever `G` and `s ↦ D⁻¹ sin(sD) G(s)` are
+  (`TauCeti.integrable_waveSinPropagator_sub_apply`): the retarded integral exists.
 * `TauCeti.hasDerivAt_waveSinPropagator_apply`, `TauCeti.hasDerivAt_waveCosPropagator_apply`:
   the time derivatives.
 
@@ -395,6 +404,19 @@ theorem waveSinPropagator_zero : waveSinPropagator (E := E) F 0 = 0 := by
   filter_upwards [(memLp_waveSinSymbol (E := E) 0).coeFn_toLp] with ξ h
   simp [h]
 
+/-- `D⁻¹ sin(tD)` is odd in `t`: `D⁻¹ sin(-tD) = -D⁻¹ sin(tD)`. -/
+@[simp]
+theorem waveSinPropagator_neg (t : ℝ) :
+    waveSinPropagator (E := E) F (-t) = -waveSinPropagator F t := by
+  simpa using waveSinPropagator_sub (E := E) (F := F) t 0
+
+/-- `cos(tD)` is even in `t`: `cos(-tD) = cos(tD)`. -/
+@[simp]
+theorem waveCosPropagator_neg (t : ℝ) :
+    waveCosPropagator (E := E) F (-t) = waveCosPropagator F t := by
+  rw [waveCosPropagator_def, waveCosPropagator_def]
+  exact congrArg _ (MemLp.toLp_congr _ _ (.of_forall fun ξ ↦ by simp [waveCosSymbol_apply]))
+
 /-- `cos(tD)` has operator norm at most `1`. -/
 theorem norm_waveCosPropagator_le (t : ℝ) : ‖waveCosPropagator (E := E) F t‖ ≤ 1 :=
   Lp.norm_fourierMultiplierCLM_toLp_le _ (Eventually.of_forall (norm_waveCosSymbol_le t))
@@ -418,6 +440,30 @@ theorem continuous_waveSinPropagator_uncurry :
     (dist_eq_norm _ _).trans_le ((norm_waveSinPropagator_sub_le s t).trans_eq
       (Real.dist_eq s t).symm)).continuous.comp continuous_fst).clm_apply continuous_snd
 
+/-- For an almost everywhere strongly measurable `G : ℝ → L²`, the retarded integrand
+`(t, s) ↦ D⁻¹ sin((t - s)D) G(s)` is jointly almost everywhere strongly measurable. -/
+theorem aestronglyMeasurable_waveSinPropagator_sub_prod {G : ℝ → Lp F 2 (volume : Measure E)}
+    (hG : AEStronglyMeasurable G) :
+    AEStronglyMeasurable (fun p : ℝ × ℝ ↦ waveSinPropagator F (p.1 - p.2) (G p.2))
+      (volume.prod volume) := by
+  have h : AEStronglyMeasurable (fun p : ℝ × ℝ ↦ (p.1 - p.2, G p.2)) (volume.prod volume) :=
+    (continuous_fst.sub continuous_snd).aestronglyMeasurable.prodMk hG.comp_snd
+  -- Closing the goal with this term directly makes elaboration unify the composite with the goal
+  -- function, which is very slow; stating it first and closing by `exact` is fast.
+  have := (continuous_waveSinPropagator_uncurry (E := E) (F := F)).comp_aestronglyMeasurable h
+  exact this
+
+/-- For an almost everywhere strongly measurable `G : ℝ → L²` and a fixed time `t`, the retarded
+integrand `s ↦ D⁻¹ sin((t - s)D) G(s)` is almost everywhere strongly measurable. -/
+theorem _root_.MeasureTheory.AEStronglyMeasurable.waveSinPropagator_sub_apply
+    {G : ℝ → Lp F 2 (volume : Measure E)} {μ : Measure ℝ} (hG : AEStronglyMeasurable G μ)
+    (t : ℝ) : AEStronglyMeasurable (fun s ↦ waveSinPropagator F (t - s) (G s)) μ := by
+  have h : AEStronglyMeasurable (fun s : ℝ ↦ (t - s, G s)) μ :=
+    (continuous_const.sub continuous_id).aestronglyMeasurable.prodMk hG
+  -- As above, stating the composite first and closing by `exact` keeps elaboration fast.
+  have := (continuous_waveSinPropagator_uncurry (E := E) (F := F)).comp_aestronglyMeasurable h
+  exact this
+
 /-- The retarded Duhamel integral `t ↦ ∫_{s < t} D⁻¹ sin((t - s)D) G(s) ds` of an almost
 everywhere strongly measurable `G : ℝ → L²` is almost everywhere strongly measurable. Where the
 integral does not exist it takes the value `0`. -/
@@ -425,8 +471,7 @@ theorem aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub
     {G : ℝ → Lp F 2 (volume : Measure E)} (hG : AEStronglyMeasurable G) :
     AEStronglyMeasurable fun t ↦ ∫ s in Set.Iio t, waveSinPropagator F (t - s) (G s) :=
   aestronglyMeasurable_setIntegral_of_measurableSet (R := fun t s ↦ s < t)
-    (continuous_waveSinPropagator_uncurry.comp_aestronglyMeasurable
-      ((continuous_fst.sub continuous_snd).aestronglyMeasurable.prodMk hG.comp_snd))
+    (aestronglyMeasurable_waveSinPropagator_sub_prod hG)
     (measurableSet_lt measurable_snd measurable_fst)
 
 /-- `cos(tD) = (W₊(t) + W₋(t)) / 2`, where `W₊(t) = exp(itD)` is the half-wave propagator and
@@ -454,13 +499,35 @@ theorem _root_.IntervalIntegrable.waveSinPropagator_sub_apply
     {G : ℝ → Lp F 2 (volume : Measure E)} {t₀ t : ℝ} (hG : IntervalIntegrable G volume t₀ t) :
     IntervalIntegrable (fun τ ↦ waveSinPropagator F (t - τ) (G τ)) volume t₀ t := by
   refine (hG.smul |t - t₀|).mono_fun ?_ ?_
-  · exact continuous_waveSinPropagator_uncurry.comp_aestronglyMeasurable
-      ((continuous_const.sub continuous_id).aestronglyMeasurable.prodMk hG.def'.1)
+  · exact hG.def'.1.waveSinPropagator_sub_apply t
   · filter_upwards [ae_restrict_mem measurableSet_uIoc] with τ hτ
     rw [Pi.smul_apply, norm_smul, Real.norm_eq_abs, abs_abs]
     exact ((waveSinPropagator F (t - τ)).le_opNorm _).trans
       (mul_le_mul_of_nonneg_right ((norm_waveSinPropagator_le _).trans
         (Set.abs_sub_right_of_mem_uIcc (Set.uIoc_subset_uIcc hτ))) (norm_nonneg _))
+
+/-- By the subtraction formula, `‖D⁻¹ sin((t - s)D) g‖ ≤ |t| ‖g‖ + ‖D⁻¹ sin(sD) g‖`. -/
+theorem norm_waveSinPropagator_sub_apply_le (s t : ℝ) (g : Lp F 2 (volume : Measure E)) :
+    ‖waveSinPropagator F (t - s) g‖ ≤ |t| * ‖g‖ + ‖waveSinPropagator F s g‖ := by
+  rw [waveSinPropagator_sub, sub_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.comp_apply]
+  refine (norm_sub_le _ _).trans (add_le_add ?_ ?_)
+  · refine ((waveSinPropagator F t).le_opNorm _).trans ?_
+    gcongr
+    · exact norm_waveSinPropagator_le t
+    · exact ((waveCosPropagator F s).le_opNorm _).trans
+        (mul_le_of_le_one_left (norm_nonneg _) (norm_waveCosPropagator_le s))
+  · exact ((waveCosPropagator F t).le_opNorm _).trans
+      (mul_le_of_le_one_left (norm_nonneg _) (norm_waveCosPropagator_le t))
+
+/-- **The retarded integral exists.** If `G : ℝ → L²` and `s ↦ D⁻¹ sin(sD) G(s)` are integrable,
+then so is the retarded integrand `s ↦ D⁻¹ sin((t - s)D) G(s)`, at every time `t`. -/
+theorem integrable_waveSinPropagator_sub_apply {G : ℝ → Lp F 2 (volume : Measure E)}
+    (hG : Integrable G) (hSG : Integrable fun s ↦ waveSinPropagator F s (G s)) (t : ℝ) :
+    Integrable fun s ↦ waveSinPropagator F (t - s) (G s) :=
+  ((hG.norm.const_mul |t|).add hSG.norm).mono'
+    (hG.aestronglyMeasurable.waveSinPropagator_sub_apply t)
+    (.of_forall fun s ↦ norm_waveSinPropagator_sub_apply_le s t (G s))
 
 /-- For a continuous `G : ℝ → L²`, the map `t ↦ cos(tD) G(t)` is continuous. -/
 theorem _root_.Continuous.waveCosPropagator_apply {G : ℝ → Lp F 2 (volume : Measure E)}

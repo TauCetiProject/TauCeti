@@ -10,6 +10,9 @@ public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.Algebra.Module.Torsion.Localization
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coefficients
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
+public import TauCeti.AlgebraicTopology.Singular.Reduced
+import TauCeti.Algebra.Module.Torsion.Int
+import TauCeti.AlgebraicTopology.Singular.ModuleChains.Contractible
 
 /-!
 # Flat base change in singular homology
@@ -40,8 +43,14 @@ of a space vanishes in a degree exactly when its integral homology is a torsion 
 * `TauCeti.isTorsion'_singularChains_homology_iff`: `Hₙ(X; R)` is `M`-torsion exactly when
   `Hₙ(X; M⁻¹R)` vanishes; `TauCeti.isTorsion'_singularChains_int_homology_iff` is the case
   `R = ℤ`.
+* A path-connected space whose reduced integral homology is `S`-torsion up to degree `N` has the
+  `S⁻¹ℤ`-homology of a point up to degree `N`:
+  `isIso_singularHomologyMap_isTerminalPUnit_from_of_forall_isTorsion'_reducedSingularHomology`.
 * `TauCeti.isAddTorsion_singularChains_homology_iff`: `Hₙ(X; ℤ)` is a torsion group exactly when
   `Hₙ(X; ℚ)` vanishes.
+* `TauCeti.bijective_singularHomologyMap_baseChange_iff_isIso`,
+  `TauCeti.isIso_singularHomologyMap_localization_iff`: characterization of when a continuous map
+  induces an isomorphism on homology with localized coefficients.
 
 ## References
 
@@ -142,6 +151,32 @@ theorem isTorsion'_singularChains_int_homology_iff (S : Submonoid ℤ) (k : Type
   · simp only [Submonoid.smul_def] at ha ⊢
     exact (int_smul_eq_zsmul _ _ _).symm.trans ha
 
+/-- If a path-connected space `W` has `S`-torsion reduced integral singular homology up to degree
+`N`, then the map to a point induces an isomorphism on `H_q(-; A)` for all `q ≤ N`, for every
+localization `A` of `ℤ` at `S`. -/
+theorem isIso_singularHomologyMap_isTerminalPUnit_from_of_forall_isTorsion'_reducedSingularHomology
+    (S : Submonoid ℤ) (A : Type) [CommRing A] [Algebra ℤ A] [IsLocalization S A]
+    (W : TopCat.{0}) [PathConnectedSpace W] (N : ℕ)
+    (hW : ∀ q ≤ N, Module.IsTorsion'
+      ((reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) q).obj W) S)
+    {q : ℕ} (hq : q ≤ N) :
+    IsIso (((singularHomologyFunctor (ModuleCat.{0} A) q).obj (ModuleCat.of A A)).map
+      (TopCat.isTerminalPUnit.from W)) := by
+  cases q with
+  | zero =>
+    -- In degree `0`, path-connectedness identifies `H₀(W; A)` with `A ≅ H₀(*; A)`.
+    exact IsIso.of_isIso_fac_right (singularHomologyMap_singularHomology₀ε
+      (ModuleCat.of A A) (TopCat.isTerminalPUnit.from W))
+  | succ r =>
+    -- In positive degrees, reduced and ordinary homology agree, so flat base change turns
+    -- `S`-torsion in `H~_{r + 1}(W; ℤ)` into vanishing of `H_{r + 1}(W; A)`.
+    have hsub : Subsingleton (((singularChains A).obj W).homology (r + 1)) :=
+      (isTorsion'_singularChains_int_homology_iff S A W (r + 1)).1 <|
+        ((reducedSingularHomologySuccIso (ModuleCat.of ℤ ℤ) r).app
+          W).symm.toLinearEquiv.toAddEquiv.isTorsion'_iff.2 (hW (r + 1) hq)
+    exact (isIso_singularHomologyMap_isTerminalPUnit_from_succ_iff
+      (ModuleCat.of A A) W r).2 hsub
+
 /-- **Rational homology detects torsion in integral homology.** The integral singular homology
 `Hₙ(X; ℤ)` of a space in the lowest universe is a torsion group exactly when its rational homology
 `Hₙ(X; ℚ)` vanishes. -/
@@ -150,5 +185,34 @@ theorem isAddTorsion_singularChains_homology_iff (X : TopCat.{0}) (n : ℕ) :
       Subsingleton (((singularChains ℚ).obj X).homology n) :=
   isAddTorsion_iff_isTorsion_int.trans
     (isTorsion'_singularChains_int_homology_iff (nonZeroDivisors ℤ) ℚ X n)
+
+/-- The base-changed homology map `Hₙ(f; R).baseChange S` is bijective if and only if `Hₙ(f; S)`
+is an isomorphism. -/
+theorem bijective_singularHomologyMap_baseChange_iff_isIso [Module.Flat R S] {X Y : TopCat.{u}}
+    (f : X ⟶ Y) (n : ℕ) :
+    Function.Bijective
+        ((HomologicalComplex.homologyMap ((singularChains R).map f) n).hom.baseChange S) ↔
+      IsIso (HomologicalComplex.homologyMap ((singularChains S).map f) n) := by
+  let g := (HomologicalComplex.homologyMap ((singularChains R).map f) n).hom.baseChange S
+  refine (ConcreteCategory.isIso_iff_bijective (ModuleCat.ofHom g)).symm.trans ?_
+  rw [← isIso_comp_right_iff _ (singularHomologyTensorIso R S Y n).hom,
+    singularHomologyTensorIso_hom_naturality, isIso_comp_left_iff]
+
+/-- A continuous map `f : X ⟶ Y` induces an isomorphism on `Hₙ(-; A)`, for a localization `A` of
+`R` at `M`, if and only if the kernel and cokernel of `Hₙ(f; R)` are `M`-torsion. -/
+theorem isIso_singularHomologyMap_localization_iff {R : Type u} [CommRing R] (M : Submonoid R)
+    (A : Type u) [CommRing A] [Algebra R A] [IsLocalization M A] {X Y : TopCat.{u}} (f : X ⟶ Y)
+    (n : ℕ) :
+    IsIso (HomologicalComplex.homologyMap ((singularChains A).map f) n) ↔
+      Module.IsTorsion'
+          (LinearMap.ker (HomologicalComplex.homologyMap ((singularChains R).map f) n).hom) M ∧
+        Module.IsTorsion'
+          ((((singularChains R).obj Y).homology n) ⧸
+            LinearMap.range (HomologicalComplex.homologyMap ((singularChains R).map f) n).hom)
+          M := by
+  have := IsLocalization.flat A M
+  rw [← bijective_singularHomologyMap_baseChange_iff_isIso R A f n, Function.Bijective,
+    LinearMap.baseChange_injective_iff_isTorsion'_ker _ M A,
+    LinearMap.baseChange_surjective_iff_isTorsion'_coker _ M A]
 
 end TauCeti

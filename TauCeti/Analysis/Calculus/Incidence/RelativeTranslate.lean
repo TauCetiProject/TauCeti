@@ -115,6 +115,13 @@ theorem relativeTranslate_apply {E V : Type*} [Add V] [SMul ℝ V]
     relativeTranslate f β p x = f x + β x • p :=
   (rfl)
 
+/-- Relative translation commutes with precomposition: reading `f`, `β` and the translate through
+a map `φ`, for instance a chart, gives the translate of the composites. -/
+theorem relativeTranslate_comp {E E' V : Type*} [Add V] [SMul ℝ V]
+    (f : E → V) (β : E → ℝ) (p : V) (φ : E' → E) :
+    relativeTranslate (f ∘ φ) (β ∘ φ) p = relativeTranslate f β p ∘ φ :=
+  (rfl)
+
 /-- Relative translation by the zero parameter is the identity on `f`. -/
 @[simp]
 theorem relativeTranslate_zero_right {E V : Type*} [AddZeroClass V] [SMulZeroClass ℝ V]

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Young.HookLength.BetaNumbers
-public import TauCeti.Combinatorics.Young.StandardTableau.Corner
+public import TauCeti.Combinatorics.Young.StandardTableau.Corner.Basic
 -- Non-public: these appear only inside proofs, never in the type of an exported declaration.
 import TauCeti.Combinatorics.Young.StandardTableau.Reading
 import TauCeti.LinearAlgebra.Vandermonde
