@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.Rank
 public import TauCeti.LinearAlgebra.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Projectivization.Basic
 public import TauCeti.RingTheory.MvPolynomial.DualNumber
+import TauCeti.RingTheory.MvPolynomial.LinearSubst
 
 /-!
 # Jacobian matrices of polynomial families at a point
@@ -71,7 +72,8 @@ products, as the multiplicativity of evaluation then replaces the Leibniz rule.
 * `TauCeti.mulVec_surjective_jacobiMatrixAt_iff_exists_eval_pderiv_ne_zero`: a single equation
   has full rank exactly where some partial derivative does not vanish.
 * `TauCeti.jacobiMatrixAt_sumElim`, `TauCeti.jacobiMatrixAt_toMvPolynomial`: the Jacobian
-  matrix of a joined family is stacked, and that of a family of linear forms is its matrix.
+  matrix of a joined family is stacked, and that of a family of linear forms is its matrix
+  by `Matrix.pderiv_toMvPolynomial`.
 * `TauCeti.mulVec_surjective_jacobiMatrixAt_sumElim_toMvPolynomial_iff`: adding the equation of
   the hyperplane `ℓ = 0` to a family of full rank keeps full rank exactly when `ℓ` is not a
   combination of the rows of the Jacobian matrix.
@@ -119,10 +121,8 @@ point. -/
 @[simp]
 theorem jacobiMatrixAt_toMvPolynomial [Fintype σ] (M : Matrix ι σ R) (v : σ → R) :
     jacobiMatrixAt M.toMvPolynomial v = M := by
-  classical
   ext i j
-  simp [Matrix.toMvPolynomial, pderiv_monomial, Finsupp.single_apply, apply_ite,
-    Finset.sum_ite_eq']
+  simp only [jacobiMatrixAt_apply, Matrix.pderiv_toMvPolynomial, eval_C]
 
 /-- **Euler's identity** for the Jacobian matrix of a family of homogeneous polynomials: applied
 to the point itself, it returns each equation's value scaled by its degree. -/

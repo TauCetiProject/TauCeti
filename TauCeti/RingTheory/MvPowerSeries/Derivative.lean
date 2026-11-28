@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.LinearMap.Polynomial
 public import Mathlib.RingTheory.MvPowerSeries.Derivative
 public import Mathlib.RingTheory.MvPowerSeries.Order
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Substitution
+import TauCeti.RingTheory.MvPolynomial.LinearSubst
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
@@ -33,6 +35,9 @@ series only; here the substituted series may have any number of variables.
 
 ## Main results
 
+* `Matrix.pderiv_subst_toMvPolynomial`: for a matrix substitution, the derivative is the sum of
+  the substituted derivatives weighted by a column of the matrix, by `MvPowerSeries.pderiv_subst`
+  and `Matrix.pderiv_toMvPolynomial`.
 * `MvPowerSeries.le_order_pderiv`: if `n + 1 ≤ f.order` then `n ≤ (pderiv i f).order`.
 * `MvPowerSeries.pderiv_map`: partial differentiation commutes with a change of coefficients.
 * `MvPowerSeries.coeff_pderiv_mem`: partial derivatives keep the coefficients in an additive
@@ -196,6 +201,22 @@ theorem pderiv_substAlgHom {S : Type*} [CommRing R] [CommRing S] [Algebra R S]
   simp only [substAlgHom_apply_eq_subst_map, pderiv_subst ha, pderiv_map]
 
 end MvPowerSeries
+
+namespace Matrix
+
+/-- The chain rule for linear substitution by `A`: the partial derivative in variable `j`
+is the sum of the substituted partial derivatives weighted by column `j` of `A`. -/
+theorem pderiv_subst_toMvPolynomial {σ τ R : Type*} [CommRing R] [Fintype σ] [Fintype τ]
+    (A : Matrix σ τ R) (f : MvPowerSeries σ R) (j : τ) :
+    MvPowerSeries.pderiv j
+        (MvPowerSeries.subst (fun i ↦ (A.toMvPolynomial i : MvPowerSeries τ R)) f) =
+      ∑ i, A i j •
+        MvPowerSeries.subst (fun k ↦ (A.toMvPolynomial k : MvPowerSeries τ R))
+          (MvPowerSeries.pderiv i f) := by
+  simp only [MvPowerSeries.pderiv_subst A.hasSubst_toMvPolynomial, MvPowerSeries.pderiv_coe,
+    A.pderiv_toMvPolynomial, MvPolynomial.coe_C, MvPowerSeries.smul_eq_C_mul, mul_comm]
+
+end Matrix
 
 namespace PowerSeries
 

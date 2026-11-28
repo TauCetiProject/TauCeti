@@ -81,6 +81,9 @@ degree `d` it is the representation `TauCeti.polynomialRep` of the general linea
 * `TauCeti.polynomialAction_mul`: the substitution of standard vectors is a left action.
 * `TauCeti.polynomialAction_sum_C_mul_X`: on linear forms it is matrix-vector multiplication of
   the coefficient vector.
+* `Matrix.toMvPolynomial_eq_sum_smul_X` writes a row polynomial as a sum of scalar multiples of
+  variables, and `Matrix.pderiv_toMvPolynomial` computes its partial derivative using
+  `MvPolynomial.pderiv_X_self` and `MvPolynomial.pderiv_X_of_ne`.
 * `Matrix.eval_aeval_toMvPolynomial`: substituting the rows of a rectangular matrix `A` as linear
   forms gives the polynomial `x ↦ p(A x)`.
 -/
@@ -430,6 +433,27 @@ end Action
 end TauCeti
 
 namespace Matrix
+
+/-- The linear polynomial associated to row `i` of `A` is the sum of its entries times
+the corresponding variables. -/
+theorem toMvPolynomial_eq_sum_smul_X {σ τ R : Type*} [CommSemiring R]
+    [Fintype τ] (A : Matrix σ τ R) (i : σ) :
+    A.toMvPolynomial i = ∑ j, A i j • MvPolynomial.X j := by
+  -- Mathlib defines the row polynomial using monomials rather than scalar multiples.
+  simp only [toMvPolynomial, MvPolynomial.smul_eq_C_mul, MvPolynomial.C_mul_X_eq_monomial]
+
+/-- The partial derivative of row `i` of `A` in variable `j` is the constant polynomial
+with value `A i j`. -/
+@[simp]
+theorem pderiv_toMvPolynomial {σ τ R : Type*} [CommSemiring R]
+    [Fintype τ] (A : Matrix σ τ R) (i : σ) (j : τ) :
+    MvPolynomial.pderiv j (A.toMvPolynomial i) = MvPolynomial.C (A i j) := by
+  classical
+  rw [A.toMvPolynomial_eq_sum_smul_X, map_sum, Finset.sum_eq_single j]
+  · rw [Derivation.map_smul, MvPolynomial.pderiv_X_self, MvPolynomial.smul_eq_C_mul, mul_one]
+  · intro k _ hkj
+    simp only [Derivation.map_smul, MvPolynomial.pderiv_X_of_ne hkj, smul_zero]
+  · exact fun hj ↦ (hj (Finset.mem_univ j)).elim
 
 /-- Substituting the linear forms `∑ⱼ Aᵢⱼ Xⱼ` given by the rows of a rectangular matrix `A` into
 `p` gives the polynomial `x ↦ p(A x)`: this is the pullback of polynomial functions along the
