@@ -84,6 +84,7 @@ theorem homEquiv_id (x : T ⟶ X) : (homEquiv J (G := G) x x (𝟙 (point J x)))
     ((homEquiv_apply_map J x x (𝟙 (pt x))).trans (ActionCategory.id_hom _))
 
 /-- Composition of arrows between embedded points multiplies their labels in reverse order. -/
+@[simp]
 theorem homEquiv_comp (x y z : T ⟶ X) (a : point J (G := G) x ⟶ point J y)
     (b : point J (G := G) y ⟶ point J z) :
     (homEquiv J x z (a ≫ b)).val = (homEquiv J y z b).val * (homEquiv J x y a).val := by
