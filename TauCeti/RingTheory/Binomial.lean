@@ -541,6 +541,8 @@ The identity combines them without division, which is the integral step needed i
   division semiring, and its analogue
   `TauCeti.Ring.choose_eq_inv_factorial_mul_eval_descPochhammer` for `Ring.choose x n` over a
   characteristic-zero field.
+* `TauCeti.Ring.factorial_mul_choose_mul_neg_one_pow`: the upper-negation form
+  `n! (x choose n) (-1)ⁿ = (ascPochhammer R n).eval (-x)` over a characteristic-zero field.
 
 ## References
 
@@ -663,6 +665,14 @@ theorem choose_eq_inv_factorial_mul_eval_descPochhammer {R : Type*} [Field R] [C
     _root_.Ring.choose x n = (n.factorial : R)⁻¹ * (descPochhammer R n).eval x := by
   rw [_root_.Ring.choose_eq_smul, smul_eq_mul, ← Polynomial.aeval_eq_smeval,
     ← descPochhammer_map (algebraMap ℤ R), Polynomial.aeval_def, Polynomial.eval_map]
+
+/-- Over a field of characteristic zero, `n! (x choose n) (-1)ⁿ` is the rising factorial
+`(-x)ₙ = (ascPochhammer R n).eval (-x)`. -/
+theorem factorial_mul_choose_mul_neg_one_pow {R : Type*} [Field R] [CharZero R] (x : R)
+    (n : ℕ) :
+    (n.factorial : R) * _root_.Ring.choose x n * (-1) ^ n = (ascPochhammer R n).eval (-x) := by
+  rw [choose_eq_inv_factorial_mul_eval_descPochhammer, ascPochhammer_eval_neg_eq_descPochhammer,
+    mul_inv_cancel_left₀ (Nat.cast_ne_zero.mpr n.factorial_ne_zero), mul_comm]
 
 /-- The multiset coefficients of one half are the normalized central binomial coefficients:
 `(1/2 multichoose n) = (2n choose n) / 4 ^ n`, because

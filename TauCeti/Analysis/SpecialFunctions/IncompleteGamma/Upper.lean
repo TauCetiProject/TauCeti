@@ -48,6 +48,9 @@ as `x → 0+`.
 * `Complex.hasDerivAt_upperIncompleteGamma`, `Complex.deriv_upperIncompleteGamma`,
   `Complex.analyticOnNhd_upperIncompleteGamma`: `∂Γ(a, z)/∂z = −z^{a−1} e^{−z}` on the slit
   plane (DLMF 8.8.13), so `Γ(a, ·)` is holomorphic there;
+* `Complex.upperIncompleteGamma_sub_upperIncompleteGamma_add_eq_integral`: `Γ(a, z) − Γ(a, z + w)`
+  is the integral of `t^{a−1} e^{−t}` along the segment from `z` to `z + w`, when that segment
+  lies in the slit plane;
 * `Complex.differentiable_upperIncompleteGamma_left`: `Γ(·, z)` is entire for `z` in the slit
   plane;
 * `Complex.continuousOn_upperIncompleteGamma_ofReal`,
@@ -75,6 +78,9 @@ positive axis is Mathlib's `MeasureTheory.IntegrableOn.continuousOn_Ici_primitiv
 The results after `Complex.partialGamma_add_upperIncompleteGamma` are new proofs; the statements
 follow DLMF. `Complex.upperIncompleteGamma_ofReal_eq_ofReal_integral` is adapted from the lean-DLMF
 project (<https://github.com/bjbraams/lean-DLMF>), file `DLMF/IncompleteGamma/RealIntegrals.lean`.
+`Complex.upperIncompleteGamma_sub_upperIncompleteGamma_add_eq_integral` adapts the
+fundamental-theorem step of lean-DLMF's `incompleteGamma_increment_series`, file
+`DLMF/IncompleteGamma/SeriesRecurrences.lean`, from `γ(a, ·)` to `Γ(a, ·)`.
 -/
 
 public section
@@ -289,6 +295,32 @@ theorem hasDerivAt_upperIncompleteGamma {z : ℂ} (hz : z ∈ slitPlane) (a : �
 theorem deriv_upperIncompleteGamma {z : ℂ} (hz : z ∈ slitPlane) (a : ℂ) :
     deriv (upperIncompleteGamma a) z = -(z ^ (a - 1) * cexp (-z)) :=
   (hasDerivAt_upperIncompleteGamma hz a).deriv
+
+/-- **DLMF 8.2.2** along a segment: if the segment from `z` to `z + w` lies in the slit plane,
+then `Γ(a, z) − Γ(a, z + w) = ∫₀¹ w (z + t w)^{a−1} e^{−(z + t w)} dt`, the integral of
+`t^{a−1} e^{−t}` along that segment. -/
+theorem upperIncompleteGamma_sub_upperIncompleteGamma_add_eq_integral (a : ℂ) {z w : ℂ}
+    (h : ∀ t ∈ Icc (0 : ℝ) 1, z + t * w ∈ slitPlane) :
+    upperIncompleteGamma a z - upperIncompleteGamma a (z + w) =
+      ∫ t in (0 : ℝ)..1, w * ((z + t * w) ^ (a - 1) * cexp (-(z + t * w))) := by
+  have hI : uIcc (0 : ℝ) 1 = Icc 0 1 := uIcc_of_le zero_le_one
+  -- `t ↦ −Γ(a, z + t w)` is a primitive of the integrand on `[0, 1]`
+  have hderiv (t : ℝ) (ht : t ∈ uIcc (0 : ℝ) 1) :
+      HasDerivAt (fun s : ℝ => -upperIncompleteGamma a (z + s * w))
+        (w * ((z + t * w) ^ (a - 1) * cexp (-(z + t * w)))) t := by
+    have h1 : HasDerivAt (fun s : ℂ => z + s * w) w (t : ℂ) := by
+      simpa using ((hasDerivAt_id (t : ℂ)).mul_const w).const_add z
+    refine (((hasDerivAt_upperIncompleteGamma (h t (hI ▸ ht)) a).comp (t : ℂ)
+      h1).comp_ofReal.neg).congr_deriv ?_
+    ring
+  have hcont : ContinuousOn
+      (fun t : ℝ => w * ((z + t * w) ^ (a - 1) * cexp (-(z + t * w)))) (uIcc 0 1) := fun t ht =>
+    (continuousAt_const.mul (((continuousAt_const.add (continuous_ofReal.continuousAt.mul
+      continuousAt_const)).cpow continuousAt_const (h t (hI ▸ ht))).mul
+        (by fun_prop))).continuousWithinAt
+  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hcont.intervalIntegrable]
+  simp only [ofReal_one, one_mul, ofReal_zero, zero_mul, add_zero]
+  ring
 
 /-- `Γ(a, ·)` is analytic on the slit plane. -/
 theorem analyticOnNhd_upperIncompleteGamma (a : ℂ) :
