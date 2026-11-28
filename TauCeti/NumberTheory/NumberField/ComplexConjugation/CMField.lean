@@ -46,6 +46,8 @@ automorphism, not the identity, conjugating every complex embedding is CM.
   `NumberField.IsCMField.of_forall_isConj` assumes that the field is Galois over `ℚ` and totally
   complex; this criterion assumes only that the field is algebraic over `ℚ` and has one
   automorphism, not the identity, conjugating every complex embedding.
+* `AlgEquiv.commute_complexConj`: on an algebraic CM field, complex conjugation commutes
+  with every automorphism over `ℚ`, without a finiteness or Galois hypothesis.
 * `RingHom.star_comp`: on a CM field, every ring endomorphism of `ℂ` commutes with complex
   conjugation on embeddings.
 
@@ -112,6 +114,21 @@ theorem complexConjugationAt_eq_complexConjugationAt (w w' : InfinitePlace K)
   simp
 
 end TauCeti.NumberField
+
+namespace AlgEquiv
+
+/-- Complex conjugation of an algebraic CM field commutes with every rational automorphism. -/
+theorem commute_complexConj {K : Type*} [Field K] [CharZero K] [Algebra.IsIntegral ℚ K]
+    [IsCMField K] (g : Gal(K/ℚ)) :
+    Commute g ((IsCMField.complexConj K).restrictScalars ℚ) := by
+  obtain ⟨φ⟩ : Nonempty (K →+* ℂ) := inferInstance
+  apply AlgEquiv.ext
+  intro x
+  apply φ.injective
+  exact (IsCMField.complexEmbedding_complexConj K (φ.comp g.toRingHom) x).trans
+    (IsCMField.complexEmbedding_complexConj K φ (g x)).symm
+
+end AlgEquiv
 
 namespace RingHom
 
