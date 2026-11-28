@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Aut.Conjugation
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Equivalence
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import TauCeti.CategoryTheory.Category.Cat
+public import TauCeti.CategoryTheory.Endomorphism
 import Mathlib.CategoryTheory.Equivalence
 
 /-!
@@ -233,6 +235,27 @@ lemma naturalityObjIso_inv {B : Type u₁} [Bicategory.{w₁, v₁} B]
     {F G : B ⥤ᵖ Cat.{v, w}} (η : StrongTrans F G) {a b : B} (f : a ⟶ b) (X : F.obj a) :
     (η.naturalityObjIso f X).inv = (η.naturality f).inv.toNatTrans.app X :=
   (rfl)
+
+/-- The naturality isomorphism conjugates the two ways of mapping an automorphism along a
+strong transformation and a base morphism. -/
+lemma mapAut_naturality {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} (η : StrongTrans F G) {a b : B} (f : a ⟶ b)
+    (X : F.obj a) (t : Aut X) :
+    (G.map f).toFunctor.mapAut _ ((η.app a).toFunctor.mapAut X t) =
+      Aut.autMulEquivOfIso (η.naturalityObjIso f X)
+        ((η.app b).toFunctor.mapAut _ ((F.map f).toFunctor.mapAut X t)) := by
+  simpa only [naturalityObjIso, Cat.Hom.comp_toFunctor, Functor.comp_mapAut] using
+    Functor.mapAut_eq_autMulEquivOfIso_app (Cat.Hom.toNatIso (η.naturality f)) X t
+
+/-- The component of a composite strong transformation maps automorphisms by successively
+applying the component functors. -/
+lemma comp_app_mapAut {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G H : B ⥤ᵖ Cat.{v, w}} (η : F ⟶ G) (θ : G ⟶ H) (a : B)
+    (X : F.obj a) (t : Aut X) :
+    ((η ≫ θ).app a).toFunctor.mapAut X t =
+      (θ.app a).toFunctor.mapAut _ ((η.app a).toFunctor.mapAut X t) := by
+  simp only [comp_app, Cat.Hom.comp_toFunctor]
+  exact Functor.comp_mapAut _ _ _ _
 
 /-- The essential image of a strong transformation into `Cat` is stable under its target's
 functors on `1`-morphisms. -/

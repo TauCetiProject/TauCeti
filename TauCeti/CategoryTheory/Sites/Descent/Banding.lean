@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.Grp.Basic
+public import Mathlib.Algebra.Category.Grp.Limits
 public import Mathlib.CategoryTheory.Bicategory.LocallyDiscrete
 public import Mathlib.CategoryTheory.Bicategory.Modification.Pseudo
 public import Mathlib.CategoryTheory.Sites.Over
 public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
-public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat
+public import TauCeti.CategoryTheory.Sites.Whiskering
 
 /-!
 # Abelian bandings of gerbes and band-preserving transformations
@@ -162,6 +163,22 @@ theorem aut_mul_comm {U : C} {x : F.obj (.mk (op U))} (g h : Aut x) : g * h = h 
   ext
   simp [b.mulEquiv_hom_comp h.asIso a]
 
+include b in
+/-- Automorphisms in a banded pseudofunctor are determined on a covering sieve, because their
+coefficients are sections of a sheaf. No prestack hypothesis is needed. -/
+theorem aut_ext {U : C} {x : F.obj (.mk (op U))} {R : Sieve U} (hR : R ∈ J U)
+    {s t : Aut x} (h : ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      (F.map f.op.toLoc).toFunctor.mapAut x s = (F.map f.op.toLoc).toFunctor.mapAut x t) :
+    s = t := by
+  obtain ⟨a, rfl⟩ := (b.mulEquiv U x).surjective s
+  obtain ⟨a', rfl⟩ := (b.mulEquiv U x).surjective t
+  apply congrArg (b.mulEquiv U x)
+  apply Multiplicative.toAdd.injective
+  refine ((A.isSheaf_obj_comp (forget AddCommGrpCat)).isSeparated R hR).ext fun V f hf ↦ ?_
+  have h' := h f hf
+  rw [b.mapAut_mulEquiv, b.mapAut_mulEquiv] at h'
+  exact congrArg Multiplicative.toAdd ((b.mulEquiv V _).injective h')
+
 /-- The restriction of an `A`-banding of `F` to the slice site `(Over U, J.over U)`: the
 `A.over U`-banding of the restriction `F.over U` that identifies, for `X : Over U` and an object
 `x` of the fibre of `F` over `X.left`, the coefficients `A(X.left)` with `Aut x` through `b`. -/
@@ -285,12 +302,10 @@ lemma BandCompatible.comp (φ : A ⟶ B) (ψ : B ⟶ D) (η : F ⟶ G) (θ : G �
     [BandCompatible φ bF bG η] [BandCompatible ψ bG bH θ] :
     BandCompatible (φ ≫ ψ) bF bH (η ≫ θ) where
   mapAut_mulEquiv U x a := by
-    ext
-    rw [Functor.mapAut_apply_asIso]
-    simp only [StrongTrans.comp_app, Cat.Hom.comp_toFunctor, Functor.mapIso_hom, Functor.comp_map]
-    rw [BandCompatible.map_mulEquiv_hom bG φ η, BandCompatible.map_mulEquiv_hom bH ψ θ]
-    -- The two sides differ only by `Functor.comp_obj` and by the evaluation of `φ ≫ ψ` on
-    -- sections, both of which hold by definition.
+    rw [StrongTrans.comp_app_mapAut, BandCompatible.mapAut_mulEquiv (bG := bG) (φ := φ),
+      BandCompatible.mapAut_mulEquiv (bG := bH) (φ := ψ)]
+    -- Composition of coefficient maps and evaluation of composite component functors are
+    -- definitionally given by successive evaluation.
     rfl
 
 open scoped Pseudofunctor.StrongTrans in

@@ -128,15 +128,6 @@ class IsRelativeGerbe (η : StrongTrans F G) (J : GrothendieckTopology C) : Prop
 
 variable {J : GrothendieckTopology C} (η : StrongTrans F G)
 
-/-- A strong transformation whose components are essentially surjective is locally essentially
-surjective, for every topology. -/
-theorem isLocallyEssSurj_of_essSurj (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.EssSurj) :
-    η.IsLocallyEssSurj J where
-  exists_covering_lift {U} y := ⟨⊤, J.top_mem U, fun V f _ ↦
-    have := hη V
-    ⟨(η.app (.mk (op V))).toFunctor.objPreimage ((G.map f.op.toLoc).toFunctor.obj y),
-      ⟨(η.app (.mk (op V))).toFunctor.objObjPreimageIso _⟩⟩⟩
-
 /-- A strong transformation between gerbes is locally essentially surjective: `F` has objects
 locally, and their images become isomorphic to the restrictions of any object of `G` locally. -/
 instance isLocallyEssSurj_of_isGerbe [F.IsGerbe J] [G.IsGerbe J] : η.IsLocallyEssSurj J where

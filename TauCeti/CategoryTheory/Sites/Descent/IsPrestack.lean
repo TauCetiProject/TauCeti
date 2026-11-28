@@ -540,6 +540,16 @@ lemma hom_ext {Y : C} {M N : F.obj (.mk (op Y))} {R : Sieve Y} (hR : R ∈ J Y) 
     φ = φ' :=
   (F.isPrestackFor' R hR).hom_ext h
 
+/-- In a prestack, an automorphism is determined by its pullbacks to a covering sieve. -/
+lemma aut_ext {Y : C} {M : F.obj (.mk (op Y))} {R : Sieve Y} (hR : R ∈ J Y)
+    {a a' : Aut M}
+    (h : ∀ ⦃T : C⦄ (g : T ⟶ Y), R g →
+      (F.map g.op.toLoc).toFunctor.mapAut M a =
+        (F.map g.op.toLoc).toFunctor.mapAut M a') : a = a' := by
+  apply Aut.ext
+  apply Iso.ext
+  exact hom_ext hR fun _ g hg ↦ congrArg (fun t ↦ t.asIso.hom) (h g hg)
+
 /-- In a prestack, a family of morphisms over the members of a covering sieve which is compatible
 under pullback is the family of pullbacks of a morphism. -/
 lemma exists_map_eq {Y : C} {M N : F.obj (.mk (op Y))} {R : Sieve Y} (hR : R ∈ J Y)
