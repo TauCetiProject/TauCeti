@@ -46,9 +46,7 @@ theorem exists_unitary_integral_idele_reduction_eq {E : Type*} [Field E] [Number
   let a := unitsOfAdicCompletion E w (u : (w.adicCompletion E)ˣ)
   have ha : a ∈ integralUnits (𝓞 E) E := unitsOfAdicCompletion_mem_integralUnits_iff.mpr
     ((Valuation.mem_unitGroup_iff _ Valued.v _).mp u.property)
-  have hstar : star a ∈ integralUnits (𝓞 E) E := by
-    simpa only [mem_integralUnits_iff_val_mem_and_inv_mem, Units.coe_star,
-      Units.coe_star_inv, star_mem_integralAdeles_iff] using ha
+  have hstar : star a ∈ integralUnits (𝓞 E) E := star_mem_integralUnits_iff.mpr ha
   let z : integralUnits (𝓞 E) E := ⟨a * (star a)⁻¹, (integralUnits (𝓞 E) E).mul_mem ha
     ((integralUnits (𝓞 E) E).inv_mem hstar)⟩
   have hproj (v : HeightOneSpectrum (𝓞 E)) (hv : v ≠ w.conjPlace) :
