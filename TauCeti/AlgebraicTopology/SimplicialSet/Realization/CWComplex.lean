@@ -147,10 +147,6 @@ lemma toTopRelativeCWComplexStageIso_hom_naturality {X Y : SSet.{u}} (i : X ⟶ 
   -- `toTop.map (Subcomplex.homOfLE ((skeletonOfMono i).monotone h))`.
   rfl
 
-private lemma skeletonOfMono_bot_eq_skeleton (X : SSet.{u}) (n : ℕ) :
-    skeletonOfMono (Subcomplex.ι (⊥ : X.Subcomplex)) n = X.skeleton n := by
-  simp [skeletonOfMono]
-
 /-- The `n`-th categorical stage of `SSet.toTopCWComplex X` identifies with the geometric
 realization of `X.skeleton n`. -/
 def toTopCWComplexStageIso (X : SSet.{u}) (n : ℕ) :
