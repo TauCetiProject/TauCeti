@@ -20,6 +20,7 @@ import Mathlib.FieldTheory.Galois.Basic
 import TauCeti.Algebra.Algebra.Equiv
 import TauCeti.Algebra.BigOperators.ZPow
 import TauCeti.NumberTheory.GaussSum.Basic
+import TauCeti.NumberTheory.MulChar.Basic
 import TauCeti.NumberTheory.NumberField.AutomorphismAction
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Finrank
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Galois
@@ -393,25 +394,19 @@ private theorem exists_algEquiv_map_prod_galEquivProd_gaussSum {m : ℕ} [NeZero
         change eL_K (algebraMap K L (algebraMap (𝓞 K) K z)) = _
         rw [heL_K]
         rfl
-      have hinv :
-          eO ((Ideal.powerResidueSymbol P m)⁻¹ (Ideal.Quotient.mk P α)) =
-            (Ideal.powerResidueSymbol P' m)⁻¹ (eQ (Ideal.Quotient.mk P α)) := by
-        let _ := Ideal.Quotient.field P; let _ := Ideal.Quotient.field P'
-        have : IsLocalHom eQ.toRingHom := eQ.surjective.isLocalHom
-        obtain ⟨β, hβ⟩ := Ideal.Quotient.mk_surjective (Ring.inverse (Ideal.Quotient.mk P α))
-        have heQ_inv :
-            Ring.inverse (eQ (Ideal.Quotient.mk P α)) = Ideal.Quotient.mk P' (eO β) := by
-          have h1 : eQ (Ring.inverse (Ideal.Quotient.mk P α)) =
-              Ring.inverse (eQ (Ideal.Quotient.mk P α)) :=
-            map_ringInverse eQ.toRingHom _
-          rw [← h1, ← hβ]
-          exact Ideal.quotientEquiv_mk P P' eO hPP' β
+      have hfwd (u : 𝓞 K ⧸ P) :
+          eO (Ideal.powerResidueSymbol P m u) = Ideal.powerResidueSymbol P' m (eQ u) := by
+        obtain ⟨β, rfl⟩ := Ideal.Quotient.mk_surjective u
         have hcongr : ∀ {Q : Ideal (𝓞 K')} [Q.IsMaximal], Ideal.map eO P = Q →
             (Ideal.map eO P).powerResidueSymbol m (Ideal.Quotient.mk (Ideal.map eO P) (eO β)) =
               Q.powerResidueSymbol m (Ideal.Quotient.mk Q (eO β)) := by
           intro Q _ hQ; subst hQ; rfl
-        simp only [MulChar.inv_apply]
-        rw [← hβ, Ideal.map_powerResidueSymbol (n := m) P eO β, hcongr hPP'.symm, heQ_inv]
+        rw [Ideal.map_powerResidueSymbol (n := m) P eO β, hcongr hPP'.symm,
+          Ideal.quotientEquiv_mk P P' eO hPP' β]
+      have hinv :
+          eO ((Ideal.powerResidueSymbol P m)⁻¹ (Ideal.Quotient.mk P α)) =
+            (Ideal.powerResidueSymbol P' m)⁻¹ (eQ (Ideal.Quotient.mk P α)) :=
+        MulChar.map_inv_apply_of_map_apply (f := eO.toRingHom) hfwd (Ideal.Quotient.mk P α)
       simp only [MulChar.ringHomComp_apply, RingHom.comp_apply]
       rw [heO_L, hinv]
       rfl
@@ -640,12 +635,13 @@ theorem gaussSum_inv_powerResidueSymbol_eq_of_eq {m : ℕ} [NeZero m]
   let _ := Ideal.Quotient.field P
   have hcard : Fintype.card (𝓞 K ⧸ P) = p := by
     rw [← Nat.card_eq_fintype_card, ← Ideal.absNorm_eq_natCard, hNP]
-  have hbij : Function.Bijective (Algebra.ofId (ZMod p) (𝓞 K ⧸ P)) :=
-    (Fintype.bijective_iff_injective_and_card _).mpr
-      ⟨(Algebra.ofId (ZMod p) (𝓞 K ⧸ P)).toRingHom.injective, by rw [ZMod.card, hcard]⟩
-  let eQ : ZMod p ≃ₐ[ZMod p] (𝓞 K ⧸ P) :=
-    AlgEquiv.ofBijective (Algebra.ofId (ZMod p) (𝓞 K ⧸ P)) hbij
-  have heQ (t : ZMod p) : (eQ t : 𝓞 K ⧸ P) = algebraMap (ZMod p) (𝓞 K ⧸ P) t := rfl
+  let eQ_ring : ZMod p ≃+* (𝓞 K ⧸ P) := ZMod.ringEquivOfPrime _ hp.out hcard
+  have heQ_ring : eQ_ring.toRingHom = algebraMap (ZMod p) (𝓞 K ⧸ P) :=
+    Subsingleton.elim _ _
+  let eQ : ZMod p ≃ₐ[ZMod p] (𝓞 K ⧸ P) := AlgEquiv.ofRingEquiv (f := eQ_ring) fun r ↦ by
+    simpa [Algebra.algebraMap_self] using DFunLike.congr_fun heQ_ring r
+  have heQ (t : ZMod p) : (eQ t : 𝓞 K ⧸ P) = algebraMap (ZMod p) (𝓞 K ⧸ P) t :=
+    DFunLike.congr_fun heQ_ring t
   rw [gaussSum, gaussSum]
   refine (Fintype.sum_equiv eQ.toEquiv _ _ fun t ↦ ?_).symm
   simp only [MulChar.ringHomComp_apply, AlgEquiv.toEquiv_eq_coe, EquivLike.coe_coe,
@@ -700,11 +696,11 @@ theorem map_stickelbergerGaussProduct (m : ℕ) [NeZero m]
   have : IsGalois ℚ K := IsCyclotomicExtension.isGalois {m} ℚ K
   have : IsGalois ℚ K' := IsCyclotomicExtension.isGalois {m} ℚ K'
   let eAlg : K →ₐ[ℚ] K' := e.toRatAlgHom
-  have hsurj : Function.Surjective eAlg := by
-    have hfin : Module.finrank ℚ K = Module.finrank ℚ K' := by
-      rw [IsCyclotomicExtension.Rat.finrank m K, IsCyclotomicExtension.Rat.finrank m K']
-    exact (LinearMap.range_eq_top (f := eAlg.toLinearMap)).mp (Submodule.eq_top_of_finrank_eq
-      ((LinearMap.finrank_range_of_inj (f := eAlg.toLinearMap) eAlg.injective).trans hfin))
+  have hfin : Module.finrank ℚ K = Module.finrank ℚ K' := by
+    rw [IsCyclotomicExtension.Rat.finrank m K, IsCyclotomicExtension.Rat.finrank m K']
+  have hsurj : Function.Surjective eAlg :=
+    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (f := eAlg.toLinearMap) hfin).mp
+      eAlg.injective
   let eEquiv : K ≃ₐ[ℚ] K' := AlgEquiv.ofBijective eAlg ⟨eAlg.injective, hsurj⟩
   have hPP'_equiv :
       P' = P.map (NumberField.RingOfIntegers.mapRingEquiv eEquiv.toRingEquiv : 𝓞 K →+* 𝓞 K') :=

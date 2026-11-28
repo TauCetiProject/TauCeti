@@ -16,6 +16,7 @@ public import TauCeti.NumberTheory.Padics.TensorPrimaryComponent
 import Mathlib.Algebra.GroupWithZero.Torsion
 import TauCeti.Algebra.Algebra.Equiv
 import TauCeti.Algebra.BigOperators.ZPow
+import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.NumberTheory.NumberField.AutomorphismAction
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Galois
 import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.StickelbergerPhi.Relation
@@ -228,17 +229,17 @@ theorem stickelbergerIdeal_annihilates (m : ℕ) [NeZero m]
     (∏ a : (ZMod m)ˣ, cyclotomicClassGroupAction m K a c ^ x.coeff a) = 1 := by
   -- Package the group-ring action of `x` as a `MonoidHom` on `ClassGroup (𝓞 K)`.
   let act : ClassGroup (𝓞 K) →* ClassGroup (𝓞 K) :=
-    { toFun := fun d ↦ ∏ a : (ZMod m)ˣ, cyclotomicClassGroupAction m K a d ^ x.coeff a
-      map_one' := by simp
-      map_mul' := fun d₁ d₂ ↦ by simp only [map_mul, mul_zpow, Finset.prod_mul_distrib] }
+    ∏ a : (ZMod m)ˣ, (zpowGroupHom (x.coeff a)).comp (cyclotomicClassGroupAction m K a).toMonoidHom
   -- Step 1: `act` kills every maximal ideal `P` with `(absNorm P).Coprime m`.
   have hprime (P : Ideal (𝓞 K)) [P.IsMaximal] (hP : (Ideal.absNorm P).Coprime m) :
       act (ClassGroup.mk0 ⟨P, mem_nonZeroDivisors_of_ne_zero (NeZero.ne _)⟩) = 1 := by
     obtain ⟨u, hu⟩ := exists_toPrincipalIdeal_eq_prod_zpow_of_isMaximal m K P hP hx
     have hmk := congrArg (ClassGroup.mk K) hu
     rw [ClassGroup.mk_toPrincipalIdeal, map_prod] at hmk
+    rw [MonoidHom.finsetProd_apply]
     refine (Finset.prod_congr rfl fun a _ ↦ ?_).trans hmk.symm
-    rw [map_zpow, ClassGroup.mk_mk0 K, cyclotomicClassGroupAction_mk0]
+    simp only [MonoidHom.comp_apply, zpowGroupHom_apply, MulEquiv.coe_toMonoidHom, map_zpow,
+      ClassGroup.mk_mk0 K, cyclotomicClassGroupAction_mk0]
     exact congrArg (· ^ x.coeff a)
       (congrArg ClassGroup.mk0 (Subtype.ext (P.map_ringOfIntegers_mapRingEquiv _)))
   -- Step 2: By unique factorization, `act` kills every nonzero ideal `I` with
@@ -271,7 +272,10 @@ theorem stickelbergerIdeal_annihilates (m : ℕ) [NeZero m]
   have hc : c = ClassGroup.mk0 ⟨I, mem_nonZeroDivisors_of_ne_zero hI0⟩ := by
     rw [← hmk, ← ClassGroup.mk_mk0 K]
     exact congrArg (ClassGroup.mk K) (Units.ext (by simp [FractionalIdeal.coe_mk0]))
-  exact hc ▸ hideal I hIcop hI0
+  have hact := hideal I hIcop hI0
+  rw [← hc] at hact
+  simpa only [act, MonoidHom.finsetProd_apply, MonoidHom.comp_apply, zpowGroupHom_apply,
+    MulEquiv.coe_toMonoidHom] using hact
 
 /-! ### Equivariance of the integral action, `p`-primary projection, and `p`-primary annihilation -/
 
@@ -326,12 +330,6 @@ theorem prod_zpow_prod_zpow {m : ℕ} [NeZero m]
     rw [map_prod]
     refine Fintype.prod_equiv (Equiv.mulLeft a) _ _ fun b ↦ ?_
     simp [map_zpow, ← MulAut.mul_apply, ← map_mul]
-  have hcoeff (d : (ZMod m)ˣ) :
-      (x * y).coeff d = ∑ a : (ZMod m)ˣ, x.coeff a * y.coeff (a⁻¹ * d) := by
-    rw [MonoidAlgebra.coeff_mul, Finsupp.sum_fintype _ _ (fun _ ↦ by simp)]
-    refine Finset.sum_congr rfl fun a _ ↦ ?_
-    rw [Finsupp.sum_fintype _ _ (fun _ ↦ by simp)]
-    simp only [← eq_inv_mul_iff_mul_eq, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
   calc
     ∏ a : (ZMod m)ˣ,
         cyclotomicClassGroupAction m K a
@@ -345,7 +343,7 @@ theorem prod_zpow_prod_zpow {m : ℕ} [NeZero m]
             ∑ a : (ZMod m)ˣ, x.coeff a * y.coeff (a⁻¹ * d) :=
           Finset.prod_prod_zpow Finset.univ Finset.univ (fun _ _ ↦ Group.isUnit _) _ _
     _ = ∏ d : (ZMod m)ˣ, cyclotomicClassGroupAction m K d c ^ (x * y).coeff d :=
-          Finset.prod_congr rfl fun d _ ↦ by rw [hcoeff d]
+          Finset.prod_congr rfl fun d _ ↦ by rw [MonoidAlgebra.coeff_mul_eq_sum]
 
 /-- Comparison between the `p`-primary projection of the covariant `ℤ[(ZMod m)ˣ]`-action and the
 scalar-extended group-ring action `cyclotomicClassActionAlgHom` on
@@ -365,8 +363,9 @@ theorem primaryComponentEquivPadicIntTensor_galEquivZMod_prod_zpow {m : ℕ} [Ne
       cyclotomicClassActionAlgHom ℤ_[p] m K
         (MonoidAlgebra.mapRingHom (ZMod m)ˣ (Int.castRingHom ℤ_[p]) x)
         ((1 : ℤ_[p]) ⊗ₜ[ℤ] Additive.ofMul c) := by
-  rw [cyclotomicClassActionAlgHom_mapRingHom_intCast]
-  simp only [AddCommGroup.primaryComponentEquivPadicIntTensor_apply,
+  rw [cyclotomicClassActionAlgHom_apply]
+  simp only [MonoidAlgebra.coeff_mapRingHom, eq_intCast,
+    AddCommGroup.primaryComponentEquivPadicIntTensor_apply,
     CommGroup.one_tmul_primaryProj, LinearMap.sum_apply, LinearMap.smul_apply,
     cyclotomicClassAction_tmul]
   have hsum :
@@ -386,7 +385,8 @@ theorem stickelbergerIdeal_annihilates_baseChange (R : Type*) [CommRing R]
     (z : R ⊗[ℤ] Additive (ClassGroup (𝓞 K))) :
     cyclotomicClassActionAlgHom R m K
       (MonoidAlgebra.mapRingHom (ZMod m)ˣ (Int.castRingHom R) x) z = 0 := by
-  rw [cyclotomicClassActionAlgHom_mapRingHom_intCast]
+  rw [cyclotomicClassActionAlgHom_apply]
+  simp only [MonoidAlgebra.coeff_mapRingHom, eq_intCast]
   let T : Module.End R (R ⊗[ℤ] Additive (ClassGroup (𝓞 K))) :=
     ∑ a : (ZMod m)ˣ, (x.coeff a : R) • cyclotomicClassAction R m K a
   refine TensorProduct.inductionOn (motive := fun w ↦ T w = 0) z (fun r c ↦ ?_)

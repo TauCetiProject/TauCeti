@@ -9,6 +9,7 @@ public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
 public import TauCeti.NumberTheory.NumberField.ClassNumber.RingEquiv
+import TauCeti.Algebra.MonoidAlgebra.Basic
 
 /-!
 # The Galois action on the ideal class group of a cyclotomic field
@@ -40,8 +41,8 @@ and products of residues act by composition (`map_one`, `map_mul`). When `R` is 
   class of its image `σ_a 𝔞`.
 * `TauCeti.cyclotomicClassAction_tmul`: on a pure tensor, `r ⊗ c ↦ r ⊗ σ_a c`.
 * `TauCeti.cyclotomicClassActionAlgHom_single`, `TauCeti.cyclotomicClassActionAlgHom_apply`, and
-  `TauCeti.cyclotomicClassActionAlgHom_mapRingHom_intCast`: basis and coefficient-sum evaluations
-  of the group-ring action.
+  `TauCeti.cyclotomicClassActionAlgHom_tmul`: basis and coefficient-sum evaluations of the
+  group-ring action.
 
 ## References
 
@@ -140,26 +141,11 @@ theorem cyclotomicClassActionAlgHom_single (a : (ZMod m)ˣ) (r : R) :
       r • cyclotomicClassAction R m K a :=
   MonoidAlgebra.lift_single _ a r
 
-/-- Evaluating `cyclotomicClassActionAlgHom` on a group-ring basis element `single a 1`. -/
-theorem cyclotomicClassActionAlgHom_single_one (a : (ZMod m)ˣ) :
-    cyclotomicClassActionAlgHom R m K (MonoidAlgebra.single a 1) =
-      cyclotomicClassAction R m K a := by
-  simp
-
 /-- Coefficient-sum evaluation for `cyclotomicClassActionAlgHom`. -/
 theorem cyclotomicClassActionAlgHom_apply (x : MonoidAlgebra R (ZMod m)ˣ) :
     cyclotomicClassActionAlgHom R m K x =
-      ∑ a : (ZMod m)ˣ, x.coeff a • cyclotomicClassAction R m K a := by
-  simp [cyclotomicClassActionAlgHom, MonoidAlgebra.lift_apply, Finsupp.sum_fintype]
-
-/-- Coefficient-sum evaluation for `cyclotomicClassActionAlgHom` on an integral group-ring element
-mapped along `Int.castRingHom R`. -/
-theorem cyclotomicClassActionAlgHom_mapRingHom_intCast (x : MonoidAlgebra ℤ (ZMod m)ˣ) :
-    cyclotomicClassActionAlgHom R m K
-        (MonoidAlgebra.mapRingHom (ZMod m)ˣ (Int.castRingHom R) x) =
-      ∑ a : (ZMod m)ˣ, (x.coeff a : R) • cyclotomicClassAction R m K a := by
-  rw [cyclotomicClassActionAlgHom_apply]
-  simp [MonoidAlgebra.coeff_mapRingHom]
+      ∑ a : (ZMod m)ˣ, x.coeff a • cyclotomicClassAction R m K a :=
+  MonoidAlgebra.lift_apply_eq_sum _ x
 
 /-- Action of a group-ring element on a pure tensor `r ⊗ c`. -/
 theorem cyclotomicClassActionAlgHom_tmul (x : MonoidAlgebra R (ZMod m)ˣ) (r : R)

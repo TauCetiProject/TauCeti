@@ -259,9 +259,7 @@ private theorem invPowerResidueMulChar_isPrimitiveRoot (P : Ideal (𝓞 K)) [P.I
   let _ : Fintype (𝓞 K ⧸ P) := Fintype.ofFinite _
   have hcard : Fintype.card (𝓞 K ⧸ P) = p := by
     rw [← Nat.card_eq_fintype_card, ← Ideal.absNorm_eq_natCard, hNP]
-  have hbij := (Fintype.bijective_iff_injective_and_card
-    (algebraMap (ZMod p) (𝓞 K ⧸ P))).mpr ⟨RingHom.injective _, by rw [ZMod.card, hcard]⟩
-  let eQ : ZMod p ≃+* (𝓞 K ⧸ P) := RingEquiv.ofBijective (algebraMap (ZMod p) (𝓞 K ⧸ P)) hbij
+  let eQ : ZMod p ≃+* (𝓞 K ⧸ P) := ZMod.ringEquivOfPrime _ hp.out hcard
   let eU : (ZMod p)ˣ ≃* (𝓞 K ⧸ P)ˣ := Units.mapEquiv eQ.toMulEquiv
   have hug : ∀ u : (𝓞 K ⧸ P)ˣ, u ∈ Subgroup.zpowers (eU g) := by
     have hz : Subgroup.zpowers (eU g) = ⊤ := by
@@ -269,7 +267,9 @@ private theorem invPowerResidueMulChar_isPrimitiveRoot (P : Ideal (𝓞 K)) [P.I
       exact eq_top_iff.mpr fun u _ ↦
         Subgroup.mem_map.mpr ⟨eU.symm u, Subgroup.mem_top _, eU.apply_symm_apply u⟩
     exact fun u ↦ hz ▸ Subgroup.mem_top u
-  rw [IsPrimitiveRoot.iff_orderOf, invPowerResidueMulChar_apply]
+  have heQ : (eU g : 𝓞 K ⧸ P) = algebraMap (ZMod p) (𝓞 K ⧸ P) (g : ZMod p) :=
+    DFunLike.congr_fun (Subsingleton.elim eQ.toRingHom (algebraMap (ZMod p) (𝓞 K ⧸ P))) (g : ZMod p)
+  rw [IsPrimitiveRoot.iff_orderOf, invPowerResidueMulChar_apply, ← heQ]
   change orderOf ((Ideal.powerResidueSymbol P m)⁻¹ ((eU g : (𝓞 K ⧸ P)ˣ) : 𝓞 K ⧸ P)) = m
   rw [MulChar.orderOf_apply_eq_orderOf _ hug, orderOf_inv,
     Ideal.orderOf_powerResidueSymbol (hNP ▸ hcop)]
@@ -410,37 +410,31 @@ theorem smul_char [IsCyclotomicExtension {m} ℚ K] (τ : Gal(K/ℚ))
 of `(ZMod p)ˣ` preserves `d.P` and `d.char`, updating `root` to `d.char g'`. -/
 noncomputable def withGen (d : SplitPrimeGaussData m K p) (g' : (ZMod p)ˣ)
     (hg' : Subgroup.zpowers g' = ⊤) : SplitPrimeGaussData m K p :=
-  { P := d.P, isMaximal := d.isMaximal, liesOver := d.liesOver, absNorm_eq := d.absNorm_eq
-    coprime := d.coprime, gen := g', zpowers_gen := hg', char := d.char
-    root := d.char (g' : ZMod p), char_gen := rfl
-    isPrimitiveRoot_root := IsPrimitiveRoot.iff_orderOf.mpr <| by
-      rw [d.char.orderOf_apply_eq_orderOf (fun x ↦ hg' ▸ Subgroup.mem_top x),
-        ← d.char.orderOf_apply_eq_orderOf (fun x ↦ d.zpowers_gen ▸ Subgroup.mem_top x),
-        d.char_gen, ← d.isPrimitiveRoot_root.eq_orderOf]
-    mk_char_inv_gen := by
-      have := d.isMaximal; have := d.liesOver; let _ := Ideal.Quotient.field d.P
-      have : CharP (𝓞 K ⧸ d.P) p :=
-        Ideal.Quotient.charP_of_liesOver d.P Ideal.IsPrime.ne_top' p hp.out
-      let _ : Algebra (ZMod p) (𝓞 K ⧸ d.P) := ZMod.algebra _ p
-      exact mk_char_inv_gen_of_eq d.P d.absNorm_eq d.coprime d.char
-        d.inv_powerResidueSymbol_algebraMap_eq g' (char_pow_eq_one d g') }
+  have := d.isMaximal; have := d.liesOver
+  ofIdeal m d.P d.absNorm_eq d.coprime g' hg'
 
 /-- Reindexing the generator preserves `d.P`. -/
 @[simp] theorem withGen_P (d : SplitPrimeGaussData m K p) (g' : (ZMod p)ˣ)
-    (hg' : Subgroup.zpowers g' = ⊤) : (d.withGen g' hg').P = d.P := by unfold withGen; rfl
+    (hg' : Subgroup.zpowers g' = ⊤) : (d.withGen g' hg').P = d.P := by unfold withGen ofIdeal; rfl
 
 /-- Reindexing the generator updates `gen` to `g'`. -/
 @[simp] theorem withGen_gen (d : SplitPrimeGaussData m K p) (g' : (ZMod p)ˣ)
-    (hg' : Subgroup.zpowers g' = ⊤) : (d.withGen g' hg').gen = g' := by unfold withGen; rfl
+    (hg' : Subgroup.zpowers g' = ⊤) : (d.withGen g' hg').gen = g' := by unfold withGen ofIdeal; rfl
 
 /-- Reindexing the generator preserves `d.char`. -/
 @[simp] theorem withGen_char (d : SplitPrimeGaussData m K p) (g' : (ZMod p)ˣ)
-    (hg' : Subgroup.zpowers g' = ⊤) : (d.withGen g' hg').char = d.char := by unfold withGen; rfl
+    (hg' : Subgroup.zpowers g' = ⊤) : (d.withGen g' hg').char = d.char := by
+  have := d.isMaximal; have := d.liesOver; let _ := Ideal.Quotient.field d.P
+  have : CharP (𝓞 K ⧸ d.P) p :=
+    Ideal.Quotient.charP_of_liesOver d.P Ideal.IsPrime.ne_top' p hp.out
+  let _ : Algebra (ZMod p) (𝓞 K ⧸ d.P) := ZMod.algebra _ p
+  exact (ofIdeal_char d.P d.absNorm_eq d.coprime g' hg').trans
+    d.char_eq_invPowerResidueMulChar.symm
 
 /-- Reindexing the generator updates `root` to `d.char g'`. -/
 @[simp] theorem withGen_root (d : SplitPrimeGaussData m K p) (g' : (ZMod p)ˣ)
     (hg' : Subgroup.zpowers g' = ⊤) : (d.withGen g' hg').root = d.char (g' : ZMod p) := by
-  unfold withGen; rfl
+  rw [← (d.withGen g' hg').char_gen, withGen_gen, withGen_char]
 
 /-- Any two compatible split-prime data over the same prime ideal have the same character,
 independently of the chosen generator. -/
