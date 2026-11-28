@@ -34,8 +34,7 @@ on `I · A⟨x⟩ + A⟨x⟩₊` in a divided power polynomial algebra.
 * `DividedPowers.glue_comm`, `DividedPowers.glue_of_le_left`, `DividedPowers.glue_of_le_right`,
   `DividedPowers.glue_self`, `DividedPowers.glue_bot`, `DividedPowers.bot_glue`: symmetry,
   dominance, idempotence, and unit laws for gluing.
-* `DividedPowers.exists_dividedPowers_sup_iff`,
-  `DividedPowers.existsUnique_dividedPowers_sup_iff`: a common extension exists (and is unique)
+* `DividedPowers.existsUnique_dividedPowers_sup_iff`: a common extension exists and is unique
   if and only if `γ` and `ε` agree on `I ⊓ J`.
 * `DividedPowers.isDPMorphism_glue_iff`: a ring map is a divided power morphism out of the glued
   structure if and only if it is one out of `γ` and out of `ε`.
@@ -221,11 +220,10 @@ private noncomputable def supPowers : TauCeti.PD.AdditivePowers (I ⊔ J) where
   dpow_null hz := by rw [supDpow, dite_eq_right hz]
   dpow_zero hz := by
     obtain ⟨x, hx, y, hy, rfl⟩ := Submodule.mem_sup.mp hz
-    simp [supDpow_add h 0 hx hy, convolution_def, γ.dpow_zero hx, ε.dpow_zero hy]
+    rw [supDpow_add h 0 hx hy, convolution_zero γ ε hx hy]
   dpow_one hz := by
     obtain ⟨x, hx, y, hy, rfl⟩ := Submodule.mem_sup.mp hz
-    simp [supDpow_add h 1 hx hy, convolution_def, Nat.antidiagonal_succ, γ.dpow_zero hx,
-      ε.dpow_zero hy, γ.dpow_one hx, ε.dpow_one hy, add_comm]
+    rw [supDpow_add h 1 hx hy, convolution_one γ ε hx hy]
   dpow_mem hn hz := by
     obtain ⟨x, hx, y, hy, rfl⟩ := Submodule.mem_sup.mp hz
     rw [supDpow_add h _ hx hy]
@@ -412,24 +410,16 @@ theorem isDPMorphism_glue_iff {C : Type*} [CommSemiring C] {K : Ideal C} (κ : D
       · rw [glue_dpow_of_mem_left h n hs, hγ.dpow_comp s hs]
       · rw [glue_dpow_of_mem_right h n hs, hε.dpow_comp s hs]
 
-/-- A divided power structure on `I ⊔ J` restricting to `γ` on `I` and to `ε` on `J` exists if and
-only if `γ` and `ε` agree on `I ⊓ J`; it is then `glue γ ε h`, by `eq_glue_iff`. -/
-theorem exists_dividedPowers_sup_iff :
-    (∃ θ : DividedPowers (I ⊔ J),
-        (∀ n, ∀ x ∈ I, θ.dpow n x = γ.dpow n x) ∧ ∀ n, ∀ y ∈ J, θ.dpow n y = ε.dpow n y) ↔
-      ∀ n, ∀ w ∈ I ⊓ J, γ.dpow n w = ε.dpow n w := by
-  refine ⟨fun ⟨θ, hθI, hθJ⟩ n w hw ↦ ?_, fun h ↦ ⟨glue γ ε h, (eq_glue_iff h _).mp rfl⟩⟩
-  rw [← hθI n w hw.1, hθJ n w hw.2]
-
 /-- Stacks Project, Lemma 23.2.5 (tag `07GQ`): there exists a unique divided power structure on
 `I ⊔ J` restricting to `γ` on `I` and to `ε` on `J` if and only if `γ` and `ε` agree on `I ⊓ J`
 in every degree. -/
 theorem existsUnique_dividedPowers_sup_iff (γ : DividedPowers I) (ε : DividedPowers J) :
     (∃! θ : DividedPowers (I ⊔ J),
         (∀ n, ∀ x ∈ I, θ.dpow n x = γ.dpow n x) ∧ ∀ n, ∀ y ∈ J, θ.dpow n y = ε.dpow n y) ↔
-      ∀ n, ∀ w ∈ I ⊓ J, γ.dpow n w = ε.dpow n w :=
-  ⟨fun hθ ↦ exists_dividedPowers_sup_iff.mp hθ.exists,
+      ∀ n, ∀ w ∈ I ⊓ J, γ.dpow n w = ε.dpow n w := by
+  refine ⟨fun ⟨θ, ⟨hθI, hθJ⟩, _⟩ n w hw ↦ ?_,
     fun h ↦ ⟨glue γ ε h, (eq_glue_iff h _).mp rfl, fun θ hθ ↦ (eq_glue_iff h θ).mpr hθ⟩⟩
+  rw [← hθI n w hw.1, hθJ n w hw.2]
 
 /-- When `I ⊓ J = I * J`, there is a unique divided power structure on `I ⊔ J` restricting to `γ`
 on `I` and to `ε` on `J`. -/

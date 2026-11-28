@@ -152,35 +152,26 @@ theorem sum_filter_antidiagonal_choose (m n a b : ℕ) (hab : a + b = m + n) :
         (fun pq ↦ (pq.1.1 + pq.2.1, pq.1.2 + pq.2.2) = (a, b)),
       a.choose pq.1.1 * b.choose pq.1.2 = (m + n).choose m := by
   rw [← hab, Nat.add_choose_eq a b m]
-  have hsub :
-      ∑ pq ∈ (antidiagonal m ×ˢ antidiagonal n).filter
-          (fun pq ↦ (pq.1.1 + pq.2.1, pq.1.2 + pq.2.2) = (a, b)),
-        a.choose pq.1.1 * b.choose pq.1.2 =
-      ∑ p ∈ (antidiagonal m).filter (fun p ↦ p.1 ≤ a ∧ p.2 ≤ b),
-        a.choose p.1 * b.choose p.2 := by
-    refine Finset.sum_bij (fun pq _ ↦ pq.1) ?_ ?_ ?_ ?_
-    · intro pq hpq
-      simp only [mem_filter, mem_product, mem_antidiagonal, Prod.mk.injEq] at hpq ⊢
-      exact ⟨hpq.1.1, by omega, by omega⟩
-    · rintro ⟨p₁, q₁⟩ hpq₁ ⟨p₂, q₂⟩ hpq₂ hEq
-      dsimp at hEq
-      subst hEq
-      simp only [mem_filter, mem_product, mem_antidiagonal, Prod.mk.injEq] at hpq₁ hpq₂
-      congr 1
-      ext <;> omega
-    · intro p hp
-      simp only [mem_filter, mem_antidiagonal] at hp
-      refine ⟨(p, (a - p.1, b - p.2)), ?_, rfl⟩
-      simp only [mem_filter, mem_product, mem_antidiagonal, Prod.mk.injEq]
-      exact ⟨⟨hp.1, by omega⟩, by omega, by omega⟩
-    · intro _ _
-      rfl
-  rw [hsub]
-  refine Finset.sum_subset (filter_subset _ _) fun p hp hp' ↦ ?_
-  simp only [mem_filter, not_and, not_le] at hp'
-  by_cases h1 : p.1 ≤ a
-  · have h2 : b < p.2 := hp' hp h1
-    rw [Nat.choose_eq_zero_of_lt h2, mul_zero]
-  · rw [Nat.choose_eq_zero_of_lt (Nat.lt_of_not_ge h1), zero_mul]
+  refine Finset.sum_bij_ne_zero (fun pq _ _ ↦ pq.1) ?_ ?_ ?_ fun _ _ _ ↦ rfl
+  · intro pq hpq _
+    simp only [mem_filter, mem_product] at hpq
+    exact hpq.1.1
+  · rintro ⟨p₁, q₁⟩ hpq₁ _ ⟨p₂, q₂⟩ hpq₂ _ hEq
+    dsimp at hEq
+    subst hEq
+    simp only [mem_filter, mem_product, mem_antidiagonal, Prod.mk.injEq] at hpq₁ hpq₂
+    congr 1
+    ext <;> omega
+  · intro p hp hne
+    have hle : p.1 ≤ a ∧ p.2 ≤ b := by
+      by_contra h
+      rw [not_and_or, not_le, not_le] at h
+      rcases h with h1 | h2
+      · exact hne (by rw [Nat.choose_eq_zero_of_lt h1, zero_mul])
+      · exact hne (by rw [Nat.choose_eq_zero_of_lt h2, mul_zero])
+    rw [mem_antidiagonal] at hp
+    refine ⟨(p, (a - p.1, b - p.2)), ?_, hne, rfl⟩
+    simp only [mem_filter, mem_product, mem_antidiagonal, Prod.mk.injEq]
+    exact ⟨⟨hp, by omega⟩, by omega, by omega⟩
 
 end Finset

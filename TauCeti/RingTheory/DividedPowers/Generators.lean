@@ -552,14 +552,16 @@ private noncomputable def counterexampleAdditivePowers :
       simp [counterexampleDpow, hx, hy, hxy, add_comm]
     | k + 2 =>
       rw [Finset.Nat.sum_antidiagonal_succ, Finset.Nat.sum_antidiagonal_succ']
+      have hsq : (Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)} :
+          Ideal (TrivSqZeroExt (ZMod 2) (ZMod 2))) *
+          Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)} = ⊥ := by
+        rw [Ideal.span_singleton_mul_span_singleton, TrivSqZeroExt.inr_mul_inr,
+          Ideal.span_singleton_eq_bot]
       have hmid : ∑ p ∈ antidiagonal k,
           counterexampleDpow (p.1 + 1) x * counterexampleDpow (p.2 + 1) y = 0 :=
-        Finset.sum_eq_zero fun p _ ↦ by
-          rcases Ideal.mem_span_singleton.mp (counterexampleDpow_mem p.1.succ_ne_zero hx) with
-            ⟨u, hu⟩
-          rcases Ideal.mem_span_singleton.mp (counterexampleDpow_mem p.2.succ_ne_zero hy) with
-            ⟨v, hv⟩
-          rw [hu, hv, mul_mul_mul_comm, TrivSqZeroExt.inr_mul_inr, zero_mul]
+        Finset.sum_eq_zero fun p _ ↦ Ideal.mem_bot.mp <| hsq ▸
+          Ideal.mul_mem_mul (counterexampleDpow_mem p.1.succ_ne_zero hx)
+            (counterexampleDpow_mem p.2.succ_ne_zero hy)
       rw [hmid, add_zero]
       match k with
       | 0 | 1 => simp [counterexampleDpow, hx, hy, hxy, add_comm]
