@@ -57,8 +57,15 @@ transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
   `AddCircle p` (based at any point with a chosen lift) is `Multiplicative ℤ`.
 * `AddCircle.fundamentalGroupMulEquivZero`: the basepoint-`0` specialisation, using the lift
   `0 : ℝ`.
+* `AddCircle.fundamentalGroupMulEquiv_fromPath_zsmulLoop`: for `p ≠ 0` Mathlib's loop
+  `AddCircle.zsmulLoop p x n`, `t ↦ n • t p + x`, is sent to `ofAdd n` with the lift `x`; for
+  `n = 1` this is the generator. `AddCircle.fundamentalGroupMulEquivZero_fromPath_zsmulLoop` is
+  its basepoint-`0` specialisation.
 * `AddCircle.fundamentalGroupMulEquiv_eq_windingNumberIso`: for positive periods the
   chosen-lift computation agrees with Mathlib, including the sign of the generator.
+* `AddCircle.zpowers_eq_top_iff_isUnit_windingNumber`,
+  `AddCircle.isOfFinOrder_iff_windingNumber_eq_zero`: for a positive period, a loop class generates
+  `π₁(AddCircle p, x)` iff its winding number is `±1`, and has finite order iff it is `0`.
 * `Circle.fundamentalGroupMulEquiv`: `π₁(Circle, x) ≃* Multiplicative ℤ`.
 * `Circle.fundamentalGroupMulEquiv_expLoop`: the loop `Circle.expLoop`, `t ↦ exp(2πit)`, going
   once counterclockwise around the circle, is sent to the generator `ofAdd 1`.
@@ -76,6 +83,10 @@ transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
   `Circle.degree`, computed from angle lifts.
 * `Circle.fundamentalGroupMulEquiv_map_pow`: the `n`-th power map of the circle acts on the
   fundamental group as multiplication by `n`.
+* `Circle.mapOfEq_pow`: at the basepoint `1`, the `n`-th power map of the circle induces
+  `γ ↦ γ ^ n` on the fundamental group.
+* `Circle.mem_range_mapOfEq_pow_iff`: its image consists of the classes whose degree is divisible
+  by `n`.
 * `Circle.zpowers_fromPath_eq_top_of_degree_map_eq_one`,
   `Circle.homotopic_trans_of_degree_map_eq`: for a map `d : X → Circle` injective on
   fundamental groups, the degree of the image of a loop detects generators and conjugate loops.
@@ -268,6 +279,31 @@ lemma fundamentalGroupMulEquivZero_eq_one_iff (hp : p ≠ 0) (γ : FundamentalGr
   rw [fundamentalGroupMulEquivZero]
   exact fundamentalGroupMulEquiv_eq_one_iff p hp ⟨0, by simp⟩ γ
 
+/-- **The winding loops of the circle.** For `p ≠ 0`, the class of Mathlib's loop
+`AddCircle.zsmulLoop p x n`, `t ↦ n • t p + x`, is sent to `n` by
+`π₁(AddCircle p, x) ≃* Multiplicative ℤ` with the lift `x`; for `n = 1` it is the generator. For
+`0 < p` this is also Mathlib's `AddCircle.windingNumber_zsmulLoop`. -/
+theorem fundamentalGroupMulEquiv_fromPath_zsmulLoop (hp : p ≠ 0) (x : ℝ) (n : ℤ) :
+    fundamentalGroupMulEquiv p hp ⟨x, rfl⟩
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (zsmulLoop p x n))) =
+      Multiplicative.ofAdd n := by
+  rw [fundamentalGroupMulEquiv_apply_eq_iff, toAdd_ofAdd]
+  have h := (isCoveringMap_coe p).monodromy_eq_apply_one
+    (γ := zsmulLoop p x n) (e := ⟨x, rfl⟩)
+    (Γ := ⟨fun t : unitInterval ↦ n • ((t : ℝ) * p) + x, by fun_prop⟩)
+    (by funext t; exact (zsmulLoop_apply p x n t).symm) (by simp)
+  simpa [add_comm] using h
+
+/-- The basepoint-`0` case of `AddCircle.fundamentalGroupMulEquiv_fromPath_zsmulLoop`: the class
+of `AddCircle.zsmulLoop p 0 n`, `t ↦ n • t p`, is sent to `n` by
+`π₁(AddCircle p, 0) ≃* Multiplicative ℤ`. -/
+theorem fundamentalGroupMulEquivZero_fromPath_zsmulLoop (hp : p ≠ 0) (n : ℤ) :
+    fundamentalGroupMulEquivZero p hp
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (zsmulLoop p 0 n))) =
+      Multiplicative.ofAdd n := by
+  rw [fundamentalGroupMulEquivZero_apply]
+  exact fundamentalGroupMulEquiv_fromPath_zsmulLoop p hp 0 n
+
 /-- For positive periods, the chosen-lift equivalence agrees with Mathlib's winding-number
 isomorphism. In particular it is independent of the chosen lift and has the same orientation. -/
 lemma fundamentalGroupMulEquiv_eq_windingNumberIso [hp : Fact (0 < p)] {x : AddCircle p}
@@ -297,6 +333,34 @@ lemma windingNumberIso_apply_eq_iff [hp : Fact (0 < p)] {x : AddCircle p}
       ((isCoveringMap_coe p).monodromy γ.toPath e : ℝ) = (e : ℝ) + n.toAdd • p := by
   rw [← fundamentalGroupMulEquiv_eq_windingNumberIso p e]
   exact fundamentalGroupMulEquiv_apply_eq_iff p hp.out.ne' e γ n
+
+/-- The fundamental group of a circle of positive period is torsion-free, being isomorphic to
+`ℤ`. -/
+instance [Fact (0 < p)] (x : AddCircle p) :
+    IsMulTorsionFree (FundamentalGroup (AddCircle p) x) :=
+  (windingNumberIso x).injective.isMulTorsionFree (windingNumberIso x).toMonoidHom
+
+variable {p} in
+/-- Mathlib's winding-number isomorphism sends a loop class to its winding number. -/
+@[simp]
+lemma windingNumberIso_apply [Fact (0 < p)] {x : AddCircle p}
+    (γ : FundamentalGroup (AddCircle p) x) :
+    windingNumberIso x γ = Multiplicative.ofAdd (windingNumber γ) :=
+  (ofAdd_toAdd _).symm
+
+variable {p} in
+/-- **A loop class generates `π₁(AddCircle p)` iff its winding number is `±1`.** -/
+theorem zpowers_eq_top_iff_isUnit_windingNumber [Fact (0 < p)] {x : AddCircle p}
+    (γ : FundamentalGroup (AddCircle p) x) :
+    Subgroup.zpowers γ = ⊤ ↔ IsUnit (windingNumber γ) := by
+  rw [(windingNumberIso x).zpowers_eq_top_iff_isUnit_toAdd, windingNumberIso_apply, toAdd_ofAdd]
+
+variable {p} in
+/-- **A loop class in `π₁(AddCircle p)` has finite order iff its winding number is `0`.** -/
+@[simp]
+theorem isOfFinOrder_iff_windingNumber_eq_zero [Fact (0 < p)] {x : AddCircle p}
+    (γ : FundamentalGroup (AddCircle p) x) : IsOfFinOrder γ ↔ windingNumber γ = 0 := by
+  rw [(windingNumberIso x).isOfFinOrder_iff_toAdd_eq_zero, windingNumberIso_apply, toAdd_ofAdd]
 
 end AddCircle
 
@@ -440,25 +504,15 @@ instance (x : Circle) : IsMulTorsionFree (FundamentalGroup Circle x) :=
 theorem zpowers_fromPath_eq_top_iff {x : Circle} (γ : Path x x) :
     Subgroup.zpowers (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) = ⊤ ↔
       IsUnit (degree γ) := by
-  refine ⟨fun h ↦ ?_, fun hγ ↦ ?_⟩
-  · obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp
-      (h ▸ Subgroup.mem_top ((fundamentalGroupMulEquiv x).symm (Multiplicative.ofAdd 1)))
-    rw [(fundamentalGroupMulEquiv x).eq_symm_apply, map_zpow, fundamentalGroupMulEquiv_fromPath,
-      ← ofAdd_zsmul, EmbeddingLike.apply_eq_iff_eq, smul_eq_mul] at hk
-    exact .of_mul_eq_one_right _ hk
-  rcases Int.isUnit_iff.mp hγ with hγ | hγ
-  · exact (fundamentalGroupMulEquiv x).zpowers_eq_top_of_apply_eq_ofAdd_one
-      (by rw [fundamentalGroupMulEquiv_fromPath, hγ])
-  · rw [← Subgroup.zpowers_inv]
-    exact (fundamentalGroupMulEquiv x).zpowers_eq_top_of_apply_eq_ofAdd_one
-      (by rw [map_inv, fundamentalGroupMulEquiv_fromPath, hγ, ofAdd_neg, inv_inv])
+  rw [(fundamentalGroupMulEquiv x).zpowers_eq_top_iff_isUnit_toAdd,
+    fundamentalGroupMulEquiv_fromPath, toAdd_ofAdd]
 
 /-- **A loop class in `π₁(S¹)` has finite order iff the loop has degree `0`.** -/
 @[simp]
 theorem isOfFinOrder_fromPath_iff {x : Circle} (γ : Path x x) :
     IsOfFinOrder (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) ↔ degree γ = 0 := by
-  rw [isOfFinOrder_iff_eq_one, ← (fundamentalGroupMulEquiv x).map_eq_one_iff,
-    fundamentalGroupMulEquiv_fromPath, ofAdd_eq_one]
+  rw [(fundamentalGroupMulEquiv x).isOfFinOrder_iff_toAdd_eq_zero,
+    fundamentalGroupMulEquiv_fromPath, toAdd_ofAdd]
 
 /-- **The counterclockwise loop generates `π₁(S¹)`.** Every class in `π₁(Circle, 1)` is a power
 of the class of `t ↦ exp(2πit)`. -/
@@ -557,6 +611,41 @@ theorem fundamentalGroupMulEquiv_map_pow (n : ℕ) {x : Circle} (γ : Fundamenta
     _ = Multiplicative.ofAdd (degree γ) ^ n := by
         rw [degree_map_pow, ← ofAdd_nsmul, nsmul_eq_mul]
     _ = _ := congrArg (· ^ n) (fundamentalGroupMulEquiv_fromPath γ).symm
+
+/-- **The `n`-th power map of the circle raises loop classes to the `n`-th power.** On the
+fundamental group of the circle at `1`, which `z ↦ z ^ n` fixes, the induced endomorphism is
+`γ ↦ γ ^ n`. -/
+@[simp]
+theorem mapOfEq_pow (n : ℕ) (γ : FundamentalGroup Circle 1) :
+    FundamentalGroup.mapOfEq ⟨(· ^ n), continuous_pow n⟩ (one_pow n) γ = γ ^ n := by
+  -- Changing the basepoint along an equality does not change the image in `ℤ`.
+  have key : ∀ {x y : Circle} (h : x = y) (δ : FundamentalGroup Circle x),
+      fundamentalGroupMulEquiv y
+          ((CategoryTheory.eqToIso (congrArg FundamentalGroupoid.mk h)).conj δ) =
+        fundamentalGroupMulEquiv x δ := by
+    rintro x _ rfl δ
+    simp
+  -- Unfold `mapOfEq` into the conjugation by `eqToIso` of `FundamentalGroup.map`, then compare
+  -- the images in `ℤ`.
+  apply (fundamentalGroupMulEquiv 1).injective
+  rw [FundamentalGroup.mapOfEq, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, map_pow,
+    ← fundamentalGroupMulEquiv_map_pow n γ]
+  exact key (one_pow n) _
+
+/-- **The image of the `n`-th power map on `π₁(S¹)`.** A loop class at `1` is in the image of the
+endomorphism induced by `z ↦ z ^ n` exactly when `n` divides its degree. -/
+theorem mem_range_mapOfEq_pow_iff (n : ℕ) (γ : FundamentalGroup Circle 1) :
+    γ ∈ (FundamentalGroup.mapOfEq ⟨(· ^ n), continuous_pow n⟩ (one_pow n)).range ↔
+      (n : ℤ) ∣ (fundamentalGroupMulEquiv 1 γ).toAdd := by
+  simp only [MonoidHom.mem_range, mapOfEq_pow]
+  constructor
+  · rintro ⟨δ, rfl⟩
+    exact ⟨(fundamentalGroupMulEquiv 1 δ).toAdd, by rw [map_pow, toAdd_pow, nsmul_eq_mul]⟩
+  · rintro ⟨k, hk⟩
+    refine ⟨(fundamentalGroupMulEquiv 1).symm (Multiplicative.ofAdd k), ?_⟩
+    apply (fundamentalGroupMulEquiv 1).injective
+    apply Multiplicative.toAdd.injective
+    simp [hk]
 
 section Detect
 

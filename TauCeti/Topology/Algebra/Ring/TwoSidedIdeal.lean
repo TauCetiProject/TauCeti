@@ -12,12 +12,15 @@ public import Mathlib.Topology.ApproximateUnit
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import TauCeti.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.RingTheory.TwoSidedIdeal.Annihilator
+import TauCeti.Topology.Algebra.Ring.MaximalIdeals
 
 /-!
 # Closed two-sided ideals
 
 The closure of a two-sided ideal in a topological ring is again two-sided, and closed two-sided
-ideals in rings with an approximate unit absorb compatible scalar multiplication. We
+ideals in rings with an approximate unit absorb compatible scalar multiplication. Closedness is
+preserved by `⊥` (in `T₁` spaces), `⊤`, binary intersections, opposite rings, and continuous
+nonunital ring-homomorphism preimages. We
 also supply the topological-ring structure on Mathlib's existing quotient topology
 for quotients of noncommutative rings by native ideals. The closed ideal generated
 by an ideal of the center presents discrete modules with central relations.
@@ -36,6 +39,12 @@ The preimage of a closed two-sided ideal under a continuous ring homomorphism is
 ring is closed (`TwoSidedIdeal.isClosed_annihilator`). Hence, in a proper star ring, a
 self-adjoint ideal is essential as soon as it meets every nonzero closed two-sided ideal
 (`TwoSidedIdeal.isEssential_iff_forall_isClosed`).
+
+Closure commutes with passing to the underlying left ideal
+(`TwoSidedIdeal.asIdeal_topologicalClosure`). Hence, in a topological ring whose units form an open
+set, such as a unital Banach algebra, the closure of a proper two-sided ideal is proper
+(`TwoSidedIdeal.topologicalClosure_ne_top_of_isOpen_isUnit`), so the ring is simple as soon as
+its closed two-sided ideals are trivial (`TwoSidedIdeal.eq_bot_or_eq_top_of_forall_isClosed`).
 
 The quotient-ring construction generalizes Patrick Massot's
 `QuotientRing.topologicalRing_quotient` in Mathlib from commutative rings, using
@@ -151,6 +160,72 @@ theorem topologicalClosure_le_iff (I J : TwoSidedIdeal A) (hJ : IsClosed (J : Se
 
 end TopologicalClosure
 
+section ClosedOps
+
+variable {A : Type*} [NonUnitalNonAssocRing A] [TopologicalSpace A]
+
+/-- The opposite of a closed two-sided ideal is closed. -/
+instance isClosed_op (I : TwoSidedIdeal A) [hI : IsClosed (I : Set A)] :
+    IsClosed (I.op : Set Aᵐᵒᵖ) := by
+  rw [coe_op]
+  exact hI.preimage MulOpposite.continuous_unop
+
+/-- The `unop` of a closed two-sided ideal in the opposite ring is closed. -/
+instance isClosed_unop (I : TwoSidedIdeal Aᵐᵒᵖ) [hI : IsClosed (I : Set Aᵐᵒᵖ)] :
+    IsClosed (I.unop : Set A) := by
+  rw [coe_unop]
+  exact hI.preimage MulOpposite.continuous_op
+
+/-- The trivial two-sided ideal `⊥` in a `T₁` ring is closed. -/
+instance isClosed_bot [T1Space A] : IsClosed ((⊥ : TwoSidedIdeal A) : Set A) := by
+  rw [coe_bot]
+  exact isClosed_singleton
+
+/-- The whole ring `⊤` as a two-sided ideal is closed. -/
+instance isClosed_top : IsClosed ((⊤ : TwoSidedIdeal A) : Set A) := by
+  rw [coe_top]
+  exact isClosed_univ
+
+/-- The intersection `I ⊓ J` of two closed two-sided ideals is closed. -/
+instance isClosed_inf (I J : TwoSidedIdeal A) [hI : IsClosed (I : Set A)]
+    [hJ : IsClosed (J : Set A)] : IsClosed ((I ⊓ J : TwoSidedIdeal A) : Set A) :=
+  hI.inter hJ
+
+end ClosedOps
+
+section OpenUnits
+
+variable {A : Type*} [Ring A] [TopologicalSpace A] [IsTopologicalRing A]
+
+/-- The underlying left ideal of the topological closure of a two-sided ideal is the closure of its
+underlying left ideal. -/
+@[simp]
+theorem asIdeal_topologicalClosure (I : TwoSidedIdeal A) :
+    I.topologicalClosure.asIdeal = I.asIdeal.closure :=
+  SetLike.ext' (by simp [coe_asIdeal])
+
+/-- In a topological ring whose units form an open set (for instance a unital Banach algebra), the
+topological closure of a proper two-sided ideal is proper. This is
+`Ideal.closure_ne_top_of_isOpen_isUnit` applied to the underlying left ideal `I.asIdeal`. -/
+theorem topologicalClosure_ne_top_of_isOpen_isUnit (hU : IsOpen {a : A | IsUnit a})
+    {I : TwoSidedIdeal A} (hI : I ≠ ⊤) : I.topologicalClosure ≠ ⊤ := by
+  intro htop
+  refine Ideal.closure_ne_top_of_isOpen_isUnit hU ?_
+    (by rw [← asIdeal_topologicalClosure, htop, top_asIdeal])
+  simpa [Ideal.eq_top_iff_one, one_mem_iff] using hI
+
+/-- In a topological ring whose units form an open set (for instance a unital Banach algebra), if
+every closed two-sided ideal is `⊥` or `⊤`, then so is every two-sided ideal. -/
+theorem eq_bot_or_eq_top_of_forall_isClosed (hU : IsOpen {a : A | IsUnit a})
+    (h : ∀ I : TwoSidedIdeal A, IsClosed (I : Set A) → I = ⊥ ∨ I = ⊤) (I : TwoSidedIdeal A) :
+    I = ⊥ ∨ I = ⊤ := by
+  refine or_iff_not_imp_right.mpr fun hI ↦ eq_bot_iff.mpr ?_
+  rw [← (h _ I.isClosed_topologicalClosure).resolve_right
+    (topologicalClosure_ne_top_of_isOpen_isUnit hU hI)]
+  exact I.le_topologicalClosure
+
+end OpenUnits
+
 section ClosedKer
 
 variable {A B F : Type*} [NonUnitalNonAssocRing A] [TopologicalSpace A]
@@ -204,6 +279,45 @@ theorem isEssential_iff_forall_isClosed [StarRing A] [IsProperStar A] {I : TwoSi
 
 end Annihilator
 
+end TwoSidedIdeal
+
+namespace AddSubgroup
+
+section ApproximateUnit
+
+variable {R A : Type*} [NonUnitalNonAssocRing A] [TopologicalSpace A]
+  [SMul R A] [ContinuousConstSMul R A]
+
+/-- In a topological nonunital ring with a scalar-compatible `R`-action and a nontrivial filter
+`l` satisfying `a * e → a`, every closed additive subgroup closed under right multiplication is
+closed under `R`-scalar multiplication. -/
+theorem smul_mem_of_isClosed_right_of_tendsto [SMulCommClass R A A]
+    (I : AddSubgroup A) (hI : IsClosed (I : Set A))
+    (hmul : ∀ {a : A}, a ∈ I → ∀ b : A, a * b ∈ I)
+    {l : Filter A} [l.NeBot] (c : R) {a : A}
+    (hl : Tendsto (a * ·) l (𝓝 a)) (ha : a ∈ I) : c • a ∈ I := by
+  have hlim : Tendsto (fun e : A => a * (c • e)) l (𝓝 (c • a)) := by
+    simpa only [mul_smul_comm] using hl.const_smul c
+  exact hI.mem_of_tendsto hlim (Eventually.of_forall fun e => hmul ha (c • e))
+
+/-- In a topological nonunital ring with a scalar-compatible `R`-action and a nontrivial filter
+`l` satisfying `e * a → a`, every closed additive subgroup closed under left multiplication is
+closed under `R`-scalar multiplication. -/
+theorem smul_mem_of_isClosed_left_of_tendsto [IsScalarTower R A A]
+    (I : AddSubgroup A) (hI : IsClosed (I : Set A))
+    (hmul : ∀ {a : A}, a ∈ I → ∀ b : A, b * a ∈ I)
+    {l : Filter A} [l.NeBot] (c : R) {a : A}
+    (hl : Tendsto (· * a) l (𝓝 a)) (ha : a ∈ I) : c • a ∈ I := by
+  have hlim : Tendsto (fun e : A => (c • e) * a) l (𝓝 (c • a)) := by
+    simpa only [smul_mul_assoc] using hl.const_smul c
+  exact hI.mem_of_tendsto hlim (Eventually.of_forall fun e => hmul ha (c • e))
+
+end ApproximateUnit
+
+end AddSubgroup
+
+namespace TwoSidedIdeal
+
 section ApproximateUnit
 
 variable {R A : Type*} [Semiring R] [NonUnitalRing A] [TopologicalSpace A]
@@ -215,9 +329,8 @@ theorem smul_mem_of_isApproximateUnit (I : TwoSidedIdeal A) [hI : IsClosed (I : 
     {l : Filter A} (hl : l.IsApproximateUnit) (c : R) {a : A} (ha : a ∈ I) :
     c • a ∈ I := by
   have := hl.neBot
-  have hlim : Tendsto (fun e => (c • e) * a) l (𝓝 (c • a)) := by
-    simpa only [smul_mul_assoc] using (hl.tendsto_mul_right a).const_smul c
-  exact hI.mem_of_tendsto hlim (Eventually.of_forall fun e => I.mul_mem_left (c • e) a ha)
+  exact (AddSubgroup.ofClass I).smul_mem_of_isClosed_left_of_tendsto hI
+    (fun hx b => I.mul_mem_left b _ hx) c (hl.tendsto_mul_right a) ha
 
 end ApproximateUnit
 

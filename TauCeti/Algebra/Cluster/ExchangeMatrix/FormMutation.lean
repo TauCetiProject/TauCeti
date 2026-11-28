@@ -25,6 +25,10 @@ Sign-independence and double mutation need only alternation, `B (row k) k = 0`, 
 vanishing of row `k` of `Bᵀ * Λ` outside `row k`. The statements use raw compatibility
 equations and Mathlib's bilinear-form predicate, without imposing a bundled representation.
 
+The integral mutation factor is its own inverse without hypotheses. Thus form mutation
+preserves exactly the bilinear form's evaluated values and preserves and reflects the full
+scalar bar premise, including at finite-order parameters.
+
 ## References
 
 * A. Berenstein and A. Zelevinsky, *Quantum cluster algebras*, Advances in Mathematics 195
@@ -51,6 +55,48 @@ theorem formMutation_def (row : K ↪ I) (B : Matrix I K ℤ)
     (Λ : Matrix I I ℤ) (k : K) :
     formMutation row B Λ k =
       (matrixMutationLeft row B k 1)ᵀ * Λ * matrixMutationLeft row B k 1 := by rfl
+
+/-- Form mutation evaluates by applying the integral mutation factor to both arguments.
+No alternation, compatibility or diagonal hypothesis is needed. -/
+theorem toBilin'_formMutation (row : K ↪ I) (B : Matrix I K ℤ)
+    (Λ : Matrix I I ℤ) (k : K) (x y : I → ℤ) :
+    (formMutation row B Λ k).toBilin' x y =
+      Λ.toBilin' (matrixMutationLeft row B k 1 *ᵥ x)
+        (matrixMutationLeft row B k 1 *ᵥ y) := by
+  rw [formMutation_def, ← Matrix.toBilin'_comp]
+  simp only [LinearMap.BilinForm.comp_apply, Matrix.toLin'_apply]
+
+/-- Integral form mutation preserves exactly the set of values of the bilinear form.
+The coordinate change is its own inverse for every exchange matrix. -/
+@[simp]
+theorem range_toBilin'_formMutation (row : K ↪ I) (B : Matrix I K ℤ)
+    (Λ : Matrix I I ℤ) (k : K) :
+    Set.range (fun p : (I → ℤ) × (I → ℤ) ↦
+      (formMutation row B Λ k).toBilin' p.1 p.2) =
+      Set.range (fun p : (I → ℤ) × (I → ℤ) ↦ Λ.toBilin' p.1 p.2) := by
+  ext n
+  constructor
+  · rintro ⟨⟨x, y⟩, rfl⟩
+    exact ⟨(matrixMutationLeft row B k 1 *ᵥ x, matrixMutationLeft row B k 1 *ᵥ y),
+      (toBilin'_formMutation row B Λ k x y).symm⟩
+  · rintro ⟨⟨x, y⟩, rfl⟩
+    refine ⟨(matrixMutationLeft row B k 1 *ᵥ x, matrixMutationLeft row B k 1 *ᵥ y), ?_⟩
+    simp only [toBilin'_formMutation, Matrix.mulVec_mulVec,
+      matrixMutationLeft_mul_self, Matrix.one_mulVec]
+
+/-- The full scalar bar premise is preserved and reflected by integral form mutation,
+including finite-order parameters. The result only uses the assigned integer powers and map;
+ring automorphism and involutivity assumptions are not needed for this propagation law. -/
+@[simp]
+theorem forall_map_zpow_formMutation_iff {R : Type*} [Pow R ℤ]
+    (row : K ↪ I) (B : Matrix I K ℤ) (Λ : Matrix I I ℤ) (k : K)
+    (σ : R → R) (u : R) :
+    (∀ a b : I → ℤ, σ (u ^ (formMutation row B Λ k).toBilin' a b) =
+      u ^ (-(formMutation row B Λ k).toBilin' a b)) ↔
+      ∀ a b : I → ℤ, σ (u ^ Λ.toBilin' a b) = u ^ (-Λ.toBilin' a b) := by
+  have h := congrArg (fun s : Set ℤ ↦ ∀ n ∈ s, σ (u ^ n) = u ^ (-n))
+    (range_toBilin'_formMutation row B Λ k)
+  simpa only [Set.forall_mem_range, Prod.forall] using Iff.of_eq h
 
 /-- Congruence mutation preserves alternation, independently of compatibility. -/
 theorem isAlt_toBilin'_formMutation (row : K ↪ I) (B : Matrix I K ℤ) {Λ : Matrix I I ℤ}

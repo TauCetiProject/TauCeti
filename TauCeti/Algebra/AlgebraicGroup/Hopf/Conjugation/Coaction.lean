@@ -243,6 +243,14 @@ theorem mem_conjugationInvariants {f : H} :
   let := conjugationComoduleAlgebra (R := R) (H := H)
   exact ComoduleAlgebra.mem_coinvariants
 
+/-- A conjugation invariant is a unit of the invariants exactly when it is a unit of `H`: the
+inverse of an invariant unit is again invariant (`TauCeti.ComoduleAlgebra.isUnit_coinvariants_iff`).
+-/
+theorem isUnit_conjugationInvariants_iff {f : conjugationInvariants R H} :
+    IsUnit f ↔ IsUnit (f : H) :=
+  letI := conjugationComoduleAlgebra (R := R) (H := H)
+  ComoduleAlgebra.isUnit_coinvariants_iff
+
 /-- **An invariant function is constant on conjugacy classes of points**: for every commutative
 `R`-algebra `A` and all `A`-points `g` and `x`, `f(g * x * g⁻¹) = f(x)`. -/
 theorem conjugationInvariants_apply_conj {f : H} (hf : f ∈ conjugationInvariants R H)

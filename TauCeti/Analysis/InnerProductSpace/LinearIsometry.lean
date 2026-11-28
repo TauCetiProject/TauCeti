@@ -57,6 +57,8 @@ diffeomorphisms.
 * `LinearIsometry.apply_eq_of_map_single`: a linear isometry of Euclidean spaces sending the `i`-th
   standard basis vector to the `j`-th one reads the `i`-th coordinate off as the `j`-th coordinate
   of the image.
+* `LinearIsometry.inner_apply_eq_zero_of_anticomm`: a map anticommuting with a linear
+  isometry sends its fixed vectors to vectors orthogonal to them.
 * `LinearMap.eq_of_apply_eq_of_eqOn_orthogonal`: linear maps agreeing on a vector and
   its orthogonal complement are equal, without a unit-norm assumption.
 * `LinearIsometryEquiv.eq_extendOrthogonalComplement_iff`: a linear isometry equals the
@@ -70,6 +72,8 @@ diffeomorphisms.
   `LinearIsometryEquiv.forall_orthonormal_sum_re_inner_conj_iff`: a condition on the diagonal sums
   `∑ᵢ ⟪T wᵢ, wᵢ⟫` (resp. on their real parts `∑ᵢ re ⟪T wᵢ, wᵢ⟫`) of an operator along all
   orthonormal families is invariant under conjugation by a linear isometry equivalence.
+* `LinearIsometryEquiv.inner_map_left_eq_of_involutive`: an involutive linear isometry equivalence
+  is self-adjoint.
 * `ContDiff.linearIsometryEquiv_symm_apply`: the inverses along a smooth family of linear
   isometries of a finite-dimensional space form a smooth family.
 -/
@@ -84,6 +88,16 @@ open scoped InnerProductSpace
 
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- A map anticommuting with a linear isometry `R` of `E` sends the fixed vectors of `R` to vectors
+orthogonal to them: `⟪v, T w⟫ = ⟪R v, R (T w)⟫ = -⟪v, T w⟫` for `v, w` fixed by `R`. For `R` the
+conjugation of `ℂⁿ` and `T = i`, this is the orthogonality of `ℝⁿ` and `iℝⁿ`. -/
+theorem inner_apply_eq_zero_of_anticomm (R : E →ₗᵢ[𝕜] E) {T : E → E}
+    (hT : ∀ v, R (T v) = -T (R v)) {v w : E} (hv : R v = v) (hw : R w = w) :
+    ⟪v, T w⟫_𝕜 = 0 := by
+  have h := R.inner_map_map v (T w)
+  rw [hv, hT, hw, inner_neg_right] at h
+  exact self_eq_neg.1 h.symm
 
 /-- A linear isometry `f` maps the orthogonal complement of `v` into the orthogonal complement of
 `f v`. -/
@@ -269,6 +283,17 @@ theorem forall_orthonormal_sum_re_inner_conj_iff (U : E ≃ₗᵢ[𝕜] F) {T : 
         P (∑ i, RCLike.re ⟪U.toLinearEquiv.conj T (w i), w i⟫_𝕜)) ↔
       ∀ w : ι → E, Orthonormal 𝕜 w → P (∑ i, RCLike.re ⟪T (w i), w i⟫_𝕜) := by
   simpa only [map_sum] using U.forall_orthonormal_sum_inner_conj_iff fun z ↦ P (RCLike.re z)
+
+section Involutive
+
+variable {R : E ≃ₗᵢ[𝕜] E}
+
+/-- An involutive linear isometry equivalence is self-adjoint. -/
+theorem inner_map_left_eq_of_involutive (hR : Function.Involutive R) (v w : E) :
+    ⟪R v, w⟫_𝕜 = ⟪v, R w⟫_𝕜 := by
+  rw [R.inner_map_eq_flip, R.symm_apply_eq.2 (hR w).symm]
+
+end Involutive
 
 end LinearIsometryEquiv
 

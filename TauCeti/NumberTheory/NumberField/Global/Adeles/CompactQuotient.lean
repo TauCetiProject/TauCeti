@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
-
-import Mathlib.NumberTheory.NumberField.FiniteAdeleRing
-import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
+public import TauCeti.NumberTheory.NumberField.Global.Adeles.FundamentalDomain
 
 /-!
 # Compactness of the additive adele quotient
@@ -16,11 +13,11 @@ import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 For a number field `K`, the diagonal copy of `K` is cocompact in its adele ring.  Equivalently,
 the additive quotient `𝔸[K] / K` is compact.
 
-The proof uses a compact set of representatives.  Strong approximation first subtracts an element
-of `K` so that the finite component is integral everywhere.  The remaining freedom to subtract an
-algebraic integer does not disturb finite integrality, and moves the infinite component into the
-closed fundamental parallelepiped of the Minkowski lattice.  That parallelepiped is compact, as is
-the product of all local integer rings, so their product maps onto the quotient from a compact set.
+The proof uses a compact set of representatives: the closure of the fundamental domain `F × Ô`
+of `TauCeti.GlobalNumberFields.adeleFundamentalDomain`, the product of the half-open fundamental
+parallelotope of the Minkowski lattice with the integral finite adeles.  It is compact
+(`TauCeti.GlobalNumberFields.isCompact_closure_adeleFundamentalDomain`) and contains a translate
+by `K` of every adele, so it maps onto the quotient.
 
 Together with the discreteness of the principal subgroup, this identifies the diagonal number
 field as a lattice in the additive adele ring.  The compact quotient is also the additive global
@@ -52,35 +49,10 @@ variable (K : Type*) [Field K] [NumberField K]
 translated by a diagonal element of `K` into this set. -/
 theorem exists_isCompact_forall_exists_sub_algebraMap_mem :
     ∃ D : Set 𝔸[K], IsCompact D ∧
-      ∀ a : 𝔸[K], ∃ x : K, a - algebraMap K 𝔸[K] x ∈ D := by
-  classical
-  -- The compact representative set is the product of the closed Minkowski parallelepiped with
-  -- the integral finite adeles.
-  let b := mixedEmbedding.latticeBasis K
-  let e := InfiniteAdeleRing.ringEquiv_mixedSpace K
-  let D : Set 𝔸[K] := (e.symm '' parallelepiped b) ×ˢ
-    (FiniteAdeleRing.integralAdeles (𝓞 K) K : Set 𝔸ᶠ[K])
-  have he : Continuous e.symm :=
-    InfiniteAdeleRing.continuous_ringEquiv_mixedSpace_symm K
-  refine ⟨D, (b.parallelepiped.isCompact.image he).prod FiniteAdeleRing.isCompact_integralAdeles,
-    fun a ↦ ?_⟩
-  -- Expose the product representation of the adele ring for the componentwise construction.
-  let a' : K∞ × 𝔸ᶠ[K] := a
-  -- Strong approximation makes the finite component integral after subtracting `x`.
-  obtain ⟨x, hx⟩ :=
-    FiniteAdeleRing.exists_forall_sub_algebraMap_mem_adicCompletionIntegers a'.2
-  obtain ⟨y, hy⟩ := InfiniteAdeleRing.exists_sub_algebraMap_integer_mem_parallelepiped K
-    (a'.1 - algebraMap K K∞ x)
-  refine ⟨x + algebraMap (𝓞 K) K y, Set.mem_prod.mpr ⟨⟨_, hy, ?_⟩, ?_⟩⟩
-  · -- `AdeleRing` is a type synonym for this product; exposing it lets the two components be
-    -- compared through their canonical APIs.
-    change e.symm _ = a'.1 - algebraMap K K∞ (x + algebraMap (𝓞 K) K y)
-    rw [e.symm_apply_apply, map_add]
-    abel
-  · exact FiniteAdeleRing.sub_algebraMap_add_algebraMap_mem_integralAdeles
-      (FiniteAdeleRing.mem_integralAdeles.mpr fun v ↦ by
-        rw [FiniteAdeleRing.sub_apply, FiniteAdeleRing.algebraMap_apply]
-        exact hx v) y
+      ∀ a : 𝔸[K], ∃ x : K, a - algebraMap K 𝔸[K] x ∈ D :=
+  ⟨closure (adeleFundamentalDomain K), isCompact_closure_adeleFundamentalDomain K, fun a ↦
+    (existsUnique_sub_algebraMap_mem_adeleFundamentalDomain K a).exists.imp
+      fun _ h ↦ subset_closure h⟩
 
 /-- **The additive adele class group is compact.** The quotient of the adele ring by the diagonal
 copy of the number field is compact. -/

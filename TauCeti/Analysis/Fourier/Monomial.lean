@@ -33,6 +33,8 @@ integrates term by term against an `L¹` function.
 * `TauCeti.norm_fourier_apply`: every Fourier monomial on `AddCircle T` has pointwise modulus `1`.
 * `TauCeti.fourier_pow`, `TauCeti.fourier_one_pow`: `fourier k ^ m = fourier (m * k)` and
   `fourier 1 ^ m = fourier m` in `C(AddCircle T, ℂ)`.
+* `TauCeti.fourier_add_eq_mul`, `TauCeti.star_fourier`: `fourier (m + n) = fourier m * fourier n`
+  and `(fourier n)⋆ = fourier (-n)` in `C(AddCircle T, ℂ)`.
 * `TauCeti.fourier_apply_add`, `TauCeti.fourier_apply_sub`: `fourier n` turns sums and differences
   of points into `fourier n x * fourier n y` and `fourier n x * fourier (-n) y`.
 * `TauCeti.norm_two_pi_I_mul_intCast_div`: `‖2πin/T‖ = 2π/T |n|` for `T > 0`.
@@ -53,6 +55,9 @@ integrates term by term against an `L¹` function.
   `UnitAddTorus.norm_mFourier_apply`: the same pointwise facts for the multivariate
   monomials `mFourier n` on the torus `UnitAddTorus d`, whose value at the image of `x : d → ℝ`
   is `exp (2πi ∑ i, n i * x i)`.
+* `TauCeti.UnitAddTorus.exp_two_pi_I_mul_equivFun_symm_eq_mFourier`: in the coordinates of a real
+  basis, the character `exp (2πi f)` of a real linear form `f` with integer values `n` on the basis
+  is `mFourier n`.
 * `TauCeti.UnitAddTorus.contDiff_mFourier_coe` and
   `TauCeti.UnitAddTorus.norm_iteratedFDeriv_mFourier_coe_le`: this lift of `mFourier n` is smooth,
   and its `k`-th derivative is bounded by `(2π ∑ i, |n i|) ^ k`.
@@ -93,6 +98,17 @@ theorem fourier_pow (k : ℤ) (m : ℕ) :
 theorem fourier_one_pow (m : ℕ) :
     fourier (T := T) 1 ^ m = fourier (T := T) (m : ℤ) := by
   simpa using fourier_pow (T := T) 1 m
+
+/-- The Fourier monomials are multiplicative in the index as elements of `C(AddCircle T, ℂ)`. -/
+theorem fourier_add_eq_mul (m n : ℤ) : fourier (T := T) (m + n) = fourier m * fourier n := by
+  ext x
+  rw [fourier_add, ContinuousMap.mul_apply]
+
+/-- The adjoint of the Fourier monomial `fourier n` in `C(AddCircle T, ℂ)` is `fourier (-n)`. -/
+@[simp]
+theorem star_fourier (n : ℤ) : star (fourier (T := T) n) = fourier (-n) := by
+  ext x
+  rw [ContinuousMap.star_apply, Complex.star_def, ← fourier_neg]
 
 /-- Pointwise, the `m`-th power of the fundamental Fourier monomial is the monomial
 of natural frequency `m`. -/
@@ -325,6 +341,19 @@ theorem mFourier_coe_apply (n : d → ℤ) (x : d → ℝ) :
   refine congrArg cexp (Finset.sum_congr rfl fun i _ ↦ ?_)
   push_cast
   ring
+
+/-- In the coordinates `φ` of a real basis `b` of `V`, the character `exp (2πi f)` of a real linear
+form `f` with integer values `f (b i) = n i` on the basis vectors is the Fourier monomial
+`mFourier n` of the torus, at the image of `φ`. -/
+theorem exp_two_pi_I_mul_equivFun_symm_eq_mFourier {V : Type*} [AddCommGroup V] [Module ℝ V]
+    (b : Module.Basis d ℝ V) (f : V →ₗ[ℝ] ℝ) {n : d → ℤ} (hn : ∀ i, f (b i) = n i) (φ : d → ℝ) :
+    Complex.exp (2 * π * Complex.I * f (b.equivFun.symm φ)) =
+      mFourier n (fun i ↦ (φ i : UnitAddCircle)) := by
+  rw [TauCeti.UnitAddTorus.mFourier_coe_apply, Module.Basis.equivFun_symm_apply, map_sum]
+  simp only [map_smul, smul_eq_mul, hn]
+  push_cast
+  exact congrArg (fun t ↦ Complex.exp (2 * π * Complex.I * t))
+    (Finset.sum_congr rfl fun i _ ↦ mul_comm _ _)
 
 /-- The lift of the Fourier mode `mFourier n` to `d → ℝ` is smooth. -/
 theorem contDiff_mFourier_coe (n : d → ℤ) :

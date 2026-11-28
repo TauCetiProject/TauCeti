@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 
 /-!
-# Comparing an angle with an arccosine
+# Comparing an angle with an arccosine, and the values of `arccos` at `±1/2`
 
 Mathlib's `Analysis/SpecialFunctions/Trigonometric/Inverse.lean` carries a complete comparison
 family for `Real.arcsin` — `Real.arcsin_le_iff_le_sin`, `Real.le_arcsin_iff_sin_le`,
@@ -38,12 +38,20 @@ sides: they have the shape `arccos x ≤ y ↔ cos y ≤ x` where the `arcsin` f
 * `Real.le_cos_iff_mem_Icc` — the closed companion: for `x ≤ 1` and `t ∈ [-π, π]`,
   `x ≤ cos t ↔ t ∈ [-arccos x, arccos x]`. On one period centred at `0`, the angles at which `cos`
   reaches a threshold thus form the symmetric interval of half-width `arccos x`.
+* `Real.cos_lt_cos_iff_mem_Ioo` — on the period `[0, 2π]`, for an angle `α ∈ [0, π]`,
+  `cos θ < cos α ↔ θ ∈ (α, 2π - α)`.
+* `Real.lt_iff_lt_cos_arccos`, `Real.lt_iff_cos_arccos_lt` — `arccos` clamps its argument to
+  `[-1, 1]`: for `t ∈ [-1, 1]` other than `cos (arccos x)`, comparing `t` with `x` is comparing it
+  with `cos (arccos x)`.
 * `Real.lt_cos_of_mem_Icc` — the unimodality corollary: `cos` has no interior minimum on
   `[-π, π]`. For `-π ≤ a`, `b ≤ π` and `θ ∈ [a, b]`, if `k < cos a` and `k < cos b` then
   `k < cos θ`; nothing is assumed of `k`.
 * `Real.le_pi_div_arccos_iff`, `Real.le_pi_div_arccos_iff'`, `Real.lt_pi_div_arccos_iff`, and
   `Real.pi_div_arccos_lt_iff` — equivalences comparing `π / arccos x` with a threshold `y` via
   comparisons between `x` and `cos (π / y)`.
+* `Real.arccos_one_half` and `Real.arccos_neg_one_half` — the values `arccos (1 / 2) = π / 3` and
+  `arccos (-(1 / 2)) = 2π / 3`, the `Real.arccos` counterparts of Mathlib's
+  `Real.cos_pi_div_three`.
 -/
 
 public section
@@ -143,6 +151,42 @@ theorem le_cos_iff_mem_Icc {x t : ℝ} (hx : x ≤ 1) (ht : t ∈ Icc (-π) π) 
   rw [← cos_abs, ← le_arccos_iff_le_cos hx ⟨abs_nonneg t, abs_le.mpr ⟨ht.1, ht.2⟩⟩,
     abs_le, mem_Icc]
 
+/-- **The cosine is below `cos α` on an arc.** For `α ∈ [0, π]`, the angles of the period
+`[0, 2π]` at which `Real.cos` is below `cos α` are exactly those of `(α, 2π - α)`. -/
+theorem cos_lt_cos_iff_mem_Ioo {α θ : ℝ} (hα : α ∈ Icc 0 π) (hθ : θ ∈ Icc 0 (2 * π)) :
+    cos θ < cos α ↔ θ ∈ Ioo α (2 * π - α) := by
+  obtain ⟨hθ₀, hθ₂⟩ := hθ
+  rcases le_or_gt θ π with h | h
+  · rw [strictAntiOn_cos.lt_iff_gt ⟨hθ₀, h⟩ hα]
+    exact ⟨fun h' => ⟨h', by linarith [hα.2]⟩, fun h' => h'.1⟩
+  · rw [← cos_two_pi_sub θ, strictAntiOn_cos.lt_iff_gt ⟨by linarith, by linarith⟩ hα]
+    exact ⟨fun h' => ⟨by linarith [hα.2], by linarith⟩, fun h' => by linarith [h'.2]⟩
+
+/-- **`arccos` clamps its argument to `[-1, 1]`.** For `t ∈ [-1, 1]` other than
+`cos (arccos x)`, `t < x` if and only if `t < cos (arccos x)`, where `cos (arccos x)` is `x`
+clamped to `[-1, 1]`. -/
+theorem lt_iff_lt_cos_arccos {x t : ℝ} (ht : t ∈ Icc (-1) 1) (hne : t ≠ cos (arccos x)) :
+    t < x ↔ t < cos (arccos x) := by
+  rcases lt_or_ge x (-1) with h | h
+  · rw [arccos_of_le_neg_one h.le, cos_pi] at hne ⊢
+    have := lt_of_le_of_ne ht.1 (Ne.symm hne)
+    constructor <;> intro <;> linarith
+  rcases le_or_gt x 1 with h' | h'
+  · rw [cos_arccos h h']
+  · rw [arccos_of_one_le h'.le, cos_zero] at hne ⊢
+    have := lt_of_le_of_ne ht.2 hne
+    constructor <;> intro <;> linarith
+
+/-- **`arccos` clamps its argument to `[-1, 1]`.** For `t ∈ [-1, 1]` other than
+`cos (arccos x)`, `x < t` if and only if `cos (arccos x) < t`, where `cos (arccos x)` is `x`
+clamped to `[-1, 1]`. -/
+theorem lt_iff_cos_arccos_lt {x t : ℝ} (ht : t ∈ Icc (-1) 1) (hne : t ≠ cos (arccos x)) :
+    x < t ↔ cos (arccos x) < t := by
+  have htx : t ≠ x := by
+    rintro rfl
+    exact hne (cos_arccos ht.1 ht.2).symm
+  rw [← not_le, ← not_le, htx.le_iff_lt, hne.le_iff_lt, lt_iff_lt_cos_arccos ht hne]
+
 /-- **The cosine has no interior minimum on `[-π, π]`.** If `k < cos a` and `k < cos b`, with
 `-π ≤ a` and `b ≤ π`, then `k < cos θ` for every `θ ∈ [a, b]`.
 
@@ -198,5 +242,14 @@ theorem pi_div_arccos_lt_iff {x y : ℝ} (hx : x < 1) (hy : 1 < y) :
   have hy₀ : 0 < y := zero_lt_one.trans hy
   rw [div_lt_iff₀ (arccos_pos.2 hx), ← div_lt_iff₀' hy₀,
     lt_arccos_iff_lt_cos' ⟨(div_pos pi_pos hy₀).le, div_lt_self pi_pos hy⟩]
+
+/-- `arccos (1 / 2) = π / 3`. -/
+theorem arccos_one_half : arccos (1 / 2) = π / 3 := by
+  rw [← cos_pi_div_three, arccos_cos (by positivity) (by linarith [pi_pos])]
+
+/-- `arccos (-(1 / 2)) = 2π / 3`. -/
+theorem arccos_neg_one_half : arccos (-(1 / 2)) = 2 * π / 3 := by
+  rw [arccos_neg, arccos_one_half]
+  ring
 
 end Real

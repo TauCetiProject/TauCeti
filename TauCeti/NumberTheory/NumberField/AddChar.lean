@@ -10,6 +10,8 @@ public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import Mathlib.RingTheory.DedekindDomain.Different
 public import Mathlib.NumberTheory.NumberField.Basic
 
+import Mathlib.NumberTheory.NumberField.Norm
+
 /-!
 # Trace characters on residue rings of number fields
 
@@ -17,7 +19,9 @@ Let `I` be a nonzero ideal of `𝓞 K`. The phase `exp (2πi Tr(xy))`, for `x �
 and `y ∈ K`, depends only on `x mod I` precisely when `y` belongs to the trace dual
 `I⁻¹ 𝔡⁻¹`. This file constructs that additive character as `Ideal.traceAddChar`,
 using Mathlib's `Real.fourierChar` and `FractionalIdeal.dual`. The construction also
-works for the zero ideal, whose trace dual in Mathlib is zero.
+works for the zero ideal, whose trace dual in Mathlib is zero. The underlying trace character
+`TauCeti.numberFieldTraceChar K` of `K` is trivial on `𝓞 K`, whose traces are integers
+(`TauCeti.numberFieldTraceChar_algebraMap`).
 
 The evaluation lemma `Ideal.traceAddChar_mk` permits any representative of a residue
 class. The character is trivial exactly when its parameter lies in the inverse different,
@@ -70,6 +74,13 @@ theorem numberFieldTraceChar_apply_eq_one_iff (x : K) :
     exact_mod_cast h.symm
   · rintro ⟨n, hn⟩
     exact ⟨n, by rw [← hn, eq_intCast, Rat.cast_intCast, mul_comm]⟩
+
+/-- The trace character is trivial on the algebraic integers, whose traces are integers. -/
+@[simp]
+theorem numberFieldTraceChar_algebraMap (r : 𝓞 K) :
+    numberFieldTraceChar K (algebraMap (𝓞 K) K r) = 1 :=
+  (numberFieldTraceChar_apply_eq_one_iff K _).mpr
+    ⟨Algebra.trace ℤ (𝓞 K) r, by simpa using Algebra.coe_trace_int r⟩
 
 end TauCeti
 

@@ -14,7 +14,8 @@ public import Mathlib.Algebra.MonoidAlgebra.Basic
 
 This file defines the element of a group algebra obtained by summing the members of a conjugacy
 class.  It proves that every class sum is central, the first input to the class-algebra side of
-finite-group character theory.
+finite-group character theory.  Dually, `TauCeti.classCoeff k C` is the `k`-linear functional
+on `k[G]` summing the coefficients over the members of `C`.
 -/
 
 public section
@@ -94,6 +95,15 @@ theorem classSum_commutes {k : Type*} [Semiring k] (C : ConjClasses G) (g : G) :
 
 end
 
+/-- The conjugacy class of a central element `g` is `{g}`, so its class sum is `g`. -/
+theorem classSum_mk_of_mem_center (k : Type*) [Semiring k] {g : G} (hg : g ∈ Subgroup.center G) :
+    classSum k (ConjClasses.mk g) = MonoidAlgebra.of k G g := by
+  ext x
+  simp only [classSum_coeff, ConjClasses.mk_eq_mk_iff_isConj, MonoidAlgebra.of_apply,
+    MonoidAlgebra.coeff_single, Finsupp.single_apply]
+  exact if_congr ⟨fun h => (h.eq_of_right_mem_center hg).symm, fun h => h ▸ IsConj.refl x⟩
+    rfl rfl
+
 /-- The class sum of the conjugacy class of `1` is the unit of the group algebra: that class is the
 singleton `{1}` (`ConjClasses.carrier_mk_one`). -/
 @[simp]
@@ -114,5 +124,36 @@ theorem classSum_mem_center (k : Type*) [CommSemiring k] (C : ConjClasses G) :
     rw [mul_add, add_mul, hx, hy]
   | smul r x hx =>
     rw [Algebra.mul_smul_comm, Algebra.smul_mul_assoc, hx]
+
+end TauCeti
+
+/-! ### Coefficient sums over a conjugacy class -/
+
+namespace TauCeti
+
+variable {G : Type*} [Group G] [Fintype G]
+
+open Classical in
+/-- The sum of the coefficients of an element of `k[G]` over a conjugacy class. -/
+noncomputable def classCoeff (k : Type*) [CommSemiring k] (C : ConjClasses G) :
+    MonoidAlgebra k G →ₗ[k] k where
+  toFun x := ∑ g ∈ Finset.univ.filter (fun g ↦ ConjClasses.mk g = C), x.coeff g
+  map_add' x y := by simp [MonoidAlgebra.coeff_add, Finset.sum_add_distrib]
+  map_smul' r x := by simp [MonoidAlgebra.coeff_smul, Finset.mul_sum]
+
+open Classical in
+/-- `classCoeff k C x` is the sum of the coefficients of `x` at the members of `C`. -/
+theorem classCoeff_apply {k : Type*} [CommSemiring k] (C : ConjClasses G)
+    (x : MonoidAlgebra k G) :
+    classCoeff k C x = ∑ g ∈ Finset.univ.filter (fun g ↦ ConjClasses.mk g = C), x.coeff g :=
+  (rfl)
+
+open Classical in
+/-- The coefficient sum over `C` of `single h r` is `r` if `h ∈ C`, and `0` otherwise. -/
+@[simp]
+theorem classCoeff_single {k : Type*} [CommSemiring k] (C : ConjClasses G) (h : G) (r : k) :
+    classCoeff k C (MonoidAlgebra.single h r) = if ConjClasses.mk h = C then r else 0 := by
+  rw [classCoeff_apply]
+  simp [MonoidAlgebra.coeff_single, Finsupp.single_apply]
 
 end TauCeti

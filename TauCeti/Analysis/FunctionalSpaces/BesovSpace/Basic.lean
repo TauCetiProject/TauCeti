@@ -12,7 +12,9 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.DyadicSymbol
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Reindex
+import TauCeti.Analysis.Normed.Operator.OfTendsto
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecificLimits.DyadicSum
 
 /-!
 # Inhomogeneous Besov spaces
@@ -100,6 +102,9 @@ both its tempered distribution and this `Lᵖ` data.
   `2^{ks} ‖∑_{k - L ≤ j < k + L} gⱼ‖ ≤ max C 0 2^{|s| L} ∑_{k - L ≤ j < k + L} 2^{js} ‖xⱼ‖` when
   `‖gⱼ‖ ≤ C ‖xⱼ‖`, by which a block that is a sum of boundedly many pieces of nearby index is
   controlled by the weighted pieces.
+* `Memℓp.two_rpow_mul_mono` and `Memℓp.two_rpow_mul_of_lt`: for `a ≥ 0`, `(2^{js} aⱼ)ⱼ ∈ ℓ^q`
+  implies `(2^{js'} aⱼ)ⱼ ∈ ℓ^{q'}` when `s' ≤ s` and `q ≤ q'`, or when `s' < s` and `q' ≠ 0`; the
+  monotonicity of the Besov scale, here and on the torus, is this statement for `aⱼ = ‖Δⱼ u‖_p`.
 * `TauCeti.two_rpow_mul_norm_tsum_le`: the weighted estimate
   `2^{ks} ‖∑ⱼ gⱼ‖ ≤ K 2^{|s| N} ∑_{k - N ≤ j < k + N} aⱼ + K ∑_{d ≥ 0} (2^{-s})^d a_{d + k}` when
   `gⱼ = 0` for `j + N ≤ k`, `‖gⱼ‖ ≤ K xⱼ` and `2^{js} xⱼ ≤ aⱼ`, by which a block meeting all pieces
@@ -139,6 +144,32 @@ theorem TauCeti.two_rpow_mul_norm_sum_Ico_le {G H : Type*} [SeminormedAddCommGro
         · exact Real.rpow_mul_natCast_le_of_mem_Ico' one_le_two s hj
         · exact (hg j).trans (by gcongr; exact le_max_left C 0)
     _ = _ := by ring
+
+/-- **Monotonicity of dyadically weighted sequences.** If `a ≥ 0` and `(2^{js} aⱼ)ⱼ ∈ ℓ^q`, then
+`(2^{js'} aⱼ)ⱼ ∈ ℓ^{q'}` for `s' ≤ s` and `q ≤ q'`. -/
+theorem Memℓp.two_rpow_mul_mono {a : ℕ → ℝ} {s s' : ℝ} {q q' : ℝ≥0∞}
+    (h : Memℓp (fun j : ℕ ↦ (2 : ℝ) ^ (s * j) * a j) q) (ha : ∀ j, 0 ≤ a j) (hs : s' ≤ s)
+    (hq : q ≤ q') : Memℓp (fun j : ℕ ↦ (2 : ℝ) ^ (s' * j) * a j) q' := by
+  refine (h.of_exponent_ge hq).mono fun j ↦ ?_
+  rw [Real.norm_of_nonneg (mul_nonneg (by positivity) (ha j))]
+  gcongr
+  · exact ha j
+  · exact one_le_two
+
+/-- **Strict monotonicity of dyadically weighted sequences.** If `a ≥ 0` and
+`(2^{js} aⱼ)ⱼ ∈ ℓ^q`, then `(2^{js'} aⱼ)ⱼ ∈ ℓ^{q'}` for `s' < s`, every `q` and every `q' ≠ 0`: the
+weighted sequence for `s'` decays geometrically. -/
+theorem Memℓp.two_rpow_mul_of_lt {a : ℕ → ℝ} {s s' : ℝ} {q q' : ℝ≥0∞}
+    (h : Memℓp (fun j : ℕ ↦ (2 : ℝ) ^ (s * j) * a j) q) (ha : ∀ j, 0 ≤ a j) (hs : s' < s)
+    (hq' : q' ≠ 0) : Memℓp (fun j : ℕ ↦ (2 : ℝ) ^ (s' * j) * a j) q' := by
+  obtain ⟨C, hC⟩ := memℓp_infty_iff.1 (h.of_exponent_ge le_top)
+  refine Memℓp.of_norm_le_geometric (C := C) (by positivity)
+    (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs)) (fun j ↦ ?_) hq'
+  have hj : ‖(2 : ℝ) ^ (s * j) * a j‖ ≤ C := hC ⟨j, rfl⟩
+  rw [Real.norm_of_nonneg (mul_nonneg (by positivity) (ha j))] at hj
+  rw [Real.norm_of_nonneg (mul_nonneg (by positivity) (ha j)),
+    ← Real.rpow_sub_pow_mul_rpow_mul_natCast two_pos s' s j, mul_assoc, mul_comm C]
+  exact mul_le_mul_of_nonneg_left hj (by positivity)
 
 /-- **Weighted tail sums.** Let `gⱼ` be vectors that vanish for `j + N ≤ k`, with `‖gⱼ‖ ≤ K xⱼ`
 and `2^{js} xⱼ ≤ aⱼ`. Splitting `∑ⱼ gⱼ` at `j = k`, the contributing terms below `k` lie within
@@ -288,29 +319,14 @@ theorem MemBesov.smul_of_tower {R : Type*} [SMul R ℂ] [SMul R 𝓢'(E, F)]
 theorem MemBesov.mono {u : 𝓢'(E, F)} {s' : ℝ} {q' : ℝ≥0∞} (hu : u.MemBesov φ s p q)
     (hs : s' ≤ s) (hq : q ≤ q') : u.MemBesov φ s' p q' := by
   obtain ⟨f, hf, hmem⟩ := memBesov_iff.1 hu
-  refine memBesov_iff.2 ⟨f, hf, (hmem.of_exponent_ge hq).mono fun j ↦ ?_⟩
-  rw [Real.norm_of_nonneg (by positivity)]
-  gcongr
-  exact one_le_two
-
-/-- Lowering the order from `s` to `s'` multiplies the `j`-th weight `2^{js}` by
-`(2^{s' - s})^j`. -/
-private theorem two_rpow_mul_natCast_eq (s s' : ℝ) (j : ℕ) :
-    (2 : ℝ) ^ (s' * j) = (2 ^ (s' - s)) ^ j * 2 ^ (s * j) := by
-  rw [← Real.rpow_mul_natCast zero_le_two, ← Real.rpow_add two_pos, ← add_mul, sub_add_cancel]
+  exact memBesov_iff.2 ⟨f, hf, hmem.two_rpow_mul_mono (fun _ ↦ norm_nonneg _) hs hq⟩
 
 /-- **Strict monotonicity of the Besov scale.** `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' < s`, every
 `q` and every `q' ≠ 0`: the weighted blocks for `s'` decay geometrically. -/
 theorem MemBesov.of_lt {u : 𝓢'(E, F)} {s' : ℝ} {q' : ℝ≥0∞} (hu : u.MemBesov φ s p q)
     (hs : s' < s) (hq' : q' ≠ 0) : u.MemBesov φ s' p q' := by
   obtain ⟨f, hf, hmem⟩ := memBesov_iff.1 hu
-  obtain ⟨C, hC⟩ := memℓp_infty_iff.1 (hmem.of_exponent_ge le_top)
-  refine memBesov_iff.2 ⟨f, hf, Memℓp.of_norm_le_geometric (C := C) (by positivity)
-    (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs)) (fun j ↦ ?_) hq'⟩
-  have hj : ‖(2 : ℝ) ^ (s * j) * ‖f j‖‖ ≤ C := hC ⟨j, rfl⟩
-  rw [Real.norm_of_nonneg (by positivity)] at hj ⊢
-  rw [two_rpow_mul_natCast_eq s s' j, mul_assoc, mul_comm C]
-  exact mul_le_mul_of_nonneg_left hj (by positivity)
+  exact memBesov_iff.2 ⟨f, hf, hmem.two_rpow_mul_of_lt (fun _ ↦ norm_nonneg _) hs hq'⟩
 
 theorem MemBesov.neg {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) : (-u).MemBesov φ s p q := by
   simpa using hu.smul (-1)
@@ -497,6 +513,12 @@ instance : Module ℂ (BesovSpace F φ s p q) :=
   fast_instance% Function.Injective.module ℂ
     (⟨⟨toDistr, toDistr_zero⟩, toDistr_add⟩ : BesovSpace F φ s p q →+ 𝓢'(E, F))
     (fun _ _ ↦ ext) toDistr_smul
+
+/-- The real action on `B^s_{p,q}`, obtained from its complex structure, acts on the underlying
+tempered distribution. -/
+@[simp]
+theorem toDistr_real_smul (a : ℝ) (u : BesovSpace F φ s p q) : (a • u).toDistr = a • u.toDistr :=
+  (rfl)
 
 variable (F φ s p q) in
 /-- The weighted Littlewood–Paley blocks `u ↦ (2^{js} Δⱼ u)ⱼ`, as an injective linear map into
@@ -770,10 +792,11 @@ section Complete
 
 The Bessel potential `J^{s-1}` maps `B^s_{p,q}` boundedly into `Lᵖ`. On the `j`-th block it acts
 with norm `O(2^{j(s-1)})`, by
-`TemperedDistribution.exists_besselPotential_compL_littlewoodPaleyBlock_eq`, so the series
-`∑ⱼ J^{s-1} Δⱼ u` converges absolutely in `Lᵖ`. Hence `u = J^{1-s} (J^{s-1} u)` depends
-continuously on `u`, and the limit of a Cauchy sequence `uₙ` in `B^s_{p,q}` is `J^{1-s}` of the
-`Lᵖ` limit of the `J^{s-1} uₙ`.
+`TemperedDistribution.exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le`, so the series
+`∑ⱼ J^{s-1} Δⱼ u` converges absolutely in `Lᵖ`
+(`TauCeti.exists_hasSum_and_norm_le_of_two_rpow_mul_le`). Hence `u = J^{1-s} (J^{s-1} u)`
+depends continuously on `u`, and the limit of a Cauchy sequence `uₙ` in `B^s_{p,q}` is `J^{1-s}`
+of the `Lᵖ` limit of the `J^{s-1} uₙ`.
 -/
 
 open Filter Topology
@@ -786,64 +809,41 @@ series `∑ⱼ J^{s-1} Δⱼ u` converges absolutely in `Lᵖ`. -/
 private theorem exists_besselPotential_toDistr_eq_and_norm_le :
     ∃ C : ℝ, ∀ u : BesovSpace F φ s p q, ∃ g : Lp F p (volume : Measure E),
       besselPotential E F (s - 1) u.toDistr = g ∧ ‖g‖ ≤ C * ‖u‖ := by
-  obtain ⟨C, hC⟩ := exists_besselPotential_compL_littlewoodPaleyBlock_eq (F := F) φ (s - 1)
-  choose σ hσ hσC using hC
-  refine ⟨2 * max C 0, fun u ↦ ?_⟩
-  -- `J^{s-1} Δⱼ u = T_{σⱼ} Δⱼ u` is the `Lᵖ` function `h j`.
-  choose h hh hhn using fun j ↦ exists_fourierMultiplierCLM_eq_and_norm_le (σ j) (u.block j)
-  have hbound (j : ℕ) : ‖h j‖ ≤ max C 0 * ‖u‖ * (1 / 2) ^ j := by
-    have h2 : ((2 : ℝ) ^ j) ^ (s - 1) = 2 ^ (s * j) * (1 / 2) ^ j := by
-      rw [Real.rpow_sub_one (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul zero_le_two]
-      field_simp
-      simp
-    calc ‖h j‖ ≤ (∫ x, ‖𝓕⁻ (σ j : E → ℂ) x‖) * ‖u.block j‖ := hhn j
-      _ ≤ max C 0 * ((2 : ℝ) ^ j) ^ (s - 1) * ‖u.block j‖ := by
-        gcongr
-        exact (hσC j).trans (by gcongr; exact le_max_left _ _)
-      _ = max C 0 * (1 / 2) ^ j * (2 ^ (s * j) * ‖u.block j‖) := by rw [h2]; ring
-      _ ≤ max C 0 * (1 / 2) ^ j * ‖u‖ := by gcongr; exact rpow_mul_norm_block_le u j
-      _ = _ := by ring
-  have hsum : Summable fun j ↦ ‖h j‖ :=
-    (summable_geometric_two.mul_left (max C 0 * ‖u‖)).of_nonneg_of_le (fun _ ↦ norm_nonneg _)
-      hbound
-  refine ⟨∑' j, h j, ?_, ?_⟩
-  · -- Both sides are limits of `J^{s-1} ∑_{j < N} Δⱼ u = ∑_{j < N} h j` in `𝓢'(E, F)`.
-    refine tendsto_nhds_unique (((besselPotential E F (s - 1)).continuous.tendsto _).comp
-      (tendsto_sum_littlewoodPaleyBlock φ u.toDistr)) ?_
-    have hlim := (hsum.of_norm.hasSum.map (Lp.toTemperedDistributionCLM F volume p)
-      (Lp.toTemperedDistributionCLM F volume p).continuous).tendsto_sum_nat
-    convert hlim using 2 with N
-    · simp only [Function.comp_apply, map_sum]
-      refine Finset.sum_congr rfl fun j _ ↦ ?_
-      rw [Lp.toTemperedDistributionCLM_apply, ← hh, ← ContinuousLinearMap.comp_apply, hσ,
-        ContinuousLinearMap.comp_apply, coe_block]
-    · rw [Lp.toTemperedDistributionCLM_apply]
-  · calc ‖∑' j, h j‖ ≤ ∑' j, ‖h j‖ := norm_tsum_le_tsum_norm hsum
-      _ ≤ ∑' j : ℕ, max C 0 * ‖u‖ * (1 / 2) ^ j :=
-        hsum.tsum_le_tsum hbound (summable_geometric_two.mul_left _)
-      _ = 2 * max C 0 * ‖u‖ := by rw [tsum_mul_left, tsum_geometric_two]; ring
+  obtain ⟨C, hC0, hJ⟩ :=
+    exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ (s - 1)
+  refine ⟨2 * C, fun u ↦ ?_⟩
+  -- `J^{s-1} Δⱼ u` is the `Lᵖ` function `h j`, and `2^{js} ‖Δⱼ u‖_p ≤ ‖u‖`.
+  choose h hh hhn using fun j : ℕ ↦ hJ j u.toDistr (u.block j) (coe_block u j).symm
+  obtain ⟨w, hw, hwn⟩ := exists_hasSum_and_norm_le_of_two_rpow_mul_le (t := fun j ↦ (j : ℝ)) hC0
+    (fun _ ↦ le_rfl) (rpow_mul_norm_block_le u) hhn
+  refine ⟨w, ?_, hwn⟩
+  -- Both sides are limits of `J^{s-1} ∑_{j < N} Δⱼ u = ∑_{j < N} h j` in `𝓢'(E, F)`.
+  refine tendsto_nhds_unique (((besselPotential E F (s - 1)).continuous.tendsto _).comp
+    (tendsto_sum_littlewoodPaleyBlock φ u.toDistr)) ?_
+  have hlim := (hw.map (Lp.toTemperedDistributionCLM F volume p)
+    (Lp.toTemperedDistributionCLM F volume p).continuous).tendsto_sum_nat
+  simpa only [Function.comp_def, map_sum, Lp.toTemperedDistributionCLM_apply, ← hh] using hlim
 
 variable (F φ s p q) in
 /-- The Bessel potential `u ↦ J^{s-1} u` from `B^s_{p,q}` to `Lᵖ`, an auxiliary continuous linear
 map: `B^s_{p,q}` lies in the tempered distributions as `J^{1-s}` of its image. -/
 private def besselPotentialLp : BesovSpace F φ s p q →L[ℂ] Lp F p (volume : Measure E) :=
-  have hC := (exists_besselPotential_toDistr_eq_and_norm_le (F := F) (φ := φ) (s := s) (p := p)
-    (q := q)).choose_spec
-  have hinj : Function.Injective (Lp.toTemperedDistributionCLM F volume p) :=
-    LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot
-  have key (u : BesovSpace F φ s p q) : Lp.toTemperedDistributionCLM F volume p (hC u).choose =
-      besselPotential E F (s - 1) u.toDistr := (hC u).choose_spec.1.symm
-  LinearMap.mkContinuous
-    { toFun u := (hC u).choose
-      map_add' u v := hinj <| (key (u + v)).trans <| by simp only [map_add, key, toDistr_add]
-      map_smul' c u := hinj <| (key (c • u)).trans <| by
-        simp only [map_smul, key, toDistr_smul, RingHom.id_apply] }
-    _ fun u ↦ (hC u).choose_spec.2
+  .ofTendstoOfInjective (Lp.toTemperedDistributionCLM F volume p)
+    (LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot) (l := (⊤ : Filter Unit))
+    (fun _ ↦ (besselPotential E F (s - 1) : 𝓢'(E, F) →ₗ[ℂ] 𝓢'(E, F)) ∘ₗ
+      { toFun := toDistr, map_add' := toDistr_add, map_smul' := toDistr_smul })
+    fun u ↦ (exists_besselPotential_toDistr_eq_and_norm_le.choose_spec u).imp fun _ hg ↦
+      ⟨tendsto_const_nhds_iff.2 hg.1, hg.2⟩
 
 /-- `besselPotentialLp` computes the Bessel potential `J^{s-1}`. -/
 private theorem besselPotential_toDistr_eq (u : BesovSpace F φ s p q) :
-    besselPotential E F (s - 1) u.toDistr = besselPotentialLp F φ s p q u :=
-  (exists_besselPotential_toDistr_eq_and_norm_le.choose_spec u).choose_spec.1
+    besselPotential E F (s - 1) u.toDistr = besselPotentialLp F φ s p q u := by
+  -- `besselPotentialLp` is built from the constant family `J^{s-1} u` over the filter `⊤` on
+  -- `Unit`, so its limit characterisation is the equation itself.
+  rw [← Lp.toTemperedDistributionCLM_apply, besselPotentialLp]
+  refine tendsto_const_nhds_iff.1 <|
+    Tendsto.congr (fun _ ↦ ?_) (ContinuousLinearMap.tendsto_ofTendstoOfInjective _ _ _ _ u)
+  simp only [LinearMap.comp_apply, LinearMap.coe_mk, AddHom.coe_mk, ContinuousLinearMap.coe_coe]
 
 /-- The tempered distribution of `u` is `J^{1-s}` applied to the `Lᵖ` function `J^{s-1} u`. -/
 private theorem toDistr_eq_besselPotential (u : BesovSpace F φ s p q) :
@@ -900,15 +900,10 @@ instance : CompleteSpace (BesovSpace F φ s p q) := by
       Lp.toTemperedDistributionCLM_apply]
     exact (toDistr_eq_besselPotential (u n)).symm
   have hwv (j : ℕ) : (w j : 𝓢'(E, F)) = (((2 : ℝ) ^ (s * j) : ℝ) : ℂ) •
-      littlewoodPaleyBlock F φ j (besselPotential E F (1 - s) g) := by
-    refine tendsto_nhds_unique ?_ ((((((2 : ℝ) ^ (s * j) : ℝ) : ℂ) •
-      littlewoodPaleyBlock F φ j).continuous.tendsto _).comp hv)
-    have := ((Lp.toTemperedDistributionCLM F volume p).continuous.tendsto _).comp
-      ((tendsto_pi_nhds.1 ((lp.uniformContinuous_coe.continuous.tendsto w).comp hw)) j)
-    refine this.congr fun n ↦ ?_
-    simp only [Function.comp_apply, Lp.toTemperedDistributionCLM_apply,
-      FunLike.coe_smul, Pi.smul_apply]
-    exact (u n).coe_weightedBlocks_apply j
+      littlewoodPaleyBlock F φ j (besselPotential E F (1 - s) g) :=
+    lp.map_apply_eq_of_tendsto hw hv (Lp.toTemperedDistributionCLM F volume p).continuous
+      ((((2 : ℝ) ^ (s * j) : ℝ) : ℂ) • littlewoodPaleyBlock F φ j).continuous
+      fun n ↦ (u n).coe_weightedBlocks_apply j
   refine ⟨⟨_, w, hwv⟩, tendsto_iff_norm_sub_tendsto_zero.2 ?_⟩
   refine (tendsto_iff_norm_sub_tendsto_zero.1 hw).congr fun n ↦ ?_
   rw [← norm_weightedBlocks, weightedBlocks_sub, Function.comp_apply]
@@ -925,17 +920,10 @@ private theorem norm_le_of_toDistr_eq_of_le (hs : s' ≤ s) (hq : q ≤ q')
     {u : BesovSpace F φ s p q} {v : BesovSpace F φ s' p q'} (h : u.toDistr = v.toDistr) :
     ‖v‖ ≤ ‖u‖ := by
   rw [← norm_weightedBlocks, ← norm_weightedBlocks]
-  set w : lp (fun _ : ℕ ↦ Lp F p (volume : Measure E)) q' :=
-    ⟨u.weightedBlocks, (lp.memℓp u.weightedBlocks).of_exponent_ge hq⟩
-  -- The entries of the anonymous `lp` element `w` are those of `u.weightedBlocks` by definition:
-  -- `lp` coerces through `Subtype.val` and has no lemma evaluating an anonymous constructor.
-  have hw : ∀ j, w j = u.weightedBlocks j := fun _ ↦ rfl
-  calc _ ≤ ‖w‖ := lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ by
-          rw [hw j, norm_weightedBlocks_apply, norm_weightedBlocks_apply,
-            block_eq_of_toDistr_eq h j]
-          gcongr
-          exact one_le_two
-    _ ≤ _ := lp.norm_le_norm_of_exponent_le (zero_lt_one.trans_le Fact.out).ne' hq hw
+  refine lp.norm_le_norm_of_exponent_le (zero_lt_one.trans_le Fact.out).ne' hq fun j ↦ ?_
+  rw [norm_weightedBlocks_apply, norm_weightedBlocks_apply, block_eq_of_toDistr_eq h j]
+  gcongr
+  exact one_le_two
 
 /-- For `s' < s`, the `B^{s'}_{p,q'}` norm of a distribution is at most `(1 - 2^{s' - s})⁻¹` times
 its `B^s_{p,q}` norm: the weighted blocks for `s'` decay geometrically. -/
@@ -945,8 +933,8 @@ private theorem norm_le_of_toDistr_eq_of_lt (hs : s' < s) {u : BesovSpace F φ s
   rw [← norm_weightedBlocks, mul_comm]
   refine lp.norm_le_of_norm_le_geometric (by positivity)
     (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs)) fun j ↦ ?_
-  rw [norm_weightedBlocks_apply, ← block_eq_of_toDistr_eq h, two_rpow_mul_natCast_eq s s' j,
-    mul_assoc, mul_comm ‖u‖]
+  rw [norm_weightedBlocks_apply, ← block_eq_of_toDistr_eq h,
+    ← Real.rpow_sub_pow_mul_rpow_mul_natCast two_pos s' s j, mul_assoc, mul_comm ‖u‖]
   exact mul_le_mul_of_nonneg_left (rpow_mul_norm_block_le u j) (by positivity)
 
 variable (F φ p) in

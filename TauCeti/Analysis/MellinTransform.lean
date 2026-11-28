@@ -28,7 +28,9 @@ for `Γ(z)` (`Complex.GammaIntegral_convergent`), and the scaling `t ↦ c t` is
 `TauCeti.integral_multHaar_cpow_mul_exp_neg_mul`) and their `Γ_ℝ` specialization for
 `t ^ (z / 2) e^(-π a² t)` (`TauCeti.integrable_multHaar_cpow_div_two_mul_exp_neg_pi_mul_sq`,
 `TauCeti.integral_multHaar_cpow_div_two_mul_exp_neg_pi_mul_sq`), which are the one-place gamma
-integrals produced by Gaussians in Hecke's integral representations of zeta and L-functions.
+integrals produced by Gaussians in Hecke's integral representations of zeta and L-functions. The
+substitution `u = t²` gives the Gaussian form `∫ t ^ w e^(-b t²) dt / t = Γ(w / 2) b ^ (-w / 2) / 2`
+(`TauCeti.integral_multHaar_cpow_mul_exp_neg_mul_sq`).
 
 `TauCeti.hasMellin_max_one_sub_zero` computes the Mellin transform of the continuous cutoff
 `max (1 - t) 0`, using the difference of Mathlib's interval-power transforms. Its inverse
@@ -118,6 +120,26 @@ theorem integral_multHaar_cpow_div_two_mul_exp_neg_pi_mul_sq (a : ℝ) {z : ℂ}
     neg_div, Nat.cast_ofNat, mul_neg, mul_div_cancel₀ _ two_ne_zero]
   ring
 
+/-- `∫ t ^ w e^(-b t²) dt / t = Γ(w / 2) b ^ (-w / 2) / 2` for `b > 0` and `re w > 0`: the
+substitution `u = t²` halves `dt / t`. -/
+theorem integral_multHaar_cpow_mul_exp_neg_mul_sq {b : ℝ} (hb : 0 < b) {w : ℂ} (hw : 0 < w.re) :
+    ∫ t, (t : ℂ) ^ w * (Real.exp (-(b * t ^ 2)) : ℂ) ∂multHaar =
+      (1 / 2 : ℂ) * ((b : ℂ) ^ (-(w / 2)) * Gamma (w / 2)) := by
+  have hw2 : 0 < (w / 2).re := by rw [div_ofNat_re]; exact half_pos hw
+  set h : ℝ → ℂ := fun u ↦ (u : ℂ) ^ (w / 2) * (Real.exp (-(b * u)) : ℂ)
+  have hmap := map_multHaar_rpow (γ := 2) two_ne_zero
+  have hh : AEStronglyMeasurable h (multHaar.map (· ^ (2 : ℝ))) :=
+    ((Complex.measurable_ofReal.pow_const _).mul
+      (Complex.measurable_ofReal.comp (Real.measurable_exp.comp
+        (measurable_const_mul b).neg))).aestronglyMeasurable
+  have key := integral_map (μ := multHaar) (measurable_id'.pow_const (2 : ℝ)).aemeasurable hh
+  rw [hmap, integral_smul_measure, integral_multHaar_cpow_mul_exp_neg_mul hb.le hw2] at key
+  rw [← integral_congr_ae (ae_pos_multHaar.mono fun t (ht : 0 < t) ↦ ?_)]
+  · rw [← key]
+    norm_num
+  · simp only [h, Real.rpow_two]
+    rw [ofReal_pow, ofReal_pow_cpow ht.le, Nat.cast_ofNat, mul_div_cancel₀ _ two_ne_zero]
+
 end TauCeti
 
 namespace HasMellin
@@ -131,5 +153,15 @@ theorem comp_mul_right {f : ℝ → E} {s : ℂ} {m : E} (h : HasMellin f s m)
   constructor
   · simpa only [mul_comm] using (MellinConvergent.comp_mul_left (f := f) (s := s) ha).mpr h.1
   · rw [mellin_comp_mul_right f s ha, h.2]
+
+/-- Replacing `f(t)` by `c • f(t / a)` for positive `a` preserves Mellin convergence
+and multiplies the transform at `s` by `c * a^s`. -/
+theorem const_smul_comp_div {f : ℝ → E} {s : ℂ} {m : E} (h : HasMellin f s m)
+    (c : ℂ) {a : ℝ} (ha : 0 < a) :
+    HasMellin (fun t ↦ c • f (t / a)) s ((c * (a : ℂ) ^ s) • m) := by
+  have hd := h.comp_mul_right (inv_pos.mpr ha)
+  have hc := hasMellin_const_smul hd.1 c
+  rw [hd.2, ofReal_inv, inv_cpow_ofReal_nonneg ha.le, cpow_neg, inv_inv, ← mul_smul] at hc
+  simpa only [div_eq_mul_inv] using hc
 
 end HasMellin

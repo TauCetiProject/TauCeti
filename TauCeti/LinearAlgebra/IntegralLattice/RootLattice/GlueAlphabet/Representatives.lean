@@ -827,7 +827,7 @@ theorem form_glueWordRepresentativeVector_self (hv : ∀ i, (t i).Valid)
     (w : ∀ i, (t i).glueAlphabet (ht i)) :
     (pi fun i ↦ (t i).rootLattice (ht i)).form (glueWordRepresentativeVector t ht w)
         (glueWordRepresentativeVector t ht w) = ∑ i, (t i).glueMinimum (ht i) (w i) := by
-  rw [pi_form, piForm_apply]
+  rw [pi_form, LinearMap.BilinForm.pi_apply]
   exact Finset.sum_congr rfl fun i _ ↦ (t i).form_glueRepresentativeVector_self (hv i) (ht i) (w i)
 
 /-- **Minimality of `glueWordRepresentative`**: no dual vector in the coset `glueWordIsometry t ht

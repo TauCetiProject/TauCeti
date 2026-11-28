@@ -69,9 +69,7 @@ theorem exists_mem_withBoundaryIn_toSection_eq_iff_of_unitClosedDisc (hp : 2 < p
       ∀ ζ : 𝕔𝔻, ‖(ζ : ℂ)‖ = 1 → f ζ ∈ L ζ := by
   have h := exists_mem_withBoundaryIn_toSection_eq_iff (A := A) (hp := hp) (L := L)
     (s := trivialSection hf)
-  refine h.trans (forall_congr' fun ζ ↦ ?_)
-  rw [← SetLike.mem_coe, ← Set.mem_compl_iff, UnitClosedDisc.compl_borderedInterior]
-  rfl
+  exact h.trans (forall_congr' fun ζ ↦ imp_congr_left UnitClosedDisc.notMem_borderedInterior_iff)
 
 /-- The real subspace `ℝⁿ` of `ℂⁿ`: the vectors all of whose coordinates are real. -/
 private theorem mem_ker_im_iff {v : Fin n → ℂ} :

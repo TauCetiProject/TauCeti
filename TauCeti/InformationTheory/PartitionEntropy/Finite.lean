@@ -1,0 +1,101 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.InformationTheory.LabelEntropy
+public import TauCeti.InformationTheory.PartitionEntropy
+import Mathlib.MeasureTheory.Measure.Real
+import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
+
+/-!
+# Partition entropy of labels with finitely many values
+
+On a label with finitely many values, the extended partition entropies
+`TauCeti.countablePartitionEntropy` and `TauCeti.conditionalPartitionEntropy` are the real
+finite-label entropies `TauCeti.labelEntropy` and `TauCeti.condLabelEntropy`, mapped into `ℝ≥0∞`.
+
+## Main results
+
+* `TauCeti.countablePartitionEntropy_eq_ofReal_labelEntropy`: under a probability (or zero)
+  measure, `countablePartitionEntropy μ a = ENNReal.ofReal (labelEntropy μ a)`.
+* `TauCeti.conditionalPartitionEntropy_eq_ofReal_condLabelEntropy`: for every measure,
+  `conditionalPartitionEntropy μ a b = ENNReal.ofReal (condLabelEntropy μ a b)`.
+* `TauCeti.conditionalPartitionEntropy_ne_top`: for every measure, the conditional partition
+  entropy is finite on finite alphabets, like `TauCeti.countablePartitionEntropy_ne_top`.
+* `TauCeti.toReal_countablePartitionEntropy` (under a probability or zero measure) and
+  `TauCeti.toReal_conditionalPartitionEntropy` (for every measure): their real parts are the
+  finite-label entropies.
+* `TauCeti.countablePartitionEntropy_le_ofReal_log_card`: under a probability (or zero) measure, a
+  measurable label `a` with `a x ∈ s` for every `x`, for a finite set `s`, has
+  `H(a) ≤ log (card s)`.
+-/
+
+public section
+
+open MeasureTheory Real
+open scoped ENNReal
+
+namespace TauCeti
+
+variable {X ι κ : Type*} {mX : MeasurableSpace X} {μ : Measure X} [Fintype ι] [Fintype κ]
+
+/-- On a finite alphabet, under a probability (or zero) measure, the partition entropy of a label
+is its finite-label entropy. -/
+theorem countablePartitionEntropy_eq_ofReal_labelEntropy [IsZeroOrProbabilityMeasure μ]
+    (a : X → ι) : countablePartitionEntropy μ a = ENNReal.ofReal (labelEntropy μ a) := by
+  rw [labelEntropy_def, countablePartitionEntropy_def, tsum_fintype, ENNReal.ofReal_sum_of_nonneg]
+  exact fun _ _ ↦ negMulLog_nonneg measureReal_nonneg measureReal_le_one
+
+/-- On a finite alphabet, under a probability (or zero) measure, the real part of the partition
+entropy of a label is its finite-label entropy. -/
+theorem toReal_countablePartitionEntropy [IsZeroOrProbabilityMeasure μ] (a : X → ι) :
+    (countablePartitionEntropy μ a).toReal = labelEntropy μ a := by
+  rw [countablePartitionEntropy_eq_ofReal_labelEntropy,
+    ENNReal.toReal_ofReal (labelEntropy_nonneg a)]
+
+/-- On finite alphabets, for every measure, the conditional partition entropy of `a` given `b` is
+the finite-label conditional entropy. -/
+theorem conditionalPartitionEntropy_eq_ofReal_condLabelEntropy (μ : Measure X) (a : X → ι)
+    (b : X → κ) :
+    conditionalPartitionEntropy μ a b = ENNReal.ofReal (condLabelEntropy μ a b) := by
+  have h i j := measureReal_inter_mul_log_div_nonneg μ (a ⁻¹' {i}) (b ⁻¹' {j})
+  rw [conditionalPartitionEntropy_def, tsum_fintype, Fintype.sum_prod_type, condLabelEntropy_def,
+    ENNReal.ofReal_sum_of_nonneg fun i _ ↦ Finset.sum_nonneg fun j _ ↦ h i j]
+  exact Finset.sum_congr rfl fun i _ ↦ (ENNReal.ofReal_sum_of_nonneg fun j _ ↦ h i j).symm
+
+/-- On finite alphabets, for every measure, the conditional partition entropy is finite. -/
+theorem conditionalPartitionEntropy_ne_top {ι κ : Type*} [Finite ι] [Finite κ] (μ : Measure X)
+    (a : X → ι) (b : X → κ) : conditionalPartitionEntropy μ a b ≠ ∞ := by
+  have := Fintype.ofFinite ι
+  have := Fintype.ofFinite κ
+  rw [conditionalPartitionEntropy_eq_ofReal_condLabelEntropy]
+  exact ENNReal.ofReal_ne_top
+
+/-- On finite alphabets, for every measure, the real part of the conditional partition entropy is
+the finite-label conditional entropy. -/
+theorem toReal_conditionalPartitionEntropy (μ : Measure X) (a : X → ι) (b : X → κ) :
+    (conditionalPartitionEntropy μ a b).toReal = condLabelEntropy μ a b := by
+  rw [conditionalPartitionEntropy_eq_ofReal_condLabelEntropy,
+    ENNReal.toReal_ofReal (condLabelEntropy_nonneg μ a b)]
+
+/-- **Support bound.** Under a probability measure (or the zero measure), a measurable label whose
+values lie in a finite set `s` has entropy at most `log (card s)`. -/
+theorem countablePartitionEntropy_le_ofReal_log_card {ι : Type*} [IsZeroOrProbabilityMeasure μ]
+    [MeasurableSpace ι] [MeasurableSingletonClass ι] {a : X → ι} (ha : Measurable a)
+    (s : Finset ι) (hs : ∀ x, a x ∈ s) :
+    countablePartitionEntropy μ a ≤ ENNReal.ofReal (Real.log s.card) := by
+  set b : X → s := fun x ↦ ⟨a x, hs x⟩
+  have hb : Measurable b := ha.subtype_mk
+  -- `b` is `a` with its codomain corestricted to `s`, so `a` factors through it by definition.
+  have hab : Subtype.val ∘ b = a := rfl
+  rw [← hab, countablePartitionEntropy_comp_of_injective b Subtype.val_injective]
+  rcases eq_zero_or_isProbabilityMeasure μ with rfl | _
+  · simp
+  rw [countablePartitionEntropy_eq_ofReal_labelEntropy]
+  refine ENNReal.ofReal_le_ofReal ?_
+  simpa using (labelEntropy_nonneg_le_log_card hb).2
+
+end TauCeti
