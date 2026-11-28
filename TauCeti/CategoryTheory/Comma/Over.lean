@@ -39,6 +39,9 @@ to the source is a strong epimorphism. This uses Mathlib's `StrongEpi.llp` and `
   pullback of it.
 * `CategoryTheory.Over.exists_comp_pullback_map_eq_iff`: factorization through a monomorphism
   can be checked after base change if the projection to the source is a strong epimorphism.
+* `CategoryTheory.Over.map_left_op_map_hom_op`: for a presheaf of types `F` on `C`, restricting
+  a section of `F` over `S` to `Y` and then along a morphism `Z ⟶ Y` over `S` is restricting it
+  to `Z`.
 * `CategoryTheory.Over.pullbackRightPullbackFstIso_inv_comp_pullback_map`: the identification
   `T ×_S X ≅ T ×_{S'} (S' ×_S X)` is natural in `T` over `S'`.
 * `CategoryTheory.Over.mapSection`: a section of a presheaf on `Over S` over `T` restricts to a
@@ -54,7 +57,7 @@ public section
 
 open CategoryTheory.Limits
 
-universe v u
+universe w v u
 
 namespace CategoryTheory
 
@@ -128,6 +131,14 @@ theorem exists_comp_pullback_map_eq_iff {C : Type u} [Category.{v} C]
       simpa only [comp_left, homMk_left] using sq.fac_right
   · rintro ⟨g, rfl⟩
     exact ⟨(Over.pullback p).map g, ((Over.pullback p).map_comp g i).symm⟩
+
+/-- For a presheaf of types `F` on `C` and a morphism `f : Z ⟶ Y` over `S`, restricting a section
+`z` of `F` over `S` to `Y` and then along `f.left` is restricting it to `Z`. -/
+lemma map_left_op_map_hom_op {C : Type u} [Category.{v} C] {S : C} (F : Cᵒᵖ ⥤ Type w)
+    {Y Z : Over S} (f : Z ⟶ Y) (z : F.obj (Opposite.op S)) :
+    F.map f.left.op (F.map Y.hom.op z) = F.map Z.hom.op z := by
+  rw [← Over.w f, op_comp, Functor.map_comp]
+  rfl
 
 /-- A section `ξ` of a presheaf `F` on `Over S` over an object `T` restricts to every object
 `(Over.map T.hom).obj T'` for `T'` over `T.left`, along the morphism `T'` itself; these
