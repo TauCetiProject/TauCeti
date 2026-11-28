@@ -260,6 +260,10 @@ theorem valuation_mapRingHom {L : Type*} [Field L] (σ : K →+* L) (f : K⸨X�
     valuation_eq_exp_neg_order ((map_ne_zero_iff _ (mapRingHom_injective σ.injective)).mpr hf),
     mapRingHom_apply, order_map_of_injective f σ.injective]
 
+/-- The uniformizer `single 1 1` does not have valuation one. -/
+theorem valuation_single_one_ne_one : Valued.v (single (1 : ℤ) (1 : K)) ≠ 1 := by
+  simp [_root_.LaurentSeries.valuation_single_zpow]
+
 end Valuation
 
 section Eval

@@ -23,7 +23,8 @@ import TauCeti.GroupTheory.GroupAction.Orbit.Card
 transposition, for arbitrary additive commutative groups.
 
 This file records general-purpose facts about permutations: a map intertwining two permutations
-intertwines their integer powers (`Function.Semiconj.perm_zpow_right`), a transposition
+intertwines their integer powers (`Function.Semiconj.perm_zpow_right`, and more generally via
+monoid homomorphisms `Function.Semiconj.zpow_right_of_monoidHom`), a transposition
 preserves the complement of a set containing neither of its swapped points, an identity between
 transpositions,
 a permutation transporting two points outside a fixed set to another such pair,
@@ -93,6 +94,15 @@ theorem perm_zpow_right (hg : Function.Semiconj g σ τ) (k : ℤ) :
   | negSucc m =>
       simpa only [zpow_negSucc, ← inv_pow, Equiv.Perm.coe_pow] using
         (iterate_right hinv (m + 1) z)
+
+/-- A map intertwining the actions of two group elements via homomorphisms into permutations
+intertwines all of their integer powers. -/
+theorem zpow_right_of_monoidHom {G H : Type*} [Group G] [Group H]
+    (φ : G →* Equiv.Perm α) (ψ : H →* Equiv.Perm γ) {a : G} {b : H}
+    (hg : Function.Semiconj g ⇑(φ a) ⇑(ψ b)) (k : ℤ) :
+    Function.Semiconj g ⇑(φ (a ^ k)) ⇑(ψ (b ^ k)) := by
+  rw [map_zpow, map_zpow]
+  exact hg.perm_zpow_right k
 
 end Function.Semiconj
 

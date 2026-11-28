@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.LaurentSeries
 public import Mathlib.RingTheory.PowerSeries.Expand
 public import TauCeti.Data.Int.MulOrderEmbedding
 public import TauCeti.Data.Rat.NumDenDvd
+public import TauCeti.LinearAlgebra.LinearEquiv.Basic
 public import TauCeti.RingTheory.HahnSeries.EmbDomain
 public import TauCeti.RingTheory.HahnSeries.Map
 public import TauCeti.RingTheory.LaurentSeries.Basic
@@ -65,6 +66,8 @@ definitionally equal to it, so the algebra maps here are assembled from the ring
 * `LaurentSeries.sum_single_mul_expand_contract`: reconstruction from congruence components.
 * `LaurentSeries.contract_eq_of_sum_eq`: uniqueness of the congruence components.
 * `LaurentSeries.contract_expand_mul`: `contract d (expand d g * h) r = g * contract d h r`.
+* `LaurentSeries.cyclicShift_contract` and `LaurentSeries.cyclicShift_zpow_contract`:
+  contracting `X * f` or `X ^ z * f` acts by `LinearEquiv.cyclicShift` on congruence components.
 * `LaurentSeries.coeff_ramifiedEmbedding_intCast_div`,
   `LaurentSeries.coeff_ramifiedEmbedding_of_not_den_dvd`: the coefficients of the level-`n`
   embedding.
@@ -450,6 +453,51 @@ theorem contract_single_mul_self {A : Type*} [Semiring A] (d : ℕ+) (f : A⸨X�
     contract d (single (r : ℤ) 1 * f) r = contract d f 0 := by
   ext k
   simp [coeff_single_mul]
+
+/-- Contracting `X * f` shifts the congruence components of `f` cyclically, scaling component `0`
+by `X`. -/
+theorem cyclicShift_contract {A : Type*} [CommSemiring A] (r : ℕ+) (f : A⸨X⸩) :
+    LinearEquiv.cyclicShift A⸨X⸩ A⸨X⸩ TauCeti.LaurentSeries.unitX r (contract r f) =
+      contract r (single 1 1 * f) := by
+  ext i m
+  rw [LinearEquiv.cyclicShift_apply]
+  split_ifs with hi
+  · have hrot : ((finRotate r).symm i : ℕ) = (r : ℕ) - 1 := by
+      have hi0 : i = 0 := Fin.ext hi
+      rw [hi0, finRotate_symm_apply, zero_sub, Fin.val_neg']
+      rcases eq_or_ne (r : ℕ) 1 with hr1 | hr1
+      · simp [hr1]
+      · have h1 : 1 < (r : ℕ) := Nat.lt_of_le_of_ne r.pos (Ne.symm hr1)
+        simp [Nat.mod_eq_of_lt h1, Nat.mod_eq_of_lt (by omega : (r : ℕ) - 1 < (r : ℕ))]
+    rw [TauCeti.LaurentSeries.val_unitX, smul_eq_mul, coeff_single_mul, one_mul, coeff_contract,
+      coeff_contract, coeff_single_mul, one_mul, hrot, Nat.cast_sub r.pos, Nat.cast_one]
+    congr 1
+    rw [show (i : ℤ) = 0 from Int.natCast_eq_zero.2 hi]
+    ring
+  · have hrot : ((finRotate r).symm i : ℕ) = (i : ℕ) - 1 :=
+      coe_finRotate_symm_of_ne_zero (Fin.val_ne_zero_iff.1 hi)
+    rw [one_smul, coeff_contract, coeff_contract, coeff_single_mul, one_mul, hrot]
+    congr 1
+    rw [Nat.cast_sub (Nat.one_le_iff_ne_zero.2 hi), Nat.cast_one]
+    ring
+
+/-- Integer powers of `LinearEquiv.cyclicShift` commute with `contract r` by multiplying by
+`X ^ z`. -/
+theorem cyclicShift_zpow_contract {A : Type*} [CommSemiring A] (r : ℕ+) (z : ℤ) (f : A⸨X⸩) :
+    (LinearEquiv.cyclicShift A⸨X⸩ A⸨X⸩ TauCeti.LaurentSeries.unitX r ^ z) (contract r f) =
+      contract r (single z 1 * f) := by
+  let mulX := LinearEquiv.smulOfUnit (R := A⸨X⸩) (M := A⸨X⸩) TauCeti.LaurentSeries.unitX
+  let S := LinearEquiv.cyclicShift A⸨X⸩ A⸨X⸩ TauCeti.LaurentSeries.unitX r
+  have hsc : Function.Semiconj (contract r) ⇑mulX ⇑S := fun g ↦ by
+    have hg : mulX g = single 1 1 * g := by
+      have h1 := LinearEquiv.smulOfUnit_zpow_apply (R := A⸨X⸩) (M := A⸨X⸩)
+        TauCeti.LaurentSeries.unitX 1 g
+      simpa [mulX, TauCeti.LaurentSeries.val_unitX] using h1
+    rw [hg]
+    exact (cyclicShift_contract r g).symm
+  have h := (hsc.linearEquiv_zpow_right z f).symm
+  rw [LinearEquiv.smulOfUnit_zpow_apply, smul_eq_mul, TauCeti.LaurentSeries.val_unitX_zpow] at h
+  exact h
 
 /-! ### Ramified levels in rational exponents -/
 

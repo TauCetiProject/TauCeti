@@ -79,6 +79,12 @@ theorem iterateFrobeniusEquiv_symm_pow (x : R) (n : ℕ) :
     (iterateFrobeniusEquiv R p n).symm x ^ p ^ n = x := by
   rw [← iterateFrobeniusEquiv_def, RingEquiv.apply_symm_apply]
 
+/-- For a perfect ring `R` of exponential characteristic `p`, every iterated Frobenius map
+`iterateFrobenius R p n` is surjective. -/
+instance instRingHomSurjectiveIterateFrobenius (n : ℕ) :
+    RingHomSurjective (iterateFrobenius R p n) :=
+  ⟨(iterateFrobeniusEquiv R p n).surjective⟩
+
 /-- The `p ^ n`-th power of the `p ^ (m + n)`-th root of `x` is its `p ^ m`-th root. -/
 @[simp]
 theorem iterateFrobeniusEquiv_symm_add_pow (x : R) (m n : ℕ) :

@@ -10,7 +10,12 @@ public import Mathlib.Algebra.Module.Submodule.Map
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.Logic.Equiv.Fin.Rotate
 public import Mathlib.RingTheory.Ideal.Maps
+import Mathlib.Algebra.Exact.Basic
+import TauCeti.Algebra.Module.Equiv.Basic
+import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.LinearAlgebra.Pi.CyclicShift
 import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
@@ -18,7 +23,16 @@ import TauCeti.LinearAlgebra.Span.Basic
 
 Transport of submodule stability through an intertwining semilinear equivalence.
 Symmetry of a linear automorphism agrees with inversion in its group structure, and commutes with
-restriction of scalars.
+restriction of scalars. A map intertwining two linear automorphisms also intertwines all of their
+integer powers (`Function.Semiconj.linearEquiv_zpow_right`). Integer powers of scalar
+multiplication by a unit act by integer powers of the unit (`LinearEquiv.smulOfUnit_zpow_apply`),
+and `LinearEquiv.cyclicShift` shifts `Fin r → M` cyclically while scaling the wraparound coordinate
+by a unit `u : Rˣ`, with full-cycle and integer-power API
+(`LinearEquiv.cyclicShift_iterate_rank_apply`, `LinearEquiv.cyclicShift_zpow_mul_rank`,
+`LinearEquiv.cyclicShift_zpow_smul`, and `LinearEquiv.map_comp_cyclicShift_zpow`).
+Given an injective linear map `ι : M →ₗ[R] V` and a linear section of the quotient map
+`V →ₗ[R] V ⧸ LinearMap.range ι`, `LinearEquiv.sectionProdEquiv` identifies `M × (V ⧸ range ι)`
+with `V`.
 Through a linear equivalence `L : M ≃ₗ[R] M₁ × M₂`, the vectors `L⁻¹ (0, vᵢ)` for a spanning
 family `v` of `M₂` span the kernel of `u ↦ (L u).1`.
 A ring isomorphism over a common target carries the kernel of one map to the kernel of the other.
@@ -35,11 +49,136 @@ Following the identification of equal submodules by an inclusion is the other in
 
 public section
 
+namespace Function.Semiconj
+
+/-- A map intertwining two linear automorphisms also intertwines all of their integer powers. -/
+theorem linearEquiv_zpow_right {R₁ R₂ M₁ M₂ : Type*}
+    [Semiring R₁] [Semiring R₂] [AddCommMonoid M₁] [AddCommMonoid M₂]
+    [Module R₁ M₁] [Module R₂ M₂]
+    {f : M₁ → M₂} {e₁ : M₁ ≃ₗ[R₁] M₁} {e₂ : M₂ ≃ₗ[R₂] M₂}
+    (hf : Function.Semiconj f e₁ e₂) (z : ℤ) :
+    Function.Semiconj f ⇑(e₁ ^ z) ⇑(e₂ ^ z) :=
+  fun x ↦ hf.zpow_right_of_monoidHom
+    (MulAction.toPermHom (M₁ ≃ₗ[R₁] M₁) M₁) (MulAction.toPermHom (M₂ ≃ₗ[R₂] M₂) M₂) z x
+
+end Function.Semiconj
+
 namespace LinearEquiv
 
 /-- Symmetry of a linear automorphism is its group inverse. -/
 theorem symm_eq_inv {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
     (e : V ≃ₗ[R] V) : e.symm = e⁻¹ := rfl
+
+/-- Integer powers of scalar multiplication by a unit act as scalar multiplication by the
+corresponding integer power of the unit. -/
+@[simp]
+theorem smulOfUnit_zpow_apply {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    (u : Rˣ) (z : ℤ) (x : M) :
+    ((LinearEquiv.smulOfUnit (R := R) (M := M) u) ^ z) x = ((u ^ z : Rˣ) : R) • x := by
+  have hz := congrArg (fun e : M ≃ₗ[R] M ↦ e x)
+    (map_zpow (DistribMulAction.toModuleAut R M) u z)
+  simpa [LinearEquiv.smulOfUnit, Units.smul_def] using hz.symm
+
+/-- Cyclic shift on `Fin r → M` as a linear automorphism, scaling coordinate `0` by `u : Rˣ`. -/
+def cyclicShift (R M : Type*) [CommSemiring R] [AddCommMonoid M] [Module R M]
+    (u : Rˣ) (r : ℕ) : (Fin r → M) ≃ₗ[R] (Fin r → M) where
+  toFun w i := (if (i : ℕ) = 0 then (u : R) else 1) • w ((finRotate r).symm i)
+  invFun w j := (if (finRotate r j : ℕ) = 0 then ((u⁻¹ : Rˣ) : R) else 1) • w (finRotate r j)
+  left_inv w := by
+    ext j
+    simp only [Equiv.symm_apply_apply]
+    split_ifs <;> simp [smul_smul]
+  right_inv w := by
+    ext i
+    simp only [Equiv.apply_symm_apply]
+    split_ifs <;> simp [smul_smul]
+  map_add' x y := by ext i; simp [smul_add]
+  map_smul' c x := by ext i; simp [smul_comm c]
+
+/-- Coordinate formula for `LinearEquiv.cyclicShift`. -/
+@[simp]
+theorem cyclicShift_apply {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    (u : Rˣ) (r : ℕ) (w : Fin r → M) (i : Fin r) :
+    cyclicShift R M u r w i = (if (i : ℕ) = 0 then (u : R) else 1) • w ((finRotate r).symm i) := by
+  rfl
+
+/-- After a full cycle of length `r`, `LinearEquiv.cyclicShift R M u r` acts as scalar
+multiplication by `u`. -/
+theorem cyclicShift_iterate_rank_apply {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] (u : Rˣ) (r : ℕ) (w : Fin r → M) :
+    (cyclicShift R M u r)^[r] w = (u : R) • w := by
+  have hcoe : ⇑(cyclicShift R M u r) = TauCeti.cyclicShift (R := R) (M := M) id (u : R) := by
+    ext v i
+    simp [cyclicShift_apply, TauCeti.cyclicShift_apply]
+  ext i
+  rw [hcoe]
+  have h := TauCeti.cyclicShift_iterate_rank_apply (σ := RingHom.id R) id (fun _ _ ↦ rfl)
+    (u : R) rfl w i
+  simpa only [Function.iterate_id, id_eq, Pi.smul_apply] using h
+
+/-- An integer multiple `r * z` of `LinearEquiv.cyclicShift R M u r` acts as scalar
+multiplication by `u ^ z`. -/
+theorem cyclicShift_zpow_mul_rank {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    (u : Rˣ) (r : ℕ) (z : ℤ) (w : Fin r → M) :
+    (cyclicShift R M u r ^ ((r : ℤ) * z)) w = ((u ^ z : Rˣ) : R) • w := by
+  have hsc : Function.Semiconj id ⇑(cyclicShift R M u r ^ r)
+      ⇑(LinearEquiv.smulOfUnit (R := R) (M := Fin r → M) u) := fun v ↦ by
+    rw [id_eq, pow_apply_eq_iterate, cyclicShift_iterate_rank_apply, LinearEquiv.smulOfUnit_apply,
+      id_eq]
+  have hz := hsc.linearEquiv_zpow_right z w
+  rw [zpow_mul, zpow_natCast]
+  exact hz.trans (smulOfUnit_zpow_apply u z w)
+
+/-- Integer powers of `LinearEquiv.cyclicShift` commute with pointwise scaling of a fixed vector
+`v : M` by scalar coordinate families `g : Fin r → R`. -/
+theorem cyclicShift_zpow_smul {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    (u : Rˣ) (r : ℕ) (z : ℤ) (g : Fin r → R) (v : M) :
+    (cyclicShift R M u r ^ z) (fun l ↦ g l • v) =
+      fun l ↦ ((cyclicShift R R u r ^ z) g l) • v := by
+  have hsc : Function.Semiconj (fun (g' : Fin r → R) l ↦ g' l • v)
+      ⇑(cyclicShift R R u r) ⇑(cyclicShift R M u r) := fun g' ↦ by
+    ext l
+    simp [cyclicShift_apply, smul_eq_mul, mul_smul]
+  exact (hsc.linearEquiv_zpow_right z g).symm
+
+/-- Coordinatewise application of a `σ`-semilinear map fixing `u` commutes with integer powers of
+`LinearEquiv.cyclicShift`. -/
+theorem map_comp_cyclicShift_zpow {R M N : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    {σ : R →+* R} (Φ : M →ₛₗ[σ] N) (u : Rˣ) (hσu : σ (u : R) = u) (r : ℕ) (z : ℤ)
+    (w : Fin r → M) :
+    (fun l ↦ Φ ((cyclicShift R M u r ^ z) w l)) =
+      (cyclicShift R N u r ^ z) (fun l ↦ Φ (w l)) := by
+  have hsc : Function.Semiconj (fun (v : Fin r → M) l ↦ Φ (v l))
+      ⇑(cyclicShift R M u r) ⇑(cyclicShift R N u r) := fun v ↦ by
+    ext l
+    simp only [cyclicShift_apply]
+    split_ifs
+    · rw [map_smulₛₗ, hσu]
+    · simp only [one_smul]
+  exact hsc.linearEquiv_zpow_right z w
+
+/-- Given an injective linear map `ι : M →ₗ[R] V` and a linear section `sec` of the quotient map
+`V →ₗ[R] V ⧸ LinearMap.range ι`, `M × (V ⧸ LinearMap.range ι)` is linearly equivalent to `V` via
+`(x, y) ↦ ι x + sec y`. -/
+noncomputable def sectionProdEquiv {R M V : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [AddCommGroup V] [Module R V] (ι : M →ₗ[R] V) (hι : Function.Injective ι)
+    (sec : (V ⧸ LinearMap.range ι) →ₗ[R] V)
+    (hq_sec : ∀ y, (LinearMap.range ι).mkQ (sec y) = y) :
+    (M × (V ⧸ LinearMap.range ι)) ≃ₗ[R] V :=
+  ((LinearMap.exact_iff (f := ι) (g := (LinearMap.range ι).mkQ)).2
+    (Submodule.ker_mkQ _) |>.splitSurjectiveEquiv hι
+      ⟨sec, LinearMap.ext hq_sec⟩).val.symm
+
+/-- Applying `LinearEquiv.sectionProdEquiv` to `(x, y)` gives `ι x + sec y`. -/
+@[simp]
+theorem sectionProdEquiv_apply {R M V : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [AddCommGroup V] [Module R V] (ι : M →ₗ[R] V) (hι : Function.Injective ι)
+    (sec : (V ⧸ LinearMap.range ι) →ₗ[R] V)
+    (hq_sec : ∀ y, (LinearMap.range ι).mkQ (sec y) = y) (p : M × (V ⧸ LinearMap.range ι)) :
+    sectionProdEquiv ι hι sec hq_sec p = ι p.1 + sec p.2 := by
+  simp [sectionProdEquiv, Function.Exact.splitSurjectiveEquiv]
+  rfl
 
 /-- The inverse of a linear equivalence with restricted scalars is the inverse with restricted
 scalars. -/
