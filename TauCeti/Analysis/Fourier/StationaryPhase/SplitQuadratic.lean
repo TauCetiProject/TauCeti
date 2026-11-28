@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.Inversion
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Fourier.Decay
 
 /-!
@@ -26,21 +27,6 @@ universe u
 variable {E : Type*} {V : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup V] [NormedSpace ℂ V]
 
-private theorem iteratedFDeriv_slice {a : E × E → V} {N j : ℕ} (ha : ContDiff ℝ N a)
-    (hj : j ≤ N) (x y : E) :
-    iteratedFDeriv ℝ j (fun z ↦ a (x, z)) y =
-      (iteratedFDeriv ℝ j a (x, y)).compContinuousLinearMap
-        (fun _ ↦ ContinuousLinearMap.inr ℝ E E) := by
-  let L := ContinuousLinearMap.inr ℝ E E
-  have heq : (fun z ↦ a (x, z)) = (fun q ↦ a ((x, 0) + q)) ∘ L := by
-    funext z
-    simp [L]
-  have htranslate : ContDiff ℝ N (fun q ↦ a ((x, 0) + q)) :=
-    ha.comp (contDiff_const.add contDiff_id)
-  rw [heq, L.iteratedFDeriv_comp_right htranslate y
-    (by exact_mod_cast hj), iteratedFDeriv_comp_add_left]
-  simp [L]
-
 private theorem norm_iteratedFDeriv_slice_sub_le {a : E × E → V} {N j : ℕ}
     (ha : ContDiff ℝ (N + 1 : ℕ) a) {S : ℝ}
     (hS : ∀ i ≤ N + 1, ∀ p, ‖iteratedFDeriv ℝ i a p‖ ≤ S) (hj : j ≤ N) (x y : E) :
@@ -50,7 +36,8 @@ private theorem norm_iteratedFDeriv_slice_sub_le {a : E × E → V} {N j : ℕ}
       (contDiff_const.prodMk contDiff_id)
   change ‖iteratedFDeriv ℝ j ((fun z ↦ a (x, z)) - (fun z ↦ a (0, z))) y‖ ≤ S * ‖x‖
   rw [iteratedFDeriv_sub_apply (hs x).contDiffAt (hs 0).contDiffAt,
-    iteratedFDeriv_slice ha (by omega), iteratedFDeriv_slice ha (by omega)]
+    ha.contDiffAt.iteratedFDeriv_prod_right j (by exact_mod_cast (show j ≤ N + 1 by omega)),
+    ha.contDiffAt.iteratedFDeriv_prod_right j (by exact_mod_cast (show j ≤ N + 1 by omega))]
   rw [show (iteratedFDeriv ℝ j a (x, y)).compContinuousLinearMap
         (fun _ ↦ ContinuousLinearMap.inr ℝ E E) -
       (iteratedFDeriv ℝ j a (0, y)).compContinuousLinearMap
@@ -108,11 +95,8 @@ private theorem integrable_fourier_slice_zero {a : E × E → V} {R S : ℝ} {N 
     (isCompact_closedBall 0 R).measure_ne_top hfc (C := S) (fun j hj y ↦ ?_) w
   · rw [Real.rpow_neg (by positivity), Real.rpow_natCast, ← div_eq_mul_inv]
     exact (le_div_iff₀ (by positivity)).2 (by simpa [mul_comm] using h)
-  · rw [iteratedFDeriv_slice ha hj]
-    refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
-    simpa only [Finset.prod_const, Finset.card_univ, Fintype.card_fin] using
-      (mul_le_of_le_one_right (norm_nonneg (iteratedFDeriv ℝ j a (0, y)))
-        (pow_le_one₀ (norm_nonneg _) (ContinuousLinearMap.norm_inr_le_one ℝ E E))).trans (hS j hj _)
+  · exact (ha.contDiffAt.norm_iteratedFDeriv_prod_right_le j (by exact_mod_cast hj)).trans
+      (hS j hj _)
 
 private theorem fourier_slice_sub_bound {a : E × E → V} {R S : ℝ} {N : ℕ}
     (ha : ContDiff ℝ (N + 1 : ℕ) a) (hc : tsupport a ⊆ Metric.closedBall 0 R)
