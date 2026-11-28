@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.RegularValue.Level
+public import TauCeti.Geometry.Manifold.RegularValue.Level.Basic
 public import TauCeti.Geometry.Manifold.RegularValue.NormSq
 public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Boundary
 

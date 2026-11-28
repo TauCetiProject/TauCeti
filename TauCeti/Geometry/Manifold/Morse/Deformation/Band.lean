@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Deformation
-public import TauCeti.Geometry.Manifold.RegularValue.Level
+public import TauCeti.Geometry.Manifold.RegularValue.Level.Basic
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic

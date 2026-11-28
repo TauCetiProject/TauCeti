@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.FiberProduct.Equation
-public import TauCeti.Geometry.Manifold.RegularValue.Level
+public import TauCeti.Geometry.Manifold.RegularValue.Level.Basic
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph

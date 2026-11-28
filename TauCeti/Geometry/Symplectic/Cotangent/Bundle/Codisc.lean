@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Normalize
-public import TauCeti.Geometry.Manifold.RegularValue.Level
+public import TauCeti.Geometry.Manifold.RegularValue.Level.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Cotangent
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar

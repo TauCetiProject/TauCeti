@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.Family
 public import TauCeti.Geometry.Manifold.Morse.Bott.ScalarComposition
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Degenerate
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-import TauCeti.Geometry.Manifold.RegularValue.Level
+import TauCeti.Geometry.Manifold.RegularValue.Level.Basic
 import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
 
 /-!

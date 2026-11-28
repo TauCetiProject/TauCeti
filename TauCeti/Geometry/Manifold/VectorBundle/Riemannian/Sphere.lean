@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
-public import TauCeti.Geometry.Manifold.RegularValue.Level
+public import TauCeti.Geometry.Manifold.RegularValue.Level.Basic
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 import Mathlib.Geometry.Manifold.Algebra.Structures
 import Mathlib.Analysis.Calculus.Deriv.Pow

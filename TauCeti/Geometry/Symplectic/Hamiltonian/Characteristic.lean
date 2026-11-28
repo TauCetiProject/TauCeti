@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.IntegralCurve.Reparam
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
-import TauCeti.Geometry.Manifold.RegularValue.Level
+import TauCeti.Geometry.Manifold.RegularValue.Level.Basic
 
 /-!
 # Characteristic foliations of regular hypersurfaces
