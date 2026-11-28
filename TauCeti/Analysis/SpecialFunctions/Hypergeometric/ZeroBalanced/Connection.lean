@@ -11,7 +11,6 @@ public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Basic
 import TauCeti.Analysis.Complex.NegNatTopology
 import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.ODE.Wronskian
-import TauCeti.Analysis.SpecialFunctions.Gamma.Analytic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Bounds
 import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.EulerIntegral
@@ -19,6 +18,7 @@ import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Analytic
 import TauCeti.Analysis.SpecialFunctions.Integrals.EulerKernel
 import TauCeti.Analysis.SpecialFunctions.Log.Limits
+import TauCeti.Data.Nat.Cast.Basic
 
 /-!
 # The zero-balanced hypergeometric connection formula
@@ -63,17 +63,17 @@ private theorem ordinaryHypergeometric_eq_mul_eulerZeroBalanced {a x : ℝ}
       ha (by linarith) (abs_lt.mpr ⟨by linarith [hx.2], by linarith [hx.1]⟩)
 
 private theorem differentiableAt_and_sturmLiouville_eulerZeroBalanced {a x : ℝ}
-    (ha : a ∈ Ioo (0 : ℝ) 1) (hx : x ∈ Ioo (0 : ℝ) 1) :
+    (ha : 0 < a) (hx : x ∈ Ioo (0 : ℝ) 1) :
     DifferentiableAt ℝ (eulerZeroBalanced a) x ∧
     HasDerivAt (fun y ↦ y * (1 - y) ^ (2 * a) * deriv (eulerZeroBalanced a) y)
       (a ^ 2 * (1 - x) ^ (2 * a - 1) * eulerZeroBalanced a x) x := by
   let γ := Real.Gamma a ^ 2 / Real.Gamma (2 * a)
   have hE_eq {y : ℝ} (hy : y ∈ Ioo (0 : ℝ) 1) :
       eulerZeroBalanced a y = γ * ₂F₁ a a (2 * a) (1 - y) := by
-    have h := ordinaryHypergeometric_eq_mul_eulerZeroBalanced ha.1 hy
+    have h := ordinaryHypergeometric_eq_mul_eulerZeroBalanced ha hy
     dsimp [γ]
-    field_simp [(Real.Gamma_pos_of_pos ha.1).ne',
-      (Real.Gamma_pos_of_pos (by linarith [ha.1] : 0 < 2 * a)).ne'] at h ⊢
+    field_simp [(Real.Gamma_pos_of_pos ha).ne',
+      (Real.Gamma_pos_of_pos (by linarith : 0 < 2 * a)).ne'] at h ⊢
     linarith
   have hd_at {y : ℝ} (hy : y ∈ Ioo (0 : ℝ) 1) :
       HasDerivAt (eulerZeroBalanced a) (-γ * deriv (₂F₁ a a (2 * a)) (1 - y)) y :=
@@ -86,7 +86,7 @@ private theorem differentiableAt_and_sturmLiouville_eulerZeroBalanced {a x : ℝ
         (by ring)
   refine ⟨(hd_at hx).differentiableAt, ?_⟩
   have hsl := hasDerivAt_rpow_mul_one_sub_rpow_deriv_ordinaryHypergeometric a a (2 * a)
-    (fun k hk ↦ by linarith [ha.1, show (0 : ℝ) ≤ k by positivity])
+    (fun k hk ↦ by linarith [ha, k.cast_nonneg (α := ℝ)])
     (abs_lt.mpr ⟨by linarith [hx.2], by linarith [hx.1]⟩)
     (Or.inl (sub_pos.mpr hx.2).ne')
   have hcomp := (hsl.comp x ((hasDerivAt_id x).const_sub 1)).const_mul (-γ)
@@ -121,10 +121,10 @@ private theorem realDigammaCoeff_recurrence {a : ℝ} (ha : 0 < a) (k : ℕ) :
     dsimp [realDigammaDiff]
     rw [Nat.cast_add, Nat.cast_one,
       Real.digamma_apply_add_one (x := (k : ℝ) + 1) (fun m ↦ by
-        linarith [show (0 : ℝ) ≤ m by positivity, show (0 : ℝ) ≤ k by positivity]),
+        linarith [m.cast_nonneg (α := ℝ), k.cast_nonneg (α := ℝ)]),
       add_right_comm (k : ℝ) 1 a,
       Real.digamma_apply_add_one (x := (k : ℝ) + a) (fun m ↦ by
-        linarith [ha, show (0 : ℝ) ≤ m by positivity, show (0 : ℝ) ≤ k by positivity])]
+        linarith [ha, m.cast_nonneg (α := ℝ), k.cast_nonneg (α := ℝ)])]
     ring
   have hrec : ((k : ℝ) + 1) * ((k : ℝ) + 1) * ordinaryHypergeometricCoefficient a a 1 (k + 1) =
       ((k : ℝ) + a) ^ 2 * ordinaryHypergeometricCoefficient a a 1 k := by
@@ -145,14 +145,14 @@ private theorem norm_le_one_of_mem_Ioo {a : ℝ} (ha : a ∈ Ioo (0 : ℝ) 1) : 
 private theorem realDigammaCoeff_bound {a : ℝ} (ha : a ∈ Ioo (0 : ℝ) 1) :
     ∃ B : ℝ, 0 ≤ B ∧ ∀ k : ℕ, |realDigammaCoeff a k| ≤ B := by
   have hd_nn (k : ℕ) : 0 ≤ realDigammaDiff a k := mul_nonneg zero_le_two <| sub_nonneg.mpr <|
-    Real.monotoneOn_digamma (mem_Ioi.mpr (by linarith [show (0 : ℝ) ≤ k by positivity, ha.1]))
+    Real.monotoneOn_digamma (mem_Ioi.mpr (by linarith [k.cast_nonneg (α := ℝ), ha.1]))
       (mem_Ioi.mpr (by positivity)) (by linarith [ha.2])
   have ha1 : ‖a‖ ≤ 1 := norm_le_one_of_mem_Ioo ha
   refine ⟨realDigammaDiff a 0, hd_nn 0, fun k ↦ ?_⟩
   have hle : realDigammaDiff a k ≤ realDigammaDiff a 0 := by
     simpa [realDigammaDiff] using mul_le_mul_of_nonneg_left
       (Real.antitoneOn_digamma_add_sub_digamma_add ha.2.le (mem_Ioi.mpr (by linarith [ha.1]))
-        (mem_Ioi.mpr (by linarith [ha.1, show (0 : ℝ) ≤ k by positivity])) (Nat.cast_nonneg k))
+        (mem_Ioi.mpr (by linarith [ha.1, k.cast_nonneg (α := ℝ)])) (Nat.cast_nonneg k))
       zero_le_two
   have hck : |ordinaryHypergeometricCoefficient a a 1 k| ≤ 1 := by
     simpa only [Real.norm_eq_abs] using norm_ordinaryHypergeometricCoefficient_one_le_one ha1 ha1 k
@@ -184,15 +184,12 @@ private theorem realV_ode {a x : ℝ} (ha : a ∈ Ioo (0 : ℝ) 1) (hxa : |x| < 
     2 * (1 - x) * deriv (₂F₁ a a 1) x - 2 * a * ₂F₁ a a 1 x := by
   have hxe : ‖x‖ₑ < 1 := by
     rwa [← ofReal_norm, ENNReal.ofReal_lt_one, Real.norm_eq_abs]
-  have hxb : x ∈ Metric.eball (0 : ℝ) 1 := mem_eball_zero_iff.mpr hxe
   have hv := hasFPowerSeriesOnBall_realV ha
   have hu := hasFPowerSeriesOnBall_ordinaryHypergeometric ℝ a a 1
   set D := realDigammaCoeff a
   set C := ordinaryHypergeometricCoefficient a a 1
-  have hv0 : HasSum (fun n : ℕ ↦ D n * x ^ n) (realV a x) := by
-    simpa [FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using hv.hasSum hxb
-  have hv1 : HasSum (fun n : ℕ ↦ (n + 1) * D (n + 1) * x ^ n) (deriv (realV a) x) := by
-    simpa [FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using hv.deriv_ofScalars.hasSum hxb
+  have hv0 := hv.hasSum_ofScalars hxe
+  have hv1 := hv.deriv_ofScalars.hasSum_ofScalars hxe
   have hv2 := hv.hasSum_mul_deriv_ofScalars hxe
   have hv3 := hv.deriv_ofScalars.hasSum_mul_deriv_ofScalars hxe
   have hv4 : HasSum (fun n : ℕ ↦ (n : ℝ) * ((n : ℝ) - 1) * D n * x ^ n)
@@ -202,10 +199,8 @@ private theorem realV_ode {a x : ℝ} (ha : a ∈ Ioo (0 : ℝ) 1) (hxa : |x| < 
     | zero => simp
     | succ m => simp [Nat.cast_add_one]
   have hLHS := (hv3.add hv1).sub ((hv4.add (hv2.mul_left (2 * a + 1))).add (hv0.mul_left (a ^ 2)))
-  have hu0 : HasSum (fun n : ℕ ↦ C n * x ^ n) (₂F₁ a a 1 x) := by
-    simpa [FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using hu.hasSum hxb
-  have hu1 : HasSum (fun n : ℕ ↦ (n + 1) * C (n + 1) * x ^ n) (deriv (₂F₁ a a 1) x) := by
-    simpa [FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using hu.deriv_ofScalars.hasSum hxb
+  have hu0 := hu.hasSum_ofScalars hxe
+  have hu1 := hu.deriv_ofScalars.hasSum_ofScalars hxe
   have hu2 := hu.hasSum_mul_deriv_ofScalars hxe
   have hRHS := ((hu1.mul_left 2).sub (hu2.mul_left 2)).sub (hu0.mul_left (2 * a))
   have hcongr :
@@ -251,7 +246,7 @@ private theorem hasDerivAt_sturmLiouville_realU2 {a x : ℝ}
         (by dsimp [u2']; ring)).deriv
     simp [hdy]
   · have hode := ordinaryHypergeometric_gaussEquation_of_norm_lt_one (𝕂 := ℝ) a a 1
-      (fun k hk ↦ by linarith [show (0 : ℝ) ≤ k by positivity])
+      (fun k hk ↦ by linarith [k.cast_nonneg (α := ℝ)])
       (Real.norm_eq_abs _ ▸ abs_lt.mpr ⟨by linarith [hx.1], hx.2⟩)
     have hV_eq := realV_ode ha (abs_lt.mpr ⟨by linarith [hx.1], hx.2⟩)
     have hpow : (1 - x) ^ (2 * a) = (1 - x) ^ (2 * a - 1) * (1 - x) := by
@@ -265,7 +260,7 @@ private theorem hasDerivAt_sturmLiouville_realU2 {a x : ℝ}
 /-! ### Logarithmic asymptotic at `0⁺`, Wronskian uniqueness, and complex continuation -/
 
 private theorem eulerZeroBalanced_eq_split {a x : ℝ}
-    (ha : a ∈ Ioo (0 : ℝ) 1) (hx : x ∈ Ioo (0 : ℝ) 1) :
+    (ha : 0 < a) (hx : x ∈ Ioo (0 : ℝ) 1) :
     eulerZeroBalanced a x =
       (∫ s in (0 : ℝ)..1, ((1 - s) ^ (a - 1) - 1) * s ^ (a - 1) * (x + (1 - x) * s) ^ (-a)) +
         (1 - x) ^ (-a) * ((∫ w in (0 : ℝ)..(1 - x), (w ^ (a - 1) - 1) / (1 - w)) - Real.log x) := by
@@ -276,8 +271,8 @@ private theorem eulerZeroBalanced_eq_split {a x : ℝ}
     simp only [sub_self, sub_zero] at h; rw [eulerZeroBalanced, ← h]
     exact intervalIntegral.integral_congr fun s _ ↦ by
       rw [sub_sub_cancel, (by ring : 1 - (1 - x) * (1 - s) = x + (1 - x) * s)]
-  have htot := intervalIntegrable_one_sub_rpow_mul_rpow_mul_add_mul_rpow ha.1 ha.1 hx.1 (-a)
-  have hsing := intervalIntegrable_rpow_mul_add_mul_rpow ha.1 hx.1 (-a)
+  have htot := intervalIntegrable_one_sub_rpow_mul_rpow_mul_add_mul_rpow ha ha hx.1 (-a)
+  have hsing := intervalIntegrable_rpow_mul_add_mul_rpow ha hx.1 (-a)
   have hdiff : ∫ s in (0 : ℝ)..1,
       ((1 - s) ^ (a - 1) - 1) * s ^ (a - 1) * (x + (1 - x) * s) ^ (-a) =
       eulerZeroBalanced a x - ∫ s in (0 : ℝ)..1, s ^ (a - 1) * (x + (1 - x) * s) ^ (-a) := by
@@ -285,7 +280,7 @@ private theorem eulerZeroBalanced_eq_split {a x : ℝ}
     exact intervalIntegral.integral_congr fun _ _ ↦ by ring
   have hsing_val : ∫ s in (0 : ℝ)..1, s ^ (a - 1) * (x + (1 - x) * s) ^ (-a) =
       (1 - x) ^ (-a) * ((∫ w in (0 : ℝ)..(1 - x), (w ^ (a - 1) - 1) / (1 - w)) - Real.log x) := by
-    rw [← Real.one_sub_rpow_mul_integral_rpow_mul_add_mul_rpow_eq_sub_log ha.1 hx, ← mul_assoc,
+    rw [← Real.one_sub_rpow_mul_integral_rpow_mul_add_mul_rpow_eq_sub_log ha hx, ← mul_assoc,
       ← Real.rpow_add (sub_pos.mpr hx.2), neg_add_cancel, Real.rpow_zero, one_mul]
   linarith
 
@@ -316,7 +311,7 @@ private theorem tendsto_eulerZeroBalanced_add_log {a : ℝ} (ha : a ∈ Ioo (0 :
   rw [one_mul, sub_zero, ← two_mul] at hcomb
   refine hcomb.congr' ?_
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with x hx
-  rw [eulerZeroBalanced_eq_split ha hx]; ring
+  rw [eulerZeroBalanced_eq_split ha.1 hx]; ring
 
 private theorem differentiableAt_ordinaryHypergeometric_zero (a : ℝ) :
     DifferentiableAt ℝ (₂F₁ a a 1 : ℝ → ℝ) 0 :=
@@ -351,7 +346,7 @@ private theorem differentiableAt_realParts {a x : ℝ}
     DifferentiableAt ℝ (realU2 a) x ∧ DifferentiableAt ℝ (realDiff a) x := by
   have hx_b : x ∈ Metric.ball (0 : ℝ) 1 :=
     mem_ball_zero_iff.mpr ((Real.norm_of_nonneg hx.1.le).trans_lt hx.2)
-  have hdE := (differentiableAt_and_sturmLiouville_eulerZeroBalanced ha hx).1
+  have hdE := (differentiableAt_and_sturmLiouville_eulerZeroBalanced ha.1 hx).1
   have hdu1 := (analyticOnNhd_ordinaryHypergeometric ℝ a a 1 x hx_b).differentiableAt
   have hdv := (analyticOnNhd_realV ha x hx_b).differentiableAt
   have hdu2 : DifferentiableAt ℝ (realU2 a) x :=
@@ -372,7 +367,7 @@ private theorem realWronskian_eq_const {a x : ℝ}
         (abs_lt.mpr ⟨by linarith [hy.1], hy.2⟩))
     (fun y hy ↦ (differentiableAt_realParts ha hy).2.2.2.hasDerivAt)
     (fun y hy ↦ by
-      refine ((differentiableAt_and_sturmLiouville_eulerZeroBalanced ha hy).2.sub
+      refine ((differentiableAt_and_sturmLiouville_eulerZeroBalanced ha.1 hy).2.sub
         (hasDerivAt_sturmLiouville_realU2 ha hy)).congr_of_eventuallyEq ?_ |>.congr_deriv
         (by dsimp [realDiff]; ring)
       filter_upwards [Ioo_mem_nhds hy.1 hy.2] with z hz
@@ -556,39 +551,6 @@ theorem zero_balanced_connection (a : ℂ) (ha : ∀ n : ℕ, 2 * a ≠ -(n : �
   ⟨analyticOnNhd_zeroBalancedSeries a,
     fun _ hx0 hx1 ↦ ordinaryHypergeometric_one_sub_eq_zeroBalancedSeries ha hx0 hx1⟩
 
-private theorem tendsto_re_zeroBalancedTail_ofReal_nhdsGT_zero (a : ℝ) :
-    Tendsto (fun x : ℝ ↦ (zeroBalancedTail (a : ℂ) (x : ℂ)).re) (𝓝[>] 0) (𝓝 0) := by
-  let f : ℂ → ℝ := fun z ↦
-    ((∑' k : ℕ, ordinaryHypergeometricCoefficient (a : ℂ) (a : ℂ) 1 k *
-      (2 * (Complex.digamma (k + 1) - Complex.digamma (k + (a : ℂ)))) * z ^ k) -
-      2 * (Complex.digamma 1 - Complex.digamma (a : ℂ))).re
-  have hdig_lim : Tendsto (fun x : ℝ ↦ f (x : ℂ)) (𝓝[>] 0) (𝓝 0) := by
-    have hc := (analyticOnNhd_zeroBalancedDigammaSeries (a : ℂ) 0
-      (mem_ball_self zero_lt_one)).continuousAt.sub
-      (continuousAt_const (y := 2 * (Complex.digamma 1 - Complex.digamma (a : ℂ))))
-    have h0 : f 0 = 0 := by
-      simp only [f]
-      rw [tsum_eq_single 0 fun k hk ↦ by simp [zero_pow hk]]
-      simp [ordinaryHypergeometricCoefficient]
-    have hlim : Tendsto (fun x : ℝ ↦ f (x : ℂ)) (𝓝[>] 0) (𝓝 (f 0)) :=
-      (Complex.continuous_re.continuousAt.comp hc).tendsto.comp
-        (Complex.continuous_ofReal.continuousWithinAt (s := Ioi (0 : ℝ))).tendsto
-    rwa [h0] at hlim
-  have hlog_lim : Tendsto (fun x : ℝ ↦ (₂F₁ a a 1 x - 1) * Real.log x) (𝓝[>] 0) (𝓝 0) := by
-    simpa [ordinaryHypergeometric_zero] using
-      Real.tendsto_sub_mul_log_nhdsGT_zero (differentiableAt_ordinaryHypergeometric_zero a)
-  have hsub : Tendsto (fun x : ℝ ↦ -((₂F₁ a a 1 x - 1) * Real.log x) + f (x : ℂ))
-      (𝓝[>] 0) (𝓝 0) := by
-    simpa using hlog_lim.neg.add hdig_lim
-  refine hsub.congr' ?_
-  filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with x hx
-  have hxn : ‖(x : ℂ)‖ < 1 := norm_ofReal_lt_one_of_mem_Ioo hx
-  have hof : ordinaryHypergeometric (a : ℂ) (a : ℂ) 1 (x : ℂ) - 1 =
-      ((₂F₁ a a 1 x - 1 : ℝ) : ℂ) := by
-    simp [ofReal_ordinaryHypergeometric]
-  rw [zeroBalancedTail_eq_log_mul_add (a : ℂ) hxn, add_re, ← Complex.ofReal_log hx.1.le,
-    hof, neg_mul, neg_re, ← Complex.ofReal_mul, Complex.ofReal_re, mul_comm]
-
 /-- Real logarithmic cusp limit at `x → 0⁺`: whenever `2a` is not a nonpositive integer,
 `₂F₁(a, a; 2a; 1 - x) / (Γ(2a) / Γ(a)²) + log x` tends to `2 * (ψ(1) - ψ(a))` as `x → 0⁺`
 (CDT Lemma 5.1.20). -/
@@ -601,8 +563,13 @@ theorem tendsto_ordinaryHypergeometric_one_sub_div_add_log {a : ℝ}
   have hgamma : Real.Gamma (2 * a) / Real.Gamma a ^ 2 ≠ 0 :=
     div_ne_zero (Real.Gamma_ne_zero ha)
       (pow_ne_zero 2 (Real.Gamma_ne_zero (ne_neg_natCast_of_two_mul_ne ha)))
+  have htail_lim : Tendsto (fun x : ℝ ↦ (zeroBalancedTail (a : ℂ) (x : ℂ)).re) (𝓝[>] 0) (𝓝 0) := by
+    simpa [zeroBalancedTail_zero_right, Function.comp_def] using
+      (Complex.continuous_re.continuousAt.comp
+        (continuousAt_zeroBalancedTail_zero (a : ℂ))).tendsto.comp
+        (Complex.continuous_ofReal.continuousWithinAt (s := Ioi (0 : ℝ))).tendsto
   rw [← add_zero (2 * (Real.digamma 1 - Real.digamma a))]
-  refine (tendsto_const_nhds.add (tendsto_re_zeroBalancedTail_ofReal_nhdsGT_zero a)).congr' ?_
+  refine (tendsto_const_nhds.add htail_lim).congr' ?_
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with x hx
   have hxn : ‖(x : ℂ)‖ < 1 := norm_ofReal_lt_one_of_mem_Ioo hx
   have h1xn : ‖1 - (x : ℂ)‖ < 1 := by

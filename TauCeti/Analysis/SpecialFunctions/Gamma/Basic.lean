@@ -11,10 +11,12 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Asymptotics.Lemmas
+import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Gamma.LogConvex
 import TauCeti.Analysis.SpecialFunctions.Pochhammer
+import TauCeti.Data.Nat.Cast.Basic
 import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
@@ -53,6 +55,11 @@ valid for every `s`, is the form from which the growth of hypergeometric coeffic
 ## Main results
 
 * `Complex.analyticAt_Gamma` — Gamma is analytic away from the nonpositive integers.
+* `Complex.deriv_Gamma_ofReal` — at every regular real point, `deriv Complex.Gamma x` is the
+  complex coercion of `deriv Real.Gamma x`.
+* `TauCeti.analyticAt_Gamma_two_mul_div_Gamma_sq` and
+  `TauCeti.analyticOnNhd_Gamma_two_mul_div_Gamma_sq` — complex analyticity of
+  `b ↦ Γ(2b) / Γ(b)²` away from `2b ∈ -ℕ`.
 * `Real.measurable_Gamma` — `Real.Gamma` is measurable.
 * `Real.continuous_inv_Gamma` — `s ↦ (Real.Gamma s)⁻¹` is continuous.
 * `TauCeti.continuous_Gamma_sum_div_prod` — the finite Gamma quotient is jointly continuous on
@@ -644,6 +651,18 @@ end Complex
 
 namespace Complex
 
+/-- At every regular real point, the complex Gamma derivative is the complex coercion
+of the derivative of real Gamma. -/
+theorem deriv_Gamma_ofReal {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) :
+    deriv Gamma (x : ℂ) = ((deriv Real.Gamma x : ℝ) : ℂ) := by
+  have hpoles : ∀ m : ℕ, (x : ℂ) ≠ -(m : ℂ) := fun m hm ↦ hx m (by exact_mod_cast hm)
+  have hc := (differentiableAt_Gamma _ hpoles).hasDerivAt.comp_ofReal
+  have hr := (Real.differentiableAt_Gamma hx).hasDerivAt.ofReal_comp
+  have heq : (fun y : ℝ ↦ Gamma (y : ℂ)) = fun y ↦ (Real.Gamma y : ℂ) :=
+    funext Gamma_ofReal
+  rw [heq] at hc
+  exact hc.unique hr
+
 /-- Gamma is analytic away from the nonpositive integers. -/
 @[fun_prop]
 theorem analyticAt_Gamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : AnalyticAt ℂ Gamma s := by
@@ -651,3 +670,22 @@ theorem analyticAt_Gamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : Analyt
   simpa only [Pi.inv_def, inv_inv] using h
 
 end Complex
+
+namespace TauCeti
+
+/-- The zero-balanced prefactor `b ↦ Γ(2b) / Γ(b)²` is analytic wherever `2b` is not a nonpositive
+integer. -/
+theorem analyticAt_Gamma_two_mul_div_Gamma_sq {b : ℂ} (hb : ∀ n : ℕ, 2 * b ≠ -(n : ℂ)) :
+    AnalyticAt ℂ (fun z : ℂ ↦ Complex.Gamma (2 * z) / Complex.Gamma z ^ 2) b := by
+  have hb' := ne_neg_natCast_of_two_mul_ne hb
+  exact ((Complex.analyticAt_Gamma hb).comp (analyticAt_const.mul analyticAt_id)).div
+    ((Complex.analyticAt_Gamma hb').pow 2) (pow_ne_zero 2 (Complex.Gamma_ne_zero hb'))
+
+/-- The zero-balanced prefactor `b ↦ Γ(2b) / Γ(b)²` is analytic on
+`{b : ℂ | ∀ n : ℕ, 2 * b ≠ -(n : ℂ)}`. -/
+theorem analyticOnNhd_Gamma_two_mul_div_Gamma_sq :
+    AnalyticOnNhd ℂ (fun b : ℂ ↦ Complex.Gamma (2 * b) / Complex.Gamma b ^ 2)
+      {b : ℂ | ∀ n : ℕ, 2 * b ≠ -(n : ℂ)} :=
+  fun _ hb ↦ analyticAt_Gamma_two_mul_div_Gamma_sq hb
+
+end TauCeti

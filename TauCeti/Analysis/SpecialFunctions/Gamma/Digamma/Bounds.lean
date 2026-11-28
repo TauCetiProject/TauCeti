@@ -20,10 +20,9 @@ Lipschitz estimate `‖digamma s - digamma w‖ ≤ ‖s - w‖ * (π² / 6)`
 `Complex.norm_digamma_add_sub_digamma_add_le` and
 `Complex.norm_digamma_add_one_sub_digamma_add_le`.
 
-For real arguments, the series yields strict monotonicity of `Real.digamma`
-(`Real.strictMonoOn_digamma`), strict antitonicity and antitonicity of shifted differences in both
-the shift parameter `t ↦ ψ(t + b) - ψ(t + a)` and the subtracted argument `a ↦ d - ψ(t + a)`, and
-uniform two-sided bounds on shifted differences (`Real.digamma_add_sub_digamma_add_le`,
+For real arguments, the series yields strict antitonicity and antitonicity of shifted differences in
+both the shift parameter `t ↦ ψ(t + b) - ψ(t + a)` and the subtracted argument `a ↦ d - ψ(t + a)`,
+and uniform two-sided bounds on shifted differences (`Real.digamma_add_sub_digamma_add_le`,
 `Real.digamma_add_sub_digamma_add_bounds`, `Real.digamma_nat_add_one_sub_digamma_add_bounds`).
 
 ## References
@@ -87,17 +86,6 @@ theorem norm_digamma_add_one_sub_digamma_add_le {z b : ℂ} {R : ℝ}
 end Complex
 
 namespace Real
-
-/-- Real digamma is strictly monotone on the positive real axis. -/
-theorem strictMonoOn_digamma : StrictMonoOn digamma (Ioi 0) := by
-  intro x hx y hy hxy
-  rw [← sub_pos, digamma_sub_digamma_eq_tsum
-    (fun m ↦ by linarith [mem_Ioi.mp hy, m.cast_nonneg (α := ℝ)])
-    (fun m ↦ by linarith [mem_Ioi.mp hx, m.cast_nonneg (α := ℝ)])]
-  refine (summable_sub_div_add_mul_add y x).tsum_pos (fun n ↦ div_nonneg (sub_nonneg.mpr hxy.le)
-    (mul_pos (by linarith [mem_Ioi.mp hx, n.cast_nonneg (α := ℝ)])
-      (by linarith [mem_Ioi.mp hy, n.cast_nonneg (α := ℝ)])).le) 0 ?_
-  simpa using div_pos (sub_pos.mpr hxy) (mul_pos (mem_Ioi.mp hx) (mem_Ioi.mp hy))
 
 /-- When `a < b`, the shifted digamma difference `t ↦ ψ(t + b) - ψ(t + a)` is strictly antitone
 on `(-a, ∞)`. -/
@@ -165,7 +153,8 @@ theorem digamma_nat_add_one_sub_digamma_add_bounds {k : ℕ} (hk : 1 ≤ k) {c a
     0 ≤ digamma ((k : ℝ) + 1) - digamma ((k : ℝ) + a) ∧
       digamma ((k : ℝ) + 1) - digamma ((k : ℝ) + a) ≤ digamma 2 - digamma (1 + c) := by
   have hk' : (1 : ℝ) ≤ k := by exact_mod_cast hk
-  simpa only [show (1 : ℝ) + 1 = 2 by norm_num] using
+  have h11 : (1 : ℝ) + 1 = 2 := by norm_num
+  simpa only [h11] using
     digamma_add_sub_digamma_add_bounds hk' hc hca ha
 
 end Real

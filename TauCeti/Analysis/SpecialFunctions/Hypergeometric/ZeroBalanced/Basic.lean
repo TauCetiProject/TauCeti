@@ -10,26 +10,29 @@ public import Mathlib.Analysis.SpecialFunctions.OrdinaryHypergeometric
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Real.Pi.Bounds
-import TauCeti.Analysis.Analytic.Binomial
+import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import TauCeti.Analysis.Complex.NegNatTopology
-import TauCeti.Analysis.SpecialFunctions.Gamma.Analytic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma.Bounds
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Basic
+import TauCeti.Data.Nat.Cast.Basic
 
 /-!
 # The zero-balanced hypergeometric logarithmic series and its remainder estimates
 
-Specializing DLMF 15.8.10 to `m = 0` and `b = a` (with the ordinary normalization in DLMF 15.2.2)
-gives `TauCeti.zeroBalancedSeries a x`,
+Specializing DLMF 15.8.10 to `m = 0` and `b = a`—which uses Olver's regularized hypergeometric
+function `𝐅` from DLMF 15.2.2, so multiplying by `Γ(2a)` recovers the ordinary function from
+DLMF 15.2.1—gives `TauCeti.zeroBalancedSeries a x`,
 `Γ(2a) / Γ(a)² * ∑' k, (a)_k² / (k!)² * x^k * (-log x + 2(ψ(k + 1) - ψ(k + a)))`, written with
 Mathlib's principal logarithm `Complex.log`, together with its `k ≥ 1` inner tail
 `TauCeti.zeroBalancedTail`:
 
 * `zeroBalancedSeries` and `zeroBalancedTail` are analytic on `Metric.ball 0 1 ∩ Complex.slitPlane`,
-  analytic in `a` away from `2a ∈ -ℕ` (resp. `a ∈ -ℕ_{≥1}`) for `‖x‖ < 1`, and on
-  `0 < ‖x‖ < 1` `zeroBalancedSeries` equals its limit from `{z | 0 < z.im}`.
+  analytic in `a` away from `2a ∈ -ℕ` (resp. `a ∈ -ℕ_{≥1}`) for `‖x‖ < 1`,
+  `zeroBalancedTail a` is continuous at `0` (`TauCeti.continuousAt_zeroBalancedTail_zero`), and on
+  `0 < ‖x‖ < 1` with `0 ≤ x.im` (in particular along the nonzero real diameter)
+  `zeroBalancedSeries` equals its limit from `{z | 0 < z.im}`.
 * Splitting off `k = 0` writes `zeroBalancedSeries a x` on `‖x‖ < 1` as
   `Γ(2a) / Γ(a)² * (-log x - 2γ - 2ψ(a) + zeroBalancedTail a x)` with explicit
   `O(‖x‖(1 + ‖log x‖) / (1 - ‖x‖))` bounds on `zeroBalancedTail` and its `a`-derivatives.
@@ -41,7 +44,8 @@ The lens identity with `₂F₁(a, a; 2a; 1 - x)` is proved in
 
 * F. Calegari, V. Dimitrov and Y. Tang (CDT), *The unbounded denominators conjecture*,
   J. Amer. Math. Soc. 38 (2025), Lemma 5.1.20 (p. 672) and Lemma 5.2.9 (p. 676).
-* [NIST DLMF, 15.8.10](https://dlmf.nist.gov/15.8.E10), [15.2.2](https://dlmf.nist.gov/15.2.E2).
+* [NIST DLMF, 15.8.10](https://dlmf.nist.gov/15.8.E10), [15.2.1](https://dlmf.nist.gov/15.2.E1),
+  [15.2.2](https://dlmf.nist.gov/15.2.E2).
 -/
 
 public section
@@ -210,8 +214,9 @@ theorem hasSum_zeroBalancedSeries (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
       Complex.Gamma (2 * a) / Complex.Gamma a ^ 2 *
         (ordinaryHypergeometricCoefficient a a 1 k * x ^ k *
           (-Complex.log x + 2 * (Complex.digamma (k + 1) - Complex.digamma (k + a)))))
-      (zeroBalancedSeries a x) :=
-  (summable_zeroBalancedSeries a hx).hasSum.mul_left _
+      (zeroBalancedSeries a x) := by
+  rw [zeroBalancedSeries_def]
+  exact (summable_zeroBalancedSeries a hx).hasSum.mul_left _
 
 /-- On the open unit disc, the `zeroBalancedTail` series is summable. -/
 theorem summable_zeroBalancedTail (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
@@ -227,8 +232,9 @@ theorem hasSum_zeroBalancedTail (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
       ordinaryHypergeometricCoefficient a a 1 (k + 1) * x ^ (k + 1) *
         (-Complex.log x +
           2 * (Complex.digamma ((k + 1 : ℕ) + 1) - Complex.digamma ((k + 1 : ℕ) + a))))
-      (zeroBalancedTail a x) :=
-  (summable_zeroBalancedTail a hx).hasSum
+      (zeroBalancedTail a x) := by
+  rw [zeroBalancedTail_def]
+  exact (summable_zeroBalancedTail a hx).hasSum
 
 private theorem tsum_zeroBalancedTerm_eq_split (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
     ∑' k : ℕ, zeroBalancedTerm a x k =
@@ -239,8 +245,8 @@ private theorem tsum_zeroBalancedTerm_eq_split (a : ℂ) {x : ℂ} (hx : ‖x‖
     (summable_zeroBalancedSeries_digamma a hx).hasSum).congr_fun fun k ↦ by
       dsimp [zeroBalancedTerm]; ring).tsum_eq
 
-/-- On the open unit disc, `zeroBalancedSeries a x` separates into `-log x * ₂F₁(a, a; 1; x)`
-plus the holomorphic digamma-weighted power series. -/
+/-- On the open unit disc, `zeroBalancedSeries a x` equals `Γ(2a) / Γ(a)²` times the sum of
+`-log x * ₂F₁(a, a; 1; x)` and the holomorphic digamma-weighted power series. -/
 theorem zeroBalancedSeries_eq_log_mul_add (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
     zeroBalancedSeries a x =
       Complex.Gamma (2 * a) / Complex.Gamma a ^ 2 *
@@ -267,8 +273,8 @@ theorem zeroBalancedTail_eq_log_mul_add (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
   rw [tsum_zeroBalancedTerm_eq_split a hx, h0] at hsum
   linear_combination -hsum
 
-/-- On the open unit disc, `zeroBalancedSeries a x` splits into its `k = 0` logarithmic term
-`-log x - 2γ - 2ψ(a)` and `zeroBalancedTail a x`. -/
+/-- On the open unit disc, `zeroBalancedSeries a x` equals `Γ(2a) / Γ(a)²` times the sum of its
+`k = 0` logarithmic term `-log x - 2γ - 2ψ(a)` and `zeroBalancedTail a x`. -/
 theorem zeroBalancedSeries_eq_add_zeroBalancedTail (a : ℂ) {x : ℂ} (hx : ‖x‖ < 1) :
     zeroBalancedSeries a x =
       Complex.Gamma (2 * a) / Complex.Gamma a ^ 2 *
@@ -353,8 +359,8 @@ theorem analyticOnNhd_zeroBalancedTail_left {x : ℂ} (hx : ‖x‖ < 1) :
         (differentiableAt_id.const_add _))).differentiableWithinAt
 
 private theorem norm_ofReal_sub_half (a : ℝ) : ‖(a : ℂ) - 1 / 2‖ = |a - 1 / 2| := by
-  rw [show (a : ℂ) - 1 / 2 = ((a - 1 / 2 : ℝ) : ℂ) by push_cast; ring,
-    Complex.norm_real, Real.norm_eq_abs]
+  have hsub : (a : ℂ) - 1 / 2 = ((a - 1 / 2 : ℝ) : ℂ) := by push_cast; ring
+  rw [hsub, Complex.norm_real, Real.norm_eq_abs]
 
 /-- Cauchy derivative estimate for `b ↦ zeroBalancedTail b x` on `closedBall (1 / 2 : ℂ) (3 / 8)`
 and `‖x‖ < 1`. -/
@@ -514,6 +520,60 @@ theorem analyticOnNhd_zeroBalancedTail (a : ℂ) :
   simp only [Pi.add_apply, Pi.sub_apply, Pi.mul_apply, Pi.neg_apply,
     zeroBalancedTail_eq_log_mul_add a (mem_ball_zero_iff.mp hz.1)]
 
+/-- For every `a : ℂ`, `zeroBalancedTail a` is continuous at `0`, where the logarithmic singularity
+in `zeroBalancedTail_eq_log_mul_add` is absorbed by `₂F₁(a, a; 1; x) - 1 = O(x)`. -/
+theorem continuousAt_zeroBalancedTail_zero (a : ℂ) :
+    ContinuousAt (zeroBalancedTail a) 0 := by
+  rw [ContinuousAt, zeroBalancedTail_zero_right]
+  have hF : DifferentiableAt ℂ (fun x : ℂ ↦ ordinaryHypergeometric a a 1 x) 0 :=
+    (analyticOnNhd_ordinaryHypergeometric ℂ a a 1 0 (mem_ball_self zero_lt_one)).differentiableAt
+  obtain ⟨C, hF_bound⟩ : ∃ C : ℝ, ∀ᶠ x in 𝓝 (0 : ℂ),
+      ‖ordinaryHypergeometric a a 1 x - 1‖ ≤ C * ‖x‖ := by
+    have hbig : (fun x : ℂ ↦ ordinaryHypergeometric a a 1 x - 1) =O[𝓝 0] (fun x : ℂ ↦ x) := by
+      simpa [ordinaryHypergeometric_zero, sub_zero] using hF.isBigO_sub
+    exact hbig.bound
+  have hlog_mul : Tendsto (fun x : ℂ ↦ -Complex.log x * (ordinaryHypergeometric a a 1 x - 1))
+      (𝓝 0) (𝓝 0) := by
+    have hnorm_lim : Tendsto (fun x : ℂ ↦ C * (‖x‖ * |Real.log ‖x‖| + Real.pi * ‖x‖))
+        (𝓝 0) (𝓝 0) := by
+      have h1 : Tendsto (fun x : ℂ ↦ ‖x‖ * |Real.log ‖x‖|) (𝓝 0) (𝓝 0) := by
+        have h0 := (Real.continuous_mul_log.abs.tendsto 0).comp
+          (by simpa using continuous_norm.tendsto (0 : ℂ) : Tendsto norm (𝓝 (0 : ℂ)) (𝓝 0))
+        simpa [Function.comp_def, abs_mul, abs_norm] using h0
+      have h2 : Tendsto (fun x : ℂ ↦ Real.pi * ‖x‖) (𝓝 0) (𝓝 0) := by
+        simpa using (tendsto_const_nhds (x := Real.pi)).mul (continuous_norm.tendsto (0 : ℂ))
+      simpa using (tendsto_const_nhds (x := C)).mul (h1.add h2)
+    refine squeeze_zero_norm' ?_ hnorm_lim
+    filter_upwards [hF_bound] with x hxF
+    rw [norm_mul, norm_neg]
+    have hlog_norm : ‖Complex.log x‖ ≤ |Real.log ‖x‖| + Real.pi := by
+      refine (Complex.norm_le_abs_re_add_abs_im (Complex.log x)).trans ?_
+      rw [Complex.log_re, Complex.log_im]
+      exact add_le_add_right (Complex.abs_arg_le_pi x) _
+    calc
+      ‖Complex.log x‖ * ‖ordinaryHypergeometric a a 1 x - 1‖
+          ≤ (|Real.log ‖x‖| + Real.pi) * (C * ‖x‖) :=
+        mul_le_mul hlog_norm hxF (norm_nonneg _) (by positivity)
+      _ = C * (‖x‖ * |Real.log ‖x‖| + Real.pi * ‖x‖) := by ring
+  have hdig_lim :
+      Tendsto (fun x : ℂ ↦ (∑' k : ℕ, ordinaryHypergeometricCoefficient a a 1 k *
+          (2 * (Complex.digamma (k + 1) - Complex.digamma (k + a))) * x ^ k) -
+        2 * (Complex.digamma 1 - Complex.digamma a)) (𝓝 0) (𝓝 0) := by
+    have hc := (analyticOnNhd_zeroBalancedDigammaSeries a 0
+      (mem_ball_self zero_lt_one)).continuousAt.tendsto.sub
+      (tendsto_const_nhds (x := 2 * (Complex.digamma 1 - Complex.digamma a)))
+    have h0 : (∑' k : ℕ, ordinaryHypergeometricCoefficient a a 1 k *
+          (2 * (Complex.digamma (k + 1) - Complex.digamma (k + a))) * (0 : ℂ) ^ k) -
+        2 * (Complex.digamma 1 - Complex.digamma a) = 0 := by
+      rw [tsum_eq_single 0 fun k hk ↦ by simp [zero_pow hk]]
+      simp [ordinaryHypergeometricCoefficient]
+    simpa [h0] using hc
+  have hadd := hlog_mul.add hdig_lim
+  rw [add_zero] at hadd
+  refine hadd.congr' ?_
+  filter_upwards [Metric.ball_mem_nhds (0 : ℂ) zero_lt_one] with x hx
+  exact (zeroBalancedTail_eq_log_mul_add a (mem_ball_zero_iff.mp hx)).symm
+
 /-- For every `a : ℂ`, `zeroBalancedSeries a` is complex analytic on the slit unit disc
 `Metric.ball 0 1 ∩ Complex.slitPlane`. -/
 theorem analyticOnNhd_zeroBalancedSeries (a : ℂ) :
@@ -527,9 +587,10 @@ theorem analyticOnNhd_zeroBalancedSeries (a : ℂ) :
   rw [zeroBalancedSeries_eq_tsum_term, tsum_zeroBalancedTerm_eq_split a (mem_ball_zero_iff.mp hz.1)]
   simp only [Pi.mul_apply, Pi.add_apply, Pi.neg_apply]
 
-/-- On the punctured unit disc `0 < ‖x‖ < 1`, `zeroBalancedSeries a x` equals its limit from the
-open upper half-plane `{z : ℂ | 0 < z.im}`: on the negative real axis Mathlib's principal
-logarithm takes the boundary value `log |x| + π i` from above. -/
+/-- On the punctured unit disc `0 < ‖x‖ < 1` with `0 ≤ x.im` (in particular along the nonzero real
+diameter), `zeroBalancedSeries a x` equals its limit from the open upper half-plane
+`{z : ℂ | 0 < z.im}`: on `(-1, 0)` Mathlib's principal logarithm takes the boundary value
+`log |x| + π i` from above. -/
 theorem tendsto_zeroBalancedSeries_nhdsWithin_im_pos (a : ℂ) {x : ℂ}
     (hx0 : x ≠ 0) (hx1 : ‖x‖ < 1) :
     Tendsto (zeroBalancedSeries a) (𝓝[{z : ℂ | 0 < z.im}] x) (𝓝 (zeroBalancedSeries a x)) := by
