@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Ring.Finset
+public import TauCeti.Algebra.BigOperators.Finset.WeightedVariance
 public import Mathlib.Basic.Real.Basic
-import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Ring
 
 /-!
@@ -32,15 +31,15 @@ theorem sum_sq_sub_mean {ι R : Type*} [Field R] [CharZero R] (s : Finset ι) (t
   rcases s.eq_empty_or_nonempty with rfl | hs
   · simp
   have hcard : (s.card : R) ≠ 0 := Nat.cast_ne_zero.2 (card_ne_zero.2 hs)
-  set m := (∑ j ∈ s, t j) / s.card with hm
-  -- Expand `tᵢ - c = (tᵢ - m) + (m - c)`: the cross terms cancel since `∑ tᵢ = card s * m`.
-  have hsum : ∑ i ∈ s, t i = s.card * m := by
-    rw [hm]
-    field_simp
-  have h (i : ι) : (t i - c) ^ 2 =
-      (t i - m) ^ 2 + 2 * (m - c) * t i - 2 * (m - c) * m + (c - m) ^ 2 := by ring
-  simp only [h, sum_add_distrib, sum_sub_distrib, ← mul_sum, hsum, sum_const, nsmul_eq_mul]
-  ring
+  -- The weighted identity with the uniform weights `1 / card s`, scaled by `card s`.
+  have h := sum_mul_sub_sq_eq s (w := fun _ ↦ (s.card : R)⁻¹) (by simp [hcard]) c t
+  simp only [← mul_sum, ← div_eq_inv_mul (∑ i ∈ s, t i)] at h
+  have hflip (a : R) : ∑ i ∈ s, (a - t i) ^ 2 = ∑ i ∈ s, (t i - a) ^ 2 :=
+    sum_congr rfl fun i _ ↦ by ring
+  rw [hflip, hflip] at h
+  have hscaled := congrArg ((s.card : R) * ·) h
+  simp only [mul_add, ← mul_assoc, mul_inv_cancel₀ hcard, one_mul] at hscaled
+  rw [hscaled, add_comm]
 
 /-- The mean minimizes the sum of squared deviations, even for an empty set. -/
 theorem sum_sq_sub_mean_le {ι : Type*} (s : Finset ι) (t : ι → ℝ) (c : ℝ) :
