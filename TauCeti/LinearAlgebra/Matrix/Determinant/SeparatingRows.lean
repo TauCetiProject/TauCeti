@@ -63,6 +63,7 @@ theorem RingHom.exists_matrix_map_det_ne_zero {d S D : Type*} [Fintype d] [Decid
       by_cases hlk : l = k
       · subst hlk; simpa using hx
       · simpa [hlk] using hl
-    exact hk (hmax hdet hsub (show k ∈ {l | N.updateRow k x l ∈ X} by simpa using hx))
+    have hk_mem : k ∈ {l | N.updateRow k x l ∈ X} := by simpa using hx
+    exact hk (hmax hdet hsub hk_mem)
   have hcol : ∀ i : d, R (N.adjugate i k) = 0 := h_sep (N.adjugate · k) hkill
   simp [N.det_eq_sum_mul_adjugate_row k, hcol]
