@@ -26,7 +26,7 @@ essentially bounded function, convolution along compatible bilinear maps is asso
 point; this associativity statement requires only right-translation invariance and
 s-finiteness.
 
-A continuous linear map `L : F →L[𝕜] F'` between real or complex Banach spaces commutes with
+A continuous linear map `L : F →L[𝕜] F'` between Banach spaces commutes with
 convolution against a scalar kernel `ρ : G → 𝕜`: `ρ ⋆ (L ∘ f) = L (ρ ⋆ f)` at every point where
 `ρ ⋆ f` exists (`ContinuousLinearMap.convolution_lsmul_comp_comm`). This is the convolution form
 of `ContinuousLinearMap.integral_comp_comm`. It lets a mollification be moved through a continuous
@@ -277,15 +277,18 @@ end MeasureTheory
 
 /-- A continuous linear map commutes with convolution against a scalar kernel, at every point
 where the convolution exists. -/
-theorem ContinuousLinearMap.convolution_lsmul_comp_comm {𝕜 G F F' : Type*} [RCLike 𝕜] [Sub G]
-    [MeasurableSpace G] {μ : Measure G} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace ℝ F]
-    [CompleteSpace F] [NormedAddCommGroup F'] [NormedSpace 𝕜 F'] [NormedSpace ℝ F']
-    [CompleteSpace F'] (L : F →L[𝕜] F') {ρ : G → 𝕜} {f : G → F} {x : G}
+theorem ContinuousLinearMap.convolution_lsmul_comp_comm {𝕜 G F F' : Type*}
+    [NontriviallyNormedField 𝕜] [Sub G] [MeasurableSpace G] {μ : Measure G}
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace ℝ F] [CompleteSpace F]
+    [NormedAddCommGroup F'] [NormedSpace 𝕜 F'] [NormedSpace ℝ F'] [CompleteSpace F']
+    (L : F →L[𝕜] F') {ρ : G → 𝕜} {f : G → F} {x : G}
     (h : ConvolutionExistsAt ρ f x (ContinuousLinearMap.lsmul 𝕜 𝕜) μ) :
     (ρ ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] fun y ↦ L (f y)) x =
       L ((ρ ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] f) x) := by
-  simpa only [convolution_lsmul, ContinuousLinearMap.lsmul_apply, map_smul] using
-    L.integral_comp_comm h.integrable
+  -- The integral commutes with `L` viewed as a continuous real-linear map.
+  simpa only [convolution_lsmul, ContinuousLinearMap.lsmul_apply, map_smul,
+    AddMonoidHom.coe_toRealLinearMap, AddMonoidHom.coe_ofClass] using
+    ((L : F →+ F').toRealLinearMap L.continuous).integral_comp_comm h.integrable
 
 namespace MeasureTheory
 

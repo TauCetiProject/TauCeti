@@ -22,9 +22,9 @@ import TauCeti.MeasureTheory.Integral.Dilation
 On a measurable additive group `G` with an s-finite right-invariant measure `μ`, for instance
 an additive Haar measure on a finite-dimensional real normed space, the classical
 convolution `(k ⋆ f)(x) = ∫ t, k(t) • f(x - t) dμ(t)` of `k ∈ L¹(μ; 𝕜)`, with `𝕜` real or
-complex, and `f ∈ Lᵖ(μ; X)` exists almost everywhere and lies in `Lᵖ(μ; X)` for every
-`1 ≤ p ≤ ∞`, and its class does not depend on the representatives of `k` and `f`. The first part
-of the file bundles it as a continuous bilinear map
+complex, and `f ∈ Lᵖ(μ; X)` has an integrand `t ↦ k(t) • f(x - t)` that is integrable for
+almost every `x`, lies in `Lᵖ(μ; X)` for every `1 ≤ p ≤ ∞`, and its class does not depend on the
+representatives of `k` and `f`. The first part of the file bundles it as a continuous bilinear map
 `MeasureTheory.Lp.addConvolutionL μ p : L¹(μ; 𝕜) →L[𝕜] Lᵖ(μ; X) →L[𝕜] Lᵖ(μ; X)` of norm at most
 one, which is Young's inequality. This includes the endpoint `p = ∞`, where translation is not
 continuous on `L∞` and the translate-integral description below is not available.
@@ -118,8 +118,8 @@ open scoped Convolution ENNReal
 
 On a measurable additive group with an s-finite right-invariant measure, such as an additive
 Haar measure on a finite-dimensional real normed space, the convolution
-`(k ⋆ f)(x) = ∫ t, k(t) • f(x - t) dμ(t)` of `k ∈ L¹(μ; 𝕜)` and `f ∈ Lᵖ(μ; X)` converges
-absolutely almost everywhere and lies in `Lᵖ(μ; X)` for every `1 ≤ p ≤ ∞`
+`(k ⋆ f)(x) = ∫ t, k(t) • f(x - t) dμ(t)` of `k ∈ L¹(μ; 𝕜)` and `f ∈ Lᵖ(μ; X)` has an integrand
+that is integrable at almost every `x`, and lies in `Lᵖ(μ; X)` for every `1 ≤ p ≤ ∞`
 (`MeasureTheory.Integrable.ae_convolution_exists_of_memLp` and
 `MeasureTheory.Integrable.memLp_convolution`), and its
 almost-everywhere class does not depend on the representatives of `k` and `f`
@@ -238,7 +238,7 @@ end NontriviallyNormedField
 
 /-- Convolution commutes with postcomposition by a continuous linear map between Banach spaces:
 `T ∘ (k ⋆ f) = k ⋆ (T ∘ f)`. -/
-theorem compLpL_addConvolutionL {𝕜 Y : Type*} [RCLike 𝕜] [NormedSpace 𝕜 X]
+theorem compLpL_addConvolutionL {𝕜 Y : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 X]
     [SMulCommClass ℝ 𝕜 X] [CompleteSpace X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
     [NormedSpace 𝕜 Y] [SMulCommClass ℝ 𝕜 Y] [CompleteSpace Y] (T : X →L[𝕜] Y) (k : Lp 𝕜 1 μ)
     (f : Lp X p μ) :

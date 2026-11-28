@@ -51,13 +51,15 @@ Let `μ` be an s-finite right-invariant measure on a measurable additive group `
 The statement is in `ℝ≥0∞` (`MeasureTheory.eLpNorm_convolution_le`), so it needs no
 integrability hypotheses: it is informative exactly when the right side is finite, and then
 `f ⋆[L] g ∈ Lᵖ` (`MeasureTheory.Integrable.memLp_convolution`). It follows
-from the pointwise bound `‖(f ⋆[L] g)(x)‖ ≤ ‖L‖ ∫ ‖f t‖ ‖g (x - t)‖ dμ(t)` and the bound
-`‖x ↦ ∫ ‖f t‖ ‖g (x - t)‖ dμ(t)‖_p ≤ ‖f‖₁ ‖g‖_p` on the dominating function
+from the pointwise bound `‖(f ⋆[L] g)(x)‖ₑ ≤ ‖L‖ₑ ∫⁻ t, ‖f t‖ₑ ‖g (x - t)‖ₑ ∂μ` and the bound
+`‖x ↦ ∫⁻ t, ‖f t‖ₑ ‖g (x - t)‖ₑ ∂μ‖_p ≤ ‖f‖₁ ‖g‖_p` on this lower integral, which after
+multiplication by `‖L‖ₑ` dominates `‖f ⋆[L] g‖ₑ`
 (`MeasureTheory.eLpNorm_lintegral_convolution_le`). For `p < ∞` the latter is Minkowski's
 integral inequality (`TauCeti.lintegral_Lp_lintegral_le`) together with the translation
 invariance `‖g (· - t)‖_p = ‖g‖_p`; for `p = ∞`, `‖g (x - t)‖ ≤ ‖g‖_∞` for almost every `t`.
-As the dominating function lies in `Lᵖ`, it is finite almost everywhere, so the integral defining
-`f ⋆[L] g` converges absolutely at almost every point
+When `f` is integrable and `g ∈ Lᵖ`, the unscaled lower integral therefore has finite `Lᵖ` norm, so
+it is finite almost everywhere. At each such `x` the integrand `t ↦ L (f t) (g (x - t))` is
+integrable, that is, almost everywhere strongly measurable with finite lower integral of its norm
 (`MeasureTheory.Integrable.ae_convolution_exists_of_memLp`).
 
 The kernel `f` and the bilinear map `L` are arbitrary, so the inequality applies to complex
@@ -85,14 +87,14 @@ of their norms, so this inequality also bounds the `Lᵠ` norm of `f ⋆[L] g`
 * `MeasureTheory.lconvolution_sq_le`: pointwise Cauchy–Schwarz for `f ⋆ₗ[μ] g`.
 * `MeasureTheory.lintegral_lconvolution_sq_le`: Young's inequality `L¹ ⋆ L² ⊆ L²`.
 * `MeasureTheory.enorm_convolution_le_lintegral`: the pointwise bound for `f ⋆[L, μ] g`.
-* `MeasureTheory.convolutionExistsAt_of_lintegral_lt_top`: the convolution exists at `x` when
-  `∫ ‖f t‖ ‖g (x - t)‖ dμ(t)` is finite.
-* `MeasureTheory.eLpNorm_lintegral_convolution_le`: `‖x ↦ ∫ ‖f t‖ ‖g (x - t)‖ dμ(t)‖_p` is at
+* `MeasureTheory.convolutionExistsAt_of_lintegral_lt_top`: the integrand of the convolution at
+  `x` is integrable when `∫⁻ t, ‖f t‖ₑ ‖g (x - t)‖ₑ ∂μ` is finite.
+* `MeasureTheory.eLpNorm_lintegral_convolution_le`: `‖x ↦ ∫⁻ t, ‖f t‖ₑ ‖g (x - t)‖ₑ ∂μ‖_p` is at
   most `‖f‖₁ ‖g‖_p`.
 * `MeasureTheory.eLpNorm_convolution_le`: Young's inequality `‖f ⋆[L] g‖_p ≤ ‖L‖ ‖f‖₁ ‖g‖_p`.
 * `MeasureTheory.Integrable.memLp_convolution`: `L¹ ⋆ Lᵖ ⊆ Lᵖ` along a continuous bilinear map.
-* `MeasureTheory.Integrable.ae_convolution_exists_of_memLp`: the convolution of an integrable `f`
-  and `g ∈ Lᵖ` exists almost everywhere.
+* `MeasureTheory.Integrable.ae_convolution_exists_of_memLp`: for an integrable `f` and `g ∈ Lᵖ`,
+  the integrand of the convolution is integrable at almost every point.
 * `MeasureTheory.eLpNorm_lconvolution_le`: Young's inequality `Lᵖ ⋆ Lʳ ⊆ Lᵠ`.
 * `MeasureTheory.eLpNorm_convolution_le_of_inv_add_inv_eq`: the same bound for the convolution
   `f ⋆[L, μ] g` of vector-valued functions along a continuous bilinear map `L`.
@@ -186,8 +188,9 @@ variable [AddGroup G] [MeasurableSpace G] [MeasurableAdd₂ G] [MeasurableNeg G]
   {μ : Measure G} [SFinite μ] [IsAddRightInvariant μ]
 
 omit [NormedSpace ℝ F] in
-/-- The integral `∫ L (f t) (g (x - t)) dμ(t)` defining the convolution converges absolutely at
-`x` as soon as `∫ ‖f t‖ ‖g (x - t)‖ dμ(t)` is finite. -/
+/-- The integrand `t ↦ L (f t) (g (x - t))` of the convolution at `x` is integrable, that is,
+almost everywhere strongly measurable with finite lower integral of its norm, as soon as
+`∫⁻ t, ‖f t‖ₑ * ‖g (x - t)‖ₑ ∂μ` is finite. -/
 theorem convolutionExistsAt_of_lintegral_lt_top (hf : AEStronglyMeasurable f μ)
     (hg : AEStronglyMeasurable g μ) {x : G} (h : ∫⁻ t, ‖f t‖ₑ * ‖g (x - t)‖ₑ ∂μ < ∞) :
     ConvolutionExistsAt f g x L μ :=
@@ -195,8 +198,8 @@ theorem convolutionExistsAt_of_lintegral_lt_top (hf : AEStronglyMeasurable f μ)
     (ENNReal.mul_lt_top eNorm_lt_top h)⟩
 
 /-- The `Lᵖ` bound behind Young's inequality for an integrable kernel: for `1 ≤ p ≤ ∞`, the
-function `x ↦ ∫⁻ t, ‖f t‖ₑ * ‖g (x - t)‖ₑ ∂μ`, which dominates the norm of the convolution of `f`
-and `g`, has `Lᵖ` norm at most `‖f‖₁ ‖g‖_p`. -/
+function `x ↦ ∫⁻ t, ‖f t‖ₑ * ‖g (x - t)‖ₑ ∂μ`, which after multiplication by `‖L‖ₑ` dominates
+the norm of the convolution `f ⋆[L, μ] g`, has `Lᵖ` norm at most `‖f‖₁ ‖g‖_p`. -/
 theorem eLpNorm_lintegral_convolution_le (hf : AEStronglyMeasurable f μ)
     (hg : AEStronglyMeasurable g μ) {p : ℝ≥0∞} (hp : 1 ≤ p) :
     eLpNorm (fun x ↦ ∫⁻ t, ‖f t‖ₑ * ‖g (x - t)‖ₑ ∂μ) p μ ≤ eLpNorm f 1 μ * eLpNorm g p μ := by
@@ -265,11 +268,11 @@ theorem Integrable.memLp_convolution {p : ℝ≥0∞} (hf : Integrable f μ) (hg
       (memLp_one_iff_integrable.2 hf).eLpNorm_lt_top) hg.eLpNorm_lt_top)
 
 omit [NormedSpace ℝ F] in
-/-- For an integrable `f` and `g ∈ Lᵖ` with `1 ≤ p ≤ ∞`, the integral `∫ L (f t) (g (x - t)) dμ(t)`
-defining the convolution converges absolutely at almost every `x`. -/
+/-- For an integrable `f` and `g ∈ Lᵖ` with `1 ≤ p ≤ ∞`, the integrand `t ↦ L (f t) (g (x - t))`
+of the convolution is integrable at almost every `x`. -/
 theorem Integrable.ae_convolution_exists_of_memLp {p : ℝ≥0∞} (hf : Integrable f μ)
     (hg : MemLp g p μ) (hp : 1 ≤ p) : ∀ᵐ x ∂μ, ConvolutionExistsAt f g x L μ := by
-  -- The dominating function `x ↦ ∫⁻ t, ‖f t‖ₑ * ‖g (x - t)‖ₑ ∂μ` lies in `Lᵖ`, so it is finite
+  -- The lower integral `x ↦ ∫⁻ t, ‖f t‖ₑ * ‖g (x - t)‖ₑ ∂μ` has finite `Lᵖ` norm, so it is finite
   -- almost everywhere.
   have hfin : eLpNorm (fun x ↦ ∫⁻ t, ‖f t‖ₑ * ‖g (x - t)‖ₑ ∂μ) p μ ≠ ∞ :=
     ((eLpNorm_lintegral_convolution_le hf.aestronglyMeasurable hg.aestronglyMeasurable
