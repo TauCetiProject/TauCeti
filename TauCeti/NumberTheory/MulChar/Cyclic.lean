@@ -190,20 +190,20 @@ end Domain
 section FiniteField
 
 /-- A character `ω` of a finite field `F` that lifts a ring homomorphism `f : F →+* S` along a
-monoid homomorphism `φ` from the values of `ω` to `S`, that is `φ (ω x) = f x` for every `x`, has
-order `#F - 1`. A Teichmüller character, which lifts the identity of a residue field, is such a
-character. -/
-theorem orderOf_eq_card_sub_one_of_map_apply_eq {F R S G : Type*} [Field F] [Fintype F]
-    [CommRing R] [Semiring S] [Nontrivial S] [FunLike G R S] [MonoidHomClass G R S]
-    {ω : MulChar F R} {φ : G} {f : F →+* S} (hω : ∀ x, φ (ω x) = f x) :
-    orderOf ω = Fintype.card F - 1 := by
+function `φ` from the values of `ω` to `S`, that is `φ (ω x) = f x` for every `x`, has order
+`#F - 1`. A Teichmüller character, which lifts the identity of a residue field along the
+reduction map, is such a character. -/
+theorem orderOf_eq_card_sub_one_of_map_apply_eq {F R S : Type*} [Field F] [Fintype F]
+    [CommMonoidWithZero R] [Semiring S] [Nontrivial S] {ω : MulChar F R} {φ : R → S}
+    {f : F →+* S} (hω : ∀ x, φ (ω x) = f x) : orderOf ω = Fintype.card F - 1 := by
   classical
-  refine Nat.dvd_antisymm (orderOf_dvd_card_sub_one F ω) ?_
-  rw [← Fintype.card_units, ← Nat.card_eq_fintype_card, ← IsCyclic.exponent_eq_card]
+  rw [← Fintype.card_units]
+  refine Nat.dvd_antisymm (orderOf_dvd_of_pow_eq_one ω.pow_card_eq_one) ?_
+  rw [← Nat.card_eq_fintype_card, ← IsCyclic.exponent_eq_card]
+  -- `ω (x ^ n) = 1 = ω 1` for `n = orderOf ω`, and `ω` is injective because `f` is.
   refine Monoid.exponent_dvd_of_forall_pow_eq_one fun x ↦ Units.ext (f.injective ?_)
-  have h := congrArg (fun χ : MulChar F R ↦ φ (χ x)) (pow_orderOf_eq_one ω)
-  simp only [pow_apply_coe, map_pow, hω, one_apply_coe, map_one] at h
-  rwa [Units.val_pow_eq_pow_val, Units.val_one, map_pow, map_one]
+  rw [← hω, ← hω, Units.val_pow_eq_pow_val, map_pow, ← pow_apply_coe, pow_orderOf_eq_one,
+    one_apply_coe, Units.val_one, map_one]
 
 end FiniteField
 
