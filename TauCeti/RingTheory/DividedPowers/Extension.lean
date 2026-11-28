@@ -206,6 +206,14 @@ private def toDividedPowersOfMap (hI : DividedPowers I) {f : A →+* B}
       rw [hmap n y hyI, hmap m (hI.dpow n y) (hI.dpow_mem hn hyI),
         hmap (m * n) y hyI, hI.dpow_comp hn hyI, map_mul, map_natCast])
 
+@[simp]
+private theorem toDividedPowersOfMap_dpow (hI : DividedPowers I) {f : A →+* B}
+    (δ : TauCeti.PD.AdditivePowers (I.map f)) {S : Set A} (hSI : S ⊆ I)
+    (hS : I.map f = Ideal.span (f '' S))
+    (hmap : ∀ n, ∀ y ∈ I, δ.dpow n (f y) = f (hI.dpow n y)) (n : ℕ) (y : B) :
+    (toDividedPowersOfMap hI δ hSI hS hmap).dpow n y = δ.dpow n y :=
+  TauCeti.PD.AdditivePowers.toDividedPowers_dpow δ hS _ _ n y
+
 /-- Extension of divided powers on a principal ideal `I = Ideal.span {x}` along an arbitrary
 homomorphism `f : A →+* B`, without any flatness hypothesis (Stacks Project Lemma 23.4.2,
 Tag 07H1). -/
@@ -220,9 +228,12 @@ noncomputable def ofPrincipal (hI : DividedPowers I) {x : A} (hx : I = Ideal.spa
 @[simp]
 theorem ofPrincipal_dpow_mul (hI : DividedPowers I) {x : A} (hx : I = Ideal.span {x})
     (f : A →+* B) (n : ℕ) (b : B) :
-    (hI.ofPrincipal hx f).dpow n (b * f x) = b ^ n * f (hI.dpow n x) :=
-  (TauCeti.PD.AdditivePowers.toDividedPowers_dpow _ _ _ _ n _).trans
-    (principalDpow_mul hI hx f n b)
+    (hI.ofPrincipal hx f).dpow n (b * f x) = b ^ n * f (hI.dpow n x) := by
+  rw [ofPrincipal]
+  dsimp only [principalCandidate]
+  rw [toDividedPowersOfMap_dpow]
+  dsimp only
+  rw [principalDpow_mul]
 
 /-- Evaluation of the principal extension on the generator image `f x`. -/
 @[simp]
@@ -235,9 +246,12 @@ theorem ofPrincipal_dpow_apply (hI : DividedPowers I) {x : A} (hx : I = Ideal.sp
 theorem isDPMorphism_ofPrincipal (hI : DividedPowers I) {x : A} (hx : I = Ideal.span {x})
     (f : A →+* B) :
     IsDPMorphism hI (hI.ofPrincipal hx f) f :=
-  ⟨le_rfl, fun _ ha ↦
-    (TauCeti.PD.AdditivePowers.toDividedPowers_dpow _ _ _ _ _ _).trans
-      (principalDpow_map hI hx f _ ha)⟩
+  ⟨le_rfl, fun _ ha ↦ by
+    rw [ofPrincipal]
+    dsimp only [principalCandidate]
+    rw [toDividedPowersOfMap_dpow]
+    dsimp only
+    rw [principalDpow_map hI hx f _ ha]⟩
 
 /-- Universal property of `ofPrincipal`: a homomorphism `g : B →+* C` is a PD morphism out of
 `hI.ofPrincipal hx f` if and only if `g.comp f` is a PD morphism out of `hI`. -/
@@ -658,17 +672,23 @@ noncomputable def ofFlat (hI : DividedPowers I) {f : A →+* B} (hf : f.Flat) :
 theorem ofFlat_dpow_sum (hI : DividedPowers I) {f : A →+* B} (hf : f.Flat) (n : ℕ)
     {ι : Type*} [DecidableEq ι] {s : Finset ι} (b : ι → B) {x : ι → A}
     (hx : ∀ i ∈ s, x i ∈ I) :
-    (hI.ofFlat hf).dpow n (∑ i ∈ s, b i * f (x i)) = hI.extCoeff f n s b x :=
-  (TauCeti.PD.AdditivePowers.toDividedPowers_dpow _ _ _ _ n _).trans
-    (flatDpow_sum_eq hI hf n b hx)
+    (hI.ofFlat hf).dpow n (∑ i ∈ s, b i * f (x i)) = hI.extCoeff f n s b x := by
+  rw [ofFlat]
+  dsimp only [flatCandidate]
+  rw [toDividedPowersOfMap_dpow]
+  dsimp only
+  rw [flatDpow_sum_eq hI hf n b hx]
 
 /-- Evaluation of `ofFlat` on the image of an element of `I`. -/
 @[simp]
 theorem ofFlat_dpow_map (hI : DividedPowers I) {f : A →+* B} (hf : f.Flat)
     (n : ℕ) {x : A} (hx : x ∈ I) :
-    (hI.ofFlat hf).dpow n (f x) = f (hI.dpow n x) :=
-  (TauCeti.PD.AdditivePowers.toDividedPowers_dpow _ _ _ _ n _).trans
-    (flatDpow_map_eq hI hf n hx)
+    (hI.ofFlat hf).dpow n (f x) = f (hI.dpow n x) := by
+  rw [ofFlat]
+  dsimp only [flatCandidate]
+  rw [toDividedPowersOfMap_dpow]
+  dsimp only
+  rw [flatDpow_map_eq hI hf n hx]
 
 /-- The flat ring homomorphism `f` is a divided power morphism into `hI.ofFlat hf`. -/
 theorem isDPMorphism_ofFlat (hI : DividedPowers I) {f : A →+* B} (hf : f.Flat) :
