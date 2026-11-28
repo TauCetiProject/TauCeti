@@ -30,6 +30,8 @@ or network representation.
   `IsMinOn f t b` (with no membership `a ∈ s` or `b ∈ t` required), `a ⊓ b ∈ s` and `a ⊔ b ∈ t`,
   then `f` attains its minimum over `t` at `a ⊔ b` and over `s` at `a ⊓ b`.
 * `TauCeti.IsSubmodular.isSublattice_minimizers`: minimizers over a sublattice form a sublattice.
+* `TauCeti.IsSubmodular.sub_le_sum_insert_sub`: for a submodular set function, the increase from
+  `S` to `S ∪ T` is at most the sum of the increases from `S` to `insert x S` over `x ∈ T \ S`.
 * `TauCeti.IsSymmSubmodular.sdiff_add_sdiff_le`: the posimodular inequality.
 -/
 
@@ -129,6 +131,29 @@ theorem isSublattice_minimizers [Add K] [Preorder K] [AddLeftMono K] [AddRightMo
   · rintro a ⟨ha, hamin⟩ b ⟨hb, hbmin⟩
     exact ⟨hs.infClosed ha hb,
       (hf.isMinOn_sup_inf hamin hbmin (hs.supClosed ha hb) (hs.infClosed ha hb)).2⟩
+
+/-- For a submodular set function, the increase from `S` to `S ∪ T` is at most the sum, over the
+elements `x` of `T \ S`, of the increases from `S` to `insert x S`. -/
+theorem sub_le_sum_insert_sub [AddCommGroup K] [Preorder K] [AddLeftMono K]
+    {α : Type*} [DecidableEq α] {f : Finset α → K} (hf : IsSubmodular f) (S T : Finset α) :
+    f (S ∪ T) - f S ≤ ∑ x ∈ T \ S, (f (insert x S) - f S) := by
+  induction T using Finset.induction_on with
+  | empty => simp
+  | insert a T ha ih =>
+    by_cases haS : a ∈ S
+    · rwa [Finset.union_insert, Finset.insert_eq_of_mem (Finset.mem_union_left T haS),
+        Finset.insert_sdiff_of_mem T haS]
+    rw [Finset.insert_sdiff_of_notMem T haS,
+      Finset.sum_insert fun h ↦ ha (Finset.mem_sdiff.mp h).1]
+    have h := hf.apply (S ∪ T) (insert a S)
+    rw [show S ∪ T ∪ insert a S = S ∪ insert a T by grind,
+      show (S ∪ T) ∩ insert a S = S by grind] at h
+    calc f (S ∪ insert a T) - f S = (f (S ∪ insert a T) + f S) - (f S + f S) :=
+          (add_sub_add_right_eq_sub _ _ _).symm
+      _ ≤ (f (S ∪ T) + f (insert a S)) - (f S + f S) := sub_le_sub_right h _
+      _ = (f (insert a S) - f S) + (f (S ∪ T) - f S) := by
+          rw [sub_add_sub_comm, add_comm (f (S ∪ T))]
+      _ ≤ _ := add_le_add_right ih _
 
 end IsSubmodular
 
