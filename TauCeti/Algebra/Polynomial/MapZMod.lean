@@ -27,6 +27,9 @@ of `G`.
 
 * `Polynomial.map_intCastRingHom_zmod_eq_zero_iff`: `G.map (Int.castRingHom (ZMod n)) = 0`
   exactly when `(n : ℤ[X]) ∣ G`.
+* `Polynomial.eval_map_intCastRingHom_zmod_eq_zero_iff`: the reduction of `G` modulo `n` vanishes
+  at the class of `a` exactly when `n ∣ G(a)`.
+* `Polynomial.dvd_eval_emod_iff`: `m ∣ G(a % m)` exactly when `m ∣ G(a)`.
 * `Polynomial.exists_C_mul_eq_sub_of_map_zmod_eq`: polynomials with the same reduction modulo
   `n` differ by `C n * D`.
 * `Polynomial.exists_eq_mul_add_C_mul_of_map_zmod_dvd`: if `Φ mod n` divides `G mod n`, then
@@ -48,6 +51,20 @@ theorem map_intCastRingHom_zmod_eq_zero_iff (G : ℤ[X]) :
     G.map (Int.castRingHom (ZMod n)) = 0 ↔ (n : ℤ[X]) ∣ G := by
   rw [← C_eq_natCast, C_dvd_iff_dvd_coeff, AddMonoidAlgebra.ext_iff, DFunLike.ext_iff]
   simp only [coeff_map, coeff_zero, eq_intCast, ZMod.intCast_zmod_eq_zero_iff_dvd]
+
+/-- The reduction of an integer polynomial modulo `n` vanishes at the class of an integer `a`
+exactly when `n` divides the value of the polynomial at `a`. -/
+theorem eval_map_intCastRingHom_zmod_eq_zero_iff (G : ℤ[X]) (a : ℤ) :
+    (G.map (Int.castRingHom (ZMod n))).eval (a : ZMod n) = 0 ↔ (n : ℤ) ∣ G.eval a := by
+  rw [eval_intCast_map, Int.cast_id, eq_intCast, ZMod.intCast_zmod_eq_zero_iff_dvd]
+
+/-- Divisibility of a value of an integer polynomial by `m` depends only on the residue of the
+argument modulo `m`. -/
+theorem dvd_eval_emod_iff (G : ℤ[X]) (m a : ℤ) : m ∣ G.eval (a % m) ↔ m ∣ G.eval a := by
+  have hsub : m * -(a / m) = a % m - a := by
+    rw [Int.emod_def]
+    ring
+  exact dvd_iff_dvd_of_dvd_sub ((Dvd.intro _ hsub).trans (sub_dvd_eval_sub (a % m) a G))
 
 /-- Two integer polynomials with the same reduction modulo `n` differ by `n` times an integer
 polynomial. -/
