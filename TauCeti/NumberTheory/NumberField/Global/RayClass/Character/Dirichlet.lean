@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
+public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Conductor
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Rat
 
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
-import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.IntCast
 
 /-!
 # Ray class characters of `ℚ` and Dirichlet characters
@@ -171,10 +172,11 @@ theorem even_ratDirichletEquiv_iff (η : RayClassCharacter (ratModulus n hn)) :
 
 /-- **A Dirichlet character is even exactly when its ray class character is induced from the
 modulus `(n)` without the real place.** -/
-theorem even_ratDirichletEquiv_iff_exists_induced (h : ratFiniteModulus n hn ∣ ratModulus n hn)
+theorem even_ratDirichletEquiv_iff_exists_induced [NeZero n]
+    (h : Modulus.spanNat ℚ n ∣ ratModulus n hn)
     (η : RayClassCharacter (ratModulus n hn)) :
     (ratDirichletEquiv n hn η).Even ↔
-      ∃ ψ : RayClassCharacter (ratFiniteModulus n hn), ψ.induced h = η := by
+      ∃ ψ : RayClassCharacter (Modulus.spanNat ℚ n), ψ.induced h = η := by
   rw [RayClassCharacter.exists_induced_eq_iff_of_finitePart_eq h (by simp),
     even_ratDirichletEquiv_iff]
   refine ⟨fun hη s _ ↦ ?_, fun hη ↦ hη _ fun w hw ↦ by simp at hw⟩
@@ -190,13 +192,13 @@ theorem even_ratDirichletEquiv_iff_exists_induced (h : ratFiniteModulus n hn ∣
 
 /-- **A Dirichlet character factors through `d` and is even exactly when its ray class character is
 induced from the modulus `(d)` without the real place.** -/
-theorem factorsThrough_and_even_ratDirichletEquiv_iff {d : ℕ} {hd : d ≠ 0}
-    (h : ratFiniteModulus d hd ∣ ratModulus n hn) (η : RayClassCharacter (ratModulus n hn)) :
+theorem factorsThrough_and_even_ratDirichletEquiv_iff {d : ℕ} [NeZero d]
+    (h : Modulus.spanNat ℚ d ∣ ratModulus n hn) (η : RayClassCharacter (ratModulus n hn)) :
     (ratDirichletEquiv n hn η).FactorsThrough d ∧ (ratDirichletEquiv n hn η).Even ↔
-      ∃ ψ : RayClassCharacter (ratFiniteModulus d hd), ψ.induced h = η := by
-  have h₁ : ratFiniteModulus d hd ∣ ratModulus d hd := ratFiniteModulus_dvd_ratModulus
-  have h₂ : ratModulus d hd ∣ ratModulus n hn :=
-    ratModulus_dvd_ratModulus_iff.mpr (ratFiniteModulus_dvd_ratModulus_iff.mp h)
+      ∃ ψ : RayClassCharacter (Modulus.spanNat ℚ d), ψ.induced h = η := by
+  have h₁ : Modulus.spanNat ℚ d ∣ ratModulus d (NeZero.ne d) := spanNat_dvd_ratModulus
+  have h₂ : ratModulus d (NeZero.ne d) ∣ ratModulus n hn :=
+    ratModulus_dvd_ratModulus_iff.mpr (spanNat_dvd_ratModulus_iff.mp h)
   rw [factorsThrough_ratDirichletEquiv_iff h₂]
   constructor
   · rintro ⟨⟨η', rfl⟩, heven⟩
@@ -266,16 +268,16 @@ Dirichlet character is even.** -/
 theorem conductor_infinitePart_eq_empty_iff_even :
     η.conductor.infinitePart = ∅ ↔ (ratDirichletEquiv n hn η).Even := by
   have : NeZero n := ⟨hn⟩
-  have hf : ratFiniteModulus (ratDirichletEquiv n hn η).conductor (conductor_ne_zero _) ∣
-      ratModulus n hn :=
-    ratFiniteModulus_dvd_ratModulus_iff.mpr (conductor_dvd_level _)
+  have : NeZero (ratDirichletEquiv n hn η).conductor := ⟨conductor_ne_zero _⟩
+  have hf : Modulus.spanNat ℚ (ratDirichletEquiv n hn η).conductor ∣ ratModulus n hn :=
+    spanNat_dvd_ratModulus_iff.mpr (conductor_dvd_level _)
   -- The conductor of `η` divides the finite modulus `(f)` exactly when the character is even.
-  have key : η.conductor ∣ ratFiniteModulus _ (conductor_ne_zero (ratDirichletEquiv n hn η)) ↔
+  have key : η.conductor ∣ Modulus.spanNat ℚ (ratDirichletEquiv n hn η).conductor ↔
       (ratDirichletEquiv n hn η).Even := by
     rw [conductor_dvd_iff hf, ← factorsThrough_and_even_ratDirichletEquiv_iff hf,
       and_iff_right (factorsThrough_conductor _)]
-  rw [← key, Modulus.dvd_iff, ratFiniteModulus_finitePart, ← conductor_finitePart_eq_span,
-    ratFiniteModulus_infinitePart, Finset.subset_empty, and_iff_right dvd_rfl]
+  rw [← key, Modulus.dvd_iff, Modulus.spanNat_finitePart, ← conductor_finitePart_eq_span,
+    Modulus.spanNat_infinitePart, Finset.subset_empty, and_iff_right dvd_rfl]
 
 /-! ### Arbitrary moduli of `ℚ` -/
 
@@ -378,10 +380,10 @@ theorem even_toDirichletCharacter_of_infinitePart_eq_empty (h : 𝔪.infinitePar
 
 /-- When the Dirichlet character of `ψ : RayClassCharacter 𝔪` is even, the conductor of `ψ` is
 the finite modulus `(ψ.toDirichletCharacter.conductor)` without the real place. -/
-theorem conductor_eq_ratFiniteModulus_of_even (ψ : RayClassCharacter 𝔪)
+theorem conductor_eq_spanNat_of_even (ψ : RayClassCharacter 𝔪)
     (h : ψ.toDirichletCharacter.Even) :
-    ψ.conductor = ratFiniteModulus ψ.toDirichletCharacter.conductor (conductor_ne_zero _) := by
-  simpa only [conductor_toDirichletCharacter] using eq_ratFiniteModulus_of_infinitePart_eq_empty
+    ψ.conductor = Modulus.spanNat ℚ ψ.toDirichletCharacter.conductor := by
+  simpa only [conductor_toDirichletCharacter] using eq_spanNat_of_infinitePart_eq_empty
     (ψ.conductor_infinitePart_eq_empty_iff_even_toDirichletCharacter.mpr h)
 
 /-- When the Dirichlet character of `ψ : RayClassCharacter 𝔪` is odd, the conductor of `ψ` is the
@@ -406,11 +408,11 @@ theorem mem_range_toDirichletCharacter_iff
   · intro h
     by_cases h0 : 𝔪.infinitePart = ∅
     · have heven : χ.Even := h.resolve_left (not_not.mpr h0)
-      have hfin : ratFiniteModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _) ∣
+      have hfin : Modulus.spanNat ℚ (Ideal.absNorm 𝔪.finitePart) ∣
           ratModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _) :=
-        ratFiniteModulus_dvd_ratModulus
-      have hmod : ratFiniteModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _) ∣ 𝔪 := by
-        conv_rhs => rw [eq_ratFiniteModulus_of_infinitePart_eq_empty h0]
+        spanNat_dvd_ratModulus
+      have hmod : Modulus.spanNat ℚ (Ideal.absNorm 𝔪.finitePart) ∣ 𝔪 := by
+        conv_rhs => rw [eq_spanNat_of_infinitePart_eq_empty h0]
       have hχ : (ratDirichletEquiv _ (NeZero.ne _)
           ((ratDirichletEquiv _ (NeZero.ne _)).symm χ)).Even := by
         simpa only [MulEquiv.apply_symm_apply] using heven

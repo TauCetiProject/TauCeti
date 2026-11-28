@@ -137,9 +137,9 @@ is the finite modulus `(ψ.level)` without the real place. -/
 theorem conductor_toPrimitiveRayClassCharacter_of_even (ψ : PrimitiveDirichletCharacter)
     (hψ : ψ.character.Even) :
     (toPrimitiveRayClassCharacter ψ).conductor =
-      ratFiniteModulus ψ.level (NeZero.ne (ψ.level : ℕ)) := by
+      Modulus.spanNat ℚ ψ.level := by
   simpa only [absNorm_conductor_toPrimitiveRayClassCharacter] using
-    eq_ratFiniteModulus_of_infinitePart_eq_empty
+    eq_spanNat_of_infinitePart_eq_empty
       ((infinitePart_conductor_toPrimitiveRayClassCharacter_eq_empty_iff ψ).mpr hψ)
 
 /-- For an odd primitive Dirichlet bundle `ψ`, the conductor of `toPrimitiveRayClassCharacter ψ`

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Fin
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.Ring.NegOnePow
@@ -24,7 +25,8 @@ whose terms satisfy the simplicial identity, which is the combinatorial core of 
 alternating face map differentials. It also provides finite Euler sums for explicitly supported
 `ℤ`-graded families, including support independence, additivity, and translation of the grading.
 Finally, it relates the alternating sums `xₙ - xₙ₋₁ + ⋯ ± x₀`, which appear in the strong Morse
-inequalities, to the Euler sums `x₀ - x₁ + ⋯ ± xₙ` and to each other.
+inequalities, to the Euler sums `x₀ - x₁ + ⋯ ± xₙ` and to each other, and computes an alternating
+sum of a finitely supported sequence shifted up by `r` as `(-1)ʳ` times its alternating `finsum`.
 -/
 
 public section
@@ -218,5 +220,21 @@ theorem sum_range_succ_neg_one_pow_sub_mul {R : Type*} [Ring R] (x : ℕ → R) 
       x (n + 1) - ∑ i ∈ Finset.range (n + 1), (-1 : R) ^ (n - i) * x i := by
   simpa only [zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one] using
     sum_range_succ_neg_one_pow_sub_smul x n
+
+/-- A shifted alternating sum: if `t` vanishes from `N` on and `r + N ≤ n + 1`, then
+`∑_{r ≤ k ≤ n} (-1)ᵏ t (k - r) = (-1)^r ∑ᶠ m, (-1)ᵐ t m`. -/
+theorem sum_range_ite_neg_one_pow_mul_eq_neg_one_pow_mul_finsum {R : Type*} [Ring R]
+    {t : ℕ → R} {r N n : ℕ} (ht : ∀ m, N ≤ m → t m = 0) (hn : r + N ≤ n + 1) :
+    ∑ k ∈ Finset.range (n + 1), (if r ≤ k then (-1 : R) ^ k * t (k - r) else 0) =
+      (-1) ^ r * ∑ᶠ m, (-1 : R) ^ m * t m := by
+  obtain ⟨d, hd⟩ : ∃ d, n + 1 = r + d := ⟨n + 1 - r, by omega⟩
+  rw [hd, Finset.sum_range_add, Finset.sum_eq_zero fun k hk ↦ ite_eq_right (by simp at hk; omega),
+    zero_add, finsum_eq_sum_of_support_subset _ (s := Finset.range d) fun m hm ↦ ?_,
+    Finset.mul_sum]
+  · refine Finset.sum_congr rfl fun m _ ↦ ?_
+    rw [ite_eq_left (Nat.le_add_right r m), Nat.add_sub_cancel_left, pow_add, mul_assoc]
+  · simp only [Function.mem_support, Finset.coe_range, Set.mem_Iio] at hm ⊢
+    by_contra hmd
+    exact hm (by rw [ht m (by omega), mul_zero])
 
 end TauCeti

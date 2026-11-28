@@ -8,12 +8,18 @@ module
 public import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 
+import Mathlib.LinearAlgebra.TensorProduct.Pi
+import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+import Mathlib.RingTheory.Finiteness.Cardinality
+
 /-!
-# Finite generators before extension of scalars
+# Finiteness of tensor products
 
 If an extension of scalars is finitely generated, a finitely generated submodule of the
 original module already spans that extension. This does not require faithful flatness:
 the submodule need not be the whole original module.
+
+The tensor product of a finitely generated module with a finite module is a finite type.
 -/
 
 public section
@@ -35,5 +41,15 @@ theorem exists_fg_baseChange_eq_top (R S M : Type*) [CommSemiring R] [CommSemiri
   intro x hx
   obtain ⟨y, rfl⟩ := hspan hx
   exact ⟨y, congr_fun (LinearMap.baseChange_eq_lTensor (A := S) P.subtype) y⟩
+
+/-- The tensor product of a finitely generated module with a finite module is finite: it is a
+quotient of `(Fin n → R) ⊗[R] N`, that is of `Fin n → N`. -/
+instance finite_tensorProduct {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] [Module.Finite R M] [Finite N] : Finite (M ⊗[R] N) := by
+  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R M
+  have : Finite ((Fin n → R) ⊗[R] N) :=
+    .of_equiv _ ((TensorProduct.comm R _ _).trans
+      (TensorProduct.piScalarRight R R N (Fin n))).symm.toEquiv
+  exact .of_surjective (f.rTensor N) (LinearMap.rTensor_surjective N hf)
 
 end TauCeti

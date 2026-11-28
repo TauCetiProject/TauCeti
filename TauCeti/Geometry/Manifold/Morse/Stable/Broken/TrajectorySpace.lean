@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Stable.LevelPath
 import TauCeti.Geometry.Manifold.Morse.Stable.Stratum
+import TauCeti.Topology.Homeomorph.SetCongr
 import TauCeti.Topology.Order.OrderClosed
 
 /-!
@@ -55,6 +56,19 @@ empty unless `y` has smaller index than `x`
 
 ## Main results
 
+* `IsAdaptedPseudoGradient.IsMorseSmale.morseBrokenTrajectorySpace_eq_morseTrajectoryRecords`,
+  `IsAdaptedPseudoGradient.IsMorseSmale.morseBrokenTrajectorySpaceBoundary_eq_empty`,
+  `IsAdaptedPseudoGradient.IsMorseSmale.natCard_morseBrokenTrajectorySpace`,
+  `IsAdaptedPseudoGradient.IsMorseSmale.finite_morseBrokenTrajectorySpace`: between distinct
+  critical points of consecutive index, a trajectory space is made of the records of unbroken
+  trajectories, has empty boundary, is finite, and, when some level of `c` lies strictly between
+  the values at its ends, has as many points as there are unparametrized trajectories.
+* `IsAdaptedPseudoGradient.morseBrokenTrajectorySpace_eq_morseTrajectoryRecords_of_forall_notMem`,
+  `IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceBoundary_eq_empty_of_forall_notMem`,
+  `IsAdaptedPseudoGradient.exists_homeomorph_morseBrokenTrajectorySpace_of_forall_notMem`: when no
+  critical value lies strictly between the values at its ends, a trajectory space is made of the
+  records of unbroken trajectories, has empty boundary, and is a copy of the level slice
+  `W^u(x) ∩ W^s(y) ∩ {f = c}` on any of its levels `c`.
 * `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceComp_assoc`,
   `IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceComp_mem_morseBrokenTrajectorySpaceBoundary`:
   the composition maps of the trajectory spaces are associative and land in the boundary.
@@ -156,6 +170,119 @@ theorem IsMorseSmale.morseBrokenTrajectorySpace_eq_empty_of_le (h : hX.IsMorseSm
   rcases k with _ | k
   · exact hne (h0.symm.trans hk)
   · omega
+
+/-- **Between consecutive indices a trajectory space is made of unbroken trajectories.** Under the
+Morse–Smale condition, for critical points `x ≠ y` with `ind x ≤ ind y + 1` the trajectory space
+from `x` to `y` is the set of records of the unbroken trajectories from `x` to `y`, since every
+broken trajectory between them is unbroken
+(`IsMorseSmale.morseBrokenTrajectoryRecords_eq_morseTrajectoryRecords`). -/
+theorem IsMorseSmale.morseBrokenTrajectorySpace_eq_morseTrajectoryRecords (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f) {x y : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
+    (hy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0) (hxy : x ≠ y)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f x ≤ manifoldMorseIndex 𝓘(ℝ, E) f y + 1) :
+    hX.morseBrokenTrajectorySpace c x y =
+      hX.morseTrajectoryRecords x y ((c ⁻¹' Ioo (f y) (f x)).domRestrict c) := by
+  ext w
+  rw [mem_morseBrokenTrajectorySpace,
+    h.morseBrokenTrajectoryRecords_eq_morseTrajectoryRecords hf hx hy hxy hind, and_iff_right hxy]
+
+/-- **Between consecutive indices a trajectory space has empty boundary.** Under the Morse–Smale
+condition, for critical points `x` and `y` with `ind x ≤ ind y + 1` every broken trajectory from
+`x` to `y` is unbroken (`IsMorseSmale.morseBrokenTrajectorySpace_eq_morseTrajectoryRecords`). -/
+theorem IsMorseSmale.morseBrokenTrajectorySpaceBoundary_eq_empty (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f) {x y : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
+    (hy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f x ≤ manifoldMorseIndex 𝓘(ℝ, E) f y + 1) :
+    hX.morseBrokenTrajectorySpaceBoundary c x y = ∅ :=
+  eq_empty_of_forall_notMem fun w hw ↦ hw <|
+    (h.morseBrokenTrajectorySpace_eq_morseTrajectoryRecords hf hx hy w.property.1 hind).subset
+      w.property
+
+/-- **Between consecutive indices a trajectory space counts the unparametrized trajectories.**
+Under the Morse–Smale condition, let `x ≠ y` be critical points with `ind x ≤ ind y + 1`, and let
+some level of `c` lie strictly between `f y` and `f x`. Then the trajectory space from `x` to `y`
+has as many points as there are unparametrized trajectories from `x` to `y`: its points are the
+records of unbroken trajectories, and the point on one level determines the trajectory
+(`TauCeti.IsAdaptedPseudoGradient.exists_homeomorph_morseTrajectoryRecords_orbitQuotient`). -/
+theorem IsMorseSmale.natCard_morseBrokenTrajectorySpace (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f) {x y : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
+    (hy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0) (hxy : x ≠ y)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f x ≤ manifoldMorseIndex 𝓘(ℝ, E) f y + 1)
+    (hc : ∃ i, c i ∈ Ioo (f y) (f x)) :
+    Nat.card (hX.morseBrokenTrajectorySpace c x y) =
+      Nat.card (Quotient (Flow.connectingOrbitSetoid hX.flow x y)) := by
+  obtain ⟨i, hi⟩ := hc
+  have : Nonempty (c ⁻¹' Ioo (f y) (f x)) := ⟨⟨i, hi⟩⟩
+  obtain ⟨Φ⟩ := hX.exists_homeomorph_morseTrajectoryRecords_orbitQuotient hxy
+    (c := (c ⁻¹' Ioo (f y) (f x)).domRestrict c) fun i ↦ i.property
+  rw [h.morseBrokenTrajectorySpace_eq_morseTrajectoryRecords hf hx hy hxy hind]
+  exact Nat.card_congr Φ.toEquiv
+
+/-- **Between consecutive indices a trajectory space is finite.** Under the Morse–Smale condition,
+for critical points `x` and `y` with `ind x = ind y + 1` the trajectory space from `x` to `y` is
+finite: its points are records of unbroken trajectories, determined by their points on one level,
+and only finitely many trajectories from `x` to `y` cross a level. -/
+theorem IsMorseSmale.finite_morseBrokenTrajectorySpace (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f) {x y : M} (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
+    (hy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f x = manifoldMorseIndex 𝓘(ℝ, E) f y + 1) :
+    (hX.morseBrokenTrajectorySpace c x y).Finite := by
+  have hxy : x ≠ y := fun hxy ↦ by rw [hxy] at hind; omega
+  rcases isEmpty_or_nonempty (c ⁻¹' Ioo (f y) (f x)) with hι | ⟨⟨i₀⟩⟩
+  · -- Without a level there is at most one record, the empty family.
+    exact Set.subsingleton_of_subsingleton.finite
+  · rw [h.morseBrokenTrajectorySpace_eq_morseTrajectoryRecords hf hx hy hxy hind.le]
+    obtain ⟨Φ, -⟩ := hX.exists_homeomorph_morseTrajectoryRecords hxy
+      (c := (c ⁻¹' Ioo (f y) (f x)).domRestrict c) (fun i ↦ i.property) i₀
+    have : Finite (hX.morseTrajectoryRecords x y ((c ⁻¹' Ioo (f y) (f x)).domRestrict c)) :=
+      have := (h.finite_unstableSet_inter_stableSet_inter_level hf hind
+        ((c ⁻¹' Ioo (f y) (f x)).domRestrict c i₀)).to_subtype
+      .of_equiv _ Φ.toEquiv.symm
+    exact Set.toFinite _
+
+/-- **Without an intermediate critical value a trajectory space is made of unbroken trajectories.**
+If no critical point of `f` takes a value strictly between `f y` and `f x`, the trajectory space
+from `x` to `y` is the set of records of the unbroken trajectories from `x` to `y`
+(`IsAdaptedPseudoGradient.morseBrokenTrajectoryRecords_eq_morseTrajectoryRecords_of_forall_notMem`).
+-/
+theorem morseBrokenTrajectorySpace_eq_morseTrajectoryRecords_of_forall_notMem {x y : M}
+    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (hy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0) (hxy : x ≠ y)
+    (hcrit : ∀ z, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → f z ∉ Ioo (f y) (f x)) :
+    hX.morseBrokenTrajectorySpace c x y =
+      hX.morseTrajectoryRecords x y ((c ⁻¹' Ioo (f y) (f x)).domRestrict c) := by
+  ext w
+  rw [mem_morseBrokenTrajectorySpace,
+    hX.morseBrokenTrajectoryRecords_eq_morseTrajectoryRecords_of_forall_notMem hx hy hxy hcrit,
+    and_iff_right hxy]
+
+/-- **Without an intermediate critical value a trajectory space has empty boundary.** If no
+critical point of `f` takes a value strictly between `f y` and `f x`, every broken trajectory from
+`x` to `y` is unbroken. -/
+theorem morseBrokenTrajectorySpaceBoundary_eq_empty_of_forall_notMem {x y : M}
+    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (hy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0)
+    (hcrit : ∀ z, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → f z ∉ Ioo (f y) (f x)) :
+    hX.morseBrokenTrajectorySpaceBoundary c x y = ∅ :=
+  eq_empty_of_forall_notMem fun w hw ↦ hw <|
+    (morseBrokenTrajectorySpace_eq_morseTrajectoryRecords_of_forall_notMem hx hy w.property.1
+      hcrit).subset w.property
+
+/-- **Without an intermediate critical value a trajectory space is a level slice.** If no critical
+point of `f` takes a value strictly between `f y` and `f x`, reading off the point on a level
+`c i₀` of the family identifies the trajectory space from `x` to `y` with the level slice
+`W^u(x) ∩ W^s(y) ∩ {f = c i₀}`. -/
+theorem exists_homeomorph_morseBrokenTrajectorySpace_of_forall_notMem {x y : M}
+    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (hy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0) (hxy : x ≠ y)
+    (hcrit : ∀ z, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → f z ∉ Ioo (f y) (f x))
+    (i₀ : c ⁻¹' Ioo (f y) (f x)) :
+    ∃ Φ : hX.morseBrokenTrajectorySpace c x y ≃ₜ
+        ↥(hX.flow.unstableSet x ∩ hX.flow.stableSet y ∩ {z | f z = c i₀}),
+      ∀ w, (Φ w : M) = (w : c ⁻¹' Ioo (f y) (f x) → M) i₀ := by
+  obtain ⟨Φ, hΦ⟩ := hX.exists_homeomorph_morseTrajectoryRecords hxy
+    (c := (c ⁻¹' Ioo (f y) (f x)).domRestrict c) (fun i ↦ i.property) i₀
+  have hrec := hX.morseBrokenTrajectorySpace_eq_morseTrajectoryRecords_of_forall_notMem (c := c)
+    hx hy hxy hcrit
+  exact ⟨(Homeomorph.setCongr hrec).trans Φ, fun w ↦
+    (hΦ (Homeomorph.setCongr hrec w)).trans (by rw [Homeomorph.setCongr_apply])⟩
 
 variable {x z y : M}
 

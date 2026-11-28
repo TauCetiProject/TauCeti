@@ -223,6 +223,24 @@ lemma pullbackComp_inv_app_comp_pullback_map_pullbackComp_inv_app (f : X ⟶ Y) 
     (pullbackComp (f ≫ g) h).hom.app M)]
   simp [pseudofunctor_associativity_app]
 
+/-- Associativity of pullback along a factorization `f ≫ g = k`: the two composites
+`f^* (g ≫ h)^* M ⟶ k^* h^* M`, through `(k ≫ h)^* M` or through `f^* g^* h^* M`, agree. The
+morphism `k` is a free variable so that the equation `f ≫ g = k` can be substituted. -/
+@[reassoc]
+lemma pullbackComp_hom_app_comp_pullbackCongr_hom_app_comp_pullbackComp_inv_app (f : X ⟶ Y)
+    (g : Y ⟶ Z) (h : Z ⟶ W) {k : X ⟶ Z} (w : f ≫ g = k) (M : W.Modules) :
+    (pullbackComp f (g ≫ h)).hom.app M ≫
+        (pullbackCongr (by rw [← w, Category.assoc] : f ≫ g ≫ h = k ≫ h)).hom.app M ≫
+          (pullbackComp k h).inv.app M =
+      (pullback f).map ((pullbackComp g h).inv.app M) ≫
+        (pullbackComp f g).hom.app ((pullback h).obj M) ≫
+          (pullbackCongr w).hom.app ((pullback h).obj M) := by
+  subst w
+  rw [← cancel_epi ((pullback f).map ((pullbackComp g h).hom.app M)),
+    ← Functor.map_comp_assoc, Iso.hom_inv_id_app, CategoryTheory.Functor.map_id,
+    Category.id_comp, pullback_map_pullbackComp_hom_app_comp_pullbackComp_hom_app_assoc]
+  simp [pullbackCongr]
+
 /-- The composition isomorphism of pullback is compatible with replacing the first morphism by an
 equal one. -/
 @[reassoc]

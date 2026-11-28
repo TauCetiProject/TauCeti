@@ -41,7 +41,18 @@ the output datum translated by `c`. For `0 ≤ c ≤ 1`:
   datum away from it (`TauCeti.Floer.cappedExchangePerturbation_of_le_norm_sub`);
 * on the end at `0` the first positive end coordinate is the longitudinal coordinate `s`
   (`TauCeti.Floer.fst_positiveEndCoord_zero`), so the parts `s > 0` of the input end at `1` and of
-  the output end lie off the disc `‖w‖ < 1/2` (`TauCeti.Floer.half_le_norm_positiveEndChart`);
+  the output end lie off the disc `‖w‖ < 1/2` (`TauCeti.Floer.half_le_norm_positiveEndChart`),
+  while the part `s > 1` of the end at `0` lies in the disc `‖w‖ < 1/4`
+  (`TauCeti.Floer.norm_lt_of_one_lt_fst_positiveEndCoord_zero`). So for `T ≥ 1`, `ℂ ∖ {1}` is
+  covered by the truncation `S_T`, the disc `‖w‖ ≤ 1/4` and the bands `s > T` of the input end
+  at `1` and of the output end
+  (`TauCeti.Floer.subset_preimage_truncation_union_union_image_positiveEndChart`); the part
+  `s > 0` of the input end at `1` lies in the disc `|w - 1| < 1/2`
+  (`TauCeti.Floer.norm_sub_one_lt_of_pos_fst_positiveEndCoord_one`), the part `s > 0` of the
+  output end recentred at `c` lies off the disc `|w - c| ≤ 2`
+  (`TauCeti.Floer.two_lt_norm_sub_of_pos_fst_positiveEndCoord_inf_sub`), and the coordinate of
+  that end is bounded above on every compact set
+  (`TauCeti.Floer.exists_forall_fst_positiveEndCoord_inf_sub_le`);
 * off the disc `‖w‖ < 3/2` its member `c` at `w + c` is the pair-of-pants datum at `w`
   (`TauCeti.Floer.cappedExchangePerturbation_add`); in real coordinates, it is the pair-of-pants
   datum on the part `s > 0` of the input end at `1`
@@ -51,11 +62,18 @@ the output datum translated by `c`. For `0 ≤ c ≤ 1`:
 * it is `H_1(t) dt` far out on the input end at `1`
   (`TauCeti.Floer.cappedExchangePerturbation_cylindricalEndLift`) and `H_∞(t) dt` far out on the
   output end recentred at `c`
-  (`TauCeti.Floer.cappedExchangePerturbation_add_cylindricalEndLift_inf`);
+  (`TauCeti.Floer.cappedExchangePerturbation_add_cylindricalEndLift_inf`). In the end coordinates
+  of `S = ℂ ∖ {0, 1}`, with the Hamiltonian of the capped end set to `0`, it is cylindrical with
+  data independent of `c` on all three ends: beyond the height `L` of an input end it is
+  `H_1(t) dt` on the end at `1` and vanishes on the end at `0`
+  (`TauCeti.Floer.cappedExchangePerturbation_eq_smul_endAngularForm`), and beyond the height `2`
+  of the output end its translate by `c` is `H_∞(t) dt`
+  (`TauCeti.Floer.cappedExchangePerturbation_add_eq_smul_endAngularForm`);
 * it is jointly `C^n` in `c`, the point of the capped domain `ℂ ∖ {1}` and the target point
-  (`TauCeti.Floer.contMDiffAt_cappedExchangePerturbation`); for `C^n` Hamiltonians on a normed
-  space, each member is `C^n` jointly in the point of `ℂ ∖ {1}`, in real coordinates, and the
-  target point (`TauCeti.Floer.contDiffAt_uncurry_cappedExchangePerturbation`);
+  (`TauCeti.Floer.contMDiffAt_cappedExchangePerturbation`), and so are its components in real
+  coordinates (`TauCeti.Floer.contMDiffAt_uncurry_cappedExchangePerturbation_apply`); for `C^n`
+  Hamiltonians on a normed space, each member is `C^n` jointly in the point of `ℂ ∖ {1}`, in real
+  coordinates, and the target point (`TauCeti.Floer.contDiffAt_uncurry_cappedExchangePerturbation`);
 * for a manifold target with a two-form `ω` and `|H_q| ≤ B_q`, its integrated curvature along any
   map is at most `B_0 + (B_0 + B_1 + B_∞)`, uniformly in `c` and in the neck length
   (`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le`);
@@ -274,6 +292,87 @@ theorem half_le_norm_positiveEndChart {q : Puncture} (hq : q ≠ zero) {ζ : ℝ
     (by rw [endCenter_zero]; exact hS.1)).1 h0
   simpa [endCenter_zero] using h
 
+/-- Beyond the height `0` of the input end at `1`, points lie in the disc `|w - 1| < 1/2`. -/
+theorem norm_sub_one_lt_of_pos_fst_positiveEndCoord_one {z : ℝ × ℝ}
+    (hz : 0 < (positiveEndCoord one z).1) : ‖Complex.equivRealProdCLM.symm z - 1‖ < 1 / 2 := by
+  refine not_le.1 fun h ↦ (not_le.2 hz) ?_
+  rw [fst_positiveEndCoord, endSign_one, one_mul]
+  exact re_endCoord_nonpos_of_le_norm_sub_endCenter (by decide) (by rwa [endCenter_one])
+
+/-- Beyond the height `0` of the input end, a point of the capped surface lies in the pair of
+pants `S = ℂ ∖ {0, 1}`. -/
+theorem mem_thricePuncturedSphereReal_of_pos_fst_positiveEndCoord_one {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ 1) (h : 0 < (positiveEndCoord one z).1) :
+    z ∈ thricePuncturedSphereReal := by
+  refine mem_thricePuncturedSphereReal_iff.2 ⟨fun h0 ↦ ?_, hz⟩
+  have h₁ := norm_sub_one_lt_of_pos_fst_positiveEndCoord_one h
+  rw [h0, zero_sub, norm_neg, norm_one] at h₁
+  norm_num at h₁
+
+/-- Beyond the height `0` of the output end recentred at `c`, points lie off the closed disc
+`|w - c| ≤ 2` bounded by the circle `s = 0` of that end. -/
+theorem two_lt_norm_sub_of_pos_fst_positiveEndCoord_inf_sub {z : ℝ × ℝ}
+    (hz : 0 < (positiveEndCoord inf (z - (c, 0))).1) :
+    2 < ‖Complex.equivRealProdCLM.symm z - c‖ := by
+  have h0 : Complex.equivRealProdCLM.symm (z - (c, 0)) ≠ 0 := fun h0 ↦ by
+    rw [fst_positiveEndCoord, h0, ← endCenter_inf, re_endCoord_endCenter, mul_zero] at hz
+    exact lt_irrefl _ hz
+  have h := (lt_fst_positiveEndCoord_inf_iff h0).1 hz
+  rwa [mul_zero, exp_zero, mul_one, TauCeti.Complex.equivRealProdCLM_symm_sub_prodMk_zero] at h
+
+/-- The coordinate `-s` of the output end recentred at `c` is bounded above on every compact
+set. -/
+theorem exists_forall_fst_positiveEndCoord_inf_sub_le {K : Set (ℝ × ℝ)} (hK : IsCompact K) :
+    ∃ N, ∀ z ∈ K, (positiveEndCoord inf (z - (c, 0))).1 ≤ N := by
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn
+    (f := fun z ↦ Complex.equivRealProdCLM.symm z - c)
+    (Complex.equivRealProdCLM.symm.continuous.sub continuous_const).continuousOn
+  refine ⟨|M|, fun z hz ↦ ?_⟩
+  rw [fst_positiveEndCoord, endSign_inf, neg_one_mul,
+    TauCeti.Complex.equivRealProdCLM_symm_sub_prodMk_zero]
+  refine neg_re_endCoord_inf_le (abs_nonneg M) ((hM z hz).trans ?_)
+  -- `M ≤ |M| ≤ 2 exp (2π|M|)`, from `exp x ≥ 1 + x`.
+  have h₁ := add_one_le_exp (2 * π * |M|)
+  nlinarith [le_abs_self M, abs_nonneg M, two_le_pi]
+
+/-- Beyond the height `1` of the end at `0`, points lie in the disc `|w| < 1/4`. -/
+theorem norm_lt_of_one_lt_fst_positiveEndCoord_zero {z : ℝ × ℝ}
+    (hz : 1 < (positiveEndCoord zero z).1) : ‖Complex.equivRealProdCLM.symm z‖ < 1 / 4 := by
+  refine lt_of_not_ge fun h ↦ ?_
+  have hexp : Real.exp (-(2 * π)) ≤ 1 / 2 := by
+    rw [Real.exp_neg, inv_le_comm₀ (Real.exp_pos _) (by norm_num)]
+    linarith [Real.add_one_le_exp (2 * π), Real.two_le_pi]
+  have h1 := re_endCoord_zero_le_one (by linarith : Real.exp (-(2 * π)) / 2 ≤
+    ‖Complex.equivRealProdCLM.symm z‖)
+  rw [fst_positiveEndCoord_zero] at hz
+  linarith
+
+/-- **The capped surface is covered by a compact core and two bands.** For `T ≥ 1`, the capped
+surface `ℂ ∖ {1}` is covered by the truncation `S_T` of the pair of pants, the disc `|w| ≤ 1/4`,
+and the images of the band `(T, ∞) × [0, 1)` under the positive end charts of the input end at `1`
+and of the output end. -/
+theorem subset_preimage_truncation_union_union_image_positiveEndChart {T : ℝ} (hT : 1 ≤ T) :
+    {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 1} ⊆
+      (Complex.equivRealProdCLM.symm ⁻¹' truncation T ∪
+          {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ 1 / 4}) ∪
+        (positiveEndChart one '' (Ioi T ×ˢ Ico 0 1) ∪
+          positiveEndChart inf '' (Ioi T ×ˢ Ico 0 1)) := by
+  intro z hz
+  by_cases h0 : Complex.equivRealProdCLM.symm z = 0
+  · exact Or.inl (Or.inr (by simp [h0]))
+  have hS : z ∈ thricePuncturedSphereReal := mem_thricePuncturedSphereReal_iff.2 ⟨h0, hz⟩
+  rcases subset_preimage_truncation_union_iUnion_image_positiveEndChart T hS with h | h
+  · exact Or.inl (Or.inl h)
+  obtain ⟨q, hq⟩ := mem_iUnion.1 h
+  match q with
+  | zero =>
+    obtain ⟨ζ, hζ, rfl⟩ := hq
+    refine Or.inl (Or.inr (le_of_lt (norm_lt_of_one_lt_fst_positiveEndCoord_zero ?_)))
+    rw [fst_positiveEndCoord_positiveEndChart]
+    linarith [mem_Ioi.1 hζ.1]
+  | one => exact Or.inr (Or.inl hq)
+  | inf => exact Or.inr (Or.inr hq)
+
 /-- **The family near the output is a translate.** For `L ≥ 2` and `0 ≤ c ≤ 1`, off the disc
 `‖w‖ < 3/2`, the member `c` of the family at `w + c` is the pair-of-pants datum at `w`. -/
 theorem cappedExchangePerturbation_add (hL : 2 ≤ L) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {w : ℂ}
@@ -389,6 +488,65 @@ theorem cappedExchangePerturbation_zero_eq_smul_endAngularForm (hL : 2 < L)
     rw [cappedExchangePerturbation_of_re_endCoord_le hre, exchangePerturbation_zero,
       pairOfPantsPerturbation_eq_smul_endAngularForm (by linarith), update_of_ne hq]
 
+/-- **The family is cylindrical on the input ends.** For `L > 2` and `0 ≤ c ≤ 1`, beyond the
+height `L` of an input end `q`, every member of the family is `H_q(t) dt` for the Hamiltonians
+with the end at `0` set to `0`: it is `H_1(t) dt` on the end at `1` and it vanishes on the capped
+end at `0`. -/
+theorem cappedExchangePerturbation_eq_smul_endAngularForm (hL : 2 < L) (hc₀ : 0 ≤ c)
+    (hc₁ : c ≤ 1) {q : Puncture} (hq : q ≠ inf) {w : ℂ}
+    (hw : L ≤ q.endSign * (q.endCoord w).re) (x : M) :
+    cappedExchangePerturbation H L c w x = update H zero 0 q (q.endCoord w).im x •
+      q.endAngularForm w := by
+  -- Such points lie within distance `3/2` of `0` and of `c`, where the family does not depend
+  -- on the parameter.
+  have hz : L ≤ (positiveEndCoord q (Complex.equivRealProdCLM w)).1 := by
+    rwa [fst_positiveEndCoord, ContinuousLinearEquiv.symm_apply_apply]
+  have hc : ‖(c : ℂ)‖ ≤ 1 := by rw [Complex.norm_real, Real.norm_of_nonneg hc₀]; exact hc₁
+  have hn : ‖w‖ ≤ 3 / 2 ∧ ‖w - c‖ ≤ 3 / 2 := by
+    match q, hq with
+    | zero, _ =>
+      have h := norm_lt_of_one_lt_fst_positiveEndCoord_zero (by linarith)
+      rw [ContinuousLinearEquiv.symm_apply_apply] at h
+      exact ⟨by linarith, (norm_sub_le _ _).trans (by linarith)⟩
+    | one, _ =>
+      have h := norm_sub_one_lt_of_pos_fst_positiveEndCoord_one (by linarith)
+      rw [ContinuousLinearEquiv.symm_apply_apply] at h
+      have h₁ : ‖w‖ ≤ 3 / 2 := by
+        have := norm_le_norm_add_norm_sub' w 1
+        rw [norm_one] at this
+        linarith
+      refine ⟨h₁, ?_⟩
+      have := norm_sub_le_norm_sub_add_norm_sub w 1 (c : ℂ)
+      have h₂ : ‖(1 : ℂ) - c‖ ≤ 1 := by
+        rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
+          Real.norm_of_nonneg (by linarith)]
+        linarith
+      linarith
+  have hexp : 3 / 2 ≤ 2 * Real.exp (2 * π) := by
+    linarith [Real.one_le_exp (by positivity : (0 : ℝ) ≤ 2 * π)]
+  rw [cappedExchangePerturbation_of_norm_sub_le (hn.2.trans hexp),
+    ← cappedExchangePerturbation_of_norm_sub_le (c := 0) (by
+      rw [Complex.ofReal_zero, sub_zero]; exact hn.1.trans hexp),
+    cappedExchangePerturbation_zero_eq_smul_endAngularForm hL q w x hw]
+
+/-- **The family is cylindrical on the output end recentred at the parameter.** For `L ≥ 2` and
+`0 ≤ c ≤ 1`, beyond the height `2` of the output end, the member `c` of the family at `w + c` is
+`H_∞(t) dt` in the end coordinates at `w`. -/
+theorem cappedExchangePerturbation_add_eq_smul_endAngularForm (hL : 2 ≤ L) (hc₀ : 0 ≤ c)
+    (hc₁ : c ≤ 1) {w : ℂ} (hw : 2 ≤ -(inf.endCoord w).re) (x : M) :
+    cappedExchangePerturbation H L c (w + c) x =
+      H inf (inf.endCoord w).im x • inf.endAngularForm w := by
+  -- The point is far from `0`, so off the disc on which the capped part and the inputs live.
+  have hw0 : w ≠ 0 := by
+    rintro rfl
+    rw [← endCenter_inf, re_endCoord_endCenter, neg_zero] at hw
+    norm_num at hw
+  have hnorm : 3 / 2 ≤ ‖w‖ := by
+    have h := (lt_neg_re_endCoord_inf_iff (r := 1) hw0).1 (by linarith)
+    linarith [Real.add_one_le_exp (2 * π * 1), Real.pi_pos]
+  rw [cappedExchangePerturbation_add hL hc₀ hc₁ hnorm,
+    pairOfPantsPerturbation_eq_smul_endAngularForm (r := inf) (by simpa using hw)]
+
 /-- The inserted Hamiltonian of the capped part is the value at `0` of its receiving Hamiltonians
 `update H inf 0`, the form used by the capping-family API. -/
 private theorem update_inf_zero : update H inf 0 zero = H zero :=
@@ -418,6 +576,19 @@ theorem contMDiffAt_cappedExchangePerturbation {n : ℕ∞} (hH : ∀ q, Periodi
   -- The plane part is the smooth plane datum composed with the translation by the parameter.
   exact (hcap.comp (c, (w, x)) contMDiffAt_snd).add
     (contMDiffAt_negativePlanePerturbation_sub (hH inf) (hHs inf) _)
+
+/-- **The components of the family are smooth in the parameter.** For period-one Hamiltonians of
+class `C^n` on `ℝ × M` and neck length `L > 4`, each component of the family is `C^n` jointly in
+the parameter `c`, the point of the capped domain `ℂ ∖ {1}`, in real coordinates, and the target
+point. -/
+theorem contMDiffAt_uncurry_cappedExchangePerturbation_apply {n : ℕ∞}
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H q)))
+    (hL : 4 < L) (v : ℂ) {p : ℝ × (ℝ × ℝ)} (hp : Complex.equivRealProdCLM.symm p.2 ≠ 1) (x : M) :
+    ContMDiffAt (𝓘(ℝ, ℝ × (ℝ × ℝ)).prod I) 𝓘(ℝ) n
+      (uncurry fun (p : ℝ × (ℝ × ℝ)) x ↦
+        cappedExchangePerturbation H L p.1 (Complex.equivRealProdCLM.symm p.2) x v) (p, x) :=
+  ((contMDiffAt_cappedExchangePerturbation hH hHs hL p.1 hp x).comp (p, x)
+    contMDiff_prodMk_equivRealProdCLM_symm.contMDiffAt).clm_apply contMDiffAt_const
 
 section VectorSpace
 

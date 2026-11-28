@@ -29,6 +29,10 @@ attached to `K(a)`, the character that describes a quadratic twist of an ellipti
   `η : Gal(L/K) →ₜ* ℤˣ` satisfies `g a = η(g) • a` for every `g`.
 * `TauCeti.continuousMonoidHom_eq_of_apply_eq_zsmul`: two such characters agree when `a ≠ 0` and
   `2 ≠ 0` in `L`.
+* `TauCeti.eq_one_of_apply_eq_zsmul_of_apply_eq_self`: the sign of an automorphism fixing `a` is
+  `1` when `a ≠ 0` and `2 ≠ 0` in `L`.
+* `TauCeti.forall_mem_eq_one_iff_le_fixingSubgroup_adjoin`: the sign character is trivial on a
+  subgroup exactly when the subgroup fixes `K⟮a⟯`.
 -/
 
 public section
@@ -77,5 +81,28 @@ theorem continuousMonoidHom_eq_of_apply_eq_zsmul {a : L} (ha : a ≠ 0) (h2 : (2
   have hg := (h g).symm.trans (h' g)
   rcases Int.units_eq_one_or (η g) with h1 | h1 <;>
     rcases Int.units_eq_one_or (η' g) with h1' | h1' <;> simp_all [Ne.symm hne]
+
+/-- **An automorphism fixing a square root has sign `1`.** If `a ≠ 0` and `2 ≠ 0` in `L`, and the
+automorphism `g` fixes `a` and sends it to `s • a` for a sign `s`, then `s = 1`: otherwise
+`a = -a`, so `2 a = 0`. -/
+theorem eq_one_of_apply_eq_zsmul_of_apply_eq_self {a : L} (ha : a ≠ 0) (h2 : (2 : L) ≠ 0)
+    {g : L ≃ₐ[K] L} {s : ℤˣ} (hg : g a = (s : ℤ) • a) (hfix : g a = a) : s = 1 := by
+  rcases Int.units_eq_one_or s with h1 | h1
+  · exact h1
+  · rw [hfix, h1, Units.val_neg, Units.val_one, neg_one_smul] at hg
+    exact (ha ((mul_eq_zero.mp (by linear_combination hg : (2 : L) * a = 0)).resolve_left
+      h2)).elim
+
+/-- **The sign character is trivial exactly where `K⟮a⟯` is fixed.** If `a ≠ 0` and `2 ≠ 0` in `L`
+and `g a = η(g) • a` for every automorphism `g`, then `η` is trivial on a subgroup `H` exactly when
+`H` fixes `K⟮a⟯`. -/
+theorem forall_mem_eq_one_iff_le_fixingSubgroup_adjoin {a : L} (ha : a ≠ 0) (h2 : (2 : L) ≠ 0)
+    {η : (L ≃ₐ[K] L) → ℤˣ} (hη : ∀ g : L ≃ₐ[K] L, g a = (η g : ℤ) • a)
+    {H : Subgroup (L ≃ₐ[K] L)} :
+    (∀ g ∈ H, η g = 1) ↔ H ≤ (IntermediateField.adjoin K {a}).fixingSubgroup := by
+  rw [← IntermediateField.le_fixedField_iff_le_fixingSubgroup,
+    IntermediateField.adjoin_simple_le_iff, IntermediateField.mem_fixedField_iff]
+  exact forall₂_congr fun g _ ↦ ⟨fun h1 ↦ by rw [hη g, h1, Units.val_one, one_smul],
+    eq_one_of_apply_eq_zsmul_of_apply_eq_self ha h2 (hη g)⟩
 
 end TauCeti

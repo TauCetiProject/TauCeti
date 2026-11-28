@@ -17,6 +17,7 @@ import Mathlib.RingTheory.IntegralClosure.IntegralRestrict
 import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 import TauCeti.NumberTheory.Padics.Basic
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # Liouville's inequality at an ultrametric place
@@ -43,6 +44,8 @@ values that p-adic transcendence arguments set against analytic upper bounds.
   `1 ≤ H ^ d * ‖σ x‖` in an ultrametric normed field.
 * `NumberField.one_le_house_pow_mul_norm_of_normedAlgebra`: the same inequality in every normed
   field over `ℚ_p`.
+* `RingHom.inv_pow_le_norm_sub_prod_pow`: a uniform separation bound for distinct monomials
+  of bounded total degree whose factors have a common denominator and house bound.
 
 ## References
 
@@ -105,6 +108,41 @@ theorem one_le_house_pow_mul_norm_of_normedAlgebra (p : ℕ) [Fact p.Prime] {L :
   have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := L)
   one_le_house_pow_mul_norm_of_isUltrametricDist (TauCeti.inv_abs_le_norm_intCast p) hc hx hint
     hH σ
+
+open Finset in
+/-- **Separation of algebraic monomials at an ultrametric place.** Suppose the numbers `δ * α i`
+are integral of house at most `G`, with `0 < δ ≤ G`. Two distinct products of the `α i` of total
+degree at most `N` have distance at least `((2 * G ^ N) ^ [K : ℚ])⁻¹` after embedding into an
+ultrametric field in which every nonzero integer has norm at least its inverse absolute value. -/
+theorem _root_.RingHom.inv_pow_le_norm_sub_prod_pow {L : Type*} [NormedField L]
+    [IsUltrametricDist L] (σ : K →+* L) (hL : ∀ n : ℤ, (|n| : ℝ)⁻¹ ≤ ‖(n : L)‖)
+    {ι : Type*} (s : Finset ι) {α : ι → K} {δ N : ℕ} {G : ℝ} (hδ : δ ≠ 0)
+    (hG : (δ : ℝ) ≤ G) (hint : ∀ i ∈ s, IsIntegral ℤ ((δ : K) * α i))
+    (hh : ∀ i ∈ s, house ((δ : K) * α i) ≤ G) {a b : ι → ℕ}
+    (ha : ∑ i ∈ s, a i ≤ N) (hb : ∑ i ∈ s, b i ≤ N)
+    (hne : ∏ i ∈ s, α i ^ a i ≠ ∏ i ∈ s, α i ^ b i) :
+    ((2 * G ^ N) ^ finrank ℚ K)⁻¹ ≤
+      ‖σ (∏ i ∈ s, α i ^ a i) - σ (∏ i ∈ s, α i ^ b i)‖ := by
+  have size (t : ι → ℕ) (ht : ∑ i ∈ s, t i ≤ N) :
+      IsIntegral ℤ ((δ : K) ^ N * ∏ i ∈ s, α i ^ t i) ∧
+      house ((δ : K) ^ N * ∏ i ∈ s, α i ^ t i) ≤ G ^ N := by
+    have hi := IsIntegral.pow_sum_mul_prod (s := s) fun i hi ↦
+      (mul_pow (δ : K) (α i) (t i)) ▸ (hint i hi).pow (t i)
+    have h := house_pow_sum_mul_prod_le (s := s) fun i hi ↦
+      (mul_pow (δ : K) (α i) (t i)) ▸ house_pow_le_of_le (hh i hi) (t i)
+    rw [prod_pow_eq_pow_sum] at h
+    exact ⟨hi.pow_mul_of_le (isIntegral_natCast δ) ht,
+      (house_natCast_pow_mul_le_of_le ht hG h).trans_eq (by rw [← pow_add, Nat.sub_add_cancel ht])⟩
+  obtain ⟨hia, hha⟩ := size a ha
+  obtain ⟨hib, hhb⟩ := size b hb
+  have hGpos : 0 < G := (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hδ)).trans_le hG
+  rw [inv_le_iff_one_le_mul₀ (by positivity), mul_comm, ← map_sub]
+  apply one_le_house_pow_mul_norm_of_isUltrametricDist hL (c := (δ : ℤ) ^ N)
+    (pow_ne_zero _ (by exact_mod_cast hδ)) (sub_ne_zero.mpr hne)
+  · simpa only [Int.cast_pow, Int.cast_natCast, mul_sub] using hia.sub hib
+  · simp only [Int.cast_pow, Int.cast_natCast, mul_sub, house, map_sub]
+    rw [two_mul]
+    exact (norm_sub_le _ _).trans (add_le_add hha hhb)
 
 /-! ### Examples -/
 
