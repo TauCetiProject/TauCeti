@@ -14,13 +14,13 @@ public import TauCeti.RingTheory.Ideal.Operations
 /-!
 # Uniformizer coordinates on maximal-ideal graded pieces
 
-Let `R` be a discrete valuation ring with maximal ideal `𝔪` and residue field `k`.  Fixing a
+Let `R` be a discrete valuation ring with maximal ideal `𝔪` and residue field `k`. Fixing a
 uniformizer `π` identifies `k` with the graded piece `𝔪^m / 𝔪^(m+1)` by sending the residue
-of `x` to the class of `x * π ^ m`.  This file constructs that identification explicitly and
+of `x` to the class of `x * π ^ m`. This file constructs that identification explicitly and
 computes how it changes when the uniformizer is replaced.
 
 If `π' = π * a` for a unit `a` of `R`, then the identification for `π'` is the identification
-for `π` precomposed with multiplication by the residue of `a ^ m`.  Thus it is independent of
+for `π` precomposed with multiplication by the residue of `a ^ m`. Thus it is independent of
 the uniformizer up to multiplication by a unit of the residue field.
 
 The explicit principal-power equivalence below follows the construction of Mathlib's
