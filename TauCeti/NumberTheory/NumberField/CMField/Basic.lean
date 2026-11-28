@@ -42,6 +42,8 @@ Hilbert's Theorem 90, and then `x / bⁿ` is fixed by complex conjugation.
   automorphism that is the conjugation of every complex embedding is CM, without assuming that
   it is Galois over `ℚ`.
 * `NumberField.IsCMField.exists_complexConj_div_eq_iff`: Hilbert's Theorem 90 for `K / K⁺`.
+* `NumberField.IsCMField.eq_one_or_eq_complexConj`: the automorphisms of `K` over `K⁺` are the
+  identity and complex conjugation.
 * `NumberField.IsCMField.star_eq_complexConj`: the star structure of a CM field is its complex
   conjugation, and `NumberField.IsCMField.complexConj_trans_complexConj`: it is an involution.
 * `NumberField.IsCMField.complexConj_algebraMap`: complex conjugations of CM fields are compatible
@@ -117,6 +119,14 @@ theorem star_eq_complexConj (x : K) : star x = complexConj K x :=
 theorem complexConj_trans_complexConj :
     (complexConj K).toRingEquiv.trans (complexConj K).toRingEquiv = RingEquiv.refl K :=
   RingEquiv.ext fun x ↦ complexConj_apply_apply K x
+
+variable {K} in
+/-- The automorphisms of a CM field `K` over `K⁺` are the identity and complex conjugation. -/
+theorem eq_one_or_eq_complexConj (σ : K ≃ₐ[K⁺] K) : σ = 1 ∨ σ = complexConj K := by
+  have hcard : Nat.card (K ≃ₐ[K⁺] K) = 2 :=
+    (IsQuadraticExtension.finrank_eq_two K⁺ K) ▸ IsGalois.card_aut_eq_finrank K⁺ K
+  exact or_iff_not_imp_left.2 fun h ↦
+    ((Nat.card_eq_two_iff' 1).1 hcard).unique h (complexConj_ne_one K)
 
 /-- **Hilbert's Theorem 90 for a CM field.** A unit `x` of a CM field satisfies
 `x * conj x = 1` if and only if `x = conj y / y` for a unit `y`. -/

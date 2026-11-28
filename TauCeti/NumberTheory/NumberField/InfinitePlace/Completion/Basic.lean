@@ -20,6 +20,8 @@ idele norm.
 
 `NumberField.InfinitePlace.Completion.norm_algebraMap` compares the completion norm with the place
 absolute value on the dense base field, and
+`NumberField.InfinitePlace.Completion.extensionEmbeddingOfIsReal_algebraMap` the real embedding of
+the completion at a real place with the real embedding of the place. Moreover
 `NumberField.InfinitePlace.Completion.funext_of_continuous` says that continuous maps out of the
 completion are determined by their values on it. The normalized value is continuous.
 
@@ -62,6 +64,16 @@ theorem Completion.algebraMap_apply_eq_coe (w : InfinitePlace K) (x : K) :
     algebraMap K w.Completion x = (x : w.Completion) := by
   rw [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply,
     Algebra.algebraMap_self_apply]
+
+/-- At a real place `w`, the real embedding of the completion `K_w` restricts on `K` to the real
+embedding of `w`. -/
+@[simp]
+theorem Completion.extensionEmbeddingOfIsReal_algebraMap {w : InfinitePlace K} (hw : w.IsReal)
+    (x : K) :
+    Completion.extensionEmbeddingOfIsReal hw (algebraMap K w.Completion x) =
+      embedding_of_isReal hw x := by
+  rw [Completion.algebraMap_apply_eq_coe, Completion.extensionEmbeddingOfIsReal_coe,
+    WithAbs.equiv_apply, WithAbs.ofAbs_toAbs]
 
 /-- The diagonal algebra structures on an archimedean completion form a scalar tower. -/
 instance {R : Type*} [CommSemiring R] [Algebra R K] (w : InfinitePlace K) :
