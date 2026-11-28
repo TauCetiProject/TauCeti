@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.PDeriv
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Evaluation
+import Mathlib.RingTheory.MvPolynomial.EulerIdentity
+import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
 
 /-!
 # The gradient of a symmetric tensor as a polynomial on the dual module
@@ -98,16 +100,10 @@ theorem apply_symmetricGradient_self_of_mem_homogeneousSubmodule (b : Module.Bas
     {n : ℕ} {p : SymmetricAlgebra R M}
     (hp : p ∈ TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n) (ξ : Module.Dual R M) :
     ξ (b.symmetricGradient p ξ) = n • SymmetricAlgebra.lift ξ p := by
-  rw [b.apply_symmetricGradient]
-  induction hp using Submodule.pow_induction_on_left' with
-  | algebraMap r => simp
-  | add x y _ _ _ ihx ihy => simp [ihx, ihy, smul_add]
-  | mem_mul m hm i x _ ih =>
-    obtain ⟨y, rfl⟩ := hm
-    simp only [Derivation.leibniz, smul_eq_mul, map_add, map_mul, SymmetricAlgebra.pderiv_ι,
-      SymmetricAlgebra.lift_ι_apply, AlgHom.commutes, Algebra.algebraMap_self, RingHom.id_apply,
-      ih, nsmul_eq_mul, Nat.cast_succ]
-    ring
+  have hP :=
+    ((SymmetricAlgebra.equivMvPolynomial_isHomogeneous_iff R M b n p).mpr hp).sum_X_mul_pderiv
+  simpa [symmetricGradient, b.lift_apply_eq_eval_equivMvPolynomial, mul_comm] using
+    congrArg (MvPolynomial.eval fun i ↦ ξ (b i)) hP
 
 /-- The `i`-th coordinate of `b.symmetricGradient p ξ` is the partial derivative along `b.coord i`
 evaluated at `ξ`. -/

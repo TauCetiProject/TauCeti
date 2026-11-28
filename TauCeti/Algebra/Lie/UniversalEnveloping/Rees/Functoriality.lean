@@ -70,30 +70,21 @@ variable [LieRing N] [LieAlgebra R N]
 /-- The `R[X]`-algebra homomorphism of PBW Rees algebras induced by a Lie algebra homomorphism
 `f : L →ₗ⁅R⁆ M`, acting coefficientwise via `TauCeti.UniversalEnvelopingAlgebra.map R f`. -/
 noncomputable def reesMap (f : L →ₗ⁅R⁆ M) : reesAlgebra R L →ₐ[R[X]] reesAlgebra R M :=
-  let φ : reesAlgebra R L →ₐ[R] reesAlgebra R M :=
-    AlgHom.codRestrict ((Polynomial.mapAlgHom (map R f)).comp (reesAlgebra R L).val)
-      (reesAlgebra R M) fun p ↦
-        mem_coeffSubalgebra_iff.mpr fun n ↦ by
-          rw [AlgHom.comp_apply, Subalgebra.coe_val, Polynomial.coe_mapAlgHom, Polynomial.coeff_map]
-          exact map_mem_pbwFiltration R f (mem_coeffSubalgebra_iff.mp p.property n)
-  AlgHom.ofLinearMap
-    { toAddHom := φ.toAddHom
-      map_smul' := fun q p ↦ Subtype.ext <| by
-        simp [φ, Algebra.smul_def, coeffSubalgebra.coe_algebraMap, Polynomial.map_map] }
-    (map_one φ) (map_mul φ)
+  coeffSubalgebra.mapPolynomialAlgHom (pbwFiltration R L) (pbwFiltration R M) (map R f)
+    (fun _ _ hb ↦ map_mem_pbwFiltration R f hb)
+    (one_mem_pbwFiltration R L 1) (one_mem_pbwFiltration R M 1)
 
 @[simp]
 theorem coe_reesMap (f : L →ₗ⁅R⁆ M) (p : reesAlgebra R L) :
     (reesMap R f p : Polynomial (_root_.UniversalEnvelopingAlgebra R M)) =
-      (p : Polynomial (_root_.UniversalEnvelopingAlgebra R L)).map (map R f) :=
-  (rfl)
+      (p : Polynomial (_root_.UniversalEnvelopingAlgebra R L)).map (map R f) := by
+  simp [reesMap]
 
 /-- `reesMap R f` fixes the central parameter `reesParameter`. -/
 @[simp]
 theorem reesMap_reesParameter (f : L →ₗ⁅R⁆ M) :
     reesMap R f (reesParameter R L) = reesParameter R M := by
-  apply Subtype.ext
-  simp
+  simp [reesMap]
 
 /-- `reesMap R f` maps `reesGenerator R L x` to `reesGenerator R M (f x)`. -/
 @[simp]
@@ -106,15 +97,16 @@ theorem reesMap_reesGenerator (f : L →ₗ⁅R⁆ M) (x : L) :
 @[simp]
 theorem reesMap_id :
     reesMap R (LieHom.id : L →ₗ⁅R⁆ L) = AlgHom.id R[X] (reesAlgebra R L) := by
-  ext x
-  simp
+  rw [reesMap, ← coeffSubalgebra.mapPolynomialAlgHom_id (pbwFiltration R L)
+    (fun _ _ hb ↦ hb) (one_mem_pbwFiltration R L 1)]
+  exact coeffSubalgebra.mapPolynomialAlgHom_congr (map_id R) _ _ _ _
 
 /-- `reesMap R` preserves composition of Lie homomorphisms. -/
 @[simp]
 theorem reesMap_comp (f : L →ₗ⁅R⁆ M) (g : M →ₗ⁅R⁆ N) :
     reesMap R (g.comp f) = (reesMap R g).comp (reesMap R f) := by
-  ext x
-  simp
+  rw [reesMap, reesMap, reesMap, coeffSubalgebra.mapPolynomialAlgHom_comp]
+  exact coeffSubalgebra.mapPolynomialAlgHom_congr (map_comp R f g) _ _ _ _
 
 /-- The `R[X]`-algebra equivalence of PBW Rees algebras induced by a Lie algebra equivalence. -/
 noncomputable def reesMapEquiv (e : L ≃ₗ⁅R⁆ M) : reesAlgebra R L ≃ₐ[R[X]] reesAlgebra R M :=
@@ -159,7 +151,7 @@ theorem reesMapEquiv_trans (e : L ≃ₗ⁅R⁆ M) (d : M ≃ₗ⁅R⁆ N) :
 theorem eval_comp_reesMap (f : L →ₗ⁅R⁆ M) (r : R) :
     (coeffSubalgebra.eval (pbwFiltration R M) r).comp ((reesMap R f).restrictScalars R) =
       (map R f).comp (coeffSubalgebra.eval (pbwFiltration R L) r) :=
-  reesAlgebra_algHom_ext (by simp) (fun x ↦ by simp)
+  AlgHom.ext fun p ↦ by simp [reesMap]
 
 @[simp]
 theorem eval_reesMap (f : L →ₗ⁅R⁆ M) (r : R) (p : reesAlgebra R L) :
@@ -171,7 +163,7 @@ theorem eval_reesMap (f : L →ₗ⁅R⁆ M) (r : R) (p : reesAlgebra R L) :
 theorem evalOne_reesMap (f : L →ₗ⁅R⁆ M) (p : reesAlgebra R L) :
     coeffSubalgebra.evalOne (pbwFiltration R M) (reesMap R f p) =
       map R f (coeffSubalgebra.evalOne (pbwFiltration R L) p) := by
-  simp only [coeffSubalgebra.evalOne_eq_eval, eval_reesMap]
+  simp [reesMap]
 
 end Functoriality
 
