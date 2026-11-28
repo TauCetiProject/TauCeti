@@ -32,7 +32,12 @@ middle-four interchange of fibre products,
 The canonical identifications of an iterated fibre product with a direct fibre product commute
 with maps in the first factor
 (`CategoryTheory.Limits.pullbackLeftPullbackSndIso_inv_naturality`) and in the second factor
-(`CategoryTheory.Limits.pullbackRightPullbackFstIso_hom_naturality`).
+(`CategoryTheory.Limits.pullbackRightPullbackFstIso_hom_naturality`), `pullbackSymmetry`
+is involutive (`CategoryTheory.Limits.pullbackSymmetry_hom_comp_pullbackSymmetry_hom`,
+`CategoryTheory.Limits.pullbackSymmetry_symm`) and natural with respect to `pullback.map`
+(`CategoryTheory.Limits.pullback_map_pullbackSymmetry`), and
+`CategoryTheory.Limits.pullbackRightPullbackFstIsoOfEq` adapts `pullbackRightPullbackFstIso` to an
+arbitrary factorization `m ≫ g = mg`.
 
 Pullback squares are transported along an equivalence of categories `e : D ≌ D'`: a square in
 `D` with a side `F.map snd` is a pullback square exactly when its image under `e.functor` is,
@@ -218,6 +223,103 @@ theorem pullbackRightPullbackFstIso_hom_naturality
         pullback.map (h ≫ g) a (h ≫ g) b (𝟙 U) φ (𝟙 S) (by simp) (by simp [hφ]) := by
   ext <;> simp
 
+/-- Reversing `pullbackSymmetry` twice yields the identity. -/
+@[reassoc (attr := simp)]
+theorem pullbackSymmetry_hom_comp_pullbackSymmetry_hom {C : Type*} [Category* C] {X Y Z : C}
+    (f : X ⟶ Z) (g : Y ⟶ Z) [HasPullback f g] [HasPullback g f] :
+    (pullbackSymmetry f g).hom ≫ (pullbackSymmetry g f).hom = 𝟙 (pullback f g) := by
+  apply pullback.hom_ext <;> simp
+
+/-- The inverse of `pullbackSymmetry f g` is `pullbackSymmetry g f`. -/
+theorem pullbackSymmetry_symm {C : Type*} [Category* C] {X Y Z : C}
+    (f : X ⟶ Z) (g : Y ⟶ Z) [HasPullback f g] [HasPullback g f] :
+    (pullbackSymmetry f g).symm = pullbackSymmetry g f := by
+  ext <;> simp
+
+/-- `pullbackSymmetry` is natural with respect to `pullback.map`. -/
+@[reassoc]
+theorem pullback_map_pullbackSymmetry {C : Type*} [Category* C]
+    {X₁ Y₁ X₂ Y₂ S₁ S₂ : C} (f₁ : X₁ ⟶ S₁) (g₁ : Y₁ ⟶ S₁) (f₂ : X₂ ⟶ S₂) (g₂ : Y₂ ⟶ S₂)
+    [HasPullback f₁ g₁] [HasPullback g₁ f₁] [HasPullback f₂ g₂] [HasPullback g₂ f₂]
+    (i₁ : X₁ ⟶ X₂) (i₂ : Y₁ ⟶ Y₂) (i₃ : S₁ ⟶ S₂)
+    (h₁ : f₁ ≫ i₃ = i₁ ≫ f₂) (h₂ : g₁ ≫ i₃ = i₂ ≫ g₂) :
+    pullback.map f₁ g₁ f₂ g₂ i₁ i₂ i₃ h₁ h₂ ≫ (pullbackSymmetry f₂ g₂).hom =
+      (pullbackSymmetry f₁ g₁).hom ≫ pullback.map g₁ f₁ g₂ f₂ i₂ i₁ i₃ h₂ h₁ := by
+  apply pullback.hom_ext <;> simp
+
+section PullbackRightPullbackFstIsoOfEq
+
+variable {C : Type*} [Category* C] {A B S Z : C} (m : A ⟶ B) (g : B ⟶ S) (mg : A ⟶ S)
+  (h : m ≫ g = mg) (r : Z ⟶ S) [HasPullback g r] [HasPullback m (pullback.fst g r)]
+  [HasPullback mg r]
+
+/-- Canonical isomorphism `pullback m (pullback.fst g r) ≅ pullback mg r` from `m ≫ g = mg`. -/
+noncomputable def pullbackRightPullbackFstIsoOfEq :
+    pullback m (pullback.fst g r) ≅ pullback mg r :=
+  pullbackRightPullbackFstIso g r m ≪≫ pullback.congrHom h rfl
+
+/-- First projection of `(pullbackRightPullbackFstIsoOfEq m g mg h r).hom`. -/
+@[reassoc (attr := simp)]
+theorem pullbackRightPullbackFstIsoOfEq_hom_fst :
+    (pullbackRightPullbackFstIsoOfEq m g mg h r).hom ≫ pullback.fst mg r =
+      pullback.fst m (pullback.fst g r) := by
+  simp [pullbackRightPullbackFstIsoOfEq]
+
+/-- Second projection of `(pullbackRightPullbackFstIsoOfEq m g mg h r).hom`. -/
+@[reassoc (attr := simp)]
+theorem pullbackRightPullbackFstIsoOfEq_hom_snd :
+    (pullbackRightPullbackFstIsoOfEq m g mg h r).hom ≫ pullback.snd mg r =
+      pullback.snd m (pullback.fst g r) ≫ pullback.snd g r := by
+  simp [pullbackRightPullbackFstIsoOfEq]
+
+/-- First projection of `(pullbackRightPullbackFstIsoOfEq m g mg h r).inv`. -/
+@[reassoc (attr := simp)]
+theorem pullbackRightPullbackFstIsoOfEq_inv_fst :
+    (pullbackRightPullbackFstIsoOfEq m g mg h r).inv ≫ pullback.fst m (pullback.fst g r) =
+      pullback.fst mg r := by
+  simp [pullbackRightPullbackFstIsoOfEq]
+
+/-- Second projection of `(pullbackRightPullbackFstIsoOfEq m g mg h r).inv` as a `pullback.map`. -/
+@[reassoc (attr := simp)]
+theorem pullbackRightPullbackFstIsoOfEq_inv_snd :
+    (pullbackRightPullbackFstIsoOfEq m g mg h r).inv ≫ pullback.snd m (pullback.fst g r) =
+      pullback.map mg r g r m (𝟙 Z) (𝟙 S) (by simp [h]) (by simp) := by
+  apply pullback.hom_ext <;> simp [pullbackRightPullbackFstIsoOfEq]
+
+/-- Composing `(pullbackRightPullbackFstIsoOfEq m g mg h r).hom` with the transition `pullback.map`
+to `pullback g r` recovers the second projection `pullback.snd m (pullback.fst g r)`. -/
+@[reassoc (attr := simp)]
+theorem pullbackRightPullbackFstIsoOfEq_hom_comp_pullbackMap :
+    (pullbackRightPullbackFstIsoOfEq m g mg h r).hom ≫
+        pullback.map mg r g r m (𝟙 Z) (𝟙 S) (by simp [h]) (by simp) =
+      pullback.snd m (pullback.fst g r) := by
+  apply pullback.hom_ext <;> simp [pullbackRightPullbackFstIsoOfEq, pullback.condition]
+
+/-- Conjugating a pullback map along `pullbackRightPullbackFstIsoOfEq` recovers a compatible map
+between the base-changed pullbacks. -/
+@[reassoc]
+theorem pullbackRightPullbackFstIsoOfEq_inv_map_hom_eq {X₁ X₂ : C} {r₁ : X₁ ⟶ S} {r₂ : X₂ ⟶ S}
+    [HasPullback g r₁] [HasPullback g r₂]
+    [HasPullback m (pullback.fst g r₁)] [HasPullback m (pullback.fst g r₂)]
+    [HasPullback mg r₁] [HasPullback mg r₂]
+    {b : pullback g r₁ ⟶ pullback g r₂}
+    (hb : b ≫ pullback.fst g r₂ = pullback.fst g r₁)
+    {a : pullback mg r₁ ⟶ pullback mg r₂}
+    (ha : a ≫ pullback.fst mg r₂ = pullback.fst mg r₁)
+    (hcomp : pullback.map mg r₁ g r₁ m (𝟙 _) (𝟙 _) (by simp [h]) (by simp) ≫ b =
+      a ≫ pullback.map mg r₂ g r₂ m (𝟙 _) (𝟙 _) (by simp [h]) (by simp)) :
+    (pullbackRightPullbackFstIsoOfEq m g mg h r₁).inv ≫
+        pullback.map m (pullback.fst g r₁) m (pullback.fst g r₂) (𝟙 A) b (𝟙 B)
+          (by simp) (by simp [hb]) ≫
+        (pullbackRightPullbackFstIsoOfEq m g mg h r₂).hom =
+      a := by
+  rw [Iso.inv_comp_eq, ← Iso.eq_comp_inv]
+  apply pullback.hom_ext
+  · simp [ha]
+  · simp only [Category.assoc, pullback.lift_snd, pullbackRightPullbackFstIsoOfEq_inv_snd]
+    rw [← hcomp, pullbackRightPullbackFstIsoOfEq_hom_comp_pullbackMap_assoc]
+
+end PullbackRightPullbackFstIsoOfEq
 end CategoryTheory.Limits
 
 namespace CategoryTheory

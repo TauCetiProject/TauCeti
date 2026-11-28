@@ -43,6 +43,9 @@ member, and two morphisms over a member which agree over the limit agree over so
   change functors of over categories, stated through `CategoryTheory.Limits.Cone.LiftsAlong`.
 * `CategoryTheory.Limits.IsLimit.exists_overPullback_map_eq_map`: descent of equalities of
   morphisms for the base change functors of over categories.
+* `CategoryTheory.Limits.IsLimit.exists_hom_overPullback_of_isLimit` and
+  `CategoryTheory.Limits.IsLimit.exists_iso_overPullback_of_isLimit`: the bundled `Over.pullback`
+  forms of morphism and isomorphism descent using `Over.pullbackTransport`.
 
 ## References
 
@@ -440,5 +443,104 @@ theorem exists_overPullback_map_eq_map [∀ i, CompactSpace (D.obj i)] {j : I}
   refine ⟨k.left, k.hom, (Over.pullback_map_eq_map_iff _ u v).mpr ?_⟩
   simpa [D.pullbackOver_map_snd_assoc] using
     congrArg ((pullbackSymmetry A.hom (D.map k.hom)).hom ≫ ·) e
+
+include hc in
+private theorem exists_hom_overPullback_of_isLimit_aux [∀ i, CompactSpace (D.obj i)]
+    [∀ i, QuasiSeparatedSpace (D.obj i)] {i₀ : I} (Y₁ Y₂ : Over (D.obj i₀))
+    [QuasiCompact Y₁.hom] [QuasiSeparated Y₁.hom] [LocallyOfFinitePresentation Y₂.hom]
+    (α : (Over.pullback (c.π.app i₀)).obj Y₁ ⟶ (Over.pullback (c.π.app i₀)).obj Y₂) :
+    ∃ (j : I) (fj : j ⟶ i₀)
+      (b : pullback (D.map fj) Y₁.hom ⟶ pullback (D.map fj) Y₂.hom)
+      (hb₁ : b ≫ pullback.fst _ _ = pullback.fst _ _),
+      let β : (Over.pullback (D.map fj)).obj Y₁ ⟶ (Over.pullback (D.map fj)).obj Y₂ :=
+        Over.pullbackHomOfFstEq (D.map fj) b hb₁
+      Over.pullbackTransport (c.w fj) (c.w fj) β = α ∧
+      pullback.map (c.π.app i₀) Y₁.hom (D.map fj) Y₁.hom (c.π.app j) (𝟙 _) (𝟙 _)
+          (by simp) (by simp) ≫ b =
+        Over.pullbackLeftSymm (c.π.app i₀) α ≫
+          pullback.map (c.π.app i₀) Y₂.hom (D.map fj) Y₂.hom (c.π.app j)
+            (𝟙 _) (𝟙 _) (by simp) (by simp) := by
+  let a := Over.pullbackLeftSymm (c.π.app i₀) α
+  have ha : a ≫ pullback.fst (c.π.app i₀) Y₂.hom = pullback.fst (c.π.app i₀) Y₁.hom :=
+    Over.pullbackLeftSymm_fst (c.π.app i₀) α
+  obtain ⟨j, fj, b, hb₁, hb₂⟩ := hc.exists_pullbackMap_comp_eq a ha
+  refine ⟨j, fj, b, hb₁, ?_, hb₂⟩
+  exact (Over.pullbackCompIsoOfEq_conj_hom_of_fstEq (c.w fj) hb₁ ha hb₂).trans
+    (Over.pullbackHomOfFstEq_pullbackLeftSymm (c.π.app i₀) α)
+
+include hc in
+/-- Bundled `Over.pullback` form of `exists_pullbackMap_comp_eq`: along a cofiltered limit of
+quasi-compact quasi-separated schemes with affine transition morphisms, any morphism between the
+`Over.pullback`s of `Y₁, Y₂ : Over (D.obj i₀)` to the limit descends to a morphism over some stage
+`j` mapping to `i₀`. Stacks, Lemma 32.10.1 (01ZM), descent of morphisms. -/
+theorem exists_hom_overPullback_of_isLimit [∀ i, CompactSpace (D.obj i)]
+    [∀ i, QuasiSeparatedSpace (D.obj i)] {i₀ : I} (Y₁ Y₂ : Over (D.obj i₀))
+    [QuasiCompact Y₁.hom] [QuasiSeparated Y₁.hom] [LocallyOfFinitePresentation Y₂.hom]
+    (α : (Over.pullback (c.π.app i₀)).obj Y₁ ⟶ (Over.pullback (c.π.app i₀)).obj Y₂) :
+    ∃ (j : I) (fj : j ⟶ i₀)
+      (β : (Over.pullback (D.map fj)).obj Y₁ ⟶ (Over.pullback (D.map fj)).obj Y₂),
+      Over.pullbackTransport (c.w fj) (c.w fj) β = α :=
+  let ⟨j, fj, _, _, hβ, _⟩ := hc.exists_hom_overPullback_of_isLimit_aux Y₁ Y₂ α
+  ⟨j, fj, _, hβ⟩
+
+include hc in
+/-- Bundled `Over.pullback` isomorphism descent: along a cofiltered limit of quasi-compact
+quasi-separated schemes with affine transition morphisms, an isomorphism `e` on the limit between
+the `Over.pullback`s of `Y₁, Y₂ : Over (D.obj i₀)` descends to an isomorphism `ek` at some stage
+`k` mapping to `i₀` whose transport to the limit recovers `e.hom`.
+Stacks, Lemma 32.10.1 (01ZM), descent of isomorphisms. -/
+theorem exists_iso_overPullback_of_isLimit [∀ i, CompactSpace (D.obj i)]
+    [∀ i, QuasiSeparatedSpace (D.obj i)] {i₀ : I} (Y₁ Y₂ : Over (D.obj i₀))
+    [QuasiCompact Y₁.hom] [QuasiSeparated Y₁.hom] [LocallyOfFinitePresentation Y₁.hom]
+    [QuasiCompact Y₂.hom] [QuasiSeparated Y₂.hom] [LocallyOfFinitePresentation Y₂.hom]
+    (e : (Over.pullback (c.π.app i₀)).obj Y₁ ≅ (Over.pullback (c.π.app i₀)).obj Y₂) :
+    ∃ (k : I) (fk : k ⟶ i₀)
+      (ek : (Over.pullback (D.map fk)).obj Y₁ ≅ (Over.pullback (D.map fk)).obj Y₂),
+      Over.pullbackTransport (c.w fk) (c.w fk) ek.hom = e.hom := by
+  obtain ⟨j, fj, b, hb₁, hβ, hb₂⟩ := hc.exists_hom_overPullback_of_isLimit_aux Y₁ Y₂ e.hom
+  let eSymm := Over.pullbackLeftSymmIso (c.π.app i₀) e
+  have ha_iso : IsIso (Over.pullbackLeftSymm (c.π.app i₀) e.hom) := by
+    rw [← Over.pullbackLeftSymmIso_hom (c.π.app i₀) e]
+    exact eSymm.isIso_hom
+  have : IsIso (pullback.map (c.π.app j) (pullback.fst (D.map fj) Y₁.hom)
+      (c.π.app j) (pullback.fst (D.map fj) Y₂.hom) (𝟙 _) b (𝟙 _) (by simp)
+      (by exact hb₁.symm)) :=
+    (MorphismProperty.pullbackMap_iff_of_pullbackMap_comp_eq
+      (.isomorphisms Scheme) fj (Over.pullbackLeftSymm_fst (c.π.app i₀) e.hom) hb₁ hb₂).mpr
+      ha_iso
+  have : CompactSpace (pullback (D.map fj) Y₁.hom : Scheme.{u}) :=
+    QuasiCompact.compactSpace_of_compactSpace (pullback.fst (D.map fj) Y₁.hom)
+  have : CompactSpace (pullback (D.map fj) Y₂.hom : Scheme.{u}) :=
+    QuasiCompact.compactSpace_of_compactSpace (pullback.fst (D.map fj) Y₂.hom)
+  have : QuasiSeparatedSpace (pullback (D.map fj) Y₂.hom : Scheme.{u}) :=
+    quasiSeparatedSpace_of_quasiSeparated (pullback.fst (D.map fj) Y₂.hom)
+  have : LocallyOfFinitePresentation (b ≫ pullback.fst (D.map fj) Y₂.hom) := by
+    rw [hb₁]
+    infer_instance
+  have : LocallyOfFinitePresentation b :=
+    locallyOfFinitePresentation_of_comp b (pullback.fst (D.map fj) Y₂.hom)
+  obtain ⟨k, hkj, hk⟩ := hc.exists_isIso_pullbackMap b hb₁
+  let β : (Over.pullback (D.map fj)).obj Y₁ ⟶ (Over.pullback (D.map fj)).obj Y₂ :=
+    Over.pullbackHomOfFstEq (D.map fj) b hb₁
+  let βK := Over.pullbackTransport (D.map_comp hkj fj).symm (D.map_comp hkj fj).symm β
+  let bK := pullback.map (D.map hkj) (pullback.fst (D.map fj) Y₁.hom)
+    (D.map hkj) (pullback.fst (D.map fj) Y₂.hom) (𝟙 _) b (𝟙 _) (by simp)
+    (by exact hb₁.symm)
+  have : IsIso bK := hk
+  let eIso := pullbackSymmetry Y₁.hom (D.map (hkj ≫ fj)) ≪≫
+    (pullbackRightPullbackFstIsoOfEq (D.map hkj) (D.map fj) (D.map (hkj ≫ fj))
+      (D.map_comp hkj fj).symm Y₁.hom).symm ≪≫
+    asIso bK ≪≫
+    pullbackRightPullbackFstIsoOfEq (D.map hkj) (D.map fj) (D.map (hkj ≫ fj))
+      (D.map_comp hkj fj).symm Y₂.hom ≪≫
+    pullbackSymmetry (D.map (hkj ≫ fj)) Y₂.hom
+  have hbK : (Over.forget (D.obj k)).map βK = eIso.hom := by
+    rw [Over.forget_map]
+    exact Over.pullbackCompIsoOfEq_conj_left_eq_pullbackMap (D.map_comp hkj fj).symm b hb₁
+  have : IsIso ((Over.forget (D.obj k)).map βK) := by rw [hbK]; exact eIso.isIso_hom
+  have : IsIso βK := isIso_of_reflects_iso βK (Over.forget (D.obj k))
+  refine ⟨k, hkj ≫ fj, asIso βK, ?_⟩
+  rw [asIso_hom, Over.pullbackTransport_comp (c.w hkj) (D.map_comp _ _).symm
+    (D.map_comp _ _).symm (c.w (hkj ≫ fj)) (c.w (hkj ≫ fj)) (c.w fj) (c.w fj) β, hβ]
 
 end CategoryTheory.Limits.IsLimit

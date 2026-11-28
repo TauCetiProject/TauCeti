@@ -17,7 +17,7 @@ Let `S` be covered by the images of two open immersions `j₁ : W₁ ⟶ S` and 
 overlap `W₁₂ = W₁ ×_S W₂` and inclusions `i₁ : W₁₂ ⟶ W₁`, `i₂ : W₁₂ ⟶ W₂`. Finite étale covers
 `Y₁` of `W₁` and `Y₂` of `W₂` together with an isomorphism `e` between their restrictions to
 `W₁₂` glue to a finite étale cover `Y` of `S` whose restrictions to `W₁` and `W₂` are `Y₁` and `Y₂`,
-compatibly with `e` (`TauCeti.FiniteEtaleScheme.exists_pullback_iso_of_isPullback`).
+compatibly with `e` (`TauCeti.FiniteEtaleScheme.exists_pullbackCompIsoOfEq_of_isPullback`).
 
 The glued scheme is the pushout of `Y₁` and `Y₂` along `Y₁ ×_{W₁} W₁₂`, which `e` identifies with
 the open `Y₂ ×_{W₂} W₁₂` of `Y₂`. Its inverse images of `W₁` and `W₂` are `Y₁` and `Y₂`
@@ -124,5 +124,87 @@ theorem exists_pullback_iso_of_isPullback (h : IsPullback i₁ i₂ j₁ j₂)
   refine ⟨Y, e₁, e₂, ?_⟩
   rw [c₁, c₂, ← overlapIso_hom]
   exact pushout.condition.trans (Category.assoc _ _ _)
+
+/-- **Gluing finite étale covers along two opens.** Let `j₁ : W₁ ⟶ S` and `j₂ : W₂ ⟶ S` be open
+immersions covering `S`, with overlap `W₁₂` given by a cartesian square `i₁ ≫ j₁ = i₂ ≫ j₂`. Let
+`Y₁` and `Y₂` be finite étale covers of `W₁` and `W₂`, and `e` an isomorphism between their
+restrictions to `W₁₂`. Then there is a finite étale cover `Y` of `S` whose restrictions to `W₁` and
+`W₂` are isomorphic to `Y₁` and `Y₂`, compatibly with `e` via `pullbackCompIsoOfEq`. -/
+theorem exists_pullbackCompIsoOfEq_of_isPullback (h : IsPullback i₁ i₂ j₁ j₂)
+    (hcover : j₁.opensRange ⊔ j₂.opensRange = ⊤)
+    {ij : W₁₂ ⟶ S} (hij₁ : i₁ ≫ j₁ = ij) (hij₂ : i₂ ≫ j₂ = ij)
+    (e : (pullback i₁).obj Y₁ ≅ (pullback i₂).obj Y₂) :
+    ∃ (Y : FiniteEtaleScheme S) (e₁ : (pullback j₁).obj Y ≅ Y₁)
+      (e₂ : (pullback j₂).obj Y ≅ Y₂),
+      (pullbackCompIsoOfEq i₁ j₁ ij hij₁).inv.app Y ≫ (pullback i₁).map e₁.hom ≫ e.hom =
+        (pullbackCompIsoOfEq i₂ j₂ ij hij₂).inv.app Y ≫ (pullback i₂).map e₂.hom := by
+  obtain ⟨Y, e₁, e₂, hcompat⟩ := exists_pullback_iso_of_isPullback h hcover e
+  refine ⟨Y, e₁, e₂, pullback_hom_ext ?_⟩
+  have : IsIso e₂.inv.hom.left :=
+    (Over.forget _).map_isIso ((finiteEtaleSchemeProperty W₂).ι.mapIso e₂).inv
+  have : IsOpenImmersion (Limits.pullback.fst Y₂.obj.hom i₂) :=
+    MorphismProperty.of_isPullback (P := @IsOpenImmersion)
+      (IsPullback.of_hasPullback Y₂.obj.hom i₂).flip inferInstance
+  have : IsOpenImmersion (Limits.pullback.fst Y.obj.hom j₂) :=
+    MorphismProperty.of_isPullback (P := @IsOpenImmersion)
+      (IsPullback.of_hasPullback Y.obj.hom j₂).flip inferInstance
+  have : Mono (Limits.pullback.fst Y₂.obj.hom i₂) := IsOpenImmersion.mono _
+  have : Mono (Limits.pullback.fst Y.obj.hom j₂) := IsOpenImmersion.mono _
+  apply (cancel_mono e₂.inv.hom.left).mp
+  apply (cancel_mono (Limits.pullback.fst Y.obj.hom j₂)).mp
+  have fst_eq {T U : Scheme.{u}} (f : T ⟶ U) (Z : FiniteEtaleScheme U) :
+      Limits.pullback.fst Z.obj.hom f =
+        eqToHom (pullback_obj_left f Z) ≫ Limits.pullback.fst Z.obj.hom f :=
+    (Category.id_comp _).symm
+  have hcompat' : (eqToHom (pullback_obj_left i₁ Y₁) ≫ Limits.pullback.fst Y₁.obj.hom i₁) ≫
+        e₁.inv.hom.left ≫
+        eqToHom (pullback_obj_left j₁ Y) ≫ Limits.pullback.fst Y.obj.hom j₁ =
+      e.hom.hom.left ≫ (eqToHom (pullback_obj_left i₂ Y₂) ≫ Limits.pullback.fst Y₂.obj.hom i₂) ≫
+        e₂.inv.hom.left ≫ eqToHom (pullback_obj_left j₂ Y) ≫ Limits.pullback.fst Y.obj.hom j₂ := by
+    rw [← fst_eq i₁ Y₁, ← fst_eq j₁ Y, ← fst_eq i₂ Y₂, ← fst_eq j₂ Y]
+    exact hcompat
+  have hfst : ((pullbackCompIsoOfEq i₁ j₁ ij hij₁).inv.app Y ≫
+        (pullback i₁).map e₁.hom).hom.left ≫
+        (eqToHom (pullback_obj_left i₁ Y₁) ≫ Limits.pullback.fst Y₁.obj.hom i₁) ≫
+          e₁.inv.hom.left ≫
+          eqToHom (pullback_obj_left j₁ Y) ≫ Limits.pullback.fst Y.obj.hom j₁ =
+      ((pullbackCompIsoOfEq i₂ j₂ ij hij₂).inv.app Y ≫
+        (pullback i₂).map e₂.hom).hom.left ≫
+        (eqToHom (pullback_obj_left i₂ Y₂) ≫ Limits.pullback.fst Y₂.obj.hom i₂) ≫
+          e₂.inv.hom.left ≫
+          eqToHom (pullback_obj_left j₂ Y) ≫ Limits.pullback.fst Y.obj.hom j₂ := by
+    rw [← fst_eq i₁ Y₁, ← fst_eq j₁ Y, ← fst_eq i₂ Y₂, ← fst_eq j₂ Y]
+    exact (pullbackCompIsoOfEq_inv_map_hom_fst_inv_fst hij₁ e₁).trans
+      (pullbackCompIsoOfEq_inv_map_hom_fst_inv_fst hij₂ e₂).symm
+  rw [fst_eq i₂ Y₂, fst_eq j₂ Y]
+  calc
+    ((((pullbackCompIsoOfEq i₁ j₁ ij hij₁).inv.app Y ≫
+        (pullback i₁).map e₁.hom ≫ e.hom).hom.left ≫
+        eqToHom (pullback_obj_left i₂ Y₂) ≫ Limits.pullback.fst Y₂.obj.hom i₂) ≫
+      e₂.inv.hom.left) ≫ eqToHom (pullback_obj_left j₂ Y) ≫ Limits.pullback.fst Y.obj.hom j₂
+      = ((pullbackCompIsoOfEq i₁ j₁ ij hij₁).inv.app Y ≫
+          (pullback i₁).map e₁.hom).hom.left ≫
+          e.hom.hom.left ≫
+          (eqToHom (pullback_obj_left i₂ Y₂) ≫ Limits.pullback.fst Y₂.obj.hom i₂) ≫
+            e₂.inv.hom.left ≫
+            eqToHom (pullback_obj_left j₂ Y) ≫ Limits.pullback.fst Y.obj.hom j₂ := by
+        simp only [ObjectProperty.FullSubcategory.comp_hom, Over.comp_left, Category.assoc]
+    _ = ((pullbackCompIsoOfEq i₁ j₁ ij hij₁).inv.app Y ≫
+          (pullback i₁).map e₁.hom).hom.left ≫
+          (eqToHom (pullback_obj_left i₁ Y₁) ≫ Limits.pullback.fst Y₁.obj.hom i₁) ≫
+            e₁.inv.hom.left ≫
+            eqToHom (pullback_obj_left j₁ Y) ≫ Limits.pullback.fst Y.obj.hom j₁ := by
+        rw [← hcompat']
+    _ = ((pullbackCompIsoOfEq i₂ j₂ ij hij₂).inv.app Y ≫
+          (pullback i₂).map e₂.hom).hom.left ≫
+          (eqToHom (pullback_obj_left i₂ Y₂) ≫ Limits.pullback.fst Y₂.obj.hom i₂) ≫
+            e₂.inv.hom.left ≫
+            eqToHom (pullback_obj_left j₂ Y) ≫ Limits.pullback.fst Y.obj.hom j₂ :=
+        hfst
+    _ = ((((pullbackCompIsoOfEq i₂ j₂ ij hij₂).inv.app Y ≫
+          (pullback i₂).map e₂.hom).hom.left ≫
+          eqToHom (pullback_obj_left i₂ Y₂) ≫ Limits.pullback.fst Y₂.obj.hom i₂) ≫
+        e₂.inv.hom.left) ≫ eqToHom (pullback_obj_left j₂ Y) ≫ Limits.pullback.fst Y.obj.hom j₂ := by
+        simp only [Category.assoc]
 
 end TauCeti.FiniteEtaleScheme

@@ -17,9 +17,11 @@ import TauCeti.Topology.Closure
 In a sober space, the generic points of irreducible components are precisely the points
 with no proper generization. Every point of a closed subset is a specialization of such a
 generic point of that subset, which has no proper generization in the subset
-(`IsClosed.exists_maximal_specializes`). These facts let one choose component-generic points
-without Noetherianity or a dimension argument. In a Noetherian space, every dense open set contains
-all the component-generic points.
+(`IsClosed.exists_maximal_specializes`); in particular, every proper open `U ≠ ⊤` misses a point
+whose strict generizations all lie in `U`
+(`TopologicalSpace.Opens.exists_notMem_specializes_imp_mem`). These facts let one choose
+component-generic points without Noetherianity or a dimension argument. In a Noetherian space,
+every dense open set contains all the component-generic points.
 
 In a quasi-sober space where the closure of every component-generic point has nonempty
 interior, a generization-stable subset is dense exactly when it contains all component-generic
@@ -127,6 +129,16 @@ theorem IsClosed.exists_maximal_specializes {X : Type*} [TopologicalSpace X] [Qu
   refine ⟨z, z.property, hzx, fun y hy hyz ↦ ?_⟩
   exact congrArg Subtype.val ((TauCeti.mem_genericPoints_iff.mp hz) ⟨y, hy⟩
     ((subtype_specializes_iff _ _).mpr hyz))
+
+/-- Every proper open `U ≠ ⊤` of a sober space `X` misses the generic point `s` of an irreducible
+component of `X \ U`; every strict generization of `s` lies in `U`. -/
+theorem TopologicalSpace.Opens.exists_notMem_specializes_imp_mem {X : Type*} [TopologicalSpace X]
+    [QuasiSober X] [T0Space X] (U : TopologicalSpace.Opens X) (hU : U ≠ ⊤) :
+    ∃ s : X, s ∉ U ∧ ∀ ⦃t : X⦄, t ⤳ s → t ≠ s → t ∈ U := by
+  obtain ⟨z₀, hz₀⟩ : ((U : Set X)ᶜ).Nonempty :=
+    Set.nonempty_compl.mpr fun h ↦ hU (SetLike.ext' (h.trans TopologicalSpace.Opens.coe_top.symm))
+  obtain ⟨s, hs, -, hgen⟩ := U.isOpen.isClosed_compl.exists_maximal_specializes hz₀
+  exact ⟨s, hs, fun t hts hne ↦ by_contra fun htU ↦ hne (hgen t htU hts)⟩
 
 /-- In a Noetherian space, a dense open set contains the generic point of every irreducible
 component. -/

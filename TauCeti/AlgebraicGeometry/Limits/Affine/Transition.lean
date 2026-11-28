@@ -28,6 +28,9 @@ Two points with the same images agree, and the topology is the one induced by th
 because the preimages of affine opens of the members form a basis of the limit
 (`isBasis_preimage_isAffineOpen`).
 
+`opensDiagramObjIso` and `opensConePtIso` identify `opensDiagram` and `opensCone` with preimage
+open subschemes.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.Scheme.residueFieldDiagram`: the residue fields of a compatible
@@ -56,7 +59,57 @@ universe u
 
 open CategoryTheory Limits AlgebraicGeometry Opposite
 
-namespace TauCeti.AlgebraicGeometry.Scheme
+namespace TauCeti.AlgebraicGeometry
+
+section OpensDiagram
+
+variable {I : Type u} [Category.{u} I] (D : I ⥤ Scheme.{u}) (c : Cone D) (i : I)
+  (U : (D.obj i).Opens)
+
+/-- Identification of stage `j` of `opensDiagram D i U` with `(D.map j.hom ⁻¹ᵁ U).toScheme`. -/
+noncomputable def opensDiagramObjIso (j : Over i) :
+    (opensDiagram D i U).obj j ≅ (D.map j.hom ⁻¹ᵁ U).toScheme := eqToIso (opensDiagram_obj D i U j)
+
+/-- Identification of the vertex of `opensCone D c i U` with `(c.π.app i ⁻¹ᵁ U).toScheme`. -/
+noncomputable def opensConePtIso : (opensCone D c i U).pt ≅ (c.π.app i ⁻¹ᵁ U).toScheme :=
+  eqToIso (opensCone_pt D c i U)
+
+/-- Composing `(opensDiagramObjIso D i U j).hom` with `(D.map j.hom ⁻¹ᵁ U).ι`. -/
+@[reassoc (attr := simp)] theorem opensDiagramObjIso_hom_ι (j : Over i) :
+    (opensDiagramObjIso D i U j).hom ≫ (D.map j.hom ⁻¹ᵁ U).ι = (opensDiagramι D i U).app j :=
+  (Category.id_comp _).trans (opensDiagramι_app D i U j).symm
+
+/-- Composing `(opensDiagramObjIso D i U j).inv` with `(opensDiagramι D i U).app j`. -/
+@[reassoc] theorem opensDiagramObjIso_inv_app (j : Over i) :
+    (opensDiagramObjIso D i U j).inv ≫ (opensDiagramι D i U).app j = (D.map j.hom ⁻¹ᵁ U).ι := by
+  rw [← opensDiagramObjIso_hom_ι, Iso.inv_hom_id_assoc]
+
+/-- Transition morphisms of `opensDiagram D i U` correspond to `Scheme.Hom.resLE` along
+`D.map f.left`. -/
+@[reassoc] theorem opensDiagram_map_comp_objIso_hom {j k : Over i} (f : j ⟶ k) :
+    (opensDiagram D i U).map f ≫ (opensDiagramObjIso D i U k).hom =
+      (opensDiagramObjIso D i U j).hom ≫ (D.map f.left).resLE (D.map k.hom ⁻¹ᵁ U)
+        (D.map j.hom ⁻¹ᵁ U) (by rw [← Scheme.Hom.comp_preimage, ← D.map_comp, Over.w f]) := by
+  rw [← cancel_mono (D.map k.hom ⁻¹ᵁ U).ι, Category.assoc, opensDiagramObjIso_hom_ι,
+    (opensDiagramι D i U).naturality f, Functor.comp_map, Over.forget_map, Category.assoc,
+    Scheme.Hom.resLE_comp_ι, opensDiagramObjIso_hom_ι_assoc]
+
+/-- Projections of `opensCone D c i U` correspond to `Scheme.Hom.resLE` along `c.π.app j.left`. -/
+@[reassoc] theorem opensCone_π_app_comp_objIso_hom (j : Over i) :
+    (opensCone D c i U).π.app j ≫ (opensDiagramObjIso D i U j).hom =
+      (opensConePtIso D c i U).hom ≫ (c.π.app j.left).resLE (D.map j.hom ⁻¹ᵁ U)
+        (c.π.app i ⁻¹ᵁ U) (by rw [← Scheme.Hom.comp_preimage, c.w]) :=
+  (Category.comp_id _).trans ((opensCone_π_app D c i U j).trans (Category.id_comp _).symm)
+
+/-- Composing `(opensCone D c i U).π.app j` with `(opensDiagramι D i U).app j`. -/
+@[reassoc] theorem opensCone_π_app_comp_opensDiagramι_app (j : Over i) :
+    (opensCone D c i U).π.app j ≫ (opensDiagramι D i U).app j =
+      (opensConePtIso D c i U).hom ≫ (c.π.app i ⁻¹ᵁ U).ι ≫ c.π.app j.left := by
+  rw [← opensDiagramObjIso_hom_ι, opensCone_π_app_comp_objIso_hom_assoc, Scheme.Hom.resLE_comp_ι]
+
+end OpensDiagram
+
+namespace Scheme
 
 section Points
 
@@ -208,4 +261,6 @@ instance preservesLimit_forgetToTop : PreservesLimit D Scheme.forgetToTop where
     rw [TopCat.nonempty_isLimit_iff_eq_induced _ h.some]
     exact topologicalSpace_eq_iInf_induced_of_isLimit hc
 
-end TauCeti.AlgebraicGeometry.Scheme
+end Scheme
+
+end TauCeti.AlgebraicGeometry
