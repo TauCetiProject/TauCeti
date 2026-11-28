@@ -82,16 +82,9 @@ theorem exists_adicCompletionCongr_mul_self_eq
     ∃ y ∈ w.adicCompletionIntegers E,
       adicCompletionCongr w w _ (valuation_complexConj_of_conjPlace_eq h) y * y = u := by
   set σ := adicCompletionCongr w w _ (valuation_complexConj_of_conjPlace_eq h)
-  -- conjugation preserves `O_w`, where it is an involution
-  have hσmem (x : w.adicCompletion E) (hx : x ∈ w.adicCompletionIntegers E) :
-      σ x ∈ w.adicCompletionIntegers E := by
-    rw [mem_adicCompletionIntegers] at hx ⊢
-    rwa [valued_adicCompletionCongr]
-  let σO : w.adicCompletionIntegers E →+* w.adicCompletionIntegers E :=
-    (σ : w.adicCompletion E →+* w.adicCompletion E).restrict _ _ hσmem
-  have hσO (x : w.adicCompletionIntegers E) : (σO x : w.adicCompletion E) = σ x := rfl
-  have hσσ (x : w.adicCompletionIntegers E) : σO (σO x) = x :=
-    Subtype.ext (by rw [hσO, hσO, adicCompletionCongr_complexConj_apply_apply h])
+  let σO := w.adicCompletionIntegersConj h
+  have hσO := w.coe_adicCompletionIntegersConj h
+  have hσσ := w.adicCompletionIntegersConj_apply_apply h
   -- `2` is a unit of `O_w`, and conjugation moves the image of `x` modulo `𝔪_w`
   have h2O : IsUnit (2 : w.adicCompletionIntegers E) := by
     rw [← map_ofNat (algebraMap (𝓞 E) (w.adicCompletionIntegers E)) 2]
@@ -107,7 +100,10 @@ theorem exists_adicCompletionCongr_mul_self_eq
     (u := ⟨u, (mem_adicCompletionIntegers _ _ _).2 hu₁.le⟩)
     (adicCompletionIntegers.isUnit_iff_valued_eq_one.2 hu₁)
     (Subtype.ext (by rw [hσO, hσu]))
-  exact ⟨y, y.property, by simpa [← hσO] using congrArg Subtype.val hy⟩
+  exact ⟨y, y.property, by
+    have hh := congrArg Subtype.val hy
+    change (σO y : w.adicCompletion E) * (y : w.adicCompletion E) = u at hh
+    rwa [hσO] at hh⟩
 
 end IsDedekindDomain.HeightOneSpectrum
 
@@ -151,12 +147,10 @@ theorem exists_star_mul_self_eq_of_forall_conjPlace_eq
   have hstar : star a = a := by
     rw [ha, ← coe_star_integralAdeles, ← Units.coe_star, hu]
   -- the components of `a` are units of the `O_w`
-  have hunits : Units.map ((integralAdeles (𝓞 E) E).val.toRingHom :
-      integralAdeles (𝓞 E) E →* 𝔸ᶠ[E]) u ∈ integralUnits (𝓞 E) E := by
-    rw [← range_units_map_val_eq_integralUnits]
-    exact ⟨u, rfl⟩
-  have ha_one (w : HeightOneSpectrum (𝓞 E)) : Valued.v (a w) = 1 :=
-    mem_integralUnits_iff.1 hunits w
+  have ha_one (w : HeightOneSpectrum (𝓞 E)) : Valued.v (a w) = 1 := by
+    simpa only [coe_integralProj_apply] using
+      HeightOneSpectrum.adicCompletionIntegers.isUnit_iff_valued_eq_one.1
+        (u.isUnit.map (integralProj E w))
   -- at the places fixed by conjugation, the local norms
   have hloc (w : HeightOneSpectrum (𝓞 E)) (h : w.conjPlace = w) :=
     HeightOneSpectrum.exists_adicCompletionCongr_mul_self_eq h (h2 w h) (hne w h)

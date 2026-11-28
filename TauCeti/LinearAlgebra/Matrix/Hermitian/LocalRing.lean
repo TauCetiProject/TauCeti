@@ -8,8 +8,11 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.RingTheory.LocalRing.Basic
 import Mathlib.Algebra.Star.Pi
-import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
+import TauCeti.LinearAlgebra.Matrix.RowCol
+import TauCeti.LinearAlgebra.Matrix.SchurComplement
+import TauCeti.RingTheory.LocalRing.Basic
 
 /-!
 # Orthonormal bases of unimodular hermitian matrices over a local ring
@@ -40,8 +43,8 @@ existence of orthonormal bases of unimodular hermitian forms over them.
 
 * `Matrix.IsHermitian.exists_isUnit_star_dotProduct_mulVec`: over a local ring with a unit trace,
   a unimodular hermitian form represents a unit, by a vector with a coordinate equal to `1`.
-* `Matrix.conjTranspose_mul_fromBlocks_one₂₂_mul`: a change of basis splitting a block of
-  orthonormal basis vectors off a block matrix, leaving the Schur complement.
+* `Matrix.conjTranspose_mul_fromBlocks_one₂₂_mul`: a block-diagonal congruence
+  identity leaving the Schur complement; the multiplier is invertible when `kS` is invertible.
 * `Matrix.IsHermitian.exists_conjTranspose_mul_mul_eq_one`: over a local ring with a unit trace
   whose conjugation-fixed units are norms, a unimodular hermitian matrix `b` satisfies
   `kᴴ * b * k = 1` for some `k`, which is then invertible.
@@ -66,29 +69,22 @@ namespace Matrix
 
 variable {R : Type*} [CommRing R] [StarRing R] {n : Type*} [Fintype n] [DecidableEq n]
 
-/-- **A unimodular hermitian form over a local ring represents a unit.** Let `R` be a local ring
-with an involution in which some trace `s + star s` is a unit. A hermitian matrix `b` with unit
-determinant, on a nonempty index type, takes a unit value `star v ⬝ᵥ b *ᵥ v` at a vector `v`
+omit [DecidableEq n] in
+/-- **A hermitian form with a unit entry over a local ring represents a unit.**
+Let `R` be a local ring with an involution in which some trace `s + star s` is a unit. A
+hermitian matrix `b` with a unit entry takes a unit value `star v ⬝ᵥ b *ᵥ v` at a vector `v`
 with a coordinate equal to `1`. -/
-theorem IsHermitian.exists_isUnit_star_dotProduct_mulVec [IsLocalRing R] [Nonempty n]
-    {b : Matrix n n R} (hb : b.IsHermitian) (hdet : IsUnit b.det) {s : R}
+theorem IsHermitian.exists_isUnit_star_dotProduct_mulVec [IsLocalRing R]
+    {b : Matrix n n R} (hb : b.IsHermitian) (hentry : ∃ i j, IsUnit (b i j)) {s : R}
     (hs : IsUnit (s + star s)) :
     ∃ i v, v i = 1 ∧ IsUnit (star v ⬝ᵥ b *ᵥ v) := by
+  classical
   -- the value at a basis vector is a diagonal entry
   have hsingle (j : n) : star (Pi.single j 1 : n → R) ⬝ᵥ b *ᵥ Pi.single j 1 = b j j := by
     rw [Pi.star_single, star_one, single_one_dotProduct, mulVec_single_one, col_apply]
-  obtain ⟨i⟩ := ‹Nonempty n›
+  obtain ⟨i, j, hij⟩ := hentry
   by_cases hii : IsUnit (b i i)
   · exact ⟨i, Pi.single i 1, Pi.single_eq_same i 1, by rwa [hsingle]⟩
-  -- the row `i` of `b` contains a unit, since `det b` is its product with a column of the
-  -- adjugate
-  obtain ⟨j, hij⟩ : ∃ j, IsUnit (b i j) := by
-    have hdet' : b.det = ∑ j, b i j * b.adjugate j i := by
-      have h₁ := congrFun (congrFun b.mul_adjugate i) i
-      rw [Matrix.smul_apply, one_apply_eq, smul_eq_mul, mul_one] at h₁
-      rw [← h₁, Matrix.mul_apply]
-    obtain ⟨j, -, hj⟩ := IsLocalRing.exists_of_isUnit_sum (hdet' ▸ hdet)
-    exact ⟨j, isUnit_of_mul_isUnit_left hj⟩
   by_cases hjj : IsUnit (b j j)
   · exact ⟨j, Pi.single j 1, Pi.single_eq_same j 1, by rwa [hsingle]⟩
   have hne : j ≠ i := by rintro rfl; exact hii hij
@@ -109,34 +105,16 @@ theorem IsHermitian.exists_isUnit_star_dotProduct_mulVec [IsLocalRing R] [Nonemp
   have hrest : ¬IsUnit (b i i + star t * (b j j * t)) := IsLocalRing.nonunits_add hii
     fun h ↦ hjj (isUnit_of_mul_isUnit_left (isUnit_of_mul_isUnit_right h))
   rw [hval]
-  refine (IsLocalRing.isUnit_or_isUnit_of_isUnit_add (b := -(b i i + star t * (b j j * t)))
-    ?_).resolve_right (by rwa [IsUnit.neg_iff])
-  rwa [add_neg_cancel_right]
-
-/-- **Splitting off a vector of norm one.** For a block matrix `fromBlocks A B Bᴴ 1`, whose last
-block of basis vectors is orthonormal, the change of basis `fromBlocks kS 0 (-(Bᴴ * kS)) 1`
-makes the two blocks orthogonal, and transforms the first block into the congruence of the Schur
-complement `A - B * Bᴴ` by `kS`. -/
-theorem conjTranspose_mul_fromBlocks_one₂₂_mul {α m p : Type*} [Ring α] [StarRing α]
-    [Fintype m] [Fintype p] [DecidableEq p] (A : Matrix m m α) (B : Matrix m p α)
-    (kS : Matrix m m α) :
-    (fromBlocks kS 0 (-(Bᴴ * kS)) (1 : Matrix p p α))ᴴ * fromBlocks A B Bᴴ (1 : Matrix p p α) *
-        fromBlocks kS 0 (-(Bᴴ * kS)) (1 : Matrix p p α) =
-      fromBlocks (kSᴴ * (A - B * Bᴴ) * kS) 0 0 (1 : Matrix p p α) := by
-  simp only [fromBlocks_conjTranspose, fromBlocks_multiply, conjTranspose_neg,
-    conjTranspose_mul, conjTranspose_conjTranspose, conjTranspose_zero, conjTranspose_one,
-    Matrix.mul_zero, Matrix.zero_mul, Matrix.mul_one, Matrix.one_mul, Matrix.mul_neg,
-    Matrix.neg_mul, zero_add, Matrix.mul_sub, Matrix.sub_mul, Matrix.add_mul,
-    Matrix.mul_assoc]
-  congr 1 <;> abel
+  exact TauCeti.isUnit_add_of_isUnit_of_not_isUnit hs hrest
 
 /-- **Normalizing a vector of unit norm.** If every conjugation-fixed unit is a norm, a vector `v`
-with `v i = 1` and unit norm for a hermitian `b` is, up to a unit scalar, the column `i` of an
-invertible change of basis `P` after which the `i`-th basis vector has norm `1`. -/
+with a unit coordinate `v i` and unit norm for a hermitian `b` yields an invertible change of
+basis `P`
+after which the `i`-th basis vector has norm `1`. -/
 private theorem IsHermitian.exists_isUnit_det_and_conjTranspose_mul_mul_apply_self_eq_one
     {b : Matrix n n R} (hb : b.IsHermitian)
     (hnorm : ∀ u : R, IsUnit u → star u = u → ∃ y, star y * y = u) {i : n} {v : n → R}
-    (hvi : v i = 1) (hv : IsUnit (star v ⬝ᵥ b *ᵥ v)) :
+    (hvi : IsUnit (v i)) (hv : IsUnit (star v ⬝ᵥ b *ᵥ v)) :
     ∃ P : Matrix n n R, IsUnit P.det ∧ (Pᴴ * b * P) i i = 1 := by
   obtain ⟨y, hy⟩ := hnorm _ hv (hb.star_dotProduct_mulVec_comm v v)
   have hyu : IsUnit y := isUnit_of_mul_isUnit_right (hy ▸ hv)
@@ -144,22 +122,21 @@ private theorem IsHermitian.exists_isUnit_det_and_conjTranspose_mul_mul_apply_se
   have hzy : z * y = 1 := IsUnit.val_inv_mul hyu
   -- the change of basis replacing the `i`-th basis vector by `z • v`
   refine ⟨updateCol 1 i (z • v), ?_, ?_⟩
-  · have hcol : (fun k ↦ ∑ j, (z • v) j • (1 : Matrix n n R) k j) = z • v := by
-      ext k
-      simp [Matrix.one_apply]
-    rw [← hcol, det_updateCol_sum, det_one, smul_eq_mul, mul_one, Pi.smul_apply, smul_eq_mul,
-      hvi, mul_one]
-    exact (hyu.unit⁻¹).isUnit
-  · have hrow : (updateCol (1 : Matrix n n R) i (z • v))ᴴ i = star (z • v) := by
-      ext k
-      simp [conjTranspose_apply]
-    have hcol : (updateCol (1 : Matrix n n R) i (z • v))ᵀ i = z • v := by
-      ext k
-      simp
-    rw [mul_mul_apply, hrow, hcol, star_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, ← hy]
+  · have hdet : (updateCol (1 : Matrix n n R) i (z • v)).det = z * v i := by
+      rw [← det_transpose, ← updateRow_transpose, transpose_one, det_updateRow_one]
+      rfl
+    rw [hdet]
+    exact (hyu.unit⁻¹).isUnit.mul hvi
+  · have hscale : star (z • v) ⬝ᵥ b *ᵥ (z • v) =
+        (star z * z) * (star v ⬝ᵥ b *ᵥ v) := by
+      rw [star_smul, mulVec_smul, smul_dotProduct, dotProduct_smul]
+      simp only [smul_eq_mul]
+      ac_rfl
+    rw [conjTranspose_mul_mul_updateCol_one_apply_self, hscale, ← hy]
     have hzy' : star z * star y = 1 := by rw [← star_mul', hzy, star_one]
-    simp only [smul_eq_mul]
-    linear_combination (star z * star y) * hzy + hzy'
+    calc
+      (star z * z) * (star y * y) = (star z * star y) * (z * y) := by ac_rfl
+      _ = 1 := by rw [hzy', hzy, mul_one]
 
 /-- **The block step of Gram–Schmidt.** If the `i`-th basis vector has norm `1` for a unimodular
 hermitian `b`, and the unimodular hermitian matrices on the complement of `i` have orthonormal
@@ -213,9 +190,14 @@ theorem IsHermitian.exists_conjTranspose_mul_mul_eq_one [IsLocalRing R] {b : Mat
   | _ N ih =>
   rcases isEmpty_or_nonempty n with hn | hn
   · exact ⟨1, Subsingleton.elim _ _⟩
-  obtain ⟨i, v, hvi, hv⟩ := hb.exists_isUnit_star_dotProduct_mulVec hdet hs
+  obtain ⟨i₀⟩ := hn
+  obtain ⟨j, -, hj⟩ := IsLocalRing.exists_of_isUnit_sum
+    (Matrix.det_eq_sum_mul_adjugate_row b i₀ ▸ hdet)
+  obtain ⟨i, v, hvi, hv⟩ := hb.exists_isUnit_star_dotProduct_mulVec
+    ⟨i₀, j, isUnit_of_mul_isUnit_left hj⟩ hs
   obtain ⟨P, hP, hPi⟩ :=
-    hb.exists_isUnit_det_and_conjTranspose_mul_mul_apply_self_eq_one hnorm hvi hv
+    hb.exists_isUnit_det_and_conjTranspose_mul_mul_apply_self_eq_one hnorm
+      (by rw [hvi]; exact isUnit_one) hv
   have hb₁ : (Pᴴ * b * P).IsHermitian := isHermitian_conjTranspose_mul_mul P hb
   have hdet₁ : IsUnit (Pᴴ * b * P).det := by
     rw [det_mul, det_mul, det_conjTranspose]
