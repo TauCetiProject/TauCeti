@@ -68,6 +68,8 @@ noncomputable section
 
 open scoped Matrix
 
+attribute [local instance] RingHomInvPair.of_ringEquiv RingHomInvPair.of_ringEquiv_symm
+
 namespace TauCeti
 
 /-- **The contragredient dual** of an `R`-module `M` along a ring isomorphism `σ : S ≃+* R`:
@@ -195,17 +197,13 @@ theorem smul_apply (s : S) (φ : ContragredientDual σ M) (x : M) :
 /-- `toDual` and `ofDual` form a `σ`-semilinear equivalence between `ContragredientDual σ M` and
 `Module.Dual R M`. -/
 def toDualLinearEquiv (σ : S ≃+* R) (M : Type*) [AddCommMonoid M] [Module R M] :
-    haveI := RingHomInvPair.of_ringEquiv σ
-    haveI := RingHomInvPair.of_ringEquiv_symm σ
-    ContragredientDual σ M ≃ₛₗ[(σ : S →+* R)] Module.Dual R M :=
-  haveI := RingHomInvPair.of_ringEquiv σ
-  haveI := RingHomInvPair.of_ringEquiv_symm σ
-  { toFun := toDual
-    invFun := ofDual
-    map_add' := toDual_add
-    map_smul' := toDual_smul
-    left_inv := ofDual_toDual
-    right_inv := toDual_ofDual }
+    ContragredientDual σ M ≃ₛₗ[(σ : S →+* R)] Module.Dual R M where
+  toFun := toDual
+  invFun := ofDual
+  map_add' := toDual_add
+  map_smul' := toDual_smul
+  left_inv := ofDual_toDual
+  right_inv := toDual_ofDual
 
 @[simp]
 theorem toDualLinearEquiv_apply (φ : ContragredientDual σ M) :
@@ -217,25 +215,33 @@ theorem toDualLinearEquiv_symm_apply (φ : Module.Dual R M) :
     (toDualLinearEquiv σ M).symm φ = ofDual φ :=
   (rfl)
 
-/-- `ofDual` and `toDual` form a `((RingEquiv.toOpposite R).symm.trans σ.symm)`-semilinear
-equivalence from `Module.Dual R M` (with its `Rᵐᵒᵖ`-module structure) to
-`ContragredientDual σ M`. -/
+/-- The ring equivalence `Rᵐᵒᵖ ≃+* S` induced by `σ : S ≃+* R`, sending `MulOpposite.op r` to
+`σ⁻¹ r`. -/
+def oppositeRingEquiv (σ : S ≃+* R) : Rᵐᵒᵖ ≃+* S :=
+  (RingEquiv.toOpposite R).symm.trans σ.symm
+
+@[simp]
+theorem oppositeRingEquiv_apply (σ : S ≃+* R) (r : Rᵐᵒᵖ) :
+    oppositeRingEquiv σ r = σ.symm (MulOpposite.unop r) :=
+  (rfl)
+
+@[simp]
+theorem oppositeRingEquiv_symm_apply (σ : S ≃+* R) (s : S) :
+    (oppositeRingEquiv σ).symm s = MulOpposite.op (σ s) :=
+  (rfl)
+
+/-- `ofDual` and `toDual` form a `ContragredientDual.oppositeRingEquiv σ`-semilinear equivalence
+from `Module.Dual R M` (with its `Rᵐᵒᵖ`-module structure) to `ContragredientDual σ M`. -/
 def ofDualOppositeLinearEquiv (σ : S ≃+* R) (M : Type*) [AddCommMonoid M] [Module R M] :
-    let ρ : Rᵐᵒᵖ ≃+* S := (RingEquiv.toOpposite R).symm.trans σ.symm
-    haveI := RingHomInvPair.of_ringEquiv ρ
-    haveI := RingHomInvPair.of_ringEquiv_symm ρ
-    Module.Dual R M ≃ₛₗ[(ρ : Rᵐᵒᵖ →+* S)] ContragredientDual σ M :=
-  let ρ : Rᵐᵒᵖ ≃+* S := (RingEquiv.toOpposite R).symm.trans σ.symm
-  haveI := RingHomInvPair.of_ringEquiv ρ
-  haveI := RingHomInvPair.of_ringEquiv_symm ρ
-  { toFun := ofDual
-    invFun := toDual
-    map_add' := ofDual_add
-    map_smul' := fun r φ ↦ by
-      ext x
-      simp [LinearMap.smul_apply, mul_comm]
-    left_inv := toDual_ofDual
-    right_inv := ofDual_toDual }
+    Module.Dual R M ≃ₛₗ[(oppositeRingEquiv σ : Rᵐᵒᵖ →+* S)] ContragredientDual σ M where
+  toFun := ofDual
+  invFun := toDual
+  map_add' := ofDual_add
+  map_smul' r φ := by
+    ext x
+    simp [LinearMap.smul_apply, mul_comm]
+  left_inv := toDual_ofDual
+  right_inv := ofDual_toDual
 
 /-- `ofDualOppositeLinearEquiv` sends a functional `φ` to `ofDual φ`. -/
 @[simp]
@@ -291,8 +297,6 @@ protected theorem map_add (f g : M →ₗ[R] N) : map σ (f + g) = map σ f + ma
 
 /-- `toDualLinearEquiv` intertwines `ContragredientDual.map` with `LinearMap.dualMap`. -/
 theorem toDualLinearEquiv_comp_map (f : M →ₗ[R] N) :
-    haveI := RingHomInvPair.of_ringEquiv σ
-    haveI := RingHomInvPair.of_ringEquiv_symm σ
     (toDualLinearEquiv σ M).toLinearMap.comp (map σ f) =
       f.dualMap.comp (toDualLinearEquiv σ N).toLinearMap := by
   ext φ x
@@ -301,9 +305,6 @@ theorem toDualLinearEquiv_comp_map (f : M →ₗ[R] N) :
 /-- `ofDualOppositeLinearEquiv` intertwines `LinearMap.lcomp Rᵐᵒᵖ R` with
 `ContragredientDual.map`. -/
 theorem ofDualOppositeLinearEquiv_comp_lcomp (f : M →ₗ[R] N) :
-    let ρ : Rᵐᵒᵖ ≃+* S := (RingEquiv.toOpposite R).symm.trans σ.symm
-    haveI := RingHomInvPair.of_ringEquiv ρ
-    haveI := RingHomInvPair.of_ringEquiv_symm ρ
     (ofDualOppositeLinearEquiv σ M).toLinearMap.comp (f.lcomp Rᵐᵒᵖ R) =
       (map σ f).comp (ofDualOppositeLinearEquiv σ N).toLinearMap := by
   ext φ x
@@ -314,33 +315,36 @@ theorem ofDualOppositeLinearEquiv_comp_lcomp (f : M →ₗ[R] N) :
 /-- `toDualLinearEquiv` transports the range of `ContragredientDual.map σ f` to the range of
 `f.dualMap`. -/
 theorem map_toDualLinearEquiv_range_map (f : M →ₗ[R] N) :
-    haveI := RingHomInvPair.of_ringEquiv σ
-    haveI := RingHomInvPair.of_ringEquiv_symm σ
     (LinearMap.range (map σ f)).map (toDualLinearEquiv σ M).toLinearMap =
       LinearMap.range f.dualMap := by
-  have := RingHomInvPair.of_ringEquiv σ
-  have := RingHomInvPair.of_ringEquiv_symm σ
   rw [← LinearMap.range_comp, toDualLinearEquiv_comp_map, LinearEquiv.range_comp]
 
 /-- `ofDualOppositeLinearEquiv` transports the range of `f.lcomp Rᵐᵒᵖ R` to the range of
 `ContragredientDual.map σ f`. -/
 theorem map_ofDualOppositeLinearEquiv_range_lcomp (f : M →ₗ[R] N) :
-    let ρ : Rᵐᵒᵖ ≃+* S := (RingEquiv.toOpposite R).symm.trans σ.symm
-    haveI := RingHomInvPair.of_ringEquiv ρ
-    haveI := RingHomInvPair.of_ringEquiv_symm ρ
     (LinearMap.range (f.lcomp Rᵐᵒᵖ R)).map (ofDualOppositeLinearEquiv σ M).toLinearMap =
       LinearMap.range (map σ f) := by
-  let ρ : Rᵐᵒᵖ ≃+* S := (RingEquiv.toOpposite R).symm.trans σ.symm
-  have := RingHomInvPair.of_ringEquiv ρ
-  have := RingHomInvPair.of_ringEquiv_symm ρ
   rw [← LinearMap.range_comp, ofDualOppositeLinearEquiv_comp_lcomp, LinearEquiv.range_comp]
+
+/-- The evaluation equivalence `φ ↦ σ⁻¹(φ 1)` maps the range of
+`ContragredientDual.map σ (LinearMap.mulLeft R a)` onto `Ideal.span {σ.symm a}`. -/
+theorem map_range_map_mulLeft (σ : S ≃+* R) (a : R) :
+    (LinearMap.range (map σ (LinearMap.mulLeft R a))).map
+        ((toDualLinearEquiv σ R).trans
+          ((LinearMap.ringLmapEquivSelf R R R).trans σ.toSemilinearEquiv.symm)).toLinearMap =
+      Ideal.span {σ.symm a} := by
+  have hdual := map_toDualLinearEquiv_range_map (σ := σ) (LinearMap.mulLeft R a)
+  have hspan : (LinearMap.range (LinearMap.mulLeft R a).dualMap).map
+      ((LinearMap.ringLmapEquivSelf R R R).trans σ.toSemilinearEquiv.symm).toLinearMap =
+      Ideal.span {σ.symm a} := by
+    rw [LinearMap.range_dualMap_dual_eq_span_singleton, Submodule.map_span]
+    simp [Ideal.submodule_span_eq]
+  rw [← hspan, ← hdual, ← Submodule.map_comp, ← LinearEquiv.coe_trans]
 
 /-- An `R`-linear equivalence `M ≃ₗ[R] N` induces an `S`-linear equivalence of contragredient
 duals in the contravariant direction. -/
 def congr (σ : S ≃+* R) (e : M ≃ₗ[R] N) :
     ContragredientDual σ N ≃ₗ[S] ContragredientDual σ M :=
-  haveI := RingHomInvPair.of_ringEquiv σ
-  haveI := RingHomInvPair.of_ringEquiv_symm σ
   (toDualLinearEquiv σ N).trans (e.dualMap.trans (toDualLinearEquiv σ M).symm)
 
 @[simp]
@@ -424,24 +428,18 @@ whose `i`-th coordinate of `φ` is `σ⁻¹(φ (b i))`. -/
 def contragredientDual (b : Module.Basis ι R M) (σ : S ≃+* R) :
     Module.Basis ι S (ContragredientDual σ M) :=
   letI := Classical.decEq ι
-  haveI := RingHomInvPair.of_ringEquiv σ
-  haveI := RingHomInvPair.of_ringEquiv_symm σ
   b.dualBasis.mapₛₗ (ContragredientDual.toDualLinearEquiv σ M).symm
 
 @[simp]
 theorem contragredientDual_apply (b : Module.Basis ι R M) (σ : S ≃+* R) (i : ι) :
     b.contragredientDual σ i = ContragredientDual.ofDual (σ := σ) (b.coord i) := by
   classical
-  have := RingHomInvPair.of_ringEquiv σ
-  have := RingHomInvPair.of_ringEquiv_symm σ
   simp [contragredientDual, Module.Basis.mapₛₗ_apply]
 
 @[simp]
 theorem contragredientDual_repr_apply (b : Module.Basis ι R M) (σ : S ≃+* R)
     (φ : ContragredientDual σ M) (i : ι) :
     (b.contragredientDual σ).repr φ i = σ.symm (φ (b i)) := by
-  have := RingHomInvPair.of_ringEquiv σ
-  have := RingHomInvPair.of_ringEquiv_symm σ
   simp [contragredientDual, Module.Basis.mapₛₗ_repr, Module.Basis.dualBasis_repr]
 
 theorem contragredientDual_equivFun_apply (b : Module.Basis ι R M) (σ : S ≃+* R)
@@ -489,14 +487,10 @@ instance free [Module.Finite R M] [Module.Free R M] :
 
 instance projective [Module.Finite R M] [Module.Projective R M] :
     Module.Projective S (ContragredientDual σ M) :=
-  haveI := RingHomInvPair.of_ringEquiv σ
-  haveI := RingHomInvPair.of_ringEquiv_symm σ
   Module.Projective.of_equiv (toDualLinearEquiv σ M).symm
 
 instance finite [Module.Finite R M] [Module.Projective R M] :
     Module.Finite S (ContragredientDual σ M) :=
-  haveI := RingHomInvPair.of_ringEquiv σ
-  haveI := RingHomInvPair.of_ringEquiv_symm σ
   Module.Finite.of_surjective (toDualLinearEquiv σ M).symm.toLinearMap
     (toDualLinearEquiv σ M).symm.surjective
 
