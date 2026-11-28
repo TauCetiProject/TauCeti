@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
-public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
+public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup.Basic
 public import TauCeti.Topology.Algebra.Quaternion.Symplectic.FirstColumn
 public import TauCeti.Topology.Homotopy.SerreFibration.Connected
 public import TauCeti.Topology.Homotopy.SerreFibration.TotalSpace

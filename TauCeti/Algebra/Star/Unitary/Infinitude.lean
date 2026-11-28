@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Star.Unitary
+public import TauCeti.Algebra.Star.Unitary.Basic
+public import TauCeti.Algebra.Ring.CayleyChart
 public import Mathlib.Algebra.Star.Rat
-public import Mathlib.Data.Rat.Cast.CharZero
 public import Mathlib.Algebra.CharZero.Infinite
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Ring
 
 /-!
 # Infinitely many norm-one elements
@@ -38,10 +37,12 @@ theorem infinite_unitary_of_skew {a : K} (ha : star a = -a) (ha0 : a ≠ 0) :
     simp only [star_add, star_one, star_mul, star_ratCast, ha, star_zero] at hs
     have ht : (2 : K) = 0 := by linear_combination h + hs
     exact two_ne_zero ht
-  let c (q : ℚ) : K := (1 - (q : K) * a) / (1 + (q : K) * a)
+  let c (q : ℚ) : K := cayleyCoord 1 ((q : K) * a)
+  have hc_eq (q : ℚ) : c q = (1 - (q : K) * a) / (1 + (q : K) * a) := by
+    simp only [c, cayleyCoord_def, Ring.inverse_eq_inv, div_eq_mul_inv]
   have hc (q : ℚ) : c q ∈ unitary K := by
     rw [Unitary.mem_iff_star_mul_self]
-    simp only [c, star_div₀, star_sub, star_one, star_mul, star_ratCast, ha,
+    simp only [hc_eq, star_div₀, star_sub, star_one, star_mul, star_ratCast, ha,
       star_add]
     have hnum : 1 - (q : K) * a ≠ 0 := by
       simpa only [Rat.cast_neg, neg_mul, sub_eq_add_neg] using hden (-q)
@@ -51,10 +52,10 @@ theorem infinite_unitary_of_skew {a : K} (ha : star a = -a) (ha0 : a ≠ 0) :
   let u (q : ℚ) : unitary K := ⟨c q, hc q⟩
   refine Infinite.of_injective u fun p q h ↦ ?_
   have heq : c p = c q := congrArg Subtype.val h
-  have hcross := (div_eq_div_iff (hden p) (hden q)).1 heq
-  have hzero : ((p : K) - (q : K)) * a = 0 := by
-    linear_combination -hcross / 2
-  exact Rat.cast_injective (sub_eq_zero.1 ((mul_eq_zero.1 hzero).resolve_right ha0))
+  have hmul : (p : K) * a = (q : K) * a := by
+    simpa only [c, cayleyCoord_one_cayleyCoord_one (isUnit_iff_ne_zero.2 two_ne_zero)
+      (isUnit_iff_ne_zero.2 (hden _))] using congrArg (cayleyCoord 1) heq
+  exact Rat.cast_injective (mul_right_cancel₀ ha0 hmul)
 
 /-- A characteristic-zero field with a nontrivial involution has infinitely many
 norm-one elements. -/

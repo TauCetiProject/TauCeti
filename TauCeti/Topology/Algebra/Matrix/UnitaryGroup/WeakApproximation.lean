@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.ScalarAvoidance
-public import TauCeti.Algebra.Star.NormOne
+public import TauCeti.LinearAlgebra.Matrix.Determinant.Pencil
+public import TauCeti.Algebra.Star.Unitary.Infinitude
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup.Cayley
-public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Skew
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Form
 public import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
-public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
+public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup.Basic
+public import TauCeti.Topology.Algebra.Ring.CayleyChart
 public import TauCeti.Topology.Instances.Matrix
 public import Mathlib.Topology.Algebra.Group.Matrix
 import Mathlib.Topology.Algebra.Group.Subgroup
@@ -18,19 +19,21 @@ import Mathlib.Topology.Algebra.Group.Subgroup
 /-!
 # Approximation in unitary groups by Cayley coordinates
 
-A dense homomorphism from a field of characteristic other than two with involution
+A dense, involution-preserving homomorphism from a field of characteristic other
+than two with involution
 to a topological ring with continuous involution and open units gives approximation
 in the Cayley cell of every nondegenerate
 hermitian form. If the target is a finite product of fields and the source has
 infinitely many norm-one scalars, scalar translates of this cell cover the unitary
-group. Consequently the rational unitary subgroup is dense in the whole group.
+group. Consequently the image of the source unitary group is dense in the whole group.
 The target involution may permute the field factors, as it does at split places.
 
 The Cayley-coordinate method follows [ShortProof], grh-lean at commit
 `72fead102f663d5c7a407964a13dc0cf9d977207`,
 `src/Lib/Adelic/Unitary/WeakApproximation.lean` (`New.Space.weak_approximation`,
 `New.cayleyTransform`). The proofs here use the existing algebraic Cayley bijection
-and avoid its domain complement by the characteristic polynomial.
+and avoid its domain complement using the finite exceptional set for the determinant
+pencil `det (1 + t • g)`.
 -/
 
 public section
@@ -42,22 +45,12 @@ namespace Matrix
 variable {n S : Type*} [Fintype n] [DecidableEq n]
   [CommRing S] [TopologicalSpace S] [IsTopologicalRing S]
 
-/-- Cayley coordinates are continuous at every matrix in their domain, over a
-commutative topological ring with open units. -/
-@[fun_prop]
-theorem continuousAt_cayleyCoord_one (X : Matrix n n S) (hX : IsUnit (1 + X)) [IsOpenUnits S] :
-    ContinuousAt (cayleyCoord 1) X := by
-  rw [cayleyCoord_eq_fun]
-  have hinv : ContinuousAt Ring.inverse (1 + X) := by
-    simpa only [hX.unit_spec] using IsOpenUnits.continuousAt_ringInverse hX.unit
-  exact (continuousAt_const.sub continuousAt_id).mul
-    (hinv.comp (continuousAt_const.add continuousAt_id))
-
 variable {K : Type*} [Field K] [StarRing K] [StarRing S] [ContinuousStar S]
   [Nontrivial S] {f : K →+* S} {A : Matrix n n K}
 
 /-- Matrices skew-adjoint for a nondegenerate hermitian form over a dense subfield
-are dense among the matrices skew-adjoint for its scalar extension. -/
+of characteristic different from two are dense among the matrices skew-adjoint for
+its scalar extension. -/
 theorem mem_closure_map_of_star_mul_add_mul_eq_zero
     (hf : DenseRange f) (hfstar : ∀ x, f (star x) = star (f x))
     (h2 : (2 : K) ≠ 0) (hA : A.IsHermitian) (hA' : IsUnit A)
@@ -86,7 +79,7 @@ theorem mem_closure_map_of_star_mul_add_mul_eq_zero
   rw [hPY] at hlim
   refine closure_mono ?_ hlim
   rintro _ ⟨_, ⟨Z, rfl⟩, rfl⟩
-  refine ⟨A⁻¹ * (Z - star Z), star_inv_mul_sub_star_mul_add hA Z, ?_⟩
+  refine ⟨A⁻¹ * (Z - star Z), star_inv_mul_mul_add hA (by simp [star_sub]), ?_⟩
   simp only [P, B, Matrix.map_mul, map_nonsing_inv, Matrix.map_sub f f.map_sub,
     star_eq_conjTranspose, conjTranspose_map f hfstar]
 
@@ -95,7 +88,8 @@ namespace unitaryGroupOf
 variable [IsOpenUnits S]
 
 /-- Every point of the Cayley cell lies in the closure of the unitary matrices over
-a dense subfield stable under the involution. -/
+a dense subfield of characteristic different from two, for the scalar extension of
+a nondegenerate hermitian form and an involution-preserving homomorphism. -/
 theorem mem_topologicalClosure_map_of_isUnit_one_add
     (hf : DenseRange f) (hfstar : ∀ x, f (star x) = star (f x))
     (h2 : (2 : K) ≠ 0) (hA : A.IsHermitian) (hA' : IsUnit A)
@@ -114,7 +108,7 @@ theorem mem_topologicalClosure_map_of_isUnit_one_add
       (continuous_const.add continuous_id)
   have hclosure := hopen.closure_inter
     ⟨mem_closure_map_of_star_mul_add_mul_eq_zero hf hfstar h2 hA hA' X hX, hXunit⟩
-  have hmatrix := mem_closure_image (continuousAt_cayleyCoord_one X hXunit) hclosure
+  have hmatrix := mem_closure_image (continuousAt_cayleyCoord hXunit) hclosure
   rw [cayleyCoord_one_cayleyCoord_one htwo hg] at hmatrix
   rw [← SetLike.mem_coe, Subgroup.topologicalClosure_coe,
     IsOpenUnits.isOpenEmbedding_unitsVal.isEmbedding.closure_eq_preimage_closure_image]
@@ -127,9 +121,7 @@ theorem mem_topologicalClosure_map_of_isUnit_one_add
   refine ⟨GeneralLinearGroup.map f (u.val : GL n K),
     Subgroup.mem_map.2 ⟨u.val, u.val.property, rfl⟩, ?_⟩
   rw [GeneralLinearGroup.val_map_apply, coe_cayleyEquiv_apply]
-  simp only [cayleyCoord_def, ← nonsing_inv_eq_ringInverse, Matrix.map_mul,
-    map_nonsing_inv, Matrix.map_add f f.map_add, Matrix.map_sub f f.map_sub,
-    Matrix.map_one f f.map_zero f.map_one]
+  simpa only [map_one, RingHom.mapMatrix_apply] using map_cayleyCoord f.mapMatrix 1 Z
 
 /-- Over a finite product of fields, a unitary group over a dense subfield is dense,
 provided `2` is nonzero and the subfield has infinitely many norm-one scalars.
@@ -151,9 +143,11 @@ theorem le_topologicalClosure_map [Infinite (unitary K)]
     Subgroup.le_topologicalClosure _ (Subgroup.mem_map.2 ⟨u, u.property, rfl⟩)
   have hvg : IsUnit (1 + ((v * g : GL n S) : Matrix n n S)) := by
     have hval : (v : Matrix n n S) = scalar n (f a) := by
-      ext i j
-      simp [v, u, val_scalarHom, Matrix.scalar,
-        Matrix.diagonal_apply, apply_ite f]
+      have hu : (u : GL n K) = GeneralLinearGroup.scalar n (Unitary.toUnits ⟨a, ha⟩) :=
+        Units.ext (val_scalarHom ⟨a, ha⟩)
+      dsimp only [v]
+      rw [hu, GeneralLinearGroup.map_scalar, GeneralLinearGroup.coe_scalar]
+      rfl
     rw [Units.val_mul, hval]
     simpa only [scalar_apply, ← smul_eq_diagonal_mul] using hga
   have hvgclosure := mem_topologicalClosure_map_of_isUnit_one_add hf hfstar h2 hA hA'
@@ -161,7 +155,9 @@ theorem le_topologicalClosure_map [Infinite (unitary K)]
   exact (Subgroup.mul_mem_cancel_left _ hvclosure).1 hvgclosure
 
 /-- The closure of a unitary group over a dense subfield is precisely the unitary
-group of the extended form, over a Hausdorff finite product of fields. -/
+group of the extended nondegenerate hermitian form over a Hausdorff finite product
+of fields, when the source has characteristic different from two and infinitely
+many norm-one scalars. The dense homomorphism preserves the involutions. -/
 theorem topologicalClosure_map_eq [T2Space S] [Infinite (unitary K)]
     {I : Type*} [Finite I] {L : I → Type*} [∀ i, Field (L i)] (e : S ≃+* ∀ i, L i)
     (hf : DenseRange f) (hfstar : ∀ x, f (star x) = star (f x))
@@ -173,8 +169,10 @@ theorem topologicalClosure_map_eq [T2Space S] [Infinite (unitary K)]
     (by rintro _ ⟨g, hg, rfl⟩; exact map_mem_unitaryGroupOf hfstar hg)
     (isClosed_unitaryGroupOf _)
 
-/-- In characteristic zero, nontriviality of the source involution supplies the
-infinitely many norm-one scalars needed for simultaneous unitary approximation. -/
+/-- Over a Hausdorff finite product of fields, the closure of the image of the source
+unitary group equals the unitary group of the extended nondegenerate hermitian form,
+when the source has characteristic zero and nontrivial involution and the dense
+homomorphism preserves the involutions. -/
 theorem topologicalClosure_map_eq_of_exists_star_ne [T2Space S] [CharZero K]
     {I : Type*} [Finite I] {L : I → Type*} [∀ i, Field (L i)] (e : S ≃+* ∀ i, L i)
     (hf : DenseRange f) (hfstar : ∀ x, f (star x) = star (f x))
