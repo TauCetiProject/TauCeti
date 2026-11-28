@@ -27,6 +27,9 @@ residue field extension, whose degree is then the rank of a finite free `S`.
 
 ## Main results
 
+* `TauCeti.IsLocalRing.isLocalRing_quotient_iff`: `S ⧸ I` is a local ring iff `I ≠ ⊤`.
+* `Ideal.le_maximalIdeal_of_isLocalRing_quotient`: an ideal of a local ring with a local quotient
+  lies in the maximal ideal.
 * `TauCeti.IsLocalRing.apply_mem_maximalIdeal_sq_iff`: `π a ∈ 𝔪_A²` if and only if
   `a ∈ ker π + 𝔪_Q²`.
 * `TauCeti.IsLocalRing.not_isPrincipal_maximalIdeal_of_ker_le_sq`: if `ker π ≤ 𝔪_Q²` and no
@@ -49,9 +52,22 @@ residue field extension, whose degree is then the rank of a finite free `S`.
 
 public section
 
+/-- An ideal of a local ring with a local quotient lies in the maximal ideal. -/
+theorem _root_.Ideal.le_maximalIdeal_of_isLocalRing_quotient {S : Type*} [CommRing S]
+    [_root_.IsLocalRing S] (I : Ideal S) [_root_.IsLocalRing (S ⧸ I)] :
+    I ≤ _root_.IsLocalRing.maximalIdeal S :=
+  _root_.IsLocalRing.le_maximalIdeal (Ideal.Quotient.nontrivial_iff.1 inferInstance)
+
 namespace TauCeti.IsLocalRing
 
 open _root_.IsLocalRing Module
+
+/-- A quotient `S ⧸ I` of a local ring `S` is a local ring if and only if `I ≠ ⊤`. -/
+theorem isLocalRing_quotient_iff {S : Type*} [CommRing S] [_root_.IsLocalRing S] {I : Ideal S} :
+    _root_.IsLocalRing (S ⧸ I) ↔ I ≠ ⊤ := by
+  refine ⟨fun _ ↦ Ideal.Quotient.nontrivial_iff.1 inferInstance, fun hne ↦ ?_⟩
+  have : Nontrivial (S ⧸ I) := Ideal.Quotient.nontrivial_iff.2 hne
+  exact .of_surjective' (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective
 
 variable {Q A : Type*} [CommRing Q] [IsLocalRing Q] [CommRing A] [IsLocalRing A]
 

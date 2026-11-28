@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.Localization.Submodule
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 import Mathlib.RingTheory.LocalProperties.Reduced
 import TauCeti.RingTheory.Ideal.Quotient.IsPrincipal
+import TauCeti.RingTheory.LocalRing.Quotient
 
 /-!
 # Regular local rings are domains, and localizations of regular rings
@@ -34,7 +35,9 @@ is a regular ring, so that every `Localization M` of a regular ring, including
   is again a regular local ring, and `TauCeti.IsRegularLocalRing.quotient_span_singleton_iff`: for
   a nonzero `x ∈ 𝔪` this happens exactly when `x ∉ 𝔪²`, in which case
   `TauCeti.IsRegularLocalRing.spanFinrank_maximalIdeal_quotient_span_singleton_add_one` shows that
-  the maximal ideal of `R ⧸ (x)` needs one generator fewer;
+  the maximal ideal of `R ⧸ (x)` needs one generator fewer, and
+  `TauCeti.IsRegularLocalRing.ringKrullDim_quotient_span_singleton_add_one_eq_spanFinrank` gives
+  `dim (R ⧸ (x)) + 1 = spanFinrank 𝔪` whenever `R ⧸ (x)` is local;
 * `Ideal.exists_mem_notMem_maximalIdeal_sq_of_quotient`: a nonzero ideal with regular quotient
   contains an element outside `𝔪²`, also used by the one-element criterion;
 * `TauCeti.IsRegularLocalRing.span_singleton_isPrime_of_notMem_sq`: the quotient by such a
@@ -205,11 +208,21 @@ theorem spanFinrank_maximalIdeal_quotient_span_singleton_add_one {x : R}
     (hx0 : x ≠ 0) [IsRegularLocalRing (R ⧸ span {x})] :
     (maximalIdeal (R ⧸ span {x})).spanFinrank + 1 = (maximalIdeal R).spanFinrank := by
   have hxm : x ∈ maximalIdeal R :=
-    le_maximalIdeal (Ideal.Quotient.nontrivial_iff.mp inferInstance) (mem_span_singleton_self x)
+    (span {x}).le_maximalIdeal_of_isLocalRing_quotient (mem_span_singleton_self x)
   have hdim := ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_mem_nonZeroDivisors
     (mem_nonZeroDivisors_of_ne_zero hx0) hxm
   rw [← spanFinrank_maximalIdeal (R := R ⧸ span {x}), ← spanFinrank_maximalIdeal (R := R)] at hdim
   exact_mod_cast hdim
+
+/-- If `R` is a regular local ring and `x : R` is nonzero with `R ⧸ (x)` local, then
+`ringKrullDim (R ⧸ (x)) + 1 = (maximalIdeal R).spanFinrank`. -/
+theorem ringKrullDim_quotient_span_singleton_add_one_eq_spanFinrank {x : R} (hx0 : x ≠ 0)
+    [_root_.IsLocalRing (R ⧸ span {x})] :
+    ringKrullDim (R ⧸ span {x}) + 1 = (maximalIdeal R).spanFinrank := by
+  have hxm : x ∈ maximalIdeal R :=
+    (span {x}).le_maximalIdeal_of_isLocalRing_quotient (mem_span_singleton_self x)
+  exact (ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_mem_nonZeroDivisors
+    (mem_nonZeroDivisors_of_ne_zero hx0) hxm).trans (spanFinrank_maximalIdeal (R := R)).symm
 
 /-- **The curve a parameter cuts out is a domain, so its principal ideal is prime.** Let
 `(R, 𝔪)` be a regular local ring and let `f ∈ 𝔪 \ 𝔪²`, so that `f` is a parameter. Then the

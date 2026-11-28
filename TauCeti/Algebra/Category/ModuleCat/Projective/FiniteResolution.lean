@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.ProjectiveDimension
 public import TauCeti.CategoryTheory.Exact.Resolution.ProjectiveResolution
+import TauCeti.CategoryTheory.Abelian.Projective.Resolution
 
 /-!
 # Finite projective resolutions of modules of finite projective dimension
@@ -32,6 +33,8 @@ finite free surjections and dimension shifting, made into a projective resolutio
 * `ModuleCat.exists_projectiveResolution_finite`: over a left Noetherian ring, a finite module of
   projective dimension at most `n` has a projective resolution by finite projective modules
   vanishing above degree `n`.
+* `CategoryTheory.ProjectiveResolution.finite`: a module admitting a projective resolution with
+  finitely generated degree-zero term is finitely generated.
 
 ## References
 
@@ -44,7 +47,7 @@ public section
 
 open CategoryTheory CategoryTheory.Limits
 
-universe u
+universe u v
 
 namespace TauCeti.ExactStructure.FiniteResolution
 
@@ -64,6 +67,14 @@ theorem finite_toProjectiveResolution_X {R : Type u} [Ring R] {M : ModuleCat.{u}
   exact Module.Finite.equiv (r.toProjectiveResolutionXIso hP i).toLinearEquiv.symm
 
 end TauCeti.ExactStructure.FiniteResolution
+
+/-- A module admitting a projective resolution whose degree-zero term is finitely generated is
+itself finitely generated. -/
+theorem CategoryTheory.ProjectiveResolution.finite {R : Type u} [Ring R] {M : ModuleCat.{v} R}
+    (P : ProjectiveResolution M) [Module.Finite R (P.complex.X 0)] : Module.Finite R M :=
+  -- `((ChainComplex.single₀ _).obj M).X 0` is definitionally `M`.
+  Module.Finite.of_surjective (P.π.f 0 : P.complex.X 0 ⟶ M).hom
+    ((ModuleCat.epi_iff_surjective _).1 (inferInstance : Epi (P.π.f 0)))
 
 namespace ModuleCat
 

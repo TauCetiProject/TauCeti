@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Projective.MinimalResolution.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Projective.FiniteResolution
 public import TauCeti.Algebra.Homology.ModuleCat.Minimal.Basic
+import TauCeti.CategoryTheory.Abelian.Projective.Resolution
 
 /-!
 # Bounded minimal free chain resolutions
@@ -21,7 +22,8 @@ resolution differentials.
 This file identifies the recursive minimality condition on a finite resolution with the
 condition on the differentials of its spliced chain complex. It then converts the minimal
 finite projective resolution into Mathlib's `CategoryTheory.ProjectiveResolution`, retaining
-both minimality and the length bound.
+both minimality and the length bound, and provides the inductive step constructor
+`CategoryTheory.ProjectiveResolution.exists_minimal_cons` over any commutative ring.
 
 ## References
 
@@ -111,3 +113,48 @@ theorem exists_projectiveResolution_finite_free_minimal {R : Type u} [CommRing R
   · exact hmin.isMinimal_toProjectiveResolution_complex hP
 
 end ModuleCat
+
+namespace CategoryTheory.ProjectiveResolution
+
+/-- Prepending a minimal finite-free presentation `0 → K --i--> F --p--> M → 0` to a minimal
+finite-free projective resolution `Q` of `K` yields a minimal finite-free projective resolution `P`
+of `M` whose truncation is isomorphic to `Q`. -/
+theorem exists_minimal_cons {R : Type u} [CommRing R]
+    {K F M : ModuleCat.{v} R} [Module.Finite R F] [Module.Free R F]
+    (Q : ProjectiveResolution K) {i : K ⟶ F} {p : F ⟶ M}
+    (hi : Function.Injective i.hom) (hip : Function.Exact i.hom p.hom)
+    (hp : Function.Surjective p.hom) (hi_min : LinearMap.range i.hom ≤ Ring.jacobson R • ⊤)
+    (hQ_ff : ∀ k, Module.Finite R (Q.complex.X k) ∧ Module.Free R (Q.complex.X k))
+    (hQ_min : Q.complex.IsMinimal) :
+    ∃ P : ProjectiveResolution M,
+      (∀ k, Module.Finite R (P.complex.X k) ∧ Module.Free R (P.complex.X k)) ∧
+      P.complex.IsMinimal ∧ Nonempty (ChainComplex.truncate.obj P.complex ≅ Q.complex) := by
+  have : Module.Projective R F := Module.Projective.of_free
+  have : Projective F := ModuleCat.projective_of_categoryTheory_projective F
+  have hip' : i ≫ p = 0 := ModuleCat.hom_ext (LinearMap.ext hip.apply_apply_eq_zero)
+  have hS : (ShortComplex.mk i p hip').ShortExact :=
+    ModuleCat.shortComplex_shortExact _ hip hi hp
+  let P := Q.cons hS
+  refine ⟨P, fun k ↦ ?_, ?_, ⟨Q.consTruncateIso hS⟩⟩
+  · rcases k with _ | k
+    · have e := (eqToIso (Q.cons_complex_X_zero hS)).symm.toLinearEquiv
+      exact ⟨Module.Finite.equiv e, Module.Free.of_equiv e⟩
+    · have := (hQ_ff k).1
+      have := (hQ_ff k).2
+      have e := (eqToIso (Q.cons_complex_X_succ hS k)).symm.toLinearEquiv
+      exact ⟨Module.Finite.equiv e, Module.Free.of_equiv e⟩
+  · have htr : (ChainComplex.truncate.obj P.complex).IsMinimal :=
+      hQ_min.of_iso (Q.consTruncateIso hS).symm
+    rw [ChainComplex.isMinimal_iff_range_d_succ_le] at htr ⊢
+    rintro (_ | k)
+    · rw [Q.cons_complex_d_one_zero hS, ← Category.assoc (Q.π.f 0) i, ← Category.assoc,
+        ModuleCat.hom_comp, LinearMap.range_comp]
+      refine le_trans (Submodule.map_mono (p' := Ring.jacobson R • (⊤ : Submodule R F)) ?_) ?_
+      · rw [ModuleCat.hom_comp]
+        exact (LinearMap.range_comp_le_range _ _).trans
+          ((LinearMap.range_comp_le_range _ i.hom).trans hi_min)
+      · rw [Submodule.map_smul'']
+        exact Submodule.smul_mono le_rfl le_top
+    · simpa only [ChainComplex.truncate_obj_d] using htr k
+
+end CategoryTheory.ProjectiveResolution

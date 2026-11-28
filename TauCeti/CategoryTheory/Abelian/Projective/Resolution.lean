@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.Augment
 public import Mathlib.CategoryTheory.Abelian.Projective.Resolution
 public import TauCeti.Algebra.Homology.ChainComplex.Exact
 
@@ -28,6 +29,11 @@ A complex of projectives whose differentials factor through short exact sequence
 `0 ⟶ A (p + 1) ⟶ K.X p ⟶ A p ⟶ 0` is a projective resolution of `A 0`
 (`CategoryTheory.ProjectiveResolution.splice`), by the splicing lemmas of
 `TauCeti.Algebra.Homology.ChainComplex.Exact`.
+
+One can also transport a projective resolution across an object isomorphism
+(`CategoryTheory.ProjectiveResolution.ofIso`) and prepend a short exact sequence
+`0 ⟶ K ⟶ F ⟶ M ⟶ 0` with `F` projective (`CategoryTheory.ProjectiveResolution.cons`, with
+augmentation equation `CategoryTheory.ProjectiveResolution.cons_π_f_zero`).
 -/
 
 public section
@@ -101,6 +107,8 @@ lemma splice_π_f_zero : (splice ι ε w hS hd).π.f 0 = ε 0 :=
 end Splice
 
 
+section Homotopy
+
 variable {C : Type*} [Category* C] [Abelian C] {X : C} (P Q : ProjectiveResolution X)
   (f : P.complex ⟶ Q.complex) (hf : f ≫ Q.π = P.π)
 
@@ -123,5 +131,184 @@ theorem homotopyEquivOfComm_hom : (homotopyEquivOfComm P Q f hf).hom = f :=
 @[simp]
 theorem homotopyEquivOfComm_inv : (homotopyEquivOfComm P Q f hf).inv = lift (𝟙 X) Q P :=
   (rfl)
+
+end Homotopy
+
+section Constructions
+
+open CategoryTheory.Limits
+
+variable {C : Type*} [Category* C] [Abelian C]
+
+/-- Transport a projective resolution across an isomorphism of the resolved object. -/
+def ofIso {M N : C} (P : ProjectiveResolution M) (e : M ≅ N) : ProjectiveResolution N where
+  complex := P.complex
+  projective := P.projective
+  π := P.π ≫ (ChainComplex.single₀ _).map e.hom
+  quasiIso := by
+    have : IsIso ((ChainComplex.single₀ C).map e.hom) :=
+      inferInstanceAs (IsIso (((ChainComplex.single₀ C).mapIso e).hom))
+    infer_instance
+
+/-- Transporting a projective resolution across an isomorphism preserves its complex. -/
+@[simp]
+theorem ofIso_complex {M N : C} (P : ProjectiveResolution M) (e : M ≅ N) :
+    (P.ofIso e).complex = P.complex :=
+  (rfl)
+
+/-- Transporting a projective resolution across an isomorphism composes its augmentation with the
+isomorphism. -/
+@[simp]
+theorem ofIso_π {M N : C} (P : ProjectiveResolution M) (e : M ≅ N) :
+    (P.ofIso e).π = eqToHom (ofIso_complex P e) ≫ P.π ≫ (ChainComplex.single₀ _).map e.hom := by
+  dsimp only [ofIso]
+  exact (Category.id_comp _).symm
+
+private theorem cons_exact_zero {C : Type*} [Category* C] [Abelian C] {K F M : C}
+    (Q : ProjectiveResolution K) {i : K ⟶ F} {p : F ⟶ M} {hip : i ≫ p = 0}
+    (hS : (ShortComplex.mk i p hip).ShortExact)
+    {hw : Q.complex.d 1 0 ≫ Q.π.f 0 ≫ i = 0}
+    (hp₀ : (_root_.ChainComplex.augment Q.complex (Q.π.f 0 ≫ i) hw).d 1 0 ≫ p = 0) :
+    (ShortComplex.mk ((_root_.ChainComplex.augment Q.complex (Q.π.f 0 ≫ i) hw).d 1 0) p
+      hp₀).Exact := by
+  let α : ShortComplex.mk
+      ((_root_.ChainComplex.augment Q.complex (Q.π.f 0 ≫ i) hw).d 1 0) p hp₀ ⟶
+      ShortComplex.mk i p hip :=
+    { τ₁ := Q.π.f 0, τ₂ := 𝟙 F, τ₃ := 𝟙 M
+      comm₁₂ := by dsimp; rw [Category.comp_id] }
+  have : Epi α.τ₁ := inferInstanceAs (Epi (Q.π.f 0))
+  have : IsIso α.τ₂ := inferInstanceAs (IsIso (𝟙 F))
+  have : Mono α.τ₃ := inferInstanceAs (Mono (𝟙 M))
+  exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono α).2 hS.exact
+
+private theorem cons_exactAt {C : Type*} [Category* C] [Abelian C] {K F M : C}
+    (Q : ProjectiveResolution K) {i : K ⟶ F} {p : F ⟶ M} {hip : i ≫ p = 0}
+    (hS : (ShortComplex.mk i p hip).ShortExact)
+    {hw : Q.complex.d 1 0 ≫ Q.π.f 0 ≫ i = 0} :
+    ∀ n, (_root_.ChainComplex.augment Q.complex (Q.π.f 0 ≫ i) hw).ExactAt (n + 1)
+  | 0 => by
+    let A := _root_.ChainComplex.augment Q.complex (Q.π.f 0 ≫ i) hw
+    rw [HomologicalComplex.exactAt_iff' _ 2 1 0 (by simp) (by simp)]
+    let α : ShortComplex.mk (Q.complex.d 1 0) (Q.π.f 0) Q.complex_d_comp_π_f_zero ⟶
+        A.sc' 2 1 0 :=
+      { τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := i
+        comm₁₂ := by dsimp [A]; simp
+        comm₂₃ := by dsimp [A]; simp }
+    have : Epi α.τ₁ := inferInstanceAs (Epi (𝟙 (Q.complex.X 1)))
+    have : IsIso α.τ₂ := inferInstanceAs (IsIso (𝟙 (Q.complex.X 0)))
+    have : Mono α.τ₃ := hS.mono_f
+    exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono α).1 Q.exact₀
+  | k + 1 => by
+    let A := _root_.ChainComplex.augment Q.complex (Q.π.f 0 ≫ i) hw
+    rw [HomologicalComplex.exactAt_iff' _ (k + 3) (k + 2) (k + 1) (by simp) (by simp)]
+    let e : A.sc' (k + 3) (k + 2) (k + 1) ≅
+        ShortComplex.mk (Q.complex.d (k + 2) (k + 1)) (Q.complex.d (k + 1) k)
+          (Q.complex.d_comp_d _ _ _) :=
+      ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
+        (by dsimp [A]; simp) (by dsimp [A]; simp)
+    exact (ShortComplex.exact_iff_of_iso e).2 (Q.exact_succ k)
+
+/-- Prepending a short exact sequence `0 ⟶ K --i--> F --p--> M ⟶ 0` with `F` projective to a
+projective resolution `Q` of `K` gives a projective resolution of `M`. -/
+def cons {K F M : C} (Q : ProjectiveResolution K) [Projective F] {i : K ⟶ F} {p : F ⟶ M}
+    {hip : i ≫ p = 0} (hS : (ShortComplex.mk i p hip).ShortExact) :
+    ProjectiveResolution M :=
+  let hw : Q.complex.d 1 0 ≫ Q.π.f 0 ≫ i = 0 := by
+    rw [← Category.assoc, Q.complex_d_comp_π_f_zero, zero_comp]
+  let A := _root_.ChainComplex.augment Q.complex (Q.π.f 0 ≫ i) hw
+  have hp₀ : A.d 1 0 ≫ p = 0 := by
+    refine (Category.assoc (Q.π.f 0) i p).trans ?_
+    rw [hip, comp_zero]
+    -- `A.X 1` is definitionally `Q.complex.X 0` (`ChainComplex.augment`), so both zero morphisms
+    -- coincide definitionally.
+    rfl
+  @_root_.ChainComplex.toProjectiveResolution C _ _ M A p hp₀
+    (fun
+      | 0 => by rw [_root_.ChainComplex.augment_X_zero]; exact ‹Projective F›
+      | k + 1 => by rw [_root_.ChainComplex.augment_X_succ]; exact Q.projective k)
+    hS.epi_g (cons_exact_zero Q hS hp₀) (cons_exactAt Q hS)
+
+/-- The complex of `ProjectiveResolution.cons` augments `Q.complex` with `Q.π.f 0 ≫ i`. -/
+@[simp]
+theorem cons_complex {K F M : C} (Q : ProjectiveResolution K) [Projective F] {i : K ⟶ F}
+    {p : F ⟶ M} {hip : i ≫ p = 0} (hS : (ShortComplex.mk i p hip).ShortExact) :
+    (Q.cons hS).complex = _root_.ChainComplex.augment Q.complex (Q.π.f 0 ≫ i)
+      (by rw [← Category.assoc, Q.complex_d_comp_π_f_zero, zero_comp]) :=
+  (rfl)
+
+/-- The degree-zero term of `Q.cons hS` is `F`. -/
+theorem cons_complex_X_zero {K F M : C} (Q : ProjectiveResolution K) [Projective F] {i : K ⟶ F}
+    {p : F ⟶ M} {hip : i ≫ p = 0} (hS : (ShortComplex.mk i p hip).ShortExact) :
+    (Q.cons hS).complex.X 0 = F := by
+  rw [cons_complex, _root_.ChainComplex.augment_X_zero]
+
+/-- In positive degrees, the terms of `Q.cons hS` are those of `Q`. -/
+theorem cons_complex_X_succ {K F M : C} (Q : ProjectiveResolution K) [Projective F] {i : K ⟶ F}
+    {p : F ⟶ M} {hip : i ≫ p = 0} (hS : (ShortComplex.mk i p hip).ShortExact) (k : ℕ) :
+    (Q.cons hS).complex.X (k + 1) = Q.complex.X k := by
+  rw [cons_complex, _root_.ChainComplex.augment_X_succ]
+
+/-- The first differential of `Q.cons hS` is `Q.π.f 0 ≫ i`, up to the object identifications
+`(Q.cons hS).complex.X 1 = Q.complex.X 0` and `(Q.cons hS).complex.X 0 = F`. -/
+@[simp]
+theorem cons_complex_d_one_zero {K F M : C} (Q : ProjectiveResolution K) [Projective F] {i : K ⟶ F}
+    {p : F ⟶ M} {hip : i ≫ p = 0} (hS : (ShortComplex.mk i p hip).ShortExact) :
+    (Q.cons hS).complex.d 1 0 =
+      eqToHom (Q.cons_complex_X_succ hS 0) ≫ Q.π.f 0 ≫ i ≫
+        eqToHom (Q.cons_complex_X_zero hS).symm := by
+  rw [← Category.assoc (Q.π.f 0) i]
+  refine (conj_eqToHom_iff_heq _ (Q.π.f 0 ≫ i) (Q.cons_complex_X_succ hS 0)
+    (Q.cons_complex_X_zero hS)).2 ?_
+  rw [Q.cons_complex hS, _root_.ChainComplex.augment_d_one_zero]
+  -- `Q.cons_complex` identifies `(Q.cons hS).complex` with `ChainComplex.augment ...`, whose
+  -- endpoints in degrees `1` and `0` are definitionally `Q.complex.X 0` and `F`.
+  rfl
+
+/-- In positive degrees, the differentials of `Q.cons hS` are those of `Q`, up to the object
+identifications `(Q.cons hS).complex.X (k + 1) = Q.complex.X k`. -/
+@[simp]
+theorem cons_complex_d_succ_succ {K F M : C} (Q : ProjectiveResolution K) [Projective F]
+    {i : K ⟶ F} {p : F ⟶ M} {hip : i ≫ p = 0} (hS : (ShortComplex.mk i p hip).ShortExact)
+    (j k : ℕ) :
+    (Q.cons hS).complex.d (j + 1) (k + 1) =
+      eqToHom (Q.cons_complex_X_succ hS j) ≫ Q.complex.d j k ≫
+        eqToHom (Q.cons_complex_X_succ hS k).symm := by
+  refine (conj_eqToHom_iff_heq _ _ (Q.cons_complex_X_succ hS j)
+    (Q.cons_complex_X_succ hS k)).2 ?_
+  rw [Q.cons_complex hS, _root_.ChainComplex.augment_d_succ_succ]
+  -- `Q.cons_complex` identifies `(Q.cons hS).complex` with `ChainComplex.augment ...`, whose
+  -- endpoints in degrees `j + 1` and `k + 1` are definitionally `Q.complex.X j` and
+  -- `Q.complex.X k`.
+  rfl
+
+/-- The augmentation of `Q.cons hS` is induced in degree `0` by `p`. -/
+theorem cons_π {K F M : C} (Q : ProjectiveResolution K) [Projective F] {i : K ⟶ F}
+    {p : F ⟶ M} {hip : i ≫ p = 0} (hS : (ShortComplex.mk i p hip).ShortExact) :
+    (Q.cons hS).π = ((Q.cons hS).complex.toSingle₀Equiv M).symm
+      ⟨eqToHom (Q.cons_complex_X_zero hS) ≫ p, by simp [hip]⟩ := by
+  -- `cons` passes `p : F ⟶ M` directly to `ChainComplex.toProjectiveResolution` using the
+  -- definitional equality `A.X 0 = F`, so unfolding `cons`, `toProjectiveResolution`, and
+  -- `toSingle₀Equiv` matches the `Subtype` payload up to `eqToHom (cons_complex_X_zero)`.
+  dsimp only [cons, _root_.ChainComplex.toProjectiveResolution,
+    _root_.ChainComplex.toSingle₀Equiv]
+  congr 1
+  exact Subtype.ext (Category.id_comp p).symm
+
+/-- The degree-zero augmentation of `Q.cons hS` is `p`, up to `(Q.cons hS).complex.X 0 = F`. -/
+@[simp]
+theorem cons_π_f_zero {K F M : C} (Q : ProjectiveResolution K) [Projective F] {i : K ⟶ F}
+    {p : F ⟶ M} {hip : i ≫ p = 0} (hS : (ShortComplex.mk i p hip).ShortExact) :
+    (Q.cons hS).π.f 0 = eqToHom (Q.cons_complex_X_zero hS) ≫ p := by
+  rw [cons_π, _root_.ChainComplex.toSingle₀Equiv_symm_apply_f_zero]
+
+/-- Truncating `ProjectiveResolution.cons` recovers `Q.complex`. -/
+def consTruncateIso {K F M : C} (Q : ProjectiveResolution K) [Projective F] {i : K ⟶ F}
+    {p : F ⟶ M} {hip : i ≫ p = 0} (hS : (ShortComplex.mk i p hip).ShortExact) :
+    _root_.ChainComplex.truncate.obj (Q.cons hS).complex ≅ Q.complex :=
+  _root_.ChainComplex.truncate.mapIso (eqToIso (Q.cons_complex hS)) ≪≫
+    _root_.ChainComplex.truncateAugment Q.complex (Q.π.f 0 ≫ i)
+      (by rw [← Category.assoc, Q.complex_d_comp_π_f_zero, zero_comp])
+
+end Constructions
 
 end CategoryTheory.ProjectiveResolution

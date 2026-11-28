@@ -6,18 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
-public import TauCeti.RingTheory.CohenMacaulay.Basic
+public import TauCeti.RingTheory.CohenMacaulay.Maximal.Basic
 import Mathlib.RingTheory.LocalRing.Module
 import Mathlib.RingTheory.Regular.ProjectiveDimension
 import TauCeti.RingTheory.Depth.WeaklyRegular
+import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 
 /-!
 # Maximal Cohen–Macaulay modules over regular local rings
 
 A finite module over a regular local ring is free if its depth is at least the dimension of the
-ring. In particular, a Cohen–Macaulay module whose support has the full dimension of the ring is
-free. The full-support-dimension hypothesis is essential: a quotient by a parameter is
-Cohen–Macaulay but need not be free.
+ring (`TauCeti.IsRegularLocalRing.isMaximalCohenMacaulay_iff_free`). In particular, a Cohen–Macaulay
+module whose support has the full dimension of the ring is free. The full-support-dimension
+hypothesis is essential: a quotient by a parameter is Cohen–Macaulay but need not be free.
 
 The quantitative input is
 `ModuleCat.projectiveDimension_add_depth_le_ringKrullDim`: projective dimension plus depth is
@@ -95,5 +96,11 @@ theorem free_of_isCohenMacaulay (hM : Module.IsCohenMacaulay R M)
   cases subsingleton_or_nontrivial M
   · exact Module.Free.of_subsingleton R M
   exact free_of_ringKrullDim_le_depth M (hdim ▸ hM.depth_eq.ge)
+
+/-- **Maximal Cohen–Macaulay modules over a regular local ring are free.** A finite module over a
+regular local ring is maximal Cohen–Macaulay if and only if it is free. -/
+theorem isMaximalCohenMacaulay_iff_free : Module.IsMaximalCohenMacaulay R M ↔ Module.Free R M :=
+  ⟨fun h ↦ free_of_ringKrullDim_le_depth M h.ringKrullDim_le_depth,
+    fun _ ↦ isCohenMacaulay.isMaximalCohenMacaulay_of_free M⟩
 
 end TauCeti.IsRegularLocalRing

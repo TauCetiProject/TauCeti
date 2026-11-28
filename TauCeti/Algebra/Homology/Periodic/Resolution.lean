@@ -60,8 +60,9 @@ resolution of its cokernel (Eisenbud, Section 5).
   and taking apart a periodic tail.
 * `ChainComplex.HasPeriodicTail.mono`, `ChainComplex.HasPeriodicTail.of_iso`: a periodic tail
   persists after longer preperiods and along isomorphisms.
-* `ChainComplex.HasPeriodicTail.nonempty_truncate_iterate_iso`: after its preperiod, a complex
-  with a periodic tail repeats itself.
+* `ChainComplex.HasPeriodicTail.nonempty_truncate_iterate_iso`,
+  `ChainComplex.HasPeriodicTail.nonempty_truncate_iterate_mul_iso`: after its preperiod, a complex
+  with a periodic tail repeats itself and after any multiple of its period.
 
 ## References
 
@@ -274,7 +275,7 @@ theorem resolutionComplexXZeroIso_eq (hj : (j : ZMod n) = i') :
 
 /-- The term in degree `1` of `TauCeti.PeriodicComplex.resolutionComplex Q j` is `Q^i`, for the
 residue `i' = i + 1` of `j`. -/
-private def resolutionComplexXOneIso (hj : (j : ZMod n) = i') (hi : i + 1 = i') :
+def resolutionComplexXOneIso (hj : (j : ZMod n) = i') (hi : i + 1 = i') :
     (resolutionComplex Q j).X 1 ≅ Q.X i :=
   Q.XIsoOfEq (show ((j - (1 : ℕ) : ℤ) : ZMod n) = i by
     push_cast; rw [hj, ← hi, add_sub_cancel_right])
@@ -282,7 +283,7 @@ private def resolutionComplexXOneIso (hj : (j : ZMod n) = i') (hi : i + 1 = i') 
 /-- The differential into degree `0` of `TauCeti.PeriodicComplex.resolutionComplex Q j` is the
 cyclic differential `Q^i ⟶ Q^i'`, for the residue `i' = i + 1` of `j`. -/
 @[reassoc]
-private theorem resolutionComplex_d_one_zero_comp_xZeroIso_hom (hj : (j : ZMod n) = i')
+theorem resolutionComplex_d_one_zero_comp_xZeroIso_hom (hj : (j : ZMod n) = i')
     (hi : i + 1 = i') :
     (resolutionComplex Q j).d 1 0 ≫ (resolutionComplexXZeroIso Q hj).hom =
       (resolutionComplexXOneIso Q hj hi).hom ≫ Q.d i i' := by
@@ -453,5 +454,16 @@ theorem HasPeriodicTail.nonempty_truncate_iterate_iso (h : K.HasPeriodicTail n p
   obtain ⟨-, Q, j, ⟨e⟩⟩ := h
   exact ⟨truncateIterateMapIso e n ≪≫
     TauCeti.PeriodicComplex.resolutionComplexPeriodIso Q j ≪≫ e.symm⟩
+
+/-- Dropping any multiple `n * m` of the period after the preperiod `p` preserves the complex. -/
+theorem HasPeriodicTail.nonempty_truncate_iterate_mul_iso (h : K.HasPeriodicTail n p) (m : ℕ) :
+    Nonempty (truncate.obj^[n * m] (truncate.obj^[p] K) ≅ truncate.obj^[p] K) := by
+  induction m with
+  | zero => exact ⟨eqToIso (by simp)⟩
+  | succ m ih =>
+    obtain ⟨e_step⟩ := h.nonempty_truncate_iterate_iso
+    obtain ⟨e_ih⟩ := ih
+    exact ⟨eqToIso (by rw [mul_add, mul_one, Function.iterate_add_apply]) ≪≫
+      truncateIterateMapIso e_step (n * m) ≪≫ e_ih⟩
 
 end ChainComplex

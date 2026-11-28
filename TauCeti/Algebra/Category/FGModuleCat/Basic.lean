@@ -48,6 +48,8 @@ feeds the Grothendieck-group computation for finite-dimensional vector spaces.
   original `k`-action on `M` rather than the category's restricted scalar action.
 * `FGModuleCat.tensorUnitHomLinearEquiv`: morphisms `𝟙_ (FGModuleCat R) ⟶ W` identify `R`-linearly
   with `W` by evaluation at `1`.
+* `FGModuleCat.range_biprod_map_le_smul_iff`: a binary biproduct map lands in `I • ⊤` iff both
+  summand maps do.
 -/
 
 public section
@@ -320,5 +322,41 @@ theorem conj_tensorUnitHomLinearEquiv_rightComp {W : FGModuleCat.{u} R} (f : W �
     tensorUnitHomLinearEquiv_apply, hom_hom_comp, LinearMap.comp_apply,
     tensorUnitHomLinearEquiv_symm_apply_hom_hom]
   exact congrArg f.hom.hom (LinearMap.toSpanSingleton_apply_one R W w)
+
+open CategoryTheory.Limits in
+/-- A binary biproduct map `biprod.map f₁ f₂` lands in `I • ⊤` if and only if both `f₁` and `f₂`
+land in `I • ⊤`. -/
+theorem range_biprod_map_le_smul_iff {R : Type u} [CommRing R] (I : Ideal R)
+    {P₁ Q₁ P₂ Q₂ : FGModuleCat.{v} R} (f₁ : P₁ ⟶ Q₁) (f₂ : P₂ ⟶ Q₂) :
+    LinearMap.range (biprod.map f₁ f₂).hom.hom ≤ I • ⊤ ↔
+      LinearMap.range f₁.hom.hom ≤ I • ⊤ ∧ LinearMap.range f₂.hom.hom ≤ I • ⊤ := by
+  let inlP : P₁ ⟶ P₁ ⊞ P₂ := biprod.inl
+  let inrP : P₂ ⟶ P₁ ⊞ P₂ := biprod.inr
+  let fstP : P₁ ⊞ P₂ ⟶ P₁ := biprod.fst
+  let sndP : P₁ ⊞ P₂ ⟶ P₂ := biprod.snd
+  let inlQ : Q₁ ⟶ Q₁ ⊞ Q₂ := biprod.inl
+  let inrQ : Q₂ ⟶ Q₁ ⊞ Q₂ := biprod.inr
+  let fstQ : Q₁ ⊞ Q₂ ⟶ Q₁ := biprod.fst
+  let sndQ : Q₁ ⊞ Q₂ ⟶ Q₂ := biprod.snd
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨h₁, h₂⟩ ↦ ?_⟩
+  · rintro _ ⟨x, rfl⟩
+    have hf₁ : f₁ = inlP ≫ biprod.map f₁ f₂ ≫ fstQ := by simp [inlP, fstQ]
+    rw [hf₁]
+    exact Submodule.smul_top_le_comap_smul_top I fstQ.hom.hom (h ⟨inlP.hom.hom x, rfl⟩)
+  · rintro _ ⟨x, rfl⟩
+    have hf₂ : f₂ = inrP ≫ biprod.map f₁ f₂ ≫ sndQ := by simp [inrP, sndQ]
+    rw [hf₂]
+    exact Submodule.smul_top_le_comap_smul_top I sndQ.hom.hom (h ⟨inrP.hom.hom x, rfl⟩)
+  · rintro _ ⟨z, rfl⟩
+    have hmap : biprod.map f₁ f₂ = fstP ≫ f₁ ≫ inlQ + sndP ≫ f₂ ≫ inrQ := by
+      calc biprod.map f₁ f₂
+          = (fstP ≫ inlP + sndP ≫ inrP) ≫ biprod.map f₁ f₂ := by
+            rw [biprod.total, Category.id_comp]
+        _ = fstP ≫ f₁ ≫ inlQ + sndP ≫ f₂ ≫ inrQ := by
+            simp [Preadditive.add_comp, Category.assoc, inlP, inrP, inlQ, inrQ]
+    rw [hmap]
+    exact Submodule.add_mem _
+      (Submodule.smul_top_le_comap_smul_top I inlQ.hom.hom (h₁ ⟨fstP.hom.hom z, rfl⟩))
+      (Submodule.smul_top_le_comap_smul_top I inrQ.hom.hom (h₂ ⟨sndP.hom.hom z, rfl⟩))
 
 end FGModuleCat

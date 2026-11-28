@@ -7,6 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.Stable.Functor.Suspension
 public import TauCeti.CategoryTheory.Exact.Stable.Shift
+import TauCeti.CategoryTheory.Shift.CommShift
 
 /-!
 # Stable functors commute with the integral shift
@@ -15,12 +16,21 @@ An exact functor between Frobenius exact categories that preserves projective-in
 descends to the stable categories and carries suspension to suspension. Since suspension generates
 the integral shift on each stable category, this comparison extends coherently to all shifts by
 `ℤ`. Thus the descended functor has the `Functor.CommShift ℤ` structure required of a
-triangulated functor.
+triangulated functor, and the identification `(hF.comp hG).stableFunctor = hF.stableFunctor ⋙
+hG.stableFunctor` commutes with shifts
+(`TauCeti.StableConflationExact.eqToIso_stableFunctor_comp_commShift`).
 
 ## Main definitions
 
 * `TauCeti.StableConflationExact.stableFunctorCommShift`: the coherent compatibility of the
   descended stable functor with all integral shifts.
+
+## Main results
+
+* `TauCeti.StableConflationExact.stableFunctorCommShift_iso_one`: in degree one, the shift
+  compatibility is given by the suspension comparison.
+* `TauCeti.StableConflationExact.eqToIso_stableFunctor_comp_commShift`: the composition equality
+  for descended stable functors commutes with integral shifts.
 
 ## References
 
@@ -30,7 +40,7 @@ triangulated functor.
 
 public section
 
-universe v₁ v₂ u₁ u₂
+universe v₁ v₂ v₃ u₁ u₂ u₃
 
 namespace TauCeti.StableConflationExact
 
@@ -67,5 +77,53 @@ theorem stableFunctorCommShift_iso_one (hF : StableConflationExact E E' F)
             hE'.stableShiftFunctorOneIso.symm := by
   exact hE.commShiftOfIntertwiningStableSuspensionTarget_iso_one hE'
     (hF.stableFunctor hE) (hF.stableSuspensionCompStableFunctorIso hE hE')
+
+/-- The composition equality `(hF.comp hG).stableFunctor hE = hF.stableFunctor hE ⋙
+hG.stableFunctor hE'` commutes with integral shifts. -/
+theorem eqToIso_stableFunctor_comp_commShift
+    {K : Type u₃} [Category.{v₃} K] [Preadditive K] [HasZeroObject K] [HasBinaryBiproducts K]
+    {E'' : ExactStructure K} {G : D ⥤ K} [G.Additive]
+    (hF : StableConflationExact E E' F) (hG : StableConflationExact E' E'' G)
+    (hE : E.IsFrobenius) (hE' : E'.IsFrobenius) (hE'' : E''.IsFrobenius) :
+    letI := hE.stableHasShift; letI := hE'.stableHasShift; letI := hE''.stableHasShift
+    letI := hF.stableFunctorCommShift hE hE'
+    letI := hG.stableFunctorCommShift hE' hE''
+    letI := (hF.comp hG).stableFunctorCommShift hE hE''
+    NatTrans.CommShift (eqToIso (hF.stableFunctor_comp hG hE hE')).hom ℤ := by
+  let := hE.stableHasShift; let := hE'.stableHasShift; let := hE''.stableHasShift
+  let := hF.stableFunctorCommShift hE hE'
+  let := hG.stableFunctorCommShift hE' hE''
+  let := (hF.comp hG).stableFunctorCommShift hE hE''
+  refine TauCeti.natTrans_commShift_iff_one.mpr ⟨?_⟩
+  ext Z
+  dsimp only [NatTrans.comp_app, Functor.whiskerRight_app, Functor.whiskerLeft_app,
+    Functor.comp_obj, Iso.trans_hom, eqToIso.hom]
+  rw [Functor.commShiftIso_comp_hom_app,
+    stableFunctorCommShift_iso_one (hF.comp hG) hE hE'',
+    stableFunctorCommShift_iso_one hF hE hE',
+    stableFunctorCommShift_iso_one hG hE' hE'']
+  simp only [Iso.trans_hom, Functor.isoWhiskerRight_hom, Functor.isoWhiskerLeft_hom, Iso.symm_hom,
+    NatTrans.comp_app, Functor.whiskerRight_app, Functor.whiskerLeft_app, Functor.map_comp,
+    Category.assoc]
+  have hnat := (eqToHom (hF.stableFunctor_comp hG hE hE')).naturality
+    (hE.stableShiftFunctorOneIso.hom.app Z)
+  dsimp only [Functor.comp_obj, Functor.comp_map] at hnat
+  rw [← hE''.stableShiftFunctorOneIso.inv.naturality
+      ((eqToHom (hF.stableFunctor_comp hG hE hE')).app Z), ← reassoc_of% hnat]
+  dsimp only [Functor.comp_obj, Functor.comp_map]
+  have hcanc :
+      (hG.stableFunctor hE').map (hE'.stableShiftFunctorOneIso.inv.app
+          ((hF.stableFunctor hE).obj Z)) ≫
+        (hG.stableFunctor hE').map (hE'.stableShiftFunctorOneIso.hom.app
+          ((hF.stableFunctor hE).obj Z)) = 𝟙 _ := by
+    rw [← CategoryTheory.Functor.map_comp, Iso.inv_hom_id_app, CategoryTheory.Functor.map_id]
+  rw [reassoc_of% hcanc]
+  have hcmp := NatTrans.congr_app
+    (hF.stableSuspensionCompStableFunctorIso_comp hG hE hE' hE'') Z
+  simp only [NatTrans.comp_app, Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app,
+    Functor.whiskerRight_app, Functor.associator_inv_app, Functor.associator_hom_app,
+    eqToIso.hom, eqToHom_app, Functor.comp_obj, Category.id_comp, Category.comp_id] at hcmp
+  simp only [eqToHom_app]
+  rw [reassoc_of% hcmp.symm]
 
 end TauCeti.StableConflationExact
