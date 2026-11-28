@@ -72,16 +72,19 @@ theorem homEquiv_symm_apply (x y : T ⟶ X) (g : {g : T ⟶ G // g • x = y}) :
 /-- The label of an embedded action arrow is its original section of `G`. -/
 @[simp]
 theorem homEquiv_apply_map (x y : T ⟶ X) (a : pt x ⟶ pt y) :
-    (homEquiv J x y ((Obj.toObjFunctor.{v} J (actionCategory G X) T).map a)).val = a.hom :=
-  congrArg Subtype.val ((homEquiv J x y).eq_symm_apply.mp (homEquiv_symm_apply J
-    x y ⟨a.hom, a.map_val⟩).symm)
+    (homEquiv J x y ((Obj.toObjFunctor.{v} J (actionCategory G X) T).map a)).val = a.hom := by
+  have ha : (homEquiv J x y).symm ⟨a.hom, a.map_val⟩ =
+      (Obj.toObjFunctor.{v} J (actionCategory G X) T).map a :=
+    homEquiv_symm_apply J x y ⟨a.hom, a.map_val⟩
+  rw [← ha, Equiv.apply_symm_apply]
 
 /-- The identity of an embedded point has label `1`. -/
 @[simp]
 theorem homEquiv_id (x : T ⟶ X) : (homEquiv J (G := G) x x (𝟙 (point J x))).val = 1 := by
-  let E := Obj.toObjFunctor.{v} J (actionCategory G X) T
-  exact (congrArg (fun a ↦ (homEquiv J x x a).val) (E.map_id (pt x)).symm).trans
-    ((homEquiv_apply_map J x x (𝟙 (pt x))).trans (ActionCategory.id_hom _))
+  have h : (Obj.toObjFunctor.{v} J (actionCategory G X) T).map (𝟙 (pt x)) =
+      𝟙 (point J x) := (Obj.toObjFunctor.{v} J (actionCategory G X) T).map_id _
+  rw [← h, homEquiv_apply_map J x x (𝟙 (pt x))]
+  exact ActionCategory.id_hom (pt x)
 
 /-- Composition of arrows between embedded points multiplies their labels in reverse order. -/
 @[simp]
@@ -92,11 +95,14 @@ theorem homEquiv_comp (x y z : T ⟶ X) (a : point J (G := G) x ⟶ point J y)
   obtain ⟨a, rfl⟩ := ff.map_surjective a
   obtain ⟨b, rfl⟩ := ff.map_surjective b
   let E := Obj.toObjFunctor.{v} J (actionCategory G X) T
-  exact (congrArg (fun c ↦ (homEquiv J x z c).val) (E.map_comp a b).symm).trans
-    ((homEquiv_apply_map J x z (a ≫ b)).trans
-      ((ActionCategory.comp_hom a b).trans
-        (congrArg₂ (fun (g h : T ⟶ G) ↦ g * h)
-          (homEquiv_apply_map J y z b).symm (homEquiv_apply_map J x y a).symm)))
+  let ab : pt x ⟶ pt z := a ≫ b
+  have hlabel : (homEquiv J x z (E.map ab)).val = ab.hom := homEquiv_apply_map J x z ab
+  calc
+    _ = (homEquiv J x z (E.map ab)).val :=
+      congrArg (fun c ↦ (homEquiv J x z c).val) (E.map_comp a b).symm
+    _ = _ := by
+      rw [hlabel, homEquiv_apply_map J y z b, homEquiv_apply_map J x y a]
+      exact ActionCategory.comp_hom a b
 
 /-- Restricting an embedded point is isomorphic to the embedded point of the restricted map. -/
 def pointPullbackIso (x : T ⟶ X) (f : V ⟶ T) :
@@ -133,6 +139,7 @@ theorem homEquiv_pullback (x y : T ⟶ X) (f : V ⟶ T)
       ((actionQuotient G X J).map f.op.toLoc).toFunctor.map a ≫
         (pointPullbackIso J y f).hom)).val = f ≫ (homEquiv J x y a).val := by
   obtain ⟨a, rfl⟩ := (Obj.fullyFaithfulToObjFunctor.{v} J (actionCategory G X) T).map_surjective a
+  let a' := (Obj.toObjFunctor.{v} J (actionCategory G X) T).map a
   let E := Obj.toObjFunctor.{v} J (actionCategory G X) V
   let N := toStackificationNatIso.{v} J (actionCategory G X) f
   have hx := actionCategory_map_obj_objEquiv G x f
@@ -142,24 +149,33 @@ theorem homEquiv_pullback (x y : T ⟶ X) (f : V ⟶ T)
   let r : K.obj (pt y) ⟶ pt (f ≫ y) := eqToHom hy
   let b := l ≫ K.map a ≫ r
   have h : (pointPullbackIso J x f).inv ≫
-      ((actionQuotient G X J).map f.op.toLoc).toFunctor.map
-        ((Obj.toObjFunctor.{v} J (actionCategory G X) T).map a) ≫
-        (pointPullbackIso J y f).hom = E.map b := by
+      ((actionQuotient G X J).map f.op.toLoc).toFunctor.map a' ≫
+      (pointPullbackIso J y f).hom = E.map b := by
     rw [pointPullbackIso_inv, pointPullbackIso_hom]
-    exact (Category.assoc _ _ _).trans <|
-      (congrArg (E.map l ≫ ·) (NatIso.naturality_2_assoc N a (E.map r))).trans <|
-        (congrArg (E.map l ≫ ·) (E.map_comp (K.map a) r).symm).trans (E.map_comp _ _).symm
-  have hl : l.hom = (1 : V ⟶ G) := ActionCategory.eqToHom_hom hx.symm
-  have hr : r.hom = (1 : V ⟶ G) := ActionCategory.eqToHom_hom hy
+    let pulled := (Obj.pullFunctor.{v} J (actionCategory G X) f).map a'
+    have hn : N.hom.app (pt x) ≫ pulled ≫ N.inv.app (pt y) ≫ E.map r =
+        E.map (K.map a) ≫ E.map r :=
+      NatIso.naturality_2_assoc N a (E.map r)
+    have hmap : E.map b = E.map l ≫ E.map (K.map a) ≫ E.map r := by
+      calc
+        _ = E.map l ≫ E.map (K.map a ≫ r) := E.map_comp l (K.map a ≫ r)
+        _ = _ := by rw [E.map_comp (K.map a) r]
+    -- Work in the descent category, where restriction is `Obj.pullFunctor`.
+    calc
+      _ = E.map l ≫ (N.hom.app (pt x) ≫ pulled ≫ N.inv.app (pt y) ≫ E.map r) :=
+        Category.assoc _ _ _
+      _ = E.map b := by rw [hn, hmap]
   have hb : b.hom = f ≫ a.hom := by
     have h₁ := ActionCategory.comp_hom (M := V ⟶ G) l (K.map a ≫ r)
     have h₂ := ActionCategory.comp_hom (M := V ⟶ G) (K.map a) r
-    refine h₁.trans ?_
-    rw [h₂, hl, hr, one_mul (M := V ⟶ G), mul_one (M := V ⟶ G)]
-    exact ActionCategory.map_map_hom _ _ a
-  exact (congrArg (fun c ↦ (homEquiv J (f ≫ x) (f ≫ y) c).val) h).trans <|
-    (homEquiv_apply_map J _ _ b).trans <|
-      hb.trans (congrArg (f ≫ ·) (homEquiv_apply_map J x y a).symm)
+    have hl : l.hom = (1 : V ⟶ G) := ActionCategory.eqToHom_hom hx.symm
+    have hr : r.hom = (1 : V ⟶ G) := ActionCategory.eqToHom_hom hy
+    calc
+      _ = _ := h₁
+      _ = _ := by
+        rw [h₂, hl, hr, one_mul (M := V ⟶ G), mul_one (M := V ⟶ G)]
+        exact ActionCategory.map_map_hom _ _ a
+  rw [h, homEquiv_apply_map J (f ≫ x) (f ≫ y) b, hb, homEquiv_apply_map J x y a]
 
 /-- The canonical projection `X → [X/G]`, obtained by applying 2-Yoneda to the point
 of `𝟙 X` (Stacks, Lemmas 044R and 044S). -/
