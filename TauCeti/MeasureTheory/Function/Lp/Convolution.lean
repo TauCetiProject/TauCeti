@@ -11,11 +11,23 @@ import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.Analysis.Convolution.Basic
+import TauCeti.Analysis.Convolution.Young
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Dilation
 
 /-!
 # Convolution with an integrable kernel as an operator on `Lᵖ`
+
+On a measurable additive group `G` with an s-finite right-invariant measure `μ`, for instance
+an additive Haar measure on a finite-dimensional real normed space, the classical
+convolution `(k ⋆ f)(x) = ∫ t, k(t) • f(x - t) dμ(t)` of `k ∈ L¹(μ; 𝕜)`, with `𝕜` real or
+complex, and `f ∈ Lᵖ(μ; X)` has an integrand `t ↦ k(t) • f(x - t)` that is integrable for
+almost every `x`, lies in `Lᵖ(μ; X)` for every `1 ≤ p ≤ ∞`, and its class does not depend on the
+representatives of `k` and `f`. The first part of the file bundles it as a continuous bilinear map
+`MeasureTheory.Lp.addConvolutionL μ p : L¹(μ; 𝕜) →L[𝕜] Lᵖ(μ; X) →L[𝕜] Lᵖ(μ; X)` of norm at most
+one, which is Young's inequality. This includes the endpoint `p = ∞`, where translation is not
+continuous on `L∞` and the translate-integral description below is not available.
 
 Let `k` be an integrable real function on a finite-dimensional real normed space `E` with an
 additive Haar measure `μ`, and let `1 ≤ p < ∞`. Convolution with `k` acts on `Lᵖ(μ; F)` by the
@@ -46,6 +58,16 @@ is in `TauCeti.MeasureTheory.Integral.Dilation`.
 
 ## Main declarations
 
+* `MeasureTheory.Lp.addConvolutionL`: convolution `L¹(μ; 𝕜) × Lᵖ(μ; X) → Lᵖ(μ; X)` on an
+  additive group, for `1 ≤ p ≤ ∞`, as a continuous bilinear map.
+* `MeasureTheory.Lp.coeFn_addConvolutionL`: its values are represented almost everywhere by the
+  pointwise convolution `k ⋆ f`.
+* `MeasureTheory.Lp.norm_addConvolutionL_apply_le`: Young's inequality `‖k ⋆ f‖_p ≤ ‖k‖₁ ‖f‖_p`.
+* `MeasureTheory.Lp.compLpL_addConvolutionL`: convolution commutes with postcomposition by a
+  continuous linear map between Banach spaces.
+* `TauCeti.convolutionLp_eq_addConvolutionL`: for `p < ∞` and a real kernel, the translate-integral
+  operator `TauCeti.convolutionLp` is `MeasureTheory.Lp.addConvolutionL` at the `L¹` class of the
+  kernel.
 * `TauCeti.convolutionLp`: convolution with a real kernel as a continuous linear operator on
   `Lᵖ`; it is zero when the kernel is not integrable.
 * `TauCeti.convolutionLp_apply`: the defining `Lᵖ`-valued Bochner integral.
@@ -79,12 +101,157 @@ is in `TauCeti.MeasureTheory.Integral.Dilation`.
 * H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,
   Theorem 4.15.
 * T. Hytönen, J. van Neerven, M. Veraar and L. Weis, *Analysis in Banach Spaces, Volume I*,
+  Lemma 1.2.30 (Young's inequality, including the endpoint `p = ∞` by the authors' errata) and
   Proposition 1.2.32, for Banach-valued functions.
 -/
 
 public section
 
 noncomputable section
+
+namespace MeasureTheory.Lp
+
+open ContinuousLinearMap Filter
+open scoped Convolution ENNReal
+
+/-! ### Convolution of `L¹` with `Lᵖ` on an additive group
+
+On a measurable additive group with an s-finite right-invariant measure, such as an additive
+Haar measure on a finite-dimensional real normed space, the convolution
+`(k ⋆ f)(x) = ∫ t, k(t) • f(x - t) dμ(t)` of `k ∈ L¹(μ; 𝕜)` and `f ∈ Lᵖ(μ; X)` has an integrand
+that is integrable at almost every `x`, and lies in `Lᵖ(μ; X)` for every `1 ≤ p ≤ ∞`
+(`MeasureTheory.Integrable.ae_convolution_exists_of_memLp` and
+`MeasureTheory.Integrable.memLp_convolution`), and its
+almost-everywhere class does not depend on the representatives of `k` and `f`
+(`MeasureTheory.convolution_congr`). -/
+
+variable {G X : Type*} [MeasurableSpace G] [AddGroup G] [MeasurableAdd₂ G]
+  [MeasurableNeg G] {μ : Measure G} [SFinite μ] [μ.IsAddRightInvariant]
+  [NormedAddCommGroup X] [NormedSpace ℝ X] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+section NontriviallyNormedField
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 X]
+
+omit [NormedSpace ℝ X] in
+private theorem ae_convolutionExistsAt (k : Lp 𝕜 1 μ) (f : Lp X p μ) :
+    ∀ᵐ x ∂μ, ConvolutionExistsAt (k : G → 𝕜) (f : G → X) x (lsmul 𝕜 𝕜) μ :=
+  (L1.integrable_coeFn k).ae_convolution_exists_of_memLp _ (Lp.memLp f) Fact.out
+
+private theorem memLp_convolution (k : Lp 𝕜 1 μ) (f : Lp X p μ) :
+    MemLp ((k : G → 𝕜) ⋆[lsmul 𝕜 𝕜, μ] (f : G → X)) p μ :=
+  (L1.integrable_coeFn k).memLp_convolution _ (Lp.memLp f) Fact.out
+
+private theorem toLp_convolution_add_left (k₁ k₂ : Lp 𝕜 1 μ) (f : Lp X p μ) :
+    (memLp_convolution (k₁ + k₂) f).toLp _ =
+      (memLp_convolution k₁ f).toLp _ + (memLp_convolution k₂ f).toLp _ := by
+  rw [← MemLp.toLp_add]
+  refine MemLp.toLp_congr _ _ ?_
+  rw [convolution_congr _ (Lp.coeFn_add k₁ k₂) EventuallyEq.rfl]
+  filter_upwards [ae_convolutionExistsAt k₁ f, ae_convolutionExistsAt k₂ f] with x h₁ h₂
+  exact h₁.add_distrib h₂
+
+private theorem toLp_convolution_add_right (k : Lp 𝕜 1 μ) (f₁ f₂ : Lp X p μ) :
+    (memLp_convolution k (f₁ + f₂)).toLp _ =
+      (memLp_convolution k f₁).toLp _ + (memLp_convolution k f₂).toLp _ := by
+  rw [← MemLp.toLp_add]
+  refine MemLp.toLp_congr _ _ ?_
+  rw [convolution_congr _ EventuallyEq.rfl (Lp.coeFn_add f₁ f₂)]
+  filter_upwards [ae_convolutionExistsAt k f₁, ae_convolutionExistsAt k f₂] with x h₁ h₂
+  exact h₁.distrib_add h₂
+
+variable [SMulCommClass ℝ 𝕜 X]
+
+private theorem toLp_convolution_smul_left (c : 𝕜) (k : Lp 𝕜 1 μ) (f : Lp X p μ) :
+    (memLp_convolution (c • k) f).toLp _ = c • (memLp_convolution k f).toLp _ := by
+  rw [← MemLp.toLp_const_smul]
+  refine MemLp.toLp_congr _ _ (EventuallyEq.of_eq ?_)
+  rw [convolution_congr _ (Lp.coeFn_smul c k) EventuallyEq.rfl, smul_convolution]
+
+private theorem toLp_convolution_smul_right (c : 𝕜) (k : Lp 𝕜 1 μ) (f : Lp X p μ) :
+    (memLp_convolution k (c • f)).toLp _ = c • (memLp_convolution k f).toLp _ := by
+  rw [← MemLp.toLp_const_smul]
+  refine MemLp.toLp_congr _ _ (EventuallyEq.of_eq ?_)
+  rw [convolution_congr _ EventuallyEq.rfl (Lp.coeFn_smul c f), convolution_smul]
+
+omit [SMulCommClass ℝ 𝕜 X] in
+/-- Young's inequality `‖k ⋆ f‖_p ≤ ‖k‖₁ ‖f‖_p`, in the form needed to bundle the convolution. -/
+private theorem norm_toLp_convolution_le (k : Lp 𝕜 1 μ) (f : Lp X p μ) :
+    ‖(memLp_convolution k f).toLp _‖ ≤ 1 * ‖k‖ * ‖f‖ := by
+  rw [one_mul, Lp.norm_toLp, Lp.norm_def, Lp.norm_def, ← ENNReal.toReal_mul]
+  refine ENNReal.toReal_mono (ENNReal.mul_ne_top (Lp.eLpNorm_ne_top k) (Lp.eLpNorm_ne_top f)) ?_
+  calc eLpNorm ((k : G → 𝕜) ⋆[lsmul 𝕜 𝕜, μ] (f : G → X)) p μ
+      ≤ ‖(lsmul 𝕜 𝕜 : 𝕜 →L[𝕜] X →L[𝕜] X)‖ₑ * eLpNorm k 1 μ * eLpNorm f p μ :=
+        eLpNorm_convolution_le _ (Lp.aestronglyMeasurable k) (Lp.aestronglyMeasurable f) Fact.out
+    _ ≤ eLpNorm k 1 μ * eLpNorm f p μ := by
+        rw [mul_assoc]
+        refine mul_le_of_le_one_left' ?_
+        simpa [eNorm_eq_nnNorm] using ENNReal.coe_le_coe.2 opNNNorm_lsmul_le
+
+variable (μ p) in
+/-- **Convolution of an `L¹` kernel with an `Lᵖ` function**, for every `1 ≤ p ≤ ∞`: the
+continuous bilinear map `(k, f) ↦ k ⋆ f` from `L¹(μ; 𝕜) × Lᵖ(μ; X)` to `Lᵖ(μ; X)` sending the
+classes of `k` and `f` to the class of `x ↦ ∫ t, k(t) • f(x - t) dμ(t)`
+(`MeasureTheory.Lp.coeFn_addConvolutionL`). It has norm at most one
+(`MeasureTheory.Lp.norm_addConvolutionL_le`), which is **Young's inequality**
+`‖k ⋆ f‖_p ≤ ‖k‖₁ ‖f‖_p`.
+
+The kernel may be real or complex and `X` is any normed space; as for the Bochner integral, the
+convolution vanishes unless `X` is complete. For finite `p` on a multiplicatively written locally
+compact group, the analogous operator, defined as an integral of translates, is
+`MeasureTheory.Lp.convolutionL`. -/
+def addConvolutionL : Lp 𝕜 1 μ →L[𝕜] Lp X p μ →L[𝕜] Lp X p μ :=
+  LinearMap.mkContinuous₂
+    (LinearMap.mk₂ 𝕜 (fun k f ↦ (memLp_convolution k f).toLp _) toLp_convolution_add_left
+      toLp_convolution_smul_left toLp_convolution_add_right toLp_convolution_smul_right)
+    1 norm_toLp_convolution_le
+
+private theorem addConvolutionL_apply (k : Lp 𝕜 1 μ) (f : Lp X p μ) :
+    addConvolutionL μ p k f = (memLp_convolution k f).toLp _ :=
+  (rfl)
+
+/-- The convolution `k ⋆ f` of `k ∈ L¹` and `f ∈ Lᵖ` is represented almost everywhere by
+`x ↦ ∫ t, k(t) • f(x - t) dμ(t)`. -/
+theorem coeFn_addConvolutionL (k : Lp 𝕜 1 μ) (f : Lp X p μ) :
+    addConvolutionL μ p k f =ᵐ[μ] (k : G → 𝕜) ⋆[lsmul 𝕜 𝕜, μ] (f : G → X) := by
+  rw [addConvolutionL_apply]
+  exact MemLp.coeFn_toLp _
+
+/-- The convolution of the classes of an integrable `k` and of `f ∈ Lᵖ` is represented almost
+everywhere by `x ↦ ∫ t, k(t) • f(x - t) dμ(t)`. -/
+theorem coeFn_addConvolutionL_toL1_toLp {k : G → 𝕜} (hk : Integrable k μ) {f : G → X}
+    (hf : MemLp f p μ) :
+    addConvolutionL μ p (hk.toL1 k) (hf.toLp f) =ᵐ[μ] k ⋆[lsmul 𝕜 𝕜, μ] f := by
+  rw [← convolution_congr _ hk.coeFn_toL1 hf.coeFn_toLp]
+  exact coeFn_addConvolutionL _ _
+
+/-- **Young's inequality** for an `L¹` kernel: `‖k ⋆ f‖_p ≤ ‖k‖₁ ‖f‖_p`. -/
+theorem norm_addConvolutionL_apply_le (k : Lp 𝕜 1 μ) (f : Lp X p μ) :
+    ‖addConvolutionL μ p k f‖ ≤ ‖k‖ * ‖f‖ := by
+  simpa only [addConvolutionL_apply, one_mul] using norm_toLp_convolution_le k f
+
+/-- Convolution has norm at most one as a bilinear map. -/
+theorem norm_addConvolutionL_le : ‖addConvolutionL (𝕜 := 𝕜) (X := X) μ p‖ ≤ 1 :=
+  LinearMap.mkContinuous₂_norm_le _ zero_le_one _
+
+end NontriviallyNormedField
+
+/-- Convolution commutes with postcomposition by a continuous linear map between Banach spaces:
+`T ∘ (k ⋆ f) = k ⋆ (T ∘ f)`. -/
+theorem compLpL_addConvolutionL {𝕜 Y : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 X]
+    [SMulCommClass ℝ 𝕜 X] [CompleteSpace X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    [NormedSpace 𝕜 Y] [SMulCommClass ℝ 𝕜 Y] [CompleteSpace Y] (T : X →L[𝕜] Y) (k : Lp 𝕜 1 μ)
+    (f : Lp X p μ) :
+    T.compLpL p μ (addConvolutionL μ p k f) = addConvolutionL μ p k (T.compLpL p μ f) := by
+  refine Lp.ext ?_
+  have hTf : (k : G → 𝕜) ⋆[lsmul 𝕜 𝕜, μ] (T.compLpL p μ f : G → Y) =
+      (k : G → 𝕜) ⋆[lsmul 𝕜 𝕜, μ] fun y ↦ T (f y) :=
+    convolution_congr _ EventuallyEq.rfl (T.coeFn_compLpL f)
+  filter_upwards [T.coeFn_compLpL (addConvolutionL μ p k f), coeFn_addConvolutionL k f,
+    coeFn_addConvolutionL k (T.compLpL p μ f), ae_convolutionExistsAt k f] with x h₁ h₂ h₃ hx
+  rw [h₁, h₂, h₃, hTf, T.convolution_lsmul_comp_comm hx]
+
+end MeasureTheory.Lp
 
 namespace TauCeti
 
@@ -320,6 +487,16 @@ theorem convolutionLp_ae_eq_convolution_coeFn [CompleteSpace F] (hp : p ≠ ∞)
     (hk : Integrable k μ) (f : Lp F p μ) :
     convolutionLp hp k μ f =ᵐ[μ] k ⋆[lsmul ℝ ℝ, μ] (f : E → F) := by
   simpa only [Lp.toLp_coeFn] using convolutionLp_ae_eq_convolution hp hk (Lp.memLp f)
+
+/-- For a real kernel and `p < ∞`, convolution with `k` is the bilinear convolution
+`MeasureTheory.Lp.addConvolutionL` with the `L¹` class of `k`. -/
+theorem convolutionLp_eq_addConvolutionL [CompleteSpace F] (hp : p ≠ ∞) {k : E → ℝ}
+    (hk : Integrable k μ) (f : Lp F p μ) :
+    convolutionLp hp k μ f = Lp.addConvolutionL μ p (hk.toL1 k) f := by
+  refine Lp.ext ?_
+  filter_upwards [convolutionLp_ae_eq_convolution_coeFn hp hk f,
+    Lp.coeFn_addConvolutionL (hk.toL1 k) f] with x h₁ h₂
+  rw [h₁, h₂, convolution_congr _ hk.coeFn_toL1 Filter.EventuallyEq.rfl]
 
 /-- **Convolution with a nonnegative kernel preserves positivity**: if `k ≥ 0` almost everywhere
 and `f ∈ Lᵖ` is nonnegative, then so is `k ⋆ f`. -/
