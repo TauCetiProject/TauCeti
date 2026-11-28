@@ -119,9 +119,9 @@ theorem pairedHadamard_factorization
     rw [hfg z, hg_prod z, hdiv_eq z]; ring
   obtain ⟨R, hR⟩ := hpositive
   obtain ⟨hR_im, hR_re⟩ := hR (max R 1) (le_max_left R 1)
-  obtain ⟨hg0_im, hg0_re_pos⟩ := im_eq_zero_and_re_pos_of_eq_mul_pow_one_add_div_sq
+  obtain ⟨hg0_im, hg0_re_pos⟩ := im_eq_zero_and_re_pos_of_eq_mul_pow_tprod_one_add_div_sq
     hγ_sum hf_eq_g0 (lt_of_lt_of_le zero_lt_one (le_max_right R 1)) hR_im hR_re
-  have hc_coe : g 0 = (((g 0).re : ℝ) : ℂ) := Complex.ext rfl hg0_im
+  have hc_coe : g 0 = (((g 0).re : ℝ) : ℂ) := Complex.ext (by simp) (by simp [hg0_im])
   have hf_eq_c (z : ℂ) : f z = (((g 0).re : ℝ) : ℂ) * z ^ m *
       ∏' n : ℕ, (1 + z ^ 2 / (γ n : ℂ) ^ 2) := by
     rw [← hc_coe]

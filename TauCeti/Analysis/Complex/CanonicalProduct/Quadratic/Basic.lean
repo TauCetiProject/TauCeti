@@ -29,7 +29,7 @@ entries, avoiding conditional branching in convergence and coefficient proofs.
   from inverse-square summability `∑' n, (γ n)⁻¹ ^ 2 < ∞`.
 * `TauCeti.one_le_tprod_one_add_div_sq`: on `ℝ`, the paired product is real and at least `1` in
   `ComplexOrder`.
-* `TauCeti.im_eq_zero_and_re_pos_of_eq_mul_pow_one_add_div_sq`: real positivity at a single
+* `TauCeti.im_eq_zero_and_re_pos_of_eq_mul_pow_tprod_one_add_div_sq`: real positivity at a single
   positive real point forces the leading constant of a paired quadratic product to be real and
   strictly positive.
 * `TauCeti.exists_nat_seq_tprod_one_add_div_sq`: flattening an arbitrary inverse-square-summable
@@ -101,7 +101,7 @@ end
 /-- Evaluating `f z = a * z ^ m * ∏' n, (1 + z ^ 2 / (γ n) ^ 2)` at a single positive real point
 `x₀ > 0` where `f x₀` is real and strictly positive forces the leading constant `a` to be real
 and strictly positive. -/
-theorem im_eq_zero_and_re_pos_of_eq_mul_pow_one_add_div_sq {f : ℂ → ℂ} {a : ℂ} {m : ℕ}
+theorem im_eq_zero_and_re_pos_of_eq_mul_pow_tprod_one_add_div_sq {f : ℂ → ℂ} {a : ℂ} {m : ℕ}
     {γ : ℕ → ℝ} (hsum : Summable (fun n ↦ (γ n)⁻¹ ^ 2))
     (hf_eq : ∀ z : ℂ, f z = a * z ^ m * ∏' n, (1 + z ^ 2 / (γ n : ℂ) ^ 2))
     {x₀ : ℝ} (hx₀ : 0 < x₀) (him : (f (x₀ : ℂ)).im = 0) (hre : 0 < (f (x₀ : ℂ)).re) :

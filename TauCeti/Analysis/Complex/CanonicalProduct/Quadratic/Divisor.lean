@@ -24,6 +24,11 @@ sequence (`TauCeti.exists_paired_seq_divisorProductOne`).
   `{ρ ∈ d.support | 0 < ρ.im}`.
 * `TauCeti.exists_paired_seq_divisorProductOne`: represents `divisorProductOne g` by a nonnegative
   sequence `γ : ℕ → ℝ` with `Summable (fun n ↦ (γ n)⁻¹ ^ 2)`.
+
+## References
+
+* Z. Yun and W. Zhang, *Shtukas and the Taylor expansion of L-functions*, Ann. of Math. (2) **186**
+  (2017), no. 3, 767–911, Appendix B.1, (B.3), p. 902.
 -/
 
 public section
@@ -88,8 +93,8 @@ theorem divisorProductOne_eq_tprod_im_pos {g : ℂ → ℂ} (hg : Differentiable
         dsimp only [F]
         rw [Complex.coe_upperHalfSumEquivOfNegInvariant_inl,
           Complex.coe_upperHalfSumEquivOfNegInvariant_inr, hdiv_neg]
-        exact weierstrassFactor_one_imag_pair (Set.mem_ofPred.1 (hsupp_re ρ.property.1))
-          (d ρ.val).toNat z
+        exact weierstrassFactor_one_left_inv_mul_pow_mul_neg_inv_mul_pow
+          (Set.mem_ofPred.1 (hsupp_re ρ.property.1)) (d ρ.val).toNat z
 
 /-- Every entire even function `g` with `g 0 ≠ 0`, zeros on the imaginary axis, and inverse-square
 summable divisor has `divisorProductOne g` represented by a nonnegative sequence `γ : ℕ → ℝ` with

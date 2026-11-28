@@ -68,6 +68,11 @@ theorem eval_map_pairedPartialPoly (c : ℝ) (m : ℕ) (γ : ℕ → ℝ) (s : F
   push_cast
   ring
 
+private theorem coeff_one_add_C_inv_sq_mul_X_sq_nonneg (y : ℝ) (j : ℕ) :
+    0 ≤ (1 + C (y⁻¹ ^ 2) * X ^ 2).coeff j := by
+  rw [coeff_add, coeff_one, coeff_C_mul_X_pow]
+  split_ifs <;> positivity
+
 /-- Every coefficient of `pairedPartialPoly c m γ s` is nonnegative when `0 ≤ c`. -/
 theorem coeff_pairedPartialPoly_nonneg {c : ℝ} (hc : 0 ≤ c) (m : ℕ) (γ : ℕ → ℝ)
     (s : Finset ℕ) : ∀ d, 0 ≤ (pairedPartialPoly c m γ s).coeff d := by
@@ -75,11 +80,10 @@ theorem coeff_pairedPartialPoly_nonneg {c : ℝ} (hc : 0 ≤ c) (m : ℕ) (γ : 
   have hC : ∀ d, 0 ≤ (C c).coeff d := fun d ↦ by rw [coeff_C]; split_ifs <;> positivity
   have hX : ∀ d, 0 ≤ (X ^ m : ℝ[X]).coeff d := fun d ↦ by
     rw [coeff_X_pow]; split_ifs <;> norm_num
-  have hfactor (n : ℕ) : ∀ d, 0 ≤ (1 + C ((γ n)⁻¹ ^ 2) * X ^ 2).coeff d := fun d ↦ by
-    rw [coeff_add, coeff_one, coeff_C_mul_X_pow]; split_ifs <;> positivity
   have hprod : ∀ d, 0 ≤ (∏ n ∈ s, (1 + C ((γ n)⁻¹ ^ 2) * X ^ 2)).coeff d := by
     refine Finset.prod_induction _ (fun p : ℝ[X] ↦ ∀ d, 0 ≤ p.coeff d)
-      (fun _ _ hp hq d ↦ coeff_mul_nonneg hp hq d) (fun d ↦ ?_) (fun n _ ↦ hfactor n)
+      (fun _ _ hp hq d ↦ coeff_mul_nonneg hp hq d) (fun d ↦ ?_)
+      (fun n _ ↦ coeff_one_add_C_inv_sq_mul_X_sq_nonneg (γ n))
     rw [coeff_one]; split_ifs <;> norm_num
   rw [pairedPartialPoly_def]
   exact coeff_mul_nonneg (coeff_mul_nonneg hC hX) hprod
@@ -96,8 +100,7 @@ theorem coeff_pairedPartialPoly_mono {c : ℝ} (hc : 0 ≤ c) (m : ℕ) (γ : �
         simp only [pairedPartialPoly_def, Finset.prod_insert hn]; ring
       rw [hstep]
       exact coeff_le_coeff_mul (coeff_pairedPartialPoly_nonneg hc m γ u)
-        (fun j ↦ by rw [coeff_add, coeff_one, coeff_C_mul_X_pow]; split_ifs <;> positivity)
-        (by simp) d
+        (coeff_one_add_C_inv_sq_mul_X_sq_nonneg (γ n)) (by simp) d
   exact hmono hts
 
 /-- If every `n ∈ t` has `γ n ≠ 0`, the degree-`(m + 2 * t.card)` coefficient of

@@ -47,7 +47,7 @@ theorem mul_pow_le_re_of_iteratedDeriv_nonneg {h : ℂ → ℂ} (hh : Differenti
     split_ifs with hn
     · subst n
       have hc_eq : iteratedDeriv n₀ h 0 = (((iteratedDeriv n₀ h 0).re : ℝ) : ℂ) :=
-        Complex.ext rfl (hnonneg n₀).1
+        Complex.ext (by simp) (by simp [(hnonneg n₀).1])
       rw [hc_eq, smul_eq_mul, Complex.nonneg_iff]
       exact ⟨by simpa using sub_nonneg.mpr ha₀, by simp⟩
     · simpa [Complex.nonneg_iff, eq_comm, and_comm] using hnonneg n

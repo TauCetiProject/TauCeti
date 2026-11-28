@@ -143,13 +143,14 @@ theorem weierstrassFactor_eq_zero_iff (p : ℕ) {z : ℂ} :
 /-- Pairing opposite arguments at genus one cancels the exponential factor:
 `E₁(z) E₁(-z) = 1 - z²`. -/
 @[simp]
-theorem weierstrassFactor_one_mul_neg (z : ℂ) :
+theorem weierstrassFactor_one_left_mul_neg (z : ℂ) :
     weierstrassFactor 1 z * weierstrassFactor 1 (-z) = 1 - z ^ 2 := by
   simpa using weierstrassFactor_mul_weierstrassFactor_neg 1 z
 
 /-- Pairing opposite purely imaginary roots `±ρ` in the genus-one Weierstrass product cancels the
 exponential factors and yields `(1 + z ^ 2 / (Im ρ) ^ 2) ^ d`. -/
-theorem weierstrassFactor_one_imag_pair {ρ : ℂ} (hre : ρ.re = 0) (d : ℕ) (z : ℂ) :
+theorem weierstrassFactor_one_left_inv_mul_pow_mul_neg_inv_mul_pow {ρ : ℂ} (hre : ρ.re = 0)
+    (d : ℕ) (z : ℂ) :
     weierstrassFactor 1 (ρ⁻¹ * z) ^ d * weierstrassFactor 1 ((-ρ)⁻¹ * z) ^ d =
       (1 + z ^ 2 / (ρ.im : ℂ) ^ 2) ^ d := by
   have hneg : (-ρ)⁻¹ * z = -(ρ⁻¹ * z) := by rw [inv_neg, neg_mul]
@@ -157,7 +158,7 @@ theorem weierstrassFactor_one_imag_pair {ρ : ℂ} (hre : ρ.re = 0) (d : ℕ) (
     have hρ : ρ = (ρ.im : ℂ) * I := by simpa [hre] using (re_add_im ρ).symm
     conv_lhs => rw [hρ]
     rw [mul_pow, I_sq, mul_neg_one]
-  rw [hneg, ← mul_pow, weierstrassFactor_one_mul_neg]
+  rw [hneg, ← mul_pow, weierstrassFactor_one_left_mul_neg]
   congr 1
   rw [mul_pow, inv_pow, ← div_eq_inv_mul, hρ_sq, div_neg, sub_neg_eq_add]
 
