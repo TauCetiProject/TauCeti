@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.ExactFunctor
 public import Mathlib.Algebra.Homology.DerivedCategory.HomologySequence
+public import Mathlib.Algebra.Homology.DerivedCategory.TStructure
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
 /-!
@@ -18,7 +19,9 @@ An exact functor `F : C₁ ⥤ C₂` between abelian categories induces a functo
 (`CategoryTheory.Functor.mapDerivedCategoryCompHomologyFunctorIso`). This is the derived-category
 form of `CategoryTheory.Functor.mapHomologicalComplexCompHomologyFunctorIso`; it shows for instance
 that derived restriction of module sheaves to an open subscheme preserves quasi-coherence of
-homology sheaves.
+homology sheaves. As a direct consequence, exact functors preserve cohomological boundedness
+below and above (`CategoryTheory.Functor.isGE_mapDerivedCategory_obj` and
+`CategoryTheory.Functor.isLE_mapDerivedCategory_obj`).
 -/
 
 public section
@@ -55,5 +58,21 @@ lemma mapDerivedCategoryCompHomologyFunctorIso_hom_app_Q_obj (n : ℤ) (K : Coch
         (homologyFunctorFactors C₂ n).hom.app _ ≫ ((K.sc n).mapHomologyIso F).hom ≫
           F.map ((homologyFunctorFactors C₁ n).inv.app K) := by
   simp [mapDerivedCategoryCompHomologyFunctorIso, Localization.liftNatTrans_app]
+
+/-- An exact functor preserves cohomological boundedness below (`DerivedCategory.IsGE`). -/
+instance isGE_mapDerivedCategory_obj (X : DerivedCategory C₁) (a : ℤ) [X.IsGE a] :
+    (F.mapDerivedCategory.obj X).IsGE a := by
+  rw [DerivedCategory.isGE_iff]
+  intro i hi
+  exact (F.map_isZero (DerivedCategory.isZero_of_isGE X a i hi)).of_iso
+    ((F.mapDerivedCategoryCompHomologyFunctorIso i).app X)
+
+/-- An exact functor preserves cohomological boundedness above (`DerivedCategory.IsLE`). -/
+instance isLE_mapDerivedCategory_obj (X : DerivedCategory C₁) (b : ℤ) [X.IsLE b] :
+    (F.mapDerivedCategory.obj X).IsLE b := by
+  rw [DerivedCategory.isLE_iff]
+  intro i hi
+  exact (F.map_isZero (DerivedCategory.isZero_of_isLE X b i hi)).of_iso
+    ((F.mapDerivedCategoryCompHomologyFunctorIso i).app X)
 
 end CategoryTheory.Functor

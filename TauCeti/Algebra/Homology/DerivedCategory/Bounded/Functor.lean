@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Homology.DerivedCategory.Bounded.Basic
 public import TauCeti.Algebra.Homology.DerivedCategory.Equivalence
 public import TauCeti.CategoryTheory.ObjectProperty.Equivalence
 
+import TauCeti.Algebra.Homology.DerivedCategory.ExactFunctor
+
 /-!
 # Exact functors on bounded derived categories
 
@@ -37,21 +39,8 @@ variable {A : Type u₁} [Category.{v₁} A] [Abelian A] [HasDerivedCategory.{w�
 lemma bounded_mapDerivedCategory (X : DerivedCategory A)
     (hX : (DerivedCategory.TStructure.t (C := A)).bounded X) :
     (DerivedCategory.TStructure.t (C := B)).bounded (F.mapDerivedCategory.obj X) := by
-  obtain ⟨⟨a, ha⟩, ⟨b, hb⟩⟩ := hX
-  obtain ⟨K, _, _, ⟨e⟩⟩ := X.exists_iso_Q_obj_of_isGE_of_isLE a b
-  let L : CochainComplex B ℤ := (F.mapHomologicalComplex (ComplexShape.up ℤ)).obj K
-  have : L.IsGE a := by
-    rw [CochainComplex.isGE_iff]
-    exact fun i hi ↦ (K.exactAt_of_isGE a i hi).map F
-  have : L.IsLE b := by
-    rw [CochainComplex.isLE_iff]
-    exact fun i hi ↦ (K.exactAt_of_isLE b i hi).map F
-  exact (DerivedCategory.TStructure.t (C := B)).bounded.prop_of_iso
-    (F.mapDerivedCategory.mapIso e ≪≫ F.mapDerivedCategoryFactors.app K).symm
-    ⟨⟨a, by simpa only [Functor.comp_obj] using
-      (DerivedCategory.isGE_Q_obj_iff L a).2 ‹L.IsGE a›⟩,
-      ⟨b, by simpa only [Functor.comp_obj] using
-        (DerivedCategory.isLE_Q_obj_iff L b).2 ‹L.IsLE b›⟩⟩
+  obtain ⟨⟨a, _⟩, ⟨b, _⟩⟩ := hX
+  exact ⟨⟨a, F.isGE_mapDerivedCategory_obj X a⟩, ⟨b, F.isLE_mapDerivedCategory_obj X b⟩⟩
 
 /-- The termwise action of an exact functor restricted to bounded derived categories. -/
 noncomputable def mapBoundedDerivedCategory :

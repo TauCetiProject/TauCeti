@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.Embedding.ExtendHomology
 public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.Algebra.Homology.Embedding.ExtendHomotopy
+public import TauCeti.Algebra.Homology.Functor.Extend
 
 /-!
 # Opcycles and extension by zero
@@ -19,8 +20,9 @@ epimorphism (or a monomorphism) in homology in a degree of the image exactly whe
 is, the counterpart of Mathlib's `HomologicalComplex.quasiIsoAt_extendMap_iff`. Outside the image,
 an extended complex has zero homology, so every extended chain map is an isomorphism in homology
 there. In a degree of the image, taking homology commutes with extension, naturally, both for
-complexes (`ComplexShape.Embedding.extendFunctorCompHomologyFunctorIso`) and on homotopy
-categories (`ComplexShape.Embedding.extendHomotopyFunctorCompHomologyFunctorIso`).
+complexes (`ComplexShape.Embedding.extendFunctorCompHomologyFunctorIso`), after applying a functor
+preserving zero morphisms (`ComplexShape.Embedding.extendFunctorCompMapHomologyFunctorIso`), and
+on homotopy categories (`ComplexShape.Embedding.extendHomotopyFunctorCompHomologyFunctorIso`).
 
 Adapted from [TauCetiProject/TauCeti#10141](https://github.com/TauCetiProject/TauCeti/pull/10141).
 -/
@@ -136,5 +138,37 @@ lemma extendHomotopyFunctorCompHomologyFunctorIso_hom_app_quotient_obj {j : ι} 
         (K.extendHomologyIso e hj').hom ≫
         (HomotopyCategory.homologyFunctorFactors C c j).inv.app K := by
   (rfl)
+
+end ComplexShape.Embedding
+
+namespace ComplexShape.Embedding
+
+open HomologicalComplex
+
+variable {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'} (e : c.Embedding c')
+  {C D : Type*} [Category* C] [HasZeroMorphisms C] [HasZeroObject C]
+  [Category* D] [HasZeroMorphisms D] [HasZeroObject D] [CategoryWithHomology D]
+  (F : C ⥤ D) [F.PreservesZeroMorphisms]
+
+/-- In a degree `j'` of the image of `e`, the homology of `F(K.extend e)` is naturally the
+homology of `F(K)` in the corresponding degree `j`. -/
+noncomputable def extendFunctorCompMapHomologyFunctorIso {j : ι} {j' : ι'} (hj' : e.f j = j') :
+    e.extendFunctor C ⋙ F.mapHomologicalComplex c' ⋙ homologyFunctor D c' j' ≅
+      F.mapHomologicalComplex c ⋙ homologyFunctor D c j :=
+  (Functor.associator _ _ _).symm ≪≫
+    Functor.isoWhiskerRight (F.mapHomologicalComplexExtendIso e) _ ≪≫
+    Functor.associator _ _ _ ≪≫
+    Functor.isoWhiskerLeft (F.mapHomologicalComplex c)
+      (e.extendFunctorCompHomologyFunctorIso D hj')
+
+/-- Component formula for `extendFunctorCompMapHomologyFunctorIso.hom`. -/
+@[simp]
+lemma extendFunctorCompMapHomologyFunctorIso_hom_app {j : ι} {j' : ι'} (hj' : e.f j = j')
+    (K : HomologicalComplex C c) :
+    (e.extendFunctorCompMapHomologyFunctorIso F hj').hom.app K =
+      homologyMap (F.mapHomologicalComplexExtendObjIso e K).hom j' ≫
+        (((F.mapHomologicalComplex c).obj K).extendHomologyIso e hj').hom := by
+  dsimp [extendFunctorCompMapHomologyFunctorIso]
+  simp
 
 end ComplexShape.Embedding

@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.RightDerivedFunctorPlus
 public import TauCeti.Algebra.Homology.HomologicalComplex.Acyclic
-public import TauCeti.Algebra.Homology.HomologySequenceLemmas
+
+import TauCeti.Algebra.Homology.DerivedCategory.Plus.Basic
+import TauCeti.Algebra.Homology.DerivedCategory.Plus.RightDerived
 
 /-!
 # Bounded below right derived functors from adapted complexes
@@ -29,16 +31,12 @@ sheaves form such a class for the global sections functor.
 
 The proof embeds `K` by a monomorphism and quasi-isomorphism `K ⟶ L` into a bounded below complex
 of injective objects (Mathlib's
-`CochainComplex.Plus.modelCategoryQuillen.exists_mono_quasiIso_injective`). The cokernel of
-`K ⟶ L` is then an acyclic bounded below complex with terms in `P`, which `F` sends to an acyclic
-complex (`HomologicalComplex.Acyclic.map_of_shortExact_of_isStrictlyGE`), so that `F(K) ⟶ F(L)`
-is a quasi-isomorphism (`CategoryTheory.Functor.quasiIso_map_of_mono_of_isStrictlyGE`).
+`CochainComplex.Plus.modelCategoryQuillen.exists_mono_quasiIso_injective`), and applies
+`CategoryTheory.Functor.quasiIso_map_of_mono_of_isStrictlyGE` (from
+`TauCeti/Algebra/Homology/HomologicalComplex/Acyclic.lean`).
 
 ## Main results
 
-* `CategoryTheory.Functor.quasiIso_map_of_mono_of_isStrictlyGE`: `F` sends a monomorphism and
-  quasi-isomorphism into a bounded below complex, between complexes with terms in `P`, to a
-  quasi-isomorphism.
 * `CategoryTheory.Functor.isIso_rightDerivedFunctorPlusUnit_app`: for a bounded below complex `K`
   with terms in `P`, the map `F(K) ⟶ RF(K)` is an isomorphism in `D⁺(D)`.
 
@@ -63,26 +61,6 @@ variable {C : Type u₁} [Category.{v₁} C] [Abelian C] {D : Type u₂} [Catego
   (hP : ∀ S : ShortComplex C, S.ShortExact → P S.X₁ → P S.X₂ → P S.X₃)
   (hF : ∀ S : ShortComplex C, S.ShortExact → P S.X₁ → P S.X₂ → (S.map F).ShortExact)
 
-include hP hF in
-/-- Let `P` be a class of objects closed under isomorphisms and under cokernels of
-monomorphisms, on whose short exact sequences `F` is exact. Then `F` sends a monomorphism and
-quasi-isomorphism `K ⟶ L` between complexes with terms in `P`, where `L` vanishes below some degree
-`b`, to a quasi-isomorphism. -/
-theorem quasiIso_map_of_mono_of_isStrictlyGE {K L : CochainComplex C ℤ} (f : K ⟶ L) [Mono f]
-    [QuasiIso f] (b : ℤ) [L.IsStrictlyGE b] (hK : ∀ n, P (K.X n))
-    (hL : ∀ n, P (L.X n)) : QuasiIso ((F.mapHomologicalComplex _).map f) := by
-  let S := ShortComplex.cokernelSequence f
-  have hS : S.ShortExact := TauCeti.cokernelSequence_shortExact f
-  have hSn := (HomologicalComplex.shortExact_iff_degreewise_shortExact S).1 hS
-  -- the cokernel of `f` is acyclic, vanishes below degree `b` and has terms in `P`
-  have : S.X₃.IsStrictlyGE b := (CochainComplex.isStrictlyGE_iff _ b).2 fun i hi ↦
-    have : Epi (S.g.f i) := (hSn i).epi_g
-    (L.isZero_of_isStrictlyGE b i hi).of_epi (S.g.f i)
-  have hFS : (S.map (F.mapHomologicalComplex _)).ShortExact :=
-    HomologicalComplex.shortExact_of_degreewise_shortExact _ fun n ↦ hF _ (hSn n) (hK n) (hL n)
-  exact hFS.quasiIso_f_iff.2 (HomologicalComplex.Acyclic.map_of_shortExact_of_isStrictlyGE F P hP hF
-    b (hS.quasiIso_f_iff.1 (inferInstanceAs (QuasiIso f))) fun n ↦ hP _ (hSn n) (hK n) (hL n))
-
 variable [HasDerivedCategory C] [HasDerivedCategory D] [EnoughInjectives C]
 
 include hP hF in
@@ -97,24 +75,22 @@ theorem isIso_rightDerivedFunctorPlusUnit_app (hinj : ∀ (Y : C), Injective Y �
   obtain ⟨b, _⟩ := K.property
   obtain ⟨L, i, _, hi, hL, hLb⟩ :=
     CochainComplex.Plus.modelCategoryQuillen.exists_mono_quasiIso_injective K.obj (b - 1) b
-  -- `L`, viewed as a bounded below complex of injective objects: mapping its lift back along
-  -- `InjectiveObject.ι C` gives `L` by definition, so `hLb` is the required bound
-  let L' : CochainComplex.Plus (InjectiveObject C) :=
-    ⟨HomologicalComplex.liftObjectProperty _ L hL, b - 1,
-      (CochainComplex.isStrictlyGE_mapHomologicalComplex_obj_iff _ (InjectiveObject.ι C) _).1 hLb⟩
-  let i' : K ⟶ (InjectiveObject.ι C).mapCochainComplexPlus.obj L' := ObjectProperty.homMk i
-  -- `i` and `F(i)` are quasi-isomorphisms; by definition `i'.hom` is `i` and
-  -- `(F.mapCochainComplexPlus.map i').hom` is `(F.mapHomologicalComplex _).map i`
+  -- view `L` in `CochainComplex.Plus C` and lift `i` to `K ⟶ L'`
+  let L' : CochainComplex.Plus C := ⟨L, b - 1, hLb⟩
+  let i' : K ⟶ L' := ObjectProperty.homMk i
+  have : QuasiIso i'.hom := hi
+  have : QuasiIso (F.mapCochainComplexPlus.map i').hom := by
+    rw [Functor.mapCochainComplexPlus_map_hom]
+    exact F.quasiIso_map_of_mono_of_isStrictlyGE P hP hF i (b - 1) hK fun n ↦ hinj _ (hL n)
+  -- `i'` and `F(i')` are quasi-isomorphisms, and `F.rightDerivedFunctorPlusUnit.app L'` is an
+  -- isomorphism because `L'` has injective terms
   have : IsIso (DerivedCategory.Plus.Q.map i') :=
-    Localization.inverts _ (CochainComplex.Plus.quasiIso C) i'
-      ((CochainComplex.Plus.quasiIso_iff C i').2 hi)
+    TauCeti.DerivedCategory.Plus.isIso_Q_map_of_quasiIso i'
   have : IsIso (DerivedCategory.Plus.Q.map (F.mapCochainComplexPlus.map i')) :=
-    Localization.inverts _ (CochainComplex.Plus.quasiIso D) _
-      ((CochainComplex.Plus.quasiIso_iff D _).2
-        (F.quasiIso_map_of_mono_of_isStrictlyGE P hP hF i (b - 1) hK fun n ↦ hinj _ (hL n)))
-  -- the map `F(L) ⟶ RF(L)` is an isomorphism, as `L` has injective terms
+    TauCeti.DerivedCategory.Plus.isIso_Q_map_of_quasiIso (F.mapCochainComplexPlus.map i')
+  have : ∀ n, Injective (L'.obj.X n) := hL
   have h := F.rightDerivedFunctorPlusUnit.naturality i'
-  dsimp only [Functor.comp_map] at h
+  simp only [Functor.comp_obj, Functor.comp_map] at h
   have : IsIso (F.rightDerivedFunctorPlusUnit.app K ≫
       F.rightDerivedFunctorPlus.map (DerivedCategory.Plus.Q.map i')) := by
     rw [← h]
