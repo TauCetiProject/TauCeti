@@ -14,15 +14,19 @@ import Mathlib.Data.Nat.Cast.Basic
 /-!
 # Invertible elements and `Ring.inverse`
 
-This file collects elementary lemmas on units in semirings, `Ring.inverse` in monoids with zero
-and distributive negation, and the image of `⅟2` under ring homomorphisms:
+This file collects elementary lemmas on units in semirings, numeric literal invertibility under ring
+homomorphisms, and `Ring.inverse` in monoids with zero and distributive negation:
 
 * `IsUnit.eq_zero_of_add_self_eq_zero`: if `2` is a unit in a semiring, zero is the only element
   that doubles to zero.
+* `TauCeti.invertibleMapOfNat`: ring homomorphisms preserve `Invertible` instances on numeric
+  literals `n ≥ 2`.
+* `TauCeti.map_invOf_ofNat`: ring homomorphisms send `⅟(ofNat(n))` to `⅟(ofNat(n))` independently
+  of the chosen `Invertible` instances.
+* `TauCeti.two_mul_map_invOf_two`: a ring homomorphism sends `⅟2` to a half of `1`.
 * `TauCeti.ringInverse_neg`: `Ring.inverse` commutes with negation.
 * `TauCeti.ringInverse_neg_one_pow_mul`: multiplying on the left by `(-1) ^ k` commutes with
   `Ring.inverse`.
-* `TauCeti.two_mul_map_invOf_two`: a ring homomorphism sends `⅟2` to a half of `1`.
 * `Commute.ringInverse_right`: an element commuting with `b` commutes with `Ring.inverse b`.
 * `Ring.inverse_one_sub_eq`: the resolvent identity
   `Ring.inverse (1 - x) = 1 + x * Ring.inverse (1 - x)` when `1 - x` is a unit.
@@ -37,6 +41,25 @@ theorem IsUnit.eq_zero_of_add_self_eq_zero {R : Type*} [Semiring R] (h2 : IsUnit
   exact h2.mul_right_eq_zero.mp (by rwa [two_mul])
 
 namespace TauCeti
+
+/-- Ring homomorphisms preserve invertibility of numeric literals `n ≥ 2`. -/
+abbrev invertibleMapOfNat {R S F : Type*} [NonAssocSemiring R] [NonAssocSemiring S] [FunLike F R S]
+    [RingHomClass F R S] (f : F) (n : ℕ) [n.AtLeastTwo] [Invertible (ofNat(n) : R)] :
+    Invertible (ofNat(n) : S) :=
+  (Invertible.map f (ofNat(n) : R)).copy ofNat(n) (by exact (map_ofNat f n).symm)
+
+/-- Ring homomorphisms send the inverse of a numeric literal `n ≥ 2` to the inverse of `n`,
+independently of the choice of `Invertible` instances. -/
+theorem map_invOf_ofNat {R S F : Type*} [NonAssocSemiring R] [Semiring S] [FunLike F R S]
+    [RingHomClass F R S] (f : F) (n : ℕ) [n.AtLeastTwo]
+    [Invertible (ofNat(n) : R)] [Invertible (ofNat(n) : S)] :
+    f ⅟(ofNat(n) : R) = ⅟(ofNat(n) : S) :=
+  (invOf_eq_right_inv (by rw [← map_ofNat f n, ← map_mul, mul_invOf_self, map_one])).symm
+
+/-- A ring homomorphism sends `⅟2` to a half of `1`: `2 * f ⅟2 = 1`. -/
+theorem two_mul_map_invOf_two {R S F : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
+    [Invertible (2 : R)] [FunLike F R S] [RingHomClass F R S] (f : F) : 2 * f ⅟2 = 1 :=
+  (invertibleMapOfNat f 2).mul_invOf_self
 
 variable {R : Type*} [MonoidWithZero R] [HasDistribNeg R]
 
@@ -55,15 +78,6 @@ theorem ringInverse_neg (a : R) : Ring.inverse (-a) = -Ring.inverse a := by
 theorem ringInverse_neg_one_pow_mul (k : ℕ) (a : R) :
     Ring.inverse ((-1 : R) ^ k * a) = (-1 : R) ^ k * Ring.inverse a := by
   rcases neg_one_pow_eq_or R k with h | h <;> simp [h]
-
-end TauCeti
-
-namespace TauCeti
-
-/-- A ring homomorphism sends `⅟2` to a half of `1`: `2 * f ⅟2 = 1`. -/
-theorem two_mul_map_invOf_two {R S F : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
-    [Invertible (2 : R)] [FunLike F R S] [RingHomClass F R S] (f : F) : 2 * f ⅟2 = 1 := by
-  rw [← map_ofNat f 2, ← map_mul, mul_invOf_self, map_one]
 
 end TauCeti
 

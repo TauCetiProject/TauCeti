@@ -53,6 +53,12 @@ variable (a₁ a₃ : B)
 @[simp] theorem gammaOneThreeForm_a₄ : (gammaOneThreeForm a₁ a₃).a₄ = 0 := (rfl)
 @[simp] theorem gammaOneThreeForm_a₆ : (gammaOneThreeForm a₁ a₃).a₆ = 0 := (rfl)
 
+/-- A Weierstrass curve equals `gammaOneThreeForm` of its own `a₁` and `a₃` if and only if
+`a₂ = a₄ = a₆ = 0`. -/
+theorem eq_gammaOneThreeForm_iff (W : WeierstrassCurve B) :
+    W = gammaOneThreeForm W.a₁ W.a₃ ↔ W.a₂ = 0 ∧ W.a₄ = 0 ∧ W.a₆ = 0 :=
+  ⟨fun h ↦ by rw [h]; simp, fun ⟨h₂, h₄, h₆⟩ ↦ by ext <;> simp [h₂, h₄, h₆]⟩
+
 /-- The invariant `c₄` of `Y² + a₁XY + a₃Y = X³`. -/
 @[simp]
 theorem gammaOneThreeForm_c₄ : (gammaOneThreeForm a₁ a₃).c₄ = a₁ ^ 4 - 24 * a₁ * a₃ := by
@@ -80,6 +86,14 @@ theorem gammaOneThreeForm_Δ : (gammaOneThreeForm a₁ a₃).Δ = a₁ ^ 3 * a�
 theorem map_gammaOneThreeForm {C : Type*} [CommRing C] (φ : B →+* C) :
     (gammaOneThreeForm a₁ a₃).map φ = gammaOneThreeForm (φ a₁) (φ a₃) := by
   ext <;> simp [gammaOneThreeForm]
+
+/-- Base change of `Y² + a₁XY + a₃Y = X³` to a `B`-algebra `C`. Stated separately from
+`map_gammaOneThreeForm` because `simp` does not unfold `baseChange`. -/
+@[simp]
+theorem baseChange_gammaOneThreeForm {C : Type*} [CommRing C] [Algebra B C] :
+    (gammaOneThreeForm a₁ a₃).baseChange C =
+      gammaOneThreeForm (algebraMap B C a₁) (algebraMap B C a₃) := by
+  rw [baseChange, map_gammaOneThreeForm]
 
 section VariableChange
 

@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.EllipticCurve.VariableChange
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GammaOneThreeForm
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.Trace.Defs
+public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.GammaOneThree.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.FinCases
 
@@ -207,22 +206,25 @@ theorem target_eq : target a₁ a₃ = gammaOneThreeForm
   · rw [gammaOneThreeForm_a₆]; exact h₆
 
 variable (a₁ a₃) in
-/-- **`Γ` corepresents the arrows.** `B`-algebra maps `Γ → D` correspond to coordinate changes
-`(1, r, s, t)` over `D` carrying `Y² + a₁XY + a₃Y = X³` to a curve with `a₂ = a₄ = a₆ = 0`, that is,
-to a curve of the same form; the correspondence sends `φ` to the image of
-`universalChange a₁ a₃`. -/
+/-- The universal arrow over `ArrowRing a₁ a₃` is a strict `Γ₁(3)` arrow. -/
+theorem isStrictGammaOneThreeChange_universalChange :
+    IsStrictGammaOneThreeChange (algebraMap B (ArrowRing a₁ a₃) a₁)
+      (algebraMap B (ArrowRing a₁ a₃) a₃) (universalChange a₁ a₃) := by
+  rw [isStrictGammaOneThreeChange_iff]
+  refine ⟨universalChange_u a₁ a₃, ?_, ?_, ?_⟩ <;>
+    rw [← map_gammaOneThreeForm, ← target_def, target_eq] <;> simp
+
+variable (a₁ a₃) in
+/-- **`Γ` corepresents the arrows.** `B`-algebra maps `Γ → D` correspond to strict `Γ₁(3)` arrows
+over `D` out of `gammaOneThreeForm (algebraMap B D a₁) (algebraMap B D a₃)`; the correspondence
+sends `φ` to the image of `universalChange a₁ a₃`. -/
 def arrowEquiv (D : Type*) [CommRing D] [Algebra B D] :
-    (ArrowRing a₁ a₃ →ₐ[B] D) ≃ {C : VariableChange D // C.u = 1 ∧
-      (C • (gammaOneThreeForm a₁ a₃).map (algebraMap B D)).a₂ = 0 ∧
-      (C • (gammaOneThreeForm a₁ a₃).map (algebraMap B D)).a₄ = 0 ∧
-      (C • (gammaOneThreeForm a₁ a₃).map (algebraMap B D)).a₆ = 0} where
+    (ArrowRing a₁ a₃ →ₐ[B] D) ≃
+      {C : VariableChange D //
+        IsStrictGammaOneThreeChange (algebraMap B D a₁) (algebraMap B D a₃) C} where
   toFun φ := ⟨(universalChange a₁ a₃).map φ.toRingHom, by
-    have key : (universalChange a₁ a₃).map φ.toRingHom •
-        (gammaOneThreeForm a₁ a₃).map (algebraMap B D) = (target a₁ a₃).map φ.toRingHom := by
-      rw [target_def, ← map_variableChange, WeierstrassCurve.map_map]
-      congr 2
-      exact φ.comp_algebraMap.symm
-    refine ⟨by simp, ?_, ?_, ?_⟩ <;> rw [key] <;> simp [target_eq]⟩
+    simpa only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes] using
+      (isStrictGammaOneThreeChange_universalChange a₁ a₃).map φ.toRingHom⟩
   invFun C := Ideal.Quotient.liftₐ _ (aeval ![C.val.r, C.val.s, C.val.t]) (by
     intro p hp
     refine Submodule.span_induction (p := fun p _ => aeval ![C.val.r, C.val.s, C.val.t] p = 0)
@@ -234,13 +236,13 @@ def arrowEquiv (D : Type*) [CommRing D] [Algebra B D] :
         aeval ![C.val.r, C.val.s, C.val.t] (X 2 : MvPolynomial (Fin 3) B)⟩ : VariableChange D) =
           C.val := by
       ext
-      · simp [C.prop.left]
+      · simp [C.prop.u_eq_one]
       all_goals simp
-    rw [hC, ← map_gammaOneThreeForm] at h
+    rw [hC] at h
     rintro x (rfl | rfl | rfl)
-    · exact (congrArg WeierstrassCurve.a₂ h).trans C.prop.right.left
-    · exact (congrArg WeierstrassCurve.a₄ h).trans C.prop.right.right.left
-    · exact (congrArg WeierstrassCurve.a₆ h).trans C.prop.right.right.right)
+    · exact (congrArg WeierstrassCurve.a₂ h).trans C.prop.a₂_eq_zero
+    · exact (congrArg WeierstrassCurve.a₄ h).trans C.prop.a₄_eq_zero
+    · exact (congrArg WeierstrassCurve.a₆ h).trans C.prop.a₆_eq_zero)
   left_inv φ := by
     refine Ideal.Quotient.algHom_ext _ ?_
     rw [Ideal.Quotient.liftₐ_comp]
@@ -248,7 +250,7 @@ def arrowEquiv (D : Type*) [CommRing D] [Algebra B D] :
     fin_cases i <;> simp
   right_inv C := by
     ext
-    · simp [C.prop.left]
+    · simp [C.prop.u_eq_one]
     all_goals
       simp only [universalChange, VariableChange.map, r, s, t, AlgHom.toRingHom_eq_coe,
         RingHom.coe_coe]
@@ -267,10 +269,8 @@ variable (a₁ a₃) in
 /-- The `B`-algebra map classifying `C` sends the universal arrow to `C`. -/
 @[simp]
 theorem map_universalChange_arrowEquiv_symm_apply (D : Type*) [CommRing D] [Algebra B D]
-    (C : {C : VariableChange D // C.u = 1 ∧
-      (C • (gammaOneThreeForm a₁ a₃).map (algebraMap B D)).a₂ = 0 ∧
-      (C • (gammaOneThreeForm a₁ a₃).map (algebraMap B D)).a₄ = 0 ∧
-      (C • (gammaOneThreeForm a₁ a₃).map (algebraMap B D)).a₆ = 0}) :
+    (C : {C : VariableChange D //
+      IsStrictGammaOneThreeChange (algebraMap B D a₁) (algebraMap B D a₃) C}) :
     (universalChange a₁ a₃).map ((arrowEquiv a₁ a₃ D).symm C : ArrowRing a₁ a₃ →+* D) = C :=
   congrArg Subtype.val ((arrowEquiv a₁ a₃ D).apply_symm_apply C)
 
