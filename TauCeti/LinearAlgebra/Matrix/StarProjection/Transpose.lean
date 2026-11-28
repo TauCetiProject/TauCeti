@@ -12,8 +12,8 @@ public import Mathlib.LinearAlgebra.Matrix.Hermitian
 # Transposition of star projections
 
 Over commutative coefficients, transposition of square matrices preserves both star projections
-and star orthogonality. For self-adjoint matrices it preserves zero products without assuming
-associative multiplication of the coefficients. On star projections it is an involution.
+and star orthogonality. For self-adjoint matrices it preserves zero products when star is
+additive and reverses coefficient multiplication. On star projections it is an involution.
 -/
 
 public section
@@ -40,13 +40,16 @@ theorem Matrix.isStarOrtho_transpose_iff {n R : Type*} [Fintype n]
     Matrix.transpose_eq_zero, and_comm]
 
 /-- Transposition preserves and reflects zero products of self-adjoint square matrices over
-commutative coefficients. -/
+commutative coefficients when star preserves addition and reverses multiplication. -/
 theorem Matrix.transpose_mul_eq_zero_iff_of_isSelfAdjoint {n R : Type*} [Fintype n]
-    [NonUnitalNonAssocCommSemiring R] [StarRing R] (p q : Matrix n n R)
+    [AddCommMonoid R] [CommMagma R] [StarAddMonoid R]
+    (hstar : ∀ a b : R, star (a * b) = star b * star a) (p q : Matrix n n R)
     (hp : IsSelfAdjoint p) (hq : IsSelfAdjoint q) : pᵀ * qᵀ = 0 ↔ p * q = 0 := by
+  have hconj : (q * p)ᴴ = pᴴ * qᴴ := by
+    ext i j
+    simp only [Matrix.conjTranspose_apply, Matrix.mul_apply, star_sum, hstar]
   rw [← Matrix.transpose_mul, Matrix.transpose_eq_zero,
-    ← Matrix.conjTranspose_eq_zero (M := q * p), Matrix.conjTranspose_mul,
-    hp.isHermitian.eq, hq.isHermitian.eq]
+    ← Matrix.conjTranspose_eq_zero (M := q * p), hconj, hp.isHermitian.eq, hq.isHermitian.eq]
 
 namespace Matrix
 

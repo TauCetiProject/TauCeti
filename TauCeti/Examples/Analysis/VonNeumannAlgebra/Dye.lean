@@ -31,7 +31,7 @@ example {n : Type*} [Fintype n] :
   refine ⟨Matrix.transposeStarProjection n ℂ, Matrix.transposeStarProjection_apply, ?_⟩
   intro p q
   rw [Matrix.transposeStarProjection_apply, Matrix.transposeStarProjection_apply]
-  exact (Matrix.transpose_mul_eq_zero_iff_of_isSelfAdjoint _ _
+  exact (Matrix.transpose_mul_eq_zero_iff_of_isSelfAdjoint (star_mul (R := ℂ)) _ _
     p.property.isSelfAdjoint q.property.isSelfAdjoint).symm
 
 example (x : ℂ × ℂ) :
