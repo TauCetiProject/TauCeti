@@ -493,6 +493,18 @@ theorem adjMat_mul_eq_smul (hE : IsPrimitiveIdempotents rel E)
     adjMat rel j * E i = ((adjMat rel j * E i).trace / (E i).trace) • E i :=
   hE.mul_eq_smul (adjMat_mem_bmAlgebra rel j) i
 
+/-- Every adjacency matrix `A_j` acts on the zeroth primitive idempotent `E 0` by its valency:
+`A_j * E 0 = v_j • E 0`. -/
+theorem adjMat_mul_apply_zero (hE : IsPrimitiveIdempotents rel E) (j : Fin (d + 1)) :
+    adjMat rel j * E 0 = valency rel j • E 0 := by
+  have htr : (adjMat rel j * E 0).trace = valency rel j := by
+    rw [hE.apply_zero, Matrix.mul_smul, Matrix.trace_smul, smul_eq_mul, valency_def, div_eq_inv_mul]
+    congr 1
+    simp only [Matrix.trace, Matrix.diag, Matrix.mul_apply, Matrix.of_apply, mul_one, adjMat_apply,
+      Finset.card_filter, Nat.cast_sum, Fintype.sum_prod_type]
+    simp [Finset.sum_boole]
+  simpa [hE.trace_apply_zero, htr] using hE.adjMat_mul_eq_smul 0 j
+
 /-- The column space of `E i` is a common eigenspace for every `M ∈ bmAlgebra rel`. -/
 theorem mulVec_eq_smul_of_mem_range (hE : IsPrimitiveIdempotents rel E)
     {M : Matrix X X ℝ} (hM : M ∈ bmAlgebra rel) (i : Fin (d + 1)) {v : X → ℝ}
@@ -556,6 +568,36 @@ theorem iSup_range_eq_top (hE : IsPrimitiveIdempotents rel E) :
     rw [← Matrix.sum_mulVec, hE.complete.complete, Matrix.one_mulVec]
   rw [hv]
   exact Submodule.sum_mem _ fun i _ => Submodule.mem_iSup_of_mem i ⟨v, rfl⟩
+
+/-- The column spaces of the primitive idempotents form an internal direct sum decomposition of
+`X → ℝ`. -/
+theorem isInternal_range (hE : IsPrimitiveIdempotents rel E) :
+    DirectSum.IsInternal fun i => LinearMap.range (E i).mulVecLin := by
+  refine ⟨fun z w hzw => DFinsupp.ext fun j => Subtype.ext ?_, ?_⟩
+  · have hmul : ∀ u : DirectSum (Fin (d + 1)) fun i => LinearMap.range (E i).mulVecLin,
+        (E j).mulVecLin (DirectSum.coeLinearMap (fun i => LinearMap.range (E i).mulVecLin) u) =
+          (u j : X → ℝ) := by
+      intro u
+      induction u using DirectSum.induction_on with
+      | zero => simp
+      | of i x =>
+        rcases eq_or_ne j i with rfl | hji
+        · rw [DirectSum.coeLinearMap_of, DirectSum.of_eq_same]
+          obtain ⟨v, hv⟩ := x.property
+          rw [← hv, Matrix.mulVecLin_apply, Matrix.mulVecLin_apply, Matrix.mulVec_mulVec,
+            (hE.complete.idem j).eq]
+        · rw [DirectSum.coeLinearMap_of, DirectSum.of_eq_of_ne _ _ _ hji]
+          obtain ⟨v, hv⟩ := x.property
+          rw [← hv, Matrix.mulVecLin_apply, Matrix.mulVecLin_apply, Matrix.mulVec_mulVec,
+            hE.complete.ortho hji, Matrix.zero_mulVec, ZeroMemClass.coe_zero]
+      | add u₁ u₂ hu₁ hu₂ =>
+        rw [map_add, map_add, hu₁, hu₂, DFinsupp.add_apply, Submodule.coe_add]
+    have hzw' : DirectSum.coeLinearMap (fun i => LinearMap.range (E i).mulVecLin) z =
+        DirectSum.coeLinearMap (fun i => LinearMap.range (E i).mulVecLin) w := hzw
+    rw [← hmul z, ← hmul w, hzw']
+  · exact (LinearMap.range_eq_top
+      (f := DirectSum.coeLinearMap fun i => LinearMap.range (E i).mulVecLin)).1
+      (by rw [DirectSum.range_coeLinearMap, hE.iSup_range_eq_top])
 
 private theorem eq_of_mul_ne_zero (hE : IsPrimitiveIdempotents rel E)
     {E' : Fin (d + 1) → Matrix X X ℝ} (hE' : IsPrimitiveIdempotents rel E')
