@@ -28,16 +28,17 @@ Two symmetric bilinear forms `B` and `B'` on finite free `ℤ_[2]`-modules with 
 1. `N i` and `N' i` have equal rank at every scale `i`;
 2. `N i` and `N' i` have the same parity type (type I or type II) at every scale `i`;
 3. at every scale `j` where `N (j + 1)` is of type II (including `N (j + 1) = ⊥`), the partial
-   residue invariant `LinearMap.BilinForm.IsJordanSplitting.partialOddity` modulo `8` (equivalently,
-   its `stdAddChar` image) agrees for `B` and `B'`.
+   signed oddity invariant `LinearMap.BilinForm.IsJordanSplitting.partialSignedOddity` modulo `8`
+   (equivalently, its `stdAddChar` image) agrees for `B` and `B'`.
 
 ## Main results
 
 * `LinearMap.BilinForm.IsJordanSplitting.exists_constituentSign_and_oddity_eq`: normalizing signs
   and oddities across all scales simultaneously.
-* `LinearMap.BilinForm.IsJordanSplitting.equivalent_iff_partialOddity_eq`:
-  complete classification of symmetric bilinear forms over `ℤ_[2]` via partial oddities modulo `8`.
-* `LinearMap.BilinForm.IsJordanSplitting.equivalent_iff_stdAddChar_partialOddity_eq`:
+* `LinearMap.BilinForm.IsJordanSplitting.equivalent_iff_partialSignedOddity_eq`:
+  complete classification of symmetric bilinear forms over `ℤ_[2]` via partial signed oddities
+  modulo `8`.
+* `LinearMap.BilinForm.IsJordanSplitting.equivalent_iff_stdAddChar_partialSignedOddity_eq`:
   the Gauss-sum formulation obtained by applying `ZMod.stdAddChar`.
 
 ## References
@@ -58,15 +59,15 @@ namespace LinearMap.BilinForm
 
 section PartialInvariants
 
-private theorem partialOddity_eq_sum_Iio_add_compartmentOddity
+private theorem partialSignedOddity_eq_sum_Iio_add_compartmentSignedOddity
     {M : Type*} [AddCommGroup M] [Module ℤ_[2] M] [Module.Free ℤ_[2] M]
     [Module.Finite ℤ_[2] M] {B : BilinForm ℤ_[2] M} {N : ℕ → Submodule ℤ_[2] M}
     (h : B.IsJordanSplitting 2 N) (hB : B.IsSymm) {c d : ℕ} (hcd : c ≤ d) :
-    h.partialOddity hB d =
+    h.partialSignedOddity hB d =
       (∑ i ∈ Finset.Iio c, (h.constituentOddity hB i +
         if Odd (d + 1 - i) ∧ h.constituentSign i = -1 then 4 else 0)) +
-      compartmentOddity h.constituentSignBool (h.constituentOddity hB) c d := by
-  rw [h.partialOddity_def, compartmentOddity_constituentSignBool,
+      compartmentSignedOddity h.constituentSignBool (h.constituentOddity hB) c d := by
+  rw [h.partialSignedOddity_def, compartmentSignedOddity_constituentSignBool,
     ← Finset.sum_union (Finset.Iio_disjoint_Icc le_rfl), Finset.Iio_union_Icc_eq_Iic hcd]
 
 private theorem prod_constituentSign_eq_of_eq_bot_of_even
@@ -78,15 +79,15 @@ private theorem prod_constituentSign_eq_of_eq_bot_of_even
     (hB : B.IsSymm) (hB' : B'.IsSymm) {k d : ℕ} (hkd : k ≤ d)
     (hmatch : ∀ i < k, h.constituentSign i = h'.constituentSign i)
     (hbot : N (d + 1) = ⊥) (hbot' : N' (d + 1) = ⊥)
-    (hGd : h.partialOddity hB d = h'.partialOddity hB' d)
-    (hGd1 : h.partialOddity hB (d + 1) = h'.partialOddity hB' (d + 1)) :
+    (hGd : h.partialSignedOddity hB d = h'.partialSignedOddity hB' d)
+    (hGd1 : h.partialSignedOddity hB (d + 1) = h'.partialSignedOddity hB' (d + 1)) :
     ∏ i ∈ Finset.Icc k d, h.constituentSign i = ∏ i ∈ Finset.Icc k d, h'.constituentSign i := by
   have hdiff : (∑ i ∈ Finset.Iic d,
         if h.constituentSign i = -1 then (4 : ZMod (2 ^ 3)) else 0) =
       ∑ i ∈ Finset.Iic d,
         if h'.constituentSign i = -1 then (4 : ZMod (2 ^ 3)) else 0 := by
-    rw [← h.partialOddity_succ_sub_partialOddity_of_eq_bot hB hbot,
-      ← h'.partialOddity_succ_sub_partialOddity_of_eq_bot hB' hbot', hGd, hGd1]
+    rw [← h.partialSignedOddity_succ_sub_partialSignedOddity_of_eq_bot hB hbot,
+      ← h'.partialSignedOddity_succ_sub_partialSignedOddity_of_eq_bot hB' hbot', hGd, hGd1]
   rw [← Finset.Iio_union_Icc_eq_Iic hkd, Finset.sum_union (Finset.Iio_disjoint_Icc le_rfl),
     Finset.sum_union (Finset.Iio_disjoint_Icc le_rfl)] at hdiff
   have hpre : ∑ i ∈ Finset.Iio k,
@@ -103,12 +104,12 @@ private theorem flip_end_Icc {M : Type*} [AddCommGroup M] [Module ℤ_[2] M]
     (h1 : B.IsJordanSplitting 2 N1) (hB : B.IsSymm) {k d : ℕ} (hkd : k ≤ d)
     (hlt : ∀ i < d, N1 i = Nk i) (hsd : h1.constituentSign d = -hk.constituentSign d)
     (htd : h1.constituentOddity hB d = hk.constituentOddity hB d + 4) :
-    compartmentOddity h1.constituentSignBool (h1.constituentOddity hB) k d =
-      compartmentOddity hk.constituentSignBool (hk.constituentOddity hB) k d ∧
+    compartmentSignedOddity h1.constituentSignBool (h1.constituentOddity hB) k d =
+      compartmentSignedOddity hk.constituentSignBool (hk.constituentOddity hB) k d ∧
     ∏ i ∈ Finset.Icc k d, h1.constituentSign i =
       -(∏ i ∈ Finset.Icc k d, hk.constituentSign i) := by
   have hd_mem := Finset.mem_Icc.mpr ⟨hkd, le_rfl⟩
-  refine ⟨compartmentOddity_eq_of_flip_right
+  refine ⟨compartmentSignedOddity_eq_of_flip_right
     (fun i hi ↦ ⟨hk.constituentSignBool_eq_of_eq h1 (hlt i hi),
       hk.constituentOddity_eq_of_eq h1 hB (hlt i hi)⟩)
     (hk.constituentSignBool_eq_not_of_constituentSign_eq_neg h1 hsd) htd, ?_⟩
@@ -127,7 +128,7 @@ section Normalization
 variable {M : Type*} [AddCommGroup M] [Module ℤ_[2] M] [Module.Free ℤ_[2] M]
   [Module.Finite ℤ_[2] M] {B : BilinForm ℤ_[2] M}
 
-private theorem compartmentOddity_eq_of_match_below
+private theorem compartmentSignedOddity_eq_of_match_below
     {M' : Type*} [AddCommGroup M'] [Module ℤ_[2] M'] [Module.Free ℤ_[2] M']
     [Module.Finite ℤ_[2] M'] {B' : BilinForm ℤ_[2] M'} {Nk : ℕ → Submodule ℤ_[2] M}
     {N' : ℕ → Submodule ℤ_[2] M'} (hk : B.IsJordanSplitting 2 Nk)
@@ -135,11 +136,11 @@ private theorem compartmentOddity_eq_of_match_below
     (hkd : k ≤ d)
     (hmatch : ∀ i < k, hk.constituentSign i = h'.constituentSign i ∧
       hk.constituentOddity hB i = h'.constituentOddity hB' i)
-    (hGd : hk.partialOddity hB d = h'.partialOddity hB' d) :
-    compartmentOddity hk.constituentSignBool (hk.constituentOddity hB) k d =
-      compartmentOddity h'.constituentSignBool (h'.constituentOddity hB') k d := by
-  rw [partialOddity_eq_sum_Iio_add_compartmentOddity hk hB hkd,
-    partialOddity_eq_sum_Iio_add_compartmentOddity h' hB' hkd] at hGd
+    (hGd : hk.partialSignedOddity hB d = h'.partialSignedOddity hB' d) :
+    compartmentSignedOddity hk.constituentSignBool (hk.constituentOddity hB) k d =
+      compartmentSignedOddity h'.constituentSignBool (h'.constituentOddity hB') k d := by
+  rw [partialSignedOddity_eq_sum_Iio_add_compartmentSignedOddity hk hB hkd,
+    partialSignedOddity_eq_sum_Iio_add_compartmentSignedOddity h' hB' hkd] at hGd
   have hpre : ∑ i ∈ Finset.Iio k, (hk.constituentOddity hB i +
         if Odd (d + 1 - i) ∧ hk.constituentSign i = -1 then 4 else 0) =
       ∑ i ∈ Finset.Iio k, (h'.constituentOddity hB' i +
@@ -168,7 +169,7 @@ private theorem exists_matching_succ_of_eq
   · exact hk_eq
 
 /-- Type-II sweep step `k → k + 1`: when `Nk k` is even, its oddity is already `0`, and its sign
-either is trivial (`Nk k = ⊥`), is forced by `partialOddity k` when `Nk (k + 1)` is also even,
+either is trivial (`Nk k = ⊥`), is forced by `partialSignedOddity k` when `Nk (k + 1)` is also even,
 already matches, or is flipped by a sign walk onto the odd constituent `Nk (k + 1)`. -/
 private theorem exists_matching_succ_of_even
     {M' : Type*} [AddCommGroup M'] [Module ℤ_[2] M'] [Module.Free ℤ_[2] M']
@@ -180,7 +181,7 @@ private theorem exists_matching_succ_of_even
     (hbot_k : Nk k = ⊥ ↔ N' k = ⊥)
     (hpar_k : (∀ v ∈ Nk k, 2 * 2 ^ k ∣ B v v) ↔ ∀ v ∈ N' k, 2 * 2 ^ k ∣ B' v v)
     (hinv_k : (∀ v ∈ Nk (k + 1), 2 * 2 ^ (k + 1) ∣ B v v) →
-      hk.partialOddity hB k = h'.partialOddity hB' k)
+      hk.partialSignedOddity hB k = h'.partialSignedOddity hB' k)
     (heven_k : ∀ v ∈ Nk k, 2 * 2 ^ k ∣ B v v) :
     ∃ N'' : ℕ → Submodule ℤ_[2] M, ∃ h'' : B.IsJordanSplitting 2 N'',
       ∀ i < k + 1, h''.constituentSign i = h'.constituentSign i ∧
@@ -192,9 +193,9 @@ private theorem exists_matching_succ_of_even
       ⟨(hk.constituentSign_of_eq_bot hbot).trans
         (h'.constituentSign_of_eq_bot (hbot_k.mp hbot)).symm, htk.trans ht'k.symm⟩
   · by_cases heven_next : ∀ v ∈ Nk (k + 1), 2 * 2 ^ (k + 1) ∣ B v v
-    · have hcomp := compartmentOddity_eq_of_match_below hk h' hB hB' le_rfl hmatch
+    · have hcomp := compartmentSignedOddity_eq_of_match_below hk h' hB hB' le_rfl hmatch
         (hinv_k heven_next)
-      simp only [compartmentOddity_def, Finset.Icc_self, Finset.sum_singleton,
+      simp only [compartmentSignedOddity_def, Finset.Icc_self, Finset.sum_singleton,
         Nat.add_sub_cancel_left, odd_one, true_and, htk, ht'k, zero_add,
         IsJordanSplitting.constituentSignBool_eq_true_iff] at hcomp
       have hsk : hk.constituentSign k = h'.constituentSign k := by
@@ -210,7 +211,7 @@ private theorem exists_matching_succ_of_even
           hk.exists_signWalk_succ_of_even_of_odd hB heven_k hbot heven_next
         have hs1k := TauCeti.eq_of_eq_neg_of_ne_of_eq_one_or_neg_one
           (hk.constituentSign_eq_one_or_neg_one k) (h'.constituentSign_eq_one_or_neg_one k)
-          (hk.constituentSign_eq_neg_of_isSquare_five h1 hdk) hsk
+          (hk.constituentSign_eq_neg_of_isSquare_five_mul_det h1 hdk) hsk
         have heven1 := (hk.forall_two_mul_pow_dvd_iff_of_isJordanSplitting_two h1 k).mp heven_k
         exact exists_matching_succ_of_eq hk h' hB hB' hmatch h1
           (fun i hi ↦ hagree1 i (by omega) (by omega))
@@ -245,9 +246,9 @@ private theorem exists_flip_end_of_compartment
     (h' : B'.IsJordanSplitting 2 N') (hB : B.IsSymm) (hB' : B'.IsSymm) {k d : ℕ}
     (hkd : k ≤ d) (hmatch : ∀ i < k, hk.constituentSign i = h'.constituentSign i)
     (hbot_d1 : Nk (d + 1) = ⊥ ↔ N' (d + 1) = ⊥)
-    (hinv_d : hk.partialOddity hB d = h'.partialOddity hB' d)
+    (hinv_d : hk.partialSignedOddity hB d = h'.partialSignedOddity hB' d)
     (hinv_d1 : (∀ v ∈ Nk (d + 2), 2 * 2 ^ (d + 2) ∣ B v v) →
-      hk.partialOddity hB (d + 1) = h'.partialOddity hB' (d + 1))
+      hk.partialSignedOddity hB (d + 1) = h'.partialSignedOddity hB' (d + 1))
     (hodd_d : ¬∀ v ∈ Nk d, 2 * 2 ^ d ∣ B v v)
     (heven_d1 : ∀ v ∈ Nk (d + 1), 2 * 2 ^ (d + 1) ∣ B v v)
     (hSd : ∏ i ∈ Finset.Icc k d, hk.constituentSign i ≠
@@ -264,16 +265,16 @@ private theorem exists_flip_end_of_compartment
     · obtain ⟨N1, h1, ha, hdk, -, hok, -⟩ :=
         hk.exists_signWalk_add_two_of_odd_of_odd hB hodd_d heven_d2
       exact ⟨N1, h1, fun i hi ↦ ha i (by omega) (by omega),
-        hk.constituentSign_eq_neg_of_isSquare_five h1 hdk,
+        hk.constituentSign_eq_neg_of_isSquare_five_mul_det h1 hdk,
         by simpa [map_ofNat] using hk.constituentOddity_eq_add_of_eight_dvd h1 hB (δ := 4) hok⟩
   · obtain ⟨N1, h1, ha, hdk, -, hok⟩ :=
       hk.exists_signWalk_succ_of_odd_of_even hB hodd_d heven_d1 hbot
     exact ⟨N1, h1, fun i hi ↦ ha i (by omega) (by omega),
-      hk.constituentSign_eq_neg_of_isSquare_five h1 hdk,
+      hk.constituentSign_eq_neg_of_isSquare_five_mul_det h1 hdk,
       by simpa [map_ofNat] using hk.constituentOddity_eq_add_of_eight_dvd h1 hB (δ := 4) hok⟩
 
-/-- Align the compartment invariants `(compartmentOddity, ∏ constituentSign)` on `[k, d]` without
-disturbing constituents `i < k`. -/
+/-- Align the compartment invariants `(compartmentSignedOddity, ∏ constituentSign)` on `[k, d]`
+without disturbing constituents `i < k`. -/
 private theorem exists_aligned_compartment
     {M' : Type*} [AddCommGroup M'] [Module ℤ_[2] M'] [Module.Free ℤ_[2] M']
     [Module.Finite ℤ_[2] M'] {B' : BilinForm ℤ_[2] M'} {Nk : ℕ → Submodule ℤ_[2] M}
@@ -283,18 +284,18 @@ private theorem exists_aligned_compartment
     (hmatch : ∀ i < k, hk.constituentSign i = h'.constituentSign i ∧
       hk.constituentOddity hB i = h'.constituentOddity hB' i)
     (hbot_d1 : Nk (d + 1) = ⊥ ↔ N' (d + 1) = ⊥)
-    (hinv_d : hk.partialOddity hB d = h'.partialOddity hB' d)
+    (hinv_d : hk.partialSignedOddity hB d = h'.partialSignedOddity hB' d)
     (hinv_d1 : (∀ v ∈ Nk (d + 2), 2 * 2 ^ (d + 2) ∣ B v v) →
-      hk.partialOddity hB (d + 1) = h'.partialOddity hB' (d + 1))
+      hk.partialSignedOddity hB (d + 1) = h'.partialSignedOddity hB' (d + 1))
     (hodd_d : ¬∀ v ∈ Nk d, 2 * 2 ^ d ∣ B v v)
     (heven_d1 : ∀ v ∈ Nk (d + 1), 2 * 2 ^ (d + 1) ∣ B v v) :
     ∃ N1 : ℕ → Submodule ℤ_[2] M, ∃ h1 : B.IsJordanSplitting 2 N1,
       (∀ i < k, N1 i = Nk i) ∧
-      compartmentOddity h1.constituentSignBool (h1.constituentOddity hB) k d =
-        compartmentOddity h'.constituentSignBool (h'.constituentOddity hB') k d ∧
+      compartmentSignedOddity h1.constituentSignBool (h1.constituentOddity hB) k d =
+        compartmentSignedOddity h'.constituentSignBool (h'.constituentOddity hB') k d ∧
       ∏ i ∈ Finset.Icc k d, h1.constituentSign i =
         ∏ i ∈ Finset.Icc k d, h'.constituentSign i := by
-  have hTd := compartmentOddity_eq_of_match_below hk h' hB hB' hkd hmatch hinv_d
+  have hTd := compartmentSignedOddity_eq_of_match_below hk h' hB hB' hkd hmatch hinv_d
   by_cases hSd : ∏ i ∈ Finset.Icc k d, hk.constituentSign i =
       ∏ i ∈ Finset.Icc k d, h'.constituentSign i
   · exact ⟨Nk, hk, fun _ _ ↦ rfl, hTd, hSd⟩
@@ -317,7 +318,7 @@ private theorem exists_isJordanSplitting_matching_below
     (hrank : ∀ i, finrank ℤ_[2] (N i) = finrank ℤ_[2] (N' i))
     (hpar : ∀ i, (∀ v ∈ N i, 2 * 2 ^ i ∣ B v v) ↔ ∀ v ∈ N' i, 2 * 2 ^ i ∣ B' v v)
     (hinv : ∀ j, (∀ v ∈ N (j + 1), 2 * 2 ^ (j + 1) ∣ B v v) →
-      h.partialOddity hB j = h'.partialOddity hB' j) :
+      h.partialSignedOddity hB j = h'.partialSignedOddity hB' j) :
     ∀ k : ℕ, ∃ N'' : ℕ → Submodule ℤ_[2] M, ∃ h'' : B.IsJordanSplitting 2 N'',
       ∀ i < k, h''.constituentSign i = h'.constituentSign i ∧
         h''.constituentOddity hB i = h'.constituentOddity hB' i := by
@@ -332,9 +333,9 @@ private theorem exists_isJordanSplitting_matching_below
       have := hk.finite i; have := h'.finite i
       rw [← Submodule.finrank_eq_zero, ← Submodule.finrank_eq_zero, hrank_k i]
     have hinv_k (j) (hj : ∀ v ∈ Nk (j + 1), 2 * 2 ^ (j + 1) ∣ B v v) :
-        hk.partialOddity hB j = h'.partialOddity hB' j :=
+        hk.partialSignedOddity hB j = h'.partialSignedOddity hB' j :=
       have hjN := (hk.forall_two_mul_pow_dvd_iff_of_isJordanSplitting_two h (j + 1)).mp hj
-      (h.partialOddity_eq_of_isJordanSplitting hk hB hjN).symm.trans (hinv j hjN)
+      (h.partialSignedOddity_eq_of_isJordanSplitting hk hB hjN).symm.trans (hinv j hjN)
     by_cases heven_k : ∀ v ∈ Nk k, 2 * 2 ^ k ∣ B v v
     · exact exists_matching_succ_of_even hk h' hB hB' hmatch (hbot_iff k) (hpar_k k)
         (hinv_k k) heven_k
@@ -349,7 +350,7 @@ private theorem exists_isJordanSplitting_matching_below
             rw [h1.forall_two_mul_pow_dvd_iff_of_isJordanSplitting_two hk i]
             exact hodd_block i hi)
           (fun i hi ↦ by rw [← hpar_k i]; exact hodd_block i hi)
-          (by simpa only [compartmentOddity_constituentSignBool] using hT1) hS1
+          (by simpa only [compartmentSignedOddity_constituentSignBool] using hT1) hS1
       exact exists_matching_succ_of_eq hk h' hB hB' hmatch h2
         (fun i hi ↦ (hagree2 i (by simp only [Finset.mem_Icc]; omega)).trans (hagree1 i hi))
         (hmatch2 k (Finset.mem_Icc.mpr ⟨le_rfl, hkd⟩))
@@ -366,7 +367,7 @@ theorem IsJordanSplitting.exists_constituentSign_and_oddity_eq
     (hrank : ∀ i, finrank ℤ_[2] (N i) = finrank ℤ_[2] (N' i))
     (hpar : ∀ i, (∀ v ∈ N i, 2 * 2 ^ i ∣ B v v) ↔ ∀ v ∈ N' i, 2 * 2 ^ i ∣ B' v v)
     (hinv : ∀ j, (∀ v ∈ N (j + 1), 2 * 2 ^ (j + 1) ∣ B v v) →
-      h.partialOddity hB j = h'.partialOddity hB' j) :
+      h.partialSignedOddity hB j = h'.partialSignedOddity hB' j) :
     ∃ N'' : ℕ → Submodule ℤ_[2] M, ∃ h'' : B.IsJordanSplitting 2 N'',
       ∀ i, h''.constituentSign i = h'.constituentSign i ∧
         h''.constituentOddity hB i = h'.constituentOddity hB' i := by
@@ -397,12 +398,12 @@ variable {M : Type*} [AddCommGroup M] [Module ℤ_[2] M] [Module.Free ℤ_[2] M]
   [Module.Finite ℤ_[2] M] {B : BilinForm ℤ_[2] M} {N : ℕ → Submodule ℤ_[2] M}
 
 /-- **Classification of symmetric bilinear forms over `ℤ_[2]` via Jordan splittings (`ZMod 8`
-partial residue form).** Symmetric forms `B` and `B'` on finite free `ℤ_[2]`-modules with Jordan
-splittings `N` and `N'` with respect to `2` are isometric if and only if their constituents have
-equal ranks and parity types at every scale, and their partial residues
-`LinearMap.BilinForm.IsJordanSplitting.partialOddity` agree modulo `8` at every scale `j` with
-`N (j + 1)` of type II. -/
-theorem IsJordanSplitting.equivalent_iff_partialOddity_eq
+partial signed oddity form).** Symmetric forms `B` and `B'` on finite free `ℤ_[2]`-modules with
+Jordan splittings `N` and `N'` with respect to `2` are isometric if and only if their constituents
+have equal ranks and parity types at every scale, and their partial signed oddities
+`LinearMap.BilinForm.IsJordanSplitting.partialSignedOddity` agree modulo `8` at every scale `j`
+with `N (j + 1)` of type II. -/
+theorem IsJordanSplitting.equivalent_iff_partialSignedOddity_eq
     {M' : Type*} [AddCommGroup M'] [Module ℤ_[2] M'] [Module.Free ℤ_[2] M']
     [Module.Finite ℤ_[2] M'] {B' : BilinForm ℤ_[2] M'} {N' : ℕ → Submodule ℤ_[2] M'}
     (h : B.IsJordanSplitting 2 N) (h' : B'.IsJordanSplitting 2 N')
@@ -411,14 +412,14 @@ theorem IsJordanSplitting.equivalent_iff_partialOddity_eq
       (∀ i, finrank ℤ_[2] (N i) = finrank ℤ_[2] (N' i)) ∧
       (∀ i, (∀ v ∈ N i, 2 * 2 ^ i ∣ B v v) ↔ ∀ v ∈ N' i, 2 * 2 ^ i ∣ B' v v) ∧
       ∀ j, (∀ v ∈ N (j + 1), 2 * 2 ^ (j + 1) ∣ B v v) →
-        h.partialOddity hB j = h'.partialOddity hB' j := by
+        h.partialSignedOddity hB j = h'.partialSignedOddity hB' j := by
   refine ⟨fun ⟨ε⟩ ↦ ?_, ?_⟩
   · exact ⟨fun i ↦ h.finrank_eq_of_equivalent h' ⟨ε⟩ two_ne_zero PadicInt.not_isUnit_two i,
       fun i ↦ ⟨fun he ↦ h.forall_two_mul_pow_dvd_of_equivalent h' ⟨ε⟩
           (mem_nonZeroDivisors_of_ne_zero two_ne_zero) dvd_rfl he,
         fun he ↦ h'.forall_two_mul_pow_dvd_of_equivalent h ⟨ε.symm⟩
           (mem_nonZeroDivisors_of_ne_zero two_ne_zero) dvd_rfl he⟩,
-      fun j hj ↦ h.partialOddity_eq_of_equivalent h' hB hB' ⟨ε⟩ hj⟩
+      fun j hj ↦ h.partialSignedOddity_eq_of_equivalent h' hB hB' ⟨ε⟩ hj⟩
   rintro ⟨hrank, hpar, hinv⟩
   obtain ⟨N'', h'', hmatch⟩ := h.exists_constituentSign_and_oddity_eq h' hB hB' hrank hpar hinv
   refine equivalent_of_isInternal h''.isInternal h'.isInternal h''.apply_eq_zero h'.apply_eq_zero
@@ -444,9 +445,9 @@ theorem IsJordanSplitting.equivalent_iff_partialOddity_eq
     hsign_i, hodd_i⟩
 
 /-- **Classification of symmetric bilinear forms over `ℤ_[2]` via Jordan splittings (Gauss-sum
-form).** Obtained from `IsJordanSplitting.equivalent_iff_partialOddity_eq` by applying the standard
-additive character `ZMod.stdAddChar`. -/
-theorem IsJordanSplitting.equivalent_iff_stdAddChar_partialOddity_eq
+form).** Obtained from `IsJordanSplitting.equivalent_iff_partialSignedOddity_eq` by applying
+the standard additive character `ZMod.stdAddChar`. -/
+theorem IsJordanSplitting.equivalent_iff_stdAddChar_partialSignedOddity_eq
     {M' : Type*} [AddCommGroup M'] [Module ℤ_[2] M'] [Module.Free ℤ_[2] M']
     [Module.Finite ℤ_[2] M'] {B' : BilinForm ℤ_[2] M'} {N' : ℕ → Submodule ℤ_[2] M'}
     (h : B.IsJordanSplitting 2 N) (h' : B'.IsJordanSplitting 2 N')
@@ -455,8 +456,8 @@ theorem IsJordanSplitting.equivalent_iff_stdAddChar_partialOddity_eq
       (∀ i, finrank ℤ_[2] (N i) = finrank ℤ_[2] (N' i)) ∧
       (∀ i, (∀ v ∈ N i, 2 * 2 ^ i ∣ B v v) ↔ ∀ v ∈ N' i, 2 * 2 ^ i ∣ B' v v) ∧
       ∀ j, (∀ v ∈ N (j + 1), 2 * 2 ^ (j + 1) ∣ B v v) →
-        stdAddChar (h.partialOddity hB j) = stdAddChar (h'.partialOddity hB' j) := by
-  rw [h.equivalent_iff_partialOddity_eq h' hB hB']
+        stdAddChar (h.partialSignedOddity hB j) = stdAddChar (h'.partialSignedOddity hB' j) := by
+  rw [h.equivalent_iff_partialSignedOddity_eq h' hB hB']
   simp only [injective_stdAddChar.eq_iff]
 
 end Classification

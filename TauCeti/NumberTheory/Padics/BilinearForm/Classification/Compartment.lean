@@ -32,8 +32,8 @@ import TauCeti.Order.Interval.Finset.Basic
 A *compartment* of a dyadic Jordan splitting `N` is a block `Finset.Icc c d` of consecutive type-I
 (odd) constituents. Elementary moves supported inside the compartment — adjacent odd-odd sign
 walking, adjacent oddity fusion, and distance-two sign walking — preserve the compartment sign
-product `∏ i ∈ Finset.Icc c d, h.constituentSign i` and the weighted oddity-sign sum modulo `8`
-(`LinearMap.BilinForm.compartmentOddity`).
+product `∏ i ∈ Finset.Icc c d, h.constituentSign i` and the sign-weighted oddity sum modulo `8`
+(`LinearMap.BilinForm.compartmentSignedOddity`).
 
 This file proves that these two invariants are complete for a compartment
 (`LinearMap.BilinForm.IsJordanSplitting.exists_constituentSign_and_oddity_eq_on_Icc`): elementary
@@ -44,7 +44,7 @@ second at every index in `Finset.Icc c d` without changing any constituent outsi
 
 * O. T. O'Meara, *Introduction to Quadratic Forms*, §93.
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, Chapter 15, §7.
-* D. Allcock, I. Gal, and A. Mark, *Classification of quadratic forms over `ℤ₂`*, §4.
+* D. Allcock, I. Gal and A. Mark, *The Conway–Sloane calculus for 2-adic lattices*, §4.
 -/
 
 public section
@@ -224,8 +224,8 @@ private theorem pairValidPath_reverse (rc0 rc1 : Fin 4) {u v : PairState} {p : L
     rw [List.reverse_cons, List.map_append, List.map_singleton]
     exact pairValidPath_append rc0 rc1 (ih hv0 hv1 hp.2) (by simp [pairValidPath, hinv, heq])
 
-/-- The length-2 compartment invariants `(compartmentOddity, xor s₀ s₁)` on `[c, c + 1]`: here
-`compartmentOddity` reduces to `t₀ + t₁ + 4·[s₁]` (since `Odd (c+2-c)` is false and
+/-- The length-2 compartment invariants `(compartmentSignedOddity, xor s₀ s₁)` on `[c, c + 1]`: here
+`compartmentSignedOddity` reduces to `t₀ + t₁ + 4·[s₁]` (since `Odd (c+2-c)` is false and
 `Odd (c+2-(c+1))` is true), and `compS` determines `xor s₀ s₁`. -/
 private def pairInv (u : PairState) : ZMod (2 ^ 3) × Bool :=
   (u.1.2 + u.2.2 + (if u.2.1 then 4 else 0), xor u.1.1 u.2.1)
@@ -302,7 +302,7 @@ private theorem eq_or_flip_of_stateJ_eq {s s' : Bool} {t t' : ZMod (2 ^ 3)}
     (h : stateJ s t = stateJ s' t') : (s = s' ∧ t = t') ∨ ((!s) = s' ∧ t + 4 = t') := by
   revert s s' t t' h; decide
 
-private theorem compartmentOddity_and_compS_eq_of_outside_two {s s' : ℕ → Bool}
+private theorem compartmentSignedOddity_and_compS_eq_of_outside_two {s s' : ℕ → Bool}
     {t t' : ℕ → ZMod (2 ^ 3)} {c d a b : ℕ}
     (ha : a ∈ Finset.Icc c d) (hb : b ∈ Finset.Icc c d) (hab : a ≠ b)
     (hout : ∀ i, i ≠ a → i ≠ b → s' i = s i ∧ t' i = t i)
@@ -312,15 +312,16 @@ private theorem compartmentOddity_and_compS_eq_of_outside_two {s s' : ℕ → Bo
         (t b + if Odd (d + 1 - b) ∧ s b then 4 else 0))
     (hS : (if s' a then (4 : ZMod (2 ^ 3)) else 0) + (if s' b then 4 else 0) =
       (if s a then 4 else 0) + (if s b then 4 else 0)) :
-    compartmentOddity s' t' c d = compartmentOddity s t c d ∧ compS s' c d = compS s c d :=
-  ⟨by rw [compartmentOddity_def, compartmentOddity_def]
+    compartmentSignedOddity s' t' c d = compartmentSignedOddity s t c d ∧
+      compS s' c d = compS s c d :=
+  ⟨by rw [compartmentSignedOddity_def, compartmentSignedOddity_def]
       exact Finset.sum_eq_of_eq_outside_two ha hb hab
         (fun i _ h1 h2 ↦ by rw [(hout i h1 h2).1, (hout i h1 h2).2]) hT,
    Finset.sum_eq_of_eq_outside_two ha hb hab (fun i _ h1 h2 ↦ by rw [(hout i h1 h2).1]) hS⟩
 
-private theorem pairInv_eq_of_compartmentOddity_compS {s s' : ℕ → Bool}
+private theorem pairInv_eq_of_compartmentSignedOddity_compS {s s' : ℕ → Bool}
     {t t' : ℕ → ZMod (2 ^ 3)} {c : ℕ}
-    (hT : compartmentOddity s t c (c + 1) = compartmentOddity s' t' c (c + 1))
+    (hT : compartmentSignedOddity s t c (c + 1) = compartmentSignedOddity s' t' c (c + 1))
     (hS : compS s c (c + 1) = compS s' c (c + 1)) :
     pairInv ((s c, t c), (s (c + 1), t (c + 1))) =
       pairInv ((s' c, t' c), (s' (c + 1), t' (c + 1))) := by
@@ -328,19 +329,20 @@ private theorem pairInv_eq_of_compartmentOddity_compS {s s' : ℕ → Bool}
   have hd0 : c + 1 + 1 - c = 2 := by omega
   have hd1 : c + 1 + 1 - (c + 1) = 1 := by omega
   have hnotOdd2 : ¬Odd 2 := by decide
-  simp only [compartmentOddity_def, compS, Finset.Icc_self_add_one, Finset.sum_pair hne, hd0, hd1,
-    hnotOdd2, odd_one, false_and, true_and, ↓reduceIte, add_zero] at hT hS
+  simp only [compartmentSignedOddity_def, compS, Finset.Icc_self_add_one, Finset.sum_pair hne,
+    hd0, hd1, hnotOdd2, odd_one, false_and, true_and, ↓reduceIte, add_zero] at hT hS
   refine Prod.ext (by simpa [pairInv, add_assoc] using hT) ?_
   exact (by decide : ∀ a b e f : Bool,
     (if a then (4 : ZMod (2 ^ 3)) else 0) + (if b then 4 else 0) =
       (if e then 4 else 0) + (if f then 4 else 0) → xor a b = xor e f) _ _ _ _ hS
 
-private theorem compartmentOddity_and_compS_eq_of_pairStep {s s' : ℕ → Bool}
+private theorem compartmentSignedOddity_and_compS_eq_of_pairStep {s s' : ℕ → Bool}
     {t t' : ℕ → ZMod (2 ^ 3)} {c d k : ℕ} (hck : c ≤ k) (hkd : k + 1 ≤ d)
     (hagree : ∀ i, i ≠ k → i ≠ k + 1 → s' i = s i ∧ t' i = t i) {a b : Bool}
     (hpair : ((s' k, t' k), (s' (k + 1), t' (k + 1))) =
       pairStep ((s k, t k), (s (k + 1), t (k + 1))) a b) :
-    compartmentOddity s' t' c d = compartmentOddity s t c d ∧ compS s' c d = compS s c d := by
+    compartmentSignedOddity s' t' c d = compartmentSignedOddity s t c d ∧
+      compS s' c d = compS s c d := by
   have hp1 := Prod.mk.injEq .. ▸ congrArg Prod.fst hpair
   have hp2 := Prod.mk.injEq .. ▸ congrArg Prod.snd hpair
   have hsub : d + 1 - k = (d + 1 - (k + 1)) + 1 := by omega
@@ -353,19 +355,20 @@ private theorem compartmentOddity_and_compS_eq_of_pairStep {s s' : ℕ → Bool}
       ((if q.1.1 then (4 : ZMod (2 ^ 3)) else 0) + (if q.2.1 then 4 else 0) =
         (if s0 then 4 else 0) + (if s1 then 4 else 0)) := by decide
   have hdec := hkey (s k) (s (k + 1)) a b (decide (Odd (d + 1 - (k + 1)))) (t k) (t (k + 1))
-  refine compartmentOddity_and_compS_eq_of_outside_two (Finset.mem_Icc.mpr ⟨hck, by omega⟩)
+  refine compartmentSignedOddity_and_compS_eq_of_outside_two (Finset.mem_Icc.mpr ⟨hck, by omega⟩)
     (Finset.mem_Icc.mpr ⟨by omega, hkd⟩) (by omega) hagree ?_
     (by rw [hp1.1, hp2.1]; exact hdec.2)
   rw [hp1.1, hp1.2, hp2.1, hp2.2]
   simpa only [hpar, Bool.and_eq_true, Bool.not_eq_true', decide_eq_true_eq,
     decide_eq_false_iff_not] using hdec.1
 
-private theorem compartmentOddity_and_compS_eq_of_flip_add_two {s s' : ℕ → Bool}
+private theorem compartmentSignedOddity_and_compS_eq_of_flip_add_two {s s' : ℕ → Bool}
     {t t' : ℕ → ZMod (2 ^ 3)} {c d k : ℕ} (hck : c ≤ k) (hkd : k + 2 ≤ d)
     (hagree : ∀ i, i ≠ k → i ≠ k + 2 → s' i = s i ∧ t' i = t i)
     (hsk : s' k = !s k) (htk : t' k = t k + 4)
     (hsl : s' (k + 2) = !s (k + 2)) (htl : t' (k + 2) = t (k + 2) + 4) :
-    compartmentOddity s' t' c d = compartmentOddity s t c d ∧ compS s' c d = compS s c d := by
+    compartmentSignedOddity s' t' c d = compartmentSignedOddity s t c d ∧
+      compS s' c d = compS s c d := by
   have hsub : d + 1 - k = (d + 1 - (k + 2)) + 2 := by omega
   have hpar : Odd (d + 1 - k) ↔ Odd (d + 1 - (k + 2)) := by
     rw [hsub]
@@ -376,7 +379,7 @@ private theorem compartmentOddity_and_compS_eq_of_flip_add_two {s s' : ℕ → B
       ((if !s0 then (4 : ZMod (2 ^ 3)) else 0) + (if !s2 then 4 else 0) =
         (if s0 then 4 else 0) + (if s2 then 4 else 0)) := by decide
   have hdec := hkey (s k) (s (k + 2)) (decide (Odd (d + 1 - (k + 2)))) (t k) (t (k + 2))
-  refine compartmentOddity_and_compS_eq_of_outside_two (Finset.mem_Icc.mpr ⟨hck, by omega⟩)
+  refine compartmentSignedOddity_and_compS_eq_of_outside_two (Finset.mem_Icc.mpr ⟨hck, by omega⟩)
     (Finset.mem_Icc.mpr ⟨by omega, hkd⟩) (by omega) hagree ?_ (by rw [hsk, hsl]; exact hdec.2)
   rw [hsk, htk, hsl, htl]
   simpa only [hpar, Bool.and_eq_true, decide_eq_true_eq] using hdec.1
@@ -539,12 +542,12 @@ private theorem exists_move_stateJ_step (h : B.IsJordanSplitting 2 N) (hB : B.Is
       (∀ i, i ≠ c → i ≠ c + 1 → N1 i = N i) ∧
       stateJ (h1.constituentSignBool c) (h1.constituentOddity hB c) =
         stateJ (h.constituentSignBool c) (h.constituentOddity hB c) + (if a then 2 else 6) ∧
-      compartmentOddity h1.constituentSignBool (h1.constituentOddity hB) c d =
-        compartmentOddity h.constituentSignBool (h.constituentOddity hB) c d ∧
+      compartmentSignedOddity h1.constituentSignBool (h1.constituentOddity hB) c d =
+        compartmentSignedOddity h.constituentSignBool (h.constituentOddity hB) c d ∧
       compS h1.constituentSignBool c d = compS h.constituentSignBool c d := by
   obtain ⟨b, hb⟩ := exists_canRepMod4 _ _ _ (isValidOdd_constituent_and_exists_mem h hB hodd1).1
   obtain ⟨N1, h1, hagree1, hu1⟩ := exists_move_odd_odd h hB hodd0 hodd1 a b ha hb
-  have hTS := compartmentOddity_and_compS_eq_of_pairStep (c := c) (d := d) (k := c) le_rfl hcd
+  have hTS := compartmentSignedOddity_and_compS_eq_of_pairStep (c := c) (d := d) (k := c) le_rfl hcd
     (fun i h1' h2' ↦ ⟨h.constituentSignBool_eq_of_eq h1 (hagree1 i h1' h2'),
       h.constituentOddity_eq_of_eq h1 hB (hagree1 i h1' h2')⟩) hu1
   have hf := congrArg (fun p ↦ stateJ p.1.1 p.1.2) hu1
@@ -552,7 +555,7 @@ private theorem exists_move_stateJ_step (h : B.IsJordanSplitting 2 N) (hB : B.Is
   exact ⟨N1, h1, hagree1, hf, hTS.1, hTS.2⟩
 
 /-- Match `stateJ` at the left endpoint `c` using at most two elementary moves on `(c, c + 1)`,
-preserving the compartment invariants `compartmentOddity` and `compS` on `[c, d]`. -/
+preserving the compartment invariants `compartmentSignedOddity` and `compS` on `[c, d]`. -/
 private theorem exists_match_stateJ_at_left (hB : B.IsSymm) {N : ℕ → Submodule ℤ_[2] M}
     (h : B.IsJordanSplitting 2 N) {s' : ℕ → Bool} {t' : ℕ → ZMod (2 ^ 3)} {c d : ℕ}
     (hcd : c + 2 ≤ d) (hodd0 : ¬∀ x ∈ N c, 2 * 2 ^ c ∣ B x x)
@@ -561,8 +564,8 @@ private theorem exists_match_stateJ_at_left (hB : B.IsSymm) {N : ℕ → Submodu
     ∃ N1 : ℕ → Submodule ℤ_[2] M, ∃ h1 : B.IsJordanSplitting 2 N1,
       (∀ i, i ≠ c → i ≠ c + 1 → N1 i = N i) ∧
       stateJ (h1.constituentSignBool c) (h1.constituentOddity hB c) = stateJ (s' c) (t' c) ∧
-      compartmentOddity h1.constituentSignBool (h1.constituentOddity hB) c d =
-        compartmentOddity h.constituentSignBool (h.constituentOddity hB) c d ∧
+      compartmentSignedOddity h1.constituentSignBool (h1.constituentOddity hB) c d =
+        compartmentSignedOddity h.constituentSignBool (h.constituentOddity hB) c d ∧
       compS h1.constituentSignBool c d = compS h.constituentSignBool c d := by
   rcases exists_steps_stateJ (rankClass (finrank ℤ_[2] (N c))) (h.constituentSignBool c)
       (h.constituentOddity hB c) (s' c) (t' c)
@@ -585,8 +588,8 @@ private theorem exists_match_stateJ_at_left (hB : B.IsSymm) {N : ℕ → Submodu
       (hf2.trans (by rw [hf1])).trans hJ2, hT2.trans hT1, hS2.trans hS1⟩
 
 /-- Given a match in `stateJ` at `c`, match `(constituentSignBool, constituentOddity)` at `c` by a
-distance-two sign walk on `(c, c + 2)` if needed, preserving `compartmentOddity` and `compS` on
-`[c, d]`. -/
+distance-two sign walk on `(c, c + 2)` if needed, preserving `compartmentSignedOddity` and
+`compS` on `[c, d]`. -/
 private theorem exists_match_state_at_left_of_stateJ_eq (hB : B.IsSymm)
     {N1 : ℕ → Submodule ℤ_[2] M} (h1 : B.IsJordanSplitting 2 N1) {s' : ℕ → Bool}
     {t' : ℕ → ZMod (2 ^ 3)} {c d : ℕ} (hcd : c + 2 ≤ d)
@@ -596,23 +599,23 @@ private theorem exists_match_state_at_left_of_stateJ_eq (hB : B.IsSymm)
     ∃ N2 : ℕ → Submodule ℤ_[2] M, ∃ h2 : B.IsJordanSplitting 2 N2,
       (∀ i, i ∉ Finset.Icc c d → N2 i = N1 i) ∧
       h2.constituentSignBool c = s' c ∧ h2.constituentOddity hB c = t' c ∧
-      compartmentOddity h2.constituentSignBool (h2.constituentOddity hB) c d =
-        compartmentOddity h1.constituentSignBool (h1.constituentOddity hB) c d ∧
+      compartmentSignedOddity h2.constituentSignBool (h2.constituentOddity hB) c d =
+        compartmentSignedOddity h1.constituentSignBool (h1.constituentOddity hB) c d ∧
       compS h2.constituentSignBool c d = compS h1.constituentSignBool c d := by
   rcases eq_or_flip_of_stateJ_eq hJ1 with ⟨hs, ht⟩ | ⟨hs, ht⟩
   · exact ⟨N1, h1, fun _ _ ↦ rfl, hs, ht, rfl, rfl⟩
   · obtain ⟨N2, h2, hagree2, hdk, hdl, hok, hol⟩ :=
       h1.exists_signWalk_add_two_of_odd_of_odd hB hodd0 hodd2
-    have hsk := h1.constituentSign_eq_neg_of_isSquare_five h2 hdk
+    have hsk := h1.constituentSign_eq_neg_of_isSquare_five_mul_det h2 hdk
     have htc : h2.constituentOddity hB c = h1.constituentOddity hB c + 4 := by
       simpa [map_ofNat] using h1.constituentOddity_eq_add_of_eight_dvd h2 hB (δ := 4) hok
-    have hslk := h1.constituentSign_eq_neg_of_isSquare_five h2 hdl
+    have hslk := h1.constituentSign_eq_neg_of_isSquare_five_mul_det h2 hdl
     have htl : h2.constituentOddity hB (c + 2) = h1.constituentOddity hB (c + 2) + 4 := by
       simpa [map_ofNat] using h1.constituentOddity_eq_add_of_eight_dvd h2 hB (δ := 4) hol
     have hsc := h1.constituentSignBool_eq_not_of_constituentSign_eq_neg h2 hsk
     have hsl := h1.constituentSignBool_eq_not_of_constituentSign_eq_neg h2 hslk
-    have hTS2 := compartmentOddity_and_compS_eq_of_flip_add_two (c := c) (d := d) (k := c) le_rfl
-      hcd (fun i h1' h2' ↦ ⟨h1.constituentSignBool_eq_of_eq h2 (hagree2 i h1' h2'),
+    have hTS2 := compartmentSignedOddity_and_compS_eq_of_flip_add_two (c := c) (d := d) (k := c)
+      le_rfl hcd (fun i h1' h2' ↦ ⟨h1.constituentSignBool_eq_of_eq h2 (hagree2 i h1' h2'),
         h1.constituentOddity_eq_of_eq h2 hB (hagree2 i h1' h2')⟩)
       hsc htc hsl htl
     exact ⟨N2, h2, fun i hi ↦ by
@@ -627,8 +630,8 @@ private theorem exists_isJordanSplitting_matching_compartment (hB : B.IsSymm) (s
       (∀ i ∈ Finset.Icc c (c + len), ¬∀ x ∈ N i, 2 * 2 ^ i ∣ B x x) →
       (∀ i ∈ Finset.Icc c (c + len),
         isValidOdd (rankClass (finrank ℤ_[2] (N i))) (s' i) (t' i) = true) →
-      compartmentOddity h.constituentSignBool (h.constituentOddity hB) c (c + len) =
-        compartmentOddity s' t' c (c + len) →
+      compartmentSignedOddity h.constituentSignBool (h.constituentOddity hB) c (c + len) =
+        compartmentSignedOddity s' t' c (c + len) →
       compS h.constituentSignBool c (c + len) = compS s' c (c + len) →
       ∃ N' : ℕ → Submodule ℤ_[2] M, ∃ h' : B.IsJordanSplitting 2 N',
         (∀ i, i ∉ Finset.Icc c (c + len) → N' i = N i) ∧
@@ -637,7 +640,7 @@ private theorem exists_isJordanSplitting_matching_compartment (hB : B.IsSymm) (s
   | 0, c, N, h, _, _, hT, hS => by
     refine ⟨N, h, fun _ _ ↦ rfl, fun i hi ↦ ?_⟩
     obtain rfl : i = c := by simp only [add_zero, Finset.mem_Icc] at hi; omega
-    simp only [compS, compartmentOddity_def, add_zero, Finset.Icc_self, Finset.sum_singleton,
+    simp only [compS, compartmentSignedOddity_def, add_zero, Finset.Icc_self, Finset.sum_singleton,
       Nat.add_sub_cancel_left, odd_one, true_and] at hS hT
     have hs : h.constituentSignBool i = s' i := (by decide : ∀ a b : Bool,
       (if a then (4 : ZMod (2 ^ 3)) else 0) = (if b then 4 else 0) → a = b) _ _ hS
@@ -646,7 +649,7 @@ private theorem exists_isJordanSplitting_matching_compartment (hB : B.IsSymm) (s
     have hodd0 := hodd c (by simp); have hodd1 := hodd (c + 1) (by simp)
     set u := pairState h hB c
     set v : PairState := ((s' c, t' c), (s' (c + 1), t' (c + 1)))
-    have hinv : pairInv u = pairInv v := pairInv_eq_of_compartmentOddity_compS hT hS
+    have hinv : pairInv u = pairInv v := pairInv_eq_of_compartmentSignedOddity_compS hT hS
     set rc0 := rankClass (finrank ℤ_[2] (N c)); set rc1 := rankClass (finrank ℤ_[2] (N (c + 1)))
     have hp1 := pairValidPath_pairCanon rc0 rc1 u
       (isValidOdd_constituent_and_exists_mem h hB hodd0).1
@@ -692,7 +695,7 @@ private theorem exists_isJordanSplitting_matching_compartment (hB : B.IsSymm) (s
         exact hvalid' i (hIcc_split ▸ Finset.mem_insert_of_mem hi))
       (by
         have hT2' := hT2.trans (hT1.trans hT)
-        simp only [compartmentOddity_def] at hT2' ⊢
+        simp only [compartmentSignedOddity_def] at hT2' ⊢
         rw [hIcc_split, Finset.sum_insert hc_notMem, Finset.sum_insert hc_notMem, hsc2, htc2]
           at hT2'
         simpa only [hd] using add_left_cancel hT2')
@@ -714,10 +717,10 @@ private theorem exists_isJordanSplitting_matching_compartment (hB : B.IsSymm) (s
 /-- **Compartment normalization for dyadic Jordan splittings.** Let `B` and `B'` be symmetric
 bilinear forms on finite free `ℤ_[2]`-modules with Jordan splittings `N` and `N'` with respect to
 `2`. Suppose that on a closed interval `Finset.Icc c d`, every constituent of `N` and `N'` is of
-type I, `N i` and `N' i` have equal rank, the compartment sign products agree, and the weighted
-compartment oddity-sign sums agree modulo `8`. Then `B` admits a Jordan splitting `N''` agreeing
-with `N` outside `Finset.Icc c d` whose constituent signs and oddities match those of `N'` on all
-of `Finset.Icc c d`. -/
+type I, `N i` and `N' i` have equal rank, the compartment sign products agree, and the
+sign-weighted compartment oddity sums agree modulo `8`. Then `B` admits a Jordan splitting
+`N''` agreeing with `N` outside `Finset.Icc c d` whose constituent signs and oddities match those
+of `N'` on all of `Finset.Icc c d`. -/
 theorem IsJordanSplitting.exists_constituentSign_and_oddity_eq_on_Icc
     {M' : Type*} [AddCommGroup M'] [Module ℤ_[2] M'] [Module.Free ℤ_[2] M']
     [Module.Finite ℤ_[2] M'] {B' : BilinForm ℤ_[2] M'} {N' : ℕ → Submodule ℤ_[2] M'}
@@ -745,9 +748,9 @@ theorem IsJordanSplitting.exists_constituentSign_and_oddity_eq_on_Icc
           (h'.constituentOddity hB' i) = true := fun i hi ↦ by
       rw [hrank i hi]
       exact (isValidOdd_constituent_and_exists_mem h' hB' (hodd' i hi)).1
-    have hT' : compartmentOddity h.constituentSignBool (h.constituentOddity hB) c (c + len) =
-        compartmentOddity h'.constituentSignBool (h'.constituentOddity hB') c (c + len) := by
-      simpa only [compartmentOddity_constituentSignBool] using hT
+    have hT' : compartmentSignedOddity h.constituentSignBool (h.constituentOddity hB) c (c + len) =
+        compartmentSignedOddity h'.constituentSignBool (h'.constituentOddity hB') c (c + len) := by
+      simpa only [compartmentSignedOddity_constituentSignBool] using hT
     have hS' : compS h.constituentSignBool c (c + len) =
         compS h'.constituentSignBool c (c + len) := by
       simp only [compS, IsJordanSplitting.constituentSignBool_eq_true_iff,

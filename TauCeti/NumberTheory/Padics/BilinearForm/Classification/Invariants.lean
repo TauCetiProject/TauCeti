@@ -57,10 +57,12 @@ with respect to `2`, each constituent `N i` has a unique unimodular rescaling `C
   `constituentSign_of_eq_bot`, `constituentOddity_of_eq_bot`, `constituentOddity_of_even`:
   agreement on equal constituents, zero constituents, and type-II constituents.
 * `LinearMap.BilinForm.IsJordanSplitting.constituentSign_eq_mul_of_isSquare_det`,
-  `constituentOddity_eq_add_of_eight_dvd`, `constituentSign_eq_neg_of_isSquare_five`:
+  `constituentOddity_eq_add_of_eight_dvd`, `constituentSign_eq_neg_of_isSquare_five_mul_det`:
   transformation under elementary Jordan-splitting moves.
-* `LinearMap.BilinForm.compartmentOddity`, `compartmentOddity_constituentSignBool`,
-  `compartmentOddity_eq_of_flip_right`: weighted oddity-sign sum on an interval `Finset.Icc c d`.
+* `LinearMap.BilinForm.compartmentSignedOddity`, `compartmentSignedOddity_constituentSignBool`,
+  `compartmentSignedOddity_eq_of_flip_right`: sign-weighted oddity sum
+  `∑ i ∈ Finset.Icc c d, (t i + if Odd (d + 1 - i) ∧ s i then 4 else 0)` modulo `8` on
+  `Finset.Icc c d`, the compartment part of `IsJordanSplitting.partialSignedOddity d`.
 
 ## References
 
@@ -339,7 +341,7 @@ theorem IsJordanSplitting.constituentOddity_eq_add_of_eight_dvd {N' : ℕ → Su
 
 /-- Multiplying the Gram determinant of a constituent by `5` (up to squares) negates its
 constituent sign. -/
-theorem IsJordanSplitting.constituentSign_eq_neg_of_isSquare_five
+theorem IsJordanSplitting.constituentSign_eq_neg_of_isSquare_five_mul_det
     {N' : ℕ → Submodule ℤ_[2] M} (h : B.IsJordanSplitting 2 N) (h' : B.IsJordanSplitting 2 N')
     {k : ℕ}
     (hdk : ∀ (n : ℕ) (d : Basis (Fin n) ℤ_[2] (N k)) (d' : Basis (Fin n) ℤ_[2] (N' k)),
@@ -388,32 +390,34 @@ theorem IsJordanSplitting.constituentSignBool_eq_of_eq {N' : ℕ → Submodule �
 
 end FreeFinite
 
-/-- The weighted oddity-sign sum modulo `8` on a closed interval `Finset.Icc c d`, given boolean
-signs `s` (`true` for `-1`) and oddities `t : ℕ → ZMod 8`. -/
-def compartmentOddity (s : ℕ → Bool) (t : ℕ → ZMod (2 ^ 3)) (c d : ℕ) : ZMod (2 ^ 3) :=
+/-- The sign-weighted oddity sum modulo `8` on `Finset.Icc c d`, defined by
+`∑ i ∈ Finset.Icc c d, (t i + if Odd (d + 1 - i) ∧ s i then 4 else 0)` for boolean signs `s`
+(`true` for `-1`) and constituent oddities `t : ℕ → ZMod 8`. This is the compartment part of
+`IsJordanSplitting.partialSignedOddity d`. -/
+def compartmentSignedOddity (s : ℕ → Bool) (t : ℕ → ZMod (2 ^ 3)) (c d : ℕ) : ZMod (2 ^ 3) :=
   ∑ i ∈ Finset.Icc c d, (t i + if Odd (d + 1 - i) ∧ s i then 4 else 0)
 
-/-- Expansion of `LinearMap.BilinForm.compartmentOddity` as a sum over `Finset.Icc c d`. -/
-theorem compartmentOddity_def (s : ℕ → Bool) (t : ℕ → ZMod (2 ^ 3)) (c d : ℕ) :
-    compartmentOddity s t c d =
+/-- Expansion of `LinearMap.BilinForm.compartmentSignedOddity` as a sum over `Finset.Icc c d`. -/
+theorem compartmentSignedOddity_def (s : ℕ → Bool) (t : ℕ → ZMod (2 ^ 3)) (c d : ℕ) :
+    compartmentSignedOddity s t c d =
       ∑ i ∈ Finset.Icc c d, (t i + if Odd (d + 1 - i) ∧ s i then 4 else 0) :=
   (rfl)
 
-/-- Evaluating `compartmentOddity` at `(h.constituentSignBool, h.constituentOddity hB)` recovers
-the weighted oddity-sign sum over `Finset.Icc c d` in terms of `h.constituentSign`. -/
-theorem compartmentOddity_constituentSignBool [Module.Free ℤ_[2] M] [Module.Finite ℤ_[2] M]
+/-- Evaluating `compartmentSignedOddity` at `(h.constituentSignBool, h.constituentOddity hB)`
+recovers the sign-weighted oddity sum over `Finset.Icc c d` in terms of `h.constituentSign`. -/
+theorem compartmentSignedOddity_constituentSignBool [Module.Free ℤ_[2] M] [Module.Finite ℤ_[2] M]
     (h : B.IsJordanSplitting 2 N) (hB : B.IsSymm) (c d : ℕ) :
-    compartmentOddity h.constituentSignBool (h.constituentOddity hB) c d =
+    compartmentSignedOddity h.constituentSignBool (h.constituentOddity hB) c d =
       ∑ i ∈ Finset.Icc c d, (h.constituentOddity hB i +
         if Odd (d + 1 - i) ∧ h.constituentSign i = -1 then 4 else 0) := by
-  simp only [compartmentOddity_def, IsJordanSplitting.constituentSignBool_eq_true_iff]
+  simp only [compartmentSignedOddity_def, IsJordanSplitting.constituentSignBool_eq_true_iff]
 
 /-- Flipping the boolean sign and shifting the oddity by `4` modulo `8` at the right endpoint `d`
-of `Finset.Icc c d` leaves `compartmentOddity` unchanged. -/
-theorem compartmentOddity_eq_of_flip_right {s s1 : ℕ → Bool} {t t1 : ℕ → ZMod (2 ^ 3)} {c d : ℕ}
-    (hlt : ∀ i < d, s1 i = s i ∧ t1 i = t i)
+of `Finset.Icc c d` leaves `compartmentSignedOddity` unchanged. -/
+theorem compartmentSignedOddity_eq_of_flip_right {s s1 : ℕ → Bool} {t t1 : ℕ → ZMod (2 ^ 3)}
+    {c d : ℕ} (hlt : ∀ i < d, s1 i = s i ∧ t1 i = t i)
     (hsd : s1 d = !s d) (htd : t1 d = t d + 4) :
-    compartmentOddity s1 t1 c d = compartmentOddity s t c d := by
+    compartmentSignedOddity s1 t1 c d = compartmentSignedOddity s t c d := by
   refine Finset.sum_congr rfl fun i hi ↦ ?_
   rcases eq_or_ne i d with rfl | hne
   · have h4 : ∀ b : Bool, (4 : ZMod (2 ^ 3)) + (if !b then 4 else 0) = if b then 4 else 0 := by
