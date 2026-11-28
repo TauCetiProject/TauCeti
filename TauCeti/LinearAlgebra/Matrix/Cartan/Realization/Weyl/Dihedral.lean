@@ -145,6 +145,18 @@ noncomputable def dihedralGroupFourEquivWeylBTwo {K H : Type*} [Field K]
   R.dihedralGroupMulEquivWeyl (diag_map_intCast (CartanMatrix.B_diag 2))
     (fun k ↦ by fin_cases k <;> simp) R.orderOf_weylSimple_mul_weylSimple_eq_four_B_two
 
+/-- `TauCeti.CartanRealization.dihedralGroupFourEquivWeylBTwo` evaluates to
+`TauCeti.dihedralHom`. -/
+@[simp]
+theorem dihedralGroupFourEquivWeylBTwo_apply {K H : Type*} [Field K]
+    [AddCommGroup H] [Module K H]
+    (R : CartanRealization ((CartanMatrix.B 2).map (Int.cast : ℤ → K)) H)
+    (x : DihedralGroup 4) :
+    R.dihedralGroupFourEquivWeylBTwo x =
+      TauCeti.dihedralHom (R.weylSimple_mul_self _ 0) (R.weylSimple_mul_self _ 1)
+        (R.orderOf_weylSimple_mul_weylSimple_eq_four_B_two ▸ pow_orderOf_eq_one _) x :=
+  R.dihedralGroupMulEquivWeyl_apply _ _ R.orderOf_weylSimple_mul_weylSimple_eq_four_B_two x
+
 /-- **Type `B₂` cardinality check**: `|W(B₂)| = 8` over any field. -/
 theorem card_weylGroup_B_two {K H : Type*} [Field K] [AddCommGroup H] [Module K H]
     (R : CartanRealization ((CartanMatrix.B 2).map (Int.cast : ℤ → K)) H) :
@@ -171,6 +183,21 @@ noncomputable def dihedralGroupZeroEquivWeylAffineAOne {K H : Type*} [Field K] [
   R.dihedralGroupMulEquivWeyl (diag_map_intCast (A := !![(2 : ℤ), -2; -2, 2]) (by decide))
     (fun k ↦ by fin_cases k <;> simp)
     R.orderOf_weylSimple_mul_weylSimple_eq_zero_affine_A_one
+
+/-- `TauCeti.CartanRealization.dihedralGroupZeroEquivWeylAffineAOne` evaluates to
+`TauCeti.dihedralHom`. -/
+@[simp]
+theorem dihedralGroupZeroEquivWeylAffineAOne_apply {K H : Type*} [Field K] [CharZero K]
+    [AddCommGroup H] [Module K H]
+    (R : CartanRealization ((!![(2 : ℤ), -2; -2, 2]).map (Int.cast : ℤ → K)) H)
+    (x : DihedralGroup 0) :
+    R.dihedralGroupZeroEquivWeylAffineAOne x =
+      TauCeti.dihedralHom
+        (R.weylSimple_mul_self (diag_map_intCast (A := !![(2 : ℤ), -2; -2, 2]) (by decide)) 0)
+        (R.weylSimple_mul_self (diag_map_intCast (A := !![(2 : ℤ), -2; -2, 2]) (by decide)) 1)
+        (R.orderOf_weylSimple_mul_weylSimple_eq_zero_affine_A_one ▸ pow_orderOf_eq_one _) x :=
+  R.dihedralGroupMulEquivWeyl_apply _ _
+    R.orderOf_weylSimple_mul_weylSimple_eq_zero_affine_A_one x
 
 /-- Over a characteristic-zero field, the Weyl group of affine `A₁⁽¹⁾` is infinite. -/
 instance instInfiniteWeylGroupAffineAOne {K H : Type*} [Field K] [CharZero K]
