@@ -8,8 +8,10 @@ module
 public import TauCeti.NumberTheory.SelbergSieve
 public import TauCeti.NumberTheory.SelbergSieve.LambdaSquared
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
 import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.NumberTheory.ArithmeticFunction.DivisorBounds
 
 /-!
 # Selberg's optimal weights and upper bound
@@ -30,6 +32,8 @@ at that parameter, and inherit their laws.
   For `1 < z` the optimal weights are such a weight, so `1 / G(z)` is the minimum.
 * `BoundingSieve.siftedSum_le_totalMass_div_diagonalMass_add_sum_three_pow`: Selberg's upper
   bound `S ≤ X / G(z) + ∑_{d ∣ P, d < z²} 3^ω(d) |r_d|` for `1 < z`.
+* `BoundingSieve.sum_three_pow_mul_abs_rem_le_mul`: if `|r_d| ≤ R` for every `d ∣ P`, the error
+  term of that bound is at most `R z² (1 + 2 log z)²`.
 
 ## References
 
@@ -158,5 +162,39 @@ theorem siftedSum_le_totalMass_div_diagonalMass_add_sum_three_pow (s : BoundingS
   exact s.errSum_lambdaSquared_le_sum_three_pow_cardDistinctFactors_lt _ z
     (fun d _ ↦ s.abs_optimalSelbergWeights_le_one z d)
     fun d _ hd ↦ s.optimalSelbergWeights_eq_zero_of_le hd
+
+/-- **The error term of Selberg's upper bound under a uniform remainder bound.** If `|r_d| ≤ R`
+for every divisor `d` of the sieving product, then for every real `z`,
+`∑_{d ∣ P, d < z²} 3^ω(d) |r_d| ≤ R z² (1 + 2 log z)²`, by the coefficient-one majorant of
+`∑_{n ≤ z²} 3^ω(n)`. For `z² < 1` the sum is empty. -/
+theorem sum_three_pow_mul_abs_rem_le_mul (s : BoundingSieve) {R z : ℝ}
+    (hrem : ∀ d ∈ s.prodPrimes.divisors, |s.rem d| ≤ R) :
+    ∑ d ∈ s.prodPrimes.divisors.filter (fun d : ℕ ↦ (d : ℝ) < z ^ 2),
+        (3 : ℝ) ^ ω d * |s.rem d| ≤ R * (z ^ 2 * (1 + 2 * Real.log z) ^ 2) := by
+  have hR : 0 ≤ R := (abs_nonneg _).trans
+    (hrem 1 (Nat.one_mem_divisors.2 s.prodPrimes_squarefree.ne_zero))
+  rcases lt_or_ge (z ^ 2) 1 with hz | hz
+  · rw [sum_eq_zero fun d hd ↦ ?_]
+    · positivity
+    · obtain ⟨hdP, hdz⟩ := mem_filter.1 hd
+      have hd1 : (1 : ℝ) ≤ d := mod_cast Nat.pos_of_mem_divisors hdP
+      linarith
+  calc ∑ d ∈ s.prodPrimes.divisors.filter (fun d : ℕ ↦ (d : ℝ) < z ^ 2),
+        (3 : ℝ) ^ ω d * |s.rem d|
+      ≤ ∑ d ∈ s.prodPrimes.divisors.filter (fun d : ℕ ↦ (d : ℝ) < z ^ 2), R * (3 : ℝ) ^ ω d :=
+        sum_le_sum fun d hd ↦ by
+          rw [mul_comm]
+          exact mul_le_mul_of_nonneg_right (hrem d (mem_filter.1 hd).1) (by positivity)
+    _ = R * ∑ d ∈ s.prodPrimes.divisors.filter (fun d : ℕ ↦ (d : ℝ) < z ^ 2),
+          (3 : ℝ) ^ ω d := (mul_sum _ _ _).symm
+    _ ≤ R * ∑ n ∈ Ioc 0 ⌊z ^ 2⌋₊, (3 : ℝ) ^ ω n := by
+        refine mul_le_mul_of_nonneg_left (sum_le_sum_of_subset_of_nonneg (fun d hd ↦ ?_)
+          fun _ _ _ ↦ by positivity) hR
+        obtain ⟨hdP, hdz⟩ := mem_filter.1 hd
+        exact mem_Ioc.2 ⟨Nat.pos_of_mem_divisors hdP, Nat.le_floor hdz.le⟩
+    _ ≤ R * (z ^ 2 * (1 + Real.log (z ^ 2)) ^ 2) :=
+        mul_le_mul_of_nonneg_left
+          (ArithmeticFunction.sum_Ioc_three_pow_cardDistinctFactors_le_mul_one_add_log_sq hz) hR
+    _ = R * (z ^ 2 * (1 + 2 * Real.log z) ^ 2) := by rw [Real.log_pow, Nat.cast_ofNat]
 
 end BoundingSieve

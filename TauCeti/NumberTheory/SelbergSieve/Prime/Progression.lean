@@ -13,7 +13,6 @@ public import TauCeti.NumberTheory.Chebyshev.ResidueClass
 import Mathlib.Analysis.Complex.ExponentialBounds
 import TauCeti.Data.Int.CardIntervalMod
 import TauCeti.Data.Nat.Squarefree
-import TauCeti.NumberTheory.ArithmeticFunction.DivisorBounds
 import TauCeti.NumberTheory.SelbergSieve.CoprimeDiagonal
 
 /-!
@@ -30,9 +29,10 @@ Selberg's upper bound, with the diagonal mass bounded below by `(φ(k) / k) log 
 
 `π(x; k, a) ≤ x / (φ(k) log z) + 2 z² (1 + 2 log z)² + z`
 
-for every `x ≥ 0` and `z > 1`. With `z = (x / k) ^ (1 / 3)` this is the Brun–Titchmarsh bound
+for every modulus `k ≥ 1`, every `x ≥ 0` and every `z > 1`. With `z = (x / k) ^ (1 / 3)` this is
+the Brun–Titchmarsh bound
 
-`π(x; k, a) ≤ C x / (φ(k) log (x / k))` for `x ≥ 4 k`,
+`π(x; k, a) ≤ C x / (φ(k) log (x / k))` for `k ≥ 1` and `x ≥ 4 k`,
 
 with an absolute constant `C` (the proof gives `C = 906`; the classical constant `2 + o(1)` needs
 a sharper treatment of the remainder and is not claimed). The class `a` need not be reduced.
@@ -47,9 +47,12 @@ a sharper treatment of the remainder and is not claimed). The class `a` need not
   for every modulus including `0`.
 * `BoundingSieve.card_primesLE_filter_modEq_le`: the primes of the progression are counted by the
   sifted sum, up to `⌊z⌋₊`.
-* `TauCeti.primeCountAP_le_div_log_add`: the bound at an arbitrary sieving level `z > 1`.
-* `TauCeti.exists_primeCountAP_le_mul_div_totient_mul_log`: the Brun–Titchmarsh bound for
-  `x ≥ 4 k`.
+* `TauCeti.primeCountAP_le_div_log_add`: the bound at an arbitrary sieving level `z > 1`, for
+  `k ≥ 1`.
+* `TauCeti.exists_primeCountAP_le_mul_div_totient_mul_log`: the Brun–Titchmarsh bound for `k ≥ 1`
+  and `x ≥ 4 k`, for a class in `ZMod k`.
+* `TauCeti.exists_card_primesLE_filter_modEq_le_mul_div_totient_mul_log`: the same bound for the
+  number of primes `p ≤ x` with `p ≡ a (mod k)`, `a` a natural number.
 
 ## References
 
@@ -243,36 +246,6 @@ namespace TauCeti
 
 open scoped ArithmeticFunction.omega
 
-variable {k : ℕ} {a : ℕ} {x z : ℝ}
-
-/-- The Selberg remainder of the progression sieve at level `z` is at most
-`2 z² (1 + 2 log z)²`. -/
-private theorem sum_three_pow_mul_abs_rem_primeProgression_le (hx : 0 ≤ x) (hz : 1 ≤ z) :
-    ∑ d ∈ (BoundingSieve.primeProgression k a x z).prodPrimes.divisors.filter
-        (fun d : ℕ ↦ (d : ℝ) < z ^ 2),
-      (3 : ℝ) ^ ω d * |(BoundingSieve.primeProgression k a x z).rem d| ≤
-      2 * (z ^ 2 * (1 + 2 * Real.log z) ^ 2) := by
-  have hz2 : 1 ≤ z ^ 2 := one_le_pow₀ hz
-  calc _ ≤ ∑ d ∈ (BoundingSieve.primeProgression k a x z).prodPrimes.divisors.filter
-          (fun d : ℕ ↦ (d : ℝ) < z ^ 2), (3 : ℝ) ^ ω d * 2 :=
-        sum_le_sum fun d hd ↦ mul_le_mul_of_nonneg_left
-          (BoundingSieve.abs_rem_primeProgression_le hx
-            (Nat.dvd_of_mem_divisors (mem_filter.1 hd).1)) (by positivity)
-    _ = 2 * ∑ d ∈ (BoundingSieve.primeProgression k a x z).prodPrimes.divisors.filter
-          (fun d : ℕ ↦ (d : ℝ) < z ^ 2), (3 : ℝ) ^ ω d := by
-        rw [mul_sum]
-        exact sum_congr rfl fun _ _ ↦ mul_comm _ _
-    _ ≤ 2 * ∑ n ∈ Ioc 0 ⌊z ^ 2⌋₊, (3 : ℝ) ^ ω n := by
-        refine mul_le_mul_of_nonneg_left (sum_le_sum_of_subset_of_nonneg (fun d hd ↦ ?_)
-          fun _ _ _ ↦ by positivity) zero_le_two
-        obtain ⟨hdP, hdz⟩ := mem_filter.1 hd
-        exact mem_Ioc.2 ⟨Nat.pos_of_mem_divisors hdP, Nat.le_floor hdz.le⟩
-    _ ≤ 2 * (z ^ 2 * (1 + Real.log (z ^ 2)) ^ 2) :=
-        mul_le_mul_of_nonneg_left
-          (ArithmeticFunction.sum_Ioc_three_pow_cardDistinctFactors_le_mul_one_add_log_sq hz2)
-          zero_le_two
-    _ = 2 * (z ^ 2 * (1 + 2 * Real.log z) ^ 2) := by rw [Real.log_pow, Nat.cast_ofNat]
-
 /-- **Selberg's sieve for primes in an arithmetic progression.** For every modulus `k ≥ 1`, every
 residue class `a` modulo `k`, every real `x ≥ 0` and every sieving level `z > 1`,
 `π(x; k, a) ≤ x / (φ(k) log z) + 2 z² (1 + 2 log z)² + z`. -/
@@ -287,10 +260,7 @@ theorem primeCountAP_le_div_log_add (k : ℕ) [NeZero k] (a : ZMod k) {x z : ℝ
   have hlog : 0 < Real.log z := Real.log_pos hz
   have hcount : (Chebyshev.primeCountAP k a x : ℝ) =
       #((Nat.primesLE ⌊x⌋₊).filter (· ≡ a.val [MOD k])) := by
-    rw [Chebyshev.primeCountAP_def]
-    congr 2
-    refine filter_congr fun p _ ↦ ?_
-    rw [← ZMod.natCast_eq_natCast_iff, ZMod.natCast_zmod_val]
+    rw [← Chebyshev.primeCountAP_natCast, ZMod.natCast_zmod_val]
   have hG : (k.totient : ℝ) / k * Real.log z ≤ s.diagonalMass z :=
     s.totient_div_mul_log_le_diagonalMass k (by linarith)
       (fun p hp hpz hpk ↦ (BoundingSieve.prime_dvd_primeProgression_prodPrimes_iff hp).2
@@ -312,7 +282,8 @@ theorem primeCountAP_le_div_log_add (k : ℕ) [NeZero k] (a : ZMod k) {x z : ℝ
           (Nat.floor_le (by linarith))
     _ ≤ x / (k.totient * Real.log z) + 2 * (z ^ 2 * (1 + 2 * Real.log z) ^ 2) + z :=
         add_le_add_left (add_le_add hmain
-          (sum_three_pow_mul_abs_rem_primeProgression_le hx hz.le)) z
+          (s.sum_three_pow_mul_abs_rem_le_mul fun d hd ↦
+            BoundingSieve.abs_rem_primeProgression_le hx (Nat.dvd_of_mem_divisors hd))) z
 
 /-- With `E = exp (L / 3)` and `L ≥ 1`, the remainder and small-prime terms of the level
 `z = E` are at most `903 exp L / L`: `L (1 + 2 L / 3)² ≤ 450 E` and `E L ≤ 3 E²`. -/
@@ -384,5 +355,19 @@ theorem exists_primeCountAP_le_mul_div_totient_mul_log :
         linarith
     _ ≤ 906 * (x / (k.totient * L)) := by linarith
     _ = 906 * x / (k.totient * L) := by rw [mul_div_assoc]
+
+/-- **The Brun–Titchmarsh bound, for natural residues.** There is an absolute constant `C` such
+that for every modulus `k ≥ 1`, every natural number `a` and every real `x ≥ 4 k`, the number of
+primes `p ≤ x` with `p ≡ a (mod k)` is at most `C x / (φ(k) log (x / k))`. The number `a` need
+not be coprime to `k`. -/
+theorem exists_card_primesLE_filter_modEq_le_mul_div_totient_mul_log :
+    ∃ C : ℝ, 0 < C ∧ ∀ (k a : ℕ) (x : ℝ), k ≠ 0 → 4 * (k : ℝ) ≤ x →
+      (#{p ∈ Nat.primesLE ⌊x⌋₊ | p ≡ a [MOD k]} : ℝ) ≤
+        C * x / (k.totient * Real.log (x / k)) := by
+  obtain ⟨C, hC, h⟩ := exists_primeCountAP_le_mul_div_totient_mul_log
+  refine ⟨C, hC, fun k a x hk hx ↦ ?_⟩
+  have : NeZero k := ⟨hk⟩
+  rw [← Chebyshev.primeCountAP_natCast]
+  exact h k a x hx
 
 end TauCeti

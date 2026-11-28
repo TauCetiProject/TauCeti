@@ -15,8 +15,10 @@ Mathlib's `Int.Ico_filter_modEq_card` counts the integers of `[a, b)` congruent 
 uniform bound `(b - a) / r + 1`, independent of the residue `v`: a box of side `L` in `ℤ^n`
 contains at most `(L / r + 1) ^ n` points of any one residue class modulo `r`.
 
-For the naturals of `(a, b]`, `Nat.abs_card_Ioc_filter_modEq_sub_div_lt` is the two-sided form:
-the count differs from `(b - a) / r` by less than one. This is the remainder bound for a sieve
+For the integers of `(a, b]`, `Int.abs_card_Ioc_filter_modEq_sub_div_lt` is the two-sided form:
+the count differs from `(b - a) / r` by less than one.
+`Nat.abs_card_Ioc_filter_modEq_sub_div_lt` is the same statement for natural endpoints, modulus
+and residue. This is the remainder bound for a sieve
 on an arithmetic progression.
 -/
 
@@ -44,6 +46,32 @@ theorem card_Ico_filter_modEq_le {r : ℤ} (hr : 0 < r) {a b : ℤ} (hab : a ≤
   push_cast
   linarith
 
+/-- For rationals `a ≤ b` and `r > 0`, the truncated difference of floors
+`max (⌊(b - v) / r⌋ - ⌊(a - v) / r⌋) 0` differs from `(b - a) / r` by less than one. -/
+private theorem abs_max_floor_sub_floor_sub_div_lt {r : ℚ} (hr : 0 < r) {a b : ℚ} (hab : a ≤ b)
+    (v : ℚ) : |((max (⌊(b - v) / r⌋ - ⌊(a - v) / r⌋) 0 : ℤ) : ℚ) - (b - a) / r| < 1 := by
+  have h₁ := Int.floor_le ((b - v) / r)
+  have h₂ := Int.lt_floor_add_one ((b - v) / r)
+  have h₃ := Int.floor_le ((a - v) / r)
+  have h₄ := Int.lt_floor_add_one ((a - v) / r)
+  have hsplit : (b - a) / r = (b - v) / r - (a - v) / r := by ring
+  have hmono : ⌊(a - v) / r⌋ ≤ ⌊(b - v) / r⌋ :=
+    Int.floor_mono (div_le_div_of_nonneg_right (sub_le_sub_right hab v) hr.le)
+  rw [max_eq_left (sub_nonneg.2 hmono), abs_lt]
+  push_cast
+  constructor <;> linarith
+
+/-- An interval `(a, b]` of integers with `a ≤ b` contains `(b - a) / r` integers congruent to `v`
+modulo `r > 0`, up to an error of absolute value less than one, whatever the residue `v`. -/
+theorem abs_card_Ioc_filter_modEq_sub_div_lt {r : ℤ} (hr : 0 < r) {a b : ℤ} (hab : a ≤ b)
+    (v : ℤ) : |(#{x ∈ Ioc a b | x ≡ v [ZMOD r]} : ℚ) - ((b : ℚ) - a) / r| < 1 := by
+  have hcard : ((#{x ∈ Ioc a b | x ≡ v [ZMOD r]} : ℤ) : ℚ) =
+      ((max (⌊((b : ℚ) - v) / r⌋ - ⌊((a : ℚ) - v) / r⌋) 0 : ℤ) : ℚ) := by
+    rw [Ioc_filter_modEq_card _ _ hr]
+  rw [Int.cast_natCast] at hcard
+  rw [hcard]
+  exact abs_max_floor_sub_floor_sub_div_lt (by exact_mod_cast hr) (by exact_mod_cast hab) v
+
 end Int
 
 namespace Nat
@@ -52,25 +80,11 @@ namespace Nat
 modulo `r > 0`, up to an error of absolute value less than one, whatever the residue `v`. -/
 theorem abs_card_Ioc_filter_modEq_sub_div_lt {r : ℕ} (hr : 0 < r) {a b : ℕ} (hab : a ≤ b)
     (v : ℕ) : |(#{x ∈ Ioc a b | x ≡ v [MOD r]} : ℚ) - ((b : ℚ) - a) / r| < 1 := by
-  have hr' : (0 : ℚ) < r := by exact_mod_cast hr
   have hcard : ((#{x ∈ Ioc a b | x ≡ v [MOD r]} : ℤ) : ℚ) =
       ((max (⌊((b : ℚ) - v) / r⌋ - ⌊((a : ℚ) - v) / r⌋) 0 : ℤ) : ℚ) := by
     rw [Nat.Ioc_filter_modEq_card _ _ hr]
   rw [Int.cast_natCast] at hcard
-  have hba : (0 : ℚ) ≤ ((b : ℚ) - a) / r :=
-    div_nonneg (sub_nonneg.2 (by exact_mod_cast hab)) hr'.le
-  have h₁ := Int.floor_le (((b : ℚ) - v) / r)
-  have h₂ := Int.lt_floor_add_one (((b : ℚ) - v) / r)
-  have h₃ := Int.floor_le (((a : ℚ) - v) / r)
-  have h₄ := Int.lt_floor_add_one (((a : ℚ) - v) / r)
-  have hsplit : ((b : ℚ) - a) / r = ((b : ℚ) - v) / r - ((a : ℚ) - v) / r := by ring
-  have hnonneg : (0 : ℤ) ≤ ⌊((b : ℚ) - v) / r⌋ - ⌊((a : ℚ) - v) / r⌋ := by
-    have h : (-1 : ℚ) < ((⌊((b : ℚ) - v) / r⌋ - ⌊((a : ℚ) - v) / r⌋ : ℤ) : ℚ) := by
-      push_cast
-      linarith
-    exact_mod_cast h
-  rw [hcard, max_eq_left hnonneg, abs_lt]
-  push_cast
-  constructor <;> linarith
+  rw [hcard]
+  exact Int.abs_max_floor_sub_floor_sub_div_lt (by exact_mod_cast hr) (by exact_mod_cast hab) v
 
 end Nat

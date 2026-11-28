@@ -91,6 +91,13 @@ theorem thetaAP_def (q : ℕ) (a : ZMod q) (x : ℝ) :
 theorem primeCountAP_def (q : ℕ) (a : ZMod q) (x : ℝ) :
     primeCountAP q a x = #{p ∈ Nat.primesLE ⌊x⌋₊ | ((p : ℕ) : ZMod q) = a} := (rfl)
 
+/-- For the residue class of a natural number `a`, `π(x; q, a)` counts the primes `p ≤ x` with
+`p ≡ a (mod q)`. -/
+theorem primeCountAP_natCast (q a : ℕ) (x : ℝ) :
+    primeCountAP q (a : ZMod q) x = #{p ∈ Nat.primesLE ⌊x⌋₊ | p ≡ a [MOD q]} := by
+  rw [primeCountAP_def]
+  exact congrArg card (filter_congr fun p _ ↦ ZMod.natCast_eq_natCast_iff p a q)
+
 /-! ### Basic properties -/
 
 theorem psiAP_nonneg (q : ℕ) (a : ZMod q) (x : ℝ) : 0 ≤ psiAP q a x :=
