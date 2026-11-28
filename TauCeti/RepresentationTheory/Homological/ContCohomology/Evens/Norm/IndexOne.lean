@@ -331,12 +331,13 @@ private theorem subsingletonEquiv_eq_smoothTensorInducedMulHom
         x := by
   let := Fintype.ofFinite (G ⧸ U.toSubgroup)
   have := QuotientGroup.subsingleton_iff.2 (Subgroup.index_eq_one.1 hU)
-  obtain ⟨a, rfl⟩ := PiTensorProduct.exists_eq_tprod_of_subsingleton (QuotientGroup.mk 1) x
-  refine (PiTensorProduct.subsingletonEquiv_apply_tprod _ _).trans ?_
-  refine Eq.symm ((smoothTensorInducedMulHom_hom_hom_apply_tprod (R := ℤ) U.toSubgroup U.isOpen' A
-    (oneTransversal hU) _).trans ?_)
-  rw [Fintype.prod_subsingleton _ (QuotientGroup.mk 1), leftTransversalRep_oneTransversal hU]
-  exact one_smul G (α := A) a
+  refine Eq.symm ((smoothTensorInducedMulHom_hom_hom_apply (R := ℤ) U.toSubgroup U.isOpen' A
+    (oneTransversal hU) x).trans ?_)
+  rw [U.toSubgroup.tensorInducedMulAlgHom_eq_subsingletonAlgEquiv_of_rep_eq_one ℤ A
+    (oneTransversal hU) (QuotientGroup.mk 1) (leftTransversalRep_oneTransversal hU _)]
+  exact congrArg (fun e ↦ e x)
+    (PiTensorProduct.subsingletonAlgEquiv_toLinearEquiv (R := ℤ)
+      (QuotientGroup.mk 1) (fun _ : G ⧸ U.toSubgroup ↦ A))
 
 /-- **The Evens norm in characteristic two at index one, after restriction**: for a compact open
 subgroup `U` of index one and a discrete commutative `G`-ring `A` with `2 = 0`, restricting the norm
