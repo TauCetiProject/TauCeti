@@ -271,7 +271,8 @@ theorem mk_mem_elementaryUnitaryGroup_of_coe_eq_siegelTransvection
   have hε := mul_self_eq_one_of_trace_of_det_ne_zero hσ hQ hdet htr
   have hσε := map_eq_self_of_mul_self_eq_one_of_det_ne_zero hσ hQ hdet hε
   obtain ⟨d, hd, hdε⟩ := hadm; obtain ⟨f, -, hf, huf, hfu⟩ :=
-    exists_comp_dotProduct_mulVec_eq_zero_and_eq_one hσ hQ hdet htr hu0 hu
+    exists_comp_dotProduct_mulVec_eq_zero_and_eq_one hσ hQ htr
+      (by simpa using (mulVec_injective_of_det_ne_zero hdet).ne hu0) hu
   have hc := (exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_iff hσ hQ hdet hu0 hu
     huw c).mp ⟨s, hs, hcs⟩
   set α := ε * ((σ ∘ f) ⬝ᵥ (Q *ᵥ w)); set w₀ := w - α • u; set c₀ := c + α - ε * σ α

@@ -132,6 +132,8 @@ applies to the quotients appearing here without any further appeal to defeq.
   `MaximalSpectrum.toNat_length_quotient_eq_finrank_residueField`: for `A` local and a maximal
   ideal `m` of an `A`-algebra `B`, the `A`-length of `B ⧸ m` is the residue degree
   `[κ(B_m) : κ(A)]`, for any chosen localization `B_m`.
+* `Ideal.isFiniteLength_quotient_pow_of_fg`: `A ⧸ 𝔪 ⁿ` has finite length for every `n` when `𝔪` is
+  a finitely generated maximal ideal, with no noetherian hypothesis.
 * `TauCeti.isFiniteLength_quotient_maximalIdeal_pow`: `A ⧸ 𝔪 ⁿ` has finite length for every `n`
   over a noetherian local ring, so it is an Artinian ring
   (`TauCeti.isArtinianRing_quotient_maximalIdeal_pow`).
@@ -729,6 +731,44 @@ theorem length_quotient_eq_one (m : Ideal A) [m.IsMaximal] : Module.length A (A 
 
 end Ring
 
+section CommRing
+
+variable {A : Type*} [CommRing A]
+
+/-- **A quotient by a power of a finitely generated maximal ideal has finite length.** If `𝔪` is a
+finitely generated maximal ideal of `A`, then `A ⧸ 𝔪 ⁿ` has finite length over `A` for every `n`,
+with no noetherian hypothesis: each layer `𝔪 ⁿ ⧸ 𝔪 ⁿ⁺¹` is a quotient of `𝔪 ⁿ ⧸ 𝔪 𝔪 ⁿ`, a finite
+vector space over the field `A ⧸ 𝔪`. -/
+theorem isFiniteLength_quotient_pow_of_fg (m : Ideal A) [m.IsMaximal] (hm : m.FG) (n : ℕ) :
+    IsFiniteLength A (A ⧸ m ^ n) := by
+  induction n with
+  | zero =>
+    have : Subsingleton (A ⧸ m ^ 0) := by
+      rw [pow_zero, Ideal.one_eq_top]
+      infer_instance
+    exact .of_subsingleton
+  | succ n ih =>
+    let := Ideal.Quotient.field m
+    set N := (m • ⊤ : Submodule A (m ^ n : Ideal A))
+    -- `𝔪ⁿ ⧸ 𝔪 𝔪ⁿ` is a finite-dimensional vector space over `A ⧸ 𝔪`.
+    have : Module.Finite A (m ^ n : Ideal A) := Module.Finite.iff_fg.mpr (hm.pow (n := n))
+    have : Module.Finite (A ⧸ m) ((m ^ n : Ideal A) ⧸ N) :=
+      Module.Finite.of_restrictScalars_finite A _ _
+    have hQ : Module.length A ((m ^ n : Ideal A) ⧸ N) ≠ ⊤ := by
+      rw [Module.length_eq_of_surjective (R := A ⧸ m) Ideal.Quotient.mk_surjective,
+        Module.length_ne_top_iff]
+      exact ((IsArtinianRing.tfae _ _).out 1 4).mp ‹_›
+    have hle : N ≤ Submodule.comap (m ^ n : Ideal A).subtype (m ^ (n + 1)) :=
+      Submodule.smul_le.mpr fun r hr x _ ↦ by
+        simpa [pow_succ'] using Ideal.mul_mem_mul hr x.property
+    rw [← Module.length_ne_top_iff] at ih ⊢
+    rw [TauCeti.length_quotient_eq_length_quotient_comap_subtype_add
+      (Ideal.pow_le_pow_right (I := m) n.le_succ)]
+    refine WithTop.add_ne_top.mpr ⟨ne_top_of_le_ne_top hQ ?_, ih⟩
+    exact Module.length_le_of_surjective (Submodule.factor hle) (Submodule.factor_surjective hle)
+
+end CommRing
+
 section NoetherianRing
 
 variable {A : Type*} [CommRing A] [IsNoetherianRing A]
@@ -770,18 +810,11 @@ open _root_.IsLocalRing
 
 variable {A : Type*} [CommRing A] [IsNoetherianRing A] [IsLocalRing A]
 
-/-- Every quotient of a noetherian local ring by a power of its maximal ideal has finite length:
-for `n ≠ 0` the power `𝔪 ⁿ` is maximal-primary, and for `n = 0` the quotient is zero. -/
+/-- Every quotient of a noetherian local ring by a power of its maximal ideal has finite length,
+as the maximal ideal is finitely generated. -/
 theorem _root_.TauCeti.isFiniteLength_quotient_maximalIdeal_pow (n : ℕ) :
-    IsFiniteLength A (A ⧸ maximalIdeal A ^ n) := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · have : Subsingleton (A ⧸ maximalIdeal A ^ 0) := by
-      rw [pow_zero, Ideal.one_eq_top]
-      infer_instance
-    exact .of_subsingleton
-  · exact isFiniteLength_quotient_of_isMaximal_radical _ <| by
-      rw [radical_pow _ hn, (maximalIdeal.isMaximal A).isPrime.radical]
-      infer_instance
+    IsFiniteLength A (A ⧸ maximalIdeal A ^ n) :=
+  isFiniteLength_quotient_pow_of_fg _ (IsNoetherian.noetherian _) n
 
 /-- The quotient of a noetherian local ring by a power of its maximal ideal is an Artinian ring,
 being of finite length over the ring. -/
