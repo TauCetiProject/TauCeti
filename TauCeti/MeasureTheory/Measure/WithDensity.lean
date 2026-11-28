@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.MeasureTheory.Measure.Real
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
@@ -82,6 +83,9 @@ requiring the reference measure itself to be sigma-finite.
 * `MeasureTheory.withDensity_eq_iff_of_sigmaFinite_withDensity`: two a.e. measurable densities
   presenting the same sigma-finite weighted measure agree almost everywhere against the reference
   measure.
+* `MeasureTheory.withDensity_le_withDensity_iff`: a density vanishing off a set on which the
+  reference measure is σ-finite gives a weighted measure below another exactly when it is below
+  the other density almost everywhere.
 * `MeasureTheory.continuous_eq_of_withDensity_ofReal_eq`: continuous nonnegative real densities
   presenting the same weighted measure against a sigma-finite measure positive on nonempty open
   sets are equal pointwise.
@@ -398,6 +402,24 @@ theorem withDensity_eq_iff_of_sigmaFinite_withDensity {α : Type*} [MeasurableSp
     rw [← restrict_withDensity hs, ← restrict_withDensity hs]
     exact congrArg (·.restrict s) hfg
   exact (withDensity_eq_iff hf.restrict hg.restrict hfin).mp heq
+
+/-- **Comparison of weighted measures.** If `f` is `μ`-a.e. finitely strongly measurable, so that
+it vanishes almost everywhere off a measurable set on which `μ` is σ-finite, then
+`μ.withDensity f ≤ μ.withDensity k` exactly when `f ≤ k` holds `μ`-almost everywhere. Neither `μ`
+nor `k` needs any further hypothesis. An a.e. measurable `f` with finite lintegral is
+a.e. finitely strongly measurable by `ENNReal.aefinStronglyMeasurable_of_aemeasurable`. -/
+theorem withDensity_le_withDensity_iff {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    {f k : α → ℝ≥0∞} (hf : AEFinStronglyMeasurable f μ) :
+    μ.withDensity f ≤ μ.withDensity k ↔ f ≤ᵐ[μ] k := by
+  refine ⟨fun h => ?_, withDensity_mono⟩
+  -- `f` vanishes almost everywhere outside a measurable set `t` on which `μ` is σ-finite, and on
+  -- `t` the bound follows by comparing set integrals.
+  obtain ⟨t, ht, hft, _⟩ := hf.exists_set_sigmaFinite
+  refine ae_of_ae_restrict_of_ae_restrict_compl t ?_ (hft.mono fun x hx => by simp [hx])
+  refine ae_le_of_forall_setLIntegral_le_of_sigmaFinite₀ hf.aemeasurable.restrict fun s hs _ => ?_
+  rw [Measure.restrict_restrict hs, ← withDensity_apply _ (hs.inter ht),
+    ← withDensity_apply _ (hs.inter ht)]
+  exact Measure.le_iff'.1 h _
 
 /-- Continuous nonnegative real densities that present the same measure are equal pointwise, with
 respect to a σ-finite reference measure that is positive on nonempty open sets. -/

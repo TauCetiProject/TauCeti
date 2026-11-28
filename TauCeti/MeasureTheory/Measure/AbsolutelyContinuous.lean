@@ -23,9 +23,9 @@ property holding `ν`-almost everywhere holds at `f x` for `μ`-almost every `x`
 
 If a finite measure `ν` is absolutely continuous with respect to `μ`, then `ν s` is uniformly
 small whenever `μ s` is small. This quantitative form of `ν ≪ μ` holds for an arbitrary
-reference measure `μ`, with no σ-finiteness and hence no Radon–Nikodym derivative, and it is
-equivalent to `ν ≪ μ`. It is what transfers approximation properties, such as regularity, from
-`μ` to `ν`.
+reference measure `μ`: it requires neither σ-finiteness of `μ` nor the existence of a
+Radon–Nikodym derivative, and it is equivalent to `ν ≪ μ`. It is what transfers approximation
+properties, such as regularity, from `μ` to `ν`.
 
 Each summand of a sum of measures is absolutely continuous with respect to the sum, so `μ + ν`
 is a common dominating measure for `μ` and `ν`.
