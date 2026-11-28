@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.AdeleRing
+public import TauCeti.NumberTheory.NumberField.Global.Ideles.Basic
 import TauCeti.Algebra.Order.Floor.Semifield
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.BoundedConjugates
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Counting rational points in dyadic dilates of a compact set of adeles
@@ -33,8 +34,6 @@ of adelic vectors by diagonal dyadic matrices, an input to the reduction theory 
 
 ## Main results
 
-* `TauCeti.GlobalNumberFields.twoInf`: the idele `2_∞`, with `coe_twoInf`, `coe_twoInf_zpow` and
-  `norm_fst_twoInf_zpow_mul_algebraMap_apply`.
 * `TauCeti.GlobalNumberFields.exists_encard_le_floor_mul_add_one_pow`: elements of `K` with finite
   part in a compact set and absolute values at most `r` number at most `(⌊c r⌋ + 1) ^ d`.
 * `TauCeti.GlobalNumberFields.exists_encard_setOf_twoInf_zpow_mul_mem_le`: the dyadic count
@@ -59,52 +58,7 @@ open scoped NumberField.AdeleRing
 
 namespace TauCeti.GlobalNumberFields
 
-variable (K : Type*) [Field K] [NumberField K]
-
-/-- The idele `2_∞` of a number field `K`: it is `2` at every infinite place and `1` at every
-finite place. -/
-noncomputable def twoInf : 𝔸[K]ˣ :=
-  Units.map ((MonoidHom.inl _ _).comp (algebraMap K (InfiniteAdeleRing K)).toMonoidHom)
-    (Units.mk0 (2 : K) two_ne_zero)
-
-variable {K}
-
-/-- The integral powers of `2_∞` are `2 ^ k` at the infinite places and `1` at the finite
-places. -/
-@[simp]
-theorem coe_twoInf_zpow (k : ℤ) :
-    ((twoInf K ^ k : 𝔸[K]ˣ) : 𝔸[K]) = (algebraMap K (InfiniteAdeleRing K) (2 ^ k), 1) := by
-  rw [twoInf, ← map_zpow, Units.coe_map, Units.val_zpow_eq_zpow_val, Units.val_mk0,
-    MonoidHom.comp_apply, MonoidHom.inl_apply, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
-
-/-- The idele `2_∞` is `2` at the infinite places and `1` at the finite places. -/
-@[simp]
-theorem coe_twoInf : ((twoInf K : 𝔸[K]ˣ) : 𝔸[K]) = (2, 1) := by
-  rw [← zpow_one (twoInf K), coe_twoInf_zpow, zpow_one, map_ofNat]
-
-/-- The inverses of the integral powers of `2_∞`, in the form `simp` reaches through
-`zpow_neg`. -/
-@[simp]
-theorem coe_inv_twoInf_zpow (k : ℤ) :
-    (((twoInf K ^ k)⁻¹ : 𝔸[K]ˣ) : 𝔸[K]) = (algebraMap K (InfiniteAdeleRing K) (2 ^ k)⁻¹, 1) := by
-  rw [← zpow_neg, coe_twoInf_zpow, zpow_neg]
-
-/-- Multiplying by a power of `2_∞` does not change the finite part of a diagonal adele. -/
-theorem snd_twoInf_zpow_mul_algebraMap (k : ℤ) (x : K) :
-    (((twoInf K ^ k : 𝔸[K]ˣ) : 𝔸[K]) * algebraMap K 𝔸[K] x).2 = algebraMap K 𝔸ᶠ[K] x := by
-  rw [coe_twoInf_zpow, Prod.snd_mul, one_mul, AdeleRing.algebraMap_snd_def]
-
-/-- Multiplying a diagonal adele by `2_∞ ^ k` multiplies its absolute value at every infinite
-place by `2 ^ k`. -/
-theorem norm_fst_twoInf_zpow_mul_algebraMap_apply (k : ℤ) (x : K) (w : InfinitePlace K) :
-    ‖(((twoInf K ^ k : 𝔸[K]ˣ) : 𝔸[K]) * algebraMap K 𝔸[K] x).1 w‖ = 2 ^ k * w x := by
-  rw [coe_twoInf_zpow, Prod.fst_mul, AdeleRing.algebraMap_fst_def, ← map_mul]
-  -- the absolute value at `w` of the diagonal infinite adele of `z ∈ K` is `w z`
-  have hnorm (z : K) : ‖algebraMap K (InfiniteAdeleRing K) z w‖ = w z := by
-    simp [InfiniteAdeleRing.algebraMap_apply, AbsoluteValue.Completion.norm_coe,
-      InfinitePlace.coe_apply]
-  have h2 : w 2 = 2 := by exact_mod_cast w.map_natCast 2
-  rw [hnorm, map_mul, map_zpow₀, h2]
+variable {K : Type*} [Field K] [NumberField K]
 
 /-- **Elements of a number field with bounded conjugates and finite part in a compact set.** For a
 compact set `s` of finite adeles of `K` there is `c > 0` such that for every `r`, the elements of
@@ -158,21 +112,6 @@ theorem exists_encard_le_floor_mul_add_one_pow {s : Set 𝔸ᶠ[K]} (hs : IsComp
       rw [Nat.card_unique, one_mul, ← mul_assoc] at this
       exact_mod_cast this
 
-/-- A compact set of vectors of adeles has bounded absolute values at the infinite places. -/
-private theorem exists_forall_norm_fst_apply_le {ι : Type*} [Finite ι] {B : Set (ι → 𝔸[K])}
-    (hB : IsCompact B) :
-    ∃ R : ℝ, ∀ b ∈ B, ∀ i (w : InfinitePlace K), ‖(b i).1 w‖ ≤ R := by
-  have := Fintype.ofFinite ι
-  obtain ⟨R, hR⟩ := (hB.image (f := fun b : ι → 𝔸[K] ↦ ∑ i, ∑ w, ‖(b i).1 w‖)
-    (by fun_prop)).bddAbove
-  refine ⟨R, fun b hb i w ↦ ?_⟩
-  calc ‖(b i).1 w‖ ≤ ∑ w, ‖(b i).1 w‖ :=
-        Finset.single_le_sum (fun w _ ↦ norm_nonneg _) (Finset.mem_univ w)
-    _ ≤ ∑ i, ∑ w, ‖(b i).1 w‖ :=
-        Finset.single_le_sum (f := fun i ↦ ∑ w, ‖(b i).1 w‖)
-          (fun i _ ↦ Finset.sum_nonneg fun w _ ↦ norm_nonneg _) (Finset.mem_univ i)
-    _ ≤ R := hR ⟨b, hb, rfl⟩
-
 /-- **Rational points in dyadic dilates of a compact set of adeles.** Let `K` be a number field
 and `B` a compact set of vectors of adeles of `K`. There is a constant `C` such that for every
 `x ∈ ℤ ^ ι` the number of `ξ ∈ K ^ ι` with `(2_∞ ^ (-x i) * ξ i)_i ∈ B` is at most
@@ -187,7 +126,8 @@ theorem exists_encard_setOf_twoInf_zpow_mul_mem_le {ι : Type*} [Fintype ι]
     exists_encard_le_floor_mul_add_one_pow (hB.image (f := fun b : ι → 𝔸[K] ↦ (b i).2)
       (by fun_prop))
   -- the infinite parts of the coordinates of `B` are bounded by some `R`
-  obtain ⟨R, hR⟩ := exists_forall_norm_fst_apply_le hB
+  obtain ⟨R, hR⟩ := hB.exists_forall_le_of_finite_continuousOn
+    (f := fun p : ι × InfinitePlace K ↦ fun b ↦ ‖(b p.1).1 p.2‖) (by fun_prop)
   refine ⟨∏ i, (⌊c i * R⌋₊ + 1) ^ finrank ℚ K, fun x ↦ ?_⟩
   -- the `i`-th coordinate of a point has finite part in the `i`-th projection of `B` and
   -- absolute values at most `R * 2 ^ x i`
@@ -197,7 +137,7 @@ theorem exists_encard_setOf_twoInf_zpow_mul_mem_le {ι : Type*} [Fintype ι]
           algebraMap K 𝔸ᶠ[K] y ∈ (fun b : ι → 𝔸[K] ↦ (b i).2) '' B} := by
     intro ξ hξ i _
     refine ⟨fun w ↦ ?_, ⟨_, hξ, ?_⟩⟩
-    · have h := hR _ hξ i w
+    · have h := hR _ hξ (i, w)
       rw [norm_fst_twoInf_zpow_mul_algebraMap_apply, zpow_neg, inv_mul_le_iff₀ (by positivity),
         mul_comm] at h
       exact h

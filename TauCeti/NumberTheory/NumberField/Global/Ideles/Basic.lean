@@ -45,6 +45,9 @@ product of the unit groups `K_vˣ` at the finite places with respect to the loca
 a restricted product over all places, and it shows that the units topology of the adele ring is
 the restricted-product topology of the local unit groups.
 
+The idele `TauCeti.GlobalNumberFields.twoInf` is `2` at the infinite places and `1` at the finite
+places. Its projection and norm lemmas describe dyadic scaling of arbitrary adeles.
+
 This topology need not be the subspace topology of the adele ring: when `R` has infinitely many
 height-one primes, `NumberField.IdeleGroup.not_isEmbedding_val` shows that the inclusion of the
 ideles into the adeles is not an embedding.
@@ -351,3 +354,84 @@ theorem not_isEmbedding_val [Infinite (HeightOneSpectrum R)] :
     .of_comp Units.continuous_val (continuous_const.prodMk continuous_id) (hval ▸ h.comp hof)
 
 end NumberField.IdeleGroup
+
+namespace TauCeti.GlobalNumberFields
+
+open scoped NumberField.AdeleRing
+
+variable (K : Type*) [Field K] [NumberField K]
+
+/-- The idele `2_∞` of a number field `K`: it is `2` at every infinite place and `1` at every
+finite place. -/
+noncomputable def twoInf : 𝔸[K]ˣ :=
+  IdeleGroup.ofInfiniteIdele (𝓞 K) K
+    (Units.map (algebraMap K (InfiniteAdeleRing K)).toMonoidHom
+      (Units.mk0 (2 : K) two_ne_zero))
+
+variable {K}
+
+/-- The integral powers of `2_∞` are `2 ^ k` at the infinite places and `1` at the finite
+places. -/
+@[simp]
+theorem coe_twoInf_zpow (k : ℤ) :
+    ((twoInf K ^ k : 𝔸[K]ˣ) : 𝔸[K]) = (algebraMap K (InfiniteAdeleRing K) (2 ^ k), 1) := by
+  rw [twoInf, ← map_zpow, IdeleGroup.coe_ofInfiniteIdele, ← map_zpow, Units.coe_map,
+    Units.val_zpow_eq_zpow_val, Units.val_mk0]
+  rfl
+
+/-- The idele `2_∞` is `2` at the infinite places and `1` at the finite places. -/
+@[simp]
+theorem coe_twoInf : ((twoInf K : 𝔸[K]ˣ) : 𝔸[K]) = (2, 1) := by
+  rw [← zpow_one (twoInf K), coe_twoInf_zpow, zpow_one, map_ofNat]
+
+/-- The inverses of the integral powers of `2_∞`, in the form `simp` reaches through
+`zpow_neg`. -/
+@[simp]
+theorem coe_inv_twoInf_zpow (k : ℤ) :
+    (((twoInf K ^ k)⁻¹ : 𝔸[K]ˣ) : 𝔸[K]) = (algebraMap K (InfiniteAdeleRing K) (2 ^ k)⁻¹, 1) := by
+  rw [← zpow_neg, coe_twoInf_zpow, zpow_neg]
+
+/-- Multiplying by a power of `2_∞` does not change the finite part of a diagonal adele. -/
+theorem snd_twoInf_zpow_mul_algebraMap (k : ℤ) (x : K) :
+    (((twoInf K ^ k : 𝔸[K]ˣ) : 𝔸[K]) * algebraMap K 𝔸[K] x).2 = algebraMap K 𝔸ᶠ[K] x := by
+  rw [coe_twoInf_zpow, Prod.snd_mul, one_mul, AdeleRing.algebraMap_snd_def]
+
+/-- Multiplying an adele by `2_∞ ^ k` multiplies its norm at every infinite place by `2 ^ k`. -/
+theorem norm_fst_twoInf_zpow_mul_apply (k : ℤ) (a : 𝔸[K]) (w : InfinitePlace K) :
+    ‖(((twoInf K ^ k : 𝔸[K]ˣ) : 𝔸[K]) * a).1 w‖ = 2 ^ k * ‖a.1 w‖ := by
+  have hnorm (z : K) : ‖algebraMap K (InfiniteAdeleRing K) z w‖ = w z := by
+    simp [InfiniteAdeleRing.algebraMap_apply, AbsoluteValue.Completion.norm_coe,
+      InfinitePlace.coe_apply]
+  have h2 : w 2 = 2 := by exact_mod_cast w.map_natCast 2
+  rw [coe_twoInf_zpow]
+  -- Normalize the product projection before rewriting at the dependent coordinate `w`.
+  change ‖algebraMap K (InfiniteAdeleRing K) (2 ^ k) w * a.1 w‖ = _
+  rw [norm_mul, hnorm, map_zpow₀, h2]
+
+/-- Multiplying a diagonal adele by `2_∞ ^ k` multiplies its absolute value at every infinite
+place by `2 ^ k`. -/
+theorem norm_fst_twoInf_zpow_mul_algebraMap_apply (k : ℤ) (x : K) (w : InfinitePlace K) :
+    ‖(((twoInf K ^ k : 𝔸[K]ˣ) : 𝔸[K]) * algebraMap K 𝔸[K] x).1 w‖ = 2 ^ k * w x := by
+  rw [norm_fst_twoInf_zpow_mul_apply, AdeleRing.algebraMap_fst_def]
+  simp only [InfiniteAdeleRing.algebraMap_apply, AbsoluteValue.Completion.norm_coe,
+    InfinitePlace.coe_apply]
+
+/-- The finite component of `2_∞` is trivial. Powers simplify using `map_zpow`. -/
+@[simp]
+theorem toFiniteIdele_twoInf : IdeleGroup.toFiniteIdele (𝓞 K) K (twoInf K) = 1 := by
+  simp [twoInf]
+
+/-- The coordinate of `2_∞` at an infinite place is the unit `2`. Powers simplify using
+`map_zpow`. -/
+@[simp]
+theorem _root_.NumberField.InfinitePlace.ideleInfiniteCoord_twoInf (w : InfinitePlace K) :
+    w.ideleInfiniteCoord (twoInf K) =
+      Units.map (algebraMap K w.Completion).toMonoidHom (Units.mk0 (2 : K) two_ne_zero) := by
+  apply Units.ext
+  rw [InfinitePlace.coe_ideleInfiniteCoord, coe_twoInf, Units.coe_map, Units.val_mk0]
+  -- The infinite-adele numeral is pointwise; normalize its projection before `map_ofNat`.
+  change (2 : InfiniteAdeleRing K) w = algebraMap K w.Completion 2
+  rw [map_ofNat]
+  rfl
+
+end TauCeti.GlobalNumberFields
