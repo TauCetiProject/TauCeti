@@ -420,18 +420,14 @@ theorem trivialF2Map_eq_of_conj [LocallyCompactSpace G] (φ ψ : H →ₜ* G) (g
       (fun v => by rw [TopRep.eqToHom_hom_apply, trivialF2_ρ_apply_apply, cast_eq]) n
   rw [hψ, trivialF2Map_comp, hc, Category.id_comp]
 
-/-- **Restriction to a subgroup of index one is injective**: corestricting the identity of `G` to
-`S` gives it a left inverse. -/
+/-- **Restriction to a subgroup of index one is injective**, with trivial `𝔽₂` coefficients. -/
 theorem trivialF2ResMap_injective_of_index_eq_one {S : Subgroup G} (hS : S.index = 1) (n : ℕ) :
     Function.Injective (trivialF2ResMap G S n) := by
-  let ι : G →ₜ* S :=
-    ⟨(MonoidHom.id G).codRestrict S fun g ↦ by simp [Subgroup.index_eq_one.1 hS],
-      continuous_id.subtype_mk _⟩
-  have hι : (ContinuousMonoidHom.subgroupSubtype S).comp ι = ContinuousMonoidHom.id G :=
-    ContinuousMonoidHom.ext fun _ ↦ rfl
-  refine Function.LeftInverse.injective (g := trivialF2Map ι n) fun a ↦ ?_
-  rw [← trivialF2Map_subgroupSubtype, ← ConcreteCategory.comp_apply, ← trivialF2Map_comp, hι,
-    trivialF2Map_id, ConcreteCategory.id_apply]
+  intro a b h
+  rw [trivialF2ResMap_def, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at h
+  exact ContinuousCohomology.res_injective_of_index_eq_one hS _ n
+    ((ConcreteCategory.bijective_of_isIso
+      (eqToHom (congrArg (continuousCohomology n) (res_trivialF2_hom S.subtype)))).1 h)
 
 /-- A topological group isomorphism induces an equivalence on continuous cohomology with
 trivial `𝔽₂` coefficients. The cohomology map runs along the inverse group isomorphism. -/

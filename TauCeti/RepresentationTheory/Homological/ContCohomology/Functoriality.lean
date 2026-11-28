@@ -63,6 +63,8 @@ transformations `resNatTrans` and `inflNatTrans`, matching the shape of Mathlib'
   `TauCeti.ContinuousCohomology.infl_comp_infl`: the composition laws of the named maps;
   `TauCeti.ContinuousCohomology.resLE_refl`: restriction along the identity inclusion is the
   identity.
+* `TauCeti.ContinuousCohomology.res_injective_of_index_eq_one`: restriction to a subgroup of index
+  one is injective.
 * `TauCeti.ContinuousCohomology.coeffMap_comp_res`,
   `TauCeti.ContinuousCohomology.coeffMap_comp_resLE` and
   `TauCeti.ContinuousCohomology.coeffMap_comp_infl`: naturality of restriction and of inflation in
@@ -408,6 +410,26 @@ theorem res_comp_res (T : Subgroup S) (X : TopRep R G) (n : ℕ) :
     (map_congr rfl (heq_of_eq ?_) n)
   ext v
   rfl
+
+/-- **Restriction to a subgroup of index one is injective**, in every degree and for all
+coefficients. -/
+theorem res_injective_of_index_eq_one {S : Subgroup G} (hS : S.index = 1) (X : TopRep R G)
+    (n : ℕ) : Function.Injective (res S X n) := by
+  let ι : G →ₜ* S :=
+    ⟨(MonoidHom.id G).codRestrict S fun g ↦ by simp [Subgroup.index_eq_one.1 hS],
+      continuous_id.subtype_mk _⟩
+  refine Function.LeftInverse.injective
+    (g := _root_.ContinuousCohomology.map ι (𝟙 X) n) fun a ↦ ?_
+  -- The composite `G → S → G` is the identity of `G`, over the identity of the coefficients.
+  have h : _root_.ContinuousCohomology.map (X := X)
+      ((ContinuousMonoidHom.subgroupSubtype S).comp ι)
+      ((TopRep.resFunctor (ι : G →* S)).map (𝟙 (TopRep.res (S.subtype : S →* G) X)) ≫ 𝟙 X) n =
+      _root_.ContinuousCohomology.map (ContinuousMonoidHom.id G) (𝟙 X) n :=
+    map_congr_of_hom_apply (ContinuousMonoidHom.ext fun _ ↦ rfl) _ _ (fun _ ↦ rfl) n
+  have ha := ConcreteCategory.congr_hom ((_root_.ContinuousCohomology.map_comp (X := X)
+    (ContinuousMonoidHom.subgroupSubtype S) ι (𝟙 _) (𝟙 X) n).symm.trans
+      (h.trans (_root_.ContinuousCohomology.map_id X n))) a
+  rwa [ConcreteCategory.comp_apply, ConcreteCategory.id_apply] at ha
 
 end Res
 
