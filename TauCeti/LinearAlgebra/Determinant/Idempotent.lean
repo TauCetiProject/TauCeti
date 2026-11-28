@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Determinant
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # The determinant of `1 + c • e` for an idempotent `e`
@@ -31,21 +32,18 @@ variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensiona
 
 /-- **The determinant of `1 + c • e` for an idempotent `e`** is `(1 + c) ^ r`, where `r` is the
 dimension of the range of `e`: in the splitting `V = range e ⊕ ker e`, the endomorphism
-`1 + c • e` is the scalar `1 + c` on the first summand and the identity on the second. -/
+`1 + c • e` is the scalar `1 + c` on the first summand and the identity on the second. The
+proof factors `c • e` through `range e` and applies the Weinstein–Aronszajn identity
+`LinearMap.det_one_add_comp_comm`. -/
 theorem det_one_add_smul_of_isIdempotentElem {e : V →ₗ[K] V} (he : IsIdempotentElem e) (c : K) :
     LinearMap.det (1 + c • e) = (1 + c) ^ finrank K (range e) := by
-  let φ := Submodule.prodEquivOfIsCompl _ _ (IsIdempotentElem.isCompl he)
-  let g : Module.End K (range e × ker e) := prodMap ((1 + c) • LinearMap.id) LinearMap.id
-  have key : (1 + c • e) ∘ₗ (φ : range e × ker e →ₗ[K] V) =
-      (φ : range e × ker e →ₗ[K] V) ∘ₗ g := by
+  have hYX : e.rangeRestrict ∘ₗ (c • (range e).subtype) = c • LinearMap.id := by
     ext x
-    · have hx : e x = x := (IsIdempotentElem.mem_range_iff he).mp x.property
-      simp [φ, g, hx, add_smul]
-    · have hx : e x = 0 := x.property
-      simp [φ, g, hx]
-  have hconj : 1 + c • e = (φ : range e × ker e →ₗ[K] V) ∘ₗ g ∘ₗ φ.symm := by
-    rw [← LinearMap.comp_assoc, ← key, LinearMap.comp_assoc, LinearEquiv.comp_symm,
-      LinearMap.comp_id]
-  rw [hconj, det_conj, det_prodMap, det_smul, det_id, det_id, mul_one, mul_one]
+    simp [(IsIdempotentElem.mem_range_iff he).mp x.property]
+  have hXY : (c • (range e).subtype) ∘ₗ e.rangeRestrict = c • e := by
+    ext x
+    simp
+  rw [← hXY, det_one_add_comp_comm, hYX, ← Module.End.one_eq_id, ← one_smul K (1 : End K _),
+    smul_smul, mul_one, ← add_smul, det_smul, map_one, mul_one]
 
 end LinearMap
