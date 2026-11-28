@@ -24,6 +24,11 @@ measure hold for the restriction (`MeasureTheory.Measure.ae_le_ae_restrict_coe_o
 Spaces of functions on an open set `Ω` are built on `μ.restrict Ω`, so this identifies their
 whole-space instances with the spaces for `μ`.
 
+On a linearly ordered space with the order topology, a property of almost every point of
+`(a, b)` holds at almost every point close to `a` on the right: the filter `𝓝[>] a ⊓ ae μ` of
+essential right limits refines `ae (μ.restrict (Ioo a b))`
+(`TauCeti.nhdsGT_inf_ae_le_ae_restrict_Ioo`).
+
 On a finite type, the restriction of a measure to its points of finite mass is a finite measure
 (`MeasureTheory.Measure.isFiniteMeasure_restrict_setOf_measure_singleton_ne_top`).
 
@@ -126,6 +131,15 @@ theorem measure_preimage_inter_eq_of_map_restrict_eq_smul
     P (f ⁻¹' C ∩ H) = c * μ C := by
   simpa only [Measure.map_apply hf hC, Measure.restrict_apply (hf hC),
     smul_apply, smul_eq_mul] using congrArg (fun ν : Measure E ↦ ν C) h
+
+open Filter Topology in
+/-- Almost every point close to `a` on the right is almost every point of `(a, b)`: the filter
+`𝓝[>] a ⊓ ae μ` of essential right limits at `a` refines `ae (μ.restrict (Ioo a b))`. -/
+theorem nhdsGT_inf_ae_le_ae_restrict_Ioo {X : Type*} [TopologicalSpace X] [LinearOrder X]
+    [OrderTopology X] [MeasurableSpace X] {μ : Measure X} {a b : X} (hab : a < b) :
+    𝓝[>] a ⊓ ae μ ≤ ae (μ.restrict (Ioo a b)) :=
+  (le_inf inf_le_right (inf_le_left.trans (le_principal_iff.2 (Ioo_mem_nhdsGT hab)))).trans
+    le_ae_restrict
 
 end TauCeti
 

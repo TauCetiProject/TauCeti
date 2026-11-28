@@ -37,6 +37,8 @@ set whose closure contains the point, for any measure positive on nonempty open 
 
 * `IsOpen.subset_closure_of_ae_le`: an open set lies in the closure of any set containing it a.e.
 * `IsOpen.closure_eq_of_ae_eq`: a.e. equal open sets have equal closures.
+* `IsOpen.neBot_nhdsWithin_inf_ae`: the essential limit filter `𝓝[s] x ⊓ ae μ` at a point of the
+  closure of an open set `s` is nontrivial.
 * `IsOpen.ext_closure_of_ae_eq`: a continuous function on the closure of an open set is determined
   by its values at almost every point of the set.
 * `IsOpen.eqOn_closure_inter_of_ae_eq`: two functions continuous on `closure U ∩ V` that agree
@@ -80,6 +82,20 @@ No measurability assumption on either set is needed. -/
 theorem subset_closure_of_ae_le (hs : IsOpen s) (hst : s ≤ᵐ[μ] t) : s ⊆ closure t :=
   ((Measure.dense_of_ae hst).open_subset_closure_inter hs).trans <|
     closure_mono fun _ hx => hx.2 hx.1
+
+/-- **Essential limits within an open set are nontrivial.** If `x` lies in the closure of an open
+set `s` and `μ` is positive on nonempty open sets, then the filter `𝓝[s] x ⊓ ae μ` of points of `s`
+near `x` outside a null set is nontrivial. For `s = Ioi a` on `ℝ` this is the filter of essential
+right limits. -/
+theorem neBot_nhdsWithin_inf_ae (hs : IsOpen s) {x : X} (hx : x ∈ closure s) :
+    (𝓝[s] x ⊓ ae μ).NeBot := by
+  refine inf_neBot_iff.2 fun o ho o' ho' ↦ ?_
+  obtain ⟨v, hv, hxv, hvo⟩ := mem_nhdsWithin.1 ho
+  by_contra hempty
+  have hsub : v ∩ s ⊆ o'ᶜ := fun y hy hy' ↦ hempty ⟨y, hvo hy, hy'⟩
+  -- Every neighbourhood of `x` meets `s` in a nonempty open set, which is not null.
+  exact ((hv.inter hs).measure_pos μ (mem_closure_iff.1 hx v hv hxv)).ne'
+    (measure_mono_null hsub (mem_ae_iff.1 ho'))
 
 /-- Almost-everywhere equal open sets have the same closure for a measure positive on nonempty
 open sets. The open sets themselves need not be equal. -/

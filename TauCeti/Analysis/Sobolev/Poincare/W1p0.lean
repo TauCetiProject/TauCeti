@@ -36,6 +36,8 @@ not in `W^{1,p}_0(Ω)` (`TauCeti.W1p.const_notMem_w1p0Submodule`).
 * `TauCeti.W1p.norm_value_le_mul_norm_gradient_of_subset_ball`: the bounded-ball corollary.
 * `TauCeti.W1p.const_notMem_w1p0Submodule`: on a nonempty bounded domain, nonzero constants do
   not lie in `W^{1,p}_0(Ω)`.
+* `TauCeti.W1p0.not_surjective_valueL`: consequently the value map
+  `W^{1,p}_0(Ω) → Lᵖ(Ω)` is not onto.
 
 ## References
 
@@ -149,5 +151,21 @@ theorem W1p.const_notMem_w1p0Submodule
   have h := W1p.norm_value_le_mul_norm_gradient_of_subset_ball hball hmem
   rw [W1p.gradient_const, norm_zero, mul_zero] at h
   exact W1p.value_const_ne_zero hne hc (norm_le_zero_iff.1 h)
+
+/-- **The value map of `W^{1,p}_0(Ω)` is not onto `Lᵖ(Ω)`** for a nonempty bounded open
+`Ω ⊆ ℝ^{n+1}` and every `p`: the constant `1` lies in `Lᵖ(Ω)`, since `Ω` has finite volume, but is
+not the value of a function in `W^{1,p}_0(Ω)` (`TauCeti.W1p.const_notMem_w1p0Submodule`). -/
+theorem W1p0.not_surjective_valueL
+    (hOmega : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
+    (hne : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))).Nonempty) :
+    ¬ Function.Surjective (W1p0.valueL (mu := volume) (Omega := Omega) (p := p)) := by
+  intro hsurj
+  have : IsFiniteMeasure (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
+    isFiniteMeasure_restrict.2 hOmega.measure_lt_top.ne
+  obtain ⟨v, hv⟩ := hsurj ((memLp_const (1 : ℝ)).toLp _)
+  rw [W1p0.valueL_apply] at hv
+  have hconst : (v : W1p volume Omega p) = W1p.const 1 :=
+    W1p.ext_value (Lp.ext ((hv ▸ MemLp.coeFn_toLp _).trans (W1p.value_const_ae 1).symm))
+  exact W1p.const_notMem_w1p0Submodule hne hOmega one_ne_zero (hconst ▸ v.property)
 
 end TauCeti
