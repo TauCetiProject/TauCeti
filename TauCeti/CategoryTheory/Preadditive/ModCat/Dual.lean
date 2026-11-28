@@ -17,6 +17,7 @@ import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
 import Mathlib.CategoryTheory.Limits.Preserves.Opposites
 import Mathlib.CategoryTheory.Preadditive.Yoneda.Limits
 import TauCeti.CategoryTheory.Limits.Shapes.ZeroMorphisms
+import TauCeti.CategoryTheory.Preadditive.Yoneda
 
 /-!
 # Duals of modules over a linear category
@@ -49,53 +50,75 @@ private abbrev dualUnderlying :
     (Functor.opUnopEquiv Cᵒᵖ (ModuleCat.{w} R)).functor ⋙
       (Functor.whiskeringRight _ _ _).obj (preadditiveYoneda.obj E)
 
+private theorem dualUnderlying_obj (F : (ModCat.{w} C)ᵒᵖ) :
+    (dualUnderlying R E).obj F = (F.unop.liftToModuleCat R).op ⋙ preadditiveYoneda.obj E := by
+  simp only [Functor.comp_obj, Functor.op_obj, Functor.opUnopEquiv_functor, Functor.opHom_obj,
+    AdditiveFunctor.liftToModuleCatFunctor_obj, Functor.whiskeringRight_obj_obj]
+
+private theorem dualUnderlying_map_app_apply {F G : ModCat.{w} C} (α : F ⟶ G) (X : Cᵒᵖᵒᵖ)
+    (g : G.moduleObj R X.unop ⟶ E) :
+    ((dualUnderlying R E).map α.op).app X g =
+      ((AdditiveFunctor.liftToModuleCatFunctor Cᵒᵖ R).map α).app X.unop ≫ g := by
+  simp only [Functor.comp_map, Functor.op_map, Quiver.Hom.unop_op,
+    Functor.whiskeringRight_obj_map, Functor.whiskerRight_app]
+  exact preadditiveYoneda_obj_map_apply
+    (((AdditiveFunctor.liftToModuleCatFunctor Cᵒᵖ R).map α).app X.unop).op g
+
 /-- The dual of a module with respect to a fixed scalar module `E`, with value
 `Hom_R(F(X), E)` at `X` and precomposition on morphisms in both variables. -/
 def dual : (ModCat.{w} C)ᵒᵖ ⥤ ModCat.{w} Cᵒᵖ :=
   (additiveFunctor Cᵒᵖᵒᵖ AddCommGrpCat.{w}).lift (dualUnderlying R E)
-    fun F ↦ (additiveFunctor_iff _).2
-      (inferInstanceAs ((F.unop.liftToModuleCat R).op ⋙ preadditiveYoneda.obj E).Additive)
-
-/-- The value of the dual at `X` is the group of linear maps from the lifted value
-of the original module at `X.unop` to `E`. -/
-def dualValueIso (F : ModCat.{w} C) (X : Cᵒᵖᵒᵖ) :
-    ((dual R E).obj (op F)).obj.obj X ≅ AddCommGrpCat.of (F.moduleObj R X.unop ⟶ E) :=
-  Iso.refl _
-
-/-- The indexing morphisms of the dual act by precomposition with the lifted maps. -/
-@[simp]
-theorem dual_obj_map_apply (F : ModCat.{w} C) {X Y : Cᵒᵖᵒᵖ} (f : X ⟶ Y)
-    (g : ((dual R E).obj (op F)).obj.obj X) :
-    (dualValueIso R E F Y).hom (((dual R E).obj (op F)).obj.map f g) =
-      (F.liftToModuleCat R).map f.unop ≫ (dualValueIso R E F X).hom g := (rfl)
-
-/-- The dual of a natural transformation acts by precomposition with its lifted components. -/
-@[simp]
-theorem dual_map_app_apply {F G : ModCat.{w} C} (α : F ⟶ G) (X : Cᵒᵖᵒᵖ)
-    (g : ((dual R E).obj (op G)).obj.obj X) :
-    (dualValueIso R E F X).hom (((dual R E).map α.op).hom.app X g) =
-      ((AdditiveFunctor.liftToModuleCatFunctor Cᵒᵖ R).map α).app X.unop ≫
-        (dualValueIso R E G X).hom g := (rfl)
-
-instance : (dual (C := C) R E).Additive where
-  map_add {F G} α β := by
-    apply ObjectProperty.hom_ext
-    ext1
-    funext X
-    apply (cancel_mono (dualValueIso R E G.unop X).hom).mp
-    apply AddCommGrpCat.ext
-    intro g
-    have happ (γ : F ⟶ G) := dual_map_app_apply R E γ.unop X g
-    simp only [Quiver.Hom.op_unop, Opposite.op_unop] at happ
-    rw [ObjectProperty.add_hom, NatTrans.app_add, Preadditive.add_comp, AddCommGrpCat.hom_add_apply]
-    simp only [CategoryTheory.comp_apply, happ, unop_add, Functor.map_add, NatTrans.app_add]
-    exact Preadditive.add_comp _ _ _ _ _ _
+    fun F ↦ (additiveFunctor_iff _).2 (by rw [dualUnderlying_obj]; infer_instance)
 
 /-- Forgetting the additivity witness of the dual recovers the scalar lift followed by
 pointwise preadditive Yoneda. -/
 private def dualCompInclusionIso :
     dual (C := C) R E ⋙ (additiveFunctor Cᵒᵖᵒᵖ AddCommGrpCat.{w}).ι ≅ dualUnderlying R E :=
   ObjectProperty.liftCompιIso _ _ _
+
+private def dualObjIso (F : ModCat.{w} C) :
+    ((dual R E).obj (op F)).obj ≅ (F.liftToModuleCat R).op ⋙ preadditiveYoneda.obj E :=
+  (dualCompInclusionIso R E).app (op F) ≪≫ eqToIso (dualUnderlying_obj R E (op F))
+
+/-- The value of the dual at `X` is the group of linear maps from the lifted value
+of the original module at `X.unop` to `E`. -/
+def dualValueIso (F : ModCat.{w} C) (X : Cᵒᵖᵒᵖ) :
+    ((dual R E).obj (op F)).obj.obj X ≅ AddCommGrpCat.of (F.moduleObj R X.unop ⟶ E) :=
+  (dualObjIso R E F).app X
+
+/-- The indexing morphisms of the dual act by precomposition with the lifted maps. -/
+@[simp↓]
+theorem dual_obj_map_apply (F : ModCat.{w} C) {X Y : Cᵒᵖᵒᵖ} (f : X ⟶ Y)
+    (g : ((dual R E).obj (op F)).obj.obj X) :
+    (dualValueIso R E F Y).hom (((dual R E).obj (op F)).obj.map f g) =
+      (F.liftToModuleCat R).map f.unop ≫ (dualValueIso R E F X).hom g := by
+  refine Eq.trans ?_ (preadditiveYoneda_obj_map_apply ((F.liftToModuleCat R).map f.unop).op
+    ((dualValueIso R E F X).hom g))
+  simpa only [dualValueIso, ConcreteCategory.comp_apply, Functor.comp_map, Functor.op_map] using!
+    ConcreteCategory.congr_hom ((dualObjIso R E F).hom.naturality f) g
+
+/-- The dual of a natural transformation acts by precomposition with its lifted components. -/
+@[simp↓]
+theorem dual_map_app_apply {F G : ModCat.{w} C} (α : F ⟶ G) (X : Cᵒᵖᵒᵖ)
+    (g : ((dual R E).obj (op G)).obj.obj X) :
+    (dualValueIso R E F X).hom (((dual R E).map α.op).hom.app X g) =
+      ((AdditiveFunctor.liftToModuleCatFunctor Cᵒᵖ R).map α).app X.unop ≫
+        (dualValueIso R E G X).hom g := by
+  refine Eq.trans ?_ (dualUnderlying_map_app_apply R E α X ((dualValueIso R E G X).hom g))
+  simpa only [dualValueIso, dualObjIso, Functor.comp_map, ObjectProperty.ι_map, NatTrans.comp_app,
+    ConcreteCategory.comp_apply] using! ConcreteCategory.congr_hom
+      (NatTrans.congr_app ((dualCompInclusionIso R E).hom.naturality α.op) X) g
+
+instance : (dual (C := C) R E).Additive := by
+  have h : (Functor.opHom Cᵒᵖ (ModuleCat.{w} R)).Additive :=
+    ⟨fun {F G} α β ↦ by
+      ext1
+      funext X
+      simp only [Functor.opHom_map_app, NatTrans.app_add, unop_add, op_add]⟩
+  have : (Functor.opUnopEquiv Cᵒᵖ (ModuleCat.{w} R)).functor.Additive := h
+  have : (dualUnderlying (C := C) R E).Additive := inferInstance
+  have := Functor.additive_of_iso (dualCompInclusionIso (C := C) R E).symm
+  exact Functor.additive_of_comp_faithful _ (additiveFunctor Cᵒᵖᵒᵖ AddCommGrpCat.{w}).ι
 
 /-- The contravariant dual sends finite colimits of modules to limits. -/
 instance : PreservesFiniteLimits (dual (C := C) R E) := by

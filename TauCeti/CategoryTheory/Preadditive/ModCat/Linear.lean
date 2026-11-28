@@ -187,9 +187,16 @@ def liftToModuleCatFunctorForgetIso :
       (additiveFunctor D AddCommGrpCat.{w}).ι :=
   NatIso.ofComponents (fun F ↦ F.liftToModuleCatForgetIso R) (by
     intro F G α
-    ext X x
-    -- Forgetting the lift of a morphism leaves the same component on underlying groups.
-    rfl)
+    apply NatTrans.ext
+    funext X
+    simp only [Functor.comp_map, Functor.whiskeringRight_obj_map, Functor.whiskerRight_app,
+      NatTrans.comp_app, ObjectProperty.ι_map]
+    apply AddCommGrpCat.ext
+    intro x
+    simp only [ConcreteCategory.comp_apply]
+    rewrite (config := { transparency := .default })
+      [liftToModuleCatForgetIso_hom_app_apply R G X, ModuleCat.forget₂_map]
+    exact liftToModuleCatFunctor_map_app_apply R α X x)
 
 /-- The functorial comparison at each additive functor is its pointwise forgetful comparison. -/
 @[simp]
