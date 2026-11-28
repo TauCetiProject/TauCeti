@@ -16,7 +16,8 @@ public import TauCeti.Topology.LocallyConstant.CompactSupport
 consisting of smooth vectors with compact support modulo the inducing subgroup. We use the
 coset space `G ⧸ H` via `g ↦ g⁻¹H`. Functions satisfy left covariance and `G` acts by translation.
 `Representation.compactInduction_eq_smoothVectors` gives equality with smooth coinduction when
-the coset space is compact. `Subgroup.cIndFunctor` acts by postcomposition on morphisms.
+the coset space is compact. `TauCeti.SmoothRep.cIndFunctor` acts by postcomposition on morphisms
+and is linear over commutative coefficient rings.
 
 ## References
 
@@ -133,14 +134,15 @@ theorem compactInductionMap_apply_apply (φ : σ.IntertwiningMap τ)
     Subrepresentation.coe_subtype, coindMap_coe_apply_apply]
 end Representation
 
-namespace Subgroup
+namespace TauCeti.SmoothRep
 
-open CategoryTheory TauCeti
+open CategoryTheory
 universe u v w
 variable {G : Type v} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
 
 /-- Compact induction on smooth representations, with postcomposition on morphisms. -/
-def cIndFunctor (H : Subgroup G) (A : Type u) [Ring A] :
+-- As for `smoothPart`, the object carrier must reduce to the subrepresentation for evaluation.
+abbrev cIndFunctor (A : Type u) [Ring A] (H : Subgroup G) :
     SmoothRep.{max v w} A H ⥤ SmoothRep.{max v w} A G where
   obj X := SmoothRep.of (V := X.obj.ρ.compactInduction.toSubmodule)
     X.obj.ρ.compactInduction.toRepresentation
@@ -153,17 +155,47 @@ def cIndFunctor (H : Subgroup G) (A : Type u) [Ring A] :
     simp))
 
 /-- The object of the compact induction functor carries the compactly supported coinduced action. -/
-@[simp] theorem cIndFunctor_obj (H : Subgroup G) (A : Type u) [Ring A]
+@[simp] theorem cIndFunctor_obj (A : Type u) [Ring A] (H : Subgroup G)
     (X : SmoothRep.{max v w} A H) :
-    (H.cIndFunctor A).obj X = SmoothRep.of (V := X.obj.ρ.compactInduction.toSubmodule)
+    (cIndFunctor A H).obj X = SmoothRep.of (V := X.obj.ρ.compactInduction.toSubmodule)
       X.obj.ρ.compactInduction.toRepresentation := (rfl)
 
-/-- Compact induction maps a morphism by postcomposition, via the object identifications
-`cIndFunctor_obj`. -/
-@[simp] theorem cIndFunctor_map (H : Subgroup G) (A : Type u) [Ring A]
+/-- The underlying intertwining map of compact induction is postcomposition by the coefficient
+morphism. -/
+theorem cIndFunctor_map_hom_hom {A : Type u} [Ring A] {H : Subgroup G}
     {X Y : SmoothRep.{max v w} A H} (f : X ⟶ Y) :
-    (H.cIndFunctor A).map f =
-      eqToHom (H.cIndFunctor_obj A X) ≫
-        ObjectProperty.homMk (Rep.ofHom (Representation.compactInductionMap f.hom.hom)) ≫
-        eqToHom (H.cIndFunctor_obj A Y).symm := (rfl)
-end Subgroup
+    ((cIndFunctor A H).map f).hom.hom = Representation.compactInductionMap f.hom.hom := (rfl)
+
+/-- Compact induction preserves addition of morphisms over a ring. -/
+instance additive_cIndFunctor (A : Type u) [Ring A] (H : Subgroup G) :
+    (cIndFunctor.{u, v, w} A H).Additive where
+  map_add {_ _ f k} := by
+    have h : (f + k).hom = f.hom + k.hom := (SmoothRep.ι A H).map_add
+    apply (SmoothRep.ι A G).map_injective
+    rw [(SmoothRep.ι A G).map_add (f := (cIndFunctor A H).map f) (g := (cIndFunctor A H).map k)]
+    apply Rep.hom_ext
+    simp only [ObjectProperty.ι_map, Rep.add_hom]
+    apply DFunLike.ext
+    intro x
+    apply Subtype.ext
+    apply Subtype.ext
+    funext g
+    simp [h, Rep.add_hom]
+
+/-- Compact induction is linear over a commutative coefficient ring. -/
+instance linear_cIndFunctor (A : Type u) [CommRing A] (H : Subgroup G) :
+    (cIndFunctor.{u, v, w} A H).Linear A where
+  map_smul f r := by
+    have h : (r • f).hom = r • f.hom := (SmoothRep.ι A H).map_smul r f
+    apply (SmoothRep.ι A G).map_injective
+    rw [(SmoothRep.ι A G).map_smul r ((cIndFunctor A H).map f)]
+    apply Rep.hom_ext
+    simp only [ObjectProperty.ι_map, Rep.smul_hom]
+    apply DFunLike.ext
+    intro x
+    apply Subtype.ext
+    apply Subtype.ext
+    funext g
+    simp [h, Rep.smul_hom]
+
+end TauCeti.SmoothRep
