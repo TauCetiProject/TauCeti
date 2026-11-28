@@ -132,20 +132,12 @@ private theorem moduleFinite_hom_of_isGE_of_isLE_single_single
     (hM : Module.Finite A ((homologyFunctor (ModuleCat.{v} A) a).obj M))
     (hN : Module.Finite A ((homologyFunctor (ModuleCat.{v} A) c).obj N)) :
     Module.Finite A (M ⟶ N) := by
-  obtain ⟨X, ⟨eM⟩⟩ := exists_iso_singleFunctor_obj_of_isGE_of_isLE M a
-  obtain ⟨Y, ⟨eN⟩⟩ := exists_iso_singleFunctor_obj_of_isGE_of_isLE N c
-  have eX : X ≅ (homologyFunctor (ModuleCat.{v} A) a).obj M :=
-    ((singleFunctorCompHomologyFunctorIso (ModuleCat.{v} A) a).app X).symm ≪≫
-      (homologyFunctor (ModuleCat.{v} A) a).mapIso eM.symm
-  have eY : Y ≅ (homologyFunctor (ModuleCat.{v} A) c).obj N :=
-    ((singleFunctorCompHomologyFunctorIso (ModuleCat.{v} A) c).app Y).symm ≪≫
-      (homologyFunctor (ModuleCat.{v} A) c).mapIso eN.symm
-  have : Module.Finite A X := Module.Finite.equiv eX.symm.toLinearEquiv
-  have : Module.Finite A Y := Module.Finite.equiv eY.symm.toLinearEquiv
-  have : Module.Finite A ((singleFunctor (ModuleCat.{v} A) a).obj X ⟶
-      (singleFunctor (ModuleCat.{v} A) c).obj Y) :=
-    ModuleCat.moduleFinite_hom_singleFunctor X Y a c
-  exact Module.Finite.equiv (Linear.homCongr A eM eN).symm
+  have : Module.Finite A
+      ((singleFunctor (ModuleCat.{v} A) a).obj ((homologyFunctor (ModuleCat.{v} A) a).obj M) ⟶
+        (singleFunctor (ModuleCat.{v} A) c).obj ((homologyFunctor (ModuleCat.{v} A) c).obj N)) :=
+    ModuleCat.moduleFinite_hom_singleFunctor _ _ a c
+  exact Module.Finite.equiv
+    (Linear.homCongr A (isoSingleFunctorHomology M a) (isoSingleFunctorHomology N c)).symm
 
 private theorem moduleFinite_hom_of_isGE_of_isLE_left_single :
     ∀ (k : ℕ) (M N : DerivedCategory (ModuleCat.{v} A)) (a c e : ℤ) (_ : e - c ≤ k)

@@ -18,8 +18,8 @@ For the canonical t-structure `DerivedCategory.TStructure.t` on the derived cate
 abelian category, an object is `≥ n` (resp. `≤ n`) exactly when its cohomology vanishes in
 degrees `< n` (resp. `> n`) (Mathlib's `DerivedCategory.isGE_iff`, `DerivedCategory.isLE_iff`).
 This file records how the truncation functors act on cohomology, identifies the objects of the
-heart with the objects of `C`, and provides morphism-factorization and cohomology-bijectivity
-results for truncated objects.
+heart with the objects of `C`, and provides morphism-factorization results for truncated
+objects.
 
 * The map `τ_{<n} X ⟶ X` induces an isomorphism on `Hᵠ` for `q < n`
   (`DerivedCategory.isIso_homologyFunctor_map_truncLTι_app`), the map `τ_{≤n} X ⟶ X` induces an
@@ -39,10 +39,8 @@ results for truncated objects.
   (`DerivedCategory.truncGETruncLTIsoSingleFunctor_hom_naturality`). This is the identification of
   the `t`-cohomology objects of `X` with its cohomology, which computes the first page of the
   spectral sequence of the truncations of `X`.
-* `DerivedCategory.homologyFunctor_map_bijective_of_isLE_of_isGE`: when `X` is `≤ n` and `Y`
-  is `≥ n`, the functor `H^n` induces a bijection `(X ⟶ Y) → (H^n(X) ⟶ H^n(Y))`.
-* `DerivedCategory.homologyFunctor_map_eq_zero_iff_of_isLE_of_isGE`: in particular, under
-  `X.IsLE n` and `Y.IsGE n`, a morphism `f : X ⟶ Y` vanishes if and only if `H^n(f) = 0`.
+* `DerivedCategory.homologyFunctor_map_eq_zero_iff_of_isLE_of_isGE`: under `X.IsLE n` and
+  `Y.IsGE n`, a morphism `f : X ⟶ Y` vanishes if and only if `H^n(f) = 0`.
 * `DerivedCategory.exists_comp_truncLEι_of_isLE_of_homologyFunctor_map_eq_zero` and
   `DerivedCategory.exists_truncGEπ_comp_of_isGE_of_homologyFunctor_map_eq_zero`: when
   `X.IsLE b₁` and `H^{b₁}(f) = 0`, `f : X ⟶ Y` factors through `τ_{≤ b₀} Y ⟶ Y` (`b₀ + 1 = b₁`);
@@ -271,68 +269,22 @@ theorem isIso_homologyFunctor_map_truncLEι_app (X : DerivedCategory C) {q n : �
     IsIso ((homologyFunctor C q).map ((TStructure.t.truncLEι n).app X)) :=
   isIso_homologyFunctor_map_truncLTι_app X (Int.lt_add_one_iff.mpr hqn)
 
-/-- If `X` is concentrated in degrees `≤ n` and `Y` in degrees `≥ n`, then `H^n` induces a
-bijection `(X ⟶ Y) → ((homologyFunctor C n).obj X ⟶ (homologyFunctor C n).obj Y)`. -/
-theorem homologyFunctor_map_bijective_of_isLE_of_isGE (X Y : DerivedCategory C) (n : ℤ)
-    [X.IsLE n] [Y.IsGE n] :
-    Function.Bijective ((homologyFunctor C n).map :
-      (X ⟶ Y) → ((homologyFunctor C n).obj X ⟶ (homologyFunctor C n).obj Y)) := by
-  -- Reduce `X ⟶ Y` to `τ_{≥ n} X ⟶ τ_{≤ n} Y` (a map between heart objects), identify both
-  -- with `singleFunctor` images, and transport along `H^n` using `singleFunctor`'s fullness.
-  have : IsIso ((homologyFunctor C n).map ((TStructure.t.truncGEπ n).app X)) :=
-    isIso_homologyFunctor_map_truncGEπ_app X le_rfl
-  have : IsIso ((homologyFunctor C n).map ((TStructure.t.truncLEι n).app Y)) :=
-    isIso_homologyFunctor_map_truncLEι_app Y le_rfl
-  obtain ⟨A, ⟨eA⟩⟩ :=
-    exists_iso_singleFunctor_obj_of_isGE_of_isLE ((TStructure.t.truncGE n).obj X) n
-  obtain ⟨B, ⟨eB⟩⟩ :=
-    exists_iso_singleFunctor_obj_of_isGE_of_isLE ((TStructure.t.truncLE n).obj Y) n
-  let eX : (homologyFunctor C n).obj X ≅ A :=
-    asIso ((homologyFunctor C n).map ((TStructure.t.truncGEπ n).app X)) ≪≫
-      (homologyFunctor C n).mapIso eA ≪≫ (singleFunctorCompHomologyFunctorIso C n).app A
-  let eY : B ≅ (homologyFunctor C n).obj Y :=
-    ((singleFunctorCompHomologyFunctorIso C n).app B).symm ≪≫
-      (homologyFunctor C n).mapIso eB.symm ≪≫
-      asIso ((homologyFunctor C n).map ((TStructure.t.truncLEι n).app Y))
-  have hmap : ∀ u : A ⟶ B,
-      (homologyFunctor C n).map ((TStructure.t.truncGEπ n).app X ≫ eA.hom ≫
-        (singleFunctor C n).map u ≫ eB.inv ≫ (TStructure.t.truncLEι n).app Y) =
-        eX.hom ≫ u ≫ eY.hom := by
-    intro u
-    have hnat : ((singleFunctorCompHomologyFunctorIso C n).hom.app A) ≫ u ≫
-        ((singleFunctorCompHomologyFunctorIso C n).inv.app B) =
-        (homologyFunctor C n).map ((singleFunctor C n).map u) :=
-      NatIso.naturality_2 (singleFunctorCompHomologyFunctorIso C n) u
-    simp [eX, eY, ← hnat, Category.assoc]
-  let invMap : ((homologyFunctor C n).obj X ⟶ (homologyFunctor C n).obj Y) → (X ⟶ Y) :=
-    fun φ ↦ (TStructure.t.truncGEπ n).app X ≫ eA.hom ≫
-      (singleFunctor C n).map (eX.inv ≫ φ ≫ eY.inv) ≫ eB.inv ≫ (TStructure.t.truncLEι n).app Y
-  refine Function.bijective_iff_has_inverse.mpr ⟨invMap, fun f ↦ ?_, fun φ ↦ ?_⟩
-  · -- Lift `f` through `τ_{≥ n} X ⟶ τ_{≤ n} Y` to `A ⟶ B` via full faithfulness of `singleFunctor`.
-    let g : (TStructure.t.truncGE n).obj X ⟶ (TStructure.t.truncLE n).obj Y :=
-      TStructure.t.liftTruncLE (TStructure.t.descTruncGE f n) n
-    have hfg : (TStructure.t.truncGEπ n).app X ≫ g ≫ (TStructure.t.truncLEι n).app Y = f := by
-      simp [g]
-    obtain ⟨u, hu⟩ := (singleFunctor C n).map_surjective (eA.inv ≫ g ≫ eB.hom)
-    have hf : (TStructure.t.truncGEπ n).app X ≫ eA.hom ≫ (singleFunctor C n).map u ≫
-        eB.inv ≫ (TStructure.t.truncLEι n).app Y = f := by
-      rw [hu]
-      simpa [Category.assoc] using hfg
-    rw [← hf]
-    dsimp only [invMap]
-    rw [hmap u]
-    simp
-  · dsimp only [invMap]
-    rw [hmap]
-    simp
-
 /-- If `X` is concentrated in degrees `≤ n` and `Y` in degrees `≥ n`, then a morphism `f : X ⟶ Y`
 is zero if and only if it induces zero on `H^n`. -/
 theorem homologyFunctor_map_eq_zero_iff_of_isLE_of_isGE {X Y : DerivedCategory C}
     (f : X ⟶ Y) (n : ℤ) [X.IsLE n] [Y.IsGE n] :
-    (homologyFunctor C n).map f = 0 ↔ f = 0 :=
-  ⟨fun hf ↦ (homologyFunctor_map_bijective_of_isLE_of_isGE X Y n).injective (by simpa using hf),
-    fun hf ↦ by simp [hf]⟩
+    (homologyFunctor C n).map f = 0 ↔ f = 0 := by
+  refine ⟨fun hf ↦ ?_, fun hf ↦ by simp [hf]⟩
+  have : IsIso ((homologyFunctor C n).map ((TStructure.t.truncLEι n).app Y)) :=
+    isIso_homologyFunctor_map_truncLEι_app Y le_rfl
+  let g : X ⟶ (TStructure.t.truncLE n).obj Y := TStructure.t.liftTruncLE f n
+  have hg : (homologyFunctor C n).map g = 0 := by
+    rw [← cancel_mono ((homologyFunctor C n).map ((TStructure.t.truncLEι n).app Y)),
+      ← Functor.map_comp, TStructure.t.liftTruncLE_ι, hf, zero_comp]
+  let e := isoSingleFunctorHomology ((TStructure.t.truncLE n).obj Y) n
+  have hge : g ≫ e.hom = 0 := hom_ext_of_isLE (by simp [hg])
+  have hg0 : TStructure.t.liftTruncLE f n = 0 := (cancel_mono e.hom).1 (by simpa using hge)
+  rw [← TStructure.t.liftTruncLE_ι f n, hg0, zero_comp]
 
 /-- If `X` is concentrated in degrees `≤ b₁` and `f : X ⟶ Y` induces zero on `H^{b₁}`, then `f`
 factors through `(τ_{≤ b₀} Y) ⟶ Y` whenever `b₀ + 1 = b₁`. -/

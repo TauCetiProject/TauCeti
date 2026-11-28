@@ -17,8 +17,7 @@ transport those instances through `((t.triangleLEGE a b h).obj X).obj₁` and `.
 
 This file supplies the corresponding `t.IsLE` and `t.IsGE` instances for the first and third
 vertices of `(t.triangleLEGE a b h).obj X`, removing boilerplate rewrites during t-structure
-truncation inductions (such as in `TauCeti.Algebra.Homology.DerivedCategory.TStructure` and
-`TauCeti.Algebra.Homology.DerivedCategory.FiniteHom`).
+truncation inductions (such as in `TauCeti.Algebra.Homology.DerivedCategory.FiniteHom`).
 -/
 
 public section

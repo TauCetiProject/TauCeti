@@ -26,8 +26,6 @@ extension of a submodule of `ker g` by `ker f`.
   are.
 * `Module.Finite.ker_comp`: over a noetherian ring, the kernel of `g ∘ f` is finite if those of `f`
   and `g` are.
-* `TauCeti.Module.Finite.of_exact`: if `M → N → P → 0` is exact and `M` and `P` are finite
-  over a semiring `R`, then `N` is finite over `R` whenever `N` is an additive commutative group.
 -/
 
 public section
@@ -61,43 +59,3 @@ theorem ker_comp [IsNoetherianRing R] (f : M →ₗ[R] N) (g : N →ₗ[R] P)
     exact Module.Finite.iff_fg.mp inferInstance
 
 end Module.Finite
-
-namespace TauCeti.Module.Finite
-
-section Semiring
-
-variable {R M N P : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
-  [AddCommGroup N] [Module R N] [AddCommMonoid P] [Module R P]
-
-/-- If `M → N → P → 0` is exact and `M` and `P` are finitely generated over a semiring `R`, then
-so is `N`, provided `N` is an additive commutative group.
-
-This generalizes Mathlib's `Module.Finite.of_exact` from `[Ring R]` to `[Semiring R]`. -/
-theorem of_exact {f : M →ₗ[R] N} {g : N →ₗ[R] P}
-    (h_exact : Function.Exact f g) (h_surj : Function.Surjective g)
-    [_root_.Module.Finite R M] [_root_.Module.Finite R P] : _root_.Module.Finite R N := by
-  classical
-  obtain ⟨t, ht⟩ := _root_.Module.finite_def.mp ‹_root_.Module.Finite R P›
-  choose lift hlift using h_surj
-  let P₁ : Submodule R N := Submodule.span R (lift '' (t : Set P))
-  have hP₁ : P₁.map g = ⊤ := by
-    rw [Submodule.map_span, ← Set.image_comp]
-    simpa only [Function.comp_def, hlift, Set.image_id'] using ht
-  have htop : P₁ ⊔ LinearMap.range f = ⊤ := by
-    refine top_unique fun x _ ↦ ?_
-    have hx : g x ∈ P₁.map g := by rw [hP₁]; exact Submodule.mem_top
-    obtain ⟨z, hz, hzx⟩ := hx
-    have hker : x - z ∈ LinearMap.ker g := LinearMap.mem_ker.mpr <| by
-      calc g (x - z) = g x + g (-z) := by rw [sub_eq_add_neg, map_add]
-        _ = g (z + -z) := by rw [← hzx, ← map_add]
-        _ = 0 := by simp
-    rw [LinearMap.exact_iff.mp h_exact] at hker
-    exact Submodule.mem_sup.mpr ⟨z, hz, x - z, hker, add_sub_cancel _ _⟩
-  refine ⟨?_⟩
-  rw [← htop, LinearMap.range_eq_map]
-  exact (Submodule.fg_span (t.finite_toSet.image lift)).sup
-    (_root_.Module.Finite.fg_top.map f)
-
-end Semiring
-
-end TauCeti.Module.Finite

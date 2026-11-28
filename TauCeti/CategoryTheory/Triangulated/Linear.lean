@@ -9,12 +9,11 @@ public import Mathlib.CategoryTheory.Linear.Basic
 public import Mathlib.CategoryTheory.Triangulated.Pretriangulated
 public import Mathlib.RingTheory.Noetherian.Basic
 import TauCeti.LinearAlgebra.Exact
-import TauCeti.RingTheory.Finiteness.Finsupp
 
 /-!
 # Finiteness of Hom modules across distinguished triangles
 
-In an `R`-linear pretriangulated category `C` (over any semiring `R`), the representable Hom
+In an `R`-linear pretriangulated category `C` (over a ring `R`), the representable Hom
 functors `Z ⟶ -` and `- ⟶ Z` send a distinguished triangle `T` to a half-exact sequence of
 `R`-modules. Because the rightmost map `(Z ⟶ T.obj₂) →ₗ[R] (Z ⟶ T.obj₃)` (or
 `(T.obj₂ ⟶ Z) →ₗ[R] (T.obj₁ ⟶ Z)`) need not be surjective, finite generation of the middle Hom
@@ -42,7 +41,7 @@ universe t' v u
 
 namespace CategoryTheory.Pretriangulated
 
-variable {R : Type t'} [Semiring R] {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
+variable {R : Type t'} [Ring R] {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
   [HasShift C ℤ] [∀ n : ℤ, (CategoryTheory.shiftFunctor C n).Additive] [Pretriangulated C]
   [Linear R C]
 
@@ -62,9 +61,7 @@ theorem Triangle.moduleFinite_hom_of_distTriang_right (T : Triangle C) (hT : T �
     · obtain ⟨y, hy⟩ := T.coyoneda_exact₂ hT x hx
       exact ⟨y, hy.symm⟩
     · rw [← hy, Category.assoc, comp_distTriang_mor_zero₁₂ T hT, comp_zero]
-  have : Module.Finite R (LinearMap.range g) :=
-    Module.Finite.iff_fg.mpr (IsNoetherian.noetherian _)
-  exact TauCeti.Module.Finite.of_exact hfg.rangeRestrict g.surjective_rangeRestrict
+  exact hfg.moduleFinite
 
 /-- If `T` is a distinguished triangle in an `R`-linear pretriangulated category, `T.obj₃ ⟶ Z` is
 a finite `R`-module and `T.obj₁ ⟶ Z` is a Noetherian `R`-module, then `T.obj₂ ⟶ Z` is a finite
@@ -82,8 +79,6 @@ theorem Triangle.moduleFinite_hom_of_distTriang_left (T : Triangle C) (hT : T �
     · obtain ⟨y, hy⟩ := T.yoneda_exact₂ hT x hx
       exact ⟨y, hy.symm⟩
     · rw [← hy, ← Category.assoc, comp_distTriang_mor_zero₁₂ T hT, zero_comp]
-  have : Module.Finite R (LinearMap.range g) :=
-    Module.Finite.iff_fg.mpr (IsNoetherian.noetherian _)
-  exact TauCeti.Module.Finite.of_exact hfg.rangeRestrict g.surjective_rangeRestrict
+  exact hfg.moduleFinite
 
 end CategoryTheory.Pretriangulated
