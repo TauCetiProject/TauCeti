@@ -130,6 +130,15 @@ theorem genIndex_eq_cardQuot {g : integralAdeles (𝓞 K) K} (hg : IsUnit (g : �
     _ = (Ideal.span {g}).cardQuot := by
       rw [h_span, cardQuot_completedIdeal K hN0, Submodule.cardQuot_apply]
 
+/-- The generalised index of an integral finite idele is at least `1`. -/
+theorem one_le_genIndex_of_mem_integralAdeles {a : 𝔸ᶠ[K]} (ha : IsUnit a)
+    (hi : a ∈ integralAdeles (𝓞 K) K) : 1 ≤ genIndex K a := by
+  have he := genIndex_eq_cardQuot (g := ⟨a, hi⟩) ha
+  have hp := genIndex_units_pos ha.unit
+  rw [ha.unit_spec, he] at hp
+  rw [he]
+  exact_mod_cast (Nat.one_le_iff_ne_zero.mpr (by exact_mod_cast hp.ne'))
+
 /-- Some positive integer multiple of a finite adele is integral. -/
 theorem exists_natCast_mul_mem_integralAdeles (a : 𝔸ᶠ[K]) :
     ∃ m : ℕ, m ≠ 0 ∧ (m : 𝔸ᶠ[K]) * a ∈ integralAdeles (𝓞 K) K := by
