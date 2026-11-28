@@ -69,8 +69,8 @@ theorem exists_isRightAlmostSplit_biproduct_of_finite {M : FGModuleCat.{w} A}
   obtain ⟨n, F, p, hF, hp⟩ := exists_isRightAlmostSplit_biproduct
     ((indecomposable_obj_iff M).mpr hM) fun hP ↦ by
       -- The final map of the almost-split sequence ending at `M`.
-      obtain ⟨S, hS, ⟨e⟩⟩ := exists_isAlmostSplit R M hM hP
-      exact ⟨S.X₂, S.g ≫ e.hom, hS.isRightAlmostSplit_g.comp_iso e.hom⟩
+      obtain ⟨_, Y, _, p, _, hS⟩ := exists_isAlmostSplit R M hM hP
+      exact ⟨Y, p, hS.isRightAlmostSplit_g⟩
   exact ⟨n, F, p, fun j ↦ (indecomposable_obj_iff (F j)).mp (hF j), hp⟩
 
 /-- **Source maps with irreducible components.** Over an Artin algebra, every finitely generated
@@ -86,8 +86,8 @@ theorem exists_isLeftAlmostSplit_biproduct_of_finite {M : FGModuleCat.{w} A}
   obtain ⟨n, F, i, hF, hi⟩ := exists_isLeftAlmostSplit_biproduct
     ((indecomposable_obj_iff M).mpr hM) fun hI ↦ by
       -- The initial map of the almost-split sequence starting at `M`.
-      obtain ⟨S, hS, ⟨e⟩⟩ := exists_isAlmostSplit_of_not_injective R M hM hI
-      exact ⟨S.X₂, e.inv ≫ S.f, hS.isLeftAlmostSplit_f.iso_comp e.inv⟩
+      obtain ⟨Y, _, i, _, _, hS⟩ := exists_isAlmostSplit_of_not_injective R M hM hI
+      exact ⟨Y, i, hS.isLeftAlmostSplit_f⟩
   exact ⟨n, F, i, fun j ↦ (indecomposable_obj_iff (F j)).mp (hF j), hi⟩
 
 /-- **Existence of sink maps.** Over an Artin algebra, every finitely generated indecomposable
