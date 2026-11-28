@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Sites.Descent.IsomTorsor.Functor
-public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Map
+public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.ContractedProduct
 
 /-!
 # The extended Isom torsors for change of band
