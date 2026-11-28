@@ -14,9 +14,9 @@ import Mathlib.Topology.MetricSpace.Equicontinuity
 /-!
 # The Aubin–Lions compactness theorem
 
-Let `X₀ → X → X₁` be Banach spaces, with a compact operator `i : X₀ → X` and an injective
-continuous linear map `j : X → X₁`. The **Aubin–Lions theorem** says that a sequence `uₙ` of
-functions of time, bounded in `Lᵖ(a, b; X₀)`, whose images `j ∘ i ∘ uₙ` have weak time
+Let `X₀` be a normed space and `X`, `X₁` Banach spaces, with a compact operator `i : X₀ → X` and
+an injective continuous linear map `j : X → X₁`. The **Aubin–Lions theorem** says that a sequence
+`uₙ` of functions of time, bounded in `Lᵖ(a, b; X₀)`, whose images `j ∘ i ∘ uₙ` have weak time
 derivatives bounded in `Lʳ(a, b; X₁)` for some `r > 1`, has a subsequence along which `i ∘ uₙ`
 converges in `Lᵖ(a, b; X)`.
 
@@ -27,8 +27,9 @@ space: energy estimates bound the approximate solutions in `L²(0, T; H¹)` and 
 derivatives in a weak norm, and the theorem upgrades the resulting weak convergence to strong
 `L²` convergence, which is what lets nonlinear terms pass to the limit.
 
-As in Simon's version of the theorem, no reflexivity is assumed; the exponent `p` is arbitrary in
-`[1, ∞]`, `r` is any exponent in `(1, ∞]`, and `X₀` need not be complete.
+No reflexivity is assumed, as in Simon's version of the theorem. The exponent `p` is arbitrary in
+`[1, ∞]`, `r` is any exponent in `(1, ∞]`, and `X₀` need only be a normed space, not a Banach
+space.
 
 ## Proof
 
@@ -278,10 +279,11 @@ private theorem cauchySeq_toLp_of_uniformCauchy {i : X₀ →L[ℝ] X} (hi : IsC
       simpa using hreal
 
 /-- **The Aubin–Lions theorem.** Let `i : X₀ → X` be a compact operator and `j : X → X₁` an
-injective continuous linear map between Banach spaces, and let `1 ≤ p ≤ ∞` and `1 < r ≤ ∞`.
-Let `u n` be bounded in `Lᵖ(a, b; X₀)`, and let `j ∘ i ∘ u n` have weak derivatives `u' n` on
-`(a, b)` bounded in `Lʳ(a, b; X₁)`. Then a subsequence of `i ∘ u n` converges in `Lᵖ(a, b; X)`.
-As in Simon's version of the theorem, no reflexivity is assumed and `X₀` need not be complete. -/
+injective continuous linear map, where `X₀` is a normed space and `X`, `X₁` are Banach spaces,
+and let `1 ≤ p ≤ ∞` and `1 < r ≤ ∞`. Let `u n` be bounded in `Lᵖ(a, b; X₀)`, and let
+`j ∘ i ∘ u n` have weak derivatives `u' n` on `(a, b)` bounded in `Lʳ(a, b; X₁)`. Then a
+subsequence of `i ∘ u n` converges in `Lᵖ(a, b; X)`.
+No reflexivity is assumed, as in Simon's version of the theorem. -/
 theorem exists_subseq_tendsto_eLpNorm_of_hasWeakLineDerivOn [CompleteSpace X] [CompleteSpace X₁]
     {i : X₀ →L[ℝ] X} (hi : IsCompactOperator i) {j : X →L[ℝ] X₁} (hj : Function.Injective j)
     {p r : ℝ≥0∞} (hp : 1 ≤ p) (hr : 1 < r) {a b : ℝ} {M M' : ℝ≥0} {u : ℕ → ℝ → X₀}
