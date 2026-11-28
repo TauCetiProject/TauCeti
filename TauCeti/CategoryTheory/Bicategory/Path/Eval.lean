@@ -322,16 +322,13 @@ lemma whiskerRightEval_whiskerLeftEval (p : Path a b) {q q' : Path b c}
 
 /-- Whiskering on both sides, with a singleton on the right, evaluates through the
 concatenation comparisons before and after the middle 2-cell. -/
-lemma whiskerLeftEval_whiskerRightEval_toPath (p : Path a b) {q q' : Path b c}
+lemma whiskerRightEval_whiskerLeftEval_toPath (p : Path a b) {q q' : Path b c}
     (θ : q.eval ⟶ q'.eval) (f : c ⟶ d) :
-    p.whiskerLeftEval (whiskerRightEval θ f.toPath) =
+    whiskerRightEval (p.whiskerLeftEval θ) f.toPath =
       (evalCons (p.comp q) f).hom ≫ (evalComp p q).hom ▷ f ≫
         (p.eval ◁ θ) ▷ f ≫ (evalComp p q').inv ▷ f ≫
           (evalCons (p.comp q') f).inv := by
-  have h := whiskerRightEval_whiskerLeftEval p θ f.toPath
-  -- Concatenating a singleton makes both reassociation transports reflexive.
-  erw [eqToHom_refl, eqToHom_refl] at h
-  simpa [whiskerRightEval_def, whiskerLeftEval_def, evalComp_toPath,
-    comp_whiskerRight, Category.assoc] using h.symm
+  simp [whiskerRightEval_def, whiskerLeftEval_def, evalComp_toPath,
+    comp_whiskerRight, Category.assoc]
 
 end Quiver.Path
