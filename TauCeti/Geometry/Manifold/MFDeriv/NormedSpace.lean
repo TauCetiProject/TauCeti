@@ -95,6 +95,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
 * `TauCeti.exists_contMDiffAt_mvfderiv_eq_one`, `TauCeti.exists_contMDiffAt_mvfderiv_ne_zero`: any
   nonzero tangent vector admits a scalar function `C^n` at the point whose differential sends it to
   `1`.
+* `ContinuousLinearMap.injective_mfderiv_iff` and `LinearIsometry.injective_mfderiv`: injectivity
+  of the manifold derivative of a continuous linear map or linear isometry between normed spaces.
 -/
 
 public section
@@ -666,5 +668,20 @@ theorem isCompl_ker_mvfderiv_span_singleton {g : M → 𝕜} {x : M} {v : Tangen
     IsCompl (LinearMap.ker (mvfderiv I g x : TangentSpace I x →ₗ[𝕜] 𝕜)) (𝕜 ∙ v) :=
   ⟨Submodule.disjoint_span_singleton_of_notMem hgv,
     codisjoint_iff.2 (by rw [sup_comm]; exact LinearMap.span_singleton_sup_ker_eq_top _ hgv)⟩
+
+/-- The manifold derivative of a continuous linear map between normed spaces at any point `x` is
+injective if and only if the map itself is injective. -/
+@[simp]
+theorem _root_.ContinuousLinearMap.injective_mfderiv_iff (L : F →L[𝕜] F') (x : F) :
+    Function.Injective (mfderiv 𝓘(𝕜, F) 𝓘(𝕜, F') L x) ↔ Function.Injective L := by
+  rw [← injective_mvfderiv_iff, mvfderiv_eq_fderiv, L.fderiv, ContinuousLinearMap.coe_comp,
+    ContinuousLinearEquiv.coe_coe]
+  exact Function.Injective.of_comp_iff' L (NormedSpace.fromTangentSpace x).bijective
+
+/-- Every linear isometry between normed spaces has an injective manifold derivative at every
+point. -/
+theorem _root_.LinearIsometry.injective_mfderiv (L : F →ₗᵢ[𝕜] F') (x : F) :
+    Function.Injective (mfderiv 𝓘(𝕜, F) 𝓘(𝕜, F') L x) :=
+  (L.toContinuousLinearMap.injective_mfderiv_iff x).2 L.injective
 
 end TauCeti

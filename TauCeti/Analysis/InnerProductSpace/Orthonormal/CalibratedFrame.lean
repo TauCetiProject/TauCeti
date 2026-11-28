@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
+public import TauCeti.Analysis.InnerProductSpace.Orientation
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Alternating
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
@@ -38,9 +39,11 @@ span of `e`.
 
 ## Main results
 
-* `ContinuousAlternatingMap.IsCalibratedFrame.one_le_norm`: a form calibrating a frame has comass
-  at least one, and `ContinuousAlternatingMap.isCalibratedFrame_iff_one_le_apply`: for a form of
-  comass at most one it suffices that the value on an orthonormal frame is at least one.
+* `ContinuousAlternatingMap.IsCalibratedFrame.one_le_norm` and
+  `ContinuousAlternatingMap.IsCalibratedFrame.norm_eq_one`: a form calibrating a frame has comass
+  at least one (hence comass one when `‖φ‖ ≤ 1`), and
+  `ContinuousAlternatingMap.isCalibratedFrame_iff_one_le_apply`: for a form of comass at most one
+  it suffices that the value on an orthonormal frame is at least one.
 * `ContinuousAlternatingMap.IsCalibratedFrame.of_ιMulti_eq`: calibration of orthonormal frames
   depends only on their wedge.
 * `ContinuousAlternatingMap.isCalibratedFrame_sum_smul_iff`: an orthogonal change of frame by `A`
@@ -49,7 +52,11 @@ span of `e`.
   `ContinuousAlternatingMap.isCalibratedFrame_neg_iff_update_neg` are its two cases.
 * `ContinuousAlternatingMap.isCalibratedFrame_compContinuousLinearMap_iff`: naturality under
   pullback along linear isometries.
-* `ContinuousAlternatingMap.isCalibratedFrame_alternatingFormEquiv_ιMulti_iff`: the frames
+* `ContinuousAlternatingMap.isCalibratedFrame_volumeFormL_orthonormalBasis_iff`: on an oriented
+  `k`-dimensional space, `o.volumeFormL` calibrates an orthonormal basis iff it is positively
+  oriented.
+* `ContinuousAlternatingMap.isCalibratedFrame_alternatingFormEquiv_ιMulti_iff` and
+  `ContinuousAlternatingMap.isCalibratedFrame_alternatingFormEquiv_ιMulti_iff_ιMulti_eq`: the frames
   calibrated by a unit decomposable form.
 
 ## References
@@ -85,6 +92,14 @@ theorem IsCalibratedFrame.one_le_norm (h : φ.IsCalibratedFrame v) : 1 ≤ ‖φ
   simpa [h.apply_eq_one] using
     (opNorm_le_iff_le_orthonormal (norm_nonneg φ)).1 le_rfl v h.orthonormal
 
+/-- A form of comass at most one that calibrates some frame has comass one. -/
+theorem IsCalibratedFrame.norm_eq_one (h : φ.IsCalibratedFrame v) (hφ : ‖φ‖ ≤ 1) : ‖φ‖ = 1 :=
+  le_antisymm hφ h.one_le_norm
+
+/-- A form with comass strictly less than one calibrates no frame. -/
+theorem not_isCalibratedFrame_of_norm_lt_one (hφ : ‖φ‖ < 1) : ¬φ.IsCalibratedFrame v :=
+  fun h ↦ hφ.not_ge h.one_le_norm
+
 /-- For a form of comass at most one, an orthonormal frame is calibrated as soon as the value of
 the form on it is at least one. -/
 theorem isCalibratedFrame_iff_one_le_apply (hφ : ‖φ‖ ≤ 1) :
@@ -97,6 +112,16 @@ theorem isCalibratedFrame_iff_one_le_apply (hφ : ‖φ‖ ≤ 1) :
 @[simp]
 theorem not_isCalibratedFrame_zero : ¬(0 : E [⋀^Fin k]→L[ℝ] ℝ).IsCalibratedFrame v :=
   fun h ↦ zero_ne_one (α := ℝ) (by simpa using h.apply_eq_one)
+
+/-- A form that calibrates some frame is nonzero. -/
+theorem IsCalibratedFrame.ne_zero (h : φ.IsCalibratedFrame v) : φ ≠ 0 :=
+  fun h0 ↦ not_isCalibratedFrame_zero (h0 ▸ h)
+
+/-- In degree zero, the empty frame is calibrated by `φ` if and only if `φ ![] = 1`. -/
+theorem isCalibratedFrame_zero_iff (φ : E [⋀^Fin 0]→L[ℝ] ℝ) (v : Fin 0 → E) :
+    φ.IsCalibratedFrame v ↔ φ ![] = 1 := by
+  rw [isCalibratedFrame_iff, Matrix.empty_eq v]
+  exact and_iff_right (orthonormal_iff_ite.2 fun i ↦ i.elim0)
 
 /-- In degree zero the constant form `c` calibrates the empty frame exactly when `c = 1`. -/
 @[simp]
@@ -153,9 +178,41 @@ theorem isCalibratedFrame_neg_iff_update_neg (i : Fin k) :
       fun hv ↦ hv.orthonormal_of_forall_eq_or_eq_neg hsign⟩
   rw [isCalibratedFrame_iff, isCalibratedFrame_iff, horth, hval, neg_apply]
 
+/-- On an oriented `k`-dimensional real inner product space, `o.volumeFormL` calibrates a frame `v`
+if and only if `v` is orthonormal and `0 < o.volumeForm v`. -/
+theorem isCalibratedFrame_volumeFormL_iff_pos [Fact (Module.finrank ℝ E = k)]
+    (o : Orientation ℝ E (Fin k)) (v : Fin k → E) :
+    o.volumeFormL.IsCalibratedFrame v ↔ Orthonormal ℝ v ∧ 0 < o.volumeForm v := by
+  rw [isCalibratedFrame_iff, Orientation.volumeFormL_apply]
+  refine and_congr_right fun hv ↦ ⟨fun h ↦ by linarith, fun hpos ↦ ?_⟩
+  have habs := o.abs_volumeForm_apply_eq_sqrt_det_gram v
+  rwa [abs_of_pos hpos, Matrix.gram_eq_one_iff_orthonormal.2 hv, Matrix.det_one, Real.sqrt_one]
+    at habs
+
+/-- On an oriented `k`-dimensional real inner product space, `o.volumeFormL` calibrates an
+orthonormal basis `b` if and only if `b` is positively oriented for `o`. -/
+@[simp]
+theorem isCalibratedFrame_volumeFormL_orthonormalBasis_iff [Fact (Module.finrank ℝ E = k)]
+    (o : Orientation ℝ E (Fin k)) (b : OrthonormalBasis (Fin k) ℝ E) :
+    o.volumeFormL.IsCalibratedFrame b ↔ b.toBasis.orientation = o := by
+  rw [isCalibratedFrame_volumeFormL_iff_pos, and_iff_right b.orthonormal,
+    ← OrthonormalBasis.coe_toBasis, Orientation.volumeForm_apply_pos_iff]
+
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ E]
+
+/-- **Wedge characterization of equality planes of a simple calibration**: for an orthonormal frame
+`e : Fin k → E`, the unit decomposable form `⟪e₁ ∧ ⋯ ∧ eₖ, ·⟫` calibrates `v` if and only if `v` is
+orthonormal and spans the same oriented `k`-plane as `e` (`ιMulti ℝ k v = ιMulti ℝ k e`). -/
+theorem isCalibratedFrame_alternatingFormEquiv_ιMulti_iff_ιMulti_eq {e : Fin k → E}
+    (he : Orthonormal ℝ e) :
+    (TauCeti.alternatingFormEquiv E k (ιMulti ℝ k e)).IsCalibratedFrame v ↔
+      Orthonormal ℝ v ∧ ιMulti ℝ k v = ιMulti ℝ k e := by
+  rw [isCalibratedFrame_iff, TauCeti.alternatingFormEquiv_apply]
+  refine and_congr_right fun hv ↦ ⟨fun h1 ↦ ?_, fun heq ↦ ?_⟩
+  · exact (inner_eq_one_iff_of_norm_eq_one he.norm_ιMulti hv.norm_ιMulti).1 h1 |>.symm
+  · rw [heq, real_inner_self_eq_norm_sq, he.norm_ιMulti, one_pow]
 
 /-- The unit decomposable form `⟪e₁ ∧ ⋯ ∧ eₖ, ·⟫` of an orthonormal frame `e` calibrates exactly
 the frames `A • e` with `A ∈ SO(k)`, the positively oriented orthonormal frames of the span of
@@ -163,15 +220,28 @@ the frames `A • e` with `A ∈ SO(k)`, the positively oriented orthonormal fra
 theorem isCalibratedFrame_alternatingFormEquiv_ιMulti_iff {e : Fin k → E} (he : Orthonormal ℝ e) :
     (TauCeti.alternatingFormEquiv E k (ιMulti ℝ k e)).IsCalibratedFrame v ↔
       ∃ A ∈ Matrix.specialOrthogonalGroup (Fin k) ℝ, v = fun j ↦ ∑ i, A j i • e i := by
-  refine ⟨fun h ↦ (he.ιMulti_eq_ιMulti_iff h.orthonormal).1 ?_, ?_⟩
-  · have h1 := h.apply_eq_one
-    rw [TauCeti.alternatingFormEquiv_apply,
-      inner_eq_one_iff_of_norm_eq_one he.norm_ιMulti h.orthonormal.norm_ιMulti] at h1
-    exact h1.symm
-  · rintro ⟨A, hA, rfl⟩
-    refine (isCalibratedFrame_sum_smul_iff_of_mem_specialOrthogonalGroup hA).2 ⟨he, ?_⟩
-    rw [TauCeti.alternatingFormEquiv_apply, real_inner_self_eq_norm_sq, he.norm_ιMulti, one_pow]
+  rw [isCalibratedFrame_alternatingFormEquiv_ιMulti_iff_ιMulti_eq he]
+  refine ⟨fun ⟨hv, heq⟩ ↦ (he.ιMulti_eq_ιMulti_iff hv).1 heq, ?_⟩
+  rintro ⟨A, hA, rfl⟩
+  have hv : Orthonormal ℝ (fun j ↦ ∑ i, A j i • e i) :=
+    (TauCeti.orthonormal_sum_smul_iff_of_mem_unitaryGroup
+      (Matrix.mem_specialOrthogonalGroup_iff.1 hA).1).2 he
+  exact ⟨hv, (he.ιMulti_eq_ιMulti_iff hv).2 ⟨A, hA, rfl⟩⟩
 
 end FiniteDimensional
 
 end ContinuousAlternatingMap
+
+namespace Orthonormal
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {k : ℕ} {u : Fin k → E}
+
+/-- The unit decomposable form `⟪u₁ ∧ ⋯ ∧ uₖ, ·⟫` of an orthonormal frame `u` calibrates `u`
+itself. -/
+theorem isCalibratedFrame_alternatingFormEquiv_ιMulti (hu : Orthonormal ℝ u) :
+    (TauCeti.alternatingFormEquiv E k (ιMulti ℝ k u)).IsCalibratedFrame u :=
+  (ContinuousAlternatingMap.isCalibratedFrame_alternatingFormEquiv_ιMulti_iff_ιMulti_eq hu).2
+    ⟨hu, rfl⟩
+
+end Orthonormal

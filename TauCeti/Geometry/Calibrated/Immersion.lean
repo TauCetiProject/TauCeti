@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.CalibratedFrame
+public import TauCeti.Geometry.Calibrated.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Immersion.Volume
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Calibrated immersions
@@ -18,6 +21,18 @@ volume `TauCeti.immersionVolume`
 `TauCeti.riemannianTotalVolume` on compact sources and evaluates to `0` on noncompact sources via
 `TauCeti.integralTopForm`'s compact-support convention.
 
+In positive degree, calibration of `(f, o)` is equivalent to `df_x` carrying positively oriented
+`(f^* g)_x`-orthonormal bases of `T_x N` to `φ_{f x}`-calibrated frames of `T_{f x} M`
+(`TauCeti.isCalibratedImmersion_iff_forall_isCalibratedFrame`,
+`TauCeti.isCalibratedImmersion_iff_exists_isCalibratedFrame`), and in every degree `k ≥ 0` forces
+`‖φ (f x)‖ = 1` along the image when `φ` is a calibration
+(`TauCeti.IsCalibratedImmersion.opNorm_eq_one`). On any oriented Riemannian manifold the identity
+map is calibrated by the Riemannian volume form
+(`TauCeti.isCalibratedImmersion_id_riemannianVolumeForm`), and every linear isometry from an
+oriented `k`-dimensional inner product space into a finite-dimensional real inner product space is
+calibrated by its simple constant calibration
+(`TauCeti.isCalibratedImmersion_linearIsometry_const`).
+
 ## Main definitions
 
 * `TauCeti.IsCalibratedImmersion`: an oriented smooth immersion whose pullback of `φ` equals the
@@ -26,24 +41,30 @@ volume `TauCeti.immersionVolume`
 ## Main results
 
 * `TauCeti.isCalibratedImmersion_iff_forall_orthonormal_basis`,
-  `TauCeti.isCalibratedImmersion_iff_exists_orthonormal_basis`, and
+  `TauCeti.isCalibratedImmersion_iff_exists_orthonormal_basis`,
+  `TauCeti.isCalibratedImmersion_iff_forall_isCalibratedFrame`,
+  `TauCeti.isCalibratedImmersion_iff_exists_isCalibratedFrame`, and
   `TauCeti.isCalibratedImmersion_zeroDim_iff`: tangent-frame characterizations in positive degree
   and degree zero.
+* `TauCeti.IsCalibratedImmersion.one_le_opNorm` and `TauCeti.IsCalibratedImmersion.opNorm_eq_one`:
+  along a calibrated immersion, `φ` has comass at least `1`, hence `1` when `φ` is a calibration.
 * `TauCeti.IsCalibratedImmersion.neg` and `TauCeti.isCalibratedImmersion_neg_right_iff`:
   orientation-reversal properties.
 * `TauCeti.IsCalibratedImmersion.integralTopForm_mpullback_eq_immersionVolume` and
   `TauCeti.IsCalibratedImmersion.integralTopForm_mpullback_eq_riemannianTotalVolume`: integral of
   `f^* φ` along a calibrated immersion.
 * `TauCeti.IsCalibratedImmersion.comp_of_isOrientationPreservingAt`,
-  `TauCeti.IsCalibratedImmersion.comp_diffeomorph_of_isOrientationPreservingAt`, and
-  `TauCeti.isCalibratedImmersion_comp_diffeomorph_iff_of_isOrientationPreservingAt`: invariance of
-  `IsCalibratedImmersion` under orientation-preserving smooth maps and diffeomorphisms of the
-  source.
+  `TauCeti.IsCalibratedImmersion.comp_diffeomorph_of_isOrientationPreservingAt`,
+  `TauCeti.isCalibratedImmersion_comp_diffeomorph_iff_of_isOrientationPreservingAt`, and
+  `TauCeti.isCalibratedImmersion_comp_diffeomorph_iff_of_isOrientationReversingAt`: behavior of
+  `IsCalibratedImmersion` under orientation-preserving and orientation-reversing reparametrizations.
+* `TauCeti.isCalibratedImmersion_id_riemannianVolumeForm` and
+  `TauCeti.isCalibratedImmersion_linearIsometry_const`: foundational calibrated immersions.
 
 ## References
 
 * R. Harvey and H. B. Lawson, *Calibrated geometries*, Acta Math. **148** (1982), 47–157,
-  Definition II.4.1.
+  Definition II.4.1 and §II.4.
 * D. Joyce, *Lectures on special Lagrangian geometry*, in *Global Theory of Minimal Surfaces*,
   Clay Math. Proc. **2** (2005), arXiv:math/0111111v3, Definition 2.1.
 -/
@@ -52,8 +73,8 @@ public section
 
 noncomputable section
 
-open Bundle Manifold
-open scoped Bundle ContDiff Manifold
+open Bundle Manifold exteriorPower
+open scoped Bundle ContDiff Manifold RealInnerProductSpace
 
 namespace TauCeti
 
@@ -164,6 +185,69 @@ theorem isCalibratedImmersion_iff_exists_orthonormal_basis {k : ℕ} [NeZero k]
       (by rwa [mpullback_apply])
     exact DFunLike.congr_fun hEq v
 
+/-- **Calibrated-frame characterization of calibrated immersions (universal form)**: in positive
+degree, `(f, o)` is calibrated by `φ` if and only if at every `x : N` and for every positively
+oriented `f^* g`-orthonormal basis `b` of `T_x N`, the pushed-forward frame `df_x ∘ b` is calibrated
+by `φ (f x)`. -/
+theorem isCalibratedImmersion_iff_forall_isCalibratedFrame {k : ℕ} [NeZero k]
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (φ : RoughForm I M ℝ k) (f : N → M) (hf : ContMDiff I' I ∞ f)
+    (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
+    (o : Manifold.Orientation I' N (Fin k)) :
+    IsCalibratedImmersion g φ f hf hinj o ↔
+      letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
+      letI : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
+        ⟨(g.pullback f hf hinj).toRiemannianMetric⟩
+      ∀ (x : N) (b : OrthonormalBasis (Fin k) ℝ (TangentSpace I' x)),
+        b.toBasis.orientation = o.orientationAt x →
+          (φ (f x)).IsCalibratedFrame (mfderiv I' I f x ∘ b) := by
+  let : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
+  let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
+    ⟨(g.pullback f hf hinj).toRiemannianMetric⟩
+  rw [isCalibratedImmersion_iff_forall_orthonormal_basis]
+  refine ⟨fun h x b hb ↦ ?_, fun h x b hb horth ↦ ?_⟩
+  · have horth := (g.orthonormal_pullback_iff f hf hinj x b).1 b.orthonormal
+    exact ⟨orthonormal_iff_ite.2 fun i j ↦
+      (g.inner_riemannianBundle (f x) _ _).trans (horth i j), h x b.toBasis hb
+        (by simpa only [OrthonormalBasis.coe_toBasis] using horth)⟩
+  · have hb_orth : Orthonormal ℝ b := (g.orthonormal_pullback_iff f hf hinj x b).2 horth
+    let bO : OrthonormalBasis (Fin k) ℝ (TangentSpace I' x) := b.toOrthonormalBasis hb_orth
+    have hbO : bO.toBasis.orientation = o.orientationAt x := by rwa [b.toBasis_toOrthonormalBasis]
+    rw [← b.coe_toOrthonormalBasis hb_orth]
+    exact (h x bO hbO).apply_eq_one
+
+/-- **Calibrated-frame characterization of calibrated immersions (existential form)**: in positive
+degree, `(f, o)` is calibrated by `φ` if and only if every `x : N` admits a positively oriented
+`f^* g`-orthonormal basis `b` of `T_x N` whose image `df_x ∘ b` is calibrated by `φ (f x)`. -/
+theorem isCalibratedImmersion_iff_exists_isCalibratedFrame {k : ℕ} [NeZero k]
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (φ : RoughForm I M ℝ k) (f : N → M) (hf : ContMDiff I' I ∞ f)
+    (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
+    (o : Manifold.Orientation I' N (Fin k)) :
+    IsCalibratedImmersion g φ f hf hinj o ↔
+      letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
+      letI : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
+        ⟨(g.pullback f hf hinj).toRiemannianMetric⟩
+      ∀ x : N, ∃ b : OrthonormalBasis (Fin k) ℝ (TangentSpace I' x),
+        b.toBasis.orientation = o.orientationAt x ∧
+          (φ (f x)).IsCalibratedFrame (mfderiv I' I f x ∘ b) := by
+  let : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
+  let : RiemannianBundle (fun x : N ↦ TangentSpace I' x) :=
+    ⟨(g.pullback f hf hinj).toRiemannianMetric⟩
+  rw [isCalibratedImmersion_iff_exists_orthonormal_basis]
+  refine ⟨fun h x ↦ ?_, fun h x ↦ ?_⟩
+  · obtain ⟨b, hb, horth, hval⟩ := h x
+    have hb_orth : Orthonormal ℝ b := (g.orthonormal_pullback_iff f hf hinj x b).2 horth
+    let bO : OrthonormalBasis (Fin k) ℝ (TangentSpace I' x) := b.toOrthonormalBasis hb_orth
+    refine ⟨bO, by rwa [b.toBasis_toOrthonormalBasis], ?_⟩
+    rw [ContinuousAlternatingMap.isCalibratedFrame_iff, b.coe_toOrthonormalBasis hb_orth]
+    exact ⟨orthonormal_iff_ite.2 fun i j ↦ (g.inner_riemannianBundle (f x) _ _).trans (horth i j),
+      hval⟩
+  · obtain ⟨b, hb, hcal⟩ := h x
+    have horth := (g.orthonormal_pullback_iff f hf hinj x b).1 b.orthonormal
+    exact ⟨b.toBasis, hb, by simpa only [OrthonormalBasis.coe_toBasis] using horth,
+      by simpa only [OrthonormalBasis.coe_toBasis] using hcal.apply_eq_one⟩
+
 open scoped Classical in
 /-- In degree zero, an oriented immersion is calibrated by `φ` if and only if `φ (f x) ![]` equals
 `1` at positively oriented points of `N` and `-1` at negatively oriented points. -/
@@ -185,6 +269,43 @@ theorem isCalibratedImmersion_zeroDim_iff
   · ext x v
     rw [mpullback_apply, riemannianVolumeForm_zeroDim_apply,
       Subsingleton.elim (fun i : Fin 0 ↦ mfderiv I' I f x (v i)) ![], h x]
+
+/-- Along a `φ`-calibrated immersion (in any degree `k ≥ 0`, including `k = 0`), `φ` has comass at
+least `1` at every image point `f x`. -/
+theorem IsCalibratedImmersion.one_le_opNorm {k : ℕ}
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    {φ : RoughForm I M ℝ k} {f : N → M} {hf : ContMDiff I' I ∞ f}
+    {hinj : ∀ x, Function.Injective (mfderiv I' I f x)}
+    {o : Manifold.Orientation I' N (Fin k)}
+    (hcal : IsCalibratedImmersion g φ f hf hinj o) (x : N) :
+    letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
+    1 ≤ ‖φ (f x)‖ := by
+  let : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
+  let : RiemannianBundle (fun z : N ↦ TangentSpace I' z) :=
+    ⟨(g.pullback f hf hinj).toRiemannianMetric⟩
+  let := o.fact_finrank_tangentSpace x
+  let b : OrthonormalBasis (Fin k) ℝ (TangentSpace I' x) :=
+    (stdOrthonormalBasis ℝ (TangentSpace I' x)).reindex (finCongr Fact.out)
+  have horth : Orthonormal ℝ (mfderiv I' I f x ∘ b) := orthonormal_iff_ite.2 fun i j ↦
+    (g.inner_riemannianBundle (f x) _ _).trans
+      ((g.orthonormal_pullback_iff f hf hinj x b).1 b.orthonormal i j)
+  have habs : |φ (f x) (mfderiv I' I f x ∘ b)| = 1 := by
+    rw [Function.comp_def, ← mpullback_apply, (isCalibratedImmersion_iff g φ f hf hinj o).1 hcal]
+    exact abs_riemannianVolumeForm_apply_orthonormal o x b
+  simpa only [Real.norm_eq_abs, habs] using
+    ((φ (f x)).opNorm_le_iff_le_orthonormal (norm_nonneg _)).1 le_rfl _ horth
+
+/-- Along a calibrated immersion (in any degree `k ≥ 0`, including `k = 0`) for a calibration `φ`,
+the comass of `φ` attains `1` at every image point `f x`. -/
+theorem IsCalibratedImmersion.opNorm_eq_one {k : ℕ}
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    {φ : RoughForm I M ℝ k} {f : N → M} {hf : ContMDiff I' I ∞ f}
+    {hinj : ∀ x, Function.Injective (mfderiv I' I f x)}
+    {o : Manifold.Orientation I' N (Fin k)}
+    (hφ : IsCalibration g φ) (hcal : IsCalibratedImmersion g φ f hf hinj o) (x : N) :
+    letI : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
+    ‖φ (f x)‖ = 1 :=
+  le_antisymm (hφ.opNorm_le_one (f x)) (hcal.one_le_opNorm x)
 
 /-- An immersion is calibrated for the opposite source orientation `-o` by `φ` if and only if it is
 calibrated for `o` by `-φ`. -/
@@ -301,8 +422,107 @@ theorem isCalibratedImmersion_comp_diffeomorph_iff_of_isOrientationPreservingAt 
       fun y ↦ (ho (Φ.symm y)).diffeomorph_symm (by simp)),
    fun h ↦ h.comp_diffeomorph_of_isOrientationPreservingAt Φ o' ho⟩
 
+/-- Precomposing an immersion with an orientation-reversing diffeomorphism exchanges calibration by
+`φ` with calibration by `-φ`. -/
+theorem isCalibratedImmersion_comp_diffeomorph_iff_of_isOrientationReversingAt {k : ℕ}
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (φ : RoughForm I M ℝ k) (f : N → M) (hf : ContMDiff I' I ∞ f)
+    (hinj : ∀ x, Function.Injective (mfderiv I' I f x))
+    (o : Manifold.Orientation I' N (Fin k))
+    (Φ : N' ≃ₘ^∞⟮I'', I'⟯ N) (o' : Manifold.Orientation I'' N' (Fin k))
+    (ho : ∀ x, o'.IsOrientationReversingAt o Φ x) :
+    IsCalibratedImmersion g φ (f ∘ Φ) (hf.comp Φ.contMDiff)
+        (fun x ↦ (Φ.mfderiv_comp_diffeomorph_injective_iff (by simp)).2 (hinj (Φ x))) o' ↔
+      IsCalibratedImmersion g (-φ) f hf hinj o := by
+  conv_lhs => rw [← neg_neg o', isCalibratedImmersion_neg_right_iff]
+  exact isCalibratedImmersion_comp_diffeomorph_iff_of_isOrientationPreservingAt g (-φ) f hf hinj o
+    Φ (-o') fun x ↦ (o'.isOrientationPreservingAt_neg_left o Φ x).2 (ho x)
+
 end Transport
 
 end Immersions
+
+section Examples
+
+/-- On any oriented Riemannian manifold `(M, g, o)`, the identity immersion `id : M → M` is
+calibrated by `riemannianVolumeForm o` in every dimension `m ≥ 0`. -/
+theorem isCalibratedImmersion_id_riemannianVolumeForm
+    {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+    [IsManifold I 1 M] {m : ℕ}
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (o : Manifold.Orientation I M (Fin m)) :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    IsCalibratedImmersion g (riemannianVolumeForm o) id contMDiff_id
+      (fun _ ↦ by simpa [mfderiv_id] using Function.injective_id) o := by
+  let : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  let hid : ContMDiff I I (∞ + 1) (id : M → M) := by simpa using contMDiff_id
+  let hinj : ∀ x : M, Function.Injective (mfderiv I I id x) :=
+    fun _ ↦ by simpa [mfderiv_id] using Function.injective_id
+  rw [isCalibratedImmersion_iff, mpullback_id]
+  exact congrArg (fun g' : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) ↦
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩
+    riemannianVolumeForm o) (g.pullback_id hid hinj).symm
+
+/-- **Every oriented linear isometric subspace is calibrated**: for any linear isometry
+`L : F →ₗᵢ[ℝ] V` from an oriented `k`-dimensional real inner product space `(F, oF)` into a
+finite-dimensional real inner product space `V` and any positively oriented orthonormal basis `b` of
+`F`, the immersion `L : F → V` is calibrated by the constant simple calibration
+`SmoothForm.const (alternatingFormEquiv V k (ιMulti ℝ k (L ∘ b)))` in every dimension `k ≥ 0`. -/
+theorem isCalibratedImmersion_linearIsometry_const
+    {F V : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] {k : ℕ}
+    (L : F →ₗᵢ[ℝ] V) (oF : _root_.Orientation ℝ F (Fin k))
+    (b : OrthonormalBasis (Fin k) ℝ F) (hb : b.toBasis.orientation = oF) :
+    IsCalibratedImmersion ((riemannianMetricVectorSpace V).ofLE le_top)
+      (SmoothForm.const (alternatingFormEquiv V k (ιMulti ℝ k (L ∘ b)))).val
+      L L.contDiff.contMDiff L.injective_mfderiv
+      (Manifold.Orientation.model (I := 𝓘(ℝ, F)) oF
+        (Module.finrank_eq_card_basis b.toBasis).symm) := by
+  let hk : Fintype.card (Fin k) = Module.finrank ℝ F :=
+    (Module.finrank_eq_card_basis b.toBasis).symm
+  let gV := (riemannianMetricVectorSpace V).ofLE (le_top : ∞ ≤ ⊤)
+  let gF := gV.pullback L (by simpa using L.contDiff.contMDiff) L.injective_mfderiv
+  let : RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x) := ⟨gF.toRiemannianMetric⟩
+  let oM := Manifold.Orientation.model (I := 𝓘(ℝ, F)) oF hk
+  have hmf (x : F) (u : TangentSpace 𝓘(ℝ, F) x) :
+      NormedSpace.fromTangentSpace (L x) (mfderiv 𝓘(ℝ, F) 𝓘(ℝ, V) L x u) =
+        L (NormedSpace.fromTangentSpace x u) := by
+    have hf : fderiv ℝ (L : F → V) x = L.toContinuousLinearMap := L.toContinuousLinearMap.fderiv
+    rw [mfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.apply_symm_apply, hf, LinearIsometry.coe_toContinuousLinearMap]
+  have hnorm (x : F) (u : TangentSpace 𝓘(ℝ, F) x) :
+      ‖(NormedSpace.fromTangentSpace x u : F)‖ = ‖u‖ := by
+    refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 (Eq.symm ?_)
+    rw [← real_inner_self_eq_norm_sq, gF.inner_riemannianBundle,
+      ContMDiffRiemannianMetric.pullback_inner, ContMDiffRiemannianMetric.ofLE_inner,
+      riemannianMetricVectorSpace_inner, hmf, L.inner_map_map, real_inner_self_eq_norm_sq]
+  have : Fact (Module.finrank ℝ F = k) := ⟨by simpa using hk.symm⟩
+  let A : F [⋀^Fin k]→L[ℝ] ℝ :=
+    (alternatingFormEquiv V k (ιMulti ℝ k (L ∘ b))).compContinuousLinearMap L.toContinuousLinearMap
+  have hAb : A b = 1 := by
+    rw [ContinuousAlternatingMap.compContinuousLinearMap_apply,
+      LinearIsometry.coe_toContinuousLinearMap]
+    exact (L.orthonormal_comp_iff.2 b.orthonormal).isCalibratedFrame_alternatingFormEquiv_ιMulti
+      |>.apply_eq_one
+  have hAvol : A = oF.volumeFormL := oF.eq_volumeFormL_of_apply_orthonormal A b hb hAb
+  rw [isCalibratedImmersion_iff]; funext x; ext v
+  let := oM.fact_finrank_tangentSpace x
+  let e : TangentSpace 𝓘(ℝ, F) x ≃ₗᵢ[ℝ] F :=
+    { (NormedSpace.fromTangentSpace x).toLinearEquiv with norm_map' := hnorm x }
+  have hlhs : mpullback 𝓘(ℝ, F) 𝓘(ℝ, V) L
+      (SmoothForm.const (alternatingFormEquiv V k (ιMulti ℝ k (L ∘ b)))).val x v = A (e ∘ v) := by
+    rw [mpullback_apply, SmoothForm.const_apply,
+      ContinuousAlternatingMap.compContinuousLinearMap_apply]
+    exact congrArg _ (funext fun i ↦ hmf x (v i))
+  have hrhs : riemannianVolumeForm oM x v = oF.volumeFormL (e ∘ v) := by
+    rw [riemannianVolumeForm_apply, ← Manifold.Orientation.map_orientationAt_model oF hk x,
+      _root_.Orientation.volumeFormL_apply]
+    exact ((oM.orientationAt x).volumeForm_map e (e ∘ v)).symm.trans
+      (congrArg _ (funext fun i ↦ (e.symm_apply_apply (v i)).symm))
+  rw [hlhs, hrhs, hAvol]
+
+end Examples
 
 end TauCeti
