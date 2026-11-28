@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Boundary
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
 public import Mathlib.Data.Finset.Sort
+import Mathlib.CategoryTheory.Functor.KanExtension.DenseAtYoneda
 
 /-!
 # Complements on standard simplices
@@ -285,6 +286,9 @@ noncomputable def contraction (n : ℕ) :
     ext ⟨⟨m⟩⟩ p
     rfl
   rel := by ext _ ⟨⟨_, ⟨⟩⟩, _⟩
+
+/-- The standard simplex functor `SimplexCategory ⥤ SSet` is dense. -/
+instance isDense : stdSimplex.{u}.IsDense := inferInstanceAs uliftYoneda.{u}.IsDense
 
 end SSet.stdSimplex
 

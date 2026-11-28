@@ -156,8 +156,8 @@ defect groups are the Sylow `2`-subgroups of `S₃ = C_{S₃}(1)`, of order `2`.
 theorem not_isDefectGroup_blockOneS₃_bot :
     ¬ IsDefectGroup (ZMod 2) 2 (blockOneS₃ : MonoidAlgebra (ZMod 2) S₃) ⊥ := fun h => by
   obtain ⟨S, hS⟩ := isDefectGroup_blockOneS₃_iff_sylow.1 h
-  have hτ := S.maximal_isPGroup.eq_of_le (IsPGroup.of_card card_zpowers_τ) (hS ▸ bot_le)
-  have : τ ∈ (⊥ : Subgroup S₃) := hS ▸ hτ ▸ Subgroup.mem_zpowers τ
+  have hs := S.maximal_isPGroup.eq_of_le (IsPGroup.of_card card_zpowers_s) (hS ▸ bot_le)
+  have : s ∈ (⊥ : Subgroup S₃) := hS ▸ hs ▸ Subgroup.mem_zpowers s
   exact absurd (Subgroup.mem_bot.1 this) (by decide)
 
 /-- **Martínez's theorem on `𝔽₂[S₃]`.** The class `{1}` is a defect class of `1 + ρ + ρ²` for

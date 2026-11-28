@@ -57,6 +57,7 @@ isomorphisms and by reindexing.
   along an equivalence gives polynomial generators.
 * `MvPolynomial.exists_pos_eval_eq_mul_eval_div`: clears nonzero polynomial denominators in the
   value of a polynomial at a coordinatewise rational map by a strictly positive polynomial factor.
+* `MvPolynomial.exists_eval_comp`: closure of polynomial-witnessed maps under composition.
 -/
 
 public section
@@ -211,5 +212,19 @@ theorem exists_pos_eval_eq_mul_eval_div {α β K : Type*} [Field K] [LinearOrder
       eval (fun a ↦ eval x (N a) / eval x (D a)) p :=
     eval₂Hom_congr' rfl (fun a ha _ ↦ by simp [N', D', ha]) rfl
   obtain ⟨hB, hEq⟩ := hAB x hx; exact ⟨hB, heval ▸ hEq⟩
+
+/-- **Composition of polynomial-witnessed maps.** If `Φ : (τ → R) → R` is given by a multivariate
+polynomial and every coordinate of `Ψ : (σ → R) → τ → R` is given by a multivariate polynomial,
+then `fun w ↦ Φ (Ψ w)` is given by a multivariate polynomial. -/
+theorem exists_eval_comp {σ τ R : Type*} [CommSemiring R] {Φ : (τ → R) → R}
+    {Ψ : (σ → R) → τ → R}
+    (hΦ : ∃ P : MvPolynomial τ R, ∀ y, Φ y = eval y P)
+    (hΨ : ∀ k, ∃ Q : MvPolynomial σ R, ∀ w, Ψ w k = eval w Q) :
+    ∃ P : MvPolynomial σ R, ∀ w, Φ (Ψ w) = eval w P := by
+  choose Q hQ using hΨ
+  obtain ⟨P, hP⟩ := hΦ
+  refine ⟨aeval Q P, fun w ↦ ?_⟩
+  rw [hP (Ψ w), ← aeval_eq_eval, ← aeval_eq_eval, comp_aeval_apply, aeval_eq_eval, aeval_eq_eval]
+  exact congrArg (fun x ↦ eval x P) (funext fun k ↦ hQ k w)
 
 end MvPolynomial

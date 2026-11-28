@@ -27,6 +27,9 @@ the total space of the endomorphism bundle `Hom(E, E)` and `B × (V →L[𝕜] V
 * `Bundle.Trivialization.continuousOn_totalSpaceMk_conjStarAlgEquiv_orthonormalFrameAt`:
   conjugating a model endomorphism `Q` to `σ_y Q σ_y⁻¹` is continuous on `e.baseSet × univ` into
   the total space of `Hom(E, E)`.
+* `Bundle.Trivialization.continuousOn_continuousLinearMapAt_comp_orthonormalFrameAt`,
+  `Bundle.Trivialization.continuousOn_orthonormalFrameAt_symm_comp_symmL`: the frame `σ_y` and its
+  inverse, read in a second linear chart, are continuous families of operators.
 -/
 
 public section
@@ -72,6 +75,35 @@ theorem continuousOn_conjStarAlgEquiv_orthonormalFrameAt_symm :
   exact ((e.continuousOn_orthonormalFrameAt_symm c b).comp hv fun _ hq ↦ hq).congr
     fun q _ ↦ by simp
 
+omit [∀ b, CompleteSpace (E b)] [CompleteSpace V] in
+/-- Over `e.baseSet ∩ φ.baseSet`, the local orthonormal frame `e.orthonormalFrameAt c b`, read in a
+second linear chart `φ`, is a continuous family of operators `V →L[𝕜] F`. -/
+theorem continuousOn_continuousLinearMapAt_comp_orthonormalFrameAt
+    (φ : Trivialization F (π F E)) [φ.IsLinear 𝕜] :
+    ContinuousOn (fun y ↦ (φ.continuousLinearMapAt 𝕜 y).comp
+      ((e.orthonormalFrameAt c b y).toContinuousLinearEquiv : V →L[𝕜] E y))
+      (e.baseSet ∩ φ.baseSet) := by
+  refine continuousOn_clm_apply.2 fun v ↦ ?_
+  refine (continuous_snd.comp_continuousOn (φ.continuousOn.comp
+    ((e.continuousOn_totalSpaceMk_orthonormalFrameAt c b v).mono inter_subset_left)
+    fun y hy ↦ φ.mem_source.2 hy.2)).congr fun y hy ↦ ?_
+  simp [φ.continuousLinearMapAt_apply_of_mem (R := 𝕜) hy.2]
+
+omit [∀ b, CompleteSpace (E b)] [CompleteSpace V] [FiniteDimensional 𝕜 V] in
+/-- Over `e.baseSet ∩ φ.baseSet`, the inverse of the local orthonormal frame
+`e.orthonormalFrameAt c b`, read in a second linear chart `φ`, is a continuous family of operators
+`F →L[𝕜] V`. -/
+theorem continuousOn_orthonormalFrameAt_symm_comp_symmL [FiniteDimensional 𝕜 F]
+    (φ : Trivialization F (π F E)) [φ.IsLinear 𝕜] :
+    ContinuousOn (fun y ↦ ((e.orthonormalFrameAt c b y).symm.toContinuousLinearEquiv :
+      E y →L[𝕜] V).comp (φ.symmL 𝕜 y)) (e.baseSet ∩ φ.baseSet) := by
+  refine continuousOn_clm_apply.2 fun w ↦ ?_
+  have hs : ContinuousOn (fun y ↦ TotalSpace.mk' F y (φ.symm y w)) (e.baseSet ∩ φ.baseSet) :=
+    φ.continuousOn_symm.comp (continuous_id.prodMk continuous_const).continuousOn
+      fun y (hy : y ∈ e.baseSet ∩ φ.baseSet) ↦ ⟨hy.2, mem_univ w⟩
+  exact ((e.continuousOn_orthonormalFrameAt_symm c b).comp hs fun y hy ↦ hy.1).congr
+    fun y hy ↦ by simp [φ.symmL_apply hy.2]
+
 /-- Over `e.baseSet`, conjugating model endomorphisms by the local orthonormal frame
 `e.orthonormalFrameAt c b` is continuous into the total space of the endomorphism bundle. -/
 theorem continuousOn_totalSpaceMk_conjStarAlgEquiv_orthonormalFrameAt [FiniteDimensional 𝕜 F] :
@@ -86,22 +118,8 @@ theorem continuousOn_totalSpaceMk_conjStarAlgEquiv_orthonormalFrameAt [FiniteDim
   have hU : e.baseSet ∩ φ.baseSet ∈ 𝓝 y₀ :=
     (e.open_baseSet.inter φ.open_baseSet).mem_nhds ⟨hy₀, mem_baseSet_trivializationAt F E y₀⟩
   -- The local frame read in `φ`, and its inverse read in `φ`, are continuous near `y₀`.
-  have hA : ContinuousOn (fun y ↦ (φ.continuousLinearMapAt 𝕜 y).comp
-      ((e.orthonormalFrameAt c b y).toContinuousLinearEquiv : V →L[𝕜] E y))
-      (e.baseSet ∩ φ.baseSet) := by
-    refine continuousOn_clm_apply.2 fun v ↦ ?_
-    refine (continuous_snd.comp_continuousOn (φ.continuousOn.comp
-      ((e.continuousOn_totalSpaceMk_orthonormalFrameAt c b v).mono inter_subset_left)
-      fun y hy ↦ φ.mem_source.2 hy.2)).congr fun y hy ↦ ?_
-    simp [φ.continuousLinearMapAt_apply_of_mem (R := 𝕜) hy.2]
-  have hC : ContinuousOn (fun y ↦ ((e.orthonormalFrameAt c b y).symm.toContinuousLinearEquiv :
-      E y →L[𝕜] V).comp (φ.symmL 𝕜 y)) (e.baseSet ∩ φ.baseSet) := by
-    refine continuousOn_clm_apply.2 fun w ↦ ?_
-    have hs : ContinuousOn (fun y ↦ TotalSpace.mk' F y (φ.symm y w)) (e.baseSet ∩ φ.baseSet) :=
-      φ.continuousOn_symm.comp (continuous_id.prodMk continuous_const).continuousOn
-        fun y (hy : y ∈ e.baseSet ∩ φ.baseSet) ↦ ⟨hy.2, mem_univ w⟩
-    exact ((e.continuousOn_orthonormalFrameAt_symm c b).comp hs fun y hy ↦ hy.1).congr
-      fun y hy ↦ by simp [φ.symmL_apply hy.2]
+  have hA := e.continuousOn_continuousLinearMapAt_comp_orthonormalFrameAt c b φ
+  have hC := e.continuousOn_orthonormalFrameAt_symm_comp_symmL c b φ
   have hA' : ContinuousAt (fun q : B × (V →L[𝕜] V) ↦ (φ.continuousLinearMapAt 𝕜 q.1).comp
       ((e.orthonormalFrameAt c b q.1).toContinuousLinearEquiv : V →L[𝕜] E q.1)) (y₀, Q₀) := by
     have h := hA.continuousAt hU

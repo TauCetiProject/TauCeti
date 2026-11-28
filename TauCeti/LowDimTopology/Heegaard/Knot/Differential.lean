@@ -76,7 +76,8 @@ the first counts the domains avoiding `w` with any multiplicity at `z`, the seco
 * the relative Alexander grading is `A(x, y) = b - a`
   (`relativeAlexanderGrading_eq_of_coeff_knotCoefficient_ne_zero`, and its version modulo the
   periodic Alexander values in general), so that the knot differential preserves the Alexander
-  grading `A(U ^ a V ^ b x) = A(x) + b - a`;
+  grading `A(U ^ a V ^ b x) = A(x) + b - a`, for every absolute Alexander grading `A` whose
+  differences are the relative ones (`sub_eq_of_coeff_knotCoefficient_ne_zero`);
 * the relative Maslov grading of the diagram pointed at `w` is `gr(x, y) = 1 - 2 a`
   (`relativeGrading_eq_one_sub_two_mul_of_coeff_knotCoefficient_ne_zero`), so that the knot
   differential lowers the grading `gr(U ^ a V ^ b x) = gr(x) - 2 a` by one.
@@ -301,6 +302,17 @@ theorem relativeAlexanderGrading_eq_of_coeff_knotCoefficient_ne_zero
     H.relativeAlexanderGrading w z x y = m 1 - m 0 := by
   obtain ⟨D, hD, hw, hz⟩ := exists_mem_minusDomains_of_coeff_knotCoefficient_ne_zero h
   rw [(mem_minusDomains_iff.mp hD).1.relativeAlexanderGrading_eq hA, hw, hz]
+
+/-- **The knot differential preserves an Alexander grading.** For an Alexander grading `A` of the
+generators with `A(x) - A(y) = n_z(D) - n_w(D)` for every domain `D` from `x` to `y`, a term
+`U ^ m 0 * V ^ m 1` of the knot coefficient from `x` to `y` has `A(x) - A(y) = m 1 - m 0`. -/
+theorem sub_eq_of_coeff_knotCoefficient_ne_zero {A : H.Generator → ℤ}
+    (hA : ∀ {x y : H.Generator} {D : Region → ℤ}, H.IsDomainBetween x y D →
+      A x - A y = D (H.basepoint z) - D (H.basepoint w))
+    {m : Fin 2 →₀ ℕ} (h : (H.knotCoefficient χ w z x y).coeff m ≠ 0) :
+    A x - A y = m 1 - m 0 := by
+  obtain ⟨D, hD, hw, hz⟩ := exists_mem_minusDomains_of_coeff_knotCoefficient_ne_zero h
+  rw [hA (mem_minusDomains_iff.mp hD).1, hw, hz]
 
 /-- **The knot differential lowers the Maslov grading by one.** When the relative Maslov grading
 of the diagram `H_w` pointed at `w` alone is normalized and its periodic domains have Maslov index

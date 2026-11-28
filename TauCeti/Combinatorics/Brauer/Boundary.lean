@@ -47,6 +47,11 @@ loops that form there, by alternately following the caps of `D₁` (`capMatching
 * `TauCeti.BrauerDiagram.forall_isThrough_iff_bottomCap_eq_empty`,
   `TauCeti.BrauerDiagram.exists_eq_permToBrauer_iff_bottomCap_eq_empty`: a diagram is a
   permutation diagram exactly when it caps no bottom point.
+* `TauCeti.BrauerDiagram.bottomCap_capCup`, `TauCeti.BrauerDiagram.topCup_capCup`,
+  `TauCeti.BrauerDiagram.bottomThrough_capCup`, `TauCeti.BrauerDiagram.topThrough_capCup`: the
+  boundary sets of a cap-cup diagram.
+* `TauCeti.capCup_comm`, `TauCeti.capCup_eq_capCup_iff`: a cap-cup diagram depends exactly on the
+  unordered pair it caps.
 
 ## References
 
@@ -61,14 +66,6 @@ namespace TauCeti
 namespace BrauerDiagram
 
 variable {k : ℕ} (D : BrauerDiagram k)
-
-/-- A bottom point lies on a cap exactly when it does not lie on a through strand. -/
-theorem isCap_inl_iff (i : Fin k) : D.IsCap (Sum.inl i) ↔ ¬D.IsThrough (Sum.inl i) := by
-  rcases h : D.val (Sum.inl i) with j | j <;> simp [isCap_def, isThrough_def, h]
-
-/-- A top point lies on a cup exactly when it does not lie on a through strand. -/
-theorem isCup_inr_iff (j : Fin k) : D.IsCup (Sum.inr j) ↔ ¬D.IsThrough (Sum.inr j) := by
-  rcases h : D.val (Sum.inr j) with i | i <;> simp [isCup_def, isThrough_def, h]
 
 /-- The bottom endpoints of the through strands of `D`. -/
 def bottomThrough : Finset (Fin k) := Finset.univ.filter fun i => D.IsThrough (Sum.inl i)
@@ -222,6 +219,74 @@ theorem inr_cupMatching (j : {j : Fin k // D.IsCup (Sum.inr j)}) :
     Sum.inr (D.cupMatching.val j).val = D.val (Sum.inr j.val) := by
   simpa [cupMatching] using inr_cupFun D j
 
+section CapCup
+
+variable {a b : Fin k}
+
+/-- The capped bottom points of `capCup a b` are `a` and `b`. -/
+@[simp]
+theorem bottomCap_capCup (hab : a ≠ b) : (capCup a b).bottomCap = {a, b} := by
+  ext i
+  rw [mem_bottomCap, isCap_capCup_inl_iff hab]
+  simp
+
+/-- The cupped top points of `capCup a b` are `a` and `b`. -/
+@[simp]
+theorem topCup_capCup (hab : a ≠ b) : (capCup a b).topCup = {a, b} := by
+  ext j
+  rw [mem_topCup, isCup_capCup_inr_iff hab]
+  simp
+
+/-- The bottom endpoints of the through strands of `capCup a b` are the points off the pair, the
+complement of its cap.
+
+Not a `simp` lemma: `simp` rewrites the complement of a pair further, so the right-hand side is
+not in simp-normal form. -/
+theorem bottomThrough_capCup (hab : a ≠ b) : (capCup a b).bottomThrough = {a, b}ᶜ := by
+  rw [← compl_compl (capCup a b).bottomThrough, ← bottomCap_eq_compl, bottomCap_capCup hab]
+
+/-- The top endpoints of the through strands of `capCup a b` are the points off the pair, the
+complement of its cup.
+
+Not a `simp` lemma, for the reason given for `TauCeti.BrauerDiagram.bottomThrough_capCup`. -/
+theorem topThrough_capCup (hab : a ≠ b) : (capCup a b).topThrough = {a, b}ᶜ := by
+  rw [← compl_compl (capCup a b).topThrough, ← topCup_eq_compl, topCup_capCup hab]
+
+end CapCup
+
 end BrauerDiagram
+
+/-! ### A cap-cup diagram depends only on the unordered pair -/
+
+section CapCupPair
+
+variable {k : ℕ} {a b c d : Fin k}
+
+/-- **A cap-cup diagram depends only on the unordered pair it caps.** -/
+theorem capCup_comm (a b : Fin k) : capCup b a = capCup a b := by
+  rcases eq_or_ne a b with rfl | hab
+  · rfl
+  exact (eq_capCup_iff hab).mpr ⟨capCup_val_inl_right hab.symm, capCup_val_inr_right hab.symm,
+    fun _ hia hib => capCup_val_inl_of_ne hib hia⟩
+
+/-- **Two cap-cup diagrams agree exactly when they cap the same unordered pair**, once one of
+them is built on a pair of distinct indices. -/
+@[simp]
+theorem capCup_eq_capCup_iff (hab : a ≠ b) :
+    capCup a b = capCup c d ↔ (a = c ∧ b = d) ∨ (a = d ∧ b = c) := by
+  refine ⟨fun h => ?_, ?_⟩
+  · rcases eq_or_ne c d with rfl | hcd
+    · rw [capCup_self] at h
+      exact absurd h (capCup_ne_permToBrauer hab 1)
+    · have hpair : ({a, b} : Finset (Fin k)) = {c, d} := by
+        rw [← BrauerDiagram.bottomCap_capCup hab, ← BrauerDiagram.bottomCap_capCup hcd, h]
+      rw [← Finset.coe_inj] at hpair
+      simp only [Finset.coe_insert, Finset.coe_singleton] at hpair
+      exact Set.pair_eq_pair_iff.mp hpair
+  · rintro (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
+    · rfl
+    · exact capCup_comm _ _
+
+end CapCupPair
 
 end TauCeti
