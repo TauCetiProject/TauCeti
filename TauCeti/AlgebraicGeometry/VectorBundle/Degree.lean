@@ -14,6 +14,7 @@ public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.Degree
 public import TauCeti.AlgebraicGeometry.Cohomology.Skyscraper
 public import TauCeti.AlgebraicGeometry.VectorBundle.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.Curves.Degree.Pullback
+public import TauCeti.AlgebraicGeometry.Curves.Finite
 public import TauCeti.AlgebraicGeometry.VectorBundle.FreeSubsheaf
 import TauCeti.AlgebraicGeometry.Morphisms.Finite.Flat.Degree
 import TauCeti.AlgebraicGeometry.Noetherian
@@ -83,7 +84,9 @@ formula `f_* f^* E ≅ E ⊗ f_* 𝒪_X`, where `f_* 𝒪_X` is a vector bundle 
 (`FiniteLocallyFreeSheaf.rank_pushforward_unit_apply`). The formula for the degree of a tensor
 product then gives `deg f^* E = deg (E ⊗ f_* 𝒪_X) - r · deg (f_* 𝒪_X) = d · deg E`. A finite
 dominant morphism from an integral scheme onto such a curve is flat, as the local rings of the curve
-are valuation rings.
+are valuation rings. A nonconstant morphism of curves over `k` is dominant and finite
+(`AlgebraicGeometry.Scheme.Hom.isFinite_of_isDominant_of_isCurveOver`), so the formula holds for
+every nonconstant morphism of curves onto such a curve.
 
 ## Main declarations
 
@@ -141,7 +144,11 @@ are valuation rings.
   `FixedRank.vectorBundleDegree_pullback_eq_finrank_functionField_mul_of_isCurveOver`: the same
   formulas for vector bundles of every constant rank, on a proper integral curve `Y` whose
   codimension-one local rings are discrete valuation rings, the second for a finite dominant
-  morphism from an integral scheme.
+  morphism from an integral scheme;
+* `FixedRank.vectorBundleDegree_pullback`: `deg f^* E = [K(X) : f^* K(Y)] · deg E` for a
+  nonconstant morphism `f : X ⟶ Y` of curves over `k`, where the codimension-one local rings of
+  `Y` are discrete valuation rings, and a vector bundle `E` of constant rank on `Y`; such a
+  morphism is finite (`AlgebraicGeometry.Scheme.Hom.isFinite_of_isDominant_of_isCurveOver`).
 
 ## References
 
@@ -805,6 +812,26 @@ theorem vectorBundleDegree_pullback_eq_finrank_functionField_mul_of_isCurveOver 
     f.finrank_eq_finrank_fieldRange_functionFieldMap E
 
 end PullbackOfIsCurveOver
+
+section PullbackOfCurve
+
+variable {Y : Scheme.{u}} [Y.Over (Spec (.of k))] [X.IsCurveOver k] [Y.IsCurveOver k]
+  [∀ y : CodimensionOnePoint Y, IsDiscreteValuationRing (Y.presheaf.stalk (y : Y))]
+
+/-- **The degree of a vector bundle under pullback along a nonconstant morphism of curves**
+(Stacks, Lemma 0AYZ). Let `f : X ⟶ Y` be a dominant, equivalently nonconstant
+(`AlgebraicGeometry.Scheme.Hom.isDominant_iff_nontrivial_range`), morphism over `k` of curves over
+`k`, where the codimension-one local rings of `Y` are discrete valuation rings. Then
+`deg f^* E = [K(X) : f^* K(Y)] · deg E` for every vector bundle `E` of constant rank on `Y`. The
+curve `X` may be singular. -/
+theorem vectorBundleDegree_pullback (f : X ⟶ Y) [f.IsOver (Spec (.of k))] [IsDominant f]
+    (E : FixedRank Y r) :
+    vectorBundleDegree k ((pullback f).obj E) =
+      Module.finrank f.functionFieldMap.hom.fieldRange X.functionField * vectorBundleDegree k E :=
+  have := f.isFinite_of_isDominant_of_isCurveOver k
+  vectorBundleDegree_pullback_eq_finrank_functionField_mul_of_isCurveOver k E
+
+end PullbackOfCurve
 
 end FiniteLocallyFreeSheaf.FixedRank
 
