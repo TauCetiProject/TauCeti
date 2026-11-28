@@ -55,9 +55,10 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
   `‖∏_{n ≥ 1} (1 - qⁿ w) - 1‖ ≤ exp (‖q‖ ‖w‖ / (1 - ‖q‖)) - 1`, and
   `‖∏_{n ≥ 1} (1 - qⁿ w) - 1‖ ≤ ‖q‖ / (1 - 2‖q‖)` for `‖q‖ < 1/2` and `‖w‖ ≤ 1`, in particular
   `‖∏_{n ≥ 1} (1 + qⁿ) - 1‖ ≤ ‖q‖ / (1 - 2‖q‖)`.
-* `TauCeti.multipliable_one_add_pow`, `TauCeti.multipliable_one_sub_pow_odd`,
-  `TauCeti.multipliable_one_add_pow_odd`: for `‖q‖ < 1` the products `∏_{n ≥ 1} (1 + qⁿ)` and
-  `∏_{n ≥ 0} (1 ∓ q^{2n+1})` converge.
+* `TauCeti.multipliable_one_add_pow`, `TauCeti.multipliable_one_sub_pow_odd_mul`,
+  `TauCeti.multipliable_one_sub_pow_odd`, `TauCeti.multipliable_one_add_pow_odd`: for `‖q‖ < 1`
+  the products `∏_{n ≥ 1} (1 + qⁿ)` and `∏_{n ≥ 0} (1 - q^{2n+1} w)` (and in particular
+  `∏_{n ≥ 0} (1 ∓ q^{2n+1})`) converge.
 * `TauCeti.qTheta`: the theta product `θ_q(w) = (1 - w) ∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)`.
 * `TauCeti.multipliable_qTheta`, `TauCeti.qTheta_ne_zero`: for `‖q‖ < 1` the product in
   `θ_q(w)` converges, and `θ_q(w) ≠ 0` when `w` is not an integral power of `q`.
@@ -75,10 +76,13 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
   `θ_{s³}(s) ∏_{n ≥ 1} (1 - s^{3n}) = ∏_{n ≥ 1} (1 - sⁿ)`, and
   `θ_q(ω) ∏_{n ≥ 1} (1 - qⁿ) = (1 - ω) ∏_{n ≥ 1} (1 - q^{3n})` for a primitive cube root of
   unity `ω`.
-* `TauCeti.tprod_one_sub_pow_eq_tprod_one_sub_pow_odd_mul`,
-  `TauCeti.tprod_one_add_pow_mul_tprod_one_sub_pow`: the Euler function `∏_{n ≥ 1} (1 - qⁿ)` is
-  `∏_{n ≥ 0} (1 - q^{2n+1}) ∏_{n ≥ 1} (1 - q^{2n})`, and multiplying it by `∏_{n ≥ 1} (1 + qⁿ)`
-  gives `∏_{n ≥ 1} (1 - q^{2n})`.
+* `TauCeti.tprod_one_sub_pow_mul_eq_tprod_one_sub_pow_odd_mul`,
+  `TauCeti.tprod_one_sub_pow_eq_tprod_one_sub_pow_odd_mul`,
+  `TauCeti.tprod_one_add_pow_eq_tprod_one_add_pow_odd_mul`,
+  `TauCeti.tprod_one_add_pow_mul_tprod_one_sub_pow`: splitting `∏_{n ≥ 1} (1 - qⁿ w)` into its
+  odd- and even-power factors `∏_{n ≥ 0} (1 - q^{2n+1} w) ∏_{n ≥ 1} (1 - q^{2n} w)`, specialized
+  to `w = 1` and `w = -1`, and multiplying `∏_{n ≥ 1} (1 + qⁿ)` by `∏_{n ≥ 1} (1 - qⁿ)` gives
+  `∏_{n ≥ 1} (1 - q^{2n})`.
 * `TauCeti.tprod_one_add_pow_mul_tprod_one_sub_pow_odd`: **Euler's identity**
   `∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 0} (1 - q^{2n+1}) = 1` for `‖q‖ < 1`, the analytic form of the
   equinumerosity of partitions into distinct parts and into odd parts.
@@ -360,14 +364,16 @@ theorem qTheta_mul_left {q : 𝕜} (hq : ‖q‖ < 1) (hq₀ : q ≠ 0) {w : �
   field_simp
   ring
 
+/-- For `‖q‖ < 1` the product `∏_{n ≥ 0} (1 - q^{2n+1} w)` over the odd powers of `q` converges. -/
+theorem multipliable_one_sub_pow_odd_mul {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
+    Multipliable fun n : ℕ ↦ 1 - q ^ (2 * n + 1) * w :=
+  multipliable_one_sub_of_summable
+    ((summable_norm_pow_succ_mul hq w).comp_injective (mul_right_injective₀ (a := 2) two_ne_zero))
+
 /-- For `‖q‖ < 1` the product `∏_{n ≥ 0} (1 - q^{2n+1})` over the odd powers of `q` converges. -/
 theorem multipliable_one_sub_pow_odd {q : 𝕜} (hq : ‖q‖ < 1) :
     Multipliable fun n : ℕ ↦ 1 - q ^ (2 * n + 1) := by
-  refine multipliable_one_sub_of_summable ?_
-  exact ((summable_geometric_of_lt_one (norm_nonneg _) (norm_pow_lt_one hq two_ne_zero)).mul_left
-    ‖q‖).congr fun n ↦ by
-      simp only [norm_pow]
-      ring
+  simpa using multipliable_one_sub_pow_odd_mul hq 1
 
 /-- For `‖q‖ < 1` the product `∏_{n ≥ 0} (1 + q^{2n+1})` over the odd powers of `q` converges. -/
 theorem multipliable_one_add_pow_odd {q : 𝕜} (hq : ‖q‖ < 1) :
@@ -382,16 +388,31 @@ theorem tprod_one_sub_pow_odd_mul_tprod_one_add_pow_odd {q : 𝕜} (hq : ‖q‖
   rw [← (multipliable_one_sub_pow_odd hq).tprod_mul (multipliable_one_add_pow_odd hq)]
   exact tprod_congr fun n ↦ by ring
 
+/-- Splitting `∏_{n ≥ 1} (1 - qⁿ w)` into odd and even powers of `q`:
+`∏_{n ≥ 1} (1 - qⁿ w) = ∏_{n ≥ 0} (1 - q^{2n+1} w) ∏_{n ≥ 1} (1 - q^{2n} w)` for `‖q‖ < 1`. -/
+theorem tprod_one_sub_pow_mul_eq_tprod_one_sub_pow_odd_mul {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
+    ∏' n : ℕ, (1 - q ^ (n + 1) * w) =
+      (∏' n : ℕ, (1 - q ^ (2 * n + 1) * w)) * ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1) * w) := by
+  have hP₂ : Multipliable fun n : ℕ ↦ 1 - q ^ (2 * n + 1 + 1) * w := by
+    simpa [← pow_mul, mul_add] using
+      multipliable_one_sub_pow_mul (norm_pow_lt_one hq two_ne_zero) w
+  rw [← tprod_even_mul_odd (f := fun n ↦ 1 - q ^ (n + 1) * w)
+    (multipliable_one_sub_pow_odd_mul hq w) hP₂]
+  simp [← pow_mul, mul_add]
+
 /-- The Euler product `∏_{n ≥ 1} (1 - qⁿ)` split into its odd and even factors:
 `∏_{n ≥ 1} (1 - qⁿ) = ∏_{n ≥ 0} (1 - q^{2n+1}) ∏_{n ≥ 1} (1 - q^{2n})` for `‖q‖ < 1`. -/
 theorem tprod_one_sub_pow_eq_tprod_one_sub_pow_odd_mul {q : 𝕜} (hq : ‖q‖ < 1) :
     ∏' n : ℕ, (1 - q ^ (n + 1)) =
       (∏' n : ℕ, (1 - q ^ (2 * n + 1))) * ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1)) := by
-  have hP₂ : Multipliable fun n : ℕ ↦ 1 - (q ^ 2) ^ (n + 1) := by
-    simpa using multipliable_one_sub_pow_mul (norm_pow_lt_one hq two_ne_zero) 1
-  rw [← tprod_even_mul_odd (f := fun n ↦ 1 - q ^ (n + 1))
-    (multipliable_one_sub_pow_odd hq) (by simpa [← pow_mul, mul_add] using hP₂)]
-  simp [← pow_mul, mul_add]
+  simpa using tprod_one_sub_pow_mul_eq_tprod_one_sub_pow_odd_mul hq 1
+
+/-- The product `∏_{n ≥ 1} (1 + qⁿ)` split into its odd and even factors:
+`∏_{n ≥ 1} (1 + qⁿ) = ∏_{n ≥ 0} (1 + q^{2n+1}) ∏_{n ≥ 1} (1 + q^{2n})` for `‖q‖ < 1`. -/
+theorem tprod_one_add_pow_eq_tprod_one_add_pow_odd_mul {q : 𝕜} (hq : ‖q‖ < 1) :
+    ∏' n : ℕ, (1 + q ^ (n + 1)) =
+      (∏' n : ℕ, (1 + q ^ (2 * n + 1))) * ∏' n : ℕ, (1 + (q ^ 2) ^ (n + 1)) := by
+  simpa [sub_neg_eq_add] using tprod_one_sub_pow_mul_eq_tprod_one_sub_pow_odd_mul hq (-1)
 
 /-- `∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 1} (1 - qⁿ) = ∏_{n ≥ 1} (1 - q^{2n})` for `‖q‖ < 1`. -/
 theorem tprod_one_add_pow_mul_tprod_one_sub_pow {q : 𝕜} (hq : ‖q‖ < 1) :

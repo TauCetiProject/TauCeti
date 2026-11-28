@@ -158,13 +158,12 @@ theorem modularLambda_eq_mul_tprod_div_tprod {τ : ℂ} (hτ : 0 < τ.im) :
   rw [modularLambda_eq_mul_tprod hτ]
   set q := cexp (π * I * τ)
   have hq : ‖q‖ < 1 := UpperHalfPlane.norm_exp_pi_I_lt_one hτ
-  have hq2 : ‖q ^ 2‖ < 1 := by simpa using pow_lt_one₀ (norm_nonneg q) hq two_ne_zero
-  have hE : Multipliable fun n : ℕ ↦ 1 + q ^ (2 * n + 2) :=
-    (multipliable_one_add_pow hq2).congr fun n ↦ by rw [← pow_mul, mul_add, mul_one]
+  have hE : ∏' n : ℕ, (1 + q ^ (2 * n + 2)) = ∏' n : ℕ, (1 + (q ^ 2) ^ (n + 1)) :=
+    tprod_congr fun n ↦ by rw [← pow_mul, mul_add, mul_one]
   -- Euler's identity, with `∏_{n ≥ 1} (1 + qⁿ)` split into its odd and even factors.
   have heuler : ((∏' n : ℕ, (1 + q ^ (2 * n + 1))) * ∏' n : ℕ, (1 + q ^ (2 * n + 2))) *
       ∏' n : ℕ, (1 - q ^ (2 * n + 1)) = 1 := by
-    rw [tprod_even_mul_odd (f := fun n ↦ 1 + q ^ (n + 1)) (multipliable_one_add_pow_odd hq) hE]
+    rw [hE, ← tprod_one_add_pow_eq_tprod_one_add_pow_odd_mul hq]
     exact tprod_one_add_pow_mul_tprod_one_sub_pow_odd hq
   rw [eq_inv_of_mul_eq_one_right heuler]
   field_simp [left_ne_zero_of_mul_eq_one heuler]

@@ -57,10 +57,15 @@ The character need not be primitive: `(-12 / ·)` is induced from `(-3 / ·)`.
   `TauCeti.kroneckerSym_pow_left`, `TauCeti.kroneckerSym_eq_one_of_isSquare`: multiplicativity in
   the numerator, over nonzero factors and without restriction when the denominator is not `-1`,
   unrestricted power law, and value `1` on squares coprime to the denominator.
-* `TauCeti.kroneckerSym_eq_zero_iff`: `(a / b) = 0` exactly when `gcd (a, b) ≠ 1`.
+* `TauCeti.kroneckerSym_eq_zero_iff`, `TauCeti.kroneckerSym_eq_zero_of_dvd`: `(a / b) = 0`
+  exactly when `gcd (a, b) ≠ 1`, in particular when `a` and `b` share a non-unit divisor.
 * `TauCeti.kroneckerSym_eq_jacobiSym_natAbs`: `(D / n) = J(n | |D|)` for `D ≡ 1 (mod 4)`.
-* `TauCeti.kroneckerSym_neg_one_left_of_odd`, `TauCeti.kroneckerSym_quadratic_reciprocity`: the
-  first supplementary law `(-1 / b) = χ₄ b` at odd `b`, and quadratic reciprocity
+* `TauCeti.kroneckerSym_neg_one_left_of_odd`, `TauCeti.kroneckerSym_two_left`,
+  `TauCeti.kroneckerSym_neg_left`, `TauCeti.kroneckerSym_neg_right`,
+  `TauCeti.kroneckerSym_neg_neg`, `TauCeti.kroneckerSym_neg_left_of_odd`,
+  `TauCeti.kroneckerSym_neg_neg_of_odd`, `TauCeti.kroneckerSym_quadratic_reciprocity`: the
+  supplementary laws `(-1 / b) = χ₄ b` at odd `b` and `(2 / b) = χ₈ b` for all `b`, the
+  sign-change formulas `(-a / b)`, `(a / -b)`, and `(-a / -b)`, and quadratic reciprocity
   `(n / b) = (b / n) (-1 / b) ^ ((n - 1) / 2)` at an odd positive numerator `n` and every `b`.
 * `TauCeti.kroneckerSym_mod_right'`: for `D ≡ 0, 1 (mod 4)`, `(D / ·)` is periodic modulo `D`.
 * `TauCeti.kroneckerChar_intCast`, `TauCeti.kroneckerChar_isQuadratic`,
@@ -226,6 +231,12 @@ theorem kroneckerSym_eq_zero_iff {a b : ℤ} : kroneckerSym a b = 0 ↔ a.gcd b 
     Int.natAbs_natCast, not_and_or, not_imp, Nat.coprime_iff_gcd_eq_one, ← Int.natCast_dvd,
     Nat.cast_ofNat]
 
+/-- If `d` is a non-unit common divisor of `a` and `b`, then `(a / b) = 0`. -/
+theorem kroneckerSym_eq_zero_of_dvd {a b d : ℤ} (hd : ¬ IsUnit d) (ha : d ∣ a) (hb : d ∣ b) :
+    kroneckerSym a b = 0 :=
+  kroneckerSym_eq_zero_iff.mpr fun h ↦ hd <| Int.isUnit_iff_natAbs_eq.mpr <|
+    Nat.dvd_one.mp (h ▸ Int.dvd_gcd (Int.natAbs_dvd.mpr ha) (Int.natAbs_dvd.mpr hb))
+
 /-- `(0 / b)` is `1` for `b = ±1` and `0` otherwise. -/
 @[simp]
 theorem kroneckerSym_zero_left (b : ℤ) : kroneckerSym 0 b = if b = 1 ∨ b = -1 then 1 else 0 := by
@@ -353,6 +364,11 @@ private theorem ne_neg_one_of_modEq_four {D : ℤ} (hD : D ≡ 0 [ZMOD 4] ∨ D 
   rintro rfl
   rcases hD with h | h <;> revert h <;> decide
 
+private theorem χ₈_natAbs (b : ℤ) : χ₈ (b.natAbs : ZMod 8) = χ₈ b := by
+  rcases Int.natAbs_eq b with h | h
+  · rw [← Int.cast_natCast, ← h]
+  · rw [← Int.cast_natCast, ← neg_eq_iff_eq_neg.mpr h, Int.cast_neg, χ₈_neg]
+
 /-- For `D ≡ 1 (mod 4)`, the Kronecker symbol `(D / n)` is the Jacobi symbol `J(n | |D|)`, for every
 integer `n`. At odd `n > 0` this is quadratic reciprocity, at `n = 2` the supplementary law
 `χ₈ D = J(2 | |D|)`, and at `n = -1` the supplementary law `sign D = J(-1 | |D|)`. In particular
@@ -374,11 +390,7 @@ theorem kroneckerSym_eq_jacobiSym_natAbs {D : ℤ} (hD : D ≡ 1 [ZMOD 4]) (n : 
     -- factors at `m`, and the supplementary law `J(2 | |D|) = χ₈ |D|` those at `2 ^ e`.
     rw [kroneckerSym_mul_right_of_ne_neg_one hD1, kroneckerSym_pow_right, kroneckerSym_two_right,
       kroneckerSym_eq_jacobiSym _ hm, jacobiSym_eq_jacobiSym_natAbs_of_emod_four_eq_one hD4 hm]
-    simp only [jacobiSym.mul_left, jacobiSym.pow_left, jacobiSym.at_two hodd]
-    congr 2
-    rcases Int.natAbs_eq D with h | h
-    · rw [h, Int.natAbs_natCast, Int.cast_natCast]
-    · rw [h, Int.natAbs_neg, Int.natAbs_natCast, Int.cast_neg, Int.cast_natCast, χ₈_neg]
+    simp only [jacobiSym.mul_left, jacobiSym.pow_left, jacobiSym.at_two hodd, χ₈_natAbs]
   rcases Int.eq_nat_or_neg n with ⟨k, rfl | rfl⟩
   · exact hnat k
   · rw [neg_eq_neg_one_mul, kroneckerSym_mul_right_of_ne_neg_one hD1, kroneckerSym_neg_one_right,
@@ -400,6 +412,56 @@ theorem kroneckerSym_neg_one_left_of_odd {b : ℤ} (hb : Odd b) : kroneckerSym (
   · rw [abs_of_neg h]
     simp only [h, neg_lt_zero, zero_lt_one, and_self, ite_true]
     split_ifs <;> omega
+
+/-- The second supplementary law for all integer denominators: `(2 / b) = χ₈ b`. For even `b`
+both sides vanish, and for odd `b` it reduces to `jacobiSym.at_two` on `|b|`. -/
+theorem kroneckerSym_two_left (b : ℤ) : kroneckerSym 2 b = χ₈ b := by
+  by_cases hb : Odd b
+  · rw [kroneckerSym_of_odd 2 hb, ite_eq_right (by omega), one_mul,
+      jacobiSym.at_two (Int.natAbs_odd.mpr hb), χ₈_natAbs]
+  · have h2 : (2 : ℤ) ∣ b := even_iff_two_dvd.mp (Int.not_odd_iff_even.mp hb)
+    rw [kroneckerSym_eq_zero_of_dvd (by decide) (dvd_refl 2) h2, (χ₈_intCast_eq_zero_iff b).mpr h2]
+
+/-- Negating the numerator: `(-a / b) = (-1 / b) · (a / b)` whenever `a ≠ 0 ∨ b ≠ -1`. The
+hypothesis is needed at `a = 0, b = -1`, where `(0 / -1) = 1` and `(-1 / -1) = -1`. -/
+theorem kroneckerSym_neg_left {a b : ℤ} (h : a ≠ 0 ∨ b ≠ -1) :
+    kroneckerSym (-a) b = kroneckerSym (-1) b * kroneckerSym a b := by
+  rcases h with ha | hb
+  · rw [neg_eq_neg_one_mul a, kroneckerSym_mul_left (by decide) ha b]
+  · rw [neg_eq_neg_one_mul a, kroneckerSym_mul_left_of_ne_neg_one hb (-1) a]
+
+/-- Negating the denominator: `(a / -b) = (if a < 0 then -1 else 1) · (a / b)` whenever
+`b ≠ 0 ∨ a ≠ -1`. The hypothesis is needed at `a = -1, b = 0`, where `(-1 / 0) = 1`. -/
+theorem kroneckerSym_neg_right (a : ℤ) {b : ℤ} (h : b ≠ 0 ∨ a ≠ -1) :
+    kroneckerSym a (-b) = (if a < 0 then -1 else 1) * kroneckerSym a b := by
+  rcases h with hb | ha
+  · rw [neg_eq_neg_one_mul b, kroneckerSym_mul_right a (by decide) hb, kroneckerSym_neg_one_right]
+  · rw [neg_eq_neg_one_mul b, kroneckerSym_mul_right_of_ne_neg_one ha (-1) b,
+      kroneckerSym_neg_one_right]
+
+/-- Simultaneous sign change: `(-a / -b) = (-1 / -b) · (if a < 0 then -1 else 1) · (a / b)`
+whenever `a ≠ 0 ∨ b ≠ 1` and `b ≠ 0 ∨ a ≠ -1` (failing at `a = 0, b = 1` and `a = -1, b = 0`). -/
+theorem kroneckerSym_neg_neg {a b : ℤ} (ha : a ≠ 0 ∨ b ≠ 1) (hb : b ≠ 0 ∨ a ≠ -1) :
+    kroneckerSym (-a) (-b) =
+      kroneckerSym (-1) (-b) * (if a < 0 then -1 else 1) * kroneckerSym a b := by
+  have ha' : a ≠ 0 ∨ (-b : ℤ) ≠ -1 := ha.imp_right fun h he ↦ h (by omega)
+  rw [kroneckerSym_neg_left ha', kroneckerSym_neg_right a hb, mul_assoc]
+
+/-- Negating the numerator at an odd denominator `b`: `(-a / b) = χ₄ b · (a / b)` whenever
+`a ≠ 0 ∨ b ≠ -1`. -/
+theorem kroneckerSym_neg_left_of_odd {a b : ℤ} (ha : a ≠ 0 ∨ b ≠ -1) (hb : Odd b) :
+    kroneckerSym (-a) b = χ₄ b * kroneckerSym a b := by
+  rw [kroneckerSym_neg_left ha, kroneckerSym_neg_one_left_of_odd hb]
+
+/-- Simultaneous sign change at an odd denominator `b`:
+`(-a / -b) = (if a < 0 then 1 else -1) · χ₄ b · (a / b)` whenever `a ≠ 0 ∨ b ≠ 1`. In
+particular, for `a < 0` and odd `b`, `(-a / -b) = χ₄ b · (a / b)`. -/
+theorem kroneckerSym_neg_neg_of_odd {a b : ℤ} (ha : a ≠ 0 ∨ b ≠ 1) (hb : Odd b) :
+    kroneckerSym (-a) (-b) = (if a < 0 then 1 else -1) * χ₄ b * kroneckerSym a b := by
+  have hb0 : b ≠ 0 := by rintro rfl; exact Int.not_odd_zero hb
+  rw [kroneckerSym_neg_neg ha (.inl hb0), kroneckerSym_neg_one_left_of_odd hb.neg,
+    Int.cast_neg, χ₄_neg]
+  split_ifs <;> ring
 
 /-- **Quadratic reciprocity for the Kronecker symbol** at an odd positive numerator `n`: for every
 integer `b`, `(n / b) = (b / n) · (-1 / b) ^ ((n - 1) / 2)`. For odd `b > 0` this is the
@@ -445,13 +507,6 @@ private theorem kroneckerSym_eq_jacobiSym_emod {D : ℤ} (hD : D % 4 = 0) (hD₀
       jacobiSym_eq_sign_mul_of_emod_four_eq_zero hD hk hdvd]
     simp only [hk₀, and_true, Int.ite_lt_zero_eq_sign hD₀]
 
-private theorem kroneckerSym_eq_zero_of_two_dvd {D m : ℤ} (hD : 2 ∣ D) (hm : 2 ∣ m) :
-    kroneckerSym D m = 0 :=
-  kroneckerSym_eq_zero_iff.mpr fun h ↦ by
-    have := Int.dvd_gcd hD hm
-    rw [h] at this
-    norm_num at this
-
 /-- For a discriminant `D ≡ 0, 1 (mod 4)`, the Kronecker symbol `(D / ·)` is periodic modulo `D`. -/
 theorem kroneckerSym_mod_right' {D : ℤ} (hD : D ≡ 0 [ZMOD 4] ∨ D ≡ 1 [ZMOD 4]) {m n : ℤ}
     (h : m % D = n % D) : kroneckerSym D m = kroneckerSym D n := by
@@ -468,7 +523,8 @@ theorem kroneckerSym_mod_right' {D : ℤ} (hD : D ≡ 0 [ZMOD 4] ∨ D ≡ 1 [ZM
       rw [kroneckerSym_eq_jacobiSym_emod hD4 hD₀ hm, kroneckerSym_eq_jacobiSym_emod hD4 hD₀ hn, h]
     · have hm' : 2 ∣ m := even_iff_two_dvd.mp (Int.not_odd_iff_even.mp hm)
       have hn' : 2 ∣ n := Int.dvd_iff_emod_eq_zero.mpr (hmn ▸ Int.emod_eq_zero_of_dvd hm')
-      rw [kroneckerSym_eq_zero_of_two_dvd h2 hm', kroneckerSym_eq_zero_of_two_dvd h2 hn']
+      rw [kroneckerSym_eq_zero_of_dvd (by decide) h2 hm',
+        kroneckerSym_eq_zero_of_dvd (by decide) h2 hn']
   · rw [kroneckerSym_eq_jacobiSym_natAbs hD, kroneckerSym_eq_jacobiSym_natAbs hD]
     exact jacobiSym.mod_left' (by rwa [Int.natCast_natAbs, Int.emod_abs, Int.emod_abs])
 

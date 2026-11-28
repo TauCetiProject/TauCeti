@@ -102,6 +102,8 @@ Newman, Gordon–Hughes and Ligozat, whose cusp conditions are the orders above.
 * `TauCeti.ModularForm.etaQuotientMultiplier_negOne`,
   `TauCeti.ModularForm.etaQuotientMultiplier_T_zpow`: the multiplier at `-1` is
   `(-i) ^ {∑_δ r_δ}`, and at `Tⁿ` it is the factor of the translation law.
+* `TauCeti.ModularForm.etaQuotientMultiplier_eq_prod`: factoring the multiplier across conjugate
+  factors `γ_δ`.
 * `TauCeti.ModularForm.etaQuotientMultiplier_eq_of_etaQuotient_smul_eq`: the multiplier is
   determined by the transformation law at a single point; `etaQuotientMultiplier_ne_zero` and
   `norm_etaQuotientMultiplier` record that it is a unit of norm one.
@@ -707,6 +709,15 @@ theorem etaQuotientMultiplier_T_zpow (N : ℕ) (r : ℕ → ℤ) (n : ℤ)
   refine etaQuotientMultiplier_eq_of_etaQuotient_smul_eq (τ := UpperHalfPlane.I) ?_
   rw [Subgroup.coe_mk, ModularGroup.coe_T_zpow_smul_eq, etaQuotient_add_intCast]
   simp [ModularGroup.coe_T_zpow]
+
+/-- Evaluating `etaQuotientMultiplier N r ⟨γ, hγ⟩` from a formula `F δ` for each conjugate eta
+multiplier `ε(γ_δ)`. -/
+theorem etaQuotientMultiplier_eq_prod {N : ℕ} (r : ℕ → ℤ) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N)
+    {F : ℕ → ℂ} (hF : ∀ δ (hδ : δ ∈ N.divisors),
+      etaMultiplier (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩) = F δ) :
+    etaQuotientMultiplier N r ⟨γ, hγ⟩ = ∏ δ ∈ N.divisors, F δ ^ r δ := by
+  rw [etaQuotientMultiplier_def, ← Finset.prod_attach N.divisors (fun δ ↦ F δ ^ r δ)]
+  exact Finset.prod_congr rfl fun δ _ ↦ by rw [hF δ δ.property]
 
 /-- **The eta-quotient multiplier is a character of `Γ₀(N)`** when `∑_{δ ∣ N} r δ` is even: then
 the eta quotient has integral weight `k = ½ ∑_δ r δ`, and the slash relation `etaQuotient_slash`

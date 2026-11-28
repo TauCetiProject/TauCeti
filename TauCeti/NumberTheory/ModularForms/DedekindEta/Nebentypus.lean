@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.DedekindEta.Kronecker
-public import TauCeti.NumberTheory.ModularForms.DedekindEta.Quotient
+public import TauCeti.NumberTheory.ModularForms.DedekindEta.Quotient.Kronecker
 public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 import TauCeti.Algebra.BigOperators.ZPow
+import TauCeti.Data.Nat.Cast.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.NumberTheory.ModularForms.Basic
 
@@ -26,8 +26,8 @@ then `f ∣[k] γ = χ(d) f` for every `γ = (a b; c d) ∈ Γ₀(N)`, where
 `TauCeti.kroneckerSym`. Hence `χ` is a character modulo `N`, and if moreover the order of `f` at
 every cusp is nonnegative (positive), then `f` is a modular form (cusp form) of weight `k` on
 `Γ₁(N)` with nebentypus `χ`. The orders at the cusps are computed in
-`TauCeti.NumberTheory.ModularForms.DedekindEta.Quotient`; they depend only on `gcd(N, c)` for a
-cusp `a / c`, so it suffices to check them at the divisors of `N`.
+`TauCeti.NumberTheory.ModularForms.DedekindEta.Quotient.Basic`; they depend only on `gcd(N, c)` for
+a cusp `a / c`, so it suffices to check them at the divisors of `N`.
 
 For example, the criterion applies to `η(τ) η(23 τ)` (`N = 23`, `k = 1`, character `(-23 / ·)`)
 and to `η(τ)² η(11 τ)²` (`N = 11`, `k = 2`, trivial character), whose orders at both cusps are
@@ -83,50 +83,11 @@ open scoped Real ModularForm MatrixGroups UpperHalfPlane Manifold
 
 namespace TauCeti.ModularForm
 
-/-! ### The conjugates `γ_δ` -/
-
-private theorem natCast_mul_natCast_div {N δ : ℕ} (hδ : δ ∈ N.divisors) :
-    (δ : ℤ) * (N / δ : ℕ) = N := by
-  exact_mod_cast Nat.mul_div_cancel' (Nat.dvd_of_mem_divisors hδ)
-
-/-- The entries of `γ_δ = (a, δ b; (N / δ) t, d)` when `c = N t` and `δ ∣ N`. -/
-private theorem conjScaleGamma0_apply_of_eq {N δ : ℕ} (hδ : δ ∈ N.divisors) {γ : SL(2, ℤ)}
-    (hγ : γ ∈ Gamma0 N) {t : ℤ} (ht : γ 1 0 = N * t) :
-    conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩ 0 0 = γ 0 0 ∧
-      conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩ 0 1 = γ 0 1 * δ ∧
-      conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩ 1 0 = (N / δ : ℕ) * t ∧
-      conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩ 1 1 = γ 1 1 := by
-  have hc : γ 1 0 = δ * ((N / δ : ℕ) * t) := by
-    rw [ht, ← mul_assoc, natCast_mul_natCast_div hδ]
-  have hδ0 : (δ : ℤ) ≠ 0 := by exact_mod_cast (Nat.pos_of_mem_divisors hδ).ne'
-  refine ⟨by simp, by simp [mul_comm], by simp [hc, Int.mul_ediv_cancel_left _ hδ0], by simp⟩
-
-/-- The multiplier `∏_δ ε(γ_δ) ^ r δ`, from the values `F δ` of the eta multipliers at the
-conjugates `γ_δ`. -/
-private theorem etaQuotientMultiplier_eq_prod {N : ℕ} (r : ℕ → ℤ) {γ : SL(2, ℤ)}
-    (hγ : γ ∈ Gamma0 N) {F : ℕ → ℂ} (hF : ∀ δ (hδ : δ ∈ N.divisors),
-      etaMultiplier (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩) = F δ) :
-    etaQuotientMultiplier N r ⟨γ, hγ⟩ = ∏ δ ∈ N.divisors, F δ ^ r δ := by
-  rw [etaQuotientMultiplier_def, ← Finset.prod_attach N.divisors (fun δ ↦ F δ ^ r δ)]
-  exact Finset.prod_congr rfl fun δ _ ↦ by rw [hF δ δ.property]
-
 /-! ### The Kronecker-symbol value of the multiplier -/
 
 /-- The value `((-1) ^ k ∏_δ δ ^ (r δ) / d) = (-1 / d) ^ k ∏_{δ ∣ N} (δ / d) ^ (r δ)`. -/
 private noncomputable def symb (N : ℕ) (r : ℕ → ℤ) (k d : ℤ) : ℂ :=
   (kroneckerSym (-1) d : ℂ) ^ k * ∏ δ ∈ N.divisors, (kroneckerSym δ d : ℂ) ^ r δ
-
-/-- The sum over `δ ∣ N` of `r δ` times the even-`c` exponent of `γ_δ = (a, b δ; (N / δ) t, d)`,
-regrouped along the three sums of the congruence conditions. -/
-private theorem sum_mul_evenExp (N : ℕ) (r : ℕ → ℤ) (a b d t : ℤ) :
-    ∑ δ ∈ N.divisors, r δ * ((a + d) * ((N / δ : ℕ) * t) -
-      b * δ * d * (((N / δ : ℕ) * t) ^ 2 - 1) + 3 * d - 3 - 3 * ((N / δ : ℕ) * t) * d) =
-      (∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) * ((a + d) * t - b * d * N * t ^ 2 - 3 * t * d) +
-        (∑ δ ∈ N.divisors, (δ : ℤ) * r δ) * (b * d) + (∑ δ ∈ N.divisors, r δ) * (3 * d - 3) := by
-  rw [Finset.sum_mul, Finset.sum_mul, Finset.sum_mul, ← Finset.sum_add_distrib,
-    ← Finset.sum_add_distrib]
-  exact Finset.sum_congr rfl fun δ hδ ↦ by
-    linear_combination (-(r δ * b * d * (N / δ : ℕ) * t ^ 2)) * natCast_mul_natCast_div hδ
 
 /-- The sum over `δ ∣ N` of `r δ` times the odd-`c` exponent of `γ_δ = (a, b δ; (N / δ) t, d)`,
 regrouped along the two sums of the congruence conditions. -/
@@ -137,7 +98,8 @@ private theorem sum_mul_oddExp (N : ℕ) (r : ℕ → ℤ) (a b d t : ℤ) :
         (∑ δ ∈ N.divisors, (δ : ℤ) * r δ) * (b * d) := by
   rw [Finset.sum_mul, Finset.sum_mul, ← Finset.sum_add_distrib]
   exact Finset.sum_congr rfl fun δ hδ ↦ by
-    linear_combination (-(r δ * b * d * (N / δ : ℕ) * t ^ 2)) * natCast_mul_natCast_div hδ
+    linear_combination (-(r δ * b * d * (N / δ : ℕ) * t ^ 2)) *
+      (Nat.cast_mul_div_of_dvd (R := ℤ) (Nat.dvd_of_mem_divisors hδ))
 
 /-- For `c = N t ≥ 0`: `∏_δ ((c / δ) / d) ^ r δ = ∏_δ (δ / d) ^ r δ`, as `∑_δ r δ` is even. -/
 private theorem prod_kroneckerSym_div_left {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
@@ -150,7 +112,7 @@ private theorem prod_kroneckerSym_div_left {N : ℕ} {r : ℕ → ℤ} {k : ℤ}
   refine (Finset.prod_congr rfl fun δ hδ ↦ ?_).trans (Finset.prod_zpow_mul_eq_prod_of_sq_eq_one _
     (sq_intCast_kroneckerSym_eq_one (Int.isCoprime_iff_gcd_eq_one.mp hcop)) (hk ▸ even_two_mul k) _)
   have hc : (N / δ : ℕ) * t * δ = γ 1 0 := by
-    linear_combination t * natCast_mul_natCast_div hδ - ht
+    linear_combination t * (Nat.cast_mul_div_of_dvd (R := ℤ) (Nat.dvd_of_mem_divisors hδ)) - ht
   have hx : 0 ≤ ((N / δ : ℕ) : ℤ) * t := mul_nonneg (Int.natCast_nonneg _) ht0
   have hδ0 : (0 : ℤ) < δ := by exact_mod_cast Nat.pos_of_mem_divisors hδ
   have hmul : kroneckerSym ((N / δ : ℕ) * t * δ) (γ 1 1) =
@@ -175,7 +137,7 @@ private theorem prod_kroneckerSym_div_right {N : ℕ} {r : ℕ → ℤ} {k : ℤ
   refine (Finset.prod_congr rfl fun δ hδ ↦ ?_).trans (Finset.prod_zpow_mul_eq_prod_of_sq_eq_one _
     (sq_intCast_kroneckerSym_eq_one (Int.isCoprime_iff_gcd_eq_one.mp hcop)) (hk ▸ even_two_mul k) _)
   have hc : (N / δ : ℕ) * t * δ = γ 1 0 := by
-    linear_combination t * natCast_mul_natCast_div hδ - ht
+    linear_combination t * (Nat.cast_mul_div_of_dvd (R := ℤ) (Nat.dvd_of_mem_divisors hδ)) - ht
   have hm : (0 : ℤ) < (N / δ : ℕ) := by
     exact_mod_cast Nat.div_pos (Nat.divisor_le hδ) (Nat.pos_of_mem_divisors hδ)
   rw [← hc, kroneckerSym_mul_right _ (mul_pos hm ht0).ne'
@@ -221,25 +183,12 @@ private theorem etaQuotientMultiplier_eq_symb_of_odd {N : ℕ} {r : ℕ → ℤ}
     (h24' : (24 : ℤ) ∣ ∑ δ ∈ N.divisors, ((N / δ : ℕ) : ℤ) * r δ) {γ : SL(2, ℤ)}
     (hγ : γ ∈ Gamma0 N) {t : ℤ} (ht : γ 1 0 = N * t) (ht0 : 0 ≤ t) (hdo : Odd (γ 1 1)) :
     etaQuotientMultiplier N r ⟨γ, hγ⟩ = symb N r k (γ 1 1) := by
-  obtain ⟨A, hA⟩ := h24
-  obtain ⟨B, hB⟩ := h24'
   obtain ⟨v, hv⟩ := hdo
-  let E : ℕ → ℤ := fun δ ↦ (γ 0 0 + γ 1 1) * ((N / δ : ℕ) * t) -
-    γ 0 1 * δ * γ 1 1 * (((N / δ : ℕ) * t) ^ 2 - 1) + 3 * γ 1 1 - 3 - 3 * ((N / δ : ℕ) * t) * γ 1 1
-  have hε (δ : ℕ) (hδ : δ ∈ N.divisors) : etaMultiplier
-      (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩) =
-      (kroneckerSym ((N / δ : ℕ) * t) (γ 1 1) : ℂ) * e24 (E δ) := by
-    obtain ⟨h00, h01, h10, h11⟩ := conjScaleGamma0_apply_of_eq hδ hγ ht
-    rw [etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d _
-      (by rw [h10]; exact mul_nonneg (Int.natCast_nonneg _) ht0) (by rw [h11]; exact ⟨v, hv⟩),
-      h00, h01, h10, h11, e24_def]
   -- The exponents sum to `k (12 v)` modulo `24`, and `e(12 v k / 24) = χ₄(d) ^ k = (-1 / d) ^ k`.
-  have hsum : ∑ δ ∈ N.divisors, r δ * E δ ≡ k * (12 * v) [ZMOD 24] := by
-    refine Int.modEq_iff_dvd.mpr ⟨-(B * ((γ 0 0 + γ 1 1) * t - γ 0 1 * γ 1 1 * N * t ^ 2 -
-      3 * t * γ 1 1) + A * (γ 0 1 * γ 1 1)), ?_⟩
-    rw [sum_mul_evenExp, hA, hB, hk, hv]
-    ring
-  rw [etaQuotientMultiplier_eq_prod r hγ hε, prod_mul_e24_zpow,
+  have hsum : etaQuotientMultiplierExp N r (γ 0 0) (γ 0 1) (γ 1 1) t ≡ k * (12 * v) [ZMOD 24] := by
+    simpa only [show (∑ δ ∈ N.divisors, r δ) * (3 * γ 1 1 - 3) = k * (12 * v) by
+      rw [hk, hv]; ring] using etaQuotientMultiplierExp_modEq h24 h24' (γ 0 0) (γ 0 1) (γ 1 1) t
+  rw [etaQuotientMultiplier_eq_prod_kroneckerSym_mul_e24_of_odd_d r hγ ht ⟨v, hv⟩,
     e24_congr hsum, e24_mul, e24_twelve_mul_eq_χ₄, prod_kroneckerSym_div_left hk γ ht ht0, symb,
     kroneckerSym_neg_one_left_of_odd ⟨v, hv⟩, hv, mul_comm]
 
@@ -265,12 +214,12 @@ private theorem etaQuotientMultiplier_eq_symb_of_even {N : ℕ} {r : ℕ → ℤ
   have hε (δ : ℕ) (hδ : δ ∈ N.divisors) : etaMultiplier
       (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩) =
       (kroneckerSym (γ 1 1) ((N / δ : ℕ) * t) : ℂ) * e24 (O δ) := by
-    obtain ⟨h00, h01, h10, h11⟩ := conjScaleGamma0_apply_of_eq hδ hγ ht
+    have h10 := conjScaleGamma0_apply_one_zero_of_eq (Nat.dvd_of_mem_divisors hδ) hγ ht
     have hm : Odd (N / δ) := hNo.of_dvd_nat (Nat.div_dvd_of_dvd (Nat.dvd_of_mem_divisors hδ))
     rw [etaMultiplier_eq_kroneckerSym_mul_of_c_pos_of_odd_c _
       (by rw [h10]; exact mul_pos (by exact_mod_cast hm.pos) ht_pos)
-      (by rw [h10]; exact Int.odd_mul.mpr ⟨(Int.odd_natCast _).mpr hm, hto⟩), h00, h01, h10, h11,
-      e24_def]
+      (by rw [h10]; exact Int.odd_mul.mpr ⟨(Int.odd_natCast _).mpr hm, hto⟩), h10, e24_def]
+    simp [O, mul_comm (δ : ℤ)]
   -- The exponents sum to a multiple of `24`.
   have hsum : ∑ δ ∈ N.divisors, r δ * O δ ≡ 0 [ZMOD 24] := by
     refine Int.modEq_zero_iff_dvd.mpr ⟨B * ((γ 0 0 + γ 1 1) * t - γ 0 1 * γ 1 1 * N * t ^ 2 -
@@ -296,11 +245,9 @@ private theorem etaQuotientMultiplier_eq_symb_of_nonneg {N : ℕ} {r : ℕ → �
 private theorem symb_neg (N : ℕ) (r : ℕ → ℤ) (k : ℤ) {d : ℤ} (hd : d ≠ 0) :
     symb N r k (-d) = (-1) ^ k * symb N r k d := by
   have h1 : kroneckerSym (-1) (-d) = -kroneckerSym (-1) d := by
-    rw [neg_eq_neg_one_mul d, kroneckerSym_mul_right _ (by norm_num) hd]
-    simp
+    rw [kroneckerSym_neg_right (-1) (.inl hd), ite_eq_left (by decide), neg_one_mul]
   have h2 (δ : ℕ) : kroneckerSym δ (-d) = kroneckerSym δ d := by
-    rw [neg_eq_neg_one_mul d, kroneckerSym_mul_right _ (by norm_num) hd]
-    simp
+    rw [kroneckerSym_neg_right δ (.inl hd), ite_eq_right (by omega), one_mul]
   simp only [symb, h1, h2, Int.cast_neg]
   rw [neg_eq_neg_one_mul (kroneckerSym (-1) d : ℂ), mul_zpow]
   ring

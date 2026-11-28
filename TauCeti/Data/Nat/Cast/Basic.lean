@@ -17,6 +17,7 @@ after casting to a ring, including when `c = 0`. In a semiring without zero divi
 ## Main results
 
 * `Nat.cast_mod_eq_sub_mul_div`: `((n % c : ℕ) : R) = n - c * (n / c : ℕ)`.
+* `Nat.cast_mul_div_of_dvd`: `(δ : R) * (N / δ : ℕ) = N` when `δ ∣ N`.
 * `TauCeti.four_eq_zero_iff_two_eq_zero`: without zero divisors, `4 = 0` if and only if `2 = 0`.
 * `TauCeti.add_natCast_ne_neg_natCast`: an element off `−ℕ` stays off `−ℕ` after adding a
   natural number.
@@ -30,6 +31,11 @@ namespace Nat
 theorem cast_mod_eq_sub_mul_div {R : Type*} [NonAssocRing R] (n c : ℕ) :
     ((n % c : ℕ) : R) = n - c * (n / c : ℕ) := by
   rw [eq_sub_iff_add_eq, ← Nat.cast_mul, ← Nat.cast_add, Nat.mod_add_div]
+
+/-- For `δ ∣ N`, the cast of `δ` times the cast of `N / δ` equals the cast of `N`. -/
+theorem cast_mul_div_of_dvd {R : Type*} [NonAssocSemiring R] {δ N : ℕ} (h : δ ∣ N) :
+    (δ : R) * (N / δ : ℕ) = N := by
+  rw [← Nat.cast_mul, Nat.mul_div_cancel' h]
 
 end Nat
 

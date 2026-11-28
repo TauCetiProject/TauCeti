@@ -34,7 +34,7 @@ Both hypotheses of the multiplier statement are needed. Since `ε(T) = e^{π i /
 `Γ(12)`. For odd `r` the Kronecker symbol in `ε` survives: `γ = (113 80; 24 17) ∈ Γ(8)` has
 `ε(γ)³ = -1`, although `24 ∣ 3 · 8`.
 
-The proof reads `ε` off its Kronecker-symbol form (`etaMultiplier_eq_kroneckerSym_mul_of_even_c`,
+The proof reads `ε` off its Kronecker-symbol form (`etaMultiplier_eq_kroneckerSym_mul_of_odd_d`,
 `etaMultiplier_eq_kroneckerSym_mul_of_c_pos_of_odd_c`). The symbol is `±1` because the entries
 `c` and `d` are coprime, so an even power removes it, and the exponential factor is
 `e(r n / 24)` for an integer `n` divisible by `N`.
@@ -96,9 +96,10 @@ private theorem etaMultiplier_zpow_eq_one_of_even_c {N r : ℤ} {γ : SL(2, ℤ)
     (heven : Even (γ 1 0)) (hr : Even r) (hrN : 24 ∣ r * N) (hb : N ∣ γ 0 1) (hc : N ∣ γ 1 0)
     (hd : N ∣ γ 1 1 - 1) : etaMultiplier γ ^ r = 1 := by
   obtain ⟨m, rfl⟩ := hr.two_dvd
-  rw [etaMultiplier_eq_kroneckerSym_mul_of_even_c γ heven, mul_zpow, zpow_mul, zpow_ofNat,
+  rw [etaMultiplier_eq_kroneckerSym_mul_of_odd_d γ (γ.odd_apply_one_of_even_apply_zero heven),
+    etaMultiplierExpEvenC_def, mul_zpow, zpow_mul, zpow_ofNat,
     sq_intCast_kroneckerSym_eq_one (Int.isCoprime_iff_gcd_eq_one.1 (γ.isCoprime_row 1)),
-    one_zpow, one_mul, ← e24_def, ← e24_mul, e24_congr (Int.modEq_zero_iff_dvd.2
+    one_zpow, one_mul, ← e24_mul, e24_congr (Int.modEq_zero_iff_dvd.2
       (hrN.trans (mul_dvd_mul_left _ ?_))), e24_zero]
   have : N ∣ (γ 0 0 + γ 1 1) * γ 1 0 - γ 0 1 * (γ 1 1 * (γ 1 0 ^ 2 - 1)) +
       3 * (γ 1 1 - 1) - 3 * γ 1 1 * γ 1 0 :=
@@ -222,7 +223,7 @@ example : etaMultiplier (T ^ (6 : ℤ)) ^ 2 = -1 := by
 survives an odd power. -/
 example :
     etaMultiplier (.mk !![113, 80; 24, 17] (by norm_num [Matrix.det_fin_two_of])) ^ 3 = -1 := by
-  rw [etaMultiplier_eq_kroneckerSym_mul_of_even_c _ (by decide)]
+  rw [etaMultiplier_eq_kroneckerSym_mul_of_odd_d _ (by decide), etaMultiplierExpEvenC_def, e24_def]
   simp only [Matrix.SpecialLinearGroup.coe_mk, Matrix.of_apply, Matrix.cons_val',
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one]
   have hk : kroneckerSym 24 17 = -1 := by

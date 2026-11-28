@@ -20,6 +20,7 @@ also nonzero, hence either negative or positive.
 
 * `Int.twentyFour_dvd_mul_sq_sub_one_of_odd`: for odd `c`, `24 ∣ c (c² - 1)`.
 * `Int.lt_or_gt_of_odd`: an odd integer is negative or positive.
+* `Int.emod_four_eq_one_or_three_of_odd`: an odd integer is congruent to `1` or `3` modulo `4`.
 -/
 
 public section
@@ -38,5 +39,10 @@ theorem twentyFour_dvd_mul_sq_sub_one_of_odd {c : ℤ} (hc : Odd c) : 24 ∣ c *
 /-- An odd integer is negative or positive. -/
 theorem lt_or_gt_of_odd {d : ℤ} (hd : Odd d) : d < 0 ∨ 0 < d :=
   lt_or_gt_of_ne (by rintro rfl; simp at hd)
+
+/-- Every odd integer is congruent to `1` or `3` modulo `4`. -/
+theorem emod_four_eq_one_or_three_of_odd {d : ℤ} (hd : Odd d) : d % 4 = 1 ∨ d % 4 = 3 := by
+  obtain ⟨k, rfl⟩ := hd
+  omega
 
 end Int

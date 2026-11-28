@@ -93,9 +93,11 @@ infrastructure independent of the diamond operators.
 * `CongruenceSubgroup.mem_Gamma1_of_mul_eq`: a matrix of `SL(2, ℤ)` carrying an integral matrix
   that is `!![1, *; 0, *]` modulo `N` to another such matrix lies in `Γ₁(N)`.
 * `CongruenceSubgroup.isUnit_intCast_apply_zero_zero_of_mem_Gamma0`,
-  `CongruenceSubgroup.isUnit_intCast_apply_one_one_of_mem_Gamma0`, and
-  `CongruenceSubgroup.isCoprime_apply_one_one_of_mem_Gamma0`: a `Γ₀(N)` matrix has unit diagonal
-  entries modulo `N`, and in particular lower-right entry coprime to `N`.
+  `CongruenceSubgroup.isUnit_intCast_apply_one_one_of_mem_Gamma0`,
+  `CongruenceSubgroup.isCoprime_apply_one_one_of_mem_Gamma0`, and
+  `CongruenceSubgroup.odd_apply_one_one_of_mem_Gamma0`: a `Γ₀(N)` matrix has unit diagonal
+  entries modulo `N`, in particular lower-right entry coprime to `N`, and odd lower-right entry
+  when `N` is even.
 * `CongruenceSubgroup.intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0`: modulo its
   level, a `Γ₀(N)` matrix has mutually inverse diagonal entries.
 * `CongruenceSubgroup.intCast_add_natCast_mul_of_mem_Gamma0` and
@@ -433,6 +435,14 @@ theorem isCoprime_apply_one_one_of_mem_Gamma0 {N : ℕ} {γ : SL(2, ℤ)} (hγ :
   obtain ⟨q, hq⟩ := mem_Gamma0_iff_dvd.mp hγ
   exact ⟨γ 0 0, -(γ 0 1 * q),
     by linear_combination Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ + γ 0 1 * hq⟩
+
+/-- For an even level `N`, the lower-right entry of every `γ ∈ Γ₀(N)` is odd: `(2 : ℤ) ∣ N ∣ γ 1 0`,
+so the lower-left entry is even and `ad - bc = 1` forces `γ 1 1` to be odd. -/
+theorem odd_apply_one_one_of_mem_Gamma0 {N : ℕ} (hN : Even N) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
+    Odd (γ 1 1) :=
+  γ.odd_apply_one_of_even_apply_zero
+    (even_iff_two_dvd.mpr ((Int.natCast_dvd_natCast.mpr (even_iff_two_dvd.mp hN)).trans
+      (mem_Gamma0_iff_dvd.mp hγ)))
 
 /-- **The first column of a `Γ₀(N)` matrix collapses under a natural-number shear**:
 `a + j c ≡ a` modulo `N` for every `j : ℕ`, because `c ≡ 0`. Stated with the casts already
