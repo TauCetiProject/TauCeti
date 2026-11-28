@@ -159,74 +159,66 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommG
 /-- **Every Coxeter element of a base of type `Aₙ` (`0 < n`) has order `n + 1`.** -/
 theorem orderOf_wordProd_of_hasCartanType_A [Finite ι] {n : ℕ} (hn : 0 < n)
     (h : HasCartanType P b (.A n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
-    orderOf (wordProd P b l) = n + 1 :=
-  (orderOf_wordProd_of_isOneDegenerateOrder_of_hasCartanType (t := .A n)
-    (DynkinType.cartanMatrix_A n) (isOneDegenerateOrder_A n) (List.Perm.refl _) h hnd hall).trans
-    ((congrArg orderOf (coxA_def n).symm).trans (orderOf_coxA hn))
+    orderOf (wordProd P b l) = n + 1 := by
+  rw [orderOf_wordProd_of_hasCartanType h hnd hall, DynkinType.cartanMatrix_A]
+  exact (congrArg orderOf (coxA_def n).symm).trans (orderOf_coxA hn)
 
 /-- **Every Coxeter element of a base of type `Bₙ` (`0 < n`) has order `2 * n`.** -/
 theorem orderOf_wordProd_of_hasCartanType_B [Finite ι] {n : ℕ} (hn : 0 < n)
     (h : HasCartanType P b (.B n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
-    orderOf (wordProd P b l) = 2 * n :=
-  (orderOf_wordProd_of_isOneDegenerateOrder_of_hasCartanType (t := .B n)
-    (DynkinType.cartanMatrix_B n) (isOneDegenerateOrder_B n) (List.Perm.refl _) h hnd hall).trans
-    ((congrArg orderOf (coxB_def n).symm).trans (orderOf_coxB hn))
+    orderOf (wordProd P b l) = 2 * n := by
+  rw [orderOf_wordProd_of_hasCartanType h hnd hall, DynkinType.cartanMatrix_B]
+  exact (congrArg orderOf (coxB_def n).symm).trans (orderOf_coxB hn)
 
 /-- **Every Coxeter element of a base of type `Cₙ` (`0 < n`) has order `2 * n`.** -/
 theorem orderOf_wordProd_of_hasCartanType_C [Finite ι] {n : ℕ} (hn : 0 < n)
     (h : HasCartanType P b (.C n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
-    orderOf (wordProd P b l) = 2 * n :=
-  (orderOf_wordProd_of_isOneDegenerateOrder_of_hasCartanType (t := .C n)
-    (DynkinType.cartanMatrix_C n) (isOneDegenerateOrder_C n) (List.Perm.refl _) h hnd hall).trans
-    ((congrArg orderOf (coxC_def n).symm).trans (orderOf_coxC hn))
+    orderOf (wordProd P b l) = 2 * n := by
+  rw [orderOf_wordProd_of_hasCartanType h hnd hall, DynkinType.cartanMatrix_C]
+  exact (congrArg orderOf (coxC_def n).symm).trans (orderOf_coxC hn)
 
 /-- **Every Coxeter element of a base of type `Dₙ` (`2 ≤ n`) has order `2 * (n - 1)`.** -/
 theorem orderOf_wordProd_of_hasCartanType_D [Finite ι] {n : ℕ} (hn : 2 ≤ n)
     (h : HasCartanType P b (.D n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
-    orderOf (wordProd P b l) = 2 * (n - 1) :=
-  (orderOf_wordProd_of_isOneDegenerateOrder_of_hasCartanType (t := .D n)
-    (DynkinType.cartanMatrix_D n) (isOneDegenerateOrder_D n) (List.Perm.refl _) h hnd hall).trans
-    ((congrArg orderOf (coxD_def n).symm).trans (orderOf_coxD hn))
+    orderOf (wordProd P b l) = 2 * (n - 1) := by
+  rw [orderOf_wordProd_of_hasCartanType h hnd hall, DynkinType.cartanMatrix_D]
+  exact (congrArg orderOf (coxD_def n).symm).trans (orderOf_coxD hn)
 
 /-- **Every Coxeter element of a base of type `Aₙ`** has characteristic polynomial
 `∑ k ∈ Finset.range (n + 1), X ^ k` on the simple roots. -/
 theorem charpoly_of_hasCartanType_A_of_actsBy [DecidableEq ι] {n : ℕ}
     (h : HasCartanType P b (.A n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
     {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
-    W.charpoly = ∑ k ∈ Finset.range (n + 1), X ^ k :=
-  (charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .A n)
-    (DynkinType.cartanMatrix_A n) (isOneDegenerateOrder_A n) (List.Perm.refl _) h hnd hall
-    hW).trans ((congrArg Matrix.charpoly (coxA_def n).symm).trans (charpoly_coxA n))
+    W.charpoly = ∑ k ∈ Finset.range (n + 1), X ^ k := by
+  rw [charpoly_of_hasCartanType_of_actsBy h hnd hall hW, DynkinType.cartanMatrix_A]
+  exact (congrArg Matrix.charpoly (coxA_def n).symm).trans (charpoly_coxA n)
 
 /-- **Every Coxeter element of a base of type `Bₙ` (`0 < n`)** has characteristic polynomial
 `X ^ n + 1` on the simple roots. -/
 theorem charpoly_of_hasCartanType_B_of_actsBy [DecidableEq ι] {n : ℕ} (hn : 0 < n)
     (h : HasCartanType P b (.B n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
     {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
-    W.charpoly = X ^ n + 1 :=
-  (charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .B n)
-    (DynkinType.cartanMatrix_B n) (isOneDegenerateOrder_B n) (List.Perm.refl _) h hnd hall
-    hW).trans ((congrArg Matrix.charpoly (coxB_def n).symm).trans (charpoly_coxB hn))
+    W.charpoly = X ^ n + 1 := by
+  rw [charpoly_of_hasCartanType_of_actsBy h hnd hall hW, DynkinType.cartanMatrix_B]
+  exact (congrArg Matrix.charpoly (coxB_def n).symm).trans (charpoly_coxB hn)
 
 /-- **Every Coxeter element of a base of type `Cₙ` (`0 < n`)** has characteristic polynomial
 `X ^ n + 1` on the simple roots. -/
 theorem charpoly_of_hasCartanType_C_of_actsBy [DecidableEq ι] {n : ℕ} (hn : 0 < n)
     (h : HasCartanType P b (.C n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
     {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
-    W.charpoly = X ^ n + 1 :=
-  (charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .C n)
-    (DynkinType.cartanMatrix_C n) (isOneDegenerateOrder_C n) (List.Perm.refl _) h hnd hall
-    hW).trans ((congrArg Matrix.charpoly (coxC_def n).symm).trans (charpoly_coxC hn))
+    W.charpoly = X ^ n + 1 := by
+  rw [charpoly_of_hasCartanType_of_actsBy h hnd hall hW, DynkinType.cartanMatrix_C]
+  exact (congrArg Matrix.charpoly (coxC_def n).symm).trans (charpoly_coxC hn)
 
 /-- **Every Coxeter element of a base of type `Dₙ` (`2 ≤ n`)** has characteristic polynomial
 `(X ^ (n - 1) + 1) * (X + 1)` on the simple roots. -/
 theorem charpoly_of_hasCartanType_D_of_actsBy [DecidableEq ι] {n : ℕ} (hn : 2 ≤ n)
     (h : HasCartanType P b (.D n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
     {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
-    W.charpoly = (X ^ (n - 1) + 1) * (X + 1) :=
-  (charpoly_of_isOneDegenerateOrder_of_hasCartanType_of_actsBy (t := .D n)
-    (DynkinType.cartanMatrix_D n) (isOneDegenerateOrder_D n) (List.Perm.refl _) h hnd hall
-    hW).trans ((congrArg Matrix.charpoly (coxD_def n).symm).trans (charpoly_coxD hn))
+    W.charpoly = (X ^ (n - 1) + 1) * (X + 1) := by
+  rw [charpoly_of_hasCartanType_of_actsBy h hnd hall hW, DynkinType.cartanMatrix_D]
+  exact (congrArg Matrix.charpoly (coxD_def n).symm).trans (charpoly_coxD hn)
 
 end ClassicalOrdersAndCharpoly
 
