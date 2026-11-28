@@ -15,7 +15,10 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 
 On the open left half-plane the completed zeta function is nonvanishing by the functional
 equation. Thus only the reciprocal Gamma factors contribute to the order of the uncompleted
-function there. This gives the multiplicities in the trivial-zero terms of explicit formulas.
+function there. At `s = 0`, the simple pole of the completed zeta function subtracts one from
+the Gamma order, giving vanishing order `NumberField.Units.rank K` and vanishing when
+`0 < NumberField.Units.rank K`. This gives the multiplicities in the trivial-zero terms of
+explicit formulas.
 
 ## References
 
@@ -82,22 +85,27 @@ theorem meromorphicOrderAt_dedekindZetaData_gammaFactor_zero :
     (nrRealPlaces K) (nrComplexPlaces K) (n := 1) le_rfl
 
 /-- The order of Dedekind zeta at zero is the unit rank: the gamma poles contribute
-one for each infinite place, and the pole of the completed function subtracts one. -/
+one for each infinite place, the pole of the completed function subtracts one, and
+`r₁ + r₂ - 1 = Units.rank K`. -/
 theorem meromorphicOrderAt_dedekindZetaC_zero :
-    meromorphicOrderAt (dedekindZetaC K) 0 =
-      ((nrRealPlaces K : ℤ) + nrComplexPlaces K - 1 : ℤ) := by
+    meromorphicOrderAt (dedekindZetaC K) 0 = (NumberField.Units.rank K : ℤ) := by
+  have hrank : (nrRealPlaces K : ℤ) + nrComplexPlaces K = NumberField.Units.rank K + 1 := by
+    exact_mod_cast (NumberField.Units.rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K).symm
   rw [← dedekindZetaData_continuedL, (dedekindZetaData K).meromorphicOrderAt_continuedL
     (dedekindZetaData_hasMeromorphicContinuation K).meromorphic, dedekindZetaData_completed,
     meromorphicOrderAt_completedDedekindZeta_zero,
     meromorphicOrderAt_dedekindZetaData_gammaFactor_zero,
-    ← WithTop.LinearOrderedAddCommGroup.coe_sub]
+    ← WithTop.LinearOrderedAddCommGroup.coe_sub, hrank]
   exact congrArg _ (by ring)
 
-/-- The order of Dedekind zeta at zero equals the unit rank `NumberField.Units.rank K`. -/
-theorem meromorphicOrderAt_dedekindZetaC_zero_eq_rank :
-    meromorphicOrderAt (dedekindZetaC K) 0 = (NumberField.Units.rank K : ℤ) := by
-  have hrank : (nrRealPlaces K : ℤ) + nrComplexPlaces K = NumberField.Units.rank K + 1 := by
-    exact_mod_cast (NumberField.Units.rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K).symm
-  rw [meromorphicOrderAt_dedekindZetaC_zero, hrank, add_sub_cancel_right]
+/-- **Value of `ζ_K` at `s = 0` in positive unit rank**: `ζ_K(0) = 0`. -/
+@[simp]
+theorem dedekindZetaC_zero_of_rank_pos (hr : 0 < NumberField.Units.rank K) :
+    dedekindZetaC K 0 = 0 := by
+  have hord : meromorphicOrderAt (dedekindZetaC K) 0 ≠ 0 := by
+    rw [meromorphicOrderAt_dedekindZetaC_zero]
+    exact_mod_cast hr.ne'
+  exact not_not.mp <|
+    (meromorphicNFOn_dedekindZetaC K (Set.mem_univ 0)).meromorphicOrderAt_eq_zero_iff.not.mp hord
 
 end TauCeti.LFunctions

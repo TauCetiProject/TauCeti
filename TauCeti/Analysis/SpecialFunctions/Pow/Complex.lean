@@ -139,6 +139,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   for `|θ| < π` and `0 ≤ r`.
 * `Complex.norm_neg_log_pow_mul_exp_neg_mul_log_le` -- uniform norm bound for
   `(-log w) ^ k * exp (-s * log w)` on an annulus `δ ≤ ‖w‖ ≤ B` with `‖s‖ ≤ S`.
+* `AnalyticAt.const_cpow` -- `z ↦ c ^ f z` is analytic at `x` when `f` is analytic at `x` and
+  `c ≠ 0` or `f x ≠ 0`.
 
 The derivative `TauCeti.hasDerivAt_sub_div_sub_cpow` is adapted from the lean-DLMF project
 (<https://github.com/bjbraams/lean-DLMF>), file `DLMF/Hypergeometric/Riemann.lean`.
@@ -1196,5 +1198,20 @@ theorem HasDerivAt.cpow_half {𝕜 : Type*} [NontriviallyNormedField 𝕜] [Norm
     norm_num
   have h0 : f x ^ (1 / 2 : ℂ) ≠ 0 := by simp [cpow_eq_zero_iff, slitPlane_ne_zero hx]
   exact h.congr_deriv (by rw [eq_inv_of_mul_eq_one_left hm]; field_simp [h0])
+
+/-- For a constant complex base `c` and an analytic exponent `f` at `x`, `z ↦ c ^ f z` is
+analytic at `x` whenever `c ≠ 0` or `f x ≠ 0`. -/
+theorem AnalyticAt.const_cpow {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : E → ℂ} {x : E} {c : ℂ} (hf : AnalyticAt ℂ f x) (hc : c ≠ 0 ∨ f x ≠ 0) :
+    AnalyticAt ℂ (fun z ↦ c ^ f z) x := by
+  by_cases hc0 : c = 0
+  · subst hc0
+    have hfx : f x ≠ 0 := hc.resolve_left (not_not.mpr rfl)
+    refine (analyticAt_const (v := (0 : ℂ))).congr ?_
+    filter_upwards [hf.continuousAt.eventually_ne hfx] with z hz
+    simp [zero_cpow hz]
+  · refine (((analyticAt_const (v := Complex.log c)).mul hf).cexp').congr ?_
+    filter_upwards with z
+    exact (cpow_def_of_ne_zero hc0 (f z)).symm
 
 end

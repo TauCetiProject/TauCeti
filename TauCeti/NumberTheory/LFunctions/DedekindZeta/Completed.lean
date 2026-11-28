@@ -12,11 +12,9 @@ import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Analysis.Meromorphic.RCLike
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import TauCeti.Analysis.Meromorphic.Conj
-import TauCeti.Analysis.Meromorphic.NormalForm
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.NumberTheory.NumberField.Discriminant.Basic
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
-import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 
 /-!
 # The completed Dedekind zeta function
@@ -45,9 +43,8 @@ Dividing by the archimedean factor, whose reciprocal `|d_K| ^ (-s / 2) Γ_ℝ(s)
 is entire, transfers this to the continued Dedekind zeta function
 `TauCeti.LFunctions.dedekindZetaC K`: it agrees with Mathlib's `NumberField.dedekindZeta K` on
 `Re s > 1`, is analytic away from `s = 1` (the zero of the reciprocal factor at `s = 0` cancels the
-pole of `Λ_K` there), has a simple pole at `s = 1` whose residue is Mathlib's
-`NumberField.dedekindZeta_residue K` (the analytic class number formula), and has leading term
-`-(h R / w) * s ^ Units.rank K` at `s = 0`.
+pole of `Λ_K` there), and has a simple pole at `s = 1` whose residue is Mathlib's
+`NumberField.dedekindZeta_residue K`, the analytic class number formula.
 
 ## Main definitions
 
@@ -90,10 +87,6 @@ pole of `Λ_K` there), has a simple pole at `s = 1` whose residue is Mathlib's
   everywhere.
 * `TauCeti.LFunctions.tendsto_sub_one_mul_dedekindZetaC`: its residue at `s = 1` is
   `NumberField.dedekindZeta_residue K = 2 ^ r₁ (2π) ^ r₂ h R / (w √|d_K|)`.
-* `TauCeti.LFunctions.tendsto_dedekindZetaC_div_pow_rank_zero`,
-  `TauCeti.LFunctions.dedekindZetaC_zero_of_rank_eq_zero`,
-  `TauCeti.LFunctions.dedekindZetaC_zero_of_rank_pos`: at `s = 0`, `dedekindZetaC K` has leading
-  term `-(h R / w) * s ^ Units.rank K` and vanishes when `0 < Units.rank K`.
 
 ## References
 
@@ -467,19 +460,12 @@ theorem invDedekindZetaCompletionFactor_def (s : ℂ) :
       ((|discr K| : ℤ) : ℂ) ^ (-s / 2) * (Gammaℝ s)⁻¹ ^ nrRealPlaces K *
         (Gammaℂ s)⁻¹ ^ nrComplexPlaces K := (rfl)
 
-/-- The discriminant factor `|d_K| ^ (-s / 2)` is entire. -/
-private theorem analyticAt_discr_inv_cpow (s : ℂ) :
-    AnalyticAt ℂ (fun z : ℂ ↦ ((|discr K| : ℤ) : ℂ) ^ (-z / 2)) s := by
-  have hd : ((|discr K| : ℤ) : ℂ) ∈ slitPlane := by
-    rw [← ofReal_intCast]
-    exact ofReal_mem_slitPlane.mpr (Int.cast_pos.mpr (abs_discr_pos K))
-  exact AnalyticAt.cpow analyticAt_const (by fun_prop) hd
-
 /-- The reciprocal of the Dedekind zeta completion factor is entire. -/
 @[fun_prop]
 theorem analyticAt_invDedekindZetaCompletionFactor (s : ℂ) :
     AnalyticAt ℂ (invDedekindZetaCompletionFactor K) s :=
-  ((analyticAt_discr_inv_cpow K s).mul
+  have hd : ((|discr K| : ℤ) : ℂ) ≠ 0 := by exact_mod_cast (abs_discr_pos K).ne'
+  (((by fun_prop : AnalyticAt ℂ (fun z : ℂ ↦ -z / 2) s).const_cpow (.inl hd)).mul
     ((differentiable_Gammaℝ_inv.analyticAt s).pow _)).mul
     ((differentiable_Gammaℂ_inv.analyticAt s).pow _)
 
@@ -651,7 +637,7 @@ theorem analyticAt_dedekindZetaC_iff {s : ℂ} : AnalyticAt ℂ (dedekindZetaC K
 `s = 1`. -/
 @[simp]
 theorem dedekindZetaC_one : dedekindZetaC K 1 = 0 :=
-  (meromorphicNFOn_dedekindZetaC K (mem_univ 1)).apply_eq_zero_of_order_ne_zero
+  not_not.mp <| (meromorphicNFOn_dedekindZetaC K (mem_univ 1)).meromorphicOrderAt_eq_zero_iff.not.mp
     (by simp [meromorphicOrderAt_dedekindZetaC_one])
 
 /-- **Relation between `ζ_K` and `Λ_K`, as germs.** At every complex number `s` (including `0`
@@ -660,85 +646,9 @@ and `1`), `dedekindZetaC K` has the punctured germ of
 theorem dedekindZetaC_eventuallyEq_invDedekindZetaCompletionFactor_mul (s : ℂ) :
     dedekindZetaC K =ᶠ[𝓝[≠] s]
       fun z ↦ invDedekindZetaCompletionFactor K z * completedDedekindZeta K z := by
-  filter_upwards [(eventually_cofinite_ne 0).filter_mono (nhdsNE_le_cofinite s),
-    (eventually_cofinite_ne 1).filter_mono (nhdsNE_le_cofinite s)] with z hz0 hz1
-  rw [dedekindZetaC_eq_mul_completedDedekindZeta K hz0 hz1, invDedekindZetaCompletionFactor_def]
-
-private theorem dedekindZetaC_zero_limit_coeff :
-    -((2 ^ (nrRealPlaces K + nrComplexPlaces K) * classNumber K * regulator K /
-        torsionOrder K : ℝ) : ℂ) * 1 *
-        ((2 : ℂ)⁻¹ ^ nrRealPlaces K * (2 : ℂ)⁻¹ ^ nrComplexPlaces K) =
-      (-((classNumber K : ℝ) * regulator K / torsionOrder K : ℝ) : ℂ) := by
-  push_cast
-  rw [pow_add, inv_pow, inv_pow]
-  field_simp
-
-private theorem dedekindZetaC_zero_factor_identity {z : ℂ} (hz0 : z ≠ 0)
-    (hz : dedekindZetaC K z =
-      invDedekindZetaCompletionFactor K z * completedDedekindZeta K z) :
-    z * completedDedekindZeta K z * ((|discr K| : ℤ) : ℂ) ^ (-z / 2) *
-        ((z * Gammaℝ z)⁻¹ ^ nrRealPlaces K * (z * Gammaℂ z)⁻¹ ^ nrComplexPlaces K) =
-      dedekindZetaC K z / z ^ Units.rank K := by
-  have hrank := Units.rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K
-  rw [hz, invDedekindZetaCompletionFactor_def]
-  simp only [mul_inv, mul_pow]
-  have hzpow : z * (z⁻¹ ^ nrRealPlaces K * z⁻¹ ^ nrComplexPlaces K) = (z ^ Units.rank K)⁻¹ := by
-    rw [← pow_add, ← hrank, pow_succ', inv_pow]
-    field_simp
-  rw [div_eq_mul_inv _ (z ^ Units.rank K), ← hzpow]
-  ring
-
-/-- **Leading term of `ζ_K` at `s = 0`** (Neukirch VII (5.11)):
-`dedekindZetaC K s / s ^ Units.rank K → -(h R / w)` as `s → 0`, `s ≠ 0`. -/
-theorem tendsto_dedekindZetaC_div_pow_rank_zero :
-    Tendsto (fun s : ℂ ↦ dedekindZetaC K s / s ^ Units.rank K) (𝓝[≠] 0)
-      (𝓝 (-((classNumber K : ℝ) * regulator K / torsionOrder K : ℝ) : ℂ)) := by
-  have hdiscr :
-      Tendsto (fun z : ℂ ↦ ((|discr K| : ℤ) : ℂ) ^ (-z / 2)) (𝓝[≠] 0) (𝓝 1) := by
-    simpa using (analyticAt_discr_inv_cpow K 0).continuousAt.mono_left nhdsWithin_le_nhds
-  have hGℝ : Tendsto (fun z : ℂ ↦ (z * Gammaℝ z)⁻¹ ^ nrRealPlaces K) (𝓝[≠] 0)
-      (𝓝 ((2 : ℂ)⁻¹ ^ nrRealPlaces K)) :=
-    (Gammaℝ_residue_zero.inv₀ two_ne_zero).pow _
-  have hGℂ : Tendsto (fun z : ℂ ↦ (z * Gammaℂ z)⁻¹ ^ nrComplexPlaces K) (𝓝[≠] 0)
-      (𝓝 ((2 : ℂ)⁻¹ ^ nrComplexPlaces K)) :=
-    (Gammaℂ_residue_zero.inv₀ two_ne_zero).pow _
-  have hprod :=
-    ((tendsto_mul_completedDedekindZeta_zero K).mul hdiscr).mul (hGℝ.mul hGℂ)
-  rw [dedekindZetaC_zero_limit_coeff K] at hprod
-  refine hprod.congr' ?_
-  filter_upwards [dedekindZetaC_eventuallyEq_invDedekindZetaCompletionFactor_mul K 0,
-      self_mem_nhdsWithin]
-    with z hz (hz0 : z ≠ 0)
-  exact dedekindZetaC_zero_factor_identity K hz0 hz
-
-/-- **Value of `ζ_K` at `s = 0` in unit rank zero** (such as `ℚ` and imaginary quadratic
-fields): `ζ_K(0) = -h / w`. -/
-theorem dedekindZetaC_zero_of_rank_eq_zero (hr : Units.rank K = 0) :
-    dedekindZetaC K 0 = (-((classNumber K : ℝ) / torsionOrder K : ℝ) : ℂ) := by
-  have hlim : Tendsto (dedekindZetaC K) (𝓝[≠] 0)
-      (𝓝 (-((classNumber K : ℝ) / torsionOrder K : ℝ) : ℂ)) := by
-    simpa [hr, Units.regulator_eq_one_of_rank_eq_zero K hr] using
-      tendsto_dedekindZetaC_div_pow_rank_zero K
-  have hcont : Tendsto (dedekindZetaC K) (𝓝[≠] 0) (𝓝 (dedekindZetaC K 0)) :=
-    (analyticAt_dedekindZetaC K zero_ne_one).continuousAt.mono_left nhdsWithin_le_nhds
-  exact tendsto_nhds_unique hcont hlim
-
-/-- **Value of `ζ_K` at `s = 0` in positive unit rank**: `ζ_K(0) = 0`. -/
-theorem dedekindZetaC_zero_of_rank_pos (hr : 0 < Units.rank K) :
-    dedekindZetaC K 0 = 0 := by
-  have hpow : Tendsto (fun s : ℂ ↦ s ^ Units.rank K) (𝓝[≠] 0) (𝓝 0) := by
-    simpa [hr.ne'] using
-      (by fun_prop : ContinuousAt (fun s : ℂ ↦ s ^ Units.rank K) 0).tendsto.mono_left
-        nhdsWithin_le_nhds
-  have hlim : Tendsto (dedekindZetaC K) (𝓝[≠] 0) (𝓝 0) := by
-    have hmul := (tendsto_dedekindZetaC_div_pow_rank_zero K).mul hpow
-    rw [mul_zero] at hmul
-    refine hmul.congr' ?_
-    filter_upwards [self_mem_nhdsWithin] with s (hs : s ≠ 0)
-    exact div_mul_cancel₀ _ (pow_ne_zero _ hs)
-  have hcont : Tendsto (dedekindZetaC K) (𝓝[≠] 0) (𝓝 (dedekindZetaC K 0)) :=
-    (analyticAt_dedekindZetaC K zero_ne_one).continuousAt.mono_left nhdsWithin_le_nhds
-  exact tendsto_nhds_unique hcont hlim
+  rw [dedekindZetaC_eq_toMeromorphicNFOn]
+  exact (meromorphic_invDedekindZetaCompletionFactor_mul K).meromorphicOn
+    |>.toMeromorphicNFOn_eq_self_on_nhdsNE (mem_univ s)
 
 end Continued
 
