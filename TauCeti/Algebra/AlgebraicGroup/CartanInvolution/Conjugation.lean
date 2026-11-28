@@ -46,6 +46,7 @@ theorem twistedRealPoints_conj (e : H ≅ K) (θ : H ≅ H) :
 
 /-- Conjugation by a real coordinate Hopf-algebra isomorphism preserves and reflects the
 Cartan involution condition. -/
+@[simp]
 theorem isCartanInvolution_conj_iff (e : H ≅ K) {θ : H ≅ H} :
     IsCartanInvolution (e.symm ≪≫ θ ≪≫ e) ↔ IsCartanInvolution θ := by
   rw [isCartanInvolution_iff_isCompact, isCartanInvolution_iff_isCompact,

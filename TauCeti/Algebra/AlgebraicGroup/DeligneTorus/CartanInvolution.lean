@@ -27,17 +27,6 @@ open CategoryTheory
 
 namespace TauCeti.DeligneTorus
 
-/-- The real point of the Deligne torus corresponding to the imaginary unit in `ℂˣ`.
-Its coordinate under this identification is given by `realPointsMulEquiv_imaginaryUnitPoint`. -/
-noncomputable def imaginaryUnitPoint : WithConv (S →ₐ[ℝ] ℝ) :=
-  realPointsMulEquiv.symm (Units.mk0 Complex.I Complex.I_ne_zero)
-
-/-- Under `S(ℝ) ≃ ℂˣ`, the imaginary-unit point is sent to the unit `i`. -/
-@[simp]
-theorem realPointsMulEquiv_imaginaryUnitPoint :
-    realPointsMulEquiv imaginaryUnitPoint = Units.mk0 Complex.I Complex.I_ne_zero :=
-  realPointsMulEquiv.apply_symm_apply _
-
 variable {H : CommHopfAlgCat ℝ}
 
 /-- The Cartan condition at `i` for a homomorphism from the Deligne torus, contravariantly
