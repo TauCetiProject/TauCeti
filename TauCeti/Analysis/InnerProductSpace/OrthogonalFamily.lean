@@ -64,6 +64,26 @@ theorem norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero {v : ι → E} {s :
       Finset.sum_eq_single_of_mem i hi fun j hj hji ↦ hv hj hi hji
   exact mod_cast h
 
+/-- Pairing `c₁ • a + c₂ • b` on the left with a unit vector `a` orthogonal to `b` recovers `c₁`. -/
+theorem inner_smul_add_smul_of_inner_eq_zero_left {a b : E} (ha : ‖a‖ = 1) (hab : ⟪a, b⟫_𝕜 = 0)
+    (c₁ c₂ : 𝕜) : ⟪a, c₁ • a + c₂ • b⟫_𝕜 = c₁ := by
+  rw [inner_add_right, inner_smul_right, inner_smul_right, inner_self_eq_norm_sq_to_K, ha, hab]
+  simp
+
+/-- Pairing `c₁ • a + c₂ • b` on the left with a unit vector `b` orthogonal to `a` recovers `c₂`. -/
+theorem inner_smul_add_smul_of_inner_eq_zero_right {a b : E} (hb : ‖b‖ = 1) (hab : ⟪a, b⟫_𝕜 = 0)
+    (c₁ c₂ : 𝕜) : ⟪b, c₁ • a + c₂ • b⟫_𝕜 = c₂ := by
+  have hba : ⟪b, a⟫_𝕜 = 0 := by rw [← inner_conj_symm, hab, map_zero]
+  simpa [add_comm] using inner_smul_add_smul_of_inner_eq_zero_left hb hba c₂ c₁
+
+/-- Squared norm of `c₁ • a + c₂ • b` for orthogonal unit vectors `a` and `b`. -/
+theorem norm_smul_add_smul_sq_of_inner_eq_zero {a b : E} (ha : ‖a‖ = 1) (hb : ‖b‖ = 1)
+    (hab : ⟪a, b⟫_𝕜 = 0) (c₁ c₂ : 𝕜) :
+    ‖c₁ • a + c₂ • b‖ ^ 2 = ‖c₁‖ ^ 2 + ‖c₂‖ ^ 2 := by
+  have h := norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero (c₁ • a) (c₂ • b) <| by
+    rw [inner_smul_left, inner_smul_right, hab, mul_zero, mul_zero]
+  simpa [sq, norm_smul, ha, hb] using h
+
 /-- **Pythagoras for an orthogonal series.** If pairwise orthogonal vectors sum to `y`, then
 their squared norms sum to `‖y‖²`. -/
 theorem hasSum_norm_sq_of_pairwise_inner_eq_zero {v : ι → E}

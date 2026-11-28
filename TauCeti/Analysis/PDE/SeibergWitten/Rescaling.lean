@@ -29,7 +29,7 @@ the spinor `z ↦ χ (x₀ + h • z)`. Covariant derivatives scale by `h`
 
 `D_b χ = 0`,  `F + ⋆F = ω / 8 - q(χ) / 2 - h² η`,
 
-the flat limiting equations of `TauCeti.Analysis.PDE.SeibergWitten.FlatLimit` with the forcing
+the flat limiting equations of `TauCeti.Analysis.PDE.SeibergWitten.Flat.Limit` with the forcing
 `h² η`, which tends to zero as `r → ∞` for bounded `η`. Conversely the rescaled equations give back
 the original ones. The spinor is written in a constant frame `(w j)` of the positive half-spinors,
 `χ = ∑ⱼ αⱼ wⱼ`, with complex coefficients `αⱼ`, for instance `(u₀, v₀)` with `u₀` spanning the

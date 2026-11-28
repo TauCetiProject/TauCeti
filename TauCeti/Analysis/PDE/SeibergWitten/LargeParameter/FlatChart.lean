@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.SeibergWitten.FlatWeitzenbock
+public import TauCeti.Analysis.PDE.SeibergWitten.Flat.Weitzenbock
 
 /-!
 # The projected Weitzenböck equations in a flat chart

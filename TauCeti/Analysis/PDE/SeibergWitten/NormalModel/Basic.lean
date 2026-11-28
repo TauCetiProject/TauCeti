@@ -5,19 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.SeibergWitten.FlatLimit
+public import TauCeti.Analysis.PDE.SeibergWitten.Flat.Limit
+public import TauCeti.Analysis.PDE.SeibergWitten.Flat.Operator
 public import TauCeti.Analysis.PDE.Vortex.Gauge.ComplexStructure
 import TauCeti.Analysis.Calculus.DifferentialForm.Curl
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
+import TauCeti.Analysis.PDE.SeibergWitten.Normal.Frame
 
 /-!
 # The gauge-fixed normal model at a plane vortex
 
 Near a pseudoholomorphic curve, Taubes's large-parameter Seiberg–Witten solutions are modelled,
 after rescaling, on fields on the flat space `V = ℂ_base × ℂ_normal` that are plane vortices in
-the normal factor (`TauCeti.Analysis.PDE.SeibergWitten.FlatLimit`). The linearization of the flat
+the normal factor (`TauCeti.Analysis.PDE.SeibergWitten.Flat.Limit`). The linearization of the flat
 limiting equations, with its gauge-fixing row, is then a first-order operator on eight real
 components: the connection variation `b'` (four components) and the spinor variation `ζ ∈ W⁺`
 (two complex components). This file decomposes it, at a vortex pulled back from the normal factor,
@@ -47,7 +49,7 @@ companions). A self-dual two-form is determined by these three coordinates.
 **The operator.** At a pair `(b, ψ)`, with connection `a = i b` and covariant derivative
 `∇ = d + i b`, the linearization of the flat limiting equations
 `∑ₖ c(eₖ) ∇_{eₖ} ψ = 0`, `F + ⋆F = ω / 8 - q(ψ) / 2`, `F = -db`, together with the gauge-fixing
-row, sends a variation `(b', ζ)` to
+row, sends a variation `(b', ζ)` to (`TauCeti.Analysis.PDE.SeibergWitten.Flat.Operator`):
 
 * `d₀*(b', ζ) = div b' + Re⟪i ψ, ζ⟫ / 4` (`flatDeformationGauge`), the formal adjoint of the
   charge-one gauge action `d₀ f = (-df, i f ψ)` for the coefficient metric `|b'|² + |ζ|² / 4`;
@@ -134,132 +136,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 -- The dimension `Fact` makes the oriented four-space finite-dimensional.
 attribute [local instance] finiteDimensional_of_finrank_four
 
-/-! ### The frame values of the quadratic term on the two lines -/
-
-section FrameValues
-
-variable [Fact (finrank ℝ V = 4)] [FiniteDimensional ℂ W] (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-  (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o)
-  (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3) (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
-  {u₀ : positiveHalfSpinors o ρ} (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀)
-
-include hQ hkl h₀ h₂ hρ hu₀
-
-/-- **The quadratic term along `e₀ ∧ e₁`**: for a unit canonical spinor `u₀` with paired spinor
-`β₀`, `⟪q'(α u₀, f u₀ + g β₀), e₀ ∧ e₁⟫ = Re(conj α f) / 2`. -/
-theorem inner_quadraticTwoFormPolar_ιMulti_zero_one (hu₀₁ : ‖u₀‖ = 1) (α f g : ℂ) :
-    ⟪(quadraticTwoFormPolar o ρ hkl (α • u₀) (f • u₀ + g • pairedSpinor e u₀) : ⋀[ℝ]^2 V),
-        ιMulti ℝ 2 ![e 0, e 1]⟫ = (conj α * f).re / 2 := by
-  have h0 := inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hρ hu₀
-  rw [inner_quadraticTwoFormPolar_eq_re_inner o hQ hkl hρ, map_smul,
-    cliffordRestriction_ιMulti_zero_one_apply_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hu₀,
-    inner_add_left,
-    inner_smul_left, inner_smul_left, inner_smul_right, inner_smul_right,
-    inner_self_eq_norm_sq_to_K, hu₀₁, ← inner_conj_symm, h0]
-  simp [mul_comm]
-
-/-- **The quadratic term along `e₀ ∧ e₂`**: for a unit canonical spinor `u₀` with paired spinor
-`β₀`, `⟪q'(α u₀, f u₀ + g β₀), e₀ ∧ e₂⟫ = Im(α conj g) / 2`. -/
-theorem inner_quadraticTwoFormPolar_ιMulti_zero_two (hu₀₁ : ‖u₀‖ = 1) (α f g : ℂ) :
-    ⟪(quadraticTwoFormPolar o ρ hkl (α • u₀) (f • u₀ + g • pairedSpinor e u₀) : ⋀[ℝ]^2 V),
-        ιMulti ℝ 2 ![e 0, e 2]⟫ = (α * conj g).im / 2 := by
-  have h0 := inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hρ hu₀
-  have h1 : ‖pairedSpinor e u₀‖ = 1 := by rw [norm_pairedSpinor hQ hρ, hu₀₁]
-  rw [inner_quadraticTwoFormPolar_eq_re_inner o hQ hkl hρ, map_smul,
-    cliffordRestriction_ιMulti_zero_two_apply hQ, inner_add_left,
-    inner_smul_left, inner_smul_left, inner_smul_right, inner_smul_right, inner_smul_right,
-    inner_smul_right, inner_self_eq_norm_sq_to_K, h1, h0]
-  simp [mul_comm]
-
-/-- **The quadratic term along `e₀ ∧ e₃`**: for a unit canonical spinor `u₀` with paired spinor
-`β₀`, `⟪q'(α u₀, f u₀ + g β₀), e₀ ∧ e₃⟫ = Re(α conj g) / 2`. -/
-theorem inner_quadraticTwoFormPolar_ιMulti_zero_three (hu₀₁ : ‖u₀‖ = 1) (α f g : ℂ) :
-    ⟪(quadraticTwoFormPolar o ρ hkl (α • u₀) (f • u₀ + g • pairedSpinor e u₀) : ⋀[ℝ]^2 V),
-        ιMulti ℝ 2 ![e 0, e 3]⟫ = (α * conj g).re / 2 := by
-  have h0 := inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hρ hu₀
-  have h1 : ‖pairedSpinor e u₀‖ = 1 := by rw [norm_pairedSpinor hQ hρ, hu₀₁]
-  rw [inner_quadraticTwoFormPolar_eq_re_inner o hQ hkl hρ, map_smul,
-    cliffordRestriction_ιMulti_zero_three_apply_of_cliffordProjection_apply_eq_self hQ h₀ h₂ hu₀,
-    inner_add_left,
-    inner_smul_left, inner_smul_left, inner_smul_right, inner_smul_right,
-    inner_self_eq_norm_sq_to_K, h1, h0]
-  simp [mul_comm]
-
-end FrameValues
-
-/-! ### The gauge-fixed linearization of the flat limiting equations -/
-
-section Deformation
-
-variable [Fact (finrank ℝ V = 4)]
-
-variable (e) in
-/-- The **gauge-fixing row** of the linearized flat limiting equations at a spinor `ψ`, applied to
-a variation `(b', ζ)` of the connection `a = i b` and of the spinor: the formal `L²` adjoint
-`d₀*(b', ζ) = div b' + Re⟪i ψ, ζ⟫ / 4` of the charge-one infinitesimal gauge action
-`d₀ f = (-df, i f ψ)`, for the coefficient metric `|b'|² + |ζ|² / 4`. -/
-def flatDeformationGauge (b' : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ ζ : V → positiveHalfSpinors o ρ)
-    (y : V) : ℝ :=
-  ∑ k, fderiv ℝ (fun y' ↦ b' y' (fun _ ↦ e k)) y (e k) + (⟪I • (ψ y : W), (ζ y : W)⟫_ℂ).re / 4
-
-theorem flatDeformationGauge_def (b' : V → V [⋀^Fin 1]→L[ℝ] ℝ)
-    (ψ ζ : V → positiveHalfSpinors o ρ) (y : V) :
-    flatDeformationGauge e b' ψ ζ y =
-      ∑ k, fderiv ℝ (fun y' ↦ b' y' (fun _ ↦ e k)) y (e k) +
-        (⟪I • (ψ y : W), (ζ y : W)⟫_ℂ).re / 4 :=
-  (rfl)
-
-variable [FiniteDimensional ℂ W] (hkl : 2 + 2 = finrank ℝ V)
-
-variable (o ρ) in
-/-- The **curvature row** of the linearized flat limiting equations at a spinor `ψ`, applied to a
-variation `(b', ζ)`: the derivative `F' + ⋆F' + q'(ψ, ζ) / 2`, `F' = -db'`, of the flat curvature
-equation `F + ⋆F = ω / 8 - q(ψ) / 2`
-(`sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff`), with the real curvature
-`F = -db` read as a two-vector. -/
-def flatDeformationCurvature (b' : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ ζ : V → positiveHalfSpinors o ρ)
-    (y : V) : ⋀[ℝ]^2 V :=
-  (alternatingFormEquiv V 2).symm (-extDeriv b' y) +
-      o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (-extDeriv b' y)) +
-    (2⁻¹ : ℝ) • (quadraticTwoFormPolar o ρ hkl (ψ y) (ζ y) : ⋀[ℝ]^2 V)
-
-theorem flatDeformationCurvature_def (b' : V → V [⋀^Fin 1]→L[ℝ] ℝ)
-    (ψ ζ : V → positiveHalfSpinors o ρ) (y : V) :
-    flatDeformationCurvature o ρ hkl b' ψ ζ y =
-      (alternatingFormEquiv V 2).symm (-extDeriv b' y) +
-          o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (-extDeriv b' y)) +
-        (2⁻¹ : ℝ) • (quadraticTwoFormPolar o ρ hkl (ψ y) (ζ y) : ⋀[ℝ]^2 V) :=
-  (rfl)
-
-/-- The curvature row is self-dual. -/
-theorem hodgeStar_flatDeformationCurvature (b' : V → V [⋀^Fin 1]→L[ℝ] ℝ)
-    (ψ ζ : V → positiveHalfSpinors o ρ) (y : V) :
-    o.hodgeStar hkl (flatDeformationCurvature o ρ hkl b' ψ ζ y) =
-      flatDeformationCurvature o ρ hkl b' ψ ζ y := by
-  rw [flatDeformationCurvature, map_add, map_add, map_smul,
-    o.hodgeStar_hodgeStar_of_even even_two hkl, o.hodgeStar_coe_of_mem_eigenspace_one hkl]
-  abel
-
-omit [FiniteDimensional ℂ W]
-
-variable (e) in
-/-- The **Dirac row** of the linearized flat limiting equations at a pair `(b, ψ)`, applied to a
-variation `(b', ζ)`: the derivative `∑ₖ c(eₖ) (∇_{eₖ} ζ + i b'(eₖ) ψ)`, `∇ = d + i b`, of the flat
-Dirac operator `∑ₖ c(eₖ) ∇_{eₖ} ψ`. -/
-def flatDeformationDirac (b b' : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ ζ : V → positiveHalfSpinors o ρ)
-    (y : V) : W :=
-  ∑ k, ρ (ι Q (e k)) (fderiv ℝ (fun y' ↦ (ζ y' : W)) y (e k) +
-    (I * b y (fun _ ↦ e k)) • (ζ y : W) + (I * b' y (fun _ ↦ e k)) • (ψ y : W))
-
-theorem flatDeformationDirac_def (b b' : V → V [⋀^Fin 1]→L[ℝ] ℝ)
-    (ψ ζ : V → positiveHalfSpinors o ρ) (y : V) :
-    flatDeformationDirac e b b' ψ ζ y =
-      ∑ k, ρ (ι Q (e k)) (fderiv ℝ (fun y' ↦ (ζ y' : W)) y (e k) +
-        (I * b y (fun _ ↦ e k)) • (ζ y : W) + (I * b' y (fun _ ↦ e k)) • (ψ y : W)) :=
-  (rfl)
-
-end Deformation
-
 /-! ### Base fields pulled back from the plane -/
 
 section Pullback
@@ -270,15 +146,14 @@ variable (e) in
 along the base factor; together with the section `η₂ + i η₃` on the paired spinor it is the
 variation through which the plane vortex adjoint operator enters the normal model. -/
 def pairedConnection (η : ℂ → EuclideanSpace ℝ (Fin 4)) (y : V) : V [⋀^Fin 1]→L[ℝ] ℝ :=
-  ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)
-    (η (normalCoord e y) 0 • innerSL ℝ (e 0) - η (normalCoord e y) 1 • innerSL ℝ (e 1))
+  normalFrameForm e 0 (-η (normalCoord e y))
 
 /-- The paired connection evaluated on a vector `v`: `η₀(z) ⟪e₀, v⟫ - η₁(z) ⟪e₁, v⟫`. -/
 @[simp]
 theorem pairedConnection_apply (η : ℂ → EuclideanSpace ℝ (Fin 4)) (y v : V) :
     pairedConnection e η y (fun _ ↦ v) =
       η (normalCoord e y) 0 * ⟪e 0, v⟫ - η (normalCoord e y) 1 * ⟪e 1, v⟫ := by
-  simp [pairedConnection]
+  simp [pairedConnection]; ring
 
 /-- The paired connection is differentiable where the plane field is. -/
 theorem differentiableAt_pairedConnection {η : ℂ → EuclideanSpace ℝ (Fin 4)} {y : V}
@@ -286,6 +161,13 @@ theorem differentiableAt_pairedConnection {η : ℂ → EuclideanSpace ℝ (Fin 
     DifferentiableAt ℝ (pairedConnection e η) y := by
   have hc (i : Fin 4) : DifferentiableAt ℝ (fun y' ↦ η (normalCoord e y') i) y :=
     (differentiableAt_euclidean.1 hη i).comp y (normalCoord e).differentiableAt
+  have hfn : pairedConnection e η = fun y' ↦ ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)
+      (η (normalCoord e y') 0 • innerSL ℝ (e 0) - η (normalCoord e y') 1 • innerSL ℝ (e 1)) := by
+    funext y'
+    rw [pairedConnection, normalFrameForm_def]
+    congr 1
+    simp [sub_eq_add_neg]
+  rw [hfn]
   exact (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ)
     (0 : Fin 1)).differentiableAt.comp y (((hc 0).smul_const _).sub ((hc 1).smul_const _))
 
@@ -293,7 +175,6 @@ theorem differentiableAt_pairedConnection {η : ℂ → EuclideanSpace ℝ (Fin 
 @[simp]
 theorem pairedConnection_zero : pairedConnection e (0 : ℂ → EuclideanSpace ℝ (Fin 4)) = 0 := by
   funext y
-  ext v
   simp [pairedConnection]
 
 end Pullback
@@ -305,10 +186,11 @@ section NormalModel
 variable (e) in
 /-- The **connection of the normal model** of a pair of plane fields `(ξ, η)`: the normal
 connection `ξ₀(z) e² + ξ₁(z) e³` of `ξ` (`normalConnection`) plus the paired connection
-`η₀(z) e⁰ - η₁(z) e¹` of `η` (`pairedConnection`), pulled back along the normal coordinate `z`. -/
+`η₀(z) e⁰ - η₁(z) e¹` of `η` (`pairedConnection`), pulled back along the normal coordinate `z` via
+`normalFrameForm`. -/
 def normalModelConnection (ξ η : ℂ → EuclideanSpace ℝ (Fin 4)) (y : V) :
     V [⋀^Fin 1]→L[ℝ] ℝ :=
-  normalConnection e ξ y + pairedConnection e η y
+  normalFrameForm e (ξ (normalCoord e y)) (-η (normalCoord e y))
 
 /-- The connection of the normal model on a vector:
 `b(v) = η₀(z) ⟪e₀, v⟫ - η₁(z) ⟪e₁, v⟫ + ξ₀(z) ⟪e₂, v⟫ + ξ₁(z) ⟪e₃, v⟫`. -/
@@ -317,8 +199,7 @@ theorem normalModelConnection_apply (ξ η : ℂ → EuclideanSpace ℝ (Fin 4))
     normalModelConnection e ξ η y (fun _ ↦ v) =
       η (normalCoord e y) 0 * ⟪e 0, v⟫ - η (normalCoord e y) 1 * ⟪e 1, v⟫ +
         ξ (normalCoord e y) 0 * ⟪e 2, v⟫ + ξ (normalCoord e y) 1 * ⟪e 3, v⟫ := by
-  simp only [normalModelConnection, ContinuousAlternatingMap.add_apply, normalConnection_apply,
-    pairedConnection_apply, normalCoord_re, normalCoord_im]
+  simp [normalModelConnection]
   ring
 
 /-- The connection of the normal model of `(ξ, 0)` is the normal connection of `ξ`. -/
@@ -326,7 +207,7 @@ theorem normalModelConnection_apply (ξ η : ℂ → EuclideanSpace ℝ (Fin 4))
 theorem normalModelConnection_zero_right (ξ : ℂ → EuclideanSpace ℝ (Fin 4)) :
     normalModelConnection e ξ 0 = normalConnection e ξ := by
   funext y
-  simp [normalModelConnection]
+  apply normalFrameForm_eq_of_apply <;> simp [normalConnection_apply]
 
 /-- The connection of the normal model on `e₀` is `η₀(z)`. -/
 -- These four frame values take priority over the general `normalModelConnection_apply`.
@@ -358,25 +239,29 @@ variable [Fact (finrank ℝ V = 4)]
 variable (e) in
 /-- The **spinor of the normal model** of a pair of plane fields `(ξ, η)`: the section
 `α_ξ = 2 (ξ₂ + i ξ₃)` of `ξ` on the canonical spinor `u₀` plus the section `α_η` of `η` on the
-paired spinor `β₀ = c(e₂) c(e₀) u₀` (`pairedSpinor`), pulled back along the normal coordinate. For
-`η = 0` this is the pullback `α_ξ u₀` of `TauCeti.SeibergWitten.FlatLimit`. -/
+paired spinor `β₀ = c(e₂) c(e₀) u₀` (`pairedSpinor`), pulled back along the normal coordinate via
+`normalFrameSpinor`. For `η = 0` this is the pullback `α_ξ u₀` of
+`TauCeti.Analysis.PDE.SeibergWitten.Flat.Limit`. -/
 def normalModelSpinor (u₀ : positiveHalfSpinors o ρ) (ξ η : ℂ → EuclideanSpace ℝ (Fin 4))
     (y : V) : positiveHalfSpinors o ρ :=
-  Vortex.sectionValue ξ (normalCoord e y) • u₀ +
-    Vortex.sectionValue η (normalCoord e y) • pairedSpinor e u₀
+  normalFrameSpinor o ρ e u₀ (ξ (normalCoord e y)) (-η (normalCoord e y))
 
 theorem normalModelSpinor_apply (u₀ : positiveHalfSpinors o ρ)
     (ξ η : ℂ → EuclideanSpace ℝ (Fin 4)) (y : V) :
     normalModelSpinor e u₀ ξ η y = Vortex.sectionValue ξ (normalCoord e y) • u₀ +
-      Vortex.sectionValue η (normalCoord e y) • pairedSpinor e u₀ :=
-  (rfl)
+      Vortex.sectionValue η (normalCoord e y) • pairedSpinor e u₀ := by
+  simp only [normalModelSpinor, normalFrameSpinor_def, Vortex.sectionValue_apply, PiLp.neg_apply,
+    ofReal_neg]
+  rw [sub_eq_add_neg, ← neg_smul]
+  congr 2
+  ring
 
 /-- The spinor of the normal model as a spinor of `W`. -/
 theorem coe_normalModelSpinor (u₀ : positiveHalfSpinors o ρ)
     (ξ η : ℂ → EuclideanSpace ℝ (Fin 4)) (y : V) :
     (normalModelSpinor e u₀ ξ η y : W) = Vortex.sectionValue ξ (normalCoord e y) • (u₀ : W) +
-      Vortex.sectionValue η (normalCoord e y) • (pairedSpinor e u₀ : W) :=
-  (rfl)
+      Vortex.sectionValue η (normalCoord e y) • (pairedSpinor e u₀ : W) := by
+  rw [normalModelSpinor_apply, Submodule.coe_add, Submodule.coe_smul, Submodule.coe_smul]
 
 /-- The spinor of the normal model of `(ξ, 0)` is `α_ξ u₀`. -/
 @[simp]
@@ -543,7 +428,7 @@ theorem familyNormalModelSpinor_apply (u₀ : positiveHalfSpinors o ρ)
     familyNormalModelSpinor e u₀ Ξ Η y =
       Vortex.sectionValue (fun z ↦ Ξ (baseCoord e y, z)) (normalCoord e y) • u₀ +
         Vortex.sectionValue (fun z ↦ Η (baseCoord e y, z)) (normalCoord e y) • pairedSpinor e u₀ :=
-  (rfl)
+  normalModelSpinor_apply u₀ _ _ y
 
 /-- The spinor of the normal model of a family as a spinor of `W`. -/
 theorem coe_familyNormalModelSpinor (u₀ : positiveHalfSpinors o ρ)
@@ -552,7 +437,7 @@ theorem coe_familyNormalModelSpinor (u₀ : positiveHalfSpinors o ρ)
       Vortex.sectionValue (fun z ↦ Ξ (baseCoord e y, z)) (normalCoord e y) • (u₀ : W) +
         Vortex.sectionValue (fun z ↦ Η (baseCoord e y, z)) (normalCoord e y) •
           (pairedSpinor e u₀ : W) :=
-  (rfl)
+  coe_normalModelSpinor u₀ _ _ y
 
 omit [Fact (finrank ℝ V = 4)] in
 /-- The section `α_Ξ (w, z) = 2 (Ξ₂ + i Ξ₃)` of a family, as a function of `(w, z)`, is
@@ -707,8 +592,14 @@ variable {ξ η : ℂ → EuclideanSpace ℝ (Fin 4)} {Ξ Η : ℂ × ℂ → Eu
 /-- The connection of the normal model is differentiable where its plane fields are. -/
 theorem differentiableAt_normalModelConnection (hξ : DifferentiableAt ℝ ξ (normalCoord e y))
     (hη : DifferentiableAt ℝ η (normalCoord e y)) :
-    DifferentiableAt ℝ (normalModelConnection e ξ η) y :=
-  (differentiableAt_normalConnection hξ).add (differentiableAt_pairedConnection hη)
+    DifferentiableAt ℝ (normalModelConnection e ξ η) y := by
+  have hadd : normalModelConnection e ξ η = normalConnection e ξ + pairedConnection e η := by
+    funext y'
+    rw [← normalModelConnection_zero_right]
+    simp only [Pi.add_apply, normalModelConnection, pairedConnection, Pi.zero_apply, neg_zero,
+      ← normalFrameForm_add, add_zero, zero_add]
+  rw [hadd]
+  exact (differentiableAt_normalConnection hξ).add (differentiableAt_pairedConnection hη)
 
 variable [Fact (finrank ℝ V = 4)] [FiniteDimensional ℂ W] (hQ : ∀ v, Q v = -‖v‖ ^ 2)
   (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o)
@@ -738,7 +629,7 @@ theorem flatDeformationGauge_familyNormalModel (hu₀₁ : ‖u₀‖ = 1)
   have hψ : (normalModelSpinor e u₀ x 0 y : W) =
       Vortex.sectionValue x (normalCoord e y) • (u₀ : W) := by
     rw [normalModelSpinor_zero_right, Submodule.coe_smul]
-  simp only [flatDeformationGauge, Fin.sum_univ_four,
+  simp only [flatDeformationGauge_def, Fin.sum_univ_four,
     fderiv_familyNormalModelConnection_apply_zero hΗ,
     fderiv_familyNormalModelConnection_apply_one hΗ,
     fderiv_familyNormalModelConnection_apply_two hΞ,
@@ -763,7 +654,7 @@ private theorem inner_flatDeformationCurvature_ιMulti_zero {b' : V → V [⋀^F
         2⁻¹ * ⟪(quadraticTwoFormPolar o ρ hkl (ψ y) (ζ y) : ⋀[ℝ]^2 V), ιMulti ℝ 2 ![e 0, e j]⟫ := by
   have hs : ∀ a b : ⋀[ℝ]^2 V, ⟪o.hodgeStar hkl a, b⟫ = ⟪a, o.hodgeStar hkl b⟫ :=
     o.isSymmetric_hodgeStar_of_even even_two hkl
-  rw [flatDeformationCurvature, inner_add_left, inner_add_left, real_inner_smul_left, hs, hj,
+  rw [flatDeformationCurvature_def, inner_add_left, inner_add_left, real_inner_smul_left, hs, hj,
     real_inner_smul_right, inner_alternatingFormEquiv_symm_neg_extDeriv hb',
     inner_alternatingFormEquiv_symm_neg_extDeriv hb']
 

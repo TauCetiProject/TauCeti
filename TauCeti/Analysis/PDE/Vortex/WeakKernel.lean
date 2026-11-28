@@ -376,6 +376,41 @@ theorem exists_continuousLinearMap_mem_orthogonal_weakGaugeFixedKernel (hx : Con
     (μ := volume) hx hsol hlim
   exact ⟨Q, fun f ↦ (isMinimalGaugeFixedWeakSolution_iff_mem_orthogonal hx.continuous).1 (hQ f)⟩
 
+/-- If `Q` is a weak right inverse of `L_x` with range orthogonal to `weakGaugeFixedKernel x`,
+then `Q (L_x ψ) = ψ - P_{K_x} ψ` in `L²` for every compactly supported `C¹` field `ψ`. -/
+theorem apply_toLp_gaugeFixedOperator_eq_sub_starProjection (hx : Continuous x)
+    {Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) →L[ℝ]
+      Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)}
+    (hQsol : ∀ f, IsGaugeFixedWeakSolution volume x f (Q f))
+    (hQorth : ∀ f, Q f ∈ (weakGaugeFixedKernel x)ᗮ)
+    {ψ : ℂ → EuclideanSpace ℝ (Fin 4)} (hψ : ContDiff ℝ 1 ψ) (hψc : HasCompactSupport ψ) :
+    let hψ_lp : MemLp ψ 2 volume := hψ.continuous.memLp_of_hasCompactSupport hψc
+    let hLψ_lp : MemLp (gaugeFixedOperator x ψ) 2 volume :=
+      (continuous_gaugeFixedOperator hx hψ).memLp_of_hasCompactSupport
+        (hasCompactSupport_gaugeFixedOperator hψc)
+    Q (hLψ_lp.toLp (gaugeFixedOperator x ψ)) =
+      hψ_lp.toLp ψ - (weakGaugeFixedKernel x).starProjection (hψ_lp.toLp ψ) := by
+  intro hψ_lp hLψ_lp
+  set f := hLψ_lp.toLp (gaugeFixedOperator x ψ)
+  have hq : IsMinimalGaugeFixedWeakSolution volume x f (Q f) :=
+    (isMinimalGaugeFixedWeakSolution_iff_mem_orthogonal hx).2 ⟨hQsol f, hQorth f⟩
+  have hψ_sol : IsGaugeFixedWeakSolution volume x f (hψ_lp.toLp ψ) :=
+    isGaugeFixedWeakSolution_iff.2 fun η hη _hηc ↦ by
+      rw [hψ_lp.integral_inner_toLp_left, hLψ_lp.integral_inner_toLp_left,
+        integral_inner_gaugeFixedOperator hψ (hη.of_le one_le_two) (.inl hψc)]
+  have hproj_sol : IsGaugeFixedWeakSolution volume x 0
+      ((weakGaugeFixedKernel x).starProjection (hψ_lp.toLp ψ)) :=
+    (isGaugeFixedWeakSolution_zero_iff_mem_weakGaugeFixedKernel hx).2
+      (Submodule.starProjection_apply_mem _ _)
+  have hp_sol : IsGaugeFixedWeakSolution volume x f
+      (hψ_lp.toLp ψ - (weakGaugeFixedKernel x).starProjection (hψ_lp.toLp ψ)) := by
+    simpa only [sub_zero] using hψ_sol.sub hx hproj_sol
+  have hp : IsMinimalGaugeFixedWeakSolution volume x f
+      (hψ_lp.toLp ψ - (weakGaugeFixedKernel x).starProjection (hψ_lp.toLp ψ)) :=
+    (isMinimalGaugeFixedWeakSolution_iff_mem_orthogonal hx).2
+      ⟨hp_sol, Submodule.sub_starProjection_mem_orthogonal _⟩
+  exact hq.unique hx hp
+
 /-! ### From the classical kernel to the weak kernel -/
 
 /-- A square-integrable `C¹` solution of `L_x y = 0` represents an element of

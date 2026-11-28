@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.SeibergWitten.FlatLimit
+public import TauCeti.Analysis.PDE.SeibergWitten.Flat.Limit
 public import TauCeti.Analysis.PDE.SeibergWitten.HolomorphicGauge
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
@@ -22,7 +22,7 @@ Rescaling a large-parameter Seiberg–Witten solution near a pseudoholomorphic c
 
 `∑ₖ c(eₖ) ∇_{eₖ} (α u₀) = 0`,  `F + ⋆F = ω / 8 - q(α u₀) / 2`,  `F = i F_a = -db`,
 
-the case `r = 1 / 2` of `TauCeti.Analysis.PDE.SeibergWitten.FlatLimit`, in a positively oriented
+the case `r = 1 / 2` of `TauCeti.Analysis.PDE.SeibergWitten.Flat.Limit`, in a positively oriented
 unitary frame `e` whose vectors `e₂`, `e₃` span the normal factor. The pullbacks of normalized plane
 vortices (`TauCeti.Vortex.equation`) along the normal coordinate `z` solve them
 (`TauCeti.SeibergWitten.sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff`). This

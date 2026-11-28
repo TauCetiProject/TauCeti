@@ -41,7 +41,7 @@ on the germ of the field at `x` (`covariantDeriv_congr_of_eventuallyEq`). It, an
 trace of the Clifford pairing `(v, w) ↦ c(v) ∇_w ψ` (`AlgHom.cliffordPairing`, `flatDirac_def`).
 This is the Dirac operator of the twisted spinors on a flat chart in which the background
 connection is trivial. For `ψ = α u₀` with `u₀` constant it is the operator of the flat limiting
-equations of `TauCeti.Analysis.PDE.SeibergWitten.FlatLimit` (`flatDirac_smul_const`). The operator
+equations of `TauCeti.Analysis.PDE.SeibergWitten.Flat.Limit` (`flatDirac_smul_const`). The operator
 is additive in fields differentiable at the point (`flatDirac_add`) and affine in the connection,
 `D_{b + b'} ψ = D_b ψ + i c(b') ψ` (`flatDirac_add_connection`), where the Clifford multiplication
 `i c(b') φ` is the flat Dirac operator of the constant field `φ` for the connection `b'`
@@ -204,7 +204,7 @@ theorem covariantDeriv_congr_of_eventuallyEq {f g : V → W} (h : f =ᶠ[𝓝 x]
 theorem covariantDeriv_eq_zero_of_eventuallyEq {φ : V → W} (h : φ =ᶠ[𝓝 x] 0) :
     covariantDeriv b φ x = 0 := by
   ext v
-  simp [covariantDeriv_congr_of_eventuallyEq h, covariantDeriv_apply]
+  simp [covariantDeriv_congr_of_eventuallyEq h]
 
 /-- The covariant derivative commutes with a constant complex-linear map: `∇_v (L ψ) = L (∇_v ψ)`.
 -/

@@ -62,7 +62,7 @@ In Taubes's analysis of Seiberg–Witten solutions at large parameter `r`, the s
 rescaled at the length scale `r^(-1/2)`, and his estimates bound the rescaled curvature, `α` and
 `∇_a α`. Given also a bound on the derivative of the rescaled curvature, the compactness above
 extracts continuous locally uniform limits in the radial gauge. Identifying these limits as
-solutions of the equations studied in `TauCeti.Analysis.PDE.SeibergWitten.FlatLimit` requires
+solutions of the equations studied in `TauCeti.Analysis.PDE.SeibergWitten.Flat.Limit` requires
 further regularity, which comes from the equations.
 
 ## Main definitions and results

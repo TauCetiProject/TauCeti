@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.ZeroMultiplicity
-public import TauCeti.Analysis.PDE.SeibergWitten.FlatLimit
+public import TauCeti.Analysis.PDE.SeibergWitten.Flat.Limit
 import Mathlib.MeasureTheory.Integral.PeakFunction
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
@@ -29,7 +29,7 @@ coordinates `w = ⟪e₀, ·⟫ + i ⟪e₁, ·⟫` (`TauCeti.SeibergWitten.base
 pulled back along the normal coordinate after dilation by `√(2r)`, is a solution of the flat
 large-parameter Seiberg–Witten equations at parameter `r` which is constant along the base
 (`sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff_equation_eq_zero` in
-`TauCeti.Analysis.PDE.SeibergWitten.FlatLimit`), with section `α(y) = α_X(√(2r) z(y))`. It is
+`TauCeti.Analysis.PDE.SeibergWitten.Flat.Limit`), with section `α(y) = α_X(√(2r) z(y))`. It is
 the model of a large-parameter solution near a pseudoholomorphic curve, and this file computes the
 two quantities through which Taubes's analysis sees the curve: the defect energy of balls and the
 curvature current.
