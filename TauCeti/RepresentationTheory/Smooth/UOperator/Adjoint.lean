@@ -19,15 +19,11 @@ Since the averaging projector `e_C` is self-adjoint for `B`
 (`Representation.isSelfAdjoint_smoothAverage`) and `ρ t` has adjoint `ρ t⁻¹`, the operator
 `U_t = e_C ∘ ρ(t)` satisfies:
 
-* `Representation.apply_smoothAverage_comp_subtype_apply`:
-  `B (e_C x) y = B x (e_C y)` for all `x, y ∈ V`.
 * `Representation.isAdjointPair_uOperator`:
   `(ρ t⁻¹ ∘ₗ e_C, U_t)` is a `B.flip`-adjoint pair, i.e. `B (U_t x) y = B x (ρ t⁻¹ (e_C y))`
   for all `x, y ∈ V`.
 * `Representation.apply_uOperator_apply_eq_apply_uOperator_inv_of_mem_invariants`:
   `B (U_t x) y = B x (U_{t⁻¹} y)` for all `x, y ∈ V^C`.
-* `Representation.apply_invariantsUOperator_apply_eq`:
-  the bundled form `B (invariantsUOperator t x) y = B x (invariantsUOperator t⁻¹ y)` on `V^C`.
 
 ## References
 
@@ -47,14 +43,6 @@ variable {A G V : Type*} [CommRing A] [StarRing A] [Group G] [TopologicalSpace G
   (ρ : Representation A G V) [IsSmooth ρ]
   (C : Subgroup G) [CompactSpace C] (hC : TauCeti.HasUnitProOrder A C)
 
-/-- For a `ρ`-invariant sesquilinear form `B : V →ₗ⋆[A] V →ₗ[A] A`, the averaging projector over
-`C` is self-adjoint: `B (e_C x) y = B x (e_C y)`. -/
-theorem apply_smoothAverage_comp_subtype_apply (B : V →ₗ⋆[A] V →ₗ[A] A)
-    (hB : ∀ g x y, B (ρ g x) (ρ g y) = B x y) (x y : V) :
-    B (smoothAverage (ρ.comp C.subtype) hC x) y = B x (smoothAverage (ρ.comp C.subtype) hC y) := by
-  have hsa := isSelfAdjoint_smoothAverage (ρ.comp C.subtype) hC B (fun c ↦ hB c.val) y x
-  simpa only [LinearMap.flip_apply] using hsa.symm
-
 /-- For a `ρ`-invariant sesquilinear form `B : V →ₗ⋆[A] V →ₗ[A] A`, `ρ t⁻¹ ∘ₗ e_C` and `U_t`
 form an adjoint pair with respect to `B.flip`: `B x (ρ t⁻¹ (e_C y)) = B (U_t x) y` for all
 `t ∈ G` and `x, y ∈ V`. -/
@@ -64,7 +52,9 @@ theorem isAdjointPair_uOperator (B : V →ₗ⋆[A] V →ₗ[A] A)
       (ρ t⁻¹ ∘ₗ smoothAverage (ρ.comp C.subtype) hC) (ρ.uOperator C hC t) := by
   intro y x
   simp only [LinearMap.flip_apply, LinearMap.comp_apply, uOperator_apply]
-  rw [apply_smoothAverage_comp_subtype_apply ρ C hC B hB, ← hB t⁻¹ (ρ t x), inv_self_apply]
+  have hsa := isSelfAdjoint_smoothAverage (ρ.comp C.subtype) hC B (fun c ↦ hB c.val) y (ρ t x)
+  simp only [LinearMap.flip_apply] at hsa
+  rw [← hsa, ← hB t⁻¹ (ρ t x), inv_self_apply]
 
 /-- On `C`-invariants `V^C`, the adjoint of `U_t` with respect to a `ρ`-invariant sesquilinear form
 `B` is `U_{t⁻¹}`: `B (U_t x) y = B x (U_{t⁻¹} y)`. -/
@@ -73,18 +63,9 @@ theorem apply_uOperator_apply_eq_apply_uOperator_inv_of_mem_invariants (B : V �
     (hx : x ∈ invariants (ρ.comp C.subtype)) (hy : y ∈ invariants (ρ.comp C.subtype)) :
     B (ρ.uOperator C hC t x) y = B x (ρ.uOperator C hC t⁻¹ y) := by
   have h1 := (isAdjointPair_uOperator ρ C hC B hB t y x).symm
-  simp only [LinearMap.flip_apply, LinearMap.comp_apply] at h1
+  have hsa := isSelfAdjoint_smoothAverage (ρ.comp C.subtype) hC B (fun c ↦ hB c.val) (ρ t⁻¹ y) x
+  simp only [LinearMap.flip_apply, LinearMap.comp_apply] at h1 hsa
   rw [h1, smoothAverage_apply_of_mem_invariants (ρ.comp C.subtype) hC hy, uOperator_apply,
-    ← apply_smoothAverage_comp_subtype_apply ρ C hC B hB,
-    smoothAverage_apply_of_mem_invariants (ρ.comp C.subtype) hC hx]
-
-/-- On `C`-invariants `V^C`, the bundled operator `invariantsUOperator t` has adjoint
-`invariantsUOperator t⁻¹` with respect to any `ρ`-invariant sesquilinear form `B`. -/
-theorem apply_invariantsUOperator_apply_eq (B : V →ₗ⋆[A] V →ₗ[A] A)
-    (hB : ∀ g x y, B (ρ g x) (ρ g y) = B x y) (t : G) (x y : invariants (ρ.comp C.subtype)) :
-    B (ρ.invariantsUOperator C hC t x : V) y = B x (ρ.invariantsUOperator C hC t⁻¹ y : V) := by
-  simp only [coe_invariantsUOperator_apply]
-  exact apply_uOperator_apply_eq_apply_uOperator_inv_of_mem_invariants ρ C hC B hB t x.property
-    y.property
+    hsa, smoothAverage_apply_of_mem_invariants (ρ.comp C.subtype) hC hx]
 
 end Representation
