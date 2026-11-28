@@ -199,7 +199,7 @@ theorem IsIntegralLattice.mfderiv_toAdd_coe_kernelTorus_mem (hi : IsIntegralLatt
       mfderiv 𝓘(ℝ, kernelTorusLieAlgebra i u) 𝓘(ℝ, ι → ℝ) (e ∘ J) 1 ξ := by
     have hJeq : J =ᶠ[nhds 1] (fun t : ι → ℝ ↦ fun j ↦ (t j : AddCircle (2 * π))) ∘ (e ∘ J) :=
       hsrc.mono fun k hk ↦ (AddCircle.coe_extChartAt_pi_apply _ _ hk).symm
-    have h := ((AddCircle.hasMFDerivAt_coe_pi (2 * π) ((e ∘ J) 1)).comp 1
+    have h := ((AddCircle.hasMFDerivAt_coe_pi (fun _ ↦ 2 * π) ((e ∘ J) 1)).comp 1
       hs.hasMFDerivAt).congr_of_eventuallyEq_abuse hJeq
     -- The derivative of the covering map is the identity of `ℝ^ι`.
     exact congrArg (fun L ↦ L ξ) (h.mfderiv.trans (ContinuousLinearMap.id_comp
@@ -579,7 +579,7 @@ theorem exists_mfderiv_delzantQuotientMk_eq_zero (x : delzantLevel i u c) {t : �
     rw [torusRotation_coe, ← smul_neg]
   have hg : ContMDiff 𝓘(ℝ) 𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ∞ g := by
     rw [hg_eq]
-    exact contMDiff_torusRotation.comp (((AddCircle.contMDiff_coe_pi (2 * π) ∞).comp
+    exact contMDiff_torusRotation.comp (((AddCircle.contMDiff_coe_pi (fun _ ↦ 2 * π) ∞).comp
       (contMDiff_id.smul contMDiff_const)).prodMk contMDiff_const)
   have hgZ (s : ℝ) : g s ∈ delzantLevel i u c :=
     (weightRotation_mem_delzantLevel_iff _).2 x.property

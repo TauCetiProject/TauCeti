@@ -63,6 +63,9 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.mem_ker_map_quotientMk_iff`,
   `Matrix.SpecialLinearGroup.ker_map_quotientMk_mono`: the same entrywise description modulo an
   ideal `I`, and monotonicity of these kernels in `I`.
+* `Matrix.SpecialLinearGroup.toGL_mem_ker_map_iff`, `Matrix.SpecialLinearGroup.kerMapToGL`:
+  `toGL` identifies the kernel of base change on `SL(ι, -)` with its preimage of the kernel of
+  base change on `GL ι`, and restricts to a homomorphism between these kernels.
 * `Matrix.SpecialLinearGroup.map_injective` and `Matrix.SpecialLinearGroup.mem_range_map_iff`:
   along an injective ring hom, base change is injective and its range is described entrywise.
 * `Matrix.SpecialLinearGroup.mapGL_neg` and `Matrix.SpecialLinearGroup.mapGL_neg_one`:
@@ -187,6 +190,25 @@ theorem toGL_map {R S : Type*} [CommRing R] [CommRing S] {n : Type*}
   apply GeneralLinearGroup.ext
   intro i j
   simp only [coe_GL_coe_matrix, map_apply_coe, GeneralLinearGroup.map_apply, Matrix.map_apply]
+
+/-- A matrix of `SL(n, R)` lies in the kernel of base change along `f` on `GL n` exactly when it
+lies in the kernel of base change along `f` on `SL(n, -)`. -/
+theorem toGL_mem_ker_map_iff {R S : Type*} [CommRing R] [CommRing S] {n : Type*}
+    [Fintype n] [DecidableEq n] {f : R →+* S} {g : SpecialLinearGroup n R} :
+    toGL g ∈ (GeneralLinearGroup.map f).ker ↔ g ∈ (map f).ker := by
+  rw [MonoidHom.mem_ker, MonoidHom.mem_ker, ← toGL_map, ← map_one toGL, toGL_injective.eq_iff]
+
+/-- The inclusion `toGL`, restricted to the kernels of base change along `f`: it carries the
+kernel on `SL(n, -)` into the kernel on `GL n`. -/
+def kerMapToGL {R S : Type*} [CommRing R] [CommRing S] {n : Type*} [Fintype n] [DecidableEq n]
+    (f : R →+* S) : (map (n := n) f).ker →* (GeneralLinearGroup.map (n := n) f).ker :=
+  (toGL.comp (Subgroup.subtype _)).codRestrict _ fun g ↦ toGL_mem_ker_map_iff.2 g.property
+
+@[simp]
+theorem coe_kerMapToGL {R S : Type*} [CommRing R] [CommRing S] {n : Type*} [Fintype n]
+    [DecidableEq n] (f : R →+* S) (g : (map (n := n) f).ker) :
+    (kerMapToGL f g : GL n R) = toGL (g : SpecialLinearGroup n R) :=
+  (rfl)
 
 /-- Base change of special linear groups along an injective ring hom is injective. -/
 theorem map_injective {R S : Type*} [CommRing R] [CommRing S] {n : Type*} [Fintype n]

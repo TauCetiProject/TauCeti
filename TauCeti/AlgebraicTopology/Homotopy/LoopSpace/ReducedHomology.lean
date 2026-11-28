@@ -49,11 +49,14 @@ The path components of `Ω²X` and `ΩᴹΩᴹX` are identified with the element
 
 ## Main definitions
 
+* `TauCeti.loopSpaceReducedHomology₀Iso`: `H~₀(Ω X x; R) ≅ ∐_{a ∈ π₁(X, x), a ≠ 1} R`.
 * `TauCeti.doubleLoopSpaceReducedHomology₀Iso`, `TauCeti.MooreLoopSpace.doubleReducedHomology₀Iso`:
   `H~₀(Ω²X; R) ≅ ∐_{a ∈ π₂(X, x), a ≠ 1} R`.
 
 ## Main results
 
+* `TauCeti.exists_injective_loopSpaceReducedHomology₀`: if `π₁(X, x)` is nontrivial, `H~₀(Ω X x; R)`
+  contains a copy of `R`.
 * `TauCeti.exists_injective_doubleLoopSpaceReducedHomology₀`,
   `TauCeti.MooreLoopSpace.exists_injective_doubleReducedHomology₀`: if `π₂(X, x)` is nontrivial,
   the reduced zeroth homology of the double loop space with coefficients in a ring `R` contains a
@@ -83,6 +86,28 @@ section DegreeZero
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
   [CategoryWithHomology C] [HasKernels C] (R : C) {X : Type w} [TopologicalSpace X]
+
+/-- **Reduced zeroth homology of a loop space.** `H~₀(Ω X x; R)` is the coproduct of copies of
+`R` indexed by the nontrivial elements of `π₁(X, x)`. -/
+def loopSpaceReducedHomology₀Iso (x : X) :
+    (reducedSingularHomologyFunctor R 0).obj (TopCat.of (Ω X x)) ≅
+      ∐ fun _ : {a : FundamentalGroup X x // a ≠ 1} ↦ R :=
+  reducedSingularHomology₀IsoOfEquiv R (Y := TopCat.of (Ω X x)) (Path.refl x)
+    zerothHomotopyLoopSpaceEquivFundamentalGroup
+    (zerothHomotopyLoopSpaceEquivFundamentalGroup_mk (Path.refl x))
+
+/-- The generator of `TauCeti.loopSpaceReducedHomology₀Iso` at the class of a loop `γ` is
+`[γ] - [Path.refl x]`. -/
+@[reassoc]
+theorem ι_loopSpaceReducedHomology₀Iso_inv_ι (x : X) (γ : Ω X x)
+    (h : zerothHomotopyLoopSpaceEquivFundamentalGroup (.mk γ) ≠ 1) :
+    Sigma.ι (fun _ : {a : FundamentalGroup X x // a ≠ 1} ↦ R)
+        ⟨zerothHomotopyLoopSpaceEquivFundamentalGroup (.mk γ), h⟩ ≫
+        (loopSpaceReducedHomology₀Iso R x).inv ≫
+          (reducedSingularHomologyι R 0).app (TopCat.of (Ω X x)) =
+      singularHomology₀Section R (X := TopCat.of (Ω X x)) γ -
+        singularHomology₀Section R (X := TopCat.of (Ω X x)) (Path.refl x) :=
+  ι_reducedSingularHomology₀IsoOfEquiv_inv_ι R (Y := TopCat.of (Ω X x)) _ γ _ _ h
 
 /-- **Reduced zeroth homology of the double loop space.** `H~₀(Ω²X; R)` is the coproduct of
 copies of `R` indexed by the nontrivial elements of `π₂(X, x)`. -/
@@ -142,6 +167,18 @@ end DegreeZero
 section Ring
 
 variable {R : Type u} [Ring R] {X : Type u} [TopologicalSpace X]
+
+/-- If `π₁(X, x)` is nontrivial, the reduced zeroth homology `H~₀(Ω X x; R)` contains a copy
+of `R`. -/
+theorem exists_injective_loopSpaceReducedHomology₀ (x : X) [Nontrivial (π_ 1 X x)] :
+    ∃ f : R →ₗ[R]
+        (reducedSingularHomologyFunctor (ModuleCat.of R R) 0).obj (TopCat.of (Ω X x)),
+      Function.Injective f := by
+  have : Nontrivial (FundamentalGroup X x) :=
+    pi1MulEquivFundamentalGroup.toEquiv.nontrivial_congr.1 inferInstance
+  have : Nonempty {a : FundamentalGroup X x // a ≠ 1} :=
+    nonempty_subtype.2 (exists_ne (1 : FundamentalGroup X x))
+  exact ModuleCat.exists_injective_of_iso_sigma (loopSpaceReducedHomology₀Iso _ x)
 
 /-- **The degree-zero homological input to Proposition 5.11 of Barraud--Damian--Humilière--Oancea
 (case `k = 2`).** If `π₂(X, x)` is nontrivial, the reduced zeroth homology of the double loop

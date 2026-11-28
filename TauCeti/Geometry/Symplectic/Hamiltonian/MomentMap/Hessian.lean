@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Lie.FundamentalVectorField.Isotropy
 public import TauCeti.Geometry.Lie.FundamentalVectorField.Linearization
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ConstantOrbit.Manifold
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Critical
@@ -75,6 +76,8 @@ All declarations are in the namespace `TauCeti.SmoothTwoForm.IsMomentMap`.
   Hessian on generators is `μ(x)(⁅⁅X, Y⁆, Z⁆)`.
 * `criticalHessian_apply_eq_eval₂_deriv`: at a zero `p` of `ξ_M`, the Hessian of `μ^ξ` is
   `σ_p(A_ξ v, w)`.
+* `criticalHessian_apply_eq_eval₂_isotropyLinearization`: the same, for `ξ` in the isotropy algebra
+  of `p` and the linearized isotropy action `TauCeti.isotropyLinearization`.
 * `criticalHessian_apply_eq_zero_iff`: its null space consists of the vectors fixed by the
   differential at `p` of every element of `T_ξ`.
 * `isManifoldNondegenerateCriticalPoint_iff`: `p` is a nondegenerate critical point of `μ^ξ`
@@ -177,6 +180,21 @@ theorem criticalHessian_apply_eq_eval₂_deriv
   obtain ⟨hcrit, hX⟩ := h.mvfderiv_eq_zero_and_hamiltonianVectorField_eq hσ hp
   rw [hσ.criticalHessian_apply_eq_eval₂_fderiv ((h.contMDiff ξ).of_le (by simp)) hcrit, hX,
     (hasDerivAt_mfderiv_mulInvariantExp_smul_smul hp).deriv]
+
+omit [IsTopologicalGroup G] in
+/-- **The Hessian of a moment map component through the linearized isotropy action.** For `ξ` in
+the isotropy algebra of `p`, the Hessian of `μ^ξ` at its critical point `p` is `σ_p(A_ξ v, w)`, for
+the linearized isotropy action `A_ξ` of `TauCeti.isotropyLinearization`. -/
+theorem criticalHessian_apply_eq_eval₂_isotropyLinearization [CompleteSpace E] [CompleteSpace E']
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsNondegenerate)
+    (ξ : (InfinitesimalAction.fundamental I G I' M).isotropy p) (v w : TangentSpace I' p) :
+    criticalHessian I' (fun y ↦ μ y ξ) p v w =
+      SmoothBundleForm.eval₂ σ p (isotropyLinearization I' p ξ v) w := by
+  have hp : fundamentalVectorField I' (ξ : GroupLieAlgebra I G) p = 0 := by
+    rw [← InfinitesimalAction.fundamental_apply]
+    exact (InfinitesimalAction.mem_isotropy_iff _ p).1 ξ.property
+  rw [h.criticalHessian_apply_eq_eval₂_deriv hσ hp,
+    (hasDerivAt_mfderiv_mulInvariantExp_smul_smul_isotropyLinearization ξ).deriv]
 
 /-- **The null space of the Hessian of a moment map component.** At a zero `p` of the fundamental
 vector field `ξ_M`, a tangent vector lies in the null space of the Hessian of `μ^ξ` exactly when it

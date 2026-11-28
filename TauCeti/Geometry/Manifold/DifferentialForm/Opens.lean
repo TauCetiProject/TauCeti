@@ -54,8 +54,10 @@ some partial diffeomorphism of the ambient manifold fixing `K` pulls forms back 
 also when `U` is empty (`TauCeti.exists_partialDiffeomorph_mpullback_apply_eq_of_opens`). A partial
 diffeomorphism, viewed as a diffeomorphism between its source and target, pulls back the restriction
 of a form to its target as it pulls back the form itself
-(`TauCeti.mpullback_toDiffeomorphSourceTarget_apply`), and its inverse does the same for the
-restriction to its source (`TauCeti.mpullback_toDiffeomorphSourceTarget_symm_apply`). So a
+(`TauCeti.mpullback_toDiffeomorphSourceTarget_apply`), its inverse does the same for the
+restriction to its source (`TauCeti.mpullback_toDiffeomorphSourceTarget_symm_apply`), and the
+restriction to open subsets of a diffeomorphism pulls back restricted forms as the diffeomorphism
+pulls back the forms themselves (`TauCeti.mpullback_subtype_mpullback_subtype_val`). So a
 construction carried out on an open submanifold, such as a flow defined only where some condition
 on the forms holds, transfers to the ambient manifold. In particular, a partial diffeomorphism of
 the source of a partial diffeomorphism `Ψ` fixing a set `K` corrects `Ψ` to a partial
@@ -555,6 +557,25 @@ theorem exists_partialDiffeomorph_mpullback_apply_eq_of_opens {n : WithTop ℕ�
   · rw [PartialDiffeomorph.liftOpens_source] at hx
     obtain ⟨y, hy, rfl⟩ := hx
     exact ⟨y, hy, rfl, fun ω ↦ mpullback_liftOpens_apply_coe Ψ hn hW hW ω hy⟩
+
+omit [IsManifold I 1 M] in
+/-- **Pullback along the restriction of a diffeomorphism to open subsets.** Let `g : M → M'` be a
+diffeomorphism carrying an open subset `U` onto an open subset `V`. Pulling the restriction of a
+form on `M'` to `V` back along the restriction `U → V` of `g` is restricting to `U` its pullback
+along `g`. -/
+theorem mpullback_subtype_mpullback_subtype_val {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] {n : WithTop ℕ∞} {U : Opens M} {V : Opens M'} (g : M ≃ₘ^n⟮I, I'⟯ M')
+    (hn : n ≠ 0) (h : ∀ x, x ∈ U ↔ g x ∈ V) (ω : RoughForm I' M' F k) :
+    mpullback I I' (g.subtype h) (mpullback I' I' (Subtype.val : V → M') ω) =
+      mpullback I I (Subtype.val : U → M) (mpullback I I' g ω) := by
+  -- Through the inclusions, the restriction of `g` is `g`.
+  have hcomp : Subtype.val ∘ g.subtype h = g ∘ Subtype.val := funext (g.subtype_apply_coe h)
+  funext x
+  rw [← mpullback_comp_at ((g.subtype h).mdifferentiable hn x)
+    (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero), hcomp,
+    mpullback_comp_at (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero)
+      (g.mdifferentiable hn _)]
 
 omit [IsManifold I 1 M] in
 /-- **Pullback along a partial diffeomorphism, as a diffeomorphism of open subsets.** Pulling the

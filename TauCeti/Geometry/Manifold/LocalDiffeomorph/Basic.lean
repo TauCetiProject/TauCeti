@@ -234,6 +234,17 @@ theorem _root_.IsLocalDiffeomorphAt.range_mfderiv_comp
     rw [mfderiv_zero_of_not_mdifferentiableAt hg, mfderiv_zero_of_not_mdifferentiableAt hgφ]
     simp
 
+/-- The coordinate expression of a `C^n` local diffeomorphism at `x`, `n ≠ 0`, in the preferred
+extended charts has invertible derivative at the chart image of `x`, when the source model is
+boundaryless: this is `isInvertible_fderivWithin_writtenInExtChartAt`, read on the whole model
+space. -/
+theorem _root_.IsLocalDiffeomorphAt.isInvertible_fderiv_writtenInExtChartAt
+    {I : ModelWithCorners 𝕂 E H} [I.Boundaryless] {J : ModelWithCorners 𝕂 F G} {n : WithTop ℕ∞}
+    {f : M → N} {x : M} (hf : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0) :
+    (fderiv 𝕂 (writtenInExtChartAt I J x f) (extChartAt I x x)).IsInvertible := by
+  have h := isInvertible_fderivWithin_writtenInExtChartAt (hf.isInvertible_mfderiv hn)
+  rwa [I.range_eq_univ, fderivWithin_univ] at h
+
 section Charts
 
 variable (I : ModelWithCorners 𝕂 E H) (n : WithTop ℕ∞) [IsManifold I n M]
