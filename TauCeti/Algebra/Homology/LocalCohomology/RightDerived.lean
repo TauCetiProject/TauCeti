@@ -16,29 +16,12 @@ public import TauCeti.CategoryTheory.Abelian.GrothendieckAxioms.RightDerived
 /-!
 # Local cohomology as the right derived functor of ideal-power torsion
 
-Let `R` be a commutative ring and `J` an ideal of `R`. Mathlib defines the local cohomology
-functor `localCohomology J q : ModuleCat.{u} R ⥤ ModuleCat.{u} R` as the colimit over `n : ℕ` of
-`Ext^q_R(R ⧸ J^n, -)`. On the other hand, the `J`-power torsion submodule
-`J.primaryComponent M = ⨆ n, Submodule.torsionBySet R M (J^n)` defines a left exact additive
-endofunctor `J.primaryComponentFunctor` (`Γ_J`) of `ModuleCat.{u} R`
-(`TauCeti.Algebra.Category.ModuleCat.PrimaryComponent`).
-
-This file establishes the natural isomorphism `localCohomology.isoRightDerivedPrimaryComponent J q`
-between `localCohomology J q` and `J.primaryComponentFunctor.rightDerived q` for an arbitrary
-commutative ring `R`, ideal `J`, and degree `q : ℕ` (Stacks Project, Tag 0954):
-
-1. Balancing left and right derived `Hom` (`CategoryTheory.extObjIsoRightDerivedLinearCoyoneda`)
-   identifies `Ext^q_R(R ⧸ J^n, -)` with the `q`-th right derived functor of `Hom_R(R ⧸ J^n, -)`
-   naturally in `n`.
-2. Since `ModuleCat.{u} R` satisfies Grothendieck's axiom `AB5`, filtered colimits indexed by
-   `ℕᵒᵖᵒᵖ` are exact and therefore commute with right derived functors
-   (`CategoryTheory.Limits.colimitRightDerivedIso`).
-3. In degree `0`, `TauCeti.Algebra.Homology.LocalCohomology.DegreeZero` identifies the filtered
-   colimit of `Hom_R(R ⧸ J^n, -)` with `J.primaryComponentFunctor`
-   (`localCohomology.colimitLinearCoyonedaIsoPrimaryComponentFunctor`).
-
-As an application, `localCohomology J q` is an additive functor (`localCohomology.additive`), so
-`H^q_J(0) = 0` via `Functor.map_isZero`.
+For a commutative ring `R` and ideal `J`, `localCohomology J q` is the colimit over `n : ℕ` of
+`Ext^q_R(R ⧸ J^n, -)`. Balancing `Ext` (`CategoryTheory.extObjIsoRightDerivedLinearCoyoneda`),
+commuting `AB5` filtered colimits with right derived functors (`colimitRightDerivedIso`), and
+identifying `colimit_n Hom_R(R ⧸ J^n, -) ≅ J.primaryComponentFunctor` yields
+`localCohomology.isoRightDerivedPrimaryComponent J q : localCohomology J q ≅
+J.primaryComponentFunctor.rightDerived q` (Stacks 0954), whence `localCohomology J q` is additive.
 
 ## Main definitions
 
@@ -94,14 +77,12 @@ def diagramIsoRightDerivedLinearCoyoneda (q : ℕ) :
 @[simp]
 lemma diagramIsoRightDerivedLinearCoyoneda_hom_app (q : ℕ) (t : Dᵒᵖ) :
     (diagramIsoRightDerivedLinearCoyoneda I q).hom.app t =
-      (extObjIsoRightDerivedLinearCoyoneda R ((ringModIdeals I).obj t.unop) q).hom :=
-  (rfl)
+      (extObjIsoRightDerivedLinearCoyoneda R ((ringModIdeals I).obj t.unop) q).hom := (rfl)
 
 /-- When `ModuleCat.{u} R` has exact colimits of shape `Dᵒᵖ`, `localCohomology.ofDiagram I q` is
 naturally isomorphic to the `q`-th right derived functor of `colimit_t Hom_R(R ⧸ I(t), -)`. -/
 def ofDiagramIsoRightDerivedColimitLinearCoyoneda (q : ℕ)
-    [HasColimitsOfShape Dᵒᵖ (ModuleCat.{u} R)]
-    [HasExactColimitsOfShape Dᵒᵖ (ModuleCat.{u} R)] :
+    [HasColimitsOfShape Dᵒᵖ (ModuleCat.{u} R)] [HasExactColimitsOfShape Dᵒᵖ (ModuleCat.{u} R)] :
     ofDiagram I q ≅
       (colimit ((ringModIdeals I).op ⋙ linearCoyoneda R (ModuleCat.{u} R))).rightDerived q :=
   HasColimit.isoOfNatIso (diagramIsoRightDerivedLinearCoyoneda I q) ≪≫
@@ -111,13 +92,11 @@ def ofDiagramIsoRightDerivedColimitLinearCoyoneda (q : ℕ)
 and `colimitRightDerivedIso`. -/
 @[simp]
 lemma ofDiagramIsoRightDerivedColimitLinearCoyoneda_hom (q : ℕ)
-    [HasColimitsOfShape Dᵒᵖ (ModuleCat.{u} R)]
-    [HasExactColimitsOfShape Dᵒᵖ (ModuleCat.{u} R)] :
+    [HasColimitsOfShape Dᵒᵖ (ModuleCat.{u} R)] [HasExactColimitsOfShape Dᵒᵖ (ModuleCat.{u} R)] :
     (ofDiagramIsoRightDerivedColimitLinearCoyoneda I q).hom =
       (HasColimit.isoOfNatIso (diagramIsoRightDerivedLinearCoyoneda I q)).hom ≫
         (colimitRightDerivedIso
-          ((ringModIdeals I).op ⋙ linearCoyoneda R (ModuleCat.{u} R)) q).hom :=
-  (rfl)
+          ((ringModIdeals I).op ⋙ linearCoyoneda R (ModuleCat.{u} R)) q).hom := (rfl)
 
 end DiagramComparison
 
@@ -142,8 +121,7 @@ lemma isoRightDerivedPrimaryComponent_hom (q : ℕ) :
       (linearCoyoneda R (ModuleCat.{u} R))
     (isoRightDerivedPrimaryComponent J q).hom =
       (ofDiagramIsoRightDerivedColimitLinearCoyoneda (idealPowersDiagram J) q).hom ≫
-        (NatIso.rightDerived (colimitLinearCoyonedaIsoPrimaryComponentFunctor J) q).hom :=
-  (rfl)
+        (NatIso.rightDerived (colimitLinearCoyonedaIsoPrimaryComponentFunctor J) q).hom := (rfl)
 
 /-- For any `R`-module `M`, the `q`-th local cohomology module `H^q_J(M)` is `R`-linearly
 equivalent to `(R^q Γ_J)(M)`. -/
@@ -177,6 +155,7 @@ lemma degreeZeroIsoPrimaryComponentFunctor_hom_comp_toRightDerivedZero :
   let G := (ringModIdeals (idealPowersDiagram J)).op ⋙ linearCoyoneda R (ModuleCat.{u} R)
   let α : colimit (diagram (idealPowersDiagram J) 0) ⟶ J.primaryComponentFunctor :=
     (degreeZeroIsoPrimaryComponentFunctor J).hom
+  -- Expose the underlying `colimit` domain of `localCohomology J 0` for `colimit.hom_ext`.
   change α ≫ J.primaryComponentFunctor.{u}.toRightDerivedZero =
     (HasColimit.isoOfNatIso (diagramIsoRightDerivedLinearCoyoneda (idealPowersDiagram J) 0)).hom ≫
       (colimitRightDerivedIso G 0).hom ≫

@@ -11,22 +11,11 @@ public import TauCeti.Examples.Algebra.Homology.LocalCohomology.DegreeZero
 /-!
 # Non-Noetherian counterexample for geometric vs. algebraic local cohomology
 
-Without finite generation of the ideal `I`, geometric supported cohomology `H⁰_{V(I)}(Spec A, M~)`
-can differ from algebraic local cohomology `H⁰_I(M)`. For any nontrivial commutative ring `k`, let
-`A = k[x₀, x₁, …] ⧸ (x_j ^ (j + 2))` (`TauCeti.LocalCohomologyDegreeZeroExample.TruncatedRing k`)
-and `I = (x₀, x₁, …)` (`TauCeti.LocalCohomologyDegreeZeroExample.ideal k`).
-
-The algebraic facts are proved in `TauCeti.Examples.Algebra.Homology.LocalCohomology.DegreeZero`:
-`A` is not Noetherian (`not_isNoetherianRing`), every generator `x_j` is nilpotent
-(`X_pow_eq_zero`), so `V(I) = Spec A` (`zeroLocus_ideal`), while `I.primaryComponent A = ⊥`
-(`primaryComponent_ideal_eq_bot`) and algebraic `H⁰_I(A) = 0` (`isZero_localCohomology_zero`).
-
-On the geometric side, because `V(I) = Spec A`
-(`TauCeti.AlgebraicGeometry.zeroLocusClosed_truncatedRing_ideal`), the unit global section `1`
-gives a nontrivial element of `H⁰_{V(I)}(Spec A, 𝒪_{Spec A})`
-(`TauCeti.AlgebraicGeometry.nontrivial_supportedModuleH_zero_truncatedRing`). Comparing with the
-degree-zero equivalence `primaryComponentEquivSupportedSubmoduleTop` recovers that `I` is not
-finitely generated (`TauCeti.AlgebraicGeometry.not_fg_truncatedRing_ideal`).
+Without finite generation of `I`, geometric `H⁰_{V(I)}(Spec A, M~)` can differ from algebraic
+`H⁰_I(M)`. For `A = k[x₀, x₁, …] ⧸ (x_j ^ (j + 2))` (`TruncatedRing k`) and
+`I = (x₀, x₁, …)` (`ideal k`), `TauCeti.Examples.Algebra.Homology.LocalCohomology.DegreeZero`
+shows `V(I) = Spec A` and `H⁰_I(A) = 0`, whereas `1` gives a nontrivial element of
+`H⁰_{V(I)}(Spec A, 𝒪_{Spec A})`, recovering that `I` is not finitely generated.
 
 ## Main results
 
@@ -61,8 +50,7 @@ variable (k : Type u) [CommRing k]
 theorem zeroLocusClosed_truncatedRing_ideal :
     Spec.zeroLocusClosed (R := CommRingCat.of (TruncatedRing k))
       (ideal k : Set (TruncatedRing k)) = ⊤ := by
-  rw [← Closeds.coe_eq_univ, Spec.coe_zeroLocusClosed]
-  exact zeroLocus_ideal
+  rw [← Closeds.coe_eq_univ, Spec.coe_zeroLocusClosed]; exact zeroLocus_ideal
 
 variable [Nontrivial k]
 
@@ -74,21 +62,16 @@ theorem nontrivial_supportedModuleH_zero_truncatedRing :
       (tilde (.of (CommRingCat.of (TruncatedRing k)) (TruncatedRing k)))).supportedModuleH
       (Spec.zeroLocusClosed (R := CommRingCat.of (TruncatedRing k))
         (ideal k : Set (TruncatedRing k))) ⊤ 0) := by
-  let A := CommRingCat.of (TruncatedRing k)
-  let F := modulesSpecToSheaf.obj (tilde (.of A A))
+  let A := CommRingCat.of (TruncatedRing k); let F := modulesSpecToSheaf.obj (tilde (.of A A))
   let Z : Closeds (Spec A) := Spec.zeroLocusClosed (ideal k : Set A)
   have : Nontrivial A := Ideal.Quotient.nontrivial_iff.mpr fun htop ↦
     one_notMem_relations (htop ▸ Submodule.mem_top)
   have h1 : tilde.toOpen (.of A A) ⊤ (1 : A) ∈ F.supportedSubmodule Z ⊤ := by
     rw [F.mem_supportedSubmodule_iff]
     have hZ : Z = ⊤ := zeroLocusClosed_truncatedRing_ideal k
-    have hU : (⊤ ⊓ Z.compl : Opens (Spec A)) = ⊥ := by
-      rw [hZ]
-      ext x
-      simp
+    have hU : (⊤ ⊓ Z.compl : Opens (Spec A)) = ⊥ := by rw [hZ]; ext x; simp
     rw [(TopCat.Sheaf.isTerminalOfEqEmpty F hU).isZero.eq_of_tgt
-      (F.obj.map (Z.complInclusion ⊤).op) 0]
-    rfl
+      (F.obj.map (Z.complInclusion ⊤).op) 0]; rfl
   have hne : (⟨tilde.toOpen (.of A A) ⊤ (1 : A), h1⟩ : F.supportedSubmodule Z ⊤) ≠ 0 :=
     fun h0 ↦ one_ne_zero (α := A) <| by
       have hval : tilde.toOpen (.of A A) ⊤ (1 : A) = 0 := congr(Subtype.val $h0)
@@ -106,12 +89,11 @@ theorem not_fg_truncatedRing_ideal : ¬ (ideal k).FG := fun hfg ↦ by
   have : Subsingleton ((modulesSpecToSheaf.obj (tilde (.of A A))).supportedModuleH
       (Spec.zeroLocusClosed (R := A) (ideal k : Set A)) ⊤ 0) :=
     ((primaryComponentEquivSupportedSubmoduleTop hfg (.of A A)).trans
-      ((modulesSpecToSheaf.obj (tilde (.of A A))).supportedModuleHZeroEquiv
-        _ ⊤).symm).toEquiv.symm.subsingleton
+      ((modulesSpecToSheaf.obj (tilde (.of A A))).supportedModuleHZeroEquiv _ ⊤).symm).toEquiv
+        |>.symm.subsingleton
   have := nontrivial_supportedModuleH_zero_truncatedRing k
-  exact false_of_nontrivial_of_subsingleton
-    ((modulesSpecToSheaf.obj (tilde (.of A A))).supportedModuleH
-      (Spec.zeroLocusClosed (R := A) (ideal k : Set A)) ⊤ 0)
+  exact false_of_nontrivial_of_subsingleton ((modulesSpecToSheaf.obj (tilde (.of A A)))
+    |>.supportedModuleH (Spec.zeroLocusClosed (R := A) (ideal k : Set A)) ⊤ 0)
 
 end NonNoetherianCounterexample
 

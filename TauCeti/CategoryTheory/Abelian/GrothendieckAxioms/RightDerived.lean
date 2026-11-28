@@ -13,35 +13,22 @@ public import TauCeti.CategoryTheory.Preadditive.FunctorCategory
 /-!
 # Exact colimits of functors commute with right derived functors
 
-Let `G : T ⥤ C ⥤ D` be a diagram of additive functors between abelian categories, where `C` has
-injective resolutions and `D` has exact colimits of shape `T` (`HasColimitsOfShape T D` and
-`HasExactColimitsOfShape T D`). Since colimits in `C ⥤ D` are computed pointwise, `colimit G` is
-again an additive functor, and the colimit coprojections `colimit.ι G t : G.obj t ⟶ colimit G`
-induce a canonical natural transformation
-`colimitRightDerivedComparison G q : colimit (rightDerivedDiagram G q) ⟶ (colimit G).rightDerived q`
-out of the colimit of the degree-`q` right derived functors `(G.obj t).rightDerived q`.
-
-This file proves that `colimitRightDerivedComparison G q` is an isomorphism
-(`CategoryTheory.Limits.isIso_colimitRightDerivedComparison`), giving the natural isomorphism
-`CategoryTheory.Limits.colimitRightDerivedIso G q` between `colimit (rightDerivedDiagram G q)` and
-`(colimit G).rightDerived q`.
-For any `X : C` with chosen injective resolution `I`, evaluating `(colimit G)` termwise on
-`I.cocomplex` forms the colimit in `CochainComplex D ℕ` of the complexes `(G.obj t)(I.cocomplex)`
-(`HomologicalComplex.isColimitMapCocone`), and
-`HomologicalComplex.homologyFunctor D (ComplexShape.up ℕ) q` preserves colimits of shape `T` by
-`TauCeti.homologicalComplexHomologyFunctor_preservesColimitsOfShape`.
+For a diagram `G : T ⥤ C ⥤ D` of additive functors between abelian categories where `C` has
+injective resolutions and `D` has exact colimits of shape `T`, the canonical comparison
+`colimitRightDerivedComparison G q` is an isomorphism
+(`CategoryTheory.Limits.isIso_colimitRightDerivedComparison`), yielding
+`CategoryTheory.Limits.colimitRightDerivedIso G q : colimit (rightDerivedDiagram G q) ≅
+(colimit G).rightDerived q`.
 
 ## Main definitions
 
-* `CategoryTheory.Limits.colimitRightDerivedComparison G q`: the canonical comparison
-  `colimit (rightDerivedDiagram G q) ⟶ (colimit G).rightDerived q`.
-* `CategoryTheory.Limits.colimitRightDerivedIso G q`: the natural isomorphism
-  `colimit (rightDerivedDiagram G q) ≅ (colimit G).rightDerived q`.
+* `CategoryTheory.Limits.colimitRightDerivedComparison G q` and
+  `CategoryTheory.Limits.colimitRightDerivedIso G q`.
 
 ## Main results
 
-* `CategoryTheory.Limits.isIso_colimitRightDerivedComparison`: `colimitRightDerivedComparison G q`
-  is an isomorphism when `D` has exact colimits of shape `T`.
+* `CategoryTheory.Limits.isIso_colimitRightDerivedComparison`: the comparison is an isomorphism
+  when `D` has exact colimits of shape `T`.
 
 ## References
 
@@ -76,8 +63,7 @@ def colimitRightDerivedComparison (G : T ⥤ C ⥤ D) [∀ t, (G.obj t).Additive
       ι :=
         { app t := (colimit.ι G t).rightDerived q
           naturality _ _ w := by
-            dsimp
-            rw [Category.comp_id, ← NatTrans.rightDerived_comp, colimit.w] } }
+            dsimp; rw [Category.comp_id, ← NatTrans.rightDerived_comp, colimit.w] } }
 
 @[reassoc (attr := simp)]
 lemma ι_colimitRightDerivedComparison (G : T ⥤ C ⥤ D) [∀ t, (G.obj t).Additive] (q : ℕ) (t : T) :
@@ -100,10 +86,8 @@ private def rightDerivedEvaluationIso (G : T ⥤ C ⥤ D) [∀ t, (G.obj t).Addi
     rightDerivedDiagram G q ⋙ (evaluation C D).obj X ≅
       I.cocomplex.mapDiagram G ⋙ HomologicalComplex.homologyFunctor D _ q :=
   NatIso.ofComponents (fun t ↦ I.isoRightDerivedObj (G.obj t) q) fun {t t'} w ↦ by
-    dsimp
-    rw [I.rightDerived_app_eq (G.map w) q, Category.assoc, Category.assoc, Iso.inv_hom_id,
-      Category.comp_id]
-    simp only [HomologicalComplex.homologyFunctor_map]
+    dsimp; rw [I.rightDerived_app_eq (G.map w) q, Category.assoc, Category.assoc, Iso.inv_hom_id,
+      Category.comp_id]; simp only [HomologicalComplex.homologyFunctor_map]
 
 variable [HasExactColimitsOfShape T D]
 
@@ -114,25 +98,20 @@ instance isIso_colimitRightDerivedComparison (G : T ⥤ C ⥤ D) [∀ t, (G.obj 
     IsIso (colimitRightDerivedComparison G q) := by
   have : ∀ X : C, IsIso ((colimitRightDerivedComparison G q).app X) := fun X ↦ by
     let I := injectiveResolution X
-    have hc₁ : IsColimit (((evaluation C D).obj X).mapCocone
-        (colimit.cocone (rightDerivedDiagram G q))) :=
-      isColimitOfPreserves ((evaluation C D).obj X) (colimit.isColimit (rightDerivedDiagram G q))
+    let hc₁ := isColimitOfPreserves ((evaluation C D).obj X)
+      (colimit.isColimit (rightDerivedDiagram G q))
     let _ : (colimit.cocone G).pt.PreservesZeroMorphisms :=
       inferInstanceAs ((colimit G).PreservesZeroMorphisms)
-    have hc₂ : IsColimit ((HomologicalComplex.homologyFunctor D _ q).mapCocone
-        (I.cocomplex.mapCocone (colimit.cocone G))) :=
-      isColimitOfPreserves (HomologicalComplex.homologyFunctor D _ q)
-        (I.cocomplex.isColimitMapCocone (colimit.isColimit G))
     let c₂' := (Cocone.precompose (rightDerivedEvaluationIso G q I).hom).obj
       ((HomologicalComplex.homologyFunctor D _ q).mapCocone
         (I.cocomplex.mapCocone (colimit.cocone G)))
-    have hc₂' : IsColimit c₂' :=
-      (IsColimit.precomposeHomEquiv (rightDerivedEvaluationIso G q I) _).invFun hc₂
+    let hc₂' := (IsColimit.precomposeHomEquiv (rightDerivedEvaluationIso G q I) _).invFun
+      (isColimitOfPreserves (HomologicalComplex.homologyFunctor D _ q)
+        (I.cocomplex.isColimitMapCocone (colimit.isColimit G)))
     -- `colimitRightDerivedComparison` followed by `I.isoRightDerivedObj (colimit G) q` is the
-    -- unique cocone-point isomorphism between the two colimit cocones `hc₁` and `hc₂'`.
+    -- unique cocone-point isomorphism between `hc₁` and `hc₂'`.
     have heq : (colimitRightDerivedComparison G q).app X ≫
-        (I.isoRightDerivedObj (colimit G) q).hom =
-        (hc₁.coconePointUniqueUpToIso hc₂').hom := by
+        (I.isoRightDerivedObj (colimit G) q).hom = (hc₁.coconePointUniqueUpToIso hc₂').hom := by
       refine hc₁.hom_ext fun t ↦ ?_
       have hleg := hc₁.comp_coconePointUniqueUpToIso_hom hc₂' t
       dsimp [c₂'] at hleg ⊢
@@ -143,8 +122,7 @@ instance isIso_colimitRightDerivedComparison (G : T ⥤ C ⥤ D) [∀ t, (G.obj 
     have : IsIso ((colimitRightDerivedComparison G q).app X ≫
         (I.isoRightDerivedObj (colimit G) q).hom) :=
       heq.symm ▸ inferInstanceAs (IsIso (hc₁.coconePointUniqueUpToIso hc₂').hom)
-    exact IsIso.of_isIso_comp_right ((colimitRightDerivedComparison G q).app X)
-      (I.isoRightDerivedObj (colimit G) q).hom
+    exact IsIso.of_isIso_comp_right _ (I.isoRightDerivedObj (colimit G) q).hom
   exact NatIso.isIso_of_isIso_app _
 
 /-- **Exact colimits of functors commute with right derived functors.** If `G : T ⥤ C ⥤ D` is a

@@ -11,12 +11,8 @@ public import TauCeti.CategoryTheory.Abelian.Injective.Ext
 /-!
 # Balancing left-derived and right-derived `Ext`
 
-In a `k`-linear abelian category `C` with enough projectives and enough injectives,
-`CategoryTheory.extObjIsoLinearExtFunctor` identifies the left-derived contravariant `Hom`
-functor `_root_.Ext k C n` with the derived-category bifunctor
-`CategoryTheory.Abelian.linearExtFunctor k C n`, while
-`CategoryTheory.rightDerivedLinearCoyonedaIsoExt` identifies the right-derived covariant `Hom`
-functor with the same bifunctor. Composing them balances `Ext`
+Composing `CategoryTheory.extObjIsoLinearExtFunctor` and
+`CategoryTheory.rightDerivedLinearCoyonedaIsoExt` balances left- and right-derived `Ext`
 (`CategoryTheory.extObjIsoRightDerivedLinearCoyoneda`), naturally in both variables.
 
 ## Main definitions
@@ -58,16 +54,14 @@ inverse of `rightDerivedLinearCoyonedaIsoExt`. -/
 @[simp]
 lemma extObjIsoRightDerivedLinearCoyoneda_hom (X : C) (n : ℕ) :
     (extObjIsoRightDerivedLinearCoyoneda k X n).hom =
-      (extObjIsoLinearExtFunctor k X n).hom ≫ (rightDerivedLinearCoyonedaIsoExt k X n).inv :=
-  (rfl)
+      (extObjIsoLinearExtFunctor k X n).hom ≫ (rightDerivedLinearCoyonedaIsoExt k X n).inv := (rfl)
 
 /-- The inverse of `extObjIsoRightDerivedLinearCoyoneda` is the composite of
 `rightDerivedLinearCoyonedaIsoExt` and the inverse of `extObjIsoLinearExtFunctor`. -/
 @[simp]
 lemma extObjIsoRightDerivedLinearCoyoneda_inv (X : C) (n : ℕ) :
     (extObjIsoRightDerivedLinearCoyoneda k X n).inv =
-      (rightDerivedLinearCoyonedaIsoExt k X n).hom ≫ (extObjIsoLinearExtFunctor k X n).inv :=
-  (rfl)
+      (rightDerivedLinearCoyonedaIsoExt k X n).hom ≫ (extObjIsoLinearExtFunctor k X n).inv := (rfl)
 
 /-- The balance isomorphism `extObjIsoRightDerivedLinearCoyoneda` is natural in the first
 variable. -/
@@ -89,8 +83,7 @@ lemma extZeroIso_inv_comp_extObjIsoRightDerivedLinearCoyoneda_hom_app (X Y : C) 
     (extZeroIso (k := k) X Y).inv ≫ (extObjIsoRightDerivedLinearCoyoneda k X 0).hom.app Y =
       ((linearCoyoneda k C).obj (op X)).toRightDerivedZero.app Y := by
   refine (cancel_mono ((rightDerivedLinearCoyonedaIsoExt k X 0).hom.app Y)).1 ?_
-  dsimp only [extObjIsoRightDerivedLinearCoyoneda, Iso.trans_hom, Iso.symm_hom,
-    NatTrans.comp_app]
+  dsimp only [extObjIsoRightDerivedLinearCoyoneda, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app]
   erw [Category.assoc, Category.assoc, (rightDerivedLinearCoyonedaIsoExt k X 0).inv_hom_id_app Y,
     Category.comp_id, extZeroIso_inv_comp_extObjIsoLinearExtFunctor_hom_app,
     toRightDerivedZero_app_comp_rightDerivedLinearCoyonedaIsoExt_hom_app]

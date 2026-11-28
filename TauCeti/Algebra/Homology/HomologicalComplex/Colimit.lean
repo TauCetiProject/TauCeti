@@ -67,9 +67,8 @@ noncomputable def isColimitMapCocone (K : HomologicalComplex C c) {G : T ⥤ C �
     [∀ t, (G.obj t).PreservesZeroMorphisms] {s : Cocone G} [s.pt.PreservesZeroMorphisms]
     (hs : IsColimit s) [∀ m, PreservesColimit G ((evaluation C D).obj (K.X m))] :
     IsColimit (K.mapCocone s) :=
-  HomologicalComplex.isColimitOfEval _ _ fun m ↦
-    IsColimit.ofIsoColimit
-      (isColimitOfPreserves ((evaluation C D).obj (K.X m)) hs)
-      (Cocone.ext (Iso.refl _) fun t ↦ by simp)
+  HomologicalComplex.isColimitOfEval _ _ fun m ↦ IsColimit.ofIsoColimit
+    (isColimitOfPreserves ((evaluation C D).obj (K.X m)) hs)
+    (Cocone.ext (Iso.refl _) fun t ↦ by simp)
 
 end HomologicalComplex

@@ -143,7 +143,7 @@ theorem isoExt_hom_comp_homologyMap {X : D} (P Q : ProjectiveResolution X)
     (comm.trans (Category.comp_id _).symm) ((linearYoneda R D).obj Y).rightOp n
   rw [CategoryTheory.Functor.map_id, Category.id_comp] at h
   have hP := congrArg Quiver.Hom.unop ((Iso.comp_inv_eq _).2 ((Iso.eq_inv_comp _).2 h.symm))
-  simp only [unop_comp] at hP
+  rw [unop_comp] at hP
   exact ((isoExt_hom_square Q P n (𝟙 _)
     ((((linearYoneda R D).obj Y).rightOp.mapHomologicalComplex _).map φ) rfl
     ((Category.id_comp _).trans hP.symm)).symm).trans (Category.id_comp _)
@@ -236,8 +236,7 @@ lemma extMk_eq_zero_iff_eq_zero (f : P.complex.X 0 ⟶ Y) (m : ℕ) (hm : 0 + 1 
     Cocycle.toSingleMk_mem_coboundaries_iff _ _ _ _ _ 1 (by lia)] at h
   obtain ⟨g, hg⟩ := h
   -- The cochain complex of a projective resolution is concentrated in nonpositive degrees.
-  obtain rfl : g = 0 := (P.cochainComplex.isZero_of_isStrictlyLE 0 1).eq_of_src _ _
-  rw [comp_zero] at hg
+  rw [(P.cochainComplex.isZero_of_isStrictlyLE 0 1).eq_of_src g 0, comp_zero] at hg
   exact (cancel_epi (P.cochainComplexXIso (-0) 0 rfl).hom).1 (hg.symm.trans comp_zero.symm)
 
 variable {k : Type t} [Ring k] [Linear k C]
@@ -249,17 +248,10 @@ private noncomputable def linearYonedaCycleExt (n : ℕ) :
   map_add' z z' := (P.add_extMk z.val z'.val (n + 1) rfl z.property z'.property).symm
   map_smul' c z := (P.smul_extMk c z.val (n + 1) rfl z.property).symm
 
-private lemma linearYonedaCycleExt_apply (n : ℕ)
-    (z : LinearMap.ker ((P.complex.linearYonedaObj k Y).d n (n + 1)).hom) :
-    P.linearYonedaCycleExt n z = P.extMk z.val (n + 1) rfl z.property :=
-  (rfl)
-
 /-- Every `Ext` class is represented by a cocycle of the contravariant `Hom` complex. -/
 private lemma linearYonedaCycleExt_surjective (n : ℕ) :
-    Function.Surjective (P.linearYonedaCycleExt (k := k) (Y := Y) n) := by
-  intro α
-  obtain ⟨f, hf, hα⟩ := P.extMk_surjective α (n + 1) rfl
-  exact ⟨⟨f, hf⟩, hα⟩
+    Function.Surjective (P.linearYonedaCycleExt (k := k) (Y := Y) n) := fun α ↦
+  let ⟨f, hf, hα⟩ := P.extMk_surjective α (n + 1) rfl; ⟨⟨f, hf⟩, hα⟩
 
 /-- The `Ext` class and the native homology class of a contravariant `Hom` cocycle vanish
 together. -/
@@ -269,18 +261,15 @@ private lemma linearYonedaCycleExt_eq_zero_iff (n : ℕ)
       (P.complex.linearYonedaObj k Y).moduleCatKerHomologyClass
         (n := n) (m := n + 1) (by simp) z = 0 := by
   rw [HomologicalComplex.moduleCatKerHomologyClass_eq_moduleCatHomologyClass,
-    linearYonedaCycleExt_apply,
     (P.complex.linearYonedaObj k Y).moduleCatHomologyClass_eq_zero_iff
       (by simp) (Submodule.subtype _) (fun z ↦ z.property) rfl z]
-  cases n with
-  | zero =>
-    have h := P.extMk_eq_zero_iff_eq_zero z.val 1 rfl z.property
+  rcases n with _ | n
+  · have h := P.extMk_eq_zero_iff_eq_zero z.val 1 rfl z.property
     rw [CochainComplex.prev_nat_zero, (P.complex.linearYonedaObj k Y).shape 0 0 (by simp)]
     refine h.trans ?_
     simp only [ModuleCat.hom_zero, LinearMap.zero_apply, exists_const, Submodule.subtype_apply]
     exact eq_comm
-  | succ n =>
-    rw [CochainComplex.prev_nat_succ]
+  · rw [CochainComplex.prev_nat_succ]
     exact P.extMk_eq_zero_iff z.val (n + 1 + 1) rfl z.property n rfl
 
 /-- The cohomology of `Hom(P, Y)` for a projective resolution `P` of `X` is `Abelian.Ext X Y n`,
@@ -295,9 +284,7 @@ noncomputable def homologyLinearYonedaEquiv (n : ℕ) :
       exact (P.complex.linearYonedaObj k Y).moduleCatHomologyClass_surjective
         (by simp) (Submodule.subtype _) (fun z ↦ z.property) (fun x hx ↦ ⟨⟨x, hx⟩, rfl⟩))
     (P.linearYonedaCycleExt_surjective n)
-    (by
-      ext z
-      exact (P.linearYonedaCycleExt_eq_zero_iff n z).symm)
+    (by ext z; exact (P.linearYonedaCycleExt_eq_zero_iff n z).symm)
 
 /-- `homologyLinearYonedaEquiv` sends the homology class of a cocycle to `extMk`. -/
 @[simp↓]
@@ -307,15 +294,13 @@ lemma homologyLinearYonedaEquiv_moduleCatKerHomologyClass (n : ℕ)
         ((P.complex.linearYonedaObj k Y).moduleCatKerHomologyClass
           (n := n) (m := n + 1) (by simp) z) =
       P.extMk z.val (n + 1) rfl z.property :=
-  (LinearMap.equivOfSurjectiveOfKerEq_apply _ _ _ _ _ z).trans
-    (linearYonedaCycleExt_apply P n z)
+  LinearMap.equivOfSurjectiveOfKerEq_apply _ _ _ _ _ z
 
 /-- `ProjectiveResolution.extMk` depends only on the underlying cocycle morphism. -/
 private lemma extMk_congr {n : ℕ} {f f' : P.complex.X n ⟶ Y} (h : f = f') (m : ℕ)
     (hm : n + 1 = m) (hf : P.complex.d m n ≫ f = 0) :
     P.extMk f m hm hf = P.extMk f' m hm (h ▸ hf) := by
-  subst h
-  rfl
+  subst h; rfl
 
 /-- Computing `Ext` from projective resolutions commutes with morphisms of resolutions. -/
 lemma homologyLinearYonedaEquiv_naturality {X' : C} (P' : ProjectiveResolution X')
@@ -345,10 +330,9 @@ lemma homologyLinearYonedaEquiv_naturality_right {Y' : C} (g : Y ⟶ Y') (n : �
         (HomologicalComplex.homologyMap (P.complex.linearYonedaObjMap k g) n x) =
       (P.homologyLinearYonedaEquiv n x).comp (Ext.mk₀ g) (add_zero n) := by
   obtain ⟨y, rfl⟩ := (P.complex.linearYonedaObj k Y).moduleCat_homologyπ_surjective n x
-  rw [← (P.complex.linearYonedaObj k Y).moduleCatKerHomologyClass_moduleCatCyclesToKer
-    (m := n + 1) (by simp) y]
   let z := (P.complex.linearYonedaObj k Y).moduleCatCyclesToKer n (n + 1) y
-  rw [HomologicalComplex.homologyMap_moduleCatKerHomologyClass,
+  rw [← (P.complex.linearYonedaObj k Y).moduleCatKerHomologyClass_moduleCatCyclesToKer
+    (m := n + 1) (by simp) y, HomologicalComplex.homologyMap_moduleCatKerHomologyClass,
     homologyLinearYonedaEquiv_moduleCatKerHomologyClass,
     homologyLinearYonedaEquiv_moduleCatKerHomologyClass]
   exact (P.extMk_congr (P.complex.linearYonedaObjMap_f_hom_apply k g n z.val) (n + 1) rfl _).trans
@@ -394,8 +378,7 @@ lemma isoExt_hom_naturality_right {Y' : C} (g : Y ⟶ Y') (n : ℕ) :
   have hmap : P.complex.linearYonedaObjMap k g =
       (HomologicalComplex.unopFunctor _ _).map
         ((NatTrans.mapHomologicalComplex α _).app P.complex).op := by
-    ext i (a : P.complex.X i ⟶ Y)
-    exact P.complex.linearYonedaObjMap_f_hom_apply k g i a
+    ext i (a : P.complex.X i ⟶ Y); exact P.complex.linearYonedaObjMap_f_hom_apply k g i a
   have hL : ((_root_.Ext k C n).obj (op X)).map g ≫
       (P.isoLeftDerivedObj ((linearYoneda k C).obj Y').rightOp n).inv.unop =
       (P.isoLeftDerivedObj ((linearYoneda k C).obj Y).rightOp n).inv.unop ≫

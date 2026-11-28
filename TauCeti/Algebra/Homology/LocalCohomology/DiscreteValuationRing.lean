@@ -16,12 +16,9 @@ public import TauCeti.RingTheory.DiscreteValuationRing.PrimaryComponent
 /-!
 # Local cohomology of a discrete valuation ring
 
-For a discrete valuation ring `(R, 𝔪)` with fraction ring `K`, `K` and `K ⧸ R` are divisible,
-hence injective `R`-modules, giving a two-term injective resolution `0 ⟶ R ⟶ K ⟶ K ⧸ R ⟶ 0`.
-Since `R` and `K` have no nonzero `𝔪`-power torsion while `K ⧸ R` is entirely `𝔪`-power torsion
-(`TauCeti.IsDiscreteValuationRing.primaryComponent_maximalIdeal_self`,
-`primaryComponent_maximalIdeal_fractionRing`, and
-`primaryComponent_maximalIdeal_quotient_fractionRing`), computing local cohomology via
+For a discrete valuation ring `(R, 𝔪)` with fraction ring `K`, `K` and `K ⧸ R` are injective
+`R`-modules, giving a two-term injective resolution `0 ⟶ R ⟶ K ⟶ K ⧸ R ⟶ 0`. Since `R` and `K`
+have no nonzero `𝔪`-power torsion while `K ⧸ R` is `𝔪`-power torsion,
 `localCohomology.isoRightDerivedPrimaryComponent` gives `H⁰_𝔪(R) = 0`, `H¹_𝔪(R) ≅ K ⧸ R`, and
 `H^{n+2}_𝔪(R) = 0` for all `n : ℕ`.
 
@@ -71,8 +68,7 @@ omit [IsDomain R] [IsDiscreteValuationRing R] in
 /-- Exactness of the short complex `0 ⟶ R ⟶ K ⟶ K ⧸ R ⟶ 0` in `ModuleCat.{u} R`. -/
 lemma fractionRingShortComplex_shortExact : (fractionRingShortComplex R K).ShortExact :=
   ModuleCat.shortComplex_shortExact (fractionRingShortComplex R K)
-    (Algebra.linearMap R K).exact_map_mkQ_range
-    (FaithfulSMul.algebraMap_injective R K)
+    (Algebra.linearMap R K).exact_map_mkQ_range (FaithfulSMul.algebraMap_injective R K)
     (Submodule.mkQ_surjective _)
 
 private instance : Injective (fractionRingShortComplex R K).X₂ :=
@@ -83,8 +79,7 @@ private instance : Injective (fractionRingShortComplex R K).X₃ :=
 
 /-- The two-term injective resolution `0 ⟶ R ⟶ K ⟶ K ⧸ R ⟶ 0` of `R` as an `R`-module. -/
 @[expose]
-def fractionRingInjectiveResolution :
-    InjectiveResolution (fractionRingShortComplex R K).X₁ :=
+def fractionRingInjectiveResolution : InjectiveResolution (fractionRingShortComplex R K).X₁ :=
   letI : Injective (fractionRingShortComplex R K).X₂ :=
     Module.injective_object_of_injective_module R K
   letI : Injective (fractionRingShortComplex R K).X₃ :=
@@ -123,13 +118,11 @@ computed from the two-term injective resolution `0 ⟶ R ⟶ K ⟶ K ⧸ R ⟶ 0
 def maximalIdealOneObjIsoQuotientFractionRing :
     ((localCohomology (IsLocalRing.maximalIdeal R) 1).obj (.of R R)) ≅
       .of R (K ⧸ LinearMap.range (Algebra.linearMap R K)) :=
-  let 𝔪 := IsLocalRing.maximalIdeal R
-  let I := fractionRingInjectiveResolution R K
+  let 𝔪 := IsLocalRing.maximalIdeal R; let I := fractionRingInjectiveResolution R K
   let C := (𝔪.primaryComponentFunctor.{u}.mapHomologicalComplex _).obj I.cocomplex
   ((isoRightDerivedPrimaryComponent 𝔪 1).app (fractionRingShortComplex R K).X₁) ≪≫
     I.isoRightDerivedObj 𝔪.primaryComponentFunctor.{u} 1 ≪≫
-    (C.isoHomologyπ 0 1 (by simp)
-      ((isZero_fractionRingCocomplex_zero R K).eq_of_src _ _)).symm ≪≫
+    (C.isoHomologyπ 0 1 (by simp) ((isZero_fractionRingCocomplex_zero R K).eq_of_src _ _)).symm ≪≫
     C.iCyclesIso 1 2 (by simp) ((isZero_fractionRingCocomplex_two R K).eq_of_tgt _ _) ≪≫
     𝔪.primaryComponentFunctorObjIso (fractionRingShortComplex R K).X₃ ≪≫
     (LinearEquiv.ofTop _
@@ -143,8 +136,7 @@ lemma homologyπ_comp_maximalIdealOneObjIsoQuotientFractionRing_hom :
     let 𝔪 := IsLocalRing.maximalIdeal R
     let C := (𝔪.primaryComponentFunctor.{u}.mapHomologicalComplex _).obj
       (fractionRingInjectiveResolution R K).cocomplex
-    C.homologyπ 1 ≫
-        ((fractionRingInjectiveResolution R K).isoRightDerivedObj
+    C.homologyπ 1 ≫ ((fractionRingInjectiveResolution R K).isoRightDerivedObj
           𝔪.primaryComponentFunctor.{u} 1).inv ≫
         (isoRightDerivedPrimaryComponent 𝔪 1).inv.app (fractionRingShortComplex R K).X₁ ≫
         (maximalIdealOneObjIsoQuotientFractionRing R K).hom =
@@ -153,8 +145,7 @@ lemma homologyπ_comp_maximalIdealOneObjIsoQuotientFractionRing_hom :
           (TauCeti.IsDiscreteValuationRing.primaryComponent_maximalIdeal_quotient_fractionRing
             R K)).toModuleIso.hom := by
   intro 𝔪 C
-  have h1 :
-      ((fractionRingInjectiveResolution R K).isoRightDerivedObj
+  have h1 : ((fractionRingInjectiveResolution R K).isoRightDerivedObj
           𝔪.primaryComponentFunctor.{u} 1).inv ≫
         (isoRightDerivedPrimaryComponent 𝔪 1).inv.app (fractionRingShortComplex R K).X₁ ≫
         (maximalIdealOneObjIsoQuotientFractionRing R K).hom =
@@ -188,8 +179,7 @@ def maximalIdealOneObjLinearEquivQuotientFractionRing :
 lemma maximalIdealOneObjLinearEquivQuotientFractionRing_apply
     (x : (localCohomology (IsLocalRing.maximalIdeal R) 1).obj (.of R R)) :
     maximalIdealOneObjLinearEquivQuotientFractionRing R K x =
-      (maximalIdealOneObjIsoQuotientFractionRing R K).hom x :=
-  (rfl)
+      (maximalIdealOneObjIsoQuotientFractionRing R K).hom x := (rfl)
 
 /-- Over a discrete valuation ring `(R, 𝔪)`, `H^{n+2}_𝔪(R) = 0` for every `n : ℕ`. -/
 theorem isZero_obj_maximalIdeal_add_two_of_isDiscreteValuationRing (n : ℕ) :

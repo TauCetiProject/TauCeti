@@ -311,11 +311,9 @@ noncomputable def degreeZeroIsoPrimaryComponentFunctor :
     fun {M N} f ↦ by
       rw [← cancel_mono (J.primaryComponentFunctorι.app N)]
       simp only [Category.assoc, Iso.trans_hom, Iso.symm_hom,
-        Ideal.primaryComponentFunctorObjIso_inv_comp_ι_app,
-        J.primaryComponentFunctorι.naturality, Functor.id_map,
-        Ideal.primaryComponentFunctorObjIso_inv_comp_ι_app_assoc]
-      ext x
-      exact ConcreteCategory.congr_hom (degreeZeroToModule_naturality J f) x
+        Ideal.primaryComponentFunctorObjIso_inv_comp_ι_app, J.primaryComponentFunctorι.naturality,
+        Functor.id_map, Ideal.primaryComponentFunctorObjIso_inv_comp_ι_app_assoc]
+      ext x; exact ConcreteCategory.congr_hom (degreeZeroToModule_naturality J f) x
 
 /-- Composing `degreeZeroIsoPrimaryComponentFunctor` with the submodule inclusion `Γ_J ↪ 𝟭`
 recovers `degreeZeroToModule`. -/
@@ -324,8 +322,7 @@ lemma degreeZeroIsoPrimaryComponentFunctor_hom_comp_ι :
     (degreeZeroIsoPrimaryComponentFunctor J).hom ≫ J.primaryComponentFunctorι =
       { app M := degreeZeroToModule J M
         naturality _ _ f := degreeZeroToModule_naturality J f } := by
-  ext M x
-  simp [degreeZeroIsoPrimaryComponentFunctor]
+  ext M x; simp [degreeZeroIsoPrimaryComponentFunctor]
 
 /-- In degree zero, the diagram `t ↦ Ext⁰_R(R ⧸ J^t, -)` is naturally isomorphic to
 `t ↦ Hom_R(R ⧸ J^t, -)` via `CategoryTheory.extZeroIso`. -/
@@ -339,11 +336,6 @@ private noncomputable def diagramZeroIsoLinearCoyoneda :
       ext M x
       exact ConcreteCategory.congr_hom (extZeroIso_hom_naturality_left
         ((ringModIdeals (idealPowersDiagram J)).map w.unop) M) x
-
-private lemma diagramZeroIsoLinearCoyoneda_inv_app_app (t : ℕᵒᵖᵒᵖ) (M : ModuleCat.{u} R) :
-    ((diagramZeroIsoLinearCoyoneda J).inv.app t).app M =
-      (extZeroIso ((ringModIdeals (idealPowersDiagram J)).obj t.unop) M).inv :=
-  (rfl)
 
 /-- The filtered colimit of `Hom_R(R ⧸ J^n, -)` is naturally isomorphic to the `J`-power torsion
 functor `Γ_J`. -/
@@ -365,15 +357,12 @@ lemma ι_app_colimitLinearCoyonedaIsoPrimaryComponentFunctor_hom (t : ℕᵒᵖ�
       (extZeroIso ((ringModIdeals (idealPowersDiagram J)).obj t.unop) M).inv ≫
         (colimit.ι (diagram (idealPowersDiagram J) 0) t).app M ≫
         (degreeZeroIsoPrimaryComponentFunctor J).hom.app M := by
-  -- `colimitLinearCoyonedaIsoPrimaryComponentFunctor` composes `(HasColimit.isoOfNatIso _).symm`
-  -- (target `colimit (diagram _ 0)`) with `degreeZeroIsoPrimaryComponentFunctor J` (source
-  -- `localCohomology J 0`); `congrArg`/`trans` bridge the semireducible `localCohomology` def.
+  -- `congrArg`/`trans` bridge the semireducible `localCohomology` definition.
   have e : (colimitLinearCoyonedaIsoPrimaryComponentFunctor J).hom.app M =
       (HasColimit.isoOfNatIso (diagramZeroIsoLinearCoyoneda J)).inv.app M ≫
         (degreeZeroIsoPrimaryComponentFunctor J).hom.app M := rfl
-  have hι := congrArg (fun η ↦ η.app M)
-    (HasColimit.ι_isoOfNatIso_inv (diagramZeroIsoLinearCoyoneda J) t)
-  simp only [NatTrans.comp_app, diagramZeroIsoLinearCoyoneda_inv_app_app] at hι
+  have hι := congrArg (·.app M) (HasColimit.ι_isoOfNatIso_inv (diagramZeroIsoLinearCoyoneda J) t)
+  simp only [NatTrans.comp_app] at hι
   exact (congrArg (_ ≫ ·) e).trans ((Category.assoc _ _ _).symm.trans
     ((congrArg (· ≫ (degreeZeroIsoPrimaryComponentFunctor J).hom.app M) hι).trans
       (Category.assoc _ _ _)))

@@ -15,38 +15,26 @@ public import TauCeti.Topology.Sheaves.SupportedCohomology.Resolution
 /-!
 # Algebraic local cohomology and sheaf cohomology with closed supports
 
-Let `R` be a Noetherian commutative ring, `I` an ideal of `R`, and `M` an `R`-module with
-associated quasi-coherent sheaf `M~` on `Spec R`. Write `V(I)`
-(`AlgebraicGeometry.Spec.zeroLocusClosed I`) for the closed vanishing locus of `I` in `Spec R`.
-
-The functor `tildeSheafFunctor R : M ↦ M~` is exact and sends injective `R`-modules over a
-Noetherian ring to flasque sheaves (`isFlasque_tilde_of_injective`), while flasque sheaves are
-adapted to `supportedSubmoduleSectionsFunctor`
-(`shortExact_map_supportedSubmoduleSectionsFunctor_of_isFlasque`). Right deriving the degree-zero
-comparison `tildeCompSupportedSubmoduleSectionsTopIso`
-(`TauCeti.AlgebraicGeometry.Cohomology.SupportedCohomology.DegreeZero`) via
-`Functor.compRightDerivedIsoOfResolution` identifies
-`tildeSheafFunctor R ⋙
-  (supportedSubmoduleSectionsFunctor (Spec.zeroLocusClosed I) ⊤).rightDerived q`
-with `I.primaryComponentFunctor.rightDerived q` (`tildeCompRightDerivedSupportedSectionsIso`,
-Stacks 0955), and combining with `rightDerivedSupportedSubmoduleSectionsIso` and
-`localCohomology.isoRightDerivedPrimaryComponent` gives the natural isomorphism with algebraic local
-cohomology (`tildeCompSupportedModuleHTopIsoLocalCohomology`,
-`supportedModuleHTopTildeLinearEquivLocalCohomology`, Stacks 0A6T):
-`H^q_{V(I)}(Spec R, M~) ≃ₗ[R] H^q_I(M)`.
+Over a Noetherian ring `R`, `tildeSheafFunctor R : M ↦ M~` is exact and sends injectives to
+flasque sheaves (`isFlasque_tilde_of_injective`), which are adapted to
+`supportedSubmoduleSectionsFunctor`. Right deriving `tildeCompSupportedSubmoduleSectionsTopIso`
+via `Functor.compRightDerivedIsoOfResolution` gives `tildeCompRightDerivedSupportedSectionsIso`
+(Stacks 0955), and combining with `rightDerivedSupportedSubmoduleSectionsIso` and
+`localCohomology.isoRightDerivedPrimaryComponent` gives `H^q_{V(I)}(Spec R, M~) ≃ₗ[R] H^q_I(M)`
+(`supportedModuleHTopTildeLinearEquivLocalCohomology`, Stacks 0A6T).
 
 ## Main definitions
 
-* `TauCeti.AlgebraicGeometry.tildeCompRightDerivedSupportedSectionsIso` (Stacks 0955): the natural
-  isomorphism `(R^q Γ_{V(I)}(Spec R, -)) ∘ (~) ≅ R^q Γ_I` over a Noetherian ring `R`.
+* `TauCeti.AlgebraicGeometry.tildeCompRightDerivedSupportedSectionsIso` (Stacks 0955):
+  `(R^q Γ_{V(I)}(Spec R, -)) ∘ (~) ≅ R^q Γ_I` over a Noetherian ring `R`.
 * `TauCeti.AlgebraicGeometry.tildeCompSupportedModuleHTopIsoLocalCohomology` and
   `TauCeti.AlgebraicGeometry.supportedModuleHTopTildeLinearEquivLocalCohomology` (Stacks 0A6T):
-  the comparison `H^q_{V(I)}(Spec R, M~) ≃ₗ[R] H^q_I(M)` over a Noetherian ring `R`.
+  `H^q_{V(I)}(Spec R, M~) ≃ₗ[R] H^q_I(M)` over a Noetherian ring `R`.
 
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.supportedModuleHTopTildeLinearEquivLocalCohomology_naturality`:
-  naturality of the module-level comparison with respect to `R`-module morphisms.
+  naturality of the comparison with respect to `R`-module morphisms.
 
 ## References
 
@@ -73,9 +61,8 @@ section Comparison
 variable {R : CommRingCat.{u}}
 
 /-- Injective sheaves of `R`-modules on `Spec R` are flasque. -/
-lemma isFlasque_injective
-    (F : Sheaf (Opens.grothendieckTopology (Spec R)) (ModuleCat.{u} R)) [Injective F] :
-    isFlasque (Spec R) (ModuleCat.{u} R) F :=
+lemma isFlasque_injective (F : Sheaf (Opens.grothendieckTopology (Spec R)) (ModuleCat.{u} R))
+    [Injective F] : isFlasque (Spec R) (ModuleCat.{u} R) F :=
   isFlasque_iff.mpr (isFlasque_of_injective_moduleCat _)
 
 /-- In a short exact sequence of sheaves of `R`-modules on `Spec R`, if the first two terms are
@@ -84,10 +71,9 @@ lemma isFlasque_X₃_of_shortExact
     (T : ShortComplex (Sheaf (Opens.grothendieckTopology (Spec R)) (ModuleCat.{u} R)))
     (hT : T.ShortExact) (h₁ : isFlasque (Spec R) (ModuleCat.{u} R) T.X₁)
     (h₂ : isFlasque (Spec R) (ModuleCat.{u} R) T.X₂) :
-    isFlasque (Spec R) (ModuleCat.{u} R) T.X₃ := by
-  have := isFlasque_iff.mp h₁
-  have := isFlasque_iff.mp h₂
-  exact isFlasque_iff.mpr hT.isFlasque_X₃_of_isFlasque
+    isFlasque (Spec R) (ModuleCat.{u} R) T.X₃ :=
+  have := isFlasque_iff.mp h₁; have := isFlasque_iff.mp h₂
+  isFlasque_iff.mpr hT.isFlasque_X₃_of_isFlasque
 
 /-- Taking global sections supported in `V(I)` preserves short exact sequences whose first term
 is flasque. -/
@@ -96,14 +82,13 @@ lemma shortExact_map_supportedSubmodule_of_isFlasque (I : Ideal R)
     (hT : T.ShortExact) (h₁ : isFlasque (Spec R) (ModuleCat.{u} R) T.X₁)
     (_ : isFlasque (Spec R) (ModuleCat.{u} R) T.X₂) :
     (T.map (supportedSubmoduleSectionsFunctor (R := R)
-      (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤)).ShortExact := by
+      (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤)).ShortExact :=
   have := isFlasque_iff.mp h₁
-  exact shortExact_map_supportedSubmoduleSectionsFunctor_of_isFlasque _ ⊤ hT
+  shortExact_map_supportedSubmoduleSectionsFunctor_of_isFlasque _ ⊤ hT
 
 /-- Over a Noetherian ring `R`, the quasi-coherent sheaf `M~` associated with an injective
 `R`-module `M` is flasque. -/
-lemma isFlasque_tilde_injective [IsNoetherianRing R] (M : ModuleCat.{u} R)
-    (_ : Injective M) :
+lemma isFlasque_tilde_injective [IsNoetherianRing R] (M : ModuleCat.{u} R) (_ : Injective M) :
     isFlasque (Spec R) (ModuleCat.{u} R) ((tildeSheafFunctor R).obj M) :=
   isFlasque_iff.mpr (isFlasque_modulesSpecToSheaf_tilde_of_injective M)
 
@@ -117,17 +102,12 @@ def tildeCompRightDerivedSupportedSectionsIso [IsNoetherianRing R] (I : Ideal R)
           (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤).rightDerived q ≅
       I.primaryComponentFunctor.{u}.rightDerived q :=
   Functor.compRightDerivedIsoOfResolution
-    (supportedSubmoduleSectionsFunctor (R := R)
-      (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤)
-    (isFlasque (Spec R) (ModuleCat.{u} R))
-    (fun _ _ ↦ isFlasque_injective _)
-    isFlasque_X₃_of_shortExact
-    (shortExact_map_supportedSubmodule_of_isFlasque I)
-    (tildeSheafFunctor R)
-    I.primaryComponentFunctor.{u}
+    (supportedSubmoduleSectionsFunctor (R := R) (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤)
+    (isFlasque (Spec R) (ModuleCat.{u} R)) (fun _ _ ↦ isFlasque_injective _)
+    isFlasque_X₃_of_shortExact (shortExact_map_supportedSubmodule_of_isFlasque I)
+    (tildeSheafFunctor R) I.primaryComponentFunctor.{u}
     (tildeCompSupportedSubmoduleSectionsTopIso (IsNoetherian.noetherian I))
-    isFlasque_tilde_injective
-    q
+    isFlasque_tilde_injective q
 
 /-- At each module `M`, `tildeCompRightDerivedSupportedSectionsIso` is computed by
 `Functor.compRightDerivedIsoOfResolution_hom_app` from the chosen injective resolution of `M`. -/
@@ -136,10 +116,8 @@ lemma tildeCompRightDerivedSupportedSectionsIso_hom_app [IsNoetherianRing R]
     (tildeCompRightDerivedSupportedSectionsIso I q).hom.app M =
       ((supportedSubmoduleSectionsFunctor (R := R)
           (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤).rightDerivedObjIsoOfResolution
-          (isFlasque (Spec R) (ModuleCat.{u} R))
-          (fun _ _ ↦ isFlasque_injective _)
-          isFlasque_X₃_of_shortExact
-          (shortExact_map_supportedSubmodule_of_isFlasque I)
+          (isFlasque (Spec R) (ModuleCat.{u} R)) (fun _ _ ↦ isFlasque_injective _)
+          isFlasque_X₃_of_shortExact (shortExact_map_supportedSubmodule_of_isFlasque I)
           ((injectiveResolution M).mapι (tildeSheafFunctor R))
           (fun m ↦ isFlasque_tilde_injective _ ((injectiveResolution M).injective m)) q).hom ≫
         (HomologicalComplex.homologyFunctor (ModuleCat.{u} R) _ q).map
@@ -154,16 +132,13 @@ with `Functor.rightDerivedObjIsoOfResolution` on `J.mapι (tildeSheafFunctor R)`
 `tildeCompSupportedSubmoduleSectionsTopIso` on `J.cocomplex`. -/
 @[reassoc]
 lemma tildeCompRightDerivedSupportedSectionsIso_hom_app_comp_isoRightDerivedObj
-    [IsNoetherianRing R] (I : Ideal R) (q : ℕ) {M : ModuleCat.{u} R}
-    (J : InjectiveResolution M) :
+    [IsNoetherianRing R] (I : Ideal R) (q : ℕ) {M : ModuleCat.{u} R} (J : InjectiveResolution M) :
     (tildeCompRightDerivedSupportedSectionsIso I q).hom.app M ≫
         (J.isoRightDerivedObj I.primaryComponentFunctor.{u} q).hom =
       ((supportedSubmoduleSectionsFunctor (R := R)
           (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤).rightDerivedObjIsoOfResolution
-          (isFlasque (Spec R) (ModuleCat.{u} R))
-          (fun _ _ ↦ isFlasque_injective _)
-          isFlasque_X₃_of_shortExact
-          (shortExact_map_supportedSubmodule_of_isFlasque I)
+          (isFlasque (Spec R) (ModuleCat.{u} R)) (fun _ _ ↦ isFlasque_injective _)
+          isFlasque_X₃_of_shortExact (shortExact_map_supportedSubmodule_of_isFlasque I)
           (J.mapι (tildeSheafFunctor R))
           (fun m ↦ isFlasque_tilde_injective _ (J.injective m)) q).hom ≫
         (HomologicalComplex.homologyFunctor (ModuleCat.{u} R) _ q).map
@@ -194,7 +169,11 @@ private lemma toRightDerivedZero_app_comp_rightDerivedSupportedSubmoduleSections
   refine (cancel_epi ((supportedSubmoduleSectionsRepresentableIso (R := R) S W).hom.app F)).1 ?_
   have hnat := NatTrans.congr_app (NatTrans.toRightDerivedZero_comp_rightDerived_zero
     (supportedSubmoduleSectionsRepresentableIso (R := R) S W).hom) F
-  simp only [NatTrans.comp_app] at hnat
+  have hr := NatTrans.congr_app
+    (rightDerivedSupportedSubmoduleSectionsIso_hom_comp (R := R) S W 0) F
+  simp only [NatTrans.comp_app] at hnat hr
+  -- `supportedModuleHPresheafFunctor` is unexposed, so the domain/codomain equality between
+  -- `ModuleCat.ofHom Abelian.Ext.linearEquiv₀.symm` and the RHS only holds definitionally.
   have hL : (supportedSubmoduleSectionsRepresentableIso (R := R) S W).hom.app F ≫
       (supportedSubmoduleSectionsFunctor (R := R) S W).toRightDerivedZero.app F ≫
         (rightDerivedSupportedSubmoduleSectionsIso (R := R) S W 0).hom.app F =
@@ -202,18 +181,9 @@ private lemma toRightDerivedZero_app_comp_rightDerivedSupportedSubmoduleSections
           (op ((S.supportedFreeModuleSheafFunctor R).obj W))).toRightDerivedZero.app F ≫
         (rightDerivedLinearCoyonedaIsoExt R
           ((S.supportedFreeModuleSheafFunctor R).obj W) 0).hom.app F := by
-    rw [← Category.assoc, ← hnat, Category.assoc]
-    have hr := NatTrans.congr_app
-      (rightDerivedSupportedSubmoduleSectionsIso_hom_comp (R := R) S W 0) F
-    simp only [NatTrans.comp_app] at hr
-    erw [hr]
-    rfl
-  -- `supportedModuleHPresheafFunctor` is unexposed, so the domain/codomain equality between
-  -- `ModuleCat.ofHom Abelian.Ext.linearEquiv₀.symm` and the RHS only holds definitionally;
-  -- `ext` + `erw` compares their underlying functions on morphisms `g : Q_S(W) ⟶ F`.
+    rw [← Category.assoc, ← hnat, Category.assoc]; erw [hr]; rfl
   erw [hL, toRightDerivedZero_app_comp_rightDerivedLinearCoyonedaIsoExt_hom_app]
-  ext g
-  apply (F.supportedModuleHZeroEquiv S W).injective
+  ext g; apply (F.supportedModuleHZeroEquiv S W).injective
   erw [supportedModuleHZeroEquiv_supportedModuleHPresheafZeroIso_inv_app_apply,
     supportedSubmoduleSectionsRepresentableIso_hom_app_apply]
   change (F.supportedModuleHZeroEquiv S W) (Abelian.Ext.mk₀ g) = _
@@ -233,8 +203,7 @@ private lemma rightDerivedSupportedSubmoduleSectionsIso_inv_app_zero
   refine (cancel_mono ((rightDerivedSupportedSubmoduleSectionsIso (R := R) S W 0).hom.app F)).1 ?_
   rw [Iso.inv_hom_id_app]
   erw [Category.assoc, toRightDerivedZero_app_comp_rightDerivedSupportedSubmoduleSectionsIso_hom,
-    Iso.hom_inv_id_app]
-  rfl
+    Iso.hom_inv_id_app]; rfl
 
 /-- **Algebraic local cohomology agrees with sheaf cohomology with supports (Stacks 0A6T).**
 Over a Noetherian ring `R`, the functor `M ↦ H^q_{V(I)}(Spec R, M~)` is naturally isomorphic to
@@ -246,9 +215,8 @@ def tildeCompSupportedModuleHTopIsoLocalCohomology [IsNoetherianRing R] (I : Ide
           (Spec.zeroLocusClosed (R := R) (I : Set R)) q ⋙
         (evaluation (Opens (Spec R))ᵒᵖ (ModuleCat.{u} R)).obj (op ⊤) ≅
       localCohomology I q :=
-  (Functor.isoWhiskerLeft (tildeSheafFunctor R)
-    (rightDerivedSupportedSubmoduleSectionsIso
-      (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤ q)).symm ≪≫
+  (Functor.isoWhiskerLeft (tildeSheafFunctor R) (rightDerivedSupportedSubmoduleSectionsIso
+    (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤ q)).symm ≪≫
     tildeCompRightDerivedSupportedSectionsIso I q ≪≫
     (localCohomology.isoRightDerivedPrimaryComponent I q).symm
 
@@ -259,12 +227,10 @@ def tildeCompSupportedModuleHTopIsoLocalCohomology [IsNoetherianRing R] (I : Ide
 lemma tildeCompSupportedModuleHTopIsoLocalCohomology_hom [IsNoetherianRing R]
     (I : Ideal R) (q : ℕ) :
     (tildeCompSupportedModuleHTopIsoLocalCohomology I q).hom =
-      (Functor.isoWhiskerLeft (tildeSheafFunctor R)
-        (rightDerivedSupportedSubmoduleSectionsIso
-          (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤ q)).inv ≫
+      (Functor.isoWhiskerLeft (tildeSheafFunctor R) (rightDerivedSupportedSubmoduleSectionsIso
+        (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤ q)).inv ≫
         (tildeCompRightDerivedSupportedSectionsIso I q).hom ≫
-        (localCohomology.isoRightDerivedPrimaryComponent I q).inv :=
-  (rfl)
+        (localCohomology.isoRightDerivedPrimaryComponent I q).inv := (rfl)
 
 /-- In degree zero, `tildeCompSupportedModuleHTopIsoLocalCohomology` factors through
 `supportedModuleHPresheafZeroIso`, `tildeCompSupportedSubmoduleSectionsTopIso`, and
@@ -289,8 +255,7 @@ lemma tildeCompSupportedModuleHTopIsoLocalCohomology_hom_app_zero
     rightDerivedSupportedSubmoduleSectionsIso_inv_app_zero]
   erw [Category.assoc,
     toRightDerivedZero_app_comp_tildeCompRightDerivedSupportedSectionsIso_hom_assoc,
-    ← NatTrans.comp_app, hloc]
-  rfl
+    ← NatTrans.comp_app, hloc]; rfl
 
 /-- In degree zero, `tildeCompSupportedModuleHTopIsoLocalCohomology` followed by
 `localCohomology.degreeZeroIsoPrimaryComponentFunctor` agrees with
@@ -304,8 +269,7 @@ lemma tildeCompSupportedModuleHTopIsoLocalCohomology_hom_app_zero_comp
           (Spec.zeroLocusClosed (R := R) (I : Set R))).hom.app (op ⊤) ≫
         (tildeCompSupportedSubmoduleSectionsTopIso (IsNoetherian.noetherian I)).hom.app M := by
   rw [tildeCompSupportedModuleHTopIsoLocalCohomology_hom_app_zero]
-  erw [Category.assoc, Category.assoc, Iso.inv_hom_id_app, Category.comp_id]
-  rfl
+  erw [Category.assoc, Category.assoc, Iso.inv_hom_id_app, Category.comp_id]; rfl
 
 /-- **Module-level local cohomology comparison (Stacks 0A6T).** Over a Noetherian ring `R`,
 `H^q_{V(I)}(Spec R, M~)` is `R`-linearly equivalent to `H^q_I(M)`. -/
@@ -325,8 +289,7 @@ lemma supportedModuleHTopTildeLinearEquivLocalCohomology_apply [IsNoetherianRing
     (x : (modulesSpecToSheaf.obj (tilde M)).supportedModuleH
       (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤ q) :
     supportedModuleHTopTildeLinearEquivLocalCohomology I M q x =
-      (tildeCompSupportedModuleHTopIsoLocalCohomology I q).hom.app M x :=
-  (rfl)
+      (tildeCompSupportedModuleHTopIsoLocalCohomology I q).hom.app M x := (rfl)
 
 /-- In degree zero, `supportedModuleHTopTildeLinearEquivLocalCohomology` identifies
 `supportedModuleHZeroEquiv` with `primaryComponentEquivSupportedSubmoduleTop` and
@@ -342,8 +305,7 @@ lemma degreeZeroEquivPrimaryComponent_supportedModuleHTopTildeLinearEquivLocalCo
           (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤ x) := by
   let hI : I.FG := IsNoetherian.noetherian I
   refine (primaryComponentEquivSupportedSubmoduleTop hI M).injective ?_
-  rw [LinearEquiv.apply_symm_apply]
-  apply Subtype.ext
+  rw [LinearEquiv.apply_symm_apply]; apply Subtype.ext
   rw [coe_primaryComponentEquivSupportedSubmoduleTop_apply,
     localCohomology.coe_degreeZeroEquivPrimaryComponent_apply,
     supportedModuleHTopTildeLinearEquivLocalCohomology_apply]
@@ -355,6 +317,7 @@ lemma degreeZeroEquivPrimaryComponent_supportedModuleHTopTildeLinearEquivLocalCo
   simp only [NatTrans.comp_app, ModuleCat.hom_comp, LinearMap.comp_apply,
     tildeSheafFunctor_obj] at h1 h2
   rw [← h1]
+  -- Expose `(tildeSheafFunctor R).obj M` as `modulesSpecToSheaf.obj (tilde M)`.
   change tilde.toOpen M ⊤ (I.primaryComponentFunctorι.app M
       ((localCohomology.degreeZeroIsoPrimaryComponentFunctor I).hom.app M
         ((tildeCompSupportedModuleHTopIsoLocalCohomology I 0).hom.app M x))) = _
@@ -374,12 +337,10 @@ lemma supportedModuleHTopTildeLinearEquivLocalCohomology_naturality [IsNoetheria
     (I : Ideal R) {M N : ModuleCat.{u} R} (f : M ⟶ N) (q : ℕ)
     (x : (modulesSpecToSheaf.obj (tilde M)).supportedModuleH
       (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤ q) :
-    (localCohomology I q).map f
-        (supportedModuleHTopTildeLinearEquivLocalCohomology I M q x) =
+    (localCohomology I q).map f (supportedModuleHTopTildeLinearEquivLocalCohomology I M q x) =
       supportedModuleHTopTildeLinearEquivLocalCohomology I N q
-        (((supportedModuleHPresheafFunctor
-          (Spec.zeroLocusClosed (R := R) (I : Set R)) q).map
-            ((tildeSheafFunctor R).map f)).app (op ⊤) x) :=
+        (((supportedModuleHPresheafFunctor (Spec.zeroLocusClosed (R := R) (I : Set R)) q).map
+          ((tildeSheafFunctor R).map f)).app (op ⊤) x) :=
   (ConcreteCategory.congr_hom
     ((tildeCompSupportedModuleHTopIsoLocalCohomology I q).hom.naturality f) x).symm
 

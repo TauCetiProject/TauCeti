@@ -14,21 +14,11 @@ import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 /-!
 # Degree-zero supported sheaf cohomology on an affine scheme
 
-Let `R` be a commutative ring, `I` an ideal of `R`, and `M` an `R`-module with associated
-quasi-coherent sheaf `M~` on `Spec R`. Write `V(I)` (`AlgebraicGeometry.Spec.zeroLocusClosed I`)
-for the closed vanishing locus of `I` in `Spec R`.
-
-A global section `m ∈ M ≅ Γ(Spec R, M~)` restricts to zero on `Spec R \ V(I) = ⋃_{f ∈ I} D(f)` if
-and only if every `f ∈ I` annihilates `m` at some power
-(`TauCeti.AlgebraicGeometry.tilde_toOpen_top_mem_supportedSubmodule_iff`). When `I` is finitely
-generated, this holds if and only if `m ∈ I.primaryComponent M`
-(`TauCeti.AlgebraicGeometry.tilde_toOpen_top_mem_supportedSubmodule_iff_mem_primaryComponent`),
-giving the `R`-linear equivalence
-`TauCeti.AlgebraicGeometry.primaryComponentEquivSupportedSubmoduleTop`
-and the natural isomorphism
-`tildeSheafFunctor R ⋙ supportedSubmoduleSectionsFunctor (Spec.zeroLocusClosed I) ⊤ ≅
-  I.primaryComponentFunctor`
-(`TauCeti.AlgebraicGeometry.tildeCompSupportedSubmoduleSectionsTopIso`).
+For a ring `R`, ideal `I`, and `R`-module `M`, a global section `m ∈ M ≅ Γ(Spec R, M~)` restricts
+to zero on `Spec R \ V(I)` iff every `f ∈ I` annihilates `m` at some power
+(`tilde_toOpen_top_mem_supportedSubmodule_iff`). When `I` is finitely generated, this holds iff
+`m ∈ I.primaryComponent M`, yielding `primaryComponentEquivSupportedSubmoduleTop` and
+`tildeCompSupportedSubmoduleSectionsTopIso`.
 
 ## Main definitions
 
@@ -81,32 +71,21 @@ theorem tilde_toOpen_top_mem_supportedSubmodule_iff (s : Set R) (M : ModuleCat.{
       tilde.toOpen M (⊤ ⊓ Z.compl) m :=
     ConcreteCategory.congr_hom (tilde.toOpen_res M ⊤ (⊤ ⊓ Z.compl) (Z.complInclusion ⊤)) m
   let U (f : s) : Opens (Spec R) := basicOpen f.val
-  have hU : (⊤ ⊓ Z.compl : Opens (Spec R)) =
-      ⨆ f ∈ s, (basicOpen f : Opens (Spec R)) := by
-    rw [top_inf_eq]
-    exact Spec.compl_zeroLocusClosed_eq_iSup_basicOpen s
+  have hU : (⊤ ⊓ Z.compl : Opens (Spec R)) = ⨆ f ∈ s, (basicOpen f : Opens (Spec R)) := by
+    rw [top_inf_eq]; exact Spec.compl_zeroLocusClosed_eq_iSup_basicOpen s
   have hle (f : s) : U f ≤ ⊤ ⊓ Z.compl :=
     hU ▸ le_iSup₂ (f := fun f (_ : f ∈ s) ↦ (basicOpen f : Opens (Spec R))) f.val f.property
-  have hresf (f : s) :
-      F.obj.map (homOfLE (hle f)).op (tilde.toOpen M (⊤ ⊓ Z.compl) m) =
-        tilde.toOpen M (U f) m :=
-    ConcreteCategory.congr_hom
-      (tilde.toOpen_res M (⊤ ⊓ Z.compl) (U f) (homOfLE (hle f))) m
+  have hresf (f : s) : F.obj.map (homOfLE (hle f)).op (tilde.toOpen M (⊤ ⊓ Z.compl) m) =
+      tilde.toOpen M (U f) m :=
+    ConcreteCategory.congr_hom (tilde.toOpen_res M (⊤ ⊓ Z.compl) (U f) (homOfLE (hle f))) m
   rw [hres]
-  constructor
-  · intro hm f hf
-    have hmf : tilde.toOpen M (U ⟨f, hf⟩) m = 0 := by
-      rw [← hresf ⟨f, hf⟩, hm, map_zero]
-    obtain ⟨⟨_, n, rfl⟩, hn⟩ := (IsLocalizedModule.eq_zero_iff (.powers f)
-      (tilde.toOpen M (basicOpen f)).hom).mp hmf
+  refine ⟨fun hm f hf ↦ ?_, fun hm ↦ ?_⟩
+  · obtain ⟨⟨_, n, rfl⟩, hn⟩ := (IsLocalizedModule.eq_zero_iff (.powers f)
+      (tilde.toOpen M (basicOpen f)).hom).mp (by rw [← hresf ⟨f, hf⟩, hm, map_zero])
     exact ⟨n, hn⟩
-  · intro hm
-    apply TopCat.Sheaf.eq_of_locally_eq' F U (⊤ ⊓ Z.compl) (fun f ↦ homOfLE (hle f))
-    · rw [hU]
-      exact iSup₂_le fun f hf ↦ le_iSup U ⟨f, hf⟩
-    · intro f
-      obtain ⟨n, hn⟩ := hm f.val f.property
-      rw [map_zero, hresf f]
+  · apply TopCat.Sheaf.eq_of_locally_eq' F U (⊤ ⊓ Z.compl) (fun f ↦ homOfLE (hle f))
+    · rw [hU]; exact iSup₂_le fun f hf ↦ le_iSup U ⟨f, hf⟩
+    · intro f; obtain ⟨n, hn⟩ := hm f.val f.property; rw [map_zero, hresf f]
       exact (IsLocalizedModule.eq_zero_iff (.powers f.val)
         (tilde.toOpen M (basicOpen f.val)).hom).mpr ⟨⟨_, n, rfl⟩, hn⟩
 
@@ -119,10 +98,9 @@ theorem tilde_toOpen_top_mem_supportedSubmodule_iff_mem_primaryComponent
           (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤ ↔
       m ∈ I.primaryComponent M := by
   obtain ⟨G, hG⟩ := hI
-  have hZ : Spec.zeroLocusClosed (R := R) (I : Set R) = Spec.zeroLocusClosed (G : Set R) := by
-    rw [← hG, Spec.zeroLocusClosed_span]
-  rw [hZ, tilde_toOpen_top_mem_supportedSubmodule_iff, ← hG, Ideal.mem_primaryComponent_span_iff]
-  rfl
+  rw [show Spec.zeroLocusClosed (R := R) (I : Set R) = Spec.zeroLocusClosed (G : Set R) by
+    rw [← hG, Spec.zeroLocusClosed_span], tilde_toOpen_top_mem_supportedSubmodule_iff,
+    ← hG, Ideal.mem_primaryComponent_span_iff]; rfl
 
 /-- For a finitely generated ideal `I`, the `I`-primary component `Γ_I(M)` is `R`-linearly
 equivalent to the global sections of `M~` supported in `V(I)`. -/
@@ -133,9 +111,8 @@ def primaryComponentEquivSupportedSubmoduleTop {I : Ideal R} (hI : I.FG) (M : Mo
   let e := (tilde.isoTop M).toLinearEquiv
   let S := (modulesSpecToSheaf.obj (tilde M)).supportedSubmodule
     (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤
-  (LinearEquiv.ofEq (I.primaryComponent M) (S.comap e.toLinearMap)
-    (Submodule.ext fun m ↦
-      (tilde_toOpen_top_mem_supportedSubmodule_iff_mem_primaryComponent hI M m).symm)).trans
+  (LinearEquiv.ofEq (I.primaryComponent M) (S.comap e.toLinearMap) (Submodule.ext fun m ↦
+    (tilde_toOpen_top_mem_supportedSubmodule_iff_mem_primaryComponent hI M m).symm)).trans
     (e.ofSubmodule' S)
 
 /-- Under `primaryComponentEquivSupportedSubmoduleTop`, an element `m` maps to the global section
@@ -144,9 +121,7 @@ def primaryComponentEquivSupportedSubmoduleTop {I : Ideal R} (hI : I.FG) (M : Mo
 lemma coe_primaryComponentEquivSupportedSubmoduleTop_apply
     {I : Ideal R} (hI : I.FG) (M : ModuleCat.{u} R) (m : I.primaryComponent M) :
     (primaryComponentEquivSupportedSubmoduleTop hI M m :
-        (modulesSpecToSheaf.obj (tilde M)).obj.obj (op ⊤)) =
-      tilde.toOpen M ⊤ m.val :=
-  (rfl)
+        (modulesSpecToSheaf.obj (tilde M)).obj.obj (op ⊤)) = tilde.toOpen M ⊤ m.val := (rfl)
 
 private def primaryComponentEquivSupportedSubmoduleTopIso
     {I : Ideal R} (hI : I.FG) (M : ModuleCat.{u} R) :
@@ -162,8 +137,7 @@ private def primaryComponentIsoSupportedSubmoduleTop
       (tildeSheafFunctor R ⋙
         supportedSubmoduleSectionsFunctor (R := R)
           (Spec.zeroLocusClosed (R := R) (I : Set R)) ⊤).obj M :=
-  I.primaryComponentFunctorObjIso M ≪≫
-    primaryComponentEquivSupportedSubmoduleTopIso hI M
+  I.primaryComponentFunctorObjIso M ≪≫ primaryComponentEquivSupportedSubmoduleTopIso hI M
 
 private lemma primaryComponentIsoSupportedSubmoduleTop_hom_comp_ι
     {I : Ideal R} (hI : I.FG) (M : ModuleCat.{u} R) :
@@ -175,11 +149,7 @@ private lemma primaryComponentIsoSupportedSubmoduleTop_hom_comp_ι
       (((tildeSheafFunctor R).obj M).supportedSubmoduleι
         (Spec.zeroLocusClosed (R := R) (I : Set R))).hom.app (op ⊤) =
       ModuleCat.ofHom (I.primaryComponent M).subtype ≫ tilde.toOpen M ⊤ := by
-    apply ModuleCat.hom_ext
-    apply LinearMap.ext
-    intro m
-    exact (((tildeSheafFunctor R).obj M).supportedSubmoduleι_hom_app_apply
-      (Spec.zeroLocusClosed (R := R) (I : Set R)) (op ⊤)
+    ext m; exact (((tildeSheafFunctor R).obj M).supportedSubmoduleι_hom_app_apply _ (op ⊤)
       (primaryComponentEquivSupportedSubmoduleTop hI M m)).trans
       (coe_primaryComponentEquivSupportedSubmoduleTop_apply hI M m)
   have hcomp : (primaryComponentIsoSupportedSubmoduleTop hI M).hom =
@@ -203,8 +173,7 @@ def tildeCompSupportedSubmoduleSectionsTopIso {I : Ideal R} (hI : I.FG) :
         tilde.toOpen N ⊤ =
       I.primaryComponentFunctorι.app M ≫ tilde.toOpen M ⊤ ≫
         (modulesSpecToSheaf.map (tilde.map f)).hom.app (op ⊤) := by
-      rw [← Category.assoc, I.primaryComponentFunctorι.naturality, Functor.id_map,
-        Category.assoc]
+      rw [← Category.assoc, I.primaryComponentFunctorι.naturality, Functor.id_map, Category.assoc]
       exact (congrArg (I.primaryComponentFunctorι.app M ≫ ·)
         (tilde.toOpen_map_app f ⊤).symm).trans (Category.assoc _ _ _).symm
     simp only [Category.assoc]

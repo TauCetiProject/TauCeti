@@ -13,12 +13,10 @@ import Mathlib.CategoryTheory.Abelian.ShortExact
 /-!
 # Exactness of the forgetful functor to sheaves of `R`-modules on `Spec R`
 
-For a commutative ring `R`, Mathlib's `AlgebraicGeometry.modulesSpecToSheaf` forgets the
-`𝒪_{Spec R}`-module structure on an `𝒪_{Spec R}`-module to produce a sheaf of `R`-modules on
-`Spec R`. Forgetting further down to sheaves of abelian groups recovers
-`TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf (Spec R)`, which is additive and exact. Since the
-forgetful functor from sheaves of `R`-modules to sheaves of abelian groups is faithful and reflects
-short exact sequences, `modulesSpecToSheaf` is additive and exact as well.
+Forgetting `𝒪_{Spec R}`-module structures via `AlgebraicGeometry.modulesSpecToSheaf` and then down
+to sheaves of abelian groups recovers `TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf (Spec R)`.
+Since the forgetful functor on sheaves of `R`-modules is faithful and reflects short exact
+sequences, `modulesSpecToSheaf` is additive and exact.
 
 ## Main declarations
 
@@ -47,9 +45,7 @@ variable {R : CommRingCat.{u}}
 
 /-- `modulesSpecToSheaf` is additive: addition of module-sheaf morphisms is sectionwise. -/
 instance additive_modulesSpecToSheaf : (modulesSpecToSheaf (R := R)).Additive where
-  map_add {_ _ _ _} := by
-    ext
-    rfl
+  map_add {_ _ _ _} := by ext; rfl
 
 /-- Forgetting `R`-module structures after `modulesSpecToSheaf` recovers
 `Scheme.Modules.toSheaf`. -/
@@ -94,17 +90,15 @@ theorem shortExact_map_modulesSpecToSheaf {S : ShortComplex (Spec R).Modules} (h
 
 /-- `modulesSpecToSheaf` preserves finite limits. -/
 instance preservesFiniteLimits_modulesSpecToSheaf :
-    PreservesFiniteLimits (modulesSpecToSheaf (R := R)) := by
-  rw [Functor.preservesFiniteLimits_iff_forall_exact_map_and_mono]
-  exact fun _ hS ↦ ⟨(shortExact_map_modulesSpecToSheaf hS).exact,
-    (shortExact_map_modulesSpecToSheaf hS).mono_f⟩
+    PreservesFiniteLimits (modulesSpecToSheaf (R := R)) :=
+  (Functor.preservesFiniteLimits_iff_forall_exact_map_and_mono _).2 fun _ hS ↦
+    ⟨(shortExact_map_modulesSpecToSheaf hS).exact, (shortExact_map_modulesSpecToSheaf hS).mono_f⟩
 
 /-- `modulesSpecToSheaf` preserves finite colimits. -/
 instance preservesFiniteColimits_modulesSpecToSheaf :
-    PreservesFiniteColimits (modulesSpecToSheaf (R := R)) := by
-  rw [Functor.preservesFiniteColimits_iff_forall_exact_map_and_epi]
-  exact fun _ hS ↦ ⟨(shortExact_map_modulesSpecToSheaf hS).exact,
-    (shortExact_map_modulesSpecToSheaf hS).epi_g⟩
+    PreservesFiniteColimits (modulesSpecToSheaf (R := R)) :=
+  (Functor.preservesFiniteColimits_iff_forall_exact_map_and_epi _).2 fun _ hS ↦
+    ⟨(shortExact_map_modulesSpecToSheaf hS).exact, (shortExact_map_modulesSpecToSheaf hS).epi_g⟩
 
 end
 

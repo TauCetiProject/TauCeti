@@ -54,8 +54,7 @@ lemma primaryComponent_maximalIdeal_quotient_fractionRing :
       (K ⧸ LinearMap.range (Algebra.linearMap R K)) = ⊤ := by
   obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible R
   rw [hϖ.maximalIdeal_eq, Submodule.eq_top_iff']
-  intro q
-  obtain ⟨x, rfl⟩ := Submodule.mkQ_surjective _ q
+  intro q; obtain ⟨x, rfl⟩ := Submodule.mkQ_surjective _ q
   obtain ⟨⟨a, s, hs⟩, rfl⟩ := IsLocalization.mk'_surjective (nonZeroDivisors R) x
   obtain ⟨k, u, rfl⟩ := _root_.IsDiscreteValuationRing.eq_unit_mul_pow_irreducible
     (mem_nonZeroDivisors_iff_ne_zero.mp hs) hϖ
@@ -64,13 +63,7 @@ lemma primaryComponent_maximalIdeal_quotient_fractionRing :
   rw [← map_smul, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
   refine ⟨↑u⁻¹ * a, ?_⟩
   have hspec := IsLocalization.mk'_spec' K a ⟨↑u * ϖ ^ k, hs⟩
-  -- Multiply by `u⁻¹` in `R`: `(u * ϖ^k) • mk' K a _ = algebraMap R K a`.
-  calc Algebra.linearMap R K (↑u⁻¹ * a)
-    _ = (↑u⁻¹ : R) • algebraMap R K a := by
-      rw [Algebra.linearMap_apply, map_mul, ← Algebra.smul_def]
-    _ = (↑u⁻¹ : R) • ((↑u * ϖ ^ k) • IsLocalization.mk' K a ⟨↑u * ϖ ^ k, hs⟩) := by
-      rw [← hspec, ← Algebra.smul_def]
-    _ = ϖ ^ k • IsLocalization.mk' K a ⟨↑u * ϖ ^ k, hs⟩ := by
-      rw [← mul_smul, ← mul_assoc, Units.inv_mul, one_mul]
+  rw [Algebra.linearMap_apply, map_mul, ← Algebra.smul_def, ← hspec, ← Algebra.smul_def,
+    ← mul_smul, ← mul_assoc, Units.inv_mul, one_mul]
 
 end TauCeti.IsDiscreteValuationRing
