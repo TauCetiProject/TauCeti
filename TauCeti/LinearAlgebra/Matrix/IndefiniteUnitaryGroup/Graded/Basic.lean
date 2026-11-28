@@ -360,6 +360,16 @@ theorem gradedGram_mul_gradedGram [Ring R] {N N' : R} (h : N * N' = 1) :
       · simp [ha, Ne.symm ha]
     · simp [hab]
 
+/-- The normalized graded Gram matrix is unitary: it is Hermitian and squares to `1`. -/
+theorem gradedGram_one_mem_unitary [Ring R] [StarRing R] :
+    gradedGram X s (1 : R) ∈ unitary (Matrix (X ⊕ Fin s) (X ⊕ Fin s) R) := by
+  have hsq : gradedGram X s (1 : R) * gradedGram X s 1 = 1 :=
+    gradedGram_mul_gradedGram (one_mul (1 : R))
+  have hu : IsUnit (gradedGram X s (1 : R)) := ⟨⟨_, _, hsq, hsq⟩, rfl⟩
+  rw [hu.mem_unitary_iff_star_mul_self, star_eq_conjTranspose, (isHermitian_gradedGram
+    (X := X) (s := s) (star_one (R := R))).eq]
+  exact hsq
+
 /-- The inverse of the graded Gram matrix of `N` is the graded Gram matrix of `N'` when
 `N * N' = 1`. -/
 theorem inv_gradedGram [CommRing R] {N N' : R} (h : N * N' = 1) :

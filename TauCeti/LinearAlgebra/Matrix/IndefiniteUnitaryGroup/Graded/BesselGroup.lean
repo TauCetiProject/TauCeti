@@ -316,6 +316,25 @@ theorem mem_gradedBesselGroup_iff {g : unitaryGroupOf (gradedGram X s N)} :
   obtain ⟨b, rfl⟩ := Sum.isRight_iff.mp hk
   exact h i b hk0 hik
 
+/-- The graded Bessel subgroup is closed: its prescribed matrix entries are closed conditions. -/
+theorem isClosed_gradedBesselGroup [TopologicalSpace R] [T2Space R] :
+    IsClosed (gradedBesselGroup X s N : Set (unitaryGroupOf (gradedGram X s N))) := by
+  have hset : (gradedBesselGroup X s N : Set (unitaryGroupOf (gradedGram X s N))) =
+    {g : unitaryGroupOf (gradedGram X s N) | ∀ i (b : Fin s),
+      0 ≤ gradedGrade X s (.inr b) → gradedGrade X s i ≤ gradedGrade X s (.inr b) →
+      ((g : GL (X ⊕ Fin s) R) : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R) i (.inr b) =
+        (1 : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R) i (.inr b)} :=
+    Set.ext fun _ ↦ mem_gradedBesselGroup_iff
+  rw [hset]
+  simp only [Set.ofPred_forall]
+  refine isClosed_iInter fun i ↦ isClosed_iInter fun b ↦
+    isClosed_iInter fun _ ↦ isClosed_iInter fun _ ↦ ?_
+  have hval : Continuous (fun g : unitaryGroupOf (gradedGram X s N) ↦
+      ((g : GL (X ⊕ Fin s) R) : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R)) :=
+    Units.continuous_val.comp continuous_subtypeVal
+  exact isClosed_eq ((continuous_apply (Sum.inr b : X ⊕ Fin s)).comp
+    ((continuous_apply i).comp hval)) continuous_const
+
 /-- The unipotent group of the grades is contained in the Bessel group. -/
 theorem gradedUnipotent_le_gradedBesselGroup : gradedUnipotent X s N ≤ gradedBesselGroup X s N :=
   fun _ hg ↦ mem_gradedBesselGroup_iff.mpr fun i _ _ hib ↦ mem_gradedUnipotent_iff.mp hg i _ hib
