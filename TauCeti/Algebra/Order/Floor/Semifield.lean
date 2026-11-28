@@ -28,6 +28,8 @@ Dually, for `B > 0` and any natural degree bound `n`, multiplying `B < ⌊B⌋�
 `n / B < ⌊n / B⌋₊ + 1` gives `n < (⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)`, and in particular
 `n < (2 * ⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)`. This includes `n = 0` and `B < 1`, and counts the available
 jet conditions on an integer interval of radius `B`.
+Rounding a dyadic rescaling down, `⌊a * 2 ^ k⌋₊ + 1 ≤ (⌊a⌋₊ + 1) * 2 ^ max k 0` for every
+integer `k`, which bounds counts of points in dyadic dilates of a box.
 
 For closed intervals `[0, W]` subdivided into `n > 0` equal cells of step `W / n`, clamping the
 floor index `⌊x / (W / n)⌋₊` at `n - 1` keeps the right endpoint `W` inside the last cell while
@@ -56,6 +58,8 @@ lying under a line above a block lower polygon.
 * `TauCeti.lt_floor_add_one_mul_floor_div_add_one`: `n < (⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` for `B > 0`.
 * `TauCeti.lt_two_mul_floor_add_one_mul_floor_div_add_one`:
   `n < (2 * ⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` for `B > 0`.
+* `TauCeti.floor_mul_two_zpow_add_one_le`: `⌊a * 2 ^ k⌋₊ + 1 ≤ (⌊a⌋₊ + 1) * 2 ^ max k 0` for
+  `k : ℤ`.
 * `TauCeti.mem_Icc_min_sub_one_natFloor_div`: for `0 ≤ W` and `0 < n`, every `x ∈ [0, W]` lies in
   the closed cell of step `W / n` indexed by `min (n - 1) ⌊x / (W / n)⌋₊`.
 * `TauCeti.natCast_max_one_ceil_lt_add_one` and `TauCeti.natCast_max_one_ceil_le_add_one`:
@@ -168,6 +172,27 @@ point-order pairs, also when `n = 0` or `B < 1`. -/
 theorem lt_two_mul_floor_add_one_mul_floor_div_add_one (hB : 0 < B) (n : ℕ) :
     n < (2 * ⌊B⌋₊ + 1) * (⌊(n : K) / B⌋₊ + 1) :=
   (lt_floor_add_one_mul_floor_div_add_one hB n).trans_le (Nat.mul_le_mul_right _ (by omega))
+
+/-- Rounding `a * 2 ^ k` down and adding one costs at most the factor `2 ^ max k 0` over
+`⌊a⌋₊ + 1`, for any `a` (the left side is `1` when `a ≤ 0`) and any integer `k`. -/
+theorem floor_mul_two_zpow_add_one_le (a : K) (k : ℤ) :
+    ⌊a * 2 ^ k⌋₊ + 1 ≤ (⌊a⌋₊ + 1) * 2 ^ k.toNat := by
+  rcases lt_or_ge a 0 with ha | ha
+  · -- for negative `a` the left side is `1`
+    rw [Nat.floor_of_nonpos (mul_nonpos_of_nonpos_of_nonneg ha.le (zpow_nonneg zero_le_two k)),
+      zero_add]
+    exact Nat.one_le_iff_ne_zero.mpr (by positivity)
+  have h₁ : a * 2 ^ k ≤ a * 2 ^ k.toNat := by
+    gcongr
+    rw [← zpow_natCast]
+    exact zpow_le_zpow_right₀ one_le_two (Int.self_le_toNat k)
+  have h₂ : a * 2 ^ k.toNat < (⌊a⌋₊ + 1) * 2 ^ k.toNat :=
+    mul_lt_mul_of_pos_right (Nat.lt_floor_add_one a) (by positivity)
+  have h₃ : ⌊a * 2 ^ k⌋₊ < (⌊a⌋₊ + 1) * 2 ^ k.toNat := by
+    rw [Nat.floor_lt (mul_nonneg ha (zpow_nonneg zero_le_two k))]
+    push_cast
+    exact h₁.trans_lt h₂
+  omega
 
 /-- For a nonnegative `t` and positive `a`, some positive multiple `N a` lies in `(t, t + a]`. -/
 theorem exists_pos_nat_mul_bounds {t a : K} (ht : 0 ≤ t) (ha : 0 < a) :
