@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.Finiteness.Cardinality
 public import Mathlib.RingTheory.Jacobson.Semiprimary
 public import TauCeti.Algebra.Module.Submodule.Superfluous
 
+import TauCeti.RingTheory.Jacobson.TNilpotent
+
 /-!
 # Projective covers
 

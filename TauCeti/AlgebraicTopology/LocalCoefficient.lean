@@ -582,6 +582,18 @@ theorem transport_symm {x y : X} (L : LocalCoefficientSystem.{u, v, w} R X)
   rw [h]
   exact L.map_id_apply _ a
 
+/-- Transport along a path class whose ends are moved by equalities is the transport along the
+class, conjugated by the transports along the constant classes that move the ends. -/
+theorem transport_cast {a b a' b' : X} (L : LocalCoefficientSystem.{u, v, w} R X)
+    (p : Path.Homotopic.Quotient a b) (ha : a' = a) (hb : b' = b) :
+    transport L (p.cast ha hb) =
+      ((transport L ((Path.Homotopic.Quotient.refl a').cast rfl ha.symm)).trans
+        (transport L p)).trans
+          (transport L ((Path.Homotopic.Quotient.refl b').cast rfl hb.symm)).symm := by
+  subst ha hb
+  ext v
+  simp
+
 /-- Transport commutes with a morphism of local coefficient systems. -/
 theorem transport_naturality {x y : X} {L K : LocalCoefficientSystem.{u, v, w} R X}
     (η : L ⟶ K) (p : Path.Homotopic.Quotient x y)
@@ -589,6 +601,19 @@ theorem transport_naturality {x y : X} {L K : LocalCoefficientSystem.{u, v, w} R
     η.app (FundamentalGroupoid.mk y) (transport L p a) =
       transport K p (η.app (FundamentalGroupoid.mk x) a) := by
   exact η.naturality_apply p a
+
+open MonoidalCategory in
+open scoped TensorProduct in
+/-- **Transport in a tensor product** of local coefficient systems is the tensor product of the
+transports: on the fibre `L(x) ⊗ K(x)` of the pointwise tensor product, a path class acts on
+`a ⊗ b` by acting on `a` and on `b`. -/
+theorem transport_tensor_tmul {S : Type w} [CommRing S] {x y : X}
+    (L K : LocalCoefficientSystem.{w, v, w} S X) (p : Path.Homotopic.Quotient x y)
+    (a : L.obj (FundamentalGroupoid.mk x)) (b : K.obj (FundamentalGroupoid.mk x)) :
+    transport (L ⊗ K) p (a ⊗ₜ[S] b) = transport L p a ⊗ₜ[S] transport K p b := by
+  -- The pointwise tensor product acts on a path class by the tensor product of the actions.
+  exact (transport_apply (L ⊗ K) p (a ⊗ₜ[S] b)).trans
+    (ModuleCat.MonoidalCategory.tensorHom_tmul (L.map p) (K.map p) a b)
 
 /-- Pullback transport is transport along the image path. -/
 @[simp]

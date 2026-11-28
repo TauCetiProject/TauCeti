@@ -31,6 +31,10 @@ approximation of `x` (Foucart–Rauhut, Def 2.2).
 * `EuclideanSpace.restrictedL1Norm_add_le`, `EuclideanSpace.restrictedL1Norm_smul`: the
   restricted norm is a seminorm in `x`; `EuclideanSpace.restrictedL1Norm_univ_eq_norm`: on
   `Finset.univ` it is the norm of `PiLp 1`.
+* `EuclideanSpace.restrictedL1Norm_toLp_indicator`: on `T`, the restricted norm of the
+  truncation of `x` to `S` is the restricted norm of `x` on `T ∩ S`.
+* `EuclideanSpace.restrictedL1Norm_univ_add_restrictedL1Norm_compl_le`: for `β` vanishing
+  outside `S`, `‖β‖₁ + ‖Δ_{Sᶜ}‖₁ ≤ ‖β + Δ‖₁ + ‖Δ_S‖₁`.
 * `EuclideanSpace.bestSparseL1Error_le_restrictedL1Norm_sub`,
   `EuclideanSpace.le_bestSparseL1Error_iff_forall_sparse`: `σₛ(x)₁` is the greatest lower bound
   of the `ℓ¹` distances from `x` to `s`-sparse vectors.
@@ -58,6 +62,8 @@ approximation of `x` (Foucart–Rauhut, Def 2.2).
 
 The definitions are adapted from the lean-CKSD project (<https://github.com/bjbraams/lean-CKSD>),
 file `CKSD/Nonparametric/Basic.lean`; the proofs are new.
+`EuclideanSpace.restrictedL1Norm_univ_add_restrictedL1Norm_compl_le` isolates a step of the proof
+of `hasNullspaceProperty_iff` in `CKSD/Nonparametric/SparseRecovery/Basic.lean`.
 -/
 
 public section
@@ -162,6 +168,16 @@ theorem restrictedL1Norm_le_of_card_le (x : EuclideanSpace ℝ ι)
   simp only [restrictedL1Norm_def] at hle ⊢
   linarith
 
+/-- The restricted `ℓ¹` norm on `T` of the truncation of `x` to `S`, which replaces the
+coordinates of `x` outside `S` by zero, is the restricted norm of `x` on `T ∩ S`. -/
+@[simp]
+theorem restrictedL1Norm_toLp_indicator [DecidableEq ι] (x : EuclideanSpace ℝ ι)
+    (S T : Finset ι) :
+    restrictedL1Norm (WithLp.toLp 2 ((S : Set ι).indicator (WithLp.ofLp x))) T =
+      x.restrictedL1Norm (T ∩ S) := by
+  simp only [restrictedL1Norm_def, Set.indicator_apply, mem_coe, apply_ite,
+    abs_zero, sum_ite_mem]
+
 variable [Fintype ι]
 
 /-- On all coordinates, the restricted norm is the norm of `x` in `PiLp 1`. -/
@@ -175,6 +191,23 @@ theorem restrictedL1Norm_add_restrictedL1Norm_compl [DecidableEq ι] (x : Euclid
     (S : Finset ι) : x.restrictedL1Norm S + x.restrictedL1Norm Sᶜ = x.restrictedL1Norm univ := by
   simp only [restrictedL1Norm_def]
   exact sum_add_sum_compl S _
+
+/-- If `β` vanishes outside `S`, then perturbing it by `Δ` changes its `ℓ¹` norm by at least
+`‖Δ_{Sᶜ}‖₁ - ‖Δ_S‖₁`: `‖β‖₁ + ‖Δ_{Sᶜ}‖₁ ≤ ‖β + Δ‖₁ + ‖Δ_S‖₁`. -/
+theorem restrictedL1Norm_univ_add_restrictedL1Norm_compl_le [DecidableEq ι]
+    {β : EuclideanSpace ℝ ι} {S : Finset ι} (hβ : ∀ j ∉ S, β j = 0) (Δ : EuclideanSpace ℝ ι) :
+    β.restrictedL1Norm univ + Δ.restrictedL1Norm Sᶜ ≤
+      (β + Δ).restrictedL1Norm univ + Δ.restrictedL1Norm S := by
+  have hβc : β.restrictedL1Norm Sᶜ = 0 :=
+    restrictedL1Norm_eq_zero_iff.2 fun j hj ↦ hβ j (mem_compl.1 hj)
+  have hc : (β + Δ).restrictedL1Norm Sᶜ = Δ.restrictedL1Norm Sᶜ := by
+    rw [restrictedL1Norm_def, restrictedL1Norm_def]
+    exact sum_congr rfl fun j hj ↦ by simp [hβ j (mem_compl.1 hj)]
+  have hS : β.restrictedL1Norm S ≤ (β + Δ).restrictedL1Norm S + Δ.restrictedL1Norm S := by
+    simpa using (β + Δ).restrictedL1Norm_add_le (-Δ) S
+  have hβ' := β.restrictedL1Norm_add_restrictedL1Norm_compl S
+  have hβΔ := (β + Δ).restrictedL1Norm_add_restrictedL1Norm_compl S
+  linarith
 
 /-! ### The best `s`-sparse `ℓ¹` error -/
 
