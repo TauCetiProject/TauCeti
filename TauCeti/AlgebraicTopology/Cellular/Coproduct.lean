@@ -82,6 +82,7 @@ def sigmaDiskBoundaryPairIso :
 
 /-- On the ambient spaces, `TauCeti.sigmaDiskBoundaryPairIso` applies
 `TauCeti.diskHomeomorphClosedBall` on each summand. -/
+@[simp]
 lemma sigmaDiskBoundaryPairIso_hom_fst_apply
     (p : (TopPair.sigma fun _ : ι ↦ diskBoundaryPair.{w} n).fst) :
     TopPair.Hom.fst (sigmaDiskBoundaryPairIso ι n).hom p =
@@ -93,25 +94,6 @@ lemma sigmaDiskBoundaryPairIso_hom_fst_apply
   -- only after unfolding semireducible `ConcreteCategory.hom (TopCat.ofHom _)`.
   erw [TopPair.ofSubsetMap_fst_apply]
   exact Homeomorph.sigmaCongrRight_apply (fun _ : ι ↦ diskHomeomorphClosedBall n) p
-
-/-- On the ambient spaces, `TauCeti.sigmaDiskBoundaryPairIso` preserves the summand. -/
-@[simp]
-lemma sigmaDiskBoundaryPairIso_hom_fst_apply_fst
-    (p : (TopPair.sigma fun _ : ι ↦ diskBoundaryPair.{w} n).fst) :
-    (TopPair.Hom.fst (sigmaDiskBoundaryPairIso ι n).hom p).1 = p.1 :=
-  congrArg Sigma.fst (sigmaDiskBoundaryPairIso_hom_fst_apply ι n p)
-
-/-- On the ambient spaces, `TauCeti.sigmaDiskBoundaryPairIso` is the radial rescaling of the
-coordinate identification `EuclideanSpace.equiv` in every summand. -/
-@[simp]
-lemma coe_sigmaDiskBoundaryPairIso_hom_fst_apply_snd
-    (p : (TopPair.sigma fun _ : ι ↦ diskBoundaryPair.{w} n).fst) :
-    ((TopPair.Hom.fst (sigmaDiskBoundaryPairIso ι n).hom p).2 : Fin n → ℝ) =
-      (EuclideanSpace.equiv (Fin n) ℝ).unitBallHomeomorph
-        ((p.2 : ULift.{w} (closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
-          EuclideanSpace ℝ (Fin n)) := by
-  rw [sigmaDiskBoundaryPairIso_hom_fst_apply]
-  exact coe_diskHomeomorphClosedBall_apply p.2
 
 end DiskPair
 
