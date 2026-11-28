@@ -106,8 +106,10 @@ In the namespace `TauCeti.HomologicalOrientation`:
   number of a disc with a disc running in a holomorphic graph over the first or the second
   coordinate axis is an order of vanishing.
 
-The examples at the end of the file compute the local intersection numbers of the line `w = 0` with
-the curves `w = z ^ k` (it is `k`, and in particular `2` for the parabola) and of the lines `w = 0`
+* `localIndex_eq_of_apply_eq_sub_graph_pow`: the line `w = 0` and the curve `w = z ^ k` meet at the
+  origin with local intersection number `k`, for `k ≠ 0`.
+
+The examples at the end of the file compute the local intersection numbers of the lines `w = 0`
 and `w = z` with the cusp `w ↦ (w², w³)` (they are `3` and `2`), and of the vertical line `z = 0`
 with the curve `z = w²` (it is `2`).
 
@@ -511,18 +513,19 @@ theorem localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_fst_eq
     (u₁ := fun z ↦ (u₁ z).swap) (u₂ := fun w ↦ (u₂ w).swap)
     (fun p ↦ by ext <;> simp [F', hF]) h₁ ha hf hgraph ((S.analyticAt _).comp h₂) (by rw [h])
 
-/-! #### Examples -/
+/-! #### Tangencies of the line `w = 0` with the curves `w = z ^ k` -/
 
-/-- The line `w = 0` and the curve `w = z ^ (k + 1)` of `ℂ²` meet at the origin with local
-intersection number `k + 1`; for `k = 1` this is the parabola, tangent to the line. -/
-example (k : ℕ) :
-    o.localIndex o ⟨fun p ↦ (p.1 - p.2, -p.2 ^ (k + 1)), by fun_prop⟩ (0, 0) = k + 1 := by
+/-- **A tangency of order `k`.** The line `w = 0` and the curve `w = z ^ k` of `ℂ²`, for `k ≠ 0`,
+meet at the origin with local intersection number `k`: the local index at `(0, 0)` of
+`F (z, w) = (z, 0) - (w, w ^ k)` is `k`. For `k = 2` this is the parabola, tangent to the line. -/
+theorem localIndex_eq_of_apply_eq_sub_graph_pow {k : ℕ} (hF : ∀ p, F p = (p.1, 0) - (p.2, p.2 ^ k))
+    (hk : k ≠ 0) : o.localIndex o F (0, 0) = k := by
   rw [o.localIndex_eq_analyticOrderNatAt_sub_of_apply_eq_graph_sub_graph hn (f := fun _ ↦ 0)
-    (g := (· ^ (k + 1))) (fun p ↦ by simp [Prod.mk_sub_mk]) analyticAt_const
-    (analyticAt_id.pow _) (by simp)]
-  have hpow : (fun z : ℂ ↦ z ^ (k + 1) - 0) = (· - 0) ^ (k + 1) := funext fun z ↦ by simp
+    (g := (· ^ k)) hF analyticAt_const (analyticAt_id.pow _) (by simp [zero_pow hk])]
+  have hpow : (fun z : ℂ ↦ z ^ k - 0) = (· - 0) ^ k := funext fun z ↦ by simp
   rw [analyticOrderNatAt, hpow, analyticOrderAt_centeredMonomial, ENat.toNat_natCast]
-  exact Nat.cast_succ k
+
+/-! #### Examples -/
 
 /-- The line `w = 0` and the cusp `w ↦ (w², w³)` of `ℂ²`, critical at `0`, meet at the origin with
 local intersection number `3`. -/

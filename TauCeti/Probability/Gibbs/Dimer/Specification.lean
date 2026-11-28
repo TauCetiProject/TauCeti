@@ -72,7 +72,9 @@ over the completion set `Ω_F(ω)` give `w(ω ∩ F) / Z^w_F(ω) · μ[ω]_{E �
 `SimpleGraph.IsDimerGibbs.lintegral_dimerBoltzmann_setOf_forall_mem_eq`). Hence `ν` is Gibbs
 (`SimpleGraph.IsDimerGibbs.isGibbs_comap_val`), and a measure is dimer Gibbs iff it is the
 push-forward of a Gibbs probability measure of `γ^w`
-(`SimpleGraph.isDimerGibbs_iff_exists_isGibbs`).
+(`SimpleGraph.isDimerGibbs_iff_exists_isGibbs`). As the push-forward is weakly continuous, the
+dimer Gibbs probability measures form a weakly compact set
+(`SimpleGraph.isCompact_setOf_isDimerGibbs`).
 
 ## References
 
@@ -399,8 +401,7 @@ along the inclusion gives it back. -/
 theorem IsDimerGibbs.map_comap_val {w : G.edgeSet → ℝ} {μ : Measure (G.edgeSet → Bool)}
     (hμ : G.IsDimerGibbs w μ) :
     (μ.comap (Subtype.val : G.dimerSubshift Γ hΓ → _)).map Subtype.val = μ :=
-  (map_comap_subtypeVal (G.dimerSubshift Γ hΓ).measurableSet_coe μ).trans
-    (Measure.restrict_eq_self_of_ae_mem (hμ.ae_mem_dimerSubshift Γ hΓ))
+  TauCeti.Subshift.map_comap_val_of_ae_mem (hμ.ae_mem_dimerSubshift Γ hΓ)
 
 variable (Γ hΓ) in
 /-- The pull-back to `𝔛(G)` of a dimer Gibbs measure is a probability measure. -/
@@ -408,9 +409,7 @@ theorem IsDimerGibbs.isProbabilityMeasure_comap_val {w : G.edgeSet → ℝ}
     {μ : Measure (G.edgeSet → Bool)} (hμ : G.IsDimerGibbs w μ) :
     IsProbabilityMeasure (μ.comap (Subtype.val : G.dimerSubshift Γ hΓ → _)) := by
   have := hμ.isProbabilityMeasure
-  exact (MeasurableEmbedding.subtypeVal (G.dimerSubshift Γ hΓ).measurableSet_coe)
-    |>.isProbabilityMeasure_comap
-      ((hμ.ae_mem_dimerSubshift Γ hΓ).mono fun ω hω => ⟨⟨ω, hω⟩, rfl⟩)
+  exact TauCeti.Subshift.isProbabilityMeasure_comap_val_of_ae_mem (hμ.ae_mem_dimerSubshift Γ hΓ)
 
 variable (Γ hΓ) in
 /-- **The DLR equation on a cylinder.** Let `μ` be dimer Gibbs for a positive `w`, `ω` a dimer
@@ -502,6 +501,27 @@ theorem isDimerGibbs_iff_exists_isGibbs {w : G.edgeSet → ℝ} (hw : ∀ e, 0 <
     hμ.map_comap_val Γ hΓ⟩, ?_⟩
   rintro ⟨ν, _, hν, rfl⟩
   exact isDimerGibbs_map_val hw hν
+
+/-- **Dimer Gibbs measures form a weakly compact set.** For a positive weight, the dimer Gibbs
+probability measures on configurations form a weakly compact set. -/
+theorem isCompact_setOf_isDimerGibbs {w : G.edgeSet → ℝ} (hw : ∀ e, 0 < w e) :
+    IsCompact {μ : ProbabilityMeasure (G.edgeSet → Bool) | G.IsDimerGibbs w μ} := by
+  have hΓ := Iso.exists_smul_eq_mapEdgeSet (G := G)
+  have key : {μ : ProbabilityMeasure (G.edgeSet → Bool) | G.IsDimerGibbs w μ} =
+      (fun ν : ProbabilityMeasure (G.dimerSubshift (G ≃g G) hΓ) =>
+        ν.map Subtype.val) ''
+        {ν | (dimerSpecification (G ≃g G) hΓ hw).IsGibbs (ν : Measure _)} := by
+    ext μ
+    simp only [mem_ofPred_eq, mem_image]
+    rw [isDimerGibbs_iff_exists_isGibbs (G ≃g G) hΓ hw]
+    constructor
+    · rintro ⟨ν, hν, hG, hmap⟩
+      exact ⟨⟨ν, hν⟩, hG, Subtype.ext hmap⟩
+    · rintro ⟨ν, hG, rfl⟩
+      exact ⟨ν, inferInstance, hG, rfl⟩
+  rw [key]
+  exact (isCompact_setOf_isGibbs_dimerSpecification _ hΓ hw).image
+    (ProbabilityMeasure.continuous_map continuous_subtypeVal)
 
 end IsGibbs
 

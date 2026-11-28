@@ -30,6 +30,8 @@ Among the former are the estimates `‖e * a - c‖ ≤ ‖e‖ ‖a - b‖ + �
 (`TauCeti.norm_mul_sub_le_left`) and `‖a * e - c‖ ≤ ‖a - b‖ ‖e‖ + ‖b * e - c‖`
 (`TauCeti.norm_mul_sub_le_right`), which compare a product with `c` through the product with `b`,
 the nonvanishing `1 - x ≠ 0` for `‖x‖ < 1` (`TauCeti.one_sub_ne_zero_of_norm_lt_one`),
+the vanishing of `w₁` when `w₁ = w₁ * w₂` with `‖w₂‖ < 1`
+(`TauCeti.eq_zero_of_eq_mul_of_norm_lt_one`),
 the lower bound `1 - ‖q‖ ≤ ‖1 - qⁿ‖` for `‖q‖ ≤ 1` and `n ≠ 0`
 (`TauCeti.one_sub_norm_le_norm_one_sub_pow`),
 and `‖a * c - b * d‖ₑ ≤ ‖a - b‖ₑ + ‖c - d‖ₑ` for `‖b‖ ≤ 1` and `‖c‖ ≤ 1`
@@ -59,6 +61,16 @@ theorem norm_mul_lt_one {K : Type*} [NonUnitalSeminormedRing K] (u v : K) (hu : 
     _ ≤ ‖u‖ := by
       simpa only [mul_one] using mul_le_mul_of_nonneg_left hv.le (norm_nonneg u)
     _ < 1 := hu
+
+/-- In a normed ring, `w₁ = w₁ * w₂` with `‖w₂‖ < 1` forces `w₁ = 0`. -/
+theorem eq_zero_of_eq_mul_of_norm_lt_one {R : Type*} [NonUnitalNormedRing R] {w₁ w₂ : R}
+    (h : w₁ = w₁ * w₂) (h2 : ‖w₂‖ < 1) : w₁ = 0 := by
+  have h1 : ‖w₁‖ ≤ ‖w₁‖ * ‖w₂‖ :=
+    calc ‖w₁‖ = ‖w₁ * w₂‖ := by rw [← h]
+      _ ≤ ‖w₁‖ * ‖w₂‖ := norm_mul_le _ _
+  have : ‖w₁‖ * (1 - ‖w₂‖) ≤ 0 := by nlinarith
+  exact norm_eq_zero.1 (le_antisymm (nonpos_of_mul_nonpos_left this (by linarith))
+    (norm_nonneg _))
 
 /-- The extended norm is submultiplicative: `‖a * b‖ₑ ≤ ‖a‖ₑ * ‖b‖ₑ`. -/
 theorem eNorm_mul_le {R : Type*} [NonUnitalSeminormedRing R] (a b : R) :
