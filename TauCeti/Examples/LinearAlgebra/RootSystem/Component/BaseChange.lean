@@ -14,7 +14,7 @@ import Mathlib.Tactic.NormNum
 /-!
 # Rational components of A₁ × A₁
 
-The adjoint integral datum has roots `±(2, 0)` and `±(0, 2)` and coroots `±(1, 0)` and
+The simply connected integral datum has roots `±(2, 0)` and `±(0, 2)` and coroots `±(1, 0)` and
 `±(0, 1)`. Its two components survive rationalization, including restriction to the rational
 root and coroot spans, with the original four root labels and integer pairings.
 -/
@@ -29,7 +29,8 @@ private abbrev roots : Fin 4 → Fin 2 → ℤ := ![![2, 0], ![-2, 0], ![0, 2], 
 
 private abbrev coroots : Fin 4 → Fin 2 → ℤ := ![![1, 0], ![-1, 0], ![0, 1], ![0, -1]]
 
-/-- The adjoint integral root datum of A₁ × A₁, with opposite roots labelled consecutively. -/
+/-- The simply connected integral root datum of A₁ × A₁, with opposite roots labelled
+consecutively. -/
 def datum : RootPairing (Fin 4) ℤ (Fin 2 → ℤ) (Fin 2 → ℤ) where
   toLinearMap := dotProductBilin ℤ ℤ
   root := ⟨roots, by decide⟩
