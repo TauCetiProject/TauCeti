@@ -67,7 +67,7 @@ def integratedStarAlgHom : ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] (H →L[�
 function underlying the convolution-algebra element. -/
 @[simp]
 theorem integratedStarAlgHom_apply (f : ConvolutionAlgebra α μ) :
-    P.integratedStarAlgHom μ f = P.integratedOperator μ f.ofConv := by
+    P.integratedStarAlgHom μ f = P.integratedOperator μ f.toFun := by
   rw [integratedStarAlgHom, ContinuousLinearMap.toNonUnitalStarAlgHomOfMulStar_apply,
     integratedOperatorCLM_apply]
 
@@ -87,17 +87,14 @@ theorem continuous_integratedStarAlgHom : Continuous (P.integratedStarAlgHom μ)
 `⋆`-algebra homomorphism. -/
 def integratedStarAlgHomL1 :
     Completion (ConvolutionAlgebra α μ) →⋆ₙₐ[ℂ] (H →L[ℂ] H) :=
-  ((P.integratedOperatorCLM μ).toNonUnitalStarAlgHomOfMulStar (fun f g => by simp)
-    (fun f => by simp)).fromCompletion
-    ((P.integratedOperatorCLM μ).continuous_toNonUnitalStarAlgHomOfMulStar _ _)
+  (P.integratedStarAlgHom μ).fromCompletion (P.continuous_integratedStarAlgHom μ)
 
 @[simp]
 theorem toNonUnitalAlgHom_integratedStarAlgHomL1 :
     (P.integratedStarAlgHomL1 μ).toNonUnitalAlgHom = P.integratedOperatorL1 μ := by
-  simp only [integratedStarAlgHomL1, NonUnitalStarAlgHom.toNonUnitalAlgHom_fromCompletion,
-    ContinuousLinearMap.toNonUnitalAlgHom_toNonUnitalStarAlgHomOfMulStar]
-  exact NonUnitalAlgHom.fromCompletion_unique _ _ _ (P.continuous_integratedOperatorL1 μ)
-    fun f => by simp
+  rw [integratedStarAlgHomL1, NonUnitalStarAlgHom.toNonUnitalAlgHom_fromCompletion]
+  exact NonUnitalAlgHom.fromCompletion_unique _ _ (P.integratedOperatorL1 μ)
+    (P.continuous_integratedOperatorL1 μ) fun f => by simp
 
 @[simp]
 theorem integratedStarAlgHomL1_apply (x : Completion (ConvolutionAlgebra α μ)) :

@@ -64,7 +64,7 @@ private theorem compLeft_apply (φ : Hom α β) (f : C_c(G, A)) (s : G) :
 coefficient homomorphism. -/
 def convolutionMap (φ : Hom α β) (μ : Measure G) [IsFiniteMeasureOnCompacts μ] :
     ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] ConvolutionAlgebra β μ where
-  toFun f := .toConv (f.ofConv.compLeft ⟨φ, map_continuous φ⟩)
+  toFun f := CompactlySupportedL1.ofFun (f.toFun.compLeft ⟨φ, map_continuous φ⟩)
   map_zero' := by
     apply CompactlySupportedL1.ext
     ext s
@@ -80,22 +80,22 @@ def convolutionMap (φ : Hom α β) (μ : Measure G) [IsFiniteMeasureOnCompacts 
   map_mul' f g := by
     apply CompactlySupportedL1.ext
     ext s
-    simp only [ConvolutionAlgebra.ofConv_mul, CompactlySupportedL1.toFun_ofFun, compLeft_apply]
+    simp only [ConvolutionAlgebra.toFun_mul, compLeft_apply]
     rw [map_convolution, convolution_apply]
     simp only [compLeft_apply]
   map_star' f := by
     apply CompactlySupportedL1.ext
     ext s
-    simp only [ConvolutionAlgebra.ofConv_star, CompactlySupportedL1.toFun_ofFun,
-      twistedInvolution_apply, compLeft_apply, map_smul, map_action, map_star]
+    simp only [ConvolutionAlgebra.toFun_star, twistedInvolution_apply, compLeft_apply,
+      map_smul, map_action, map_star]
 
 variable {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
 
 /-- The induced map applies the coefficient homomorphism at each group element. -/
 @[simp]
 theorem convolutionMap_apply (φ : Hom α β) (f : ConvolutionAlgebra α μ) (s : G) :
-    (φ.convolutionMap μ f).ofConv s = φ (f.ofConv s) :=
-  compLeft_apply φ f.ofConv s
+    (φ.convolutionMap μ f).toFun s = φ (f.toFun s) :=
+  compLeft_apply φ f.toFun s
 
 /-- The identity coefficient map induces the identity convolution map. -/
 @[simp]
@@ -118,6 +118,6 @@ theorem convolutionMap_injective (φ : Hom α β) (hφ : Function.Injective φ) 
   apply CompactlySupportedL1.ext
   ext s
   apply hφ
-  simpa using congrArg (fun k : ConvolutionAlgebra β μ => k.ofConv s) h
+  simpa using congrArg (fun k : ConvolutionAlgebra β μ => k.toFun s) h
 
 end TauCeti.CStarAction.Hom

@@ -260,8 +260,8 @@ variable {G A B H : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 @[simp]
 theorem integratedOperator_descend_convolutionMap
     [OpensMeasurableSpace G] [IsFiniteMeasureOnCompacts μ] (f : ConvolutionAlgebra α μ) :
-    (P.descend q hq hker).integratedOperator μ (q.convolutionMap μ f).ofConv =
-      P.integratedOperator μ f.ofConv := by
+    (P.descend q hq hker).integratedOperator μ (q.convolutionMap μ f).toFun =
+      P.integratedOperator μ f.toFun := by
   rw [← (P.descend q hq hker).integratedOperator_comap q μ f, P.comap_descend q hq hker]
 
 /-- Integrating `P.descend q hq hker` on the twisted L¹ completion agrees with integrating `P`
@@ -289,8 +289,8 @@ theorem integratedOperator_quotientLift_convolutionMap
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
     (hP : ∀ a ∈ I, P.coefficient a = 0) (f : ConvolutionAlgebra α μ) :
     (P.quotientLift I hI hP).integratedOperator μ
-        ((α.quotientMkHom I hI).convolutionMap μ f).ofConv =
-      P.integratedOperator μ f.ofConv :=
+        ((α.quotientMkHom I hI).convolutionMap μ f).toFun =
+      P.integratedOperator μ f.toFun :=
   P.integratedOperator_descend_convolutionMap (α.quotientMkHom I hI)
     (α.quotientMkHom_surjective I hI) _ μ f
 
@@ -558,8 +558,8 @@ integrating `M` on `f`. -/
 @[simp]
 theorem integratedMultiplier_descend_convolutionMap
     [OpensMeasurableSpace G] [IsFiniteMeasureOnCompacts μ] (f : ConvolutionAlgebra α μ) :
-    (M.descend q hq hker).integratedMultiplier μ (q.convolutionMap μ f).ofConv =
-      M.integratedMultiplier μ f.ofConv := by
+    (M.descend q hq hker).integratedMultiplier μ (q.convolutionMap μ f).toFun =
+      M.integratedMultiplier μ f.toFun := by
   rw [← (M.descend q hq hker).integratedMultiplier_comap μ q f, M.comap_descend q hq hker]
 
 /-- Under a left Haar measure, `(M.descend q hq hker).integratedStarAlgHom μ` factors
@@ -577,8 +577,8 @@ theorem integratedMultiplier_quotientLift_convolutionMap
     (hI : _root_.IsInvariant (fun g a => α g a) (I : Set A))
     (hM : ∀ a ∈ I, M.coefficient a = 0) (f : ConvolutionAlgebra α μ) :
     (M.quotientLift I hI hM).integratedMultiplier μ
-        ((α.quotientMkHom I hI).convolutionMap μ f).ofConv =
-      M.integratedMultiplier μ f.ofConv :=
+        ((α.quotientMkHom I hI).convolutionMap μ f).toFun =
+      M.integratedMultiplier μ f.toFun :=
   M.integratedMultiplier_descend_convolutionMap (α.quotientMkHom I hI)
     (α.quotientMkHom_surjective I hI) _ μ f
 

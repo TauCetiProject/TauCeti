@@ -44,7 +44,7 @@ variable {G A H : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
 
 /-- Coefficient evaluation on the dense convolution algebra. -/
 private def coefficientEval (g : G) : ConvolutionAlgebra α Measure.count →ₗ[ℂ] A where
-  toFun f := f.ofConv g
+  toFun f := f.toFun g
   map_add' f h := by simp
   map_smul' c f := by simp
 
@@ -52,7 +52,7 @@ private theorem norm_coefficientEval_le (hρ : Function.Injective ρ) (g : G)
     (f : ConvolutionAlgebra α Measure.count) :
     ‖coefficientEval α g f‖ ≤ ‖of α ρ Measure.count f‖ := by
   exact (CovariantRepresentation.norm_apply_le_norm_integratedOperator_regular
-    α ρ hρ f.ofConv g).trans_eq (norm_of α ρ Measure.count f).symm
+    α ρ hρ f.toFun g).trans_eq (norm_of α ρ Measure.count f).symm
 
 /-- The Fourier coefficient at `g`, extending `f ↦ f g` continuously from compactly supported
 coefficients to the concrete regular crossed product. -/
@@ -65,7 +65,7 @@ def fourierCoeff (_hρ : Function.Injective ρ) (g : G) :
 @[simp]
 theorem fourierCoeff_of (hρ : Function.Injective ρ) (g : G)
     (f : ConvolutionAlgebra α Measure.count) :
-    fourierCoeff α ρ hρ g (of α ρ Measure.count f) = f.ofConv g :=
+    fourierCoeff α ρ hρ g (of α ρ Measure.count f) = f.toFun g :=
   LinearMap.extendOfNorm_eq (denseRange_of α ρ Measure.count)
     ⟨1, fun f => by simpa only [one_mul, LinearMap.coe_ofClass] using
       norm_coefficientEval_le α ρ hρ g f⟩ f
@@ -98,7 +98,7 @@ theorem fourierCoeff_star (hρ : Function.Injective ρ) (g : G)
         (continuous_star.comp (fourierCoeff α ρ hρ g⁻¹).continuous))
   | ih f =>
     rw [← map_star, fourierCoeff_of, fourierCoeff_of,
-      ConvolutionAlgebra.ofConv_star, twistedInvolution_apply,
+      ConvolutionAlgebra.toFun_star, twistedInvolution_apply,
       modularCharacter_eq_one_of_discreteTopology]
     simp only [NNReal.coe_one, Complex.ofReal_one, one_smul]
 
@@ -106,7 +106,7 @@ theorem fourierCoeff_star (hρ : Function.Injective ρ) (g : G)
 linear maps. -/
 theorem fourierCoeff_unique (hρ : Function.Injective ρ) (g : G)
     (F : regularAlgebra α ρ Measure.count →L[ℂ] A)
-    (hF : ∀ f, F (of α ρ Measure.count f) = f.ofConv g) : F = fourierCoeff α ρ hρ g := by
+    (hF : ∀ f, F (of α ρ Measure.count f) = f.toFun g) : F = fourierCoeff α ρ hρ g := by
   symm
   apply LinearMap.extendOfNorm_unique (Eₗ := regularAlgebra α ρ Measure.count)
     (f := coefficientEval α g) (denseRange_of α ρ Measure.count) 1
@@ -127,7 +127,7 @@ theorem inner_single_fourierCoeff (hρ : Function.Injective ρ)
   | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
   | ih f =>
     simpa only [coe_of, CovariantRepresentation.integratedStarAlgHom_apply, fourierCoeff_of]
-      using CovariantRepresentation.inner_integratedOperator_regular_single α ρ f.ofConv r s w v
+      using CovariantRepresentation.inner_integratedOperator_regular_single α ρ f.toFun r s w v
 
 /-- An element with all Fourier coefficients zero is zero. -/
 theorem eq_zero_of_fourierCoeff_eq_zero (hρ : Function.Injective ρ)

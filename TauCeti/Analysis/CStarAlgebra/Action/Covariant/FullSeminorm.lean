@@ -135,7 +135,7 @@ theorem norm_integratedStarAlgHom_le_fullSeminorm {H : Type w} [NormedAddCommGro
     le_csSup bddAbove_integratedSeminorms ⟨K, _, _, _, P.restrict hπ hU, rfl⟩ f
   rw [CovariantRepresentation.integratedStarAlgHom_apply] at hK ⊢
   rw [← CovariantRepresentation.restrict_integratedOperator_apply hπ hU, V.norm_map, V.norm_map]
-  exact ((P.restrict hπ hU).integratedOperator μ f.ofConv).le_of_opNorm_le hK η
+  exact ((P.restrict hπ hU).integratedOperator μ f.toFun).le_of_opNorm_le hK η
 
 /-- The full seminorm is the least bound for the integrated forms of covariant
 representations on Hilbert spaces in the universe `max u v`. -/
@@ -193,7 +193,7 @@ theorem fullSeminorm_eq_zero_iff [μ.InnerRegularCompactLTTop] {H : Type w} [Nor
 theorem fullSeminorm_coefficientMul_le (a : A) (f : ConvolutionAlgebra α μ) :
     fullSeminorm α μ (coefficientMul a f) ≤ ‖a‖ * fullSeminorm α μ f := by
   refine fullSeminorm_le_iff.2 fun H _ _ _ P => ?_
-  rw [CovariantRepresentation.integratedStarAlgHom_apply, ofConv_coefficientMul,
+  rw [CovariantRepresentation.integratedStarAlgHom_apply, toFun_coefficientMul,
     P.integratedOperator_smul, ← P.integratedStarAlgHom_apply]
   exact (norm_mul_le _ _).trans (mul_le_mul (NonUnitalStarAlgHom.norm_apply_le _ _)
     (norm_integratedStarAlgHom_le_fullSeminorm P f) (norm_nonneg _) (norm_nonneg _))
@@ -205,7 +205,7 @@ theorem fullSeminorm_translateLIE (r : G) (f : ConvolutionAlgebra α μ) :
   have h (t : G) (g : ConvolutionAlgebra α μ) :
       fullSeminorm α μ (translateLIE t g) ≤ fullSeminorm α μ g := by
     refine fullSeminorm_le_iff.2 fun H _ _ _ P => ?_
-    rw [CovariantRepresentation.integratedStarAlgHom_apply, ofConv_translateLIE,
+    rw [CovariantRepresentation.integratedStarAlgHom_apply, toFun_translateLIE,
       P.integratedOperator_translate,
       CStarRing.norm_mem_unitary_mul _ (P.isUnitary.mem_unitary t),
       ← P.integratedStarAlgHom_apply]

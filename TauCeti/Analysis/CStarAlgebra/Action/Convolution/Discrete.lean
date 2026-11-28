@@ -30,8 +30,8 @@ subalgebras.
 
 * `TauCeti.CStarAction.ConvolutionAlgebra.sum_single`: every element is a finite sum of point
   masses.
-* `TauCeti.CStarAction.ConvolutionAlgebra.ofConv_single_mul_apply` and
-  `TauCeti.CStarAction.ConvolutionAlgebra.ofConv_mul_single_apply`: convolution with a point mass
+* `TauCeti.CStarAction.ConvolutionAlgebra.toFun_single_mul_apply` and
+  `TauCeti.CStarAction.ConvolutionAlgebra.toFun_mul_single_apply`: convolution with a point mass
   is a twisted translation.
 * `TauCeti.CStarAction.ConvolutionAlgebra.single_mul_single` and
   `TauCeti.CStarAction.ConvolutionAlgebra.star_single`: the product and involution of point
@@ -65,7 +65,7 @@ open scoped Classical in
 /-- The point mass `δ_g ⊗ a` in the convolution algebra of a discrete group with counting
 measure: the function with value `a` at `g` and `0` elsewhere. -/
 def single (g : G) (a : A) : ConvolutionAlgebra α Measure.count :=
-  toConv
+  CompactlySupportedL1.ofFun
     { toFun := fun s => if s = g then a else 0
       continuous_toFun := continuous_of_discreteTopology
       hasCompactSupport' := HasCompactSupport.intro isCompact_singleton fun _ hs =>
@@ -73,18 +73,18 @@ def single (g : G) (a : A) : ConvolutionAlgebra α Measure.count :=
 
 /-- A point mass takes its value at its base point. -/
 @[simp]
-theorem ofConv_single_same (g : G) (a : A) :
-    (single g a : ConvolutionAlgebra α Measure.count).ofConv g = a := by
+theorem toFun_single_same (g : G) (a : A) :
+    (single g a : ConvolutionAlgebra α Measure.count).toFun g = a := by
   simp [single]
 
 /-- A point mass vanishes off its base point. -/
-theorem ofConv_single_of_ne {g s : G} (h : s ≠ g) (a : A) :
-    (single g a : ConvolutionAlgebra α Measure.count).ofConv s = 0 := by
+theorem toFun_single_of_ne {g s : G} (h : s ≠ g) (a : A) :
+    (single g a : ConvolutionAlgebra α Measure.count).toFun s = 0 := by
   simp [single, h]
 
 /-- The values of a point mass, for any decidability instance. -/
-theorem ofConv_single_apply (g : G) (a : A) (s : G) [Decidable (s = g)] :
-    (single g a : ConvolutionAlgebra α Measure.count).ofConv s = if s = g then a else 0 := by
+theorem toFun_single_apply (g : G) (a : A) (s : G) [Decidable (s = g)] :
+    (single g a : ConvolutionAlgebra α Measure.count).toFun s = if s = g then a else 0 := by
   by_cases h : s = g <;> simp [single, h]
 
 @[simp]
@@ -92,14 +92,14 @@ theorem single_zero (g : G) : (single g 0 : ConvolutionAlgebra α Measure.count)
   ext1
   ext s
   classical
-  simp [ofConv_single_apply]
+  simp [toFun_single_apply]
 
 theorem single_add (g : G) (a b : A) :
     (single g (a + b) : ConvolutionAlgebra α Measure.count) = single g a + single g b := by
   ext1
   ext s
   classical
-  simp only [ofConv_single_apply, CompactlySupportedL1.toFun_add,
+  simp only [toFun_single_apply, CompactlySupportedL1.toFun_add,
     CompactlySupportedContinuousMap.coe_add, Pi.add_apply]
   split_ifs <;> simp
 
@@ -108,25 +108,25 @@ theorem single_smul (g : G) (c : ℂ) (a : A) :
   ext1
   ext s
   classical
-  simp only [ofConv_single_apply, CompactlySupportedL1.toFun_smul,
+  simp only [toFun_single_apply, CompactlySupportedL1.toFun_smul,
     CompactlySupportedContinuousMap.coe_smul, Pi.smul_apply]
   split_ifs <;> simp
 
 /-- An element of the convolution algebra of a discrete group has finite support. -/
-theorem finite_support_ofConv (f : ConvolutionAlgebra α Measure.count) :
-    (Function.support f.ofConv).Finite :=
-  f.ofConv.hasCompactSupport.isCompact.finite_of_discrete.subset (subset_tsupport _)
+theorem finite_support_toFun (f : ConvolutionAlgebra α Measure.count) :
+    (Function.support f.toFun).Finite :=
+  f.toFun.hasCompactSupport.isCompact.finite_of_discrete.subset (subset_tsupport _)
 
 /-- **Every element is a finite sum of point masses**: `f = ∑ g ∈ s, δ_g ⊗ f(g)` for every finite
 set `s` containing the support of `f`. -/
 theorem sum_single (f : ConvolutionAlgebra α Measure.count) {s : Finset G}
-    (hs : Function.support f.ofConv ⊆ s) : ∑ g ∈ s, single g (f.ofConv g) = f := by
+    (hs : Function.support f.toFun ⊆ s) : ∑ g ∈ s, single g (f.toFun g) = f := by
   classical
   ext1
   ext r
   rw [← CompactlySupportedL1.addEquiv_apply, map_sum]
   simp only [CompactlySupportedL1.addEquiv_apply, CompactlySupportedContinuousMap.coe_sum,
-    Finset.sum_apply, ofConv_single_apply, Finset.sum_ite_eq]
+    Finset.sum_apply, toFun_single_apply, Finset.sum_ite_eq]
   split_ifs with hr
   · rfl
   · exact (Function.notMem_support.1 fun h => hr (hs h)).symm
@@ -135,19 +135,19 @@ variable [OpensMeasurableSpace G]
 
 /-- Left multiplication by a point mass translates and twists:
 `((δ_g ⊗ a) ⋆ f)(s) = a α_g(f(g⁻¹ s))`. -/
-theorem ofConv_single_mul_apply (g : G) (a : A) (f : ConvolutionAlgebra α Measure.count)
-    (s : G) : (single g a * f).ofConv s = a * α g (f.ofConv (g⁻¹ * s)) := by
-  rw [ofConv_mul, convolution_apply,
-    integral_count_eq_single g fun r hr => by rw [ofConv_single_of_ne hr, zero_mul],
-    ofConv_single_same]
+theorem toFun_single_mul_apply (g : G) (a : A) (f : ConvolutionAlgebra α Measure.count)
+    (s : G) : (single g a * f).toFun s = a * α g (f.toFun (g⁻¹ * s)) := by
+  rw [toFun_mul, convolution_apply,
+    integral_count_eq_single g fun r hr => by rw [toFun_single_of_ne hr, zero_mul],
+    toFun_single_same]
 
 /-- Right multiplication by a point mass translates and twists:
 `(f ⋆ (δ_g ⊗ a))(s) = f(s g⁻¹) α_{s g⁻¹}(a)`. -/
-theorem ofConv_mul_single_apply (f : ConvolutionAlgebra α Measure.count) (g : G) (a : A)
-    (s : G) : (f * single g a).ofConv s = f.ofConv (s * g⁻¹) * α (s * g⁻¹) a := by
-  rw [ofConv_mul, convolution_apply, integral_count_eq_single (s * g⁻¹) fun r hr => ?_]
+theorem toFun_mul_single_apply (f : ConvolutionAlgebra α Measure.count) (g : G) (a : A)
+    (s : G) : (f * single g a).toFun s = f.toFun (s * g⁻¹) * α (s * g⁻¹) a := by
+  rw [toFun_mul, convolution_apply, integral_count_eq_single (s * g⁻¹) fun r hr => ?_]
   · simp
-  · rw [ofConv_single_of_ne, map_zero, mul_zero]
+  · rw [toFun_single_of_ne, map_zero, mul_zero]
     rintro h
     exact hr (by rw [← h]; group)
 
@@ -159,7 +159,7 @@ theorem single_mul_single (g h : G) (a b : A) :
   classical
   ext1
   ext s
-  rw [ofConv_single_mul_apply, ofConv_single_apply, ofConv_single_apply]
+  rw [toFun_single_mul_apply, toFun_single_apply, toFun_single_apply]
   simp only [inv_mul_eq_iff_eq_mul]
   split_ifs <;> simp
 
@@ -170,8 +170,8 @@ theorem star_single (g : G) (a : A) :
     star (single g a : ConvolutionAlgebra α Measure.count) = single g⁻¹ (α g⁻¹ (star a)) := by
   classical
   refine CompactlySupportedL1.ext (CompactlySupportedContinuousMap.ext fun s => ?_)
-  simp only [ofConv_star, twistedInvolution_apply, modularCharacter_eq_one_of_discreteTopology,
-    ofConv_single_apply, inv_eq_iff_eq_inv]
+  simp only [toFun_star, twistedInvolution_apply, modularCharacter_eq_one_of_discreteTopology,
+    toFun_single_apply, inv_eq_iff_eq_inv]
   split_ifs with h
   · simp [h]
   · simp
@@ -187,7 +187,7 @@ variable [CStarAlgebra A] {α : CStarAction G A} [OpensMeasurableSpace G]
 theorem single_one_one_mul (f : ConvolutionAlgebra α Measure.count) : single 1 1 * f = f := by
   ext1
   ext s
-  rw [ofConv_single_mul_apply]
+  rw [toFun_single_mul_apply]
   simp
 
 /-- The point mass `δ_1 ⊗ 1` is a right unit of the convolution algebra. -/
@@ -195,7 +195,7 @@ theorem single_one_one_mul (f : ConvolutionAlgebra α Measure.count) : single 1 
 theorem mul_single_one_one (f : ConvolutionAlgebra α Measure.count) : f * single 1 1 = f := by
   ext1
   ext s
-  rw [ofConv_mul_single_apply]
+  rw [toFun_mul_single_apply]
   simp
 
 end Unital

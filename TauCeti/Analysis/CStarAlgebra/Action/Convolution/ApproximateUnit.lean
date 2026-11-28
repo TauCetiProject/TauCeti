@@ -92,19 +92,19 @@ values within `ε` of `f s`, weighted by a nonnegative `φ` of unit integral, an
 private theorem norm_sub_le_of_forall_mem_tsupport [OpensMeasurableSpace G]
     [IsFiniteMeasureOnCompacts μ]
     {φ : C_c(G, ℝ)} (hφ : 0 ≤ φ) (hφ1 : ∫ s, φ s ∂μ = 1) {u f : ConvolutionAlgebra α μ}
-    {X : G → G → A} (hX : ∀ s, Continuous (X s)) (hu : ∀ s, u.ofConv s = ∫ r, φ r • X s r ∂μ)
-    {C : Set G} (hC : IsCompact C) (hsupp : ∀ s ∉ C, u.ofConv s = f.ofConv s) {ε : ℝ}
-    (hε : ∀ s, ∀ r ∈ tsupport φ, ‖X s r - f.ofConv s‖ ≤ ε) :
+    {X : G → G → A} (hX : ∀ s, Continuous (X s)) (hu : ∀ s, u.toFun s = ∫ r, φ r • X s r ∂μ)
+    {C : Set G} (hC : IsCompact C) (hsupp : ∀ s ∉ C, u.toFun s = f.toFun s) {ε : ℝ}
+    (hε : ∀ s, ∀ r ∈ tsupport φ, ‖X s r - f.toFun s‖ ≤ ε) :
     ‖u - f‖ ≤ ε * μ.real C := by
   -- Pointwise, `u s` is a `φ`-average of values within `ε` of `f s`.
-  have hpt (s : G) : ‖u.ofConv s - f.ofConv s‖ ≤ ε :=
+  have hpt (s : G) : ‖u.toFun s - f.toFun s‖ ≤ ε :=
     hu s ▸ φ.norm_integral_smul_sub_le hφ hφ1 (hX s) (hε s)
   -- Outside `C` the difference vanishes, and on `C` it is at most `ε`.
   rw [CompactlySupportedL1.norm_eq_integral_norm,
     ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := C)
       fun s hs => by simp [hsupp s hs]]
   refine (le_abs_self _).trans ?_
-  simpa using norm_setIntegral_le_of_norm_le_const (s := C) (f := fun s => ‖(u - f).ofConv s‖)
+  simpa using norm_setIntegral_le_of_norm_le_const (s := C) (f := fun s => ‖(u - f).toFun s‖)
     hC.measure_lt_top fun s _ => by simpa using hpt s
 
 /-- The constant used to make the estimates of both convergences less than `ε`. -/
@@ -127,7 +127,7 @@ theorem tendsto_smulRight_mul [IsFiniteMeasureOnCompacts μ] {ι : Type*} {l : F
     (hφs : Tendsto (fun i => tsupport (φ i)) l (𝓝 1).smallSets) {lA : Filter A}
     (hlA : lA.IsIncreasingApproximateUnit) (f : ConvolutionAlgebra α μ) :
     Tendsto (fun p : ι × A => smulRight (φ p.1) p.2 * f) (l ×ˢ lA) (𝓝 f) := by
-  set g := f.ofConv
+  set g := f.toFun
   -- All the products live in the compact set `C = V₀ * K`, with `K` the support of `g`.
   obtain ⟨V₀, hV₀c, hV₀⟩ := exists_compact_mem_nhds (1 : G)
   set C := V₀ * tsupport g
@@ -182,7 +182,7 @@ theorem tendsto_mul_smulRight [BorelSpace G] [μ.IsHaarMeasure] {ι : Type*} {l 
     (hφs : Tendsto (fun i => tsupport (φ i)) l (𝓝 1).smallSets) {lA : Filter A}
     (hlA : lA.IsIncreasingApproximateUnit) (f : ConvolutionAlgebra α μ) :
     Tendsto (fun p : ι × A => f * smulRight (φ p.1) p.2) (l ×ˢ lA) (𝓝 f) := by
-  set g := f.ofConv
+  set g := f.toFun
   set c : G → ℝ := fun t => (Measure.modularCharacter t : ℝ)
   -- All the products live in the compact set `C = K * V₀`, with `K` the support of `g`.
   obtain ⟨V₀, hV₀c, hV₀⟩ := exists_compact_mem_nhds (1 : G)
@@ -217,7 +217,7 @@ theorem tendsto_mul_smulRight [BorelSpace G] [μ.IsHaarMeasure] {ι : Type*} {l 
   refine lt_of_le_of_lt ?_ (three_mul_mul_lt (m := μ.real C) hε measureReal_nonneg)
   refine norm_sub_le_of_forall_mem_tsupport hi0 hi1
     (X := fun s t => c t • (g (s * t⁻¹) * α (s * t⁻¹) e)) (fun s => by fun_prop)
-    (fun s => ofConv_mul_smulRight_apply f (φ i) e s) hC (fun s hs => ?_) fun s t ht => ?_
+    (fun s => toFun_mul_smulRight_apply f (φ i) e s) hC (fun s hs => ?_) fun s t ht => ?_
   · -- The product is supported in `supp g * supp φ ⊆ C`.
     rw [hgC' s hs]
     refine Function.notMem_support.1 fun h => hs ?_

@@ -223,10 +223,16 @@ theorem coeFn_toL1 (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSM
     (f : CompactlySupportedL1 tag E μ) : toL1 𝕜 f =ᵐ[μ] f.toFun := by
   simpa [toL1] using CompactlySupportedContinuousMap.coeFn_toLp 𝕜 f.toFun
 
-private theorem toL1_eq_toL1AddMonoidHom (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E]
+/-- The `L¹` class `toL1AddMonoidHom f` is represented a.e. by its underlying function. -/
+theorem coeFn_toL1AddMonoidHom (f : CompactlySupportedL1 tag E μ) :
+    toL1AddMonoidHom f =ᵐ[μ] f.toFun :=
+  (f.toFun.memLp 1 μ).coeFn_toLp
+
+/-- `toL1 𝕜 f` agrees with the scalar-free realization `toL1AddMonoidHom f`. -/
+theorem toL1_eq_toL1AddMonoidHom (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E]
     [IsBoundedSMul 𝕜 E] (f : CompactlySupportedL1 tag E μ) :
     toL1 𝕜 f = toL1AddMonoidHom f :=
-  Lp.ext ((coeFn_toL1 𝕜 f).trans (f.toFun.memLp 1 μ).coeFn_toLp.symm)
+  Lp.ext ((coeFn_toL1 𝕜 f).trans (coeFn_toL1AddMonoidHom f).symm)
 
 /-- The `L¹` seminorm of `f : CompactlySupportedL1 tag E μ` is `‖toL1 𝕜 f‖`. -/
 theorem norm_def (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
@@ -491,6 +497,7 @@ theorem liftCLM_apply (Φ : C_c(X, E) →ₗ[𝕜] B) {C : ℝ}
     liftCLM (tag := tag) (E := E) (μ := μ) Φ C hΦ f = Φ f.toFun :=
   (rfl)
 
+/-- The operator norm of `liftCLM Φ C hΦ` is at most `C` when `0 ≤ C`. -/
 theorem norm_liftCLM_le (Φ : C_c(X, E) →ₗ[𝕜] B) {C : ℝ} (hC : 0 ≤ C)
     (hΦ : ∀ f : C_c(X, E), ‖Φ f‖ ≤ C * ∫ s, ‖f s‖ ∂μ) :
     ‖liftCLM (tag := tag) (E := E) (μ := μ) Φ C hΦ‖ ≤ C :=

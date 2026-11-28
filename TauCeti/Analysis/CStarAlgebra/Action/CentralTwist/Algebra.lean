@@ -15,10 +15,10 @@ For a point-norm continuous action `α` of a topological group `G` on a C⋆-alg
 normalized continuous central multiplier cocycle `ω : CentralCocycle α`, and a measure `μ` on `G`,
 `TwistedConvolutionAlgebra ω μ` is an abbreviation for `CompactlySupportedL1 ω A μ`, wrapping
 `C_c(G, A)` with `ω.convolution μ`, `ω.involution`, and the Bochner `L¹` seminorm `∫ s, ‖f s‖ ∂μ`.
-When `G` is locally compact and Borel and `μ` is left-invariant, `TwistedConvolutionAlgebra ω μ` is
-a complex `StarRing` and `NormedStarGroup` whose uniform completion
-`UniformSpace.Completion (TwistedConvolutionAlgebra ω μ)` is the cocycle-twisted `L¹` Banach
-⋆-algebra `L¹(G, A, α, ω)`. When `G` is weakly locally compact and `μ` is inner regular on
+When `G` is locally compact and Borel and `μ` is left-invariant and finite on compact sets,
+`TwistedConvolutionAlgebra ω μ` is a complex `StarRing` and `NormedStarGroup` whose uniform
+completion `UniformSpace.Completion (TwistedConvolutionAlgebra ω μ)` is the cocycle-twisted `L¹`
+Banach ⋆-algebra `L¹(G, A, α, ω)`. When `G` is weakly locally compact and `μ` is inner regular on
 finite-measure sets, `CompactlySupportedL1.completionEquivL1` identifies this completion
 isometrically with Bochner `Lp A 1 μ`. At `ω = 1`, `untwistStarAlgEquiv` identifies it isometrically
 with `ConvolutionAlgebra α μ`. Without local compactness, `untwistRingEquiv` provides the underlying
@@ -65,12 +65,6 @@ namespace TwistedConvolutionAlgebra
 
 variable {α : CStarAction G A} {ω : CentralCocycle α} {μ : Measure G}
 
-/-- Regard a compactly supported function as an element of the twisted convolution algebra. -/
-abbrev toConv (f : C_c(G, A)) : TwistedConvolutionAlgebra ω μ := CompactlySupportedL1.ofFun f
-
-/-- The compactly supported function underlying an element of the twisted convolution algebra. -/
-abbrev ofConv (f : TwistedConvolutionAlgebra ω μ) : C_c(G, A) := CompactlySupportedL1.toFun f
-
 /-! ### Cocycle-twisted convolution product -/
 
 section Mul
@@ -78,33 +72,33 @@ section Mul
 variable [IsTopologicalGroup G] [OpensMeasurableSpace G] [IsFiniteMeasureOnCompacts μ]
 
 instance : Mul (TwistedConvolutionAlgebra ω μ) where
-  mul f g := toConv (ω.convolution μ f.ofConv g.ofConv)
+  mul f g := CompactlySupportedL1.ofFun (ω.convolution μ f.toFun g.toFun)
 
-@[simp] theorem ofConv_mul (f g : TwistedConvolutionAlgebra ω μ) :
-    (f * g).ofConv = ω.convolution μ f.ofConv g.ofConv := (rfl)
+@[simp] theorem toFun_mul (f g : TwistedConvolutionAlgebra ω μ) :
+    (f * g).toFun = ω.convolution μ f.toFun g.toFun := (rfl)
 
-@[simp] theorem toConv_convolution (f g : C_c(G, A)) :
-    (toConv (ω.convolution μ f g) : TwistedConvolutionAlgebra ω μ) =
-      toConv f * toConv g := (rfl)
+@[simp] theorem ofFun_convolution (f g : C_c(G, A)) :
+    (CompactlySupportedL1.ofFun (ω.convolution μ f g) : TwistedConvolutionAlgebra ω μ) =
+      CompactlySupportedL1.ofFun f * CompactlySupportedL1.ofFun g := (rfl)
 
 instance : NonUnitalNonAssocRing (TwistedConvolutionAlgebra ω μ) :=
-  CompactlySupportedL1.nonUnitalNonAssocRingOf (fun f g => ω.convolution μ f g) ofConv_mul
+  CompactlySupportedL1.nonUnitalNonAssocRingOf (fun f g => ω.convolution μ f g) toFun_mul
     (fun _ _ _ => by simp) (fun _ _ _ => by simp) (fun _ => by simp) (fun _ => by simp)
 
 instance :
     IsScalarTower ℂ (TwistedConvolutionAlgebra ω μ) (TwistedConvolutionAlgebra ω μ) :=
-  CompactlySupportedL1.isScalarTowerOf (fun f g => ω.convolution μ f g) ofConv_mul
+  CompactlySupportedL1.isScalarTowerOf (fun f g => ω.convolution μ f g) toFun_mul
     fun _ _ _ => by simp
 
 instance :
     SMulCommClass ℂ (TwistedConvolutionAlgebra ω μ) (TwistedConvolutionAlgebra ω μ) :=
-  CompactlySupportedL1.smulCommClassOf (fun f g => ω.convolution μ f g) ofConv_mul
+  CompactlySupportedL1.smulCommClassOf (fun f g => ω.convolution μ f g) toFun_mul
     fun _ _ _ => by simp
 
 variable [MeasurableMul G] [μ.IsMulLeftInvariant]
 
 instance instNonUnitalRing : NonUnitalRing (TwistedConvolutionAlgebra ω μ) :=
-  CompactlySupportedL1.nonUnitalRingOf (fun f g => ω.convolution μ f g) ofConv_mul
+  CompactlySupportedL1.nonUnitalRingOf (fun f g => ω.convolution μ f g) toFun_mul
     fun _ _ _ => by simp [CentralCocycle.convolution_assoc]
 
 end Mul
@@ -116,26 +110,27 @@ section Star
 variable [IsTopologicalGroup G] [LocallyCompactSpace G]
 
 instance : Star (TwistedConvolutionAlgebra ω μ) where
-  star f := toConv (ω.involution f.ofConv)
+  star f := CompactlySupportedL1.ofFun (ω.involution f.toFun)
 
-@[simp] theorem ofConv_star (f : TwistedConvolutionAlgebra ω μ) :
-    (star f).ofConv = ω.involution f.ofConv := (rfl)
+@[simp] theorem toFun_star (f : TwistedConvolutionAlgebra ω μ) :
+    (star f).toFun = ω.involution f.toFun := (rfl)
 
-@[simp] theorem toConv_involution (f : C_c(G, A)) :
-    (toConv (ω.involution f) : TwistedConvolutionAlgebra ω μ) = star (toConv f) := (rfl)
+@[simp] theorem ofFun_involution (f : C_c(G, A)) :
+    (CompactlySupportedL1.ofFun (ω.involution f) : TwistedConvolutionAlgebra ω μ) =
+      star (CompactlySupportedL1.ofFun f) := (rfl)
 
 instance : InvolutiveStar (TwistedConvolutionAlgebra ω μ) :=
-  CompactlySupportedL1.involutiveStarOf ω.involution ofConv_star fun _ => by simp
+  CompactlySupportedL1.involutiveStarOf ω.involution toFun_star fun _ => by simp
 
 instance : StarModule ℂ (TwistedConvolutionAlgebra ω μ) :=
-  CompactlySupportedL1.starModuleOf ω.involution ofConv_star fun _ _ => by simp
+  CompactlySupportedL1.starModuleOf ω.involution toFun_star fun _ _ => by simp
 
 variable [OpensMeasurableSpace G] [MeasurableMul G] [IsFiniteMeasureOnCompacts μ]
   [μ.IsMulLeftInvariant]
 
 instance instStarRing : StarRing (TwistedConvolutionAlgebra ω μ) :=
-  CompactlySupportedL1.starRingOf (fun f g => ω.convolution μ f g) ω.involution ofConv_mul
-    ofConv_star CompactlySupportedL1.toFun_add (fun _ _ => by simp) fun _ _ => by
+  CompactlySupportedL1.starRingOf (fun f g => ω.convolution μ f g) ω.involution toFun_mul
+    toFun_star CompactlySupportedL1.toFun_add (fun _ _ => by simp) fun _ _ => by
       simp [CentralCocycle.involution_convolution]
 
 end Star
@@ -153,7 +148,7 @@ variable [IsTopologicalGroup G] [MeasurableMul G] [μ.IsMulLeftInvariant]
 instance : NonUnitalSeminormedRing (TwistedConvolutionAlgebra ω μ) where
   __ : SeminormedAddCommGroup (TwistedConvolutionAlgebra ω μ) := inferInstance
   __ : NonUnitalRing (TwistedConvolutionAlgebra ω μ) := inferInstance
-  norm_mul_le := CompactlySupportedL1.norm_mul_le_of (fun f g => ω.convolution μ f g) ofConv_mul
+  norm_mul_le := CompactlySupportedL1.norm_mul_le_of (fun f g => ω.convolution μ f g) toFun_mul
     (fun f g => ω.integral_norm_convolution_le μ f g)
 
 end Multiplication
@@ -178,10 +173,10 @@ variable [IsFiniteMeasureOnCompacts μ] [IsTopologicalGroup G] [LocallyCompactSp
 /-- For a left-invariant measure, the `ω`-twisted involution is an `L¹` isometry:
 `‖star f‖ = ‖f‖`. -/
 theorem norm_star (f : TwistedConvolutionAlgebra ω μ) : ‖star f‖ = ‖f‖ :=
-  CompactlySupportedL1.norm_star_of ω.involution ofConv_star (ω.integral_norm_involution μ) f
+  CompactlySupportedL1.norm_star_of ω.involution toFun_star (ω.integral_norm_involution μ) f
 
 instance : NormedStarGroup (TwistedConvolutionAlgebra ω μ) :=
-  CompactlySupportedL1.normedStarGroupOf ω.involution ofConv_star (ω.integral_norm_involution μ)
+  CompactlySupportedL1.normedStarGroupOf ω.involution toFun_star (ω.integral_norm_involution μ)
 
 end NormedStar
 
@@ -196,19 +191,19 @@ and isometrically isomorphic as a nonunital ring (and `ℂ`-linearly, via `untwi
 to `ConvolutionAlgebra α μ`, without requiring local compactness. -/
 def untwistRingEquiv :
     TwistedConvolutionAlgebra (1 : CentralCocycle α) μ ≃+* ConvolutionAlgebra α μ where
-  toFun f := ConvolutionAlgebra.toConv f.ofConv
-  invFun f := toConv f.ofConv
+  toFun f := CompactlySupportedL1.ofFun f.toFun
+  invFun f := CompactlySupportedL1.ofFun f.toFun
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := by ext1; simp
   map_mul' _ _ := by ext1; simp
 
-@[simp] theorem ofConv_untwistRingEquiv
+@[simp] theorem toFun_untwistRingEquiv
     (f : TwistedConvolutionAlgebra (1 : CentralCocycle α) μ) :
-    (untwistRingEquiv α μ f).ofConv = f.ofConv := (rfl)
+    (untwistRingEquiv α μ f).toFun = f.toFun := (rfl)
 
-@[simp] theorem ofConv_untwistRingEquiv_symm (f : ConvolutionAlgebra α μ) :
-    ((untwistRingEquiv α μ).symm f).ofConv = f.ofConv := (rfl)
+@[simp] theorem toFun_untwistRingEquiv_symm (f : ConvolutionAlgebra α μ) :
+    ((untwistRingEquiv α μ).symm f).toFun = f.toFun := (rfl)
 
 @[simp] theorem untwistRingEquiv_smul (c : ℂ)
     (f : TwistedConvolutionAlgebra (1 : CentralCocycle α) μ) :
@@ -222,13 +217,11 @@ def untwistRingEquiv :
 @[simp] theorem norm_untwistRingEquiv
     (f : TwistedConvolutionAlgebra (1 : CentralCocycle α) μ) :
     ‖untwistRingEquiv α μ f‖ = ‖f‖ := by
-  rw [CompactlySupportedL1.norm_eq_integral_norm, CompactlySupportedL1.norm_eq_integral_norm]
-  rfl
+  simp [CompactlySupportedL1.norm_eq_integral_norm, toFun_untwistRingEquiv]
 
 @[simp] theorem norm_untwistRingEquiv_symm (f : ConvolutionAlgebra α μ) :
     ‖(untwistRingEquiv α μ).symm f‖ = ‖f‖ := by
-  rw [CompactlySupportedL1.norm_eq_integral_norm, CompactlySupportedL1.norm_eq_integral_norm]
-  rfl
+  simp [CompactlySupportedL1.norm_eq_integral_norm, toFun_untwistRingEquiv_symm]
 
 section LocallyCompact
 
@@ -247,17 +240,21 @@ def untwistStarAlgEquiv :
 @[simp] theorem toRingEquiv_untwistStarAlgEquiv :
     (untwistStarAlgEquiv α μ).toRingEquiv = untwistRingEquiv α μ := (rfl)
 
-@[simp] theorem ofConv_untwistStarAlgEquiv
+@[simp] theorem toFun_untwistStarAlgEquiv
     (f : TwistedConvolutionAlgebra (1 : CentralCocycle α) μ) :
-    (untwistStarAlgEquiv α μ f).ofConv = f.ofConv := (rfl)
+    (untwistStarAlgEquiv α μ f).toFun = f.toFun := (rfl)
 
-@[simp] theorem ofConv_untwistStarAlgEquiv_symm (f : ConvolutionAlgebra α μ) :
-    ((untwistStarAlgEquiv α μ).symm f).ofConv = f.ofConv := (rfl)
+@[simp] theorem toFun_untwistStarAlgEquiv_symm (f : ConvolutionAlgebra α μ) :
+    ((untwistStarAlgEquiv α μ).symm f).toFun = f.toFun := (rfl)
 
 @[simp] theorem norm_untwistStarAlgEquiv
     (f : TwistedConvolutionAlgebra (1 : CentralCocycle α) μ) :
     ‖untwistStarAlgEquiv α μ f‖ = ‖f‖ :=
   norm_untwistRingEquiv α μ f
+
+@[simp] theorem norm_untwistStarAlgEquiv_symm (f : ConvolutionAlgebra α μ) :
+    ‖(untwistStarAlgEquiv α μ).symm f‖ = ‖f‖ :=
+  norm_untwistRingEquiv_symm α μ f
 
 end LocallyCompact
 

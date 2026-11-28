@@ -265,7 +265,7 @@ theorem integratedOperatorBochnerL1_toLp {μ : Measure G} [IsFiniteMeasureOnComp
 theorem integratedOperatorBochnerL1_convolutionAlgebra_toL1 {μ : Measure G}
     [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop] (f : ConvolutionAlgebra α μ) :
     P.integratedOperatorBochnerL1 μ (CompactlySupportedL1.toL1 ℂ f) =
-      P.integratedOperator μ f.ofConv := by
+      P.integratedOperator μ f.toFun := by
   rw [CompactlySupportedL1.toL1_eq_toLp, P.integratedOperatorBochnerL1_toLp]
 
 /-- For the trivial covariant representation attached to `π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)`, the `L¹`

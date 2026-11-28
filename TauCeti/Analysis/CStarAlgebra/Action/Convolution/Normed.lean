@@ -63,7 +63,7 @@ variable [IsTopologicalGroup G] [MeasurableMul G] [μ.IsMulLeftInvariant]
 instance : NonUnitalSeminormedRing (ConvolutionAlgebra α μ) where
   __ : SeminormedAddCommGroup (ConvolutionAlgebra α μ) := inferInstance
   __ : NonUnitalRing (ConvolutionAlgebra α μ) := inferInstance
-  norm_mul_le := CompactlySupportedL1.norm_mul_le_of (fun f g => α.convolution μ f g) ofConv_mul
+  norm_mul_le := CompactlySupportedL1.norm_mul_le_of (fun f g => α.convolution μ f g) toFun_mul
     (fun f g => α.integral_norm_convolution_le μ f g)
 
 end Multiplication
@@ -90,14 +90,14 @@ variable {α : CStarAction G A} {μ : Measure G} [IsFiniteMeasureOnCompacts μ]
 `‖f*‖₁ = ‖f‖₁`: the modular weight in `f*(s) = c(s) • α s (star (f s⁻¹))` is exactly the density
 of the inverted Haar measure. -/
 theorem norm_star (f : ConvolutionAlgebra α μ) : ‖star f‖ = ‖f‖ :=
-  CompactlySupportedL1.norm_star_of α.twistedInvolution ofConv_star
+  CompactlySupportedL1.norm_star_of α.twistedInvolution toFun_star
     (α.integral_norm_twistedInvolution μ) f
 
 /-- For a left-invariant measure the twisted convolution algebra is a seminormed ⋆-algebra. Its
 completion `UniformSpace.Completion (ConvolutionAlgebra α μ)` is the twisted L¹ Banach
 ⋆-algebra. -/
 instance : NormedStarGroup (ConvolutionAlgebra α μ) :=
-  CompactlySupportedL1.normedStarGroupOf α.twistedInvolution ofConv_star
+  CompactlySupportedL1.normedStarGroupOf α.twistedInvolution toFun_star
     (α.integral_norm_twistedInvolution μ)
 
 end Star

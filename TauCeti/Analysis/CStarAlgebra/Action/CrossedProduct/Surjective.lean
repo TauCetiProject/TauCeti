@@ -66,9 +66,9 @@ private theorem mul_mem_range_fullCrossedProductMap_left (φ : Hom α β)
       (continuous_mul_const y)
   | ih g =>
     have hmem (s : G) :
-        (coefficientMultiplier β μ (g.ofConv s) *
+        (coefficientMultiplier β μ (g.toFun s) *
           (groupMultiplier β μ s : 𝓜(ℂ, FullCrossedProduct β μ))).fst y ∈ R := by
-      obtain ⟨a, ha⟩ := hsurj (g.ofConv s)
+      obtain ⟨a, ha⟩ := hsurj (g.toFun s)
       obtain ⟨x, rfl⟩ := (φ.fullCrossedProductMap μ).mem_range.mp hy
       exact (φ.fullCrossedProductMap μ).mem_range.mpr
         ⟨(coefficientMultiplier α μ a).fst

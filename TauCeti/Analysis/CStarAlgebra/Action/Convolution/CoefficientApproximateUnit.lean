@@ -41,29 +41,29 @@ theorem tendsto_coefficientMul {l : Filter A} (hl : l.IsIncreasingApproximateUni
     Tendsto (fun e => coefficientMul e f) l (𝓝 f) := by
   rw [Metric.tendsto_nhds]
   intro ε hε
-  let K := tsupport f.ofConv
-  have hK : IsCompact K := f.ofConv.hasCompactSupport
+  let K := tsupport f.toFun
+  have hK : IsCompact K := f.toFun.hasCompactSupport
   let δ := ε / (μ.real K + 1)
   have hδ : 0 < δ := by positivity
   have he := Metric.tendstoUniformlyOn_iff.1
     (hl.tendstoUniformlyOn_mul_right
-      (f.ofConv.hasCompactSupport.isCompact_range f.ofConv.continuous)) δ hδ
+      (f.toFun.hasCompactSupport.isCompact_range f.toFun.continuous)) δ hδ
   filter_upwards [he] with e he
-  have hb (s : G) : ‖e * f.ofConv s - f.ofConv s‖ ≤ δ := by
+  have hb (s : G) : ‖e * f.toFun s - f.toFun s‖ ≤ δ := by
     simpa only [id_eq, dist_eq_norm, norm_sub_rev] using (he _ (Set.mem_range_self s)).le
-  have hz (s : G) (hs : s ∉ K) : ‖e * f.ofConv s - f.ofConv s‖ = 0 := by
+  have hz (s : G) (hs : s ∉ K) : ‖e * f.toFun s - f.toFun s‖ = 0 := by
     simp [image_eq_zero_of_notMem_tsupport hs]
   rw [dist_eq_norm, CompactlySupportedL1.norm_eq_integral_norm]
-  simp only [CompactlySupportedL1.toFun_sub, ofConv_coefficientMul,
+  simp only [CompactlySupportedL1.toFun_sub, toFun_coefficientMul,
     CompactlySupportedContinuousMap.sub_apply, CompactlySupportedContinuousMap.smul_apply,
     smul_eq_mul]
   calc
-    (∫ s, ‖e * f.ofConv s - f.ofConv s‖ ∂μ)
-        = ∫ s in K, ‖e * f.ofConv s - f.ofConv s‖ ∂μ :=
+    (∫ s, ‖e * f.toFun s - f.toFun s‖ ∂μ)
+        = ∫ s in K, ‖e * f.toFun s - f.toFun s‖ ∂μ :=
       (setIntegral_eq_integral_of_forall_compl_eq_zero hz).symm
     _ ≤ δ * μ.real K := by
       have h := norm_setIntegral_le_of_norm_le_const
-        (f := fun s => ‖e * f.ofConv s - f.ofConv s‖) (hK.measure_lt_top (μ := μ))
+        (f := fun s => ‖e * f.toFun s - f.toFun s‖) (hK.measure_lt_top (μ := μ))
         (fun s (_ : s ∈ K) => by simpa only [norm_norm] using hb s)
       rwa [Real.norm_of_nonneg (integral_nonneg fun _ => norm_nonneg _)] at h
     _ < ε := by

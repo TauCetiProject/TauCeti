@@ -200,8 +200,8 @@ with integrating `P`. -/
 theorem integratedOperator_idealExtension_convolutionMap
     [OpensMeasurableSpace G] [IsFiniteMeasureOnCompacts μ]
     (f : ConvolutionAlgebra hI.restrict μ) :
-    (P.idealExtension hmul).integratedOperator μ (hI.subtypeHom.convolutionMap μ f).ofConv =
-      P.integratedOperator μ f.ofConv := by
+    (P.idealExtension hmul).integratedOperator μ (hI.subtypeHom.convolutionMap μ f).toFun =
+      P.integratedOperator μ f.toFun := by
   rw [← (P.idealExtension hmul).integratedOperator_comap hI.subtypeHom μ f,
     P.comap_idealExtension_subtypeHom hmul]
 

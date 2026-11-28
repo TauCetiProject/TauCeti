@@ -48,18 +48,20 @@ variable {G A H : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G]
 /-- The integrated form as a continuous linear map on the convolution algebra with its L¹
 seminorm. -/
 def integratedOperatorCLM : ConvolutionAlgebra α μ →L[ℂ] (H →L[ℂ] H) :=
-  CompactlySupportedL1.liftCLM (P.integratedOperator μ) 1 fun f => by
-    simpa only [one_mul] using P.norm_integratedOperator_le μ f
+  P.coefficient.integratedOperatorCLM α P.continuous_orbit P.isUnitary.exists_norm_le μ
+    P.isUnitary.norm_le_one
 
 @[simp]
 theorem integratedOperatorCLM_apply (f : ConvolutionAlgebra α μ) :
-    P.integratedOperatorCLM μ f = P.integratedOperator μ f.ofConv :=
-  CompactlySupportedL1.liftCLM_apply (P.integratedOperator μ) _ f
+    P.integratedOperatorCLM μ f = P.integratedOperator μ f.toFun := by
+  rw [integratedOperatorCLM, NonUnitalStarAlgHom.integratedOperatorCLM_apply,
+    P.integratedOperator_eq_coefficient]
 
 /-- The operator norm of the integrated map is at most one, including zero representation spaces
 and measures without full support. -/
 theorem norm_integratedOperatorCLM_le : ‖P.integratedOperatorCLM μ‖ ≤ 1 :=
-  CompactlySupportedL1.norm_liftCLM_le (P.integratedOperator μ) zero_le_one _
+  P.coefficient.norm_integratedOperatorCLM_le α P.continuous_orbit P.isUnitary.exists_norm_le μ
+    P.isUnitary.norm_le_one
 
 section Multiplication
 
@@ -72,7 +74,7 @@ def integratedNonUnitalAlgHom : ConvolutionAlgebra α μ →ₙₐ[ℂ] (H →L[
 
 @[simp]
 theorem integratedNonUnitalAlgHom_apply (f : ConvolutionAlgebra α μ) :
-    P.integratedNonUnitalAlgHom μ f = P.integratedOperator μ f.ofConv := by
+    P.integratedNonUnitalAlgHom μ f = P.integratedOperator μ f.toFun := by
   rw [integratedNonUnitalAlgHom, ContinuousLinearMap.toNonUnitalAlgHomOfMul_apply,
     integratedOperatorCLM_apply]
 
@@ -85,15 +87,14 @@ theorem continuous_integratedNonUnitalAlgHom : Continuous (P.integratedNonUnital
 `integratedNonUnitalAlgHom` to the completion of the convolution algebra in its L¹ seminorm. -/
 def integratedOperatorL1 :
     Completion (ConvolutionAlgebra α μ) →ₙₐ[ℂ] (H →L[ℂ] H) :=
-  ((P.integratedOperatorCLM μ).toNonUnitalAlgHomOfMul fun f g => by simp).fromCompletion
-    ((P.integratedOperatorCLM μ).continuous_toNonUnitalAlgHomOfMul _)
+  (P.integratedNonUnitalAlgHom μ).fromCompletion (P.continuous_integratedNonUnitalAlgHom μ)
 
 /-- On compactly supported coefficients the L¹ integrated form is the integrated form. -/
 @[simp]
 theorem integratedOperatorL1_coe (f : ConvolutionAlgebra α μ) :
-    P.integratedOperatorL1 μ f = P.integratedOperator μ f.ofConv := by
+    P.integratedOperatorL1 μ f = P.integratedOperator μ f.toFun := by
   rw [integratedOperatorL1, NonUnitalAlgHom.fromCompletion_apply_coe,
-    ContinuousLinearMap.toNonUnitalAlgHomOfMul_apply, integratedOperatorCLM_apply]
+    integratedNonUnitalAlgHom_apply]
 
 /-- The L¹ integrated form is continuous. -/
 @[fun_prop]
@@ -103,12 +104,14 @@ theorem continuous_integratedOperatorL1 : Continuous (P.integratedOperatorL1 μ)
 /-- The L¹ integrated form is a contraction: `‖(π ⋊ U)(x)‖ ≤ ‖x‖₁` on the twisted L¹ algebra. -/
 theorem norm_integratedOperatorL1_le (x : Completion (ConvolutionAlgebra α μ)) :
     ‖P.integratedOperatorL1 μ x‖ ≤ ‖x‖ := by
-  have hle : ‖(P.integratedOperatorCLM μ).fromCompletion‖ ≤ 1 := by
-    rw [ContinuousLinearMap.norm_fromCompletion]
-    exact P.norm_integratedOperatorCLM_le μ
-  simpa only [integratedOperatorL1, NonUnitalAlgHom.coe_fromCompletion,
-    ContinuousLinearMap.coe_toNonUnitalAlgHomOfMul, ContinuousLinearMap.coe_fromCompletion] using
-    ((P.integratedOperatorCLM μ).fromCompletion.le_of_opNorm_le hle x).trans_eq (one_mul _)
+  rw [integratedOperatorL1]
+  simpa only [one_mul] using
+    (P.integratedNonUnitalAlgHom μ).norm_fromCompletion_le
+      (P.continuous_integratedNonUnitalAlgHom μ) (C := 1) (fun a => by
+        simpa only [integratedNonUnitalAlgHom, ContinuousLinearMap.toNonUnitalAlgHomOfMul_apply,
+          one_mul] using
+          (P.integratedOperatorCLM μ).le_of_opNorm_le (P.norm_integratedOperatorCLM_le μ) a)
+      x
 
 end Multiplication
 

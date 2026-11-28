@@ -136,7 +136,7 @@ theorem dense_span_range_groupUnitary :
         Set (FullCrossedProduct (trivial : CStarAction G ℂ) Measure.count)) := by
   refine (denseRange_of (α := (trivial : CStarAction G ℂ)) (μ := Measure.count)).mono ?_
   rintro _ ⟨f, rfl⟩
-  rw [← sum_single f (finite_support_ofConv f).coe_toFinset.ge, map_sum]
+  rw [← sum_single f (finite_support_toFun f).coe_toFinset.ge, map_sum]
   refine Submodule.sum_mem _ fun g _ => ?_
   rw [of_single_eq_smul_groupUnitary]
   exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨g, rfl⟩)
@@ -166,7 +166,7 @@ private theorem integrable_smul_unitary (u : G →* unitary B) (f : C_c(G, ℂ))
 unital C⋆-algebra, as a linear map on the convolution algebra. -/
 private def integralUnitary (u : G →* unitary B) :
     ConvolutionAlgebra (trivial : CStarAction G ℂ) Measure.count →ₗ[ℂ] B where
-  toFun f := ∫ g, f.ofConv g • (u g : B) ∂Measure.count
+  toFun f := ∫ g, f.toFun g • (u g : B) ∂Measure.count
   map_add' f h := by
     simp only [CompactlySupportedL1.toFun_add, CompactlySupportedContinuousMap.coe_add,
       Pi.add_apply, add_smul]
@@ -178,13 +178,13 @@ private def integralUnitary (u : G →* unitary B) :
 
 private theorem integralUnitary_apply (u : G →* unitary B)
     (f : ConvolutionAlgebra (trivial : CStarAction G ℂ) Measure.count) :
-    integralUnitary u f = ∫ g, f.ofConv g • (u g : B) ∂Measure.count :=
+    integralUnitary u f = ∫ g, f.toFun g • (u g : B) ∂Measure.count :=
   rfl
 
 private theorem integralUnitary_single (u : G →* unitary B) (g : G) (c : ℂ) :
     integralUnitary u (single g c) = c • (u g : B) := by
   rw [integralUnitary_apply, integral_count_eq_single g fun r hr => by
-    rw [ofConv_single_of_ne hr, zero_smul], ofConv_single_same]
+    rw [toFun_single_of_ne hr, zero_smul], toFun_single_same]
 
 /-- The covariant pair for the trivial action on `ℂ` given by a representation `π` of `B` and a
 unitary representation `u` of `G` in `B`: scalars act by scalar multiplication. -/
@@ -273,7 +273,7 @@ private def liftUnitaryAux (u : G →* unitary B) :
 
 private theorem liftUnitaryAux_of (u : G →* unitary B)
     (f : ConvolutionAlgebra (trivial : CStarAction G ℂ) Measure.count) :
-    liftUnitaryAux u (of trivial Measure.count f) = ∫ g, f.ofConv g • (u g : B) ∂Measure.count :=
+    liftUnitaryAux u (of trivial Measure.count f) = ∫ g, f.toFun g • (u g : B) ∂Measure.count :=
   lift_of _ _ f
 
 private theorem liftUnitaryAux_groupUnitary (u : G →* unitary B) (g : G) :
@@ -303,7 +303,7 @@ def liftUnitary :
 theorem liftUnitary_of (u : G →* unitary B)
     (f : ConvolutionAlgebra (trivial : CStarAction G ℂ) Measure.count) :
     liftUnitary G B u (of trivial Measure.count f) =
-      ∫ g, f.ofConv g • (u g : B) ∂Measure.count :=
+      ∫ g, f.toFun g • (u g : B) ∂Measure.count :=
   liftUnitaryAux_of u f
 
 /-- The ⋆-homomorphism integrating `u` sends each canonical unitary `groupUnitary g` to `u g`. -/

@@ -393,8 +393,8 @@ theorem extendToMultiplier_integratedMultiplier {ψ : B →⋆ₙₐ[ℂ] 𝓜(�
 theorem integratedMultiplier_comap [LocallyCompactSpace G] {A' : Type*}
     [NonUnitalCStarAlgebra A'] {α' : CStarAction G A'} (φ : Hom α' α)
     (f : ConvolutionAlgebra α' μ) :
-    (M.comap φ).integratedMultiplier μ f.ofConv =
-      M.integratedMultiplier μ (φ.convolutionMap μ f).ofConv :=
+    (M.comap φ).integratedMultiplier μ f.toFun =
+      M.integratedMultiplier μ (φ.convolutionMap μ f).toFun :=
   DoubleCentralizer.eq_iff_forall_multiplierExtension_eq.2 fun _ _ _ _ ρ hρ => by
     simpa using (M.toCovariantRepresentation hρ).integratedOperator_comap φ μ f
 
@@ -532,7 +532,7 @@ theorem integratedMultiplier_twistedInvolution (f : C_c(G, A)) :
 
 /-- The strict integrated form of `M` as a ⋆-homomorphism on `ConvolutionAlgebra α μ`. -/
 def integratedStarAlgHom : ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] 𝓜(ℂ, B) where
-  toFun f := M.integratedMultiplier μ f.ofConv
+  toFun f := M.integratedMultiplier μ f.toFun
   map_zero' := by simp
   map_add' _ _ := by simp
   map_mul' _ _ := by simp
@@ -541,7 +541,7 @@ def integratedStarAlgHom : ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] 𝓜(ℂ, 
 
 @[simp]
 theorem integratedStarAlgHom_apply (f : ConvolutionAlgebra α μ) :
-    M.integratedStarAlgHom μ f = M.integratedMultiplier μ f.ofConv := (rfl)
+    M.integratedStarAlgHom μ f = M.integratedMultiplier μ f.toFun := (rfl)
 
 theorem multiplierExtension_integratedStarAlgHom {H : Type*} [NormedAddCommGroup H]
     [InnerProductSpace ℂ H] [CompleteSpace H] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
@@ -552,7 +552,7 @@ theorem multiplierExtension_integratedStarAlgHom {H : Type*} [NormedAddCommGroup
 /-- The integrated ⋆-homomorphism is contractive for the L¹ norm on `ConvolutionAlgebra α μ`. -/
 theorem norm_integratedStarAlgHom_le_norm (f : ConvolutionAlgebra α μ) :
     ‖M.integratedStarAlgHom μ f‖ ≤ ‖f‖ := by
-  simpa [CompactlySupportedL1.norm_eq_integral_norm] using M.norm_integratedMultiplier_le μ f.ofConv
+  simpa [CompactlySupportedL1.norm_eq_integral_norm] using M.norm_integratedMultiplier_le μ f.toFun
 
 /-- `M.integratedStarAlgHom μ` is bounded by `ConvolutionAlgebra.fullSeminorm`. -/
 theorem norm_integratedStarAlgHom_le_fullSeminorm (f : ConvolutionAlgebra α μ) :
@@ -579,7 +579,7 @@ theorem eq_of_integratedStarAlgHom_eq {N : CovariantMultiplierHom α B}
     (hM : M.coefficient.IsMultiplierNondegenerate)
     (h : M.integratedStarAlgHom μ = N.integratedStarAlgHom μ) : M = N :=
   eq_of_integratedMultiplier_eq μ hM fun f => by
-    simpa using congr($h (ConvolutionAlgebra.toConv f))
+    simpa using congr($h (CompactlySupportedL1.ofFun f))
 
 end Haar
 

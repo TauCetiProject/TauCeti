@@ -84,14 +84,14 @@ theorem coe_of (f : ConvolutionAlgebra α μ) :
 
 /-- The regular norm of a compactly supported coefficient is its integrated operator norm. -/
 theorem norm_of (f : ConvolutionAlgebra α μ) :
-    ‖of α ρ μ f‖ = ‖(CovariantRepresentation.regular α ρ μ).integratedOperator μ f.ofConv‖ := by
+    ‖of α ρ μ f‖ = ‖(CovariantRepresentation.regular α ρ μ).integratedOperator μ f.toFun‖ := by
   rw [← (CovariantRepresentation.regular α ρ μ).integratedStarAlgHom_apply]
   rfl
 
 /-- The regular norm is bounded by the L¹ norm. -/
 theorem norm_of_le (f : ConvolutionAlgebra α μ) : ‖of α ρ μ f‖ ≤ ‖f‖ := by
   rw [norm_of, CompactlySupportedL1.norm_eq_integral_norm]
-  exact (CovariantRepresentation.regular α ρ μ).norm_integratedOperator_le μ f.ofConv
+  exact (CovariantRepresentation.regular α ρ μ).norm_integratedOperator_le μ f.toFun
 
 /-- The compact-support inclusion is continuous for the L¹ topology. -/
 @[fun_prop]

@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Group.ModularCharacter
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import Mathlib.MeasureTheory.Integral.CompactlySupported
+public import TauCeti.MeasureTheory.Function.Lp.CompactlySupportedL1
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Group.ModularCharacter
@@ -57,6 +58,8 @@ construction.
   against a left-invariant measure.
 * `NonUnitalStarAlgHom.integratedOperator_eq_star`: adjoint identity for coefficients satisfying a
   pointwise modular-weighted adjoint relation.
+* `NonUnitalStarAlgHom.integratedOperatorCLM`: contractive continuous linear map on
+  `CompactlySupportedL1 tag A μ` when `‖U x‖ ≤ 1` for all `x`.
 
 ## References
 
@@ -305,5 +308,35 @@ theorem integratedOperator_eq_star (hU : ∀ v : H, Continuous fun g => U g v)
         ((π.hasCompactSupport_integrand U f w).comp_left (inner_zero_right v))
 
 end GroupStar
+
+section CompactlySupportedL1
+
+open TauCeti UniformSpace
+
+variable {ι : Type*} (tag : ι) {X A H : Type*} [TopologicalSpace X] [MeasurableSpace X]
+  [OpensMeasurableSpace X] [NonUnitalCStarAlgebra A] [NormedAddCommGroup H]
+  [InnerProductSpace ℂ H] [CompleteSpace H] (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) {U : X → H →L[ℂ] H}
+  (hU : ∀ v : H, Continuous fun x => U x v) (hbdd : ∃ C, ∀ x, ‖U x‖ ≤ C)
+  (μ : Measure X) [IsFiniteMeasureOnCompacts μ] (hC1 : ∀ x, ‖U x‖ ≤ 1)
+
+/-- Bundle `π.integratedOperator U hU hbdd μ` as a contractive continuous linear map on
+`CompactlySupportedL1 tag A μ` when `‖U x‖ ≤ 1` for every `x`. -/
+def integratedOperatorCLM : CompactlySupportedL1 tag A μ →L[ℂ] (H →L[ℂ] H) :=
+  CompactlySupportedL1.liftCLM (π.integratedOperator U hU hbdd μ) 1 fun f => by
+    simpa only [one_mul] using π.norm_integratedOperator_le hU hbdd μ hC1 f
+
+variable {π tag hU hbdd μ hC1} in
+/-- Evaluating `integratedOperatorCLM` on `f` computes `π.integratedOperator` on `f.toFun`. -/
+@[simp]
+theorem integratedOperatorCLM_apply (f : CompactlySupportedL1 tag A μ) :
+    π.integratedOperatorCLM tag hU hbdd μ hC1 f = π.integratedOperator U hU hbdd μ f.toFun :=
+  CompactlySupportedL1.liftCLM_apply (π.integratedOperator U hU hbdd μ) _ f
+
+/-- The operator norm of `integratedOperatorCLM` is at most `1`. -/
+theorem norm_integratedOperatorCLM_le :
+    ‖π.integratedOperatorCLM tag hU hbdd μ hC1‖ ≤ 1 :=
+  CompactlySupportedL1.norm_liftCLM_le (π.integratedOperator U hU hbdd μ) zero_le_one _
+
+end CompactlySupportedL1
 
 end NonUnitalStarAlgHom

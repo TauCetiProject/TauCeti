@@ -96,6 +96,7 @@ space `V` and `c < s`, then `ContinuousLinearMap.denseRange_comp` and rescaling 
   identities and composites.
 * `UniformSpace.Completion.completionSeparationQuotientₗᵢ`: the canonical linear isometric
   equivalence `Completion (SeparationQuotient E) ≃ₗᵢ[𝕜] Completion E` for a seminormed `𝕜`-module.
+* `NonUnitalAlgHom.norm_fromCompletion_le`: linear norm bounds on `E` pass to `f.fromCompletion`.
 -/
 
 public section
@@ -524,3 +525,23 @@ variable {𝕜 E}
   (completionSeparationQuotientₗᵢ 𝕜 E).symm.injective <| by simp
 
 end UniformSpace.Completion
+
+namespace NonUnitalAlgHom
+
+/-- If a continuous semilinear nonunital algebra homomorphism `f : E →ₛₙₐ[φ] F` into a complete
+Hausdorff space satisfies `‖f a‖ ≤ C * ‖a‖` on `E`, then its extension `f.fromCompletion hf`
+satisfies the same bound on `UniformSpace.Completion E`. -/
+theorem norm_fromCompletion_le {R S E F : Type*} [Monoid R] [Monoid S] {φ : R →* S}
+    [NonUnitalSeminormedRing E] [DistribMulAction R E] [UniformContinuousConstSMul R E]
+    [NonUnitalSeminormedRing F] [DistribMulAction S F] [ContinuousConstSMul S F]
+    [T0Space F] [CompleteSpace F]
+    (f : E →ₛₙₐ[φ] F) (hf : Continuous f) {C : ℝ} (hC : ∀ a : E, ‖f a‖ ≤ C * ‖a‖)
+    (x : Completion E) :
+    ‖f.fromCompletion hf x‖ ≤ C * ‖x‖ := by
+  induction x using Completion.induction_on with
+  | hp =>
+    exact isClosed_le (continuous_norm.comp (continuous_fromCompletion f hf))
+      (continuous_const.mul continuous_norm)
+  | ih a => simpa only [fromCompletion_apply_coe, Completion.norm_coe] using hC a
+
+end NonUnitalAlgHom

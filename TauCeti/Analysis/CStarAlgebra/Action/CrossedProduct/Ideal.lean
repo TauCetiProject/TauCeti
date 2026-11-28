@@ -94,7 +94,7 @@ theorem of_convolutionMap_mem_range_fullCrossedProductMap_subtypeHom
 /-- Any compactly supported function on `G` taking values in `I` maps under `FullCrossedProduct.of`
 into the range of `hI.subtypeHom.fullCrossedProductMap μ`. -/
 theorem of_mem_range_fullCrossedProductMap_subtypeHom_of_forall_mem
-    {f : ConvolutionAlgebra α μ} (hf : ∀ s : G, f.ofConv s ∈ I) :
+    {f : ConvolutionAlgebra α μ} (hf : ∀ s : G, f.toFun s ∈ I) :
     of α μ f ∈ (hI.subtypeHom.fullCrossedProductMap μ).range := by
   obtain ⟨g, rfl⟩ := (hI.subtypeHom.convolutionMap μ).mem_range.mp <|
     (hI.mem_range_convolutionMap_subtypeHom_iff μ).mpr hf

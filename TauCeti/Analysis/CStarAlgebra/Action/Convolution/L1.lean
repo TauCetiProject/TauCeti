@@ -246,7 +246,7 @@ theorem toL1_translateLIE [OpensMeasurableSpace G] [IsTopologicalGroup G] [Measu
     CompactlySupportedL1.toL1 ℂ (translateLIE r f) =
       α.translateLp μ 1 r (CompactlySupportedL1.toL1 ℂ f) := by
   rw [CompactlySupportedL1.toL1_eq_toLp ℂ, CompactlySupportedL1.toL1_eq_toLp ℂ]
-  simpa only [ofConv_translateLIE] using (α.translateLp_toLp (μ := μ) r f.ofConv).symm
+  simpa only [toFun_translateLIE] using (α.translateLp_toLp (μ := μ) r f.toFun).symm
 
 variable [R1Space G] [WeaklyLocallyCompactSpace G] [BorelSpace G]
   [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop]
@@ -482,7 +482,7 @@ theorem ConvolutionAlgebra.toL1_mul (f g : ConvolutionAlgebra α μ) :
       α.convolutionL1 μ (CompactlySupportedL1.toL1 ℂ f) (CompactlySupportedL1.toL1 ℂ g) := by
   rw [CompactlySupportedL1.toL1_eq_toLp ℂ, CompactlySupportedL1.toL1_eq_toLp ℂ,
     CompactlySupportedL1.toL1_eq_toLp ℂ]
-  simpa only [ofConv_mul] using (α.convolutionL1_toLp (μ := μ) f.ofConv g.ofConv).symm
+  simpa only [toFun_mul] using (α.convolutionL1_toLp (μ := μ) f.toFun g.toFun).symm
 
 /-- Pointwise left coefficient multiplication is a left multiplier of twisted `L¹` convolution. -/
 theorem compLp_mul_convolutionL1 (a : A) (f g : Lp A 1 μ) :
@@ -651,8 +651,8 @@ theorem twistedInvolutionL1_toLp (f : C_c(G, A)) :
     α.twistedInvolutionL1 μ (CompactlySupportedContinuousMap.toLp 1 μ ℂ f) =
       CompactlySupportedContinuousMap.toLp 1 μ ℂ (α.twistedInvolution f) := by
   simpa only [CompactlySupportedL1.toL1_eq_toLp, CompactlySupportedL1.toFun_ofFun,
-    ConvolutionAlgebra.ofConv_star] using
-    (ConvolutionAlgebra.toL1_star (α := α) (μ := μ) (ConvolutionAlgebra.toConv f)).symm
+    ConvolutionAlgebra.toFun_star] using
+    (ConvolutionAlgebra.toL1_star (α := α) (μ := μ) (CompactlySupportedL1.ofFun f)).symm
 
 @[simp]
 theorem twistedInvolutionL1_twistedInvolutionL1 (f : Lp A 1 μ) :
@@ -742,8 +742,8 @@ private theorem twistedInvolutionL1_toL1 (g : ConvolutionAlgebra α μ) :
     with s h₁ h₂ h₃ h₄ h₅
   rw [h₁, h₂, h₃, Pi.star_apply, h₄, h₅]
   simp only [ENNReal.toReal_one, inv_one, Real.rpow_one, star_smul, star_trivial]
-  have hstar : (star g).ofConv s = α.twistedInvolution g.ofConv s :=
-    congrArg (fun φ : C_c(G, A) => φ s) (ConvolutionAlgebra.ofConv_star g)
+  have hstar : (star g).toFun s = α.twistedInvolution g.toFun s :=
+    congrArg (fun φ : C_c(G, A) => φ s) (ConvolutionAlgebra.toFun_star g)
   rw [twistedInvolution_apply, ← map_smul, Complex.coe_smul] at hstar
   exact hstar
 

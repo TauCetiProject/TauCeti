@@ -84,8 +84,8 @@ variable [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G]
 integration. -/
 theorem integratedOperator_comap (P : CovariantRepresentation β H) (φ : Hom α β)
     (μ : Measure G) [IsFiniteMeasureOnCompacts μ] (f : ConvolutionAlgebra α μ) :
-    (P.comap φ).integratedOperator μ f.ofConv =
-      P.integratedOperator μ (φ.convolutionMap μ f).ofConv := by
+    (P.comap φ).integratedOperator μ f.toFun =
+      P.integratedOperator μ (φ.convolutionMap μ f).toFun := by
   ext v
   simp only [integratedOperator_apply, comap_coefficient, comap_group,
     NonUnitalStarAlgHom.comp_apply, Hom.coe_toNonUnitalStarAlgHom, Hom.convolutionMap_apply]

@@ -46,10 +46,10 @@ variable {G A B C : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 theorem norm_convolutionMap_le (f : ConvolutionAlgebra α μ) :
     ‖φ.convolutionMap μ f‖ ≤ ‖f‖ := by
   simp only [CompactlySupportedL1.norm_eq_integral_norm]
-  refine integral_mono (φ.convolutionMap μ f).ofConv.integrable.norm f.ofConv.integrable.norm ?_
+  refine integral_mono (φ.convolutionMap μ f).toFun.integrable.norm f.toFun.integrable.norm ?_
   intro s
   simpa only [convolutionMap_apply] using
-    NonUnitalStarAlgHom.norm_apply_le φ (f.ofConv s)
+    NonUnitalStarAlgHom.norm_apply_le φ (f.toFun s)
 
 /-- The compact-support convolution map as a continuous linear map for the L¹ norms. -/
 def convolutionMapCLM : ConvolutionAlgebra α μ →L[ℂ] ConvolutionAlgebra β μ :=
