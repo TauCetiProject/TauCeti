@@ -63,7 +63,8 @@ product of the classes of the matrices `(u, 1)` and `(1, v)`.
   with invertible diagonal blocks `u` and `v` has class `[u] + [v]`.
 * `TauCeti.AlgebraicK1.mkOfFintype_eq_one_iff`: `[u]` is trivial exactly when `u ⊕ 1` is
   elementary for an identity block of some size.
-* `TauCeti.AlgebraicK1.mkOfFintype_diagGL`, `TauCeti.AlgebraicK1.mkOfFintype_scalar`: the class of
+* `TauCeti.AlgebraicK1.mkOfFintype_diagGL_mulSingle`,
+  `TauCeti.AlgebraicK1.mkOfFintype_diagGL`, `TauCeti.AlgebraicK1.mkOfFintype_scalar`: the class of
   an invertible diagonal matrix is the sum of the classes of its diagonal entries.
 * `TauCeti.AlgebraicK1.ofUnits_eq_ofUnits_of_coe_eq_one_add_mul`: `[1 + ab] = [1 + ba]`.
 * `TauCeti.AlgebraicK1.ofUnits_eq_one_of_coe_eq_one_add_mul`: `[1 + ab] = 0` when `ba = 0`.
@@ -275,7 +276,7 @@ theorem mkOfFintype_eq_mul_of_coe_eq_fromBlocks_zero₁₂ {g : GL (ι ⊕ κ) A
 
 /-- The class of the diagonal matrix with one diagonal entry `a` and all others `1` is the class
 of the unit `a`. -/
-private theorem mkOfFintype_diagGL_mulSingle (i : ι) (a : Aˣ) :
+theorem mkOfFintype_diagGL_mulSingle (i : ι) (a : Aˣ) :
     mkOfFintype A ι (diagGL (Pi.mulSingle i a)) = ofUnits A a := by
   have hblock : (Equiv.sumCompl (· = i)).symm.reindexGL A (diagGL (Pi.mulSingle i a)) =
       fromBlocksGL (GeneralLinearGroup.scalar {j // j = i} a, 1) := by
