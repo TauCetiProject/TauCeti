@@ -52,6 +52,9 @@ variable [IsNoetherianRing A]
 
 local instance : HasExt.{w} (FGModuleCat.{w} A) := hasExt_of_enoughProjectives _
 
+-- The full-subcategory `HasForget₂` instance defines `forget₂` as the inclusion `P.ι`, so the
+-- instances of `(ModuleCat.isFG A).ι` transfer by `inferInstanceAs`. The adapters stay local to
+-- avoid overlapping Mathlib's `forget₂` instances for commutative rings.
 local instance : (forget₂ (FGModuleCat.{w} A) (ModuleCat.{w} A)).Additive :=
   inferInstanceAs ((ModuleCat.isFG.{w} A).ι.Additive)
 
@@ -62,6 +65,7 @@ noncomputable def ext1LinearEquiv (M N : FGModuleCat.{w} A) :
     (ExactStructure.abelian _).Ext1 M N ≃ₗ[R]
       (ExactStructure.abelian _).Ext1 M.obj N.obj := by
   let F := forget₂ (FGModuleCat.{w} A) (ModuleCat.{w} A)
+  -- As for additivity above: `forget₂` is the full-subcategory inclusion.
   letI : F.Linear R := inferInstanceAs ((ModuleCat.isFG.{w} A).ι.Linear R)
   letI : F.PreservesProjectiveObjects :=
     ⟨fun {X} hX ↦ (projective_obj_iff X).2 hX⟩

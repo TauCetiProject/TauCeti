@@ -133,6 +133,16 @@ theorem toExt_smul {R : Type*} [Ring R] [Linear R C] (r : R) (ξ : E.Ext1 Z X) :
     (r • ξ).toExt = r • ξ.toExt := by
   rw [smul_eq_pushout, toExt_pushout, Ext.mk₀_smul, Ext.comp_smul, Ext.comp_mk₀_id]
 
+/-- The comparison with derived `Ext¹` preserves negation. -/
+@[simp]
+theorem toExt_neg (ξ : E.Ext1 Z X) : (-ξ).toExt = -ξ.toExt := by
+  rw [neg_eq_pushout, toExt_pushout, Ext.mk₀_neg, Ext.comp_neg, Ext.comp_mk₀_id]
+
+/-- The comparison with derived `Ext¹` preserves subtraction. -/
+@[simp]
+theorem toExt_sub (ξ η : E.Ext1 Z X) : (ξ - η).toExt = ξ.toExt - η.toExt := by
+  rw [sub_eq_add_neg, toExt_add, toExt_neg, sub_eq_add_neg]
+
 /-- Every derived degree-one class out of the end of a projective presentation is represented
 by a Yoneda extension for the canonical abelian exact structure. -/
 theorem toExt_surjective_of_shortExact {S : ShortComplex C}
