@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.HomotopyCategory.Bifunctor
 public import TauCeti.Algebra.Homology.Monoidal.KFlat.Tensor
 public import TauCeti.CategoryTheory.Localization.DerivabilityStructure.Derives
+public import TauCeti.CategoryTheory.Functor.Derived.LeftDerivedTwo
 public import Mathlib.Algebra.Homology.DerivedCategory.Basic
 public import Mathlib.CategoryTheory.Localization.DerivabilityStructure.Product
 
@@ -52,10 +53,24 @@ variables (`CategoryTheory.Functor.hasLeftDerivedFunctor₂_tensor_of_inverts`).
   `TauCeti.leftDerivedTensorObjIsoKFlatTensor_naturality`), on the homotopy category the functors
   `LF.obj (DerivedCategory.Q.obj P)` and `LF.flip.obj (DerivedCategory.Q.obj P)` are the
   totalized tensor products with `P` on the left and on the right
-  (`TauCeti.qhCompObjIsoOfIsKFlat`, `TauCeti.qhCompFlipObjIsoOfIsKFlat`), and derived tensoring
+  (`TauCeti.qhCompObjIsoOfIsKFlat`, `TauCeti.qhCompFlipObjIsoOfIsKFlat`), derived tensoring
   with the unit complex `𝟙_ (CochainComplex C ℤ)` on either side is naturally isomorphic to the
   identity
-  (`TauCeti.leftDerivedTensorLeftUnitor`, `TauCeti.leftDerivedTensorRightUnitor`).
+  (`TauCeti.leftDerivedTensorLeftUnitor`, `TauCeti.leftDerivedTensorRightUnitor`), and the
+  Koszul braiding (`TauCeti.curriedTensorQBraidingFlipIso`) induces a natural symmetry isomorphism
+  `LF.flip ≅ LF` (`TauCeti.leftDerivedTensorFlipIso`) compatible with the counit
+  (`TauCeti.leftDerivedTensorFlipIso_hom_fac`, `TauCeti.leftDerivedTensorFlipIso_inv_fac`,
+  `TauCeti.leftDerivedTensorFlipIso_hom_fac_app_app`,
+  `TauCeti.leftDerivedTensorFlipIso_inv_fac_app_app`,
+  `TauCeti.leftDerivedTensorFlipIso_app_app_Q`, `TauCeti.leftDerivedTensorFlipIso_hom_app_app_Q`,
+  and `TauCeti.leftDerivedTensorFlipIso_inv_app_app_Q`) and the derived unitors
+  (`TauCeti.leftDerivedTensorFlipIso_hom_app_comp_leftUnitor`,
+  `TauCeti.leftDerivedTensorFlipIso_hom_app_app_comp_leftUnitor`,
+  `TauCeti.flip_leftDerivedTensorFlipIso_hom_app_comp_rightUnitor`, and
+  `TauCeti.leftDerivedTensorFlipIso_hom_app_app_comp_rightUnitor`), which is
+  involutive over symmetric coefficients (`TauCeti.flip_leftDerivedTensorFlipIso_hom_comp`,
+  `TauCeti.leftDerivedTensorFlipIso_inv_app_app`,
+  `TauCeti.leftDerivedTensorFlipIso_hom_app_app_comp`).
 
 Bounded-above complexes of flat objects are K-flat, so on either side they compute the derived
 tensor product on complex models as the ordinary totalized tensor product followed by
@@ -66,7 +81,17 @@ and
 `CategoryTheory.Functor.isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_boundedAbove_flat_right`).
 
 For the canonical bifunctor `TauCeti.derivedTensor C`, the unit `𝟙_ C` placed in degree `0` is a
-unit on both sides (`TauCeti.derivedTensorLeftUnitor`, `TauCeti.derivedTensorRightUnitor`).
+unit on both sides (`TauCeti.derivedTensorLeftUnitor`, `TauCeti.derivedTensorRightUnitor`), and
+`TauCeti.derivedTensorFlipIso C` provides the canonical symmetry isomorphism
+`(derivedTensor C).flip ≅ derivedTensor C` (with `TauCeti.derivedTensorFlipIso_hom_fac`,
+`TauCeti.derivedTensorFlipIso_inv_fac`, `TauCeti.derivedTensorFlipIso_hom_fac_app_app`,
+`TauCeti.derivedTensorFlipIso_inv_fac_app_app`, component formulas
+`TauCeti.derivedTensorFlipIso_hom_app_app_Q`, `TauCeti.derivedTensorFlipIso_inv_app_app_Q`,
+`TauCeti.derivedTensorFlipIso_app_app_Q`, unit compatibility
+`TauCeti.derivedTensorFlipIso_hom_app_comp_derivedTensorLeftUnitor` and
+`TauCeti.flip_derivedTensorFlipIso_hom_app_comp_derivedTensorRightUnitor`, and involutivity over
+symmetric coefficients `TauCeti.flip_derivedTensorFlipIso_hom_comp`,
+`TauCeti.derivedTensorFlipIso_inv_app_app`, `TauCeti.derivedTensorFlipIso_hom_app_app_comp`).
 Modules over a commutative ring and sheaves of modules over a sheaf of commutative rings on a small
 site are the main examples.
 
@@ -95,7 +120,10 @@ variable {C : Type*} [Category* C] [Abelian C] [MonoidalCategory C] [MonoidalPre
   [∀ (X₁ X₂ X₃ X₄ : GradedObject ℤ C), GradedObject.HasTensor₄ObjExt X₁ X₂ X₃ X₄]
   [∀ (X₁ X₂ X₃ : GradedObject ℤ C), GradedObject.HasGoodTensor₁₂Tensor X₁ X₂ X₃]
   [∀ (X₁ X₂ X₃ : GradedObject ℤ C), GradedObject.HasGoodTensorTensor₂₃ X₁ X₂ X₃]
-  [BraidedCategory C]
+
+section
+
+variable [BraidedCategory C]
 
 namespace CategoryTheory.Functor
 
@@ -812,3 +840,414 @@ theorem derivedTensorRightUnitor_hom_app_Q (K : CochainComplex C ℤ) :
 end TauCeti
 
 end Unit
+
+end
+
+section Symmetry
+
+variable [HasDerivedCategory C]
+
+namespace TauCeti
+
+section Braided
+
+variable [BraidedCategory C]
+
+/-- The braiding on `CochainComplex C ℤ` transported to a flip isomorphism on the total tensor
+bifunctor postcomposed with `DerivedCategory.Q`. -/
+def curriedTensorQBraidingFlipIso :
+    (MonoidalCategory.curriedTensor (CochainComplex C ℤ) ⋙
+        (whiskeringRight _ _ _).obj (DerivedCategory.Q (C := C))).flip ≅
+      MonoidalCategory.curriedTensor (CochainComplex C ℤ) ⋙
+        (whiskeringRight _ _ _).obj (DerivedCategory.Q (C := C)) :=
+  Functor.whiskeringRightFlipIso
+      (MonoidalCategory.curriedTensor (CochainComplex C ℤ))
+      (DerivedCategory.Q (C := C)) ≪≫
+    Functor.isoWhiskerRight
+      ((flipFunctor _ _ _).mapIso
+          (BraidedCategory.curriedBraidingNatIso (CochainComplex C ℤ)) ≪≫
+        (flipping (C := CochainComplex C ℤ) (D := CochainComplex C ℤ)
+          (E := CochainComplex C ℤ)).counitIso.app _)
+      ((whiskeringRight _ _ _).obj DerivedCategory.Q)
+
+/-- Forward component of `curriedTensorQBraidingFlipIso` on complexes `(K, L)`. -/
+@[simp]
+lemma curriedTensorQBraidingFlipIso_hom_app_app (K L : CochainComplex C ℤ) :
+    ((curriedTensorQBraidingFlipIso (C := C)).hom.app K).app L =
+      DerivedCategory.Q.map (β_ L K).hom := by
+  simp [curriedTensorQBraidingFlipIso, BraidedCategory.curriedBraidingNatIso]
+
+/-- Inverse component of `curriedTensorQBraidingFlipIso` on complexes `(K, L)`. -/
+@[simp]
+lemma curriedTensorQBraidingFlipIso_inv_app_app (K L : CochainComplex C ℤ) :
+    ((curriedTensorQBraidingFlipIso (C := C)).inv.app K).app L =
+      DerivedCategory.Q.map (β_ L K).inv := by
+  simp [curriedTensorQBraidingFlipIso, BraidedCategory.curriedBraidingNatIso]
+
+section General
+
+variable (LF : DerivedCategory C ⥤ DerivedCategory C ⥤ DerivedCategory C)
+  (α : (((whiskeringLeft₂ (DerivedCategory C)).obj DerivedCategory.Q).obj
+    DerivedCategory.Q).obj LF ⟶
+      MonoidalCategory.curriedTensor (CochainComplex C ℤ) ⋙
+        (whiskeringRight _ _ _).obj (DerivedCategory.Q (C := C)))
+  [LF.IsLeftDerivedFunctor₂ α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ))]
+
+/-- **Symmetry of the derived tensor product.** The Koszul braiding induces a natural isomorphism
+`LF.flip ≅ LF` on any left derived tensor bifunctor `(LF, α)`. -/
+def leftDerivedTensorFlipIso : LF.flip ≅ LF :=
+  LF.leftDerived₂FlipIso α (quasiIso C (.up ℤ)) (curriedTensorQBraidingFlipIso (C := C))
+
+/-- Whiskered counit compatibility of `(leftDerivedTensorFlipIso LF α).hom` with `α` and
+`curriedTensorQBraidingFlipIso`. -/
+@[reassoc (attr := simp)]
+lemma leftDerivedTensorFlipIso_hom_fac :
+    (((whiskeringLeft₂ (DerivedCategory C)).obj DerivedCategory.Q).obj DerivedCategory.Q).map
+        (leftDerivedTensorFlipIso LF α).hom ≫ α =
+      (DerivedCategory.Q.whiskeringLeft₂FlipIso DerivedCategory.Q LF).hom ≫
+        (flipFunctor _ _ _).map α ≫ (curriedTensorQBraidingFlipIso (C := C)).hom :=
+  leftDerived₂FlipIso_hom_fac LF α (quasiIso C (.up ℤ)) (curriedTensorQBraidingFlipIso (C := C))
+
+/-- Whiskered counit compatibility of `(leftDerivedTensorFlipIso LF α).inv` with `α` and
+`curriedTensorQBraidingFlipIso`. -/
+@[reassoc (attr := simp)]
+lemma leftDerivedTensorFlipIso_inv_fac :
+    (((whiskeringLeft₂ (DerivedCategory C)).obj DerivedCategory.Q).obj DerivedCategory.Q).map
+        (leftDerivedTensorFlipIso LF α).inv ≫
+        (DerivedCategory.Q.whiskeringLeft₂FlipIso DerivedCategory.Q LF).hom ≫
+        (flipFunctor _ _ _).map α =
+      α ≫ (curriedTensorQBraidingFlipIso (C := C)).inv :=
+  leftDerived₂FlipIso_inv_fac LF α (quasiIso C (.up ℤ)) (curriedTensorQBraidingFlipIso (C := C))
+
+/-- Compatibility of `leftDerivedTensorFlipIso` with the Koszul braiding on images of complexes. -/
+@[reassoc (attr := simp)]
+lemma leftDerivedTensorFlipIso_hom_fac_app_app (K L : CochainComplex C ℤ) :
+    ((leftDerivedTensorFlipIso LF α).hom.app (DerivedCategory.Q.obj K)).app
+        (DerivedCategory.Q.obj L) ≫ (α.app K).app L =
+      (α.app L).app K ≫ DerivedCategory.Q.map (β_ L K).hom := by
+  simp only [leftDerivedTensorFlipIso, leftDerived₂FlipIso_hom_fac_app_app,
+    curriedTensorQBraidingFlipIso_hom_app_app]
+
+/-- Compatibility of the inverse of `leftDerivedTensorFlipIso` with the inverse Koszul braiding on
+images of complexes. -/
+@[reassoc (attr := simp)]
+lemma leftDerivedTensorFlipIso_inv_fac_app_app (K L : CochainComplex C ℤ) :
+    ((leftDerivedTensorFlipIso LF α).inv.app (DerivedCategory.Q.obj K)).app
+        (DerivedCategory.Q.obj L) ≫ (α.app L).app K =
+      (α.app K).app L ≫ DerivedCategory.Q.map (β_ L K).inv := by
+  simp only [leftDerivedTensorFlipIso, leftDerived₂FlipIso_inv_fac_app_app,
+    curriedTensorQBraidingFlipIso_inv_app_app]
+
+/-- Forward component formula for `leftDerivedTensorFlipIso` on `(Q.obj K, Q.obj L)` when the
+target model comparison `(α.app K).app L` is invertible. -/
+lemma leftDerivedTensorFlipIso_hom_app_app_Q (K L : CochainComplex C ℤ)
+    [IsIso ((α.app K).app L)] :
+    ((leftDerivedTensorFlipIso LF α).hom.app (DerivedCategory.Q.obj K)).app
+        (DerivedCategory.Q.obj L) =
+      (α.app L).app K ≫ DerivedCategory.Q.map (β_ L K).hom ≫ inv ((α.app K).app L) := by
+  simpa only [leftDerivedTensorFlipIso, curriedTensorQBraidingFlipIso_hom_app_app] using
+    leftDerived₂FlipIso_hom_app_app_L LF α (quasiIso C (.up ℤ))
+      (curriedTensorQBraidingFlipIso (C := C)) K L
+
+/-- Inverse component formula for `leftDerivedTensorFlipIso` on `(Q.obj K, Q.obj L)` when the
+model comparison `(α.app L).app K` is invertible. -/
+lemma leftDerivedTensorFlipIso_inv_app_app_Q (K L : CochainComplex C ℤ)
+    [IsIso ((α.app L).app K)] :
+    ((leftDerivedTensorFlipIso LF α).inv.app (DerivedCategory.Q.obj K)).app
+        (DerivedCategory.Q.obj L) =
+      (α.app K).app L ≫ DerivedCategory.Q.map (β_ L K).inv ≫ inv ((α.app L).app K) := by
+  simpa only [leftDerivedTensorFlipIso, curriedTensorQBraidingFlipIso_inv_app_app] using
+    leftDerived₂FlipIso_inv_app_app_L LF α (quasiIso C (.up ℤ))
+      (curriedTensorQBraidingFlipIso (C := C)) K L
+
+/-- When both comparison morphisms `(α.app L).app K` and `(α.app K).app L` are invertible (in
+particular, when either `K` or `L` is K-flat), `leftDerivedTensorFlipIso` on `(Q.obj K, Q.obj L)`
+is the swapped model comparison followed by the localized Koszul braiding and the inverse target
+comparison. -/
+lemma leftDerivedTensorFlipIso_app_app_Q (K L : CochainComplex C ℤ)
+    [IsIso ((α.app L).app K)] [IsIso ((α.app K).app L)] :
+    ((leftDerivedTensorFlipIso LF α).app (DerivedCategory.Q.obj K)).app
+        (DerivedCategory.Q.obj L) =
+      asIso ((α.app L).app K) ≪≫ DerivedCategory.Q.mapIso (β_ L K) ≪≫
+        (asIso ((α.app K).app L)).symm := by
+  rw [leftDerivedTensorFlipIso, leftDerived₂FlipIso_app_app_L]
+  ext
+  simp
+
+section Unitor
+
+variable [(CochainComplex.KFlat.localizerMorphism C).IsLeftDerivabilityStructure]
+
+/-- The Koszul flip at `𝟙` followed by the left derived unitor equals the right derived
+unitor as a natural transformation. -/
+@[reassoc (attr := simp)]
+lemma leftDerivedTensorFlipIso_hom_app_comp_leftUnitor :
+    (leftDerivedTensorFlipIso LF α).hom.app
+        (DerivedCategory.Q.obj (𝟙_ (CochainComplex C ℤ))) ≫
+      (leftDerivedTensorLeftUnitor LF α).hom =
+      (leftDerivedTensorRightUnitor LF α).hom := by
+  refine Localization.natTrans_ext DerivedCategory.Q (quasiIso C (.up ℤ)) fun K ↦ ?_
+  simp only [NatTrans.comp_app, leftDerivedTensorLeftUnitor_hom_app_Q,
+    leftDerivedTensorFlipIso_hom_fac_app_app_assoc, leftDerivedTensorRightUnitor_hom_app_Q]
+  rw [← DerivedCategory.Q.map_comp, braiding_leftUnitor]
+
+/-- The Koszul flip at `(𝟙, X)` followed by the left derived unitor equals the right derived
+unitor. -/
+@[reassoc (attr := simp)]
+lemma leftDerivedTensorFlipIso_hom_app_app_comp_leftUnitor (X : DerivedCategory C) :
+    ((leftDerivedTensorFlipIso LF α).hom.app
+        (DerivedCategory.Q.obj (𝟙_ (CochainComplex C ℤ)))).app X ≫
+      (leftDerivedTensorLeftUnitor LF α).hom.app X =
+      (leftDerivedTensorRightUnitor LF α).hom.app X :=
+  NatTrans.congr_app (leftDerivedTensorFlipIso_hom_app_comp_leftUnitor LF α) X
+
+/-- The flipped Koszul flip at `𝟙` followed by the right derived unitor equals the left derived
+unitor as a natural transformation. -/
+@[reassoc (attr := simp)]
+lemma flip_leftDerivedTensorFlipIso_hom_app_comp_rightUnitor :
+    ((flipFunctor _ _ _).map (leftDerivedTensorFlipIso LF α).hom).app
+        (DerivedCategory.Q.obj (𝟙_ (CochainComplex C ℤ))) ≫
+      (leftDerivedTensorRightUnitor LF α).hom =
+      (leftDerivedTensorLeftUnitor LF α).hom := by
+  refine Localization.natTrans_ext DerivedCategory.Q (quasiIso C (.up ℤ)) fun K ↦ ?_
+  simp only [NatTrans.comp_app, flipFunctor_map_app_app, leftDerivedTensorRightUnitor_hom_app_Q,
+    leftDerivedTensorFlipIso_hom_fac_app_app_assoc, leftDerivedTensorLeftUnitor_hom_app_Q]
+  rw [← DerivedCategory.Q.map_comp, braiding_rightUnitor]
+
+/-- The Koszul flip at `(X, 𝟙)` followed by the right derived unitor equals the left derived
+unitor. -/
+@[reassoc (attr := simp)]
+lemma leftDerivedTensorFlipIso_hom_app_app_comp_rightUnitor (X : DerivedCategory C) :
+    ((leftDerivedTensorFlipIso LF α).hom.app X).app
+        (DerivedCategory.Q.obj (𝟙_ (CochainComplex C ℤ))) ≫
+      (leftDerivedTensorRightUnitor LF α).hom.app X =
+      (leftDerivedTensorLeftUnitor LF α).hom.app X :=
+  NatTrans.congr_app (flip_leftDerivedTensorFlipIso_hom_app_comp_rightUnitor LF α) X
+
+end Unitor
+
+end General
+
+section Canonical
+
+variable [(CochainComplex.KFlat.localizerMorphism C).IsLeftDerivabilityStructure] (C)
+
+/-- **Symmetry of the canonical derived tensor product.** The Koszul braiding induces a natural
+isomorphism `(derivedTensor C).flip ≅ derivedTensor C`. -/
+def derivedTensorFlipIso : (derivedTensor C).flip ≅ derivedTensor C :=
+  leftDerivedTensorFlipIso (derivedTensor C) (derivedTensorCounit C)
+
+/-- Whiskered counit compatibility of `(derivedTensorFlipIso C).hom` with `derivedTensorCounit C`
+and `curriedTensorQBraidingFlipIso`. -/
+@[reassoc (attr := simp)]
+lemma derivedTensorFlipIso_hom_fac :
+    (((whiskeringLeft₂ (DerivedCategory C)).obj DerivedCategory.Q).obj DerivedCategory.Q).map
+        (derivedTensorFlipIso C).hom ≫ derivedTensorCounit C =
+      (DerivedCategory.Q.whiskeringLeft₂FlipIso DerivedCategory.Q (derivedTensor C)).hom ≫
+        (flipFunctor _ _ _).map (derivedTensorCounit C) ≫
+          (curriedTensorQBraidingFlipIso (C := C)).hom :=
+  leftDerivedTensorFlipIso_hom_fac (derivedTensor C) (derivedTensorCounit C)
+
+/-- Whiskered counit compatibility of `(derivedTensorFlipIso C).inv` with `derivedTensorCounit C`
+and `curriedTensorQBraidingFlipIso`. -/
+@[reassoc (attr := simp)]
+lemma derivedTensorFlipIso_inv_fac :
+    (((whiskeringLeft₂ (DerivedCategory C)).obj DerivedCategory.Q).obj DerivedCategory.Q).map
+        (derivedTensorFlipIso C).inv ≫
+        (DerivedCategory.Q.whiskeringLeft₂FlipIso DerivedCategory.Q (derivedTensor C)).hom ≫
+        (flipFunctor _ _ _).map (derivedTensorCounit C) =
+      derivedTensorCounit C ≫ (curriedTensorQBraidingFlipIso (C := C)).inv :=
+  leftDerivedTensorFlipIso_inv_fac (derivedTensor C) (derivedTensorCounit C)
+
+/-- Compatibility of `derivedTensorFlipIso` with the Koszul braiding on images of complexes. -/
+@[reassoc (attr := simp)]
+lemma derivedTensorFlipIso_hom_fac_app_app (K L : CochainComplex C ℤ) :
+    ((derivedTensorFlipIso C).hom.app (DerivedCategory.Q.obj K)).app
+        (DerivedCategory.Q.obj L) ≫ ((derivedTensorCounit C).app K).app L =
+      ((derivedTensorCounit C).app L).app K ≫ DerivedCategory.Q.map (β_ L K).hom :=
+  leftDerivedTensorFlipIso_hom_fac_app_app (derivedTensor C) (derivedTensorCounit C) K L
+
+/-- Compatibility of the inverse of `derivedTensorFlipIso` with the inverse Koszul braiding on
+images of complexes. -/
+@[reassoc (attr := simp)]
+lemma derivedTensorFlipIso_inv_fac_app_app (K L : CochainComplex C ℤ) :
+    ((derivedTensorFlipIso C).inv.app (DerivedCategory.Q.obj K)).app
+        (DerivedCategory.Q.obj L) ≫ ((derivedTensorCounit C).app L).app K =
+      ((derivedTensorCounit C).app K).app L ≫ DerivedCategory.Q.map (β_ L K).inv :=
+  leftDerivedTensorFlipIso_inv_fac_app_app (derivedTensor C) (derivedTensorCounit C) K L
+
+/-- Forward component formula for `derivedTensorFlipIso` on `(Q.obj K, Q.obj L)` when the target
+comparison `((derivedTensorCounit C).app K).app L` is invertible. -/
+lemma derivedTensorFlipIso_hom_app_app_Q (K L : CochainComplex C ℤ)
+    [IsIso (((derivedTensorCounit C).app K).app L)] :
+    ((derivedTensorFlipIso C).hom.app (DerivedCategory.Q.obj K)).app
+        (DerivedCategory.Q.obj L) =
+      ((derivedTensorCounit C).app L).app K ≫ DerivedCategory.Q.map (β_ L K).hom ≫
+        inv (((derivedTensorCounit C).app K).app L) :=
+  leftDerivedTensorFlipIso_hom_app_app_Q (derivedTensor C) (derivedTensorCounit C) K L
+
+/-- Inverse component formula for `derivedTensorFlipIso` on `(Q.obj K, Q.obj L)` when the source
+comparison `((derivedTensorCounit C).app L).app K` is invertible. -/
+lemma derivedTensorFlipIso_inv_app_app_Q (K L : CochainComplex C ℤ)
+    [IsIso (((derivedTensorCounit C).app L).app K)] :
+    ((derivedTensorFlipIso C).inv.app (DerivedCategory.Q.obj K)).app
+        (DerivedCategory.Q.obj L) =
+      ((derivedTensorCounit C).app K).app L ≫ DerivedCategory.Q.map (β_ L K).inv ≫
+        inv (((derivedTensorCounit C).app L).app K) :=
+  leftDerivedTensorFlipIso_inv_app_app_Q (derivedTensor C) (derivedTensorCounit C) K L
+
+/-- When both comparison morphisms `((derivedTensorCounit C).app L).app K` and
+`((derivedTensorCounit C).app K).app L` are invertible (in particular, when either `K` or `L` is
+K-flat), `derivedTensorFlipIso` on `(Q.obj K, Q.obj L)` is the swapped counit followed by the
+localized Koszul braiding and the inverse target counit. -/
+lemma derivedTensorFlipIso_app_app_Q (K L : CochainComplex C ℤ)
+    [IsIso (((derivedTensorCounit C).app L).app K)]
+    [IsIso (((derivedTensorCounit C).app K).app L)] :
+    ((derivedTensorFlipIso C).app (DerivedCategory.Q.obj K)).app (DerivedCategory.Q.obj L) =
+      asIso (((derivedTensorCounit C).app L).app K) ≪≫ DerivedCategory.Q.mapIso (β_ L K) ≪≫
+        (asIso (((derivedTensorCounit C).app K).app L)).symm :=
+  leftDerivedTensorFlipIso_app_app_Q (derivedTensor C) (derivedTensorCounit C) K L
+
+/- Note: `derivedTensorLeftUnitor C` and `derivedTensorRightUnitor C` are defined directly as
+`leftDerivedTensorLeftUnitor (derivedTensor C) (derivedTensorCounit C)` and
+`leftDerivedTensorRightUnitor (derivedTensor C) (derivedTensorCounit C)`, which relies on the
+definitional equality `(DerivedCategory.singleFunctor C 0).obj (𝟙_ C) =
+DerivedCategory.Q.obj (𝟙_ (CochainComplex C ℤ))` (via `DerivedCategory.Q_obj_single_obj`, since
+`DerivedCategory.singleFunctor` is an `abbrev` and `𝟙_ (CochainComplex C ℤ)` is definitionally
+`(HomologicalComplex.single C (.up ℤ) 0).obj (𝟙_ C)`). Both chosen-unitor bridges below share
+this same definitional reduction. -/
+
+/-- The Koszul flip at `𝟙_ C[0]` followed by `derivedTensorLeftUnitor` equals
+`derivedTensorRightUnitor` as a natural transformation. -/
+@[reassoc (attr := simp)]
+lemma derivedTensorFlipIso_hom_app_comp_derivedTensorLeftUnitor :
+    (derivedTensorFlipIso C).hom.app ((DerivedCategory.singleFunctor C 0).obj (𝟙_ C)) ≫
+      (derivedTensorLeftUnitor C).hom =
+      (derivedTensorRightUnitor C).hom :=
+  leftDerivedTensorFlipIso_hom_app_comp_leftUnitor (derivedTensor C) (derivedTensorCounit C)
+
+/-- The Koszul flip at `(𝟙_ C[0], X)` followed by `derivedTensorLeftUnitor` equals
+`derivedTensorRightUnitor`. -/
+@[reassoc (attr := simp)]
+lemma derivedTensorFlipIso_hom_app_app_comp_derivedTensorLeftUnitor (X : DerivedCategory C) :
+    ((derivedTensorFlipIso C).hom.app ((DerivedCategory.singleFunctor C 0).obj (𝟙_ C))).app X ≫
+      (derivedTensorLeftUnitor C).hom.app X =
+      (derivedTensorRightUnitor C).hom.app X :=
+  NatTrans.congr_app (derivedTensorFlipIso_hom_app_comp_derivedTensorLeftUnitor C) X
+
+/-- The flipped Koszul flip at `𝟙_ C[0]` followed by `derivedTensorRightUnitor` equals
+`derivedTensorLeftUnitor` as a natural transformation. -/
+@[reassoc (attr := simp)]
+lemma flip_derivedTensorFlipIso_hom_app_comp_derivedTensorRightUnitor :
+    ((flipFunctor _ _ _).map (derivedTensorFlipIso C).hom).app
+        ((DerivedCategory.singleFunctor C 0).obj (𝟙_ C)) ≫
+      (derivedTensorRightUnitor C).hom =
+      (derivedTensorLeftUnitor C).hom :=
+  flip_leftDerivedTensorFlipIso_hom_app_comp_rightUnitor (derivedTensor C) (derivedTensorCounit C)
+
+/-- The Koszul flip at `(X, 𝟙_ C[0])` followed by `derivedTensorRightUnitor` equals
+`derivedTensorLeftUnitor`. -/
+@[reassoc (attr := simp)]
+lemma derivedTensorFlipIso_hom_app_app_comp_derivedTensorRightUnitor (X : DerivedCategory C) :
+    ((derivedTensorFlipIso C).hom.app X).app
+        ((DerivedCategory.singleFunctor C 0).obj (𝟙_ C)) ≫
+      (derivedTensorRightUnitor C).hom.app X =
+      (derivedTensorLeftUnitor C).hom.app X :=
+  NatTrans.congr_app (flip_derivedTensorFlipIso_hom_app_comp_derivedTensorRightUnitor C) X
+
+end Canonical
+
+end Braided
+
+section Symmetric
+
+variable [SymmetricCategory C]
+
+/-- Over symmetric coefficients, `curriedTensorQBraidingFlipIso` is involutive as a natural
+transformation. -/
+@[reassoc (attr := simp)]
+lemma flip_curriedTensorQBraidingFlipIso_hom_comp :
+    (flipFunctor _ _ _).map (curriedTensorQBraidingFlipIso (C := C)).hom ≫
+        (curriedTensorQBraidingFlipIso (C := C)).hom =
+      (flipping (C := CochainComplex C ℤ) (D := CochainComplex C ℤ)
+        (E := DerivedCategory C)).counitIso.hom.app
+          (MonoidalCategory.curriedTensor (CochainComplex C ℤ) ⋙
+            (whiskeringRight _ _ _).obj (DerivedCategory.Q (C := C))) := by
+  ext K L
+  simp [← DerivedCategory.Q.map_comp]
+
+section General
+
+variable (LF : DerivedCategory C ⥤ DerivedCategory C ⥤ DerivedCategory C)
+  (α : (((whiskeringLeft₂ (DerivedCategory C)).obj DerivedCategory.Q).obj
+    DerivedCategory.Q).obj LF ⟶
+      MonoidalCategory.curriedTensor (CochainComplex C ℤ) ⋙
+        (whiskeringRight _ _ _).obj (DerivedCategory.Q (C := C)))
+  [LF.IsLeftDerivedFunctor₂ α (quasiIso C (.up ℤ)) (quasiIso C (.up ℤ))]
+
+/-- Over symmetric coefficients, `leftDerivedTensorFlipIso` is involutive as a natural
+transformation. -/
+@[reassoc (attr := simp)]
+lemma flip_leftDerivedTensorFlipIso_hom_comp :
+    (flipFunctor _ _ _).map (leftDerivedTensorFlipIso LF α).hom ≫
+        (leftDerivedTensorFlipIso LF α).hom =
+      (flipping (C := DerivedCategory C) (D := DerivedCategory C)
+        (E := DerivedCategory C)).counitIso.hom.app LF :=
+  flip_leftDerived₂FlipIso_hom_comp LF α (quasiIso C (.up ℤ))
+    (curriedTensorQBraidingFlipIso (C := C)) (flip_curriedTensorQBraidingFlipIso_hom_comp (C := C))
+
+/-- Over symmetric coefficients, the inverse of `leftDerivedTensorFlipIso` at `(X, Y)` equals its
+forward map at `(Y, X)`. -/
+@[simp]
+lemma leftDerivedTensorFlipIso_inv_app_app (X Y : DerivedCategory C) :
+    ((leftDerivedTensorFlipIso LF α).inv.app X).app Y =
+      ((leftDerivedTensorFlipIso LF α).hom.app Y).app X :=
+  leftDerived₂FlipIso_inv_app_app LF α (quasiIso C (.up ℤ))
+    (curriedTensorQBraidingFlipIso (C := C)) (flip_curriedTensorQBraidingFlipIso_hom_comp (C := C))
+    X Y
+
+/-- Over symmetric coefficients, `leftDerivedTensorFlipIso` is involutive. -/
+@[reassoc (attr := simp)]
+lemma leftDerivedTensorFlipIso_hom_app_app_comp (X Y : DerivedCategory C) :
+    ((leftDerivedTensorFlipIso LF α).hom.app X).app Y ≫
+      ((leftDerivedTensorFlipIso LF α).hom.app Y).app X = 𝟙 ((LF.obj Y).obj X) :=
+  leftDerived₂FlipIso_hom_app_app_comp LF α (quasiIso C (.up ℤ))
+    (curriedTensorQBraidingFlipIso (C := C)) (flip_curriedTensorQBraidingFlipIso_hom_comp (C := C))
+    X Y
+
+end General
+
+section Canonical
+
+variable [(CochainComplex.KFlat.localizerMorphism C).IsLeftDerivabilityStructure] (C)
+
+/-- Over symmetric coefficients, `derivedTensorFlipIso` is involutive as a natural
+transformation. -/
+@[reassoc (attr := simp)]
+lemma flip_derivedTensorFlipIso_hom_comp :
+    (flipFunctor _ _ _).map (derivedTensorFlipIso C).hom ≫ (derivedTensorFlipIso C).hom =
+      (flipping (C := DerivedCategory C) (D := DerivedCategory C)
+        (E := DerivedCategory C)).counitIso.hom.app (derivedTensor C) :=
+  flip_leftDerivedTensorFlipIso_hom_comp (derivedTensor C) (derivedTensorCounit C)
+
+/-- Over symmetric coefficients, the inverse of `derivedTensorFlipIso` at `(X, Y)` equals its
+forward map at `(Y, X)`. -/
+@[simp]
+lemma derivedTensorFlipIso_inv_app_app (X Y : DerivedCategory C) :
+    ((derivedTensorFlipIso C).inv.app X).app Y = ((derivedTensorFlipIso C).hom.app Y).app X :=
+  leftDerivedTensorFlipIso_inv_app_app (derivedTensor C) (derivedTensorCounit C) X Y
+
+/-- Over symmetric coefficients, `derivedTensorFlipIso` is involutive. -/
+@[reassoc (attr := simp)]
+lemma derivedTensorFlipIso_hom_app_app_comp (X Y : DerivedCategory C) :
+    ((derivedTensorFlipIso C).hom.app X).app Y ≫
+      ((derivedTensorFlipIso C).hom.app Y).app X = 𝟙 (((derivedTensor C).obj Y).obj X) :=
+  leftDerivedTensorFlipIso_hom_app_app_comp (derivedTensor C) (derivedTensorCounit C) X Y
+
+end Canonical
+
+end Symmetric
+
+end TauCeti
+
+end Symmetry
