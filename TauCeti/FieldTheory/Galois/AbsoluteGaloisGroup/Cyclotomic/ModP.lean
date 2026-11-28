@@ -76,8 +76,8 @@ theorem map_continuousLocalCyclotomicCharacter_eq_cast_modP {k : Type*} [Ring k]
       (ContinuousMonoidHom.unitsMap
           ⟨(ZMod.castHom (dvd_refl p) k).toMonoidHom, continuous_of_discreteTopology⟩).comp
         (modPLocalCyclotomicCharacter p K) := by
-  rw [ContinuousMonoidHom.unitsMap_ringHom_comp_eq_castHom f
-    (continuousLocalCyclotomicCharacter p K)]
+  rw [ContinuousMonoidHom.unitsMap_ringHom_comp_eq_castHom
+    (continuousLocalCyclotomicCharacter p K) f]
   congr 1
   ext1 σ
   apply Units.ext

@@ -663,7 +663,7 @@ into a topological ring `k` of characteristic `p` agrees with pushing its mod-`p
 `ZMod.castHom`. -/
 theorem unitsMap_ringHom_comp_eq_castHom {p : ℕ} [Fact p.Prime] {A k : Type*}
     [Monoid A] [TopologicalSpace A] [Ring k] [CharP k p] [TopologicalSpace k]
-    (f : ℤ_[p] →+* k) (χ : A →ₜ* ℤ_[p]ˣ) :
+    (χ : A →ₜ* ℤ_[p]ˣ) (f : ℤ_[p] →+* k) :
     (unitsMap ⟨f.toMonoidHom, f.continuous_of_padicInt_charP⟩).comp χ =
       (unitsMap ⟨(ZMod.castHom (dvd_refl p) k).toMonoidHom, continuous_of_discreteTopology⟩).comp
         ((unitsMap ⟨PadicInt.toZMod.toMonoidHom, PadicInt.continuous_toZMod⟩).comp χ) := by
