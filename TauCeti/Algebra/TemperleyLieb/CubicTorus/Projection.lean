@@ -240,8 +240,8 @@ private theorem mul_partialProd_of_qcomm :
     have ih := mul_partialProd_of_qcomm (u := Fin.init u) (φ := Fin.init φ)
       (fun i ↦ hφ i.castSucc) (Fin.init b)
     have hlast := mul_pow_of_qcomm (hφ (Fin.last N)) (b (Fin.last N))
-    rw [Fin.partialProd_pow_last u (fun i ↦ (b i).val)]
-    dsimp only [Fin.init] at ih ⊢
+    rw [Fin.partialProd_last_eq_init_mul (fun i ↦ u i ^ (b i).val)]
+    dsimp only [Fin.init_def] at ih ⊢
     rw [← mul_assoc, ih, smul_mul_assoc,
       mul_assoc, hlast, mul_smul_comm, smul_smul, coe_cubeRootPow_mul, ← mul_assoc]
     congr 3; rw [Fin.sum_univ_castSucc]; simp [mul_add]; ring
@@ -313,14 +313,14 @@ private theorem partialProd_mul_partialProd :
       Fin.partialProd (fun i ↦ u i ^ (a i).val) (Fin.last (N + 1)) *
           Fin.partialProd (fun i ↦ u i ^ (b i).val) (Fin.last (N + 1))
         = Pa * (Ua * Pb) * Ub := by
-          simp only [Fin.partialProd_pow_last, mul_assoc, Pa, Pb, Ua, Ub]; rfl
+          simp only [Fin.partialProd_last_eq_init_mul, mul_assoc, Pa, Pb, Ua, Ub]; rfl
       _ = (cubeRootPow ((2 * ∑ i : Fin N,
               (if (i : ℕ) + 1 = N then (1 : ZMod 3) else 0) * Fin.init b i) *
             a (Fin.last N)) : ℂ) • ((Pa * Pb) * (Ua * Ub)) := by
           rw [hcomm]; simp only [mul_smul_comm, smul_mul_assoc, mul_assoc]
       _ = (cubeRootPow (2 * halfChainForm (ZMod 3) (N + 1) b a) : ℂ) •
             Fin.partialProd (fun i ↦ u i ^ ((a + b) i).val) (Fin.last (N + 1)) := by
-          rw [ih, hpow, Fin.partialProd_pow_last u (fun i ↦ ((a + b) i).val), ← hinit]
+          rw [ih, hpow, Fin.partialProd_last_eq_init_mul (fun i ↦ u i ^ ((a + b) i).val), ← hinit]
           simp only [smul_mul_assoc, smul_smul, coe_cubeRootPow_mul, hsum]
           rfl
 
