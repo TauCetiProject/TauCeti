@@ -33,6 +33,8 @@ with passing to the opposite algebra, and composes in stages:
   `Algebra.TensorProduct.map (AlgHom.id S R') f` agrees, as an `S`-linear map (and as a function),
   with `f.toLinearMap.baseChange R'`, for any intermediate commutative semiring `S` between `R`
   and `R'`.
+* `Subalgebra.coe_lTensor_val_eq_lTensor_subtype`: scalar extension of a subalgebra inclusion
+  acts as the tensor of its submodule inclusion.
 * `TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv`:
   `L ⊗[K] (A ⊗[K] B) ≃ₐ[L] (L ⊗[K] A) ⊗[L] (L ⊗[K] B)`;
 * `TauCeti.Algebra.mulBaseChange`: the map
@@ -141,6 +143,16 @@ theorem _root_.AlgHom.coe_tensorProduct_map_id {R S R' A B : Type*}
     ⇑(Algebra.TensorProduct.map (AlgHom.id S R') f) = ⇑(f.toLinearMap.baseChange R') := by
   simpa only [AlgHom.coe_toLinearMap, LinearMap.coe_restrictScalars] using
     congrArg DFunLike.coe (f.toLinearMap_tensorProduct_map_id (S := S) (R' := R'))
+
+/-- The scalar extension of a subalgebra inclusion acts as the tensor of the underlying
+submodule inclusion. -/
+theorem _root_.Subalgebra.coe_lTensor_val_eq_lTensor_subtype {R A S R' : Type*}
+    [CommSemiring R] [Semiring A] [Algebra R A] [CommSemiring S] [Algebra R S]
+    [Semiring R'] [Algebra R R'] [Algebra S R'] [IsScalarTower R S R']
+    (P : Subalgebra R A) :
+    ⇑(Algebra.TensorProduct.lTensor (S := S) R' P.val) = ⇑(P.toSubmodule.subtype.lTensor R') := by
+  rw [AlgHom.coe_tensorProduct_map_id, LinearMap.baseChange_eq_lTensor,
+    Subalgebra.toSubmodule_subtype, AlgHom.toLinearMap_eq_coe]
 
 namespace Algebra.TensorProduct
 
