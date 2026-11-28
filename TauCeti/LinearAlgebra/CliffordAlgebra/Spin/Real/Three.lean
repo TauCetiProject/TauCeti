@@ -252,20 +252,72 @@ theorem coe_realSpinThreeEquivQuaternionUnitary_symm_apply (q : unitary ℍ[ℝ]
       simpa only [CliffordAlgebra.coe_evenUnitaryGroupEvenPart,
         CliffordAlgebra.coe_spinGroupToEvenUnitary_apply] using h
 
-private noncomputable def realThreeToWeightedSumSquaresOne :
-    (realCliffordForm 3 0).IsometryEquiv (weightedSumSquares ℝ ![(1 : ℝ), 1, 1]) where
-  __ := LinearEquiv.refl ℝ (Fin 3 → ℝ)
-  map_app' v := congrArg (fun Q : QuadraticForm ℝ (Fin 3 → ℝ) => Q v)
-    (realCliffordForm_zero_eq_weightedSumSquares_one 3).symm
+private theorem weightedSumSquares_one_three_eq :
+    weightedSumSquares ℝ (1 : Fin 3 → ℝ) = weightedSumSquares ℝ ![(1 : ℝ), 1, 1] := by
+  congr 1
+  funext i
+  fin_cases i <;> rfl
 
-@[simp]
-private theorem realThreeToWeightedSumSquaresOne_apply (v : Fin 3 → ℝ) :
-    realThreeToWeightedSumSquaresOne v = v := rfl
+private noncomputable def castEvenEquiv {Q₀ Q₁ : QuadraticForm ℝ (Fin 3 → ℝ)} (hQ : Q₀ = Q₁)
+    (e : CliffordAlgebra.even Q₁ ≃ₐ[ℝ] ℍ[ℝ]) : CliffordAlgebra.even Q₀ ≃ₐ[ℝ] ℍ[ℝ] :=
+  hQ ▸ e
+
+private noncomputable def castSpinEquiv {Q₀ Q₁ : QuadraticForm ℝ (Fin 3 → ℝ)} (hQ : Q₀ = Q₁)
+    (e : spinGroup Q₁ ≃* unitary ℍ[ℝ]) : spinGroup Q₀ ≃* unitary ℍ[ℝ] :=
+  hQ ▸ e
+
+private def castSpinElem {Q₀ Q₁ : QuadraticForm ℝ (Fin 3 → ℝ)} (hQ : Q₀ = Q₁)
+    (s : spinGroup Q₀) : spinGroup Q₁ :=
+  hQ ▸ s
+
+private theorem algEquiv_trans_castEvenEquiv_apply {Q₀ Q₁ : QuadraticForm ℝ (Fin 3 → ℝ)}
+    (hQ : Q₀ = Q₁) (e₀ : CliffordAlgebra.even (realCliffordForm 3 0) ≃ₐ[ℝ] CliffordAlgebra.even Q₀)
+    (e₁ : CliffordAlgebra.even Q₁ ≃ₐ[ℝ] ℍ[ℝ])
+    (x : CliffordAlgebra.even (realCliffordForm 3 0)) :
+    (e₀.trans (castEvenEquiv hQ e₁)) x = e₁ (hQ ▸ e₀ x) := by
+  cases hQ
+  rfl
+
+private theorem castEvenEquiv_apply {Q₀ Q₁ : QuadraticForm ℝ (Fin 3 → ℝ)} (hQ : Q₀ = Q₁)
+    (e₁ : CliffordAlgebra.even Q₁ ≃ₐ[ℝ] ℍ[ℝ]) (x : CliffordAlgebra.even Q₀) :
+    (castEvenEquiv hQ e₁) x = e₁ (hQ ▸ x) := by
+  cases hQ
+  rfl
+
+private theorem mulEquiv_trans_castSpinEquiv_apply {Q₀ Q₁ : QuadraticForm ℝ (Fin 3 → ℝ)}
+    (hQ : Q₀ = Q₁) (e₀ : spinGroup (realCliffordForm 3 0) ≃* spinGroup Q₀)
+    (e₁ : spinGroup Q₁ ≃* unitary ℍ[ℝ])
+    (s : spinGroup (realCliffordForm 3 0)) :
+    (e₀.trans (castSpinEquiv hQ e₁)) s = e₁ (castSpinElem hQ (e₀ s)) := by
+  cases hQ
+  rfl
+
+private theorem cast_even_ι_bilin {Q₀ Q₁ : QuadraticForm ℝ (Fin 3 → ℝ)} (hQ : Q₀ = Q₁)
+    (x y : Fin 3 → ℝ) :
+    hQ ▸ ((CliffordAlgebra.even.ι Q₀).bilin x y) = (CliffordAlgebra.even.ι Q₁).bilin x y := by
+  cases hQ
+  rfl
+
+private theorem coe_castEven_spinGroupToEvenUnitary {Q₀ Q₁ : QuadraticForm ℝ (Fin 3 → ℝ)}
+    (hQ : Q₀ = Q₁) (e₁ : CliffordAlgebra.even Q₁ ≃ₐ[ℝ] ℍ[ℝ]) (s : spinGroup Q₀) :
+    e₁ (CliffordAlgebra.evenUnitaryGroupEvenPart Q₁
+        (CliffordAlgebra.spinGroupToEvenUnitary Q₁ (castSpinElem hQ s))) =
+      (castEvenEquiv hQ e₁) (CliffordAlgebra.evenUnitaryGroupEvenPart Q₀
+        (CliffordAlgebra.spinGroupToEvenUnitary Q₀ s)) := by
+  cases hQ
+  rfl
+
+private theorem castSpinElem_smul {Q₀ Q₁ : QuadraticForm ℝ (Fin 3 → ℝ)} (hQ : Q₀ = Q₁)
+    (s : spinGroup Q₀) (v : Fin 3 → ℝ) :
+    (castSpinElem hQ s) • v = s • v := by
+  cases hQ
+  rfl
 
 private noncomputable def realThreeTransportedEvenEquiv :
     CliffordAlgebra.even (realCliffordForm 3 0) ≃ₐ[ℝ] ℍ[ℝ] :=
-  (CliffordAlgebra.evenEquivOfIsometry realThreeToWeightedSumSquaresOne).trans
-    CliffordAlgebra.evenHamiltonEquivWeightedSumSquaresOne
+  (CliffordAlgebra.evenEquivOfIsometry (realCliffordFormZeroIsometryWeightedSumSquares 3)).trans
+    (castEvenEquiv weightedSumSquares_one_three_eq
+      CliffordAlgebra.evenHamiltonEquivWeightedSumSquaresOne)
 
 private theorem realThreeTransportedEvenEquiv_eq :
     realThreeTransportedEvenEquiv = realCliffordThreeZeroEvenEquivQuaternion := by
@@ -280,45 +332,44 @@ private theorem realThreeTransportedEvenEquiv_eq :
       ((CliffordAlgebra.even.ι (realCliffordForm 3 0)).bilin x y) =
     realCliffordThreeZeroEvenEquivQuaternion
       ((CliffordAlgebra.even.ι (realCliffordForm 3 0)).bilin x y)
-  rw [realThreeTransportedEvenEquiv, AlgEquiv.trans_apply,
-    CliffordAlgebra.evenEquivOfIsometry_ι, realThreeToWeightedSumSquaresOne_apply]
-  rw [CliffordAlgebra.evenHamiltonEquivWeightedSumSquaresOne_ι,
+  rw [realThreeTransportedEvenEquiv, algEquiv_trans_castEvenEquiv_apply,
+    CliffordAlgebra.evenEquivOfIsometry_ι, realCliffordFormZeroIsometryWeightedSumSquares_apply,
+    realCliffordFormZeroIsometryWeightedSumSquares_apply,
+    cast_even_ι_bilin weightedSumSquares_one_three_eq x y,
+    CliffordAlgebra.evenHamiltonEquivWeightedSumSquaresOne_ι,
     realCliffordThreeZeroEvenEquivQuaternion_ι]
   ext <;> simp [QuaternionAlgebra.mk_mul_mk] <;> ring
 
 private noncomputable def realThreeTransportedSpinEquiv :
     spinGroup (realCliffordForm 3 0) ≃* unitary ℍ[ℝ] :=
-  realThreeToWeightedSumSquaresOne.spinGroupEquiv.trans
-    CliffordAlgebra.spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne
+  (realCliffordFormZeroIsometryWeightedSumSquares 3).spinGroupEquiv.trans
+    (castSpinEquiv weightedSumSquares_one_three_eq
+      CliffordAlgebra.spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne)
 
 private theorem realThreeTransportedSpinEquiv_eq :
     realThreeTransportedSpinEquiv = realSpinThreeEquivQuaternionUnitary := by
   apply MulEquiv.ext
   intro s
   apply Subtype.ext
-  rw [realThreeTransportedSpinEquiv, MulEquiv.trans_apply,
+  rw [realThreeTransportedSpinEquiv, mulEquiv_trans_castSpinEquiv_apply,
     CliffordAlgebra.coe_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne_apply,
-    coe_realSpinThreeEquivQuaternionUnitary_apply]
-  rw [← realThreeTransportedEvenEquiv_eq]
-  rw [show CliffordAlgebra.evenUnitaryGroupEvenPart _
-        (CliffordAlgebra.spinGroupToEvenUnitary _
-          (realThreeToWeightedSumSquaresOne.spinGroupEquiv s)) =
-      CliffordAlgebra.evenEquivOfIsometry realThreeToWeightedSumSquaresOne
-        (CliffordAlgebra.evenUnitaryGroupEvenPart _
-          (CliffordAlgebra.spinGroupToEvenUnitary _ s)) by
-    apply Subtype.ext
-    simp only [CliffordAlgebra.coe_evenUnitaryGroupEvenPart,
-      CliffordAlgebra.coe_spinGroupToEvenUnitary_apply,
-      CliffordAlgebra.coe_evenEquivOfIsometry_apply]
-    -- The coercion lemmas reduce both even-unitary values to Clifford elements; expose the
-    -- remaining bundled Spin-equivalence coercion before applying its named application lemma.
-    change (realThreeToWeightedSumSquaresOne.spinGroupEquiv s : CliffordAlgebra _) =
-      CliffordAlgebra.equivOfIsometry realThreeToWeightedSumSquaresOne
-        (s : CliffordAlgebra _)
-    rw [QuadraticMap.IsometryEquiv.spinGroupEquiv_apply,
-      QuadraticMap.Isometry.coe_spinGroupMap_apply,
-      CliffordAlgebra.equivOfIsometry_apply]]
-  rfl
+    coe_castEven_spinGroupToEvenUnitary, coe_realSpinThreeEquivQuaternionUnitary_apply,
+    ← realThreeTransportedEvenEquiv_eq, realThreeTransportedEvenEquiv,
+    algEquiv_trans_castEvenEquiv_apply, castEvenEquiv_apply]
+  congr 2
+  apply Subtype.ext
+  simp only [CliffordAlgebra.coe_evenUnitaryGroupEvenPart,
+    CliffordAlgebra.coe_spinGroupToEvenUnitary_apply,
+    CliffordAlgebra.coe_evenEquivOfIsometry_apply]
+  -- The coercion lemmas reduce both even-unitary values to Clifford elements; expose the
+  -- remaining bundled Spin-equivalence coercion before applying its named application lemma.
+  change ((realCliffordFormZeroIsometryWeightedSumSquares 3).spinGroupEquiv s :
+      CliffordAlgebra _) =
+    CliffordAlgebra.equivOfIsometry (realCliffordFormZeroIsometryWeightedSumSquares 3)
+      (s : CliffordAlgebra _)
+  rw [QuadraticMap.IsometryEquiv.spinGroupEquiv_apply,
+    QuadraticMap.Isometry.coe_spinGroupMap_apply,
+    CliffordAlgebra.equivOfIsometry_apply]
 
 /-- Under the compact real three-dimensional Spin equivalence and the oriented pure-quaternion
 isometry, the Spin action is conjugation by the corresponding unit quaternion. -/
@@ -329,20 +380,21 @@ theorem realSpinThreeEquivQuaternionUnitary_action
         (realCliffordThreeZeroPureQuaternionEquiv v : ℍ[ℝ]) *
           star (realSpinThreeEquivQuaternionUnitary s : ℍ[ℝ]) := by
   have h := CliffordAlgebra.spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne_action
-    (s := realThreeToWeightedSumSquaresOne.spinGroupEquiv s) v
-  have ha : realThreeToWeightedSumSquaresOne.spinGroupEquiv s • v = s • v := by
-    rw [CliffordAlgebra.spinGroup_smul_apply, CliffordAlgebra.spinGroup_smul_apply]
+    (s := castSpinElem weightedSumSquares_one_three_eq
+      ((realCliffordFormZeroIsometryWeightedSumSquares 3).spinGroupEquiv s)) v
+  have ha :
+      (castSpinElem weightedSumSquares_one_three_eq
+        ((realCliffordFormZeroIsometryWeightedSumSquares 3).spinGroupEquiv s)) • v = s • v := by
+    rw [castSpinElem_smul, CliffordAlgebra.spinGroup_smul_apply,
+      CliffordAlgebra.spinGroup_smul_apply]
     have hmap := QuadraticMap.Isometry.spinGroupMap_spinVectorAction
-      realThreeToWeightedSumSquaresOne.toIsometry s v
-    -- Naturality is stated for `spinGroupMap`, whereas the local term uses the bundled
-    -- `spinGroupEquiv`; expose the common `spinVectorAction` equation before rewriting that bridge.
-    change CliffordAlgebra.spinVectorAction _
-        (realThreeToWeightedSumSquaresOne.toIsometry.spinGroupMap s) v =
-      CliffordAlgebra.spinVectorAction _ s v at hmap
+      (realCliffordFormZeroIsometryWeightedSumSquares 3).toIsometry s v
+    simp only [QuadraticMap.IsometryEquiv.toIsometry_apply,
+      realCliffordFormZeroIsometryWeightedSumSquares_apply] at hmap
     simpa only [QuadraticMap.IsometryEquiv.spinGroupEquiv_apply] using hmap
   rw [ha] at h
   rw [← realThreeTransportedSpinEquiv_eq]
-  simpa only [realThreeTransportedSpinEquiv, MulEquiv.trans_apply,
+  simpa only [realThreeTransportedSpinEquiv, mulEquiv_trans_castSpinEquiv_apply,
     coe_realCliffordThreeZeroPureQuaternionEquiv_apply,
     CliffordAlgebra.coe_pureHamiltonEquivWeightedSumSquaresOne_apply] using h
 

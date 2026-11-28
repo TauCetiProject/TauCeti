@@ -165,14 +165,6 @@ theorem hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_realDetLieLift (a t : 
     push_cast
     ring
 
-/-- At the identity the determinant ray acts infinitesimally by `(ia/2) Id`. -/
-theorem hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_realDetLieLift_zero (a : ℝ) :
-    HasDerivAt (fun s : ℝ ↦ realSpinCHalfSpinSmoothHom o hQ b ρ ε
-      (lieExp (s • spinCGroup.realDetLieLift 4 hpos a)))
-      ((Complex.I * (a / 2)) • (1 : S →L[ℂ] S)) 0 := by
-  simpa using
-    hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_realDetLieLift o hQ b ρ ε a 0
-
 /-- The smooth weight-one half-spin representation of compact `Spinᶜ(4)` lifted to the Lie group
 `(S →L[ℂ] S)ˣ` of invertible continuous endomorphisms. -/
 def realSpinCHalfSpinUnitsSmoothHom :
@@ -187,18 +179,6 @@ theorem coe_realSpinCHalfSpinUnitsSmoothHom_apply (x : SpinC) :
       realSpinCHalfSpinSmoothHom o hQ b ρ ε x :=
   (realSpinCHalfSpinSmoothHom o hQ b ρ ε).coe_toHomUnits x
 
-/-- Along any Lie-algebra ray `s ↦ exp(s • Z)` in `Spinᶜ(4)`, the smooth half-spin action has
-initial velocity equal to its Lie differential in canonical endomorphism coordinates. -/
-theorem hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_zero
-    (Z : LeftInvariantDerivation IC SpinC) :
-    HasDerivAt (fun s : ℝ ↦ realSpinCHalfSpinSmoothHom o hQ b ρ ε (lieExp (s • Z)))
-      (unitsLieAlgebraEquiv (lieMap (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε) Z)) 0 := by
-  let _ : T2Space SpinC := ModelWithCorners.t2Space_of_lieGroup IC ∞
-  exact ((realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε).hasDerivAt_lieExp_smul_val_zero
-    Z).congr_of_eventuallyEq
-      (Filter.Eventually.of_forall fun s ↦
-        (coe_realSpinCHalfSpinUnitsSmoothHom_apply o hQ b ρ ε (lieExp (s • Z))).symm)
-
 /-- On the central determinant lift `realDetLieLift 4 hpos a`, the differentiated half-spin
 representation acts by `(ia/2) Id`, reflecting weight `1` of the spinor action versus weight `2` of
 the determinant character. -/
@@ -209,12 +189,22 @@ theorem unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_realDetLieLi
           (spinCGroup.realDetLieLift 4 hpos a)) =
       (Complex.I * (a / 2)) • (1 : S →L[ℂ] S) := by
   let _ : T2Space SpinC := ModelWithCorners.t2Space_of_lieGroup IC ∞
-  refine (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε).unitsLieAlgebraEquiv_lieMap_eq_of_hasDerivAt
-    (spinCGroup.realDetLieLift 4 hpos a) ?_
-  exact (hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_realDetLieLift_zero
-    o hQ b ρ ε a).congr_of_eventuallyEq
-    (Filter.Eventually.of_forall fun s ↦
-      coe_realSpinCHalfSpinUnitsSmoothHom_apply o hQ b ρ ε _)
+  have hlie :
+      HasDerivAt (fun s : ℝ ↦ realSpinCHalfSpinSmoothHom o hQ b ρ ε
+          (lieExp (s • spinCGroup.realDetLieLift 4 hpos a)))
+        (unitsLieAlgebraEquiv (lieMap (realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε)
+          (spinCGroup.realDetLieLift 4 hpos a))) 0 :=
+    ((realSpinCHalfSpinUnitsSmoothHom o hQ b ρ ε).hasDerivAt_lieExp_smul_val_zero
+      (spinCGroup.realDetLieLift 4 hpos a)).congr_of_eventuallyEq
+        (Filter.Eventually.of_forall fun s ↦
+          (coe_realSpinCHalfSpinUnitsSmoothHom_apply o hQ b ρ ε _).symm)
+  have hdet :
+      HasDerivAt (fun s : ℝ ↦ realSpinCHalfSpinSmoothHom o hQ b ρ ε
+          (lieExp (s • spinCGroup.realDetLieLift 4 hpos a)))
+        ((Complex.I * (a / 2)) • (1 : S →L[ℂ] S)) 0 := by
+    simpa only [zero_mul, zero_div, Circle.exp_zero, Circle.coe_one, mul_one] using
+      hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_realDetLieLift o hQ b ρ ε a 0
+  exact hlie.unique hdet
 
 /-- Restricting the smooth `Spinᶜ(4)` half-spin units homomorphism to `Spin(4)` along `ofSpin`
 agrees with `realHalfSpinSmoothHom` transported via

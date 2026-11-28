@@ -57,27 +57,6 @@ local notation "SpecialOrthogonalLieModel(" n ")" =>
   LieSubalgebra.toSubmodule (TauCeti.Lie.lieSubalgebraOfSubgroup
     (I := 𝓘(ℝ, Matrix (Fin n) (Fin n) ℝ)) (SpecialOrthogonalUnitsRange(n)))
 
-/-- The identity linear equivalence as an isometry from `realCliffordForm n 0` to the standard
-sum-of-squares form. -/
-def realCliffordFormZeroIsometryWeightedSumSquares (n : ℕ) :
-    (realCliffordForm n 0).IsometryEquiv (QuadraticMap.weightedSumSquares ℝ (1 : Fin n → ℝ)) where
-  __ := LinearEquiv.refl ℝ (Fin n → ℝ)
-  map_app' v := congrArg (fun Q : QuadraticForm ℝ (Fin n → ℝ) ↦ Q v)
-    (realCliffordForm_zero_eq_weightedSumSquares_one n).symm
-
-/-- `realCliffordFormZeroIsometryWeightedSumSquares` acts as the identity on vectors. -/
-@[simp]
-theorem realCliffordFormZeroIsometryWeightedSumSquares_apply (n : ℕ) (v : Fin n → ℝ) :
-    realCliffordFormZeroIsometryWeightedSumSquares n v = v :=
-  (rfl)
-
-/-- The inverse of `realCliffordFormZeroIsometryWeightedSumSquares` acts as the identity on
-vectors. -/
-@[simp]
-theorem realCliffordFormZeroIsometryWeightedSumSquares_symm_apply (n : ℕ) (v : Fin n → ℝ) :
-    (realCliffordFormZeroIsometryWeightedSumSquares n).symm v = v :=
-  (rfl)
-
 /-- The coordinate differential of the real Spin projection undoes
 `CliffordAlgebra.matrixSoEquivQuadratic`. -/
 theorem realCliffordSpinToSpecialOrthogonalCoordinateLieHom_matrixSoEquivQuadratic (n : ℕ)

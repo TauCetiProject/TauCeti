@@ -75,6 +75,8 @@ unfolding.
 * `TauCeti.realCliffordFormCongr`: the coordinate isometry between equal signatures.
 * `TauCeti.realCliffordBlockIsometry`: the splitting of the `(p, q)` form into its
   positive-definite `(p, 0)` and negative-definite `(0, q)` blocks.
+* `TauCeti.realCliffordFormZeroIsometryWeightedSumSquares`: the identity isometry from
+  `realCliffordForm n 0` to the standard real sum-of-squares form.
 * `TauCeti.realCliffordPositiveSplitIsometry`: the isometry which separates the last positive
   coordinate from a standard signature form.
 * `TauCeti.realCliffordFirstSplitIsometry`: the isometry which separates the first coordinate from
@@ -176,6 +178,27 @@ theorem realCliffordForm_zero_eq_weightedSumSquares_one (n : ℕ) :
   apply Finset.sum_congr rfl
   intro i _
   rw [realCliffordWeight_of_lt (by omega), one_mul]
+
+/-- The identity linear equivalence as an isometry from `realCliffordForm n 0` to the standard
+sum-of-squares form. -/
+def realCliffordFormZeroIsometryWeightedSumSquares (n : ℕ) :
+    (realCliffordForm n 0).IsometryEquiv (QuadraticMap.weightedSumSquares ℝ (1 : Fin n → ℝ)) where
+  __ := LinearEquiv.refl ℝ (Fin n → ℝ)
+  map_app' v := congrArg (fun Q : QuadraticForm ℝ (Fin n → ℝ) ↦ Q v)
+    (realCliffordForm_zero_eq_weightedSumSquares_one n).symm
+
+/-- `realCliffordFormZeroIsometryWeightedSumSquares` acts as the identity on vectors. -/
+@[simp]
+theorem realCliffordFormZeroIsometryWeightedSumSquares_apply (n : ℕ) (v : Fin n → ℝ) :
+    realCliffordFormZeroIsometryWeightedSumSquares n v = v :=
+  (rfl)
+
+/-- The inverse of `realCliffordFormZeroIsometryWeightedSumSquares` acts as the identity on
+vectors. -/
+@[simp]
+theorem realCliffordFormZeroIsometryWeightedSumSquares_symm_apply (n : ℕ) (v : Fin n → ℝ) :
+    (realCliffordFormZeroIsometryWeightedSumSquares n).symm v = v :=
+  (rfl)
 
 /-- The signature forms are nondegenerate. -/
 theorem nondegenerate_realCliffordForm (p q : ℕ) : (realCliffordForm p q).Nondegenerate :=
