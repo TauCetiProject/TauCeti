@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Finsupp.Order
 public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
-public import TauCeti.Algebra.MonoidAlgebra.Face
+public import TauCeti.Algebra.MonoidAlgebra.Face.Basic
 public import TauCeti.Algebra.MonoidAlgebra.TensorProduct
 
 /-!

@@ -93,11 +93,12 @@ theorem faceRestriction_eq_comapDomain (p : AddMonoidAlgebra R M) :
     ext a
     simp [hp]
 
-/-- Restriction retains a monomial on the face. -/
+/-- Restriction retains a monomial whose exponent lies in the face. -/
 @[simp]
-theorem faceRestriction_single_mem (a : F) (r : R) :
-    F.faceRestriction hF R (single (a : M) r) = single a r := by
-  rw [faceRestriction_eq_comapDomain, comapDomain_single_map]
+theorem faceRestriction_single_of_mem {a : M} (ha : a ∈ F) (r : R) :
+    F.faceRestriction hF R (single a r) = single ⟨a, ha⟩ r := by
+  rw [faceRestriction_eq_comapDomain]
+  exact comapDomain_single_map Subtype.val Subtype.val_injective ⟨a, ha⟩ r
 
 /-- Restriction kills a monomial outside the face. -/
 @[simp]
@@ -257,10 +258,8 @@ theorem faceRestriction_mapDomainRingHom_nsmul (hn : n ≠ 0) (p : AddMonoidAlge
   | add p q hp hq => simp only [map_add, hp, hq]
   | single a r =>
     by_cases ha : a ∈ F
-    · have h := F.faceRestriction_single_mem hF (n • ⟨a, ha⟩) r
-      rw [AddSubmonoidClass.coe_nsmul] at h
-      simp only [mapDomainRingHom_apply, mapDomain_single, nsmulAddMonoidHom_apply, h,
-        F.faceRestriction_single_mem hF ⟨a, ha⟩]
+    · simp [mapDomainRingHom_apply, F.faceRestriction_single_of_mem hF ha,
+        F.faceRestriction_single_of_mem hF (F.nsmul_mem ha n)]
     · have hna : n • a ∉ F := fun h ↦ ha ((hF.nsmulSaturated h).resolve_left hn)
       simp [mapDomainRingHom_apply, F.faceRestriction_single_of_notMem hF ha,
         F.faceRestriction_single_of_notMem hF hna]

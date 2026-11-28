@@ -75,9 +75,11 @@ of arbitrary semigroup algebras `R[S]` (without assuming `S.FG`, except for modu
 * `AddMonoidAlgebra.nsmulSaturationInfClosureToFractionRing` and
   `AddMonoidAlgebra.isFractionRing_nsmulSaturation_inf_closure`: canonical embedding of `R[S_sat]`
   into any fraction ring `K` of `R[S]`, making `K` a fraction ring of `R[S_sat]`.
-* `TauCeti.AddMonoidAlgebra.isIntegralClosure_nsmulSaturation_inf_closure_fractionRing` and
-  `AddSubmonoid.nsmulSaturationInfClosureEquivIntegralClosure`: `R[S_sat]` is the integral closure
-  of `R[S]` in any fraction ring `K` over an integrally closed domain `R`.
+* `TauCeti.AddMonoidAlgebra.isIntegralClosure_nsmulSaturation_inf_closure_fractionRing`,
+  `AddSubmonoid.nsmulSaturationInfClosureEquivIntegralClosure`, and
+  `AddSubmonoid.fiberIntegralClosureEquivMapDomainAlgHom`: `R[S_sat]` is the integral closure of
+  `R[S]` in any fraction ring `K` over an integrally closed domain `R`, is canonically isomorphic
+  to any integral closure `B`, and identifies fibers of points over `R[S]`.
 * `AddMonoidAlgebra.moduleFinite_integralClosure_of_free`,
   `AddSubmonoid.FG.moduleFinite_integralClosure_addMonoidAlgebra_addSubgroupClosure`, and
   `AddSubmonoid.FG.moduleFinite_integralClosure_addMonoidAlgebra_fractionRing`: finiteness of the
@@ -543,107 +545,110 @@ variable {G : Type*} [AddCommGroup G] [Module.IsTorsionFree ℤ G]
 
 /-- Over an integrally closed domain `R`, for any submonoid `S` of a torsion-free abelian group `G`,
 the canonical `R[S]`-algebra isomorphism between
-`R[S.nsmulSaturation ⊓ (AddSubgroup.closure S).toAddSubmonoid]` and the integral closure of `R[S]`
-in any fraction ring `K` of `R[S]` (for instance `K = FractionRing (AddMonoidAlgebra R S)`). -/
-noncomputable def nsmulSaturationInfClosureEquivIntegralClosure (S : AddSubmonoid G) (R K : Type*)
+`R[S.nsmulSaturation ⊓ (AddSubgroup.closure S).toAddSubmonoid]` and any integral closure `B` of
+`R[S]` in a fraction ring `K` of `R[S]` (for example,
+`B = integralClosure (AddMonoidAlgebra R S) K`). -/
+noncomputable def nsmulSaturationInfClosureEquivIntegralClosure (S : AddSubmonoid G) (R K B : Type*)
     [CommRing R] [IsDomain R] [IsIntegrallyClosed R] [CommRing K]
-    [Algebra (AddMonoidAlgebra R S) K] [IsFractionRing (AddMonoidAlgebra R S) K] :
+    [Algebra (AddMonoidAlgebra R S) K] [IsFractionRing (AddMonoidAlgebra R S) K]
+    [CommRing B] [Algebra (AddMonoidAlgebra R S) B] [Algebra B K]
+    [IsScalarTower (AddMonoidAlgebra R S) B K] [IsIntegralClosure B (AddMonoidAlgebra R S) K] :
     letI := (mapDomainRingHom R
       (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
     AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid) ≃ₐ[
-        AddMonoidAlgebra R S]
-      integralClosure (AddMonoidAlgebra R S) K :=
+        AddMonoidAlgebra R S] B :=
   letI := (mapDomainRingHom R
     (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
   letI := (nsmulSaturationInfClosureToFractionRing S R K).toAlgebra
   haveI : IsScalarTower (AddMonoidAlgebra R S)
       (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid))
-      K :=
-    IsScalarTower.of_algebraMap_eq fun f =>
-      (nsmulSaturationInfClosureToFractionRing_mapDomain_inclusion S R K f).symm
-  haveI :=
-    TauCeti.AddMonoidAlgebra.isIntegralClosure_nsmulSaturation_inf_closure_fractionRing
-      (R := R) (S := S) (K := K)
+      K := IsScalarTower.of_algebraMap_eq fun f =>
+    (nsmulSaturationInfClosureToFractionRing_mapDomain_inclusion S R K f).symm
+  haveI := TauCeti.AddMonoidAlgebra.isIntegralClosure_nsmulSaturation_inf_closure_fractionRing
+    (R := R) (S := S) (K := K)
   IsIntegralClosure.equiv (AddMonoidAlgebra R S)
-    (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid)) K
-    (integralClosure (AddMonoidAlgebra R S) K)
+    (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid)) K B
 
 /-- `nsmulSaturationInfClosureEquivIntegralClosure` acts on `K` via
 `nsmulSaturationInfClosureToFractionRing`. -/
 @[simp]
-theorem coe_nsmulSaturationInfClosureEquivIntegralClosure_apply (S : AddSubmonoid G) (R K : Type*)
-    [CommRing R] [IsDomain R] [IsIntegrallyClosed R] [CommRing K]
+theorem algebraMap_nsmulSaturationInfClosureEquivIntegralClosure_apply (S : AddSubmonoid G)
+    (R K B : Type*) [CommRing R] [IsDomain R] [IsIntegrallyClosed R] [CommRing K]
     [Algebra (AddMonoidAlgebra R S) K] [IsFractionRing (AddMonoidAlgebra R S) K]
+    [CommRing B] [Algebra (AddMonoidAlgebra R S) B] [Algebra B K]
+    [IsScalarTower (AddMonoidAlgebra R S) B K] [IsIntegralClosure B (AddMonoidAlgebra R S) K]
     (f : AddMonoidAlgebra R
       ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid)) :
-    (S.nsmulSaturationInfClosureEquivIntegralClosure R K f : K) =
+    algebraMap B K (S.nsmulSaturationInfClosureEquivIntegralClosure R K B f) =
       nsmulSaturationInfClosureToFractionRing S R K f := by
-  have h :
-      algebraMap (integralClosure (AddMonoidAlgebra R S) K) K
-          (S.nsmulSaturationInfClosureEquivIntegralClosure R K f) =
-        nsmulSaturationInfClosureToFractionRing S R K f := by
-    rw [nsmulSaturationInfClosureEquivIntegralClosure, IsIntegralClosure.algebraMap_equiv,
-      RingHom.algebraMap_toAlgebra]
-  simpa using h
+  rw [nsmulSaturationInfClosureEquivIntegralClosure, IsIntegralClosure.algebraMap_equiv,
+    RingHom.algebraMap_toAlgebra]
 
 /-- `nsmulSaturationInfClosureEquivIntegralClosure` maps an element pushed forward from `R[S]`
-along `AddSubmonoid.inclusion` to its `algebraMap` image in `integralClosure (R[S]) K`. -/
+along `AddSubmonoid.inclusion` to its `algebraMap` image in `B`. -/
 @[simp]
 theorem nsmulSaturationInfClosureEquivIntegralClosure_mapDomain_inclusion (S : AddSubmonoid G)
-    (R K : Type*) [CommRing R] [IsDomain R] [IsIntegrallyClosed R] [CommRing K]
+    (R K B : Type*) [CommRing R] [IsDomain R] [IsIntegrallyClosed R] [CommRing K]
     [Algebra (AddMonoidAlgebra R S) K] [IsFractionRing (AddMonoidAlgebra R S) K]
+    [CommRing B] [Algebra (AddMonoidAlgebra R S) B] [Algebra B K]
+    [IsScalarTower (AddMonoidAlgebra R S) B K] [IsIntegralClosure B (AddMonoidAlgebra R S) K]
     (f : AddMonoidAlgebra R S) :
-    S.nsmulSaturationInfClosureEquivIntegralClosure R K
+    S.nsmulSaturationInfClosureEquivIntegralClosure R K B
         (mapDomain
           (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)) f) =
-      algebraMap (AddMonoidAlgebra R S) (integralClosure (AddMonoidAlgebra R S) K) f := by
-  ext
-  simp
+      algebraMap (AddMonoidAlgebra R S) B f := by
+  apply IsIntegralClosure.algebraMap_injective B (AddMonoidAlgebra R S) K
+  simp [IsScalarTower.algebraMap_apply (AddMonoidAlgebra R S) B K]
 
 /-- `nsmulSaturationInfClosureEquivIntegralClosure` maps a monomial coming from `S` along
-`AddSubmonoid.inclusion` to its `algebraMap` image in `integralClosure (R[S]) K`. -/
+`AddSubmonoid.inclusion` to its `algebraMap` image in `B`. -/
 @[simp]
 theorem nsmulSaturationInfClosureEquivIntegralClosure_single_inclusion (S : AddSubmonoid G)
-    (R K : Type*) [CommRing R] [IsDomain R] [IsIntegrallyClosed R] [CommRing K]
+    (R K B : Type*) [CommRing R] [IsDomain R] [IsIntegrallyClosed R] [CommRing K]
     [Algebra (AddMonoidAlgebra R S) K] [IsFractionRing (AddMonoidAlgebra R S) K]
+    [CommRing B] [Algebra (AddMonoidAlgebra R S) B] [Algebra B K]
+    [IsScalarTower (AddMonoidAlgebra R S) B K] [IsIntegralClosure B (AddMonoidAlgebra R S) K]
     (s : S) (r : R) :
-    S.nsmulSaturationInfClosureEquivIntegralClosure R K
+    S.nsmulSaturationInfClosureEquivIntegralClosure R K B
         (single
           (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure) s) r) =
-      algebraMap (AddMonoidAlgebra R S) (integralClosure (AddMonoidAlgebra R S) K)
-        (single s r) := by
+      algebraMap (AddMonoidAlgebra R S) B (single s r) := by
   rw [← mapDomain_single, nsmulSaturationInfClosureEquivIntegralClosure_mapDomain_inclusion]
 
 /-- `nsmulSaturationInfClosureEquivIntegralClosure` maps a constant monomial `single 0 r` to its
-`algebraMap` image in `integralClosure (R[S]) K`. -/
+`algebraMap` image in `B`. -/
 @[simp]
 theorem nsmulSaturationInfClosureEquivIntegralClosure_single_zero (S : AddSubmonoid G)
-    (R K : Type*) [CommRing R] [IsDomain R] [IsIntegrallyClosed R] [CommRing K]
-    [Algebra (AddMonoidAlgebra R S) K] [IsFractionRing (AddMonoidAlgebra R S) K] (r : R) :
-    S.nsmulSaturationInfClosureEquivIntegralClosure R K (single 0 r) =
-      algebraMap (AddMonoidAlgebra R S) (integralClosure (AddMonoidAlgebra R S) K)
-        (single 0 r) := by
-  ext
-  simp
+    (R K B : Type*) [CommRing R] [IsDomain R] [IsIntegrallyClosed R] [CommRing K]
+    [Algebra (AddMonoidAlgebra R S) K] [IsFractionRing (AddMonoidAlgebra R S) K]
+    [CommRing B] [Algebra (AddMonoidAlgebra R S) B] [Algebra B K]
+    [IsScalarTower (AddMonoidAlgebra R S) B K] [IsIntegralClosure B (AddMonoidAlgebra R S) K]
+    (r : R) :
+    S.nsmulSaturationInfClosureEquivIntegralClosure R K B (single 0 r) =
+      algebraMap (AddMonoidAlgebra R S) B (single 0 r) := by
+  simpa using S.nsmulSaturationInfClosureEquivIntegralClosure_single_inclusion R K B 0 r
 
 /-- Applying `nsmulSaturationInfClosureToFractionRing` to the inverse of
-`nsmulSaturationInfClosureEquivIntegralClosure` recovers the underlying element of `K`. -/
+`nsmulSaturationInfClosureEquivIntegralClosure` recovers the `algebraMap B K` image in `K`. -/
 @[simp]
 theorem
     nsmulSaturationInfClosureToFractionRing_nsmulSaturationInfClosureEquivIntegralClosure_symm_apply
-    (S : AddSubmonoid G) (R K : Type*) [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
+    (S : AddSubmonoid G) (R K B : Type*) [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
     [CommRing K] [Algebra (AddMonoidAlgebra R S) K] [IsFractionRing (AddMonoidAlgebra R S) K]
-    (x : integralClosure (AddMonoidAlgebra R S) K) :
+    [CommRing B] [Algebra (AddMonoidAlgebra R S) B] [Algebra B K]
+    [IsScalarTower (AddMonoidAlgebra R S) B K] [IsIntegralClosure B (AddMonoidAlgebra R S) K]
+    (x : B) :
     letI := (mapDomainRingHom R
       (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
     nsmulSaturationInfClosureToFractionRing S R K
-        ((S.nsmulSaturationInfClosureEquivIntegralClosure R K).symm x) =
-      x := by
+        ((S.nsmulSaturationInfClosureEquivIntegralClosure R K B).symm x) =
+      algebraMap B K x := by
   let := (mapDomainRingHom R
     (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
-  rw [← coe_nsmulSaturationInfClosureEquivIntegralClosure_apply S R K, AlgEquiv.apply_symm_apply]
+  rw [← algebraMap_nsmulSaturationInfClosureEquivIntegralClosure_apply S R K B,
+    AlgEquiv.apply_symm_apply]
 
-/-- `(S.nsmulSaturationInfClosureEquivIntegralClosure R K).symm` recovers `f` from its image under
+/-- `(S.nsmulSaturationInfClosureEquivIntegralClosure R K _).symm` recovers `f` from its image under
 `nsmulSaturationInfClosureToFractionRing`. -/
 @[simp]
 theorem nsmulSaturationInfClosureEquivIntegralClosure_symm_apply_mk (S : AddSubmonoid G)
@@ -655,14 +660,92 @@ theorem nsmulSaturationInfClosureEquivIntegralClosure_symm_apply_mk (S : AddSubm
       integralClosure (AddMonoidAlgebra R S) K) :
     letI := (mapDomainRingHom R
       (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
-    (S.nsmulSaturationInfClosureEquivIntegralClosure R K).symm
-        ⟨nsmulSaturationInfClosureToFractionRing S R K f, hf⟩ =
-      f := by
+    (S.nsmulSaturationInfClosureEquivIntegralClosure R K
+        (integralClosure (AddMonoidAlgebra R S) K)).symm
+        ⟨nsmulSaturationInfClosureToFractionRing S R K f, hf⟩ = f := by
   let := (mapDomainRingHom R
     (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
-  apply (S.nsmulSaturationInfClosureEquivIntegralClosure R K).injective
-  ext
-  simp
+  exact (S.nsmulSaturationInfClosureEquivIntegralClosure R K _).injective <|
+    IsIntegralClosure.algebraMap_injective (integralClosure (AddMonoidAlgebra R S) K)
+      (AddMonoidAlgebra R S) K (by simp)
+
+omit [Module.IsTorsionFree ℤ G] in
+private theorem algebraMap_eq_mapDomainAlgHom_inclusion (S : AddSubmonoid G) (R : Type*)
+    [CommSemiring R] (f : AddMonoidAlgebra R S) :
+    letI := (mapDomainRingHom R
+      (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
+    algebraMap (AddMonoidAlgebra R S) _ f = mapDomainAlgHom R R
+      (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)) f := by
+  simp [RingHom.algebraMap_toAlgebra]
+
+/-- For an integrally closed domain `R`, torsion-free `G`, and integral closure `B` of `R[S]` in
+`L`, the fiber of `B →+* K` over `x : R[S] →ₐ[R] K` is equivalent to the fiber of
+`R[S.nsmulSaturation ⊓ (AddSubgroup.closure S).toAddSubmonoid] →ₐ[R] K`. -/
+noncomputable def fiberIntegralClosureEquivMapDomainAlgHom (S : AddSubmonoid G) (R L B K : Type*)
+    [CommRing R] [IsDomain R] [IsIntegrallyClosed R] [CommRing L] [Algebra (AddMonoidAlgebra R S) L]
+    [IsFractionRing (AddMonoidAlgebra R S) L] [CommRing B] [Algebra (AddMonoidAlgebra R S) B]
+    [Algebra B L] [IsScalarTower (AddMonoidAlgebra R S) B L]
+    [IsIntegralClosure B (AddMonoidAlgebra R S) L] [CommSemiring K] [Algebra R K]
+    (x : AddMonoidAlgebra R S →ₐ[R] K) :
+    {z : B →+* K // z.comp (algebraMap (AddMonoidAlgebra R S) B) = x.toRingHom} ≃
+      {y : AddMonoidAlgebra R
+          ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid) →ₐ[R] K //
+        y.comp (mapDomainAlgHom R R
+          (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))) = x} :=
+  letI := (mapDomainRingHom R
+    (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
+  let e := S.nsmulSaturationInfClosureEquivIntegralClosure R L B
+  { toFun := fun z ↦
+      ⟨{ z.val.comp e.toRingHom with
+          commutes' := fun r ↦ by
+            simp only [RingHom.toFun_eq_coe, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
+              RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv]
+            rw [← (mapDomainAlgHom R R (AddSubmonoid.inclusion
+                (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).commutes r,
+              ← algebraMap_eq_mapDomainAlgHom_inclusion, e.commutes]
+            exact (RingHom.congr_fun z.property _).trans (x.commutes r) },
+        AlgHom.ext fun f ↦ by
+          simp only [AlgHom.comp_apply, AlgHom.coe_mk, RingHom.comp_apply,
+            RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv]
+          rw [← algebraMap_eq_mapDomainAlgHom_inclusion, e.commutes]
+          exact RingHom.congr_fun z.property f⟩
+    invFun := fun y ↦ ⟨y.val.toRingHom.comp e.symm.toRingHom, RingHom.ext fun f ↦ by
+      simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, AlgEquiv.coe_toRingEquiv,
+        AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+      rw [e.symm.commutes f, algebraMap_eq_mapDomainAlgHom_inclusion]
+      exact AlgHom.congr_fun y.property f⟩
+    left_inv := fun z ↦ Subtype.ext <| RingHom.ext fun b ↦ congrArg z.val (e.apply_symm_apply b)
+    right_inv := fun y ↦ Subtype.ext <| AlgHom.ext fun f ↦ congrArg y.val (e.symm_apply_apply f) }
+
+/-- Evaluating `fiberIntegralClosureEquivMapDomainAlgHom` gives `z.val.comp e.toRingHom`. -/
+theorem coe_fiberIntegralClosureEquivMapDomainAlgHom_apply (S : AddSubmonoid G) (R L B K : Type*)
+    [CommRing R] [IsDomain R] [IsIntegrallyClosed R] [CommRing L] [Algebra (AddMonoidAlgebra R S) L]
+    [IsFractionRing (AddMonoidAlgebra R S) L] [CommRing B] [Algebra (AddMonoidAlgebra R S) B]
+    [Algebra B L] [IsScalarTower (AddMonoidAlgebra R S) B L]
+    [IsIntegralClosure B (AddMonoidAlgebra R S) L] [CommSemiring K] [Algebra R K]
+    (x : AddMonoidAlgebra R S →ₐ[R] K)
+    (z : {z : B →+* K // z.comp (algebraMap (AddMonoidAlgebra R S) B) = x.toRingHom}) :
+    (S.fiberIntegralClosureEquivMapDomainAlgHom R L B K x z : AddMonoidAlgebra R
+        ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid) →ₐ[R] K).toRingHom =
+      z.val.comp (S.nsmulSaturationInfClosureEquivIntegralClosure R L B).toRingHom := (rfl)
+
+/-- The inverse of `fiberIntegralClosureEquivMapDomainAlgHom` gives
+`y.val.toRingHom.comp e.symm.toRingHom`. -/
+theorem coe_fiberIntegralClosureEquivMapDomainAlgHom_symm_apply (S : AddSubmonoid G)
+    (R L B K : Type*) [CommRing R] [IsDomain R] [IsIntegrallyClosed R] [CommRing L]
+    [Algebra (AddMonoidAlgebra R S) L] [IsFractionRing (AddMonoidAlgebra R S) L] [CommRing B]
+    [Algebra (AddMonoidAlgebra R S) B] [Algebra B L] [IsScalarTower (AddMonoidAlgebra R S) B L]
+    [IsIntegralClosure B (AddMonoidAlgebra R S) L] [CommSemiring K] [Algebra R K]
+    (x : AddMonoidAlgebra R S →ₐ[R] K)
+    (y : {y : AddMonoidAlgebra R
+        ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid) →ₐ[R] K //
+      y.comp (mapDomainAlgHom R R
+        (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))) = x}) :
+    letI := (mapDomainRingHom R
+      (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
+    ((S.fiberIntegralClosureEquivMapDomainAlgHom R L B K x).symm y : B →+* K) =
+      y.val.toRingHom.comp
+        (S.nsmulSaturationInfClosureEquivIntegralClosure R L B).symm.toRingHom := (rfl)
 
 /-- **Finite normalization of a semigroup algebra.** Over an integrally closed domain `R`, for any
 finitely generated submonoid `S` of a torsion-free abelian group `G` and any fraction ring `K` of
@@ -673,19 +756,17 @@ theorem FG.moduleFinite_integralClosure_addMonoidAlgebra_fractionRing {R K : Typ
     Module.Finite (AddMonoidAlgebra R S) (integralClosure (AddMonoidAlgebra R S) K) := by
   let := (mapDomainRingHom R
     (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))).toAlgebra
-  have : Module.Finite (AddMonoidAlgebra R S)
-      (AddMonoidAlgebra R
-        ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid)) :=
+  have : Module.Finite (AddMonoidAlgebra R S) (AddMonoidAlgebra R
+      ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid)) :=
     hS.finite_mapDomainRingHom_inclusion_nsmulSaturation_inf_closure R
-  exact Module.Finite.equiv (S.nsmulSaturationInfClosureEquivIntegralClosure R K).toLinearEquiv
+  exact Module.Finite.equiv (S.nsmulSaturationInfClosureEquivIntegralClosure R K _).toLinearEquiv
 
 /-- Over an integrally closed domain `R`, the semigroup algebra `R[S]` of any `NSMulSaturated`
 submonoid `S` of a torsion-free abelian group `G` is integrally closed. -/
 theorem NSMulSaturated.isIntegrallyClosed_addMonoidAlgebra {R : Type*} [CommRing R] [IsDomain R]
     [IsIntegrallyClosed R] {S : AddSubmonoid G} (hsat : S.NSMulSaturated) :
     IsIntegrallyClosed (AddMonoidAlgebra R S) := by
-  let _ : Algebra (AddMonoidAlgebra R S) (AddMonoidAlgebra R G) :=
-    (mapDomainRingHom R S.subtype).toAlgebra
+  let := (mapDomainRingHom R S.subtype).toAlgebra
   have : IsIntegrallyClosedIn (AddMonoidAlgebra R S) (AddMonoidAlgebra R G) :=
     (S.isIntegrallyClosedIn_iff_nsmulSaturated R).mpr hsat
   have : FaithfulSMul (AddMonoidAlgebra R S) (AddMonoidAlgebra R G) :=

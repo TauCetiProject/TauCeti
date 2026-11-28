@@ -87,16 +87,30 @@ section
 
 variable {R M : Type*} [AddCommGroup M]
 
-/-- A linear functional that is nonnegative on a pointed cone cuts out a face of the cone. -/
-theorem isFaceOf_inf_ker [Semiring R] [PartialOrder R] [IsOrderedRing R] [NoZeroDivisors R]
-    [Module R M] {C : PointedCone R M} {φ : Module.Dual R M} (hφ : ∀ x ∈ C, 0 ≤ φ x) :
+private theorem isFaceOf_inf_ker_of [Semiring R] [PartialOrder R] [IsOrderedRing R] [Module R M]
+    (h0 : ∀ {a b : R}, 0 < a → 0 ≤ b → a * b = 0 → b = 0)
+    {C : PointedCone R M} {φ : Module.Dual R M} (hφ : ∀ x ∈ C, 0 ≤ φ x) :
     (C ⊓ PointedCone.ofSubmodule (LinearMap.ker φ)).IsFaceOf C := by
   refine ⟨inf_le_left, fun {x y a} hx hy ha hxy ↦ ⟨hx, ?_⟩⟩
   have hker : φ (a • x + y) = 0 := hxy.2
   rw [map_add, map_smul, smul_eq_mul] at hker
   have hax : a * φ x = 0 :=
     (add_eq_zero_iff_of_nonneg (mul_nonneg ha.le (hφ x hx)) (hφ y hy)).1 hker |>.1
-  exact (mul_eq_zero.1 hax).resolve_left ha.ne'
+  exact h0 ha (hφ x hx) hax
+
+/-- A linear functional that is nonnegative on a pointed cone cuts out a face of the cone. -/
+theorem isFaceOf_inf_ker [Semiring R] [PartialOrder R] [IsOrderedRing R] [NoZeroDivisors R]
+    [Module R M] {C : PointedCone R M} {φ : Module.Dual R M} (hφ : ∀ x ∈ C, 0 ≤ φ x) :
+    (C ⊓ PointedCone.ofSubmodule (LinearMap.ker φ)).IsFaceOf C :=
+  isFaceOf_inf_ker_of (fun ha _ hab ↦ (mul_eq_zero.1 hab).resolve_left ha.ne') hφ
+
+/-- A linear functional that is nonnegative on a pointed cone over a ring with `PosMulStrictMono`
+cuts out a face of the cone. -/
+theorem isFaceOf_inf_ker_of_posMulStrictMono [Semiring R] [PartialOrder R] [IsOrderedRing R]
+    [PosMulStrictMono R] [Module R M] {C : PointedCone R M} {φ : Module.Dual R M}
+    (hφ : ∀ x ∈ C, 0 ≤ φ x) :
+    (C ⊓ PointedCone.ofSubmodule (LinearMap.ker φ)).IsFaceOf C :=
+  isFaceOf_inf_ker_of (fun ha hb hab ↦ by_contra fun h ↦ (mul_pos ha (hb.lt_of_ne' h)).ne' hab) hφ
 
 /-- Let `F` be a face of the cone hull `C` of a set `s`. A linear functional that is nonnegative on
 `s` and vanishes at exactly those members of `s` which lie in `F` cuts out `F` from `C`. -/

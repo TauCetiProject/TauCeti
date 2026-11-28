@@ -5,14 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.TypeTags.Hom
 public import Mathlib.Data.PNat.Basic
 public import Mathlib.GroupTheory.Divisible
 
 import Mathlib.Algebra.Category.Grp.Injective
+import Mathlib.Algebra.Module.Injective
 import Mathlib.Data.Rat.Cast.CharZero
 
 /-!
-# Divisibility on `Additive` and compatible root families
+# Divisibility on `Additive`, compatible root families, and character extensions
 
 An `ℕ`-rootable monoid `G` becomes an `ℕ`-divisible additive monoid under `Additive G`:
 `Additive.instDivisibleByNat` transfers `RootableBy G ℕ` to `DivisibleBy (Additive G) ℕ`.
@@ -26,6 +28,10 @@ is `ℕ`-rootable. More generally, for a `ℤ`-divisible additive commutative gr
 `d` of an additive commutative group `L` with no nonzero integer multiple in an additive subgroup
 `S`, Baer's criterion extends `1 ↦ c` along `ℤ ↪ L ⧸ S` to an additive homomorphism `L →+ A`
 vanishing on `S` and sending `d` to `c`.
+
+Similarly, injectivity of `Additive U` for an `ℕ`-rootable commutative group `U` allows any
+character `Multiplicative H →* U` to extend along any injective additive group homomorphism
+`f : H →+ L` (`TauCeti.exists_monoidHom_comp_toMultiplicative_eq_of_rootableBy`).
 
 ## Main definitions
 
@@ -44,6 +50,13 @@ vanishing on `S` and sending `d` to `c`.
   commutative group.
 * `TauCeti.exists_apply_one_eq_and_forall_pow_eq_of_rootableBy_units`: compatible `ℕ+`-indexed roots
   in a commutative group with zero whose unit group is `ℕ`-rootable.
+* `TauCeti.exists_monoidHom_comp_toMultiplicative_eq_of_rootableBy`: extending a character
+  `Multiplicative H →* U` along an injective `f : H →+ L` when `[RootableBy U ℕ]`.
+
+## References
+
+* W. Bruns and J. Gubeladze, *Polytopes, Rings, and K-Theory*, Chapter 2.
+* S. Lang, *Algebra*, Chapter III (divisible abelian groups and injectivity).
 -/
 
 public section
@@ -133,5 +146,17 @@ theorem exists_apply_one_eq_and_forall_pow_eq_of_rootableBy_units {M₀ : Type*}
   obtain ⟨y, hy1, hyd⟩ := exists_apply_one_eq_and_forall_pow_eq (Units.mk0 x hx)
   exact ⟨fun n ↦ (y n : M₀), by simpa using congrArg Units.val hy1,
     fun n d ↦ by simpa only [Units.val_pow_eq_pow_val] using congrArg Units.val (hyd n d)⟩
+
+/-- Into any commutative group `U` that is `ℕ`-rootable (for instance `Kˣ` for an algebraically
+closed field `K` via `TauCeti.IsAlgClosed.unitsRootableByNat`), every character
+`Multiplicative H →* U` extends along any injective additive group homomorphism `f : H →+ L`. -/
+theorem exists_monoidHom_comp_toMultiplicative_eq_of_rootableBy {H L U : Type*} [AddCommGroup H]
+    [AddCommGroup L] [CommGroup U] [RootableBy U ℕ] {f : H →+ L} (hf : Function.Injective f)
+    (ψ : Multiplicative H →* U) : ∃ χ : Multiplicative L →* U, χ.comp f.toMultiplicative = ψ := by
+  let : DivisibleBy (Additive U) ℤ := AddGroup.divisibleByIntOfDivisibleByNat (Additive U)
+  obtain ⟨g, hg⟩ := (Module.Baer.of_divisible (Additive U)).extension_property_addMonoidHom
+    f hf ψ.toAdditiveRight
+  exact ⟨AddMonoidHom.toMultiplicativeLeft g, MonoidHom.ext fun x ↦ by
+    simpa using congrArg Additive.toMul (DFunLike.congr_fun hg x.toAdd)⟩
 
 end TauCeti
