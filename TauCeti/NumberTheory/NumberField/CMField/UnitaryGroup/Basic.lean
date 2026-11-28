@@ -83,6 +83,8 @@ operators; `G(s)` acts on the hermitian spaces with an adelic frame
   `TauCeti.IsUnitaryLevel.isCompact`, `TauCeti.IsUnitaryLevel.relIndex_ne_zero`,
   `TauCeti.IsUnitaryLevel.inf`, `TauCeti.IsUnitaryLevel.mono`: levels are compact, of finite
   index in `K₀`, and stable under intersections and enlargement inside `K₀`.
+* `TauCeti.isUnit_diagonal_intCast_units`: the diagonal matrix `diag(s)` of a sign vector is
+  invertible.
 * `TauCeti.exists_mem_adelicUnitaryGroup_iff`: an adelic matrix lies in `G(s)` exactly when it
   preserves the form `diag(s)` at the infinite places and `1_n` at the finite places.
 * `TauCeti.finiteAdelicUnitaryGroup.continuous_proj`,
@@ -372,6 +374,12 @@ end FiniteAdelicUnitaryGroup
 
 /-! ### The adelic unitary group of a sign vector -/
 
+/-- **A diagonal matrix of signs is invertible**: for a sign vector `s : ι → ℤˣ`, the diagonal
+matrix `diag(s)` over any commutative ring is invertible, as each `s i` is. -/
+theorem isUnit_diagonal_intCast_units {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
+    (s : ι → ℤˣ) : IsUnit (diagonal fun i ↦ ((s i : ℤ) : R)) :=
+  isUnit_diagonal.2 (Pi.isUnit_iff.2 fun i ↦ (s i).isUnit.map (Int.castRingHom R))
+
 section InfiniteAdelicUnitaryGroup
 
 variable (E : Type*) [Field E] [CharZero E] [Algebra.IsIntegral ℚ E] [IsCMField E] {ι : Type*}
@@ -451,10 +459,8 @@ def adelicUnitaryGroup.ofMatrix {s : ι → ℤˣ} (M : Matrix ι ι (InfiniteAd
     (hM : star M * diagonal (fun i ↦ ((s i : ℤ) : InfiniteAdeleRing E)) * M =
       diagonal (fun i ↦ ((s i : ℤ) : InfiniteAdeleRing E)))
     (N : Matrix ι ι 𝔸ᶠ[E]) (hN : star N * N = 1) : adelicUnitaryGroup E s :=
-  have hs : IsUnit (diagonal fun i ↦ ((s i : ℤ) : InfiniteAdeleRing E)) :=
-    isUnit_diagonal.2 (Pi.isUnit_iff.2 fun i ↦ (s i).isUnit.map (Int.castRingHom _))
   have hN' : star N * 1 * N = 1 := by rwa [Matrix.mul_one]
-  ⟨((unitaryGroupOf.ofMatrix hs M hM : GL ι _),
+  ⟨((unitaryGroupOf.ofMatrix (isUnit_diagonal_intCast_units s) M hM : GL ι _),
       (unitaryGroupOf.ofMatrix isUnit_one N hN' : GL ι _)),
     (unitaryGroupOf.ofMatrix _ M hM).property,
     unitaryGroupOf_one.le (unitaryGroupOf.ofMatrix _ N hN').property⟩
