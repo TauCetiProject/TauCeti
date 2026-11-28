@@ -13,12 +13,10 @@ public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Weyl.Basic
 /-!
 # Rank-two Weyl groups and two-reflection dihedral subgroups
 
-For a realization `R` of any matrix `A` with diagonal `2` over any field, any pair of simple
-reflections `sᵢ = R.weylSimple hdiag i` and `sⱼ = R.weylSimple hdiag j` generates a dihedral
-subgroup `Subgroup.closure {sᵢ, sⱼ} ≃* DihedralGroup (orderOf (sᵢ * sⱼ))` via
-`TauCeti.dihedralGroupMulEquivClosure`. When `{i, j}` exhausts the index set `I`, this identifies
-the whole Weyl group `R.weylGroup hdiag` with `DihedralGroup (orderOf (sᵢ * sⱼ))`
-(`TauCeti.CartanRealization.dihedralGroupMulEquivWeyl`).
+For a realization `R` of any matrix `A` with diagonal `2` over any field, when a pair of indices
+`i, j : I` exhausts `I` (`∀ k : I, k = i ∨ k = j`), the Weyl group `R.weylGroup hdiag` is
+isomorphic to `DihedralGroup (orderOf (sᵢ * sⱼ))` for `sᵢ = R.weylSimple hdiag i` and
+`sⱼ = R.weylSimple hdiag j` (`TauCeti.CartanRealization.dihedralGroupMulEquivWeyl`).
 
 * **Order-four pairs and type `B₂`**: for any `i, j` with `A i j * A j i = 2` and
   `A i j ≠ 0 ∨ A j i ≠ 0`, `sᵢ * sⱼ` has order `4` over any field
