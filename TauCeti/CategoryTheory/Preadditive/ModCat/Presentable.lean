@@ -117,7 +117,7 @@ lemma isCardinalPresentable_sigma_yoneda {I : Type v} (hI : HasCardinalLT I κ) 
     isCardinalPresentable_monotone _ (IsRegular.aleph0_le Fact.out) _
       (inferInstanceAs (IsFinitelyPresentable.{v} ((yoneda C).obj (X i.as))))
   exact isCardinalPresentable_of_isColimit' _ (coproductIsCoproduct _) κ
-    ((hasCardinalLT_iff_of_equiv (Arrow.discreteEquiv I) κ).2 hI)
+    ((hasCardinalLT_arrow_discrete_iff κ).2 hI)
 
 private structure Presentation (F : ModCat.{v} C) where
   I : Type v
@@ -168,19 +168,37 @@ private abbrev relationGenerator (P : ∀ k : K, Presentation (D.obj k))
 
 private def ι (P : ∀ k : K, Presentation (D.obj k)) (k : K) :
     (∐ fun i ↦ (yoneda C).obj ((P k).X i)) ⟶ ∐ fun i ↦ (yoneda C).obj (generator P i) :=
-  Sigma.desc fun i ↦ Sigma.ι (fun j ↦ (yoneda C).obj (generator P j)) ⟨k, i⟩
+  Sigma.map' (g := fun i ↦ (yoneda C).obj ((P k).X i))
+    (f := fun i ↦ (yoneda C).obj (generator P i))
+    (fun i ↦ (⟨k, i⟩ : Σ k : K, (P k).I)) fun _ ↦ 𝟙 _
+
+@[reassoc]
+private lemma ι_ι (P : ∀ k : K, Presentation (D.obj k)) (k : K) (i : (P k).I) :
+    Sigma.ι (fun i ↦ (yoneda C).obj ((P k).X i)) i ≫ ι P k =
+      Sigma.ι (fun j ↦ (yoneda C).obj (generator P j)) ⟨k, i⟩ :=
+  (Sigma.ι_comp_map' (g := fun i ↦ (yoneda C).obj ((P k).X i))
+    (f := fun i ↦ (yoneda C).obj (generator P i))
+    (fun i ↦ (⟨k, i⟩ : Σ k : K, (P k).I)) (fun _ ↦ 𝟙 _) i).trans (Category.id_comp _)
 
 private def projection (P : ∀ k : K, Presentation (D.obj k)) (c : Cocone D) :
     (∐ fun i ↦ (yoneda C).obj (generator P i)) ⟶ c.pt :=
-  Sigma.desc fun i ↦
-    Sigma.ι (fun j ↦ (yoneda C).obj ((P i.1).X j)) i.2 ≫ (P i.1).π ≫ c.ι.app i.1
+  (sigmaSigmaIso (fun k ↦ (P k).I) fun k i ↦ (yoneda C).obj ((P k).X i)).inv ≫
+    Sigma.desc fun k ↦ (P k).π ≫ c.ι.app k
+
+@[reassoc]
+private lemma ι_generator_projection (P : ∀ k : K, Presentation (D.obj k)) (c : Cocone D)
+    (k : K) (i : (P k).I) :
+    Sigma.ι (fun j ↦ (yoneda C).obj (generator P j)) ⟨k, i⟩ ≫ projection P c =
+      Sigma.ι (fun j ↦ (yoneda C).obj ((P k).X j)) i ≫ (P k).π ≫ c.ι.app k := by
+  simp only [projection, sigmaSigmaIso_inv, Sigma.ι_comp_desc_assoc, Category.assoc,
+    Sigma.ι_comp_desc]
 
 @[reassoc]
 private lemma ι_projection (P : ∀ k : K, Presentation (D.obj k)) (c : Cocone D) (k : K) :
     ι P k ≫ projection P c = (P k).π ≫ c.ι.app k := by
   apply Sigma.hom_ext
   intro i
-  simp only [ι, projection, Sigma.ι_comp_desc_assoc, Sigma.ι_comp_desc]
+  rw [ι_ι_assoc, ι_generator_projection]
 
 private def lift (P : ∀ k : K, Presentation (D.obj k)) (a : Arrow K) :
     (∐ fun i ↦ (yoneda C).obj ((P a.left).X i)) ⟶
@@ -268,9 +286,9 @@ private def isCokernelOfDiagram (P : ∀ k : K, Presentation (D.obj k)) {c : Coc
   refine ⟨hc.desc c', ?_⟩
   apply Sigma.hom_ext
   rintro ⟨k, i⟩
-  rw [← Category.assoc, projection, Sigma.ι_comp_desc]
-  simp only [Category.assoc, hc.fac c' k]
-  simpa only [ι, Category.assoc, Sigma.ι_comp_desc_assoc] using
+  rw [ι_generator_projection_assoc]
+  simp only [hc.fac c' k]
+  simpa only [Category.assoc, ι_ι_assoc] using
     congrArg (Sigma.ι (fun j ↦ (yoneda C).obj ((P k).X j)) i ≫ ·) (hs k)
 
 end
@@ -356,15 +374,6 @@ private noncomputable def ιSigmaYonedaIso {I : Type*} [Small.{v} I] (X : I → 
     Sigma.mapIso fun i ↦ ((additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).liftCompιIso preadditiveYoneda
       fun _ ↦ (additiveFunctor_iff _).2 inferInstance).app (X i)
 
-private theorem exists_cokernel_yoneda_iff {I J : Type*} [Small.{v} I] [Small.{v} J]
-    (X : I → C) (Y : J → C) (F : ModCat.{v} C) :
-    (∃ (d : (∐ fun j ↦ (yoneda C).obj (Y j)) ⟶ ∐ fun i ↦ (yoneda C).obj (X i)),
-      Nonempty (cokernel d ≅ F)) ↔
-    ∃ (d : (∐ fun j ↦ preadditiveYoneda.obj (Y j)) ⟶ ∐ fun i ↦ preadditiveYoneda.obj (X i)),
-      Nonempty (cokernel d ≅ F.obj) :=
-  exists_cokernel_iso_iff_of_fullyFaithful (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι
-    (ιSigmaYonedaIso Y) (ιSigmaYonedaIso X) F
-
 /-- A module is finitely presentable exactly when its underlying functor has a finite
 presentation by representables. -/
 theorem isFinitelyPresentable_iff_isFinitelyPresentedFunctor [EssentiallySmall.{v} C]
@@ -378,24 +387,23 @@ theorem isFinitelyPresentable_iff_isFinitelyPresentedFunctor [EssentiallySmall.{
     have := (hasCardinalLT_aleph0_iff J).1 hJ
     obtain ⟨n, ⟨i⟩⟩ := Finite.exists_equiv_fin I
     obtain ⟨m, ⟨j⟩⟩ := Finite.exists_equiv_fin J
-    obtain ⟨d', ⟨e'⟩⟩ := (exists_cokernel_yoneda_iff X Y F).1 ⟨d, ⟨e⟩⟩
-    let eX := Sigma.reindex i.symm (fun k ↦ preadditiveYoneda.obj (X k))
-    let eY := Sigma.reindex j.symm (fun k ↦ preadditiveYoneda.obj (Y k))
-    let f := eY.hom ≫ d' ≫ eX.inv
-    let iso := cokernel.mapIso f d' eY eX (by simp [f])
-    let q := cokernel.π f ≫ (iso ≪≫ e').hom
+    obtain ⟨f, ⟨e'⟩⟩ := (exists_cokernel_iso_iff_of_fullyFaithful
+      (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι
+      (ιSigmaYonedaIso Y ≪≫ (Sigma.reindex j.symm (fun k ↦ preadditiveYoneda.obj (Y k))).symm)
+      (ιSigmaYonedaIso X ≪≫ (Sigma.reindex i.symm (fun k ↦ preadditiveYoneda.obj (X k))).symm)
+      F).1 ⟨d, ⟨e⟩⟩
+    let q := cokernel.π f ≫ e'.hom
     exact ⟨m, n, Y ∘ j.symm, X ∘ i.symm, f, q, by simp [q],
-      ⟨cokernel.cokernelIso f q (iso ≪≫ e') rfl⟩⟩
+      ⟨cokernel.cokernelIso f q e' rfl⟩⟩
   · rintro ⟨m, n, Y, X, d, p, hp, ⟨hc⟩⟩
-    let eX := Sigma.reindex (Equiv.ulift : ULift.{v} (Fin n) ≃ Fin n)
-      (fun k ↦ preadditiveYoneda.obj (X k))
-    let eY := Sigma.reindex (Equiv.ulift : ULift.{v} (Fin m) ≃ Fin m)
-      (fun k ↦ preadditiveYoneda.obj (Y k))
-    let f := eY.hom ≫ d ≫ eX.inv
-    let iso := cokernel.mapIso f d eY eX (by simp [f])
     let e := (cokernelIsCokernel d).coconePointUniqueUpToIso hc
-    obtain ⟨g, hg⟩ := (exists_cokernel_yoneda_iff (X ∘ ULift.down) (Y ∘ ULift.down) F).2
-      ⟨f, ⟨iso ≪≫ e⟩⟩
+    obtain ⟨g, hg⟩ := (exists_cokernel_iso_iff_of_fullyFaithful
+      (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι
+      (ιSigmaYonedaIso (Y ∘ ULift.down) ≪≫ Sigma.reindex
+        (Equiv.ulift : ULift.{v} (Fin m) ≃ Fin m) (fun k ↦ preadditiveYoneda.obj (Y k)))
+      (ιSigmaYonedaIso (X ∘ ULift.down) ≪≫ Sigma.reindex
+        (Equiv.ulift : ULift.{v} (Fin n) ≃ Fin n) (fun k ↦ preadditiveYoneda.obj (X k)))
+      F).2 ⟨d, ⟨e⟩⟩
     exact ⟨ULift.{v} (Fin n), ULift.{v} (Fin m), (hasCardinalLT_aleph0_iff _).2 inferInstance,
       (hasCardinalLT_aleph0_iff _).2 inferInstance, _, _, g, hg⟩
 
