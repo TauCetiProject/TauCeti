@@ -7,16 +7,16 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
-public import Mathlib.Analysis.InnerProductSpace.TwoDim
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.LinearAlgebra.Trace
+public import TauCeti.Analysis.InnerProductSpace.TwoDim
 import Mathlib.Analysis.Calculus.Deriv.Star
 import Mathlib.Analysis.Calculus.FDeriv.Star
-import Mathlib.Analysis.InnerProductSpace.Trace
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Trace
+import TauCeti.Topology.Algebra.Module.Trace
 
 /-!
 # Vorticity and the classical vorticity equation
@@ -215,25 +215,25 @@ theorem neg_laplacian_eq_trace_fderiv_mul_fderiv [FiniteDimensional ℝ E] {u : 
       LinearMap.trace ℝ E (fderiv ℝ (u t) x * fderiv ℝ (u t) x : E →L[ℝ] E) := by
   obtain ⟨Adot, D, hAdot, hD, hsum⟩ := exists_hasDerivAt_fderiv hu hp heq
   -- the trace, as a continuous linear functional on operators
-  set τ : (E →L[ℝ] E) →L[ℝ] ℝ :=
-    LinearMap.toContinuousLinearMap (LinearMap.trace ℝ E ∘ₗ ContinuousLinearMap.coeLM ℝ)
-  have hτ : ∀ T : E →L[ℝ] E, τ T = LinearMap.trace ℝ E (T : E →ₗ[ℝ] E) := fun _ ↦ by simp [τ]
+  set τ := traceCLM ℝ E
   -- the divergence vanishes near `(t, x)`, so its time and space derivatives vanish there
   have ht : τ Adot = 0 := by
     have h₀ : HasDerivAt (fun s ↦ τ (fderiv ℝ (u s) x)) 0 t :=
       (hasDerivAt_const t (0 : ℝ)).congr_of_eventuallyEq <|
-        ((continuous_id.prodMk continuous_const).tendsto t).eventually hdiv
+        (((continuous_id.prodMk continuous_const).tendsto t).eventually hdiv).mono
+          fun _ h ↦ by simpa [τ] using h
     exact (τ.hasFDerivAt.comp_hasDerivAt t hAdot).unique h₀
   have hx : τ (D (u t x)) = 0 := by
     have h₀ : HasFDerivAt (fun y ↦ τ (fderiv ℝ (u t) y)) (0 : E →L[ℝ] ℝ) x :=
       (hasFDerivAt_const (0 : ℝ) x).congr_of_eventuallyEq <|
-        ((continuous_const.prodMk continuous_id).tendsto x).eventually hdiv
+        (((continuous_const.prodMk continuous_id).tendsto x).eventually hdiv).mono
+          fun _ h ↦ by simpa [τ] using h
     simpa using congrArg (fun T : E →L[ℝ] ℝ ↦ T (u t x)) ((τ.hasFDerivAt.comp x hD).unique h₀)
   have hΔ : Δ (p t) x = τ (fderiv ℝ (∇ (p t)) x) := by
-    simp [laplacian_eq_trace_iteratedGradientChain_one, hτ]
+    simp [τ, laplacian_eq_trace_iteratedGradientChain_one]
   have := congrArg τ hsum
   rw [map_add, map_add, map_add, ht, hx, map_zero, ← hΔ] at this
-  rw [← hτ]
+  rw [← traceCLM_apply]
   linarith
 
 end TauCeti
@@ -248,33 +248,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fact (fin
 local notation "J" => o.rightAngleRotation
 
 attribute [local instance] FiniteDimensional.of_fact_finrank_eq_two
-
-/-- The trace in the positively oriented orthonormal frame `(e, J e)`. -/
-private theorem trace_eq_inner_add_inner {e : E} (he : ‖e‖ = 1) (T : E →L[ℝ] E) :
-    LinearMap.trace ℝ E (T : E →ₗ[ℝ] E) = ⟪e, T e⟫_ℝ + ⟪J e, T (J e)⟫_ℝ := by
-  have hon : Orthonormal ℝ ![e, J e] := by
-    rw [orthonormal_iff_ite]
-    intro i j
-    fin_cases i <;> fin_cases j <;> simp [he]
-  let b : OrthonormalBasis (Fin 2) ℝ E :=
-    (o.basisRightAngleRotation e (by rintro rfl; simp at he)).toOrthonormalBasis
-      (by simpa using hon)
-  rw [LinearMap.trace_eq_sum_inner _ b, Fin.sum_univ_two]
-  simp [b]
-
-/-- Two operators on the plane agree once their matrix entries in the frame `(e, J e)` agree. -/
-private theorem ext_inner_frame {e : E} (he : e ≠ 0) {X Y : E →L[ℝ] E}
-    (h : ∀ v ∈ ({e, J e} : Set E), ∀ w ∈ ({e, J e} : Set E), ⟪X v, w⟫_ℝ = ⟪Y v, w⟫_ℝ) :
-    X = Y := by
-  set b := o.basisRightAngleRotation e he
-  refine ContinuousLinearMap.coe_injective (b.ext fun i ↦ ?_)
-  refine InnerProductSpace.ext_inner_right_basis b fun j ↦ ?_
-  have hb : ∀ k, b k ∈ ({e, J e} : Set E) := fun k ↦ by fin_cases k <;> simp [b]
-  exact h _ (hb i) _ (hb j)
-
-private theorem exists_norm_eq_one : ∃ e : E, ‖e‖ = 1 := by
-  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ E = 2)
-  exact exists_norm_eq E zero_le_one
 
 /-- The **scalar vorticity** of a planar velocity field: `ω = −trace (J ∇u)`, which is
 `∂₁u₂ − ∂₂u₁` in every positively oriented orthonormal frame
@@ -292,52 +265,29 @@ theorem scalarVorticity_def (u : E → E) (x : E) :
 theorem scalarVorticity_eq_inner_sub_inner (u : E → E) (x : E) {e : E} (he : ‖e‖ = 1) :
     o.scalarVorticity u x = ⟪J e, fderiv ℝ u x e⟫_ℝ - ⟪e, fderiv ℝ u x (J e)⟫_ℝ := by
   rw [scalarVorticity_def, o.trace_eq_inner_add_inner he]
-  simp only [ContinuousLinearMap.coe_comp, Function.comp_apply, ContinuousLinearEquiv.coe_coe,
+  simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_comp, Function.comp_apply,
+    ContinuousLinearEquiv.coe_coe,
     LinearIsometryEquiv.coe_toContinuousLinearEquiv, o.inner_rightAngleRotation_swap,
     o.rightAngleRotation_rightAngleRotation, inner_neg_left]
   ring
-
-/-- Every vector of the plane is expanded in the positively oriented orthonormal frame
-`(e, J e)`. -/
-private theorem eq_inner_smul_add_inner_smul {e : E} (he : ‖e‖ = 1) (v : E) :
-    v = ⟪e, v⟫_ℝ • e + ⟪J e, v⟫_ℝ • J e := by
-  have he0 : e ≠ 0 := by rintro rfl; simp at he
-  refine InnerProductSpace.ext_inner_left_basis (o.basisRightAngleRotation e he0) fun i ↦ ?_
-  fin_cases i <;>
-    simp [inner_add_right, inner_smul_right, he, real_inner_comm e]
 
 /-- **The planar vorticity is a multiple of the rotation.** In an oriented plane, the vorticity
 tensor is `Ω = ω J`, with `ω` the scalar vorticity. -/
 theorem vorticity_eq_scalarVorticity_smul (u : E → E) (x : E) :
     vorticity u x = o.scalarVorticity u x • (J : E →L[ℝ] E) := by
-  obtain ⟨e, he⟩ := exists_norm_eq_one (E := E)
+  obtain ⟨e, he⟩ : ∃ e : E, ‖e‖ = 1 :=
+    ⟨_, (o.finOrthonormalBasis two_pos Fact.out).orthonormal.1 0⟩
   have he0 : e ≠ 0 := by rintro rfl; simp at he
   rw [o.scalarVorticity_eq_inner_sub_inner u x he]
   obtain ⟨a, c, h₁⟩ : ∃ a c : ℝ, fderiv ℝ u x e = a • e + c • J e :=
     ⟨_, _, o.eq_inner_smul_add_inner_smul he _⟩
   obtain ⟨b, d, h₂⟩ : ∃ b d : ℝ, fderiv ℝ u x (J e) = b • e + d • J e :=
     ⟨_, _, o.eq_inner_smul_add_inner_smul he _⟩
-  refine o.ext_inner_frame he0 ?_
+  refine ContinuousLinearMap.coe_injective (o.ext_inner_frame he0 ?_)
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp, forall_eq]
-  simp only [inner_vorticity_apply]
+  simp only [ContinuousLinearMap.coe_coe, inner_vorticity_apply]
   simp [h₁, h₂, inner_add_left, inner_add_right, inner_smul_left, inner_smul_right, he,
     real_inner_comm e (J e)]
-
-/-- In the plane, `J A + A† J = (trace A) J` for every operator `A`. -/
-private theorem rightAngleRotation_comp_add_adjoint_comp (A : E →L[ℝ] E) :
-    (J : E →L[ℝ] E) ∘L A + adjoint A ∘L (J : E →L[ℝ] E) =
-      LinearMap.trace ℝ E (A : E →ₗ[ℝ] E) • (J : E →L[ℝ] E) := by
-  obtain ⟨e, he⟩ := exists_norm_eq_one (E := E)
-  have he0 : e ≠ 0 := by rintro rfl; simp at he
-  rw [o.trace_eq_inner_add_inner he]
-  obtain ⟨a, c, h₁⟩ : ∃ a c : ℝ, A e = a • e + c • J e :=
-    ⟨_, _, o.eq_inner_smul_add_inner_smul he _⟩
-  obtain ⟨b, d, h₂⟩ : ∃ b d : ℝ, A (J e) = b • e + d • J e :=
-    ⟨_, _, o.eq_inner_smul_add_inner_smul he _⟩
-  refine o.ext_inner_frame he0 ?_
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp, forall_eq]
-  simp [adjoint_inner_left, h₁, h₂, inner_add_left, inner_add_right, inner_smul_left,
-    inner_smul_right, he, real_inner_comm e (J e)]
 
 /-- **The scalar vorticity equation.** Let `u` be jointly `C²` in `(t, x)` on an oriented plane
 and `p t` be `C²` at `x`, and suppose that `∂ₜu + (u·∇)u + ∇p = 0` holds at time `t` near `x`.
@@ -351,7 +301,8 @@ theorem deriv_scalarVorticity_add_fderiv_scalarVorticity_add_mul_trace_eq_zero
         fderiv ℝ (o.scalarVorticity (u t)) x (u t x) +
         o.scalarVorticity (u t) x * LinearMap.trace ℝ E (fderiv ℝ (u t) x : E →ₗ[ℝ] E) = 0 := by
   obtain ⟨Ωdot, Ω', hΩdot, hΩ', h⟩ := exists_hasDerivAt_vorticity hu hp heq
-  obtain ⟨e, he⟩ := exists_norm_eq_one (E := E)
+  obtain ⟨e, he⟩ : ∃ e : E, ‖e‖ = 1 :=
+    ⟨_, (o.finOrthonormalBasis two_pos Fact.out).orthonormal.1 0⟩
   -- the scalar vorticity is the entry `⟪J e, Ω e⟫` of the vorticity tensor
   set ℓ : (E →L[ℝ] E) →L[ℝ] ℝ := (innerSL ℝ (J e)).comp (apply ℝ E e)
   have hℓ : ∀ v : E → E, o.scalarVorticity v = fun y ↦ ℓ (vorticity v y) := by
@@ -383,7 +334,8 @@ theorem deriv_scalarVorticity_add_fderiv_scalarVorticity_eq_zero
 /-- **Rigid rotation.** The rotation `u x = J x` by `π/2` has scalar vorticity `2`. -/
 @[simp]
 theorem scalarVorticity_rightAngleRotation (x : E) : o.scalarVorticity J x = 2 := by
-  obtain ⟨e, he⟩ := exists_norm_eq_one (E := E)
+  obtain ⟨e, he⟩ : ∃ e : E, ‖e‖ = 1 :=
+    ⟨_, (o.finOrthonormalBasis two_pos Fact.out).orthonormal.1 0⟩
   rw [o.scalarVorticity_eq_inner_sub_inner _ x he, LinearIsometryEquiv.fderiv]
   simp [he]
   norm_num

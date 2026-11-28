@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Incompressible.Vorticity
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Analysis.InnerProductSpace.Trace
 import TauCeti.Analysis.Calculus.Gradient
 
 /-!
@@ -20,7 +19,7 @@ On an oriented plane with rotation `J` by `π/2`, the rigid rotation `u x = J x`
 (`Orientation.scalarVorticity_rightAngleRotation`), the sign fixed by the convention
 `ω = ∂₁u₂ − ∂₂u₁` for the counterclockwise rotation `(−x₂, x₁)`. The pressure Poisson equation
 `−Δp = trace ((∇u)²) = trace (J²) = −2` then recovers `Δ (‖x‖² / 2) = 2`
-(`Orientation.laplacian_norm_sq_div_two`).
+(`TauCeti.laplacian_norm_sq_div_two`).
 -/
 
 public section
@@ -37,11 +36,6 @@ local notation "J" => o.rightAngleRotation
 
 attribute [local instance] FiniteDimensional.of_fact_finrank_eq_two
 
-/-- The rotation by `π/2` is trace-free: the rigid rotation is divergence-free. -/
-theorem trace_rightAngleRotation :
-    LinearMap.trace ℝ E ((J : E →L[ℝ] E) : E →ₗ[ℝ] E) = 0 := by
-  simp [LinearMap.trace_eq_sum_inner _ (stdOrthonormalBasis ℝ E)]
-
 /-- **Rigid rotation solves the Euler equations.** The stationary velocity `u x = J x` with
 pressure `p x = ‖x‖² / 2` satisfies `∂ₜu + (u·∇)u + ∇p = 0` everywhere. -/
 theorem add_fderiv_rightAngleRotation_add_gradient_eq_zero (t : ℝ) (x : E) :
@@ -50,7 +44,14 @@ theorem add_fderiv_rightAngleRotation_add_gradient_eq_zero (t : ℝ) (x : E) :
     simpa [div_eq_inv_mul] using TauCeti.gradient_mul_norm_sq_add (E := E) 1 0 x
   simp [LinearIsometryEquiv.fderiv, hp]
 
-variable (E) in
+end Orientation
+
+namespace TauCeti
+
+variable (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fact (finrank ℝ E = 2)]
+
+attribute [local instance] FiniteDimensional.of_fact_finrank_eq_two
+
 /-- **The pressure Poisson equation for rigid rotation.** Applied to the rigid rotation of an
 oriented plane, `−Δp = trace ((∇u)²)` gives `Δ (‖x‖² / 2) = 2`, the dimension of the plane. -/
 theorem laplacian_norm_sq_div_two (x : E) : Δ (fun y : E ↦ (‖y‖ ^ 2 / 2 : ℝ)) x = 2 := by
@@ -69,4 +70,4 @@ theorem laplacian_norm_sq_div_two (x : E) : Δ (fun y : E ↦ (‖y‖ ^ 2 / 2 :
     ContinuousLinearMap.coe_id, LinearMap.trace_id, (Fact.out : finrank ℝ E = 2)] at h
   linarith
 
-end Orientation
+end TauCeti
