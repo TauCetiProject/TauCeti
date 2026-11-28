@@ -29,10 +29,10 @@ On a seminormed group, as `‖s‖ → ∞`:
 * every power `‖s‖ ^ n` is `O(exp ‖s‖ ^ b)` whenever `0 < b`, and `o(exp (c ‖s‖))` whenever
   `0 < c`, so a polynomial weight turns `O(exp (-c ‖s‖))` decay into `O(exp (-a ‖s‖))` decay for
   every `a < c`;
-* `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`,
-  and `O(‖s‖ ^ b)` (resp. `O(x ^ b)`) whenever `a ≤ b`; in particular `√‖s‖ = o(s)`,
-  `‖s‖ ^ a` tends to `0` whenever `a < 0`, and `√x / (x ^ a) ^ k → 0` for real `x → ∞`
-  whenever `1 / 2 < a k`.
+* `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`
+  (so eventually `K * x ^ a ≤ x ^ b` for every constant `K`), and `O(‖s‖ ^ b)` (resp. `O(x ^ b)`)
+  whenever `a ≤ b`; in particular `√‖s‖ = o(s)`, `‖s‖ ^ a` tends to `0` whenever `a < 0`, and
+  `√x / (x ^ a) ^ k → 0` for real `x → ∞` whenever `1 / 2 < a k`.
 
 These are the comparisons behind the order of growth of an entire function.
 
@@ -191,19 +191,23 @@ theorem isLittleO_pow_mul_cpow_pow_of_norm_lt {ρ : ℂ} (α : ℂ) {r : ℝ} (h
   exact mul_le_mul_of_nonneg_left ((Real.rpow_le_rpow_of_exponent_le hn' (Nat.le_ceil _)).trans_eq
     (Real.rpow_natCast _ _)) (by positivity)
 
+/-- For `a < b` and any constant `K`, eventually `K * x ^ a ≤ x ^ b` as `x → ∞`. -/
+theorem eventually_const_mul_rpow_le_rpow {a b : ℝ} (hab : a < b) (K : ℝ) :
+    ∀ᶠ x : ℝ in atTop, K * x ^ a ≤ x ^ b := by
+  filter_upwards [(tendsto_rpow_atTop (sub_pos.2 hab)).eventually_ge_atTop K,
+    eventually_gt_atTop 0] with x hx hx0
+  calc K * x ^ a ≤ x ^ (b - a) * x ^ a :=
+        mul_le_mul_of_nonneg_right hx (Real.rpow_nonneg hx0.le _)
+    _ = x ^ b := by rw [← Real.rpow_add hx0, sub_add_cancel]
+
 variable {E : Type*} [SeminormedAddCommGroup E]
 
 /-- For `a < b` and any real `c`, `exp (c * ‖s‖ ^ a)` is `O(exp ‖s‖ ^ b)` as `‖s‖ → ∞`. -/
 theorem isBigO_exp_mul_norm_rpow (c : ℝ) {a b : ℝ} (hab : a < b) :
     (fun s : E ↦ Real.exp (c * ‖s‖ ^ a)) =O[cobounded E] fun s ↦ Real.exp (‖s‖ ^ b) := by
-  have h : ∀ᶠ x : ℝ in atTop, c * x ^ a ≤ x ^ b := by
-    filter_upwards [(tendsto_rpow_atTop (sub_pos.2 hab)).eventually_ge_atTop c,
-      eventually_gt_atTop 0] with x hx hx0
-    calc c * x ^ a ≤ x ^ (b - a) * x ^ a :=
-          mul_le_mul_of_nonneg_right hx (Real.rpow_nonneg hx0.le _)
-      _ = x ^ b := by rw [← Real.rpow_add hx0, sub_add_cancel]
   refine Real.isBigO_exp_comp_exp_comp.2 (isBoundedUnder_of_eventually_le (a := 0) ?_)
-  filter_upwards [tendsto_norm_cobounded_atTop.eventually h] with s hs
+  filter_upwards [tendsto_norm_cobounded_atTop.eventually
+    (eventually_const_mul_rpow_le_rpow hab c)] with s hs
   simpa using hs
 
 /-- For `b > 0`, every power `‖s‖ ^ n` is `O(exp ‖s‖ ^ b)` as `‖s‖ → ∞`. -/

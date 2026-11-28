@@ -46,6 +46,8 @@ recorded once here rather than reconstructed at each use site.
   `(𝓞 F)ˣ`.
 * `AlgEquiv.mapAlgEquiv_symm_autCongr_smul`: restriction to rings of integers intertwines
   conjugation of automorphisms along an algebra equivalence.
+* `AlgEquiv.restrictScalars_smul_ideal`: `σ.restrictScalars R` acts on the ideals of `𝓞 L` as
+  `σ` does.
 -/
 
 public section
@@ -135,5 +137,22 @@ theorem mapAlgEquiv_symm_autCongr_smul (e : K ≃ₐ[R] L) (σ : K ≃ₐ[R] K)
   -- to the ambient fields, where `autCongr` is visibly conjugation by `e`.
   change e.symm ((autCongr e σ • x : 𝓞 L) : L) = σ (e.symm (x : L))
   simp
+
+end AlgEquiv
+
+namespace AlgEquiv
+
+variable {R K L : Type*} [CommSemiring R] [CommSemiring K] [Field L] [Algebra R K] [Algebra K L]
+  [Algebra R L] [IsScalarTower R K L]
+
+/-- **Restricting scalars does not change the action on ideals.** `σ.restrictScalars R` is `σ`
+with its base ring changed, so it induces the same action on the ideals of `𝓞 L`. -/
+@[simp]
+theorem restrictScalars_smul_ideal (σ : L ≃ₐ[K] L) (Q : Ideal (𝓞 L)) :
+    σ.restrictScalars R • Q = σ • Q := by
+  rw [Ideal.pointwise_smul_def, Ideal.pointwise_smul_def]
+  refine congrArg (Ideal.map · Q) (RingHom.ext fun x ↦ NumberField.RingOfIntegers.ext ?_)
+  simp only [MulSemiringAction.toRingHom_apply, NumberField.algebraMap_smul_eq_apply,
+    restrictScalars_apply]
 
 end AlgEquiv

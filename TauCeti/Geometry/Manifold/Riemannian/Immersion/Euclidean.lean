@@ -10,8 +10,10 @@ public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 import TauCeti.Geometry.Manifold.Riemannian.Immersion.Weingarten
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Immersion
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.VectorSpace
 import TauCeti.Geometry.Manifold.VectorField.ModelChart
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # Immersions into a Euclidean space: affine maps and the round sphere
@@ -40,6 +42,8 @@ vector of two basic examples:
 ## Main results
 
 * `TauCeti.immersionSecondFundamentalForm_model_space`: `B(X, Y) = (D_X (df Y))^⊥`.
+* `TauCeti.immersionSecondFundamentalFormAt_model_space_eq_sub`: for an isometric immersion,
+  `B(v, w) = D_v (df W) - df (∇_v W)`.
 * `TauCeti.immersionSecondFundamentalFormAt_affine`, `TauCeti.immersionShapeOperatorAt_affine`,
   `TauCeti.immersionPrincipalCurvatures_affine`, `TauCeti.immersionMeanCurvatureVector_affine`:
   affine maps have `B = 0`, `S_ν = 0`, principal curvatures `0` and `H = 0`.
@@ -85,6 +89,51 @@ theorem immersionSecondFundamentalForm_model_space {f : M → F} {X Y : Π y : M
       (orthogonalNormalSpace I 𝓘(ℝ, F) f x).starProjection
         (mfderiv I 𝓘(ℝ, F) (fun y ↦ (mfderiv I 𝓘(ℝ, F) f y (Y y) : F)) x (X x)) := by
   rw [immersionSecondFundamentalForm_def, alongMap_leviCivitaConnection_model_space hf hY]
+
+variable [FiniteDimensional ℝ E] [IsManifold I 2 M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+
+/-- **The second fundamental form of an isometric immersion into a Euclidean space** is the
+ambient derivative of `df W` minus its tangential part:
+`B(v, w) = D_v (df W) - df (∇_v W)` for vector fields `V`, `W` through `v`, `w`, with `∇` the
+Levi-Civita connection of `M`. -/
+theorem immersionSecondFundamentalFormAt_model_space_eq_sub {f : M → F} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ, F) 2 f x)
+    (hg : ∀ y (v w : TangentSpace I y), ⟪v, w⟫_ℝ = ⟪mvfderiv I f y v, mvfderiv I f y w⟫_ℝ)
+    {V W : Π y : M, TangentSpace I y} (hV : MDiffAt (T% V) x) (hW : MDiffAt (T% W) x) :
+    immersionSecondFundamentalFormAt (leviCivitaConnection 𝓘(ℝ, F) F) f x (V x) (W x) =
+      mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) -
+        mvfderiv I f x (leviCivitaConnection I M W x (V x)) := by
+  have hdW : MDifferentiableAt I 𝓘(ℝ, F) (fun y ↦ (mfderiv I 𝓘(ℝ, F) f y (W y) : F)) x := by
+    simpa only [mvfderiv_apply_eq_mfderiv_apply] using
+      mdifferentiableAt_mvfderiv_apply hf le_rfl hW
+  -- `immersionSecondFundamentalForm_model_space` is stated with `mfderiv`; `hD` restates its
+  -- ambient derivative `D_v (df W)` with `mvfderiv`. After rewriting the outer `mvfderiv`, the
+  -- two maps `y ↦ df_y (W y)` agree up to the identification of `TangentSpace 𝓘(ℝ, F) _` with
+  -- `F`, which `congr` closes.
+  have hD : (mfderiv I 𝓘(ℝ, F) (fun y ↦ (mfderiv I 𝓘(ℝ, F) f y (W y) : F)) x (V x) : F) =
+      mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) := by
+    rw [mvfderiv_apply_eq_mfderiv_apply]
+    congr 2
+  rw [immersionSecondFundamentalFormAt_apply hf hV hW,
+    immersionSecondFundamentalForm_model_space (hf.mdifferentiableAt two_ne_zero) hdW, hD]
+  set D := mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x)
+  set T := mvfderiv I f x (leviCivitaConnection I M W x (V x)) with hT
+  -- `D` and `T` are `F`-valued, while the goals below use the inner product and subtraction of
+  -- `TangentSpace 𝓘(ℝ, F) (f x)`, which is `F`. So each goal is proved over `F` as `h`, and
+  -- `rwa` closes it through this identification.
+  refine Submodule.eq_starProjection_of_mem_of_inner_eq_zero ?_ fun z hz ↦ ?_
+  · -- `D_v (df W) - df (∇_v W)` is orthogonal to the image of `df`, by the Gauss formula.
+    refine mem_orthogonalNormalSpace_iff.2 fun u ↦ ?_
+    have hG := (isLeviCivitaConnection_leviCivitaConnection I).inner_apply_eq_inner_mvfderiv
+      hf hg hV hW u
+    have h : ⟪mvfderiv I f x u, D - T⟫_ℝ = 0 := by
+      rw [inner_sub_right, real_inner_comm, ← hG, ← hg, real_inner_comm, sub_self]
+    rwa [mvfderiv_apply_eq_mfderiv_apply] at h
+  · -- `df (∇_v W)` is tangent, so orthogonal to the normal space.
+    have h := mem_orthogonalNormalSpace_iff.1 hz (leviCivitaConnection I M W x (V x))
+    rwa [← mvfderiv_apply_eq_mfderiv_apply, ← hT, ← sub_sub_cancel D T] at h
 
 end Flat
 
