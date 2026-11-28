@@ -156,6 +156,20 @@ theorem ae_eq_of_forall_setIntegral_eq_of_aestronglyMeasurable (hm : m ≤ m0) {
     ← setIntegral_congr_ae (hm s hs) (hfm.ae_eq_mk.mono fun x hx _ => hx),
     ← setIntegral_congr_ae (hm s hs) (hgm.ae_eq_mk.mono fun x hx _ => hx), hfg s hs hμs]
 
+/-- An integrable `m`-measurable real function with nonnegative integrals over all `m`-measurable
+sets of finite measure is almost everywhere nonnegative. The trimmed measure `μ.trim hm` need not be
+σ-finite. -/
+theorem ae_nonneg_of_forall_setIntegral_nonneg_of_aestronglyMeasurable (hm : m ≤ m0) {f : α → ℝ}
+    (hf : Integrable f μ) (hfm : AEStronglyMeasurable[m] f μ)
+    (hf_nonneg : ∀ s, MeasurableSet[m] s → μ s < ∞ → 0 ≤ ∫ x in s, f x ∂μ) : 0 ≤ᵐ[μ] f := by
+  have hf' := (hf.congr hfm.ae_eq_mk).trim hm hfm.stronglyMeasurable_mk
+  refine (ae_le_of_ae_le_trim (ae_nonneg_of_forall_setIntegral_nonneg hf' fun s hs hμs => ?_)).trans
+    hfm.ae_eq_mk.symm.le
+  rw [trim_measurableSet_eq hm hs] at hμs
+  rw [← setIntegral_trim hm hfm.stronglyMeasurable_mk hs,
+    ← setIntegral_congr_ae (hm s hs) (hfm.ae_eq_mk.mono fun x hx _ => hx)]
+  exact hf_nonneg s hs hμs
+
 end Uniqueness
 
 section Indicator
@@ -168,6 +182,17 @@ theorem integrable_condExpIndSMul_of_le (hm : m ≤ m0) {s : Set α} (hs : Measu
     (hμs : μ s ≠ ∞) (x : G) : Integrable (condExpIndSMul hm hs hμs x) μ :=
   ⟨Lp.aestronglyMeasurable _,
     (lintegral_eNorm_condExpIndSMul_le hm hs hμs x).trans_lt (by finiteness)⟩
+
+/-- The `L²` conditional expectation of indicators is additive over disjoint measurable sets of
+finite measure: the projection of `𝟙_(s ∪ t) x` is the sum of the projections of `𝟙_s x` and
+`𝟙_t x`. -/
+theorem condExpIndSMul_disjoint_union (hm : m ≤ m0) {s t : Set α} (hs : MeasurableSet s)
+    (ht : MeasurableSet t) (hμs : μ s ≠ ∞) (hμt : μ t ≠ ∞) (hst : Disjoint s t) (x : G) :
+    condExpIndSMul hm (hs.union ht) (measure_union_ne_top hμs hμt) x =
+      condExpIndSMul hm hs hμs x + condExpIndSMul hm ht hμt x := by
+  simp_rw [condExpIndSMul]
+  rw [indicatorConstLp_disjoint_union hs ht hμs hμt hst (1 : ℝ), map_add, Submodule.coe_add,
+    map_add]
 
 /-- The conditional expectation of `𝟙_s x`, as a continuous linear map of `x` into `L¹`, for a
 measurable set `s` of finite measure. -/
@@ -212,9 +237,7 @@ private theorem dominatedFinMeasAdditive_condExpL1ProjInd (hm : m ≤ m0) (μ : 
     refine Lp.ext ?_
     grw [add_apply, Lp.coeFn_add, condExpL1ProjInd_ae_eq hm hs hμs,
       condExpL1ProjInd_ae_eq hm ht hμt, condExpL1ProjInd_ae_eq hm (hs.union ht) hμst]
-    rw [condExpIndSMul, condExpIndSMul, condExpIndSMul,
-      indicatorConstLp_disjoint_union hs ht hμs hμt hst (1 : ℝ), map_add, Submodule.coe_add,
-      map_add]
+    rw [condExpIndSMul_disjoint_union hm hs ht hμs hμt hst]
     exact Lp.coeFn_add _ _
   · simp only [one_mul, condExpL1ProjInd, hs, hμs.ne, ne_eq, not_false_eq_true, and_self,
       ↓reduceDIte]
@@ -386,13 +409,9 @@ theorem condExpL1Proj_toL1_ae_eq_condExpL2 {f : Lp ℝ 2 μ} (hf : Integrable f 
 /-- The conditional expectation on real `L¹` is positive. -/
 theorem condExpL1Proj_nonneg {f : α →₁[μ] ℝ} (hf : 0 ≤ f) : 0 ≤ condExpL1Proj ℝ hm μ f := by
   rw [← Lp.coeFn_nonneg] at hf ⊢
-  obtain ⟨g, hg, hPg⟩ := aestronglyMeasurable_condExpL1Proj (hm := hm) f
-  have hgi : Integrable g (μ.trim hm) := ((L1.integrable_coeFn _).congr hPg).trim hm hg
-  refine (ae_le_of_ae_le_trim (ae_nonneg_of_forall_setIntegral_nonneg hgi fun s hs hμs => ?_)).trans
-    hPg.symm.le
-  rw [trim_measurableSet_eq hm hs] at hμs
-  rw [← setIntegral_trim hm hg hs, ← setIntegral_congr_ae (hm s hs) (hPg.mono fun x hx _ => hx),
-    setIntegral_condExpL1Proj f hs hμs.ne]
+  refine ae_nonneg_of_forall_setIntegral_nonneg_of_aestronglyMeasurable hm (L1.integrable_coeFn _)
+    (aestronglyMeasurable_condExpL1Proj f) fun s hs hμs => ?_
+  rw [setIntegral_condExpL1Proj f hs hμs.ne]
   exact setIntegral_nonneg_of_ae_restrict (ae_restrict_of_ae hf)
 
 /-- The conditional expectation on real `L¹` is monotone. -/
