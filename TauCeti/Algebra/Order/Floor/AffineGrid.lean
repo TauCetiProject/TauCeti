@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Fintype.BigOperators
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import TauCeti.Algebra.Order.Floor.Ring
 
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Finset.NAry
 import Mathlib.Data.Fintype.Perm
 
@@ -17,9 +16,9 @@ import Mathlib.Data.Fintype.Perm
 
 The theorem `TauCeti.exists_finset_forall_affine_sum_le` rounds each input up on a fixed mesh
 and bounds the resulting error in every affine sum. The cardinality bound depends on the
-number of inputs, independently of the number of outputs. The proof uses the grid in
-`TauCeti.exists_finset_forall_exists_le_lt_add` and Mathlib's `Finset.card_image₂_le`
-and `Fintype.card_equiv`.
+number of inputs, independently of the number of outputs. The family is the binary image
+(`Finset.image₂`) of the rounded families from `TauCeti.exists_finset_forall_exists_le_lt_add`
+and the bijections assigning inputs to indices.
 
 In the parametric Subspace Theorem the inputs are the base-`Q` logarithms of the successive
 minima. For the wedge exponents at one infinite place, the summation indices are the inverse images

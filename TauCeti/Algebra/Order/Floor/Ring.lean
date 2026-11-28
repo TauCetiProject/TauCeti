@@ -30,8 +30,9 @@ the line into the closed intervals `[δ m, δ (m + 1)]` with `m ∈ ℤ`. Every 
 interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its index between
 `⌈-R / δ⌉ - 1` and `⌊R / δ⌋`. Two points with no multiple of `δ` between them lie in the same
 interval, and an open interval of length `L` contains at most `⌈L / δ⌉₊` multiples of `δ`.
-Rounding up to the multiples of `δ` moves a point by less than `δ`, and on a finite index type
-only finitely many rounded families have entries in `[-R, R]`.
+Rounding up to the multiples of `δ` moves a point by less than `δ`. For inputs in `[-R, R]`,
+the grid uses only multiples indexed by the integers in `[-⌈R / δ⌉₊, ⌈R / δ⌉₊]`, an
+interval of size `2 * ⌈R / δ⌉₊ + 1` by `Int.card_Icc_neg_natCast_natCast`.
 
 ## Main results
 
@@ -55,10 +56,9 @@ only finitely many rounded families have entries in `[-R, R]`.
 * `TauCeti.mem_Icc_mul_floor_div`: `x ∈ [δ ⌊x / δ⌋, δ (⌊x / δ⌋ + 1)]`.
 * `TauCeti.mem_Icc_ceil_floor_of_mem_Icc`: if `x ∈ [δ m, δ (m + 1)]` and `|x| ≤ R`, then
   `m ∈ [⌈-R / δ⌉ - 1, ⌊R / δ⌋]`.
-* `TauCeti.exists_finset_forall_exists_le_lt_add`: finitely many families round up, by less
-  than `δ` in each entry, every family with entries in `[-R, R]`. The proof uses
-  `Int.natAbs_floor_le_natCeil_abs` for grid membership and `Int.card_Icc_neg_natCast_natCast`
-  with `Fintype.card_fun` to bound the number of families by `(2 * ⌈R / δ⌉₊ + 1) ^ Nat.card κ`.
+* `TauCeti.exists_finset_forall_exists_le_lt_add`: at most `(2 * ⌈R / δ⌉₊ + 1) ^ Nat.card κ`
+  families suffice to round up every family on `κ` with entries in `[-R, R]`, by less than
+  `δ` per entry.
 * `TauCeti.floor_div_eq_of_forall_intCast_mul_notMem_uIcc`: if no multiple of `δ > 0` lies
   between `a` and `b`, then `⌊a / δ⌋ = ⌊b / δ⌋`.
 * `TauCeti.encard_setOf_intCast_mul_mem_Ioo_le`: an open interval of length `L` contains at most
@@ -282,11 +282,10 @@ theorem exists_finset_forall_exists_le_lt_add {κ : Type*} [Finite κ] (hδ : 0 
       have hbound := hfloor.trans hceil
       omega)⟩
     refine ⟨round g, Finset.mem_image_of_mem _ (Finset.mem_univ _), fun k ↦ ?_⟩
-    have hlo : a k ≤ (⌈a k / δ⌉ : ℤ) * δ := (div_le_iff₀ hδ).mp (Int.le_ceil _)
-    have hhi : ((⌈a k / δ⌉ : ℤ) : K) * δ < a k + δ := by
-      rw [← lt_div_iff₀ hδ, add_div, div_self hδ.ne']
-      exact Int.ceil_lt_add_one _
-    exact ⟨hlo, hhi⟩
+    have hlo := Int.sub_floor_div_mul_nonneg (-a k) hδ
+    have hhi := Int.sub_floor_div_mul_lt (-a k) hδ
+    simp only [neg_div, Int.floor_neg, Int.cast_neg, neg_mul, neg_sub_neg] at hlo hhi
+    exact ⟨sub_nonneg.mp hlo, sub_lt_iff_lt_add'.mp hhi⟩
 
 /-- For `t > 0`, two nonnegative elements `a`, `b` of an ordered field with the same natural
 floor of `x * t` differ by less than `1 / t`: on the nonnegative half-line the cells of the grid of
