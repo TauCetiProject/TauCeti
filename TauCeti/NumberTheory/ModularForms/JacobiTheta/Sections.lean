@@ -15,12 +15,12 @@ import TauCeti.NumberTheory.ModularForms.JacobiTheta.TwoVariable
 /-!
 # Characteristic theta basis and finite-dimensionality of level-`k` theta sections
 
-Fix `k : ℕ`, `τ` in the upper half-plane and real characteristics `α, β`. An explicit basis of
-`TauCeti.thetaSections k τ α β` consists of the theta functions with characteristics
-`θ_r(z) = e^{2πi(r + α)z} θ(kz + (r + α)τ - β, kτ)` for `0 ≤ r < k`
-(`TauCeti.characteristicTheta`), where `θ = jacobiTheta₂` is Mathlib's two-variable Jacobi theta
-function. The coordinates of a section `s` in this basis are its twisted Fourier coefficients
-`thetaFourierCoeff α s r` (`TauCeti.thetaSectionsBasis_repr_apply`).
+Fix a positive level `k : ℕ` (`0 < k`), `τ` in the upper half-plane (`0 < τ.im`), and real
+characteristics `α, β`. An explicit basis of `TauCeti.thetaSections k τ α β` consists of the
+theta functions with characteristics `θ_r(z) = e^{2πi(r + α)z} θ(kz + (r + α)τ - β, kτ)` for
+`0 ≤ r < k` (`TauCeti.characteristicTheta`), where `θ = jacobiTheta₂` is Mathlib's two-variable
+Jacobi theta function. The coordinates of a section `s` in this basis are its twisted Fourier
+coefficients `thetaFourierCoeff α s r` (`TauCeti.thetaSectionsBasis_repr_apply`).
 
 For `k > 0` and `0 < τ.im`, integrating the theta series termwise
 (`TauCeti.integral_cexp_mul_jacobiTheta₂_mul_add`) computes all twisted Fourier coefficients of
@@ -40,7 +40,7 @@ uniqueness from `TauCeti.Analysis.Complex.QuasiPeriodic.Fourier`,
 
 ## Main results
 
-* `TauCeti.characteristicTheta_mem_thetaSections`: each `θ_r` is a section.
+* `TauCeti.characteristicTheta_mem_thetaSections`: each `θ_r` belongs to `thetaSections k τ α β`.
 * `TauCeti.hasSum_characteristicTheta`, `TauCeti.thetaFourierCoeff_characteristicTheta_add_mul`,
   `TauCeti.thetaFourierCoeff_characteristicTheta_eq_zero`, and
   `TauCeti.thetaFourierCoeff_characteristicTheta_fin`: explicit Fourier series and twisted Fourier
@@ -83,7 +83,9 @@ theorem characteristicTheta_apply (r : ℤ) (z : ℂ) :
       cexp (2 * π * I * (r + α) * z) * jacobiTheta₂ (k * z + (r + α) * τ - β) (k * τ) :=
   (rfl)
 
-/-- Each theta function with characteristics is a section of the level-`k` theta line. -/
+/-- For all `k : ℕ`, `τ : ℂ`, and real characteristics `(α, β)`, `characteristicTheta k τ α β r`
+belongs to `thetaSections k τ α β` (and when `τ.im ≠ 0`, defines a holomorphic section of the
+level-`k` theta line on the complex torus `ℂ / (ℤ + τℤ)`). -/
 theorem characteristicTheta_mem_thetaSections (k : ℕ) (τ : ℂ) (α β : ℝ) (r : ℤ) :
     characteristicTheta k τ α β r ∈ thetaSections k τ α β := by
   refine mem_thetaSections_iff.mpr ⟨?_, fun z ↦ ?_, fun z ↦ ?_⟩
@@ -271,8 +273,10 @@ private noncomputable def thetaCoeffMap (k : ℕ) (τ : ℂ) (α β : ℝ) :
     have ht : IntervalIntegrable (fun x : ℝ => (t : ℂ → ℂ) x) volume 0 1 :=
       ((mem_thetaSections_iff.mp t.property).1.continuous.comp
         continuous_ofReal).intervalIntegrable 0 1
-    exact thetaFourierCoeff_add hs ht r
-  map_smul' c s := funext fun r => thetaFourierCoeff_smul α c (s : ℂ → ℂ) r
+    simpa only [Submodule.coe_add, Pi.add_apply] using thetaFourierCoeff_add hs ht r
+  map_smul' c s := funext fun r => by
+    simpa only [Submodule.coe_smul, Pi.smul_apply, smul_eq_mul, RingHom.id_apply] using
+      thetaFourierCoeff_smul α c (s : ℂ → ℂ) r
 
 @[simp]
 private lemma thetaCoeffMap_apply (s : thetaSections k τ α β) (r : Fin k) :
@@ -325,6 +329,7 @@ theorem thetaSectionsBasis_apply (hk : 0 < k) (hτ : 0 < τ.im) (r : Fin k) :
 
 /-- The coordinates of a section in `TauCeti.thetaSectionsBasis` are its twisted Fourier
 coefficients `TauCeti.thetaFourierCoeff α s r`. -/
+@[simp]
 theorem thetaSectionsBasis_repr_apply (hk : 0 < k) (hτ : 0 < τ.im) (s : thetaSections k τ α β)
     (r : Fin k) :
     (thetaSectionsBasis hk hτ α β).repr s r = thetaFourierCoeff α (s : ℂ → ℂ) r := by

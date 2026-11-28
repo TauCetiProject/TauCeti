@@ -67,7 +67,8 @@ of level `k` is a prequantum line of `ω`.
 ## Main results
 
 * `TauCeti.thetaFactor_add`: the cocycle law.
-* `TauCeti.thetaFactor_add_int`: shifting characteristics by integers leaves `thetaFactor`
+* `TauCeti.thetaFactor_add_int_left`, `TauCeti.thetaFactor_add_int_right`, and
+  `TauCeti.thetaFactor_add_int`: shifting characteristics by integers leaves `thetaFactor`
   unchanged.
 * `TauCeti.thetaFactor_mul_thetaFactor`: multiplying factors adds levels and characteristics.
 * `TauCeti.exp_mul_exp_comm_eq_exp_neg_mul` and
@@ -133,16 +134,34 @@ theorem thetaFactor_zero_one (z : ℂ) :
     thetaFactor k τ α β 0 1 z = cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) := by
   simp [thetaFactor_def]
 
-/-- Shifting the characteristics `(α, β)` by integers leaves `thetaFactor` unchanged. -/
-theorem thetaFactor_add_int (k : ℤ) (τ : ℂ) (α β : ℝ) (a b m n : ℤ) (z : ℂ) :
-    thetaFactor k τ (α + a) (β + b) m n z = thetaFactor k τ α β m n z := by
+/-- Shifting the first characteristic `α` by an integer leaves `thetaFactor` unchanged. -/
+@[simp]
+theorem thetaFactor_add_int_left (k : ℤ) (τ : ℂ) (α β : ℝ) (a m n : ℤ) (z : ℂ) :
+    thetaFactor k τ (α + a) β m n z = thetaFactor k τ α β m n z := by
   simp only [thetaFactor_def]
-  have h1 : cexp (((m * a + n * b : ℤ) : ℂ) * (2 * π * I)) = 1 :=
-    Complex.exp_int_mul_two_pi_mul_I (m * a + n * b)
+  have h1 : cexp (((m * a : ℤ) : ℂ) * (2 * π * I)) = 1 :=
+    Complex.exp_int_mul_two_pi_mul_I (m * a)
   conv_rhs => rw [← mul_one (cexp _), ← h1, ← Complex.exp_add]
   congr 1
   push_cast
   ring
+
+/-- Shifting the second characteristic `β` by an integer leaves `thetaFactor` unchanged. -/
+@[simp]
+theorem thetaFactor_add_int_right (k : ℤ) (τ : ℂ) (α β : ℝ) (b m n : ℤ) (z : ℂ) :
+    thetaFactor k τ α (β + b) m n z = thetaFactor k τ α β m n z := by
+  simp only [thetaFactor_def]
+  have h1 : cexp (((n * b : ℤ) : ℂ) * (2 * π * I)) = 1 :=
+    Complex.exp_int_mul_two_pi_mul_I (n * b)
+  conv_rhs => rw [← mul_one (cexp _), ← h1, ← Complex.exp_add]
+  congr 1
+  push_cast
+  ring
+
+/-- Shifting the characteristics `(α, β)` by integers leaves `thetaFactor` unchanged. -/
+theorem thetaFactor_add_int (k : ℤ) (τ : ℂ) (α β : ℝ) (a b m n : ℤ) (z : ℂ) :
+    thetaFactor k τ (α + a) (β + b) m n z = thetaFactor k τ α β m n z := by
+  rw [thetaFactor_add_int_left, thetaFactor_add_int_right]
 
 /-- **The cocycle law** `e_(m + m', n + n')(z) = e_(m,n)(z + m' + n'τ) e_(m',n')(z)` for
 `(m, n), (m', n') ∈ ℤ²`. It holds because the level `k` is an integer. -/
@@ -254,9 +273,11 @@ private theorem mem_automorphySubgroup {s : ℂ → ℂ} {p : ℤ × ℤ} :
       ∀ z, s (z + p.1 + p.2 * τ) = thetaFactor k τ α β p.1 p.2 z * s z :=
   Iff.rfl
 
-/-- **Sections of the theta line.** A function satisfies the `ℤ²`-automorphy law
-`s (z + m + nτ) = e_(m,n)(z) s z` for every `(m, n) ∈ ℤ²` exactly when it satisfies it for the
-generators: `s (z + 1) = exp (2πiα) s z` and `s (z + τ) = exp (2πiβ - πikτ - 2πikz) s z`. -/
+/-- **Generator criterion for `ℤ²`-automorphy.** For any `τ : ℂ`, a function satisfies the
+`ℤ²`-automorphy law `s (z + m + nτ) = e_(m,n)(z) s z` for every `(m, n) ∈ ℤ²` exactly when it
+satisfies it for the generators: `s (z + 1) = exp (2πiα) s z` and
+`s (z + τ) = exp (2πiβ - πikτ - 2πikz) s z` (defining a section of the theta line when
+`Im τ ≠ 0`). -/
 theorem forall_add_eq_thetaFactor_mul_iff {s : ℂ → ℂ} :
     (∀ (m n : ℤ) z, s (z + m + n * τ) = thetaFactor k τ α β m n z * s z) ↔
       (∀ z, s (z + 1) = cexp (2 * π * I * α) * s z) ∧

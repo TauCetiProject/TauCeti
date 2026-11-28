@@ -28,7 +28,8 @@ pulled back to the universal cover `ℂ`, of the degree-`k` theta line on the co
 * `TauCeti.add_eq_thetaFactor_mul_of_mem_thetaSections` and
   `TauCeti.mem_thetaSections_iff_forall_add_eq_thetaFactor_mul`: bridging `thetaSections` with
   full `ℤ²`-automorphy via `thetaFactor`.
-* `TauCeti.thetaSections_add_int` and `TauCeti.mul_mem_thetaSections`: integer characteristic
+* `TauCeti.thetaSections_add_int_left`, `TauCeti.thetaSections_add_int_right`,
+  `TauCeti.thetaSections_add_int`, and `TauCeti.mul_mem_thetaSections`: integer characteristic
   invariance and level-additive multiplication of theta sections.
 
 ## References
@@ -87,19 +88,34 @@ theorem mem_thetaSections_iff_forall_add_eq_thetaFactor_mul :
   rw [mem_thetaSections_iff, forall_add_eq_thetaFactor_mul_iff]
   simp only [Int.cast_natCast]
 
-/-- Shifting the characteristics `(α, β)` by integers does not change the space of theta
+/-- Shifting the first characteristic `α` by an integer does not change the space of theta
 sections. -/
-theorem thetaSections_add_int (k : ℕ) (τ : ℂ) (α β : ℝ) (a b : ℤ) :
-    thetaSections k τ (α + a) (β + b) = thetaSections k τ α β := by
+@[simp]
+theorem thetaSections_add_int_left (k : ℕ) (τ : ℂ) (α β : ℝ) (a : ℤ) :
+    thetaSections k τ (α + a) β = thetaSections k τ α β := by
   ext s
   have hα : cexp (2 * π * I * (α + a : ℝ)) = cexp (2 * π * I * α) := by
-    simpa only [thetaFactor_one_zero] using thetaFactor_add_int k τ α β a b 1 0 0
+    simpa only [thetaFactor_one_zero] using thetaFactor_add_int_left k τ α β a 1 0 0
+  simp only [mem_thetaSections_iff, hα]
+
+/-- Shifting the second characteristic `β` by an integer does not change the space of theta
+sections. -/
+@[simp]
+theorem thetaSections_add_int_right (k : ℕ) (τ : ℂ) (α β : ℝ) (b : ℤ) :
+    thetaSections k τ α (β + b) = thetaSections k τ α β := by
+  ext s
   have hβ : ∀ z : ℂ,
       cexp (2 * π * I * (β + b : ℝ) - π * I * k * τ - 2 * π * I * k * z) =
         cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) := fun z => by
     simpa only [thetaFactor_zero_one, Int.cast_natCast] using
-      thetaFactor_add_int k τ α β a b 0 1 z
-  simp only [mem_thetaSections_iff, hα, hβ]
+      thetaFactor_add_int_right k τ α β b 0 1 z
+  simp only [mem_thetaSections_iff, hβ]
+
+/-- Shifting the characteristics `(α, β)` by integers does not change the space of theta
+sections. -/
+theorem thetaSections_add_int (k : ℕ) (τ : ℂ) (α β : ℝ) (a b : ℤ) :
+    thetaSections k τ (α + a) (β + b) = thetaSections k τ α β := by
+  rw [thetaSections_add_int_left, thetaSections_add_int_right]
 
 /-- Pointwise multiplication of theta sections adds levels and characteristics. -/
 theorem mul_mem_thetaSections {k₁ k₂ : ℕ} {τ : ℂ} {α₁ β₁ α₂ β₂ : ℝ} {s₁ s₂ : ℂ → ℂ}

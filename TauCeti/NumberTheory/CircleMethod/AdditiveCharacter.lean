@@ -118,8 +118,9 @@ theorem expTwoPiI_intCast_mul (m : ℤ) (α : ℝ) : expTwoPiI (m * α) = expTwo
   ring
 
 /-- `e(α) = 1` exactly when `α` is an integer. -/
-theorem expTwoPiI_eq_one_iff {α : ℝ} : expTwoPiI α = 1 ↔ ∃ m : ℤ, α = m :=
-  Complex.exp_two_pi_mul_I_mul_ofReal_eq_one_iff α
+theorem expTwoPiI_eq_one_iff {α : ℝ} : expTwoPiI α = 1 ↔ ∃ m : ℤ, α = m := by
+  rw [expTwoPiI_def]
+  exact Complex.exp_two_pi_mul_I_mul_ofReal_eq_one_iff α
 
 @[simp]
 theorem expTwoPiI_intCast (m : ℤ) : expTwoPiI m = 1 :=

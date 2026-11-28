@@ -7,22 +7,25 @@ module
 
 public import Mathlib.Analysis.Complex.Periodic
 public import Mathlib.Analysis.Fourier.AddCircle
-public import TauCeti.Analysis.Complex.Laurent.Basic
+public import TauCeti.Analysis.Complex.Laurent.Series
+import TauCeti.Analysis.Complex.Laurent.Expansion
 import TauCeti.Analysis.Complex.Periodic
 import TauCeti.Analysis.Complex.PowerSeries.FourierCoeff
 
 /-!
-# Circle Laurent coefficients of periodic cusp functions
+# Circle Laurent coefficients and expansions of periodic cusp functions
 
 For an `h`-periodic function `f : ℂ → ℂ` (`0 < h`), the unit-circle Laurent coefficients of its
 cusp function `Function.Periodic.cuspFunction h f` equal the interval Fourier coefficients
 `fourierCoeffOn` of `t ↦ f t` on `[0, h]` (`circleLaurentCoeff_cuspFunction_eq_fourierCoeffOn`).
+When `f` is entire, `cuspFunction h f` admits a convergent Laurent series on `ℂ \ {0}` with
+coefficients `fourierCoeffOn hh (fun t : ℝ => f t)` (`hasLaurentSeriesOnAnnulus_cuspFunction`).
 -/
 
 public section
 
-open Complex
-open scoped Real
+open Complex Metric
+open scoped Real ENNReal
 
 namespace TauCeti
 
@@ -60,5 +63,27 @@ theorem circleLaurentCoeff_cuspFunction_eq_fourierCoeffOn {h : ℝ} (hh : 0 < h)
     ring
   rw [hcmap, Function.Periodic.eq_cuspFunction hh.ne' hf, Periodic.qParam_zpow]
   simp only [fourier_coe_apply, smul_eq_mul]
+
+/-- For an entire `h`-periodic function `f : ℂ → ℂ` (`0 < h`), its cusp function
+`Function.Periodic.cuspFunction h f` expands on the punctured plane `ℂ \ {0}` in a convergent
+Laurent series whose coefficients are the interval Fourier coefficients
+`fourierCoeffOn hh (fun t : ℝ => f t)`. -/
+theorem hasLaurentSeriesOnAnnulus_cuspFunction {h : ℝ} (hh : 0 < h) {f : ℂ → ℂ}
+    (hd : Differentiable ℂ f) (hf : Function.Periodic f h) :
+    HasLaurentSeriesOnAnnulus (Function.Periodic.cuspFunction h f)
+      (fourierCoeffOn hh (fun t : ℝ => f t)) 0 0 ⊤ := by
+  have hdiff : DifferentiableOn ℂ (Function.Periodic.cuspFunction h f)
+      (eball 0 ⊤ \ closedBall 0 0) := by
+    intro w hw
+    have hw0 : w ≠ 0 := fun h => hw.right (by simp [h])
+    have hq : Function.Periodic.qParam h (Function.Periodic.invQParam h w) = w :=
+      Function.Periodic.qParam_right_inv hh.ne' hw0
+    rw [← hq]
+    exact (Function.Periodic.differentiableAt_cuspFunction hh.ne' hf (hd _)).differentiableWithinAt
+  have hL := hdiff.hasLaurentSeriesOnAnnulus le_rfl zero_lt_one ENNReal.ofReal_lt_top
+  have hcoeff : circleLaurentCoeff (Function.Periodic.cuspFunction h f) 0 1 =
+      fourierCoeffOn hh (fun t : ℝ => f t) :=
+    funext fun m => circleLaurentCoeff_cuspFunction_eq_fourierCoeffOn hh hf m
+  rwa [hcoeff] at hL
 
 end TauCeti

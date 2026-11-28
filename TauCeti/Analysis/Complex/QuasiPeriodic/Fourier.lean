@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.AddCircle
-import TauCeti.Analysis.Complex.Laurent.Expansion
 import TauCeti.Analysis.Complex.Laurent.Periodic
 import TauCeti.Analysis.Complex.Periodic
 import TauCeti.Analysis.Fourier.FourierCoeffOn
@@ -16,9 +15,10 @@ import TauCeti.Analysis.Fourier.RiemannLebesgue
 # Twisted Fourier analysis of quasi-periodic entire functions
 
 Via the exponential coordinate `w = exp (2πiz)` (`Function.Periodic.qParam 1`) and Laurent
-expansion on `ℂ \ {0}` (`DifferentiableOn.hasLaurentSeriesOnAnnulus`), every entire function
-`s : ℂ → ℂ` satisfying `s (z + 1) = exp (2πiα) * s z` expands into a twisted Fourier series with
-coefficients `thetaFourierCoeff α s m = fourierCoeffOn zero_lt_one (fun t => exp (-2πiαt) * s t) m`.
+expansion of periodic cusp functions on `ℂ \ {0}`
+(`TauCeti.hasLaurentSeriesOnAnnulus_cuspFunction`), every entire function `s : ℂ → ℂ` satisfying
+`s (z + 1) = exp (2πiα) * s z` expands into a twisted Fourier series with coefficients
+`thetaFourierCoeff α s m = fourierCoeffOn zero_lt_one (fun t => exp (-2πiαt) * s t) m`.
 
 ## Main definitions
 
@@ -29,7 +29,8 @@ coefficients `thetaFourierCoeff α s m = fourierCoeffOn zero_lt_one (fun t => ex
 * `TauCeti.thetaFourierCoeff_eq_integral`: the explicit integral formula
   `∫ t in 0..1, exp (-2πi(m + α)t) * s t`.
 * `TauCeti.thetaFourierCoeff_zero`, `TauCeti.thetaFourierCoeff_smul`,
-  `TauCeti.thetaFourierCoeff_add`: linearity of `thetaFourierCoeff`.
+  `TauCeti.thetaFourierCoeff_add`, and `TauCeti.thetaFourierCoeff_add_int`: linearity and integer
+  twist-shift reindexing of `thetaFourierCoeff`.
 * `TauCeti.hasSum_thetaFourierCoeff`: twisted Fourier expansion of quasi-periodic entire functions.
 * `TauCeti.summable_norm_thetaFourierCoeff_mul_exp` and
   `TauCeti.summable_norm_thetaFourierCoeff`: exponential coefficient decay and absolute summability.
@@ -75,6 +76,15 @@ theorem thetaFourierCoeff_eq_integral (α : ℝ) (s : ℂ → ℂ) (m : ℤ) :
   congr 2
   push_cast
   ring
+
+/-- Shifting the twist parameter `α` by an integer `a` shifts the Fourier mode index by `a`. -/
+@[simp]
+theorem thetaFourierCoeff_add_int (α : ℝ) (a : ℤ) (s : ℂ → ℂ) (m : ℤ) :
+    thetaFourierCoeff (α + a) s m = thetaFourierCoeff α s (m + a) := by
+  simp only [thetaFourierCoeff_eq_integral]
+  refine intervalIntegral.integral_congr fun t _ => ?_
+  push_cast
+  ring_nf
 
 /-- The twisted Fourier coefficients of the zero function vanish. -/
 @[simp]
@@ -132,34 +142,11 @@ private lemma twistedCusp_qParam {α : ℝ} {s : ℂ → ℂ}
     twistedCusp α s (Function.Periodic.qParam 1 z) = twistedPeriodic α s z :=
   Function.Periodic.eq_cuspFunction one_ne_zero (periodic_twistedPeriodic h1) z
 
-private lemma differentiableOn_twistedCusp {α : ℝ} {s : ℂ → ℂ}
-    (hs : Differentiable ℂ s) (h1 : ∀ z, s (z + 1) = cexp (2 * π * I * α) * s z) :
-    DifferentiableOn ℂ (twistedCusp α s) (eball 0 ⊤ \ closedBall 0 0) := by
-  have hdiff : Differentiable ℂ (twistedPeriodic α s) :=
-    ((differentiable_id.const_mul _).cexp).mul hs
-  intro w hw
-  have hw0 : w ≠ 0 := fun h => hw.right (by simp [h])
-  have hq : Function.Periodic.qParam 1 (Function.Periodic.invQParam 1 w) = w :=
-    Function.Periodic.qParam_right_inv one_ne_zero hw0
-  rw [← hq]
-  exact (Function.Periodic.differentiableAt_cuspFunction one_ne_zero
-    (periodic_twistedPeriodic h1) (hdiff _)).differentiableWithinAt
-
-private lemma thetaFourierCoeff_eq_circleLaurentCoeff {α : ℝ} {s : ℂ → ℂ}
-    (h1 : ∀ z, s (z + 1) = cexp (2 * π * I * α) * s z) (m : ℤ) :
-    thetaFourierCoeff α s m = circleLaurentCoeff (twistedCusp α s) 0 1 m := by
-  rw [thetaFourierCoeff_def]
-  exact (circleLaurentCoeff_cuspFunction_eq_fourierCoeffOn zero_lt_one
-    (periodic_twistedPeriodic h1) m).symm
-
 private lemma hasLaurentSeriesOnAnnulus_twistedCusp {α : ℝ} {s : ℂ → ℂ}
     (hs : Differentiable ℂ s) (h1 : ∀ z, s (z + 1) = cexp (2 * π * I * α) * s z) :
-    HasLaurentSeriesOnAnnulus (twistedCusp α s) (thetaFourierCoeff α s) 0 0 ⊤ := by
-  have hL := (differentiableOn_twistedCusp hs h1).hasLaurentSeriesOnAnnulus le_rfl zero_lt_one
-    (ENNReal.ofReal_lt_top)
-  have hcoeff : circleLaurentCoeff (twistedCusp α s) 0 1 = thetaFourierCoeff α s :=
-    funext fun m => (thetaFourierCoeff_eq_circleLaurentCoeff h1 m).symm
-  rwa [hcoeff] at hL
+    HasLaurentSeriesOnAnnulus (twistedCusp α s) (thetaFourierCoeff α s) 0 0 ⊤ :=
+  hasLaurentSeriesOnAnnulus_cuspFunction zero_lt_one
+    (((differentiable_id.const_mul _).cexp).mul hs) (periodic_twistedPeriodic h1)
 
 /-- **Twisted Fourier expansion.** Every entire function `s : ℂ → ℂ` satisfying
 `s (z + 1) = exp (2πiα) * s z` is the sum of its twisted Fourier series at every `z ∈ ℂ`. -/
@@ -197,11 +184,9 @@ theorem summable_norm_thetaFourierCoeff_mul_exp {α : ℝ} {s : ℂ → ℂ} (hs
     (ENNReal.ofReal_lt_top)
   refine hsum.congr fun m => ?_
   congr 1
-  exact Complex.ofReal_injective (by
-    push_cast
-    rw [← Complex.exp_intCast_mul]
-    congr 1
-    ring)
+  rw [← Real.exp_intCast_mul]
+  congr 1
+  ring
 
 /-- The twisted Fourier coefficients of a quasi-periodic entire function are absolutely summable. -/
 theorem summable_norm_thetaFourierCoeff {α : ℝ} {s : ℂ → ℂ} (hs : Differentiable ℂ s)

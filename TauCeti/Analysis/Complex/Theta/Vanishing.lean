@@ -116,23 +116,18 @@ private lemma thetaFourierCoeff_zero_level_eq_zero_of_ne {τ : ℂ} (hτ : τ.im
   simp only [Nat.cast_zero, add_zero, mul_zero, zero_mul] at hrec
   have hexp : cexp (2 * π * I * (m + α) * τ - 2 * π * I * β) = 1 :=
     mul_right_cancel₀ hm (by simpa only [one_mul] using hrec.symm)
-  have hnorm_eq := norm_thetaFourierCoeff_add_level hs m
-  simp only [Nat.cast_zero, add_zero, zero_div] at hnorm_eq
-  have hnorm : Real.exp (-2 * π * ((m : ℝ) + α) * τ.im) = 1 :=
-    mul_right_cancel₀ (norm_ne_zero_iff.mpr hm) (by simpa only [one_mul] using hnorm_eq.symm)
-  have hma : (m : ℝ) + α = 0 := by
-    have hmul : -2 * π * ((m : ℝ) + α) * τ.im = 0 :=
-      Real.exp_injective (by simpa only [Real.exp_zero] using hnorm)
-    have hne : -2 * π * τ.im ≠ 0 :=
-      mul_ne_zero (mul_ne_zero (neg_ne_zero.mpr two_ne_zero) Real.pi_pos.ne') hτ
-    have : (-2 * π * τ.im) * ((m : ℝ) + α) = 0 := by linarith
-    exact (mul_eq_zero.mp this).resolve_left hne
-  have hmaC : ((m : ℂ) + α) = 0 := by exact_mod_cast hma
-  have hneg : 2 * π * I * (m + α) * τ - 2 * π * I * β = -(2 * π * I * (β : ℂ)) := by
-    rw [hmaC]
-    ring
-  rw [hneg, Complex.exp_neg, inv_eq_one, Complex.exp_two_pi_mul_I_mul_ofReal_eq_one_iff] at hexp
-  exact ⟨hma, hexp.imp fun _ h => h.symm⟩
+  have hfac : (2 * π * I * (m + α) * τ - 2 * π * I * β : ℂ) =
+      2 * π * I * (((m : ℂ) + α) * τ - β) := by ring
+  rw [hfac, Complex.exp_two_pi_mul_I_mul_eq_one_iff] at hexp
+  obtain ⟨b, hb⟩ := hexp
+  have him := congrArg Complex.im hb
+  simp only [sub_im, mul_im, add_re, intCast_re, ofReal_re, add_im, intCast_im, ofReal_im,
+    add_zero, zero_mul, sub_zero, intCast_im] at him
+  have hma : (m : ℝ) + α = 0 := (mul_eq_zero.mp him).resolve_right hτ
+  have hre := congrArg Complex.re hb
+  simp only [sub_re, mul_re, add_re, intCast_re, ofReal_re, add_im, intCast_im, ofReal_im,
+    add_zero, zero_mul, sub_zero, hma, zero_mul, ofReal_re, intCast_re] at hre
+  exact ⟨hma, -b, by push_cast; linarith⟩
 
 /-- At level `k = 0` with `τ.im ≠ 0` and integer characteristics `(α, β) ∈ ℤ × ℤ`, the theta
 sections are precisely the constant functions. -/
