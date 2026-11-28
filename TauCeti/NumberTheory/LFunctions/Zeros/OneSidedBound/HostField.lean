@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 import TauCeti.FieldTheory.IntermediateField.Quadratic
 import TauCeti.NumberTheory.Multiquadratic.Cyclotomic.FundamentalDiscriminant
+import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
 import Mathlib.RingTheory.RootsOfUnity.Complex
 
 /-!
@@ -106,11 +107,9 @@ instance instIsTotallyComplexBaseField : IsTotallyComplex P.baseField :=
 
 /-- The imaginary quadratic base has a unique infinite place. -/
 instance instSubsingletonInfinitePlaceBaseField : Subsingleton (InfinitePlace P.baseField) := by
-  classical
-  exact Fintype.card_le_one_iff_subsingleton.mp <| by
-    rw [InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces,
-      IsTotallyComplex.nrRealPlaces_eq_zero,
-      InfinitePlace.nrComplexPlaces_eq_one_of_finrank_eq_two P.finrank_baseField, zero_add]
+  have heq := TauCeti.NumberField.infinitePlace_eq_mk_of_finrank_eq_two P.finrank_baseField
+    (algebraMap P.baseField ℂ)
+  exact ⟨fun v w => (heq v).trans (heq w).symm⟩
 
 /-- Every infinite place of the host is complex. -/
 instance instIsTotallyComplexHostField (s : ℕ) : IsTotallyComplex (P.hostField s) :=
