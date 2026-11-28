@@ -1,0 +1,316 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.NumberTheory.LocalField.Uniformizer
+public import TauCeti.NumberTheory.NumberField.CMField.AdeleStar
+public import TauCeti.NumberTheory.NumberField.Global.Adeles.AddChar
+public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.FiniteComponent
+public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Splitting
+import TauCeti.NumberTheory.NumberField.CMField.Basic
+import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.IntegralIdeal
+
+/-!
+# Weil data of a CM field
+
+Let `E` be a CM field with complex conjugation `x ↦ conj x`, a CM type `Φ`, finite adeles `𝔸_f`,
+integral finite adeles `Ô`, different `𝔇`, and let `ψ_f` be the standard character of `𝔸_f`
+(`TauCeti.GlobalNumberFields.finiteAdeleAddChar`). **Weil data** `(j, α, υ)` for `E` and `Φ`
+consist of
+
+* an element `j ∈ E` with `conj j = −j` and `Im φ(j) > 0` for every embedding `φ ∈ Φ`;
+* a finite idele `α` such that `ord_w(j α (conj α)) = −ord_w(𝔇)` at every finite place `w`, that
+  is, such that `j α (conj α)` generates the inverse different;
+* a splitting character `υ` of `E` for `Φ`
+  (`TauCeti.GlobalNumberFields.HeckeCharacter.IsSplitting`);
+
+such that `c₀ = (1 − j⁻¹)/2` is an algebraic integer and `υ(ϖ_w) = −1` for every uniformiser `ϖ_w`
+at a finite place `w = conj w`.
+
+These data fix the Weil representation of the unitary groups of hermitian spaces over `E`: `j`
+turns a hermitian form into the symplectic form of a Heisenberg group, `α` scales the lattice
+`α Ô^n` on which the finite part of the vacuum lives, and `υ` splits the metaplectic cover. This
+file records the scalars built from them:
+
+* `c₀ = (1 − j⁻¹)/2`, an algebraic integer with `c₀ + conj c₀ = 1` (`TauCeti.WeilData.traceOne`);
+* the character `ψ₀(z) = ψ_f(j α (conj α) z)` of `𝔸_f`, for which `Ô` is self-dual: `z ∈ Ô`
+  exactly when `ψ₀(z u) = 1` for every `u ∈ Ô`
+  (`TauCeti.WeilData.forall_selfDualAddChar_mul_eq_one_iff`);
+* the real scale `κ_w = (2π Im Φ_w(j))^{−1/2}` at an infinite place `w`
+  (`TauCeti.WeilData.realScale`), where `Im Φ_w(j) = |j|_w`;
+* the Hecke character `χ_𝔸(x) = υ(x) |x|^{−1/2}` (`TauCeti.WeilData.adelicChar`);
+* the **adelic vacuum** on `𝔸^n`,
+  `vac(x) = exp(−π Σ_{i,w} Im Φ_w(j) |x_{i,w}|²) · ψ_f(−¼ x_f* x_f)` if `x_f ∈ α Ô^n` and `0`
+  otherwise (`TauCeti.WeilData.vacuum`);
+* the **semicharacter** `semi(z) = ψ₀(½ c₀ z* z)` on `𝔸_f^n` (`TauCeti.WeilData.semichar`).
+
+The definition of Weil data makes sense for every CM field. Splitting characters exist only under
+a condition on the roots of unity of `E`: by
+`TauCeti.GlobalNumberFields.HeckeCharacter.IsSplitting.prod_embedding_div_norm_eq_one` the phases
+of every global unit multiply to one, which fails for `i ∈ ℚ(i)`.
+
+## Main definitions
+
+* `TauCeti.WeilData Φ`: Weil data for `E` and the CM type `Φ`.
+* `TauCeti.WeilData.traceOne`, `TauCeti.WeilData.selfDualAddChar`, `TauCeti.WeilData.realScale`,
+  `TauCeti.WeilData.adelicChar`, `TauCeti.WeilData.vacuum`, `TauCeti.WeilData.semichar`: the
+  scalars, characters and functions above.
+
+## Main results
+
+* `TauCeti.WeilData.im_embedding_j`: `Im Φ_w(j) = |j|_w`, so it is positive.
+* `TauCeti.WeilData.traceOne_add_star`: `c₀ + conj c₀ = 1`.
+* `TauCeti.WeilData.forall_selfDualAddChar_mul_eq_one_iff`: `Ô` is self-dual for `ψ₀`.
+* `TauCeti.WeilData.vacuum_zero`, `TauCeti.WeilData.norm_vacuum_of_forall_mem`,
+  `TauCeti.WeilData.vacuum_of_not_forall_mem`, `TauCeti.WeilData.continuous_vacuum`: the vacuum
+  is `1` at `0`, a Gaussian in absolute value on `𝔸_∞^n × α Ô^n`, zero off it, and continuous.
+
+## References
+
+* S. S. Kudla, *Splitting metaplectic covers of dual reductive pairs*, Israel J. Math. 87 (1994).
+* M. Harris, S. S. Kudla and W. J. Sweet, *Theta dichotomy for unitary groups*, J. Amer. Math. Soc.
+  9 (1996), §1.
+
+## Attribution
+
+The data and the scalars built from them follow `New.WeilData`, `New.WeilData.traceOne`,
+`New.vacuumFn` and `New.stdLattice.semichar` in `src/Lib/Weil/Construction/WeilData.lean` and
+`src/Lib/Weil/Construction/FiniteMultiplier.lean` of grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC).
+-/
+
+public section
+noncomputable section
+
+open IsDedekindDomain IsDedekindDomain.FiniteAdeleRing NumberField NumberField.IsCMField
+open TauCeti.GlobalNumberFields
+open scoped NumberField nonZeroDivisors Real ComplexConjugate
+
+namespace TauCeti
+
+variable {E : Type*} [Field E] [NumberField E] [IsCMField E]
+
+/-- **Weil data** `(j, α, υ)` for a CM field `E` and a CM type `Φ`: an element `j ∈ E` with
+`conj j = −j` and `Im φ(j) > 0` for `φ ∈ Φ`, such that `(1 − j⁻¹)/2` is an algebraic integer; a
+finite idele `α` such that `j α (conj α)` generates the inverse different `𝔇⁻¹`, that is,
+`ord_w(j α (conj α)) = −ord_w(𝔇)` at every finite place `w`; and a splitting character `υ` of `E`
+for `Φ` with `υ(ϖ_w) = −1` at every uniformiser `ϖ_w` of a finite place `w = conj w`. -/
+@[ext]
+structure WeilData (Φ : CMType E) where
+  /-- The element `j` of `E`. -/
+  j : E
+  /-- `j` is purely imaginary: `conj j = −j`. -/
+  star_j : star j = -j
+  /-- `j` has positive imaginary part under every embedding of `Φ`. -/
+  im_embedding_j_pos (φ : E →+* ℂ) (hφ : φ ∈ Φ) : 0 < (φ j).im
+  /-- `(1 − j⁻¹)/2` is an algebraic integer. -/
+  isIntegral_one_sub_inv_j_div_two : IsIntegral ℤ ((1 - j⁻¹) / 2)
+  /-- The finite idele `α`. -/
+  α : (FiniteAdeleRing (𝓞 E) E)ˣ
+  /-- The fractional ideal of `j α (conj α)` is the inverse different `𝔇⁻¹`. -/
+  spanSingleton_mul_toFractionalIdeal :
+    FractionalIdeal.spanSingleton (𝓞 E)⁰ j *
+        (toFractionalIdeal (α * star α) : FractionalIdeal (𝓞 E)⁰ E) =
+      FractionalIdeal.dual ℤ ℚ 1
+  /-- The splitting character `υ`. -/
+  υ : HeckeCharacter E
+  /-- `υ` is a splitting character of `E` for `Φ`. -/
+  isSplitting : υ.IsSplitting Φ
+  /-- `υ(ϖ_w) = −1` at every uniformiser `ϖ_w` of a finite place `w` fixed by conjugation. -/
+  finiteComponent_eq_neg_one (w : HeightOneSpectrum (𝓞 E)) (hw : w.conjPlace = w)
+    (ϖ : (w.adicCompletion E)ˣ) (hϖ : IsUniformizer (w.adicCompletion E) ϖ) :
+    HeckeCharacter.finiteComponent υ w ϖ = -1
+
+namespace WeilData
+
+variable {Φ : CMType E} (W : WeilData Φ)
+
+/-! ### The element `j` -/
+
+/-- `j` is purely imaginary under every complex embedding. -/
+theorem re_embedding_j (φ : E →+* ℂ) : (φ W.j).re = 0 := by
+  have h : conj (φ W.j) = -φ W.j := by
+    rw [← complexEmbedding_complexConj, ← star_eq_complexConj, W.star_j, map_neg]
+  have := congrArg Complex.re h
+  rw [Complex.conj_re, Complex.neg_re] at this
+  linarith
+
+/-- **`Im Φ_w(j) = |j|_w`**: `Φ_w(j)` is purely imaginary with positive imaginary part. -/
+theorem im_embedding_j (w : InfinitePlace E) : (Φ.embedding w W.j).im = w W.j := by
+  have him := W.im_embedding_j_pos _ (Φ.embedding_mem w)
+  rw [← Φ.norm_embedding_apply w, Complex.norm_eq_sqrt_sq_add_sq, W.re_embedding_j]
+  simp [Real.sqrt_sq him.le]
+
+/-- `j` has positive absolute value at every infinite place. -/
+theorem apply_j_pos (w : InfinitePlace E) : 0 < w W.j :=
+  W.im_embedding_j w ▸ W.im_embedding_j_pos _ (Φ.embedding_mem w)
+
+/-- `j ≠ 0`. -/
+theorem j_ne_zero : W.j ≠ 0 := by
+  obtain ⟨w⟩ : Nonempty (InfinitePlace E) := inferInstance
+  exact fun h ↦ (W.apply_j_pos w).ne' (by simp [h])
+
+/-! ### The algebraic integer `c₀` -/
+
+/-- The element `c₀ = (1 − j⁻¹)/2` of `E`. -/
+def traceOne : E := (1 - W.j⁻¹) / 2
+
+/-- The defining formula of `c₀`. -/
+theorem traceOne_def : W.traceOne = (1 - W.j⁻¹) / 2 := (rfl)
+
+/-- `c₀ = (1 − j⁻¹)/2` is an algebraic integer. -/
+theorem isIntegral_traceOne : IsIntegral ℤ W.traceOne :=
+  W.isIntegral_one_sub_inv_j_div_two
+
+/-- **`c₀ + conj c₀ = 1`**, as `j⁻¹` is purely imaginary. -/
+theorem traceOne_add_star : W.traceOne + star W.traceOne = 1 := by
+  simp only [traceOne_def, star_div₀, star_sub, star_inv₀, W.star_j, star_one, star_ofNat]
+  ring
+
+/-! ### The self-dual character `ψ₀` -/
+
+/-- The character `ψ₀(z) = ψ_f(j α (conj α) z)` of the finite adeles. -/
+def selfDualAddChar : AddChar (FiniteAdeleRing (𝓞 E) E) Circle :=
+  (finiteAdeleAddChar E).compAddMonoidHom
+    (AddMonoidHom.mulLeft (algebraMap E _ W.j * W.α * star (W.α : FiniteAdeleRing (𝓞 E) E)))
+
+/-- The defining formula `ψ₀(z) = ψ_f(j α (conj α) z)`. -/
+theorem selfDualAddChar_apply (z : FiniteAdeleRing (𝓞 E) E) :
+    W.selfDualAddChar z =
+      finiteAdeleAddChar E (algebraMap E _ W.j * W.α * star (W.α : FiniteAdeleRing (𝓞 E) E) * z) :=
+  (rfl)
+
+/-- `ψ₀` is continuous. -/
+@[fun_prop, continuity]
+theorem continuous_selfDualAddChar : Continuous W.selfDualAddChar :=
+  continuous_finiteAdeleAddChar.comp (continuous_const.mul continuous_id)
+
+/-- **`Ô` is self-dual for `ψ₀`**: a finite adele `z` is integral exactly when `ψ₀(z u) = 1` for
+every `u ∈ Ô`. -/
+theorem forall_selfDualAddChar_mul_eq_one_iff (z : FiniteAdeleRing (𝓞 E) E) :
+    (∀ u ∈ integralAdeles (𝓞 E) E, W.selfDualAddChar (z * u) = 1) ↔
+      z ∈ integralAdeles (𝓞 E) E := by
+  -- `t = j α (conj α)` is a finite idele representing the inverse different
+  set t : (FiniteAdeleRing (𝓞 E) E)ˣ := unitEmbedding (𝓞 E) E (Units.mk0 W.j W.j_ne_zero) *
+    (W.α * star W.α)
+  have ht : toFractionalIdeal t = Units.mk0 (FractionalIdeal.dual ℤ ℚ 1)
+      (FractionalIdeal.dual_ne_zero ℤ ℚ one_ne_zero) := by
+    refine Units.ext ?_
+    rw [map_mul, toFractionalIdeal_unitEmbedding, Units.val_mul, coe_toPrincipalIdeal,
+      Units.val_mk0, Units.val_mk0, W.spanSingleton_mul_toFractionalIdeal]
+  have htz : algebraMap E _ W.j * W.α * star (W.α : FiniteAdeleRing (𝓞 E) E) = t := by
+    rw [Units.val_mul, Units.val_mul, Units.coe_star, unitEmbedding_apply, Units.val_mk0,
+      mul_assoc]
+  simp_rw [selfDualAddChar_apply, htz, ← mul_assoc]
+  rw [forall_finiteAdeleAddChar_mul_eq_one_iff, mem_finiteAdelicIdeal_iff t ht,
+    Units.inv_mul_cancel_left]
+
+/-! ### The real scales and the Hecke character `χ_𝔸` -/
+
+/-- The real scale `κ_w = (2π Im Φ_w(j))^{−1/2}` at an infinite place `w`. -/
+def realScale (w : InfinitePlace E) : ℝ := (2 * π * (Φ.embedding w W.j).im) ^ (-(2⁻¹ : ℝ))
+
+/-- `κ_w = (2π |j|_w)^{−1/2}`. -/
+theorem realScale_eq (w : InfinitePlace E) :
+    W.realScale w = (2 * π * w W.j) ^ (-(2⁻¹ : ℝ)) := by
+  rw [realScale, im_embedding_j]
+
+/-- The real scales are positive. -/
+theorem realScale_pos (w : InfinitePlace E) : 0 < W.realScale w := by
+  rw [realScale_eq]
+  exact Real.rpow_pos_of_pos (by have := W.apply_j_pos w; positivity) _
+
+/-- The Hecke character `χ_𝔸(x) = υ(x) |x|^{−1/2}`. -/
+def adelicChar : HeckeCharacter E := W.υ * HeckeCharacter.normPow E (-(2⁻¹ : ℂ))
+
+/-- The defining formula `χ_𝔸(x) = υ(x) |x|^{−1/2}`. -/
+@[simp]
+theorem adelicChar_apply (c : IdeleClassGroup (𝓞 E) E) :
+    (W.adelicChar c : ℂ) = W.υ c * (((ideleClassNorm c : NNReal) : ℝ) : ℂ) ^ (-(2⁻¹ : ℂ)) := by
+  simp [adelicChar]
+
+/-- `|χ_𝔸(x)| = |x|^{−1/2}`. -/
+theorem norm_adelicChar_apply (c : IdeleClassGroup (𝓞 E) E) :
+    ‖(W.adelicChar c : ℂ)‖ = ((ideleClassNorm c : NNReal) : ℝ) ^ (-(2⁻¹ : ℝ)) := by
+  rw [adelicChar, ContinuousMonoidHom.mul_apply, Units.val_mul, norm_mul,
+    W.isSplitting.norm_apply, one_mul, HeckeCharacter.norm_normPow_apply]
+  simp
+
+/-! ### The adelic vacuum and the semicharacter -/
+
+variable {n : Type*} [Fintype n]
+
+open scoped Classical in
+/-- The **adelic vacuum** on `𝔸^n`: `exp(−π Σ_{i,w} Im Φ_w(j) |x_{i,w}|²) · ψ_f(−¼ x_f* x_f)` if the
+finite part `x_f` lies in `α Ô^n`, and `0` otherwise, where `Im Φ_w(j) = |j|_w`
+(`TauCeti.WeilData.im_embedding_j`) and `x_f* x_f = Σ_i conj x_{i,f} x_{i,f}`. -/
+def vacuum (x : n → AdeleRing (𝓞 E) E) : ℂ :=
+  Real.exp (-(π * ∑ i, ∑ w : InfinitePlace E, w W.j * ‖(x i).1 w‖ ^ 2)) *
+    if ∀ i, W.α⁻¹ • (x i).2 ∈ integralAdeles (𝓞 E) E then
+      (finiteAdeleAddChar E (algebraMap E _ (-4⁻¹) * ∑ i, star (x i).2 * (x i).2) : ℂ)
+    else 0
+
+/-- The vacuum on `𝔸_∞^n × α Ô^n`. -/
+theorem vacuum_of_forall_mem {x : n → AdeleRing (𝓞 E) E}
+    (hx : ∀ i, W.α⁻¹ • (x i).2 ∈ integralAdeles (𝓞 E) E) :
+    W.vacuum x = Real.exp (-(π * ∑ i, ∑ w : InfinitePlace E, w W.j * ‖(x i).1 w‖ ^ 2)) *
+      (finiteAdeleAddChar E (algebraMap E _ (-4⁻¹) * ∑ i, star (x i).2 * (x i).2) : ℂ) := by
+  simp only [vacuum, hx, implies_true, ↓reduceIte]
+
+/-- The vacuum vanishes off `𝔸_∞^n × α Ô^n`. -/
+theorem vacuum_of_not_forall_mem {x : n → AdeleRing (𝓞 E) E}
+    (hx : ¬∀ i, W.α⁻¹ • (x i).2 ∈ integralAdeles (𝓞 E) E) :
+    W.vacuum x = 0 := by
+  simp only [vacuum, hx, ↓reduceIte, mul_zero]
+
+/-- On `𝔸_∞^n × α Ô^n` the vacuum has the absolute value of a Gaussian. -/
+theorem norm_vacuum_of_forall_mem {x : n → AdeleRing (𝓞 E) E}
+    (hx : ∀ i, W.α⁻¹ • (x i).2 ∈ integralAdeles (𝓞 E) E) :
+    ‖W.vacuum x‖ = Real.exp (-(π * ∑ i, ∑ w : InfinitePlace E, w W.j * ‖(x i).1 w‖ ^ 2)) := by
+  rw [W.vacuum_of_forall_mem hx, norm_mul, Circle.norm_coe, mul_one, Complex.norm_real,
+    Real.norm_of_nonneg (Real.exp_nonneg _)]
+
+/-- The vacuum takes the value `1` at `0`. -/
+@[simp]
+theorem vacuum_zero : W.vacuum (0 : n → AdeleRing (𝓞 E) E) = 1 := by
+  rw [W.vacuum_of_forall_mem fun i ↦ by simp]
+  simp
+
+/-- The vacuum is continuous: `α Ô^n` is open and closed. -/
+@[fun_prop, continuity]
+theorem continuous_vacuum : Continuous (W.vacuum (n := n)) := by
+  classical
+  -- the set of the `x` with `x_f ∈ α Ô^n` is open and closed, so the cut-off is continuous
+  have hS : IsClopen
+      {x : n → AdeleRing (𝓞 E) E | ∀ i, W.α⁻¹ • (x i).2 ∈ integralAdeles (𝓞 E) E} := by
+    simp only [Set.ofPred_forall]
+    refine isClopen_iInter_of_finite fun i ↦ ?_
+    have hc : Continuous fun x : n → AdeleRing (𝓞 E) E ↦ W.α⁻¹ • (x i).2 := by fun_prop
+    exact ⟨(isClosed_integralAdeles (𝓞 E) E).preimage hc,
+      (isOpen_integralAdeles (𝓞 E) E).preimage hc⟩
+  unfold vacuum
+  refine Continuous.mul (by fun_prop) (Continuous.if (fun a ha ↦ ?_) ?_ continuous_const)
+  · rw [hS.frontier_eq] at ha
+    exact ha.elim
+  exact continuous_subtypeVal.comp (continuous_finiteAdeleAddChar.comp (by fun_prop))
+
+/-- The **semicharacter** `semi(z) = ψ₀(½ c₀ z* z)` on `𝔸_f^n`, where `z* z = Σ_i conj z_i z_i`. -/
+def semichar (z : n → FiniteAdeleRing (𝓞 E) E) : Circle :=
+  W.selfDualAddChar (algebraMap E _ (W.traceOne / 2) * ∑ i, star (z i) * z i)
+
+/-- The defining formula `semi(z) = ψ₀(½ c₀ z* z)`. -/
+theorem semichar_apply (z : n → FiniteAdeleRing (𝓞 E) E) :
+    W.semichar z = W.selfDualAddChar (algebraMap E _ (W.traceOne / 2) * ∑ i, star (z i) * z i) :=
+  (rfl)
+
+/-- The semicharacter takes the value `1` at `0`. -/
+@[simp]
+theorem semichar_zero : W.semichar (0 : n → FiniteAdeleRing (𝓞 E) E) = 1 := by
+  simp [semichar]
+
+end WeilData
+
+end TauCeti
