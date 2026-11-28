@@ -11,11 +11,9 @@ public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 import TauCeti.AlgebraicGeometry.AbelianVariety.DimensionZero
 import TauCeti.AlgebraicGeometry.AbelianVariety.FaithfullyFlat
-import TauCeti.AlgebraicGeometry.Descent.MorphismProperty
 import TauCeti.AlgebraicGeometry.GroupScheme.Rank
 import TauCeti.AlgebraicGeometry.Morphisms.Finite.Flat.Degree
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
-import TauCeti.AlgebraicGeometry.Morphisms.Flat.Descent
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 import TauCeti.CategoryTheory.Comma.Over
 
@@ -152,16 +150,6 @@ theorem deg_baseChange (f : A ⟶ B) (L : Type u) [Field L] [Algebra K L] :
   have h : Hom.toSchemeHom (Hom.baseChange f L) = eA.hom ≫ g ≫ eB.inv := by
     rw [Hom.toSchemeHom_baseChange]
     simp only [Over.comp_left, Over.eqToHom_left, eA, eB, eqToIso.hom, eqToIso.inv, g, p]
-  -- Finiteness and surjectivity descend along the pullback of the field extension.
-  have hdesc (hf : IsIsogeny (Hom.baseChange f L)) : IsIsogeny f := by
-    let P : MorphismProperty Scheme.{u} := @IsFinite ⊓ @Surjective
-    have : P.RespectsIso := MorphismProperty.RespectsIso.inf _ _
-    have : P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @QuasiCompact) :=
-      MorphismProperty.DescendsAlong.inf (P := @IsFinite) (W := @Surjective)
-    have hg : P (Hom.toSchemeHom (Hom.baseChange f L)) := (isIsogeny_iff _).mp hf
-    rw [h, P.cancel_left_of_respectsIso, P.cancel_right_of_respectsIso] at hg
-    exact (isIsogeny_iff f).mpr
-      (MorphismProperty.of_isPullback_of_surjective_of_flat_of_quasiCompact hpb hg)
   by_cases hf : IsIsogeny f
   · have := hf.isFinite
     have := hf.flat
@@ -172,6 +160,7 @@ theorem deg_baseChange (f : A ⟶ B) (L : Type u) [Field L] [Algebra K L] :
       Scheme.Hom.finrank_comp_right_of_isIso,
       Scheme.Hom.finrank_of_isPullback _ _ _ _ hpb.flip]
     exact (deg_eq_finrank hf _).symm
-  · rw [(deg_eq_zero_iff _).mpr (hf ∘ hdesc), (deg_eq_zero_iff _).mpr hf]
+  · rw [(deg_eq_zero_iff _).mpr (hf ∘ (isIsogeny_baseChange_iff f L).mp),
+      (deg_eq_zero_iff _).mpr hf]
 
 end TauCeti.AlgebraicGeometry.AbelianVariety
