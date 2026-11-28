@@ -70,24 +70,33 @@ private theorem antipode_axioms_of_anti {R H K : Type*} [CommSemiring R]
     induction z using TensorProduct.inductionOn with
     | add u v hu hv => simp only [map_add, hu, hv]
     | tmul a b => simp [SK, hmul]
-  constructor <;>
+  constructor
   · refine LinearMap.ext fun x ↦ ?_
     obtain ⟨a, rfl⟩ := e.symm.surjective x
     simp only [LinearMap.comp_apply, Algebra.linearMap_apply, Algebra.algebraMap_eq_smul_one,
       hcomul, hcounit]
-    first | rw [hR, hl] | rw [hL, hr]
+    rw [hR, hl]
+    simp [Algebra.algebraMap_eq_smul_one, hone]
+  · refine LinearMap.ext fun x ↦ ?_
+    obtain ⟨a, rfl⟩ := e.symm.surjective x
+    simp only [LinearMap.comp_apply, Algebra.linearMap_apply, Algebra.algebraMap_eq_smul_one,
+      hcomul, hcounit]
+    rw [hL, hr]
     simp [Algebra.algebraMap_eq_smul_one, hone]
 
 variable {R H : Type*} [CommSemiring R] [Semiring H] [HopfAlgebra R H]
 
 private theorem opCoop_antipode_axioms :
-    let e := Coop.unopLinearEquiv R H
-    let S : (Coop H)ᵐᵒᵖ →ₗ[R] (Coop H)ᵐᵒᵖ :=
-      e.symm.toLinearMap ∘ₗ HopfAlgebra.antipode R ∘ₗ e.toLinearMap
-    LinearMap.mul' R (Coop H)ᵐᵒᵖ ∘ₗ S.rTensor (Coop H)ᵐᵒᵖ ∘ₗ Coalgebra.comul =
-        Algebra.linearMap R (Coop H)ᵐᵒᵖ ∘ₗ Coalgebra.counit ∧
-      LinearMap.mul' R (Coop H)ᵐᵒᵖ ∘ₗ S.lTensor (Coop H)ᵐᵒᵖ ∘ₗ Coalgebra.comul =
-        Algebra.linearMap R (Coop H)ᵐᵒᵖ ∘ₗ Coalgebra.counit :=
+    LinearMap.mul' R (Coop H)ᵐᵒᵖ ∘ₗ
+        ((Coop.unopLinearEquiv R H).symm.toLinearMap ∘ₗ HopfAlgebra.antipode R ∘ₗ
+          (Coop.unopLinearEquiv R H).toLinearMap).rTensor (Coop H)ᵐᵒᵖ ∘ₗ
+        Coalgebra.comul =
+      Algebra.linearMap R (Coop H)ᵐᵒᵖ ∘ₗ Coalgebra.counit ∧
+    LinearMap.mul' R (Coop H)ᵐᵒᵖ ∘ₗ
+        ((Coop.unopLinearEquiv R H).symm.toLinearMap ∘ₗ HopfAlgebra.antipode R ∘ₗ
+          (Coop.unopLinearEquiv R H).toLinearMap).lTensor (Coop H)ᵐᵒᵖ ∘ₗ
+        Coalgebra.comul =
+      Algebra.linearMap R (Coop H)ᵐᵒᵖ ∘ₗ Coalgebra.counit :=
   antipode_axioms_of_anti (Coop.unopLinearEquiv R H) (HopfAlgebra.antipode R)
     (fun _ _ ↦ rfl) rfl (fun _ ↦ rfl) (TensorProduct.comm R H H).toLinearMap
     (fun a ↦ by
@@ -108,6 +117,8 @@ noncomputable instance instHopfAlgebraCoop : HopfAlgebra R (Coop H)ᵐᵒᵖ whe
   antipode :=
     (Coop.unopLinearEquiv R H).symm.toLinearMap ∘ₗ HopfAlgebra.antipode R ∘ₗ
       (Coop.unopLinearEquiv R H).toLinearMap
+  -- Tactic mode (`by exact`) is required under `module` so the public `Prop` field can use the
+  -- `private` helper.
   mul_antipode_rTensor_comul := by exact opCoop_antipode_axioms.1
   mul_antipode_lTensor_comul := by exact opCoop_antipode_axioms.2
 
@@ -118,13 +129,16 @@ theorem antipode_op_coop (a : H) :
 
 private theorem mulOpposite_antipode_axioms
     (hS : Function.Bijective (HopfAlgebra.antipode R : H →ₗ[R] H)) :
-    let e := (opLinearEquiv R (M := H)).symm
-    let S : Hᵐᵒᵖ →ₗ[R] Hᵐᵒᵖ :=
-      e.symm.toLinearMap ∘ₗ TauCeti.HopfAlgebra.inverseAntipode hS ∘ₗ e.toLinearMap
-    LinearMap.mul' R Hᵐᵒᵖ ∘ₗ S.rTensor Hᵐᵒᵖ ∘ₗ Coalgebra.comul =
-        Algebra.linearMap R Hᵐᵒᵖ ∘ₗ Coalgebra.counit ∧
-      LinearMap.mul' R Hᵐᵒᵖ ∘ₗ S.lTensor Hᵐᵒᵖ ∘ₗ Coalgebra.comul =
-        Algebra.linearMap R Hᵐᵒᵖ ∘ₗ Coalgebra.counit :=
+    LinearMap.mul' R Hᵐᵒᵖ ∘ₗ
+        ((opLinearEquiv R).toLinearMap ∘ₗ TauCeti.HopfAlgebra.inverseAntipode hS ∘ₗ
+          (opLinearEquiv R).symm.toLinearMap).rTensor Hᵐᵒᵖ ∘ₗ
+        Coalgebra.comul =
+      Algebra.linearMap R Hᵐᵒᵖ ∘ₗ Coalgebra.counit ∧
+    LinearMap.mul' R Hᵐᵒᵖ ∘ₗ
+        ((opLinearEquiv R).toLinearMap ∘ₗ TauCeti.HopfAlgebra.inverseAntipode hS ∘ₗ
+          (opLinearEquiv R).symm.toLinearMap).lTensor Hᵐᵒᵖ ∘ₗ
+        Coalgebra.comul =
+      Algebra.linearMap R Hᵐᵒᵖ ∘ₗ Coalgebra.counit :=
   antipode_axioms_of_anti (opLinearEquiv R (M := H)).symm
     (TauCeti.HopfAlgebra.inverseAntipode hS) (fun _ _ ↦ rfl) rfl (fun _ ↦ rfl) LinearMap.id
     (fun _ ↦ rfl)
@@ -138,6 +152,8 @@ noncomputable def hopfAlgebra
     HopfAlgebra R Hᵐᵒᵖ where
   antipode := (opLinearEquiv R).toLinearMap ∘ₗ TauCeti.HopfAlgebra.inverseAntipode hS ∘ₗ
     (opLinearEquiv R).symm.toLinearMap
+  -- Tactic mode (`by exact`) is required under `module` so the public `Prop` field can use the
+  -- `private` helper.
   mul_antipode_rTensor_comul := by exact (mulOpposite_antipode_axioms hS).1
   mul_antipode_lTensor_comul := by exact (mulOpposite_antipode_axioms hS).2
 

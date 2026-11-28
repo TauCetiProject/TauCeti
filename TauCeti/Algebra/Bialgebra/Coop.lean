@@ -41,9 +41,10 @@ noncomputable instance instBialgebra : Bialgebra R (Coop A) :=
           (algEquiv R A).symm.toAlgHom).comp (Algebra.TensorProduct.comm R A A).toAlgHom
       have hf (z : A ⊗[R] A) :
           TensorProduct.map (linearEquiv R A).symm.toLinearMap
-              (linearEquiv R A).symm.toLinearMap (TensorProduct.comm R A A z) = f z :=
-        LinearMap.congr_fun
-          (TensorProduct.ext' (g := f.toLinearMap) fun _ _ ↦ rfl) z
+              (linearEquiv R A).symm.toLinearMap (TensorProduct.comm R A A z) = f z := by
+        induction z using TensorProduct.inductionOn with
+        | add u v hu hv => simp only [map_add, hu, hv]
+        | tmul x y => simp [f]
       simp only [← mk_mul, comul_mk, Bialgebra.comul_mul, hf]
       exact map_mul f (Coalgebra.comul (R := R) a) (Coalgebra.comul (R := R) b))
 

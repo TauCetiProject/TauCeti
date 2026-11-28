@@ -40,8 +40,10 @@ noncomputable instance instBialgebra : Bialgebra R Aᵐᵒᵖ :=
       let f := (Algebra.TensorProduct.opAlgEquiv R R A A).symm
       have hf (z : A ⊗[R] A) :
           TensorProduct.map (opLinearEquiv R).toLinearMap (opLinearEquiv R).toLinearMap z =
-            f (op z) :=
-        LinearMap.congr_fun (TensorProduct.ext' fun x y ↦ rfl) z
+            f (op z) := by
+        induction z using TensorProduct.inductionOn with
+        | add u v hu hv => simp only [map_add, op_add, hu, hv]
+        | tmul x y => simp [f]
       simp only [← op_mul, comul_op, Bialgebra.comul_mul, hf]
       rw [op_mul, map_mul])
 
