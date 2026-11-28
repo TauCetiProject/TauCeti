@@ -22,7 +22,10 @@ unless `u * x = 1` (`TauCeti.exists_unit_conj_of_mul_ne_one`). The rational func
 `x / (1 - x)²`, `x² / (1 - x)³` and `x / (1 - x)³` of the Tate coordinates satisfy the linear
 relation `TauCeti.div_one_sub_sq_add_sq_div_one_sub_cube`. A square root in a field extension of a
 non-square of the base field does not lie in the base field
-(`TauCeti.notMem_range_algebraMap_of_sq_eq_of_not_isSquare`).
+(`TauCeti.notMem_range_algebraMap_of_sq_eq_of_not_isSquare`). Cancelling a common nonzero factor
+`c` in `1 - c * (x / (c * d))` yields `(d - x) / d` (`TauCeti.one_sub_mul_div_mul`) and the
+nonvanishing equivalence `1 - c * (x / (c * d)) ≠ 0 ↔ x ≠ d`
+(`TauCeti.one_sub_mul_div_mul_ne_zero_iff`).
 -/
 
 public section
@@ -54,6 +57,21 @@ theorem notMem_range_algebraMap_of_sq_eq_of_not_isSquare {K L : Type*} [Field K]
   rintro ⟨y, rfl⟩
   rw [← map_pow, (algebraMap K L).injective.eq_iff] at hx2
   exact hsq ⟨y, by simpa only [sq] using hx2.symm⟩
+
+/-- Cancelling a nonzero factor `c` in `1 - c * (x / (c * d))` gives `(d - x) / d` when
+`d ≠ 0`. -/
+theorem one_sub_mul_div_mul {K : Type*} [Field K] {c d : K} (hc : c ≠ 0) (hd : d ≠ 0)
+    (x : K) :
+    1 - c * (x / (c * d)) = (d - x) / d := by
+  rw [mul_div_assoc', mul_div_mul_left _ _ hc, one_sub_div hd]
+
+/-- For nonzero `c` and `d` in a field, `1 - c * (x / (c * d))` is nonzero if and only if
+`x ≠ d`. -/
+theorem one_sub_mul_div_mul_ne_zero_iff {K : Type*} [Field K] {c d : K} (hc : c ≠ 0)
+    (hd : d ≠ 0) (x : K) :
+    1 - c * (x / (c * d)) ≠ 0 ↔ x ≠ d := by
+  rw [one_sub_mul_div_mul hc hd, div_ne_zero_iff, sub_ne_zero, ne_comm]
+  exact and_iff_left hd
 
 variable {K : Type*} [DivisionRing K]
 

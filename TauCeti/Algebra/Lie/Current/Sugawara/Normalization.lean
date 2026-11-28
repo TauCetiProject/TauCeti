@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Lie.Current.Sugawara.Basic
 public import TauCeti.Algebra.Lie.Weights.IsSimple
 public import TauCeti.LinearAlgebra.RootSystem.DualCoxeterNumber
 
+import TauCeti.Algebra.Field.Basic
+
 /-!
 # Affine normalisations and the dual Coxeter number for Segal--Sugawara operators
 
@@ -28,8 +30,6 @@ normalisation `κ_L = 2 h^∨ κ₀` in terms of the dual Coxeter number `h^∨`
 
 * `TauCeti.CurrentAlgebra.eq_neg_div_two_mul_smul_killingForm`: `Φ = -(k • κ₀)` equals
   `(-k / (2 d)) • κ_L` when `2 ≠ 0` and `κ_L = (2 d) • κ₀`.
-* `TauCeti.CurrentAlgebra.one_sub_two_mul_neg_div_two_mul_ne_zero_iff`: noncriticality
-  `1 - 2 · 1 · (-k / (2 d)) ≠ 0 ↔ k + d ≠ 0` when `2 ≠ 0`.
 * `TauCeti.CurrentAlgebra.sugawaraVirasoro_eq_sum_dualBasis`: `κ₀`-dual-basis formula for `Lₘ` when
   `2 ≠ 0`.
 * `TauCeti.CurrentAlgebra.sugawaraCentralCharge_neg_div_two_mul`: scalar formula
@@ -60,13 +60,6 @@ variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
   {Φ : LinearMap.BilinForm K L} {hΦ : Φ.lieInvariant L} {hΦs : Φ.IsSymm}
 
 omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
-private theorem one_sub_two_mul_neg_div_two_mul [NeZero (2 : K)] {d : K} (hd : d ≠ 0) (k : K) :
-    1 - 2 * (1 : K) * (-k / (2 * d)) = (k + d) / d := by
-  have h2 : (2 : K) ≠ 0 := NeZero.ne (2 : K)
-  field_simp
-  ring
-
-omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
 /-- **Over a field with `2 ≠ 0`, for a form `κ₀` with `κ_L = (2 d) • κ₀`, the affine level
 `Φ = -(k • κ₀)` at `a = 1` is `(-k / (2 d)) • κ_L`.** -/
 theorem eq_neg_div_two_mul_smul_killingForm [NeZero (2 : K)] {κ₀ : LinearMap.BilinForm K L}
@@ -77,14 +70,6 @@ theorem eq_neg_div_two_mul_smul_killingForm [NeZero (2 : K)] {κ₀ : LinearMap.
   ext x y
   simp only [hΦk, hκ₀, LinearMap.neg_apply, LinearMap.smul_apply, smul_eq_mul]
   field_simp
-
-/-- **Noncriticality in the affine normalisation** (when `2 ≠ 0` in `K`):
-`1 - 2 · 1 · (-k / (2 d)) ≠ 0` if and only if `k + d ≠ 0`. -/
-theorem one_sub_two_mul_neg_div_two_mul_ne_zero_iff [NeZero (2 : K)] {d : K} (hd : d ≠ 0)
-    (k : K) :
-    1 - 2 * (1 : K) * (-k / (2 * d)) ≠ 0 ↔ k + d ≠ 0 := by
-  rw [one_sub_two_mul_neg_div_two_mul hd, div_ne_zero_iff]
-  exact and_iff_left hd
 
 /-- **The `κ₀`-dual-basis formula for the Segal--Sugawara Virasoro modes** over a field with
 `2 ≠ 0`. If `κ_L = (2 d) • κ₀`, then at `a = 1` and `c = -k / (2 d)`,
@@ -99,7 +84,7 @@ theorem sugawaraVirasoro_eq_sum_dualBasis [NeZero (2 : K)] {κ₀ : LinearMap.Bi
     sugawaraVirasoro Φ hΦ hΦs 1 (-k / (2 * d)) m =
       (2 * (k + d))⁻¹ • ∑ i, normalOrderedMode Φ hΦ hΦs 1 m (b i) (κ₀.dualBasis hκ₀nd b i) := by
   have h2 : (2 : K) ≠ 0 := NeZero.ne (2 : K)
-  rw [sugawaraVirasoro_def, one_sub_two_mul_neg_div_two_mul hd,
+  rw [sugawaraVirasoro_def, mul_one, one_sub_mul_div_mul h2 hd, sub_neg_eq_add, add_comm d k,
     sugawaraMode_eq_inv_smul_sum_dualBasis hκ₀nd (mul_ne_zero h2 hd) hκ₀ b m, smul_smul]
   congr 1
   field_simp
@@ -114,8 +99,8 @@ theorem sugawaraCentralCharge_neg_div_two_mul [NeZero (2 : K)] {d : K} (hd : d �
   have h2 : (2 : K) ≠ 0 := NeZero.ne (2 : K)
   have hnum : -(2 * (1 : K) * (-k / (2 * d))) = k / d := by
     field_simp
-  rw [sugawaraCentralCharge_def, hnum, one_sub_two_mul_neg_div_two_mul hd,
-    div_div_div_cancel_right₀ hd, div_mul_eq_mul_div]
+  rw [sugawaraCentralCharge_def, hnum, mul_one, one_sub_mul_div_mul h2 hd, sub_neg_eq_add,
+    add_comm d k, div_div_div_cancel_right₀ hd, div_mul_eq_mul_div]
 
 section Simple
 
