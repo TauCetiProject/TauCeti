@@ -8,8 +8,12 @@ module
 public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
+import Mathlib.Data.ENat.BigOperators
+import Mathlib.LinearAlgebra.Finsupp.Span
 import Mathlib.LinearAlgebra.Quotient.Pi
 import Mathlib.LinearAlgebra.TensorProduct.Quotient
+import Mathlib.RingTheory.Finiteness.Ideal
+import TauCeti.LinearAlgebra.Quotient.Basic
 import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Ideal.Operations.Pi
 import TauCeti.RingTheory.Length
@@ -37,6 +41,10 @@ the length of `M` itself, which over a field `A ⧸ I` is its rank.
   of the `M i ⧸ p i`.
 * `TauCeti.length_pi_quotient_smul_top`: the length of `(∀ i, M i) ⧸ I • ⊤` is the sum of the
   lengths of the `M i ⧸ I • ⊤`.
+* `Ideal.isFiniteLength_smul_top_quotient_smul_top` and
+  `Ideal.isFiniteLength_quotient_pow_smul_top`: finite colength of `IM` implies finite length of
+  `(JM)/I(JM)` for finitely generated `J`, and finite colength of all powers of finitely generated
+  `I`.
 * `TauCeti.length_quotient_tensor`: the length of `(A ⧸ I) ⊗[A] M` over `A ⧸ I` is the length of
   `M ⧸ I • M` over `A`.
 * `TauCeti.rankAtStalk_quotient_tensor_eq_length`: for a maximal ideal `I` and `M` killed by `I`,
@@ -120,3 +128,54 @@ theorem rankAtStalk_quotient_tensor_eq_length [I.IsMaximal] (hM : I • (⊤ : S
 end Tensor
 
 end TauCeti
+
+namespace Ideal
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- If `M / IM` has finite length and `J` is finitely generated, then `JM / I(JM)` has finite
+length. In particular this applies to `J = I ^ n` when `I` is finitely generated. -/
+theorem isFiniteLength_smul_top_quotient_smul_top (I : Ideal R) {J : Ideal R} (hJ : J.FG)
+    (hM : IsFiniteLength R (M ⧸ (I • (⊤ : Submodule R M)))) :
+    IsFiniteLength R (↥(J • (⊤ : Submodule R M)) ⧸
+      (I • ⊤ : Submodule R ↥(J • (⊤ : Submodule R M)))) := by
+  classical
+  obtain ⟨s, hs, hspan⟩ := Submodule.fg_def.mp hJ
+  let := hs.fintype
+  let f : (s →₀ M) →ₗ[R] M := Finsupp.lsum (S := R) fun i : s ↦ i.val • LinearMap.id
+  have hrange : LinearMap.range f = J • (⊤ : Submodule R M) := by
+    rw [← hspan, Submodule.span_smul_eq]
+    exact (Submodule.smul_top_eq_range_lsum s).symm
+  have hfin : IsFiniteLength R ((s →₀ M) ⧸ (I • ⊤ : Submodule R (s →₀ M))) := by
+    rw [← Module.length_ne_top_iff,
+      TauCeti.length_quotient_smul_top_congr (Finsupp.linearEquivFunOnFinite R M s),
+      TauCeti.length_pi_quotient_smul_top]
+    exact ENat.sum_ne_top.mpr fun _ _ ↦ Module.length_ne_top_iff.mpr hM
+  let g := f.codRestrict (J • (⊤ : Submodule R M))
+    (fun x ↦ hrange ▸ LinearMap.mem_range_self f x)
+  have hf : Function.Surjective g := by
+    intro y
+    have hy : (y : M) ∈ LinearMap.range f := by rw [hrange]; exact y.property
+    obtain ⟨x, hx⟩ := LinearMap.mem_range.mp hy
+    exact ⟨x, Subtype.ext hx⟩
+  exact hfin.of_surjective (Submodule.mapQ_surjective _ _ g
+    (Submodule.smul_top_le_comap_smul_top I g) hf)
+
+/-- If `I` is finitely generated and `M / IM` has finite length, then `M / I ^ n M` has finite
+length for every `n`. No finiteness assumption on `M` or on the ring is required. -/
+theorem isFiniteLength_quotient_pow_smul_top (I : Ideal R) (hI : I.FG)
+    (hM : IsFiniteLength R (M ⧸ (I • (⊤ : Submodule R M)))) (n : ℕ) :
+    IsFiniteLength R (M ⧸ (I ^ n • (⊤ : Submodule R M))) := by
+  induction n with
+  | zero =>
+    rw [pow_zero, one_smul]
+    exact Module.length_ne_top_iff.mp (by simp)
+  | succ n ih =>
+    rw [← Module.length_ne_top_iff, pow_succ', Submodule.mul_smul,
+      TauCeti.length_quotient_smul_eq_length_quotient_smul_top_add]
+    exact (ENat.add_lt_top.mpr
+      ⟨(Module.length_ne_top_iff.mpr
+          (I.isFiniteLength_smul_top_quotient_smul_top hI.pow hM)).lt_top,
+        (Module.length_ne_top_iff.mpr ih).lt_top⟩).ne
+
+end Ideal
