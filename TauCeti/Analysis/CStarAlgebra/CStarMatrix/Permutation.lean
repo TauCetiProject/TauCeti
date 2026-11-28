@@ -7,20 +7,18 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Rectangular
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.Permutation
 
 /-!
 # Permutation unitaries for C⋆-matrices
 
-Transports `Matrix.permutationUnitary` along `CStarMatrix.ofMatrixRingEquiv` to define
-`CStarMatrix.permutationUnitary`, together with its coercion formula and reindexing identity.
+Relates conjugation by `CStarMatrix.ofMatrix (Matrix.permutationUnitary σ : Matrix n n A)` to
+`CStarMatrix.reindexₐ R A σ`.
 
 ## Main declarations
 
-* `CStarMatrix.permutationUnitary`: the group homomorphism
-  `Equiv.Perm n →* unitary (CStarMatrix n n A)`.
-* `CStarMatrix.coe_permutationUnitary`: coercion of `permutationUnitary σ` to `CStarMatrix n n A`.
-* `CStarMatrix.permutationUnitary_conj`: conjugation by `permutationUnitary σ` agrees with
-  `CStarMatrix.reindexₐ R A σ`.
+* `CStarMatrix.ofMatrix_permutationUnitary_conj`: conjugation by
+  `ofMatrix (Matrix.permutationUnitary σ : Matrix n n A)` agrees with `CStarMatrix.reindexₐ R A σ`.
 -/
 
 public section
@@ -31,36 +29,18 @@ namespace CStarMatrix
 
 variable {n R A : Type*} [Fintype n] [DecidableEq n] [Semiring A] [StarRing A]
 
-/-- Permutation unitaries form a group homomorphism
-`Equiv.Perm n →* unitary (CStarMatrix n n A)`, transporting `Matrix.permutationUnitary` along
-`ofMatrixRingEquiv`. -/
-def permutationUnitary : Equiv.Perm n →* unitary (CStarMatrix n n A) :=
-  (Unitary.map (⟨(ofMatrixRingEquiv : Matrix n n A ≃+* CStarMatrix n n A).toMonoidHom,
-    fun _ => rfl⟩ : Matrix n n A →⋆* CStarMatrix n n A)).toMonoidHom.comp
-    Matrix.permutationUnitary
-
-/-- The underlying matrix of `permutationUnitary σ` is `ofMatrix (σ⁻¹.permMatrix A)`. -/
-@[simp]
-theorem coe_permutationUnitary (σ : Equiv.Perm n) :
-    (permutationUnitary (A := A) σ : CStarMatrix n n A) = ofMatrix (σ⁻¹.permMatrix A) :=
-  congrArg ofMatrix (Matrix.coe_permutationUnitary σ)
-
-/-- Conjugation by `permutationUnitary σ` agrees with `reindexₐ R A σ`. -/
-theorem permutationUnitary_conj [Semiring R] [Module R A] (σ : Equiv.Perm n)
+/-- Conjugation by `ofMatrix (Matrix.permutationUnitary σ : Matrix n n A)` agrees with
+`reindexₐ R A σ`. -/
+theorem ofMatrix_permutationUnitary_conj [Semiring R] [Module R A] (σ : Equiv.Perm n)
     (M : CStarMatrix n n A) :
-    (permutationUnitary (A := A) σ : CStarMatrix n n A) * M *
-        star (permutationUnitary (A := A) σ : CStarMatrix n n A) = reindexₐ R A σ M := by
-  ext i j
-  simp only [coe_permutationUnitary, star_eq_conjTranspose, ← ofMatrix_conjTranspose,
-    Matrix.conjTranspose_permMatrix, inv_inv, reindexₐ_apply]
-  calc (ofMatrix (σ⁻¹.permMatrix A) * M * ofMatrix (σ.permMatrix A)) i j
-      = (ofMatrix.symm (ofMatrix (σ⁻¹.permMatrix A) * M * ofMatrix (σ.permMatrix A))) i j := by
-        rw [ofMatrix_symm_apply]
-    _ = ((σ⁻¹.permMatrix A * ofMatrix.symm M) * σ.permMatrix A) i j := by
-        simp only [ofMatrix_symm_mul, Equiv.symm_apply_apply]
-    _ = M (σ.symm i) (σ.symm j) := by
-        rw [Equiv.Perm.permMatrix, Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul,
-          PEquiv.mul_toMatrix_toPEquiv]
-        simp [ofMatrix_symm_apply]
+    ofMatrix (Matrix.permutationUnitary (R := A) σ : Matrix n n A) * M *
+        star (ofMatrix (Matrix.permutationUnitary (R := A) σ : Matrix n n A)) =
+      reindexₐ R A σ M := by
+  apply ofMatrix.symm.injective
+  simp only [ofMatrix_symm_mul, ofMatrix_symm_star, Equiv.symm_apply_apply, ofMatrix_symm_reindexₐ]
+  rw [Matrix.coe_permutationUnitary, Matrix.conjTranspose_permMatrix,
+    ← Matrix.permMatrixHom_apply (R := A) σ, ← Matrix.permMatrixHom_apply (R := A) σ⁻¹,
+    Matrix.permMatrixHom_mul, Matrix.mul_permMatrixHom]
+  rfl
 
 end CStarMatrix

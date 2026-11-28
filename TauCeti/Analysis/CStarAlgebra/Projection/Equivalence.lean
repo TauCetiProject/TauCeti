@@ -190,21 +190,13 @@ projection. -/
 theorem exists_matrix_mul_eq_self (h : MurrayVonNeumannEquiv p q) :
     ∃ v : CStarMatrix n m A,
       v.conjTranspose * v = p ∧ v * v.conjTranspose = q ∧ v * p = v := by
-  obtain ⟨hp, hq, v, hv, hv'⟩ := h
-  have hpp : p * p = p := hp.isIdempotentElem.eq
-  have hpc : p.conjTranspose = p := by rw [← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq]
-  refine ⟨v * p, ?_, ?_, by rw [mul_assoc_rectangular, hpp]⟩
-  · calc
-      _ = p * (v.conjTranspose * v) * p := by
-        simp only [conjTranspose_mul, hpc, mul_assoc_rectangular]
-      _ = p := by rw [hv, hpp, hpp]
-  · calc
-      _ = v * (p * p) * v.conjTranspose := by
-        simp only [conjTranspose_mul, hpc, mul_assoc_rectangular]
-      _ = (v * v.conjTranspose) * (v * v.conjTranspose) := by
-        rw [hpp, ← hv]
-        simp only [mul_assoc_rectangular]
-      _ = q := by rw [hv', hq.isIdempotentElem.eq]
+  obtain ⟨v, hvp, hvq, hvp_eq, -⟩ :=
+    (murrayVonNeumannEquiv_iff_isMurrayVonNeumannEquivalent.mp
+      h).exists_mul_conjTranspose_mul_self_eq_support
+  refine ⟨ofMatrix v, ?_, ?_, ?_⟩ <;> apply ofMatrix.symm.injective
+  · simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Equiv.symm_apply_apply] using hvp
+  · simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Equiv.symm_apply_apply] using hvq
+  · simpa only [ofMatrix_symm_mul, Equiv.symm_apply_apply] using hvp_eq
 
 /-- Rectangular Murray–von Neumann equivalence is transitive. -/
 protected theorem trans (h : MurrayVonNeumannEquiv p q) (h' : MurrayVonNeumannEquiv q r) :
@@ -427,7 +419,7 @@ private theorem normalized_mul_eq_inv {B m n : Type*} [Fintype m] [Fintype n] [D
           simp only [CStarMatrix.mul_assoc_rectangular]
       _ = (y * x).conjTranspose := by
           rw [hxy, hp.isSelfAdjoint.conjTranspose_mul_of_mul_eq hpx, ← conjTranspose_mul]
-      _ = q := by rw [hyx, hq.isSelfAdjoint.conjTranspose_eq]
+      _ = q := by rw [hyx, ← star_eq_conjTranspose, hq.isSelfAdjoint.star_eq]
   have hcb : c * b = 1 := by
     have h1 : x.conjTranspose * x * (1 - q) = 0 := by
       rw [CStarMatrix.mul_assoc_rectangular, hx_1q, CStarMatrix.mul_zero]
@@ -487,7 +479,7 @@ private theorem normalized_mul_eq_witness {B m n : Type*} [Fintype m] [Fintype n
           simp only [CStarMatrix.mul_assoc_rectangular]
       _ = p := by
           rw [hx_1q, CStarMatrix.zero_mul, zero_add, ← conjTranspose_mul, hxy,
-            hp.isSelfAdjoint.conjTranspose_eq, hp.isIdempotentElem.eq]
+            ← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq, hp.isIdempotentElem.eq]
   have hw₂ : w * w.conjTranspose = q := by
     have hcomm_sq : Commute s q := hcomm_cq.cfcₙ_nnreal NNReal.sqrt
     have hxx : x.conjTranspose * x = s * q * s := by

@@ -364,13 +364,8 @@ theorem IsMurrayVonNeumannEquivalent.add {p q : Matrix m m R} {p' q' : Matrix n 
       hq'.isSelfAdjoint
   -- Partial isometries `v` and `w` implementing the two equivalences have orthogonal ranges and
   -- orthogonal initial spaces, so `v + w` implements the sum.
-  obtain ⟨v, hvp, hvp', hv⟩ := h₁.exists_mul_conjTranspose_mul_self_eq
-  obtain ⟨w, hwq, hwq', hw⟩ := h₂.exists_mul_conjTranspose_mul_self_eq
-  -- `v` maps the range of `p` onto that of `p'`, and `w` that of `q` onto that of `q'`.
-  have hvr : v * p = v := by rw [← hvp, ← Matrix.mul_assoc, hv]
-  have hvl : p' * v = v := by rw [← hvp', hv]
-  have hwr : w * q = w := by rw [← hwq, ← Matrix.mul_assoc, hw]
-  have hwl : q' * w = w := by rw [← hwq', hw]
+  obtain ⟨v, hvp, hvp', hvr, hvl⟩ := h₁.exists_mul_conjTranspose_mul_self_eq_support
+  obtain ⟨w, hwq, hwq', hwr, hwl⟩ := h₂.exists_mul_conjTranspose_mul_self_eq_support
   refine ⟨hp.add hq hpq, hp'.add hq' hpq', v + w, ?_, ?_⟩
   · rw [conjTranspose_add, Matrix.add_mul, Matrix.mul_add, Matrix.mul_add, hvp, hwq,
       conjTranspose_mul_eq_zero_of_mul_eq_zero hp'.isSelfAdjoint hvl hwl hpq',

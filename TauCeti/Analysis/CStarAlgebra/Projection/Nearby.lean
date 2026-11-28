@@ -93,7 +93,7 @@ private theorem nearbyUnitary_add_star {A : Type*} [CStarAlgebra A]
   have hcomm_s_sz : Commute s (star z) := hcomm_1d_sz.cfcₙ_nnreal NNReal.sqrt
   have hsu : star (u : A) = s⁻¹ʳ * star z := by
     rw [hu_eq', star_mul, ← Ring.inverse_star, (CFC.sqrt_nonneg (1 - d)).isSelfAdjoint.star_eq,
-      hcomm_s_sz.ringInverse_left.eq]
+      hcomm_s_sz.symm.ringInverse_right.symm.eq]
   have hsum : (u : A) + star (u : A) = (2 : ℝ) • s := by
     rw [hsu, hu_eq', ← mul_add, hz_add_sz, mul_smul_comm, ← mul_assoc,
       Ring.inverse_mul_cancel _ hs_unit, one_mul]
@@ -193,7 +193,7 @@ theorem IsStarProjection.nearbyUnitary_mul_mul_star {A : Type*} [CStarAlgebra A]
   have hup : ((hp.nearbyUnitary hq hpq : unitary A) : A) * p =
       q * ((hp.nearbyUnitary hq hpq : unitary A) : A) := by
     rw [hp.coe_nearbyUnitary hq hpq, ← pow_two, ← TauCeti.intertwiner_def, mul_assoc, hzp,
-      ← mul_assoc, hcomm_s_q.ringInverse_left.eq, mul_assoc]
+      ← mul_assoc, hcomm_s_q.symm.ringInverse_right.symm.eq, mul_assoc]
   rw [hup, mul_assoc, Unitary.mul_star_self_of_mem (hp.nearbyUnitary hq hpq).property, mul_one]
 
 /-- Kato's overlap-polar unitary satisfies `‖u - 1‖ ≤ √2 * ‖p - q‖`. -/
