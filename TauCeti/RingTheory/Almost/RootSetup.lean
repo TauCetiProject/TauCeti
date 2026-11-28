@@ -37,6 +37,10 @@ multiplication map `m ⊗[V] m → m` is bijective.
   condition (A).
 * `TauCeti.Almost.BasicSetup.ofCompatibleRoots_shift`: dropping finitely many roots does not
   change the setup.
+* `TauCeti.Almost.BasicSetup.ofCompatibleRoots_eq_iff`: root setups agree exactly when the
+  two chains of principal ideals are mutually cofinal.
+* `TauCeti.Almost.BasicSetup.baseChange_ofCompatibleRoots`: scalar extension sends a root setup
+  to the setup of the images of its roots.
 * `TauCeti.Almost.BasicSetup.flat_ofCompatibleRoots_ideal` and
   `TauCeti.Almost.BasicSetup.ofCompatibleRoots_tildeToIdeal_bijective`: if `ϖ 0` is a
   nonzerodivisor, then `m` is flat and `m~ → m` is bijective.
@@ -103,10 +107,31 @@ theorem ofCompatibleRoots_shift (k : ℕ) :
       ofCompatibleRoots hp hϖ :=
   BasicSetup.ext (span_range_compatible_roots_shift hϖ k)
 
+-- This is not a simp rule: it would expand setup equality into two quantified divisibility goals.
+/-- Two compatible root sequences give the same basic setup exactly when their chains of
+principal ideals are mutually cofinal. The exponents of the sequences may differ. -/
+theorem ofCompatibleRoots_eq_iff {q : ℕ} (hq : 2 ≤ q) {ψ : ℕ → V}
+    (hψ : ∀ n, ψ (n + 1) ^ q = ψ n) :
+    ofCompatibleRoots hp hϖ = ofCompatibleRoots hq hψ ↔
+      (∀ n, ∃ m, ψ m ∣ ϖ n) ∧ (∀ n, ∃ m, ϖ m ∣ ψ n) := by
+  rw [BasicSetup.ext_iff, le_antisymm_iff]
+  simp only [ofCompatibleRoots_ideal, Ideal.span_le, Set.range_subset_iff, SetLike.mem_coe,
+    mem_span_range_compatible_roots_iff hϖ, mem_span_range_compatible_roots_iff hψ]
+
+/-- Base change of a root setup to a commutative algebra `W` gives the root setup of the
+images of the original roots in `W`. -/
+@[simp]
+theorem baseChange_ofCompatibleRoots (W : Type*) [CommRing W] [Algebra V W] :
+    (ofCompatibleRoots hp hϖ).baseChange W =
+      ofCompatibleRoots hp (ϖ := algebraMap V W ∘ ϖ)
+        (fun n ↦ by simp only [Function.comp_apply, ← map_pow, hϖ]) := by
+  apply BasicSetup.ext
+  simp only [baseChange_ideal, ofCompatibleRoots_ideal, Ideal.map_span, Set.range_comp]
+
 /-- If `ϖ 0` is a nonzerodivisor, the ideal of the root setup is a flat `V`-module. -/
 theorem flat_ofCompatibleRoots_ideal (hreg : IsSMulRegular V (ϖ 0)) :
     Module.Flat V (ofCompatibleRoots hp hϖ).ideal :=
-  have : NeZero p := ⟨by omega⟩
+  have : NeZero p := ⟨by lia⟩
   -- The ideal is defined as `Ideal.span (Set.range ϖ)`, and the coefficients of the element
   -- `⟨ϖ, hϖ⟩` of the perfection are the `ϖ n` by definition (`Perfection.coeffMonoidHom_mk`).
   Perfection.flat_span_range_of_isSMulRegular (⟨ϖ, hϖ⟩ : Perfection V p) hreg
