@@ -20,9 +20,11 @@ Finite order is preserved by sums, products, and affine substitution. Multiplica
 a nonzero polynomial and invertible affine substitution preserve it in both directions.
 These equivalences allow pole-clearing polynomials and changes of variable to be removed
 from growth hypotheses. For continuous functions, finite order is equivalent to a global
-bound by `C * exp (‖z‖ ^ A)` with positive constants. The exponential has finite order,
-whereas its self-composition does not. A function in meromorphic normal form of finite order has
-no poles outside a bounded set, since it is bounded near every point there.
+bound by `C * exp (‖z‖ ^ A)` with positive constants, and it gives a bound
+`exp (C * (1 + ‖z‖) ^ d)` with a natural exponent `d`, which is convenient for composing with
+polynomial maps. The exponential has finite order, whereas its self-composition does not. A
+function in meromorphic normal form of finite order has no poles outside a bounded set, since it
+is bounded near every point there.
 
 ## References
 
@@ -135,6 +137,30 @@ theorem isFiniteOrder_iff_exists_bound (hf : Continuous f) :
     have hO : f =O[cobounded ℂ] (fun z ↦ Real.exp (‖z‖ ^ A)) := by
       exact IsBigO.of_bound C (Filter.Eventually.of_forall fun z ↦ by simpa using hC z)
     exact hO.trans (by simpa using isBigO_exp_mul_norm_rpow (E := ℂ) 1 hB)
+
+/-- A continuous function of finite order has a global bound `exp (C * (1 + ‖z‖) ^ d)` with
+`C > 0` and a natural exponent `d`. Since only natural powers of `1 + ‖z‖` occur, the bound is
+easily transported along polynomial maps. -/
+theorem IsFiniteOrder.exists_norm_le_exp_mul_one_add_norm_pow (h : IsFiniteOrder f)
+    (hf : Continuous f) : ∃ C > 0, ∃ d : ℕ, ∀ z, ‖f z‖ ≤ Real.exp (C * (1 + ‖z‖) ^ d) := by
+  obtain ⟨A, hA, C, hC, hbound⟩ := (isFiniteOrder_iff_exists_bound hf).mp h
+  refine ⟨C + 1, by positivity, ⌈A⌉₊, fun z ↦ ?_⟩
+  have h1 : 1 ≤ 1 + ‖z‖ := le_add_of_nonneg_right (norm_nonneg z)
+  have hpow : ‖z‖ ^ A ≤ (1 + ‖z‖) ^ ⌈A⌉₊ :=
+    calc
+      ‖z‖ ^ A ≤ (1 + ‖z‖) ^ A := Real.rpow_le_rpow (norm_nonneg z) (by linarith) hA.le
+      _ ≤ (1 + ‖z‖) ^ (⌈A⌉₊ : ℝ) := Real.rpow_le_rpow_of_exponent_le h1 (Nat.le_ceil A)
+      _ = _ := Real.rpow_natCast _ _
+  have hd : 1 ≤ (1 + ‖z‖) ^ ⌈A⌉₊ := one_le_pow₀ h1
+  calc
+    ‖f z‖ ≤ C * Real.exp (‖z‖ ^ A) := hbound z
+    _ ≤ Real.exp C * Real.exp ((1 + ‖z‖) ^ ⌈A⌉₊) := by
+      gcongr
+      linarith [Real.add_one_le_exp C]
+    _ ≤ Real.exp ((C + 1) * (1 + ‖z‖) ^ ⌈A⌉₊) := by
+      rw [← Real.exp_add]
+      gcongr
+      nlinarith
 
 /-- The exponential is a nonconstant example of a finite-order entire function. -/
 theorem isFiniteOrder_cexp : IsFiniteOrder cexp :=
