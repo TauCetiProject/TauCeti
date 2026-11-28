@@ -27,6 +27,10 @@ set, distinct vectors of a fibre give distinct sections, and in a vector bundle 
 (`FiberBundle.contMDiffExtendₗ`), continuously so at each point (`FiberBundle.contMDiffExtendL`).
 Equivalently, evaluation of global `C^n` sections at a point is surjective.
 
+For applications requiring a linear family of global sections agreeing with the constant-coordinate
+local sections of `FiberBundle.trivializationAt F V x` near `x`, `ContMDiffSection.liftModel`
+composes `FiberBundle.contMDiffExtendₗ` with `(FiberBundle.trivializationAt F V x).symmL ℝ x`.
+
 Every fibre vector is moreover the value of a compactly supported `C^n` section supported in any
 prescribed neighbourhood of its base point
 (`ContMDiffSection.exists_apply_eq_isCompact_tsupport_subset`): a global `C^n` section with that
@@ -287,6 +291,54 @@ theorem evalLinearMap_surjective (n : ℕ∞ω) [ENat.LEInfty n] [IsManifold I n
     Function.Surjective (evalLinearMap I F n V x) := fun v ↦ by
   obtain ⟨s, hs, hsx⟩ := FiberBundle.exists_contMDiff_section_eq I F n v
   exact ⟨⟨s, hs⟩, by simpa using hsx⟩
+
+section LiftModel
+
+open scoped Topology
+
+variable (I F V) in
+/-- Compose `FiberBundle.contMDiffExtendₗ I F V x` with `(trivializationAt F V x).symmL ℝ x`,
+producing an `ℝ`-linear lift from the model fibre `F` to global `C^n` sections agreeing near `x`
+with the constant-coordinate local sections of `trivializationAt F V x`. -/
+noncomputable def liftModel (n : ℕ∞ω) [ENat.LEInfty n] [IsManifold I n M]
+    [ContMDiffVectorBundle n F V I] (x : M) :
+    F →ₗ[ℝ] Cₛ^n⟮I; F, V⟯ :=
+  let L := (FiberBundle.contMDiffExtendₗ I F V x).comp
+    ((FiberBundle.trivializationAt F V x).symmL ℝ x).toLinearMap
+  { toFun u := ⟨L u, FiberBundle.contMDiff_contMDiffExtend I F _⟩
+    map_add' u₁ u₂ := by ext y; exact congr_fun (L.map_add u₁ u₂) y
+    map_smul' c u := by ext y; exact congr_fun (L.map_smul c u) y }
+
+/-- `ContMDiffSection.liftModel` evaluates pointwise to `FiberBundle.contMDiffExtend` of
+`(trivializationAt F V x).symmL ℝ x u`. -/
+theorem liftModel_apply {n : ℕ∞ω} [ENat.LEInfty n] [IsManifold I n M]
+    [ContMDiffVectorBundle n F V I] (x : M) (u : F) (y : M) :
+    liftModel I F V n x u y =
+      FiberBundle.contMDiffExtend I F ((FiberBundle.trivializationAt F V x).symmL ℝ x u) y := by
+  rfl
+
+/-- Near `x`, `ContMDiffSection.liftModel` agrees with the constant-coordinate local sections of
+`trivializationAt F V x`. -/
+theorem liftModel_eventuallyEq {n : ℕ∞ω} [ENat.LEInfty n] [IsManifold I n M]
+    [ContMDiffVectorBundle n F V I] (x : M) (u : F) :
+    ∀ᶠ y in 𝓝 x, liftModel I F V n x u y = (FiberBundle.trivializationAt F V x).symmL ℝ y u := by
+  let e := FiberBundle.trivializationAt F V x
+  have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt F V x
+  filter_upwards [FiberBundle.eventually_contMDiffExtend_eq_extend I F (e.symmL ℝ x u),
+    e.open_baseSet.mem_nhds hx] with y hy hye
+  rw [liftModel_apply, hy, FiberBundle.extend, Trivialization.symmL_apply e hx,
+    Trivialization.symmL_apply e hye]
+  simp [e, hx]
+
+/-- At the base point `x`, `ContMDiffSection.liftModel` evaluates to
+`(trivializationAt F V x).symmL`. -/
+@[simp]
+theorem liftModel_apply_self {n : ℕ∞ω} [ENat.LEInfty n] [IsManifold I n M]
+    [ContMDiffVectorBundle n F V I] (x : M) (u : F) :
+    liftModel I F V n x u x = (FiberBundle.trivializationAt F V x).symmL ℝ x u :=
+  (liftModel_eventuallyEq x u).self_of_nhds
+
+end LiftModel
 
 end Surjective
 

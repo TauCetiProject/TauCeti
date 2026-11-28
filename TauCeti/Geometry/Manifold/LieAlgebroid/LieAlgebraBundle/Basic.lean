@@ -21,9 +21,9 @@ Concretely, a smooth real vector bundle `V → M` equipped with a smooth fibrewi
 section `B` of `V →L[ℝ] V →L[ℝ] V` is a zero-anchor Lie algebroid
 (`TauCeti.LieAlgebroid.ofFiberwiseBracket`). Specializing to `Bundle.Trivial M 𝔤` gives the
 trivial Lie algebra bundle algebroid (`trivialLieAlgebra`, the zero-action base case of
-transformation Lie algebroids), together with evaluation (`trivialLieAlgebraEval`), constant
-sections (`trivialLieAlgebraConst`), and pullback (`trivialLieAlgebraPullback`) (Mackenzie 2005,
-§3.3).
+transformation Lie algebroids), together with evaluation (`trivialLieAlgebraEval`, and over a
+one-point base `trivialLieAlgebraEvalEquiv`), constant sections (`trivialLieAlgebraConst`), and
+pullback (`trivialLieAlgebraPullback`) (Mackenzie 2005, §3.3).
 
 ## References
 
@@ -170,6 +170,27 @@ theorem trivialLieAlgebraConst_injective [Nonempty M] :
     Function.Injective (trivialLieAlgebraConst I M 𝔤) :=
   let ⟨x⟩ := ‹Nonempty M›
   Function.RightInverse.injective (trivialLieAlgebraEval_trivialLieAlgebraConst x)
+
+variable (I M 𝔤) in
+/-- Over a one-point manifold, evaluation at `default` and constant sections establish a Lie
+algebra isomorphism between sections of `trivialLieAlgebra I M 𝔤` and `𝔤`. -/
+def trivialLieAlgebraEvalEquiv [Unique M] : (trivialLieAlgebra I M 𝔤).Sections ≃ₗ⁅ℝ⁆ 𝔤 :=
+  { trivialLieAlgebraEval I M 𝔤 default with
+    invFun := trivialLieAlgebraConst I M 𝔤
+    left_inv s := (trivialLieAlgebra I M 𝔤).sectionsEquiv.injective <|
+      ContMDiffSection.ext fun x ↦ by rw [Unique.eq_default x]; simp
+    right_inv ξ := trivialLieAlgebraEval_trivialLieAlgebraConst default ξ }
+
+/-- Evaluating `trivialLieAlgebraEvalEquiv` on a section evaluates it at `default`. -/
+@[simp]
+theorem trivialLieAlgebraEvalEquiv_apply [Unique M] (s : (trivialLieAlgebra I M 𝔤).Sections) :
+    trivialLieAlgebraEvalEquiv I M 𝔤 s = trivialLieAlgebraEval I M 𝔤 default s := (rfl)
+
+/-- The inverse of `trivialLieAlgebraEvalEquiv` sends an element of `𝔤` to the corresponding
+constant section. -/
+@[simp]
+theorem trivialLieAlgebraEvalEquiv_symm_apply [Unique M] (ξ : 𝔤) :
+    (trivialLieAlgebraEvalEquiv I M 𝔤).symm ξ = trivialLieAlgebraConst I M 𝔤 ξ := (rfl)
 
 variable {E' H' N E'' H'' P : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
