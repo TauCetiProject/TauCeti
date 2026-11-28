@@ -117,9 +117,6 @@ private theorem isAffine_of_isAffine_pullback {S S' Y : Scheme.{u}} [IsAffine S]
   -- The canonical descent datum on `Y ×_S S'` is effective with an affine descended scheme `Y₀`.
   obtain ⟨Y₀, _, f, _⟩ :=
     TauCeti.DescentDatum.exists_isAffine_baseChange_hom_isIso (TauCeti.DescentDatum.baseChange p X)
-  have : IsIso (TauCeti.DescentDatum.Hom.id (TauCeti.DescentDatum.baseChange p X)).hom := by
-    rw [TauCeti.DescentDatum.Hom.id_hom]
-    infer_instance
   -- By uniqueness of effective descent, `Y₀ ≅ Y` over `S`.
   exact .of_isIso (f.descendIso (TauCeti.DescentDatum.Hom.id _)).inv.left
 

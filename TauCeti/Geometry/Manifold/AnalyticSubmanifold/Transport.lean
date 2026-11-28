@@ -324,15 +324,13 @@ theorem IsMAnalyticSubmanifold.exists_isManifold {e : E ≃L[𝕜] Fin n → �
     contMDiff_subtypeVal_linearSliceChartedSpace c hc
       (fun x z hz ↦ (hci x).contMDiffAt ((c x).open_target.mem_nhds hz)) hcover⟩
 
-/-- When the ambient `C^ω` manifold `M` is modelled on `𝓘(𝕜, E)`, every `d`-dimensional analytic
-submanifold `s ⊆ M` admits a `C^ω` manifold structure modelled on `Fin d → 𝕜` for which
-`Subtype.val : s → M` is a `C^ω` smooth embedding (`Manifold.IsSmoothEmbedding`). -/
-theorem IsMAnalyticSubmanifold.exists_isSmoothEmbedding
-    {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(𝕜, E) ω M]
-    {s : Set M} {e : E ≃L[𝕜] Fin n → 𝕜} (hs : IsMAnalyticSubmanifold 𝓘(𝕜, E) e d s) :
+/-- Every `d`-dimensional analytic submanifold `s` of a boundaryless `C^ω` manifold admits a
+`C^ω` manifold structure modelled on `Fin d → 𝕜` for which the inclusion is a `C^ω` embedding. -/
+theorem IsMAnalyticSubmanifold.exists_isSmoothEmbedding {e : E ≃L[𝕜] Fin n → 𝕜}
+    (hs : IsMAnalyticSubmanifold I e d s) :
     ∃ C : ChartedSpace (Fin d → 𝕜) s, letI := C
       IsManifold 𝓘(𝕜, Fin d → 𝕜) ω s ∧
-        Manifold.IsSmoothEmbedding 𝓘(𝕜, Fin d → 𝕜) 𝓘(𝕜, E) ω (Subtype.val : s → M) := by
+        Manifold.IsSmoothEmbedding 𝓘(𝕜, Fin d → 𝕜) I ω (Subtype.val : s → M) := by
   obtain ⟨c, hc, hcover, hcs, hci⟩ := hs.exists_linearSliceCharts
   let A : s → ((Fin d → 𝕜) × (Fin (n - d) → 𝕜)) ≃L[𝕜] E :=
     fun _ ↦ (splitAt (𝕜 := 𝕜) (M := 𝕜) hs.le).symm.trans e.symm

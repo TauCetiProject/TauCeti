@@ -35,7 +35,9 @@ the intersection form `B` on integral homology.
 * a curve of virtual dimension zero is embedded
   (`TauCeti.IsRegularSimpleCurve.singularity_eq_zero_of_apply_canonical_eq_apply_self`);
 * a curve of square zero orthogonal to `κ` is an embedded torus
-  (`TauCeti.IsRegularSimpleCurve.genus_eq_one_of_apply_self_eq_zero`).
+  (`TauCeti.IsRegularSimpleCurve.genus_eq_one_of_apply_self_eq_zero`), and conversely a torus of
+  square zero is orthogonal to `κ`
+  (`TauCeti.IsRegularSimpleCurve.apply_canonical_eq_zero_of_genus_eq_one`).
 
 Adjunction also bounds the genus by the class, `2 g ≤ c · c + κ · c + 2`
 (`TauCeti.IsRegularSimpleCurve.two_mul_genus_le`), the genus bound used to count curve types
@@ -146,6 +148,14 @@ theorem singularity_eq_zero_of_apply_canonical_eq_apply_self (h : IsRegularSimpl
 /-- A regular simple curve of square zero orthogonal to the canonical class is a torus. -/
 theorem genus_eq_one_of_apply_self_eq_zero (h : IsRegularSimpleCurve B κ c g δ)
     (hc : B c c = 0) (hκ : B κ c = 0) : g = 1 := by
+  have := h.adjunction
+  have := h.index_nonneg
+  omega
+
+/-- A regular simple torus of square zero is orthogonal to the canonical class: adjunction gives
+`κ · c = 2 δ ≥ 0`, and the index `-2 κ · c` is nonnegative. -/
+theorem apply_canonical_eq_zero_of_genus_eq_one (h : IsRegularSimpleCurve B κ c 1 δ)
+    (hc : B c c = 0) : B κ c = 0 := by
   have := h.adjunction
   have := h.index_nonneg
   omega

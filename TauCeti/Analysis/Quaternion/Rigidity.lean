@@ -49,14 +49,14 @@ variable {f : ℍ → ℍ} {s : Set ℍ}
 
 /-- A function agreeing on an open neighbourhood of `q` with `x ↦ a + x * b` has left slope `b`
 at `q`. -/
-private theorem hasLeftQuotientFDerivAt_of_eqOn_add_mul {a b q : ℍ} (hs : IsOpen s) (hq : q ∈ s)
+theorem hasLeftQuotientFDerivAt_of_eqOn_add_mul {a b q : ℍ} (hs : IsOpen s) (hq : q ∈ s)
     (hab : ∀ x ∈ s, f x = a + x * b) : HasLeftQuotientFDerivAt f q b :=
   ((hasLeftQuotientFDerivAt_mul_const b q).const_add a).congr_of_eventuallyEq
     (eventually_of_mem (hs.mem_nhds hq) hab)
 
 /-- A function agreeing on an open neighbourhood of `q` with `x ↦ a + b * x` has right slope `b`
 at `q`. -/
-private theorem hasRightQuotientFDerivAt_of_eqOn_add_mul {a b q : ℍ} (hs : IsOpen s) (hq : q ∈ s)
+theorem hasRightQuotientFDerivAt_of_eqOn_add_mul {a b q : ℍ} (hs : IsOpen s) (hq : q ∈ s)
     (hab : ∀ x ∈ s, f x = a + b * x) : HasRightQuotientFDerivAt f q b :=
   ((hasRightQuotientFDerivAt_const_mul b q).const_add a).congr_of_eventuallyEq
     (eventually_of_mem (hs.mem_nhds hq) hab)

@@ -22,7 +22,9 @@ Also provides `MeasureTheory.StronglyMeasurable.exp_I_mul_add` for the strong me
 
 Strong measurability also descends along a surjective local homeomorphism out of a Lindelöf
 space: a function on its codomain is strongly measurable exactly when its composite with the local
-homeomorphism is.
+homeomorphism is. Extending an `mΩ`-strongly measurable function by zero outside a set `T` gives
+an `mProd`-strongly measurable function on `ι × Ω` whenever `T ×ˢ A` is `mProd`-measurable for all
+`mΩ`-measurable `A`.
 
 Finite-support approximation transfers between strongly measurable functions whenever
 convergence of the constant zero sequence to the first implies convergence to the second.
@@ -35,6 +37,9 @@ convergence of the constant zero sequence to the first implies convergence to th
   real function scaled by `I * α` and shifted by `b : ℂ`.
 * `IsLocalHomeomorph.stronglyMeasurable_comp_iff`: `g ∘ f` is strongly measurable exactly when
   `g` is, for a surjective local homeomorphism `f` out of a Lindelöf space.
+* `MeasureTheory.StronglyMeasurable.indicator_prod`: extending an `mΩ`-strongly measurable
+  function by zero outside a set `T` preserves strong measurability on `ι × Ω` when measurable
+  rectangles `T ×ˢ A` are `mProd`-measurable.
 * `MeasureTheory.FinStronglyMeasurable.of_tendsto_const_zero`: transfer finite-support
   approximation using convergence of constant zero sequences.
 -/
@@ -73,6 +78,25 @@ theorem MeasureTheory.StronglyMeasurable.exp_I_mul_add {Ω : Type*} {m : Measura
     StronglyMeasurable[m] (fun ω ↦ Complex.exp (Complex.I * α * (f ω : ℂ) + b)) :=
   Complex.continuous_exp.comp_stronglyMeasurable <| (stronglyMeasurable_const.mul
     (Complex.continuous_ofReal.comp_stronglyMeasurable hf)).add stronglyMeasurable_const
+
+/-- Extending an `mΩ`-strongly measurable function `a` by zero outside a set `T` yields an
+`mProd`-strongly measurable function on `ι × Ω`, provided every `mΩ`-measurable rectangle `T ×ˢ A`
+is `mProd`-measurable. -/
+theorem MeasureTheory.StronglyMeasurable.indicator_prod
+    {ι Ω E : Type*} {mΩ : MeasurableSpace Ω} {mProd : MeasurableSpace (ι × Ω)}
+    [TopologicalSpace E] [Zero E] {a : Ω → E} (ha : StronglyMeasurable[mΩ] a)
+    {T : Set ι} (hT : ∀ ⦃A : Set Ω⦄, MeasurableSet[mΩ] A → MeasurableSet[mProd] (T ×ˢ A)) :
+    StronglyMeasurable[mProd] (fun p : ι × Ω ↦ T.indicator (fun _ ↦ a p.2) p.1) := by
+  classical
+  let S : Set (ι × Ω) := T ×ˢ Set.univ
+  have hS : MeasurableSet[mProd] S := hT MeasurableSet.univ
+  have hproj : @Measurable S Ω inferInstance mΩ (fun p : S ↦ p.val.2) := by
+    intro A hA
+    refine ⟨T ×ˢ A, hT hA, ?_⟩
+    ext p
+    simp [S, p.property.1]
+  simpa [S, Set.indicator_apply] using
+    (ha.comp_measurable hproj).dite (stronglyMeasurable_const (b := (0 : E))) hS
 
 namespace MeasureTheory
 

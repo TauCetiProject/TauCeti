@@ -13,7 +13,8 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 import TauCeti.Geometry.Manifold.Morse.Bott.Index.Basic
 import TauCeti.Geometry.Manifold.Morse.Bott.NegativeNormal
 import TauCeti.Geometry.Manifold.VectorBundle.ComplementarySubbundle
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 import TauCeti.Topology.VectorBundle.Trivialization
 
@@ -35,12 +36,15 @@ indices are constant, the spaces `ν⁻ s` and `ν⁺ s` have `C^k` local frames
 namespace `TauCeti.SmoothEmbedding`). By the smooth local frame criterion
 `TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle` they are therefore `C^k`
 subbundles of the normal bundle, the **negative and positive normal bundles** `ν⁻` and `ν⁺`.
-Conversely, local frames of the negative normal spaces of any size `r` force the index to be `r`
-(`IsNondegenerateCriticalSubmanifold.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames`), so the
-rank of `ν⁻` is the index of the submanifold. The indices are locally constant along a Morse–Bott
-submanifold, so on a connected one the hypothesis holds automatically (the `_of_preconnectedSpace`
-versions). For a smooth function and a smooth fibre metric, the negative normal spaces of a
-submanifold of constant index therefore form a topological vector bundle whose rank is the index
+Conversely, local frames of the negative normal spaces indexed by a finite type `κ` force the index
+to be the cardinality of `κ`
+(`IsNondegenerateCriticalSubmanifold.manifoldMorseIndex_eq_card_of_hasLocalSubbundleFrames`, and
+`IsNondegenerateCriticalSubmanifold.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames` for frames
+of size `r`), so the rank of `ν⁻` is the index of the submanifold. The indices are locally
+constant along a Morse–Bott submanifold, so on a connected one the hypothesis holds automatically
+(the `_of_preconnectedSpace` versions). For a smooth function and a smooth fibre metric, the
+negative normal spaces of a submanifold of constant index therefore form a topological vector
+bundle whose rank is the index
 (`IsNondegenerateCriticalSubmanifold.hasLocalSubbundleFrames_negativeNormalSpace`). The negative
 normal bundle is the bundle whose disc bundle is attached when the critical level of the
 submanifold is crossed.
@@ -48,8 +52,9 @@ submanifold is crossed.
 The subbundles depend on the metric `g`, but their ranks do not. No eigenbasis of the normal
 Hessian is chosen. In the preferred normal-bundle trivialization at `s₀`, with fibre model `P`, the
 metric becomes a `C^k` family `G` of bilinear forms on `P`
-(`Bundle.Trivialization.contMDiffOn_compl₁₂_symmₗ`). The projections onto the negative relative
-spectral subspaces of the normal Hessian with respect to `G`, along the positive ones, are then a
+(`Bundle.ContMDiffRiemannianMetric.exists_contMDiffOn_apply_eq_inner_symm`). The projections onto
+the negative relative spectral subspaces of the normal Hessian with respect to `G`, along the
+positive ones, are then a
 `C^k` family of operators on `P` whose ranges and kernels read the negative and positive normal
 spaces in the trivialization
 (`IsNondegenerateCriticalSubmanifold.exists_contMDiffOn_negativeNormalProjection`), and a `C^k`
@@ -147,17 +152,11 @@ theorem exists_contMDiffOn_negativeNormalProjection_trivializationAt
   let := i.normalSpaceContMDiffVectorBundle hn hk hdim
   set e := trivializationAt P (fun s ↦ i.isImmersion.NormalSpace s hn) s₀
   -- The metric read in the trivialization.
-  set G : S → P →L[ℝ] P →L[ℝ] ℝ := fun s ↦
-    ((g.inner s).toLinearMap₁₂.compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)).toContinuousBilinearMap
-  have hG : ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P →L[ℝ] ℝ) k G e.baseSet :=
-    e.contMDiffOn_compl₁₂_symmₗ g.contMDiff.contMDiffOn
+  obtain ⟨G, hG, hGg⟩ := g.exists_contMDiffOn_apply_eq_inner_symm e
   obtain ⟨p, hp, hps⟩ := h.exists_contMDiffOn_negativeNormalProjection hn
     g.toRiemannianMetric (le_self_add.trans hk) hf hdim s₀ hG fun s hs u v ↦ by
       simp only [← normalSpaceFiberBundle_trivializationAt] at hs ⊢
-      simp only [G, LinearMap.toContinuousBilinearMap_apply, LinearMap.compl₁₂_apply,
-        ContinuousLinearMap.toLinearMap₁₂_apply, e.symmₗ_apply hs.2]
-      -- The underlying metric of `g` has the inner products of `g`, by definition.
-      rfl
+      exact hGg s hs.2 u v
   -- The normal-bundle trivialization at `s₀` is the bundle chart `e` at `s₀`.
   simp only [← normalSpaceFiberBundle_trivializationAt] at hp hps
   exact ⟨p, hp.mono fun s hs ↦ ⟨hs, hs⟩, fun s hs ↦ hps s ⟨hs, hs⟩⟩
@@ -334,27 +333,14 @@ theorem contMDiff_negativeNormalProjection
   have : IsManifold J 1 S := .of_le (n := k + 1) le_add_self
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
-  have : IsManifold I (k + 1) M := .of_le (n := k + 2) (by gcongr; exact one_le_two)
-  let := i.normalSpaceContMDiffVectorBundle hn hk hdim
-  intro w₀
-  rw [Bundle.contMDiffAt_totalSpace_iff]
-  refine ⟨(Bundle.contMDiff_proj _).contMDiffAt, ?_⟩
+  -- In the trivialization at any point, the projection reads as the `C^k` family `p`.
+  refine contMDiff_bundleMap_of_contMDiffOn_symm
+    (fun s ↦ h.negativeNormalProjection hn g.toRiemannianMetric s) fun s₀ ↦ ?_
   obtain ⟨p, hp, hps⟩ :=
-    exists_contMDiffOn_negativeNormalProjection_trivializationAt hn h hk hf hdim g w₀.proj
-  set e := trivializationAt P (fun s ↦ i.isImmersion.NormalSpace s hn) w₀.proj
-  have hw₀ : w₀.proj ∈ e.baseSet := mem_baseSet_trivializationAt P _ w₀.proj
-  have hpw : ContMDiffAt (J.prod 𝓘(ℝ, P)) 𝓘(ℝ, P →L[ℝ] P) k (fun w ↦ p w.proj) w₀ :=
-    (hp.contMDiffAt (e.open_baseSet.mem_nhds hw₀)).comp w₀ (Bundle.contMDiff_proj _).contMDiffAt
-  have he : ContMDiffAt (J.prod 𝓘(ℝ, P)) 𝓘(ℝ, P) k (fun w ↦ (e w).2) w₀ :=
-    ((e.contMDiffOn (IB := J) (n := k)).contMDiffAt
-      (e.open_source.mem_nhds (e.mem_source.mpr hw₀))).snd
-  refine (hpw.clm_apply he).congr_of_eventuallyEq ?_
-  filter_upwards [(FiberBundle.continuous_proj P _).continuousAt.preimage_mem_nhds
-    (e.open_baseSet.mem_nhds hw₀)] with w hw
-  obtain ⟨-, -, -, -, -, hpe⟩ := hps w.proj hw
-  have hy : w.snd = e.symm w.proj (e w).2 := (e.symm_proj_apply w hw).symm
-  rw [hy, ← hpe]
-  exact congr_arg Prod.snd (e.apply_mk_symm hw _)
+    exists_contMDiffOn_negativeNormalProjection_trivializationAt hn h hk hf hdim g s₀
+  refine ⟨p, hp.mono inter_subset_left, fun s hs ↦ ?_⟩
+  obtain ⟨-, -, -, -, -, hpe⟩ := hps s hs.1
+  exact hpe
 
 /-- Projecting the normal bundle onto the positive normal bundle relative to a `C^k` fibre metric,
 along the negative normal bundle, is a `C^k` map of total spaces: it is `v ↦ v - P v` for the
@@ -798,14 +784,26 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 /-- **The rank of the negative normal bundle is the Morse index.** If the negative normal spaces
 of a nondegenerate critical submanifold relative to a fibre metric `g` have continuous local frames
-of size `r`, then the Morse index of `f` is `r` all along the submanifold, since every negative
-normal space has the dimension of the index (`finrank_negativeNormalSpace`). This is the converse
-of `hasLocalSubbundleFrames_negativeNormalSpace`. -/
+indexed by a finite type `κ`, then the Morse index of `f` is the cardinality of `κ` all along the
+submanifold, since every negative normal space has the dimension of the index
+(`finrank_negativeNormalSpace`). -/
+theorem manifoldMorseIndex_eq_card_of_hasLocalSubbundleFrames
+    (h : i.IsNondegenerateCriticalSubmanifold f)
+        (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn)
+    {κ : Type*} [Fintype κ] (hV : HasLocalSubbundleFrames P κ (h.negativeNormalSpace hn g))
+    (s : S) : manifoldMorseIndex I f (i s) = Fintype.card κ := by
+  rw [← h.finrank_negativeNormalSpace hn g, hV.finrank_eq]
+
+/-- **The rank of the negative normal bundle is the Morse index.** If the negative normal spaces
+of a nondegenerate critical submanifold relative to a fibre metric `g` have continuous local frames
+of size `r`, then the Morse index of `f` is `r` all along the submanifold
+(`manifoldMorseIndex_eq_card_of_hasLocalSubbundleFrames`). This is the converse of
+`hasLocalSubbundleFrames_negativeNormalSpace`. -/
 theorem manifoldMorseIndex_eq_of_hasLocalSubbundleFrames
     (h : i.IsNondegenerateCriticalSubmanifold f)
         (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn)
     {r : ℕ} (hV : HasLocalSubbundleFrames P (Fin r) (h.negativeNormalSpace hn g)) (s : S) :
-    manifoldMorseIndex I f (i s) = r := by
-  rw [← h.finrank_negativeNormalSpace hn g, hV.finrank_eq, Fintype.card_fin]
+    manifoldMorseIndex I f (i s) = r :=
+  (h.manifoldMorseIndex_eq_card_of_hasLocalSubbundleFrames hn g hV s).trans (Fintype.card_fin r)
 
 end TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold
