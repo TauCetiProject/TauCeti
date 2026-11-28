@@ -23,9 +23,12 @@ order is.
 This is the compactness behind fixed-point arguments on sets of matrices such as
 `{S | α • 1 ≤ S ≤ β • 1}`, which are also convex.
 
+Reindexing rows and columns along one equivalence preserves and reflects the Loewner order.
+
 ## Main statements
 
 * `Matrix.instCompactIccSpace`: the Loewner order on `Matrix n n 𝕜` has compact closed intervals.
+* `Matrix.reindex_le_reindex_iff`: `reindex e e A ≤ reindex e e B ↔ A ≤ B`.
 -/
 
 public section
@@ -62,5 +65,12 @@ instance instCompactIccSpace : CompactIccSpace (Matrix n n 𝕜) where
     have h₂ := (le_algebraMap_iff_spectrum_le (ha := hy.isSelfAdjoint)).1 hyr t ht
     rw [Real.norm_eq_abs, abs_of_nonneg h₁]
     exact h₂.trans (le_max_left _ _)
+
+omit [Finite n] in
+/-- Reindexing rows and columns along one equivalence preserves and reflects the Loewner order. -/
+theorem reindex_le_reindex_iff {m : Type*} (e : m ≃ n) {A B : Matrix m m 𝕜} :
+    reindex e e A ≤ reindex e e B ↔ A ≤ B :=
+  -- The difference of the reindexed matrices is the reindexed difference, by definition.
+  posSemidef_submatrix_equiv (M := B - A) e.symm
 
 end Matrix

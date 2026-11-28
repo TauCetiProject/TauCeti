@@ -20,6 +20,10 @@ It also gives block matrix-vector constraints over commutative star-ordered ring
 proper star: a null vector of a diagonal block is a null vector of the block above or below it.
 In particular, a zero lower-right diagonal block forces both off-diagonal blocks to vanish.
 Over the same rings, `0 ≤ A ≤ B` forces every null vector of `B` to be a null vector of `A`.
+Over any partially ordered star ring in which addition is monotone (`AddLeftMono`), a block
+diagonal matrix `fromBlocks A 0 0 D` is positive semidefinite exactly when both of its diagonal
+blocks are; hence, in the Loewner order, two block matrices with the same off-diagonal blocks
+compare exactly when their diagonal blocks do. Neither statement needs finite index types.
 
 The results apply in particular to positive-definite kernels, represented directly as matrices,
 but do not depend on Tau Ceti's positive-definite-function theory.
@@ -45,6 +49,9 @@ but do not depend on Tau Ceti's positive-definite-function theory.
   when the lower-right diagonal block is zero.
 * `Matrix.PosSemidef.mulVec_eq_zero_of_posSemidef_sub`: null vectors of `B` are null vectors of
   `A` when `A` and `B - A` are positive semidefinite.
+* `Matrix.posSemidef_fromBlocks_zero₁₂_zero₂₁_iff`: positivity of a block diagonal matrix.
+* `Matrix.fromBlocks_le_fromBlocks_iff`: the Loewner order between block matrices with equal
+  off-diagonal blocks.
 
 ## References
 
@@ -350,3 +357,46 @@ theorem mulVec_eq_zero_of_posSemidef_sub [Fintype ι] {A B : Matrix ι ι R} (hA
   exact hA.dotProduct_mulVec_zero_iff.1 (le_antisymm h (hA.dotProduct_mulVec_nonneg x))
 
 end Matrix.PosSemidef
+
+namespace Matrix
+
+section BlockDiagonal
+
+variable {ι κ R : Type*} [Ring R] [PartialOrder R] [StarRing R] [AddLeftMono R]
+
+/-- A block diagonal matrix `fromBlocks A 0 0 D` is positive semidefinite if and only if both
+diagonal blocks `A` and `D` are. -/
+@[simp]
+theorem posSemidef_fromBlocks_zero₁₂_zero₂₁_iff {A : Matrix ι ι R} {D : Matrix κ κ R} :
+    (fromBlocks A 0 0 D).PosSemidef ↔ A.PosSemidef ∧ D.PosSemidef := by
+  -- The diagonal blocks are the submatrices along `Sum.inl` and `Sum.inr`, by definition.
+  refine ⟨fun h ↦ ⟨h.submatrix Sum.inl, h.submatrix Sum.inr⟩, fun ⟨hA, hD⟩ ↦ ?_⟩
+  -- Every finite principal submatrix sits inside the block diagonal matrix of two finite
+  -- principal submatrices of `A` and `D`, where the quadratic form splits into two parts.
+  refine (posSemidef_iff_submatrix_of_forall_finset
+    (fun p : Finset ι × Finset κ ↦ Sum.map ((↑) : p.1 → ι) ((↑) : p.2 → κ))
+    (fun t ↦ ⟨(t.toLeft, t.toRight), by rintro (_ | _) h <;> simp_all⟩)).2 fun p ↦ ?_
+  rw [fromBlocks_submatrix_sumMap, submatrix_zero, submatrix_zero]
+  have hA' := posSemidef_iff_dotProduct_mulVec.1 (hA.submatrix ((↑) : p.1 → ι))
+  have hD' := posSemidef_iff_dotProduct_mulVec.1 (hD.submatrix ((↑) : p.2 → κ))
+  rw [posSemidef_iff_dotProduct_mulVec]
+  refine ⟨?_, fun x ↦ ?_⟩
+  · simp [IsHermitian, fromBlocks_conjTranspose, hA'.1.eq, hD'.1.eq]
+  · simpa [fromBlocks_mulVec, dotProduct, Fintype.sum_sum_type] using
+      add_nonneg (hA'.2 (x ∘ Sum.inl)) (hD'.2 (x ∘ Sum.inr))
+
+open scoped MatrixOrder in
+/-- In the Loewner order, two block matrices with the same off-diagonal blocks `B` and `C`
+compare exactly when their diagonal blocks do:
+`fromBlocks A B C D ≤ fromBlocks A' B C D' ↔ A ≤ A' ∧ D ≤ D'`. -/
+@[simp]
+theorem fromBlocks_le_fromBlocks_iff {𝕜 : Type*} [RCLike 𝕜] {A A' : Matrix ι ι 𝕜}
+    {B : Matrix ι κ 𝕜} {C : Matrix κ ι 𝕜} {D D' : Matrix κ κ 𝕜} :
+    fromBlocks A B C D ≤ fromBlocks A' B C D' ↔ A ≤ A' ∧ D ≤ D' := by
+  have h : fromBlocks A' B C D' - fromBlocks A B C D = fromBlocks (A' - A) 0 0 (D' - D) := by
+    simp [sub_eq_add_neg, fromBlocks_neg, fromBlocks_add]
+  rw [le_iff, le_iff, le_iff, h, posSemidef_fromBlocks_zero₁₂_zero₂₁_iff]
+
+end BlockDiagonal
+
+end Matrix

@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
+import Mathlib.Data.Matrix.ColumnRowPartitioned
 import Mathlib.LinearAlgebra.Lagrange
 import Mathlib.Topology.MetricSpace.ThickenedIndicator
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Continuity
@@ -42,7 +43,9 @@ satisfies `cfc f A * V = V * cfc f B`, since both functional calculi agree with 
 the two finite spectra. Compressing `cfc f A` to an `A`-invariant subspace thus gives the
 functional calculus of the compression of `A`. For the same reason the functional calculus
 commutes with transposition, and, being a continuous unital ⋆-algebra isomorphism, reindexing
-rows and columns along one equivalence commutes with it too.
+rows and columns along one equivalence commutes with it too. The coordinate inclusions of the two
+blocks intertwine a block diagonal Hermitian matrix with its blocks, so the functional calculus
+acts blockwise on it.
 
 *Traces.* The trace of `cfc f A` is `∑ᵢ f(aᵢ)` over the eigenvalues `aᵢ` of `A`. For a second
 Hermitian matrix `B` with eigenvalues `bⱼ`, the trace of `cfc f A * cfc g B` is
@@ -68,6 +71,8 @@ with a measurable random matrix `ω ↦ A ω` gives measurability of `ω ↦ cfc
 * `Matrix.IsHermitian.cfc_mul_eq_mul_cfc` — `A * V = V * B` implies `cfc f A * V = V * cfc f B`;
 * `Matrix.cfc_transpose`, `Matrix.cfc_reindex` — the functional calculus commutes with
   transposition and with reindexing;
+* `Matrix.cfc_fromBlocks_zero₁₂_zero₂₁` — the functional calculus of a block diagonal Hermitian
+  matrix is block diagonal, with the functional calculi of the blocks on the diagonal;
 * `Matrix.IsHermitian.toEuclideanLin_cfc_apply_of_apply_eq_smul` — `cfc f A` acts by `f μ` on an
   eigenvector of `A` with eigenvalue `μ`;
 * `Matrix.IsHermitian.toEuclideanLin_cfc` — the Euclidean operator of `cfc f A` is the symmetric
@@ -176,6 +181,28 @@ theorem cfc_reindex {m : Type*} [Fintype m] [DecidableEq m] (e : n ≃ m) (f : �
       exact (reindex e e).injective h
     rw [cfc_apply_of_not_predicate A hA, cfc_apply_of_not_predicate _ hA']
     simp
+
+/-- **The functional calculus acts blockwise on block diagonal matrices**: for Hermitian `A` and
+`D`, `cfc f (fromBlocks A 0 0 D) = fromBlocks (cfc f A) 0 0 (cfc f D)`. -/
+theorem cfc_fromBlocks_zero₁₂_zero₂₁ {m : Type*} [Fintype m] [DecidableEq m] {A : Matrix n n 𝕜}
+    {D : Matrix m m 𝕜} (hA : A.IsHermitian) (hD : D.IsHermitian) (f : ℝ → ℝ) :
+    cfc f (fromBlocks A 0 0 D) = fromBlocks (cfc f A) 0 0 (cfc f D) := by
+  -- The coordinate inclusions `fromRows 1 0` and `fromRows 0 1` of the two blocks intertwine
+  -- `fromBlocks A 0 0 D` with `A` and with `D`; their columns pick out the columns of `cfc f`.
+  have hM : (fromBlocks A 0 0 D).IsHermitian := hA.fromBlocks (by simp) hD
+  have h₁ := hM.cfc_mul_eq_mul_cfc hA (V := fromRows 1 0)
+    (by simp [fromBlocks_mul_fromRows, fromRows_mul]) f
+  have h₂ := hM.cfc_mul_eq_mul_cfc hD (V := fromRows 0 1)
+    (by simp [fromBlocks_mul_fromRows, fromRows_mul]) f
+  ext (i | i) (j | j)
+  · simpa [Matrix.mul_apply, Fintype.sum_sum_type, Matrix.one_apply] using
+      congrFun (congrFun h₁ (.inl i)) j
+  · simpa [Matrix.mul_apply, Fintype.sum_sum_type, Matrix.one_apply] using
+      congrFun (congrFun h₂ (.inl i)) j
+  · simpa [Matrix.mul_apply, Fintype.sum_sum_type, Matrix.one_apply] using
+      congrFun (congrFun h₁ (.inr i)) j
+  · simpa [Matrix.mul_apply, Fintype.sum_sum_type, Matrix.one_apply] using
+      congrFun (congrFun h₂ (.inr i)) j
 
 /-- For symmetric `C` and positive `ε`, `(C² + ε I)⁻¹ C` is the functional calculus of
 `x ↦ x / (x² + ε)` at `C`, including when `C` is singular. -/
