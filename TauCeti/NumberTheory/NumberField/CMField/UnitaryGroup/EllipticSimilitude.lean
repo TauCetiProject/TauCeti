@@ -7,8 +7,9 @@ module
 
 public import Mathlib.NumberTheory.NumberField.CMField
 public import TauCeti.LinearAlgebra.Matrix.Hermitian.Similitude
-import Mathlib.FieldTheory.IsAlgClosed.Basic
-import Mathlib.FieldTheory.Perfect
+public import TauCeti.NumberTheory.NumberField.CMType.Basic
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
+import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.NumberTheory.NumberField.CMField.Basic
 
 /-!
@@ -40,6 +41,13 @@ the elliptic similitude `y` is kept.
 The nonzero multiplier forces `y` to be invertible (`Matrix.IsEllipticSimilitude.isUnit`). The
 general matrix identities used here also apply to zero multipliers.
 
+The roots of the characteristic polynomial under the conjugate embedding `star φ` are the
+conjugates of those under `φ`, so the root condition only needs to be checked at the embeddings
+of a CM type (`Matrix.isEllipticSimilitude_iff_forall_mem_cmType`). The predicate is unchanged
+when `β` is replaced by `β * δ(y)` for an invertible `δ(y)`
+(`Matrix.isEllipticSimilitude_mul_aeval_iff`), and when `(y, β)` is replaced by
+`(P⁻¹ * y * P, Pᴴ * β * P)` for an invertible `P` (`Matrix.isEllipticSimilitude_units_conj_iff`).
+
 ## Main definitions
 
 * `Matrix.IsEllipticSimilitude y β ν`: `y` is an elliptic similitude of `β` with multiplier `ν`.
@@ -53,6 +61,11 @@ general matrix identities used here also apply to zero multipliers.
 * `Matrix.IsEllipticSimilitude.exists_mul_eq_mul_diagonal`: at every complex embedding `β` is
   diagonal in an eigenbasis of `y`, whose eigenvalues have `star (d i) * d i = ν`.
 * `Matrix.IsEllipticSimilitude.mul_aeval`: `y` is an elliptic similitude of `β * δ(y)`.
+* `Matrix.isEllipticSimilitude_iff_forall_mem_cmType`: the root condition may be checked on a CM
+  type.
+* `Matrix.isEllipticSimilitude_mul_aeval_iff`: for invertible `δ(y)`, `y` is an elliptic
+  similitude of `β * δ(y)` iff it is one of `β`.
+* `Matrix.isEllipticSimilitude_units_conj_iff`: invariance under a change of basis.
 
 ## Provenance
 
@@ -99,18 +112,12 @@ theorem separable_charpoly (h : y.IsEllipticSimilitude β ν) : y.charpoly.Separ
 /-- An elliptic similitude is invertible, since zero cannot be a complex eigenvalue when the
 multiplier is nonzero. -/
 theorem isUnit (h : y.IsEllipticSimilitude β ν) : IsUnit y := by
-  classical
   let φ : E →+* ℂ := Classical.choice inferInstance
-  apply (isUnit_iff_isUnit_det y).2
-  apply isUnit_iff_ne_zero.2
-  intro hy
-  have hzero : 0 ∈ (y.charpoly.map φ).roots := by
-    rw [← charpoly_map]
-    apply (mem_roots (charpoly_monic _).ne_zero).2
-    simp only [IsRoot, eval_charpoly, map_zero, zero_sub, det_neg]
-    rw [← RingHom.mapMatrix_apply, ← φ.map_det, hy, map_zero, mul_zero]
-  have hν := h.star_mul_self_of_mem_roots φ 0 hzero
-  exact h.multiplier_ne_zero (by simpa using hν.symm)
+  rw [← spectrum.zero_notMem_iff E, mem_spectrum_iff_isRoot_charpoly]
+  intro h0
+  have hzero : (0 : ℂ) ∈ (y.charpoly.map φ).roots :=
+    (mem_roots ((charpoly_monic y).map φ).ne_zero).2 (by simpa using h0.map (f := φ))
+  exact h.multiplier_ne_zero (by simpa using (h.star_mul_self_of_mem_roots φ 0 hzero).symm)
 
 /-- At every complex embedding `φ`, an elliptic similitude of `β` with multiplier `ν` is a
 similitude of the complex form `β.map φ` with multiplier `ν`. -/
@@ -147,5 +154,67 @@ theorem mul_aeval (h : y.IsEllipticSimilitude β ν) (δ : E[X]) :
   star_mul_self_of_mem_roots := h.star_mul_self_of_mem_roots
 
 end IsEllipticSimilitude
+
+variable {y β : Matrix n n E} {ν : ℚ}
+
+/-- **The root condition can be checked on a CM type.** For a CM type `Φ` of `E`, the matrix `y`
+is an elliptic similitude of `β` with multiplier `ν` if and only if the other conditions hold and
+every complex root `r` of the characteristic polynomial under every embedding in `Φ` satisfies
+`star r * r = ν`: the roots under the conjugate embedding `star φ` are the conjugates of those
+under `φ`. -/
+theorem isEllipticSimilitude_iff_forall_mem_cmType (Φ : TauCeti.CMType E) :
+    y.IsEllipticSimilitude β ν ↔ ν ≠ 0 ∧ Irreducible y.charpoly ∧ yᴴ * β * y = (ν : E) • β ∧
+      ∀ φ ∈ Φ, ∀ r ∈ (y.charpoly.map φ).roots, star r * r = (ν : ℂ) := by
+  refine ⟨fun h ↦ ⟨h.multiplier_ne_zero, h.irreducible_charpoly, h.conjTranspose_mul_mul,
+    fun φ _ ↦ h.star_mul_self_of_mem_roots φ⟩, fun ⟨hν, hirr, hβ, hΦ⟩ ↦ ⟨hν, hirr, hβ, ?_⟩⟩
+  intro φ r hr
+  by_cases hφ : φ ∈ Φ
+  · exact hΦ φ hφ r hr
+  -- `star r` is a root under the conjugate embedding `star φ`, which lies in `Φ`
+  have hroot := ((mem_roots ((charpoly_monic y).map φ).ne_zero).1 hr).map (f := starRingEnd ℂ)
+  rw [Polynomial.map_map, ← RingHom.star_def] at hroot
+  have h := hΦ (star φ) ((Φ.star_mem_iff φ).2 hφ) (star r)
+    ((mem_roots ((charpoly_monic y).map _).ne_zero).2 hroot)
+  rwa [star_star, mul_comm] at h
+
+/-- If `δ(y)` is invertible, then `y` is an elliptic similitude of `β * δ(y)` with multiplier `ν`
+if and only if it is an elliptic similitude of `β` with multiplier `ν`. -/
+theorem isEllipticSimilitude_mul_aeval_iff {δ : E[X]} (hδ : IsUnit (aeval y δ)) :
+    y.IsEllipticSimilitude (β * aeval y δ) ν ↔ y.IsEllipticSimilitude β ν := by
+  refine ⟨fun h ↦ ⟨h.multiplier_ne_zero, h.irreducible_charpoly, hδ.mul_left_injective ?_,
+    h.star_mul_self_of_mem_roots⟩, fun h ↦ h.mul_aeval δ⟩
+  calc yᴴ * β * y * aeval y δ = yᴴ * (β * aeval y δ) * y := by
+        rw [Matrix.mul_assoc, ← aeval_mul_eq_mul_aeval rfl δ]
+        simp only [Matrix.mul_assoc]
+    _ = (ν : E) • (β * aeval y δ) := h.conjTranspose_mul_mul
+    _ = (ν : E) • β * aeval y δ := (Matrix.smul_mul _ _ _).symm
+
+/-- **Change of basis.** For an invertible `P`, the matrix `P⁻¹ * y * P` is an elliptic similitude
+of `Pᴴ * β * P` with multiplier `ν` if and only if `y` is an elliptic similitude of `β` with
+multiplier `ν`. -/
+theorem isEllipticSimilitude_units_conj_iff (P : GL n E) :
+    IsEllipticSimilitude ((P⁻¹ : GL n E) * y * P : Matrix n n E) ((P : Matrix n n E)ᴴ * β * P)
+      ν ↔ y.IsEllipticSimilitude β ν := by
+  have hc : ((P⁻¹ : GL n E) * y * P : Matrix n n E).charpoly = y.charpoly := by
+    rw [coe_units_inv]
+    exact charpoly_units_conj' P y
+  have h1 : ((P⁻¹ : GL n E) : Matrix n n E)ᴴ * (P : Matrix n n E)ᴴ = 1 := by
+    rw [← conjTranspose_mul, Units.mul_inv, conjTranspose_one]
+  have hP : IsUnit (P : Matrix n n E)ᴴ := by
+    simpa only [star_eq_conjTranspose] using (Units.isUnit P).star
+  have hsim : ((P⁻¹ : GL n E) * y * P : Matrix n n E)ᴴ * ((P : Matrix n n E)ᴴ * β * P) *
+      ((P⁻¹ : GL n E) * y * P) = (ν : E) • ((P : Matrix n n E)ᴴ * β * P) ↔
+      yᴴ * β * y = (ν : E) • β := by
+    have key : ((P⁻¹ : GL n E) * y * P : Matrix n n E)ᴴ * ((P : Matrix n n E)ᴴ * β * P) *
+        ((P⁻¹ : GL n E) * y * P) = (P : Matrix n n E)ᴴ * (yᴴ * β * y) * P := by
+      simp only [conjTranspose_mul, Matrix.mul_assoc, Units.mul_inv_cancel_left]
+      rw [← Matrix.mul_assoc _ (P : Matrix n n E)ᴴ, h1, Matrix.one_mul]
+    rw [key, ← Matrix.smul_mul, ← Matrix.mul_smul]
+    exact ⟨fun h ↦ hP.mul_right_injective ((Units.isUnit P).mul_left_injective h),
+      fun h ↦ by rw [h]⟩
+  exact ⟨fun h ↦ ⟨h.multiplier_ne_zero, hc ▸ h.irreducible_charpoly,
+      hsim.1 h.conjTranspose_mul_mul, hc ▸ h.star_mul_self_of_mem_roots⟩,
+    fun h ↦ ⟨h.multiplier_ne_zero, hc ▸ h.irreducible_charpoly,
+      hsim.2 h.conjTranspose_mul_mul, hc ▸ h.star_mul_self_of_mem_roots⟩⟩
 
 end Matrix

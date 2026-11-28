@@ -20,7 +20,7 @@ diagonalizable: its eigenvectors for the distinct roots form a basis
 (`Matrix.exists_mul_eq_mul_diagonal_of_separable`). When the matrix is invertible, the diagonal
 entries of any such diagonalization are units (`Matrix.isUnit_of_mul_eq_mul_diagonal`). Conversely,
 the diagonal entries of any diagonalization of a matrix with separable characteristic polynomial
-are distinct (`Matrix.injective_of_mul_eq_mul_diagonal`).
+are distinct (`Matrix.injective_of_separable_of_mul_eq_mul_diagonal`).
 
 ## Main results
 
@@ -28,8 +28,8 @@ are distinct (`Matrix.injective_of_mul_eq_mul_diagonal`).
   polynomial is conjugate to a diagonal matrix.
 * `Matrix.isUnit_of_mul_eq_mul_diagonal`: an invertible matrix conjugate to a diagonal matrix has
   unit diagonal entries.
-* `Matrix.injective_of_mul_eq_mul_diagonal`: a diagonalization of a matrix with separable
-  characteristic polynomial has distinct diagonal entries.
+* `Matrix.injective_of_separable_of_mul_eq_mul_diagonal`: a diagonalization of a matrix with
+  separable characteristic polynomial has distinct diagonal entries.
 -/
 
 public section
@@ -82,7 +82,7 @@ theorem isUnit_of_mul_eq_mul_diagonal {R : Type*} [CommRing R] {M : Matrix ι ι
 
 /-- The diagonal entries of a diagonalization of a matrix with separable characteristic polynomial
 are distinct. -/
-theorem injective_of_mul_eq_mul_diagonal {R : Type*} [CommRing R] [Nontrivial R]
+theorem injective_of_separable_of_mul_eq_mul_diagonal {R : Type*} [CommRing R] [Nontrivial R]
     {M : Matrix ι ι R} (hsep : M.charpoly.Separable) {P : GL ι R} {d : ι → R}
     (hP : M * P = P * diagonal d) : Function.Injective d := by
   rw [charpoly_eq_prod_of_mul_eq_mul_diagonal hP] at hsep
