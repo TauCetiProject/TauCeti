@@ -18,7 +18,7 @@ Local class field theory, normalized so that a uniformizer corresponds to a geom
 (`TauCeti.ClassFieldTheory.geometricArtinMap`), lets one read a continuous character `δ` of `Kˣ`
 as a character of the Galois group: a continuous character `ψ` of `G_K^ab` *corresponds* to `δ`
 when `ψ(Art_geo(x)) = δ(x)` for every `x ∈ Kˣ`. Since the geometric Artin map has dense image, `ψ`
-is unique when it exists (`continuousMonoidHom_ext_geometricArtinMap`).
+is unique when it exists and the target is Hausdorff (`continuousMonoidHom_ext_geometricArtinMap`).
 
 * For a nonarchimedean local field `K`, a character `ψ` corresponds to the unramified character
   `μ_a : x ↦ a ^ v_K(x)` exactly when `ψ` is trivial on inertia and sends every geometric
@@ -49,10 +49,14 @@ Composing a corresponding Galois character with the arithmetic Artin map gives `
 
 * `TauCeti.ClassFieldTheory.comp_geometricArtinMap_eq_unramifiedCharacter_iff`: a character
   corresponds to `μ_a` exactly when it is unramified and sends geometric Frobenius to `a`.
-* `ContinuousMonoidHom.padicGaloisCharacterOfZHat_geometricArtinMap`,
-  `ContinuousMonoidHom.padicGaloisCharacter_geometricArtinMap` and
+* `ContinuousMonoidHom.padicGaloisCharacterOfZHat_geometricArtinMap`: evaluation formula for
+  `δ.padicGaloisCharacterOfZHat φ` at `geometricArtinMap ℚ_[p] x` (giving a character
+  corresponding to `δ` when `φ zHat.gen = δ(p)`).
+* `ContinuousMonoidHom.padicGaloisCharacter_geometricArtinMap` and
   `ContinuousMonoidHom.eq_padicGaloisCharacter`: existence and uniqueness of the Galois
-  character corresponding to `δ`.
+  character corresponding to `δ` when the target is profinite.
+* `ContinuousMonoidHom.padicGaloisCharacter_eq_padicGaloisCharacterOfZHat`: identification of
+  `δ.padicGaloisCharacter` with `δ.padicGaloisCharacterOfZHat (zHat.lift (δ(p)))`.
 * `ContinuousMonoidHom.padicGaloisCharacter_padicUnitPart`: the Galois character of `x|x|` is
   the cyclotomic character.
 * `ContinuousMonoidHom.padicGaloisCharacter_mul`, `ContinuousMonoidHom.padicGaloisCharacter_inv`
@@ -178,9 +182,15 @@ variable {A : Type*} [CommGroup A] [TopologicalSpace A] [IsTopologicalGroup A] [
 that sends the geometric Artin symbol of `x` to `δ(x)`
 (`ContinuousMonoidHom.padicGaloisCharacter_geometricArtinMap`). It is
 `ContinuousMonoidHom.padicGaloisCharacterOfZHat` specialized at `zHat.lift (δ(p))`. -/
-@[expose] def padicGaloisCharacter (δ : ℚ_[p]ˣ →ₜ* A) :
+def padicGaloisCharacter (δ : ℚ_[p]ˣ →ₜ* A) :
     Field.absoluteGaloisGroupAbelianization ℚ_[p] →ₜ* A :=
   δ.padicGaloisCharacterOfZHat (zHat.lift (δ (padicPrimeUnit p)))
+
+/-- `δ.padicGaloisCharacter` is `δ.padicGaloisCharacterOfZHat` specialized at
+`zHat.lift (δ (padicPrimeUnit p))`. -/
+theorem padicGaloisCharacter_eq_padicGaloisCharacterOfZHat (δ : ℚ_[p]ˣ →ₜ* A) :
+    δ.padicGaloisCharacter = δ.padicGaloisCharacterOfZHat (zHat.lift (δ (padicPrimeUnit p))) :=
+  (rfl)
 
 /-- The Galois character of `δ` evaluated at `σ`: `δ` of the cyclotomic character of `σ`, times
 `δ(p)` raised to minus the unramified coordinate of `σ`. -/
@@ -189,7 +199,7 @@ theorem padicGaloisCharacter_apply (δ : ℚ_[p]ˣ →ₜ* A)
     padicGaloisCharacter δ σ =
       δ (padicIntUnitsInclusion p (abelianizedLocalCyclotomicCharacter p ℚ_[p] σ)) *
         zHat.lift (δ (padicPrimeUnit p))⁻¹ (unramifiedCoordinate ℚ_[p] σ) := by
-  rw [padicGaloisCharacter, padicGaloisCharacterOfZHat_apply,
+  rw [padicGaloisCharacter_eq_padicGaloisCharacterOfZHat, padicGaloisCharacterOfZHat_apply,
     ← zpow_neg_one (δ (padicPrimeUnit p)), zHat.lift_zpow_apply, zpow_neg_one, map_inv]
 
 /-- **The Galois character of `δ` corresponds to `δ`**: it sends the geometric Artin symbol of `x`
@@ -197,7 +207,8 @@ to `δ(x)`. -/
 theorem padicGaloisCharacter_geometricArtinMap (δ : ℚ_[p]ˣ →ₜ* A) (x : ℚ_[p]ˣ) :
     padicGaloisCharacter δ (geometricArtinMap ℚ_[p] x) = δ x := by
   -- The cyclotomic factor gives `δ(x|x|)` and the unramified factor gives `δ(p) ^ v(x)`.
-  rw [padicGaloisCharacter, padicGaloisCharacterOfZHat_geometricArtinMap, map_zpow, zHat.lift_gen]
+  rw [padicGaloisCharacter_eq_padicGaloisCharacterOfZHat,
+    padicGaloisCharacterOfZHat_geometricArtinMap, map_zpow, zHat.lift_gen]
   conv_rhs => rw [DFunLike.congr_fun δ.eq_unramifiedCharacter_mul_comp_padicUnitPart x]
   simp [mul_comm]
 

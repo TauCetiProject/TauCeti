@@ -246,7 +246,7 @@ theorem padicGaloisCharacter_weilToAbsolute (δ : ℚ_[p]ˣ →ₜ* A) (w : Weil
       padicGaloisCharacter δ
           (weilToAbsolute ℚ_[p] w : Field.absoluteGaloisGroupAbelianization ℚ_[p]) =
         δ.toGaloisCharacterOfZHat (zHat.lift (δ (padicPrimeUnit p))) (weilToAbsolute ℚ_[p] w) := by
-    rw [padicGaloisCharacter, padicGaloisCharacterOfZHat_mk]
+    rw [padicGaloisCharacter_eq_padicGaloisCharacterOfZHat, padicGaloisCharacterOfZHat_mk]
   exact h.trans (δ.toGaloisCharacterOfZHat_weilToAbsolute _ (zHat.lift_gen _) w)
 
 end Profinite
@@ -333,7 +333,7 @@ theorem padicGaloisCharacter_padicModPCyclotomicCharacter
     ContinuousMonoidHom.padicGaloisCharacter (padicModPCyclotomicCharacter p)
         (σ : Field.absoluteGaloisGroupAbelianization ℚ_[p]) =
       modPLocalCyclotomicCharacter p ℚ_[p] σ := by
-  rw [ContinuousMonoidHom.padicGaloisCharacter,
+  rw [ContinuousMonoidHom.padicGaloisCharacter_eq_padicGaloisCharacterOfZHat,
     ContinuousMonoidHom.padicGaloisCharacterOfZHat_mk]
   have h : (padicModPCyclotomicCharacter p).toGaloisCharacterOfZHat
         (zHat.lift ((padicModPCyclotomicCharacter p) (padicPrimeUnit p))) =

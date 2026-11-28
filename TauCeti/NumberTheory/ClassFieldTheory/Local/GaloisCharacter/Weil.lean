@@ -43,7 +43,10 @@ and this restriction respects trivial, pointwise product, and inverse characters
 ## Main results
 
 * `ContinuousMonoidHom.toWeilCharacter_apply`,
-  `ContinuousMonoidHom.toWeilCharacter_unramifiedCharacter`: evaluation of `toWeilCharacter`.
+  `ContinuousMonoidHom.toWeilCharacter_unramifiedCharacter`,
+  `ContinuousMonoidHom.ofWeilCharacter_toWeilCharacter`,
+  `ContinuousMonoidHom.toWeilCharacter_ofWeilCharacter`: evaluation and round-trip cancellation
+  laws for `toWeilCharacter` and `ofWeilCharacter`.
 * `TauCeti.ClassFieldTheory.galoisCharacter_eq_of_weilToAbsolute_eq`,
   `TauCeti.ClassFieldTheory.galoisCharacter_eq_mul_of_weilToAbsolute_eq`,
   `TauCeti.ClassFieldTheory.galoisCharacter_eq_inv_of_weilToAbsolute_eq`: uniqueness and closure
@@ -185,6 +188,23 @@ theorem ofWeilCharacter_eq_of_mk_eq_localWeilGeometricArtinEquiv [T1Space G]
     ψ.ofWeilCharacter x = ψ w := by
   rw [ofWeilCharacter_apply, ← hw, TopologicalAbelianization.lift_mk]
 
+/-- `ofWeilCharacter` is left inverse to `toWeilCharacter`. -/
+@[simp]
+theorem ofWeilCharacter_toWeilCharacter [T1Space G] (δ : Kˣ →ₜ* G) :
+    δ.toWeilCharacter.ofWeilCharacter = δ := by
+  ext1 x
+  obtain ⟨w, hw⟩ := QuotientGroup.mk_surjective (localWeilGeometricArtinEquiv K x)
+  rw [ofWeilCharacter_eq_of_mk_eq_localWeilGeometricArtinEquiv δ.toWeilCharacter x w hw,
+    δ.toWeilCharacter_eq_of_mk_eq_localWeilGeometricArtinEquiv x w hw]
+
+/-- `toWeilCharacter` is left inverse to `ofWeilCharacter`. -/
+@[simp]
+theorem toWeilCharacter_ofWeilCharacter [T1Space G] (ψ : WeilGroup K →ₜ* G) :
+    ψ.ofWeilCharacter.toWeilCharacter = ψ := by
+  ext1 w
+  rw [toWeilCharacter_apply, ofWeilCharacter_apply, ContinuousMulEquiv.apply_symm_apply,
+    TopologicalAbelianization.lift_mk]
+
 end CommGroup
 
 end ContinuousMonoidHom
@@ -222,14 +242,8 @@ def localWeilCharacterEquiv (G : Type*) [CommGroup G] [TopologicalSpace G] [Cont
     [T1Space G] : (Kˣ →ₜ* G) ≃* (WeilGroup K →ₜ* G) where
   toFun := ContinuousMonoidHom.toWeilCharacter
   invFun := ContinuousMonoidHom.ofWeilCharacter
-  left_inv δ := ContinuousMonoidHom.ext fun x ↦ by
-    obtain ⟨w, hw⟩ := QuotientGroup.mk_surjective (localWeilGeometricArtinEquiv K x)
-    rw [ContinuousMonoidHom.ofWeilCharacter_eq_of_mk_eq_localWeilGeometricArtinEquiv
-        δ.toWeilCharacter x w hw,
-      δ.toWeilCharacter_eq_of_mk_eq_localWeilGeometricArtinEquiv x w hw]
-  right_inv ψ := ContinuousMonoidHom.ext fun w ↦ by
-    rw [ContinuousMonoidHom.toWeilCharacter_apply, ContinuousMonoidHom.ofWeilCharacter_apply,
-      ContinuousMulEquiv.apply_symm_apply, TopologicalAbelianization.lift_mk]
+  left_inv := ContinuousMonoidHom.ofWeilCharacter_toWeilCharacter
+  right_inv := ContinuousMonoidHom.toWeilCharacter_ofWeilCharacter
   map_mul' := ContinuousMonoidHom.toWeilCharacter_mul
 
 variable {K}
