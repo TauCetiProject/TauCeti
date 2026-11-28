@@ -14,11 +14,13 @@ import Mathlib.Algebra.Order.BigOperators.Group.Finset
 /-!
 # Weighted Chebyshev inequalities
 
-For nonnegative weights, similarly ordered vectors in an ordered commutative semiring
-satisfy the weighted Chebyshev inequality. Oppositely ordered vectors satisfy the reverse
-inequality. With positive weights, equality holds exactly when one vector is constant.
-Both finite-set forms allow arbitrary total weight; normalized whole-type forms are
-provided through the `Monovary` and `Antivary` dot-notation APIs.
+For nonnegative weights, similarly ordered vectors in a linearly ordered commutative semiring
+with `IsStrictOrderedRing` and `ExistsAddOfLE` satisfy the weighted Chebyshev inequality.
+Oppositely ordered vectors satisfy the reverse inequality. Equality holds exactly when one
+vector is constant on the indices of positive weight within the summation set. Both finite-set
+forms allow arbitrary total weight; normalized whole-type forms are provided through the
+`Monovary` and `Antivary` dot-notation APIs. Their equality criteria likewise concern the
+positive-weight support, giving global constancy when every weight is positive.
 
 The proofs compare the two subtraction-free weighted double sums. In particular, the
 results apply to natural numbers and nonnegative real numbers as well as ordered rings.
@@ -36,35 +38,39 @@ variable {ι R : Type*} [CommSemiring R] [LinearOrder R] [IsStrictOrderedRing R]
   [ExistsAddOfLE R]
 
 private theorem weighted_pair_eq_iff {s : Finset ι} {w a b : ι → R}
-    (hw : ∀ i ∈ s, 0 < w i)
+    (hw : ∀ i ∈ s, 0 ≤ w i)
     (hpair : (∀ i ∈ s, ∀ j ∈ s, a i * b j + a j * b i ≤ a i * b i + a j * b j) ∨
       (∀ i ∈ s, ∀ j ∈ s, a i * b i + a j * b j ≤ a i * b j + a j * b i)) :
     (∑ i ∈ s, w i * a i) * (∑ i ∈ s, w i * b i) =
       (∑ i ∈ s, w i) * (∑ i ∈ s, w i * a i * b i) ↔
-      (∀ i ∈ s, ∀ j ∈ s, a i = a j) ∨ (∀ i ∈ s, ∀ j ∈ s, b i = b j) := by
+      (∀ i ∈ s, 0 < w i → ∀ j ∈ s, 0 < w j → a i = a j) ∨
+      (∀ i ∈ s, 0 < w i → ∀ j ∈ s, 0 < w j → b i = b j) := by
   constructor
   · intro heq
     have hs : (∑ i ∈ s, ∑ j ∈ s, w i * w j * (a i * b j + a j * b i)) =
         ∑ i ∈ s, ∑ j ∈ s, w i * w j * (a i * b i + a j * b j) := by
       rw [sum_sum_weight_mul_cross, sum_sum_weight_mul_diagonal, heq]
-    have hterm (i : ι) (hi : i ∈ s) (j : ι) (hj : j ∈ s) :
+    have hterm (i : ι) (hi : i ∈ s) (hwi : 0 < w i)
+        (j : ι) (hj : j ∈ s) (hwj : 0 < w j) :
         a i * b j + a j * b i = a i * b i + a j * b j := by
-      apply mul_left_cancel₀ (mul_pos (hw i hi) (hw j hj)).ne'
+      apply mul_left_cancel₀ (mul_pos hwi hwj).ne'
       rcases hpair with hp | hp
       · have hle i hi j hj := mul_le_mul_of_nonneg_left (hp i hi j hj)
-          (mul_pos (hw i hi) (hw j hj)).le
+          (mul_nonneg (hw i hi) (hw j hj))
         exact (sum_eq_sum_iff_of_le (hle i hi)).mp
           ((sum_eq_sum_iff_of_le fun i hi ↦ sum_le_sum (hle i hi)).mp hs i hi) j hj
       · have hle i hi j hj := mul_le_mul_of_nonneg_left (hp i hi j hj)
-          (mul_pos (hw i hi) (hw j hj)).le
+          (mul_nonneg (hw i hi) (hw j hj))
         exact ((sum_eq_sum_iff_of_le (hle i hi)).mp
           ((sum_eq_sum_iff_of_le fun i hi ↦ sum_le_sum (hle i hi)).mp hs.symm i hi) j hj).symm
     have hp := Function.forall_eq_or_forall_eq_of_forall_eq_or_eq
-      (a := fun i : {i // i ∈ s} ↦ a i) (b := fun i : {i // i ∈ s} ↦ b i)
-      (fun i j ↦ TauCeti.mul_add_mul_eq_mul_add_mul_iff.mp (hterm i i.property j j.property))
+      (a := fun i : {i // i ∈ s ∧ 0 < w i} ↦ a i)
+      (b := fun i : {i // i ∈ s ∧ 0 < w i} ↦ b i)
+      (fun i j ↦ TauCeti.mul_add_mul_eq_mul_add_mul_iff.mp
+        (hterm i i.property.1 i.property.2 j j.property.1 j.property.2))
     rcases hp with ha | hb
-    · exact Or.inl fun i hi j hj ↦ ha ⟨i, hi⟩ ⟨j, hj⟩
-    · exact Or.inr fun i hi j hj ↦ hb ⟨i, hi⟩ ⟨j, hj⟩
+    · exact Or.inl fun i hi hwi j hj hwj ↦ ha ⟨i, hi, hwi⟩ ⟨j, hj, hwj⟩
+    · exact Or.inr fun i hi hwi j hj hwj ↦ hb ⟨i, hi, hwi⟩ ⟨j, hj, hwj⟩
   · intro hconst
     apply (mul_left_cancel₀ (two_ne_zero : (2 : R) ≠ 0))
     rw [← sum_sum_weight_mul_cross, ← sum_sum_weight_mul_diagonal]
@@ -72,9 +78,14 @@ private theorem weighted_pair_eq_iff {s : Finset ι} {w a b : ι → R}
     intro i hi
     apply sum_congr rfl
     intro j hj
+    rcases (hw i hi).eq_or_lt with hwi | hwi
+    · simp [← hwi]
+    rcases (hw j hj).eq_or_lt with hwj | hwj
+    · simp [← hwj]
     congr 1
     exact TauCeti.mul_add_mul_eq_mul_add_mul_iff.mpr
-      (hconst.elim (fun ha ↦ Or.inl (ha i hi j hj)) (fun hb ↦ Or.inr (hb i hi j hj)))
+      (hconst.elim (fun ha ↦ Or.inl (ha i hi hwi j hj hwj))
+        (fun hb ↦ Or.inr (hb i hi hwi j hj hwj)))
 
 /-- Weighted Chebyshev inequality on a finite set, with arbitrary nonnegative total weight. -/
 theorem MonovaryOn.sum_mul_sum_le_sum_mul_sum {s : Finset ι} {w a b : ι → R}
@@ -87,12 +98,14 @@ theorem MonovaryOn.sum_mul_sum_le_sum_mul_sum {s : Finset ι} {w a b : ι → R}
   rw [sum_sum_weight_mul_cross, sum_sum_weight_mul_diagonal] at h
   exact (mul_le_mul_iff_right₀ (zero_lt_two : (0 : R) < 2)).mp h
 
-/-- Equality in finite weighted Chebyshev with positive weights characterizes constant vectors. -/
+/-- Equality in finite weighted Chebyshev for nonnegative weights holds exactly when one
+vector is constant on the positive-weight indices in the summation set. -/
 theorem MonovaryOn.sum_mul_sum_eq_sum_mul_sum_iff {s : Finset ι} {w a b : ι → R}
-    (hab : MonovaryOn a b s) (hw : ∀ i ∈ s, 0 < w i) :
+    (hab : MonovaryOn a b s) (hw : ∀ i ∈ s, 0 ≤ w i) :
     (∑ i ∈ s, w i * a i) * (∑ i ∈ s, w i * b i) =
       (∑ i ∈ s, w i) * (∑ i ∈ s, w i * a i * b i) ↔
-      (∀ i ∈ s, ∀ j ∈ s, a i = a j) ∨ (∀ i ∈ s, ∀ j ∈ s, b i = b j) :=
+      (∀ i ∈ s, 0 < w i → ∀ j ∈ s, 0 < w j → a i = a j) ∨
+      (∀ i ∈ s, 0 < w i → ∀ j ∈ s, 0 < w j → b i = b j) :=
   weighted_pair_eq_iff hw
     (Or.inl fun _ hi _ hj ↦ TauCeti.MonovaryOn.mul_add_mul_le_mul_add_mul hab hi hj)
 
@@ -107,12 +120,14 @@ theorem AntivaryOn.sum_mul_sum_le_sum_mul_sum {s : Finset ι} {w a b : ι → R}
   rw [sum_sum_weight_mul_diagonal, sum_sum_weight_mul_cross] at h
   exact (mul_le_mul_iff_right₀ (zero_lt_two : (0 : R) < 2)).mp h
 
-/-- Equality in the reversed finite weighted inequality with positive weights. -/
+/-- Equality in the reversed finite weighted inequality for nonnegative weights holds exactly
+when one vector is constant on the positive-weight indices in the summation set. -/
 theorem AntivaryOn.sum_mul_sum_eq_sum_mul_sum_iff {s : Finset ι} {w a b : ι → R}
-    (hab : AntivaryOn a b s) (hw : ∀ i ∈ s, 0 < w i) :
+    (hab : AntivaryOn a b s) (hw : ∀ i ∈ s, 0 ≤ w i) :
     (∑ i ∈ s, w i) * (∑ i ∈ s, w i * a i * b i) =
       (∑ i ∈ s, w i * a i) * (∑ i ∈ s, w i * b i) ↔
-      (∀ i ∈ s, ∀ j ∈ s, a i = a j) ∨ (∀ i ∈ s, ∀ j ∈ s, b i = b j) :=
+      (∀ i ∈ s, 0 < w i → ∀ j ∈ s, 0 < w j → a i = a j) ∨
+      (∀ i ∈ s, 0 < w i → ∀ j ∈ s, 0 < w j → b i = b j) :=
   eq_comm.trans (weighted_pair_eq_iff hw
     (Or.inr fun _ hi _ hj ↦ TauCeti.AntivaryOn.mul_add_mul_le_mul_add_mul hab hi hj))
 
@@ -132,18 +147,22 @@ theorem Antivary.sum_mul_le_sum_mul_sum {w a b : ι → R} (hab : Antivary a b)
   simpa only [hw1, one_mul, mul_assoc] using
     (hab.antivaryOn (↑(univ : Finset ι))).sum_mul_sum_le_sum_mul_sum (fun i _ ↦ hw i)
 
-/-- Equality in normalized weighted Chebyshev with positive weights. -/
+/-- Equality in normalized weighted Chebyshev for nonnegative weights holds exactly when one
+vector is constant on the positive-weight support. -/
 theorem Monovary.sum_mul_sum_eq_sum_mul_iff {w a b : ι → R} (hab : Monovary a b)
-    (hw : ∀ i, 0 < w i) (hw1 : ∑ i, w i = 1) :
+    (hw : ∀ i, 0 ≤ w i) (hw1 : ∑ i, w i = 1) :
     (∑ i, w i * a i) * (∑ i, w i * b i) = (∑ i, w i * (a i * b i)) ↔
-      (∀ i j, a i = a j) ∨ (∀ i j, b i = b j) := by
+      (∀ i, 0 < w i → ∀ j, 0 < w j → a i = a j) ∨
+      (∀ i, 0 < w i → ∀ j, 0 < w j → b i = b j) := by
   simpa only [hw1, one_mul, mul_assoc, mem_univ, forall_true_left] using
     (hab.monovaryOn (↑(univ : Finset ι))).sum_mul_sum_eq_sum_mul_sum_iff (fun i _ ↦ hw i)
 
-/-- Equality in the reversed weighted Chebyshev inequality for positive normalized weights. -/
+/-- Equality in the reversed normalized weighted inequality for nonnegative weights holds
+exactly when one vector is constant on the positive-weight support. -/
 theorem Antivary.sum_mul_eq_sum_mul_sum_iff {w a b : ι → R} (hab : Antivary a b)
-    (hw : ∀ i, 0 < w i) (hw1 : ∑ i, w i = 1) :
+    (hw : ∀ i, 0 ≤ w i) (hw1 : ∑ i, w i = 1) :
     (∑ i, w i * (a i * b i)) = (∑ i, w i * a i) * (∑ i, w i * b i) ↔
-      (∀ i j, a i = a j) ∨ (∀ i j, b i = b j) := by
+      (∀ i, 0 < w i → ∀ j, 0 < w j → a i = a j) ∨
+      (∀ i, 0 < w i → ∀ j, 0 < w j → b i = b j) := by
   simpa only [hw1, one_mul, mul_assoc, mem_univ, forall_true_left] using
     (hab.antivaryOn (↑(univ : Finset ι))).sum_mul_sum_eq_sum_mul_sum_iff (fun i _ ↦ hw i)
