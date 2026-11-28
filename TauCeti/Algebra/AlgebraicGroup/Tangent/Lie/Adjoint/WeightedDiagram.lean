@@ -576,8 +576,8 @@ theorem dominantVectorOrbit_inj (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base
     b.dominantVectorOrbit h₁ = b.dominantVectorOrbit h₂ ↔ h₁ = h₂ :=
   b.dominantVectorOrbit_injective.eq_iff
 
-/-- **Every nonzero nilpotent element of a connected Killing group lies in the orbit of a unique
-dominant neutral element.** -/
+/-- **Every nonzero nilpotent element in the Lie algebra of a connected Killing group lies in the
+orbit of a nilpositive partner of a unique dominant neutral element.** -/
 theorem existsUnique_dominantVectorOrbit_eq_of_isNilpotent_ad
     (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base)
     {e : Module.Dual k (Bialgebra.CotangentSpace k H)}
