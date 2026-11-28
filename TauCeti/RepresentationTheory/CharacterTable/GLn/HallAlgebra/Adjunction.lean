@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.GLn.HallAlgebra.Mackey
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.RingTheory.Derivation.Basic
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.GroupTheory.GroupAction.Quotient
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
@@ -14,6 +15,7 @@ import Mathlib.LinearAlgebra.Projection
 import TauCeti.LinearAlgebra.GeneralLinearGroup.Basic
 import TauCeti.LinearAlgebra.Dimension.Submodule
 import TauCeti.LinearAlgebra.GeneralLinearGroup.SubmoduleOrbit
+import TauCeti.RingTheory.Derivation.Basic
 
 /-!
 # The adjoint of the induction product, and cuspidal elements
@@ -414,6 +416,72 @@ theorem mulAdjoint_mul (hc : c.IsCuspidal) {d : ℕ} (hd : d ≠ 0) (F H : HallA
   -- The term of `W` is the Leibniz rule for the block averages at `g|_W` and `g|_{V/W}`.
   rw [rankInner_mul_of_isCuspidal hc hd _ _ ho, mulAdjoint_apply, mulAdjoint_apply,
     blockAverage_of_dim_eq_zero_right _ ho, blockAverage_of_dim_eq_zero_right _ ho]
+
+/-- For `d ≠ 0` and any `f`, the multiplication adjoint `∂_{d, f}` annihilates the unit `1`.
+Adapted from grh-lean (`src/Lib/LocalGL/Green/TauFunctions.lean`, Apache 2.0, Copyright 2026
+Anthropic PBC). -/
+@[simp]
+theorem mulAdjoint_one {d : ℕ} (hd : d ≠ 0) (f : HallAlgebra k) :
+    mulAdjoint d f 1 = 0 := by
+  ext a
+  rw [mulAdjoint_apply, zero_apply]
+  refine rankInner_eq_zero_of_right f fun b hb ↦ ?_
+  rw [← SimilarityClass.ofEnd_rep a, ← SimilarityClass.ofEnd_rep b, blockAverage_one_ofEnd]
+  simp [one_apply, hb, hd]
+
+/-- The multiplication adjoint `∂_{d, f}` scales the constant function `𝟙` by `⟨f, 𝟙⟩_d`.
+Adapted from grh-lean (`src/Lib/LocalGL/Green/LabelCharacters.lean`, Apache 2.0, Copyright 2026
+Anthropic PBC). -/
+theorem mulAdjoint_constOne (d : ℕ) (f : HallAlgebra k) :
+    mulAdjoint d f constOne = rankInner d f constOne • constOne := by
+  ext a
+  rw [mulAdjoint_apply, blockAverage_constOne, smul_apply, constOne_apply, mul_one]
+
+/-- `∂_{d, f} 𝟙 = 0` iff `⟨f, 𝟙⟩_d = 0`.
+Adapted from grh-lean (`src/Lib/LocalGL/Green/LabelCharacters.lean`, Apache 2.0, Copyright 2026
+Anthropic PBC). -/
+@[simp]
+theorem mulAdjoint_constOne_eq_zero_iff (d : ℕ) (f : HallAlgebra k) :
+    mulAdjoint d f constOne = 0 ↔ rankInner d f constOne = 0 := by
+  have hne : (constOne : HallAlgebra k) ≠ 0 := fun h ↦ by
+    have h0 := congrArg (fun F : HallAlgebra k ↦ F (ofEnd (0 : Module.End k (Fin 0 → k)))) h
+    simp [constOne_apply, zero_apply] at h0
+  rw [mulAdjoint_constOne, smul_eq_zero_iff_left hne]
+
+/-- For cuspidal `c` and `d ≠ 0`, `mulAdjoint d c` bundled as a `ℂ`-derivation of `HallAlgebra k`.
+Adapted from grh-lean (`src/Lib/LocalGL/Green/TauFunctions.lean`, Apache 2.0, Copyright 2026
+Anthropic PBC). -/
+noncomputable def mulAdjointDerivation {c : HallAlgebra k} (hc : c.IsCuspidal)
+    {d : ℕ} (hd : d ≠ 0) : Derivation ℂ (HallAlgebra k) (HallAlgebra k) :=
+  Derivation.mk'
+    { toFun := mulAdjoint d c
+      map_add' := mulAdjoint_add d c
+      map_smul' := fun r F ↦ by simp [mulAdjoint_smul] }
+    fun F H ↦ by
+      simp only [LinearMap.coe_mk, AddHom.coe_mk, smul_eq_mul]
+      rw [mulAdjoint_mul hc hd, add_comm, mul_comm (mulAdjoint d c F)]
+
+@[simp]
+theorem mulAdjointDerivation_apply {c : HallAlgebra k} (hc : c.IsCuspidal)
+    {d : ℕ} (hd : d ≠ 0) (F : HallAlgebra k) :
+    mulAdjointDerivation hc hd F = mulAdjoint d c F := by
+  rfl
+
+/-- For cuspidal `c` and `d ≠ 0`, the derivation `∂_{d, c}` satisfies the power rule
+`∂_{d, c} (F ^ (n + 1)) = (n + 1) • (F ^ n * ∂_{d, c} F)`. -/
+theorem mulAdjoint_pow_succ {c : HallAlgebra k} (hc : c.IsCuspidal) {d : ℕ} (hd : d ≠ 0)
+    (F : HallAlgebra k) (n : ℕ) :
+    mulAdjoint d c (F ^ (n + 1)) = (n + 1) • (F ^ n * mulAdjoint d c F) := by
+  simpa only [mulAdjointDerivation_apply, smul_eq_mul, Nat.add_sub_cancel] using
+    (mulAdjointDerivation hc hd).leibniz_pow F (n + 1)
+
+/-- **Finite-product Leibniz rule.** For cuspidal `c` and `d ≠ 0`,
+`∂_{d, c} (∏ i ∈ s, F i) = ∑ i ∈ s, ∂_{d, c} (F i) * ∏ j ∈ s.erase i, F j`. -/
+theorem mulAdjoint_prod {ι : Type*} [DecidableEq ι] {c : HallAlgebra k} (hc : c.IsCuspidal)
+    {d : ℕ} (hd : d ≠ 0) (s : Finset ι) (F : ι → HallAlgebra k) :
+    mulAdjoint d c (∏ i ∈ s, F i) =
+      ∑ i ∈ s, mulAdjoint d c (F i) * ∏ j ∈ s.erase i, F j := by
+  simpa [smul_eq_mul, mul_comm] using (mulAdjointDerivation hc hd).leibniz_prod s F
 
 end Adjunction
 
