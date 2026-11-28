@@ -47,9 +47,7 @@ theorem norm_rightRegular (g : G) (f : G →ᵇ V) :
   · exact norm_compContinuous_le f _
   · calc
       ‖f‖ = ‖rightRegular 𝕜 V G g⁻¹ (rightRegular 𝕜 V G g f)‖ := by
-        congr 1
-        ext x
-        simp
+        rw [Representation.inv_self_apply]
       _ ≤ ‖rightRegular 𝕜 V G g f‖ := norm_compContinuous_le _ _
 
 variable (𝕜 V) {H : Type*} [Monoid H] (Γ : Subgroup G) (i : H →* G)

@@ -81,12 +81,8 @@ noncomputable def boundedAutomorphicRepresentation :
 
 variable {V}
 
-/-- The underlying bounded continuous function of a bounded automorphic function. -/
-def BoundedAutomorphicFunction.toBoundedContinuousFunction (f : V.BoundedAutomorphicFunction) :
-    adelicUnitaryGroup E s →ᵇ ℂ := f.val
-
 instance : CoeFun V.BoundedAutomorphicFunction (fun _ ↦ adelicUnitaryGroup E s → ℂ) :=
-  ⟨fun f ↦ f.toBoundedContinuousFunction⟩
+  ⟨fun f ↦ f.val⟩
 
 /-- Bounded automorphic functions are equal when they agree at every point. -/
 @[ext]
@@ -95,30 +91,10 @@ theorem BoundedAutomorphicFunction.ext {f h : V.BoundedAutomorphicFunction}
   apply Subtype.ext
   exact BoundedContinuousFunction.ext hfh
 
-@[simp]
-theorem BoundedAutomorphicFunction.zero_apply (g : adelicUnitaryGroup E s) :
-    (0 : V.BoundedAutomorphicFunction) g = 0 := (rfl)
-
-@[simp]
-theorem BoundedAutomorphicFunction.add_apply (f h : V.BoundedAutomorphicFunction)
-    (g : adelicUnitaryGroup E s) : (f + h) g = f g + h g := (rfl)
-
-@[simp]
-theorem BoundedAutomorphicFunction.smul_apply (c : ℂ) (f : V.BoundedAutomorphicFunction)
-    (g : adelicUnitaryGroup E s) : (c • f) g = c * f g := (rfl)
-
-@[simp]
-theorem BoundedAutomorphicFunction.neg_apply (f : V.BoundedAutomorphicFunction)
-    (g : adelicUnitaryGroup E s) : (-f) g = -f g := (rfl)
-
-@[simp]
-theorem BoundedAutomorphicFunction.sub_apply (f h : V.BoundedAutomorphicFunction)
-    (g : adelicUnitaryGroup E s) : (f - h) g = f g - h g := (rfl)
-
 /-- Bounded automorphic functions are continuous. -/
 @[fun_prop]
 theorem BoundedAutomorphicFunction.continuous (f : V.BoundedAutomorphicFunction) :
-    Continuous f := f.toBoundedContinuousFunction.continuous
+    Continuous f := f.val.continuous
 
 /-- Bounded automorphic functions are invariant under rational points. -/
 theorem BoundedAutomorphicFunction.rationalPoint_mul (f : V.BoundedAutomorphicFunction)
