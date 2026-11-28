@@ -223,10 +223,11 @@ private theorem awayToSection_mk_tmul_eq_theta (l k j : ℕ) (h : (j : ℤ) = (k
   | add u u' hu hu' =>
     have e : Away.mk ℬ (Graded.map_mem f ha) l _ ((φ (l * d)).liftBaseChange S (u + u')).property =
         Away.mk ℬ (Graded.map_mem f ha) l _ ((φ (l * d)).liftBaseChange S u).property +
-        Away.mk ℬ (Graded.map_mem f ha) l _ ((φ (l * d)).liftBaseChange S u').property :=
-      HomogeneousLocalization.val_injective _ (by
-        simp only [HomogeneousLocalization.val_add, Away.val_mk, map_add, Submodule.coe_add,
-          Localization.add_mk_self])
+        Away.mk ℬ (Graded.map_mem f ha) l _ ((φ (l * d)).liftBaseChange S u').property := by
+      have := map_add (Away.mkLinearMap (Graded.map_mem f ha) l)
+        ((φ (l * d)).liftBaseChange S u) ((φ (l * d)).liftBaseChange S u')
+      simp only [Away.mkLinearMap_apply] at this
+      simpa only [map_add] using this
     rw [e, map_add, TensorProduct.add_tmul, hu, hu', map_add, map_add]
   | tmul s y =>
     rw [awayToSection_mk_liftBaseChange f hf φ hφ ha l s y, LinearMap.baseChange_tmul,
