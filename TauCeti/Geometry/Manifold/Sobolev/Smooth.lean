@@ -74,7 +74,8 @@ private theorem mem_of_forall_chartReading_mem {t : ℝ}
     {S : Set (PiLp 2 fun _ : ι ↦ H^{t}(CoordinateSpace n))} (hS : IsClosed S)
     (h : ∀ u, chartReading he ψ t u ∈ S) (z : chartSobolevSpace he ψ t) :
     (z : PiLp 2 fun _ : ι ↦ H^{t}(CoordinateSpace n)) ∈ S :=
-  closure_minimal (range_subset_iff.2 h) hS ((mem_chartSobolevSpace_iff he ψ).1 z.property)
+  closure_minimal (range_subset_iff.2 h) hS
+    ((chartReading he ψ t).mem_rangeClosure_iff.1 z.property)
 
 variable {t : ℝ} (ht : finrank ℝ (CoordinateSpace n) < 2 * t)
 include ht
@@ -143,7 +144,7 @@ private theorem exists_toChartSobolevSpace_eq_of_contDiff
   refine ⟨u, ?_⟩
   ext1
   ext1 j
-  rw [coe_toChartSobolevSpace, chartReading_apply]
+  rw [LinearMap.coe_toRangeClosure, chartReading_apply]
   -- Both components have the continuous representative `gⱼ = ψⱼ · (u ∘ eⱼ⁻¹)`.
   refine (toZeroAtInfty_injective (hs := ht) ?_).symm
   ext w
@@ -163,13 +164,13 @@ theorem mem_range_toChartSobolevSpace_iff
     x ∈ range (toChartSobolevSpace he ψ s) ↔
       ∀ t (h : s ≤ t), x ∈ range (chartSobolevInclusion he ψ h) := by
   refine ⟨fun ⟨u, hu⟩ t h ↦ ⟨toChartSobolevSpace he ψ t u, by
-    rw [chartSobolevInclusion_toChartSobolevSpace, hu]⟩, fun hx ↦ ?_⟩
+    rw [LinearMap.rangeClosureMap_toRangeClosure, hu]⟩, fun hx ↦ ?_⟩
   choose y hy using hx
   -- All the lifts of `x` have the components of `x`, as tempered distributions.
   have hyx (t : ℝ) (h : s ≤ t) (i : ι) :
       ((y t h : PiLp 2 fun _ : ι ↦ H^{t}(CoordinateSpace n)) i).toDistr =
         ((x : PiLp 2 fun _ : ι ↦ H^{s}(CoordinateSpace n)) i).toDistr := by
-    rw [← hy t h, coe_chartSobolevInclusion_apply, toDistr_inclusion]
+    rw [← hy t h, LinearMap.coe_rangeClosureMap_apply, PiLp.piMap_apply, toDistr_inclusion]
   -- Orders `T k ≥ s` at which the Sobolev embedding lands in `C^k`.
   let T (k : ℕ) : ℝ := max s (n + k + 1)
   have hsT (k : ℕ) : s ≤ T k := le_max_left _ _
@@ -188,6 +189,6 @@ theorem mem_range_toChartSobolevSpace_iff
         (v := (y (T k) (hsT k) : PiLp 2 fun _ : ι ↦ H^{T k}(CoordinateSpace n)) i)
         (by rw [hyx, hyx])]
       exact contDiff_toZeroAtInfty (hTk k) _
-  exact ⟨u, by rw [← hy (T 0) (hsT 0), ← hu, chartSobolevInclusion_toChartSobolevSpace]⟩
+  exact ⟨u, by rw [← hy (T 0) (hsT 0), ← hu, LinearMap.rangeClosureMap_toRangeClosure]⟩
 
 end TauCeti

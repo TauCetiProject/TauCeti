@@ -79,6 +79,25 @@ theorem differential_zero_comp_augmentation : r.differential 0 ≫ r.augmentatio
 instance epi_augmentation : Epi r.augmentation :=
   (GradedModuleCat.epi_iff_surjective _).2 r.surjective_π
 
+/-- If every graded morphism `r.termObj 0 ⟶ N` annihilates `r.differential 0`, then
+precomposition with `r.augmentation` is a `k`-linear equivalence
+`(M ⟶ N) ≃ₗ[k] (r.termObj 0 ⟶ N)`. -/
+noncomputable def augmentationLinearEquiv {N : GradedModuleCat.{v} 𝒜}
+    (hN : ∀ f : r.termObj 0 ⟶ N, r.differential 0 ≫ f = 0) :
+    (M ⟶ N) ≃ₗ[k] (r.termObj 0 ⟶ N) :=
+  LinearEquiv.ofBijective (Linear.leftComp k N r.augmentation)
+    ⟨fun _ _ hfg ↦ (cancel_epi r.augmentation).mp hfg, fun f ↦
+      ((GradedModuleCat.exact_iff).mpr r.exact_d_π :
+        (ShortComplex.mk (r.differential 0) r.augmentation
+          r.differential_zero_comp_augmentation).Exact).desc' f (hN f)⟩
+
+/-- `augmentationLinearEquiv` acts by precomposition with `r.augmentation`. -/
+@[simp]
+theorem augmentationLinearEquiv_apply {N : GradedModuleCat.{v} 𝒜}
+    (hN : ∀ f : r.termObj 0 ⟶ N, r.differential 0 ≫ f = 0) (f : M ⟶ N) :
+    r.augmentationLinearEquiv hN f = r.augmentation ≫ f := by
+  rfl
+
 /-- The chain complex of graded modules formed by the terms and differentials of a concrete
 graded resolution. It is reducible so that the augmentation `r.augmentation : r.termObj 0 ⟶ M`
 and its `Epi` instance apply directly to the degree-zero term of the complex. -/
