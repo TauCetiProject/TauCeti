@@ -55,14 +55,14 @@ In the namespace `TauCeti.Algebra.WeilRestriction`:
   homomorphism `g` out of `A[X][1 / N]` is the unit `∑ᵢ bᵢ ⊗ g(Xᵢ)`.
 * `multiplicativeGroupAlgEquiv_universalCoefficient`: the `i`-th coefficient of the universal point
   is sent to `Xᵢ`.
-* `multiplicativeGroupAlgEquiv_normHom`: the norm morphism `Res_{B/A} 𝔾ₘ → 𝔾ₘ` is the norm form in
-  these coordinates.
+* `multiplicativeGroupAlgEquiv_normBialgHom`: the norm morphism `Res_{B/A} 𝔾ₘ → 𝔾ₘ` is the norm form
+  in these coordinates.
 * `multiplicativeGroupAlgEquivOfPowerBasis`: **`Res_{K/k} 𝔾ₘ ≅ Spec k[X][1 / ∑ᵢ aⁱ Xᵢ ^ p]`**
   for `K = k(a ^ (1 / p))`, characterized by
   `multiplicativeGroupPoints_comp_multiplicativeGroupAlgEquivOfPowerBasis`,
   `multiplicativeGroupAlgEquivOfPowerBasis_universalCoefficient` and
   `multiplicativeGroupAlgEquivOfPowerBasis_symm_algebraMap_X`.
-* `multiplicativeGroupAlgEquivOfPowerBasis_normHom`: in these coordinates the norm morphism is
+* `multiplicativeGroupAlgEquivOfPowerBasis_normBialgHom`: in these coordinates the norm morphism is
   `∑ᵢ aⁱ Xᵢ ^ p`.
 
 In the namespace `PowerBasis`:
@@ -222,17 +222,16 @@ theorem multiplicativeGroupAlgEquiv_universalCoefficient (i : ι) :
 /-- **The norm morphism in coordinates.** Under `multiplicativeGroupAlgEquiv`, the norm morphism
 `Res_{B/A} 𝔾ₘ → 𝔾ₘ` sends the coordinate `T` of `𝔾ₘ` to the norm form
 `N = Norm(∑ᵢ Xᵢ ⊗ bᵢ)`. -/
-theorem multiplicativeGroupAlgEquiv_normHom :
-    multiplicativeGroupAlgEquiv A B b L (NormTorus.normHom A B (LaurentPolynomial.T 1)) =
+theorem multiplicativeGroupAlgEquiv_normBialgHom :
+    multiplicativeGroupAlgEquiv A B b L (NormTorus.normBialgHom A B (LaurentPolynomial.T 1)) =
       algebraMap (MvPolynomial ι A) L
         (Algebra.norm (MvPolynomial ι A) (∑ i, (X i : MvPolynomial ι A) ⊗ₜ[A] b i)) := by
   -- on points, the norm morphism composed with the coordinate isomorphism is the norm of
   -- `∑ᵢ bᵢ ⊗ Xᵢ`, which is the norm form evaluated at the variables
-  have h := congrArg Units.val (NormTorus.pointsMulEquiv_comp_normHom (R := L)
-    (toConv (multiplicativeGroupAlgEquiv A B b L).toAlgHom))
+  have h := NormTorus.ofConv_normBialgHom_T (R := L)
+    (toConv (multiplicativeGroupAlgEquiv A B b L).toAlgHom)
   rw [NormTorus.coe_norm, multiplicativeGroupPoints_multiplicativeGroupAlgEquiv, map_sum] at h
-  simp only [MultiplicativeGroup.pointsMulEquiv_apply, laurentEvalEquiv_symm_apply,
-    AlgHom.comp_apply, Algebra.TensorProduct.comm_tmul] at h
+  simp only [AlgEquiv.coe_toAlgHom, Algebra.TensorProduct.comm_tmul] at h
   refine h.trans ?_
   rw [b.norm_sum_tmul_eq_aeval]
   have : (aeval fun i ↦ algebraMap (MvPolynomial ι A) L (X i)) =
@@ -315,13 +314,13 @@ theorem multiplicativeGroupAlgEquivOfPowerBasis_universalCoefficient (i : Fin pb
 /-- **The norm morphism in coordinates for `K = k(a ^ (1 / p))`.** Under
 `multiplicativeGroupAlgEquivOfPowerBasis`, the norm morphism `Res_{B/k} 𝔾ₘ → 𝔾ₘ` sends the
 coordinate `T` of `𝔾ₘ` to `∑ᵢ aⁱ Xᵢ ^ p`. -/
-theorem multiplicativeGroupAlgEquivOfPowerBasis_normHom :
+theorem multiplicativeGroupAlgEquivOfPowerBasis_normBialgHom :
     multiplicativeGroupAlgEquivOfPowerBasis k B pb hdim hgen L
-        (NormTorus.normHom k B (LaurentPolynomial.T 1)) =
+        (NormTorus.normBialgHom k B (LaurentPolynomial.T 1)) =
       algebraMap (MvPolynomial (Fin pb.dim) k) L
         (∑ i : Fin pb.dim, a ^ (i : ℕ) • (X i : MvPolynomial (Fin pb.dim) k) ^ p) := by
   have := isLocalizationAway_norm_of_powerBasis k B pb hdim hgen L
-  have h := multiplicativeGroupAlgEquiv_normHom k B pb.basis L
+  have h := multiplicativeGroupAlgEquiv_normBialgHom k B pb.basis L
   simp only [pb.coe_basis] at h
   rwa [pb.norm_sum_X_tmul_gen_pow hdim hgen] at h
 

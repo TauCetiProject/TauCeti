@@ -10,6 +10,7 @@ public import TauCeti.Algebra.HopfAlgebra.WeilRestriction
 public import TauCeti.Algebra.Polynomial.Laurent.Smooth
 public import TauCeti.RingTheory.WeilRestriction.Smooth
 import TauCeti.Algebra.Bialgebra.BaseChange
+import TauCeti.Algebra.Bialgebra.MonoidAlgebra.BaseChange
 import TauCeti.Algebra.Coalgebra.Convolution
 
 /-!
@@ -49,6 +50,9 @@ these two properties is proved in this file.
   over `B`.
 * `TauCeti.Algebra.WeilRestriction.sum_tmul_universalCoefficient_T`: in a finite basis `b` of `B`,
   the universal point is `∑ᵢ bᵢ ⊗ cᵢ`, where the `cᵢ` are the universal coefficients of `T`.
+* `TauCeti.Algebra.WeilRestriction.multiplicativeGroupDiagonal` and
+  `TauCeti.Algebra.WeilRestriction.multiplicativeGroupPoints_mapDomain_multiplicativeGroupDiagonal`:
+  the diagonal morphism `𝔾ₘ → Res_{B/A} 𝔾ₘ` as a bialgebra map, sending `r` to `1 ⊗ r` on points.
 
 ## References
 
@@ -115,6 +119,39 @@ theorem multiplicativeGroupPoints_naturality {T' : Type*} [CommRing T'] [Algebra
         (multiplicativeGroupPoints A B T f) := by
   simp only [multiplicativeGroupPoints, MulEquiv.trans_apply, pointsMulEquiv_naturality,
     ← MultiplicativeGroup.pointsMulEquiv_mapValue, AlgHom.mapValue_apply]
+
+variable (A B) in
+/-- **The diagonal `𝔾ₘ → Res_{B/A} 𝔾ₘ`**, as a bialgebra homomorphism of coordinate algebras. It
+composes the base-change identification `B ⊗[A] A[T;T⁻¹] ≃ₐc[B] B[T;T⁻¹]` on the Weil restriction
+with `WeilRestriction.diagonal`. On points over `T` it sends a unit `r` of `T` to `1 ⊗ r` in
+`(B ⊗[A] T)ˣ`, see `multiplicativeGroupPoints_mapDomain_multiplicativeGroupDiagonal`. -/
+noncomputable def multiplicativeGroupDiagonal :
+    WeilRestriction A B B[T;T⁻¹] →ₐc[A] A[T;T⁻¹] :=
+  (diagonal A B A[T;T⁻¹]).comp
+    (mapBialgHom A B (AddMonoidAlgebra.scalarTensorBialgEquiv A B (G := ℤ)).symm.toBialgHom)
+
+/-- **The diagonal `𝔾ₘ → Res_{B/A} 𝔾ₘ` on points.** Precomposing a point `x` of `𝔾ₘ` over `T` with
+`WeilRestriction.multiplicativeGroupDiagonal` gives the unit `1 ⊗ r` of `B ⊗[A] T`, where `r` is
+the unit of `T` attached to `x`. -/
+@[simp↓]
+theorem multiplicativeGroupPoints_mapDomain_multiplicativeGroupDiagonal
+    (x : WithConv (A[T;T⁻¹] →ₐ[A] T)) :
+    multiplicativeGroupPoints A B T (BialgHom.mapDomain (multiplicativeGroupDiagonal A B) x) =
+      Units.map (Algebra.TensorProduct.includeRight : T →ₐ[A] B ⊗[A] T).toMonoidHom
+        (MultiplicativeGroup.pointsMulEquiv x) := by
+  have hpt :
+      pointsMulEquiv A B B[T;T⁻¹] T (BialgHom.mapDomain (multiplicativeGroupDiagonal A B) x) =
+        BialgHom.mapDomain (AddMonoidAlgebra.scalarTensorBialgEquiv A B (G := ℤ)).symm.toBialgHom
+          (TauCeti.AlgHom.pointsLTensor B x) := by
+    rw [multiplicativeGroupDiagonal, BialgHom.mapDomain_comp, MonoidHom.comp_apply,
+      pointsMulEquiv_mapDomain_mapBialgHom, pointsMulEquiv_mapDomain_diagonal]
+  have hT :
+      (AddMonoidAlgebra.scalarTensorBialgEquiv A B (G := ℤ)).symm (LaurentPolynomial.T 1) =
+        (1 : B) ⊗ₜ[A] LaurentPolynomial.T 1 :=
+    AddMonoidAlgebra.scalarTensorBialgEquiv_symm_single A B (1 : ℤ) (1 : B)
+  ext
+  rw [multiplicativeGroupPoints, MulEquiv.trans_apply, hpt]
+  simp [hT]
 
 /-- The unit of `B ⊗[A] U` classifying a bialgebra map `WeilRestriction A B B[T;T⁻¹] →ₐc[A] U`
 is group-like over `B`. -/

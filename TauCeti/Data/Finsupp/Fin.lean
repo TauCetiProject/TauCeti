@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Finsupp.Fin
 public import Mathlib.Data.Finsupp.Lex
 public import Mathlib.Order.Fin.Tuple
+import Mathlib.Algebra.BigOperators.Finsupp.Fin
 import TauCeti.Order.Fin.Tuple
 
 /-!
@@ -23,7 +24,9 @@ such vectors adds initial parts and last entries separately. Two such vectors ar
 lexicographically by their initial parts first, and then by their last entries.
 
 Finally, `Finsupp.ext_iff_of_fin_three` says that a finitely supported function on `Fin 3` is
-determined by its values at any three distinct points, in whatever order they are listed.
+determined by its values at any three distinct points, in whatever order they are listed, and
+`Finsupp.uliftFinTwoAddEquiv` identifies `ULift (Fin 2) →₀ M` with `M × M` as an additive
+equivalence.
 -/
 
 public section
@@ -121,5 +124,27 @@ theorem ext_iff_of_fin_three [Zero M] {a b c : Fin 3} (hab : a ≠ b) (hac : a �
     {d d' : Fin 3 →₀ M} : d = d' ↔ d a = d' a ∧ d b = d' b ∧ d c = d' c := by
   refine ⟨by rintro rfl; simp, fun ⟨h₁, h₂, h₃⟩ => Finsupp.ext fun x => ?_⟩
   rcases (by omega : x = a ∨ x = b ∨ x = c) with rfl | rfl | rfl <;> assumption
+
+/-- Additive equivalence between finitely supported functions `ULift (Fin 2) →₀ M` and pairs
+`M × M`, sending `f` to `(f ⟨0⟩, f ⟨1⟩)`. -/
+noncomputable def uliftFinTwoAddEquiv (M : Type*) [AddZeroClass M] :
+    (ULift (Fin 2) →₀ M) ≃+ M × M where
+  toEquiv := (Finsupp.equivCongrLeft Equiv.ulift).trans (finTwoArrowEquiv' M)
+  map_add' f g := by simp
+
+@[simp]
+theorem uliftFinTwoAddEquiv_apply [AddZeroClass M] (f : ULift (Fin 2) →₀ M) :
+    uliftFinTwoAddEquiv M f = (f ⟨0⟩, f ⟨1⟩) :=
+  (rfl)
+
+@[simp]
+theorem uliftFinTwoAddEquiv_symm_apply_zero [AddZeroClass M] (p : M × M) :
+    (uliftFinTwoAddEquiv M).symm p ⟨0⟩ = p.1 :=
+  (rfl)
+
+@[simp]
+theorem uliftFinTwoAddEquiv_symm_apply_one [AddZeroClass M] (p : M × M) :
+    (uliftFinTwoAddEquiv M).symm p ⟨1⟩ = p.2 :=
+  (rfl)
 
 end Finsupp

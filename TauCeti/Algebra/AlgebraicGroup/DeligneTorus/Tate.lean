@@ -35,8 +35,8 @@ norm of a point with coordinates `(z₁, z₂)` is `z₁ * z₂`, the character 
 
 ## Main results
 
-* `TauCeti.DeligneTorus.normHom_T_one`: the norm morphism `TauCeti.NormTorus.normHom ℝ ℂ` sends
-  the coordinate `T` of `𝔾ₘ` to the norm character.
+* `TauCeti.DeligneTorus.normBialgHom_T_one`: the norm morphism `TauCeti.NormTorus.normBialgHom ℝ ℂ`
+  sends the coordinate `T` of `𝔾ₘ` to the norm character.
 * `TauCeti.DeligneTorus.apply_normUnit`: a point `g` of `S` sends the norm character to `Nm(g)`.
 * `TauCeti.DeligneTorus.endOfPoint_tateComodule`: a point `g` acts on `ℝ(m)` by `Nm(g) ^ m`.
 * `TauCeti.DeligneTorus.hodgeComponent_tateComodule`: the Tate comodule has the single Hodge type
@@ -65,28 +65,28 @@ universal point of `S`. A point `g` of `S` sends it to `Nm(g)` (`apply_normUnit`
 noncomputable def normUnit : Sˣ :=
   norm S (toConv (AlgHom.id ℝ S))
 
-/-- A point `g` of `S` sends the image under `TauCeti.NormTorus.normHom ℝ ℂ` of the coordinate
-`T` of `𝔾ₘ` to the norm `Nm(g)`: `TauCeti.NormTorus.pointsMulEquiv_comp_normHom` evaluated at `T`.
+/-- A point `g` of `S` sends the image under `TauCeti.NormTorus.normBialgHom ℝ ℂ` of the
+coordinate `T` of `𝔾ₘ` to the norm `Nm(g)`: `TauCeti.NormTorus.ofConv_normBialgHom_T`.
 The public form is `apply_normUnit`. -/
-private theorem apply_normHom_T_one {R : Type*} [CommRing R] [Algebra ℝ R]
+private theorem apply_normBialgHom_T_one {R : Type*} [CommRing R] [Algebra ℝ R]
     (g : WithConv (S →ₐ[ℝ] R)) :
-    g.ofConv (NormTorus.normHom ℝ ℂ (LaurentPolynomial.T 1)) = (norm R g : R) := by
+    g.ofConv (NormTorus.normBialgHom ℝ ℂ (LaurentPolynomial.T 1)) = (norm R g : R) := by
   have hg : WeilRestriction.multiplicativeGroupPoints ℝ ℂ R g = pointsMulEquiv R g :=
     Units.ext (by rw [WeilRestriction.multiplicativeGroupPoints_apply, coe_pointsMulEquiv])
-  simpa [MultiplicativeGroup.pointsMulEquiv_apply, hg, norm_apply] using
-    congrArg Units.val (NormTorus.pointsMulEquiv_comp_normHom g)
+  rw [NormTorus.ofConv_normBialgHom_T, hg, norm_apply]
 
-/-- The norm morphism `TauCeti.NormTorus.normHom ℝ ℂ` sends the coordinate `T` of `𝔾ₘ` to the norm
-character. -/
+/-- The norm morphism `TauCeti.NormTorus.normBialgHom ℝ ℂ` sends the coordinate `T` of `𝔾ₘ` to
+the norm character. -/
 @[simp]
-theorem normHom_T_one : NormTorus.normHom ℝ ℂ (LaurentPolynomial.T 1) = (normUnit : S) := by
-  rw [normUnit, ← apply_normHom_T_one, ofConv_toConv, AlgHom.id_apply]
+theorem normBialgHom_T_one :
+    NormTorus.normBialgHom ℝ ℂ (LaurentPolynomial.T 1) = (normUnit : S) := by
+  rw [normUnit, ← apply_normBialgHom_T_one, ofConv_toConv, AlgHom.id_apply]
 
 /-- **A point of `S` sends the norm character to its norm.** -/
 @[simp]
 theorem apply_normUnit {R : Type*} [CommRing R] [Algebra ℝ R] (g : WithConv (S →ₐ[ℝ] R)) :
     g.ofConv (normUnit : S) = (norm R g : R) := by
-  rw [← normHom_T_one, apply_normHom_T_one]
+  rw [← normBialgHom_T_one, apply_normBialgHom_T_one]
 
 /-- **The norm character is group-like**: `ε(Nm) = 1` and `Δ(Nm) = Nm ⊗ Nm`. -/
 theorem isGroupLikeElem_normUnit : IsGroupLikeElem ℝ (normUnit : S) where

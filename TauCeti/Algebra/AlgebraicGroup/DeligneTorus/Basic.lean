@@ -8,7 +8,9 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Topology
 public import TauCeti.Algebra.AlgebraicGroup.NormTorus.Complex
 public import TauCeti.Topology.Algebra.PointTopology.WeilRestriction
+import Mathlib.Analysis.Complex.Basic
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Algebra.HopfAlgebra.Antipode
 
 /-!
 # The Deligne torus
@@ -20,12 +22,16 @@ multiplicative group of `ℂ`. Here it is the commutative Hopf `ℝ`-algebra
 points are `ℂˣ` (`TauCeti.DeligneTorus.realPointsMulEquiv`), homeomorphically for the point
 topology (`TauCeti.DeligneTorus.isHomeomorph_realPointsMulEquiv`).
 
-On points it carries the homomorphisms pinned in Milne's conventions for Hodge structures:
+It carries the homomorphisms pinned in Milne's conventions for Hodge structures, both as bialgebra
+maps of coordinate Hopf algebras and on points:
 
 * the diagonal `d : 𝔾ₘ → S`, `r ↦ 1 ⊗ r`, which on real points is the inclusion `ℝˣ → ℂˣ`
-  (`TauCeti.DeligneTorus.diagonal`);
-* the weight `w = d ∘ inv`, `r ↦ r⁻¹` (`TauCeti.DeligneTorus.weight`);
-* the norm `Nm : S → 𝔾ₘ`, the norm of `ℂ/ℝ` (`TauCeti.DeligneTorus.norm`), which on real points is
+  (`TauCeti.Algebra.WeilRestriction.multiplicativeGroupDiagonal ℝ ℂ`,
+  `TauCeti.DeligneTorus.diagonal`);
+* the weight `w = d ∘ inv`, `r ↦ r⁻¹`
+  (`TauCeti.DeligneTorus.weightBialgHom`, `TauCeti.DeligneTorus.weight`);
+* the norm `Nm : S → 𝔾ₘ`, the norm of `ℂ/ℝ`
+  (`TauCeti.NormTorus.normBialgHom ℝ ℂ`, `TauCeti.DeligneTorus.norm`), which on real points is
   `z ↦ z * conj z = |z|²`, so that `Nm ∘ d` is the squaring map and `Nm ∘ w` is `r ↦ r⁻²`.
 
 ## Main definitions
@@ -33,6 +39,9 @@ On points it carries the homomorphisms pinned in Milne's conventions for Hodge s
 * `TauCeti.DeligneTorus.S`: the coordinate Hopf algebra of the Deligne torus.
 * `TauCeti.DeligneTorus.pointsMulEquiv`: `S(R) ≃* (ℂ ⊗[ℝ] R)ˣ`.
 * `TauCeti.DeligneTorus.realPointsMulEquiv`: `S(ℝ) ≃* ℂˣ`.
+* `TauCeti.DeligneTorus.weightBialgHom`: the weight as a bialgebra homomorphism of coordinate Hopf
+  algebras (alongside `TauCeti.Algebra.WeilRestriction.multiplicativeGroupDiagonal ℝ ℂ` and
+  `TauCeti.NormTorus.normBialgHom ℝ ℂ`).
 * `TauCeti.DeligneTorus.diagonal`, `TauCeti.DeligneTorus.weight`, `TauCeti.DeligneTorus.norm`: the
   diagonal, weight and norm on points.
 
@@ -41,6 +50,10 @@ On points it carries the homomorphisms pinned in Milne's conventions for Hodge s
 * `TauCeti.DeligneTorus.realPointsMulEquiv_apply`: the complex number attached to a real point is
   its value on the coordinate `T` of `𝔾ₘ`, read in `ℂ ⊗[ℝ] ℝ ≃ ℂ`.
 * `TauCeti.DeligneTorus.isHomeomorph_realPointsMulEquiv`: `S(ℝ) ≃ ℂˣ` is a homeomorphism.
+* `TauCeti.DeligneTorus.mapDomain_multiplicativeGroupDiagonal` and
+  `TauCeti.DeligneTorus.mapDomain_weightBialgHom`: precomposition by the diagonal and weight
+  bialgebra maps induces `diagonal` and `weight` on points over every commutative `ℝ`-algebra `R`
+  (and `TauCeti.NormTorus.pointsMulEquiv_mapDomain_normBialgHom` induces `norm`).
 * `TauCeti.DeligneTorus.pointsMulEquiv_mapValue`, `TauCeti.DeligneTorus.mapValue_diagonal`,
   `TauCeti.DeligneTorus.mapValue_weight`, `TauCeti.DeligneTorus.norm_mapValue`: the identification
   of points, the diagonal, the weight and the norm are natural in `R`.
@@ -48,8 +61,9 @@ On points it carries the homomorphisms pinned in Milne's conventions for Hodge s
   and `Nm ∘ w` is `r ↦ r⁻²`.
 * `TauCeti.DeligneTorus.weight_eq_inv_diagonal`, `TauCeti.DeligneTorus.weight_two`: the weight is
   `r ↦ d(r)⁻¹`; for instance `w(2) = 1/2` in `ℂˣ`.
-* `TauCeti.DeligneTorus.coe_norm_real`, `TauCeti.DeligneTorus.norm_real_eq_one_iff`: on real
-  points the norm is `Complex.normSq`, and its kernel is the unit circle.
+* `TauCeti.DeligneTorus.coe_norm_real`, `TauCeti.DeligneTorus.norm_real_eq_one_iff`,
+  `TauCeti.DeligneTorus.isCompact_ker_norm_real`: on real points the norm is `Complex.normSq`, and
+  its kernel is the compact unit circle `U(1)`.
 
 ## References
 
@@ -248,5 +262,55 @@ theorem norm_real_eq_one_iff (f : WithConv (S →ₐ[ℝ] ℝ)) :
     norm ℝ f = 1 ↔ ‖(realPointsMulEquiv f : ℂ)‖ = 1 := by
   rw [norm_apply, ← NormTorus.mem_normOne, coe_realPointsMulEquiv]
   exact NormTorus.mem_normOne_complex_iff
+
+/-- **The real norm-one locus of the Deligne torus is compact** in the point topology. -/
+theorem isCompact_ker_norm_real :
+    IsCompact (((norm ℝ).ker : Subgroup (WithConv (S →ₐ[ℝ] ℝ))) :
+      Set (WithConv (S →ₐ[ℝ] ℝ))) := by
+  have hEmb : Topology.IsEmbedding
+      (fun f : WithConv (S →ₐ[ℝ] ℝ) ↦ (realPointsMulEquiv f : ℂ)) :=
+    Units.isEmbedding_val₀.comp isHomeomorph_realPointsMulEquiv.isEmbedding
+  rw [hEmb.isCompact_iff]
+  have himg : (fun f : WithConv (S →ₐ[ℝ] ℝ) ↦ (realPointsMulEquiv f : ℂ)) ''
+      (((norm ℝ).ker : Subgroup (WithConv (S →ₐ[ℝ] ℝ))) :
+        Set (WithConv (S →ₐ[ℝ] ℝ))) = Metric.sphere 0 1 := by
+    ext z
+    simp only [Set.mem_image, SetLike.mem_coe, MonoidHom.mem_ker, norm_real_eq_one_iff,
+      mem_sphere_zero_iff_norm]
+    exact ⟨by rintro ⟨f, hf, rfl⟩; exact hf, fun hz ↦
+      ⟨realPointsMulEquiv.symm
+          (Units.mk0 z (ne_zero_of_mem_unit_sphere ⟨z, mem_sphere_zero_iff_norm.2 hz⟩)),
+        by simp [hz], by simp⟩⟩
+  rw [himg]
+  exact isCompact_sphere 0 1
+
+/-! ### Coordinate bialgebra homomorphisms -/
+
+/-- **The weight `w = d ∘ inv : 𝔾ₘ → S`**, as a bialgebra homomorphism `S →ₐc[ℝ] ℝ[T;T⁻¹]` of
+coordinate Hopf algebras, composing `WeilRestriction.multiplicativeGroupDiagonal ℝ ℂ` with the
+antipode of `ℝ[T;T⁻¹]`. On points over `R` it induces `TauCeti.DeligneTorus.weight`
+(`TauCeti.DeligneTorus.mapDomain_weightBialgHom`). -/
+noncomputable def weightBialgHom : S →ₐc[ℝ] ℝ[T;T⁻¹] :=
+  (HopfAlgebra.antipodeBialgHom (R := ℝ) (A := ℝ[T;T⁻¹])).comp
+    (WeilRestriction.multiplicativeGroupDiagonal ℝ ℂ)
+
+/-- Precomposing a point of `𝔾ₘ` over `R` with `WeilRestriction.multiplicativeGroupDiagonal ℝ ℂ`
+gives `diagonal R` applied to the corresponding unit of `R`. -/
+@[simp↓]
+theorem mapDomain_multiplicativeGroupDiagonal (x : WithConv (ℝ[T;T⁻¹] →ₐ[ℝ] R)) :
+    BialgHom.mapDomain (WeilRestriction.multiplicativeGroupDiagonal ℝ ℂ) x =
+      diagonal R (MultiplicativeGroup.pointsMulEquiv x) := by
+  apply (pointsMulEquiv R).injective
+  rw [pointsMulEquiv_diagonal]
+  exact WeilRestriction.multiplicativeGroupPoints_mapDomain_multiplicativeGroupDiagonal x
+
+/-- Precomposing a point of `𝔾ₘ` over `R` with `weightBialgHom` gives `weight R` applied to the
+corresponding unit of `R`. -/
+@[simp↓]
+theorem mapDomain_weightBialgHom (x : WithConv (ℝ[T;T⁻¹] →ₐ[ℝ] R)) :
+    BialgHom.mapDomain weightBialgHom x = weight R (MultiplicativeGroup.pointsMulEquiv x) := by
+  rw [weightBialgHom, BialgHom.mapDomain_comp, MonoidHom.comp_apply,
+    BialgHom.mapDomain_antipodeBialgHom, map_inv, mapDomain_multiplicativeGroupDiagonal,
+    weight_eq_inv_diagonal]
 
 end TauCeti.DeligneTorus
