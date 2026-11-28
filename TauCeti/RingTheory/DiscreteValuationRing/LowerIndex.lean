@@ -6,53 +6,34 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.Invariant
-import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 public import TauCeti.RingTheory.Valuation.AddValuation
+import TauCeti.RingTheory.LocalRing.FixedPoints.ResidueField
 
 /-!
-# The lower index of a quotient, over discrete valuation rings
+# Serre's lower-index quotient formula on discrete valuation rings
 
 Let a finite group `G` act faithfully on a discrete valuation ring `B` by `A`-algebra
-automorphisms, with invariants the discrete valuation ring `A`, and let `H` be a normal subgroup.
-Mathlib makes `G ⧸ H` act on the fixed ring `B^H = FixedPoints.subalgebra A B H`, with invariants
-`A`; this is the integer ring of the fixed field `L^H` of a finite Galois extension `L/K`, with
-`Gal(L^H/K) = G ⧸ H`. The ring `B^H` is again a discrete valuation ring
-(`TauCeti.FixedPoints.isDiscreteValuationRing_subalgebra`), on which `G ⧸ H` acts faithfully
-(`Subgroup.faithfulSMul_quotient_subalgebra`). This file proves Serre's formula
-comparing Serre's lower index `i_G(σ) = min_x v_B(σ x - x)` (`TauCeti.IsLocalRing.lowerIndex`) on
-`B` and on `B^H`: when the residue extension of `B` over `A` is separable,
+automorphisms over a local ring `A` with separable residue extension, and let `H` be a normal
+subgroup. Serre's quotient formula compares Serre's lower index `i_G(σ) = min_x v_B(σ x - x)`
+(`TauCeti.IsLocalRing.lowerIndex`) on `B` and on `B^H`:
 
 `e · i_{G/H}(σ H) = ∑_{τ ∈ H} i_G(σ τ)`,
 
 where `e` is the ramification index of `B` over `B^H`. Neither completeness of `A` nor finiteness
-of its residue field is assumed. Separability enters only through generators: `B` and `B^H` are
-then generated over `A` by single elements `x` and `y`, at which the lower indices are read, and
-`σ y - y` is associated in `B` with `(σ f)(x) = ∏_{τ ∈ H} (x - σ τ x)` for the characteristic
-polynomial `f` of `x` under `H`. Without separability the formula fails.
-
-The formula is the input to Herbrand's theorem `(G/H)_{φ(u)} = G_u H / H`, which relates the
-lower numbering of `G ⧸ H` to that of `G` through the Herbrand function `φ` of `H`, and hence to
-the compatibility of the upper numbering with quotients. The counting form records Serre's
-lemma: if `σ` has the largest lower index `j` in its coset `σ H`, then
-`i_G(σ τ) = min (i_H(τ), j)` for `τ ∈ H`, and so `e · i_{G/H}(σ H) = ∑_{k < j} #H_k`. The
-nonarchimedean local field case is
-`TauCeti.LocalFieldsRamification.ramificationIndex_mul_lowerIndex_restrictNormal_eq_sum`.
-
-The comparison of `σ y - y` with `(σ f)(x)` uses only the generators, so it is first proved for
-any tower of discrete valuation rings `C → B` generated over `A` by single elements, with `C` the
-ring of invariants of a finite group `H` acting faithfully on `B` and `σ` acting compatibly on
-`B` and `C`. This monogenic form also gives the nonarchimedean local field case.
+of its residue field is assumed. Adapts the coset formula and its counting form from
+`TauCeti/NumberTheory/LocalField/LowerIndex.lean` and
+`TauCeti/NumberTheory/LocalField/Herbrand/Quotient.lean`.
 
 ## Main results
 
 * `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top`: the quotient
   formula `e · i(σ|_C) = ∑_{τ ∈ H} i(σ τ)` for a tower of monogenic discrete valuation rings.
-* `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_mk_eq_finsum`: **Serre's quotient formula**
-  `e · i_{G/H}(σ H) = ∑_{τ ∈ H} i_G(σ τ)`.
-* `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_mk_eq_sum_card`: its counting form
-  `e · i_{G/H}(σ H) = ∑_{k < j} #H_k` for `σ` of largest lower index `j` in `σ H`.
+* `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_mk_eq_finsum` and
+  `TauCeti.IsLocalRing.ramificationIdx_mul_lowerIndex_mk_eq_sum_card`: **Serre's
+  quotient formula** `e · i_{G/H}(σ H) = ∑_{τ ∈ H} i_G(σ τ)` and its counting form
+  `e · i_{G/H}(σ H) = ∑_{k < j} #H_k` over a general local ring `A`.
 
 ## References
 
@@ -115,55 +96,51 @@ theorem ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top {x : B}
 
 end Monogenic
 
-end IsLocalRing
+section
 
-variable {A B : Type*} [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
-  [CommRing B] [IsDomain B] [IsDiscreteValuationRing B] [Algebra A B]
-  {G : Type*} [Group G] [Finite G] [MulSemiringAction G B] [SMulCommClass G A B]
-  [Algebra.IsInvariant A B G] [FaithfulSMul G B]
-  (H : Subgroup G) [H.Normal]
+attribute [local instance] fixedPointsSubalgebraAlgebra isScalarTower_fixedPoints_subalgebra
+  faithfulSMul_fixedPoints_subalgebra isLocalHom_algebraMap_fixedPoints_subalgebra
+  FixedPoints.moduleFinite_subalgebra_of_isDiscreteValuationRing
+  FixedPoints.moduleFinite_subalgebra_of_le
+  isSeparable_residueField_fixedPoints_subalgebra
+  isSeparable_residueField_fixedPoints_subalgebra_of_le
 
-namespace IsLocalRing
+variable (A B G : Type*) [CommRing A] [IsLocalRing A] [CommRing B] [IsDomain B]
+  [_root_.IsDiscreteValuationRing B] [Algebra A B] [IsLocalHom (algebraMap A B)] [Group G]
+  [Finite G] [MulSemiringAction G B] [SMulCommClass G A B] [FaithfulSMul G B]
+  [Algebra.IsSeparable (ResidueField A) (ResidueField B)]
 
-variable (A B) in
-/-- **Serre's quotient formula for the lower index.** Let a finite group `G` act faithfully on the
-discrete valuation ring `B` by `A`-algebra automorphisms, with invariants the discrete valuation
-ring `A` and separable residue extension, and let `H` be a normal subgroup. Then for every
-`σ : G`, `e · i_{G/H}(σ H) = ∑_{τ ∈ H} i_G(σ τ)`, where `e` is the ramification index of `B` over
-the invariants `B^H` and `i_{G/H}` is the lower index of the action of `G ⧸ H` on `B^H`. Both
-sides are `⊤` for `σ ∈ H`. -/
-theorem ramificationIdx_mul_lowerIndex_mk_eq_finsum [IsLocalHom (algebraMap A B)]
-    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] (σ : G) :
+/-- **Serre's quotient formula for the lower index**: for normal `H ≤ G`,
+`e(B / B^H) · i_{G ⧸ H}(σ H) = ∑ᶠ τ : H, i_G(σ τ)`. -/
+theorem ramificationIdx_mul_lowerIndex_mk_eq_finsum (H : Subgroup G) [H.Normal] (σ : G) :
     ((maximalIdeal B).ramificationIdx (FixedPoints.subalgebra A B H) : ℕ∞) *
         lowerIndex (FixedPoints.subalgebra A B H) (σ : G ⧸ H) =
       ∑ᶠ τ : H, lowerIndex B (σ * τ) := by
-  have := Algebra.IsInvariant.isIntegral A B G
-  have := IsDiscreteValuationRing.faithfulSMul_of_isIntegral (R := A) (S := B)
-  have : IsGaloisGroup G A B := ⟨inferInstance, inferInstance, inferInstance⟩
-  have := IsGaloisGroup.moduleFinite_of_isIntegrallyClosed G A B
-  obtain ⟨x, hx⟩ := IsDiscreteValuationRing.exists_adjoin_eq_top (R := A) (S := B)
-  obtain ⟨y, hy⟩ := FixedPoints.exists_adjoin_eq_top A B H
-  exact ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top hx hy
+  obtain ⟨x, hx⟩ := IsDiscreteValuationRing.exists_adjoin_eq_top
+    (R := FixedPoints.subalgebra A B G) (S := B)
+  obtain ⟨y, hy⟩ := IsDiscreteValuationRing.exists_adjoin_eq_top
+    (R := FixedPoints.subalgebra A B G) (S := FixedPoints.subalgebra A B H)
+  exact ramificationIdx_mul_lowerIndex_eq_finsum_of_adjoin_eq_top (G := G)
+    (G' := G ⧸ H) (H := H) (A := FixedPoints.subalgebra A B G)
+    (C := FixedPoints.subalgebra A B H) (B := B) hx hy
     (fun c ↦ (H.coe_mk_smul σ c).symm) fun τ b ↦ (Subgroup.smul_def τ b).symm
 
-variable (A) in
-/-- **Serre's lemma on the lower index of a quotient**, in counting form. Let a finite group `G`
-act faithfully on the discrete valuation ring `B` by `A`-algebra automorphisms, with invariants the
-discrete valuation ring `A` and separable residue extension, and let `H` be a normal subgroup. If
-`σ` has the largest lower index in its coset `σ H`, and `i_G(σ) = j` is finite, then
-`e · i_{G/H}(σ H) = ∑_{k < j} #H_k`, where `H_k` are the ramification groups of `H` acting on `B`
-and `e` is the ramification index of `B` over `B^H`. -/
-theorem ramificationIdx_mul_lowerIndex_mk_eq_sum_card [IsLocalHom (algebraMap A B)]
-    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] {σ : G} {j : ℕ}
-    (hj : lowerIndex B σ = j) (hσ : ∀ τ ∈ H, lowerIndex B (σ * τ) ≤ lowerIndex B σ) :
+/-- **Serre's lemma on the lower index of a quotient**, in counting form. If `σ` maximizes
+`lowerIndex` in `σ H` with `i_G(σ) = j`, then
+`e(B / B^H) · i_{G ⧸ H}(σ H) = ∑ k ∈ range j, #H_k`. -/
+theorem ramificationIdx_mul_lowerIndex_mk_eq_sum_card (H : Subgroup G) [H.Normal]
+    {σ : G} {j : ℕ} (hj : lowerIndex B σ = j)
+    (hσ : ∀ τ ∈ H, lowerIndex B (σ * τ) ≤ lowerIndex B σ) :
     ((maximalIdeal B).ramificationIdx (FixedPoints.subalgebra A B H) : ℕ∞) *
         lowerIndex (FixedPoints.subalgebra A B H) (σ : G ⧸ H) =
       ∑ k ∈ Finset.range j, (Nat.card (ramificationGroup H B k) : ℕ∞) := by
-  have := Fintype.ofFinite H
-  rw [ramificationIdx_mul_lowerIndex_mk_eq_finsum A B, finsum_eq_sum_of_fintype,
+  let _ := Fintype.ofFinite H
+  rw [ramificationIdx_mul_lowerIndex_mk_eq_finsum A B G H σ, finsum_eq_sum_of_fintype,
     ← sum_min_lowerIndex_natCast (G := H) (S := B) j]
   refine Finset.sum_congr rfl fun τ _ ↦ ?_
   rw [lowerIndex_mul_eq_min_of_le (hσ τ τ.property), lowerIndex_coe, hj]
+
+end
 
 end IsLocalRing
 

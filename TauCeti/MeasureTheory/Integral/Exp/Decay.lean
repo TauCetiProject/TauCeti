@@ -66,6 +66,8 @@ inclusion.
 * `TauCeti.integrable_one_add_abs_rpow_mul_exp_neg_mul_abs`: `(1 + |·|) ^ K * exp (-(a * |·|))`
   is integrable for every `K : ℝ` when `0 < a`.
 * `TauCeti.tendsto_one_add_abs_rpow_mul_exp_neg_mul_abs`: it tends to `0` along `cocompact ℝ`.
+* `TauCeti.ae_norm_neg_le_one_add_abs_rpow_mul_exp_neg_mul_abs`: reflecting `y ↦ -y` preserves
+  the polynomial–exponential decay bound `‖g y‖ ≤ C (1 + |y|) ^ R e^{-α |y|}` almost everywhere.
 * `TauCeti.integrable_exp_neg_mul_norm`: `exp (-(a * ‖·‖))` is integrable on a finite-dimensional
   space when `0 < a`.
 * `TauCeti.memLp_exp_neg_mul_norm`: it lies in every `Lᵖ`.
@@ -593,6 +595,16 @@ theorem tendsto_one_add_abs_rpow_mul_exp_neg_mul_abs (K : ℝ) {a : ℝ} (ha : 0
   simp only [Function.comp_apply]
   rw [mul_left_comm, ← Real.exp_add]
   ring_nf
+
+/-- Reflecting `y ↦ -y` preserves the polynomial–exponential decay bound
+`‖g y‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|)` almost everywhere on `ℝ`. -/
+theorem ae_norm_neg_le_one_add_abs_rpow_mul_exp_neg_mul_abs {E : Type*}
+    [SeminormedAddCommGroup E] {g : ℝ → E} {C R α : ℝ}
+    (hg : ∀ᵐ y : ℝ, ‖g y‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|)) :
+    ∀ᵐ y : ℝ, ‖g (-y)‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|) := by
+  have hqmp := (Measure.measurePreserving_neg (volume : Measure ℝ)).quasiMeasurePreserving
+  filter_upwards [hqmp.tendsto_ae.eventually hg] with y hy
+  simpa only [abs_neg] using hy
 
 /-- At a nonnegative rate the integrand is bounded below by a positive constant on `(c, ∞)`, a set
 of infinite measure, so it is not integrable there. -/

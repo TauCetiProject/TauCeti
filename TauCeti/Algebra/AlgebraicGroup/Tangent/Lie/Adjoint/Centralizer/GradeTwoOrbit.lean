@@ -62,13 +62,14 @@ subalgebra, equal weighted Dynkin diagrams force the neutral elements to coincid
   `IsSl2Triple.isOpen_range_projectiveOrbitMap_eigenspace_two_identityComponent`, and
   `IsSl2Triple.exists_mem_quotientPointsSubgroup_identityComponent_basePointsRepresentation_eq`:
   specializations to `C_G(h)` and to the connected centralizer `C_G(h)°`.
-* `IsSl2Triple.range_projectiveOrbitMap_adjoint_eq`: two `sl₂` triples sharing `h` have the same
-  topological adjoint `G`-orbit image in `P(𝔤 × k)`, including nonclosed points.
+* `IsSl2Triple.range_projectiveOrbitMap_adjoint_eq` and `IsSl2Triple.vectorOrbit_mk_eq`: two `sl₂`
+  triples sharing `h` have nilpositive elements in the same rational adjoint `G`-orbit and with the
+  same topological adjoint `G`-orbit image in `P(𝔤 × k)`, including nonclosed points.
 * `IsSl2Triple.exists_mem_quotientPointsSubgroup_identityComponent_of_weightedDynkinDiagram_eq`
   and `IsSl2Triple.range_projectiveOrbitMap_adjoint_eq_of_weightedDynkinDiagram_eq`: triples whose
   neutral elements are dominant in the same Weyl chamber and have equal weighted Dynkin diagrams
-  share their neutral element, hence are conjugate under `C_G(h₁)°(k)` and have the same
-  topological adjoint `G`-orbit image in `P(𝔤 × k)`, including nonclosed points.
+  share their neutral element, hence are conjugate under `C_G(h₁)°(k)` and have nilpositive elements
+  with the same topological adjoint `G`-orbit image in `P(𝔤 × k)`, including nonclosed points.
 
 ## References
 
@@ -288,6 +289,15 @@ theorem range_projectiveOrbitMap_adjoint_eq (t : IsSl2Triple h e f) (t' : IsSl2T
   obtain ⟨g, -, -, rfl, -⟩ :=
     t.exists_mem_quotientPointsSubgroup_centralizerHopfIdeal_basePointsRepresentation_eq t'
   exact (Comodule.range_projectiveOrbitMap_mk_one_basePointsRepresentation g e).symm
+
+/-- **Two `sl₂` triples sharing `h` have nilpositive elements in the same rational adjoint
+`G`-orbit.** -/
+theorem vectorOrbit_mk_eq (t : IsSl2Triple h e f) (t' : IsSl2Triple h e' f') :
+    Comodule.VectorOrbit.mk (k := k) (H := H) e =
+      Comodule.VectorOrbit.mk (k := k) (H := H) e' := by
+  obtain ⟨g, -, -, rfl, -⟩ :=
+    t.exists_mem_quotientPointsSubgroup_centralizerHopfIdeal_basePointsRepresentation_eq t'
+  exact (Comodule.VectorOrbit.mk_basePointsRepresentation g e).symm
 
 end Subgroup
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Parabolic.Basic
+public import TauCeti.Algebra.TypeAHeckeAlgebra.Reverse
 public import TauCeti.Algebra.Ring.QuadraticPow
 
 /-!
@@ -19,7 +20,9 @@ parabolic sums used to construct Hecke permutation modules and Specht modules.
 
 The identity coefficient is always `1`, even when the parameter is a root of unity. The sum
 is a quasi-idempotent with scalar `∑ w ∈ W_J, a ^ (2 * length w)`. Dividing by this scalar
-produces an idempotent only when it is a unit; no division is made in the definition.
+produces an idempotent only when it is a unit; no division is made in the definition. Since `W_J`
+is closed under inversion and `length w⁻¹ = length w`, the sum is fixed by the reversal
+anti-involution `T_w ↦ T_(w⁻¹)`.
 Only the parabolic subgroup being summed over needs to be finite.
 
 ## References
@@ -120,6 +123,16 @@ theorem linearIndependent_Tw_mul_parabolicEigenSum (a : R) :
       (LinearMap.ker_eq_bot.mpr hF) using 1
   ext d
   simp [F, f, c]
+
+/-- A parabolic weighted sum is fixed by the reversal anti-involution `T_w ↦ T_(w⁻¹)`, since the
+parabolic subgroup is closed under inversion and inversion preserves length. -/
+@[simp]
+theorem reverse_parabolicEigenSum (a : R) :
+    reverse q (parabolicEigenSum (q := q) cs J a) = parabolicEigenSum cs J a := by
+  let _ := Fintype.ofFinite (cs.parabolic J)
+  rw [parabolicEigenSum_eq_sum, map_sum]
+  refine Fintype.sum_equiv (Equiv.inv (cs.parabolic J)) _ _ fun w ↦ ?_
+  rw [map_smul, reverse_Tw, Equiv.inv_apply, Subgroup.coe_inv, cs.length_inv]
 
 /-- A parabolic weighted sum is nonzero over every nontrivial coefficient ring. -/
 theorem parabolicEigenSum_ne_zero [Nontrivial R] (a : R) :

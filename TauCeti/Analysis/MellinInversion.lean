@@ -1,10 +1,11 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: Claude, The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.MellinInversion
 public import Mathlib.Analysis.Asymptotics.Theta
 public import Mathlib.RingTheory.Polynomial.Pochhammer
@@ -12,16 +13,21 @@ public import TauCeti.Analysis.Contour.Residue.Basic
 import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.Polynomial.Basic
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Topology.Algebra.Polynomial
-import TauCeti.Analysis.Contour.Residue.VerticalLineShift
 import TauCeti.Analysis.Complex.NormSq
+import TauCeti.Analysis.Contour.Residue.VerticalLineShift
 import TauCeti.Analysis.MellinTransform
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.SpecialFunctions.Pochhammer
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
-# Norm bounds, contour shifts, and the first-order cutoff for Mellin inversion
+# Norm bounds, contour shifts, slit-plane holomorphy, and the first-order Perron cutoff
 
 Mathlib's `mellinInv σ f y` is `(1 / 2π) ∫ y^{-(σ + i t)} • f(σ + i t) dt`. For `y > 0`, the factor
 `t ↦ y^{-(σ + i t)}` is continuous of constant norm `y^{-σ}`. Hence the integrand is integrable
@@ -52,6 +58,15 @@ file, which credits Lawrence Wu for its uniform little-o arguments. Here the den
 Mathlib's Pochhammer polynomial and its leading-monomial asymptotics. The profile supplies the
 horizontal-tail estimates for Landau's iterated Perron formula.
 
+When the vertical profile `g y = f(σ + i y)` satisfies an exponential decay bound
+`‖g y‖ ≤ C (1 + |y|) ^ R e^{-α |y|}` almost everywhere — such as the `α = π` or `α = 2π` decay
+produced by Stirling's formula for balanced ratios of Gamma factors in Mellin–Barnes integrals —
+the principal power `w ^ (±(σ + i y))` extends the integral from `(0, ∞)` to the sector
+`{w : ℂ | w ∈ Complex.slitPlane ∧ |arg w| < α}` (which equals all of `Complex.slitPlane` when
+`π ≤ α`): at each point `w₀` of that sector, `|arg w|` stays strictly below `α` on a neighborhood
+in `slitPlane`, leaving positive exponential margin for integrability and differentiation under
+the integral sign.
+
 ## Main results
 
 * `Complex.VerticalIntegrable.integrable_cpow_smul`: the integrand of `mellinInv σ f y` is
@@ -75,6 +90,16 @@ horizontal-tail estimates for Landau's iterated Perron formula.
   full-line L¹ bound for all-order Perron kernels, with separate first/last-factor margins.
 * `TauCeti.isTheta_cpow_div_ascPochhammer`: the all-order Perron kernel decays as
   `|t|⁻(j+1)` uniformly on every bounded set of real parts.
+* `TauCeti.integrable_cpow_smul_of_norm_le_exp_neg_mul_abs`,
+  `TauCeti.integrable_cpow_neg_smul_of_norm_le_exp_neg_mul_abs`: integrability on `ℝ` of
+  `y ↦ w ^ (±(σ + i y)) • g y` whenever `|arg w| < α` and
+  `‖g y‖ = O((1 + |y|) ^ R e^{-α |y|})` almost everywhere.
+* `TauCeti.hasDerivAt_integral_cpow_smul`, `TauCeti.hasDerivAt_integral_cpow_neg_smul`:
+  differentiation under the integral sign at any `w₀ ∈ Complex.slitPlane` with `|arg w₀| < α`.
+* `TauCeti.differentiableOn_integral_cpow_smul`, `TauCeti.analyticOnNhd_integral_cpow_smul`,
+  `TauCeti.differentiableOn_integral_cpow_neg_smul`,
+  `TauCeti.analyticOnNhd_integral_cpow_neg_smul`: complex differentiability and holomorphy on
+  `{w : ℂ | w ∈ Complex.slitPlane ∧ |arg w| < α}`.
 
 ## References
 
@@ -367,6 +392,172 @@ theorem isTheta_cpow_div_ascPochhammer (j : ℕ) {x : ℝ} (hx : 0 < x)
           tendsto_fst
   exact (hn.div (hp.trans (hs.pow (j + 1)))).mono
     (Filter.prod_mono (Filter.principal_mono.mpr subset_closure) le_rfl)
+
+private lemma neg_contour_eq (σ y : ℝ) :
+    ((-σ : ℝ) : ℂ) + (-y : ℝ) * I = -((σ : ℂ) + y * I) := by
+  push_cast; ring
+
+/-- Reflecting the integration variable `y ↦ -y` preserves integrability along a vertical
+contour while matching `-(σ + i y)` with `(-σ) + i (-y)`. -/
+theorem integrable_neg_add_mul_I_iff {E : Type*} [NormedAddCommGroup E]
+    (F : ℂ → ℝ → E) (σ : ℝ) :
+    Integrable (fun y : ℝ ↦ F (-((σ : ℂ) + y * I)) y) ↔
+      Integrable (fun y : ℝ ↦ F (((-σ : ℝ) : ℂ) + y * I) (-y)) := by
+  have hneg (y : ℝ) : -((σ : ℂ) + (-y : ℝ) * I) = ((-σ : ℝ) : ℂ) + y * I := by push_cast; ring
+  exact ⟨fun h ↦ h.comp_neg.congr (Eventually.of_forall fun y ↦ by simp only [hneg]),
+    fun h ↦ h.comp_neg.congr (Eventually.of_forall fun y ↦ by simp only [neg_contour_eq, neg_neg])⟩
+
+/-- Reflecting the integration variable `y ↦ -y` in a vertical contour integral maps
+`-(σ + i y)` to `(-σ) + i y`: `∫ y, F (-(σ + i y)) y = ∫ y, F ((-σ) + i y) (-y)`. -/
+theorem integral_neg_add_mul_I {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (F : ℂ → ℝ → E) (σ : ℝ) :
+    ∫ y : ℝ, F (-((σ : ℂ) + y * I)) y = ∫ y : ℝ, F (((-σ : ℝ) : ℂ) + y * I) (-y) := by
+  conv_rhs => rw [← integral_neg_eq_self]
+  exact integral_congr_ae (Eventually.of_forall fun y ↦ by simp only [neg_contour_eq, neg_neg])
+
+/-- If `g : ℝ → E` is strongly measurable and satisfies
+`‖g y‖ ≤ C (1 + |y|) ^ R e^{-α |y|}` almost everywhere, then `y ↦ w ^ (σ + i y) • g y` is
+integrable on `ℝ` for every `σ : ℝ` and every `w : ℂ` with `|arg w| < α`. -/
+theorem integrable_cpow_smul_of_norm_le_exp_neg_mul_abs {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {g : ℝ → E} {α : ℝ} (hg_meas : AEStronglyMeasurable g)
+    (hg_bound : ∃ C R : ℝ, ∀ᵐ y : ℝ, ‖g y‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|))
+    (σ : ℝ) {w : ℂ} (harg : |w.arg| < α) :
+    Integrable fun y : ℝ ↦ w ^ ((σ : ℂ) + y * I) • g y := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · refine (integrable_zero ℝ E volume).congr ?_
+    have hne : ∀ᵐ y : ℝ, y ≠ 0 := by rw [ae_iff]; simp
+    filter_upwards [hne] with y hy
+    have hs : (σ : ℂ) + y * I ≠ 0 := fun h ↦ hy (by simpa using congrArg Complex.im h)
+    simp [Complex.zero_cpow hs]
+  obtain ⟨C, R, hg⟩ := hg_bound
+  set δ : ℝ := α - |w.arg|
+  have hδ : 0 < δ := sub_pos.2 harg
+  refine ((integrable_one_add_abs_rpow_mul_exp_neg_mul_abs R hδ).const_mul
+    (‖w‖ ^ σ * C)).mono'
+    ((Continuous.const_cpow (by fun_prop) (Or.inl hw)).aestronglyMeasurable.smul hg_meas) ?_
+  filter_upwards [hg] with y hgy
+  have hpow :
+      ‖w ^ ((σ : ℂ) + y * I)‖ ≤ ‖w‖ ^ σ * (1 + |y|) ^ (0 : ℝ) * Real.exp (|w.arg| * |y|) := by
+    simpa using Complex.norm_cpow_le_rpow_mul_exp_abs_arg_mul_abs_im w ((σ : ℂ) + y * I)
+  have hrate : (|w.arg| + -α) * |y| = -(δ * |y|) := by dsimp [δ]; ring
+  rw [norm_smul]
+  refine (mul_le_mul_one_add_abs_rpow_mul_exp (norm_nonneg _) (norm_nonneg _) hpow hgy).trans_eq ?_
+  rw [zero_add, hrate, mul_assoc]
+
+/-- Negated-exponent companion to `TauCeti.integrable_cpow_smul_of_norm_le_exp_neg_mul_abs`:
+`y ↦ w ^ (-(σ + i y)) • g y` is integrable on `ℝ` whenever `|arg w| < α`. -/
+theorem integrable_cpow_neg_smul_of_norm_le_exp_neg_mul_abs {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {g : ℝ → E} {α : ℝ} (hg_meas : AEStronglyMeasurable g)
+    (hg_bound : ∃ C R : ℝ, ∀ᵐ y : ℝ, ‖g y‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|))
+    (σ : ℝ) {w : ℂ} (harg : |w.arg| < α) :
+    Integrable fun y : ℝ ↦ w ^ (-((σ : ℂ) + y * I)) • g y := by
+  obtain ⟨C, R, hg⟩ := hg_bound
+  exact (integrable_neg_add_mul_I_iff (fun s y ↦ w ^ s • g y) σ).mpr
+    (integrable_cpow_smul_of_norm_le_exp_neg_mul_abs
+      (hg_meas.comp_quasiMeasurePreserving
+        (Measure.measurePreserving_neg (volume : Measure ℝ)).quasiMeasurePreserving)
+      ⟨C, R, ae_norm_neg_le_one_add_abs_rpow_mul_exp_neg_mul_abs hg⟩ (-σ) harg)
+
+/-- **Differentiation under a Mellin–Barnes integral.** If `g : ℝ → E` is strongly measurable and
+satisfies `‖g y‖ ≤ C (1 + |y|) ^ R e^{-α |y|}` almost everywhere, then
+`w ↦ ∫ y : ℝ, w ^ (σ + i y) • g y` has complex derivative
+`∫ y : ℝ, ((σ + i y) * w₀ ^ (σ + i y - 1)) • g y` at every `w₀ ∈ Complex.slitPlane` with
+`|arg w₀| < α`. -/
+theorem hasDerivAt_integral_cpow_smul {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {g : ℝ → E} {α : ℝ} (hg_meas : AEStronglyMeasurable g)
+    (hg_bound : ∃ C R : ℝ, ∀ᵐ y : ℝ, ‖g y‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|))
+    (σ : ℝ) {w₀ : ℂ} (hw₀ : w₀ ∈ slitPlane) (harg : |w₀.arg| < α) :
+    HasDerivAt (fun w : ℂ ↦ ∫ y : ℝ, w ^ ((σ : ℂ) + y * I) • g y)
+      (∫ y : ℝ, (((σ : ℂ) + y * I) * w₀ ^ ((σ : ℂ) + y * I - 1)) • g y) w₀ := by
+  obtain ⟨C, R, hg⟩ := hg_bound
+  obtain ⟨U, hU, r₀, r₁, α', hr₀, hα', hU_bounds⟩ :=
+    Complex.exists_mem_nhds_slitPlane_norm_and_arg_lt hw₀ harg
+  set δ : ℝ := α - α'
+  have hδ : 0 < δ := sub_pos.2 hα'
+  set M₁ : ℝ := max (r₀ ^ (σ - 1)) (r₁ ^ (σ - 1))
+  set S : ℝ := max |σ| 1
+  have hF_meas : ∀ᶠ w in 𝓝 w₀, AEStronglyMeasurable (fun y : ℝ ↦ w ^ ((σ : ℂ) + y * I) • g y) :=
+    Filter.eventually_of_mem hU fun w hw ↦
+      (Continuous.const_cpow (by fun_prop)
+        (Or.inl (slitPlane_ne_zero (hU_bounds w hw).1))).aestronglyMeasurable.smul hg_meas
+  have hF'_meas : AEStronglyMeasurable
+      (fun y : ℝ ↦ (((σ : ℂ) + y * I) * w₀ ^ ((σ : ℂ) + y * I - 1)) • g y) :=
+    ((Continuous.mul (by fun_prop) (Continuous.const_cpow (by fun_prop)
+      (Or.inl (slitPlane_ne_zero hw₀)))).aestronglyMeasurable).smul hg_meas
+  refine (hasDerivAt_integral_of_dominated_loc_of_deriv_le
+    (F := fun (w : ℂ) (y : ℝ) ↦ w ^ ((σ : ℂ) + y * I) • g y)
+    (F' := fun (w : ℂ) (y : ℝ) ↦ (((σ : ℂ) + y * I) * w ^ ((σ : ℂ) + y * I - 1)) • g y)
+    (bound := fun y : ℝ ↦ S * M₁ * C * ((1 + |y|) ^ (R + 1) * Real.exp (-(δ * |y|))))
+    hU hF_meas (integrable_cpow_smul_of_norm_le_exp_neg_mul_abs hg_meas ⟨C, R, hg⟩ σ harg)
+    hF'_meas ?_ ((integrable_one_add_abs_rpow_mul_exp_neg_mul_abs (R + 1) hδ).const_mul _) ?_).2
+  · filter_upwards [hg] with y hgy w hw
+    obtain ⟨_, hw_lo, hw_hi, hw_arg⟩ := hU_bounds w hw
+    exact Complex.norm_cpow_deriv_smul_le hr₀ hw_lo hw_hi hw_arg hgy
+  · exact Eventually.of_forall fun y w hw ↦
+      (Complex.hasStrictDerivAt_cpow_const (hU_bounds w hw).1).hasDerivAt.smul_const (g y)
+
+/-- Negated-exponent companion to `TauCeti.hasDerivAt_integral_cpow_smul`:
+`w ↦ ∫ y : ℝ, w ^ (-(σ + i y)) • g y` has complex derivative
+`∫ y : ℝ, (-(σ + i y) * w₀ ^ (-(σ + i y) - 1)) • g y` at every `w₀ ∈ Complex.slitPlane` with
+`|arg w₀| < α`. -/
+theorem hasDerivAt_integral_cpow_neg_smul {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {g : ℝ → E} {α : ℝ} (hg_meas : AEStronglyMeasurable g)
+    (hg_bound : ∃ C R : ℝ, ∀ᵐ y : ℝ, ‖g y‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|))
+    (σ : ℝ) {w₀ : ℂ} (hw₀ : w₀ ∈ slitPlane) (harg : |w₀.arg| < α) :
+    HasDerivAt (fun w : ℂ ↦ ∫ y : ℝ, w ^ (-((σ : ℂ) + y * I)) • g y)
+      (∫ y : ℝ, (-((σ : ℂ) + y * I) * w₀ ^ (-((σ : ℂ) + y * I) - 1)) • g y) w₀ := by
+  obtain ⟨C, R, hg⟩ := hg_bound
+  have h := hasDerivAt_integral_cpow_smul
+    (hg_meas.comp_quasiMeasurePreserving
+      (Measure.measurePreserving_neg (volume : Measure ℝ)).quasiMeasurePreserving)
+    ⟨C, R, ae_norm_neg_le_one_add_abs_rpow_mul_exp_neg_mul_abs hg⟩ (-σ) hw₀ harg
+  refine (h.congr_of_eventuallyEq (Eventually.of_forall fun w ↦ ?_)).congr_deriv ?_
+  · exact integral_neg_add_mul_I (fun s y ↦ w ^ s • g y) σ
+  · exact (integral_neg_add_mul_I (fun s y ↦ (s * w₀ ^ (s - 1)) • g y) σ).symm
+
+/-- If `g : ℝ → E` is strongly measurable and satisfies
+`‖g y‖ ≤ C (1 + |y|) ^ R e^{-α |y|}` almost everywhere, then `w ↦ ∫ y : ℝ, w ^ (σ + i y) • g y`
+is complex differentiable on `{w : ℂ | w ∈ Complex.slitPlane ∧ |arg w| < α}`. -/
+theorem differentiableOn_integral_cpow_smul {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {g : ℝ → E} {α : ℝ} (hg_meas : AEStronglyMeasurable g)
+    (hg_bound : ∃ C R : ℝ, ∀ᵐ y : ℝ, ‖g y‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|)) (σ : ℝ) :
+    DifferentiableOn ℂ (fun w : ℂ ↦ ∫ y : ℝ, w ^ ((σ : ℂ) + y * I) • g y)
+      {w : ℂ | w ∈ slitPlane ∧ |w.arg| < α} :=
+  fun _ hw ↦ (hasDerivAt_integral_cpow_smul hg_meas hg_bound σ
+    hw.1 hw.2).differentiableAt.differentiableWithinAt
+
+/-- If `g : ℝ → E` is strongly measurable and satisfies
+`‖g y‖ ≤ C (1 + |y|) ^ R e^{-α |y|}` almost everywhere, then `w ↦ ∫ y : ℝ, w ^ (σ + i y) • g y`
+is holomorphic on `{w : ℂ | w ∈ Complex.slitPlane ∧ |arg w| < α}`. -/
+theorem analyticOnNhd_integral_cpow_smul {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [CompleteSpace E] {g : ℝ → E} {α : ℝ} (hg_meas : AEStronglyMeasurable g)
+    (hg_bound : ∃ C R : ℝ, ∀ᵐ y : ℝ, ‖g y‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|)) (σ : ℝ) :
+    AnalyticOnNhd ℂ (fun w : ℂ ↦ ∫ y : ℝ, w ^ ((σ : ℂ) + y * I) • g y)
+      {w : ℂ | w ∈ slitPlane ∧ |w.arg| < α} :=
+  (differentiableOn_integral_cpow_smul hg_meas hg_bound σ).analyticOnNhd
+    (isOpen_slitPlane_inter_abs_arg_lt α)
+
+/-- Negated-exponent companion to `TauCeti.differentiableOn_integral_cpow_smul`:
+`w ↦ ∫ y : ℝ, w ^ (-(σ + i y)) • g y` is complex differentiable on
+`{w : ℂ | w ∈ Complex.slitPlane ∧ |arg w| < α}`. -/
+theorem differentiableOn_integral_cpow_neg_smul {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {g : ℝ → E} {α : ℝ} (hg_meas : AEStronglyMeasurable g)
+    (hg_bound : ∃ C R : ℝ, ∀ᵐ y : ℝ, ‖g y‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|)) (σ : ℝ) :
+    DifferentiableOn ℂ (fun w : ℂ ↦ ∫ y : ℝ, w ^ (-((σ : ℂ) + y * I)) • g y)
+      {w : ℂ | w ∈ slitPlane ∧ |w.arg| < α} :=
+  fun _ hw ↦ (hasDerivAt_integral_cpow_neg_smul hg_meas hg_bound σ
+    hw.1 hw.2).differentiableAt.differentiableWithinAt
+
+/-- Negated-exponent companion to `TauCeti.analyticOnNhd_integral_cpow_smul`:
+`w ↦ ∫ y : ℝ, w ^ (-(σ + i y)) • g y` is holomorphic on
+`{w : ℂ | w ∈ Complex.slitPlane ∧ |arg w| < α}`. -/
+theorem analyticOnNhd_integral_cpow_neg_smul {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [CompleteSpace E] {g : ℝ → E} {α : ℝ} (hg_meas : AEStronglyMeasurable g)
+    (hg_bound : ∃ C R : ℝ, ∀ᵐ y : ℝ, ‖g y‖ ≤ C * (1 + |y|) ^ R * Real.exp (-α * |y|)) (σ : ℝ) :
+    AnalyticOnNhd ℂ (fun w : ℂ ↦ ∫ y : ℝ, w ^ (-((σ : ℂ) + y * I)) • g y)
+      {w : ℂ | w ∈ slitPlane ∧ |w.arg| < α} :=
+  (differentiableOn_integral_cpow_neg_smul hg_meas hg_bound σ).analyticOnNhd
+    (isOpen_slitPlane_inter_abs_arg_lt α)
 
 section RiemannLebesgue
 

@@ -50,10 +50,12 @@ for set and probability integrals.
 * `TauCeti.MeasureTheory.norm_integral_le_of_eLpNorm_one_le` bounds the norm of an integral by any
   real bound on the `L¹` norm of the integrand.
 
-## Finite averages
+## Finite averages and weighted double sums
 
 * `MeasureTheory.integrable_expect` and `MeasureTheory.integral_expect`: a finite average of
   integrable functions is integrable, and its integral is the average of the integrals.
+* `MeasureTheory.integral_sum_smul_sum` and `MeasureTheory.integral_sum_mul_sum`: commute Bochner
+  integration with a weighted finite sum of finite sums of integrable functions.
 
 ## Counting measures of multisets
 
@@ -444,6 +446,30 @@ theorem _root_.MeasureTheory.integral_expect (hf : ∀ i ∈ s, Integrable (f i)
     integral_finsetSum s hf]
 
 end Expect
+
+/-- Commute Bochner integration with a weighted finite sum of finite sums of integrable
+functions. -/
+theorem _root_.MeasureTheory.integral_sum_smul_sum {α ι 𝕜 E : Type*} {κ : ι → Type*}
+    [MeasurableSpace α] {μ : Measure α} [NormedRing 𝕜] [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [SMulCommClass ℝ 𝕜 E]
+    (s : Finset ι) (t : ∀ i, Finset (κ i)) (w : ι → 𝕜) (g : ∀ i, κ i → α → E)
+    (hg : ∀ i ∈ s, ∀ k ∈ t i, Integrable (g i k) μ) :
+    ∫ y, (∑ i ∈ s, w i • ∑ k ∈ t i, g i k y) ∂μ =
+      ∑ i ∈ s, w i • ∑ k ∈ t i, ∫ y, g i k y ∂μ := by
+  rw [integral_finsetSum (f := fun i y ↦ w i • ∑ k ∈ t i, g i k y) s fun i hi ↦
+    (integrable_finsetSum (t i) fun k hk ↦ hg i hi k hk).smul _]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [(integrable_finsetSum (t i) fun k hk ↦ hg i hi k hk).integral_smul,
+    integral_finsetSum (t i) fun k hk ↦ hg i hi k hk]
+
+/-- Scalar-multiplication form of `MeasureTheory.integral_sum_smul_sum` over `[RCLike 𝕜]`. -/
+theorem _root_.MeasureTheory.integral_sum_mul_sum {α ι 𝕜 : Type*} {κ : ι → Type*}
+    [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
+    (s : Finset ι) (t : ∀ i, Finset (κ i)) (w : ι → 𝕜) (g : ∀ i, κ i → α → 𝕜)
+    (hg : ∀ i ∈ s, ∀ k ∈ t i, Integrable (g i k) μ) :
+    ∫ y, (∑ i ∈ s, w i * ∑ k ∈ t i, g i k y) ∂μ =
+      ∑ i ∈ s, w i * ∑ k ∈ t i, ∫ y, g i k y ∂μ :=
+  _root_.MeasureTheory.integral_sum_smul_sum s t w g hg
 
 /-- The negative exponential of an almost-everywhere nonnegative, almost-everywhere measurable
 function is integrable on a finite measure space. -/
