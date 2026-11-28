@@ -172,7 +172,8 @@ theorem unobservableSubspace_eq_iInf_fin_card (A : Matrix n n R) (C : Matrix p n
 /-- The kernel of `(ctrbMatrix Aᵀ Cᵀ)ᵀ` is the unobservable subspace of `(A, C)`. -/
 @[simp]
 theorem ker_mulVecLin_transpose_ctrbMatrix (A : Matrix n n R) (C : Matrix p n R) :
-    LinearMap.ker (ctrbMatrix Aᵀ Cᵀ)ᵀ.mulVecLin = unobservableSubspace A C := by
+    LinearMap.ker (ctrbMatrix Aᵀ Cᵀ).vecMulLinear = unobservableSubspace A C := by
+  rw [← mulVecLin_transpose]
   rw [unobservableSubspace_eq_iInf_fin_card]
   ext x
   simp only [LinearMap.mem_ker, mulVecLin_apply, Submodule.mem_iInf, funext_iff, Prod.forall,
@@ -190,7 +191,8 @@ theorem isObservable_iff_injective :
     IsObservable A C ↔
       Function.Injective fun x : n → R => fun k : Fin (Fintype.card n) =>
         (C * A ^ (k : ℕ)) *ᵥ x := by
-  rw [isObservable_iff, ← ker_mulVecLin_transpose_ctrbMatrix, LinearMap.ker_eq_bot]
+  rw [isObservable_iff, ← ker_mulVecLin_transpose_ctrbMatrix, LinearMap.ker_eq_bot,
+    ← mulVecLin_transpose]
   have hcomp :
       (fun x : n → R => fun k : Fin (Fintype.card n) => (C * A ^ (k : ℕ)) *ᵥ x) =
         Equiv.curry (Fin (Fintype.card n)) p R ∘ (ctrbMatrix Aᵀ Cᵀ)ᵀ.mulVecLin := by
@@ -209,8 +211,8 @@ variable [Field K] [Fintype p] (A : Matrix n n K) (C : Matrix p n K)
 theorem isObservable_iff_isControllable_transpose :
     IsObservable A C ↔ IsControllable Aᵀ Cᵀ := by
   have h := (ctrbMatrix Aᵀ Cᵀ)ᵀ.mulVecLin.finrank_range_add_finrank_ker
-  rw [finrank_range_mulVecLin, rank_transpose, ker_mulVecLin_transpose_ctrbMatrix,
-    finrank_fintype_fun_eq_card] at h
+  rw [finrank_range_mulVecLin, rank_transpose, mulVecLin_transpose,
+    ker_mulVecLin_transpose_ctrbMatrix, finrank_fintype_fun_eq_card] at h
   rw [isObservable_iff, isControllable_iff_rank_ctrbMatrix, ← Submodule.finrank_eq_zero]
   omega
 

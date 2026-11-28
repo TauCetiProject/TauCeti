@@ -92,8 +92,8 @@ omit [Fintype m] in
 @[simp]
 theorem transpose_ctrbMatrix_apply {p : Type*} (A : Matrix n n R) (C : Matrix p n R)
     (k : Fin (Fintype.card n)) (i : p) (j : n) :
-    (ctrbMatrix Aᵀ Cᵀ)ᵀ (k, i) j = (C * A ^ (k : ℕ)) i j := by
-  simp [ctrbMatrix_apply, ← transpose_pow, ← transpose_mul]
+    (Aᵀ ^ (k : ℕ) * Cᵀ) j i = (C * A ^ (k : ℕ)) i j := by
+  simp [← transpose_pow, ← transpose_mul]
 
 omit [Fintype m] in
 /-- Application of the transpose of the controllability matrix of `(Aᵀ, Cᵀ)` agrees with the
@@ -102,7 +102,7 @@ free output `(C * A ^ k) *ᵥ x`. -/
 theorem transpose_ctrbMatrix_mulVec {p : Type*} (A : Matrix n n R) (C : Matrix p n R)
     (x : n → R) (k : Fin (Fintype.card n)) (i : p) :
     ((ctrbMatrix Aᵀ Cᵀ)ᵀ *ᵥ x) (k, i) = ((C * A ^ (k : ℕ)) *ᵥ x) i := by
-  simp only [mulVec, dotProduct, transpose_ctrbMatrix_apply]
+  simp only [mulVec, dotProduct, transpose_apply, ctrbMatrix_apply, transpose_ctrbMatrix_apply]
 
 variable {A B}
 
