@@ -287,8 +287,8 @@ private theorem scalarModel_filtMean_zero (ys : ℕ → EuclideanSpace ℝ (Fin 
 
 example (ys : ℕ → EuclideanSpace ℝ (Fin 1)) :
     scalarModel.predMean ys 1 = (2 : ℝ)⁻¹ • ys 0 := by
-  rw [predMean_succ, scalarModel_filtMean_zero, show scalarModel.A 0 = 1 from rfl,
-    toLpLin_one, LinearMap.id_apply]
+  rw [predMean_succ, scalarModel_filtMean_zero]
+  simp [scalarModel]
 
 example (ys : ℕ → EuclideanSpace ℝ (Fin 1)) :
     scalarModel.filtMean ys 1 = (5 : ℝ)⁻¹ • (ys 0 + (3 : ℝ) • ys 1) := by
