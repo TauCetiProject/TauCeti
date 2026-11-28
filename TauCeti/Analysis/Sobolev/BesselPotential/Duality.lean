@@ -37,7 +37,7 @@ symbol (`SchwartzMap.integral_bilin_fourierMultiplierCLM_eq`), the Bessel potent
 symbol `⟨ξ⟩ ^ s`, so they are symmetric, and `J^s` and `J^{-s}` cancel. For scalar test functions
 it is the distributional action `u ψ` of `u`.
 
-For `1 < p < ∞` and a complex Hilbert space `F`, the pairing of `H^{s,p}(E, F)` with
+For `1 ≤ p < ∞` and a complex Hilbert space `F`, the pairing of `H^{s,p}(E, F)` with
 `H^{-s,q}(E, F⋆)`, `F⋆ = StrongDual ℂ F`, identifies `H^{-s,q}(E, F⋆)` isometrically with the
 continuous dual of `H^{s,p}(E, F)`. This is the duality between positive and negative order Sobolev
 spaces used to extend operators to distributions by transposition. The pairing is bilinear, not
@@ -64,7 +64,7 @@ values in a complex Hilbert space, the inner product of the `L²` parts of `a �
   scalar Schwartz function `ψ` by `u ψ = ⟨u, ψ⟩`.
 * `BesselPotentialSpace.norm_toDistr_apply_le`: hence `‖u ψ‖ ≤ ‖u‖_{H^{s,p}} ‖ψ‖_{H^{-s,q}}`.
 * `BesselPotentialSpace.dualEquiv`: the isometric isomorphism
-  `H^{-s,q}(E, F⋆) ≃ₗᵢ[ℂ] (H^{s,p}(E, F))⋆` given by the density pairing, for `1 < p < ∞`, with
+  `H^{-s,q}(E, F⋆) ≃ₗᵢ[ℂ] (H^{s,p}(E, F))⋆` given by the density pairing, for `1 ≤ p < ∞`, with
   `BesselPotentialSpace.dualEquiv_apply_eq_integral` and its Schwartz-function form
   `BesselPotentialSpace.dualEquiv_toBesselPotentialSpaceCLM`.
 * `TemperedDistribution.memSobolev_neg_of_norm_le`: a scalar tempered distribution `u` with
@@ -233,31 +233,31 @@ variable {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate
 
 /-- The density pairing with `w ∈ H^{-s,q}(E, F⋆)` is the functional on `Lᵖ(E, F)` represented by
 the `L^q` part of `w`, applied to the `Lᵖ` part. -/
-private theorem flip_besselPotentialPairing_eq_comp (hp : 1 < p) (hp_top : p ≠ ∞) (s : ℝ)
+private theorem flip_besselPotentialPairing_eq_comp (hp_top : p ≠ ∞) (s : ℝ)
     (w : H^{-s, q}(E, StrongDual ℂ F)) :
     ((ContinuousLinearMap.id ℂ (StrongDual ℂ F)).flip.besselPotentialPairing s p q).flip w =
-      (Lp.strongDualEquiv ℂ volume q p hp hp_top w.toLp).comp
+      (Lp.strongDualEquiv ℂ volume q p hp_top w.toLp).comp
         (toLpₗᵢ E F s p : H^{s, p}(E, F) →L[ℂ] Lp F p (volume : Measure E)) := by
   ext u
-  simp [ContinuousLinearMap.besselPotentialPairing_apply, Lp.strongDualEquiv_apply]
+  simp [ContinuousLinearMap.besselPotentialPairing_apply]
 
 variable (s) in
 /-- The density pairing as a linear isometry `H^{-s,q}(E, F⋆) → (H^{s,p}(E, F))⋆`: through the
 Bessel potentials it is the integral representation of functionals on `Lᵖ(E, F)` by
 `L^q(E, F⋆)`, which is isometric. -/
-private def toDualₗᵢ (hp : 1 < p) (hp_top : p ≠ ∞) :
+private def toDualₗᵢ (hp_top : p ≠ ∞) :
     H^{-s, q}(E, StrongDual ℂ F) →ₗᵢ[ℂ] StrongDual ℂ H^{s, p}(E, F) where
   toLinearMap :=
     ((ContinuousLinearMap.id ℂ (StrongDual ℂ F)).flip.besselPotentialPairing (E := E) s p q).flip
   norm_map' w := by
-    rw [ContinuousLinearMap.coe_coe, flip_besselPotentialPairing_eq_comp hp hp_top,
+    rw [ContinuousLinearMap.coe_coe, flip_besselPotentialPairing_eq_comp hp_top,
       ContinuousLinearMap.opNorm_comp_linearIsometryEquiv, LinearIsometryEquiv.norm_map,
       norm_toLp_eq]
 
 variable (s) in
-private theorem toDualₗᵢ_apply (hp : 1 < p) (hp_top : p ≠ ∞) (w : H^{-s, q}(E, StrongDual ℂ F))
+private theorem toDualₗᵢ_apply (hp_top : p ≠ ∞) (w : H^{-s, q}(E, StrongDual ℂ F))
     (u : H^{s, p}(E, F)) :
-    toDualₗᵢ s hp hp_top w u =
+    toDualₗᵢ s hp_top w u =
       (ContinuousLinearMap.id ℂ (StrongDual ℂ F)).flip.besselPotentialPairing s p q u w :=
   rfl
 
@@ -265,11 +265,11 @@ variable (s) in
 /-- Every functional `Λ` on `H^{s,p}(E, F)` is a density pairing: `Λ ∘ J^{-s}` is a functional on
 `Lᵖ(E, F)`, represented by some `g ∈ L^q(E, F⋆)`, and `Λ` is the density pairing with the element
 of `H^{-s,q}(E, F⋆)` whose `L^q` part is `g`. -/
-private theorem toDualₗᵢ_surjective (hp : 1 < p) (hp_top : p ≠ ∞) :
-    Function.Surjective (toDualₗᵢ (E := E) (F := F) (q := q) s hp hp_top) := by
+private theorem toDualₗᵢ_surjective (hp_top : p ≠ ∞) :
+    Function.Surjective (toDualₗᵢ (E := E) (F := F) (q := q) s hp_top) := by
   intro Λ
   set e := toLpₗᵢ E F s p
-  refine ⟨ofLp (-s) ((Lp.strongDualEquiv ℂ volume q p hp hp_top).symm
+  refine ⟨ofLp (-s) ((Lp.strongDualEquiv ℂ volume q p hp_top).symm
     (Λ.comp e.symm.toLinearIsometry.toContinuousLinearMap)), ContinuousLinearMap.ext fun u ↦ ?_⟩
   rw [toDualₗᵢ_apply, ContinuousLinearMap.besselPotentialPairing_apply, toLp_ofLp]
   simp only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.id_apply,
@@ -277,34 +277,34 @@ private theorem toDualₗᵢ_surjective (hp : 1 < p) (hp_top : p ≠ ∞) :
   simp only [e, LinearIsometry.coe_toContinuousLinearMap,
     LinearIsometryEquiv.coe_toLinearIsometry, ← toLpₗᵢ_apply, LinearIsometryEquiv.symm_apply_apply]
 
-/-- **Duality of the Bessel-potential spaces.** For Hölder conjugate exponents `1 < p, q < ∞`, the
+/-- **Duality of the Bessel-potential spaces.** For Hölder conjugate exponents with `1 ≤ p < ∞`, the
 density pairing `⟨w, u⟩ = ∫ (J^{-s} w) x ((J^s u) x) dx` identifies `H^{-s,q}(E, F⋆)`,
 `F⋆ = StrongDual ℂ F`, complex-linearly and isometrically with the continuous dual of
 `H^{s,p}(E, F)`, for every real `s` and every complex Hilbert space `F`. -/
 def dualEquiv (s : ℝ) (p q : ℝ≥0∞) [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q]
-    (hp : 1 < p) (hp_top : p ≠ ∞) :
+    (hp_top : p ≠ ∞) :
     H^{-s, q}(E, StrongDual ℂ F) ≃ₗᵢ[ℂ] StrongDual ℂ H^{s, p}(E, F) :=
-  LinearIsometryEquiv.ofSurjective (toDualₗᵢ s hp hp_top) (toDualₗᵢ_surjective s hp hp_top)
+  LinearIsometryEquiv.ofSurjective (toDualₗᵢ s hp_top) (toDualₗᵢ_surjective s hp_top)
 
-/-- `dualEquiv s p q hp hp_top w` is the density pairing with `w`, for the evaluation pairing of
+/-- `dualEquiv s p q hp_top w` is the density pairing with `w`, for the evaluation pairing of
 `F` with `F⋆`. -/
-theorem dualEquiv_apply {s : ℝ} (hp : 1 < p) (hp_top : p ≠ ∞) (w : H^{-s, q}(E, StrongDual ℂ F))
+theorem dualEquiv_apply {s : ℝ} (hp_top : p ≠ ∞) (w : H^{-s, q}(E, StrongDual ℂ F))
     (u : H^{s, p}(E, F)) :
-    dualEquiv s p q hp hp_top w u =
+    dualEquiv s p q hp_top w u =
       (ContinuousLinearMap.id ℂ (StrongDual ℂ F)).flip.besselPotentialPairing s p q u w := by
   rw [dualEquiv, LinearIsometryEquiv.coe_ofSurjective, toDualₗᵢ_apply]
 
 /-- The integral formula for `dualEquiv`: `w` acts on `u` by `∫ (J^{-s} w) x ((J^s u) x) dx`. -/
-theorem dualEquiv_apply_eq_integral {s : ℝ} (hp : 1 < p) (hp_top : p ≠ ∞)
+theorem dualEquiv_apply_eq_integral {s : ℝ} (hp_top : p ≠ ∞)
     (w : H^{-s, q}(E, StrongDual ℂ F)) (u : H^{s, p}(E, F)) :
-    dualEquiv s p q hp hp_top w u = ∫ x, w.toLp x (u.toLp x) := by
+    dualEquiv s p q hp_top w u = ∫ x, w.toLp x (u.toLp x) := by
   simp [dualEquiv_apply, ContinuousLinearMap.besselPotentialPairing_apply]
 
 /-- On Schwartz functions `dualEquiv` is the integral of the pointwise evaluation pairing. -/
 @[simp]
-theorem dualEquiv_toBesselPotentialSpaceCLM {s : ℝ} (hp : 1 < p) (hp_top : p ≠ ∞)
+theorem dualEquiv_toBesselPotentialSpaceCLM {s : ℝ} (hp_top : p ≠ ∞)
     (ψ : 𝓢(E, StrongDual ℂ F)) (φ : 𝓢(E, F)) :
-    dualEquiv s p q hp hp_top (SchwartzMap.toBesselPotentialSpaceCLM (-s) q ψ)
+    dualEquiv s p q hp_top (SchwartzMap.toBesselPotentialSpaceCLM (-s) q ψ)
         (SchwartzMap.toBesselPotentialSpaceCLM s p φ) = ∫ x, ψ x (φ x) := by
   simp [dualEquiv_apply]
 
@@ -329,13 +329,13 @@ theorem memSobolev_neg_of_norm_le {u : 𝓢'(E, ℂ)} {t C : ℝ}
       (SchwartzMap.denseRange_toBesselPotentialSpaceCLM (p := 2) t ENNReal.ofNat_ne_top) ⟨C, hu⟩ φ
   -- By duality, `ℓ` is the density pairing with some `w ∈ H^{-t}(E, ℂ⋆)`; evaluating `w` at `1`
   -- pointwise gives a scalar element `v ∈ H^{-t}(E, ℂ)`.
-  set w := (BesselPotentialSpace.dualEquiv t 2 2 ENNReal.one_lt_two ENNReal.ofNat_ne_top).symm ℓ
+  set w := (BesselPotentialSpace.dualEquiv t 2 2 ENNReal.ofNat_ne_top).symm ℓ
   obtain ⟨v, hv⟩ : ∃ v : H^{-t}(E, ℂ), ∀ᵐ x, v.toLp x = w.toLp x 1 :=
     ⟨BesselPotentialSpace.ofLp (-t) ((ContinuousLinearMap.apply ℂ ℂ (1 : ℂ)).compLp w.toLp),
       by simpa using (ContinuousLinearMap.apply ℂ ℂ (1 : ℂ)).coeFn_compLp w.toLp⟩
   convert BesselPotentialSpace.memSobolev_toDistr v using 1
   ext φ
-  have hw : BesselPotentialSpace.dualEquiv t 2 2 ENNReal.one_lt_two ENNReal.ofNat_ne_top w
+  have hw : BesselPotentialSpace.dualEquiv t 2 2 ENNReal.ofNat_ne_top w
       (A φ) = u φ := by
     rw [LinearIsometryEquiv.apply_symm_apply, hℓA]
   rw [← hw, BesselPotentialSpace.dualEquiv_apply_eq_integral,

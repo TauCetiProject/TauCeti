@@ -17,20 +17,21 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 /-!
 # Weak derivatives from `Lᵠ` test bounds
 
-For conjugate exponents `1 < p, q < ∞`, a distributional directional derivative bounded by
-the `Lᵠ` norm of test functions is represented by an `Lᵖ` weak derivative, with the same
-bound. This applies to locally integrable functions without assuming differentiability or a
-weak derivative in advance. For a finite-dimensional real codomain the same holds coordinatewise,
-with a constant depending only on the codomain. The proof extends the distributional functional
-from the image of test functions in `Lᵠ` by Hahn–Banach, then uses the integral representation
-of the dual.
+For conjugate exponents `p` and `1 ≤ q < ∞`, a distributional directional derivative bounded by
+`C ≥ 0` times the `Lᵠ` norm of test functions is represented by an `Lᵖ` weak derivative of norm
+at most `C`. This applies to locally integrable functions without assuming differentiability or a
+weak derivative in advance. For a finite-dimensional real codomain the same holds
+coordinatewise for a finite bound `M < ∞` in place of `C`, with a constant depending only on
+the codomain. The proof extends the distributional functional from the image of test functions
+in `Lᵠ` by Hahn–Banach, then uses the integral representation of the dual.
 
 The result assumes σ-finiteness on the open domain. The Hilbert-space theorem in
 `TestFunctionLp/Basic` remains available without that measure hypothesis.
 
 On a finite-dimensional real inner product space `E` of dimension `d`, the same duality represents
 functionals bounded by the gradient: a linear functional `ℓ` on the test functions of `Ω` with
-`|ℓ φ| ≤ M ‖∇φ‖_{Lᵠ}` is `φ ↦ ∫_Ω ⟪H, ∇φ⟫` for a field `H ∈ Lᵖ(Ω; E)` with `‖H‖_{Lᵖ} ≤ d² M`
+`|ℓ φ| ≤ M ‖∇φ‖_{Lᵠ}`, `M ≥ 0`, is `φ ↦ ∫_Ω ⟪H, ∇φ⟫` for a field `H ∈ Lᵖ(Ω; E)` with
+`‖H‖_{Lᵖ} ≤ d² M`
 (`TauCeti.exists_memLp_forall_eq_integral_inner_gradient_of_abs_le`), that is, `ℓ = -div H` in the
 sense of distributions. The functional extends by Hahn–Banach through the partial derivatives
 `φ ↦ (⟪bᵢ, ∇φ⟫)ᵢ` into `(Lᵠ(Ω))ᵈ`, and the dual of `(Lᵠ(Ω))ᵈ` is `(Lᵖ(Ω))ᵈ`.
@@ -59,17 +60,18 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ
   [SigmaFinite (μ.restrict Ω)] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
   [p.HolderConjugate q]
 
-/-- A distributional directional derivative bounded by the conjugate `Lᵠ` test norm is an
-`Lᵖ` weak derivative with that bound. No regularity of `u` beyond local integrability is needed. -/
+/-- A distributional directional derivative bounded by `C ≥ 0` times the conjugate `Lᵠ` test
+norm is an `Lᵖ` weak derivative of norm at most `C`. No regularity of `u` beyond local
+integrability is needed. -/
 theorem exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le_eLpNorm {u : E → ℝ}
-    (hq : 1 < q) (hq_top : q ≠ ⊤) (hu : LocallyIntegrableOn u Ω μ) (v : E)
+    (hq_top : q ≠ ⊤) (hu : LocallyIntegrableOn u Ω μ) (v : E)
     {C : ℝ} (hC : 0 ≤ C)
     (hbound : ∀ φ : 𝓓(Ω, ℝ),
       |∫ x, lineDeriv ℝ (φ : E → ℝ) x v * u x ∂μ| ≤ C * (eLpNorm (φ : E → ℝ) q μ).toReal) :
     ∃ g : Lp ℝ p (μ.restrict Ω), ‖g‖ ≤ C ∧ HasWeakLineDerivOn μ Ω u g v := by
   obtain ⟨Λ, hΛnorm, hΛφ⟩ :=
     exists_dual_norm_le_of_abs_integral_lineDeriv_mul_le_eLpNorm hu v hC hbound
-  let g := (Lp.dualEquiv ℝ (μ.restrict Ω) p q hq hq_top).symm (-Λ)
+  let g := (Lp.dualEquiv ℝ (μ.restrict Ω) p q hq_top).symm (-Λ)
   refine ⟨g, ?_, ?_⟩
   · simpa only [g, LinearIsometryEquiv.norm_map, norm_neg] using hΛnorm
   · refine hasWeakLineDerivOn_iff_testFunction.2
@@ -90,10 +92,11 @@ theorem exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le_eLpNo
     simp only [smul_eq_mul]
 
 /-- **Vector-valued `Lᵖ` representation.** For a finite-dimensional real codomain, a
-distributional directional derivative bounded by `M` times the conjugate `Lᵠ` test norm is an
-`Lᵖ` weak derivative of norm at most `C * M`. The constant depends only on the codomain. -/
+distributional directional derivative bounded by a finite `M < ∞` times the conjugate `Lᵠ` test
+norm is an `Lᵖ` weak derivative of norm at most `C * M`. The constant depends only on the
+codomain. -/
 theorem exists_eLpNorm_le_hasWeakLineDerivOn_of_enorm_integral_lineDeriv_smul_le {G : Type*}
-    [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G] (hq : 1 < q)
+    [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
     (hq_top : q ≠ ⊤) :
     ∃ C : ℝ≥0, ∀ u : E → G, LocallyIntegrableOn u Ω μ → ∀ (v : E) (M : ℝ≥0∞), M ≠ ⊤ →
       (∀ φ : 𝓓(Ω, ℝ), ‖∫ x, lineDeriv ℝ (φ : E → ℝ) x v • u x ∂μ‖ₑ ≤
@@ -109,7 +112,7 @@ theorem exists_eLpNorm_le_hasWeakLineDerivOn_of_enorm_integral_lineDeriv_smul_le
     (c i).locallyIntegrableOn_comp hu
   have hscalar (i) : ∃ g : Lp ℝ p (μ.restrict (Ω : Set E)), ‖g‖ ≤ ‖c i‖ * M.toReal ∧
       HasWeakLineDerivOn μ Ω (fun z => c i (u z)) g v := by
-    refine exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le_eLpNorm hq hq_top
+    refine exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le_eLpNorm hq_top
       (hcu i) v (by positivity) fun φ => ?_
     have hφ : eLpNorm (φ : E → ℝ) q μ ≠ ⊤ :=
       (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).eLpNorm_ne_top
@@ -247,13 +250,13 @@ private theorem exists_dual_comp_partialDerivativesLp_eq [Fact (1 ≤ q)]
   have h := hΛ (T.rangeRestrict φ)
   simpa only [LinearMap.codRestrict_apply, LinearMap.mkContinuous_apply, hf₀_apply] using h
 
-/-- **Functionals bounded by the gradient are divergences.** Let `1 < q < ∞` and let `p` be its
+/-- **Functionals bounded by the gradient are divergences.** Let `1 ≤ q < ∞` and let `p` be its
 conjugate exponent. If a linear functional `ℓ` on the test functions of `Ω` satisfies
-`|ℓ φ| ≤ M ‖∇φ‖_{L^q}`, then `ℓ φ = ∫_Ω ⟪H, ∇φ⟫` for a field `H ∈ Lᵖ(Ω; E)` with
+`|ℓ φ| ≤ M ‖∇φ‖_{L^q}` for some `M ≥ 0`, then `ℓ φ = ∫_Ω ⟪H, ∇φ⟫` for a field `H ∈ Lᵖ(Ω; E)` with
 `‖H‖_{Lᵖ(Ω)} ≤ d² M`, where `d` is the dimension. In other words `ℓ = -div H` in the sense of
 distributions. -/
 theorem exists_memLp_forall_eq_integral_inner_gradient_of_abs_le [SigmaFinite (μ.restrict Ω)]
-    [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q] (hq : 1 < q) (hq_top : q ≠ ⊤)
+    [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q] (hq_top : q ≠ ⊤)
     (ℓ : 𝓓(Ω, ℝ) →ₗ[ℝ] ℝ) {M : ℝ} (hM : 0 ≤ M)
     (hℓ : ∀ φ : 𝓓(Ω, ℝ), |ℓ φ| ≤ M * (eLpNorm (∇ (φ : E → ℝ)) q μ).toReal) :
     ∃ H : E → E, MemLp H p (μ.restrict Ω) ∧
@@ -261,7 +264,7 @@ theorem exists_memLp_forall_eq_integral_inner_gradient_of_abs_le [SigmaFinite (�
       ∀ φ : 𝓓(Ω, ℝ), ℓ φ = ∫ x in Ω, ⟪H x, ∇ (φ : E → ℝ) x⟫_ℝ ∂μ := by
   set b := stdOrthonormalBasis ℝ E
   obtain ⟨Λ, hΛ, hΛT⟩ := exists_dual_comp_partialDerivativesLp_eq (μ := μ) (q := q) b ℓ hM hℓ
-  obtain ⟨H, hH, hHnorm, hHΛ⟩ := Lp.exists_memLp_forall_dual_pi_apply_eq (p := p) hq hq_top b Λ
+  obtain ⟨H, hH, hHnorm, hHΛ⟩ := Lp.exists_memLp_forall_dual_pi_apply_eq (p := p) hq_top b Λ
   rw [Fintype.card_fin] at hHnorm
   refine ⟨H, hH, ?_, fun φ => ?_⟩
   · calc eLpNorm H p (μ.restrict Ω) ≤ finrank ℝ E * ENNReal.ofReal ‖Λ‖ := hHnorm
