@@ -38,6 +38,10 @@ acts on the coset theta series `θ_γ`.
 * `ZLattice.IsIntegral.discriminantPairingChar_mk_mk`: on `x, y ∈ L^∨`,
   `e(b_L(x, y)) = exp (2πi ⟪x, y⟫)`.
 * `ZLattice.IsEven.discriminantQuadraticChar_mk`: on `x ∈ L^∨`, `e(q_L(x)) = exp (πi ‖x‖²)`.
+* `ZLattice.IsIntegral.discriminantPairingChar_orthSum` and
+  `ZLattice.IsEven.discriminantQuadraticChar_orthSum`: the pairing and quadratic phases of an
+  orthogonal sum factor under `ZLattice.discriminantGroupOrthSumEquiv`, using the product inner
+  product and squared norm formulas for `WithLp 2`.
 * `ZLattice.IsEven.discriminantQuadraticChar_add`:
   `e(q_L(γ + δ)) = e(q_L(γ)) e(q_L(δ)) e(b_L(γ, δ))`.
 * `ZLattice.IsEven.discriminantQuadraticChar_nsmul`,
@@ -66,6 +70,9 @@ namespace ZLattice
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] {L : Submodule ℤ E} [DiscreteTopology L] [IsZLattice ℝ L]
 
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+  [FiniteDimensional ℝ F] {M : Submodule ℤ F} [DiscreteTopology M] [IsZLattice ℝ M]
+
 namespace IsIntegral
 
 /-- The complex additive character `δ ↦ e(b_L(γ, δ))` of the discriminant group, obtained from
@@ -91,6 +98,23 @@ theorem discriminantPairingChar_mk_mk (hL : IsIntegral L) (x y : dual L) :
   rw [discriminantPairingChar_apply, ratModelDiscriminantGroupEquiv_mk,
     ratModelDiscriminantGroupEquiv_mk, TauCeti.IntegralLattice.discriminantPairing_mk,
     TauCeti.expCircle_coe, ← ratModel_form_ratModelDualEquiv_cast hL x y, Complex.ofReal_ratCast]
+
+/-- For integral full lattices, the pairing phase on the discriminant group of an orthogonal
+sum is the product of the pairing phases of the two component classes. -/
+@[simp]
+theorem discriminantPairingChar_orthSum (h : IsIntegral (orthSum L M))
+    (γ δ : DiscriminantGroup (orthSum L M)) :
+    h.discriminantPairingChar γ δ =
+      (isIntegral_orthSum_iff.mp h).1.discriminantPairingChar
+        (discriminantGroupOrthSumEquiv L M γ).1 (discriminantGroupOrthSumEquiv L M δ).1 *
+      (isIntegral_orthSum_iff.mp h).2.discriminantPairingChar
+        (discriminantGroupOrthSumEquiv L M γ).2 (discriminantGroupOrthSumEquiv L M δ).2 := by
+  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ γ
+  obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ δ
+  simp only [discriminantGroupOrthSumEquiv_mk, discriminantPairingChar_mk_mk,
+    coe_dualOrthSumEquiv_apply_fst, coe_dualOrthSumEquiv_apply_snd]
+  simp only [WithLp.prod_inner_apply, WithLp.ofLp_fst, WithLp.ofLp_snd, ofReal_add,
+    mul_add, exp_add]
 
 /-- The discriminant pairing character is symmetric in its two class arguments. -/
 theorem discriminantPairingChar_comm (hL : IsIntegral L) (γ δ : DiscriminantGroup L) :
@@ -157,6 +181,21 @@ theorem discriminantQuadraticChar_mk (hL : IsEven L) (x : dual L) :
     real_inner_self_eq_norm_sq]
   congr 1
   ring
+
+/-- For even full lattices, the quadratic phase on the discriminant group of an orthogonal sum
+is the product of the quadratic phases of the two component classes. -/
+@[simp]
+theorem discriminantQuadraticChar_orthSum (h : IsEven (orthSum L M))
+    (γ : DiscriminantGroup (orthSum L M)) :
+    h.discriminantQuadraticChar γ =
+      (isEven_orthSum_iff.mp h).1.discriminantQuadraticChar
+        (discriminantGroupOrthSumEquiv L M γ).1 *
+      (isEven_orthSum_iff.mp h).2.discriminantQuadraticChar
+        (discriminantGroupOrthSumEquiv L M γ).2 := by
+  obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ γ
+  simp only [discriminantGroupOrthSumEquiv_mk, discriminantQuadraticChar_mk,
+    coe_dualOrthSumEquiv_apply_fst, coe_dualOrthSumEquiv_apply_snd]
+  rw [WithLp.prod_norm_sq_eq_of_L2, ofReal_add, mul_add, exp_add]
 
 /-- At the zero class of `L^∨ ⧸ L`, the quadratic phase is `1`. -/
 @[simp]
