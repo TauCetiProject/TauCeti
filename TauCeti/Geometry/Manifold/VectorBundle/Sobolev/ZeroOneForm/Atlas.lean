@@ -139,10 +139,14 @@ def zeroOneAtlasEquiv (h : SobolevSection.TransfersTo A.tangentHom A'.tangentHom
     (h' : SobolevSection.TransfersTo A'.tangentHom A.tangentHom μ p k) :
     zeroOneSobolevSections A μ p k ≃L[ℝ] zeroOneSobolevSections A' μ p k :=
   .ofContinuousLinearMap (zeroOneChangeAtlas h) (zeroOneChangeAtlas h')
-    (ContinuousLinearMap.ext fun w ↦ by
-      simp)
-    (ContinuousLinearMap.ext fun w ↦ by
-      simp)
+    (ContinuousLinearMap.ext fun _ ↦ by simp) (ContinuousLinearMap.ext fun _ ↦ by simp)
+
+@[simp]
+theorem zeroOneAtlasEquiv_apply (h : SobolevSection.TransfersTo A.tangentHom A'.tangentHom μ p k)
+    (h' : SobolevSection.TransfersTo A'.tangentHom A.tangentHom μ p k)
+    (w : zeroOneSobolevSections A μ p k) :
+    zeroOneAtlasEquiv h h' w = zeroOneChangeAtlas h w :=
+  (rfl)
 
 @[simp]
 theorem toContinuousLinearMap_zeroOneAtlasEquiv
@@ -151,14 +155,7 @@ theorem toContinuousLinearMap_zeroOneAtlasEquiv
     (zeroOneAtlasEquiv h h' :
         zeroOneSobolevSections A μ p k →L[ℝ] zeroOneSobolevSections A' μ p k) =
       zeroOneChangeAtlas h :=
-  (rfl)
-
-@[simp]
-theorem zeroOneAtlasEquiv_apply (h : SobolevSection.TransfersTo A.tangentHom A'.tangentHom μ p k)
-    (h' : SobolevSection.TransfersTo A'.tangentHom A.tangentHom μ p k)
-    (w : zeroOneSobolevSections A μ p k) :
-    zeroOneAtlasEquiv h h' w = zeroOneChangeAtlas h w :=
-  (rfl)
+  ContinuousLinearMap.ext (zeroOneAtlasEquiv_apply h h')
 
 theorem zeroOneAtlasEquiv_symm_apply
     (h : SobolevSection.TransfersTo A.tangentHom A'.tangentHom μ p k)
@@ -171,7 +168,8 @@ theorem zeroOneAtlasEquiv_symm_apply
 theorem zeroOneAtlasEquiv_symm (h : SobolevSection.TransfersTo A.tangentHom A'.tangentHom μ p k)
     (h' : SobolevSection.TransfersTo A'.tangentHom A.tangentHom μ p k) :
     (zeroOneAtlasEquiv h h').symm = zeroOneAtlasEquiv h' h :=
-  (rfl)
+  ContinuousLinearEquiv.ext <| funext fun w ↦
+    (zeroOneAtlasEquiv_symm_apply h h' w).trans (zeroOneAtlasEquiv_apply h' h w).symm
 
 @[simp]
 theorem zeroOneAtlasEquiv_refl :

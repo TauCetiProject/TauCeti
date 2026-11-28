@@ -41,6 +41,7 @@ is bounded on `x ≥ 0`.
 * `TauCeti.div_exp_sub_one_le_one`: `x / (exp x - 1) ≤ 1` for `0 ≤ x`.
 * `TauCeti.inv_one_sub_exp_neg_eq_one_add_inv_exp_sub_one`, `TauCeti.inv_one_sub_exp_neg_le`:
   `(1 - exp (-t))⁻¹ = 1 + (exp t - 1)⁻¹ ≤ 1 + t⁻¹` for `0 < t`.
+* `TauCeti.min_one_div_two_le_one_sub_exp_neg`: `min 1 t / 2 ≤ 1 - exp (-t)` for `0 ≤ t`.
 * `TauCeti.exp_neg_le_rpow_iff`: `exp (-t) ≤ y ^ ε ↔ exp (-(t / ε)) ≤ y` for `0 ≤ y`, `0 < ε`.
 * `TauCeti.abs_log_sub_le_iff`: `|log x - y| ≤ C ↔ exp (-C) * exp y ≤ x ∧ x ≤ exp C * exp y` for
   `0 < x`.
@@ -213,6 +214,25 @@ theorem inv_one_sub_exp_neg_le {t : ℝ} (ht : 0 < t) : (1 - exp (-t))⁻¹ ≤ 
   have hdiv := div_exp_sub_one_le_one ht.le
   rw [div_le_one (sub_pos.2 (one_lt_exp_iff.2 ht))] at hdiv
   linarith [inv_anti₀ ht hdiv]
+
+/-- For nonnegative `t`, the gap `1 - exp (-t)` is at least half of `min 1 t`: it is linear in
+`t` up to `t = 1` and bounded below by a constant thereafter. -/
+theorem min_one_div_two_le_one_sub_exp_neg {t : ℝ} (ht : 0 ≤ t) :
+    min 1 t / 2 ≤ 1 - exp (-t) := by
+  have hden : 0 < 1 + t := by linarith
+  have hinv : exp (-t) ≤ (1 + t)⁻¹ := by
+    rw [exp_neg]
+    exact inv_anti₀ hden (by simpa [add_comm] using add_one_le_exp t)
+  have hfrac : min 1 t / 2 ≤ t / (1 + t) := by
+    rcases le_total t 1 with h | h
+    · rw [min_eq_right h, div_le_div_iff₀ (by norm_num) hden]
+      nlinarith [mul_nonneg ht (sub_nonneg.mpr h)]
+    · rw [min_eq_left h, div_le_div_iff₀ (by norm_num) hden]
+      linarith
+  calc
+    _ ≤ t / (1 + t) := hfrac
+    _ = 1 - (1 + t)⁻¹ := by field_simp; ring
+    _ ≤ _ := sub_le_sub_left hinv _
 
 /-- For `0 ≤ y` and `0 < ε`, the power `y ^ ε` reaches the level `exp (-t)` exactly when `y`
 reaches the level `exp (-(t / ε))`. -/

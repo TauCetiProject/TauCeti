@@ -9,6 +9,7 @@ public import TauCeti.Analysis.HeisenbergModel.WeilOperators
 public import TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Matrix.DeterminantBound.L2OpNorm
+import TauCeti.Data.Int.Sign
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Accretive.Basic
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Reproducing
@@ -52,7 +53,8 @@ jointly continuous representation `ω_ε` of `U(ε)` on the Fock space `𝓕(ε)
 
 * `TauCeti.Fock.heisenbergDatum_mul_gaussian`, `TauCeti.Fock.isVacuum_gaussian`: the reproducing
   kernel of the Gaussian, and the Gaussian is a vacuum.
-* `TauCeti.Fock.cocycle_multiplier`: the cocycle of `Δ_∞` is trivial.
+* `TauCeti.Fock.cocycle_multiplier`: the cocycle of `Δ_∞` is trivial, so `Δ_∞` does not vanish
+  (`TauCeti.Fock.multiplier_ne_zero`).
 * `TauCeti.Fock.norm_multiplier_le`, `TauCeti.Fock.norm_weilRep_le`,
   `TauCeti.Fock.continuous_weilRep`: the bounds `|Δ_∞(u)| ≤ ‖u‖^{|ι|}` and
   `‖ω_ε(u)‖ ≤ ‖e‖ ‖u‖^{|ι|}`, and the joint continuity of `ω_ε`.
@@ -142,6 +144,22 @@ theorem signMatrix_mem_unitary : signMatrix ε ∈ unitary (Matrix ι ι ℂ) :=
 
 theorem inv_signMatrix : (signMatrix ε)⁻¹ = signMatrix ε :=
   inv_eq_left_inv signMatrix_mul_signMatrix
+
+/-- The transposed inverse of an element of `U(ε)` again preserves the form `diag(ε)`. -/
+theorem star_transpose_inv_mul_signMatrix_mul_transpose_inv (g : unitaryGroup ε) :
+    star ((g⁻¹ : GL ι ℂ) : Matrix ι ι ℂ)ᵀ * signMatrix ε * ((g⁻¹ : GL ι ℂ) : Matrix ι ι ℂ)ᵀ =
+      signMatrix ε := by
+  set M : Matrix ι ι ℂ := ((g⁻¹ : GL ι ℂ) : Matrix ι ι ℂ)
+  have hg : M * signMatrix ε * star M = signMatrix ε := by
+    simpa only [inv_signMatrix] using
+      (mem_unitaryGroupOf_iff' isUnit_signMatrix).mp (inv_mem g.property)
+  have hS : (signMatrix ε)ᵀ = signMatrix ε := by
+    rw [signMatrix_eq_diagonal, diagonal_transpose]
+  -- Transposing `M * diag(ε) * star M = diag(ε)` gives the claim for `Mᵀ`.
+  calc star Mᵀ * signMatrix ε * Mᵀ = (M * signMatrix ε * star M)ᵀ := by
+        rw [transpose_mul, transpose_mul, hS, star_eq_conjTranspose, star_eq_conjTranspose,
+          conjTranspose_transpose_eq_transpose_conjTranspose, Matrix.mul_assoc]
+    _ = signMatrix ε := by rw [hg, hS]
 
 omit [DecidableEq ι] in
 theorem star_dotProduct_signMatrix_mulVec [DecidableEq ι] (x y : ι → ℂ) :
@@ -338,6 +356,17 @@ omit [Fintype ι] [DecidableEq ι] in
 theorem negBlock_apply (u : Matrix ι ι ℂ) (i j : {i // ε i = -1}) : negBlock ε u i j = u i j :=
   (rfl)
 
+variable (ε) in
+/-- The block `u₊₊` of a square matrix on the indices of sign other than `-1`, that is, of
+sign `1`. -/
+def posBlock (u : Matrix ι ι ℂ) : Matrix {i // ε i ≠ -1} {i // ε i ≠ -1} ℂ :=
+  u.submatrix Subtype.val Subtype.val
+
+omit [Fintype ι] [DecidableEq ι] in
+@[simp]
+theorem posBlock_apply (u : Matrix ι ι ℂ) (i j : {i // ε i ≠ -1}) : posBlock ε u i j = u i j :=
+  (rfl)
+
 /-- The negative block of `g⁻¹` is the conjugate transpose of that of `g`, for `g ∈ U(ε)`. -/
 theorem negBlock_inv (g : unitaryGroup ε) :
     negBlock ε (((g⁻¹ : unitaryGroup ε) : GL ι ℂ) : Matrix ι ι ℂ) =
@@ -420,8 +449,7 @@ private theorem conjTranspose_posProj : (posProj ε)ᴴ = posProj ε := by
 /-- The determinant of `P₊ + P₋ x` is the minor of `x` on the indices of sign `-1`. -/
 private theorem det_posProjAdd (x : Matrix ι ι ℂ) : (posProjAdd ε x).det = (negBlock ε x).det := by
   let e := Equiv.sumCompl fun i ↦ ε i = -1
-  have h_pos (i : {i // ¬ ε i = -1}) : ε i = 1 :=
-    (Int.units_eq_one_or (ε i)).resolve_right i.property
+  have h_pos (i : {i // ¬ ε i = -1}) : ε i = 1 := Int.units_eq_one_of_ne_neg_one i.property
   have h_blocks : (posProjAdd ε x).submatrix e e =
       fromBlocks (negBlock ε x) (x.submatrix Subtype.val Subtype.val) 0 1 := by
     ext (i | i) (j | j)
@@ -605,6 +633,12 @@ theorem cocycle_multiplier (g h : unitaryGroup ε) :
   field_simp
   rw [one_div, inv_pow, inv_pow, ← pow_mul, ← mul_two]
   exact inv_mul_cancel₀ (pow_ne_zero _ (by exact_mod_cast Real.pi_ne_zero))
+
+/-- `Δ_∞(g) ≠ 0` for `g ∈ U(ε)`, since the cocycle of `Δ_∞` is trivial. -/
+theorem multiplier_ne_zero (g : unitaryGroup ε) : multiplier ε g ≠ 0 := by
+  intro hzero
+  have h := cocycle_multiplier (ε := ε) g 1
+  simp [HeisenbergDatum.Multiplier.cocycle_def, hzero] at h
 
 /-! ### The Fock space and the Weil representation -/
 

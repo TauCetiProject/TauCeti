@@ -30,6 +30,10 @@ only that `R` is dense in `Ô` and that `aÔ` is open in the finite adeles for e
   adeles.
 * `IsDedekindDomain.FiniteAdeleRing.algebraMap_mem_completedIdeal_iff`: for `N ≠ ⊥`, the rational
   points of `NÔ` are the elements of `N`.
+* `IsDedekindDomain.FiniteAdeleRing.exists_mem_algebraMap_eq_of_mem_completedIdeal`: for
+  `N ≠ ⊥`, the elements of `K` whose diagonal image lies in `NÔ` come from `N`.
+* `IsDedekindDomain.FiniteAdeleRing.completedIdeal_prod_eq_iInf`: the completion of a product of
+  pairwise coprime ideals is the intersection of the completions.
 * `IsDedekindDomain.FiniteAdeleRing.coe_mem_finiteAdelicIdeal_iff_mem_completedIdeal`: an integral
   finite adele lies in `NÔ` exactly when it lies in the finite adelic extension of `N`.
 * `IsDedekindDomain.FiniteAdeleRing.isOpen_completedIdeal`,
@@ -184,6 +188,26 @@ theorem algebraMap_mem_completedIdeal_iff {N : Ideal R} (hN : N ≠ ⊥) {r : R}
     algebraMap R (integralAdeles R K) r ∈ completedIdeal K N ↔ r ∈ N := by
   rw [← coe_mem_finiteAdelicIdeal_iff_mem_completedIdeal hN, Subalgebra.coe_algebraMap,
     algebraMap_mem_finiteAdelicIdeal_mk0_iff hN]
+
+/-- For `N ≠ ⊥`, an element of `K` whose diagonal image in the finite adeles lies in `NÔ` is the
+image of an element of `N`: `K ∩ NÔ = N`. -/
+theorem exists_mem_algebraMap_eq_of_mem_completedIdeal {N : Ideal R} (hN : N ≠ ⊥) {x : K}
+    {c : integralAdeles R K} (hc : c ∈ completedIdeal K N)
+    (hx : (c : 𝔸ᶠ[R, K]) = algebraMap K 𝔸ᶠ[R, K] x) : ∃ r ∈ N, algebraMap R K r = x := by
+  obtain ⟨r, rfl⟩ := (algebraMap_mem_integralAdeles_iff (R := R) x).mp (hx ▸ c.property)
+  have hrc : algebraMap R (integralAdeles R K) r = c :=
+    Subtype.ext (by rw [hx, Subalgebra.coe_algebraMap, IsScalarTower.algebraMap_apply R K])
+  exact ⟨r, (algebraMap_mem_completedIdeal_iff hN).mp (hrc ▸ hc), rfl⟩
+
+variable (K) in
+/-- The completion of a finite product of pairwise coprime ideals is the intersection of their
+completions (Chinese remainder theorem in `Ô`). -/
+theorem completedIdeal_prod_eq_iInf {ι : Type*} {s : Finset ι} {N : ι → Ideal R}
+    (hN : (s : Set ι).Pairwise (Function.onFun IsCoprime N)) :
+    completedIdeal K (∏ i ∈ s, N i) = ⨅ i ∈ s, completedIdeal K (N i) := by
+  simp only [completedIdeal_def]
+  rw [← Ideal.mapHom_apply, map_prod]
+  exact Ideal.prod_eq_iInf_of_pairwise_isCoprime fun i hi j hj hij ↦ (hN hi hj hij).map _
 
 variable (K) in
 /-- For `N ≠ ⊥`, pulling `NÔ` back along the diagonal map recovers `N`. -/
