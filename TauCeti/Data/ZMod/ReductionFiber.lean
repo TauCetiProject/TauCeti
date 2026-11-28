@@ -5,21 +5,32 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Nat.Totient
 public import Mathlib.Data.ZMod.Units
+import Mathlib.GroupTheory.Index
 import TauCeti.Data.Nat.Totient
-import TauCeti.Data.ZMod.PrincipalUnits
 
 /-!
 # Fibers of unit reduction with unchanged prime factors
 
 Passing from `ℤ/(nk)` to `ℤ/n` gives exactly `k` unit lifts of each unit provided `n * k ≠ 0`
 and `k` introduces no new prime factors. The fibers are cosets of the kernel, whose cardinality
-is the ratio of the two totients.
+is the ratio of the two totients. When the prime support is unchanged,
+`Nat.totient_mul_of_primeFactors_subset` identifies the totient ratio with the modulus ratio.
 -/
 
 public section
 
 namespace ZMod
+
+/-- For `m ≠ 0`, the kernel of the reduction `(ZMod m)ˣ → (ZMod n)ˣ` along `n ∣ m` has
+`φ m / φ n` elements, stated without division. -/
+theorem card_ker_unitsMap_mul_totient {m n : ℕ} [NeZero m] (h : n ∣ m) :
+    Nat.card (unitsMap h).ker * n.totient = m.totient := by
+  have : NeZero n := ⟨fun hn ↦ NeZero.ne m (eq_zero_of_zero_dvd (hn ▸ h))⟩
+  have hcard := Subgroup.card_ker_mul_card_of_surjective (unitsMap_surjective h)
+  rwa [Nat.card_eq_fintype_card (α := (ZMod n)ˣ), Nat.card_eq_fintype_card (α := (ZMod m)ˣ),
+    card_units_eq_totient, card_units_eq_totient] at hcard
 
 /-- If `m ≠ 0`, `n ∣ m`, and `m` and `n` have the same prime factors, each unit modulo `n`
 has exactly `m / n` unit lifts modulo `m`. -/
