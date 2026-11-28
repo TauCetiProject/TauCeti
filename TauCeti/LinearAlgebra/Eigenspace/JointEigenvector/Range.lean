@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Eigenspace.Triangularizable
-public import Mathlib.RingTheory.Finiteness.Defs
 
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Exists
 
@@ -48,9 +47,8 @@ private theorem exists_jointEigenvector_mem_range_aux {K V ι : Type*} [Field K]
   have : Nontrivial (LinearMap.range f) :=
     Submodule.nontrivial_iff_ne_bot.mpr (mt LinearMap.range_eq_bot.mp hf_ne)
   have h_comm : Pairwise fun i j ↦ Commute ((A i).restrict (h_stable i))
-      ((A j).restrict (h_stable j)) := fun i j hij ↦ by
-    ext ⟨u, hu⟩
-    simpa using LinearMap.congr_fun (hA hij).eq u
+      ((A j).restrict (h_stable j)) :=
+    fun i j hij ↦ LinearMap.restrict_commute (hA hij) (h_stable i) (h_stable j)
   obtain ⟨χ, ⟨_, ⟨v, rfl⟩⟩, hv, hχ⟩ := exists_jointEigenvector_of_pairwise_commute
     (fun i ↦ (A i).restrict (h_stable i)) h_comm htri
   refine ⟨χ, v, Subtype.coe_ne_coe.mpr hv, fun i ↦ ?_⟩
