@@ -33,6 +33,9 @@ complex characters of order `d` exactly for `d ∣ #F - 1`.
 * `MulChar.mulEquivRootsOfUnityOfGenerator`: if `g` generates `Mˣ`, evaluation at `g` identifies
   the characters with the `#Mˣ`-th roots of unity of `R`.
 * `MulChar.orderOf_apply_eq_orderOf`: if `g` generates `Mˣ`, then `χ g` has the order of `χ`.
+* `MulChar.orderOf_eq_exponent_of_injective_toUnitHom`: a character that is injective on units
+  has the exponent of `Mˣ` as its order; for `Mˣ` cyclic this is `#Mˣ`
+  (`MulChar.orderOf_eq_card_of_injective_toUnitHom`).
 * `MulChar.isCyclic`: with values in a domain, the characters of a monoid with a finite cyclic unit
   group form a cyclic group.
 * `TauCeti.orderOf_ofRootOfUnity`: the character `ofRootOfUnity hζ hg` has the order of `ζ`.
@@ -88,6 +91,22 @@ theorem orderOf_apply_eq_orderOf (χ : MulChar M R) {g : Mˣ}
     (hg : ∀ x, x ∈ Subgroup.zpowers g) : orderOf (χ g) = orderOf χ := by
   rw [← (mulEquivRootsOfUnityOfGenerator (R := R) hg).orderOf_eq χ, ← Subgroup.orderOf_coe,
     ← orderOf_units, mulEquivRootsOfUnityOfGenerator_apply]
+
+/-- A character that is injective on units has the exponent of `Mˣ` as its order. -/
+theorem orderOf_eq_exponent_of_injective_toUnitHom {ω : MulChar M R}
+    (hω : Function.Injective ω.toUnitHom) : orderOf ω = Monoid.exponent Mˣ := by
+  refine Nat.dvd_antisymm (orderOf_dvd_of_pow_eq_one <| eq_one_iff.2 fun u ↦ ?_)
+    (Monoid.exponent_dvd_of_forall_pow_eq_one fun u ↦ hω <| Units.ext ?_)
+  · rw [pow_apply_coe, ← map_pow, ← Units.val_pow_eq_pow_val, Monoid.pow_exponent_eq_one,
+      Units.val_one, map_one]
+  · rw [map_pow, map_one, Units.val_pow_eq_pow_val, coe_toUnitHom, ← pow_apply_coe,
+      pow_orderOf_eq_one, one_apply_coe, Units.val_one]
+
+/-- If `Mˣ` is cyclic, a character that is injective on units has order `#Mˣ`. This is the
+converse of `MulChar.injective_toUnitHom_of_orderOf_eq_card`. -/
+theorem orderOf_eq_card_of_injective_toUnitHom [IsCyclic Mˣ] {ω : MulChar M R}
+    (hω : Function.Injective ω.toUnitHom) : orderOf ω = Nat.card Mˣ :=
+  (orderOf_eq_exponent_of_injective_toUnitHom hω).trans IsCyclic.exponent_eq_card
 
 end CommMonoidWithZero
 
@@ -197,13 +216,10 @@ theorem orderOf_eq_card_sub_one_of_map_apply_eq {F R S : Type*} [Field F] [Finty
     [CommMonoidWithZero R] [NonAssocSemiring S] [Nontrivial S] {ω : MulChar F R} {φ : R → S}
     {f : F →+* S} (hω : ∀ x, φ (ω x) = f x) : orderOf ω = Fintype.card F - 1 := by
   classical
-  rw [← Fintype.card_units]
-  refine Nat.dvd_antisymm (orderOf_dvd_of_pow_eq_one ω.pow_card_eq_one) ?_
-  rw [← Nat.card_eq_fintype_card, ← IsCyclic.exponent_eq_card]
-  -- `ω (x ^ n) = 1 = ω 1` for `n = orderOf ω`, and `ω` is injective because `f` is.
-  refine Monoid.exponent_dvd_of_forall_pow_eq_one fun x ↦ Units.ext (f.injective ?_)
-  rw [← hω, ← hω, Units.val_pow_eq_pow_val, map_pow, ← pow_apply_coe, pow_orderOf_eq_one,
-    one_apply_coe, Units.val_one, map_one]
+  rw [← Fintype.card_units, ← Nat.card_eq_fintype_card]
+  -- `ω` is injective on units because `f` is.
+  refine orderOf_eq_card_of_injective_toUnitHom fun x y h ↦ Units.ext (f.injective ?_)
+  rw [← hω, ← hω, ← coe_toUnitHom, ← coe_toUnitHom, h]
 
 end FiniteField
 
