@@ -43,6 +43,8 @@ be added or removed.
 ## Main definitions
 
 * `TauCeti.CategoryTheory.cechXIso`: the canonical product coordinates on each Čech term.
+* `TauCeti.CategoryTheory.cechComplexπ`: the canonical projection from degree `n` of `Č(U, P)`
+  onto the factor indexed by a tuple `c : Fin (n + 1) → ι`.
 
 * `TauCeti.CategoryTheory.cechAugmentation U hT P`: the augmentation of the Čech complex of `P`
   for `U`; its degree `0` component restricts a section over `T` along each map to `T`
@@ -138,6 +140,26 @@ def cechXIso (n : ℕ) :
 lemma cechXIso_hom_π (n : ℕ) (a : Fin (n + 1) → ι) :
     (cechXIso U P n).hom ≫ Pi.π _ a = (Pi.π _ a : ((cechComplexFunctor U).obj P).X n ⟶ _) :=
   Category.id_comp _
+
+/-- The canonical projection from degree `n` of the Čech complex `Č(U, P)` to the factor indexed
+by a tuple `c : Fin (n + 1) → ι`. Using this wrapper keeps the domain syntactically equal to
+`((cechComplexFunctor U).obj P).X n` during rewriting. -/
+def cechComplexπ (n : ℕ) (c : Fin (n + 1) → ι) :
+    ((cechComplexFunctor U).obj P).X n ⟶ P.obj (op (∏ᶜ fun j ↦ U (c j))) :=
+  Pi.π (fun d : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (d j)))) c
+
+/-- `cechComplexπ` is definitionally the product projection `Pi.π`. -/
+theorem cechComplexπ_eq (n : ℕ) (c : Fin (n + 1) → ι) :
+    cechComplexπ U P n c =
+      Pi.π (fun d : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (d j)))) c :=
+  (rfl)
+
+/-- Two morphisms into degree `n` of `Č(U, P)` are equal if their compositions with every
+canonical projection `cechComplexπ` agree. -/
+theorem cechComplex_hom_ext {W : A} {n : ℕ} {f g : W ⟶ ((cechComplexFunctor U).obj P).X n}
+    (h : ∀ c : Fin (n + 1) → ι, f ≫ cechComplexπ U P n c = g ≫ cechComplexπ U P n c) :
+    f = g :=
+  Pi.hom_ext _ _ h
 
 /-! ### The Čech complex in degrees `0` and `1`
 
@@ -254,6 +276,14 @@ theorem cechComplexFunctor_obj_d_comp_π (n : ℕ) (k : Fin (n + 2) → ι) :
   -- the coface map `δ m` unfolds to a `Pi.lift`
   exact (Preadditive.zsmul_comp _ _ _).trans <| congrArg _ <| Pi.lift_comp_π _ _
 
+/-- Morphism-level differential formula for `Č(U, P)` in terms of `cechComplexπ`. -/
+@[reassoc]
+theorem cechComplexFunctor_obj_d_comp_cechComplexπ (n : ℕ) (k : Fin (n + 2) → ι) :
+    ((cechComplexFunctor U).obj P).d n (n + 1) ≫ cechComplexπ U P (n + 1) k =
+      ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) • (cechComplexπ U P n (k ∘ m.succAbove) ≫
+        P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (m.succAbove x)).op) :=
+  cechComplexFunctor_obj_d_comp_π U P n k
+
 /-! ### Maps of presheaves -/
 
 /-- A morphism of presheaves `α : P ⟶ Q` acts on the Čech complexes factorwise: the factor of
@@ -264,6 +294,14 @@ theorem cechComplexFunctor_map_f_π {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ)
     ((cechComplexFunctor U).map α).f n ≫ Pi.π _ a =
       Pi.π _ a ≫ α.app (op (∏ᶜ fun j ↦ U (a j))) :=
   Pi.map_π (fun _ ↦ α.app _) a
+
+/-- Morphism-level presheaf-map projection formula for `Č(U, P)` in terms of `cechComplexπ`. -/
+@[reassoc]
+theorem cechComplexFunctor_map_f_comp_cechComplexπ {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) (n : ℕ)
+    (a : Fin (n + 1) → ι) :
+    ((cechComplexFunctor U).map α).f n ≫ cechComplexπ U Q n a =
+      cechComplexπ U P n a ≫ α.app (op (∏ᶜ fun j ↦ U (a j))) :=
+  cechComplexFunctor_map_f_π U P α n a
 
 /-- The native Čech differential in product coordinates is the alternating face sum. -/
 @[reassoc]
@@ -343,6 +381,14 @@ theorem cechComplexMap_f_π (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk 
     (cechComplexMap P φ).f n ≫ Pi.π _ a =
       Pi.π _ (φ.f ∘ a) ≫ P.map (Limits.Pi.map fun j ↦ φ.φ (a j)).op :=
   Pi.lift_comp_π _ _
+
+/-- Morphism-level family-map projection formula for `Č(U, P)` in terms of `cechComplexπ`. -/
+@[reassoc]
+theorem cechComplexMap_f_comp_cechComplexπ
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (n : ℕ) (a : Fin (n + 1) → ι) :
+    (cechComplexMap P φ).f n ≫ cechComplexπ U P n a =
+      cechComplexπ V P n (φ.f ∘ a) ≫ P.map (Limits.Pi.map fun j ↦ φ.φ (a j)).op :=
+  cechComplexMap_f_π P φ n a
 
 /-- The component `(cechComplexMap P φ).f n` is `P` applied to the map of `(n + 1)`-fold powers of
 formal coproducts induced by `φ`. -/

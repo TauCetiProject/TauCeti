@@ -456,3 +456,14 @@ theorem ι_comp_sum_π_comp_ι {C : Type*} [Category* C] [Preadditive C] {β : T
     rw [Sigma.ι_π_of_ne_assoc _ (Ne.symm hj), zero_comp]
 
 end CategoryTheory.Limits.Sigma
+
+namespace CategoryTheory.Limits.Pi
+
+/-- Reindexing a product along `p : β → α` with identity maps on the factors is the lift of the
+projections `Pi.π f (p b)`. -/
+lemma map'_id_eq_lift {C : Type*} [Category* C] {α β : Type*} {f : α → C} (p : β → α)
+    [HasProduct f] [HasProduct fun b ↦ f (p b)] :
+    Pi.map' p (fun _ ↦ 𝟙 _) = Pi.lift fun b ↦ Pi.π f (p b) := by
+  simp only [Pi.map', Category.comp_id]
+
+end CategoryTheory.Limits.Pi

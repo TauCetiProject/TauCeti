@@ -30,9 +30,9 @@ Conversely, every element of a filtered colimit of modules comes from some membe
 (`TauCeti.ModuleCat.colimit_exists_rep`), again with no universe constraints. Finally, a family
 of bilinear maps `M j × N j → P j` natural in `j` induces a bilinear map of the filtered colimits,
 `TauCeti.ModuleCat.colimitMap₂`, computed on the images of two elements by multiplying them at any
-common later member of the diagram (`TauCeti.ModuleCat.colimitMap₂_ι_ι`). This is how products on
-the members of a directed system, such as cup products on the Čech cohomologies of the covers of a
-space, pass to the colimit.
+common later member of the diagram (`TauCeti.ModuleCat.colimitMap₂_ι_ι`), and bilinear/trilinear
+maps out of filtered colimits are determined on tuples from a single member
+(`TauCeti.ModuleCat.colimit_bilinear_ext`, `TauCeti.ModuleCat.colimit_trilinear_ext`).
 -/
 
 public noncomputable section
@@ -57,6 +57,8 @@ end ModuleCat
 namespace TauCeti.ModuleCat
 
 universe u v w
+
+section ColimitExt
 
 variable {R : Type*} [Ring R] {J : Type u} [Category.{w} J] {F : J ⥤ _root_.ModuleCat.{v} R}
 
@@ -94,11 +96,53 @@ def isColimitOfJointlySurjectiveOfMapEqZero {ι : Type u} [Preorder ι] [IsDirec
     rwa [map_sub, sub_eq_zero, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
       ← F.map_comp, ← F.map_comp] at hm
 
+end ColimitExt
+
+section FilteredBilinear
+
+open IsFiltered
+
+variable {R : Type*} [CommRing R] {J : Type u} [Category.{w} J] [IsFilteredOrEmpty J]
+
+/-- Two `R`-bilinear maps out of filtered colimits of `R`-modules agree if they agree on pairs
+coming from the same index `j : J`. -/
+theorem colimit_bilinear_ext {F G : J ⥤ _root_.ModuleCat.{v} R} [HasColimit F] [HasColimit G]
+    {M : Type v} [AddCommGroup M] [Module R M]
+    {Φ Ψ : ↑(colimit F) →ₗ[R] ↑(colimit G) →ₗ[R] M}
+    (h : ∀ j (x : F.obj j) (y : G.obj j),
+      Φ ((colimit.ι F j).hom x) ((colimit.ι G j).hom y) =
+        Ψ ((colimit.ι F j).hom x) ((colimit.ι G j).hom y)) :
+    Φ = Ψ :=
+  colimit_linearMap_ext fun i x ↦ colimit_linearMap_ext fun j y ↦ by
+    rw [← colimit.w F (leftToMax i j), ← colimit.w G (rightToMax i j),
+      _root_.ModuleCat.comp_apply, _root_.ModuleCat.comp_apply]
+    exact h (max i j) _ _
+
+/-- Two `R`-trilinear maps out of filtered colimits of `R`-modules agree if they agree on triples
+coming from the same index `j : J`. -/
+theorem colimit_trilinear_ext {F₁ F₂ F₃ : J ⥤ _root_.ModuleCat.{v} R}
+    [HasColimit F₁] [HasColimit F₂] [HasColimit F₃]
+    {M : Type v} [AddCommGroup M] [Module R M]
+    {Φ Ψ : ↑(colimit F₁) →ₗ[R] ↑(colimit F₂) →ₗ[R] ↑(colimit F₃) →ₗ[R] M}
+    (h : ∀ j (x : F₁.obj j) (y : F₂.obj j) (z : F₃.obj j),
+      Φ ((colimit.ι F₁ j).hom x) ((colimit.ι F₂ j).hom y) ((colimit.ι F₃ j).hom z) =
+        Ψ ((colimit.ι F₁ j).hom x) ((colimit.ι F₂ j).hom y) ((colimit.ι F₃ j).hom z)) :
+    Φ = Ψ :=
+  colimit_bilinear_ext fun m x y ↦ colimit_linearMap_ext fun i₃ z ↦ by
+    rw [← colimit.w F₁ (leftToMax m i₃), ← colimit.w F₂ (leftToMax m i₃),
+      ← colimit.w F₃ (rightToMax m i₃), _root_.ModuleCat.comp_apply,
+      _root_.ModuleCat.comp_apply, _root_.ModuleCat.comp_apply]
+    exact h (max m i₃) _ _ _
+
+end FilteredBilinear
+
 /-! ### Elements and bilinear maps of filtered colimits -/
 
 section Bilinear
 
 open IsFiltered
+
+variable {R : Type*} [Ring R] {J : Type u} [Category.{w} J] {F : J ⥤ _root_.ModuleCat.{v} R}
 
 /-- **Every element of a filtered colimit of modules comes from some member of the diagram.**
 There are no universe bounds on the index category, the ring or the modules; unlike

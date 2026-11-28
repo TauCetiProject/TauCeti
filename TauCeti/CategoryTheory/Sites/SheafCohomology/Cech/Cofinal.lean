@@ -104,6 +104,21 @@ theorem toCechCohomology_eq (U : FormalCoproduct.{w} C) (j : J) (φ : E j ⟶ U)
     ← cechComplexHomologyMap_comp_cechCohomologyι A E hE n hjk (hE hjk).some]
   exact (Category.assoc _ _ _).symm.trans ((hk =≫ _).trans (Category.assoc _ _ _))
 
+/-- Elementwise computation of `toCechCohomology` through any member `E j` refining `U` and any
+refinement `φ : E j ⟶ U`. -/
+theorem toCechCohomology_app_eq {FA : A → A → Type*} {CA : A → Type*}
+    [∀ X Y, FunLike (FA X Y) (CA X) (CA Y)] [ConcreteCategory A FA]
+    (U : FormalCoproduct.{w} C) (j : J) (φ : E j ⟶ U) (P : Cᵒᵖ ⥤ A)
+    (x : CA (((cechComplexFunctor U.obj).obj P).homology n)) :
+    (toCechCohomology A E hE n U ⟨j, ⟨φ⟩⟩).app P x =
+      (cechCohomologyι E hE n j).app P
+        (HomologicalComplex.homologyMap (cechComplexMap P φ) n x) := by
+  have hm : (toCechCohomology A E hE n U ⟨j, ⟨φ⟩⟩).app P =
+      (cechComplexHomologyMap A n φ).app P ≫ (cechCohomologyι E hE n j).app P :=
+    NatTrans.congr_app (toCechCohomology_eq A E hE n U j φ) P
+  rw [cechComplexHomologyMap_app] at hm
+  exact (ConcreteCategory.congr_hom hm x).trans (ConcreteCategory.comp_apply _ _ x)
+
 /-- On a member of the system, `toCechCohomology` is the structure map. -/
 @[simp]
 theorem toCechCohomology_self (j : J) (hj : ∃ i, Nonempty (E i ⟶ E j)) :
@@ -186,6 +201,23 @@ theorem cechCohomologyι_comp_cechCohomologyComparison (h : ∀ j, ∃ k, Nonemp
     cechCohomologyι E hE n j ≫ cechCohomologyComparison A E hE F hF n h =
       toCechCohomology A F hF n (E j) (h j) :=
   (isColimitCechCohomologyCocone A E hE n).fac _ j
+
+omit [IsDirectedOrder J] in
+/-- Elementwise action of `cechCohomologyComparison` on a class inserted from the family `E j`. -/
+theorem cechCohomologyComparison_app_ι {FA : A → A → Type*} {CA : A → Type*}
+    [∀ X Y, FunLike (FA X Y) (CA X) (CA Y)] [ConcreteCategory A FA]
+    (h : ∀ j, ∃ k, Nonempty (F k ⟶ E j)) (P : Cᵒᵖ ⥤ A) (j : J)
+    (x : CA (((cechComplexFunctor (E j).obj).obj P).homology n)) :
+    (cechCohomologyComparison A E hE F hF n h).app P ((cechCohomologyι E hE n j).app P x) =
+      (toCechCohomology A F hF n (E j) (h j)).app P x := by
+  have hm : ((cechCohomologyι E hE n j).app P ≫
+        (cechCohomologyComparison A E hE F hF n h).app P :
+        ((cechComplexFunctor (E j).obj).obj P).homology n ⟶ _) x =
+      ((toCechCohomology A F hF n (E j) (h j)).app P :
+        ((cechComplexFunctor (E j).obj).obj P).homology n ⟶ _) x :=
+    ConcreteCategory.congr_hom
+      (NatTrans.congr_app (cechCohomologyι_comp_cechCohomologyComparison A E hE F hF n h j) P) x
+  exact (ConcreteCategory.comp_apply _ _ x).symm.trans hm
 
 /-- The comparison map is compatible with `toCechCohomology` for every family refined by the
 first system. -/

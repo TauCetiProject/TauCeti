@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Cup.Homology
-public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Reverse
 
 /-!
 # Graded commutativity of the cup product on Čech cohomology
@@ -25,14 +24,10 @@ for classes `α` of degree `p` and `β` of degree `q`
 anticommutes with itself, so its square vanishes when `2` is invertible in `R`
 (`TauCeti.CategoryTheory.cechCupHomology_self_eq_zero_of_odd`), for instance over `ℚ`.
 
-The cup product is not graded commutative on cochains: it multiplies the front face of one
-cochain with the back face of the other. The order-reversing operator `τ` of
-`TauCeti.CategoryTheory.cechReverse` exchanges front and back faces,
-`τ (τ b ⌣ τ a) = (-1) ^ (p q) a ⌣ b` (`TauCeti.CategoryTheory.cechReverse_cechCup_cechReverse`),
-and in a thin category it induces the identity on cohomology
-(`TauCeti.CategoryTheory.homologyMap_cechReverse_app`), so it fixes the class of every cocycle
-(`TauCeti.CategoryTheory.homologyπ_moduleCatCyclesMk_cechReverse`). These two facts give graded
-commutativity on cohomology.
+This specializes the general graded-commutativity theorem
+`TauCeti.CategoryTheory.cechComplexCup_comm` to multiplication in a presheaf of commutative
+`R`-algebras (proved in `TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Cup.Homology` via the
+order-reversing operator `TauCeti.CategoryTheory.cechReverse`).
 
 ## Main results
 
@@ -67,18 +62,14 @@ theorem cechCupHomology_comm (hF : ∀ X (x y : F.obj X), x * y = y * x) {p q n 
     (h : p + q = n) (h' : q + p = n) (α : (cechAlgebraComplex U F).homology p)
     (β : (cechAlgebraComplex U F).homology q) :
     cechCupHomology U F q p n h' β α = (-1 : ℤ) ^ (p * q) • cechCupHomology U F p q n h α β := by
-  obtain ⟨x, hx, rfl⟩ := exists_homologyπ_moduleCatCyclesMk_eq _ (p + 1) (by simp) α
-  obtain ⟨y, hy, rfl⟩ := exists_homologyπ_moduleCatCyclesMk_eq _ (q + 1) (by simp) β
-  -- Replace `x` and `y` by their reversals, then `τ x ⌣ τ y` by its reversal, on the right.
-  conv_rhs => rw [← homologyπ_moduleCatCyclesMk_cechReverse U x,
-    ← homologyπ_moduleCatCyclesMk_cechReverse U y, cechCupHomology_homologyπ_moduleCatCyclesMk,
-    ← homologyπ_moduleCatCyclesMk_cechReverse, ← map_zsmul]
-  rw [cechCupHomology_homologyπ_moduleCatCyclesMk]
-  congr 1
-  apply moduleCat_iCycles_injective
-  rw [map_zsmul, iCycles_moduleCatCyclesMk, iCycles_moduleCatCyclesMk,
-    cechReverse_cechCup_cechReverse U hF h' y x, smul_smul, mul_comm q p, ← pow_add,
-    Even.neg_one_pow ⟨_, rfl⟩, one_smul]
+  simp only [cechCupHomology_eq_cechComplexCup]
+  exact cechComplexCup_comm U
+    (P := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
+    (Q := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
+    (S := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
+    (fun X ↦ LinearMap.mul R (F.obj X)) (fun X ↦ LinearMap.mul R (F.obj X))
+    (cechAlgebraMul_naturality F) (cechAlgebraMul_naturality F)
+    (fun X (x y : F.obj X) ↦ hF X y x) p q n h α β
 
 /-- **Odd classes square to zero** when `2` is invertible: for a presheaf of commutative algebras
 on a thin category, graded commutativity makes a class `α` of odd degree anticommute with itself,
