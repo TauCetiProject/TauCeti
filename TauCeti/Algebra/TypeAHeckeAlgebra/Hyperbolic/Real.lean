@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic.Basic
+public import Mathlib.Analysis.SpecialFunctions.Sigmoid
 import TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam.Analytic
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import Mathlib.Tactic.FieldSimp
@@ -188,40 +189,34 @@ theorem range_realHyperbolicProjParam_neg (θ : ℝ) :
     rw [realHyperbolicProjParam_neg_neg α θ, hα]
 
 /-- **Upper-`α` endpoint limit.** For every real `θ`, as `α → +∞`, `realHyperbolicProjParam α θ`
-tends to `exp (-2 * θ) / (1 + exp (-2 * θ))`. -/
+tends to `Real.sigmoid (-(2 * θ)) = exp (-2 * θ) / (1 + exp (-2 * θ))`. -/
 theorem tendsto_realHyperbolicProjParam_atTop (θ : ℝ) :
     Filter.Tendsto (fun α ↦ realHyperbolicProjParam α θ) Filter.atTop
-      (𝓝 (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ)))) := by
-  simp_rw [realHyperbolicProjParam_def]
-  have hend : (1 - 1 * Real.tanh θ) / 2 = Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ)) := by
-    rw [one_mul, Real.one_sub_tanh_div_two]
-  rw [← hend]
-  exact (tendsto_const_nhds.sub (Real.tendsto_tanh_atTop.mul_const _)).div_const 2
+      (𝓝 (Real.sigmoid (-(2 * θ)))) := by
+  simp_rw [realHyperbolicProjParam_def, ← Real.one_sub_tanh_div_two]
+  simpa using (tendsto_const_nhds.sub (Real.tendsto_tanh_atTop.mul_const _)).div_const 2
 
 /-- **Lower-`α` endpoint limit.** For every real `θ`, as `α → -∞`, `realHyperbolicProjParam α θ`
-tends to `1 / (1 + exp (-2 * θ))`. -/
+tends to `Real.sigmoid (2 * θ) = 1 / (1 + exp (-2 * θ))`. -/
 theorem tendsto_realHyperbolicProjParam_atBot (θ : ℝ) :
     Filter.Tendsto (fun α ↦ realHyperbolicProjParam α θ) Filter.atBot
-      (𝓝 (1 / (1 + Real.exp (-2 * θ)))) := by
-  simp_rw [realHyperbolicProjParam_def]
-  have hend : (1 - (-1) * Real.tanh θ) / 2 = 1 / (1 + Real.exp (-2 * θ)) := by
-    rw [neg_one_mul, sub_neg_eq_add, Real.one_add_tanh_div_two]
-  rw [← hend]
-  exact (tendsto_const_nhds.sub (Real.tendsto_tanh_atBot.mul_const _)).div_const 2
+      (𝓝 (Real.sigmoid (2 * θ))) := by
+  simp_rw [realHyperbolicProjParam_def, ← Real.one_add_tanh_div_two]
+  simpa using (tendsto_const_nhds.sub (Real.tendsto_tanh_atBot.mul_const _)).div_const 2
 
 /-- For every real `θ`, as `α → +∞`, `realHyperbolicWenzlProjParam α θ` tends to
-`1 / (1 + exp (-2 * θ))`. -/
+`Real.sigmoid (2 * θ) = 1 / (1 + exp (-2 * θ))`. -/
 theorem tendsto_realHyperbolicWenzlProjParam_atTop (θ : ℝ) :
     Filter.Tendsto (fun α ↦ realHyperbolicWenzlProjParam α θ) Filter.atTop
-      (𝓝 (1 / (1 + Real.exp (-2 * θ)))) := by
+      (𝓝 (Real.sigmoid (2 * θ))) := by
   simpa [Function.comp_def] using
     (tendsto_realHyperbolicProjParam_atBot θ).comp Filter.tendsto_neg_atTop_atBot
 
 /-- For every real `θ`, as `α → -∞`, `realHyperbolicWenzlProjParam α θ` tends to
-`exp (-2 * θ) / (1 + exp (-2 * θ))`. -/
+`Real.sigmoid (-(2 * θ)) = exp (-2 * θ) / (1 + exp (-2 * θ))`. -/
 theorem tendsto_realHyperbolicWenzlProjParam_atBot (θ : ℝ) :
     Filter.Tendsto (fun α ↦ realHyperbolicWenzlProjParam α θ) Filter.atBot
-      (𝓝 (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ)))) := by
+      (𝓝 (Real.sigmoid (-(2 * θ)))) := by
   simpa [Function.comp_def] using
     (tendsto_realHyperbolicProjParam_atTop θ).comp Filter.tendsto_neg_atBot_atTop
 
@@ -244,10 +239,10 @@ theorem strictMono_realHyperbolicWenzlProjParam {θ : ℝ} (hθ : 0 < θ) :
 
 /-- **Positive-real interval bijection (`0 < θ`).** For `0 < θ` (so `Q = exp (-2 * θ) ∈ (0, 1)`),
 `α ↦ realHyperbolicProjParam α θ` is a bijection from `ℝ` onto the open interval
-`(Q / (1 + Q), 1 / (1 + Q))`. -/
+`(Real.sigmoid (-(2 * θ)), Real.sigmoid (2 * θ)) = (Q / (1 + Q), 1 / (1 + Q))`. -/
 theorem bijOn_realHyperbolicProjParam {θ : ℝ} (hθ : 0 < θ) :
     Set.BijOn (fun α ↦ realHyperbolicProjParam α θ) Set.univ
-      (Set.Ioo (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ))) (1 / (1 + Real.exp (-2 * θ)))) := by
+      (Set.Ioo (Real.sigmoid (-(2 * θ))) (Real.sigmoid (2 * θ))) := by
   have ht : 0 < Real.tanh θ := by simpa using Real.tanh_strictMono hθ
   have haff : Set.BijOn (fun t : ℝ ↦ (1 - t * Real.tanh θ) / 2) (Set.Ioo (-1 : ℝ) 1)
       (Set.Ioo ((1 - Real.tanh θ) / 2) ((1 + Real.tanh θ) / 2)) := by
@@ -262,79 +257,72 @@ theorem bijOn_realHyperbolicProjParam {θ : ℝ} (hθ : 0 < θ) :
   simpa only [Function.comp_def, ← realHyperbolicProjParam_def] using haff.comp Real.tanh_bijOn
 
 /-- For `0 < θ`, Wenzl's parameter `α ↦ realHyperbolicWenzlProjParam α θ` is also a bijection from
-`ℝ` onto `(exp (-2 * θ) / (1 + exp (-2 * θ)), 1 / (1 + exp (-2 * θ)))`. -/
+`ℝ` onto `(Real.sigmoid (-(2 * θ)), Real.sigmoid (2 * θ))`. -/
 theorem bijOn_realHyperbolicWenzlProjParam {θ : ℝ} (hθ : 0 < θ) :
     Set.BijOn (fun α ↦ realHyperbolicWenzlProjParam α θ) Set.univ
-      (Set.Ioo (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ))) (1 / (1 + Real.exp (-2 * θ)))) := by
+      (Set.Ioo (Real.sigmoid (-(2 * θ))) (Real.sigmoid (2 * θ))) := by
   have hneg : Set.BijOn Neg.neg (Set.univ : Set ℝ) Set.univ :=
     ⟨fun _ _ ↦ trivial, neg_injective.injOn, fun x _ ↦ ⟨-x, trivial, neg_neg x⟩⟩
   simpa [Function.comp_def] using (bijOn_realHyperbolicProjParam hθ).comp hneg
 
 /-- For `0 < θ`, the range of `α ↦ realHyperbolicProjParam α θ` is
-`(exp (-2 * θ) / (1 + exp (-2 * θ)), 1 / (1 + exp (-2 * θ)))`. -/
+`(Real.sigmoid (-(2 * θ)), Real.sigmoid (2 * θ))`. -/
 theorem range_realHyperbolicProjParam_of_pos {θ : ℝ} (hθ : 0 < θ) :
     Set.range (fun α ↦ realHyperbolicProjParam α θ) =
-      Set.Ioo (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ))) (1 / (1 + Real.exp (-2 * θ))) := by
+      Set.Ioo (Real.sigmoid (-(2 * θ))) (Real.sigmoid (2 * θ)) := by
   rw [← Set.image_univ]
   exact (bijOn_realHyperbolicProjParam hθ).image_eq
 
 /-- For every nonzero real `θ`, the range of `α ↦ realHyperbolicProjParam α θ` is the open interval
-between `1 / (1 + exp (-2 * θ))` and `exp (-2 * θ) / (1 + exp (-2 * θ))`. -/
+between `Real.sigmoid (2 * θ)` and `Real.sigmoid (-(2 * θ))`. -/
 theorem range_realHyperbolicProjParam_of_ne_zero {θ : ℝ} (hθ : θ ≠ 0) :
     Set.range (fun α ↦ realHyperbolicProjParam α θ) =
-      Set.Ioo (min (1 / (1 + Real.exp (-2 * θ))) (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ))))
-        (max (1 / (1 + Real.exp (-2 * θ))) (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ)))) := by
+      Set.Ioo (min (Real.sigmoid (2 * θ)) (Real.sigmoid (-(2 * θ))))
+        (max (Real.sigmoid (2 * θ)) (Real.sigmoid (-(2 * θ)))) := by
   rcases lt_or_gt_of_ne hθ with hlt | hgt
-  · have hpos : 0 < -θ := neg_pos.2 hlt
-    have hQ₁ : Real.exp (-2 * (-θ)) / (1 + Real.exp (-2 * (-θ))) =
-        1 / (1 + Real.exp (-2 * θ)) := by
-      rw [← Real.one_sub_tanh_div_two, Real.tanh_neg, sub_neg_eq_add, Real.one_add_tanh_div_two]
-    have hQ₂ : 1 / (1 + Real.exp (-2 * (-θ))) =
-        Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ)) := by
-      rw [← Real.one_add_tanh_div_two, Real.tanh_neg, ← sub_eq_add_neg, Real.one_sub_tanh_div_two]
-    have hle : 1 / (1 + Real.exp (-2 * θ)) ≤ Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ)) :=
-      div_le_div_of_nonneg_right (Real.one_le_exp (by linarith)) (by positivity)
-    rw [← range_realHyperbolicProjParam_neg, range_realHyperbolicProjParam_of_pos hpos, hQ₁, hQ₂,
-      min_eq_left hle, max_eq_right hle]
-  · have hle : Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ)) ≤ 1 / (1 + Real.exp (-2 * θ)) :=
-      div_le_div_of_nonneg_right (Real.exp_le_one_iff.2 (by linarith)) (by positivity)
+  · have hle : Real.sigmoid (2 * θ) ≤ Real.sigmoid (-(2 * θ)) :=
+      Real.sigmoid_le_iff.2 (by linarith)
+    rw [← range_realHyperbolicProjParam_neg, range_realHyperbolicProjParam_of_pos (neg_pos.2 hlt),
+      mul_neg, neg_neg, min_eq_left hle, max_eq_right hle]
+  · have hle : Real.sigmoid (-(2 * θ)) ≤ Real.sigmoid (2 * θ) :=
+      Real.sigmoid_le_iff.2 (by linarith)
     rw [range_realHyperbolicProjParam_of_pos hgt, min_eq_right hle, max_eq_left hle]
 
 private theorem min_lt_max_realHyperbolicProjParam_endpoints {θ : ℝ} (hθ : θ ≠ 0) :
-    min (1 / (1 + Real.exp (-2 * θ))) (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ))) <
-      max (1 / (1 + Real.exp (-2 * θ))) (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ))) :=
+    min (Real.sigmoid (2 * θ)) (Real.sigmoid (-(2 * θ))) <
+      max (Real.sigmoid (2 * θ)) (Real.sigmoid (-(2 * θ))) :=
   Set.nonempty_Ioo.1 (range_realHyperbolicProjParam_of_ne_zero hθ ▸ Set.range_nonempty _)
 
 /-- **Closure of the real hyperbolic family.** For every real `θ` (including `θ = 0`, where both
 sides equal `{1 / 2}`), the closure of the range of `α ↦ realHyperbolicProjParam α θ` is the closed
-interval `[min (1 / (1 + Q)) (Q / (1 + Q)), max (1 / (1 + Q)) (Q / (1 + Q))]` at
-`Q = exp (-2 * θ)`. -/
+interval `[min (Real.sigmoid (2 * θ)) (Real.sigmoid (-(2 * θ))),
+max (Real.sigmoid (2 * θ)) (Real.sigmoid (-(2 * θ)))]`. -/
 theorem closure_range_realHyperbolicProjParam (θ : ℝ) :
     closure (Set.range fun α ↦ realHyperbolicProjParam α θ) =
-      Set.Icc (min (1 / (1 + Real.exp (-2 * θ))) (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ))))
-        (max (1 / (1 + Real.exp (-2 * θ))) (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ)))) := by
+      Set.Icc (min (Real.sigmoid (2 * θ)) (Real.sigmoid (-(2 * θ))))
+        (max (Real.sigmoid (2 * θ)) (Real.sigmoid (-(2 * θ)))) := by
   rcases eq_or_ne θ 0 with rfl | hθ
-  · simp [Set.range_const, one_add_one_eq_two]
+  · simp [Set.range_const, one_div]
   · rw [range_realHyperbolicProjParam_of_ne_zero hθ]
     exact closure_Ioo (min_lt_max_realHyperbolicProjParam_endpoints hθ).ne
 
 /-- The greatest lower bound of `α ↦ realHyperbolicProjParam α θ` is
-`min (1 / (1 + exp (-2 * θ))) (exp (-2 * θ) / (1 + exp (-2 * θ)))`. -/
+`min (Real.sigmoid (2 * θ)) (Real.sigmoid (-(2 * θ)))`. -/
 theorem sInf_range_realHyperbolicProjParam (θ : ℝ) :
     sInf (Set.range fun α ↦ realHyperbolicProjParam α θ) =
-      min (1 / (1 + Real.exp (-2 * θ))) (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ))) := by
+      min (Real.sigmoid (2 * θ)) (Real.sigmoid (-(2 * θ))) := by
   rcases eq_or_ne θ 0 with rfl | hθ
-  · simp [Set.range_const, one_add_one_eq_two]
+  · simp [Set.range_const, one_div]
   · rw [range_realHyperbolicProjParam_of_ne_zero hθ]
     exact csInf_Ioo (min_lt_max_realHyperbolicProjParam_endpoints hθ)
 
 /-- The least upper bound of `α ↦ realHyperbolicProjParam α θ` is
-`max (1 / (1 + exp (-2 * θ))) (exp (-2 * θ) / (1 + exp (-2 * θ)))`. -/
+`max (Real.sigmoid (2 * θ)) (Real.sigmoid (-(2 * θ)))`. -/
 theorem sSup_range_realHyperbolicProjParam (θ : ℝ) :
     sSup (Set.range fun α ↦ realHyperbolicProjParam α θ) =
-      max (1 / (1 + Real.exp (-2 * θ))) (Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ))) := by
+      max (Real.sigmoid (2 * θ)) (Real.sigmoid (-(2 * θ))) := by
   rcases eq_or_ne θ 0 with rfl | hθ
-  · simp [Set.range_const, one_add_one_eq_two]
+  · simp [Set.range_const, one_div]
   · rw [range_realHyperbolicProjParam_of_ne_zero hθ]
     exact csSup_Ioo (min_lt_max_realHyperbolicProjParam_endpoints hθ)
 
@@ -343,22 +331,26 @@ endpoint of the real hyperbolic interval tends to `0 = a_(-1)(Q)`. -/
 theorem tendsto_sInf_range_realHyperbolicProjParam_atTop :
     Filter.Tendsto (fun θ ↦ sInf (Set.range fun α ↦ realHyperbolicProjParam α θ)) Filter.atTop
       (𝓝 0) := by
-  simp_rw [sInf_range_realHyperbolicProjParam, ← Real.one_add_tanh_div_two,
-    ← Real.one_sub_tanh_div_two]
-  simpa using
-    (((tendsto_const_nhds (x := (1 : ℝ))).add Real.tendsto_tanh_atTop).div_const 2).min
-      (((tendsto_const_nhds (x := (1 : ℝ))).sub Real.tendsto_tanh_atTop).div_const 2)
+  simp_rw [sInf_range_realHyperbolicProjParam]
+  have h1 : Filter.Tendsto (fun θ : ℝ ↦ Real.sigmoid (2 * θ)) Filter.atTop (𝓝 1) :=
+    Real.tendsto_sigmoid_atTop.comp (Filter.tendsto_id.const_mul_atTop zero_lt_two)
+  have h2 : Filter.Tendsto (fun θ : ℝ ↦ Real.sigmoid (-(2 * θ))) Filter.atTop (𝓝 0) :=
+    Real.tendsto_sigmoid_atBot.comp
+      (Filter.tendsto_neg_atTop_atBot.comp (Filter.tendsto_id.const_mul_atTop zero_lt_two))
+  simpa using h1.min h2
 
 /-- **Scalar limit of the upper interval endpoint as `θ → +∞`.** As `θ → +∞` (`Q → 0⁺`), the upper
 endpoint of the real hyperbolic interval tends to `1 = a_1(Q)`. -/
 theorem tendsto_sSup_range_realHyperbolicProjParam_atTop :
     Filter.Tendsto (fun θ ↦ sSup (Set.range fun α ↦ realHyperbolicProjParam α θ)) Filter.atTop
       (𝓝 1) := by
-  simp_rw [sSup_range_realHyperbolicProjParam, ← Real.one_add_tanh_div_two,
-    ← Real.one_sub_tanh_div_two]
-  simpa [one_add_one_eq_two] using
-    (((tendsto_const_nhds (x := (1 : ℝ))).add Real.tendsto_tanh_atTop).div_const 2).max
-      (((tendsto_const_nhds (x := (1 : ℝ))).sub Real.tendsto_tanh_atTop).div_const 2)
+  simp_rw [sSup_range_realHyperbolicProjParam]
+  have h1 : Filter.Tendsto (fun θ : ℝ ↦ Real.sigmoid (2 * θ)) Filter.atTop (𝓝 1) :=
+    Real.tendsto_sigmoid_atTop.comp (Filter.tendsto_id.const_mul_atTop zero_lt_two)
+  have h2 : Filter.Tendsto (fun θ : ℝ ↦ Real.sigmoid (-(2 * θ))) Filter.atTop (𝓝 0) :=
+    Real.tendsto_sigmoid_atBot.comp
+      (Filter.tendsto_neg_atTop_atBot.comp (Filter.tendsto_id.const_mul_atTop zero_lt_two))
+  simpa using h1.max h2
 
 /-- **Scalar limit of the lower interval endpoint as `θ → -∞`.** As `θ → -∞` (`Q → +∞`), the lower
 endpoint of the real hyperbolic interval tends to `0`. -/
@@ -382,14 +374,23 @@ theorem tendsto_sSup_range_realHyperbolicProjParam_atBot :
   rw [h]
   exact tendsto_sSup_range_realHyperbolicProjParam_atTop.comp Filter.tendsto_neg_atBot_atTop
 
+private theorem one_div_one_add_exp_neg_two_mul_eq_sigmoid (θ : ℝ) :
+    1 / (1 + Real.exp (-2 * θ)) = Real.sigmoid (2 * θ) := by
+  rw [Real.sigmoid_def, one_div, neg_mul]
+
+private theorem exp_neg_two_mul_div_one_add_eq_sigmoid_neg (θ : ℝ) :
+    Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ)) = Real.sigmoid (-(2 * θ)) := by
+  rw [← Real.sigmoid_mul_rexp_neg (2 * θ), Real.sigmoid_def, div_eq_mul_inv, neg_mul, mul_comm]
+
 /-- **Boundary relation `τ = η * (1 - η)`.** For every real `θ` and `η`,
 `(4 * cosh θ ^ 2)⁻¹ = η * (1 - η)` holds if and only if `η` is one of the two interval endpoints
-`1 / (1 + exp (-2 * θ))` or `exp (-2 * θ) / (1 + exp (-2 * θ))`. -/
+`Real.sigmoid (2 * θ)` or `Real.sigmoid (-(2 * θ))`. -/
 theorem inv_four_mul_cosh_sq_eq_mul_one_sub_iff {θ η : ℝ} :
     (4 * Real.cosh θ ^ 2)⁻¹ = η * (1 - η) ↔
-      η = 1 / (1 + Real.exp (-2 * θ)) ∨ η = Real.exp (-2 * θ) / (1 + Real.exp (-2 * θ)) := by
+      η = Real.sigmoid (2 * θ) ∨ η = Real.sigmoid (-(2 * θ)) := by
   rw [← wenzlParam_neg_two_real_exp_neg_two_mul,
-    wenzlParam_neg_two_eq_mul_one_sub_iff (by positivity)]
+    wenzlParam_neg_two_eq_mul_one_sub_iff (by positivity),
+    one_div_one_add_exp_neg_two_mul_eq_sigmoid, exp_neg_two_mul_div_one_add_eq_sigmoid_neg]
 
 /-- **Closed-interval characterization `(4 * cosh θ ^ 2)⁻¹ ≤ η * (1 - η)`.** For every real `θ` and
 `η`, `(4 * cosh θ ^ 2)⁻¹ ≤ η * (1 - η)` holds if and only if `η` belongs to the closure of the real
@@ -398,7 +399,9 @@ theorem inv_four_mul_cosh_sq_le_mul_one_sub_iff {θ η : ℝ} :
     (4 * Real.cosh θ ^ 2)⁻¹ ≤ η * (1 - η) ↔
       η ∈ closure (Set.range fun α ↦ realHyperbolicProjParam α θ) := by
   rw [← wenzlParam_neg_two_real_exp_neg_two_mul,
-    wenzlParam_neg_two_le_mul_one_sub_iff (by positivity), closure_range_realHyperbolicProjParam]
+    wenzlParam_neg_two_le_mul_one_sub_iff (by positivity),
+    one_div_one_add_exp_neg_two_mul_eq_sigmoid, exp_neg_two_mul_div_one_add_eq_sigmoid_neg,
+    closure_range_realHyperbolicProjParam]
 
 /-- **Open-interval characterization `(4 * cosh θ ^ 2)⁻¹ < η * (1 - η)`.** For every real `θ` and
 `η`, the strict inequality `(4 * cosh θ ^ 2)⁻¹ < η * (1 - η)` holds if and only if `θ ≠ 0` and
@@ -407,7 +410,8 @@ theorem inv_four_mul_cosh_sq_lt_mul_one_sub_iff {θ η : ℝ} :
     (4 * Real.cosh θ ^ 2)⁻¹ < η * (1 - η) ↔
       θ ≠ 0 ∧ η ∈ Set.range fun α ↦ realHyperbolicProjParam α θ := by
   rw [← wenzlParam_neg_two_real_exp_neg_two_mul,
-    wenzlParam_neg_two_lt_mul_one_sub_iff (by positivity)]
+    wenzlParam_neg_two_lt_mul_one_sub_iff (by positivity),
+    one_div_one_add_exp_neg_two_mul_eq_sigmoid, exp_neg_two_mul_div_one_add_eq_sigmoid_neg]
   rcases eq_or_ne θ 0 with rfl | hθ
   · simp
   · simp [hθ, range_realHyperbolicProjParam_of_ne_zero hθ]

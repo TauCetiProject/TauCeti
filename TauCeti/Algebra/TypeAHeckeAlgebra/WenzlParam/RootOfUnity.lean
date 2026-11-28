@@ -65,8 +65,9 @@ private theorem wenzlParam_exp_ofReal_mul_I (k : ℤ) {θ : ℝ} (hθ : Real.cos
 theorem wenzlParam_exp_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k) (hkl : k < l) :
     wenzlParam (k : ℤ) (exp (2 * π * I / l)) =
       ↑(Real.sin ((k + 1) * π / l) / (2 * Real.cos (π / l) * Real.sin (k * π / l))) := by
-  have hcos : 0 < Real.cos (π / l) := cos_pi_div_natCast_pos (by omega)
-  have hsin : 0 < Real.sin (k * π / l) := sin_natCast_mul_pi_div_natCast_pos hk₀ hkl
+  have hcos : 0 < Real.cos (π / l) := cos_pi_div_pos (by exact_mod_cast (by omega : 2 < l))
+  have hsin : 0 < Real.sin (k * π / l) :=
+    sin_mul_pi_div_pos (Nat.cast_pos.2 hk₀) (Nat.cast_lt.2 hkl)
   have h := wenzlParam_exp_ofReal_mul_I k hcos.ne' (by simpa [mul_div_assoc] using hsin.ne')
   rw [two_mul_pi_div_mul_I] at h
   simpa [mul_div_assoc] using h
@@ -83,8 +84,9 @@ theorem wenzlParam_exp_neg_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 
 theorem wenzlParam_neg_exp_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k) (hkl : k < l) :
     wenzlParam (-(k : ℤ)) (exp (2 * π * I / l)) =
       ↑(Real.sin ((k - 1) * π / l) / (2 * Real.cos (π / l) * Real.sin (k * π / l))) := by
-  have hcos : 0 < Real.cos (π / l) := cos_pi_div_natCast_pos (by omega)
-  have hsin : 0 < Real.sin (k * π / l) := sin_natCast_mul_pi_div_natCast_pos hk₀ hkl
+  have hcos : 0 < Real.cos (π / l) := cos_pi_div_pos (by exact_mod_cast (by omega : 2 < l))
+  have hsin : 0 < Real.sin (k * π / l) :=
+    sin_mul_pi_div_pos (Nat.cast_pos.2 hk₀) (Nat.cast_lt.2 hkl)
   have h := wenzlParam_exp_ofReal_mul_I (-(k : ℤ)) hcos.ne'
     (by simpa [mul_div_assoc, Real.sin_neg] using hsin.ne')
   rw [two_mul_pi_div_mul_I] at h
@@ -135,7 +137,7 @@ theorem wenzlParam_exp_two_pi_mul_I_div_two_mul {m : ℕ} (hm : 2 ≤ m) :
   have h := wenzlParam_exp_two_pi_mul_I_div (l := 2 * m) (k := m) (by omega) (by omega) (by omega)
   simp only [Nat.cast_mul, Nat.cast_ofNat] at h
   have hcos : Real.cos (π / (2 * m)) ≠ 0 := by
-    simpa using (cos_pi_div_natCast_pos (by omega : 2 < 2 * m)).ne'
+    simpa using (cos_pi_div_pos (by exact_mod_cast (by omega : 2 < 2 * m))).ne'
   -- With `θ = π / (2 * m)`: `sin ((m + 1) θ) = cos θ` and `sin (m θ) = 1`.
   have h₁ : (m + 1) * π / (2 * m) = π / (2 * m) + π / 2 := by field_simp; ring
   have h₂ : m * π / (2 * m) = π / 2 := by field_simp
@@ -170,14 +172,17 @@ theorem exists_mem_Ioo_wenzlParam_exp_two_pi_mul_I_div {l k : ℕ} (hk : 2 ≤ k
   have hl : 3 ≤ l := by omega
   have hk₀ : 0 < k := by omega
   have hkl₀ : k < l := by omega
-  have hcos : 0 < Real.cos (π / l) := cos_pi_div_natCast_pos (by omega)
-  have hsin_k : 0 < Real.sin (k * π / l) := sin_natCast_mul_pi_div_natCast_pos hk₀ hkl₀
+  have hcos : 0 < Real.cos (π / l) := cos_pi_div_pos (by exact_mod_cast (by omega : 2 < l))
+  have hsin_k : 0 < Real.sin (k * π / l) :=
+    sin_mul_pi_div_pos (Nat.cast_pos.2 hk₀) (Nat.cast_lt.2 hkl₀)
   have hsin_add : 0 < Real.sin ((k + 1) * π / l) := by
-    simpa using sin_natCast_mul_pi_div_natCast_pos (l := l) (k := k + 1) (by omega) (by omega)
+    simpa using sin_mul_pi_div_pos (Nat.cast_pos.2 (by omega : 0 < k + 1))
+      (Nat.cast_lt.2 (by omega : k + 1 < l))
   have hsin_sub : 0 < Real.sin ((k - 1) * π / l) := by
     have hk_sub : 1 ≤ k := by omega
     simpa [Nat.cast_sub hk_sub] using
-      sin_natCast_mul_pi_div_natCast_pos (l := l) (k := k - 1) (by omega) (by omega)
+      sin_mul_pi_div_pos (Nat.cast_pos.2 (by omega : 0 < k - 1))
+        (Nat.cast_lt.2 (by omega : k - 1 < l))
   set r₁ := Real.sin ((k + 1) * π / l) / (2 * Real.cos (π / l) * Real.sin (k * π / l))
   set r₂ := Real.sin ((k - 1) * π / l) / (2 * Real.cos (π / l) * Real.sin (k * π / l))
   have hr₁ : 0 < r₁ := by positivity

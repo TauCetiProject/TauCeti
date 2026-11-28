@@ -154,11 +154,6 @@ theorem sin_mul_pi_div_pos {x l : ℝ} (h0 : 0 < x) (hx : x < l) : 0 < sin (x * 
   refine sin_pos_of_pos_of_lt_pi (div_pos (mul_pos h0 pi_pos) hl) ?_
   rwa [div_lt_iff₀ hl, mul_comm π, mul_lt_mul_iff_left₀ pi_pos]
 
-/-- For natural indices `0 < k < l`, the sine of `k * π / l` is positive. -/
-theorem sin_natCast_mul_pi_div_natCast_pos {l k : ℕ} (hk₀ : 0 < k) (hkl : k < l) :
-    0 < sin (k * π / l) :=
-  sin_mul_pi_div_pos (Nat.cast_pos.2 hk₀) (Nat.cast_lt.2 hkl)
-
 /-- On `(π/6, 5π/6)`, `sin θ > 1/2`. -/
 theorem two_inv_lt_sin_of_mem_Ioo {θ : ℝ} (hθ : θ ∈ Set.Ioo (π / 6) (5 * π / 6)) :
     2⁻¹ < sin θ := by
@@ -179,10 +174,6 @@ theorem cos_pi_div_pos {x : ℝ} (hx : 2 < x) : 0 < cos (π / x) := by
   have hx₀ : 0 < x := by linarith
   refine cos_pos_of_mem_Ioo ⟨by linarith [div_pos pi_pos hx₀, pi_pos], ?_⟩
   rwa [div_lt_div_iff_of_pos_left pi_pos hx₀ two_pos]
-
-/-- For a natural denominator `2 < l`, the cosine of `π / l` is positive. -/
-theorem cos_pi_div_natCast_pos {l : ℕ} (hl : 2 < l) : 0 < cos (π / l) :=
-  cos_pi_div_pos (by exact_mod_cast hl)
 
 /-- If `α, β > 0`, `γ ≥ 0` and `α + β + γ < π`, then `(cos α cos β + cos γ) / (sin α sin β) > 1`.
 Indeed `cos α cos β - sin α sin β = -cos (π - α - β)`, and `cos (π - α - β) < cos γ` because

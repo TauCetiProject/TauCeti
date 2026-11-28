@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Complex.Trigonometric
 public import Mathlib.Analysis.SpecialFunctions.Artanh
+public import Mathlib.Analysis.SpecialFunctions.Sigmoid
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
@@ -46,8 +47,8 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
 * `Real.one_add_exp_two_mul`, `Real.one_add_tanh`, `Real.one_sub_tanh`,
   `Real.one_sub_tanh_div_two`, `Real.one_add_tanh_div_two`, `Real.one_add_tanh_le` and
   `Real.one_sub_tanh_le` — `1 + exp (2 * x) = 2 * cosh x * exp x`,
-  `1 ± tanh x = exp (± x) / cosh x`, `(1 - tanh x) / 2 = exp (-2 * x) / (1 + exp (-2 * x))`,
-  `(1 + tanh x) / 2 = 1 / (1 + exp (-2 * x))`, and `Real.tanh` approaches `∓1` at the rate
+  `1 ± tanh x = exp (± x) / cosh x`, `(1 - tanh x) / 2 = Real.sigmoid (-(2 * x))`,
+  `(1 + tanh x) / 2 = Real.sigmoid (2 * x)`, and `Real.tanh` approaches `∓1` at the rate
   `2 * exp (± 2 x)`.
 * `Real.one_sub_tanh_sq_le`, `Real.exists_iteratedDeriv_succ_tanh_eq_mul_eval` and
   `Real.exists_abs_iteratedDeriv_succ_tanh_le` — every derivative of positive order of
@@ -532,27 +533,22 @@ theorem one_add_exp_two_mul (x : ℝ) : 1 + exp (2 * x) = 2 * cosh x * exp x := 
   apply Complex.ofReal_injective
   simpa [Complex.ofReal_exp, Complex.ofReal_cosh] using Complex.one_add_exp_two_mul (x : ℂ)
 
-/-- `(1 - tanh x) / 2 = exp (-2 * x) / (1 + exp (-2 * x))`. -/
-theorem one_sub_tanh_div_two (x : ℝ) :
-    (1 - tanh x) / 2 = exp (-2 * x) / (1 + exp (-2 * x)) := by
-  have h1 : 1 + exp (-2 * x) = 2 * cosh x * exp (-x) := by
-    simpa [mul_neg] using one_add_exp_two_mul (-x)
-  have hexp : exp (-x) * exp (-x) = exp (-2 * x) := by
-    rw [← exp_add]
-    ring_nf
-  have hc : cosh x ≠ 0 := (cosh_pos x).ne'
-  have he : exp (-x) ≠ 0 := (exp_pos (-x)).ne'
-  rw [one_sub_tanh, div_div, h1,
-    div_eq_div_iff (mul_ne_zero hc two_ne_zero) (mul_ne_zero (mul_ne_zero two_ne_zero hc) he)]
-  linear_combination 2 * cosh x * hexp
-
-/-- `(1 + tanh x) / 2 = 1 / (1 + exp (-2 * x))`, the logistic sigmoid at `2 * x`. -/
+/-- `(1 + tanh x) / 2 = Real.sigmoid (2 * x)`, relating the hyperbolic tangent and the logistic
+sigmoid. -/
 theorem one_add_tanh_div_two (x : ℝ) :
-    (1 + tanh x) / 2 = 1 / (1 + exp (-2 * x)) := by
-  have h : (1 + tanh x) / 2 = 1 - (1 - tanh x) / 2 := by ring
-  rw [h, one_sub_tanh_div_two]
-  have hden : 1 + exp (-2 * x) ≠ 0 := by positivity
-  field_simp [hden]
+    (1 + tanh x) / 2 = sigmoid (2 * x) := by
+  have h1 : 1 + exp (-(2 * x)) = 2 * cosh x * exp (-x) := by
+    simpa [mul_neg] using one_add_exp_two_mul (-x)
+  have hexp : exp x * exp (-x) = 1 := by rw [← exp_add, add_neg_cancel, exp_zero]
+  have hc : cosh x ≠ 0 := (cosh_pos x).ne'
+  rw [sigmoid_def, one_add_tanh, div_div, h1, ← one_div, eq_comm,
+    div_eq_div_iff (by positivity) (mul_ne_zero hc two_ne_zero)]
+  linear_combination -2 * cosh x * hexp
+
+/-- `(1 - tanh x) / 2 = Real.sigmoid (-(2 * x))`. -/
+theorem one_sub_tanh_div_two (x : ℝ) :
+    (1 - tanh x) / 2 = sigmoid (-(2 * x)) := by
+  rw [sigmoid_neg, ← one_add_tanh_div_two]
   ring
 
 end Real

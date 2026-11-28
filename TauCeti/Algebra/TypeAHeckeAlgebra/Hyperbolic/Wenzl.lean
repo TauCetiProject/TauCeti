@@ -57,9 +57,11 @@ theorem wenzlParam_neg_two_mul_hyperbolicHeckeParam_add_inv_sq {θ : ℂ} (hθ :
       ((hyperbolicHeckeParam θ : ℂ) + ↑(hyperbolicHeckeParam θ)⁻¹) ^ 2 = 1 := by
   have hsum : (hyperbolicHeckeParam θ : ℂ) + ↑(hyperbolicHeckeParam θ)⁻¹ = 2 * cosh θ := by
     rw [val_hyperbolicHeckeParam, val_inv_hyperbolicHeckeParam, two_cosh, add_comm]
-  have htwo : (2 : ℂ) ^ 2 = 4 := by norm_num
-  rw [wenzlParam_neg_two_exp_neg_two_mul, hsum, mul_pow, htwo]
-  exact inv_mul_cancel₀ (mul_ne_zero (by norm_num) (pow_ne_zero 2 hθ))
+  have hne : ((hyperbolicHeckeParam θ : ℂ) + ↑(hyperbolicHeckeParam θ)⁻¹) ^ 2 ≠ 0 := by
+    rw [hsum]
+    exact pow_ne_zero 2 (mul_ne_zero two_ne_zero hθ)
+  rw [← val_hyperbolicHeckeParam_sq, wenzlParam_neg_two_sq, Units.val_inv_eq_inv_val]
+  exact inv_mul_cancel₀ (by simpa only [Units.val_inv_eq_inv_val] using hne)
 
 namespace InfiniteTypeAHeckeAlgebra
 
