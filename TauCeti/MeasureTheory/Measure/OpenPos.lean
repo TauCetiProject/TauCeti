@@ -46,8 +46,6 @@ set whose closure contains the point, for any measure positive on nonempty open 
 * `IsOpen.eqOn_diag_of_forall_ae_eq`: local continuous representatives of one function on balls
   around the points of `closure U` glue along the diagonal.
 * `TauCeti.eq_of_ae_eq_of_interior_closure_eq`: a.e. equal regular open sets are equal.
-* `TauCeti.nhdsGT_inf_ae_le_ae_restrict_Ioo`: a property of almost every point of `(a, b)` holds
-  at almost every point close to `a` on the right.
 * `Metric.measureReal_ball_pos`: a ball of positive radius has positive real measure.
 * `Metric.measureReal_closedBall_pos`: a closed ball of positive radius has positive real
   measure.
@@ -180,14 +178,6 @@ theorem eq_of_ae_eq_of_interior_closure_eq {X : Type*} [TopologicalSpace X] [Mea
     s = t := by
   have hsopen : IsOpen s := hs ▸ isOpen_interior
   rw [← hs, ← ht, hsopen.closure_eq_of_ae_eq (ht ▸ isOpen_interior) hst]
-
-/-- Almost every point close to `a` on the right is almost every point of `(a, b)`: the filter
-`𝓝[>] a ⊓ ae μ` of essential right limits at `a` refines `ae (μ.restrict (Ioo a b))`. -/
-theorem nhdsGT_inf_ae_le_ae_restrict_Ioo {X : Type*} [TopologicalSpace X] [LinearOrder X]
-    [OrderTopology X] [MeasurableSpace X] {μ : Measure X} {a b : X} (hab : a < b) :
-    𝓝[>] a ⊓ ae μ ≤ ae (μ.restrict (Ioo a b)) :=
-  (le_inf inf_le_right (inf_le_left.trans (le_principal_iff.2 (Ioo_mem_nhdsGT hab)))).trans
-    le_ae_restrict
 
 /-- In a proper space, a measure that is positive on nonempty open sets and finite on compact sets
 gives every ball of positive radius positive real measure. -/

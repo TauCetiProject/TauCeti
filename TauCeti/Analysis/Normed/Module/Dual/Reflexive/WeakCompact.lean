@@ -33,8 +33,8 @@ With Šmulian's theorem (`TauCeti.tendsto_subseq_toWeakSpace_of_isCompact_closur
 sequence in a reflexive real or complex normed space has a weakly convergent subsequence
 (`TauCeti.tendsto_subseq_toWeakSpace_of_isBounded`), and every norm-bounded, sequentially weakly
 closed subset is weakly compact (`TauCeti.isCompact_toWeakSpace_of_isBounded_of_isSeqClosed`).
-Consequently a bounded operator from a reflexive normed space maps closed balls to norm-closed
-sets (`ContinuousLinearMap.isClosed_image_closedBall`).
+Consequently a bounded operator from a reflexive seminormed space into a normed space maps closed
+balls to norm-closed sets (`ContinuousLinearMap.isClosed_image_closedBall`).
 
 ## References
 
@@ -101,6 +101,22 @@ theorem surjective_inclusionInDoubleDual_iff_isCompact_toWeakSpace_closedBall :
   ⟨fun hE ↦ isCompact_toWeakSpace_closedBall hE 0 1,
     surjective_inclusionInDoubleDual_of_isCompact_toWeakSpace_closedBall⟩
 
+/-- **A bounded operator on a reflexive space maps closed balls to closed sets.** If `E` is a
+reflexive real or complex seminormed space and `T : E →L[𝕜] G` is bounded, with `G` normed, then
+`T '' closedBall x r` is closed in `G`. -/
+theorem _root_.ContinuousLinearMap.isClosed_image_closedBall
+    (hE : Surjective (inclusionInDoubleDual 𝕜 E)) {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace 𝕜 G] (T : E →L[𝕜] G) (x : E) (r : ℝ) :
+    IsClosed (T '' closedBall x r) := by
+  -- The image of the weakly compact ball under the weakly continuous map `T` is weakly compact,
+  -- hence weakly closed, hence norm-closed.
+  have hK := (isCompact_toWeakSpace_closedBall hE x r).image (WeakSpace.map T).continuous
+  have hcomp : toWeakSpace 𝕜 G ∘ T = WeakSpace.map T ∘ toWeakSpace 𝕜 E :=
+    funext fun v ↦ (WeakSpace.map_apply T v).symm
+  rw [← image_comp, ← hcomp, image_comp] at hK
+  rw [← preimage_image_eq (T '' closedBall x r) (toWeakSpace 𝕜 G).injective]
+  exact hK.isClosed.preimage (toWeakSpaceCLM 𝕜 G).continuous
+
 section Normed
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
@@ -122,22 +138,6 @@ theorem isCompact_toWeakSpace_of_isBounded_of_isSeqClosed
     IsCompact (toWeakSpace 𝕜 F '' s) := by
   have hc := isCompact_closure_toWeakSpace_of_isBounded hF hb
   exact ((isClosed_weakSpace_iff_isSeqClosed hc).2 hseq).closure_eq ▸ hc
-
-/-- **A bounded operator on a reflexive space maps closed balls to closed sets.** If `F` is a
-reflexive real or complex normed space and `T : F →L[𝕜] G` is bounded, then `T '' closedBall x r`
-is closed in `G`. -/
-theorem _root_.ContinuousLinearMap.isClosed_image_closedBall
-    (hF : Surjective (inclusionInDoubleDual 𝕜 F)) {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace 𝕜 G] (T : F →L[𝕜] G) (x : F) (r : ℝ) :
-    IsClosed (T '' closedBall x r) := by
-  -- The image of the weakly compact ball under the weakly continuous map `T` is weakly compact,
-  -- hence weakly closed, hence norm-closed.
-  have hK := (isCompact_toWeakSpace_closedBall hF x r).image (WeakSpace.map T).continuous
-  have hcomp : toWeakSpace 𝕜 G ∘ T = WeakSpace.map T ∘ toWeakSpace 𝕜 F :=
-    funext fun v ↦ (WeakSpace.map_apply T v).symm
-  rw [← image_comp, ← hcomp, image_comp] at hK
-  rw [← preimage_image_eq (T '' closedBall x r) (toWeakSpace 𝕜 G).injective]
-  exact hK.isClosed.preimage (toWeakSpaceCLM 𝕜 G).continuous
 
 end Normed
 

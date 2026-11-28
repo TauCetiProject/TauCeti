@@ -9,7 +9,8 @@ public import TauCeti.Analysis.PDE.Parabolic.DirichletProblem
 public import TauCeti.Analysis.PDE.Parabolic.SolutionOperator
 public import TauCeti.Analysis.Sobolev.EvolutionSpace.InitialValue
 import TauCeti.Analysis.Convex.Uniform.Basic
-import TauCeti.MeasureTheory.Measure.OpenPos
+import TauCeti.Analysis.Normed.Operator.EssentialLimit
+import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
 # The pivot space is the sharp target of the energy space
@@ -72,7 +73,8 @@ theorem exists_toContinuousMap_left_eq (hι : DenseRange ι) (hab : a < b) (u₀
   ⟨parabolicSolutionL hι hab (A := fun _ ↦ innerSL ℝ) (fun _ _ ↦ aestronglyMeasurable_const)
       (Eventually.of_forall fun _ ↦ norm_innerSL_le ℝ) one_pos le_rfl
       (Eventually.of_forall fun _ v ↦ by
-        rw [innerSL_apply_apply, real_inner_self_eq_norm_sq, one_mul, zero_mul, sub_zero]) (u₀, 0),
+        rw [innerSL_apply_apply, real_inner_self_eq_norm_sq]
+        simp) (u₀, 0),
     toContinuousMap_parabolicSolutionL_left ..⟩
 
 /-- **The pivot space is the sharp target.** For a Gelfand triple `V ↪ H ↪ V*` whose inclusion
