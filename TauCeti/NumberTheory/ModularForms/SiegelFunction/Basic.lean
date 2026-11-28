@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 public import Mathlib.NumberTheory.ZetaValues
+import TauCeti.Analysis.Complex.Periodic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
 public import TauCeti.Analysis.SpecialFunctions.QPochhammer
 
@@ -515,12 +516,6 @@ theorem siegelFunction_zero_half_mul_half_zero_mul_half_half {τ : ℂ} (hτ : 0
   conv_rhs => rw [← mul_one (2 * I * _ * _ * _ * _), ← (one_pow 2 : (1 : ℂ) ^ 2 = 1), ← heuler]
   ring
 
-private theorem exp_pi_I_mul_eq_qParam_two (τ : ℂ) : cexp (π * I * τ) = 𝕢 2 τ := by
-  rw [Function.Periodic.qParam]
-  congr 1
-  push_cast
-  ring
-
 private theorem exp_neg_pi_I_mul_div_twelve_pow_four (τ : ℂ) :
     cexp (-(π * I * τ / 12)) ^ 4 = cexp (-(π * I * τ / 3)) := by
   rw [← Complex.exp_natCast_mul]
@@ -556,7 +551,7 @@ theorem siegelFunction_zero_half_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
 theorem siegelFunction_half_zero_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
     siegelFunction ![1 / 2, 0] τ ^ 4 =
       cexp (-(π * I * τ / 3)) * (∏' n : ℕ, (1 - 𝕢 2 τ ^ (2 * n + 1))) ^ 8 := by
-  rw [siegelFunction_half_zero hτ, exp_pi_I_mul_eq_qParam_two, mul_pow, neg_pow,
+  rw [siegelFunction_half_zero hτ, Periodic.exp_pi_mul_I_mul_eq_qParam_two, mul_pow, neg_pow,
     exp_neg_pi_I_mul_div_twelve_pow_four, ← pow_mul]
   norm_num
 
@@ -572,7 +567,8 @@ theorem siegelFunction_half_half_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
     ring
   have hodd : ∏' n : ℕ, (1 + 𝕢 2 τ ^ (2 * n + 1)) = ∏' n : ℕ, (1 - (-𝕢 2 τ) ^ (2 * n + 1)) :=
     tprod_congr fun n ↦ (one_sub_neg_pow_odd _ n).symm
-  rw [siegelFunction_half_half hτ, exp_pi_I_mul_eq_qParam_two, hodd, mul_pow, mul_pow, neg_pow,
+  rw [siegelFunction_half_half hτ, Periodic.exp_pi_mul_I_mul_eq_qParam_two, hodd, mul_pow, mul_pow,
+    neg_pow,
     exp_neg_pi_I_mul_div_twelve_pow_four, h₄, ← pow_mul]
   norm_num
 

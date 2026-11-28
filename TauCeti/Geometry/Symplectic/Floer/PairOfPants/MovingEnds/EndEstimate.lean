@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.EndLinearization.Chart
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart.Output
 import TauCeti.Analysis.Complex.ThricePuncturedSphere.MovingEnds
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.Topology.Instances.Real.TSupport
@@ -68,8 +69,10 @@ chart as a strictly monotone function of the longitudinal coordinate
 The patching of the end estimates of `D_u` with the interior estimate into the semi-Fredholm
 estimate on the whole sphere is
 `exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add_of_movingEnds`
-in `TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds.SemiFredholm`; the corresponding
-patching for the formal adjoint is not treated here.
+in `TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds.SemiFredholm`, and the corresponding
+patching for the formal adjoint is
+`exists_forall_sum_setIntegral_add_le_mul_integral_floerLinearizationAdjoint_add_of_movingEnds`
+there.
 
 ## References
 
@@ -238,14 +241,13 @@ theorem
           (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
             Complex.I) u ξ z‖ ^ 2 := by
-  set ψ := realChart fun z ↦ c i + a i * zero.cylindricalEndLift z with hψ
+  set ψ := realChart fun z ↦ c i + a i * zero.cylindricalEndLift z
   have hpb (ζ : ℝ × ℝ) (hζ : 2 < ζ.1) :=
     Floer.perturbationPullback_realChart_puncturedSpherePerturbation_of_two_le (Hout := Hout) hH ha
       hsep hout i hζ.le
   -- Beyond `s = 0` the chart avoids the centers.
-  have hψne (ζ : ℝ × ℝ) (hζ : 0 < ζ.1) (j : ι) : Complex.equivRealProdCLM.symm (ψ ζ) ≠ c j := by
-    rw [hψ, equivRealProdCLM_symm_realChart]
-    exact add_mul_cylindricalEndLift_ne hsep (ha i) (by simpa using hζ) j
+  have hψne (ζ : ℝ × ℝ) (hζ : 0 < ζ.1) (j : ι) : Complex.equivRealProdCLM.symm (ψ ζ) ≠ c j :=
+    equivRealProdCLM_symm_realChart_add_mul_cylindricalEndLift_ne hsep (ha i) hζ j
   obtain ⟨C, R, hR, hest⟩ :=
     ω.exists_forall_setIntegral_comp_le_mul_integral_floerLinearization_of_chart (R₁ := 2) hX
       (hHs i) hx hnd hJe hJex (fun ζ _ ↦ (contDiff_realChart (by fun_prop)).contDiffAt)
@@ -329,7 +331,8 @@ theorem
   refine ⟨C, R, hR, fun ξ hξ hξc hξR ↦ ?_⟩
   obtain ⟨b, hb⟩ := exists_forall_notMem_Ioo_positiveEndChart_inf_eq_zero hξc hξR
   exact hest hξ hb (ω.integrable_norm_floerLinearization_sq_puncturedSpherePerturbation hH hHs
-    hHout hHouts ha (fun ζ hζ ↦ equivRealProdCLM_symm_positiveEndChart_inf_ne hout (by linarith))
+    hHout hHouts ha (fun ζ hζ ↦ equivRealProdCLM_symm_positiveEndChart_inf_ne
+      (fun i ↦ by linarith [hout i, norm_nonneg (a i)]) (by linarith))
     hJ hu hξ hξc (hξR.trans (image_mono (prod_mono (Ioi_subset_Ioi hR.le) subset_rfl))))
 
 /-! ### The formal adjoint -/
@@ -549,7 +552,8 @@ exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdj
   obtain ⟨b, hb⟩ := exists_forall_notMem_Ioo_positiveEndChart_inf_eq_zero hηc hηR
   refine (hest hη hb (ω.integrable_mul_norm_floerLinearizationAdjoint_sq_puncturedSpherePerturbation
     hH hHs hHout hHouts ha
-    (fun ζ hζ ↦ equivRealProdCLM_symm_positiveEndChart_inf_ne hout (by linarith))
+    (fun ζ hζ ↦ equivRealProdCLM_symm_positiveEndChart_inf_ne
+      (fun i ↦ by linarith [hout i, norm_nonneg (a i)]) (by linarith))
     (fun ζ hζ ↦ hJ ζ (by linarith))
     (fun ζ hζ ↦ (hu ζ (by linarith)).of_le one_le_two) (by fun_prop) (hη.of_le one_le_two) hηc
     (hηR.trans (image_mono (prod_mono (Ioi_subset_Ioi hR.le) subset_rfl))))).trans_eq ?_

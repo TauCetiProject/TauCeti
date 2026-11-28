@@ -260,19 +260,25 @@ variable {proj : Z → B} (hS : IsLocallyTrivialReduction proj H S)
 /-- The atlas of `S` given by the chosen equivariant trivializations of a locally trivial
 reduction. -/
 def atlas : MapFiber.Atlas H (fun p : S ↦ proj p) :=
-  ⟨fun b ↦ (isLocallyTrivialReduction_iff.mp hS b).choose,
-    fun b ↦ (isLocallyTrivialReduction_iff.mp hS b).choose_spec.1⟩
+  MapFiber.Atlas.ofTrivAt
+    (fun b ↦ (isLocallyTrivialReduction_iff.mp hS b).choose)
+    (fun b ↦ (isLocallyTrivialReduction_iff.mp hS b).choose_spec.1)
 
 /-- The trivialization of the atlas at `b` is the chosen equivariant trivialization at `b`. -/
 theorem atlas_trivAt (b : B) :
-    hS.atlas.trivAt b = (isLocallyTrivialReduction_iff.mp hS b).choose :=
-  (rfl)
+    hS.atlas.trivAt b = (isLocallyTrivialReduction_iff.mp hS b).choose := by
+  simp [atlas]
+
+/-- The charts of the reduction atlas are the range of `hS.atlas.trivAt`. -/
+theorem atlas_charts : hS.atlas.charts = range hS.atlas.trivAt := by
+  simp [atlas, MapFiber.Atlas.charts_ofTrivAt]
 
 /-- The trivializations of the atlas turn the action of `H` into right multiplication. -/
 theorem atlas_trivAt_mk_smul (b : B) (g : H) (p : S) (hgp : op (g : G) • (p : Z) ∈ S)
     (hp : proj p ∈ (hS.atlas.trivAt b).baseSet) :
-    hS.atlas.trivAt b ⟨_, hgp⟩ = ((hS.atlas.trivAt b p).1, (hS.atlas.trivAt b p).2 * g) :=
-  (isLocallyTrivialReduction_iff.mp hS b).choose_spec.2 g p hgp hp
+    hS.atlas.trivAt b ⟨_, hgp⟩ = ((hS.atlas.trivAt b p).1, (hS.atlas.trivAt b p).2 * g) := by
+  rw [hS.atlas_trivAt] at hp ⊢
+  exact (isLocallyTrivialReduction_iff.mp hS b).choose_spec.2 g p hgp hp
 
 /-- **A locally trivial reduction is a fibre bundle** with fibre `H`: the fibres of `S` over the
 base, with the chosen trivializations as atlas. -/
@@ -305,7 +311,9 @@ theorem principalBundle (hproj : ∀ (g : Gᵐᵒᵖ) (z : Z), proj (g • z) = 
       (proj_reductionMulAction_smul hproj hSH)
     PrincipalBundle H (MapFiber fun p : S ↦ proj p) :=
   letI := reductionMulAction hSH
-  hS.atlas.principalBundle (proj_reductionMulAction_smul hproj hSH) fun b p hp g ↦ by
+  hS.atlas.principalBundle (proj_reductionMulAction_smul hproj hSH) fun t ht p hp g ↦ by
+    rw [hS.atlas_charts] at ht
+    obtain ⟨b, rfl⟩ := ht
     rw [reductionMulAction_smul_eq_mk hSH g p (hSH p p.property g g.property),
       hS.atlas_trivAt_mk_smul b g p _ hp]
 

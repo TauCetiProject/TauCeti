@@ -26,13 +26,16 @@ The estimate for a single test function is
 
 The slab hypothesis is load-bearing: no such inequality holds on the whole space, by
 `TauCeti.not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv`. So is the boundary condition: the
-constant function `1` on a nonempty bounded open `Ω` lies in `W^{1,p}(Ω)` with zero gradient.
+constant function `1` on a nonempty bounded open `Ω` lies in `W^{1,p}(Ω)` with zero gradient, and
+not in `W^{1,p}_0(Ω)` (`TauCeti.W1p.const_notMem_w1p0Submodule`).
 
 ## Main declarations
 
 * `TauCeti.W1p.norm_value_le_mul_norm_gradient_of_subset_slab`: Poincaré on a slab-contained
   domain.
 * `TauCeti.W1p.norm_value_le_mul_norm_gradient_of_subset_ball`: the bounded-ball corollary.
+* `TauCeti.W1p.const_notMem_w1p0Submodule`: on a nonempty bounded domain, nonzero constants do
+  not lie in `W^{1,p}_0(Ω)`.
 
 ## References
 
@@ -132,5 +135,19 @@ theorem W1p.norm_value_le_mul_norm_gradient_of_subset_ball
   have hwidth : (c 0 + R) - (c 0 - R) = 2 * R := by ring
   simpa only [hwidth] using W1p.norm_value_le_mul_norm_gradient_of_subset_slab
     hslab hu
+
+/-- **Nonzero constants have nonzero boundary values.** On a nonempty bounded open
+`Ω ⊆ ℝ^{n+1}`, the constant function `c ≠ 0` lies in `W^{1,p}(Ω)` but not in `W^{1,p}_0(Ω)`: its
+gradient vanishes, so the Poincaré inequality would force it to vanish. -/
+theorem W1p.const_notMem_w1p0Submodule
+    [IsFiniteMeasure (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))]
+    (hne : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))).Nonempty)
+    (hbdd : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) {c : ℝ}
+    (hc : c ≠ 0) : (W1p.const c : W1p volume Omega p) ∉ w1p0Submodule volume Omega p := by
+  intro hmem
+  obtain ⟨R, -, hball⟩ := hbdd.subset_ball_lt 0 0
+  have h := W1p.norm_value_le_mul_norm_gradient_of_subset_ball hball hmem
+  rw [W1p.gradient_const, norm_zero, mul_zero] at h
+  exact W1p.value_const_ne_zero hne hc (norm_le_zero_iff.1 h)
 
 end TauCeti

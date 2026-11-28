@@ -55,6 +55,8 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.map_intCast_zmod_surjective`: strong approximation for `SL₂`,
   with `Matrix.SpecialLinearGroup.map_intCast_zmod_prod_surjective` its two-modulus form:
   reductions prescribed at coprime `d` and `d'` are realized by one integral matrix.
+* `Matrix.SpecialLinearGroup.exists_mul_diagonal_eq_diagonal_mul`: for a unit `u` modulo `d`,
+  every `γ ∈ SL₂(ℤ)` has a twist `γ'` with `γ' diag(1, u) = diag(1, u) γ` modulo `d`.
 * `Matrix.SpecialLinearGroup.mem_ker_map_iff`, `Matrix.SpecialLinearGroup.ker_map_mono`: an
   element of `SL(ι, R)` lies in the kernel of base change along `f : R →+* S` iff it is congruent
   to the identity modulo `RingHom.ker f` entrywise, and these kernels grow with `RingHom.ker f`.
@@ -63,6 +65,9 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.mem_ker_map_quotientMk_iff`,
   `Matrix.SpecialLinearGroup.ker_map_quotientMk_mono`: the same entrywise description modulo an
   ideal `I`, and monotonicity of these kernels in `I`.
+* `Matrix.SpecialLinearGroup.toGL_mem_ker_map_iff`, `Matrix.SpecialLinearGroup.kerMapToGL`:
+  `toGL` identifies the kernel of base change on `SL(ι, -)` with its preimage of the kernel of
+  base change on `GL ι`, and restricts to a homomorphism between these kernels.
 * `Matrix.SpecialLinearGroup.map_injective` and `Matrix.SpecialLinearGroup.mem_range_map_iff`:
   along an injective ring hom, base change is injective and its range is described entrywise.
 * `Matrix.SpecialLinearGroup.mapGL_neg` and `Matrix.SpecialLinearGroup.mapGL_neg_one`:
@@ -189,6 +194,25 @@ theorem toGL_map {R S : Type*} [CommRing R] [CommRing S] {n : Type*}
   apply GeneralLinearGroup.ext
   intro i j
   simp only [coe_GL_coe_matrix, map_apply_coe, GeneralLinearGroup.map_apply, Matrix.map_apply]
+
+/-- A matrix of `SL(n, R)` lies in the kernel of base change along `f` on `GL n` exactly when it
+lies in the kernel of base change along `f` on `SL(n, -)`. -/
+theorem toGL_mem_ker_map_iff {R S : Type*} [CommRing R] [CommRing S] {n : Type*}
+    [Fintype n] [DecidableEq n] {f : R →+* S} {g : SpecialLinearGroup n R} :
+    toGL g ∈ (GeneralLinearGroup.map f).ker ↔ g ∈ (map f).ker := by
+  rw [MonoidHom.mem_ker, MonoidHom.mem_ker, ← toGL_map, ← map_one toGL, toGL_injective.eq_iff]
+
+/-- The inclusion `toGL`, restricted to the kernels of base change along `f`: it carries the
+kernel on `SL(n, -)` into the kernel on `GL n`. -/
+def kerMapToGL {R S : Type*} [CommRing R] [CommRing S] {n : Type*} [Fintype n] [DecidableEq n]
+    (f : R →+* S) : (map (n := n) f).ker →* (GeneralLinearGroup.map (n := n) f).ker :=
+  (toGL.comp (Subgroup.subtype _)).codRestrict _ fun g ↦ toGL_mem_ker_map_iff.2 g.property
+
+@[simp]
+theorem coe_kerMapToGL {R S : Type*} [CommRing R] [CommRing S] {n : Type*} [Fintype n]
+    [DecidableEq n] (f : R →+* S) (g : (map (n := n) f).ker) :
+    (kerMapToGL f g : GL n R) = toGL (g : SpecialLinearGroup n R) :=
+  (rfl)
 
 /-- Base change of special linear groups along an injective ring hom is injective. -/
 theorem map_injective {R S : Type*} [CommRing R] [CommRing S] {n : Type*} [Fintype n]
@@ -797,6 +821,25 @@ theorem map_intCast_zmod_surjective :
   obtain ⟨τ, hτ⟩ := exists_map_eq_of_col_eq (M⁻¹ * g)
     (inv_mul_zero_zero_eq_one M g hcol0 hcol1) (inv_mul_one_zero_eq_zero M g hcol0 hcol1)
   exact ⟨σ * τ, by rw [map_mul, ← hMdef, hτ, mul_inv_cancel_left]⟩
+
+/-- **Twisting by a diagonal matrix.** For a unit `u` modulo `d`, every `γ ∈ SL₂(ℤ)` has a twist
+`γ' ∈ SL₂(ℤ)` with `γ' diag(1, u) = diag(1, u) γ` modulo `d`. -/
+theorem exists_mul_diagonal_eq_diagonal_mul (u : (ZMod d)ˣ) (γ : SL(2, ℤ)) :
+    ∃ γ' : SL(2, ℤ), ((γ' : SL(2, ZMod d)) : Matrix (Fin 2) (Fin 2) (ZMod d)) *
+        Matrix.diagonal ![1, (u : ZMod d)] =
+      Matrix.diagonal ![1, (u : ZMod d)] * (γ : SL(2, ZMod d)) := by
+  set g := ((γ : SL(2, ZMod d)) : Matrix (Fin 2) (Fin 2) (ZMod d))
+  have hg : g 0 0 * g 1 1 - g 0 1 * g 1 0 = 1 := by
+    rw [← Matrix.det_fin_two]
+    exact (γ : SL(2, ZMod d)).det_coe
+  let g' : SL(2, ZMod d) := ⟨!![g 0 0, g 0 1 * ↑u⁻¹; ↑u * g 1 0, g 1 1], by
+    rw [Matrix.det_fin_two_of]
+    linear_combination hg - g 0 1 * g 1 0 * Units.inv_mul u⟩
+  obtain ⟨γ', hγ'⟩ := map_intCast_zmod_surjective g'
+  refine ⟨γ', ?_⟩
+  rw [hγ']
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [g', Matrix.mul_apply, Fin.sum_univ_two, mul_comm]
 
 
 /-- **Strong approximation for `SL₂` at two coprime moduli**: for coprime `d` and `d'`, the joint

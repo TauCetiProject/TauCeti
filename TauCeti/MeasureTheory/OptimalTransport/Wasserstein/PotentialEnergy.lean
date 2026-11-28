@@ -365,6 +365,15 @@ theorem integrable_comp_of_norm_gradient_le {α : Type*} [MeasurableSpace α] {�
   rw [abs_le] at this ⊢
   constructor <;> nlinarith [neg_abs_le (V 0), le_abs_self (V 0)]
 
+omit [BorelSpace E] [SecondCountableTopology E] in
+/-- The potential energy of a differentiable potential whose gradient grows at most linearly,
+`‖∇V x‖ ≤ C (1 + ‖x‖)`, is the Bochner integral `∫ V dρ` at every finite measure `ρ` with finite
+second moment. -/
+theorem potentialEnergy_eq_integral_of_norm_gradient_le {ρ : Measure E} [IsFiniteMeasure ρ]
+    (hV : Differentiable ℝ V) (hV' : ∀ x, ‖gradient V x‖ ≤ C * (1 + ‖x‖)) (hρ : MemLp id 2 ρ) :
+    potentialEnergy V ρ = ((∫ x, V x ∂ρ : ℝ) : EReal) :=
+  potentialEnergy_of_integrable (integrable_comp_of_norm_gradient_le hV hV' hρ)
+
 /-- **The first variation of the potential energy.** Let `V` be a differentiable potential whose
 gradient grows at most linearly, `‖∇V x‖ ≤ C (1 + ‖x‖)`, and let `ρ` be a finite measure with
 finite second moment. For every vector field `ξ ∈ L²(ρ; E)`, the potential energy

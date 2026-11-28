@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.QExpansion
 import Mathlib.RingTheory.RootsOfUnity.Lemmas
 import TauCeti.Algebra.BigOperators.Intervals
-import TauCeti.Data.ZMod.Count
+import TauCeti.Data.ZMod.FinEquiv
 import TauCeti.NumberTheory.ModularForms.LevelOne.Invariant
 import TauCeti.NumberTheory.ModularForms.QExpansion.BigO
 import TauCeti.RingTheory.HahnSeries.Multiplication
