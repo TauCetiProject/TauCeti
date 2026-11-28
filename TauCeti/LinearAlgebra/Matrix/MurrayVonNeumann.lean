@@ -336,12 +336,6 @@ theorem IsMurrayVonNeumannEquivalent.exists_mul_conjTranspose_mul_self_eq_suppor
   · rw [← hvp, ← Matrix.mul_assoc, hv]
   · rw [← hvq, hv]
 
-private lemma mul_conjTranspose_eq_of_isStarProjection {m n R : Type*} [Fintype n]
-    [NonUnitalSemiring R] [StarRing R] {p : Matrix n n R} (hp : IsStarProjection p)
-    {x : Matrix m n R} (hxp : x * p = x) : p * xᴴ = xᴴ := by
-  simpa only [conjTranspose_mul, ← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq] using
-    congr_arg conjTranspose hxp
-
 /-- Square matrix projections are equivalent exactly when they are the initial and final
 projections of a partial isometry. -/
 theorem isMurrayVonNeumannEquivalent_iff_exists_isPartialIsometry {p q : Matrix m m R} :

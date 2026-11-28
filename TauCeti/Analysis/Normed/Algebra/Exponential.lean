@@ -138,15 +138,13 @@ theorem _root_.IsIdempotentElem.exp_smul {𝕜 A : Type*} [NontriviallyNormedFie
     [ContinuousSMul ℚ 𝕜] [CompleteSpace 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A] [CompleteSpace A]
     {p : A} (hp : IsIdempotentElem p) (c : 𝕜) :
     NormedSpace.exp (c • p) = 1 + (NormedSpace.exp c - 1) • p := by
-  have h1 := (hasSum_nat_add_iff' 1).mpr (NormedSpace.exp_series_hasSum_exp' (𝕂 := 𝕜) (c • p))
-  have h2 : HasSum (fun n : ℕ => ((n + 1) !⁻¹ : 𝕜) • c ^ (n + 1)) (NormedSpace.exp c - 1) := by
-    simpa [Finset.sum_range_one] using
-      (hasSum_nat_add_iff' 1).mpr (NormedSpace.exp_series_hasSum_exp' (𝕂 := 𝕜) c)
-  have h3 : HasSum (fun n : ℕ => ((n + 1) !⁻¹ : 𝕜) • (c • p) ^ (n + 1))
+  have h1 := NormedSpace.hasSum_exp_sub_one 𝕜 (c • p)
+  have h2 := NormedSpace.hasSum_exp_sub_one 𝕜 c
+  have h3 : HasSum (fun n : ℕ => (((n + 1)! : 𝕜))⁻¹ • (c • p) ^ (n + 1))
       ((NormedSpace.exp c - 1) • p) := by
     convert h2.smul_const p using 1
     ext n; rw [smul_pow, hp.pow_succ_eq, smul_assoc]
-  simpa [Finset.sum_range_one, sub_eq_iff_eq_add', add_comm] using h1.unique h3
+  simpa only [sub_eq_iff_eq_add', add_comm] using h1.unique h3
 
 /-! ### Additivity and cancellation in a complete normed algebra -/
 

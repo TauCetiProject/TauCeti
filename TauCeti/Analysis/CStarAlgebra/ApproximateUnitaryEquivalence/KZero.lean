@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnitaryEquivalence.Matrix
 public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.KZero
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
-import TauCeti.Analysis.CStarAlgebra.Projection.Perturbation
+import TauCeti.Analysis.CStarAlgebra.Projection.Nearby
 
 /-!
 # Approximate unitary equivalence and projection K-theory
@@ -57,10 +57,10 @@ theorem projectionMonoid_map_eq (h : ApproximatelyUnitarilyEquivalent φ ψ) :
       simpa only [StarAlgEquiv.toNonUnitalStarAlgHom_apply,
         Unitary.conjStarAlgAut_apply] using
         hφP.map (Unitary.conjStarAlgAut ℂ _ u).toNonUnitalStarAlgHom
-    obtain ⟨v, hv, heq, -⟩ :=
-      hconj.exists_mem_unitary_mul_mul_star_eq_of_norm_sub_lt_one hψP hclose
+    obtain ⟨v, heq, -, -⟩ :=
+      hconj.exists_unitary_conj_of_norm_sub_lt_one hψP hclose
     have huM := CStarMatrix.ofMatrix_symm_mem_unitary_iff.mpr u.prop
-    have hvM := CStarMatrix.ofMatrix_symm_mem_unitary_iff.mpr hv
+    have hvM := CStarMatrix.ofMatrix_symm_mem_unitary_iff.mpr v.prop
     have hpφ := hp.matrix_map (NonUnitalStarRingHom.ofClass φ)
     have h₁ := hpφ.isMurrayVonNeumannEquivalent_mul_mul_star huM
     have h₂ := h₁.isStarProjection_right.isMurrayVonNeumannEquivalent_mul_mul_star hvM

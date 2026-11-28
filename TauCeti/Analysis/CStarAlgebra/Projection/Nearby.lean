@@ -12,9 +12,9 @@ public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Pol
 
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Order
-import Mathlib.Analysis.SpecificLimits.Normed
-import Mathlib.Topology.UniformSpace.Compact
+import Mathlib.Topology.Connected.Clopen
 import TauCeti.Algebra.Ring.Invertible
+import TauCeti.Algebra.Star.Projection.Pair
 import TauCeti.Algebra.Star.Projection.Unitization
 
 /-!
@@ -30,9 +30,10 @@ Perturbation and homotopy theory for star projections in complex C⋆-algebras:
   `.exists_unitization_unitary_conj_of_norm_sub_lt_one`,
   `.exists_path_isStarProjection_of_norm_sub_lt_one`: nearby projections (`‖p - q‖ < 1`) are
   unitarily conjugate in the identity path component and joined by a continuous path of projections.
-* `Path.exists_unitary_conj_of_isStarProjection`,
-  `Path.exists_unitization_unitary_conj_of_isStarProjection`: endpoints of a norm-continuous path of
-  star projections are unitarily conjugate in the identity path component.
+* `Continuous.exists_joined_one_mul_mul_star_eq`, `Path.exists_unitary_conj_of_isStarProjection`,
+  `Path.exists_unitization_unitary_conj_of_isStarProjection`: values of a continuous family (and
+  endpoints of a norm-continuous path) of star projections are unitarily conjugate in the identity
+  path component.
 
 ## References
 
@@ -48,50 +49,18 @@ open scoped CStarAlgebra ComplexOrder NNReal Real unitInterval Ring
 
 section NearbyProjections
 
-private theorem overlap_mul_star_aux {A : Type*} [Ring A] {a b : A} (ha : a * a = a)
-    (hb : b * b = b) :
-    (b * a + (1 - b) * (1 - a)) * (a * b + (1 - a) * (1 - b)) = 1 - (a - b) * (a - b) := by
-  calc (b * a + (1 - b) * (1 - a)) * (a * b + (1 - a) * (1 - b))
-      = b * (a * a) * b + b * (a - a * a) * (1 - b) + (1 - b) * (a - a * a) * b +
-          (1 - b) * (1 - a - a + a * a) * (1 - b) := by noncomm_ring
-    _ = b * a * b + (1 - b - b + b * b - a + b * a + a * b - b * a * b) := by
-          rw [ha]; noncomm_ring
-    _ = 1 - (a * a - a * b - b * a + b * b) := by rw [ha, hb]; noncomm_ring
-    _ = 1 - (a - b) * (a - b) := by noncomm_ring
-
-private theorem overlap_intertwine {A : Type*} [Ring A] {p q : A} (hp : p * p = p)
-    (hq : q * q = q) :
-    (q * p + (1 - q) * (1 - p)) * p = q * (q * p + (1 - q) * (1 - p)) := by
-  calc (q * p + (1 - q) * (1 - p)) * p = q * p := by simp [add_mul, mul_assoc, hp, sub_mul]
-    _ = q * (q * p + (1 - q) * (1 - p)) := by simp [mul_add, ← mul_assoc, hq, mul_sub]
-
-private theorem overlap_mul_star_self {A : Type*} [Ring A] [StarRing A] {p q : A}
-    (hp : IsStarProjection p) (hq : IsStarProjection q) :
-    (q * p + (1 - q) * (1 - p)) * star (q * p + (1 - q) * (1 - p)) = 1 - (p - q) * (p - q) := by
-  simp only [star_add, star_mul, star_sub, star_one, hp.isSelfAdjoint.star_eq,
-    hq.isSelfAdjoint.star_eq]
-  exact overlap_mul_star_aux hp.isIdempotentElem.eq hq.isIdempotentElem.eq
-
-private theorem overlap_star_mul_self {A : Type*} [Ring A] [StarRing A] {p q : A}
-    (hp : IsStarProjection p) (hq : IsStarProjection q) :
-    star (q * p + (1 - q) * (1 - p)) * (q * p + (1 - q) * (1 - p)) = 1 - (p - q) * (p - q) := by
-  simp only [star_add, star_mul, star_sub, star_one, hp.isSelfAdjoint.star_eq,
-    hq.isSelfAdjoint.star_eq]
-  rw [overlap_mul_star_aux hq.isIdempotentElem.eq hp.isIdempotentElem.eq]
-  congr 1; noncomm_ring
-
 private theorem isUnit_overlap {A : Type*} [CStarAlgebra A] {p q : A}
     (hp : IsStarProjection p) (hq : IsStarProjection q) (hpq : ‖p - q‖ < 1) :
-    IsUnit (q * p + (1 - q) * (1 - p)) := by
-  let z : A := q * p + (1 - q) * (1 - p)
-  have hzzs : z * star z = 1 - (p - q) * (p - q) := overlap_mul_star_self hp hq
-  have hzsz : star z * z = 1 - (p - q) * (p - q) := overlap_star_mul_self hp hq
+    IsUnit (TauCeti.intertwiner p q) := by
+  let z : A := TauCeti.intertwiner p q
+  have hzzs : z * star z = 1 - (p - q) ^ 2 := hp.intertwiner_mul_star_intertwiner hq
+  have hzsz : star z * z = 1 - (p - q) ^ 2 := hp.star_intertwiner_mul_intertwiner hq
   have hnormal : Commute z (star z) := hzzs.trans hzsz.symm
-  have hd_sa : (p - q) * (p - q) = star (p - q) * (p - q) := by
-    rw [star_sub, hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq]
-  have hd_norm : ‖(p - q) * (p - q)‖ = ‖p - q‖ * ‖p - q‖ := by
+  have hd_sa : (p - q) ^ 2 = star (p - q) * (p - q) := by
+    rw [pow_two, star_sub, hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq]
+  have hd_norm : ‖(p - q) ^ 2‖ = ‖p - q‖ * ‖p - q‖ := by
     rw [hd_sa, CStarRing.norm_star_mul_self]
-  have h1d : IsUnit (1 - (p - q) * (p - q)) := isUnit_one_sub_of_norm_lt_one (by
+  have h1d : IsUnit (1 - (p - q) ^ 2) := isUnit_one_sub_of_norm_lt_one (by
     rw [hd_norm]; nlinarith [norm_nonneg (p - q)])
   exact (hnormal.isUnit_mul_iff.mp (hzzs ▸ h1d)).1
 
@@ -101,11 +70,13 @@ private theorem nearbyUnitary_add_star {A : Type*} [CStarAlgebra A]
     {u : unitary A}
     (hu_eq : (u : A) = (CFC.sqrt (1 - (p - q) * (p - q)))⁻¹ʳ * (q * p + (1 - q) * (1 - p))) :
     (u : A) + star (u : A) = (2 : ℝ) • CFC.sqrt (1 - (p - q) * (p - q)) := by
-  let z : A := q * p + (1 - q) * (1 - p)
-  let d : A := (p - q) * (p - q)
+  let z : A := TauCeti.intertwiner p q
+  let d : A := (p - q) ^ 2
   let s : A := CFC.sqrt (1 - d)
-  have hzzs : z * star z = 1 - d := overlap_mul_star_self hp hq
-  have hzsz : star z * z = 1 - d := overlap_star_mul_self hp hq
+  have hu_eq' : (u : A) = s⁻¹ʳ * z := by
+    simpa only [s, d, z, pow_two, TauCeti.intertwiner_def] using hu_eq
+  have hzzs : z * star z = 1 - d := hp.intertwiner_mul_star_intertwiner hq
+  have hzsz : star z * z = 1 - d := hp.star_intertwiner_mul_intertwiner hq
   have hnormal : Commute z (star z) := hzzs.trans hzsz.symm
   have hcomm_1d_sz : Commute (1 - d) (star z) := by
     rw [← hzzs]
@@ -117,16 +88,14 @@ private theorem nearbyUnitary_add_star {A : Type*} [CStarAlgebra A]
   have hss : s * s = 1 - d := CFC.sqrt_mul_sqrt_self (1 - d) h1d_nonneg
   -- For projections `p, q`, `z + z⋆ = 2 (1 - (p - q)²) = 2 s²`.
   have hz_add_sz : z + star z = (2 : ℝ) • (s * s) := by
-    rw [hss]
-    simp only [z, d, star_add, star_mul, star_sub, star_one, hp.isSelfAdjoint.star_eq,
-      hq.isSelfAdjoint.star_eq, two_smul]
-    noncomm_ring [hp.isIdempotentElem.eq, hq.isIdempotentElem.eq]
+    rw [hss, hp.intertwiner_add_star_intertwiner hq, two_mul, two_smul]
   -- Since `s` commutes with `z⋆`, `u⋆ = s⁻¹ z⋆`, giving `u + u⋆ = s⁻¹ (z + z⋆) = 2 s`.
   have hcomm_s_sz : Commute s (star z) := hcomm_1d_sz.cfcₙ_nnreal NNReal.sqrt
   have hsu : star (u : A) = s⁻¹ʳ * star z := by
-    rw [hu_eq, star_mul, ← Ring.inverse_star, (CFC.sqrt_nonneg (1 - d)).isSelfAdjoint.star_eq,
+    rw [hu_eq', star_mul, ← Ring.inverse_star, (CFC.sqrt_nonneg (1 - d)).isSelfAdjoint.star_eq,
       hcomm_s_sz.ringInverse_left.eq]
-  rw [hsu, hu_eq, ← mul_add, hz_add_sz, mul_smul_comm, ← mul_assoc,
+  rw [show (CFC.sqrt (1 - (p - q) * (p - q))) = s by simp only [s, d, pow_two]]
+  rw [hsu, hu_eq', ← mul_add, hz_add_sz, mul_smul_comm, ← mul_assoc,
     Ring.inverse_mul_cancel _ hs_unit, one_mul]
 
 private theorem norm_nearbyUnitary_sub_one_le_aux {A : Type*} [CStarAlgebra A]
@@ -137,13 +106,14 @@ private theorem norm_nearbyUnitary_sub_one_le_aux {A : Type*} [CStarAlgebra A]
     ‖(u : A) - 1‖ ≤ √2 * ‖p - q‖ := by
   obtain _ | _ := subsingleton_or_nontrivial A
   · simp [Subsingleton.elim ((u : A) - 1) 0]
-  let z : A := q * p + (1 - q) * (1 - p)
-  let d : A := (p - q) * (p - q)
+  let z : A := TauCeti.intertwiner p q
+  let d : A := (p - q) ^ 2
   let s : A := CFC.sqrt (1 - d)
-  have h1d_nonneg : 0 ≤ 1 - d := overlap_mul_star_self hp hq ▸ mul_star_self_nonneg z
+  have h1d_nonneg : 0 ≤ 1 - d :=
+    hp.intertwiner_mul_star_intertwiner hq ▸ mul_star_self_nonneg z
   -- Step 1: Express `(u - 1)⋆ (u - 1) = 2 (1 - s)` using `u + u⋆ = 2 s`.
-  have hu_add_star : (u : A) + star (u : A) = (2 : ℝ) • s :=
-    nearbyUnitary_add_star hp hq hpq hu_eq
+  have hu_add_star : (u : A) + star (u : A) = (2 : ℝ) • s := by
+    simpa only [s, d, pow_two] using nearbyUnitary_add_star hp hq hpq hu_eq
   have hdiff_sq : star ((u : A) - 1) * ((u : A) - 1) = (2 : ℝ) • (1 - s) := by
     calc star ((u : A) - 1) * ((u : A) - 1)
         = star (u : A) * (u : A) - ((u : A) + star (u : A)) + 1 := by
@@ -153,7 +123,8 @@ private theorem norm_nearbyUnitary_sub_one_le_aux {A : Type*} [CStarAlgebra A]
           abel
   -- Step 2: Bound `0 ≤ 1 - s ≤ d` (since `1 - d ≤ s = √(1 - d) ≤ 1`), hence `‖1 - s‖ ≤ ‖p - q‖²`.
   have hd_sa : d = star (p - q) * (p - q) := by
-    rw [star_sub, hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq]
+    dsimp only [d]
+    rw [pow_two, star_sub, hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq]
   have hd_norm : ‖d‖ = ‖p - q‖ * ‖p - q‖ := by rw [hd_sa, CStarRing.norm_star_mul_self]
   have h1d_le : 1 - d ≤ 1 := sub_le_self 1 (hd_sa ▸ star_mul_self_nonneg (p - q))
   have h1d_norm_le : ‖1 - d‖ ≤ 1 := by
@@ -183,12 +154,15 @@ private theorem coe_nearbyUnitary_spectral {A : Type*} [CStarAlgebra A] {p q : A
       ((hp.nearbyUnitary hq hpq : unitary A) : A) = s⁻¹ʳ * (q * p + (1 - q) * (1 - p)) := by
   let : PartialOrder A := CStarAlgebra.spectralOrder A
   let : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
+  have hzzs : TauCeti.intertwiner p q * star (TauCeti.intertwiner p q) =
+      1 - (p - q) * (p - q) := by
+    rw [hp.intertwiner_mul_star_intertwiner hq, pow_two]
   refine ⟨CFC.sqrt (1 - (p - q) * (p - q)),
-    CFC.sqrt_mul_sqrt_self _ (overlap_mul_star_self hp hq ▸ mul_star_self_nonneg _),
+    CFC.sqrt_mul_sqrt_self _ (hzzs ▸ mul_star_self_nonneg _),
     CStarAlgebra.nonneg_iff_eq_star_mul_self.mp (CFC.sqrt_nonneg _), ?_⟩
   rw [IsStarProjection.nearbyUnitary]
   dsimp only
-  rw [Units.coe_polarUnitary, (isUnit_overlap hp hq hpq).unit_spec, overlap_mul_star_self hp hq]
+  rw [Units.coe_polarUnitary, (isUnit_overlap hp hq hpq).unit_spec, hzzs, TauCeti.intertwiner_def]
 
 /-- Explicit polar formula for Kato's unitary `IsStarProjection.nearbyUnitary`. -/
 theorem IsStarProjection.coe_nearbyUnitary {A : Type*} [CStarAlgebra A]
@@ -208,20 +182,17 @@ theorem IsStarProjection.nearbyUnitary_mul_mul_star {A : Type*} [CStarAlgebra A]
         star ((hp.nearbyUnitary hq hpq : unitary A) : A) = q := by
   let : PartialOrder A := CStarAlgebra.spectralOrder A
   let : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
-  let z : A := q * p + (1 - q) * (1 - p)
-  have hzp : z * p = q * z := overlap_intertwine hp.isIdempotentElem.eq hq.isIdempotentElem.eq
-  have hpzs : p * star z = star z * q := by
-    simpa only [star_mul, hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq] using
-      congrArg star hzp
-  have hcomm_1d_q : Commute (1 - (p - q) * (p - q)) q := by
-    rw [← overlap_mul_star_self hp hq, Commute, SemiconjBy, mul_assoc, ← hpzs, ← mul_assoc, hzp,
-      mul_assoc]
-  have hcomm_s_q : Commute (CFC.sqrt (1 - (p - q) * (p - q))) q :=
+  have hzp : TauCeti.intertwiner p q * p = q * TauCeti.intertwiner p q :=
+    hp.isIdempotentElem.intertwiner_mul hq.isIdempotentElem
+  have hcomm_1d_q : Commute (1 - (p - q) ^ 2) q :=
+    (Commute.one_left q).sub_left
+      (hp.isIdempotentElem.commute_sub_sq_right hq.isIdempotentElem).symm
+  have hcomm_s_q : Commute (CFC.sqrt (1 - (p - q) ^ 2)) q :=
     hcomm_1d_q.cfcₙ_nnreal NNReal.sqrt
   have hup : ((hp.nearbyUnitary hq hpq : unitary A) : A) * p =
       q * ((hp.nearbyUnitary hq hpq : unitary A) : A) := by
-    rw [hp.coe_nearbyUnitary hq hpq, mul_assoc, hzp, ← mul_assoc, hcomm_s_q.ringInverse_left.eq,
-      mul_assoc]
+    rw [hp.coe_nearbyUnitary hq hpq, ← pow_two, ← TauCeti.intertwiner_def, mul_assoc, hzp,
+      ← mul_assoc, hcomm_s_q.ringInverse_left.eq, mul_assoc]
   rw [hup, mul_assoc, Unitary.mul_star_self_of_mem (hp.nearbyUnitary hq hpq).property, mul_one]
 
 /-- Kato's overlap-polar unitary satisfies `‖u - 1‖ ≤ √2 * ‖p - q‖`. -/
@@ -287,56 +258,38 @@ end NearbyProjections
 
 section ProjectionPath
 
+/-! The statement below writes `Star.star`: in a declaration named `Continuous.foo`, plain `star`
+resolves to `Continuous.star`. -/
+
+/-- **Homotopic projections are unitarily equivalent.** For a continuous family `f` of star
+projections of a unital C⋆-algebra over a preconnected space, any two values `f x` and `f y` are
+conjugate by a unitary in the path component of `1`. For a path of projections this compares its
+endpoints. -/
+theorem Continuous.exists_joined_one_mul_mul_star_eq {X : Type*} [TopologicalSpace X]
+    [PreconnectedSpace X] {A : Type*} [CStarAlgebra A] {f : X → A}
+    (hf : Continuous f) (hfp : ∀ x, IsStarProjection (f x)) (x y : X) :
+    ∃ u : unitary A, Joined 1 u ∧ (u : A) * f x * Star.star (u : A) = f y := by
+  refine PreconnectedSpace.induction₂'
+    (fun x y ↦ ∃ u : unitary A, Joined 1 u ∧ (u : A) * f x * Star.star (u : A) = f y)
+    (fun x ↦ ?_) ⟨fun a b c ⟨u, hu, hab⟩ ⟨v, hv, hbc⟩ ↦ ⟨v * u, ?_, ?_⟩⟩ x y
+  · filter_upwards [hf.continuousAt.eventually (Metric.ball_mem_nhds (f x) one_pos)] with y hy
+    rw [dist_eq_norm] at hy
+    obtain ⟨u₁, hu₁_conj, -, hu₁_join⟩ :=
+      (hfp x).exists_unitary_conj_of_norm_sub_lt_one (hfp y) (by rwa [norm_sub_rev])
+    obtain ⟨u₂, hu₂_conj, -, hu₂_join⟩ :=
+      (hfp y).exists_unitary_conj_of_norm_sub_lt_one (hfp x) hy
+    exact ⟨⟨u₁, hu₁_join, hu₁_conj⟩, ⟨u₂, hu₂_join, hu₂_conj⟩⟩
+  · simpa using hv.mul hu
+  · rw [Submonoid.coe_mul, star_mul, ← hbc, ← hab]
+    simp only [mul_assoc]
+
 /-- **Endpoints of a continuous path of projections are unitarily conjugate** in a unital
 C⋆-algebra, by a unitary in the identity path component of `unitary A`. -/
 theorem Path.exists_unitary_conj_of_isStarProjection {A : Type*} [CStarAlgebra A]
     {p q : A} (γ : Path p q) (hγ : ∀ t : I, IsStarProjection (γ t)) :
     ∃ u : unitary A, (u : A) * p * star (u : A) = q ∧ Joined (1 : unitary A) u := by
-  obtain ⟨δ, hδpos, hδ⟩ :=
-    Metric.uniformContinuous_iff.mp (CompactSpace.uniformContinuous_of_continuous γ.continuous)
-      1 zero_lt_one
-  obtain ⟨n, hn⟩ := exists_nat_one_div_lt hδpos
-  let N : ℕ := n + 1
-  have hNposR : (0 : ℝ) < N := Nat.cast_pos.mpr (Nat.succ_pos n)
-  let grid : Fin (N + 1) → I := fun k =>
-    ⟨(k : ℝ) / N, by positivity,
-      (div_le_one hNposR).mpr (Nat.cast_le.mpr (Nat.le_of_lt_succ k.isLt))⟩
-  have hgrid0 : grid ⟨0, Nat.succ_pos N⟩ = 0 := Subtype.ext (by simp [grid])
-  have hgridN : grid ⟨N, Nat.lt_succ_self N⟩ = 1 :=
-    Subtype.ext (by simp [grid])
-  have hdist (k : ℕ) (hk : k + 1 ≤ N) :
-      dist (grid ⟨k, Nat.lt_succ_of_le (Nat.le_of_succ_le hk)⟩)
-        (grid ⟨k + 1, Nat.lt_succ_of_le hk⟩) = (1 : ℝ) / N := by
-    rw [Subtype.dist_eq, Real.dist_eq]
-    have hsub : (grid ⟨k, Nat.lt_succ_of_le (Nat.le_of_succ_le hk)⟩ : ℝ) -
-        (grid ⟨k + 1, Nat.lt_succ_of_le hk⟩ : ℝ) = -((1 : ℝ) / N) := by
-      simp only [grid, Nat.cast_add, Nat.cast_one]
-      ring
-    rw [hsub, abs_neg, abs_of_pos (one_div_pos.mpr hNposR)]
-  have hstep : ∀ k : ℕ, (hk : k ≤ N) →
-      ∃ u : unitary A, (u : A) * γ 0 * star (u : A) = γ (grid ⟨k, Nat.lt_succ_of_le hk⟩) ∧
-        Joined (1 : unitary A) u := fun k => by
-    induction k with
-    | zero => exact fun _ => ⟨1, by rw [hgrid0]; simp, Joined.refl 1⟩
-    | succ k ih =>
-      intro hk
-      obtain ⟨u, hu_conj, hu_join⟩ := ih (Nat.le_of_succ_le hk)
-      let t₁ : I := grid ⟨k, Nat.lt_succ_of_le (Nat.le_of_succ_le hk)⟩
-      let t₂ : I := grid ⟨k + 1, Nat.lt_succ_of_le hk⟩
-      have hnorm : ‖γ t₁ - γ t₂‖ < 1 := by
-        rw [← dist_eq_norm]
-        refine hδ ?_
-        rw [hdist k hk]
-        simpa [N] using hn
-      obtain ⟨v, hv_conj, -, hv_join⟩ :=
-        IsStarProjection.exists_unitary_conj_of_norm_sub_lt_one (hγ t₁) (hγ t₂) hnorm
-      refine ⟨v * u, ?_, by simpa only [one_mul] using hv_join.mul hu_join⟩
-      calc ((v * u : unitary A) : A) * γ 0 * star ((v * u : unitary A) : A)
-          = (v : A) * ((u : A) * γ 0 * star (u : A)) * star (v : A) := by
-            simp only [Submonoid.coe_mul, star_mul]; noncomm_ring
-        _ = γ t₂ := by rw [hu_conj, hv_conj]
-  obtain ⟨u, hu_conj, hu_join⟩ := hstep N le_rfl
-  exact ⟨u, by simpa only [γ.source, γ.target, hgridN] using hu_conj, hu_join⟩
+  obtain ⟨u, hjoin, hconj⟩ := γ.continuous.exists_joined_one_mul_mul_star_eq hγ 0 1
+  exact ⟨u, by simpa only [γ.source, γ.target] using hconj, hjoin⟩
 
 /-- **Endpoints of a continuous path of projections are unitarily conjugate in the unitization**
 for any (possibly non-unital) C⋆-algebra, by a unitary in the identity path component of

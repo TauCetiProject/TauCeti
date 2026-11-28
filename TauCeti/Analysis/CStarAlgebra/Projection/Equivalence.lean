@@ -13,6 +13,7 @@ public import TauCeti.LinearAlgebra.Matrix.MurrayVonNeumann
 import Mathlib.Algebra.Star.UnitaryStarAlgAut
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Order
+import TauCeti.Algebra.Algebra.Unitization
 import TauCeti.Algebra.Star.Projection.Basic
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Unitization
 import TauCeti.Analysis.CStarAlgebra.Projection.Nearby
@@ -369,17 +370,12 @@ theorem MurrayVonNeumannEquiv.of_unitization_unitary_conj
       star (u : (CStarMatrix n n A)⁺¹) = (q : (CStarMatrix n n A)⁺¹)) :
     MurrayVonNeumannEquiv p q := by
   classical
-  let φ : (CStarMatrix n n A)⁺¹ →⋆ₐ[ℂ] CStarMatrix n n A⁺¹ :=
-    Unitization.starLift (CStarMatrix.mapₙₐ (n := n) (Unitization.inrNonUnitalStarAlgHom ℂ A))
-  let φₘ : (CStarMatrix n n A)⁺¹ →⋆* CStarMatrix n n A⁺¹ :=
-    ⟨φ.toAlgHom.toRingHom.toMonoidHom, map_star φ⟩
-  refine MurrayVonNeumannEquiv.of_matrix_unitization_unitary_conj hp (Unitary.map φₘ u) ?_
-  have hφ (M : CStarMatrix n n A) : φ (M : (CStarMatrix n n A)⁺¹) = M.map Unitization.inr := by
-    simp [φ, Unitization.starLift_apply_apply, CStarMatrix.mapₙₐ_apply, CStarMatrix.mapₗ_apply,
-      CStarMatrix.map_inrNonUnitalStarAlgHom]
-  have hφₘ (x : (CStarMatrix n n A)⁺¹) : φₘ x = φ x := by simp [φₘ]
-  rw [Unitary.coe_map]
-  simpa only [hφₘ, map_mul, map_star, hφ] using congrArg φ h
+  obtain ⟨v, hv₁, hv₂⟩ := hp.exists_star_mul_self_eq_of_mem_unitary_unitization u.property h
+  have hq : IsStarProjection q := IsStarProjection.of_inr (R := ℂ) (by
+    rw [← h]
+    simpa only [Unitary.conjStarAlgAut_apply] using
+      hp.inr.map (Unitary.conjStarAlgAut ℂ (CStarMatrix n n A)⁺¹ u))
+  exact ⟨hp, hq, v, by rwa [← star_eq_conjTranspose], by rwa [← star_eq_conjTranspose]⟩
 
 end UnitizationConjugacy
 
@@ -576,8 +572,8 @@ def stabilizedUnitary [DecidableEq m] [DecidableEq n] [Ring A] [StarRing A]
     (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) (hbe : v * p = v) :
     unitary (CStarMatrix (m ⊕ n) (m ⊕ n) A) :=
   ⟨fromBlocks (1 - p) v.conjTranspose v (1 - q), by
-    have hbeM : ofMatrix.symm v * ofMatrix.symm p = ofMatrix.symm v :=
-      congrArg ofMatrix.symm hbe
+    have hbeM : ofMatrix.symm v * ofMatrix.symm p = ofMatrix.symm v := by
+      simpa only [ofMatrix_symm_mul] using congrArg ofMatrix.symm hbe
     have heaM : ofMatrix.symm p * (ofMatrix.symm v)ᴴ = (ofMatrix.symm v)ᴴ := by
       simpa only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose] using
         congrArg ofMatrix.symm (hp.mul_conjTranspose_of_mul_eq hbe)

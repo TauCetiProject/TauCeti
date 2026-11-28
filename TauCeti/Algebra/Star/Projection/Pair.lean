@@ -21,7 +21,7 @@ Let `p` and `q` be star projections in a star ring. Their intertwiner
 where `(p - q) ^ 2` commutes with `p` and `q` (`IsIdempotentElem.commute_sub_sq_left`). In a
 C⋆-algebra these identities show that `z` is invertible when `‖p - q‖ < 1`, and that the unitary
 part `z * (1 - (p - q) ^ 2) ^ (-1 / 2)` of its polar decomposition conjugates `p` to `q`
-(`IsStarProjection.exists_mem_unitary_mul_mul_star_eq_of_norm_sub_lt_one`).
+(`IsStarProjection.exists_unitary_conj_of_norm_sub_lt_one`).
 
 ## References
 
