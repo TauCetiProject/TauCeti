@@ -43,6 +43,8 @@ preserves `GH⁻` as a bigraded `R[U]`-module
   north-east stabilization, as a semilinear map.
 * `TauCeti.GridDiagram.stabilizeXSuccHomologyMap`: the induced semilinear map
   `GH⁻(G') → GH⁻(G)`.
+* `TauCeti.GridDiagram.stabilizeXSuccHomologyEquiv`: the same comparison packaged as a ground-ring
+  linear equivalence.
 
 ## Main results
 
@@ -180,6 +182,23 @@ theorem stabilizeXSuccHomologyMap_bijective :
   (G.unblockedHomologyRotateEquiv R).symm.bijective.comp
     ((G.rotate.stabilizeXHomologyMap_bijective s.rev R).comp
       (G.stabilizeXSuccSourceEquiv s R).bijective)
+
+/-- The specified north-east `X`-stabilization comparison on `GH⁻`, as an equivalence over the
+ground ring. Its forward map is the semilinear stabilization homology map. -/
+noncomputable def stabilizeXSuccHomologyEquiv :
+    (G.stabilizeX s.succ (G.X s).succ s).unblockedHomology R ≃ₗ[R]
+      G.unblockedHomology R :=
+  LinearEquiv.ofBijective
+    ((G.stabilizeXSuccHomologyMap s R).restrictScalarsOfCommutes R
+      fun _ ↦ by rw [RingHom.coe_coe, AlgHom.commutes])
+    (by simpa using G.stabilizeXSuccHomologyMap_bijective s R)
+
+/-- The forward equivalence is the semilinear homology comparison. -/
+@[simp]
+theorem stabilizeXSuccHomologyEquiv_apply
+    (y : (G.stabilizeX s.succ (G.X s).succ s).unblockedHomology R) :
+    G.stabilizeXSuccHomologyEquiv s R y = G.stabilizeXSuccHomologyMap s R y := by
+  simp [stabilizeXSuccHomologyEquiv]
 
 /-- Every unblocked cycle differs from the image of a north-east stabilization cycle by a
 boundary. -/

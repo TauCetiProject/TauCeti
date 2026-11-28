@@ -46,9 +46,12 @@ grids satisfy both hypotheses; they are treated in `TorusLink/Homology.lean`.
 * `TauCeti.GridDiagram.eval_one_eq_zero_of_smul_single_mem_range`: if every state has an even
   number of counted rectangles into `z`, a multiple `p • z` is a boundary only when
   `p(1, …, 1) = 0`.
-* `TauCeti.GridDiagram.X_pow_smul_XMarkingClass_ne_zero` and
-  `TauCeti.GridDiagram.IsKnot.X_pow_smul_XMarkingClass_ne_zero`: under that parity hypothesis at
-  `G.X`, no power of a grid variable, or of `U` on a knot grid, kills `XMarkingClass`.
+* `TauCeti.GridDiagram.eq_zero_of_monomial_smul_XMarkingClass_eq_zero` and
+  `TauCeti.GridDiagram.IsKnot.eq_zero_of_smul_X_pow_smul_XMarkingClass_eq_zero`: under that parity
+  hypothesis at `G.X`, any scalar multiple of a monomial or `U`-power action on `XMarkingClass`
+  vanishes only when the scalar vanishes, so no power of a grid variable or of `U` kills
+  `XMarkingClass` (`TauCeti.GridDiagram.X_pow_smul_XMarkingClass_ne_zero`,
+  `TauCeti.GridDiagram.IsKnot.X_pow_smul_XMarkingClass_ne_zero`).
 * `TauCeti.GridDiagram.IsKnot.alexanderℤ_X_mem_nonTorsionDegrees` and
   `TauCeti.GridDiagram.IsKnot.supNonTorsionDegree_alexanderUnblockedHomologyGrading_eq`: the
   Alexander grading of `G.X` is a non-torsion degree, and the maximal one when `G.X` has maximal
@@ -169,14 +172,41 @@ theorem XMarkingClass_def : G.XMarkingClass R = G.unblockedHomologyClass R (G.XM
   (rfl)
 
 /-- If every grid state has an even number of counted rectangles into the `X`-marking state, then
+a monomial multiple `monomial e r • G.XMarkingClass R` vanishes only when `r = 0`. -/
+theorem eq_zero_of_monomial_smul_XMarkingClass_eq_zero
+    (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card) {e : Fin n →₀ ℕ} {r : R}
+    (hr : (monomial e r : MvPolynomial (Fin n) R) • G.XMarkingClass R = 0) : r = 0 := by
+  rw [XMarkingClass_def, ← map_smul, unblockedHomologyClass_eq_zero_iff, Submodule.coe_smul,
+    coe_XMarkingCycle] at hr
+  have hev := G.eval_one_eq_zero_of_smul_single_mem_range R hX hr
+  simpa [eval_monomial] using hev
+
+/-- If every grid state has an even number of counted rectangles into the `X`-marking state, then
+the `R`-linear map `R →ₗ[R] P` sending `r` to `r • (monomial e 1 • G.XMarkingClass R)` is
+injective whenever `P` is an `R`-submodule of `GH⁻` containing that class. -/
+theorem injective_toSpanSingleton_monomial_smul_XMarkingClass
+    (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card) (e : Fin n →₀ ℕ)
+    {P : Submodule R (G.unblockedHomology R)}
+    (hmem : (monomial e (1 : R)) • G.XMarkingClass R ∈ P) :
+    Function.Injective
+      (LinearMap.toSpanSingleton R P ⟨(monomial e (1 : R)) • G.XMarkingClass R, hmem⟩) := by
+  intro r₁ r₂ hr
+  have hval : (r₁ - r₂) • ((monomial e (1 : R)) • G.XMarkingClass R) = 0 := by
+    have hcoe := congrArg Subtype.val hr
+    simp only [LinearMap.toSpanSingleton_apply, Submodule.coe_smul] at hcoe
+    rwa [sub_smul, sub_eq_zero]
+  have hmon : (monomial e (r₁ - r₂) : MvPolynomial (Fin n) R) • G.XMarkingClass R = 0 := by
+    rwa [← algebraMap_smul (MvPolynomial (Fin n) R), smul_smul, algebraMap_eq,
+      C_mul_monomial, mul_one] at hval
+  exact sub_eq_zero.mp (G.eq_zero_of_monomial_smul_XMarkingClass_eq_zero R hX hmon)
+
+/-- If every grid state has an even number of counted rectangles into the `X`-marking state, then
 no monomial in the grid variables kills its class in `GH⁻`. -/
 theorem monomial_smul_XMarkingClass_ne_zero
     (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card) (e : Fin n →₀ ℕ) :
     (monomial e (1 : R)) • G.XMarkingClass R ≠ 0 := by
-  intro h
-  rw [XMarkingClass_def, ← map_smul, unblockedHomologyClass_eq_zero_iff, Submodule.coe_smul,
-    coe_XMarkingCycle] at h
-  exact G.monomial_smul_single_notMem_range R hX e h
+  have := CharP.nontrivial_of_char_ne_one (R := R) (v := 2) (by decide)
+  exact fun h ↦ one_ne_zero (G.eq_zero_of_monomial_smul_XMarkingClass_eq_zero R hX h)
 
 /-- If every grid state has an even number of counted rectangles into the `X`-marking state, then
 no power of a grid variable kills its class in `GH⁻`. -/
@@ -192,6 +222,21 @@ namespace IsKnot
 
 variable {G R} (hG : G.IsKnot)
 include hG
+
+/-- On a knot grid whose `X`-marking state receives an even number of counted rectangles from
+every grid state, a ground-ring multiple `r • (U ^ k • G.XMarkingClass R)` vanishes only when
+`r = 0`. -/
+theorem eq_zero_of_smul_X_pow_smul_XMarkingClass_eq_zero
+    (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card) (k : ℕ) {r : R}
+    (hr : letI := hG.unblockedHomologyModule R
+      r • ((Polynomial.X ^ k : Polynomial R) • G.XMarkingClass R) = 0) : r = 0 := by
+  let _ := hG.unblockedHomologyModule R
+  let i : Fin n := ⟨0, Nat.pos_of_ne_zero hG.ne_zero⟩
+  have hU := hG.aeval_smul_unblockedHomology (R := R) (MvPolynomial.X i ^ k) (G.XMarkingClass R)
+  rw [map_pow, aeval_X] at hU
+  rw [hU, ← algebraMap_smul (MvPolynomial (Fin n) R) r, smul_smul, algebraMap_eq,
+    X_pow_eq_monomial, C_mul_monomial, mul_one] at hr
+  exact G.eq_zero_of_monomial_smul_XMarkingClass_eq_zero R hX hr
 
 /-- On a knot grid whose `X`-marking state receives an even number of counted rectangles from
 every grid state, no power of `U` kills the class of the `X`-marking state in `GH⁻`. -/
@@ -219,8 +264,8 @@ theorem XMarkingClass_mem_alexanderUnblockedHomologyGrading_piece :
   have h := OddComponentGridDiagram.single_one_mem_bigradedChainMinusPiece
     hG.toOddComponentGridDiagram R G.X
   have hle := OddComponentGridDiagram.bigradedChainMinusPiece_le_alexanderChainMinusPiece
-    hG.toOddComponentGridDiagram R (hG.toOddComponentGridDiagram.bidegree G.X).1
-    (hG.toOddComponentGridDiagram.bidegree G.X).2
+    hG.toOddComponentGridDiagram R (hG.toOddComponentGridDiagram.bidegree G.X).fst
+    (hG.toOddComponentGridDiagram.bidegree G.X).snd
   have hmem := hle (by rw [Prod.mk.eta]; exact h)
   rwa [OddComponentGridDiagram.bidegree_snd] at hmem
 

@@ -234,11 +234,7 @@ namespace OddComponentGridDiagram
 /-- The standard `2 × 2` unknot grid diagram, as an odd-component grid diagram: it presents a
 knot, so its component count is one. -/
 abbrev twoByTwo : OddComponentGridDiagram 2 :=
-  ⟨GridDiagram.twoByTwo, by
-    have h : GridDiagram.twoByTwo.componentCount = 1 :=
-      GridDiagram.unknot_zero ▸ (GridDiagram.isKnot_def _).1 (GridDiagram.isKnot_unknot 0)
-    rw [h]
-    exact odd_one⟩
+  GridDiagram.isKnot_twoByTwo.toOddComponentGridDiagram
 
 /-- The identity generator in the standard two-by-two diagram has bidegree `(-1, -1)`. -/
 @[simp]

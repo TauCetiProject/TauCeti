@@ -118,6 +118,13 @@ theorem halfTurnRenameEquiv_mem_bigradedChainMinusPiece {g : ℤ × ℤ} {c : Gr
   rw [hdegree]
   exact hc x.halfTurn e he
 
+/-- The half-turn identifies each Maslov--Alexander piece of `GC⁻`. -/
+theorem halfTurnRenameEquiv_mem_bigradedChainMinusPiece_iff {g : ℤ × ℤ} {c : GridChainMinus R n} :
+    GridChain.halfTurnRenameEquiv R c ∈ G.rotate.bigradedChainMinusPiece R g ↔
+      c ∈ G.bigradedChainMinusPiece R g := by
+  refine ⟨fun hc ↦ ?_, G.halfTurnRenameEquiv_mem_bigradedChainMinusPiece R⟩
+  have h := G.rotate.halfTurnRenameEquiv_mem_bigradedChainMinusPiece R hc
+  rwa [GridChain.halfTurnRenameEquiv_halfTurnRenameEquiv, G.rotate_rotate] at h
 end Chains
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommRing R] [CharP R 2]

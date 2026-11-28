@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Homology.Bigraded.CyclicPermutation
+public import TauCeti.KnotTheory.Grid.Homology.Bigraded.Knot
 public import TauCeti.KnotTheory.Grid.Homology.Commutation.Invariance
 public import TauCeti.KnotTheory.Grid.Homology.Transpose
 public import TauCeti.KnotTheory.Grid.Move.Components
@@ -31,8 +32,11 @@ which is not a grid move but also preserves the bigrading
 cyclic permutations and commutations (`GridDiagram.IsStabilization.exists_commutationMovesTo`),
 knot grids connected by grid moves have isomorphic `GH⁻` as bigraded `K[U]`-modules
 (`GridDiagram.IsKnot.bigradedUnblockedHomologyIsomorphic_of_movesTo`), over every commutative ring
-`K` of characteristic two. It concerns the isomorphism class of the bigraded module: the maps
-attached to different move sequences are not compared.
+`K` of characteristic two, and hence equal ground-ring `finrank` in every Maslov--Alexander bidegree
+(`GridDiagram.IsKnot.finrank_bigradedUnblockedHomologyGrading_piece_eq_of_movesTo`). It concerns
+the isomorphism class of the bigraded module: the maps attached to different move sequences are not
+compared. For the resulting `GridLink` piece-`finrank` invariant and its concrete evaluations on
+`GridLink.unknot`, see `TauCeti.KnotTheory.Grid.Move.Bigraded`.
 
 Forgetting the Maslov grading gives the Alexander-graded relation
 (`GridDiagram.IsKnot.BigradedUnblockedHomologyIsomorphic.unblockedHomologyIsomorphic`). This is how
@@ -45,6 +49,8 @@ the invariance of the Alexander-graded `GH⁻` and of `τ` is derived in `Homolo
 * `TauCeti.GridDiagram.IsKnot.bigradedUnblockedHomologyIsomorphic_of_movesTo`: **invariance of the
   bigraded `GH⁻`**, knot grids connected by grid moves have isomorphic `GH⁻` as bigraded
   `K[U]`-modules.
+* `TauCeti.GridDiagram.IsKnot.finrank_bigradedUnblockedHomologyGrading_piece_eq_of_movesTo`: knot
+  grids connected by grid moves have equal ground-ring `finrank` in every bidegree of `GH⁻`.
 
 ## References
 
@@ -215,6 +221,14 @@ theorem bigradedUnblockedHomologyIsomorphic_of_movesTo (hG' : G'.IsKnot) (h : G.
     (fun _ ih hA hB ↦ (ih hB hA).symm)
     (fun h _ ih ih' hA hB ↦
       (ih hA (h.isKnot_iff.mpr hA)).trans (ih' (h.isKnot_iff.mpr hA) hB)) hG hG'
+
+/-- Knot grid diagrams connected by arbitrary grid moves have equal ground-ring `finrank` in every
+Maslov--Alexander bidegree of `GH⁻`. -/
+theorem finrank_bigradedUnblockedHomologyGrading_piece_eq_of_movesTo (hG' : G'.IsKnot)
+    (h : G.MovesTo G') (g : ℤ × ℤ) :
+    Module.finrank K ((hG.bigradedUnblockedHomologyGrading K).piece g) =
+      Module.finrank K ((hG'.bigradedUnblockedHomologyGrading K).piece g) :=
+  (hG.bigradedUnblockedHomologyIsomorphic_of_movesTo K hG' h).finrank_piece_eq g
 
 end MovesTo
 

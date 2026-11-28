@@ -102,6 +102,13 @@ degree-`p` piece consists of the classes of the cycles of degree `p`. -/
 noncomputable def homology : InternalGrading R (d.homology hd) ι :=
   (G.ker hhom).quotient d.boundariesInKer (G.isHomogeneous_boundariesInKer hhom)
 
+/-- When the degree-`p` cycle piece is finitely generated over `R`, so is the degree-`p`
+homology piece. -/
+instance finite_homology_piece (p : ι) [Module.Finite R ((G.ker hhom).piece p)] :
+    Module.Finite R ((G.homology hhom hd).piece p) := by
+  rw [homology]
+  infer_instance
+
 /-- A homology class is homogeneous of degree `p` exactly when it is the class of a cycle of
 degree `p`. -/
 theorem mem_homology_piece_iff {p : ι} {y : d.homology hd} :

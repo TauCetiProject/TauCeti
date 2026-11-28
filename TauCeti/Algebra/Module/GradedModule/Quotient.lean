@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.RingTheory.Noetherian.Basic
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.LinearAlgebra.Graded.LinearMap
@@ -40,6 +41,8 @@ differential over a polynomial ring whose variables move the degree; the kernel 
 
 * `TauCeti.InternalGrading.submodule`: the grading of a homogeneous submodule.
 * `TauCeti.InternalGrading.ker`: the grading of the kernel of a homogeneous linear map.
+* `TauCeti.InternalGrading.kerPieceEquivKerRestrict`: equivalence between a kernel piece and
+  the kernel of the restricted map.
 * `TauCeti.InternalGrading.quotient`: the grading of the quotient by a homogeneous submodule.
 
 ## Main results
@@ -115,6 +118,15 @@ theorem submodule_piece (p : ι) :
     (G.submodule U hU).piece p = (G.piece p).comap (U.subtype.restrictScalars R) :=
   (rfl)
 
+/-- When the ambient piece `G.piece p` is Noetherian over `R`, the degree-`p` piece of any
+homogeneous submodule is finitely generated over `R`. -/
+instance finite_submodule_piece (p : ι) [IsNoetherian R (G.piece p)] :
+    Module.Finite R ((G.submodule U hU).piece p) := by
+  rw [submodule_piece]
+  exact Module.Finite.of_injective ((U.subtype.restrictScalars R).restrict fun _ hx ↦ hx)
+    fun _ _ h ↦ Subtype.ext (Subtype.ext
+      (by simpa [_root_.LinearMap.restrict_apply] using congrArg (fun z : G.piece p ↦ (z : M)) h))
+
 theorem mem_submodule_piece {p : ι} {x : U} :
     x ∈ (G.submodule U hU).piece p ↔ (x : M) ∈ G.piece p :=
   Iff.rfl
@@ -159,6 +171,13 @@ of the elements of the kernel lying in the degree-`p` piece of `M`. -/
 noncomputable def ker : InternalGrading R (_root_.LinearMap.ker f) ι :=
   G.submodule (_root_.LinearMap.ker f) hf.isHomogeneous_ker
 
+/-- When the ambient piece `G.piece p` is Noetherian over `R`, the degree-`p` piece of the kernel of
+a homogeneous map is finitely generated over `R`. -/
+instance finite_ker_piece (p : ι) [IsNoetherian R (G.piece p)] :
+    Module.Finite R ((G.ker hf).piece p) := by
+  rw [ker]
+  infer_instance
+
 /-- An element of the kernel of `f` is homogeneous of degree `p` exactly when it is homogeneous of
 degree `p` in `M`. -/
 @[simp]
@@ -172,6 +191,37 @@ theorem coe_decompose_ker (p : ι) (z : _root_.LinearMap.ker f) :
     ((decompose (G.ker hf).piece z p : _root_.LinearMap.ker f) : M) =
       decompose G.piece (z : M) p :=
   G.coe_decompose_submodule (_root_.LinearMap.ker f) hf.isHomogeneous_ker p z
+
+/-- The degree-`p` piece of the kernel of a homogeneous map is linearly equivalent to the kernel
+of the map restricted to the degree-`p` piece of the source. -/
+noncomputable def kerPieceEquivKerRestrict [IsScalarTower R S N] (p : ι) :
+    (G.ker hf).piece p ≃ₗ[R]
+      _root_.LinearMap.ker ((f.restrictScalars R).comp (G.piece p).subtype) where
+  toFun z := ⟨⟨z.val.val, (G.mem_ker_piece hf).mp z.property⟩,
+    _root_.LinearMap.mem_ker.mpr (_root_.LinearMap.mem_ker.mp z.val.property)⟩
+  invFun w := ⟨⟨w.val.val, _root_.LinearMap.mem_ker.mpr (_root_.LinearMap.mem_ker.mp w.property)⟩,
+    (G.mem_ker_piece hf).mpr w.val.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+/-- The forward map of `kerPieceEquivKerRestrict` preserves the underlying element of `M`. -/
+@[simp]
+theorem coe_kerPieceEquivKerRestrict_apply [IsScalarTower R S N] (p : ι)
+    (z : (G.ker hf).piece p) :
+    ((G.kerPieceEquivKerRestrict hf p z : G.piece p) : M) = ((z : _root_.LinearMap.ker f) : M) := by
+  rw [kerPieceEquivKerRestrict]
+  rfl
+
+/-- The inverse map of `kerPieceEquivKerRestrict` preserves the underlying element of `M`. -/
+@[simp]
+theorem coe_kerPieceEquivKerRestrict_symm_apply [IsScalarTower R S N] (p : ι)
+    (w : _root_.LinearMap.ker ((f.restrictScalars R).comp (G.piece p).subtype)) :
+    (((G.kerPieceEquivKerRestrict hf p).symm w : _root_.LinearMap.ker f) : M) =
+      ((w : G.piece p) : M) := by
+  rw [kerPieceEquivKerRestrict]
+  rfl
 
 /-- The grading of the kernel of `f` vanishes in every degree in which the grading of `M` does. -/
 theorem ker_piece_eq_bot {p : ι} (hp : G.piece p = ⊥) : (G.ker hf).piece p = ⊥ :=
@@ -225,6 +275,12 @@ noncomputable def quotient : InternalGrading R (M ⧸ U) ι where
 theorem quotient_piece (p : ι) :
     (G.quotient U hU).piece p = (G.piece p).map (U.mkQ.restrictScalars R) :=
   (rfl)
+
+/-- Finite generation of `G.piece p` passes to the degree-`p` piece of any homogeneous quotient. -/
+instance finite_quotient_piece (p : ι) [Module.Finite R (G.piece p)] :
+    Module.Finite R ((G.quotient U hU).piece p) := by
+  rw [quotient_piece]
+  infer_instance
 
 /-- An element of the quotient has degree `p` exactly when it is the class of an element of
 degree `p`. -/

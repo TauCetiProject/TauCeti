@@ -86,13 +86,13 @@ theorem unblockedHomologyRelabelColumnsFinRotateEquiv_mem_bigradedPiece_iff
 /-- Cyclic row permutation gives a specified linear equivalence in each bidegree of `GH⁻`. -/
 noncomputable def bigradedUnblockedHomologyRelabelRowsFinRotateEquiv (g : ℤ × ℤ) :
     G.bigradedUnblockedHomologyPiece R g ≃ₗ[R]
-      bigradedUnblockedHomologyPiece Gᵣ R g where
-  toEquiv := (G.val.unblockedHomologyRelabelRowsFinRotateEquiv R).toEquiv.subtypeEquiv
-    (fun _ => (G.unblockedHomologyRelabelRowsFinRotateEquiv_mem_bigradedPiece_iff R).symm)
-  map_add' x y := Subtype.ext
-    ((G.val.unblockedHomologyRelabelRowsFinRotateEquiv R).map_add x y)
-  map_smul' r y := Subtype.ext
-    (((G.val.unblockedHomologyRelabelRowsFinRotateEquiv R).restrictScalars R).map_smul r y)
+      bigradedUnblockedHomologyPiece Gᵣ R g :=
+  G.bigradedUnblockedHomologyPieceEquivOfMem R Gᵣ
+    ((G.val.unblockedHomologyRelabelRowsFinRotateEquiv R).restrictScalars R)
+    (fun _ _ hy ↦ by
+      simpa only [LinearEquiv.restrictScalars_apply] using
+        (G.unblockedHomologyRelabelRowsFinRotateEquiv_mem_bigradedPiece_iff R).mpr hy)
+    g
 
 /-- On underlying classes the row-piece equivalence is the original row equivalence. -/
 @[simp]
@@ -100,7 +100,10 @@ theorem coe_bigradedUnblockedHomologyRelabelRowsFinRotateEquiv (g : ℤ × ℤ)
     (y : G.bigradedUnblockedHomologyPiece R g) :
     (G.bigradedUnblockedHomologyRelabelRowsFinRotateEquiv R g y :
       (G.val.relabelRows (finRotate n)).unblockedHomology R) =
-        G.val.unblockedHomologyRelabelRowsFinRotateEquiv R y := (rfl)
+        G.val.unblockedHomologyRelabelRowsFinRotateEquiv R y := by
+  rw [bigradedUnblockedHomologyRelabelRowsFinRotateEquiv]
+  exact (G.coe_bigradedUnblockedHomologyPieceEquivOfMem R Gᵣ _ _ g y).trans
+    (LinearEquiv.restrictScalars_apply R _ _)
 
 /-- The inverse row-piece equivalence is the inverse of the specified row comparison. -/
 @[simp]
@@ -108,27 +111,21 @@ theorem coe_bigradedUnblockedHomologyRelabelRowsFinRotateEquiv_symm (g : ℤ × 
     (y : bigradedUnblockedHomologyPiece Gᵣ R g) :
     ((G.bigradedUnblockedHomologyRelabelRowsFinRotateEquiv R g).symm y :
       G.val.unblockedHomology R) =
-        (G.val.unblockedHomologyRelabelRowsFinRotateEquiv R).symm y := (rfl)
+        (G.val.unblockedHomologyRelabelRowsFinRotateEquiv R).symm y := by
+  rw [bigradedUnblockedHomologyRelabelRowsFinRotateEquiv]
+  exact (G.coe_bigradedUnblockedHomologyPieceEquivOfMem_symm R Gᵣ _ _ g y).trans
+    (LinearEquiv.restrictScalars_symm_apply R _ _)
 
 /-- Cyclic column permutation gives a specified ground-ring equivalence in each bidegree.
 The underlying map still renames the polynomial variables by `finRotate n`. -/
 noncomputable def bigradedUnblockedHomologyRelabelColumnsFinRotateEquiv (g : ℤ × ℤ) :
     G.bigradedUnblockedHomologyPiece R g ≃ₗ[R]
-      bigradedUnblockedHomologyPiece Gc R g where
-  toEquiv := (G.val.unblockedHomologyRelabelColumnsFinRotateEquiv R).toEquiv.subtypeEquiv
-    (fun _ => (G.unblockedHomologyRelabelColumnsFinRotateEquiv_mem_bigradedPiece_iff R).symm)
-  map_add' x y := Subtype.ext
-    ((G.val.unblockedHomologyRelabelColumnsFinRotateEquiv R).map_add x y)
-  map_smul' r y := Subtype.ext (by
-    have hr : ((renameEquiv R (finRotate n)).toRingEquiv :
-        MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)
-          (algebraMap R (MvPolynomial (Fin n) R) r) =
-        algebraMap R (MvPolynomial (Fin n) R) r :=
-      (renameEquiv R (finRotate n)).commutes r
-    have h := (G.val.unblockedHomologyRelabelColumnsFinRotateEquiv R).map_smulₛₗ
-      (algebraMap R (MvPolynomial (Fin n) R) r) y
-    rw [hr, algebraMap_smul, algebraMap_smul] at h
-    exact h)
+      bigradedUnblockedHomologyPiece Gc R g :=
+  G.bigradedUnblockedHomologyPieceEquivOfSemilinear R Gc
+    (fun _ ↦ by rw [RingHom.coe_coe, AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes])
+    (G.val.unblockedHomologyRelabelColumnsFinRotateEquiv R)
+    (fun _ _ hy ↦ (G.unblockedHomologyRelabelColumnsFinRotateEquiv_mem_bigradedPiece_iff R).mpr hy)
+    g
 
 /-- On underlying classes the column-piece equivalence is the original column equivalence. -/
 @[simp]
@@ -136,7 +133,9 @@ theorem coe_bigradedUnblockedHomologyRelabelColumnsFinRotateEquiv (g : ℤ × �
     (y : G.bigradedUnblockedHomologyPiece R g) :
     (G.bigradedUnblockedHomologyRelabelColumnsFinRotateEquiv R g y :
       (G.val.relabelColumns (finRotate n)).unblockedHomology R) =
-        G.val.unblockedHomologyRelabelColumnsFinRotateEquiv R y := (rfl)
+        G.val.unblockedHomologyRelabelColumnsFinRotateEquiv R y := by
+  rw [bigradedUnblockedHomologyRelabelColumnsFinRotateEquiv]
+  exact G.coe_bigradedUnblockedHomologyPieceEquivOfSemilinear R Gc _ _ _ g y
 
 /-- The inverse column-piece equivalence is the inverse of the specified column comparison. -/
 @[simp]
@@ -144,6 +143,8 @@ theorem coe_bigradedUnblockedHomologyRelabelColumnsFinRotateEquiv_symm (g : ℤ 
     (y : bigradedUnblockedHomologyPiece Gc R g) :
     ((G.bigradedUnblockedHomologyRelabelColumnsFinRotateEquiv R g).symm y :
       G.val.unblockedHomology R) =
-        (G.val.unblockedHomologyRelabelColumnsFinRotateEquiv R).symm y := (rfl)
+        (G.val.unblockedHomologyRelabelColumnsFinRotateEquiv R).symm y := by
+  rw [bigradedUnblockedHomologyRelabelColumnsFinRotateEquiv]
+  exact G.coe_bigradedUnblockedHomologyPieceEquivOfSemilinear_symm R Gc _ _ _ g y
 
 end TauCeti.OddComponentGridDiagram

@@ -35,6 +35,11 @@ grids it is a bigraded `R[U]`-isomorphism of degree zero, so `GH⁻` does not ch
 elementary commutation (`GridDiagram.IsKnot.bigradedUnblockedHomologyIsomorphic_of_isCommutation`,
 in `Homology/Bigraded/Invariance.lean`).
 
+## Main definitions
+
+* `TauCeti.GridDiagram.unblockedHomologyCommutationEquiv`: the pentagon-counting map of a validated
+  column commutation packaged as a semilinear equivalence on `GH⁻`.
+
 ## Main results
 
 * `TauCeti.GridDiagram.unblockedHomologyCommutationMap_bijective`: **commutation invariance of
@@ -89,6 +94,47 @@ theorem unblockedHomologyCommutationMap_bijective :
     refine ⟨(G').commutationHomotopy R C.reverse z, ?_⟩
     simp only [AddSubgroupClass.coe_sub,
       G.commutationMap_commutationMap_reverse_of_mem_ker C R z.property, add_sub_cancel_left]
+
+/-- The pentagon-counting map of a validated column commutation as a semilinear equivalence on
+`GH⁻`, along the transposition of the two swapped column variables. -/
+noncomputable def unblockedHomologyCommutationEquiv :
+    G.unblockedHomology R ≃ₛₗ[((MvPolynomial.renameEquiv R
+      (Equiv.swap C.column (finRotate n C.column))).toRingEquiv :
+      MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)]
+      (G').unblockedHomology R :=
+  LinearEquiv.ofBijective (G.unblockedHomologyCommutationMap R C)
+    (G.unblockedHomologyCommutationMap_bijective C R)
+
+/-- `unblockedHomologyCommutationEquiv` acts by `unblockedHomologyCommutationMap`. -/
+@[simp]
+theorem unblockedHomologyCommutationEquiv_apply (y : G.unblockedHomology R) :
+    G.unblockedHomologyCommutationEquiv C R y = G.unblockedHomologyCommutationMap R C y :=
+  LinearEquiv.ofBijective_apply _ y
+
+/-- The inverse of `unblockedHomologyCommutationEquiv` acts by the pentagon map of `C.reverse`,
+transported across `swapColumns_swapColumns`. -/
+theorem unblockedHomologyCommutationEquiv_symm_apply (y : (G').unblockedHomology R) :
+    (G.unblockedHomologyCommutationEquiv C R).symm y =
+      _root_.cast (congrArg (fun D : GridDiagram n => ↥(D.unblockedHomology R))
+          (by rw [C.reverse_column, swapColumns_swapColumns]))
+        ((G').unblockedHomologyCommutationMap R C.reverse y) := by
+  symm
+  rw [LinearEquiv.eq_symm_apply, unblockedHomologyCommutationEquiv_apply]
+  obtain ⟨z, rfl⟩ := (G').unblockedHomologyClass_surjective R y
+  rw [unblockedHomologyCommutationMap_unblockedHomologyClass]
+  have hcast : ∀ {D : GridDiagram n} (h : D = G) (w : GridChainMinus R n)
+      (hw : w ∈ LinearMap.ker (D.unblockedDifferential R)),
+      _root_.cast (congrArg (fun H : GridDiagram n => ↥(H.unblockedHomology R)) h)
+          (D.unblockedHomologyClass R ⟨w, hw⟩) =
+        G.unblockedHomologyClass R ⟨w, h ▸ hw⟩ := by
+    rintro _ rfl w hw
+    rfl
+  rw [hcast (by rw [C.reverse_column, swapColumns_swapColumns]),
+    unblockedHomologyCommutationMap_unblockedHomologyClass, ← sub_eq_zero, ← map_sub,
+    unblockedHomologyClass_eq_zero_iff]
+  refine ⟨(G').commutationHomotopy R C.reverse z, ?_⟩
+  simp only [AddSubgroupClass.coe_sub,
+    G.commutationMap_commutationMap_reverse_of_mem_ker C R z.property, add_sub_cancel_left]
 
 end GridDiagram
 

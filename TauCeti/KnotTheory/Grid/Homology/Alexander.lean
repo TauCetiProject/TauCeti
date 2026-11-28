@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.GradedModule.Homology
 public import TauCeti.KnotTheory.Grid.Grading.Unblocked.Chain
+import TauCeti.KnotTheory.Grid.Grading.Unblocked.Finite
 public import TauCeti.KnotTheory.Grid.Homology.Unblocked
 
 /-!
@@ -41,6 +42,10 @@ the Alexander grading. For a knot, every variable acts as `U`; the resulting deg
   `V_c` lowers the Alexander grading of grid homology by one.
 * `TauCeti.OddComponentGridDiagram.X_smul_mem_alexanderUnblockedHomologyGrading_piece`: the
   same degree rule on categorical `GH⁻`.
+* `TauCeti.OddComponentGridDiagram.finite_alexanderHomologyGrading_piece` and
+  `TauCeti.OddComponentGridDiagram.finite_alexanderUnblockedHomologyGrading_piece`: over any
+  commutative ring of characteristic two, every Alexander piece of `GH⁻` is finitely generated over
+  the ground ring.
 
 ## References
 
@@ -83,6 +88,28 @@ theorem mem_alexanderHomologyGrading_piece_iff {a : ℤ}
   rw [alexanderHomologyGrading, InternalGrading.mem_homology_piece_iff,
     alexanderChainMinusGrading_piece]
 
+variable (G R)
+
+/-- Over any commutative ring of characteristic two, each Alexander piece of the cycles of `GC⁻`
+is finitely generated over the ground ring. -/
+instance finite_ker_alexanderChainMinusGrading_piece (a : ℤ) :
+    Module.Finite R (((G.alexanderChainMinusGrading R).ker
+      (G.isHomogeneous_unblockedDifferential_alexanderChainMinusGrading R)).piece a) := by
+  have h := G.finite_ker_unblockedDifferential_alexanderChainMinusPiece R a
+  rw [← G.alexanderChainMinusGrading_piece R a] at h
+  exact Module.Finite.equiv
+    ((G.alexanderChainMinusGrading R).kerPieceEquivKerRestrict
+      (G.isHomogeneous_unblockedDifferential_alexanderChainMinusGrading R) a).symm
+
+/-- Over any commutative ring of characteristic two, each Alexander piece of `ker ∂⁻ ⧸ im ∂⁻` is
+finitely generated over the ground ring. -/
+instance finite_alexanderHomologyGrading_piece (a : ℤ) :
+    Module.Finite R ((G.alexanderHomologyGrading R).piece a) := by
+  rw [alexanderHomologyGrading]
+  infer_instance
+
+variable {G R}
+
 /-- **The variable `V_c` lowers the Alexander grading of grid homology by one.** -/
 theorem X_smul_mem_alexanderHomologyGrading_piece (i : Fin n) {a : ℤ}
     {y : (G.val.unblockedDifferential R).homology
@@ -103,6 +130,13 @@ noncomputable def alexanderUnblockedHomologyGrading :
     InternalGrading R (G.val.unblockedHomology R) ℤ :=
   (G.alexanderHomologyGrading R).map
     ((G.val.unblockedHomologyIso R).symm.toLinearEquiv.restrictScalars R)
+
+/-- Over any commutative ring of characteristic two, each Alexander piece of `GH⁻` is finitely
+generated over the ground ring. -/
+instance finite_alexanderUnblockedHomologyGrading_piece (a : ℤ) :
+    Module.Finite R ((G.alexanderUnblockedHomologyGrading R).piece a) := by
+  rw [alexanderUnblockedHomologyGrading]
+  infer_instance
 
 /-- A class of `GH⁻` is Alexander-homogeneous of degree `a` exactly when its image in the
 cycle quotient is homogeneous of that degree. -/

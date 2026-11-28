@@ -55,7 +55,9 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 
 ## Main results
 
-* `TauCeti.InternalGrading.ext`: internal gradings are determined by their homogeneous pieces.
+* `TauCeti.InternalGrading.ext` and `TauCeti.InternalGrading.eq_of_piece_le`: internal gradings are
+  determined by their homogeneous pieces, and pointwise inclusion between two internal gradings
+  forces equality.
 * `TauCeti.InternalGrading.coe_decompose_ofDecomposition_piece_apply`: the decomposition carried by
   `ofDecomposition ℳ` is the given decomposition of `ℳ`, componentwise.
 * `TauCeti.InternalGrading.mem_ofRangeCoe_piece_iff`: piece membership for `ofRangeCoe`.
@@ -155,6 +157,13 @@ theorem ext : ∀ {G H : InternalGrading R M ι}, (∀ p, G.piece p = H.piece p)
 /-- The decomposition attached to an internal grading. -/
 noncomputable instance (G : InternalGrading R M ι) : DirectSum.Decomposition G.piece :=
   G.isInternal.chooseDecomposition
+
+/-- Pointwise inclusion between two internal gradings of the same module forces equality: any
+homogeneous element of `H` decomposes in `G` into components that also lie in the corresponding
+pieces of `H`. -/
+theorem eq_of_piece_le {G H : InternalGrading R M ι} (h : ∀ p, G.piece p ≤ H.piece p) :
+    G = H :=
+  InternalGrading.ext (congrFun (DirectSum.Decomposition.eq_of_subset G.piece H.piece h))
 
 /-- The internal grading carried by a family of submodules with a `DirectSum.Decomposition`.  This
 is the bridge from Mathlib's decomposition typeclass, under which graded algebras are stated, to
@@ -409,6 +418,13 @@ theorem map_trans {P : Type*} [AddCommMonoid P] [Module R P]
   apply Submodule.ext
   intro x
   simp
+
+/-- Transporting a finitely generated homogeneous piece across a linear equivalence preserves finite
+generation. -/
+instance finite_map_piece (G : InternalGrading R M ι) (e : M ≃ₗ[R] N) (p : ι)
+    [Module.Finite R (G.piece p)] : Module.Finite R ((G.map e).piece p) := by
+  rw [map_piece]
+  infer_instance
 
 end Map
 
