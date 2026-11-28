@@ -8,6 +8,9 @@ module
 public import Mathlib.Algebra.Group.AddChar
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
+public import Mathlib.Topology.LocallyConstant.Basic
+
+import TauCeti.Topology.Algebra.Group.LocallyConstant
 
 /-!
 # Additive characters trivial on a neighbourhood of zero
@@ -20,7 +23,9 @@ This file records two sources of such characters. A continuous circle-valued cha
 nonarchimedean additive group is trivial on a neighbourhood of `0`: some open subgroup maps into
 the arc of angles less than `π / 2`, and the only subgroup of the circle inside that arc is
 trivial. The condition is also preserved by the shifts `x ↦ ψ (b * x)` of a character of a
-topological ring.
+topological ring. Conversely, a character of an additive group with continuous translations that
+is trivial on a neighbourhood of `0` is constant on a neighbourhood of every point, so it is locally
+constant and continuous for every topology on its values.
 
 ## Main results
 
@@ -28,6 +33,8 @@ topological ring.
   nonarchimedean additive group is trivial on a neighbourhood of `0`.
 * `AddChar.setOf_mulShift_eq_one_mem_nhds_zero`: the shift `ψ.mulShift b` of a character trivial
   on a neighbourhood of `0` is again trivial on a neighbourhood of `0`.
+* `AddChar.isLocallyConstant_of_setOf_eq_one_mem_nhds_zero`: a character of an additive group with
+  continuous translations which is trivial on a neighbourhood of `0` is locally constant.
 -/
 
 public section
@@ -59,5 +66,15 @@ theorem setOf_mulShift_eq_one_mem_nhds_zero {R M : Type*} [Ring R] [TopologicalS
   have hb : Tendsto (b * ·) (𝓝 (0 : R)) (𝓝 0) := by
     simpa using (continuous_const_mul b).tendsto (0 : R)
   simpa using hb h0
+
+/-- An additive character of an additive group with continuous translations which is trivial on a
+neighbourhood of `0` is locally constant. This is `AddMonoidHom.isLocallyConstant_of_isOpen_ker`
+for `ψ.toAddMonoidHom`, whose kernel `{x | ψ x = 1}` is an open subgroup as it is a neighbourhood
+of `0`. -/
+theorem isLocallyConstant_of_setOf_eq_one_mem_nhds_zero {G M : Type*} [AddGroup G]
+    [TopologicalSpace G] [SeparatelyContinuousAdd G] [Monoid M] {ψ : AddChar G M}
+    (h0 : {x | ψ x = 1} ∈ 𝓝 (0 : G)) : IsLocallyConstant ψ :=
+  (ψ.toAddMonoidHom.isLocallyConstant_of_isOpen_ker
+    (ψ.toAddMonoidHom.ker.isOpen_of_mem_nhds h0)).comp Additive.toMul
 
 end AddChar

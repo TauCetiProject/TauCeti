@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.MeasureTheory.Varifold.Bundle
+public import TauCeti.Geometry.MeasureTheory.Varifold.Bundle.Basic
 public import TauCeti.MeasureTheory.Measure.Support
 public import TauCeti.Topology.VectorBundle.GrassmannBundle.Restrict
 

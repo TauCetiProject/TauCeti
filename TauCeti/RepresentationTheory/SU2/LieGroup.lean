@@ -17,9 +17,9 @@ import TauCeti.RepresentationTheory.SU2.NormalSubgroup
 The special unitary subgroup `TauCeti.GLSpecialUnitary (Fin 2) ℂ` of the real Lie group
 `GL(2, ℂ)` is closed, so the closed-subgroup theorem makes it a Lie group modelled on its Lie
 algebra `𝔰𝔲(2)` (`TauCeti.SU2.lieAlgebra`), with smooth inclusion into `GL(2, ℂ)`
-(`TauCeti.SU2.embeddedLieSubgroupData`). This file records the facts about this Lie group that
-are needed to integrate Lie-algebra homomorphisms out of `𝔰𝔲(2)` and to read the result as a map
-out of the three-sphere.
+(`TauCeti.GLSpecialUnitary.embeddedLieSubgroupData`, for all special unitary groups). This file
+records the facts about this Lie group that are needed to integrate Lie-algebra homomorphisms out
+of `𝔰𝔲(2)` and to read the result as a map out of the three-sphere.
 
 As a topological group the subgroup of `GL(2, ℂ)` is the matrix special unitary group
 (`TauCeti.GLSpecialUnitary.continuousMulEquiv`), which is compact and is the group of unit
@@ -44,7 +44,6 @@ for the entrywise topology first and then used under the operator-norm instances
 
 * `TauCeti.SU2.homeomorphSphere`: `SU(2)` is homeomorphic to the unit sphere of `ℝ⁴`, with
   `coe_homeomorphSphere_apply` and `coe_homeomorphSphere_symm_apply` giving its coordinates.
-* `TauCeti.SU2.embeddedLieSubgroupData`: the Lie group structure of `SU(2)`, modelled on `𝔰𝔲(2)`.
 * `TauCeti.SU2.nativeLieEquiv`: the native Lie algebra of `SU(2)` is `𝔰𝔲(2)`.
 * `TauCeti.SU2.torusGenerator`: the element `diag(i, -i)` of the native Lie algebra of `SU(2)`.
 
@@ -122,36 +121,15 @@ attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContin
 
 open scoped Matrix.Norms.Operator
 
-/-- **`SU(2)` is a Lie group.** The structure of embedded Lie subgroup of `GL(2, ℂ)` that the
-closed-subgroup theorem gives the closed subgroup `SU(2)`, with model space its Lie algebra
-`𝔰𝔲(2)`. -/
-def embeddedLieSubgroupData :
-    Lie.EmbeddedLieSubgroupData 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ) (GLSpecialUnitary (Fin 2) ℂ)
-      lieAlgebra.toSubmodule :=
-  Lie.EmbeddedLieSubgroupData.ofIsClosed (isClosed_GLSpecialUnitary (Fin 2) ℂ)
-
-instance : ChartedSpace lieAlgebra.toSubmodule (GLSpecialUnitary (Fin 2) ℂ) :=
-  embeddedLieSubgroupData.chartedSpace
-
-instance : LieGroup 𝓘(ℝ, lieAlgebra.toSubmodule) ∞ (GLSpecialUnitary (Fin 2) ℂ) :=
-  embeddedLieSubgroupData.lieGroup
-
-/-! The instances above for the entrywise topology of matrices, restated for the operator-norm
-topology. The two topologies agree by definition (`Matrix.linftyOpTopologicalSpace_eq`), but not
-up to instance reducibility, so instance search does not transfer them. -/
-
-/-- `SU(2)` is compact, for the operator-norm topology. -/
-instance instCompactSpaceOperatorNorm : CompactSpace (GLSpecialUnitary (Fin 2) ℂ) :=
-  GLSpecialUnitary.instCompactSpace
+/-! `SU(2)` is a Lie group, modelled on `𝔰𝔲(2)`, through the closed-subgroup structure
+`TauCeti.GLSpecialUnitary.embeddedLieSubgroupData` of the special unitary groups. Its instances are
+stated there, for the operator-norm topology; simple connectedness is restated here for it. The two
+topologies agree by definition (`Matrix.linftyOpTopologicalSpace_eq`), but not up to instance
+reducibility, so instance search does not transfer them. -/
 
 /-- `SU(2)` is simply connected, for the operator-norm topology. -/
 instance instSimplyConnectedSpaceOperatorNorm : SimplyConnectedSpace (GLSpecialUnitary (Fin 2) ℂ) :=
   instSimplyConnectedSpace
-
-/-- `SU(2)` is second countable, for the operator-norm topology. -/
-instance instSecondCountableTopologyOperatorNorm :
-    SecondCountableTopology (GLSpecialUnitary (Fin 2) ℂ) :=
-  GLSpecialUnitary.instSecondCountableTopology
 
 /-- **The native Lie algebra of `SU(2)` is `𝔰𝔲(2)`.** The differential of the inclusion of
 `SU(2)` into `GL(2, ℂ)` identifies the left-invariant derivations of the Lie group `SU(2)` with
@@ -159,7 +137,7 @@ instance instSecondCountableTopologyOperatorNorm :
 def nativeLieEquiv :
     LeftInvariantDerivation 𝓘(ℝ, lieAlgebra.toSubmodule) (GLSpecialUnitary (Fin 2) ℂ) ≃ₗ⁅ℝ⁆
       lieAlgebra :=
-  embeddedLieSubgroupData.lieEquivLieSubalgebraOfSubgroup
+  (GLSpecialUnitary.embeddedLieSubgroupData (Fin 2) ℂ).lieEquivLieSubalgebraOfSubgroup
 
 /-- The identification `TauCeti.SU2.nativeLieEquiv` is the differential of the inclusion of
 `SU(2)` into `GL(2, ℂ)`. -/
@@ -168,8 +146,8 @@ theorem coe_nativeLieEquiv_apply
     (X : LeftInvariantDerivation 𝓘(ℝ, lieAlgebra.toSubmodule) (GLSpecialUnitary (Fin 2) ℂ)) :
     (nativeLieEquiv X : LeftInvariantDerivation 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ)
         (Matrix (Fin 2) (Fin 2) ℂ)ˣ) =
-      embeddedLieSubgroupData.lieMapSubtypeVal X :=
-  embeddedLieSubgroupData.lieEquivLieSubalgebraOfSubgroup_apply X
+      (GLSpecialUnitary.embeddedLieSubgroupData (Fin 2) ℂ).lieMapSubtypeVal X :=
+  (GLSpecialUnitary.embeddedLieSubgroupData (Fin 2) ℂ).lieEquivLieSubalgebraOfSubgroup_apply X
 
 /-- **The native Lie algebra of `SU(2)` is not abelian**, since it is `𝔰𝔲(2)`
 (`TauCeti.SU2.nativeLieEquiv`, `TauCeti.SU2.not_isLieAbelian_lieAlgebra`). -/
@@ -212,14 +190,16 @@ theorem lieExp_smul_torusGenerator (s : ℝ) :
       (GLSpecialUnitary.continuousMulEquiv (Fin 2) ℂ).symm (torusExp s) := by
   apply Subtype.ext
   apply Units.ext
-  have hmap := map_lieExp embeddedLieSubgroupData.subtypeVal (s • torusGenerator)
+  have hmap := map_lieExp (GLSpecialUnitary.embeddedLieSubgroupData (Fin 2) ℂ).subtypeVal
+    (s • torusGenerator)
   dsimp only at hmap
-  have hsub : (embeddedLieSubgroupData.subtypeVal (lieExp (s • torusGenerator)) :
-      (Matrix (Fin 2) (Fin 2) ℂ)ˣ) =
+  have hsub : ((GLSpecialUnitary.embeddedLieSubgroupData (Fin 2) ℂ).subtypeVal
+        (lieExp (s • torusGenerator)) : (Matrix (Fin 2) (Fin 2) ℂ)ˣ) =
       ((lieExp (s • torusGenerator) : GLSpecialUnitary (Fin 2) ℂ) : (Matrix (Fin 2) (Fin 2) ℂ)ˣ) :=
-    embeddedLieSubgroupData.subtypeVal_apply _
-  have hY : (lieMap embeddedLieSubgroupData.subtypeVal (s • torusGenerator) :
-      LeftInvariantDerivation 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ) (Matrix (Fin 2) (Fin 2) ℂ)ˣ) =
+    (GLSpecialUnitary.embeddedLieSubgroupData (Fin 2) ℂ).subtypeVal_apply _
+  have hY : (lieMap (GLSpecialUnitary.embeddedLieSubgroupData (Fin 2) ℂ).subtypeVal
+        (s • torusGenerator) :
+        LeftInvariantDerivation 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ) (Matrix (Fin 2) (Fin 2) ℂ)ˣ) =
       (((s * -2) • suTwoEquiv (Pi.single 2 1) : lieAlgebra) :
         LeftInvariantDerivation 𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ) (Matrix (Fin 2) (Fin 2) ℂ)ˣ) := by
     rw [← Lie.EmbeddedLieSubgroupData.lieMapSubtypeVal_apply, ← coe_nativeLieEquiv_apply,

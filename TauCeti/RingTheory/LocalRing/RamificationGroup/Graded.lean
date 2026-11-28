@@ -56,8 +56,9 @@ group `G_1` is the unique Sylow `p`-subgroup of `G_0`.
 
 * `TauCeti.IsLocalRing.displacementHom G S n`: the additive displacement homomorphism
   `G_{n+1} →* Multiplicative (S → 𝔪^(n+2) / 𝔪^(n+3))`.
-* `TauCeti.IsLocalRing.ramificationGroupOneSylow G S p hidx`: `G_1` as a Sylow `p`-subgroup of
-  `G_0` whenever `p ∤ [G_0 : G_1]`.
+* `TauCeti.IsLocalRing.ramificationGroupOneSylowOfNotDvdIndex G S p hidx` and
+  `TauCeti.IsLocalRing.ramificationGroupOneSylow G S R p`: `G_1` as a Sylow `p`-subgroup of
+  `G_0`.
 * `TauCeti.IsLocalRing.tameCharacter G S`: the tame character `G_0 →* kˣ`, and
   `TauCeti.IsLocalRing.tameCharacterGraded G S`: its factorization through `G_0 / G_1`.
 * `TauCeti.IsLocalRing.ramificationGroupToResidueField hπ n`: the homomorphism
@@ -78,10 +79,12 @@ group `G_1` is the unique Sylow `p`-subgroup of `G_0`.
   `TauCeti.IsLocalRing.isPGroup_ramificationGroup`: the groups `G_i` with `i ≥ 1` are `p`-groups
   once the filtration vanishes at some index, in particular for a faithful action on a Noetherian
   local ring with finite `G_0`.
-* `TauCeti.IsLocalRing.ramificationGroup_eq_bot_of_charZero`: in residue characteristic zero, a
-  finite `G_i` with `i ≥ 1` is trivial when the filtration meets in the trivial group.
-* `TauCeti.IsLocalRing.eq_ramificationGroupOneSylow`: `G_1` is the only Sylow `p`-subgroup
-  of `G_0` when `p ∤ [G_0 : G_1]`.
+* `TauCeti.IsLocalRing.ramificationGroup_eq_bot_of_charZero` and
+  `TauCeti.IsLocalRing.ramificationGroup_eq_bot_of_not_dvd_card_ramificationGroup_zero`:
+  positive-depth vanishing over a local ring, in residue characteristic zero and when the residue
+  characteristic does not divide `#G_0`.
+* `TauCeti.IsLocalRing.eq_ramificationGroupOneSylow_of_not_dvd_index`: `G_1` is the only Sylow
+  `p`-subgroup of `G_0` when `p ∤ [G_0 : G_1]`.
 * `TauCeti.IsLocalRing.mem_ramificationGroup_natCast_iff_smul_sub_mem`: for a separable residue
   extension, membership of `σ ∈ G_0` in `G_n` is decided at a generator of the maximal ideal, and
   `TauCeti.IsLocalRing.lowerIndex_eq_addVal_smul_sub` computes the lower index there.
@@ -98,12 +101,18 @@ group `G_1` is the unique Sylow `p`-subgroup of `G_0`.
 * `TauCeti.IsLocalRing.isCyclic_ramificationGroupGraded_zero`,
   `TauCeti.IsLocalRing.isCyclic_ramificationGroup_zero_of_ramificationGroup_one_eq_bot`,
   `TauCeti.IsLocalRing.isCyclic_ramificationGroup_zero_of_charZero`,
-  `TauCeti.IsLocalRing.not_dvd_index_ramificationGroup_one`,
+  `TauCeti.IsLocalRing.card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one`, and
+  `TauCeti.IsLocalRing.not_dvd_index_ramificationGroup_one`: a finite `G_0 / G_1` is
+  cyclic of order prime to the residue characteristic and dividing `#k - 1`, and finite `G_0` is
+  cyclic when `G_1 = ⊥` or in residue characteristic zero.
+* `TauCeti.IsLocalRing.eq_ramificationGroupOneSylow`,
   `TauCeti.IsLocalRing.natCard_ramificationGroup_one`, and
-  `TauCeti.IsLocalRing.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`: a
-  finite `G_0 / G_1` is cyclic of order prime to the residue characteristic, `#G_1 = p ^ v_p(#G_0)`,
-  `G_1 = ⊥` iff `p ∤ #G_0`, and finite `G_0` is cyclic when `G_1 = ⊥` or in residue
-  characteristic zero.
+  `TauCeti.IsLocalRing.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`:
+  `G_1` is the only Sylow `p`-subgroup of `G_0`, of order the `p`-part of `#G_0`, and is trivial
+  exactly when `p ∤ #G_0`.
+* `ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero_of_finite_residueField`
+  (in `TauCeti.IsLocalRing`): the same criterion `G_1 = ⊥ ↔ ¬ p ∣ #G_0` without assuming `G_0`
+  is finite, under `[Finite (ResidueField S)]`.
 
 ## References
 
@@ -261,15 +270,44 @@ theorem ramificationGroup_eq_bot_of_charZero [CharZero (ResidueField S)] {i : �
   refine eq_bot_iff.mpr (hbot ▸ le_iInf fun j ↦ ?_)
   exact (hle (j - i).toNat).trans (ramificationGroup_antitone G S (by omega))
 
-variable (G S) [IsNoetherianRing S] [FaithfulSMul G S] [Finite (ramificationGroup G S 0)]
+section
+
+variable (G S) [IsNoetherianRing S] [FaithfulSMul G S]
 
 /-- **The positive-depth ramification groups are `p`-groups**, for `p` the residue characteristic,
 when the action on the Noetherian local ring `S` is faithful and `G_0` is finite. In particular the
 first ramification group `G_1` is a `p`-group. -/
-theorem isPGroup_ramificationGroup (p : ℕ) [CharP (ResidueField S) p] {i : ℤ} (hi : 0 < i) :
+theorem isPGroup_ramificationGroup (p : ℕ) [CharP (ResidueField S) p]
+    [Finite (ramificationGroup G S 0)] {i : ℤ} (hi : 0 < i) :
     IsPGroup p (ramificationGroup G S i) := by
   obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot G S
   exact isPGroup_ramificationGroup_of_eq_bot p hi (hN N le_rfl)
+
+/-- **Positive-depth vanishing in the tame case**: when `G` acts faithfully on a Noetherian local
+ring `S` and the residue characteristic `p` does not divide `#G_0` (which forces `G_0` to be
+finite), every positive-depth ramification group `G_i` (`i > 0`) is trivial. -/
+theorem ramificationGroup_eq_bot_of_not_dvd_card_ramificationGroup_zero (p : ℕ)
+    [CharP (ResidueField S) p] {i : ℤ} (hi : 0 < i)
+    (hp : ¬ p ∣ Nat.card (ramificationGroup G S 0)) :
+    ramificationGroup G S i = ⊥ := by
+  have : Finite (ramificationGroup G S 0) := by
+    by_contra hinf
+    have := not_finite_iff_infinite.mp hinf
+    rw [Nat.card_eq_zero_of_infinite] at hp
+    exact hp (dvd_zero p)
+  have hle : ramificationGroup G S i ≤ ramificationGroup G S 0 :=
+    ramificationGroup_antitone G S hi.le
+  have : Finite (ramificationGroup G S i) :=
+    Finite.of_injective (Subgroup.inclusion hle) (Subgroup.inclusion_injective hle)
+  rcases CharP.char_is_prime_or_zero (ResidueField S) p with hprime | rfl
+  · have : Fact p.Prime := ⟨hprime⟩
+    rcases (isPGroup_ramificationGroup G S p hi).card_eq_or_dvd with hcard | hpdvd
+    · exact Subgroup.card_eq_one.mp hcard
+    · exact (hp (hpdvd.trans (Subgroup.card_dvd_of_le hle))).elim
+  · have : CharZero (ResidueField S) := CharP.charP_to_charZero (ResidueField S)
+    exact ramificationGroup_eq_bot_of_charZero hi (iInf_ramificationGroup_eq_bot G S)
+
+end
 
 end Positive
 
@@ -411,7 +449,7 @@ theorem subsingleton_ramificationGroupGraded_of_charZero (G : Type*) [Group G] (
 /-- **Wild inertia is a Sylow subgroup of inertia.** For a faithful action on a Noetherian local
 ring `S` in prime residue characteristic `p` with finite inertia `G_0` and `p ∤ [G_0 : G_1]`, the
 group `G_1` viewed inside `G_0` is a Sylow `p`-subgroup. -/
-def ramificationGroupOneSylow (G S : Type*) [Group G] [CommRing S] [IsLocalRing S]
+def ramificationGroupOneSylowOfNotDvdIndex (G S : Type*) [Group G] [CommRing S] [IsLocalRing S]
     [IsNoetherianRing S] [MulSemiringAction G S] (p : ℕ) [Fact p.Prime]
     [CharP (ResidueField S) p] [FaithfulSMul G S] [Finite (ramificationGroup G S 0)]
     (hidx : ¬ p ∣ ((ramificationGroup G S 1).subgroupOf (ramificationGroup G S 0)).index) :
@@ -419,38 +457,40 @@ def ramificationGroupOneSylow (G S : Type*) [Group G] [CommRing S] [IsLocalRing 
   ((TauCeti.IsLocalRing.isPGroup_ramificationGroup G S p (i := 1) one_pos).comap_subtype).toSylow
     hidx
 
-/-- The subgroup underlying `TauCeti.IsLocalRing.ramificationGroupOneSylow` is `G_1` inside
-`G_0`. -/
+/-- The subgroup underlying `TauCeti.IsLocalRing.ramificationGroupOneSylowOfNotDvdIndex` is
+`G_1` inside `G_0`. -/
 @[simp]
-theorem ramificationGroupOneSylow_coe (G S : Type*) [Group G] [CommRing S]
+theorem ramificationGroupOneSylowOfNotDvdIndex_coe (G S : Type*) [Group G] [CommRing S]
     [IsLocalRing S] [IsNoetherianRing S] [MulSemiringAction G S] (p : ℕ) [Fact p.Prime]
     [CharP (ResidueField S) p] [FaithfulSMul G S] [Finite (ramificationGroup G S 0)]
     (hidx : ¬ p ∣ ((ramificationGroup G S 1).subgroupOf (ramificationGroup G S 0)).index) :
-    (ramificationGroupOneSylow G S p hidx : Subgroup (ramificationGroup G S 0)) =
+    (ramificationGroupOneSylowOfNotDvdIndex G S p hidx :
+        Subgroup (ramificationGroup G S 0)) =
       (ramificationGroup G S 1).subgroupOf (ramificationGroup G S 0) :=
   (rfl)
 
 /-- The wild inertia Sylow subgroup is normal in `G_0`. -/
-instance ramificationGroupOneSylow_normal (G S : Type*) [Group G] [CommRing S]
+instance instNormalRamificationGroupOneSylowOfNotDvdIndex (G S : Type*) [Group G] [CommRing S]
     [IsLocalRing S] [IsNoetherianRing S] [MulSemiringAction G S] (p : ℕ) [Fact p.Prime]
     [CharP (ResidueField S) p] [FaithfulSMul G S] [Finite (ramificationGroup G S 0)]
     (hidx : ¬ p ∣ ((ramificationGroup G S 1).subgroupOf (ramificationGroup G S 0)).index) :
-    (ramificationGroupOneSylow G S p hidx :
+    (ramificationGroupOneSylowOfNotDvdIndex G S p hidx :
       Subgroup (ramificationGroup G S 0)).Normal := by
-  rw [ramificationGroupOneSylow_coe]
+  rw [ramificationGroupOneSylowOfNotDvdIndex_coe]
   infer_instance
 
 /-- **`G_1` is the only Sylow `p`-subgroup of `G_0`**: for a faithful action on a Noetherian local
 ring `S` in prime residue characteristic `p` with finite inertia `G_0` and `p ∤ [G_0 : G_1]`, the
-Sylow subgroup `TauCeti.IsLocalRing.ramificationGroupOneSylow` is normal and hence unique. -/
-theorem eq_ramificationGroupOneSylow (G S : Type*) [Group G] [CommRing S]
+Sylow subgroup `TauCeti.IsLocalRing.ramificationGroupOneSylowOfNotDvdIndex` is normal and
+hence unique. -/
+theorem eq_ramificationGroupOneSylow_of_not_dvd_index (G S : Type*) [Group G] [CommRing S]
     [IsLocalRing S] [IsNoetherianRing S] [MulSemiringAction G S] (p : ℕ) [Fact p.Prime]
     [CharP (ResidueField S) p] [FaithfulSMul G S] [Finite (ramificationGroup G S 0)]
     (hidx : ¬ p ∣ ((ramificationGroup G S 1).subgroupOf (ramificationGroup G S 0)).index)
     (Q : Sylow p (ramificationGroup G S 0)) :
-    Q = ramificationGroupOneSylow G S p hidx := by
+    Q = ramificationGroupOneSylowOfNotDvdIndex G S p hidx := by
   let _ : Unique (Sylow p (ramificationGroup G S 0)) :=
-    Sylow.unique_of_normal (ramificationGroupOneSylow G S p hidx) inferInstance
+    Sylow.unique_of_normal (ramificationGroupOneSylowOfNotDvdIndex G S p hidx) inferInstance
   exact Subsingleton.elim _ _
 
 /-- For a faithful action on a Noetherian local ring `S` in prime residue characteristic `p` with
@@ -461,7 +501,8 @@ theorem natCard_ramificationGroup_one_of_not_dvd_index (G S : Type*) [Group G] [
     (hidx : ¬ p ∣ ((ramificationGroup G S 1).subgroupOf (ramificationGroup G S 0)).index) :
     Nat.card (ramificationGroup G S 1) =
       p ^ (Nat.card (ramificationGroup G S 0)).factorization p := by
-  rw [← Sylow.card_eq_multiplicity (ramificationGroupOneSylow G S p hidx)]
+  rw [← Sylow.card_eq_multiplicity (ramificationGroupOneSylowOfNotDvdIndex G S p hidx),
+    ramificationGroupOneSylowOfNotDvdIndex_coe]
   exact Nat.card_congr (Subgroup.subgroupOfEquivOfLe
     (ramificationGroup_antitone G S (by omega : (0 : ℤ) ≤ 1))).toEquiv.symm
 
@@ -843,29 +884,6 @@ theorem not_dvd_index_ramificationGroup_one (R : Type*) [CommRing R] [IsLocalRin
   · rw [zero_dvd_iff]
     exact Nat.card_pos.ne'
 
-/-- When `S` is a local `R`-algebra on which `G` acts faithfully by `R`-algebra automorphisms with
-separable residue extension, prime residue characteristic `p`, and finite `G_0`, the cardinality of
-`G_1` is the `p`-primary part `p ^ v_p(#G_0)` of the cardinality of `G_0`. -/
-theorem natCard_ramificationGroup_one (R : Type*) [CommRing R] [IsLocalRing R] [Algebra R S]
-    [IsLocalHom (algebraMap R S)] [SMulCommClass G R S]
-    [Algebra.IsSeparable (ResidueField R) (ResidueField S)] (p : ℕ) [Fact p.Prime]
-    [CharP (ResidueField S) p] [FaithfulSMul G S] [Finite (ramificationGroup G S 0)] :
-    Nat.card (ramificationGroup G S 1) =
-      p ^ (Nat.card (ramificationGroup G S 0)).factorization p :=
-  natCard_ramificationGroup_one_of_not_dvd_index G S p
-    (not_dvd_index_ramificationGroup_one R p)
-
-/-- **Wild inertia is trivial if and only if `p ∤ #G_0`**, when `S` is a local `R`-algebra on which
-`G` acts faithfully by `R`-algebra automorphisms with separable residue extension, residue
-characteristic `p`, and finite `G_0`. -/
-theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero (R : Type*)
-    [CommRing R] [IsLocalRing R] [Algebra R S] [IsLocalHom (algebraMap R S)]
-    [SMulCommClass G R S] [Algebra.IsSeparable (ResidueField R) (ResidueField S)] (p : ℕ)
-    [CharP (ResidueField S) p] [FaithfulSMul G S] [Finite (ramificationGroup G S 0)] :
-    ramificationGroup G S 1 = ⊥ ↔ ¬ p ∣ Nat.card (ramificationGroup G S 0) :=
-  ramificationGroup_one_eq_bot_iff_not_dvd_card_of_not_dvd_index G S p
-    (not_dvd_index_ramificationGroup_one R p)
-
 /-! ### The positive-depth graded embeddings -/
 
 /-- An element of `G_{n+1}` moves a uniformizer `π` by a multiple of `π ^ (n + 2)`. -/
@@ -1018,6 +1036,88 @@ theorem ramificationGroupGradedToResidueField_injective (R : Type*) [CommRing R]
     rw [ramificationGroupGradedToResidueField_mk, ← MonoidHom.mem_ker,
       ker_ramificationGroupToResidueField R hπ n] at hg
     rwa [QuotientGroup.eq_one_iff]
+
+/-! ### Wild inertia as the Sylow subgroup of inertia -/
+
+section
+
+variable (R : Type*) [CommRing R] [IsLocalRing R] [Algebra R S] [IsLocalHom (algebraMap R S)]
+  [SMulCommClass G R S] [Algebra.IsSeparable (ResidueField R) (ResidueField S)]
+variable (G S)
+include R
+
+/-- When the residue extension is separable, the order of the tame quotient `G_0 / G_1` divides
+`#(ResidueField S) - 1`. -/
+theorem card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one :
+    Nat.card (RamificationGroupGraded G S 0) ∣ Nat.card (ResidueField S) - 1 := by
+  rw [← Nat.card_units]
+  exact Subgroup.card_dvd_of_injective _ (tameCharacterGraded_injective R)
+
+section
+
+variable [FaithfulSMul G S]
+
+section
+
+variable [Finite (ramificationGroup G S 0)]
+
+/-- **Wild inertia is a Sylow subgroup of inertia.** For a faithful action with finite `G_0`, a
+separable residue extension and residue characteristic `p`, the first ramification group `G_1`,
+viewed inside `G_0`, is a Sylow `p`-subgroup: it is a `p`-group
+(`TauCeti.IsLocalRing.isPGroup_ramificationGroup`) whose index is prime to `p`
+(`TauCeti.IsLocalRing.not_dvd_index_ramificationGroup_one`). -/
+noncomputable def ramificationGroupOneSylow (p : ℕ) [Fact p.Prime] [CharP (ResidueField S) p] :
+    Sylow p (ramificationGroup G S 0) :=
+  ramificationGroupOneSylowOfNotDvdIndex G S p (not_dvd_index_ramificationGroup_one R p)
+
+@[simp]
+theorem ramificationGroupOneSylow_coe (p : ℕ) [Fact p.Prime] [CharP (ResidueField S) p] :
+    (ramificationGroupOneSylow G S R p : Subgroup (ramificationGroup G S 0)) =
+      (ramificationGroup G S 1).subgroupOf (ramificationGroup G S 0) :=
+  (rfl)
+
+/-- **`G_1` is the only Sylow `p`-subgroup of `G_0`**: the Sylow subgroup
+`TauCeti.IsLocalRing.ramificationGroupOneSylow` is normal. -/
+theorem eq_ramificationGroupOneSylow (p : ℕ) [Fact p.Prime] [CharP (ResidueField S) p]
+    (Q : Sylow p (ramificationGroup G S 0)) : Q = ramificationGroupOneSylow G S R p :=
+  eq_ramificationGroupOneSylow_of_not_dvd_index G S p (not_dvd_index_ramificationGroup_one R p) Q
+
+/-- The order of `G_1` is the `p`-part of the order of `G_0`: `#G_1 = p ^ (v_p #G_0)`. -/
+theorem natCard_ramificationGroup_one (p : ℕ) [Fact p.Prime] [CharP (ResidueField S) p] :
+    Nat.card (ramificationGroup G S 1) =
+      p ^ (Nat.card (ramificationGroup G S 0)).factorization p :=
+  natCard_ramificationGroup_one_of_not_dvd_index G S p (not_dvd_index_ramificationGroup_one R p)
+
+/-- **Wild inertia is trivial if and only if `p` does not divide `#G_0`** (the tamely ramified
+case). -/
+theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero (p : ℕ)
+    [Fact p.Prime] [CharP (ResidueField S) p] :
+    ramificationGroup G S 1 = ⊥ ↔ ¬ p ∣ Nat.card (ramificationGroup G S 0) := by
+  have hp : p.Prime := Fact.out
+  rw [← Subgroup.card_eq_one, natCard_ramificationGroup_one G S R p,
+    pow_eq_one_iff_right hp.ne_one, Nat.factorization_eq_zero_iff]
+  simp only [hp, not_true_eq_false, false_or, Nat.card_pos.ne', or_false]
+
+end
+
+/-- **Wild inertia is trivial if and only if `p` does not divide `#G_0`** when `ResidueField S` is
+finite (the tamely ramified case), without assuming `G_0` is finite. -/
+theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero_of_finite_residueField
+    (p : ℕ) [Fact p.Prime] [CharP (ResidueField S) p] [Finite (ResidueField S)] :
+    ramificationGroup G S 1 = ⊥ ↔ ¬ p ∣ Nat.card (ramificationGroup G S 0) := by
+  by_cases hfin : Finite (ramificationGroup G S 0)
+  · exact ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero G S R p
+  · have hinf := not_finite_iff_infinite.mp hfin
+    rw [Nat.card_eq_zero_of_infinite]
+    simp only [dvd_zero, not_true_eq_false, iff_false]
+    intro h
+    have hker := ker_tameCharacter R (G := G) (S := S)
+    rw [h, Subgroup.bot_subgroupOf, MonoidHom.ker_eq_bot_iff] at hker
+    exact hfin (Finite.of_injective _ hker)
+
+end
+
+end
 
 end DiscreteValuationRing
 

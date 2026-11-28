@@ -32,11 +32,20 @@ combined on the chart overlap by the cutoff `φ' · (φ ∘ e ∘ e'⁻¹)`
 
 * `OpenPartialHomeomorph.overlapCutoff_spec`: the overlap cutoff is smooth with compact support in
   the source of the transition map.
+* `mulLeft_ofReal_cutoffPullback_one_complexCutoffPullback_eq_complexCutoffPullback` (in the
+  `OpenPartialHomeomorph` namespace): a cutoff `τ` read on `M` absorbs a pullback through a cutoff
+  equal to `1` on the support of `τ`.
 * `OpenPartialHomeomorph.mulLeft_ofReal_cutoffPullback_one_eq_complexCutoffPullback`: multiplying a
   function by a cutoff `τ` read on `M` is pushing it forward to the chart by `τ` and pulling it back
   by a cutoff equal to `1` on the support of `τ`.
+* `OpenPartialHomeomorph.cutoffPushforwardSchwartz_complexCutoffPullback_apply_of_eq_one`: reading
+  through `τ` the pullback of `G` by a cutoff equal to `1` on the support of `τ` gives `τ · G`.
+* `OpenPartialHomeomorph.smul_complexChartCompression_smulLeftCLM`: cutting a chart compression
+  down by a cutoff `φ`, on both sides, gives the chart compression by `φ` and `φ`.
 * `OpenPartialHomeomorph.eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero`: a function is
   determined by its readings through cutoffs whose readings on `M` add up to `1`.
+* `OpenPartialHomeomorph.sum_indicator_cutoffPushforwardSchwartz_apply`: such a function is
+  recovered by gluing its readings back along the charts.
 -/
 
 public section
@@ -79,6 +88,38 @@ theorem cutoffPushforwardSchwartz_apply (ψ : 𝓓(⟨e.target, e.open_target⟩
     cutoffPushforwardSchwartz he ψ u y = ψ y • u (e.symm y) :=
   e.complexCutoffPushforward_apply he ψ u y
 
+/-- On the chart source, the reading `ψ · (u ∘ e⁻¹)` composed with the chart is `(ψ ∘ e) u`. -/
+theorem cutoffPushforwardSchwartz_apply_eq_of_mem (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) {x : M} (hx : x ∈ e.source) :
+    e.cutoffPushforwardSchwartz he ψ u (e x) = (e.cutoffPullback he ψ 1 x : ℂ) * u x := by
+  rw [cutoffPushforwardSchwartz_apply, e.left_inv hx, cutoffPullback_one_apply_of_mem he _ hx,
+    Complex.real_smul]
+
+omit [T2Space M] in
+/-- The reading `ψ · (u ∘ e⁻¹)` is supported in the support of `ψ`. -/
+theorem support_cutoffPushforwardSchwartz_subset (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    Function.support (e.cutoffPushforwardSchwartz he ψ u) ⊆ tsupport ψ := fun y hy ↦
+  subset_tsupport _ fun h ↦ hy (by rw [cutoffPushforwardSchwartz_apply, h, zero_smul])
+
+/-- **Absorbing a cutoff into a pullback.** Multiplying the pullback `(χ₁ f) ∘ e` by a cutoff `τ`
+read on `M` through the chart, where `χ₁` equals `1` on the support of `τ`, gives the pullback
+`(τ f) ∘ e`. -/
+theorem mulLeft_ofReal_cutoffPullback_one_complexCutoffPullback_eq_complexCutoffPullback
+    {τ χ₁ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} (hχ₁ : ∀ y ∈ tsupport τ, χ₁ y = 1)
+    (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; 𝓘(ℝ, ℂ), ℂ⟯) :
+    LinearMap.mulLeft ℂ (ContMDiffMap.ofReal (e.cutoffPullback he τ 1))
+      (e.complexCutoffPullback he χ₁ f) = e.complexCutoffPullback he τ f := by
+  ext p
+  by_cases hp : p ∈ e.source
+  · simp only [LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply,
+      ContMDiffMap.ofReal_apply, cutoffPullback_one_apply_of_mem he _ hp,
+      complexCutoffPullback_apply_of_mem he _ _ hp]
+    by_cases hτ : τ (e p) = 0
+    · simp [hτ]
+    · rw [hχ₁ _ (subset_tsupport _ hτ), one_smul, Complex.real_smul]
+  · simp [complexCutoffPullback_apply_of_notMem he _ _ hp]
+
 /-- **Multiplying by a cutoff read through a chart.** Multiplying a function `g` on `M` by a
 cutoff `τ` in the chart `e`, read on `M` as `τ ∘ e` extended by `0`, is pushing `g` forward to the
 chart as the Schwartz function `τ · (g ∘ e⁻¹)` and pulling it back to `M` through a cutoff `χ`
@@ -101,6 +142,74 @@ theorem mulLeft_ofReal_cutoffPullback_one_eq_complexCutoffPullback
   · simp [complexCutoffPullback_apply_of_notMem he _ _ hp,
       cutoffPullback_apply_of_notMem he _ _ hp]
 
+/-- **Reading a pullback in its own chart.** The reading through a cutoff `τ` of the pullback of a
+function `G` on `ℝⁿ` through a cutoff `χ` in the same chart, equal to `1` on the support of `τ`, is
+`τ · G`. -/
+theorem cutoffPushforwardSchwartz_complexCutoffPullback_apply_of_eq_one
+    {τ χ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} (hχ : ∀ y ∈ tsupport τ, χ y = 1)
+    (G : C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; 𝓘(ℝ, ℂ), ℂ⟯) (y : CoordinateSpace n) :
+    e.cutoffPushforwardSchwartz he τ (e.complexCutoffPullback he χ G) y = τ y • G y := by
+  rw [cutoffPushforwardSchwartz_apply]
+  by_cases hτ : τ y = 0
+  · simp [hτ]
+  have hy : y ∈ e.target := τ.tsupport_subset (subset_tsupport _ hτ)
+  rw [complexCutoffPullback_apply_of_mem he _ _ (e.map_target hy), e.right_inv hy,
+    hχ _ (subset_tsupport _ hτ), one_smul]
+
+/-- **Reading a cut-off Schwartz function on `M`.** If `χ = 1` on the support of `φ`, the Schwartz
+function `φ u` read on `M` through `χ` is `u` read on `M` through `φ`. -/
+theorem complexCutoffPullback_ofContDiff_smulLeftCLM {φ χ : 𝓓(⟨e.target, e.open_target⟩, ℝ)}
+    (hχ : ∀ y ∈ tsupport φ, χ y = 1) (u : 𝓢(CoordinateSpace n, ℂ)) :
+    e.complexCutoffPullback he χ (ContMDiffMap.ofContDiff (SchwartzMap.smulLeftCLM ℂ ⇑φ u)
+        (SchwartzMap.smooth _ ⊤)) =
+      e.complexCutoffPullback he φ (ContMDiffMap.ofContDiff u (u.smooth ⊤)) := by
+  have hφt : (⇑φ : CoordinateSpace n → ℝ).HasTemperateGrowth :=
+    φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
+  ext q
+  by_cases hq : q ∈ e.source
+  · simp only [complexCutoffPullback_apply_of_mem he _ _ hq, ContMDiffMap.coe_ofContDiff,
+      SchwartzMap.smulLeftCLM_apply_apply hφt]
+    by_cases hφq : φ (e q) = 0
+    · simp [hφq]
+    · rw [hχ _ (subset_tsupport _ hφq), one_smul]
+  · simp [complexCutoffPullback_apply_of_notMem he _ _ hq]
+
+/-- **Compressing a chart compression.** If `χ` and `χ₂` equal `1` on the support of `φ`, then
+`φ · Cχ,χ₂(D) (φ u)` is the chart compression of `D` by `φ` and `φ`, where `Cχ,χ₂(D)` is the
+compression of `D` by `χ` and `χ₂`. -/
+theorem smul_complexChartCompression_smulLeftCLM {φ χ χ₂ : 𝓓(⟨e.target, e.open_target⟩, ℝ)}
+    (hχ : ∀ y ∈ tsupport φ, χ y = 1) (hχ₂ : ∀ y ∈ tsupport φ, χ₂ y = 1)
+    (D : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
+    (u : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n) :
+    φ y • e.complexChartCompression he χ χ₂ D (ContMDiffMap.ofContDiff
+        (SchwartzMap.smulLeftCLM ℂ ⇑φ u) (SchwartzMap.smooth _ ⊤)) y =
+      e.complexChartCompression he φ φ D (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y := by
+  rw [complexChartCompression_apply, complexChartCompression_apply,
+    complexCutoffPullback_ofContDiff_smulLeftCLM he hχ₂]
+  by_cases hφy : φ y = 0
+  · simp [hφy]
+  rw [hχ _ (subset_tsupport _ hφy), one_smul]
+
+omit he in
+/-- **A function is recovered from its readings.** If the readings `ψᵢ ∘ eᵢ` on `M` of finitely
+many cutoffs `ψᵢ` in charts `eᵢ` add up to `1`, then gluing the readings `ψᵢ · (u ∘ eᵢ⁻¹)` of a
+function `u` back along the charts, each extended by `0` outside the chart source, gives `u`. -/
+theorem sum_indicator_cutoffPushforwardSchwartz_apply {ι : Type*} [Fintype ι]
+    {e : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (ψ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ))
+    (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1)
+    (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) :
+    ∑ i, (e i).source.indicator
+      (fun p ↦ (e i).cutoffPushforwardSchwartz (he i) (ψ i) u (e i p)) x = u x := by
+  calc _ = ∑ i, ((e i).cutoffPullback (he i) (ψ i) 1 x) • u x := Finset.sum_congr rfl fun i _ ↦ by
+          by_cases hx : x ∈ (e i).source
+          · rw [indicator_of_mem hx, cutoffPushforwardSchwartz_apply,
+              cutoffPullback_one_apply_of_mem (he i) _ hx, (e i).left_inv hx]
+          · rw [indicator_of_notMem hx, cutoffPullback_apply_of_notMem (he i) _ _ hx, zero_smul]
+    _ = u x := by rw [← Finset.sum_smul, hψ x, one_smul]
+
 omit he in
 /-- **A function is determined by its readings.** If the readings `ψᵢ ∘ eᵢ` on `M` of finitely
 many cutoffs `ψᵢ` in charts `eᵢ` add up to `1`, a smooth function `u` on `M` all of whose readings
@@ -113,14 +222,8 @@ theorem eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero {ι : Type*} [Fintyp
     {u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
     (hu : ∀ i, (e i).cutoffPushforwardSchwartz (he i) (ψ i) u = 0) : u = 0 := by
   ext x
-  have hx : u x = ∑ i, ((e i).cutoffPullback (he i) (ψ i) 1 x : ℂ) * u x := by
-    rw [← Finset.sum_mul, ← Complex.ofReal_sum, hψ x, Complex.ofReal_one, one_mul]
-  rw [hx, Finset.sum_eq_zero fun i _ ↦ ?_]
-  · rw [ContMDiffMap.coe_zero, Pi.zero_apply]
-  by_cases hxi : x ∈ (e i).source
-  · simpa [cutoffPullback_one_apply_of_mem (he i) _ hxi, (e i).left_inv hxi, Complex.real_smul]
-      using DFunLike.congr_fun (hu i) (e i x)
-  · rw [cutoffPullback_apply_of_notMem (he i) _ _ hxi, Complex.ofReal_zero, zero_mul]
+  rw [← sum_indicator_cutoffPushforwardSchwartz_apply he ψ hψ u x]
+  simp [hu]
 
 section Overlap
 
