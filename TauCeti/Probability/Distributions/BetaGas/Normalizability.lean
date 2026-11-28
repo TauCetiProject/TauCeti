@@ -1,0 +1,248 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Probability.Distributions.BetaGas.Basic
+import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
+
+/-!
+# Normalizability of the finite beta gas
+
+For a continuous potential, `0 < β ≤ β'`, and `1 < β'`, the weight is integrable if
+`2 * β' / β < liminf_{|x| → ∞} V x / log |x|`, where the liminf is in the extended reals.
+The Vandermonde product contributes a coordinate power `β * (n - 1)`; the growth assumption
+dominates it by a power with exponent below `-1`, uniformly in `n`. The partition function is
+then positive and the beta-gas measure is a probability. The Gaussian case is a specialization.
+For a fixed nonzero `n`, a separate result requires only the corresponding exponent to be below
+`-1`, allowing weaker growth than the uniform-in-size condition.
+
+## References
+
+* G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*, Cambridge
+  University Press (2010), §2.6.1, (2.6.1)–(2.6.2). Their potential `V_AGZ` is `β V / 2`
+  in our convention; their threshold `β'` therefore becomes `2 * β' / β`.
+-/
+
+public section
+noncomputable section
+
+open MeasureTheory Real Set
+
+namespace TauCeti.Probability
+
+/-- Bound the Vandermonde interaction by a product of one-coordinate powers. -/
+theorem betaGasVandermonde_le_coord_prod (n : ℕ) {β : ℝ} (hβ : 0 ≤ β)
+    (x : Fin n → ℝ) :
+    (∏ z ∈ betaGasPairs n, |x z.1 - x z.2| ^ β) ≤
+      ∏ i : Fin n, (1 + |x i|) ^ (β * ((n - 1 : ℕ) : ℝ)) := by
+  classical
+  let f : Fin n → ℝ := fun i => 1 + |x i|
+  have hdiff (i j : Fin n) : |x i - x j| ≤ f i * f j := by
+    dsimp [f]
+    have h := abs_sub_le (x i) 0 (x j)
+    simp only [sub_zero, zero_sub, abs_neg] at h
+    nlinarith [abs_nonneg (x i), abs_nonneg (x j)]
+  calc
+    _ ≤ ∏ z ∈ betaGasPairs n, (f z.1 ^ β * f z.2 ^ β) := by
+      apply Finset.prod_le_prod₀
+      · intro z _
+        positivity
+      intro z _
+      calc
+        |x z.1 - x z.2| ^ β ≤ (f z.1 * f z.2) ^ β :=
+          Real.rpow_le_rpow (abs_nonneg _) (hdiff z.1 z.2) hβ
+        _ = f z.1 ^ β * f z.2 ^ β :=
+          Real.mul_rpow (by positivity) (by positivity)
+    _ = ∏ i : Fin n, (f i ^ β) ^ (n - 1) :=
+      betaGasPairs_prod_mul n (fun i => f i ^ β)
+    _ = ∏ i : Fin n, f i ^ (β * ((n - 1 : ℕ) : ℝ)) := by
+      apply Finset.prod_congr rfl
+      intro i _
+      rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
+
+/-- Bound the beta-gas weight by a product of one-coordinate functions. -/
+theorem betaGasWeight_le_coord_prod (n : ℕ) {β : ℝ} (hβ : 0 ≤ β)
+    (V : ℝ → ℝ)
+    (x : Fin n → ℝ) :
+    betaGasWeight n β V x ≤
+      ∏ i : Fin n, ((1 + |x i|) ^ (β * ((n - 1 : ℕ) : ℝ)) *
+        exp (-(β * (n : ℝ) / 2) * V (x i))) := by
+  classical
+  let a : ℝ := β * (n : ℝ) / 2
+  let p : ℝ := β * ((n - 1 : ℕ) : ℝ)
+  have hvander : (∏ z ∈ betaGasPairs n, |x z.1 - x z.2| ^ β) ≤
+      ∏ i : Fin n, (1 + |x i|) ^ p :=
+    betaGasVandermonde_le_coord_prod n hβ x
+  have hexp : exp (-(β * (n : ℝ) / 2) * ∑ i : Fin n, V (x i)) =
+      ∏ i : Fin n, exp (-a * V (x i)) := by
+    have hdistrib : -(β * (n : ℝ) / 2) * ∑ i : Fin n, V (x i) =
+        ∑ i : Fin n, (-a * V (x i)) := by simp [a, Finset.mul_sum]
+    rw [hdistrib]
+    exact Real.exp_sum _ _
+  rw [betaGasWeight_def, hexp]
+  calc
+    _ ≤ (∏ i : Fin n, exp (-a * V (x i))) *
+        (∏ i : Fin n, (1 + |x i|) ^ p) :=
+      mul_le_mul_of_nonneg_left hvander (by positivity)
+    _ = ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * V (x i))) := by
+      rw [← Finset.prod_mul_distrib]
+      apply Finset.prod_congr rfl
+      intro i _
+      ring
+
+/-- For a nonempty gas, the coordinate majorant is integrable when the logarithmic
+growth coefficient makes its exponent strictly smaller than `-1`. -/
+theorem integrable_betaGasWeight_of_eventually_le_div_log_of_exponent
+    (n : ℕ) (hn : 0 < n) {β c : ℝ} (hβ : 0 < β)
+    {V : ℝ → ℝ} (hV : Continuous V)
+    (hq : β * ((n - 1 : ℕ) : ℝ) - (β * (n : ℝ) / 2) * c < -1)
+    (hRatio : ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop,
+      c ≤ V x / log |x|) :
+    Integrable (betaGasWeight n β V)
+      (volume : Measure (Fin n → ℝ)) := by
+  classical
+  let a : ℝ := β * (n : ℝ) / 2
+  let p : ℝ := β * ((n - 1 : ℕ) : ℝ)
+  have ha : 0 < a := by
+    dsimp [a]
+    positivity
+  have hGrowth := TauCeti.eventually_mul_log_abs_le_of_eventually_le_div_log
+    Filter.tendsto_comap hRatio
+  have hmajor : Integrable
+      (fun x : Fin n → ℝ =>
+        ∏ i, ((1 + |x i|) ^ p * exp (-a * V (x i))))
+      (volume : Measure (Fin n → ℝ)) :=
+    Integrable.fintype_prod fun _ =>
+      integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth
+        (by positivity) ha hq hV hGrowth
+  apply Integrable.mono' hmajor
+    ((continuous_betaGasWeight n hβ.le hV).aestronglyMeasurable)
+  filter_upwards with x
+  simpa only [Real.norm_eq_abs, abs_of_nonneg (betaGasWeight_nonneg n β V x),
+    abs_of_nonneg (by positivity :
+      0 ≤ ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * V (x i))))] using
+    betaGasWeight_le_coord_prod n hβ.le V x
+
+/-- For a continuous potential and `0 < β ≤ β'` with `1 < β'`, the beta-gas weight is
+integrable if eventually as `|x| → ∞`, `2 * β' / β ≤ V x / log |x|`. -/
+theorem integrable_betaGasWeight_of_eventually_le_div_log (n : ℕ) {β β' : ℝ}
+    (hβ : 0 < β)
+    (hβ' : 1 < β') (hββ' : β ≤ β') {V : ℝ → ℝ} (hV : Continuous V)
+    (hRatio : ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop,
+      2 * β' / β ≤ V x / log |x|) :
+    Integrable (betaGasWeight n β V)
+      (volume : Measure (Fin n → ℝ)) := by
+  by_cases hn : n = 0
+  · subst n
+    simp
+  · have hnle : 1 ≤ n := Nat.one_le_iff_ne_zero.mpr hn
+    apply integrable_betaGasWeight_of_eventually_le_div_log_of_exponent n
+      (Nat.pos_of_ne_zero hn) hβ hV _ hRatio
+    have hq : β * ((n - 1 : ℕ) : ℝ) -
+        (β * (n : ℝ) / 2) * (2 * β' / β) < -1 := by
+      have hncast : (n : ℝ) = ((n - 1 : ℕ) : ℝ) + 1 := by
+        exact_mod_cast (Nat.sub_add_cancel hnle).symm
+      have hformula : β * ((n - 1 : ℕ) : ℝ) -
+          (β * (n : ℝ) / 2) * (2 * β' / β) =
+          -β' + ((n - 1 : ℕ) : ℝ) * (β - β') := by
+        rw [hncast]
+        field_simp [hβ.ne']
+        ring
+      rw [hformula]
+      have hdiff : β - β' ≤ 0 := sub_nonpos.mpr hββ'
+      have hmul : ((n - 1 : ℕ) : ℝ) * (β - β') ≤ 0 :=
+        mul_nonpos_of_nonneg_of_nonpos (by positivity) hdiff
+      linarith
+    exact hq
+
+/-- For a continuous potential and `0 < β ≤ β'` with `1 < β'`, the beta-gas weight is
+integrable if the liminf of `V x / log |x|` as `|x| → ∞` exceeds `2 * β' / β`.
+The liminf is taken in the extended reals. -/
+theorem integrable_betaGasWeight_of_lt_liminf_div_log (n : ℕ) {β β' : ℝ} (hβ : 0 < β)
+    (hβ' : 1 < β') (hββ' : β ≤ β') {V : ℝ → ℝ} (hV : Continuous V)
+    (hliminf :
+      ((2 * β' / β : ℝ) : EReal) <
+        Filter.liminf (fun x : ℝ => ((V x / log |x| : ℝ) : EReal))
+          (Filter.comap (fun x : ℝ => |x|) Filter.atTop)) :
+    Integrable (betaGasWeight n β V)
+      (volume : Measure (Fin n → ℝ)) := by
+  have hratioE : ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop,
+      ((2 * β' / β : ℝ) : EReal) < ((V x / log |x| : ℝ) : EReal) :=
+    Filter.eventually_lt_of_lt_liminf hliminf
+  have hRatio : ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop,
+      2 * β' / β ≤ V x / log |x| := by
+    filter_upwards [hratioE] with x hx
+    exact (EReal.coe_lt_coe_iff.mp hx).le
+  exact integrable_betaGasWeight_of_eventually_le_div_log n hβ hβ' hββ' hV hRatio
+
+/-- For `0 < β ≤ β'`, `1 < β'`, and continuous `V` with
+`2 * β' / β < liminf_{|x| → ∞} V x / log |x|`, the partition function is positive. -/
+theorem betaGasPartitionFunction_pos_of_lt_liminf_div_log (n : ℕ) {β β' : ℝ} (hβ : 0 < β)
+    (hβ' : 1 < β') (hββ' : β ≤ β') {V : ℝ → ℝ} (hV : Continuous V)
+    (hliminf :
+      ((2 * β' / β : ℝ) : EReal) <
+        Filter.liminf (fun x : ℝ => ((V x / log |x| : ℝ) : EReal))
+          (Filter.comap (fun x : ℝ => |x|) Filter.atTop)) :
+    0 < betaGasPartitionFunction n β V := by
+  exact betaGasPartitionFunction_pos_of_integrable n β V
+    (integrable_betaGasWeight_of_lt_liminf_div_log n hβ hβ' hββ' hV hliminf)
+
+/-- The general-potential beta-gas measure is a probability under the logarithmic-growth
+condition. -/
+theorem isProbabilityMeasure_betaGasMeasure_of_lt_liminf_div_log (n : ℕ) {β β' : ℝ} (hβ : 0 < β)
+    (hβ' : 1 < β') (hββ' : β ≤ β') {V : ℝ → ℝ} (hV : Continuous V)
+    (hliminf :
+      ((2 * β' / β : ℝ) : EReal) <
+        Filter.liminf (fun x : ℝ => ((V x / log |x| : ℝ) : EReal))
+          (Filter.comap (fun x : ℝ => |x|) Filter.atTop)) :
+    IsProbabilityMeasure (betaGasMeasure n β V) :=
+  isProbabilityMeasure_betaGasMeasure n β V
+    (integrable_betaGasWeight_of_lt_liminf_div_log n hβ hβ' hββ' hV hliminf)
+
+/-- The Gaussian beta-gas weight is integrable for every positive inverse temperature. -/
+theorem integrable_gaussianBetaGasWeight (n : ℕ) {β : ℝ} (hβ : 0 < β) :
+    Integrable (gaussianBetaGasWeight n β)
+      (volume : Measure (Fin n → ℝ)) := by
+  let β' : ℝ := max β 2
+  have hβ' : 1 < β' := by
+    dsimp [β']
+    exact lt_of_lt_of_le one_lt_two (le_max_right _ _)
+  have hββ' : β ≤ β' := le_max_left _ _
+  have hRatio := eventually_quadratic_div_log_abs_gt (2 * β' / β)
+  rw [gaussianBetaGasWeight_eq_betaGasWeight]
+  apply integrable_betaGasWeight_of_eventually_le_div_log n hβ hβ' hββ' (by fun_prop)
+  filter_upwards [hRatio] with x hx
+  exact hx.le
+
+/-- The Gaussian beta-gas partition function is strictly positive for positive
+inverse temperature. -/
+theorem gaussianBetaGasPartitionFunction_pos (n : ℕ) {β : ℝ} (hβ : 0 < β) :
+    0 < gaussianBetaGasPartitionFunction n β := by
+  rw [gaussianBetaGasPartitionFunction_eq_betaGasPartitionFunction]
+  apply betaGasPartitionFunction_pos_of_integrable n β _
+  rw [← gaussianBetaGasWeight_eq_betaGasWeight]
+  exact integrable_gaussianBetaGasWeight n hβ
+
+/-- The Gaussian beta-gas density integrates to one for positive inverse temperature. -/
+@[simp]
+theorem integral_gaussianBetaGasPDFReal_eq_one (n : ℕ) {β : ℝ} (hβ : 0 < β) :
+    (∫ x, gaussianBetaGasPDFReal n β x
+      ∂(volume : Measure (Fin n → ℝ))) = 1 := by
+  rw [gaussianBetaGasPDFReal_eq_betaGasPDFReal]
+  apply integral_betaGasPDFReal_eq_one
+  rw [← gaussianBetaGasPartitionFunction_eq_betaGasPartitionFunction]
+  exact gaussianBetaGasPartitionFunction_pos n hβ
+
+/-- The normalized Gaussian beta-gas measure has total mass one for positive
+inverse temperature. -/
+theorem isProbabilityMeasure_gaussianBetaGasMeasure (n : ℕ) {β : ℝ} (hβ : 0 < β) :
+    IsProbabilityMeasure (gaussianBetaGasMeasure n β) := by
+  rw [gaussianBetaGasMeasure_eq_betaGasMeasure]
+  apply isProbabilityMeasure_betaGasMeasure
+  rw [← gaussianBetaGasWeight_eq_betaGasWeight]
+  exact integrable_gaussianBetaGasWeight n hβ
+
+end TauCeti.Probability

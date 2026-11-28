@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
+import Mathlib.MeasureTheory.Integral.Asymptotics
+import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrals.MellinWeight
 import TauCeti.Analysis.SpecialFunctions.Pow.Deriv
@@ -34,6 +36,13 @@ zero and one.
 * `TauCeti.one_div_sqrt_mul_sqrt_le_inv_min_sq_add_sq` and
   `TauCeti.integrable_one_div_sqrt_mul_sqrt`: the inverse product of two quadratic square
   roots is dominated by a Cauchy integrand and is integrable for positive radii.
+* `TauCeti.eventually_mul_log_abs_le_of_eventually_le_div_log`: an eventual lower bound on
+  `V x / log |x|` yields the corresponding lower bound on `V x`.
+
+* `TauCeti.integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth`: sufficient logarithmic
+  growth makes an exponentially weighted polynomial integrable.
+* `TauCeti.eventually_quadratic_div_log_abs_gt`: quadratic growth dominates logarithmic growth
+  as `|x| → ∞`.
 
 * `TauCeti.integrableOn_rpow_mul_sin` and `TauCeti.integral_Ioi_rpow_mul_sin`: integrability
   and the value of `∫ x in Ioi 0, x ^ (-(alpha + 1)) * sin x` for `0 < alpha < 1`.
@@ -73,6 +82,105 @@ namespace TauCeti
 
 open Asymptotics Filter MeasureTheory Real Set
 open scoped Topology
+
+/-- If `|x|` tends to infinity along `l`, an eventual lower bound on `V x / log |x|`
+implies the corresponding lower bound on `V x`. -/
+theorem eventually_mul_log_abs_le_of_eventually_le_div_log {l : Filter ℝ} {V : ℝ → ℝ} {c : ℝ}
+    (habs : Tendsto (fun x : ℝ ↦ |x|) l atTop)
+    (hV : ∀ᶠ x in l, c ≤ V x / Real.log |x|) :
+    ∀ᶠ x in l, c * Real.log |x| ≤ V x := by
+  filter_upwards [hV, habs.eventually_gt_atTop 1] with x hx hxlarge
+  exact (le_div_iff₀ (Real.log_pos hxlarge)).mp hx
+
+private theorem one_add_abs_rpow_mul_exp_neg_le {p a c x vx : ℝ}
+    (hp : 0 ≤ p) (ha : 0 < a) (hq : p - a * c ≤ 0)
+    (hx : 1 ≤ |x|) (hVx : c * log |x| ≤ vx) :
+    (1 + |x|) ^ p * exp (-a * vx) ≤
+      (2 ^ p * 2 ^ (-(p - a * c))) * (1 + |x|) ^ (p - a * c) := by
+  have hxabs : 0 < |x| := lt_of_lt_of_le zero_lt_one hx
+  have hpoly : (1 + |x|) ^ p ≤ (2 * |x|) ^ p :=
+    Real.rpow_le_rpow (by positivity) (by nlinarith) hp
+  have hexp : exp (-a * vx) ≤ |x| ^ (-a * c) := by
+    rw [Real.rpow_def_of_pos hxabs]
+    apply exp_le_exp.mpr
+    have hmul := mul_le_mul_of_nonpos_left hVx (by linarith : -a ≤ 0)
+    nlinarith [hmul]
+  calc
+    _ ≤ (2 * |x|) ^ p * |x| ^ (-a * c) :=
+      mul_le_mul hpoly hexp (by positivity) (by positivity)
+    _ = 2 ^ p * |x| ^ (p - a * c) := by
+      rw [Real.mul_rpow (by positivity) (by positivity)]
+      rw [mul_assoc, ← Real.rpow_add hxabs]
+      congr 2
+      ring
+    _ ≤ (2 ^ p * 2 ^ (-(p - a * c))) * (1 + |x|) ^ (p - a * c) := by
+      have hpow : |x| ^ (p - a * c) ≤
+          2 ^ (-(p - a * c)) * (1 + |x|) ^ (p - a * c) := by
+        calc
+          _ ≤ ((1 + |x|) / 2) ^ (p - a * c) :=
+            Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) hq
+          _ = _ := by
+            rw [Real.div_rpow (by positivity) (by positivity),
+              Real.rpow_neg (by positivity)]
+            ring
+      have htwo : 0 ≤ (2 : ℝ) ^ p := by positivity
+      simpa only [mul_assoc] using mul_le_mul_of_nonneg_left hpow htwo
+
+/-- A continuous potential with sufficient logarithmic growth dominates a
+polynomial factor and makes the resulting exponential weight integrable. -/
+theorem integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth {p a c : ℝ} {V : ℝ → ℝ}
+    (hp : 0 ≤ p) (ha : 0 < a) (hq : p - a * c < -1)
+    (hV : Continuous V)
+    (hGrowth : ∀ᶠ x in Filter.comap abs Filter.atTop, c * log |x| ≤ V x) :
+    Integrable (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) volume := by
+  let q : ℝ := p - a * c
+  have hqneg : q ≤ 0 := by dsimp [q]; linarith
+  have hmajor : Integrable (fun x : ℝ => (1 + |x|) ^ q) volume := by
+    have hdim : (Module.finrank ℝ ℝ : ℝ) < -q := by
+      simp only [Module.finrank_self, Nat.cast_one]
+      dsimp [q]
+      linarith
+    simpa only [Real.norm_eq_abs, neg_neg] using
+      (integrable_one_add_norm (E := ℝ) (μ := volume) hdim)
+  have hg : Continuous (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) := by
+    have hbase : Continuous (fun x : ℝ => 1 + |x|) := by fun_prop
+    have hexp : Continuous (fun x : ℝ => exp (-a * V x)) := by fun_prop
+    exact (hbase.rpow_const (fun x => Or.inl (by positivity))).mul hexp
+  have hbig : (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) =O[Filter.comap abs atTop]
+      (fun x : ℝ => (1 + |x|) ^ q) := by
+    apply Asymptotics.IsBigO.of_bound (2 ^ p * 2 ^ (-q))
+    filter_upwards [hGrowth, Filter.tendsto_comap.eventually (Filter.eventually_ge_atTop 1)]
+      with x hxGrowth hx
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), Real.norm_eq_abs,
+      abs_of_nonneg (Real.rpow_nonneg (by positivity) q)]
+    exact one_add_abs_rpow_mul_exp_neg_le hp ha hqneg hx hxGrowth
+  rw [comap_abs_atTop, ← cocompact_eq_atBot_atTop] at hbig
+  exact hg.locallyIntegrable.integrable_of_isBigO_cocompact hbig
+    (hmajor.integrableAtFilter _)
+
+/-- Every fixed threshold is eventually below `x² / (2 log |x|)`
+as `|x|` tends to infinity. -/
+theorem eventually_quadratic_div_log_abs_gt (c : ℝ) :
+    ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop,
+      c < (x ^ 2 / 2) / log |x| := by
+  rw [Filter.eventually_comap]
+  apply Filter.eventually_atTop.2
+  refine ⟨max (2 * max c 0 + 1) 2, ?_⟩
+  intro t ht x hxt
+  have htA : 2 * max c 0 + 1 ≤ t := le_trans (le_max_left _ _) ht
+  have htB : 2 ≤ t := le_trans (le_max_right _ _) ht
+  have htpos : 0 < t := by linarith
+  have htgt : 1 < t := lt_of_lt_of_le one_lt_two htB
+  have hlogpos : 0 < log t := Real.log_pos htgt
+  have hlogle : log t ≤ t :=
+    (Real.log_le_sub_one_of_pos htpos).trans (by linarith)
+  have hmargin : 0 < t / 2 - max c 0 := by linarith
+  have hquad : max c 0 * t < t ^ 2 / 2 := by
+    have := mul_pos htpos hmargin
+    nlinarith
+  rw [← sq_abs, hxt, lt_div_iff₀ hlogpos]
+  exact (mul_le_mul_of_nonneg_right (le_max_left c 0) hlogpos.le).trans_lt
+    ((mul_le_mul_of_nonneg_left hlogle (le_max_right _ _)).trans_lt hquad)
 
 /-- For `0 < alpha < 1`, the function `x ↦ x ^ (-(alpha + 1)) * sin x` is integrable on the
 positive half-line. -/

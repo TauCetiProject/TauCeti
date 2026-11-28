@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Prokhorov
 import TauCeti.Analysis.SpecialFunctions.Integrability.Log
+import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Data.EReal.Operations
 import TauCeti.Data.EReal.Quantale
 import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
@@ -188,9 +189,8 @@ theorem tendsto_logarithmicConfinement_of_eventually_le_div_log {V : ℝ → ℝ
     simpa only [Function.comp_def, neg_zero] using
       ((Real.tendsto_log_comp_add_sub_log 1).comp habs).neg
   refine tendsto_atTop_mono' _ ?_ (hlead.atTop_add herr)
-  filter_upwards [hV, habs.eventually_ge_atTop 2] with x hx hx'
-  have hl := Real.log_pos (one_lt_two.trans_le hx')
-  have hmul := (le_div_iff₀ hl).mp hx
+  have hmul := TauCeti.eventually_mul_log_abs_le_of_eventually_le_div_log habs hV
+  filter_upwards [hmul] with x hx
   rw [logarithmicConfinement_def, add_comm (1 : ℝ) |x|]
   simp only [Function.comp_apply]
   nlinarith
