@@ -469,17 +469,24 @@ lemma cylinderι_const_one_comp_toCylinderHom_app {X Y : SimplicialObject C} {f 
   simp only [toCylinderHom, toCylinderHomApp, cylinderι_desc, ← SimplexCategory.toMk₁_zero n,
     ← SimplexCategory.toMk₁Equiv_apply, Equiv.symm_apply_apply, toCylinderHomTerm, Fin.cases_zero]
 
+/-- Evaluating `H.toCylinderHom` on the constant-`0` summand `SimplexCategory.const m.unop ⦋1⦌ 0`
+recovers `f.app m`. -/
+@[reassoc (attr := simp)]
+lemma cylinderι_const_zero_comp_toCylinderHom_app {X Y : SimplicialObject C} {f g : X ⟶ Y}
+    (H : Homotopy f g) (m : SimplexCategoryᵒᵖ) :
+    cylinderι X (SimplexCategory.const m.unop ⦋1⦌ 0) ≫ H.toCylinderHom.app m = f.app m := by
+  obtain ⟨m⟩ := m
+  induction m using SimplexCategory.rec with | _ n
+  simp only [toCylinderHom, toCylinderHomApp, cylinderι_desc, ← SimplexCategory.toMk₁_last n,
+    ← SimplexCategory.toMk₁Equiv_apply, Equiv.symm_apply_apply]
+  rw [← Fin.succ_last, toCylinderHomTerm, Fin.cases_succ, Fin.succ_last, H.h_last_comp_δ_last]
+
 /-- Restricting `H.toCylinderHom` along the `0`-end inclusion recovers `f`. -/
 @[reassoc (attr := simp)]
 lemma cylinderι₀_comp_toCylinderHom {X Y : SimplicialObject C} {f g : X ⟶ Y} (H : Homotopy f g) :
     (cylinderι₀ C).app X ≫ H.toCylinderHom = f := by
   ext Δ
-  obtain ⟨Δ⟩ := Δ
-  induction Δ using SimplexCategory.rec with | _ n
-  simp only [NatTrans.comp_app, cylinderι₀_app_app, toCylinderHom, toCylinderHomApp,
-    cylinderι_desc, ← SimplexCategory.toMk₁_last n, ← SimplexCategory.toMk₁Equiv_apply,
-    Equiv.symm_apply_apply]
-  rw [← Fin.succ_last, toCylinderHomTerm, Fin.cases_succ, Fin.succ_last, H.h_last_comp_δ_last]
+  simp
 
 /-- Restricting `H.toCylinderHom` along the `1`-end inclusion recovers `g`. -/
 @[reassoc (attr := simp)]

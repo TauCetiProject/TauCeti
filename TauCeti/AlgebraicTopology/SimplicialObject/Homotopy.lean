@@ -265,6 +265,16 @@ lemma refl_hom (X : SimplicialObject C) : (refl X).hom = 𝟙 X := (rfl)
 @[simp]
 lemma refl_inv (X : SimplicialObject C) : (refl X).inv = 𝟙 X := (rfl)
 
+@[simp]
+lemma refl_homotopyHomInvId_h (X : SimplicialObject C) {n : ℕ} (i : Fin (n + 1)) :
+    (refl X).homotopyHomInvId.h i = X.σ i := by
+  simp [refl]
+
+@[simp]
+lemma refl_homotopyInvHomId_h (X : SimplicialObject C) {n : ℕ} (i : Fin (n + 1)) :
+    (refl X).homotopyInvHomId.h i = X.σ i := by
+  simp [refl]
+
 instance (X : SimplicialObject C) : Inhabited (HomotopyEquiv X X) :=
   ⟨refl X⟩
 
@@ -283,6 +293,14 @@ lemma symm_hom (e : HomotopyEquiv X Y) : e.symm.hom = e.inv := (rfl)
 lemma symm_inv (e : HomotopyEquiv X Y) : e.symm.inv = e.hom := (rfl)
 
 @[simp]
+lemma symm_homotopyHomInvId_h (e : HomotopyEquiv X Y) {n : ℕ} (i : Fin (n + 1)) :
+    e.symm.homotopyHomInvId.h i = e.homotopyInvHomId.h i := (rfl)
+
+@[simp]
+lemma symm_homotopyInvHomId_h (e : HomotopyEquiv X Y) {n : ℕ} (i : Fin (n + 1)) :
+    e.symm.homotopyInvHomId.h i = e.homotopyHomInvId.h i := (rfl)
+
+@[simp]
 lemma symm_symm (e : HomotopyEquiv X Y) : e.symm.symm = e := (rfl)
 
 /-- An isomorphism of simplicial objects induces a combinatorial simplicial homotopy
@@ -298,6 +316,16 @@ lemma ofIso_hom (e : X ≅ Y) : (ofIso e).hom = e.hom := (rfl)
 
 @[simp]
 lemma ofIso_inv (e : X ≅ Y) : (ofIso e).inv = e.inv := (rfl)
+
+@[simp]
+lemma ofIso_homotopyHomInvId_h (e : X ≅ Y) {n : ℕ} (i : Fin (n + 1)) :
+    (ofIso e).homotopyHomInvId.h i = X.σ i := by
+  simp [ofIso]
+
+@[simp]
+lemma ofIso_homotopyInvHomId_h (e : X ≅ Y) {n : ℕ} (i : Fin (n + 1)) :
+    (ofIso e).homotopyInvHomId.h i = Y.σ i := by
+  simp [ofIso]
 
 /-- Any functor `F : C ⥤ D` applied levelwise preserves combinatorial simplicial homotopy
 equivalences, with no additivity assumption on `F`. -/
@@ -321,6 +349,18 @@ lemma whiskerRight_hom (e : HomotopyEquiv X Y) {D : Type u'} [Category.{v'} D] (
 @[simp]
 lemma whiskerRight_inv (e : HomotopyEquiv X Y) {D : Type u'} [Category.{v'} D] (F : C ⥤ D) :
     (e.whiskerRight F).inv = ((whiskering C D).obj F).map e.inv := (rfl)
+
+@[simp]
+lemma whiskerRight_homotopyHomInvId_h (e : HomotopyEquiv X Y)
+    {D : Type u'} [Category.{v'} D] (F : C ⥤ D) {n : ℕ} (i : Fin (n + 1)) :
+    (e.whiskerRight F).homotopyHomInvId.h i = F.map (e.homotopyHomInvId.h i) := by
+  simp [whiskerRight]
+
+@[simp]
+lemma whiskerRight_homotopyInvHomId_h (e : HomotopyEquiv X Y)
+    {D : Type u'} [Category.{v'} D] (F : C ⥤ D) {n : ℕ} (i : Fin (n + 1)) :
+    (e.whiskerRight F).homotopyInvHomId.h i = F.map (e.homotopyInvHomId.h i) := by
+  simp [whiskerRight]
 
 /-- A combinatorial simplicial homotopy equivalence between whiskered objects descends along a
 fully faithful functor. -/
@@ -358,6 +398,22 @@ lemma whiskerRight_ofFullyFaithful_inv {D : Type u'} [Category.{v'} D] (F : C �
     Functor.whiskerRight (e.ofFullyFaithful F).inv F = e.inv :=
   ((whiskering C D).obj F).map_preimage e.inv
 
+@[simp]
+lemma ofFullyFaithful_homotopyHomInvId_h {D : Type u'} [Category.{v'} D] (F : C ⥤ D)
+    [F.Full] [F.Faithful]
+    (e : HomotopyEquiv (((whiskering C D).obj F).obj X) (((whiskering C D).obj F).obj Y))
+    {n : ℕ} (i : Fin (n + 1)) :
+    (e.ofFullyFaithful F).homotopyHomInvId.h i = F.preimage (e.homotopyHomInvId.h i) := by
+  simp [ofFullyFaithful]
+
+@[simp]
+lemma ofFullyFaithful_homotopyInvHomId_h {D : Type u'} [Category.{v'} D] (F : C ⥤ D)
+    [F.Full] [F.Faithful]
+    (e : HomotopyEquiv (((whiskering C D).obj F).obj X) (((whiskering C D).obj F).obj Y))
+    {n : ℕ} (i : Fin (n + 1)) :
+    (e.ofFullyFaithful F).homotopyInvHomId.h i = F.preimage (e.homotopyInvHomId.h i) := by
+  simp [ofFullyFaithful]
+
 /-- Whiskering a descended combinatorial simplicial homotopy equivalence recovers the original
 homotopy equivalence. -/
 @[simp]
@@ -365,17 +421,7 @@ lemma whiskerRight_ofFullyFaithful {D : Type u'} [Category.{v'} D] (F : C ⥤ D)
     [F.Full] [F.Faithful]
     (e : HomotopyEquiv (((whiskering C D).obj F).obj X) (((whiskering C D).obj F).obj Y)) :
     (e.ofFullyFaithful F).whiskerRight F = e :=
-  ext (by simp) (by simp)
-    (by
-      ext n i
-      rw [Homotopy.congrLeft_h]
-      dsimp only [whiskerRight, ofFullyFaithful]
-      simp)
-    (by
-      ext n i
-      rw [Homotopy.congrLeft_h]
-      dsimp only [whiskerRight, ofFullyFaithful]
-      simp)
+  ext (by simp) (by simp) (by ext n i; simp) (by ext n i; simp)
 
 /-- Descending a whiskered combinatorial simplicial homotopy equivalence along a fully faithful
 functor recovers the original homotopy equivalence. -/
@@ -387,16 +433,7 @@ lemma ofFullyFaithful_whiskerRight {D : Type u'} [Category.{v'} D] (F : C ⥤ D)
       (((whiskering C D).obj F).map_preimage (e.whiskerRight F).hom))
     (((whiskering C D).obj F).map_injective
       (((whiskering C D).obj F).map_preimage (e.whiskerRight F).inv))
-    (by
-      ext n i
-      rw [Homotopy.congrLeft_h]
-      dsimp only [ofFullyFaithful, whiskerRight]
-      simp)
-    (by
-      ext n i
-      rw [Homotopy.congrLeft_h]
-      dsimp only [ofFullyFaithful, whiskerRight]
-      simp)
+    (by ext n i; simp) (by ext n i; simp)
 
 section Preadditive
 
@@ -423,6 +460,24 @@ lemma trans_hom {Z : SimplicialObject C} (e₁ : HomotopyEquiv X Y) (e₂ : Homo
 @[simp]
 lemma trans_inv {Z : SimplicialObject C} (e₁ : HomotopyEquiv X Y) (e₂ : HomotopyEquiv Y Z) :
     (e₁.trans e₂).inv = e₂.inv ≫ e₁.inv := (rfl)
+
+@[simp]
+lemma trans_homotopyHomInvId_h {Z : SimplicialObject C}
+    (e₁ : HomotopyEquiv X Y) (e₂ : HomotopyEquiv Y Z) {n : ℕ} (i : Fin (n + 1)) :
+    (e₁.trans e₂).homotopyHomInvId.h i =
+      e₁.hom.app (op ⦋n⦌) ≫ e₂.homotopyHomInvId.h i ≫ e₁.inv.app (op ⦋n + 1⦌) +
+        e₁.homotopyHomInvId.h i -
+        X.σ i ≫ e₁.hom.app (op ⦋n + 1⦌) ≫ e₁.inv.app (op ⦋n + 1⦌) := by
+  simp [trans]
+
+@[simp]
+lemma trans_homotopyInvHomId_h {Z : SimplicialObject C}
+    (e₁ : HomotopyEquiv X Y) (e₂ : HomotopyEquiv Y Z) {n : ℕ} (i : Fin (n + 1)) :
+    (e₁.trans e₂).homotopyInvHomId.h i =
+      e₂.inv.app (op ⦋n⦌) ≫ e₁.homotopyInvHomId.h i ≫ e₂.hom.app (op ⦋n + 1⦌) +
+        e₂.homotopyInvHomId.h i -
+        Z.σ i ≫ e₂.inv.app (op ⦋n + 1⦌) ≫ e₂.hom.app (op ⦋n + 1⦌) := by
+  simp [trans]
 
 end Preadditive
 

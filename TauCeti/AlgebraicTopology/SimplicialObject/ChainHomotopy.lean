@@ -102,6 +102,18 @@ lemma toChainHomotopyEquiv_inv (e : HomotopyEquiv X Y) :
     e.toChainHomotopyEquiv.inv = (alternatingFaceMapComplex C).map e.inv :=
   (rfl)
 
+@[simp]
+lemma toChainHomotopyEquiv_homotopyHomInvId_hom (e : HomotopyEquiv X Y) (p q : ℕ) :
+    e.toChainHomotopyEquiv.homotopyHomInvId.hom p q =
+      e.homotopyHomInvId.toChainHomotopy.hom p q := by
+  simp [toChainHomotopyEquiv]
+
+@[simp]
+lemma toChainHomotopyEquiv_homotopyInvHomId_hom (e : HomotopyEquiv X Y) (p q : ℕ) :
+    e.toChainHomotopyEquiv.homotopyInvHomId.hom p q =
+      e.homotopyInvHomId.toChainHomotopy.hom p q := by
+  simp [toChainHomotopyEquiv]
+
 end CategoryTheory.SimplicialObject.HomotopyEquiv
 
 end

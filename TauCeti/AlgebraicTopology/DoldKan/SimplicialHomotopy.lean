@@ -229,6 +229,22 @@ lemma toNHomotopyEquiv_hom {X Y : SimplicialObject C} (e : HomotopyEquiv X Y) :
 lemma toNHomotopyEquiv_inv {X Y : SimplicialObject C} (e : HomotopyEquiv X Y) :
     e.toNHomotopyEquiv.inv = N.map e.inv := (rfl)
 
+@[simp]
+lemma toNHomotopyEquiv_homotopyHomInvId_hom {X Y : SimplicialObject C} (e : HomotopyEquiv X Y)
+    (p q : ℕ) :
+    e.toNHomotopyEquiv.homotopyHomInvId.hom p q =
+      (inclusionN.app X).f p ≫
+        e.homotopyHomInvId.toChainHomotopy.hom p q ≫ (PInftyToN.app X).f q := by
+  simp [toNHomotopyEquiv]
+
+@[simp]
+lemma toNHomotopyEquiv_homotopyInvHomId_hom {X Y : SimplicialObject C} (e : HomotopyEquiv X Y)
+    (p q : ℕ) :
+    e.toNHomotopyEquiv.homotopyInvHomId.hom p q =
+      (inclusionN.app Y).f p ≫
+        e.homotopyInvHomId.toChainHomotopy.hom p q ≫ (PInftyToN.app Y).f q := by
+  simp [toNHomotopyEquiv]
+
 /-- A chain homotopy equivalence `e` between `K[X]` and `K[Y]` whose forward morphism is `K.map f`
 lifts to a simplicial homotopy equivalence `HomotopyEquiv X Y` with forward morphism `f`. -/
 def ofAlternatingFaceMapComplexHomotopyEquiv {X Y : SimplicialObject C} (f : X ⟶ Y)
@@ -424,5 +440,17 @@ lemma Γ.mapHomotopyEquiv_hom {K L : ChainComplex C ℕ} (e : HomotopyEquiv K L)
 @[simp]
 lemma Γ.mapHomotopyEquiv_inv {K L : ChainComplex C ℕ} (e : HomotopyEquiv K L) :
     (Γ.mapHomotopyEquiv e).inv = Γ.map e.inv := (rfl)
+
+@[simp]
+lemma Γ.mapHomotopyEquiv_homotopyHomInvId_h {K L : ChainComplex C ℕ} (e : HomotopyEquiv K L)
+    {n : ℕ} (i : Fin (n + 1)) :
+    (Γ.mapHomotopyEquiv e).homotopyHomInvId.h i = (Γ.mapHomotopy e.homotopyHomInvId).h i := by
+  simp [Γ.mapHomotopyEquiv]
+
+@[simp]
+lemma Γ.mapHomotopyEquiv_homotopyInvHomId_h {K L : ChainComplex C ℕ} (e : HomotopyEquiv K L)
+    {n : ℕ} (i : Fin (n + 1)) :
+    (Γ.mapHomotopyEquiv e).homotopyInvHomId.h i = (Γ.mapHomotopy e.homotopyInvHomId).h i := by
+  simp [Γ.mapHomotopyEquiv]
 
 end CategoryTheory.Idempotents.DoldKan
