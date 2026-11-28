@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.IndexNSmul
 import Mathlib.GroupTheory.FiniteAbelian.Basic
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.Dimension.Torsion.Finite
+import TauCeti.Algebra.Group.Prod
 import TauCeti.GroupTheory.Index.Map
 
 /-!
@@ -69,10 +70,9 @@ here rather than in the copyright header.
 rather than a finite ambient group, so the counting lemma that derived it is unnecessary),
 `ker_nsmulAddMonoidHom` (`AddSubgroup.nsmulAddMonoidHom_injective_of_isTorsionFree` through
 `AddMonoidHom.ker_eq_bot_iff`), its `nsmulAddMonoidHom_range_prod` and `nsmulAddMonoidHom_ker_prod`
-(`AddMonoidHom.range_prodMap` and `AddMonoidHom.ker_prodMap`, which apply once multiplication by
-`n` on a product is identified with the componentwise `AddMonoidHom.prodMap`, a step the proof
-below takes directly), and its `Subgroup.fg_of_commGroup_fg` and
-`Group.fg_of_fg_ker_of_fg_range` (both in `TauCeti/GroupTheory/Finiteness.lean`). Its
+(`AddMonoidHom.range_prodMap` and `AddMonoidHom.ker_prodMap`, which apply via
+`nsmulAddMonoidHom_prod` from `TauCeti.Algebra.Group.Prod`), and its `Subgroup.fg_of_commGroup_fg`
+and `Group.fg_of_fg_ker_of_fg_range` (both in `TauCeti/GroupTheory/Finiteness.lean`). Its
 `Module.rank_eq_zero_of_finite` is replaced by Mathlib's `Module.IsTorsion.rank_eq_zero` applied
 to `isAddTorsion_of_finite`.
 -/
@@ -230,11 +230,7 @@ theorem index_range_nsmul_of_fg (G : Type*) [AddCommGroup G] [AddGroup.FG G] (n 
     (AddMonoidHom.ker_eq_bot_iff _).mpr
       (AddSubgroup.nsmulAddMonoidHom_injective_of_isTorsionFree hn)
   -- multiplication by `n` on a product is componentwise, so it is `AddMonoidHom.prodMap`
-  have hprod : nsmulAddMonoidHom (α := (Fin r →₀ ℤ) × ⨁ i, ZMod (p i ^ e i)) n =
-      (nsmulAddMonoidHom (α := Fin r →₀ ℤ) n).prodMap
-        (nsmulAddMonoidHom (α := ⨁ i, ZMod (p i ^ e i)) n) := by
-    ext x <;> simp
-  rw [hidx, hker, hrk, hprod, AddMonoidHom.range_prodMap, AddSubgroup.index_prod,
+  rw [hidx, hker, hrk, nsmulAddMonoidHom_prod, AddMonoidHom.range_prodMap, AddSubgroup.index_prod,
     AddSubgroup.index_range_nsmul, AddSubgroup.index_range,
     AddMonoidHom.ker_prodMap, Nat.card_congr (AddSubgroup.prodEquiv _ _).toEquiv,
     Nat.card_prod, hkerF]
@@ -262,17 +258,14 @@ theorem index_range_powMonoidHom_of_fg (G : Type*) [CommGroup G] [Group.FG G] (n
 theorem index_range_powMonoidHom_prod {A B : Type*} [CommGroup A] [CommGroup B] (n : ℕ) :
     (powMonoidHom n : A × B →* A × B).range.index =
       (powMonoidHom n : A →* A).range.index * (powMonoidHom n : B →* B).range.index := by
-  have : (powMonoidHom n : A × B →* A × B) = (powMonoidHom n).prodMap (powMonoidHom n) := by
-    ext x <;> simp
-  rw [this, MonoidHom.range_prodMap, index_prod]
+  rw [range_powMonoidHom_prod, index_prod]
 
 /-- The `n`-torsion of a product has cardinality the product of the cardinalities. -/
 theorem card_ker_powMonoidHom_prod {A B : Type*} [CommGroup A] [CommGroup B] (n : ℕ) :
     Nat.card (powMonoidHom n : A × B →* A × B).ker =
       Nat.card (powMonoidHom n : A →* A).ker * Nat.card (powMonoidHom n : B →* B).ker := by
-  have : (powMonoidHom n : A × B →* A × B) = (powMonoidHom n).prodMap (powMonoidHom n) := by
-    ext x <;> simp
-  rw [this, MonoidHom.ker_prodMap, Nat.card_congr (prodEquiv _ _).toEquiv, Nat.card_prod]
+  rw [powMonoidHom_prod, MonoidHom.ker_prodMap, Nat.card_congr (prodEquiv _ _).toEquiv,
+    Nat.card_prod]
 
 end Subgroup
 

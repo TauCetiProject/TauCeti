@@ -45,7 +45,8 @@ that a homomorphism into a pro-`p` group kills their intersection.
   characteristic `p`.
 * `TauCeti.disjoint_of_not_dvd_natCard_of_isPGroup`: a `p`-group meets a subgroup of order prime
   to `p` trivially.
-* `IsPGroup.subsingleton_of_coprime`, `IsPGroup.subsingleton_of_ne`: a group that is a `p`-group
+* `IsPGroup.subsingleton_of_coprime`, `IsAddPGroup.subsingleton_of_coprime`,
+  `IsPGroup.subsingleton_of_ne`, `IsAddPGroup.subsingleton_of_ne`: a group that is a `p`-group
   and a `q`-group for coprime `p`, `q`, in particular for distinct primes, is trivial.
 * `IsPGroup.smul_zmod_eq_self`: a `p`-group acts trivially on the additive group `ZMod p`.
 * `MonoidHom.apply_eq_self_of_iterate_pow_eq_self`: an endomorphism of a group of order `p`
@@ -150,12 +151,17 @@ theorem disjoint_of_not_dvd_natCard_of_isPGroup [Fact p.Prime] {C Q : Subgroup G
     ((Fact.out : p.Prime).coprime_iff_not_dvd.mpr hC)).symm
 
 /-- A group that is a `p`-group and a `q`-group for coprime `p` and `q` is trivial. -/
+@[to_additive
+  /-- An additive group that is a `p`-group and a `q`-group for coprime `p` and `q` is trivial. -/]
 theorem _root_.IsPGroup.subsingleton_of_coprime {q : ℕ} (hp : IsPGroup p G) (hq : IsPGroup q G)
     (hpq : p.Coprime q) : Subsingleton G :=
   Subgroup.subsingleton_iff.mp <| subsingleton_of_bot_eq_top
     (disjoint_self.mp ((hp.to_subgroup ⊤).disjoint_of_coprime (hq.to_subgroup ⊤) hpq)).symm
 
 /-- **A group that is a `p`-group and a `q`-group for two distinct primes is trivial.** -/
+@[to_additive
+  /-- **An additive group that is a `p`-group and a `q`-group for two distinct primes is
+  trivial.** -/]
 theorem _root_.IsPGroup.subsingleton_of_ne {q : ℕ} [Fact p.Prime] [Fact q.Prime]
     (hp : IsPGroup p G) (hq : IsPGroup q G) (hpq : p ≠ q) : Subsingleton G :=
   hp.subsingleton_of_coprime hq ((Nat.coprime_primes Fact.out Fact.out).mpr hpq)

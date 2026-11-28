@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.Algebra.Group.ElementaryTwoQuotient.Basic
+import TauCeti.LinearAlgebra.FreeModule.ModN
 
 /-!
 # The maximal elementary-2 quotient distributes over products
@@ -21,10 +21,8 @@ H)/(G × H)²` is `G/G² × H/H²`, and the same holds for an arbitrary indexed 
 
 and `TauCeti.twoRank (∀ i, G i) = ∑ i, TauCeti.twoRank (G i)`.
 
-Both structural equivalences are transported from Mathlib's product-quotient API for quotients by
-the range of the doubling map (`QuotientAddGroup.prodAddEquiv` and
-`QuotientAddGroup.addEquivPiModRangeNSMulAddMonoidHom`) through the identification of the `ModN`
-model of `G/G²` with the quotient by the range of doubling, rather than rebuilt by hand.
+Both structural equivalences specialize `ModN.prodLinearEquiv` and `ModN.piLinearEquiv` (from
+`TauCeti.LinearAlgebra.FreeModule.ModN`) at `n = 2` on `Additive`.
 
 This is the structural tool behind computing a class group's 2-rank from a decomposition: a finite
 abelian group is a product of cyclic groups, and its 2-rank is the number of even-order factors.
@@ -46,74 +44,23 @@ public section
 
 namespace TauCeti
 
-/-- The doubling submodule `range (lsmul ℤ _ 2)` of `Additive G`, whose quotient is the `ModN` model
-of `G/G²`, is the range of the doubling monoid hom `nsmulAddMonoidHom 2` as an additive subgroup.
-This is the identity that matches the `ModN` model against Mathlib's quotient-by-range API. -/
-private theorem range_lsmul_two_toAddSubgroup_eq_range_nsmul (G : Type*) [CommGroup G] :
-    (LinearMap.range (LinearMap.lsmul ℤ (Additive G) ((2 : ℕ) : ℤ))).toAddSubgroup =
-      (nsmulAddMonoidHom (α := Additive G) 2).range := by
-  ext x
-  simp only [Submodule.mem_toAddSubgroup, LinearMap.mem_range, LinearMap.lsmul_apply,
-    AddMonoidHom.mem_range, nsmulAddMonoidHom_apply]
-  refine ⟨?_, ?_⟩
-  · rintro ⟨y, rfl⟩; exact ⟨y, by rw [natCast_zsmul]⟩
-  · rintro ⟨y, rfl⟩; exact ⟨y, by rw [natCast_zsmul]⟩
-
-/-- The `ModN` model `G/G²` as the quotient of `Additive G` by the range of the doubling monoid hom
-`nsmulAddMonoidHom 2`, matching the shape of Mathlib's product-quotient equivalences. -/
-private noncomputable def bridgeModRangeNSMul (G : Type*) [CommGroup G] :
-    ElementaryTwoQuotient G ≃+ Additive G ⧸ (nsmulAddMonoidHom (α := Additive G) 2).range :=
-  QuotientAddGroup.quotientAddEquivOfEq (range_lsmul_two_toAddSubgroup_eq_range_nsmul G)
-
 section Prod
-
-variable (G H : Type*) [CommGroup G] [CommGroup H]
-
-/-- The doubling submodule of `Additive (G × H)` splits as the product of the doubling ranges of the
-factors, matching the shape of `QuotientAddGroup.prodAddEquiv`. -/
-private theorem range_lsmul_two_toAddSubgroup_prod_eq :
-    (LinearMap.range (LinearMap.lsmul ℤ (Additive G × Additive H) ((2 : ℕ) : ℤ))).toAddSubgroup =
-      (nsmulAddMonoidHom (α := Additive G) 2).range.prod
-        (nsmulAddMonoidHom (α := Additive H) 2).range := by
-  ext ⟨a, b⟩
-  simp only [Submodule.mem_toAddSubgroup, LinearMap.mem_range, LinearMap.lsmul_apply,
-    AddSubgroup.mem_prod, AddMonoidHom.mem_range, nsmulAddMonoidHom_apply, natCast_zsmul,
-    Prod.exists, Prod.smul_mk, Prod.mk.injEq]
-  refine ⟨?_, ?_⟩
-  · rintro ⟨u, v, hu, hv⟩; exact ⟨⟨u, hu⟩, ⟨v, hv⟩⟩
-  · rintro ⟨⟨u, hu⟩, ⟨v, hv⟩⟩; exact ⟨u, v, hu, hv⟩
-
-/-- The product equivalence as an additive equivalence, transported from
-`QuotientAddGroup.prodAddEquiv` through the bridge to the `ModN` model on each factor. -/
-private noncomputable def elementaryTwoQuotientProdAddEquiv :
-    ElementaryTwoQuotient (G × H) ≃+
-      ElementaryTwoQuotient G × ElementaryTwoQuotient H :=
-  (QuotientAddGroup.quotientAddEquivOfEq (range_lsmul_two_toAddSubgroup_prod_eq G H)).trans <|
-    (QuotientAddGroup.prodAddEquiv _ _).trans
-      ((bridgeModRangeNSMul G).symm.prodCongr (bridgeModRangeNSMul H).symm)
-
-private theorem elementaryTwoQuotientProdAddEquiv_mk (p : G × H) :
-    elementaryTwoQuotientProdAddEquiv G H (elementaryTwoQuotientMk p) =
-      (elementaryTwoQuotientMk p.1, elementaryTwoQuotientMk p.2) := by
-  simp only [elementaryTwoQuotientMk_eq_mkQ]
-  rfl
 
 /-- **The elementary-2 quotient of a product is the product of the elementary-2 quotients.** For
 commutative groups `G` and `H`, the class map identifies `(G × H)/(G × H)²` with `G/G² × H/H²`
-`ZMod 2`-linearly. It is transported from Mathlib's `QuotientAddGroup.prodAddEquiv` through the
-identification of the `ModN` model of the quotient with the quotient by the doubling range. -/
+`ZMod 2`-linearly, specializing `ModN.prodLinearEquiv` at `n = 2`. -/
 noncomputable def elementaryTwoQuotientProdLinearEquiv (G H : Type*) [CommGroup G] [CommGroup H] :
     ElementaryTwoQuotient (G × H) ≃ₗ[ZMod 2]
       ElementaryTwoQuotient G × ElementaryTwoQuotient H :=
-  { elementaryTwoQuotientProdAddEquiv G H with
-    map_smul' := fun c x => ZMod.map_smul (elementaryTwoQuotientProdAddEquiv G H) c x }
+  ModN.prodLinearEquiv (Additive G) (Additive H) 2
 
 /-- The product equivalence sends the class of `(a, b)` to the pair of classes. -/
 @[simp] theorem elementaryTwoQuotientProdLinearEquiv_mk (G H : Type*) [CommGroup G] [CommGroup H]
     (p : G × H) :
     elementaryTwoQuotientProdLinearEquiv G H (elementaryTwoQuotientMk p) =
-      (elementaryTwoQuotientMk p.1, elementaryTwoQuotientMk p.2) :=
-  elementaryTwoQuotientProdAddEquiv_mk G H p
+      (elementaryTwoQuotientMk p.1, elementaryTwoQuotientMk p.2) := by
+  simp only [elementaryTwoQuotientProdLinearEquiv, elementaryTwoQuotientMk_eq_mkQ]
+  exact ModN.prodLinearEquiv_mkQ (Additive G) (Additive H) 2 (Additive.ofMul p)
 
 /-- The inverse product equivalence sends a pair of classes to the class of the pair. -/
 @[simp] theorem elementaryTwoQuotientProdLinearEquiv_symm_mk (G H : Type*)
@@ -144,38 +91,21 @@ section Pi
 
 variable {ι : Type*} (G : ι → Type*) [∀ i, CommGroup (G i)]
 
-/-- The indexed-product equivalence as an additive equivalence, transported from
-`QuotientAddGroup.addEquivPiModRangeNSMulAddMonoidHom` through the bridge to the `ModN` model on
-each factor. -/
-private noncomputable def elementaryTwoQuotientPiAddEquiv :
-    ElementaryTwoQuotient (∀ i, G i) ≃+ ∀ i, ElementaryTwoQuotient (G i) :=
-  (bridgeModRangeNSMul (∀ i, G i)).trans <|
-    (QuotientAddGroup.addEquivPiModRangeNSMulAddMonoidHom (fun i => Additive (G i)) 2).trans
-      (AddEquiv.piCongrRight fun i => (bridgeModRangeNSMul (G i)).symm)
-
-private theorem elementaryTwoQuotientPiAddEquiv_mk (g : ∀ i, G i) :
-    elementaryTwoQuotientPiAddEquiv G (elementaryTwoQuotientMk g) =
-      fun i => elementaryTwoQuotientMk (g i) := by
-  funext i
-  simp only [elementaryTwoQuotientMk_eq_mkQ]
-  rfl
-
 /-- **The elementary-2 quotient of an indexed product is the product of the elementary-2
 quotients.** For a family of commutative groups `G i` over an arbitrary index, the class map
-identifies `(∀ i, G i)/(…)²` with `∀ i, (G i)/(G i)²` `ZMod 2`-linearly. It is transported from
-Mathlib's `QuotientAddGroup.addEquivPiModRangeNSMulAddMonoidHom` through the identification of the
-`ModN` model of the quotient with the quotient by the doubling range. -/
+identifies `(∀ i, G i)/(…)²` with `∀ i, (G i)/(G i)²` `ZMod 2`-linearly, specializing
+`ModN.piLinearEquiv` at `n = 2`. -/
 noncomputable def elementaryTwoQuotientPiLinearEquiv :
     ElementaryTwoQuotient (∀ i, G i) ≃ₗ[ZMod 2] ∀ i, ElementaryTwoQuotient (G i) :=
-  { elementaryTwoQuotientPiAddEquiv G with
-    map_smul' := fun c x => ZMod.map_smul (elementaryTwoQuotientPiAddEquiv G) c x }
+  ModN.piLinearEquiv (fun i ↦ Additive (G i)) 2
 
 /-- The indexed-product equivalence sends the class of `g` to the family of componentwise
 classes. -/
 @[simp] theorem elementaryTwoQuotientPiLinearEquiv_mk (g : ∀ i, G i) :
     elementaryTwoQuotientPiLinearEquiv G (elementaryTwoQuotientMk g) =
-      fun i => elementaryTwoQuotientMk (g i) :=
-  elementaryTwoQuotientPiAddEquiv_mk G g
+      fun i => elementaryTwoQuotientMk (g i) := by
+  simp only [elementaryTwoQuotientPiLinearEquiv, elementaryTwoQuotientMk_eq_mkQ]
+  exact ModN.piLinearEquiv_mkQ (fun i ↦ Additive (G i)) 2 (Additive.ofMul g)
 
 /-- The inverse indexed-product equivalence sends a family of componentwise classes to the class
 of the assembled family. -/

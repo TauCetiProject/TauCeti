@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Orthogonal.Quotient
 public import Mathlib.Algebra.Group.Subgroup.Map
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
+import Mathlib.Algebra.Group.Shrink
+import Mathlib.Data.Fintype.Shrink
 
 /-!
 # Finite quadratic modules
@@ -35,6 +37,9 @@ the polar pairing is therefore `B(x, y)` modulo `ℤ`.
   quadratic modules.
 * `TauCeti.FiniteQuadraticModule.Isometry.ofSubsingleton`: the unique isometry between two trivial
   finite quadratic modules.
+* `TauCeti.FiniteQuadraticModule.shrink` and `TauCeti.FiniteQuadraticModule.shrinkIsometry`:
+  universe shrinking for finite quadratic modules and the canonical isometry back to the original
+  module.
 * `TauCeti.FiniteQuadraticModule.restrictTopIsometry`,
   `TauCeti.FiniteQuadraticModule.restrictCongr`,
   `TauCeti.FiniteQuadraticModule.restrictProdIsometry` and
@@ -447,6 +452,18 @@ theorem toHom_toIsometry (f : Isometry A B) :
 end Isometry
 
 /-! ## Canonical constructions -/
+
+/-- **Universe shrinking for finite quadratic modules.** Every finite quadratic module is finite
+and therefore `Small` in any universe `v`, so its group and quadratic form transfer to
+`Shrink.{v} A` in `Type v`. -/
+noncomputable def shrink (A : FiniteQuadraticModule.{u}) : FiniteQuadraticModule.{v} :=
+  ofQuadraticMap (A.quadratic.comp (Shrink.addEquiv.{v} (α := A)).toIntLinearEquiv.toLinearMap)
+
+/-- The canonical isometry between the universe-shrunk module `A.shrink` and `A`. -/
+noncomputable def shrinkIsometry (A : FiniteQuadraticModule.{u}) :
+    Isometry (A.shrink : FiniteQuadraticModule.{v}) A where
+  toLinearEquiv := Shrink.addEquiv.toIntLinearEquiv
+  map_app' _ := rfl
 
 /-- Restrict a finite quadratic module to an additive subgroup.
 

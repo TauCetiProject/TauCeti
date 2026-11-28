@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Finiteness
+public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import Mathlib.GroupTheory.Torsion
 public import TauCeti.GroupTheory.NoncommPiCoprod
 import Mathlib.GroupTheory.FiniteAbelian.Basic
@@ -23,13 +24,15 @@ Mathlib has a substantial theory of finitely generated commutative groups in
 `finite_of_fg_isMulTorsion`, and
 `Subgroup.finiteIndex_range_powMonoidHom_of_fg`, which is the finiteness of `G ⧸ Gⁿ`. Closure
 properties of finite generation that it does not carry are collected here, together with finiteness
-of the torsion subgroup, a `Fin`-indexed form of finite generation, surjective presentations of
-finitely generated abelian groups from finite powers of `ℤ`, the choice of finitely many generators
-from any generating set, and a single exponent bringing back into a subgroup `E` every root of `E`
-lying in a finitely generated subgroup.
+of the torsion subgroup, cyclic finite generation, a `Fin`-indexed form of finite generation,
+surjective presentations of finitely generated abelian groups from finite powers of `ℤ`, the choice
+of finitely many generators from any generating set, and a single exponent bringing back into a
+subgroup `E` every root of `E` lying in a finitely generated subgroup.
 
 ## Main results
 
+* `Group.instFGOfIsCyclic` and `AddGroup.instFGOfIsAddCyclic`: every cyclic group is finitely
+  generated.
 * `TauCeti.CommGroup.finite_torsion_of_fg` and `TauCeti.AddCommGroup.finite_torsion_of_fg`: the
   torsion subgroup of a finitely generated abelian group is finite, using Mathlib's
   `CommGroup.finite_of_fg_isMulTorsion`.
@@ -119,6 +122,13 @@ general, and `Subgroup.fg_of_fg_map_of_fg_inf_ker` has no counterpart there at a
 -/
 
 public section
+
+/-- Every cyclic group is finitely generated. -/
+@[to_additive /-- Every cyclic additive group is finitely generated. -/]
+instance (priority := 100) Group.instFGOfIsCyclic (G : Type*) [Group G] [IsCyclic G] :
+    Group.FG G := by
+  obtain ⟨g, hg⟩ := isCyclic_iff_exists_zpowers_eq_top.mp ‹_›
+  exact Group.fg_iff.mpr ⟨{g}, Subgroup.zpowers_eq_closure g ▸ hg, Set.finite_singleton g⟩
 
 /-- **A subgroup of a finitely generated additive commutative group is finitely generated.** The
 additive form of `Subgroup.fg_of_commGroup`. -/

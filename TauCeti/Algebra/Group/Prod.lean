@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Prod
+public import Mathlib.Algebra.Group.Subgroup.Basic
 public import Mathlib.Algebra.Group.Submonoid.Operations
 
 /-!
@@ -51,6 +52,10 @@ identities as the product of the two factors.
   componentwise, and its inverse is the product of the inverses.
 * `MulEquiv.iterate_prodCongr_eq_id`: the product of two automorphisms of order dividing `m` has
   order dividing `m`.
+* `powMonoidHom_prod`, `nsmulAddMonoidHom_prod`: the `n`-th power / multiplication-by-`n` map on
+  a product of commutative monoids is the product of those maps on the factors.
+* `Subgroup.range_powMonoidHom_prod`, `AddSubgroup.range_nsmulAddMonoidHom_prod`: the subgroup of
+  `n`-th powers / `n`-multiples in a product is the product of those subgroups on the factors.
 -/
 
 public section
@@ -215,3 +220,26 @@ theorem ofProdCoprod_symm_apply (x : A × B) :
 end ofProdCoprod
 
 end MulEquiv
+
+/-- The `n`-th power map on a product of commutative monoids is the product of the `n`-th power
+maps on the factors. -/
+@[to_additive nsmulAddMonoidHom_prod
+/-- Multiplication by `n` on a product of commutative additive monoids is the product of
+multiplication by `n` on the factors. -/]
+theorem powMonoidHom_prod {A B : Type*} [CommMonoid A] [CommMonoid B] (n : ℕ) :
+    (powMonoidHom n : A × B →* A × B) = (powMonoidHom n).prodMap (powMonoidHom n) := by
+  ext x <;> simp
+
+namespace Subgroup
+
+/-- The subgroup of `n`-th powers in a product is the product of the subgroups of `n`-th
+powers. -/
+@[to_additive range_nsmulAddMonoidHom_prod
+  /-- The subgroup of `n`-multiples in a product is the product of the subgroups of
+  `n`-multiples. -/]
+theorem range_powMonoidHom_prod {A B : Type*} [CommGroup A] [CommGroup B] (n : ℕ) :
+    (powMonoidHom n : A × B →* A × B).range =
+      (powMonoidHom n : A →* A).range.prod (powMonoidHom n : B →* B).range := by
+  rw [powMonoidHom_prod, MonoidHom.range_prodMap]
+
+end Subgroup

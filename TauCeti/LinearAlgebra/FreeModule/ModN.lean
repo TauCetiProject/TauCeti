@@ -6,18 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FreeModule.ModN
+import TauCeti.Algebra.Group.Prod
 
 /-!
-# Coordinates in the basis of `G / nG`
+# Coordinates and product equivalences for `G / nG`
 
 For a `ℤ`-basis `b` of a free `ℤ`-module `G` and `n ≠ 0`, Mathlib's `ModN.basis b` is the basis of
 `ModN G n = G / nG` over `ℤ / n` formed by the classes of the vectors of `b`. This file records
 that the coordinates of the class of `v` in this basis are the coordinates of `v` in `b`, reduced
-modulo `n`.
+modulo `n`, and shows that `ModN · n` commutes `ZMod n`-linearly with binary and arbitrary indexed
+products of additive commutative groups.
 
-## Main statements
+## Main definitions and statements
 
 * `ModN.basis_repr_mkQ`, `ModN.basis_repr_mk`: `(ModN.basis b).repr [v] i = (b.repr v i : ℤ / n)`.
+* `LinearMap.range_lsmul_toAddSubgroup_eq_range_nsmulAddMonoidHom`,
+  `ModN.quotientRangeNSMulAddEquiv`: identification of `ModN G n` with
+  `G ⧸ (nsmulAddMonoidHom n).range`.
+* `ModN.prodLinearEquiv`: `ModN (G × H) n ≃ₗ[ZMod n] ModN G n × ModN H n`.
+* `ModN.piLinearEquiv`: `ModN (∀ i, G i) n ≃ₗ[ZMod n] ∀ i, ModN (G i) n`.
 -/
 
 @[expose] public section
@@ -50,3 +57,104 @@ theorem basis_repr_mk (b : Basis ι ℤ G) (v : G) (i : ι) :
   basis_repr_mkQ b v i
 
 end ModN
+
+end
+
+public section
+
+namespace LinearMap
+
+/-- The `ℤ`-linear multiplication-by-`n` range equals the additive range of
+`nsmulAddMonoidHom n`. -/
+theorem range_lsmul_toAddSubgroup_eq_range_nsmulAddMonoidHom (G : Type*) [AddCommGroup G]
+    (n : ℕ) :
+    (LinearMap.range (LinearMap.lsmul ℤ G (n : ℤ))).toAddSubgroup =
+      (nsmulAddMonoidHom (α := G) n).range := by
+  ext x
+  simp [natCast_zsmul]
+
+end LinearMap
+
+namespace ModN
+
+/-- Canonical additive equivalence identifying `ModN G n` with
+`G ⧸ (nsmulAddMonoidHom (α := G) n).range`. -/
+noncomputable def quotientRangeNSMulAddEquiv (G : Type*) [AddCommGroup G] (n : ℕ) :
+    ModN G n ≃+ G ⧸ (nsmulAddMonoidHom (α := G) n).range :=
+  QuotientAddGroup.quotientAddEquivOfEq
+    (LinearMap.range_lsmul_toAddSubgroup_eq_range_nsmulAddMonoidHom G n)
+
+/-- `ModN.quotientRangeNSMulAddEquiv` maps `mkQ n x` to the quotient class of `x`. -/
+@[simp]
+theorem quotientRangeNSMulAddEquiv_mkQ (G : Type*) [AddCommGroup G] (n : ℕ) (x : G) :
+    quotientRangeNSMulAddEquiv G n (mkQ n x) =
+      (x : G ⧸ (nsmulAddMonoidHom (α := G) n).range) :=
+  QuotientAddGroup.quotientAddEquivOfEq_mk
+    (LinearMap.range_lsmul_toAddSubgroup_eq_range_nsmulAddMonoidHom G n) x
+
+/-- The inverse of `ModN.quotientRangeNSMulAddEquiv` maps the quotient class of `x` to
+`mkQ n x`. -/
+@[simp]
+theorem quotientRangeNSMulAddEquiv_symm_mk (G : Type*) [AddCommGroup G] (n : ℕ) (x : G) :
+    (quotientRangeNSMulAddEquiv G n).symm
+        (x : G ⧸ (nsmulAddMonoidHom (α := G) n).range) =
+      mkQ n x := by
+  rw [AddEquiv.symm_apply_eq, quotientRangeNSMulAddEquiv_mkQ]
+
+private noncomputable def prodAddEquiv (G H : Type*) [AddCommGroup G] [AddCommGroup H] (n : ℕ) :
+    ModN (G × H) n ≃+ ModN G n × ModN H n :=
+  (quotientRangeNSMulAddEquiv (G × H) n).trans <|
+    (QuotientAddGroup.quotientAddEquivOfEq
+      (AddSubgroup.range_nsmulAddMonoidHom_prod (A := G) (B := H) n)).trans <|
+      (QuotientAddGroup.prodAddEquiv _ _).trans
+        ((quotientRangeNSMulAddEquiv G n).symm.prodCongr (quotientRangeNSMulAddEquiv H n).symm)
+
+/-- `ModN · n` distributes `ZMod n`-linearly over binary products of additive commutative groups. -/
+noncomputable def prodLinearEquiv (G H : Type*) [AddCommGroup G] [AddCommGroup H] (n : ℕ) :
+    ModN (G × H) n ≃ₗ[ZMod n] ModN G n × ModN H n :=
+  (prodAddEquiv G H n).toLinearEquiv (ZMod.map_smul _)
+
+/-- `ModN.prodLinearEquiv` sends the class of `x` to `(mkQ n x.1, mkQ n x.2)`. -/
+@[simp]
+theorem prodLinearEquiv_mkQ (G H : Type*) [AddCommGroup G] [AddCommGroup H] (n : ℕ) (x : G × H) :
+    prodLinearEquiv G H n (mkQ n x) = (mkQ n x.1, mkQ n x.2) := by
+  simp [prodLinearEquiv, prodAddEquiv, QuotientAddGroup.prodAddEquiv_apply]
+
+/-- The inverse of `ModN.prodLinearEquiv` sends `(mkQ n x, mkQ n y)` to `mkQ n (x, y)`. -/
+@[simp]
+theorem prodLinearEquiv_symm_mkQ (G H : Type*) [AddCommGroup G] [AddCommGroup H] (n : ℕ)
+    (x : G) (y : H) :
+    (prodLinearEquiv G H n).symm (mkQ n x, mkQ n y) = mkQ n (x, y) := by
+  rw [LinearEquiv.symm_apply_eq, prodLinearEquiv_mkQ]
+
+private noncomputable def piAddEquiv {ι : Type*} (G : ι → Type*) [∀ i, AddCommGroup (G i)]
+    (n : ℕ) :
+    ModN (∀ i, G i) n ≃+ ∀ i, ModN (G i) n :=
+  (quotientRangeNSMulAddEquiv (∀ i, G i) n).trans <|
+    (QuotientAddGroup.addEquivPiModRangeNSMulAddMonoidHom G n).trans
+      (AddEquiv.piCongrRight fun i ↦ (quotientRangeNSMulAddEquiv (G i) n).symm)
+
+/-- `ModN · n` distributes `ZMod n`-linearly over indexed products of additive commutative
+groups. -/
+noncomputable def piLinearEquiv {ι : Type*} (G : ι → Type*) [∀ i, AddCommGroup (G i)] (n : ℕ) :
+    ModN (∀ i, G i) n ≃ₗ[ZMod n] ∀ i, ModN (G i) n :=
+  (piAddEquiv G n).toLinearEquiv (ZMod.map_smul _)
+
+/-- `ModN.piLinearEquiv` sends the class of `x` to `fun i ↦ mkQ n (x i)`. -/
+@[simp]
+theorem piLinearEquiv_mkQ {ι : Type*} (G : ι → Type*) [∀ i, AddCommGroup (G i)] (n : ℕ)
+    (x : ∀ i, G i) :
+    piLinearEquiv G n (mkQ n x) = fun i ↦ mkQ n (x i) := by
+  ext i
+  simp [piLinearEquiv, piAddEquiv]
+
+/-- The inverse of `ModN.piLinearEquiv` sends `fun i ↦ mkQ n (x i)` to `mkQ n x`. -/
+@[simp]
+theorem piLinearEquiv_symm_mkQ {ι : Type*} (G : ι → Type*) [∀ i, AddCommGroup (G i)] (n : ℕ)
+    (x : ∀ i, G i) :
+    (piLinearEquiv G n).symm (fun i ↦ mkQ n (x i)) = mkQ n x := by
+  rw [LinearEquiv.symm_apply_eq, piLinearEquiv_mkQ]
+
+end ModN
+
+end
