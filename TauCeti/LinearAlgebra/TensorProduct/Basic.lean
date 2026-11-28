@@ -130,6 +130,11 @@ theorem tmul_mem_ker_rTensor {f : N →ₗ[R] P} {x : N} (hx : x ∈ ker f) (w :
     x ⊗ₜ w ∈ ker (f.rTensor M) := by
   rw [mem_ker, rTensor_tmul, mem_ker.mp hx, zero_tmul]
 
+/-- Tensoring any `w` with the kernel of a linear map `f` lands in the kernel of `𝟙 ⊗ f`. -/
+theorem tmul_mem_ker_lTensor {f : N →ₗ[R] P} {x : N} (w : M) (hx : x ∈ ker f) :
+    w ⊗ₜ x ∈ ker (f.lTensor M) := by
+  rw [mem_ker, lTensor_tmul, mem_ker.mp hx, tmul_zero]
+
 /-- Composing the twisted co-Leibniz operator `b ⊗ 𝟙 + (𝟙 ⊗ d) ∘ (τ ⊗ 𝟙)` on `N ⊗ P` with itself:
 if `τ` is an involution anticommuting with `b`, the cross terms cancel and the composite is
 `(b ∘ b) ⊗ 𝟙 + 𝟙 ⊗ (d ∘ d)`. -/

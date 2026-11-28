@@ -305,7 +305,7 @@ theorem W1p.exists_norm_preciseRepresentative_le (hp : (finrank ℝ E : ℝ≥0�
   have havg := norm_le_add_toReal_eLpNorm_div_of_ae_dist_le
     (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
     (Measure.restrict_eq_zero.not.2 (measure_ball_pos mu x hr).ne')
-    (W1p.eLpNorm_value_restrict_ne_top u hBΩ) hosc
+    (Lp.eLpNorm_restrict_ne_top (W1p.value u) hBΩ) hosc
   rw [Measure.restrict_apply_univ, ← measureReal_def] at havg
   linarith
 

@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.Basic
-import Mathlib.RingTheory.Valuation.LocalSubring
+public import TauCeti.AlgebraicGeometry.AdicSpace.ResidueField.Basic
+import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.VerticalGeneralization
+import TauCeti.RingTheory.Valuation.Composite
+import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!
 # Points of the valuation spectrum with prescribed support and centre
@@ -17,24 +19,39 @@ centre. This file shows that every such pair arises: for prime ideals `𝔮 ⊆ 
 ring `R` there is a point of `Spv R`, bounded by `1` on `R`, with support `𝔮` and centre `𝔭`
 (`TauCeti.ValuationSpectrum.exists_supp_eq_and_valuation_lt_one_iff_mem`).
 
-The point is the classical one. The localisation of the domain `R ⧸ 𝔮` at the image of `𝔭` is a
-local subring of the fraction field of `R ⧸ 𝔮`, and a valuation subring dominating it
-(`LocalSubring.exists_le_valuationSubring`) has a valuation which, pulled back to `R`, is bounded
-by `1`, vanishes exactly on `𝔮` and is below `1` exactly on `𝔭`.
+The centre can also be enlarged by specializing. Let `φ : R →+* A` and let `x` be a point of
+`Spv A` bounded by `1` on `φ(R)`. Every prime `𝔭` of `R` containing the centre
+`{r : x(φ r) < 1}` is the centre of a specialization of `x` with the same support, again bounded
+by `1` on `φ(R)`
+(`TauCeti.ValuationSpectrum.exists_specializes_supp_eq_and_valuation_lt_one_iff_mem`).
 
-This is the algebraic input to the surjectivity of the specialization map of a Tate Huber pair,
-`Spa(A, A⁺) → Spec(A⁺ ⧸ A°°)`: there `𝔭` is the prime of `A⁺` to be hit and `𝔮` a prime below
-it that avoids a pseudouniformiser.
+Both points are classical. For the first, the localisation of the domain `R ⧸ 𝔮` at the image of
+`𝔭` is a local subring of the fraction field of `R ⧸ 𝔮`, and the valuation of a valuation subring
+dominating it (`RingHom.exists_valuationSubring_mem_and_mem_nonunits_iff`), pulled back to `R`, is
+bounded by `1`, vanishes exactly on `𝔮` and is below `1` exactly on `𝔭`. For the second, `x` is
+the pullback of the valuation subring `O` of its residue field `κ(x)`. The map `R → O → κ(O)` has
+the centre of `x` as kernel, so some valuation subring `U` of `κ(O)` dominates `𝔭`, and the
+composite `W = O ∘ U ⊆ O` (`ValuationSubring.comapResidue`) has centre `𝔭` on `R`. A larger
+valuation subring is a generization, so `x` specializes to the pullback of `W`.
+
+These are the algebraic inputs to the specialization map of a Huber pair,
+`Spa(A, A⁺) → Spec(A⁺ ⧸ A°°)`: the first to its surjectivity over a Tate ring, where `𝔭` is the
+prime of `A⁺` to be hit and `𝔮` a prime below it that avoids a pseudouniformiser, and the second
+to the lifting of specializations along it.
 
 ## Main results
 
 * `TauCeti.ValuationSpectrum.exists_supp_eq_and_valuation_lt_one_iff_mem`: for primes `𝔮 ⊆ 𝔭` of
   `R`, some point of `Spv R` bounded by `1` on `R` has support `𝔮` and centre `𝔭`.
+* `TauCeti.ValuationSpectrum.exists_specializes_supp_eq_and_valuation_lt_one_iff_mem`: a point
+  bounded by `1` on `φ(R)` specializes, keeping its support, to one with any larger centre.
 
 ## References
 
 * [The Stacks Project](https://stacks.math.columbia.edu/tag/00IA), Tag 00IA: every local subring
   of a field is dominated by a valuation subring.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic] (arXiv:1910.05934v1), Chapter 4, for vertical
+  specializations as composites of valuation rings.
 -/
 
 public section
@@ -49,31 +66,12 @@ values strictly below `1` exactly on `𝔭`. -/
 theorem exists_supp_eq_and_valuation_lt_one_iff_mem {𝔮 𝔭 : Ideal R} [𝔮.IsPrime] [𝔭.IsPrime]
     (h : 𝔮 ≤ 𝔭) :
     ∃ v : Spv R, v.supp = 𝔮 ∧ (∀ r, v.valuation r ≤ 1) ∧ ∀ r, v.valuation r < 1 ↔ r ∈ 𝔭 := by
-  classical
-  -- `g : R → K = Frac(R ⧸ 𝔮)` has kernel `𝔮`; its corestriction to its range is onto
-  let K := FractionRing (R ⧸ 𝔮)
-  let g : R →+* K := (algebraMap (R ⧸ 𝔮) K).comp (Ideal.Quotient.mk 𝔮)
+  -- `g : R → Frac(R ⧸ 𝔮)` has kernel `𝔮`
+  let g : R →+* FractionRing (R ⧸ 𝔮) := (algebraMap (R ⧸ 𝔮) _).comp (Ideal.Quotient.mk 𝔮)
   have hkerg : RingHom.ker g = 𝔮 := by
-    rw [RingHom.ker_comp_of_injective _ (IsFractionRing.injective (R ⧸ 𝔮) K), Ideal.mk_ker]
-  have hker : RingHom.ker g.rangeRestrict = 𝔮 := by rw [RingHom.ker_rangeRestrict, hkerg]
-  have hgr : Function.Surjective g.rangeRestrict := g.rangeRestrict_surjective
-  -- the image `P` of `𝔭` in the range of `g` is prime, and pulls back to `𝔭`
-  let P : Ideal g.range := 𝔭.map g.rangeRestrict
-  have : P.IsPrime := Ideal.map_isPrime_of_surjective hgr (hker.symm ▸ h)
-  have hP (r : R) : g.rangeRestrict r ∈ P ↔ r ∈ 𝔭 := by
-    rw [← Ideal.mem_comap, Ideal.comap_map_of_surjective' _ hgr, hker, sup_eq_left.mpr h]
-  -- a valuation subring `V` dominating the localisation of the range of `g` at `P`
-  obtain ⟨V, hle, hloc⟩ := (LocalSubring.ofPrime g.range P).exists_le_valuationSubring
-  have hmem (r : R) : g r ∈ V := hle (LocalSubring.le_ofPrime _ _ (g.rangeRestrict r).property)
-  -- domination: `g r` is a unit of `V` exactly when `r ∉ 𝔭`
-  have hunit (r : R) : IsUnit (⟨g r, hmem r⟩ : V) ↔ r ∉ 𝔭 := by
-    rw [← hP, ← Ideal.mem_primeCompl_iff, ← IsLocalization.AtPrime.isUnit_to_map_iff
-      (LocalSubring.ofPrime g.range P).toSubring P, ← isUnit_map_iff (Subring.inclusion hle)]
-    -- both elements of `V` have underlying element `g r` of `K`
-    rfl
-  have hval (r : R) : V.valuation (g r) < 1 ↔ r ∈ 𝔭 := by
-    rw [← not_iff_not, ← hunit, V.valuation_eq_one_iff, not_lt]
-    exact ⟨fun h1 ↦ le_antisymm ((V.valuation_le_one_iff _).mpr (hmem r)) h1, Eq.ge⟩
+    rw [RingHom.ker_comp_of_injective _ (IsFractionRing.injective (R ⧸ 𝔮) _), Ideal.mk_ker]
+  obtain ⟨V, hmem, hnon⟩ :=
+    g.exists_valuationSubring_mem_and_mem_nonunits_iff 𝔭 (hkerg.trans_le h)
   let w : Valuation R V.ValueGroup := V.valuation.comap g
   refine ⟨ofValuation w, ?_, fun r ↦ ?_, fun r ↦ ?_⟩
   · ext r
@@ -81,6 +79,51 @@ theorem exists_supp_eq_and_valuation_lt_one_iff_mem {𝔮 𝔭 : Ideal R} [𝔮.
       ← RingHom.mem_ker, hkerg]
   · exact (isEquiv_valuation_ofValuation w).le_one_iff_le_one.mpr
       ((V.valuation_le_one_iff _).mpr (hmem r))
-  · exact (isEquiv_valuation_ofValuation w).lt_one_iff_lt_one.trans (hval r)
+  · exact (isEquiv_valuation_ofValuation w).lt_one_iff_lt_one.trans
+      (V.mem_nonunits_iff.symm.trans (hnon r))
+
+/-- **Enlarging the centre by a specialization.** Let `φ : R →+* A` and let `x` be a point of
+`Spv A` bounded by `1` on `φ(R)`. If a prime `𝔭` of `R` contains the centre `{r : x(φ r) < 1}`,
+then `x` specializes to a point `x'` with the same support, bounded by `1` on `φ(R)`, whose
+values on `φ(R)` are strictly below `1` exactly on `𝔭`. -/
+theorem exists_specializes_supp_eq_and_valuation_lt_one_iff_mem {A : Type*} [CommRing A]
+    (φ : R →+* A) {x : Spv A} (hx : ∀ r, x.valuation (φ r) ≤ 1) (𝔭 : Ideal R) [𝔭.IsPrime]
+    (h𝔭 : ∀ r, x.valuation (φ r) < 1 → r ∈ 𝔭) :
+    ∃ x' : Spv A, x ⤳ x' ∧ x'.supp = x.supp ∧ (∀ r, x'.valuation (φ r) ≤ 1) ∧
+      ∀ r, x'.valuation (φ r) < 1 ↔ r ∈ 𝔭 := by
+  -- `x` is the pullback along `ι : A → κ(x)` of the point of a valuation subring `O` of `κ(x)`
+  let ι := algebraMap A x.supp.ResidueField
+  let O := (residueFieldValuation x).valuationSubring
+  have hxO : comap ι (ofValuation O.valuation) = x := by
+    rw [← ofValuation_eq_of_isEquiv (Valuation.isEquiv_valuation_valuationSubring _),
+      comap_algebraMap_residueField_ofValuation]
+  -- the pullback of the point of a valuation subring `V` reads off membership and nonunits
+  have hle (V : ValuationSubring x.supp.ResidueField) (a : A) :
+      (comap ι (ofValuation V.valuation)).valuation a ≤ 1 ↔ ι a ∈ V :=
+    (valuation_map_le_one_iff rfl a).symm.trans
+      ((isEquiv_valuation_ofValuation _).le_one_iff_le_one.trans (V.valuation_le_one_iff _))
+  have hlt (V : ValuationSubring x.supp.ResidueField) (a : A) :
+      (comap ι (ofValuation V.valuation)).valuation a < 1 ↔ ι a ∈ V.nonunits :=
+    (valuation_map_lt_one_iff rfl a).symm.trans
+      ((isEquiv_valuation_ofValuation _).lt_one_iff_lt_one.trans V.mem_nonunits_iff.symm)
+  -- `φ` lands in `O`, and modulo the maximal ideal of `O` its kernel is the centre of `x`
+  let ψ : R →+* O := (ι.comp φ).codRestrict O fun r ↦ (hle O (φ r)).mp (hxO.symm ▸ hx r)
+  have hker : RingHom.ker ((IsLocalRing.residue O).comp ψ) ≤ 𝔭 := fun r hr ↦ h𝔭 r <| hxO ▸
+    (hlt O (φ r)).mpr (ValuationSubring.coe_mem_nonunits_iff.mpr
+      ((IsLocalRing.residue_eq_zero_iff _).mp (RingHom.mem_ker.mp hr)))
+  -- a valuation subring `U` of `κ(O)` dominating `𝔭`, and the composite `W ⊆ O` of `O` with `U`
+  obtain ⟨U, hU, hUnon⟩ :=
+    ((IsLocalRing.residue O).comp ψ).exists_valuationSubring_mem_and_mem_nonunits_iff 𝔭 hker
+  refine ⟨comap ι (ofValuation (O.comapResidue U).valuation), ?_, ?_, fun r ↦ ?_, fun r ↦ ?_⟩
+  · have := (ofValuation_valuation_specializes_of_le
+      (ValuationSubring.comapResidue_le (U := U))).map (continuous_comap ι)
+    rwa [hxO] at this
+  · refine (?_ : _ = (comap ι (ofValuation O.valuation)).supp).trans (congrArg supp hxO)
+    rw [supp_comap, supp_comap,
+      Ideal.eq_bot_of_prime (ofValuation (O.comapResidue U).valuation).supp,
+      Ideal.eq_bot_of_prime (ofValuation O.valuation).supp]
+  · exact (hle _ (φ r)).mpr (ValuationSubring.coe_mem_comapResidue_iff (a := ψ r) |>.mpr (hU r))
+  · exact (hlt _ (φ r)).trans
+      ((ValuationSubring.coe_mem_nonunits_comapResidue_iff (a := ψ r)).trans (hUnon r))
 
 end TauCeti.ValuationSpectrum

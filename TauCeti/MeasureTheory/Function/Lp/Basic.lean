@@ -39,12 +39,15 @@ operators `MeasureTheory.Lp.reCLM` and `MeasureTheory.Lp.imCLM` between `Lp ℝ 
 * `MeasureTheory.Lp.coeFn_add_ae_eq_of_ae_eq`, `MeasureTheory.Lp.coeFn_sub_ae_eq_of_ae_eq`,
   `MeasureTheory.Lp.coeFn_neg_ae_eq_of_ae_eq`, `MeasureTheory.Lp.coeFn_smul_ae_eq_of_ae_eq`: if
   `⇑u =ᵐ[μ] g` and `⇑v =ᵐ[μ] h`, then `⇑(u + v) =ᵐ[μ] g + h`, and similarly for `-` and `•`.
+* `MeasureTheory.Lp.coeFn_sub_ae_eq_zero_iff`: `⇑(u - v)` vanishes almost everywhere on `s`
+  exactly when `⇑u` and `⇑v` agree almost everywhere on `s`.
 * `ContinuousLinearMap.compLp_comp_linear`, `ContinuousLinearMap.compLp_comp_toSpanSingleton`:
   simplification laws for linear composition and scalar-functional reconstruction at every
   exponent.
 * `ContinuousLinearMap.compLpL_toSpanSingleton`: a scalar functional after rank-one
   reconstruction is scalar multiplication.
 * `ContinuousLinearMap.compLpL_apply`: the bundled composition applied to `f` is `L.compLp f`.
+* `ContinuousLinearMap.zero_compLp`: composing an `Lp` class with the zero map gives zero.
 * `ContinuousLinearMap.compLp_compLp`, `ContinuousLinearMap.compLpL_comp_compLpL`,
   `ContinuousLinearMap.compLpL_compLpL`: composition laws for `compLp` and `compLpL`.
 * `ContinuousLinearMap.compLpL_comp_compLpL_eq`: two composites of `compLpL` operators agree when
@@ -99,6 +102,13 @@ theorem coeFn_add_ae_eq_of_ae_eq (hu : ⇑u =ᵐ[μ] g) (hv : ⇑v =ᵐ[μ] h) :
 theorem coeFn_sub_ae_eq_of_ae_eq (hu : ⇑u =ᵐ[μ] g) (hv : ⇑v =ᵐ[μ] h) : ⇑(u - v) =ᵐ[μ] g - h :=
   (coeFn_sub u v).trans (hu.sub hv)
 
+/-- Two `Lᵖ` functions agree almost everywhere on `s` exactly when their difference vanishes
+almost everywhere on `s`. -/
+theorem coeFn_sub_ae_eq_zero_iff {s : Set α} (u v : Lp E p μ) :
+    ⇑(u - v) =ᵐ[μ.restrict s] 0 ↔ ⇑u =ᵐ[μ.restrict s] ⇑v :=
+  (Filter.EventuallyEq.congr_left (ae_restrict_of_ae (coeFn_sub u v))).trans
+    Filter.eventuallyEq_iff_sub.symm
+
 /-- If `u` is almost everywhere `g`, then `-u` is almost everywhere `-g`. -/
 theorem coeFn_neg_ae_eq_of_ae_eq (hu : ⇑u =ᵐ[μ] g) : ⇑(-u) =ᵐ[μ] -g :=
   (coeFn_neg u).trans hu.neg
@@ -125,6 +135,13 @@ variable {α E F 𝕜 𝕜' : Type*} {_ : MeasurableSpace α} {μ : Measure α} 
 theorem compLpL_apply [Fact (1 ≤ p)] (L : E →SL[σ] F) (f : Lp E p μ) :
     L.compLpL p μ f = L.compLp f :=
   rfl
+
+/-- Composing an `Lp` class with the zero map gives the zero class. -/
+@[simp]
+theorem zero_compLp (f : Lp E p μ) : (0 : E →SL[σ] F).compLp f = 0 := by
+  ext1
+  filter_upwards [(0 : E →SL[σ] F).coeFn_compLp f, Lp.coeFn_zero F p μ] with x hx h0
+  rw [hx, h0, zero_apply, Pi.zero_apply]
 
 /-- Postcomposing an `Lᵖ` class with `-L` negates `L.compLp f`. -/
 @[simp]

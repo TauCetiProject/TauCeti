@@ -97,10 +97,13 @@ both operators and both vectors (`ContinuousLinearMap.norm_smul_apply_add_smul_a
 
 Over `ℝ` or `ℂ`, two-sided norm bounds `1 - δ < ‖T v‖ < 1 + δ` on a `δ`-net of the unit sphere
 extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on the whole space
-(`ContinuousLinearMap.norm_apply_bounds_of_net`). Over a normed `ℝ`-algebra, an operator sending
+(`ContinuousLinearMap.norm_apply_bounds_of_net`). Over a normed `ℝ`-algebra the operator norm is
+homogeneous for integer multiples (`ContinuousLinearMap.normSMulClass_int`), and an operator sending
 the ball `ball 0 r`, `r > 0`, into `ball 0 s` has operator norm at most `s / r`
 (`ContinuousLinearMap.opNorm_le_of_mapsTo_ball`), so at most one when it maps `ball 0 r` into
-itself (`ContinuousLinearMap.opNorm_le_one_of_mapsTo_ball`).
+itself (`ContinuousLinearMap.opNorm_le_one_of_mapsTo_ball`). Conversely, a continuous semilinear
+map of operator norm at most `κ` maps `ball y (r / κ)` into `ball (L y) r`
+(`ContinuousLinearMap.mapsTo_ball_div_of_opNorm_le`).
 
 If `J * J = -1` for a continuous linear operator `J` on a normed space over any nontrivially
 normed field, then the block-diagonal operator `diag(J, J)` on `V × V` also squares to `-1`
@@ -616,7 +619,37 @@ theorem norm_apply_bounds_of_net (T : V →L[𝕜] F) {t : Set V} {δ : ℝ}
 
 end Net
 
+section IntSMul
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The operator norm is homogeneous for integer multiples, `‖n • L‖ = ‖n‖ * ‖L‖`, when the scalar
+field is a normed `ℝ`-algebra: the operators then form a real normed space. -/
+instance normSMulClass_int : NormSMulClass ℤ (E →L[𝕜] F) :=
+  let _ : NormedSpace ℝ (E →L[𝕜] F) := NormedSpace.restrictScalars ℝ 𝕜 (E →L[𝕜] F)
+  ⟨fun n L ↦ by simpa only [Int.norm_cast_real] using norm_zsmul ℝ n L⟩
+
+end IntSMul
+
 section MapsToBall
+
+section
+
+variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+  {σ₁₂ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ₁₂] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+
+/-- A continuous semilinear map `L` with `‖L‖ ≤ κ` maps the ball `ball y (r / κ)` into
+`ball (L y) r`. -/
+theorem mapsTo_ball_div_of_opNorm_le (L : E →SL[σ₁₂] F) {κ : NNReal} (hL : ‖L‖ ≤ κ) (y : E)
+    (r : ℝ) : Set.MapsTo L (Metric.ball y (r / κ)) (Metric.ball (L y) r) := fun x hx => by
+  rcases eq_or_ne κ 0 with rfl | hκ
+  · simp at hx
+  have h := (L.lipschitzWith.weaken (by exact_mod_cast hL)).mapsTo_ball hκ y (r / κ) hx
+  rwa [mul_div_cancel₀ r (NNReal.coe_ne_zero.2 hκ)] at h
+
+end
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]

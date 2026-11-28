@@ -30,7 +30,7 @@ of the integral points `GLₙ(R)`, embedded in `GLₙ(K)` by `Matrix.GeneralLine
 dominant exponents `a`.
 
 Existence clears denominators (`TauCeti.IsLocalization.exists_matrix_map_eq_smul`) and takes a
-Smith normal form over `R` (`Matrix.exists_smith_normal_form_of_isDiscreteValuationRing`).
+Smith normal form over `R` (`Matrix.exists_smith_normal_form_of_preValuationRing`).
 Uniqueness is the uniqueness of that Smith normal form (`Matrix.eq_of_mul_mul_eq_diagonal_pow`),
 which reads the exponents off the valuations of minors.
 
@@ -91,7 +91,7 @@ theorem exists_monotone_mem_doubleCoset_diagGL_zpow (hϖ : Irreducible ϖ)
   obtain ⟨⟨_, m, rfl⟩, A, hA⟩ :=
     IsLocalization.exists_matrix_map_eq_smul (Submonoid.powers ϖ) (g : Matrix (Fin n) (Fin n) K)
   rw [← algebraMap_smul K, map_pow] at hA
-  obtain ⟨L, Q, s, hL, hQ, hs, hLAQ⟩ := exists_smith_normal_form_of_isDiscreteValuationRing A
+  obtain ⟨L, Q, s, hL, hQ, hs, hLAQ⟩ := exists_smith_normal_form_of_preValuationRing A
   set L' : GL (Fin n) R := GeneralLinearGroup.mk'' L hL
   set Q' : GL (Fin n) R := GeneralLinearGroup.mk'' Q hQ
   have hA' : (↑L'⁻¹ : Matrix (Fin n) (Fin n) R) * diagonal s * (↑Q'⁻¹ : Matrix (Fin n) (Fin n) R) =

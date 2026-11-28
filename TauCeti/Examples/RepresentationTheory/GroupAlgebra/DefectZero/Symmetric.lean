@@ -21,9 +21,9 @@ The argument: a block of defect group `1` has block algebra `M_n(D)` for a finit
 division algebra `D` over `𝔽₂`
 (`TauCeti.IsBlockIdempotent.exists_algEquiv_matrix_divisionRing_of_isDefectGroup_bot`), and `D`
 is finite, hence commutative (`littleWedderburn`). The block algebra of `ρ + ρ²` is not
-commutative, since `ρ` and the transposition `τ = (0 1)` act there without commuting, so `n ≥ 2`;
+commutative, since `ρ` and the transposition `s = (0 1)` act there without commuting, so `n ≥ 2`;
 and it has dimension at most `4`, since `𝔽₂[S₃]` has dimension `6` and the block algebra of the
-other block `1 + ρ + ρ²` contains the independent elements `1 + ρ + ρ²` and `(1 + ρ + ρ²) τ`. So
+other block `1 + ρ + ρ²` contains the independent elements `1 + ρ + ρ²` and `(1 + ρ + ρ²) s`. So
 `n² dim D ≤ 4` forces `n = 2` and `D = 𝔽₂`.
 -/
 
@@ -49,25 +49,25 @@ theorem isBlockIdempotent_blocksS₃ (i : Fin 2) : IsBlockIdempotent (blocksS₃
   exacts [isBlockIdempotent_blockOneS₃, isBlockIdempotent_blockTwoS₃]
 
 /-- The block algebra of `1 + ρ + ρ²` contains two linearly independent elements, its identity
-`1 + ρ + ρ²` and `(1 + ρ + ρ²) τ (1 + ρ + ρ²)`. -/
+`1 + ρ + ρ²` and `(1 + ρ + ρ²) s (1 + ρ + ρ²)`. -/
 theorem two_le_finrank_blockAlgebra_blockOneS₃ :
     2 ≤ finrank (ZMod 2) isBlockIdempotent_blockOneS₃.BlockAlgebra := by
   set hb := isBlockIdempotent_blockOneS₃
   have hli : LinearIndependent (ZMod 2)
-      ![(1 : hb.BlockAlgebra), hb.isIdempotentElem_val.compress (of (ZMod 2) S₃ τ)] := by
+      ![(1 : hb.BlockAlgebra), hb.isIdempotentElem_val.compress (of (ZMod 2) S₃ s)] := by
     rw [LinearIndependent.pair_iff]
-    intro s t hst
-    have h := congrArg Subtype.val hst
+    intro a b hab
+    have h := congrArg Subtype.val hab
     simp only [IsIdempotentElem.Corner.val_add, IsIdempotentElem.Corner.val_smul,
       IsIdempotentElem.Corner.val_one, IsIdempotentElem.Corner.val_zero,
       IsIdempotentElem.val_compress, coe_blockOneS₃] at h
     have h1 := congrArg (fun x ↦ x.coeff 1) h
-    have hτ := congrArg (fun x ↦ x.coeff τ) h
-    simp only [add_mul, mul_add, one_mul, mul_one, of_apply, single_mul_single, one_def] at h1 hτ
-    -- The coefficient of `(1 + ρ + ρ²) τ (1 + ρ + ρ²)` at `τ` is `3 = 1`.
+    have hs := congrArg (fun x ↦ x.coeff s) h
+    simp only [add_mul, mul_add, one_mul, mul_one, of_apply, single_mul_single, one_def] at h1 hs
+    -- The coefficient of `(1 + ρ + ρ²) s (1 + ρ + ρ²)` at `s` is `3 = 1`.
     have key : ∀ u : ZMod 2, u + u + u = 0 → u = 0 := by decide
     exact ⟨by simpa +decide [Finsupp.single_apply] using h1,
-      key t (by simpa +decide [Finsupp.single_apply] using hτ)⟩
+      key b (by simpa +decide [Finsupp.single_apply] using hs)⟩
   simpa using hli.fintype_card_le_finrank
 
 /-- The block algebra of `ρ + ρ²` has dimension at most `4`: `𝔽₂[S₃]` has dimension `6`, and
@@ -88,15 +88,15 @@ theorem finrank_blockAlgebra_blockTwoS₃_le :
     finrank (ZMod 2) isBlockIdempotent_blockTwoS₃.BlockAlgebra = 6 at h6
   omega
 
-/-- The block algebra of `ρ + ρ²` is not commutative: `ρ` and `τ` act there without commuting,
-since `(ρ + ρ²) ρ τ` has coefficient `1` at `ρ² τ` and `(ρ + ρ²) τ ρ` has coefficient `0`. -/
+/-- The block algebra of `ρ + ρ²` is not commutative: `ρ` and `s` act there without commuting,
+since `(ρ + ρ²) ρ s` has coefficient `1` at `ρ² s` and `(ρ + ρ²) s ρ` has coefficient `0`. -/
 theorem not_commute_blockAlgebra_blockTwoS₃ :
     ¬ ∀ x y : isBlockIdempotent_blockTwoS₃.BlockAlgebra, x * y = y * x := by
   set hb := isBlockIdempotent_blockTwoS₃
   intro h
-  have h' := congrArg (fun x ↦ (Subtype.val x).coeff (ρ ^ 2 * τ))
+  have h' := congrArg (fun x ↦ (Subtype.val x).coeff (ρ ^ 2 * s))
     (h (hb.isIdempotentElem_val.compress (of (ZMod 2) S₃ ρ))
-      (hb.isIdempotentElem_val.compress (of (ZMod 2) S₃ τ)))
+      (hb.isIdempotentElem_val.compress (of (ZMod 2) S₃ s)))
   simp only [IsIdempotentElem.Corner.val_mul, IsIdempotentElem.val_compress, coe_blockTwoS₃,
     add_mul, mul_add, of_apply, single_mul_single] at h'
   simp +decide [Finsupp.single_apply] at h'

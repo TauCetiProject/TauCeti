@@ -43,8 +43,9 @@ the factors.
 
 An endomorphism is invertible exactly when it is a unit of the endomorphism ring
 (`ContinuousLinearMap.isInvertible_iff_isUnit`). A map is invertible exactly when its negation is
-(`ContinuousLinearMap.isInvertible_neg_iff`), and negating a map negates its totalized inverse
-(`ContinuousLinearMap.inverse_neg`).
+(`ContinuousLinearMap.isInvertible_neg_iff`), negating a map negates its totalized inverse
+(`ContinuousLinearMap.inverse_neg`), and a difference `f - g` is invertible exactly when `g - f`
+is (`ContinuousLinearMap.isInvertible_sub_comm`).
 
 A map agreeing pointwise with an equality cast is invertible
 (`ContinuousLinearMap.isInvertible_of_eq_cast`), including zero modules.
@@ -141,6 +142,10 @@ theorem inverse_neg [IsTopologicalAddGroup E] (f : E →L[R] F) : (-f).inverse =
     ext; simp
   rw [hneg, inverse_equiv_comp]
   ext; simp
+
+/-- A difference `f - g` is invertible exactly when `g - f` is. -/
+theorem isInvertible_sub_comm {f g : E →L[R] F} : (f - g).IsInvertible ↔ (g - f).IsInvertible := by
+  rw [← isInvertible_neg_iff, neg_sub]
 
 end Neg
 

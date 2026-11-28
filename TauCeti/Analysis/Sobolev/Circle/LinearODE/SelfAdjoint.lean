@@ -18,7 +18,7 @@ infinitesimally symplectic real-linear maps of `F`. The asymptotic operator
 `A ζ = J₀ (ζ' - S_t ζ)` of Floer theory is the bounded operator `I • loopOperator T S` from
 `H¹(F)` to `H⁰(F)`. Read through the inclusion `ι : H¹(F) → H⁰(F)` it is an unbounded operator on
 the real Hilbert space `H⁰(F)` with domain `H¹(F)`,
-`ι.domainOperator (I • loopOperator T S)` (`ContinuousLinearMap.domainOperator`).
+`LinearMap.domainOperator ι (I • loopOperator T S)` of the underlying linear maps.
 
 When the loop is nondegenerate, that is, `ζ' = S_t ζ` has no nonzero periodic solution, this
 operator is self-adjoint (`TauCeti.CircleSobolev.isSelfAdjoint_domainOperator_I_smul_loopOperator`):
@@ -56,8 +56,8 @@ infinitesimally symplectic and `ζ' = S_t ζ` has no nonzero periodic solution, 
 theorem isSelfAdjoint_domainOperator_I_smul_loopOperator
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
     (hL : (loopOperator T S).IsInvertible) :
-    IsSelfAdjoint (((inclusion (E := F) zero_le_one).restrictScalars ℝ).domainOperator
-      (I • loopOperator T S) (inclusion_injective zero_le_one)) :=
+    IsSelfAdjoint (((inclusion (E := F) zero_le_one).restrictScalars ℝ).toLinearMap.domainOperator
+      (I • loopOperator T S).toLinearMap (inclusion_injective zero_le_one)) :=
   ContinuousLinearMap.isSelfAdjoint_domainOperator_of_isInvertible
     (real_inner_I_smul_loopOperator_comm T S hS)
     ((ContinuousLinearMap.isInvertible_smul_iff I_ne_zero).2 hL)
@@ -67,8 +67,8 @@ has no nonzero periodic solution, the operator `J₀ (d/dt - S_t)` on `H⁰(F)` 
 has compact resolvent. -/
 theorem hasCompactResolvent_domainOperator_I_smul_loopOperator
     (hL : (loopOperator T S).IsInvertible) :
-    (((inclusion (E := F) zero_le_one).restrictScalars ℝ).domainOperator
-      (I • loopOperator T S) (inclusion_injective zero_le_one)).HasCompactResolvent :=
+    (((inclusion (E := F) zero_le_one).restrictScalars ℝ).toLinearMap.domainOperator
+      (I • loopOperator T S).toLinearMap (inclusion_injective zero_le_one)).HasCompactResolvent :=
   ContinuousLinearMap.hasCompactResolvent_domainOperator (c := 0)
     (isCompactOperator_inclusion (E := F) zero_lt_one)
     (by simpa using hL)

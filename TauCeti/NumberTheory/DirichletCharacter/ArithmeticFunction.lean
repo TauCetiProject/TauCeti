@@ -18,7 +18,8 @@ natural numbers it is the pointwise product, including at primes dividing either
 These comparisons allow products of Dirichlet L-functions to be handled on their actual
 coefficient functions. A character's arithmetic function is completely multiplicative.
 The finite harmonic form of the twisted von Mangoldt convolution expresses the sum of
-`χ(n) log(n) / n` in terms of sums of `χ(n) / n`.
+`χ(n) log(n) / n` in terms of sums of `χ(n) / n`. The coefficients `χ(n) μ(n)` of the
+Möbius twist are bounded in norm by one.
 -/
 
 public section
@@ -26,7 +27,7 @@ public section
 namespace DirichletCharacter
 
 open ArithmeticFunction Finset
-open scoped LSeries.notation
+open scoped LSeries.notation ArithmeticFunction.Moebius
 
 section CommMonoidWithZero
 
@@ -60,6 +61,13 @@ theorem isCompletelyMultiplicative_toArithmeticFunction (χ : DirichletCharacter
     Nat.cast_mul, map_mul]
 
 end CommMonoidWithZero
+
+/-- The coefficients of the Möbius-twisted Dirichlet character have norm at most one. -/
+theorem norm_mul_moebius_le_one {N : ℕ} (χ : DirichletCharacter ℂ N) (n : ℕ) :
+    ‖χ n * (μ n : ℂ)‖ ≤ 1 := by
+  rw [norm_mul]
+  have hμ : ‖(μ n : ℂ)‖ ≤ 1 := by exact_mod_cast ArithmeticFunction.abs_moebius_le_one (n := n)
+  exact (mul_le_of_le_one_right (norm_nonneg _) hμ).trans (χ.norm_le_one n)
 
 /-- On `Re s > 1`, a character's arithmetic function has an absolutely convergent
 Dirichlet series with sum equal to its continued L-function. -/
