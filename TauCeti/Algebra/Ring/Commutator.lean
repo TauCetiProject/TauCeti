@@ -228,22 +228,22 @@ theorem pow_mul_eq_sum_antidiagonal (x y : A) (n : ℕ) :
     x ^ n * y =
       ∑ ij ∈ Finset.antidiagonal n,
         n.choose ij.fst • ((fun z ↦ ⁅x, z⁆)^[ij.fst] y * x ^ ij.snd) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [Finset.sum_antidiagonal_choose_succ_nsmul
-      (fun i j ↦ (fun z ↦ ⁅x, z⁆)^[i] y * x ^ j) n]
-    have hstep (i j : ℕ) :
-        x * ((fun z ↦ ⁅x, z⁆)^[i] y * x ^ j) =
-          (fun z ↦ ⁅x, z⁆)^[i + 1] y * x ^ j + (fun z ↦ ⁅x, z⁆)^[i] y * (x * x ^ j) := by
-      rw [Function.iterate_succ_apply', Ring.lie_def]
-      noncomm_ring
-    rw [pow_succ', mul_assoc, ih, Finset.mul_sum]
-    simp only [mul_smul_comm, hstep, nsmul_add, Finset.sum_add_distrib, pow_succ']
-    rw [add_comm, add_left_cancel_iff, Finset.sum_congr rfl]
-    rintro ⟨i, j⟩ hij
-    rw [Finset.mem_antidiagonal] at hij
-    rw [Nat.choose_symm_of_eq_add hij.symm]
+  let : LieRing A := LieRing.ofAssociativeRing
+  have htoEnd (k : ℕ) (z : A) :
+      ((@LieModule.toEnd ℤ A A _ _ _ _ _ LieRingModule.ofAssociativeModule
+        LieModule.ofAssociativeModule x) ^ k) z = x ^ k * z := by
+    rw [show @LieModule.toEnd ℤ A A _ _ _ _ _ LieRingModule.ofAssociativeModule
+      LieModule.ofAssociativeModule x = Algebra.lmul ℤ A x from rfl, ← map_pow]
+    rfl
+  have had (k : ℕ) (z : A) :
+      ((LieAlgebra.ad ℤ A x) ^ k) z = (fun w ↦ ⁅x, w⁆)^[k] z := by
+    rw [pow_apply_eq_iterate]
+    rfl
+  have hbr (u v : A) :
+      @Bracket.bracket A A LieRingModule.ofAssociativeModule.toBracket u v = u * v := rfl
+  simpa only [htoEnd, had, hbr, mul_one] using
+    @LieModule.toEnd_pow_lie ℤ A A _ _ _ _ _ LieRingModule.ofAssociativeModule
+      LieModule.ofAssociativeModule x y 1 n
 
 end IteratedCommutator
 
