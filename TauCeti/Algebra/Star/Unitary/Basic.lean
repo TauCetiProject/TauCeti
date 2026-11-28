@@ -15,12 +15,12 @@ public import Mathlib.Algebra.Star.Unitary
 The unitary elements of a product of star monoids are the pairs of unitary elements. This file
 packages that identification as a multiplicative equivalence. It also records that a unit is
 unitary exactly when its adjoint is its inverse, and that in a group with an involution a normal
-element times the inverse of its adjoint is unitary, which turns a homomorphism with values
-commuting with their adjoints into a homomorphism to the unitary subgroup. A star-preserving
-multiplicative map that sends `1` to `1`, such as a unit-preserving non-unital `⋆`-homomorphism,
-maps unitaries to unitaries, and the ring inverse of a unitary element is its adjoint. Finally,
-the unitary elements of a subgroup of the units are identified with the unitary elements whose
-unit lies in that subgroup.
+element times the inverse of its adjoint is unitary, which turns a homomorphism each of whose
+values commutes with the adjoint of every value into a homomorphism to the unitary subgroup. A
+star-preserving multiplicative map that sends `1` to `1`, such as a unit-preserving non-unital
+`⋆`-homomorphism, maps unitaries to unitaries, and the ring inverse of a unitary element is its
+adjoint. Finally, the unitary elements of a subgroup of the units are identified with the unitary
+elements whose unit lies in that subgroup.
 
 For a subgroup `H` of the units `Mˣ` of a star monoid `M`, the unitary part `H.unitaryPart` is the
 subgroup of `unitary M` consisting of the unitary elements whose unit lies in `H`. For a subgroup
@@ -41,7 +41,7 @@ the Cartan decomposition of `H`. The same elements also form the subgroup
 * `Unitary.mul_star_inv_mem`: in a group with an involution, `x * (star x)⁻¹` is unitary for a
   normal element `x`.
 * `MonoidHom.mulStarInv`: the homomorphism `a ↦ φ a * (star (φ a))⁻¹` into the unitary subgroup,
-  for a homomorphism `φ` whose values commute with the adjoints of its values.
+  for a homomorphism `φ` each of whose values commutes with the adjoint of every value.
 * `Units.mem_unitary_iff_star_eq_inv`: a unit `u` is unitary if and only if `star u = u⁻¹`
   in `R`.
 * `Subgroup.unitaryInfEquiv`: the unitary elements of a subgroup `H` of `Mˣ` are the unitary
@@ -97,13 +97,8 @@ theorem ringInverse_coe {R : Type*} [MonoidWithZero R] [StarMul R] (u : unitary 
 unitary**: `x * (star x)⁻¹ ∈ unitary G` when `x` commutes with `star x`. -/
 theorem mul_star_inv_mem {G : Type*} [Group G] [StarMul G] (x : G) [IsStarNormal x] :
     x * (star x)⁻¹ ∈ unitary G := by
-  have h : star x * x = x * star x := star_comm_self
-  have h' : (star x)⁻¹ * x⁻¹ = x⁻¹ * (star x)⁻¹ := by simp only [← mul_inv_rev, h]
-  refine Unitary.mem_iff.mpr ⟨?_, ?_⟩
-  · rw [star_mul, star_inv, star_star, mul_assoc, ← mul_assoc (star x), h]
-    simp [mul_assoc]
-  · rw [star_mul, star_inv, star_star, mul_assoc, ← mul_assoc (star x)⁻¹, h']
-    simp [mul_assoc]
+  rw [Unitary.mul_inv_mem_iff, star_star]
+  exact star_comm_self
 
 end Unitary
 
@@ -111,8 +106,8 @@ namespace MonoidHom
 
 variable {H G : Type*} [Monoid H] [Group G] [StarMul G]
 
-/-- For a homomorphism `φ` to a group with an involution whose values commute with the adjoints
-of its values, the homomorphism `a ↦ φ a * (star (φ a))⁻¹` into the unitary subgroup
+/-- For a homomorphism `φ` to a group with an involution, each of whose values commutes with the
+adjoint of every value, the homomorphism `a ↦ φ a * (star (φ a))⁻¹` into the unitary subgroup
 (`Unitary.mul_star_inv_mem`). For instance, an element of an adelic group supported at a place
 `w` and its adjoint, supported at the conjugate place, commute when the two places differ. -/
 def mulStarInv (φ : H →* G) (hφ : ∀ a b, Commute (φ a) (star (φ b))) :

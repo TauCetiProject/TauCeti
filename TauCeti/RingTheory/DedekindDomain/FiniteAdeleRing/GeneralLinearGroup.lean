@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Instances.Matrix
-public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.IntegralGL
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 
 /-!
 # Matrices over the finite adeles, place by place
@@ -38,9 +38,9 @@ are built, such as the embedding of `GL_n(E_w)` in the finite adelic unitary gro
 
 ## Main results
 
-* `IsDedekindDomain.FiniteAdeleRing.matrix_ext`: matrices over `𝔸ᶠ` are determined by their
-  components. For invertible matrices, this file uses
-  `IsDedekindDomain.FiniteAdeleRing.generalLinearGroup_ext` from `IntegralGL`.
+* `IsDedekindDomain.FiniteAdeleRing.matrix_ext`,
+  `IsDedekindDomain.FiniteAdeleRing.generalLinearGroup_ext`: matrices over `𝔸ᶠ`, and elements of
+  `GL_n(𝔸ᶠ)`, are determined by their components.
 * `IsDedekindDomain.FiniteAdeleRing.map_proj_ofAdicCompletionGL_self`,
   `IsDedekindDomain.FiniteAdeleRing.map_proj_ofAdicCompletionGL_of_ne`: the components of
   `ofAdicCompletionGL K v g`.
@@ -79,6 +79,13 @@ theorem matrix_ext {m n : Type*} {X Y : Matrix m n (FiniteAdeleRing R K)}
     simpa using congr_fun₂ (h v) i j
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- An element of `GL_n(𝔸ᶠ)` is determined by its components at the finite places. -/
+theorem generalLinearGroup_ext {g h : GL ι (FiniteAdeleRing R K)}
+    (H : ∀ v : HeightOneSpectrum R, Matrix.GeneralLinearGroup.map (proj K v).toRingHom g =
+      Matrix.GeneralLinearGroup.map (proj K v).toRingHom h) : g = h := by
+  refine Units.ext <| Matrix.ext fun i j ↦ ext K fun v ↦ ?_
+  simpa using congrArg (fun x : GL ι (v.adicCompletion K) ↦ x.val i j) (H v)
 
 /-- Two elements of `GL_n(𝔸ᶠ)` **commute when at every place one of them has component `1`**,
 for instance two elements trivial away from two different places. -/

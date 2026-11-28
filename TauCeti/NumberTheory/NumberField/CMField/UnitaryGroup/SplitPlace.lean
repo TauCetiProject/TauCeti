@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Star.Unitary.Basic
 public import TauCeti.NumberTheory.NumberField.CMField.UnitaryGroup.Basic
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.GeneralLinearGroup
 import Mathlib.Topology.Algebra.Group.Units
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
 /-!
 # The finite adelic unitary group at a split place
@@ -121,6 +122,7 @@ variable {w : HeightOneSpectrum (𝓞 E)} (hw : w.conjPlace ≠ w)
 
 /-- `ι_w(g) = y (y*)⁻¹` for the element `y` of `GL_n(𝔸_f)` with component `g` at `w` and `1`
 elsewhere. -/
+@[simp]
 theorem coe_ofSplitPlace (g : GL ι (w.adicCompletion E)) :
     (ofSplitPlace E ι w hw g : GL ι 𝔸ᶠ[E]) =
       ofAdicCompletionGL E w g * (star (ofAdicCompletionGL E w g))⁻¹ :=
@@ -141,8 +143,7 @@ theorem proj_conjPlace_ofSplitPlace (g : GL ι (w.adicCompletion E)) :
       GeneralLinearGroup.inverseTranspose (GeneralLinearGroup.map
         (adicCompletionCongr w w.conjPlace (complexConj E).toRingEquiv (valuation_conjPlace w) :
           w.adicCompletion E →+* w.conjPlace.adicCompletion E) g) := by
-  rw [proj_eq_map, coe_ofSplitPlace, map_mul, map_proj_ofAdicCompletionGL_of_ne hw, one_mul,
-    map_proj_conjPlace_star_inv, map_proj_ofAdicCompletionGL_self]
+  rw [proj_conjPlace, proj_ofSplitPlace_self]
 
 /-- The component of `ι_w(g)` at a place other than `w` and `conj w` is `1`. -/
 @[simp]
@@ -174,20 +175,14 @@ theorem range_ofSplitPlace :
     Set.range (ofSplitPlace E ι w hw) =
       {g | ∀ u, u ≠ w → u ≠ w.conjPlace → proj E ι u g = 1} := by
   ext x
-  refine ⟨?_, fun hx ↦ ⟨proj E ι w x, Subtype.ext <| generalLinearGroup_ext fun u ↦ ?_⟩⟩
+  refine ⟨?_, fun hx ↦ ⟨proj E ι w x, ext_proj fun u ↦ ?_⟩⟩
   · rintro ⟨g, rfl⟩ u hu hu'
     exact proj_ofSplitPlace_of_ne hw hu hu' g
-  · -- `generalLinearGroup_ext` reads components through `(FiniteAdeleRing.proj E u).toRingHom`,
-    -- which factors through `ContinuousAlgHom.toAlgHom`; no rewrite lemma turns it into the
-    -- definitionally equal `RingHomClass` coercion of `proj_eq_map`, so restate the goal.
-    change GeneralLinearGroup.map (FiniteAdeleRing.proj E u : 𝔸ᶠ[E] →+* u.adicCompletion E) _ =
-      GeneralLinearGroup.map (FiniteAdeleRing.proj E u : 𝔸ᶠ[E] →+* u.adicCompletion E) (x : GL ι _)
-    rw [← proj_eq_map, ← proj_eq_map]
-    rcases eq_or_ne u w with rfl | hu
-    · exact proj_ofSplitPlace_self hw _
-    rcases eq_or_ne u w.conjPlace with rfl | hu'
-    · rw [proj_conjPlace_ofSplitPlace, proj_conjPlace]
-    · rw [proj_ofSplitPlace_of_ne hw hu hu', hx u hu hu']
+  rcases eq_or_ne u w with rfl | hu
+  · exact proj_ofSplitPlace_self hw _
+  rcases eq_or_ne u w.conjPlace with rfl | hu'
+  · rw [proj_conjPlace_ofSplitPlace, proj_conjPlace]
+  · rw [proj_ofSplitPlace_of_ne hw hu hu', hx u hu hu']
 
 /-- **`ι_w(g)` lies in `K₀` exactly when `g ∈ GL_n(𝒪_w)`.** -/
 theorem ofSplitPlace_mem_integralAdelicUnitaryGroup_iff {g : GL ι (w.adicCompletion E)} :
@@ -201,8 +196,11 @@ theorem ofSplitPlace_mem_integralAdelicUnitaryGroup_iff {g : GL ι (w.adicComple
   · -- The transport `σ` carries `GL_n(𝒪_w)` into `GL_n(𝒪_{conj w})`, and the inverse transpose
     -- preserves `GL_n(𝒪_{conj w})`.
     obtain ⟨k, hk⟩ :=
-      (map_adicCompletionCongr_mem_range_map_subtype_iff (w := w.conjPlace)
-        (σ := (complexConj E).toRingEquiv) (valuation_conjPlace w)).2 hg
+      (GeneralLinearGroup.map_mem_range_map_subtype_iff
+        (f := adicCompletionCongr w w.conjPlace (complexConj E).toRingEquiv (valuation_conjPlace w))
+        (r := (w.adicCompletionIntegers E).toSubring)
+        (s := (w.conjPlace.adicCompletionIntegers E).toSubring)
+        fun _ ↦ adicCompletionCongr_mem_adicCompletionIntegers_iff _).2 hg
     rw [proj_conjPlace_ofSplitPlace]
     exact ⟨GeneralLinearGroup.inverseTranspose k,
       (GeneralLinearGroup.map_inverseTranspose _ k).trans (congrArg _ hk)⟩
