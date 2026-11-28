@@ -139,12 +139,6 @@ theorem isCompl_center_derivedSeries (hθ : θ.IsReductiveCartanInvolution) :
   have := hθ.isKilling_derivedSeries
   TauCeti.isCompl_center_derivedSeries_of_isKilling_derivedSeries K L
 
-/-- A reductive Cartan involution equals the automorphism reconstructed from its restrictions to
-the centre and the derived ideal. -/
-theorem eq_ofIsCompl (hθ : θ.IsReductiveCartanInvolution) :
-    θ = ofIsCompl hθ.isCompl_center_derivedSeries θ.centerCongr (θ.derivedSeriesCongr 1) :=
-  θ.eq_ofIsCompl_centerCongr_derivedSeriesCongr hθ.isCompl_center_derivedSeries
-
 end IsReductiveCartanInvolution
 
 private theorem isCartanInvolution_derivedSeriesCongr_iff {θ : L ≃ₗ⁅K⁆ L}

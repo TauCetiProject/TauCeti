@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.CartanInvolution.Decomposition
 public import TauCeti.Algebra.Lie.Matrix.NegTranspose
 
 import TauCeti.Algebra.Lie.GeneralLinear.Basic
+import TauCeti.Algebra.Lie.SpecialLinear.ConjTranspose
 import TauCeti.Algebra.Regular.SMul
 import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
 
@@ -60,8 +61,7 @@ variable (n R)
 
 /-- The involutive Lie automorphism `X ↦ -Xᵀ` of the special linear Lie algebra `sl n R`. -/
 def cartanInvolution : sl n R ≃ₗ⁅R⁆ sl n R :=
-  (sl n R).restrictNegTranspose fun X hX ↦ by
-    rw [mem_sl_iff, trace_transpose, mem_sl_iff.mp hX]
+  (sl n R).restrictNegTranspose fun _ ↦ transpose_mem_sl
 
 variable {n R}
 

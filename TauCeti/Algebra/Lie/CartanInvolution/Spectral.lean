@@ -75,26 +75,18 @@ private theorem derivedComponent_mem_cartanP {R L' : Type*} [CommRing R] [LieRin
     {x : L'} (hx : θ x + x ∈ center R L') :
     ((LieIdeal.prodEquivOfIsCompl (center R L') (derivedSeries R L' 1) hc).symm x).2 ∈
       (θ.derivedSeriesCongr 1).cartanP := by
-  set e := LieIdeal.prodEquivOfIsCompl (center R L') (derivedSeries R L' 1) hc
-  set z := (e.symm x).1
-  set d := (e.symm x).2
-  have hx_eq : x = (z : L') + (d : L') :=
-    (LieIdeal.prodEquivOfIsCompl_symm_fst_add_snd (center R L') (derivedSeries R L' 1) hc x).symm
-  have hdD : θ (d : L') + (d : L') ∈ derivedSeries R L' 1 :=
-    (derivedSeries R L' 1).add_mem ((θ.apply_mem_derivedSeries_iff 1).mpr d.property) d.property
-  have hzZ : θ (z : L') + (z : L') ∈ center R L' :=
-    (center R L').add_mem (θ.apply_mem_center_iff.mpr z.property) z.property
-  have hdZ : θ (d : L') + (d : L') ∈ center R L' := by
-    have hsub : θ (d : L') + (d : L') = (θ x + x) - (θ (z : L') + (z : L')) := by
-      rw [hx_eq, map_add]; abel
-    exact hsub ▸ (center R L').sub_mem hx hzZ
-  have hbot : θ (d : L') + (d : L') = 0 := by
-    rw [← LieSubmodule.mem_bot (R := R) (L := L') (M := L'), ← hc.inf_eq_bot]
-    exact ⟨hdZ, hdD⟩
+  have hmap := LieIdeal.prodEquivOfIsCompl_symm_map (center R L') (derivedSeries R L' 1) hc hc
+    (θ : L' →ₗ⁅R⁆ L') (fun _ ↦ θ.apply_mem_center_iff.mpr)
+    (fun _ ↦ (θ.apply_mem_derivedSeries_iff 1).mpr) x
+  simp only [LieEquiv.coe_toLieHom] at hmap
+  have hsum := LieIdeal.prodEquivOfIsCompl_symm_apply_left (center R L')
+    (derivedSeries R L' 1) hc ⟨θ x + x, hx⟩
+  have h2 := congrArg Prod.snd hsum
+  rw [map_add, Prod.snd_add, congrArg Prod.snd hmap] at h2
   rw [mem_cartanP]
   exact Subtype.ext <| by
-    rw [coe_derivedSeriesCongr, NegMemClass.coe_neg]
-    exact eq_neg_of_add_eq_zero_left hbot
+    rw [coe_derivedSeriesCongr, NegMemClass.coe_neg, eq_neg_iff_add_eq_zero]
+    simpa using congrArg Subtype.val h2
 
 /-- **Diagonalizability of `ad x` for a reductive Cartan involution.** Over `ℝ`, whenever
 `θ x + x ∈ center ℝ L`, the eigenspaces of `ad x` span `L`. -/

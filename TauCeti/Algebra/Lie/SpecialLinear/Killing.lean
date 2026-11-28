@@ -71,15 +71,20 @@ theorem killingForm_apply (X Y : sl n R) :
       (f := ad R (Matrix n n R) X ∘ₗ ad R (Matrix n n R) Y)
       (fN := ad R (sl n R) X ∘ₗ ad R (sl n R) Y)
       (fQ := 0)
-      (by
-        dsimp only [i]
-        rw [LinearMap.comp_assoc, (sl n R).ad_comp_incl_eq Y, ← LinearMap.comp_assoc,
-          (sl n R).ad_comp_incl_eq X, LinearMap.comp_assoc])
+      (LinearMap.ext fun Z ↦ by
+        have hY : ad R (Matrix n n R) ↑Y (i Z) = i (ad R (sl n R) Y Z) :=
+          LinearMap.congr_fun ((sl n R).ad_comp_incl_eq Y) Z
+        have hX : ad R (Matrix n n R) ↑X (i (ad R (sl n R) Y Z)) =
+            i (ad R (sl n R) X (ad R (sl n R) Y Z)) :=
+          LinearMap.congr_fun ((sl n R).ad_comp_incl_eq X) (ad R (sl n R) Y Z)
+        dsimp only [LinearMap.comp_apply]
+        rw [hY, hX])
       (by
         ext M
         simp [π, LieAlgebra.matrix_trace_commutator_zero])
-    rw [map_zero, add_zero, ← killingForm_apply_apply, ← killingForm_apply_apply] at htrace_add
-    rw [← htrace_add, Matrix.killingForm_apply, mem_sl_iff.mp X.property,
+    have hK : killingForm R (Matrix n n R) X Y = killingForm R (sl n R) X Y := by
+      simpa only [killingForm_apply_apply, map_zero, add_zero] using htrace_add
+    rw [← hK, Matrix.killingForm_apply, mem_sl_iff.mp X.property,
       mem_sl_iff.mp Y.property]
     ring
 

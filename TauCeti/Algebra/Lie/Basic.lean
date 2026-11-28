@@ -825,16 +825,9 @@ variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L']
 /-- A Lie equivalence preserves membership in the centre. -/
 theorem apply_mem_center_iff (e : L ≃ₗ⁅R⁆ L') {x : L} :
     e x ∈ center R L' ↔ x ∈ center R L := by
-  simp only [LieModule.mem_maxTrivSubmodule]
-  constructor
-  · intro hx y
-    apply e.injective
-    simp only [coe_toLieHom, e.map_lie, map_zero]
-    exact hx (e y)
-  · intro hx y
-    obtain ⟨z, rfl⟩ := e.surjective y
-    simp only [coe_toLieHom]
-    rw [← e.map_lie, hx z, map_zero]
+  rw [← e.map_center, ← LieSubmodule.mem_toSubmodule, LieIdeal.coe_map_of_surjective e.surjective]
+  exact (Submodule.mem_map_equiv (e := e.toLinearEquiv) _).trans
+    (by rw [LieSubmodule.mem_toSubmodule, ← e.coe_toLinearEquiv, LinearEquiv.symm_apply_apply])
 
 /-- The Lie equivalence between centres induced by a Lie equivalence. -/
 def centerCongr (e : L ≃ₗ⁅R⁆ L') : center R L ≃ₗ⁅R⁆ center R L' :=

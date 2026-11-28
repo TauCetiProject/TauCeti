@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
+import TauCeti.LinearAlgebra.Matrix.Trace.TransposeMul
 
 /-!
 # Positive diagonal-weighted matrix traces
@@ -70,15 +71,11 @@ ring. -/
 theorem trace_mul_transpose_pos {K m n : Type*} [Ring K] [LinearOrder K] [IsStrictOrderedRing K]
     [Fintype m] [Fintype n] {X : Matrix m n K} (hX : X ≠ 0) :
     0 < (X * Xᵀ).trace := by
-  have htr : (X * Xᵀ).trace = Xᵀ.vec ⬝ᵥ Xᵀ.vec := by
-    rw [Matrix.vec_dotProduct_vec, Matrix.transpose_transpose]
   have hnonneg : 0 ≤ (X * Xᵀ).trace := by
-    rw [htr]
-    exact Finset.sum_nonneg fun _ _ ↦ mul_self_nonneg _
-  have hne : (X * Xᵀ).trace ≠ 0 := by
-    rw [htr, ne_eq, dotProduct_self_eq_zero, Matrix.vec_eq_zero_iff]
-    intro h
-    exact hX (Matrix.transpose_injective (h.trans Matrix.transpose_zero.symm))
+    simpa only [transpose_transpose] using trace_transpose_mul_self_nonneg Xᵀ
+  have hne : (X * Xᵀ).trace ≠ 0 := fun h ↦
+    hX <| transpose_eq_zero.mp <| trace_transpose_mul_self_eq_zero_iff.mp <| by
+      simpa only [transpose_transpose] using h
   exact lt_of_le_of_ne hnonneg hne.symm
 
 end Matrix

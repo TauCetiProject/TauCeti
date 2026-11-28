@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import TauCeti.Algebra.Lie.Prod
 public import TauCeti.Algebra.Lie.Solvable.Basic
 import TauCeti.LinearAlgebra.Eigenspace.Transport
+import TauCeti.LinearAlgebra.End.Prod
 
 /-!
 # Automorphism decomposition on `Z(L) ⊕ [L, L]`
@@ -78,11 +79,6 @@ noncomputable def eigenspaceCenterDerivedEquiv (θ : L ≃ₗ⁅R⁆ L)
   let fD : Module.End R (derivedSeries R L 1) := (θ.derivedSeriesCongr 1).toLinearEquiv
   let fL : Module.End R L := θ.toLinearEquiv
   let a := (LieIdeal.prodEquivOfIsCompl (center R L) (derivedSeries R L 1) h).toLinearEquiv
-  have hprod : Module.End.eigenspace (fZ.prodMap fD) μ =
-      (Module.End.eigenspace fZ μ).prod (Module.End.eigenspace fD μ) := by
-    rw [Module.End.eigenspace_def, Module.End.eigenspace_def, Module.End.eigenspace_def,
-      ← LinearMap.ker_prodMap]
-    congr 1
   have hinter : ∀ p, a ((fZ.prodMap fD) p) = fL (a p) := fun ⟨z, d⟩ ↦ by
     simp [a, fZ, fD, fL, map_add]
   have hmap : (Module.End.eigenspace (fZ.prodMap fD) μ).map (a : _ →ₗ[R] L) =
@@ -90,7 +86,7 @@ noncomputable def eigenspaceCenterDerivedEquiv (θ : L ≃ₗ⁅R⁆ L)
     rw [TauCeti.eigenspace_eq_comap_of_intertwine hinter μ,
       Submodule.map_comap_eq_of_surjective a.surjective]
   ((Submodule.prodEquiv (Module.End.eigenspace fZ μ) (Module.End.eigenspace fD μ)).symm.trans
-    (LinearEquiv.ofEq _ _ hprod.symm)).trans
+    (LinearEquiv.ofEq _ _ (Module.End.eigenspace_prodMap fZ fD μ).symm)).trans
     (a.ofSubmodules _ _ hmap)
 
 /-- `eigenspaceCenterDerivedEquiv` acts by addition in `L`. -/

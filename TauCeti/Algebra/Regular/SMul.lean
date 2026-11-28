@@ -51,7 +51,7 @@ namespace IsSMulRegular
 /-- If scaling by `2` is regular on a module, then `a + a = 0` implies `a = 0`. -/
 theorem eq_zero_of_add_self {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
     (h2 : IsSMulRegular M (2 : R)) {a : M} (h : a + a = 0) : a = 0 :=
-  h2 (show (2 : R) • a = (2 : R) • 0 by rw [two_smul, h, smul_zero])
+  h2 (by simp [two_smul, h])
 
 /-- If scaling by `2` is regular on a module, then `a = -a` implies `a = 0`. -/
 theorem eq_zero_of_eq_neg {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M]
