@@ -30,8 +30,8 @@ Because `0 ≤ (fract t - fract t ^ 2) / 2 ≤ 1 / 8` and `‖z + t‖` grows li
 of `Complex.slitPlane`, every compact `K ⊆ slitPlane` admits a common integrable majorant on
 `(0, ∞)`. Conversely, on `(-∞, 0]` the integrand fails to be integrable on `(0, ∞)` — even at a
 nonpositive integer `z = -n`, where `fract t - fract t ^ 2` vanishes to first order at `t = n` and
-leaves a non-integrable pole of order `j + 1 ≥ 1`. Rewriting `(z + t) ^ (-(j + 2))` as a principal
-power and applying `TauCeti.hasDerivAt_integral_mul_ofReal_add_cpow` differentiates the family
+leaves a non-integrable pole of order `j + 1 ≥ 1`. Applying
+`TauCeti.hasDerivAt_integral_div_ofReal_add_pow` differentiates the family
 under the integral sign on `slitPlane`, and combining the sharp half-angle inequality
 `cos (arg z / 2) * (‖z‖ + t) ≤ ‖z + t‖` with `TauCeti.integral_Ioi_one_div_add_pow` yields Nemes's
 explicit upper bound on the integral norm.
@@ -191,27 +191,16 @@ theorem hasDerivAt_integral_fract_sub_fract_sq_div_add_pow {z : ℂ} (hz : z ∈
       (-(j + 2 : ℂ) *
         ∫ t : ℝ in Ioi 0, (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / (z + t) ^ (j + 3))
       z := by
-  let g : ℝ → ℂ := fun t ↦ (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ)
-  have hcpow (w : ℂ) (t : ℝ) (n : ℕ) :
-      g t * ((t : ℂ) + w) ^ (-((n : ℕ) : ℂ)) = g t / (w + t) ^ n := by
-    rw [Complex.cpow_neg, Complex.cpow_natCast, add_comm (t : ℂ) w, div_eq_mul_inv]
-  have hg_int :
-      IntegrableOn (fun t : ℝ ↦ g t * ((t : ℂ) + z) ^ (-(((j + 2 : ℕ) : ℂ)))) (Ioi 0) :=
-    (integrableOn_Ioi_fract_sub_fract_sq_div_add_pow_iff.mpr hz).congr_fun
-      (fun t _ ↦ (hcpow z t (j + 2)).symm) measurableSet_Ioi
-  have hd := hasDerivAt_integral_mul_ofReal_add_cpow hz hg_int
-  have hfun :
-      (fun w : ℂ ↦ ∫ t : ℝ in Ioi 0, g t * ((t : ℂ) + w) ^ (-(((j + 2 : ℕ) : ℂ)))) =
-        fun w : ℂ ↦ ∫ t : ℝ in Ioi 0, g t / (w + t) ^ (j + 2) := by
-    ext w
-    exact setIntegral_congr_fun measurableSet_Ioi fun t _ ↦ hcpow w t (j + 2)
-  rw [hfun] at hd
-  refine hd.congr_deriv ?_
-  have hs1 : -(((j + 2 : ℕ) : ℂ)) - 1 = -(((j + 3 : ℕ) : ℂ)) := by push_cast; ring
-  have hs0 : -(((j + 2 : ℕ) : ℂ)) = -(j + 2 : ℂ) := by push_cast; ring
-  rw [hs1, hs0]
+  have hint : IntegrableOn (fun t : ℝ ↦
+      (((Int.fract t - Int.fract t ^ 2) / 2 : ℝ) : ℂ) / ((t : ℂ) + z) ^ (j + 2)) (Ioi 0) :=
+    (integrableOn_Ioi_fract_sub_fract_sq_div_add_pow_iff (j := j).mpr hz).congr_fun
+      (fun t _ ↦ by rw [add_comm (t : ℂ) z]) measurableSet_Ioi
+  refine ((hasDerivAt_integral_div_ofReal_add_pow hz hint).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun w ↦ setIntegral_congr_fun measurableSet_Ioi fun t _ ↦ by
+      rw [add_comm w (t : ℂ)])).congr_deriv ?_
+  simp only [Nat.cast_add, Nat.cast_ofNat]
   congr 1
-  exact setIntegral_congr_fun measurableSet_Ioi fun t _ ↦ hcpow z t (j + 3)
+  exact setIntegral_congr_fun measurableSet_Ioi fun t _ ↦ by rw [add_comm z (t : ℂ)]
 
 /-- Nemes's explicit slit-plane bound for the periodic-quadratic Stieltjes integral of order `j + 2`
 (for `z ∉ slitPlane` the integrand is not integrable and the left-hand side vanishes):
