@@ -26,7 +26,8 @@ on. Run at double speed on each half of the interval it gives the time maps
 `TauCeti.collaredFirstHalf` and `TauCeti.collaredSecondHalf` of a stationary-time concatenation,
 which glue two `C^n` maps on `M × [0, 1]` agreeing at the seam into a `C^n` map
 (`ContMDiff.glue_collaredHalves`). Convex combinations of smooth interval-valued maps are smooth
-(`ContMDiff.convexComb`). These support reversal, rescaling, straight-line homotopies and
+(`ContMDiff.convexComb`), and the inclusion `[a, b] → ℝ` is the bundled `C^n` map
+`ContMDiffMap.subtypeValIcc`. These support reversal, rescaling, straight-line homotopies and
 stationary-time concatenation of smooth isotopies.
 
 The constructions reuse Mathlib’s interval immersion and `Real.smoothTransition`.
@@ -35,6 +36,10 @@ within-range derivatives of the inclusion composed with their inverses. The deri
 inclusion is invertible at every point, including both endpoints. At interior points the projection
 `ℝ → [a, b]` is differentiable and sends the unit vector of `ℝ` to that of the interval, and the
 map `(s, t) ↦ (γ s, t)` from the plane to `M × [a, b]` has the product derivative.
+
+The source of the preferred chart is `[a, b)` for the left chart and `(a, b]` for the right chart
+(`TauCeti.mem_extChartAt_Icc_source_iff`), equivalently the points whose coordinate is below
+`b - a` (`TauCeti.mem_extChartAt_Icc_source_iff_apply_zero_lt`).
 
 Both preferred charts send their endpoints to `0` (`extChartAt_Icc_bot`, `extChartAt_Icc_top`).
 The unit tangent vector `1` of the interval has the chart sign as its coordinate in its own chart
@@ -118,6 +123,20 @@ theorem ContMDiff.convexComb {a b : ℝ} [Fact (a < b)] {f g : M → Set.Icc a b
   have hreal : ContMDiff I 𝓘(ℝ) n fun x ↦ (1 - (h x : ℝ)) * f x + h x * g x :=
     ((contMDiff_const.sub (hval hh)).mul (hval hf)).add ((hval hh).mul (hval hg))
   exact contMDiff_iff_comp_subtypeVal_Icc.mpr ⟨continuous_induced_rng.mpr hreal.continuous, hreal⟩
+
+namespace ContMDiffMap
+
+/-- The inclusion `[a, b] → ℝ` as a `C^n` map. -/
+noncomputable def subtypeValIcc {a b : ℝ} [Fact (a < b)] : C^n⟮𝓡∂ 1, Set.Icc a b; 𝓘(ℝ), ℝ⟯ :=
+  ⟨Subtype.val, contMDiff_subtypeVal_Icc⟩
+
+/-- The inclusion `[a, b] → ℝ` is the coercion. -/
+@[simp]
+theorem coe_subtypeValIcc {a b : ℝ} [Fact (a < b)] :
+    ⇑(subtypeValIcc : C^n⟮𝓡∂ 1, Set.Icc a b; 𝓘(ℝ), ℝ⟯) = Subtype.val :=
+  (rfl)
+
+end ContMDiffMap
 
 namespace TauCeti
 
@@ -300,6 +319,20 @@ theorem extChartAt_Icc_target (α : Icc a b) :
   split_ifs <;> simp [IccLeftChart, IccRightChart,
     modelWithCornersEuclideanHalfSpace_symm_apply, range_modelWithCornersEuclideanHalfSpace,
     max_lt_iff, hab', and_comm]
+
+/-- The source of the preferred interval chart at `α` is `[a, b)` when `α < b`, the left chart,
+and `(a, b]` otherwise, the right chart. -/
+theorem mem_extChartAt_Icc_source_iff (α x : Icc a b) :
+    x ∈ (extChartAt (𝓡∂ 1) α).source ↔ if (α : ℝ) < b then (x : ℝ) < b else a < (x : ℝ) := by
+  rw [extChartAt_source, Icc_chartedSpaceChartAt]
+  split_ifs <;> simp [IccLeftChart, IccRightChart]
+
+/-- The source of a preferred interval chart is cut out by its coordinate: a point lies in it
+exactly when its coordinate is below the length `b - a` of the interval. -/
+theorem mem_extChartAt_Icc_source_iff_apply_zero_lt (α x : Icc a b) :
+    x ∈ (extChartAt (𝓡∂ 1) α).source ↔ extChartAt (𝓡∂ 1) α x 0 < b - a := by
+  rw [mem_extChartAt_Icc_source_iff, extChartAt_Icc_apply]
+  split_ifs <;> simp
 
 /-- On the actual coordinate target, the inverse interval chart composed with inclusion is
 affine; the model retraction and interval clamps do not alter these values. -/

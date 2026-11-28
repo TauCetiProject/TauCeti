@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.BaseChange
 public import TauCeti.NumberTheory.QuadraticForm.Global.LocalWittClass
 import TauCeti.LinearAlgebra.QuadraticForm.Witt.SepClosed
+import TauCeti.NumberTheory.QuadraticForm.Global.Isotropy
 
 /-!
 # The global-to-local map of Witt rings of a number field
@@ -37,8 +38,13 @@ infinite place is defined as well, and two classes with the same image under the
 map have the same image at every complex embedding, so adding complex coordinates would not change
 the kernel.
 
-That the global-to-local map is injective is the Hasse–Minkowski theorem for Witt classes; this
-file does not prove it.
+The global-to-local map is injective: this is the Hasse–Minkowski theorem for Witt classes. Every
+Witt class is the class of an anisotropic regular form `Q`, and by the Hasse–Minkowski theorem for
+isotropy `Q` stays anisotropic at some finite or real place. If the class vanishes there, that
+anisotropic localization has trivial Witt class, so `Q` lives on the zero space. Consequently two
+regular forms have the same Witt class exactly when their localizations have the same Witt class
+at every finite and every real place, and the invariants of `globalToLocal_eq_zero_iff` decide
+whether a Witt class of `K` is zero.
 
 ## Main definitions
 
@@ -54,6 +60,9 @@ file does not prove it.
 * `TauCeti.WittRing.globalToLocal_eq_zero_iff`: the kernel of the global-to-local map, described
   by the dimension modulo two, the signed discriminant, the Clifford invariant and the real
   signatures.
+* `TauCeti.WittRing.globalToLocal_injective`: the global-to-local map is injective.
+* `QuadraticForm.wittClass_formClass_eq_iff_locally`: two regular forms have the same Witt class
+  exactly when their localizations have the same Witt class at every finite and every real place.
 * `TauCeti.WittRing.signature_atRealPlace_wittClass_formClass`: the signature of the real
   coordinate of the Witt class of a regular form is the difference of its two inertia indices.
 * `TauCeti.WittRing.atComplexEmbedding_eq_of_globalToLocal_eq`: classes with the same image under
@@ -70,7 +79,9 @@ file does not prove it.
   and the real and complex Witt rings, Chapter VI, §3, for the map `W(K) → ∏_v W(K_v)`, and
   Chapter V, §3, for the signed discriminant and the Clifford invariant.
 * O. T. O'Meara, *Introduction to Quadratic Forms*, Springer (1963), 63:20 for the local
-  classification.
+  classification, and 66:1 for the Hasse–Minkowski theorem for isotropy.
+* J. S. Milne, *Class Field Theory*, v4.03, Chapter VIII, Theorem 6.3, p. 252, for the
+  local–global principle for Witt classes.
 -/
 
 public section
@@ -216,6 +227,31 @@ theorem globalToLocal_eq_zero_iff (x : WittRing K) :
   exact ⟨fun ⟨⟨hn, hd, hc⟩, hs⟩ => ⟨hn (Classical.arbitrary _), hd, hc, hs⟩,
     fun ⟨hn, hd, hc, hs⟩ => ⟨⟨fun _ => hn, hd, hc⟩, hs⟩⟩
 
+/-- **Injectivity of the global-to-local map of Witt rings.** A Witt class of a number field `K`
+that vanishes at every finite and every real place is zero.
+
+Complex places are not needed: by `atComplexEmbedding_eq_of_globalToLocal_eq`, the image of a Witt
+class at a complex embedding is determined by its image under the global-to-local map. -/
+theorem globalToLocal_injective : Function.Injective (globalToLocal K) := by
+  refine (injective_iff_map_eq_zero (globalToLocal K)).mpr fun x hx => ?_
+  -- `x` is the Witt class of an anisotropic class, the class of a diagonal form `Q`.
+  obtain ⟨c, rfl⟩ := wittClass_surjective x
+  rw [← wittClass_anisotropicPart] at hx ⊢
+  have hA := RegularFormClass.anisotropic_anisotropicPart c
+  obtain ⟨p, hp⟩ := Quotient.mk_surjective (RegularFormClass.anisotropicPart c)
+  rw [← hp, ← formClass_presentedForm, QuadraticForm.anisotropic_formClass] at hA
+  rw [← hp, ← formClass_presentedForm] at hx ⊢
+  rw [globalToLocal_wittClass_formClass] at hx
+  simp only [Prod.ext_iff, funext_iff, Prod.fst_zero, Prod.snd_zero, Pi.zero_apply] at hx
+  -- An anisotropic regular form with Witt class zero lives on the zero space, and by
+  -- Hasse–Minkowski `Q` stays anisotropic at some finite or real place.
+  rw [hA.wittClass_formClass_eq_zero_iff]
+  have hloc := (QuadraticForm.anisotropic_iff_not_isLocallyIsotropic _).mp hA
+  rw [QuadraticForm.isLocallyIsotropic_iff, not_and_or, not_forall_not, not_forall_not] at hloc
+  rcases hloc with ⟨v, hv⟩ | ⟨w, hw⟩
+  · simpa using (hv.wittClass_formClass_eq_zero_iff _).mp (hx.1 v)
+  · simpa using (hw.wittClass_formClass_eq_zero_iff _).mp (hx.2 w)
+
 /-- Two Witt classes with the same image under the global-to-local map have the same image at
 every complex embedding. -/
 theorem atComplexEmbedding_eq_of_globalToLocal_eq {x y : WittRing K}
@@ -262,5 +298,20 @@ theorem globalToLocal_wittClass_formClass_eq_iff {Q : _root_.QuadraticForm K V}
   rw [WittRing.globalToLocal_wittClass_formClass, WittRing.globalToLocal_wittClass_formClass,
     Prod.ext_iff, funext_iff, funext_iff]
   exact locally_wittClass_formClass_eq_iff hQ hR
+
+/-- **Hasse–Minkowski for Witt classes.** Two regular forms over a number field have the same Witt
+class exactly when their localizations have the same Witt class at every finite and every real
+place. -/
+theorem wittClass_formClass_eq_iff_locally {Q : _root_.QuadraticForm K V}
+    {R : _root_.QuadraticForm K W} (hQ : Q.Nondegenerate) (hR : R.Nondegenerate) :
+    wittClass (formClass Q hQ) = wittClass (formClass R hR) ↔
+      (∀ v : HeightOneSpectrum (𝓞 K),
+        wittClass (formClass (Q.atFinitePlace v) (Nondegenerate.atFinitePlace hQ v)) =
+          wittClass (formClass (R.atFinitePlace v) (Nondegenerate.atFinitePlace hR v))) ∧
+      ∀ w : {w : InfinitePlace K // w.IsReal},
+        wittClass (formClass (Q.atRealPlace w) (Nondegenerate.atRealPlace hQ w)) =
+          wittClass (formClass (R.atRealPlace w) (Nondegenerate.atRealPlace hR w)) := by
+  rw [← WittRing.globalToLocal_injective.eq_iff, WittRing.globalToLocal_wittClass_formClass,
+    WittRing.globalToLocal_wittClass_formClass, Prod.ext_iff, funext_iff, funext_iff]
 
 end QuadraticForm

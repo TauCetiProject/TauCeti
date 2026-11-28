@@ -40,6 +40,8 @@ Proposition 2.44.
 
 * `TauCeti.continuousOn_chartVolumeDensity_extChartAt_symm`: the chart density of a continuous
   metric, read in coordinates, is continuous on the chart target.
+* `TauCeti.aemeasurable_ofReal_chartVolumeDensity_extChartAt_symm`: it is a.e.-measurable on
+  every measurable subset of the chart target.
 * `TauCeti.chartRiemannianVolume_apply`: the coordinate integral formula.
 * `TauCeti.setLIntegral_chartRiemannianVolume`, `TauCeti.setIntegral_chartRiemannianVolume`:
   integration against a chart volume in coordinates.
@@ -94,6 +96,17 @@ theorem continuousOn_chartVolumeDensity_extChartAt_symm
   intro y hy
   simpa only [TangentBundle.trivializationAt_baseSet, extChartAt_source,
     PartialEquiv.symm_target] using (extChartAt I α).symm.map_source hy
+
+omit [MeasurableSpace M] [BorelSpace M] in
+/-- The chart density of a continuous metric, read in coordinates, is a.e.-measurable for every
+measure restricted to a measurable subset of the chart target. -/
+theorem aemeasurable_ofReal_chartVolumeDensity_extChartAt_symm
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (α : M) {A : Set E}
+    (hA : MeasurableSet A) (hAt : A ⊆ (extChartAt I α).target) (μ : Measure E) :
+    AEMeasurable (fun y ↦ ENNReal.ofReal (chartVolumeDensity (I := I) α ((extChartAt I α).symm y)))
+      (μ.restrict A) :=
+  (ENNReal.continuous_ofReal.comp_continuousOn
+    ((continuousOn_chartVolumeDensity_extChartAt_symm α).mono hAt)).aemeasurable hA
 
 private def chartVolumeDensityData
     [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (alpha : M) :

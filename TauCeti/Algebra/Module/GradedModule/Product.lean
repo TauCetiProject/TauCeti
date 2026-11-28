@@ -57,9 +57,8 @@ def productCarrier : Submodule R (∀ j, M j) :=
 
 /-- Every homogeneous family belongs to the graded product. -/
 theorem productPiece_le_productCarrier (p : ℤ) : productPiece G p ≤ productCarrier G := by
-  intro x hx
-  exact ⟨DirectSum.lof R ℤ (fun q ↦ productPiece G q) p ⟨x, hx⟩,
-    DirectSum.coeLinearMap_lof (productPiece G) p ⟨x, hx⟩⟩
+  rw [productCarrier, DirectSum.range_coeLinearMap]
+  exact le_iSup _ p
 
 private def productCoordinate (j : J) (p : ℤ) :
     productPiece G p →ₗ[R] (G j).piece p where
@@ -156,22 +155,14 @@ theorem productEquiv_apply (x : ⨁ p, productPiece G p) :
 
 /-- The internal grading on the product, obtained from its degreewise product presentation. -/
 noncomputable def product : InternalGrading R (productCarrier G) ℤ :=
-  (ofDecomposition (DirectSum.summand R (fun p : ℤ ↦ productPiece G p))).map (productEquiv G)
+  ofRangeCoe (productPiece G) (product_recompose_injective G)
 
 /-- An element of the graded product has degree `p` exactly when each component does. -/
 @[simp]
 theorem mem_product_piece_iff (p : ℤ) (x : productCarrier G) :
-    x ∈ (product G).piece p ↔ ∀ j, x.val j ∈ (G j).piece p := by
-  rw [product, map_piece, ofDecomposition_piece, DirectSum.summand_def]
-  constructor
-  · rintro ⟨y, ⟨t, rfl⟩, rfl⟩
-    simpa only [LinearEquiv.coe_coe, productEquiv_apply, DirectSum.coeLinearMap_lof] using
-      (mem_productPiece_iff G p t.val).mp t.property
-  · intro hx
-    let t : productPiece G p := ⟨x.val, (mem_productPiece_iff G p x.val).mpr hx⟩
-    refine ⟨DirectSum.lof R ℤ (fun q ↦ productPiece G q) p t, ⟨t, rfl⟩, ?_⟩
-    apply Subtype.ext
-    simp only [LinearEquiv.coe_coe, productEquiv_apply, DirectSum.coeLinearMap_lof, t]
+    x ∈ (product G).piece p ↔ ∀ j, x.val j ∈ (G j).piece p :=
+  (mem_ofRangeCoe_piece_iff (productPiece G) (product_recompose_injective G) p x).trans
+    (mem_productPiece_iff G p x.val)
 
 /-- Evaluation at one factor, as a linear map on the graded product. -/
 def productEval (j : J) : productCarrier G →ₗ[R] M j :=

@@ -83,15 +83,21 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   an atomless real law;
 * `MeasureTheory.Measure.measureReal_Iio_neg` relates the lower tail of a symmetric real law to
   its cdf;
-* `MeasureTheory.Measure.cdf_neg_of_measure_singleton_eq_zero` computes the cdf of a reflected
-  law away from atoms;
+* `MeasureTheory.Measure.cdf_neg` computes the cdf of a reflected law, and
+  `MeasureTheory.Measure.cdf_neg_of_measure_singleton_eq_zero` expresses it through the cdf away
+  from atoms;
 * `MeasureTheory.Measure.cdf_map_abs_of_nonneg` and `MeasureTheory.Measure.cdf_map_abs_of_neg`
   evaluate the cdf of the image of a real law under absolute value, and
   `MeasureTheory.Measure.cdf_map_abs_of_isNegInvariant` specializes it to symmetric laws;
+* `MeasureTheory.Measure.cdf_map_orderIso` evaluates the cdf of the image of a real law under an
+  order isomorphism of `ℝ`;
 * `MeasureTheory.Measure.cdf_map_const_mul_sqrt` evaluates the cdf of the image of a real law
   under a positive multiple of the square root;
 * `MeasureTheory.Measure.leftLim_cdf` identifies the left limit of the cdf at a point with the
   mass of the open ray to its left;
+* `MeasureTheory.Measure.measureReal_singleton_eq_cdf_sub_leftLim` and
+  `MeasureTheory.Measure.cdf_eq_measureReal_Iio_add_measureReal_singleton` identify the mass of a
+  point with the jump of the cdf there;
 * `Set.OrdConnected.mem_of_measureReal_Iio_le_of_le_cdf` shows that a cumulative-crossing point
   lies in every interval carrying the full mass of the measure;
 * `MeasureTheory.Measure.cdf_map_natCast` evaluates the cdf at a nonnegative point;
@@ -184,6 +190,13 @@ theorem cdf_map {I : Type*} [MeasurableSpace I] (μ : Measure I) [IsProbabilityM
     cdf (μ.map label) x = μ.real (label ⁻¹' Iic x) := by
   rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hlabel measurableSet_Iic]
 
+/-- The cdf of the image of a probability measure under an order isomorphism of `ℝ` (an
+increasing homeomorphism) is the cdf of the measure composed with the inverse isomorphism. -/
+@[simp]
+theorem cdf_map_orderIso (μ : Measure ℝ) [IsProbabilityMeasure μ] (f : ℝ ≃o ℝ) (x : ℝ) :
+    cdf (μ.map f) x = cdf μ (f.symm x) := by
+  rw [cdf_map μ f f.monotone.measurable.aemeasurable, f.preimage_Iic, cdf_eq_real]
+
 /-- The cdf of a convolution is the average of the translated cdfs of its second factor. -/
 theorem cdf_conv (μ ν : Measure ℝ) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     (x : ℝ) : cdf (μ ∗ ν) x = ∫ y, cdf ν (x - y) ∂μ := by
@@ -238,16 +251,17 @@ theorem measureReal_Iio_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] [μ.IsN
   rw [← Set.neg_Ioi, measureReal_def, Measure.measure_neg, ← measureReal_def,
     measureReal_Ioi_eq_one_sub_cdf]
 
-/-- **The cumulative distribution function of the reflected law.** If `μ` has no atom at `-x`,
-the law of `-X` puts mass `1 - cdf μ (-x)` on `Iic x`. -/
+/-- **The cumulative distribution function of the reflected law.** The law of `-X` puts mass
+`1 - μ (Iio (-x))` on `Iic x`. -/
+theorem cdf_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] (x : ℝ) :
+    cdf μ.neg x = 1 - μ.real (Iio (-x)) := by
+  rw [cdf_eq_real, neg_def, map_measureReal_apply measurable_neg measurableSet_Iic, neg_preimage,
+    Set.neg_Iic, ← compl_Iio, probReal_compl_eq_one_sub measurableSet_Iio]
+
+/-- If `μ` has no atom at `-x`, the law of `-X` puts mass `1 - cdf μ (-x)` on `Iic x`. -/
 theorem cdf_neg_of_measure_singleton_eq_zero {μ : Measure ℝ} [IsProbabilityMeasure μ] {x : ℝ}
     (hx : μ {-x} = 0) : cdf μ.neg x = 1 - cdf μ (-x) := by
-  have hpre : (Neg.neg ⁻¹' Iic x : Set ℝ) = (Iio (-x))ᶜ := by
-    ext y
-    simp
-  rw [cdf_eq_real, neg_def, map_measureReal_apply measurable_neg measurableSet_Iic, hpre,
-    measureReal_compl measurableSet_Iio, probReal_univ, measureReal_congr (Iio_ae_eq_Iic' hx),
-    cdf_eq_real]
+  rw [cdf_neg, measureReal_congr (Iio_ae_eq_Iic' hx), cdf_eq_real]
 
 /-- The cdf of the image of `μ` under absolute value at a nonnegative point `x` is the mass of
 `[-x, x]`, that is, the cdf of `μ` at `x` minus its left limit at `-x`. -/
@@ -355,18 +369,20 @@ theorem exists_nat_lt_measureReal_Iic {u : ℝ} (hu : u < 1) :
 
 end Nat
 
+/-- The mass of a point under a real probability law is the jump of its cumulative distribution
+function there. -/
+theorem measureReal_singleton_eq_cdf_sub_leftLim (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    (x : ℝ) : ν.real {x} = cdf ν x - leftLim (cdf ν) x := by
+  have h := (cdf ν).measure_singleton x
+  rw [measure_cdf] at h
+  rw [measureReal_def, h, ENNReal.toReal_ofReal (sub_nonneg.2 ((cdf ν).mono.leftLim_le le_rfl))]
+
 /-- The cumulative distribution function of a real probability measure `ν` is continuous at `x`
 if and only if `ν` assigns mass zero to `{x}`. -/
 theorem continuousAt_cdf_iff (ν : Measure ℝ) [IsProbabilityMeasure ν] (x : ℝ) :
     ContinuousAt (cdf ν) x ↔ ν {x} = 0 := by
-  have hsing : ν {x} = ENNReal.ofReal (cdf ν x - leftLim (cdf ν) x) :=
-    calc
-      ν {x} = (cdf ν).measure {x} := by rw [measure_cdf]
-      _ = ENNReal.ofReal (cdf ν x - leftLim (cdf ν) x) := StieltjesFunction.measure_singleton _ _
-  have hle : leftLim (cdf ν) x ≤ cdf ν x := (cdf ν).mono.leftLim_le le_rfl
   rw [(cdf ν).mono.continuousAt_iff_leftLim_eq_rightLim, ((cdf ν).right_continuous x).rightLim_eq,
-    hsing, ENNReal.ofReal_eq_zero, sub_nonpos]
-  exact ⟨fun h ↦ h.symm.le, le_antisymm hle⟩
+    ← measureReal_eq_zero_iff, measureReal_singleton_eq_cdf_sub_leftLim, sub_eq_zero, eq_comm]
 
 /-- **CDF continuity from null singletons.** The cumulative distribution function of a
 probability measure on `ℝ` is continuous when every singleton has measure zero. -/
@@ -448,6 +464,12 @@ theorem leftLim_cdf (ν : Measure ℝ) [IsProbabilityMeasure ν] (x : ℝ) :
   have hnonneg : 0 ≤ leftLim (cdf ν) x :=
     (cdf_nonneg ν (x - 1)).trans ((cdf ν).mono.le_leftLim (by linarith))
   rw [measureReal_def, h, ENNReal.toReal_ofReal hnonneg]
+
+/-- The cumulative distribution function of a real probability law at a point is the mass of the
+open ray to the left of the point plus the mass of the point itself. -/
+theorem cdf_eq_measureReal_Iio_add_measureReal_singleton (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    (x : ℝ) : cdf ν x = ν.real (Iio x) + ν.real {x} := by
+  rw [measureReal_singleton_eq_cdf_sub_leftLim, leftLim_cdf, add_sub_cancel]
 
 /-- The mass of the open ray to the left of a point is at most a level exactly when the cumulative
 distribution function stays at most that level at every point strictly to the left. -/
