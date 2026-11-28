@@ -23,8 +23,8 @@ public section
 
 namespace TauCeti
 
-/-- Double-counting evaluation of `∑_{1 ≤ h < n} (a - padicValNat p h)` when `0 < n` and
-`a ≤ padicValNat p n`, using `Nat.Ico_filter_not_dvd_card_add_div`. -/
+/-- For `0 < n` and `a ≤ v_p(n)`,
+`(∑_{1 ≤ h < n} (a - v_p(h))) + ∑_{1 ≤ i ≤ a} n / p ^ i = a * n`. -/
 theorem sum_Ico_sub_padicValNat_add_sum_Icc_div (p : ℕ) {n a : ℕ} (hn : 0 < n)
     (ha : a ≤ padicValNat p n) :
     (∑ h ∈ Finset.Ico 1 n, (a - padicValNat p h)) +

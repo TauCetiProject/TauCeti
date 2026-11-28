@@ -151,7 +151,7 @@ theorem sum_oreCoefficientDepth_padic_of_mod_pos (p : ℕ) [Fact p.Prime] {n j :
   have hn := hadm.pos
   have ha_le : j / n ≤ padicValNat p n := hadm.div_le_padicValNat
   obtain ⟨hvb, -⟩ := (isOreAdmissible_iff_of_mod_pos hmod).mp hadm |>.2
-  rw [addVal_natCast_padic p hmod.ne'] at hvb
+  rw [_root_.Padic.addVal_natCast_eq_padicValNat p hmod.ne'] at hvb
   have hvb_le : padicValNat p (j % n) ≤ j / n := by exact_mod_cast hvb
   have hlt_b : j % n < n := Nat.mod_lt j hn
   have hdepth : ∀ h ∈ Finset.Ico 1 n,
