@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 
 /-!
@@ -24,17 +23,8 @@ residue of a scalar `algebraMap k R c` with its image in `IsLocalRing.ResidueFie
 whenever `R` admits a `k`-algebra augmentation `R →ₐ[k] k`, `algebraMap k (ResidueField R)` is
 surjective (`AlgHom.surjective_algebraMap_residueField`).
 
-We also record an elementary adic uniqueness principle for `k`-algebra homomorphisms into an
-adically separated commutative ring (`IsHausdorff J S`): if `G` generates a left ideal modulo which
-every element of `R` is represented by a scalar in `k`, then two `k`-algebra homomorphisms
-`φ, ψ : R →ₐ[k] S` that agree on `G` and map `G` into `J` are congruent modulo every power `J ^ n`
-(`AlgHom.sub_mem_pow_of_eqOn`), and hence equal when `IsHausdorff J S` holds
-(`AlgHom.ext_of_isHausdorff`), without assuming `R` is commutative. Specializing to commutative
-local `k`-algebras `R` and `S` where `algebraMap k (ResidueField R)` is surjective and `S` is
-separated (`IsHausdorff`) with respect to its maximal ideal yields uniqueness of `φ, ψ : R →ₐ[k] S`
-from agreement on any generating set of `maximalIdeal R`, provided one of the homomorphisms (`φ`) is
-local (`AlgHom.ext_of_span_eq_maximalIdeal`), even when `R` is not finitely generated as a
-`k`-algebra (as for rings of analytic germs or formal power series).
+For adic congruences and uniqueness of `k`-algebra homomorphisms into adically separated targets,
+see `TauCeti.RingTheory.AdicCompletion.Uniqueness`.
 
 ## Main results
 
@@ -48,21 +38,11 @@ local (`AlgHom.ext_of_span_eq_maximalIdeal`), even when `R` is not finitely gene
   `algebraMap k (IsLocalRing.ResidueField R) c`.
 * `AlgHom.surjective_algebraMap_residueField`: if a commutative local `k`-algebra `R` over a
   commutative ring `k` admits `R →ₐ[k] k`, then `algebraMap k (ResidueField R)` is surjective.
-* `AlgHom.sub_mem_pow_of_eqOn`, `AlgHom.ext_of_isHausdorff`: adic congruences to every order and
-  (under `IsHausdorff J S`) uniqueness of `k`-algebra homomorphisms into a commutative ring `S`
-  from agreement on a set `G` mapped into `J` and generating an ideal modulo which every element is
-  represented by a scalar.
-* `AlgHom.ext_of_span_eq_maximalIdeal`: specialization to commutative local `k`-algebras, giving
-  uniqueness from agreement on generators of `maximalIdeal R` when `algebraMap k (ResidueField R)`
-  is surjective, `S` is maximal-ideal separated (`IsHausdorff`), and `φ` is a local homomorphism.
 
 ## References
 
 * H. Grauert and R. Remmert, *Coherent Analytic Sheaves*, Grundlehren der mathematischen
   Wissenschaften 265, Springer, 1984, Chapter 1, §1.
-* N. Bourbaki, *Commutative Algebra*, Chapter III, §2 (for `I`-adic congruences and uniqueness of
-  homomorphisms into adically separated targets) and §3 (for the local-ring specialization and
-  maximal-ideal generators).
 -/
 
 public section
@@ -157,66 +137,5 @@ theorem surjective_algebraMap_residueField {k R : Type*} [CommRing k] [CommRing 
   simp [ε.commutes] at hu
 
 end Augmentation
-
-section AdicUniqueness
-
-/-- **Adic congruences from generators modulo which every element is a scalar.** Suppose `G`
-generates an ideal modulo which every element of `R` is represented by a scalar in `k`, and
-`φ, ψ : R →ₐ[k] S` agree on `G` and map `G` into an ideal `J` of `S`. Then `φ r - ψ r ∈ J ^ n`
-for every `n : ℕ` and `r : R`. -/
-theorem sub_mem_pow_of_eqOn {k R S : Type*} [CommSemiring k] [Ring R] [CommRing S]
-    [Algebra k R] [Algebra k S] {φ ψ : R →ₐ[k] S} {G : Set R} {J : Ideal S}
-    (haug : ∀ r : R, ∃ c : k, r - algebraMap k R c ∈ Ideal.span G)
-    (hGJ : ∀ g ∈ G, φ g ∈ J) (hG : Set.EqOn φ ψ G) :
-    ∀ (n : ℕ) (r : R), φ r - ψ r ∈ J ^ n
-  | 0, _ => by simp
-  | n + 1, r => by
-    have hψJ : Ideal.span G ≤ J.comap ψ.toRingHom :=
-      Ideal.span_le.2 fun g hg ↦ Ideal.mem_comap.2 (hG hg ▸ hGJ g hg)
-    obtain ⟨c, hc⟩ := haug r
-    have hrc : φ r - ψ r = φ (r - algebraMap k R c) - ψ (r - algebraMap k R c) := by simp
-    rw [hrc]
-    refine Submodule.span_induction (p := fun x _ ↦ φ x - ψ x ∈ J ^ (n + 1))
-      (fun g hg ↦ by simp [hG hg]) (by simp)
-      (fun x y _ _ hx hy ↦ by simpa only [map_add, sub_add_sub_comm] using add_mem hx hy)
-      (fun a x hx ihx ↦ ?_) hc
-    have hsplit : φ (a • x) - ψ (a • x) = φ a * (φ x - ψ x) + (φ a - ψ a) * ψ x := by
-      simp only [smul_eq_mul, map_mul, mul_sub, sub_mul, sub_add_sub_cancel]
-    rw [hsplit]
-    exact add_mem (Ideal.mul_mem_left _ (φ a) ihx)
-      (pow_succ J n ▸ Ideal.mul_mem_mul (sub_mem_pow_of_eqOn haug hGJ hG n a) (hψJ hx))
-
-/-- **Uniqueness of `k`-algebra homomorphisms into an adically separated ring.** Suppose `G`
-generates an ideal modulo which every element of `R` is represented by a scalar in `k`, and `S` is
-`IsHausdorff J S` for an ideal `J` of `S`. If `φ, ψ : R →ₐ[k] S` agree on `G` and map `G` into
-`J`, then `φ = ψ`. -/
-theorem ext_of_isHausdorff {k R S : Type*} [CommSemiring k] [Ring R] [CommRing S]
-    [Algebra k R] [Algebra k S] {φ ψ : R →ₐ[k] S} {G : Set R} (J : Ideal S) [IsHausdorff J S]
-    (haug : ∀ r : R, ∃ c : k, r - algebraMap k R c ∈ Ideal.span G)
-    (hGJ : ∀ g ∈ G, φ g ∈ J) (hG : Set.EqOn φ ψ G) :
-    φ = ψ :=
-  AlgHom.coe_fn_injective <| IsHausdorff.funext' J fun n r ↦
-    Ideal.Quotient.eq.2 (sub_mem_pow_of_eqOn haug hGJ hG n r)
-
-/-- **Uniqueness of `k`-algebra homomorphisms of local rings from maximal-ideal generators.** Let
-`R` and `S` be commutative local `k`-algebras such that `algebraMap k (ResidueField R)` is
-surjective and `S` is separated (`IsHausdorff`) with respect to its maximal ideal. If `G` generates
-`maximalIdeal R` and `φ, ψ : R →ₐ[k] S` agree on `G` with `φ` local (no locality assumption on `ψ`
-is needed), then `φ = ψ`. -/
-theorem ext_of_span_eq_maximalIdeal {k R S : Type*} [CommRing k] [CommRing R] [IsLocalRing R]
-    [CommRing S] [IsLocalRing S] [Algebra k R] [Algebra k S]
-    [IsHausdorff (IsLocalRing.maximalIdeal S) S] {φ ψ : R →ₐ[k] S} [IsLocalHom φ]
-    (hres : Function.Surjective (algebraMap k (IsLocalRing.ResidueField R)))
-    {G : Set R} (hG_span : Ideal.span G = IsLocalRing.maximalIdeal R)
-    (hG : Set.EqOn φ ψ G) :
-    φ = ψ := by
-  have : IsLocalHom φ.toRingHom := ⟨IsLocalHom.map_nonunit (f := φ)⟩
-  refine ext_of_isHausdorff (IsLocalRing.maximalIdeal S) (fun r ↦ ?_) (fun g hg ↦ ?_) hG
-  · obtain ⟨c, hc⟩ := hres (IsLocalRing.residue R r)
-    refine ⟨c, hG_span.symm ▸ (IsLocalRing.residue_eq_zero_iff _).1 ?_⟩
-    rw [map_sub, TauCeti.residue_algebraMap, hc, sub_self]
-  · exact map_nonunit φ.toRingHom g (hG_span ▸ Ideal.subset_span hg)
-
-end AdicUniqueness
 
 end AlgHom

@@ -15,7 +15,7 @@ import TauCeti.Geometry.RingedSpace.PresheafedSpace.Basic
 
 This file characterizes which morphisms between the holomorphic locally ringed spaces
 `locallyRingedSpace I X` and `locallyRingedSpace J Y` (constructed in
-`StructureSheaf.RingedSpace.Defs`, with induced maps and comparisons in
+`StructureSheaf.RingedSpace.Defs`, with induced maps and open restrictions in
 `StructureSheaf.RingedSpace.Basic`) come from complex analytic maps:
 
 * On arbitrary complex charted spaces `X` and `Y` (with no manifold, boundaryless, or
@@ -599,20 +599,6 @@ theorem analyticMapGermEquivStalkAlgHom_symm_stalkAlgHomOfCAppTopAlgebraMap (x :
 
 end PresheafedRecovery
 
-/-- A morphism `φ : locallyRingedSpace I X ⟶ locallyRingedSpace J Y` into a finite-dimensional
-boundaryless complex manifold `Y` is induced by a unique complex-analytic map `f : C^ω⟮I, X; J, Y⟯`
-if and only if its section maps fix the complex constants. -/
-theorem existsUnique_contMDiffMap_locallyRingedSpaceMap_eq_iff
-    (φ : locallyRingedSpace I X ⟶ locallyRingedSpace J Y) :
-    (∃! f : C^ω⟮I, X; J, Y⟯, locallyRingedSpaceMap f f.contMDiff = φ) ↔
-      ∀ (U : Opens Y) (c : ℂ), (φ.c.app (op U)).hom (algebraMap ℂ _ c) =
-        algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj (op ((Opens.map φ.base).obj U))) c :=
-  ⟨fun ⟨f, h, _⟩ U c ↦ h ▸ locallyRingedSpaceMap_c_app_algebraMap f f.contMDiff U c, fun hφ ↦
-    ⟨⟨φ.base, contMDiff_base_of_c_app_top_algebraMap φ.toHom (hφ ⊤)⟩,
-      locallyRingedSpaceMap_eq_of_c_app_top_algebraMap φ (hφ ⊤)
-        (contMDiff_base_of_c_app_top_algebraMap φ.toHom (hφ ⊤)), by
-      rintro _ rfl; exact ContMDiffMap.ext fun _ ↦ rfl⟩⟩
-
 -- Exposed so `(holomorphicMapLocalRingedEquivalence ... f).val.base` and `(.symm φ : X → Y)`
 -- reduce definitionally in dependent stalk types.
 variable (I X J Y) in
@@ -629,6 +615,21 @@ def holomorphicMapLocalRingedEquivalence :
   right_inv φ := Subtype.ext <|
     locallyRingedSpaceMap_eq_of_c_app_top_algebraMap φ.val (φ.property ⊤)
       (contMDiff_base_of_c_app_top_algebraMap φ.val.toHom (φ.property ⊤))
+
+/-- A morphism `φ : locallyRingedSpace I X ⟶ locallyRingedSpace J Y` into a finite-dimensional
+boundaryless complex manifold `Y` is induced by a unique complex-analytic map `f : C^ω⟮I, X; J, Y⟯`
+if and only if its section maps fix the complex constants. -/
+theorem existsUnique_contMDiffMap_locallyRingedSpaceMap_eq_iff
+    (φ : locallyRingedSpace I X ⟶ locallyRingedSpace J Y) :
+    (∃! f : C^ω⟮I, X; J, Y⟯, locallyRingedSpaceMap f f.contMDiff = φ) ↔
+      ∀ (U : Opens Y) (c : ℂ), (φ.c.app (op U)).hom (algebraMap ℂ _ c) =
+        algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj
+          (op ((Opens.map φ.base).obj U))) c := by
+  refine ⟨fun ⟨f, h, _⟩ U c ↦ h ▸ locallyRingedSpaceMap_c_app_algebraMap f f.contMDiff U c,
+    fun hφ ↦ ?_⟩
+  obtain ⟨f, hf, huniq⟩ :=
+    (holomorphicMapLocalRingedEquivalence I X J Y).bijective.existsUnique ⟨φ, hφ⟩
+  exact ⟨f, congrArg Subtype.val hf, fun g hg ↦ huniq g (Subtype.ext hg)⟩
 
 /-- In the forward direction, `holomorphicMapLocalRingedEquivalence` sends `f` to
 `LocallyRingedSpaceCLinearHom.ofContMDiff f f.contMDiff`. -/
@@ -674,7 +675,8 @@ theorem holomorphicMapLocalRingedEquivalence_symm_id [FiniteDimensional ℂ E] [
     [IsManifold I 1 X] :
     (holomorphicMapLocalRingedEquivalence I X I X).symm (LocallyRingedSpaceCLinearHom.id I X) =
       ContMDiffMap.id :=
-  ContMDiffMap.ext fun _ ↦ rfl
+  (holomorphicMapLocalRingedEquivalence I X I X).symm_apply_eq.2
+    (holomorphicMapLocalRingedEquivalence_id (I := I) (X := X)).symm
 
 /-- `holomorphicMapLocalRingedEquivalence.symm` sends
 `LocallyRingedSpaceCLinearHom.ofContMDiff f hf` to `⟨f, hf⟩`. -/
@@ -683,7 +685,8 @@ theorem holomorphicMapLocalRingedEquivalence_symm_ofContMDiff (f : X → Y)
     (hf : ContMDiff I J ω f) :
     (holomorphicMapLocalRingedEquivalence I X J Y).symm
         (LocallyRingedSpaceCLinearHom.ofContMDiff f hf) = ⟨f, hf⟩ :=
-  ContMDiffMap.ext fun _ ↦ rfl
+  (holomorphicMapLocalRingedEquivalence I X J Y).symm_apply_eq.2
+    (holomorphicMapLocalRingedEquivalence_mk f hf).symm
 
 section SymmAndComp
 
@@ -738,7 +741,7 @@ theorem holomorphicMapLocalRingedEquivalence_symm_comp
     (holomorphicMapLocalRingedEquivalence I X K Z).symm (ψ.comp φ) =
       ((holomorphicMapLocalRingedEquivalence J Y K Z).symm ψ).comp
         ((holomorphicMapLocalRingedEquivalence I X J Y).symm φ) :=
-  ContMDiffMap.ext fun _ ↦ rfl
+  (holomorphicMapLocalRingedEquivalence I X K Z).injective (by simp)
 
 /-- Restricting a holomorphic map `f : C^ω⟮I, X; J, Y⟯` to an open subset `U : Opens X` corresponds
 under `holomorphicMapLocalRingedEquivalence` to precomposing in `LocallyRingedSpaceCLinearHom`
@@ -761,7 +764,7 @@ theorem holomorphicMapLocalRingedEquivalence_symm_restrict (U : Opens X) :
         (φ.comp (LocallyRingedSpaceCLinearHom.ofContMDiff Subtype.val contMDiff_subtypeVal)) =
       ((holomorphicMapLocalRingedEquivalence I X J Y).symm φ).comp
         (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^ω⟮I, U; I, X⟯) :=
-  ContMDiffMap.ext fun _ ↦ rfl
+  (holomorphicMapLocalRingedEquivalence I U J Y).injective (by simp)
 
 /-- Restricting a holomorphic map `f : C^ω⟮I, X; J, Y⟯` to an open subset `U : Opens X` corresponds
 on underlying locally ringed-space morphisms to precomposing with the open immersion

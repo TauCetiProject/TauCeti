@@ -8,13 +8,13 @@ module
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Germ
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LocalRing
 public import TauCeti.Geometry.Manifold.ContMDiff.Defs
-public import TauCeti.Geometry.Manifold.ContMDiff.Germ
+public import TauCeti.Geometry.Manifold.ContMDiff.Germ.Map
 public import TauCeti.Order.Filter.Germ
 
 /-!
 # Pullback of holomorphic stalks by local analytic maps
 
-`stalkPullback` pulls back holomorphic germs along a map between complex manifolds analytic
+`stalkPullback` pulls back holomorphic germs along a map between complex charted spaces analytic
 near the chosen point, with `ℂ`-algebra homomorphism upgrade `stalkPullbackAlgHom`,
 base-point-explicit form `stalkPullbackAt` (whose domain stalk at `y` is decoupled from `f x` via
 an explicit equality `f x = y`, enabling congruence `stalkPullbackAt_congr` across locally equal
@@ -27,8 +27,8 @@ Pullback along a map with a local analytic inverse, such as a chart, is an equiv
 (`stalkPullbackEquiv`), with evaluation and function-germ laws in both directions.
 It is in particular bijective (`stalkPullback_bijective`), as is pullback along a continuous
 linear equivalence (`ContinuousLinearEquiv.holomorphicStalkPullback_bijective`). For a boundaryless
-model, `OpenPartialHomeomorph.holomorphicStalkEquivModelSpace` identifies a manifold stalk with a
-stalk on a continuously linearly equivalent model space using any analytic chart;
+model, `OpenPartialHomeomorph.holomorphicStalkEquivModelSpace` identifies a charted-space stalk
+with a stalk on a continuously linearly equivalent model space using any analytic chart;
 `stalkEquivModelSpace` specializes this ring equivalence to the preferred chart, which identifies
 the stalk at `x` of a finite-dimensional manifold with a stalk of a model space in `Type`
 (`exists_ringEquiv_stalk_modelSpace`). Together with isolated-point evaluation in dimension zero,

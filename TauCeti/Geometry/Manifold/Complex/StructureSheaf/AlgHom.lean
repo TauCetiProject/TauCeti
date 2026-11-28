@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.MaximalIdeal
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Separated
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.RingTheory.AdicCompletion.Uniqueness
 import TauCeti.RingTheory.LocalRing.AlgHom
 
 /-!
@@ -32,7 +33,7 @@ When the target `Y` is a finite-dimensional boundaryless complex manifold and th
 (`instIsHausdorffMaximalIdealStalkOfOmega`) or any finite-dimensional boundaryless complex manifold
 (`instIsHausdorffMaximalIdealStalk`) — every `ℂ`-algebra homomorphism `ψ : 𝒪_{Y, y} →ₐ[ℂ] 𝒪_{X, x}`
 is induced by pullback along an analytic map germ `AnalyticMapGerm I J x y` (defined in
-`TauCeti.Geometry.Manifold.ContMDiff.Germ`) unique up to `=ᶠ[𝓝 x]`:
+`TauCeti.Geometry.Manifold.ContMDiff.Germ.Map`) unique up to `=ᶠ[𝓝 x]`:
 
 * When `Y` is modelled on `𝓘(ℂ, E')` with a holomorphic chart `e ∈ maximalAtlas 𝓘(ℂ, E') ω Y` at
   `y`, `OpenPartialHomeomorph.exists_stalkPullbackAt_eq` proves the existence of a map `f : X → Y`

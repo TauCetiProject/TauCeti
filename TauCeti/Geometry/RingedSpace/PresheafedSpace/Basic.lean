@@ -43,6 +43,9 @@ Mathlib's `AlgebraicGeometry.SheafedSpace.epi_of_base_surjective_of_stalk_mono`,
   section map of a composite morphism of presheafed spaces is the composite of the section maps.
 * `AlgebraicGeometry.PresheafedSpace.epi_of_base_surjective_of_c_app_mono`: a morphism which is
   surjective on points and a monomorphism on sections over every open is an epimorphism.
+* `AlgebraicGeometry.PresheafedSpace.Hom.iso_hom_appLE_comp_inv_appLE`,
+  `AlgebraicGeometry.PresheafedSpace.Hom.iso_inv_appLE_eq`: cancellation and inverse identification
+  for `appLE` of an isomorphism of presheafed spaces.
 -/
 
 public section
@@ -173,6 +176,35 @@ theorem congr_appLE {X Y : PresheafedSpace.{v, u, w} C} {k₁ k₂ : X ⟶ Y} (h
     (h₁ : V ≤ (Opens.map k₁.base).obj U) (h₂ : V ≤ (Opens.map k₂.base).obj U) :
     k₁.appLE U V h₁ = k₂.appLE U V h₂ := by
   subst hk; rfl
+
+/-- For an isomorphism `e : X ≅ Y` of presheafed spaces and matching opens `V ≤ e.hom⁻¹ U` and
+`U ≤ e.inv⁻¹ V`, the restricted section maps cancel. -/
+@[reassoc]
+theorem iso_hom_appLE_comp_inv_appLE {X Y : PresheafedSpace.{v, u, w} C} (e : X ≅ Y)
+    (U : Opens Y) (V : Opens X)
+    (hUV : V ≤ (Opens.map e.hom.base).obj U) (hVU : U ≤ (Opens.map e.inv.base).obj V) :
+    e.hom.appLE U V hUV ≫ e.inv.appLE V U hVU = 𝟙 (Y.presheaf.obj (op U)) := by
+  have h := appLE_comp_appLE e.inv e.hom U V U hUV hVU
+  rw [h, congr_appLE e.inv_hom_id _ (by simp), id_appLE]
+  exact (congrArg Y.presheaf.map (Subsingleton.elim _ (𝟙 (op U)))).trans (Y.presheaf.map_id (op U))
+
+/-- If `e : X ≅ Y` is an isomorphism of presheafed spaces with `e.hom.appLE U V hUV = f` and
+`g` is a left inverse to `f`, then `e.inv.appLE V U hVU = g`. -/
+theorem iso_inv_appLE_eq {X Y : PresheafedSpace.{v, u, w} C} (e : X ≅ Y)
+    (U : Opens Y) (V : Opens X)
+    (hUV : V ≤ (Opens.map e.hom.base).obj U) (hVU : U ≤ (Opens.map e.inv.base).obj V)
+    {f : Y.presheaf.obj (op U) ⟶ X.presheaf.obj (op V)}
+    {g : X.presheaf.obj (op V) ⟶ Y.presheaf.obj (op U)}
+    (hf : e.hom.appLE U V hUV = f) (hg : g ≫ f = 𝟙 (X.presheaf.obj (op V))) :
+    e.inv.appLE V U hVU = g := by
+  have hcomp : f ≫ e.inv.appLE V U hVU = 𝟙 (Y.presheaf.obj (op U)) :=
+    hf ▸ iso_hom_appLE_comp_inv_appLE e U V hUV hVU
+  calc
+    e.inv.appLE V U hVU
+        = 𝟙 (X.presheaf.obj (op V)) ≫ e.inv.appLE V U hVU := (Category.id_comp _).symm
+    _   = (g ≫ f) ≫ e.inv.appLE V U hVU := by rw [hg]
+    _   = g ≫ (f ≫ e.inv.appLE V U hVU) := Category.assoc _ _ _
+    _   = g := by rw [hcomp, Category.comp_id]
 
 end Hom
 
