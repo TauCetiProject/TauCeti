@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.NumberTheory.PrimeCounting
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Topology.Order.ProjIcc
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Cdf
 import TauCeti.NumberTheory.Mertens.Basic
