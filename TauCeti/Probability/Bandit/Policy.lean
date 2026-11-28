@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Kernel.IonescuTulcea.Traj
 public import TauCeti.Probability.Kernel.Composition.MeasureCompProd
-public import Mathlib.Probability.Kernel.CondDistrib
 
 /-!
 # Bandit policies and the law of their interaction with an environment
