@@ -629,18 +629,6 @@ section DiscreteValueGroup
 variable {R A : Type*} [NormedRing R] [SeminormedRing A] [SMul R A] [NormSMulClass R A]
   [NormMulClass A] {f : R⟦X⟧} {b : ℝ} {k : ℤ}
 
-private theorem norm_le_zpow_or_zpow_succ_le_of_disc {A : Type*} [SeminormedRing A] {b : ℝ}
-    (hb : 1 < b) (hdisc : ∀ y : A, ‖y‖ ≠ 0 → ∃ m : ℤ, ‖y‖ = b ^ m) (k : ℤ) (y : A) :
-    ‖y‖ ≤ b ^ k ∨ b ^ (k + 1) ≤ ‖y‖ := by
-  have hb0 : 0 < b := zero_lt_one.trans hb
-  rcases eq_or_ne ‖y‖ 0 with hy0 | hy0
-  · exact Or.inl (hy0 ▸ (zpow_pos hb0 k).le)
-  · obtain ⟨m, hm⟩ := hdisc y hy0
-    rw [hm]
-    rcases le_or_gt m k with hmk | hkm
-    · exact Or.inl (zpow_le_zpow_right₀ hb.le hmk)
-    · exact Or.inr (zpow_le_zpow_right₀ hb.le (by omega))
-
 /-- **Upper bound on the pointwise convergence radius in a discretely normed extension.** Suppose
 `b > 1` and every nonzero norm in `A` is an integer power `b ^ m` (`m ∈ ℤ`). If `f` is not
 restricted at `b ^ (k + 1)`, then `f.convergenceRadius A ≤ ENNReal.ofReal (b ^ k)`. Neither
@@ -649,7 +637,7 @@ theorem convergenceRadius_le_ofReal_zpow (hb : 1 < b)
     (hdisc : ∀ y : A, ‖y‖ ≠ 0 → ∃ m : ℤ, ‖y‖ = b ^ m) (hnres : ¬f.IsRestricted (b ^ (k + 1))) :
     f.convergenceRadius A ≤ ENNReal.ofReal (b ^ k) :=
   convergenceRadius_le_ofReal_of_norm_le_or_le (zpow_pos (zero_lt_one.trans hb) _).le
-    (norm_le_zpow_or_zpow_succ_le_of_disc hb hdisc k) hnres
+    (TauCeti.norm_le_zpow_or_zpow_succ_le_of_disc hb hdisc k) hnres
 
 /-- **Pointwise convergence radius in a discretely normed extension.** Suppose `b > 1` and every
 nonzero norm in `A` is an integer power `b ^ m` (`m ∈ ℤ`). In a complete ultrametric extension `A`,
@@ -660,7 +648,7 @@ theorem convergenceRadius_eq_ofReal_zpow [IsUltrametricDist A] [CompleteSpace A]
     (hres : f.IsRestricted (b ^ k)) (hnres : ¬f.IsRestricted (b ^ (k + 1))) :
     f.convergenceRadius A = ENNReal.ofReal (b ^ k) :=
   convergenceRadius_eq_ofReal_of_norm_le_or_le (zpow_pos (zero_lt_one.trans hb) _).le
-    hres hatt (norm_le_zpow_or_zpow_succ_le_of_disc hb hdisc k) hnres
+    hres hatt (TauCeti.norm_le_zpow_or_zpow_succ_le_of_disc hb hdisc k) hnres
 
 /-- **Pointwise convergence radius in a discretely normed extension strictly inside `f.radius`.**
 Suppose `b > 1` and every nonzero norm in `A` is an integer power `b ^ m` (`m ∈ ℤ`). In any

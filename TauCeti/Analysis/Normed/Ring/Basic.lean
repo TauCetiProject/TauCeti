@@ -305,6 +305,20 @@ theorem tendsto_finsetProd_cofinite_zero {ι R : Type*} [SeminormedCommRing R] {
       _ = ε := div_mul_cancel₀ ε (zero_lt_one.trans_le hM1).ne'
   exact hs.not_gt hprod
 
+/-- In a space with `Norm` whose nonzero norms are integer powers of `b > 1`, every element has
+norm either at most `b ^ k` or at least `b ^ (k + 1)`, so the open interval `(b ^ k, b ^ (k + 1))`
+contains no norms. -/
+theorem norm_le_zpow_or_zpow_succ_le_of_disc {A : Type*} [Norm A] {b : ℝ} (hb : 1 < b)
+    (hdisc : ∀ y : A, ‖y‖ ≠ 0 → ∃ m : ℤ, ‖y‖ = b ^ m) (k : ℤ) (y : A) :
+    ‖y‖ ≤ b ^ k ∨ b ^ (k + 1) ≤ ‖y‖ := by
+  rcases eq_or_ne ‖y‖ 0 with hy0 | hy0
+  · exact Or.inl (hy0 ▸ (zpow_pos (zero_lt_one.trans hb) k).le)
+  · obtain ⟨m, hm⟩ := hdisc y hy0
+    rw [hm]
+    rcases le_or_gt m k with hmk | hkm
+    · exact Or.inl (zpow_le_zpow_right₀ hb.le hmk)
+    · exact Or.inr (zpow_le_zpow_right₀ hb.le (by omega))
+
 end TauCeti
 
 namespace IsIdempotentElem
