@@ -24,7 +24,7 @@ fibre, the divisibility axiom `TauCeti.NumericalType.weight_dvd` of an abstract 
 
 ## References
 
-* [The Stacks Project, Section 55.8](https://stacks.math.columbia.edu/tag/0C6Y) and
+* [The Stacks Project, Section 55.3](https://stacks.math.columbia.edu/tag/0C6Y) and
   [Section 55.9](https://stacks.math.columbia.edu/tag/0C5Y), for the numerical type of a regular
   model.
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Section 9.1.

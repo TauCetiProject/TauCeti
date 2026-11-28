@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.ConstantField
-public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 public import TauCeti.AlgebraicGeometry.SpecialFiber.Components
 public import TauCeti.AlgebraicGeometry.SpecialFiber.Subscheme
 
@@ -52,7 +51,7 @@ That the weight `wᵢ` of the `i`-th component divides the `i`-th row of the int
 
 ## References
 
-* [The Stacks Project, Section 55.8](https://stacks.math.columbia.edu/tag/0C6Y) and
+* [The Stacks Project, Section 55.3](https://stacks.math.columbia.edu/tag/0C6Y) and
   [Section 55.9](https://stacks.math.columbia.edu/tag/0C5Y), for the weights and genera of the
   components of the numerical type of a regular model.
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Section 9.1.

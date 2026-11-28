@@ -135,22 +135,25 @@ lemma coe_torsionCongr (f : T.Equiv T') (ℓ : ℕ) (x : T.torsion ℓ) :
 @[simp]
 lemma torsionCongr_refl (ℓ : ℕ) :
     (Equiv.refl : T.Equiv T).torsionCongr ℓ = LinearEquiv.refl (ZMod ℓ) (T.torsion ℓ) := by
-  rw [torsionCongr, picCongr_refl]
-  exact AddEquiv.torsionByZModLinearEquiv_refl ℓ
+  ext x
+  rw [coe_torsionCongr, picCongr_refl]
+  rfl
 
 /-- Torsion transport respects composition of equivalences of numerical types. -/
 @[simp]
 lemma torsionCongr_trans (f : T.Equiv T') (g : T'.Equiv T'') (ℓ : ℕ) :
     (f.trans g).torsionCongr ℓ = (f.torsionCongr ℓ).trans (g.torsionCongr ℓ) := by
-  rw [torsionCongr, picCongr_trans]
-  exact AddEquiv.torsionByZModLinearEquiv_trans f.picCongr.toAddEquiv g.picCongr.toAddEquiv ℓ
+  ext x
+  rw [coe_torsionCongr, LinearEquiv.trans_apply, coe_torsionCongr, coe_torsionCongr,
+    picCongr_trans, LinearEquiv.trans_apply]
 
 /-- Torsion transport along an inverse equivalence is the inverse linear equivalence. -/
 @[simp]
 lemma torsionCongr_symm (f : T.Equiv T') (ℓ : ℕ) :
     (f.torsionCongr ℓ).symm = f.symm.torsionCongr ℓ := by
-  rw [torsionCongr, AddEquiv.torsionByZModLinearEquiv_symm, torsionCongr, ← picCongr_symm]
-  rfl
+  refine LinearEquiv.ext fun x ↦ (f.torsionCongr ℓ).injective <| Subtype.ext ?_
+  rw [LinearEquiv.apply_symm_apply, coe_torsionCongr, coe_torsionCongr, ← picCongr_symm,
+    LinearEquiv.apply_symm_apply]
 
 /-- Torsion dimension is invariant under equivalence of numerical types. -/
 theorem finrank_torsion_eq (f : T.Equiv T') (ℓ : ℕ) :

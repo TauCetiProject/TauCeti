@@ -22,7 +22,7 @@ Building on `AlgebraicGeometry.Scheme.Hom.totalSpecialFiberPicSpecialization` fr
 formula `toIntLinearMap_specialFiberMultidegree_comp_verticalLineBundleLinear` from
 `TauCeti.AlgebraicGeometry.IntersectionNumber.Specialization`, and the vertical Cartier
 homomorphism `AlgebraicGeometry.Scheme.Hom.verticalLineBundleLinear` from
-`TauCeti.AlgebraicGeometry.SpecialFiber.LinearEquivalence`, this module proves:
+`TauCeti.AlgebraicGeometry.SpecialFiber.Vertical`, this module proves:
 
 * `AlgebraicGeometry.Scheme.Hom.ker_totalSpecialFiberPicSpecialization`:
   `ker totalSpecialFiberPicSpecialization.toIntLinearMap =
@@ -83,35 +83,16 @@ local notation "hbase" =>
 
 /-- Vertical combinations of special-fibre components map onto `(𝒯).principalDivisors`. -/
 theorem map_specialFiberMultidegree_range_verticalLineBundleLinear :
-    (LinearMap.range (toBase.verticalLineBundleLinear hX hη)).map
+    letI := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
+    (LinearMap.range (toBase.verticalLineBundleLinear hη)).map
         (toBase.specialFiberMultidegree hX hη
           toBase.specialFiberCohomologyFiniteDimensional_zero
           hC.finiteDimensional_one).toIntLinearMap =
       (𝒯).principalDivisors := by
+  let := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
   rw [← LinearMap.range_comp,
     toBase.toIntLinearMap_specialFiberMultidegree_comp_verticalLineBundleLinear,
     ← toBase.specialFiberNumericalType_principalDivisors hX hη hC hπ hreg hconn]
-
-/-- Every vertical combination of special-fibre components maps to `0` in `(𝒯).Pic`. -/
-@[simp] theorem totalSpecialFiberPicSpecialization_comp_verticalLineBundleLinear :
-    (toBase.totalSpecialFiberPicSpecialization hX hη hC hπ hreg hconn).toIntLinearMap ∘ₗ
-        toBase.verticalLineBundleLinear hX hη = 0 := by
-  ext v
-  simp only [LinearMap.comp_apply, AddMonoidHom.coe_toIntLinearMap, LinearMap.zero_apply,
-    toBase.totalSpecialFiberPicSpecialization_apply]
-  refine (Submodule.Quotient.mk_eq_zero _).mpr ?_
-  rw [toBase.specialFiberMultidegree_verticalLineBundleLinear,
-    toBase.specialFiberNumericalType_principalDivisors hX hη hC hπ hreg hconn]
-  exact ⟨v, rfl⟩
-
-/-- Pointwise form of `totalSpecialFiberPicSpecialization_comp_verticalLineBundleLinear`. -/
-@[simp high] lemma totalSpecialFiberPicSpecialization_verticalLineBundleLinear
-    (v : (𝒯).Component → ℤ) :
-    toBase.totalSpecialFiberPicSpecialization hX hη hC hπ hreg hconn
-        (toBase.verticalLineBundleLinear hX hη v) = 0 :=
-  LinearMap.congr_fun
-    (toBase.totalSpecialFiberPicSpecialization_comp_verticalLineBundleLinear hX hη hC hπ hreg hconn)
-    v
 
 /-- **Kernel of `totalSpecialFiberPicSpecialization`**:
 `ker totalSpecialFiberPicSpecialization.toIntLinearMap =
@@ -120,12 +101,14 @@ This is the total-space counterpart of
 [Stacks, Lemma 55.13.2 (Tag 0CAC)](https://stacks.math.columbia.edu/tag/0CAC), which characterizes
 the kernel of `Pic(C) → Pic(T)` on the generic fibre. -/
 theorem ker_totalSpecialFiberPicSpecialization :
+    letI := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
     LinearMap.ker
         (toBase.totalSpecialFiberPicSpecialization hX hη hC hπ hreg hconn).toIntLinearMap =
       LinearMap.ker (toBase.specialFiberMultidegree hX hη
           toBase.specialFiberCohomologyFiniteDimensional_zero
           hC.finiteDimensional_one).toIntLinearMap ⊔
-        LinearMap.range (toBase.verticalLineBundleLinear hX hη) := by
+        LinearMap.range (toBase.verticalLineBundleLinear hη) := by
+  let := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
   have hcomp :
       (toBase.totalSpecialFiberPicSpecialization hX hη hC hπ hreg hconn).toIntLinearMap =
         (𝒯).principalDivisors.mkQ ∘ₗ (toBase.specialFiberMultidegree hX hη
@@ -138,6 +121,24 @@ theorem ker_totalSpecialFiberPicSpecialization :
   rw [Submodule.ker_mkQ,
     ← toBase.map_specialFiberMultidegree_range_verticalLineBundleLinear hX hη hC hπ hreg hconn]
   exact (Submodule.comap_map_eq _ _).trans (sup_comm _ _)
+
+/-- Every vertical combination of special-fibre components maps to `0` in `(𝒯).Pic`. -/
+@[simp] theorem totalSpecialFiberPicSpecialization_comp_verticalLineBundleLinear :
+    letI := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
+    (toBase.totalSpecialFiberPicSpecialization hX hη hC hπ hreg hconn).toIntLinearMap ∘ₗ
+        toBase.verticalLineBundleLinear hη = 0 :=
+  LinearMap.range_le_ker_iff.mp <|
+    (toBase.ker_totalSpecialFiberPicSpecialization hX hη hC hπ hreg hconn).symm ▸ le_sup_right
+
+/-- Pointwise form of `totalSpecialFiberPicSpecialization_comp_verticalLineBundleLinear`. -/
+@[simp high] lemma totalSpecialFiberPicSpecialization_verticalLineBundleLinear
+    (v : (𝒯).Component → ℤ) :
+    letI := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
+    toBase.totalSpecialFiberPicSpecialization hX hη hC hπ hreg hconn
+        (toBase.verticalLineBundleLinear hη v) = 0 :=
+  LinearMap.congr_fun
+    (toBase.totalSpecialFiberPicSpecialization_comp_verticalLineBundleLinear hX hη hC hπ hreg hconn)
+    v
 
 /-- **Pointwise kernel characterization of `totalSpecialFiberPicSpecialization`**: a class `a` on
 `X` maps to `0` in `(𝒯).Pic` iff some vertical twist `a * ∏ᵢ [𝒪_X(Cᵢ)] ^ vᵢ` has degree zero on
@@ -152,14 +153,15 @@ theorem totalSpecialFiberPicSpecialization_ofMul_eq_zero_iff (a : LineBundleClas
             (a * ∏ i : (𝒯).Component,
               (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
                 hX i.val.property).toInvertibleSheaf)⁻¹ ^ v i)) = 0 := by
+  let := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
   have hprod (w : (𝒯).Component → ℤ) :
-      (toBase.verticalLineBundleLinear hX hη w).toMul =
+      (toBase.verticalLineBundleLinear hη w).toMul =
         ∏ i : (𝒯).Component,
           (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
             hX i.val.property).toInvertibleSheaf)⁻¹ ^ w i :=
-    toBase.toMul_verticalLineBundleLinear_apply hX hη w
+    toBase.toMul_verticalLineBundleLinear_apply hη w
   have hbmul (w : (𝒯).Component → ℤ) :
-      (Additive.ofMul a + toBase.verticalLineBundleLinear hX hη w).toMul =
+      (Additive.ofMul a + toBase.verticalLineBundleLinear hη w).toMul =
         a * ∏ i : (𝒯).Component,
           (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
             hX i.val.property).toInvertibleSheaf)⁻¹ ^ w i := by
@@ -168,20 +170,20 @@ theorem totalSpecialFiberPicSpecialization_ofMul_eq_zero_iff (a : LineBundleClas
     ker_totalSpecialFiberPicSpecialization, Submodule.mem_sup]
   refine ⟨?_, ?_⟩
   · rintro ⟨b, hb, _, ⟨v, rfl⟩, hbv⟩
-    have hb' : Additive.ofMul a + toBase.verticalLineBundleLinear hX hη (-v) = b := by
+    have hb' : Additive.ofMul a + toBase.verticalLineBundleLinear hη (-v) = b := by
       rw [map_neg, ← hbv, add_neg_cancel_right]
     rw [← hb', LinearMap.mem_ker, AddMonoidHom.coe_toIntLinearMap, ← ofMul_toMul
-      (Additive.ofMul a + toBase.verticalLineBundleLinear hX hη (-v)),
+      (Additive.ofMul a + toBase.verticalLineBundleLinear hη (-v)),
       toBase.specialFiberMultidegree_eq_zero_iff] at hb
     exact ⟨-v, fun j ↦ by rw [← hbmul (-v)]; exact hb j⟩
   · rintro ⟨v, hv⟩
-    have hneg : toBase.verticalLineBundleLinear hX hη (-v) =
-        -toBase.verticalLineBundleLinear hX hη v := map_neg _ _
-    refine ⟨Additive.ofMul a + toBase.verticalLineBundleLinear hX hη v, ?_,
-      toBase.verticalLineBundleLinear hX hη (-v), ⟨-v, rfl⟩,
+    have hneg : toBase.verticalLineBundleLinear hη (-v) =
+        -toBase.verticalLineBundleLinear hη v := map_neg _ _
+    refine ⟨Additive.ofMul a + toBase.verticalLineBundleLinear hη v, ?_,
+      toBase.verticalLineBundleLinear hη (-v), ⟨-v, rfl⟩,
       by rw [hneg, add_neg_cancel_right]⟩
     rw [LinearMap.mem_ker, AddMonoidHom.coe_toIntLinearMap, ← ofMul_toMul
-      (Additive.ofMul a + toBase.verticalLineBundleLinear hX hη v),
+      (Additive.ofMul a + toBase.verticalLineBundleLinear hη v),
       toBase.specialFiberMultidegree_eq_zero_iff]
     exact fun j ↦ by rw [hbmul v]; exact hv j
 
@@ -190,13 +192,15 @@ theorem totalSpecialFiberPicSpecialization_ofMul_eq_zero_iff (a : LineBundleClas
 /-- Every vertical divisor linearly equivalent to zero on `X` lies in
 `ker T.intersection.vecMulLinear`. -/
 theorem ker_verticalLineBundleLinear_le_ker_vecMulLinear_intersection :
-    LinearMap.ker (toBase.verticalLineBundleLinear hX hη) ≤
+    letI := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
+    LinearMap.ker (toBase.verticalLineBundleLinear hη) ≤
       LinearMap.ker (𝒯).intersection.vecMulLinear := by
+  let := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
   intro v hv
   rw [LinearMap.mem_ker] at hv
   have h1 : (𝒯).weightScaling (toBase.specialFiberMultidegree hX hη
       toBase.specialFiberCohomologyFiniteDimensional_zero hC.finiteDimensional_one
-      (toBase.verticalLineBundleLinear hX hη v)) = (𝒯).intersection.vecMulLinear v := by
+      (toBase.verticalLineBundleLinear hη v)) = (𝒯).intersection.vecMulLinear v := by
     rw [toBase.specialFiberMultidegree_verticalLineBundleLinear,
       ← toBase.specialFiberNumericalType_weightedIntersection hX hη hC hπ hreg hconn]
     exact LinearMap.congr_fun (𝒯).weightScaling_comp_weightedIntersection v
@@ -207,7 +211,9 @@ theorem ker_verticalLineBundleLinear_le_ker_vecMulLinear_intersection :
 
 /-- Any `v ∈ ker verticalLineBundleLinear` satisfies `mⱼ vᵢ = mᵢ vⱼ` for all `i, j`. -/
 theorem multiplicity_mul_eq_of_mem_ker_verticalLineBundleLinear {v : (𝒯).Component → ℤ}
-    (hv : v ∈ LinearMap.ker (toBase.verticalLineBundleLinear hX hη))
+    (hv : letI := fun x ↦
+        TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
+      v ∈ LinearMap.ker (toBase.verticalLineBundleLinear hη))
     (i j : (𝒯).Component) :
     ((𝒯).multiplicity j : ℤ) * v i = ((𝒯).multiplicity i : ℤ) * v j := by
   have hker : (𝒯).intersection.vecMulLinear v = 0 :=
@@ -218,18 +224,20 @@ theorem multiplicity_mul_eq_of_mem_ker_verticalLineBundleLinear {v : (𝒯).Comp
 include hC hπ hreg hconn in
 /-- The kernel of `verticalLineBundleLinear` has `ℤ`-rank `1`. -/
 theorem finrank_ker_verticalLineBundleLinear :
-    Module.finrank ℤ (LinearMap.ker (toBase.verticalLineBundleLinear hX hη)) = 1 := by
+    letI := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
+    Module.finrank ℤ (LinearMap.ker (toBase.verticalLineBundleLinear hη)) = 1 := by
+  let := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
   let i₀ : (𝒯).Component := Classical.choice (𝒯).componentNonempty
   have : Module.Finite ℤ (LinearMap.ker (𝒯).intersection.vecMulLinear) :=
     .of_fg ((𝒯).ker_vecMulLinear_intersection_eq_span ▸ Submodule.fg_span (Set.finite_singleton _))
-  have hle : Module.finrank ℤ (LinearMap.ker (toBase.verticalLineBundleLinear hX hη)) ≤ 1 :=
+  have hle : Module.finrank ℤ (LinearMap.ker (toBase.verticalLineBundleLinear hη)) ≤ 1 :=
     (Submodule.finrank_mono (t := LinearMap.ker (𝒯).intersection.vecMulLinear)
       (toBase.ker_verticalLineBundleLinear_le_ker_vecMulLinear_intersection
         hX hη hC hπ hreg hconn)).trans_eq
       (𝒯).finrank_ker_vecMulLinear_intersection
   refine le_antisymm hle
     (Module.finrank_pos_iff_exists_ne_zero.mpr
-      ⟨⟨_, toBase.multiplicity_mem_ker_verticalLineBundleLinear hX hη hπ hreg⟩,
+      ⟨⟨_, toBase.multiplicity_mem_ker_verticalLineBundleLinear hη hπ hreg⟩,
         fun h ↦ (Int.natCast_ne_zero.mpr ((𝒯).multiplicity i₀).ne_zero)
           (congrFun (congrArg Subtype.val h) i₀)⟩)
 
@@ -237,20 +245,23 @@ theorem finrank_ker_verticalLineBundleLinear :
 spanned over `ℤ` by the multiplicity vector `i ↦ mᵢ`. -/
 theorem ker_verticalLineBundleLinear_eq_span_of_gcd_eq_one
     (hgcd : Finset.univ.gcd (fun i : (𝒯).Component ↦ ((𝒯).multiplicity i : ℕ)) = 1) :
-    LinearMap.ker (toBase.verticalLineBundleLinear hX hη) =
-      Submodule.span ℤ {fun i ↦ ((𝒯).multiplicity i : ℤ)} :=
-  le_antisymm
+    letI := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
+    LinearMap.ker (toBase.verticalLineBundleLinear hη) =
+      Submodule.span ℤ {fun i ↦ ((𝒯).multiplicity i : ℤ)} := by
+  let := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
+  exact le_antisymm
     ((toBase.ker_verticalLineBundleLinear_le_ker_vecMulLinear_intersection
       hX hη hC hπ hreg hconn).trans_eq
       ((𝒯).ker_vecMulLinear_intersection_eq_span_of_gcd_eq_one hgcd))
     (Submodule.span_le.mpr (Set.singleton_subset_iff.mpr <|
-      toBase.multiplicity_mem_ker_verticalLineBundleLinear hX hη hπ hreg))
+      toBase.multiplicity_mem_ker_verticalLineBundleLinear hη hπ hreg))
 
 /-- If some component `C_{i₀}` has multiplicity `1`, `ker verticalLineBundleLinear` is spanned over
 `ℤ` by the multiplicity vector `i ↦ mᵢ`. -/
 theorem ker_verticalLineBundleLinear_eq_span_of_multiplicity_eq_one
     {i₀ : (𝒯).Component} (hi₀ : (𝒯).multiplicity i₀ = 1) :
-    LinearMap.ker (toBase.verticalLineBundleLinear hX hη) =
+    letI := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
+    LinearMap.ker (toBase.verticalLineBundleLinear hη) =
       Submodule.span ℤ {fun i ↦ ((𝒯).multiplicity i : ℤ)} :=
   toBase.ker_verticalLineBundleLinear_eq_span_of_gcd_eq_one hX hη hC hπ hreg hconn <|
     Nat.dvd_one.mp <| by
@@ -260,8 +271,10 @@ theorem ker_verticalLineBundleLinear_eq_span_of_multiplicity_eq_one
 /-- When `X_s` is reduced, `v ∈ ker verticalLineBundleLinear` iff `v` is constant. -/
 theorem mem_ker_verticalLineBundleLinear_iff_of_isReduced [IsReduced (specialFiber R toBase).left]
     (v : (𝒯).Component → ℤ) :
-    v ∈ LinearMap.ker (toBase.verticalLineBundleLinear hX hη) ↔
+    letI := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
+    v ∈ LinearMap.ker (toBase.verticalLineBundleLinear hη) ↔
       ∃ c : ℤ, v = fun _ ↦ c := by
+  let := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
   have hm : ∀ i : (𝒯).Component, (𝒯).multiplicity i = 1 :=
     (toBase.isReduced_specialFiber_iff_multiplicity_eq_one hX hη hC hπ hreg hconn).mp
       inferInstance

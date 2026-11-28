@@ -330,8 +330,22 @@ theorem mem_ker_totalSpecialFiberPicSpecialization_iff {a : Additive (LineBundle
   refine (Submodule.Quotient.mk_eq_zero _).trans
     ((NumericalType.mem_principalDivisors_iff _).trans (exists_congr fun v ↦ ?_))
   rw [toBase.specialFiberNumericalType_weightedIntersection hX hη hC hπ hreg hconn]
-  have hmul := (toBase.specialFiberMultidegree_prod_zpow hX hη
-    toBase.specialFiberCohomologyFiniteDimensional_zero hC.finiteDimensional_one v).symm
+  let := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
+  have hv : toBase.verticalLineBundleLinear hη v =
+      Additive.ofMul (∏ j, (LineBundleClass.mk
+        (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
+          hX j.val.property).toInvertibleSheaf)⁻¹ ^ v j) :=
+    Additive.toMul.injective <|
+      (toBase.toMul_verticalLineBundleLinear_apply hη v).trans (toMul_ofMul _).symm
+  have hmul : v ᵥ* toBase.specialFiberWeightedIntersectionMatrix hX hη =
+      toBase.specialFiberMultidegree hX hη
+        toBase.specialFiberCohomologyFiniteDimensional_zero hC.finiteDimensional_one
+        (Additive.ofMul (∏ j, (LineBundleClass.mk
+          (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
+            hX j.val.property).toInvertibleSheaf)⁻¹ ^ v j)) :=
+    (toBase.specialFiberMultidegree_verticalLineBundleLinear hX hη
+      toBase.specialFiberCohomologyFiniteDimensional_zero hC.finiteDimensional_one v).symm.trans
+      (congrArg _ hv)
   exact ⟨fun h ↦ h.symm.trans hmul, fun h ↦ hmul.trans h.symm⟩
 
 /-- Under `T.picToCoker : T.Pic →ₗ[ℤ] T.Coker`
@@ -369,9 +383,8 @@ theorem degree_reducedSpecialFiberPicSpecialization
             ((mem_toFinset _).mp i.property))
         ((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).multiplicity i : ℤ) *
           LineBundleClass.intersectionNumber (ResidueField R)
-            (subschemeToReducedSpecialFiber ((ker_reducedSpecialFiberι_eq_radical R toBase).trans_le
-              (toBase.radical_ker_specialFiberι_le_vanishingIdeal_closure_singleton
-                ((mem_toFinset _).mp i.property)))) a.toMul := by
+            (toBase.subschemeClosureToReducedSpecialFiber ((mem_toFinset _).mp i.property))
+            a.toMul := by
   rw [reducedSpecialFiberPicSpecialization_apply]
   refine (NumericalType.degree_mk _ _).trans ((NumericalType.totalDegree_apply _ _).trans ?_)
   refine Finset.sum_congr rfl fun i _ ↦ ?_
@@ -403,7 +416,7 @@ theorem degree_specialFiberPicSpecialization
     ((mem_toFinset _).mp i.property))
   rw [MonoidHom.toAdditive_apply_apply, toMul_ofMul, LineBundleClass.pullbackHom_apply,
     LineBundleClass.intersectionNumber_pullback,
-    TauCeti.subschemeToReducedSpecialFiber_reducedSpecialFiberToSpecialFiber]
+    subschemeClosureToReducedSpecialFiber_reducedSpecialFiberToSpecialFiber]
 
 /-- The numerical total degree of `totalSpecialFiberPicSpecialization a` is `∑ᵢ mᵢ (a · Cᵢ)_k`. -/
 theorem degree_totalSpecialFiberPicSpecialization (a : Additive (LineBundleClass X)) :
@@ -632,7 +645,7 @@ def totalPicSpecialization :
 
 /-- `M.totalPicSpecialization` equals `M.toBase.totalSpecialFiberPicSpecialization` at the
 chosen uniformizer of `R`. -/
-theorem totalPicSpecialization_eq :
+theorem totalPicSpecialization_def :
     M.totalPicSpecialization hX hC =
       M.toBase.totalSpecialFiberPicSpecialization hX
         (M.toBase.base_genericPoint_ne_closedPoint (IsDiscreteValuationRing.not_a_field R)) hC
@@ -867,10 +880,8 @@ theorem degree_reducedSpecialFiberPicSpecialization
             (M.base_eq_closedPoint_of_numericalType hX hC i))
         ((M.numericalType hX hC).multiplicity i : ℤ) *
           LineBundleClass.intersectionNumber (ResidueField R)
-            (subschemeToReducedSpecialFiber
-              ((ker_reducedSpecialFiberι_eq_radical R M.toBase).trans_le
-                (M.toBase.radical_ker_specialFiberι_le_vanishingIdeal_closure_singleton
-                  (M.base_eq_closedPoint_of_numericalType hX hC i)))) a.toMul :=
+            (M.toBase.subschemeClosureToReducedSpecialFiber
+              (M.base_eq_closedPoint_of_numericalType hX hC i)) a.toMul :=
   M.toBase.degree_reducedSpecialFiberPicSpecialization hX _ hC
     TauCeti.IsDiscreteValuationRing.maximalIdeal_eq_span_exists_irreducible_choose
     TauCeti.IsDiscreteValuationRing.isSMulRegular_exists_irreducible_choose
