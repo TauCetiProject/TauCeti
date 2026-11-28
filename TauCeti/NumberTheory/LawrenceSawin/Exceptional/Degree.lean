@@ -88,18 +88,18 @@ theorem exceptionalDegree_pos (j : ℕ) : 0 < exceptionalDegree j := by
   exact Nat.choose_pos (by omega)
 
 /-- The seed contributes degree one at exponent one. -/
-theorem exceptionalDegree_zero : exceptionalDegree 0 = 1 := by
+@[simp] theorem exceptionalDegree_zero : exceptionalDegree 0 = 1 := by
   rw [exceptionalDegree_eq_choose, exceptionalPair_zero]
   decide
 
 /-- The first geometric exception has normalized degree 8855. -/
-theorem exceptionalDegree_one : exceptionalDegree 1 = 8855 := by
+@[simp] theorem exceptionalDegree_one : exceptionalDegree 1 = 8855 := by
   rw [exceptionalDegree_eq_choose, exceptionalPair_one]
   rw [Nat.choose_eq_factorial_div_factorial (by decide)]
   decide
 
 /-- The next exceptional pair `(20, 76)` has the indicated normalized degree. -/
-theorem exceptionalDegree_two : exceptionalDegree 2 = 36030431772522503316 := by
+@[simp] theorem exceptionalDegree_two : exceptionalDegree 2 = 36030431772522503316 := by
   rw [exceptionalDegree_eq_choose, exceptionalPair_two]
   rw [Nat.choose_eq_factorial_div_factorial (by decide)]
   decide
