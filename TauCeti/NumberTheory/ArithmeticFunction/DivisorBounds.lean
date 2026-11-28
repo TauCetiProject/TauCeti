@@ -12,7 +12,7 @@ import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import TauCeti.NumberTheory.ArithmeticFunction.Zeta
 public import Mathlib.NumberTheory.Harmonic.Bounds
-import TauCeti.Analysis.SpecialFunctions.Log.SumLogDivAddPow
+import TauCeti.Analysis.SpecialFunctions.Log.SumLogDiv.AddPow
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Basic
 import TauCeti.NumberTheory.ArithmeticFunction.Misc
 import TauCeti.NumberTheory.Divisors
@@ -383,9 +383,11 @@ theorem sum_Ioc_zeta_pow_le_div_factorial_mul_log_add_pow (k : ℕ) {x : ℝ} (h
         rw [mul_sum]
         exact sum_congr rfl fun d _ ↦ by ring
       _ ≤ _ := by
-        refine (mul_le_mul_of_nonneg_left (TauCeti.sum_Ioc_log_div_add_pow_div_le k hx)
+        refine (mul_le_mul_of_nonneg_left
+          (TauCeti.sum_Ioc_log_div_add_pow_div_le k hx (Nat.cast_nonneg k))
           (by positivity)).trans_eq ?_
-        rw [Nat.factorial_succ, Nat.cast_mul]
+        rw [Nat.factorial_succ, Nat.cast_mul, div_mul_eq_div_div]
+        push_cast
         ring
 
 /-- A coefficient-one summatory bound for three to the number of distinct prime factors. -/

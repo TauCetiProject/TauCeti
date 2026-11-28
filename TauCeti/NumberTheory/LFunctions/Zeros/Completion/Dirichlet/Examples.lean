@@ -10,7 +10,7 @@ import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Dyadic.Classification
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic
-import TauCeti.Analysis.SpecialFunctions.Log.SumLogDivSq
+import TauCeti.Analysis.SpecialFunctions.Log.SumLogDiv.Sq
 import Mathlib.Tactic.NormNum
 
 /-!

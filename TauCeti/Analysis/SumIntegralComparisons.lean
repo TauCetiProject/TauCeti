@@ -20,6 +20,8 @@ Finite uniform-mesh sums also bracket the integral on `[0, δ * N]`, including z
 and their gap vanishes under refinement of a fixed interval. For a decreasing or increasing
 function on `[x₀, x₀ + a]` with `a` a natural number, the sum of its values at the right
 endpoints of the unit cells differs from its integral by at most `|f x₀ - f (x₀ + a)|`.
+`AntitoneOn.sum_Ioc_le_integral` bounds the right-endpoint sum over `a < n ≤ b`
+by the integral over `[a, b]` for a decreasing function and natural endpoints.
 A nonnegative decreasing integrable function on the positive half-line vanishes at infinity.
 
 For `f` nonnegative and decreasing on `[a, ∞)`, with `a` a natural number, the differences
@@ -213,6 +215,14 @@ theorem abs_sum_range_sub_integral_le {x₀ : ℝ} {a : ℕ} (hf : AntitoneOn f 
   rw [abs_le]
   constructor <;> linarith [hf.integral_le_sum, hf.sum_le_integral]
 
+/-- For a decreasing function on `[a, b]` with natural endpoints `a ≤ b`, its sum at
+the right endpoints of the unit intervals is at most its integral. -/
+theorem sum_Ioc_le_integral {a b : ℕ} (hf : AntitoneOn f (Icc (a : ℝ) (b : ℝ)))
+    (hab : a ≤ b) :
+    (∑ n ∈ Finset.Ioc a b, f n) ≤ ∫ t in (a : ℝ)..(b : ℝ), f t := by
+  have h := hf.sum_le_integral_Ico hab
+  rwa [Finset.sum_Ico_add' (fun n : ℕ => f n) a b 1, Finset.Ico_add_one_add_one_eq_Ioc] at h
+
 /-! ### The integral-test constant -/
 
 section IntegralTestConstant
@@ -232,10 +242,8 @@ theorem antitoneOn_sum_Ioc_sub_integral (hf : AntitoneOn f (Ici (a : ℝ))) :
   intro N (hN : a ≤ N) M (hM : a ≤ M) hNM
   have hN' : (a : ℝ) ≤ N := Nat.cast_le.2 hN
   have hM' : (a : ℝ) ≤ M := Nat.cast_le.2 hM
-  -- the right-endpoint sum over `(N, M]` lies below `∫_N^M f`
-  have hsum : ∑ n ∈ Finset.Ioc N M, f n ≤ ∫ t in (N : ℝ)..M, f t := by
-    have h := (hf.mono fun t (ht : t ∈ Icc (N : ℝ) M) => hN'.trans ht.1).sum_le_integral_Ico hNM
-    rwa [Finset.sum_Ico_add' (fun n : ℕ => f n) N M 1, Finset.Ico_add_one_add_one_eq_Ioc] at h
+  have hanti : AntitoneOn f (Icc (N : ℝ) (M : ℝ)) := hf.mono fun _ ht => hN'.trans ht.1
+  have hsum := hanti.sum_Ioc_le_integral hNM
   simp only
   rw [← Finset.sum_Ioc_consecutive _ hN hNM, ← intervalIntegral.integral_add_adjacent_intervals
     (hf.intervalIntegrable_of_le le_rfl hN') (hf.intervalIntegrable_of_le hN' hM')]
