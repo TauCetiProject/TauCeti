@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Basic
-public import TauCeti.AlgebraicGeometry.IntersectionNumber.Weight
+public import TauCeti.AlgebraicGeometry.IntersectionNumber.Weight.Matrix
 import TauCeti.AlgebraicGeometry.SpecialFiber.Reduced
 
 /-!
@@ -37,8 +37,8 @@ then defines a numerical type in the sense of
 
 The axioms of a numerical type are the properties of these data proved in
 `TauCeti.AlgebraicGeometry.IntersectionNumber.Matrix` and
-`TauCeti.AlgebraicGeometry.IntersectionNumber.Weight`: the intersection matrix is symmetric with
-nonnegative off-diagonal entries and kills the multiplicity vector, its graph is connected
+`TauCeti.AlgebraicGeometry.IntersectionNumber.Weight.Matrix`: the intersection matrix is symmetric
+with nonnegative off-diagonal entries and kills the multiplicity vector, its graph is connected
 because the special fibre is, and `wᵢ` divides its `i`-th row. The component set is nonempty by
 `AlgebraicGeometry.Scheme.Hom.nonempty_setOf_base_eq_closedPoint`.
 
@@ -59,6 +59,10 @@ The combinatorial theory of `TauCeti.NumericalType`, such as its signed genus
   over the residue field.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_adj_iff`: two distinct components are
   adjacent exactly when they intersect.
+* `AlgebraicGeometry.Scheme.Hom.specialFiberNumericalType_weight_mul_genus_sub_one` and
+  `specialFiberNumericalType_arithmeticGenus_eulerCharBelow_selfIntersection`:
+  `wᵢ (gᵢ - 1) = -χ_k(𝒪_{Cᵢ})` and the total arithmetic-genus identity, derived formally from
+  `TauCeti.NumericalType.arithmeticGenus` by substituting the component Euler characteristics.
 
 ## Implementation notes
 
@@ -90,6 +94,7 @@ noncomputable section
 open CategoryTheory AlgebraicGeometry IsLocalRing Order
 open TauCeti TauCeti.AlgebraicGeometry TauCeti.AlgebraicGeometry.Scheme.Modules
 open AlgebraicGeometry.Scheme.IdealSheafData (vanishingIdeal)
+open AlgebraicGeometry.Scheme.Modules (eulerCharBelow eulerCharBelow_two)
 
 universe u
 
@@ -151,6 +156,20 @@ def specialFiberNumericalType : NumericalType.{u} where
     Γ((vanishingIdeal ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).subscheme, ⊤)
     (Cohomology (InvertibleSheaf.trivial (vanishingIdeal
       ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).subscheme).obj 1)
+
+/-- A codimension-one point of `X` arises as a component of `specialFiberNumericalType` if and only
+if it maps to `closedPoint R`. -/
+theorem exists_specialFiberNumericalType_component_iff (x : CodimensionOnePoint X) :
+    (∃ i : (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).Component, i.val = x) ↔
+      toBase x = closedPoint R :=
+  ⟨by rintro ⟨i, rfl⟩; exact (Set.Finite.mem_toFinset _).mp i.property,
+    fun hx ↦ ⟨⟨x, (Set.Finite.mem_toFinset _).mpr hx⟩, rfl⟩⟩
+
+/-- Every component of `specialFiberNumericalType` maps to `closedPoint R`. -/
+theorem base_eq_closedPoint_of_specialFiberNumericalType
+    (i : (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).Component) :
+    toBase i.val = closedPoint R :=
+  (Set.Finite.mem_toFinset _).mp i.property
 
 /-- The multiplicity of a component of the special fibre in the numerical type of a regular model
 is the order of vanishing of `π` along it. -/
@@ -243,6 +262,97 @@ theorem isReduced_specialFiber_iff_multiplicity_eq_one :
   rw [toBase.isReduced_specialFiber_iff_specialFiberMultiplicity_eq_one_of_isRegular hX hη hπ]
   exact ⟨fun h i ↦ PNat.eq (h i.val ((Set.Finite.mem_toFinset _).mp i.property)),
     fun h x hx ↦ congrArg PNat.val (h ⟨x, (Set.Finite.mem_toFinset _).mpr hx⟩)⟩
+
+/-- For each component `Cᵢ` of the special fibre, `wᵢ (gᵢ - 1) = -χ_k(𝒪_{Cᵢ})`, where `χ_k` is the
+degree-`2` truncated Euler characteristic `dim_k H⁰ - dim_k H¹` over the residue field. -/
+theorem specialFiberNumericalType_weight_mul_genus_sub_one
+    (i : (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).Component) :
+    letI := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
+      (toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hη hC hπ hreg hconn i))
+    ((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).weight i : ℤ) *
+        (((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).genus i : ℤ) - 1) =
+      -eulerCharBelow (ResidueField R)
+        (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme
+        (InvertibleSheaf.trivial
+          (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme).obj 2 := by
+  have hi := toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hη hC hπ hreg hconn i
+  let := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hi)
+  have := toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton hi
+  have := hC.finiteDimensional_one i.val hi
+  have hwg : ((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).weight i : ℤ) *
+      ((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).genus i : ℤ) =
+    (Module.finrank (ResidueField R) (Cohomology (InvertibleSheaf.trivial
+      (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme).obj 1) : ℤ) := by
+    exact_mod_cast toBase.specialFiberNumericalType_weight_mul_genus hX hη hC hπ hreg hconn i
+  have hw0 : ((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).weight i : ℤ) =
+      (Module.finrank (ResidueField R) (Cohomology (InvertibleSheaf.trivial
+        (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme).obj 0) : ℤ) := by
+    exact_mod_cast (toBase.specialFiberNumericalType_weight hX hη hC hπ hreg hconn i).trans
+      (toBase.specialFiberWeight_def _)
+  rw [eulerCharBelow_two, mul_sub, mul_one, hwg, hw0]; ring
+
+/-- Weighted sum of `mᵢ wᵢ (gᵢ - 1)` across `specialFiberNumericalType`, equal to
+`-∑ᵢ mᵢ χ_k(𝒪_{Cᵢ})`. -/
+theorem sum_specialFiberNumericalType_multiplicity_mul_weight_mul_genus_sub_one :
+    ∑ i : (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).Component,
+        ((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).multiplicity i : ℤ) *
+          ((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).weight i : ℤ) *
+          (((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).genus i : ℤ) - 1) =
+      -∑ i : (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).Component,
+        ((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).multiplicity i : ℤ) *
+          (letI := subschemeOverResidueField
+            (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
+              (toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hη hC hπ hreg hconn i))
+          eulerCharBelow (ResidueField R)
+            (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme
+            (InvertibleSheaf.trivial
+              (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme).obj 2) := by
+  rw [← Finset.sum_neg_distrib]; refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [mul_assoc,
+    toBase.specialFiberNumericalType_weight_mul_genus_sub_one hX hη hC hπ hreg hconn i, mul_neg]
+
+/-- Signed genus of `specialFiberNumericalType` in terms of `χ_k(𝒪_{Cᵢ})` and self-intersections:
+`g(T) = 1 - ∑ᵢ mᵢ χ_k(𝒪_{Cᵢ}) - (∑ᵢ mᵢ (Cᵢ · Cᵢ)) / 2`. -/
+theorem specialFiberNumericalType_arithmeticGenus_eulerCharBelow_selfIntersection :
+    (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).arithmeticGenus =
+      1 - (∑ i : (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).Component,
+          ((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).multiplicity i : ℤ) *
+            (letI := subschemeOverResidueField
+              (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
+                (toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hη hC hπ hreg hconn i))
+            eulerCharBelow (ResidueField R)
+              (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme
+              (InvertibleSheaf.trivial
+                (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme).obj 2)) -
+        (∑ i : (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).Component,
+          ((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).multiplicity i : ℤ) *
+            toBase.specialFiberIntersectionMatrix hX hη i i) / 2 := by
+  rw [NumericalType.arithmeticGenus_def,
+    toBase.sum_specialFiberNumericalType_multiplicity_mul_weight_mul_genus_sub_one
+      hX hη hC hπ hreg hconn]
+  simp only [specialFiberNumericalType_intersection]; ring
+
+/-- Division-free form of
+`specialFiberNumericalType_arithmeticGenus_eulerCharBelow_selfIntersection`:
+`2 g(T) = 2 - 2 ∑ᵢ mᵢ χ_k(𝒪_{Cᵢ}) - ∑ᵢ mᵢ (Cᵢ · Cᵢ)`. -/
+theorem two_mul_specialFiberNumericalType_arithmeticGenus_eulerCharBelow_selfIntersection :
+    2 * (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).arithmeticGenus =
+      2 - 2 * (∑ i : (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).Component,
+          ((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).multiplicity i : ℤ) *
+            (letI := subschemeOverResidueField
+              (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
+                (toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hη hC hπ hreg hconn i))
+            eulerCharBelow (ResidueField R)
+              (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme
+              (InvertibleSheaf.trivial
+                (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme).obj 2)) -
+        ∑ i : (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).Component,
+          ((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).multiplicity i : ℤ) *
+            toBase.specialFiberIntersectionMatrix hX hη i i := by
+  rw [NumericalType.two_mul_arithmeticGenus,
+    toBase.sum_specialFiberNumericalType_multiplicity_mul_weight_mul_genus_sub_one
+      hX hη hC hπ hreg hconn]
+  simp only [specialFiberNumericalType_intersection]; ring
 
 end AlgebraicGeometry.Scheme.Hom
 

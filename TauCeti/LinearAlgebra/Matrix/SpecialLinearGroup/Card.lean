@@ -17,7 +17,7 @@ import Mathlib.LinearAlgebra.Matrix.Transvection
 import Mathlib.RingTheory.ZMod.LocalRing
 import TauCeti.Data.ZMod.MulCastHom
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
-import TauCeti.RingTheory.LocalRing.RingHom
+import TauCeti.RingTheory.LocalRing.RingHom.Basic
 
 /-!
 # The order of special linear groups over `ℤ/Nℤ`

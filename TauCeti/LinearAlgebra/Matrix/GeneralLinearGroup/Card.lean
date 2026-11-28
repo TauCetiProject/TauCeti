@@ -30,7 +30,7 @@ import TauCeti.Data.ZMod.MulCastHom
 -- Non-public: the count along a local surjection is the unit count of the matrix rings.
 import TauCeti.LinearAlgebra.Matrix.IdealEntries
 import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
-import TauCeti.RingTheory.LocalRing.RingHom
+import TauCeti.RingTheory.LocalRing.RingHom.Basic
 
 /-!
 # The order of general linear groups

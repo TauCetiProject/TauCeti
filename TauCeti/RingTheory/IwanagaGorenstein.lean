@@ -123,8 +123,8 @@ theorem of_globalDimension_lt_top (A : Type u) [Ring A] [IsNoetherianRing A]
     | bot => exact ⟨0, bot_le⟩
     | coe d => lift d to ℕ using fun he ↦ h.ne (by simp [hd, he]); exact ⟨d, le_rfl⟩
   exact ⟨inferInstance, inferInstance,
-    ⟨n, (globalDimension_le_iff_hasInjectiveDimensionLE A n).mp hn _⟩,
-    ⟨n, (globalDimension_le_iff_hasInjectiveDimensionLE Aᵐᵒᵖ n).mp
+    ⟨n, (Abelian.globalDimension_le_iff_hasInjectiveDimensionLE (ModuleCat A) n).mp hn _⟩,
+    ⟨n, (Abelian.globalDimension_le_iff_hasInjectiveDimensionLE (ModuleCat Aᵐᵒᵖ) n).mp
       ((globalDimension_mulOpposite A).trans_le hn) _⟩⟩
 
 /-- A left and right noetherian ring over which every left module in the ring's universe has
@@ -133,7 +133,7 @@ theorem of_hasProjectiveDimensionLE (A : Type u) [Ring A] [IsNoetherianRing A]
     [IsNoetherianRing Aᵐᵒᵖ] (d : ℕ)
     (hd : ∀ M : ModuleCat.{u} A, HasProjectiveDimensionLE M d) : IsIwanagaGorenstein A :=
   of_globalDimension_lt_top A <|
-    ((globalDimension_le_iff_hasProjectiveDimensionLE A d).mpr hd).trans_lt
+    ((Abelian.globalDimension_le_iff_hasProjectiveDimensionLE (ModuleCat A) d).mpr hd).trans_lt
       (WithBot.coe_lt_coe.mpr (ENat.natCast_lt_top d))
 
 /-- **Hypersurface quotients of Iwanaga–Gorenstein commutative rings.** If `R` is a commutative

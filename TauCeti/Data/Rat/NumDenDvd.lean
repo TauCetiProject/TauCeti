@@ -5,8 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Finset.Defs
 public import Mathlib.Data.Rat.Lemmas
 
+import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
+import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
+import Mathlib.Algebra.Order.Ring.Nat
+import Mathlib.Algebra.Order.Ring.Rat
 import Mathlib.Data.Int.Cast.Lemmas
 
 /-!
@@ -19,6 +24,10 @@ explicit quotient, so that it applies with no case split on `a = 0` at the point
 what turns a rational scaling between two integral objects into integer divisibilities, as for
 the scaling `(A, B) ↦ (r⁴A, r⁶B)` between two integral short Weierstrass equations.
 
+Also proves the nonnegative specialization `Rat.den_dvd_iff_exists_mul_natCast_eq` and simultaneous
+denominator clearing across a `Finset` of nonnegative rationals
+(`Finset.exists_nat_mul_eq_natCast`).
+
 ## Main results
 
 * `Rat.den_dvd_of_intCast_eq_mul_intCast`: `a' = r * a` implies `r.den ∣ a`.
@@ -26,6 +35,10 @@ the scaling `(A, B) ↦ (r⁴A, r⁶B)` between two integral short Weierstrass e
 * `Rat.den_dvd_iff_exists_eq_intCast_div`: for `n ≠ 0`, `r.den ∣ n` exactly when `r = k / n` for
   an integer `k`.
 * `Rat.den_dvd_iff_exists_mul_intCast_eq`: `r.den ∣ a` exactly when `r * a` is an integer.
+* `Rat.den_dvd_iff_exists_mul_natCast_eq`: for `0 ≤ r`, `r.den ∣ n` exactly when `r * n` is a
+  natural number.
+* `Finset.exists_nat_mul_eq_natCast`: nonnegative rational families on a `Finset` clear
+  denominators simultaneously.
 -/
 
 public section
@@ -78,6 +91,40 @@ theorem den_dvd_iff_exists_mul_intCast_eq (r : ℚ) (a : ℤ) :
   refine ⟨fun ⟨c, hc⟩ ↦ ⟨r.num * c, ?_⟩, fun ⟨z, hz⟩ ↦ den_dvd_of_intCast_eq_mul_intCast r hz.symm⟩
   rw [hc, Int.cast_mul, Int.cast_natCast, ← mul_assoc, mul_den_eq_num, Int.cast_mul]
 
+/-- **A nonnegative rational multiple of a natural number is a natural number exactly when the
+denominator divides it**: for `0 ≤ r`, `r.den ∣ n` if and only if `r * n` is a natural number. -/
+theorem den_dvd_iff_exists_mul_natCast_eq {r : ℚ} (hr : 0 ≤ r) (n : ℕ) :
+    r.den ∣ n ↔ ∃ k : ℕ, r * n = k := by
+  rw [← Int.natCast_dvd_natCast, den_dvd_iff_exists_mul_intCast_eq r (n : ℤ)]
+  refine ⟨fun ⟨z, hz⟩ ↦ ⟨z.toNat, ?_⟩, fun ⟨k, hk⟩ ↦ ⟨k, by exact_mod_cast hk⟩⟩
+  have hz0 : 0 ≤ z := by
+    have hq : (0 : ℚ) ≤ (z : ℚ) := by
+      rw [← hz]
+      exact mul_nonneg hr (by exact_mod_cast Nat.zero_le n)
+    exact_mod_cast hq
+  rw [← Int.cast_natCast (R := ℚ) z.toNat, Int.toNat_of_nonneg hz0]
+  exact_mod_cast hz
+
 end Rat
+
+namespace Finset
+
+/-- Any finite subset of a nonnegative rational family `x : ι → ℚ` clears denominators
+simultaneously to natural numbers. -/
+theorem exists_nat_mul_eq_natCast {ι : Type*} (s : Finset ι) {x : ι → ℚ}
+    (hx : ∀ i ∈ s, 0 ≤ x i) :
+    ∃ (D : ℕ) (k : ι → ℕ), 0 < D ∧ ∀ i ∈ s, (D : ℚ) * x i = (k i : ℚ) := by
+  classical
+  let D : ℕ := ∏ i ∈ s, (x i).den
+  have hD : 0 < D := Finset.prod_pos fun i _ ↦ (x i).pos
+  have hex : ∀ i : s, ∃ m : ℕ, x i.val * D = m := fun i ↦
+    (Rat.den_dvd_iff_exists_mul_natCast_eq (hx i.val i.property) D).mp
+      (Finset.dvd_prod_of_mem _ i.property)
+  choose k hk using hex
+  refine ⟨D, fun i ↦ if hi : i ∈ s then k ⟨i, hi⟩ else 0, hD, fun i hi ↦ ?_⟩
+  simp only [hi, ↓reduceDIte]
+  rw [mul_comm, hk ⟨i, hi⟩]
+
+end Finset
 
 end

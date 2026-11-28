@@ -46,6 +46,8 @@ sits *inside* the derived ideal and the two are not complementary.
   matrix units and the differences of the diagonal ones contains every trace-zero matrix. This is
   the spanning core shared by the derived-ideal computation below and by the ideal-generation
   argument of `TauCeti/Algebra/Lie/GeneralLinear/Radical.lean`.
+* `LinearMap.surjective_of_single_mem_range`: a linear map into `sl n R` is surjective
+  if it hits the same generators.
 * `TauCeti.mem_center_matrix_iff`: an element of `gl n R` is central exactly when it is a scalar
   matrix; `TauCeti.one_mem_center_matrix` records that the identity is central,
   `TauCeti.center_matrix_toSubmodule_eq_span_one` records the centre as the span of `1`, and
@@ -253,6 +255,39 @@ variable (R n) in
 theorem ker_traceLieCharacter : (traceLieCharacter R n).ker = slIdeal R n := by
   ext A
   rw [LieHom.mem_ker, traceLieCharacter_apply, mem_slIdeal_iff]
+
+/-- A linear map into the special linear Lie algebra is surjective if it hits every
+off-diagonal matrix unit and every difference of two diagonal matrix units. -/
+theorem _root_.LinearMap.surjective_of_single_mem_range {M : Type*} [AddCommGroup M] [Module R M]
+    (f : M →ₗ[R] LieAlgebra.SpecialLinear.sl n R)
+    (off : ∀ (i j : n) (hij : i ≠ j),
+      LieAlgebra.SpecialLinear.single i j hij 1 ∈ LinearMap.range f)
+    (diag : ∀ i j : n, i ≠ j →
+      LieAlgebra.SpecialLinear.singleSubSingle i j 1 ∈ LinearMap.range f) :
+    Function.Surjective f := by
+  intro X
+  let N := LinearMap.range ((LieAlgebra.SpecialLinear.sl n R).toSubmodule.subtype.comp f)
+  have hx : X.val ∈ N := by
+    apply mem_of_trace_eq_zero_of_single_mem (N := N)
+    · intro i j hij c
+      obtain ⟨t, ht⟩ := LinearMap.mem_range.mp (off i j hij)
+      refine LinearMap.mem_range.mpr ⟨c • t, ?_⟩
+      simp only [LinearMap.comp_apply, map_smul, ht, Submodule.subtype_apply,
+        LieAlgebra.SpecialLinear.val_single, Matrix.smul_single, smul_eq_mul,
+        mul_one]
+    · intro i j c
+      by_cases h : i = j
+      · subst j
+        simpa only [sub_self] using N.zero_mem
+      · obtain ⟨t, ht⟩ := LinearMap.mem_range.mp (diag i j h)
+        refine LinearMap.mem_range.mpr ⟨c • t, ?_⟩
+        simp only [LinearMap.comp_apply, map_smul, ht, Submodule.subtype_apply,
+          LieAlgebra.SpecialLinear.val_singleSubSingle, smul_sub, Matrix.smul_single, smul_eq_mul,
+          mul_one]
+    · exact LieAlgebra.SpecialLinear.mem_sl_iff.mp X.property
+  obtain ⟨t, ht⟩ := LinearMap.mem_range.mp hx
+  refine ⟨t, Subtype.ext ?_⟩
+  simpa only [LinearMap.comp_apply, Submodule.subtype_apply] using ht
 
 /-! ### The derived ideal of `gl n R` -/
 
