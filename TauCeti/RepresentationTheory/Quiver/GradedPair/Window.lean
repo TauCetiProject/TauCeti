@@ -111,6 +111,16 @@ theorem windowDegree_arrow (d : StepDirection) (w : NonemptyInterval ℤ)
   have h : (vertexIndex i).val + 1 = (vertexIndex j).val := LineQuiver.index_add_one_eq e
   cases d <;> simp only [windowDegree, step_up, step_down] <;> omega
 
+/-- A path changes the degree by its length times the operator's degree step. -/
+theorem windowDegree_path (d : StepDirection) (w : NonemptyInterval ℤ)
+    {i j : WindowVertex w} (p : Quiver.Path i j) :
+    d.windowDegree w j = d.windowDegree w i + (p.length : ℤ) * d.step := by
+  induction p with
+  | nil => simp
+  | cons p e ih =>
+    rw [windowDegree_arrow d w e, ih, Quiver.Path.length_cons, Nat.cast_add, Nat.cast_one]
+    ring
+
 /-- Every consecutive pair of degrees in the direction of the operator has an arrow. -/
 theorem nonempty_hom_iff_windowDegree_eq_add_step (d : StepDirection) (w : NonemptyInterval ℤ)
     (i j : WindowVertex w) :
@@ -752,6 +762,30 @@ theorem ofRepFunctor_map_apply {M N : FiniteRep w} (f : M ⟶ N)
       exact congrArg (fun y ↦ (ofRepGradeEquiv d N i ((f.hom.app i).hom y)).val)
         ((ofRepGradeEquiv d M i).symm_apply_apply x)
 
+/-- In vertex coordinates, an assembled morphism acts componentwise on every family. -/
+@[simp]
+theorem ofRepFunctor_map_component {M N : FiniteRep w} (f : M ⟶ N)
+    (x : ∀ i, QuiverRep.vertexSpace ℂ (StepDirection.WindowVertex w) M.obj i)
+    (i : StepDirection.WindowVertex w) :
+    (ofRepCarrierEquiv d N).symm
+      (((ofRepFunctor w d).map f).toLinearMap (ofRepCarrierEquiv d M x)) i =
+        (f.hom.app i).hom (x i) := by
+  classical
+  let g : Hom (ofRep d M) (ofRep d N) := (ofRepFunctor w d).map f
+  -- Fix the object types using the functor projection before distributing over the finite sum.
+  change (ofRepCarrierEquiv d N).symm (g.toLinearMap (ofRepCarrierEquiv d M x)) i = _
+  have hs (j : StepDirection.WindowVertex w) (y : M.obj.obj (j : Paths _)) :
+      (ofRepCarrierEquiv d N).symm
+        (g.toLinearMap (ofRepCarrierEquiv d M (Pi.single j y))) =
+          Pi.single j ((f.hom.app j).hom y) :=
+    (congrArg (ofRepCarrierEquiv d N).symm (ofRepFunctor_map_apply f j y)).trans
+      ((ofRepCarrierEquiv d N).symm_apply_apply _)
+  let y : ∀ j, QuiverRep.vertexSpace ℂ (StepDirection.WindowVertex w) N.obj j :=
+    fun j ↦ (f.hom.app j).hom (x j)
+  conv_lhs => rw [← Finset.univ_sum_single x, map_sum, map_sum, map_sum]
+  exact congrFun ((Finset.sum_congr rfl (fun j _ ↦ hs j (x j))).trans
+    (Finset.univ_sum_single y)) i
+
 /-- Restricting to the window grades is an equivalence between coordinate graded pairs
 supported in that window and pointwise finite-dimensional type-A representations. -/
 def windowEquivalence (w : NonemptyInterval ℤ) (d : StepDirection) :
@@ -1147,6 +1181,66 @@ def enlargeExtendByZeroIso (d : StepDirection) (h : w ≤ W) :
       simp only [Category.assoc, eqToHom_trans, eqToHom_trans_assoc, eqToHom_refl, Category.comp_id,
         Category.id_comp]
       exact ModuleCat.hom_ext (LinearMap.ext (enlargeExtendByZeroApp_naturality h f v)))
+
+/-- At a retained vertex, the forward extension-by-zero comparison preserves the carrier vector. -/
+@[simp↓]
+theorem coe_enlargeExtendByZeroIso_hom_app (h : w ≤ W) (P : InWindow w d)
+    (i : WindowVertex w)
+    (x : P.space.grade (d.windowDegree W ((windowEmbedding d h).obj i))) :
+    ((windowEmbedding d h).extendByZeroRepVertexSpaceEquiv P.toRep i
+      ((eqToHom ((windowEmbedding d h).extendByZeroFunctor_obj (M := P.toRep))).app
+        ((windowEmbedding d h).obj i)
+        (((enlargeExtendByZeroIso d h).hom.app P).app ((windowEmbedding d h).obj i) x))).val =
+      x.val := by
+  let φ := windowEmbedding d h
+  let j := φ.obj i
+  let e := eqToIso (φ.extendByZeroRep_obj P.toRep j)
+  let q := eqToIso (Functor.congr_obj (φ.extendByZeroFunctor_obj (M := P.toRep))
+    (j : Paths (WindowVertex W)))
+  have hc : ((enlargeExtendByZeroIso d h).hom.app P).app (j : Paths _) =
+      ModuleCat.ofHom (enlargeExtendByZeroApp h P j) ≫ e.inv ≫ q.inv := by
+    simp only [enlargeExtendByZeroIso, NatIso.ofComponents_hom_app, Iso.trans_hom, Iso.symm_hom,
+      eqToIso.inv, enlargeExtendByZeroRepIso]
+    erw [NatTrans.comp_app, Paths.liftNatIso_hom_app, enlargeExtendByZeroVertexIso_hom]
+    erw [eqToHom_app, Category.assoc]
+  erw [hc, QuiverEmbedding.extendByZeroRepVertexSpaceEquiv_apply,
+    QuiverEmbedding.extendByZeroRepFiberEquiv_apply, eqToHom_app]
+  -- Express the transports as module maps so the inverse pairs cancel before evaluation.
+  change ((e.hom (q.hom ((ModuleCat.ofHom (enlargeExtendByZeroApp h P j) ≫
+    e.inv ≫ q.inv) x))) ⟨i, rfl⟩).val = x.val
+  have ht : (ModuleCat.ofHom (enlargeExtendByZeroApp h P j) ≫ e.inv ≫ q.inv) ≫
+      q.hom ≫ e.hom = ModuleCat.ofHom (enlargeExtendByZeroApp h P j) := by simp
+  have hx := ConcreteCategory.congr_hom ht x
+  erw [ModuleCat.comp_apply, ModuleCat.comp_apply] at hx
+  exact (congrArg (fun y ↦ (y ⟨i, rfl⟩).val) hx).trans
+    (coe_enlargeExtendByZeroApp h P j x ⟨i, rfl⟩)
+
+/-- At a retained vertex, the inverse extension-by-zero comparison preserves the carrier vector. -/
+@[simp↓]
+theorem coe_enlargeExtendByZeroIso_inv_app (h : w ≤ W) (P : InWindow w d)
+    (i : WindowVertex w) (x : P.space.grade (d.windowDegree w i)) :
+    ((((enlargeExtendByZeroIso d h).inv.app P).app ((windowEmbedding d h).obj i)
+      ((eqToHom ((windowEmbedding d h).extendByZeroFunctor_obj (M := P.toRep)).symm).app
+        ((windowEmbedding d h).obj i)
+        (((windowEmbedding d h).extendByZeroRepVertexSpaceEquiv P.toRep i).symm x))) :
+      P.space.grade (d.windowDegree W ((windowEmbedding d h).obj i))).val = x.val := by
+  let φ := windowEmbedding d h
+  let j := φ.obj i
+  let e := φ.extendByZeroRepVertexSpaceEquiv P.toRep i
+  let q := eqToIso (Functor.congr_obj (φ.extendByZeroFunctor_obj (M := P.toRep))
+    (j : Paths (WindowVertex W)))
+  let z := q.inv (e.symm x)
+  let a := (enlargeExtendByZeroIso d h).app P
+  have hx := coe_enlargeExtendByZeroIso_hom_app h P i (a.inv.app j z)
+  -- Read the functor equality transport as a module map before cancelling the isomorphisms.
+  erw [eqToHom_app] at hx
+  change (e (q.hom (a.hom.app j (a.inv.app j z)))).val = (a.inv.app j z).val at hx
+  have hi : a.hom.app j (a.inv.app j z) = z :=
+    ConcreteCategory.congr_hom (congr_app a.inv_hom_id j) z
+  have hq : q.hom z = e.symm x := ConcreteCategory.congr_hom q.inv_hom_id (e.symm x)
+  erw [hi, hq, e.apply_symm_apply] at hx
+  erw [eqToHom_app]
+  exact hx.symm
 
 end Enlargement
 
