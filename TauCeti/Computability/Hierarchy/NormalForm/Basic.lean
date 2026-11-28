@@ -281,10 +281,13 @@ private theorem computableIn_fin_bool_iff_exists_code {Z : Set ℕ} {k : ℕ}
       (Primrec.encode.comp
         (Primrec.list_ofFn fun i =>
           Primrec.fin_app.comp Primrec.id (Primrec.const i))).computableIn
-    have heval : Nat.RecursiveIn {Z.oracle} (fun m => Code.eval Z.oracle c m) :=
-      Code.recursiveIn_eval Z.oracle c
-    refine (heval.comp henc).of_eq fun n => ?_
-    simp [Part.bind_eq_bind, Part.bind_assoc, fun x => Part.eq_some_iff.2 (hc x)]
+    have heval : RecursiveIn {Z.oracle} (Code.eval Z.oracle c) :=
+      RecursiveIn.iff_nat.2 (Code.recursiveIn_eval Z.oracle c)
+    have hcomp : ComputableIn {Z.oracle} fun x : Fin k → ℕ => encode (b x) :=
+      (heval.comp henc).of_eq_tot hc
+    exact RecursiveIn.of_eq
+      ((Primrec.option_getD.comp Primrec.decode (Primrec.const false)).computableIn.comp hcomp)
+      fun x => by simp [encodek]
 
 -- Reinterpret matrix validity across an equal `depth + arity` sum.
 private theorem isValid_of_depth_eq {Z : Set ℕ} {p q : QuantifierPrefix} {k j : ℕ} {c : Code}

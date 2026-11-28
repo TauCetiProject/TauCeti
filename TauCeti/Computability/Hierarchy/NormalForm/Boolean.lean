@@ -108,6 +108,12 @@ private def unpairFst (d : ℕ) (l : List ℕ) : List ℕ :=
 private def unpairSnd (d : ℕ) (l : List ℕ) : List ℕ :=
   (l.take d).map (fun y => y.unpair.2) ++ l.drop d
 
+private theorem unpairFst_eq (d : ℕ) (l : List ℕ) :
+    unpairFst d l = (l.take d).map (fun y => y.unpair.1) ++ l.drop d := (rfl)
+
+private theorem unpairSnd_eq (d : ℕ) (l : List ℕ) :
+    unpairSnd d l = (l.take d).map (fun y => y.unpair.2) ++ l.drop d := (rfl)
+
 private theorem exists_unpairTakeCode {f : ℕ → ℕ} (hf : Primrec f) :
     ∃ c : Code, ∀ (O : ℕ →. ℕ) (d : ℕ) (l : List ℕ),
       Code.eval O c (Nat.pair d (encode l)) =
@@ -134,12 +140,16 @@ private noncomputable def unpairSndBase : Code :=
   (exists_unpairTakeCode (Primrec.snd.comp Primrec.unpair)).choose
 
 private theorem eval_unpairFstBase (O : ℕ →. ℕ) (d : ℕ) (l : List ℕ) :
-    Code.eval O unpairFstBase (Nat.pair d (encode l)) = Part.some (encode (unpairFst d l)) :=
-  (exists_unpairTakeCode (Primrec.fst.comp Primrec.unpair)).choose_spec O d l
+    Code.eval O unpairFstBase (Nat.pair d (encode l)) = Part.some (encode (unpairFst d l)) := by
+  unfold unpairFstBase
+  rw [unpairFst_eq]
+  exact (exists_unpairTakeCode (Primrec.fst.comp Primrec.unpair)).choose_spec O d l
 
 private theorem eval_unpairSndBase (O : ℕ →. ℕ) (d : ℕ) (l : List ℕ) :
-    Code.eval O unpairSndBase (Nat.pair d (encode l)) = Part.some (encode (unpairSnd d l)) :=
-  (exists_unpairTakeCode (Primrec.snd.comp Primrec.unpair)).choose_spec O d l
+    Code.eval O unpairSndBase (Nat.pair d (encode l)) = Part.some (encode (unpairSnd d l)) := by
+  unfold unpairSndBase
+  rw [unpairSnd_eq]
+  exact (exists_unpairTakeCode (Primrec.snd.comp Primrec.unpair)).choose_spec O d l
 
 private noncomputable def unpairFstCode (d : ℕ) : Code :=
   Code.curry unpairFstBase d
@@ -268,9 +278,9 @@ private theorem eval_unpair_components {Z : Set ℕ} {nf₁ nf₂ : NormalFormCo
       encode b₂ ∈ Code.eval Z.oracle
         (Code.comp nf₂.matrix (unpairSndCode nf₁.quantifiers.depth)) (encode l) := by
   have hl₁ : (unpairFst nf₁.quantifiers.depth l).length = nf₁.quantifiers.depth + nf₁.arity := by
-    rw [unpairFst, List.length_map_take_append_drop, hl]
+    rw [unpairFst_eq, List.length_map_take_append_drop, hl]
   have hl₂ : (unpairSnd nf₁.quantifiers.depth l).length = nf₂.quantifiers.depth + nf₂.arity := by
-    rw [unpairSnd, List.length_map_take_append_drop, hl, hq, ha]
+    rw [unpairSnd_eq, List.length_map_take_append_drop, hl, hq, ha]
   obtain ⟨b₁, hb₁⟩ := isValid_iff.1 h₁ _ hl₁
   obtain ⟨b₂, hb₂⟩ := isValid_iff.1 h₂ _ hl₂
   refine ⟨b₁, b₂, hb₁, hb₂, ?_, ?_⟩
@@ -318,8 +328,10 @@ private theorem evalList_binop {op : Code → Code → Code} {P : Prop → Prop 
       nf₁.IsValid Z → nf₂.IsValid Z → binop op nf₁ nf₂ = some nf →
       ∀ {l : List ℕ}, l.length = nf₁.quantifiers.depth + nf₁.arity →
         (nf.MatrixHolds Z l ↔
-          P (nf₁.MatrixHolds Z (unpairFst nf₁.quantifiers.depth l))
-            (nf₂.MatrixHolds Z (unpairSnd nf₁.quantifiers.depth l))))
+          P (nf₁.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++
+              l.drop nf₁.quantifiers.depth))
+            (nf₂.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
+              l.drop nf₁.quantifiers.depth))))
     (hdist : ∀ (p : QuantifierPrefix) (R₁ R₂ : List ℕ → Prop) (xs₁ xs₂ xs : List ℕ),
       p.Eval (fun l => P (R₁ ((l.take p.depth).map (fun y => y.unpair.1) ++ xs₁))
         (R₂ ((l.take p.depth).map (fun y => y.unpair.2) ++ xs₂))) xs ↔
@@ -332,7 +344,7 @@ private theorem evalList_binop {op : Code → Code → Code} {P : Prop → Prop 
   rw [evalList_iff, evalList_iff, evalList_iff, quantifiers_binop h, ← hq]
   refine (QuantifierPrefix.eval_congr_append fun bs hbs => ?_).trans
     (hdist nf₁.quantifiers (nf₁.MatrixHolds Z) (nf₂.MatrixHolds Z) xs xs xs)
-  simpa [unpairFst, unpairSnd, List.take_left' hbs, List.drop_left' hbs] using
+  simpa [List.take_left' hbs, List.drop_left' hbs] using
     hmat h₁ h₂ h (l := bs ++ xs) (by simp [hbs, hxs])
 
 private theorem holds_binop {op : Code → Code → Code} {P : Prop → Prop → Prop}
@@ -414,8 +426,9 @@ theorem exists_and_eq_some {nf₁ nf₂ : NormalFormCode}
             l.drop nf₁.quantifiers.depth)) ∧
         Code.eval O c₂ (encode l) = Part.some (encode
           ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
-            l.drop nf₁.quantifiers.depth))) :=
-  exists_binop_eq_some hq ha
+            l.drop nf₁.quantifiers.depth))) := by
+  simp only [← unpairFst_eq, ← unpairSnd_eq]
+  exact exists_binop_eq_some hq ha
 
 /-- When the quantifier prefixes and arities agree, `or` returns `some` of a normal-form code
 whose matrix applies `Code.boolOr` to `nf₁.matrix` and `nf₂.matrix` composed with oracle-independent
@@ -431,8 +444,9 @@ theorem exists_or_eq_some {nf₁ nf₂ : NormalFormCode}
             l.drop nf₁.quantifiers.depth)) ∧
         Code.eval O c₂ (encode l) = Part.some (encode
           ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
-            l.drop nf₁.quantifiers.depth))) :=
-  exists_binop_eq_some hq ha
+            l.drop nf₁.quantifiers.depth))) := by
+  simp only [← unpairFst_eq, ← unpairSnd_eq]
+  exact exists_binop_eq_some hq ha
 
 /-- A successful conjunction witnesses that the operands have equal quantifier prefixes. -/
 theorem quantifiers_eq_of_and_eq_some {nf₁ nf₂ nf : NormalFormCode}
@@ -465,8 +479,8 @@ theorem exists_matrix_and {nf₁ nf₂ nf : NormalFormCode} (h : nf₁.and nf₂
             l.drop nf₁.quantifiers.depth)) ∧
         Code.eval O c₂ (encode l) = Part.some (encode
           ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
-            l.drop nf₁.quantifiers.depth))) :=
-  exists_matrix_binop h
+            l.drop nf₁.quantifiers.depth))) := by
+  simpa only [unpairFst_eq, unpairSnd_eq] using exists_matrix_binop h
 
 /-- A successful disjunction witnesses that the operands have equal quantifier prefixes. -/
 theorem quantifiers_eq_of_or_eq_some {nf₁ nf₂ nf : NormalFormCode}
@@ -499,8 +513,8 @@ theorem exists_matrix_or {nf₁ nf₂ nf : NormalFormCode} (h : nf₁.or nf₂ =
             l.drop nf₁.quantifiers.depth)) ∧
         Code.eval O c₂ (encode l) = Part.some (encode
           ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
-            l.drop nf₁.quantifiers.depth))) :=
-  exists_matrix_binop h
+            l.drop nf₁.quantifiers.depth))) := by
+  simpa only [unpairFst_eq, unpairSnd_eq] using exists_matrix_binop h
 
 /-- Conjunction is primitive recursive on normal-form codes. -/
 theorem primrec₂_and : Primrec₂ and :=
@@ -532,8 +546,9 @@ theorem matrixHolds_and {Z : Set ℕ} {nf₁ nf₂ nf : NormalFormCode}
       nf₁.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++
         l.drop nf₁.quantifiers.depth) ∧
       nf₂.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
-        l.drop nf₁.quantifiers.depth) :=
-  matrixHolds_binop Code.eval_boolAnd (fun _ _ => Iff.of_eq (Bool.and_eq_true _ _)) h₁ h₂ h hl
+        l.drop nf₁.quantifiers.depth) := by
+  simpa only [unpairFst_eq, unpairSnd_eq] using
+    matrixHolds_binop Code.eval_boolAnd (fun _ _ => Iff.of_eq (Bool.and_eq_true _ _)) h₁ h₂ h hl
 
 /-- Matrix semantics for a successful disjunction on variable lists of the expected length: the
 bound prefix of length `nf₁.quantifiers.depth` is unpaired coordinatewise while the free variables
@@ -545,8 +560,9 @@ theorem matrixHolds_or {Z : Set ℕ} {nf₁ nf₂ nf : NormalFormCode}
       nf₁.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.1) ++
         l.drop nf₁.quantifiers.depth) ∨
       nf₂.MatrixHolds Z ((l.take nf₁.quantifiers.depth).map (fun y => y.unpair.2) ++
-        l.drop nf₁.quantifiers.depth) :=
-  matrixHolds_binop Code.eval_boolOr (fun _ _ => Iff.of_eq (Bool.or_eq_true _ _)) h₁ h₂ h hl
+        l.drop nf₁.quantifiers.depth) := by
+  simpa only [unpairFst_eq, unpairSnd_eq] using
+    matrixHolds_binop Code.eval_boolOr (fun _ _ => Iff.of_eq (Bool.or_eq_true _ _)) h₁ h₂ h hl
 
 /-- Semantic equation for a successful conjunction on lists of the expected arity. -/
 theorem evalList_and {Z : Set ℕ} {nf₁ nf₂ nf : NormalFormCode}

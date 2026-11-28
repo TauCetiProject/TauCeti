@@ -37,7 +37,7 @@ proof.
 
 public section
 
-open Encodable Denumerable TauCeti.Oracle.Single
+open Encodable TauCeti.Oracle.Single
 
 namespace TauCeti.ArithmeticalHierarchy
 
@@ -96,15 +96,9 @@ theorem isSigma_one_eval_bool :
     exact Code.recursiveIn₂_eval (Z.indicator 1)
   have hstep : Primrec fun p : Code × ℕ => (Code.comp guard p.1, p.2) :=
     (Code.primrec₂_comp.comp (Primrec.const guard) Primrec.fst).pair Primrec.snd
-  have harg : Nat.RecursiveIn {Z.oracle}
-      (fun n => ((decode (α := Code × ℕ) n).map fun p =>
-        encode (Code.comp guard p.1, p.2) : Part ℕ)) :=
-    (Partrec.nat_iff.1 (Computable.ofOption (Primrec.option_map Primrec.decode
-      (Primrec.encode.comp (hstep.comp Primrec.snd)).to₂).to_comp)).recursiveIn
   have hcomp : RecursiveIn {Z.oracle}
-      ((fun p : Code × ℕ => Code.eval Z.oracle (Code.comp guard p.1) p.2) : Code × ℕ →. ℕ) := by
-    refine (Nat.RecursiveIn.comp hev harg).of_eq fun n => ?_
-    cases decode (α := Code × ℕ) n <;> simp
+      ((fun p : Code × ℕ => Code.eval Z.oracle (Code.comp guard p.1) p.2) : Code × ℕ →. ℕ) :=
+    hev.comp hstep.computableIn
   refine hcomp.isSigma_one_mem_dom.of_eq fun p => ?_
   have hbind : ∀ y,
       y ∈ Code.eval Z.oracle (Code.comp guard p.1) p.2 ↔

@@ -324,15 +324,6 @@ instance : PartialOrder QuantifierPrefix where
       · rfl
       · exact (Nat.lt_asymm hpq hqp).elim
 
-/-- The quantifier-free prefix `zero` is the least element of the hierarchy order. -/
-instance : OrderBot QuantifierPrefix where
-  bot := .zero
-  bot_le p := by
-    cases p
-    · exact Or.inl rfl
-    · exact Or.inr (Nat.zero_lt_succ _)
-    · exact Or.inr (Nat.zero_lt_succ _)
-
 /-- Decidability of the hierarchy order on quantifier prefixes. -/
 instance : DecidableLE QuantifierPrefix := fun p q =>
   inferInstanceAs (Decidable (p = q ∨ p.depth < q.depth))
@@ -347,13 +338,22 @@ theorem le_iff {p q : QuantifierPrefix} : p ≤ q ↔ p = q ∨ p.depth < q.dept
 /-- Strict order on prefixes is strict inequality of depth. -/
 theorem lt_iff {p q : QuantifierPrefix} : p < q ↔ p.depth < q.depth := (Iff.rfl)
 
+/-- The quantifier-free prefix `zero` is the least element of the hierarchy order. -/
+instance : OrderBot QuantifierPrefix where
+  bot := .zero
+  bot_le p := by
+    cases p
+    · exact le_iff.2 (Or.inl rfl)
+    · exact le_iff.2 (Or.inr (Nat.zero_lt_succ _))
+    · exact le_iff.2 (Or.inr (Nat.zero_lt_succ _))
+
 /-- The bottom prefix is `zero`. -/
 @[simp]
 theorem bot_eq_zero : (⊥ : QuantifierPrefix) = .zero := (rfl)
 
 /-- Hierarchy inclusion implies depth inequality. -/
 theorem depth_mono {p q : QuantifierPrefix} (h : p ≤ q) : p.depth ≤ q.depth := by
-  rcases h with rfl | h
+  rcases le_iff.1 h with rfl | h
   · exact le_rfl
   · exact h.le
 
@@ -870,9 +870,9 @@ theorem IsClass.or {Z : Set ℕ} {p : QuantifierPrefix} {α : Type*} [Primcodabl
 /-- Hierarchy order on prefixes corresponds to inclusion of arithmetical pointclasses. -/
 theorem IsClass.mono {Z : Set ℕ} {p q : QuantifierPrefix} {α : Type*} [Primcodable α]
     {P : α → Prop} (h : p.IsClass Z P) (hpq : p ≤ q) : q.IsClass Z P := by
-  rcases hpq with rfl | hlt
+  rcases le_iff.1 hpq with rfl | hlt
   · exact h
-  · have hdep : p.depth + 1 ≤ q.depth := lt_iff.1 hlt
+  · have hdep : p.depth + 1 ≤ q.depth := hlt
     cases p with
     | zero =>
       rw [isClass_zero] at h
@@ -884,7 +884,9 @@ theorem IsClass.mono {Z : Set ℕ} {p q : QuantifierPrefix} {α : Type*} [Primco
       rw [isClass_sigma] at h
       cases q with
       | zero => exact (Nat.not_lt_zero _ hlt).elim
-      | sigma _ => exact isClass_sigma.2 (h.of_le hlt.le)
+      | sigma _ =>
+        simp only [depth_sigma] at hlt
+        exact isClass_sigma.2 (h.of_le hlt.le)
       | pi _ =>
         simp only [depth_sigma, depth_pi] at hdep
         exact isClass_pi.2 (h.pi_succ.of_le hdep)
@@ -895,7 +897,9 @@ theorem IsClass.mono {Z : Set ℕ} {p q : QuantifierPrefix} {α : Type*} [Primco
       | sigma _ =>
         simp only [depth_sigma, depth_pi] at hdep
         exact isClass_sigma.2 (h.sigma_succ.of_le hdep)
-      | pi _ => exact isClass_pi.2 (h.of_le hlt.le)
+      | pi _ =>
+        simp only [depth_pi] at hlt
+        exact isClass_pi.2 (h.of_le hlt.le)
 
 /-- Adding an existential number quantifier lands in `p.addExists.IsClass Z`, contracting with a
 leading existential block when `p` is already existential. -/
