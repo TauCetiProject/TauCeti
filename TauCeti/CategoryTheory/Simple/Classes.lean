@@ -44,7 +44,7 @@ namespace TauCeti
 
 open _root_.CategoryTheory _root_.CategoryTheory.Limits
 
-universe v₁ v₂ u₁ u₂
+universe v₁ v₂ v₃ u₁ u₂ u₃
 
 variable (C : Type u₁) [_root_.CategoryTheory.Category.{v₁} C]
   [_root_.CategoryTheory.Limits.HasZeroMorphisms C]
@@ -146,6 +146,35 @@ theorem equiv_apply_classOf (e : C ≌ D) (X : C) [Simple X] :
   apply (eq_iff_nonempty_iso _ _).2
   exact ⟨equivApplyReprIso e (classOf X) ≪≫ e.functor.mapIso (classOfReprIso X) ≪≫
     (classOfReprIso _).symm⟩
+
+/-- Composing `SimpleClasses.equiv e` with `SimpleClasses.equiv e.symm` is the identity. -/
+@[simp]
+theorem equiv_symm_equiv (e : C ≌ D) (S : SimpleClasses C) :
+    equiv e.symm (equiv e S) = S :=
+  (equiv e).left_inv S
+
+/-- Composing `SimpleClasses.equiv e.symm` with `SimpleClasses.equiv e` is the identity. -/
+@[simp]
+theorem equiv_equiv_symm (e : C ≌ D) (T : SimpleClasses D) :
+    equiv e (equiv e.symm T) = T :=
+  (equiv e).right_inv T
+
+/-- `SimpleClasses.equiv` sends the identity equivalence to the identity. -/
+@[simp]
+theorem equiv_refl (S : SimpleClasses C) :
+    equiv (_root_.CategoryTheory.Equivalence.refl (C := C)) S = S :=
+  (eq_iff_nonempty_iso _ _).2
+    ⟨equivApplyReprIso _root_.CategoryTheory.Equivalence.refl S⟩
+
+/-- `SimpleClasses.equiv` respects composition of equivalences. -/
+@[simp]
+theorem equiv_trans {E : Type u₃} [_root_.CategoryTheory.Category.{v₃} E]
+    [_root_.CategoryTheory.Limits.HasZeroMorphisms E] (e₁ : C ≌ D) (e₂ : D ≌ E)
+    (S : SimpleClasses C) :
+    equiv (e₁.trans e₂) S = equiv e₂ (equiv e₁ S) :=
+  (eq_iff_nonempty_iso _ _).2 ⟨equivApplyReprIso (e₁.trans e₂) S ≪≫
+    e₂.functor.mapIso (equivApplyReprIso e₁ S).symm ≪≫
+    (equivApplyReprIso e₂ (equiv e₁ S)).symm⟩
 
 end Equivalence
 

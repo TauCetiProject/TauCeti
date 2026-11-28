@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.Grading.Universal
+public import TauCeti.CategoryTheory.Monoidal.Grading.Universal.UnitSummands
 public import TauCeti.CategoryTheory.Monoidal.Linear
 public import TauCeti.CategoryTheory.Monoidal.NaturalTransformation
 public import TauCeti.CategoryTheory.Semisimple.CatCenter
@@ -13,20 +13,22 @@ public import TauCeti.CategoryTheory.Semisimple.CatCenter
 /-!
 # Monoidal automorphisms of the identity from characters of the universal grading group
 
-Let `C` be a finite semisimple `R`-linear monoidal category with simple tensor unit. A character
+Let `C` be a finite semisimple `R`-linear monoidal category. A character
 `χ : universalGradingGroup C →* Rˣ` of its universal grading group determines a monoidal natural
 automorphism of the identity functor of `C`: it acts on each simple object `X` as multiplication
 by `χ (degree [X])`, and on an arbitrary object through a decomposition into simple objects
 (`TauCeti.simpleScalarsToCatCenter`). It is monoidal because every simple constituent of `X ⊗ Y`,
-for simple `X` and `Y`, has degree `degree [X] * degree [Y]`, and because the tensor unit has
-trivial degree.
+for simple `X` and `Y`, has degree `degree [X] * degree [Y]`, and because every simple summand of
+the tensor unit `𝟙_ C` is tensor-idempotent and hence has trivial degree in
+`universalGradingGroup C` (`universalGradingGroup.degree_classOf_eq_one_of_hom_to_unit_ne_zero`).
+In particular, `𝟙_ C` need not be simple.
 
 This gives a group homomorphism from the characters of the universal grading group to the group
 `Aut_⊗(𝟭_C)` of monoidal natural automorphisms of the identity, which acts on the pivotal
 structures of `C`. Over a field it is injective, since a character is determined by its values on
 the degrees of the simple objects, which generate the group. This is the direction of the
-isomorphism `Aut_⊗(𝟭_C) ≅ Hom(U(C), kˣ)` of Drinfeld, Gelaki, Nikshych and Ostrik which extends a
-character to all objects.
+isomorphism `Aut_⊗(𝟭_C) ≅ Hom(U(C), kˣ)` of Drinfeld, Gelaki, Nikshych and Ostrik (and Penneys in
+the multitensor case) which extends a character to all objects.
 
 ## Main declarations
 
@@ -43,6 +45,8 @@ character to all objects.
 * V. Drinfeld, S. Gelaki, D. Nikshych, V. Ostrik, *On braided fusion categories I*,
   Selecta Math. **16** (2010), §2.3
 * [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §4.14
+* D. Penneys, *Unitary dual functors for unitary multitensor categories*,
+  Higher Structures **4** (2020), no. 2, 22–56 (arXiv:1808.00323), Lemma 3.19
 -/
 
 public section
@@ -130,12 +134,16 @@ private theorem app_tensorObj (χ : universalGradingGroup C →* Rˣ) (X Y : C) 
     comp_simpleScalarsToCatCenter_app]
   simp [smul_smul, mul_comm]
 
-variable [Simple (𝟙_ C)]
-
 variable {R} in
 private instance (χ : universalGradingGroup C →* Rˣ) : NatTrans.IsMonoidal (natIso χ).hom where
   unit := by
-    simp [natIso_hom_app, degreeScalars]
+    simp only [Functor.LaxMonoidal.id_ε, Category.id_comp, natIso_hom_app]
+    refine (𝟭 C).hom_ext_of_simple fun S _ s ↦ ?_
+    dsimp only [Functor.id_obj, Functor.id_map]
+    rw [comp_simpleScalarsToCatCenter_app, Category.comp_id]
+    by_cases hs : s = 0
+    · simp [hs]
+    · simp [degreeScalars, universalGradingGroup.degree_classOf_eq_one_of_hom_to_unit_ne_zero hs]
   tensor X Y := by
     simp [natIso_hom_app, app_tensorObj]
 
@@ -153,8 +161,8 @@ private theorem forgetAut_monoidalAut_app (χ : universalGradingGroup C →* Rˣ
   exact natIso_hom_app χ X
 
 /-- A character of the universal grading group of a finite semisimple `R`-linear monoidal category
-with simple unit gives the monoidal natural automorphism of the identity functor acting on each
-simple object `X` as multiplication by the value of the character on the degree of `X`. -/
+gives the monoidal natural automorphism of the identity functor acting on each simple object `X` as
+multiplication by the value of the character on the degree of `X`. -/
 def characterMonoidalAut :
     (universalGradingGroup C →* Rˣ) →* Aut (LaxMonoidalFunctor.of (𝟭 C)) where
   toFun := monoidalAut
@@ -199,22 +207,38 @@ end Character
 
 section Injective
 
-variable (k : Type w) [Field k] {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C]
-  [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C] [IsFiniteSemisimpleCategory C]
-  [Simple (𝟙_ C)]
+variable (R : Type w) [CommSemiring R] {C : Type u} [Category.{v} C] [Abelian C]
+  [MonoidalCategory C] [MonoidalPreadditive C] [Linear R C] [MonoidalLinear R C]
+  [IsFiniteSemisimpleCategory C]
 
-/-- Over a field, distinct characters of the universal grading group give distinct monoidal
-automorphisms of the identity functor, since a character is determined by its values on the
-degrees of the simple objects. -/
-theorem characterMonoidalAut_injective :
-    Function.Injective (characterMonoidalAut k (C := C)) := by
+/-- If units of `R` act faithfully by scalar multiplication on the identity of every simple
+representative, distinct characters of the universal grading group give distinct monoidal
+automorphisms of the identity functor. -/
+theorem characterMonoidalAut_injective_of_smul_injective
+    (hinj : ∀ S : SimpleClasses C, Function.Injective (fun u : Rˣ ↦ (u : R) • 𝟙 S.repr)) :
+    Function.Injective (characterMonoidalAut R (C := C)) := by
   intro χ ψ h
   ext S
   have hS := congrArg
     (fun a ↦ (LaxMonoidalFunctor.forgetAut (𝟭 C) a).asIso.hom.app S.repr) h
   simp only [characterMonoidalAut_app_of_simple, SimpleClasses.classOf_repr] at hS
-  exact smul_left_injective k (CategoryTheory.id_ne_zero S.repr) hS
+  exact congrArg Units.val (hinj S hS)
 
 end Injective
+
+section Field
+
+variable (k : Type w) [Field k] {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C]
+  [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C] [IsFiniteSemisimpleCategory C]
+
+/-- Over a field, distinct characters of the universal grading group give distinct monoidal
+automorphisms of the identity functor, since a character is determined by its values on the
+degrees of the simple objects. -/
+theorem characterMonoidalAut_injective :
+    Function.Injective (characterMonoidalAut k (C := C)) :=
+  characterMonoidalAut_injective_of_smul_injective k fun S _ _ h ↦
+    Units.ext (smul_left_injective k (CategoryTheory.id_ne_zero S.repr) h)
+
+end Field
 
 end TauCeti

@@ -55,6 +55,10 @@ and avoid exposing the definitional equality of the objects being transported.
   `CategoryTheory.Functor.map_comp_whiskeringLeft_eqToIso_op_id_app` and
   `CategoryTheory.Functor.whiskeringLeft_transport_comp_hom_app`: components of precomposition
   comparisons that transport along an equality of functors.
+* `TauCeti.inv_heq_inv`, `TauCeti.prop_conj_eqToHom` and `TauCeti.eq_recOn_of_heq`:
+  heterogeneous equality of inverses of heterogeneously equal isomorphisms, preservation of
+  morphism predicates under `eqToHom` conjugation, and recovering equality with a double
+  `Eq.recOn` cast from heterogeneous equality.
 -/
 
 public section
@@ -159,6 +163,26 @@ theorem eqToIso_conjugate_trans {C : Type*} [Category* C] {U V W X Y Z : C}
       eqToIso h₁ ≪≫ (eqToIso h₂ ≪≫ e ≪≫ eqToIso h₃) ≪≫ eqToIso h₄ := by
   subst h₁ h₂ h₃ h₄
   simp
+
+/-- Inverses of heterogeneously equal isomorphisms between equal endpoints are heterogeneously
+equal. -/
+theorem inv_heq_inv {C : Type*} [Category* C] {X₁ Y₁ X₂ Y₂ : C}
+    (hX : X₁ = X₂) (hY : Y₁ = Y₂) {f : X₁ ⟶ Y₁} {g : X₂ ⟶ Y₂} [IsIso f] [IsIso g]
+    (h : f ≍ g) : inv f ≍ inv g := by
+  subst hX hY; cases h; rfl
+
+/-- A predicate on morphisms is preserved under conjugation by `eqToHom`. -/
+theorem prop_conj_eqToHom {C : Type*} [Category* C]
+    {P : ∀ {x y : C}, (x ⟶ y) → Prop} {x₁ y₁ x₂ y₂ : C} (hx : x₂ = x₁) (hy : y₁ = y₂)
+    {m : x₁ ⟶ y₁} (hm : P m) : P (eqToHom hx ≫ m ≫ eqToHom hy) := by
+  subst hx hy; simpa using hm
+
+/-- Two heterogeneously equal elements of a binary family `P : α → α → Sort*` agree after
+transporting both indices via `Eq.recOn`. -/
+theorem eq_recOn_of_heq {α : Sort*} {P : α → α → Sort*} {x₁ y₁ x₂ y₂ : α}
+    (hx : x₁ = x₂) (hy : y₁ = y₂) {a : P x₁ y₁} {b : P x₂ y₂} (h : a ≍ b) :
+    a = Eq.recOn hy.symm (Eq.recOn hx.symm b) := by
+  subst hx hy; exact eq_of_heq h
 
 end TauCeti
 

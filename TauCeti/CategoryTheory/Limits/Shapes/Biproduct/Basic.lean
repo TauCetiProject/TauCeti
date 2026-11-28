@@ -47,7 +47,8 @@ biproduct over an empty index type is zero (`TauCeti.isZero_biproduct_of_isEmpty
 isomorphism between the points of two limit bicones of one family carries inclusions to inclusions
 (`CategoryTheory.Limits.Bicone.ι_comp_conePointUniqueUpToIso_hom`). The point of a bilimit
 bicone is zero exactly when every summand is
-(`CategoryTheory.Limits.Bicone.IsBilimit.isZero_pt_iff`).
+(`CategoryTheory.Limits.Bicone.IsBilimit.isZero_pt_iff`), and an additive functor preserves finite
+biproducts indexed in any universe (`CategoryTheory.Limits.preservesBiproductsOfShape_of_finite`).
 An additive functor which
 kills one summand of a binary biproduct inverts the projection onto the other
 (`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`), and its comparison
@@ -603,6 +604,17 @@ theorem Bicone.IsBilimit.isZero_pt_iff {J : Type w} {f : J → C} {b : Bicone f}
   ⟨fun h j ↦ (IsZero.iff_id_eq_zero _).2 <| (bicone_ι_π_self b j).symm.trans <| by
       rw [h.eq_of_src (b.π j) 0, comp_zero],
     fun h ↦ (IsZero.iff_id_eq_zero _).2 <| hb.isLimit.hom_ext fun j ↦ (h j.as).eq_of_tgt _ _⟩
+
+/-- An additive functor preserves finite biproducts indexed in an arbitrary universe. -/
+theorem preservesBiproductsOfShape_of_finite {C : Type u} {D : Type u'} [Category.{v} C]
+    [Category.{w'} D] [Preadditive C] [Preadditive D] (J : Type w) [Finite J] (F : C ⥤ D)
+    [F.Additive] : PreservesBiproductsOfShape J F :=
+  let ⟨_⟩ := nonempty_fintype J
+  ⟨⟨fun {b} hb ↦ ⟨isBilimitOfTotal (F.mapBicone b) <| by
+    have h := congrArg (fun g : b.pt ⟶ b.pt ↦ F.map g) (IsBilimit.total hb)
+    simp only [F.map_sum, F.map_comp, F.map_id] at h
+    simp only [Functor.mapBicone_π, Functor.mapBicone_ι]
+    exact h⟩⟩⟩
 
 end CategoryTheory.Limits
 

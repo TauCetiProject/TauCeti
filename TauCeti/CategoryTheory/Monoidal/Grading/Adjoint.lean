@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.Grading.Universal
+public import TauCeti.CategoryTheory.Monoidal.Grading.Universal.Rigid
 public import TauCeti.CategoryTheory.Semisimple.Monoidal
 public import TauCeti.CategoryTheory.Semisimple.Rigid
 
@@ -391,7 +391,7 @@ theorem _root_.TauCeti.SimpleClasses.IsAdjoint.degree_eq_one {U : SimpleClasses 
   | of_tensor_rightDual X U f hf =>
     obtain ⟨g, hg⟩ : Occurs U.repr (X.repr ⊗ X.dual.repr) :=
       Occurs.of_iso_right (whiskerLeftIso _ (dualReprIso X).symm) ⟨f, hf⟩
-    rw [degree_mul _ _ _ g hg, degree_dual, mul_inv_cancel]
+    rw [degree_mul _ _ _ g hg, degree_dual_of_simple_unit, mul_inv_cancel]
   | of_tensor A B U f _ _ hf hA hB => rw [degree_mul _ _ _ f hf, hA, hB, mul_one]
 
 section DegreeCharacterization

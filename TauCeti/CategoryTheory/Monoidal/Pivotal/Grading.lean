@@ -5,31 +5,40 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.Grading.Classification
+public import TauCeti.CategoryTheory.Monoidal.Grading.Groupoid.Character
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Torsor
 
 /-!
 # Classifying pivotal structures by universal grading characters
 
 Fix a pivotal structure `P` on a finite semisimple rigid linear monoidal category over an
-algebraically closed field, with simple unit and finite-dimensional endomorphism spaces of
-simple objects. Every other pivotal structure is uniquely the twist of `P` by a character of
-the universal grading group. The equivalence `PivotalCategory.characterEquiv` sends `Q` to the
-character of the monoidal automorphism `Q /ₛ P`; its inverse twists `P` by a character.
+algebraically closed field with finite-dimensional endomorphism spaces of simple objects. Every
+other pivotal structure is uniquely the twist of `P` by a character of `universalGradingGroup C`,
+or equivalently by a `kˣ`-valued groupoid character `universalGradingGroupoid C ⥤ SingleObj kˣ`
+(Penneys, Lemma 3.19(2)). Simplicity of the tensor unit `𝟙_ C` is not required, so both
+classifications apply to arbitrary multitensor and multifusion categories.
 
-Concretely, twisting a pivotal structure by a character `χ` multiplies its component at each
-simple object `X` by `χ (degree [X])`
+Concretely, twisting a pivotal structure by a groupoid character `F` multiplies its component at
+each simple object `X` by `F.map (degreeOf X)`
+(`PivotalCategory.groupoidCharacterMonoidalAut_smul_pivotalIso_hom_app_of_simple`), and twisting by
+a group character `χ` multiplies it by `χ (degree [X])`
 (`PivotalCategory.characterMonoidalAut_smul_pivotalIso_hom_app_of_simple`).
 
-The base pivotal structure is explicit: this does not assert that every fusion category has
-a pivotal structure. No finiteness assumption on the set of simple classes or characteristic
-assumption on the field is needed.
+The base pivotal structure is explicit: this does not assert that every multitensor category has a
+pivotal structure. The equivalences `PivotalCategory.characterEquiv` and
+`PivotalCategory.groupoidCharacterEquiv` (along with the arbitrary-field variants
+`PivotalCategory.characterEquivOfSurjective` and
+`PivotalCategory.groupoidCharacterEquivOfSurjective` when simple endomorphism algebras are scalar)
+need no finiteness assumption on the set of simple classes or characteristic assumption on
+the field.
 
 ## References
 
 * V. Drinfeld, S. Gelaki, D. Nikshych, V. Ostrik, *On braided fusion categories I*,
   Selecta Math. **16** (2010), §2.3
 * [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §§4.7, 4.14
+* D. Penneys, *Unitary dual functors for unitary multitensor categories*,
+  Higher Structures **4** (2020), no. 2, 22–56 (arXiv:1808.00323), §3.3, Lemma 3.19
 -/
 
 public section
@@ -46,7 +55,7 @@ section Twist
 
 variable {R : Type w} [CommSemiring R] {C : Type u} [Category.{v} C] [Abelian C]
   [MonoidalCategory C] [MonoidalPreadditive C] [Linear R C] [MonoidalLinear R C]
-  [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)] [RigidCategory C]
+  [IsFiniteSemisimpleCategory C] [RigidCategory C]
 
 /-- Twisting a pivotal structure by a character `χ` of the universal grading group multiplies
 its component at a simple object `X` by `χ (degree [X])`. -/
@@ -61,7 +70,92 @@ theorem characterMonoidalAut_smul_pivotalIso_hom_app_of_simple
   -- unfolding, so `Category.id_comp` is applied up to definitional equality.
   exact congrArg _ (Category.id_comp _)
 
+/-- Twisting a pivotal structure by an `Rˣ`-valued character `F` of `universalGradingGroupoid C`
+multiplies its component at a simple object `X` by `F.map (degreeOf X)`. -/
+theorem groupoidCharacterMonoidalAut_smul_pivotalIso_hom_app_of_simple
+    (F : universalGradingGroupoid C ⥤ SingleObj Rˣ) (P : PivotalCategory C) (X : C) [Simple X] :
+    (groupoidCharacterMonoidalAut R F • P).pivotalIso.hom.app X =
+      Units.val (F.map (universalGradingGroupoid.degreeOf X)) • P.pivotalIso.hom.app X := by
+  rw [groupoidCharacterMonoidalAut_eq_characterMonoidalAut,
+    characterMonoidalAut_smul_pivotalIso_hom_app_of_simple,
+    universalGradingGroupoid.singleObjFunctorMulEquiv_apply_degree_classOf]
+
 end Twist
+
+section ClassificationGeneral
+
+variable (k : Type*) [Field k]
+  {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [RigidCategory C]
+  [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
+  [IsFiniteSemisimpleCategory C]
+  (hscalar : ∀ (S : C) [Simple S], Function.Surjective (algebraMap k (End S)))
+
+/-- Relative to a chosen pivotal structure `P`, when every simple object has scalar endomorphisms
+over `k`, pivotal structures are parametrized by the characters of the universal grading group. -/
+def characterEquivOfSurjective (P : PivotalCategory C) :
+    PivotalCategory C ≃ (universalGradingGroup C →* kˣ) := by
+  letI : Nonempty (PivotalCategory C) := ⟨P⟩
+  exact (Equiv.smulConst P).symm.trans (monoidalAutCharacterEquivOfSurjective k hscalar).toEquiv
+
+/-- The character of `Q` relative to `P` is that of the automorphism `Q /ₛ P`. -/
+@[simp]
+theorem characterEquivOfSurjective_apply (P Q : PivotalCategory C) :
+    characterEquivOfSurjective k hscalar P Q =
+      monoidalAutCharacterOfSurjective k hscalar (Q /ₛ P) := by
+  simp [characterEquivOfSurjective]
+
+/-- A character parametrizes the pivotal structure obtained by twisting the base structure. -/
+@[simp]
+theorem characterEquivOfSurjective_symm_apply (P : PivotalCategory C)
+    (χ : universalGradingGroup C →* kˣ) :
+    (characterEquivOfSurjective k hscalar P).symm χ = characterMonoidalAut k χ • P := by
+  simp [characterEquivOfSurjective]
+
+/-- When every simple object has scalar endomorphisms over `k`, any two pivotal structures differ
+by exactly one universal grading character. -/
+theorem existsUnique_character_smul_eq_of_surjective
+    (hscalar : ∀ (S : C) [Simple S], Function.Surjective (algebraMap k (End S)))
+    (P Q : PivotalCategory C) :
+    ∃! χ : universalGradingGroup C →* kˣ, characterMonoidalAut k χ • P = Q := by
+  simpa only [characterEquivOfSurjective_symm_apply] using
+    (characterEquivOfSurjective k hscalar P).symm.bijective.existsUnique Q
+
+/-- Relative to a chosen pivotal structure `P`, when every simple object has scalar endomorphisms
+over `k`, pivotal structures on a multitensor category `C` are parametrized by `kˣ`-valued
+characters `universalGradingGroupoid C ⥤ SingleObj kˣ`. -/
+def groupoidCharacterEquivOfSurjective (P : PivotalCategory C) :
+    PivotalCategory C ≃ (universalGradingGroupoid C ⥤ SingleObj kˣ) :=
+  (characterEquivOfSurjective k hscalar P).trans
+    (universalGradingGroupoid.singleObjFunctorMulEquiv (C := C) kˣ).symm.toEquiv
+
+/-- The groupoid character of `Q` relative to `P` is that of the monoidal automorphism
+`Q /ₛ P`. -/
+@[simp]
+theorem groupoidCharacterEquivOfSurjective_apply (P Q : PivotalCategory C) :
+    groupoidCharacterEquivOfSurjective k hscalar P Q =
+      monoidalAutGroupoidCharacterOfSurjective k hscalar (Q /ₛ P) := by
+  simp [groupoidCharacterEquivOfSurjective, monoidalAutGroupoidCharacterOfSurjective_eq]
+
+/-- A groupoid character parametrizes the pivotal structure obtained by twisting `P`. -/
+@[simp]
+theorem groupoidCharacterEquivOfSurjective_symm_apply (P : PivotalCategory C)
+    (F : universalGradingGroupoid C ⥤ SingleObj kˣ) :
+    (groupoidCharacterEquivOfSurjective k hscalar P).symm F =
+      groupoidCharacterMonoidalAut k F • P := by
+  simp [groupoidCharacterEquivOfSurjective,
+    groupoidCharacterMonoidalAut_eq_characterMonoidalAut]
+
+/-- When every simple object has scalar endomorphisms over `k`, any two pivotal structures on a
+multitensor category differ by a unique `kˣ`-valued character of `universalGradingGroupoid C`. -/
+theorem existsUnique_groupoidCharacter_smul_eq_of_surjective
+    (hscalar : ∀ (S : C) [Simple S], Function.Surjective (algebraMap k (End S)))
+    (P Q : PivotalCategory C) :
+    ∃! F : universalGradingGroupoid C ⥤ SingleObj kˣ,
+      groupoidCharacterMonoidalAut k F • P = Q := by
+  simpa only [groupoidCharacterEquivOfSurjective_symm_apply] using
+    (groupoidCharacterEquivOfSurjective k hscalar P).symm.bijective.existsUnique Q
+
+end ClassificationGeneral
 
 section Classification
 
@@ -69,34 +163,67 @@ variable (k : Type*) [Field k] [IsAlgClosed k]
   {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [RigidCategory C]
   [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
   [hfin : ∀ (X : C) [Simple X], FiniteDimensional k (X ⟶ X)]
-  [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)]
+  [IsFiniteSemisimpleCategory C]
 
 /-- Relative to a chosen pivotal structure `P`, pivotal structures are parametrized by the
 characters of the universal grading group. -/
 def characterEquiv (P : PivotalCategory C) :
-    PivotalCategory C ≃ (universalGradingGroup C →* kˣ) := by
-  letI : Nonempty (PivotalCategory C) := ⟨P⟩
-  exact (Equiv.smulConst P).symm.trans (monoidalAutCharacterEquiv (hfin := hfin) k).toEquiv
+    PivotalCategory C ≃ (universalGradingGroup C →* kˣ) :=
+  characterEquivOfSurjective k (fun S _ ↦ (bijective_algebraMap_end_of_simple k S).surjective) P
 
 /-- The character of `Q` relative to `P` is that of the automorphism `Q /ₛ P`. -/
 @[simp]
 theorem characterEquiv_apply (P Q : PivotalCategory C) :
     characterEquiv (hfin := hfin) k P Q =
       monoidalAutCharacter (hfin := hfin) k (Q /ₛ P) := by
-  simp [characterEquiv]
+  rw [monoidalAutCharacter_eq]
+  exact characterEquivOfSurjective_apply k
+    (fun S _ ↦ (bijective_algebraMap_end_of_simple k S).surjective) P Q
 
 /-- A character parametrizes the pivotal structure obtained by twisting the base structure. -/
 @[simp]
 theorem characterEquiv_symm_apply (P : PivotalCategory C)
     (χ : universalGradingGroup C →* kˣ) :
-    (characterEquiv (hfin := hfin) k P).symm χ = characterMonoidalAut k χ • P := by
-  simp [characterEquiv]
+    (characterEquiv (hfin := hfin) k P).symm χ = characterMonoidalAut k χ • P :=
+  characterEquivOfSurjective_symm_apply k
+    (fun S _ ↦ (bijective_algebraMap_end_of_simple k S).surjective) P χ
 
 /-- Any two pivotal structures differ by exactly one universal grading character. -/
 theorem existsUnique_character_smul_eq (P Q : PivotalCategory C) :
-    ∃! χ : universalGradingGroup C →* kˣ, characterMonoidalAut k χ • P = Q := by
-  simpa only [characterEquiv_symm_apply] using
-    (characterEquiv (hfin := hfin) k P).symm.bijective.existsUnique Q
+    ∃! χ : universalGradingGroup C →* kˣ, characterMonoidalAut k χ • P = Q :=
+  existsUnique_character_smul_eq_of_surjective k
+    (fun S _ ↦ (bijective_algebraMap_end_of_simple k S).surjective) P Q
+
+/-- Relative to a chosen pivotal structure `P`, pivotal structures on a multitensor category `C`
+are parametrized by `kˣ`-valued characters `universalGradingGroupoid C ⥤ SingleObj kˣ` of its
+universal grading groupoid (Penneys, Lemma 3.19(2)). -/
+def groupoidCharacterEquiv (P : PivotalCategory C) :
+    PivotalCategory C ≃ (universalGradingGroupoid C ⥤ SingleObj kˣ) :=
+  (characterEquiv (hfin := hfin) k P).trans
+    (universalGradingGroupoid.singleObjFunctorMulEquiv (C := C) kˣ).symm.toEquiv
+
+/-- The groupoid character of `Q` relative to `P` is that of the monoidal automorphism
+`Q /ₛ P`. -/
+@[simp]
+theorem groupoidCharacterEquiv_apply (P Q : PivotalCategory C) :
+    groupoidCharacterEquiv (hfin := hfin) k P Q =
+      monoidalAutGroupoidCharacter (hfin := hfin) k (Q /ₛ P) := by
+  simp [groupoidCharacterEquiv, monoidalAutGroupoidCharacter_eq]
+
+/-- A groupoid character parametrizes the pivotal structure obtained by twisting `P`. -/
+@[simp]
+theorem groupoidCharacterEquiv_symm_apply (P : PivotalCategory C)
+    (F : universalGradingGroupoid C ⥤ SingleObj kˣ) :
+    (groupoidCharacterEquiv (hfin := hfin) k P).symm F =
+      groupoidCharacterMonoidalAut k F • P := by
+  simp [groupoidCharacterEquiv, groupoidCharacterMonoidalAut_eq_characterMonoidalAut]
+
+/-- Any two pivotal structures on a multitensor category differ by a unique `kˣ`-valued character of
+`universalGradingGroupoid C`. -/
+theorem existsUnique_groupoidCharacter_smul_eq (P Q : PivotalCategory C) :
+    ∃! F : universalGradingGroupoid C ⥤ SingleObj kˣ, groupoidCharacterMonoidalAut k F • P = Q := by
+  simpa only [groupoidCharacterEquiv_symm_apply] using
+    (groupoidCharacterEquiv (hfin := hfin) k P).symm.bijective.existsUnique Q
 
 end Classification
 
