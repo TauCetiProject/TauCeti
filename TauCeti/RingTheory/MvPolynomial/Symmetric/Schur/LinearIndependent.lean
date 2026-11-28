@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basic
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Symmetric
 
@@ -187,17 +186,19 @@ theorem linearIndependent_diagramSchurPoly [IsCancelAdd R] {N : ℕ} :
   rw [← sum_filter, ← sum_subtype_eq_sum_filter, ← sum_filter, ← sum_subtype_eq_sum_filter] at h
   let e : {ν : {μ : YoungDiagram // μ.colLen 0 ≤ N} // ν.val.card = μ.val.card} ≃
       {ν : μ.val.card.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N} :=
-    { toFun := fun ν => ⟨ν.val.val.toPartition ν.property, by simpa using ν.val.property⟩
-      invFun := fun ν => ⟨⟨YoungDiagram.ofPartition ν.val, ν.property⟩,
-        YoungDiagram.card_ofPartition ν.val⟩
-      left_inv := fun ν => by ext : 2; simp
-      right_inv := fun ν => by ext : 1; simp }
+    ((Equiv.subtypeSubtypeEquivSubtypeInter (fun ν : YoungDiagram => ν.colLen 0 ≤ N)
+        (fun ν : YoungDiagram => ν.card = μ.val.card)).trans
+      ((Equiv.subtypeEquivRight fun _ => and_comm).trans
+        (Equiv.subtypeSubtypeEquivSubtypeInter (fun ν : YoungDiagram => ν.card = μ.val.card)
+          (fun ν : YoungDiagram => ν.colLen 0 ≤ N)).symm)).trans
+      (Equiv.subtypeEquiv YoungDiagram.equivPartition fun ν => by
+        simp [YoungDiagram.equivPartition])
   have hli : LinearIndependent R
       (fun ν : {ν : {μ : YoungDiagram // μ.colLen 0 ≤ N} // ν.val.card = μ.val.card} =>
         diagramSchurPoly N R ν.val.val) := by
     convert (linearIndependent_diagramSchurPoly_of_colLen_le
       (R := R) (n := μ.val.card) (N := N)).comp e e.injective with ν
-    simp [e]
+    simp [e, YoungDiagram.equivPartition]
   exact linearIndependent_iff'ₛ.mp hli (s.subtype fun ν => ν.val.card = μ.val.card)
     (fun ν => g ν.val) (fun ν => g' ν.val) h ⟨μ, rfl⟩ (by simpa using hμ)
 

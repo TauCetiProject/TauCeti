@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Hive.LittlewoodRichardson
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
-import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.LittlewoodRichardson
-import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Weight.HighestWeight
 import TauCeti.RepresentationTheory.FDRep.DirectSum
 
 /-!
