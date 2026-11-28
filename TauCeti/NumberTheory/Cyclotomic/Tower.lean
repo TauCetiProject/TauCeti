@@ -300,8 +300,9 @@ theorem isOpen_range_cyclotomicTowerCharacter_of_finite_rat
     [∀ i, HasEnoughRootsOfUnity L (p ^ i)] [Algebra ℚ K] [FiniteDimensional ℚ K] :
     IsOpen ((cyclotomicTowerCharacter p K L).range : Set ℤ_[p]ˣ) := by
   rw [range_cyclotomicTowerCharacter]
-  exact isOpen_range_localCyclotomicCharacter_of_surjective p ℚ K
-    (surjective_localCyclotomicCharacter_rat p)
+  exact isOpen_range_localCyclotomicCharacter_of_isOpen p ℚ K
+    (by rw [MonoidHom.range_eq_top.mpr (surjective_localCyclotomicCharacter_rat p),
+          Subgroup.coe_top]; exact isOpen_univ)
 
 end Character
 

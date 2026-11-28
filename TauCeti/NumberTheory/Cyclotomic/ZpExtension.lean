@@ -8,7 +8,8 @@ module
 public import TauCeti.FieldTheory.Galois.Quotient
 public import TauCeti.NumberTheory.Cyclotomic.LogCharacter
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Procyclic
-import TauCeti.Topology.Algebra.Group.Quotient.Basic
+import Mathlib.Topology.Maps.Strict.Group
+import TauCeti.Topology.Algebra.Group.Profinite.ProP.Subgroup
 import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.Topology.Algebra.Group.Profinite.Hopfian
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.ClosedSubgroups
@@ -18,9 +19,10 @@ import TauCeti.Topology.Algebra.Group.Profinite.ProP.PadicInt.ClosedSubgroups
 
 Inside the full cyclotomic tower `K(μ_{p^∞})`, take the fixed field of the finite-order
 automorphisms. The logarithmic coordinate of the cyclotomic character identifies the
-Galois group of this fixed field with an open subgroup of the additive group of `ℤ_p`.
-Thus this is the unique subextension of the full tower with Galois group topologically
-isomorphic to `ℤ_p`. In any common overfield containing the roots of unity, the construction
+Galois group of this fixed field with a closed subgroup of the additive group of `ℤ_p`,
+which is open over number fields. When this image is nontrivial, the fixed field is the
+unique subextension of the full tower with Galois group topologically isomorphic to `ℤ_p`.
+In any common overfield containing the roots of unity, the construction
 commutes with base change by compositum.
 
 The construction includes `p = 2`: a cyclotomic character value with nontrivial sign
@@ -108,10 +110,11 @@ theorem coe_cyclotomicZpExtensionGaloisEquivRange_restrictNormalHom (σ : Gal(C/
       cyclotomicTowerLogCharacter p K L σ := by
   simp only [cyclotomicZpExtensionGaloisEquivRange, ContinuousMulEquiv.trans_apply,
     quotientFixingSubgroupEquiv_symm_restrictNormalHom, ContinuousMulEquiv.quotientCongr_mk,
-    ContinuousMulEquiv.refl_apply, ContinuousMulEquiv.coe_quotientKerEquivRange_mk,
-    ContinuousMonoidHom.coe_toMonoidHom]
-  -- The remaining coercion only forgets continuity.
-  rfl
+    ContinuousMulEquiv.refl_apply]
+  let f := (cyclotomicTowerLogCharacter p K L).toMonoidHom
+  have hle : f.ker ≤ f.rangeRestrict.ker := (MonoidHom.ker_rangeRestrict f).symm.le
+  -- The topological equivalence uses the algebraic range kernel lift, whose evaluation is a lift.
+  exact congrArg Subtype.val (QuotientGroup.lift_mk' f.ker hle σ)
 
 /-- The principal-unit part of the cyclotomic character descends to the torsion fixed field. -/
 noncomputable def cyclotomicZpExtensionPrincipalCharacter :
@@ -121,6 +124,15 @@ noncomputable def cyclotomicZpExtensionPrincipalCharacter :
   map_mul' σ τ := by simp
   continuous_toFun := (unitsPrincipalLogEquiv p).symm.continuous.comp
     (continuous_subtypeVal.comp (cyclotomicZpExtensionGaloisEquivRange p K L).continuous)
+
+/-- The logarithm of the descended principal character is its logarithmic coordinate. -/
+@[simp]
+theorem unitsPrincipalLogEquiv_cyclotomicZpExtensionPrincipalCharacter
+    (σ : Gal(cyclotomicZpExtension p K L/K)) :
+    unitsPrincipalLogEquiv p (cyclotomicZpExtensionPrincipalCharacter p K L σ) =
+      (cyclotomicZpExtensionGaloisEquivRange p K L σ : Multiplicative ℤ_[p]) := by
+  simp only [cyclotomicZpExtensionPrincipalCharacter, ContinuousMonoidHom.coe_mk,
+    MonoidHom.coe_mk, OneHom.coe_mk, ContinuousMulEquiv.apply_symm_apply]
 
 /-- On restriction from the full tower the descended character divides the full character
 by the torsion section of its residue. -/
@@ -134,9 +146,8 @@ theorem coe_cyclotomicZpExtensionPrincipalCharacter_restrictNormalHom (σ : Gal(
   let u := cyclotomicTowerCharacter p K L σ
   have hu := (padicIntUnitsEquivZModUnitsProd p).symm_apply_apply u
   rw [padicIntUnitsEquivZModUnitsProd_symm_apply, padicIntUnitsEquivZModUnitsProd_apply_fst] at hu
-  -- Reveal the composite evaluation so the restriction lemma matches its inner argument.
-  change (↑((unitsPrincipalLogEquiv p).symm (cyclotomicZpExtensionGaloisEquivRange p K L
-    (AlgEquiv.restrictNormalHom (cyclotomicZpExtension p K L) σ))) : ℤ_[p]ˣ) = _
+  simp only [cyclotomicZpExtensionPrincipalCharacter, ContinuousMonoidHom.coe_mk,
+    MonoidHom.coe_mk, OneHom.coe_mk]
   rw [h, cyclotomicTowerLogCharacter_apply, eq_inv_mul_iff_mul_eq]
   exact hu
 
@@ -146,10 +157,10 @@ when its cyclotomic character has finite order. -/
 theorem mem_fixingSubgroup_lift_cyclotomicZpExtension_iff (σ : Gal(L/K)) :
     σ ∈ (IntermediateField.lift (cyclotomicZpExtension p K L)).fixingSubgroup ↔
       cyclotomicCharacter L p σ.toRingEquiv ∈ CommGroup.torsion ℤ_[p]ˣ := by
-  have h : (IntermediateField.lift (cyclotomicZpExtension p K L)).fixingSubgroup = _ :=
+  have h : ((cyclotomicZpExtension p K L).map (cyclotomicTower p K L).val).fixingSubgroup = _ :=
     IntermediateField.map_fixingSubgroup (E' := L) (cyclotomicZpExtension p K L)
   rw [fixingSubgroup_cyclotomicZpExtension] at h
-  rw [h, Subgroup.mem_comap, mem_torsionCharSubgroup_iff,
+  rw [IntermediateField.lift, h, Subgroup.mem_comap, mem_torsionCharSubgroup_iff,
     cyclotomicTowerCharacter_restrictNormalHom]
 
 variable {K L} in
@@ -168,22 +179,16 @@ theorem cyclotomicZpExtension_baseChange (E : IntermediateField K L) :
   let A := adjoin E (j '' (F : Set C))
   have hfix : (cyclotomicZpExtension p E L).fixingSubgroup = A.fixingSubgroup := by
     ext σ
-    have hadjoin : (∀ x ∈ A, σ x = x) ↔ ∀ x ∈ F, σ (j x) = j x := by
-      have h := forall_mem_adjoin_smul_eq_self_iff E (S := j '' (F : Set C)) σ
-      simp only [AlgEquiv.smul_def, Set.forall_mem_image] at h
-      exact h.trans ⟨fun ht _ hx ↦ ht hx, fun ht _ hx ↦ ht _ hx⟩
-    rw [fixingSubgroup_cyclotomicZpExtension, mem_torsionCharSubgroup_iff,
-      cyclotomicTowerCharacter_apply, IntermediateField.mem_fixingSubgroup_iff, hadjoin]
+    rw [fixingSubgroup_adjoin_image, Subgroup.mem_comap]
+    simp only [F, fixingSubgroup_cyclotomicZpExtension, mem_torsionCharSubgroup_iff]
+    rw [cyclotomicTowerCharacter_apply]
     let τ := j.restrictNormalHom (σ.restrictScalars K)
     have hχ : cyclotomicTowerCharacter p K L τ = cyclotomicCharacter T p σ.toRingEquiv := by
       rw [cyclotomicTowerCharacter_apply, ← AlgEquiv.toRingEquiv_restrictScalars K σ]
       exact cyclotomicCharacter_eq_of_injective (f := j.toRingHom) p j.injective
         (fun _ x _ ↦ (j.restrictNormalHom_commutes (σ.restrictScalars K) x).symm)
         (fun _ n ↦ HasEnoughRootsOfUnity.exists_isPrimitiveRoot C (p ^ n)) |>.symm
-    rw [← hχ, ← mem_torsionCharSubgroup_iff, ← fixingSubgroup_cyclotomicZpExtension,
-      IntermediateField.mem_fixingSubgroup_iff]
-    simp only [F, ← AlgEquiv.restrictScalars_apply K σ, ← j.restrictNormalHom_commutes, τ]
-    exact ⟨fun h x hx ↦ congrArg j (h x hx), fun h x hx ↦ j.injective (h x hx)⟩
+    exact Iff.of_eq (congrArg (· ∈ CommGroup.torsion ℤ_[p]ˣ) hχ).symm
   have hA := congrArg fixedField hfix
   rw [InfiniteGalois.fixedField_fixingSubgroup, InfiniteGalois.fixedField_fixingSubgroup] at hA
   rw [hA]
@@ -191,9 +196,12 @@ theorem cyclotomicZpExtension_baseChange (E : IntermediateField K L) :
   rw [lift_adjoin, Set.image_image, restrictScalars_adjoin_eq_sup]
   congr 1
   -- The two inclusion maps compose to the inclusion of the original full tower into `L`.
-  have hj : (fun x : C ↦ (j x : L)) = ((cyclotomicTower p K L).val : C → L) := rfl
+  have hj : (fun x : C ↦ (j x : L)) = ((cyclotomicTower p K L).val : C → L) := by
+    rw [IntermediateField.coe_val]
+    funext x
+    exact IntermediateField.coe_inclusion hCD x
   rw [hj, ← adjoin_map, adjoin_self]
-  rfl
+  rw [IntermediateField.lift]
 
 /-- If the logarithmic cyclotomic image is nontrivial, the torsion fixed field has Galois
 group topologically isomorphic to `ℤ_p`. -/
@@ -218,33 +226,47 @@ theorem nonempty_cyclotomicZpExtensionGaloisEquiv_padicInt_of_finite_rat
   obtain ⟨e⟩ := H.nonempty_continuousMulEquiv_padicInt
   exact ⟨(cyclotomicZpExtensionGaloisEquivRange p K L).trans e⟩
 
-/-- The coordinate on the cyclotomic Galois group attached to an infinite-order topological
-generator `γ`, taking `γ` to the additive unit of `ℤ_p`. -/
+/-- The Galois group of the torsion fixed field is pro-`p`, even for trivial logarithmic image. -/
+theorem isProP_cyclotomicZpExtensionGalois :
+    IsProP p Gal(cyclotomicZpExtension p K L/K) :=
+  ((isProP_multiplicative_padicInt p).subgroup _).of_equiv
+    (cyclotomicZpExtensionGaloisEquivRange p K L).symm
+
+/-- The coordinate attached to a nonidentity topological generator `γ` sends `γ` to `1`
+in additive notation (`ofAdd 1`). -/
 noncomputable def cyclotomicZpExtensionGaloisEquivPadicInt
     (γ : Gal(cyclotomicZpExtension p K L/K))
-    (hγ : (Subgroup.closure {γ}).topologicalClosure = ⊤) (hfin : ¬ IsOfFinOrder γ) :
+    (hγ : (Subgroup.closure {γ}).topologicalClosure = ⊤) (hne : γ ≠ 1) :
     Gal(cyclotomicZpExtension p K L/K) ≃ₜ* Multiplicative ℤ_[p] := by
-  have hne : (cyclotomicTowerLogCharacter p K L).toMonoidHom.range ≠ ⊥ := by
-    rw [Subgroup.ne_bot_iff_exists_ne_one]
-    refine ⟨cyclotomicZpExtensionGaloisEquivRange p K L γ, ?_⟩
+  have hfin : ¬ IsOfFinOrder γ := by
     intro h
-    have hg := (cyclotomicZpExtensionGaloisEquivRange p K L).injective
-      (h.trans (map_one (cyclotomicZpExtensionGaloisEquivRange p K L)).symm)
-    rw [hg] at hfin
-    exact hfin (isOfFinOrder_iff_pow_eq_one.mpr ⟨1, Nat.one_pos, one_pow 1⟩)
-  let e := (nonempty_cyclotomicZpExtensionGaloisEquiv_padicInt p K L hne).some.symm
-  let hP := (isProP_multiplicative_padicInt p).of_surjective
-    e.toMulEquiv.toMonoidHom e.continuous e.surjective
-  exact (hP.padicPowEquiv hγ hfin).symm
+    apply hne
+    apply (cyclotomicZpExtensionGaloisEquivRange p K L).injective
+    exact (isOfFinOrder_iff_eq_one _).mp
+      ((cyclotomicZpExtensionGaloisEquivRange p K L).toMulEquiv.toMonoidHom.isOfFinOrder h) |>.trans
+        (map_one _).symm
+  exact ((isProP_cyclotomicZpExtensionGalois p K L).padicPowEquiv hγ hfin).symm
+
+/-- The inverse generator coordinate is the generator's `p`-adic power map. -/
+@[simp]
+theorem cyclotomicZpExtensionGaloisEquivPadicInt_symm_apply
+    (γ : Gal(cyclotomicZpExtension p K L/K))
+    (hγ : (Subgroup.closure {γ}).topologicalClosure = ⊤) (hne : γ ≠ 1)
+    (l : Multiplicative ℤ_[p]) :
+    (cyclotomicZpExtensionGaloisEquivPadicInt p K L γ hγ hne).symm l =
+      (isProP_cyclotomicZpExtensionGalois p K L).padicPow γ l.toAdd := by
+  simp only [cyclotomicZpExtensionGaloisEquivPadicInt, ContinuousMulEquiv.symm_symm,
+    IsProP.padicPowEquiv_apply]
 
 /-- The coordinate attached to a generator sends that generator to `1` in additive notation. -/
 @[simp]
 theorem cyclotomicZpExtensionGaloisEquivPadicInt_apply_generator
     (γ : Gal(cyclotomicZpExtension p K L/K))
-    (hγ : (Subgroup.closure {γ}).topologicalClosure = ⊤) (hfin : ¬ IsOfFinOrder γ) :
-    cyclotomicZpExtensionGaloisEquivPadicInt p K L γ hγ hfin γ = ofAdd 1 := by
-  rw [cyclotomicZpExtensionGaloisEquivPadicInt, ContinuousMulEquiv.symm_apply_eq,
-    IsProP.padicPowEquiv_apply, toAdd_ofAdd, IsProP.padicPow_one]
+    (hγ : (Subgroup.closure {γ}).topologicalClosure = ⊤) (hne : γ ≠ 1) :
+    cyclotomicZpExtensionGaloisEquivPadicInt p K L γ hγ hne γ = ofAdd 1 := by
+  apply (cyclotomicZpExtensionGaloisEquivPadicInt p K L γ hγ hne).symm.injective
+  rw [ContinuousMulEquiv.symm_apply_apply,
+    cyclotomicZpExtensionGaloisEquivPadicInt_symm_apply, toAdd_ofAdd, IsProP.padicPow_one]
 
 variable {K L}
 

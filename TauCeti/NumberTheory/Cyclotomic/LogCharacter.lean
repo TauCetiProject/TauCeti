@@ -13,7 +13,8 @@ import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Range
 # Logarithmic character and torsion of the full cyclotomic tower
 
 The splitting `TauCeti.padicIntUnitsEquivZModUnitsProd` supplies the logarithmic coordinate of
-`TauCeti.cyclotomicTowerCharacter`. Its kernel is the finite subgroup of finite-order tower
+`TauCeti.cyclotomicTowerCharacter`. The kernel of `TauCeti.cyclotomicTowerLogCharacter`
+is the finite subgroup of finite-order tower
 automorphisms. The sign of the full character at `p = 2` can also be nontrivial on automorphisms
 of infinite order.
 -/

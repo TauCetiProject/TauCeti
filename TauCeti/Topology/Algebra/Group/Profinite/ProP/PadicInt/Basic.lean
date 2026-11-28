@@ -15,6 +15,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Product
 public import TauCeti.Topology.Algebra.Group.Profinite.Rank
 public import TauCeti.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
+import Mathlib.LinearAlgebra.Span.Basic
 import Mathlib.Topology.Separation.Connected
 
 /-!
@@ -154,45 +155,47 @@ open Multiplicative
 
 variable {p : ℕ} [Fact p.Prime]
 
-private noncomputable def padicIntLevelMulHom (p : ℕ) [Fact p.Prime] (n : ℕ) :
-    Multiplicative ℤ_[p] →* ↥(padicIntLevel p n) :=
-  (AddMonoidHom.mulLeft ((p : ℤ_[p]) ^ n)).toMultiplicative.codRestrict
-    (padicIntLevel p n).toSubgroup fun x ↦ (mem_padicIntLevel_iff p n).2 (dvd_mul_right _ x.toAdd)
-
-private theorem coe_padicIntLevelMulHom_apply (p : ℕ) [Fact p.Prime] (n : ℕ)
-    (x : Multiplicative ℤ_[p]) :
-    (padicIntLevelMulHom p n x : Multiplicative ℤ_[p]) =
-      ofAdd ((p : ℤ_[p]) ^ n * x.toAdd) :=
-  (rfl)
-
 /-- Multiplication by `p ^ n` gives the topological group isomorphism onto `p ^ n ℤ_p`. -/
 noncomputable def padicIntLevelMulEquiv (p : ℕ) [Fact p.Prime] (n : ℕ) :
     Multiplicative ℤ_[p] ≃ₜ* ↥(padicIntLevel p n) := by
-  let f := padicIntLevelMulHom p n
+  have hn : (p : ℤ_[p]) ^ n ≠ 0 := pow_ne_zero n (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
+  let e := LinearEquiv.toSpanNonzeroSingleton ℤ_[p] ℤ_[p] ((p : ℤ_[p]) ^ n) hn
+  have hmem (x : ℤ_[p]) : x ∈ Submodule.span ℤ_[p] {(p : ℤ_[p]) ^ n} ↔
+      ofAdd x ∈ padicIntLevel p n := by
+    simp only [Submodule.mem_span_singleton, smul_eq_mul, mem_padicIntLevel_iff,
+      toAdd_ofAdd, dvd_def, mul_comm, eq_comm]
+  let d : ℤ_[p] ≃+ Additive ↥(padicIntLevel p n) :=
+    { toFun := fun x ↦ Additive.ofMul ⟨ofAdd (e x), (hmem _).mp (e x).property⟩
+      invFun := fun y ↦ e.symm ⟨y.toMul.val.toAdd, (hmem _).mpr y.toMul.property⟩
+      left_inv := fun x ↦ e.symm_apply_apply x
+      right_inv := fun y ↦ by
+        apply Subtype.ext
+        exact congrArg (fun z : Submodule.span ℤ_[p] {(p : ℤ_[p]) ^ n} ↦ ofAdd (z : ℤ_[p]))
+          (e.apply_symm_apply _)
+      map_add' := fun x y ↦ by
+        apply Subtype.ext
+        exact congrArg (fun z : Submodule.span ℤ_[p] {(p : ℤ_[p]) ^ n} ↦ ofAdd (z : ℤ_[p]))
+          (e.map_add x y) }
+  let f : Multiplicative ℤ_[p] ≃* ↥(padicIntLevel p n) := d.toMultiplicative
+  have hf (x : Multiplicative ℤ_[p]) :
+      (f x : Multiplicative ℤ_[p]) = ofAdd ((p : ℤ_[p]) ^ n * x.toAdd) := by
+    -- The local equivalence only repackages the singleton-span map into multiplicative subtypes.
+    change ofAdd (x.toAdd * (p : ℤ_[p]) ^ n) = _
+    rw [mul_comm]
   have hcont : Continuous f := by
     apply Topology.IsInducing.subtypeVal.continuous_iff.mpr
-    simpa only [f, Function.comp_def, Pi.mul_apply, coe_padicIntLevelMulHom_apply] using
+    simpa only [Function.comp_def, Pi.mul_apply, hf] using
       continuous_ofAdd.comp (continuous_const.mul continuous_toAdd :
         Continuous fun x : Multiplicative ℤ_[p] ↦ (p : ℤ_[p]) ^ n * x.toAdd)
-  have hn : (p : ℤ_[p]) ^ n ≠ 0 := pow_ne_zero n (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
-  have hinj : Function.Injective f := by
-    intro x y h
-    have hmul := congrArg (fun z : ↥(padicIntLevel p n) ↦ (z : Multiplicative ℤ_[p])) h
-    simp only [f, coe_padicIntLevelMulHom_apply, ofAdd.injective.eq_iff] at hmul
-    exact ofAdd.symm.injective (mul_left_cancel₀ hn hmul)
-  have hsurj : Function.Surjective f := by
-    intro y
-    obtain ⟨x, hx⟩ := (mem_padicIntLevel_iff p n).1 y.property
-    refine ⟨ofAdd x, Subtype.ext ?_⟩
-    simp only [f, coe_padicIntLevelMulHom_apply, toAdd_ofAdd, ← hx, ofAdd_toAdd]
-  let e := MulEquiv.ofBijective f ⟨hinj, hsurj⟩
-  exact ⟨e, hcont, hcont.continuous_symm_of_equiv_compact_to_t2 (f := e.toEquiv)⟩
+  exact ⟨f, hcont, hcont.continuous_symm_of_equiv_compact_to_t2 (f := f.toEquiv)⟩
 
 /-- The ambient value of level rescaling is multiplication by `p ^ n`. -/
 @[simp]
 theorem coe_padicIntLevelMulEquiv_apply (n : ℕ) (x : Multiplicative ℤ_[p]) :
-    (padicIntLevelMulEquiv p n x : Multiplicative ℤ_[p]) = ofAdd ((p : ℤ_[p]) ^ n * x.toAdd) :=
-  coe_padicIntLevelMulHom_apply p n x
+    (padicIntLevelMulEquiv p n x : Multiplicative ℤ_[p]) = ofAdd ((p : ℤ_[p]) ^ n * x.toAdd) := by
+  -- Evaluation forgets the subtype packaging of the singleton-span equivalence.
+  change ofAdd (x.toAdd * (p : ℤ_[p]) ^ n) = _
+  rw [mul_comm]
 
 end LevelRescaling
 

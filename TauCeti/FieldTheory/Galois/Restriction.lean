@@ -478,3 +478,29 @@ theorem IntermediateField.subsingleton_algEquiv_of_eq_bot {L : IntermediateField
   rw [AlgEquiv.commutes, AlgEquiv.commutes]
 
 end Bot
+
+namespace IntermediateField
+
+variable {K M : Type*} [Field K] [Field M] [Algebra K M]
+
+/-- Fixing an adjoined image is equivalent to fixing the original field after restriction
+along the embedding and restriction of scalars. -/
+theorem fixingSubgroup_adjoin_image {E N : Type*} [Field E] [Field N]
+    [Algebra K E] [Algebra K N] [Algebra E N] [IsScalarTower K E N] [Normal K M]
+    (F : IntermediateField K M) (j : M →ₐ[K] N) :
+    (adjoin E (j '' (F : Set M))).fixingSubgroup =
+      F.fixingSubgroup.comap (j.restrictNormalHom.comp (AlgEquiv.restrictScalarsHom K)) := by
+  ext σ
+  have hadjoin : (∀ x ∈ adjoin E (j '' (F : Set M)), σ x = x) ↔
+      ∀ ⦃x⦄, x ∈ F → σ (j x) = j x := by
+    simpa only [AlgEquiv.smul_def, Set.forall_mem_image, SetLike.mem_coe] using
+      forall_mem_adjoin_smul_eq_self_iff E (S := j '' (F : Set M)) σ
+  rw [mem_fixingSubgroup_iff, hadjoin, Subgroup.mem_comap, mem_fixingSubgroup_iff]
+  simp only [MonoidHom.comp_apply, AlgEquiv.restrictScalarsHom_apply]
+  constructor
+  · intro h x hx
+    exact j.injective ((j.restrictNormalHom_commutes (σ.restrictScalars K) x).trans (h hx))
+  · intro h x hx
+    rw [← AlgEquiv.restrictScalars_apply K σ, ← j.restrictNormalHom_commutes, h x hx]
+
+end IntermediateField

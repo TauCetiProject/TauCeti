@@ -10,7 +10,6 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.OpenSubgroup
-public import Mathlib.Topology.Maps.Strict.Group
 public import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 public import TauCeti.GroupTheory.QuotientGroup.Map
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
@@ -533,12 +532,3 @@ instance instDiscreteTopologyComapMk' [T2Space G] (N : Subgroup G) [N.Normal] [D
 end DiscreteComap
 
 end Subgroup
-
-/-- The topological first isomorphism sends a quotient representative to its image. -/
-@[to_additive (attr := simp)
-  /-- The topological first isomorphism sends a quotient representative to its image. -/]
-theorem ContinuousMulEquiv.coe_quotientKerEquivRange_mk
-    {G H : Type*} [Group G] [Group H] [TopologicalSpace G] [TopologicalSpace H]
-    {f : G →* H} (hf : Topology.IsStrictMap f) (x : G) :
-    (ContinuousMulEquiv.quotientKerEquivRange hf (QuotientGroup.mk x) : H) = f x :=
-  (rfl)
