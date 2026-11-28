@@ -514,14 +514,13 @@ end ContinuousLinearEquiv
 namespace TauCeti.holomorphicStructureSheaf
 
 /-- An isomorphism-invariant property of commutative rings holds for every holomorphic stalk of
-`Fin n → ℂ` as soon as it holds for `ℂ` and passes, for every `n : ℕ`, from the holomorphic stalks
-of `Fin n → ℂ` to the holomorphic stalk of `(Fin n → ℂ) × ℂ` at `(0, 0)`. -/
+`Fin n → ℂ` as soon as it holds for `ℂ` and passes, for every `n : ℕ`, from the holomorphic stalk
+of `Fin n → ℂ` at `0` to the holomorphic stalk of `(Fin n → ℂ) × ℂ` at `(0, 0)`. -/
 theorem stalk_induction_modelSpace (P : ∀ (R : Type) [CommRing R], Prop)
     (hequiv : ∀ {A B : Type} [CommRing A] [CommRing B], (A ≃+* B) → P A → P B)
     (h₀ : P ℂ)
     (hprod : ∀ n : ℕ,
-      (∀ x : Fin n → ℂ,
-        P ((holomorphicStructureSheaf 𝓘(ℂ, Fin n → ℂ) (Fin n → ℂ)).presheaf.stalk x)) →
+      P ((holomorphicStructureSheaf 𝓘(ℂ, Fin n → ℂ) (Fin n → ℂ)).presheaf.stalk 0) →
       P ((holomorphicStructureSheaf 𝓘(ℂ, (Fin n → ℂ) × ℂ)
         ((Fin n → ℂ) × ℂ)).presheaf.stalk (0, 0)))
     (n : ℕ) (y : Fin n → ℂ) :
@@ -540,16 +539,16 @@ theorem stalk_induction_modelSpace (P : ∀ (R : Type) [CommRing R], Prop)
     have hg : ContMDiff 𝓘(ℂ, (Fin n → ℂ) × ℂ) 𝓘(ℂ, Fin (n + 1) → ℂ) ω g :=
       (by fun_prop : ContDiff ℂ ω g).contMDiff
     have hfy : f y = (0, 0) := by simp [f, Prod.mk_zero_zero]
-    have hbij := stalkPullback_bijective (I := 𝓘(ℂ, Fin (n + 1) → ℂ))
-      (J := 𝓘(ℂ, (Fin n → ℂ) × ℂ)) (a := y)
-      (Eventually.of_forall fun _ ↦ hf.contMDiffAt)
-      (Eventually.of_forall fun _ ↦ hg.contMDiffAt)
-      (Eventually.of_forall fun z ↦ by simp [f, g])
-      (Eventually.of_forall fun w ↦ by simp [f, g])
     exact hequiv ((RingEquiv.cast (R := fun p ↦
         (holomorphicStructureSheaf 𝓘(ℂ, (Fin n → ℂ) × ℂ) ((Fin n → ℂ) × ℂ)).presheaf.stalk p)
-        hfy.symm).trans (RingEquiv.ofBijective _ hbij))
-      (hprod n ih)
+        hfy.symm).trans
+      (stalkPullbackEquiv (I := 𝓘(ℂ, Fin (n + 1) → ℂ))
+        (J := 𝓘(ℂ, (Fin n → ℂ) × ℂ)) (a := y)
+        (Eventually.of_forall fun _ ↦ hf.contMDiffAt)
+        (Eventually.of_forall fun _ ↦ hg.contMDiffAt)
+        (Eventually.of_forall fun z ↦ by simp [f, g])
+        (Eventually.of_forall fun w ↦ by simp [f, g])))
+      (hprod n (ih 0))
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
@@ -557,14 +556,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
 
 /-- An isomorphism-invariant property of commutative rings holds for every holomorphic stalk of a
 finite-dimensional complex manifold without boundary as soon as it holds for `ℂ` and passes, for
-every `n : ℕ`, from the holomorphic stalks of `Fin n → ℂ` to the holomorphic stalk of
+every `n : ℕ`, from the holomorphic stalk of `Fin n → ℂ` at `0` to the holomorphic stalk of
 `(Fin n → ℂ) × ℂ` at `(0, 0)`. -/
 theorem stalk_induction (P : ∀ (R : Type) [CommRing R], Prop)
     (hequiv : ∀ {A B : Type} [CommRing A] [CommRing B], (A ≃+* B) → P A → P B)
     (h₀ : P ℂ)
     (hprod : ∀ n : ℕ,
-      (∀ x : Fin n → ℂ,
-        P ((holomorphicStructureSheaf 𝓘(ℂ, Fin n → ℂ) (Fin n → ℂ)).presheaf.stalk x)) →
+      P ((holomorphicStructureSheaf 𝓘(ℂ, Fin n → ℂ) (Fin n → ℂ)).presheaf.stalk 0) →
       P ((holomorphicStructureSheaf 𝓘(ℂ, (Fin n → ℂ) × ℂ)
         ((Fin n → ℂ) × ℂ)).presheaf.stalk (0, 0)))
     (x : X) :

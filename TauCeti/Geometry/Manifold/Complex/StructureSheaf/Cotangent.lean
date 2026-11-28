@@ -15,18 +15,20 @@ import TauCeti.RingTheory.Ideal.Cotangent.LocalRing
 /-!
 # The cotangent space of a holomorphic stalk
 
-Differentiating a holomorphic germ in a chart identifies the algebraic cotangent space
-`𝔪/𝔪²` of its local ring with the complex dual of the model space. Scalars on the source
-are in the native residue field; `holomorphicCotangentEquiv` is semilinear along its
-canonical identification with `ℂ` by evaluation. No additional stalk or quotient carrier
-is introduced.
+For a chart modeled on a finite-dimensional complex normed space `E` with the self-model
+`𝓘(ℂ, E)`, differentiating a holomorphic germ identifies the algebraic cotangent space `𝔪/𝔪²` of
+its local ring with `StrongDual ℂ E` via `OpenPartialHomeomorph.holomorphicCotangentEquiv`
+(semilinear along the canonical evaluation identification of the residue field with `ℂ`). No
+additional stalk or quotient carrier is introduced.
 
-The identification sends centered linear coordinate germs to their coordinate functionals.
-In particular the coordinate classes form a basis, which describes the first-order
-independence of local holomorphic parameters. The construction uses Hadamard's lemma
-and the square-ideal criterion from `StructureSheaf.MaximalIdeal`, yielding the chart-local
-cotangent-dimension formula (`OpenPartialHomeomorph.finrank_cotangentSpace_holomorphicStalk`)
-on any boundaryless complex manifold model.
+In that self-model setting, `holomorphicCotangentEquiv` sends centered linear coordinate germs to
+their coordinate functionals, so the coordinate classes form a basis
+(`OpenPartialHomeomorph.holomorphicCotangentBasis`) describing the first-order independence of
+local holomorphic parameters. Using Hadamard's lemma and the square-ideal criterion from
+`StructureSheaf.MaximalIdeal`, this yields the chart-local cotangent-dimension formula on `𝓘(ℂ, E)`.
+Transporting the dimension along a chart equivalence to a finite-dimensional model space then gives
+`OpenPartialHomeomorph.finrank_cotangentSpace_holomorphicStalk` for any boundaryless complex
+manifold model `I : ModelWithCorners ℂ E H` with `[FiniteDimensional ℂ E]`.
 
 ## References
 
@@ -297,7 +299,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
 
 include hx he in
 /-- The embedding dimension of a holomorphic stalk equals the complex dimension of its
-manifold model. This does not require Noetherianity of the stalk. -/
+finite-dimensional boundaryless manifold model. This does not require Noetherianity of the
+stalk. -/
 theorem finrank_cotangentSpace_holomorphicStalk :
     Module.finrank
         (IsLocalRing.ResidueField ((holomorphicStructureSheaf I X).presheaf.stalk x))

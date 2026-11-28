@@ -70,7 +70,7 @@ theorem uniqueFactorizationMonoid_holomorphicStalk :
   (e.holomorphicStalkEquivFin he hx).symm.toMulEquiv.uniqueFactorizationMonoid
     (stalk_induction_modelSpace (fun R _ ↦ UniqueFactorizationMonoid R)
       (fun eqv h ↦ eqv.toMulEquiv.uniqueFactorizationMonoid h) inferInstance
-      (fun n hV ↦ have := hV 0
+      (fun n hV ↦ have := hV
         (isRueckert_evalVertical (0 : Fin n → ℂ) 0).uniqueFactorizationMonoid) _ _)
 
 end OpenPartialHomeomorph

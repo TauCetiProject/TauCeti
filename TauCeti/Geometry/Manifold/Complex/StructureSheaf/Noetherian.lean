@@ -61,7 +61,7 @@ instance stalkIsNoetherianRing (x : X) :
     IsNoetherianRing ((holomorphicStructureSheaf I X).presheaf.stalk x) :=
   stalk_induction (fun R _ ↦ IsNoetherianRing R)
     (fun e _ ↦ isNoetherianRing_of_ringEquiv _ e) inferInstance
-    (fun n hV ↦ have := hV 0; (isRueckert_evalVertical (0 : Fin n → ℂ) 0).isNoetherianRing) x
+    (fun n hV ↦ have := hV; (isRueckert_evalVertical (0 : Fin n → ℂ) 0).isNoetherianRing) x
 
 /-- A stalk of Mathlib's complex-smooth structure sheaf on a finite-dimensional complex manifold
 without boundary is a Noetherian ring, via its comparison with holomorphic germs. -/
