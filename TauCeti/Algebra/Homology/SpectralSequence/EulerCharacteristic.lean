@@ -15,22 +15,15 @@ public import TauCeti.Algebra.Homology.SpectralSequence.ModuleCat
 In a spectral sequence `(E_r)` of modules over a ring `R`, each page `E_r` is a homological complex
 whose homology is isomorphic to `E_{r+1}`. Whenever a differential vector `u = (u₁, u₂)` has odd
 total degree `u₁ + u₂`, the total-degree sign `(p, q) ↦ (-1)^(p + q)` alternates along the
-differentials of `E_r` and does not depend on the page index `r`: for cohomological spectral
-sequences with `u = (r, 1 - r)` one has `r + (1 - r) = 1`, and for homological spectral sequences
-with `u = (-r, r - 1)` one has `-r + (r - 1) = -1`.
+differentials of `E_r` and does not depend on the page index `r`: in particular, for cohomological
+spectral sequences with `u = (r, 1 - r)` one has `r + (1 - r) = 1`.
 
 Combining this sign convention with `HomologicalComplex.eulerChar_eq_homologyEulerChar` gives
 invariance of the Euler characteristic across the pages of a finitely supported spectral sequence:
 
-* `ComplexShape.eulerCharSignsUp'Sub`, `ComplexShape.eulerCharSignsUp'NegSub`,
-  `ComplexShape.eulerCharSignsSpectralSequenceNat`,
-  `ComplexShape.eulerCharSignsSpectralSequenceNatNeg`,
-  `ComplexShape.eulerCharSignsSpectralSequenceFin`,
-  `ComplexShape.eulerCharSignsSpectralSequenceFinNeg`: total-degree alternating signs on the page
-  shapes `(r, 1 - r)` and `(-r, r - 1)` of cohomological and homological spectral sequences, built
-  from `ComplexShape.EulerCharSigns.ofUp'Odd`,
-  `ComplexShape.EulerCharSigns.ofSpectralSequenceNatOdd`, and
-  `ComplexShape.EulerCharSigns.ofSpectralSequenceFinOdd`.
+* `ComplexShape.EulerCharSigns.ofUp'Odd` and `ComplexShape.eulerCharSignsUp'Sub`: total-degree
+  alternating signs `(p, q) ↦ (-1)^(p + q)` on `ComplexShape.up' u` for odd `u.1 + u.2` and on the
+  cohomological spectral sequence page shapes `(r, 1 - r)`.
 * `CategoryTheory.SpectralSequence.eulerChar_page_add_one`,
   `CategoryTheory.SpectralSequence.eulerChar_page_eq_of_le_of_finite`, and
   `CategoryTheory.SpectralSequence.eulerChar_page_eq_of_le`: Euler characteristic invariance across
@@ -76,42 +69,6 @@ theorem EulerCharSigns.ofUp'Odd_χ {u : ℤ × ℤ} (hu : Odd (u.1 + u.2)) (pq :
     (EulerCharSigns.ofUp'Odd hu).χ pq = (pq.1 + pq.2).negOnePow :=
   (rfl)
 
-/-- Total-degree Euler characteristic signs `(p, q) ↦ (-1)^(p + q)` on
-`ComplexShape.spectralSequenceNat u` for any shift `u : ℤ × ℤ` of odd total degree. -/
-@[instance_reducible]
-def EulerCharSigns.ofSpectralSequenceNatOdd {u : ℤ × ℤ} (hu : Odd (u.1 + u.2)) :
-    (spectralSequenceNat u).EulerCharSigns where
-  χ pq := ((pq.1 : ℤ) + pq.2).negOnePow
-  χ_next {pq pq'} h :=
-    (ofUp'Odd hu).χ_next (i := ((pq.1 : ℤ), (pq.2 : ℤ))) (j := ((pq'.1 : ℤ), (pq'.2 : ℤ)))
-      (Prod.ext h.1 h.2)
-
-/-- The sign at `pq` under `ComplexShape.EulerCharSigns.ofSpectralSequenceNatOdd` is
-`(-1)^(pq.1 + pq.2)`. -/
-@[simp]
-theorem EulerCharSigns.ofSpectralSequenceNatOdd_χ {u : ℤ × ℤ} (hu : Odd (u.1 + u.2))
-    (pq : ℕ × ℕ) :
-    (EulerCharSigns.ofSpectralSequenceNatOdd hu).χ pq = ((pq.1 : ℤ) + pq.2).negOnePow :=
-  (rfl)
-
-/-- Total-degree Euler characteristic signs `(p, q) ↦ (-1)^(p + q)` on
-`ComplexShape.spectralSequenceFin l u` for any shift `u : ℤ × ℤ` of odd total degree. -/
-@[instance_reducible]
-def EulerCharSigns.ofSpectralSequenceFinOdd {l : ℕ} {u : ℤ × ℤ} (hu : Odd (u.1 + u.2)) :
-    (spectralSequenceFin l u).EulerCharSigns where
-  χ pq := (pq.1 + pq.2).negOnePow
-  χ_next {pq pq'} h :=
-    (ofUp'Odd hu).χ_next (i := (pq.1, (pq.2 : ℤ))) (j := (pq'.1, (pq'.2 : ℤ)))
-      (Prod.ext h.1 h.2)
-
-/-- The sign at `pq` under `ComplexShape.EulerCharSigns.ofSpectralSequenceFinOdd` is
-`(-1)^(pq.1 + pq.2)`. -/
-@[simp]
-theorem EulerCharSigns.ofSpectralSequenceFinOdd_χ {l : ℕ} {u : ℤ × ℤ} (hu : Odd (u.1 + u.2))
-    (pq : ℤ × Fin l) :
-    (EulerCharSigns.ofSpectralSequenceFinOdd hu).χ pq = (pq.1 + pq.2).negOnePow :=
-  (rfl)
-
 /-- Alternating signs `(p, q) ↦ (-1)^(p + q)` on page `r` of a cohomological spectral sequence with
 differential bidegree `(r, 1 - r)`. -/
 instance eulerCharSignsUp'Sub (r : ℤ) :
@@ -129,70 +86,6 @@ theorem χ_up'_sub (r : ℤ) (pq : ℤ × ℤ) :
 theorem coe_χ_up'_sub_of_add_eq_neg (r : ℤ) {pq : ℤ × ℤ} {n : ℕ} (h : pq.1 + pq.2 = -(n : ℤ)) :
     ((up' (r, 1 - r)).χ pq : ℤ) = (-1 : ℤ) ^ n := by
   rw [χ_up'_sub, h, Int.negOnePow_neg, Int.coe_negOnePow_natCast]
-
-/-- Alternating signs `(p, q) ↦ (-1)^(p + q)` on page `r` of a homological spectral sequence with
-differential bidegree `(-r, r - 1)`. -/
-instance eulerCharSignsUp'NegSub (r : ℤ) :
-    (up' (-r, r - 1)).EulerCharSigns :=
-  EulerCharSigns.ofUp'Odd ⟨-1, by lia⟩
-
-/-- The alternating sign at `pq` on `ComplexShape.up' (-r, r - 1)` is `(-1)^(pq.1 + pq.2)`. -/
-@[simp high]
-theorem χ_up'_neg_sub (r : ℤ) (pq : ℤ × ℤ) :
-    (up' (-r, r - 1)).χ pq = (pq.1 + pq.2).negOnePow :=
-  EulerCharSigns.ofUp'Odd_χ _ pq
-
-/-- Alternating signs `(p, q) ↦ (-1)^(p + q)` on page `r` of a first-quadrant cohomological
-spectral sequence indexed by `ℕ × ℕ`. -/
-instance eulerCharSignsSpectralSequenceNat (r : ℤ) :
-    (spectralSequenceNat (r, 1 - r)).EulerCharSigns :=
-  EulerCharSigns.ofSpectralSequenceNatOdd ⟨0, by lia⟩
-
-/-- The alternating sign at `pq` on `ComplexShape.spectralSequenceNat (r, 1 - r)` is
-`(-1)^(pq.1 + pq.2)`. -/
-@[simp high]
-theorem χ_spectralSequenceNat (r : ℤ) (pq : ℕ × ℕ) :
-    (spectralSequenceNat (r, 1 - r)).χ pq = ((pq.1 : ℤ) + pq.2).negOnePow :=
-  EulerCharSigns.ofSpectralSequenceNatOdd_χ _ pq
-
-/-- Alternating signs `(p, q) ↦ (-1)^(p + q)` on page `r` of a first-quadrant homological
-spectral sequence indexed by `ℕ × ℕ`. -/
-instance eulerCharSignsSpectralSequenceNatNeg (r : ℤ) :
-    (spectralSequenceNat (-r, r - 1)).EulerCharSigns :=
-  EulerCharSigns.ofSpectralSequenceNatOdd ⟨-1, by lia⟩
-
-/-- The alternating sign at `pq` on `ComplexShape.spectralSequenceNat (-r, r - 1)` is
-`(-1)^(pq.1 + pq.2)`. -/
-@[simp high]
-theorem χ_spectralSequenceNat_neg (r : ℤ) (pq : ℕ × ℕ) :
-    (spectralSequenceNat (-r, r - 1)).χ pq = ((pq.1 : ℤ) + pq.2).negOnePow :=
-  EulerCharSigns.ofSpectralSequenceNatOdd_χ _ pq
-
-/-- Alternating signs `(p, q) ↦ (-1)^(p + q)` on page `r` of a bounded-row cohomological spectral
-sequence indexed by `ℤ × Fin l`. -/
-instance eulerCharSignsSpectralSequenceFin (l : ℕ) (r : ℤ) :
-    (spectralSequenceFin l (r, 1 - r)).EulerCharSigns :=
-  EulerCharSigns.ofSpectralSequenceFinOdd ⟨0, by lia⟩
-
-/-- The alternating sign at `pq` on `ComplexShape.spectralSequenceFin l (r, 1 - r)` is
-`(-1)^(pq.1 + pq.2)`. -/
-@[simp high]
-theorem χ_spectralSequenceFin (l : ℕ) (r : ℤ) (pq : ℤ × Fin l) :
-    (spectralSequenceFin l (r, 1 - r)).χ pq = (pq.1 + pq.2).negOnePow :=
-  EulerCharSigns.ofSpectralSequenceFinOdd_χ _ pq
-
-/-- Alternating signs `(p, q) ↦ (-1)^(p + q)` on page `r` of a bounded-row homological spectral
-sequence indexed by `ℤ × Fin l`. -/
-instance eulerCharSignsSpectralSequenceFinNeg (l : ℕ) (r : ℤ) :
-    (spectralSequenceFin l (-r, r - 1)).EulerCharSigns :=
-  EulerCharSigns.ofSpectralSequenceFinOdd ⟨-1, by lia⟩
-
-/-- The alternating sign at `pq` on `ComplexShape.spectralSequenceFin l (-r, r - 1)` is
-`(-1)^(pq.1 + pq.2)`. -/
-@[simp high]
-theorem χ_spectralSequenceFin_neg (l : ℕ) (r : ℤ) (pq : ℤ × Fin l) :
-    (spectralSequenceFin l (-r, r - 1)).χ pq = (pq.1 + pq.2).negOnePow :=
-  EulerCharSigns.ofSpectralSequenceFinOdd_χ _ pq
 
 end ComplexShape
 
