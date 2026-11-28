@@ -67,6 +67,9 @@ over its subgroup of squares when `-1 ≠ 1`.
 * `Subgroup.zpowers_pow_inf`, with its additive form `AddSubgroup.zmultiples_nsmul_inf`:
   `⟨g ^ m⟩ ∩ ⟨g ^ n⟩ = ⟨g ^ lcm m n⟩`
 * `Subgroup.zpowers_mk_self_eq_top`, with its additive form
+* `TauCeti.zpowers_eq_top_of_orderOf_eq_card` and its additive form
+  `TauCeti.zmultiples_eq_top_of_addOrderOf_eq_card`: an element whose order equals the nonzero
+  cardinality of the group generates it.
 * `Subgroup.zpowersMulEquivOfOrderOfEq`, with its additive form
   `AddSubgroup.zmultiplesAddEquivOfAddOrderOfEq`: `⟨a⟩ ≃* ⟨b⟩`, `a ↦ b`, for `a` and `b` of the
   same order
@@ -92,6 +95,19 @@ over its subgroup of squares when `-1 ≠ 1`.
 -/
 
 public section
+
+namespace TauCeti
+
+/-- An element whose order equals the nonzero cardinality of the group generates the group. -/
+@[to_additive
+  /-- An element whose additive order equals the nonzero cardinality of the group generates
+  the additive group. -/]
+theorem zpowers_eq_top_of_orderOf_eq_card {G : Type*} [Group G] {g : G}
+    (hcard : Nat.card G ≠ 0) (horder : orderOf g = Nat.card G) : Subgroup.zpowers g = ⊤ := by
+  have : Finite G := Nat.finite_of_card_ne_zero hcard
+  exact (Subgroup.zpowers g).eq_top_of_card_eq ((Nat.card_zpowers g).trans horder)
+
+end TauCeti
 
 namespace Subgroup
 
