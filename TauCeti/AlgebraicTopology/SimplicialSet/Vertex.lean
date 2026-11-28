@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.CompStruct
+public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 public import Mathlib.AlgebraicTopology.SimplicialSet.StdSimplex
 
 /-!
@@ -24,8 +25,14 @@ monotone along the vertices of every simplex.
   vertices of each simplex.
 * `SSet.map_const_castSucc_of_δ_last`: the first `n + 1` vertices of an `(n + 1)`-simplex whose
   last face is constant at `x` are `x`.
-* `SSet.yonedaEquiv_const_one`: the constant map `Δ[1] ⟶ X` at a vertex `x` is the degenerate
-  edge at `x`.
+* `SSet.map_const_succ_of_δ_zero`: the last `n + 1` vertices of an `(n + 1)`-simplex whose
+  face opposite to the initial vertex is constant at `y` are `y`.
+* `SSet.δ_zero_σ_one_σ_one`: the face `0` of `s₁ s₁ e` is the degenerate `2`-simplex at the
+  target of the edge `e`.
+* `SSet.yonedaEquiv_const_one`, `SSet.const_app_one`: the constant map `Δ[1] ⟶ X` at a vertex
+  `x` is the degenerate edge at `x`, and every constant map at `x` sends `1`-simplices to it.
+* `SSet.lift_id_const_app_one`: the graph `W ⟶ W ⊗ X` of a constant map at `x` sends a
+  `1`-simplex `e` to the pair of `e` and the degenerate edge at `x`.
 -/
 
 public section
@@ -37,6 +44,13 @@ universe u
 namespace SSet
 
 variable {X : SSet.{u}}
+
+/-- The face `0` of the degenerate `3`-simplex `s₁ s₁ e` on an edge `e` is the degenerate
+`2`-simplex on the target of `e`. -/
+lemma δ_zero_σ_one_σ_one (e : X _⦋1⦌) :
+    X.δ 0 (X.σ 1 (X.σ 1 e)) = X.σ 0 (X.σ 0 (X.δ 0 e)) :=
+  (δ_comp_σ_of_le_apply (i := (0 : Fin 3)) (j := 0) (Fin.zero_le _) _).trans
+    (congrArg _ (δ_comp_σ_of_le_apply (i := (0 : Fin 2)) (j := 0) (Fin.zero_le _) _))
 
 /-- The `i`-th vertex of the image of a simplex `s` under `X.map f` is the `f i`-th vertex
 of `s`. -/
@@ -71,10 +85,33 @@ lemma map_const_castSucc_of_δ_last {n : ℕ} {σ : X _⦋n + 1⦌} {x : X _⦋0
   rw [SimplicialObject.δ_def, map_const_map, map_const_map] at h
   simpa [SimplexCategory.δ, Fin.succAbove_last] using h
 
+/-- If the face of an `(n + 1)`-simplex `σ` opposite to its initial vertex is the constant simplex
+at a vertex `y`, then the vertex `j.succ` of `σ` is `y`, since it is the vertex `j` of that face. -/
+lemma map_const_succ_of_δ_zero {n : ℕ} {σ : X _⦋n + 1⦌} {y : X _⦋0⦌}
+    (hσ : X.δ 0 σ = X.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op y) (j : Fin (n + 1)) :
+    X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ j.succ).op σ = y := by
+  have h := congrArg (X.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ j).op) hσ
+  rw [SimplicialObject.δ_def, map_const_map, map_const_map] at h
+  simpa [SimplexCategory.δ, Fin.succAbove_zero] using h
+
 /-- The constant map `Δ[1] ⟶ X` at a vertex `x` is the degenerate edge at `x`. -/
 lemma yonedaEquiv_const_one (x : X _⦋0⦌) :
     yonedaEquiv (const x : Δ[1] ⟶ X) = (Edge.id x).edge := by
   rw [Edge.id_edge, ← comp_const (stdSimplex.σ 0), ← yonedaEquiv_symm_zero,
     stdSimplex.yonedaEquiv_σ_comp, Equiv.apply_symm_apply]
+
+/-- A constant map at a vertex `x` sends every `1`-simplex to the degenerate edge at `x`. -/
+lemma const_app_one {W : SSet.{u}} (x : X _⦋0⦌) (e : W _⦋1⦌) :
+    (const x : W ⟶ X).app _ e = (Edge.id x).edge := by
+  rw [← yonedaEquiv_const_one, ← comp_const (yonedaEquiv.symm e), yonedaEquiv_comp,
+    Equiv.apply_symm_apply]
+
+open MonoidalCategory CartesianMonoidalCategory in
+/-- The graph `W ⟶ W ⊗ X` of a constant map at a vertex `x` sends a `1`-simplex `e` to the pair
+of `e` and the degenerate edge at `x`. -/
+lemma lift_id_const_app_one {W : SSet.{u}} (x : X _⦋0⦌) (e : W _⦋1⦌) :
+    (lift (𝟙 W) (const x)).app _ e = (e, (Edge.id x).edge) :=
+  -- A simplex of `W ⊗ X` is a pair, and the first component of the graph is the identity.
+  Prod.ext rfl (const_app_one x e)
 
 end SSet

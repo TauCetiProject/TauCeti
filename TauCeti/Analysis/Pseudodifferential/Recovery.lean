@@ -75,7 +75,9 @@ compactly supported amplitude and a Hilbert space `V`
 
 `t ^ (-m) ∫ ⟪Op(a) u_t (x), u_t (x)⟫ dx → ∫ |φ(x)|² ⟪σ(a)(x, ξ) v, v⟫ dx`
 
-(`TauCeti.ClassicalSymbol.tendsto_integral_inner_quantizeSchwartzValue_cutoffExponential`).
+(`TauCeti.ClassicalSymbol.tendsto_integral_inner_quantizeSchwartzValue_cutoffExponential`), and the
+same holds with a weight `w(x)`, continuous near the support of `φ`, in both integrals
+(`TauCeti.ClassicalSymbol.tendsto_integral_smul_inner_quantizeSchwartzValue_cutoffExponential`).
 Pairing instead with the test functions `x ↦ exp(-i ⟪x, t ξ⟫) ψ(x)` of a compactly supported `ψ`,
 which needs no inner product,
 
@@ -448,12 +450,12 @@ theorem tendsto_quantizeSchwartzValue_cutoffExponential_atTop [CompleteSpace V] 
     (𝐞 ⟪η, x⟫))
 
 /-- Dominated convergence for the rescaled quantizations of high-frequency wave packets, tested
-against a compactly supported `ψ` after a continuous semilinear map `L`: both the bilinear and
-the inner-product pairings with wave packets are of this form. -/
+against a continuous compactly supported `ψ` after a continuous semilinear map `L`: both the
+bilinear and the (weighted) inner-product pairings with wave packets are of this form. -/
 private theorem tendsto_integral_smul_map_quantizeSchwartzValue_cutoffExponential
     [CompleteSpace V] [CompleteSpace W] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
     {σ : ℂ →+* ℂ} [RingHomIsometric σ] (a : ClassicalSymbol n V W m) {ξ : CoordinateSpace n}
-    (hξ : ξ ≠ 0) (φ : 𝓢(CoordinateSpace n, ℂ)) {ψ : 𝓢(CoordinateSpace n, ℂ)}
+    (hξ : ξ ≠ 0) (φ : 𝓢(CoordinateSpace n, ℂ)) {ψ : CoordinateSpace n → ℂ} (hψc : Continuous ψ)
     (hψ : HasCompactSupport ψ) (v : V) (L : W →SL[σ] F) :
     Tendsto (fun t : ℝ ↦ ∫ x, ψ x • L (t ^ (-m) • Complex.exp (-(⟪x, t • ξ⟫ * Complex.I)) •
         quantizeSchwartzValue a.toSymbol.coefficient (φ.cutoffExponential 1 (t • ξ) v) x)) atTop
@@ -462,13 +464,13 @@ private theorem tendsto_integral_smul_map_quantizeSchwartzValue_cutoffExponentia
     a.toSymbol.exists_norm_rpow_neg_smul_quantizeSchwartzValue_cutoffExponential_le hψ hξ φ v
   refine tendsto_integral_filter_of_dominated_convergence (fun x ↦ ‖ψ x‖ * (‖L‖ * B))
     (.of_forall fun t ↦ ?_) ((eventually_ge_atTop 1).mono fun t ht ↦ .of_forall fun x ↦ ?_)
-    (ψ.integrable.norm.mul_const _) (.of_forall fun x ↦ ?_)
+    ((hψc.integrable_of_hasCompactSupport hψ).norm.mul_const _) (.of_forall fun x ↦ ?_)
   · have hG : Continuous fun x : CoordinateSpace n ↦
         t ^ (-m) • Complex.exp (-(⟪x, t • ξ⟫ * Complex.I)) •
           quantizeSchwartzValue a.toSymbol.coefficient (φ.cutoffExponential 1 (t • ξ) v) x :=
       ((Complex.continuous_exp.comp (by fun_prop)).smul
         (a.toSymbol.continuous_quantizeSchwartzValue_coefficient _)).const_smul _
-    exact (ψ.continuous.smul (L.continuous.comp hG)).aestronglyMeasurable
+    exact (hψc.smul (L.continuous.comp hG)).aestronglyMeasurable
   · by_cases hx : x ∈ tsupport ψ
     · rw [norm_smul]
       gcongr
@@ -506,12 +508,52 @@ theorem tendsto_integral_smul_quantizeSchwartzValue_cutoffExponential [CompleteS
       one_smul, inner_neg_right, Complex.ofReal_neg, neg_mul, smul_eq_mul, mul_one]
     rw [mul_smul, smul_comm (ψ x), smul_comm (ψ x)]
   simp_rw [← integral_smul, hpair]
-  exact a.tendsto_integral_smul_map_quantizeSchwartzValue_cutoffExponential hξ φ hψ v
-    (.id ℂ W)
+  exact a.tendsto_integral_smul_map_quantizeSchwartzValue_cutoffExponential hξ φ ψ.continuous hψ
+    v (.id ℂ W)
 
 section Inner
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+
+/-- **Weighted pairings with high-frequency wave packets.** For a classical symbol `a` of order
+`m`, a nonzero frequency `ξ`, a compactly supported Schwartz amplitude `φ`, `v ∈ H` and a weight
+`w` continuous on an open set `U` containing the support of `φ`, the wave packets
+`u_t(y) = exp(i ⟪y, t ξ⟫) φ(y) v` satisfy
+
+`t ^ (-m) ∫ w(x) ⟪Op(a) u_t (x), u_t (x)⟫ dx → ∫ w(x) |φ(x)|² ⟪σ(a)(x, ξ) v, v⟫ dx`
+
+as `t → ∞`. The weight need not be smooth: a continuous density of a measure is allowed. -/
+theorem tendsto_integral_smul_inner_quantizeSchwartzValue_cutoffExponential
+    (a : ClassicalSymbol n H H m) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0)
+    {φ : 𝓢(CoordinateSpace n, ℂ)} (hφ : HasCompactSupport φ) {w : CoordinateSpace n → ℝ}
+    {U : Set (CoordinateSpace n)} (hU : IsOpen U) (hw : ContinuousOn w U) (hφU : tsupport φ ⊆ U)
+    (v : H) :
+    Tendsto (fun t : ℝ ↦ t ^ (-m) • ∫ x, w x • ⟪quantizeSchwartzValue a.toSymbol.coefficient
+        (φ.cutoffExponential 1 (t • ξ) v) x, φ.cutoffExponential 1 (t • ξ) v x⟫_ℂ) atTop
+      (𝓝 (∫ x, (w x * ‖φ x‖ ^ 2) • ⟪a.principal.coefficient (x, ξ) v, v⟫_ℂ)) := by
+  -- The phase of the wave packet cancels in the pairing, which is tested against `w φ`.
+  have hpair : ∀ (t : ℝ) x, t ^ (-m) • (w x • ⟪quantizeSchwartzValue a.toSymbol.coefficient
+      (φ.cutoffExponential 1 (t • ξ) v) x, φ.cutoffExponential 1 (t • ξ) v x⟫_ℂ) =
+        ((w x : ℂ) * φ x) • innerSLFlip ℂ v (t ^ (-m) • Complex.exp (-(⟪x, t • ξ⟫ * Complex.I)) •
+          quantizeSchwartzValue a.toSymbol.coefficient (φ.cutoffExponential 1 (t • ξ) v) x) := by
+    intro t x
+    simp only [innerSLFlip_apply_apply, SchwartzMap.cutoffExponential_apply φ one_ne_zero,
+      one_smul, inner_smul_right, ← Complex.coe_smul, inner_smul_left, Complex.conj_ofReal,
+      ← Complex.exp_conj, map_neg, map_mul, Complex.conj_I, mul_neg, neg_neg, smul_eq_mul]
+    ring
+  have hlim : ∀ x, ((w x : ℂ) * φ x) • innerSLFlip ℂ v (a.principal.coefficient (x, ξ) (φ x • v)) =
+      (w x * ‖φ x‖ ^ 2) • ⟪a.principal.coefficient (x, ξ) v, v⟫_ℂ := by
+    intro x
+    simp only [innerSLFlip_apply_apply, map_smul, inner_smul_left, smul_eq_mul, Complex.real_smul,
+      Complex.ofReal_mul, Complex.ofReal_pow, ← Complex.mul_conj']
+    ring
+  have hwφ : Continuous fun x ↦ (w x : ℂ) * φ x :=
+    ((Complex.continuous_ofReal.comp_continuousOn hw).mul
+      φ.continuous.continuousOn).continuous_of_tsupport_subset hU
+        (tsupport_mul_subset_right.trans hφU)
+  simp_rw [← integral_smul, hpair, ← hlim]
+  exact a.tendsto_integral_smul_map_quantizeSchwartzValue_cutoffExponential hξ φ hwφ
+    hφ.mul_left v (innerSLFlip ℂ v)
 
 /-- **Pairings with high-frequency wave packets.** For a classical symbol `a` of order `m`, a
 nonzero frequency `ξ`, a compactly supported Schwartz amplitude `φ` and `v ∈ H`, the wave packets
@@ -524,24 +566,8 @@ theorem tendsto_integral_inner_quantizeSchwartzValue_cutoffExponential
     Tendsto (fun t : ℝ ↦ t ^ (-m) • ∫ x, ⟪quantizeSchwartzValue a.toSymbol.coefficient
         (φ.cutoffExponential 1 (t • ξ) v) x, φ.cutoffExponential 1 (t • ξ) v x⟫_ℂ) atTop
       (𝓝 (∫ x, ‖φ x‖ ^ 2 • ⟪a.principal.coefficient (x, ξ) v, v⟫_ℂ)) := by
-  -- The phase of the wave packet cancels in the pairing.
-  have hpair : ∀ (t : ℝ) x, t ^ (-m) • ⟪quantizeSchwartzValue a.toSymbol.coefficient
-      (φ.cutoffExponential 1 (t • ξ) v) x, φ.cutoffExponential 1 (t • ξ) v x⟫_ℂ =
-        φ x • innerSLFlip ℂ v (t ^ (-m) • Complex.exp (-(⟪x, t • ξ⟫ * Complex.I)) •
-          quantizeSchwartzValue a.toSymbol.coefficient (φ.cutoffExponential 1 (t • ξ) v) x) := by
-    intro t x
-    simp only [innerSLFlip_apply_apply, SchwartzMap.cutoffExponential_apply φ one_ne_zero,
-      one_smul, inner_smul_right, ← Complex.coe_smul, inner_smul_left, Complex.conj_ofReal,
-      ← Complex.exp_conj, map_neg, map_mul, Complex.conj_I, mul_neg, neg_neg, smul_eq_mul]
-    ring
-  have hlim : ∀ x, φ x • innerSLFlip ℂ v (a.principal.coefficient (x, ξ) (φ x • v)) =
-      ‖φ x‖ ^ 2 • ⟪a.principal.coefficient (x, ξ) v, v⟫_ℂ := by
-    intro x
-    rw [innerSLFlip_apply_apply, map_smul, inner_smul_left, smul_eq_mul, ← mul_assoc,
-      Complex.mul_conj', Complex.real_smul, Complex.ofReal_pow]
-  simp_rw [← integral_smul, hpair, ← hlim]
-  exact a.tendsto_integral_smul_map_quantizeSchwartzValue_cutoffExponential hξ φ hφ v
-    (innerSLFlip ℂ v)
+  simpa using a.tendsto_integral_smul_inner_quantizeSchwartzValue_cutoffExponential hξ hφ
+    (w := fun _ ↦ 1) isOpen_univ continuousOn_const (Set.subset_univ _) v
 
 end Inner
 

@@ -186,7 +186,7 @@ theorem IsMetricCompatible.derivSchoutenTensor_eq
   have hg := hcov.mvfderiv_inner_eq (FiberBundle.extend E w) hσx hτx
   simp only [FiberBundle.extend_apply_self] at hg
   have hS : MDiffAt cov.scalarCurvature x :=
-    cov.contMDiff_scalarCurvature.mdifferentiableAt (by simp)
+    (cov.contMDiff_scalarCurvature (n := ⊤)).mdifferentiableAt (by simp)
   have hRic := cov.mdifferentiableAt_ricciTensor_apply hσx hτx
   have hin := TauCeti.Manifold.mdifferentiableAt_inner hσx hτx
   have hfun : (fun y ↦ cov.schoutenTensor y (σ y) (τ y)) =

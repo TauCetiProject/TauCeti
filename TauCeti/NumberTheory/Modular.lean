@@ -15,6 +15,7 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 public import TauCeti.MeasureTheory.Group.FundamentalDomain
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arccos
 import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
 import TauCeti.Analysis.Complex.UpperHalfPlane.Rho
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
@@ -55,6 +56,7 @@ the elliptic points `i` and `ρ`.
 * `ModularGroup.isOpen_smul_fdo` and `ModularGroup.disjoint_smul_fdo`: the translates of the
   open fundamental domain are open, and two of them are disjoint unless the translating
   elements differ by a sign.
+* `ModularGroup.ae_exists_smul_mem_fdo`: almost every `SL(2, ℤ)`-orbit on `ℍ` meets `𝒟ᵒ`.
 * `ModularGroup.isFundamentalDomain_fdo`: `𝒟ᵒ` is a fundamental domain for `PSL(2, ℤ)` acting
   on `ℍ` with the invariant measure.
 * `ModularGroup.isFundamentalDomain_iUnion_out_inv_smul_fdo`: the coset tiling of `𝒟ᵒ` is a
@@ -209,10 +211,8 @@ theorem volume_fd : (volume : Measure ℍ) fd = ENNReal.ofReal (Real.pi / 3) := 
     ext z
     simp only [fd, mem_ofPred_eq, TauCeti.UpperHalfPlane.mem_idealRegion_iff, abs_le]
     tauto
-  have harccos : Real.arccos (1 / 2) = Real.pi / 3 := by
-    rw [← Real.cos_pi_div_three, Real.arccos_cos (by positivity) (by linarith [Real.pi_pos])]
   rw [hfd, TauCeti.UpperHalfPlane.volume_idealRegion (by norm_num) (by norm_num) (by norm_num),
-    Real.arccos_neg, harccos]
+    Real.arccos_neg, Real.arccos_one_half]
   congr 1
   ring
 
@@ -243,6 +243,17 @@ theorem disjoint_smul_fdo {γ δ : SL(2, ℤ)} (h₁ : γ⁻¹ * δ ≠ 1) (h₂
 
 /-! ### `𝒟ᵒ` is a fundamental domain for `PSL(2, ℤ)` -/
 
+/-- **Almost every orbit of `SL(2, ℤ)` on `ℍ` meets `𝒟ᵒ`.** The points never carried into `𝒟ᵒ`
+lie in the translates of the null set `𝒟 \ 𝒟ᵒ`. -/
+theorem ae_exists_smul_mem_fdo : ∀ᵐ τ : ℍ, ∃ γ : SL(2, ℤ), γ • τ ∈ fdo := by
+  rw [MeasureTheory.ae_iff]
+  refine measure_mono_null (t := ⋃ γ : SL(2, ℤ), (γ • ·) ⁻¹' ((fd : Set ℍ) \ fdo))
+    (fun τ hτ ↦ ?_) (measure_iUnion_null fun γ ↦
+      (measurePreserving_smul γ (volume : Measure ℍ)).quasiMeasurePreserving.preimage_null
+        (MeasureTheory.ae_eq_set.mp fd_ae_eq_fdo).1)
+  obtain ⟨γ, hγ⟩ := exists_smul_mem_fd τ
+  exact Set.mem_iUnion.mpr ⟨γ, hγ, not_exists.mp hτ γ⟩
+
 open Matrix.SpecialLinearGroup in
 /-- **The open standard domain `𝒟ᵒ` is a fundamental domain for `PSL(2, ℤ)` acting on `ℍ`**,
 with respect to the invariant measure: almost every point of `ℍ` is carried into `𝒟ᵒ` by some
@@ -254,14 +265,8 @@ theorem isFundamentalDomain_fdo :
     MeasureTheory.IsFundamentalDomain PSL(2, ℤ) (fdo : Set ℍ) volume := by
   refine MeasureTheory.IsFundamentalDomain.mk'' isOpen_fdo.measurableSet.nullMeasurableSet
     ?_ ?_ fun g ↦ (measurePreserving_smul g volume).quasiMeasurePreserving
-  · -- the points never landing in `𝒟ᵒ` are covered by the translates of the null `𝒟 \ 𝒟ᵒ`
-    rw [MeasureTheory.ae_iff]
-    refine measure_mono_null (t := ⋃ γ : SL(2, ℤ), (γ • ·) ⁻¹' ((fd : Set ℍ) \ fdo))
-      (fun τ hτ ↦ ?_) (measure_iUnion_null fun γ ↦
-        (measurePreserving_smul γ (volume : Measure ℍ)).quasiMeasurePreserving.preimage_null
-          (MeasureTheory.ae_eq_set.mp fd_ae_eq_fdo).1)
-    obtain ⟨γ, hγ⟩ := exists_smul_mem_fd τ
-    exact Set.mem_iUnion.mpr ⟨γ, hγ, not_exists.mp hτ (γ : PSL(2, ℤ))⟩
+  · filter_upwards [ae_exists_smul_mem_fdo] with τ ⟨γ, hγ⟩
+    exact ⟨γ, hγ⟩
   · refine fun g hg ↦ QuotientGroup.induction_on g (fun γ hγ ↦ ?_) hg
     have hne : ¬ (γ = 1 ∨ γ = -1) := fun h ↦ hγ (by
       simp only [QuotientGroup.eq_one_iff,

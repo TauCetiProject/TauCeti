@@ -179,6 +179,15 @@ theorem ι_homogeneousSubmoduleOneEquiv_apply (x : homogeneousSubmodule R M 1) :
   conv_rhs => rw [← (homogeneousSubmoduleOneEquiv R M).symm_apply_apply x]
   exact (coe_homogeneousSubmoduleOneEquiv_symm_apply R M _).symm
 
+/-- `homogeneousSubmoduleOneEquiv` sends the generator of an element of the module back to that
+element. -/
+@[simp]
+theorem homogeneousSubmoduleOneEquiv_mk_ι (m : M)
+    (h : SymmetricAlgebra.ι R M m ∈ homogeneousSubmodule R M 1) :
+    homogeneousSubmoduleOneEquiv R M ⟨SymmetricAlgebra.ι R M m, h⟩ = m :=
+  (homogeneousSubmoduleOneEquiv R M).eq_symm_apply.mp
+    (Subtype.ext (coe_homogeneousSubmoduleOneEquiv_symm_apply R M m).symm)
+
 /-- The homogeneous submodules form a graded monoid: the unit is homogeneous of degree zero, and
 multiplication adds degrees. -/
 instance instGradedMonoid : SetLike.GradedMonoid (homogeneousSubmodule R M) :=

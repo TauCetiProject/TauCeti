@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.AffineSpace.Slope
 public import Mathlib.MeasureTheory.Measure.ResolventTransform
+public import Mathlib.MeasureTheory.Measure.Sub
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Analytic.Within
@@ -64,6 +65,16 @@ namespace Complex
 /-- The real resolvent kernel is `(x - z)⁻¹`. -/
 theorem resolvent_real_eq_inv (z : ℂ) (x : ℝ) : resolvent (R := ℝ) z x = ((x : ℂ) - z)⁻¹ := by
   rw [resolvent, Ring.inverse_eq_inv', coe_algebraMap]
+
+/-- Averaging the resolvent kernel at opposite real arguments gives the kernel at the squared
+argument and parameter, multiplied by the original parameter, away from the poles. -/
+theorem inv_two_mul_add_resolvent_real_neg {z : ℂ} (x : ℝ) (hz : z ^ 2 ≠ (x : ℂ) ^ 2) :
+    (2 : ℂ)⁻¹ * (resolvent z x + resolvent z (-x)) = z * resolvent (z ^ 2) (x ^ 2) := by
+  have hp : (x : ℂ) - z ≠ 0 := sub_ne_zero.mpr fun h ↦ hz (by rw [h])
+  have hm : -(x : ℂ) - z ≠ 0 := sub_ne_zero.mpr fun h ↦ hz (by rw [← h, neg_sq])
+  simp only [resolvent_real_eq_inv, Complex.ofReal_pow, Complex.ofReal_neg]
+  field_simp [hp, hm, sub_ne_zero.mpr hz.symm]
+  ring
 
 /-- The imaginary part of the real resolvent kernel, with sign `(x - z)⁻¹`. -/
 theorem im_resolvent_real (z : ℂ) (x : ℝ) :
@@ -147,6 +158,16 @@ theorem resolventTransform_eq_neg_integral_inv_sub (μ : Measure ℝ) (z : ℂ) 
   congr 1 with x
   rw [Complex.resolvent_real_eq_inv, ← inv_neg, neg_sub]
 
+/-- The resolvent transform subtracts a dominated finite measure at points where the
+resolvent is integrable for the larger measure. -/
+theorem Measure.resolventTransform_sub (μ : Measure ℝ) {ν : Measure ℝ} [IsFiniteMeasure ν]
+    (hν : ν ≤ μ) {z : ℂ} (hz : Integrable (resolvent (R := ℝ) z) μ) :
+    resolventTransform (μ - ν) z = resolventTransform μ z - resolventTransform ν z := by
+  apply eq_sub_of_add_eq
+  simp only [resolventTransform_apply]
+  rw [← integral_add_measure (hz.mono_measure Measure.sub_le) (hz.mono_measure hν),
+    Measure.sub_add_cancel_of_le hν]
+
 /-- At a nonreal point, the resolvent transform of a measure `μ` without finite weighted mass
 `∫ (1 + x ^ 2)⁻¹ dμ` is `0`, since the resolvent kernel is not integrable. -/
 theorem resolventTransform_eq_zero_of_not_lintegral_lt_top {μ : Measure ℝ}
@@ -179,6 +200,35 @@ theorem integrable_resolvent_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :
   apply integrable_resolvent
   rintro ⟨x, _, hx⟩
   exact hz (by simpa using (congrArg Complex.im hx).symm)
+
+open scoped ComplexOrder ENNReal in
+/-- At a nonreal parameter `z`, the resolvent transform of a finite measure averaged with its
+reflection equals `z` times the transform of its square pushforward at `z²`. -/
+theorem Measure.resolventTransform_smul_add_smul_map_neg (μ : Measure ℝ) [IsFiniteMeasure μ]
+    {z : ℂ} (hz : z.im ≠ 0) :
+    resolventTransform ((2 : ℝ≥0∞)⁻¹ • μ + (2 : ℝ≥0∞)⁻¹ • μ.map (fun x ↦ -x)) z =
+      z * resolventTransform (μ.map (fun x ↦ x ^ 2)) (z ^ 2) := by
+  have hcont : AEStronglyMeasurable (resolvent z) (μ.map (fun x ↦ -x)) :=
+    (Complex.continuous_resolvent_real hz).aestronglyMeasurable
+  have hpos : Integrable (resolvent z) μ := integrable_resolvent_of_im_ne_zero hz
+  have hneg : Integrable (resolvent z) (μ.map (fun x ↦ -x)) :=
+    integrable_resolvent_of_im_ne_zero hz
+  have hneg' : Integrable (fun x : ℝ ↦ resolvent z (-x)) μ :=
+    hneg.comp_measurable measurable_neg
+  have hsquare :
+      AEStronglyMeasurable (resolvent (R := ℝ) (z ^ 2)) (μ.map (fun x ↦ x ^ 2)) := by
+    fun_prop
+  simp only [resolventTransform_apply, ← smul_add, integral_smul_measure,
+    integral_add_measure hpos hneg, integral_map measurable_neg.aemeasurable hcont,
+    integral_map (by fun_prop : AEMeasurable (fun x : ℝ ↦ x ^ 2) μ) hsquare,
+    ENNReal.toReal_inv, ENNReal.toReal_ofNat, Complex.real_smul, Complex.ofReal_inv,
+    Complex.ofReal_ofNat]
+  rw [← integral_add hpos hneg', ← integral_const_mul, ← integral_const_mul]
+  refine integral_congr_ae (.of_forall fun x ↦ Complex.inv_two_mul_add_resolvent_real_neg x ?_)
+  intro h
+  apply hz (Complex.sq_nonneg_iff.mp ?_)
+  rw [h, ← Complex.ofReal_pow]
+  exact Complex.zero_le_real.mpr (sq_nonneg x)
 
 /-- The imaginary part of the transform is the integral of the kernel
 `z.im / ((x - z.re)² + z.im²)`, which is the Poisson kernel without the factor `π⁻¹`

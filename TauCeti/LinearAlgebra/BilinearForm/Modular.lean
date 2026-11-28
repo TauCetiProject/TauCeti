@@ -282,9 +282,7 @@ of which `B` is `a` times is unique. -/
 theorem IsModular.isPerfPair_of_smul_eq (h : B.IsModular a) (ha : a ∈ nonZeroDivisors R)
     {C : BilinForm R M} (hC : a • C = B) : C.IsPerfPair := by
   obtain ⟨C', hC', hperf⟩ := h
-  have : C = C' := LinearMap.ext₂ fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp (by
-    simpa using LinearMap.congr_fun₂ (hC.trans hC'.symm) x y)
-  exact this ▸ hperf
+  exact eq_of_smul_eq (isRegular_iff_mem_nonZeroDivisors.mpr ha).left hC hC' ▸ hperf
 
 /-- The rescaling of a modular form by its regular scale has unit Gram determinant. -/
 theorem IsModular.isUnit_det_of_smul_eq (h : B.IsModular a) (ha : a ∈ nonZeroDivisors R)

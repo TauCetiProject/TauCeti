@@ -234,16 +234,10 @@ field `B` that is local with every field `Y(a,z)` is the field of the state `B�
 theorem eq_field_of_lie_translation [HasUniqueDiv V] {B : VertexOperator R V}
     (hB : ∀ a, ∃ N, B.IsLocalOfOrder (A.field a) N)
     (hT : ∀ n : ℤ, ⁅A.translation, B[[n]]⁆ = (derivative B)[[n]]) :
-    B = A.field ((B[[-1]]) A.vacuum) := by
-  refine A.eq_field_of_ncoeff_apply_vacuum_eq hB fun n ↦ ?_
-  by_cases hn : 0 ≤ n
-  · rw [ncoeff_apply_of_nonneg A.translation_vacuum hT hn,
-      A.ncoeff_field_apply_vacuum_of_nonneg _ n hn]
-  · -- Both creation series satisfy `k! • x₍₋ₖ₋₁₎|0⟩ = Tᵏ x₍₋₁₎|0⟩`.
-    obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = -(k : ℤ) - 1 := ⟨(-n - 1).toNat, by omega⟩
-    rw [← nsmul_right_inj k.factorial_ne_zero,
-      factorial_smul_ncoeff_apply A.translation_vacuum hT k,
-      A.factorial_smul_ncoeff_field_apply_vacuum]
+    B = A.field ((B[[-1]]) A.vacuum) :=
+  A.eq_field_of_ncoeff_apply_vacuum_eq hB
+    (ncoeff_apply_eq_of_lie_of_neg_one_eq A.translation_vacuum hT
+      (A.lie_translation_ncoeff _) (A.ncoeff_neg_one_field_apply_vacuum _).symm)
 
 end FormalVertexAxioms
 

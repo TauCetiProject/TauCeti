@@ -52,6 +52,12 @@ are treated in `TauCeti.Topology.Algebra.Group.LocallyConstant.CompactSupport`.
   finite sum of indicators `1_K • m` of compact open sets.
 * `LocallyConstant.compactlySupported_eq_span`: in a Hausdorff space, `C_c^∞(X, M)` is spanned by
   the indicators `1_K • m` of compact open sets.
+* `LocallyConstant.compactlySupported.surjective_of_forall_compactOpenIndicator`: consequently, a
+  linear map into `C_c^∞(X, M)` whose range contains every `1_K • m` is surjective.
+* `LocallyConstant.comap_subtypeVal_compactOpenIndicator`: restricting `1_W • m` to a subspace
+  gives the indicator of the compact open set that `W` cuts out of it.
+* `LocallyConstant.map_compactOpenIndicator`: composing `1_K • m` with a map preserving `0` gives
+  the indicator `1_K • f m`.
 * `LocallyConstant.compactlySupported_eq_top`, `LocallyConstant.compactlySupported_eq_bot`: every
   locally constant function on a compact space is a test function, and on a preconnected
   noncompact space, such as `ℝ`, the only test function is `0`.
@@ -93,6 +99,13 @@ theorem tsupport_eq_support (f : LocallyConstant X M) : tsupport f = support f :
 theorem hasCompactSupport_iff_isCompact_support {f : LocallyConstant X M} :
     HasCompactSupport f ↔ IsCompact (support f) := by
   rw [HasCompactSupport, tsupport_eq_support]
+
+/-- The projection to the first factor of the support of a compactly supported locally constant
+function on a product is compact. -/
+theorem isCompact_image_fst_support {Y : Type*} [TopologicalSpace Y]
+    {f : LocallyConstant (X × Y) M} (hf : HasCompactSupport f) :
+    IsCompact (Prod.fst '' support f) :=
+  (hasCompactSupport_iff_isCompact_support.1 hf).image continuous_fst
 
 /-- A locally constant function with compact support takes only finitely many values. -/
 theorem finite_range_of_hasCompactSupport {f : LocallyConstant X M} (hf : HasCompactSupport f) :
@@ -149,6 +162,24 @@ theorem compactOpenIndicator_zero (K : CompactOpens X) :
 @[simp]
 theorem compactOpenIndicator_bot (m : M) : compactOpenIndicator (⊥ : CompactOpens X) m = 0 :=
   ext fun x => compactOpenIndicator_of_notMem (by simp [← SetLike.mem_coe]) m
+
+/-- The restriction of the indicator `1_W • m` to a subspace `Z` is the indicator `1_K • m` of the
+compact open subset `K` of `Z` that `W` cuts out of `Z`. -/
+theorem comap_subtypeVal_compactOpenIndicator {Z : Set X} {W : CompactOpens X}
+    {K : CompactOpens Z} (h : Subtype.val ⁻¹' (W : Set X) = (K : Set Z)) (m : M) :
+    (compactOpenIndicator W m).comap ⟨Subtype.val, continuous_subtypeVal⟩ =
+      compactOpenIndicator K m := by
+  ext z
+  have hzK : (z : X) ∈ (W : Set X) ↔ z ∈ (K : Set Z) := by rw [← h, mem_preimage]
+  by_cases hz : z ∈ (K : Set Z) <;> simp [hz, hzK]
+
+/-- Composing the indicator `1_K • m` of a compact open set with a map `f` preserving `0` gives the
+indicator `1_K • f m`. -/
+@[simp]
+theorem map_compactOpenIndicator {N : Type*} [Zero N] {f : M → N} (hf : f 0 = 0)
+    (K : CompactOpens X) (m : M) :
+    (compactOpenIndicator K m).map f = compactOpenIndicator K (f m) :=
+  ext fun x => by by_cases hx : x ∈ K <;> simp [hx, hf]
 
 end Indicator
 
@@ -232,11 +263,27 @@ theorem compactlySupported.ext {f g : compactlySupported R X M}
     (h : ∀ x, (f : LocallyConstant X M) x = (g : LocallyConstant X M) x) : f = g :=
   compactlySupported.coeFn_injective (funext h)
 
+/-- Composing a test function with a map `g` preserving `0` gives a test function, with values
+in any module over any semiring. -/
+theorem map_mem_compactlySupported {S N : Type*} [Semiring S] [AddCommMonoid N] [Module S N]
+    {f : LocallyConstant X M} (hf : f ∈ compactlySupported R X M) {g : M → N} (hg : g 0 = 0) :
+    f.map g ∈ compactlySupported S X N :=
+  mem_compactlySupported.2 ((mem_compactlySupported.1 hf).comp_left hg)
+
 /-- The indicator of a compact clopen set `K`, for instance `1_K • m` when `f = const X m`, has
 compact support. -/
 theorem indicator_mem_compactlySupported (f : LocallyConstant X M) {K : Set X} (hK : IsClopen K)
     (hKc : IsCompact K) : f.indicator hK ∈ compactlySupported R X M :=
   HasCompactSupport.intro' hKc hK.isClosed fun _ hx => indicator_of_notMem f hK hx
+
+/-- Cutting a test function off along any clopen set `K`, compact or not, gives a test
+function. -/
+theorem indicator_mem_compactlySupported_of_mem {f : LocallyConstant X M}
+    (hf : f ∈ compactlySupported R X M) {K : Set X} (hK : IsClopen K) :
+    f.indicator hK ∈ compactlySupported R X M :=
+  (mem_compactlySupported.1 hf).mono fun x hx => by
+    rw [mem_support, indicator_apply] at hx
+    exact (Set.indicator_apply_ne_zero.1 hx).2
 
 /-- The indicator `1_K • m` of a compact open set has compact support. -/
 theorem compactOpenIndicator_mem_compactlySupported [T2Space X] (K : CompactOpens X) (m : M) :
@@ -289,6 +336,25 @@ theorem compactlySupported_eq_span [T2Space X] :
     exact Submodule.sum_mem _ fun m _ => Submodule.subset_span ⟨(K m, m), rfl⟩
   · rintro _ ⟨⟨K, m⟩, rfl⟩
     exact compactOpenIndicator_mem_compactlySupported K m
+
+/-- In a Hausdorff space, a linear map into `C_c^∞(X, M)` is surjective as soon as every indicator
+`1_K • m` of a compact open set lies in its range, since these indicators span `C_c^∞(X, M)`. -/
+theorem compactlySupported.surjective_of_forall_compactOpenIndicator [T2Space X] {N : Type*}
+    [AddCommMonoid N] [Module R N] (L : N →ₗ[R] compactlySupported R X M)
+    (h : ∀ (K : CompactOpens X) (m : M),
+      ∃ n, (L n : LocallyConstant X M) = compactOpenIndicator K m) :
+    Surjective L := by
+  rw [← LinearMap.range_eq_top, eq_top_iff]
+  rintro f -
+  -- The range contains the span of the indicators, as a submodule of `LocallyConstant X M`.
+  suffices hspan : compactlySupported R X M ≤
+      (LinearMap.range L).map (compactlySupported R X M).subtype by
+    obtain ⟨g, hg, hgf⟩ := hspan f.property
+    exact Submodule.subtype_injective _ hgf ▸ hg
+  refine compactlySupported_eq_span.le.trans (Submodule.span_le.2 ?_)
+  rintro _ ⟨⟨K, m⟩, rfl⟩
+  obtain ⟨n, hn⟩ := h K m
+  exact ⟨L n, LinearMap.mem_range_self _ _, hn⟩
 
 variable (R X M) in
 /-- On a compact space every locally constant function has compact support. -/

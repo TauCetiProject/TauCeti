@@ -89,6 +89,11 @@ theorem mem_componentGroup_iff {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ �
   rw [componentGroup, Subgroup.mem_inf, mem_glpos, Subgroup.mem_comap, Subgroup.mem_map_equiv,
     MulAut.conj_symm_apply]
 
+/-- `Γ_{g,U}` consists of matrices of positive determinant. -/
+theorem componentGroup_le_glpos (U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ)))
+    (g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)) : componentGroup U g ≤ GLPos (Fin 2) ℚ :=
+  inf_le_left
+
 /-- **For compact `U`, every element of `Γ_{g,U}` has determinant `1`.** -/
 theorem det_eq_one_of_mem_componentGroup {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))}
     (hU : IsCompact (U : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))))
@@ -170,7 +175,7 @@ theorem mapGL_mem_componentGroup_iff {U : Subgroup (GL (Fin 2) (FiniteAdeleRing 
 image in `GL₂(ℚ)` of the principal congruence subgroup `Γ(M)` of `SL₂(ℤ)` lies in `Γ_{g,U}`. -/
 theorem map_Gamma_le_componentGroup {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))}
     {g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)} {M : ℕ}
-    (h : principalLevel ℚ (Ideal.span {(M : ℤ)}) ≤ U.map (MulAut.conj g).toMonoidHom) :
+    (h : principalLevel ℚ (Fin 2) (Ideal.span {(M : ℤ)}) ≤ U.map (MulAut.conj g).toMonoidHom) :
     (CongruenceSubgroup.Gamma M).map (SpecialLinearGroup.mapGL (n := Fin 2) (R := ℤ) ℚ) ≤
       componentGroup U g := by
   rintro _ ⟨γ, hγ, rfl⟩
@@ -184,12 +189,13 @@ theorem map_Gamma_le_componentGroup {U : Subgroup (GL (Fin 2) (FiniteAdeleRing �
 `Γ(N)`**: an element of `SL₂(ℤ)` lies in `Γ_{1,K(N)}` exactly when it lies in the principal
 congruence subgroup `Γ(N)`. -/
 theorem mapGL_mem_componentGroup_principalLevel_one_iff {N : ℕ} [NeZero N] {γ : SL(2, ℤ)} :
-    SpecialLinearGroup.mapGL ℚ γ ∈ componentGroup (principalLevel ℚ (Ideal.span {(N : ℤ)})) 1 ↔
+    SpecialLinearGroup.mapGL ℚ γ ∈
+        componentGroup (principalLevel ℚ (Fin 2) (Ideal.span {(N : ℤ)})) 1 ↔
       γ ∈ CongruenceSubgroup.Gamma N := by
   refine ⟨fun h ↦ ?_, fun h ↦ map_Gamma_le_componentGroup (fun x hx ↦ ⟨x, hx, by simp⟩)
     ⟨γ, h, rfl⟩⟩
   replace h : GeneralLinearGroup.map (algebraMap ℤ (FiniteAdeleRing ℤ ℚ)) γ.toGL ∈
-      principalLevel ℚ (Ideal.span {(N : ℤ)}) := by
+      principalLevel ℚ (Fin 2) (Ideal.span {(N : ℤ)}) := by
     simpa using mapGL_mem_componentGroup_iff.mp h
   obtain ⟨hg, -, h⟩ := mem_principalLevel_iff.mp h
   have hN : Ideal.span {(N : ℤ)} ≠ ⊥ := by simp [NeZero.ne N]
@@ -207,7 +213,7 @@ theorem mapGL_mem_componentGroup_principalLevel_one_iff {N : ℕ} [NeZero N] {γ
 theorem isCongruenceSubgroup_comap_mapGL_componentGroup
     {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))} {g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)}
     {M : ℕ} [NeZero M]
-    (h : principalLevel ℚ (Ideal.span {(M : ℤ)}) ≤ U.map (MulAut.conj g).toMonoidHom) :
+    (h : principalLevel ℚ (Fin 2) (Ideal.span {(M : ℤ)}) ≤ U.map (MulAut.conj g).toMonoidHom) :
     CongruenceSubgroup.IsCongruenceSubgroup
       ((componentGroup U g).comap (SpecialLinearGroup.mapGL (n := Fin 2) (R := ℤ) ℚ)) :=
   ⟨M, NeZero.ne M, Subgroup.map_le_iff_le_comap.mp (map_Gamma_le_componentGroup h)⟩

@@ -26,6 +26,9 @@ integration-by-parts arguments:
 * `MeasureTheory.eLpNorm_clm_apply_le`: Hölder's inequality
   `‖x ↦ f x (g x)‖_{Lᶜ} ≤ ‖f‖_{Lᵃ} ‖g‖_{Lᵇ}` for evaluation, and
   `MeasureTheory.eLpNorm_clm_apply_const_le`, evaluation at a fixed vector.
+* `MeasureTheory.MemLp.clm_comp`: the pointwise composition of fields of continuous linear maps in
+  `Lᵖ` and `L^q` lies in `L^r` for a Hölder triple `(p, q, r)`; in particular two `L^∞` fields
+  compose to an `L^∞` field.
 * `MeasureTheory.MemLp.integrable_bilinear_apply`: more generally, an essentially bounded field of
   continuous bilinear maps applied to an `L^p` function and an `L^q` function is integrable.
 * `MeasureTheory.MemLp.integrable_inner_of_holderConjugate`: Hölder's inequality makes the
@@ -48,19 +51,24 @@ integration-by-parts arguments:
 * `TauCeti.eNorm_integral_smul_sub_integral_smul_le`: against an integrable weight, the integrals
   of two products `a • b` and `f • g` of `L^∞` functions differ by at most
   `‖b‖_∞ ∫ |ψ| ‖a - f‖ + ‖f‖_∞ ∫ |ψ| ‖b - g‖`.
-* `TauCeti.lintegral_enorm_mul_enorm_mul_enorm_le` and
+* `TauCeti.lintegral_enorm_mul_enorm_mul_enorm_le`, its Bochner form
+  `TauCeti.integral_norm_mul_norm_mul_norm_le` and
   `MeasureTheory.MemLp.integrable_norm_mul_norm_mul_norm`: Hölder's inequality in three factors,
   `∫ |w| |g| |f| ≤ ‖w‖_p ‖g‖_r ‖f‖_q` for `1/p + 1/q = 1/s` and `1/r + 1/s = 1`, and the resulting
   integrability.
 * `MeasureTheory.Lp.sum_smul` and `MeasureTheory.Lp.smul_sum`: the heterogeneous scalar
   multiplication `Lᵖ × L^q → Lʳ` distributes over finite sums in each factor.
+* `MeasureTheory.Lp.lpSMul_comm`, `MeasureTheory.Lp.lpSMulₗ`, `MeasureTheory.Lp.tendsto_lpSMul`,
+  and `MeasureTheory.Lp.continuous_lpSMul`: commutativity over a commutative normed ring, bilinear
+  map packaging, and joint continuity of heterogeneous `Lp` scalar multiplication.
 * `MeasureTheory.MemLp.toLp_smul_toLp`: the product of the classes of `f` and `g` is the class of
   `f • g`; `MeasureTheory.Lp.one_smul`: the constant one of `L^∞` acts trivially.
 -/
 
 public section
 
-open scoped ENNReal
+open Filter
+open scoped ENNReal Topology
 
 namespace MeasureTheory.MemLp
 
@@ -106,6 +114,23 @@ theorem _root_.MeasureTheory.eLpNorm_clm_apply_const_le (v : V) :
     exact le_top
 
 end Evaluation
+
+section Composition
+
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+  [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+omit [p.HolderConjugate q] in
+/-- **Hölder's inequality for composition of operator fields.** If `A ∈ Lᵖ(μ)` and `B ∈ L^q(μ)`
+are fields of continuous linear maps and `(p, q, r)` is a Hölder triple, then the pointwise
+composition `x ↦ A x ∘L B x` lies in `L^r(μ)`; in particular two `L^∞` fields compose to an `L^∞`
+field. -/
+theorem clm_comp (r : ℝ≥0∞) [ENNReal.HolderTriple p q r] {A : α → F →L[𝕜] G}
+    {B : α → E →L[𝕜] F} (hA : MemLp A p μ) (hB : MemLp B q μ) :
+    MemLp (fun x ↦ (A x).comp (B x)) r μ :=
+  (ContinuousLinearMap.compL 𝕜 E F G).memLp_of_bilin r hA hB
+
+end Composition
 
 section Bilinear
 
@@ -262,6 +287,56 @@ protected theorem smul_sum (s : Finset ι) (f : Lp 𝕜 p μ) (g : ι → Lp E q
   | empty => simp
   | insert i s hi ih => rw [Finset.sum_insert hi, Finset.sum_insert hi, Lp.add_smul, ih]
 
+/-- When `R` is a commutative normed ring, the heterogeneous `Lp` product is commutative:
+`(f • g : Lp R r μ) = g • f` for `f ∈ Lᵖ` and `g ∈ L^q` with `1/p + 1/q = 1/r`. -/
+theorem lpSMul_comm {R : Type*} [NormedCommRing R] (f : Lp R p μ) (g : Lp R q μ) :
+    (f • g : Lp R r μ) = g • f := by
+  ext
+  filter_upwards [coeFn_lpSMul (r := r) f g, coeFn_lpSMul (r := r) g f] with x h₁ h₂
+  simp [h₁, h₂, mul_comm]
+
+/-- Heterogeneous `Lp` scalar multiplication `(f, g) ↦ (f • g : Lp E r μ)` as a `𝕜'`-bilinear
+map. -/
+noncomputable def lpSMulₗ (𝕜' : Type*) [NormedCommRing 𝕜'] [Module 𝕜' E] [Module 𝕜' 𝕜]
+    [IsBoundedSMul 𝕜' E] [IsBoundedSMul 𝕜' 𝕜] [IsScalarTower 𝕜' 𝕜 E] [SMulCommClass 𝕜' 𝕜 E] :
+    Lp 𝕜 p μ →ₗ[𝕜'] Lp E q μ →ₗ[𝕜'] Lp E r μ :=
+  LinearMap.mk₂ 𝕜' (fun f g ↦ (f • g : Lp E r μ))
+    Lp.smul_add Lp.smul_assoc Lp.add_smul fun c f g ↦ (Lp.smul_comm c f g).symm
+
+@[simp]
+theorem lpSMulₗ_apply_apply (𝕜' : Type*) [NormedCommRing 𝕜'] [Module 𝕜' E] [Module 𝕜' 𝕜]
+    [IsBoundedSMul 𝕜' E] [IsBoundedSMul 𝕜' 𝕜] [IsScalarTower 𝕜' 𝕜 E] [SMulCommClass 𝕜' 𝕜 E]
+    (f : Lp 𝕜 p μ) (g : Lp E q μ) :
+    lpSMulₗ (p := p) (q := q) (r := r) (𝕜 := 𝕜) (E := E) (μ := μ) 𝕜' f g = f • g := by
+  simp [lpSMulₗ]
+
+/-- The heterogeneous `Lp` scalar multiplication `Lᵖ × L^q → Lʳ` is jointly continuous. -/
+theorem continuous_lpSMul [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)] :
+    Continuous fun x : Lp 𝕜 p μ × Lp E q μ ↦ (x.1 • x.2 : Lp E r μ) :=
+  -- `𝕜` is only assumed to be a `[NormedRing 𝕜]` without a commutative scalar field `𝕜'` in
+  -- scope, so we invoke `IsBoundedBilinearMap.continuous` with `𝕜 := ℕ` via
+  -- `AddMonoidHom.map_nsmul`.
+  IsBoundedBilinearMap.continuous (𝕜 := ℕ)
+    { add_left := Lp.smul_add
+      smul_left := fun c f g ↦ map_nsmul
+        ({ toFun := (· • g)
+           map_zero' := Lp.zero_smul _ _ _
+           map_add' := fun f₁ f₂ ↦ Lp.smul_add f₁ f₂ g } : Lp 𝕜 p μ →+ Lp E r μ) c f
+      add_right := Lp.add_smul
+      smul_right := fun c f g ↦ map_nsmul
+        ({ toFun := (f • ·)
+           map_zero' := Lp.smul_zero _ _ _
+           map_add' := Lp.add_smul f } : Lp E q μ →+ Lp E r μ) c g
+      bound := ⟨1, one_pos, fun f g ↦ by simpa using Lp.norm_smul_le f g⟩ }
+
+/-- If `f i → f₀` in `Lᵖ` and `g i → g₀` in `L^q` (`1/p + 1/q = 1/r`), then `f i • g i → f₀ • g₀`
+in `Lʳ`. -/
+theorem tendsto_lpSMul [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)] {l : Filter ι}
+    {f : ι → Lp 𝕜 p μ} {g : ι → Lp E q μ} {f₀ : Lp 𝕜 p μ} {g₀ : Lp E q μ}
+    (hf : Tendsto f l (𝓝 f₀)) (hg : Tendsto g l (𝓝 g₀)) :
+    Tendsto (fun i ↦ (f i • g i : Lp E r μ)) l (𝓝 (f₀ • g₀)) :=
+  (continuous_lpSMul.tendsto _).comp (hf.prodMk_nhds hg)
+
 /-- The heterogeneous product of the `Lp` classes of `f` and `g` is the class of the pointwise
 product `f • g`. -/
 theorem _root_.MeasureTheory.MemLp.toLp_smul_toLp {f : α → 𝕜} {g : α → E} (hf : MemLp f p μ)
@@ -358,5 +433,28 @@ theorem lintegral_enorm_mul_enorm_mul_enorm_le {α E F G : Type*} [MeasurableSpa
     _ ≤ eLpNorm w p μ * (eLpNorm g r μ * eLpNorm f q μ) := by
         rw [mul_left_comm]
         gcongr
+
+/-- **Hölder's inequality in three factors**, for the Bochner integral:
+`∫ |w| |g| |f| ≤ ‖w‖_p ‖g‖_r ‖f‖_q` for `w ∈ Lᵖ`, `g ∈ Lʳ` and `f ∈ L^q` with
+`1/p + 1/q = 1/s` and `1/r + 1/s = 1`. This is the real form of
+`TauCeti.lintegral_enorm_mul_enorm_mul_enorm_le`. -/
+theorem integral_norm_mul_norm_mul_norm_le {α E F G : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedAddCommGroup G]
+    {p q r s : ℝ≥0∞} [p.HolderTriple q s] [r.HolderTriple s 1] {w : α → E} {g : α → F}
+    {f : α → G} (hw : MemLp w p μ) (hg : MemLp g r μ) (hf : MemLp f q μ) :
+    ∫ x, ‖w x‖ * (‖g x‖ * ‖f x‖) ∂μ ≤
+      (eLpNorm w p μ).toReal * ((eLpNorm g r μ).toReal * (eLpNorm f q μ).toReal) := by
+  have hle := lintegral_enorm_mul_enorm_mul_enorm_le (p := p) (q := q) (r := r) (s := s)
+    (μ := μ) hw.aestronglyMeasurable hg.aestronglyMeasurable hf.aestronglyMeasurable
+  rw [integral_eq_lintegral_of_nonneg_ae (f := fun x ↦ ‖w x‖ * (‖g x‖ * ‖f x‖))
+    (ae_of_all _ fun x ↦ by positivity)
+    (hw.aestronglyMeasurable.norm.mul
+      (hg.aestronglyMeasurable.norm.mul hf.aestronglyMeasurable.norm)),
+    ← ENNReal.toReal_mul, ← ENNReal.toReal_mul]
+  refine ENNReal.toReal_mono (ENNReal.mul_ne_top hw.eLpNorm_ne_top
+      (ENNReal.mul_ne_top hg.eLpNorm_ne_top hf.eLpNorm_ne_top))
+    ((lintegral_congr fun x ↦ ?_).trans_le hle)
+  rw [ENNReal.ofReal_mul (norm_nonneg _), ENNReal.ofReal_mul (norm_nonneg _), ofReal_norm,
+    ofReal_norm, ofReal_norm]
 
 end TauCeti

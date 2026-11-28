@@ -28,6 +28,8 @@ of a preconnected space from second-countable pieces with countably many neighbo
   disjoint open second-countable pieces is second countable.
 * `TauCeti.mk_le_continuum_of_secondCountableTopology`: a second-countable `T₀` space has at most
   `𝔠` points; in particular so does every Polish space.
+* `Pairwise.lift_mk_le_of_isOpen_disjoint_of_denseRange`: a pairwise disjoint family of nonempty
+  open sets has cardinality at most that of any dense-range index type.
 
 ## References
 
@@ -41,12 +43,24 @@ public section
 
 open Set Function Cardinal TopologicalSpace
 
-universe u
+universe u v
 
 /-- Every subtype of a second-countable space is second countable. -/
 instance Subtype.instSecondCountableTopology {α : Type*} [TopologicalSpace α]
     [SecondCountableTopology α] (p : α → Prop) : SecondCountableTopology (Subtype p) :=
   Topology.IsInducing.subtypeVal.secondCountableTopology
+
+/-- A pairwise disjoint family of nonempty open sets has lifted index cardinality at most that of
+any dense-range map into the ambient space. -/
+theorem _root_.Pairwise.lift_mk_le_of_isOpen_disjoint_of_denseRange
+    {X : Type*} [TopologicalSpace X] {ι : Type u} {α : Type v}
+    {U : ι → Set X} (hUo : ∀ i, IsOpen (U i))
+    (hd : Pairwise (Function.onFun Disjoint U))
+    (hne : ∀ i, (U i).Nonempty) {ψ : α → X} (hψ : DenseRange ψ) :
+    Cardinal.lift.{v} #ι ≤ Cardinal.lift.{u} #α := by
+  choose q hq using fun i ↦ hψ.exists_mem_open (hUo i) (hne i)
+  refine Cardinal.lift_mk_le'.2 ⟨⟨q, fun i₁ i₂ heq ↦ by_contra fun hne' ↦ ?_⟩⟩
+  exact (hd hne').notMem_of_mem_left (hq i₁) (heq ▸ hq i₂)
 
 namespace TauCeti
 

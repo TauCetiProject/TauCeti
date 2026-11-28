@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Gibbs.Specification
 public import Mathlib.Probability.ConditionalProbability
 import TauCeti.Probability.Process.Tail.Subshift
-import TauCeti.MeasureTheory.Group.Action
 import Mathlib.Dynamics.Ergodic.RadonNikodym
 
 /-!
@@ -117,22 +116,8 @@ null-measurable, almost invariant event of positive mass is an invariant Gibbs m
 theorem cond_mem_gibbsInvariant (hmove : ∀ F Λ : Finset I, ∃ g : Γ, ∀ i ∈ F, g • i ∉ Λ)
     (hμ : μ ∈ γ.gibbsInvariant) {t : Set X} (ht : NullMeasurableSet t μ)
     (htg : ∀ g : Γ, (fun ω => g • ω) ⁻¹' t =ᵐ[μ] t) (ht₀ : μ t ≠ 0) :
-    μ[|t] ∈ γ.gibbsInvariant := by
-  obtain ⟨hinv, hγμ⟩ := mem_gibbsInvariant_iff.1 hμ
-  obtain ⟨_, hμu⟩ := mem_invariantMeasuresOfMeasureUnivEq_iff.1 hinv
-  have : IsProbabilityMeasure μ := ⟨hμu⟩
-  -- Replace `t` by a measurable version `t'`; the conditioned measure does not change.
-  obtain ⟨t', -, ht', htt'⟩ := ht.exists_measurable_subset_ae_eq
-  have hcond_eq : μ[|t] = μ[|t'] := by
-    simp only [ProbabilityTheory.cond, measure_congr htt', Measure.restrict_congr_set htt']
-  rw [hcond_eq]
-  rw [← measure_congr htt'] at ht₀
-  have := cond_isProbabilityMeasure (μ := μ) ht₀
-  have hcond := SMulInvariantMeasure.cond ht' fun g : Γ =>
-    preimage_smul_ae_eq_self_of_ae_eq htt' (htg g)
-  exact mem_gibbsInvariant_iff.2
-    ⟨mem_invariantMeasuresOfMeasureUnivEq_iff.2 ⟨hcond, measure_univ⟩,
-      hγμ.of_absolutelyContinuous hmove cond_absolutelyContinuous⟩
+    μ[|t] ∈ γ.gibbsInvariant :=
+  (γ.isExtreme_gibbsInvariant hmove).cond_mem hμ ht htg ht₀
 
 end Specification
 

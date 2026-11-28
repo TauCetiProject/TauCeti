@@ -478,12 +478,11 @@ theorem range_negHamiltonianLieHom (hσ : σ.IsSymplectic) :
     exact ⟨_, (symplecticLieSubalgebraEquiv_negHamiltonianLieHom hσ f).symm⟩
   · rintro ⟨φ, hφ⟩
     -- Every smooth `0`-form is the form of a smooth function.
-    let g : C^∞⟮I, M; ℝ⟯ := ⟨fun y ↦ φ.val y 0,
-      isSmoothForm_ofFunction_iff.1 (by rw [← RoughForm.eq_ofFunction]; exact φ.isSmoothForm)⟩
-    have hg : SmoothForm.ofFunction g = φ :=
-      Subtype.ext <| (SmoothForm.coe_ofFunction g).trans (RoughForm.eq_ofFunction φ.val).symm
-    refine ⟨(σ.poissonLieAlgebraEquiv hσ).symm g, (σ.symplecticLieSubalgebraEquiv _).injective ?_⟩
-    rw [symplecticLieSubalgebraEquiv_negHamiltonianLieHom, LinearEquiv.apply_symm_apply, hg, hφ]
+    refine ⟨(σ.poissonLieAlgebraEquiv hσ).symm
+      (show C^∞⟮I, M; ℝ⟯ from ⟨_, φ.contMDiff_apply_zero⟩),
+      (σ.symplecticLieSubalgebraEquiv _).injective ?_⟩
+    rw [symplecticLieSubalgebraEquiv_negHamiltonianLieHom, LinearEquiv.apply_symm_apply,
+      ← φ.eq_ofFunction, hφ]
 
 end SmoothTwoForm
 

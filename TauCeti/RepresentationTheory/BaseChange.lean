@@ -72,12 +72,16 @@ to torsion modules and do not require the coefficient algebra to be flat.
 * `Representation.baseChange`: scalar extension of a representation.
 * `Representation.ker_baseChange`: scalar extension to a faithful algebra keeps the kernel of a
   representation on a flat module.
+* `Representation.asAlgebraHom_baseChange_mapAlgHom`: an element of `R[G]`, with its coefficients
+  mapped to `A`, acts on `A ⊗_R V` as the base change of its action on `V`.
 * `Representation.invariantsBaseChangeEquiv`: flat scalar extension commutes with taking the
   invariants of a finite group.
 * `Representation.invariantsBaseChangeMap`: the comparison map `A ⊗_R V^G → (A ⊗_R V)^G`,
   injective for flat `A` (`Representation.invariantsBaseChangeMap_injective`).
 * `Representation.averageMap_baseChange`: the averaging projection commutes with scalar
   extension.
+* `Representation.equivFinsuppOfBasisLeft_apply_fixed_of_baseChange`: the coordinates of a fixed
+  vector of a free scalar extension are fixed.
 * `Representation.exists_common_fixed_vector_of_baseChange`: descent of a nonzero common
   fixed vector.
 * `Representation.character_baseChange`: the character of a base-changed representation is the
@@ -173,6 +177,24 @@ theorem ker_baseChange {G : Type*} [Group G] (A : Type v) [Semiring A] [Algebra 
     (by simpa using LinearMap.congr_fun hg (1 ⊗ₜ v))
 
 end BaseChange
+
+section AsAlgebraHom
+
+variable {R : Type u} {A : Type v} [CommSemiring R] [CommSemiring A] [Algebra R A]
+variable [AddCommMonoid V] [Module R V]
+
+/-- An element of `R[G]`, read in `A[G]` by mapping its coefficients to `A`, acts on the base
+change of `ρ` as the base change of its action on `V`. -/
+@[simp]
+theorem asAlgebraHom_baseChange_mapAlgHom (ρ : Representation R G V) (a : MonoidAlgebra R G) :
+    (baseChange A ρ).asAlgebraHom (MonoidAlgebra.mapAlgHom G (Algebra.ofId R A) a) =
+      (ρ.asAlgebraHom a).baseChange A := by
+  induction a using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add a b ha hb => simp only [map_add, ha, hb, LinearMap.baseChange_add]
+  | single g c => simp [asAlgebraHom_single, LinearMap.baseChange_smul, algebraMap_smul]
+
+end AsAlgebraHom
 
 section Invariants
 
@@ -348,6 +370,17 @@ end Average
 variable {R : Type u} {A : Type v} [CommSemiring R] [Semiring A] [Algebra R A]
 variable [Module.Free R A] [AddCommMonoid V] [Module R V]
 
+omit [Module.Free R A] in
+/-- If `w ∈ A ⊗[R] V` is fixed by the scalar extension of `ρ`, then so is each coordinate of `w`
+in a basis of `A`: writing `w = ∑ bᵢ ⊗ vᵢ`, the group acts on the coefficients `vᵢ`. -/
+theorem equivFinsuppOfBasisLeft_apply_fixed_of_baseChange {ι : Type*} [DecidableEq ι]
+    (b : Module.Basis ι R A) (ρ : Representation R G V) {w : A ⊗[R] V}
+    (hfixed : ∀ g, baseChange A ρ g w = w) (i : ι) (g : G) :
+    ρ g (TensorProduct.equivFinsuppOfBasisLeft b w i) =
+      TensorProduct.equivFinsuppOfBasisLeft b w i := by
+  rw [← Module.Basis.equivFinsuppOfBasisLeft_lTensor_apply, ← LinearMap.baseChange_eq_lTensor,
+    ← baseChange_apply, hfixed g]
+
 /-- A nonzero common fixed vector after scalar extension to an algebra free over the base
 semiring descends to a nonzero common fixed vector over the base semiring. Neither commutativity
 nor nontriviality of the coefficient algebra is needed.
@@ -364,11 +397,7 @@ theorem exists_common_fixed_vector_of_baseChange
   have he : e w ≠ 0 := fun h ↦ hw (e.map_eq_zero_iff.mp h)
   obtain ⟨i, hi⟩ := Finsupp.ne_iff.mp he
   simp only [Finsupp.coe_zero, Pi.zero_apply] at hi
-  refine ⟨e w i, hi, fun g ↦ ?_⟩
-  rw [← Module.Basis.equivFinsuppOfBasisLeft_lTensor_apply]
-  have h := hfixed g
-  rw [baseChange_apply, LinearMap.baseChange_eq_lTensor] at h
-  exact congrArg (fun x ↦ e x i) h
+  exact ⟨e w i, hi, equivFinsuppOfBasisLeft_apply_fixed_of_baseChange b ρ hfixed i⟩
 
 end
 
