@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
+public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
+import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lemmas
 
 /-!
 # Orbitwise measurability of operator fields
@@ -21,6 +23,9 @@ For composition of operator fields, apply the evaluation lemma as
 For finite-support conclusions it suffices that the right field has finitely strongly
 measurable orbits. Neither completeness nor operator-norm measurability is needed. Addition
 and scalar multiplication of orbits use the native strong-measurability arithmetic lemmas.
+
+`AEStronglyMeasurable.bilin_apply` evaluates an a.e. strongly measurable bilinear operator
+field on two a.e. strongly measurable vectors.
 
 ## References
 
@@ -52,6 +57,21 @@ theorem AEStronglyMeasurable.clm_apply_of_forall {u : S → E} (hu : AEStronglyM
     {A : S → E →L[𝕜] F} (hA : ∀ x, AEStronglyMeasurable (fun s ↦ A s x) μ) :
     AEStronglyMeasurable (fun s ↦ A s (u s)) μ :=
   hu.apply_of_forall_of_continuousAt hA (.of_forall fun s ↦ (A s).continuous.continuousAt)
+
+/-- Almost everywhere strongly measurable fields and vectors give a.e. strongly measurable
+bilinear evaluations. -/
+theorem AEStronglyMeasurable.bilin_apply
+    {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {B : S → E →L[𝕜] F →L[𝕜] G} {v : S → E} {w : S → F}
+    (hB : AEStronglyMeasurable B μ) (hv : AEStronglyMeasurable v μ)
+    (hw : AEStronglyMeasurable w μ) :
+    AEStronglyMeasurable (fun s ↦ B s (v s) (w s)) μ :=
+  have hcont : Continuous (fun p :
+      (E →L[𝕜] F →L[𝕜] G) × E × F ↦ p.1 p.2.1 p.2.2) :=
+    (continuous_fst.clm_apply continuous_snd.fst).clm_apply continuous_snd.snd
+  hcont.comp_aestronglyMeasurable (hB.prodMk (hv.prodMk hw))
 
 /-- An orbitwise strongly measurable field preserves finite strong measurability of vectors
 for arbitrary measures. -/
