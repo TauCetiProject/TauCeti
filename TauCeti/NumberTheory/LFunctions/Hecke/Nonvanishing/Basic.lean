@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.LFunctions.UnitaryCancelling
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Cancellation
 
 /-!
-# Boundary nonvanishing for ray class character L-functions
+# Unitary character families and away-from-exception nonvanishing for ray class characters
 
 Over an arbitrary number field `K` and modulus `𝔪 : Modulus K`, the unitary ideal weights
 `χ ↦ χ.toUnitaryIdealWeight` of ray class characters satisfy
@@ -22,8 +22,15 @@ Consequently every nontrivial ray class character satisfies `TauCeti.LFunctions.
 and its continued L-function `continuedLFunctionOfWeight χ.toUnitaryIdealWeight` is nonzero on
 `Re s ≥ 1` away from `s = 1` in the quadratic case `χ ^ 2 = 1`.
 
+For arbitrary-continuation nonvanishing and meromorphic-order-zero criteria on `Re s ≥ 1`, see
+`TauCeti.NumberTheory.LFunctions.Hecke.Nonvanishing.Continuation`. For the `[K : ℚ] = 1` closing
+the exceptional point `χ ^ 2 = 1 ∧ s = 1`, see
+`TauCeti.NumberTheory.LFunctions.Hecke.Nonvanishing.DegreeOne`.
+
 ## Main results
 
+* `RayClassCharacter.hasCancellation_imaginaryNormTwist_toUnitaryIdealWeight_iff`:
+  `HasCancellation (imaginaryNormTwist χ.toUnitaryIdealWeight t) ↔ χ ≠ 1`.
 * `RayClassCharacter.isUnitaryCharacterFamily_toUnitaryIdealWeight`:
   `toUnitaryIdealWeight` on `RayClassCharacter 𝔪` forms a unitary character family.
 * `RayClassCharacter.unitaryCancelling_toUnitaryIdealWeight_iff`:
@@ -40,9 +47,9 @@ and its continued L-function `continuedLFunctionOfWeight χ.toUnitaryIdealWeight
 
 public section
 
-namespace TauCeti.GlobalNumberFields.RayClassCharacter
+open NumberField TauCeti TauCeti.LFunctions
 
-open TauCeti.LFunctions
+namespace TauCeti.GlobalNumberFields.RayClassCharacter
 
 variable {K : Type*} [Field K] [NumberField K] {𝔪 : Modulus K}
 

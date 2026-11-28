@@ -1,0 +1,94 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.NumberTheory.LSeries.DirichletContinuation
+public import TauCeti.NumberTheory.LFunctions.Hecke.Basic
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Dirichlet
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Continuation
+
+/-!
+# Presented Hecke L-functions over `ℚ`
+
+Over `ℚ`, `TauCeti.GlobalNumberFields.RayClassCharacter.toDirichletCharacter` identifies any ray
+class character `χ` of a modulus `𝔪` with a Dirichlet character `ψ = χ.toDirichletCharacter` modulo
+`Ideal.absNorm 𝔪.finitePart`
+(`TauCeti.GlobalNumberFields.LSeries_rayClassCharacter_eq_LSeries_toDirichletCharacter`). Since
+`DirichletCharacter.LFunction` is meromorphic on `ℂ` (entire when `ψ ≠ 1`, and agreeing away from
+`s = 1` with a finite Euler product times `riemannZeta` when `ψ = 1`), the canonical meromorphic
+continuation `TauCeti.LFunctions.heckeLFunctionC χ` equals
+`toMeromorphicNFOn (DirichletCharacter.LFunction χ.toDirichletCharacter) Set.univ` for every `χ`
+(including the principal character), yielding unconditional series agreement on `Re s > 1` and
+entire continuation when `χ ≠ 1`.
+
+For nonvanishing and meromorphic order zero on `Re s ≥ 1` (whenever `χ ≠ 1 ∨ s ≠ 1`), see
+`TauCeti.NumberTheory.LFunctions.Hecke.Rat.Nonvanishing`.
+
+## Main results
+
+* `TauCeti.LFunctions.heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat`: identification of
+  `heckeLFunctionC χ` with the meromorphic normal form of Mathlib's `DirichletCharacter.LFunction`
+  for every `χ`.
+* `TauCeti.LFunctions.differentiable_heckeLFunctionC_rat`: entireness of `heckeLFunctionC χ` when
+  `χ ≠ 1`.
+* `TauCeti.LFunctions.heckeLFunctionC_eq_LSeries_rat`: agreement with the defining `L`-series on
+  `Re s > 1`.
+
+## References
+
+* J. Neukirch, *Algebraic Number Theory*, Chapter VII, §6.
+* The Dirichlet-character continuation is `DirichletCharacter.LFunction` in
+  `Mathlib/NumberTheory/LSeries/DirichletContinuation.lean` (David Loeffler and Michael Stoll).
+-/
+
+public section
+
+open Filter NumberField Set
+open scoped NumberField Topology
+
+namespace TauCeti.LFunctions
+
+open GlobalNumberFields
+
+/-- **Over `ℚ`, the presented Hecke L-function of any ray class character is the meromorphic normal
+form of the corresponding Dirichlet L-function.** -/
+theorem heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat {𝔪 : Modulus ℚ}
+    (χ : RayClassCharacter 𝔪) :
+    heckeLFunctionC χ =
+      toMeromorphicNFOn (DirichletCharacter.LFunction χ.toDirichletCharacter) Set.univ := by
+  rw [heckeLFunctionC_def, LSeries_rayClassCharacter_eq_LSeries_toDirichletCharacter χ]
+  exact meromorphicContinuation_eq_toMeromorphicNFOn
+    χ.toDirichletCharacter.meromorphic_LFunction
+    (fun s (hs : 1 < s.re) ↦
+      χ.toDirichletCharacter.analyticAt_LFunction (.inl fun h ↦ by simp [h] at hs))
+    fun _ hs ↦ DirichletCharacter.LFunction_eq_LSeries _ hs
+
+/-- **Entire continuation over `ℚ`.** For any modulus `𝔪` of `ℚ` and any nontrivial ray class
+character `χ ≠ 1`, `heckeLFunctionC χ` is entire. -/
+theorem differentiable_heckeLFunctionC_rat {𝔪 : Modulus ℚ} {χ : RayClassCharacter 𝔪}
+    (hχ : χ ≠ 1) : Differentiable ℂ (heckeLFunctionC χ) := by
+  have hψ : χ.toDirichletCharacter ≠ 1 :=
+    RayClassCharacter.toDirichletCharacter_eq_one_iff.not.mpr hχ
+  have hLdiff : Differentiable ℂ (DirichletCharacter.LFunction χ.toDirichletCharacter) :=
+    DirichletCharacter.differentiable_LFunction hψ
+  rw [heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat χ,
+    toMeromorphicNFOn_eq_self.mpr
+      (Complex.analyticOnNhd_univ_iff_differentiable.mpr hLdiff).meromorphicNFOn]
+  exact hLdiff
+
+/-- **Dirichlet series agreement over `ℚ`.** For any modulus `𝔪` of `ℚ` and any ray class
+character `χ`, `heckeLFunctionC χ` agrees with its defining `L`-series on `Re s > 1`. -/
+theorem heckeLFunctionC_eq_LSeries_rat {𝔪 : Modulus ℚ} (χ : RayClassCharacter 𝔪)
+    {s : ℂ} (hs : 1 < s.re) :
+    heckeLFunctionC χ s =
+      LSeries (normCoeff ℚ χ.toUnitaryIdealWeight.toIdealArithmeticFunction) s := by
+  rw [heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat χ,
+    toMeromorphicNFOn_apply_of_analyticAt χ.toDirichletCharacter.meromorphic_LFunction
+      (χ.toDirichletCharacter.analyticAt_LFunction (.inl fun h ↦ by simp [h] at hs)),
+    LSeries_rayClassCharacter_eq_LSeries_toDirichletCharacter χ,
+    DirichletCharacter.LFunction_eq_LSeries _ hs]
+
+end TauCeti.LFunctions

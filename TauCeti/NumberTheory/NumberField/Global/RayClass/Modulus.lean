@@ -209,6 +209,12 @@ theorem mem_support_iff (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K)) :
 theorem support_mono {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) : 𝔪.support ⊆ 𝔫.support := fun v hv ↦
   (mem_support_iff 𝔫 v).mpr (((mem_support_iff 𝔪 v).mp hv).trans (dvd_iff.mp h).1)
 
+/-- Two moduli with the same finite part have the same support. -/
+theorem support_eq_of_finitePart_eq {𝔪 𝔫 : Modulus K} (h : 𝔪.finitePart = 𝔫.finitePart) :
+    𝔪.support = 𝔫.support := by
+  ext v
+  rw [mem_support_iff, mem_support_iff, h]
+
 /-- The **exponent** of a finite place in a modulus: the multiplicity of `v` in the factorization
 of the finite part. -/
 noncomputable def exponent (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K)) : ℕ :=
@@ -698,6 +704,12 @@ theorem Modulus.isCoprimeTo_iff_sup_eq_top {𝔪 : Modulus K} {I : Ideal (𝓞 K
   · refine v.isPrime.ne_top (top_le_iff.mp ?_)
     rw [← h]
     exact sup_le (Ideal.le_of_dvd hdvd) (Ideal.le_of_dvd ((mem_support_iff _ _).mp hv))
+
+/-- Two moduli with the same finite part have the same coprime ideals. -/
+theorem Modulus.isCoprimeTo_iff_of_finitePart_eq {𝔪 𝔫 : Modulus K}
+    (h : 𝔪.finitePart = 𝔫.finitePart) {I : Ideal (𝓞 K)} :
+    𝔪.IsCoprimeTo I ↔ 𝔫.IsCoprimeTo I := by
+  simp only [IsCoprimeTo, Modulus.support_eq_of_finitePart_eq h]
 
 /-- **The monoid of nonzero integral ideals prime to a modulus.**  There is one such monoid, the
 one built away from a finite set of primes; its membership predicate is `Modulus.IsCoprimeTo`. -/

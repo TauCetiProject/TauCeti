@@ -21,6 +21,7 @@ This file records lightweight finite-sum identities and real-shift norm comparis
   of `LSeries.term a s n` by `Real.exp (Real.log n * (w.re - s.re))`.
 * `TauCeti.LSeries.norm_term_le_exp_mul`: an upper bound `E` on `Real.log n * (w.re - s.re)`
   bounds `‖LSeries.term a s n‖` by `Real.exp E * ‖LSeries.term a w n‖`.
+* `TauCeti.LSeries.term_sq`: reindexing a square-indexed Dirichlet term to `2 * s`.
 -/
 
 public section
@@ -54,5 +55,13 @@ theorem norm_term_le_exp_mul (a : ℕ → ℂ) {s w : ℂ} {n : ℕ} {E : ℝ}
     ‖_root_.LSeries.term a s n‖ ≤ Real.exp E * ‖_root_.LSeries.term a w n‖ := by
   rw [norm_term_eq_exp_mul a s w n]
   gcongr
+
+/-- Reindexing a Dirichlet term at a square index `m ^ 2` doubles the complex variable `s`. -/
+theorem term_sq (a : ℕ → ℂ) (s : ℂ) (m : ℕ) :
+    _root_.LSeries.term a s (m ^ 2) = _root_.LSeries.term (fun n ↦ a (n ^ 2)) (2 * s) m := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · simp
+  · rw [_root_.LSeries.term_of_ne_zero (pow_ne_zero 2 hm), _root_.LSeries.term_of_ne_zero hm,
+      Nat.cast_pow, ← Complex.natCast_cpow_natCast_mul, Nat.cast_ofNat]
 
 end TauCeti.LSeries

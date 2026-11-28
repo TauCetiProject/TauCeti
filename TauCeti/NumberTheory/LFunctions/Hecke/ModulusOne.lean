@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed
 public import TauCeti.NumberTheory.LFunctions.Hecke.ChangeModulus
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Cancellation
 import TauCeti.NumberTheory.LFunctions.DedekindZeta.WeightedClassSum
+import TauCeti.NumberTheory.LFunctions.Hecke.Cancellation
 import TauCeti.NumberTheory.LFunctions.Hecke.Orthogonality
 
 /-!
@@ -95,12 +96,8 @@ nonprincipal ideal class character agrees with the partial-summation continuatio
 theorem heckeLFunctionC_eq_continuedLFunctionOfWeight_of_modulus_one
     {χ : RayClassCharacter (Modulus.one K)} (hχ : χ ≠ 1) {s : ℂ}
     (hs : 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re) :
-    heckeLFunctionC χ s = continuedLFunctionOfWeight χ.toUnitaryIdealWeight s := by
-  have hc := RayClassCharacter.hasCancellation_toUnitaryIdealWeight_iff.mpr hχ
-  have hF : Differentiable ℂ (heckeLFunctionC χ) := fun z ↦
-    (analyticAt_heckeLFunctionC_of_modulus_one hχ z).differentiableAt
-  refine hF.differentiableOn.eqOn_of_eqOn_re_gt (differentiableOn_continuedLFunctionOfWeight hc)
-    (b := 1) (fun z hz ↦ ?_) hs
-  rw [heckeLFunctionC_eq_LSeries_of_modulus_one χ hz, continuedLFunctionOfWeight_eq_LSeries _ hz]
+    heckeLFunctionC χ s = continuedLFunctionOfWeight χ.toUnitaryIdealWeight s :=
+  heckeLFunctionC_eqOn_continuedLFunctionOfWeight hχ
+    (fun _ hz ↦ heckeLFunctionC_eq_LSeries_of_modulus_one χ hz) hs
 
 end TauCeti.LFunctions

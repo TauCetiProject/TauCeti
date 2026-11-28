@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Basic
-public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Regroup
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
+import Mathlib.NumberTheory.LSeries.Convolution
 
 /-!
 # Absolute convergence of ideal convolution
@@ -20,7 +21,9 @@ ideals of the same norm, and does not suffice for ideal Euler products.
 `TauCeti.hasSum_idealTerm_convolution` gives the product formula with specified sums;
 `TauCeti.summable_idealTerm_convolution` supplies absolute convergence, including at a common
 boundary point when both factors converge there. The ideal-indexed abscissa of the convolution
-is at most the maximum of the two original abscissae, with infinite abscissae allowed.
+is at most the maximum of the two original abscissae, with infinite abscissae allowed. For
+norm-regrouped series, `TauCeti.abscissaOfAbsConv_normCoeff_convolution_one_one` shows that the
+ideal divisor series `1 * 1` has exact abscissa `1`.
 
 The argument follows Mathlib's `LSeriesHasSum.convolution`: form the absolutely convergent
 product family and regroup it by multiplication. Here the fibres are the finite factorizations
@@ -35,7 +38,7 @@ public section
 
 namespace TauCeti
 
-open scoped nonZeroDivisors NumberField
+open scoped nonZeroDivisors NumberField ComplexOrder
 
 variable {K : Type*} [Field K] [NumberField K]
 
@@ -98,5 +101,64 @@ theorem idealAbscissaOfAbsConv_convolution_le (f g : IdealArithmeticFunction K) 
     summable_idealTerm_of_idealAbscissaOfAbsConv_lt_re K
       (by simpa using (le_max_right ..).trans_lt hx)
   simpa using idealAbscissaOfAbsConv_le K (summable_idealTerm_convolution hf hg)
+
+/-! ### Norm-regrouped convolution series -/
+
+/-- **Product identity on `Re s > 1`.** Whenever the regrouped `L`-series of `f` converges
+absolutely at `s` with `1 < Re s`, the regrouped `L`-series of `1 * f` is `ζ_K(s) L(f, s)`. -/
+theorem LSeries_normCoeff_convolution_one_eq_dedekindZeta_mul {f : IdealArithmeticFunction K}
+    {s : ℂ} (hs : 1 < s.re) (hf : LSeriesSummable (normCoeff K f) s) :
+    LSeries (normCoeff K (IdealArithmeticFunction.convolution 1 f)) s =
+      NumberField.dedekindZeta K s * LSeries (normCoeff K f) s := by
+  rw [normCoeff_convolution,
+    ArithmeticFunction.LSeries_mul' ((LSeriesSummable_normCoeff_one_iff K).mpr hs) hf,
+    dedekindZeta_eq_LSeries_normCoeff_one]
+
+/-- The Dirichlet series of `1 * f` converges absolutely on `Re s > 1` whenever `f` is uniformly
+bounded on nonzero ideals. -/
+theorem LSeriesSummable_normCoeff_convolution_one_of_bounded {f : IdealArithmeticFunction K} {C : ℝ}
+    (hf : ∀ I : (Ideal (𝓞 K))⁰, ‖f I‖ ≤ C) {s : ℂ} (hs : 1 < s.re) :
+    LSeriesSummable (normCoeff K (IdealArithmeticFunction.convolution 1 f)) s := by
+  rw [normCoeff_convolution]
+  exact ArithmeticFunction.LSeriesSummable_mul ((LSeriesSummable_normCoeff_one_iff K).mpr hs)
+    (LSeriesSummable_normCoeff K (summable_idealTerm_of_bounded_of_one_lt_re hf hs))
+
+/-- The abscissa of absolute convergence of `1 * f` is at most `1` whenever `f` is uniformly
+bounded on nonzero ideals. -/
+theorem abscissaOfAbsConv_normCoeff_convolution_one_le_one_of_bounded
+    {f : IdealArithmeticFunction K} {C : ℝ} (hf : ∀ I : (Ideal (𝓞 K))⁰, ‖f I‖ ≤ C) :
+    LSeries.abscissaOfAbsConv (normCoeff K (IdealArithmeticFunction.convolution 1 f)) ≤ 1 :=
+  LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun _ hy ↦
+    LSeriesSummable_normCoeff_convolution_one_of_bounded hf (by simpa using hy)
+
+/-- The ideal divisor series `1 * 1` has exact abscissa of absolute convergence `1`. -/
+theorem abscissaOfAbsConv_normCoeff_convolution_one_one :
+    LSeries.abscissaOfAbsConv (normCoeff K (IdealArithmeticFunction.convolution 1
+      (1 : MultiplicativeIdealWeight K).toIdealArithmeticFunction)) = 1 := by
+  refine le_antisymm
+    (abscissaOfAbsConv_normCoeff_convolution_one_le_one_of_bounded (C := 1) fun _ ↦ by
+      rw [MultiplicativeIdealWeight.toIdealArithmeticFunction_one, Pi.one_apply, norm_one]) ?_
+  by_contra hlt
+  have hsum : LSeriesSummable (normCoeff K (IdealArithmeticFunction.convolution 1
+      (1 : MultiplicativeIdealWeight K).toIdealArithmeticFunction)) 1 :=
+    LSeriesSummable_of_abscissaOfAbsConv_lt_re (by simpa using not_le.mp hlt)
+  apply not_LSeriesSummable_normCoeff_one K
+  rw [LSeriesSummable, ← summable_norm_iff] at hsum ⊢
+  refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ ?_) hsum
+  have hle : normCoeff K (1 : IdealArithmeticFunction K) n ≤
+      normCoeff K (IdealArithmeticFunction.convolution 1
+        (1 : MultiplicativeIdealWeight K).toIdealArithmeticFunction) n := by
+    rw [normCoeff_eq_sum_normFiber, normCoeff_eq_sum_normFiber]
+    refine Finset.sum_le_sum fun A _ ↦ ?_
+    rw [Pi.one_apply, MultiplicativeIdealWeight.toIdealArithmeticFunction_one,
+      IdealArithmeticFunction.convolution_one_one_apply]
+    exact_mod_cast (Finset.one_le_card.mpr ⟨(1, A), by simp⟩ :
+      1 ≤ (Ideal.divisorsAntidiagonal A).card)
+  have h0 : 0 ≤ normCoeff K (1 : IdealArithmeticFunction K) n := normCoeff_one_nonneg K n
+  have h1 := h0.trans hle
+  refine LSeries.norm_term_le 1 ?_
+  rw [Complex.eq_coe_norm_of_nonneg h0, Complex.eq_coe_norm_of_nonneg h1,
+    Complex.real_le_real] at hle
+  exact hle
 
 end TauCeti

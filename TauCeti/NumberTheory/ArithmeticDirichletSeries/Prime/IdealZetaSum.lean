@@ -14,6 +14,7 @@ import TauCeti.Analysis.SpecialFunctions.Log.OneDivSub
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.DedekindZeta.Basic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.DedekindZeta.Tail
+import TauCeti.NumberTheory.NumberField.DedekindZeta.Limits
 import TauCeti.Topology.Algebra.Order.Field
 
 /-!
@@ -119,13 +120,8 @@ real logarithm of `ζ_K(s)` and `log (1 / (s - 1))` tends to the logarithm of th
 theorem tendsto_log_dedekindZeta_re_sub_log_one_div_sub_one :
     Tendsto (fun s : ℝ ↦ Real.log (dedekindZeta K s).re - Real.log (1 / (s - 1))) (𝓝[>] 1)
       (𝓝 (Real.log (dedekindZeta_residue K))) := by
-  have hre : Tendsto (fun s : ℝ ↦ (s - 1) * (dedekindZeta K s).re) (𝓝[>] 1)
-      (𝓝 (dedekindZeta_residue K)) := by
-    have h := (Complex.continuous_re.tendsto _).comp (tendsto_sub_one_mul_dedekindZeta_nhdsGT K)
-    refine (Complex.ofReal_re (dedekindZeta_residue K) ▸ h).congr fun s ↦ ?_
-    simp only [Function.comp_apply]
-    rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.re_ofReal_mul]
-  refine (hre.log (dedekindZeta_residue_ne_zero K)).congr' ?_
+  refine ((tendsto_sub_one_mul_re_dedekindZeta_nhdsGT K).log
+    (dedekindZeta_residue_ne_zero K)).congr' ?_
   filter_upwards [self_mem_nhdsWithin] with s hs
   have hs' : 0 < s - 1 := sub_pos.mpr hs
   rw [Real.log_mul hs'.ne' (dedekindZeta_re_pos hs).ne', one_div, Real.log_inv]

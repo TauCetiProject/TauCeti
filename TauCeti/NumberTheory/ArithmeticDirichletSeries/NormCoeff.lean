@@ -94,6 +94,12 @@ theorem normFiber_one : normFiber K 1 = {1} := by
   ext I
   simp [Ideal.absNorm_eq_one_iff, Subtype.ext_iff]
 
+/-- A nonzero ideal lies in the norm fibre of `m` if and only if its square lies in the norm
+fibre of `m ^ 2`. -/
+theorem sq_mem_normFiber_iff (A : (Ideal (𝓞 K))⁰) (m : ℕ) :
+    A ^ 2 ∈ normFiber K (m ^ 2) ↔ A ∈ normFiber K m := by
+  rw [mem_normFiber, mem_normFiber, SubmonoidClass.coe_pow, map_pow, Nat.pow_left_inj two_ne_zero]
+
 /-- Regroup ideal arithmetic functions by absolute norm as a complex-linear map.
 
 The coefficient at `n` is the finite sum of `f I` over the nonzero integral ideals `I` whose
@@ -202,6 +208,12 @@ theorem norm_normCoeff_eq_sum_norm_of_nonneg (f : IdealArithmeticFunction K) (hf
     push_cast
     exact Finset.sum_congr rfl fun I _ ↦ Complex.eq_coe_norm_of_nonneg (hf I)
   rw [h, Complex.norm_real, Real.norm_of_nonneg (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)]
+
+/-- Regrouping preserves pointwise nonnegativity on ideals. -/
+theorem normCoeff_nonneg {f : IdealArithmeticFunction K} (hf : ∀ I, 0 ≤ f I) :
+    0 ≤ (normCoeff K f : ℕ → ℂ) := fun n ↦ by
+  rw [normCoeff_eq_sum_normFiber]
+  exact Finset.sum_nonneg fun I _ ↦ hf I
 
 /-! ### The cancellation rejection test -/
 

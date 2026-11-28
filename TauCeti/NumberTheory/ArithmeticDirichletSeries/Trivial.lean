@@ -43,7 +43,7 @@ public section
 
 namespace TauCeti
 
-open scoped nonZeroDivisors NumberField
+open scoped nonZeroDivisors NumberField ComplexOrder
 
 variable (K : Type*) [Field K] [NumberField K]
 
@@ -119,6 +119,10 @@ theorem normCoeff_one_apply (n : ℕ) :
   · simp [hn]
   · rw [ite_eq_right hn, normCoeff_eq_sum_normFiber]
     simp [card_normFiber_eq_dedekindZetaCoeff K hn]
+
+/-- The norm coefficients of the trivial ideal arithmetic function are nonnegative. -/
+theorem normCoeff_one_nonneg : 0 ≤ (normCoeff K (1 : IdealArithmeticFunction K) : ℕ → ℂ) :=
+  normCoeff_nonneg K fun _ ↦ zero_le_one
 
 /-- The trivial unitary ideal weight has the Dedekind zeta coefficients away from zero. -/
 theorem normCoeff_toIdealArithmeticFunction_one_apply (n : ℕ) :

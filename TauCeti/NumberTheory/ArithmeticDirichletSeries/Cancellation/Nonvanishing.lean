@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Cancellation
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Nonvanishing
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.ThreeFourOne
-import TauCeti.NumberTheory.NumberField.DedekindZeta
 
 /-!
 # The continued L-function of a cancelling weight does not vanish on `Re s ≥ 1`
@@ -33,9 +32,10 @@ handled in two ways:
   finitely many Euler factors deleted. That translate is continuous away from its pole at
   `1 + u * I`, which leaves only the point `s = 1 + (u / 2) * I` uncovered.
 
-The cases are not exhaustive in general. A character-family argument supplies cancellation for
-the nondegenerate members of its family. For a quadratic character the excluded point `s = 1`
-needs a different argument, since there `L(χ ^ 2, ·)` has a pole.
+When `(χ ^ 2).val.IsNormTwistOnGood u`, `HasCancellation χ` on `s.re = 1`, and `[K : ℚ] = 1` at
+`s = 1 + (u / 2) * I`, Landau's theorem closes that exceptional point in
+`TauCeti.NumberTheory.ArithmeticDirichletSeries.Cancellation.Nonvanishing.DegreeOne` (with the
+trivial-square case `(χ ^ 2).val.IsTrivialOnGood` as `u = 0`).
 
 ## Main results
 
@@ -51,11 +51,14 @@ needs a different argument, since there `L(χ ^ 2, ·)` has a pole.
 
 ## References
 
+* E. Landau, *Über die zu einem algebraischen Zahlkörper gehörige Zetafunction und die Ausdehnung
+  der Tschebyschefschen Primzahlentheorie auf das Problem der Vertheilung der Primideale*,
+  J. Reine Angew. Math. 125 (1903), 64–188.
 * H. Davenport, *Multiplicative Number Theory*, Chapter 4.
 * The case analysis on the square follows Mathlib's
-  `Mathlib/NumberTheory/LSeries/Nonvanishing.lean` (Michael Stoll and David Loeffler), where
-  `DirichletCharacter.LFunction_ne_zero_of_re_eq_one` proves the analogous statement for
-  Dirichlet `L`-functions.
+  `Mathlib/NumberTheory/LSeries/Nonvanishing.lean` (Michael Stoll, David Loeffler, and
+  Terence Tao), where `DirichletCharacter.LFunction_ne_zero_of_re_eq_one` proves the analogous
+  statement for Dirichlet `L`-functions.
 -/
 
 public section
@@ -102,31 +105,10 @@ theorem continuedLFunctionOfWeight_ne_zero_of_isNormTwistOnGood_sq {χ : Unitary
     continuedLFunctionOfWeight χ s ≠ 0 := by
   rcases hs.lt_or_eq with hs | hs
   · exact continuedLFunctionOfWeight_ne_zero_of_one_lt_re χ hs
-  obtain ⟨S, hS⟩ : ∃ S : Finset (HeightOneSpectrum (𝓞 K)),
-      (χ ^ 2).val.badPrimes = (S : Set (HeightOneSpectrum (𝓞 K))) :=
-    ⟨(χ ^ 2).val.finite_badPrimes.toFinset, (χ ^ 2).val.finite_badPrimes.coe_toFinset.symm⟩
-  -- The `L`-series of `χ ^ 2` is `L_S(z - u * I)`, and `L_S(w) = G(w) + ρ / (w - 1)` with `G`
-  -- holomorphic on a half-plane containing `Re w ≥ 1`.
-  obtain ⟨G, hG, hGL⟩ := exists_differentiableOn_eq_LSeries_ofBadPrimes_sub K S
-  set ρ : ℂ := dedekindZeta_residue K * ∏ P ∈ S, (1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-1 : ℂ))
-  set w₀ : ℂ := 2 * s - 1 - (u : ℂ) * I
-  have hw₀ : w₀ - 1 ≠ 0 := fun h ↦ hsu (by linear_combination h / 2)
-  have hcont : ContinuousAt (fun z : ℂ ↦ G (z - (u : ℂ) * I) + ρ / (z - (u : ℂ) * I - 1))
-      (2 * s - 1) := by
-    have hG₀ : ContinuousAt G w₀ :=
-      (hG.differentiableAt ((isOpen_lt continuous_const continuous_re).mem_nhds
-        (setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K
-          (show 1 ≤ w₀.re by norm_num [w₀, ← hs])))).continuousAt
-    have hpole : ContinuousAt (fun z : ℂ ↦ ρ / (z - (u : ℂ) * I - 1)) (2 * s - 1) :=
-      continuousAt_const.div (by fun_prop) hw₀
-    have hshift : ContinuousAt (fun z : ℂ ↦ G (z - (u : ℂ) * I)) (2 * s - 1) :=
-      hG₀.comp_of_eq (by fun_prop) rfl
-    exact hshift.add hpole
-  refine χ.ne_zero_of_eqOn_LSeries hs.symm (differentiableAt_continuedLFunctionOfWeight hχ hs.le)
-    (fun z hz ↦ continuedLFunctionOfWeight_eq_LSeries χ hz) hcont fun z hz ↦ ?_
-  have hz' : 1 < (z - (u : ℂ) * I).re := by simpa using hz
-  rw [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val, hχ₂.LSeries_normCoeff hS, hGL _ hz',
-    sub_add_cancel]
+  exact χ.val.ne_zero_of_eqOn_LSeries_of_isNormTwistOnGood_sq hχ₂ hs.symm hsu
+    (differentiableAt_continuedLFunctionOfWeight hχ hs.le) fun z hz ↦ by
+      rw [continuedLFunctionOfWeight_eq_LSeries χ hz,
+        UnitaryIdealWeight.toIdealArithmeticFunction_eq_val]
 
 /-- **Nonvanishing when the square is trivial on its good ideals**, as for a quadratic character.
 If a unitary weight `χ` has cancellation and `χ ^ 2` takes the value `1` on its good ideals, the

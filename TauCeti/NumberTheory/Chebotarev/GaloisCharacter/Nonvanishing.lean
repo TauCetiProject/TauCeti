@@ -7,8 +7,9 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.ThreeFourOne
 public import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Weight
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Nonvanishing
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
-import TauCeti.NumberTheory.NumberField.DedekindZeta
+import TauCeti.NumberTheory.NumberField.DedekindZeta.Basic
 
 /-!
 # Nonvanishing of Galois character series on the line `Re s = 1`
@@ -26,9 +27,9 @@ boundary behaviour required to apply a Tauberian theorem to the Frobenius von Ma
 
 The criterion is the `3-4-1` criterion `TauCeti.UnitaryIdealWeight.ne_zero_of_eqOn_LSeries` for
 the unitary weight `galoisCharacterUnitaryWeight χ`, whose pointwise square is the unitary weight
-of `χ²`. The remaining results handle the square: for `χ² = 1` its series is the trivial one, which
-continues across `Re s = 1` away from `s = 1` by
-`TauCeti.exists_differentiableOn_eq_LSeries_ofBadPrimes_sub`.
+of `χ²`. For `χ² = 1`,
+`TauCeti.MultiplicativeIdealWeight.ne_zero_of_eqOn_LSeries_of_isNormTwistOnGood_sq` at `u := 0`
+handles the deleted-ramified-Euler-factor continuation directly.
 
 ## Main results
 
@@ -72,29 +73,6 @@ theorem MonoidHom.LSeries_galoisCharacterWeight_ne_zero (χ : (F ≃ₐ[K] F) �
 
 namespace NumberField.Chebotarev
 
-variable (K F) in
--- The series of the trivial character continues to a function differentiable at every point of
--- `Re s = 1` other than the pole `s = 1`.
-private theorem exists_differentiableAt_eqOn_LSeries_galoisCharacterWeight_one :
-    ∃ T : ℂ → ℂ, (∀ s : ℂ, s.re = 1 → s ≠ 1 → DifferentiableAt ℂ T s) ∧
-      Set.EqOn T (LSeries (normCoeff K
-        (1 : (F ≃ₐ[K] F) →* ℂˣ).galoisCharacterWeight.toIdealArithmeticFunction))
-        {s | 1 < s.re} := by
-  obtain ⟨G, hG, hGL⟩ := exists_differentiableOn_eq_LSeries_ofBadPrimes_sub K (ramifiedPrimes K F)
-  set ρ := dedekindZeta_residue K *
-    ∏ 𝔭 ∈ ramifiedPrimes K F, (1 - (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (-1 : ℂ))
-  refine ⟨fun s ↦ G s + ρ / (s - 1), fun s hs hs1 ↦ ?_, fun s (hs : 1 < s.re) ↦ ?_⟩
-  · -- The line `Re s = 1` lies in the half-plane `Re s > 1 - 1 / [K : ℚ]` of the continuation.
-    have hmem : {z : ℂ | 1 - 1 / (Module.finrank ℚ K : ℝ) < z.re} ∈ 𝓝 s :=
-      (isOpen_lt continuous_const continuous_re).mem_nhds <| by
-        rw [Set.mem_ofPred_eq, hs]
-        simpa only [Set.mem_ofPred_eq, hs] using
-          setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K hs.ge
-    exact (hG.differentiableAt hmem).add
-      ((differentiableAt_const ρ).div (differentiableAt_id.sub_const 1) (sub_ne_zero.mpr hs1))
-  · dsimp only
-    rw [hGL s hs, MonoidHom.galoisCharacterWeight_one, sub_add_cancel]
-
 /-- **The `3-4-1` criterion for a Galois character.** Let `F / K` be a finite Galois extension,
 `χ` a character of `Gal(F/K)`, and `s = 1 + it`. If `f` is complex differentiable at `s` and `f₂`
 is continuous at `1 + 2it = 2s - 1`, and they agree on `Re s > 1` with the `L`-series of `χ` and of
@@ -131,12 +109,14 @@ theorem ne_zero_of_eqOn_LSeries_galoisCharacterWeight_of_sq_eq_one (χ : (F ≃�
     (hfL : Set.EqOn f (LSeries (normCoeff K χ.galoisCharacterWeight.toIdealArithmeticFunction))
       {z | 1 < z.re}) :
     f s ≠ 0 := by
-  -- The series of `χ² = 1` is the trivial one, which is differentiable at `2s - 1 ≠ 1`.
-  obtain ⟨T, hT, hTL⟩ := exists_differentiableAt_eqOn_LSeries_galoisCharacterWeight_one K F
-  have hs₂ : (2 * s - 1).re = 1 := by norm_num [hs]
-  have hs₂1 : 2 * s - 1 ≠ 1 := fun h ↦ hs1 (by linear_combination h / 2)
-  exact ne_zero_of_eqOn_LSeries_galoisCharacterWeight χ hs hf hfL (hT _ hs₂ hs₂1).continuousAt
-    (by rwa [hχ])
+  have hsq : (χ.galoisCharacterWeight ^ 2).IsNormTwistOnGood 0 := by
+    have hχ2 : χ * χ = 1 :=
+      MonoidHom.ext fun g ↦ by simpa [pow_two] using congrFun (congrArg DFunLike.coe hχ) g
+    rw [pow_two, ← MonoidHom.galoisCharacterWeight_mul, hχ2, MonoidHom.galoisCharacterWeight_one]
+    exact (MultiplicativeIdealWeight.isNormTwistOnGood_zero_iff _).mpr
+      (MultiplicativeIdealWeight.isTrivialOnGood_ofBadPrimes (ramifiedPrimes K F).finite_toSet)
+  exact χ.galoisCharacterWeight.ne_zero_of_eqOn_LSeries_of_isNormTwistOnGood_sq hsq hs
+    (by simpa using hs1) hf hfL
 
 /-- **The trivial-character series has no zeros on `Re s = 1`.** Let `F / K` be a finite Galois
 extension. If `f` agrees on `Re s > 1` with the `L`-series of the trivial character of `Gal(F/K)`,

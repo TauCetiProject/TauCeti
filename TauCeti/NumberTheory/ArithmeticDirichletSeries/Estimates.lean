@@ -62,8 +62,10 @@ of a convergent series of nonnegative terms must become arbitrarily small.
   absolutely convergent ideal-indexed Dirichlet series on `Re s > 1`, and
   `TauCeti.summable_idealTerm_of_unitary_of_one_lt_re` is its unitary specialization.
 * `TauCeti.analyticOnNhd_LSeries_of_bounded`: the L-series of a uniformly bounded weight is
-  holomorphic on `Re s > 1`, and `TauCeti.analyticOnNhd_LSeries_of_unitary` is its unitary
-  specialization.
+  holomorphic on `Re s > 1`, `TauCeti.analyticOnNhd_LSeries_of_unitary` is its unitary
+  specialization, and `TauCeti.analyticAt_of_eqOn_LSeries_of_bounded` (with specialization
+  `TauCeti.UnitaryIdealWeight.analyticAt_of_eqOn_LSeries`) transfers analyticity to any function
+  agreeing with the `L`-series on `Re s > 1`.
 * `TauCeti.idealAbscissaOfAbsConv_lt_re_of_bounded`: the same hypothesis places the ideal-indexed
   abscissa of absolute convergence strictly below every `Re s > 1`.
 
@@ -535,6 +537,26 @@ theorem analyticOnNhd_LSeries_of_unitary {K : Type*} [Field K] [NumberField K]
     rw [UnitaryIdealWeight.toIdealArithmeticFunction_apply]
     exact χ.norm_le_one _
 
+/-- Any function agreeing on `Re z > 1` with the `L`-series of a uniformly bounded ideal arithmetic
+function is analytic at every `s` with `1 < Re s`. -/
+theorem analyticAt_of_eqOn_LSeries_of_bounded {K : Type*} [Field K] [NumberField K]
+    {f : IdealArithmeticFunction K} {C : ℝ} (hf : ∀ I : (Ideal (𝓞 K))⁰, ‖f I‖ ≤ C)
+    {L : ℂ → ℂ} (hLL : Set.EqOn L (LSeries (normCoeff K f)) {z | 1 < z.re})
+    {s : ℂ} (hs : 1 < s.re) : AnalyticAt ℂ L s :=
+  (analyticOnNhd_LSeries_of_bounded hf s hs).congr
+    ((eventuallyEq_of_mem ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds hs)
+      hLL).symm)
+
+/-- Any function agreeing on `Re z > 1` with the `L`-series of a unitary ideal weight is
+analytic at every `s` with `1 < Re s`. -/
+theorem UnitaryIdealWeight.analyticAt_of_eqOn_LSeries {K : Type*} [Field K] [NumberField K]
+    (χ : UnitaryIdealWeight K) {L : ℂ → ℂ}
+    (hLL : Set.EqOn L (LSeries (normCoeff K χ.toIdealArithmeticFunction)) {z | 1 < z.re})
+    {s : ℂ} (hs : 1 < s.re) : AnalyticAt ℂ L s :=
+  analyticAt_of_eqOn_LSeries_of_bounded (C := 1) (fun I ↦ by
+    rw [UnitaryIdealWeight.toIdealArithmeticFunction_apply]
+    exact χ.norm_le_one _) hLL hs
+
 /-- **A uniformly bounded weight has ideal-indexed abscissa below every `Re s > 1`.** This is the
 form in which `summable_idealTerm_of_bounded_of_one_lt_re` feeds results stated strictly to the
 right of `TauCeti.idealAbscissaOfAbsConv`, such as the termwise differentiation of the Euler
@@ -569,6 +591,26 @@ theorem analyticOnNhd_dedekindZeta :
   rw [funext (dedekindZeta_eq_LSeries_dedekindZetaCoeff K)]
   exact (LSeries_analyticOnNhd _).mono fun s (hs : 1 < s.re) ↦ by
     simpa [abscissaOfAbsConv_dedekindZetaCoeff] using EReal.coe_lt_coe_iff.mpr hs
+
+/-- Norm-regrouped `L`-series summability on `Re s > 1` for a weight whose square is a purely
+imaginary norm twist on its good ideals. -/
+theorem MultiplicativeIdealWeight.LSeriesSummable_normCoeff_of_isNormTwistOnGood_sq
+    {K : Type*} [Field K] [NumberField K] {χ : MultiplicativeIdealWeight K} {u : ℝ}
+    (hχ : (χ ^ 2).IsNormTwistOnGood u) {s : ℂ} (hs : 1 < s.re) :
+    LSeriesSummable (normCoeff K χ.toIdealArithmeticFunction) s :=
+  LSeriesSummable_normCoeff K <| by
+    simpa [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val] using
+      summable_idealTerm_of_unitary_of_one_lt_re
+        (MultiplicativeIdealWeight.unitaryOfIsNormTwistOnGoodSq hχ) hs
+
+/-- Norm-regrouped `L`-series summability on `Re s > 1` for a weight whose square is trivial on its
+good ideals. -/
+theorem MultiplicativeIdealWeight.LSeriesSummable_normCoeff_of_isTrivialOnGood_sq
+    {K : Type*} [Field K] [NumberField K] {χ : MultiplicativeIdealWeight K}
+    (hχ : (χ ^ 2).IsTrivialOnGood) {s : ℂ} (hs : 1 < s.re) :
+    LSeriesSummable (normCoeff K χ.toIdealArithmeticFunction) s :=
+  MultiplicativeIdealWeight.LSeriesSummable_normCoeff_of_isNormTwistOnGood_sq
+    ((MultiplicativeIdealWeight.isNormTwistOnGood_zero_iff _).mpr hχ) hs
 
 /-- **The Dedekind zeta series at real `s > 1`.** The sum of `N(𝔟) ^ (-s)` over the nonzero
 integral ideals `𝔟` of `𝓞 K` is `ζ_K(s)`. -/

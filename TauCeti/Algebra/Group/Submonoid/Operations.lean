@@ -8,10 +8,11 @@ module
 public import Mathlib.Algebra.Group.Submonoid.Operations
 
 /-!
-# Coercions under equality of submonoids
+# Coercions and unique roots for submonoids
 
 The equivalence induced by equality of submonoids preserves the ambient value in both
-directions. The additive statements apply to equality of additive submonoids.
+directions, and every submonoid of a monoid with unique roots inherits `HasUniqueRoots`. The
+additive statements apply to additive submonoids.
 -/
 
 public section
@@ -38,3 +39,15 @@ theorem submonoidCongr_symm_apply (h : S = T) (x : T) :
   rfl
 
 end MulEquiv
+
+namespace Submonoid
+
+/-- Every submonoid of a monoid with unique roots inherits unique roots. -/
+@[to_additive
+  /-- Every additive submonoid of an additive monoid with unique divisibility inherits unique
+  divisibility. -/]
+instance instHasUniqueRoots {M : Type*} [Monoid M] [HasUniqueRoots M] (S : Submonoid M) :
+    HasUniqueRoots S :=
+  Function.Injective.hasUniqueRoots S.subtype Subtype.val_injective
+
+end Submonoid

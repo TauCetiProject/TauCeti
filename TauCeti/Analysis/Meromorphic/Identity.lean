@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Meromorphic.NormalForm
+import TauCeti.Analysis.Complex.HalfPlaneIdentity
 
 /-!
 # Identity principles for meromorphic functions
@@ -16,6 +18,9 @@ canonical value zero at poles. For arbitrary meromorphic representatives it does
 
 The propagation uses Mathlib's
 `MeromorphicOn.meromorphicOrderAt_eq_top_of_isPreconnected`, applied to the difference.
+In the complex plane, two functions meromorphic at `a : ℂ` that agree on the `Re z > a.re` side of
+a neighbourhood of `a` also agree on a punctured neighbourhood of `a`
+(`MeromorphicAt.eventuallyEq_nhdsNE_of_eventuallyEq_re_gt`).
 -/
 
 public section
@@ -45,3 +50,15 @@ theorem MeromorphicNFOn.eqOn_of_isPreconnected
   intro y hy
   exact ((hf hy).eventuallyEq_nhdsNE_iff_eventuallyEq_nhds (hg hy) |>.mp
     (hf.meromorphicOn.eventuallyEq_of_isPreconnected hg.meromorphicOn hU hx hy hfg)).eq_of_nhds
+
+/-- **Punctured-neighbourhood identity theorem for meromorphic functions on a half-plane
+boundary.** Two functions meromorphic at `a : ℂ` that agree on the `Re z > a.re` side of a
+neighbourhood of `a` agree on a punctured neighbourhood of `a`. -/
+theorem MeromorphicAt.eventuallyEq_nhdsNE_of_eventuallyEq_re_gt
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+    {f g : ℂ → E} {a : ℂ} (hf : MeromorphicAt f a) (hg : MeromorphicAt g a)
+    (hfg : f =ᶠ[𝓝[{z : ℂ | a.re < z.re}] a] g) :
+    f =ᶠ[𝓝[≠] a] g :=
+  TauCeti.eventuallyEq_nhdsNE_of_differentiableAt_of_eventuallyEq_re_gt
+    (hf.eventually_analyticAt.mono fun _ h ↦ h.differentiableAt)
+    (hg.eventually_analyticAt.mono fun _ h ↦ h.differentiableAt) hfg

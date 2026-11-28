@@ -84,6 +84,19 @@ theorem toMultiplicativeIdealWeight_mul (χ ψ : RayClassCharacter 𝔪) :
     TauCeti.MultiplicativeIdealWeight.ofIntegralIdealsAway_mul]
   rfl
 
+/-- Pointwise powers of ray class characters (for `n ≠ 0`) agree with powers of ideal weights,
+including at ideals meeting the modulus. -/
+@[simp]
+theorem toMultiplicativeIdealWeight_pow (χ : RayClassCharacter 𝔪) {n : ℕ} (hn : n ≠ 0) :
+    toMultiplicativeIdealWeight (χ ^ n) = χ.toMultiplicativeIdealWeight ^ n := by
+  induction n with
+  | zero => exact absurd rfl hn
+  | succ k ih =>
+    rcases eq_or_ne k 0 with rfl | hk
+    · have h1 : χ ^ (0 + 1) = χ := MonoidHom.ext fun c ↦ by simp
+      rw [h1, zero_add, pow_one]
+    · rw [pow_succ χ k, pow_succ _ k, toMultiplicativeIdealWeight_mul, ih hk]
+
 /-- The inverse character gives the conjugate ideal weight, including at ideals meeting the
 modulus, where both weights vanish. -/
 @[simp]
@@ -139,6 +152,13 @@ theorem toUnitaryIdealWeight_mul (χ ψ : RayClassCharacter 𝔪) :
   apply Subtype.ext
   simp
 
+/-- The unitary extension respects positive powers of characters. -/
+@[simp]
+theorem toUnitaryIdealWeight_pow (χ : RayClassCharacter 𝔪) {n : ℕ} (hn : n ≠ 0) :
+    (χ ^ n).toUnitaryIdealWeight = χ.toUnitaryIdealWeight ^ n := by
+  apply Subtype.ext
+  simp [toMultiplicativeIdealWeight_pow χ hn]
+
 /-- The ideal weight of the inverse character is the conjugate ideal weight. -/
 @[simp]
 theorem toUnitaryIdealWeight_inv (χ : RayClassCharacter 𝔪) :
@@ -176,6 +196,26 @@ theorem toUnitaryIdealWeight_injective :
   intro χ ψ h
   apply toMultiplicativeIdealWeight_injective
   simpa only [← val_toUnitaryIdealWeight] using congrArg Subtype.val h
+
+/-- A ray class character has ideal weight trivial on its good ideals if and only if `χ = 1`. -/
+@[simp]
+theorem isTrivialOnGood_iff_eq_one (χ : RayClassCharacter 𝔪) :
+    χ.toMultiplicativeIdealWeight.IsTrivialOnGood ↔ χ = 1 := by
+  constructor
+  · intro h
+    refine toMultiplicativeIdealWeight_injective ?_
+    have h0 := (TauCeti.MultiplicativeIdealWeight.isNormTwistOnGood_zero_iff _).mpr h
+    simpa using h0.eq_normTwist (badPrimes_toMultiplicativeIdealWeight χ)
+  · rintro rfl
+    rw [toMultiplicativeIdealWeight_one]
+    exact TauCeti.MultiplicativeIdealWeight.isTrivialOnGood_ofBadPrimes 𝔪.support.finite_toSet
+
+/-- A ray class character has squared ideal weight trivial on its good ideals if and only if
+`χ ^ 2 = 1` in the character group. -/
+@[simp]
+theorem isTrivialOnGood_sq_iff_sq_eq_one (χ : RayClassCharacter 𝔪) :
+    (χ.toMultiplicativeIdealWeight ^ 2).IsTrivialOnGood ↔ χ ^ 2 = 1 := by
+  rw [sq, sq, ← toMultiplicativeIdealWeight_mul, isTrivialOnGood_iff_eq_one]
 
 /-- The extended weight of `χ` takes the same value on principal ideals `(a)` and `(b)` whenever
 `a ≠ 0`, `b ≠ 0`, `b - a ∈ 𝔪.finitePart`, and `a`, `b` have the same strict sign at every real

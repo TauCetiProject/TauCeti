@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Basic
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
+import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 
 /-!
@@ -131,3 +133,34 @@ theorem IsMultiplicative.convolution {f g : IdealArithmeticFunction K}
     ring
 
 end TauCeti.IdealArithmeticFunction
+
+namespace TauCeti
+
+open IsDedekindDomain
+open scoped NumberField
+
+/-- At a prime power `𝔭 ^ n`, convolving the everywhere-one function with a completely
+multiplicative ideal weight gives the geometric sum `∑ i ∈ Finset.range (n + 1), χ 𝔭 ^ i`. -/
+theorem convolution_one_primeIdealPow {K : Type*} [Field K] [NumberField K]
+    (χ : MultiplicativeIdealWeight K) (P : HeightOneSpectrum (𝓞 K)) (n : ℕ) :
+    IdealArithmeticFunction.convolution 1 χ.toIdealArithmeticFunction (P.primeIdealPow n) =
+      ∑ i ∈ Finset.range (n + 1), χ P.asIdeal ^ i := by
+  rw [IdealArithmeticFunction.convolution_primeIdealPow]
+  simp only [Pi.one_apply, one_mul, MultiplicativeIdealWeight.toIdealArithmeticFunction_apply,
+    HeightOneSpectrum.coe_primeIdealPow, map_pow]
+  rw [Finset.Nat.sum_antidiagonal_eq_sum_range_succ (fun _ j ↦ χ P.asIdeal ^ j)]
+  exact Finset.sum_range_reflect (fun j ↦ χ P.asIdeal ^ j) (n + 1)
+
+/-- At a prime power `𝔭 ^ n` where `χ 𝔭 = -1`, `1 * χ` evaluates to `1` for even `n` and `0` for
+odd `n`. -/
+theorem convolution_one_primeIdealPow_of_apply_eq_neg_one {K : Type*} [Field K] [NumberField K]
+    {χ : MultiplicativeIdealWeight K} {P : HeightOneSpectrum (𝓞 K)}
+    (hP : χ P.asIdeal = -1) (n : ℕ) :
+    IdealArithmeticFunction.convolution 1 χ.toIdealArithmeticFunction (P.primeIdealPow n) =
+      if Even n then 1 else 0 := by
+  rw [convolution_one_primeIdealPow, hP, neg_one_geom_sum]
+  by_cases hn : Even n
+  · simp [hn, Nat.not_even_iff_odd.mpr hn.add_one]
+  · simp [hn, (Nat.not_even_iff_odd.mp hn).add_one]
+
+end TauCeti

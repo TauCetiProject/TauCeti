@@ -68,9 +68,11 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
 * `DirichletCharacter.apply_intCast_eq_of_forall_isCoprime`: characters of equal levels agreeing
   at the integers prime to the level agree at every integer.
 * `DirichletCharacter.eq_changeLevel_iff_forall_isCoprime`,
-  `DirichletCharacter.forall_isCoprime_changeLevel_apply_eq_iff`: a character modulo `N` is the
-  lift of a character modulo `d ∣ N` iff they agree at integers prime to `N`, and agreement on
-  coprime integers is invariant under lifting `N` to a nonzero multiple `M`.
+  `DirichletCharacter.forall_isCoprime_changeLevel_apply_eq_iff`,
+  `DirichletCharacter.eq_of_level_eq_of_changeLevel_eq`: a character modulo `N` is the lift of a
+  character modulo `d ∣ N` iff they agree at integers prime to `N`, agreement on coprime
+  integers is invariant under lifting `N` to a nonzero multiple `M`, and invariants transport
+  across `changeLevel hMN ψ = χ` when `N = M`.
 * `DirichletCharacter.one_natCast`: the trivial character modulo `N` is `1` at the natural numbers
   prime to `N` and `0` at the others.
 * `DirichletCharacter.apply_eq_one_of_conductor_dvd`: a character is `1` at every integer prime
@@ -526,6 +528,19 @@ theorem forall_isCoprime_changeLevel_apply_eq_iff {R : Type*} [CommMonoidWithZer
   rw [← eq_changeLevel_iff_forall_isCoprime (hd.trans h),
     ← eq_changeLevel_iff_forall_isCoprime hd,
     changeLevel_trans _ hd h, (changeLevel_injective h).eq_iff]
+
+/-- Transport an invariant `F` across `changeLevel hMN ψ = χ` when the target and source levels
+are equal (`N = M`). -/
+theorem eq_of_level_eq_of_changeLevel_eq {R : Type*} [CommMonoidWithZero R] {α : Sort*}
+    (F : ∀ {N : ℕ}, [NeZero N] → DirichletCharacter R N → α)
+    {M N : ℕ} [NeZero M] [NeZero N] (hMN : M ∣ N) (hNM : N = M)
+    {ψ : DirichletCharacter R M} {χ : DirichletCharacter R N}
+    (h : changeLevel hMN ψ = χ) :
+    F χ = F ψ := by
+  subst hNM
+  rw [changeLevel_self] at h
+  subst h
+  rfl
 
 /-- **The trivial character at a natural number.** The trivial character modulo `N` is `1` at the
 natural numbers prime to `N` and `0` at the others. -/

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
-import TauCeti.NumberTheory.NumberField.DedekindZeta
+import TauCeti.NumberTheory.NumberField.DedekindZeta.Basic
 
 /-!
 # Nonvanishing of the continued Dedekind zeta function on `Re s ≥ 1`
