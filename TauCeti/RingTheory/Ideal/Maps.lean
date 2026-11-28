@@ -76,27 +76,6 @@ theorem comap_pow_of_ringEquiv {R S : Type*} [CommSemiring R] [CommSemiring S]
     (I : Ideal R) (e : S ≃+* R) (n : ℕ) : (I ^ n).comap e = I.comap e ^ n := by
   rw [← map_symm, ← map_symm, Ideal.map_pow]
 
-/-- Extending an ideal along a surjective ring homomorphism between possibly noncommutative
-semirings commutes with taking powers. -/
-theorem map_pow_of_surjective {R S F : Type*} [Semiring R] [Semiring S]
-    [FunLike F R S] [RingHomClass F R S] (f : F) (hf : Function.Surjective f)
-    (I : Ideal R) : ∀ n : ℕ, (I ^ n).map f = I.map f ^ n
-  | 0 => by simp [Submodule.pow_zero, Ideal.one_eq_top, Ideal.map_top]
-  | n + 1 => by
-    refine le_antisymm ?_ ?_
-    · rw [Submodule.pow_succ I, map_le_iff_le_comap, Submodule.mul_le]
-      intro u hu v hv
-      rw [mem_comap, map_mul, Submodule.pow_succ]
-      exact Submodule.mul_mem_mul
-        (map_pow_of_surjective f hf I n ▸ mem_map_of_mem f hu) (mem_map_of_mem f hv)
-    · rw [Submodule.pow_succ (I.map f), Submodule.mul_le]
-      intro x hx y hy
-      obtain ⟨u, hu, rfl⟩ := mem_image_of_mem_map_of_surjective f hf
-        (map_pow_of_surjective f hf I n ▸ hx)
-      obtain ⟨v, hv, rfl⟩ := mem_image_of_mem_map_of_surjective f hf hy
-      rw [← map_mul]
-      exact mem_map_of_mem f (Submodule.pow_succ I ▸ Submodule.mul_mem_mul hu hv)
-
 /-- Extension along a ring homomorphism commutes with finite products of ideals. -/
 theorem map_finset_prod {R S F ι : Type*} [CommSemiring R] [CommSemiring S] [FunLike F R S]
     [RingHomClass F R S] (f : F) (s : Finset ι) (J : ι → Ideal R) :
@@ -154,6 +133,22 @@ theorem map_mem_pow_of_le_comap {R S : Type*} [Semiring R] [Semiring S] (f : R �
     {I : Ideal R} {J : Ideal S} (h : I ≤ J.comap f) {n : ℕ} {x : R} (hx : x ∈ I ^ n) :
     f x ∈ J ^ n :=
   pow_le_comap_pow_of_le_comap f h n hx
+
+/-- Extending an ideal along a surjective ring homomorphism between possibly noncommutative
+semirings commutes with taking powers. -/
+theorem map_pow_of_surjective {R S F : Type*} [Semiring R] [Semiring S]
+    [FunLike F R S] [RingHomClass F R S] (f : F) (hf : Function.Surjective f)
+    (I : Ideal R) (n : ℕ) : (I ^ n).map f = I.map f ^ n := by
+  refine le_antisymm (map_le_iff_le_comap.mpr (pow_le_comap_pow_of_le_comap f le_comap_map n)) ?_
+  induction n with
+  | zero => simp [Submodule.pow_zero, Ideal.one_eq_top, Ideal.map_top]
+  | succ n ih =>
+    rw [Submodule.pow_succ (I.map f), Submodule.mul_le]
+    intro x hx y hy
+    obtain ⟨u, hu, rfl⟩ := mem_image_of_mem_map_of_surjective f hf (ih hx)
+    obtain ⟨v, hv, rfl⟩ := mem_image_of_mem_map_of_surjective f hf hy
+    rw [← map_mul]
+    exact mem_map_of_mem f (Submodule.pow_succ I ▸ Submodule.mul_mem_mul hu hv)
 
 /-- Along a surjective ring homomorphism, the powers of the image of an ideal lie in the image of
 its powers. Unlike `Ideal.map_pow`, neither ring need be commutative. -/

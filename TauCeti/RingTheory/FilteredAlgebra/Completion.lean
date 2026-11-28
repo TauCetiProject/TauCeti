@@ -248,15 +248,6 @@ theorem mul_mem_completionIdeal {a b : ℕ} {x y : F.completion}
       rw [← hr, ← hs, ← map_mul, Ideal.Quotient.eq_zero_iff_mem]
       simpa only [Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using F.mul_mem hxr hys
 
-/-- Elements congruent to one modulo a completion ideal remain so under multiplication. -/
-theorem mul_sub_one_mem_completionIdeal {n : ℕ} {u v : F.completion}
-    (hu : u - 1 ∈ F.completionIdeal n) (hv : v - 1 ∈ F.completionIdeal n) :
-    u * v - 1 ∈ F.completionIdeal n := by
-  have huv : u * v - 1 = u * (v - 1) + (u - 1) := by
-    rw [mul_sub, mul_one, sub_add_sub_cancel]
-  rw [huv]
-  exact add_mem ((F.completionIdeal n).mul_mem_left u hv) hu
-
 /-- The induced decreasing multiplicative filtration on the completion. -/
 def completionFiltration : TauCeti.AlgFiltration F.completion where
   ideal := F.completionIdeal

@@ -13,8 +13,8 @@ import TauCeti.Algebra.Lie.UniversalEnveloping.Primitive
 /-!
 # Completed primitive elements of positively graded universal enveloping algebras
 
-For a Lie algebra `L` over a commutative ring `R` equipped with a positive grading `ℒ` by
-`(d : PositiveDegrees N)`. Every element in the image of `completedLieToU` is completed primitive,
+Let `L` be a Lie algebra over a commutative ring `R` equipped with a positive grading `ℒ` by
+`d : PositiveDegrees N`. Every element in the image of `completedLieToU` is completed primitive,
 and every homogeneous component of a completed primitive element in `completedEnveloping` is an
 ordinary primitive element of `U(L)`. Over a commutative `ℚ`-algebra `R`, this identifies
 `completedPrimitiveLieSubalgebra` with `d.completedLie ℒ` (`completedPrimitiveLieEquiv`).

@@ -68,11 +68,9 @@ theorem isCompletedGroupLike_completedExp_iff (hneg : ∀ n, d n < 0 → ℒ n =
     isCompletedPrimitive_iff_includeLeftCompletion_add_includeRightCompletion, hcounit,
     completedCoproduct_completedExp, (𝓕 hneg).completedTensor_completedExp R (𝓕 hneg) x x]
   refine ⟨fun h => ?_, fun h => ⟨rfl, congrArg 𝒯.completedExp (Subtype.ext h)⟩⟩
-  have hlog := congrArg 𝒯.completedLog (Subtype.ext h.2 :
-    (⟨𝒯.completedExp a, 𝒯.completedExp_sub_one_mem a⟩ :
-      {u : 𝒯.completion // u - 1 ∈ 𝒯.completionIdeal 1}) =
-    ⟨𝒯.completedExp (bL + bR), 𝒯.completedExp_sub_one_mem (bL + bR)⟩)
-  simpa only [AlgFiltration.completedLog_completedExp, a, bL, bR, AddMemClass.coe_add] using hlog
+  have hinj : a = bL + bR := 𝒯.completedExpEquiv.injective
+    (Subtype.ext (by simpa only [AlgFiltration.coe_completedExpEquiv] using h.2))
+  simpa only [a, bL, bR, AddMemClass.coe_add] using congrArg Subtype.val hinj
 
 /-- Over a commutative `ℚ`-algebra, the completed logarithm of an element congruent to `1` modulo
 the first completion ideal is completed primitive if and only if that element is completed

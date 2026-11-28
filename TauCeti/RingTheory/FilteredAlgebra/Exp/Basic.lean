@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.RingTheory.FilteredAlgebra.Algebra
+public import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
 public import TauCeti.RingTheory.Nilpotent.Log
 
 /-!
@@ -145,7 +146,7 @@ theorem completedExp_add (x y : F.completionIdeal 1)
 theorem completedLog_mul (u v : {u : F.completion // u - 1 ∈ F.completionIdeal 1})
     (h : Commute (u : F.completion) v) :
     F.completedLog ⟨(u : F.completion) * v,
-      F.mul_sub_one_mem_completionIdeal u.property v.property⟩ =
+      (F.completionIdeal 1).mul_sub_one_mem u.property v.property⟩ =
       F.completedLog u + F.completedLog v := by
   apply F.completion_ext
   intro k

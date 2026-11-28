@@ -80,19 +80,15 @@ theorem tensorTotalDegree_def (m : Γ) :
 theorem mul_mem_tensorTotalDegree {m₁ m₂ : Γ} {x y : U ⊗[R] U}
     (hx : x ∈ tensorTotalDegree ℒ m₁) (hy : y ∈ tensorTotalDegree ℒ m₂) :
     x * y ∈ tensorTotalDegree ℒ (m₁ + m₂) := by
-  rw [tensorTotalDegree_def] at hx hy
-  refine Submodule.iSup_induction _ (motive := fun x => x * y ∈ tensorTotalDegree ℒ (m₁ + m₂)) hx
-    (fun p x hx => ?_) (by simp) (fun _ _ h₁ h₂ => by simpa [add_mul] using add_mem h₁ h₂)
-  refine Submodule.iSup_induction _ (motive := fun x => x * y ∈ tensorTotalDegree ℒ (m₁ + m₂)) hx
-    (fun hp x hx => ?_) (by simp) (fun _ _ h₁ h₂ => by simpa [add_mul] using add_mem h₁ h₂)
-  refine Submodule.iSup_induction _ (motive := fun y => x * y ∈ tensorTotalDegree ℒ (m₁ + m₂)) hy
-    (fun q y hy => ?_) (by simp) (fun _ _ h₁ h₂ => by simpa [mul_add] using add_mem h₁ h₂)
-  refine Submodule.iSup_induction _ (motive := fun y => x * y ∈ tensorTotalDegree ℒ (m₁ + m₂)) hy
-    (fun hq y hy => ?_) (by simp) (fun _ _ h₁ h₂ => by simpa [mul_add] using add_mem h₁ h₂)
-  rw [tensorTotalDegree_def]
-  exact Submodule.mem_iSup_of_mem (p + q) <| Submodule.mem_iSup_of_mem
-    (by simp only [Prod.fst_add, Prod.snd_add]; rw [add_add_add_comm, hp, hq])
-    (mul_mem_tensorGrading ℒ hx hy)
+  refine (?_ : tensorTotalDegree ℒ m₁ * tensorTotalDegree ℒ m₂ ≤
+      tensorTotalDegree ℒ (m₁ + m₂)) (Submodule.mul_mem_mul hx hy)
+  simp only [tensorTotalDegree_def, Submodule.iSup_mul, Submodule.mul_iSup, iSup_le_iff]
+  rintro p hp q hq
+  rw [Submodule.mul_le]
+  intro a ha b hb
+  exact Submodule.mem_iSup_of_mem (q + p) <| Submodule.mem_iSup_of_mem
+    (by simp only [Prod.fst_add, Prod.snd_add]; rw [add_add_add_comm, hq, hp])
+    (mul_mem_tensorGrading ℒ ha hb)
 
 /-- Comultiplication sends homogeneous elements of degree `m` into total tensor degree `m`. -/
 theorem comul_mem_tensorTotalDegree {m : Γ} {a : U} (ha : a ∈ homogeneousSubmodule ℒ m) :

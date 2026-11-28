@@ -9,6 +9,8 @@ public import TauCeti.RingTheory.FilteredAlgebra.AlgHom
 public import TauCeti.RingTheory.TensorProduct.Filtration
 public import Mathlib.RingTheory.TensorProduct.Basic
 
+import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
+
 /-!
 # Completed tensor products of filtered algebras
 
@@ -253,7 +255,7 @@ theorem completedTensor_sub_one_mem_completionIdeal {k : ℕ}
     (hu : u - 1 ∈ F.completionIdeal k) (hv : v - 1 ∈ G.completionIdeal k) :
     F.completedTensor R G u v - 1 ∈ (F.tensorProduct R G).completionIdeal k := by
   rw [completedTensor_apply]
-  exact (F.tensorProduct R G).mul_sub_one_mem_completionIdeal
+  exact ((F.tensorProduct R G).completionIdeal k).mul_sub_one_mem
     (by simpa only [map_sub, map_one] using
       F.includeLeftCompletion_mem_completionIdeal R G hu)
     (by simpa only [map_sub, map_one] using

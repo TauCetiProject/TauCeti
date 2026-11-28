@@ -82,16 +82,21 @@ theorem pow_sub_one_mem (I : Ideal R) {a : R} (ha : a - 1 ∈ I) (n : ℕ) :
   rw [← geom_sum_mul]
   exact I.mul_mem_left _ ha
 
+/-- Elements congruent to one modulo a left ideal remain so under multiplication. -/
+theorem mul_sub_one_mem (I : Ideal R) {a b : R} (ha : a - 1 ∈ I) (hb : b - 1 ∈ I) :
+    a * b - 1 ∈ I := by
+  have hab : a * b - 1 = a * (b - 1) + (a - 1) := by
+    rw [mul_sub, mul_one, sub_add_sub_cancel]
+  rw [hab]
+  exact add_mem (I.mul_mem_left _ hb) ha
+
 variable (I : Ideal R) in
 /-- The principal unit group of an ideal `I`: the units `u` with `u - 1 ∈ I`. -/
 def principalUnitGroup : Subgroup Rˣ where
   carrier := {u | (u : R) - 1 ∈ I}
   one_mem' := by simp
   mul_mem' {u v} hu hv := by
-    have huv : ((u * v : Rˣ) : R) - 1 = u * ((v : R) - 1) + ((u : R) - 1) := by
-      rw [Units.val_mul, mul_sub, mul_one, sub_add_sub_cancel]
-    rw [Set.mem_ofPred_eq, huv]
-    exact add_mem (I.mul_mem_left _ hv) hu
+    simpa only [Set.mem_ofPred_eq, Units.val_mul] using I.mul_sub_one_mem hu hv
   inv_mem' {u} hu := by
     have hu' : ((u⁻¹ : Rˣ) : R) - 1 = -(↑u⁻¹ * ((u : R) - 1)) := by
       rw [mul_sub, Units.inv_mul, mul_one, neg_sub]

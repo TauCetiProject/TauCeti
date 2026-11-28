@@ -83,10 +83,10 @@ private theorem projection_completedLieToUFun (k : ℕ) (x : d.completedLie ℒ)
 noncomputable def completedLieToU : d.completedLie ℒ →ₗ⁅R⁆ Û where
   toFun := completedLieToUFun d ℒ
   map_add' _ _ := (𝓕).completion_ext fun _ => by simp only [map_add, projection_completedLieToUFun]
-  map_smul' _ _ := (𝓕).completion_ext fun _ => by
-    rw [RingHom.id_apply, projection_completedLieToUFun, map_smul, map_smul,
-      ← (𝓕).projectionₐ_apply (R := R), map_smul, (𝓕).projectionₐ_apply,
-      projection_completedLieToUFun]
+  map_smul' r x := (𝓕).completion_ext fun k => by
+    have h := map_smul ((𝓕).projectionₐ (R := R) k) r (completedLieToUFun d ℒ x)
+    simp only [AlgFiltration.projectionₐ_apply] at h
+    simp only [RingHom.id_apply, projection_completedLieToUFun, map_smul, h]
   map_lie' := (𝓕).completion_ext fun _ => by
     simp [projection_completedLieToUFun, LieRing.of_associative_ring_bracket]
 
