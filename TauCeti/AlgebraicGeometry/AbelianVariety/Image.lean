@@ -211,21 +211,27 @@ def imageBaseChangeIso (f : A ⟶ B) :
       ((ker_imageι fL).trans (ker_imageι_baseChange L f).symm)
   let e : (image fL).toOver ≅ ((image f).baseChange L).toOver :=
     Over.isoMk (asIso (Hom.toSchemeHom l)) (Hom.toOverHom l).w
-  have he : e.hom = Hom.toOverHom l := Over.OverMorphism.ext (by rfl)
+  have he : e.hom = Hom.toOverHom l :=
+    Over.OverMorphism.ext ((Over.isoMk_hom_left _ _).trans (asIso_hom _))
   have : IsMonHom e.hom := he.symm ▸ inferInstanceAs (IsMonHom (Hom.toOverHom l))
   exact InducedCategory.isoMk (CommGrp.mkIso' e)
+
+/-- The forward map of the base-change comparison is the image lift into the extended image. -/
+private theorem imageBaseChangeIso_hom_eq_imageLift (f : A ⟶ B) :
+    (imageBaseChangeIso L f).hom =
+      imageLift (Hom.baseChange f L) (Hom.baseChange (imageι f) L)
+        (ker_imageι_baseChange L f).le := by
+  apply Hom.ext
+  simp only [Hom.toSchemeHom, toOverHom_eq_forget₂Grp_map, CommGrp.forget₂Grp_map_hom,
+    imageBaseChangeIso, InducedCategory.isoMk_hom, InducedCategory.homMk_hom,
+    CommGrp.mkIso'_hom_hom_hom_hom, Over.isoMk_hom_left, asIso_hom]
 
 /-- The image comparison respects the inclusions into the extended target. -/
 @[reassoc (attr := simp)]
 theorem imageBaseChangeIso_hom_imageι (f : A ⟶ B) :
     (imageBaseChangeIso L f).hom ≫ Hom.baseChange (imageι f) L =
       imageι (Hom.baseChange f L) := by
-  have h : (imageBaseChangeIso L f).hom =
-      imageLift (Hom.baseChange f L) (Hom.baseChange (imageι f) L)
-        (ker_imageι_baseChange L f).le := by
-    apply Hom.ext
-    rfl
-  rw [h, imageLift_comp]
+  rw [imageBaseChangeIso_hom_eq_imageLift, imageLift_comp]
 
 /-- The image comparison respects the maps from the extended source. -/
 @[reassoc (attr := simp)]
