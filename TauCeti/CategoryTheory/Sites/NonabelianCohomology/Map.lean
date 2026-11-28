@@ -51,16 +51,23 @@ namespace Torsor
 
 variable [HasWeakSheafify J (Type w)] [J.WEqualsLocallyBijective (Type w)]
 
+/-- The induced arrow on extended torsors. Its action is characterized by
+`toMap_mapFunctor_map` and `mapFunctor_map_hom_app_smul_toMap`. -/
+def mapFunctorMap (φ : G ⟶ G') {P Q : Torsor G} (f : P ⟶ Q) :
+    P.map φ ⟶ Q.map φ :=
+  P.mapLift (f.hom ≫ Q.toMap φ) fun U g p ↦ by simp [f.map_smul]
+
 /-- Extension of the structure group along `φ`, as a functor on torsors. It carries the class
 `[p, a]` to `[f p, a]` under an equivariant morphism `f`. -/
 abbrev mapFunctor (φ : G ⟶ G') : Torsor G ⥤ Torsor G' where
   obj P := P.map φ
-  map {P Q} f := P.mapLift (f.hom ≫ Q.toMap φ)
-    fun U g p ↦ by simp [f.map_smul]
+  map f := mapFunctorMap φ f
   map_id P := by
+    dsimp only [mapFunctorMap]
     apply map_hom_ext
     simp
   map_comp f g := by
+    dsimp only [mapFunctorMap]
     apply map_hom_ext
     simp [Category.assoc]
 
@@ -69,10 +76,11 @@ lemma mapFunctor_obj (φ : G ⟶ G') (P : Torsor G) :
     (mapFunctor φ).obj P = P.map φ := (rfl)
 
 /-- The canonical maps into an extension commute with equivariant morphisms of torsors. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma toMap_mapFunctor_map (φ : G ⟶ G') {P Q : Torsor G} (f : P ⟶ Q) :
-    P.toMap φ ≫ ((mapFunctor φ).map f).hom = f.hom ≫ Q.toMap φ :=
-  toMap_mapLift _ _
+    P.toMap φ ≫ ((mapFunctor φ).map f).hom = f.hom ≫ Q.toMap φ := by
+  dsimp only [mapFunctor, mapFunctorMap]
+  exact toMap_mapLift _ _
 
 /-- On local contracted-product representatives the induced morphism keeps the coefficient. -/
 @[simp]
@@ -95,17 +103,17 @@ def mapIdIso {φ : G ⟶ G} (hφ : φ = 𝟙 G) : mapFunctor φ ≅ 𝟭 (Torsor
       exact asIso (P.mapLift (φ := 𝟙 G) (𝟙 P.sheaf) fun _ _ _ ↦ rfl))
     (fun {P Q} f ↦ by
       apply map_hom_ext
-      dsimp only [mapFunctor]
+      dsimp only [mapFunctor, mapFunctorMap]
       simp [Category.assoc])
 
-/-- The identity-band comparison carries the image of an original section back to itself. -/
+/-- The identity-extension comparison carries the image of an original section back to itself. -/
 @[reassoc (attr := simp)]
 lemma toMap_mapIdIso_hom {φ : G ⟶ G} (hφ : φ = 𝟙 G) (P : Torsor G) :
     P.toMap φ ≫ ((mapIdIso hφ).hom.app P).hom = 𝟙 P.sheaf := by
   subst φ
   exact toMap_mapLift _ _
 
-/-- The inverse identity-band comparison is the canonical map into the extension. -/
+/-- The inverse identity-extension comparison is the canonical map into the extension. -/
 @[simp]
 lemma mapIdIso_inv_app_hom {φ : G ⟶ G} (hφ : φ = 𝟙 G) (P : Torsor G) :
     ((mapIdIso hφ).inv.app P).hom = P.toMap φ := by
@@ -113,7 +121,7 @@ lemma mapIdIso_inv_app_hom {φ : G ⟶ G} (hφ : φ = 𝟙 G) (P : Torsor G) :
   exact (congrArg Hom.hom ((mapIdIso hφ).inv_hom_id_app P)).trans
     (toMap_mapIdIso_hom hφ P).symm
 
-/-- The identity-band comparison sends `[p, a]` to `a • p`. -/
+/-- The identity-extension comparison sends `[p, a]` to `a • p`. -/
 lemma mapIdIso_hom_app_smul_toMap {φ : G ⟶ G} (hφ : φ = 𝟙 G) (P : Torsor G) (U : Cᵒᵖ)
     (p : P.sheaf.obj.obj U) (a : G.obj.obj U) :
     ((mapIdIso hφ).hom.app P).hom.hom.app U
