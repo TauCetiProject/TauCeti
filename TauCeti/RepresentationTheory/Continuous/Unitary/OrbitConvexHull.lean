@@ -160,6 +160,7 @@ variable [CompleteSpace V]
 theorem norm_starProjection_invariants_sub_le (hρ : ρ.IsUnitary) {v : V} {ε : ℝ}
     (hv : ∀ m, ‖ρ m v - v‖ ≤ ε) :
     ‖ρ.invariants.starProjection v - v‖ ≤ ε := by
+  -- The `ℝ`-action is defined through `algebraMap ℝ 𝕜`, so the scalar tower holds by `rfl`.
   let : NormedSpace ℝ V := NormedSpace.restrictScalars ℝ 𝕜 V
   let : IsScalarTower ℝ 𝕜 V := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
   have hmem : ρ.invariants.starProjection v ∈ Metric.closedBall v ε := by

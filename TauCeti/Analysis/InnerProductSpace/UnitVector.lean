@@ -17,6 +17,8 @@ representation is close to `1` wherever `ρ g` moves `ξ` little.
 ## Main results
 
 * `TauCeti.norm_inner_sub_one_le`: `‖⟪ξ, x⟫ - 1‖ ≤ ‖x - ξ‖` for a unit vector `ξ`.
+* `TauCeti.norm_sub_sq_eq_two_mul_one_sub_re_inner`: `‖x - ξ‖ ^ 2 = 2 * (1 - re ⟪ξ, x⟫)` for unit
+  vectors `x` and `ξ`.
 -/
 
 public section
@@ -31,5 +33,11 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 theorem norm_inner_sub_one_le {ξ : E} (hξ : ‖ξ‖ = 1) (x : E) : ‖⟪ξ, x⟫_𝕜 - 1‖ ≤ ‖x - ξ‖ := by
   rw [← inner_self_eq_one_of_norm_eq_one hξ, ← inner_sub_right]
   simpa [hξ] using norm_inner_le_norm (𝕜 := 𝕜) ξ (x - ξ)
+
+/-- For unit vectors `x` and `ξ`, `‖x - ξ‖ ^ 2 = 2 * (1 - re ⟪ξ, x⟫)`. -/
+theorem norm_sub_sq_eq_two_mul_one_sub_re_inner {x ξ : E} (hx : ‖x‖ = 1) (hξ : ‖ξ‖ = 1) :
+    ‖x - ξ‖ ^ 2 = 2 * (1 - RCLike.re ⟪ξ, x⟫_𝕜) := by
+  rw [norm_sub_sq (𝕜 := 𝕜), hx, hξ, inner_re_symm]
+  ring
 
 end TauCeti

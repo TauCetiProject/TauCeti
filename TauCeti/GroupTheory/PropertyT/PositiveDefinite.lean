@@ -121,12 +121,8 @@ private theorem approx_invariant_of_posSemidef_approx {Λ : Subgroup Γ}
     have hk := hFδ φ hφ hφ1 hφF k k.property
     have hre : 1 - (φ k).re < ε ^ 2 / 4 :=
       (RCLike.one_sub_re_le_norm_sub_one (φ k)).trans_lt hk
-    have hsq : ‖ρ k ξ - ξ‖ ^ 2 = 2 * (1 - (φ k).re) := by
-      rw [@norm_sub_sq ℂ, hρ.norm_map, hξ, one_pow]
-      have hsymm : RCLike.re ⟪ρ k ξ, ξ⟫_ℂ = (φ k).re :=
-        inner_re_symm (𝕜 := ℂ) (ρ k ξ) ξ
-      rw [hsymm]
-      ring
+    have hsq : ‖ρ k ξ - ξ‖ ^ 2 = 2 * (1 - (φ k).re) :=
+      TauCeti.norm_sub_sq_eq_two_mul_one_sub_re_inner (𝕜 := ℂ) ((hρ.norm_map k ξ).trans hξ) hξ
     rw [restrict_apply_apply, Subgroup.coe_subtype]
     exact (sq_le_sq₀ (norm_nonneg _) (by positivity)).mp (by nlinarith)
   obtain ⟨v, hv, hvξ⟩ := (hρ.restrict Λ.subtype).exists_invariant_norm_sub_le horb
