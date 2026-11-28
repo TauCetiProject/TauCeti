@@ -165,7 +165,7 @@ theorem subst_exp_det_one_sub_pow_mul_fin_two (A : Matrix (Fin 2) (Fin 2) R) :
 `exp (∑ₙ det (1 - A ^ n) Xⁿ / n) = det (1 - X A) / (1 - X) ^ 2`. -/
 theorem subst_exp_det_one_sub_pow_fin_two_of_det_eq_one (hA : A.det = 1) :
     (exp R).subst (mk fun n ↦ (n : ℚ)⁻¹ • (1 - A ^ n).det) =
-      (A.charpolyRev : R⟦X⟧) * mk 1 ^ 2 := by
+      (A.charpolyRev : R⟦X⟧) * PowerSeries.mk 1 ^ 2 := by
   have h := subst_exp_det_one_sub_pow_mul_fin_two A
   rw [hA, map_one, one_mul] at h
   rw [← h, mul_assoc, ← sq, ← mul_pow, mul_comm (1 - X), mk_one_mul_one_sub_eq_one, one_pow,
@@ -175,7 +175,7 @@ omit [Algebra ℚ R] in
 /-- For a `2 × 2` matrix `A` of determinant one and `n ≠ 0`, the coefficient of `Xⁿ` in
 `det (1 - X A) / (1 - X) ^ 2 = det (1 - X A) (∑ Xᵏ) ^ 2` is `n det (1 - A)`. -/
 theorem coeff_coe_charpolyRev_mul_mk_one_sq_fin_two (hA : A.det = 1) {n : ℕ} (hn : n ≠ 0) :
-    coeff n ((A.charpolyRev : R⟦X⟧) * mk 1 ^ 2) = n * (1 - A).det := by
+    coeff n ((A.charpolyRev : R⟦X⟧) * PowerSeries.mk 1 ^ 2) = n * (1 - A).det := by
   rw [Polynomial.coeff_coe_mul_mk_one_sq _ ((natDegree_charpolyRev_le A).trans (by simp; omega)),
     eval_one_charpolyRev, charpolyRev_fin_two, det_one_sub_fin_two, hA]
   simp only [map_one, one_mul, Polynomial.derivative_add, Polynomial.derivative_sub,

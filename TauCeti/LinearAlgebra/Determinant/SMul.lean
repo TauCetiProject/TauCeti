@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Determinant
 import TauCeti.Algebra.Module.LinearMap.End
+import TauCeti.LinearAlgebra.Basis.Semilinear
 
 /-!
 # The determinant of a commuting scalar action
@@ -22,6 +23,8 @@ Let `V` be a module over a commutative ring `E` with a commuting action of a sem
 ## Main results
 
 * `TauCeti.smulDet_congr`: it depends only on the isomorphism class of `V`.
+* `TauCeti.smulDet_eq_symm_apply_of_map_smul`: a `σ`-semilinear isomorphism `V' ≃ V` changes it by
+  `σ⁻¹`.
 * `TauCeti.smulDet_eq_pow_of_smul_eq`: if `a` acts on a free module as `c ∈ E`, then
   `det_E(a | V) = c ^ dim_E V`.
 * `TauCeti.smulDet_prod`: the determinant on `V × W` is the product of the determinants, since
@@ -80,5 +83,44 @@ theorem smulDet_prod {W : Type*} [AddCommGroup W] [Module E W] [Module k W] [SMu
   have : SMulCommClass k E W := .symm E k W
   rw [smulDet_apply, smulDet_apply, smulDet_apply, DistribSMul.toLinearMap_prod,
     LinearMap.det_prodMap]
+
+/-- **A semilinear twist changes the determinant of the scalar action by `σ⁻¹`.** If a
+`k`-linear isomorphism `e : V' ≃ V` satisfies `e (c • v) = σ c • e v` for a ring automorphism
+`σ` of `E`, then `det_E(a | V') = σ⁻¹(det_E(a | V))` for every `a ∈ k`. -/
+theorem smulDet_eq_symm_apply_of_map_smul {V' : Type*} [AddCommGroup V'] [Module E V']
+    [Module k V'] [SMulCommClass E k V'] (σ : E ≃+* E) (e : V' ≃ₗ[k] V)
+    (he : ∀ (c : E) (v : V'), e (c • v) = σ c • e v) (a : k) :
+    smulDet E k V' a = σ.symm (smulDet E k V a) := by
+  have : SMulCommClass k E V := .symm E k V
+  have : SMulCommClass k E V' := .symm E k V'
+  have := RingHomInvPair.of_ringEquiv σ
+  have := RingHomInvPair.of_ringEquiv_symm σ
+  -- `e⁻¹` is `σ⁻¹`-semilinear over `E`.
+  let eE : V ≃ₛₗ[(σ.symm : E →+* E)] V' :=
+    { e.symm.toAddEquiv with
+      map_smul' c v := e.injective (by simp [he]) }
+  -- `eE` is `k`-linear, since `e` is.
+  have hk (a : k) (v : V) : eE (a • v) = a • eE v := e.symm.map_smul a v
+  rw [smulDet_apply, smulDet_apply]
+  by_cases H : ∃ s : Finset V, Nonempty (Module.Basis s E V)
+  · classical
+    obtain ⟨s, ⟨b⟩⟩ := H
+    let b' := b.mapₛₗ eE
+    have hb' (j : s) : b' j = eE (b j) := b.mapₛₗ_apply eE j
+    -- `eE` applies `σ⁻¹` to the coordinates in `b` and reads the result in `b'`.
+    have hb (v : V) (i : s) : b'.repr (eE v) i = σ.symm (b.repr v i) := by
+      have h : eE v = b.semilinearMap σ.symm b' v :=
+        LinearMap.congr_fun (b.ext (f₁ := (eE : V →ₛₗ[(σ.symm : E →+* E)] V')) fun j ↦ by
+          simp [hb']) v
+      simp [h]
+    rw [← LinearMap.det_toMatrix b, ← LinearMap.det_toMatrix b', RingEquiv.map_det]
+    congr 1
+    ext i j
+    simp [LinearMap.toMatrix_apply, hb', ← hk, hb]
+  · have H' : ¬∃ s : Finset V', Nonempty (Module.Basis s E V') := fun ⟨s, ⟨b⟩⟩ ↦ by
+      classical
+      exact H ⟨_, ⟨(b.mapₛₗ eE.symm).reindexFinsetRange⟩⟩
+    classical
+    simp [LinearMap.coe_det, H, H']
 
 end TauCeti

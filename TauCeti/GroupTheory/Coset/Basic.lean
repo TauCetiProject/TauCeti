@@ -37,7 +37,9 @@ isomorphism of groups, and under translation:
 * `QuotientGroup.apply_out_mk`: a function invariant under right multiplication by `H` takes the
   same value at `g` and at the chosen representative of `g H`, and
   `QuotientGroup.finite_support_comp_inv_mul`: a left translate of such a function supported on
-  finitely many cosets is again supported on finitely many cosets.
+  finitely many cosets is again supported on finitely many cosets;
+  `QuotientGroup.sum_ite_out_inv_mul_mem`: a function vanishing off finitely many cosets is the sum
+  of its restrictions to them.
 * `QuotientGroup.mk_out_smul` and `QuotientGroup.mk_mul_out_smul`: the representative of a
   translated coset `g • q` lies in the coset of `g * q.out`, and `QuotientGroup.inv_smul_of_mk_eq`
   and `QuotientGroup.out_inv_smul`: the inverse of a representative of `q`, for instance
@@ -387,6 +389,23 @@ theorem finite_support_comp_inv_mul {A : Type*} [Zero A] {K : Subgroup G} {f : G
     rw [← MulAction.Quotient.mk_smul_out, smul_eq_mul, QuotientGroup.apply_out_mk hf]
   refine (hf_fin.preimage (MulAction.injective x⁻¹).injOn).subset fun q hq ↦ ?_
   simpa [h_value] using hq
+
+open scoped Classical in
+/-- If `f` vanishes off the cosets in a finite set `T`, then `f` is the sum over `q ∈ T` of its
+restrictions to the cosets `q`, each written through the representative `q.out`. -/
+@[to_additive /-- If `f` vanishes off the cosets in a finite set `T`, then `f` is the sum over
+`q ∈ T` of its restrictions to the cosets `q`, each written through the representative
+`q.out`. -/]
+theorem sum_ite_out_inv_mul_mem {M : Type*} [AddCommMonoid M] {T : Finset (G ⧸ H)} {f : G → M}
+    (hT : ∀ a, f a ≠ 0 → (a : G ⧸ H) ∈ T) (a : G) :
+    ∑ q ∈ T, (if q.out⁻¹ * a ∈ H then f a else 0) = f a := by
+  have hq (q : G ⧸ H) : q.out⁻¹ * a ∈ H ↔ (a : G ⧸ H) = q := by
+    rw [← QuotientGroup.eq, QuotientGroup.out_eq', eq_comm]
+  simp_rw [hq, Finset.sum_ite_eq]
+  split_ifs with h
+  · rfl
+  · by_contra hne
+    exact h (hT a (Ne.symm hne))
 
 /-- The chosen representative of the translate `g • q` of a left coset `q` lies in the same coset
 as `g` times the chosen representative of `q`. -/

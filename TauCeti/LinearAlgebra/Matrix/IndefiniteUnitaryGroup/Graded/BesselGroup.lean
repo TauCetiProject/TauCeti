@@ -26,7 +26,13 @@ Gram matrix on `X ⊕ Fin s`, whose basis vectors carry the grades `TauCeti.grad
 * the **Bessel group** `TauCeti.gradedBesselGroup X s N`, the `g ∈ G` that agree with the
   identity at the entries `(i, e_b)` with `0 ≤ grade e_b` and `grade i ≤ grade e_b`; it contains
   `U` (`TauCeti.gradedUnipotent_le_gradedBesselGroup`) and the copy of the unitary group `U(X)`
-  embedded as the `X`-block by `TauCeti.gradedInclusion X s N`.
+  embedded as the `X`-block by `TauCeti.gradedInclusion X s N`;
+* the **degree filtration** `TauCeti.gradedUnipotentFiltration X s N d` of `U`, the `g ∈ U` for
+  which `g - 1` raises the grade by at least `d`. It is decreasing, equal to `U` for `d ≤ 1`, and
+  its terms are subgroups preserved by conjugation by every isometry raising the grade by at least
+  `0`, such as the image of `U(X)`. For a string of odd length all grades are even, so that
+  `U^{≥2} = U` (`TauCeti.gradedUnipotentFiltration_two`). The group `U^{≥2}` is the domain of the
+  unipotent character of a graded hermitian form.
 
 The `X`-block of an element of the Bessel group is unitary, and taking it is a homomorphism
 `TauCeti.gradedBesselProj X s N` onto `U(X)`, continuous for any topology on `R`, which is the
@@ -54,6 +60,7 @@ they give the subgroups of its points over any `E`-algebra with involution, such
 ## Main definitions
 
 * `TauCeti.gradedUnipotent X s N`: the unipotent group `U` of the flag of the grades.
+* `TauCeti.gradedUnipotentFiltration X s N d`: its degree filtration.
 * `TauCeti.gradedBesselGroup X s N`: the Bessel group.
 * `TauCeti.gradedInclusion X s N`: the embedding of `U(X)` as the `X`-block.
 * `TauCeti.gradedBesselInclusion X s N`: the same embedding into the Bessel group.
@@ -71,14 +78,20 @@ they give the subgroups of its points over any `E`-algebra with involution, such
   since `U` meets `U(X)` only in `1` (`TauCeti.gradedInclusion_mem_gradedUnipotent_iff`).
 * `TauCeti.continuous_gradedBesselProj`: the projection is continuous.
 * `TauCeti.mem_gradedUnipotent_iff_blockUnitriangular_reindex`: the comparison with `besselU`.
+* `TauCeti.gradedUnipotentFiltration_two`: for a string of odd length, `U^{≥2} = U`.
+* `TauCeti.mul_mul_inv_mem_gradedUnipotentFiltration`,
+  `TauCeti.gradedInclusion_mul_mul_inv_mem_gradedUnipotentFiltration`: conjugation by isometries
+  raising the grade by at least `0`, and by `U(X)`, preserves the filtration.
 
 ## References
 
 * `grh-lean`, https://github.com/lsernau/grh-lean, file `src/Lib/Weil/Periods/Grading.lean`
   (declarations `New.Grading.unipotent`, `New.Grading.besselGroup`, `New.Grading.inclX`,
   `New.Grading.besselProj`, `New.Grading.exists_besselGroup_proj`,
-  `New.Grading.exists_unipotent_mul_inclX`); Apache 2.0, Copyright 2026 Anthropic, PBC. The groups
-  and the statements about the projection follow these declarations.
+  `New.Grading.exists_unipotent_mul_inclX`, `New.Grading.hasDegreeGe_two_of_odd`) and file
+  `src/Lib/Weil/Periods/Equivariant.lean` (`New.Grading.hasDegreeGe_conj`); Apache 2.0, Copyright
+  2026 Anthropic, PBC. The groups and the statements about the projection follow these
+  declarations; the degree filtration as a family of subgroups is new here.
 * W. T. Gan, B. H. Gross and D. Prasad, *Symplectic local root numbers, central critical
   L-values, and restriction problems in the representation theory of classical groups*,
   Astérisque 346 (2012), Section 12, for Bessel subgroups as semidirect products of a unipotent
@@ -160,6 +173,110 @@ theorem mem_gradedUnipotent_iff_blockUnitriangular_reindex {ϱ : ℕ}
       rw [h0, one_apply_ne (by rintro rfl; exact hlt.false)]
     · have h1 := h.apply_of_eq heq.symm
       simpa only [reindex_apply, submatrix_apply, Equiv.symm_apply_apply, hone] using h1
+
+/-! ### The degree filtration of the unipotent group -/
+
+variable (X s N) in
+/-- The **`d`-th term of the degree filtration** of the unipotent group of the grades: the
+isometries `g` of the graded Gram matrix for which `g - 1` raises the grade by at least `max d 1`.
+It is the unipotent group of the grades for `d ≤ 1` and decreases with `d`. -/
+def gradedUnipotentFiltration (d : ℤ) : Subgroup (unitaryGroupOf (gradedGram X s N)) where
+  carrier := {g | RaisesDegree (gradedGrade X s) (max d 1)
+    (((g : GL (X ⊕ Fin s) R) : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R) - 1)}
+  one_mem' := by simp
+  mul_mem' {g h} hg hh := by
+    simpa using RaisesDegree.mul_sub_one hg hh (by omega)
+  inv_mem' {g} hg := by
+    -- `g⁻¹ - 1 = -(g⁻¹ (g - 1))`, and `g⁻¹` raises the grade by at least `0`, as `g` does.
+    have hinv : RaisesDegree (gradedGrade X s) 0
+        (((g⁻¹ : unitaryGroupOf (gradedGram X s N)) : GL (X ⊕ Fin s) R) :
+          Matrix (X ⊕ Fin s) (X ⊕ Fin s) R) := by
+      simpa [Matrix.coe_units_inv] using (RaisesDegree.of_sub_one (hg.mono (by omega))).inv
+    have h : (((g⁻¹ : unitaryGroupOf (gradedGram X s N)) : GL (X ⊕ Fin s) R) :
+          Matrix (X ⊕ Fin s) (X ⊕ Fin s) R) - 1 =
+        -((((g⁻¹ : unitaryGroupOf (gradedGram X s N)) : GL (X ⊕ Fin s) R) :
+          Matrix (X ⊕ Fin s) (X ⊕ Fin s) R) *
+            (((g : GL (X ⊕ Fin s) R) : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R) - 1)) := by
+      simp [Matrix.mul_sub]
+    rw [Set.mem_ofPred_eq, h]
+    simpa using (hinv.mul hg).neg
+
+/-- An isometry `g` of the graded Gram matrix lies in the `d`-th term of the degree filtration
+exactly when `g - 1` raises the grade by at least `max d 1`. -/
+theorem mem_gradedUnipotentFiltration_iff_raisesDegree {d : ℤ}
+    {g : unitaryGroupOf (gradedGram X s N)} :
+    g ∈ gradedUnipotentFiltration X s N d ↔ RaisesDegree (gradedGrade X s) (max d 1)
+      (((g : GL (X ⊕ Fin s) R) : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R) - 1) :=
+  Iff.rfl
+
+/-- An isometry `g` of the graded Gram matrix lies in the `d`-th term of the degree filtration
+exactly when it lies in the unipotent group of the grades and `g - 1` raises the grade by at
+least `d`. -/
+theorem mem_gradedUnipotentFiltration_iff {d : ℤ} {g : unitaryGroupOf (gradedGram X s N)} :
+    g ∈ gradedUnipotentFiltration X s N d ↔ g ∈ gradedUnipotent X s N ∧
+      RaisesDegree (gradedGrade X s) d
+        (((g : GL (X ⊕ Fin s) R) : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R) - 1) := by
+  rw [mem_gradedUnipotentFiltration_iff_raisesDegree, raisesDegree_max_iff,
+    mem_gradedUnipotent_iff_raisesDegree, and_comm]
+
+/-- Every term of the degree filtration lies in the unipotent group of the grades. -/
+theorem gradedUnipotentFiltration_le_gradedUnipotent (d : ℤ) :
+    gradedUnipotentFiltration X s N d ≤ gradedUnipotent X s N :=
+  fun _ hg ↦ (mem_gradedUnipotentFiltration_iff.1 hg).1
+
+/-- For `d ≤ 1` the `d`-th term of the degree filtration is the unipotent group of the grades. -/
+theorem gradedUnipotentFiltration_eq_gradedUnipotent {d : ℤ} (hd : d ≤ 1) :
+    gradedUnipotentFiltration X s N d = gradedUnipotent X s N := by
+  ext g
+  rw [mem_gradedUnipotentFiltration_iff, and_iff_left_iff_imp]
+  exact fun hg ↦ (mem_gradedUnipotent_iff_raisesDegree.1 hg).mono hd
+
+/-- The degree filtration is decreasing. -/
+theorem gradedUnipotentFiltration_antitone :
+    Antitone (gradedUnipotentFiltration (R := R) X s N) := fun _ _ hd _ hg ↦
+  mem_gradedUnipotentFiltration_iff.2
+    ⟨(mem_gradedUnipotentFiltration_iff.1 hg).1, (mem_gradedUnipotentFiltration_iff.1 hg).2.mono hd⟩
+
+/-- For a string of odd length all grades are even, so the degree filtration only jumps at even
+degrees: its terms of degree `2k - 1` and `2k` agree. -/
+theorem gradedUnipotentFiltration_two_mul (hs : Odd s) (k : ℤ) :
+    gradedUnipotentFiltration X s N (2 * k) = gradedUnipotentFiltration X s N (2 * k - 1) := by
+  refine le_antisymm (gradedUnipotentFiltration_antitone (by omega)) fun g hg ↦ ?_
+  rw [mem_gradedUnipotentFiltration_iff] at hg ⊢
+  refine ⟨hg.1, raisesDegree_iff.2 fun i j hij ↦ ?_⟩
+  obtain ⟨a, ha⟩ := even_gradedGrade hs i
+  obtain ⟨b, hb⟩ := even_gradedGrade hs j
+  have := raisesDegree_iff.1 hg.2 i j hij
+  omega
+
+/-- For a string of odd length the unipotent group of the grades is the second term of its degree
+filtration: for every element `g`, the matrix `g - 1` raises the grade by at least two. -/
+theorem gradedUnipotentFiltration_two (hs : Odd s) :
+    gradedUnipotentFiltration X s N 2 = gradedUnipotent X s N := by
+  simpa using (gradedUnipotentFiltration_two_mul (N := N) hs 1).trans
+    (gradedUnipotentFiltration_eq_gradedUnipotent le_rfl)
+
+/-- Conjugation by an isometry `r` raising the grade by at least `0` preserves each term of the
+degree filtration. -/
+theorem mul_mul_inv_mem_gradedUnipotentFiltration {d : ℤ}
+    {r g : unitaryGroupOf (gradedGram X s N)}
+    (hr : RaisesDegree (gradedGrade X s) 0
+      (((r : GL (X ⊕ Fin s) R) : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R)))
+    (hg : g ∈ gradedUnipotentFiltration X s N d) :
+    r * g * r⁻¹ ∈ gradedUnipotentFiltration X s N d := by
+  have hr' : RaisesDegree (gradedGrade X s) 0
+      (((r⁻¹ : unitaryGroupOf (gradedGram X s N)) : GL (X ⊕ Fin s) R) :
+        Matrix (X ⊕ Fin s) (X ⊕ Fin s) R) := by
+    simpa [Matrix.coe_units_inv] using hr.inv
+  have h : (((r * g * r⁻¹ : unitaryGroupOf (gradedGram X s N)) : GL (X ⊕ Fin s) R) :
+      Matrix (X ⊕ Fin s) (X ⊕ Fin s) R) - 1 =
+      ((r : GL (X ⊕ Fin s) R) : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R) *
+        (((g : GL (X ⊕ Fin s) R) : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R) - 1) *
+        (((r⁻¹ : unitaryGroupOf (gradedGram X s N)) : GL (X ⊕ Fin s) R) :
+          Matrix (X ⊕ Fin s) (X ⊕ Fin s) R) := by
+    simp [Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_assoc]
+  rw [mem_gradedUnipotentFiltration_iff_raisesDegree, h]
+  simpa using (hr.mul (mem_gradedUnipotentFiltration_iff_raisesDegree.1 hg)).mul hr'
 
 /-! ### The Bessel group -/
 
@@ -401,6 +518,26 @@ theorem gradedInclusion_mem_gradedUnipotent_iff {a : unitaryGroup X R} :
   refine ⟨fun h ↦ Subtype.ext ?_, fun h ↦ by rw [h, map_one]; exact one_mem _⟩
   ext x y
   simpa [Matrix.one_apply] using mem_gradedUnipotent_iff.mp h (.inl x) (.inl y) (by simp)
+
+/-- The image of `U(X)` raises the grade by at least `0`: it is block diagonal for the
+grades. -/
+theorem raisesDegree_coe_gradedInclusion (a : unitaryGroup X R) :
+    RaisesDegree (gradedGrade X s) 0
+      ((gradedInclusion X s N a : GL (X ⊕ Fin s) R) : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R) := by
+  rw [coe_gradedInclusion, raisesDegree_iff]
+  rintro (x | b) (y | c) h
+  · simp
+  · simp at h
+  · simp at h
+  · obtain rfl : b = c := by_contra fun hbc ↦ h (by simp [one_apply_ne hbc])
+    simp
+
+/-- Conjugation by the image of `U(X)` preserves each term of the degree filtration. -/
+theorem gradedInclusion_mul_mul_inv_mem_gradedUnipotentFiltration {d : ℤ} (a : unitaryGroup X R)
+    {g : unitaryGroupOf (gradedGram X s N)} (hg : g ∈ gradedUnipotentFiltration X s N d) :
+    gradedInclusion X s N a * g * (gradedInclusion X s N a)⁻¹ ∈
+      gradedUnipotentFiltration X s N d :=
+  mul_mul_inv_mem_gradedUnipotentFiltration (raisesDegree_coe_gradedInclusion a) hg
 
 variable (X s N) in
 /-- The **projection of the Bessel group onto `U(X)`**, `g ↦` the `X`-block of `g`. -/

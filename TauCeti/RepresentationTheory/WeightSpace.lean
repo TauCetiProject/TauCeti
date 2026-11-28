@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RepresentationTheory.Basic
+public import Mathlib.RepresentationTheory.Intertwining
 public import Mathlib.RepresentationTheory.Invariants
 import Mathlib.Algebra.Module.Submodule.EqLocus
 import TauCeti.LinearAlgebra.Trace.Exact
@@ -50,6 +51,10 @@ provided each element of its image lifts through `red`. The resulting representa
   intersection of the eigenspaces of the `ρ g` for the eigenvalues `c g`.
 * `Representation.weightSpace_one`: for a group `G`, the trivial character cuts out the invariants.
 * `Representation.weightSpace_le_comap`: `ρ.weightSpace c` is `G`-stable.
+* `Representation.weightSpace_prod`, `Representation.mem_weightSpace_directSum`: the weight space
+  of a product or a direct sum is computed componentwise.
+* `Representation.Equiv.apply_mem_weightSpace_iff`: an equivalence of representations preserves
+  and reflects weight vectors.
 * `Representation.map_mem_weightSpace_of_commute`: a linear map commuting with every `ρ g`
   preserves `ρ.weightSpace c`.
 * `Representation.trace_eq_finrank_weightSpace_mul_add`: the splitting of the trace.
@@ -108,6 +113,35 @@ theorem weightSpace_le_comap (ρ : Representation k G V) (c : G →* k) (h : G) 
   rw [mem_weightSpace] at hv
   intro g
   rw [← mul_apply_eq_comp, ← map_mul, hv, hv, map_mul, mul_smul]
+
+/-- The vectors of a product on which `G` acts through `c` are the pairs of such vectors. -/
+@[simp]
+theorem weightSpace_prod {W : Type*} [AddCommMonoid W] [Module k W] (ρ : Representation k G V)
+    (σ : Representation k G W) (c : G →* k) :
+    (ρ.prod σ).weightSpace c = (ρ.weightSpace c).prod (σ.weightSpace c) := by
+  ext ⟨v, w⟩
+  simp [Prod.ext_iff, forall_and]
+
+/-- A vector of a direct sum lies in the subspace on which `G` acts through `c` exactly when each
+of its components does. -/
+theorem mem_weightSpace_directSum {ι : Type*} {W : ι → Type*} [∀ i, AddCommMonoid (W i)]
+    [∀ i, Module k (W i)] (ρ : ∀ i, Representation k G (W i)) {c : G →* k}
+    {x : DirectSum ι W} :
+    x ∈ (directSum ρ).weightSpace c ↔ ∀ i, x i ∈ (ρ i).weightSpace c := by
+  simp only [mem_weightSpace, directSum_apply, DirectSum.ext_iff, DirectSum.lmap_apply,
+    DirectSum.smul_apply]
+  exact forall_comm
+
+/-- An equivalence of representations carries a vector on which `G` acts through `c` to a vector
+on which `G` acts through `c`, and only such vectors. -/
+theorem Equiv.apply_mem_weightSpace_iff {W : Type*} [AddCommMonoid W] [Module k W]
+    {ρ : Representation k G V} {σ : Representation k G W} (e : ρ.Equiv σ) {c : G →* k} {v : V} :
+    e v ∈ σ.weightSpace c ↔ v ∈ ρ.weightSpace c := by
+  simp only [mem_weightSpace]
+  refine forall_congr' fun g ↦ ?_
+  have h : σ g (e v) = e (ρ g v) :=
+    (IntertwiningMap.isIntertwining ρ σ e.toIntertwiningMap g v).symm
+  rw [h, ← map_smul, (EquivLike.injective e).eq_iff]
 
 /-- A linear map commuting with every `ρ g` preserves the subspace on which `ρ` acts through `c`. -/
 theorem map_mem_weightSpace_of_commute {ρ : Representation k G V} {c : G →* k} {v : V}
