@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.Valuation.Integers
 public import TauCeti.Topology.Algebra.Valued.NormedValued
 import Mathlib.RingTheory.AdicCompletion.Functoriality
 import TauCeti.RingTheory.AdicCompletion.Finite
+import TauCeti.RingTheory.AdicCompletion.Sup
 import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.WittVector.Units
 
@@ -52,6 +53,8 @@ with pair of definition `(A_inf, (p, [ϖ]))`.
   and `ϖ`-adically precomplete, then `𝕎 R` is `(p, [ϖ])`-adically precomplete.
 * `WittVector.isAdicComplete_span_p_teichmuller`: if `R` is perfect of characteristic
   `p` and `ϖ`-adically complete, then `𝕎 R` is `(p, [ϖ])`-adically complete.
+* `WittVector.isAdicComplete_span_pair_of_dvd_coeff_zero`: under the same hypotheses, `𝕎 R` is
+  `(a, c)`-adically complete whenever `ϖ` divides the zeroth Witt coordinates of `a` and `c`.
 * `TauCeti.WittVector.completeSpace_and_t2Space_adicTopology_span_p_teichmuller`: under the same
   hypotheses, the `(p, [ϖ])`-adic topology on `𝕎 R` is complete and Hausdorff.
 * `Valuation.Integers.isAdicComplete_span_p_teichmuller`: for the ring of integers `𝒪_F` of a
@@ -285,6 +288,15 @@ instance isPrecomplete_span_p_teichmuller (ϖ : R) [IsPrecomplete (span {ϖ}) R]
 `(p, [ϖ])`-adically complete. -/
 instance isAdicComplete_span_p_teichmuller (ϖ : R) [IsAdicComplete (span {ϖ}) R] :
     IsAdicComplete (span {(p : 𝕎 R), teichmuller p ϖ}) (𝕎 R) where
+
+/-- If `R` is perfect of characteristic `p` and `ϖ`-adically complete, then `𝕎 R` is
+`(a, c)`-adically complete for all `a, c` whose zeroth Witt coordinates are divisible by `ϖ`: both
+lie in `(p, [ϖ])`. -/
+theorem isAdicComplete_span_pair_of_dvd_coeff_zero {ϖ : R} [IsAdicComplete (span {ϖ}) R]
+    {a c : 𝕎 R} (ha : ϖ ∣ a.coeff 0) (hc : ϖ ∣ c.coeff 0) :
+    IsAdicComplete (span {a, c}) (𝕎 R) :=
+  .span_pair_of_mem (I := span {(p : 𝕎 R), teichmuller p ϖ}) (mem_span_p_teichmuller_iff.mpr ha)
+    (mem_span_p_teichmuller_iff.mpr hc)
 
 end PerfectRing
 

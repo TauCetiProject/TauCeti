@@ -30,8 +30,10 @@ An element is squarefree exactly when the length of the quotient by its principa
 ideal (`Ring.ord`) is at most one. This detects reducedness of principal divisors at
 codimension-one points.
 
-A module of finite length over a discrete valuation ring is torsion, and a submodule of finite
-colength in `O^ι` is spanned by the rows of a square matrix. The rows of a square matrix `M` span
+A module of finite length over a discrete valuation ring is torsion, a module is torsion exactly
+when each of its elements is killed by a power of a uniformizer
+(`IsDiscreteValuationRing.isTorsion_iff_isTorsion'_powers`), and a submodule of finite colength in
+`O^ι` is spanned by the rows of a square matrix. The rows of a square matrix `M` span
 a submodule of colength `v(det M)`, infinite when `det M = 0`
 (`Matrix.length_quotient_span_range_eq_addVal_det`). For an arbitrary rectangular matrix with a
 nonempty family of full-column row selections, the row-span colength is the least valuation of
@@ -122,6 +124,22 @@ theorem isTorsion_of_length_ne_top {M : Type*} [AddCommGroup M] [Module O M]
   rw [← sub_eq_zero]
   by_contra hrs
   exact hx ⟨⟨r - s, mem_nonZeroDivisors_of_ne_zero hrs⟩, by simpa [sub_smul, sub_eq_zero] using h⟩
+
+/-- **Torsion modules over a discrete valuation ring are primary.** For a uniformizer `ϖ`, an
+`O`-module is torsion exactly when each of its elements is killed by a power of `ϖ`. -/
+theorem isTorsion_iff_isTorsion'_powers {M : Type*} [AddCommMonoid M] [Module O M] {ϖ : O}
+    (hϖ : Irreducible ϖ) : Module.IsTorsion O M ↔ Module.IsTorsion' M (Submonoid.powers ϖ) := by
+  rw [Submodule.isTorsion'_powers_iff]
+  refine ⟨fun hM x ↦ ?_, fun h x ↦ ?_⟩
+  · obtain ⟨r, hr⟩ := @hM x
+    obtain ⟨m, u, hu⟩ := eq_unit_mul_pow_irreducible (nonZeroDivisors.ne_zero r.property) hϖ
+    refine ⟨m, ?_⟩
+    have h : (u : O) • ϖ ^ m • x = 0 := by
+      rw [smul_smul, ← hu]
+      exact hr
+    simpa [smul_smul] using congr_arg ((↑u⁻¹ : O) • ·) h
+  · obtain ⟨m, hm⟩ := h x
+    exact ⟨⟨ϖ ^ m, mem_nonZeroDivisors_of_ne_zero (pow_ne_zero m hϖ.ne_zero)⟩, hm⟩
 
 /-- A submodule of finite colength in `O^ι` is spanned by the rows of a square matrix: it is free
 (`O` is a principal ideal domain) and contains `c • O^ι` for some `c ≠ 0`, so it has rank
