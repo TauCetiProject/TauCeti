@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Deformation.Lift
 public import TauCeti.RingTheory.Deformation.PredeformationFunctor
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Pullback
+import TauCeti.RingTheory.FiberProduct.Basic
 
 /-!
 # Gluing lifts and strict classes over Artinian coefficient rings
@@ -43,14 +44,40 @@ local notation "P" => ArtinLocalAlg.pullback f g hg
 local notation "p₁" => pullbackFst f g hg
 local notation "p₂" => pullbackSnd f g hg
 
+-- The coefficient pullback has the ring-pullback carrier, but its bundled projections and
+-- `GeneralLinearGroup.map` are opaque. Compare the maps through their public application equations.
+private theorem map_pullbackFst :
+    GeneralLinearGroup.map ((p₁).hom.left.hom : (P).obj.left →+* A₁.obj.left) =
+      Units.map ((RingHom.pullbackFst (f.hom.left.hom : A₁.obj.left →+* B.obj.left)
+        (g.hom.left.hom : A₂.obj.left →+* B.obj.left)).mapMatrix (m := n)).toMonoidHom :=
+  MonoidHom.ext fun u ↦ GeneralLinearGroup.ext fun i j ↦
+    (GeneralLinearGroup.map_apply _ i j u).trans
+      (pullbackFst_hom_left_hom_apply f g hg _)
+
+private theorem map_pullbackSnd :
+    GeneralLinearGroup.map ((p₂).hom.left.hom : (P).obj.left →+* A₂.obj.left) =
+      Units.map ((RingHom.pullbackSnd (f.hom.left.hom : A₁.obj.left →+* B.obj.left)
+        (g.hom.left.hom : A₂.obj.left →+* B.obj.left)).mapMatrix (m := n)).toMonoidHom :=
+  MonoidHom.ext fun u ↦ GeneralLinearGroup.ext fun i j ↦
+    (GeneralLinearGroup.map_apply _ i j u).trans
+      (pullbackSnd_hom_left_hom_apply f g hg _)
+
 /-- Two lifts over a coefficient fibre product agree if their projections agree. -/
 theorem Lift.eq_of_map_pullback_eq {ρ σ : Lift ρbar P}
     (h₁ : ρ.map p₁ = σ.map p₁) (h₂ : ρ.map p₂ = σ.map p₂) : ρ = σ := by
-  refine Lift.ext fun x ↦ GeneralLinearGroup.ext fun i j ↦ ArtinLocalAlg.pullback_ext f g hg ?_ ?_
-  · simpa only [Lift.map_apply, GeneralLinearGroup.map_apply, AlgHom.coe_toRingHom] using
-      congrArg (fun t : Lift ρbar A₁ ↦ (t x) i j) h₁
-  · simpa only [Lift.map_apply, GeneralLinearGroup.map_apply, AlgHom.coe_toRingHom] using
-      congrArg (fun t : Lift ρbar A₂ ↦ (t x) i j) h₂
+  -- The exposed coefficient-pullback carrier is the ring pullback; the bundled projections
+  -- are compared through their named application equations.
+  refine Lift.ext fun x ↦ GeneralLinearGroup.ext fun i j ↦ RingHom.pullback_ext
+    (p := (f.hom.left.hom : A₁.obj.left →+* B.obj.left))
+    (q := (g.hom.left.hom : A₂.obj.left →+* B.obj.left)) ?_ ?_
+  · have hx := congrArg (fun t : Lift ρbar A₁ ↦ (t x) i j) h₁
+    simp only [Lift.map_apply, GeneralLinearGroup.map_apply, AlgHom.coe_toRingHom,
+      pullbackFst_hom_left_hom_apply] at hx
+    exact hx
+  · have hx := congrArg (fun t : Lift ρbar A₂ ↦ (t x) i j) h₂
+    simp only [Lift.map_apply, GeneralLinearGroup.map_apply, AlgHom.coe_toRingHom,
+      pullbackSnd_hom_left_hom_apply] at hx
+    exact hx
 
 -- The coefficient pullback uses the same carrier as the ring pullback. These abbreviations
 -- let the matrix equivalence compute before passing to the bundled coefficient projections.
@@ -65,24 +92,6 @@ private noncomputable abbrev pullbackGL :
   RingHom.pullbackGLEquiv (f.hom.left.hom : A₁.obj.left →+* B.obj.left)
     (g.hom.left.hom : A₂.obj.left →+* B.obj.left) n
 
-private theorem map_fst_pullbackGL_symm (x : compatibleGL (n := n) f g) :
-    GeneralLinearGroup.map ((p₁).hom.left.hom : (P).obj.left →+* A₁.obj.left)
-      ((pullbackGL f g hg).symm x) = x.val.1 :=
-  GeneralLinearGroup.ext fun i j ↦
-    (GeneralLinearGroup.map_apply _ i j _).trans
-      ((pullbackFst_hom_left_hom_apply f g hg _).trans
-        (congrArg (fun u : GL n A₁.obj.left ↦ u i j)
-          (RingHom.unitsMap_pullbackFst_pullbackGLEquiv_symm _ _ x)))
-
-private theorem map_snd_pullbackGL_symm (x : compatibleGL (n := n) f g) :
-    GeneralLinearGroup.map ((p₂).hom.left.hom : (P).obj.left →+* A₂.obj.left)
-      ((pullbackGL f g hg).symm x) = x.val.2 :=
-  GeneralLinearGroup.ext fun i j ↦
-    (GeneralLinearGroup.map_apply _ i j _).trans
-      ((pullbackSnd_hom_left_hom_apply f g hg _).trans
-        (congrArg (fun u : GL n A₂.obj.left ↦ u i j)
-          (RingHom.unitsMap_pullbackSnd_pullbackGLEquiv_symm _ _ x)))
-
 /-- Compatible lifts in the chosen basis glue uniquely over the coefficient fibre product. -/
 theorem Lift.existsUnique_map_pullback {ρ₁ : Lift ρbar A₁} {ρ₂ : Lift ρbar A₂}
     (h : ρ₁.map f = ρ₂.map g) :
@@ -93,6 +102,10 @@ theorem Lift.existsUnique_map_pullback {ρ₁ : Lift ρbar A₁} {ρ₂ : Lift �
     exact hx
   let e := pullbackGL (n := n) f g hg
   let ρ : G →* GL n (P).obj.left := e.symm.toMonoidHom.comp pair
+  have hρ₁ (x : G) :
+      GeneralLinearGroup.map ((p₁).hom.left.hom : (P).obj.left →+* A₁.obj.left) (ρ x) = ρ₁ x := by
+    rw [map_pullbackFst f g hg]
+    exact RingHom.unitsMap_pullbackFst_pullbackGLEquiv_symm _ _ (pair x)
   have hcont : IsLocallyConstant ρ := (IsLocallyConstant.iff_eventually_eq _).mpr fun x ↦ by
     filter_upwards [ρ₁.isLocallyConstant.eventually_eq x, ρ₂.isLocallyConstant.eventually_eq x]
       with y hy₁ hy₂
@@ -100,11 +113,13 @@ theorem Lift.existsUnique_map_pullback {ρ₁ : Lift ρbar A₁} {ρ₂ : Lift �
   let t : Lift ρbar P := ⟨ρ, hcont, MonoidHom.ext fun x ↦ by
     rw [MonoidHom.comp_apply, ← map_augmentation_map p₁ (ρ x)]
     exact congrArg (GeneralLinearGroup.map (A₁.augmentation : A₁.obj.left →+* k))
-      (map_fst_pullbackGL_symm f g hg (pair x)) |>.trans (ρ₁.map_augmentation_apply x)⟩
+      (hρ₁ x) |>.trans (ρ₁.map_augmentation_apply x)⟩
   have ht₁ : t.map p₁ = ρ₁ := Lift.ext fun x ↦
-    (Lift.map_apply p₁ t x).trans (map_fst_pullbackGL_symm f g hg (pair x))
+    (Lift.map_apply p₁ t x).trans (hρ₁ x)
   have ht₂ : t.map p₂ = ρ₂ := Lift.ext fun x ↦
-    (Lift.map_apply p₂ t x).trans (map_snd_pullbackGL_symm f g hg (pair x))
+    (Lift.map_apply p₂ t x).trans (by
+      rw [map_pullbackSnd f g hg]
+      exact RingHom.unitsMap_pullbackSnd_pullbackGLEquiv_symm _ _ (pair x))
   exact ⟨t, ⟨ht₁, ht₂⟩, fun σ hσ ↦
     Lift.eq_of_map_pullback_eq f g hg (hσ.1.trans ht₁.symm) (hσ.2.trans ht₂.symm)⟩
 
@@ -117,11 +132,16 @@ theorem ArtinLocalAlg.exists_strictKernelMap_pullback {a₁ : A₁.strictKernel 
     simpa only [coe_strictKernelMap_apply] using congrArg Subtype.val h
   let pair : compatibleGL (n := n) f g := ⟨(a₁.val, a₂.val), hab⟩
   let b : GL n (P).obj.left := (pullbackGL f g hg).symm pair
-  have hb₁ := map_fst_pullbackGL_symm f g hg pair
+  have hb₁ : GeneralLinearGroup.map ((p₁).hom.left.hom : (P).obj.left →+* A₁.obj.left) b =
+      a₁.val := by
+    rw [map_pullbackFst f g hg]
+    exact RingHom.unitsMap_pullbackFst_pullbackGLEquiv_symm _ _ pair
   have hb : b ∈ (P).strictKernel n :=
     (mem_strictKernel_iff_map_mem p₁).mpr (hb₁.symm ▸ a₁.property)
   exact ⟨⟨b, hb⟩, Subtype.ext ((coe_strictKernelMap_apply p₁ _).trans hb₁),
-    Subtype.ext ((coe_strictKernelMap_apply p₂ _).trans (map_snd_pullbackGL_symm f g hg pair))⟩
+    Subtype.ext ((coe_strictKernelMap_apply p₂ _).trans (by
+      rw [map_pullbackSnd f g hg]
+      exact RingHom.unitsMap_pullbackSnd_pullbackGLEquiv_symm _ _ pair))⟩
 
 end Pullback
 
