@@ -17,6 +17,8 @@ chain starts at rank `r + 1 - m` and adds `5 * r + 1` at each step. The bounds b
 its initial rank from the chain length, control the final definite rank and the weight gap, and
 compare the tower exponent with the logarithmic scale of the second prime-sum cutoff. They depend
 only on numerical rank and scale inequalities, not on the cyclotomic field or the prime levels.
+The comparison `pow_le_sqrt_of_log_cutoff` bounds the Frobenius-cycle power of the second
+cutoff using `l₀_le`, `Real.log_pow`, and the sixth-power separation of the logarithmic scales.
 
 For a dyadic chain length `m = 2^e` with `e ≠ 0` and a ternary target rank `r = 3^j`, the initial
 rank is even, as needed for indexing the derivative rows. When `r ≥ 2`, the half-gap is at least
@@ -24,7 +26,7 @@ the initial rank plus one rank increment. At the dyadic chain length, `m^594 ≤
 
 The normalization and constants are those of `New.Data` in `New/Reduction/Data/Magnitudes.lean`
 and `New/Reduction/Data/Sizes.lean` in the `grh` folder of
-<https://github.com/lsernau/grh-lean> at commit `72fead1`.
+<https://github.com/lsernau/grh-lean> at commit `72fead1` (Apache 2.0).
 -/
 
 public section
@@ -156,6 +158,39 @@ theorem towerExponent_le_log_cutoff {x x₁ s : ℕ} (hscale : x ^ 1000000 ≤ x
       mul_le_mul_of_nonneg_right (by norm_num) (Real.log_natCast_nonneg _)
     _ = Real.log ((x : ℝ) ^ (1000000 : ℕ)) := by simp [Real.log_pow]
     _ ≤ Real.log x₁ := Real.log_le_log (pow_pos hx' _) hs'
+
+/-- At a second cutoff `x₁` with `log x₁ ≥ 35` and tower exponent `s ≤ log x₁`, the scale
+separation `(log x₁)^6 ≤ log b` gives `x₁^(3(l₀ s)^2) ≤ √b`. This is the cutoff bound
+used in the marked-prime degree estimate `New.Data.x₁_pow_le_sqrt_b` of lsernau/grh-lean
+(Apache 2.0). -/
+theorem pow_le_sqrt_of_log_cutoff {x₁ b s : ℕ} (hlarge : 35 ≤ Real.log (x₁ : ℝ))
+    (hs : (s : ℝ) ≤ Real.log (x₁ : ℝ)) (hsep : Real.log (x₁ : ℝ) ^ 6 ≤ Real.log (b : ℝ)) :
+    (x₁ : ℝ) ^ (3 * l₀ s ^ 2) ≤ √(b : ℝ) := by
+  have hl : (l₀ s : ℝ) ≤ 81 * Real.log (x₁ : ℝ) := by
+    rcases s.eq_zero_or_pos with rfl | hpos
+    · norm_num only [l₀_def, Nat.log_zero_right, zero_add, Nat.cast_pow, Nat.cast_ofNat]
+      linarith
+    · have hbound : (l₀ s : ℝ) ≤ 81 * (s : ℝ) := by exact_mod_cast l₀_le hpos.ne'
+      exact hbound.trans (by gcongr)
+  have hpow : (6 : ℝ) * (l₀ s : ℝ) ^ 2 * Real.log (x₁ : ℝ) ≤ Real.log (b : ℝ) := by
+    calc
+      _ ≤ 6 * (81 * Real.log (x₁ : ℝ)) ^ 2 * Real.log (x₁ : ℝ) := by gcongr
+      _ = (6 * 81 ^ 2) * Real.log (x₁ : ℝ) ^ 3 := by ring
+      _ ≤ Real.log (x₁ : ℝ) ^ 3 * Real.log (x₁ : ℝ) ^ 3 := by
+        gcongr
+        calc
+          (6 * 81 ^ 2 : ℝ) ≤ 35 ^ 3 := by norm_num
+          _ ≤ _ := by gcongr
+      _ = Real.log (x₁ : ℝ) ^ 6 := by ring
+      _ ≤ _ := hsep
+  have hx₁ : 0 < (x₁ : ℝ) := zero_lt_one.trans
+    ((Real.log_pos_iff (Nat.cast_nonneg x₁)).mp (by linarith))
+  have hlogb : 0 < Real.log (b : ℝ) := (pow_pos (by linarith) _).trans_le hsep
+  have hb : 0 < (b : ℝ) := zero_lt_one.trans ((Real.log_pos_iff (Nat.cast_nonneg b)).mp hlogb)
+  apply Real.le_sqrt_of_sq_le
+  apply (Real.log_le_log_iff (by positivity) hb).mp
+  simp only [Real.log_pow, Nat.cast_mul, Nat.cast_pow, Nat.cast_ofNat]
+  linarith only [hpow]
 
 /-- At chain length `m = 2^e` and tower exponent `s = 22e`, the auxiliary exponent `l₀ s`
 gives `m^594 ≤ 2^(l₀ s)`. -/
