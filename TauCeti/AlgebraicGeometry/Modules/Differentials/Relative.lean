@@ -22,8 +22,19 @@ import TauCeti.RingTheory.Kaehler.BaseChange
 For a morphism `f : X ⟶ S`, the sheaf of relative differentials is the cokernel of the
 absolute cotangent map `f^* Ω_{S/ℤ} ⟶ Ω_{X/ℤ}`. Over compatible affine opens, the
 Jacobi–Zariski sequence identifies its sections with the Kähler differentials of the
-coordinate-ring map. This comparison identifies the maps on differentials induced by
-commutative squares, and gives the base-change isomorphism for cartesian squares.
+coordinate-ring map (`Scheme.Hom.relativeDifferentialsSectionsEquiv`). The underlying
+`TauCeti.AlgebraicGeometry.cotangentCokernelSectionsEquiv` works over any base ring.
+
+The sheaf represents relative derivations (`Scheme.Hom.relativeDifferentialsHomEquiv`).
+For a scheme over `Spec R`, `Scheme.relativeDifferentialsIsoOverSpec` compares it with the
+sheaf of differentials over `R`. Over the inverse image of an affine open in the base,
+`Scheme.Hom.relativeDifferentialsRestrictPreimageIso` gives the corresponding local comparison.
+The sheaf is quasi-coherent and is of finite type or finite presentation when the morphism
+is locally of finite type or locally of finite presentation, respectively.
+
+A commutative square induces the canonical map `g'^* Ω_{X/S} ⟶ Ω_{X'/S'}`
+(`Scheme.Hom.relativeDifferentialsPullbackHom`). For a cartesian square this map is an
+isomorphism (`Scheme.Hom.relativeDifferentialsBaseChangeIso`).
 
 ## References
 
@@ -177,6 +188,16 @@ theorem relativeDifferentialsSectionsEquiv_D (f : X ⟶ S)
       f.relativeDifferential U.val a :=
   cotangentCokernelSectionsEquiv_D (ULift.{u} ℤ) f V U hUV a
 
+/-- The inverse affine comparison sends a sheaf differential to the Kähler differential. -/
+@[simp]
+theorem relativeDifferentialsSectionsEquiv_symm_relativeDifferential (f : X ⟶ S)
+    (V : S.affineOpens) (U : X.affineOpens) (hUV : U.val ≤ f ⁻¹ᵁ V.val) (a : Γ(X, U)) :
+    letI : Algebra Γ(S, V) Γ(X, U) := (f.appLE V.val U.val hUV).hom.toAlgebra
+    (f.relativeDifferentialsSectionsEquiv V U hUV).symm (f.relativeDifferential U.val a) =
+      KaehlerDifferential.D Γ(S, V) Γ(X, U) a := by
+  let : Algebra Γ(S, V) Γ(X, U) := (f.appLE V.val U.val hUV).hom.toAlgebra
+  rw [← f.relativeDifferentialsSectionsEquiv_D V U hUV a, LinearEquiv.symm_apply_apply]
+
 /-- The relative differential vanishes on functions pulled back from the base. -/
 @[simp]
 theorem relativeDifferential_appLE (f : X ⟶ S) (V : S.Opens) (U : X.Opens)
@@ -285,7 +306,7 @@ theorem relativeDifferentialsHomEquiv_apply (f : X ⟶ S) {M : X.Modules}
 /-- The morphism associated to a derivation sends the differential of a function to its value
 under that derivation. -/
 @[simp]
-theorem relativeDifferentialsHomEquiv_symm_app_d (f : X ⟶ S) {M : X.Modules}
+theorem relativeDifferentialsHomEquiv_symm_app_relativeDifferential (f : X ⟶ S) {M : X.Modules}
     (D : PresheafOfModulesOfCommRing.Derivation M.val f.c) (U : X.Opens) (a : Γ(X, U)) :
     ((f.relativeDifferentialsHomEquiv M).symm D).app U (f.relativeDifferential U a) =
       D.d (X := op U) a :=
@@ -411,7 +432,7 @@ private theorem pullback_π_comp_relativeDifferentialsPullbackHom :
 /-- The map on relative differentials sends the pullback of a differential to the differential
 of the pulled-back function, also after restricting to a smaller open. -/
 @[simp]
-theorem relativeDifferentialsPullbackHom_app_pullbackSectionsLE_d
+theorem relativeDifferentialsPullbackHom_app_pullbackSectionsLE_relativeDifferential
     (U : X.Opens) (U' : X'.Opens) (hU : U' ≤ g' ⁻¹ᵁ U) (a : Γ(X, U)) :
     (relativeDifferentialsPullbackHom g' H).app U'
         (g'.pullbackSectionsLE f.relativeDifferentials U U' hU (f.relativeDifferential U a)) =
@@ -437,12 +458,11 @@ variable {g' : X' ⟶ X} {f : X ⟶ S} {f' : X' ⟶ S'} {g : S' ⟶ S}
 
 private theorem bijective_relativeDifferentialsPullbackHom_app (H : IsPullback g' f' f g)
     (V : S.affineOpens) (U : X.affineOpens) (V' : S'.affineOpens)
-    (hU : U.val ≤ f ⁻¹ᵁ V.val) (hV' : V'.val ≤ g ⁻¹ᵁ V.val) :
+    (hU : U.val ≤ f ⁻¹ᵁ V.val) (hV' : V'.val ≤ g ⁻¹ᵁ V.val)
+    (hW : IsAffineOpen (g' ⁻¹ᵁ U.val ⊓ f' ⁻¹ᵁ V'.val)) :
     Function.Bijective ((relativeDifferentialsPullbackHom g' H.toCommSq).app
       (g' ⁻¹ᵁ U.val ⊓ f' ⁻¹ᵁ V'.val)) := by
   let W := g' ⁻¹ᵁ U.val ⊓ f' ⁻¹ᵁ V'.val
-  have hW : IsAffineOpen W :=
-    .of_isIso (Scheme.Hom.isPullback_resLE H hV' hU (UY := W) rfl).isoPullback.hom
   let R := Γ(S, V)
   let R' := Γ(S', V')
   let A := Γ(X, U)
@@ -481,8 +501,8 @@ private theorem bijective_relativeDifferentialsPullbackHom_app (H : IsPullback g
       LinearEquiv.baseChange_tmul]
     refine (congrArg φ ((hρ.equiv_tmul 1 _).trans ((one_smul B _).trans
       (congrArg ρ (f.relativeDifferentialsSectionsEquiv_D V U hU a))))).trans ?_
-    refine (relativeDifferentialsPullbackHom_app_pullbackSectionsLE_d g' H.toCommSq
-      U.val W inf_le_left a).trans ?_
+    refine (relativeDifferentialsPullbackHom_app_pullbackSectionsLE_relativeDifferential
+      g' H.toCommSq U.val W inf_le_left a).trans ?_
     refine ((f'.relativeDifferentialsSectionsEquiv_D V' ⟨W, hW⟩ inf_le_right
       (g'.appLE U.val W inf_le_left a)).symm).trans ?_
     exact (congrArg (f'.relativeDifferentialsSectionsEquiv V' ⟨W, hW⟩ inf_le_right)
@@ -499,8 +519,9 @@ theorem isIso_relativeDifferentialsPullbackHom (H : IsPullback g' f' f g) :
   let I := Σ V : S.affineOpens,
     {U : X.affineOpens // U.val ≤ f ⁻¹ᵁ V.val} × {V' : S'.affineOpens // V'.val ≤ g ⁻¹ᵁ V.val}
   let W (i : I) := g' ⁻¹ᵁ i.2.1.val.val ⊓ f' ⁻¹ᵁ i.2.2.val.val
-  refine Scheme.Modules.Hom.isIso_of_bijective_app _ (U := W) (fun i ↦ ?_) ?_ (fun i ↦ ?_)
-  · exact .of_isIso (isPullback_resLE H i.2.2.property i.2.1.property rfl).isoPullback.hom
+  have hW (i : I) : IsAffineOpen (W i) :=
+    .of_isIso (isPullback_resLE H i.2.2.property i.2.1.property (UY := W i) rfl).isoPullback.hom
+  refine Scheme.Modules.Hom.isIso_of_bijective_app _ hW ?_ (fun i ↦ ?_)
   · refine top_unique fun x _ ↦ ?_
     obtain ⟨V, hV, hxV, _⟩ := exists_isAffineOpen_mem_and_subset
       (x := f (g' x)) (U := ⊤) trivial
@@ -513,7 +534,7 @@ theorem isIso_relativeDifferentialsPullbackHom (H : IsPullback g' f' f g) :
     exact TopologicalSpace.Opens.mem_iSup.mpr ⟨⟨⟨V, hV⟩, ⟨⟨U, hU⟩, hUV⟩, ⟨⟨V', hV'⟩, hV'V⟩⟩,
       TopologicalSpace.Opens.mem_inf.mpr ⟨hxU, hxV'⟩⟩
   · exact bijective_relativeDifferentialsPullbackHom_app H i.1 i.2.1.val i.2.2.val
-      i.2.1.property i.2.2.property
+      i.2.1.property i.2.2.property (hW i)
 
 variable (g') in
 /-- Canonical base change of the sheaf of relative differentials along a cartesian square. -/
@@ -532,22 +553,80 @@ theorem relativeDifferentialsBaseChangeIso_hom (H : IsPullback g' f' f g) :
 
 end BaseChange
 
+/-- The scheme over `Spec Γ(S,V)` obtained by restricting `f` to an affine open `V` of `S`. -/
+@[instance_reducible]
+def restrictPreimageOverSpec (f : X ⟶ S) (V : S.affineOpens) :
+    (f ⁻¹ᵁ V.val).toScheme.Over (Spec (.of Γ(S, V))) :=
+  ⟨(f ∣_ V.val) ≫ V.property.isoSpec.hom⟩
+
+/-- The induced structure morphism is the restriction of `f` followed by the affine-open
+isomorphism. -/
+theorem restrictPreimageOverSpec_over (f : X ⟶ S) (V : S.affineOpens) :
+    CategoryTheory.over _ _ (f.restrictPreimageOverSpec V) =
+      (f ∣_ V.val) ≫ V.property.isoSpec.hom :=
+  (rfl)
+
+section RestrictPreimage
+
+variable (f : X ⟶ S) (V : S.affineOpens)
+
+private theorem isPullback_restrictPreimageOverSpec :
+    IsPullback (f ⁻¹ᵁ V.val).ι (CategoryTheory.over _ _ (f.restrictPreimageOverSpec V)) f
+      (V.property.isoSpec.inv ≫ V.val.ι) :=
+  (isPullback_morphismRestrict f V.val).flip.of_iso
+    (.refl _) (.refl _) V.property.isoSpec (.refl _) (by simp)
+    (by simp [restrictPreimageOverSpec_over]) (by simp) (by simp)
+
 /-- On the inverse image of an affine open `V` of the base, the relative differentials are the
 differentials over `Γ(S, V)` with the induced structure morphism. -/
-def relativeDifferentialsRestrictIso (f : X ⟶ S) (V : S.affineOpens) :
-    let U := f ⁻¹ᵁ V.val
-    let : U.toScheme.Over (Spec (.of Γ(S, V))) := ⟨(f ∣_ V.val) ≫ V.property.isoSpec.hom⟩
-    f.relativeDifferentials.restrict U.ι ≅ U.toScheme.relativeDifferentials Γ(S, V) := by
-  let U := f ⁻¹ᵁ V.val
-  let k := (f ∣_ V.val) ≫ V.property.isoSpec.hom
-  let : U.toScheme.Over (Spec (.of Γ(S, V))) := ⟨k⟩
-  have H : IsPullback U.ι k f (V.property.isoSpec.inv ≫ V.val.ι) :=
-    (isPullback_morphismRestrict f V.val).flip.of_iso
-      (.refl _) (.refl _) V.property.isoSpec (.refl _) (by simp [U]) (by simp [k])
-      (by simp) (by simp)
-  exact (Scheme.Modules.restrictFunctorIsoPullback U.ι).app f.relativeDifferentials ≪≫
-    relativeDifferentialsBaseChangeIso U.ι H ≪≫
-      (Scheme.relativeDifferentialsIsoOverSpec Γ(S, V) U.toScheme).symm
+def relativeDifferentialsRestrictPreimageIso :
+    f.relativeDifferentials.restrict (f ⁻¹ᵁ V.val).ι ≅
+      @Scheme.relativeDifferentials Γ(S, V) _ _ (f.restrictPreimageOverSpec V) :=
+  (Scheme.Modules.restrictFunctorIsoPullback (f ⁻¹ᵁ V.val).ι).app f.relativeDifferentials ≪≫
+    relativeDifferentialsBaseChangeIso (f ⁻¹ᵁ V.val).ι (isPullback_restrictPreimageOverSpec f V) ≪≫
+      (@Scheme.relativeDifferentialsIsoOverSpec Γ(S, V) _ _ (f.restrictPreimageOverSpec V)).symm
+
+/-- Restriction over an affine open of the base carries the differential of a local function
+to the differential of its pullback to the inverse-image scheme. -/
+@[simp]
+theorem relativeDifferentialsRestrictPreimageIso_hom_app_relativeDifferential
+    (W : (f ⁻¹ᵁ V.val).toScheme.Opens) (a : Γ(X, (f ⁻¹ᵁ V.val).ι ''ᵁ W)) :
+    (f.relativeDifferentialsRestrictPreimageIso V).hom.app W
+        ((f.relativeDifferentials.restrictAppIso (f ⁻¹ᵁ V.val).ι W).inv
+          (f.relativeDifferential ((f ⁻¹ᵁ V.val).ι ''ᵁ W) a)) =
+      (@Scheme.universalDerivation Γ(S, V) _ _ (f.restrictPreimageOverSpec V)).d
+        (X := op W) (((f ⁻¹ᵁ V.val).ι.appIso W).hom a) := by
+  let j := (f ⁻¹ᵁ V.val).ι
+  let e := @Scheme.relativeDifferentialsIsoOverSpec Γ(S, V) _ _ (f.restrictPreimageOverSpec V)
+  let b := (j.appIso W).hom a
+  trans e.inv.app W ((CategoryTheory.over _ _ (f.restrictPreimageOverSpec V)).relativeDifferential
+    W b)
+  · simp only [relativeDifferentialsRestrictPreimageIso, Iso.trans_hom, Iso.app_hom,
+      Scheme.Modules.Hom.comp_app, Iso.symm_hom, ConcreteCategory.comp_apply,
+      Scheme.Modules.restrictFunctorIsoPullback_hom_app_restrictAppIso_inv,
+      relativeDifferentialsBaseChangeIso_hom,
+      relativeDifferentialsPullbackHom_app_pullbackSectionsLE_relativeDifferential,
+      e, b, j, Scheme.Hom.appIso_hom']
+  · have h := @Scheme.relativeDifferentialsIsoOverSpec_hom_app_d Γ(S, V) _ _
+      (f.restrictPreimageOverSpec V) W b
+    exact (congrArg (e.inv.app W) h.symm).trans (congr($(e.hom_inv_id).app W _))
+
+/-- The inverse comparison sends a differential to the restriction of the differential of the
+corresponding function on the image open. -/
+@[simp]
+theorem relativeDifferentialsRestrictPreimageIso_inv_app_d
+    (W : (f ⁻¹ᵁ V.val).toScheme.Opens) (a : Γ((f ⁻¹ᵁ V.val).toScheme, W)) :
+    (f.relativeDifferentialsRestrictPreimageIso V).inv.app W
+        ((@Scheme.universalDerivation Γ(S, V) _ _ (f.restrictPreimageOverSpec V)).d (X := op W) a) =
+      (f.relativeDifferentials.restrictAppIso (f ⁻¹ᵁ V.val).ι W).inv
+        (f.relativeDifferential ((f ⁻¹ᵁ V.val).ι ''ᵁ W) (((f ⁻¹ᵁ V.val).ι.appIso W).inv a)) := by
+  have h := f.relativeDifferentialsRestrictPreimageIso_hom_app_relativeDifferential V W
+    (((f ⁻¹ᵁ V.val).ι.appIso W).inv a)
+  simp only [Iso.inv_hom_id_apply] at h
+  let e := f.relativeDifferentialsRestrictPreimageIso V
+  exact (congrArg (e.inv.app W) h.symm).trans (congr($(e.hom_inv_id).app W _))
+
+end RestrictPreimage
 
 /-- Relative differentials of a morphism locally of finite type are of finite type. -/
 instance isFiniteType_relativeDifferentials (f : X ⟶ S) [LocallyOfFiniteType f] :
@@ -555,14 +634,15 @@ instance isFiniteType_relativeDifferentials (f : X ⟶ S) [LocallyOfFiniteType f
   refine isFiniteType_of_isFiniteType_restrict _ (fun V : S.affineOpens ↦ f ⁻¹ᵁ V.val)
     (f.iSup_preimage_eq_top (iSup_affineOpens_eq_top S)) fun V ↦ ?_
   let U := f ⁻¹ᵁ V.val
-  let : U.toScheme.Over (Spec (.of Γ(S, V))) := ⟨(f ∣_ V.val) ≫ V.property.isoSpec.hom⟩
-  have : LocallyOfFiniteType (U.toScheme ↘ Spec (.of Γ(S, V))) :=
-    inferInstanceAs (LocallyOfFiniteType ((f ∣_ V.val) ≫ V.property.isoSpec.hom))
+  let : U.toScheme.Over (Spec (.of Γ(S, V))) := f.restrictPreimageOverSpec V
+  have : LocallyOfFiniteType (U.toScheme ↘ Spec (.of Γ(S, V))) := by
+    rw [restrictPreimageOverSpec_over]
+    infer_instance
   have : (U.toScheme.relativeDifferentials Γ(S, V)).IsFiniteType :=
     Scheme.Modules.isFiniteType_of_finite_sections _ fun W hW ↦
       finite_relativeDifferentials_sections Γ(S, V) U.toScheme ⟨W, hW⟩
   exact SheafOfModules.IsFiniteType.of_iso (R := U.toScheme.ringCatSheaf)
-    (f.relativeDifferentialsRestrictIso V).symm
+    (f.relativeDifferentialsRestrictPreimageIso V).symm
 
 /-- Relative differentials of a morphism locally of finite presentation are finitely presented. -/
 instance isFinitePresentation_relativeDifferentials (f : X ⟶ S) [LocallyOfFinitePresentation f] :
@@ -571,11 +651,12 @@ instance isFinitePresentation_relativeDifferentials (f : X ⟶ S) [LocallyOfFini
     (fun V : S.affineOpens ↦ f ⁻¹ᵁ V.val)
     (f.iSup_preimage_eq_top (iSup_affineOpens_eq_top S)) fun V ↦ ?_
   let U := f ⁻¹ᵁ V.val
-  let : U.toScheme.Over (Spec (.of Γ(S, V))) := ⟨(f ∣_ V.val) ≫ V.property.isoSpec.hom⟩
-  have : LocallyOfFinitePresentation (U.toScheme ↘ Spec (.of Γ(S, V))) :=
-    inferInstanceAs (LocallyOfFinitePresentation ((f ∣_ V.val) ≫ V.property.isoSpec.hom))
+  let : U.toScheme.Over (Spec (.of Γ(S, V))) := f.restrictPreimageOverSpec V
+  have : LocallyOfFinitePresentation (U.toScheme ↘ Spec (.of Γ(S, V))) := by
+    rw [restrictPreimageOverSpec_over]
+    infer_instance
   exact (SheafOfModules.isFinitePresentation U.toScheme.ringCatSheaf).prop_of_iso
-    (f.relativeDifferentialsRestrictIso V).symm inferInstance
+    (f.relativeDifferentialsRestrictPreimageIso V).symm inferInstance
 
 end AlgebraicGeometry.Scheme.Hom
 

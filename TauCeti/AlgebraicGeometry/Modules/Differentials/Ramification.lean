@@ -29,10 +29,10 @@ import TauCeti.RingTheory.Kaehler.BaseChange
 # The ramification ideal sheaf and the Picard-group Riemann–Hurwitz relation
 
 Let `f : X ⟶ Y` be a morphism of schemes over `Spec R`. The cotangent map
-`cotangentMap R f : f^* Ω_{Y/R} ⟶ Ω_{X/R}` has quasi-coherent cokernel whose sections over
-compatible affine opens `V ⊆ Y` and `U ⊆ f⁻¹(V)` are the relative Kähler differentials
-`Ω[Γ(X, U)⁄Γ(Y, V)]` (`cotangentCokernelSectionsEquiv`), and whose formation commutes with
-arbitrary base change `R → S` (`cotangentCokernelBaseChangeIso`).
+`cotangentMap R f : f^* Ω_{Y/R} ⟶ Ω_{X/R}` has quasi-coherent cokernel whose formation commutes
+with arbitrary base change `R → S` (`cotangentCokernelBaseChangeIso`). The comparison with
+relative Kähler differentials on compatible affine opens is `cotangentCokernelSectionsEquiv`
+in `TauCeti.AlgebraicGeometry.Modules.Differentials.Relative`.
 
 Whenever `cokernel (cotangentMap R f)` is of finite type (in particular whenever `Ω_{X/R}` is of
 finite type), its zeroth Fitting ideal sheaf is the **ramification ideal sheaf**
