@@ -30,7 +30,6 @@ variable {L M : ModCat.{v} C}
 
 /-- Every epimorphism onto a flat module is pure. -/
 theorem Flat.isPureEpi [M.Flat] (p : L ⟶ M) [Epi p] : IsPureEpi p where
-  epi := inferInstance
   lift {_} hP f := by
     obtain ⟨Q, hQ, a, b, hab⟩ := Flat.exists_factorization_of_isFinitelyPresentedFunctor hP f
     have := projective_of_isFiniteFree hQ

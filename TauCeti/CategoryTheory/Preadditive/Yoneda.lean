@@ -69,6 +69,8 @@ which is moreover additive.
   are equal.
 * `CategoryTheory.preadditiveYoneda_obj_hom_app_apply`: a morphism `α` out of `(-, Y)` sends
   `g : X ⟶ Y` to `G(g)` of `α (𝟙 Y)`.
+* `CategoryTheory.NatTrans.epi_of_preadditiveYoneda_lifts`: a natural transformation into an
+  additive functor is epic if every morphism from a representable lifts along it.
 * `CategoryTheory.exists_comp_eq_preadditiveYoneda_obj_of_epi`: lifting along an epimorphism out of
   an additive functor.
 * `CategoryTheory.exists_preadditiveYoneda_map_comp_eq`: lifting along an epimorphism out of a
@@ -141,6 +143,40 @@ theorem preadditiveYoneda_obj_hom_app_apply {Y : C} {G : Cᵒᵖ ⥤ AddCommGrpC
     α.app (op X) g = G.map g.op (α.app (op Y) (𝟙 Y)) := by
   simpa using NatTrans.naturality_apply α g.op (𝟙 Y)
 
+private theorem exists_preadditiveYoneda_obj_hom_app_id_eq {Y : C}
+    {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}} [F.Additive] (x : F.obj (op Y)) :
+    ∃ f : preadditiveYoneda.obj Y ⟶ F, f.app (op Y) (𝟙 Y) = x := by
+  let e := yonedaEquiv (F := F ⋙ forget AddCommGrpCat) (X := Y)
+  let α := e.symm x
+  have happ (Z : Cᵒᵖ) (a : Z.unop ⟶ Y) : α.app Z a = F.map a.op x :=
+    yonedaEquiv_symm_app_apply (F := F ⋙ forget AddCommGrpCat) x Z a
+  -- The ordinary Yoneda morphism is additive at each component since `F` is additive.
+  let f : preadditiveYoneda.obj Y ⟶ F :=
+    { app Z := AddCommGrpCat.ofHom
+        ({ toFun := α.app Z
+           map_zero' := by simp [happ]
+           map_add' a b := by simp [happ] } : (Z.unop ⟶ Y) →+ F.obj Z)
+      naturality Z W h := by
+        ext (a : Z.unop ⟶ Y)
+        exact α.naturality_apply h a }
+  exact ⟨f, e.apply_symm_apply x⟩
+
+/-- A natural transformation into an additive functor is epic if every morphism from a
+representable lifts along it. -/
+theorem NatTrans.epi_of_preadditiveYoneda_lifts {F G : Cᵒᵖ ⥤ AddCommGrpCat.{v}} [G.Additive]
+    (p : F ⟶ G) (h : ∀ ⦃Y : C⦄ (f : preadditiveYoneda.obj Y ⟶ G),
+      ∃ g : preadditiveYoneda.obj Y ⟶ F, g ≫ p = f) : Epi p := by
+  apply (NatTrans.epi_iff_epi_app p).2
+  rintro ⟨Y⟩
+  apply (AddCommGrpCat.epi_iff_surjective _).2
+  intro x
+  obtain ⟨f, hf⟩ := exists_preadditiveYoneda_obj_hom_app_id_eq x
+  obtain ⟨g, hg⟩ := h f
+  refine ⟨g.app (op Y) (𝟙 Y), ?_⟩
+  have hx := congrArg (fun f : preadditiveYoneda.obj Y ⟶ G ↦ f.app (op Y) (𝟙 Y)) hg
+  rw [NatTrans.comp_app] at hx
+  exact (CategoryTheory.comp_apply (g.app (op Y)) (p.app (op Y)) _).symm.trans (hx.trans hf)
+
 /-- A morphism from a representable functor `(-, Y)` to `G` lifts along any epimorphism
 `F ⟶ G` out of an additive functor `F`. -/
 theorem exists_comp_eq_preadditiveYoneda_obj_of_epi {Y : C} {F G : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
@@ -148,20 +184,11 @@ theorem exists_comp_eq_preadditiveYoneda_obj_of_epi {Y : C} {F G : Cᵒᵖ ⥤ A
     ∃ s : preadditiveYoneda.obj Y ⟶ F, s ≫ π = α := by
   obtain ⟨x, hx⟩ :=
     (AddCommGrpCat.epi_iff_surjective (π.app (op Y))).1 inferInstance (α.app (op Y) (𝟙 Y))
-  -- The Yoneda morphism of `x` sends `h : Z ⟶ Y` to `F(h) x`; it respects addition because `F`
-  -- is additive. Elements of `(-, Y)` at `Z` are morphisms `Z ⟶ Y`, but only up to unfolding
-  -- `preadditiveYoneda`, so the components are given on `Z.unop ⟶ Y` and naturality is
-  -- `F.map_comp` applied to `x`.
-  let s : preadditiveYoneda.obj Y ⟶ F :=
-    { app Z := AddCommGrpCat.ofHom (
-        { toFun h := F.map h.op x
-          map_zero' := by simp
-          map_add' a b := by simp } : (Z.unop ⟶ Y) →+ F.obj Z)
-      naturality Z Z' h := by
-        ext (a : Z.unop ⟶ Y)
-        exact ConcreteCategory.congr_hom (F.map_comp a.op h) x }
+  obtain ⟨s, hs⟩ := exists_preadditiveYoneda_obj_hom_app_id_eq x
   refine ⟨s, preadditiveYoneda_obj_hom_ext ?_⟩
-  exact (congrArg (π.app (op Y)) (by simp : F.map (𝟙 Y).op x = x)).trans hx
+  rw [NatTrans.comp_app]
+  exact (CategoryTheory.comp_apply (s.app (op Y)) (π.app (op Y)) _).trans
+    ((congrArg (π.app (op Y)) hs).trans hx)
 
 /-- A morphism from a sum `∐ (-, Y j)` of representable functors to `G` lifts along any
 epimorphism `F ⟶ G` out of an additive functor `F`: lift each summand by

@@ -32,58 +32,37 @@ namespace TauCeti.ModCat
 variable {C : Type u} [Category.{v} C] [Preadditive C]
 variable {L M : ModCat.{v} C}
 
-/-- A pure epimorphism is an epimorphism along which every map from a finitely presented
-module lifts. -/
+/-- A morphism is a pure epimorphism if every map from a finitely presented module lifts
+along it. Such a morphism is epic by `IsPureEpi.epi`. -/
 structure IsPureEpi (p : L ⟶ M) : Prop where
-  /-- The underlying morphism is an epimorphism. -/
-  epi : Epi p
   /-- Maps from finitely presented modules lift along a pure epimorphism. -/
   lift ⦃P : ModCat.{v} C⦄ (hP : IsFinitelyPresentedFunctor P.obj) (f : P ⟶ M) :
     ∃ g : P ⟶ L, g ≫ p = f
+
+/-- A pure epimorphism is epic because maps from representables lift along it. -/
+theorem IsPureEpi.epi {p : L ⟶ M} (hp : IsPureEpi p) : Epi p := by
+  have : M.obj.Additive := (additiveFunctor_iff _).1 M.property
+  apply (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι.epi_of_epi_map
+  refine p.hom.epi_of_preadditiveYoneda_lifts fun Y f ↦ ?_
+  obtain ⟨g, hg⟩ := hp.lift (isFinitelyPresentedFunctor_preadditiveYoneda_obj Y)
+    (ObjectProperty.homMk f : (yoneda C).obj Y ⟶ M)
+  exact ⟨g.hom, congrArg (fun k ↦ k.hom) hg⟩
 
 /-- A morphism is a pure epimorphism if and only if every map from a finitely presented
 module lifts along it. -/
 theorem isPureEpi_iff {p : L ⟶ M} :
     IsPureEpi p ↔
       ∀ ⦃P : ModCat.{v} C⦄, IsFinitelyPresentedFunctor P.obj →
-        ∀ f : P ⟶ M, ∃ g : P ⟶ L, g ≫ p = f := by
-  refine ⟨fun hp _ hP f ↦ hp.lift hP f, fun h ↦ ⟨?_, h⟩⟩
-  apply (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι.epi_of_epi_map
-  apply (NatTrans.epi_iff_epi_app _).2
-  intro X
-  apply (AddCommGrpCat.epi_iff_surjective _).2
-  intro x
-  -- The representable on `X.unop` tests surjectivity at `X` by evaluation on the identity.
-  let f : (yoneda C).obj X.unop ⟶ M := ObjectProperty.homMk
-    { app Y := AddCommGrpCat.ofHom
-        ({ toFun k := M.obj.map k.op x
-           map_zero' := by simp
-           map_add' := by simp } : (Y.unop ⟶ X.unop) →+ M.obj.obj Y)
-      naturality Y Z k := by
-        ext (a : Y.unop ⟶ X.unop)
-        exact ConcreteCategory.congr_hom (M.obj.map_comp a.op k) x }
-  obtain ⟨g, hg⟩ := h (isFinitelyPresentedFunctor_preadditiveYoneda_obj X.unop) f
-  refine ⟨g.hom.app X (𝟙 X.unop), ?_⟩
-  have hx := congrArg (fun k : (yoneda C).obj X.unop ⟶ M ↦ k.hom.app X (𝟙 X.unop)) hg
-  have hf : f.hom.app X (𝟙 X.unop) = x := by
-    -- Unpack the component of the locally constructed Yoneda morphism.
-    change M.obj.map (𝟙 X.unop).op x = x
-    simp
-  rw [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app] at hx
-  exact (CategoryTheory.comp_apply (g.hom.app X) (p.hom.app X) _).symm.trans (hx.trans hf)
+        ∀ f : P ⟶ M, ∃ g : P ⟶ L, g ≫ p = f :=
+  ⟨fun hp _ hP f ↦ hp.lift hP f, fun h ↦ ⟨h⟩⟩
 
 /-- A split epimorphism is pure. -/
 theorem IsPureEpi.of_isSplitEpi (p : L ⟶ M) [IsSplitEpi p] : IsPureEpi p where
-  epi := inferInstance
   lift {_} _ f := ⟨f ≫ section_ p, by simp⟩
 
 /-- The composite of two pure epimorphisms is pure. -/
 theorem IsPureEpi.comp {N : ModCat.{v} C} {p : L ⟶ M} {q : M ⟶ N}
     (hp : IsPureEpi p) (hq : IsPureEpi q) : IsPureEpi (p ≫ q) where
-  epi := by
-    have := hp.epi
-    have := hq.epi
-    infer_instance
   lift {_} hP f := by
     obtain ⟨g, hg⟩ := hq.lift hP f
     obtain ⟨k, hk⟩ := hp.lift hP g
@@ -125,7 +104,7 @@ theorem _root_.CategoryTheory.ShortComplex.ShortExact.isPureEpi_iff_exists_of_co
     exact hp.exists_of_commSq hS.exact hQ sq
   · intro h
     have : Epi S.g := hS.epi_g
-    refine ⟨inferInstance, fun {P} hP f ↦ ?_⟩
+    refine ⟨fun {P} hP f ↦ ?_⟩
     obtain ⟨U, V, hU, hV, d, q, hq, ⟨hq'⟩⟩ :=
       isFinitelyPresentedFunctor_iff_exists_finiteFree_presentation.mp hP
     have := projective_of_isFiniteFree hV
