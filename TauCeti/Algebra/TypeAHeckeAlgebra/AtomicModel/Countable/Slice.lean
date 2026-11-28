@@ -72,13 +72,14 @@ private theorem countableAtomicTrace_eq_mul_of_slice (p : ι → R) (hp : Summab
     summable_of_ne_finset_zero (s := {u}) fun _ ha ↦ by simp [Finset.notMem_singleton.mp ha]
   have h_ite : Summable fun a ↦ if P u a then p a else 0 :=
     (hp.of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun _ ↦ by split_ifs <;> simp).of_norm
-  rw [show (fun a ↦ signedChecked pos q y (single (e (w, a)) 1) (e (w, a)) * ∏ i, p (e (w, a) i)) =
+  have hterm : (fun a ↦ signedChecked pos q y (single (e (w, a)) 1) (e (w, a)) *
+      ∏ i, p (e (w, a) i)) =
       fun a ↦ (((q⁻¹ : Rˣ) : R) * signedChecked pos q x (single w 1) w * ∏ i, p (w i)) *
         ((if a = u then (if pos u then (q : R) ^ 2 else -1) * p u else 0) +
-          ((q : R) ^ 2 - 1) * (if P u a then p a else 0))
-      from funext fun a ↦ by rw [hdiag w a, hprod w a]; split_ifs <;> simp_all [u] <;> ring,
-    (h₁.add (h_ite.mul_left _)).tsum_mul_left, h₁.tsum_add (h_ite.mul_left _), tsum_ite_eq,
-    h_ite.tsum_mul_left, hz u]
+          ((q : R) ^ 2 - 1) * (if P u a then p a else 0)) :=
+    funext fun a ↦ by rw [hdiag w a, hprod w a]; split_ifs <;> simp_all [u] <;> ring
+  rw [hterm, (h₁.add (h_ite.mul_left _)).tsum_mul_left, h₁.tsum_add (h_ite.mul_left _),
+    tsum_ite_eq, h_ite.tsum_mul_left, hz u]
   linear_combination (z * signedChecked pos q x (single w 1) w * ∏ i, p (w i)) * Units.inv_mul q
 
 /-- **Countable first-site (left-slice) Markov rule** for `countableAtomicTrace`. -/

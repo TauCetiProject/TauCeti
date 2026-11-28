@@ -38,8 +38,8 @@ theorem summable_signed_pow_mul_pow {R ι : Type*} [SeminormedRing R] (pos : ι 
     Summable fun a ↦ ‖(if pos a then (1 : R) else -1) ^ m * p a ^ (m + 1)‖ := by
   refine (hp.mul_left (‖(1 : R)‖ * (∑' b, ‖p b‖) ^ m)).of_nonneg_of_le (fun _ ↦ norm_nonneg _)
     fun a ↦ (norm_mul_le _ _).trans ?_
-  rw [show ‖(if pos a then (1 : R) else -1) ^ m‖ = ‖(1 : R)‖ by split_ifs <;> simp, mul_assoc]
-  exact mul_le_mul_of_nonneg_left ((norm_pow_le' (p a) (Nat.succ_pos m)).trans
+  have h1 : ‖(if pos a then (1 : R) else -1) ^ m‖ = ‖(1 : R)‖ := by split_ifs <;> simp
+  rw [h1, mul_assoc]; exact mul_le_mul_of_nonneg_left ((norm_pow_le' (p a) (Nat.succ_pos m)).trans
     (by rw [pow_succ]; gcongr; exact hp.le_tsum a fun _ _ ↦ norm_nonneg _)) (norm_nonneg _)
 
 /-- **Cycle-word countable atomic trace at `Q = 1`** equals the signed `(m + 1)`-th power sum. -/
@@ -95,8 +95,7 @@ theorem countableAtomicTrace_cycleWord_hasProd {K : Type*} [NormedField K]
       (norm_atomicTrace_cycleWord_le _ q _ m).trans (by
         simp only [norm_one, one_mul]; have hs := sum_subtype_norm_le_tsum hp s
         have _ : 0 ≤ ∑ a : s, ‖p a‖ := Finset.sum_nonneg fun _ _ ↦ norm_nonneg _
-        gcongr))).const_mul
-    _)).congr fun s ↦ ?_
+        gcongr))).const_mul _)).congr fun s ↦ ?_
   rw [(atomicTrace_cycleWord_generating_eval (fun a : s ↦ pos a) q (fun a : s ↦ p a)
       ((mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left (sum_subtype_norm_le_tsum hp s)
         (by positivity)) (norm_nonneg x)).trans_lt hx)).2, Finset.univ_eq_attach, s.prod_attach

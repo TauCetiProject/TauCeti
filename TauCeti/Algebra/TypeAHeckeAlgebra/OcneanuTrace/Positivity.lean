@@ -47,10 +47,11 @@ theorem ocneanuTrace_star_mul_self_nonneg {q : ℂˣ} [Fact (IsSelfAdjoint (q : 
   obtain ⟨n, y, rfl⟩ := exists_toInfinite_eq x
   rw [← TypeAHeckeAlgebra.toInfinite_star, ← map_mul]; by_cases hreg : Q = 1 ∧ η = 1 / 2
   · rcases hreg with ⟨rfl, rfl⟩
-    rw [show (q : ℂ) * ((1 / 2 : ℝ) : ℂ) - (↑q⁻¹ : ℂ) * (1 - ((1 / 2 : ℝ) : ℂ)) = 0 by
-        have _ := q.ne_zero; rw [Units.val_inv_eq_inv_val]; push_cast; field_simp
-        linear_combination (by simpa using hQ.symm : (q : ℂ) ^ 2 = 1),
-      map_mul, TypeAHeckeAlgebra.toInfinite_star]; exact ocneanuTrace_zero_star_mul_self_nonneg _
+    have hz0 : (q : ℂ) * ((1 / 2 : ℝ) : ℂ) - (↑q⁻¹ : ℂ) * (1 - ((1 / 2 : ℝ) : ℂ)) = 0 := by
+      have _ := q.ne_zero; rw [Units.val_inv_eq_inv_val]; push_cast; field_simp
+      linear_combination (by simpa using hQ.symm : (q : ℂ) ^ 2 = 1)
+    rw [hz0, map_mul, TypeAHeckeAlgebra.toInfinite_star]
+    exact ocneanuTrace_zero_star_mul_self_nonneg _
   · obtain ⟨r⟩ := TypeAHeckeAlgebra.nonempty_countableAtomicRealization_ocneanuTrace hQ0 hQ hη hreg
     exact r.trace_eq (star y * y) ▸ TypeAHeckeAlgebra.countableAtomicTrace_star_mul_self_nonneg
       r.pos q r.summable_norm_weight (fun a ↦ Complex.zero_le_real.mpr (r.weight_pos a).le) y

@@ -70,8 +70,8 @@ theorem tendsto_coeff_one_add_div_pow {𝕜 : Type*} [Field 𝕜] [Algebra ℚ �
         (Finset.prod_congr rfl fun i hi ↦ Nat.cast_sub ((Finset.mem_range.mp hi).le.trans hkN))
     have hprod : ∏ i ∈ Finset.range k, (1 - (i : 𝕜) * (N : 𝕜)⁻¹) =
         (∏ i ∈ Finset.range k, ((N : 𝕜) - i)) / (N : 𝕜) ^ k := by
-      rw [show (N : 𝕜) ^ k = ∏ _i ∈ Finset.range k, (N : 𝕜) by simp, ← Finset.prod_div_distrib]
-      exact Finset.prod_congr rfl fun i _ ↦ by field_simp
+      have hNk : (N : 𝕜) ^ k = ∏ _i ∈ Finset.range k, (N : 𝕜) := by simp
+      rw [hNk, ← Finset.prod_div_distrib]; exact Finset.prod_congr rfl fun i _ ↦ by field_simp
     rw [hpow, map_sum]; simp only [coeff_C_mul_X_pow, Finset.sum_ite_eq, Finset.mem_range,
       Nat.lt_succ_iff.mpr hkN, ↓reduceIte, hprod, ← hdesc, div_pow]; field_simp
   have h1 : Tendsto (fun N : ℕ ↦ ∏ i ∈ Finset.range k, (1 - (i : 𝕜) * (N : 𝕜)⁻¹)) atTop (𝓝 1) := by

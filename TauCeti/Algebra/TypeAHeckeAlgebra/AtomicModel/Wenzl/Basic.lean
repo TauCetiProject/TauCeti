@@ -60,10 +60,9 @@ theorem wenzlGtOneWeight_eq_twoSidedGeom (Q η : ℝ) : wenzlGtOneWeight Q η =
 theorem wenzlGtOneWeight_nonneg {Q : ℝ} (hQ : 1 < Q) {η : ℝ}
     (hη : η ∈ Set.Icc (1 / (1 + Q)) (Q / (1 + Q))) (a : ℕ ⊕ₗ ℕᵒᵈ) :
     0 ≤ wenzlGtOneWeight Q η a :=
-  have h1Q : 0 < 1 + Q := by linarith
   have hQi : 0 ≤ Q⁻¹ := inv_nonneg.mpr (zero_lt_one.trans hQ).le
-  twoSidedGeom_nonneg (mul_nonneg (by linarith [(div_le_iff₀ h1Q).mp hη.1]) hQi)
-    (mul_nonneg (by linarith [(le_div_iff₀ h1Q).mp hη.2]) hQi) hQi a
+  twoSidedGeom_nonneg (mul_nonneg (by linarith [(div_le_iff₀ (by linarith : 0 < 1 + Q)).mp hη.1])
+    hQi) (mul_nonneg (by linarith [(le_div_iff₀ (by linarith : 0 < 1 + Q)).mp hη.2]) hQi) hQi a
 
 /-- For `1 < Q` and any `η : ℝ`, `wenzlGtOneWeight Q η` is absolutely summable. -/
 theorem summable_norm_wenzlGtOneWeight {Q : ℝ} (hQ : 1 < Q) (η : ℝ) :
@@ -83,8 +82,8 @@ theorem wenzlGtOneWeight_leftSlice {Q : ℝ} (hQ : 1 < Q) (η : ℝ) (b : ℕ �
     (if wenzlGtOnePos b then Q else -1) * wenzlGtOneWeight Q η b +
       (Q - 1) * (∑' a, if a < b then wenzlGtOneWeight Q η a else 0) = (1 + Q) * η - 1 := by
   have hQ0 : Q ≠ 0 := (zero_lt_one.trans hQ).ne'
-  rw [show Q - 1 = Q * (1 - Q⁻¹) by field_simp, mul_assoc]
-  obtain ⟨m | m, rfl⟩ := toLex.surjective b
+  have hQsub : Q - 1 = Q * (1 - Q⁻¹) := by field_simp
+  rw [hQsub, mul_assoc]; obtain ⟨m | m, rfl⟩ := toLex.surjective b
   · rw [wenzlGtOneWeight_inl, wenzlGtOneWeight_eq_twoSidedGeom, mul_tsum_lt_twoSidedGeom_inl]
     simp only [wenzlGtOnePos_inl, ↓reduceIte]; field_simp; ring
   · rw [← toDual_ofDual m, wenzlGtOneWeight_inr, wenzlGtOneWeight_eq_twoSidedGeom,
@@ -136,9 +135,8 @@ theorem wenzlLtOneWeight_eq_twoSidedGeom (Q η : ℝ) :
 theorem wenzlLtOneWeight_nonneg {Q : ℝ} (hQ0 : 0 < Q) {η : ℝ}
     (hη : η ∈ Set.Icc (Q / (1 + Q)) (1 / (1 + Q))) (a : ℕ ⊕ₗ ℕᵒᵈ) :
     0 ≤ wenzlLtOneWeight Q η a :=
-  have h1Q : 0 < 1 + Q := by linarith
-  twoSidedGeom_nonneg (by linarith [(le_div_iff₀ h1Q).mp hη.2])
-    (by linarith [(div_le_iff₀ h1Q).mp hη.1]) hQ0.le a
+  twoSidedGeom_nonneg (by linarith [(le_div_iff₀ (by linarith : 0 < 1 + Q)).mp hη.2])
+    (by linarith [(div_le_iff₀ (by linarith : 0 < 1 + Q)).mp hη.1]) hQ0.le a
 
 /-- For `0 < Q < 1` and any `η : ℝ`, `wenzlLtOneWeight Q η` is absolutely summable. -/
 theorem summable_norm_wenzlLtOneWeight {Q : ℝ} (hQ0 : 0 < Q) (hQ1 : Q < 1) (η : ℝ) :

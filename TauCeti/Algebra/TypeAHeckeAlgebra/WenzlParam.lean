@@ -401,8 +401,9 @@ theorem mem_wenzlPositiveSet_of_mem_Icc_of_le_one {Q : ℝ} (hQ0 : 0 ≤ Q) (hQ1
 /-- Inversion symmetry `wenzlPositiveSet Q⁻¹ = wenzlPositiveSet Q` for `0 < Q`. -/
 @[simp] theorem wenzlPositiveSet_inv {Q : ℝ} (hQ : 0 < Q) :
     wenzlPositiveSet Q⁻¹ = wenzlPositiveSet Q := by
-  ext η; simp [mem_wenzlPositiveSet_iff, show 1 / (1 + Q⁻¹) = Q / (1 + Q) by field_simp; ring,
-    show Q⁻¹ / (1 + Q⁻¹) = 1 / (1 + Q) by field_simp; ring, min_comm (Q / (1 + Q)),
+  have h1 : 1 / (1 + Q⁻¹) = Q / (1 + Q) := by field_simp; ring
+  have h2 : Q⁻¹ / (1 + Q⁻¹) = 1 / (1 + Q) := by field_simp; ring
+  ext η; simp [mem_wenzlPositiveSet_iff, h1, h2, min_comm (Q / (1 + Q)),
     max_comm (Q / (1 + Q)), wenzlParam_inv]
 
 /-- Complement symmetry `1 - η ∈ wenzlPositiveSet Q ↔ η ∈ wenzlPositiveSet Q` for `0 < Q`. -/
@@ -412,7 +413,7 @@ theorem mem_wenzlPositiveSet_of_mem_Icc_of_le_one {Q : ℝ} (hQ0 : 0 ≤ Q) (hQ1
     simpa using h (1 - η) hx, h η⟩
   rintro x (hx | ⟨d, hd, rfl⟩)
   · have hmm : min (1 / (1 + Q)) (Q / (1 + Q)) + max (1 / (1 + Q)) (Q / (1 + Q)) = 1 :=
-      (min_add_max _ _).trans (by field_simp [show 1 + Q ≠ 0 by linarith])
+      (min_add_max _ _).trans (by have : 1 + Q ≠ 0 := by { linarith }; field_simp)
     exact Or.inl ⟨by linarith [hx.2], by linarith [hx.1]⟩
   · refine Or.inr ⟨-d, neg_ne_zero.mpr hd, ?_⟩; linarith [wenzlParam_add_wenzlParam_neg (mul_ne_zero
       (by linarith : 1 + Q ≠ 0) (sum_pos (fun i _ ↦ pow_pos hQ i) (nonempty_range_iff.mpr

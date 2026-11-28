@@ -42,10 +42,12 @@ variable {R : Type*} [CommRing R] {ι : Type*} [LinearOrder ι] (pos : ι → Pr
   suffices h : (signedChecked pos q (tailIncl q n x)).comp L = L.comp (signedChecked pos q x) by
     simpa [L] using LinearMap.congr_fun h v
   refine signedChecked_comp_eq_of_forall_T pos q _ L (fun i ↦ ?_) x
+  have hstrand : BraidGroup.strand (⟨i + 1, by omega⟩ : Fin (n + 1 - 1)) =
+      (BraidGroup.strand i).succ := Fin.ext (by simp)
+  have hstrandSucc : BraidGroup.strandSucc (⟨i + 1, by omega⟩ : Fin (n + 1 - 1)) =
+      (BraidGroup.strandSucc i).succ := Fin.ext (by simp)
   rw [tailIncl_T, signedChecked_T, signedChecked_T, LinearMap.smul_comp, LinearMap.comp_smul,
-    show BraidGroup.strand (⟨i + 1, by omega⟩ : Fin (n + 1 - 1)) = (BraidGroup.strand i).succ from
-      Fin.ext (by simp), show BraidGroup.strandSucc (⟨i + 1, by omega⟩ : Fin (n + 1 - 1)) =
-        (BraidGroup.strandSucc i).succ from Fin.ext (by simp), signedCheckedR_comp_lmapDomain_cons]
+    hstrand, hstrandSucc, signedCheckedR_comp_lmapDomain_cons]
 
 /-- `tailIncl` acts block-diagonally on words grouped by their first letter. -/
 theorem signedChecked_tailIncl_single_cons_apply_cons (x : TypeAHeckeAlgebra R q n)
@@ -67,8 +69,7 @@ theorem signedChecked_tailIncl_mul_T_zero_single_cons_apply
         (if a = w 0 then (if pos (w 0) then (q : R) ^ 2 else -1)
           else if a < w 0 then (q : R) ^ 2 - 1 else 0) := by
   have hj : BraidGroup.strand (n := n + 2) (0 : Fin (n + 1)) = 0 := Fin.ext (by simp)
-  have hk : BraidGroup.strandSucc (n := n + 2) (0 : Fin (n + 1)) = (0 : Fin (n + 1)).succ :=
-    Fin.ext (by simp)
+  have hk : BraidGroup.strandSucc (n := n + 2) (0 : Fin (n + 1)) = Fin.succ 0 := Fin.ext (by simp)
   simp only [map_mul, mul_apply_eq_comp, signedChecked_T, hj, hk, LinearMap.smul_apply,
     signedCheckedR_single_one, Fin.cons_zero, Fin.cons_succ, Fin.cons_comp_swap_zero]
   rcases lt_trichotomy a (w 0) with h | rfl | h
@@ -138,9 +139,9 @@ theorem atomicTrace_geometric_leftSlice_eq {r : ℕ} {c : R}
         split_ifs <;> congr 1 <;> omega).trans ?_
       rw [Fin.sum_univ_eq_sum_range (fun a ↦ if r - (b : ℕ) < a then ((q : R) ^ 2) ^ a else 0),
         ← Finset.sum_filter]; congr 1; ext k; simp; omega
+    have hqpow : ((q : R) ^ 2) ^ (r + 1) = (q : R) * (q : R) ^ (2 * r + 1) := by ring
     have hg := geom_sum_Ico_mul ((q : R) ^ 2) (by omega : r - (b : ℕ) + 1 ≤ r + 1)
-    rw [pow_succ' ((q : R) ^ 2) (r - (b : ℕ)), show ((q : R) ^ 2) ^ (r + 1) =
-      (q : R) * (q : R) ^ (2 * r + 1) by ring] at hg
+    rw [pow_succ' ((q : R) ^ 2) (r - (b : ℕ)), hqpow] at hg
     simp only [↓reduceIte, hI]; linear_combination c * hg
 
 /-- **Negative discrete geometric model in first-site R-order** (`z = -(c * q⁻¹)`). -/

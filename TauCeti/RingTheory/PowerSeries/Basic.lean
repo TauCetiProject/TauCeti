@@ -175,6 +175,15 @@ theorem coeff_succ_mul_eq_add_sum (f g : R⟦X⟧) (n : ℕ) :
   rw [Finset.Nat.sum_antidiagonal_eq_sum_range_succ (fun i j ↦ coeff j f * coeff i g),
     Finset.sum_range_succ, Nat.sub_self, add_comm]
 
+/-- Multiplying `mk f` on the left by `C c` multiplies each coefficient by `c`. -/
+theorem C_mul_mk (c : R) (f : ℕ → R) : C c * mk f = mk fun k ↦ c * f k := by
+  ext; simp
+
+/-- Splitting off the constant term of `mk (fun k ↦ if k = 0 then a else f k)`. -/
+theorem mk_ite_zero (a : R) (f : ℕ → R) :
+    mk (fun k ↦ if k = 0 then a else f k) = C a + X * mk fun k ↦ f (k + 1) := by
+  ext (_ | k) <;> simp [coeff_succ_X_mul]
+
 end Coeff
 
 end PowerSeries

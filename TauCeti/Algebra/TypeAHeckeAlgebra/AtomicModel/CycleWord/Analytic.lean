@@ -37,17 +37,18 @@ private theorem eval_denom_ne_zero {K : Type*} [NormedField K] {ι : Type*} [Fin
     (pos : ι → Prop) [DecidablePred pos] (q : Kˣ) (p : ι → K) {x : K}
     (hx : max 1 (max ‖(q : K) ^ 2‖ ‖(q : K) ^ 2 - 1‖) * (∑ a, ‖p a‖) * ‖x‖ < 1) (a : ι) :
     (cycleGeneratingFactor pos p ((q : K) ^ 2) 1 a).eval x ≠ 0 := by
-  rw [eval_cycleGeneratingFactor]
-  set M : ℝ := max 1 (max ‖(q : K) ^ 2‖ ‖(q : K) ^ 2 - 1‖)
+  rw [eval_cycleGeneratingFactor]; set M : ℝ := max 1 (max ‖(q : K) ^ 2‖ ‖(q : K) ^ 2 - 1‖)
   have hpa : ‖p a‖ ≤ ∑ b, ‖p b‖ := Finset.single_le_sum (fun _ _ ↦ norm_nonneg _) (by simp)
-  have h1M : 1 ≤ M := le_max_left _ _
-  have hQM : ‖(q : K) ^ 2‖ ≤ M := (le_max_left _ _).trans (le_max_right _ _)
+  have h1M : 1 ≤ M := le_max_left _ _; have hQM : ‖(q : K) ^ 2‖ ≤ M := by simp [M]
   split_ifs <;> intro h0
-  · have : ‖(q : K) ^ 2 * p a * x‖ = 1 := by simpa [sub_eq_zero.mp h0] using norm_one (α := K)
-    linarith [show ‖(q : K) ^ 2 * p a * x‖ ≤ M * (∑ b, ‖p b‖) * ‖x‖ by simp only [norm_mul]; gcongr]
-  · have : ‖p a * x‖ = 1 := by rw [show p a * x = -1 from eq_neg_of_add_eq_zero_left (by
-      simpa [add_comm] using h0), norm_neg, norm_one]
-    linarith [show ‖p a * x‖ ≤ M * (∑ b, ‖p b‖) * ‖x‖ by rw [norm_mul, ← one_mul ‖p a‖]; gcongr]
+  · have hnorm : ‖(q : K) ^ 2 * p a * x‖ = 1 := by
+      simpa [sub_eq_zero.mp h0] using norm_one (α := K)
+    have hle : ‖(q : K) ^ 2 * p a * x‖ ≤ M * (∑ b, ‖p b‖) * ‖x‖ := by simp only [norm_mul]; gcongr
+    linarith
+  · have hneg : p a * x = -1 := eq_neg_of_add_eq_zero_left (by simpa [add_comm] using h0)
+    have hnorm : ‖p a * x‖ = 1 := by rw [hneg, norm_neg, norm_one]
+    have hle : ‖p a * x‖ ≤ M * (∑ b, ‖p b‖) * ‖x‖ := by rw [norm_mul, ← one_mul ‖p a‖]; gcongr
+    linarith
 
 /-- **Analytic evaluation of the cycle-trace generating function on a finite alphabet** on the disk
 `max 1 (max ‖Q‖ ‖Q - 1‖) * (∑ a, ‖p a‖) * ‖x‖ < 1` (`Q = q ^ 2`). -/

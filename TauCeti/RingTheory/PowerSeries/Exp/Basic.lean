@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.PowerSeries.Rescale
 
 import Mathlib.Data.Rat.Cast.Lemmas
 import Mathlib.RingTheory.PowerSeries.Inverse
+import TauCeti.RingTheory.PowerSeries.Basic
 
 /-!
 # The exponential specialization of a monoid algebra
@@ -105,13 +106,11 @@ theorem coeff_succ_one_add_mul_rescale_exp {𝕜 : Type*} [Field 𝕜] [Algebra 
     coeff (m + 1) (mk (fun k ↦ if k = 0 then 1 else c₁ * f k) * rescale (c₁ * c₂) (exp 𝕜)) =
       c₁ * (coeff m ((mk fun k ↦ f (k + 1)) * rescale (c₁ * c₂) (exp 𝕜)) +
         c₁ ^ m * c₂ ^ (m + 1) / ((m + 1).factorial : 𝕜)) := by
-  let E := rescale (c₁ * c₂) (exp 𝕜)
-  rw [show mk (fun k ↦ if k = 0 then 1 else c₁ * f k) * E =
-      E + C c₁ * X * ((mk fun k ↦ f (k + 1)) * E) by
-    rw [show mk (fun k ↦ if k = 0 then 1 else c₁ * f k) = 1 + C c₁ * X * mk fun k ↦ f (k + 1) by
-      ext (_ | k) <;> [simp; (rw [map_add, mul_assoc, coeff_C_mul, coeff_succ_X_mul]; simp)]]; ring]
-  rw [map_add, mul_assoc, coeff_C_mul, coeff_succ_X_mul, coeff_rescale, coeff_exp, map_div₀,
-    map_one, map_natCast, mul_pow, pow_succ' c₁ m]; ring
+  have hF : mk (fun k ↦ if k = 0 then 1 else c₁ * f k) = 1 + C c₁ * X * mk fun k ↦ f (k + 1) := by
+    rw [mk_ite_zero, map_one, ← C_mul_mk, mul_left_comm, mul_assoc]
+  rw [hF, add_mul, one_mul, mul_assoc (C c₁ * X), map_add, mul_assoc, coeff_C_mul,
+    coeff_succ_X_mul, coeff_rescale, coeff_exp, map_div₀, map_one, map_natCast, mul_pow,
+    pow_succ' c₁ m]; ring
 
 end PowerSeries
 
