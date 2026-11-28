@@ -64,6 +64,9 @@ Etingof–Nikshych–Ostrik):
   `CategoryTheory.Center.endAlgEquivOfSimple_globalDim_of_isFiniteSemisimpleCategory`,
   `CategoryTheory.Center.globalDim_eq_smul_id_of_isFiniteSemisimpleCategory`,
   `CategoryTheory.Center.globalDim_f_of_isFiniteSemisimpleCategory`,
+  `CategoryTheory.Center.endAlgEquivOfSimple_globalDim_of_globalDim_ne_zero`,
+  `CategoryTheory.Center.globalDim_eq_smul_id_of_globalDim_ne_zero`,
+  `CategoryTheory.Center.globalDim_f_of_globalDim_ne_zero`,
   `CategoryTheory.Center.endAlgEquivOfSimple_globalDim`,
   `CategoryTheory.Center.globalDim_eq_smul_id`, and `CategoryTheory.Center.globalDim_f`:
   `dim(I(X)) = dim(X) · dim(C)` and `globalDim (Center C) = (globalDim C)²`.
@@ -338,6 +341,35 @@ theorem globalDim_f_of_isFiniteSemisimpleCategory
   have h := endAlgEquivOfSimple_globalDim_of_isFiniteSemisimpleCategory k C
   rw [endAlgEquivOfSimple_tensorUnit_apply, sq, ← map_mul, ← End.of_comp] at h
   exact congrArg End.asHom ((endAlgEquivOfSimple k (𝟙_ C)).injective h)
+
+/-- **Global dimension of the Drinfeld centre (scalar form, nondegenerate global dimension)**:
+whenever `globalDim C ≠ 0`, `dim(Center C) = dim(C)²`. -/
+theorem endAlgEquivOfSimple_globalDim_of_globalDim_ne_zero (hdim : globalDim C ≠ 0) :
+    letI := @Fintype.ofFinite _ (finite_simpleClasses_of_globalDim_ne_zero k C hdim)
+    endAlgEquivOfSimple k (𝟙_ (Center C)) (End.of (globalDim (Center C))) =
+      endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C)) ^ 2 := by
+  have := isFiniteSemisimpleCategory_of_globalDim_ne_zero k C hdim
+  let := @Fintype.ofFinite _ (finite_simpleClasses_of_globalDim_ne_zero k C hdim)
+  exact endAlgEquivOfSimple_globalDim_of_isFiniteSemisimpleCategory k C
+
+/-- **Global dimension of the Drinfeld centre (scalar multiplication form, nondegenerate global
+dimension)**: whenever `globalDim C ≠ 0`, `globalDim (Center C) = (dim C)² • 𝟙 (𝟙_ (Center C))`. -/
+theorem globalDim_eq_smul_id_of_globalDim_ne_zero (hdim : globalDim C ≠ 0) :
+    letI := @Fintype.ofFinite _ (finite_simpleClasses_of_globalDim_ne_zero k C hdim)
+    globalDim (Center C) =
+      endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C)) ^ 2 • 𝟙 (𝟙_ (Center C)) := by
+  have := isFiniteSemisimpleCategory_of_globalDim_ne_zero k C hdim
+  let := @Fintype.ofFinite _ (finite_simpleClasses_of_globalDim_ne_zero k C hdim)
+  exact globalDim_eq_smul_id_of_isFiniteSemisimpleCategory k C
+
+/-- **Global dimension of the Drinfeld centre (morphism form, nondegenerate global dimension)**:
+whenever `globalDim C ≠ 0`, `(globalDim (Center C)).f = globalDim C ≫ globalDim C`. -/
+theorem globalDim_f_of_globalDim_ne_zero (hdim : globalDim C ≠ 0) :
+    letI := @Fintype.ofFinite _ (finite_simpleClasses_of_globalDim_ne_zero k C hdim)
+    (globalDim (Center C)).f = globalDim C ≫ globalDim C := by
+  have := isFiniteSemisimpleCategory_of_globalDim_ne_zero k C hdim
+  let := @Fintype.ofFinite _ (finite_simpleClasses_of_globalDim_ne_zero k C hdim)
+  exact globalDim_f_of_isFiniteSemisimpleCategory k C
 
 /-- **Global dimension of the Drinfeld centre in characteristic zero (scalar form)**:
 `dim(Center C) = dim(C)²`. -/

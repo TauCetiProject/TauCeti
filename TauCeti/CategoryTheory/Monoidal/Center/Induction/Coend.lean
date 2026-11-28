@@ -58,7 +58,7 @@ right adjunction `forgetInductionAdjunction : Center.forget C ⊣ Center.inducti
   `CategoryTheory.Center.isColimitInductionCowedge`,
   `CategoryTheory.Center.hasCoend_inductionBifunctor`, and
   `CategoryTheory.Center.inductionObjIsoCoend`: the cowedge for `inductionBifunctor X` on
-  `inductionObj X`, its `IsColimit` and `HasCoend` witnesses, and its canonical comparison
+  `inductionObj X`, its `IsColimit` and `HasCoend` witnesses, and its natural comparison
   isomorphism with Mathlib's `Limits.coend`.
 
 ## References
@@ -501,14 +501,9 @@ def isColimitInductionCowedge (X : C) : Limits.IsColimit (inductionCowedge k X) 
     (fun s ↦ inductionDesc fun Y : C ↦ s.π Y)
     (fun s Y ↦ inductionCoendι_comp_inductionDesc (fun Y' : C ↦ s.π Y')
       (fun {Y₁ Y₂ : C} (g : Y₁ ⟶ Y₂) ↦ (Limits.Cowedge.condition s g).symm) Y)
-    (fun s m hm ↦ inductionObj_map_hom_ext_ι (F := 𝟭 C) fun S ↦ by
-      have hmS : biproduct.ι (inductionSummand X) S ≫ m = s.π S.repr := by
-        rw [← inductionCoendι_repr k X S]
-        exact hm S.repr
-      have hdesc : biproduct.ι (inductionSummand X) S ≫
-          inductionDesc (fun Y' : C ↦ s.π Y') = s.π S.repr :=
-        ι_comp_inductionDesc _ S
-      exact hmS.trans hdesc.symm)
+    (fun s _m hm ↦ inductionObj_hom_ext_coendι fun Y ↦
+      (hm Y).trans (inductionCoendι_comp_inductionDesc (fun Y' : C ↦ s.π Y')
+        (fun {Y₁ Y₂ : C} (g : Y₁ ⟶ Y₂) ↦ (Limits.Cowedge.condition s g).symm) Y).symm)
 
 omit [Fintype (SimpleClasses C)] in
 /-- `inductionBifunctor X` admits a categorical coend. -/
@@ -542,6 +537,28 @@ theorem coend_ι_comp_inductionObjIsoCoend_inv (X Y : C)
       inductionCoendι X Y :=
   Limits.colimit.comp_coconePointUniqueUpToIso_inv
     (isColimitInductionCowedge k X) (Limits.WalkingMultispan.right Y)
+
+/-- Inverse comparison form of naturality for `inductionObjIsoCoend`:
+`Limits.coend.map (inductionBifunctorMap f)` corresponds to `inductionMap f`. -/
+@[reassoc (attr := simp)]
+theorem coend_map_comp_inductionObjIsoCoend_inv {X X' : C} (f : X ⟶ X')
+    [Limits.HasCoend (inductionBifunctor X)] [Limits.HasCoend (inductionBifunctor X')] :
+    Limits.coend.map (inductionBifunctorMap f) ≫ (inductionObjIsoCoend k X').inv =
+      (inductionObjIsoCoend k X).inv ≫ inductionMap f := by
+  refine Limits.coend.hom_ext fun Y ↦ ?_
+  rw [Limits.coend.ι_map_assoc, inductionBifunctorMap_app_app,
+    coend_ι_comp_inductionObjIsoCoend_inv, coend_ι_comp_inductionObjIsoCoend_inv_assoc]
+  exact (inductionCoendι_comp_inductionMap f Y).symm
+
+/-- `inductionObjIsoCoend` is natural in `X`: `Limits.coend.map (inductionBifunctorMap f)`
+corresponds to `inductionMap f`. -/
+@[reassoc (attr := simp)]
+theorem inductionObjIsoCoend_hom_comp_coend_map {X X' : C} (f : X ⟶ X')
+    [Limits.HasCoend (inductionBifunctor X)] [Limits.HasCoend (inductionBifunctor X')] :
+    (inductionObjIsoCoend k X).hom ≫ Limits.coend.map (inductionBifunctorMap f) =
+      inductionMap f ≫ (inductionObjIsoCoend k X').hom := by
+  rw [← Iso.eq_inv_comp, ← Category.assoc, ← Iso.comp_inv_eq,
+    coend_map_comp_inductionObjIsoCoend_inv]
 
 end Cowedge
 
