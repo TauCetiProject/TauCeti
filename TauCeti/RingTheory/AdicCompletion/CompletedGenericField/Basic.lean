@@ -117,11 +117,8 @@ theorem isAdicComplete_completedGenericIntegers :
 special fibre. -/
 noncomputable def completedGenericResidueEquiv :
     ResidueField (completedGenericIntegers π) ≃+* FractionRing (A ⧸ Ideal.span {π}) :=
-  (RingEquiv.ofBijective
-    (ResidueField.map (algebraMap (genericLocalRing π) (completedGenericIntegers π)))
-    (_root_.AdicCompletion.residueField_map_bijective_of_fg
-      (fg_maximalIdeal_genericLocalRing π))).symm.trans
-      (FractionRing.algEquiv (A ⧸ Ideal.span {π}) (Ideal.span {π}).ResidueField).symm.toRingEquiv
+  (residueFieldEquivOfFG (fg_maximalIdeal_genericLocalRing π)).symm.trans
+    (FractionRing.algEquiv (A ⧸ Ideal.span {π}) (Ideal.span {π}).ResidueField).symm.toRingEquiv
 
 /-- The canonical residue-field identification agrees with reduction of the original affine ring. -/
 @[simp]
@@ -130,16 +127,13 @@ theorem completedGenericResidueEquiv_residue_algebraMap (a : A) :
       (residue (completedGenericIntegers π) (algebraMap A (completedGenericIntegers π) a)) =
         algebraMap (A ⧸ Ideal.span {π}) (FractionRing (A ⧸ Ideal.span {π}))
           (Ideal.Quotient.mk _ a) := by
+  rw [completedGenericResidueEquiv, RingEquiv.trans_apply,
+    IsScalarTower.algebraMap_apply A (genericLocalRing π) (completedGenericIntegers π),
+    residueFieldEquivOfFG_symm_residue_algebraMap]
   apply (FractionRing.algEquiv (A ⧸ Ideal.span {π}) (Ideal.span {π}).ResidueField).injective
-  dsimp only [completedGenericResidueEquiv, RingEquiv.trans_apply]
   rw [AlgEquiv.coe_toRingEquiv, AlgEquiv.apply_symm_apply, AlgEquiv.commutes,
     Ideal.algebraMap_quotient_residueField_mk]
-  apply (RingEquiv.ofBijective
-    (ResidueField.map (algebraMap (genericLocalRing π) (completedGenericIntegers π)))
-    (_root_.AdicCompletion.residueField_map_bijective_of_fg
-      (fg_maximalIdeal_genericLocalRing π))).symm_apply_eq.mpr
-  rw [IsScalarTower.algebraMap_apply A (genericLocalRing π) (completedGenericIntegers π)]
-  exact (ResidueField.map_residue _ (algebraMap A (genericLocalRing π) a)).symm
+  rfl
 
 variable [IsNoetherianRing A]
 
