@@ -77,6 +77,10 @@ norms. It is stated for the derivative `Dʲ u` in terms of `D^{j + l} u`, `l ≤
   `‖u‖_∞ ≤ C ‖Dⁿu‖_{L¹}` for an additive Haar measure.
 * `TauCeti.exists_eLpNorm_iteratedFDeriv_le_sum_of_lt_finrank`: for `1 ≤ p < n` and
   `1 / q ≥ 1 / p - m / n`, `‖Dʲ u‖_q ≤ C ∑_{l ≤ m} ‖D^{j + l} u‖_p` for compactly supported `u`.
+* `TauCeti.sobolevConst`: the constant `C(n, p)` of the Gagliardo–Nirenberg–Sobolev inequality
+  `‖u‖_{p⋆} ≤ C(n, p) ‖Du‖_p`, depending on the dimension and the exponent alone.
+* `TauCeti.eLpNorm_le_sobolevConst_mul_eLpNorm_fderiv`: that inequality for compactly supported
+  `C¹` maps on any `n`-dimensional real inner product space.
 
 ## References
 
@@ -398,5 +402,64 @@ theorem exists_eLpNorm_top_le_mul_eLpNorm_iteratedFDeriv_finrank :
           smul_eq_mul]
         push_cast [← eNorm_eq_nnNorm]
         ring
+
+end TauCeti
+
+/-! ### The Gagliardo–Nirenberg–Sobolev inequality with a dimensional constant -/
+
+namespace TauCeti
+
+open MeasureTheory Module
+open scoped ENNReal NNReal
+
+/-- The constant `C(d, p)` of the **Gagliardo–Nirenberg–Sobolev inequality**
+`‖u‖_{p⋆} ≤ C(d, p) ‖Du‖_p`, `1 / p⋆ = 1 / p - 1 / d`, on a `d`-dimensional real inner product
+space with its Lebesgue measure (`TauCeti.eLpNorm_le_sobolevConst_mul_eLpNorm_fderiv`). It depends
+on the dimension `d` and the exponent `p` alone; it is Mathlib's constant
+`MeasureTheory.eLpNormLESNormFDerivOfEqInnerConst` for `EuclideanSpace ℝ (Fin d)`. -/
+noncomputable def sobolevConst (d : ℕ) (p : ℝ) : ℝ≥0 :=
+  eLpNormLESNormFDerivOfEqInnerConst (volume : Measure (EuclideanSpace ℝ (Fin d))) p
+
+/-- `TauCeti.sobolevConst d p` is Mathlib's Gagliardo–Nirenberg–Sobolev constant for the
+`d`-dimensional Euclidean space. -/
+theorem sobolevConst_def (d : ℕ) (p : ℝ) :
+    sobolevConst d p =
+      eLpNormLESNormFDerivOfEqInnerConst (volume : Measure (EuclideanSpace ℝ (Fin d))) p :=
+  (rfl)
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- **The Gagliardo–Nirenberg–Sobolev inequality with a dimensional constant.** Let `E` be a real
+inner product space of dimension `d > 0` with its Lebesgue measure, `1 ≤ p` and
+`1 / p⋆ = 1 / p - 1 / d`. A compactly supported `C¹` map `u` from `E` to a real inner product space
+satisfies `‖u‖_{p⋆} ≤ C(d, p) ‖Du‖_p`, where `C(d, p) = TauCeti.sobolevConst d p` depends on `d`
+and `p` alone. -/
+theorem eLpNorm_le_sobolevConst_mul_eLpNorm_fderiv {u : E → F} (hu : ContDiff ℝ 1 u)
+    (h2u : HasCompactSupport u) {p p' : ℝ≥0} (hp : 1 ≤ p) (hn : 0 < finrank ℝ E)
+    (hp' : (p' : ℝ)⁻¹ = p⁻¹ - (finrank ℝ E : ℝ)⁻¹) :
+    eLpNorm u p' volume ≤ sobolevConst (finrank ℝ E) p * eLpNorm (fderiv ℝ u) p volume := by
+  -- Transport Mathlib's inequality on `ℝᵈ` along a linear isometry `ℝᵈ ≃ E`.
+  let e := (stdOrthonormalBasis ℝ E).repr.symm
+  have he : MeasurePreserving e := e.measurePreserving
+  have hv : ContDiff ℝ 1 (u ∘ e) := hu.comp e.contDiff
+  have h2v : HasCompactSupport (u ∘ e) :=
+    h2u.comp_isClosedEmbedding e.toHomeomorph.isClosedEmbedding
+  have key := eLpNorm_le_eLpNorm_fderiv_of_eq_inner volume hv h2v hp
+    (by rwa [finrank_euclideanSpace_fin]) (by rwa [finrank_euclideanSpace_fin])
+  have hvalue : eLpNorm (u ∘ e) p' volume = eLpNorm u p' volume :=
+    eLpNorm_comp_measurePreserving hu.continuous.aestronglyMeasurable he
+  have hderiv : eLpNorm (fderiv ℝ (u ∘ e)) p volume = eLpNorm (fderiv ℝ u) p volume := by
+    have hcomp : ∀ y, ‖fderiv ℝ (u ∘ e) y‖ = ‖(fderiv ℝ u ∘ e) y‖ := fun y ↦ by
+      rw [← e.coe_toContinuousLinearEquiv, ContinuousLinearEquiv.comp_right_fderiv,
+        Function.comp_apply]
+      exact ContinuousLinearMap.opNorm_comp_linearIsometryEquiv _ e
+    rw [← eLpNorm_comp_measurePreserving
+      (hu.continuous_fderiv one_ne_zero).aestronglyMeasurable he]
+    exact eLpNorm_congr_norm_ae (hv.continuous_fderiv one_ne_zero).aestronglyMeasurable
+      ((hu.continuous_fderiv one_ne_zero).comp e.continuous).aestronglyMeasurable
+      (.of_forall hcomp)
+  rw [hvalue, hderiv] at key
+  exact key
 
 end TauCeti

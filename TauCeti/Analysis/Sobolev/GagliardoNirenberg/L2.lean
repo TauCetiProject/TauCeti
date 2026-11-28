@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Basic
-public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
+public import TauCeti.Analysis.FunctionalSpaces.SobolevInequality
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Analysis.Sobolev.Embedding
 import TauCeti.Analysis.Sobolev.W1p.SobolevEmbedding
@@ -43,17 +43,14 @@ The inequality interpolates between the trivial endpoint `θ = 0` and the Sobole
 norms (`MeasureTheory.eLpNorm_le_eLpNorm_rpow_mul_eLpNorm_rpow`) gives
 `‖u‖_q ≤ ‖u‖₂ ^ (1 - θ) ‖u‖_{2⋆} ^ θ`. The Sobolev inequality for test functions is Mathlib's
 `MeasureTheory.eLpNorm_le_eLpNorm_fderiv_of_eq_inner`; its constant depends on the chosen space and
-measure, so it is transported from `EuclideanSpace ℝ (Fin d)` along a linear isometry, which
-preserves Lebesgue measure and operator norms. On `W^{1,2}(E)` the Sobolev inequality passes from
+measure, so `TauCeti.eLpNorm_le_sobolevConst_mul_eLpNorm_fderiv` transports it from
+`EuclideanSpace ℝ (Fin d)` along a linear isometry, which preserves Lebesgue measure and operator
+norms. On `W^{1,2}(E)` the Sobolev inequality passes from
 test functions by `TauCeti.W1p.eLpNorm_value_le_of_forall_testFunction`, since test functions are
 dense in `W^{1,2}(E)` (`TauCeti.W1p.mem_w1p0Submodule_top`).
 
 ## Main results
 
-* `TauCeti.sobolevConst`: the dimensional constant `C(d, p)` of the Gagliardo–Nirenberg–Sobolev
-  inequality.
-* `TauCeti.eLpNorm_le_sobolevConst_mul_eLpNorm_fderiv`: `‖u‖_{p⋆} ≤ C(d, p) ‖Du‖_p` on any
-  `d`-dimensional real inner product space.
 * `TauCeti.eLpNorm_le_eLpNorm_rpow_mul_eLpNorm_fderiv_rpow`: the Gagliardo–Nirenberg inequality
   for compactly supported `C¹` maps, and `TauCeti.eLpNorm_four_le_of_finrank_eq_three` its case
   `d = 3`, `q = 4`.
@@ -85,55 +82,8 @@ namespace TauCeti
 open MeasureTheory Module Set TopologicalSpace
 open scoped ENNReal NNReal
 
-/-- The constant `C(d, p)` of the **Gagliardo–Nirenberg–Sobolev inequality**
-`‖u‖_{p⋆} ≤ C(d, p) ‖Du‖_p`, `1 / p⋆ = 1 / p - 1 / d`, on a `d`-dimensional real inner product
-space with its Lebesgue measure (`TauCeti.eLpNorm_le_sobolevConst_mul_eLpNorm_fderiv`). It depends
-on the dimension `d` and the exponent `p` alone; it is Mathlib's constant
-`MeasureTheory.eLpNormLESNormFDerivOfEqInnerConst` for `EuclideanSpace ℝ (Fin d)`. -/
-def sobolevConst (d : ℕ) (p : ℝ) : ℝ≥0 :=
-  eLpNormLESNormFDerivOfEqInnerConst (volume : Measure (EuclideanSpace ℝ (Fin d))) p
-
-/-- `TauCeti.sobolevConst d p` is Mathlib's Gagliardo–Nirenberg–Sobolev constant for the
-`d`-dimensional Euclidean space. -/
-theorem sobolevConst_def (d : ℕ) (p : ℝ) :
-    sobolevConst d p =
-      eLpNormLESNormFDerivOfEqInnerConst (volume : Measure (EuclideanSpace ℝ (Fin d))) p :=
-  (rfl)
-
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-
-/-- **The Gagliardo–Nirenberg–Sobolev inequality with a dimensional constant.** Let `E` be a real
-inner product space of dimension `d > 0` with its Lebesgue measure, `1 ≤ p` and
-`1 / p⋆ = 1 / p - 1 / d`. A compactly supported `C¹` map `u` from `E` to a real inner product space
-satisfies `‖u‖_{p⋆} ≤ C(d, p) ‖Du‖_p`, where `C(d, p) = TauCeti.sobolevConst d p` depends on `d`
-and `p` alone. -/
-theorem eLpNorm_le_sobolevConst_mul_eLpNorm_fderiv {u : E → F} (hu : ContDiff ℝ 1 u)
-    (h2u : HasCompactSupport u) {p p' : ℝ≥0} (hp : 1 ≤ p) (hn : 0 < finrank ℝ E)
-    (hp' : (p' : ℝ)⁻¹ = p⁻¹ - (finrank ℝ E : ℝ)⁻¹) :
-    eLpNorm u p' volume ≤ sobolevConst (finrank ℝ E) p * eLpNorm (fderiv ℝ u) p volume := by
-  -- Transport Mathlib's inequality on `ℝᵈ` along a linear isometry `ℝᵈ ≃ E`.
-  let e := (stdOrthonormalBasis ℝ E).repr.symm
-  have he : MeasurePreserving e := e.measurePreserving
-  have hv : ContDiff ℝ 1 (u ∘ e) := hu.comp e.contDiff
-  have h2v : HasCompactSupport (u ∘ e) :=
-    h2u.comp_isClosedEmbedding e.toHomeomorph.isClosedEmbedding
-  have key := eLpNorm_le_eLpNorm_fderiv_of_eq_inner volume hv h2v hp
-    (by rwa [finrank_euclideanSpace_fin]) (by rwa [finrank_euclideanSpace_fin])
-  have hvalue : eLpNorm (u ∘ e) p' volume = eLpNorm u p' volume :=
-    eLpNorm_comp_measurePreserving hu.continuous.aestronglyMeasurable he
-  have hderiv : eLpNorm (fderiv ℝ (u ∘ e)) p volume = eLpNorm (fderiv ℝ u) p volume := by
-    have hcomp : ∀ y, ‖fderiv ℝ (u ∘ e) y‖ = ‖(fderiv ℝ u ∘ e) y‖ := fun y ↦ by
-      rw [← e.coe_toContinuousLinearEquiv, ContinuousLinearEquiv.comp_right_fderiv,
-        Function.comp_apply]
-      exact ContinuousLinearMap.opNorm_comp_linearIsometryEquiv _ e
-    rw [← eLpNorm_comp_measurePreserving
-      (hu.continuous_fderiv one_ne_zero).aestronglyMeasurable he]
-    exact eLpNorm_congr_norm_ae (hv.continuous_fderiv one_ne_zero).aestronglyMeasurable
-      ((hu.continuous_fderiv one_ne_zero).comp e.continuous).aestronglyMeasurable
-      (.of_forall hcomp)
-  rw [hvalue, hderiv] at key
-  exact key
 
 /-- The exponent `2⋆` of the Sobolev embedding of `W^{1,2}` in dimension `d ≥ 3`, with
 `1 / 2⋆ = 1 / 2 - 1 / d`. -/
@@ -268,7 +218,8 @@ private theorem exists_mem_Icc_inv_eq {d : ℕ} (hd : 0 < d) {q : ℝ≥0} (hq2 
   have hd' : (0 : ℝ) < d := by exact_mod_cast hd
   have hq2' : (q : ℝ)⁻¹ ≤ 2⁻¹ := inv_anti₀ two_pos (by exact_mod_cast hq2)
   refine ⟨d * (2⁻¹ - (q : ℝ)⁻¹), ⟨mul_nonneg hd'.le (by linarith), ?_⟩, ?_⟩
-  · have := mul_le_mul_of_nonneg_left (show 2⁻¹ - (q : ℝ)⁻¹ ≤ (d : ℝ)⁻¹ by linarith) hd'.le
+  · have hbound : 2⁻¹ - (q : ℝ)⁻¹ ≤ (d : ℝ)⁻¹ := by linarith
+    have := mul_le_mul_of_nonneg_left hbound hd'.le
     rwa [mul_inv_cancel₀ hd'.ne'] at this
   · rw [mul_div_cancel_left₀ _ hd'.ne']
     ring
