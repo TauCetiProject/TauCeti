@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Linear.DeligneProduct.Basic
+public import TauCeti.CategoryTheory.Linear.LinearTensor.Basic
 
 /-!
 # Symmetry and opposites of `LinearTensor`
