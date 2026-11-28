@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.Analysis.Distribution.TestFunction
-import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn

@@ -47,9 +47,8 @@ uniformly on a neighbourhood filter of a point of continuity of the function.
 
 The file also bounds the topological support of `ρ.normed μ ⋆ g` by the Minkowski sum
 `closedBall 0 ρ.rOut + tsupport g`, and provides normalized-kernel results for the shrinking
-sequence `ContDiffBump.shrinking` from `TauCeti.Analysis.Calculus.BumpFunction.Basic`: interior
-translated-support selection (`ContDiffBump.exists_seq_sub_tsupport_subset`), uniform indicator
-approximation on compact subsets of open domains
+sequence `ContDiffBump.shrinking` from `TauCeti.Analysis.Calculus.BumpFunction.Basic`: uniform
+indicator approximation on compact subsets of open domains
 (`ContDiffBump.tendstoUniformlyOn_normed_convolution_indicator`), rescaling of the bumps
 (`ContDiffBump.shrinking_apply_eq`), and reduction of integrals against their normalized forms to
 one kernel (`ContDiffBump.integral_shrinking_normed_mul`).
@@ -76,20 +75,6 @@ namespace ContDiffBump
 section Shrinking
 
 variable {R : ℝ}
-
-/-- On a relatively compact open subdomain, a shrinking sequence of normalized bump kernels
-has every translated support inside the ambient open domain. -/
-theorem exists_seq_sub_tsupport_subset {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-    {μ : Measure E} [μ.IsAddHaarMeasure] {W Ω : TopologicalSpace.Opens E}
-    (hWc : IsCompact (closure (W : Set E))) (hWΩ : closure (W : Set E) ⊆ Ω) :
-    ∃ φ : ℕ → ContDiffBump (0 : E),
-      Tendsto (fun n => (φ n).rOut) atTop (𝓝 0) ∧
-      ∀ n x, x ∈ (W : Set E) → ∀ y ∈ tsupport ((φ n).normed μ), x - y ∈ Ω := by
-  obtain ⟨φ, hφ, hball⟩ := exists_seq_tendsto_rOut_closedBall_subset Ω.isOpen hWc hWΩ
-  refine ⟨φ, hφ, fun n x hx y hy => hball n x (subset_closure hx) ?_⟩
-  rw [(φ n).tsupport_normed_eq, mem_closedBall, dist_zero_right] at hy
-  simpa [mem_closedBall, dist_eq_norm] using hy
 
 /-- `ContDiffBump.shrinking hR n` is `ContDiffBump.shrinking hR 0` rescaled by the factor `n + 1`,
 so all the bumps of the sequence are rescalings of one kernel. -/

@@ -74,9 +74,10 @@ for the statements here.
   (`TauCeti.IsWeakCRSolution.add_zeroth`),
   restriction to open subsets (`TauCeti.IsWeakCRSolution.mono`,
   `TauCeti.IsSobolevCRCoefficients.mono`), changing the exponent
-  (`TauCeti.IsWeakCRSolution.mono_exponent`, `TauCeti.IsWeakCRSolution.of_memLpLoc`) and
-  invariance under changes of `J`, `DJ`, `S`, `ξ` and `η` on null subsets of `Ω`
-  (`TauCeti.isWeakCRSolution_congr_ae`).
+  (`TauCeti.IsWeakCRSolution.mono_exponent`, `TauCeti.IsWeakCRSolution.of_memLpLoc`),
+  replacing coefficients on null subsets (`TauCeti.IsSobolevCRCoefficients.congr_ae`), and
+  invariance of the weak equation under changes of `J`, `DJ`, `S`, `ξ` and `η` on null subsets of
+  `Ω` (`TauCeti.isWeakCRSolution_congr_ae`).
 
 The proofs test against vector-valued test functions through the inner-product form of the weak
 derivative identity (`TauCeti.HasWeakLineDerivOn.integral_inner_lineDeriv_eq_neg`) and the
@@ -274,6 +275,17 @@ theorem IsSobolevCRCoefficients.mono_exponent (hc : IsSobolevCRCoefficients p Ω
     (hrp : r ≤ p) : IsSobolevCRCoefficients r Ω J DJ S :=
   ⟨hc.hasWeakFDerivOn, hc.memLpLoc_coeff.mono_exponent hrp,
     hc.memLpLoc_deriv.mono_exponent hrp, hc.memLpLoc_zeroth.mono_exponent hrp⟩
+
+omit [CompleteSpace V] in
+/-- Replacing the coefficients of `IsSobolevCRCoefficients` by functions agreeing with them almost
+everywhere on `Ω` preserves Sobolev Cauchy–Riemann coefficients. -/
+theorem IsSobolevCRCoefficients.congr_ae (hc : IsSobolevCRCoefficients p Ω J DJ S)
+    (hJ : J =ᵐ[volume.restrict Ω] J') (hDJ : DJ =ᵐ[volume.restrict Ω] DJ')
+    (hS : S =ᵐ[volume.restrict Ω] S') :
+    IsSobolevCRCoefficients p Ω J' DJ' S' :=
+  ⟨(hc.hasWeakFDerivOn.congr_ae hJ).congr_ae_deriv hDJ,
+    hc.memLpLoc_coeff.congr_ae hJ, hc.memLpLoc_deriv.congr_ae hDJ,
+    hc.memLpLoc_zeroth.congr_ae hS⟩
 
 omit [CompleteSpace V] in
 /-- Coefficients in `W^{1,p}_loc(Ω)` (for `J`) and `Lᵖ_loc(Ω)` (for `S`) form Sobolev

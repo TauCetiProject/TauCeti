@@ -10,13 +10,13 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Sobolev.Mollification.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
+import TauCeti.Analysis.Calculus.BumpFunction.Normed
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Function.Lp.Holder
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.UnifTight
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
-import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
 
 /-!

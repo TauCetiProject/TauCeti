@@ -8,13 +8,12 @@ module
 public import TauCeti.Analysis.InnerProductSpace.GelfandTriple
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.MeasureTheory.Function.Lp.Holder
-import TauCeti.Analysis.Calculus.BumpFunction.Convolution
+import TauCeti.Analysis.Calculus.BumpFunction.Normed
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Sobolev.Mollification.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
-import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import Mathlib.Analysis.Calculus.FDeriv.Bilinear
 import Mathlib.MeasureTheory.Function.Holder

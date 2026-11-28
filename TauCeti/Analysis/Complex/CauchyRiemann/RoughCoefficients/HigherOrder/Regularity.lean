@@ -7,10 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder.Basic
 public import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
-import Mathlib.Analysis.Normed.Operator.NormedSpace
-import Mathlib.Topology.Algebra.Module.FiniteDimension
-import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
-import TauCeti.Analysis.Sobolev.WeakDeriv.Bilinear.Holder
+import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Weak.Morrey
 import TauCeti.Data.ENNReal.Holder
 
 /-!
@@ -36,9 +33,10 @@ of `TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder.Basic`,
    `TauCeti.IsWeakLinearCauchyRiemannOn.contDiffOn`, and
    `TauCeti.IsWeakLinearCauchyRiemannOn.contDiffOn_infty`). Transporting along a continuous linear
    equivalence to Euclidean space yields inhomogeneous `W^{k+1,r}_loc` regularity (`1 < r < ∞`,
-   `r ≤ p`) directly from `HasWeakFDerivOn` (via `W^{1,1}_loc ⊆ L²_loc` and mollification of the
-   continuous Morrey representative of `J`), as well as `W^{k+1,p}_loc`, `C^k`, and `C^∞`
-   regularity for `TauCeti.IsWeakLinearCauchyRiemannOn` at every exponent `q : ℝ≥0∞`.
+   `r ≤ p`) directly from `HasWeakFDerivOn` (via
+   `TauCeti.IsSobolevCRCoefficients.isWeakCRSolution_of_hasWeakFDerivOn`), as well as
+   `W^{k+1,r}_loc` (`1 < r < ∞`, `r ≤ p`), `C^k`, and `C^∞` regularity for
+   `TauCeti.IsWeakLinearCauchyRiemannOn` at every exponent `q : ℝ≥0∞`.
 
 ## Main declarations
 
@@ -48,7 +46,7 @@ of `TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder.Basic`,
   regularity of weakly differentiable solutions valued in any finite-dimensional real normed space.
 * `TauCeti.IsWeakLinearCauchyRiemannOn.memWkpLoc_succ`,
   `TauCeti.IsWeakLinearCauchyRiemannOn.contDiffOn`, and
-  `TauCeti.IsWeakLinearCauchyRiemannOn.contDiffOn_infty`: `W^{k+1,p}_loc`, `C^k`, and `C^∞`
+  `TauCeti.IsWeakLinearCauchyRiemannOn.contDiffOn_infty`: `W^{k+1,r}_loc`, `C^k`, and `C^∞`
   regularity of continuous weak linear Cauchy–Riemann solutions valued in any finite-dimensional
   real normed space.
 
@@ -97,53 +95,6 @@ end HigherRegularity
 
 section NormedSpace
 
-section InnerProductHelper
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- On a finite-dimensional real inner product space, any map `ξ` with weak derivative `Dξ` on `Ω`
-satisfying `∂_s ξ + J ∂_t ξ + S ξ = η` almost everywhere on `Ω` for Sobolev coefficients at
-exponent `2 < p ≤ ∞` lies in `L²_loc(Ω)` (via the two-dimensional embedding `W^{1,1}_loc ⊆ L²_loc`)
-and satisfies `IsWeakCRSolution 2 Ω J DJ S ξ η`. -/
-private theorem isWeakCRSolution_of_hasWeakFDerivOn_ae [FiniteDimensional ℝ E] {Ω : Opens ℂ}
-    {p : ℝ≥0∞} (hp : 2 < p) {J S : ℂ → E →L[ℝ] E} {DJ : ℂ → ℂ →L[ℝ] E →L[ℝ] E}
-    {ξ η : ℂ → E} {Dξ : ℂ → ℂ →L[ℝ] E}
-    (hc : IsSobolevCRCoefficients p Ω J DJ S)
-    (hDξ : HasWeakFDerivOn volume Ω ξ Dξ)
-    (heq : ∀ᵐ z ∂volume.restrict Ω, Dξ z 1 + J z (Dξ z I) + S z (ξ z) = η z) :
-    IsWeakCRSolution 2 Ω J DJ S ξ η := by
-  have hloc := Ω.isOpen.isLocallyClosed
-  have hp1 : 1 ≤ p := one_le_two.trans hp.le
-  have hp2 : p⁻¹ + (2 : ℝ≥0∞)⁻¹ < 1 := ENNReal.inv_add_inv_two_lt_one_iff.2 hp
-  -- `HasWeakFDerivOn` places `ξ ∈ W^{1,1}_loc(Ω) ⊆ L²_loc(Ω)` via the 2D Sobolev embedding.
-  have hξ1 : MemWkpLoc 1 Ω 1 ξ :=
-    memWkpLoc_succ_iff_of_isOpen.2
-      ⟨(memLpLoc_one_iff_locallyIntegrableOn hloc).2 hDξ.locallyIntegrableOn, Dξ, hDξ,
-        memWkpLoc_zero_iff.2 ((memLpLoc_one_iff_locallyIntegrableOn hloc).2
-          hDξ.locallyIntegrableOn_deriv)⟩
-  have hξ2 : MemLpLoc 2 Ω ξ := hξ1.memLpLoc_two le_rfl
-  -- Replace `J` by its continuous Morrey representative `J'`.
-  set J' := TauCeti.MeasureTheory.preciseRepresentative volume J
-  have hJ'cont : ContinuousOn J' Ω := hc.memWkpLoc_coeff.continuousOn_preciseRepresentative hp
-  have hJJ' : J =ᵐ[volume.restrict Ω] J' := hc.memLpLoc_coeff.ae_eq_preciseRepresentative hp1
-  have hc' : IsSobolevCRCoefficients p Ω J' DJ S :=
-    ⟨hc.hasWeakFDerivOn.congr_ae hJJ', hc.memLpLoc_coeff.congr_ae hJJ',
-      hc.memLpLoc_deriv, hc.memLpLoc_zeroth⟩
-  have heq' : ∀ᵐ z ∂volume.restrict Ω, Dξ z 1 + J' z (Dξ z I) + S z (ξ z) = η z := by
-    filter_upwards [heq, hJJ'] with z hz hJ using by rwa [← hJ]
-  have hJ'ξ : HasWeakLineDerivOn volume Ω (fun z => J' z (ξ z))
-      (fun z => DJ z I (ξ z) + J' z (Dξ z I)) I := by
-    simpa only [ContinuousLinearMap.id_apply] using
-      (hc'.hasWeakFDerivOn.hasWeakLineDerivOn I).bilin_of_continuousOn
-        (ContinuousLinearMap.id ℝ (E →L[ℝ] E)) hp2.le hJ'cont
-        (fun K hKc hKΩ => memLpLoc_iff.1 (hc'.memLpLoc_deriv.clm_comp
-          (ContinuousLinearMap.apply ℝ (E →L[ℝ] E) I)) K hKΩ hKc)
-        (hDξ.hasWeakLineDerivOn I) (fun K hKc hKΩ => memLpLoc_iff.1 hξ2 K hKΩ hKc)
-  exact (isWeakCRSolution_congr_ae hJJ' .rfl .rfl .rfl .rfl).2 <|
-    (hc'.isWeakCRSolution_iff_ae_of_hasWeakLineDerivOn hp2.le hDξ hξ2 hJ'ξ).2 heq'
-
-end InnerProductHelper
-
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {Ω : Opens ℂ} {p q r : ℝ≥0∞} {k : ℕ} {J S : ℂ → V →L[ℝ] V} {ξ η : ℂ → V}
 
@@ -177,7 +128,7 @@ theorem HasWeakFDerivOn.memWkpLoc_succ_of_ae_cauchyRiemann {Dξ : ℂ → ℂ �
     simpa [conjA, map_add] using congrArg A hz
   have hsol' : IsWeakCRSolution 2 Ω (fun z => conjA (J z)) DJ' (fun z => conjA (S z))
       (fun z => A (ξ z)) (fun z => A (η z)) :=
-    isWeakCRSolution_of_hasWeakFDerivOn_ae hp hc' (hDξ.clm_comp (A : V →L[ℝ] E)) heq'
+    hc'.isWeakCRSolution_of_hasWeakFDerivOn hp (hDξ.clm_comp (A : V →L[ℝ] E)) heq'
   have hp2 : p⁻¹ + (2 : ℝ≥0∞)⁻¹ < 1 := ENNReal.inv_add_inv_two_lt_one_iff.2 hp
   have hJsq' : ∀ᵐ z ∂volume.restrict Ω, conjA (J z) * conjA (J z) = -1 := by
     filter_upwards [hJsq] with z hz
@@ -186,16 +137,16 @@ theorem HasWeakFDerivOn.memWkpLoc_succ_of_ae_cauchyRiemann {Dξ : ℂ → ℂ �
     (hsol'.memWkpLoc_succ hc' hp hJsq' hp2 hr hr_top hrp (hJ'.of_le (le_max_right 1 k)) hS' hη')
 
 /-- **Interior Sobolev regularity for `TauCeti.IsWeakLinearCauchyRiemannOn` on a finite-dimensional
-real normed space.** If `2 < p < ∞`, `J ∈ W^{max 1 k, p}_loc(Ω)` with `J² = -1` almost everywhere
-on `Ω`, and `S ∈ W^{k,p}_loc(Ω)`, then every weak solution `ξ` of `∂_s ξ + J ∂_t ξ + S ξ = 0` on
-`Ω` at any exponent `q : ℝ≥0∞` lies in `W^{k+1,p}_loc(Ω)`. -/
-theorem IsWeakLinearCauchyRiemannOn.memWkpLoc_succ (hp : 2 < p) (hp_top : p ≠ ⊤)
+real normed space.** If `2 < p ≤ ∞`, `1 < r < ∞`, `r ≤ p`, `J ∈ W^{max 1 k, p}_loc(Ω)` with
+`J² = -1` almost everywhere on `Ω`, and `S ∈ W^{k,p}_loc(Ω)`, then every weak solution `ξ` of
+`∂_s ξ + J ∂_t ξ + S ξ = 0` on `Ω` at any exponent `q : ℝ≥0∞` lies in `W^{k+1,r}_loc(Ω)`. -/
+theorem IsWeakLinearCauchyRiemannOn.memWkpLoc_succ (hp : 2 < p)
+    (hr : 1 < r) (hr_top : r ≠ ⊤) (hrp : r ≤ p)
     (hJ : MemWkpLoc p Ω (max 1 k) J) (hJsq : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1)
     (hS : MemWkpLoc p Ω k S) (h : IsWeakLinearCauchyRiemannOn q Ω J S ξ) :
-    MemWkpLoc p Ω (k + 1) ξ := by
+    MemWkpLoc r Ω (k + 1) ξ := by
   obtain ⟨-, -, Dξ, hDξ, -, heq⟩ := isWeakLinearCauchyRiemannOn_iff_of_isOpen.1 h
-  exact hDξ.memWkpLoc_succ_of_ae_cauchyRiemann hp ((by norm_num : (1 : ℝ≥0∞) < 2).trans hp)
-    hp_top le_rfl hJ hJsq hS memWkpLoc_zero_fun heq
+  exact hDξ.memWkpLoc_succ_of_ae_cauchyRiemann hp hr hr_top hrp hJ hJsq hS memWkpLoc_zero_fun heq
 
 /-- **`C^k` interior regularity for `TauCeti.IsWeakLinearCauchyRiemannOn`.** If `2 < p ≤ ∞`
 (allowing `p = ∞`), `J ∈ W^{max 1 k, p}_loc(Ω)` with `J² = -1` almost everywhere on `Ω`, and
@@ -206,8 +157,8 @@ theorem IsWeakLinearCauchyRiemannOn.contDiffOn (hp : 2 < p)
     (hS : MemWkpLoc p Ω k S) (h : IsWeakLinearCauchyRiemannOn q Ω J S ξ) :
     ContDiffOn ℝ k ξ Ω := by
   obtain ⟨p₀, hp₀, hp₀p⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hp
-  exact (h.memWkpLoc_succ hp₀ ENNReal.coe_ne_top (hJ.mono_exponent hp₀p.le) hJsq
-    (hS.mono_exponent hp₀p.le)).contDiffOn_of_continuousOn hp₀ h.continuousOn .rfl
+  exact (h.memWkpLoc_succ hp ((by norm_num : (1 : ℝ≥0∞) < 2).trans hp₀) ENNReal.coe_ne_top
+    hp₀p.le hJ hJsq hS).contDiffOn_of_continuousOn hp₀ h.continuousOn .rfl
 
 /-- **`C^∞` interior regularity for `TauCeti.IsWeakLinearCauchyRiemannOn` with smooth
 coefficients.** If `J` and `S` are `C^∞` on `Ω` and `J² = -1` almost everywhere on `Ω`, then every
