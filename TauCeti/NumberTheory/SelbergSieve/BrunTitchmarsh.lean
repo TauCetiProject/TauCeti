@@ -8,10 +8,9 @@ module
 public import Mathlib.NumberTheory.PrimeCounting
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Analysis.Complex.ExponentialBounds
-import TauCeti.NumberTheory.ArithmeticFunction.DivisorBounds
 import TauCeti.NumberTheory.PrimeCounting
 import TauCeti.NumberTheory.SelbergSieve.CoprimeDiagonal
-import TauCeti.NumberTheory.SelbergSieve.PrimeInterval
+import TauCeti.NumberTheory.SelbergSieve.Prime.Interval
 
 /-!
 # The Selberg upper bound for primes in an interval
@@ -53,29 +52,6 @@ open scoped ArithmeticFunction.omega
 
 namespace TauCeti
 
-/-- The Selberg remainder of the interval sieve at level `z` is at most `z² (1 + 2 log z)²`,
-the coefficient-one majorant of `∑_{n ≤ z²} 3^ω(n)`. -/
-private theorem sum_three_pow_mul_abs_rem_primeInterval_le (x y z : ℝ) (hx : 0 ≤ x)
-    (hy : 0 ≤ y) (hz : 1 ≤ z) :
-    ∑ d ∈ (BoundingSieve.primeInterval x y z).prodPrimes.divisors.filter
-        (fun d : ℕ ↦ (d : ℝ) < z ^ 2),
-      (3 : ℝ) ^ ω d * |(BoundingSieve.primeInterval x y z).rem d| ≤
-      z ^ 2 * (1 + 2 * Real.log z) ^ 2 := by
-  have hz2 : 1 ≤ z ^ 2 := one_le_pow₀ hz
-  calc _ ≤ ∑ d ∈ (BoundingSieve.primeInterval x y z).prodPrimes.divisors.filter
-          (fun d : ℕ ↦ (d : ℝ) < z ^ 2), (3 : ℝ) ^ ω d := by
-        gcongr with d
-        exact mul_le_of_le_one_right (by positivity)
-          (BoundingSieve.abs_rem_primeInterval_lt_one x y z hx hy d).le
-    _ ≤ ∑ n ∈ Ioc 0 ⌊z ^ 2⌋₊, (3 : ℝ) ^ ω n := by
-        refine sum_le_sum_of_subset_of_nonneg (fun d hd ↦ ?_) (fun _ _ _ ↦ by positivity)
-        obtain ⟨hdP, hdz⟩ := mem_filter.mp hd
-        exact mem_Ioc.mpr ⟨Nat.pos_of_mem_divisors hdP,
-          Nat.le_floor (le_of_lt hdz)⟩
-    _ ≤ z ^ 2 * (1 + Real.log (z ^ 2)) ^ 2 :=
-        ArithmeticFunction.sum_Ioc_three_pow_cardDistinctFactors_le_mul_one_add_log_sq hz2
-    _ = z ^ 2 * (1 + 2 * Real.log z) ^ 2 := by rw [Real.log_pow, Nat.cast_ofNat]
-
 /-- **Selberg's sieve for primes in an interval.** For every real `x`, every `y ≥ 0` and every
 sieving level `z > 1`, the number of primes in `(x, x + y]` is at most
 `y / log z + z² (1 + 2 log z)² + z + 1`. -/
@@ -109,7 +85,8 @@ theorem primeCounting_floor_add_sub_le_div_log_add (x y : ℝ) {z : ℝ} (hy : 0
     _ ≤ y / Real.log z + z ^ 2 * (1 + 2 * Real.log z) ^ 2 + (z + 1) := by
         rw [BoundingSieve.primeInterval_totalMass]
         gcongr
-        exact sum_three_pow_mul_abs_rem_primeInterval_le x' y z hx' hy hz.le
+        exact (s.sum_three_pow_mul_abs_rem_le_mul fun d _ ↦
+          (BoundingSieve.abs_rem_primeInterval_lt_one x' y z hx' hy d).le).trans_eq (one_mul _)
 
 /-- With `L = log y`, `a = log L ≥ 1` and `12 a ≤ L`, the sieving level `z = √y / L³` makes the
 bound of `primeCounting_floor_add_sub_le_div_log_add` at most `2y / L + 30 y a / L²`. -/
