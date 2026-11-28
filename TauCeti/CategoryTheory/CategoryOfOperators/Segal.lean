@@ -34,112 +34,7 @@ namespace TauCeti.CategoryOfOperators
 
 variable (C : Type u) [Category.{v} C]
 
-/-- The singleton family given by a specified coordinate of a family. Its objects and maps
-reduce to coordinate evaluation, as needed for the dependent components of operator maps. -/
-@[expose, reducible]
-def singletonCoordinate (b : FinPointed.{w}) (i : Fin b.len) :
-    (Fin b.len → C) ⥤ (Fin 1 → C) :=
-  Functor.pi' fun _ ↦ CategoryTheory.Pi.eval (fun _ : Fin b.len ↦ C) i
-
 variable [MonoidalCategory C] [SymmetricCategory C]
-
-/-- The lift of the inert projection to the singleton family containing its selected member.
-The body is exposed so that its dependent components have the specified base map. -/
-@[expose, implicit_reducible]
-noncomputable def toSingleton (b : FinPointed.{w}) (i : Fin b.len) (X : Fin b.len → C) :
-    (ι C b).obj X ⟶ (ι C (FinPointed.mk 1)).obj ((singletonCoordinate C b i).obj X) :=
-  ⟨FinPointed.ρ i, fun _ ↦
-    (listTensorPermIso X (.of_eq (FinPointed.fiber_ρ i _))).hom ≫ (ρ_ (X i)).hom⟩
-
-@[simp]
-lemma toSingleton_base (b : FinPointed.{w}) (i : Fin b.len) (X : Fin b.len → C) :
-    (toSingleton C b i X).base = FinPointed.ρ i :=
-  (rfl)
-
-@[simp]
-lemma toSingleton_app (b : FinPointed.{w}) (i : Fin b.len) (X : Fin b.len → C)
-    (j : Fin 1) :
-    (toSingleton C b i X).app j =
-      (listTensorPermIso X (.of_eq (FinPointed.fiber_ρ i j))).hom ≫ (ρ_ (X i)).hom :=
-  (rfl)
-
-/-- Projection lifts commute with morphisms of families. -/
-@[reassoc]
-lemma toSingleton_naturality (b : FinPointed.{w}) (i : Fin b.len)
-    {X Y : Fin b.len → C} (f : X ⟶ Y) :
-    (ι C b).map f ≫ toSingleton C b i Y =
-      toSingleton C b i X ≫ (ι C (FinPointed.mk 1)).map
-        ((singletonCoordinate C b i).map f) := by
-  refine hom_ext (by simp) fun j ↦ ?_
-  dsimp only [ι, toSingleton, Hom.ofFamily, Hom.id, singletonCoordinate, Functor.pi',
-    CategoryTheory.Pi.eval]
-  rw [comp_ofFamily_app]
-  rw [comp_app]
-  dsimp only
-  simp only [Category.assoc]
-  rw [← listTensorMap_comp_assoc,
-    ← listTensorPermIso_flatMap_left_hom_assoc X
-      (fun j ↦ .of_eq (FinPointed.fiber_id j)),
-    ← listTensorMap_comp_assoc,
-    reassoc_of% listTensorFlatMapIso_hom_listTensorMap_rightUnitor X
-      ((FinPointed.ρ i).fiber j),
-    listTensorPermIso_hom_eqToHom_assoc X _ (List.flatMap_singleton' _)]
-  rw [listTensorPermIso_hom_naturality_assoc]
-  simp [tensorHom_id]
-
-/-- The inert projection, as a natural transformation on families. -/
-noncomputable def inertProjection (b : FinPointed.{w}) (i : Fin b.len) :
-    ι C b ⟶ singletonCoordinate C b i ⋙ ι C (FinPointed.mk 1) where
-  app := toSingleton C b i
-  naturality _ _ f := toSingleton_naturality C b i f
-
-@[simp]
-lemma inertProjection_app (b : FinPointed.{w}) (i : Fin b.len) (X : Fin b.len → C) :
-    (inertProjection C b i).app X = toSingleton C b i X :=
-  (rfl)
-
-/-- The pushforward of an inert projection is isomorphic, over the identity, to the
-singleton family consisting of its selected member. -/
-noncomputable def pushforwardSingletonIso (b : FinPointed.{w}) (i : Fin b.len)
-    (X : Fin b.len → C) :
-    ((ι C b).obj X).pushforward (FinPointed.ρ i) ≅
-      (ι C (FinPointed.mk 1)).obj ((singletonCoordinate C b i).obj X) :=
-  (ι C (FinPointed.mk 1)).mapIso (CategoryTheory.Pi.isoMk fun j ↦
-    listTensorPermIso X (.of_eq (FinPointed.fiber_ρ i j)) ≪≫ ρ_ (X i))
-
-@[simp]
-lemma pushforwardSingletonIso_hom_base (b : FinPointed.{w}) (i : Fin b.len)
-    (X : Fin b.len → C) : (pushforwardSingletonIso C b i X).hom.base = 𝟙 _ :=
-  (rfl)
-
-/-- The singleton projection lift is the standard pushforward lift followed by the
-singleton tensor and right-unitor comparison. -/
-@[reassoc]
-lemma toPushforward_comp_pushforwardSingletonIso_hom (b : FinPointed.{w}) (i : Fin b.len)
-    (X : Fin b.len → C) :
-    ((ι C b).obj X).toPushforward (FinPointed.ρ i) ≫
-      (pushforwardSingletonIso C b i X).hom = toSingleton C b i X := by
-  dsimp only [pushforwardSingletonIso, Functor.mapIso, CategoryTheory.Pi.isoMk,
-    ι, toSingleton, singletonCoordinate, Functor.pi', CategoryTheory.Pi.eval, Iso.trans_hom]
-  refine hom_ext (by simp) fun j ↦ ?_
-  have h := comp_ofFamily_app (((ι C b).obj X).toPushforward (FinPointed.ρ i))
-    (Z' := fun _ ↦ X i) (fun j ↦
-      (listTensorPermIso X (.of_eq (FinPointed.fiber_ρ i j))).hom ≫ (ρ_ (X i)).hom) j
-  dsimp only [ι, pushforward] at h
-  rw [h]
-  simp
-
-/-- The inert projection to the singleton coordinate is strongly coCartesian. -/
-instance isStronglyCocartesian_toSingleton (b : FinPointed.{w}) (i : Fin b.len)
-    (X : Fin b.len → C) :
-    (toFinPointed C).IsStronglyCocartesian (FinPointed.ρ i) (toSingleton C b i X) := by
-  have : (toFinPointed C).IsHomLift (𝟙 (FinPointed.mk 1))
-      (pushforwardSingletonIso C b i X).hom := isHomLift_iff.2 (by simp)
-  have h := Functor.IsStronglyCocartesian.comp (p := toFinPointed C)
-    (f := FinPointed.ρ i) (g := 𝟙 (FinPointed.mk 1))
-    (φ := ((ι C b).obj X).toPushforward (FinPointed.ρ i))
-    (ψ := (pushforwardSingletonIso C b i X).hom)
-  simpa only [Category.comp_id, toPushforward_comp_pushforwardSingletonIso_hom] using h
 
 /-! ## Cylinders on the strict simplicial fibers -/
 
@@ -254,7 +149,7 @@ private lemma uncurry_fiberInertProjection_comp (b : FinPointed.{max u v})
   · have h := leOfHom f
     fin_cases a <;> fin_cases a' <;> dsimp at h <;> try omega
     all_goals simp [Functor.uncurry, ComposableArrows.mk₁, ComposableArrows.Mk₁.map,
-      fiberInertProjection, Functor.whiskerLeft, inertProjection, toFinPointed]
+      fiberInertProjection, Functor.whiskerLeft, inertProjection_app, toFinPointed]
 
 /-- The projection cylinder lies over the edge given by the inert projection. -/
 @[reassoc (attr := simp)]
@@ -287,7 +182,10 @@ lemma nerveFiberProjectionCylinder_app_verticalEdge (b : FinPointed.{max u v})
         (nerveEquiv ((nerve.fiberIso (toFinPointed C) b).inv.app _ x))))).edge := by
   simp only [nerveFiberProjectionCylinder, Homotopy.precomp_h, NatTrans.comp_app,
     types_comp_apply, whiskerRight_app_verticalEdge]
-  rw [← nerveEquiv.symm_apply_apply ((nerve.fiberIso (toFinPointed C) b).inv.app _ x)]
-  exact NatTrans.nerveHomotopy_h_app_verticalEdge _ _
+  conv_lhs =>
+    rw [← nerveEquiv.symm_apply_apply ((nerve.fiberIso (toFinPointed C) b).inv.app _ x)]
+  simpa only [fiberInertProjection, Functor.whiskerLeft_app, inertProjection_app] using
+    NatTrans.nerveHomotopy_h_app_verticalEdge (fiberInertProjection C b i)
+      (nerveEquiv ((nerve.fiberIso (toFinPointed C) b).inv.app _ x))
 
 end TauCeti.CategoryOfOperators

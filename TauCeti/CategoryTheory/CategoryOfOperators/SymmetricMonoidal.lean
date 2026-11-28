@@ -254,6 +254,25 @@ lemma comp_ofFamily_app {Z' : Fin Y.base.len → C} (f : X ⟶ Y) (φ : ∀ j, Y
         f.app j ≫ φ j :=
   Hom.comp_ofFamily_app' f φ j
 
+/-- Precomposing with a morphism given by maps of family members tensors these maps over
+each fiber before applying the component of the second morphism. -/
+lemma ofFamily_comp_app {Y' : Fin X.base.len → C} (φ : ∀ j, X.obj j ⟶ Y' j)
+    (f : (⟨X.base, Y'⟩ : CategoryOfOperators.{w} C) ⟶ Z) (j : Fin Z.base.len) :
+    ((Hom.ofFamily X φ : X ⟶ ⟨X.base, Y'⟩) ≫ f).app j =
+      (listTensorPermIso X.obj
+        (.of_eq (congrArg (FinPointed.Hom.fiber · j) (Category.id_comp f.base)))).hom ≫
+        listTensorMap φ (f.base.fiber j) ≫ f.app j := by
+  rw [comp_app]
+  dsimp only [Hom.ofFamily, Hom.id]
+  simp only [Category.assoc]
+  rw [← listTensorMap_comp_assoc,
+    ← listTensorPermIso_flatMap_left_hom_assoc X.obj
+      (fun j ↦ .of_eq (FinPointed.fiber_id j)),
+    ← listTensorMap_comp_assoc,
+    reassoc_of% listTensorFlatMapIso_hom_listTensorMap_rightUnitor X.obj (f.base.fiber j),
+    listTensorPermIso_hom_eqToHom_assoc X.obj _ (List.flatMap_singleton' _)]
+  simp only [listTensorPermIso_hom_listTensorPermIso_hom_assoc]
+
 /-! ### The functor to `Fin_*` -/
 
 variable (C) in
@@ -471,6 +490,111 @@ instance [Subsingleton C] [Quiver.IsThin C] : (toFinPointed.{w} C).IsIso where
       obtain rfl : a = b := h
       exact congrArg (CategoryOfOperators.mk a) (Subsingleton.elim X Y)
     · exact fun n ↦ ⟨⟨n, fun _ ↦ 𝟙_ C⟩, rfl⟩
+
+/-! ### Inert projections to singleton families -/
+
+section
+
+variable (C)
+
+omit [MonoidalCategory C] [SymmetricCategory C] in
+/-- The singleton family given by a specified coordinate of a family. Its objects and maps
+reduce to coordinate evaluation, as needed for the dependent components of operator maps. -/
+@[expose, reducible]
+def singletonCoordinate (b : FinPointed.{w}) (i : Fin b.len) :
+    (Fin b.len → C) ⥤ (Fin 1 → C) :=
+  Functor.pi' fun _ ↦ CategoryTheory.Pi.eval (fun _ : Fin b.len ↦ C) i
+
+/-- The lift of the inert projection to the singleton family containing its selected member.
+The body is exposed so that its dependent components have the specified base map. -/
+@[expose, implicit_reducible]
+noncomputable def toSingleton (b : FinPointed.{w}) (i : Fin b.len) (X : Fin b.len → C) :
+    (ι C b).obj X ⟶ (ι C (FinPointed.mk 1)).obj ((singletonCoordinate C b i).obj X) :=
+  ⟨FinPointed.ρ i, fun _ ↦
+    (listTensorPermIso X (.of_eq (FinPointed.fiber_ρ i _))).hom ≫ (ρ_ (X i)).hom⟩
+
+@[simp]
+lemma toSingleton_base (b : FinPointed.{w}) (i : Fin b.len) (X : Fin b.len → C) :
+    (toSingleton C b i X).base = FinPointed.ρ i :=
+  (rfl)
+
+@[simp]
+lemma toSingleton_app (b : FinPointed.{w}) (i : Fin b.len) (X : Fin b.len → C)
+    (j : Fin 1) :
+    (toSingleton C b i X).app j =
+      (listTensorPermIso X (.of_eq (FinPointed.fiber_ρ i j))).hom ≫ (ρ_ (X i)).hom :=
+  (rfl)
+
+/-- Projection lifts commute with morphisms of families. -/
+@[reassoc]
+lemma toSingleton_naturality (b : FinPointed.{w}) (i : Fin b.len)
+    {X Y : Fin b.len → C} (f : X ⟶ Y) :
+    (ι C b).map f ≫ toSingleton C b i Y =
+      toSingleton C b i X ≫ (ι C (FinPointed.mk 1)).map
+        ((singletonCoordinate C b i).map f) := by
+  refine hom_ext (by simp) fun j ↦ ?_
+  dsimp only [ι]
+  rw [ofFamily_comp_app, comp_ofFamily_app]
+  dsimp only [toSingleton, singletonCoordinate, Functor.pi', CategoryTheory.Pi.eval]
+  simp only [listTensorPermIso_self, Iso.refl_hom, Category.id_comp, Category.assoc]
+  rw [listTensorPermIso_hom_naturality_assoc]
+  simp [tensorHom_id]
+
+/-- The inert projection, as a natural transformation on families. -/
+noncomputable def inertProjection (b : FinPointed.{w}) (i : Fin b.len) :
+    ι C b ⟶ singletonCoordinate C b i ⋙ ι C (FinPointed.mk 1) where
+  app := toSingleton C b i
+  naturality _ _ f := toSingleton_naturality C b i f
+
+@[simp]
+lemma inertProjection_app (b : FinPointed.{w}) (i : Fin b.len) (X : Fin b.len → C) :
+    (inertProjection C b i).app X = toSingleton C b i X :=
+  (rfl)
+
+/-- The pushforward of an inert projection is isomorphic, over the identity, to the
+singleton family consisting of its selected member. -/
+noncomputable def pushforwardSingletonIso (b : FinPointed.{w}) (i : Fin b.len)
+    (X : Fin b.len → C) :
+    ((ι C b).obj X).pushforward (FinPointed.ρ i) ≅
+      (ι C (FinPointed.mk 1)).obj ((singletonCoordinate C b i).obj X) :=
+  (ι C (FinPointed.mk 1)).mapIso (CategoryTheory.Pi.isoMk fun j ↦
+    listTensorPermIso X (.of_eq (FinPointed.fiber_ρ i j)) ≪≫ ρ_ (X i))
+
+@[simp]
+lemma pushforwardSingletonIso_hom_base (b : FinPointed.{w}) (i : Fin b.len)
+    (X : Fin b.len → C) : (pushforwardSingletonIso C b i X).hom.base = 𝟙 _ :=
+  (rfl)
+
+/-- The singleton projection lift is the standard pushforward lift followed by the
+singleton tensor and right-unitor comparison. -/
+@[reassoc]
+lemma toPushforward_comp_pushforwardSingletonIso_hom (b : FinPointed.{w}) (i : Fin b.len)
+    (X : Fin b.len → C) :
+    ((ι C b).obj X).toPushforward (FinPointed.ρ i) ≫
+      (pushforwardSingletonIso C b i X).hom = toSingleton C b i X := by
+  dsimp only [pushforwardSingletonIso, Functor.mapIso, CategoryTheory.Pi.isoMk,
+    ι, toSingleton, singletonCoordinate, Functor.pi', CategoryTheory.Pi.eval, Iso.trans_hom]
+  refine hom_ext (by simp) fun j ↦ ?_
+  have h := comp_ofFamily_app (((ι C b).obj X).toPushforward (FinPointed.ρ i))
+    (Z' := fun _ ↦ X i) (fun j ↦
+      (listTensorPermIso X (.of_eq (FinPointed.fiber_ρ i j))).hom ≫ (ρ_ (X i)).hom) j
+  dsimp only [ι, pushforward] at h
+  rw [h]
+  simp
+
+/-- The inert projection to the singleton coordinate is strongly coCartesian. -/
+instance isStronglyCocartesian_toSingleton (b : FinPointed.{w}) (i : Fin b.len)
+    (X : Fin b.len → C) :
+    (toFinPointed C).IsStronglyCocartesian (FinPointed.ρ i) (toSingleton C b i X) := by
+  have : (toFinPointed C).IsHomLift (𝟙 (FinPointed.mk 1))
+      (pushforwardSingletonIso C b i X).hom := isHomLift_iff.2 (by simp)
+  have h := Functor.IsStronglyCocartesian.comp (p := toFinPointed C)
+    (f := FinPointed.ρ i) (g := 𝟙 (FinPointed.mk 1))
+    (φ := ((ι C b).obj X).toPushforward (FinPointed.ρ i))
+    (ψ := (pushforwardSingletonIso C b i X).hom)
+  simpa only [Category.comp_id, toPushforward_comp_pushforwardSingletonIso_hom] using h
+
+end
 
 end CategoryOfOperators
 
