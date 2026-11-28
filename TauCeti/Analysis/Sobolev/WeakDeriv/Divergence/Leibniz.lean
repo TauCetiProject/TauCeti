@@ -32,7 +32,10 @@ cutoff argument has to correct.
 Since `χ φ` is only `C¹` for a test function `φ`, the rule rests on extending the defining
 identity of the weak divergence from `𝓓(Ω, ℝ)` to `C¹` functions compactly supported in `Ω`
 (`TauCeti.HasWeakDivergenceOn.integral_inner_gradient_eq_neg_integral_mul_of_contDiff`), by
-approximating them in `C¹` by test functions supported in one compact subset of `Ω`.
+approximating them in `C¹` by test functions supported in one compact subset of `Ω`. This
+extension and the resulting characterization follow the corresponding results for weak
+directional derivatives, `TauCeti.HasWeakLineDerivOn.integral_fderiv_smul_eq_neg_integral_smul`
+and `TauCeti.hasWeakLineDerivOn_iff_contDiff_one`.
 
 ## Main results
 
