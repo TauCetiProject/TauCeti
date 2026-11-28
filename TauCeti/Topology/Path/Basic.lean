@@ -23,6 +23,8 @@ import TauCeti.Data.Set.Function
   at their shared endpoints and whose outer ranges are disjoint yields an injective path.
 * `Path.firstHalf`, `Path.secondHalf`: the two halves of a path, cut at its midpoint, with
   `Path.firstHalf_trans_secondHalf`: their concatenation is the path itself.
+* `Path.exists_last_mem_of_isClosed`: if a path meets a closed set, there is a last parameter in
+  that set and every later parameter avoids it.
 -/
 
 public section
@@ -159,5 +161,18 @@ theorem firstHalf_trans_secondHalf (γ : Path a b)
     ring
 
 end Halves
+
+/-- If a path meets a closed set, there is a last parameter in that set and every later parameter
+avoids it. -/
+theorem exists_last_mem_of_isClosed (γ : Path x y) {s : Set X} (hs : IsClosed s)
+    (hne : (range γ ∩ s).Nonempty) :
+    ∃ t : unitInterval, γ t ∈ s ∧ ∀ r : unitInterval, t < r → γ r ∉ s := by
+  have hcomp : IsCompact (γ ⁻¹' s) :=
+    isCompact_univ.of_isClosed_subset (hs.preimage γ.continuous) (subset_univ _)
+  have hne' : (γ ⁻¹' s).Nonempty := by
+    obtain ⟨_, ⟨t, rfl⟩, hts⟩ := hne
+    exact ⟨t, hts⟩
+  obtain ⟨t, hts, htmax⟩ := hcomp.exists_isMaxOn hne' continuous_id.continuousOn
+  exact ⟨t, hts, fun r hr hrs => not_le_of_gt hr (htmax hrs)⟩
 
 end Path

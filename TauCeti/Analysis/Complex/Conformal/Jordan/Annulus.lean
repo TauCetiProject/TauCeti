@@ -94,58 +94,46 @@ private theorem exists_signed_radial_segment {C : Set ℂ} (hC : IsJordanCurve C
       0 < t ∧ t < 1 ∧ p = ((s * t : ℝ) : ℂ) ∧ p ∈ C ∧ Injective J ∧
       range J ⊆ closedBall 0 1 ∧ range J ∩ sphere 0 1 = {s₀} ∧
       range J ∩ C = {p} ∧ ∀ z ∈ range J, t ≤ s * z.re := by
-  -- Last-hit radius on the ray `{s * r | r ≥ 0}` via compactness and connectedness.
   have hsabs : |s| = 1 := by rcases hs with rfl | rfl <;> norm_num
   have hssq : s * s = 1 := by rcases hs with rfl | rfl <;> norm_num
-  let f : ℝ → ℂ := fun r => ((s * r : ℝ) : ℂ)
-  have hfc : Continuous f := by fun_prop
-  have hnorm {r : ℝ} (hr : 0 ≤ r) : ‖f r‖ = r := by
-    simp only [f, Complex.norm_real, Real.norm_eq_abs, abs_mul, hsabs, one_mul, abs_of_nonneg hr]
-  set S : Set ℝ := {r : ℝ | 0 ≤ r ∧ f r ∈ C}
-  have hSlt {r : ℝ} (hr : r ∈ S) : r < 1 := by
-    have hlt : ‖f r‖ < 1 := mem_ball_zero_iff.mp (hCb hr.2)
-    linarith [hnorm hr.1]
-  have hSsub : S ⊆ Icc 0 1 := fun _ hr => ⟨hr.1, (hSlt hr).le⟩
-  have hSclosed : IsClosed S := isClosed_Ici.inter (hC.isClosed.preimage hfc)
-  have hScomp : IsCompact S := isCompact_Icc.of_isClosed_subset hSclosed hSsub
-  have hSne : S.Nonempty := by
-    have h1not : f 1 ∉ filledHull C := by
-      intro hmem
-      have hlt : ‖f 1‖ < 1 := mem_ball_zero_iff.mp (hC.isCompact.filledHull_subset_ball hCb hmem)
-      simp [f, hsabs] at hlt
-    have hconn : IsPreconnected (f '' Icc 0 1) :=
-      isPreconnected_Icc.image f hfc.continuousOn
-    obtain ⟨z, ⟨r, hr, rfl⟩, hfr⟩ := hconn.inter_frontier_nonempty
-      ⟨f 0, mem_image_of_mem f ⟨le_rfl, zero_le_one⟩, by simpa [f] using h0.1⟩
-      ⟨f 1, mem_image_of_mem f ⟨zero_le_one, le_rfl⟩, h1not⟩
-    rw [hC.frontier_filledHull] at hfr
-    exact ⟨r, hr.1, hfr⟩
-  obtain ⟨t, htS, htmax⟩ := hScomp.exists_isMaxOn hSne continuous_id.continuousOn
-  have htpos : 0 < t := lt_of_le_of_ne htS.1 fun h0t => by
-    subst h0t
-    exact h0.2 (by simpa [f] using htS.2)
-  have htlt : t < 1 := hSlt htS
-  have hpC : f t ∈ C := htS.2
-  have htmax' : ∀ r : ℝ, t < r → f r ∉ C := fun r hr hmem => by
-    have hle : r ≤ t := htmax ⟨htpos.le.trans hr.le, hmem⟩
-    linarith
+  -- Last-hit parameter along the radial path `0 ↦ s₀` via `Path.exists_last_mem_of_isClosed`.
+  set γ : Path (0 : ℂ) s₀ := Path.segment 0 s₀
+  have hγ_eval (r : I) : γ r = ((s * (r : ℝ) : ℝ) : ℂ) := by
+    simp [γ, Path.segment, AffineMap.lineMap_apply, ← hs₀, Complex.real_smul, mul_comm]
+  have h1not : s₀ ∉ filledHull C := fun hmem => by
+    have hlt : ‖s₀‖ < 1 := mem_ball_zero_iff.mp (hC.isCompact.filledHull_subset_ball hCb hmem)
+    rw [← hs₀, Complex.norm_real, Real.norm_eq_abs, hsabs] at hlt
+    exact lt_irrefl 1 hlt
+  have hne : (range γ ∩ C).Nonempty := by
+    rw [← hC.frontier_filledHull]
+    exact (isConnected_range γ.continuous).isPreconnected.inter_frontier_nonempty
+      ⟨0, γ.source_mem_range, h0.1⟩ ⟨s₀, γ.target_mem_range, h1not⟩
+  obtain ⟨t₀, ht₀C, ht₀_max⟩ := γ.exists_last_mem_of_isClosed hC.isClosed hne
+  set t : ℝ := (t₀ : ℝ)
+  set p : ℂ := γ t₀
+  have htpos : 0 < t := lt_of_le_of_ne t₀.property.1 fun h0t => by
+    have ht₀ : t₀ = 0 := Subtype.ext h0t.symm
+    exact h0.2 (by simpa [p, ht₀] using ht₀C)
+  have hp_eq : p = ((s * t : ℝ) : ℂ) := hγ_eval t₀
+  have htlt : t < 1 := by
+    have hlt : ‖p‖ < 1 := mem_ball_zero_iff.mp (hCb ht₀C)
+    simpa [hp_eq, Complex.norm_real, Real.norm_eq_abs, hsabs, abs_of_nonneg htpos.le] using hlt
   -- Define the radial segment `J` from `s₀` to `p = s * t` and evaluate it.
-  set p : ℂ := f t
   have hp_ne : s₀ ≠ p := fun h => by
     rw [← hs₀] at h
     have hre := congrArg (fun z : ℂ => s * z.re) h
-    simp only [p, f, Complex.ofReal_re, ← mul_assoc, hssq, one_mul] at hre
+    simp only [hp_eq, Complex.ofReal_re, ← mul_assoc, hssq, one_mul] at hre
     linarith
   set J : Path s₀ p := Path.segment s₀ p
   have hJ_eval (r : I) : J r = ((s * ((1 - (r : ℝ)) + (r : ℝ) * t) : ℝ) : ℂ) := by
-    simp only [J, Path.segment, Path.coe_mk_mk, AffineMap.lineMap_apply, ← hs₀, p, f,
+    simp only [J, Path.segment, Path.coe_mk_mk, AffineMap.lineMap_apply, ← hs₀, hp_eq,
       vsub_eq_sub, vadd_eq_add, Complex.real_smul]
     push_cast
     ring
   -- `J` lies in `closedBall 0 1`, stays on the ray beyond `t`, and meets `sphere 0 1` at `s₀`.
   have hJ_cb : range J ⊆ closedBall 0 1 := by
     rw [Path.range_segment]
-    refine (convex_closedBall (0 : ℂ) 1).segment_subset ?_ (ball_subset_closedBall (hCb hpC))
+    refine (convex_closedBall (0 : ℂ) 1).segment_subset ?_ (ball_subset_closedBall (hCb ht₀C))
     rw [← hs₀]
     simp [Complex.norm_real, Real.norm_eq_abs, hsabs]
   have hJ_re {z : ℂ} (hz : z ∈ range J) : t ≤ s * z.re := by
@@ -160,25 +148,27 @@ private theorem exists_signed_radial_segment {C : Set ℂ} (hC : IsJordanCurve C
     by_cases hzs : z = s₀
     · exact mem_singleton_iff.mpr hzs
     have hzp : z ≠ p := fun h =>
-      sphere_disjoint_ball.notMem_of_mem_left hzS (h ▸ hCb hpC)
+      sphere_disjoint_ball.notMem_of_mem_left hzS (h ▸ hCb ht₀C)
     have hz_open := mem_openSegment_of_ne_left_right (Ne.symm hzs) (Ne.symm hzp) hzJ
     have hball : z ∈ ball (0 : ℂ) 1 :=
       openSegment_subset_ball_of_ne (by rw [← hs₀]; simp [hsabs])
-        (ball_subset_closedBall (hCb hpC)) hp_ne hz_open
+        (ball_subset_closedBall (hCb ht₀C)) hp_ne hz_open
     exact (sphere_disjoint_ball.notMem_of_mem_left hzS hball).elim
-  -- By maximality of `t`, `J` meets `C` only at `p`.
+  -- By maximality of `t₀`, `J` meets `C` only at `p`.
   have hJ_C : range J ∩ C = {p} := by
-    refine Subset.antisymm ?_ (singleton_subset_iff.mpr ⟨J.target_mem_range, hpC⟩)
+    refine Subset.antisymm ?_ (singleton_subset_iff.mpr ⟨J.target_mem_range, ht₀C⟩)
     rintro z ⟨⟨r, rfl⟩, hzC⟩
     rw [mem_singleton_iff]
     by_cases hr1 : (r : ℝ) = 1
     · have : r = 1 := Subtype.ext hr1
       subst this; exact J.target
     · have hlt : (r : ℝ) < 1 := lt_of_le_of_ne r.property.2 hr1
-      have hgt : t < (1 - (r : ℝ)) + (r : ℝ) * t := by nlinarith
-      exact (htmax' _ hgt (by dsimp only [f]; rw [← hJ_eval r]; exact hzC)).elim
-  exact ⟨t, p, J, htpos, htlt, rfl, hpC, Path.segment_injective_of_ne hp_ne, hJ_cb, hJ_S, hJ_C,
-    fun _ => hJ_re⟩
+      let r' : I := ⟨(1 - (r : ℝ)) + (r : ℝ) * t, by nlinarith [r.property.1, r.property.2],
+        by nlinarith [r.property.1, r.property.2]⟩
+      have hgt : t₀ < r' := Subtype.coe_lt_coe.mp (by dsimp [r', t]; nlinarith)
+      exact (ht₀_max r' hgt (by dsimp [r']; rw [hγ_eval, ← hJ_eval r]; exact hzC)).elim
+  exact ⟨t, p, J, htpos, htlt, hp_eq, ht₀C, Path.segment_injective_of_ne hp_ne, hJ_cb, hJ_S,
+    hJ_C, fun _ => hJ_re⟩
 
 /-- Combining the positive and negative radial segments gives disjoint segments `J₁ : Path 1 p₁`
 and `J₂ : Path p₂ (-1)` meeting `C` and `sphere 0 1` only at their endpoints. -/

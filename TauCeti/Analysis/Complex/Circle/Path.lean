@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Topology.Path
 public import TauCeti.Analysis.Complex.Circle.Basic
-public import TauCeti.Topology.UnitInterval
 
 /-!
 # Semicircle paths on the unit circle
@@ -101,11 +100,13 @@ theorem lowerSemicirclePath_mem_sphere (t : unitInterval) :
     ← mem_sphere_zero_iff_norm]
   exact upperSemicirclePath_mem_sphere t
 
+@[simp]
 theorem upperSemicirclePath_im_nonneg (t : unitInterval) :
     0 ≤ (upperSemicirclePath t).im := by
   rw [upperSemicirclePath_apply, Circle.im_upperSemicircle]
   exact Real.sqrt_nonneg _
 
+@[simp]
 theorem lowerSemicirclePath_im_nonpos (t : unitInterval) :
     (lowerSemicirclePath t).im ≤ 0 := by
   rw [lowerSemicirclePath_eq_conj, conj_im]
