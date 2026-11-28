@@ -30,7 +30,9 @@ to be integrable on `S`. For a measure of total mass at most `1`, such as a prob
 its restriction to an event, this becomes the first-moment bound `|∫ g dμ| ≤ √(∫ g² dμ)` for `g`
 with `g²` integrable (`MeasureTheory.Integrable.abs_integral_le_sqrt_integral_sq`). Its
 consequence for absolute moments is `∫ ‖f‖ᵏ dμ ≤ √(∫ ‖f‖²ᵏ dμ)` for `f` with `‖f‖²ᵏ` integrable
-(`MeasureTheory.Integrable.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul`).
+(`MeasureTheory.Integrable.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul`), and hence
+`∫ ‖f‖ᵏ dμ ≤ √B` for `f ∈ L^(2k)` on a probability space with `2k`-th absolute moment at most `B`
+(`MeasureTheory.MemLp.integral_norm_pow_le_sqrt`).
 -/
 
 public section
@@ -101,3 +103,17 @@ theorem integral_norm_pow_le_sqrt_integral_norm_pow_two_mul {Ω E : Type*} [Meas
   exact le_of_abs_le (hf.abs_integral_le_sqrt_integral_sq hμ)
 
 end MeasureTheory.Integrable
+
+namespace MeasureTheory.MemLp
+
+/-- On a probability space, a function in `L^(2k)` whose `2k`-th absolute moment is at most `B` has
+`k`-th absolute moment at most `√B`. -/
+theorem integral_norm_pow_le_sqrt {Ω E : Type*} [MeasurableSpace Ω]
+    [NormedAddCommGroup E] {μ : Measure Ω} [IsProbabilityMeasure μ] {f : Ω → E}
+    {k : ℕ} {B : ℝ} (hf : MemLp f (2 * k : ℕ) μ)
+    (hB : ∫ x, ‖f x‖ ^ (2 * k) ∂μ ≤ B) :
+    ∫ x, ‖f x‖ ^ k ∂μ ≤ √B :=
+  (hf.integrable_norm_pow'.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul prob_le_one).trans
+    (Real.sqrt_le_sqrt hB)
+
+end MeasureTheory.MemLp
