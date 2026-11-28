@@ -83,6 +83,9 @@ private theorem weylBasis_apply (N : ℕ) (a : Fin N → ZMod 3) : weylBasis N a
 private def negPerm (N : ℕ) : Equiv.Perm (Fin N → ZMod 3) :=
   (neg_involutive (G := Fin N → ZMod 3)).toPerm Neg.neg
 
+private theorem negPerm_apply (N : ℕ) (a : Fin N → ZMod 3) : negPerm N a = -a :=
+  congrFun (Function.Involutive.coe_toPerm _) a
+
 private def cubicOrbitCongr (N : ℕ) :
     Quotient (Equiv.Perm.SameCycle.setoid (negPerm N)) ≃ CubicOrbit N :=
   Quotient.congr (Equiv.refl _) fun a b ↦
@@ -94,13 +97,11 @@ private theorem weylBasis_equivFun_comp_cubicInversion (N : ℕ) :
         (weylBasis N).equivFun.toLinearMap := by
   refine (weylBasis N).ext fun a ↦ funext fun j ↦ ?_
   classical
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-    Module.Basis.equivFun_apply, Module.Basis.equivFun_apply, AlgHom.toLinearMap_apply,
-    weylBasis_apply, cubicInversion_weyl, ← weylBasis_apply, (weylBasis N).repr_self,
-    ← weylBasis_apply, (weylBasis N).repr_self, LinearEquiv.funCongrLeft_apply,
-    LinearMap.funLeft_apply, Finsupp.single_apply, Finsupp.single_apply]
-  change (if -a = j then (1 : ℂ) else 0) = if a = -j then 1 else 0
-  exact if_congr neg_eq_iff_eq_neg rfl rfl
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Module.Basis.equivFun_apply,
+    AlgHom.toLinearMap_apply, LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply,
+    negPerm_apply]
+  conv_lhs => rw [weylBasis_apply, cubicInversion_weyl, ← weylBasis_apply]
+  simp [Finsupp.single_apply, neg_eq_iff_eq_neg]
 
 private theorem cubicFixed_toSubmodule_eq (N : ℕ) :
     (cubicFixed N).toSubmodule = (cubicInversion N).toLinearMap.fixedSubmodule := by
