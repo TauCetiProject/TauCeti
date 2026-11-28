@@ -52,6 +52,14 @@ summing these bounds controls the difference of the product integrals.
   composed with `Fin.cons` is integrable on the head-tail product.
 * `TauCeti.integrable_pi_succ`: the integrability counterpart of `TauCeti.integral_pi_succ`.
 * `TauCeti.integral_integral_update_pi`: the one-coordinate Fubini identity.
+* `TauCeti.ae_integrable_comp_update`, `TauCeti.ae_forall_integrable_comp_update_eval`,
+  `TauCeti.integrable_integral_update`, `TauCeti.integral_integral_update_pi_swap`: for an
+  integrable function, almost every section through one coordinate is integrable, and the partial
+  integral over the other coordinates is integrable with the same integral (the last is
+  `TauCeti.integral_integral_update_pi` with the two integrals in the opposite order).
+* `TauCeti.integral_mul_comp_eval_eq`: Fubini for a function times a function of one coordinate,
+  integrated against the partial integrals over the other coordinates.
+* `TauCeti.integral_comp_eval_mul_comp_eval`: functions of two distinct coordinates factorise.
 * `TauCeti.integral_pi_sum_mul`: Fubini over a sum of index types, for a product of a function of
   each block of coordinates.
 * `TauCeti.setIntegral_prod_le_exp_mul_pow`: the exponential-moment (Chernoff) bound for the
@@ -137,6 +145,75 @@ theorem integral_integral_update_pi {E : Type*} [NormedAddCommGroup E] [NormedSp
   have hint := hmp.integrable_comp_of_integrable hh
   refine (integral_prod _ hint).symm.trans ?_
   exact hmp.hasLaw.integral_comp hh.aestronglyMeasurable
+
+/-- **Fubini against a function of one coordinate.** If `x ↦ T x * h (xᵢ)` is integrable under a
+product of σ-finite measures whose `i`-th factor is a probability measure, its integral is the
+integral under `P i` of `a ↦ (∫ y, T (update y i a) ∂(Measure.pi P)) * h a`. This partial
+integral integrates `T` over the other coordinates with the `i`-th held at `a`. The theorem asks
+only for integrability of `x ↦ T x * h (xᵢ)`; when moreover `T` itself is integrable and every
+factor is a probability measure, the partial integral is, for `P i`-almost every `a`, a version of
+the conditional expectation `E(T | Xᵢ = a)`. -/
+theorem integral_mul_comp_eval_eq (P : ∀ i, Measure (α i)) [∀ i, SigmaFinite (P i)]
+    {T : (∀ i, α i) → ℝ} (i : ι) [IsProbabilityMeasure (P i)] {h : α i → ℝ}
+    (hTh : Integrable (fun x ↦ T x * h (x i)) (Measure.pi P)) :
+    ∫ x, T x * h (x i) ∂(Measure.pi P) =
+      ∫ a, (∫ y, T (update y i a) ∂(Measure.pi P)) * h a ∂(P i) := by
+  have hmp := measurePreserving_update_prod_pi P i
+  rw [← hmp.hasLaw.integral_comp hTh.aestronglyMeasurable,
+    integral_prod_symm _ (hmp.integrable_comp_of_integrable hTh)]
+  simp [integral_mul_const]
+
+/-- For an integrable function `T` on a product of σ-finite measures whose `i`-th factor is a
+probability measure, almost every section `y ↦ T (update y i a)` is integrable. -/
+theorem ae_integrable_comp_update (P : ∀ i, Measure (α i)) [∀ i, SigmaFinite (P i)] (i : ι)
+    [IsProbabilityMeasure (P i)] {E : Type*} [NormedAddCommGroup E] {T : (∀ i, α i) → E}
+    (hT : Integrable T (Measure.pi P)) :
+    ∀ᵐ a ∂(P i), Integrable (fun y ↦ T (update y i a)) (Measure.pi P) :=
+  ((measurePreserving_update_prod_pi P i).integrable_comp_of_integrable hT).prod_left_ae
+
+/-- For an integrable function `T` on a product of probability measures, almost every `x` has
+integrable sections `y ↦ T (update y i (x i))` through every coordinate `i`. -/
+theorem ae_forall_integrable_comp_update_eval (P : ∀ i, Measure (α i))
+    [∀ i, IsProbabilityMeasure (P i)] {E : Type*} [NormedAddCommGroup E] {T : (∀ i, α i) → E}
+    (hT : Integrable T (Measure.pi P)) :
+    ∀ᵐ x ∂(Measure.pi P), ∀ i, Integrable (fun y ↦ T (update y i (x i))) (Measure.pi P) :=
+  ae_all_iff.2 fun i ↦ (measurePreserving_eval P i).quasiMeasurePreserving.ae
+    (ae_integrable_comp_update P i hT)
+
+/-- The partial integral `a ↦ ∫ y, T (update y i a)` of an integrable function `T`, which
+integrates out every coordinate but the `i`-th, is integrable under `P i`. -/
+theorem integrable_integral_update (P : ∀ i, Measure (α i)) [∀ i, SigmaFinite (P i)] (i : ι)
+    [IsProbabilityMeasure (P i)] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {T : (∀ i, α i) → E} (hT : Integrable T (Measure.pi P)) :
+    Integrable (fun a ↦ ∫ y, T (update y i a) ∂(Measure.pi P)) (P i) :=
+  ((measurePreserving_update_prod_pi P i).integrable_comp_of_integrable hT).integral_prod_right
+
+/-- **The tower property for one coordinate.** Integrating the partial integral
+`a ↦ ∫ y, T (update y i a)` of an integrable `T` against `P i` gives the integral of `T`. This is
+`TauCeti.integral_integral_update_pi` with the two integrals in the opposite order: there the
+inner integral is over the `i`-th coordinate, here it is over the others. -/
+theorem integral_integral_update_pi_swap (P : ∀ i, Measure (α i)) [∀ i, SigmaFinite (P i)]
+    (i : ι) [IsProbabilityMeasure (P i)] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {T : (∀ i, α i) → E} (hT : Integrable T (Measure.pi P)) :
+    ∫ a, ∫ y, T (update y i a) ∂(Measure.pi P) ∂(P i) = ∫ x, T x ∂(Measure.pi P) := by
+  have hmp := measurePreserving_update_prod_pi P i
+  rw [← hmp.hasLaw.integral_comp hT.aestronglyMeasurable,
+    integral_prod_symm _ (hmp.integrable_comp_of_integrable hT)]
+  rfl
+
+omit [DecidableEq ι] in
+/-- **Factorization over two distinct coordinates.** For `j ≠ i` and a product of probability
+measures, the Bochner integral of `x ↦ u (xⱼ) * v (xᵢ)` is the product of the Bochner integrals of
+`u` under `P j` and of `v` under `P i`. Only a.e. strong measurability is assumed: when `u` or
+`v` is not integrable, both sides are `0`. For square-integrable `u` and `v`, for which the
+covariance is defined, it says that `u (Xⱼ)` and `v (Xᵢ)` are uncorrelated. -/
+theorem integral_comp_eval_mul_comp_eval (P : ∀ i, Measure (α i))
+    [∀ i, IsProbabilityMeasure (P i)] {i j : ι} (hji : j ≠ i) {u : α j → ℝ} {v : α i → ℝ}
+    (hu : AEStronglyMeasurable u (P j)) (hv : AEStronglyMeasurable v (P i)) :
+    ∫ x, u (x j) * v (x i) ∂(Measure.pi P) = (∫ a, u a ∂(P j)) * ∫ b, v b ∂(P i) := by
+  rw [← integral_prod_mul]
+  exact (measurePreserving_eval_pair P hji).hasLaw.integral_comp (f := fun z ↦ u z.1 * v z.2)
+    (hu.comp_fst.mul hv.comp_snd)
 
 /-- The product formula for a `Fin n`-indexed product measure, by induction on `n`. -/
 private theorem lintegral_fin_nat_prod_eq_prod {n : ℕ} {α : Fin n → Type*}
