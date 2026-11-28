@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ModularForms.OrderAtInfty
+public import TauCeti.NumberTheory.ModularForms.DedekindEta.Kronecker
 public import TauCeti.NumberTheory.ModularForms.DedekindEta.ScaledTransformation
 import TauCeti.Algebra.BigOperators.ZPow
 import TauCeti.Analysis.Complex.Sqrt
@@ -482,6 +483,41 @@ theorem etaQuotientMultiplier_eq_prod {N : ℕ} (r : ℕ → ℤ) (γ : Gamma0 N
   rw [etaQuotientMultiplier_def, ← Finset.prod_attach N.divisors (fun δ ↦ F δ ^ r δ)]
   exact Finset.prod_congr rfl fun δ _ ↦ by rw [hF δ δ.property]
 
+/-- The entries of `conjScaleGamma0 hδ γ = (a, δ b; (N / δ) t, d)` when `c = N t` and `δ ∣ N`. -/
+lemma _root_.TauCeti.conjScaleGamma0_apply_of_eq {N δ : ℕ} (hδ : δ ∣ N) {γ : SL(2, ℤ)}
+    (hγ : γ ∈ Gamma0 N) {t : ℤ} (ht : γ 1 0 = N * t) :
+    conjScaleGamma0 hδ ⟨γ, hγ⟩ 0 0 = γ 0 0 ∧
+      conjScaleGamma0 hδ ⟨γ, hγ⟩ 0 1 = γ 0 1 * δ ∧
+      conjScaleGamma0 hδ ⟨γ, hγ⟩ 1 0 = (N / δ : ℕ) * t ∧
+      conjScaleGamma0 hδ ⟨γ, hγ⟩ 1 1 = γ 1 1 := by
+  rcases eq_or_ne δ 0 with rfl | hδ0
+  · obtain rfl := Nat.eq_zero_of_zero_dvd hδ
+    simp [ht]
+  · have hmul : (δ : ℤ) * (N / δ : ℕ) = N := by exact_mod_cast Nat.mul_div_cancel' hδ
+    have hc : γ 1 0 = δ * ((N / δ : ℕ) * t) := by rw [ht, ← mul_assoc, hmul]
+    refine ⟨by simp, by simp [mul_comm],
+      by simp [hc, Int.mul_ediv_cancel_left _ (Int.natCast_ne_zero.mpr hδ0)], by simp⟩
+
+/-- For `γ = (a b; c d) ∈ Γ₀(N)` with `c = N t ≥ 0`, odd `d`, and `δ ∣ N`, the eta multiplier
+of the conjugate `γ_δ = (a, δ b; (N / δ) t, d)` is
+`((N / δ) t / d) · e(((a + d) (N / δ) t - b δ d (((N / δ) t)² - 1) + 3 d - 3 - 3 (N / δ) t d)`
+`/ 24)`. -/
+theorem etaMultiplier_conjScaleGamma0_of_nonneg_of_odd {N δ : ℕ} (hδ : δ ∣ N) {γ : SL(2, ℤ)}
+    (hγ : γ ∈ Gamma0 N) {t : ℤ} (ht : γ 1 0 = N * t) (hc : 0 ≤ γ 1 0) (hdo : Odd (γ 1 1)) :
+    etaMultiplier (conjScaleGamma0 hδ ⟨γ, hγ⟩) =
+      (kroneckerSym ((N / δ : ℕ) * t) (γ 1 1) : ℂ) *
+        e24 ((γ 0 0 + γ 1 1) * ((N / δ : ℕ) * t) -
+          γ 0 1 * δ * γ 1 1 * (((N / δ : ℕ) * t) ^ 2 - 1) + 3 * γ 1 1 - 3 -
+          3 * ((N / δ : ℕ) * t) * γ 1 1) := by
+  obtain ⟨h00, h01, h10, h11⟩ := conjScaleGamma0_apply_of_eq hδ hγ ht
+  have hc' : 0 ≤ ((N / δ : ℕ) : ℤ) * t := by
+    rcases Nat.eq_zero_or_pos N with rfl | hN
+    · simp
+    · exact mul_nonneg (Int.natCast_nonneg _)
+        (nonneg_of_mul_nonneg_right (ht ▸ hc) (Int.natCast_pos.mpr hN))
+  rw [etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d _
+    (by rw [h10]; exact hc') (by rw [h11]; exact hdo), h00, h01, h10, h11, e24_def]
+
 /-- **The transformation of an eta quotient under `Γ₀(N)`**: for `γ = (a b; c d) ∈ Γ₀(N)`,
 `f(γ τ) = (∏_{δ ∣ N} ε(γ_δ) ^ {r δ}) · √(c τ + d) ^ {∑_{δ ∣ N} r δ} · f(τ)` on the upper
 half-plane, with the principal square root. -/
@@ -601,22 +637,3 @@ theorem etaQuotientMultiplier_mul (N : ℕ) (r : ℕ → ℤ) (hr : Even (∑ δ
   exact mul_right_cancel₀ (etaQuotient_ne_zero N r (by simp)) hI
 
 end TauCeti.ModularForm
-
-namespace TauCeti
-
-/-- The entries of `conjScaleGamma0 hδ γ = (a, δ b; (N / δ) t, d)` when `c = N t` and `δ ∣ N`. -/
-lemma conjScaleGamma0_apply_of_eq {N δ : ℕ} (hδ : δ ∣ N) {γ : SL(2, ℤ)}
-    (hγ : γ ∈ CongruenceSubgroup.Gamma0 N) {t : ℤ} (ht : γ 1 0 = N * t) :
-    conjScaleGamma0 hδ ⟨γ, hγ⟩ 0 0 = γ 0 0 ∧
-      conjScaleGamma0 hδ ⟨γ, hγ⟩ 0 1 = γ 0 1 * δ ∧
-      conjScaleGamma0 hδ ⟨γ, hγ⟩ 1 0 = (N / δ : ℕ) * t ∧
-      conjScaleGamma0 hδ ⟨γ, hγ⟩ 1 1 = γ 1 1 := by
-  rcases eq_or_ne δ 0 with rfl | hδ0
-  · obtain rfl := Nat.eq_zero_of_zero_dvd hδ
-    simp [ht]
-  · have hmul : (δ : ℤ) * (N / δ : ℕ) = N := by exact_mod_cast Nat.mul_div_cancel' hδ
-    have hc : γ 1 0 = δ * ((N / δ : ℕ) * t) := by rw [ht, ← mul_assoc, hmul]
-    refine ⟨by simp, by simp [mul_comm],
-      by simp [hc, Int.mul_ediv_cancel_left _ (Int.natCast_ne_zero.mpr hδ0)], by simp⟩
-
-end TauCeti

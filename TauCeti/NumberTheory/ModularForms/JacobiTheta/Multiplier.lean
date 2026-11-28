@@ -385,28 +385,17 @@ private theorem etaQuotientMultiplier_thetaEtaExp_of_nonneg {γ : SL(2, ℤ)}
       (thetaEpsilon (γ 1 1))⁻¹ * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) := by
   obtain ⟨t, ht⟩ := mem_Gamma0_iff_dvd.mp hγ
   have ht' : γ 1 0 = 4 * t := by simpa using ht
-  have ht0 : 0 ≤ t := by omega
   have hdo : Odd (γ 1 1) := γ.odd_apply_one_of_even_apply_zero ⟨2 * t, by omega⟩
-  let E : ℕ → ℤ := fun δ ↦ (γ 0 0 + γ 1 1) * ((4 / δ : ℕ) * t) -
-    γ 0 1 * δ * γ 1 1 * (((4 / δ : ℕ) * t) ^ 2 - 1) + 3 * γ 1 1 - 3 -
-    3 * ((4 / δ : ℕ) * t) * γ 1 1
-  have hε (δ : ℕ) (hδ : δ ∈ (4 : ℕ).divisors) :
-      ModularForm.etaMultiplier
-        (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩) =
-      (kroneckerSym ((4 / δ : ℕ) * t) (γ 1 1) : ℂ) * ModularForm.e24 (E δ) := by
-    obtain ⟨h00, h01, h10, h11⟩ :=
-      conjScaleGamma0_apply_of_eq (Nat.dvd_of_mem_divisors hδ) hγ ht
-    rw [ModularForm.etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d _
-      (by rw [h10]; exact mul_nonneg (Int.natCast_nonneg _) ht0) (by rw [h11]; exact hdo),
-      h00, h01, h10, h11, ModularForm.e24_def]
-  have hE : ∑ δ ∈ (4 : ℕ).divisors, thetaEtaExp δ * E δ = 3 * γ 1 1 - 3 := by
-    rw [sum_thetaEtaExp_mul]
-    simp only [E, Nat.reduceDiv, Nat.cast_one, Nat.cast_ofNat]
-    ring
-  rw [ModularForm.etaQuotientMultiplier_eq_prod thetaEtaExp ⟨γ, hγ⟩ hε,
-    ModularForm.prod_mul_e24_zpow, hE, prod_kroneckerSym_thetaEtaExp t (γ 1 1), ← ht',
+  rw [ModularForm.etaQuotientMultiplier_eq_prod thetaEtaExp ⟨γ, hγ⟩ fun δ hδ ↦
+      ModularForm.etaMultiplier_conjScaleGamma0_of_nonneg_of_odd
+        (Nat.dvd_of_mem_divisors hδ) hγ ht hc hdo,
+    ModularForm.prod_mul_e24_zpow, prod_kroneckerSym_thetaEtaExp t (γ 1 1), ← ht',
     mul_comm (kroneckerSym 2 (γ 1 1) : ℂ), mul_assoc,
-    mul_comm (kroneckerSym (γ 1 0) (γ 1 1) : ℂ), kroneckerSym_two_mul_e24 hdo]
+    mul_comm (kroneckerSym (γ 1 0) (γ 1 1) : ℂ), ← kroneckerSym_two_mul_e24 hdo]
+  congr 3
+  rw [sum_thetaEtaExp_mul]
+  simp only [Nat.reduceDiv, Nat.cast_one, Nat.cast_ofNat]
+  ring
 
 private theorem thetaAutomorphy_eq_of_mem_Gamma0_of_nonneg {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 4)
     (hc : 0 ≤ γ 1 0) (z : ℍ) :
