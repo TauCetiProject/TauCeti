@@ -16,20 +16,25 @@ import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
 # Holomorphic stalks are unique factorisation domains
 
 The ring `𝒪_{X, x}` of germs of holomorphic functions at a point of a finite-dimensional complex
-manifold without boundary is a unique factorisation domain.
+manifold without boundary is a unique factorisation domain. The same holds chart-locally at any
+point in the domain of a holomorphic chart with respect to a boundaryless model on a
+finite-dimensional complex normed space, without assuming a global manifold structure.
 
 The proof follows Rückert's inductive descent along Weierstrass preparation and division. In
 dimension zero the stalk is `ℂ`. For the inductive step from `Fin n → ℂ` to `(Fin n → ℂ) × ℂ` at
 `(0, 0)`, vertical polynomial evaluation satisfies the Rückert hypotheses with respect to
 distinguished polynomials (`TauCeti.holomorphicStructureSheaf.isRueckert_evalVertical`), and
 Rückert's factorial descent (`RingHom.IsRueckert.uniqueFactorizationMonoid`) passes unique
-factorisation from `𝒪_{Fin n → ℂ, 0}` to `𝒪_{(Fin n → ℂ) × ℂ, (0, 0)}`. Dimension induction and
-chart pullback (`TauCeti.holomorphicStructureSheaf.stalk_induction`) then transfer the property to
-arbitrary finite-dimensional complex manifolds without boundary, as well as to Mathlib's native
-complex-smooth structure sheaf via `TauCeti.holomorphicStructureSheaf.smoothStalkIso`.
+factorisation from `𝒪_{Fin n → ℂ, 0}` to `𝒪_{(Fin n → ℂ) × ℂ, (0, 0)}`. Dimension induction on
+model spaces (`TauCeti.holomorphicStructureSheaf.stalk_induction_modelSpace`) and chart pullback
+(`OpenPartialHomeomorph.holomorphicStalkEquivFin`) then transfer the property to arbitrary
+chart-local and manifold holomorphic stalks, as well as to Mathlib's native complex-smooth
+structure sheaf via `TauCeti.holomorphicStructureSheaf.smoothStalkIso`.
 
 ## Main declarations
 
+* `OpenPartialHomeomorph.uniqueFactorizationMonoid_holomorphicStalk`: unique factorisation of the
+  holomorphic stalk at any point in the domain of a holomorphic chart.
 * `TauCeti.holomorphicStructureSheaf.stalkUniqueFactorizationMonoid`: holomorphic stalks are
   unique factorisation domains.
 * `TauCeti.holomorphicStructureSheaf.smoothStalkUniqueFactorizationMonoid`: so are the stalks of
@@ -46,6 +51,30 @@ public noncomputable section
 
 open scoped ContDiff Manifold
 
+namespace OpenPartialHomeomorph
+
+open TauCeti TauCeti.holomorphicStructureSheaf
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
+  {X : Type} [TopologicalSpace X] [ChartedSpace H X]
+  (e : OpenPartialHomeomorph X H) (he : e ∈ IsManifold.maximalAtlas I 1 X) {x : X}
+  (hx : x ∈ e.source)
+
+include he hx in
+/-- At any point in the domain of a holomorphic chart with respect to a boundaryless model on a
+finite-dimensional complex normed space `E`, the holomorphic stalk is a unique factorisation
+domain, without assuming a global manifold structure on `X`. -/
+theorem uniqueFactorizationMonoid_holomorphicStalk :
+    UniqueFactorizationMonoid ((holomorphicStructureSheaf I X).presheaf.stalk x) :=
+  (e.holomorphicStalkEquivFin he hx).symm.toMulEquiv.uniqueFactorizationMonoid
+    (stalk_induction_modelSpace (fun R _ ↦ UniqueFactorizationMonoid R)
+      (fun eqv h ↦ eqv.toMulEquiv.uniqueFactorizationMonoid h) inferInstance
+      (fun n hV ↦ have := hV
+        (isRueckert_evalVertical (0 : Fin n → ℂ) 0).uniqueFactorizationMonoid) _ _)
+
+end OpenPartialHomeomorph
+
 namespace TauCeti.holomorphicStructureSheaf
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
@@ -56,10 +85,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
 without boundary is a unique factorisation domain. -/
 instance stalkUniqueFactorizationMonoid (x : X) :
     UniqueFactorizationMonoid ((holomorphicStructureSheaf I X).presheaf.stalk x) :=
-  stalk_induction (fun R _ ↦ UniqueFactorizationMonoid R)
-    (fun e h ↦ e.toMulEquiv.uniqueFactorizationMonoid h) inferInstance
-    (fun n hV ↦ have := hV 0
-      (isRueckert_evalVertical (0 : Fin n → ℂ) 0).uniqueFactorizationMonoid) x
+  (chartAt H x).uniqueFactorizationMonoid_holomorphicStalk
+    (IsManifold.chart_mem_maximalAtlas x) (mem_chart_source H x)
 
 /-- A stalk of Mathlib's complex-smooth structure sheaf on a finite-dimensional complex manifold
 without boundary is a unique factorisation domain, via its comparison with holomorphic germs. -/

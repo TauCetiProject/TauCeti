@@ -9,20 +9,26 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.MaximalIdeal
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LocalRing
 public import Mathlib.RingTheory.Ideal.Cotangent
 import Mathlib.LinearAlgebra.Dual.Basis
+import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
+import TauCeti.RingTheory.Ideal.Cotangent.LocalRing
 
 /-!
 # The cotangent space of a holomorphic stalk
 
-Differentiating a holomorphic germ in a chart identifies the algebraic cotangent space
-`𝔪/𝔪²` of its local ring with the complex dual of the model space. Scalars on the source
-are in the native residue field; `holomorphicCotangentEquiv` is semilinear along its
-canonical identification with `ℂ` by evaluation. No additional stalk or quotient carrier
-is introduced.
+For a chart modeled on a finite-dimensional complex normed space `E` with the self-model
+`𝓘(ℂ, E)`, differentiating a holomorphic germ identifies the algebraic cotangent space `𝔪/𝔪²` of
+its local ring with `StrongDual ℂ E` via `OpenPartialHomeomorph.holomorphicCotangentEquiv`
+(semilinear along the canonical evaluation identification of the residue field with `ℂ`). No
+additional stalk or quotient carrier is introduced.
 
-The identification sends centered linear coordinate germs to their coordinate functionals.
-In particular the coordinate classes form a basis, which describes the first-order
-independence of local holomorphic parameters. The construction uses Hadamard's lemma
-and the square-ideal criterion from `StructureSheaf.MaximalIdeal`.
+In that self-model setting, `holomorphicCotangentEquiv` sends centered linear coordinate germs to
+their coordinate functionals, so the coordinate classes form a basis
+(`OpenPartialHomeomorph.holomorphicCotangentBasis`) describing the first-order independence of
+local holomorphic parameters. Using Hadamard's lemma and the square-ideal criterion from
+`StructureSheaf.MaximalIdeal`, this yields the chart-local cotangent-dimension formula on `𝓘(ℂ, E)`.
+Transporting the dimension along a chart equivalence to a finite-dimensional model space then gives
+`OpenPartialHomeomorph.finrank_cotangentSpace_holomorphicStalk` for any boundaryless complex
+manifold model `I : ModelWithCorners ℂ E H` with `[FiniteDimensional ℂ E]`.
 
 ## References
 
@@ -37,6 +43,8 @@ open scoped ContDiff Manifold
 open TauCeti TauCeti.holomorphicStructureSheaf
 
 namespace OpenPartialHomeomorph
+
+section SelfModel
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {X : Type} [TopologicalSpace X] [ChartedSpace E X]
@@ -271,15 +279,39 @@ theorem holomorphicCotangentBasis_apply {ι : Type*} (b : Module.Basis ι ℂ E)
   simp
 
 include hx he in
-/-- The embedding dimension of a holomorphic stalk equals the complex dimension of its
-manifold model. This does not require Noetherianity of the stalk. -/
-theorem finrank_cotangentSpace_holomorphicStalk :
+private theorem finrank_cotangentSpace_holomorphicStalk_self :
     Module.finrank
         (IsLocalRing.ResidueField ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x))
         (IsLocalRing.CotangentSpace ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x)) =
       Module.finrank ℂ E := by
   simpa only [Fintype.card_fin] using Module.finrank_eq_card_basis
     (e.holomorphicCotangentBasis x hx he (Module.finBasis ℂ E))
+
+end SelfModel
+
+section GeneralModel
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
+  {X : Type} [TopologicalSpace X] [ChartedSpace H X]
+  (e : OpenPartialHomeomorph X H) (x : X) (hx : x ∈ e.source)
+  (he : e ∈ IsManifold.maximalAtlas I 1 X)
+
+include hx he in
+/-- The embedding dimension of a holomorphic stalk equals the complex dimension of its
+finite-dimensional boundaryless manifold model. This does not require Noetherianity of the
+stalk. -/
+theorem finrank_cotangentSpace_holomorphicStalk :
+    Module.finrank
+        (IsLocalRing.ResidueField ((holomorphicStructureSheaf I X).presheaf.stalk x))
+        (IsLocalRing.CotangentSpace ((holomorphicStructureSheaf I X).presheaf.stalk x)) =
+      Module.finrank ℂ E := by
+  rw [IsLocalRing.finrank_cotangentSpace_eq_of_ringEquiv (e.holomorphicStalkEquivFin he hx),
+    (OpenPartialHomeomorph.refl _).finrank_cotangentSpace_holomorphicStalk_self _ (Set.mem_univ _)
+      (StructureGroupoid.id_mem_maximalAtlas _)]
+  simp
+
+end GeneralModel
 
 section Curves
 
