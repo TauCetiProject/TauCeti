@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Typeclasses.SFinite
 public import Mathlib.Topology.Compactness.SigmaCompact
 
 /-!
-# σ-finiteness of restrictions to countable unions and σ-compact sets
+# σ-finiteness of restrictions to countable unions, σ-compact sets and completions
 
 A measure that is finite on compact sets is σ-finite on a σ-compact space
 (`MeasureTheory.SigmaFinite.of_isFiniteMeasureOnCompacts`). This file records the relative
@@ -27,6 +27,8 @@ compact sets are replaced by their measurable envelopes.
   pullback `μ.comap (↑)` to every measurable σ-compact set.
 * `Measure.sigmaFinite_restrict_iUnion`: the restriction to a countable union of finite-measure
   sets is sigma-finite.
+* `Measure.sigmaFinite_completion_restrict_iff`: the completion of a measure has σ-finite
+  restriction to a null measurable set exactly when the measure does.
 * `TauCeti.ae_eq_of_forall_measure_inter_eq`: for a σ-finite measure, null measurable sets with the
   same intersections with all sets of finite measure are a.e. equal.
 -/
@@ -57,6 +59,21 @@ theorem MeasureTheory.Measure.sigmaFinite_restrict_iUnion {α ι : Type*} [Measu
     exact (measure_mono inter_subset_left).trans_lt
       ((measure_toMeasurable (s (e n))).trans_lt (hfin (e n)))
   · rw [← iUnion_union, union_compl_self]
+
+/-- The completion of `μ` has σ-finite restriction to a null measurable set exactly when `μ`
+does. -/
+theorem MeasureTheory.Measure.sigmaFinite_completion_restrict_iff {α : Type*}
+    [MeasurableSpace α] {μ : Measure α} {s : Set α} (hs : NullMeasurableSet s μ) :
+    SigmaFinite (μ.completion.restrict s) ↔ SigmaFinite (μ.restrict s) := by
+  -- Both restrictions take the same value on every set, and σ-finiteness only involves these
+  -- values: spanning sets need not be measurable.
+  have heq (t : Set α) : μ.completion.restrict s t = μ.restrict s t :=
+    (Measure.restrict_apply' (μ := μ.completion) hs).trans (Measure.restrict_apply₀' hs).symm
+  have transfer {m₁ m₂ : MeasurableSpace α} (ν₁ : Measure[m₁] α) (ν₂ : Measure[m₂] α)
+      (h : ∀ t, ν₁ t = ν₂ t) (_ : SigmaFinite ν₁) : SigmaFinite ν₂ :=
+    sigmaFinite_of_countable (countable_range (spanningSets ν₁))
+      (by rintro _ ⟨n, rfl⟩; rw [← h]; exact measure_spanningSets_lt_top ν₁ n) (by simp)
+  exact ⟨transfer _ _ heq, transfer _ _ fun t ↦ (heq t).symm⟩
 
 variable {α : Type*} [MeasurableSpace α] [TopologicalSpace α] {μ : Measure α}
 
