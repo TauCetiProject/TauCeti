@@ -29,7 +29,7 @@ acts on functions supported on `A` through the single map `x ↦ T (1_A x)`, who
 (`ContinuousLinearMap.apply_toLp_indicator_eq_setIntegral_of_atom`): for a functional `Φ`,
 the density of `Φ` on `A` is the functional `x ↦ μ(A)⁻¹ Φ (1_A x)`. If instead `μ A = ∞`, an `Lᵖ`
 function with `p < ∞` vanishes almost everywhere on `A`
-(`MeasureTheory.MemLp.ae_eq_zero_restrict_of_atom`).
+(`MeasureTheory.MemLp.ae_eq_zero_restrict_of_measure_eq_top_of_isAtom`).
 
 If almost every point lies in one of countably many pairwise disjoint finite-measure atoms `Aᵢ`
 and `p < ∞`, then `f ∈ Lᵖ(μ; X)` is the sum of its cut-offs to the atoms
@@ -62,8 +62,9 @@ namespace MeasureTheory.MemLp
 
 /-- **Infinite atoms carry no `Lᵖ` functions for finite `p`.** A function in `Lᵖ`, `0 < p < ∞`,
 vanishes almost everywhere on an atom of infinite measure. -/
-theorem ae_eq_zero_restrict_of_atom {f : S → X} (hf : MemLp f p μ) (hp0 : p ≠ 0) (hp : p ≠ ∞)
-    {A : Set S} (hAinf : μ A = ∞) (hAatom : μ.IsAtom A) : f =ᵐ[μ.restrict A] 0 := by
+theorem ae_eq_zero_restrict_of_measure_eq_top_of_isAtom {f : S → X} (hf : MemLp f p μ)
+    (hp0 : p ≠ 0) (hp : p ≠ ∞) {A : Set S} (hAinf : μ A = ∞) (hAatom : μ.IsAtom A) :
+    f =ᵐ[μ.restrict A] 0 := by
   -- A nonzero `Lᵖ` function on `A` sees a subset of `A` of positive finite measure.
   by_contra hne
   obtain ⟨t, ht, ht0, htfin⟩ :=
