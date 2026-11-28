@@ -53,24 +53,12 @@ def isogenies (S : Scheme.{u}) : MorphismProperty (AbelianScheme S) :=
 /-- An isogeny of abelian schemes is a finite flat surjective homomorphism. -/
 abbrev IsIsogeny (f : A ⟶ B) : Prop := isogenies S f
 
-/-- Isogenies of abelian schemes are exactly the maps whose underlying group-scheme
-homomorphisms are isogenies. -/
-theorem isIsogeny_iff_toGrpFunctor_map (f : A ⟶ B) :
-    IsIsogeny f ↔ GroupScheme.IsIsogeny (toGrpFunctor.map f) :=
-  (Iff.rfl)
-
-/-- An abelian-scheme homomorphism is an isogeny precisely when its underlying morphism
-of schemes is finite, flat and surjective. -/
-theorem isIsogeny_iff (f : A ⟶ B) :
-    IsIsogeny f ↔
-      IsFinite (toOverHom f).left ∧ Flat (toOverHom f).left ∧ Surjective (toOverHom f).left :=
-  (isIsogeny_iff_toGrpFunctor_map f).trans (GroupScheme.isIsogeny_iff (toGrpFunctor.map f))
-
 /-- Finiteness and surjectivity characterize isogenies of abelian schemes over any base. -/
 @[simp]
 theorem isIsogeny_iff_isFinite_surjective (f : A ⟶ B) :
     IsIsogeny f ↔ IsFinite (toOverHom f).left ∧ Surjective (toOverHom f).left := by
-  rw [isIsogeny_iff]
+  change GroupScheme.IsIsogeny (toGrpFunctor.map f) ↔ _
+  rw [GroupScheme.isIsogeny_iff, toGrpFunctor_map_hom_hom]
   exact ⟨fun h ↦ ⟨h.1, h.2.2⟩, fun ⟨hf, hs⟩ ↦
     ⟨hf, (toOverHom f).flat_left_of_finite_of_surjective, hs⟩⟩
 
@@ -87,8 +75,9 @@ instance : (isogenies S).RespectsIso := by
 /-- Arbitrary base change preserves isogenies of abelian schemes. -/
 theorem IsIsogeny.baseChange {f : A ⟶ B} (hf : IsIsogeny f) (p : T ⟶ S) :
     IsIsogeny ((baseChangeFunctor p).map f) :=
-  (isIsogeny_iff_toGrpFunctor_map _).mpr
-    (GroupScheme.IsIsogeny.baseChange p ((isIsogeny_iff_toGrpFunctor_map f).mp hf))
+  (MorphismProperty.inverseImage_iff (GroupScheme.isogenies T) toGrpFunctor _).mpr
+    (GroupScheme.IsIsogeny.baseChange p
+      ((MorphismProperty.inverseImage_iff (GroupScheme.isogenies S) toGrpFunctor f).mp hf))
 
 /-- The functor to abelian varieties over a field preserves and reflects isogenies. -/
 theorem isIsogeny_toAbelianVarietyFunctor_map_iff {k : Type u} [Field k]

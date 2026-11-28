@@ -226,12 +226,6 @@ lemma toGrpFunctor_map_hom_hom {A B : AbelianScheme S} (f : A ⟶ B) :
     (toGrpFunctor.map f).hom.hom = toOverHom f :=
   (rfl)
 
-/-- `toOverHom` is definitionally the underlying-morphism projection through the induced category
-and `Grp`. -/
-private lemma toOverHom_def {A B : AbelianScheme S} (f : A ⟶ B) :
-    toOverHom f = f.hom.hom.hom :=
-  rfl
-
 /-- `toOverHom` sends the identity homomorphism to the identity over `S`. Not a simp lemma:
 `toOverHom` is reducible, so `Functor.map_id` and `toOverFunctor_obj` already prove it. -/
 lemma toOverHom_id (A : AbelianScheme S) : toOverHom (𝟙 A) = 𝟙 A.toOver :=
@@ -246,7 +240,7 @@ lemma toOverHom_comp {A B C : AbelianScheme S} (f : A ⟶ B) (g : B ⟶ C) :
 
 /-- The underlying morphism of a homomorphism of abelian schemes preserves the group law. -/
 instance {A B : AbelianScheme S} (f : A ⟶ B) : IsMonHom (toOverHom f) :=
-  toOverHom_def f ▸ inferInstance
+  toGrpFunctor_map_hom_hom f ▸ inferInstanceAs (IsMonHom f.hom.hom.hom)
 
 /-- A homomorphism of abelian schemes preserves the zero section. -/
 @[reassoc]
@@ -287,7 +281,7 @@ equal. -/
 @[ext]
 lemma hom_ext {A B : AbelianScheme S} {f g : A ⟶ B}
     (h : (toOverHom f).left = (toOverHom g).left) : f = g := by
-  simp only [toOverHom_def] at h
+  change f.hom.hom.hom.left = g.hom.hom.hom.left at h
   exact InducedCategory.hom_ext (Grp.hom_ext _ _ (Over.OverMorphism.ext h))
 
 /-- Forgetting a homomorphism of abelian schemes to its underlying morphism over `S` is

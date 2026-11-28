@@ -140,7 +140,7 @@ theorem flat_left_of_finite_of_surjective {S : Scheme.{u}} {G H : Over S} [GrpOb
   let : IsFinite (F.map f).left := MorphismProperty.overPullbackMap p f ‹_›
   let : Surjective (F.map f).left := MorphismProperty.overPullbackMap p f ‹_›
   let : LocallyOfFiniteType (F.obj H).hom :=
-    inferInstanceAs (LocallyOfFiniteType (pullback.snd H.hom p))
+    TauCeti.AlgebraicGeometry.locallyOfFiniteType_over_pullback_obj_hom p H
   let : GeometricallyReduced (F.obj H).hom :=
     inferInstanceAs (GeometricallyReduced (pullback.snd H.hom p))
   have hf : Flat (F.map f).left :=
