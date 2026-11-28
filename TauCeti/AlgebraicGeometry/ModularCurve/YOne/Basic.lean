@@ -304,6 +304,7 @@ theorem exists_comp_yOneι_eq_iff {S : Scheme.{u}}
     (t : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring))) (N : ℕ) [NeZero N] :
     (∃ h : S ⟶ yOne.{u} N, h ≫ yOneι N = t) ↔
       t ≫ (pointHom ^ N).left = t ≫ curveGeom.zero ∧ ∀ s, t s ∈ exactOrderOpens N := by
+  simp_rw [yOneι_def]
   have h := EllipticCurveGeom.exists_lift_naiveExactOrderPreimageι_iff N pointHom
     (Z := Over.mk t) (x := toUnit (Over.mk t) ≫ pointHom) rfl
   simp only [Over.mk_hom, EllipticCurveGeom.isOfNaiveExactOrder_toUnit_comp_iff_forall_lt] at h
@@ -929,14 +930,14 @@ normal form. -/
 @[reassoc (attr := simp)]
 theorem yOneSnd_yOneι :
     yOneSnd B N ≫ UniversalTate.yOneι N = (yOneι B N).base ≫ prod.snd := by
-  rw [yOneι_base]
+  rw [UniversalTate.yOneι_def, yOneι_base]
   exact naiveExactOrderPreimageMap_naiveExactOrderPreimageι _ _ _ _
 
 /-- **`yOneSnd B N` exhibits `(yOne B N).base` as the base change of `UniversalTate.yOne N` along
 `prod.snd`.** -/
 theorem isPullback_yOneSnd :
     IsPullback (yOneSnd B N) (yOneι B N).base (UniversalTate.yOneι N) prod.snd := by
-  rw [yOneι_base]
+  rw [UniversalTate.yOneι_def, yOneι_base]
   exact isPullback_naiveExactOrderPreimageMap N (isPullback_prodCurveProj B curveGeom)
     (zero_prodCurveProj B curveGeom) (prodCurvePoint_left_prodCurveProj (B := B) pointHom)
 

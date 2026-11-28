@@ -272,7 +272,9 @@ private theorem isEmpty_equalizer_toUnit_comp_one_iff (Z : Over S)
   rw [← comp_pow, ← Set.range_eq_empty_iff,
     range_equalizer_ι_left_of_left_eq_hom_comp _ _ 1 (by simp [hom_one_left]),
     Set.eq_empty_iff_forall_notMem]
-  exact Iff.rfl
+  simp only [Over.comp_left, Over.toUnit_left, Set.mem_ofPred_eq, hom_one_left,
+    Over.tensorUnit_left, Over.tensorUnit_hom, Category.id_comp]
+  simp only [Scheme.Hom.comp_apply]
 
 /-- A point `toUnit Z ≫ P` obtained by pulling back an `S`-point `P` along `Z.hom` has naive
 exact order `N` if and only if `N • P` agrees with the zero section along `Z.hom` and no proper
