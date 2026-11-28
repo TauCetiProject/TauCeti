@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.RestrictedProduct.TopologicalSpace
 
 /-!
@@ -86,10 +85,12 @@ for every filter and every reference family: each of its components is a coordin
 map of restricted products. -/]
 theorem continuous_piRestrictedProduct_symm [Finite n] :
     Continuous (piRestrictedProduct (G := G) (n := n) (𝓕 := 𝓕) U).symm :=
-  continuous_pi fun j ↦ RestrictedProduct.mapAlong_continuous
+  continuous_pi fun j ↦ (RestrictedProduct.mapAlong_continuous
     (A₁ := fun i ↦ (Subgroup.pi univ fun _ : n ↦ Subgroup.ofClass (U i) : Set (n → G i)))
     (A₂ := fun i ↦ (U i : Set (G i))) _ G id tendsto_id (fun i (y : n → G i) ↦ y j)
-    (.of_forall fun _ _ hy ↦ hy j (mem_univ j)) fun _ ↦ continuous_apply j
+    (.of_forall fun _ _ hy ↦ hy j (mem_univ j)) fun _ ↦ continuous_apply j).congr fun y ↦ by
+      ext i
+      simp only [RestrictedProduct.mapAlong_apply, piRestrictedProduct_symm_apply, id_eq]
 
 /-- For the cofinite filter and open reference sets, the swap is continuous. -/
 @[to_additive continuous_addPiRestrictedProduct /-- For the cofinite filter and open reference
@@ -106,14 +107,18 @@ theorem continuous_piRestrictedProduct [Finite n] (hU : ∀ i, IsOpen (U i : Set
     piRestrictedProduct U
   have hswapT : Continuous swapT :=
     RestrictedProduct.continuous_rng_of_principal.mpr <| continuous_pi fun i ↦ continuous_pi
-      fun j ↦ (RestrictedProduct.continuous_eval i).comp (continuous_apply j)
-  exact (RestrictedProduct.continuous_inclusion hT).comp hswapT
+      fun j ↦ ((RestrictedProduct.continuous_eval i).comp (continuous_apply j)).congr fun x ↦
+        (piRestrictedProduct_apply U x i j).symm
+  refine ((RestrictedProduct.continuous_inclusion hT).comp hswapT).congr fun x ↦ ?_
+  ext i j
+  simp only [Function.comp_apply, swapT, RestrictedProduct.inclusion_apply,
+    piRestrictedProduct_apply, Pi.map_apply]
 
 /-- For the cofinite filter and open reference sets, the swap of a finite family of elements of
-a restricted product of topological groups is an isomorphism of topological groups. -/
+a restricted product of groups is a group isomorphism that is also a homeomorphism. -/
 @[to_additive addPiRestrictedProductContinuousAddEquiv /-- For the cofinite filter and open
 reference sets, the swap of a finite family of elements of an additive restricted product of
-topological groups is an isomorphism of topological additive groups. -/]
+additive groups is an additive group isomorphism that is also a homeomorphism. -/]
 def piRestrictedProductContinuousMulEquiv [Finite n] (hU : ∀ i, IsOpen (U i : Set (G i))) :
     (n → Πʳ i, [G i, (U i : Set (G i))]) ≃ₜ*
       Πʳ i, [n → G i,

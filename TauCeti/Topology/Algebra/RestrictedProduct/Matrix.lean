@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Action
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Topology.Algebra.RestrictedProduct.Box
 public import TauCeti.Topology.Algebra.RestrictedProduct.Pi
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Subalgebra
 
 /-!
 # Matrices over a restricted product
@@ -21,11 +21,11 @@ Haar measure scaling on adelic vectors.
 
 ## Main results
 
-* `Matrix.GeneralLinearGroup.eventually_map_evalRingHom_smul_univ_pi`: almost every factor
+* `Matrix.GeneralLinearGroup.eventually_map_evalRingHom_smul_univ_pi_eq_self`: almost every factor
   preserves integral vectors.
 * `Matrix.GeneralLinearGroup.smul_apply_apply_restrictedProduct`: the action is computed factorwise.
-* `Matrix.GeneralLinearGroup.preimage_addPiRestrictedProduct_symm_smul`: the translate of the
-  integral vectors corresponds to the box of local translates.
+* `Matrix.GeneralLinearGroup.preimage_addPiRestrictedProduct_symm_smul_univ_pi_box`: the translate
+  of the integral vectors corresponds to the box of local translates.
 -/
 
 public section
@@ -43,7 +43,7 @@ namespace Matrix.GeneralLinearGroup
 restricted product `Πʳ v, [R v, O v]_[𝓕]` has, at `𝓕`-almost every factor `v`, entries and inverse
 entries in `O v`, so its image under the evaluation at `v` maps the integral vectors `O vᶥ` onto
 themselves. -/
-theorem eventually_map_evalRingHom_smul_univ_pi {𝓕 : Filter P}
+theorem eventually_map_evalRingHom_smul_univ_pi_eq_self {𝓕 : Filter P}
     (g : GL ι (Πʳ v, [R v, O v]_[𝓕])) :
     ∀ᶠ v in 𝓕, GeneralLinearGroup.map (evalRingHom R v) g •
         univ.pi (fun _ : ι ↦ (O v : Set (R v))) = univ.pi fun _ : ι ↦ (O v : Set (R v)) := by
@@ -52,28 +52,39 @@ theorem eventually_map_evalRingHom_smul_univ_pi {𝓕 : Filter P}
     eventually_all.2 fun i ↦ eventually_all.2 fun j ↦
       (g.val i j).property.and (g⁻¹.val i j).property
   filter_upwards [hint] with v hv
-  -- An invertible matrix with integral entries maps integral vectors to integral vectors.
-  have hmaps (h : GL ι (Πʳ v, [R v, O v]_[𝓕])) (hh : ∀ i j, h.val i j v ∈ O v)
-      (x : ι → R v) (hx : x ∈ univ.pi fun _ : ι ↦ (O v : Set (R v))) :
-      GeneralLinearGroup.map (evalRingHom R v) h • x ∈ univ.pi fun _ : ι ↦ (O v : Set (R v)) :=
-    fun i _ ↦ sum_mem fun j _ ↦ mul_mem (hh i j) (hx j (mem_univ j))
-  refine Subset.antisymm ?_ fun x hx ↦ ?_
-  · rintro _ ⟨x, hx, rfl⟩
-    exact hmaps g (fun i j ↦ (hv i j).1) x hx
-  · rw [mem_smul_set_iff_inv_smul_mem, ← map_inv]
-    exact hmaps g⁻¹ (fun i j ↦ (hv i j).2) x hx
+  -- Viewing `O v` as a `ℤ`-subalgebra, the inverse of `g_v` comes from it, so it preserves
+  -- the integral vectors.
+  let A := subalgebraOfSubring (Subring.ofClass (O v))
+  have hA (x : R v) : x ∈ A ↔ x ∈ O v := by
+    rw [mem_subalgebraOfSubring, ← SetLike.mem_coe, Subring.coe_ofClass, SetLike.mem_coe]
+  have hg : (GeneralLinearGroup.map (evalRingHom R v) g)⁻¹ ∈
+      (GeneralLinearGroup.map (n := ι) (A.val : A →+* R v)).range := by
+    refine MonoidHom.mem_range.2 ((mem_range_map_val_iff A _).2 ⟨fun i j ↦ ?_, fun i j ↦ ?_⟩)
+    · rw [hA, ← map_inv, GeneralLinearGroup.val_map_apply, Matrix.map_apply,
+        evalRingHom_apply]
+      exact (hv i j).2
+    · rw [hA, inv_inv, GeneralLinearGroup.val_map_apply, Matrix.map_apply,
+        evalRingHom_apply]
+      exact (hv i j).1
+  ext x
+  rw [mem_smul_set_iff_inv_smul_mem, Units.smul_def, smul_eq_mulVec]
+  simp only [mem_univ_pi, SetLike.mem_coe, ← hA]
+  exact forall_mulVec_mem_iff hg
 
 /-- The coordinate at `v` of the action of an invertible matrix `g` over a restricted product is
 the action of its image `g_v` under the evaluation at `v` on the coordinates at `v`. -/
+@[simp]
 theorem smul_apply_apply_restrictedProduct {𝓕 : Filter P} (g : GL ι (Πʳ v, [R v, O v]_[𝓕]))
     (x : ι → Πʳ v, [R v, O v]_[𝓕]) (j : ι) (v : P) :
     (g • x) j v = (GeneralLinearGroup.map (evalRingHom R v) g • fun j ↦ x j v) j := by
-  rw [Units.smul_def, smul_eq_mulVec, Units.smul_def, smul_eq_mulVec]
-  exact RingHom.map_mulVec (evalRingHom R v) _ x j
+  rw [Units.smul_def, smul_eq_mulVec, Units.smul_def, smul_eq_mulVec,
+    GeneralLinearGroup.val_map_apply]
+  simpa only [Function.comp_def, evalRingHom_apply] using
+    RingHom.map_mulVec (evalRingHom R v) (g : Matrix ι ι (Πʳ v, [R v, O v]_[𝓕])) x j
 
 /-- Under the swap of coordinates `TauCeti.addPiRestrictedProduct`, the translate by an invertible
 matrix `g` of the integral vectors `(box O)ᶥ` is the coordinate box with factors `g_v • O vᶥ`. -/
-theorem preimage_addPiRestrictedProduct_symm_smul {𝓕 : Filter P}
+theorem preimage_addPiRestrictedProduct_symm_smul_univ_pi_box {𝓕 : Filter P}
     (g : GL ι (Πʳ v, [R v, O v]_[𝓕])) :
     (addPiRestrictedProduct (n := ι) (𝓕 := 𝓕) O).symm ⁻¹'
         (g • univ.pi fun _ : ι ↦ (box fun v ↦ (O v : Set (R v)) : Set (Πʳ v, [R v, O v]_[𝓕]))) =

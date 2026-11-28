@@ -9,22 +9,21 @@ public import Mathlib.MeasureTheory.Measure.Haar.DistribChar
 public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct.Basic
 public import TauCeti.Topology.Algebra.RestrictedProduct.Matrix
 public import TauCeti.Topology.Instances.Matrix
-import TauCeti.Algebra.BigOperators.Finprod
-import TauCeti.Topology.Algebra.RestrictedProduct.SecondCountable
 
 /-!
 # The Haar character of the general linear group over a restricted product
 
 Let `𝔸 = Πʳ v, [R v, O v]` be the restricted product of a countable family of commutative locally
 compact second countable topological rings `R v` with respect to compact open subrings `O v`, for
-instance the finite adele ring of a Dedekind domain. The group `GL ι 𝔸` acts on the column vectors
-`ι → 𝔸`, and this file computes its distributive Haar character factorwise:
+instance the finite adele ring of the ring of integers of a number field. The group `GL ι 𝔸` acts
+on the column vectors `ι → 𝔸`, and this file computes its distributive Haar character factorwise:
 
 `distribHaarChar (ι → 𝔸) g = ∏ᶠ v, distribHaarChar (ι → R v) g_v`,
 
 where `g_v` is the image of `g` in `GL ι (R v)` under the evaluation `𝔸 →+* R v`. The product is
 finitary because `g_v` has entries, and inverse entries, in `O v` at all but finitely many `v`,
-and then it preserves `O vᶥ` (`Matrix.GeneralLinearGroup.eventually_map_evalRingHom_smul_univ_pi`).
+and then it preserves `O vᶥ`
+(`Matrix.GeneralLinearGroup.eventually_map_evalRingHom_smul_univ_pi_eq_self`).
 
 The proof identifies `ι → 𝔸` with the restricted product `Πʳ v, [ι → R v, O vᶥ]`
 (`TauCeti.addPiRestrictedProductContinuousAddEquiv`), on which the restricted product of the local
@@ -34,7 +33,7 @@ identification the translate of the integral vectors `Ôᶥ` by `g` is the coord
 
 ## Main results
 
-* `MeasureTheory.distribHaarChar_pi_restrictedProduct`: the Haar character of `GL ι 𝔸` on
+* `MeasureTheory.distribHaarChar_pi_restrictedProduct_eq_finprod`: the Haar character of `GL ι 𝔸` on
   `ι → 𝔸` is the finitary product of the Haar characters of its factors.
 
 ## References
@@ -64,7 +63,7 @@ variable [Countable P] [∀ v, TopologicalSpace (R v)] [∀ v, IsTopologicalRing
 rings with respect to compact open subrings, an invertible matrix `g` scales additive Haar measure
 on `ι → 𝔸` by the finitary product over `v` of the factors by which its images
 `g_v ∈ GL ι (R v)` scale additive Haar measure on `ι → R v`. -/
-theorem distribHaarChar_pi_restrictedProduct (g : GL ι (Πʳ v, [R v, O v])) :
+theorem distribHaarChar_pi_restrictedProduct_eq_finprod (g : GL ι (Πʳ v, [R v, O v])) :
     distribHaarChar (ι → Πʳ v, [R v, O v]) g =
       ∏ᶠ v, distribHaarChar (ι → R v) (GeneralLinearGroup.map (evalRingHom R v) g) := by
   let _ (v : P) : MeasurableSpace (R v) := borel _
@@ -88,13 +87,16 @@ theorem distribHaarChar_pi_restrictedProduct (g : GL ι (Πʳ v, [R v, O v])) :
   let Φ := addPiRestrictedProductContinuousAddEquiv (n := ι) O hO.out
   let e := Φ.symm.toHomeomorph.toMeasurableEquiv
   let μ : Measure (ι → Πʳ v, [R v, O v]) := (restrictedAddHaar B ν (.of_forall hν)).map e
-  have _ : μ.IsAddHaarMeasure := Φ.symm.isAddHaarMeasure_map _
+  have hΦ : ⇑e = Φ.symm := Homeomorph.toMeasurableEquiv_coe _
+  have _ : μ.IsAddHaarMeasure := by
+    simpa only [μ, hΦ] using Φ.symm.isAddHaarMeasure_map
+      (restrictedAddHaar B ν (.of_forall hν))
   -- The translate of the integral vectors by `h` is the box with factors `h_v • O vᶥ`, whose
   -- measure is the finitary product of the local Haar characters.
   let s : Set (ι → Πʳ v, [R v, O v]) := univ.pi fun _ ↦ box fun v ↦ (O v : Set (R v))
   -- `e` is `Φ.symm` viewed as a measurable equivalence, so the two have the same coercion.
   have he : ⇑e = (addPiRestrictedProduct O).symm :=
-    coe_addPiRestrictedProductContinuousAddEquiv_symm O hO.out
+    hΦ.trans (coe_addPiRestrictedProductContinuousAddEquiv_symm O hO.out)
   have hloc (h : GL ι (Πʳ v, [R v, O v])) (v : P) :
       ν v (GeneralLinearGroup.map (evalRingHom R v) h • univ.pi fun _ ↦ (O v : Set (R v))) =
         distribHaarChar (ι → R v) (GeneralLinearGroup.map (evalRingHom R v) h) := by
@@ -102,9 +104,9 @@ theorem distribHaarChar_pi_restrictedProduct (g : GL ι (Πʳ v, [R v, O v])) :
   have hmeas (h : GL ι (Πʳ v, [R v, O v])) :
       μ (h • s) = (∏ᶠ v, distribHaarChar (ι → R v) (GeneralLinearGroup.map (evalRingHom R v) h)
         : ℝ≥0) := by
-    rw [MeasurableEquiv.map_apply, he, h.preimage_addPiRestrictedProduct_symm_smul,
+    rw [MeasurableEquiv.map_apply, he, h.preimage_addPiRestrictedProduct_symm_smul_univ_pi_box,
       restrictedAddHaar_box_eq_finprod _ _ _
-        (h.eventually_map_evalRingHom_smul_univ_pi.mono fun v hv ↦ by rw [hB, hv]),
+        (h.eventually_map_evalRingHom_smul_univ_pi_eq_self.mono fun v hv ↦ by rw [hB, hv]),
       finprod_congr (hloc h)]
     exact (ENNReal.ofNNRealHom.map_finprod_of_injective ENNReal.coe_injective _).symm
   have hs : μ s = 1 := by

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Haar.DistribChar
 public import TauCeti.MeasureTheory.Measure.Haar.DistribChar.RestrictedProduct
-public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct.Basic
 public import TauCeti.NumberTheory.LocalField.HaarCharacter
 public import TauCeti.NumberTheory.LocalField.Topology
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
@@ -41,7 +40,7 @@ The same computation, factor by factor, handles column vectors. An invertible ma
 `𝔸ᶠ` lies in `GL_n(𝒪_v)` at almost every place, and at each place it scales Haar measure on
 `K_vⁿ` by `|det g_v|_v` (`MeasureTheory.distribHaarChar_eq_normalizedAbsoluteValue_det`). So it
 scales every additive Haar measure on `(𝔸ᶠ)ⁿ` by the module `∏ᶠ v, |(det g)_v|_v` of its
-determinant (`MeasureTheory.distribHaarChar_pi_restrictedProduct`).
+determinant (`MeasureTheory.distribHaarChar_pi_restrictedProduct_eq_finprod`).
 
 Two consequences fix the normalization. For a nonzero ideal `N` of `R` with `R ⧸ N` finite, the
 completion `NÔ` of `N` in `Ô` has index `#(R ⧸ N)` in `Ô`, so it has measure `#(R ⧸ N)⁻¹`; for the
@@ -283,16 +282,18 @@ theorem _root_.Matrix.GeneralLinearGroup.distribHaarChar_pi_finiteAdeleRing_eq_d
       distribHaarChar (FiniteAdeleRing R K) (Matrix.GeneralLinearGroup.det g) := by
   -- Compute both sides factorwise; at each place, use the local formula for `GL_n`.
   rw [distribHaarChar_eq_finprod]
-  refine (distribHaarChar_pi_restrictedProduct
+  refine (distribHaarChar_pi_restrictedProduct_eq_finprod
     (R := fun v : HeightOneSpectrum R ↦ v.adicCompletion K)
     (O := fun v ↦ v.adicCompletionIntegers K) g).trans (finprod_congr fun v ↦ ?_)
   -- The determinant commutes with the evaluation at `v`, which reads off the coordinate at `v`
   -- of a finite adele.
-  rw [distribHaarChar_eq_normalizedAbsoluteValue_det, Matrix.GeneralLinearGroup.val_det_apply]
-  exact congrArg (fun x ↦ (normalizedAbsoluteValue (v.adicCompletion K) x : ℝ≥0))
-    (RingHom.map_det (evalRingHom (fun v : HeightOneSpectrum R ↦ v.adicCompletion K)
-      (B := fun v ↦ v.adicCompletionIntegers K) (𝓕 := Filter.cofinite) v)
-      (g : Matrix ι ι (FiniteAdeleRing R K))).symm
+  have hdet := congrArg Units.val (Matrix.GeneralLinearGroup.map_det
+    (evalRingHom (fun v : HeightOneSpectrum R ↦ v.adicCompletion K)
+      (B := fun v ↦ v.adicCompletionIntegers K) (𝓕 := Filter.cofinite) v) g)
+  rw [Units.coe_map, MonoidHom.coe_ofClass, evalRingHom_apply,
+    Matrix.GeneralLinearGroup.val_det_apply] at hdet
+  rw [distribHaarChar_eq_normalizedAbsoluteValue_det]
+  exact congrArg (fun x ↦ (normalizedAbsoluteValue (v.adicCompletion K) x : ℝ≥0)) hdet
 
 /-- **Scaling of Haar measure on finite adelic vectors by `GL_n`.** For every additive Haar measure
 `μ` on the column vectors `ι → 𝔸ᶠ`, every invertible matrix `g` over the finite adele ring and
