@@ -39,10 +39,12 @@ def intOrderAddMonoidIsoNat : Nonneg ℤ ≃+o ℕ :=
 
 theorem intOrderAddMonoidIsoNat_apply (n : Nonneg ℤ) :
     intOrderAddMonoidIsoNat n = n.val.toNat :=
-  (rfl)
+  by rw [intOrderAddMonoidIsoNat, ← OrderAddMonoidIso.invFun_eq_symm]
 
 theorem intOrderAddMonoidIsoNat_symm_apply (n : ℕ) :
     intOrderAddMonoidIsoNat.symm n = (Nat.cast n : Nonneg ℤ) :=
-  (rfl)
+  by
+    rw [intOrderAddMonoidIsoNat, OrderAddMonoidIso.symm_symm]
+    rfl
 
 end Nonneg
