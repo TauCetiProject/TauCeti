@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Quasicategory.CoCartesian.Nerve
 public import TauCeti.AlgebraicTopology.Quasicategory.InfinityOperad.Basic
 import Mathlib.CategoryTheory.Limits.FunctorCategory.Shapes.Products
+import TauCeti.AlgebraicTopology.Quasicategory.MappingSpace.Nerve
 import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
 import TauCeti.CategoryTheory.ComposableArrows.Basic
 import TauCeti.CategoryTheory.FiberedCategory.HomLift
@@ -71,16 +72,9 @@ private noncomputable def obj₀EquivOver (F : E ⥤ B) {x y : (nerve E) _⦋0�
     (e : Edge ((nerveMap F).app _ x) ((nerveMap F).app _ y)) (t : F.obj (nerveEquiv x) ⟶
       F.obj (nerveEquiv y)) (ht : nerve.homEquiv e = t) :
     (rightMappingSpaceOver (nerveMap F) e : SSet.{u}) _⦋0⦌ ≃
-      {g : nerveEquiv x ⟶ nerveEquiv y // F.map g = t} where
-  toFun v := ⟨nerve.homEquiv (rightMappingSpace.obj₀Equiv v.val), by
-    rw [← ht, ← nerve.homEquiv_map_nerveMap, (rightMappingSpaceOver.mem_obj₀_iff e v.val).1
-      v.property]⟩
-  invFun g := ⟨rightMappingSpace.obj₀Equiv.symm (nerve.homEquiv.symm g.val),
-    (rightMappingSpaceOver.mem_obj₀_iff e _).2 (nerve.homEquiv.injective (by
-      rw [Equiv.apply_symm_apply, nerve.homEquiv_map_nerveMap, Equiv.apply_symm_apply, g.property,
-        ht]))⟩
-  left_inv v := by simp
-  right_inv g := by simp
+      {g : nerveEquiv x ⟶ nerveEquiv y // F.map g = t} :=
+  (rightMappingSpaceOver.obj₀EquivNerve F e).trans
+    (Equiv.subtypeEquivRight fun g ↦ by rw [ht])
 
 /-- Postcomposition with an edge `g` of the nerve composes the corresponding morphisms. -/
 private lemma obj₀EquivOver_postcomp (F : E ⥤ B) {x y z : (nerve E) _⦋0⦌} (g : Edge y z)
@@ -91,14 +85,8 @@ private lemma obj₀EquivOver_postcomp (F : E ⥤ B) {x y z : (nerve E) _⦋0⦌
     (v : (rightMappingSpaceOver (nerveMap F) e : SSet.{u}) _⦋0⦌) :
     (obj₀EquivOver F e' t' ht' ((rightMappingSpaceOver.postcomp g h).app _ v)).val =
       (obj₀EquivOver F e t ht v).val ≫ nerve.homEquiv g := by
-  obtain ⟨c⟩ := rightMappingSpace.postcomp_compStruct g (rightMappingSpace.obj₀Equiv v.val)
-  rw [Equiv.symm_apply_apply] at c
-  have hv := ConcreteCategory.congr_hom
-    (NatTrans.congr_app (rightMappingSpaceOver.postcomp_ι g h) (op ⦋0⦌)) v
-  simp only [NatTrans.comp_app, ConcreteCategory.comp_apply] at hv
-  -- The inclusion of `Hom^R(x, z)_{e'}` into `Hom^R(x, z)` takes a vertex to its underlying vertex.
-  exact (congrArg (fun w ↦ nerve.homEquiv (rightMappingSpace.obj₀Equiv w)) hv).trans
-    (nerve.homEquiv_comp c).symm
+  -- Transport changes only the subtype predicate, leaving the underlying morphism unchanged.
+  exact rightMappingSpaceOver.obj₀EquivNerve_postcomp F g h v
 
 /-! ### The criterion -/
 
