@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.Data.ZMod.ValMinAbs
 public import Mathlib.NumberTheory.Harmonic.Defs
 public import Mathlib.RingTheory.RootsOfUnity.Complex
+public import TauCeti.Algebra.Group.AddChar.Prod
 
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.SpecificLimits.Normed
@@ -30,8 +31,14 @@ estimate, after summing over nonzero frequencies.
 * `ZMod.map_stdAddChar_of_map_stdAddChar_one`: a multiplicative map of `ℂ` sending `ζ_N` to
   `ζ_N^d` sends every character value `stdAddChar j` to `stdAddChar (d * j)`.
 * `ZMod.isPrimitiveRoot_stdAddChar_one`: `ζ_N = stdAddChar 1` is a primitive `N`-th root of unity.
+* `ZMod.stdAddChar_intCast_natCast_mul`: the standard character modulo `m n` at `n x` is the
+  standard character modulo `m` at `x`.
+* `ZMod.stdAddChar_intCast_eq_mul_of_add_eq_one`: if `u n + v m = 1`, then
+  `e(k / (m n)) = e(u k / m) e(v k / n)` for every integer `k`.
 * `ZMod.stdAddChar_eq_mul_of_coprime`: for coprime `c₁, c₂`, the standard character modulo
   `c₁ c₂` is `e(c₂' x / c₁) e(c₁' x / c₂)` with `c₂' c₂ ≡ 1 (mod c₁)` and `c₁' c₁ ≡ 1 (mod c₂)`.
+* `ZMod.stdAddChar_compAddMonoidHom_chineseRemainder_symm`: the same statement for characters,
+  along the inverse of `ZMod.chineseRemainder` and with `AddChar.coprodEquiv`.
 * `ZMod.exists_map_stdAddChar_one_eq`: every ring endomorphism of `ℂ` sends `ζ_N` to `ζ_N^d` for
   a unit `d` of `ZMod N`.
 * `ZMod.two_div_norm_stdAddChar_sub_one_le`: an upper bound for the reciprocal chord length.
@@ -119,10 +126,41 @@ theorem exists_map_stdAddChar_one_eq {F : Type*} [FunLike F ℂ ℂ] [RingHomCla
   refine ⟨unitOfCoprime i ((hζ.pow_iff_coprime (NeZero.pos N) i).mp (hi ▸ hσ)), ?_⟩
   rw [coe_unitOfCoprime, ← hi, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, mul_one]
 
-/-- **The standard character modulo a product of coprime moduli** splits along the Chinese
-remainder theorem with inverse shifts: `e(x / (c₁ c₂)) = e(c₂' x / c₁) e(c₁' x / c₂)`, where
-`c₂' = c₂⁻¹` modulo `c₁` and `c₁' = c₁⁻¹` modulo `c₂`. With Bézout's `u c₁ + v c₂ = 1`, the inverses
-are `v` modulo `c₁` and `u` modulo `c₂`, and `k / (c₁ c₂) = v k / c₁ + u k / c₂`. -/
+/-- **The standard additive character at a multiple.** The standard additive character modulo
+`m n` at `n x` is the standard additive character modulo `m` at `x`: both are `e^(2π i x / m)`. -/
+theorem stdAddChar_intCast_natCast_mul {m n : ℕ} [NeZero m] [NeZero n] (x : ℤ) :
+    stdAddChar (((n * x : ℤ) : ZMod (m * n))) = stdAddChar (x : ZMod m) := by
+  have hn : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
+  rw [stdAddChar_coe, stdAddChar_coe]
+  congr 1
+  push_cast
+  field_simp
+
+/-- `stdAddChar_intCast_natCast_mul` for a modulus `N` equal to `m n`, for example `N = n m`. -/
+private theorem stdAddChar_intCast_natCast_mul_of_eq {N m n : ℕ} [NeZero N] [NeZero m]
+    [NeZero n] (hN : N = m * n) (x : ℤ) :
+    stdAddChar (((n * x : ℤ) : ZMod N)) = stdAddChar (x : ZMod m) := by
+  subst hN
+  exact stdAddChar_intCast_natCast_mul x
+
+/-- **The standard character at an integer, for coprime moduli.** If `u n + v m = 1`, then
+`e(k / (m n)) = e(u k / m) e(v k / n)`, where `e(t) = exp (2πi t)`. This splitting comes from the
+earlier proof of `Matrix.sum_stdAddChar_dotProduct_mulVec_mul`, the coprime case of the quadratic
+Gauss sum, which now uses this lemma. -/
+theorem stdAddChar_intCast_eq_mul_of_add_eq_one {m n : ℕ} [NeZero m] [NeZero n] {u v : ℤ}
+    (huv : u * n + v * m = 1) (k : ℤ) :
+    stdAddChar (k : ZMod (m * n)) =
+      stdAddChar ((u * k : ℤ) : ZMod m) * stdAddChar ((v * k : ℤ) : ZMod n) := by
+  have hk : k = n * (u * k) + m * (v * k) := by linear_combination (-k) * huv
+  conv_lhs => rw [hk]
+  rw [Int.cast_add, AddChar.map_add_eq_mul, stdAddChar_intCast_natCast_mul,
+    stdAddChar_intCast_natCast_mul_of_eq (mul_comm m n)]
+
+/-- **The standard character modulo a product of coprime moduli** is the product of two standard
+characters, one modulo each factor: `e(x / (c₁ c₂)) = e(c₂' x₁ / c₁) e(c₁' x₂ / c₂)`, where
+`e(t) = exp (2πi t)`. For the factor modulo `c₁`, reduce `x` modulo `c₁` to `x₁`, multiply by
+`c₂' = c₂⁻¹` modulo `c₁`, and evaluate the standard character modulo `c₁`. The factor modulo `c₂`
+uses `x₂`, the reduction of `x` modulo `c₂`, and `c₁' = c₁⁻¹` modulo `c₂`. -/
 theorem stdAddChar_eq_mul_of_coprime {c₁ c₂ : ℕ} [NeZero c₁] [NeZero c₂] (h : c₁.Coprime c₂)
     (x : ZMod (c₁ * c₂)) :
     stdAddChar x =
@@ -144,16 +182,27 @@ theorem stdAddChar_eq_mul_of_coprime {c₁ c₂ : ℕ} [NeZero c₁] [NeZero c�
     push_cast at this
     rwa [ZMod.natCast_self, zero_mul, add_zero] at this
   obtain ⟨k, rfl⟩ := ZMod.intCast_surjective x
-  rw [hv, hu, map_intCast (castHom (Nat.dvd_mul_right c₁ c₂) (ZMod c₁)),
-    map_intCast (castHom (Nat.dvd_mul_left c₂ c₁) (ZMod c₂)), ← Int.cast_mul, ← Int.cast_mul,
-    stdAddChar_coe, stdAddChar_coe, stdAddChar_coe, ← Complex.exp_add]
-  congr 1
-  have hC : (c₁ : ℂ) * u + c₂ * v = 1 := by exact_mod_cast huv
-  have h₁ : (c₁ : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne c₁)
-  have h₂ : (c₂ : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne c₂)
-  push_cast
-  field_simp
-  linear_combination (-(k : ℂ)) * hC
+  rw [hv, hu]
+  simp only [map_intCast, ← Int.cast_mul]
+  exact stdAddChar_intCast_eq_mul_of_add_eq_one (by linear_combination huv) k
+
+/-- **The Chinese remainder theorem for the standard character.** The standard character modulo
+`c₁ c₂`, composed with the inverse of `ZMod.chineseRemainder`, is the character
+`(x₁, x₂) ↦ e(c₂' x₁ / c₁) e(c₁' x₂ / c₂)` of `ZMod c₁ × ZMod c₂`: the image under
+`AddChar.coprodEquiv` of the standard characters shifted by `c₂' = c₂⁻¹` modulo `c₁` and by
+`c₁' = c₁⁻¹` modulo `c₂`. -/
+theorem stdAddChar_compAddMonoidHom_chineseRemainder_symm {c₁ c₂ : ℕ} [NeZero c₁] [NeZero c₂]
+    (h : c₁.Coprime c₂) :
+    stdAddChar.compAddMonoidHom (chineseRemainder h).symm.toAddEquiv.toAddMonoidHom =
+      AddChar.coprodEquiv
+        (stdAddChar.mulShift (c₂ : ZMod c₁)⁻¹, stdAddChar.mulShift (c₁ : ZMod c₂)⁻¹) := by
+  ext x
+  obtain ⟨y, rfl⟩ := (chineseRemainder h).surjective x
+  obtain ⟨k, rfl⟩ := ZMod.intCast_surjective y
+  simp only [AddChar.compAddMonoidHom_apply, AddChar.coprodEquiv_apply, AddChar.mulShift_apply]
+  rw [AddEquiv.coe_toAddMonoidHom, RingEquiv.toAddEquiv_eq_coe, RingEquiv.coe_toAddEquiv,
+    RingEquiv.symm_apply_apply, stdAddChar_eq_mul_of_coprime h]
+  simp only [map_intCast, Prod.fst_intCast, Prod.snd_intCast]
 
 /-- The reciprocal chord bound in terms of the least nonnegative representatives of a
 nonzero residue and its negative. -/

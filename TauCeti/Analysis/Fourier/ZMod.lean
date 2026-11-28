@@ -29,8 +29,6 @@ function with values in a subring `R ⊆ ℂ` containing them again has its valu
 
 ## Main results
 
-* `ZMod.stdAddChar_intCast_natCast_mul`: the additive character modulo `m n` at `n x` is the
-  additive character modulo `m` at `x`.
 * `ZMod.fourier_val_div_eq_stdAddChar`: the Fourier mode `n` at `j.val / N` on the circle is the
   standard additive character at `j * n`, and `ZMod.val_div_natCast_mem_Icc`: `j.val / N` lies in
   `[0, 1]`.
@@ -46,16 +44,6 @@ public section
 namespace ZMod
 
 variable {v N : ℕ} [NeZero v] [NeZero N] {E : Type*} [AddCommGroup E] [Module ℂ E]
-
-/-- **The standard additive character at a multiple.** The standard additive character modulo
-`m n` at `n x` is the standard additive character modulo `m` at `x`: both are `e^(2π i x / m)`. -/
-theorem stdAddChar_intCast_natCast_mul {m n : ℕ} [NeZero m] [NeZero n] (x : ℤ) :
-    stdAddChar (((n * x : ℤ) : ZMod (m * n))) = stdAddChar (x : ZMod m) := by
-  have hn : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
-  rw [stdAddChar_coe, stdAddChar_coe]
-  congr 1
-  push_cast
-  field_simp
 
 /-- The Fourier mode `n` at the residue representative `j.val / N` of the circle is the standard
 additive character at `j * n`. -/

@@ -13,6 +13,7 @@ public import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 public import TauCeti.NumberTheory.MulChar.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.Analysis.Fourier.ZMod
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.Data.ZMod.Count
 
 /-!

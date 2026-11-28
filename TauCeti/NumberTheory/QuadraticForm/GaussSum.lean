@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.Data.Matrix.DotProduct
 import TauCeti.Data.Matrix.ZMod
 import TauCeti.Data.ZMod.MulCastHom.Sum
@@ -237,16 +238,9 @@ theorem sum_stdAddChar_dotProduct_mulVec_mul (A : Matrix ι ι ℤ) {m n : ℕ} 
     ext i <;> simp [e, Equiv.arrowProdEquivProdArrow, map_intCast]
   rw [he]
   simp only
-  rw [intCast_dotProduct_mulVec, intCast_dotProduct_mulVec, intCast_dotProduct_mulVec,
-    stdAddChar_coe, stdAddChar_coe, stdAddChar_coe, ← Complex.exp_add]
-  congr 1
-  simp only [smul_mulVec, dotProduct_smul, smul_eq_mul, Int.cast_mul]
-  have hm : (m : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne m)
-  have hn : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne n)
-  have huv' : (u : ℂ) * n + v * m = 1 := by exact_mod_cast huv
-  push_cast
-  field_simp
-  linear_combination (-((w ⬝ᵥ A *ᵥ w : ℤ) : ℂ)) * huv'
+  rw [intCast_dotProduct_mulVec, intCast_dotProduct_mulVec, intCast_dotProduct_mulVec]
+  simp only [smul_mulVec, dotProduct_smul, smul_eq_mul]
+  exact ZMod.stdAddChar_intCast_eq_mul_of_add_eq_one huv _
 
 /-- **The Gauss sum modulo an odd prime power.** Let `A` be a symmetric integer matrix indexed by
 a type with `2k` elements, and `p ^ e` an odd prime power prime to `det A`. With
