@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Polynomial.Expand
 import Mathlib.FieldTheory.Finite.GaloisField
 
 /-!
-# Hasse derivatives of `q`-th powers over a finite field
+# Hasse derivatives of `q`-th powers, and evaluation, over a finite field
 
 Over a finite field `K` with `q` elements, the Hasse derivatives of `f ^ q` vanish at every
 order not divisible by `q` (`Polynomial.hasseDeriv_pow_natCard_eq_zero` with `q = Nat.card K`,
@@ -22,6 +22,11 @@ reduces the claim to `Polynomial.hasseDeriv_pow_expChar_pow_eq_zero`.
 
 The polynomial `X ^ q ^ n - X` is separable for `n ≠ 0` over any commutative ring with `q`
 elements (`Polynomial.separable_X_pow_card_pow_sub_X`).
+
+Over a finite field with `q` elements, `(X - a) ^ q = X ^ q - a` (`Polynomial.X_sub_C_pow_natCard`),
+so `(X - a) ^ q` divides `A(X, X ^ q) - A(X, a)` for `A ∈ K[X][Y]`
+(`Polynomial.X_sub_C_pow_natCard_dvd_eval_sub_eval`). In particular `f ^ q ≡ f(a)` modulo
+`(X - a) ^ q` for `f ∈ K[X]` (`Polynomial.X_sub_C_pow_natCard_dvd_pow_natCard_sub_C_eval`).
 -/
 
 public section
@@ -63,5 +68,40 @@ theorem hasseDeriv_pow_card_eq_zero [Fintype K] {k : ℕ} (hk : ¬Fintype.card K
     hasseDeriv k (f ^ Fintype.card K) = 0 := by
   rw [← Nat.card_eq_fintype_card] at hk ⊢
   exact hasseDeriv_pow_natCard_eq_zero hk f
+
+/-- Over a finite field with `q` elements, `(X - a) ^ q = X ^ q - a`. -/
+theorem X_sub_C_pow_natCard [Finite K] (a : K) :
+    (X - C a) ^ Nat.card K = X ^ Nat.card K - C a := by
+  have := Fintype.ofFinite K
+  rw [Nat.card_eq_fintype_card, ← FiniteField.Polynomial.expand_card, map_sub, expand_X, expand_C]
+
+/-- Over a finite field with `q` elements, `(X - a) ^ q` divides `A(X, X ^ q) - A(X, a)` for every
+`A ∈ K[X][Y]`. Over an infinite field `Nat.card K = 0`, and the statement is `1 ∣ _`. -/
+theorem X_sub_C_pow_natCard_dvd_eval_sub_eval (a : K) (A : K[X][X]) :
+    (X - C a) ^ Nat.card K ∣ A.eval (X ^ Nat.card K) - A.eval (C a) := by
+  cases finite_or_infinite K with
+  | inl _ =>
+    rw [X_sub_C_pow_natCard]
+    exact sub_dvd_eval_sub _ _ _
+  | inr _ =>
+    rw [Nat.card_eq_zero_of_infinite, pow_zero]
+    exact one_dvd _
+
+/-- Over a finite field with `q` elements, `f ^ q ≡ f(a)` modulo `(X - a) ^ q` for every
+`f ∈ K[X]`: `f ^ q = f(X ^ q)` with the coefficients of `f` fixed, so this is
+`X_sub_C_pow_natCard_dvd_eval_sub_eval` for `f` read in `K[X][Y]`. Over an infinite field
+`Nat.card K = 0`, and the statement is `1 ∣ _`. -/
+theorem X_sub_C_pow_natCard_dvd_pow_natCard_sub_C_eval (a : K) (f : K[X]) :
+    (X - C a) ^ Nat.card K ∣ f ^ Nat.card K - C (f.eval a) := by
+  cases finite_or_infinite K with
+  | inl _ =>
+    have := Fintype.ofFinite K
+    have h : f ^ Nat.card K = (f.map C).eval (X ^ Nat.card K) := by
+      rw [eval_map, Nat.card_eq_fintype_card, ← FiniteField.Polynomial.expand_card, coe_expand]
+    rw [h, ← eval₂_at_apply, ← eval_map]
+    exact X_sub_C_pow_natCard_dvd_eval_sub_eval a _
+  | inr _ =>
+    rw [Nat.card_eq_zero_of_infinite, pow_zero]
+    exact one_dvd _
 
 end Polynomial

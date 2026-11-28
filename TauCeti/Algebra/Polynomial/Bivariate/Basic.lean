@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.Algebra.Polynomial.Taylor
 
+import Mathlib.Algebra.Polynomial.BigOperators
+
 /-!
 # Coefficient maps, variable swaps, and evaluation of bivariate polynomials
 
@@ -32,6 +34,8 @@ This file also provides coefficient and natural-degree formulas for `Bivariate.s
   natural degrees.
 * `Polynomial.natDegree_swap_eq_of_eq_C_mul_multiset_prod`: swapped (inner-variable) natural
   degree of a bivariate product `C c * s.prod`.
+* `Polynomial.natDegree_coeff_prod_le_of_le`: a bound for the natural degrees of the coefficients
+  of a product of bivariate polynomials.
 -/
 
 public section
@@ -174,5 +178,15 @@ theorem natDegree_swap_eq_of_eq_C_mul_multiset_prod {R : Type*} [CommSemiring R]
     natDegree_map_eq_of_injective C_injective,
     natDegree_multiset_prod _ fun h0 ↦ hswap_ne 0 h0 rfl,
     Multiset.map_map, Function.comp_def]
+
+/-- If every coefficient of each `P i` in `R[X][Y]` has natural degree at most `a i`, every
+coefficient of `∏ i ∈ s, P i` has natural degree at most `∑ i ∈ s, a i`. -/
+theorem natDegree_coeff_prod_le_of_le {R ι : Type*} [CommSemiring R] (s : Finset ι)
+    (P : ι → R[X][Y]) {a : ι → ℕ} (hP : ∀ i ∈ s, ∀ j, ((P i).coeff j).natDegree ≤ a i) (n : ℕ) :
+    ((∏ i ∈ s, P i).coeff n).natDegree ≤ ∑ i ∈ s, a i := by
+  refine (natDegree_swap_le_iff _ _).1 ?_ n
+  rw [map_prod]
+  exact (natDegree_prod_le _ _).trans
+    (Finset.sum_le_sum fun i hi ↦ (natDegree_swap_le_iff _ _).2 (hP i hi))
 
 end Polynomial
