@@ -133,7 +133,9 @@ theorem kerRes_mem_unramifiedKerCohomology_of_mem_selmerGroup
     {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff} (hc : c ∈ φ.selmerGroup τ) :
     φ.kerRes (τ i) c ∈ (φ.baseChange (L i)).unramifiedKerCohomology :=
   φ.localCondition_selmerStructure_le_unramifiedKerCohomology τ i hdeg
-    ((φ.mem_selmerGroup_iff_forall_kerRes_mem_localCondition τ).1 hc i)
+    (by
+      simpa only [selmerStructure_localCondition] using
+        (φ.mem_selmerGroup_iff_forall_kerRes_mem_localKummerCondition τ).1 hc i)
 
 end ArbitraryFamily
 
@@ -221,16 +223,19 @@ theorem mem_selmerGroup_iff_mem_unramifiedOutsideKerCohomology_and_forall_kerRes
       c ∈ φ.unramifiedOutsideKerCohomology τ S hfinite ∧
         ∀ v ∈ S, φ.kerRes (τ v) c ∈ (φ.selmerStructure τ).localCondition v := by
   refine ⟨fun hc ↦ ⟨φ.selmerGroup_le_unramifiedOutsideKerCohomology τ hfinite hgood₁ hS hc,
-    fun v _ ↦ (φ.mem_selmerGroup_iff_forall_kerRes_mem_localCondition τ).1 hc v⟩, ?_⟩
+    fun v _ ↦ by
+      simpa only [selmerStructure_localCondition] using
+        (φ.mem_selmerGroup_iff_forall_kerRes_mem_localKummerCondition τ).1 hc v⟩, ?_⟩
   rintro ⟨hur, hloc⟩
-  rw [mem_selmerGroup_iff_forall_kerRes_mem_localCondition]
+  rw [mem_selmerGroup_iff_forall_kerRes_mem_localKummerCondition]
   intro v
   by_cases hv : v ∈ S
-  · exact hloc v hv
+  · simpa only [selmerStructure_localCondition] using hloc v hv
   · have : Finite (R ⧸ v.asIdeal) := hfinite v hv
     obtain ⟨_, _⟩ := hgood₁ v hv
     obtain ⟨_, _⟩ := hgood₂ v hv
-    rw [φ.localCondition_selmerStructure_eq_unramifiedKerCohomology τ v (hS v hv)]
+    rw [← φ.selmerStructure_localCondition τ v,
+      φ.localCondition_selmerStructure_eq_unramifiedKerCohomology τ v (hS v hv)]
     exact mem_unramifiedOutsideKerCohomology_iff.mp hur v hv
 
 end DedekindOutsideS

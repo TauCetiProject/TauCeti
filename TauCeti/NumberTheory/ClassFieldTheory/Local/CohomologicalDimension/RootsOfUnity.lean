@@ -194,8 +194,7 @@ theorem nontrivial_h2_kummerCoeff (hn : IsUnit (n : K)) (h1 : 1 < n) :
     Nontrivial (continuousCohomology 2
       (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (KummerCoeff K n))) := by
   have : Fact (1 < n) := ⟨h1⟩
-  exact ((((explicitH2AddEquivContinuousCohomology (AbsoluteGaloisGroup K)
-    (KummerCoeff K n)).symm.trans (galRepOfZModModuleH2Equiv n K (KummerCoeff K n))).trans
-      (h2MuEquivZMod K hn)).toEquiv.nontrivial)
+  exact (((explicitH2AddEquivContinuousCohomology (AbsoluteGaloisGroup K)
+    (KummerCoeff K n)).symm.trans (explicitH2MuEquivZMod K hn)).toEquiv.nontrivial)
 
 end TauCeti.ClassFieldTheory

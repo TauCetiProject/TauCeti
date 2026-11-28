@@ -117,7 +117,7 @@ theorem index_range_nsmul_eq_natCard_torsionBy_of_localField (hnres : (n : 𝓀[
       Nat.card (Submodule.torsionBy ℤ W.toAffine.Point n) := by
   have hnO : IsUnit (n : 𝒪[K]) :=
     (IsLocalRing.residue_ne_zero_iff_isUnit (n : 𝒪[K])).mp (by simpa using hnres)
-  have hnK : (n : K) ≠ 0 := fun h ↦ hnO.ne_zero (Subtype.ext (by simpa using h))
+  have hnK : (n : K) ≠ 0 := TauCeti.natCast_ne_zero_of_isUnit hnO
   have hcard : Nat.card (𝒪[K] ⧸ Ideal.span {(n : 𝒪[K])}) = 1 :=
     have : Subsingleton (𝒪[K] ⧸ Ideal.span {(n : 𝒪[K])}) :=
       Ideal.Quotient.subsingleton_iff.mpr (Ideal.span_singleton_eq_top.mpr hnO)
