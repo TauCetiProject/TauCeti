@@ -111,8 +111,8 @@ at the places in `A` and vanishes elsewhere; the next reference rows have weight
 row's extra allowance is `b + x b / x₁`, and the common allowance per row is `g²`. If the latter
 costs at most `b` boxes in each diagram, the total excess is bounded by `f x b (log b)³ / 2`,
 where `f` is the number of places. -/
-theorem sum_row_size_sum_le {ι : Type*} [Fintype ι] [DecidableEq ι] (A : Finset ι)
-    (κ : ι → ℕ) (n : ℕ → ℕ) (r : ℕ → ι → ℕ → ℕ) {x x₁ b m k g : ℕ} {C : ℝ}
+theorem _root_.Finset.sum_row_size_sum_le {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (A : Finset ι) (κ : ι → ℕ) (n : ℕ → ℕ) (r : ℕ → ι → ℕ → ℕ) {x x₁ b m k g : ℕ} {C : ℝ}
     (hm : m ≤ x) (hx₁ : x ≤ x₁) (hxb : x ≤ b) (hb : 13 ≤ Real.log (b : ℝ))
     (hC : 0 ≤ C) (hCb : C ≤ 23 * Real.log (b : ℝ))
     (hg : ∀ j < m, n j * g ^ 2 ≤ b)
