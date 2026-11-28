@@ -57,6 +57,9 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.algebraIntegersExtension` and `TauCeti.Place.isScalarTowerIntegersExtension`: the
   action of the valuation ring of a place of `F / k` on an `F`-algebra `F'`, to be installed
   with `attribute [local instance 10]`.
+* `TauCeti.Place.algebraConstantsIntegralClosure` and
+  `TauCeti.Place.isScalarTower_constants_integralClosure`: the action of an integral constant
+  extension `k'` on the local integral closure `𝒪'_P`, to be installed locally when needed.
 * `TauCeti.Place.restrict`: the place of `F / k` that a place of `F' / k'` lies over.
 * `TauCeti.Place.ramificationIdx`: the ramification index `e(P' | P)`.
 * `TauCeti.Place.relativeDegree`: the relative degree `f(P' | P) = [F'_{P'} : F_P]`.
@@ -339,35 +342,24 @@ def constantsEquiv : Place k F' ≃ Place k' F' where
       isTrivialOn := ⟨fun c hc ↦ Q.valuation_eq_one_of_isAlgebraic
         (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).isAlgebraic
         fun h ↦ hc ((algebraMap k' F').injective (by rw [h, map_zero]))⟩ }
-  invFun Q :=
-    { valuation := Q.valuation
-      valuation_surjective := Q.valuation_surjective
-      isTrivialOn := ⟨fun c hc ↦ by
-        rw [IsScalarTower.algebraMap_apply k k' F']
-        exact Q.isTrivialOn.eq_one _ fun h ↦
-          hc ((algebraMap k k').injective (by rw [h, map_zero]))⟩ }
+  invFun := restrictConstants k
   left_inv _ := rfl
   right_inv _ := rfl
 
 variable {k k' F'}
 
 @[simp]
-theorem valuation_constantsEquiv (Q : Place k F') :
-    (constantsEquiv k k' F' Q).valuation = Q.valuation := (rfl)
+theorem constantsEquiv_symm_apply (Q : Place k' F') :
+    (constantsEquiv k k' F').symm Q = Q.restrictConstants k := (rfl)
 
 @[simp]
-theorem valuation_constantsEquiv_symm (Q : Place k' F') :
-    ((constantsEquiv k k' F').symm Q).valuation = Q.valuation := (rfl)
+theorem valuation_constantsEquiv (Q : Place k F') :
+    (constantsEquiv k k' F' Q).valuation = Q.valuation := (rfl)
 
 @[simp]
 theorem integers_constantsEquiv (Q : Place k F') :
     (constantsEquiv k k' F' Q).integers = Q.integers :=
   SetLike.ext fun x ↦ by rw [mem_integers_iff, mem_integers_iff, valuation_constantsEquiv]
-
-@[simp]
-theorem integers_constantsEquiv_symm (Q : Place k' F') :
-    ((constantsEquiv k k' F').symm Q).integers = Q.integers :=
-  SetLike.ext fun x ↦ by rw [mem_integers_iff, mem_integers_iff, valuation_constantsEquiv_symm]
 
 end Constants
 

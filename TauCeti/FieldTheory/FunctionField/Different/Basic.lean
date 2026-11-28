@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.DedekindDomain.Different.Basic
 public import TauCeti.FieldTheory.FunctionField.AffineModel.Extension
 
 -- Proof-only: the scalar tower `k → 𝒪_P → 𝒪_{P'}` of valuation rings.
+import TauCeti.FieldTheory.FunctionField.Place.Extension.Constants
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 
 /-!
@@ -43,16 +44,13 @@ fields, and nothing needs `k` perfect.
 
 ## Main definitions
 
-* `TauCeti.Place.centerIntegralClosure`: the centre of `P'` on the local model `𝒪'_P`.
 * `TauCeti.Place.differentExponent`: the different exponent `d(P' ∣ P)` (Stichtenoth,
   Definition 3.4.3).
 
 ## Main results
 
-* `TauCeti.Place.centerIntegralClosure_liesOver_maximalIdeal`: the centre of `P'` on the local
-  model lies over the maximal ideal of `𝒪_P` (identified with the centre of `P` on `𝒪_P` by
-  `TauCeti.Place.center_integers_asIdeal`), so the residue extension the different exponent reads
-  is the residue-field extension of the two places.
+* `TauCeti.Place.differentExponent_restrictConstants`: restricting the constant field of `P'` to
+  `k` leaves `d(P' ∣ P)` unchanged.
 * `TauCeti.Place.pow_dvd_differentIdeal_iff_le_differentExponent`: the characteristic property of
   the different exponent, `𝔓'^n ∣ differentIdeal 𝒪_P 𝒪'_P ↔ n ≤ d(P' ∣ P)`.
 * `TauCeti.Place.ramificationIdx_le_differentExponent_add_one`: **Dedekind's different theorem**
@@ -172,23 +170,6 @@ attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExte
 
 variable [Algebra.IsSeparable F F']
 
-/-- **The centre of `P'` on the local model `𝒪'_P`**: the height one prime of the integral closure
-of `𝒪_P` in `F'` consisting of the functions that vanish at `P'`. -/
-noncomputable def centerIntegralClosure :
-    HeightOneSpectrum (integralClosure ((P'.restrict k F).integers) F') :=
-  P'.center (algebraMap_mem_integers_of_mem_integralClosure k F P')
-
-theorem centerIntegralClosure_def : centerIntegralClosure k F P' =
-    P'.center (algebraMap_mem_integers_of_mem_integralClosure k F P') := (rfl)
-
-/-- The centre of `P'` on the local model lies over the maximal ideal of `𝒪_P`, so the residue
-extension of the local model is read at the residue field of `P`. -/
-instance centerIntegralClosure_liesOver_maximalIdeal :
-    (centerIntegralClosure k F P').asIdeal.LiesOver
-      (IsLocalRing.maximalIdeal ((P'.restrict k F).integers)) := by
-  rw [← (P'.restrict k F).center_integers_asIdeal fun c ↦ c.property, centerIntegralClosure_def]
-  exact center_liesOver k F P' _
-
 /-- **The different exponent `d(P' ∣ P)`** of a place `P'` of `F' / k'` over the place
 `P = P'.restrict k F` of `F / k` (Stichtenoth, Definition 3.4.3), for `F' / F` finite and
 separable: the multiplicity with which the centre of `P'` on the local model `𝒪'_P` divides the
@@ -204,6 +185,33 @@ noncomputable def differentExponent : ℕ :=
 theorem differentExponent_def : differentExponent k F P' =
     multiplicity (centerIntegralClosure k F P').asIdeal (differentIdeal
       ((P'.restrict k F).integers) (integralClosure ((P'.restrict k F).integers) F')) := (rfl)
+
+private theorem differentExponent_eq_multiplicity_of_restrict_eq {k₀ : Type*} [Field k₀]
+    [Algebra k₀ F'] [Algebra k k₀] [IsScalarTower k k₀ F']
+    {Q : Place k₀ F'} {P : Place k F} (hP : Q.restrict k F = P)
+    (hQ : ∀ c : integralClosure P.integers F', algebraMap _ F' c ∈ Q.integers) :
+    differentExponent k F Q =
+      multiplicity (Q.center hQ).asIdeal
+        (differentIdeal P.integers (integralClosure P.integers F')) := by
+  subst hP
+  rw [differentExponent_def]
+  congr 2
+  ext c
+  simp [mem_center_asIdeal]
+
+/-- Restricting the constant field of `P'` to `k` does not change its different exponent over
+`F / k`. -/
+@[simp]
+theorem differentExponent_restrictConstants :
+    differentExponent k F (P'.restrictConstants k) = differentExponent k F P' := by
+  rw [differentExponent_eq_multiplicity_of_restrict_eq k F (restrict_restrictConstants k F P')
+      fun c ↦ by
+        rw [integers_restrictConstants]
+        exact algebraMap_mem_integers_of_mem_integralClosure k F P' c,
+    differentExponent_def]
+  congr 2
+  ext c
+  simp [mem_center_asIdeal]
 
 /-- **The characteristic property of the different exponent**: the `n`-th power of the centre of
 `P'` divides the different ideal of the local model exactly when `n ≤ d(P' ∣ P)`. -/
@@ -271,8 +279,9 @@ theorem differentExponent_eq_zero_iff_formallyUnramified :
   let _ := P'.integersAlgebra hB
   have := P'.isScalarTower_integers hB
   have : IsScalarTower O B P'.integers := IsScalarTower.to₁₂₃ O B P'.integers F'
-  have : IsLocalization q.asIdeal.primeCompl P'.integers :=
+  have : IsLocalization (P'.center hB).asIdeal.primeCompl P'.integers :=
     P'.isLocalization_integers_center hB
+  rw [← centerIntegralClosure_def k F P'] at this
   exact Algebra.FormallyUnramified.iff_of_equiv
     ((IsLocalization.algEquiv q.asIdeal.primeCompl (Localization.AtPrime q.asIdeal)
       P'.integers).restrictScalars O)

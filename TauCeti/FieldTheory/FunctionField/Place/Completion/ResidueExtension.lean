@@ -15,11 +15,11 @@ its residue field and the residue field of the place below, but also the embeddi
 between them. The two completion isomorphisms form a commutative square with the
 original and completed residue embeddings.
 
-Consequently the full relative residue degree and separability of the residue
-extension are unchanged by completion. No finiteness or separability assumption
-on the fields or their residues is needed. In particular, the degree here includes
-any inseparable factor; this is the residue degree occurring in local different
-and discriminant formulas.
+Consequently the full relative residue degree (`finrank_residueField_completion`) and
+separability of the residue extension are unchanged by completion. No finiteness or
+separability assumption on the fields or their residues is needed. In particular, the
+degree here includes any inseparable factor; this is the residue degree occurring in
+local different and discriminant formulas.
 
 The algebra structure of the completed valuation-ring extension is explicit, as
 in `TauCeti.Place.completionIntegersExtensionAlgebra`. This is the intrinsic-place
@@ -41,8 +41,11 @@ open IsLocalRing
 
 variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
   [Algebra k F] [Algebra k k'] [Algebra k' F'] [Algebra k F'] [Algebra F F']
-  [IsScalarTower k k' F'] [IsScalarTower k F F']
-  [Algebra.IsIntegral F F'] (P' : Place k' F')
+  [IsScalarTower k k' F'] [IsScalarTower k F F'] [Algebra.IsIntegral F F']
+
+section Residue
+
+variable (P' : Place k' F')
 
 /-- The canonical residue-field identifications commute with the embedding induced
 by the extension of valuation rings. -/
@@ -101,5 +104,7 @@ theorem isSeparable_residueField_completion_iff :
     (P'.restrict k F).residueFieldEquivCompletion.toRingEquiv
     P'.residueFieldEquivCompletion.toRingEquiv
     (P'.algebraMap_comp_residueFieldEquivCompletion (k := k) (F := F))).symm
+
+end Residue
 
 end TauCeti.Place

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 -- `Nat.card` occurs in the statement of `TauCeti.card_residueField_of_surjective`.
 public import Mathlib.SetTheory.Cardinal.Finite
@@ -27,6 +28,8 @@ is the residue field `κ`. Likewise, any surjective `R₀`-algebra map `ψ : R �
   sending the class of `r` to `residue R r`.
 * `TauCeti.residueFieldAlgEquivOfSurjective`: `ResidueField R ≃ₐ[R₀] L` induced by a surjective
   `R₀`-algebra map `ψ : R →ₐ[R₀] L` onto a field `L`.
+* `TauCeti.finrank_residueField_eq_of_equiv_equiv`: a commuting square of ring equivalences
+  between local ring extensions induces an equality of residue-field degrees.
 * `TauCeti.card_residueField_of_surjective`: along a surjective ring homomorphism of
   local rings, the residue fields have the same number of elements.
 * `TauCeti.natCard_residueField_mem_maximalIdeal`: the cast cardinality of the residue field
@@ -112,6 +115,26 @@ theorem residueFieldAlgEquivOfSurjective_symm_apply {R₀ L : Type*} [CommRing R
     (residueFieldAlgEquivOfSurjective hψ).symm (ψ r) = residue R r :=
   (residueFieldAlgEquivOfSurjective hψ).symm_apply_eq.mpr
     (residueFieldAlgEquivOfSurjective_residue hψ r).symm
+
+/-- A commuting square of ring equivalences between local ring extensions induces an equality
+of residue-field degrees. -/
+theorem finrank_residueField_eq_of_equiv_equiv
+    {R₀ S₀ R₁ S₁ : Type*} [CommRing R₀] [CommRing S₀] [CommRing R₁] [CommRing S₁]
+    [IsLocalRing R₀] [IsLocalRing S₀] [IsLocalRing R₁] [IsLocalRing S₁]
+    [Algebra R₀ S₀] [Algebra R₁ S₁]
+    [IsLocalHom (algebraMap R₀ S₀)] [IsLocalHom (algebraMap R₁ S₁)]
+    (i : R₀ ≃+* R₁) (j : S₀ ≃+* S₁)
+    (hc : (algebraMap R₁ S₁).comp i.toRingHom = j.toRingHom.comp (algebraMap R₀ S₀)) :
+    Module.finrank (ResidueField R₀) (ResidueField S₀) =
+      Module.finrank (ResidueField R₁) (ResidueField S₁) := by
+  refine Algebra.finrank_eq_of_equiv_equiv (ResidueField.mapEquiv i) (ResidueField.mapEquiv j) ?_
+  refine RingHom.ext fun y ↦ ?_
+  obtain ⟨x, rfl⟩ := residue_surjective y
+  rw [RingHom.comp_apply, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
+    RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, RingHom.coe_coe, ResidueField.mapEquiv_apply,
+    ResidueField.map_residue, ResidueField.algebraMap_residue, ResidueField.algebraMap_residue,
+    ResidueField.mapEquiv_apply, ResidueField.map_residue]
+  exact congrArg (residue S₁) (RingHom.congr_fun hc x)
 
 /-- Along a surjective ring homomorphism of local rings, the residue fields have the same number
 of elements, so the residue field of a quotient `A ⧸ I` by a proper ideal has as many elements as

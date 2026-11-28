@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Completion.Basic
-public import TauCeti.Topology.Algebra.Valued.WithVal
 public import Mathlib.RingTheory.Valuation.RamificationGroup
 
 /-!

@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Place.Completion.Extension
-import Mathlib.FieldTheory.SeparableClosure
+public import TauCeti.FieldTheory.FunctionField.Place.Completion.ResidueExtension
 import TauCeti.RingTheory.AdicCompletion.Pi
+import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
 # The local degree of a completed extension of function fields
@@ -19,8 +19,16 @@ extension of complete discretely valued fields of degree
 
 `[F̂'_{P'} : F̂_P] = e(P' ∣ P) · f(P' ∣ P)`,
 
-and the completed valuation ring `𝒪̂_{P'}` is a free module of the same rank over `𝒪̂_P`. Neither
-separability nor perfectness is assumed, of `F' / F`, of the residue extension, or of the
+and the completed valuation ring `𝒪̂_{P'}` is a free module of the same rank over `𝒪̂_P` and equals
+the integral closure of `𝒪̂_P` in `F̂'_{P'}` (`TauCeti.Place.isIntegralClosure_completionIntegers`,
+adapting `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegers_isIntegralClosure` in
+`TauCeti/RingTheory/DedekindDomain/AdicValuation/IntegralClosure.lean`). Moreover, the image of
+`F'` generates `F̂'_{P'}` over `F̂_P` (`TauCeti.Place.adjoin_range_completionEmbedding_eq_top`), and
+separability of `F' / F` passes to `F̂'_{P'} / F̂_P` (`TauCeti.Place.isSeparable_completion`, the
+place-theoretic counterpart of
+`IsDedekindDomain.HeightOneSpectrum.isSeparable_adicCompletion_of_isSeparable` in
+`TauCeti/RingTheory/DedekindDomain/AdicValuation/Semilocal.lean`).
+Neither separability nor perfectness is assumed, of `F' / F`, of the residue extension, or of the
 constants: an inseparable residue extension is counted with its full degree. This identifies the
 completion at a place as a finite extension of complete discrete valuation rings, the setting in
 which integral bases, trace forms and the different of a completed extension are computed.
@@ -55,14 +63,19 @@ completed extension.
 * `TauCeti.Place.finiteDimensional_completion` and `TauCeti.Place.finrank_completion`: **the
   local degree** `[F̂'_{P'} : F̂_P] = e(P' ∣ P) f(P' ∣ P)`.
 * `TauCeti.Place.isIntegralClosure_completionIntegers`,
-  `TauCeti.Place.isSeparable_completion`, and `TauCeti.Place.restrict_completionPlace`: `𝒪̂_{P'}`
-  is the integral closure of `𝒪̂_P` in `F̂'_{P'}`, separability of `F' / F` passes to
-  `F̂'_{P'} / F̂_P`, and over a common constant field `k` the completed upper place restricts to the
-  completed lower place.
+  `TauCeti.Place.adjoin_range_completionEmbedding_eq_top`,
+  `TauCeti.Place.isSeparable_completion`, `TauCeti.Place.restrict_completionPlace`, and
+  `TauCeti.Place.relativeDegree_completionPlace`: `𝒪̂_{P'}` is the integral closure of `𝒪̂_P` in
+  `F̂'_{P'}`, the image of `F'` generates `F̂'_{P'}` over `F̂_P`, separability of `F' / F` passes to
+  `F̂'_{P'} / F̂_P`, and completion preserves restriction and the relative degree `f(P' ∣ P)`.
 
 ## References
 
 * J.-P. Serre, *Local Fields*, GTM 67, Springer, 1979, Chapter II, §§2–3.
+* `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegers_isIntegralClosure` in
+  `TauCeti/RingTheory/DedekindDomain/AdicValuation/IntegralClosure.lean` and
+  `IsDedekindDomain.HeightOneSpectrum.isSeparable_adicCompletion_of_isSeparable` in
+  `TauCeti/RingTheory/DedekindDomain/AdicValuation/Semilocal.lean`.
 -/
 
 public section
@@ -500,53 +513,59 @@ theorem isIntegralClosure_completionIntegers :
   have := P.moduleFinite_completionIntegers P' hP
   infer_instance
 
+/-- The image of `F'` generates `F̂'_{P'}` as an intermediate field over `F̂_P` when the residue
+extension is finite. -/
+theorem adjoin_range_completionEmbedding_eq_top :
+    letI := P.completionExtensionAlgebra P' hP
+    IntermediateField.adjoin P.Completion (Set.range P'.completionEmbedding) = ⊤ := by
+  let _ := P.completionExtensionAlgebra P' hP
+  obtain ⟨u, t, -, hsp, ht⟩ := exists_residue_basis (k := k) (F := F) P'
+  have hsub : Set.range (fun p : Fin (relativeDegree k F P') × Fin (ramificationIdx F P') ↦
+      P'.completionEmbedding ((u p.1 : F') * (t : F') ^ (p.2 : ℕ))) ⊆
+      Set.range P'.completionEmbedding := by
+    rintro _ ⟨p, rfl⟩
+    exact ⟨_, rfl⟩
+  have hspan : Submodule.span P.Completion (Set.range P'.completionEmbedding) = ⊤ :=
+    top_unique ((P.span_completion_eq_top P' hP u hsp ht).ge.trans
+      (Submodule.span_mono hsub))
+  have hle : (⊤ : Submodule P.Completion P'.Completion) ≤
+      (IntermediateField.adjoin P.Completion
+        (Set.range P'.completionEmbedding)).toSubalgebra.toSubmodule := by
+    rw [← hspan, Submodule.span_le]
+    exact IntermediateField.subset_adjoin P.Completion _
+  exact eq_top_iff.mpr fun x _ ↦ hle Submodule.mem_top
+
 /-- **Completion preserves separability**: for an integral separable extension `F' / F` with finite
-residue extension at `P' ∣ P`, `F̂'_{P'} / F̂_P` is separable (with arbitrary residue fields). -/
+residue extension at `P' ∣ P`, `F̂'_{P'} / F̂_P` is separable (with arbitrary residue fields).
+
+Formal counterpart of
+`IsDedekindDomain.HeightOneSpectrum.isSeparable_adicCompletion_of_isSeparable` in
+`TauCeti/RingTheory/DedekindDomain/AdicValuation/Semilocal.lean`. -/
 theorem isSeparable_completion [Algebra.IsSeparable F F'] :
     letI := P.completionExtensionAlgebra P' hP
     Algebra.IsSeparable P.Completion P'.Completion := by
   let _ := P.completionExtensionAlgebra P' hP
-  obtain ⟨u, t, -, hsp, ht⟩ := exists_residue_basis (k := k) (F := F) P'
-  have hcomp : (algebraMap P.Completion P'.Completion).comp P.completionEmbedding.toRingHom =
-      P'.completionEmbedding.toRingHom.comp (algebraMap F F') :=
-    RingHom.ext fun x ↦ by simp [P.algebraMap_completionExtensionAlgebra P' hP]
-  rw [← separableClosure.eq_top_iff, eq_top_iff]
-  have hsub : Submodule.span P.Completion (Set.range fun p :
-      Fin (relativeDegree k F P') × Fin (ramificationIdx F P') ↦
-        P'.completionEmbedding ((u p.1 : F') * (t : F') ^ (p.2 : ℕ))) ≤
-      (separableClosure P.Completion P'.Completion).toSubalgebra.toSubmodule := by
-    refine Submodule.span_le.mpr ?_
-    rintro _ ⟨p, rfl⟩
-    dsimp only
-    set y : F' := (u p.1 : F') * (t : F') ^ (p.2 : ℕ)
-    have haeval : Polynomial.aeval (P'.completionEmbedding.toRingHom y)
-        ((minpoly F y).map P.completionEmbedding.toRingHom) = 0 := by
-      rw [Polynomial.aeval_def, Polynomial.eval₂_map, hcomp, ← Polynomial.hom_eval₂,
-        ← Polynomial.aeval_def, minpoly.aeval, map_zero]
-    exact mem_separableClosure_iff.mpr <|
-      (Polynomial.Separable.map (Algebra.IsSeparable.isSeparable F y)).of_dvd
-        (minpoly.dvd P.Completion _ haeval)
-  exact fun z _ ↦ hsub (span_completion_eq_top P P' hP u hsp ht ▸ Submodule.mem_top)
+  rw [← AlgEquiv.Algebra.isSeparable_iff <|
+      (IntermediateField.equivOfEq (P.adjoin_range_completionEmbedding_eq_top P' hP)).trans
+        IntermediateField.topEquiv,
+    IntermediateField.isSeparable_adjoin_iff_isSeparable]
+  rintro _ ⟨y, rfl⟩
+  exact P.isSeparable_completionEmbedding P' hP y
 
-end Degree
-
-section Constants
-
-variable {k F F' : Type*} [Field k] [Field F] [Field F']
-  [Algebra k F] [Algebra k F'] [Algebra F F'] [IsScalarTower k F F']
-  [Algebra.IsIntegral F F'] (P : Place k F) (P' : Place k F') (hP : P'.restrict k F = P)
-  [FiniteDimensional (P'.restrict k F).ResidueField P'.ResidueField]
-
-/-- For an integral extension `F' / F` over `k` with finite residue extension at `P' ∣ P`, the
-completed upper place restricts to the completed lower place. -/
+/-- For an integral extension `F' / F` with finite residue extension at `P' ∣ P`, the completed
+upper place restricts to the completed lower place. -/
 @[simp]
 theorem restrict_completionPlace :
     letI := P.completionExtensionAlgebra P' hP
+    letI := (P'.restrictConstants k).instAlgebraCompletion
+    haveI := P'.isScalarTower_restrictConstants_completion k
     haveI := P.isScalarTower_completionExtensionAlgebra P' hP
     haveI : Algebra.IsIntegral P.Completion P'.Completion :=
       haveI := P.finiteDimensional_completion P' hP; .of_finite _ _
     P'.completionPlace.restrict k P.Completion = P.completionPlace := by
   let _ := P.completionExtensionAlgebra P' hP
+  let _ := (P'.restrictConstants k).instAlgebraCompletion
+  have := P'.isScalarTower_restrictConstants_completion k
   have := P.isScalarTower_completionExtensionAlgebra P' hP
   have := P.finiteDimensional_completion P' hP
   have : Algebra.IsIntegral P.Completion P'.Completion := .of_finite _ _
@@ -555,6 +574,36 @@ theorem restrict_completionPlace :
   rw [P.algebraMap_completionExtensionAlgebra P' hP]
   exact P.completionExtension_mem_integers P' hP hx
 
-end Constants
+/-- Completion preserves the full relative degree `f(P' ∣ P)`, including any inseparable
+residue factor. -/
+@[simp]
+theorem relativeDegree_completionPlace :
+    letI := P.completionExtensionAlgebra P' hP
+    letI := (P'.restrictConstants k).instAlgebraCompletion
+    haveI := P'.isScalarTower_restrictConstants_completion k
+    haveI := P.isScalarTower_completionExtensionAlgebra P' hP
+    haveI : FiniteDimensional P.Completion P'.Completion := finiteDimensional_completion P P' hP
+    relativeDegree k P.Completion P'.completionPlace = relativeDegree k F P' := by
+  subst hP
+  let P := P'.restrict k F
+  let _ := P.completionExtensionAlgebra P' rfl
+  let _ := (P'.restrictConstants k).instAlgebraCompletion
+  have := P'.isScalarTower_restrictConstants_completion k
+  have := P.isScalarTower_completionExtensionAlgebra P' rfl
+  let _ := P.completionIntegersExtensionAlgebra P' rfl
+  have : FiniteDimensional P.Completion P'.Completion := finiteDimensional_completion P P' rfl
+  have hsub : (P'.completionPlace.restrict k P.Completion).integers.toSubring =
+      P.completionPlace.integers.toSubring :=
+    congrArg (fun R : Place k P.Completion ↦ R.integers.toSubring)
+      (restrict_completionPlace P P' rfl)
+  rw [relativeDegree_def, ← P'.finrank_residueField_completion (k := k) (F := F)]
+  refine finrank_residueField_eq_of_equiv_equiv (RingEquiv.subringCongr hsub) (.refl _)
+    (RingHom.ext fun x ↦ Subtype.ext ?_)
+  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+    RingEquiv.refl_apply]
+  rw [coe_algebraMap_integers, coe_algebraMap_completionIntegersExtensionAlgebra,
+    algebraMap_completionExtensionAlgebra, RingEquiv.coe_subringCongr_apply]
+
+end Degree
 
 end TauCeti.Place

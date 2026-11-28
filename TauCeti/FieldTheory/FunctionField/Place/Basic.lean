@@ -744,6 +744,44 @@ theorem degree_eq_one_of_isAlgClosed_of_isIntegral [IsAlgClosed k]
 
 end ResidueField
 
+section Constants
+
+/-- **Restricting the constant field of a place**: any place `Q` of `F' / k'` is also a place of
+`F' / k` with the same normalized valuation, with no integrality assumption on `k' / k`.
+
+Marked as an `abbrev` because `Place.Completion` (`P.valuation.Completion`) depends on the
+`valuation` projection: `(Q.restrictConstants k).Completion` must agree with `Q.Completion` at
+`reducible`/`implicit` transparency so `rw` and `simp` can rewrite completion statements across
+`Q.restrictConstants k` and `Q`. -/
+abbrev restrictConstants {k' F' : Type*} [Field k'] [Field F'] [Algebra k' F']
+    (k : Type u) [Field k] [Algebra k k'] [Algebra k F'] [IsScalarTower k k' F']
+    (Q : Place k' F') : Place k F' where
+  valuation := Q.valuation
+  valuation_surjective := Q.valuation_surjective
+  isTrivialOn := ⟨fun c hc ↦ by
+    rw [IsScalarTower.algebraMap_apply k k' F']
+    exact Q.isTrivialOn.eq_one _ fun h ↦ hc ((algebraMap k k').injective (by rw [h, map_zero]))⟩
+
+@[simp]
+theorem valuation_restrictConstants {k : Type u} {k' F' : Type*} [Field k] [Field k'] [Field F']
+    [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F'] (Q : Place k' F') :
+    (Q.restrictConstants k).valuation = Q.valuation := rfl
+
+@[simp]
+theorem ord_restrictConstants {k : Type u} {k' F' : Type*} [Field k] [Field k'] [Field F']
+    [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F']
+    (Q : Place k' F') (x : F') :
+    (Q.restrictConstants k).ord x = Q.ord x := by
+  simp [ord_def]
+
+@[simp]
+theorem integers_restrictConstants {k : Type u} {k' F' : Type*} [Field k] [Field k'] [Field F']
+    [Algebra k k'] [Algebra k' F'] [Algebra k F'] [IsScalarTower k k' F'] (Q : Place k' F') :
+    (Q.restrictConstants k).integers = Q.integers :=
+  SetLike.ext fun x ↦ by rw [mem_integers_iff, mem_integers_iff, valuation_restrictConstants]
+
+end Constants
+
 end Place
 
 end TauCeti
