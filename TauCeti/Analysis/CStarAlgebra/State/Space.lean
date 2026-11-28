@@ -218,11 +218,14 @@ composite can drop, for instance to `0`. -/
 theorem mapsTo_pullbackFunctional_stateSpace_of_surjective (f : F) (hf : Function.Surjective f) :
     MapsTo (pullbackFunctional A f) (stateSpace B) (stateSpace A) := by
   intro φ hφ
-  let ω : B →P[ℂ] ℂ := .mk₀ (toStrongDual φ) fun _ => map_nonneg_of_mem_stateSpace hφ
+  let ω : B →P[ℂ] ℂ := .mk₀ (toStrongDual φ) fun x hx =>
+    (map_nonneg_of_mem_stateSpace hφ hx).trans_eq (toStrongDual_apply φ x).symm
   have hcomp : ((ω.comp (.ofClass f) : A →P[ℂ] ℂ) : A →L[ℂ] ℂ) =
       toStrongDual (pullbackFunctional A f φ) := by
     ext a
-    exact (pullbackFunctional_apply f φ a).symm
+    simp only [PositiveContinuousLinearMap.coe_toContinuousLinearMap,
+      PositiveContinuousLinearMap.comp_apply, PositiveContinuousLinearMap.coe_ofClass, ω,
+      PositiveContinuousLinearMap.mk₀_apply, toStrongDual_apply, pullbackFunctional_apply]
   refine mem_stateSpace_iff.2 ⟨fun a ha => ?_, ?_⟩
   · rw [pullbackFunctional_apply]
     exact map_nonneg_of_mem_stateSpace hφ (map_nonneg f ha)
