@@ -11,6 +11,8 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.RingTheory.Spectrum.Maximal.Localization
+import Mathlib.RingTheory.Localization.BaseChange
+import Mathlib.RingTheory.Localization.LocalizationLocalization
 import Mathlib.Algebra.GroupWithZero.Indicator
 import Mathlib.RingTheory.RingHom.Surjective
 import Mathlib.RingTheory.SurjectiveOnStalks
@@ -38,8 +40,14 @@ The proof decomposes the Artinian ring `C = B ⧸ J` as the product of its local
 `IsLocalRing.length_restrictScalars`, and identifies `C_q` with `B_m ⧸ J B_m` for the maximal
 ideal `m` of `B` under `q`.
 
+The repeated localization formula below uses Mathlib's
+`IsLocalization.isLocalization_isLocalization_atPrime_isLocalization` and
+`LocalizedModule.isBaseChange`.
+
 ## Main results
 
+* `Submonoid.length_localizedModule_under`: local lengths are unchanged
+  after localizing the base ring and module.
 * `Ideal.length_quotient_eq_finsum`: `length_A (B ⧸ J)` is the sum over the maximal ideals `q` of
   `C = B ⧸ J` of `length_{C_q} C_q · length_A κ(C_q)`.
 * `Ideal.length_localization_quotient`: `(B ⧸ J)_q` has the same length over itself as
@@ -93,6 +101,39 @@ theorem Module.length_localizedModule_under_of_surjective {R S : Type*} [CommRin
   rw [← length_eq_of_surjective (M := L) hsurj]
   exact ((IsLocalizedModule.iso p.primeCompl (f.restrictScalars R)).extendScalarsOfIsLocalization
     p.primeCompl Rp).length_eq
+
+open TensorProduct in
+/-- If `S` is a localization of `R` and `q` is a prime of `S`, the local length of
+`S ⊗[R] M` at `q` is the local length of `M` at the contraction of `q`. -/
+theorem Submonoid.length_localizedModule_under {R S : Type*} [CommRing R]
+    [CommRing S] [Algebra R S] (U : Submonoid R) [IsLocalization U S] (M : Type*)
+    [AddCommGroup M] [Module R M] (q : Ideal S) [q.IsPrime] :
+    Module.length (Localization.AtPrime (q.under R)) (LocalizedModule.AtPrime (q.under R) M) =
+      Module.length (Localization.AtPrime q) (LocalizedModule.AtPrime q (S ⊗[R] M)) := by
+  let p := q.under R
+  let Rp := Localization.AtPrime p
+  let Sq := Localization.AtPrime q
+  let Mp := LocalizedModule.AtPrime p M
+  let Lq := LocalizedModule.AtPrime q (S ⊗[R] M)
+  let _ := Localization.AtPrime.algebraOfLiesOver p q
+  have : IsLocalization.AtPrime Sq p :=
+    IsLocalization.isLocalization_isLocalization_atPrime_isLocalization U Sq q
+  have hbij : Function.Bijective (algebraMap Rp Sq) :=
+    IsLocalization.bijective p.primeCompl _ (IsScalarTower.algebraMap_eq R Rp Sq).symm
+  let eRing := AlgEquiv.ofBijective (Algebra.ofId Rp Sq) hbij
+  have hq := (TensorProduct.isBaseChange R M S).comp
+    (LocalizedModule.isBaseChange q.primeCompl (S ⊗[R] M))
+  -- The two local modules become equivalent after extending scalars to the same local ring.
+  let eUnit : Sq ⊗[Rp] Mp ≃ₗ[Rp] Mp :=
+    (TensorProduct.congr eRing.symm.toLinearEquiv (LinearEquiv.refl Rp Mp)).trans
+      (TensorProduct.lid Rp Mp)
+  let _ : Module Rp Lq := Module.compHom Lq (algebraMap Rp Sq)
+  have : IsScalarTower Rp Sq Lq := IsScalarTower.of_compHom _ _ _
+  let eLocal : Sq ⊗[Rp] Mp ≃ₗ[Rp] Lq :=
+    ((LocalizedModule.isBaseChange p.primeCompl M).tensorEquiv Sq).trans
+      (hq.equiv.restrictScalars Rp)
+  exact eUnit.length_eq.symm.trans (eLocal.length_eq.trans
+    (Module.length_eq_of_surjective hbij.surjective))
 
 namespace Ideal
 
