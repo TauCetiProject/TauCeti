@@ -136,6 +136,11 @@ local instance :
     IsAffine ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).left :=
   isAffine_Spec _
 
+local instance :
+    LocallyOfFiniteType ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).hom := by
+  change LocallyOfFiniteType (Spec (CommRingCat.of H) ↘ Spec (CommRingCat.of k))
+  infer_instance
+
 section CompactTarget
 
 variable [CompactSpace X.left]
@@ -250,17 +255,12 @@ theorem isIso_fppfHomogeneousQuotientToPointsSheaf
     [IsReduced X.left]
     (h : orbit ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x = Set.univ) :
     IsIso (fppfHomogeneousQuotientToPointsSheaf H x) := by
-  have : Flat
-      (orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left :=
-    flat_orbitMap_of_orbit_eq_univ _ x h
-  have : Surjective
-      (orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left :=
-    (surjective_orbitMap_iff_orbit_eq_univ _ x).mpr h
-  have : IsLocallyNoetherian X.left := LocallyOfFiniteType.isLocallyNoetherian X.hom
-  have : LocallyOfFinitePresentation
-      (orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x).left :=
-    locallyOfFinitePresentation_orbitMap _ x
-  exact isIso_fppfHomogeneousQuotientToPointsSheaf_of_isLocallySurjective H x
+  have : CompactSpace X.left := compactSpace_of_orbit_eq_univ _ x h
+  have : IsIso
+      (orbitInclusion ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x) :=
+    isIso_orbitInclusion_of_orbit_eq_univ _ x h
+  rw [← fppfHomogeneousQuotientIsoOrbitPoints_hom_comp_orbitInclusion H x]
+  infer_instance
 
 /-- **Homogeneous orbit comparison from rational-point transitivity.** Over an algebraically closed
 field, when `X` is reduced and `G(k)` acts transitively on `X(k)`, the descended orbit map
@@ -288,9 +288,9 @@ def fppfHomogeneousQuotientIsoPointsSheaf
     (h : orbit ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x = Set.univ) :
     _root_.CommHopfAlgCat.fppfHomogeneousQuotient H (stabilizerHopfIdeal H x) ≅
       TauCeti.CommAlgCat.pointsSheaf X :=
-  have : IsIso (fppfHomogeneousQuotientToPointsSheaf H x) :=
-    isIso_fppfHomogeneousQuotientToPointsSheaf H x h
-  asIso (fppfHomogeneousQuotientToPointsSheaf H x)
+  have : CompactSpace X.left := compactSpace_of_orbit_eq_univ _ x h
+  fppfHomogeneousQuotientIsoOrbitPoints H x ≪≫
+    (TauCeti.CommAlgCat.pointsSheafFunctor k).mapIso (orbitInclusionIso _ x h)
 
 /-- The forward direction of `fppfHomogeneousQuotientIsoPointsSheaf` is
 `fppfHomogeneousQuotientToPointsSheaf`. -/
@@ -300,8 +300,11 @@ theorem fppfHomogeneousQuotientIsoPointsSheaf_hom
     [IsReduced X.left]
     (h : orbit ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x = Set.univ) :
     (fppfHomogeneousQuotientIsoPointsSheaf H x h).hom =
-      fppfHomogeneousQuotientToPointsSheaf H x :=
-  (rfl)
+      fppfHomogeneousQuotientToPointsSheaf H x := by
+  have : CompactSpace X.left := compactSpace_of_orbit_eq_univ _ x h
+  rw [fppfHomogeneousQuotientIsoPointsSheaf, Iso.trans_hom, Functor.mapIso_hom,
+    orbitInclusionIso_hom]
+  exact fppfHomogeneousQuotientIsoOrbitPoints_hom_comp_orbitInclusion H x
 
 /-- Under `fppfHomogeneousQuotientIsoPointsSheaf`, `representedQuotientProjection` is the orbit
 morphism `orbitMap`. -/
@@ -328,8 +331,8 @@ def representedQuotientIsoOfOrbitEqUniv
     (e : _root_.CommHopfAlgCat.fppfHomogeneousQuotient H (stabilizerHopfIdeal H x) ≅
       TauCeti.CommAlgCat.pointsSheaf Q) :
     Q ≅ X :=
-  _root_.CommHopfAlgCat.representedQuotientIso H (stabilizerHopfIdeal H x) e
-    (fppfHomogeneousQuotientIsoPointsSheaf H x h)
+  have : CompactSpace X.left := compactSpace_of_orbit_eq_univ _ x h
+  representedQuotientIsoOrbitOver H x e ≪≫ orbitInclusionIso _ x h
 
 /-- The scheme isomorphism `representedQuotientIsoOfOrbitEqUniv` intertwines the quotient map
 `Spec H ⟶ Q` with the orbit morphism `Spec H ⟶ X`. -/
@@ -344,9 +347,10 @@ theorem representedQuotientProjection_comp_representedQuotientIsoOfOrbitEqUniv_h
     _root_.CommHopfAlgCat.representedQuotientProjection H (stabilizerHopfIdeal H x) e ≫
         (representedQuotientIsoOfOrbitEqUniv H x h e).hom =
       orbitMap ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) x := by
-  rw [representedQuotientIsoOfOrbitEqUniv, _root_.CommHopfAlgCat.representedQuotientIso_hom,
-    _root_.CommHopfAlgCat.representedQuotientProjection_comp_fppfHomogeneousQuotientSchemeMap,
-    representedQuotientProjection_fppfHomogeneousQuotientIsoPointsSheaf]
+  have : CompactSpace X.left := compactSpace_of_orbit_eq_univ _ x h
+  rw [representedQuotientIsoOfOrbitEqUniv, Iso.trans_hom, ← Category.assoc,
+    representedQuotientProjection_comp_representedQuotientIsoOrbitOver_hom,
+    orbitInclusionIso_hom, orbitProjection_inclusion]
 
 /-- When a representing quotient scheme `Q` carries a `G`-action making the quotient map
 equivariant, the isomorphism `Q ≅ X` onto a reduced homogeneous scheme `X` is `G`-equivariant. -/
@@ -364,11 +368,13 @@ theorem isModHom_representedQuotientIsoOfOrbitEqUniv_hom
           _root_.CommHopfAlgCat.representedQuotientProjection H (stabilizerHopfIdeal H x) e ≫
         γ[(Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k)),Q]) :
     IsModHom ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k)))
-      (representedQuotientIsoOfOrbitEqUniv H x h e).hom :=
-  _root_.CommHopfAlgCat.isModHom_representedQuotientIso_hom H (stabilizerHopfIdeal H x) e
-    (fppfHomogeneousQuotientIsoPointsSheaf H x h) hq (by
-      rw [representedQuotientProjection_fppfHomogeneousQuotientIsoPointsSheaf]
-      exact mul_orbitMap _ x)
+      (representedQuotientIsoOfOrbitEqUniv H x h e).hom := by
+  have : CompactSpace X.left := compactSpace_of_orbit_eq_univ _ x h
+  have : IsModHom ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k)))
+      (representedQuotientIsoOrbitOver H x e).hom :=
+    isModHom_representedQuotientIsoOrbitOver_hom H x e hq
+  rw [representedQuotientIsoOfOrbitEqUniv, Iso.trans_hom]
+  infer_instance
 
 end OrbitComparison
 

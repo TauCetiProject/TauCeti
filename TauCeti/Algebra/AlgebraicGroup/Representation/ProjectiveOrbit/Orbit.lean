@@ -48,6 +48,16 @@ local instance [_root_.IsReduced H] :
     IsReduced ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).left :=
   (affine_isReduced_iff (CommRingCat.of H)).mpr inferInstance
 
+local instance :
+    CompactSpace ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).left := by
+  change CompactSpace (Spec (CommRingCat.of H))
+  infer_instance
+
+local instance :
+    LocallyOfFiniteType ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).hom := by
+  change LocallyOfFiniteType (Spec (CommRingCat.of H) ↘ Spec (CommRingCat.of k))
+  infer_instance
+
 /-- **Every orbit scheme is isomorphic to Chevalley's projective-orbit quotient model.** For a
 reduced finite-type affine group `Spec H` acting on a finite-type scheme over an algebraically
 closed field, the orbit scheme `orbitOver (Spec H) x` is isomorphic over `Spec k` to a projective
