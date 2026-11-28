@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Biproduct
 public import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Abelian
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Tensor
 
 /-!
 # Finiteness of cohomology by dimension shifting

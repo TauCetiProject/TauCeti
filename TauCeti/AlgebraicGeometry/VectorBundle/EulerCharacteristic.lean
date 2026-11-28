@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.Biproduct
 public import TauCeti.AlgebraicGeometry.VectorBundle.Affine.Semilocal
 public import TauCeti.AlgebraicGeometry.VectorBundle.ProjectionFormula
+import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Tensor
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 import TauCeti.AlgebraicGeometry.Modules.SchemeTheoreticSupport
 

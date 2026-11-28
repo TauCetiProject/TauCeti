@@ -79,9 +79,9 @@ private theorem finite_cohomology_proj [IsNoetherianRing R] {κ : Type*} [Finite
   obtain ⟨n, I, _, π, _⟩ := (Proj.eventually_exists_epi_free_tensor_twistingSheaf
     (fun i ↦ _root_.SymmetricAlgebra.ι R M (b i)) (fun i ↦ ι_mem_homogeneousSubmodule R M (b i))
     (iSup_basicOpen_ι_eq_top R M b b.span_eq) F).exists
-  -- `Proj.eventually_exists_epi_free_tensor_twistingSheaf` elaborates `⊗` with
-  -- `SheafOfModules.monoidalCategory` rather than `Scheme.Modules.instMonoidalCategory`, so
-  -- typeclass search does not apply `Scheme.Modules.isFinitePresentation_tensorObj` automatically.
+  -- `SheafOfModules.free I` has syntactic type `SheafOfModules (Proj _).ringCatSheaf` while
+  -- `Scheme.Modules` is semireducible, so `inferInstance` at reducible transparency does not
+  -- trigger `Scheme.Modules.isFinitePresentation_tensorObj`.
   have : ((SheafOfModules.free I : (Proj (homogeneousSubmodule R M)).Modules) ⊗
       Proj.twistingSheaf (homogeneousSubmodule R M) (-n)).IsFinitePresentation :=
     Scheme.Modules.isFinitePresentation_tensorObj (Proj _) _ _

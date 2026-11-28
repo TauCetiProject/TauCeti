@@ -126,6 +126,23 @@ def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyAddEquivOfIso
     Cohomology M q ≃+ Cohomology N q :=
   ((cohomologyFunctor X q).mapIso e).addCommGroupIsoToAddEquiv
 
+/-- Applying `cohomologyAddEquivOfIso` is the map on cohomology induced by `e.hom`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyAddEquivOfIso_apply
+    {M N : X.Modules} (e : M ≅ N) (q : ℕ) (x : Cohomology M q) :
+    _root_.AlgebraicGeometry.Scheme.Modules.cohomologyAddEquivOfIso e q x =
+      (cohomologyFunctor X q).map e.hom x :=
+  (rfl)
+
+/-- Applying the inverse of `cohomologyAddEquivOfIso` is the map on cohomology induced by
+`e.inv`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyAddEquivOfIso_symm_apply
+    {M N : X.Modules} (e : M ≅ N) (q : ℕ) (x : Cohomology N q) :
+    (_root_.AlgebraicGeometry.Scheme.Modules.cohomologyAddEquivOfIso e q).symm x =
+      (cohomologyFunctor X q).map e.inv x :=
+  (rfl)
+
 /-- Isomorphic sheaves of modules have trivial cohomology in the same degrees. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_congr
     {M N : X.Modules} (e : M ≅ N) (q : ℕ) :

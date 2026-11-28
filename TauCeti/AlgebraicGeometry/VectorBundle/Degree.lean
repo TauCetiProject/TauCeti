@@ -15,6 +15,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Skyscraper
 public import TauCeti.AlgebraicGeometry.VectorBundle.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.Curves.Degree.Pullback
 public import TauCeti.AlgebraicGeometry.VectorBundle.FreeSubsheaf
+import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Tensor
 import TauCeti.AlgebraicGeometry.Noetherian
 
 /-!

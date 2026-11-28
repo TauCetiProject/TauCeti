@@ -27,12 +27,15 @@ projective-over-`Spec R` case of the coherence of higher direct images for proje
 over Noetherian bases (Hartshorne, Theorem III.8.8(b)) and for proper morphisms over locally
 Noetherian bases (Stacks Tag 02O5).
 
-Combining Serre's vanishing theorem for closed subschemes of projective space
+In the second theorem below, let `M` be a finitely generated `R`-module (distinct from the
+coefficient sheaf `M` above), `i : X ⟶ Proj (Sym_R M)` a closed immersion, and `F` a
+quasi-coherent `𝒪_X`-module of finite type. Combining Serre's vanishing theorem for closed
+subschemes of projective space
 (`AlgebraicGeometry.Scheme.Hom.exists_subsingleton_cohomology_tensor_pullback_twistingSheaf`)
 with the affine-base global-sections comparison
-(`AlgebraicGeometry.Scheme.Hom.isZero_higherDirectImage_of_subsingleton_cohomology`) yields the
-asymptotic vanishing of `R^q (i ≫ projToSpec R M)_* (F ⊗ i^* 𝒪(m))` for closed immersions
-`i : X ⟶ Proj (Sym_R M)` over a Noetherian ring `R`
+(`AlgebraicGeometry.Scheme.Hom.isZero_higherDirectImage_of_subsingleton_cohomology`) shows that
+for all sufficiently large `m` and every positive degree `q > 0`, the higher direct image
+`R^q (i ≫ projToSpec R M)_* (F ⊗ i^* 𝒪(m))` vanishes
 (`AlgebraicGeometry.Scheme.Hom.exists_isZero_higherDirectImage_tensor_pullback_twistingSheaf`).
 
 ## References

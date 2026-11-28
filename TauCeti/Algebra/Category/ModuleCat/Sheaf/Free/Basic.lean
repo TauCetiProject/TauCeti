@@ -12,7 +12,6 @@ public import Mathlib.LinearAlgebra.StdBasis
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Biproducts
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Defs
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Monoidal
-import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
 
 /-!
 # Free sheaves on finitely many generators
@@ -36,8 +35,6 @@ which generators and relations of a finitely presented sheaf are handled locally
 * `TauCeti.SheafOfModules.isZero_free`: the free sheaf on an empty type is a zero object;
 * `TauCeti.SheafOfModules.biproductIsoFree`: a finite free sheaf is the biproduct of copies of
   the unit;
-* `SheafOfModules.biproductConstIsoTensorFree`: a finite biproduct of copies of `M` is
-  isomorphic to `M ⊗ free I`;
 * `TauCeti.SheafOfModules.evaluationFreeIso`: the sections of a finite free sheaf are tuples of
   sections of the coefficient sheaf;
 * `TauCeti.SheafOfModules.freeBasis`: the corresponding basis of sections, consisting of the
@@ -214,55 +211,6 @@ theorem ιFree_biproductIsoFree_inv (i : I) :
     ιFree i ≫ (biproductIsoFree (R := R) I).inv =
       biproduct.ι (fun _ : I ↦ 𝟙_ (SheafOfModules.{u} (ringCatSheaf R))) i :=
   (biproduct.isColimit _).comp_coconePointUniqueUpToIso_inv (isColimitFreeCofan I) ⟨i⟩
-
-/-- A finite biproduct of copies of `M` is isomorphic to `M ⊗ free I`. -/
-def _root_.SheafOfModules.biproductConstIsoTensorFree
-    (M : _root_.SheafOfModules.{u} (ringCatSheaf R)) (I : Type u) [Finite I] :
-    (⨁ fun _ : I ↦ M) ≅ M ⊗ free (R := ringCatSheaf R) I := by
-  letI : Fintype I := Fintype.ofFinite I
-  have : HasBiproduct (C := _root_.SheafOfModules.{u} (ringCatSheaf R))
-      fun _ : I ↦ 𝟙_ (_root_.SheafOfModules.{u} (ringCatSheaf R)) :=
-    HasBiproduct.of_hasCoproduct _
-  exact biproduct.isoCoproduct (fun _ : I ↦ M) ≪≫
-    Sigma.mapIso (fun _ ↦ (ρ_ M).symm) ≪≫
-    (PreservesCoproduct.iso (tensorLeft M)
-      (fun _ : I ↦ 𝟙_ (_root_.SheafOfModules.{u} (ringCatSheaf R)))).symm ≪≫
-    whiskerLeftIso M ((biproduct.isoCoproduct
-      (fun _ : I ↦ 𝟙_ (_root_.SheafOfModules.{u} (ringCatSheaf R)))).symm ≪≫
-      biproductIsoFree (R := R) I)
-
-/-- `biproductConstIsoTensorFree` sends the `i`-th summand inclusion to `M ◁ ιFree i`, up to the
-right unitor of `M`. -/
-@[reassoc (attr := simp)]
-theorem _root_.SheafOfModules.biproduct_ι_biproductConstIsoTensorFree_hom
-    (M : _root_.SheafOfModules.{u} (ringCatSheaf R)) {I : Type u} [Finite I] (i : I) :
-    biproduct.ι (fun _ : I ↦ M) i ≫ (M.biproductConstIsoTensorFree I).hom =
-      (ρ_ M).inv ≫ M ◁ ιFree i := by
-  let : Fintype I := Fintype.ofFinite I
-  have : HasBiproduct (C := _root_.SheafOfModules.{u} (ringCatSheaf R))
-      fun _ : I ↦ 𝟙_ (_root_.SheafOfModules.{u} (ringCatSheaf R)) :=
-    HasBiproduct.of_hasCoproduct _
-  simp only [_root_.SheafOfModules.biproductConstIsoTensorFree, Iso.trans_hom, Iso.symm_hom,
-    biproduct.isoCoproduct_hom, biproduct.ι_desc_assoc, Sigma.ι_mapIso_hom_assoc,
-    PreservesCoproduct.iso_inv, whiskerLeftIso_hom]
-  have hsig : Sigma.ι (fun _ : I ↦ M ⊗ 𝟙_ (_root_.SheafOfModules.{u} (ringCatSheaf R))) i ≫
-      sigmaComparison (tensorLeft M) (fun _ : I ↦ 𝟙_ (_root_.SheafOfModules.{u} (ringCatSheaf R))) =
-      M ◁ Sigma.ι (fun _ : I ↦ 𝟙_ (_root_.SheafOfModules.{u} (ringCatSheaf R))) i :=
-    ι_comp_sigmaComparison (tensorLeft M) _ i
-  rw [reassoc_of% hsig, ← MonoidalCategory.whiskerLeft_comp, biproduct.isoCoproduct_inv,
-    Sigma.ι_comp_desc_assoc]
-  congr 2
-  exact biproduct_ι_biproductIsoFree_hom i
-
-/-- The inverse of `biproductConstIsoTensorFree` sends `M ◁ ιFree i` to the `i`-th summand
-inclusion, up to the right unitor of `M`. -/
-@[reassoc (attr := simp)]
-theorem _root_.SheafOfModules.whiskerLeft_ιFree_biproductConstIsoTensorFree_inv
-    (M : _root_.SheafOfModules.{u} (ringCatSheaf R)) {I : Type u} [Finite I] (i : I) :
-    M ◁ ιFree i ≫ (M.biproductConstIsoTensorFree I).inv =
-      (ρ_ M).hom ≫ biproduct.ι (fun _ : I ↦ M) i := by
-  rw [Iso.comp_inv_eq, Category.assoc,
-    _root_.SheafOfModules.biproduct_ι_biproductConstIsoTensorFree_hom, Iso.hom_inv_id_assoc]
 
 variable (I)
 
