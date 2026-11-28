@@ -120,55 +120,6 @@ section Splitting
 
 variable {X : Type*} [Fintype X] {d : ℕ} {rel : X → X → Fin (d + 1)}
 
-private theorem exists_spectral_proj [DecidableEq X] (h : IsAssocScheme rel)
-    {M : Matrix X X ℝ} (hM_mem : M ∈ bmAlgebra rel) (hM_herm : M.IsHermitian)
-    (x₀ y₀ : X) (hne : hM_herm.eigenvalues y₀ ≠ hM_herm.eigenvalues x₀) :
-    ∃ Q ∈ bmAlgebra rel, IsIdempotentElem Q ∧
-      Q *ᵥ ⇑(hM_herm.eigenvectorBasis x₀) = ⇑(hM_herm.eigenvectorBasis x₀) ∧
-      Q *ᵥ ⇑(hM_herm.eigenvectorBasis y₀) = 0 := by
-  set μ : ℝ := hM_herm.eigenvalues x₀
-  let S_ev : Finset ℝ := (Finset.univ.image hM_herm.eigenvalues).erase μ
-  let fac (ν : ℝ) : Matrix X X ℝ := (μ - ν)⁻¹ • (M - ν • 1)
-  set Q : Matrix X X ℝ := (S_ev.toList.map fac).prod
-  have hQ_mem : ∀ l : List ℝ, (l.map fac).prod ∈ bmAlgebra rel := fun l => by
-    induction l with
-    | nil => exact h.one_mem_bmAlgebra
-    | cons ν l ih =>
-      exact h.mul_mem_bmAlgebra (Submodule.smul_mem _ _
-        (Submodule.sub_mem _ hM_mem (Submodule.smul_mem _ _ h.one_mem_bmAlgebra))) ih
-  have hQ_mulVec : ∀ (l : List ℝ) (j : X),
-      (l.map fac).prod *ᵥ ⇑(hM_herm.eigenvectorBasis j) =
-        (l.map fun ν => (μ - ν)⁻¹ * (hM_herm.eigenvalues j - ν)).prod •
-          ⇑(hM_herm.eigenvectorBasis j) := fun l j => by
-    induction l with
-    | nil => simp
-    | cons ν l ih =>
-      rw [List.map_cons, List.prod_cons, ← Matrix.mulVec_mulVec, ih, Matrix.mulVec_smul]
-      simp only [fac, Matrix.smul_mulVec, Matrix.sub_mulVec, Matrix.one_mulVec,
-        hM_herm.mulVec_eigenvectorBasis j, ← sub_smul, smul_smul, List.map_cons, List.prod_cons]
-      rw [mul_comm _ ((List.map _ l).prod)]
-  have hQ_eval : ∀ j : X, (S_ev.toList.map fun ν =>
-      (μ - ν)⁻¹ * (hM_herm.eigenvalues j - ν)).prod =
-      if hM_herm.eigenvalues j = μ then 1 else 0 := fun j => by
-    split_ifs with hj
-    · refine List.prod_eq_one fun x hx => ?_
-      obtain ⟨ν, hν, rfl⟩ := List.mem_map.mp hx
-      have hne' : μ - ν ≠ 0 :=
-        sub_ne_zero.mpr (Finset.ne_of_mem_erase (Finset.mem_toList.mp hν)).symm
-      rw [hj, inv_mul_cancel₀ hne']
-    · exact List.prod_eq_zero (List.mem_map.mpr ⟨hM_herm.eigenvalues j,
-        Finset.mem_toList.mpr (Finset.mem_erase.mpr
-          ⟨hj, Finset.mem_image_of_mem _ (Finset.mem_univ _)⟩), by simp⟩)
-  have hQ_idem : IsIdempotentElem Q := by
-    rw [IsIdempotentElem, ← sub_eq_zero]
-    refine hM_herm.eq_zero_of_mulVec_eigenvectorBasis fun j => ?_
-    rw [Matrix.sub_mulVec, ← Matrix.mulVec_mulVec, hQ_mulVec S_ev.toList j,
-      Matrix.mulVec_smul, hQ_mulVec S_ev.toList j, smul_smul, hQ_eval j]
-    split_ifs <;> simp
-  refine ⟨Q, hQ_mem S_ev.toList, hQ_idem, ?_, ?_⟩
-  · simp [Q, hQ_mulVec S_ev.toList x₀, hQ_eval x₀, μ]
-  · simp [Q, hQ_mulVec S_ev.toList y₀, hQ_eval y₀, μ, hne]
-
 private theorem split_alg_of_comm [DecidableEq X] (h : IsAssocScheme rel)
     {p Q : Matrix X X ℝ} (hp_mem : p ∈ bmAlgebra rel) (hQ_mem : Q ∈ bmAlgebra rel)
     (hp_idem : IsIdempotentElem p) (hQ_idem : IsIdempotentElem Q) (hcomm : Q * p = p * Q) :
@@ -208,8 +159,14 @@ private theorem exists_split_of_not_mul_eq_smul (h : IsAssocScheme rel) {p A : M
     simp [M, Matrix.mul_assoc, hp_idem.eq]
   obtain ⟨x₀, y₀, hx₀, hy₀, hne⟩ :=
     hM_herm.exists_mulVec_eigenvectorBasis_ne_zero_of_mul_eq hpM hnot
-  obtain ⟨Q, hQ_mem, hQ_idem, hQx₀, hQy₀⟩ :=
-    exists_spectral_proj h hM_mem hM_herm x₀ y₀ hne
+  obtain ⟨Q, hQ_adjoin, hQ_idem, hQ_mulVec⟩ :=
+    hM_herm.exists_spectral_projection (hM_herm.eigenvalues x₀)
+  have hQ_mem : Q ∈ bmAlgebra rel := h.mem_bmSubalgebra_iff.mp
+    (Algebra.adjoin_le (Set.singleton_subset_iff.mpr (h.mem_bmSubalgebra_iff.mpr hM_mem)) hQ_adjoin)
+  have hQx₀ : Q *ᵥ ⇑(hM_herm.eigenvectorBasis x₀) = ⇑(hM_herm.eigenvectorBasis x₀) := by
+    simp [hQ_mulVec x₀]
+  have hQy₀ : Q *ᵥ ⇑(hM_herm.eigenvectorBasis y₀) = 0 := by
+    simp [hQ_mulVec y₀, hne]
   have hcomm : Q * p = p * Q := h.mul_comm_of_mem_bmAlgebra hQ_mem hp_mem
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ :=
     split_alg_of_comm h hp_mem hQ_mem hp_idem hQ_idem hcomm
