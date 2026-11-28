@@ -70,9 +70,9 @@ noncomputable def d4SixMonomialIsometry (u : Fin 6 → Fˣ) (σ : Equiv.Perm (Fi
         d4SixGlueModule) ∈ d4SixGlueSubgroup ↔ w ∈ d4SixGlueSubgroup) :
     Isometry d4SixLattice d4SixLattice :=
   (Isometry.ofEq d4SixLattice_def).trans <|
-    (gluedLatticePiCongrIsometry (fun _ : Fin 6 ↦ D 4) (fun _ ↦ isSimplyLaced_D 4)
+    (gluedLatticePiCongrIsometry' (fun _ : Fin 6 ↦ D 4) (fun _ ↦ isSimplyLaced_D 4)
       (fun _ ↦ valid_D.mpr le_rfl) d4SixGlueSubgroup isLagrangian_d4SixGlueSubgroup.isIsotropic
-      (fun _ ↦ valid_D.mpr le_rfl) isLagrangian_d4SixGlueSubgroup.isIsotropic σ.symm
+      (fun _ ↦ valid_D.mpr le_rfl) isLagrangian_d4SixGlueSubgroup.isIsotropic σ
       (fun j ↦ typeD4ScalarIsometry (isSimplyLaced_D 4) hF hω (u (σ.symm j)))
       (fun j x ↦ (typeD4GlueAlphabetQuaternaryIsometry hF hω).symm
         (u (σ.symm j) * typeD4GlueAlphabetQuaternaryIsometry hF hω x))
@@ -93,7 +93,7 @@ theorem d4SixMonomialIsometry_apply (u : Fin 6 → Fˣ) (σ : Equiv.Perm (Fin 6)
     d4SixMonomialIsometry hF hω u σ hσ x j =
       typeD4ScalarIsometry (isSimplyLaced_D 4) hF hω (u (σ.symm j)) (x (σ.symm j)) := by
   rw [d4SixMonomialIsometry, Isometry.trans_apply, Isometry.trans_apply, Isometry.ofEq_apply,
-    Isometry.ofEq_apply, gluedLatticePiCongrIsometry_apply]
+    Isometry.ofEq_apply, gluedLatticePiCongrIsometry'_apply]
 
 /-! ### Monomial automorphisms of the hexacode -/
 

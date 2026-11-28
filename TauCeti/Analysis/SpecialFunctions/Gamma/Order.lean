@@ -33,8 +33,8 @@ The total values at poles are zero by Mathlib's convention. The zero-order chara
 therefore use nonzero total values, while the negative-order characterizations identify the
 pole lattices. `Complex.gammaPolesRightOf` packages the finite set of poles of `t ↦ Γ(a + t)`
 strictly to the right of a vertical line `Re t = σ` (together with `mem_gammaPolesRightOf`,
-`gammaPolesRightOf_eq_empty_iff`, `gammaPolesRightOf_sdiff`, `mem_gammaPolesRightOf_union`,
-and the vertical-strip lemmas `re_ne_of_eq_neg_sub_natCast`,
+`gammaPolesRightOf_eq_empty_iff`, `gammaPolesRightOf_antitone`, `gammaPolesRightOf_sdiff`,
+`mem_gammaPolesRightOf_union`, and the vertical-strip lemmas `re_ne_of_eq_neg_sub_natCast`,
 `re_mem_Ioo_of_mem_gammaPolesRightOf_union_sdiff`, and
 `add_ne_neg_natCast_of_notMem_gammaPolesRightOf_union_sdiff`).
 These formulas supply the local orders and pole sets from which shifted products and archimedean
@@ -319,6 +319,13 @@ theorem mem_gammaPolesRightOf {a t : ℂ} {σ : ℝ} :
 theorem gammaPolesRightOf_eq_empty_iff {a : ℂ} {σ : ℝ} :
     gammaPolesRightOf a σ = ∅ ↔ -a.re ≤ σ := by
   simp [gammaPolesRightOf, Nat.ceil_eq_zero]
+
+/-- `gammaPolesRightOf a` is antitone in the abscissa `σ`: shifting `σ` to the left only adds
+poles of `t ↦ Γ(a + t)` to the right of `Re t = σ`. -/
+theorem gammaPolesRightOf_antitone (a : ℂ) : Antitone (gammaPolesRightOf a) :=
+  fun _ _ h s hs ↦ by
+    rw [mem_gammaPolesRightOf] at hs ⊢
+    exact ⟨h.trans_lt hs.1, hs.2⟩
 
 /-- The difference `gammaPolesRightOf a σ₁ \ gammaPolesRightOf a σ₂` is the image of the
 ceiling interval `[⌈-Re a - σ₂⌉₊, ⌈-Re a - σ₁⌉₊)` under `k ↦ -a - k`. -/

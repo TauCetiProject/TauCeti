@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Contact.Distribution
 public import TauCeti.Geometry.Manifold.Distribution.Coorientation
+import TauCeti.Geometry.Manifold.Distribution.Coorientation.Neighborhood
 
 /-!
 # Coorientable contact structures and global contact forms
@@ -32,6 +33,12 @@ These statements specialize the results for smooth hyperplane fields in
 which vanishes nowhere is a contact form
 (`TauCeti.IsContactDistribution.isContactForm_and_kerDistribution_eq_iff`).
 
+Coorientability can also be asked for only along a subset. If the annihilator line has a
+continuous section vanishing nowhere along an inducing map `ι : X → M`, then some contact form
+with kernel `ξ` is defined on an open neighbourhood of the image of `ι`, and is a positive multiple
+of that section along `ι` (`TauCeti.IsContactDistribution.exists_opens_isContactForm_pos_smul`),
+even when `ξ` is not coorientable on all of `M`.
+
 ## Main results
 
 * `TauCeti.IsContactDistribution.exists_isContactForm_pos_smul`: every coorientation of a contact
@@ -49,6 +56,8 @@ which vanishes nowhere is a contact form
 * `TauCeti.IsContactDistribution.exists_isContactForm_kerDistribution_eq_iff_exists_isCoorientation`
   states that a contact structure is the kernel of a global contact form exactly when it has a
   coorientation.
+* `TauCeti.IsContactDistribution.exists_opens_isContactForm_pos_smul`: a contact structure whose
+  annihilator line is trivial along a subset is the kernel of a contact form near it.
 
 ## References
 
@@ -189,5 +198,33 @@ theorem exists_isContactForm_kerDistribution_eq_iff_exists_isCoorientation
   exact (hD.isContMDiffDistribution.exists_isCoorientation_iff hD.finrank_sub_one_add_one).symm
 
 end IsContactDistribution
+
+/-- **A contact structure with a trivial contact line along a subset is defined by a contact form
+near it.** Let `D` be a contact structure on a Hausdorff second-countable manifold, `ι : X → M` an
+inducing map, and `σ q` a nonzero covector annihilating `D (ι q)`, depending continuously on `q`.
+Then on some open neighbourhood `W` of the image of `ι` there is a contact form with kernel `D`,
+which at every point `ι q` is a positive multiple of `σ q`. The contact structure need not be
+coorientable away from the image. -/
+theorem IsContactDistribution.exists_opens_isContactForm_pos_smul [T2Space M]
+    [SecondCountableTopology M] (hD : IsContactDistribution I ∞ D) {X : Type*} [TopologicalSpace X]
+    {ι : X → M} (hι : Topology.IsInducing ι) {σ : Π q : X, TangentSpace I (ι q) →L[ℝ] ℝ}
+    (hσ : Continuous fun q ↦ TotalSpace.mk' (E →L[ℝ] ℝ)
+      (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) (ι q) (σ q))
+    (hσ₀ : ∀ q, σ q ≠ 0) (hσD : ∀ q, σ q ∈ CotangentBundle.annihilatorSpace I D (ι q)) :
+    ∃ W : TopologicalSpace.Opens M, range ι ⊆ W ∧ ∃ α : SmoothForm I W ℝ 1, α.IsContactForm ∧
+      α.kerDistribution = (fun y : W ↦ D y) ∧
+      ∀ q (hq : ι q ∈ W), ∃ c : ℝ, 0 < c ∧ SmoothForm.degreeOneEquiv α ⟨ι q, hq⟩ = c • σ q := by
+  rcases isEmpty_or_nonempty M with hM | hM
+  · have : IsManifold I (∞ + 1) (⊤ : TopologicalSpace.Opens M) :=
+      IsManifold.of_le (n := ∞) (by simp)
+    obtain ⟨hαc, hαD⟩ := (hD.comp_subtypeVal (by simp) ⊤).isContactForm_and_kerDistribution_eq_iff
+      (α := 0).2 fun y ↦ isEmptyElim (y : M)
+    exact ⟨⊤, fun _ ⟨q, _⟩ ↦ isEmptyElim (ι q), 0, hαc, hαD, fun q ↦ isEmptyElim (ι q)⟩
+  obtain ⟨W, hιW, α, hα, hpos⟩ := hD.isContMDiffDistribution.exists_opens_smoothForm_pos_smul
+    hD.finrank_sub_one_add_one hι hσ hσ₀ hσD
+  have : IsManifold I (∞ + 1) W := IsManifold.of_le (n := ∞) (by simp)
+  obtain ⟨hαc, hαD⟩ :=
+    (hD.comp_subtypeVal (by simp) W).isContactForm_and_kerDistribution_eq_iff.2 hα
+  exact ⟨W, hιW, α, hαc, hαD, hpos⟩
 
 end TauCeti

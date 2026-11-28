@@ -96,7 +96,9 @@ tend to `1` lies strictly within distance one of `1`.
 * `TauCeti.norm_inv_sub_one_eq`: inversion preserves distance less than one from `1`.
 * `TauCeti.norm_pow_sub_one_le_norm_sub_one`: a power of an element `x` of norm at most one is
   no farther from `1` than `x`.
-* `TauCeti.norm_prod_sub_prod_le`: a uniform perturbation bound for finite products.
+* `TauCeti.norm_prod_sub_prod_le`, `TauCeti.norm_prod_sub_prod_le_mul_prod`, and
+  `TauCeti.norm_pow_sub_pow_le_mul_pow`: uniform and weighted perturbation bounds for finite
+  products and powers.
 * `TauCeti.norm_prod_pow_sub_prod_pow_le`: monomials in two close families lying in a
   norm-bounded subring differ by a bound independent of their degree.
 * `TauCeti.norm_fwdDiff_iter_pow_mul_pow_le`: for `‖x‖, ‖h‖ ≤ c`, the `k`-th forward difference
@@ -509,30 +511,28 @@ theorem norm_prod_sub_one_lt {ι R : Type*} [SeminormedCommRing R] [IsUltrametri
     exact norm_mul_sub_one_lt hε (hf j (Finset.mem_insert_self j s))
       (ih fun i hi ↦ hf i (Finset.mem_insert_of_mem hi))
 
-/-- If two finite families are bounded by `M` and differ by at most `ε` in each coordinate,
-their products differ by at most `ε * M ^ (s.card - 1)`. The exponent uses natural subtraction,
-so the statement includes the empty product and `M = 0`. -/
-theorem norm_prod_sub_prod_le {ι R : Type*} [SeminormedCommRing R]
-    [IsUltrametricDist R] {s : Finset ι} {f g : ι → R} {M ε : ℝ} (hε : 0 ≤ ε)
-    (hf : ∀ i ∈ s, ‖f i‖ ≤ M) (hg : ∀ i ∈ s, ‖g i‖ ≤ M)
-    (hfg : ∀ i ∈ s, ‖f i - g i‖ ≤ ε) :
-    ‖∏ i ∈ s, f i - ∏ i ∈ s, g i‖ ≤ ε * M ^ (s.card - 1) := by
+/-- **Weighted perturbation bound for finite products in an ultrametric ring.** If two finite
+families satisfy `‖f i‖ ≤ M i`, `‖g i‖ ≤ M i`, and `‖f i - g i‖ ≤ δ * M i` for every `i ∈ s`
+with `0 ≤ δ`, then their products satisfy `‖∏ i ∈ s, f i - ∏ i ∈ s, g i‖ ≤ δ * ∏ i ∈ s, M i`. -/
+theorem norm_prod_sub_prod_le_mul_prod {ι R : Type*} [SeminormedCommRing R]
+    [IsUltrametricDist R] {s : Finset ι} {f g : ι → R} {M : ι → ℝ} {δ : ℝ} (hδ : 0 ≤ δ)
+    (hf : ∀ i ∈ s, ‖f i‖ ≤ M i) (hg : ∀ i ∈ s, ‖g i‖ ≤ M i)
+    (hfg : ∀ i ∈ s, ‖f i - g i‖ ≤ δ * M i) :
+    ‖∏ i ∈ s, f i - ∏ i ∈ s, g i‖ ≤ δ * ∏ i ∈ s, M i := by
   classical
   induction s using Finset.induction_on with
-  | empty => simp [hε]
+  | empty => simpa using hδ
   | insert a s ha ih =>
     rcases s.eq_empty_or_nonempty with rfl | hs
     · simpa using hfg a (by simp)
-    have hprod : ‖∏ i ∈ s, f i‖ ≤ M ^ s.card := by
-      calc ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := TauCeti.norm_prod_le_prod_norm_of_nonempty hs f
-        _ ≤ ∏ _i ∈ s, M := Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _)
-          fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)
-        _ = M ^ s.card := Finset.prod_const _
-    have htail := ih (fun i hi ↦ hf i (Finset.mem_insert_of_mem hi))
-      (fun i hi ↦ hg i (Finset.mem_insert_of_mem hi))
-      (fun i hi ↦ hfg i (Finset.mem_insert_of_mem hi))
-    rw [Finset.prod_insert ha, Finset.prod_insert ha, Finset.card_insert_of_notMem ha,
-      Nat.add_sub_cancel]
+    have hmem : ∀ i ∈ s, i ∈ insert a s := fun i hi ↦ Finset.mem_insert_of_mem hi
+    have hprod : ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, M i :=
+      (TauCeti.norm_prod_le_prod_norm_of_nonempty hs f).trans
+        (Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun i hi ↦ hf i (hmem i hi))
+    have htail := ih (fun i hi ↦ hf i (hmem i hi)) (fun i hi ↦ hg i (hmem i hi))
+      (fun i hi ↦ hfg i (hmem i hi))
+    have hMa : 0 ≤ M a := (norm_nonneg (g a)).trans (hg a (Finset.mem_insert_self a s))
+    rw [Finset.prod_insert ha, Finset.prod_insert ha, Finset.prod_insert ha]
     calc ‖f a * ∏ i ∈ s, f i - g a * ∏ i ∈ s, g i‖ =
           ‖(f a - g a) * ∏ i ∈ s, f i + g a * (∏ i ∈ s, f i - ∏ i ∈ s, g i)‖ := by
             congr 1
@@ -541,13 +541,55 @@ theorem norm_prod_sub_prod_le {ι R : Type*} [SeminormedCommRing R]
           (‖g a‖ * ‖∏ i ∈ s, f i - ∏ i ∈ s, g i‖) :=
         (IsUltrametricDist.norm_add_le_max _ _).trans
           (max_le_max (norm_mul_le _ _) (norm_mul_le _ _))
-      _ ≤ max (ε * M ^ s.card) (M * (ε * M ^ (s.card - 1))) :=
-        max_le_max (mul_le_mul (hfg a (by simp)) hprod (norm_nonneg _) hε)
-          (mul_le_mul (hg a (by simp)) htail (norm_nonneg _)
-            ((norm_nonneg _).trans (hg a (by simp))))
-      _ = ε * M ^ s.card := by
-        have hcard : s.card - 1 + 1 = s.card := Nat.sub_add_cancel (Finset.card_pos.mpr hs)
-        rw [mul_left_comm M ε, ← pow_succ', hcard, max_self]
+      _ ≤ max ((δ * M a) * ∏ i ∈ s, M i) (M a * (δ * ∏ i ∈ s, M i)) :=
+        max_le_max
+          (mul_le_mul (hfg a (Finset.mem_insert_self a s)) hprod (norm_nonneg _)
+            (mul_nonneg hδ hMa))
+          (mul_le_mul (hg a (Finset.mem_insert_self a s)) htail (norm_nonneg _) hMa)
+      _ = δ * (M a * ∏ i ∈ s, M i) := by
+        rw [mul_assoc, mul_left_comm (M a) δ, max_self]
+
+/-- If two finite families are bounded by `M` and differ by at most `ε` in each coordinate (with
+`0 ≤ ε`), their products differ by at most `ε * M ^ (s.card - 1)`. The exponent uses natural
+subtraction, so the statement includes the empty product and `M = 0`. -/
+theorem norm_prod_sub_prod_le {ι R : Type*} [SeminormedCommRing R]
+    [IsUltrametricDist R] {s : Finset ι} {f g : ι → R} {M ε : ℝ} (hε : 0 ≤ ε)
+    (hf : ∀ i ∈ s, ‖f i‖ ≤ M) (hg : ∀ i ∈ s, ‖g i‖ ≤ M)
+    (hfg : ∀ i ∈ s, ‖f i - g i‖ ≤ ε) :
+    ‖∏ i ∈ s, f i - ∏ i ∈ s, g i‖ ≤ ε * M ^ (s.card - 1) := by
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simp [hε]
+  have ⟨i₀, hi₀⟩ := hs
+  have hM0 : 0 ≤ M := (norm_nonneg (f i₀)).trans (hf i₀ hi₀)
+  rcases eq_or_lt_of_le hM0 with rfl | hM
+  · by_cases hcard : s.card = 1
+    · obtain ⟨a, rfl⟩ := Finset.card_eq_one.mp hcard
+      simpa using hfg a (Finset.mem_singleton_self a)
+    · have hpos : 0 < s.card := Finset.card_pos.mpr hs
+      have hcard2 : s.card - 1 ≠ 0 := by omega
+      have hprod_le (h : ι → R) (hh : ∀ i ∈ s, ‖h i‖ ≤ 0) : ‖∏ i ∈ s, h i‖ ≤ 0 :=
+        calc ‖∏ i ∈ s, h i‖ ≤ ∏ i ∈ s, ‖h i‖ := TauCeti.norm_prod_le_prod_norm_of_nonempty hs h
+          _ ≤ ∏ _i ∈ s, (0 : ℝ) := Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) hh
+          _ = 0 := by simp [hs.ne_empty]
+      have hsub : ‖∏ i ∈ s, f i - ∏ i ∈ s, g i‖ ≤ 0 :=
+        (norm_sub_le _ _).trans (add_nonpos (hprod_le f hf) (hprod_le g hg))
+      simpa [zero_pow hcard2] using hsub
+  · have h := norm_prod_sub_prod_le_mul_prod (s := s) (f := f) (g := g) (M := fun _ ↦ M)
+      (div_nonneg hε hM0) hf hg fun i hi ↦ by
+        simpa only [div_mul_cancel₀ _ hM.ne'] using hfg i hi
+    have hcard : s.card - 1 + 1 = s.card := Nat.sub_add_cancel (Finset.card_pos.mpr hs)
+    rw [Finset.prod_const, ← hcard, pow_succ', ← mul_assoc, div_mul_cancel₀ _ hM.ne'] at h
+    exact h
+
+/-- **Ultrametric perturbation bound for powers.** If `‖x‖ ≤ r`, `‖y‖ ≤ r`, and `‖x - y‖ ≤ δ * r`
+with `0 ≤ δ`, then `‖x ^ m - y ^ m‖ ≤ δ * r ^ m` for every `m : ℕ`. -/
+theorem norm_pow_sub_pow_le_mul_pow {R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
+    {x y : R} {r δ : ℝ} (hδ : 0 ≤ δ) (hx : ‖x‖ ≤ r) (hy : ‖y‖ ≤ r)
+    (hxy : ‖x - y‖ ≤ δ * r) (m : ℕ) :
+    ‖x ^ m - y ^ m‖ ≤ δ * r ^ m := by
+  simpa using norm_prod_sub_prod_le_mul_prod (s := Finset.range m)
+    (f := fun _ ↦ x) (g := fun _ ↦ y) (M := fun _ ↦ r) hδ
+    (fun _ _ ↦ hx) (fun _ _ ↦ hy) (fun _ _ ↦ hxy)
 
 /-- **Monomials in close families of a bounded subring are close.** In an ultrametric seminormed
 commutative ring, let `b` and `y` be families whose members indexed by a finset `s` lie in a

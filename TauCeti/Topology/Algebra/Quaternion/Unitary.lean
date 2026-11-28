@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Quaternion.NormForm
 public import TauCeti.Algebra.Quaternion.ComplexMatrix
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Quaternion
-public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
+public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup.Basic
 public import Mathlib.Analysis.Quaternion
 public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom

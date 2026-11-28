@@ -75,6 +75,8 @@ valid for every `s`, is the form from which the growth of hypergeometric coeffic
 * `Complex.inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add` and
   `Real.inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add` — the pole-free reciprocal identity
   `(Γ s)⁻¹ = s (s + 1) ⋯ (s + n - 1) (Γ(s + n))⁻¹`, valid at every `s`.
+* `Real.inv_Gamma_sub_natCast` — the same identity shifted down, with a falling factorial:
+  `(Γ(s - n))⁻¹ = (s - 1) ⋯ (s - n) (Γ s)⁻¹`.
 * `Complex.ne_neg_natCast_of_neg_one_lt_re_of_ne_zero`,
   `Real.ne_neg_natCast_of_neg_one_lt_of_ne_zero` — a nonzero parameter strictly to the right of
   `-1` avoids `−ℕ`.
@@ -445,6 +447,15 @@ theorem inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (s : ℝ) (n : ℕ) :
   rw [hcast, Complex.Gamma_ofReal, Complex.Gamma_ofReal, heval, ← Complex.ofReal_inv,
     ← Complex.ofReal_inv, ← Complex.ofReal_mul] at h
   exact Complex.ofReal_injective h
+
+/-- Shifting the argument of the reciprocal Gamma function down by `n` multiplies it by a falling
+factorial: `(Γ(s - n))⁻¹ = (s - 1)(s - 2) ⋯ (s - n) (Γ s)⁻¹` for every real `s`, including at
+the nonpositive integer poles where the reciprocals vanish. -/
+theorem inv_Gamma_sub_natCast (s : ℝ) (n : ℕ) :
+    (Gamma (s - n))⁻¹ = (descPochhammer ℝ n).eval (s - 1) * (Gamma s)⁻¹ := by
+  have hs : s - 1 - n + 1 = s - n := by ring
+  rw [inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add, sub_add_cancel,
+    descPochhammer_eval_eq_ascPochhammer, hs]
 
 /-- A nonzero real number strictly greater than `-1` is not a nonpositive integer. -/
 theorem ne_neg_natCast_of_neg_one_lt_of_ne_zero {σ : ℝ} (hσ₀ : -1 < σ) (hσ : σ ≠ 0) (n : ℕ) :

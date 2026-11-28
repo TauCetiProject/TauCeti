@@ -25,7 +25,8 @@ other up to a positive multiplier:
 contactomorphism from `ker α_0` to `ker α_t` carrying the coorientation given by `α_0` to that
 given by `α_t` (`TauCeti.SmoothForm.exists_diffeotopy_preservesCoorientation`). A positive
 multiplier cannot be avoided: for `α_t = (1 + t) α_0` the contact volume `∫ α_t ∧ (dα_t)ⁿ` grows
-with `t`, while a diffeomorphism preserves it up to sign.
+with `t`, while a diffeomorphism preserves it up to sign
+(`TauCeti.SmoothForm.IsContactForm.abs_eq_one_of_isStrictContactomorphism_smul`).
 
 When every slice of `α` is a contact form, the diffeotopy is the time-dependent flow of the Gray
 vector field from time `0` (`TauCeti.SmoothForm.grayDiffeotopy`), whose time slices are Gray's

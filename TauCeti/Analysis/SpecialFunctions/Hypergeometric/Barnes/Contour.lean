@@ -32,7 +32,9 @@ contour (`Complex.eulerIntegral_eq_mellinBarnes`). In general no vertical line s
 families, and the contour is the line `Re t = σ` for some `σ < 0` avoiding the poles, deformed
 to pass to the right of the finitely many poles of `Γ(a + t) Γ(b + t)` with real part above `σ`.
 By the residue theorem its integral is the line integral plus `2πi` times the residues at those
-poles. This file defines that value and proves that it does not depend on the line.
+poles. This file defines that value and proves that it does not depend on the line. See
+`Barnes/Continuation.lean` for the identification with Euler's integral
+(`Complex.eulerIntegral_eq_hypergeometricMellinBarnes`) and the Gauss hypergeometric series.
 
 ## Main definitions
 
@@ -47,12 +49,11 @@ poles. This file defines that value and proves that it does not depend on the li
 * `Complex.hypergeometricMellinBarnes_eq`: for `-z ∈ slitPlane`, the value does not depend on
   the line `Re t = σ`, among lines with `σ < 0` that avoid the poles of `Γ(a + t) Γ(b + t)`.
   This holds for all complex `a`, `b`, `c`.
-* `Complex.eulerIntegral_eq_hypergeometricMellinBarnes`: for `0 < Re a`, `0 < Re b < Re c` and
-  `-z ∈ slitPlane`, Euler's integral is `(Γ(a) Γ(b))⁻¹` times the contour integral, on every such
-  line, including lines with poles of `Γ(a + t) Γ(b + t)` to their right.
 * `Complex.residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast`: the residue at a simple
   pole `t = -a - k` that is not a pole of `Γ(b + t)` or of `Γ(-t)`, which is
   `(-1)^k / k! · Γ(b - a - k) Γ(a + k) Γ(c - a - k)⁻¹ (-z)^(-a - k)`.
+* `Complex.residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast_right`: the corresponding
+  residue at `t = -b - k`, obtained by symmetry.
 
 ## Implementation notes
 
@@ -122,8 +123,9 @@ over the contour `C` that runs up the line `Re t = σ` and is deformed to pass t
 poles of `Γ(a + t) Γ(b + t)` with real part `> σ`: the line integral `(2π)⁻¹ ∫ F(σ + i y) dy` plus
 the residues of the integrand at those poles. For `σ < 0` avoiding the poles of
 `Γ(a + t) Γ(b + t)` and `-z ∈ slitPlane`, it does not depend on `σ`
-(`Complex.hypergeometricMellinBarnes_eq`), and when moreover `0 < Re a`, `0 < Re b < Re c` it is
-`Γ(a) Γ(b)` times Euler's integral (`Complex.eulerIntegral_eq_hypergeometricMellinBarnes`). -/
+(`Complex.hypergeometricMellinBarnes_eq`), and in `Barnes/Continuation.lean` it is shown that when
+moreover `a ∉ -ℕ` and `0 < Re b < Re c` it is `Γ(a) Γ(b)` times Euler's integral
+(`Complex.eulerIntegral_eq_hypergeometricMellinBarnes`). -/
 def hypergeometricMellinBarnes (a b c z : ℂ) (σ : ℝ) : ℂ :=
   (2 * (π : ℂ))⁻¹ * (∫ y : ℝ, hypergeometricMellinBarnesIntegrand a b c z (σ + y * I)) +
     ∑ p ∈ gammaPolesRightOf a σ ∪ gammaPolesRightOf b σ,
@@ -306,27 +308,6 @@ theorem hypergeometricMellinBarnes_eq (a b c : ℂ) {z : ℂ} (hz : -z ∈ slitP
   · exact hypergeometricMellinBarnes_eq_of_le a b c hz h hσ₂ ha₁ hb₁ ha₂ hb₂
   · exact (hypergeometricMellinBarnes_eq_of_le a b c hz h hσ₁ ha₂ hb₂ ha₁ hb₁).symm
 
-/-- **Barnes's integral for Euler's integral over a separating contour** (DLMF 15.6.6). For
-`0 < Re a`, `0 < Re b < Re c` and `-z ∈ slitPlane`, Euler's integral is `(Γ(a) Γ(b))⁻¹` times
-Barnes's integral over the line `Re t = σ` plus the residues at the poles of `Γ(a + t) Γ(b + t)`
-to its right, for every `σ < 0` whose line avoids those poles. -/
-theorem eulerIntegral_eq_hypergeometricMellinBarnes {a b c z : ℂ} (ha : 0 < a.re) (hb : 0 < b.re)
-    (hbc : b.re < c.re) (hz : -z ∈ slitPlane) {σ : ℝ} (hσ : σ < 0)
-    (haσ : ∀ n : ℕ, a.re + σ ≠ -n) (hbσ : ∀ n : ℕ, b.re + σ ≠ -n) :
-    eulerIntegral a b c z = (Gamma a * Gamma b)⁻¹ * hypergeometricMellinBarnes a b c z σ := by
-  -- A line between `-min (Re a, Re b)` and `0`, with no poles to its right.
-  set σ' := max (-a.re) (-b.re) / 2
-  have ha' : -a.re < σ' := by have := le_max_left (-a.re) (-b.re); simp only [σ']; linarith
-  have hb' : -b.re < σ' := by have := le_max_right (-a.re) (-b.re); simp only [σ']; linarith
-  have hσ' : σ' < 0 := by simp only [σ']; linarith [max_lt (neg_neg_of_pos ha) (neg_neg_of_pos hb)]
-  have hpa : ∀ n : ℕ, a.re + σ' ≠ -n := fun n hn ↦ by linarith [n.cast_nonneg' (α := ℝ)]
-  have hpb : ∀ n : ℕ, b.re + σ' ≠ -n := fun n hn ↦ by linarith [n.cast_nonneg' (α := ℝ)]
-  rw [hypergeometricMellinBarnes_eq a b c hz hσ hσ' haσ hbσ hpa hpb,
-    hypergeometricMellinBarnes_eq_integral a b c z ha'.le hb'.le,
-    eulerIntegral_eq_mellinBarnes a hbc hz hσ' ha' hb']
-  simp only [hypergeometricMellinBarnesIntegrand_def, mul_inv]
-  ring
-
 /-! ### Residues -/
 
 /-- The residue of Barnes's integrand at a pole `t = -a - k` of `Γ(a + t)` that is not a pole of
@@ -363,5 +344,17 @@ theorem residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast (c : ℂ) {a
   simp only [G]
   rw [show b + (-(k : ℂ) - a) = b - a - k by ring, show -(-(k : ℂ) - a) = a + k by ring,
     show c + (-(k : ℂ) - a) = c - a - k by ring, show -(k : ℂ) - a = -a - k by ring]
+
+/-- Residue evaluation of `hypergeometricMellinBarnesIntegrand a b c z` at the candidate
+left-family pole `t = -b - k` when `-b - k` avoids both `-a - ℕ` and `ℕ`. Note that the
+reciprocal Gamma factor `(Γ(c - b - k))⁻¹` vanishes when `c - b - k ∈ -ℕ`, which cancels the pole
+of `Γ(b + t)` and makes the singularity removable (with residue `0`). -/
+theorem residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast_right (c : ℂ) {a b z : ℂ}
+    (k : ℕ) (hb : ∀ m : ℕ, b + k ≠ -m) (hba : ∀ m : ℕ, a - b - k ≠ -m) :
+    TauCeti.Contour.residue (hypergeometricMellinBarnesIntegrand a b c z) (-b - k) =
+      (-1) ^ k / k ! * (Gamma (a - b - k) * Gamma (b + k) * (Gamma (c - b - k))⁻¹ *
+        (-z) ^ (-b - k)) := by
+  rw [hypergeometricMellinBarnesIntegrand_comm]
+  exact residue_hypergeometricMellinBarnesIntegrand_neg_sub_natCast c k hb hba
 
 end Complex
