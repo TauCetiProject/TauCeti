@@ -17,7 +17,7 @@ Given a multiplicative character `T : MulChar K ℂ` and an integer `Q ≥ 2`, e
 of unity `x ∈ K` maps under `T` to a `(Q - 1)`-th root of unity in `ℂ`, hence to a power
 `exp (2πi / (Q - 1)) ^ e`. Defining `thetaChar T Q x := T ^ e` produces a pairing on `(Q - 1)`-th
 roots of unity used to parameterize Green's cuspidal functions `τ_P` on `GL_n(k)` by irreducible
-polynomials `P` (ShortGRH `IntegralRepresentationsOfGeneralLinearGroups` §4.4).
+polynomials `P`.
 
 * `TauCeti.HallAlgebra.thetaExponent`: chosen natural number `e` with
   `T x = exp (2πi / (Q - 1)) ^ e`.
