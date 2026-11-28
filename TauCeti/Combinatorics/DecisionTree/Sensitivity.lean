@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Fintype.Pi
 public import Mathlib.Data.Fintype.Powerset
+public import Mathlib.Data.Finset.Piecewise
 public import Mathlib.Order.Lattice.Nat
 import Mathlib.Combinatorics.Enumerative.DoubleCounting
 
@@ -72,17 +73,24 @@ theorem flipBlock_apply (x : Fin n → Bool) (B : Finset (Fin n)) (i : Fin n) :
     flipBlock x B i = if i ∈ B then !x i else x i := by
   rw [flipBlock]
 
+/-- Flipping a block is the piecewise function that negates `x` on the block and keeps `x`
+outside it. -/
+theorem flipBlock_eq_piecewise (x : Fin n → Bool) (B : Finset (Fin n)) :
+    flipBlock x B = B.piecewise (fun i => !x i) x := by
+  ext i
+  rw [flipBlock_apply, piecewise]
+
 /-- Flipping a block negates the variables of the block. -/
 @[simp]
 theorem flipBlock_apply_of_mem {x : Fin n → Bool} {B : Finset (Fin n)} {i : Fin n}
     (hi : i ∈ B) : flipBlock x B i = !x i := by
-  simp [flipBlock_apply, hi]
+  rw [flipBlock_eq_piecewise, piecewise_eq_of_mem _ _ _ hi]
 
 /-- Flipping a block does not change the variables outside the block. -/
 @[simp]
 theorem flipBlock_apply_of_notMem {x : Fin n → Bool} {B : Finset (Fin n)} {i : Fin n}
     (hi : i ∉ B) : flipBlock x B i = x i := by
-  simp [flipBlock_apply, hi]
+  rw [flipBlock_eq_piecewise, piecewise_eq_of_notMem _ _ _ hi]
 
 /-- Flipping the empty block does not change the input. -/
 @[simp]
@@ -283,18 +291,19 @@ theorem blockSensitivityAt_le_iff {k : ℕ} :
         (∀ B ∈ 𝓑, f (flipBlock x B) ≠ f x) → #𝓑 ≤ k := by
   simp [blockSensitivityAt]
 
-open Classical in
 variable (f x) in
 /-- Some family of pairwise disjoint blocks whose flips change the value of `f` at `x` has
 exactly `blockSensitivityAt f x` members. -/
 theorem exists_card_eq_blockSensitivityAt :
     ∃ 𝓑 : Finset (Finset (Fin n)), (𝓑 : Set (Finset (Fin n))).PairwiseDisjoint id ∧
       (∀ B ∈ 𝓑, f (flipBlock x B) ≠ f x) ∧ #𝓑 = blockSensitivityAt f x := by
+  classical
+  rw [blockSensitivityAt]
   obtain ⟨𝓑, h𝓑, hcard⟩ := exists_mem_eq_sup
     ({𝓑 | (𝓑 : Set (Finset (Fin n))).PairwiseDisjoint id ∧ ∀ B ∈ 𝓑, f (flipBlock x B) ≠ f x} :
       Finset (Finset (Finset (Fin n)))) ⟨∅, by simp⟩ card
   obtain ⟨-, h𝓑, hf⟩ := mem_filter.1 h𝓑
-  exact ⟨𝓑, h𝓑, hf, by rw [blockSensitivityAt, hcard]⟩
+  exact ⟨𝓑, h𝓑, hf, hcard.symm⟩
 
 variable (f) in
 /-- The block sensitivity `bs(f)`: the largest block sensitivity at an input. -/
