@@ -92,9 +92,7 @@ variable {R S M N : Type*} [Semiring R] [Semiring S]
 The equivalence restricts the codomain and its inverse composes with `W.subtype`. -/
 def rangeEqEquivSurjective :
     {f : M →ₛₗ[σ] N // f.range = W} ≃ {g : M →ₛₗ[σ] W // Function.Surjective g} where
-  toFun f := ⟨f.val.codRestrict W (fun x ↦ by
-    have hx := LinearMap.mem_range_self f.val x
-    rwa [f.property] at hx), by
+  toFun f := ⟨f.val.codRestrict W (fun x ↦ f.property.le (LinearMap.mem_range_self f.val x)), by
     rw [← LinearMap.range_eq_top, LinearMap.range_codRestrict, f.property, comap_subtype_self]⟩
   invFun g := ⟨W.subtype.comp g.val, by
     rw [LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.mpr g.property),
@@ -102,17 +100,21 @@ def rangeEqEquivSurjective :
   left_inv f := Subtype.ext (LinearMap.subtype_comp_codRestrict ..)
   right_inv g := by
     apply Subtype.ext
-    apply LinearMap.ext
-    intro x
-    apply Subtype.ext
-    simp only [LinearMap.codRestrict_apply, LinearMap.comp_apply, subtype_apply]
+    exact (LinearMap.cancel_left W.subtype_injective).mp (LinearMap.subtype_comp_codRestrict ..)
+
+/-- The forward equivalence is the bundled codomain restriction to `W`. -/
+@[simp]
+theorem rangeEqEquivSurjective_apply_val
+    (f : {f : M →ₛₗ[σ] N // f.range = W}) :
+    (W.rangeEqEquivSurjective f).val =
+      f.val.codRestrict W (fun x ↦ f.property.le (LinearMap.mem_range_self f.val x)) :=
+  (rfl)
 
 /-- The forward equivalence leaves each output unchanged in the ambient module. -/
-@[simp]
 theorem rangeEqEquivSurjective_apply_coe
     (f : {f : M →ₛₗ[σ] N // f.range = W}) (x : M) :
-    ((W.rangeEqEquivSurjective f).val x : N) = f.val x :=
-  (rfl)
+    ((W.rangeEqEquivSurjective f).val x : N) = f.val x := by
+  simp only [rangeEqEquivSurjective_apply_val, LinearMap.codRestrict_apply]
 
 /-- The inverse equivalence composes with the submodule inclusion. -/
 @[simp]
