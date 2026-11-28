@@ -45,6 +45,9 @@ linear combination to the combination of the images with the twisted coefficient
   a linear combination of its predecessors.
 * `TauCeti.leftInverse_fintypeLinearCombination`: a linear map `M → (ι → R)` sending each `x i` to
   the `i`-th standard basis vector is a left inverse of `Fintype.linearCombination R x`.
+* `TauCeti.single_sub_single_mem_ker_fintypeLinearCombination`: the difference of two
+  single-coordinate vectors with exchanged coefficients lies in the kernel of the scalar linear
+  combination.
 * `Finsupp.linearCombination_equivFunOnFinite_symm_apply` and
   `Finsupp.linearCombination_equivFunOnFinite_symm_eq_zero_iff`: the coefficients of the linear map
   on free modules over a finite basis with a given matrix, and its vanishing exactly when every
@@ -165,6 +168,14 @@ theorem leftInverse_fintypeLinearCombination {ι R M : Type*} [Fintype ι] [Deci
     Function.LeftInverse φ (Fintype.linearCombination R x) := fun v ↦ by
   ext j
   simp [Fintype.linearCombination_apply, hφ, Pi.single_apply]
+
+/-- The vector with `a k` at `j`, minus the vector with `a j` at `k`, lies in the kernel of
+the scalar linear combination with coefficients `a`. -/
+theorem single_sub_single_mem_ker_fintypeLinearCombination {ι R : Type*} [Fintype ι]
+    [DecidableEq ι] [CommRing R] {a : ι → R} (j k : ι) :
+    Pi.single j (a k) - Pi.single k (a j) ∈ LinearMap.ker (Fintype.linearCombination R a) := by
+  simp only [LinearMap.mem_ker, map_sub, Fintype.linearCombination_apply_single, smul_eq_mul,
+    mul_comm (a k) (a j), sub_self]
 
 end TauCeti
 
