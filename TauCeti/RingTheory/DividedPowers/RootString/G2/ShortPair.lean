@@ -293,6 +293,17 @@ theorem mem_g2ShortPairIndex {m n : ℕ} {p : ℕ × ℕ × ℕ} :
   simp only [g2ShortPairIndex, Finset.mem_filter, Finset.mem_product, Finset.mem_range]
   omega
 
+/-- Every nonzero index in the G₂ short-pair collection has total divided-power degree
+strictly smaller than the input degree `m + n`. -/
+theorem g2ShortPairIndex_degree_lt {m n : ℕ} {p : ℕ × ℕ × ℕ}
+    (hp : p ∈ (g2ShortPairIndex m n).erase 0) :
+    (n - p.1 - p.2.1 - 2 * p.2.2) + p.1 + p.2.1 + p.2.2 +
+      (m - p.1 - 2 * p.2.1 - p.2.2) < m + n := by
+  obtain ⟨hne, hp⟩ := mem_erase.mp hp
+  have hb := mem_g2ShortPairIndex.mp hp
+  simp only [ne_eq, Prod.ext_iff, Prod.fst_zero, Prod.snd_zero] at hne
+  omega
+
 /-- **Coefficient-one normal ordering for scaled short-pair root vectors in type `G₂`.**
 The bracket constants are `1, 2, 2`: `x * y = y * x + z`, `x * z = z * x + 2 • w`, and
 `z * y = y * z + 2 • s`. Assume also that `w` and `s` commute with `x`, that `s` commutes

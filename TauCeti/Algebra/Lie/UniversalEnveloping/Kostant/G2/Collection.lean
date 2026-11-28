@@ -258,24 +258,6 @@ theorem dividedPower_root_mul_of_g2_short_pair {α β γ δ ε : ι}
   have hβ : P.root β = P.root α + P.root η := by rw [hη]; module
   exact g2_short_pair_in_triple c hβ hγ hδ hε m n
 
-private theorem chainG2Index_degree_lt {m n : ℕ} {p : ℕ × ℕ × ℕ × ℕ}
-    (hp : p ∈ (chainG2Index m n).erase 0) :
-    (n - p.1 - p.2.1 - p.2.2.1 - 2 * p.2.2.2) + p.1 + p.2.1 + p.2.2.1 + p.2.2.2 +
-      (m - p.1 - 2 * p.2.1 - 3 * p.2.2.1 - 3 * p.2.2.2) < m + n := by
-  obtain ⟨hne, hp⟩ := mem_erase.mp hp
-  have hb := mem_chainG2Index.mp hp
-  simp only [ne_eq, Prod.ext_iff, Prod.fst_zero, Prod.snd_zero] at hne
-  omega
-
-private theorem g2ShortPairIndex_degree_lt {m n : ℕ} {p : ℕ × ℕ × ℕ}
-    (hp : p ∈ (g2ShortPairIndex m n).erase 0) :
-    (n - p.1 - p.2.1 - 2 * p.2.2) + p.1 + p.2.1 + p.2.2 +
-      (m - p.1 - 2 * p.2.1 - p.2.2) < m + n := by
-  obtain ⟨hne, hp⟩ := mem_erase.mp hp
-  have hb := mem_g2ShortPairIndex.mp hp
-  simp only [ne_eq, Prod.ext_iff, Prod.fst_zero, Prod.snd_zero] at hne
-  omega
-
 /-- The swapped product is the leading term; every correction has strictly smaller total
 sum of divided-power exponents. All correction coefficients are integers. -/
 theorem dividedPower_root_mul_eq_swap_add_of_g2_triple {α β γ δ ε ζ : ι}

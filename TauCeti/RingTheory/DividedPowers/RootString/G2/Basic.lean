@@ -483,6 +483,17 @@ theorem mem_chainG2Index {m n : ℕ} {p : ℕ × ℕ × ℕ × ℕ} :
   simp only [chainG2Index, Finset.mem_filter, Finset.mem_product, Finset.mem_range]
   omega
 
+/-- Every nonzero index in the G₂ triple-string collection has total divided-power degree
+strictly smaller than the input degree `m + n`. -/
+theorem chainG2Index_degree_lt {m n : ℕ} {p : ℕ × ℕ × ℕ × ℕ}
+    (hp : p ∈ (chainG2Index m n).erase 0) :
+    (n - p.1 - p.2.1 - p.2.2.1 - 2 * p.2.2.2) + p.1 + p.2.1 + p.2.2.1 + p.2.2.2 +
+      (m - p.1 - 2 * p.2.1 - 3 * p.2.2.1 - 3 * p.2.2.2) < m + n := by
+  obtain ⟨hne, hp⟩ := mem_erase.mp hp
+  have hb := mem_chainG2Index.mp hp
+  simp only [ne_eq, Prod.ext_iff, Prod.fst_zero, Prod.snd_zero] at hne
+  omega
+
 /-- **Coefficient-one normal ordering along the type-`G₂` root string.** Suppose
 
 ```text
