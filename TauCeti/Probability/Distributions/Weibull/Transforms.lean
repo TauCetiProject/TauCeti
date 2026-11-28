@@ -11,6 +11,7 @@ public import TauCeti.Probability.Distributions.Weibull.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Probability.Distributions.Exponential.Basic
+import TauCeti.Probability.GeneratingFunction
 import TauCeti.Probability.HasLaw
 import TauCeti.Probability.Moments.IntegrableExpMul
 
@@ -425,11 +426,8 @@ theorem integrableExpSet_weibullMeasure (hX : HasLaw X (weibullMeasure k lam) P)
     (hk : 0 < k) (hlam : 0 < lam) :
     integrableExpSet X P =
       if k < 1 then Set.Iic 0 else if k = 1 then Set.Iio lam⁻¹ else Set.univ := by
-  rw [← TauCeti.Probability.integrableExpSet_id_weibullMeasure hk hlam]
-  ext t
-  simp only [integrableExpSet, Set.mem_ofPred_eq, id_eq]
-  simpa only [Function.comp_def] using
-    integrable_comp_iff hX (f := fun x : ℝ ↦ Real.exp (t * x)) (by fun_prop)
+  rw [TauCeti.Probability.HasLaw.integrableExpSet_eq hX,
+    TauCeti.Probability.integrableExpSet_id_weibullMeasure hk hlam]
 
 /-- The moment-generating function of a superlinear Weibull random variable is its convergent
 Gamma-coefficient series. -/
