@@ -25,11 +25,11 @@ squarefree `m > M` with `m ^ 2 ∣ Δ a`. It is the finite count of such `m` amo
 removing the singular locus `Δ = 0` before sieving. An element lies in the tail exactly when its
 multiplicity is positive (`TauCeti.squareDivisorMultiplicity_pos_iff`), so on a finite set the
 tail has at most the summed multiplicity many elements
-(`TauCeti.ncard_inter_squareDivisorTail_le_sum`). Both decrease as the cutoff `M` grows.
+(`Finset.ncard_inter_squareDivisorTail_le_sum`). Both decrease as the cutoff `M` grows.
 When `|Δ a| ≤ N ^ 2`, the multiplicity counts squarefree moduli in `(M, N]`
 (`TauCeti.squareDivisorMultiplicity_eq_card_Ioc`), so on a finite set with this uniform bound the
 summed multiplicity is a finite sum over those moduli of the number of `a` with `Δ a ≠ 0` and
-`m ^ 2 ∣ Δ a` (`TauCeti.sum_squareDivisorMultiplicity_eq_sum_Ioc`).
+`m ^ 2 ∣ Δ a` (`Finset.sum_squareDivisorMultiplicity_eq_sum_Ioc`).
 
 The summed multiplicity is the left side of the summed tail estimates of Bhargava, Shankar and
 Wang, *Squarefree values of polynomial discriminants I*, Invent. Math. 228 (2022), Theorem 4.4
@@ -148,6 +148,14 @@ theorem squareDivisorMultiplicity_le_card_Ioc {N : ℕ} (hN : (Δ a).natAbs ≤ 
   rw [squareDivisorMultiplicity_eq_card_Ioc hN]
   exact Finset.card_le_card (Finset.monotone_filter_right _ fun _ _ h ↦ h.2.2)
 
+end TauCeti
+
+namespace Finset
+
+open TauCeti
+
+variable {A : Type*} {Δ : A → ℤ} {M : ℕ}
+
 /-- If `|Δ a| ≤ N ^ 2` on a finite set `s`, the summed multiplicity over `s` is the sum over the
 squarefree moduli `m ∈ (M, N]` of the number of `a ∈ s` with `Δ a ≠ 0` and `m ^ 2 ∣ Δ a`. -/
 theorem sum_squareDivisorMultiplicity_eq_sum_Ioc [DecidablePred fun m : ℕ ↦ Squarefree m]
@@ -176,4 +184,4 @@ theorem ncard_inter_squareDivisorTail_le_sum (s : Finset A) (Δ : A → ℤ) (M 
         · exact squareDivisorMultiplicity_pos_iff.mpr h
         · exact Nat.zero_le _
 
-end TauCeti
+end Finset

@@ -147,7 +147,7 @@ for `X ≥ 1`. -/
 theorem ncard_monicWeightedBox_two_inter_squareDivisorTail_le (M : ℕ) (hX : 1 ≤ X) :
     ((monicWeightedBox 2 X ∩ squareDivisorTail discr M).ncard : ℝ) ≤
       90 * X ^ 3 / (M + 1) + 12 * X ^ 2 := by
-  have h := ncard_inter_squareDivisorTail_le_sum (finite_monicWeightedBox 2 X).toFinset discr M
+  have h := (finite_monicWeightedBox 2 X).toFinset.ncard_inter_squareDivisorTail_le_sum discr M
   rw [Set.Finite.coe_toFinset] at h
   exact (Nat.cast_le.mpr h).trans (by
     simpa only [Nat.cast_sum] using sum_squareDivisorMultiplicity_monicWeightedBox_two_le M hX)
