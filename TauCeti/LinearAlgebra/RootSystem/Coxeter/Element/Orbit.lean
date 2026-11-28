@@ -18,6 +18,7 @@ import TauCeti.Data.List.Pairwise
 import TauCeti.GroupTheory.Coxeter.CoxeterElement
 import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.Cycle.Enumeration
+import TauCeti.GroupTheory.Perm.Cycle.Power
 import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Plane
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Length
@@ -192,13 +193,6 @@ variable {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N} [Finite ι] [P.IsCrystallographic] [P.IsReduced]
 
-omit [CharZero R] [IsDomain R] [P.IsCrystallographic] [P.IsReduced] in
-private theorem exists_fin_pow_eq_of_sameCycle {c : P.weylGroup} {j k : ι}
-    (hc : 0 < orderOf c) (hsc : Equiv.Perm.SameCycle (P.weylGroupToPerm c) j k) :
-    ∃ m : Fin (orderOf c), P.weylGroupToPerm (c ^ (m : ℕ)) j = k :=
-  let ⟨i, hi, heq⟩ := hsc.exists_pow_eq'
-  ⟨⟨i, hi.trans_le (Nat.le_of_dvd hc (orderOf_map_dvd P.weylGroupToPerm c))⟩, by rw [map_pow, heq]⟩
-
 section FiniteType
 
 variable (b : P.Base) (hft : IsFiniteType b.cartanMatrix)
@@ -295,7 +289,7 @@ private theorem card_quotient_sameCycle_bipartite_of_isFiniteType
   rw [← Nat.card_eq_of_bijective (fun k : inversions P b c₀ ↦
       Quotient.mk (Equiv.Perm.SameCycle.setoid (P.weylGroupToPerm c₀)) k.val)
     ⟨fun k₁ k₂ hk ↦ Subtype.ext <| by
-      obtain ⟨m, hm⟩ := exists_fin_pow_eq_of_sameCycle (orderOf_pos c₀) (Quotient.exact hk)
+      obtain ⟨m, hm⟩ := (Quotient.exact hk).exists_fin_pow_map_eq (orderOf_pos c₀)
       have hm0 : m = ⟨0, orderOf_pos c₀⟩ :=
         (b.subsingleton_fin_pow_mem_inversions_bipartite_of_isFiniteType hft hconn col k₁.val
           (m₁ := ⟨0, orderOf_pos c₀⟩) (m₂ := m) (by simp) (hm ▸ k₂.property)).symm
@@ -457,7 +451,7 @@ theorem existsUnique_pow_mem_inversions_wordProd_of_isFiniteType (j : ι) :
   have := P.finite_weylGroup_of_base b; set c := wordProd P b l
   obtain ⟨k, ⟨hk_sc, hk_inv⟩, hk_uniq⟩ :=
     b.existsUnique_sameCycle_mem_inversions_wordProd_of_isFiniteType hft hconn hnd hall j
-  obtain ⟨m₀, hm₀⟩ := exists_fin_pow_eq_of_sameCycle (orderOf_pos c) hk_sc
+  obtain ⟨m₀, hm₀⟩ := hk_sc.exists_fin_pow_map_eq (orderOf_pos c)
   have hper := (b.minimalPeriod_weylGroupToPerm_wordProd_of_isFiniteType hft hconn hnd hall j).symm
   refine ⟨m₀, by rwa [← hm₀] at hk_inv, fun m hm ↦ Fin.ext <|
     (Function.iterate_eq_iterate_iff_of_lt_minimalPeriod (lt_of_lt_of_eq m.isLt hper)

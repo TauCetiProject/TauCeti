@@ -129,8 +129,9 @@ private theorem sum_tmul_root_injective_of_isFiniteType (b : P.Base)
 /-- **Complexified weight-space regular primitive-root eigenvector** (Cartan-matrix form): for a
 base `b` of a nonempty finite crystallographic reduced root pairing over a char-0 domain `R` with
 `[Algebra R ℂ]`, when `b.cartanMatrix` is of finite type with preconnected Dynkin diagram, every
-`c = wordProd P b l` of order `h = orderOf c` has a nonzero `exp (2πi / h)`-eigenvector
-`v : ℂ ⊗[R] M` lying outside every complexified coroot hyperplane with trivial Weyl stabilizer. -/
+Coxeter element `c = wordProd P b l` (with `l` duplicate-free and containing every simple root) of
+order `h = orderOf c` has a nonzero `exp (2πi / h)`-eigenvector `v : ℂ ⊗[R] M` lying outside every
+complexified coroot hyperplane with trivial Weyl stabilizer. -/
 theorem exists_eigenvector_baseChange_weylGroupRootRep_wordProd_of_isFiniteType
     [Nonempty ι] (b : P.Base) (hft : IsFiniteType b.cartanMatrix)
     (hconn : (diagramGraph b.cartanMatrix).Preconnected)
@@ -158,8 +159,9 @@ theorem exists_eigenvector_baseChange_weylGroupRootRep_wordProd_of_isFiniteType
 
 /-- **Complexified weight-space regular primitive-root eigenvector**: for any finite, reduced,
 irreducible, crystallographic root pairing `P` over a char-0 domain `R` with `[Algebra R ℂ]`, every
-`c = wordProd P b l` of order `h = orderOf c` has a nonzero `exp (2πi / h)`-eigenvector
-`v : ℂ ⊗[R] M` lying outside every complexified coroot hyperplane with trivial Weyl stabilizer. -/
+Coxeter element `c = wordProd P b l` (with `l` duplicate-free and containing every simple root) of
+order `h = orderOf c` has a nonzero `exp (2πi / h)`-eigenvector `v : ℂ ⊗[R] M` lying outside every
+complexified coroot hyperplane with trivial Weyl stabilizer. -/
 theorem exists_eigenvector_baseChange_weylGroupRootRep_wordProd [P.IsIrreducible] (b : P.Base)
     {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
     let c := wordProd P b l
