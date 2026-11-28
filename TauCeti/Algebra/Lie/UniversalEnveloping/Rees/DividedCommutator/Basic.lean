@@ -77,36 +77,41 @@ theorem commutator_coeff_mem_pbwFiltrationPrevious (a b : reesAlgebra R L) (n : 
   exact mul_sub_mul_mem_pbwFiltrationPrevious R L
     (mem_coeffSubalgebra_iff.mp a.property x.1) (mem_coeffSubalgebra_iff.mp b.property x.2)
 
+private theorem mul_reesParameter_injective :
+    Function.Injective (LinearMap.mul R[X] (reesAlgebra R L) (reesParameter R L)) :=
+  fun _ _ h ↦ reesParameter_mul_injective R L (by simpa only [LinearMap.mul_apply'] using h)
+
+private theorem commutator_mem_range_mul_reesParameter (a b : reesAlgebra R L) :
+    a * b - b * a ∈ LinearMap.range (LinearMap.mul R[X] (reesAlgebra R L) (reesParameter R L)) := by
+  simp only [LinearMap.mem_range, LinearMap.mul_apply']
+  refine (coeffSubalgebra.exists_X_mul_eq_iff (pbwFiltration R L) (one_mem_pbwFiltration R L 1)
+    (a * b - b * a)).mpr ⟨?_, fun n ↦ ?_⟩
+  · have hmem := commutator_coeff_mem_pbwFiltrationPrevious R L a b 0
+    rwa [pbwFiltrationPrevious_zero, Submodule.mem_bot] at hmem
+  · rw [← pbwFiltrationPrevious_succ]
+    exact commutator_coeff_mem_pbwFiltrationPrevious R L a b (n + 1)
+
 /-- The **divided commutator** on the PBW Rees algebra, sending `(a, b)` to the unique element `c`
 satisfying `reesParameter R L * c = a * b - b * a`, bundled as an `R[X]`-bilinear map. Requires no
 freeness hypothesis on `L`. -/
 noncomputable def reesDividedCommutator :
     reesAlgebra R L →ₗ[R[X]] reesAlgebra R L →ₗ[R[X]] reesAlgebra R L :=
+  -- Cache `AddCommGroup (reesAlgebra R L)` locally so `HSub` on the nested `R[X]`-bilinear
+  -- map synthesizes (`reesAlgebra R L` is a `Subalgebra R U[X]` with a separate `Algebra R[X]`).
   letI : AddCommGroup (reesAlgebra R L) := inferInstance
   LinearMap.codRestrict₂
     (LinearMap.mul R[X] (reesAlgebra R L) - (LinearMap.mul R[X] (reesAlgebra R L)).flip)
     (LinearMap.mul R[X] (reesAlgebra R L) (reesParameter R L))
-    (show Function.Injective (LinearMap.mul R[X] (reesAlgebra R L) (reesParameter R L)) from
-      fun _ _ h ↦ reesParameter_mul_injective R L (by simpa only [LinearMap.mul_apply'] using h))
-    (show ∀ a b : reesAlgebra R L,
-        (LinearMap.mul R[X] (reesAlgebra R L) - (LinearMap.mul R[X] (reesAlgebra R L)).flip) a b ∈
-          LinearMap.range (LinearMap.mul R[X] (reesAlgebra R L) (reesParameter R L)) from
-      fun a b ↦ by
-        simp only [LinearMap.mem_range, LinearMap.sub_apply, LinearMap.flip_apply,
-          LinearMap.mul_apply']
-        exact (coeffSubalgebra.exists_X_mul_eq_iff (pbwFiltration R L) (one_mem_pbwFiltration R L 1)
-          (a * b - b * a)).mpr
-          ⟨by
-            have hmem := commutator_coeff_mem_pbwFiltrationPrevious R L a b 0
-            rwa [pbwFiltrationPrevious_zero, Submodule.mem_bot] at hmem,
-           fun n ↦ by
-            rw [← pbwFiltrationPrevious_succ]
-            exact commutator_coeff_mem_pbwFiltrationPrevious R L a b (n + 1)⟩)
+    (mul_reesParameter_injective R L)
+    fun a b ↦ by
+      simpa only [LinearMap.sub_apply, LinearMap.flip_apply, LinearMap.mul_apply'] using
+        commutator_mem_range_mul_reesParameter R L a b
 
 /-- **Defining relation of the divided commutator.** -/
 @[simp]
 theorem reesParameter_mul_reesDividedCommutator (a b : reesAlgebra R L) :
     reesParameter R L * reesDividedCommutator R L a b = a * b - b * a := by
+  -- Same local `AddCommGroup` cache so `LinearMap.sub_apply` synthesizes on the nested map.
   let _ : AddCommGroup (reesAlgebra R L) := inferInstance
   rw [← LinearMap.mul_apply' (R := R[X]) (reesParameter R L), reesDividedCommutator,
     LinearMap.codRestrict₂_apply]

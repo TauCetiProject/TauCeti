@@ -54,18 +54,14 @@ theorem lift_reesZeroFiberBracket_apply {R : Type u} [CommRing R]
     | algebraMap c => simp
     | ι y => simp
     | mul r₁ r₂ h₁ h₂ =>
-      rw [reesZeroFiberBracket_mul_right, map_add, map_mul, map_mul, h₁, h₂,
-        b.symmetricGradient_mul, lie_add, lie_smul, lie_smul, map_add, LinearMap.map_smul,
-        LinearMap.map_smul, smul_eq_mul, smul_eq_mul]
+      simp [reesZeroFiberBracket_mul_right, h₁, h₂]
       ring
     | add r₁ r₂ h₁ h₂ => simp [h₁, h₂]
   induction p using SymmetricAlgebra.induction with
   | algebraMap c => simp
   | ι x => rw [b.symmetricGradient_ι, hgen]
   | mul p₁ p₂ h₁ h₂ =>
-    rw [reesZeroFiberBracket_mul_left, map_add, map_mul, map_mul, h₁, h₂,
-      b.symmetricGradient_mul, add_lie, smul_lie, smul_lie, map_add, LinearMap.map_smul,
-      LinearMap.map_smul, smul_eq_mul, smul_eq_mul]
+    simp [reesZeroFiberBracket_mul_left, h₁, h₂]
     ring
   | add p₁ p₂ h₁ h₂ => simp [h₁, h₂]
 

@@ -57,18 +57,25 @@ theorem hasFDerivAt_contMDiffEval (b : Module.Basis ι 𝕜 E) (n : ℕ∞ω) (p
   rw [SymmetricAlgebra.coe_contMDiffEval]
   exact b.hasFDerivAt_lift p ξ
 
+/-- The Fréchet derivative of `SymmetricAlgebra.contMDiffEval 𝕜 E n p` at `ξ` is
+`ContinuousLinearMap.apply 𝕜 𝕜 (b.symmetricGradient p ξ.toLinearMap)`. -/
 theorem fderiv_contMDiffEval (b : Module.Basis ι 𝕜 E) (n : ℕ∞ω) (p : SymmetricAlgebra 𝕜 E)
     (ξ : StrongDual 𝕜 E) :
     fderiv 𝕜 (⇑(SymmetricAlgebra.contMDiffEval 𝕜 E n p)) ξ =
       ContinuousLinearMap.apply 𝕜 𝕜 (b.symmetricGradient p ξ.toLinearMap) :=
   (b.hasFDerivAt_contMDiffEval n p ξ).fderiv
 
+/-- Applying the Fréchet derivative of `SymmetricAlgebra.contMDiffEval 𝕜 E n p` at `ξ` to `η`
+gives `η (b.symmetricGradient p ξ.toLinearMap)`. -/
 theorem fderiv_contMDiffEval_apply (b : Module.Basis ι 𝕜 E) (n : ℕ∞ω) (p : SymmetricAlgebra 𝕜 E)
     (ξ η : StrongDual 𝕜 E) :
     fderiv 𝕜 (⇑(SymmetricAlgebra.contMDiffEval 𝕜 E n p)) ξ η =
       η (b.symmetricGradient p ξ.toLinearMap) := by
   rw [b.fderiv_contMDiffEval, ContinuousLinearMap.apply_apply]
 
+/-- At `t = 0`, the directional derivative of
+`t ↦ SymmetricAlgebra.contMDiffEval 𝕜 E n p (ξ + t • η)` is
+`η (b.symmetricGradient p ξ.toLinearMap)`. -/
 theorem hasDerivAt_contMDiffEval_add_smul_zero (b : Module.Basis ι 𝕜 E) (n : ℕ∞ω)
     (p : SymmetricAlgebra 𝕜 E) (ξ η : StrongDual 𝕜 E) :
     HasDerivAt (fun t : 𝕜 ↦ SymmetricAlgebra.contMDiffEval 𝕜 E n p (ξ + t • η))

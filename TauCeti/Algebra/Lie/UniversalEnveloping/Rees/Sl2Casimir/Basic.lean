@@ -77,6 +77,8 @@ theorem reesSl2Casimir_def (h e f : L) :
         4 * reesGenerator R L f * reesGenerator R L e :=
   (rfl)
 
+/-- Specializing `reesSl2Casimir` at `t = 1` recovers the classical enveloping-algebra Casimir
+`ι(h)² + 2 * ι(h) + 4 * ι(f) * ι(e)`. -/
 @[simp]
 theorem evalOne_reesSl2Casimir (h e f : L) :
     coeffSubalgebra.evalOne (pbwFiltration R L) (reesSl2Casimir R L h e f) =

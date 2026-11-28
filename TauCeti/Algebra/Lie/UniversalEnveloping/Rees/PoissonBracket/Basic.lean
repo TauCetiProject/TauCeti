@@ -100,15 +100,15 @@ noncomputable def reesZeroFiberBracket :
 theorem reesZeroFiberBracket_reesSpecializationZero (a b : reesAlgebra R L) :
     reesZeroFiberBracket R L (reesSpecializationZero R L a) (reesSpecializationZero R L b) =
       reesSpecializationZero R L (reesDividedCommutator R L a b) := by
-  have ha := LinearMap.quotKerEquivOfSurjective_symm_apply
-    (f := (reesSpecializationZero R L).toLinearMap) (reesSpecializationZero_surjective R L) a
-  have hb := LinearMap.quotKerEquivOfSurjective_symm_apply
-    (f := (reesSpecializationZero R L).toLinearMap) (reesSpecializationZero_surjective R L) b
-  rw [reesZeroFiberBracket, LinearMap.compl₁₂_apply, LinearEquiv.coe_toLinearMap,
-    ← AlgHom.toLinearMap_apply (reesSpecializationZero R L) a,
-    ← AlgHom.toLinearMap_apply (reesSpecializationZero R L) b, ha, hb,
-    LinearMap.liftQ₂_mk, LinearMap.compr₂_apply, AlgHom.toLinearMap_apply,
-    LinearMap.restrictScalars₁₂_apply_apply]
+  have ha : (LinearMap.quotKerEquivOfSurjective (reesSpecializationZero R L).toLinearMap
+      (reesSpecializationZero_surjective R L)).symm (reesSpecializationZero R L a) =
+      Submodule.Quotient.mk a :=
+    LinearMap.quotKerEquivOfSurjective_symm_apply _ (reesSpecializationZero_surjective R L) a
+  have hb : (LinearMap.quotKerEquivOfSurjective (reesSpecializationZero R L).toLinearMap
+      (reesSpecializationZero_surjective R L)).symm (reesSpecializationZero R L b) =
+      Submodule.Quotient.mk b :=
+    LinearMap.quotKerEquivOfSurjective_symm_apply _ (reesSpecializationZero_surjective R L) b
+  simp [reesZeroFiberBracket, ha, hb]
 
 /-- **Divided-commutator characterization of `reesZeroFiberBracket`.** Whenever
 `a * b - b * a = reesParameter R L * c` in `reesAlgebra R L`, the bracket of the zero-fibre
@@ -321,23 +321,6 @@ theorem map_reesZeroFiberBracket {M : Type w} [LieRing M] [LieAlgebra R M] [Modu
   rw [reesZeroFiberBracket_reesSpecializationZero, ← reesSpecializationZero_reesMap,
     ← reesSpecializationZero_reesMap, ← reesSpecializationZero_reesMap,
     reesMap_reesDividedCommutator, reesZeroFiberBracket_reesSpecializationZero]
-
-/-- If `⁅x, y⁆ = c • y`, then `{ι x, ι y} = c • ι y`. -/
-theorem reesZeroFiberBracket_ι_of_lie_eq_smul {x y : L} {c : R} (h : ⁅x, y⁆ = c • y) :
-    reesZeroFiberBracket R L (SymmetricAlgebra.ι R L x) (SymmetricAlgebra.ι R L y) =
-      c • SymmetricAlgebra.ι R L y := by
-  rw [reesZeroFiberBracket_ι_ι, h, map_smul]
-
-/-- If `⁅x, y⁆ = c • y`, then `{(ι x) ^ 2, ι y} = (2 * c) • (ι x * ι y)`. -/
-theorem reesZeroFiberBracket_sq_ι_of_lie_eq_smul {x y : L} {c : R} (h : ⁅x, y⁆ = c • y) :
-    reesZeroFiberBracket R L (SymmetricAlgebra.ι R L x ^ 2) (SymmetricAlgebra.ι R L y) =
-      (2 * c) • (SymmetricAlgebra.ι R L x * SymmetricAlgebra.ι R L y) := by
-  rw [reesZeroFiberBracket_swap, ← reesZeroFiberDerivation_apply,
-    (reesZeroFiberDerivation R L (SymmetricAlgebra.ι R L y)).leibniz_pow _ 2,
-    reesZeroFiberDerivation_apply, reesZeroFiberBracket_swap,
-    reesZeroFiberBracket_ι_of_lie_eq_smul R L h]
-  simp only [Nat.reduceSub, pow_one, smul_eq_mul, mul_neg, smul_neg, neg_neg,
-    Algebra.mul_smul_comm, ← Nat.cast_smul_eq_nsmul R, Nat.cast_ofNat, smul_smul]
 
 end ZeroFiberBracket
 

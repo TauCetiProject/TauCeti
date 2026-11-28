@@ -81,12 +81,16 @@ theorem hasDerivAt_lift_add_smul_zero (b : Module.Basis ι 𝕜 M) (p : Symmetri
       (η (b.symmetricGradient p ξ)) 0 := by
   simpa using b.hasDerivAt_lift_add_smul p ξ η 0
 
+/-- The derivative at `t₀` of `t ↦ SymmetricAlgebra.lift (ξ + t • η) p` is
+`η (b.symmetricGradient p (ξ + t₀ • η))`. -/
 theorem deriv_lift_add_smul (b : Module.Basis ι 𝕜 M) (p : SymmetricAlgebra 𝕜 M)
     (ξ η : Module.Dual 𝕜 M) (t₀ : 𝕜) :
     deriv (fun t : 𝕜 ↦ SymmetricAlgebra.lift (ξ + t • η) p) t₀ =
       η (b.symmetricGradient p (ξ + t₀ • η)) :=
   (b.hasDerivAt_lift_add_smul p ξ η t₀).deriv
 
+/-- The derivative at `0` of `t ↦ SymmetricAlgebra.lift (ξ + t • η) p` is
+`η (b.symmetricGradient p ξ)`. -/
 theorem deriv_lift_add_smul_zero (b : Module.Basis ι 𝕜 M) (p : SymmetricAlgebra 𝕜 M)
     (ξ η : Module.Dual 𝕜 M) :
     deriv (fun t : 𝕜 ↦ SymmetricAlgebra.lift (ξ + t • η) p) 0 =

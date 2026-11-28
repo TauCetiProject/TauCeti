@@ -31,7 +31,7 @@ universe u v
 
 section Symbol
 
-variable (R : Type u) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
+variable (R : Type u) (L : Type v) [CommSemiring R] [AddCommMonoid L] [Module R L]
 
 /-- The classical quadratic Casimir symbol `ι(h)² + 4 * ι(e) * ι(f)` in `SymmetricAlgebra R L`. -/
 noncomputable def sl2CasimirSymbol (h e f : L) : SymmetricAlgebra R L :=

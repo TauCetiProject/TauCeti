@@ -88,24 +88,28 @@ theorem coe_reesMap (f : L →ₗ⁅R⁆ M) (p : reesAlgebra R L) :
       (p : Polynomial (_root_.UniversalEnvelopingAlgebra R L)).map (map R f) :=
   (rfl)
 
+/-- `reesMap R f` fixes the central parameter `reesParameter`. -/
 @[simp]
 theorem reesMap_reesParameter (f : L →ₗ⁅R⁆ M) :
     reesMap R f (reesParameter R L) = reesParameter R M := by
   apply Subtype.ext
   simp
 
+/-- `reesMap R f` maps `reesGenerator R L x` to `reesGenerator R M (f x)`. -/
 @[simp]
 theorem reesMap_reesGenerator (f : L →ₗ⁅R⁆ M) (x : L) :
     reesMap R f (reesGenerator R L x) = reesGenerator R M (f x) := by
   apply Subtype.ext
   simp
 
+/-- `reesMap R` sends the identity Lie homomorphism to the identity `R[X]`-algebra homomorphism. -/
 @[simp]
 theorem reesMap_id :
     reesMap R (LieHom.id : L →ₗ⁅R⁆ L) = AlgHom.id R[X] (reesAlgebra R L) := by
   ext x
   simp
 
+/-- `reesMap R` preserves composition of Lie homomorphisms. -/
 @[simp]
 theorem reesMap_comp (f : L →ₗ⁅R⁆ M) (g : M →ₗ⁅R⁆ N) :
     reesMap R (g.comp f) = (reesMap R g).comp (reesMap R f) := by

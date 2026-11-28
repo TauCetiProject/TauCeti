@@ -22,7 +22,7 @@ namespace Module.Basis
 /-- Gradient of `TauCeti.sl2CasimirSymbol R L h e f` at `ξ : Module.Dual R L`:
 `(2 * ξ h) • h + (4 * ξ f) • e + (4 * ξ e) • f`. -/
 theorem symmetricGradient_sl2CasimirSymbol {R L ι : Type*}
-    [CommRing R] [LieRing L] [LieAlgebra R L] [Fintype ι]
+    [CommSemiring R] [AddCommMonoid L] [Module R L] [Fintype ι]
     (b : Module.Basis ι R L) (h e f : L) (ξ : Module.Dual R L) :
     b.symmetricGradient (TauCeti.sl2CasimirSymbol R L h e f) ξ =
       (2 * ξ h) • h + (4 * ξ f) • e + (4 * ξ e) • f := by

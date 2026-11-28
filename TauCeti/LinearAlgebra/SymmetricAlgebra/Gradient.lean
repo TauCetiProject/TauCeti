@@ -27,8 +27,7 @@ is independent of the chosen finite basis `b`. Under the finite-rank biduality e
 
 From the coordinate-free pairing formula follow `R`-linearity in `p`, vanishing on scalars,
 `b.symmetricGradient (ι x) ξ = x` on generators, the Leibniz product rule, the power rule, and
-contravariant naturality of evaluations together with covariant naturality of gradients along any
-linear map between finite free modules.
+covariant naturality of gradients along any linear map between finite free modules.
 
 ## Main definitions
 
@@ -88,10 +87,8 @@ evaluated at `ξ`. -/
 theorem apply_symmetricGradient (b : Module.Basis ι R M) (p : SymmetricAlgebra R M)
     (ξ η : Module.Dual R M) :
     η (b.symmetricGradient p ξ) = SymmetricAlgebra.lift ξ (SymmetricAlgebra.pderiv η p) := by
-  rw [symmetricGradient, map_sum, SymmetricAlgebra.pderiv_eq_sum b η p, map_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [LinearMap.map_smul, smul_eq_mul, map_mul, AlgHom.commutes, Algebra.algebraMap_self,
-    RingHom.id_apply, ← SymmetricAlgebra.equivMvPolynomial_pderiv_coord,
+  simp [symmetricGradient, SymmetricAlgebra.pderiv_eq_sum b η p,
+    ← SymmetricAlgebra.equivMvPolynomial_pderiv_coord,
     ← b.lift_apply_eq_eval_equivMvPolynomial, mul_comm]
 
 /-- **Euler's homogeneous identity for `symmetricGradient`.** Pairing the gradient at `ξ` of a

@@ -49,6 +49,8 @@ section Symbol
 
 variable (R : Type u) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
 
+/-- At the zero fibre, `reesSl2Casimir` specializes to the quadratic Casimir symbol
+`sl2CasimirSymbol R L h e f = ι(h)² + 4 * ι(e) * ι(f)`, as the `2 * t * j(h)` term vanishes. -/
 @[simp]
 theorem reesSpecializationZero_reesSl2Casimir [Module.Free R L] (h e f : L) :
     reesSpecializationZero R L (reesSl2Casimir R L h e f) = sl2CasimirSymbol R L h e f := by
@@ -89,6 +91,8 @@ theorem reesZeroFiberBracket_slFinTwoCasimirSymbol_left
   (forall_reesZeroFiberBracket_eq_zero_iff_mem_lieInvariants _ _).mpr
     (slFinTwoCasimirSymbol_mem_lieInvariants R) q
 
+/-- Every element of `SymmetricAlgebra R (SpecialLinear.sl (Fin 2) R)` has vanishing zero-fibre
+Poisson bracket with `slFinTwoCasimirSymbol R`. -/
 @[simp]
 theorem reesZeroFiberBracket_slFinTwoCasimirSymbol_right
     (p : SymmetricAlgebra R (SpecialLinear.sl (Fin 2) R)) :
@@ -103,10 +107,9 @@ theorem reesZeroFiberBracket_slFinTwo_h_e_ne_zero {R : Type u} [CommRing R] (h2 
       (SymmetricAlgebra.ι R _ (TauCeti.slFinTwoBasis R 0)) ≠ 0 := by
   rw [reesZeroFiberBracket_ι_ι, TauCeti.lie_slFinTwoBasis_two_zero, map_smul]
   intro hzero
-  have heval := congrArg (SymmetricAlgebra.lift ((TauCeti.slFinTwoBasis R).coord 0)) hzero
-  rw [map_smul, SymmetricAlgebra.lift_ι_apply, Module.Basis.coord_apply,
-    Module.Basis.repr_self, Finsupp.single_eq_same, smul_eq_mul, mul_one, map_zero] at heval
-  exact h2 heval
+  refine h2 ?_
+  simpa [-TauCeti.slFinTwoBasis_zero] using
+    congrArg (SymmetricAlgebra.lift ((TauCeti.slFinTwoBasis R).coord 0)) hzero
 
 end SlFinTwo
 
