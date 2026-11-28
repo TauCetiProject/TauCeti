@@ -140,10 +140,10 @@ private theorem exists_prod_comp_eq_expand {e D : ℕ} (he : e ≠ 0) {ζ : F}
     rw [comp_C_mul_X_coeff]
     exact natDegree_mul_le.trans (by rw [← C_pow, ← C_pow, natDegree_C, add_zero]; exact hPcd _)
 
-/-- If `f ≠ 0`, `f(a) ≠ 0` and `∑ᵢ f ^ (i c) · Aᵢ(X, X ^ q) = 0` under the degree bound of
+/-- If `f(a) ≠ 0` and `∑ᵢ f ^ (i c) · Aᵢ(X, X ^ q) = 0` under the degree bound of
 `Polynomial.sum_pow_mul_eval_X_pow_eq_zero_iff`, then every `Aᵢ` vanishes at `Y = a`. -/
 private theorem eval_C_eq_zero_of_sum_pow_mul_eval_X_pow_eq_zero {e D : ℕ}
-    (he : e ∣ Nat.card F - 1) {f : F[X]} (hf₀ : f ≠ 0) {a : F} (hfa : f.eval a ≠ 0)
+    (he : e ∣ Nat.card F - 1) {f : F[X]} {a : F} (hfa : f.eval a ≠ 0)
     (hf : ∀ (b : F) (h : F[X]) (ℓ : ℕ), 1 < ℓ → ℓ ∣ e → f ≠ C b * h ^ ℓ)
     {A : Fin e → F[X][X]} (hA : ∀ i j, ((A i).coeff j).natDegree ≤ D)
     (hD : e * D + (e - 1) * f.natDegree < Nat.card F)
@@ -177,7 +177,7 @@ private theorem eval_C_eq_zero_of_sum_pow_mul_eval_X_pow_eq_zero {e D : ℕ}
   have hQdvd : (X - C a) ^ q ∣ Q.eval (f ^ (q - 1)) := by
     rw [hfc]
     exact hPu.trans (eval_dvd_eval_pow_of_prod_comp_C_mul_X_eq_expand he0 hNQ _)
-  have hQw := aeval_div_eq_zero_of_dvd hf₀ hQdeg hQcd hD hQdvd
+  have hQw := aeval_div_eq_zero_of_dvd (fun h ↦ hfa (by rw [h, eval_zero])) hQdeg hQcd hD hQdvd
   -- Map to the fraction field and apply Capelli's theorem.
   have hinj := IsFractionRing.injective F[X] (FractionRing F[X])
   set φ := algebraMap F[X] (FractionRing F[X])
@@ -197,7 +197,7 @@ private theorem eval_C_eq_zero_of_sum_pow_mul_eval_X_pow_eq_zero {e D : ℕ}
 Every `Aᵢ` vanishes at `Y = a`, so `Aᵢ = (Y - a) A'ᵢ`, and the `A'ᵢ` satisfy the same hypotheses
 with a smaller sum of degrees in `Y`. -/
 private theorem forall_eq_zero_of_sum_pow_mul_eval_X_pow_eq_zero {e D : ℕ}
-    (he : e ∣ Nat.card F - 1) {f : F[X]} (hf₀ : f ≠ 0) {a : F} (hfa : f.eval a ≠ 0)
+    (he : e ∣ Nat.card F - 1) {f : F[X]} {a : F} (hfa : f.eval a ≠ 0)
     (hf : ∀ (b : F) (h : F[X]) (ℓ : ℕ), 1 < ℓ → ℓ ∣ e → f ≠ C b * h ^ ℓ)
     (hD : e * D + (e - 1) * f.natDegree < Nat.card F) {A : Fin e → F[X][X]}
     (hA : ∀ i j, ((A i).coeff j).natDegree ≤ D)
@@ -208,7 +208,7 @@ private theorem forall_eq_zero_of_sum_pow_mul_eval_X_pow_eq_zero {e D : ℕ}
   by_cases hA0 : ∀ i, A i = 0
   · exact hA0
   obtain ⟨i₀, hi₀⟩ := not_forall.1 hA0
-  have h0 := eval_C_eq_zero_of_sum_pow_mul_eval_X_pow_eq_zero he hf₀ hfa hf hA hD hR
+  have h0 := eval_C_eq_zero_of_sum_pow_mul_eval_X_pow_eq_zero he hfa hf hA hD hR
   set A' : Fin e → F[X][X] := fun i ↦ A i /ₘ (X - C (C a))
   have hAA' (i : Fin e) : A i = (X - C (C a)) * A' i :=
     (mul_divByMonic_eq_iff_isRoot.2 (h0 i)).symm
@@ -257,7 +257,7 @@ theorem sum_pow_mul_eval_X_pow_eq_zero_iff {e D : ℕ} (he : e ∣ Nat.card F - 
   · intro i
     exact absurd i.isLt (by lia)
   · -- For `e = 1` the sum does not depend on `f`, and it is the one for `f = 1`.
-    exact forall_eq_zero_of_sum_pow_mul_eval_X_pow_eq_zero he one_ne_zero (a := 0)
+    exact forall_eq_zero_of_sum_pow_mul_eval_X_pow_eq_zero he (f := 1) (a := 0)
       (by rw [eval_one]; exact one_ne_zero)
       (fun b h ℓ hℓ hℓ1 ↦ absurd (Nat.le_of_dvd one_pos hℓ1) (by lia)) (by simpa using hD) hA
       (by simpa using hR)
@@ -272,6 +272,6 @@ theorem sum_pow_mul_eval_X_pow_eq_zero_iff {e D : ℕ} (he : e ∣ Nat.card F - 
     obtain ⟨a, hfa⟩ := exists_eval_ne_zero_of_natDegree_lt_card f hf₀ (by
       rw [← Nat.cast_card]
       exact_mod_cast hfq)
-    exact forall_eq_zero_of_sum_pow_mul_eval_X_pow_eq_zero he hf₀ hfa hf hD hA hR
+    exact forall_eq_zero_of_sum_pow_mul_eval_X_pow_eq_zero he hfa hf hD hA hR
 
 end Polynomial
