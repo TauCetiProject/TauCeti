@@ -118,7 +118,7 @@ variable {J₀ : unitary (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace �
 /-- The `Spinᶜ` lift of the unitary group of `ℝ⁴` is continuous. -/
 @[fun_prop]
 theorem continuous_unitarySpinCLift : Continuous (unitarySpinCLift hJ₀ e h₀ h₂) := by
-  rw [unitarySpinCLift_eq_comp hJ₀ e h₀ h₂ negNormSqForm_apply negNormSqForm_ne_zero]
+  rw [unitarySpinCLift_eq_comp hJ₀ e h₀ h₂ (negNormSqForm_apply _) negNormSqForm_ne_zero]
   exact ((EuclideanSpace.basisFun (Fin 4) ℝ).continuous_realSpinCGroupEquiv_symm _ _ _).comp
     (e.continuous_centralizerSpinCLift hJ₀ h₀ h₂ _ _)
 

@@ -96,6 +96,16 @@ theorem map_star (f : Q₁ →qᵢ Q₂) (x : CliffordAlgebra Q₁) :
     map f (star x) = star (map f x) := by
   simp only [star_def, map_reverse, map_involute]
 
+/-- The Clifford equivalence induced by a quadratic isometry commutes with conjugation. -/
+theorem equivOfIsometry_star (e : Q₁.IsometryEquiv Q₂) (x : CliffordAlgebra Q₁) :
+    equivOfIsometry e (star x) = star (equivOfIsometry e x) := by
+  simp only [equivOfIsometry_apply, map_star]
+
+/-- The Clifford equivalence induced by a quadratic isometry intertwines grade involutions. -/
+theorem equivOfIsometry_involute (e : Q₁.IsometryEquiv Q₂) (x : CliffordAlgebra Q₁) :
+    equivOfIsometry e (involute x) = involute (equivOfIsometry e x) := by
+  simp only [equivOfIsometry_apply, map_involute]
+
 /-- A quadratic isometry maps each piece `evenOdd Q₁ i` of the `ℤ/2`-grading into
 `evenOdd Q₂ i`. -/
 theorem map_evenOdd_le (f : Q₁ →qᵢ Q₂) (i : ZMod 2) :
@@ -297,6 +307,14 @@ theorem equivOfIsometry_mem_evenOdd_iff (e : Q₁.IsometryEquiv Q₂) {x : Cliff
 theorem equivOfIsometry_ι (e : Q₁.IsometryEquiv Q₂) (v : M₁) :
     equivOfIsometry e (ι Q₁ v) = ι Q₂ (e v) := by
   rw [equivOfIsometry_apply, map_apply_ι, IsometryEquiv.toIsometry_apply]
+
+/-- Applying two isometry-induced Clifford equivalences is the same as applying the
+equivalence induced by the composite isometry. -/
+theorem equivOfIsometry_trans_apply {M₃ : Type*} [AddCommGroup M₃] [Module R M₃]
+    {Q₃ : QuadraticForm R M₃} (e : Q₁.IsometryEquiv Q₂) (f : Q₂.IsometryEquiv Q₃)
+    (x : CliffordAlgebra Q₁) :
+    equivOfIsometry f (equivOfIsometry e x) = equivOfIsometry (e.trans f) x := by
+  simpa only [AlgEquiv.trans_apply] using DFunLike.congr_fun (equivOfIsometry_trans e f) x
 
 /-- Mapping a unit along the equivalence induced by an isometry equivalence `e`, and back along
 the one induced by `e.symm`, gives it back. -/

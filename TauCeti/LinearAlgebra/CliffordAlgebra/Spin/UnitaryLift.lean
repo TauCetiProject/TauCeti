@@ -14,6 +14,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Four
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Neg
+public import TauCeti.Analysis.InnerProductSpace.QuadraticForm.SquaredNorm
 import TauCeti.Analysis.Normed.Module.QuadraticMap
 
 /-!
@@ -390,20 +391,9 @@ namespace TauCeti
 
 section Lift
 
-/-- The form `Q v = -‖v‖²` on `ℝ⁴` with the Euclidean norm, the geometric Clifford convention
-through which the lifts of this section are compared with the coordinate group `Spinᶜ(4)`. -/
-def negNormSqForm : QuadraticForm ℝ (EuclideanSpace ℝ (Fin 4)) :=
-  -LinearMap.BilinMap.toQuadraticMap (innerₗ (EuclideanSpace ℝ (Fin 4)))
-
-/-- The form `TauCeti.negNormSqForm` is `v ↦ -‖v‖²`. -/
-@[simp]
-theorem negNormSqForm_apply (v : EuclideanSpace ℝ (Fin 4)) :
-    negNormSqForm v = -‖v‖ ^ 2 := by
-  simp [negNormSqForm]
-
-/-- The form `TauCeti.negNormSqForm` is nonzero. -/
-theorem negNormSqForm_ne_zero : negNormSqForm ≠ 0 :=
-  (QuadraticForm.nondegenerate_of_eq_neg_norm_sq negNormSqForm_apply).ne_zero
+/-- The negative squared norm on Euclidean four-space is nonzero. -/
+theorem negNormSqForm_ne_zero : negNormSqForm (EuclideanSpace ℝ (Fin 4)) ≠ 0 :=
+  (QuadraticForm.nondegenerate_of_eq_neg_norm_sq (negNormSqForm_apply _)).ne_zero
 
 variable {J₀ : unitary (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))}
   (hJ₀ : ∀ v, (J₀ : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))
@@ -421,9 +411,9 @@ determinant of the unitary matrix (`TauCeti.det_unitarySpinCLift`). -/
 def unitarySpinCLift :
     Subgroup.centralizer {J₀} →*
       spinCGroup (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0).ne_zero :=
-  ((EuclideanSpace.basisFun (Fin 4) ℝ).realSpinCGroupEquiv negNormSqForm_apply
+  ((EuclideanSpace.basisFun (Fin 4) ℝ).realSpinCGroupEquiv (negNormSqForm_apply _)
       (nondegenerate_realCliffordForm 4 0).ne_zero negNormSqForm_ne_zero).symm.toMonoidHom.comp
-    (e.centralizerSpinCLift hJ₀ h₀ h₂ negNormSqForm_apply negNormSqForm_ne_zero)
+    (e.centralizerSpinCLift hJ₀ h₀ h₂ (negNormSqForm_apply _) negNormSqForm_ne_zero)
 
 /-- The lift `unitarySpinCLift` is the lift `centralizerSpinCLift` for any form `Q v = -‖v‖²` on
 `ℝ⁴`, transported to the coordinate group `Spinᶜ(4)` along the standard basis. -/
@@ -433,8 +423,8 @@ theorem unitarySpinCLift_eq_comp {Q : QuadraticForm ℝ (EuclideanSpace ℝ (Fin
       ((EuclideanSpace.basisFun (Fin 4) ℝ).realSpinCGroupEquiv hQ
         (nondegenerate_realCliffordForm 4 0).ne_zero hQ₀).symm.toMonoidHom.comp
           (e.centralizerSpinCLift hJ₀ h₀ h₂ hQ hQ₀) := by
-  obtain rfl : Q = negNormSqForm :=
-    QuadraticMap.ext fun v ↦ (hQ v).trans (negNormSqForm_apply v).symm
+  obtain rfl : Q = negNormSqForm (EuclideanSpace ℝ (Fin 4)) :=
+    QuadraticMap.ext fun v ↦ (hQ v).trans ((negNormSqForm_apply _) v).symm
   rfl
 
 /-- **The rotation of `unitarySpinCLift g` is `g`**, read on coordinate vectors. -/
@@ -445,7 +435,7 @@ theorem toSpecialOrthogonal_unitarySpinCLift_apply (g : Subgroup.centralizer {J�
       WithLp.ofLp (((g : unitary (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))) :
         EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) (WithLp.toLp 2 v)) := by
   have h := (EuclideanSpace.basisFun (Fin 4) ℝ).toSpecialOrthogonal_realSpinCGroupHom_apply
-    negNormSqForm_apply (nondegenerate_realCliffordForm 4 0).ne_zero negNormSqForm_ne_zero
+    (negNormSqForm_apply _) (nondegenerate_realCliffordForm 4 0).ne_zero negNormSqForm_ne_zero
     (unitarySpinCLift hJ₀ e h₀ h₂ g) v
   rw [← OrthonormalBasis.coe_realSpinCGroupEquiv, unitarySpinCLift, MonoidHom.comp_apply,
     MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply,
@@ -462,9 +452,9 @@ determinant of its unitary matrix in the frame `e`. -/
 theorem det_unitarySpinCLift (g : Subgroup.centralizer {J₀}) :
     spinCGroup.det _ _ (unitarySpinCLift hJ₀ e h₀ h₂ g) =
       Matrix.UnitaryGroup.detCircle (e.centralizerToUnitaryGroup hJ₀ h₀ h₂ g) := by
-  rw [← e.det_centralizerSpinCLift hJ₀ h₀ h₂ negNormSqForm_apply negNormSqForm_ne_zero,
+  rw [← e.det_centralizerSpinCLift hJ₀ h₀ h₂ (negNormSqForm_apply _) negNormSqForm_ne_zero,
     unitarySpinCLift, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    ← (EuclideanSpace.basisFun (Fin 4) ℝ).det_realSpinCGroupHom negNormSqForm_apply
+    ← (EuclideanSpace.basisFun (Fin 4) ℝ).det_realSpinCGroupHom (negNormSqForm_apply _)
       (nondegenerate_realCliffordForm 4 0).ne_zero negNormSqForm_ne_zero,
     ← OrthonormalBasis.coe_realSpinCGroupEquiv, MulEquiv.apply_symm_apply]
 
@@ -490,19 +480,19 @@ theorem realSpinCGroupHom_unitarySpinCLift {V : Type*} [NormedAddCommGroup V]
     b.realSpinCGroupHom hQ (nondegenerate_realCliffordForm 4 0).ne_zero hQ₀
         (unitarySpinCLift hJ₀ e h₀ h₂ g) =
       (e.map b.repr.symm).spinCUnitary hQ hQ₀ (e.centralizerToUnitaryGroup hJ₀ h₀ h₂ g) := by
-  set c := (EuclideanSpace.basisFun (Fin 4) ℝ).realSpinCGroupEquiv negNormSqForm_apply
+  set c := (EuclideanSpace.basisFun (Fin 4) ℝ).realSpinCGroupEquiv (negNormSqForm_apply _)
     (nondegenerate_realCliffordForm 4 0).ne_zero negNormSqForm_ne_zero
   rw [unitarySpinCLift, MonoidHom.comp_apply, e.centralizerSpinCLift_eq_comp, MonoidHom.comp_apply]
   refine DFunLike.congr_fun ((e.map b.repr.symm).eq_spinCUnitary hQ hQ₀
     (φ := (b.realSpinCGroupHom hQ (nondegenerate_realCliffordForm 4 0).ne_zero hQ₀).comp
-      (c.symm.toMonoidHom.comp (e.spinCUnitary negNormSqForm_apply negNormSqForm_ne_zero)))
+      (c.symm.toMonoidHom.comp (e.spinCUnitary (negNormSqForm_apply _) negNormSqForm_ne_zero)))
     (fun h v ↦ ?_) (fun h ↦ ?_)) _
-  · set y := e.spinCUnitary negNormSqForm_apply negNormSqForm_ne_zero h
+  · set y := e.spinCUnitary (negNormSqForm_apply _) negNormSqForm_ne_zero h
     obtain ⟨w, rfl⟩ := b.repr.symm.surjective v
     -- The rotation of `c.symm y` on coordinates is the rotation of `y` on `ℝ⁴`, and on `V` it is
     -- read through `b`.
     have hy := (EuclideanSpace.basisFun (Fin 4) ℝ).toSpecialOrthogonal_realSpinCGroupHom_apply
-      negNormSqForm_apply (nondegenerate_realCliffordForm 4 0).ne_zero negNormSqForm_ne_zero
+      (negNormSqForm_apply _) (nondegenerate_realCliffordForm 4 0).ne_zero negNormSqForm_ne_zero
       (c.symm y) w.ofLp
     have hv := b.toSpecialOrthogonal_realSpinCGroupHom_apply hQ
       (nondegenerate_realCliffordForm 4 0).ne_zero hQ₀ (c.symm y) w.ofLp
@@ -514,7 +504,7 @@ theorem realSpinCGroupHom_unitarySpinCLift {V : Type*} [NormedAddCommGroup V]
       e.complexCoords_toSpecialOrthogonal_spinCUnitary_apply]
   · rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
       OrthonormalBasis.det_realSpinCGroupHom, ← OrthonormalBasis.det_realSpinCGroupHom
-        (EuclideanSpace.basisFun (Fin 4) ℝ) negNormSqForm_apply
+        (EuclideanSpace.basisFun (Fin 4) ℝ) (negNormSqForm_apply _)
         (nondegenerate_realCliffordForm 4 0).ne_zero negNormSqForm_ne_zero,
       ← OrthonormalBasis.coe_realSpinCGroupEquiv, MulEquiv.apply_symm_apply,
       OrthonormalBasis.det_spinCUnitary]
