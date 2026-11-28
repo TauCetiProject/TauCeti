@@ -191,6 +191,19 @@ theorem star_apply_conjPlace (a : 𝔸ᶠ[E]) (w : HeightOneSpectrum (𝓞 E)) :
   rw [← coe_finiteAdeleConj, finiteAdeleConj_def]
   exact finiteAdeleEquiv_apply_eq_adicCompletionCongr _ _ a
 
+/-- **Conjugation of finite adeles at a place, for any presentation of the conjugate place.** If
+`|conj x|_{w'} = |x|_w` for all `x ∈ E`, so that `w'` is the conjugate place `conj w`, the component
+at `w'` of the conjugate of a finite adele `a` is the image of `a_w` under the isomorphism
+`E_w ≃ E_{w'}` extending the conjugation of `E`. With `w = conj w'` this computes every component
+of `star a`, and at a place `w` with `conj w = w` it reads `(star a)_w = conj (a_w)` for the
+automorphism `t ↦ conj t` of `E_w`. -/
+theorem star_apply_eq_adicCompletionCongr {w w' : HeightOneSpectrum (𝓞 E)}
+    (hw : ∀ x, w'.valuation E ((complexConj E).toRingEquiv x) = w.valuation E x) (a : 𝔸ᶠ[E]) :
+    (star a) w' =
+      HeightOneSpectrum.adicCompletionCongr w w' (complexConj E).toRingEquiv hw (a w) := by
+  obtain rfl := HeightOneSpectrum.eq_conjPlace_iff.2 hw
+  exact star_apply_conjPlace a w
+
 /-- The diagonal embedding of a CM field in its finite adeles commutes with conjugation. As
 `star_eq_complexConj` makes `complexConj E` the `simp` normal form of conjugation on `E` and
 `finiteAdeleConj_apply` makes `star` the normal form on the finite adeles, this is the `simp`

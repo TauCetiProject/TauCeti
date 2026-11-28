@@ -97,6 +97,8 @@ is `∞` outside the almost everywhere strongly measurable functions.
 * `TauCeti.tendsto_integral_mul_integral_inner_of_tendsto_eLpNorm_eLpNorm_sub`: the same for
   families converging in a mixed norm `L^q_b Lˢ_x` and almost everywhere in `b`, tested against
   `θ(b) χ(x)`.
+* `TauCeti.tendsto_integral_mul_inner_of_tendsto_eLpNorm_eLpNorm_sub`: the same for
+  `L²`-valued families, with the pairings written as `L²` inner products.
 * `MeasureTheory.AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_inner_le`,
   `MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le`: the duality
   bound for `q = ∞` and for every `1 ≤ q ≤ ∞`, on a σ-finite measure space, for inner product
@@ -238,6 +240,41 @@ theorem tendsto_integral_mul_integral_inner_of_tendsto_eLpNorm_eLpNorm_sub {𝕜
   rw [edist_comm, eDist_eq_eNorm_sub, ← integral_sub hθP (hθu i)]
   simp_rw [← mul_sub]
   exact enorm_integral_mul_le.trans (by gcongr; exact hmix i)
+
+open Filter Topology in
+/-- **Pairings of `L²`-valued families pass to mixed-norm limits.** Let `vᵢ : β → L²(μ)`, indexed
+along a countably generated filter, converge to `U : β → Lʳ(μ)` in `Lʳ(μ)` at `ρ`-almost every
+`b` and in the mixed norm `L^q_b Lʳ_x`, for some `1 ≤ q, r ≤ ∞`. Then for every class
+`χ' ∈ L²(μ)` with a representative `χ ∈ L^{r'}(μ)` and every `ϑ ∈ L^{q'}(ρ)` with each
+`b ↦ ϑ(b) ⟪χ', vᵢ(b)⟫` integrable,
+
+`∫ ϑ(b) ⟪χ', vᵢ(b)⟫ dρ → ∫ ϑ(b) ∫ ⟪χ(x), U(b)(x)⟫ dμ dρ`. -/
+theorem tendsto_integral_mul_inner_of_tendsto_eLpNorm_eLpNorm_sub {𝕜 H β ι : Type*}
+    [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] {mβ : MeasurableSpace β}
+    {ρ : Measure β} {l : Filter ι} [l.IsCountablyGenerated] {q r : ℝ≥0∞} [Fact (1 ≤ r)]
+    (hq : 1 ≤ q) {v : ι → β → Lp H 2 μ} {U : β → Lp H r μ}
+    (hae : ∀ᵐ b ∂ρ, Tendsto (fun i ↦ eLpNorm (⇑(U b) - ⇑(v i b)) r μ) l (𝓝 0))
+    (hlim : Tendsto (fun i ↦ eLpNorm (fun b ↦ eLpNorm (⇑(U b) - ⇑(v i b)) r μ) q ρ) l (𝓝 0))
+    {χ' : Lp H 2 μ} {χ : α → H} (hχ' : χ' =ᵐ[μ] χ) (hχr : MemLp χ r.conjExponent μ)
+    {ϑ : β → 𝕜} (hϑ : MemLp ϑ q.conjExponent ρ) (hv : ∀ i, AEStronglyMeasurable (v i) ρ)
+    (hint : ∀ i, Integrable (fun b ↦ ϑ b * ⟪χ', v i b⟫_𝕜) ρ) :
+    Tendsto (fun i ↦ ∫ b, ϑ b * ⟪χ', v i b⟫_𝕜 ∂ρ) l
+      (𝓝 (∫ b, ϑ b * ∫ x, ⟪χ x, U b x⟫_𝕜 ∂μ ∂ρ)) := by
+  have hχ : MemLp χ 2 μ := (Lp.memLp χ').ae_eq hχ'
+  obtain rfl : χ' = hχ.toLp χ := Lp.ext (hχ'.trans hχ.coeFn_toLp.symm)
+  have := (ENNReal.HolderConjugate.conjExponent hq).symm
+  have := (ENNReal.HolderConjugate.conjExponent (Fact.out : (1 : ℝ≥0∞) ≤ r)).symm
+  have hpair (h : Lp H 2 μ) : ∫ x, ⟪χ x, h x⟫_𝕜 ∂μ = ⟪hχ.toLp χ, h⟫_𝕜 :=
+    (L2.toLp_inner_of_ae_eq hχ EventuallyEq.rfl).symm
+  simp_rw [← hpair]
+  refine tendsto_integral_mul_integral_inner_of_tendsto_eLpNorm_eLpNorm_sub
+    (p := q.conjExponent) (r := r.conjExponent) hϑ hχr (ae_of_all _ fun b ↦ Lp.memLp (U b))
+    (ae_of_all _ fun b i ↦ MemLp.integrable_inner_of_holderConjugate (q := 2) (q' := 2)
+      hχ (Lp.memLp _)) (fun i ↦ ?_) (fun i ↦ ?_) hae hlim
+  · simp_rw [hpair]
+    exact (continuous_const.inner continuous_id).comp_aestronglyMeasurable (hv i)
+  · simp_rw [hpair]
+    exact hint i
 
 end TauCeti
 

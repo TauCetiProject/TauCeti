@@ -22,6 +22,8 @@ Pasting a commutative square onto a factorization gives a factorization
 A homotopy between maps of modules with square-zero differentials transfers the property of
 commuting with the differentials from one map to the other
 (`LinearMap.comp_eq_comp_of_comp_add_comp_eq_add`).
+It also provides the identity and composition laws for integer linearization of additive
+homomorphisms (`AddMonoidHom.toIntLinearMap_id` and `AddMonoidHom.toIntLinearMap_comp`).
 -/
 
 public section
@@ -96,3 +98,21 @@ theorem comp_eq_comp_of_comp_add_comp_eq_add {d₀ : V →ₗ[R] V} {d₁ : W �
 end Homotopy
 
 end LinearMap
+
+namespace AddMonoidHom
+
+/-- Viewing the identity additive homomorphism as a `ℤ`-linear map gives the identity linear map. -/
+@[simp]
+theorem toIntLinearMap_id (M : Type*) [AddCommGroup M] :
+    (AddMonoidHom.id M).toIntLinearMap = LinearMap.id :=
+  LinearMap.ext fun _ ↦ by simp
+
+/-- Viewing a composite of additive homomorphisms as a `ℤ`-linear map gives the composite of
+their `ℤ`-linear maps. -/
+@[simp]
+theorem toIntLinearMap_comp {M N P : Type*} [AddCommGroup M] [AddCommGroup N] [AddCommGroup P]
+    (g : N →+ P) (f : M →+ N) :
+    (g.comp f).toIntLinearMap = g.toIntLinearMap ∘ₗ f.toIntLinearMap :=
+  LinearMap.ext fun _ ↦ by simp
+
+end AddMonoidHom

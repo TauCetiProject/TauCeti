@@ -127,7 +127,6 @@ variable [FiniteDimensional ℝ W] {m : ℕ} [Fact (finrank ℝ W = m)] (o₂ : 
 `V` and any dimension `m` of `W`, `TensorProduct.lid ℂ F` carries the product volume element of
 `0 ⊕ W` to `ρ₂ (complexVolume Q₂ o₂)`. -/
 theorem lid_complexProdTensor_positiveOrientation_complexVolume
-    (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2)
     (ho : ((positiveOrientation : Orientation ℝ V (Fin 0)).prod o₂ Fact.out Fact.out).map
       (Fin (0 + m)) (WithLp.linearEquiv 2 ℝ (V × W)).symm = o)
     (z : ℂ ⊗[ℂ] F) :
@@ -136,17 +135,16 @@ theorem lid_complexProdTensor_positiveOrientation_complexVolume
           (QuadraticForm.eq_neg_norm_sq_of_subsingleton Q₁) Even.zero ρ₁ ρ₂ (complexVolume Q o) z) =
       ρ₂ (complexVolume Q₂ o₂) ((TensorProduct.lid ℂ F) z) := by
   rcases Nat.even_or_odd m with hm | hm
-  · rw [complexProdTensor_complexVolume_of_map_prod hQ _ _ Even.zero ρ₁ ρ₂ o₂ o hm hQ₂ ho,
+  · rw [complexProdTensor_complexVolume_of_map_prod hQ _ _ Even.zero ρ₁ ρ₂ o₂ o hm ho,
       complexVolume_positiveOrientation, map_one, Module.End.one_eq_id, ← LinearMap.lTensor_def,
       LinearMap.lid_lTensor_apply]
-  · rw [complexProdTensor_complexVolume_of_odd_of_map_prod hQ _ _ Even.zero ρ₁ ρ₂ o₂ o hm hQ₂ ho,
+  · rw [complexProdTensor_complexVolume_of_odd_of_map_prod hQ _ _ Even.zero ρ₁ ρ₂ o₂ o hm ho,
       LinearMap.lid_lTensor_apply]
 
 /-- **Signed left unit law on the product volume element.** Choosing `-positiveOrientation` on
 `0` multiplies the volume action of `0 ⊕ W` under `TensorProduct.lid ℂ F` by `-(-1) ^ m`, so it
 negates `ρ₂ (complexVolume Q₂ o₂)` for even `m` and preserves it for odd `m`. -/
 theorem lid_complexProdTensor_neg_positiveOrientation_complexVolume
-    (hQ₂ : ∀ w, Q₂ w = -‖w‖ ^ 2)
     (ho : ((-(positiveOrientation : Orientation ℝ V (Fin 0))).prod o₂ Fact.out Fact.out).map
       (Fin (0 + m)) (WithLp.linearEquiv 2 ℝ (V × W)).symm = o)
     (z : ℂ ⊗[ℂ] F) :
@@ -158,7 +156,7 @@ theorem lid_complexProdTensor_neg_positiveOrientation_complexVolume
       (Fin (0 + m)) (WithLp.linearEquiv 2 ℝ (V × W)).symm = -o := by
     rw [← ho, Orientation.map_prod_neg_left, Module.Ray.neg_neg]
   have h := lid_complexProdTensor_positiveOrientation_complexVolume hQ ρ₁ (ρ₂.comp involute) o₂
-    (-o) hQ₂ ho' z
+    (-o) ho' z
   simp only [complexVolume_neg_orientation, map_neg, LinearMap.neg_apply,
     AlgHom.comp_apply, involute_complexVolume, map_smul, LinearMap.smul_apply] at h
   rw [complexProdTensor_neg_orientation_eq_involute, neg_eq_iff_eq_neg.1 h, neg_smul]
@@ -207,6 +205,7 @@ variable [FiniteDimensional ℝ W] [Fact (finrank ℝ W = 0)]
   [Fact (finrank ℝ (WithLp 2 (V × W)) = n + 0)]
   (o : Orientation ℝ (WithLp 2 (V × W)) (Fin (n + 0)))
 
+omit [Subsingleton W] in
 /-- **Right unit law on the product chirality.** For `positiveOrientation` on `W` of dimension `0`,
 `TensorProduct.rid ℂ E` carries the product chirality of `V ⊕ 0` to `ρ₁ (complexVolume Q₁ o₁)`. -/
 theorem rid_complexProdTensor_positiveOrientation_complexVolume
@@ -216,11 +215,11 @@ theorem rid_complexProdTensor_positiveOrientation_complexVolume
     (TensorProduct.rid ℂ E)
         (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o) z) =
       ρ₁ (complexVolume Q₁ o₁) ((TensorProduct.rid ℂ E) z) := by
-  rw [complexProdTensor_complexVolume_of_map_prod hQ o₁ hQ₁ hn ρ₁ ρ₂ _ o Even.zero
-      (QuadraticForm.eq_neg_norm_sq_of_subsingleton Q₂) ho,
+  rw [complexProdTensor_complexVolume_of_map_prod hQ o₁ hQ₁ hn ρ₁ ρ₂ _ o Even.zero ho,
     complexVolume_positiveOrientation, map_one, Module.End.one_eq_id, ← LinearMap.rTensor_def,
     LinearMap.rid_rTensor_apply]
 
+omit [Subsingleton W] in
 /-- **Signed right unit law on the product chirality.** Choosing `-positiveOrientation` on `W` of
 dimension `0` negates the product chirality under `TensorProduct.rid ℂ E`. -/
 theorem rid_complexProdTensor_neg_positiveOrientation_complexVolume
