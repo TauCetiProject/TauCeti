@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Limits.Shapes.Countable
-public import Mathlib.CategoryTheory.Presentable.Directed
-public import TauCeti.CategoryTheory.Countable
+public import TauCeti.CategoryTheory.Presentable.Directed
+
+import TauCeti.CategoryTheory.Products.Basic
 
 /-!
 # Sequential presentations of countable cofiltered categories
@@ -16,46 +17,24 @@ Every countable cofiltered category admits an initial functor from the opposite 
 numbers. By `Functor.Initial.limitIso`, its inverse limits can be computed over towers. This
 is the countable step of the cardinal induction for limits of diamonds in Scholze's *Étale
 cohomology of diamonds*, Lemma 11.22. Countability can be tested on the total arrow type by
-`Arrow.countable_iff`. Dually, every countable filtered category admits a final sequence.
+`TauCeti.countable_arrow_iff`. The chosen `TauCeti.Cofiltered.countableSequence` is the identity
+on `ℕᵒᵖ`. Dually, every countable filtered category admits a final sequence.
 
 We use Deligne's directed presentation of a filtered category (SGA 4, Exposé I, 8.1.6), as
 formalized in `Mathlib.CategoryTheory.Presentable.Directed`. For a countable category the finite
 diagrams with a unique terminal object form a countable poset, even in the presence of parallel
-arrows. Mathlib's `Limits.IsFiltered.sequentialFunctor` gives a final sequence in that poset.
+arrows. To make this poset directed, we first add a natural-number coordinate to the ambient
+category, giving each object a strict successor. This specializes the product-and-projection
+argument of `IsCardinalFiltered.exists_cardinal_directed` to a natural-number coordinate.
+Mathlib's `Limits.IsFiltered.sequentialFunctor` gives a final sequence in the resulting directed
+poset, and the projection back to the original category preserves finality.
 -/
 
 public section
 
-namespace CategoryTheory
+open CategoryTheory
 
-namespace IsCardinalFiltered.exists_cardinal_directed
-
-/-- There are only countably many finite diagrams of objects and arrows in a countable
-category. -/
-instance Diagram.instCountable (J : Type*) [SmallCategory J] [CountableCategory J] :
-    Countable (Diagram J Cardinal.aleph0) := by
-  let support (D : Diagram J Cardinal.aleph0) := (D.W.toSet, Set.ofPred D.P)
-  rw [← Set.countable_univ_iff]
-  apply Set.MapsTo.countable_of_injOn (f := support) _ _
-    (Set.Countable.ofPred_finite.prod Set.Countable.ofPred_finite)
-  · intro D _
-    exact ⟨Set.finite_coe_iff.mp ((hasCardinalLT_aleph0_iff _).mp D.hW),
-      Set.finite_coe_iff.mp ((hasCardinalLT_aleph0_iff _).mp D.hP)⟩
-  · intro D _ E _ h
-    obtain ⟨hW, hP⟩ := Prod.mk.inj h
-    apply Diagram.ext
-    · ext X Y f
-      simpa only [MorphismProperty.arrow_mk_mem_toSet_iff] using Set.ext_iff.mp hW (Arrow.mk f)
-    · exact Set.ofPred_injective hP
-
-/-- The poset of Deligne diagrams with a unique terminal object is countable when the ambient
-category is countable and the diagrams are finite. -/
-instance DiagramWithUniqueTerminal.instCountable (J : Type*) [SmallCategory J]
-    [CountableCategory J] : Countable (DiagramWithUniqueTerminal J Cardinal.aleph0) := by
-  refine Function.Injective.countable (f := DiagramWithUniqueTerminal.toDiagram) fun D E h ↦ ?_
-  exact DiagramWithUniqueTerminal.ext J _ (congrArg Diagram.W h) (congrArg Diagram.P h)
-
-end IsCardinalFiltered.exists_cardinal_directed
+namespace TauCeti
 
 open IsCardinalFiltered.exists_cardinal_directed in
 /-- A countable filtered category admits a final sequence. -/
@@ -70,14 +49,14 @@ theorem IsFiltered.exists_final_nat (J : Type*) [Category* J] [CountableCategory
   have := Cardinal.fact_isRegular_aleph0.{0}
   have : IsCardinalFiltered L Cardinal.aleph0 := (isCardinalFiltered_aleph0_iff L).2 inferInstance
   have hL (x : L) : ∃ (y : L) (_ : x ⟶ y), IsEmpty (y ⟶ x) :=
-    ⟨(x.1, x.2 + 1), (𝟙 _, homOfLE (Nat.le_succ _)),
+    ⟨(x.1, x.2 + 1), Prod.mkHom (𝟙 _) (homOfLE (Nat.le_succ _)),
       ⟨fun f ↦ Nat.not_succ_le_self _ (leOfHom f.2)⟩⟩
   let P := DiagramWithUniqueTerminal L Cardinal.aleph0
   have : IsCardinalFiltered P Cardinal.aleph0 := isCardinalFiltered L _ hL
   have : IsFiltered P := isFiltered_of_isCardinalFiltered P Cardinal.aleph0
   have : (functor L Cardinal.aleph0).Final := final_functor L _ hL
-  exact ⟨Limits.IsFiltered.sequentialFunctor P ⋙ functor L _ ⋙ Prod.fst K ℕ ⋙ e.functor,
-    inferInstance⟩
+  exact ⟨Limits.IsFiltered.sequentialFunctor P ⋙ functor L _ ⋙ CategoryTheory.Prod.fst K ℕ ⋙
+    e.functor, inferInstance⟩
 
 /-- A countable cofiltered category admits an initial tower. Restricting a diagram along this
 functor computes its limit over the original category. -/
@@ -86,4 +65,39 @@ theorem IsCofiltered.exists_initial_nat_op (J : Type*) [Category* J] [CountableC
   obtain ⟨F, _⟩ := IsFiltered.exists_final_nat Jᵒᵖ
   exact ⟨F.leftOp, inferInstance⟩
 
-end CategoryTheory
+namespace Cofiltered
+
+/-- A chosen initial tower in a countable cofiltered category. On `ℕᵒᵖ` it is the identity. -/
+noncomputable def countableSequence (J : Type*) [Category* J] [CountableCategory J]
+    [IsCofiltered J] : ℕᵒᵖ ⥤ J := by
+  classical
+  exact if h : Nonempty (ℕᵒᵖ ≌ J) then h.some.functor
+    else (IsCofiltered.exists_initial_nat_op J).choose
+
+/-- The chosen countable tower is initial. -/
+instance countableSequence_initial (J : Type*) [Category* J] [CountableCategory J]
+    [IsCofiltered J] : (countableSequence J).Initial := by
+  classical
+  unfold countableSequence
+  split
+  · infer_instance
+  · exact (IsCofiltered.exists_initial_nat_op J).choose_spec
+
+/-- The chosen tower on the opposite of the natural-number category fixes every stage. -/
+@[simp]
+theorem countableSequence_nat : countableSequence (ℕᵒᵖ) = 𝟭 (ℕᵒᵖ) := by
+  classical
+  unfold countableSequence
+  have e : Nonempty (ℕᵒᵖ ≌ ℕᵒᵖ) := ⟨CategoryTheory.Equivalence.refl⟩
+  rw [dite_eq_left e]
+  -- An order automorphism of ℕ and its inverse both lie pointwise above the identity.
+  let o := e.some.unop.toOrderIso
+  have h (n : ℕ) : o n = n := by
+    have hn := o.symm.strictMono.le_apply (x := o n)
+    exact (by simpa using hn : o n ≤ n).antisymm o.strictMono.le_apply
+  exact CategoryTheory.Functor.ext (fun n ↦ Opposite.unop_injective (h n.unop))
+    (fun _ _ _ ↦ Subsingleton.elim _ _)
+
+end Cofiltered
+
+end TauCeti
