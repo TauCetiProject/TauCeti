@@ -78,6 +78,9 @@ at most `K`, with converse `BoundedContinuousFunction.lipschitzWith_of_sub_eq_sm
 `BoundedContinuousFunction.pinnedCurve` recovers `t ↦ g t - g 0` from an off-diagonal difference
 quotient by pinning at `0`.
 
+`BoundedContinuousFunction.le_def` characterizes the pointwise order on bounded continuous
+functions.
+
 `BoundedContinuousFunction.compactSlice` views a compactly supported continuous function
 on space-time as a bounded continuous spatial function at a fixed time.
 
@@ -113,6 +116,12 @@ theorem norm_boundedContinuousFunction_comp_le (hN : LipschitzWith ε N) (f : T 
 end TauCeti
 
 namespace BoundedContinuousFunction
+
+/-- Pointwise characterization of the order on bounded continuous functions. -/
+theorem le_def {α β : Type*} [TopologicalSpace α] [NormedAddCommGroup β] [Lattice β]
+    {f g : α →ᵇ β} :
+    f ≤ g ↔ ∀ x, f x ≤ g x :=
+  Iff.rfl
 
 /-- Scaling a value `f x` of a bounded continuous function by `c` has norm at most `‖c‖ * ‖f‖`. -/
 theorem norm_smul_apply_le {α 𝕜 E : Type*} [TopologicalSpace α] [SeminormedAddGroup 𝕜]

@@ -8,8 +8,10 @@ module
 public import Mathlib.Analysis.Convex.Gauge
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Order.Lattice
+public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.ContinuousMap.Ordered
+import TauCeti.Topology.ContinuousMap.Bounded.Normed
 
 /-!
 # Order units and the order-unit norm
@@ -94,7 +96,7 @@ self-adjoint part of a unital C⋆-algebra is treated in `TauCeti.Analysis.CStar
 public section
 
 open Set Metric
-open scoped Pointwise
+open scoped Pointwise BoundedContinuousFunction
 
 namespace TauCeti
 
@@ -385,20 +387,27 @@ theorem posSMulMono [NormSMulClass ℝ E] (h : IsOrderUnitNorm e) : PosSMulMono 
     simpa [norm_smul, abs_of_nonneg hr, mul_smul, ← smul_sub] using
       mul_le_mul_of_nonneg_left hb hr
 
+/-- A unital linear isometry between order-unit spaces preserves and reflects the order. -/
+theorem map_le_map_iff_of_linearIsometry {F : Type*} [SeminormedAddCommGroup F] [Module ℝ F]
+    [PartialOrder F] [IsOrderedAddMonoid F] {f : F} (he : IsOrderUnitNorm e)
+    (hf : IsOrderUnitNorm f) (i : E →ₗᵢ[ℝ] F) (hunit : i e = f) (a b : E) :
+    i a ≤ i b ↔ a ≤ b := by
+  rw [← sub_nonneg (b := i a), ← map_sub, hf.nonneg_iff_norm_smul_sub_le,
+    ← sub_nonneg (b := a), he.nonneg_iff_norm_smul_sub_le, ← hunit, ← map_smul, ← map_sub,
+    i.norm_map, i.norm_map]
+
+/-- A unital linear isometry between order-unit spaces is monotone. -/
+theorem monotone_of_linearIsometry {F : Type*} [SeminormedAddCommGroup F] [Module ℝ F]
+    [PartialOrder F] [IsOrderedAddMonoid F] {f : F} (he : IsOrderUnitNorm e)
+    (hf : IsOrderUnitNorm f) (i : E →ₗᵢ[ℝ] F) (hunit : i e = f) : Monotone i :=
+  fun _ _ hab => (he.map_le_map_iff_of_linearIsometry hf i hunit _ _).2 hab
+
 end IsOrderUnitNorm
 
 /-- The absolute value on `ℝ` is the order-unit norm of `1`. -/
 theorem isOrderUnitNorm_real_one : IsOrderUnitNorm (1 : ℝ) where
   norm_eq_one := norm_one
   norm_le_iff _ := by simp [Real.norm_eq_abs, abs_le]
-
-/-- For a nonempty compact space `K`, the supremum norm on `C(K, ℝ)` is the order-unit norm of
-the constant function `1`. -/
-theorem isOrderUnitNorm_continuousMap_one {K : Type*} [TopologicalSpace K] [CompactSpace K]
-    [Nonempty K] : IsOrderUnitNorm (1 : C(K, ℝ)) where
-  norm_eq_one := norm_one
-  norm_le_iff hr := by
-    simp [ContinuousMap.norm_le _ hr, ContinuousMap.le_def, Real.norm_eq_abs, abs_le, forall_and]
 
 namespace IsOrderUnitNorm
 
@@ -509,8 +518,106 @@ theorem opNorm_eq_one [PartialOrder E] (he : IsOrderUnitNorm e) (hf : IsOrderUni
 
 end NormedSpace
 
+section Extra
+
+variable {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E] [PartialOrder E] {e : E}
+
+/-- A space carrying an order-unit norm is nontrivial. -/
+theorem nontrivial (he : IsOrderUnitNorm e) : Nontrivial E :=
+  ⟨⟨e, 0, he.ne_zero⟩⟩
+
+/-- The unit of an order-unit norm is strictly positive. -/
+theorem pos (he : IsOrderUnitNorm e) : 0 < e :=
+  he.nonneg.lt_of_ne' he.ne_zero
+
+/-- An order-unit norm on a partially ordered space is definite: `‖a‖ = 0` forces `a = 0`. -/
+theorem eq_zero_of_norm_eq_zero (he : IsOrderUnitNorm e) {a : E} (ha : ‖a‖ = 0) : a = 0 := by
+  obtain ⟨h₁, h₂⟩ := (he.norm_le_iff le_rfl).1 ha.le
+  simp only [zero_smul, neg_zero] at h₁ h₂
+  exact le_antisymm h₂ h₁
+
+/-- The norm of a scalar multiple of the order unit is `|r|`. -/
+@[simp]
+theorem norm_smul_self [NormSMulClass ℝ E] (he : IsOrderUnitNorm e) (r : ℝ) : ‖r • e‖ = |r| := by
+  rw [norm_smul, Real.norm_eq_abs, he.norm_eq_one, mul_one]
+
+/-- Monotonicity of the order-unit norm on symmetric intervals: `-b ≤ a ≤ b` implies `‖a‖ ≤ ‖b‖`. -/
+theorem norm_le_of_neg_le_of_le [IsOrderedAddMonoid E] (he : IsOrderUnitNorm e) {a b : E}
+    (h₁ : -b ≤ a) (h₂ : a ≤ b) : ‖a‖ ≤ ‖b‖ := by
+  rw [he.norm_le_iff (norm_nonneg b)]
+  refine ⟨?_, h₂.trans (he.le_norm_smul b)⟩
+  have hneg : -(‖b‖ • e) ≤ -b := neg_le.1 (by simpa using he.le_norm_smul b)
+  exact hneg.trans h₁
+
+/-- For nonnegative elements `v` and `u` in an order-unit space, `‖v - u‖ ≤ ‖v + u‖`. -/
+theorem norm_sub_le_norm_add_of_nonneg [IsOrderedAddMonoid E] (he : IsOrderUnitNorm e)
+    {v u : E} (hv : 0 ≤ v) (hu : 0 ≤ u) : ‖v - u‖ ≤ ‖v + u‖ := by
+  refine he.norm_le_of_neg_le_of_le ?_ ?_
+  · rw [neg_add, sub_eq_add_neg]
+    exact add_le_add ((neg_nonpos.mpr hv).trans hv) le_rfl
+  · rw [sub_eq_add_neg]
+    exact add_le_add le_rfl ((neg_nonpos.mpr hu).trans hu)
+
+/-- Transport of `IsOrderUnitNorm` along a linear isometric order equivalence. -/
+theorem map_linearIsometryEquiv {F : Type*} [SeminormedAddCommGroup F] [Module ℝ F]
+    [PartialOrder F] (he : IsOrderUnitNorm e) (Φ : E ≃ₗᵢ[ℝ] F)
+    (hord : ∀ a b : E, Φ a ≤ Φ b ↔ a ≤ b) : IsOrderUnitNorm (Φ e) where
+  norm_eq_one := by rw [Φ.norm_map, he.norm_eq_one]
+  norm_le_iff {b r} hr := by
+    obtain ⟨a, rfl⟩ := Φ.surjective b
+    rw [Φ.norm_map, he.norm_le_iff hr]
+    simp only [← map_smul, ← map_neg, hord]
+
+/-- Bundle a unital linear order isomorphism between order-unit spaces as a
+`LinearIsometryEquiv`. -/
+def linearIsometryEquivOfOrderIso {F : Type*} [SeminormedAddCommGroup F] [Module ℝ F]
+    [PartialOrder F] {f : F} (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f) (Φ : E ≃ₗ[ℝ] F)
+    (hunit : Φ e = f) (hord : ∀ a b : E, Φ a ≤ Φ b ↔ a ≤ b) : E ≃ₗᵢ[ℝ] F where
+  toLinearEquiv := Φ
+  norm_map' := he.norm_map hf (Φ : E →ₗ[ℝ] F) hunit hord
+
+@[simp]
+theorem linearIsometryEquivOfOrderIso_apply {F : Type*} [SeminormedAddCommGroup F] [Module ℝ F]
+    [PartialOrder F] {f : F} (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f) (Φ : E ≃ₗ[ℝ] F)
+    (hunit : Φ e = f) (hord : ∀ a b : E, Φ a ≤ Φ b ↔ a ≤ b) (a : E) :
+    he.linearIsometryEquivOfOrderIso hf Φ hunit hord a = Φ a := (rfl)
+
+@[simp]
+theorem linearIsometryEquivOfOrderIso_symm_apply {F : Type*} [SeminormedAddCommGroup F] [Module ℝ F]
+    [PartialOrder F] {f : F} (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f) (Φ : E ≃ₗ[ℝ] F)
+    (hunit : Φ e = f) (hord : ∀ a b : E, Φ a ≤ Φ b ↔ a ≤ b) (b : F) :
+    (he.linearIsometryEquivOfOrderIso hf Φ hunit hord).symm b = Φ.symm b := (rfl)
+
+end Extra
+
 end PositiveMap
 
 end IsOrderUnitNorm
+
+/-- For a nonempty topological space `K`, the supremum norm on `K →ᵇ ℝ` is the order-unit norm
+of the constant function `1`. -/
+theorem isOrderUnitNorm_boundedContinuousFunction_one {K : Type*} [TopologicalSpace K]
+    [Nonempty K] : IsOrderUnitNorm (1 : K →ᵇ ℝ) where
+  norm_eq_one := norm_one
+  norm_le_iff hr := by
+    rw [BoundedContinuousFunction.norm_le hr]
+    simp only [Real.norm_eq_abs, abs_le, BoundedContinuousFunction.le_def, FunLike.coe_neg,
+      Pi.neg_apply, FunLike.coe_smul, Pi.smul_apply, FunLike.coe_one, Pi.one_apply, smul_eq_mul,
+      mul_one, forall_and]
+
+/-- For a nonempty compact space `K`, the supremum norm on `C(K, ℝ)` is the order-unit norm of
+the constant function `1`. -/
+theorem isOrderUnitNorm_continuousMap_one {K : Type*} [TopologicalSpace K] [CompactSpace K]
+    [Nonempty K] : IsOrderUnitNorm (1 : C(K, ℝ)) := by
+  have h1 : (ContinuousMap.linearIsometryBoundedOfCompact K ℝ ℝ).symm (1 : K →ᵇ ℝ) = 1 :=
+    ContinuousMap.ext fun _ => by
+      rw [ContinuousMap.linearIsometryBoundedOfCompact_symm_apply,
+        BoundedContinuousFunction.coe_toContinuousMap, FunLike.coe_one, ContinuousMap.coe_one]
+  simpa [h1] using (isOrderUnitNorm_boundedContinuousFunction_one (K := K)).map_linearIsometryEquiv
+    (ContinuousMap.linearIsometryBoundedOfCompact K ℝ ℝ).symm fun f g => by
+      rw [ContinuousMap.linearIsometryBoundedOfCompact_symm_apply,
+        ContinuousMap.linearIsometryBoundedOfCompact_symm_apply, ContinuousMap.le_def,
+        BoundedContinuousFunction.coe_toContinuousMap,
+        BoundedContinuousFunction.coe_toContinuousMap, BoundedContinuousFunction.le_def]
 
 end TauCeti

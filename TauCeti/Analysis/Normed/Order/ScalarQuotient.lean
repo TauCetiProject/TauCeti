@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Order.StateSpace
+public import TauCeti.Analysis.Normed.Order.OrderUnit.StateSpace
 public import TauCeti.Analysis.Normed.Module.Dual.Quotient
 import Mathlib.Analysis.LocallyConvex.Separation
 import TauCeti.Analysis.LocallyConvex.WeakDual.Basic

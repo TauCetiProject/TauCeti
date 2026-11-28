@@ -16,7 +16,8 @@ A continuous functional extends along a linear isometric embedding without chang
 This form of Hahn–Banach allows the embedded space to be given by a map rather than a submodule,
 for example when comparing injective tensor norms in different ambient spaces.
 
-The construction applies Mathlib's `exists_extension_norm_eq` to the range of the embedding.
+The construction applies Mathlib's `exists_extension_norm_eq` to the range of the embedding;
+`LinearIsometry.exists_extension_norm_eq_of_separation` handles separated seminormed domains.
 Applying the scalar extension theorem coordinatewise also extends operators into scalar-valued
 `ℓ∞` without increasing their norm. For any `RCLike` seminorm `p`, equipping the space with the
 induced seminormed structure yields a linear functional attaining `p a` and dominated by `p`
@@ -96,6 +97,24 @@ theorem exists_extension_norm_eq (i : E →ₗᵢ[𝕜] F) (f : StrongDual 𝕜 
   have hx := hg (e x)
   change g (i x) = f (e.symm (e x)) at hx
   simpa only [e.symm_apply_apply] using hx
+
+section Seminormed
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A continuous linear functional extends along a linear isometry from a separated seminormed
+space with the same operator norm. No completeness or closed-range hypothesis is required. -/
+theorem exists_extension_norm_eq_of_separation (i : E →ₗᵢ[𝕜] F)
+    (hsep : ∀ x : E, ‖x‖ = 0 → x = 0) (f : StrongDual 𝕜 E) :
+    ∃ g : StrongDual 𝕜 F, g.comp i.toContinuousLinearMap = f ∧ ‖g‖ = ‖f‖ := by
+  -- `NormedAddCommGroup.ofSeparation` upgrades `E` while keeping the ambient norm and topology
+  -- definitionally unchanged.
+  let : NormedAddCommGroup E := NormedAddCommGroup.ofSeparation fun _ => hsep _
+  exact exists_extension_norm_eq i f
+
+end Seminormed
 
 end LinearIsometry
 

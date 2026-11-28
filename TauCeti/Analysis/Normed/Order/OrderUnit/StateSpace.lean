@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Analysis.Normed.Module.WeakDual
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
-public import TauCeti.Analysis.Normed.Order.OrderUnit
+public import TauCeti.Analysis.Normed.Order.OrderUnit.Basic
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.Convex.Cone.PositiveDual
+import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
 import TauCeti.Analysis.Normed.Order.PositiveLinearMap
 import TauCeti.Topology.Algebra.Module.Spaces.WeakDual
 
@@ -140,6 +141,94 @@ theorem toWeakDual_inv_smul_mem_stateSpace {g : StrongDual ℝ E} (hg : Monotone
   ⟨fun x y hxy => by simpa using mul_le_mul_of_nonneg_left (hg hxy) (inv_nonneg.2 hge.le),
     by simp [hge.ne']⟩
 
+/-- Evaluation at any `a : E` is weak-* continuous on `OrderUnit.stateSpace e`. -/
+theorem continuous_eval_stateSpace (a : E) : Continuous (fun φ : stateSpace e => φ.val a) :=
+  (eval_continuous a).comp continuous_subtypeVal
+
+/-- Pullback of states `φ ↦ φ ∘ T` along a unital monotone continuous linear map `T : E →L[ℝ] F`.
+-/
+noncomputable def statePullback {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+    [Preorder F] {f : F} (T : E →L[ℝ] F) (hT : Monotone T) (hTe : T e = f)
+    (φ : stateSpace f) : stateSpace e :=
+  ⟨StrongDual.toWeakDual ((toStrongDual φ.val).comp T),
+    toWeakDual_comp_mem_stateSpace hT hTe φ.property⟩
+
+@[simp]
+theorem statePullback_apply {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+    [Preorder F] {f : F} (T : E →L[ℝ] F) (hT : Monotone T) (hTe : T e = f)
+    (φ : stateSpace f) (a : E) : (statePullback T hT hTe φ).val a = φ.val (T a) := (rfl)
+
+/-- Pullback of states along a unital monotone continuous linear map is weak-* continuous. -/
+theorem continuous_statePullback {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+    [Preorder F] {f : F} (T : E →L[ℝ] F) (hT : Monotone T) (hTe : T e = f) :
+    Continuous (statePullback T hT hTe) := by
+  refine continuous_induced_rng.mpr <| continuous_of_continuous_eval fun a => ?_
+  simpa only [Function.comp_apply, statePullback_apply] using
+    continuous_eval_stateSpace (e := f) (T a)
+
+/-- Evaluation at `a : E` preserves real linear combinations (and in particular convex
+combinations) that remain in `stateSpace e`. -/
+theorem eval_stateSpace_smul_add_smul {φ ψ : stateSpace e} {s t : ℝ}
+    (h : s • φ.val + t • ψ.val ∈ stateSpace e) (a : E) :
+    (⟨s • φ.val + t • ψ.val, h⟩ : stateSpace e).val a = s * φ.val a + t * ψ.val a := by
+  simp
+
+/-- Evaluation at `a : E` preserves finite barycentric (and in particular convex) combinations
+that remain in `stateSpace e`. -/
+theorem eval_stateSpace_centerMass {ι : Type*} (t : Finset ι) (w : ι → ℝ)
+    (φ : ι → stateSpace e) (h : t.centerMass w (fun i => (φ i).val) ∈ stateSpace e) (a : E) :
+    (⟨t.centerMass w (fun i => (φ i).val), h⟩ : stateSpace e).val a =
+      t.centerMass w (fun i => (φ i).val a) := by
+  simp [Finset.centerMass, sum_apply, smul_apply]
+
+/-- Pulling back along the identity map fixes every state. -/
+@[simp]
+theorem statePullback_id (φ : stateSpace e) :
+    statePullback (ContinuousLinearMap.id ℝ E) (by intro _ _ h; exact h) (by simp) φ = φ :=
+  Subtype.ext <| DFunLike.ext _ _ fun _ => rfl
+
+/-- Pulling back along a composition `S.comp T` reverses the order of composition: it applies the
+pullback along `S` first, then the pullback along `T`. (See `statePullback_statePullback` for the
+`@[simp]` direction, since `hS` and `hT` cannot be inferred from `Monotone (S.comp T)`.) -/
+theorem statePullback_comp {F G : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+    [Preorder F] [AddCommGroup G] [Module ℝ G] [TopologicalSpace G] [Preorder G] {f : F} {g : G}
+    (S : F →L[ℝ] G) (hS : Monotone S) (hSf : S f = g)
+    (T : E →L[ℝ] F) (hT : Monotone T) (hTe : T e = f) (φ : stateSpace g) :
+    statePullback (S.comp T) (hS.comp hT) (by simp [hTe, hSf]) φ =
+      statePullback T hT hTe (statePullback S hS hSf φ) :=
+  Subtype.ext <| DFunLike.ext _ _ fun _ => rfl
+
+/-- Pulling back along `S` and then along `T` simplifies to pulling back along `S.comp T`. -/
+@[simp]
+theorem statePullback_statePullback {F G : Type*} [AddCommGroup F] [Module ℝ F]
+    [TopologicalSpace F] [Preorder F] [AddCommGroup G] [Module ℝ G] [TopologicalSpace G]
+    [Preorder G] {f : F} {g : G}
+    (S : F →L[ℝ] G) (hS : Monotone S) (hSf : S f = g)
+    (T : E →L[ℝ] F) (hT : Monotone T) (hTe : T e = f) (φ : stateSpace g) :
+    statePullback T hT hTe (statePullback S hS hSf φ) =
+      statePullback (S.comp T) (by intro _ _ h; exact hS (hT h)) (by simp [hTe, hSf]) φ :=
+  Subtype.ext <| DFunLike.ext _ _ fun _ => rfl
+
+/-- Pulling back states preserves real linear combinations (and in particular convex combinations)
+that remain in `stateSpace f`. -/
+theorem statePullback_smul_add_smul {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+    [Preorder F] {f : F} (T : E →L[ℝ] F) (hT : Monotone T) (hTe : T e = f)
+    {φ ψ : stateSpace f} {s t : ℝ} (h : s • φ.val + t • ψ.val ∈ stateSpace f) :
+    (statePullback T hT hTe ⟨s • φ.val + t • ψ.val, h⟩).val =
+      s • (statePullback T hT hTe φ).val + t • (statePullback T hT hTe ψ).val :=
+  DFunLike.ext _ _ fun _ => by simp [statePullback_apply]
+
+/-- Pulling back states preserves finite barycentric (and in particular convex) combinations
+that remain in `stateSpace f`. -/
+theorem statePullback_centerMass {ι F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+    [Preorder F] {f : F} (T : E →L[ℝ] F) (hT : Monotone T) (hTe : T e = f) (t : Finset ι)
+    (w : ι → ℝ) (φ : ι → stateSpace f)
+    (h : t.centerMass w (fun i => (φ i).val) ∈ stateSpace f) :
+    (statePullback T hT hTe ⟨t.centerMass w (fun i => (φ i).val), h⟩).val =
+      t.centerMass w (fun i => (statePullback T hT hTe (φ i)).val) :=
+  DFunLike.ext _ _ fun _ => by
+    simp [Finset.centerMass, statePullback_apply, sum_apply, smul_apply]
+
 end Preorder
 
 section PartialOrder
@@ -171,6 +260,24 @@ theorem mem_stateSpace_iff_exists_positiveContinuousLinearMap :
       monotone' := by simpa [coe_toStrongDual] using hφ.1
       cont := (toStrongDual φ).cont }
   exact ⟨ω, hφ.2, toWeakDual_toStrongDual φ⟩
+
+/-- Equivalence between `OrderUnit.stateSpace e` and Mathlib's `PositiveContinuousLinearMap`s
+normalized at `e`. -/
+noncomputable def stateSpaceEquivPositive (e : E) :
+    stateSpace e ≃ {φ : E →P[ℝ] ℝ // φ e = 1} where
+  toFun φ := ⟨{ toContinuousLinearMap := toStrongDual φ.val, monotone' := φ.property.1 },
+    φ.property.2⟩
+  invFun φ := ⟨StrongDual.toWeakDual φ.val.toContinuousLinearMap, φ.val.monotone', φ.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem stateSpaceEquivPositive_apply (φ : stateSpace e) (a : E) :
+    (stateSpaceEquivPositive e φ).val a = φ.val a := (rfl)
+
+@[simp]
+theorem stateSpaceEquivPositive_symm_apply (φ : {φ : E →P[ℝ] ℝ // φ e = 1}) (a : E) :
+    ((stateSpaceEquivPositive e).symm φ).val a = φ.val a := (rfl)
 
 end PartialOrder
 
@@ -220,17 +327,28 @@ theorem stateSpace_nonempty (h : IsOrderUnitNorm e) : (OrderUnit.stateSpace e).N
   exact ⟨StrongDual.toWeakDual g, h.mem_stateSpace_iff_norm_eq_one_and_apply_eq_one.2
     ⟨hg, by simpa [h.norm_eq_one] using hge⟩⟩
 
+omit [IsOrderedAddMonoid E] in
+/-- **State extension along a unital linear isometry:** every state on `E` extends along any unital
+linear isometry `i : E →ₗᵢ[ℝ] F` into an order-unit space `(F, f)`. -/
+theorem exists_state_extension_linearIsometry {F : Type*} [SeminormedAddCommGroup F]
+    [NormedSpace ℝ F] [PartialOrder F] [IsOrderedAddMonoid F] {f : F} (he : IsOrderUnitNorm e)
+    (hf : IsOrderUnitNorm f) (i : E →ₗᵢ[ℝ] F) (hunit : i e = f) {ψ : WeakDual ℝ E}
+    (hψ : ψ ∈ OrderUnit.stateSpace e) :
+    ∃ φ ∈ OrderUnit.stateSpace f, ∀ a : E, φ (i a) = ψ a := by
+  obtain ⟨g, hg_comp, hg_norm⟩ :=
+    i.exists_extension_norm_eq_of_separation (fun _ => he.eq_zero_of_norm_eq_zero) (toStrongDual ψ)
+  have hg_apply : ∀ a : E, g (i a) = ψ a := fun a => DFunLike.congr_fun hg_comp a
+  have hg_one : g f = 1 := by rw [← hunit, hg_apply, hψ.2]
+  have hg_norm_one : ‖g‖ = 1 := hg_norm.trans (he.norm_toStrongDual_of_mem_stateSpace hψ)
+  refine ⟨StrongDual.toWeakDual g, ?_, hg_apply⟩
+  exact (hf.mem_stateSpace_iff_norm_eq_one_and_apply_eq_one).mpr ⟨hg_norm_one, hg_one⟩
+
 /-- **Extension of states.** Every state of a subspace `p` containing `e` extends to a state of
 `E`, by the Hahn–Banach theorem. The extension need not be unique. -/
 theorem exists_extension_mem_stateSpace (h : IsOrderUnitNorm e) (p : Submodule ℝ E)
     (hp : e ∈ p) {ψ : WeakDual ℝ p} (hψ : ψ ∈ OrderUnit.stateSpace (⟨e, hp⟩ : p)) :
-    ∃ φ ∈ OrderUnit.stateSpace e, ∀ x : p, φ x = ψ x := by
-  obtain ⟨g, hgx, hg⟩ := exists_extension_norm_eq p (toStrongDual ψ)
-  refine ⟨StrongDual.toWeakDual g, h.mem_stateSpace_iff_norm_eq_one_and_apply_eq_one.2 ⟨?_, ?_⟩,
-    fun x => by simpa [StrongDual.toWeakDual_apply, toStrongDual_apply] using hgx x⟩
-  · rw [StrongDual.toStrongDual_toWeakDual, hg]
-    exact (h.submodule p hp).norm_toStrongDual_of_mem_stateSpace hψ
-  · simpa using (hgx ⟨e, hp⟩).trans hψ.2
+    ∃ φ ∈ OrderUnit.stateSpace e, ∀ x : p, φ x = ψ x :=
+  (h.submodule p hp).exists_state_extension_linearIsometry h p.subtypeₗᵢ rfl hψ
 
 /-- **States detect the order.** A vector of an order-unit space is nonnegative exactly when every
 state is nonnegative on it. -/
@@ -284,6 +402,41 @@ theorem norm_eq_iSup_states (h : IsOrderUnitNorm e) (a : E) :
   refine le_antisymm ?_ (ciSup_le fun φ => h.abs_apply_le_of_mem_stateSpace φ.property a)
   exact (h.norm_le_iff_forall_mem_stateSpace ((abs_nonneg _).trans (le_ciSup hb ⟨φ₀, hφ₀⟩))).2
     fun φ hφ => le_ciSup (f := g) hb ⟨φ, hφ⟩
+
+/-- Pullback of states along a unital linear isometry between order-unit spaces is surjective. -/
+theorem surjective_statePullback_of_linearIsometry {F : Type*} [SeminormedAddCommGroup F]
+    [NormedSpace ℝ F] [PartialOrder F] [IsOrderedAddMonoid F] {f : F} (he : IsOrderUnitNorm e)
+    (hf : IsOrderUnitNorm f) (i : E →ₗᵢ[ℝ] F) (hunit : i e = f) :
+    Function.Surjective (OrderUnit.statePullback i.toContinuousLinearMap
+      (he.monotone_of_linearIsometry hf i hunit) hunit) := by
+  intro ψ
+  obtain ⟨φ, hφ, hext⟩ := he.exists_state_extension_linearIsometry hf i hunit ψ.property
+  exact ⟨⟨φ, hφ⟩, Subtype.ext <| DFunLike.ext _ _ fun a => hext a⟩
+
+/-- Restriction of states from `E` to a unital subspace `p` is surjective. -/
+theorem surjective_statePullback_subtype (he : IsOrderUnitNorm e) (p : Submodule ℝ E)
+    (hp : e ∈ p) :
+    Function.Surjective (OrderUnit.statePullback (e := (⟨e, hp⟩ : p)) (f := e)
+      p.subtypeL (fun _ _ h => h) rfl) :=
+  (he.submodule p hp).surjective_statePullback_of_linearIsometry he p.subtypeₗᵢ rfl
+
+/-- **Norm attainment by a state:** for every `a : E`, there exists a state
+`φ ∈ OrderUnit.stateSpace e` such that `|φ a| = ‖a‖`. -/
+theorem exists_state_abs_apply_eq_norm (he : IsOrderUnitNorm e) (a : E) :
+    ∃ φ ∈ OrderUnit.stateSpace e, |φ a| = ‖a‖ := by
+  have hcont : ContinuousOn (fun φ : WeakDual ℝ E => |φ a|) (OrderUnit.stateSpace e) :=
+    (eval_continuous a).abs.continuousOn
+  obtain ⟨φ₀, hφ₀, hmax⟩ := he.isCompact_stateSpace.exists_isMaxOn he.stateSpace_nonempty hcont
+  refine ⟨φ₀, hφ₀, le_antisymm (he.abs_apply_le_of_mem_stateSpace hφ₀ a) ?_⟩
+  rw [he.norm_le_iff_forall_mem_stateSpace (abs_nonneg _)]
+  exact fun φ hφ => hmax hφ
+
+/-- **Norm detection by states (`ℝ≥0`-valued):**
+`‖a‖₊ = ⨆ φ : OrderUnit.stateSpace e, ‖φ.val a‖₊`. -/
+theorem nnNorm_eq_iSup_states (he : IsOrderUnitNorm e) (a : E) :
+    ‖a‖₊ = ⨆ φ : OrderUnit.stateSpace e, ‖φ.val a‖₊ := by
+  rw [← NNReal.coe_inj, coe_nnNorm, NNReal.coe_iSup]
+  simpa [coe_nnNorm, Real.norm_eq_abs] using he.norm_eq_iSup_states a
 
 end State
 
