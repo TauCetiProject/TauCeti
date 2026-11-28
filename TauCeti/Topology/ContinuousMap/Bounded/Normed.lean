@@ -305,6 +305,15 @@ theorem compContinuousPositiveLinearMap_toLinearMap (g : C(Y, X)) :
 
 end compContinuousPositiveLinearMap
 
+/-- Precomposition with a surjective continuous map preserves the supremum norm. -/
+theorem norm_compContinuous_eq_of_surjective {X Y V : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [SeminormedAddCommGroup V] (f : X →ᵇ V) (a : C(Y, X))
+    (ha : Function.Surjective a) : ‖f.compContinuous a‖ = ‖f‖ := by
+  refine le_antisymm (f.norm_compContinuous_le a) ((norm_le (norm_nonneg _)).2 ?_)
+  intro x
+  obtain ⟨y, rfl⟩ := ha x
+  exact (f.compContinuous a).norm_coe_le_norm y
+
 variable {α 𝕜 β S : Type*} [TopologicalSpace α] [NormedField 𝕜] [SeminormedAddCommGroup β]
   [NormedSpace 𝕜 β] [SetLike S (α →ᵇ β)] [AddSubgroupClass S (α →ᵇ β)]
   [SMulMemClass S 𝕜 (α →ᵇ β)]

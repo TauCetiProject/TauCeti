@@ -48,7 +48,7 @@ the smooth vectors for finite right translation on bounded continuous functions.
 def boundedAutomorphicFunctions :
     Subrepresentation ((rightRegular ℂ ℂ (adelicUnitaryGroup E s)).comp
       (adelicUnitaryGroup.ofFinite E s)) :=
-  leftInvariantSubrepresentation ℂ ℂ V.rationalPoints (adelicUnitaryGroup.ofFinite E s) ⊓
+  leftInvariantSubrepresentation ℂ ℂ (V.rationalPoints : Set _) (adelicUnitaryGroup.ofFinite E s) ⊓
     Representation.smoothVectors ((rightRegular ℂ ℂ (adelicUnitaryGroup E s)).comp
       (adelicUnitaryGroup.ofFinite E s))
 
@@ -63,13 +63,13 @@ theorem mem_boundedAutomorphicFunctions_iff (f : adelicUnitaryGroup E s →ᵇ �
   rw [boundedAutomorphicFunctions, ← SetLike.mem_coe, Subrepresentation.coe_inf,
     Set.mem_inter_iff]
   simp only [SetLike.mem_coe, mem_leftInvariantSubrepresentation_iff,
-    Representation.mem_smoothVectors_iff_exists_openSubgroup]
+    Representation.mem_smoothVectors_iff_exists_openSubgroup_mem_invariants]
   refine and_congr Iff.rfl ?_
   apply exists_congr
   intro K
-  simp only [IsConcreteLE.le_iff, Representation.mem_stabilizer, BoundedContinuousFunction.ext_iff,
-    MonoidHom.comp_apply, rightRegular_apply]
-  exact ⟨fun h k hk ↦ h hk, fun h k hk ↦ h k hk⟩
+  simp only [Representation.mem_invariants, BoundedContinuousFunction.ext_iff,
+    MonoidHom.comp_apply, rightRegular_apply, Subgroup.coe_subtype, Subtype.forall,
+    OpenSubgroup.mem_toSubgroup]
 
 /-- The space of bounded automorphic functions, carrying its inherited supremum norm. -/
 abbrev BoundedAutomorphicFunction : Type _ := V.boundedAutomorphicFunctions.toSubmodule
@@ -108,19 +108,21 @@ theorem BoundedAutomorphicFunction.exists_openSubgroup (f : V.BoundedAutomorphic
       ∀ k ∈ K, ∀ g, f (g * adelicUnitaryGroup.ofFinite E s k) = f g :=
   ((V.mem_boundedAutomorphicFunctions_iff f.val).1 f.property).2
 
-/-- The finite action on functions is right translation. -/
+/-- The finite action coerces to right translation of bounded continuous functions. -/
 @[simp]
-theorem boundedAutomorphicRepresentation_apply (k : finiteAdelicUnitaryGroup E ι)
-    (f : V.BoundedAutomorphicFunction) (g : adelicUnitaryGroup E s) :
-    V.boundedAutomorphicRepresentation k f g =
-      f (g * adelicUnitaryGroup.ofFinite E s k) :=
-  rightRegular_apply (adelicUnitaryGroup.ofFinite E s k) f.val g
+theorem coe_boundedAutomorphicRepresentation (k : finiteAdelicUnitaryGroup E ι)
+    (f : V.BoundedAutomorphicFunction) :
+    (V.boundedAutomorphicRepresentation k f : adelicUnitaryGroup E s →ᵇ ℂ) =
+      rightRegular ℂ ℂ (adelicUnitaryGroup E s) (adelicUnitaryGroup.ofFinite E s k) f.val := by
+  simp only [boundedAutomorphicRepresentation, Subrepresentation.coe_toRepresentation_apply,
+    MonoidHom.comp_apply]
 
 /-- Finite right translation preserves the supremum norm. -/
 theorem norm_boundedAutomorphicRepresentation (k : finiteAdelicUnitaryGroup E ι)
     (f : V.BoundedAutomorphicFunction) :
-    ‖V.boundedAutomorphicRepresentation k f‖ = ‖f‖ :=
-  norm_rightRegular (adelicUnitaryGroup.ofFinite E s k) f.val
+    ‖V.boundedAutomorphicRepresentation k f‖ = ‖f‖ := by
+  rw [← Submodule.norm_coe, coe_boundedAutomorphicRepresentation, norm_rightRegular,
+    Submodule.norm_coe]
 
 /-- Finite right translation is a smooth representation. -/
 instance : Representation.IsSmooth V.boundedAutomorphicRepresentation := by
@@ -135,13 +137,15 @@ def BoundedAutomorphicFunction.const (c : ℂ) : V.BoundedAutomorphicFunction :=
     (V.mem_boundedAutomorphicFunctions_iff _).2 ⟨by simp, ⊤, by simp⟩⟩
 
 @[simp]
-theorem BoundedAutomorphicFunction.const_apply (c : ℂ) (g : adelicUnitaryGroup E s) :
-    BoundedAutomorphicFunction.const V c g = c := (rfl)
+theorem BoundedAutomorphicFunction.coe_const (c : ℂ) :
+    (BoundedAutomorphicFunction.const V c : adelicUnitaryGroup E s →ᵇ ℂ) =
+      BoundedContinuousFunction.const _ c := (rfl)
 
 /-- The norm of a constant automorphic function is the absolute value of its value. -/
 theorem BoundedAutomorphicFunction.norm_const (c : ℂ) :
-    ‖BoundedAutomorphicFunction.const V c‖ = ‖c‖ :=
-  BoundedContinuousFunction.norm_const_eq c
+    ‖BoundedAutomorphicFunction.const V c‖ = ‖c‖ := by
+  rw [← Submodule.norm_coe, BoundedAutomorphicFunction.coe_const,
+    BoundedContinuousFunction.norm_const_eq]
 
 /-- Construct a bounded automorphic function from a continuous, uniformly bounded
 function invariant under rational points and an open finite subgroup. -/
@@ -155,13 +159,13 @@ def BoundedAutomorphicFunction.ofFunction (f : adelicUnitaryGroup E s → ℂ)
     (V.mem_boundedAutomorphicFunctions_iff _).2 ⟨hΓ, K, hK⟩⟩
 
 @[simp]
-theorem BoundedAutomorphicFunction.ofFunction_apply (f : adelicUnitaryGroup E s → ℂ)
+theorem BoundedAutomorphicFunction.coe_ofFunction (f : adelicUnitaryGroup E s → ℂ)
     (hf : Continuous f) (C : ℝ) (hC : ∀ g, ‖f g‖ ≤ C)
     (hΓ : ∀ γ ∈ V.rationalPoints, ∀ g, f (γ * g) = f g)
     (K : OpenSubgroup (finiteAdelicUnitaryGroup E ι))
-    (hK : ∀ k ∈ K, ∀ g, f (g * adelicUnitaryGroup.ofFinite E s k) = f g)
-    (g : adelicUnitaryGroup E s) :
-    BoundedAutomorphicFunction.ofFunction V f hf C hC hΓ K hK g = f g := (rfl)
+    (hK : ∀ k ∈ K, ∀ g, f (g * adelicUnitaryGroup.ofFinite E s k) = f g) :
+    (BoundedAutomorphicFunction.ofFunction V f hf C hC hΓ K hK :
+      adelicUnitaryGroup E s →ᵇ ℂ) = ofNormedAddCommGroup f hf C hC := (rfl)
 
 /-- Bounded automorphic functions of level `K` are the `K`-fixed vectors. -/
 def boundedAutomorphicFunctionsOfLevel (K : Subgroup (finiteAdelicUnitaryGroup E ι)) :
@@ -176,7 +180,8 @@ theorem mem_boundedAutomorphicFunctionsOfLevel_iff
       ∀ k ∈ K, ∀ g, f (g * adelicUnitaryGroup.ofFinite E s k) = f g := by
   simp only [boundedAutomorphicFunctionsOfLevel, Representation.mem_invariants,
     MonoidHom.comp_apply, BoundedAutomorphicFunction.ext_iff,
-    boundedAutomorphicRepresentation_apply, Subgroup.coe_subtype, Subtype.forall]
+    coe_boundedAutomorphicRepresentation, rightRegular_apply,
+    Subgroup.coe_subtype, Subtype.forall]
 
 /-- Every bounded automorphic function has a compact open level inside the standard
 integral subgroup. -/
