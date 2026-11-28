@@ -256,6 +256,12 @@ theorem ofHom_apply {M N : Type w} [AddCommMonoid M] [Module R M] [Comodule R C 
     ofHom (R := R) (C := C) f m = f m :=
   rfl
 
+/-- The underlying linear map of a finite-comodule morphism acts as that morphism. -/
+-- Use explicitly: global simp rewriting competes with the ambient category's coercion normal form.
+theorem hom_toLinearMap_apply {M N : FGComoduleCat.{u, v, w} R C} (f : M ⟶ N) (m : M) :
+    f.hom.toLinearMap m = f m :=
+  rfl
+
 /-- The zero morphism acts as the zero function. -/
 @[simp]
 theorem zero_apply {M N : FGComoduleCat.{u, v, w} R C} (m : M) : (0 : M ⟶ N) m = 0 :=
