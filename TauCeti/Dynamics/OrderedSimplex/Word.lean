@@ -794,15 +794,10 @@ private theorem unaccelWordMove_last_ge {d : ℕ} (hd : 1 ≤ d) (js : List (Fin
     rw [unaccelWordMove_cons_apply]
     exact (linearMove_last_gt j hy).le.trans (ih (linearMove_preserves_strict hd j hy))
 
-private theorem unaccelWordMove_append_singleton {d : ℕ} (l : List (Fin (d + 1)))
-    (j : Fin (d + 1)) (y : Fin (d + 2) → ℝ) :
-    unaccelWordMove (l ++ [j]) y = linearMove j (unaccelWordMove l y) := by
-  rw [unaccelWordMove_append, mul_apply_eq_comp, unaccelWordMove_singleton]
-
 private theorem unaccelWordMove_snoc_ne_self {d : ℕ} (hd : 1 ≤ d) (l : List (Fin (d + 1)))
     (j : Fin (d + 1)) {y : Fin (d + 2) → ℝ} (hy : IsStrictOrderedCone y) :
     unaccelWordMove (l ++ [j]) y ≠ y := fun hEq => by
-  rw [unaccelWordMove_append_singleton] at hEq
+  rw [unaccelWordMove_append, mul_apply_eq_comp, unaccelWordMove_singleton] at hEq
   have hlt := linearMove_last_gt j (unaccelWordMove_preserves_strict hd l hy)
   have hge := unaccelWordMove_last_ge hd l hy
   linarith [congrFun hEq (Fin.last (d + 1))]
@@ -850,7 +845,7 @@ private theorem unaccelWordMove_apply_injective {d : ℕ} (hd : 1 ≤ d) {y : Fi
       (fun hEq => absurd hEq (unaccelWordMove_snoc_ne_self hd l₁ j₁ hy))
       (fun l₂ j₂ _ hEq => ?_) hEq
     dsimp only at hEq
-    simp only [unaccelWordMove_append_singleton] at hEq
+    simp only [unaccelWordMove_append, mul_apply_eq_comp, unaccelWordMove_singleton] at hEq
     rcases linearMove_inj_strict (unaccelWordMove_preserves_strict hd l₁ hy)
       (unaccelWordMove_preserves_strict hd l₂ hy) hEq with ⟨hj, hl⟩
     rw [ih hl, hj]
