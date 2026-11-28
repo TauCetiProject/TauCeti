@@ -22,6 +22,10 @@ its universal closure. A structure satisfies the witness axiom exactly when `f_�
 witness at every tuple where one exists. For `n = 0`, the symbol `f_ψ` is a constant, and the
 witness axiom says that the constant witnesses `∃y ψ(y)` when that holds.
 
+Every nonempty `L`-structure expands to one satisfying all the witness axioms, by choosing a
+witness for each symbol at each tuple where one exists. Different choices are legitimate, so the
+expansion is not an instance.
+
 This is one successor step `L_k ↦ L_{k+1}` of the countable Skolem tower.
 
 ## Main definitions
@@ -37,6 +41,8 @@ This is one successor step `L_k ↦ L_{k+1}` of the countable Skolem tower.
 * `FirstOrder.Language.realize_skolemWitnessFormula` and
   `FirstOrder.Language.realize_skolemWitnessAxiom`: the witness axiom holds exactly when the Skolem
   function supplies a witness wherever one exists.
+* `FirstOrder.Language.exists_skolemLanguage_structure_realize_skolemWitnessAxiom`: every nonempty
+  `L`-structure expands to a model of all the witness axioms.
 -/
 
 public section
@@ -124,5 +130,21 @@ theorem realize_skolemWitnessAxiom {n : ℕ} (f : (skolemLanguage Γ).Functions 
         f.val.Realize Empty.elim (Fin.snoc xs (funMap f xs)) := by
   simp only [skolemWitnessAxiom, SentenceInf.realize_def, FormulaInf.realize_def,
     BoundedFormulaInf.realize_alls, realize_skolemWitnessFormula]
+
+omit [(skolemLanguage Γ).Structure M] in
+/-- **The Skolem expansion.** A nonempty `L`-structure expands to `L.sum (skolemLanguage Γ)` so that
+every witness axiom holds: interpret each Skolem symbol, at each tuple, by a witness for its formula
+when there is one, and arbitrarily otherwise. The expansion keeps the `L`-structure, extending it
+along `LHom.sumInl`. -/
+theorem exists_skolemLanguage_structure_realize_skolemWitnessAxiom [Nonempty M] :
+    ∃ S : (skolemLanguage Γ).Structure M, ∀ ⦃n : ℕ⦄ (f : (skolemLanguage Γ).Functions n),
+      letI := S
+      SentenceInf.Realize (skolemWitnessAxiom f) M := by
+  let S : (skolemLanguage Γ).Structure M :=
+    ⟨fun f xs => Classical.epsilon fun y => f.val.Realize Empty.elim (Fin.snoc xs y),
+      fun r => isEmptyElim r⟩
+  refine ⟨S, fun n f => ?_⟩
+  rw [realize_skolemWitnessAxiom]
+  exact fun _ h => Classical.epsilon_spec h
 
 end FirstOrder.Language
