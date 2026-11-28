@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.DoubleCategory.Basic
+public import TauCeti.CategoryTheory.DoubleCategory.Functor
 
 /-!
 # The transpose of a strict double category
@@ -141,5 +141,67 @@ theorem transpose_transpose : D.transpose.transpose = D :=
   rfl
 
 end StrictDoubleCategory
+
+namespace StrictDoubleFunctor
+
+universe s₁ s₂ s₃ u₁ u₂ u₃ h₁ h₂ h₃ v₁ v₂ v₃
+
+variable {O₁ : Type u₁} {H₁ : Category.{h₁} O₁} {V₁ : Category.{v₁} O₁}
+  {O₂ : Type u₂} {H₂ : Category.{h₂} O₂} {V₂ : Category.{v₂} O₂}
+  {O₃ : Type u₃} {H₃ : Category.{h₃} O₃} {V₃ : Category.{v₃} O₃}
+  {D₁ : StrictDoubleCategory.{s₁} O₁ H₁ V₁} {D₂ : StrictDoubleCategory.{s₂} O₂ H₂ V₂}
+  {D₃ : StrictDoubleCategory.{s₃} O₃ H₃ V₃}
+
+/-- Exchange the two edge maps of a strict double functor. -/
+def transpose (F : StrictDoubleFunctor D₁ D₂) :
+    StrictDoubleFunctor D₁.transpose D₂.transpose where
+  obj := F.obj
+  hMap := F.vMap
+  vMap := F.hMap
+  hMap_id := F.vMap_id
+  vMap_id := F.hMap_id
+  hMap_comp := F.vMap_comp
+  vMap_comp := F.hMap_comp
+  map := F.map
+  map_hId f := by
+    dsimp only [StrictDoubleCategory.transpose]
+    rw [DoubleCategoryStruct.transpose_cast]
+    exact F.map_vId f
+  map_vId f := by
+    dsimp only [StrictDoubleCategory.transpose]
+    rw [DoubleCategoryStruct.transpose_cast]
+    exact F.map_hId f
+  map_hComp α β := by
+    dsimp only [StrictDoubleCategory.transpose]
+    rw [DoubleCategoryStruct.transpose_cast]
+    exact F.map_vComp α β
+  map_vComp α β := by
+    dsimp only [StrictDoubleCategory.transpose]
+    rw [DoubleCategoryStruct.transpose_cast]
+    exact F.map_hComp α β
+
+@[simp] theorem transpose_obj (F : StrictDoubleFunctor D₁ D₂) (a : O₁) :
+    F.transpose.obj a = F.obj a := rfl
+
+@[simp] theorem transpose_hMap (F : StrictDoubleFunctor D₁ D₂) {a b : O₁} (f : Edge V₁ a b) :
+    F.transpose.hMap f = F.vMap f := rfl
+
+@[simp] theorem transpose_vMap (F : StrictDoubleFunctor D₁ D₂) {a b : O₁} (f : Edge H₁ a b) :
+    F.transpose.vMap f = F.hMap f := rfl
+
+@[simp] theorem transpose_map (F : StrictDoubleFunctor D₁ D₂) {a b c d : O₁}
+    {p : Edge V₁ a b} {q : Edge V₁ c d} {l : Edge H₁ a c} {r : Edge H₁ b d}
+    (α : D₁.transpose.Cell p q l r) : F.transpose.map α = F.map α := rfl
+
+@[simp] theorem transpose_transpose (F : StrictDoubleFunctor D₁ D₂) :
+    F.transpose.transpose = F := rfl
+
+@[simp] theorem id_transpose : (id D₁).transpose = id D₁.transpose := rfl
+
+@[simp] theorem comp_transpose (F : StrictDoubleFunctor D₁ D₂)
+    (G : StrictDoubleFunctor D₂ D₃) :
+    (F.comp G).transpose = F.transpose.comp G.transpose := rfl
+
+end StrictDoubleFunctor
 
 end TauCeti
