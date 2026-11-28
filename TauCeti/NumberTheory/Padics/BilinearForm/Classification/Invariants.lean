@@ -10,7 +10,6 @@ public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.Order.Interval.Finset.Nat
 public import TauCeti.LinearAlgebra.BilinearForm.Characteristic
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
-import TauCeti.Algebra.BigOperators.Finset.Erase
 import TauCeti.Algebra.BigOperators.Ring.Finset
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Parity
