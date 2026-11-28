@@ -646,9 +646,8 @@ theorem continuous_comp :
       (isometry_toContinuousLinearMap.continuous.comp continuous_snd)
 
 /-- Evaluation at a vector is continuous for the operator norm on `AdjointableMap A E F`. -/
-@[fun_prop]
-theorem continuous_apply (x : E) : Continuous fun T : AdjointableMap A E F ↦ T x :=
-  (ContinuousLinearMap.apply ℂ F x).continuous.comp isometry_toContinuousLinearMap.continuous
+instance instContinuousEvalConst : ContinuousEvalConst (AdjointableMap A E F) E F :=
+  .of_continuous_forget isometry_toContinuousLinearMap.continuous
 
 noncomputable instance instNormedRing : NormedRing (AdjointableMap A E E) where
   dist_eq := instNormedAddCommGroup.dist_eq

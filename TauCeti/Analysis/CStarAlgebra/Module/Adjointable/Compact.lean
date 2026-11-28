@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Module.Action
 public import TauCeti.Analysis.CStarAlgebra.Module.Adjointable
+import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
 # Rank-one and module-compact operators on Hilbert C⋆-modules
@@ -337,7 +338,7 @@ theorem eq_zero_of_rankOne_self_apply_eq_zero {x : E} (h : rankOne A x x x = 0) 
   refine (CStarModule.inner_self (A := A)).mp (mul_star_self_eq_zero.mp ?_)
   have hinner : inner A x (rankOne A x x x) = 0 := by rw [h, CStarModule.inner_zero_right]
   rw [rankOne_apply, CStarModule.inner_op_smul_right] at hinner
-  nth_rw 2 [← CStarModule.isSelfAdjoint_inner_self.star_eq] at hinner
+  rw [CStarModule.isSelfAdjoint_inner_self.star_eq]
   exact hinner
 
 /-- A vector annihilated by every module-compact operator vanishes. -/
@@ -442,35 +443,29 @@ theorem tendsto_comp_compactOperator_of_eventually_norm_le
     (hf : ∀ x : E, Tendsto (fun i ↦ f i x) l (𝓝 (T x)))
     {k : AdjointableMap A G E} (hk : k ∈ compactOperator A G E) :
     Tendsto (fun i ↦ (f i).comp k) l (𝓝 (T.comp k)) := by
-  rw [Metric.tendsto_nhds]
-  intro ε hε
-  set M : ℝ := max C 0 + ‖T‖ + 1
-  have hM : 0 < M := by positivity
-  obtain ⟨n, x, y, hkS⟩ :=
-    mem_compactOperator_iff_forall_exists_sum.mp hk (ε / (2 * M)) (by positivity)
-  set S : AdjointableMap A G E := ∑ j, rankOne A (x j) (y j)
-  have hS_lim : ∀ᶠ i in l, dist ((f i).comp S) (T.comp S) < ε / 2 :=
-    Metric.tendsto_nhds.mp (tendsto_comp_sum_rankOne_of_tendsto hf x y) (ε / 2) (by positivity)
-  filter_upwards [hC, hS_lim] with i hiC hiS
-  rw [dist_eq_norm] at hiS ⊢
-  have hsplit : (f i).comp k - T.comp k =
-      ((f i).comp (k - S) - T.comp (k - S)) + ((f i).comp S - T.comp S) := by
-    rw [comp_sub, comp_sub]; abel
-  have hdiff_norm : ‖(f i).comp (k - S) - T.comp (k - S)‖ ≤ M * ‖k - S‖ := by
-    calc ‖(f i).comp (k - S) - T.comp (k - S)‖
-        ≤ ‖(f i).comp (k - S)‖ + ‖T.comp (k - S)‖ := norm_sub_le _ _
-      _ ≤ ‖f i‖ * ‖k - S‖ + ‖T‖ * ‖k - S‖ :=
-          add_le_add (opNorm_comp_le (f i) (k - S)) (opNorm_comp_le T (k - S))
-      _ = (‖f i‖ + ‖T‖) * ‖k - S‖ := by ring
-      _ ≤ M * ‖k - S‖ := by gcongr; linarith [le_max_left C 0]
-  have hterm1 : ‖(f i).comp (k - S) - T.comp (k - S)‖ ≤ ε / 2 :=
-    hdiff_norm.trans <| (mul_le_mul_of_nonneg_left hkS.le hM.le).trans_eq <| by
-      field_simp
-  calc ‖(f i).comp k - T.comp k‖
-      ≤ ‖(f i).comp (k - S) - T.comp (k - S)‖ + ‖(f i).comp S - T.comp S‖ := by
-        rw [hsplit]; exact norm_add_le _ _
-    _ < ε / 2 + ε / 2 := add_lt_add_of_le_of_lt hterm1 hiS
-    _ = ε := add_halves ε
+  let D : Set (compactOperator A G E) :=
+    {s | ∃ (n : ℕ) (x : Fin n → E) (y : Fin n → G),
+      (s : AdjointableMap A G E) = ∑ j, rankOne A (x j) (y j)}
+  have hD : Dense D := Metric.dense_iff.mpr fun s ε hε ↦ by
+    obtain ⟨n, x, y, hxy⟩ := mem_compactOperator_iff_forall_exists_sum.mp s.property ε hε
+    refine ⟨⟨∑ j, rankOne A (x j) (y j),
+      Submodule.sum_mem _ fun j _ ↦ rankOne_mem_compactOperator _ _⟩, ?_, ⟨n, x, y, rfl⟩⟩
+    simpa [Metric.mem_ball, Subtype.dist_eq, dist_eq_norm, norm_sub_rev] using hxy
+  simpa only [ContinuousLinearMap.comp_apply, Submodule.coe_subtypeL, Submodule.coe_subtype,
+    compL_apply] using ContinuousLinearMap.tendsto_apply_of_dense hD
+    (f := fun i ↦ (compL (f i)).comp (compactOperator A G E).subtypeL)
+    (g := (compL T).comp (compactOperator A G E).subtypeL)
+    (hbound := by
+      filter_upwards [hC] with i hi
+      exact (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg (f i)) fun s ↦ by
+        simpa only [ContinuousLinearMap.comp_apply, Submodule.coe_subtypeL,
+          Submodule.coe_subtype, compL_apply, Submodule.norm_coe] using
+          opNorm_comp_le (f i) s.val).trans hi)
+    (htendsto := by
+      rintro s ⟨n, x, y, hs⟩
+      simpa only [ContinuousLinearMap.comp_apply, Submodule.coe_subtypeL, Submodule.coe_subtype,
+        compL_apply, hs] using tendsto_comp_sum_rankOne_of_tendsto hf x y)
+    ⟨k, hk⟩
 
 /-- Along any norm-bounded filter of adjointable operators whose adjoints converge strongly on
 `F`, composition on the left with any module-compact operator `k ∈ K_A(F, G)` converges in
