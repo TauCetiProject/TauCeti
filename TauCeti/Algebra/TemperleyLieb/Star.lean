@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.SelfAdjoint
+public import TauCeti.Algebra.Star.Opposite
 public import TauCeti.Algebra.TemperleyLieb.Basic
 public import TauCeti.Basic.Complex.Basic
 
@@ -98,22 +99,13 @@ private theorem conjugateReverse_algebraMap (r : R) :
       op (algebraMap R _ (star r)) := by
   simp [conjugateReverse, Algebra.compHom_algebraMap_apply, starRingEnd_apply]
 
-private theorem conjugateReverse_involutive (x : TemperleyLieb R δ n) :
-    unop (conjugateReverse (unop (conjugateReverse x))) = x := by
-  induction x using TemperleyLieb.induction with
-  | e i => simp [conjugateReverse_e]
-  | algebraMap r => simp [conjugateReverse_algebraMap]
-  | add x y hx hy => simp [map_add, hx, hy]
-  | mul x y hx hy => simp [map_mul, hx, hy]
-
 /-- For a self-adjoint loop value, the analytic adjoint on the Temperley–Lieb algebra: the
 conjugate-linear, product-reversing involution fixing every generator. -/
 @[no_expose]
-instance instStarRing : StarRing (TemperleyLieb R δ n) where
-  star x := unop (conjugateReverse x)
-  star_involutive := conjugateReverse_involutive
-  star_mul x y := by simp [map_mul]
-  star_add x y := by simp [map_add]
+instance instStarRing : StarRing (TemperleyLieb R δ n) :=
+  starRingOfConjOpposite adjoin_range_e conjugateReverse conjugateReverse_algebraMap (by
+    rintro _ ⟨i, rfl⟩
+    simp [conjugateReverse_e])
 
 /-- Every generator is self-adjoint. -/
 @[simp]
@@ -124,13 +116,9 @@ theorem star_e (i : Fin (n - 1)) : star (e δ i) = e δ i :=
 theorem isSelfAdjoint_e (i : Fin (n - 1)) : IsSelfAdjoint (e δ i) :=
   star_e i
 
-private theorem star_algebraMap (r : R) :
-    star (algebraMap R (TemperleyLieb R δ n) r) = algebraMap R _ (star r) :=
-  congrArg unop (conjugateReverse_algebraMap r)
-
 /-- The analytic adjoint is conjugate-linear. -/
-instance instStarModule : StarModule R (TemperleyLieb R δ n) where
-  star_smul r x := by simp [Algebra.smul_def, star_mul, star_algebraMap, Algebra.commutes]
+instance instStarModule : StarModule R (TemperleyLieb R δ n) :=
+  starModule_of_conjOpposite conjugateReverse conjugateReverse_algebraMap (fun _ ↦ rfl)
 
 /-- The analytic adjoint is the unique additive, product-reversing, conjugate-linear unital map
 fixing every generator. -/

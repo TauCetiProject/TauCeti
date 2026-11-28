@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Ring.Semireal.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Complex.Trigonometric
 public import TauCeti.Analysis.RCLike.Basic
+import TauCeti.Algebra.Ring.Units
 import TauCeti.Topology.Order.Interval.Basic
 
 /-!
@@ -532,6 +533,16 @@ theorem dist_equivRealProdCLM_le (y : ℂ) (z₀ : ℝ × ℝ) :
     dist (equivRealProdCLM y) z₀ ≤ dist y (equivRealProdCLM.symm z₀) := by
   conv_lhs => rw [← equivRealProdCLM.apply_symm_apply z₀]
   exact (lipschitz_equivRealProd.dist_le_mul y _).trans (by simp)
+
+/-- For a self-adjoint complex unit `q`, `q + q⁻¹ ≠ 0`. -/
+theorem add_inv_ne_zero_of_isSelfAdjoint {q : ℂˣ} (hq : IsSelfAdjoint (q : ℂ)) :
+    (q : ℂ) + ↑q⁻¹ ≠ 0 := by
+  obtain ⟨r, hr⟩ := Complex.conj_eq_iff_real.mp hq
+  intro h0
+  have hcomplex : 1 + (r : ℂ) ^ 2 = 0 := by
+    simpa only [← hr, h0, mul_zero] using (Units.val_mul_add_inv q).symm
+  have hreal : 1 + r ^ 2 = 0 := by exact_mod_cast hcomplex
+  nlinarith
 
 /-- A point of the closed disc of centre `c` and radius `ρ` has real part in
 `[c.re - ρ, c.re + ρ]`. -/

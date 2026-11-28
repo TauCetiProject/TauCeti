@@ -38,6 +38,7 @@ the Cartan decomposition of `H`. The same elements also form the subgroup
 * `Unitary.ringInverse_coe`: the ring inverse of a unitary element is its adjoint.
 * `Units.mem_unitary_iff_star_eq_inv`: a unit `u` is unitary if and only if `star u = u⁻¹`
   in `R`.
+* `Units.star_sub_inv_of_mem_unitary`: for a unitary unit `u`, `u - u⁻¹` is skew-adjoint.
 * `Subgroup.unitaryInfEquiv`: the unitary elements of a subgroup `H` of `Mˣ` are the unitary
   elements of `M` whose unit lies in `H`.
 * `Subgroup.unitaryPart`: the unitary part of a subgroup of units, with `Subgroup.mem_unitaryPart`

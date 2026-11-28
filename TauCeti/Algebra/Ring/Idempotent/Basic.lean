@@ -59,6 +59,9 @@ operator and restricts it to a scalar.
 * `IsIdempotentElem.two_mul_sub_one_mul_self`: `(2 p - 1) * (2 p - 1) = 1`.
 * `IsIdempotentElem.compress_sub_compress_mul_compress`:
   `p x p - (p y p)(p z p) = p (x - y z) p + p y (1 - p) · (1 - p) z p`.
+* `IsIdempotentElem.one_sub_mul_mul_sub_smul_sub`,
+  `IsIdempotentElem.one_sub_mul_mul_sub_smul_eq`: replacing balanced idempotents `p, q` by
+  `1 - p, 1 - q` negates the balanced defect and preserves the balanced relation.
 * `TauCeti.one_add_mul_self_of_mul_self_eq_one`: if `u * u = 1`, then
   `(1 + u) * (1 + u) = (1 + u) + (1 + u)`.
 * `TauCeti.one_add_mul_one_add_mul_one_add_of_mul_self_eq_one`: if `u * u = 1` and
@@ -139,6 +142,27 @@ theorem compress_sub_compress_mul_compress (hp : IsIdempotentElem p) (x y z : R)
   abel
 
 end Ring
+
+section Balanced
+
+variable {S A : Type*} [Ring A] [DistribSMul S A] {t : S} {p q : A}
+
+/-- Replacing idempotents `p` and `q` by `1 - p` and `1 - q` negates their balanced defect. -/
+theorem one_sub_mul_mul_sub_smul_sub (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) :
+    ((1 - p) * (1 - q) * (1 - p) - t • (1 - p)) -
+        ((1 - q) * (1 - p) * (1 - q) - t • (1 - q)) =
+      -((p * q * p - t • p) - (q * p * q - t • q)) := by
+  simp only [sub_mul, mul_sub, one_mul, mul_one, mul_assoc, hp.eq, hq.eq, smul_sub]
+  abel
+
+/-- If idempotents `p` and `q` satisfy the balanced relation with parameter `t`, so do `1 - p` and
+`1 - q`. -/
+theorem one_sub_mul_mul_sub_smul_eq (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
+    (h : p * q * p - t • p = q * p * q - t • q) :
+    (1 - p) * (1 - q) * (1 - p) - t • (1 - p) = (1 - q) * (1 - p) * (1 - q) - t • (1 - q) :=
+  sub_eq_zero.mp <| by rw [hp.one_sub_mul_mul_sub_smul_sub hq, sub_eq_zero.mpr h, neg_zero]
+
+end Balanced
 
 end IsIdempotentElem
 

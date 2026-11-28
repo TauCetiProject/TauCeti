@@ -31,6 +31,7 @@ of anticommutators on the self-adjoint part when the codomain has cancellative a
 ## Main results
 
 * `IsSelfAdjoint.eq_zero_of_isNilpotent`: a nilpotent self-adjoint element is zero.
+* `IsStarNormal.eq_zero_of_isNilpotent`: a nilpotent normal element is zero.
 * `IsSelfAdjoint.of_add_right`: if `e + x` and `e` are self-adjoint, then so is `x`.
 * `IsSelfAdjoint.mul_star_eq_neg_star_mul`: if `γ * x = -(x * γ)` for a self-adjoint `γ`, then
   `γ * star x = -(star x * γ)`.
@@ -40,6 +41,7 @@ of anticommutators on the self-adjoint part when the codomain has cancellative a
   `star u * q = 0`.
 * `IsSelfAdjoint.two_mul_sub_one`: `2 p - 1` is self-adjoint for a self-adjoint `p`.
 * `IsSelfAdjoint.of_mul_eq_one`: a right inverse of a self-adjoint element is self-adjoint.
+* `IsSelfAdjoint.units_inv`: the inverse of a self-adjoint unit is self-adjoint.
 * `IsSelfAdjoint.mul_sub_mul_of_mem_skewAdjoint`: the commutator `ξ H - H ξ` of a skew-adjoint
   `ξ` with a self-adjoint `H` is self-adjoint.
 * `IsSelfAdjoint.eq_zero_of_mem_skewAdjoint`: if `2` is invertible in the scalars, an element
@@ -73,6 +75,15 @@ theorem IsSelfAdjoint.eq_zero_of_isNilpotent {x : R} (hx : IsSelfAdjoint x)
       refine ih (star_mul_self_eq_zero.mp ?_)
       rwa [(hx.pow (2 ^ j)).star_eq, ← pow_add, ← two_mul, ← pow_succ']
   exact key m (pow_eq_zero_of_le m.lt_two_pow_self.le hm)
+
+/-- **A nilpotent normal element is zero** when the star is proper: since `star x` and `x` commute,
+`star x * x` is both self-adjoint and nilpotent. -/
+theorem IsStarNormal.eq_zero_of_isNilpotent {x : R} [IsStarNormal x]
+    (hnil : IsNilpotent x) : x = 0 := by
+  obtain ⟨m, hm⟩ := hnil
+  have hc : Commute (star x) x := IsStarNormal.star_comm_self
+  exact star_mul_self_eq_zero.mp <|
+    (IsSelfAdjoint.star_mul_self x).eq_zero_of_isNilpotent ⟨m, by rw [hc.mul_pow, hm, mul_zero]⟩
 
 end Nilpotent
 
@@ -111,6 +122,19 @@ theorem IsSelfAdjoint.of_mul_eq_one {A : Type*} [Monoid A] [StarMul A] {R Rinv :
   have hstar : star Rinv * R = 1 := by
     simpa only [star_mul, hR.star_eq, star_one] using congrArg star hRRinv
   exact left_inv_eq_right_inv hstar hRRinv
+
+/-- The inverse of a unit whose underlying element is self-adjoint is self-adjoint. -/
+theorem IsSelfAdjoint.units_inv {A : Type*} [Monoid A] [StarMul A] {u : Aˣ}
+    (hu : IsSelfAdjoint (u : A)) : IsSelfAdjoint (↑u⁻¹ : A) :=
+  hu.of_mul_eq_one u.mul_inv
+
+/-- `0` is self-adjoint as a `Fact` instance. -/
+instance {R : Type*} [AddMonoid R] [StarAddMonoid R] : Fact (IsSelfAdjoint (0 : R)) :=
+  ⟨.zero R⟩
+
+/-- `1` is self-adjoint as a `Fact` instance. -/
+instance {R : Type*} [MulOneClass R] [StarMul R] : Fact (IsSelfAdjoint (1 : R)) :=
+  ⟨.one R⟩
 
 /-- The commutator `ξ H - H ξ` of a skew-adjoint `ξ` with a self-adjoint `H` is self-adjoint. -/
 theorem IsSelfAdjoint.mul_sub_mul_of_mem_skewAdjoint {R : Type*} [NonUnitalRing R] [StarRing R]

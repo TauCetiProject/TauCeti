@@ -201,6 +201,13 @@ theorem T_sub_algebraMap_mul_T_add_algebraMap_eq_zero (i : ℕ) :
     Algebra.smul_def, map_sub]
   abel
 
+/-- When `q + q⁻¹ = 0`, the quadratic Hecke relation degenerates to `(T i - q) ^ 2 = 0`. -/
+theorem T_sub_algebraMap_sq_eq_zero (hq : (q : R) + ↑q⁻¹ = 0) (i : ℕ) :
+    (T q i - algebraMap R _ (q : R)) ^ 2 = 0 := by
+  have hinv : (↑q⁻¹ : R) = -(q : R) := eq_neg_of_add_eq_zero_right hq
+  simpa [sq, hinv, sub_eq_add_neg] using
+    T_sub_algebraMap_mul_T_add_algebraMap_eq_zero (R := R) (q := q) i
+
 /-- Two generators on adjacent pairs of strands satisfy the braid relation. -/
 theorem T_braid (i : ℕ) : T q i * T q (i + 1) * T q i = T q (i + 1) * T q i * T q (i + 1) := by
   simpa only [map_mul, mkAlgHom_ι] using mkAlgHom_rel (Rel.braid (R := R) (q := q) i)
@@ -683,7 +690,75 @@ theorem algebraMap_injective :
 instance [Nontrivial R] : Nontrivial (InfiniteTypeAHeckeAlgebra R q) :=
   algebraMap_injective.nontrivial
 
+/-- When `q + q⁻¹ = 0`, the sign character `T i ↦ -q⁻¹` coincides with `indexCharacter`. -/
+theorem signCharacter_eq_indexCharacter (hq : (q : R) + ↑q⁻¹ = 0) :
+    signCharacter R q = indexCharacter R q := by
+  have hinv : -(↑q⁻¹ : R) = q := (add_eq_zero_iff_eq_neg.mp hq).symm
+  exact hom_ext fun i ↦ by simp [hinv]
+
 end Characters
+
+/-- The eigenprojection `P = (q + q⁻¹)⁻¹ • (T i + q⁻¹)` is idempotent whenever `s = q + q⁻¹` is a
+unit. -/
+theorem isIdempotentElem_eigenprojection (s : Rˣ) (hs : (s : R) = q + ↑q⁻¹) (i : ℕ) :
+    IsIdempotentElem ((↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) := by
+  have hmul : (T q i + algebraMap R _ (↑q⁻¹ : R)) * (T q i + algebraMap R _ (↑q⁻¹ : R)) =
+      (s : R) • (T q i + algebraMap R _ (↑q⁻¹ : R)) := by
+    have hq := T_sub_algebraMap_mul_T_add_algebraMap_eq_zero (R := R) (q := q) i
+    have hT : T q i * (T q i + algebraMap R _ (↑q⁻¹ : R)) =
+        (q : R) • (T q i + algebraMap R _ (↑q⁻¹ : R)) := by
+      rwa [sub_mul, sub_eq_zero, ← Algebra.smul_def] at hq
+    rw [add_mul, hT, ← Algebra.smul_def, hs, add_smul]
+  rw [IsIdempotentElem, smul_mul_smul_comm, hmul, smul_smul, mul_assoc (↑s⁻¹ : R), s.inv_mul,
+    mul_one]
+
+/-- The generator `T i` is `q` on its eigenprojection `P` and `-q⁻¹` on the complement:
+`T i = q • P - q⁻¹ • (1 - P)`. -/
+theorem T_eq_smul_eigenprojection_sub_smul (s : Rˣ) (hs : (s : R) = q + ↑q⁻¹) (i : ℕ) :
+    T q i = (q : R) • ((↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) -
+      (↑q⁻¹ : R) • (1 - (↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) := by
+  set P := (↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))
+  have h1 : (q : R) • P - (↑q⁻¹ : R) • (1 - P) = (s : R) • P - algebraMap R _ (↑q⁻¹ : R) := by
+    calc (q : R) • P - (↑q⁻¹ : R) • (1 - P)
+        = ((q : R) + ↑q⁻¹) • P - (↑q⁻¹ : R) • 1 := by rw [smul_sub, add_smul]; abel
+      _ = (s : R) • P - algebraMap R _ (↑q⁻¹ : R) := by rw [← hs, Algebra.algebraMap_eq_smul_one]
+  rw [h1]
+  dsimp only [P]
+  rw [← Units.smul_def s, ← Units.smul_def s⁻¹, smul_inv_smul, add_sub_cancel_right]
+
+/-- The inverse generator is `q⁻¹` on the eigenprojection `P` of `T i` and `-q` on the
+complement: `T i⁻¹ = q⁻¹ • P - q • (1 - P)`. -/
+theorem val_inv_unitT_eq_smul_eigenprojection_sub_smul (s : Rˣ) (hs : (s : R) = q + ↑q⁻¹)
+    (i : ℕ) :
+    (↑(unitT q i)⁻¹ : InfiniteTypeAHeckeAlgebra R q) =
+      (↑q⁻¹ : R) • ((↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) -
+        (q : R) • (1 - (↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) := by
+  set P := (↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))
+  have h1 : (↑q⁻¹ : R) • P - (q : R) • (1 - P) = (s : R) • P - algebraMap R _ (q : R) := by
+    calc (↑q⁻¹ : R) • P - (q : R) • (1 - P)
+        = ((q : R) + ↑q⁻¹) • P - (q : R) • 1 := by rw [smul_sub, add_smul]; abel
+      _ = (s : R) • P - algebraMap R _ (q : R) := by rw [← hs, Algebra.algebraMap_eq_smul_one]
+  rw [h1]
+  dsimp only [P]
+  rw [← Units.smul_def s, ← Units.smul_def s⁻¹, smul_inv_smul, val_inv_unitT, map_sub]
+  abel
+
+/-- Whenever `s = q + q⁻¹` is a unit, the normalized eigenprojections
+`s⁻¹ • (T i + q⁻¹)` generate `InfiniteTypeAHeckeAlgebra R q` as an `R`-algebra. -/
+theorem adjoin_range_eigenprojection (s : Rˣ) (hs : (s : R) = q + ↑q⁻¹) :
+    Algebra.adjoin R
+        (Set.range fun i : ℕ ↦ (↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) =
+      ⊤ := by
+  rw [eq_top_iff, ← adjoin_range_T (R := R) (q := q)]
+  refine Algebra.adjoin_le ?_
+  rintro _ ⟨i, rfl⟩
+  have hi : (↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R)) ∈
+      Algebra.adjoin R
+        (Set.range fun j : ℕ ↦ (↑s⁻¹ : R) • (T q j + algebraMap R _ (↑q⁻¹ : R))) :=
+    Algebra.subset_adjoin ⟨i, rfl⟩
+  rw [T_eq_smul_eigenprojection_sub_smul s hs i]
+  exact sub_mem (SMulMemClass.smul_mem _ hi)
+    (SMulMemClass.smul_mem _ (sub_mem (one_mem _) hi))
 
 end InfiniteTypeAHeckeAlgebra
 

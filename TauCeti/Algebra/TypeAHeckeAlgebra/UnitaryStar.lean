@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.Subalgebra
+public import TauCeti.Algebra.Star.Opposite
 public import TauCeti.Algebra.Star.Unitary.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Complement
+import TauCeti.Algebra.Star.SelfAdjoint
 
 /-!
 # The unit-circle involution on the infinite type-A Hecke algebra
@@ -85,27 +87,15 @@ private theorem conjugateInverse_algebraMap (r : R) :
       op (algebraMap R _ (star r)) := by
   simp [conjugateInverse, Algebra.compHom_algebraMap_apply, starRingEnd_apply]
 
-private theorem conjugateInverse_involutive (x : InfiniteTypeAHeckeAlgebra R q) :
-    unop (conjugateInverse (unop (conjugateInverse x))) = x := by
-  have hx : x ∈ Algebra.adjoin R (Set.range (T q)) := by simp [adjoin_range_T]
-  induction hx using Algebra.adjoin_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    simp [conjugateInverse_T, conjugateInverse_algebraMap,
-      Units.mem_unitary_iff_star_eq_inv.1 hq.out, Units.star_inv_eq_of_mem_unitary hq.out]
-    abel
-  | algebraMap r => simp [conjugateInverse_algebraMap]
-  | add x y _ _ hx hy => simp [map_add, hx, hy]
-  | mul x y _ _ hx hy => simp [map_mul, hx, hy]
-
 /-- The unit-circle star ring structure: each generator is sent to its inverse and scalars are
 conjugated. Requires `Fact (q ∈ unitary R)`, i.e. a unitary (e.g. modulus-one) parameter. -/
 @[no_expose]
-instance instStarRing : StarRing (InfiniteTypeAHeckeAlgebra R q) where
-  star x := unop (conjugateInverse x)
-  star_involutive := conjugateInverse_involutive
-  star_mul x y := by simp [map_mul]
-  star_add x y := by simp [map_add]
+instance instStarRing : StarRing (InfiniteTypeAHeckeAlgebra R q) :=
+  starRingOfConjOpposite adjoin_range_T conjugateInverse conjugateInverse_algebraMap (by
+    rintro _ ⟨i, rfl⟩
+    simp [conjugateInverse_T, conjugateInverse_algebraMap,
+      Units.mem_unitary_iff_star_eq_inv.1 hq.out, Units.star_inv_eq_of_mem_unitary hq.out]
+    abel)
 
 /-- In the unit-circle convention the adjoint of a generator is its inverse. -/
 @[simp]
@@ -113,13 +103,9 @@ theorem star_T (i : ℕ) :
     star (T q i) = (↑(unitT q i)⁻¹ : InfiniteTypeAHeckeAlgebra R q) :=
   congrArg unop (conjugateInverse_T (q := q) i)
 
-private theorem star_algebraMap (r : R) :
-    star (algebraMap R (InfiniteTypeAHeckeAlgebra R q) r) = algebraMap R _ (star r) :=
-  congrArg unop (conjugateInverse_algebraMap r)
-
 /-- The unit-circle involution is conjugate-linear over the coefficient ring. -/
-instance instStarModule : StarModule R (InfiniteTypeAHeckeAlgebra R q) where
-  star_smul r x := by simp [Algebra.smul_def, star_mul, star_algebraMap, Algebra.commutes]
+instance instStarModule : StarModule R (InfiniteTypeAHeckeAlgebra R q) :=
+  starModule_of_conjOpposite conjugateInverse conjugateInverse_algebraMap (fun _ ↦ rfl)
 
 /-- The adjoint of the inverse of a generator is the generator. -/
 theorem star_val_inv_unitT (i : ℕ) :
@@ -227,5 +213,45 @@ theorem signCharacter_star (x : InfiniteTypeAHeckeAlgebra R q) :
     simpa only [signCharacter_T, ← Units.mem_unitary_iff_star_eq_inv.1 hq.out, Unitary.coe_neg,
       Unitary.coe_star] using
       (-star ⟨(q : R), hq.out⟩ : unitary R).prop) x
+
+/-- In the unit-circle fiber, `indexCharacter` (`T i ↦ q`) is a `⋆`-algebra homomorphism. -/
+def indexCharacterStarAlgHom : InfiniteTypeAHeckeAlgebra R q →⋆ₐ[R] R :=
+  { indexCharacter R q with map_star' := indexCharacter_star }
+
+@[simp]
+theorem indexCharacterStarAlgHom_apply (x : InfiniteTypeAHeckeAlgebra R q) :
+    indexCharacterStarAlgHom x = indexCharacter R q x := (rfl)
+
+@[simp]
+theorem toAlgHom_indexCharacterStarAlgHom :
+    (indexCharacterStarAlgHom (R := R) (q := q)).toAlgHom = indexCharacter R q := (rfl)
+
+/-- In the unit-circle fiber, `signCharacter` (`T i ↦ -q⁻¹`) is a `⋆`-algebra homomorphism. -/
+def signCharacterStarAlgHom : InfiniteTypeAHeckeAlgebra R q →⋆ₐ[R] R :=
+  { signCharacter R q with map_star' := signCharacter_star }
+
+@[simp]
+theorem signCharacterStarAlgHom_apply (x : InfiniteTypeAHeckeAlgebra R q) :
+    signCharacterStarAlgHom x = signCharacter R q x := (rfl)
+
+@[simp]
+theorem toAlgHom_signCharacterStarAlgHom :
+    (signCharacterStarAlgHom (R := R) (q := q)).toAlgHom = signCharacter R q := (rfl)
+
+/-- In the unit-circle fiber, `star (T i + q⁻¹) = T i + q⁻¹`, so the eigenprojection
+`P = (q + q⁻¹)⁻¹ • (T i + q⁻¹)` is a star projection whenever `s = q + q⁻¹` is a unit. -/
+theorem isStarProjection_eigenprojection (s : Rˣ) (hs : (s : R) = q + ↑q⁻¹) (i : ℕ) :
+    IsStarProjection ((↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) where
+  isIdempotentElem := isIdempotentElem_eigenprojection s hs i
+  isSelfAdjoint := by
+    have hsinv : IsSelfAdjoint (↑s⁻¹ : R) :=
+      IsSelfAdjoint.units_inv (hs ▸ by
+        simpa only [Units.mem_unitary_iff_star_eq_inv.mp hq.out] using
+          IsSelfAdjoint.add_star_self (q : R))
+    have hT : IsSelfAdjoint (T q i + algebraMap R _ (↑q⁻¹ : R)) := by
+      rw [IsSelfAdjoint, star_add, UnitCircle.star_T, val_inv_unitT, ← algebraMap_star_comm,
+        Units.star_inv_eq_of_mem_unitary hq.out, map_sub]
+      abel
+    rw [IsSelfAdjoint, star_smul, hsinv.star_eq, hT.star_eq]
 
 end TauCeti.InfiniteTypeAHeckeAlgebra.UnitCircle

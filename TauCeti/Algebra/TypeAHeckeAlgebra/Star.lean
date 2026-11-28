@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Star.Subalgebra
 public import Mathlib.Algebra.Star.SelfAdjoint
+public import TauCeti.Algebra.Star.Opposite
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Embedding
+import TauCeti.Algebra.Star.SelfAdjoint
 
 /-!
 # The real-parameter involution on type-A Hecke algebras
@@ -73,25 +75,13 @@ private theorem conjugateReverse_algebraMap (r : R) :
       op (algebraMap R _ (star r)) := by
   simp [conjugateReverse, Algebra.compHom_algebraMap_apply, starRingEnd_apply]
 
-private theorem conjugateReverse_involutive (x : InfiniteTypeAHeckeAlgebra R q) :
-    unop (conjugateReverse (unop (conjugateReverse x))) = x := by
-  have hx : x ∈ Algebra.adjoin R (Set.range (T q)) := by simp [adjoin_range_T]
-  induction hx using Algebra.adjoin_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    simp [conjugateReverse_T]
-  | algebraMap r => simp [conjugateReverse_algebraMap]
-  | add x y _ _ hx hy => simp [map_add, hx, hy]
-  | mul x y _ _ hx hy => simp [map_mul, hx, hy]
-
 /-- The real-parameter star ring structure: generators are self-adjoint and scalars are
 conjugated. Requires `Fact (IsSelfAdjoint (q : R))`, i.e. a star-fixed (e.g. real) parameter. -/
 @[no_expose]
-instance instStarRing : StarRing (InfiniteTypeAHeckeAlgebra R q) where
-  star x := unop (conjugateReverse x)
-  star_involutive := conjugateReverse_involutive
-  star_mul x y := by simp [map_mul]
-  star_add x y := by simp [map_add]
+instance instStarRing : StarRing (InfiniteTypeAHeckeAlgebra R q) :=
+  starRingOfConjOpposite adjoin_range_T conjugateReverse conjugateReverse_algebraMap (by
+    rintro _ ⟨i, rfl⟩
+    simp [conjugateReverse_T])
 
 /-- Every generator is self-adjoint in the real-parameter convention. -/
 @[simp]
@@ -105,13 +95,9 @@ theorem star_val_inv_unitT (i : ℕ) :
     simp [IsSelfAdjoint]
   simpa only [Ring.inverse_unit] using h.ringInverse.star_eq
 
-private theorem star_algebraMap (r : R) :
-    star (algebraMap R (InfiniteTypeAHeckeAlgebra R q) r) = algebraMap R _ (star r) :=
-  congrArg unop (conjugateReverse_algebraMap r)
-
 /-- The real-parameter involution is conjugate-linear over the coefficient ring. -/
-instance instStarModule : StarModule R (InfiniteTypeAHeckeAlgebra R q) where
-  star_smul r x := by simp [Algebra.smul_def, star_mul, star_algebraMap, Algebra.commutes]
+instance instStarModule : StarModule R (InfiniteTypeAHeckeAlgebra R q) :=
+  starModule_of_conjOpposite conjugateReverse conjugateReverse_algebraMap (fun _ ↦ rfl)
 
 section UniversalProperty
 
@@ -164,6 +150,41 @@ theorem signCharacter_star (x : InfiniteTypeAHeckeAlgebra R q) :
     signCharacter R q (star x) = star (signCharacter R q x) :=
   map_star_iff.mpr (fun i ↦ by
     simpa only [signCharacter_T, Ring.inverse_unit] using hq.out.ringInverse.neg) x
+
+/-- In the real-parameter fiber, `indexCharacter` (`T i ↦ q`) is a `⋆`-algebra homomorphism. -/
+def indexCharacterStarAlgHom : InfiniteTypeAHeckeAlgebra R q →⋆ₐ[R] R :=
+  { indexCharacter R q with map_star' := indexCharacter_star }
+
+@[simp]
+theorem indexCharacterStarAlgHom_apply (x : InfiniteTypeAHeckeAlgebra R q) :
+    indexCharacterStarAlgHom x = indexCharacter R q x := (rfl)
+
+@[simp]
+theorem toAlgHom_indexCharacterStarAlgHom :
+    (indexCharacterStarAlgHom (R := R) (q := q)).toAlgHom = indexCharacter R q := (rfl)
+
+/-- In the real-parameter fiber, `signCharacter` (`T i ↦ -q⁻¹`) is a `⋆`-algebra homomorphism. -/
+def signCharacterStarAlgHom : InfiniteTypeAHeckeAlgebra R q →⋆ₐ[R] R :=
+  { signCharacter R q with map_star' := signCharacter_star }
+
+@[simp]
+theorem signCharacterStarAlgHom_apply (x : InfiniteTypeAHeckeAlgebra R q) :
+    signCharacterStarAlgHom x = signCharacter R q x := (rfl)
+
+@[simp]
+theorem toAlgHom_signCharacterStarAlgHom :
+    (signCharacterStarAlgHom (R := R) (q := q)).toAlgHom = signCharacter R q := (rfl)
+
+/-- In the real-parameter fiber, the eigenprojection `P = (q + q⁻¹)⁻¹ • (T i + q⁻¹)` is a star
+projection. -/
+theorem isStarProjection_eigenprojection (s : Rˣ) (hs : (s : R) = q + ↑q⁻¹) (i : ℕ) :
+    IsStarProjection ((↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) where
+  isIdempotentElem := isIdempotentElem_eigenprojection s hs i
+  isSelfAdjoint := by
+    have hqinv : IsSelfAdjoint (↑q⁻¹ : R) := IsSelfAdjoint.units_inv hq.out
+    have hsinv : IsSelfAdjoint (↑s⁻¹ : R) := IsSelfAdjoint.units_inv (hs ▸ hq.out.add hqinv)
+    rw [IsSelfAdjoint, star_smul, hsinv.star_eq, star_add, star_T, ← algebraMap_star_comm,
+      hqinv.star_eq]
 
 end TauCeti.InfiniteTypeAHeckeAlgebra
 

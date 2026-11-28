@@ -477,6 +477,13 @@ theorem mem_boundedSubalgebra {a : A} :
     a ∈ φ.boundedSubalgebra ↔ Continuous (φ.leftMul a) := by
   rfl
 
+/-- If `φ.boundedSubalgebra = ⊤`, left multiplication on `φ.GNS` is continuous for every element
+of `A`. -/
+theorem continuous_leftMul_of_boundedSubalgebra_eq_top (h : φ.boundedSubalgebra = ⊤) (a : A) :
+    Continuous (φ.leftMul a) := by
+  rw [← φ.mem_boundedSubalgebra, h]
+  exact StarSubalgebra.mem_top
+
 /-- The canonical `⋆`-representation of `φ.boundedSubalgebra` by bounded operators on the completed
 GNS Hilbert space `φ.HilbertGNS`. -/
 def boundedSubalgebraRepresentation :
@@ -506,7 +513,24 @@ theorem boundedSubalgebra_eq_top_of_adjoin_eq_top {s : Set A}
 
 theorem continuous_leftMul_of_adjoin_eq_top {s : Set A} (hs : StarAlgebra.adjoin ℂ s = ⊤)
     (hb : ∀ a ∈ s, Continuous (φ.leftMul a)) (a : A) : Continuous (φ.leftMul a) :=
-  φ.mem_boundedSubalgebra.mp <| (φ.boundedSubalgebra_eq_top_of_adjoin_eq_top hs hb).symm ▸ trivial
+  φ.continuous_leftMul_of_boundedSubalgebra_eq_top
+    (φ.boundedSubalgebra_eq_top_of_adjoin_eq_top hs hb) a
+
+/-- If every element of an algebra-generating set acts boundedly on `φ.GNS`, then every element of
+`A` acts boundedly. -/
+theorem boundedSubalgebra_eq_top_of_algebra_adjoin_eq_top {s : Set A}
+    (hs : Algebra.adjoin ℂ s = ⊤) (hb : ∀ a ∈ s, Continuous (φ.leftMul a)) :
+    φ.boundedSubalgebra = ⊤ := by
+  refine StarSubalgebra.toSubalgebra_injective ?_
+  rw [StarSubalgebra.top_toSubalgebra, eq_top_iff, ← hs]
+  exact Algebra.adjoin_le fun a ha => φ.mem_boundedSubalgebra.mpr (hb a ha)
+
+/-- If every element of an algebra-generating set acts boundedly on `φ.GNS`, left multiplication on
+`φ.GNS` is continuous for every element of `A`. -/
+theorem continuous_leftMul_of_algebra_adjoin_eq_top {s : Set A} (hs : Algebra.adjoin ℂ s = ⊤)
+    (hb : ∀ a ∈ s, Continuous (φ.leftMul a)) (a : A) : Continuous (φ.leftMul a) :=
+  φ.continuous_leftMul_of_boundedSubalgebra_eq_top
+    (φ.boundedSubalgebra_eq_top_of_algebra_adjoin_eq_top hs hb) a
 
 /-- When every element of `A` acts continuously on `φ.GNS`, left multiplication extends to a global
 unital `⋆`-representation of `A` in the C⋆-algebra `φ.HilbertGNS →L[ℂ] φ.HilbertGNS`. -/
@@ -567,6 +591,69 @@ theorem eq_boundedRepresentation {hA : ∀ a : A, Continuous (φ.leftMul a)}
   exact φ.hilbertClassMap_clm_ext fun b => by simp [hπ]
 
 end Unital
+
+section CStarRealization
+
+universe u
+
+variable {A : Type u} [Ring A] [Algebra ℂ A] [StarRing A] [StarModule ℂ A]
+
+/-- Every element of `A` acts boundedly on the algebraic GNS space of `φ` if and only if `φ`
+factors through a unital `⋆`-representation of `A` in a unital C⋆-algebra equipped with a positive
+linear functional. -/
+theorem forall_continuous_leftMul_iff_exists_cstar (φ : StarPositiveFunctional A) :
+    (∀ a : A, Continuous (φ.leftMul a)) ↔
+      ∃ (C : Type u) (_ : CStarAlgebra C) (_ : PartialOrder C) (_ : StarOrderedRing C)
+        (ω : C →ₚ[ℂ] ℂ) (π : A →⋆ₐ[ℂ] C), ∀ a, ω (π a) = φ a := by
+  constructor
+  · intro hA
+    exact ⟨φ.HilbertGNS →L[ℂ] φ.HilbertGNS, inferInstance, inferInstance, inferInstance,
+      φ.hilbertPositiveLinearMap, φ.boundedRepresentation hA,
+      φ.hilbertPositiveLinearMap_boundedRepresentation hA⟩
+  · rintro ⟨C, _, _, _, ω, π, hφ⟩ a
+    exact (φ.continuous_leftMul_iff a).mpr
+      ⟨‖π a‖, norm_nonneg _, φ.apply_star_mul_self_le_of_cstar ω π hφ le_rfl⟩
+
+/-- On a unital complex `⋆`-algebra whose positive functionals all have bounded GNS left
+multiplications, algebraic positivity `∀ a, 0 ≤ f (star a * a)` of a linear functional `f` is
+equivalent to factoring `f` through a unital `⋆`-homomorphism into a C⋆-algebra and a positive
+linear functional. -/
+theorem exists_cstar_representation_iff_forall_nonneg_of_forall_continuous_leftMul
+    (hcont : ∀ (ψ : StarPositiveFunctional A) (a : A), Continuous (ψ.leftMul a))
+    {f : A →ₗ[ℂ] ℂ} :
+    (∃ (C : Type u) (_ : CStarAlgebra C) (_ : PartialOrder C) (_ : StarOrderedRing C)
+        (ω : C →ₚ[ℂ] ℂ) (π : A →⋆ₐ[ℂ] C), ∀ a, ω (π a) = f a) ↔
+      ∀ a : A, 0 ≤ f (star a * a) := by
+  constructor
+  · rintro ⟨C, _, _, _, ω, π, hf⟩ a
+    rw [← hf]
+    simpa using ((StarPositiveFunctional.ofPositiveLinearMap ω).comp π).square_nonneg a
+  · intro hpos
+    let φ : StarPositiveFunctional A := ⟨f, hpos⟩
+    rcases φ.forall_continuous_leftMul_iff_exists_cstar.mp (hcont φ) with
+      ⟨C, hC₁, hC₂, hC₃, ω, π, hφ⟩
+    exact ⟨C, hC₁, hC₂, hC₃, ω, π, fun a =>
+      (hφ a).trans (StarPositiveFunctional.mk_apply f hpos a)⟩
+
+/-- Normalized state version of
+`exists_cstar_representation_iff_forall_nonneg_of_forall_continuous_leftMul`. -/
+theorem exists_cstar_state_representation_iff_of_forall_continuous_leftMul
+    (hcont : ∀ (ψ : StarPositiveFunctional A) (a : A), Continuous (ψ.leftMul a))
+    {f : A →ₗ[ℂ] ℂ} :
+    (∃ (C : Type u) (_ : CStarAlgebra C) (_ : PartialOrder C) (_ : StarOrderedRing C)
+        (ω : C →ₚ[ℂ] ℂ) (π : A →⋆ₐ[ℂ] C), ω 1 = 1 ∧ ∀ a, ω (π a) = f a) ↔
+      f 1 = 1 ∧ ∀ a : A, 0 ≤ f (star a * a) := by
+  constructor
+  · rintro ⟨C, hC₁, hC₂, hC₃, ω, π, hω, hf⟩
+    exact ⟨by simpa only [map_one, ← hω] using (hf 1).symm,
+      (exists_cstar_representation_iff_forall_nonneg_of_forall_continuous_leftMul hcont).mp
+        ⟨C, hC₁, hC₂, hC₃, ω, π, hf⟩⟩
+  · rintro ⟨hf₁, hpos⟩
+    obtain ⟨C, hC₁, hC₂, hC₃, ω, π, hf⟩ :=
+      (exists_cstar_representation_iff_forall_nonneg_of_forall_continuous_leftMul hcont).mpr hpos
+    exact ⟨C, hC₁, hC₂, hC₃, ω, π, by simpa only [map_one, hf₁] using hf 1, hf⟩
+
+end CStarRealization
 
 end StarPositiveFunctional
 
