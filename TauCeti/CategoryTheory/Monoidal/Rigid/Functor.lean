@@ -99,10 +99,9 @@ equivalence.
 * `CategoryTheory.NatTrans.app_comp_rightMate_app`, `CategoryTheory.NatTrans.rightMate_app_comp_app`
   and their left-mate counterparts: the component of such a transformation at one member of an
   exact pairing is inverse to the mate of its component at the other member, with respect to the
-  image pairings. So `CategoryTheory.NatTrans.app_right_eq_of_app_left_eq` and
-  `CategoryTheory.NatTrans.app_left_eq_of_app_right_eq`: two such transformations which agree at
-  one member of an exact pairing agree at the other (with lax-target generalizations
-  `CategoryTheory.NatTrans.app_right_eq_of_exactPairing` and
+  image pairings. More generally, when the target is only lax monoidal, two monoidal natural
+  transformations from a strong monoidal functor which agree at one member of an exact pairing
+  agree at the other (`CategoryTheory.NatTrans.app_right_eq_of_exactPairing` and
   `CategoryTheory.NatTrans.app_left_eq_of_exactPairing`);
 * `TauCeti.doubleRightDualFunctor_mapRightDualIso`: the comparison is the identity for the double
   right dual functor, so that `CategoryTheory.Iso.hom_app_comp_mapRightDualIso_hom` specializes to
@@ -617,22 +616,6 @@ theorem Iso.hom_app_comp_mapRightDualIso_hom (α : F ≅ G) [α.hom.IsMonoidal] 
   rw [← NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate α.hom X, Category.assoc,
     Category.assoc, ← comp_rightAdjointMate, Iso.inv_hom_id_app, rightAdjointMate_id,
     Category.comp_id]
-
-/-- Two monoidal natural transformations between strong monoidal functors which agree at the left
-member `X` of an exact pairing `(X, Y)` also agree at its right member `Y`. -/
-theorem NatTrans.app_right_eq_of_app_left_eq (τ τ' : F ⟶ G) [τ.IsMonoidal] [τ'.IsMonoidal]
-    (X Y : C) [ExactPairing X Y] (h : τ.app X = τ'.app X) : τ.app Y = τ'.app Y := by
-  -- `τ_Y` and `τ'_Y` are both inverse to the common mate of `τ_X = τ'_X`.
-  rw [← Category.comp_id (τ.app Y), ← NatTrans.rightMate_app_comp_app τ' X Y, ← h,
-    NatTrans.app_comp_rightMate_app_assoc]
-
-/-- Two monoidal natural transformations between strong monoidal functors which agree at the
-right member `Y` of an exact pairing `(X, Y)` also agree at its left member `X`. -/
-theorem NatTrans.app_left_eq_of_app_right_eq (τ τ' : F ⟶ G) [τ.IsMonoidal] [τ'.IsMonoidal]
-    (X Y : C) [ExactPairing X Y] (h : τ.app Y = τ'.app Y) : τ.app X = τ'.app X := by
-  -- `τ_X` and `τ'_X` are both inverse to the common left mate of `τ_Y = τ'_Y`.
-  rw [← Category.comp_id (τ.app X), ← NatTrans.leftMate_app_comp_app τ' X Y, ← h,
-    NatTrans.app_comp_leftMate_app_assoc]
 
 section LaxTarget
 

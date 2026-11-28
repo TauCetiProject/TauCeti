@@ -21,6 +21,12 @@ A `DualitySignature.Substitution S T` replaces object generators of `S` by objec
   expressions respecting the monoidal and zigzag axioms without coupon equations.
 * `Substitution.toFunctor` and `Substitution.toFunctor_map_homMk`: induced strong monoidal functor
   `S.FreeRigid ⥤ T.FreeRigid` via `FreeRigid.lift`, agreeing with raw substitution.
+* `Substitution.id` and `Substitution.comp`: identity and diagrammatic composition of
+  substitutions, with two-sided unit laws (`id_comp`, `comp_id`), associativity (`comp_assoc`),
+  raw substitution laws (`Hom.subst_substitutionId_heq`, `Hom.subst_subst_heq`), and functoriality
+  (`toFunctor_id`, `toFunctor_comp`).
+* `DualitySignature.Renaming` and `Renaming.toSubstitution`: boundary-preserving renamings of
+  generators and coupons, inducing substitutions with object and coupon computation rules.
 
 Parallels `TauCeti.TensorSignature.Substitution`, extended to right and left duals.
 
@@ -32,7 +38,7 @@ Parallels `TauCeti.TensorSignature.Substitution`, extended to right and left dua
 
 public section
 
-universe u v u' v' w
+universe u v u' v' u'' v'' u''' v''' w
 
 open CategoryTheory MonoidalCategory ExactPairing
 
@@ -51,6 +57,7 @@ structure Substitution (S : DualitySignature.{u, v}) (T : DualitySignature.{u', 
     (RigidObject.eval obj (S.src g)).as (RigidObject.eval obj (S.tgt g)).as
 
 variable {S : DualitySignature.{u, v}} {T : DualitySignature.{u', v'}}
+  {U : DualitySignature.{u'', v''}} {V : DualitySignature.{u''', v'''}}
 
 namespace FreeRigid
 
@@ -70,13 +77,31 @@ theorem eval_eq_subst {α : Type w} (f : α → T.FreeRigid) (X : RigidObject α
 
 /-- Underlying `RigidObject` form of `eval_eq_subst`: categorical interpretation into
 `T.FreeRigid` agrees with syntactic substitution `RigidObject.subst`. -/
+@[simp]
 theorem as_eval_eq_subst {α : Type w} (f : α → T.FreeRigid) (X : RigidObject α) :
     (RigidObject.eval f X).as = RigidObject.subst (fun a ↦ (f a).as) X :=
   congrArg FreeRigid.as (eval_eq_subst f X)
 
+/-- Interpreting a formal rigid object by the generating objects of `S` recovers the object
+itself. -/
+@[simp]
+theorem eval_of (X : RigidObject S.Obj) :
+    RigidObject.eval (FreeRigid.of (S := S)) X = ⟨X⟩ :=
+  (eval_eq_subst _ X).trans (congrArg FreeRigid.mk (RigidObject.subst_self X))
+
+/-- Interpreting a formal rigid object after replacing generators by objects of `T.FreeRigid`
+agrees with interpreting the outer assignment at the interpreted replacements. -/
+theorem eval_eval (f : S.Obj → T.FreeRigid) (g : T.Obj → U.FreeRigid) (X : RigidObject S.Obj) :
+    RigidObject.eval g (RigidObject.eval f X).as =
+      RigidObject.eval (fun a ↦ RigidObject.eval g (f a).as) X := by
+  rw [as_eval_eq_subst, eval_eq_subst, RigidObject.subst_subst, eval_eq_subst]
+  refine congrArg FreeRigid.mk (congrArg (RigidObject.subst · X) ?_)
+  funext a
+  exact (as_eval_eq_subst g (f a).as).symm
+
 /-- Substitute formal rigid object expressions for object generators and raw morphism expressions
 for coupons. Endpoints are interpreted by `RigidObject.eval`. -/
-noncomputable def Hom.subst (σ : Substitution S T) : ∀ {X Y}, Hom X Y →
+def Hom.subst (σ : Substitution S T) : ∀ {X Y}, Hom X Y →
     Hom (RigidObject.eval σ.obj X).as (RigidObject.eval σ.obj Y).as
   | _, _, .id X => .id (RigidObject.eval σ.obj X).as
   | _, _, .α_hom X Y Z => .α_hom (RigidObject.eval σ.obj X).as
@@ -143,10 +168,10 @@ variable (σ : Substitution S T)
 /-- The strong monoidal functor `S.FreeRigid ⥤ T.FreeRigid` induced by a raw substitution, defined
 as the universal lift of `σ.obj` and the quotient morphisms of `σ.coupon`. Exposed on objects so
 that dependent morphism types over substituted endpoints reduce on constructors. -/
-@[expose] noncomputable def toFunctor : S.FreeRigid ⥤ T.FreeRigid :=
+@[expose] def toFunctor : S.FreeRigid ⥤ T.FreeRigid :=
   FreeRigid.lift σ.obj (fun g ↦ FreeRigid.homMk (σ.coupon g))
 
-noncomputable instance : σ.toFunctor.Monoidal :=
+instance : σ.toFunctor.Monoidal :=
   inferInstanceAs (FreeRigid.lift σ.obj (fun g ↦ FreeRigid.homMk (σ.coupon g))).Monoidal
 
 @[simp] theorem toFunctor_ε : Functor.LaxMonoidal.ε σ.toFunctor = 𝟙 _ := FreeRigid.lift_ε _ _
@@ -214,5 +239,331 @@ theorem HomEquiv.subst (σ : Substitution S T) {X Y} {f g : Hom X Y} (h : HomEqu
       (σ.toFunctor_map_homMk g))
 
 end FreeRigid
+
+namespace Substitution
+
+open FreeRigid
+
+/-- Two substitutions are equal if they replace each generating object by the same rigid
+expression and each coupon by the same raw expression, compared heterogeneously across equal
+substituted boundaries. -/
+theorem hext {σ σ' : Substitution S T} (hobj : σ.obj = σ'.obj)
+    (hcoupon : ∀ g, σ.coupon g ≍ σ'.coupon g) : σ = σ' := by
+  obtain ⟨obj, coupon⟩ := σ
+  obtain ⟨obj', coupon'⟩ := σ'
+  subst hobj
+  congr
+  funext g
+  exact eq_of_heq (hcoupon g)
+
+variable (S) in
+/-- The identity substitution, replacing each generating object and each coupon of `S` by
+itself. -/
+def id : Substitution S S where
+  obj := FreeRigid.of
+  coupon g := cast (by rw [FreeRigid.eval_of, FreeRigid.eval_of]) (Hom.coupon g)
+
+@[simp]
+theorem id_obj (a : S.Obj) : (Substitution.id S).obj a = FreeRigid.of a := (rfl)
+
+/-- The identity substitution replaces a coupon by the coupon itself, up to the identification of
+each boundary object with its interpretation by `FreeRigid.of`. -/
+theorem id_coupon_heq (g : S.Coupon) : (Substitution.id S).coupon g ≍ Hom.coupon g :=
+  cast_heq _ _
+
+/-- The diagrammatic composite of `σ` and `τ`: each generating object and coupon of `S` is
+replaced by its replacement under `σ`, into which `τ` is substituted. -/
+def comp (σ : Substitution S T) (τ : Substitution T U) : Substitution S U where
+  obj a := RigidObject.eval τ.obj (σ.obj a).as
+  coupon g := cast (by rw [FreeRigid.eval_eval, FreeRigid.eval_eval]) ((σ.coupon g).subst τ)
+
+@[simp]
+theorem comp_obj (σ : Substitution S T) (τ : Substitution T U) (a : S.Obj) :
+    (σ.comp τ).obj a = RigidObject.eval τ.obj (σ.obj a).as := (rfl)
+
+/-- The composite substitution replaces a coupon by the substitution of `τ` into its replacement
+under `σ`, up to the identification of boundary objects given by `FreeRigid.eval_eval`. -/
+theorem comp_coupon_heq (σ : Substitution S T) (τ : Substitution T U) (g : S.Coupon) :
+    (σ.comp τ).coupon g ≍ (σ.coupon g).subst τ :=
+  cast_heq _ _
+
+end Substitution
+
+namespace FreeRigid
+
+/-- Substituting into heterogeneously equal raw expressions gives heterogeneously equal
+results. -/
+theorem Hom.subst_congr_heq (σ : Substitution S T) {X X' Y Y' : RigidObject S.Obj}
+    {f : Hom X Y} {f' : Hom X' Y'} (hX : X = X') (hY : Y = Y') (h : f ≍ f') :
+    f.subst σ ≍ f'.subst σ := by
+  subst hX hY
+  rw [eq_of_heq h]
+
+private theorem α_hom_heq {X X' Y Y' Z Z' : RigidObject S.Obj} (hX : X = X')
+    (hY : Y = Y') (hZ : Z = Z') : Hom.α_hom X Y Z ≍ Hom.α_hom X' Y' Z' := by
+  subst hX hY hZ
+  rfl
+
+private theorem α_inv_heq {X X' Y Y' Z Z' : RigidObject S.Obj} (hX : X = X')
+    (hY : Y = Y') (hZ : Z = Z') : Hom.α_inv X Y Z ≍ Hom.α_inv X' Y' Z' := by
+  subst hX hY hZ
+  rfl
+
+private theorem comp_heq {X X' Y Y' Z Z' : RigidObject S.Obj} {f : Hom X Y}
+    {f' : Hom X' Y'} {g : Hom Y Z} {g' : Hom Y' Z'} (hX : X = X') (hY : Y = Y') (hZ : Z = Z')
+    (hf : f ≍ f') (hg : g ≍ g') : f.comp g ≍ f'.comp g' := by
+  subst hX hY hZ
+  rw [eq_of_heq hf, eq_of_heq hg]
+
+private theorem whiskerLeft_heq {X X' Y₁ Y₁' Y₂ Y₂' : RigidObject S.Obj}
+    {f : Hom Y₁ Y₂} {f' : Hom Y₁' Y₂'} (hX : X = X') (h₁ : Y₁ = Y₁') (h₂ : Y₂ = Y₂')
+    (hf : f ≍ f') : f.whiskerLeft X ≍ f'.whiskerLeft X' := by
+  subst hX h₁ h₂
+  rw [eq_of_heq hf]
+
+private theorem whiskerRight_heq {X₁ X₁' X₂ X₂' Y Y' : RigidObject S.Obj}
+    {f : Hom X₁ X₂} {f' : Hom X₁' X₂'} (h₁ : X₁ = X₁') (h₂ : X₂ = X₂') (hY : Y = Y')
+    (hf : f ≍ f') : f.whiskerRight Y ≍ f'.whiskerRight Y' := by
+  subst h₁ h₂ hY
+  rw [eq_of_heq hf]
+
+private theorem tensor_heq {W W' X X' Y Y' Z Z' : RigidObject S.Obj} {f : Hom W Y}
+    {f' : Hom W' Y'} {g : Hom X Z} {g' : Hom X' Z'} (hW : W = W') (hX : X = X') (hY : Y = Y')
+    (hZ : Z = Z') (hf : f ≍ f') (hg : g ≍ g') : f.tensor g ≍ f'.tensor g' := by
+  subst hW hX hY hZ
+  rw [eq_of_heq hf, eq_of_heq hg]
+
+private theorem homMk_heq {X X' Y Y' : RigidObject S.Obj} {f : Hom X Y}
+    {f' : Hom X' Y'} (hX : X = X') (hY : Y = Y') (hf : f ≍ f') :
+    homMk (X := ⟨X⟩) (Y := ⟨Y⟩) f ≍ homMk (X := ⟨X'⟩) (Y := ⟨Y'⟩) f' := by
+  subst hX hY
+  rw [eq_of_heq hf]
+
+/-- Substituting the identity substitution into a raw expression gives the expression itself, up
+to the identification of each object with its interpretation by `FreeRigid.of`. -/
+theorem Hom.subst_substitutionId_heq {X Y : RigidObject S.Obj} (f : Hom X Y) :
+    f.subst (Substitution.id S) ≍ f := by
+  have h (Z : RigidObject S.Obj) : (RigidObject.eval (Substitution.id S).obj Z).as = Z :=
+    congrArg FreeRigid.as (eval_of Z)
+  induction f with
+  | id X => exact congr_arg_heq Hom.id (h X)
+  | α_hom X Y Z => exact α_hom_heq (h X) (h Y) (h Z)
+  | α_inv X Y Z => exact α_inv_heq (h X) (h Y) (h Z)
+  | l_hom X => exact congr_arg_heq Hom.l_hom (h X)
+  | l_inv X => exact congr_arg_heq Hom.l_inv (h X)
+  | ρ_hom X => exact congr_arg_heq Hom.ρ_hom (h X)
+  | ρ_inv X => exact congr_arg_heq Hom.ρ_inv (h X)
+  | ε_right X => exact congr_arg_heq Hom.ε_right (h X)
+  | η_right X => exact congr_arg_heq Hom.η_right (h X)
+  | ε_left X => exact congr_arg_heq Hom.ε_left (h X)
+  | η_left X => exact congr_arg_heq Hom.η_left (h X)
+  | coupon g => exact Substitution.id_coupon_heq g
+  | comp _ _ hf hg => exact comp_heq (h _) (h _) (h _) hf hg
+  | whiskerLeft X _ hf => exact whiskerLeft_heq (h X) (h _) (h _) hf
+  | whiskerRight _ X hf => exact whiskerRight_heq (h _) (h _) (h X) hf
+  | tensor _ _ hf hg => exact tensor_heq (h _) (h _) (h _) (h _) hf hg
+
+/-- Substituting `σ` and then `τ` into a raw expression is substituting their composite, up to
+the identification of boundary objects given by `FreeRigid.eval_eval`. -/
+theorem Hom.subst_subst_heq (σ : Substitution S T) (τ : Substitution T U)
+    {X Y : RigidObject S.Obj} (f : Hom X Y) :
+    (f.subst σ).subst τ ≍ f.subst (σ.comp τ) := by
+  have h (Z : RigidObject S.Obj) :
+      (RigidObject.eval τ.obj (RigidObject.eval σ.obj Z).as).as =
+        (RigidObject.eval (σ.comp τ).obj Z).as :=
+    congrArg FreeRigid.as (eval_eval σ.obj τ.obj Z)
+  induction f with
+  | id X => exact congr_arg_heq Hom.id (h X)
+  | α_hom X Y Z => exact α_hom_heq (h X) (h Y) (h Z)
+  | α_inv X Y Z => exact α_inv_heq (h X) (h Y) (h Z)
+  | l_hom X => exact congr_arg_heq Hom.l_hom (h X)
+  | l_inv X => exact congr_arg_heq Hom.l_inv (h X)
+  | ρ_hom X => exact congr_arg_heq Hom.ρ_hom (h X)
+  | ρ_inv X => exact congr_arg_heq Hom.ρ_inv (h X)
+  | ε_right X => exact congr_arg_heq Hom.ε_right (h X)
+  | η_right X => exact congr_arg_heq Hom.η_right (h X)
+  | ε_left X => exact congr_arg_heq Hom.ε_left (h X)
+  | η_left X => exact congr_arg_heq Hom.η_left (h X)
+  | coupon g => exact (Substitution.comp_coupon_heq σ τ g).symm
+  | comp _ _ hf hg => exact comp_heq (h _) (h _) (h _) hf hg
+  | whiskerLeft X _ hf => exact whiskerLeft_heq (h X) (h _) (h _) hf
+  | whiskerRight _ X hf => exact whiskerRight_heq (h _) (h _) (h X) hf
+  | tensor _ _ hf hg => exact tensor_heq (h _) (h _) (h _) (h _) hf hg
+
+end FreeRigid
+
+namespace Substitution
+
+open FreeRigid
+
+/-- The identity substitution is a left unit for composition. -/
+@[simp]
+theorem id_comp (σ : Substitution S T) : (Substitution.id S).comp σ = σ :=
+  hext (funext fun _ ↦ rfl) fun g ↦ (comp_coupon_heq _ σ g).trans
+    (Hom.subst_congr_heq σ (congrArg FreeRigid.as (eval_of _))
+      (congrArg FreeRigid.as (eval_of _)) (id_coupon_heq g))
+
+/-- The identity substitution is a right unit for composition. -/
+@[simp]
+theorem comp_id (σ : Substitution S T) : σ.comp (Substitution.id T) = σ :=
+  hext (funext fun _ ↦ eval_of _) fun g ↦
+    (comp_coupon_heq σ _ g).trans (Hom.subst_substitutionId_heq _)
+
+/-- Composition of substitutions is associative. -/
+@[simp]
+theorem comp_assoc (σ : Substitution S T) (τ : Substitution T U) (ρ : Substitution U V) :
+    (σ.comp τ).comp ρ = σ.comp (τ.comp ρ) :=
+  hext (funext fun a ↦ eval_eval τ.obj ρ.obj (σ.obj a).as) fun g ↦
+    ((comp_coupon_heq _ ρ g).trans
+      (Hom.subst_congr_heq ρ
+        (congrArg FreeRigid.as (eval_eval _ _ _)).symm
+        (congrArg FreeRigid.as (eval_eval _ _ _)).symm
+        (comp_coupon_heq σ τ g))).trans
+      ((Hom.subst_subst_heq τ ρ _).trans (comp_coupon_heq σ _ g).symm)
+
+/-- The functor induced by the identity substitution is the identity functor. -/
+@[simp]
+theorem toFunctor_id : (Substitution.id S).toFunctor = 𝟭 S.FreeRigid := by
+  refine Functor.hext (fun X ↦ eval_of X.as) fun ⟨X⟩ ⟨Y⟩ f ↦ ?_
+  induction f using Quotient.inductionOn with | _ f
+  exact ((Substitution.id S).toFunctor_map_homMk f).heq.trans
+    (homMk_heq (congrArg FreeRigid.as (eval_of X))
+      (congrArg FreeRigid.as (eval_of Y)) (Hom.subst_substitutionId_heq f))
+
+/-- The functor induced by a composite substitution is the composite of the induced
+functors. -/
+@[simp]
+theorem toFunctor_comp (σ : Substitution S T) (τ : Substitution T U) :
+    (σ.comp τ).toFunctor = σ.toFunctor ⋙ τ.toFunctor := by
+  refine Functor.hext (fun X ↦ (eval_eval σ.obj τ.obj X.as).symm)
+    fun ⟨X⟩ ⟨Y⟩ f ↦ ?_
+  induction f using Quotient.inductionOn with | _ f
+  refine ((σ.comp τ).toFunctor_map_homMk f).heq.trans (HEq.trans ?_
+    ((congrArg τ.toFunctor.map (σ.toFunctor_map_homMk f)).trans
+      (τ.toFunctor_map_homMk _)).symm.heq)
+  exact homMk_heq (congrArg FreeRigid.as (eval_eval σ.obj τ.obj X)).symm
+    (congrArg FreeRigid.as (eval_eval σ.obj τ.obj Y)).symm
+    (Hom.subst_subst_heq σ τ f).symm
+
+end Substitution
+
+/-- A boundary-preserving renaming between duality signatures. Generating objects and coupons of
+`S` are sent to generating objects and coupons of `T`, preserving the formal source and target
+boundaries up to generator renaming. -/
+@[ext]
+structure Renaming (S : DualitySignature.{u, v}) (T : DualitySignature.{u', v'}) where
+  /-- The map on generating objects. -/
+  obj : S.Obj → T.Obj
+  /-- The map on coupons. -/
+  coupon : S.Coupon → T.Coupon
+  /-- Source boundaries are preserved under generator renaming. -/
+  src_eq : ∀ g : S.Coupon, T.src (coupon g) = RigidObject.subst (fun a ↦ .of (obj a)) (S.src g)
+  /-- Target boundaries are preserved under generator renaming. -/
+  tgt_eq : ∀ g : S.Coupon, T.tgt (coupon g) = RigidObject.subst (fun a ↦ .of (obj a)) (S.tgt g)
+
+namespace Renaming
+
+/-- The identity renaming on a duality signature `S`. -/
+def id (S : DualitySignature.{u, v}) : Renaming S S where
+  obj := _root_.id
+  coupon := _root_.id
+  src_eq _ := (RigidObject.subst_self _).symm
+  tgt_eq _ := (RigidObject.subst_self _).symm
+
+@[simp] theorem id_obj (a : S.Obj) : (id S).obj a = a := (rfl)
+@[simp] theorem id_coupon (g : S.Coupon) : (id S).coupon g = g := (rfl)
+
+/-- Composition of boundary-preserving renamings in diagrammatic order. -/
+def comp (r : Renaming S T) (s : Renaming T U) : Renaming S U where
+  obj := s.obj ∘ r.obj
+  coupon := s.coupon ∘ r.coupon
+  src_eq g := by
+    rw [Function.comp_apply, s.src_eq, r.src_eq, RigidObject.subst_subst]
+    simp
+  tgt_eq g := by
+    rw [Function.comp_apply, s.tgt_eq, r.tgt_eq, RigidObject.subst_subst]
+    simp
+
+@[simp] theorem comp_obj (r : Renaming S T) (s : Renaming T U) (a : S.Obj) :
+    (r.comp s).obj a = s.obj (r.obj a) := (rfl)
+@[simp] theorem comp_coupon (r : Renaming S T) (s : Renaming T U) (g : S.Coupon) :
+    (r.comp s).coupon g = s.coupon (r.coupon g) := (rfl)
+
+@[simp] theorem id_comp (r : Renaming S T) : (id S).comp r = r := by ext <;> simp
+@[simp] theorem comp_id (r : Renaming S T) : r.comp (id T) = r := by ext <;> simp
+@[simp] theorem comp_assoc (r : Renaming S T) (s : Renaming T U) (t : Renaming U V) :
+    (r.comp s).comp t = r.comp (s.comp t) := by ext <;> simp
+
+/-- The typed substitution induced by a boundary-preserving renaming, sending each generating
+object `a` to `FreeRigid.of (r.obj a)` and transporting each coupon
+`FreeRigid.Hom.coupon (r.coupon g)` across the preserved boundaries. -/
+def toSubstitution (r : Renaming S T) : Substitution S T where
+  obj a := FreeRigid.of (r.obj a)
+  coupon g :=
+    cast (congrArg₂ FreeRigid.Hom
+      ((r.src_eq g).trans (FreeRigid.as_eval_eq_subst _ _).symm)
+      ((r.tgt_eq g).trans (FreeRigid.as_eval_eq_subst _ _).symm))
+      (FreeRigid.Hom.coupon (r.coupon g))
+
+@[simp]
+theorem toSubstitution_obj (r : Renaming S T) (a : S.Obj) :
+    r.toSubstitution.obj a = FreeRigid.of (r.obj a) := (rfl)
+
+/-- The substitution induced by a renaming replaces each coupon `g` by
+`FreeRigid.Hom.coupon (r.coupon g)`, up to heterogeneous equality across the preserved source and
+target boundaries. -/
+theorem toSubstitution_coupon_heq (r : Renaming S T) (g : S.Coupon) :
+    r.toSubstitution.coupon g ≍ FreeRigid.Hom.coupon (r.coupon g) :=
+  cast_heq _ _
+
+/-- The functor induced by `r.toSubstitution` acts on objects by syntactic renaming
+`RigidObject.subst (fun a ↦ .of (r.obj a))`. -/
+theorem toSubstitution_toFunctor_obj (r : Renaming S T) (X : S.FreeRigid) :
+    r.toSubstitution.toFunctor.obj X = ⟨RigidObject.subst (fun a ↦ .of (r.obj a)) X.as⟩ :=
+  FreeRigid.eval_eq_subst _ _
+
+private theorem homMk_eq_eqToHom_of_heq {X₁ X₂ Y₁ Y₂ : T.FreeRigid}
+    (hX : X₁ = X₂) (hY : Y₁ = Y₂) {f₁ : FreeRigid.Hom X₁.as Y₁.as}
+    {f₂ : FreeRigid.Hom X₂.as Y₂.as} (hf : f₁ ≍ f₂) :
+    FreeRigid.homMk f₁ = eqToHom hX ≫ FreeRigid.homMk f₂ ≫ eqToHom hY.symm := by
+  subst hX hY
+  cases eq_of_heq hf
+  simp
+
+/-- The functor induced by `r.toSubstitution` maps each coupon `g` to
+`FreeRigid.coupon (r.coupon g)`, conjugated by `eqToHom` along the boundary preservation
+proofs. -/
+theorem toSubstitution_toFunctor_map_coupon (r : Renaming S T) (g : S.Coupon) :
+    r.toSubstitution.toFunctor.map (FreeRigid.coupon g) =
+      eqToHom ((r.toSubstitution_toFunctor_obj ⟨S.src g⟩).trans
+        (congrArg FreeRigid.mk (r.src_eq g).symm)) ≫
+        FreeRigid.coupon (r.coupon g) ≫
+        eqToHom ((r.toSubstitution_toFunctor_obj ⟨S.tgt g⟩).trans
+          (congrArg FreeRigid.mk (r.tgt_eq g).symm)).symm := by
+  rw [Substitution.toFunctor_map_coupon, ← FreeRigid.homMk_coupon]
+  exact homMk_eq_eqToHom_of_heq
+    ((r.toSubstitution_toFunctor_obj ⟨S.src g⟩).trans (congrArg FreeRigid.mk (r.src_eq g).symm))
+    ((r.toSubstitution_toFunctor_obj ⟨S.tgt g⟩).trans (congrArg FreeRigid.mk (r.tgt_eq g).symm))
+    (r.toSubstitution_coupon_heq g)
+
+@[simp]
+theorem toSubstitution_id (S : DualitySignature.{u, v}) :
+    (id S).toSubstitution = Substitution.id S :=
+  Substitution.hext rfl fun g ↦
+    (toSubstitution_coupon_heq _ g).trans (Substitution.id_coupon_heq g).symm
+
+@[simp]
+theorem toSubstitution_comp (r : Renaming S T) (s : Renaming T U) :
+    (r.comp s).toSubstitution = r.toSubstitution.comp s.toSubstitution := by
+  refine Substitution.hext (funext fun _ ↦ rfl) fun g ↦ ?_
+  refine (toSubstitution_coupon_heq (r.comp s) g).trans ?_
+  refine ((s.toSubstitution_coupon_heq (r.coupon g)).symm).trans ?_
+  refine (FreeRigid.Hom.subst_congr_heq s.toSubstitution
+    ((r.src_eq g).trans (FreeRigid.as_eval_eq_subst _ _).symm)
+    ((r.tgt_eq g).trans (FreeRigid.as_eval_eq_subst _ _).symm)
+    (r.toSubstitution_coupon_heq g).symm).trans ?_
+  exact (Substitution.comp_coupon_heq r.toSubstitution s.toSubstitution g).symm
+
+end Renaming
 
 end TauCeti.DualitySignature

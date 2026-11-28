@@ -1346,7 +1346,7 @@ variable (S : TensorSignature.{u, v})
 /-- Interpreting a dual-free monoidal word via the generating objects of
 `S.toDualitySignature.FreeRigid` produces the object whose underlying `RigidObject` is
 `W.toRigidObject`. -/
-@[simp] theorem projectObj_of_eq (W : FreeMonoidalCategory S.Obj) :
+private theorem projectObj_of_eq (W : FreeMonoidalCategory S.Obj) :
     FreeMonoidalCategory.projectObj (fun a : S.Obj ↦
       DualitySignature.FreeRigid.of (S := S.toDualitySignature) a) W = ⟨W.toRigidObject⟩ := by
   -- `mk_unit`/`mk_tensor` are `@[simp]`, but `W.toRigidObject` has type `RigidObject S.Obj`
@@ -1361,10 +1361,17 @@ variable (S : TensorSignature.{u, v})
 `S` to the free rigid category on `S.toDualitySignature`, obtained by the universal lift of
 `FreeMonoidal`. -/
 @[expose] def toFreeRigid : S.FreeMonoidal ⥤ S.toDualitySignature.FreeRigid :=
+  let h (W : FreeMonoidalCategory S.Obj) :
+      FreeMonoidalCategory.projectObj (fun a : S.Obj ↦
+        DualitySignature.FreeRigid.of (S := S.toDualitySignature) a) W = ⟨W.toRigidObject⟩ := by
+    induction W with
+    | of _ => simp [FreeMonoidalCategory.projectObj, DualitySignature.FreeRigid.of]
+    | unit => simp [FreeMonoidalCategory.projectObj]; rfl
+    | tensor _ _ ihX ihY => simp [FreeMonoidalCategory.projectObj, ihX, ihY]; rfl
   FreeMonoidal.lift (fun a : S.Obj ↦ DualitySignature.FreeRigid.of (S := S.toDualitySignature) a)
-    fun g ↦ eqToHom (projectObj_of_eq S (S.src g)) ≫
+    fun g ↦ eqToHom (h (S.src g)) ≫
       DualitySignature.FreeRigid.coupon (S := S.toDualitySignature) g ≫
-      eqToHom (projectObj_of_eq S (S.tgt g)).symm
+      eqToHom (h (S.tgt g)).symm
 
 instance : (toFreeRigid S).Monoidal := inferInstanceAs (FreeMonoidal.lift _ _).Monoidal
 
