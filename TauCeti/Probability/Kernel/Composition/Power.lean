@@ -63,6 +63,10 @@ variable {α : Type*} [MeasurableSpace α]
 /-- The unit of the monoid of kernels `Kernel α α` is the identity kernel. -/
 theorem one_def : (1 : Kernel α α) = Kernel.id := (rfl)
 
+/-- The unit kernel returns the Dirac measure at the starting state. -/
+@[simp] theorem one_apply (x : α) : (1 : Kernel α α) x = Measure.dirac x := by
+  rw [one_def, id_apply]
+
 /-- Multiplication in the monoid of kernels `Kernel α α` is composition. -/
 theorem mul_def (κ η : Kernel α α) : κ * η = κ ∘ₖ η := (rfl)
 
@@ -126,6 +130,13 @@ theorem deterministic_pow {f : α → α} (hf : Measurable f) (n : ℕ) :
   | succ n ih =>
     rw [pow_add, pow_one, ih, deterministic_comp_deterministic]
     simp_rw [Function.iterate_succ]
+
+/-- The constant kernel sending every state to `Measure.dirac b` is the deterministic kernel of
+the constant map `fun _ => b`. -/
+theorem const_dirac_eq_deterministic {β : Type*} [MeasurableSpace β] (b : β) :
+    const α (Measure.dirac b) = deterministic (fun _ : α => b) measurable_const := by
+  ext1 _
+  simp [deterministic_apply]
 
 /-- **Chapman–Kolmogorov lower bound.** The `m + n`-step mass of a set `s` is at least the mass of
 the paths that sit at the intermediate state `y` at time `m`. -/

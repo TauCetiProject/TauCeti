@@ -15,8 +15,10 @@ For `m ≥ 2`, Mathlib's `SimpleGraph.cycleGraph m` joins two elements of `Fin m
 differ by one and records the neighbour set of a vertex as the pair `{v - 1, v + 1}`; for `m ≥ 3`,
 it computes the degree to be two. This file derives the weaker fact valid for every nonzero `m`
 that an adjacent vertex is the successor or predecessor, and shows that there are at most the two
-neighbours `v + 1` and `v - 1`; when `m ≥ 3`, they are distinct and really are neighbours. It
-also exhibits the rotations and reflections of `Fin m` as automorphisms of the cycle graph.
+neighbours `v + 1` and `v - 1`; when `m ≥ 3`, they are distinct and really are neighbours. For
+arguments about positions along a cycle it restates adjacency through the values of the
+vertices in `ℕ`, with the wrap-around from `m - 1` to `0` made explicit. It also exhibits the
+rotations and reflections of `Fin m` as automorphisms of the cycle graph.
 
 ## Main results
 
@@ -25,6 +27,7 @@ also exhibits the rotations and reflections of `Fin m` as automorphisms of the c
   that is, every degree is at most two.
 * `TauCeti.cycleGraph_adj_add_one`: on at least three vertices a vertex is adjacent to its
   successor.
+* `TauCeti.cycleGraph_adj_iff_val`: adjacency in terms of the values of the vertices in `ℕ`.
 * `TauCeti.cycleGraphAddRightIso`, `TauCeti.cycleGraphSubLeftIso`: the rotations `v ↦ v + k` and
   the reflections `v ↦ k - v` are automorphisms of the cycle graph.
 -/
@@ -75,6 +78,24 @@ theorem cycleGraph_adj_add_one (hm : 3 ≤ m) (v : Fin m) : (cycleGraph m).Adj v
     rw [cycleGraph_neighborSet]
     exact Set.mem_insert_of_mem _ rfl
   exact hv
+
+omit [NeZero m] in
+/-- **Adjacency in a cycle graph in terms of values**: unless `m = 1`, two vertices `i` and `j` are
+adjacent exactly when the value of one is the successor of the value of the other, or one of them is
+`0` and the other is `m - 1`. -/
+theorem cycleGraph_adj_iff_val (hm : m ≠ 1) {i j : Fin m} :
+    (cycleGraph m).Adj i j ↔ (j : ℕ) = i + 1 ∨ (i : ℕ) = j + 1 ∨
+      ((i : ℕ) = 0 ∧ (j : ℕ) + 1 = m) ∨ ((j : ℕ) = 0 ∧ (i : ℕ) + 1 = m) := by
+  have : NeZero m := i.neZero
+  have := i.isLt
+  rw [cycleGraph_adj']
+  rcases lt_trichotomy i j with h | rfl | h
+  · rw [Fin.sub_val_of_le h.le, Fin.coe_sub_iff_lt.2 h]
+    omega
+  · rw [sub_self, Fin.val_zero]
+    omega
+  · rw [Fin.sub_val_of_le h.le, Fin.coe_sub_iff_lt.2 h]
+    omega
 
 /-! ## Rotations and reflections of a cycle graph -/
 

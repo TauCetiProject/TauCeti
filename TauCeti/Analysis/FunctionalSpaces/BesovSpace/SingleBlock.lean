@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.PlaneWave
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct
-public import TauCeti.MeasureTheory.Function.Lp.One
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.One
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Basic
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.RealInterpolation
 import TauCeti.MeasureTheory.Function.Holder
 
@@ -79,20 +79,18 @@ and `v` each have only the block of index `m`, then `S_{j-N} u · Δⱼ v = 0` f
 theorem lowPass_smul_block_eq_zero_of_block_eq_zero (N : ℕ) {u : BesovSpace ℂ φ s p₁ q}
     {v : BesovSpace F φ s' p₂ q'} {m : ℕ} (hu : ∀ k, k ≠ m → u.block k = 0)
     (hv : ∀ k, k ≠ m → v.block k = 0) (j : ℕ) :
-    (u.lowPass (j - N) • v.block j : Lp F r (volume : Measure E)) = 0 := by
-  rcases eq_or_ne j m with rfl | hjm
-  · rw [lowPass_eq_ite_of_block_eq_zero hu, ite_eq_right (by omega), Lp.zero_smul]
-  · rw [hv j hjm, Lp.smul_zero]
+    (u.lowPass (j - N) • v.block j : Lp F r (volume : Measure E)) = 0 :=
+  lowPass_smul_block_eq_zero N j fun k hkj ↦
+    (eq_or_ne j m).imp (fun hj ↦ hu k (by omega)) (hv j)
 
 /-- **The paraproduct `T_v u` of two factors at the same frequency vanishes term by term.** If `u`
 and `v` each have only the block of index `m`, then `Δⱼ u · S_{j-N} v = 0` for every `j`. -/
 theorem block_smul_lowPass_eq_zero_of_block_eq_zero (N : ℕ) {u : BesovSpace ℂ φ s p₁ q}
     {v : BesovSpace F φ s' p₂ q'} {m : ℕ} (hu : ∀ k, k ≠ m → u.block k = 0)
     (hv : ∀ k, k ≠ m → v.block k = 0) (j : ℕ) :
-    (u.block j • v.lowPass (j - N) : Lp F r (volume : Measure E)) = 0 := by
-  rcases eq_or_ne j m with rfl | hjm
-  · rw [lowPass_eq_ite_of_block_eq_zero hv, ite_eq_right (by omega), Lp.smul_zero]
-  · rw [hu j hjm, Lp.zero_smul]
+    (u.block j • v.lowPass (j - N) : Lp F r (volume : Measure E)) = 0 :=
+  block_smul_lowPass_eq_zero N j fun k hkj ↦
+    (eq_or_ne j m).symm.imp (hu j) fun hj ↦ hv k (by omega)
 
 /-- **The terms of the resonant part of two factors at the same frequency.** If `u` and `v` each
 have only the block of index `m`, then the `j`-th term `Δⱼ u · ∑_{|k - j| ≤ N} Δₖ v` of `R(u, v)`
@@ -179,25 +177,6 @@ theorem hasSum_block_smul_sum_block_of_toDistr_eq_fourierInv_delta (N : ℕ)
 end PlaneWave
 
 section Constant
-
-/-- **The constant `1` lies in every Hölder–Zygmund space.** As a tempered distribution, `1` is
-the volume, which lies in `B^s_{∞,q}` for every `s` and `q`. -/
-theorem _root_.TemperedDistribution.memBesov_toTemperedDistribution_volume (s : ℝ)
-    (q : ℝ≥0∞) : (volume : Measure E).toTemperedDistribution.MemBesov φ s ∞ q :=
-  memBesov_of_littlewoodPaleyBlock_eq_ite (m := 0) (p := ∞)
-    (f := 1) (fun k ↦ by
-      rw [littlewoodPaleyBlock_toTemperedDistribution_volume, Lp.toTemperedDistribution_one])
-
-/-- **The blocks of the constant `1`.** If the tempered distribution of `u ∈ B^s_{∞,q}` is the
-constant function `1`, then `Δ₀ u = 1` and `Δⱼ u = 0` for `j ≥ 1`. -/
-theorem block_eq_ite_of_toDistr_eq_volume {u : BesovSpace ℂ φ s ∞ q}
-    (hu : u.toDistr = (volume : Measure E).toTemperedDistribution) (k : ℕ) :
-    u.block k = if k = 0 then 1 else 0 :=
-  Lp.toTemperedDistribution_injective <| by
-    simp only [coe_block, hu, littlewoodPaleyBlock_toTemperedDistribution_volume]
-    split_ifs
-    · rw [Lp.toTemperedDistribution_one]
-    · simp
 
 variable {u : BesovSpace ℂ φ s ∞ q} (hu : u.toDistr = (volume : Measure E).toTemperedDistribution)
   (N : ℕ) (v : BesovSpace F φ s' p q')

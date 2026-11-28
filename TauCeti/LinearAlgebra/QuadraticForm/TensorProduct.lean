@@ -8,13 +8,18 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct.Isometries
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
+public import Mathlib.RingTheory.IsTensorProduct
+import TauCeti.LinearAlgebra.QuadraticForm.Basic
+import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
-# Tensor products of equivalent quadratic forms
+# Tensor products and quadratic forms
 
 This file shows that tensor products preserve isometric equivalences and equivalence of quadratic
 forms, including Mathlib's heterobasic tensor products whose left factor is a form over an
 `R`-algebra `A`. It complements Mathlib's tensor product of quadratic-form isometries.
+It also characterizes the pullback of a quadratic map to a scalar extension by its values
+on pure tensors with first factor one.
 
 ## Main definitions
 
@@ -31,6 +36,19 @@ namespace TauCeti
 
 open scoped TensorProduct
 open QuadraticMap
+
+/-- Pullback along the base-change equivalence is determined by the values on `1 ⊗ₜ x`. -/
+theorem _root_.IsBaseChange.eq_comp_quadraticMap_iff
+    {R A M U D : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid U] [Module R U] [Module A U]
+    [IsScalarTower R A U] [AddCancelCommMonoid D] [Module A D]
+    {f : M →ₗ[R] U} (hf : IsBaseChange A f) (q : QuadraticMap A U D)
+    (q' : QuadraticMap A (A ⊗[R] M) D) :
+    q' = q.comp hf.equiv.toLinearMap ↔ ∀ x : M, q' (1 ⊗ₜ[R] x) = q (f x) := by
+  have apply_tmul (x : M) : (q.comp hf.equiv.toLinearMap) (1 ⊗ₜ[R] x) = q (f x) := by simp
+  simp only [← apply_tmul]
+  exact ⟨fun h x ↦ DFunLike.congr_fun h _,
+    QuadraticMap.ext_of_span_range_eq_top _ (TensorProduct.isBaseChange R M A).span_range_eq_top⟩
 
 variable {R : Type*} [CommRing R] [Invertible (2 : R)]
 

@@ -12,7 +12,7 @@ public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.Span
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Abelianization
 import TauCeti.Topology.Algebra.Group.Profinite.Free.Rank
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries
-import TauCeti.Topology.Algebra.Group.Heisenberg
+import TauCeti.Topology.Algebra.Group.Heisenberg.Basic
 import Mathlib.FieldTheory.Finiteness
 
 /-!

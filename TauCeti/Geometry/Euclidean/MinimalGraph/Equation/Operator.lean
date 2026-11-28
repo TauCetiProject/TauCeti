@@ -85,20 +85,6 @@ theorem differentiableAt_areaWeight {u : E → ℝ} {x : E}
     (hgrad : DifferentiableAt ℝ (∇ u) x) : DifferentiableAt ℝ (areaWeight u) x :=
   (hasFDerivAt_areaWeight hgrad).differentiableAt
 
-/-- The derivative of the normalized gradient is given by the scalar product rule. -/
-theorem hasFDerivAt_areaFlux {u : E → ℝ} {x : E}
-    (hgrad : DifferentiableAt ℝ (∇ u) x) :
-    HasFDerivAt (areaFlux u)
-      (areaWeight u x • fderiv ℝ (∇ u) x +
-        (((-(1 + ‖∇ u x‖ ^ 2) ^ (-(3 / 2 : ℝ)) • innerSL ℝ (∇ u x)).comp
-          (fderiv ℝ (∇ u) x)).smulRight (∇ u x))) x :=
-  (hasFDerivAt_areaWeight hgrad).smul hgrad.hasFDerivAt
-
-/-- The normalized gradient is differentiable wherever the gradient is differentiable. -/
-theorem differentiableAt_areaFlux {u : E → ℝ} {x : E}
-    (hgrad : DifferentiableAt ℝ (∇ u) x) : DifferentiableAt ℝ (areaFlux u) x :=
-  (hasFDerivAt_areaFlux hgrad).differentiableAt
-
 /-- The reciprocal graph area density is at most one. -/
 theorem areaWeight_le_one (u : E → ℝ) (x : E) : areaWeight u x ≤ 1 := by
   exact Real.rpow_le_one_of_one_le_of_nonpos (le_add_of_nonneg_right (sq_nonneg _)) (by norm_num)
@@ -222,10 +208,8 @@ theorem fluxDivergence_eq_rpow_mul_nondivergenceOperator {u : E → ℝ} {x : E}
   let s : ℝ := 1 + ‖∇ u x‖ ^ 2
   have hs : 0 < s := by dsimp [s]; positivity
   have hpow : s ^ (-(1 / 2 : ℝ)) = s * s ^ (-(3 / 2 : ℝ)) := by
-    calc
-      _ = s ^ (1 + -(3 / 2 : ℝ)) := by congr 1; ring
-      _ = s ^ 1 * s ^ (-(3 / 2 : ℝ)) := Real.rpow_add hs 1 _
-      _ = _ := by simp
+    rw [mul_comm, ← Real.rpow_add_one hs.ne']
+    norm_num
   rw [fluxDivergence_def, funext (areaFlux_apply u)]
   rw [TauCeti.trace_fderiv_smul (differentiableAt_areaWeight hgrad) hgrad,
     (hasFDerivAt_areaWeight hgrad).fderiv]

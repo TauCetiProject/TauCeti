@@ -24,8 +24,8 @@ For the Poisson integral `P[ν](z) = ∫ P(z, x) dν(x)` this says that the tran
 
 ## Main results
 
-* `TauCeti.upperHalfPlanePoissonKernel_add`, `TauCeti.upperHalfPlanePoissonKernel_div`: covariance
-  of the Poisson kernel.
+* `TauCeti.upperHalfPlanePoissonKernel_add`, `TauCeti.upperHalfPlanePoissonKernel_div`,
+  `TauCeti.upperHalfPlanePoissonKernel_add_mul`: covariance of the Poisson kernel.
 * `TauCeti.upperHalfPlanePoissonIntegral_map_add`, `TauCeti.upperHalfPlanePoissonIntegral_map_div`:
   translation and dilation covariance of the Poisson integral.
 -/
@@ -56,6 +56,20 @@ theorem upperHalfPlanePoissonKernel_div (z : ℂ) {c : ℝ} (hc : c ≠ 0) (x : 
     field_simp
   rw [h, normSq_mul, normSq_inv, normSq_ofReal]
   simp only [mul_im, ofReal_re, ofReal_im, zero_mul, add_zero]
+  field_simp
+
+/-- **Affine covariance of the Poisson kernel.** For `b ≠ 0`, the affine map `w ↦ a + b w` moves
+the pole and the boundary point together at the cost of the factor `b⁻¹`:
+`P(a + b w, a + b x) = b⁻¹ P(w, x)`. -/
+theorem upperHalfPlanePoissonKernel_add_mul (a : ℝ) {b : ℝ} (hb : b ≠ 0) (w : ℂ) (x : ℝ) :
+    upperHalfPlanePoissonKernel ((a : ℂ) + b * w) (a + b * x) =
+      b⁻¹ * upperHalfPlanePoissonKernel w x := by
+  rw [upperHalfPlanePoissonKernel_eq, upperHalfPlanePoissonKernel_eq]
+  have h : ((a + b * x : ℝ) : ℂ) - ((a : ℂ) + b * w) = (b : ℂ) * ((x : ℂ) - w) := by
+    push_cast
+    ring
+  rw [h, normSq_mul, normSq_ofReal]
+  simp only [add_im, ofReal_im, mul_im, ofReal_re, zero_add, zero_mul, add_zero]
   field_simp
 
 /-- **Translation covariance of the Poisson integral.** For the translate of `ν` by `u ∈ ℝ`,
