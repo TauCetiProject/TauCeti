@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import TauCeti.Order.Hom.PowersetCard
 
 /-!
 # Jacobi's complementary-minor identity
@@ -48,6 +49,11 @@ matrices in it.
   identity takes for a pair of inverse matrices of determinant one.
 * `Matrix.det_submatrix_comp_inr_eq_sign_mul_det_mul_det_submatrix_comp_inl_nonsing_inv`: the
   form it takes for a matrix and its nonsingular inverse.
+* `Matrix.exists_sign_det_submatrix_orderEmbCompl`: specialization to the first `b` columns of
+  `A` on rows outside `I : Fin a ↪o Fin N` and the last `a` columns of `Bᵀ` in reverse order on
+  rows `I`, with a sign `u : ℤˣ` independent of `R`, `A`, and `B`.
+* `Matrix.exists_sign_det_submatrix_orderEmbCompl_nonsing_inv`: the nonsingular-inverse
+  specialization `B = A⁻¹`.
 
 ## References
 
@@ -165,5 +171,59 @@ theorem det_submatrix_comp_inr_eq_sign_mul_det_mul_det_submatrix_comp_inl_nonsin
         (A⁻¹.submatrix (⇑σ ∘ ⇑e ∘ Sum.inl) (⇑τ ∘ ⇑e ∘ Sum.inl)).det :=
   det_submatrix_comp_inr_eq_sign_mul_det_mul_det_submatrix_comp_inl A A⁻¹
     (mul_nonsing_inv A hA) e σ τ
+
+
+section OrderEmbCompl
+
+universe u v
+
+/-- Given `a + b = N`, enumerations `e, pos : m ≃ Fin N`, and an order embedding
+`I : Fin a ↪o Fin N`, there is a sign `u : ℤˣ` (independent of `R`, `A`, `B`) such that for every
+commutative ring `R` and matrices `A, B : Matrix m m R` with `A * B = 1`, `u` times the minor of
+`A` on the rows outside `I` and the first `b` columns equals `A.det` times the minor of `Bᵀ` on the
+rows `I` and the last `a` columns in reverse order. -/
+theorem exists_sign_det_submatrix_orderEmbCompl {m : Type u} [Fintype m] [DecidableEq m]
+    {N a b : ℕ} (hab : a + b = N) (e pos : m ≃ Fin N) (I : Fin a ↪o Fin N) :
+    ∃ u : ℤˣ, ∀ {R : Type v} [CommRing R] {A B : Matrix m m R}, A * B = 1 →
+      ((u : ℤ) : R) * (A.submatrix (pos.symm ∘ Fin.orderEmbCompl hab I)
+          (e.symm ∘ Fin.castLE (Nat.le_of_add_left_le hab.le))).det =
+        A.det * (Bᵀ.submatrix (pos.symm ∘ I)
+          (e.symm ∘ Fin.rev ∘ Fin.castLE (Nat.le_of_add_right_le hab.le))).det := by
+  let ρ : Fin a ⊕ Fin b ≃ m := ((Equiv.refl (Fin a)).sumCongr Fin.revPerm).trans
+    (((finSumFinEquiv.trans (finCongr hab)).trans Fin.revPerm).trans e.symm)
+  have h_inl (t : Fin a) : ρ (.inl t) = e.symm (Fin.castLE (by omega) t).rev := by
+    simp [ρ, Fin.ext_iff]
+  have h_inr (t : Fin b) : ρ (.inr t) = e.symm (Fin.castLE (by omega) t) := by
+    have h_index : N - (a + (b - (t + 1)) + 1) = t := by omega
+    simp [ρ, Fin.ext_iff, h_index]
+  let I' : Fin b ↪o Fin N := Fin.orderEmbCompl hab I
+  have h_bij : (Sum.elim I I').Bijective := by
+    refine (Fintype.bijective_iff_surjective_and_card _).mpr ⟨?_, by simp [hab]⟩
+    rw [← Set.range_eq_univ, Set.Sum.elim_range, Fin.range_orderEmbCompl, Set.union_compl_self]
+  let σ : Fin a ⊕ Fin b ≃ m := (Equiv.ofBijective _ h_bij).trans pos.symm
+  let π : Equiv.Perm m := ρ.symm.trans σ
+  have h_rows (s : Fin a ⊕ Fin b) : π (ρ s) = pos.symm (Sum.elim I I' s) := by simp [π, σ]
+  refine ⟨π.sign, fun {R} _ {A B} hAB ↦ ?_⟩
+  have h_jacobi := det_submatrix_comp_inr_eq_sign_mul_det_mul_det_submatrix_comp_inl A B hAB ρ 1 π
+  simp only [Function.comp_def, h_rows, Sum.elim_inl, Sum.elim_inr] at h_jacobi
+  simp only [Equiv.Perm.coe_one, id_eq, h_inl, h_inr, Equiv.Perm.sign_one, Units.val_one,
+    Int.cast_one, one_mul, ← det_transpose (B.submatrix _ _), transpose_submatrix] at h_jacobi
+  simp only [Function.comp_def]
+  rw [h_jacobi, ← mul_assoc, ← mul_assoc, ← Int.cast_mul, Int.units_coe_mul_self, Int.cast_one,
+    one_mul]
+
+/-- Specialization of `Matrix.exists_sign_det_submatrix_orderEmbCompl` to `B = A⁻¹` for a matrix
+with invertible determinant. -/
+theorem exists_sign_det_submatrix_orderEmbCompl_nonsing_inv {m : Type u} [Fintype m] [DecidableEq m]
+    {N a b : ℕ} (hab : a + b = N) (e pos : m ≃ Fin N) (I : Fin a ↪o Fin N) :
+    ∃ u : ℤˣ, ∀ {R : Type v} [CommRing R] {A : Matrix m m R}, IsUnit A.det →
+      ((u : ℤ) : R) * (A.submatrix (pos.symm ∘ Fin.orderEmbCompl hab I)
+          (e.symm ∘ Fin.castLE (Nat.le_of_add_left_le hab.le))).det =
+        A.det * (A⁻¹ᵀ.submatrix (pos.symm ∘ I)
+          (e.symm ∘ Fin.rev ∘ Fin.castLE (Nat.le_of_add_right_le hab.le))).det := by
+  obtain ⟨u, hu⟩ := exists_sign_det_submatrix_orderEmbCompl.{u, v} hab e pos I
+  exact ⟨u, fun hA ↦ hu (mul_nonsing_inv _ hA)⟩
+
+end OrderEmbCompl
 
 end Matrix

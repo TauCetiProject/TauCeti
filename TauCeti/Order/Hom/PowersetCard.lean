@@ -45,6 +45,10 @@ preserves shuffle signs. The shuffle of a singleton `{i}` with `s.erase i` lists
 `i` in `s` to the front. For an `r`-subset `T` of `Fin m`, the shuffle sorting `T` followed by its
 complement `Tᶜ` has sign `(-1) ^ (∑ i ∈ T, i - r * (r - 1) / 2)`, so the product of the shuffle
 signs of two `r`-subsets `S` and `T` is `(-1) ^ (∑ i ∈ S, i + ∑ j ∈ T, j)`.
+
+For `a + b = N`, `Fin.orderEmbCompl` sends an order embedding `I : Fin a ↪o Fin N` to the
+complementary order embedding `Fin b ↪o Fin N` enumerating `(Set.range I)ᶜ` in increasing
+order, built through `Set.powersetCard.compl` and `Set.powersetCard.ofFinEmbEquiv`.
 -/
 
 public section
@@ -434,3 +438,43 @@ theorem forall_le_symm_iff_eq_map_topBlock {ι : Type*} (σ : Fin N ≃ ι) {k :
     simpa using (mem_topBlock h).1 hj
 
 end TauCeti
+
+namespace Fin
+
+/-- The order embedding `Fin b ↪o Fin N` enumerating the indices outside the range of
+`I : Fin a ↪o Fin N`, where `a + b = N`. -/
+noncomputable def orderEmbCompl {N a b : ℕ} (hab : a + b = N) (I : Fin a ↪o Fin N) :
+    Fin b ↪o Fin N :=
+  Set.powersetCard.ofFinEmbEquiv.symm
+    (Set.powersetCard.compl (by rw [Fintype.card_fin, add_comm, hab])
+      (Set.powersetCard.ofFinEmbEquiv I))
+
+/-- The range of `Fin.orderEmbCompl hab I` is the complement of the range of `I`. -/
+@[simp]
+theorem range_orderEmbCompl {N a b : ℕ} (hab : a + b = N) (I : Fin a ↪o Fin N) :
+    Set.range (orderEmbCompl hab I) = (Set.range I)ᶜ := by
+  ext x
+  rw [orderEmbCompl, Set.mem_compl_iff, Set.powersetCard.mem_range_ofFinEmbEquiv_symm_iff_mem,
+    Set.powersetCard.mem_compl, Set.powersetCard.mem_ofFinEmbEquiv_iff_mem_range]
+
+/-- An order embedding `J : Fin b ↪o Fin N` equals `Fin.orderEmbCompl hab I` if and only if its
+range is the complement of the range of `I`. -/
+theorem eq_orderEmbCompl_iff {N a b : ℕ} (hab : a + b = N)
+    {I : Fin a ↪o Fin N} {J : Fin b ↪o Fin N} :
+    J = orderEmbCompl hab I ↔ Set.range J = (Set.range I)ᶜ := by
+  rw [← range_orderEmbCompl hab I]
+  exact ⟨fun h ↦ h ▸ rfl, OrderEmbedding.range_inj_of_wellFoundedLT.mp⟩
+
+/-- Taking the complementary order embedding twice recovers the original order embedding. -/
+@[simp]
+theorem orderEmbCompl_orderEmbCompl {N a b : ℕ} (hab : a + b = N) (hba : b + a = N)
+    (I : Fin a ↪o Fin N) :
+    orderEmbCompl hba (orderEmbCompl hab I) = I :=
+  OrderEmbedding.range_inj_of_wellFoundedLT.mp (by simp)
+
+/-- Taking the complementary order embedding is injective. -/
+theorem orderEmbCompl_injective {N a b : ℕ} (hab : a + b = N) :
+    Function.Injective (orderEmbCompl hab : (Fin a ↪o Fin N) → (Fin b ↪o Fin N)) :=
+  Function.LeftInverse.injective (orderEmbCompl_orderEmbCompl hab (add_comm a b ▸ hab))
+
+end Fin
