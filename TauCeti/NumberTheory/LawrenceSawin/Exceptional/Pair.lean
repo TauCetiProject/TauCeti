@@ -29,16 +29,16 @@ public section
 namespace TauCeti
 
 /-- Consecutive terms of the exceptional Pell sequence, indexed from the pair `(1, 5)`. -/
-@[expose] def exceptionalPair : ℕ → ℕ × ℕ
+def exceptionalPair : ℕ → ℕ × ℕ
   | 0 => (1, 5)
   | j + 1 =>
     let p := exceptionalPair j
     (p.2, 4 * p.2 + 1 - p.1)
 
-@[simp] theorem exceptionalPair_zero : exceptionalPair 0 = (1, 5) := rfl
+@[simp] theorem exceptionalPair_zero : exceptionalPair 0 = (1, 5) := (rfl)
 
 theorem exceptionalPair_succ (j : ℕ) : exceptionalPair (j + 1) =
-    ((exceptionalPair j).2, 4 * (exceptionalPair j).2 + 1 - (exceptionalPair j).1) := rfl
+    ((exceptionalPair j).2, 4 * (exceptionalPair j).2 + 1 - (exceptionalPair j).1) := (rfl)
 
 /-- The first successor of the seed is the pair `(5, 20)`. -/
 @[simp] theorem exceptionalPair_one : exceptionalPair 1 = (5, 20) := by
