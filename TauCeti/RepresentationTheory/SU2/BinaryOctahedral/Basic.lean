@@ -426,6 +426,14 @@ theorem mem_binaryOctahedralSLSubgroup_iff {A : Matrix.SpecialLinearGroup (Fin 2
       ∃ g ∈ binaryOctahedralSubgroup, Matrix.specialUnitaryGroup.toSL g = A :=
   Subgroup.mem_map
 
+/-- An element of `SU(2)` lies in `TauCeti.SU2.binaryOctahedralSLSubgroup` under `toSL`
+exactly when it lies in `TauCeti.SU2.binaryOctahedralSubgroup`. -/
+@[simp]
+theorem toSL_mem_binaryOctahedralSLSubgroup_iff {g : SU2} :
+    Matrix.specialUnitaryGroup.toSL g ∈ binaryOctahedralSLSubgroup ↔
+      g ∈ binaryOctahedralSubgroup :=
+  ⟨fun ⟨_, h, hA⟩ => Matrix.specialUnitaryGroup.toSL_injective hA ▸ h, fun h => ⟨g, h, rfl⟩⟩
+
 /-- **The group isomorphism between `TauCeti.SU2.binaryOctahedralSubgroup` and its `SL₂(ℂ)` copy
 `TauCeti.SU2.binaryOctahedralSLSubgroup`.** -/
 noncomputable def binaryOctahedralEquivSLSubgroup :
@@ -514,7 +522,10 @@ theorem weylElement_mem_binaryOctahedralSubgroup :
     (binaryDihedralSubgroup_two_le_binaryTetrahedralSubgroup
       (inv_mem (weylElement_mem_binaryDihedralSubgroup 2))))
 
-private theorem binaryDihedralRotation_four_notMem_binaryTetrahedralSubgroup :
+/-- The eighth-turn `τ = (1 + i) / √2` does not lie in the binary tetrahedral subgroup, so it
+represents the nontrivial coset of `2T` in `2O`. -/
+@[simp]
+theorem binaryDihedralRotation_four_notMem_binaryTetrahedralSubgroup :
     binaryDihedralRotation 4 ∉ binaryTetrahedralSubgroup := by
   intro hT
   obtain ⟨v, hv⟩ := mem_binaryTetrahedralSubgroup_iff_exists_int.mp hT

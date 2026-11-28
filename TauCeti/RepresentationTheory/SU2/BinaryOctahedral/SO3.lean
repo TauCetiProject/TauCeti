@@ -81,11 +81,11 @@ theorem toSO3_binaryDihedralRotation_four :
   refine Subtype.ext ?_
   rw [coe_cubeRotationToSpecialOrthogonalGroup, hA, binaryDihedralRotation_def, coe_toSO3_torusHom]
   have hz : ((ZMod.toCircle (1 : ZMod (2 * 4)) : ℂ) ^ 2) = Complex.I := by
-    have hsq := congrArg (fun g : SU2 => (g : Matrix (Fin 2) (Fin 2) ℂ) 0 0)
-      (binaryDihedralRotation_two_mul_sq 2)
-    rw [binaryDihedralRotation_def (2 * 2), ← map_pow, coe_torusHom, torusMatrix_apply_zero_zero,
-      coe_binaryDihedralRotation 2] at hsq
-    simpa [Nat.cast_ofNat, mul_div_right_comm, Complex.exp_pi_div_two_mul_I] using hsq
+    rw [← Circle.coe_pow, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, mul_one,
+      ZMod.toCircle_natCast]
+    push_cast
+    rw [show (2 : ℂ) * Real.pi * Complex.I * 2 / 8 = Real.pi / 2 * Complex.I by ring,
+      Complex.exp_pi_div_two_mul_I]
   ext i j
   fin_cases i <;> fin_cases j <;> simp [hz]
 

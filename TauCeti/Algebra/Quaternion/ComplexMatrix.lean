@@ -224,6 +224,7 @@ theorem mem_range_toComplexMatrix_iff {M : Matrix (Fin 2) (Fin 2) ℂ} :
 
 /-- A quaternion has special unitary matrix under `Quaternion.toComplexMatrix` exactly when it is
 a unit quaternion. -/
+@[simp]
 theorem toComplexMatrix_mem_specialUnitaryGroup_iff {q : ℍ[ℝ]} :
     toComplexMatrix q ∈ Matrix.specialUnitaryGroup (Fin 2) ℂ ↔ q ∈ unitary ℍ[ℝ] := by
   refine ⟨fun hq => ?_, fun hq => ?_⟩

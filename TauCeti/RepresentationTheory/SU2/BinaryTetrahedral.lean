@@ -169,7 +169,7 @@ noncomputable def binaryTetrahedralSubgroup : Subgroup SU2 where
   inv_mem' := by
     rintro g ⟨v, -, hg⟩
     refine exists_mem_binaryTetrahedralCoords_of_coe_eq (v := ![v 0, -v 1, -v 2, -v 3]) ?_
-    rw [← Matrix.star_eq_inv, Matrix.specialUnitaryGroup.coe_star, hg, ← map_star]
+    rw [coe_inv_eq_toComplexMatrix_star hg]
     congr 1
     ext <;> simp [neg_div]
 
