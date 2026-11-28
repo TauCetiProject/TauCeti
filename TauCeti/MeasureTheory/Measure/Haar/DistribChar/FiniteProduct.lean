@@ -1,0 +1,129 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.MeasureTheory.Constructions.Pi
+public import Mathlib.MeasureTheory.Measure.Haar.DistribChar
+
+/-!
+# Haar characters under transport and finite products
+
+The factor by which an automorphism scales additive Haar measure is unchanged by an
+intertwining additive homeomorphism. On a finite product it is the product of the factors
+on the coordinates. These formulas assemble local change of variables into a global one.
+-/
+
+public noncomputable section
+
+open MeasureTheory Measure Set
+open scoped Pointwise ENNReal
+
+namespace ContinuousAddEquiv
+
+/-- Intertwining additive homeomorphisms preserve the Haar scaling factor. The acting
+groups may differ; only the two specified automorphisms must intertwine. -/
+theorem distribHaarChar_eq {A B G H : Type*}
+    [AddCommGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A] [LocallyCompactSpace A]
+    [AddCommGroup B] [TopologicalSpace B] [IsTopologicalAddGroup B] [LocallyCompactSpace B]
+    [Group G] [DistribMulAction G A] [ContinuousConstSMul G A]
+    [Group H] [DistribMulAction H B] [ContinuousConstSMul H B]
+    (e : A ≃ₜ+ B) (g : G) (h : H) (he : ∀ x, e (g • x) = h • e x) :
+    distribHaarChar A g = distribHaarChar B h := by
+  borelize A B
+  let ν : Measure B := Measure.addHaar
+  let μ : Measure A := ν.map e.symm
+  have : μ.IsAddHaarMeasure := e.symm.isAddHaarMeasure_map ν
+  have : μ.Regular := Measure.Regular.map e.symm.toHomeomorph
+  obtain ⟨K⟩ : Nonempty (TopologicalSpace.PositiveCompacts B) := inferInstance
+  have hpre : e.symm ⁻¹' (g • (e ⁻¹' (K : Set B))) = h • (K : Set B) := by
+    ext y
+    rw [mem_preimage, mem_smul_set_iff_inv_smul_mem, mem_preimage,
+      mem_smul_set_iff_inv_smul_mem]
+    have hinv : e (g⁻¹ • e.symm y) = h⁻¹ • y := by
+      apply (MulAction.toPerm h).injective
+      simp only [MulAction.toPerm_apply]
+      rw [← he, smul_inv_smul, e.apply_symm_apply, smul_inv_smul]
+    rw [hinv]
+  have hmap (s : Set A) : μ s = ν (e.symm ⁻¹' s) :=
+    e.symm.toHomeomorph.measurableEmbedding.map_apply ν s
+  have hμ : μ (e ⁻¹' (K : Set B)) = ν K :=
+    (hmap _).trans (congrArg ν (Set.ext fun x ↦ by
+      simp only [Set.mem_preimage]
+      rw [e.apply_symm_apply]))
+  refine distribHaarChar_eq_of_measure_smul_eq_mul (μ := μ)
+    (s := e ⁻¹' (K : Set B)) ?_ ?_ ?_
+  · rw [hμ]
+    exact (Measure.measure_pos_of_nonempty_interior ν K.interior_nonempty).ne'
+  · rw [hμ]
+    exact K.isCompact.measure_ne_top
+  · rw [hμ]
+    rw [hmap, hpre]
+    exact (distribHaarChar_mul ν h K).symm
+
+end ContinuousAddEquiv
+
+namespace MeasureTheory
+
+/-- The Haar character of a coordinatewise action on a finite product is the product of
+its coordinate Haar characters. -/
+@[simp]
+theorem distribHaarChar_pi {ι : Type*} [Fintype ι] {A : ι → Type*} {G : Type*} [Group G]
+    [∀ i, AddCommGroup (A i)] [∀ i, TopologicalSpace (A i)]
+    [∀ i, IsTopologicalAddGroup (A i)] [∀ i, LocallyCompactSpace (A i)]
+    [∀ i, SecondCountableTopology (A i)]
+    [∀ i, DistribMulAction G (A i)] [∀ i, ContinuousConstSMul G (A i)]
+    (g : G) :
+    distribHaarChar (∀ i, A i) g = ∏ i, distribHaarChar (A i) g := by
+  classical
+  let _ (i : ι) : MeasurableSpace (A i) := borel _
+  have _ (i : ι) : BorelSpace (A i) := ⟨rfl⟩
+  let K (i : ι) : TopologicalSpace.PositiveCompacts (A i) := Classical.choice inferInstance
+  let μ (i : ι) : Measure (A i) := addHaarMeasure (K i)
+  have hμ (i : ι) : μ i (K i) = 1 := addHaarMeasure_self
+  let s : Set (∀ i, A i) := univ.pi fun i ↦ (K i : Set (A i))
+  have hs : Measure.pi μ s = 1 := by simp [s, Measure.pi_pi, hμ]
+  have hgs : g • s = univ.pi fun i ↦ g • (K i : Set (A i)) := by
+    ext x
+    simp only [mem_smul_set_iff_inv_smul_mem, s, mem_univ_pi, Pi.smul_apply]
+  refine distribHaarChar_eq_of_measure_smul_eq_mul (μ := Measure.pi μ) (s := s)
+    (by simp [hs]) (by simp [hs]) ?_
+  rw [hgs, hs, mul_one, Measure.pi_pi]
+  push_cast
+  exact Finset.prod_congr rfl fun i _ ↦ by rw [← distribHaarChar_mul, hμ, mul_one]
+
+/-- The Haar character on a product is the product of the two Haar characters. -/
+@[simp]
+theorem distribHaarChar_prod {A B G : Type*}
+    [AddCommGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A] [LocallyCompactSpace A]
+    [SecondCountableTopology A]
+    [AddCommGroup B] [TopologicalSpace B] [IsTopologicalAddGroup B] [LocallyCompactSpace B]
+    [SecondCountableTopology B]
+    [Group G] [DistribMulAction G A] [ContinuousConstSMul G A]
+    [DistribMulAction G B] [ContinuousConstSMul G B]
+    (g : G) :
+    distribHaarChar (A × B) g = distribHaarChar A g * distribHaarChar B g := by
+  borelize A B
+  let μ : Measure A := Measure.addHaar
+  let ν : Measure B := Measure.addHaar
+  obtain ⟨K⟩ : Nonempty (TopologicalSpace.PositiveCompacts A) := inferInstance
+  obtain ⟨L⟩ : Nonempty (TopologicalSpace.PositiveCompacts B) := inferInstance
+  have hKL : g • ((K : Set A) ×ˢ (L : Set B)) =
+      (g • (K : Set A)) ×ˢ (g • (L : Set B)) := by
+    ext x
+    simp [mem_smul_set_iff_inv_smul_mem]
+  refine distribHaarChar_eq_of_measure_smul_eq_mul (μ := μ.prod ν)
+    (s := (K : Set A) ×ˢ (L : Set B)) ?_ ?_ ?_
+  · rw [Measure.prod_prod]
+    exact mul_ne_zero (Measure.measure_pos_of_nonempty_interior μ K.interior_nonempty).ne'
+      (Measure.measure_pos_of_nonempty_interior ν L.interior_nonempty).ne'
+  · rw [Measure.prod_prod]
+    exact ENNReal.mul_ne_top K.isCompact.measure_ne_top L.isCompact.measure_ne_top
+  · rw [hKL, Measure.prod_prod, Measure.prod_prod, ← distribHaarChar_mul,
+      ← distribHaarChar_mul]
+    push_cast
+    ring
+
+end MeasureTheory
