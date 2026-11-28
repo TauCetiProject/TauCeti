@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.WeakDeriv.UniformLimit
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
-import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence
+import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp

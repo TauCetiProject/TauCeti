@@ -28,11 +28,17 @@ point.
 * `SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_of_tendsto`: if the derivative of a map is
   the limit in the tangent bundle of derivatives of Floer solutions, its perturbed derivative is
   complex linear, for structures continuous in tangent coordinates.
+* `SmoothTwoForm.continuousAt_floerEnergyDensity`: pointwise continuity of the Floer energy
+  density of a `C¹` map when the Hamiltonian vector fields are continuous into the tangent bundle.
+* `SmoothTwoForm.continuousOn_floerEnergyDensity`: continuity of the Floer energy density on an
+  open set, derived from `SmoothTwoForm.continuousAt_floerEnergyDensity`.
+* `SmoothTwoForm.continuousOn_floerEnergyDensity_of_isOpen_prod`: slice continuity of the Floer
+  energy density for a parametrized Hamiltonian family.
 -/
 
 public section
 
-open Filter Function Topology
+open Filter Function Set Topology
 open scoped Manifold
 
 namespace TauCeti.SmoothTwoForm
@@ -118,5 +124,61 @@ theorem isComplexLinearMap_perturbedMFDeriv_of_tendsto (ω : SmoothTwoForm I M)
     (fun e ↦ by
       rw [perturbedMFDeriv_apply ω Ks Kt v z₀ e]
       exact ω.tendsto_perturbedMFDeriv hz hdu hXs hXt e) hJ hsol
+
+/-- **Continuity of the Floer energy density at a point, for a manifold target.** If `u` is `C¹`
+at `z` and the Hamiltonian vector fields of `K = K_s ds + K_t dt` are continuous at `(z, u z)` as
+maps into the tangent bundle, then the Floer energy density of `u` is continuous at `z`. -/
+theorem continuousAt_floerEnergyDensity (ω : SmoothTwoForm I M) {Ks Kt : ℝ × ℝ → M → ℝ}
+    {u : ℝ × ℝ → M} {z : ℝ × ℝ} (hu : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 1 u z)
+    (hXs : ContinuousAt (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Ks p.1) p.2⟩ : TangentBundle I M)) (z, u z))
+    (hXt : ContinuousAt (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Kt p.1) p.2⟩ : TangentBundle I M)) (z, u z)) :
+    ContinuousAt (ω.floerEnergyDensity Ks Kt u) z := by
+  have hD (e : ℝ × ℝ) : Tendsto (fun z' ↦ (⟨u z', mfderiv 𝓘(ℝ, ℝ × ℝ) I u z' e⟩ :
+      TangentBundle I M)) (𝓝 z) (𝓝 ⟨u z, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z e⟩) :=
+    ((hu.continuousAt_tangentMap le_rfl).comp ((tangentBundleModelSpaceHomeomorph
+      𝓘(ℝ, ℝ × ℝ)).symm.continuous.continuousAt.comp
+        (continuous_id.prodMk continuous_const).continuousAt)).tendsto
+  exact ω.tendsto_floerEnergyDensity (u := fun _ ↦ u) tendsto_id hD hXs hXt
+
+/-- **Continuity of the Floer energy density, for a manifold target.** If `u` is `C¹` on an open
+set `U` of the domain and the Hamiltonian vector fields of the perturbation `K = K_s ds + K_t dt`
+are continuous on `U × M` as maps into the tangent bundle, then the Floer energy density of `u` is
+continuous on `U`. The vector-space case is `SymplecticForm.continuousOn_floerEnergyDensity`. -/
+theorem continuousOn_floerEnergyDensity (ω : SmoothTwoForm I M) {Ks Kt : ℝ × ℝ → M → ℝ}
+    {u : ℝ × ℝ → M} {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U)
+    (hXs : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Ks p.1) p.2⟩ : TangentBundle I M)) (U ×ˢ univ))
+    (hXt : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Kt p.1) p.2⟩ : TangentBundle I M)) (U ×ˢ univ)) :
+    ContinuousOn (ω.floerEnergyDensity Ks Kt u) U := by
+  intro z hz
+  have hUM := (hU.prod isOpen_univ).mem_nhds (mk_mem_prod hz (mem_univ (u z)))
+  exact (ω.continuousAt_floerEnergyDensity (hu.contMDiffAt (hU.mem_nhds hz))
+    (hXs.continuousAt hUM) (hXt.continuousAt hUM)).continuousWithinAt
+
+/-- **Slice continuity of the Floer energy density for a parametrized Hamiltonian family.** On any
+subset `S ⊆ Ω` of an open set `Ω` mapped into the open domain `W` of jointly continuous Hamiltonian
+vector fields `X_{K_s}, X_{K_t}`, a `C¹` map `u` has continuous Floer energy density. -/
+theorem continuousOn_floerEnergyDensity_of_isOpen_prod {P : Type*} [TopologicalSpace P]
+    (ω : SmoothTwoForm I M) {Ks Kt : P → ℝ × ℝ → M → ℝ}
+    {W : Set (P × ((ℝ × ℝ) × M))} (hW : IsOpen W)
+    (hXs : ContinuousOn (fun q : P × ((ℝ × ℝ) × M) ↦
+      (⟨q.2.2, ω.hamiltonianVectorField (Ks q.1 q.2.1) q.2.2⟩ : TangentBundle I M)) W)
+    (hXt : ContinuousOn (fun q : P × ((ℝ × ℝ) × M) ↦
+      (⟨q.2.2, ω.hamiltonianVectorField (Kt q.1 q.2.1) q.2.2⟩ : TangentBundle I M)) W)
+    {Ω S : Set (ℝ × ℝ)} (hΩ : IsOpen Ω) (hSΩ : S ⊆ Ω)
+    {p : P} {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u Ω)
+    (huW : ∀ z ∈ S, (p, (z, u z)) ∈ W) :
+    ContinuousOn (ω.floerEnergyDensity (Ks p) (Kt p) u) S := by
+  intro z hz
+  have hqW : (p, (z, u z)) ∈ W := huW z hz
+  have hslice : ContinuousAt (fun q : (ℝ × ℝ) × M ↦ (p, q)) (z, u z) :=
+    continuousAt_const.prodMk continuousAt_id
+  exact (ω.continuousAt_floerEnergyDensity
+    (hu.contMDiffAt (hΩ.mem_nhds (hSΩ hz)))
+    ((hXs.continuousAt (hW.mem_nhds hqW)).comp hslice)
+    ((hXt.continuousAt (hW.mem_nhds hqW)).comp hslice)).continuousWithinAt
 
 end TauCeti.SmoothTwoForm

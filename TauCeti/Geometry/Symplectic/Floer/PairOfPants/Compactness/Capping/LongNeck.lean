@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Closed
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capping
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
+import TauCeti.Geometry.Symplectic.Floer.Manifold.Limit
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 

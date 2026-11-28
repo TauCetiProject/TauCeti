@@ -14,7 +14,7 @@ public import TauCeti.Geometry.Manifold.VectorField.Prod
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
-import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
+import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
@@ -159,8 +159,8 @@ Hamiltonian vector fields and Poisson brackets restrict to open submanifolds, fo
   jointly `C^(n+1)` families of Hamiltonians, such as time-dependent ones, its pointwise form
   `TauCeti.SmoothTwoForm.contMDiffAt_hamiltonianVectorField_uncurry_of_isInvertible`, and the
   finite-dimensional forms `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField`,
-  `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField_uncurry` and
-  `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiffAt_hamiltonianVectorField_uncurry`.
+  `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiffAt_hamiltonianVectorField_uncurry` and
+  `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField_uncurry`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.continuous_mvfderiv_hamiltonianVectorField`: the
   pushforward `d e (X_{H_t})` by a `C¹` map `e` of the Hamiltonian vector field of a `C¹`
   time-dependent Hamiltonian is continuous, and uniformly bounded on a compact manifold for a

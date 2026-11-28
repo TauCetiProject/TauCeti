@@ -6,6 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
+import Mathlib.Analysis.InnerProductSpace.EuclideanDist
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.Geometry.Symplectic.Floer.Manifold.Limit
+import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold.Family
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
@@ -19,7 +25,9 @@ equation `∂ₜu - X(z, u)(0, 1) = J(z, u)(∂ₛu - X(z, u)(1, 0))` in a finit
 solution on `B_r(z₀)` with `r² + ∫_{B_r(z₀)} ‖∂ₛu‖² < δ` satisfies
 `r² ‖∂ₛu(z₀)‖² ≤ C (r² + ∫_{B_r(z₀)} ‖∂ₛu‖²)`
 (`TauCeti.Floer.exists_pos_forall_sq_mul_norm_fderiv_sq_le_of_small_energy_of_finiteDimensional`).
-This file states it for solutions in a chart of a manifold.
+This file states it for solutions in a chart of a manifold, as well as the parametric Euclidean-ball
+version (`TauCeti.SmoothTwoForm.IsNondegenerate.`
+`exists_pos_forall_pi_mul_sq_mul_floerEnergyDensity_le_inChart`).
 
 For a solution `u : ℝ × ℝ → M` of `(du - X_K)^{0,1} = 0` with values in a chart, the same
 inequality holds for the intrinsic Floer energy density `e(u) = ω(∂ₛu - X_{K_s}, ∂ₜu - X_{K_t})`:
@@ -60,7 +68,7 @@ public section
 
 noncomputable section
 
-open Complex ContinuousLinearMap Filter MeasureTheory Metric Real Set Topology
+open Bundle Complex ContinuousLinearMap Filter MeasureTheory Metric Real Set Topology
 
 open scoped Manifold
 
@@ -68,7 +76,11 @@ namespace TauCeti.SmoothTwoForm
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I (⊤ : ℕ∞) M] {ω : SmoothTwoForm I M} {Ks Kt : ℝ × ℝ → M → ℝ}
+  [IsManifold I (⊤ : ℕ∞) M]
+
+section
+
+variable {ω : SmoothTwoForm I M} {Ks Kt : ℝ × ℝ → M → ℝ}
   {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
 
 /-- The arithmetic closing the mean-value inequality in a chart: the energy density `f₀` at the
@@ -225,5 +237,235 @@ theorem IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_of_small_
       (fun q hq ↦ hDKW ⟨hq.1.2, hq.2⟩) fun _ _ ↦ hJt
   exact ⟨δ, hδ, C, hC, fun u z₀ r hr hrD hu hu' hfl huK hint hE ↦
     h (mem_univ ()) hr hrD hu hu' hfl huK hint hE⟩
+
+end
+
+section ChartMVI
+
+variable {P : Type*} [NormedAddCommGroup P] [InnerProductSpace ℝ P]
+
+/-- Conjugates the chart Floer data `(J, X_{K_s}, X_{K_t})` to Euclidean space via `toEuclidean`
+and `Complex.equivRealProdCLM`, obtaining the parametric Euclidean mean-value inequality on
+`C × (eℂ⁻¹ D) × (L '' K_α)`. -/
+private theorem IsNondegenerate.exists_euclidean_chart_mvi [I.Boundaryless]
+    {ω : SmoothTwoForm I M} (hω : ω.IsNondegenerate) (α : M)
+    {J : P → ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    {Ks Kt : P → ℝ × ℝ → M → ℝ} {W : Set (P × ((ℝ × ℝ) × M))}
+    {C : Set P} {D : Set (ℝ × ℝ)} {Kα : Set E} (hW : IsOpen W)
+    (hKs : ContMDiffOn (𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ) 3
+      (fun q : P × ((ℝ × ℝ) × M) ↦ Ks q.1 q.2.1 q.2.2) W)
+    (hKt : ContMDiffOn (𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ) 3
+      (fun q : P × ((ℝ × ℝ) × M) ↦ Kt q.1 q.2.1 q.2.2) W)
+    (hJ : ContMDiffOn (𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) (I.prod 𝓘(ℝ, E →L[ℝ] E)) 2
+      (fun q : P × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2.2
+        (J q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap) W)
+    (hC : IsCompact C) (hD : IsCompact D) (hKα : IsCompact Kα)
+    (hKαt : Kα ⊆ (extChartAt I α).target)
+    (hCDKW : C ×ˢ (D ×ˢ ((extChartAt I α).symm '' Kα)) ⊆ W) :
+    let L : E ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) := toEuclidean
+    let LP := ContinuousLinearEquiv.refl ℝ P
+    let eℂ := Complex.equivRealProdCLM
+    ∃ δ > 0, ∀ ⦃p : P⦄ ⦃w : ℂ → EuclideanSpace ℝ (Fin (Module.finrank ℝ E))⦄ ⦃y₀ : ℂ⦄ ⦃r : ℝ⦄,
+      p ∈ C → 0 ≤ r → ball y₀ r ⊆ eℂ ⁻¹' D → ContDiffOn ℝ 3 w (ball y₀ r) →
+      ContinuousOn (fun y ↦ fderiv ℝ w y 1) (closedBall y₀ r) →
+      (∀ y ∈ ball y₀ r,
+        fderiv ℝ w y Complex.I -
+            ω.transportedHamiltonianOneFormInChartAt α LP L Ks Kt p (y, w y) Complex.I =
+          Floer.transportedAlmostComplexInChartAt I α LP L J p (y, w y)
+            (fderiv ℝ w y 1 -
+              ω.transportedHamiltonianOneFormInChartAt α LP L Ks Kt p (y, w y) 1)) →
+      MapsTo w (ball y₀ r) (L '' Kα) →
+      π * r ^ 2 + ∫ y in ball y₀ r, ‖fderiv ℝ w y 1‖ ^ 2 < δ →
+      π * r ^ 2 * ‖fderiv ℝ w y₀ 1‖ ^ 2 ≤
+        7 * π * r ^ 2 + 8 * ∫ y in ball y₀ r, ‖fderiv ℝ w y 1‖ ^ 2 := by
+  set e := extChartAt I α
+  set eℂ := Complex.equivRealProdCLM
+  let L : E ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) := toEuclidean
+  let LP := ContinuousLinearEquiv.refl ℝ P
+  have hXsM := hω.contMDiffOn_hamiltonianVectorField_prod (n := 2) (by simp) hW hKs
+  have hXtM := hω.contMDiffOn_hamiltonianVectorField_prod (n := 2) (by simp) hW hKt
+  have hW' : IsOpen {q : P × (ℂ × EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) |
+      L.symm q.2.2 ∈ e.target ∧
+        (LP.symm q.1, (eℂ q.2.1, e.symm (L.symm q.2.2))) ∈ W} := by
+    simpa only [preimage_ofPred_eq, Floer.chartTransportEquiv_apply] using
+      (isOpen_preimage_prod_extChartAt_symm (I := I) α hW).preimage
+        (Floer.chartTransportEquiv LP L).continuous
+  have hJ' := Floer.contDiffOn_transportedAlmostComplexInChartAt (n := 2) (by simp) α LP L hJ
+  have hX' :=
+    ω.contDiffOn_transportedHamiltonianOneFormInChartAt (n := 2) (by simp) α LP L hXsM hXtM
+  have hCDKW' : C ×ˢ ((eℂ ⁻¹' D) ×ˢ (L '' Kα)) ⊆
+      {q : P × (ℂ × EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) |
+        L.symm q.2.2 ∈ e.target ∧
+          (LP.symm q.1, (eℂ q.2.1, e.symm (L.symm q.2.2))) ∈ W} := by
+    rintro ⟨p, z, _⟩ ⟨hp, hz, y, hy, rfl⟩
+    exact ⟨by simpa using hKαt hy, hCDKW ⟨hp, hz, ⟨y, hy, by simp⟩⟩⟩
+  exact Floer.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy_parametric
+    hW' hJ' hX' hC (eℂ.toHomeomorph.isCompact_preimage.2 hD) (hKα.image L.continuous) hCDKW'
+    fun p _ z _ x hx v ↦ by
+      rcases hx with ⟨y, hy, rfl⟩
+      exact Floer.transportedAlmostComplexInChartAt_apply_apply α LP L J p
+        ((L.symm_apply_apply y).symm ▸ hKαt hy) v
+
+/-- **Intrinsic chart mean-value inequality over a compact parameter window.** For a chart at `α`
+and a compact set `K_α` of chart coordinates whose image lies in `W` over `C × D`, there exist
+`δ > 0`, `M₁ > 0`, `M₂ > 0`, `M₃ ≥ 0` such that any `C³` solution `u` on an open `Ω ⊆ D` for
+`p ∈ C` mapping `closedBall c r ⊆ Ω` into the chart with coordinates in `K_α` and satisfying the
+small-energy condition `M₁ (π r²) + M₂ ∫_{B_r(c)} e(u) < δ` obeys
+`π r² e(u)(c) ≤ M₃ (π r² + ∫_{B_r(c)} e(u))`. -/
+theorem IsNondegenerate.exists_pos_forall_pi_mul_sq_mul_floerEnergyDensity_le_inChart
+    [I.Boundaryless] {ω : SmoothTwoForm I M} (hω : ω.IsNondegenerate) (α : M)
+    {J : P → ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    {Ks Kt : P → ℝ × ℝ → M → ℝ} {W : Set (P × ((ℝ × ℝ) × M))}
+    {C : Set P} {D : Set (ℝ × ℝ)} {Kα : Set E} (hW : IsOpen W)
+    (hKs : ContMDiffOn (𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ) 3
+      (fun q : P × ((ℝ × ℝ) × M) ↦ Ks q.1 q.2.1 q.2.2) W)
+    (hKt : ContMDiffOn (𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ) 3
+      (fun q : P × ((ℝ × ℝ) × M) ↦ Kt q.1 q.2.1 q.2.2) W)
+    (hJ : ContMDiffOn (𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) (I.prod 𝓘(ℝ, E →L[ℝ] E)) 2
+      (fun q : P × ((ℝ × ℝ) × M) ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2.2
+        (J q.1 q.2.1 q.2.2).toLinearMap.toContinuousLinearMap) W)
+    (hC : IsCompact C) (hD : IsCompact D) (hKα : IsCompact Kα)
+    (hKαt : Kα ⊆ (extChartAt I α).target)
+    (hCDKW : C ×ˢ (D ×ˢ ((extChartAt I α).symm '' Kα)) ⊆ W)
+    (hJt : ∀ p ∈ C, ∀ z ∈ D, ∀ y ∈ Kα,
+      (hω.symplecticFormAt ((extChartAt I α).symm y)).Tames (J p z ((extChartAt I α).symm y))) :
+    ∃ δ > 0, ∃ M₁ > 0, ∃ M₂ > 0, ∃ M₃ ≥ 0,
+      ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃p : P⦄ ⦃u : ℝ × ℝ → M⦄ ⦃c : ℝ × ℝ⦄ ⦃r : ℝ⦄,
+        IsOpen Ω → Ω ⊆ D → p ∈ C → 0 ≤ r → closedBall c r ⊆ Ω →
+        ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 3 u Ω →
+        (∀ z ∈ closedBall c r, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J p z (u z))
+          (ω.perturbedMFDeriv (Ks p) (Kt p) u z).toLinearMap) →
+        MapsTo u (closedBall c r) ((extChartAt I α).source ∩ extChartAt I α ⁻¹' Kα) →
+        M₁ * (π * r ^ 2) + M₂ * ∫ z in ball c r, ω.floerEnergyDensity (Ks p) (Kt p) u z < δ →
+        π * r ^ 2 * ω.floerEnergyDensity (Ks p) (Kt p) u c ≤
+          M₃ * (π * r ^ 2 + ∫ z in ball c r, ω.floerEnergyDensity (Ks p) (Kt p) u z) := by
+  set e := extChartAt I α
+  set eℂ := Complex.equivRealProdCLM
+  let L : E ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) := toEuclidean
+  have hXsM := hω.contMDiffOn_hamiltonianVectorField_prod (n := 2) (by simp) hW hKs
+  have hXtM := hω.contMDiffOn_hamiltonianVectorField_prod (n := 2) (by simp) hW hKt
+  have hCDKWα : C ×ˢ (D ×ˢ Kα) ⊆
+      {q : P × ((ℝ × ℝ) × E) | q.2.2 ∈ e.target ∧ (q.1, (q.2.1, e.symm q.2.2)) ∈ W} :=
+    fun q hq ↦ ⟨hKαt hq.2.2, hCDKW ⟨hq.1, hq.2.1, ⟨q.2.2, hq.2.2, rfl⟩⟩⟩
+  obtain ⟨A, hA, B, hB, C₀, hC₀, D₀, hD₀, hbd⟩ :=
+    hω.exists_forall_norm_fderiv_extChartAt_comp_sq_le_and_floerEnergyDensity_le α hC hD hKα hKαt
+      ((Floer.contDiffOn_almostComplexInChartAt_of_contMDiffOn (n := 2) (by simp)
+        α hJ).continuousOn.mono hCDKWα)
+      ((ω.contDiffOn_hamiltonianVectorFieldInChartAt (n := 2) (by simp) α hXsM).continuousOn.mono
+        hCDKWα)
+      ((ω.contDiffOn_hamiltonianVectorFieldInChartAt (n := 2) (by simp) α hXtM).continuousOn.mono
+        hCDKWα)
+      hJt
+  obtain ⟨δ, hδ, hmvi⟩ :=
+    hω.exists_euclidean_chart_mvi α hW hKs hKt hJ hC hD hKα hKαt hCDKW
+  -- Translate between Euclidean `‖∂ₛ(L ∘ e ∘ u ∘ eℂ)‖²` and the intrinsic energy density `e(u)`.
+  set cL := ‖(L : E →L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))‖ ^ 2
+  set cLs := ‖(L.symm : EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) →L[ℝ] E)‖ ^ 2
+  set A₁ := cL * A + 1
+  set B₁ := cL * B
+  set C₁ := C₀ * cLs
+  refine ⟨δ, hδ, 1 + B₁, by positivity, A₁, by positivity,
+    max (C₁ * (7 + 8 * B₁) + D₀) (C₁ * 8 * A₁), by positivity,
+    fun Ω p u c r hΩ hΩD hp hr hcr hu hfl huK hsmall ↦ ?_⟩
+  rcases hr.eq_or_lt with rfl | _
+  · simp [ball_zero]
+  -- Continuity and nonnegativity of `e(u)` on `closedBall c r`.
+  have he_cont : ContinuousOn (ω.floerEnergyDensity (Ks p) (Kt p) u) (closedBall c r) :=
+    ω.continuousOn_floerEnergyDensity_of_isOpen_prod hW hXsM.continuousOn hXtM.continuousOn hΩ hcr
+      (hu.of_le (by norm_num)) fun z hz ↦
+        hCDKW ⟨hp, hΩD (hcr hz), ⟨e (u z), (huK hz).2, e.left_inv (huK hz).1⟩⟩
+  have he_int : IntegrableOn (ω.floerEnergyDensity (Ks p) (Kt p) u) (ball c r) :=
+    (he_cont.integrableOn_compact (isCompact_closedBall c r)).mono_set ball_subset_closedBall
+  have he_nn : ∀ z ∈ closedBall c r, 0 ≤ ω.floerEnergyDensity (Ks p) (Kt p) u z := fun z hz ↦ by
+    have ht := hJt p hp z (hΩD (hcr hz)) (e (u z)) (huK hz).2
+    rw [e.left_inv (huK hz).1] at ht
+    exact floerEnergyDensity_nonneg hω ht (hfl z hz)
+  -- Transport `u` to `w : ℂ → ℝ^d` via `L ∘ e ∘ u ∘ eℂ` and compare derivatives and integrals.
+  set y₀ := eℂ.symm c
+  set w : ℂ → EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) := fun y ↦ L (e (u (eℂ y)))
+  have hball_sub : ball y₀ r ⊆ eℂ ⁻¹' ball c r := fun y hy ↦ by
+    simpa [y₀, eℂ] using (lipschitz_equivRealProd.dist_le_mul y y₀).trans_lt (by simpa using hy)
+  have hcl_sub : closedBall y₀ r ⊆ eℂ ⁻¹' closedBall c r := fun y hy ↦ by
+    simpa [y₀, eℂ] using (lipschitz_equivRealProd.dist_le_mul y y₀).trans (by simpa using hy)
+  have hU₀ : IsOpen (eℂ ⁻¹' (Ω ∩ u ⁻¹' e.source)) :=
+    (hu.continuousOn.isOpen_inter_preimage hΩ (isOpen_extChartAt_source α)).preimage eℂ.continuous
+  have hsubU : closedBall y₀ r ⊆ eℂ ⁻¹' (Ω ∩ u ⁻¹' e.source) :=
+    fun y hy ↦ ⟨hcr (hcl_sub hy), (huK (hcl_sub hy)).1⟩
+  have hcdU : ContDiffOn ℝ 3 w (eℂ ⁻¹' (Ω ∩ u ⁻¹' e.source)) :=
+    L.contDiff.comp_contDiffOn ((contMDiffOn_iff_contDiffOn.1 <|
+      (contMDiffOn_extChartAt (n := 3)).comp (hu.mono inter_subset_left)
+        fun z hz ↦ by rw [mem_preimage, ← extChartAt_source I]; exact hz.2).comp
+      eℂ.contDiff.contDiffOn (mapsTo_preimage _ _))
+  have hw_cont : ContinuousOn (fun y ↦ fderiv ℝ w y 1) (closedBall y₀ r) :=
+    ((hcdU.continuousOn_fderiv_of_isOpen hU₀ (by norm_num)).clm_apply
+      continuousOn_const).mono hsubU
+  have hdiff (z : ℝ × ℝ) (hz : z ∈ closedBall c r) : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u z :=
+    (hu.mdifferentiableOn (by norm_num)).mdifferentiableAt (hΩ.mem_nhds (hcr hz))
+  have hpt_le (y : ℂ) (hy : y ∈ closedBall y₀ r) :
+      ‖fderiv ℝ w y 1‖ ^ 2 ≤ A₁ * ω.floerEnergyDensity (Ks p) (Kt p) u (eℂ y) + B₁ := by
+    have hzc : eℂ y ∈ closedBall c r := hcl_sub hy
+    have h1 := (hbd hp (hΩD (hcr hzc)) (huK hzc).1 (huK hzc).2 (hdiff _ hzc) (hfl _ hzc)).1
+    have h4 : ‖fderiv ℝ w y 1‖ ^ 2 ≤ cL * ‖fderiv ℝ (e ∘ u) (eℂ y)‖ ^ 2 :=
+      norm_fderiv_continuousLinearEquiv_comp_equivRealProdCLM_one_sq_le L (e ∘ u) y
+    have h5 := he_nn _ hzc
+    have hcL_nn : 0 ≤ cL := by positivity
+    dsimp only [A₁, B₁]
+    nlinarith
+  have heℂ_int : IntegrableOn (fun y ↦ ω.floerEnergyDensity (Ks p) (Kt p) u (eℂ y))
+      (eℂ ⁻¹' ball c r) :=
+    (Complex.volume_preserving_equiv_real_prod.integrableOn_comp_preimage
+      eℂ.toHomeomorph.measurableEmbedding).2 he_int
+  have hint_le : ∫ y in ball y₀ r, ‖fderiv ℝ w y 1‖ ^ 2 ≤
+      B₁ * (π * r ^ 2) + A₁ * ∫ z in ball c r, ω.floerEnergyDensity (Ks p) (Kt p) u z := by
+    have hlin := setIntegral_le_mul_add_mul_of_le (μ := volume) measurableSet_ball
+      (fun _ _ ↦ sq_nonneg _) (heℂ_int.mono_set hball_sub)
+      (integrableOn_const (C := (1 : ℝ)) measure_ball_lt_top.ne) (c₁ := A₁) (c₂ := B₁)
+      fun y hy ↦ by simpa only [mul_one] using hpt_le y (ball_subset_closedBall hy)
+    have hmono := setIntegral_mono_set heℂ_int
+      (ae_restrict_of_forall_mem (measurableSet_ball.preimage eℂ.continuous.measurable)
+        fun y hy ↦ he_nn _ (ball_subset_closedBall hy))
+      hball_sub.eventuallySubset
+    have hpre := Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
+      eℂ.toHomeomorph.measurableEmbedding (ω.floerEnergyDensity (Ks p) (Kt p) u) (ball c r)
+    have hvol : ∫ _ in ball y₀ r, (1 : ℝ) = π * r ^ 2 := by
+      simp [Complex.volume_real_ball y₀ hr]
+    rw [hvol] at hlin
+    linarith [mul_le_mul_of_nonneg_left (hmono.trans_eq hpre) (by positivity : 0 ≤ A₁)]
+  -- Apply the Euclidean chart MVI and convert `‖∂ₛw(y₀)‖²` back to `e(u)(c)`.
+  have hmvi_w := hmvi (p := p) (w := w) (y₀ := y₀) (r := r) hp hr
+    (hball_sub.trans (preimage_mono (ball_subset_closedBall.trans (hcr.trans hΩD))))
+    (hcdU.mono (ball_subset_closedBall.trans hsubU)) hw_cont
+    (fun y hy ↦ by
+      have hzc : eℂ y ∈ closedBall c r := hcl_sub (ball_subset_closedBall hy)
+      exact (ω.transported_floerEquation_iff α (ContinuousLinearEquiv.refl ℝ P) L (J := J)
+        (Ks := Ks) (Kt := Kt) p (e ∘ u) y).2 <|
+        (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub
+          (hdiff _ hzc) (huK hzc).1).1 (hfl _ hzc))
+    (fun y hy ↦ ⟨e (u (eℂ y)), (huK (hcl_sub (ball_subset_closedBall hy))).2, rfl⟩)
+    (by linarith)
+  have hc_mem : c ∈ closedBall c r := mem_closedBall_self hr
+  have hup := (hbd hp (hΩD (hcr hc_mem)) (huK hc_mem).1 (huK hc_mem).2 (hdiff c hc_mem)
+    (hfl c hc_mem)).2
+  have hre_w : ‖fderiv ℝ (e ∘ u) c stdComplexLineReal‖ ^ 2 ≤ cLs * ‖fderiv ℝ w y₀ 1‖ ^ 2 :=
+    norm_fderiv_stdComplexLineReal_sq_le_continuousLinearEquiv_comp_equivRealProdCLM L (e ∘ u) c
+  have hint_nn : 0 ≤ ∫ z in ball c r, ω.floerEnergyDensity (Ks p) (Kt p) u z :=
+    setIntegral_nonneg measurableSet_ball fun z hz ↦ he_nn z (ball_subset_closedBall hz)
+  have hπr_nn : 0 ≤ π * r ^ 2 := by positivity
+  have hstep1 : π * r ^ 2 * ω.floerEnergyDensity (Ks p) (Kt p) u c ≤
+      C₁ * (π * r ^ 2 * ‖fderiv ℝ w y₀ 1‖ ^ 2) + D₀ * (π * r ^ 2) := by
+    have : ω.floerEnergyDensity (Ks p) (Kt p) u c ≤ C₁ * ‖fderiv ℝ w y₀ 1‖ ^ 2 + D₀ := by
+      nlinarith
+    nlinarith
+  have hC₁_nn : 0 ≤ C₁ := by positivity
+  have hstep3 : π * r ^ 2 * ω.floerEnergyDensity (Ks p) (Kt p) u c ≤
+      (C₁ * (7 + 8 * B₁) + D₀) * (π * r ^ 2) +
+        (C₁ * 8 * A₁) * ∫ z in ball c r, ω.floerEnergyDensity (Ks p) (Kt p) u z := by nlinarith
+  have hle1 : C₁ * (7 + 8 * B₁) + D₀ ≤ max (C₁ * (7 + 8 * B₁) + D₀) (C₁ * 8 * A₁) := le_max_left _ _
+  have hle2 : C₁ * 8 * A₁ ≤ max (C₁ * (7 + 8 * B₁) + D₀) (C₁ * 8 * A₁) := le_max_right _ _
+  nlinarith
+
+end ChartMVI
 
 end TauCeti.SmoothTwoForm

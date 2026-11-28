@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
-public import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence
+public import TauCeti.Geometry.Symplectic.Floer.DerivativeConvergence.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
