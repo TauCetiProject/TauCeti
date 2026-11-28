@@ -45,8 +45,9 @@ Baker--Campbell--Hausdorff expansion.
 * `NormedSpace.mem_eball_expSeries_radius`: every element of a normed algebra over a
   characteristic-zero normed field with `[ContinuousSMul ℚ 𝕜]` lies in the radius of convergence
   of `NormedSpace.expSeries`.
-* `NormedSpace.exp_add_of_continuousSMul`: `exp (x + y) = exp x * exp y` in a complete
-  commutative normed algebra over a characteristic-zero normed field with `[ContinuousSMul ℚ 𝕜]`.
+* `NormedSpace.exp_add_of_continuousSMul`: `exp (x + y) = exp x * exp y` for commuting
+  elements in a complete normed algebra over a characteristic-zero normed field with
+  `[ContinuousSMul ℚ 𝕜]`.
 * `NormedSpace.hasFDerivAt_exp_of_continuousSMul`: `exp` has Fréchet derivative `exp x • 1` at
   every point in a complete commutative normed algebra over a characteristic-zero normed field with
   `[ContinuousSMul ℚ 𝕜]`.
@@ -166,19 +167,21 @@ theorem mem_eball_expSeries_radius [NormedRing A] [NormedAlgebra 𝕜 A] (x : A)
   rw [expSeries_radius_eq_top]
   exact edist_lt_top _ _
 
-variable [NormedCommRing A] [NormedAlgebra 𝕜 A] [CompleteSpace A]
-
 include 𝕜 in
-/-- In a complete commutative normed algebra over a characteristic-zero normed field with
-continuous rational scalar multiplication, `NormedSpace.exp` turns addition into multiplication
-everywhere. -/
-theorem exp_add_of_continuousSMul (x y : A) : exp (x + y) = exp x * exp y :=
-  exp_add_of_mem_ball (mem_eball_expSeries_radius 𝕜 x) (mem_eball_expSeries_radius 𝕜 y)
+/-- In a complete normed algebra over a characteristic-zero normed field with continuous rational
+scalar multiplication, `NormedSpace.exp` turns addition into multiplication for commuting
+elements. -/
+theorem exp_add_of_continuousSMul [NormedRing A] [NormedAlgebra 𝕜 A] [CompleteSpace A]
+    {x y : A} (hxy : Commute x y) :
+    exp (x + y) = exp x * exp y :=
+  exp_add_of_commute_of_mem_ball hxy
+    (mem_eball_expSeries_radius 𝕜 x) (mem_eball_expSeries_radius 𝕜 y)
 
 /-- In a complete commutative normed algebra over a characteristic-zero normed field with
 continuous rational scalar multiplication, `NormedSpace.exp` has Fréchet derivative
 `NormedSpace.exp x • 1` at every point `x : A`. -/
-theorem hasFDerivAt_exp_of_continuousSMul (x : A) :
+theorem hasFDerivAt_exp_of_continuousSMul [NormedCommRing A] [NormedAlgebra 𝕜 A] [CompleteSpace A]
+    (x : A) :
     HasFDerivAt (exp : A → A) (exp x • (1 : A →L[𝕜] A)) x :=
   _root_.hasFDerivAt_exp_of_mem_ball (mem_eball_expSeries_radius 𝕜 x)
 

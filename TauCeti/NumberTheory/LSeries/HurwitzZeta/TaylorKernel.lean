@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Polynomial
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.Analytic.IteratedDeriv
 import TauCeti.Analysis.Calculus.DSlope.Iterate
 import TauCeti.Analysis.Calculus.DSlope.Parametric
 import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
@@ -302,24 +303,6 @@ theorem hurwitzTaylorQuot_eq_add_mul_succ (M : ℕ) (c z : ℂ) :
   simpa only [sub_zero, smul_eq_mul, iterate_dslope_hurwitzKernel_zero,
     Function.iterate_succ_apply', hurwitzTaylorQuot_def] using h
 
-private theorem analyticOnNhd_iteratedDeriv_fst {F : ℂ × ℂ → ℂ} {S : Set (ℂ × ℂ)}
-    (hF : AnalyticOnNhd ℂ F S) :
-    ∀ d : ℕ, AnalyticOnNhd ℂ (fun p : ℂ × ℂ => iteratedDeriv d (fun c => F (c, p.2)) p.1) S
-  | 0 => by simpa only [iteratedDeriv_zero] using hF
-  | d + 1 => by
-      have hderiv : AnalyticOnNhd ℂ (fun p : ℂ × ℂ => deriv (fun c => F (c, p.2)) p.1) S := by
-        intro p hp
-        have hf := hF p hp
-        have hf_fderiv : AnalyticAt ℂ (fun q : ℂ × ℂ => fderiv ℂ F q ((1 : ℂ), (0 : ℂ))) p :=
-          ((ContinuousLinearMap.apply ℂ ℂ ((1 : ℂ), (0 : ℂ))).analyticAt _).comp hf.fderiv
-        refine hf_fderiv.congr ?_
-        filter_upwards [hf.eventually_analyticAt] with q hq
-        have h := ((hq.differentiableAt.hasFDerivAt).comp q.1
-          (hasFDerivAt_prodMk_left q.1 q.2)).hasDerivAt.deriv
-        simpa only [Function.comp_def, ContinuousLinearMap.comp_apply,
-          ContinuousLinearMap.inl_apply] using h.symm
-      simpa only [iteratedDeriv_succ'] using analyticOnNhd_iteratedDeriv_fst hderiv d
-
 /-- For every fixed `c`-derivative order `d`,
 `(c, z) ↦ iteratedDeriv d (fun w => hurwitzTaylorQuot M w z) c` is jointly analytic on
 `{p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0}`. -/
@@ -327,7 +310,7 @@ theorem analyticOnNhd_iteratedDeriv_hurwitzTaylorQuot (M d : ℕ) :
     AnalyticOnNhd ℂ
       (fun p : ℂ × ℂ => iteratedDeriv d (fun c => hurwitzTaylorQuot M c p.2) p.1)
       {p : ℂ × ℂ | dslope Complex.exp 0 (-p.2) ≠ 0} :=
-  analyticOnNhd_iteratedDeriv_fst (analyticOnNhd_hurwitzTaylorQuot M) d
+  (analyticOnNhd_hurwitzTaylorQuot M).iteratedDeriv_fst d
 
 /-- Compact-uniform bound on a compact subset `S` of the nonvanishing locus for the `d`-th
 `c`-derivative `iteratedDeriv d (fun c => hurwitzTaylorQuot M c p.2) p.1`. -/
@@ -363,16 +346,14 @@ theorem exists_norm_hurwitzTaylorQuot_le_on_Icc {K : Set ℂ} (hK : IsCompact K)
   obtain ⟨B, hB0, hB⟩ := exists_norm_hurwitzTaylorQuot_le hS_comp hS_sub M
   exact ⟨B, hB0, fun c hc t ht => hB (c, t) ⟨hc, t, ht, rfl⟩⟩
 
-/-- Exact order-`M` Taylor decomposition after `d` derivatives in `c`, for `z` in the
-nonvanishing locus `{z : ℂ | dslope Complex.exp 0 (-z) ≠ 0}`. -/
-theorem iteratedDeriv_hurwitzKernel_sub_sum_eq_pow_mul (M d : ℕ) (c : ℂ) {z : ℂ}
-    (hz : dslope Complex.exp 0 (-z) ≠ 0) :
+/-- Exact order-`M` Taylor decomposition after `d` derivatives in `c`, for any `c, z : ℂ`. -/
+theorem iteratedDeriv_hurwitzKernel_sub_sum_eq_pow_mul (M d : ℕ) (c z : ℂ) :
     iteratedDeriv d (fun w => hurwitzKernel w z) c -
         ∑ k ∈ Finset.range (M + 1), iteratedDeriv d (hurwitzBernoulliCoeff k) c * z ^ k =
       z ^ (M + 1) * iteratedDeriv d (fun w => hurwitzTaylorQuot M w z) c := by
-  have hk : ContDiffAt ℂ d (fun w : ℂ => hurwitzKernel w z) c :=
-    ((analyticOnNhd_hurwitzKernel (c, z) hz).comp (f := fun w : ℂ => (w, z))
-      (analyticAt_id.prod analyticAt_const)).contDiffAt
+  have hk : ContDiffAt ℂ d (fun w : ℂ => hurwitzKernel w z) c := by
+    simp_rw [hurwitzKernel_def]
+    exact (((contDiff_id.neg.mul contDiff_const).cexp).div_const _).contDiffAt
   have hterm : ∀ k ∈ Finset.range (M + 1),
       ContDiffAt ℂ d (fun w : ℂ => hurwitzBernoulliCoeff k w * z ^ k) c := fun k _ =>
     ((((contDiff_const.mul ((Polynomial.bernoulli k).contDiff_aeval d)).div_const
@@ -396,7 +377,7 @@ theorem exists_norm_iteratedDeriv_hurwitzKernel_sub_sum_le {S : Set (ℂ × ℂ)
         C * ‖p.2‖ ^ (M + 1) := by
   obtain ⟨B, hB0, hB⟩ := exists_norm_iteratedDeriv_hurwitzTaylorQuot_le hS hS_sub M d
   refine ⟨B, hB0, fun p hp => ?_⟩
-  rw [iteratedDeriv_hurwitzKernel_sub_sum_eq_pow_mul M d p.1 (hS_sub hp), norm_mul, norm_pow,
+  rw [iteratedDeriv_hurwitzKernel_sub_sum_eq_pow_mul M d p.1 p.2, norm_mul, norm_pow,
     mul_comm (‖p.2‖ ^ (M + 1))]
   exact mul_le_mul_of_nonneg_right (hB p hp) (pow_nonneg (norm_nonneg _) _)
 

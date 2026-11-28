@@ -48,9 +48,9 @@ L-function decompositions in `TauCeti.NumberTheory.LSeries.ZMod.LFunction`,
   stage-`M` Taylor-subtracted head integral and combined holomorphic core (pairing
   `hurwitzHeadIntegral` with `TauCeti.hurwitzTailIntegral` from
   `TauCeti.NumberTheory.LSeries.HurwitzZeta.MellinKernel`), with integrand convergence
-  (`integrableOn_hurwitzHeadIntegrand`), joint analyticity (`analyticOnNhd_hurwitzHeadIntegral`,
-  `analyticOnNhd_hurwitzStageCore`), and overlap identities (`hurwitzHeadIntegral_eq_add_succ`,
-  `hurwitzStageCore_succ_eq`, `hurwitzStageCore_eq_of_le`).
+  (`integrableOn_Ioc_cpow_mul_hurwitzTaylorQuot`), joint analyticity
+  (`analyticOnNhd_hurwitzHeadIntegral`, `analyticOnNhd_hurwitzStageCore`), and overlap identities
+  (`hurwitzHeadIntegral_eq_add_succ`, `hurwitzStageCore_succ_eq`, `hurwitzStageCore_eq_of_le`).
 * `TauCeti.complexHurwitzZeta`, `TauCeti.complexHurwitzZeta₁`: canonical continued Hurwitz zeta
   function and its `(s - 1)`-multiplied entire-in-`s` companion, with stage representations
   `complexHurwitzZeta_eq_inv_Gamma_div_add_hurwitzStageCore` and
@@ -74,7 +74,7 @@ L-function decompositions in `TauCeti.NumberTheory.LSeries.ZMod.LFunction`,
 * `TauCeti.complexHurwitzZeta_eq_inv_Gamma_mul_integral_Ioi` and
   `TauCeti.complexHurwitzZeta_eq_complexHurwitzSeries`: Mellin–Laplace integral representation
   (using `TauCeti.integrableOn_cpow_mul_exp_neg_mul_div_one_sub_exp_neg` and
-  `TauCeti.integral_hurwitzMellinIntegrand_eq_Gamma_mul_complexHurwitzSeries` from
+  `TauCeti.integral_cpow_mul_exp_neg_mul_div_one_sub_exp_neg_eq_Gamma_mul_complexHurwitzSeries` from
   `TauCeti.Analysis.MellinTransform.ExpKernel` and
   `TauCeti.NumberTheory.LSeries.HurwitzZeta.MellinKernel`) and agreement with
   `complexHurwitzSeries` on `1 < s.re` and `0 < c.re`.
@@ -116,12 +116,12 @@ theorem hurwitzHeadIntegral_def (M : ℕ) (s c : ℂ) :
     hurwitzHeadIntegral M s c =
       ∫ t in Ioc (0 : ℝ) 1, (t : ℂ) ^ (s + M - 1) * hurwitzTaylorQuot M c t := (rfl)
 
-private theorem norm_hurwitzHeadIntegrand_eq (M : ℕ) (s c : ℂ) {t : ℝ} (ht : 0 < t) :
+private theorem norm_cpow_mul_hurwitzTaylorQuot_eq (M : ℕ) (s c : ℂ) {t : ℝ} (ht : 0 < t) :
     ‖(t : ℂ) ^ (s + M - 1) * hurwitzTaylorQuot M c t‖ =
       ‖hurwitzTaylorQuot M c t‖ * t ^ (s.re + M - 1) := by
   rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht, sub_re, add_re, natCast_re, one_re, mul_comm]
 
-private theorem aestronglyMeasurable_hurwitzHeadIntegrand (M : ℕ) (s c : ℂ) :
+private theorem aestronglyMeasurable_Ioc_cpow_mul_hurwitzTaylorQuot (M : ℕ) (s c : ℂ) :
     AEStronglyMeasurable
       (fun t : ℝ => (t : ℂ) ^ (s + M - 1) * hurwitzTaylorQuot M c t)
       (volume.restrict (Ioc 0 1)) := by
@@ -134,16 +134,16 @@ private theorem aestronglyMeasurable_hurwitzHeadIntegrand (M : ℕ) (s c : ℂ) 
 
 /-- For `-(M : ℝ) < s.re`, the stage-`M` head integrand
 `t ↦ t ^ (s + M - 1) * hurwitzTaylorQuot M c t` is integrable on `Ioc 0 1`. -/
-theorem integrableOn_hurwitzHeadIntegrand (M : ℕ) {s c : ℂ} (hs : -(M : ℝ) < s.re) :
+theorem integrableOn_Ioc_cpow_mul_hurwitzTaylorQuot (M : ℕ) {s c : ℂ} (hs : -(M : ℝ) < s.re) :
     IntegrableOn (fun t : ℝ => (t : ℂ) ^ (s + M - 1) * hurwitzTaylorQuot M c t) (Ioc 0 1) := by
   obtain ⟨B, _, hB⟩ :=
     exists_norm_hurwitzTaylorQuot_le_on_Icc (isCompact_singleton (x := c)) M
   have hint : IntegrableOn (fun t : ℝ => B * t ^ (s.re + M - 1)) (Ioc 0 1) :=
     ((intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
       (intervalIntegral.intervalIntegrable_rpow' (by linarith))).const_mul B
-  refine Integrable.mono' hint (aestronglyMeasurable_hurwitzHeadIntegrand M s c) ?_
+  refine Integrable.mono' hint (aestronglyMeasurable_Ioc_cpow_mul_hurwitzTaylorQuot M s c) ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
-  rw [norm_hurwitzHeadIntegrand_eq M s c ht.1]
+  rw [norm_cpow_mul_hurwitzTaylorQuot_eq M s c ht.1]
   exact mul_le_mul_of_nonneg_right (hB c (mem_singleton c) t (Ioc_subset_Icc_self ht))
     (Real.rpow_nonneg ht.1.le _)
 
@@ -153,7 +153,7 @@ theorem analyticOnNhd_hurwitzHeadIntegral (M : ℕ) :
       {p | -(M : ℝ) < p.1.re} := by
   refine TauCeti.analyticOnNhd_integral_of_dominated
     (isOpen_lt continuous_const (continuous_re.comp continuous_fst))
-    (fun p _ => aestronglyMeasurable_hurwitzHeadIntegrand M p.1 p.2) ?_ ?_
+    (fun p _ => aestronglyMeasurable_Ioc_cpow_mul_hurwitzTaylorQuot M p.1 p.2) ?_ ?_
   · intro p₀ hp₀
     rw [mem_ofPred_eq] at hp₀
     let δ := (p₀.1.re + (M : ℝ)) / 2
@@ -168,7 +168,7 @@ theorem analyticOnNhd_hurwitzHeadIntegral (M : ℕ) :
       ((intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).mp
         (intervalIntegral.intervalIntegrable_rpow' (by linarith))).const_mul B, ?_⟩
     filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht p ⟨hp1, hp2⟩
-    rw [norm_hurwitzHeadIntegrand_eq M p.1 p.2 ht.1]
+    rw [norm_cpow_mul_hurwitzTaylorQuot_eq M p.1 p.2 ht.1]
     exact mul_le_mul (hB p.2 hp2 t (Ioc_subset_Icc_self ht))
       (Real.rpow_le_rpow_of_exponent_ge ht.1 ht.2 (by dsimp at hp1; linarith))
       (Real.rpow_nonneg ht.1.le _) hB0
@@ -219,7 +219,7 @@ theorem hurwitzHeadIntegral_eq_add_succ (M : ℕ) {s : ℂ} (hs : -(M : ℝ) < s
   have hint2 : IntegrableOn
       (fun t : ℝ => (t : ℂ) ^ (s + ((M + 1 : ℕ) : ℂ) - 1) * hurwitzTaylorQuot (M + 1) c t)
       (Ioc 0 1) :=
-    integrableOn_hurwitzHeadIntegrand (M + 1) (by push_cast; linarith)
+    integrableOn_Ioc_cpow_mul_hurwitzTaylorQuot (M + 1) (by push_cast; linarith)
   have hcongr : EqOn (fun t : ℝ => (t : ℂ) ^ (s + M - 1) * hurwitzTaylorQuot M c t)
       (fun t : ℝ => hurwitzBernoulliCoeff (M + 1) c * (t : ℂ) ^ (s + M - 1) +
         (t : ℂ) ^ (s + ((M + 1 : ℕ) : ℂ) - 1) * hurwitzTaylorQuot (M + 1) c t)
@@ -473,7 +473,7 @@ theorem tendsto_sub_one_mul_complexHurwitzZeta {c : ℂ} (hc : 0 < c.re) :
 
 /-! ### Mellin–Laplace integral representation and agreement with `complexHurwitzSeries` -/
 
-private theorem eqOn_hurwitzStageZero_add_cpow (s c : ℂ) :
+private theorem eqOn_cpow_mul_hurwitzTaylorQuot_zero_add_cpow (s c : ℂ) :
     EqOn (fun t : ℝ => (t : ℂ) ^ (s - 1) * hurwitzTaylorQuot 0 c t + (t : ℂ) ^ (s - 2))
       (fun t : ℝ => (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t))))
       (Ioc 0 1) := fun t ht => by
@@ -497,11 +497,11 @@ private theorem hurwitzHeadIntegral_zero_add_one_div {s : ℂ} (hs : 1 < s.re) (
     rw [integral_Ioc_zero_cpow (by simp; linarith) zero_le_one, hexp]
     simp
   unfold hurwitzHeadIntegral
-  rw [h1div, ← integral_add (integrableOn_hurwitzHeadIntegrand 0 hs0)
+  rw [h1div, ← integral_add (integrableOn_Ioc_cpow_mul_hurwitzTaylorQuot 0 hs0)
     (intervalIntegral.intervalIntegrable_cpow' (a := 0) (b := 1) (r := s - 2)
       (by simp; linarith)).1]
   exact setIntegral_congr_fun measurableSet_Ioc fun t ht => by
-    simpa using eqOn_hurwitzStageZero_add_cpow s c ht
+    simpa using eqOn_cpow_mul_hurwitzTaylorQuot_zero_add_cpow s c ht
 
 /-- **Mellin–Laplace integral representation of the complex Hurwitz zeta function.** For
 `1 < s.re` and `0 < c.re`, `complexHurwitzZeta s c` equals `(Gamma s)⁻¹` times the integral of
@@ -524,14 +524,15 @@ theorem complexHurwitzZeta_eq_inv_Gamma_mul_integral_Ioi {s c : ℂ} (hs : 1 < s
       (Gamma s)⁻¹ * ((hurwitzHeadIntegral 0 s c + 1 / (s - 1)) + tail) := by ring
   rw [hcomb, hurwitzHeadIntegral_zero_add_one_div hs c,
     ← setIntegral_union (Ioc_disjoint_Ioi le_rfl) measurableSet_Ioi
-      hint_Ioc (integrableOn_hurwitzTailIntegrand s hc), Ioc_union_Ioi_eq_Ioi zero_le_one]
+      hint_Ioc (integrableOn_Ioi_one_cpow_mul_exp_neg_mul_div_one_sub_exp_neg s hc),
+    Ioc_union_Ioi_eq_Ioi zero_le_one]
 
 /-- For `1 < s.re` and `0 < c.re`, the continuation `complexHurwitzZeta s c` agrees with the
 convergent series `complexHurwitzSeries s c`. -/
 theorem complexHurwitzZeta_eq_complexHurwitzSeries {s c : ℂ} (hs : 1 < s.re) (hc : 0 < c.re) :
     complexHurwitzZeta s c = complexHurwitzSeries s c := by
   rw [complexHurwitzZeta_eq_inv_Gamma_mul_integral_Ioi hs hc,
-    integral_hurwitzMellinIntegrand_eq_Gamma_mul_complexHurwitzSeries hs hc,
+    integral_cpow_mul_exp_neg_mul_div_one_sub_exp_neg_eq_Gamma_mul_complexHurwitzSeries hs hc,
     inv_mul_cancel_left₀ (Gamma_ne_zero_of_re_pos (by linarith))]
 
 /-! ### Nonpositive integer Bernoulli values -/

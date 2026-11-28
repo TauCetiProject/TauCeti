@@ -29,11 +29,12 @@ converges for all `s : ℂ` when `0 < Re c` and is jointly analytic on
 
 ## Main results
 
-* `TauCeti.integral_hurwitzMellinIntegrand_eq_Gamma_mul_complexHurwitzSeries`:
+* `TauCeti.integral_cpow_mul_exp_neg_mul_div_one_sub_exp_neg_eq_Gamma_mul_complexHurwitzSeries`:
   `∫₀^∞ t^{s−1} e^{−ct} / (1 − e^{−t}) dt = Γ(s) * complexHurwitzSeries s c` for `1 < s.re` and
   `0 < c.re`.
 * `TauCeti.hurwitzTailIntegral`, `TauCeti.hurwitzTailIntegral_def`,
-  `TauCeti.integrableOn_hurwitzTailIntegrand`, and `TauCeti.analyticOnNhd_hurwitzTailIntegral`:
+  `TauCeti.integrableOn_Ioi_one_cpow_mul_exp_neg_mul_div_one_sub_exp_neg`, and
+  `TauCeti.analyticOnNhd_hurwitzTailIntegral`:
   the exponential tail integral on `(1, ∞)` and its joint analyticity on
   `{p : ℂ × ℂ | 0 < p.2.re}`.
 -/
@@ -49,8 +50,8 @@ namespace TauCeti
 
 /-- For `1 < s.re` and `0 < c.re`, the Mellin–Laplace integral of the Hurwitz kernel equals
 `Gamma s * complexHurwitzSeries s c`. -/
-theorem integral_hurwitzMellinIntegrand_eq_Gamma_mul_complexHurwitzSeries {s c : ℂ}
-    (hs : 1 < s.re) (hc : 0 < c.re) :
+theorem integral_cpow_mul_exp_neg_mul_div_one_sub_exp_neg_eq_Gamma_mul_complexHurwitzSeries
+    {s c : ℂ} (hs : 1 < s.re) (hc : 0 < c.re) :
     ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (s - 1) * (cexp (-c * t) / (1 - cexp (-t))) =
       Gamma s * complexHurwitzSeries s c := by
   have hs0 : 0 < s.re := by linarith
@@ -70,7 +71,8 @@ theorem hurwitzTailIntegral_def (s c : ℂ) :
 
 /-- For `0 < c.re`, the tail integrand `t ↦ (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t)))`
 is integrable on `Ioi 1`. -/
-theorem integrableOn_hurwitzTailIntegrand (s : ℂ) {c : ℂ} (hc : 0 < c.re) :
+theorem integrableOn_Ioi_one_cpow_mul_exp_neg_mul_div_one_sub_exp_neg (s : ℂ) {c : ℂ}
+    (hc : 0 < c.re) :
     IntegrableOn
       (fun t : ℝ => (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t)))) (Ioi 1) :=
   integrableOn_cpow_smul_of_norm_le_exp_neg_mul_rpow hc one_pos
@@ -83,7 +85,9 @@ theorem analyticOnNhd_hurwitzTailIntegral :
     AnalyticOnNhd ℂ (fun p : ℂ × ℂ => hurwitzTailIntegral p.1 p.2) {p | 0 < p.2.re} := by
   refine TauCeti.analyticOnNhd_integral_of_dominated
     (isOpen_lt continuous_const (continuous_re.comp continuous_snd))
-    (fun p hp => (integrableOn_hurwitzTailIntegrand p.1 hp).aestronglyMeasurable) ?_ ?_
+    (fun p hp =>
+      (integrableOn_Ioi_one_cpow_mul_exp_neg_mul_div_one_sub_exp_neg p.1 hp).aestronglyMeasurable)
+    ?_ ?_
   · intro p₀ hp₀
     rw [mem_ofPred_eq] at hp₀
     let η := p₀.2.re / 2

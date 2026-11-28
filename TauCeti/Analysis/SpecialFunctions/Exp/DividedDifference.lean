@@ -59,7 +59,8 @@ theorem dslope_exp_eq_exp_mul_dslope_zero {𝕜 : Type*} [NontriviallyNormedFiel
   · have hsub : b - a ≠ 0 := sub_ne_zero.mpr hab
     rw [dslope_of_ne _ hab, dslope_of_ne _ hsub, slope_def_field, slope_def_field]
     simp only [sub_zero, exp_zero]
-    rw [← mul_div_assoc, mul_sub, mul_one, ← exp_add_of_continuousSMul 𝕜, add_sub_cancel]
+    rw [← mul_div_assoc, mul_sub, mul_one, ← exp_add_of_continuousSMul 𝕜 (Commute.all _ _),
+      add_sub_cancel]
 
 end NormedSpace
 

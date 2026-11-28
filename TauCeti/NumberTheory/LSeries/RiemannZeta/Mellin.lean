@@ -16,8 +16,8 @@ import TauCeti.NumberTheory.LSeries.HurwitzZeta.MellinKernel
 
 Evaluates the Mellin–Laplace integral `∫₀^∞ t^{s−1}/(e^t − 1) dt = Γ(s) ζ(s)` for `1 < Re s`
 (DLMF 25.5.1) by specializing
-`TauCeti.integral_hurwitzMellinIntegrand_eq_Gamma_mul_complexHurwitzSeries` at `c = 1`, together
-with the `s = 2` specialization `∫₀^∞ t/(e^t − 1) dt = π²/6`.
+`TauCeti.integral_cpow_mul_exp_neg_mul_div_one_sub_exp_neg_eq_Gamma_mul_complexHurwitzSeries` at
+`c = 1`, together with the `s = 2` specialization `∫₀^∞ t/(e^t − 1) dt = π²/6`.
 
 ## Main results
 
@@ -37,7 +37,7 @@ namespace TauCeti
 /-- **DLMF 25.5.1**: `∫₀^∞ t^{s−1}/(e^t − 1) dt = Γ(s) ζ(s)` for `1 < Re s`. -/
 theorem integral_cpow_div_exp_sub_one_eq_Gamma_mul_riemannZeta {s : ℂ} (hs : 1 < s.re) :
     ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (s - 1) / (cexp t - 1) = Gamma s * riemannZeta s := by
-  have h := integral_hurwitzMellinIntegrand_eq_Gamma_mul_complexHurwitzSeries hs
+  have h := integral_cpow_mul_exp_neg_mul_div_one_sub_exp_neg_eq_Gamma_mul_complexHurwitzSeries hs
     (by norm_num : 0 < (1 : ℂ).re)
   rw [complexHurwitzSeries_one hs] at h
   rw [← h]

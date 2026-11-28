@@ -7,7 +7,10 @@ module
 
 public import Mathlib.NumberTheory.LSeries.HurwitzZeta
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
+import TauCeti.Analysis.MellinTransform.ExpKernel
+import TauCeti.Analysis.SpecialFunctions.Exp.InvSubOne
 import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
+import TauCeti.Analysis.SpecialFunctions.Pow.Summable
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 
 /-!
@@ -70,28 +73,11 @@ theorem complexHurwitzSeries_def (s c : ℂ) :
 /-- On `1 < re s` the Hurwitz series converges absolutely, for every complex parameter `c`. -/
 theorem summable_norm_complexHurwitzSeries (c : ℂ) {s : ℂ} (hs : 1 < s.re) :
     Summable fun n : ℕ ↦ ‖exp (-s * log (n + c))‖ := by
-  refine Summable.of_norm_bounded_eventually_nat
-    (((Real.summable_one_div_nat_add_rpow c.re s.re).mpr hs).mul_left
-      (Real.exp (Real.pi * |s.im|))) ?_
-  filter_upwards [tendsto_natCast_atTop_atTop.eventually_gt_atTop (-c.re)] with n hn
-  have hw : 0 < (n : ℝ) + c.re := by linarith
-  have hlog : Real.log ((n : ℝ) + c.re) ≤ Real.log ‖(n : ℂ) + c‖ :=
-    Real.log_le_log hw (by simpa using re_le_norm ((n : ℂ) + c))
-  have harg : s.im * arg ((n : ℂ) + c) ≤ Real.pi * |s.im| := by
-    calc s.im * arg ((n : ℂ) + c) ≤ |s.im| * |arg ((n : ℂ) + c)| := by
-          rw [← abs_mul]; exact le_abs_self _
-      _ ≤ |s.im| * Real.pi := by gcongr; exact abs_arg_le_pi _
-      _ = Real.pi * |s.im| := mul_comm _ _
-  have hre : (-s * log ((n : ℂ) + c)).re =
-      -s.re * Real.log ‖(n : ℂ) + c‖ + s.im * arg ((n : ℂ) + c) := by
-    simp only [mul_re, neg_re, neg_im, log_re, log_im]
-    ring
-  have hbound : ‖exp (-s * log ((n : ℂ) + c))‖ ≤
-      Real.exp (Real.pi * |s.im|) * Real.exp (-(Real.log ((n : ℝ) + c.re) * s.re)) := by
-    rw [norm_exp, hre, ← Real.exp_add]
-    exact Real.exp_le_exp.mpr
-      (by linarith [mul_le_mul_of_nonneg_left hlog (by linarith : (0 : ℝ) ≤ s.re)])
-  simpa [abs_of_pos hw, Real.rpow_def_of_pos hw, Real.exp_neg] using hbound
+  refine (summable_norm_natCast_add_cpow_neg hs c).congr_cofinite ?_
+  rw [Nat.cofinite_eq_atTop]
+  filter_upwards [eventually_re_natCast_add_pos c] with n hn
+  have hne : (n : ℂ) + c ≠ 0 := fun h0 ↦ lt_irrefl (0 : ℝ) (by rwa [h0, zero_re] at hn)
+  rw [cpow_def_of_ne_zero hne, mul_comm]
 
 /-- On `1 < re s` the Hurwitz series converges, for every complex parameter `c`. -/
 theorem summable_complexHurwitzSeries (c : ℂ) {s : ℂ} (hs : 1 < s.re) :
@@ -180,48 +166,19 @@ theorem complexHurwitzSeries_eq_integral {s c : ℂ} (hs : 1 < s.re) (hc : 0 < c
     complexHurwitzSeries s c = (Gamma s)⁻¹ *
       ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (s - 1) * (exp (-(c * t)) / (1 - exp (-t))) := by
   have hs0 : 0 < s.re := by linarith
-  have hnc (n : ℕ) : 0 < ((n : ℂ) + c).re := by
+  have hnc (k : ℕ) : 0 < ((k : ℂ) + c).re := by
     simp only [add_re, natCast_re]; positivity
-  -- For `t > 0` the kernel is the sum of the Gamma integrands `t ^ (s - 1) e^{-(n + c)t}`.
-  have hker {t : ℝ} (ht : 0 < t) :
-      HasSum (fun n : ℕ ↦ (t : ℂ) ^ (s - 1) * exp (-(((n : ℂ) + c) * t)))
-        ((t : ℂ) ^ (s - 1) * (exp (-(c * t)) / (1 - exp (-t)))) := by
-    have hq : ‖exp (-(t : ℂ))‖ < 1 := by
-      rw [norm_exp, neg_re, ofReal_re, Real.exp_lt_one_iff]; linarith
-    convert (hasSum_geometric_of_norm_lt_one hq).mul_left ((t : ℂ) ^ (s - 1) * exp (-(c * t)))
-      using 1
-    · ext n
-      rw [mul_assoc, ← exp_natCast_mul, ← exp_add]
-      congr 2
-      ring
-    · rw [div_eq_mul_inv, mul_assoc]
-  -- Integrate the Gamma integrands term by term.
-  have hint : HasSum
-      (fun n : ℕ ↦ ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (s - 1) * exp (-(((n : ℂ) + c) * t)))
-      (∫ t in Ioi (0 : ℝ), ∑' n : ℕ, (t : ℂ) ^ (s - 1) * exp (-(((n : ℂ) + c) * t))) := by
-    refine hasSum_integral_of_summable_integral_norm
-      (fun n ↦ integrableOn_cpow_mul_exp_neg_mul_Ioi hs0 (hnc n)) ?_
-    have hnorm (n : ℕ) : ∫ t in Ioi (0 : ℝ), ‖(t : ℂ) ^ (s - 1) * exp (-(((n : ℂ) + c) * t))‖ =
-        Real.Gamma s.re * (1 / |(n : ℝ) + c.re| ^ s.re) := by
-      have hr : 0 < (n : ℝ) + c.re := by simpa using hnc n
-      calc ∫ t in Ioi (0 : ℝ), ‖(t : ℂ) ^ (s - 1) * exp (-(((n : ℂ) + c) * t))‖
-          = ∫ t in Ioi (0 : ℝ), t ^ (s.re - 1) * Real.exp (-(((n : ℝ) + c.re) * t)) := by
-            refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
-            rw [norm_mul, norm_cpow_eq_rpow_re_of_pos ht, norm_exp]
-            simp
-        _ = (1 / ((n : ℝ) + c.re)) ^ s.re * Real.Gamma s.re :=
-            Real.integral_rpow_mul_exp_neg_mul_Ioi hs0 hr
-        _ = Real.Gamma s.re * (1 / |(n : ℝ) + c.re| ^ s.re) := by
-            rw [abs_of_pos hr, Real.div_rpow zero_le_one hr.le, Real.one_rpow]
-            ring
-    simp_rw [hnorm]
-    exact ((Real.summable_one_div_nat_add_rpow c.re s.re).mpr hs).mul_left _
+  have hsum := hasSum_setIntegral_cpow_mul_exp_neg_mul hs hc (Subset.refl (Ioi 0))
+  have hterm (k : ℕ) :
+      (∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (s - 1) * exp (-(((k : ℂ) + c) * t))) =
+        Gamma s * ((k : ℂ) + c) ^ (-s) :=
+    integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hs0 (hnc k)
+  simp_rw [hterm] at hsum
   have hΓ : Gamma s * complexHurwitzSeries s c = ∫ t in Ioi (0 : ℝ),
       (t : ℂ) ^ (s - 1) * (exp (-(c * t)) / (1 - exp (-t))) := by
-    rw [← (setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦
-      (hker ht).tsum_eq), ← hint.tsum_eq,
-      complexHurwitzSeries_eq_tsum_cpow_of_re_pos s hc, ← tsum_mul_left]
-    exact tsum_congr fun n ↦ (integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hs0 (hnc n)).symm
+    rw [complexHurwitzSeries_eq_tsum_cpow_of_re_pos s hc, ← tsum_mul_left, hsum.tsum_eq]
+    refine setIntegral_congr_fun measurableSet_Ioi fun t _ ↦ ?_
+    rw [← neg_mul, Complex.exp_neg_mul_div_one_sub_exp_neg]
   rw [← hΓ, inv_mul_cancel_left₀ (Gamma_ne_zero_of_re_pos hs0)]
 
 end TauCeti

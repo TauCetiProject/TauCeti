@@ -24,7 +24,9 @@ two-variable versions: if `f : E × 𝕜 → F` is jointly analytic at `p`, then
 `(q : E × 𝕜) ↦ iteratedDeriv n (fun y ↦ f (q.1, y)) q.2` is jointly analytic at `p`
 (`AnalyticAt.iteratedDeriv_snd`), its vertical Taylor coefficient
 `x ↦ iteratedDeriv n (fun y ↦ f (x, y)) p.2` is analytic at `p.1`
-(`AnalyticAt.curry_left_iteratedDeriv_snd`), and the first partial derivatives in the second and
+(`AnalyticAt.curry_left_iteratedDeriv_snd`), the `n`-th iterated derivative in the first
+scalar variable is jointly analytic (`AnalyticAt.iteratedDeriv_fst`,
+`AnalyticOnNhd.iteratedDeriv_fst`), and the first partial derivatives in the second and
 first scalar variables are jointly analytic at `p` (`AnalyticAt.deriv_snd`, `AnalyticAt.deriv_fst`).
 
 For `TauCeti.iteratedDerivInr k f` (defined in `TauCeti.Analysis.Calculus.IteratedDeriv.Basic` as
@@ -74,6 +76,15 @@ theorem curry_left_iteratedDeriv_snd {f : E × 𝕜 → F} {p : E × 𝕜} (hf :
     AnalyticAt 𝕜 (fun x : E ↦ iteratedDeriv n (fun y ↦ f (x, y)) p.2) p.1 :=
   (hf.iteratedDeriv_snd n).curry_left
 
+/-- If `f : 𝕜 × E → F` is jointly analytic at `p` and `F` is complete, then the `n`-th iterated
+derivative in the first variable `(q : 𝕜 × E) ↦ iteratedDeriv n (fun x ↦ f (x, q.2)) q.1` is
+jointly analytic at `p`. -/
+theorem iteratedDeriv_fst {f : 𝕜 × E → F} {p : 𝕜 × E} (hf : AnalyticAt 𝕜 f p) (n : ℕ) :
+    AnalyticAt 𝕜 (fun q : 𝕜 × E ↦ iteratedDeriv n (fun x ↦ f (x, q.2)) q.1) p := by
+  have hswap : AnalyticAt 𝕜 (fun r : E × 𝕜 ↦ f (r.2, r.1)) (p.2, p.1) :=
+    hf.comp_of_eq (analyticAt_snd.prod analyticAt_fst) rfl
+  exact (hswap.iteratedDeriv_snd n).comp_of_eq (analyticAt_snd.prod analyticAt_fst) rfl
+
 /-- If `f : E × 𝕜 → F` is jointly analytic at `p` and `F` is complete, then its partial derivative
 in the second variable `(q : E × 𝕜) ↦ deriv (fun y ↦ f (q.1, y)) q.2` is jointly analytic at
 `p`. -/
@@ -86,11 +97,24 @@ in the first variable `(q : 𝕜 × E) ↦ deriv (fun x ↦ f (x, q.2)) q.1` is 
 `p`. -/
 theorem deriv_fst {f : 𝕜 × E → F} {p : 𝕜 × E} (hf : AnalyticAt 𝕜 f p) :
     AnalyticAt 𝕜 (fun q : 𝕜 × E ↦ deriv (fun x ↦ f (x, q.2)) q.1) p := by
-  have hswap : AnalyticAt 𝕜 (fun r : E × 𝕜 ↦ f (r.2, r.1)) (p.2, p.1) :=
-    hf.comp_of_eq (analyticAt_snd.prod analyticAt_fst) rfl
-  exact hswap.deriv_snd.comp_of_eq (analyticAt_snd.prod analyticAt_fst) rfl
+  simpa only [iteratedDeriv_one] using hf.iteratedDeriv_fst 1
 
 end AnalyticAt
+
+namespace AnalyticOnNhd
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+
+/-- If `f : 𝕜 × E → F` is jointly analytic on `s` and `F` is complete, then the `n`-th iterated
+derivative in the first variable `(q : 𝕜 × E) ↦ iteratedDeriv n (fun x ↦ f (x, q.2)) q.1` is
+jointly analytic on `s`. -/
+theorem iteratedDeriv_fst {f : 𝕜 × E → F} {s : Set (𝕜 × E)} (hf : AnalyticOnNhd 𝕜 f s)
+    (n : ℕ) : AnalyticOnNhd 𝕜 (fun q : 𝕜 × E ↦ iteratedDeriv n (fun x ↦ f (x, q.2)) q.1) s :=
+  fun p hp ↦ (hf p hp).iteratedDeriv_fst n
+
+end AnalyticOnNhd
 
 section IteratedDerivInr
 
