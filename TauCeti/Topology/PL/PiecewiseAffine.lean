@@ -72,16 +72,10 @@ theorem IsPiecewiseAffineOn.sub [ContinuousAdd F] [ContinuousNeg F] (hf : IsPiec
 theorem IsPiecewiseAffineOn.sum [ContinuousAdd F] {ι : Type*} (s : Finset ι)
     {φ : ι → E → F} (hφ : ∀ i ∈ s, IsPiecewiseAffineOn (φ i) V) :
     IsPiecewiseAffineOn (∑ i ∈ s, φ i) V := by
-  classical
-  induction s using Finset.induction with
-  | empty =>
-    have h0 : IsPiecewiseAffineOn (0 : E → F) V :=
-      (isPiecewiseAffineOn_continuousAffineMap (0 : E →ᴬ[ℝ] F) V).congr fun _ _ => by simp
-    simpa only [Finset.sum_empty] using h0
-  | @insert a s has ih =>
-    rw [Finset.sum_insert has]
-    exact (hφ a (Finset.mem_insert_self a s)).add
-      (ih fun i hi => hφ i (Finset.mem_insert_of_mem hi))
+  have h0 : IsPiecewiseAffineOn (0 : E → F) V :=
+    (isPiecewiseAffineOn_continuousAffineMap (0 : E →ᴬ[ℝ] F) V).congr fun _ _ => by simp
+  exact Finset.sum_induction φ (fun g => IsPiecewiseAffineOn g V) (fun _ _ ha hb => ha.add hb) h0
+    hφ
 
 /-- Pointwise maximum of two coordinates on `ℝ × ℝ` is piecewise affine on the whole plane. -/
 theorem isPiecewiseAffineOn_max_prod :

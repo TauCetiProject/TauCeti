@@ -46,35 +46,38 @@ open Neuromanifold
 with the input affine layer of a depth-`(L₂ + 1)` network, producing depth `L₁ + L₂ + 1`. -/
 def compWidths {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 2) → ℕ) (d₂ : Fin (L₂ + 2) → ℕ) :
     Fin (L₁ + L₂ + 2) → ℕ :=
-  fun i =>
-    if _ : i.val ≤ L₁ then d₁ ⟨i.val, by omega⟩ else d₂ ⟨i.val - L₁, by omega⟩
-
-/-- On indices `i` with `i.val ≤ L₁`, `compWidths d₁ d₂ i` agrees with `d₁`. -/
-theorem compWidths_of_le {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 2) → ℕ)
-    (d₂ : Fin (L₂ + 2) → ℕ) {i : Fin (L₁ + L₂ + 2)} (hi : i.val ≤ L₁) :
-    compWidths d₁ d₂ i = d₁ ⟨i.val, by omega⟩ := by
-  simp only [compWidths, hi, ↓reduceDIte]
-
-/-- On indices `i` with `L₁ < i.val`, `compWidths d₁ d₂ i` agrees with `d₂` shifted by `L₁`. -/
-theorem compWidths_of_lt {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 2) → ℕ)
-    (d₂ : Fin (L₂ + 2) → ℕ) {i : Fin (L₁ + L₂ + 2)} (hi : L₁ < i.val) :
-    compWidths d₁ d₂ i = d₂ ⟨i.val - L₁, by omega⟩ := by
-  have hnot : ¬ i.val ≤ L₁ := Nat.not_le_of_lt hi
-  simp only [compWidths, hnot, ↓reduceDIte]
+  Fin.append (Fin.init d₁) (Fin.tail d₂) ∘ Fin.cast (by omega)
 
 /-- On indices `i : Fin (L₁ + 1)` below the merge layer, `compWidths` agrees with `d₁`. -/
 @[simp]
 theorem compWidths_left {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 2) → ℕ)
     (d₂ : Fin (L₂ + 2) → ℕ) (i : Fin (L₁ + 1)) :
-    compWidths d₁ d₂ ⟨i.val, by omega⟩ = d₁ i.castSucc :=
-  compWidths_of_le d₁ d₂ (Nat.le_of_lt_succ i.isLt)
+    compWidths d₁ d₂ ⟨i.val, by omega⟩ = d₁ i.castSucc := by
+  change Fin.append (Fin.init d₁) (Fin.tail d₂) (Fin.castAdd (L₂ + 1) i) = Fin.init d₁ i
+  exact Fin.append_left (Fin.init d₁) (Fin.tail d₂) i
 
 /-- On shifted indices `L₁ + 1 + i` above the merge layer, `compWidths` agrees with `d₂ i.succ`. -/
 @[simp]
 theorem compWidths_right {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 2) → ℕ)
     (d₂ : Fin (L₂ + 2) → ℕ) (i : Fin (L₂ + 1)) :
-    compWidths d₁ d₂ ⟨L₁ + 1 + i.val, by omega⟩ = d₂ i.succ :=
-  (compWidths_of_lt d₁ d₂ (by simp; omega)).trans (congrArg d₂ (Fin.ext (by simp; omega)))
+    compWidths d₁ d₂ ⟨L₁ + 1 + i.val, by omega⟩ = d₂ i.succ := by
+  change Fin.append (Fin.init d₁) (Fin.tail d₂) (Fin.natAdd (L₁ + 1) i) = Fin.tail d₂ i
+  exact Fin.append_right (Fin.init d₁) (Fin.tail d₂) i
+
+/-- On indices `i` with `i.val ≤ L₁`, `compWidths d₁ d₂ i` agrees with `d₁`. -/
+theorem compWidths_of_le {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 2) → ℕ)
+    (d₂ : Fin (L₂ + 2) → ℕ) {i : Fin (L₁ + L₂ + 2)} (hi : i.val ≤ L₁) :
+    compWidths d₁ d₂ i = d₁ ⟨i.val, by omega⟩ :=
+  compWidths_left d₁ d₂ ⟨i.val, by omega⟩
+
+/-- On indices `i` with `L₁ < i.val`, `compWidths d₁ d₂ i` agrees with `d₂` shifted by `L₁`. -/
+theorem compWidths_of_lt {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 2) → ℕ)
+    (d₂ : Fin (L₂ + 2) → ℕ) {i : Fin (L₁ + L₂ + 2)} (hi : L₁ < i.val) :
+    compWidths d₁ d₂ i = d₂ ⟨i.val - L₁, by omega⟩ := by
+  have hi_eq : i = ⟨L₁ + 1 + (i.val - (L₁ + 1)), by omega⟩ := Fin.ext (by simp; omega)
+  exact (congrArg (compWidths d₁ d₂) hi_eq).trans <|
+    (compWidths_right d₁ d₂ ⟨i.val - (L₁ + 1), by omega⟩).trans
+      (congrArg d₂ (Fin.ext (by simp; omega)))
 
 /-- The input width of `compWidths d₁ d₂` is `d₁ 0`. -/
 @[simp]
@@ -92,14 +95,6 @@ theorem compWidths_last {L₁ L₂ : ℕ} (d₁ : Fin (L₁ + 2) → ℕ)
     Fin.ext (by simp; omega)
   rw [hlast]
   exact compWidths_right d₁ d₂ (Fin.last L₂)
-
-private theorem reluNetRealizes_congr_depth {n m L L' : ℕ} (hL : L = L')
-    {d : Fin (L + 1) → ℕ} {d' : Fin (L' + 1) → ℕ}
-    (hd : ∀ i : Fin (L + 1), d i = d' (Fin.cast (congrArg (· + 1) hL) i))
-    {f : (Fin n → ℝ) → (Fin m → ℝ)} (hf : ReLUNetRealizes d f) :
-    ReLUNetRealizes d' f := by
-  subst hL
-  exact hf.of_width_eq (funext hd)
 
 private def reluConsParams {L : ℕ} (d : Fin (L + 2) → ℕ) {d' : Fin (L + 1) → ℕ}
     (ht : Fin.tail d = d')
@@ -240,15 +235,14 @@ theorem ReLUNetRealizes.comp {n m p L₁ L₂ : ℕ}
     ReLUNetRealizes (compWidths d₁ d₂) (h ∘ g) := by
   induction L₁ generalizing n with
   | zero =>
-    refine reluNetRealizes_congr_depth (by omega) (fun i => ?_) (reluNetRealizes_comp_one hg hh)
+    refine (reluNetRealizes_comp_one hg hh).congr_depth (by omega) fun i => ?_
     rcases Fin.eq_zero_or_eq_succ i with rfl | ⟨k, rfl⟩
     · simp [compWidths_of_le]
     · simp only [Fin.succ_ne_zero, ↓reduceIte]
       rw [compWidths_of_lt _ _ (by simp)]
       exact congrArg d₂ (Fin.ext (by simp))
   | succ L₁ ih =>
-    refine reluNetRealizes_congr_depth (by omega) (fun i => ?_)
-      (reluNetRealizes_comp_succ (fun hg' => ih hg') hg)
+    refine (reluNetRealizes_comp_succ (fun hg' => ih hg') hg).congr_depth (by omega) fun i => ?_
     rcases Fin.eq_zero_or_eq_succ i with rfl | ⟨k, rfl⟩
     · simp only [Fin.cons_zero, Fin.cast_zero, compWidths_zero]
     · simp only [Fin.cons_succ]
@@ -339,16 +333,15 @@ theorem exists_reluNetComputes_of_le {n L₁ L₂ : ℕ} (hL : L₁ ≤ L₂)
   rcases Nat.eq_zero_or_pos L₁ with rfl | hL₁
   · rcases Nat.eq_zero_or_pos L₂ with rfl | hL₂
     · exact ⟨d₁, hf⟩
-    · obtain ⟨h0, h1, θ, hθ⟩ := reluNetComputes_iff.mp hf
-      have hn : n = 1 := h0.symm.trans h1
+    · have hn : n = 1 := hf.width_zero.symm.trans hf.width_last
       subst hn
-      have haff : f =
-          ⇑((ContinuousLinearMap.proj (R := ℝ) (0 : Fin 1)).toContinuousAffineMap) := by
-        ext x
-        have hx := (hθ x).symm
-        rw [MLPSpec.realize_depth_zero] at hx
-        simpa [Fin.eq_zero] using hx
-      rw [haff]
+      have hd₁ : d₁ = ![1] := funext fun i => by
+        rw [Fin.eq_zero i]
+        exact hf.width_last
+      have hfn : f =
+          ⇑((ContinuousLinearMap.proj (R := ℝ) (0 : Fin 1)).toContinuousAffineMap) :=
+        reluNetComputes_depth_zero_iff.mp (hf.of_width_eq hd₁)
+      rw [hfn]
       exact exists_reluNetComputes_of_continuousAffineMap hL₂ _
   · exact exists_reluNetComputes_of_le_pos hL₁ hL hf
 

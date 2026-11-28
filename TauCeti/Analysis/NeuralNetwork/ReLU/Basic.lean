@@ -165,6 +165,24 @@ theorem ReLUNetComputes.of_width_eq {n L : ℕ} {d d' : Fin (L + 1) → ℕ}
   reluNetComputes_iff_reluNetRealizes.mpr
     ((reluNetComputes_iff_reluNetRealizes.mp hf).of_width_eq hd)
 
+/-- Transporting `ReLUNetRealizes` along equal depths and cast-indexed widths. -/
+theorem ReLUNetRealizes.congr_depth {n m L L' : ℕ} {d : Fin (L + 1) → ℕ}
+    {d' : Fin (L' + 1) → ℕ} {f : (Fin n → ℝ) → (Fin m → ℝ)}
+    (hf : ReLUNetRealizes d f) (hL : L = L')
+    (hd : ∀ i : Fin (L + 1), d i = d' (Fin.cast (congrArg (· + 1) hL) i)) :
+    ReLUNetRealizes d' f := by
+  subst hL
+  exact hf.of_width_eq (funext hd)
+
+/-- Transporting `ReLUNetComputes` along equal depths and cast-indexed widths. -/
+theorem ReLUNetComputes.congr_depth {n L L' : ℕ} {d : Fin (L + 1) → ℕ}
+    {d' : Fin (L' + 1) → ℕ} {f : (Fin n → ℝ) → ℝ}
+    (hf : ReLUNetComputes d f) (hL : L = L')
+    (hd : ∀ i : Fin (L + 1), d i = d' (Fin.cast (congrArg (· + 1) hL) i)) :
+    ReLUNetComputes d' f :=
+  reluNetComputes_iff_reluNetRealizes.mpr
+    ((reluNetComputes_iff_reluNetRealizes.mp hf).congr_depth hL hd)
+
 /-- The hidden layers of a network of depth `L`: the indices strictly between the input `0` and
 the output `Fin.last L`. -/
 def hiddenLayers (L : ℕ) : Finset (Fin (L + 1)) :=
@@ -230,35 +248,59 @@ theorem ReLUNetComputes.of_continuousAffineMap {n : ℕ} (A : (Fin n → ℝ) �
 
 /-! ### Concrete networks and low-depth characterizations -/
 
-private theorem reluNetRealizes_depth_two {a b c : ℕ}
-    (W₀ : Matrix (Fin b) (Fin a) ℝ) (b₀ : Fin b → ℝ)
-    (W₁ : Matrix (Fin c) (Fin b) ℝ) (b₁ : Fin c → ℝ)
-    (f : (Fin a → ℝ) → (Fin c → ℝ))
-    (hf : ∀ x j, (W₁ *ᵥ (fun k => max 0 ((W₀ *ᵥ x) k + b₀ k)) + b₁) j = f x j) :
-    ReLUNetRealizes ![a, b, c] f := by
-  let θ₁ : (reluSpec ![a, b, c]).tail.Parameters := Fin.cons (W₁, b₁) fun i => i.elim0
-  let θ₀ : Matrix (Fin ((reluSpec ![a, b, c]).width 1)) (Fin ((reluSpec ![a, b, c]).width 0)) ℝ ×
-      (Fin ((reluSpec ![a, b, c]).width 1) → ℝ) := (W₀, b₀)
-  refine ⟨rfl, rfl, Fin.cons θ₀ θ₁, fun x j => ?_⟩
-  let x₀ : Fin ((reluSpec ![a, b, c]).width 0) → ℝ := fun i => x (Fin.cast rfl i)
-  have hact : ∀ k : Fin b,
-      Neuromanifold.activation ((reluSpec ![a, b, c]).layerActivation 0) ()
-        (Neuromanifold.dense θ₀ x₀) (Fin.cast rfl k) = max 0 ((W₀ *ᵥ x) k + b₀ k) := fun k => by
-    rw [Neuromanifold.activation_apply, Neuromanifold.dense_apply, layerActivation_reluSpec]
-    rfl
-  have hreal := congrFun (congrFun (MLPSpec.realize_cons (reluSpec ![a, b, c]) θ₀ θ₁) x₀)
-    (Fin.cast rfl j)
-  rw [Function.comp_apply, Function.comp_apply, MLPSpec.realize_depth_one_eq_dense,
-    Neuromanifold.dense_apply] at hreal
-  refine hreal.trans ?_
-  have hmid :
-      ((θ₁ 0).1 *ᵥ Neuromanifold.activation ((reluSpec ![a, b, c]).layerActivation 0) ()
-          (Neuromanifold.dense θ₀ x₀) + (θ₁ 0).2) (Fin.cast rfl j) =
-        (W₁ *ᵥ (fun k => max 0 ((W₀ *ᵥ x) k + b₀ k)) + b₁) j := by
-    change (W₁ *ᵥ (fun k => Neuromanifold.activation ((reluSpec ![a, b, c]).layerActivation 0) ()
-        (Neuromanifold.dense θ₀ x₀) (Fin.cast rfl k)) + b₁) j = _
-    simp_rw [hact]
-  exact hmid.trans (hf x j)
+/-- A depth-2 ReLU network with widths `![a, b, c]` realizes `f` if and only if `f` is given by
+two affine layers with a coordinatewise ReLU hidden layer of width `b`. -/
+theorem reluNetRealizes_depth_two_iff {a b c : ℕ} {f : (Fin a → ℝ) → (Fin c → ℝ)} :
+    ReLUNetRealizes ![a, b, c] f ↔
+      ∃ (W₀ : Matrix (Fin b) (Fin a) ℝ) (b₀ : Fin b → ℝ)
+        (W₁ : Matrix (Fin c) (Fin b) ℝ) (b₁ : Fin c → ℝ),
+        f = fun x => W₁ *ᵥ (fun k => max 0 ((W₀ *ᵥ x) k + b₀ k)) + b₁ := by
+  have hact (v : Fin ((reluSpec ![a, b, c]).width 1) → ℝ) :
+      Neuromanifold.activation ((reluSpec ![a, b, c]).layerActivation 0) () v =
+        fun k => max 0 (v k) := funext fun k => by
+    rw [Neuromanifold.activation_apply]
+    exact layerActivation_reluSpec_castSucc ![a, b, c] 0 (v k)
+  have hreal (θ : (reluSpec ![a, b, c]).Parameters) (x : Fin a → ℝ) :
+      (reluSpec ![a, b, c]).realize θ x =
+        (θ 1).1 *ᵥ (fun k => max 0 (((θ 0).1 *ᵥ x) k + (θ 0).2 k)) + (θ 1).2 := by
+    have h1 := congrFun (MLPSpec.realize_eq_tail_comp (reluSpec ![a, b, c]) θ) x
+    have h2 := congrFun (MLPSpec.realize_depth_one_eq_dense (reluSpec ![a, b, c]).tail (Fin.tail θ))
+      (Neuromanifold.activation ((reluSpec ![a, b, c]).layerActivation 0) ()
+        (Neuromanifold.dense (θ 0) x))
+    have h3 : Neuromanifold.dense (Fin.tail θ 0)
+        (Neuromanifold.activation ((reluSpec ![a, b, c]).layerActivation 0) ()
+          (Neuromanifold.dense (θ 0) x)) =
+        (θ 1).1 *ᵥ (fun k => max 0 (((θ 0).1 *ᵥ x) k + (θ 0).2 k)) + (θ 1).2 := by
+      have hd0 : Neuromanifold.dense (θ 0) x = (θ 0).1 *ᵥ x + (θ 0).2 :=
+        Neuromanifold.dense_apply (θ 0) x
+      rw [Neuromanifold.dense_apply, hact, hd0]
+      rfl
+    exact h1.trans (h2.trans h3)
+  constructor
+  · intro hf
+    obtain ⟨h0, hL, θ, hθ⟩ := reluNetRealizes_iff.mp hf
+    exact ⟨(θ 0).1, (θ 0).2, (θ 1).1, (θ 1).2, funext fun x => funext fun j =>
+      (hθ x j).symm.trans (congrFun (hreal θ x) j)⟩
+  · rintro ⟨W₀, b₀, W₁, b₁, rfl⟩
+    let θ₀ : Matrix (Fin ((reluSpec ![a, b, c]).width 1)) (Fin ((reluSpec ![a, b, c]).width 0)) ℝ ×
+        (Fin ((reluSpec ![a, b, c]).width 1) → ℝ) := (W₀, b₀)
+    let θ₁ : (reluSpec ![a, b, c]).tail.Parameters := Fin.cons (W₁, b₁) fun i => i.elim0
+    refine ⟨rfl, rfl, Fin.cons θ₀ θ₁, fun x j => ?_⟩
+    exact congrFun (hreal (Fin.cons θ₀ θ₁) x) j
+
+/-- A depth-2 ReLU network with widths `![a, b, 1]` computes `f` if and only if `f` is given by
+two affine layers with a coordinatewise ReLU hidden layer of width `b`. -/
+theorem reluNetComputes_depth_two_iff {a b : ℕ} {f : (Fin a → ℝ) → ℝ} :
+    ReLUNetComputes ![a, b, 1] f ↔
+      ∃ (W₀ : Matrix (Fin b) (Fin a) ℝ) (b₀ : Fin b → ℝ)
+        (W₁ : Matrix (Fin 1) (Fin b) ℝ) (b₁ : Fin 1 → ℝ),
+        f = fun x => (W₁ *ᵥ (fun k => max 0 ((W₀ *ᵥ x) k + b₀ k)) + b₁) 0 := by
+  rw [reluNetComputes_iff_reluNetRealizes, reluNetRealizes_depth_two_iff]
+  constructor
+  · rintro ⟨W₀, b₀, W₁, b₁, hf⟩
+    exact ⟨W₀, b₀, W₁, b₁, funext fun x => congrFun (congrFun hf x) 0⟩
+  · rintro ⟨W₀, b₀, W₁, b₁, rfl⟩
+    exact ⟨W₀, b₀, W₁, b₁, funext fun x => funext fun j => by rw [Fin.eq_zero j]⟩
 
 /-- A depth-2 ReLU network of hidden width `2 * m` realizes the identity on `Fin m → ℝ` via
 `t = max 0 t - max 0 (-t)`. -/
@@ -270,7 +312,7 @@ theorem ReLUNetRealizes.id_depth_two (m : ℕ) :
     (Matrix.fromRows (1 : Matrix (Fin m) (Fin m) ℝ) (-1)).submatrix e (Equiv.refl _)
   let W₁ : Matrix (Fin m) (Fin (2 * m)) ℝ :=
     (Matrix.fromCols (1 : Matrix (Fin m) (Fin m) ℝ) (-1)).submatrix (Equiv.refl _) e
-  refine reluNetRealizes_depth_two W₀ 0 W₁ 0 id fun x j => ?_
+  refine reluNetRealizes_depth_two_iff.mpr ⟨W₀, 0, W₁, 0, funext fun x => funext fun j => ?_⟩
   have h0 : W₀ *ᵥ x = (Sum.elim x (-x)) ∘ e := by
     dsimp only [W₀]
     rw [Matrix.submatrix_mulVec_equiv]
@@ -287,8 +329,8 @@ theorem ReLUNetRealizes.id_depth_two (m : ℕ) :
     rw [Matrix.submatrix_mulVec_equiv]
     simp [Function.comp_assoc]
   simp only [Pi.add_apply, Pi.zero_apply, add_zero, h1, Matrix.fromCols_mulVec,
-    Matrix.one_mulVec, Matrix.neg_mulVec]
-  simpa [max_comm, sub_eq_add_neg] using max_zero_sub_max_neg_zero_eq_self (x j)
+    Matrix.one_mulVec, Matrix.neg_mulVec, id_eq]
+  simpa [max_comm, sub_eq_add_neg] using (max_zero_sub_max_neg_zero_eq_self (x j)).symm
 
 /-- A depth-zero ReLU network on `ℝ` computes only the identity `x ↦ x 0`. -/
 theorem reluNetComputes_depth_zero_iff {f : (Fin 1 → ℝ) → ℝ} :
@@ -326,15 +368,18 @@ theorem reluNetComputes_depth_one_iff {n : ℕ} {f : (Fin n → ℝ) → ℝ} :
     have hx := (hθ x).symm
     rw [MLPSpec.realize_depth_one] at hx
     refine hx.trans ?_
-    simp only [Lmap, M, ContinuousAffineMap.add_apply,
+    have hM : M *ᵥ x = ((θ 0).1 *ᵥ (fun i => x (Fin.cast h0' i))) ∘ (finCongr hL').symm := by
+      dsimp only [M]
+      rw [Matrix.reindex_apply,
+        Matrix.submatrix_mulVec_equiv _ _ (finCongr hL').symm (finCongr h0').symm]
+      rfl
+    have hM0 := congrFun hM 0
+    simp only [Lmap, ContinuousAffineMap.add_apply,
       ContinuousLinearMap.coe_toContinuousAffineMap, ContinuousAffineMap.coe_const,
       Function.const_apply, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
       ContinuousLinearEquiv.coe_funUnique, Function.eval, Fin.default_eq_zero,
-      LinearMap.coe_toContinuousLinearMap', Matrix.toLin'_apply, Pi.add_apply, Matrix.mulVec,
-      dotProduct, Matrix.reindex_apply, Matrix.submatrix_apply, finCongr_symm, finCongr_apply]
-    congr 1
-    refine Fintype.sum_equiv (finCongr h0') _ _ fun j => ?_
-    simp only [finCongr_apply]
+      LinearMap.coe_toContinuousLinearMap', Matrix.toLin'_apply, hM0, Function.comp_apply,
+      finCongr_symm, finCongr_apply, Pi.add_apply]
     rfl
   · rintro ⟨A, rfl⟩
     exact ⟨![n, 1], ReLUNetComputes.of_continuousAffineMap A⟩
@@ -343,9 +388,8 @@ theorem reluNetComputes_depth_one_iff {n : ℕ} {f : (Fin n → ℝ) → ℝ} :
 units (`![1, 2, 1]`). -/
 theorem reluNetComputes_abs :
     ReLUNetComputes ![1, 2, 1] (fun x : Fin 1 → ℝ => |x 0|) := by
-  refine reluNetComputes_iff_reluNetRealizes.mpr
-    (reluNetRealizes_depth_two !![1; -1] 0 !![1, 1] 0 _ fun x j => ?_)
-  simp only [Fin.eq_zero j, Pi.zero_apply, add_zero, Matrix.mulVec, dotProduct,
+  refine reluNetComputes_depth_two_iff.mpr ⟨!![1; -1], 0, !![1, 1], 0, funext fun x => ?_⟩
+  simp only [Pi.add_apply, Pi.zero_apply, add_zero, Matrix.mulVec, dotProduct,
     Fin.sum_univ_two, Fin.sum_univ_one, Matrix.of_apply, Matrix.cons_val_zero,
     Matrix.cons_val_one, one_mul, neg_mul]
   rcases le_total 0 (x 0) with h | h <;> simp [h, abs_of_nonneg, abs_of_nonpos]
@@ -354,9 +398,9 @@ theorem reluNetComputes_abs :
 network with three hidden units (`![2, 3, 1]`). -/
 theorem reluNetComputes_max :
     ReLUNetComputes ![2, 3, 1] (fun x : Fin 2 → ℝ => max (x 0) (x 1)) := by
-  refine reluNetComputes_iff_reluNetRealizes.mpr
-    (reluNetRealizes_depth_two !![1, -1; 0, 1; 0, -1] 0 !![1, 1, -1] 0 _ fun x j => ?_)
-  simp only [Fin.eq_zero j, Pi.zero_apply, add_zero, Matrix.mulVec, dotProduct,
+  refine reluNetComputes_depth_two_iff.mpr
+    ⟨!![1, -1; 0, 1; 0, -1], 0, !![1, 1, -1], 0, funext fun x => ?_⟩
+  simp only [Pi.add_apply, Pi.zero_apply, add_zero, Matrix.mulVec, dotProduct,
     Fin.sum_univ_three, Fin.sum_univ_two, Matrix.of_apply, Matrix.cons_val_zero,
     Matrix.cons_val_one, one_mul, neg_mul, zero_mul, zero_add]
   rcases le_total (x 0) (x 1) with h | h <;> rcases le_total 0 (x 1) with h1 | h1 <;>

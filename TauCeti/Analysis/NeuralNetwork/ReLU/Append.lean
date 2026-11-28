@@ -37,49 +37,39 @@ open Neuromanifold
 
 private abbrev finAppendWidths {L : ℕ} (n : ℕ) (d₁ d₂ : Fin (L + 2) → ℕ) :
     Fin (L + 2) → ℕ :=
-  fun i => if i = 0 then n else d₁ i + d₂ i
+  Fin.cons n (fun i => d₁ i.succ + d₂ i.succ)
 
 private theorem finAppendWidths_zero {L : ℕ} (n : ℕ) (d₁ d₂ : Fin (L + 2) → ℕ) :
     (reluSpec (finAppendWidths n d₁ d₂)).width 0 = n := by
-  simp [finAppendWidths]
+  rw [reluSpec_width]
+  exact Fin.cons_zero _ _
 
 private theorem finAppendWidths_succ {L : ℕ} (n : ℕ) (d₁ d₂ : Fin (L + 2) → ℕ)
     (i : Fin (L + 1)) :
     (reluSpec (finAppendWidths n d₁ d₂)).width i.succ =
       (reluSpec d₁).width i.succ + (reluSpec d₂).width i.succ := by
-  simp [finAppendWidths, Fin.succ_ne_zero]
+  simp only [reluSpec_width]
+  exact Fin.cons_succ _ _ i
 
 private def finAppendParams {n L : ℕ} {d₁ d₂ : Fin (L + 2) → ℕ}
     (h0₁ : (reluSpec d₁).width 0 = n) (h0₂ : (reluSpec d₂).width 0 = n)
     (θ₁ : (reluSpec d₁).Parameters) (θ₂ : (reluSpec d₂).Parameters) :
-    (reluSpec (finAppendWidths n d₁ d₂)).Parameters := fun i =>
-  if hi : i = 0 then
-    have hr : (reluSpec (finAppendWidths n d₁ d₂)).width i.succ =
-        (reluSpec d₁).width (0 : Fin (L + 1)).succ +
-          (reluSpec d₂).width (0 : Fin (L + 1)).succ := by
-      subst hi; exact finAppendWidths_succ n d₁ d₂ 0
-    have hc : (reluSpec (finAppendWidths n d₁ d₂)).width i.castSucc = n := by
-      subst hi; exact finAppendWidths_zero n d₁ d₂
-    have h0₁' : (reluSpec d₁).width (0 : Fin (L + 1)).castSucc = n := h0₁
-    have h0₂' : (reluSpec d₂).width (0 : Fin (L + 1)).castSucc = n := h0₂
-    let eRow := (finCongr hr).trans finSumFinEquiv.symm
-    let W₁' := (θ₁ 0).1.submatrix (Equiv.refl _) (finCongr h0₁').symm
-    let W₂' := (θ₂ 0).1.submatrix (Equiv.refl _) (finCongr h0₂').symm
-    ((Matrix.fromRows W₁' W₂').submatrix eRow (finCongr hc),
-     Sum.elim (θ₁ 0).2 (θ₂ 0).2 ∘ eRow)
-  else
-    let k : Fin L := ⟨i.val - 1, by have := Fin.pos_iff_ne_zero.mpr hi; omega⟩
-    have hi_eq : i = k.succ := Fin.ext (by simp [k]; have := Fin.pos_iff_ne_zero.mpr hi; omega)
-    have hr : (reluSpec (finAppendWidths n d₁ d₂)).width i.succ =
-        (reluSpec d₁).width k.succ.succ + (reluSpec d₂).width k.succ.succ := by
-      rw [hi_eq]; exact finAppendWidths_succ n d₁ d₂ k.succ
-    have hc : (reluSpec (finAppendWidths n d₁ d₂)).width i.castSucc =
-        (reluSpec d₁).width k.castSucc.succ + (reluSpec d₂).width k.castSucc.succ := by
-      rw [hi_eq]; exact finAppendWidths_succ n d₁ d₂ k.castSucc
-    let eRow := (finCongr hr).trans finSumFinEquiv.symm
-    let eCol := (finCongr hc).trans finSumFinEquiv.symm
-    ((Matrix.fromBlocks (θ₁ k.succ).1 0 0 (θ₂ k.succ).1).submatrix eRow eCol,
-     Sum.elim (θ₁ k.succ).2 (θ₂ k.succ).2 ∘ eRow)
+    (reluSpec (finAppendWidths n d₁ d₂)).Parameters :=
+  Fin.cons
+    (let eRow := (finCongr (finAppendWidths_succ n d₁ d₂ 0)).trans finSumFinEquiv.symm
+     let hd0 : (reluSpec (finAppendWidths n d₁ d₂)).width (0 : Fin (L + 1)).castSucc = n :=
+       finAppendWidths_zero n d₁ d₂
+     let h0₁' : (reluSpec d₁).width (0 : Fin (L + 1)).castSucc = n := h0₁
+     let h0₂' : (reluSpec d₂).width (0 : Fin (L + 1)).castSucc = n := h0₂
+     let W₁' := (θ₁ 0).1.submatrix (Equiv.refl _) (finCongr h0₁').symm
+     let W₂' := (θ₂ 0).1.submatrix (Equiv.refl _) (finCongr h0₂').symm
+     ((Matrix.fromRows W₁' W₂').submatrix eRow (finCongr hd0),
+      Sum.elim (θ₁ 0).2 (θ₂ 0).2 ∘ eRow))
+    (fun k =>
+      let eRow := (finCongr (finAppendWidths_succ n d₁ d₂ k.succ)).trans finSumFinEquiv.symm
+      let eCol := (finCongr (finAppendWidths_succ n d₁ d₂ k.castSucc)).trans finSumFinEquiv.symm
+      ((Matrix.fromBlocks (θ₁ k.succ).1 0 0 (θ₂ k.succ).1).submatrix eRow eCol,
+       Sum.elim (θ₁ k.succ).2 (θ₂ k.succ).2 ∘ eRow))
 
 private theorem finAppendParams_zero {n L : ℕ} {d₁ d₂ : Fin (L + 2) → ℕ}
     (h0₁ : (reluSpec d₁).width 0 = n) (h0₂ : (reluSpec d₂).width 0 = n)
@@ -94,8 +84,8 @@ private theorem finAppendParams_zero {n L : ℕ} {d₁ d₂ : Fin (L + 2) → �
       let W₁' := (θ₁ 0).1.submatrix (Equiv.refl _) (finCongr h0₁').symm
       let W₂' := (θ₂ 0).1.submatrix (Equiv.refl _) (finCongr h0₂').symm
       ((Matrix.fromRows W₁' W₂').submatrix eRow (finCongr hd0),
-       Sum.elim (θ₁ 0).2 (θ₂ 0).2 ∘ eRow) := by
-  simp only [finAppendParams, ↓reduceDIte]
+       Sum.elim (θ₁ 0).2 (θ₂ 0).2 ∘ eRow) :=
+  Fin.cons_zero _ _
 
 private theorem finAppendParams_succ {n L : ℕ} {d₁ d₂ : Fin (L + 2) → ℕ}
     (h0₁ : (reluSpec d₁).width 0 = n) (h0₂ : (reluSpec d₂).width 0 = n)
@@ -106,25 +96,8 @@ private theorem finAppendParams_succ {n L : ℕ} {d₁ d₂ : Fin (L + 2) → �
       let eCol :=
         (finCongr (finAppendWidths_succ n d₁ d₂ k.castSucc)).trans finSumFinEquiv.symm
       ((Matrix.fromBlocks (θ₁ k.succ).1 0 0 (θ₂ k.succ).1).submatrix eRow eCol,
-       Sum.elim (θ₁ k.succ).2 (θ₂ k.succ).2 ∘ eRow) := by
-  have hk_ne : k.succ ≠ 0 := Fin.succ_ne_zero k
-  have hfn : ∀ (k' : Fin L) (_ : k' = k)
-      (hr' : (reluSpec (finAppendWidths n d₁ d₂)).width k.succ.succ =
-        (reluSpec d₁).width k'.succ.succ + (reluSpec d₂).width k'.succ.succ)
-      (hc' : (reluSpec (finAppendWidths n d₁ d₂)).width k.succ.castSucc =
-        (reluSpec d₁).width k'.castSucc.succ + (reluSpec d₂).width k'.castSucc.succ),
-      let eRow' := (finCongr hr').trans finSumFinEquiv.symm
-      let eCol' := (finCongr hc').trans finSumFinEquiv.symm
-      let eRow := (finCongr (finAppendWidths_succ n d₁ d₂ k.succ)).trans finSumFinEquiv.symm
-      let eCol := (finCongr (finAppendWidths_succ n d₁ d₂ k.castSucc)).trans finSumFinEquiv.symm
-      ((Matrix.fromBlocks (θ₁ k'.succ).1 0 0 (θ₂ k'.succ).1).submatrix eRow' eCol',
-       Sum.elim (θ₁ k'.succ).2 (θ₂ k'.succ).2 ∘ eRow') =
-      ((Matrix.fromBlocks (θ₁ k.succ).1 0 0 (θ₂ k.succ).1).submatrix eRow eCol,
-       Sum.elim (θ₁ k.succ).2 (θ₂ k.succ).2 ∘ eRow) := by
-    rintro _ rfl _ _
-    rfl
-  simp only [finAppendParams, hk_ne, ↓reduceDIte]
-  exact hfn ⟨k.succ.val - 1, _⟩ (Fin.ext (by simp)) _ _
+       Sum.elim (θ₁ k.succ).2 (θ₂ k.succ).2 ∘ eRow) :=
+  Fin.cons_succ _ _ k
 
 private theorem finAppendParams_evalPrefix_zero {n L : ℕ} {d₁ d₂ : Fin (L + 2) → ℕ}
     (h0₁ : (reluSpec d₁).width 0 = n) (h0₂ : (reluSpec d₂).width 0 = n)
@@ -270,7 +243,7 @@ theorem ReLUNetRealizes.finAppend {n m₁ m₂ L : ℕ}
     {d₁ d₂ : Fin (L + 2) → ℕ}
     {f₁ : (Fin n → ℝ) → (Fin m₁ → ℝ)} {f₂ : (Fin n → ℝ) → (Fin m₂ → ℝ)}
     (hf₁ : ReLUNetRealizes d₁ f₁) (hf₂ : ReLUNetRealizes d₂ f₂) :
-    ReLUNetRealizes (fun i : Fin (L + 2) => if i = 0 then n else d₁ i + d₂ i)
+    ReLUNetRealizes (Fin.cons n (fun i => d₁ i.succ + d₂ i.succ))
       (fun x => Fin.append (f₁ x) (f₂ x)) := by
   obtain ⟨h0₁, hm₁, θ₁, hθ₁⟩ := reluNetRealizes_iff.mp hf₁
   obtain ⟨h0₂, hm₂, θ₂, hθ₂⟩ := reluNetRealizes_iff.mp hf₂
@@ -280,8 +253,8 @@ theorem ReLUNetRealizes.finAppend {n m₁ m₂ L : ℕ}
   have hm₂' : (reluSpec d₂).width (Fin.last L).succ = m₂ := hm₂
   have hd0' : finAppendWidths n d₁ d₂ 0 = n := finAppendWidths_zero n d₁ d₂
   have hd0 := finAppendWidths_zero n d₁ d₂
-  have hdL : finAppendWidths n d₁ d₂ (Fin.last (L + 1)) = m₁ + m₂ := by
-    simp [finAppendWidths, hm₁, hm₂]
+  have hdL : finAppendWidths n d₁ d₂ (Fin.last (L + 1)) = m₁ + m₂ :=
+    (finAppendWidths_succ n d₁ d₂ (Fin.last L)).trans (congrArg₂ (· + ·) hm₁' hm₂')
   have hdL' : (reluSpec (finAppendWidths n d₁ d₂)).width (Fin.last (L + 1)) = m₁ + m₂ := hdL
   have hd_succ := finAppendWidths_succ n d₁ d₂
   refine reluNetRealizes_iff.mpr ⟨hd0', hdL, finAppendParams h0₁' h0₂' θ₁ θ₂, fun x j => ?_⟩
@@ -343,17 +316,18 @@ theorem ReLUNetComputes.affineComb {n L : ℕ} {d₁ d₂ : Fin (L + 2) → ℕ}
   rw [heq] at hcomp
   refine hcomp.of_width_eq ?_
   ext i
-  by_cases hi0 : i = 0
-  · subst hi0
-    simp
-  · by_cases hiL : i = Fin.last (L + 1)
-    · subst hiL
+  cases i using Fin.cases with
+  | zero => simp
+  | succ k =>
+    by_cases hiL : k.succ = Fin.last (L + 1)
+    · rw [hiL]
       simp
-    · have hle : i.val ≤ L := by
-        have := i.isLt
-        have : i.val ≠ L + 1 := fun h => hiL (Fin.ext h)
+    · have hle : k.succ.val ≤ L := by
+        have := k.isLt
+        have : k.succ.val ≠ L + 1 := fun h => hiL (Fin.ext h)
         omega
       rw [compWidths_of_le _ _ hle]
-      simp [hi0, hiL]
+      simp only [Fin.succ_ne_zero, ↓reduceIte, hiL]
+      exact Fin.cons_succ (α := fun _ => ℕ) n (fun i => d₁ i.succ + d₂ i.succ) k
 
 end TauCeti
