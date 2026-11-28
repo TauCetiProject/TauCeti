@@ -8,8 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Basic
 public import TauCeti.RingTheory.Huber.Restricted.PolydiscReduction
 
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Basic
-
 /-!
 # Residue reduction of polydisc evaluation
 
@@ -17,11 +15,13 @@ Over a complete ultrametric normed field `K`, evaluating a unit-bounded restrict
 `f ∈ K°⟨T₁, …, Tₙ⟩` at a power-bounded tuple `a ∈ (K°)ⁿ` lands in `K°` and commutes with
 coefficientwise residue reduction `TauCeti.Huber.polydiscReduction n K`.
 
-This file specializes the `weightedEvalHom` reduction results of
+This file specializes `TauCeti.Huber.weightedSubringEvalHom` and its reduction results in
 `TauCeti.RingTheory.Huber.Restricted.PolydiscReduction` to `TauCeti.ValuationSpectrum.evalAtHom`.
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.evalAtHom_eq_coe_weightedSubringEvalHom`: `evalAtHom` on integral
+  series agrees with `weightedSubringEvalHom` coerced to `K`.
 * `TauCeti.ValuationSpectrum.evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring`: evaluation
   of a unit-bounded series at a power-bounded tuple is power-bounded.
 * `TauCeti.ValuationSpectrum.residue_evalAtHom_eq_eval_polydiscReduction`: residue reduction
@@ -39,15 +39,27 @@ open scoped NormedField Valued
 
 variable {n : ℕ} {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
+/-- On unit-bounded series `f ∈ K°⟨T₁, …, Tₙ⟩`, `evalAtHom` agrees with `weightedSubringEvalHom`
+coerced from `K°` to `K`. -/
+theorem evalAtHom_eq_coe_weightedSubringEvalHom (a : Fin n → K) (ha : ∀ i, IsPowerBounded (a i))
+    (f : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
+      (powerBoundedSubring K)) :
+    evalAtHom a ha f.val =
+      (weightedSubringEvalHom (fun i ↦ ⟨a i, mem_powerBoundedSubring.mpr (ha i)⟩) f : K) := by
+  rw [evalAtHom_eq_weightedEvalHom]
+  exact (coe_weightedSubringEvalHom (fun i ↦ ⟨a i, mem_powerBoundedSubring.mpr (ha i)⟩)
+    ((isWeightBounded_one_weight_iff_forall_isPowerBounded (RingHom.id K)
+      (fun i ↦ ((⟨a i, mem_powerBoundedSubring.mpr (ha i)⟩ : powerBoundedSubring K) : K))).mpr
+      ha) f).symm
+
 /-- Evaluating a unit-bounded series at a power-bounded tuple yields a power-bounded element. -/
 theorem evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring
     (a : Fin n → K) (ha : ∀ i, IsPowerBounded (a i))
     (f : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
       (powerBoundedSubring K)) :
     evalAtHom a ha f.val ∈ powerBoundedSubring K := by
-  have : IsHuberRing K := IsHuberRing.of_normedField K
-  exact evalAtHom_mem_powerBoundedSubring a ha
-    (weightedSubring_le_powerBoundedSubring isWeightFamily_one_weight le_rfl f.property)
+  rw [evalAtHom_eq_coe_weightedSubringEvalHom]
+  exact SetLike.coe_mem _
 
 /-- **Reduction commutes with evaluation at power-bounded tuples.** For `f ∈ K°⟨T₁, …, Tₙ⟩` and
 `a ∈ (K°)ⁿ`, the residue of `f(a)` in `𝓀[K]` equals the value of `polydiscReduction n K f` at
@@ -65,13 +77,17 @@ theorem residue_evalAtHom_eq_eval_polydiscReduction (a : Fin n → K)
           ⟨a i, (powerBoundedSubring_eq_integer (K := K)).le
             (mem_powerBoundedSubring.mpr (ha i))⟩)
         (polydiscReduction n K f) := by
-  simpa only [evalAtHom_eq_weightedEvalHom] using
-    residue_weightedEvalHom_eq_eval_polydiscReduction a ha
-      ((isWeightBounded_one_weight_iff_forall_isPowerBounded (RingHom.id K) a).2 ha) f
-      (by
-        rw [← evalAtHom_eq_weightedEvalHom a ha]
-        exact (powerBoundedSubring_eq_integer (K := K)).le
-          (evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha f))
+  let a' : Fin n → powerBoundedSubring K := fun i ↦ ⟨a i, mem_powerBoundedSubring.mpr (ha i)⟩
+  have hsub :
+      (⟨evalAtHom a ha f.val,
+          (powerBoundedSubring_eq_integer (K := K)).le
+            (evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha f)⟩ : 𝒪[K]) =
+        powerBoundedSubringEquivInteger (weightedSubringEvalHom a' f) :=
+    Subtype.ext (by
+      rw [coe_powerBoundedSubringEquivInteger, ← evalAtHom_eq_coe_weightedSubringEvalHom])
+  rw [hsub, residue_weightedSubringEvalHom]
+  refine congrArg (MvPolynomial.eval · _) (funext fun i ↦ congrArg (IsLocalRing.residue 𝒪[K]) ?_)
+  exact Subtype.ext (coe_powerBoundedSubringEquivInteger _)
 
 /-- A unit-bounded series `f ∈ K°⟨T₁, …, Tₙ⟩` evaluates to an element of norm `1` at `a ∈ (K°)ⁿ`
 if and only if its reduction does not vanish at the residue tuple `ā`. -/
@@ -85,8 +101,16 @@ theorem norm_evalAtHom_eq_one_iff_eval_polydiscReduction_ne_zero (a : Fin n → 
           ⟨a i, (powerBoundedSubring_eq_integer (K := K)).le
             (mem_powerBoundedSubring.mpr (ha i))⟩)
         (polydiscReduction n K f) ≠ 0 := by
-  simpa only [evalAtHom_eq_weightedEvalHom] using
-    norm_weightedEvalHom_eq_one_iff_eval_polydiscReduction_ne_zero a ha
-      ((isWeightBounded_one_weight_iff_forall_isPowerBounded (RingHom.id K) a).2 ha) f
+  let a' : Fin n → powerBoundedSubring K := fun i ↦ ⟨a i, mem_powerBoundedSubring.mpr (ha i)⟩
+  rw [evalAtHom_eq_coe_weightedSubringEvalHom,
+    norm_weightedSubringEvalHom_eq_one_iff_eval_polydiscReduction_ne_zero]
+  have ha_eq :
+      (fun i ↦ IsLocalRing.residue 𝒪[K] (powerBoundedSubringEquivInteger (a' i))) =
+        fun i ↦ IsLocalRing.residue 𝒪[K]
+          ⟨a i, (powerBoundedSubring_eq_integer (K := K)).le
+            (mem_powerBoundedSubring.mpr (ha i))⟩ :=
+    funext fun i ↦ congrArg (IsLocalRing.residue 𝒪[K])
+      (Subtype.ext (coe_powerBoundedSubringEquivInteger _))
+  rw [ha_eq]
 
 end TauCeti.ValuationSpectrum

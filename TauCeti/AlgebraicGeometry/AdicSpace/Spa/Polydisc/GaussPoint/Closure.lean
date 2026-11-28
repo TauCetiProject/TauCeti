@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Eval
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.GaussPoint.Unit
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Reduction
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basic
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UnitBall
 
 import Mathlib.Algebra.MvPolynomial.Funext
 import Mathlib.FieldTheory.Finite.Basic
@@ -22,71 +21,62 @@ import TauCeti.Topology.Homeomorph.SetCongr
 Let `K` be a complete ultrametric normed field and `D = closedPolydisc n K` the closed unit
 polydisc `Spa (K⟨T₁, …, Tₙ⟩, K⟨T₁, …, Tₙ⟩°)` of dimension `n`, with unit Gauss point
 `unitGaussPoint n K : closedPolydisc n K` defined in
-`TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.GaussPoint.Unit`.
+`TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.GaussPoint.Unit`, and classical locus
+`classicalPoints n K : Set (closedPolydisc n K)` defined in
+`TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Basic`.
 
 For any complete ultrametric normed field `K` (including trivially normed fields), every rational
 neighbourhood `R(T/s)` of `unitGaussPoint n K` can be rescaled by a scalar unit dividing a
 coefficient attaining `unitGaussValuation n K s` so that `unitGaussValuation n K s = 1` and
 `unitGaussValuation n K f ≤ 1` for all `f ∈ T`. Then `s` has a nonzero polynomial reduction
 `p = polydiscReduction n K s ∈ 𝓀[K][T₁, …, Tₙ]`, and every integral tuple `a ∈ 𝒪[K]ⁿ` whose
-residue `ā` satisfies `p(ā) ≠ 0` gives a classical point `classicalPoint x a ha ∈ R(T/s)`. When
-the canonical reduction `K° / K°° ≃+* 𝓀[K]` is infinite, `MvPolynomial.funext` provides such a
-tuple `ā`, which lifts to `𝒪[K]ⁿ`. Since rational subsets form a basis of `closedPolydisc n K`,
-every open neighbourhood of `unitGaussPoint n K` meets the `K`-rational points, so
-`unitGaussPoint n K` lies in their closure.
+residue `ā` satisfies `p(ā) ≠ 0` gives a classical point `normClassicalPoint a ha ∈ R(T/s)`. When
+the residue field `𝓀[K]` is infinite, `MvPolynomial.funext` provides such a tuple `ā`, which lifts
+to `𝒪[K]ⁿ`. Since rational subsets form a basis of `closedPolydisc n K`, every open neighbourhood
+of `unitGaussPoint n K` meets `classicalPoints n K`, so `unitGaussPoint n K` lies in its closure.
 
-In particular, under those hypotheses (complete ultrametric normed field with infinite canonical
-reduction `K° / K°°`), any closed subset of `closedPolydisc n K` (or of any topological space
-receiving a continuous map from `closedPolydisc n K`) containing the images of all `K`-rational
-points also contains the image of `unitGaussPoint n K`, and for `n ≥ 1` the `K`-rational points are
-therefore not closed.
+In particular, under those hypotheses (complete ultrametric normed field with infinite residue field
+`𝓀[K]`), any closed subset of `closedPolydisc n K` (or of any topological space receiving a
+continuous map from `closedPolydisc n K`) containing `classicalPoints n K` (or its image) also
+contains `unitGaussPoint n K` (or its image), and for `n ≥ 1` `classicalPoints n K` is therefore not
+closed.
 
-Conversely, for any complete ultrametric normed field `K` whose canonical reduction
-`K° / K°° ≃+* 𝓀[K]` is finite of cardinality `q` and `n ≥ 1`, the rational open
-`R({1} / (T₀^q - T₀))` contains `unitGaussPoint n K` (since the coefficient of `T₀` is `-1`) but
-no `K`-rational point (since `a₀^q - a₀` has zero residue and hence norm strictly less than `1`).
-Thus, for every complete ultrametric normed field `K` and `n ≥ 1`, `unitGaussPoint n K` lies in
-the closure of the `K`-rational points if and only if the residue field `K° / K°°` is infinite.
-Independently, in dimension `0`, membership in the closure holds unconditionally for every complete
-ultrametric normed field `K`.
+Conversely, for any complete ultrametric normed field `K` whose residue field `𝓀[K]` is finite of
+cardinality `q` and `n ≥ 1`, the rational open `R({1} / (T₀^q - T₀))` contains `unitGaussPoint n K`
+(since the coefficient of `T₀` is `-1`) but no `K`-rational point (since `a₀^q - a₀` has zero
+residue and hence norm strictly less than `1`). Thus, for every complete ultrametric normed field
+`K` and `n ≥ 1`, `unitGaussPoint n K` lies in the closure of `classicalPoints n K` if and only if
+the residue field `𝓀[K]` is infinite. Independently, in dimension `0`, membership in the closure
+holds unconditionally for every complete ultrametric normed field `K`.
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.unitGaussPoint_zero_mem_closure_range_classicalPoint` and
-  `TauCeti.ValuationSpectrum.unitGaussPoint_zero_mem_closure_classicalPoints`: in dimension `0`,
-  `unitGaussPoint 0 K` lies in the closure of the `K`-rational points unconditionally for any
+* `TauCeti.ValuationSpectrum.unitGaussPoint_zero_mem_closure_classicalPoints`: in dimension `0`,
+  `unitGaussPoint 0 K` lies in the closure of `classicalPoints 0 K` unconditionally for any
   complete ultrametric normed field `K`.
-* `TauCeti.ValuationSpectrum.classicalPoint_mem_rationalSubset_of_eval_restrictedReduction_ne_zero`:
-  over a complete nontrivially normed ultrametric field `K`, normalized basic opens `R(T/g)` around
-  `unitGaussPoint n K` contain every classical point whose reduction does not vanish on the
-  `restrictedReduction` of the denominator.
-* `normClassicalPoint_mem_rationalSubset_of_eval_polydiscReduction_ne_zero` (in namespace
-  `TauCeti.ValuationSpectrum`): for any complete ultrametric normed field `K`, normalized basic
-  opens `R(T/g)` around `unitGaussPoint n K` contain `normClassicalPoint a ha` whenever `ā` does
-  not vanish on `polydiscReduction n K g`.
+* `normClassicalPoint_mem_rationalSubset_of_eval_polydiscReduction_ne_zero`:
+  for any complete ultrametric normed field `K`, normalized basic opens `R(T/g)` around
+  `unitGaussPoint n K` contain `normClassicalPoint a ha` whenever `ā` does not vanish on
+  `polydiscReduction n K g`.
 * `TauCeti.ValuationSpectrum.exists_classicalPoint_mem_rationalSubset_of_unitGaussPoint_mem`:
-  over a complete ultrametric normed field with infinite residue field, every rational neighbourhood
-  of `unitGaussPoint n K` contains a `K`-rational classical point.
-* `TauCeti.ValuationSpectrum.unitGaussPoint_mem_closure_range_classicalPoint`,
-  `TauCeti.ValuationSpectrum.unitGaussPoint_mem_closure_classicalPoints`, and
+  over a complete ultrametric normed field with infinite residue field `𝓀[K]`, every rational
+  neighbourhood of `unitGaussPoint n K` meets `classicalPoints n K`.
+* `TauCeti.ValuationSpectrum.unitGaussPoint_mem_closure_classicalPoints` and
   `TauCeti.ValuationSpectrum.gaussPoint_mem_closure_rationalPoints`: over a complete ultrametric
-  normed field with infinite residue field, `unitGaussPoint n K` lies in the closure of the
-  `K`-rational points.
+  normed field with infinite residue field `𝓀[K]`, `unitGaussPoint n K` lies in the closure of
+  `classicalPoints n K`.
 * `TauCeti.ValuationSpectrum.unitGaussPoint_mem_of_isClosed_of_forall_classicalPoint_mem`,
-  `TauCeti.ValuationSpectrum.map_unitGaussPoint_mem_of_isClosed_of_forall_classicalPoint_mem`,
-  `TauCeti.ValuationSpectrum.not_isClosed_range_classicalPoint`, and
+  `TauCeti.ValuationSpectrum.map_unitGaussPoint_mem_of_isClosed_of_forall_classicalPoint_mem`, and
   `TauCeti.ValuationSpectrum.not_isClosed_classicalPoints`: over a complete ultrametric normed
-  field with infinite residue field, closed subsets containing the `K`-rational points (or their
-  images under a continuous map) contain the unit Gauss point (or its image), and for `n ≥ 1` the
-  `K`-rational points are not closed.
-* `TauCeti.ValuationSpectrum.unitGaussPoint_notMem_closure_range_classicalPoint_of_finite` and
-  `TauCeti.ValuationSpectrum.unitGaussPoint_notMem_closure_classicalPoints_of_finite`: for any
-  complete ultrametric normed field with finite residue field and `n ≥ 1`, `unitGaussPoint n K` does
-  not lie in the closure of the `K`-rational points.
-* `TauCeti.ValuationSpectrum.unitGaussPoint_mem_closure_range_classicalPoint_iff` and
-  `TauCeti.ValuationSpectrum.unitGaussPoint_mem_closure_classicalPoints_iff`: over a complete
-  ultrametric normed field, for `n ≥ 1`, `unitGaussPoint n K` lies in the closure of the
-  `K`-rational points if and only if the residue field is infinite.
+  field with infinite residue field `𝓀[K]`, closed subsets containing `classicalPoints n K` (or its
+  image under a continuous map) contain the unit Gauss point (or its image), and for `n ≥ 1`
+  `classicalPoints n K` is not closed.
+* `TauCeti.ValuationSpectrum.unitGaussPoint_notMem_closure_classicalPoints_of_finite`: for any
+  complete ultrametric normed field with finite residue field `𝓀[K]` and `n ≥ 1`,
+  `unitGaussPoint n K` does not lie in the closure of `classicalPoints n K`.
+* `TauCeti.ValuationSpectrum.unitGaussPoint_mem_closure_classicalPoints_iff`: over a complete
+  ultrametric normed field, for `n ≥ 1`, `unitGaussPoint n K` lies in the closure of
+  `classicalPoints n K` if and only if the residue field `𝓀[K]` is infinite.
 
 ## References
 
@@ -108,15 +98,6 @@ section DimensionZero
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
-/-- **In dimension `0`, the unit Gauss point lies in the closure of the `K`-rational points
-unconditionally**, without any hypothesis on the residue field. -/
-theorem unitGaussPoint_zero_mem_closure_range_classicalPoint
-    (x : spa (powerBoundedSubring K)) :
-    unitGaussPoint 0 K ∈ closure (Set.range
-      (fun a : {a : Fin 0 → K // ∀ i, IsPowerBounded (a i)} ↦
-        classicalPoint x a.val a.property)) :=
-  subset_closure ⟨⟨Fin.elim0, fun i ↦ i.elim0⟩, (unitGaussPoint_zero_eq_classicalPoint x).symm⟩
-
 /-- **In dimension `0`, the unit Gauss point lies in the closure of `classicalPoints 0 K`
 unconditionally**, without any hypothesis on the residue field. -/
 theorem unitGaussPoint_zero_mem_closure_classicalPoints :
@@ -128,53 +109,6 @@ end DimensionZero
 section Closure
 
 open scoped NormedField
-
-section NontriviallyNormedField
-
-variable {n : ℕ} {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
-
-/-- **Normalized basic-open containment.** Over a complete nontrivially normed ultrametric field
-`K`, let `R(T/g)` be a basic open of `closedPolydisc n K` whose denominator `g` has unit Gauss norm
-`1` and whose numerators `f ∈ T` all have unit Gauss norm at most `1`. Then every integral tuple
-`a ∈ 𝒪[K]ⁿ` whose residue does not annihilate the polynomial reduction of `g` in
-`𝓀[K][T₁, …, Tₙ]` produces a classical point lying in `R(T/g)`. -/
-theorem classicalPoint_mem_rationalSubset_of_eval_restrictedReduction_ne_zero
-    (x : spa (powerBoundedSubring K))
-    (T : Finset (weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K))
-      isWeightFamily_one_weight))
-    (g : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight)
-    (hg : ‖restrictedMvPowerSeriesGaussEquiv g‖ = 1)
-    (hT : ∀ f ∈ T, ‖restrictedMvPowerSeriesGaussEquiv f‖ ≤ 1)
-    (a : Fin n → Valued.integer K)
-    (heval : MvPolynomial.eval (fun i ↦ IsLocalRing.residue (Valued.integer K) (a i))
-      (TauCeti.MvPowerSeries.restrictedReduction
-        ⟨restrictedMvPowerSeriesGaussEquiv g, Subring.mem_unitClosedBall.mpr hg.le⟩) ≠ 0) :
-    classicalPoint x (fun i ↦ (a i : K))
-        (fun i ↦ isPowerBounded_iff_norm_le_one.mpr (Valued.integer.mem_iff.mp (a i).property)) ∈
-      Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T g := by
-  set a' : Fin n → K := fun i ↦ (a i : K)
-  set ha' : ∀ i, IsPowerBounded (a' i) :=
-    fun i ↦ isPowerBounded_iff_norm_le_one.mpr (Valued.integer.mem_iff.mp (a i).property)
-  have ha_norm : ∀ i, ‖a' i‖ ≤ 1 := fun i ↦ Valued.integer.mem_iff.mp (a i).property
-  set gball : Subring.unitClosedBall
-      (MvPowerSeries.IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1)) :=
-    ⟨restrictedMvPowerSeriesGaussEquiv g, Subring.mem_unitClosedBall.mpr hg.le⟩
-  have hg_not_lt : ¬ ‖evalAtHom a' ha' g‖ < 1 := by
-    rw [evalAtHom_eq_restrictedEval₂ a' ha' ha_norm g]
-    have hiff := TauCeti.MvPowerSeries.norm_restrictedEval₂_lt_one_iff (RingHom.id K)
-      (fun _ ↦ le_rfl) a gball
-    simp only [RingHom.integerRestrict_id, IsLocalRing.ResidueField.map_id,
-      MvPolynomial.eval₂_id] at hiff
-    exact hiff.not.mpr heval
-  have hg_ge : 1 ≤ ‖evalAtHom a' ha' g‖ := le_of_not_gt hg_not_lt
-  rw [Set.mem_preimage, mem_rationalSubset_iff, ← closedPolydisc_def]
-  refine ⟨(classicalPoint x a' ha').property, fun f hf ↦ ?_, ?_⟩
-  · rw [classicalPoint_vle, vle_iff_norm_le_of_mem_spa x.property]
-    exact (norm_evalAtHom_le a' ha' ha_norm f).trans ((hT f hf).trans hg_ge)
-  · rw [classicalPoint_vle, map_zero, vle_iff_norm_le_of_mem_spa x.property, norm_zero, not_le]
-    exact zero_lt_one.trans_le hg_ge
-
-end NontriviallyNormedField
 
 section InfiniteResidueField
 
@@ -246,28 +180,25 @@ theorem normClassicalPoint_mem_rationalSubset_of_eval_polydiscReduction_ne_zero
     (mem_powerBoundedSubring.mp (evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring a ha f'))
 
 open scoped Classical in
-/-- **Every rational neighbourhood of the unit Gauss point contains a `K`-rational point**, over a
-complete ultrametric normed field `K` whose canonical reduction `K° / K°°` is infinite. Rescaling by
-a coefficient attaining `unitGaussValuation n K s` reduces to `unitGaussValuation n K g = 1` and
+/-- **Every rational neighbourhood of the unit Gauss point meets `classicalPoints n K`**, over a
+complete ultrametric normed field `K` whose residue field `𝓀[K]` is infinite. Rescaling by a
+coefficient attaining `unitGaussValuation n K s` reduces to `unitGaussValuation n K g = 1` and
 `unitGaussValuation n K f ≤ 1` for all `f ∈ T`, and `MvPolynomial.funext` over the infinite residue
 field `𝓀[K]` produces a non-root of `polydiscReduction n K g`. -/
 theorem exists_classicalPoint_mem_rationalSubset_of_unitGaussPoint_mem
-    [Infinite (CanonicalReduction K)] (x : spa (powerBoundedSubring K))
+    [Infinite 𝓀[K]]
     (T : Finset (weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K))
       isWeightFamily_one_weight))
     (s : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight)
     (hs : unitGaussPoint n K ∈ Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T s) :
-    ∃ a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)},
-      classicalPoint x a.val a.property ∈
-        Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T s := by
+    ∃ p ∈ classicalPoints n K,
+      p ∈ Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T s := by
   rw [Set.mem_preimage, rationalSubset_def, Set.mem_inter_iff] at hs
   obtain ⟨u, hu_unit, hg_val, hT_val⟩ := exists_unit_mul_unitGaussValuation_eq_one T s hs.right
   let g : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
       (powerBoundedSubring K) :=
     ⟨s * u, (unitGaussValuation_le_one_iff_mem_weightedSubring n K).mp hg_val.le⟩
   have hred_ne : polydiscReduction n K g ≠ 0 := (polydiscReduction_ne_zero_iff g).mpr hg_val
-  have : Infinite 𝓀[K] :=
-    (canonicalReductionRingEquivResidueField (K := K)).toEquiv.infinite_iff.mp ‹_›
   have hex : ∃ ā : Fin n → 𝓀[K], MvPolynomial.eval ā (polydiscReduction n K g) ≠ 0 := by
     by_contra! hall
     exact hred_ne (MvPolynomial.funext fun ā ↦ by simpa using hall ā)
@@ -286,17 +217,14 @@ theorem exists_classicalPoint_mem_rationalSubset_of_unitGaussPoint_mem
       rationalSubset (powerBoundedSubring _) T s := by
     convert rationalSubset_image_mul_right (powerBoundedSubring _) T s u hu_unit
   rw [show g.val = s * u from rfl, hrat] at hmem
-  exact ⟨⟨fun i ↦ (b i : K), hba⟩, by simpa only [Set.mem_preimage,
-    classicalPoint_eq_normClassicalPoint] using hmem⟩
+  exact ⟨normClassicalPoint (fun i ↦ (b i : K)) hba,
+    normClassicalPoint_mem_classicalPoints _ hba, hmem⟩
 
-/-- **Gauss-point closure.** Over a complete ultrametric normed field `K` whose canonical reduction
-`K° / K°°` is infinite, the unit Gauss point `unitGaussPoint n K` lies in the closure of the
-`K`-rational evaluation points of `closedPolydisc n K`. -/
-theorem unitGaussPoint_mem_closure_range_classicalPoint [Infinite (CanonicalReduction K)]
-    (x : spa (powerBoundedSubring K)) :
-    unitGaussPoint n K ∈ closure (Set.range
-      (fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦
-        classicalPoint x a.val a.property)) := by
+/-- **Gauss-point closure.** Over a complete ultrametric normed field `K` whose residue field `𝓀[K]`
+is infinite, the unit Gauss point of `closedPolydisc n K` lies in the closure of
+`classicalPoints n K`. -/
+theorem unitGaussPoint_mem_closure_classicalPoints [Infinite 𝓀[K]] :
+    unitGaussPoint n K ∈ closure (classicalPoints n K) := by
   rw [mem_closure_iff]
   intro U hU hηU
   have : IsHuberRing K := IsHuberRing.of_normedField K
@@ -315,57 +243,32 @@ theorem unitGaussPoint_mem_closure_range_classicalPoint [Infinite (CanonicalRedu
       e p ∈ Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T s ↔
         p ∈ Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T s := by
     simp only [Set.mem_preimage, e, Homeomorph.setCongr_apply]
-  obtain ⟨a, ha⟩ :=
-    exists_classicalPoint_mem_rationalSubset_of_unitGaussPoint_mem x T s ((hmem_iff _).mp hηV)
-  have haU : classicalPoint x a.val a.property ∈ U := by
-    simpa only [Set.mem_preimage, e.symm_apply_apply] using hVU ((hmem_iff _).mpr ha)
-  exact ⟨classicalPoint x a.val a.property, haU, ⟨a, rfl⟩⟩
+  obtain ⟨p, hp_cl, hpV⟩ :=
+    exists_classicalPoint_mem_rationalSubset_of_unitGaussPoint_mem T s ((hmem_iff _).mp hηV)
+  have hpU : p ∈ U := by
+    simpa only [Set.mem_preimage, e.symm_apply_apply] using hVU ((hmem_iff _).mpr hpV)
+  exact ⟨p, hpU, hp_cl⟩
 
-/-- **Gauss-point closure.** Over a complete ultrametric normed field `K` whose residue field `𝓀[K]`
-is infinite, the unit Gauss point of `closedPolydisc n K` lies in the closure of
-`classicalPoints n K`. -/
-theorem unitGaussPoint_mem_closure_classicalPoints [Infinite 𝓀[K]] :
-    unitGaussPoint n K ∈ closure (classicalPoints n K) := by
-  have : Infinite (CanonicalReduction K) :=
-    canonicalReductionRingEquivResidueField.symm.toEquiv.infinite_iff.mp ‹_›
-  rw [← range_classicalPoint_eq_classicalPoints (normSpaPoint K)]
-  exact unitGaussPoint_mem_closure_range_classicalPoint (normSpaPoint K)
-
-/-- **Over a complete ultrametric normed field `K` with infinite residue field `K° / K°°`, a
-closed subset of `closedPolydisc n K` containing all `K`-rational points contains the unit Gauss
-point.** -/
+/-- **Over a complete ultrametric normed field `K` with infinite residue field `𝓀[K]`, a closed
+subset of `closedPolydisc n K` containing `classicalPoints n K` contains the unit Gauss point.** -/
 theorem unitGaussPoint_mem_of_isClosed_of_forall_classicalPoint_mem
-    [Infinite (CanonicalReduction K)] (x : spa (powerBoundedSubring K))
-    {Z : Set (closedPolydisc n K)} (hZ : IsClosed Z)
-    (hmem : ∀ (a : Fin n → K) (ha : ∀ i, IsPowerBounded (a i)), classicalPoint x a ha ∈ Z) :
+    [Infinite 𝓀[K]] {Z : Set (closedPolydisc n K)} (hZ : IsClosed Z)
+    (hmem : ∀ p ∈ classicalPoints n K, p ∈ Z) :
     unitGaussPoint n K ∈ Z :=
-  hZ.closure_subset_iff.mpr
-    (Set.range_subset_iff.mpr fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦
-      hmem a.val a.property)
-    (unitGaussPoint_mem_closure_range_classicalPoint x)
+  hZ.closure_subset_iff.mpr (fun _ hp ↦ hmem _ hp) unitGaussPoint_mem_closure_classicalPoints
 
 /-- **Closed-set propagation along a continuous map from a closed polydisc.** Over a complete
-ultrametric normed field `K` with infinite residue field `K° / K°°`, if `φ` maps
-`closedPolydisc n K` continuously into a topological space `X` (for instance an affinoid open
-chart of an adic space) and a closed subset `Z ⊆ X` contains `φ (classicalPoint x a ha)` for all
-`a ∈ (K°)ⁿ`, then `Z` contains `φ (unitGaussPoint n K)`. -/
+ultrametric normed field `K` with infinite residue field `𝓀[K]`, if `φ` maps `closedPolydisc n K`
+continuously into a topological space `X` (for instance an affinoid open chart of an adic space)
+and a closed subset `Z ⊆ X` contains `φ p` for all `p ∈ classicalPoints n K`, then `Z` contains
+`φ (unitGaussPoint n K)`. -/
 theorem map_unitGaussPoint_mem_of_isClosed_of_forall_classicalPoint_mem
-    [Infinite (CanonicalReduction K)] {X : Type*} [TopologicalSpace X]
-    {φ : closedPolydisc n K → X} (hφ : Continuous φ) (x : spa (powerBoundedSubring K))
+    [Infinite 𝓀[K]] {X : Type*} [TopologicalSpace X]
+    {φ : closedPolydisc n K → X} (hφ : Continuous φ)
     {Z : Set X} (hZ : IsClosed Z)
-    (hmem : ∀ (a : Fin n → K) (ha : ∀ i, IsPowerBounded (a i)), φ (classicalPoint x a ha) ∈ Z) :
+    (hmem : ∀ p ∈ classicalPoints n K, φ p ∈ Z) :
     φ (unitGaussPoint n K) ∈ Z :=
-  unitGaussPoint_mem_of_isClosed_of_forall_classicalPoint_mem x (hZ.preimage hφ) hmem
-
-/-- **In positive dimension over a complete ultrametric normed field `K` with infinite residue
-field, the `K`-rational points of a closed polydisc do not form a closed subset**: their closure
-contains the non-classical unit Gauss point. -/
-theorem not_isClosed_range_classicalPoint [Infinite (CanonicalReduction K)] [NeZero n]
-    (x : spa (powerBoundedSubring K)) :
-    ¬ IsClosed (Set.range (fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦
-      classicalPoint x a.val a.property)) := fun hclosed ↦ by
-  obtain ⟨a, ha⟩ := hclosed.closure_eq ▸ unitGaussPoint_mem_closure_range_classicalPoint (n := n) x
-  exact unitGaussPoint_ne_classicalPoint x a.val a.property ha.symm
+  unitGaussPoint_mem_of_isClosed_of_forall_classicalPoint_mem (hZ.preimage hφ) hmem
 
 /-- **In positive dimension with infinite residue field `𝓀[K]`, `classicalPoints n K` is not a
 closed subset of `closedPolydisc n K`**: its closure contains the nonclassical unit Gauss point. -/
@@ -378,22 +281,20 @@ end InfiniteResidueField
 
 section FiniteResidueField
 
+open scoped Valued
+
 variable {n : ℕ} {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
-/-- **Failure of Gauss-point closure for finite residue fields.** Over any complete ultrametric
-normed field `K` whose canonical reduction `K° / K°°` is finite of cardinality `q` and `n ≥ 1`,
-the rational open `R({1} / (T₀^q - T₀))` is a neighbourhood of `unitGaussPoint n K` disjoint from
-all `K`-rational points, because `a₀^q - a₀` reduces to `0` in the residue field and therefore has
+/-- **Failure of Gauss-point closure over finite residue fields.** Over any complete ultrametric
+normed field `K` whose residue field `𝓀[K]` is finite of cardinality `q` and `n ≥ 1`, the rational
+open `R({1} / (T₀^q - T₀))` is a neighbourhood of `unitGaussPoint n K` disjoint from
+`classicalPoints n K`, because `a₀^q - a₀` reduces to `0` in the residue field and therefore has
 norm strictly less than `1`. -/
-theorem unitGaussPoint_notMem_closure_range_classicalPoint_of_finite
-    [Finite (CanonicalReduction K)] [NeZero n] (x : spa (powerBoundedSubring K)) :
-    unitGaussPoint n K ∉ closure (Set.range
-      (fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦
-        classicalPoint x a.val a.property)) := by
-  have hfin_res : Finite (Valued.ResidueField K) :=
-    (canonicalReductionRingEquivResidueField (K := K)).toEquiv.finite_iff.mp ‹_›
-  let : Fintype (Valued.ResidueField K) := Fintype.ofFinite (Valued.ResidueField K)
-  set q : ℕ := Fintype.card (Valued.ResidueField K)
+theorem unitGaussPoint_notMem_closure_classicalPoints_of_finite
+    [Finite 𝓀[K]] [NeZero n] :
+    unitGaussPoint n K ∉ closure (classicalPoints n K) := by
+  let : Fintype 𝓀[K] := Fintype.ofFinite 𝓀[K]
+  set q : ℕ := Fintype.card 𝓀[K]
   set T₀ : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight :=
     weightedX _ isWeightFamily_one_weight 0
   set s := T₀ ^ q - T₀
@@ -413,54 +314,28 @@ theorem unitGaussPoint_notMem_closure_range_classicalPoint_of_finite
       have : (1 : ℝ) ≤ 0 := by simpa [hs0] using hs_norm_ge
       linarith
   intro hcl
-  obtain ⟨_, hpU, ⟨a, rfl⟩⟩ := mem_closure_iff.mp hcl U hUopen hηU
-  rw [Set.mem_preimage, mem_rationalSubset_iff] at hpU
-  have h1le := hpU.right.left 1 (Finset.mem_singleton_self 1)
-  rw [classicalPoint_vle, map_one, vle_iff_norm_le_of_mem_spa x.property, norm_one] at h1le
+  obtain ⟨p, hpU, hp_cl⟩ := mem_closure_iff.mp hcl U hUopen hηU
+  obtain ⟨a, ha, rfl⟩ := mem_classicalPoints_iff.mp hp_cl
+  rw [Set.mem_preimage, normClassicalPoint_mem_rationalSubset_iff] at hpU
+  have h1le := hpU.1 1 (Finset.mem_singleton_self 1)
+  rw [map_one, norm_one] at h1le
   -- Every `a₀ ∈ 𝒪[K]` satisfies `a₀^q - a₀ ∈ 𝓂[K]`, so `‖a₀^q - a₀‖ < 1`.
-  have heval_s : evalAtHom a.val a.property s = a.val 0 ^ q - a.val 0 := by simp [s, T₀]
-  let b : Valued.integer K :=
-    powerBoundedSubringEquivInteger ⟨a.val 0, mem_powerBoundedSubring.mpr (a.property 0)⟩
-  have hres : IsLocalRing.residue (Valued.integer K) (b ^ q - b) = 0 := by
+  have heval_s : evalAtHom a ha s = a 0 ^ q - a 0 := by simp [s, T₀]
+  let b : 𝒪[K] := powerBoundedSubringEquivInteger ⟨a 0, mem_powerBoundedSubring.mpr (ha 0)⟩
+  have hres : IsLocalRing.residue 𝒪[K] (b ^ q - b) = 0 := by
     rw [map_sub, map_pow, FiniteField.pow_card, sub_self]
-  have hlt : ‖evalAtHom a.val a.property s‖ < 1 := by
+  have hlt : ‖evalAtHom a ha s‖ < 1 := by
     simpa only [heval_s, AddSubgroupClass.coe_sub, SubmonoidClass.coe_pow, b,
       coe_powerBoundedSubringEquivInteger] using
       Valued.integer.residue_eq_zero_iff_norm_lt_one.mp hres
   exact hlt.not_ge h1le
 
-open scoped Valued in
-/-- **Failure of Gauss-point closure over finite residue fields.** When `𝓀[K]` is finite and
-`n ≥ 1`, `unitGaussPoint n K` does not lie in the closure of `classicalPoints n K`. -/
-theorem unitGaussPoint_notMem_closure_classicalPoints_of_finite
-    [Finite 𝓀[K]] [NeZero n] :
-    unitGaussPoint n K ∉ closure (classicalPoints n K) := by
-  have : Finite (CanonicalReduction K) :=
-    canonicalReductionRingEquivResidueField.symm.toEquiv.finite_iff.mp ‹_›
-  rw [← range_classicalPoint_eq_classicalPoints (normSpaPoint K)]
-  exact unitGaussPoint_notMem_closure_range_classicalPoint_of_finite (normSpaPoint K)
-
 end FiniteResidueField
 
 section EquivalenceAndHeadline
 
-/-- **Exact characterization of Gauss-point closure in positive dimension.** Over a complete
-ultrametric normed field `K`, for `n ≥ 1`, the unit Gauss point of `closedPolydisc n K` lies in the
-closure of the `K`-rational evaluation points if and only if the canonical reduction `K° / K°°` is
-infinite. -/
-theorem unitGaussPoint_mem_closure_range_classicalPoint_iff {n : ℕ} [NeZero n]
-    {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
-    (x : spa (powerBoundedSubring K)) :
-    unitGaussPoint n K ∈ closure (Set.range
-        (fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦
-          classicalPoint x a.val a.property)) ↔
-      Infinite (CanonicalReduction K) := by
-  refine ⟨fun h ↦ ?_, fun h ↦ unitGaussPoint_mem_closure_range_classicalPoint x⟩
-  by_contra hnot
-  have : Finite (CanonicalReduction K) := not_infinite_iff_finite.mp hnot
-  exact unitGaussPoint_notMem_closure_range_classicalPoint_of_finite x h
+open scoped Valued
 
-open scoped Valued in
 /-- **Characterization of Gauss-point closure in positive dimension.** Over a complete ultrametric
 normed field `K` and for `n ≥ 1`, the unit Gauss point of `closedPolydisc n K` lies in the closure
 of `classicalPoints n K` if and only if the residue field `𝓀[K]` is infinite. -/
@@ -471,18 +346,16 @@ theorem unitGaussPoint_mem_closure_classicalPoints_iff {n : ℕ} [NeZero n]
       unitGaussPoint_notMem_closure_classicalPoints_of_finite h,
     fun _ ↦ unitGaussPoint_mem_closure_classicalPoints⟩
 
-/-- **Gauss-point closure.** Over a complete ultrametric normed field `K` whose canonical reduction
-`K° / K°°` is infinite, the unit Gauss point exists on the closed unit polydisc of every dimension
-`n` and lies in the closure of the evaluation points at tuples of power-bounded elements of `K`. -/
+/-- **Gauss-point closure.** Over a complete ultrametric normed field `K` whose residue field `𝓀[K]`
+is infinite, the unit Gauss point exists on the closed unit polydisc of every dimension `n` and
+lies in the closure of `classicalPoints n K`. -/
 theorem gaussPoint_mem_closure_rationalPoints
     (K : Type*) [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
-    [Infinite (CanonicalReduction K)] (n : ℕ) (x : spa (powerBoundedSubring K)) :
+    [Infinite 𝓀[K]] (n : ℕ) :
     ∃ η : closedPolydisc n K,
-      IsUnitGaussPoint K n η ∧ η ∈ closure (Set.range
-        (fun a : {a : Fin n → K // ∀ i, IsPowerBounded (a i)} ↦
-          classicalPoint x a.val a.property)) :=
+      IsUnitGaussPoint K n η ∧ η ∈ closure (classicalPoints n K) :=
   ⟨unitGaussPoint n K, isUnitGaussPoint_unitGaussPoint n K,
-    unitGaussPoint_mem_closure_range_classicalPoint x⟩
+    unitGaussPoint_mem_closure_classicalPoints⟩
 
 end EquivalenceAndHeadline
 
