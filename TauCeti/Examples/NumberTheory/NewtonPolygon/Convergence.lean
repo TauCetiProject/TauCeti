@@ -85,7 +85,7 @@ theorem padicRealValuation_coeff_halfSlopeSeries (n : ℕ) :
 
 /-- The real `p`-adic valuation of the `n`-th coefficient of `halfSlopeSeries p` is at least
 `n / 2`. -/
-theorem half_le_padicRealValuation_coeff_halfSlopeSeries (n : ℕ) :
+private theorem half_le_padicRealValuation_coeff_halfSlopeSeries (n : ℕ) :
     (((n : ℝ) / 2 : ℝ) : WithTop ℝ) ≤
       padicRealValuation p (PowerSeries.coeff n (halfSlopeSeries p)) := by
   rw [padicRealValuation_coeff_halfSlopeSeries, WithTop.coe_le_coe]
@@ -94,7 +94,7 @@ theorem half_le_padicRealValuation_coeff_halfSlopeSeries (n : ℕ) :
   simpa using hq
 
 /-- The coefficient heights of `halfSlopeSeries p` are admissible, being minorised by `n / 2`. -/
-theorem isAdmissible_halfSlopeSeries :
+private theorem isAdmissible_halfSlopeSeries :
     IsAdmissible fun n ↦ padicRealValuation p (PowerSeries.coeff n (halfSlopeSeries p)) := by
   refine isAdmissible_iff.mpr ⟨0, 1 / 2, fun n ↦ ?_⟩
   simpa [div_eq_inv_mul] using half_le_padicRealValuation_coeff_halfSlopeSeries (p := p) n
@@ -102,6 +102,7 @@ theorem isAdmissible_halfSlopeSeries :
 /-- **Newton polygon of `∑ p^⌈n/2⌉ Xⁿ`.** The Newton polygon of `halfSlopeSeries p` is the line
 `n ↦ n / 2`: the even-indexed coefficients sit directly on this line, while each odd-indexed
 coefficient sits `1 / 2` above the midpoint of its two even neighbours. -/
+@[simp]
 theorem newtonPolygon_halfSlopeSeries (n : ℕ) :
     (halfSlopeSeries p).newtonPolygon (padicRealValuation p) n =
       (((n : ℝ) / 2 : ℝ) : WithTop ℝ) := by
@@ -120,6 +121,7 @@ theorem newtonPolygon_halfSlopeSeries (n : ℕ) :
   simpa [div_eq_inv_mul] using hline
 
 /-- Every unit edge of the Newton polygon of `halfSlopeSeries p` has slope `1 / 2`. -/
+@[simp]
 theorem unitSlope_newtonPolygon_halfSlopeSeries (n : ℕ) :
     unitSlope ((halfSlopeSeries p).newtonPolygon (padicRealValuation p)) n = 1 / 2 := by
   rw [unitSlope_def, newtonPolygon_halfSlopeSeries, newtonPolygon_halfSlopeSeries,
@@ -138,10 +140,9 @@ theorem linearGrowthInf_halfSlopeSeries :
     simpa using Set.infinite_univ
   rw [linearGrowthInf_eq_iSup_unitSlope_lowerConvexEnvelope isAdmissible_halfSlopeSeries hinf,
     ← newtonPolygon_def]
-  simp_rw [unitSlope_newtonPolygon_halfSlopeSeries]
+  simp only [unitSlope_newtonPolygon_halfSlopeSeries]
   have h0 : (0 : ℕ) ∈ finiteEdges ((halfSlopeSeries p).newtonPolygon (padicRealValuation p)) :=
-    mem_finiteEdges.mpr ⟨by simp [newtonPolygon_halfSlopeSeries],
-      by simp [newtonPolygon_halfSlopeSeries]⟩
+    mem_finiteEdges.mpr ⟨by simp, by simp⟩
   have : Nonempty (finiteEdges ((halfSlopeSeries p).newtonPolygon (padicRealValuation p))) :=
     ⟨⟨0, h0⟩⟩
   exact iSup_const
