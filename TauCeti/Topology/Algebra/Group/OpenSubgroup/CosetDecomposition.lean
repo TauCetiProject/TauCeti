@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.OpenSubgroup
+public import TauCeti.Algebra.Group.AddSubgroup.Support
 
 /-!
 # Finite coset expansions with compact projected support
@@ -26,24 +27,6 @@ of the image in the discrete coset space.
 public section
 
 open Function Set
-
-namespace AddSubgroup
-
-variable {V M : Type*} [AddGroup V] [Zero M]
-
-/-- Invariance under a subgroup on the support of a function implies invariance everywhere. -/
-theorem add_eq_of_add_eq_on_support (H : AddSubgroup V) {f : V → M}
-    (hf : ∀ x ∈ support f, ∀ u ∈ H, f (x + u) = f x) (x : V) {u : V} (hu : u ∈ H) :
-    f (x + u) = f x := by
-  by_cases hx : f x = 0
-  · by_cases hxu : f (x + u) = 0
-    · simp [hx, hxu]
-    · have h := hf (x + u) hxu (-u) (H.neg_mem hu)
-      simp only [add_neg_cancel_right, hx] at h
-      exact (hxu h.symm).elim
-  · exact hf x hx u hu
-
-end AddSubgroup
 
 namespace OpenAddSubgroup
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Complex.Basic
-public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.CosetDecomposition
 public import TauCeti.Topology.LocallyConstant.CompactSupport
 
@@ -41,87 +41,6 @@ namespace IsDedekindDomain.FiniteAdeleRing
 variable {R K : Type*} [CommRing R] [IsDedekindDomain R] [Field K] [Algebra R K]
   [IsFractionRing R K] {ι : Type*}
 
-open Classical in
-/-- The finite adele equal to one at the places of `S` and zero elsewhere. -/
-def placeIdempotent (S : Set (HeightOneSpectrum R)) : FiniteAdeleRing R K :=
-  ⟨fun v ↦ if v ∈ S then 1 else 0, Filter.Eventually.of_forall fun v ↦ by
-    dsimp
-    split_ifs <;> simp⟩
-
-open Classical in
-/-- The components of the place idempotent. -/
-@[simp]
-theorem placeIdempotent_apply (S : Set (HeightOneSpectrum R)) (v : HeightOneSpectrum R) :
-    placeIdempotent (K := K) S v = if v ∈ S then 1 else 0 := (rfl)
-
-/-- Projection of an adelic vector onto a set of finite places. -/
-def projectPlaces (S : Set (HeightOneSpectrum R)) (x : ι → FiniteAdeleRing R K) :
-    ι → FiniteAdeleRing R K := fun i ↦ placeIdempotent S * x i
-
-open Classical in
-/-- Projection is computed by keeping the selected components. -/
-@[simp]
-theorem projectPlaces_apply (S : Set (HeightOneSpectrum R)) (x : ι → FiniteAdeleRing R K)
-    (i : ι) (v : HeightOneSpectrum R) :
-    projectPlaces S x i v = if v ∈ S then x i v else 0 := by
-  simp [projectPlaces, mul_apply]
-
-/-- Projection onto places is continuous, also for an infinite set of places. -/
-@[fun_prop]
-theorem continuous_projectPlaces (S : Set (HeightOneSpectrum R)) :
-    Continuous (projectPlaces (K := K) (ι := ι) S) := by
-  unfold projectPlaces
-  fun_prop
-
-/-- Projecting twice onto the same set of places does not change a vector. -/
-@[simp]
-theorem projectPlaces_projectPlaces (S : Set (HeightOneSpectrum R))
-    (x : ι → FiniteAdeleRing R K) : projectPlaces S (projectPlaces S x) = projectPlaces S x := by
-  ext i v
-  by_cases hv : v ∈ S <;> simp [hv]
-
-/-- Projection is additive. -/
-@[simp]
-theorem projectPlaces_add (S : Set (HeightOneSpectrum R)) (x y : ι → FiniteAdeleRing R K) :
-    projectPlaces S (x + y) = projectPlaces S x + projectPlaces S y := by
-  funext i
-  exact mul_add _ _ _
-
-/-- Projection preserves zero. -/
-@[simp]
-theorem projectPlaces_zero (S : Set (HeightOneSpectrum R)) :
-    projectPlaces (K := K) (ι := ι) S 0 = 0 := by
-  funext _
-  exact mul_zero _
-
-/-- Projection preserves subtraction. -/
-@[simp]
-theorem projectPlaces_sub (S : Set (HeightOneSpectrum R)) (x y : ι → FiniteAdeleRing R K) :
-    projectPlaces S (x - y) = projectPlaces S x - projectPlaces S y := by
-  funext i
-  exact mul_sub _ _ _
-
-/-- The projection onto all places is the identity. -/
-@[simp]
-theorem projectPlaces_univ (x : ι → FiniteAdeleRing R K) : projectPlaces univ x = x := by
-  ext i v
-  simp
-
-/-- The projection onto no places is zero. -/
-@[simp]
-theorem projectPlaces_empty (x : ι → FiniteAdeleRing R K) : projectPlaces ∅ x = 0 := by
-  ext i v
-  simp
-
-/-- Projection commutes with multiplication by a finite idele. -/
-@[simp]
-theorem projectPlaces_smul (S : Set (HeightOneSpectrum R)) (t : (FiniteAdeleRing R K)ˣ)
-    (x : ι → FiniteAdeleRing R K) : projectPlaces S (t • x) = t • projectPlaces S x := by
-  funext i
-  -- Units act through their underlying scalars, and projection is multiplication by an idempotent.
-  simp only [projectPlaces, Pi.smul_apply, Units.smul_def, smul_eq_mul]
-  exact mul_left_comm _ _ _
-
 section Box
 
 variable [Finite ι]
@@ -135,8 +54,7 @@ def integralBox (S : Set (HeightOneSpectrum R)) : OpenAddSubgroup (ι → Finite
     rw [projectPlaces_add, Pi.add_apply]
     exact (integralAdeles R K).add_mem (hx i) (hy i)
   neg_mem' hx i := by
-    dsimp [projectPlaces] at *
-    rw [mul_neg]
+    rw [neg_eq_zero_sub, projectPlaces_sub, projectPlaces_zero, zero_sub, Pi.neg_apply]
     exact (integralAdeles R K).neg_mem (hx i)
   isOpen' := by
     simpa only [ofPred_forall, preimage, Function.comp_apply, SetLike.mem_coe] using
