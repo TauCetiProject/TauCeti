@@ -94,8 +94,7 @@ theorem integral_stdGaussian_of_posHomog [NormedAddCommGroup G] [NormedSpace ℝ
     have : IsEmpty (sphere (0 : E) 1) :=
       ⟨fun u ↦ (zero_ne_one' ℝ)
         (by simpa [Subsingleton.elim (u : E) 0] using norm_eq_of_mem_sphere u)⟩
-    have hμ : uniformSphereMeasure E = 0 := Subsingleton.elim _ _
-    simp [hzero, hμ]
+    simp [hzero]
   · have : IsProbabilityMeasure (chiMeasure (Module.finrank ℝ E) 1) :=
       isProbabilityMeasure_chiMeasure (Nat.cast_nonneg _) one_pos
     obtain ⟨v, hv⟩ := exists_ne (0 : E)

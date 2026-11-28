@@ -86,6 +86,12 @@ theorem uniformSphereMeasure_def :
       ((volume : Measure E).toSphere univ)⁻¹ • (volume : Measure E).toSphere := by
   rw [uniformSphereMeasure]
 
+/-- In dimension zero the unit sphere is empty, so its uniform measure is zero. -/
+@[simp]
+theorem uniformSphereMeasure_of_subsingleton [Subsingleton E] :
+    uniformSphereMeasure E = 0 := by
+  exact Subsingleton.elim _ _
+
 /-- The uniform law of a set of the sphere is its surface measure divided by the surface area
 `2 π ^ (d / 2) / Γ (d / 2)` of the sphere. -/
 theorem uniformSphereMeasure_apply (s : Set (sphere (0 : E) 1)) :
@@ -103,14 +109,26 @@ instance isProbabilityMeasure_uniformSphereMeasure [Nontrivial E] :
     exact ENNReal.inv_mul_cancel (Measure.measure_univ_ne_zero.2 (Measure.toSphere_ne_zero _))
       (measure_ne_top _ _)
 
+/-- The uniform sphere measure is a probability measure exactly in positive dimension. -/
+@[simp]
+theorem isProbabilityMeasure_uniformSphereMeasure_iff :
+    IsProbabilityMeasure (uniformSphereMeasure E) ↔ 0 < Module.finrank ℝ E := by
+  constructor
+  · intro h
+    by_contra hdim
+    let _ : Subsingleton E := Module.finrank_zero_iff.mp (Nat.eq_zero_of_not_pos hdim)
+    simpa using h.measure_univ
+  · intro hdim
+    let _ : Nontrivial E := Module.nontrivial_of_finrank_pos hdim
+    infer_instance
+
 /-- The uniform sphere measure has full topological support. In dimension zero both the sphere
 and its universal set are empty. -/
 @[simp]
 theorem support_uniformSphereMeasure :
     (uniformSphereMeasure E).support = Set.univ := by
   rcases subsingleton_or_nontrivial E with hE | _
-  · have hzero : uniformSphereMeasure E = 0 := Subsingleton.elim _ _
-    rw [hzero, Measure.support_zero]
+  · rw [uniformSphereMeasure_of_subsingleton, Measure.support_zero]
     exact Set.eq_univ_iff_forall.mpr fun x ↦ isEmptyElim x
   · rw [uniformSphereMeasure_def,
       Measure.support_smul_measure _ _ (ENNReal.inv_ne_zero.mpr (measure_ne_top _ _))]
@@ -118,8 +136,7 @@ theorem support_uniformSphereMeasure :
 
 instance isFiniteMeasure_uniformSphereMeasure : IsFiniteMeasure (uniformSphereMeasure E) := by
   rcases subsingleton_or_nontrivial E with hE | hE
-  · have hzero : uniformSphereMeasure E = 0 := Subsingleton.elim _ _
-    rw [hzero]
+  · rw [uniformSphereMeasure_of_subsingleton]
     infer_instance
   · infer_instance
 
