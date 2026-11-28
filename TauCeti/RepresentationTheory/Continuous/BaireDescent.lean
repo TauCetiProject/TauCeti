@@ -8,18 +8,17 @@ module
 public import Mathlib.NumberTheory.Padics.Complex
 public import Mathlib.Topology.Algebra.IntermediateField
 public import Mathlib.Topology.Baire.LocallyCompactRegular
-public import TauCeti.RepresentationTheory.Continuous.GeneralLinear
+public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Framed.BaseChange
 public import TauCeti.Topology.Algebra.IntermediateField
 
 import Mathlib.LinearAlgebra.TensorProduct.Pi
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.Algebra.OpenSubgroup
 import Mathlib.Topology.Baire.Lemmas
-import TauCeti.FieldTheory.IntermediateField.Basic
 import TauCeti.LinearAlgebra.Matrix.BaseChange
 import TauCeti.LinearAlgebra.Matrix.ToLin
 import TauCeti.NumberTheory.Padics.AlgebraicClosure.IntermediateField
-import TauCeti.RepresentationTheory.Continuous.StableLattice
+import TauCeti.RepresentationTheory.Continuous.IntegralModel.Matrix
 import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Subfield
 
 /-!
@@ -39,10 +38,10 @@ coset representatives to `E₀ ⊔ K` yields a finite extension `E` containing `
 
 Using the framed-representation API in
 `TauCeti.RepresentationTheory.Continuous.ContinuousRep.Framed` (`TauCeti.ContinuousRep.ofFramed`,
-`TauCeti.ContinuousRep.frame`, `TauCeti.ContinuousRep.ofFramedFrameIso`,
-`TauCeti.ContinuousRep.framedMap`), the bridges in
-`TauCeti.RepresentationTheory.Continuous.GeneralLinear`, and stable lattices in
-`TauCeti.RepresentationTheory.Continuous.StableLattice`, we deduce:
+`TauCeti.ContinuousRep.ofFramedCongr`, `TauCeti.ContinuousRep.frame`,
+`TauCeti.ContinuousRep.ofFramedFrameIso`, `TauCeti.ContinuousRep.framedMap`), the bridges in
+`TauCeti.RepresentationTheory.Continuous.ContinuousRep.Framed.BaseChange`, and integral models in
+`TauCeti.RepresentationTheory.Continuous.IntegralModel.Matrix`, we deduce:
 * **Abstract Baire descent** (`TauCeti.ContinuousRep.baire_descent_of_countable`) for any compact
   Baire group and algebraic extension with countably many closed finite subextensions, specialized
   to `PadicAlgCl ℓ` in `TauCeti.ContinuousRep.baire_descent`.
@@ -57,9 +56,9 @@ Using the framed-representation API in
   topology to a common finite extension of `ℚ_[ℓ]`, and descends intertwining maps between base
   changes of representations.
 * **Integral descent** (`TauCeti.ContinuousRep.exists_integral_conj_GL`): combining
-  `baire_descent` with `TauCeti.ContinuousRep.exists_conj_mem_integerRing_GL` over the resulting
-  finite extension `E / ℚ_[ℓ]` shows every continuous `ρ : Γ →ₜ* GL ι (PadicAlgCl ℓ)` is
-  conjugate into `GL ι 𝒪[E]`, i.e., to matrices with entries in `E` of norm at most `1`.
+  `baire_descent` with `TauCeti.GaloisLattice.IntegralModel.toGL` over the resulting finite
+  extension `E / ℚ_[ℓ]` shows every continuous `ρ : Γ →ₜ* GL ι (PadicAlgCl ℓ)` is conjugate into
+  `GL ι 𝒪[E]`, i.e., to matrices with entries in `E` of norm at most `1`.
 
 ## Main results
 
@@ -193,7 +192,9 @@ private noncomputable def descentObjectIso {Γ K L V ι : Type*}
   have hcomp :
       framedMap (algebraMap E L) (continuous_algebraMap E L)
         ((frame b ρ).liftGLOfMem E hmem) = frame b ρ := by
-    simp [IntermediateField.algebraMap_eq_subtype]
+    have hsub : (algebraMap E L : E →+* L) = SubringClass.subtype E :=
+      Subfield.algebraMap_ofSubfield (s := E.toSubfield)
+    simp [hsub]
   ((baseChangeOfGLIso L ((frame b ρ).liftGLOfMem E hmem)).trans (ofFramedCongr hcomp)).trans
     (ofFramedFrameIso b ρ)
 
@@ -241,8 +242,9 @@ private noncomputable def descentIntertwiningMap {Γ K L V₁ V₂ ι₁ ι₂ :
       have hcomm := congrArg (LinearMap.toMatrix b₁ b₂) (f.isIntertwining' g)
       rw [LinearMap.toMatrix_comp b₁ b₁ b₂, LinearMap.toMatrix_comp b₁ b₂ b₂] at hcomm
       rw [hME]
-      simpa only [IntermediateField.algebraMap_eq_subtype, map_subtype_liftGLOfMem_frame,
-        coe_toRepresentation] using hcomm
+      have hsub : (algebraMap E L : E →+* L) = SubringClass.subtype E :=
+        Subfield.algebraMap_ofSubfield (s := E.toSubfield)
+      simpa only [hsub, map_subtype_liftGLOfMem_frame, coe_toRepresentation] using hcomm
     exact LinearMap.ext fun v ↦ by
       simpa only [LinearMap.comp_apply, coe_toRepresentation, ofFramed_apply,
         Matrix.mulVecLin_apply] using
@@ -422,13 +424,39 @@ theorem exists_integral_conj_GL {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
   let : ValuativeRel E := TauCeti.algebraicExtensionValuativeRel ℚ_[ℓ] E
   have : IsNonarchimedeanLocalField E :=
     PadicAlgCl.finiteIntermediateField_isNonarchimedeanLocalField ℓ E
-  obtain ⟨PE, hPE⟩ := exists_conj_mem_integerRing_GL ρE
+  -- Use `IntegralModel.toGL` directly since `Γ` is not assumed to have `ContinuousInv`.
+  let σ : ContinuousRep Γ E (ι → E) := ofFramed ρE
+  obtain ⟨Λ⟩ : Nonempty (GaloisLattice.IntegralModel 𝒪[E] σ) := inferInstance
+  have : Module.IsTorsionFree 𝒪[E] E :=
+    Module.isTorsionFree_iff_algebraMap_injective.2 (IsFractionRing.injective 𝒪[E] E)
+  have : FaithfulSMul 𝒪[E] E :=
+    (faithfulSMul_iff_algebraMap_injective 𝒪[E] E).2 (IsFractionRing.injective 𝒪[E] E)
+  have := Submodule.IsLattice.free E Λ.lattice
+  let e : Module.Basis ι E (ι → E) := Pi.basisFun E ι
+  let b₀ := Module.Free.chooseBasis 𝒪[E] Λ.lattice
+  let bΛ : Module.Basis ι 𝒪[E] Λ.lattice :=
+    b₀.reindex ((b₀.extendOfIsFullLattice E).indexEquiv e)
+  let b : Module.Basis ι E (ι → E) := bΛ.extendOfIsFullLattice E
+  let PE : GL ι E :=
+    ⟨b.toMatrix e, e.toMatrix b, b.toMatrix_mul_toMatrix_flip e, e.toMatrix_mul_toMatrix_flip b⟩
   let P : GL ι (PadicAlgCl ℓ) := Matrix.GeneralLinearGroup.map (algebraMap E (PadicAlgCl ℓ)) PE
   refine ⟨E, P, hfin, fun g i j ↦ ?_⟩
+  have hσg : LinearMap.toMatrix e e (σ g) = (ρE g : Matrix ι ι E) := by
+    rw [show (σ g : (ι → E) →ₗ[E] (ι → E)) = Matrix.toLin' (ρE g : Matrix ι ι E) from
+      ofFramed_apply_eq_toLin' ρE g, LinearMap.toMatrix_eq_toMatrix', LinearMap.toMatrix'_toLin']
+  have hconjE : (PE * ρE g * PE⁻¹ : Matrix ι ι E) =
+      (Λ.toGL bΛ g : Matrix ι ι 𝒪[E]).map (algebraMap 𝒪[E] E) := by
+    rw [Λ.map_toGL_apply bΛ g]
+    simp only [PE, Units.inv_mk, Units.val_mk, ← hσg]
+    exact basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix b e b e (σ g)
+  have hPE : (PE * ρE g * PE⁻¹ : Matrix ι ι E) i j ∈ 𝒪[E] := by
+    rw [hconjE, Matrix.map_apply]
+    exact SetLike.coe_mem _
+  have hsub : (algebraMap E (PadicAlgCl ℓ) : E →+* PadicAlgCl ℓ) = SubringClass.subtype E :=
+    Subfield.algebraMap_ofSubfield (s := E.toSubfield)
   have hconj : P * ρ g * P⁻¹ =
       Matrix.GeneralLinearGroup.map (algebraMap E (PadicAlgCl ℓ)) (PE * ρE g * PE⁻¹) := by
-    simp only [P, map_mul, map_inv, IntermediateField.algebraMap_eq_subtype,
-      ContinuousMonoidHom.map_subtype_liftGLOfMem, ρE]
+    simp only [P, map_mul, map_inv, hsub, ContinuousMonoidHom.map_subtype_liftGLOfMem, ρE]
   have hval : (P * ρ g * P⁻¹ : Matrix ι ι (PadicAlgCl ℓ)) i j =
       (((PE * ρE g * PE⁻¹ : GL ι E) : Matrix ι ι E) i j : PadicAlgCl ℓ) := by
     rw [← Units.val_mul, ← Units.val_mul, hconj]
@@ -436,7 +464,7 @@ theorem exists_integral_conj_GL {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
   rw [hval]
   exact ⟨SetLike.coe_mem _,
     (PadicAlgCl.mem_integerRing_algebraicExtension_iff ℓ E _).mp
-      (by simpa only [Units.val_mul] using hPE g i j)⟩
+      (by simpa only [Units.val_mul] using hPE)⟩
 
 end IntegralDescent
 

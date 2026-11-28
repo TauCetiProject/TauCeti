@@ -44,6 +44,8 @@ an `A`-linear map `A ⊗[R] M → M`. Mathlib's `LinearMap.liftBaseChange` and
 * `TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor`: cancelling the base
   change `B ⊗[A] (A ⊗[R] M) ≃ B ⊗[R] M` sends `b ⊗ x` to `b` times the image of `x` in
   `B ⊗[R] M`.
+* `TensorProduct.AlgebraTensorModule.cancelBaseChange_one_tmul_cancelBaseChange`: tower
+  compatibility for `cancelBaseChange` on nested unit scalar extensions.
 * `LinearMap.injective_lTensor_baseChange_iff`: tensoring with a module over an `R`-algebra gives
   the same injectivity test before and after extending scalars to that algebra.
 * `TensorProduct.AlgebraTensorModule.distribBaseChange_symm_comp_map_baseChange`: the
@@ -115,6 +117,21 @@ theorem TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor 
   induction x using TensorProduct.inductionOn with
   | tmul a m => simp [smul_tmul', Algebra.smul_def, mul_comm]
   | add x y hx hy => simp only [tmul_add, map_add, hx, hy, smul_add]
+
+/-- Tower compatibility for `AlgebraTensorModule.cancelBaseChange` on nested unit scalar
+extensions `(1 : L) ⊗ₜ cancelBaseChange E E₁ E' E' W ((1 : E') ⊗ₜ y)`. -/
+@[simp]
+theorem TensorProduct.AlgebraTensorModule.cancelBaseChange_one_tmul_cancelBaseChange
+    {E E₁ E' L W : Type*} [CommSemiring E] [CommSemiring E₁] [CommSemiring E'] [Semiring L]
+    [Algebra E E₁] [Algebra E E'] [Algebra E L] [Algebra E₁ E'] [Algebra E₁ L] [Algebra E' L]
+    [IsScalarTower E E₁ E'] [IsScalarTower E E₁ L] [IsScalarTower E₁ E' L] [IsScalarTower E E' L]
+    [AddCommMonoid W] [Module E W] (y : E₁ ⊗[E] W) :
+    cancelBaseChange E E' L L W
+        ((1 : L) ⊗ₜ[E'] cancelBaseChange E E₁ E' E' W ((1 : E') ⊗ₜ[E₁] y)) =
+      cancelBaseChange E E₁ L L W ((1 : L) ⊗ₜ[E₁] y) := by
+  induction y using TensorProduct.inductionOn with
+  | add a b ha hb => simp only [TensorProduct.tmul_add, map_add, ha, hb]
+  | tmul c w => simp
 
 /-- For an `A`-module `B` with compatible `R`-action, tensoring an `R`-linear map with `B` over
 `R` gives an injective map if and only if extending scalars to `A` and then tensoring with `B`

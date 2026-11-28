@@ -5,26 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
-public import Mathlib.Topology.Algebra.Group.Matrix
-public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.BaseChange
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Framed
 public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Subfield
 
-import Mathlib.LinearAlgebra.Matrix.ToLin
-import Mathlib.LinearAlgebra.TensorProduct.Pi
 import TauCeti.LinearAlgebra.Matrix.BaseChange
 
 /-!
-# Matrix bridges for framed continuous representations
+# Subfield lifting and scalar extension for framed continuous representations
 
-This file provides congruence, subfield-lifting, and scalar-extension bridges for framed continuous
+This file provides subfield-lifting and scalar-extension bridges for framed continuous
 representations `TauCeti.ContinuousRep.ofFramed`, `TauCeti.ContinuousRep.frame`, and
 `TauCeti.ContinuousRep.framedMap` from
-`TauCeti.RepresentationTheory.Continuous.ContinuousRep.Framed`.
+`TauCeti.RepresentationTheory.Continuous.ContinuousRep.Framed`:
 
-* **Congruence** (`TauCeti.ContinuousRep.ofFramedCongr`): equal continuous matrix homomorphisms
-  yield canonically isomorphic framed representations on `ι → A`.
 * **Subfield lifting** (`TauCeti.ContinuousRep.map_subtype_liftGLOfMem_frame`,
   `TauCeti.ContinuousRep.framedMap_subtype_liftGLOfMem`): pushing the subfield lift of
   `frame b ρ` forward along `SubringClass.subtype E` recovers `LinearMap.toMatrix b b (ρ g)`, and
@@ -35,8 +29,6 @@ representations `TauCeti.ContinuousRep.ofFramed`, `TauCeti.ContinuousRep.frame`,
 
 ## Main definitions
 
-* `TauCeti.ContinuousRep.ofFramedCongr`: canonical isomorphism between `ofFramed φ₁` and
-  `ofFramed φ₂` for equal homomorphisms `φ₁ = φ₂`.
 * `TauCeti.ContinuousRep.baseChangeOfGLIso`: canonical isomorphism identifying
   `(ofFramed φ).baseChange B` with `ofFramed (framedMap (algebraMap A B) _ φ)`.
 
@@ -53,35 +45,6 @@ open Matrix
 open scoped TensorProduct Topology
 
 namespace TauCeti.ContinuousRep
-
-section OfFramedCongr
-
-variable {Γ A ι : Type*} [Monoid Γ] [TopologicalSpace Γ]
-  [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
-  [Fintype ι] [DecidableEq ι]
-
-/-- **Congruence isomorphism for `ofFramed`.** Equal continuous matrix homomorphisms yield
-canonically isomorphic continuous representations on `ι → A`. -/
-def ofFramedCongr {φ₁ φ₂ : Γ →ₜ* GL ι A} (h : φ₁ = φ₂) :
-    Iso (ofFramed φ₁) (ofFramed φ₂) where
-  toRepresentationEquiv := .mk (.refl A (ι → A)) fun g ↦ by
-    ext v i
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.refl_apply,
-      coe_toRepresentation, ofFramed_apply, h]
-  continuous_toFun := continuous_id
-  continuous_invFun := continuous_id
-
-@[simp]
-theorem ofFramedCongr_apply {φ₁ φ₂ : Γ →ₜ* GL ι A} (h : φ₁ = φ₂) (v : ι → A) :
-    ofFramedCongr h v = v :=
-  (rfl)
-
-@[simp]
-theorem ofFramedCongr_symm_apply {φ₁ φ₂ : Γ →ₜ* GL ι A} (h : φ₁ = φ₂) (v : ι → A) :
-    (ofFramedCongr h).symm v = v :=
-  EquivLike.injective (ofFramedCongr h) (by simp)
-
-end OfFramedCongr
 
 section LiftGL
 
@@ -133,16 +96,9 @@ def baseChangeOfGLIso (φ : Γ →ₜ* GL ι A) :
       LinearMap.ext fun v ↦ by
         simp only [coe_toRepresentation, ofFramed_apply, Matrix.mulVecLin_apply]
     refine LinearMap.ext fun x ↦ ?_
-    have hpi : TensorProduct.piScalarRight A B B ι
-          ((Matrix.mulVecLin (φ g : Matrix ι ι A)).baseChange B x) =
-        ((φ g : Matrix ι ι A).map (algebraMap A B)).mulVec
-          (TensorProduct.piScalarRight A B B ι x) := by
-      simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, Matrix.mulVecLin_apply] using
-        LinearMap.congr_fun
-          (Matrix.piScalarRight_comp_baseChange_mulVecLin (S := B) (φ g : Matrix ι ι A)) x
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, toRepresentation_baseChange,
-      Representation.baseChange_apply, hrep, hpi, coe_toRepresentation, ofFramed_apply,
-      coe_framedMap_apply])
+      Representation.baseChange_apply, hrep, Matrix.piScalarRight_baseChange_mulVecLin,
+      coe_toRepresentation, ofFramed_apply, coe_framedMap_apply])
 
 /-- Underlying map of `baseChangeOfGLIso` as `TensorProduct.piScalarRight`. -/
 @[simp]

@@ -5,15 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
-public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.NumberTheory.LocalField.Lattice
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Basic
-
-import Mathlib.LinearAlgebra.Matrix.Basis
-import Mathlib.RingTheory.Flat.TorsionFree
-import Mathlib.RingTheory.LocalRing.Module
-import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Framed
 
 /-!
 # Stable lattices for compact groups
@@ -25,9 +18,7 @@ continuous preserves a lattice: every lattice `L` is contained in a `Γ`-stable 
 `L` is open, so the elements `h` with `ρ h L ⊆ L` form a neighbourhood of `1`, and by compactness
 the sum of the translates `ρ g L` is the finite sum over finitely many `g`. In particular every
 jointly continuous representation of a compact group (`TauCeti.ContinuousRep`) has a stable
-lattice, and every continuous matrix representation `ρ : Γ →ₜ* GL ι E` is conjugate in `GL ι E`
-to one with entries in `𝒪[E]` (`TauCeti.ContinuousRep.exists_conj_mem_integerRing_GL`), which is
-the starting point for integral models of `ℓ`-adic Galois representations.
+lattice, which is the starting point for integral models of `ℓ`-adic Galois representations.
 
 Over a nonarchimedean local field this gives the classical criterion: a subgroup `K` of
 `GL(V) = V ≃ₗ[E] V` stabilizes a lattice exactly when its closure is compact. The converse
@@ -40,8 +31,6 @@ direction uses that the stabilizer of a lattice is compact
   continuous orbit maps stabilizes a lattice containing any given lattice.
 * `Representation.exists_stable_lattice`, `TauCeti.ContinuousRep.exists_stable_lattice`: such a
   representation, in particular a jointly continuous one, has a stable lattice.
-* `TauCeti.ContinuousRep.exists_conj_mem_integerRing_GL`: a continuous matrix representation of a
-  compact group over a field with a valuative topology is conjugate into `GL ι 𝒪[E]`.
 * `Subgroup.isCompact_closure_iff_exists_stable_lattice`: a subgroup of `V ≃ₗ[E] V` has compact
   closure if and only if it stabilizes a lattice.
 
@@ -131,55 +120,6 @@ theorem exists_stable_lattice [FiniteDimensional E V] (ρ : ContinuousRep Γ E V
 end TauCeti.ContinuousRep
 
 end ValuativeTopology
-
-namespace TauCeti.ContinuousRep
-
-section
-
-open Matrix
-
-/-- **Integral model over a field with a valuative topology.** Every continuous matrix
-representation `ρ : Γ →ₜ* GL ι E` of a compact group over a field `E` with a valuative topology is
-conjugate in `GL ι E` to one whose entries lie in the valuation ring `𝒪[E]`. -/
-theorem exists_conj_mem_integerRing_GL {Γ E ι : Type*} [Group Γ] [TopologicalSpace Γ]
-    [CompactSpace Γ] [Field E] [ValuativeRel E] [TopologicalSpace E]
-    [IsValuativeTopology E] [Fintype ι] [DecidableEq ι]
-    (ρ : Γ →ₜ* GL ι E) :
-    ∃ P : GL ι E, ∀ (g : Γ) (i j : ι), (P * ρ g * P⁻¹ : Matrix ι ι E) i j ∈ 𝒪[E] := by
-  let σ : ContinuousRep Γ E (ι → E) := ofFramed ρ
-  obtain ⟨Λ, hΛ, hstab⟩ := σ.exists_stable_lattice
-  have : Module.IsTorsionFree 𝒪[E] E :=
-    Module.isTorsionFree_iff_algebraMap_injective.2 (IsFractionRing.injective 𝒪[E] E)
-  have : Module.Flat 𝒪[E] Λ :=
-    Module.Flat.flat_iff_torsion_eq_bot_of_isBezout.2
-      (Submodule.isTorsionFree_iff_torsion_eq_bot.1 inferInstance)
-  have : Module.Finite 𝒪[E] Λ := Module.Finite.iff_fg.2 hΛ.fg
-  have : Module.Free 𝒪[E] Λ := Module.free_of_flat_of_isLocalRing
-  let e : Module.Basis ι E (ι → E) := Pi.basisFun E ι
-  let b₀ := Module.Free.chooseBasis 𝒪[E] Λ
-  let bΛ : Module.Basis ι 𝒪[E] Λ := b₀.reindex ((b₀.extendOfIsFullLattice E).indexEquiv e)
-  let b : Module.Basis ι E (ι → E) := bΛ.extendOfIsFullLattice E
-  let P : GL ι E :=
-    ⟨b.toMatrix e, e.toMatrix b, b.toMatrix_mul_toMatrix_flip e, e.toMatrix_mul_toMatrix_flip b⟩
-  refine ⟨P, fun g i j ↦ ?_⟩
-  have hσg : LinearMap.toMatrix e e (σ g) = (ρ g : Matrix ι ι E) := by
-    rw [show σ g = Matrix.toLin' (ρ g : Matrix ι ι E) from ofFramed_apply_eq_toLin' ρ g,
-      LinearMap.toMatrix_eq_toMatrix', LinearMap.toMatrix'_toLin']
-  have hentry : (P * ρ g * P⁻¹ : Matrix ι ι E) i j = b.repr (σ g (b j)) i := by
-    have hmul : (P * ρ g * P⁻¹ : Matrix ι ι E) = LinearMap.toMatrix b b (σ g) := by
-      simp only [P, Units.inv_mk, Units.val_mk, ← hσg]
-      exact basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix b e b e (σ g)
-    rw [hmul, LinearMap.toMatrix_apply]
-  rw [hentry]
-  have hσbj : σ g (b j) ∈ Submodule.span 𝒪[E] (Set.range b) := by
-    rw [bΛ.span_range_extendOfIsFullLattice]
-    exact hstab g _ (bΛ.extendOfIsFullLattice_apply E j ▸ (bΛ j).property)
-  obtain ⟨a, ha⟩ := (b.mem_span_iff_repr_mem 𝒪[E] (σ g (b j))).mp hσbj i
-  exact ha ▸ a.property
-
-end
-
-end TauCeti.ContinuousRep
 
 namespace Subgroup
 

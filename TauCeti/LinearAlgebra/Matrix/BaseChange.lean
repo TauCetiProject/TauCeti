@@ -25,6 +25,11 @@ In the other direction, the `R`-rational solutions of a system `A x = 0` over `S
 vectors `x : n → R` with `A *ᵥ (algebraMap R S ∘ x) = 0`, form the kernel of the `R`-linear map
 `A.mulVecLin.restrictScalars R ∘ₗ Pi.algebraMap n R S`
 (`Matrix.mem_ker_mulVecLin_restrictScalars_comp_piAlgebraMap_iff`).
+
+Finally, under `TensorProduct.piScalarRight` and basis coordinates `Module.Basis.equivFun`, the
+scalar extension `(Matrix.mulVecLin M).baseChange L` agrees with any linear map `f` whose matrix
+is `M.map (algebraMap E L)` (`TensorProduct.piScalarRight_equivFun_intertwining`), which is used to
+descend intertwining maps between framed representations.
 -/
 
 public section
@@ -48,6 +53,13 @@ theorem piScalarRight_comp_baseChange_mulVecLin (A : Matrix m n R) :
   ext i
   simp [piScalarRight_apply, piScalarRightHom_tmul, mulVec, dotProduct,
     Algebra.smul_def, Finset.sum_mul, mul_assoc]
+
+/-- Pointwise form of `Matrix.piScalarRight_comp_baseChange_mulVecLin`. -/
+theorem piScalarRight_baseChange_mulVecLin (A : Matrix m n R) (x : S ⊗[R] (n → R)) :
+    piScalarRight R S S m (A.mulVecLin.baseChange S x) =
+      (A.map (algebraMap R S)).mulVec (piScalarRight R S S n x) := by
+  simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, mulVecLin_apply] using
+    LinearMap.congr_fun (piScalarRight_comp_baseChange_mulVecLin (S := S) A) x
 
 end Semiring
 
@@ -121,11 +133,7 @@ theorem piScalarRight_equivFun_intertwining {E L V W ιV ιW : Type*}
     bW.equivFun.symm (TensorProduct.piScalarRight E L L ιW ((Matrix.mulVecLin M).baseChange L x)) =
       f (bV.equivFun.symm (TensorProduct.piScalarRight E L L ιV x)) := by
   apply bW.equivFun.injective
-  have hpi : TensorProduct.piScalarRight E L L ιW ((Matrix.mulVecLin M).baseChange L x) =
-      (M.map (algebraMap E L)).mulVec (TensorProduct.piScalarRight E L L ιV x) := by
-    simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, Matrix.mulVecLin_apply] using
-      LinearMap.congr_fun (Matrix.piScalarRight_comp_baseChange_mulVecLin (S := L) M) x
-  rw [LinearEquiv.apply_symm_apply, hpi, hM]
+  rw [LinearEquiv.apply_symm_apply, Matrix.piScalarRight_baseChange_mulVecLin, hM]
   have hrepr : (bV.repr (bV.equivFun.symm (TensorProduct.piScalarRight E L L ιV x)) : ιV → L) =
       TensorProduct.piScalarRight E L L ιV x := by
     ext i

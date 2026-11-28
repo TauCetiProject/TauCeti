@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.LinearAlgebra.TensorProduct.Projective
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import TauCeti.LinearAlgebra.Dual.BaseChange
+import TauCeti.LinearAlgebra.TensorProduct.Tower
 
 /-!
 # Scalar extension of linear maps and Hom spaces
@@ -174,29 +175,6 @@ theorem baseChange_eq_one_iff {e : M ≃ₗ[R] M} : e.baseChange R A M M = 1 ↔
   exact LinearMap.baseChange_injective.eq_iff
 
 end LinearEquiv
-
-public section
-
-open TensorProduct
-
-namespace TensorProduct.AlgebraTensorModule
-
-/-- Tower compatibility for `AlgebraTensorModule.cancelBaseChange` on nested unit scalar
-extensions `(1 : L) ⊗ₜ cancelBaseChange E E₁ E' E' W ((1 : E') ⊗ₜ y)`. -/
-@[simp]
-theorem cancelBaseChange_one_tmul_cancelBaseChange
-    {E E₁ E' L W : Type*} [CommSemiring E] [CommSemiring E₁] [CommSemiring E'] [Semiring L]
-    [Algebra E E₁] [Algebra E E'] [Algebra E L] [Algebra E₁ E'] [Algebra E₁ L] [Algebra E' L]
-    [IsScalarTower E E₁ E'] [IsScalarTower E E₁ L] [IsScalarTower E₁ E' L] [IsScalarTower E E' L]
-    [AddCommMonoid W] [Module E W] (y : E₁ ⊗[E] W) :
-    AlgebraTensorModule.cancelBaseChange E E' L L W
-        ((1 : L) ⊗ₜ[E'] AlgebraTensorModule.cancelBaseChange E E₁ E' E' W ((1 : E') ⊗ₜ[E₁] y)) =
-      AlgebraTensorModule.cancelBaseChange E E₁ L L W ((1 : L) ⊗ₜ[E₁] y) := by
-  induction y using TensorProduct.inductionOn with
-  | add a b ha hb => simp only [TensorProduct.tmul_add, map_add, ha, hb]
-  | tmul c w => simp
-
-end TensorProduct.AlgebraTensorModule
 
 namespace LinearMap
 
