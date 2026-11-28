@@ -29,7 +29,11 @@ preserve the pivotal structure. They are also natural in the functor: a monoidal
 transformation `τ : F ⟶ G` satisfies `τ_{Xᘁ} ≫ δ^G_X ≫ (τ_X)ᘁ = δ^F_X` and
 `(τ_X)ᘁ ≫ (δ^F_X)⁻¹ ≫ τ_{Xᘁ} = (δ^G_X)⁻¹`. Likewise the image
 `F.obj (ᘁY)` of a left dual of `Y` is canonically isomorphic to the left dual `ᘁ(F.obj Y)`
-(`CategoryTheory.Functor.mapLeftDualIso`), characterized through the two evaluations.
+(`CategoryTheory.Functor.mapLeftDualIso`), characterized through the two evaluations. Even when `G`
+is only lax monoidal, the component of a monoidal natural transformation `F ⟶ G` at one member of
+an exact pairing determines its component at the other
+(`CategoryTheory.NatTrans.app_right_eq_of_exactPairing` and
+`CategoryTheory.NatTrans.app_left_eq_of_exactPairing`).
 
 Between right rigid categories, applying the comparison twice gives the bidual comparison
 `κ_X = δ_{Xᘁ} ≫ ((δ_X)ᘁ)⁻¹ : F.obj Xᘁᘁ ≅ (F.obj X)ᘁᘁ`
@@ -95,9 +99,10 @@ equivalence.
 * `CategoryTheory.NatTrans.app_comp_rightMate_app`, `CategoryTheory.NatTrans.rightMate_app_comp_app`
   and their left-mate counterparts: the component of such a transformation at one member of an
   exact pairing is inverse to the mate of its component at the other member, with respect to the
-  image pairings. So `CategoryTheory.NatTrans.app_right_eq_of_app_left_eq` and
-  `CategoryTheory.NatTrans.app_left_eq_of_app_right_eq`: two such transformations which agree at
-  one member of an exact pairing agree at the other;
+  image pairings. More generally, when the target is only lax monoidal, two monoidal natural
+  transformations from a strong monoidal functor which agree at one member of an exact pairing
+  agree at the other (`CategoryTheory.NatTrans.app_right_eq_of_exactPairing` and
+  `CategoryTheory.NatTrans.app_left_eq_of_exactPairing`);
 * `TauCeti.doubleRightDualFunctor_mapRightDualIso`: the comparison is the identity for the double
   right dual functor, so that `CategoryTheory.Iso.hom_app_comp_mapRightDualIso_hom` specializes to
   the Freyd–Yetter identity `CategoryTheory.Iso.hom_app_rightDual` for a monoidal natural
@@ -612,21 +617,111 @@ theorem Iso.hom_app_comp_mapRightDualIso_hom (α : F ≅ G) [α.hom.IsMonoidal] 
     Category.assoc, ← comp_rightAdjointMate, Iso.inv_hom_id_app, rightAdjointMate_id,
     Category.comp_id]
 
-/-- Two monoidal natural transformations between strong monoidal functors which agree at the left
-member `X` of an exact pairing `(X, Y)` also agree at its right member `Y`. -/
-theorem NatTrans.app_right_eq_of_app_left_eq (τ τ' : F ⟶ G) [τ.IsMonoidal] [τ'.IsMonoidal]
-    (X Y : C) [ExactPairing X Y] (h : τ.app X = τ'.app X) : τ.app Y = τ'.app Y := by
-  -- `τ_Y` and `τ'_Y` are both inverse to the common mate of `τ_X = τ'_X`.
-  rw [← Category.comp_id (τ.app Y), ← NatTrans.rightMate_app_comp_app τ' X Y, ← h,
-    NatTrans.app_comp_rightMate_app_assoc]
+section LaxTarget
 
-/-- Two monoidal natural transformations between strong monoidal functors which agree at the
-right member `Y` of an exact pairing `(X, Y)` also agree at its left member `X`. -/
-theorem NatTrans.app_left_eq_of_app_right_eq (τ τ' : F ⟶ G) [τ.IsMonoidal] [τ'.IsMonoidal]
-    (X Y : C) [ExactPairing X Y] (h : τ.app Y = τ'.app Y) : τ.app X = τ'.app X := by
-  -- `τ_X` and `τ'_X` are both inverse to the common left mate of `τ_Y = τ'_Y`.
-  rw [← Category.comp_id (τ.app X), ← NatTrans.leftMate_app_comp_app τ' X Y, ← h,
-    NatTrans.app_comp_leftMate_app_assoc]
+/-- For a monoidal natural transformation `τ : F ⟶ H` from a strong monoidal functor `F` to a
+lax monoidal functor `H`, composing the strong image coevaluation of an exact pairing `(X, Y)`
+with `(τ.app X ⊗ₘ τ.app Y) ≫ μ H X Y` recovers the lax image `ε H ≫ H.map (η_ X Y)`. -/
+@[reassoc]
+theorem NatTrans.ε_comp_map_coevaluation_comp_δ_comp_tensorHom_comp_μ {H : C ⥤ D} [H.LaxMonoidal]
+    (τ : F ⟶ H) [τ.IsMonoidal] (X Y : C) [ExactPairing X Y] :
+    ε F ≫ F.map (η_ X Y) ≫ δ F X Y ≫ (τ.app X ⊗ₘ τ.app Y) ≫ μ H X Y =
+      ε H ≫ H.map (η_ X Y) := by
+  rw [← NatTrans.IsMonoidal.tensor, δ_μ_assoc, τ.naturality, NatTrans.IsMonoidal.unit_assoc]
+
+/-- For a monoidal natural transformation `τ : F ⟶ H` from a strong monoidal functor `F` to a
+lax monoidal functor `H`, precomposing the lax image `μ H Y X ≫ H.map (ε_ X Y)` of the evaluation
+of an exact pairing `(X, Y)` with `τ.app Y ⊗ₘ τ.app X` yields the strong image evaluation followed
+by `ε H`. -/
+@[reassoc]
+theorem NatTrans.tensorHom_comp_μ_comp_map_evaluation {H : C ⥤ D} [H.LaxMonoidal]
+    (τ : F ⟶ H) [τ.IsMonoidal] (X Y : C) [ExactPairing X Y] :
+    (τ.app Y ⊗ₘ τ.app X) ≫ μ H Y X ≫ H.map (ε_ X Y) =
+      μ F Y X ≫ F.map (ε_ X Y) ≫ η F ≫ ε H := by
+  rw [← NatTrans.IsMonoidal.tensor_assoc, ← τ.naturality, ← NatTrans.IsMonoidal.unit (τ := τ),
+    η_ε_assoc]
+
+/-- If two monoidal natural transformations from a strong monoidal functor `F` to a lax monoidal
+functor `H` agree on the left member `X` of an exact pairing `(X, Y)`, then they agree on the right
+member `Y`. -/
+theorem NatTrans.app_right_eq_of_exactPairing {H : C ⥤ D} [H.LaxMonoidal] {α β : F ⟶ H}
+    [α.IsMonoidal] [β.IsMonoidal] (X Y : C) [ExactPairing X Y] (h : α.app X = β.app X) :
+    α.app Y = β.app Y := by
+  let _ : ExactPairing (F.obj X) (F.obj Y) := F.mapExactPairing X Y
+  have hzig : (ρ_ (F.obj Y)).inv ≫ F.obj Y ◁ (ε F ≫ F.map (η_ X Y) ≫ δ F X Y) ≫
+      (α_ (F.obj Y) (F.obj X) (F.obj Y)).inv ≫ (μ F Y X ≫ F.map (ε_ X Y) ≫ η F) ▷ F.obj Y =
+      (λ_ (F.obj Y)).inv := by
+    rw [← Functor.mapExactPairing_coevaluation, ← Functor.mapExactPairing_evaluation,
+      ExactPairing.coevaluation_evaluation, Iso.inv_hom_id_assoc]
+  calc
+    α.app Y = (ρ_ (F.obj Y)).inv ≫ (α.app Y ⊗ₘ (ε H ≫ H.map (η_ X Y))) ≫ μ H Y (X ⊗ Y) ≫
+        H.map ((α_ Y X Y).inv ≫ ε_ X Y ▷ Y ≫ (λ_ Y).hom) := by
+      rw [rightUnitor_inv_comp_tensorHom_assoc]
+      simp only [MonoidalCategory.whiskerLeft_comp, Category.assoc, μ_natural_right_assoc,
+        Functor.LaxMonoidal.right_unitality_inv_assoc, ← H.map_comp]; simp
+    _ = (ρ_ (F.obj Y)).inv ≫ F.obj Y ◁ (ε F ≫ F.map (η_ X Y) ≫ δ F X Y) ≫
+        (α.app Y ⊗ₘ (α.app X ⊗ₘ β.app Y)) ≫ H.obj Y ◁ μ H X Y ≫ μ H Y (X ⊗ Y) ≫
+        H.map ((α_ Y X Y).inv ≫ ε_ X Y ▷ Y ≫ (λ_ Y).hom) := by
+      rw [← β.ε_comp_map_coevaluation_comp_δ_comp_tensorHom_comp_μ X Y, ← h]
+      simp only [whiskerLeft_comp_tensorHom_assoc, tensorHom_comp_whiskerLeft_assoc, Category.assoc]
+    _ = (ρ_ (F.obj Y)).inv ≫ F.obj Y ◁ (ε F ≫ F.map (η_ X Y) ≫ δ F X Y) ≫
+        (α_ (F.obj Y) (F.obj X) (F.obj Y)).inv ≫
+        (((α.app Y ⊗ₘ α.app X) ≫ μ H Y X ≫ H.map (ε_ X Y)) ⊗ₘ β.app Y) ≫
+        μ H (𝟙_ C) Y ≫ H.map (λ_ Y).hom := by
+      simp only [H.map_comp, Functor.LaxMonoidal.associativity_inv_assoc,
+        associator_inv_naturality_assoc, ← μ_natural_left_assoc,
+        tensorHom_comp_whiskerRight_assoc, Category.assoc]
+    _ = ((ρ_ (F.obj Y)).inv ≫ F.obj Y ◁ (ε F ≫ F.map (η_ X Y) ≫ δ F X Y) ≫
+          (α_ (F.obj Y) (F.obj X) (F.obj Y)).inv ≫ (μ F Y X ≫ F.map (ε_ X Y) ≫ η F) ▷ F.obj Y) ≫
+        (ε H ⊗ₘ β.app Y) ≫ μ H (𝟙_ C) Y ≫ H.map (λ_ Y).hom := by
+      simp only [α.tensorHom_comp_μ_comp_map_evaluation, whiskerRight_comp_tensorHom_assoc,
+        Category.assoc]
+    _ = (λ_ (F.obj Y)).inv ≫ (ε H ⊗ₘ β.app Y) ≫ μ H (𝟙_ C) Y ≫ H.map (λ_ Y).hom := by rw [hzig]
+    _ = β.app Y := by
+      rw [Functor.LaxMonoidal.ε_tensorHom_comp_μ_assoc, leftUnitor_naturality_assoc,
+        Iso.inv_hom_id_assoc, ← H.map_comp]; simp
+
+/-- If two monoidal natural transformations from a strong monoidal functor `F` to a lax monoidal
+functor `H` agree on the right member `Y` of an exact pairing `(X, Y)`, then they agree on the left
+member `X`. -/
+theorem NatTrans.app_left_eq_of_exactPairing {H : C ⥤ D} [H.LaxMonoidal] {α β : F ⟶ H}
+    [α.IsMonoidal] [β.IsMonoidal] (X Y : C) [ExactPairing X Y] (h : α.app Y = β.app Y) :
+    α.app X = β.app X := by
+  let _ : ExactPairing (F.obj X) (F.obj Y) := F.mapExactPairing X Y
+  have hzig : (λ_ (F.obj X)).inv ≫ (ε F ≫ F.map (η_ X Y) ≫ δ F X Y) ▷ F.obj X ≫
+      (α_ (F.obj X) (F.obj Y) (F.obj X)).hom ≫ F.obj X ◁ (μ F Y X ≫ F.map (ε_ X Y) ≫ η F) =
+      (ρ_ (F.obj X)).inv := by
+    rw [← Functor.mapExactPairing_coevaluation, ← Functor.mapExactPairing_evaluation,
+      ExactPairing.evaluation_coevaluation, Iso.inv_hom_id_assoc]
+  calc
+    α.app X = (λ_ (F.obj X)).inv ≫ ((ε H ≫ H.map (η_ X Y)) ⊗ₘ α.app X) ≫ μ H (X ⊗ Y) X ≫
+        H.map ((α_ X Y X).hom ≫ X ◁ ε_ X Y ≫ (ρ_ X).hom) := by
+      rw [leftUnitor_inv_comp_tensorHom_assoc]
+      simp only [MonoidalCategory.comp_whiskerRight, Category.assoc, μ_natural_left_assoc,
+        Functor.LaxMonoidal.left_unitality_inv_assoc, ← H.map_comp]; simp
+    _ = (λ_ (F.obj X)).inv ≫ (ε F ≫ F.map (η_ X Y) ≫ δ F X Y) ▷ F.obj X ≫
+        ((β.app X ⊗ₘ α.app Y) ⊗ₘ α.app X) ≫ μ H X Y ▷ H.obj X ≫ μ H (X ⊗ Y) X ≫
+        H.map ((α_ X Y X).hom ≫ X ◁ ε_ X Y ≫ (ρ_ X).hom) := by
+      rw [← β.ε_comp_map_coevaluation_comp_δ_comp_tensorHom_comp_μ X Y, ← h]
+      simp only [whiskerRight_comp_tensorHom_assoc, tensorHom_comp_whiskerRight_assoc,
+        Category.assoc]
+    _ = (λ_ (F.obj X)).inv ≫ (ε F ≫ F.map (η_ X Y) ≫ δ F X Y) ▷ F.obj X ≫
+        (α_ (F.obj X) (F.obj Y) (F.obj X)).hom ≫
+        (β.app X ⊗ₘ ((α.app Y ⊗ₘ α.app X) ≫ μ H Y X ≫ H.map (ε_ X Y))) ≫
+        μ H X (𝟙_ C) ≫ H.map (ρ_ X).hom := by
+      simp only [H.map_comp, Functor.LaxMonoidal.associativity_assoc, associator_naturality_assoc,
+        ← μ_natural_right_assoc, tensorHom_comp_whiskerLeft_assoc, Category.assoc]
+    _ = ((λ_ (F.obj X)).inv ≫ (ε F ≫ F.map (η_ X Y) ≫ δ F X Y) ▷ F.obj X ≫
+          (α_ (F.obj X) (F.obj Y) (F.obj X)).hom ≫ F.obj X ◁ (μ F Y X ≫ F.map (ε_ X Y) ≫ η F)) ≫
+        (β.app X ⊗ₘ ε H) ≫ μ H X (𝟙_ C) ≫ H.map (ρ_ X).hom := by
+      simp only [α.tensorHom_comp_μ_comp_map_evaluation, whiskerLeft_comp_tensorHom_assoc,
+        Category.assoc]
+    _ = (ρ_ (F.obj X)).inv ≫ (β.app X ⊗ₘ ε H) ≫ μ H X (𝟙_ C) ≫ H.map (ρ_ X).hom := by rw [hzig]
+    _ = β.app X := by
+      rw [Functor.LaxMonoidal.tensorHom_ε_comp_μ_assoc, rightUnitor_naturality_assoc,
+        Iso.inv_hom_id_assoc, ← H.map_comp]; simp
+
+end LaxTarget
 
 end CategoryTheory
 

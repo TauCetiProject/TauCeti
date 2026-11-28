@@ -87,7 +87,9 @@ morphism.
   comparison between two duals is an identity;
 * `CategoryTheory.ExactPairing.leftMate_rightDualIso_inv` and
   `CategoryTheory.ExactPairing.rightMate_leftDualIso_inv`: the opposite-handed mate of the
-  inverse comparison between two duals is the comparison between the two opposite-handed duals.
+  inverse comparison between two duals is the comparison between the two opposite-handed duals;
+* `TauCeti.rightAdjointMate_eqToHom` and `TauCeti.leftAdjointMate_eqToHom`: the right and left
+  adjoint mates of a transport `eqToHom` are the transports along the induced equalities of duals.
 
 ## References
 
@@ -607,5 +609,21 @@ theorem leftAdjointMate_eq_leftMate {X Y : C} [HasLeftDual X] [HasLeftDual Y] (f
     (ᘁf) = ExactPairing.leftMate HasLeftDual.exact HasLeftDual.exact f :=
   ExactPairing.leftDualHom_ext (Y := X) (by
     rw [leftAdjointMate_comp_evaluation, ExactPairing.leftMate_comp_evaluation])
+
+/-- The right adjoint mate of `eqToHom h` is the transport along the induced equality of right
+duals. -/
+@[simp]
+theorem rightAdjointMate_eqToHom [RightRigidCategory C] {X Y : C} (h : X = Y) :
+    (eqToHom h)ᘁ = eqToHom (congrArg (fun Z : C ↦ Zᘁ) h.symm) := by
+  subst h
+  simp
+
+/-- The left adjoint mate of `eqToHom h` is the transport along the induced equality of left
+duals. -/
+@[simp]
+theorem leftAdjointMate_eqToHom [LeftRigidCategory C] {X Y : C} (h : X = Y) :
+    (ᘁ(eqToHom h)) = eqToHom (congrArg (fun Z : C ↦ (ᘁZ : C)) h.symm) := by
+  subst h
+  simp
 
 end TauCeti
