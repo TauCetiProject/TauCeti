@@ -33,6 +33,8 @@ product of `𝒪ₓ`-modules is `M ⊗ N`.
   `AlgebraicGeometry.Scheme.Modules.isMonoidal_isQuasicoherent`: tensor products of
   quasi-coherent `𝒪ₓ`-modules are quasi-coherent, so quasi-coherence is a monoidal property of
   `𝒪ₓ`-modules;
+* `AlgebraicGeometry.Scheme.Modules.isFinitePresentation_tensorObj`: the tensor product of two
+  finitely presented `𝒪ₓ`-modules is finitely presented;
 * `TauCeti.AlgebraicGeometry.isQuasicoherent_unit` and
   `TauCeti.AlgebraicGeometry.isQuasicoherent_structureSheaf`: the structure sheaf, viewed as a
   module over itself, is quasi-coherent in monoidal-unit and explicit-unit notation;
@@ -101,6 +103,11 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isMonoidal_isQuasicoherent :
     ObjectProperty.IsMonoidal (C := X.Modules)
       (_root_.SheafOfModules.isQuasicoherent X.ringCatSheaf) :=
   SheafOfModules.isMonoidal_isQuasicoherent (R := X.sheaf)
+
+/-- The tensor product of two finitely presented `𝒪ₓ`-modules is finitely presented. -/
+instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_tensorObj (M N : X.Modules)
+    [M.IsFinitePresentation] [N.IsFinitePresentation] : (M ⊗ N).IsFinitePresentation :=
+  SheafOfModules.isFinitePresentation_tensorObj (R := X.sheaf)
 
 /-- The structure sheaf, viewed as a module over itself, is quasicoherent. -/
 instance AlgebraicGeometry.isQuasicoherent_unit :

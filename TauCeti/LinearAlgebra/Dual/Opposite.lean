@@ -240,3 +240,11 @@ theorem unopDualEvalEquiv_naturality (f : N →ₗ[Aᵐᵒᵖ] N') (x : N) :
 end RightEvaluation
 
 end TauCeti
+
+/-- Left multiplication on the values of a functional on a right module is postcomposition
+with left multiplication on the regular module. -/
+theorem LinearMap.smul_eq_mulLeft_comp {A M : Type*} [Ring A] [AddCommGroup M]
+    [Module Aᵐᵒᵖ M] (a : A) (g : M →ₗ[Aᵐᵒᵖ] A) :
+    a • g = LinearMap.mulLeft Aᵐᵒᵖ a ∘ₗ g := by
+  ext x
+  simp [smul_eq_mul]

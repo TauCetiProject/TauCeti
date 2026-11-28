@@ -20,6 +20,8 @@ inverted asymptotically: if `u → ∞` and `u / log u ∼ v`, then taking logar
 
 ## Main declarations
 
+* `TauCeti.Real.eventually_const_mul_log_pow_le` — a fixed multiple of a power of a scaled
+  logarithm is eventually at most `x`.
 * `TauCeti.Real.tendsto_div_log_pow_atTop` — `x / log x ^ n → +∞` as `x → +∞` for every `n : ℕ`.
 * `TauCeti.Real.isLittleO_const_div_log_pow`, `TauCeti.Real.isLittleO_const_div_log` — a constant
   is `o(x / log x ^ n)` and `o(x / log x)` as `x → ∞`.
@@ -34,6 +36,17 @@ public section
 open Asymptotics Filter Topology
 
 namespace TauCeti.Real
+
+/-- For any real constants `C` and `c` and any natural exponent `n`,
+`C * (c * log x) ^ n` is eventually at most `x` as `x → +∞`. -/
+theorem eventually_const_mul_log_pow_le (C c : ℝ) (n : ℕ) :
+    ∀ᶠ x : ℝ in atTop, C * (c * Real.log x) ^ n ≤ x := by
+  have h := (Real.isLittleO_pow_log_id_atTop (n := n)).const_mul_left (C * c ^ n)
+  filter_upwards [h.eventuallyLE, eventually_ge_atTop (0 : ℝ)] with x hx hx₀
+  calc
+    C * (c * Real.log x) ^ n = (C * c ^ n) * Real.log x ^ n := by rw [mul_pow, mul_assoc]
+    _ ≤ ‖(C * c ^ n) * Real.log x ^ n‖ := le_abs_self _
+    _ ≤ x := hx.trans_eq (Real.norm_of_nonneg hx₀)
 
 /-- For every `n : ℕ`, `x / log x ^ n → +∞` as `x → +∞`. -/
 theorem tendsto_div_log_pow_atTop (n : ℕ) :

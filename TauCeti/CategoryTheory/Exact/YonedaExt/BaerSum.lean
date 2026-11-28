@@ -233,7 +233,7 @@ theorem pullback_add (ξ : E.Ext1 Z X) (c d : Z' ⟶ Z) :
 
 /-- Any two classes with the same third term are cobase changes of one class along the two
 projections of the biproduct of their first terms. -/
-private theorem exists_pushout_fst_eq_and_pushout_snd_eq (ξ₁ : E.Ext1 Z X₁) (ξ₂ : E.Ext1 Z X₂) :
+theorem exists_pushout_fst_eq_and_pushout_snd_eq (ξ₁ : E.Ext1 Z X₁) (ξ₂ : E.Ext1 Z X₂) :
     ∃ θ : E.Ext1 Z (X₁ ⊞ X₂), θ.pushout Limits.biprod.fst = ξ₁ ∧
       θ.pushout Limits.biprod.snd = ξ₂ := by
   refine ⟨(ξ₁.biprod ξ₂).pullback (Limits.biprod.lift (𝟙 Z) (𝟙 Z)), ?_, ?_⟩
@@ -293,7 +293,7 @@ private theorem pushout_negSucc_smul (n : ℕ) (ξ : E.Ext1 Z X) :
 as zero. The multiples of a class are its cobase changes along the multiples of `𝟙 X`, so that the
 `ℕ`- and `ℤ`-module structures agree definitionally with those of an `R`-linear category. -/
 noncomputable instance : AddCommGroup (E.Ext1 Z X) where
-  -- The `by` blocks keep the private lemmas out of the exposed instance body.
+  -- The `by` blocks keep the private lemmas for scalar multiples out of the exposed instance body.
   add_assoc ξ₁ ξ₂ ξ₃ := by
     obtain ⟨θ, rfl, rfl⟩ := exists_pushout_fst_eq_and_pushout_snd_eq ξ₁ ξ₂
     obtain ⟨θ', rfl, rfl⟩ := exists_pushout_fst_eq_and_pushout_snd_eq θ ξ₃

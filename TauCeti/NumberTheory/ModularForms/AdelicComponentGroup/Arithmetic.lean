@@ -115,12 +115,12 @@ theorem relIndex_componentGroup_range_mapGL_ne_zero
   set ψ := (GeneralLinearGroup.map (n := Fin 2) (algebraMap ℤ (FiniteAdeleRing ℤ ℚ))).comp
     (SpecialLinearGroup.toGL (n := Fin 2) (R := ℤ))
   set V := U.map (MulAut.conj g).toMonoidHom
-  set O := principalLevel ℚ (⊤ : Ideal ℤ)
+  set O := principalLevel ℚ (Fin 2) (⊤ : Ideal ℤ)
   -- `gUg⁻¹` is open, so it has finite index in the compact group `GL₂(Ô)`.
   have hV : IsOpen (V : Set (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))) :=
     (Subgroup.isOpen_map_conj_iff g).mpr hU
   have h1 : V.relIndex O ≠ 0 := by
-    have : CompactSpace O := isCompact_iff_compactSpace.mp (isCompact_principalLevel ℚ ⊤)
+    have : CompactSpace O := isCompact_iff_compactSpace.mp (isCompact_principalLevel ℚ (Fin 2) ⊤)
     have := Subgroup.quotient_finite_of_isOpen (V.subgroupOf O) (Subgroup.subgroupOf_isOpen O V hV)
     exact Subgroup.index_ne_zero_of_finite
   -- The diagonal image of `SL₂(ℤ)` lies in `GL₂(Ô)`.

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.DoubleCategory.Globular
+public import TauCeti.CategoryTheory.DoubleCategory.Globular.Basic
 public import TauCeti.CategoryTheory.PathCategory.Basic
 
 /-!
