@@ -9,11 +9,13 @@ public import Mathlib.RingTheory.DividedPowers.DPMorphism
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Flat.Stability
 public import Mathlib.RingTheory.Localization.Defs
-import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 import Mathlib.RingTheory.DividedPowers.SubDPIdeal
 import Mathlib.RingTheory.Flat.EquationalCriterion
 import Mathlib.RingTheory.Flat.Localization
+import TauCeti.Algebra.Group.Pow
+import TauCeti.RingTheory.DividedPowers.Exp
 import TauCeti.RingTheory.DividedPowers.Generators
+import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.PowerSeries.CoeffProd
 
 /-!
@@ -123,27 +125,6 @@ private theorem map_mul_dpow (hI : DividedPowers I) (f : A →+* B)
     f (hI.dpow m x) * f (hI.dpow n x) = ((m + n).choose m : B) * f (hI.dpow (m + n) x) := by
   rw [← map_mul, hI.mul_dpow hx, map_mul, map_natCast]
 
-/-- Shared binomial expansion step for `(b₁ + b₂) ^ n * f (hI.dpow n x)`. -/
-private theorem add_pow_mul_map_dpow (hI : DividedPowers I) (f : A →+* B)
-    (b₁ b₂ : B) {x : A} (hx : x ∈ I) (n : ℕ) :
-    (b₁ + b₂) ^ n * f (hI.dpow n x) =
-      ∑ k ∈ antidiagonal n, (b₁ ^ k.1 * f (hI.dpow k.1 x)) * (b₂ ^ k.2 * f (hI.dpow k.2 x)) := by
-  rw [(Commute.all b₁ b₂).add_pow', sum_mul]
-  refine sum_congr rfl fun k hk ↦ ?_
-  rw [← mem_antidiagonal.mp hk, nsmul_eq_mul]
-  calc ((k.1 + k.2).choose k.1 : B) * (b₁ ^ k.1 * b₂ ^ k.2) * f (hI.dpow (k.1 + k.2) x)
-      = b₁ ^ k.1 * b₂ ^ k.2 * (((k.1 + k.2).choose k.1 : B) * f (hI.dpow (k.1 + k.2) x)) := by
-        ring
-    _ = b₁ ^ k.1 * b₂ ^ k.2 * (f (hI.dpow k.1 x) * f (hI.dpow k.2 x)) := by
-        rw [← map_mul_dpow hI f hx k.1 k.2]
-    _ = b₁ ^ k.1 * f (hI.dpow k.1 x) * (b₂ ^ k.2 * f (hI.dpow k.2 x)) := by ring
-
-private theorem pow_mul_eq_pow_mul_of_mul_eq {M : Type*} [CommMonoid M] {b c y : M}
-    (h : b * y = c * y) (k : ℕ) : b ^ k * y = c ^ k * y := by
-  induction k with
-  | zero => simp
-  | succ k ih => rw [pow_succ', mul_assoc, ih, mul_left_comm, h, ← mul_assoc, ← pow_succ]
-
 /-- **Well-definedness of the principal extension formula** (Stacks 23.4.2, tag 07H1): if
 `I = Ideal.span {x}`, then `b * f x = c * f x` implies
 `b ^ n * f (hI.dpow n x) = c ^ n * f (hI.dpow n x)` for all `n : ℕ`. -/
@@ -153,7 +134,7 @@ theorem pow_mul_map_dpow_eq_of_mul_eq (hI : DividedPowers I) (f : A →+* B)
   rcases eq_or_ne n 0 with rfl | hn
   · simp
   · obtain ⟨a, ha⟩ := exists_dpow_eq_mul hI hIx hn
-    rw [ha, map_mul, ← mul_assoc, pow_mul_eq_pow_mul_of_mul_eq hbc n, mul_assoc]
+    rw [ha, map_mul, ← mul_assoc, TauCeti.pow_mul_eq_pow_mul_of_mul_eq hbc n, mul_assoc]
 
 private theorem exists_mul_map_of_mem_span_singleton (f : A →+* B) {x : A}
     (hIx : I = Ideal.span {x}) {z : B} (hz : z ∈ I.map f) :
@@ -242,10 +223,10 @@ noncomputable def mapOfSpanSingleton (hI : DividedPowers I) (f : A →+* B)
   dpow_add {n z₁ z₂} hz₁ hz₂ := by
     obtain ⟨b₁, rfl⟩ := exists_mul_map_of_mem_span_singleton f hIx hz₁
     obtain ⟨b₂, rfl⟩ := exists_mul_map_of_mem_span_singleton f hIx hz₂
-    rw [← add_mul, principalDpow_mul,
-      add_pow_mul_map_dpow hI f b₁ b₂ (mem_of_eq_span_singleton hIx) n]
+    rw [← add_mul, principalDpow_mul, ← coeff_rescale_map_exp hI f (b₁ + b₂) n x,
+      rescale_map_exp_add hI f b₁ b₂ (mem_of_eq_span_singleton hIx), PowerSeries.coeff_mul]
     refine sum_congr rfl fun k _ ↦ ?_
-    rw [principalDpow_mul, principalDpow_mul]
+    rw [coeff_rescale_map_exp, coeff_rescale_map_exp, principalDpow_mul, principalDpow_mul]
   dpow_mul {n a z} hz := by
     obtain ⟨b, rfl⟩ := exists_mul_map_of_mem_span_singleton f hIx hz
     rw [← mul_assoc, principalDpow_mul, principalDpow_mul, mul_pow, mul_assoc]
@@ -381,22 +362,6 @@ theorem dpow_sum_mul_map_eq_extensionCoeff {ι : Type*} [DecidableEq ι] (hI : D
   refine sum_congr rfl fun k _ ↦ prod_congr rfl fun i hi ↦ ?_
   rw [hJ.dpow_mul (hf.ideal_comp (Ideal.mem_map_of_mem f (hx i hi))), hf.dpow_comp (x i) (hx i hi)]
 
-private theorem coeff_exp (hI : DividedPowers I) (n : ℕ) (x : A) :
-    PowerSeries.coeff n (hI.exp x) = hI.dpow n x := by
-  rw [DividedPowers.exp, PowerSeries.coeff_mk]
-
-private theorem coeff_rescale_map_exp (hI : DividedPowers I) (f : A →+* B)
-    (b : B) (n : ℕ) (x : A) :
-    PowerSeries.coeff n (PowerSeries.rescale b (PowerSeries.map f (hI.exp x))) =
-      b ^ n * f (hI.dpow n x) := by
-  rw [PowerSeries.coeff_rescale, PowerSeries.coeff_map, coeff_exp]
-
-private theorem constantCoeff_rescale_map_exp (hI : DividedPowers I) (f : A →+* B)
-    (b : B) {x : A} (hx : x ∈ I) :
-    PowerSeries.constantCoeff (PowerSeries.rescale b (PowerSeries.map f (hI.exp x))) = 1 := by
-  rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_rescale_map_exp, pow_zero, one_mul,
-    hI.dpow_zero hx, map_one]
-
 /-- `extensionCoeff hI f n s b x` is the `n`-th coefficient of the finite product of rescaled mapped
 exponentials `∏ i ∈ s, rescale (b i) (map f (hI.exp (x i)))`. -/
 theorem extensionCoeff_eq_coeff_prod {ι : Type*} [DecidableEq ι] (hI : DividedPowers I)
@@ -407,64 +372,6 @@ theorem extensionCoeff_eq_coeff_prod {ι : Type*} [DecidableEq ι] (hI : Divided
   rw [PowerSeries.coeff_prod_eq_sum_sym, extensionCoeff_def]
   refine sum_congr rfl fun k _ ↦ prod_congr rfl fun i _ ↦ ?_
   rw [coeff_rescale_map_exp]
-
-private theorem rescale_map_exp_zero_left (hI : DividedPowers I) (f : A →+* B)
-    {x : A} (hx : x ∈ I) :
-    PowerSeries.rescale (0 : B) (PowerSeries.map f (hI.exp x)) = 1 := by
-  ext n
-  rw [coeff_rescale_map_exp, PowerSeries.coeff_one]
-  cases n with
-  | zero => simp [hI.dpow_zero hx]
-  | succ n => simp
-
-private theorem rescale_map_exp_add_left (hI : DividedPowers I) (f : A →+* B)
-    (b₁ b₂ : B) {x : A} (hx : x ∈ I) :
-    PowerSeries.rescale (b₁ + b₂) (PowerSeries.map f (hI.exp x)) =
-      PowerSeries.rescale b₁ (PowerSeries.map f (hI.exp x)) *
-        PowerSeries.rescale b₂ (PowerSeries.map f (hI.exp x)) := by
-  ext n
-  rw [coeff_rescale_map_exp, PowerSeries.coeff_mul, add_pow_mul_map_dpow hI f b₁ b₂ hx n]
-  refine sum_congr rfl fun k _ ↦ ?_
-  rw [coeff_rescale_map_exp, coeff_rescale_map_exp]
-
-private theorem rescale_map_exp_sum_left {κ : Type*} (hI : DividedPowers I) (f : A →+* B)
-    (t : Finset κ) (c : κ → B) {x : A} (hx : x ∈ I) :
-    PowerSeries.rescale (∑ j ∈ t, c j) (PowerSeries.map f (hI.exp x)) =
-      ∏ j ∈ t, PowerSeries.rescale (c j) (PowerSeries.map f (hI.exp x)) := by
-  classical
-  induction t using Finset.induction with
-  | empty => simpa using rescale_map_exp_zero_left hI f hx
-  | insert j t hj ih =>
-    rw [sum_insert hj, prod_insert hj, rescale_map_exp_add_left hI f _ _ hx, ih]
-
-private theorem rescale_map_exp_zero_right (hI : DividedPowers I) (f : A →+* B) (b : B) :
-    PowerSeries.rescale b (PowerSeries.map f (hI.exp 0)) = 1 := by
-  ext n
-  rw [coeff_rescale_map_exp, PowerSeries.coeff_one]
-  cases n with
-  | zero => simp [hI.dpow_zero I.zero_mem]
-  | succ n => simp [hI.dpow_eval_zero (Nat.succ_ne_zero n)]
-
-private theorem rescale_map_exp_sum_right {ι : Type*} (hI : DividedPowers I) (f : A →+* B)
-    (s : Finset ι) (b : B) (x : ι → A) (hx : ∀ i ∈ s, x i ∈ I) :
-    PowerSeries.rescale b (PowerSeries.map f (hI.exp (∑ i ∈ s, x i))) =
-      ∏ i ∈ s, PowerSeries.rescale b (PowerSeries.map f (hI.exp (x i))) := by
-  classical
-  induction s using Finset.induction with
-  | empty => simpa using rescale_map_exp_zero_right hI f b
-  | insert i s hi ih =>
-    rw [sum_insert hi, prod_insert hi,
-      hI.exp_add (hx i (mem_insert_self i s))
-        (Submodule.sum_mem _ fun k hk ↦ hx k (mem_insert_of_mem hk)),
-      map_mul, map_mul, ih fun k hk ↦ hx k (mem_insert_of_mem hk)]
-
-private theorem rescale_map_exp_mul_map (hI : DividedPowers I) (f : A →+* B)
-    (a : A) (c : B) {x : A} (hx : x ∈ I) :
-    PowerSeries.rescale (f a * c) (PowerSeries.map f (hI.exp x)) =
-      PowerSeries.rescale c (PowerSeries.map f (hI.exp (a * x))) := by
-  ext n
-  simp only [coeff_rescale_map_exp, hI.dpow_mul hx, map_mul, map_pow, mul_pow]
-  ring
 
 /-- **Invariance under finite scalar substitution** (Stacks 23.4.2, tag 07H1): replacing
 `b i = ∑ j ∈ t, f (a i j) * c j` by `c j` and `x i` by `y j = ∑ i ∈ s, a i j * x i` leaves
@@ -479,17 +386,18 @@ theorem extensionCoeff_subst {ι κ : Type*} [DecidableEq ι] [DecidableEq κ]
   calc ∏ i ∈ s, PowerSeries.rescale (∑ j ∈ t, f (a i j) * c j) (PowerSeries.map f (hI.exp (x i)))
       = ∏ i ∈ s, ∏ j ∈ t, PowerSeries.rescale (f (a i j) * c j)
           (PowerSeries.map f (hI.exp (x i))) :=
-        prod_congr rfl fun i hi ↦ rescale_map_exp_sum_left hI f t _ (hx i hi)
+        prod_congr rfl fun i hi ↦ rescale_map_exp_sum hI f t _ (hx i hi)
     _ = ∏ i ∈ s, ∏ j ∈ t, PowerSeries.rescale (c j)
           (PowerSeries.map f (hI.exp (a i j * x i))) :=
-        prod_congr rfl fun i hi ↦ prod_congr rfl fun j _ ↦
-          rescale_map_exp_mul_map hI f (a i j) (c j) (hx i hi)
+        prod_congr rfl fun i hi ↦ prod_congr rfl fun j _ ↦ by
+          rw [← PowerSeries.rescale_rescale, PowerSeries.rescale_map,
+            rescale_exp hI (a i j) (hx i hi)]
     _ = ∏ j ∈ t, ∏ i ∈ s, PowerSeries.rescale (c j)
           (PowerSeries.map f (hI.exp (a i j * x i))) := prod_comm
     _ = ∏ j ∈ t, PowerSeries.rescale (c j)
           (PowerSeries.map f (hI.exp (∑ i ∈ s, a i j * x i))) :=
-        prod_congr rfl fun j _ ↦
-          (rescale_map_exp_sum_right hI f s (c j) _ fun i hi ↦ I.mul_mem_left _ (hx i hi)).symm
+        prod_congr rfl fun j _ ↦ by
+          rw [exp_sum hI s fun i hi ↦ I.mul_mem_left _ (hx i hi), map_prod, map_prod]
 
 end ExtensionCoeff
 
@@ -542,19 +450,11 @@ theorem extensionCoeff_eq_of_sum_eq [Module.Flat A B] {ι κ : Type*} [Decidable
     extensionCoeff_eq_univ_of_sum_smul hI n hx' (fun j ↦ a (.inr j)) c (fun j ↦ hm (.inr j)),
     hy_eq]
 
-private theorem exists_sum_mul_algebraMap_of_mem_map {B : Type*} [CommRing B] [Algebra A B]
-    {z : B} (hz : z ∈ I.map (algebraMap A B)) :
-    ∃ (t : Finset A), (t : Set A) ⊆ I ∧ ∃ (c : t → B),
-      (∑ i : t, c i * algebraMap A B i) = z := by
-  rw [Ideal.map, Submodule.mem_span_image_iff_exists_fun] at hz
-  obtain ⟨t, ht, c, rfl⟩ := hz
-  exact ⟨t, ht, c, by simp only [smul_eq_mul]⟩
-
 private noncomputable def flatDpow (hI : DividedPowers I) (B : Type*) [CommRing B] [Algebra A B]
     (n : ℕ) (z : B) : B :=
   open scoped Classical in
   if hz : z ∈ I.map (algebraMap A B) then
-    let h := exists_sum_mul_algebraMap_of_mem_map hz
+    let h := Ideal.exists_sum_mul_map_of_mem_map (algebraMap A B) hz
     extensionCoeff hI (algebraMap A B) n univ h.choose_spec.right.choose Subtype.val
   else 0
 
@@ -567,7 +467,7 @@ private theorem flatDpow_sum [Module.Flat A B] {ι : Type*} [DecidableEq ι] (hI
     Submodule.sum_mem _ fun i hi ↦
       (I.map (algebraMap A B)).mul_mem_left _ (Ideal.mem_map_of_mem _ (hx i hi))
   simp only [flatDpow, dite_eq_left hz]
-  set h := exists_sum_mul_algebraMap_of_mem_map hz
+  set h := Ideal.exists_sum_mul_map_of_mem_map (algebraMap A B) hz
   exact extensionCoeff_eq_of_sum_eq hI n
     (fun i _ ↦ h.choose_spec.left i.property) hx h.choose_spec.right.choose_spec
 
@@ -585,8 +485,8 @@ private theorem flatDpow_add [Module.Flat A B] (hI : DividedPowers I)
     flatDpow hI B n (z₁ + z₂) =
       ∑ k ∈ antidiagonal n, flatDpow hI B k.1 z₁ * flatDpow hI B k.2 z₂ := by
   classical
-  obtain ⟨t₁, ht₁, c₁, rfl⟩ := exists_sum_mul_algebraMap_of_mem_map hz₁
-  obtain ⟨t₂, ht₂, c₂, rfl⟩ := exists_sum_mul_algebraMap_of_mem_map hz₂
+  obtain ⟨t₁, ht₁, c₁, rfl⟩ := Ideal.exists_sum_mul_map_of_mem_map (algebraMap A B) hz₁
+  obtain ⟨t₂, ht₂, c₂, rfl⟩ := Ideal.exists_sum_mul_map_of_mem_map (algebraMap A B) hz₂
   have hsum : (∑ i : t₁, c₁ i * algebraMap A B i) + (∑ j : t₂, c₂ j * algebraMap A B j) =
       ∑ u : t₁ ⊕ t₂, Sum.elim c₁ c₂ u * algebraMap A B (Sum.elim Subtype.val Subtype.val u) := by
     rw [Fintype.sum_sum_type]
@@ -604,7 +504,7 @@ private theorem flatDpow_mul [Module.Flat A B] (hI : DividedPowers I)
     {n : ℕ} (a : B) {z : B} (hz : z ∈ I.map (algebraMap A B)) :
     flatDpow hI B n (a * z) = a ^ n * flatDpow hI B n z := by
   classical
-  obtain ⟨t, ht, c, rfl⟩ := exists_sum_mul_algebraMap_of_mem_map hz
+  obtain ⟨t, ht, c, rfl⟩ := Ideal.exists_sum_mul_map_of_mem_map (algebraMap A B) hz
   have hmul : a * ∑ i : t, c i * algebraMap A B i =
       ∑ i : t, (a * c i) * algebraMap A B i := by
     rw [mul_sum]
@@ -628,20 +528,22 @@ private noncomputable def flatAdditivePowers (hI : DividedPowers I) (B : Type*) 
     simp [flatDpow, hz]
   dpow_zero {z} hz := by
     classical
-    obtain ⟨t, ht, c, rfl⟩ := exists_sum_mul_algebraMap_of_mem_map hz
+    obtain ⟨t, ht, c, rfl⟩ := Ideal.exists_sum_mul_map_of_mem_map (algebraMap A B) hz
     rw [flatDpow_sum_eq_coeff_prod hI 0 c (fun i _ ↦ ht i.property),
       PowerSeries.coeff_zero_eq_constantCoeff_apply, map_prod]
-    exact prod_eq_one fun i _ ↦ constantCoeff_rescale_map_exp hI (algebraMap A B) _ (ht i.property)
+    exact prod_eq_one fun i _ ↦ by
+      simp [← PowerSeries.coeff_zero_eq_constantCoeff_apply, hI.dpow_zero (ht i.property)]
   dpow_one {z} hz := by
     classical
-    obtain ⟨t, ht, c, rfl⟩ := exists_sum_mul_algebraMap_of_mem_map hz
+    obtain ⟨t, ht, c, rfl⟩ := Ideal.exists_sum_mul_map_of_mem_map (algebraMap A B) hz
     rw [flatDpow_sum_eq_coeff_prod hI 1 c (fun i _ ↦ ht i.property), PowerSeries.coeff_one_prod]
     refine sum_congr rfl fun i _ ↦ ?_
-    rw [prod_eq_one fun j _ ↦ constantCoeff_rescale_map_exp hI (algebraMap A B) _ (ht j.property),
+    rw [prod_eq_one fun j _ ↦ by
+        simp [← PowerSeries.coeff_zero_eq_constantCoeff_apply, hI.dpow_zero (ht j.property)],
       mul_one, coeff_rescale_map_exp, pow_one, hI.dpow_one (ht i.property)]
   dpow_mem {n z} hn hz := by
     classical
-    obtain ⟨t, ht, c, rfl⟩ := exists_sum_mul_algebraMap_of_mem_map hz
+    obtain ⟨t, ht, c, rfl⟩ := Ideal.exists_sum_mul_map_of_mem_map (algebraMap A B) hz
     rw [flatDpow_sum hI n c (fun i _ ↦ ht i.property)]
     exact extensionCoeff_mem hI (algebraMap A B) hn c (fun i _ ↦ ht i.property)
   dpow_add {n z₁ z₂} hz₁ hz₂ := flatDpow_add hI hz₁ hz₂
