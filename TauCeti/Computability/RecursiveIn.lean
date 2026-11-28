@@ -32,11 +32,12 @@ statement on codes `Nat.pair a b` of pairs. Total oracle-computable functions ar
 composition, pairing, primitive recursion, forming finite initial segments of a sequence, and
 total unbounded search (`ComputableIn.find`), derived from partial Boolean search
 (`RecursiveIn.rfind`); unbounded option search over a binary oracle-computable sequence
-(`RecursiveIn.rfindOpt`) is recursive in the same oracle. Empty and constant oracle sets reduce
-`RecursiveIn` and `ComputableIn` to `Partrec` and `Computable`.
+(`RecursiveIn.rfindOpt`) is recursive in the same oracle, and partial oracle-recursive functions are
+closed under precomposition with total oracle-computable functions (`RecursiveIn.comp`). Empty and
+constant oracle sets reduce `RecursiveIn` and `ComputableIn` to `Partrec` and `Computable`.
 These closure proofs adapt Mathlib's `Computable.comp`, `Computable.pair`, `Computable.nat_rec`,
-`Partrec.rfind`, and `Partrec.rfindOpt` in `Mathlib.Computability.Partrec`, and `Computable.find`
-in `Mathlib.Computability.RE`, to `Nat.RecursiveIn`.
+`Partrec.comp`, `Partrec.rfind`, and `Partrec.rfindOpt` in `Mathlib.Computability.Partrec`, and
+`Computable.find` in `Mathlib.Computability.RE`, to `Nat.RecursiveIn`.
 -/
 
 public section
@@ -198,6 +199,14 @@ end ComputableIn
 namespace RecursiveIn
 
 open Encodable
+
+/-- Precomposition of an oracle-recursive partial function with an oracle-computable total
+function. This is the oracle-relative form of `Partrec.comp`. -/
+theorem comp {α β σ : Type*} [Primcodable α] [Primcodable β] [Primcodable σ]
+    {O : Set (ℕ →. ℕ)} {f : β →. σ} {g : α → β} (hf : RecursiveIn O f) (hg : ComputableIn O g) :
+    RecursiveIn O fun a => f (g a) :=
+  (Nat.RecursiveIn.comp hf hg).of_eq fun n => by
+    cases decode (α := α) n <;> simp [Encodable.encodek]
 
 /-- Unbounded search over an oracle-recursive partial Boolean relation. -/
 theorem rfind {α : Type*} [Primcodable α] {O : Set (ℕ →. ℕ)} {p : α → ℕ →. Bool}

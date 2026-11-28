@@ -14,6 +14,9 @@ For `m ≤ n`, the suffix `l.drop m` splits at the position `n` of `l` into the 
 `(l.take n).drop m` of the entries `m, …, n - 1` and the suffix `l.drop n`. This is
 `List.drop_take_append_drop` with the window written as a suffix of a prefix.
 
+Mapping over the prefix `l.take d` while preserving `l.drop d` keeps the length `l.length`
+(`List.length_map_take_append_drop`).
+
 For every function `f` from lists to entries and every length `n` there is a list of length `n`
 whose entries are the values of `f` at the lists of the earlier entries
 (`List.exists_length_eq_forall_getElem_eq`). Given an order on the entries, a property that holds
@@ -38,6 +41,13 @@ theorem drop_take_append_drop_of_le (l : List α) {m n : ℕ} (h : m ≤ n) :
     (l.take n).drop m ++ l.drop n = l.drop m := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
   simp [drop_take]
+
+/-- Mapping over the prefix `l.take d` while keeping the remaining suffix `l.drop d` preserves
+the length of `l`. -/
+theorem length_map_take_append_drop (f : α → α) (d : ℕ) (l : List α) :
+    ((l.take d).map f ++ l.drop d).length = l.length := by
+  simp only [length_append, length_map, length_take, length_drop]
+  omega
 
 /-- For every function `f` from lists to entries and every length `n` there is a list of length
 `n` in which each entry is the value of `f` at the list of the earlier entries. -/
