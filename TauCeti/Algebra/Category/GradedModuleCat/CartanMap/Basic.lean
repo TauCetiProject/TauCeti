@@ -579,6 +579,41 @@ theorem gradedFiniteProjectiveModules_directSumObj
   infer_instance
 
 omit A in
+/-- In a full subcategory closed under extensions, internal shifts, and finite degreewise direct
+sums, the class of a finite degreewise direct sum in graded `K₀` is the sum of the classes of its
+summands. -/
+private theorem laurentK0_of_directSumObj_aux
+    {A : Type (max uJ v)} [Ring A] [Algebra k A] {𝒜 : ℤ → Submodule k A}
+    {P : ObjectProperty (GradedModuleCat.{max uJ v} 𝒜)}
+    [ObjectProperty.EssentiallySmall.{max uJ v} P]
+    [P.ContainsZero] [P.IsClosedUnderBinaryProducts]
+    (hPext : (GradedExactStructure.abelian (GradedModuleCat.{max uJ v} 𝒜)
+      (GradedModuleCat.shift 𝒜)).toExactStructure.IsExtensionClosed P)
+    (hPshift : P.inverseImage (GradedExactStructure.abelian (GradedModuleCat.{max uJ v} 𝒜)
+      (GradedModuleCat.shift 𝒜)).shift.functor = P)
+    (hPsum : ∀ {J : Type uJ} [Finite J] (M : J → GradedModuleCat.{max uJ v} 𝒜),
+      (∀ j, P (M j)) → P (GradedModuleCat.directSumObj M))
+    {J : Type uJ} [Fintype J] (M : J → GradedModuleCat.{max uJ v} 𝒜)
+    (hM : ∀ j, P (M j)) :
+    LaurentK0.of.{max uJ v}
+        ((GradedExactStructure.abelian (GradedModuleCat.{max uJ v} 𝒜)
+          (GradedModuleCat.shift 𝒜)).fullSubcategory P hPext hPshift)
+        ⟨GradedModuleCat.directSumObj M, hPsum M hM⟩ =
+      ∑ j : J, LaurentK0.of.{max uJ v}
+        ((GradedExactStructure.abelian (GradedModuleCat.{max uJ v} 𝒜)
+          (GradedModuleCat.shift 𝒜)).fullSubcategory P hPext hPshift)
+        ⟨M j, hM j⟩ := by
+  let _ := HasBiproduct.of_hasCoproduct M
+  let _ : P.IsClosedUnderIsomorphisms := ObjectProperty.isClosedUnderIsomorphisms_of_containsZero P
+  have e : GradedModuleCat.directSumObj M ≅ ⨁ M :=
+    (GradedModuleCat.coproductCofanIsColimit M).coconePointUniqueUpToIso (biproduct.isColimit M)
+  have hsum : P (⨁ M) := P.prop_of_iso e (hPsum M hM)
+  rw [LaurentK0.of_congr.{max uJ v} _
+      (ObjectProperty.isoMk P e :
+        (⟨GradedModuleCat.directSumObj M, hPsum M hM⟩ : P.FullSubcategory) ≅ ⟨⨁ M, hsum⟩)]
+  exact LaurentK0.of_biproduct_fullSubcategory.{max uJ v} hPext hPshift M hM hsum
+
+omit A in
 /-- **`[⨁ Mⱼ] = ∑ [Mⱼ]`** in the graded Grothendieck group of finite graded modules, for any
 finite degreewise direct sum. -/
 theorem laurentK0_of_directSumObj
@@ -587,19 +622,10 @@ theorem laurentK0_of_directSumObj
     (hM : ∀ j, gradedFiniteModules 𝒜 (M j)) :
     LaurentK0.of.{max uJ v} (gradedFiniteModulesExactStructure 𝒜)
         ⟨GradedModuleCat.directSumObj M, gradedFiniteModules_directSumObj M hM⟩ =
-      ∑ j : J, LaurentK0.of.{max uJ v} (gradedFiniteModulesExactStructure 𝒜) ⟨M j, hM j⟩ := by
-  let _ := HasBiproduct.of_hasCoproduct M
-  have e : GradedModuleCat.directSumObj M ≅ ⨁ M :=
-    (GradedModuleCat.coproductCofanIsColimit M).coconePointUniqueUpToIso (biproduct.isColimit M)
-  have hsum : gradedFiniteModules 𝒜 (⨁ M) :=
-    (gradedFiniteModules 𝒜).prop_of_iso e (gradedFiniteModules_directSumObj M hM)
-  rw [LaurentK0.of_congr.{max uJ v} (gradedFiniteModulesExactStructure 𝒜)
-      (ObjectProperty.isoMk (gradedFiniteModules 𝒜) e :
-        (⟨GradedModuleCat.directSumObj M, gradedFiniteModules_directSumObj M hM⟩ :
-          (gradedFiniteModules 𝒜).FullSubcategory) ≅ ⟨⨁ M, hsum⟩)]
-  exact LaurentK0.of_biproduct_fullSubcategory.{max uJ v}
-    isExtensionClosed_gradedFiniteModules_gradedAbelian
-    gradedFiniteModules_gradedAbelian_shift M hM hsum
+      ∑ j : J, LaurentK0.of.{max uJ v} (gradedFiniteModulesExactStructure 𝒜) ⟨M j, hM j⟩ :=
+  laurentK0_of_directSumObj_aux isExtensionClosed_gradedFiniteModules_gradedAbelian
+    gradedFiniteModules_gradedAbelian_shift (fun M hM => gradedFiniteModules_directSumObj M hM) M
+    hM
 
 omit A in
 /-- **`[⨁ Pⱼ] = ∑ [Pⱼ]`** in the Laurent Grothendieck group of finite graded projectives, for any
@@ -611,20 +637,10 @@ theorem laurentK0_projective_of_directSumObj
     LaurentK0.of.{max uJ v} (gradedFiniteProjectiveModulesExactStructure 𝒜)
         ⟨GradedModuleCat.directSumObj M, gradedFiniteProjectiveModules_directSumObj M hM⟩ =
       ∑ j : J, LaurentK0.of.{max uJ v} (gradedFiniteProjectiveModulesExactStructure 𝒜)
-        ⟨M j, hM j⟩ := by
-  let _ := HasBiproduct.of_hasCoproduct M
-  have e : GradedModuleCat.directSumObj M ≅ ⨁ M :=
-    (GradedModuleCat.coproductCofanIsColimit M).coconePointUniqueUpToIso (biproduct.isColimit M)
-  have hsum : gradedFiniteProjectiveModules 𝒜 (⨁ M) :=
-    (gradedFiniteProjectiveModules 𝒜).prop_of_iso e
-      (gradedFiniteProjectiveModules_directSumObj M hM)
-  rw [LaurentK0.of_congr.{max uJ v} (gradedFiniteProjectiveModulesExactStructure 𝒜)
-      (ObjectProperty.isoMk (gradedFiniteProjectiveModules 𝒜) e :
-        (⟨GradedModuleCat.directSumObj M, gradedFiniteProjectiveModules_directSumObj M hM⟩ :
-          (gradedFiniteProjectiveModules 𝒜).FullSubcategory) ≅ ⟨⨁ M, hsum⟩)]
-  exact LaurentK0.of_biproduct_fullSubcategory.{max uJ v}
-    isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian
-    gradedFiniteProjectiveModules_gradedAbelian_shift M hM hsum
+        ⟨M j, hM j⟩ :=
+  laurentK0_of_directSumObj_aux isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian
+    gradedFiniteProjectiveModules_gradedAbelian_shift
+    (fun M hM => gradedFiniteProjectiveModules_directSumObj M hM) M hM
 
 end DirectSum
 

@@ -200,11 +200,12 @@ theorem of_biproduct_fullSubcategory {C : Type u} [Category.{v} C] [Preadditive 
     {J : Type*} [Fintype J] (f : J → C) [HasBiproduct f] (hf : ∀ j, R (f j)) (hRf : R (⨁ f)) :
     of.{w} (E.fullSubcategory R hR hRshift) ⟨⨁ f, hRf⟩ =
       ∑ j, of.{w} (E.fullSubcategory R hR hRshift) ⟨f j, hf j⟩ := by
-  have := hasFiniteBiproducts_of_hasBinaryBiproducts (C := R.FullSubcategory)
-  let g : J → R.FullSubcategory := fun j => ⟨f j, hf j⟩
-  have e : (⟨⨁ f, hRf⟩ : R.FullSubcategory) ≅ ⨁ g :=
-    R.fullyFaithfulι.preimageIso (R.ι.mapBiproduct g).symm
-  rw [of_congr.{w} _ e, of_biproduct.{w}]
+  rw [← ofExactK0_exactK0_of,
+    ← ExactK0.ofLE_of (E := E.toExactStructure.fullSubcategory R hR)
+      (E'' := (E.fullSubcategory R hR hRshift).toExactStructure)
+      (fun _ hS => by rw [GradedExactStructure.fullSubcategory_toExactStructure]; exact hS),
+    ExactK0.of_biproduct_fullSubcategory hR f hf hRf, map_sum, map_sum]
+  simp_rw [ExactK0.ofLE_of, ofExactK0_exactK0_of]
 
 end LaurentK0
 
