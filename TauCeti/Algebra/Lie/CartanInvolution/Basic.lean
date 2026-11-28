@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.CartanInvolution.Decomposition
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
+public import TauCeti.Algebra.Lie.CartanInvolution.Decomposition
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.Algebra.Lie.InvariantForm.Positive
 import TauCeti.Algebra.Lie.Killing.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Basic
+import TauCeti.Logic.Equiv.Basic
 
 /-!
 # Cartan involutions
@@ -26,9 +27,10 @@ skew-adjoint for `x ∈ 𝔨` and self-adjoint for `x ∈ 𝔭` (see
 `TauCeti.Algebra.Lie.CartanInvolution.Decomposition`). This file adds the sign of the Killing
 form: it is negative definite on `𝔨` and positive definite on `𝔭`. Consequently the Killing form
 of `L` is nondegenerate, so a Lie algebra with a Cartan involution is semisimple; `𝔭` is the
-Killing-orthogonal complement of `𝔨`, so a Cartan involution is determined by `𝔨`; and `𝔨` carries
-the negative definite invariant form `B|_𝔨`, so that `𝔨` is the direct sum of its centre and its
-derived algebra, the latter semisimple with negative definite Killing form.
+Killing-orthogonal complement of `𝔨`, so a Cartan involution is determined by `𝔨`; and `𝔨`
+carries the negative definite invariant form `B|_𝔨`, so that `𝔨` is reductive and is the direct
+sum of its centre and its derived algebra, the latter semisimple with negative definite Killing
+form.
 
 ## Main definitions
 
@@ -55,10 +57,11 @@ derived algebra, the latter semisimple with negative definite Killing form.
 * `LieEquiv.IsCartanInvolution.conj`: the transport `e ∘ θ ∘ e⁻¹` of a Cartan involution along an
   isomorphism `e` is a Cartan involution.
 * `LieEquiv.IsCartanInvolution.isCompl_center_derivedSeries_fixedSubalgebra`,
+  `LieEquiv.IsCartanInvolution.hasCentralRadical_fixedSubalgebra`,
   `LieEquiv.IsCartanInvolution.isSemisimple_derivedSeries_fixedSubalgebra`,
-  `LieEquiv.IsCartanInvolution.killingForm_derivedSeries_fixedSubalgebra_self_neg`: `𝔨` is the
-  direct sum of its centre and its derived algebra, which is semisimple with negative definite
-  Killing form.
+  `LieEquiv.IsCartanInvolution.killingForm_derivedSeries_fixedSubalgebra_self_neg`: `𝔨` is
+  reductive and splits as the direct sum of its centre and its derived algebra, which is
+  semisimple with negative definite Killing form.
 
 ## References
 
@@ -112,6 +115,31 @@ theorem isCartanInvolution_iff {θ : L ≃ₗ⁅K⁆ L} :
   · rw [LinearMap.BilinMap.toQuadraticMap_apply, twistedKillingForm_apply, neg_pos]
     exact h.2 x hx
 
+omit [IsStrictOrderedRing K] in
+/-- Transport of `IsCartanInvolution` along an intertwining Lie equivalence. -/
+theorem isCartanInvolution_iff_of_intertwine {L' : Type*} [LieRing L'] [LieAlgebra K L']
+    (e : L ≃ₗ⁅K⁆ L') {θ : L ≃ₗ⁅K⁆ L} {θ' : L' ≃ₗ⁅K⁆ L'} (h : ∀ x, θ' (e x) = e (θ x)) :
+    θ'.IsCartanInvolution ↔ θ.IsCartanInvolution := by
+  refine ⟨fun hθ' ↦ ⟨(e.toLinearEquiv.toEquiv.involutive_iff_of_intertwine h).mp hθ'.involutive,
+      fun x hx ↦ ?_⟩,
+    fun hθ ↦ ⟨(e.toLinearEquiv.toEquiv.involutive_iff_of_intertwine h).mpr hθ.involutive,
+      fun y hy ↦ ?_⟩⟩
+  · rw [LinearMap.BilinMap.toQuadraticMap_apply,
+      ← twistedKillingForm_map_map_of_intertwine e h x x]
+    exact hθ'.posDef_twistedKillingForm (e x) (by simpa using hx)
+  · obtain ⟨x, rfl⟩ := EquivLike.surjective e y
+    rw [LinearMap.BilinMap.toQuadraticMap_apply,
+      twistedKillingForm_map_map_of_intertwine e h x x]
+    exact hθ.posDef_twistedKillingForm x (fun hx0 ↦ hy (by rw [hx0, map_zero]))
+
+omit [IsStrictOrderedRing K] in
+/-- Conjugating a Lie automorphism by a Lie equivalence preserves the Cartan-involution
+property. -/
+theorem isCartanInvolution_conj {L' : Type*} [LieRing L'] [LieAlgebra K L']
+    (e : L ≃ₗ⁅K⁆ L') (θ : L ≃ₗ⁅K⁆ L) :
+    (e.conj θ).IsCartanInvolution ↔ θ.IsCartanInvolution :=
+  isCartanInvolution_iff_of_intertwine e fun x ↦ by simp
+
 namespace IsCartanInvolution
 
 variable {θ : L ≃ₗ⁅K⁆ L}
@@ -158,26 +186,6 @@ theorem posDef_killingForm_restrict (hθ : θ.IsCartanInvolution) {𝔞 : Submod
     (h𝔞 : 𝔞 ≤ θ.cartanP) : ((killingForm K L).restrict 𝔞).toQuadraticMap.PosDef :=
   (LinearMap.BilinForm.posDef_toQuadraticMap_iff _).mpr (hθ.killingForm_restrict_pos h𝔞)
 
-/-- A Lie algebra with a Cartan involution has nondegenerate Killing form. -/
-theorem isKilling (hθ : θ.IsCartanInvolution) : IsKilling K L := by
-  refine ⟨(LieSubmodule.toSubmodule_eq_bot _).mp <|
-    (LieIdeal.coe_killingCompl_top K L).trans (eq_bot_iff.mpr fun x hx ↦ ?_)⟩
-  by_contra hx₀
-  have := hθ.killingForm_apply_apply_neg hx₀
-  rw [LinearMap.mem_ker.mp hx, LinearMap.zero_apply] at this
-  exact this.false
-
-/-- A Lie algebra with a Cartan involution is finite-dimensional, since its Killing form is
-nondegenerate. -/
-theorem finiteDimensional (hθ : θ.IsCartanInvolution) : FiniteDimensional K L :=
-  have := hθ.isKilling
-  TauCeti.finite_of_isKilling
-
-/-- The Killing form restricted to a subspace of `𝔭` is nondegenerate. -/
-theorem nondegenerate_killingForm_restrict (hθ : θ.IsCartanInvolution) {𝔞 : Submodule K L}
-    (h𝔞 : 𝔞 ≤ θ.cartanP) : ((killingForm K L).restrict 𝔞).Nondegenerate :=
-  LinearMap.BilinForm.nondegenerate_of_anisotropic _ (hθ.posDef_killingForm_restrict h𝔞).anisotropic
-
 omit [IsStrictOrderedRing K] in
 /-- The twisted Killing form of a Cartan involution is symmetric. -/
 theorem isSymm_twistedKillingForm (hθ : θ.IsCartanInvolution) : θ.twistedKillingForm.IsSymm :=
@@ -190,12 +198,42 @@ theorem nondegenerate_twistedKillingForm (hθ : θ.IsCartanInvolution) :
     θ.twistedKillingForm.Nondegenerate :=
   θ.twistedKillingForm.nondegenerate_of_anisotropic hθ.posDef_twistedKillingForm.anisotropic
 
+omit [IsStrictOrderedRing K] in
+/-- A Lie algebra with a Cartan involution has nondegenerate Killing form. -/
+theorem isKilling (hθ : θ.IsCartanInvolution) : IsKilling K L :=
+  (TauCeti.isKilling_iff_killingForm_nondegenerate K L).mpr
+    ⟨fun x hx ↦ hθ.nondegenerate_twistedKillingForm.1 x fun y ↦ by
+      rw [twistedKillingForm_apply, hx (θ y), neg_zero],
+    fun y hy ↦ by
+      have hsymm : θ.symm y = 0 := hθ.nondegenerate_twistedKillingForm.2 (θ.symm y) fun x ↦ by
+        rw [twistedKillingForm_apply, apply_symm_apply, hy x, neg_zero]
+      exact (θ.symm_apply_eq.mp hsymm).trans (map_zero θ)⟩
+
+omit [IsStrictOrderedRing K] in
+/-- A Lie algebra with a Cartan involution is finite-dimensional, since its Killing form is
+nondegenerate. -/
+theorem finiteDimensional (hθ : θ.IsCartanInvolution) : FiniteDimensional K L :=
+  have := hθ.isKilling
+  TauCeti.finite_of_isKilling
+
+/-- The Killing form restricted to a subspace of `𝔭` is nondegenerate. -/
+theorem nondegenerate_killingForm_restrict (hθ : θ.IsCartanInvolution) {𝔞 : Submodule K L}
+    (h𝔞 : 𝔞 ≤ θ.cartanP) : ((killingForm K L).restrict 𝔞).Nondegenerate :=
+  LinearMap.BilinForm.nondegenerate_of_anisotropic _ (hθ.posDef_killingForm_restrict h𝔞).anisotropic
+
+omit [IsStrictOrderedRing K] in
 /-- A Lie algebra with a Cartan involution is semisimple. -/
 theorem isSemisimple (hθ : θ.IsCartanInvolution) : IsSemisimple K L :=
   have := hθ.isKilling
   have := hθ.finiteDimensional
   inferInstance
 
+/-- The Cartan decomposition `L = 𝔨 ⊕ 𝔭` for a Cartan involution. -/
+theorem isCompl_fixedSubalgebra_cartanP (hθ : θ.IsCartanInvolution) :
+    IsCompl θ.toLieHom.fixedSubalgebra.toSubmodule θ.cartanP :=
+  θ.isCompl_fixedSubalgebra_cartanP two_ne_zero.isUnit hθ.involutive
+
+omit [IsStrictOrderedRing K] in
 /-- A nontrivial abelian Lie algebra has no Cartan involution: its Killing form vanishes. -/
 theorem not_isLieAbelian [Nontrivial L] (hθ : θ.IsCartanInvolution) : ¬ IsLieAbelian L :=
   fun _ ↦
@@ -207,8 +245,7 @@ fixed subalgebra `𝔨`. -/
 theorem orthogonal_fixedSubalgebra_eq_cartanP (hθ : θ.IsCartanInvolution) :
     (killingForm K L).orthogonal θ.toLieHom.fixedSubalgebra.toSubmodule = θ.cartanP := by
   refine le_antisymm (fun x hx ↦ ?_) fun x hx ↦ ?_
-  · have hsup := (θ.isCompl_fixedSubalgebra_cartanP two_ne_zero.isUnit
-      hθ.involutive).sup_eq_top
+  · have hsup := hθ.isCompl_fixedSubalgebra_cartanP.sup_eq_top
     obtain ⟨k, hk, p, hp, rfl⟩ := Submodule.mem_sup.mp (hsup ▸ Submodule.mem_top (x := x))
     have hk' := (LieSubalgebra.mem_toSubmodule _).mp hk
     have hkk : killingForm K L k k = 0 := by
@@ -229,8 +266,7 @@ theorem eq_of_fixedSubalgebra_eq {θ' : L ≃ₗ⁅K⁆ L} (hθ : θ.IsCartanInv
     (h : θ.toLieHom.fixedSubalgebra = θ'.toLieHom.fixedSubalgebra) : θ = θ' := by
   have hp : θ.cartanP = θ'.cartanP := by
     rw [← hθ.orthogonal_fixedSubalgebra_eq_cartanP, ← hθ'.orthogonal_fixedSubalgebra_eq_cartanP, h]
-  exact LinearMap.ext_on_codisjoint
-    (θ.isCompl_fixedSubalgebra_cartanP two_ne_zero.isUnit hθ.involutive).codisjoint
+  exact LinearMap.ext_on_codisjoint hθ.isCompl_fixedSubalgebra_cartanP.codisjoint
     (fun k hk ↦ (LieHom.mem_fixedSubalgebra.mp ((LieSubalgebra.mem_toSubmodule _).mp hk)).trans
       (LieHom.mem_fixedSubalgebra.mp (h ▸ (LieSubalgebra.mem_toSubmodule _).mp hk)).symm)
     fun p hp' ↦ (mem_cartanP.mp hp').trans (mem_cartanP.mp (hp ▸ hp')).symm
@@ -248,13 +284,12 @@ theorem cartanP_eq_bot_iff (hθ : θ.IsCartanInvolution) :
   · by_contra hx₀
     exact (hθ.killingForm_apply_self_pos_of_mem_cartanP hx hx₀).not_gt (h x hx₀)
 
+omit [IsStrictOrderedRing K] in
 variable {L' : Type*} [LieRing L'] [LieAlgebra K L'] in
 /-- The transport `e ∘ θ ∘ e⁻¹` of a Cartan involution along an isomorphism `e` is a Cartan
 involution. -/
-theorem conj (hθ : θ.IsCartanInvolution) (e : L ≃ₗ⁅K⁆ L') : (e.conj θ).IsCartanInvolution := by
-  refine isCartanInvolution_iff.mpr ⟨involutive_conj hθ.involutive, fun x hx ↦ ?_⟩
-  rw [conj_apply, ← e.apply_symm_apply x, killingForm_of_equiv_apply, e.symm_apply_apply]
-  exact hθ.killingForm_apply_apply_neg (by simpa using hx)
+theorem conj (hθ : θ.IsCartanInvolution) (e : L ≃ₗ⁅K⁆ L') : (e.conj θ).IsCartanInvolution :=
+  (isCartanInvolution_conj e θ).mpr hθ
 
 /-! ### The fixed subalgebra `𝔨` -/
 
@@ -279,6 +314,14 @@ theorem isSemisimple_derivedSeries_fixedSubalgebra (hθ : θ.IsCartanInvolution)
     IsSemisimple K (derivedSeries K θ.toLieHom.fixedSubalgebra 1) :=
   have := hθ.finiteDimensional
   (negKillingFormFixed θ).isSemisimple_derivedSeries_one_of_anisotropic
+    isSymm_negKillingFormFixed.isRefl (posDef_negKillingFormFixed hθ).anisotropic
+    lieInvariant_negKillingFormFixed
+
+/-- The fixed subalgebra `𝔨` of a Cartan involution is reductive (`HasCentralRadical`). -/
+theorem hasCentralRadical_fixedSubalgebra (hθ : θ.IsCartanInvolution) :
+    LieAlgebra.HasCentralRadical K θ.toLieHom.fixedSubalgebra :=
+  have := hθ.finiteDimensional
+  (negKillingFormFixed θ).hasCentralRadical_of_anisotropic
     isSymm_negKillingFormFixed.isRefl (posDef_negKillingFormFixed hθ).anisotropic
     lieInvariant_negKillingFormFixed
 

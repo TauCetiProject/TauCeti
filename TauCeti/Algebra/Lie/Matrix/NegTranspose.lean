@@ -93,4 +93,17 @@ theorem restrictNegTranspose_symm :
   LieEquiv.ext fun X ↦ (L.restrictNegTranspose hL).symm_apply_eq.mpr
     (L.restrictNegTranspose_involutive hL X).symm
 
+/-- Fixed vectors of `restrictNegTranspose` are the skew-symmetric matrices in `L`. -/
+@[simp]
+theorem restrictNegTranspose_eq_self_iff (X : L) :
+    L.restrictNegTranspose hL X = X ↔ (X : Matrix n n R)ᵀ = -(X : Matrix n n R) := by
+  rw [← Subtype.coe_inj, coe_restrictNegTranspose_apply, neg_eq_iff_eq_neg]
+
+/-- Negated vectors of `restrictNegTranspose` are the symmetric matrices in `L`. -/
+@[simp]
+theorem restrictNegTranspose_eq_neg_iff (X : L) :
+    L.restrictNegTranspose hL X = -X ↔ (X : Matrix n n R)ᵀ = (X : Matrix n n R) := by
+  rw [← Subtype.coe_inj, coe_restrictNegTranspose_apply, NegMemClass.coe_neg]
+  exact neg_inj
+
 end LieSubalgebra

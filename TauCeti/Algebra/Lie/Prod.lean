@@ -13,8 +13,10 @@ public import Mathlib.LinearAlgebra.Prod
 public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Hom
 
+import Mathlib.LinearAlgebra.Projection
+
 /-!
-# Products of Lie modules
+# Products of Lie modules and Lie algebras
 
 Mathlib gives the product of two Lie *algebras* its Lie ring structure
 (`Mathlib/Algebra/Lie/Prod.lean`) and the direct sum of a *family* of Lie modules its Lie module
@@ -28,6 +30,11 @@ direct sum `⨁ i, M i` of a family forces all the summands into one universe, w
 not. The first consumer is the uniqueness of the irreducible highest weight module of a given
 weight, which compares two such modules by cutting out the graph of an isomorphism inside their
 product.
+
+The file also packages product and direct-sum equivalences for Lie algebras: products of Lie
+algebra equivalences (`LieEquiv.prodCongr`), the identification `I × J ≃ₗ⁅R⁆ L` for complementary
+ideals (`LieIdeal.prodEquivOfIsCompl`), and combining automorphisms on complementary ideals
+(`LieEquiv.ofIsCompl`).
 
 ## Main definitions
 
@@ -45,6 +52,8 @@ product.
 * `LieIdeal.prodEquivOfIsCompl`: for complementary ideals `I` and `J` of a Lie algebra `L`,
   addition `I × J ≃ₗ⁅R⁆ L`; its inverse is natural for Lie maps preserving both ideals
   (`LieIdeal.prodEquivOfIsCompl_symm_map`).
+* `LieEquiv.prodCongr`: product of two Lie algebra equivalences.
+* `LieEquiv.ofIsCompl`: combine automorphisms of complementary ideals into an automorphism of `L`.
 -/
 
 public section
@@ -466,3 +475,62 @@ theorem prodEquivOfIsCompl_symm_map {I' J' : LieIdeal R L'} (h' : IsCompl I' J')
     LieHom.coe_restrictIdeal_apply, ← map_add, prodEquivOfIsCompl_symm_fst_add_snd]
 
 end LieIdeal
+
+namespace LieEquiv
+
+variable {R L L₁ L₂ L₃ L₄ : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+  [LieRing L₁] [LieAlgebra R L₁] [LieRing L₂] [LieAlgebra R L₂]
+  [LieRing L₃] [LieAlgebra R L₃] [LieRing L₄] [LieAlgebra R L₄]
+
+/-- The product of two Lie algebra equivalences. -/
+def prodCongr (e₁ : L₁ ≃ₗ⁅R⁆ L₂) (e₂ : L₃ ≃ₗ⁅R⁆ L₄) : (L₁ × L₃) ≃ₗ⁅R⁆ (L₂ × L₄) where
+  __ := e₁.toLinearEquiv.prodCongr e₂.toLinearEquiv
+  map_lie' {p q} := Prod.ext (e₁.map_lie p.1 q.1) (e₂.map_lie p.2 q.2)
+
+/-- `prodCongr` acts componentwise. -/
+@[simp]
+theorem prodCongr_apply (e₁ : L₁ ≃ₗ⁅R⁆ L₂) (e₂ : L₃ ≃ₗ⁅R⁆ L₄) (p : L₁ × L₃) :
+    e₁.prodCongr e₂ p = (e₁ p.1, e₂ p.2) :=
+  LinearEquiv.prodCongr_apply e₁.toLinearEquiv e₂.toLinearEquiv p
+
+/-- The inverse of `prodCongr` is the product of the inverses. -/
+@[simp]
+theorem prodCongr_symm (e₁ : L₁ ≃ₗ⁅R⁆ L₂) (e₂ : L₃ ≃ₗ⁅R⁆ L₄) :
+    (e₁.prodCongr e₂).symm = e₁.symm.prodCongr e₂.symm :=
+  LieEquiv.toLinearEquiv_injective (LinearEquiv.prodCongr_symm e₁.toLinearEquiv e₂.toLinearEquiv)
+
+/-- Combine automorphisms of two complementary ideals `I` and `J` into an automorphism of `L`. -/
+noncomputable def ofIsCompl {I J : LieIdeal R L} (h : IsCompl I J)
+    (θI : I ≃ₗ⁅R⁆ I) (θJ : J ≃ₗ⁅R⁆ J) : L ≃ₗ⁅R⁆ L :=
+  ((LieIdeal.prodEquivOfIsCompl I J h).symm.trans (θI.prodCongr θJ)).trans
+    (LieIdeal.prodEquivOfIsCompl I J h)
+
+/-- `ofIsCompl` acts as `θI` on `I`. -/
+@[simp]
+theorem ofIsCompl_apply_left {I J : LieIdeal R L} (h : IsCompl I J)
+    (θI : I ≃ₗ⁅R⁆ I) (θJ : J ≃ₗ⁅R⁆ J) (x : I) :
+    ofIsCompl h θI θJ (x : L) = θI x := by
+  simp [ofIsCompl]
+
+/-- `ofIsCompl` acts as `θJ` on `J`. -/
+@[simp]
+theorem ofIsCompl_apply_right {I J : LieIdeal R L} (h : IsCompl I J)
+    (θI : I ≃ₗ⁅R⁆ I) (θJ : J ≃ₗ⁅R⁆ J) (y : J) :
+    ofIsCompl h θI θJ (y : L) = θJ y := by
+  simp [ofIsCompl]
+
+/-- `ofIsCompl` is involutive if and only if both factors are involutive. -/
+theorem involutive_ofIsCompl_iff {I J : LieIdeal R L} (h : IsCompl I J)
+    (θI : I ≃ₗ⁅R⁆ I) (θJ : J ≃ₗ⁅R⁆ J) :
+    Function.Involutive (ofIsCompl h θI θJ) ↔
+      Function.Involutive θI ∧ Function.Involutive θJ := by
+  constructor
+  · intro hinv
+    refine ⟨fun x ↦ Subtype.ext ?_, fun y ↦ Subtype.ext ?_⟩
+    · simpa using hinv (x : L)
+    · simpa using hinv (y : L)
+  · rintro ⟨hI, hJ⟩ x
+    obtain ⟨⟨a, b⟩, rfl⟩ := (LieIdeal.prodEquivOfIsCompl I J h).surjective x
+    simp [map_add, hI a, hJ b]
+
+end LieEquiv

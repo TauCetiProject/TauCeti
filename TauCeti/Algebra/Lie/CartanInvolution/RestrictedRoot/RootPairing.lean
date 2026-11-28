@@ -67,6 +67,7 @@ variable {K L : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [LieRin
   [LieAlgebra K L] {θ : L ≃ₗ⁅K⁆ L} {𝔞 : Submodule K L}
   (hθ : θ.IsCartanInvolution) (h𝔞 : 𝔞 ≤ θ.cartanP)
 
+omit [IsStrictOrderedRing K] in
 include hθ in
 variable (𝔞) in
 /-- The restricted roots form a finite set. -/

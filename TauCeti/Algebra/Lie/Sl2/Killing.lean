@@ -12,6 +12,8 @@ public import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.Algebra.Lie.Sl2.DiagonalCartan
 public import TauCeti.Algebra.Lie.Weights.InvariantForm
 
+import TauCeti.Algebra.Lie.SpecialLinear.Killing
+
 /-!
 # The Killing form of `sl₂`
 
@@ -51,15 +53,8 @@ variable {R : Type*} [CommRing R]
 /-- **The Killing form of `sl₂`** is four times the trace form of the standard representation. -/
 theorem killingForm_slFinTwo_apply (x y : SpecialLinear.sl (Fin 2) R) :
     killingForm R (SpecialLinear.sl (Fin 2) R) x y = 4 * (x.val * y.val).trace := by
-  rw [killingForm, LieModule.traceForm_apply_apply,
-    LinearMap.trace_eq_matrix_trace R (Module.Basis.ofEquivFun (slFinTwoEquivFun R)),
-    Matrix.trace_fin_three]
-  simp only [LinearMap.toMatrix_apply, Module.Basis.ofEquivFun_repr_apply, LinearMap.comp_apply,
-    LieModule.toEnd_apply_apply, slFinTwoEquivFun_apply]
-  -- The trace is now a sum of three matrix entries of double brackets; expand them.
-  simp [Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two, Module.Basis.ofEquivFun,
-    LieRing.of_associative_ring_bracket, Matrix.vecMul, dotProduct]
-  ring
+  rw [LieAlgebra.SpecialLinear.killingForm_apply, Fintype.card_fin]
+  norm_num
 
 /-- The Killing form on the standard basis `(e, f, h)` of `sl₂`: `κ(e, f) = κ(f, e) = 4`,
 `κ(h, h) = 8`, and all other pairings vanish. -/

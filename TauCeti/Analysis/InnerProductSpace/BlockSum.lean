@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.InnerProductSpace.FanDominance
 public import TauCeti.Data.Set.Card
+import TauCeti.LinearAlgebra.Eigenspace.Transport
+import TauCeti.LinearAlgebra.End.Prod
 
 /-!
 # Unitary-orbit estimates for orthogonal block sums
@@ -72,24 +74,13 @@ blocks, so its dimension is the sum of their dimensions. -/
 theorem finrank_eigenspace_prodMap_withLpMap (T₁ : V₁ →ₗ[K] V₁) (T₂ : V₂ →ₗ[K] V₂) (μ : K) :
     finrank K (eigenspace ((T₁.prodMap T₂).withLpMap 2) μ) =
       finrank K (eigenspace T₁ μ) + finrank K (eigenspace T₂ μ) := by
-  have hmem {x : WithLp 2 (V₁ × V₂)} :
-      x ∈ eigenspace ((T₁.prodMap T₂).withLpMap 2) μ ↔
-        x.fst ∈ eigenspace T₁ μ ∧ x.snd ∈ eigenspace T₂ μ := by
-    simp only [mem_eigenspace_iff, coe_withLpMap]
-    constructor
-    · intro h
-      exact ⟨by simpa [WithLp.map, prodMap_apply] using congrArg WithLp.fst h,
-        by simpa [WithLp.map, prodMap_apply] using congrArg WithLp.snd h⟩
-    · rintro ⟨h₁, h₂⟩
-      simp [WithLp.map, WithLp.ext_iff, Prod.ext_iff, prodMap_apply, h₁, h₂]
-  let e : eigenspace ((T₁.prodMap T₂).withLpMap 2) μ ≃ₗ[K] eigenspace T₁ μ × eigenspace T₂ μ :=
-    { toFun x := (⟨x.val.fst, (hmem.mp x.property).1⟩, ⟨x.val.snd, (hmem.mp x.property).2⟩)
-      invFun y := ⟨WithLp.toLp 2 (y.1.val, y.2.val), hmem.mpr ⟨by simp, by simp⟩⟩
-      map_add' x y := rfl
-      map_smul' c x := rfl
-      left_inv x := Subtype.ext (WithLp.toLp_ofLp 2 x.val)
-      right_inv y := rfl }
-  rw [e.finrank_eq, finrank_prod]
+  let a := WithLp.linearEquiv 2 K (V₁ × V₂)
+  have hinter : ∀ x, a (((T₁.prodMap T₂).withLpMap 2) x) = (T₁.prodMap T₂) (a x) := fun _ ↦ rfl
+  have hmap : (eigenspace ((T₁.prodMap T₂).withLpMap 2) μ).map a.toLinearMap =
+      (eigenspace T₁ μ).prod (eigenspace T₂ μ) := by
+    rw [TauCeti.eigenspace_eq_comap_of_intertwine hinter μ, eigenspace_prodMap,
+      Submodule.map_comap_eq_of_surjective a.surjective]
+  rw [(a.ofSubmodules _ _ hmap).finrank_eq, (Submodule.prodEquiv _ _).finrank_eq, finrank_prod]
 
 end Field
 
