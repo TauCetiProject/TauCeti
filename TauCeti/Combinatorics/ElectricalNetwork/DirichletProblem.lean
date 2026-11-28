@@ -33,8 +33,7 @@ variable {V : Type*} [Fintype V]
 private noncomputable def dirichletSystem (N : ElectricalNetwork V) (B : Set V) :
     (V → ℝ) →ₗ[ℝ] (V → ℝ) := by
   classical
-  let ev : V → (V → ℝ) →ₗ[ℝ] ℝ := LinearMap.proj
-  exact LinearMap.pi fun x => if x ∈ B then ev x else ∑ y, N.cond x y • (ev y - ev x)
+  exact LinearMap.pi fun x => if x ∈ B then LinearMap.proj x else N.netInwardCurrent x
 
 variable (N : ElectricalNetwork V)
 
@@ -43,22 +42,19 @@ private theorem dirichletSystem_eq_indicator_iff (B : Set V) (f φ : V → ℝ) 
   classical
   have row (x : V) : dirichletSystem N B f x = B.indicator φ x ↔
       (x ∈ B → f x = φ x) ∧ (x ∉ B → N.HarmonicAt f x) := by
-    by_cases hx : x ∈ B <;> simp [dirichletSystem, hx, LinearMap.sum_apply, harmonicAt_def]
+    by_cases hx : x ∈ B <;> simp [dirichletSystem, hx, harmonicAt_iff_netInwardCurrent_eq_zero]
   simp [funext_iff, row, forall_and, Set.EqOn]
 
 /-- **The Dirichlet problem.** If every vertex can reach the boundary, any prescribed boundary
 values extend uniquely to a potential harmonic off the boundary. In particular this applies to
 every nonempty boundary in a connected network. -/
-theorem existsUnique_harmonicAt {B : Set V} (hB : ∀ v, ∃ b ∈ B, N.graph.Reachable v b)
+theorem existsUnique_harmonic_extension {B : Set V} (hB : ∀ v, ∃ b ∈ B, N.graph.Reachable v b)
     (φ : V → ℝ) : ∃! f : V → ℝ, Set.EqOn f φ B ∧ ∀ x ∉ B, N.HarmonicAt f x := by
   have hinj : Function.Injective (dirichletSystem N B) := by
     apply LinearMap.ker_eq_bot.mp
     refine LinearMap.ker_eq_bot'.mpr fun f hf => ?_
     obtain ⟨hb, hi⟩ := (dirichletSystem_eq_indicator_iff N B f 0).mp (by simpa using hf)
-    funext x
-    obtain ⟨b, hbB, hupper⟩ := N.exists_mem_le_of_harmonicAt hB hi x
-    obtain ⟨c, hcB, hlower⟩ := N.exists_mem_le_of_harmonicAt hB (fun v hv => (hi v hv).neg) x
-    exact le_antisymm (hupper.trans_eq (hb hbB)) (by simpa [hb hcB] using hlower)
+    exact N.eq_of_eqOn_of_harmonicAt hb hi (fun v _ => N.harmonicAt_const 0 v) hB
   have hbij : Function.Bijective (dirichletSystem N B) :=
     ⟨hinj, LinearMap.surjective_of_injective hinj⟩
   exact (existsUnique_congr (dirichletSystem_eq_indicator_iff N B · φ)).mp
