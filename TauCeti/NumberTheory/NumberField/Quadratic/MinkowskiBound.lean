@@ -70,8 +70,8 @@ theorem two_mul_classNumber_le :
       (⌊(4 / π) ^ nrComplexPlaces K * √|(discr K : ℝ)| / 2⌋₊ + 1) := by
   refine (Nat.mul_le_mul_left 2 (classNumber_le_card_idealsLE K (le_of_eq ?_))).trans
     (two_mul_card_idealsLE_le hK _)
-  rw [hK]
-  norm_num [Nat.factorial]
+  rw [minkowskiClassBound_def, minkowskiConstant_def, hK]
+  norm_num only [Nat.factorial, Nat.cast_ofNat]
   ring
 
 /-- `h ≤ B²` for `B = ⌊(4 / π) ^ r₂ √|D| / 2⌋₊`, since `2 h ≤ B (B + 1)` and `h ≥ 1`. -/

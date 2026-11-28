@@ -161,6 +161,8 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
   epimorphisms, homology and finite colimits.
 * `Rep.preservesEpimorphisms_invariantsFunctor_iff`: for a finite group, taking invariants
   preserves epimorphisms if and only if `#G` is a unit in `k`.
+* `Rep.exists_map_apply_eq_of_isColimit`: if the image in a filtered colimit of a vector is
+  fixed by finitely many group elements, so is its image at some later stage.
 * An instance saying that invariants of a finitely generated group, in particular of a finite
   group, preserve filtered colimits.
 * `CategoryTheory.Functor.mapRepresentation`: the representation `g ↦ F(σ g)` on `F(M)`.
@@ -869,18 +871,45 @@ theorem preservesEpimorphisms_invariantsFunctor_iff {k : Type u} {G : Type v} [C
 
 section Filtered
 
-variable {k : Type u} {G : Type v} [CommRing k] [Group G] [IsMulFG G]
+variable {k : Type u} {G : Type v} [CommRing k] [Group G]
+
+open Types.FilteredColimit in
+/-- **Finitely many symmetries of a filtered colimit hold at some stage.** If the image in a
+filtered colimit of a vector `v` is fixed by every element of a finite set `s`, then so is the
+image of `v` under some map out of its stage: each equation `g • v = v` holds at a later stage, and
+one stage serves all of them. -/
+theorem exists_map_apply_eq_of_isColimit {J : Type u} [SmallCategory J] [IsFiltered J]
+    {D : J ⥤ Rep.{u} k G} {c : Cocone D} (hc : IsColimit c) {i : J} (v : D.obj i) (s : Finset G)
+    (hs : ∀ g ∈ s, c.pt.ρ g ((c.ι.app i).hom v) = (c.ι.app i).hom v) :
+    ∃ (j : J) (f : i ⟶ j), ∀ g ∈ s, (D.obj j).ρ g ((D.map f).hom v) = (D.map f).hom v := by
+  classical
+  -- Filtered colimits of representations are computed on underlying sets, where they are
+  -- described elementwise.
+  let hT := isColimitOfPreserves (forget₂ (Rep.{u} k G) (ModuleCat.{u} k) ⋙
+    forget (ModuleCat.{u} k)) hc
+  -- For each `g ∈ s` the vectors `g • v` and `v` have the same image, so they agree at a later
+  -- stage, recorded as an object of the filtered category `Under i`.
+  have hg (g : s) : ∃ X : Under i, (D.map X.hom).hom ((D.obj i).ρ g v) = (D.map X.hom).hom v := by
+    have h : (c.ι.app i).hom ((D.obj i).ρ g v) = (c.ι.app i).hom v := by
+      rw [hom_comm_apply]
+      exact hs g g.property
+    obtain ⟨j, f, hf⟩ := (isColimit_eq_iff' hT _ _).1 h
+    exact ⟨Under.mk f, hf⟩
+  choose X hX using hg
+  obtain ⟨S, hS⟩ := IsFiltered.sup_objs_exists (Finset.univ.image X)
+  refine ⟨S.right, S.hom, fun g hg ↦ ?_⟩
+  obtain ⟨m⟩ := hS (Finset.mem_image_of_mem X (Finset.mem_univ ⟨g, hg⟩))
+  rw [← Under.w m, Functor.map_comp]
+  simp only [hom_comp, Representation.IntertwiningMap.comp_apply, ← hom_comm_apply, hX]
 
 open Types.FilteredColimit in
 /-- **Invariants of a finitely generated group commute with filtered colimits.** An invariant of
 the colimit comes from a vector at some stage. It is invariant as soon as it is fixed by a finite
-generating set `s`; each of the finitely many equations `g • v = v` for `g ∈ s` holds at a later
-stage, hence all of them at a common later stage. In particular this applies to finite groups, and
-no invertibility of `#G` is needed. -/
-instance : PreservesFilteredColimits (invariantsFunctor.{u} k G) where
+generating set `s`, and the finitely many equations `g • v = v` for `g ∈ s` hold at a common later
+stage. In particular this applies to finite groups, and no invertibility of `#G` is needed. -/
+instance [IsMulFG G] : PreservesFilteredColimits (invariantsFunctor.{u} k G) where
   preserves_filtered_colimits J _ _ := ⟨fun {D} ↦ ⟨fun {c} hc ↦ by
     obtain ⟨s, hs⟩ := Group.exists_of_isMulFG G
-    classical
     -- Filtered colimits of representations are computed on underlying sets, where they are
     -- described elementwise.
     let hT := isColimitOfPreserves (forget₂ (Rep.{u} k G) (ModuleCat.{u} k) ⋙
@@ -891,27 +920,14 @@ instance : PreservesFilteredColimits (invariantsFunctor.{u} k G) where
       -- The underlying function of a morphism of representations, after `forget₂` and `forget`,
       -- is its `hom` by definition.
       replace hv : (c.ι.app i).hom v = x := hv
-      -- For each generator `g` the vectors `g • v` and `v` have the same image `x`, so they agree
-      -- at a later stage, recorded as an object of the filtered category `Under i`.
-      have hg (g : s) : ∃ X : Under i,
-          (D.map X.hom).hom ((D.obj i).ρ g v) = (D.map X.hom).hom v := by
-        have h : (c.ι.app i).hom ((D.obj i).ρ g v) = (c.ι.app i).hom v := by
-          rw [hom_comm_apply, hv]
-          exact hx g
-        obtain ⟨j, f, hf⟩ := (isColimit_eq_iff' hT _ _).1 h
-        exact ⟨Under.mk f, hf⟩
-      choose X hX using hg
-      obtain ⟨S, hS⟩ := IsFiltered.sup_objs_exists (Finset.univ.image X)
-      refine ⟨S.right, ⟨(D.map S.hom).hom v,
-        (Representation.mem_invariants_iff_of_closure_eq_top _ hs _).2 fun g hg ↦ ?_⟩, ?_⟩
-      · obtain ⟨m⟩ := hS (Finset.mem_image_of_mem X (Finset.mem_univ ⟨g, hg⟩))
-        rw [← Under.w m, Functor.map_comp]
-        simp only [hom_comp, Representation.IntertwiningMap.comp_apply, ← hom_comm_apply, hX]
-      · -- The image of `D.map S.hom v` in the colimit is that of `v`, by naturality of `c`.
-        refine Subtype.ext (hv.symm.trans ?_)
-        rw [← c.w S.hom, hom_comp, Representation.IntertwiningMap.comp_apply]
-        simp only [Functor.mapCocone_ι_app, TypeCat.ofHom_apply]
-        rw [invariantsFunctor_map_hom_apply_coe]
+      obtain ⟨j, f, hf⟩ := exists_map_apply_eq_of_isColimit hc v s fun g _ ↦ hv ▸ hx g
+      refine ⟨j, ⟨(D.map f).hom v,
+        (Representation.mem_invariants_iff_of_closure_eq_top _ hs _).2 hf⟩, ?_⟩
+      -- The image of `D.map f v` in the colimit is that of `v`, by naturality of `c`.
+      refine Subtype.ext (hv.symm.trans ?_)
+      rw [← c.w f, hom_comp, Representation.IntertwiningMap.comp_apply]
+      simp only [Functor.mapCocone_ι_app, TypeCat.ofHom_apply]
+      rw [invariantsFunctor_map_hom_apply_coe]
     · intro i j xi xj h
       obtain ⟨l, f, g, hfg⟩ := (isColimit_eq_iff _ hT).1 (congrArg Subtype.val h)
       exact ⟨l, f, g, Subtype.ext hfg⟩⟩⟩

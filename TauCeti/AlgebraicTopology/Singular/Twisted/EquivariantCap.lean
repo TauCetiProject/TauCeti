@@ -78,6 +78,8 @@ cocycle `φ` is done in this file.
   complexes of representations gives a chain map `C(Q, Q₀; L_D) ⟶ C(Z; L_{D ⊗ k_χ})[n]`, which is
   a chain homotopy equivalence when the first one is a quasi-isomorphism
   (`TopPair.homotopyEquivalences_coinvariantsTwistedChainMap`).
+* `TopPair.coinvariantsTwistedChainMapHomotopy`: homotopic equivariant chain maps give homotopic
+  twisted chain maps.
 * `TopPair.twistedHomologyIsoTwistedHomologyOfQuasiIso`: a quasi-isomorphism
   `C(X, A; k) ⟶ (k_χ ⊗ C(Y; k))[n]` identifies `H_{q + n}(Q, Q₀; L_D)` with
   `H_q(Z; L_{D ⊗ k_χ})`.
@@ -177,6 +179,23 @@ theorem coinvariantsTwistedChainMap_def
             hY.coinvariantsTensorSingularChainsRepIsoTwisted k
               (D ⊗ Rep.of (Representation.ofLinearCharacter χ))).hom :=
   (rfl)
+
+/-- **Equivariantly homotopic chain maps induce homotopic twisted chain maps.** Under the
+hypotheses of `TopPair.coinvariantsTwistedChainMap`, a homotopy between chain maps
+`f f' : C(X, A; k) ⟶ (k_χ ⊗ C(Y; k))[n]` of complexes of representations gives a homotopy between
+the chain maps `C(Q, Q₀; L_D) ⟶ C(Z; L_{D ⊗ k_χ})[n]` they induce: the tensor coinvariants are an
+additive functor. -/
+def coinvariantsTwistedChainMapHomotopy
+    {f f' : haveI := hfst.toContinuousConstSMul
+      haveI := hsnd.toContinuousConstSMul
+      haveI := hY.toContinuousConstSMul
+      P'.singularChainsRep k G hP ⟶
+        (((tensorLeft (Rep.of (Representation.ofLinearCharacter χ))).mapHomologicalComplex _).obj
+          (TauCeti.singularChainsRep k Y G)).extend (ComplexShape.embeddingDownNatAdd n)}
+    (h : _root_.Homotopy f f') :
+    _root_.Homotopy (coinvariantsTwistedChainMap hfst hsnd hP hY χ D f)
+      (coinvariantsTwistedChainMap hfst hsnd hP hY χ D f') :=
+  ((((Rep.coinvariantsTensor k G).obj D).mapHomotopy h).compRight _).compLeft _
 
 /-- **A shifted equivariant quasi-isomorphism induces a twisted chain homotopy equivalence.** Under
 the hypotheses of `TopPair.coinvariantsTwistedChainMap`, if `f` is a quasi-isomorphism then the

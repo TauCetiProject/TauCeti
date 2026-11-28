@@ -81,6 +81,13 @@ namespace LaurentPolynomial
 variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B]
 variable [Algebra R A] [Algebra R B]
 
+/-- The semilinear map of Laurent inversion acts by the substitution `T ↦ T⁻¹`. -/
+@[simp↓]
+theorem invert_toSemilinearMap_apply (p : R[T;T⁻¹]) :
+    (invert (R := R)).toRingEquiv.toRingHom.toSemilinearMap p = invert p := by
+  rw [RingHom.toSemilinearMap_apply, RingHom.toFun_eq_coe, RingEquiv.toRingHom_eq_coe,
+    RingHom.coe_coe, AlgEquiv.coe_toRingEquiv]
+
 /-- A map of Laurent coefficient algebras maps constant Laurent polynomials coefficientwise. -/
 @[simp]
 theorem mapAlgHom_C (φ : A →ₐ[R] B) (a : A) :
