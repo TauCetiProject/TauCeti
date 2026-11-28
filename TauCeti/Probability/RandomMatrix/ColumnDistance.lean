@@ -35,20 +35,19 @@ namespace ProbabilityTheory.iIndepFun
 
 variable {Ω m n : Type*} [MeasurableSpace Ω] [Fintype m] {P : Measure Ω}
 
-/-- For a matrix with independent entries, any bound uniform over fixed spans of `n - 1`
-vectors also bounds the probability that a column is close to the random span of the other
-columns. The distance event is measurable in the independent inputs because distance to a
-varying finite span is upper semicontinuous. -/
-theorem measureReal_infDist_col_span_lt_le_of_forall {𝕜 : Type*} [RCLike 𝕜]
+/-- A bound for the distance of one column to each fixed span arising outside an exceptional
+event transfers to the random span of the other columns, with an additive outer probability
+error for that event. -/
+theorem measureReal_infDist_col_span_lt_le_add {𝕜 : Type*} [RCLike 𝕜]
     [MeasurableSpace 𝕜] [BorelSpace 𝕜] [Countable n] {A : Ω → Matrix m n 𝕜}
     (hind : iIndepFun (fun ij : m × n ↦ fun ω ↦ A ω ij.1 ij.2) P)
-    (hm : AEMeasurable A P) (i : n) {t b : ℝ}
-    (h : ∀ v : {j // j ≠ i} → EuclideanSpace 𝕜 m,
-      P.real {ω | infDist (WithLp.toLp 2 fun r ↦ A ω r i)
-        (Submodule.span 𝕜 (range v) : Set (EuclideanSpace 𝕜 m)) < t} ≤ b) :
+    (hm : AEMeasurable A P) (i : n) {t b : ℝ} (hb : 0 ≤ b) {bad : Set Ω}
+    (h : ∀ ω ∉ bad, P.real {ω' | infDist (WithLp.toLp 2 fun r ↦ A ω' r i)
+      (Submodule.span 𝕜 (range fun j : {j // j ≠ i} ↦
+        WithLp.toLp 2 fun r ↦ A ω r j) : Set (EuclideanSpace 𝕜 m)) < t} ≤ b) :
     P.real {ω | infDist (WithLp.toLp 2 fun r ↦ A ω r i)
       (Submodule.span 𝕜 (range fun j : {j // j ≠ i} ↦
-        WithLp.toLp 2 fun r ↦ A ω r j) : Set (EuclideanSpace 𝕜 m)) < t} ≤ b := by
+        WithLp.toLp 2 fun r ↦ A ω r j) : Set (EuclideanSpace 𝕜 m)) < t} ≤ b + P.real bad := by
   classical
   have : IsProbabilityMeasure P := hind.isProbabilityMeasure
   let v (M : Matrix m n 𝕜) (j : {j // j ≠ i}) : EuclideanSpace 𝕜 m :=
@@ -79,20 +78,34 @@ theorem measureReal_infDist_col_span_lt_le_of_forall {𝕜 : Type*} [RCLike 𝕜
         (WithLp.toLp 2 fun r ↦ p.1 r j : EuclideanSpace 𝕜 m))
       (x := fun p ↦ WithLp.toLp 2 p.2)
       (fun _ ↦ by fun_prop) (by fun_prop)).isOpen_preimage t).measurableSet
-  have hb : 0 ≤ b := measureReal_nonneg.trans (h fun _ ↦ 0)
-  have hs (M : Matrix m n 𝕜) : P (Y ⁻¹' (Prod.mk M ⁻¹' S)) ≤ ENNReal.ofReal b := by
-    have hpre : Y ⁻¹' (Prod.mk M ⁻¹' S) =
-        {ω | infDist (WithLp.toLp 2 fun r ↦ A ω r i) (U M : Set _) < t} := rfl
-    rw [hpre, ← ENNReal.ofReal_toReal (measure_ne_top P _)]
-    exact ENNReal.ofReal_le_ofReal (h (v M))
-  have hSprob :=
-    (hind.indepFun_updateCol_zero hm i).measure_preimage_prodMk_le_of_forall hX hY hS hs
+  have hs (ω : Ω) : Y ⁻¹' (Prod.mk (X ω) ⁻¹' S) =
+      {ω' | infDist (WithLp.toLp 2 (Y ω') : EuclideanSpace 𝕜 m) (U (A ω) : Set _) < t} := by
+    ext ω'
+    simp only [S, mem_preimage, mem_ofPred_eq, hU]
+  have hSprob := (hind.indepFun_updateCol_zero hm i).measureReal_preimage_le_add hX hY hS hb
+    (fun ω hω ↦ (hs ω).symm ▸ h ω hω)
   have hevent : (fun ω ↦ (X ω, Y ω)) ⁻¹' S =
       {ω | infDist (WithLp.toLp 2 (Y ω) : EuclideanSpace 𝕜 m) (U (A ω) : Set _) < t} := by
     ext ω
-    simp only [S, mem_preimage, mem_ofPred_eq, hU]
-  rw [hevent, measure_univ, mul_one] at hSprob
-  exact (ENNReal.toReal_mono ENNReal.ofReal_ne_top hSprob).trans_eq (ENNReal.toReal_ofReal hb)
+    exact Set.ext_iff.mp (hs ω) ω
+  rwa [hevent] at hSprob
+
+/-- For a matrix with independent entries, any bound uniform over fixed spans of `n - 1`
+vectors also bounds the probability that a column is close to the random span of the other
+columns. -/
+theorem measureReal_infDist_col_span_lt_le_of_forall {𝕜 : Type*} [RCLike 𝕜]
+    [MeasurableSpace 𝕜] [BorelSpace 𝕜] [Countable n] {A : Ω → Matrix m n 𝕜}
+    (hind : iIndepFun (fun ij : m × n ↦ fun ω ↦ A ω ij.1 ij.2) P)
+    (hm : AEMeasurable A P) (i : n) {t b : ℝ}
+    (h : ∀ v : {j // j ≠ i} → EuclideanSpace 𝕜 m,
+      P.real {ω | infDist (WithLp.toLp 2 fun r ↦ A ω r i)
+        (Submodule.span 𝕜 (range v) : Set (EuclideanSpace 𝕜 m)) < t} ≤ b) :
+    P.real {ω | infDist (WithLp.toLp 2 fun r ↦ A ω r i)
+      (Submodule.span 𝕜 (range fun j : {j // j ≠ i} ↦
+        WithLp.toLp 2 fun r ↦ A ω r j) : Set (EuclideanSpace 𝕜 m)) < t} ≤ b := by
+  simpa only [measureReal_empty, add_zero] using
+    hind.measureReal_infDist_col_span_lt_le_add hm i (measureReal_nonneg.trans (h fun _ ↦ 0))
+      (bad := ∅) (fun _ _ ↦ h _)
 
 /-- In a real matrix with independent sub-Gaussian entries, the distance of one column from
 the span of the other columns has an exponential lower tail at the square root of the
