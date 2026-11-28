@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.Resultant.WeightedHomogeneous
-import Mathlib.RingTheory.Localization.Away.Basic
 import TauCeti.Algebra.MvPolynomial.Equiv
 import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.Data.Finsupp.MapDomain
@@ -377,36 +376,17 @@ private theorem eval_single_one_depressedDiscr_eq_discr (R : Type*) [CommRing R]
     (hm : 3 ≤ m) :
     MvPolynomial.eval (Pi.single (⟨m - 3, by omega⟩ : Fin (m - 1)) 1) (depressedDiscr R m) =
       (X ^ m + X : R[X]).discr := by
-  nontriviality R
   let i₀ : Fin (m - 1) := ⟨m - 3, by omega⟩
-  let v : Fin (m - 1) → R := Pi.single i₀ 1
-  let p : R[X] := X ^ m + X
-  have hp_mon : p.Monic := (monic_X_pow m).add_of_left
-    (by rw [degree_X_pow, degree_X]; exact_mod_cast (by omega : 1 < m))
-  have hp_deg : p.natDegree = m := by
-    rw [natDegree_add_eq_left_of_degree_lt
-      (by rw [degree_X_pow, degree_X]; exact_mod_cast (by omega : 1 < m)), natDegree_X_pow]
-  have hp_next : p.nextCoeff = 0 := by
-    rw [nextCoeff, hp_deg, ite_eq_right (by omega)]
-    have hm1 : m - 1 ≠ m := by omega
-    have h1m : 1 ≠ m - 1 := by omega
-    simp [p, coeff_X, hm1, h1m]
-  have hv_eq : (fun j : Fin (m - 1) ↦ p.coeff (m - 2 - (j : ℕ))) = v := by
-    ext j
-    by_cases hj : j = i₀
-    · subst hj
-      have hidx : m - 2 - (m - 3) = 1 := by omega
-      have h1m : 1 ≠ m := by omega
-      simp [p, v, i₀, coeff_X, hidx, h1m]
-    · have hne1 : 1 ≠ m - 2 - (j : ℕ) := by
-        intro h1
-        apply hj
-        ext
-        dsimp [i₀]
-        omega
-      have hnem : m - 2 - (j : ℕ) ≠ m := by omega
-      simp [p, v, coeff_X, Pi.single_eq_of_ne hj, hne1, hnem]
-  rw [discr_eq_eval_depressedDiscr hp_mon hp_deg hp_next, hv_eq]
+  rw [← discr_genericDepressed, ← monic_genericDepressed.discr_map]
+  congr 1
+  simp only [genericDepressed, Polynomial.map_add, Polynomial.map_pow, Polynomial.map_X,
+    Polynomial.map_sum, Polynomial.map_mul, Polynomial.map_C, MvPolynomial.eval_X]
+  rw [Finset.sum_eq_single i₀]
+  · simp [i₀, show m - 2 - (m - 3) = 1 by omega]
+  · intro j _ hj
+    simp [i₀, hj]
+  · intro hi0
+    exact absurd (Finset.mem_univ i₀) hi0
 
 /-- Extract the coefficient of `aₘ₋₁ ^ m` in `depressedDiscr R m` by evaluating at
 `Pi.single i₀ 1` (corresponding to `X ^ m + X`). -/

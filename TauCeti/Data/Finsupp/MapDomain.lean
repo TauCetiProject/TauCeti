@@ -7,9 +7,7 @@ module
 
 public import Mathlib.Data.Finsupp.Basic
 public import Mathlib.Data.Finsupp.Lex
-public import Mathlib.Data.Finsupp.Option
 public import Mathlib.Data.Finsupp.Weight
-public import Mathlib.Logic.Equiv.Option
 import Mathlib.LinearAlgebra.Finsupp.Supported
 
 /-!

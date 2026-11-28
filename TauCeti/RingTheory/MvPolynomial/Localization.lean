@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.MvPolynomial.Localization
-import Mathlib.GroupTheory.MonoidLocalization.Divisibility
 
 /-!
 # Divisibility in multivariate polynomial rings over away localizations
