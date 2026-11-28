@@ -27,8 +27,8 @@ Every fiber `{g | g⁻¹ * F g = a}` of the Lang map embeds into `TauCeti.fixedS
 right multiplication by the inverse of a chosen fiber point, so finiteness of `fixedSubgroup F`
 makes every Lang fiber finite (`MonoidHom.finite_setOf_inv_mul_eq`).
 
-An isomorphism intertwining two maps transports surjectivity of the Lang map `g ↦ g⁻¹ * F g`
-(`MulEquiv.surjective_inv_mul_of_semiconj`).
+A surjective homomorphism intertwining two maps transports surjectivity of the Lang map
+`g ↦ g⁻¹ * F g` (`MonoidHom.surjective_inv_mul_of_semiconj`).
 
 A surjective Lang map on an invariant subgroup corrects an element whose Frobenius defect lies in
 that subgroup to a fixed element in the same coset
@@ -174,28 +174,26 @@ theorem exists_fixed_lift_of_surjective_commutatorMap {H : Type*} [Group H]
   refine ⟨(j t)⁻¹ * n, ht, ?_⟩
   simp [hex.apply_apply_eq_one, hn]
 
-end Group
-
-end MonoidHom
-
-namespace MulEquiv
-
-/-- An isomorphism intertwining two maps transports surjectivity of the Lang map
+/-- A surjective homomorphism intertwining two maps transports surjectivity of the Lang map
 `g ↦ g⁻¹ * F g`. -/
 theorem surjective_inv_mul_of_semiconj {G₁ G₂ : Type*} [Group G₁] [Group G₂]
-    (e : G₁ ≃* G₂) {F₁ : G₁ → G₁} {F₂ : G₂ → G₂} (he : Function.Semiconj e F₁ F₂)
+    (e : G₁ →* G₂) (he : Function.Surjective e) {F₁ : G₁ → G₁} {F₂ : G₂ → G₂}
+    (hF : Function.Semiconj e F₁ F₂)
     (hsurj : Function.Surjective fun g : G₁ => g⁻¹ * F₁ g) :
     Function.Surjective fun g : G₂ => g⁻¹ * F₂ g := by
   intro a
-  obtain ⟨g, hg⟩ := hsurj (e.symm a)
+  obtain ⟨b, rfl⟩ := he a
+  obtain ⟨g, hg⟩ := hsurj b
   refine ⟨e g, ?_⟩
   dsimp only at hg
   calc
-    (e g)⁻¹ * F₂ (e g) = e g⁻¹ * e (F₁ g) := by rw [map_inv, he g]
+    (e g)⁻¹ * F₂ (e g) = e g⁻¹ * e (F₁ g) := by rw [map_inv, hF g]
     _ = e (g⁻¹ * F₁ g) := (map_mul e _ _).symm
-    _ = a := by rw [hg, e.apply_symm_apply]
+    _ = e b := by rw [hg]
 
-end MulEquiv
+end Group
+
+end MonoidHom
 
 /-- Fixed points in the image of an equivariant additive homomorphism lift when the difference map
 `t ↦ f t - t` is surjective on a group parametrizing its kernel. -/

@@ -23,8 +23,8 @@ import TauCeti.Algebra.AlgebraicGroup.Tangent.Cotangent
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Map
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Reduction
 import TauCeti.AlgebraicGeometry.AugmentationPoint.Dense
+import TauCeti.GroupTheory.CrossedCocycle.Basic
 import TauCeti.GroupTheory.FixedSubgroup.Lang
-import TauCeti.RepresentationTheory.Homological.GroupCohomology.Cocycle
 import TauCeti.RingTheory.FiniteType.FaithfullyFlatPoints
 import TauCeti.RingTheory.Ideal.Cotangent.Injectivity
 import TauCeti.RingTheory.Spectrum.Prime.Topology
@@ -366,7 +366,8 @@ theorem surjective_inv_mul_mapDomain (φ : H →ₐc[K] H)
     HopfIdeal.reduction_toIdeal K H ▸ PrimeSpectrum.irreducibleSpace_iff_isPrime_nilradical.mp hIrrH
   have hsurj_red := surjective_inv_mul_mapDomain_of_isDomain (HopfIdeal.reductionBialgHom φ)
     (derivationComp_reductionBialgHom_eq_zero φ hφ)
-  exact (HopfIdeal.reductionPointsMulEquiv K H K).surjective_inv_mul_of_semiconj
+  let e := HopfIdeal.reductionPointsMulEquiv K H K
+  exact e.toMonoidHom.surjective_inv_mul_of_semiconj e.surjective
     (HopfIdeal.reductionPointsMulEquiv_mapDomain_reductionBialgHom φ) hsurj_red
 
 /-- Commutator-map (`g ↦ g / F(g)`) form of `surjective_inv_mul_mapDomain`. -/
@@ -400,8 +401,9 @@ theorem surjective_inv_mul_frobeniusPoints {H : Type v} [CommRing H] [_root_.Hop
   have hsurj := surjective_inv_mul_mapDomain
     ((FiniteField.geometricFrobeniusBialgHom F K H) ^ n)
     (FiniteField.derivationComp_geometricFrobeniusBialgHom_pow_eq_zero F K H hn)
-  exact (AlgHom.baseChangePointsMulEquiv (k := F) (K := K) (A := H) (R := K)).symm
-    |>.surjective_inv_mul_of_semiconj (fun g' => DFunLike.congr_fun
+  let e := (AlgHom.baseChangePointsMulEquiv (k := F) (K := K) (A := H) (R := K)).symm
+  exact e.toMonoidHom.surjective_inv_mul_of_semiconj e.surjective
+    (fun g' => DFunLike.congr_fun
       (FiniteField.baseChangePointsMulEquiv_symm_comp_mapDomain_geometricFrobeniusBialgHom_pow
         (K := F) (k := K) (H := H) (R := K) n) g') hsurj
 
@@ -452,13 +454,20 @@ theorem exists_eq_inv_mul_mapValue_of_mul_eq_mul_mapValue
   let K := AlgebraicClosure L
   let ι : L →ₐ[F] K := IsScalarTower.toAlgHom F L K
   let φ : L ≃ₐ[F] L := _root_.FiniteField.frobeniusAlgEquivOfAlgebraic F L
-  let act : (L ≃ₐ[F] L) → WithConv (H →ₐ[F] L) →* WithConv (H →ₐ[F] L) :=
-    fun γ => AlgHom.mapValue γ.toAlgHom
-  have hact1 : act 1 = MonoidHom.id _ := by
-    have h1id : (1 : L ≃ₐ[F] L).toAlgHom = AlgHom.id F L := AlgHom.ext fun x => AlgEquiv.one_apply x
-    dsimp only [act]
-    rw [h1id, AlgHom.mapValue_id]
-  have hc1 : c 1 = 1 := TauCeti.cocycle_one_eq_one act hact1 c hc
+  let α : (L ≃ₐ[F] L) →* MulAut (WithConv (H →ₐ[F] L)) :=
+    { toFun γ := γ.mapValueMulEquiv
+      map_one' := MulEquiv.ext fun x => by
+        have h1id : (1 : L ≃ₐ[F] L).toAlgHom = AlgHom.id F L :=
+          AlgHom.ext fun z => AlgEquiv.one_apply z
+        simp [AlgEquiv.mapValueMulEquiv_apply, h1id]
+      map_mul' γ δ := MulEquiv.ext fun x => by
+        have hmul : (γ * δ : L ≃ₐ[F] L).toAlgHom = γ.toAlgHom.comp δ.toAlgHom :=
+          AlgHom.ext fun z => AlgEquiv.mul_apply γ δ z
+        simp [AlgEquiv.mapValueMulEquiv_apply, hmul, AlgHom.mapValue_comp] }
+  let c' : TauCeti.CrossedCocycle α :=
+    ⟨c, fun γ δ => by
+      simpa only [α, MonoidHom.coe_mk, OneHom.coe_mk, AlgEquiv.mapValueMulEquiv_apply] using hc γ δ⟩
+  have hc1 : c 1 = 1 := c'.apply_one
   have hιφ (k : ℕ) (x : WithConv (H →ₐ[F] L)) :
       AlgHom.mapValue ι (AlgHom.mapValue (φ ^ k).toAlgHom x) =
         FiniteField.frobeniusPoints F k (AlgHom.mapValue ι x) := by
@@ -471,9 +480,12 @@ theorem exists_eq_inv_mul_mapValue_of_mul_eq_mul_mapValue
   have hiter (k : ℕ) :
       bK⁻¹ * FiniteField.frobeniusPoints F k bK = AlgHom.mapValue ι (c (φ ^ k)) := by
     rw [← FiniteField.iterate_frobeniusPoints_one F k]
-    exact TauCeti.map_cocycle_pow_eq_inv_mul_iterate act hact1 c hc φ
+    exact c'.inv_mul_iterate_eq_map_apply_pow φ
       (AlgHom.mapValue (H := H) ι) (FiniteField.frobeniusPoints F 1)
-      (fun m => by simpa only [pow_one, act] using hιφ 1 m) hbK k
+      (fun m => by
+        simpa only [pow_one, α, MonoidHom.coe_mk, OneHom.coe_mk, AlgEquiv.mapValueMulEquiv_apply]
+          using hιφ 1 m)
+      hbK k
   have hfix : FiniteField.frobeniusPoints F (Module.finrank F L) bK = bK := by
     have hpow1 : φ ^ Module.finrank F L = 1 := by
       rw [← _root_.FiniteField.orderOf_frobeniusAlgEquivOfAlgebraic F L, pow_orderOf_eq_one]

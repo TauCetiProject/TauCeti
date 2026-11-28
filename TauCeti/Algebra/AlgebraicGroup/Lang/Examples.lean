@@ -56,9 +56,10 @@ theorem surjective_inv_mul_generalLinearGroup_map_frobeniusAlgHom
   have hsurj := surjective_inv_mul_frobeniusPoints (F := F) (K := K)
     (H := GeneralLinear.coordinateHopfAlgebra F n) one_ne_zero
     (GeneralLinear.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra F n)
-  refine (GeneralLinear.pointsMulEquiv (R := F) (A := K) n).surjective_inv_mul_of_semiconj
-    (fun f => ?_) hsurj
-  rw [FiniteField.frobeniusPoints_one, GeneralLinear.pointsMulEquiv_mapValue]
+  let e := GeneralLinear.pointsMulEquiv (R := F) (A := K) n
+  refine e.toMonoidHom.surjective_inv_mul_of_semiconj e.surjective (fun f => ?_) hsurj
+  simp only [e, MulEquiv.coe_toMonoidHom, FiniteField.frobeniusPoints_one,
+    GeneralLinear.pointsMulEquiv_mapValue]
 
 /-- Over a finite field `F` of odd cardinality, every iterate of the `|F|`-Frobenius acts trivially
 on the points of `μ₂` in any commutative `F`-algebra, so the Lang map is identically `1`. -/

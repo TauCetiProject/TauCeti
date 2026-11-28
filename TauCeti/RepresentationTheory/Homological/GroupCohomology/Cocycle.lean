@@ -44,8 +44,6 @@ representation:
   every value of a one-cocycle.
 * `TauCeti.apply_mem_span_range_of_cocycle`: if `z (g * h) = z g + σ g (z h)` for `O`-linear
   endomorphisms `σ g`, each `σ g` sends the span of the values of `z` into itself.
-* `TauCeti.cocycle_one_eq_one` and `TauCeti.map_cocycle_pow_eq_inv_mul_iterate`: identity at `1`
-  and power-iterate coboundary transport for non-abelian multiplicative `1`-cocycles.
 
 For the bundled one-cocycles `groupCohomology.cocycles₁ A` of a representation `A`:
 
@@ -383,32 +381,5 @@ theorem sum_smul_apply_eq_zero_of_isCocycle₁ [SMul G M] [Fintype G] {f : G →
         (Fintype.sum_bijective _ (Group.mulRight_bijective g) _ _ (fun _ ↦ rfl)).symm
       _ = _ := by simp only [hf _ _, Finset.sum_add_distrib]
   exact (add_right_cancel (hsum.symm.trans (zero_add _).symm))
-
-/-- Every non-abelian multiplicative `1`-cocycle satisfies `c 1 = 1`. -/
-theorem cocycle_one_eq_one {Γ M : Type*} [Monoid Γ] [Group M]
-    (act : Γ → M →* M) (hact1 : act 1 = MonoidHom.id M)
-    (c : Γ → M) (hc : ∀ γ δ, c (γ * δ) = c γ * act γ (c δ)) :
-    c 1 = 1 := by
-  have h1 := hc 1 1
-  rw [mul_one, hact1, MonoidHom.id_apply] at h1
-  exact mul_eq_left.mp h1.symm
-
-/-- If a non-abelian multiplicative `1`-cocycle `c` agrees (after pushing along an intertwining
-homomorphism `j`) with a coboundary `b⁻¹ * F b` on an element `γ`, then it agrees with
-`b⁻¹ * F^[k] b` on every nonnegative power `γ ^ k`. -/
-theorem map_cocycle_pow_eq_inv_mul_iterate
-    {Γ M G : Type*} [Monoid Γ] [Group M] [Group G]
-    (act : Γ → M →* M) (hact1 : act 1 = MonoidHom.id M)
-    (c : Γ → M) (hc : ∀ γ δ, c (γ * δ) = c γ * act γ (c δ))
-    (γ : Γ) (j : M →* G) (F : G →* G) (hj : ∀ m, j (act γ m) = F (j m))
-    {b : G} (hb : b⁻¹ * F b = j (c γ)) (k : ℕ) :
-    b⁻¹ * (⇑F)^[k] b = j (c (γ ^ k)) := by
-  induction k with
-  | zero =>
-    rw [Function.iterate_zero_apply, inv_mul_cancel, pow_zero,
-      cocycle_one_eq_one act hact1 c hc, map_one]
-  | succ k ih =>
-    rw [pow_succ', hc, map_mul, hj, ← ih, ← hb, Function.iterate_succ_apply']
-    simp only [map_mul, map_inv, mul_assoc, mul_inv_cancel_left]
 
 end TauCeti

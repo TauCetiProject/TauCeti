@@ -52,10 +52,8 @@ noncomputable def reductionPointsMulEquiv :
   MulEquiv.ofBijective (BialgHom.mapDomain (A := A) q)
     ⟨BialgHom.mapDomain_injective_of_surjective q (Bialgebra.Quotient.mkBialgHom_surjective _),
       fun a => by
-        have ha_ker : ∀ x ∈ I.toIdeal, a.ofConv x = 0 := fun x hx =>
-          ((mem_nilradical.mp (reduction_toIdeal R H ▸ hx)).map
-            a.ofConv.toRingHom).eq_zero
-        refine ⟨toConv (Ideal.Quotient.liftₐ I.toIdeal a.ofConv ha_ker), ?_⟩
+        refine ⟨toConv (Ideal.Quotient.liftₐ I.toIdeal a.ofConv fun _ hx =>
+          map_eq_zero_of_mem_reduction a.ofConv.toRingHom hx), ?_⟩
         rw [BialgHom.mapDomain_apply, ofConv_toConv, Bialgebra.Quotient.mkBialgHom_toAlgHom,
           Ideal.Quotient.liftₐ_comp, toConv_ofConv]⟩
 
@@ -72,8 +70,8 @@ reduced quotient `H ⧸ (HopfIdeal.reduction R H).toIdeal`. -/
 @[simp]
 theorem reductionPointsMulEquiv_symm_apply (a : WithConv (H →ₐ[R] A)) :
     (reductionPointsMulEquiv R H A).symm a =
-      toConv (Ideal.Quotient.liftₐ (reduction R H).toIdeal a.ofConv fun x hx =>
-        ((mem_nilradical.mp (reduction_toIdeal R H ▸ hx)).map a.ofConv.toRingHom).eq_zero) := by
+      toConv (Ideal.Quotient.liftₐ (reduction R H).toIdeal a.ofConv fun _ hx =>
+        map_eq_zero_of_mem_reduction a.ofConv.toRingHom hx) := by
   apply (reductionPointsMulEquiv R H A).injective
   rw [MulEquiv.apply_symm_apply, reductionPointsMulEquiv_apply, BialgHom.mapDomain_apply,
     ofConv_toConv, Bialgebra.Quotient.mkBialgHom_toAlgHom, Ideal.Quotient.liftₐ_comp,

@@ -112,6 +112,20 @@ theorem apply_inv {Γ : Type*} [Group Γ] {α : Γ →* MulAut H} (c : CrossedCo
   refine (mul_eq_one_iff_eq_inv.mp ?_).trans (map_inv (α γ⁻¹) (c γ)).symm
   simpa using (c.apply_mul γ⁻¹ γ).symm
 
+/-- If a crossed cocycle `c` agrees (after pushing along an intertwining homomorphism `j`) with
+a coboundary `b⁻¹ * F b` at `γ`, then it agrees with `b⁻¹ * F^[k] b` at every nonnegative power
+`γ ^ k`. -/
+theorem inv_mul_iterate_eq_map_apply_pow {G : Type*} [Group G] (c : CrossedCocycle α)
+    (γ : Γ) (j : H →* G) (F : G →* G) (hj : ∀ m, j (α γ m) = F (j m))
+    {b : G} (hb : b⁻¹ * F b = j (c γ)) (k : ℕ) :
+    b⁻¹ * (⇑F)^[k] b = j (c (γ ^ k)) := by
+  induction k with
+  | zero =>
+    rw [Function.iterate_zero_apply, inv_mul_cancel, pow_zero, c.apply_one, map_one]
+  | succ k ih =>
+    rw [pow_succ', c.apply_mul, map_mul, hj, ← ih, ← hb, Function.iterate_succ_apply']
+    simp only [map_mul, map_inv, mul_assoc, mul_inv_cancel_left]
+
 /-- The unit crossed cocycle `γ ↦ 1`. -/
 instance : One (CrossedCocycle α) :=
   ⟨⟨fun _ ↦ 1, fun γ _ ↦ by simp⟩⟩
