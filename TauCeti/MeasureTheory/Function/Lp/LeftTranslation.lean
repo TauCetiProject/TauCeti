@@ -53,6 +53,10 @@ on bounded uniformly continuous functions with invariant means on `L∞` of a Ha
   with left translation.
 * `MeasureTheory.Lp.continuous_leftTranslation_apply`: for `p < ∞`, `g ↦ L_g f` is continuous.
 * `MeasureTheory.Lp.tendsto_leftTranslation_apply_nhds_one`: for `p < ∞`, `L_g f → f` as `g → 1`.
+* `MeasureTheory.MemLp.tendsto_eLpNorm_comp_mul_left_sub`: for `1 ≤ p < ∞`, the left translation
+  increments `‖f (g * ·) - f‖_p` of an `Lᵖ` function tend to `0` as `g → 1`.
+* `MeasureTheory.Integrable.tendsto_integral_norm_comp_inv_mul_sub`: the case `p = 1`, as
+  `∫ ‖f (g⁻¹ * ·) - f‖ → 0` as `g → 1` for an integrable function.
 * `MeasureTheory.Lp.leftTranslation_toLpTop`: the class in `L∞` of a bounded continuous
   function commutes with left translation.
 -/
@@ -183,6 +187,49 @@ theorem tendsto_leftTranslation_apply_nhds_one [TopologicalSpace G] [IsTopologic
     (f : Lp E p μ) : Tendsto (fun g : G => leftTranslation μ p 𝕜 g f) (𝓝 1) (𝓝 f) := by
   simpa only [map_one, LinearIsometryEquiv.coe_one, id_eq]
     using (continuous_leftTranslation_apply (𝕜 := 𝕜) hp f).tendsto 1
+
+open Topology in
+/-- The left translates of an `Lᵖ` function converge to it in `Lᵖ` for `1 ≤ p < ∞`:
+`‖f (g * ·) - f‖_p → 0` as `g → 1`, for a left-invariant measure that is locally finite and inner
+regular for compact sets, such as a regular left Haar measure. The counterpart for right
+translates is `MeasureTheory.MemLp.tendsto_eLpNorm_comp_mul_right_sub_of_regular`. -/
+theorem _root_.MeasureTheory.MemLp.tendsto_eLpNorm_comp_mul_left_sub [TopologicalSpace G]
+    [IsTopologicalGroup G] [BorelSpace G] [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
+    {f : G → E} (hf : MemLp f p μ) (hp : p ≠ ∞) :
+    Tendsto (fun g => eLpNorm (fun x => f (g * x) - f x) p μ) (𝓝 1) (𝓝 0) := by
+  have : Fact (p ≠ ∞) := ⟨hp⟩
+  -- `Lp.leftTranslation` acts by isometries linear over a ring of scalars; `ℤ` acts on any `E`.
+  let : IsBoundedSMul ℤ E := .of_norm_smul_le norm_zsmul_le
+  have hinv : Tendsto (fun g : G => g⁻¹) (𝓝 1) (𝓝 1) := by
+    simpa using (continuous_inv (G := G)).tendsto 1
+  -- `f (g * ·)` represents the left translate `L_{g⁻¹} f`, which tends to `f` as `g → 1`.
+  refine ((tendsto_Lp_iff_tendsto_eLpNorm _ f hf).1
+    ((tendsto_leftTranslation_apply_nhds_one (𝕜 := ℤ) hp (hf.toLp f)).comp hinv)).congr
+    fun g => eLpNorm_congr_ae ?_
+  filter_upwards [coeFn_leftTranslation (𝕜 := ℤ) g⁻¹ (hf.toLp f),
+    (measurePreserving_mul_left μ g).quasiMeasurePreserving.ae hf.coeFn_toLp] with x h₁ h₂
+  simp only [Pi.sub_apply, Function.comp_apply]
+  rw [h₁, inv_inv, h₂]
+
+open Topology in
+/-- **Continuity of left translation in `L¹`**: the left translates of an integrable function
+converge to it, `∫ ‖f (g⁻¹ * ·) - f‖ → 0` as `g → 1`, for a left-invariant measure that is
+locally finite and inner regular for compact sets, such as a regular left Haar measure. -/
+theorem _root_.MeasureTheory.Integrable.tendsto_integral_norm_comp_inv_mul_sub
+    [TopologicalSpace G] [IsTopologicalGroup G] [BorelSpace G] [IsLocallyFiniteMeasure μ]
+    [μ.InnerRegularCompactLTTop] {f : G → E} (hf : Integrable f μ) :
+    Tendsto (fun g => ∫ x, ‖f (g⁻¹ * x) - f x‖ ∂μ) (𝓝 1) (𝓝 0) := by
+  have hinv : Tendsto (fun g : G => g⁻¹) (𝓝 1) (𝓝 1) := by
+    simpa using (continuous_inv (G := G)).tendsto 1
+  have h := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
+    (((memLp_one_iff_integrable.2 hf).tendsto_eLpNorm_comp_mul_left_sub
+      ENNReal.one_ne_top).comp hinv)
+  rw [ENNReal.toReal_zero] at h
+  refine h.congr fun g => ?_
+  have hm : AEStronglyMeasurable (fun x => f (g⁻¹ * x) - f x) μ :=
+    ((hf.comp_mul_left g⁻¹).sub hf).aestronglyMeasurable
+  simp only [Function.comp_apply]
+  rw [eLpNorm_one_eq_lintegral_eNorm hm, ← integral_norm_eq_lintegral_eNorm hm]
 
 end MeasureTheory.Lp
 
