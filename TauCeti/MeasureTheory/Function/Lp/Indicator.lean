@@ -34,6 +34,11 @@ inside `L¹`: the norm of `∑ i, indicatorConstLp 1 (hs i) (hμs i) (c i)` is
 `∑ i, μ(s i) * ‖c i‖`. An `Lᵖ` class represented by `φ ∘ G` for a simple function `G` is the
 sum of the indicator classes of the fibres of `G` with constants `φ w`.
 
+For finite exponents, the indicator classes of the partial unions of a sequence of sets converge
+to the indicator class of the union when the union has finite measure. Hence a closed additive
+subgroup of `Lᵖ` containing the indicator classes of a pairwise disjoint sequence contains the
+indicator class of its union.
+
 In `L∞` the indicator of any measurable set is essentially bounded, whatever its measure. The
 class `TauCeti.linftyIndicator μ s hs` of `1_s` in real `L∞(μ)` therefore needs no finiteness of
 `μ s`, unlike `indicatorConstLp`. It is additive on disjoint sets, nonnegative, vanishes on null
@@ -61,6 +66,9 @@ constant indicator classes it intersects the supporting sets.
   finite exponent countably additive on pairwise disjoint sets whose union has finite measure.
 * `TauCeti.eq_sum_indicatorConstLp_fiber`: an `Lᵖ` class represented by `φ ∘ G`, for a simple
   function `G`, as a sum of indicator classes of the fibres of `G`.
+* `TauCeti.indicatorConstLp_iUnion_mem`: for `p < ∞`, a closed additive subgroup of `Lᵖ` containing
+  the indicator classes of a countable pairwise disjoint family of sets contains that of their
+  union.
 * `MeasureTheory.SimpleFunc.memLp_indicator`, `MeasureTheory.SimpleFunc.integrable_indicator`: a
   simple function cut off to a measurable set of finite measure lies in every `Lᵖ`.
 * `TauCeti.linftyIndicator μ s hs`: the class in `L∞(μ)` of the indicator of a measurable set.
@@ -296,6 +304,17 @@ theorem hasSum_indicatorConstLp [Countable ι] [Fact (1 ≤ p)] (hp : p ≠ ∞)
   exact tendsto_indicatorConstLp_of_monotone hp
     (fun t : Finset ι ↦ t.measurableSet_biUnion fun i _ ↦ hs i)
     (fun t t' h ↦ Set.biUnion_subset_biUnion_left h) (Set.iUnion_eq_iUnion_finset s).symm c
+
+/-- If a closed additive subgroup of `Lᵖ`, `p < ∞`, contains the indicator classes of the members
+of a countable pairwise disjoint family of measurable sets, it contains the indicator class of
+their union, provided the union has finite measure. -/
+theorem indicatorConstLp_iUnion_mem [Countable ι] [Fact (1 ≤ p)] {V : AddSubgroup (Lp E p μ)}
+    (hV : IsClosed (V : Set (Lp E p μ))) (hp : p ≠ ∞) (hs : ∀ i, MeasurableSet (s i))
+    (hd : Pairwise (Function.onFun Disjoint s)) (hμ : μ (⋃ i, s i) ≠ ∞) {c : E}
+    (hsV : ∀ i (hμi : μ (s i) ≠ ∞), indicatorConstLp p (hs i) hμi c ∈ V) :
+    indicatorConstLp p (MeasurableSet.iUnion hs) hμ c ∈ V :=
+  hV.mem_of_tendsto (hasSum_indicatorConstLp hp hs hd hμ c)
+    (Eventually.of_forall fun _ ↦ V.sum_mem fun i _ ↦ hsV i _)
 
 end Countable
 

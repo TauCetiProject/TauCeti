@@ -10,13 +10,13 @@ public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
-public import TauCeti.MeasureTheory.Integral.PiSystem
 import Mathlib.Analysis.Normed.Affine.MazurUlam
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.AEMeasurable
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Algebra.Order.Ring.PosPart.Sq
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
+import TauCeti.MeasureTheory.Function.Lp.DenseSpan
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -581,20 +581,15 @@ theorem topologicalClosure_span_indicatorConstLp_eq_top_of_isPiSystem
     (Submodule.span ℝ {g : Lp ℝ 2 μ | ∃ (s : Set X) (hs : s ∈ S),
       g = indicatorConstLp 2 (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs)
         (hfin s hs) 1}).topologicalClosure = ⊤ := by
-  rw [← Submodule.orthogonal_eq_bot_iff, Submodule.orthogonal_closure]
-  apply bot_unique
-  intro f hf
-  apply Lp.ext
-  have hfi : ∀ s ∈ S, IntegrableOn f s μ := fun s hs =>
-    integrableOn_Lp_of_measure_ne_top f (by norm_num) (hfin s hs)
-  obtain ⟨v, hv, hcover⟩ := hcover
-  refine (ae_eq_zero_of_setIntegral_eq_zero_of_isPiSystem hgen hpi v hv hcover
-    (fun n ↦ hfi _ (hv n)) ?_).trans (Lp.coeFn_zero ℝ 2 μ).symm
-  intro s hs
-  rw [← L2.inner_indicatorConstLp_one
-    (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs) (hfin s hs) f]
-  exact (Submodule.mem_orthogonal _ f).mp hf _
-    (Submodule.subset_span ⟨s, hs, rfl⟩)
+  obtain ⟨v, hv, hspan⟩ := hcover
+  have hD : (Submodule.span ℝ ({1} : Set ℝ)).topologicalClosure = ⊤ := by
+    rw [(Submodule.span_singleton_eq_top_iff ℝ (1 : ℝ)).2 fun v ↦ ⟨v, mul_one v⟩]
+    exact top_unique (Submodule.le_topologicalClosure _)
+  refine top_unique ((hpi.topologicalClosure_span_indicatorConstLp_eq_top hgen
+    ⟨v, hv, fun n ↦ (hfin _ (hv n)).lt_top, hspan⟩ (by norm_num) hD).symm.trans_le
+    (Submodule.topologicalClosure_mono (Submodule.span_le.2 ?_)))
+  rintro _ ⟨s, hs, -, -, c, rfl, rfl⟩
+  exact Submodule.subset_span ⟨s, hs, rfl⟩
 
 /-- Initial-interval indicators have dense real linear span in `L²` for a Borel measure
 finite on initial intervals of a second-countable linearly ordered space. -/

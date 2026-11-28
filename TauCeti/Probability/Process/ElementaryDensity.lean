@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Process.Predictable.Measure
 public import TauCeti.MeasureTheory.Function.L2Space
+public import TauCeti.MeasureTheory.Integral.PiSystem
 
 /-!
 # Density of elementary predictable integrands
