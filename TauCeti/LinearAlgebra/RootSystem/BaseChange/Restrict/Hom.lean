@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.RootSystem.Hom
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Basic
-import TauCeti.LinearAlgebra.RootSystem.HomInvariance
+import TauCeti.LinearAlgebra.RootSystem.HomInvariance.Basic
 
 /-!
 # Restriction of morphisms, equivalences, and automorphisms under scalar restriction

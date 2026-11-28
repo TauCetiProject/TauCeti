@@ -19,8 +19,9 @@ summand inherits such a projection.
 
 This file records these projections, `TauCeti.internalProjection`. Their pointwise behaviour and
 kernel are Mathlib's lemmas about `Submodule.projectionOnto`, restated for the specialization.
-The one fact that goes beyond a single projection is that over a finite index type the projections
-sum to the identity, `TauCeti.sum_coe_internalProjection`.
+Over a finite index type the projections sum to the identity (`TauCeti.sum_coe_internalProjection`),
+giving the canonical linear equivalence `TauCeti.internalDirectSumEquiv : (∀ i, Q i) ≃ₗ[A] M`
+without requiring `DecidableEq` on the index type.
 
 For a single complementary pair `F₀`, `F₁`, the projection onto `F₁` also computes any linear map
 vanishing on `F₀` from its values on a basis of `F₁`
@@ -37,6 +38,8 @@ remains injective.
 
 * `TauCeti.internalProjection`: the projection of `M` onto the summand `Q i` of an internal direct
   sum decomposition, as a linear map `M →ₗ[A] Q i`.
+* `TauCeti.internalDirectSumEquiv`: the canonical linear equivalence `(∀ i, Q i) ≃ₗ[A] M` for a
+  finite internal direct sum decomposition, requiring no `DecidableEq` on the index type.
 
 ## Main results
 
@@ -45,6 +48,9 @@ remains injective.
   other summands.
 * `TauCeti.sum_coe_internalProjection`: over a finite index type the projections onto the summands
   sum to the identity.
+* `TauCeti.internalDirectSumEquiv_apply` and `TauCeti.internalDirectSumEquiv_symm_apply`: the
+  forward map sums the summand components and the inverse reads them off via
+  `TauCeti.internalProjection`.
 * `DirectSum.IsInternal.coe_ofBijective_coeLinearMap_symm_apply_eq_internalProjection`: the
   component supplied by the inverse direct-sum equivalence is the internal projection.
 * `Submodule.projection_map_apply_of_mem`: an additive homomorphism preserving the two
@@ -182,6 +188,49 @@ theorem coe_ofBijective_coeLinearMap_symm_apply_eq_internalProjection
         congrArg₂ (fun a b ↦ a + b) hx hy
 
 end DirectSum.IsInternal
+
+namespace TauCeti
+
+variable {A : Type u} {M : Type v} [Ring A] [AddCommGroup M] [Module A M]
+variable {ι : Type w} {Q : ι → Submodule A M}
+
+/-- The canonical linear equivalence `(∀ i, Q i) ≃ₗ[A] M` associated to a finite internal direct
+sum decomposition `Q`, sending a tuple to the sum of its coordinates and inversely projecting onto
+each summand via `TauCeti.internalProjection`. Requires no `DecidableEq ι`. -/
+noncomputable def internalDirectSumEquiv [Fintype ι] (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤) :
+    (∀ i, Q i) ≃ₗ[A] M :=
+  let _ : DecidableEq ι := Classical.decEq ι
+  (DirectSum.linearEquivFunOnFintype A ι (fun i ↦ Q i)).symm.trans
+    (LinearEquiv.ofBijective (DirectSum.coeLinearMap Q)
+      (DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top hQi hQt))
+
+/-- The inverse of the internal direct-sum equivalence reads off the `i`-th coordinate by
+`TauCeti.internalProjection`. -/
+@[simp]
+theorem internalDirectSumEquiv_symm_apply [Fintype ι] (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤)
+    (x : M) (i : ι) :
+    (internalDirectSumEquiv hQi hQt).symm x i = internalProjection hQi hQt i x := by
+  let _ : DecidableEq ι := Classical.decEq ι
+  exact Subtype.ext
+    (DirectSum.IsInternal.coe_ofBijective_coeLinearMap_symm_apply_eq_internalProjection
+      (DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top hQi hQt) i x)
+
+/-- The internal direct-sum equivalence sends a tuple of summand elements to their sum in `M`. -/
+@[simp]
+theorem internalDirectSumEquiv_apply [Fintype ι] (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤)
+    (x : ∀ i, Q i) :
+    internalDirectSumEquiv hQi hQt x = ∑ i, (x i : M) := by
+  have h := sum_coe_internalProjection hQi hQt (internalDirectSumEquiv hQi hQt x)
+  simpa [← internalDirectSumEquiv_symm_apply] using h.symm
+
+/-- Applying the internal direct-sum equivalence to a single-coordinate tuple returns the coerced
+element in `M`. -/
+theorem internalDirectSumEquiv_single [Fintype ι] [inst : DecidableEq ι]
+    (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤) (i : ι) (x : Q i) :
+    internalDirectSumEquiv hQi hQt (Pi.single i x) = (x : M) := by
+  simp [Pi.apply_single (fun j (y : Q j) ↦ (y : M)) (fun _ ↦ rfl)]
+
+end TauCeti
 
 namespace Submodule
 

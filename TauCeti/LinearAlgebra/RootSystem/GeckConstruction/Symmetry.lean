@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.GeckConstruction.Basic
-public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
+public import TauCeti.LinearAlgebra.RootSystem.HomInvariance.Basic
 
 /-!
 # Symmetries of Geck's construction

@@ -38,6 +38,9 @@ holds on the component.
   `2 ≠ 0` in the field.
 * `RootPairing.componentProj_reflection_of_eq`: the projection onto the component space of `C`
   carries the reflections at roots of `C` to the reflections of the component pairing.
+* `RootPairing.componentPairing_coroot'_componentProj`,
+  `RootPairing.toLinearMap_coe_componentProj_coroot`: evaluating a component coroot on
+  `P.componentProj C x` agrees with evaluating the ambient coroot on `x`.
 * `RootPairing.Equiv.componentPairingEquiv_weightMap_componentProj`: the equivalence of component
   pairings intertwines the projections onto the component spaces.
 
@@ -180,6 +183,27 @@ instance isReduced_componentPairing [P.IsReduced] : (P.componentPairing C).IsRed
     refine (IsReduced.eq_or_eq_neg (P := P) i j hinj).imp (fun h ↦ ?_) fun h ↦ ?_
     · exact Subtype.ext h
     · exact Subtype.ext h
+
+/-- Evaluating a component coroot on `P.componentProj C x` agrees with evaluating the ambient
+coroot on `x`. See `toLinearMap_coe_componentProj_coroot` for the `simp`-normal-form lemma. -/
+theorem componentPairing_coroot'_componentProj (i : C.supp) (x : M) :
+    (P.componentPairing C).coroot' i (P.componentProj C x) = P.coroot' i x := by
+  let _ : Fintype P.Component := Fintype.ofFinite _
+  conv_rhs => rw [← P.sum_componentProj x]
+  rw [map_sum, Finset.sum_eq_single_of_mem C (Finset.mem_univ C)]
+  · simp [coroot']
+  · intro D _ hDC
+    have hne : P.componentOf i ≠ D := by
+      have hC : P.componentOf i = C := (C.mem_supp_iff i).mp i.property
+      exact hC.trans_ne hDC.symm
+    exact coroot'_eq_zero_of_mem_componentSpace hne (P.componentProj D x).property
+
+/-- The `simp`-normal form of `RootPairing.componentPairing_coroot'_componentProj`: pairing
+`P.componentProj C x` with a coroot of `C` agrees with pairing `x` with that coroot. -/
+@[simp]
+theorem toLinearMap_coe_componentProj_coroot (i : C.supp) (x : M) :
+    P.toLinearMap (P.componentProj C x : M) (P.coroot i) = P.toLinearMap x (P.coroot i) := by
+  simpa [coroot'] using componentPairing_coroot'_componentProj P C i x
 
 end
 

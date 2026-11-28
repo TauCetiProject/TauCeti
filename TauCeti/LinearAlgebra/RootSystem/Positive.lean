@@ -429,12 +429,17 @@ theorem posRootCone_def : posRootCone P b = AddSubmonoid.closure (P.root '' b.su
   rw [posRootCone]
 
 omit [CharZero R] in
+/-- Membership in the positive root cone is membership in the `ℕ`-span of the simple roots. -/
+theorem mem_posRootCone_iff_mem_span {v : M} :
+    v ∈ posRootCone P b ↔ v ∈ Submodule.span ℕ (P.root '' b.support) := by
+  rw [posRootCone, ← Submodule.span_nat_eq_addSubmonoidClosure, Submodule.mem_toAddSubmonoid]
+
+omit [CharZero R] in
 /-- Membership in the positive root cone, spelled out as a nonnegative integer combination of the
 simple roots. -/
 theorem mem_posRootCone {v : M} :
     v ∈ posRootCone P b ↔ ∃ f : ι → ℕ, v = ∑ j ∈ b.support, f j • P.root j := by
-  rw [posRootCone, ← Submodule.span_nat_eq_addSubmonoidClosure, Submodule.mem_toAddSubmonoid,
-    Submodule.mem_span_image_finset_iff_exists_fun']
+  rw [mem_posRootCone_iff_mem_span, Submodule.mem_span_image_finset_iff_exists_fun']
   exact exists_congr fun _ => eq_comm
 
 omit [CharZero R] in

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Bases
+import TauCeti.LinearAlgebra.RootSystem.Base
 
 /-!
 # Root systems whose automorphisms are all Weyl
@@ -25,7 +26,6 @@ the full automorphism group of a root system of rigid type, such as `E₈`, with
 
 * `RootPairing.Base.eq_one_of_forall_indexEquiv_eq`: an automorphism of a root system fixing every
   simple root of a base is the identity.
-* `RootPairing.Base.mem_support_map_iff`: the simple roots of a transported base.
 * `RootPairing.Base.subtypePerm_mem_matrixSymmetryGroup`: an automorphism carrying the simple roots
   of a base onto themselves permutes them by a symmetry of the Cartan matrix.
 * `RootPairing.Base.weylGroup_eq_top_of_matrixSymmetryGroup_eq_bot`: **if the Cartan matrix of a
@@ -58,14 +58,6 @@ theorem _root_.RootPairing.Base.eq_one_of_forall_indexEquiv_eq [P.IsRootSystem] 
   · rw [b.span_root_support, RootPairing.rootSpan, RootPairing.IsRootSystem.span_root_eq_top]
   · rintro _ ⟨i, hi, rfl⟩
     simp [RootPairing.Hom.root_weightMap_apply, hu i hi]
-
-/-- A root index is simple for the transported base `b.map e` exactly when its preimage under `e`
-is simple for `b`. -/
-theorem _root_.RootPairing.Base.mem_support_map_iff (b : P.Base) (e : P.Aut) (j : ι) :
-    j ∈ (b.map e).support ↔ e.indexEquiv.symm j ∈ b.support := by
-  classical
-  rw [RootPairing.Base.support_map_eq, Finset.mem_image]
-  exact ⟨by rintro ⟨i, hi, rfl⟩; simpa using hi, fun h ↦ ⟨_, h, by simp⟩⟩
 
 /-- **An automorphism carrying the simple roots of a base onto themselves induces a symmetry of the
 Cartan matrix**: its index bijection, restricted to the simple roots, preserves the Cartan

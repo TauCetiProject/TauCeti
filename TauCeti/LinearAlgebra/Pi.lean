@@ -48,6 +48,10 @@ weights.
 * `Submodule.span_image_map_pi_bot`: over a finite index type, the families vanishing on `J` with
   coefficients in `S` are spanned by the coordinatewise images under a ring map `R →+* S` of
   those with coefficients in `R`.
+* `Pi.image_sigma_single`: the image of a sigma-indexed family of one-point vectors on a
+  sigma set is the union of the coordinate images.
+* `Submodule.span_iUnion_single`: the span of a union of coordinate embeddings is the product of
+  the summand spans.
 * `Submodule.isCompl_pi_bot_of_single_mem`: a submodule of `ι → R` containing `Pi.single i 1` at
   every coordinate `i` where it does not vanish is complemented by the families vanishing there.
 * `LinearEquiv.piCongrLeft_apply_apply` and `LinearEquiv.piCongrLeft_single`: reindexing the
@@ -114,6 +118,20 @@ public theorem Fin.snoc_zero_eq_single {n : ℕ} {M : Fin (n + 1) → Type*} [�
   induction i using Fin.lastCases with
   | last => simp
   | cast i => simp
+
+namespace Pi
+
+/-- The image of a sigma-indexed family of one-point vectors `fun p ↦ Pi.single p.1 (v p.1 p.2)`
+on a sigma set `t.sigma s` is the union of the coordinate images `Pi.single c '' (v c '' s c)`
+over `c ∈ t`. -/
+public theorem image_sigma_single {κ : Type*} [DecidableEq κ] {ι M : κ → Type*}
+    [∀ c, Zero (M c)] (v : ∀ c, ι c → M c) (t : Set κ) (s : ∀ c, Set (ι c)) :
+    (fun p : Σ c, ι c ↦ Pi.single p.1 (v p.1 p.2)) '' (t.sigma s) =
+      ⋃ c ∈ t, Pi.single c '' (v c '' s c) := by
+  simp only [Set.image_sigma_eq_iUnion, Set.image_image]
+  rfl
+
+end Pi
 
 namespace Submodule
 
@@ -219,6 +237,17 @@ public theorem infinite_pi_of_infinite {R ι : Type*} [Semiring R] [Nontrivial R
   obtain ⟨a, ha⟩ := mem_span_singleton.mp hmem
   have := congrFun ha i
   simp [hij] at this
+
+/-- For a finite index type `ι`, the `R`-span of the union of the coordinate embeddings
+`Pi.single i '' s i` is the product submodule `Submodule.pi Set.univ (fun i ↦ span R (s i))`. -/
+public theorem span_iUnion_single {R ι : Type*} {M : ι → Type*} [Semiring R] [DecidableEq ι]
+    [Finite ι] [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (s : ∀ i, Set (M i)) :
+    span R (⋃ i, Pi.single i '' s i) = pi Set.univ fun i ↦ span R (s i) := by
+  rw [span_iUnion]
+  have hsingle (i : ι) :
+      span R (Pi.single i '' s i) = (span R (s i)).map (LinearMap.single R M i) := by
+    rw [← LinearMap.coe_single (R := R) (φ := M), ← map_span]
+  simp_rw [hsingle, iSup_map_single]
 
 end Submodule
 

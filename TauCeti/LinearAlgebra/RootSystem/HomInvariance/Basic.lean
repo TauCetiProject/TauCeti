@@ -53,6 +53,7 @@ weight-space vectors.
 * `RootPairing.Hom.linearIndependent_root_indexEquiv_iff`: it preserves and reflects linear
   independence of a pair of roots; consequently `RootPairing.Hom.isReduced` and
   `RootPairing.Equiv.isReduced` transport reducedness to the target pairing.
+* `RootPairing.Equiv.isRootSystem`: an equivalence of root pairings transports `IsRootSystem`.
 * `RootPairing.Hom.chainTopCoeff_indexEquiv` and `RootPairing.Hom.chainBotCoeff_indexEquiv`: it
   preserves the two root-string coefficients.
 * `RootPairing.Hom.coroot'_weightMap` and `RootPairing.Hom.weightMap_reflection`: the weight map
@@ -226,6 +227,19 @@ theorem chainBotCoeff_indexEquiv (i j : ι) :
 end Chain
 
 end Hom
+
+/-- An equivalence of root pairings transports `IsRootSystem` from the source to the target. -/
+theorem Equiv.isRootSystem (e : P.Equiv P₂) [P.IsRootSystem] : P₂.IsRootSystem where
+  span_root_eq_top := Submodule.eq_top_iff'.mpr fun y ↦ by
+    obtain ⟨x, rfl⟩ := e.bijective_weightMap.surjective y
+    refine e.toHom.weightMap_mem_rootSpan ?_
+    rw [RootPairing.rootSpan, IsRootSystem.span_root_eq_top]
+    exact Submodule.mem_top
+  span_coroot_eq_top := Submodule.eq_top_iff'.mpr fun y ↦ by
+    obtain ⟨x, rfl⟩ := e.symm.bijective_coweightMap.surjective y
+    refine e.symm.toHom.coweightMap_mem_corootSpan ?_
+    rw [RootPairing.corootSpan, IsRootSystem.span_coroot_eq_top]
+    exact Submodule.mem_top
 
 /-- An equivalence of root pairings transports reducedness from the source to the target. -/
 theorem Equiv.isReduced (e : P.Equiv P₂) [P.IsReduced] : P₂.IsReduced :=
