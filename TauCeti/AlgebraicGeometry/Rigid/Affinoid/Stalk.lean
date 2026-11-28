@@ -10,8 +10,11 @@ public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.Subdomain
 public import TauCeti.Topology.GTopology.Points
 public import Mathlib.RingTheory.AdicCompletion.Algebra
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
+public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 
 import TauCeti.RingTheory.AdicCompletion.AlgHom
+import TauCeti.RingTheory.AdicCompletion.Flat.Basic
+import TauCeti.RingTheory.AdicCompletion.Localization
 import TauCeti.RingTheory.AdicCompletion.Noetherian
 import TauCeti.RingTheory.Affinoid.Subdomain.Kernel
 import TauCeti.RingTheory.Ideal.KrullIntersection
@@ -58,6 +61,8 @@ local description of immersions, are built on.
 * `TauCeti.AffinoidSubdomain.quotientPowEquiv`: `A ⧸ 𝔪ₓⁿ ≃ 𝒪_{Sp A,x} ⧸ 𝔪ⁿ`.
 * `TauCeti.AffinoidSubdomain.completionRingEquiv`: the `𝔪ₓ`-adic completion of `A` is the
   `𝔪`-adic completion of `𝒪_{Sp A,x}`.
+* `TauCeti.AffinoidSubdomain.localizationCompletionRingEquiv`: the maximal-ideal completions
+  of `A_𝔪` and `𝒪_{Sp A,x}` agree, by `AdicCompletion.equivMaximalIdealOfAtPrime`.
 
 ## Main results
 
@@ -70,6 +75,8 @@ local description of immersions, are built on.
 * `TauCeti.AffinoidSubdomain.iInf_sup_maximalIdeal_stalk_pow_eq`: finitely generated ideals of the
   stalk are closed for its `𝔪`-adic topology.
 * `TauCeti.AffinoidSubdomain.instIsNoetherianRingStalk`: the stalk is noetherian.
+* `TauCeti.AffinoidSubdomain.faithfullyFlat_localizationToStalk`: the germ map from `A_𝔪` is
+  faithfully flat, using `AdicCompletion.flat_iff_of_isLocalRing`.
 
 ## References
 
@@ -431,6 +438,59 @@ theorem evalₐ_completionRingEquiv_symm (n : ℕ)
       (quotientPowEquiv K x n).symm (AdicCompletion.evalₐ _ n s) := by
   rw [RingEquiv.eq_symm_apply, ← evalₐ_completionRingEquiv, RingEquiv.apply_symm_apply]
 
+variable (K x) in
+/-- The maximal-ideal completions of the algebraic local ring `A_𝔪` and the analytic stalk
+`𝒪_{Sp A,x}` are canonically isomorphic. See Bosch, *Lectures on Formal and Rigid Geometry*,
+§4.1, Proposition 6. -/
+noncomputable def localizationCompletionRingEquiv :
+    AdicCompletion (maximalIdeal (Localization.AtPrime x.asIdeal))
+        (Localization.AtPrime x.asIdeal) ≃+*
+      AdicCompletion (maximalIdeal (stalk K x)) (stalk K x) :=
+  (AdicCompletion.equivMaximalIdealOfAtPrime x.asIdeal
+    (Localization.AtPrime x.asIdeal)).toRingEquiv.symm.trans (completionRingEquiv K x)
+
+variable (K x) in
+/-- The comparison of completed local rings intertwines the completion maps with the local
+germ map. -/
+theorem localizationCompletionRingEquiv_comp_algebraMap :
+    (localizationCompletionRingEquiv K x).toRingHom.comp (algebraMap _ _) =
+      (algebraMap (stalk K x) _).comp (localizationToStalk K x) := by
+  apply IsLocalization.ringHom_ext x.asIdeal.primeCompl
+  apply RingHom.ext
+  intro a
+  let e := AdicCompletion.equivMaximalIdealOfAtPrime x.asIdeal (Localization.AtPrime x.asIdeal)
+  have he : e (AdicCompletion.of x.asIdeal A a) = AdicCompletion.of _ _ (algebraMap A _ a) :=
+    AdicCompletion.equivMaximalIdealOfAtPrime_of x.asIdeal (Localization.AtPrime x.asIdeal) a
+  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+    localizationToStalk_algebraMap, AdicCompletion.algebraMap_apply,
+    Algebra.algebraMap_self_apply]
+  rw [← he]
+  calc
+    _ = completionRingEquiv K x
+        (e.toRingEquiv.symm (e.toRingEquiv (AdicCompletion.of x.asIdeal A a))) := rfl
+    _ = _ := by rw [RingEquiv.symm_apply_apply, completionRingEquiv_of]
+
+variable (K x) in
+/-- The comparison of completed local rings sends the image of an algebraic local section to
+the image of its germ. -/
+@[simp]
+theorem localizationCompletionRingEquiv_of {z : Localization.AtPrime x.asIdeal} :
+    localizationCompletionRingEquiv K x (AdicCompletion.of _ _ z) =
+      AdicCompletion.of _ _ (localizationToStalk K x z) := by
+  simpa only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
+    AdicCompletion.algebraMap_apply, Algebra.algebraMap_self_apply] using
+    DFunLike.congr_fun (localizationCompletionRingEquiv_comp_algebraMap K x) z
+
+variable (K x) in
+/-- The inverse completion comparison sends the image of an algebraic germ back to the image of
+the original local section. -/
+@[simp]
+theorem localizationCompletionRingEquiv_symm_of {z : Localization.AtPrime x.asIdeal} :
+    (localizationCompletionRingEquiv K x).symm
+        (AdicCompletion.of _ _ (localizationToStalk K x z)) =
+      AdicCompletion.of _ _ z :=
+  (RingEquiv.symm_apply_eq _).mpr (localizationCompletionRingEquiv_of K x).symm
+
 /-- Finitely many germs at `x` are germs of sections over one common affinoid neighbourhood. -/
 theorem exists_germ_eq_of_finite {ι : Type*} [Finite ι] (s : ι → stalk K x) :
     ∃ (U : AffinoidSubdomain K A) (hx : x ∈ U) (f : ι → U.sections),
@@ -509,5 +569,26 @@ instance instIsNoetherianRingStalk : IsNoetherianRing (stalk K x) :=
   let := Ideal.Quotient.field (maximalIdeal (stalk K x))
   Ideal.isNoetherianRing_of_iInf_sup_pow_eq maximalIdeal_stalk_fg fun _ ↦
     iInf_sup_maximalIdeal_stalk_pow_eq
+
+/-- The local germ map from the algebraic local ring to the analytic stalk is faithfully flat.
+See Bosch, *Lectures on Formal and Rigid Geometry*, §4.1. -/
+theorem faithfullyFlat_localizationToStalk : (localizationToStalk K x).FaithfullyFlat := by
+  let R := Localization.AtPrime x.asIdeal
+  let S := stalk K x
+  let T := AdicCompletion (maximalIdeal S) S
+  let : Algebra R S := (localizationToStalk K x).toAlgebra
+  let : Algebra R T := ((algebraMap S T).comp (localizationToStalk K x)).toAlgebra
+  have : IsScalarTower R S T := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+  have : IsNoetherianRing A := hA.out.isNoetherianRing
+  have : Module.Flat R T := by
+    let e : AdicCompletion (maximalIdeal R) R ≃ₐ[R] T :=
+      AlgEquiv.ofRingEquiv (f := localizationCompletionRingEquiv K x) fun z ↦ by
+        rw [AdicCompletion.algebraMap_apply, Algebra.algebraMap_self_apply]
+        exact localizationCompletionRingEquiv_of K x
+    exact Module.Flat.of_linearEquiv e.symm.toLinearEquiv
+  have : Module.Flat R S := (AdicCompletion.flat_iff_of_isLocalRing R S).mp ‹_›
+  have : IsLocalHom (algebraMap R S) := inferInstanceAs (IsLocalHom (localizationToStalk K x))
+  rw [← (localizationToStalk K x).algebraMap_toAlgebra, RingHom.faithfullyFlat_algebraMap_iff]
+  exact Module.FaithfullyFlat.of_flat_of_isLocalHom
 
 end TauCeti.AffinoidSubdomain
