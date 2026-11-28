@@ -117,23 +117,7 @@ lemma supportedModuleHSheafZeroIso_hom_naturality
   rw [← Category.assoc, ← toSheafify_naturality]
   simp only [Category.assoc, toSheafify_supportedModuleHSheafZeroIso_hom,
     toSheafify_supportedModuleHSheafZeroIso_hom_assoc]
-  ext W x
-  apply Subtype.ext
-  change ((G.supportedModuleHPresheafZeroIso S).hom.app W
-      (((supportedModuleHPresheafFunctor S 0).map f).app W x)).val =
-    (((supportedSubmoduleFunctor S).map f).hom.app W
-      ((F.supportedModuleHPresheafZeroIso S).hom.app W x)).val
-  calc
-    _ = (G.supportedModuleHZeroEquiv S W.unop
-        (((supportedModuleHPresheafFunctor S 0).map f).app W x)).val :=
-      coe_supportedModuleHPresheafZeroIso_hom_app_apply S G W _
-    _ = f.hom.app W (F.supportedModuleHZeroEquiv S W.unop x) :=
-      (congrArg (fun y ↦ (G.supportedModuleHZeroEquiv S W.unop y).val)
-        (supportedModuleHPresheafFunctor_map_app_apply S 0 f W x)).trans
-          (coe_supportedModuleHZeroEquiv_naturality_right S W.unop f x)
-    _ = f.hom.app W ((F.supportedModuleHPresheafZeroIso S).hom.app W x).val :=
-      congrArg (f.hom.app W) (coe_supportedModuleHPresheafZeroIso_hom_app_apply S F W x).symm
-    _ = _ := (coe_supportedSubmoduleFunctor_map_hom_app_apply S f W _).symm
+  exact supportedModuleHPresheafZeroIso_hom_naturality S f
 
 /-- Degree-zero local cohomology preserves monomorphisms, giving the initial
 monomorphism in the coefficient long exact sequence. -/
@@ -163,6 +147,16 @@ theorem isZero_stalk_supportedModuleHSheaf_of_notMem {x : X} (hx : x ∉ S) (n :
   rw [← TopCat.Presheaf.germ_res_apply _ (homOfLE inf_le_left) x hxV]
   rw [Subsingleton.elim ((F.supportedModuleHPresheaf S n).map
     (homOfLE (inf_le_left : W ⊓ S.compl ≤ W)).op c) 0, map_zero]
+
+/-- If the supported cohomology modules `H_Sⁿ(W, F)` vanish on every open `W`, then the local
+cohomology sheaf `𝓗_Sⁿ(F)` is zero. -/
+theorem isZero_supportedModuleHSheaf_of_subsingleton {n : ℕ}
+    (h : ∀ W : Opens X, Subsingleton (F.supportedModuleH S W n)) :
+    IsZero (F.supportedModuleHSheaf S n) := by
+  apply Functor.map_isZero
+  refine (Functor.isZero_iff _).2 fun W ↦ ?_
+  rw [F.supportedModuleHPresheaf_obj]
+  exact ModuleCat.isZero_iff_subsingleton.2 (h W.unop)
 
 /-- If the local cohomology sheaf `𝓗_Sⁿ(F)` vanishes, then every class in `H_Sⁿ(W, F)` vanishes
 locally: each point `x ∈ W` has an open neighbourhood `V ≤ W` on which the class restricts to

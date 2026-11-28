@@ -372,17 +372,31 @@ lemma coe_supportedModuleHPresheafZeroIso_hom_app_apply
         F.supportedModuleHZeroEquiv S W.unop x :=
   (rfl)
 
-/-- The inverse degree-zero comparison sends a supported section to the cohomology class that
-`CategoryTheory.Sheaf.supportedModuleHZeroEquiv` identifies with it. -/
+/-- The inverse degree-zero comparison sends a supported section to its cohomology class. -/
 @[simp]
-lemma supportedModuleHZeroEquiv_supportedModuleHPresheafZeroIso_inv_app_apply
+lemma supportedModuleHPresheafZeroIso_inv_app_apply
     (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) (W : (Opens X)ᵒᵖ)
     (s : F.supportedSubmodule S W.unop) :
-    F.supportedModuleHZeroEquiv S W.unop ((F.supportedModuleHPresheafZeroIso S).inv.app W s) =
-      s :=
-  Subtype.ext <| (coe_supportedModuleHPresheafZeroIso_hom_app_apply S F W _).symm.trans <|
-    congrArg Subtype.val
-      (ConcreteCategory.congr_hom ((F.supportedModuleHPresheafZeroIso S).inv_hom_id_app W) s)
+    (F.supportedModuleHPresheafZeroIso S).inv.app W s =
+      (F.supportedModuleHZeroEquiv S W.unop).symm s :=
+  (rfl)
+
+/-- The degree-zero presheaf comparison is natural in the coefficient sheaf. -/
+@[reassoc]
+lemma supportedModuleHPresheafZeroIso_hom_naturality (f : F ⟶ G) :
+    (supportedModuleHPresheafFunctor S 0).map f ≫ (G.supportedModuleHPresheafZeroIso S).hom =
+      (F.supportedModuleHPresheafZeroIso S).hom ≫ ((supportedSubmoduleFunctor S).map f).hom := by
+  refine supportedModuleHPresheaf_hom_ext fun W x ↦ ?_
+  refine (supportedModuleHPresheaf_comp_app_apply ((supportedModuleHPresheafFunctor S 0).map f)
+    (G.supportedModuleHPresheafZeroIso S).hom W x).trans ?_
+  rw [supportedModuleHPresheaf_comp_app_apply]
+  refine Subtype.ext ?_
+  refine (coe_supportedModuleHPresheafZeroIso_hom_app_apply S G W
+    (((supportedModuleHPresheafFunctor S 0).map f).app W x)).trans ?_
+  rw [supportedModuleHPresheafFunctor_map_app_apply]
+  refine (coe_supportedModuleHZeroEquiv_naturality_right S W.unop f x).trans ?_
+  rw [← coe_supportedModuleHPresheafZeroIso_hom_app_apply S F W x]
+  exact (coe_supportedSubmoduleFunctor_map_hom_app_apply S f W _).symm
 
 /-- The degree-zero supported cohomology presheaf of modules already satisfies the sheaf law. -/
 theorem isSheaf_supportedModuleHPresheaf_zero

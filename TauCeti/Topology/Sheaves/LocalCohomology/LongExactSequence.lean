@@ -124,12 +124,8 @@ theorem exact_supportedModuleHSheafδ_map_f (hT : T.ShortExact) (n : ℕ) :
 /-- A flasque sheaf has zero positive local cohomology sheaves. -/
 theorem isZero_supportedModuleHSheaf_succ_of_isFlasque
     (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))
-    [TopCat.Presheaf.IsFlasque F.obj] (n : ℕ) : IsZero (F.supportedModuleHSheaf S (n + 1)) := by
-  apply Functor.map_isZero
-  apply (Functor.isZero_iff _).2
-  intro W
-  rw [F.supportedModuleHPresheaf_obj]
-  exact ModuleCat.isZero_iff_subsingleton.2 inferInstance
+    [TopCat.Presheaf.IsFlasque F.obj] (n : ℕ) : IsZero (F.supportedModuleHSheaf S (n + 1)) :=
+  F.isZero_supportedModuleHSheaf_of_subsingleton S fun _ ↦ inferInstance
 
 /-- Dimension shifting for local cohomology sheaves along a flasque middle term. -/
 instance isIso_supportedModuleHSheafδ_succ (hT : T.ShortExact)
@@ -174,6 +170,17 @@ theorem shortExact_map_supportedSubmoduleFunctor (hT : T.ShortExact)
   { exact := exact_map_supportedSubmoduleFunctor S hT.exact
     mono_f := mono_supportedSubmoduleFunctor_map S T.f
     epi_g := epi_supportedSubmoduleFunctor_map_g S hT h }
+
+/-- If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is short exact with `Γ_S(F₁)` and `Γ_S(F₂)` flasque and
+`𝓗_S¹(F₁) = 0`, then `Γ_S(F₃)` is flasque, as the quotient of `Γ_S(F₂)` by `Γ_S(F₁)`. -/
+theorem isFlasque_supportedSubmoduleSheaf_X₃_of_shortExact (hT : T.ShortExact)
+    [TopCat.Presheaf.IsFlasque (T.X₁.supportedSubmoduleSheaf S).obj]
+    [TopCat.Presheaf.IsFlasque (T.X₂.supportedSubmoduleSheaf S).obj]
+    (h : IsZero (T.X₁.supportedModuleHSheaf S 1)) :
+    TopCat.Presheaf.IsFlasque (T.X₃.supportedSubmoduleSheaf S).obj := by
+  have : TopCat.Presheaf.IsFlasque (T.map (supportedSubmoduleFunctor S)).X₁.obj := ‹_›
+  have : TopCat.Presheaf.IsFlasque (T.map (supportedSubmoduleFunctor S)).X₂.obj := ‹_›
+  exact (shortExact_map_supportedSubmoduleFunctor S hT h).isFlasque_X₃_of_isFlasque
 
 end
 
