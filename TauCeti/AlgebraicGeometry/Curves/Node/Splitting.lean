@@ -26,7 +26,7 @@ count, persists over every further field extension of `L`.
 The splitting applies to every chosen base change of the curve: the singular subscheme and the
 branch scheme commute with the flat base change `Spec L → Spec K`
 (`AlgebraicGeometry.Scheme.isPullback_singularLocus_subschemeι`,
-`AlgebraicGeometry.Scheme.exists_isPullback_branchSchemeToSingularLocus`). Once nodes and branches
+`AlgebraicGeometry.Scheme.isPullback_branchSchemeBaseChangeMap`). Once nodes and branches
 are split over `L`, the branch scheme is the trivial double cover of the singular subscheme
 (`AlgebraicGeometry.Scheme.Hom.exists_split_of_finrank_eq`).
 
@@ -104,7 +104,7 @@ theorem exists_split_branchScheme {K : Type u} [Field K]
   -- The nodes and branches of `X'` are base changes along `Spec F ⟶ Spec L` of those of the
   -- base change of `X` to `L`, hence split over `F`.
   have Hbase := (Scheme.isPullback_singularLocus_subschemeι H).flip.paste_vert H
-  obtain ⟨f, Hbr⟩ := Scheme.exists_isPullback_branchSchemeToSingularLocus H
+  have Hbr := Scheme.isPullback_branchSchemeBaseChangeMap H
   have Hbr' := Hbr.paste_vert Hbase
   rw [← Spec.algebraMap_comp_algebraMap K L F] at Hbase Hbr'
   have hS := Over.w eS.hom

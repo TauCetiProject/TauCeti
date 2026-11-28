@@ -185,6 +185,12 @@ theorem isPullback_pullback_marking (g : T ⟶ S) (i : Fin n) :
   .of_right (by simpa only [pullback_marking_snd, marking_comp_toBase] using IsPullback.id_horiz g)
     (P.pullback_marking_fst g i) (IsPullback.of_hasPullback P.toBase g).flip
 
+/-- The base-changed total space forms a pullback square over `g : T ⟶ S`. -/
+theorem isPullback_pullback_over (g : T ⟶ S) :
+    IsPullback (Limits.pullback.fst P.toBase g) ((P.pullback g).total ↘ T) (P.total ↘ S) g := by
+  rw [(P.pullback g).over_eq_toBase, P.over_eq_toBase, pullback_toBase]
+  exact IsPullback.of_hasPullback P.toBase g
+
 /-- Reindex the markings of a pointed prestable family along an injection `e : Fin m ↪ Fin n`:
 the `i`th marking of the result is the `e i`th marking of `P`. Reindexing along an equivalence
 reorders the markings, and reindexing along `Fin.castSuccEmb` forgets the last marking. -/
@@ -219,6 +225,14 @@ def ofSmooth {X : Scheme.{u}} (f : X ⟶ S) [IsProper f] [SmoothOfRelativeDimens
     have := SmoothOfRelativeDimension.smooth 1 f
     simp [Scheme.Hom.smoothLocus_eq_top]
 
+/-- The total space of `ofSmooth f s hs hdisj` is smooth of relative dimension `1` over the base. -/
+instance smoothOfRelativeDimension_ofSmooth_over {X : Scheme.{u}} (f : X ⟶ S) [IsProper f]
+    [SmoothOfRelativeDimension 1 f] [GeometricallyConnected f] (s : Fin n → (S ⟶ X))
+    (hs : ∀ i, s i ≫ f = 𝟙 S)
+    (hdisj : Pairwise fun i j ↦ Disjoint (Set.range (s i)) (Set.range (s j))) :
+    SmoothOfRelativeDimension 1 ((ofSmooth f s hs hdisj).total ↘ S) := by
+  rwa [over_eq_toBase, ofSmooth_toBase]
+
 /-- The point of a pointed prestable curve over a field at its `i`th marking, as a point of the
 smooth locus. -/
 def markingPoint {K : Type u} [Field K] (P : PointedPrestableFamily (Spec (.of K)) n) (i : Fin n) :
@@ -237,6 +251,24 @@ reindexed markings. -/
 theorem markingPoint_reindex {K : Type u} [Field K] (P : PointedPrestableFamily (Spec (.of K)) n)
     (e : Fin m ↪ Fin n) (i : Fin m) : (P.reindex e).markingPoint i = P.markingPoint (e i) :=
   (rfl)
+
+/-- Over `Spec K`, the value of the `i`th marking at any point agrees with `P.markingPoint i`. -/
+theorem coe_markingPoint_eq_apply {K : Type u} [Field K]
+    (P : PointedPrestableFamily (Spec (.of K)) n) (i : Fin n) (s : Spec (.of K)) :
+    (P.markingPoint i : P.total) = P.marking i s :=
+  congrArg (P.marking i) (Subsingleton.elim default s)
+
+/-- Distinct markings give distinct points in the smooth locus of a pointed prestable curve over a
+field. -/
+theorem injective_markingPoint {K : Type u} [Field K]
+    (P : PointedPrestableFamily (Spec (.of K)) n) : Function.Injective P.markingPoint :=
+  fun _ _ hij ↦ by_contra fun hne ↦ P.marking_apply_ne hne default (congrArg Subtype.val hij)
+
+/-- Over `Spec K`, the range of the `i`th marking is the singleton `{P.markingPoint i}`. -/
+theorem range_marking_eq_singleton {K : Type u} [Field K]
+    (P : PointedPrestableFamily (Spec (.of K)) n) (i : Fin n) :
+    Set.range (P.marking i) = {(P.markingPoint i : P.total)} :=
+  Set.range_unique
 
 end PointedPrestableFamily
 

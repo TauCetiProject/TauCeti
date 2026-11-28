@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.FiniteEtale.Basic
 public import TauCeti.AlgebraicGeometry.Pullback.SpecMap
 public import TauCeti.RingTheory.Etale.Splitting
 import Mathlib.RingTheory.SimpleModule.InjectiveProjective
+import Mathlib.RingTheory.TensorProduct.Pi
 import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 import TauCeti.RingTheory.Etale.FiniteEtaleSplit.Relative
 import TauCeti.RingTheory.TotallySplit
@@ -42,7 +43,9 @@ Counted in the functor-of-points sense, there is a finite Galois extension `L / 
 dividing `n!` over which a finite étale scheme `X` of rank `n` over `K` has exactly `n` points
 with values in `L`, that is `n` morphisms `Spec L ⟶ X` over `Spec K`. The rank is Mathlib's
 `AlgebraicGeometry.Scheme.Hom.finrank`, so this applies to any finite étale scheme over a field
-whose rank is known.
+whose rank is known. Over a separably closed field `K`, a finite étale scheme is already split, so
+base change along any `K`-algebra with a unique prime ideal induces a bijection on underlying
+points (`AlgebraicGeometry.Scheme.bijective_of_isPullback_of_isFinite_of_etale`).
 
 ## References
 
@@ -207,3 +210,38 @@ theorem exists_natCard_hom_eq_finrank_of_isFinite_of_etale {K : Type u} [Field K
     (TauCeti.AlgebraicGeometry.algSpecHomEquivAlgHom _ _))
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry.Scheme
+
+/-- Base-changing a finite étale scheme over a separably closed field `K` along any `K`-algebra
+`M` with a unique prime ideal (in particular, any field extension `L / K`) induces a bijection on
+underlying points. -/
+theorem bijective_of_isPullback_of_isFinite_of_etale {K M : Type u} [Field K] [IsSepClosed K]
+    [CommRing M] [Algebra K M] [Subsingleton (PrimeSpectrum M)] [Nonempty (PrimeSpectrum M)]
+    {Y Y' : Scheme.{u}} {f : Y ⟶ Spec (.of K)} {f' : Y' ⟶ Spec (.of M)} {g : Y' ⟶ Y}
+    [IsFinite f] [Etale f]
+    (H : IsPullback g f' f (Spec.map (CommRingCat.ofHom (algebraMap K M)))) :
+    Function.Bijective g := by
+  have : Surjective (Spec.map (CommRingCat.ofHom (algebraMap K M))) :=
+    ⟨fun x ↦ ⟨Classical.arbitrary (PrimeSpectrum M), Subsingleton.elim _ x⟩⟩
+  have : Surjective g := MorphismProperty.of_isPullback H.flip inferInstance
+  obtain ⟨A, ⟨e⟩⟩ := f.exists_finiteEtale_algebra
+  obtain ⟨n, ⟨a⟩⟩ := Algebra.IsFiniteSplit.nonempty_algEquiv_fun K A.obj
+  let aM : M ⊗[K] A.obj ≃ₐ[M] Fin n → M := (Algebra.TensorProduct.congr AlgEquiv.refl a).trans <|
+    (Algebra.TensorProduct.piRight K M M (fun _ : Fin n ↦ K)).trans
+      (AlgEquiv.piCongrRight fun _ ↦ Algebra.TensorProduct.rid K M M)
+  let e' : Y' ≅ Spec (.of (Fin n → M)) := H.isoPullback ≪≫ (Over.forget _).mapIso
+    (((Over.pullback (Spec.algebraMap K M)).mapIso e).symm ≪≫
+      TauCeti.AlgebraicGeometry.pullbackSpecIsoOfAlgEquiv K A.obj M (Fin n → M) aM)
+  let eY : Y ≅ Spec (.of (Fin n → K)) :=
+    ((Over.forget _).mapIso e).symm ≪≫ Scheme.Spec.mapIso a.toRingEquiv.toCommRingCatIso.symm.op
+  let : Unique (PrimeSpectrum M) := uniqueOfSubsingleton (Classical.arbitrary _)
+  let equivFin (R : Type u) [CommRing R] [Unique (PrimeSpectrum R)] :
+      PrimeSpectrum (Fin n → R) ≃ Fin n :=
+    (PrimeSpectrum.sigmaToPiHomeo (fun _ : Fin n ↦ R)).toEquiv.symm.trans (Equiv.sigmaUnique _ _)
+  have : Finite Y' := Finite.of_equiv (Fin n) (e'.hom.homeomorph.toEquiv.trans (equivFin M)).symm
+  exact (Nat.bijective_iff_surjective_and_card g).mpr ⟨g.surjective,
+    (Nat.card_congr (e'.hom.homeomorph.toEquiv.trans (equivFin M))).trans
+      (Nat.card_congr (eY.hom.homeomorph.toEquiv.trans (equivFin K))).symm⟩
+
+end AlgebraicGeometry.Scheme
