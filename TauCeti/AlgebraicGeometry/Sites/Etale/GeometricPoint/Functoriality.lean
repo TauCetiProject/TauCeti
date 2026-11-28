@@ -16,9 +16,9 @@ public import TauCeti.FieldTheory.RatFunc.PowerTower
 This file extends `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint` with:
 
 * **Pushforward along scheme morphisms**: the fully faithful slice embedding `toOver`, lifting
-  `Over.map`, `Over.mapId`, `Over.mapComp`, and `Over.mapCongr` to `GeometricPoint.map f`,
-  `mapId`, `mapComp`, and `mapCongr`, together with the associativity and unit coherence laws
-  (`mapComp_assoc`, `mapId_comp`, `comp_mapId`).
+  `Over.map`, `Over.mapId`, `Over.mapComp`, and `Over.mapCongr` via `mapCompToOver` to
+  `GeometricPoint.map f`, `mapId`, `mapComp`, and `mapCongr`, together with the associativity and
+  unit coherence laws (`mapComp_assoc`, `mapId_comp`, `comp_mapId`).
 * **Algebraic vs. separable closures**: `fromAlgClosure` and `algClosureToSepClosure`, showing that
   `Spec kbar ⟶ Spec ksep` is an isomorphism in `GeometricPoint S` if and only if the base field is
   perfect, while always inducing an isomorphism of points and étale stalks
@@ -63,13 +63,6 @@ theorem toOver_preimage_hom {S : Scheme.{u}} {s₁ s₂ : GeometricPoint S}
     ((toOver S).preimage f).hom = f.left :=
   congrArg Over.Hom.left ((toOver S).map_preimage f)
 
-/-- The underlying scheme morphism of `(toOverFullyFaithful S).preimage f` is `f.left`. -/
-@[simp]
-theorem toOverFullyFaithful_preimage_hom {S : Scheme.{u}} {s₁ s₂ : GeometricPoint S}
-    (f : (toOver S).obj s₁ ⟶ (toOver S).obj s₂) :
-    ((toOverFullyFaithful S).preimage f).hom = f.left :=
-  congrArg Over.Hom.left ((toOverFullyFaithful S).map_preimage f)
-
 -- Exposed so `((map f).obj s).Ω`, `((map f).obj s).hom`, and `((map f).map φ).hom` unfold in
 -- coherence statements.
 /-- Pushforward of geometric points along a scheme morphism `f : X ⟶ Y`, lifting `Over.map f`
@@ -79,7 +72,9 @@ noncomputable def map {X Y : Scheme.{u}} (f : X ⟶ Y) : GeometricPoint X ⥤ Ge
   obj s := ⟨s.Ω, s.hom ≫ f⟩
   map φ := ⟨φ.hom, by simp⟩
 
-private noncomputable def mapCompToOver {X Y : Scheme.{u}} (f : X ⟶ Y) :
+/-- Natural isomorphism comparing geometric-point pushforward `map f` via `toOver` with slice
+pushforward `Over.map f`. -/
+noncomputable def mapCompToOver {X Y : Scheme.{u}} (f : X ⟶ Y) :
     map f ⋙ toOver Y ≅ toOver X ⋙ Over.map f :=
   NatIso.ofComponents
     (fun s ↦ Over.isoMk (Iso.refl (Spec (.of s.Ω))) (by dsimp [toOver, map]; simp))
@@ -87,13 +82,19 @@ private noncomputable def mapCompToOver {X Y : Scheme.{u}} (f : X ⟶ Y) :
       ext
       exact (Category.comp_id _).trans (Category.id_comp _).symm
 
-private theorem mapCompToOver_hom_app {X Y : Scheme.{u}} (f : X ⟶ Y) (s : GeometricPoint X) :
+/-- The forward component of `mapCompToOver f` at `s` has the identity as underlying scheme
+morphism. -/
+@[simp]
+theorem mapCompToOver_hom_app_left {X Y : Scheme.{u}} (f : X ⟶ Y) (s : GeometricPoint X) :
     ((mapCompToOver f).hom.app s).left = 𝟙 _ :=
-  rfl
+  (rfl)
 
-private theorem mapCompToOver_inv_app {X Y : Scheme.{u}} (f : X ⟶ Y) (s : GeometricPoint X) :
+/-- The inverse component of `mapCompToOver f` at `s` has the identity as underlying scheme
+morphism. -/
+@[simp]
+theorem mapCompToOver_inv_app_left {X Y : Scheme.{u}} (f : X ⟶ Y) (s : GeometricPoint X) :
     ((mapCompToOver f).inv.app s).left = 𝟙 _ :=
-  rfl
+  (rfl)
 
 /-- Pushforward along `𝟙 X` is naturally isomorphic to the identity functor, lifted from
 `Over.mapId X`. -/
@@ -105,18 +106,18 @@ noncomputable def mapId (X : Scheme.{u}) : map (𝟙 X) ≅ 𝟭 (GeometricPoint
 @[simp]
 theorem mapId_hom_app_hom {X : Scheme.{u}} (s : GeometricPoint X) :
     ((mapId X).hom.app s).hom = 𝟙 (Spec (.of s.Ω)) := by
-  rw [mapId, Functor.fullyFaithfulCancelRight_hom_app, toOver_preimage_hom]
-  dsimp [Over.mapId]
-  simp only [mapCompToOver_hom_app, Over.isoMk_hom_left, Iso.refl_hom]
+  simp only [mapId, Functor.fullyFaithfulCancelRight_hom_app, toOver_preimage_hom, Iso.trans_hom,
+    NatTrans.comp_app, Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Over.comp_left,
+    mapCompToOver_hom_app_left, Over.mapId_hom_app_left]
   exact Category.id_comp _
 
 /-- The inverse component of `mapId X` at `s` has the identity as underlying scheme morphism. -/
 @[simp]
 theorem mapId_inv_app_hom {X : Scheme.{u}} (s : GeometricPoint X) :
     ((mapId X).inv.app s).hom = 𝟙 (Spec (.of s.Ω)) := by
-  rw [mapId, Functor.fullyFaithfulCancelRight_inv_app, toOver_preimage_hom]
-  dsimp [Over.mapId]
-  simp only [mapCompToOver_inv_app, Over.isoMk_inv_left, Iso.refl_inv]
+  simp only [mapId, Functor.fullyFaithfulCancelRight_inv_app, toOver_preimage_hom, Iso.trans_inv,
+    NatTrans.comp_app, Functor.isoWhiskerLeft_inv, Functor.whiskerLeft_app, Over.comp_left,
+    mapCompToOver_inv_app_left, Over.mapId_inv_app_left]
   exact Category.id_comp _
 
 /-- Pushforward along a composite `f ≫ g` is naturally isomorphic to the composite of the
@@ -137,10 +138,13 @@ noncomputable def mapComp {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
 theorem mapComp_hom_app_hom {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
     (s : GeometricPoint X) :
     ((mapComp f g).hom.app s).hom = 𝟙 (Spec (.of s.Ω)) := by
-  rw [mapComp, Functor.fullyFaithfulCancelRight_hom_app, toOver_preimage_hom]
-  dsimp [Over.mapComp]
-  simp only [mapCompToOver_hom_app, mapCompToOver_inv_app, Over.isoMk_hom_left, Iso.refl_hom]
-  exact (Category.id_comp _).trans (Category.id_comp _)
+  simp only [mapComp, Functor.fullyFaithfulCancelRight_hom_app, toOver_preimage_hom, Iso.trans_hom,
+    NatTrans.comp_app, Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app,
+    Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, Iso.symm_hom, Functor.associator,
+    Over.comp_left, Over.id_left, mapCompToOver_hom_app_left, mapCompToOver_inv_app_left,
+    Over.mapComp_hom_app_left, Over.map_map_left]
+  exact (Category.id_comp _).trans <| (Category.id_comp _).trans <| (Category.id_comp _).trans <|
+    (Category.id_comp _).trans <| (Category.id_comp _).trans (Category.id_comp _)
 
 /-- The inverse component of `mapComp f g` at `s` has the identity as underlying scheme
 morphism. -/
@@ -148,11 +152,13 @@ morphism. -/
 theorem mapComp_inv_app_hom {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
     (s : GeometricPoint X) :
     ((mapComp f g).inv.app s).hom = 𝟙 (Spec (.of s.Ω)) := by
-  rw [mapComp, Functor.fullyFaithfulCancelRight_inv_app, toOver_preimage_hom]
-  dsimp [Over.mapComp]
-  simp only [mapCompToOver_hom_app, mapCompToOver_inv_app, Over.isoMk_inv_left, Iso.refl_inv,
-    Category.comp_id]
-  exact Category.id_comp _
+  simp only [mapComp, Functor.fullyFaithfulCancelRight_inv_app, toOver_preimage_hom, Iso.trans_inv,
+    NatTrans.comp_app, Functor.isoWhiskerLeft_inv, Functor.whiskerLeft_app,
+    Functor.isoWhiskerRight_inv, Functor.whiskerRight_app, Iso.symm_inv, Functor.associator,
+    Over.comp_left, Over.id_left, mapCompToOver_hom_app_left, mapCompToOver_inv_app_left,
+    Over.mapComp_inv_app_left, Over.map_map_left]
+  exact (Category.comp_id _).trans <| (Category.comp_id _).trans <| (Category.comp_id _).trans <|
+    (Category.comp_id _).trans <| (Category.comp_id _).trans (Category.comp_id _)
 
 /-- Equal scheme morphisms induce naturally isomorphic pushforward functors, lifted from
 `Over.mapCongr`. -/
@@ -167,9 +173,10 @@ noncomputable def mapCongr {X Y : Scheme.{u}} {f g : X ⟶ Y} (h : f = g) : map 
 theorem mapCongr_hom_app_hom {X Y : Scheme.{u}} {f g : X ⟶ Y} (h : f = g)
     (s : GeometricPoint X) :
     ((mapCongr h).hom.app s).hom = 𝟙 (Spec (.of s.Ω)) := by
-  rw [mapCongr, Functor.fullyFaithfulCancelRight_hom_app, toOver_preimage_hom]
-  dsimp [Over.mapCongr]
-  simp only [mapCompToOver_hom_app, mapCompToOver_inv_app, Over.isoMk_hom_left, Iso.refl_hom]
+  simp only [mapCongr, Functor.fullyFaithfulCancelRight_hom_app, toOver_preimage_hom, Iso.trans_hom,
+    NatTrans.comp_app, Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Iso.symm_hom,
+    Over.comp_left, mapCompToOver_hom_app_left, mapCompToOver_inv_app_left,
+    Over.mapCongr_hom_app_left]
   exact (Category.id_comp _).trans (Category.id_comp _)
 
 /-- The inverse component of `mapCongr h` at `s` has the identity as underlying scheme morphism. -/
@@ -177,9 +184,10 @@ theorem mapCongr_hom_app_hom {X Y : Scheme.{u}} {f g : X ⟶ Y} (h : f = g)
 theorem mapCongr_inv_app_hom {X Y : Scheme.{u}} {f g : X ⟶ Y} (h : f = g)
     (s : GeometricPoint X) :
     ((mapCongr h).inv.app s).hom = 𝟙 (Spec (.of s.Ω)) := by
-  rw [mapCongr, Functor.fullyFaithfulCancelRight_inv_app, toOver_preimage_hom]
-  dsimp [Over.mapCongr]
-  simp only [mapCompToOver_hom_app, mapCompToOver_inv_app, Over.isoMk_inv_left, Iso.refl_inv]
+  simp only [mapCongr, Functor.fullyFaithfulCancelRight_inv_app, toOver_preimage_hom, Iso.trans_inv,
+    NatTrans.comp_app, Functor.isoWhiskerLeft_inv, Functor.whiskerLeft_app, Iso.symm_inv,
+    Over.comp_left, mapCompToOver_hom_app_left, mapCompToOver_inv_app_left,
+    Over.mapCongr_inv_app_left]
   exact Category.id_comp _
 
 /-- Associativity coherence for `mapComp`. -/
@@ -197,11 +205,13 @@ theorem mapComp_assoc {W X Y Z : Scheme.{u}} (f : W ⟶ X) (g : X ⟶ Y) (h : Y 
 theorem mapId_comp {X Y : Scheme.{u}} (f : X ⟶ Y) (s : GeometricPoint X) :
     (mapComp (𝟙 X) f).hom.app s ≫ (map f).map ((mapId X).hom.app s) =
       (mapCongr (Category.id_comp f)).hom.app s := by
-  ext : 1
-  change ((mapComp (𝟙 X) f).hom.app s).hom ≫ ((map f).map ((mapId X).hom.app s)).hom =
-    ((mapCongr (Category.id_comp f)).hom.app s).hom
-  rw [map_map_hom, mapComp_hom_app_hom, mapId_hom_app_hom, mapCongr_hom_app_hom]
-  exact Category.comp_id _
+  apply Hom.ext
+  calc
+    ((mapComp (𝟙 X) f).hom.app s ≫ (map f).map ((mapId X).hom.app s)).hom
+      = ((mapComp (𝟙 X) f).hom.app s).hom ≫ ((map f).map ((mapId X).hom.app s)).hom := rfl
+    _ = ((mapCongr (Category.id_comp f)).hom.app s).hom := by
+      rw [map_map_hom, mapComp_hom_app_hom, mapId_hom_app_hom, mapCongr_hom_app_hom]
+      exact Category.comp_id _
 
 /-- Right unit coherence for `mapComp` and `mapId`. -/
 theorem comp_mapId {X Y : Scheme.{u}} (f : X ⟶ Y) (s : GeometricPoint X) :

@@ -41,8 +41,7 @@ elements behind the finite unitary groups.
 
 ## Main results
 
-* `TauCeti.FiniteField.frobeniusAlgHom_pow_apply`,
-  `TauCeti.FiniteField.frobeniusAlgEquivOfFinite_pow_apply`: the `n`-th iterate is the
+* `TauCeti.FiniteField.frobeniusAlgHom_pow_apply`: the `n`-th iterate is the
   `q ^ n`-power map.
 * `TauCeti.FiniteField.sub_pow_natCard`: the `q`-power map is additive,
   `(x - y) ^ q = x ^ q - y ^ q`.
@@ -222,28 +221,19 @@ theorem frobeniusAlgEquivOfFinite_symm_apply_pow (K L : Type*) [Field K] [Finite
     ((frobeniusAlgEquivOfFinite K L).symm x) ^ Nat.card K = x := by
   rw [← frobeniusAlgEquivOfFinite_apply K L, AlgEquiv.apply_symm_apply]
 
-/-- The `m`-th power of `TauCeti.FiniteField.frobeniusAlgEquivOfFinite K L` raises every element to
-the `(Nat.card K) ^ m`-th power. -/
-@[simp]
-theorem frobeniusAlgEquivOfFinite_pow_apply (K L : Type*) [Field K] [Finite K] [Field L]
-    [Algebra K L] [PerfectField L] (m : ℕ) (x : L) :
-    (frobeniusAlgEquivOfFinite K L ^ m) x = x ^ Nat.card K ^ m := by
-  have hcoe : ⇑(frobeniusAlgEquivOfFinite K L) = (· ^ Nat.card K) :=
-    funext (frobeniusAlgEquivOfFinite_apply K L)
-  rw [AlgEquiv.coe_pow, hcoe, pow_iterate]
-
-/-- Under `[Fintype K]` and `[Algebra.IsAlgebraic K L]`,
-`TauCeti.FiniteField.frobeniusAlgEquivOfFinite K L` equals Mathlib's
-`FiniteField.frobeniusAlgEquivOfAlgebraic K L`. -/
+/-- Under `[Fintype K]` and `[Algebra.IsAlgebraic K L]` (with `PerfectField L` supplied locally
+by `Algebra.IsAlgebraic.perfectField K`), `TauCeti.FiniteField.frobeniusAlgEquivOfFinite K L`
+equals Mathlib's `FiniteField.frobeniusAlgEquivOfAlgebraic K L`. -/
 theorem frobeniusAlgEquivOfFinite_eq_frobeniusAlgEquivOfAlgebraic (K L : Type*) [Field K]
-    [Fintype K] [Field L] [Algebra K L] [Algebra.IsAlgebraic K L] [PerfectField L] :
+    [Fintype K] [Field L] [Algebra K L] [Algebra.IsAlgebraic K L] :
+    letI := Algebra.IsAlgebraic.perfectField K (L := L)
     frobeniusAlgEquivOfFinite K L = _root_.FiniteField.frobeniusAlgEquivOfAlgebraic K L := by
   ext x
   rw [frobeniusAlgEquivOfFinite_apply, _root_.FiniteField.coe_frobeniusAlgEquivOfAlgebraic,
     Nat.card_eq_fintype_card]
 
-/-- When `K` carries a `Fintype` instance, `(frobeniusAlgEquivOfFinite K L ^ m).toAlgHom` equals
-`FiniteField.frobeniusAlgHom K L ^ m`. -/
+/-- For a perfect field `L` over `K` (`[PerfectField L]`) with `[Fintype K]`,
+`(frobeniusAlgEquivOfFinite K L ^ m).toAlgHom` equals `FiniteField.frobeniusAlgHom K L ^ m`. -/
 theorem frobeniusAlgEquivOfFinite_pow_toAlgHom (K L : Type*) [Field K] [Fintype K] [Field L]
     [Algebra K L] [PerfectField L] (m : ℕ) :
     (frobeniusAlgEquivOfFinite K L ^ m).toAlgHom = _root_.FiniteField.frobeniusAlgHom K L ^ m := by

@@ -314,9 +314,22 @@ theorem toSheafSpecStalkEquiv_ofOverGaloisStalkAction (R : Type u) [CommRing R] 
   rw [← toSheafSpecStalkEquiv_apply] at h1 h2
   exact algHom_eq_comp_of_ofOverGaloisStalkAction σ z _ _ h1 h2
 
+/-- Natural isomorphism identifying `FiniteEtaleScheme.spec` of the coordinate-algebra functor
+with the identity on `FiniteEtaleScheme (Spec (.of R))`, obtained by composing the counit of
+`FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme` with
+`FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor`. -/
+noncomputable def finiteEtaleInverseCompSpecIso (R : Type u) [CommRing R] :
+    (FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of R)).inverse ⋙
+        FiniteEtaleScheme.spec (.of R) ≅
+      𝟭 (FiniteEtaleScheme (Spec (.of R))) :=
+  (Functor.isoWhiskerLeft _
+      (eqToIso (FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor
+        (.of R)))).symm ≪≫
+    (FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of R)).counitIso
+
 /-- Over any commutative ring `R`, the stalk at `ofOver (𝟙 (Spec (.of R))) Ω` of the étale sheaf
 of sections of a finite étale `Spec R`-scheme `X` is the set of `Ω`-valued points of its
-coordinate algebra, obtained by transporting `toSheafSpecStalkEquiv` along the counit of
+coordinate algebra, obtained by transporting `toSheafSpecStalkEquiv` along the inverse counit of
 `FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme`. -/
 noncomputable def toSheafStalkEquiv (R Ω : Type u) [CommRing R] [Field Ω] [IsSepClosed Ω]
     [Algebra R Ω] (X : FiniteEtaleScheme (Spec (.of R))) :
@@ -326,17 +339,14 @@ noncomputable def toSheafStalkEquiv (R Ω : Type u) [CommRing R] [Field Ω] [IsS
         (.of R)).inverse.obj X).unop.obj →ₐ[R] Ω) :=
   (((Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.mapIso
     ((FiniteEtaleScheme.toSheaf (Spec (.of R))).mapIso
-      ((FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme
-        (.of R)).counitIso.symm.app X ≪≫
-        (Functor.isoWhiskerLeft _
-          (eqToIso (FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor
-            (.of R)))).app X))).toEquiv).trans
+      ((finiteEtaleInverseCompSpecIso R).symm.app X))).toEquiv).trans
     (toSheafSpecStalkEquiv R Ω
       ((FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme
         (.of R)).inverse.obj X).unop)
 
-/-- `toSheafStalkEquiv` transports a germ along the counit of
-`finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme` and then applies `toSheafSpecStalkEquiv`. -/
+/-- `toSheafStalkEquiv` transports a germ along the inverse counit of
+`finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme` (`(finiteEtaleInverseCompSpecIso R).inv`) and
+then applies `toSheafSpecStalkEquiv`. -/
 theorem toSheafStalkEquiv_apply (R Ω : Type u) [CommRing R] [Field Ω] [IsSepClosed Ω]
     [Algebra R Ω] (X : FiniteEtaleScheme (Spec (.of R)))
     (z : (Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.obj
@@ -347,11 +357,7 @@ theorem toSheafStalkEquiv_apply (R Ω : Type u) [CommRing R] [Field Ω] [IsSepCl
           (.of R)).inverse.obj X).unop
         ((Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of R))) Ω).hom).sheafFiber.map
           ((FiniteEtaleScheme.toSheaf (Spec (.of R))).map
-            ((FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme
-              (.of R)).counitIso.inv.app X ≫
-              (Functor.isoWhiskerLeft _
-                (eqToIso (FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor
-                  (.of R)))).hom.app X)) z) :=
+            ((finiteEtaleInverseCompSpecIso R).inv.app X)) z) :=
   (rfl)
 
 /-- **Naturality of `toSheafStalkEquiv`.** A morphism `f : X ⟶ Y` of finite étale
@@ -368,36 +374,16 @@ theorem toSheafStalkEquiv_map (R Ω : Type u) [CommRing R] [Field Ω] [IsSepClos
       (toSheafStalkEquiv R Ω X z).comp
         ((FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme
           (.of R)).inverse.map f).unop.hom.hom := by
-  have hnat :
-      f ≫
-        (FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme
-          (.of R)).counitIso.inv.app Y ≫
-        (Functor.isoWhiskerLeft _
-          (eqToIso (FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor
-            (.of R)))).hom.app Y =
-      ((FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme
-          (.of R)).counitIso.inv.app X ≫
-        (Functor.isoWhiskerLeft _
-          (eqToIso (FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor
-            (.of R)))).hom.app X) ≫
-        (FiniteEtaleScheme.spec (.of R)).map
-          ((FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme
-            (.of R)).inverse.map f).unop.op := by
-    let E := FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme (.of R)
-    rw [← Category.assoc]
-    trans (E.counitIso.inv.app X ≫ (E.inverse ⋙ E.functor).map f) ≫
-      (Functor.isoWhiskerLeft E.inverse
-        (eqToIso (FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor
-          (.of R)))).hom.app Y
-    · exact congrArg (· ≫ _) (E.counitIso.inv.naturality f)
-    · rw [Category.assoc]
-      exact congrArg (E.counitIso.inv.app X ≫ ·)
-        ((Functor.isoWhiskerLeft E.inverse
-          (eqToIso (FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme_functor
-            (.of R)))).hom.naturality f)
+  have hnat := (finiteEtaleInverseCompSpecIso R).inv.naturality f
+  dsimp only [Functor.id_map, Functor.comp_map] at hnat
   rw [toSheafStalkEquiv_apply, toSheafStalkEquiv_apply, ← ConcreteCategory.comp_apply,
     ← Functor.map_comp, ← Functor.map_comp, hnat, Functor.map_comp, Functor.map_comp,
-    ConcreteCategory.comp_apply, toSheafSpecStalkEquiv_map]
+    ConcreteCategory.comp_apply,
+    ← Quiver.Hom.op_unop
+      ((FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme
+        (.of R)).inverse.map f),
+    toSheafSpecStalkEquiv_map]
+  rfl
 
 /-- **The Galois action on the stalk of any finite étale cover over an affine base.** Under
 `toSheafStalkEquiv`, `σ : Ω ≃ₐ[R] Ω` sends the point with coordinate map `v` to `σ ∘ v`. -/
@@ -410,9 +396,12 @@ theorem toSheafStalkEquiv_ofOverGaloisStalkAction (R Ω : Type u) [CommRing R] [
         ((ofOverGaloisStalkAction (𝟙 (Spec (.of R))) Ω σ).asIso.hom.app
           ((FiniteEtaleScheme.toSheaf (Spec (.of R))).obj X) z) =
       σ.toAlgHom.comp (toSheafStalkEquiv R Ω X z) := by
-  rw [toSheafStalkEquiv_apply, toSheafStalkEquiv_apply, ← ConcreteCategory.comp_apply,
-    ← (ofOverGaloisStalkAction (𝟙 (Spec (.of R))) Ω σ).asIso.hom.naturality,
-    ConcreteCategory.comp_apply]
+  have hnat := NatTrans.naturality_apply
+    (ofOverGaloisStalkAction (𝟙 (Spec (.of R))) Ω σ).asIso.hom
+    ((FiniteEtaleScheme.toSheaf (Spec (.of R))).map
+      ((finiteEtaleInverseCompSpecIso R).inv.app X)) z
+  dsimp only [Functor.id_obj] at hnat
+  rw [toSheafStalkEquiv_apply, toSheafStalkEquiv_apply, ← hnat]
   exact toSheafSpecStalkEquiv_ofOverGaloisStalkAction R Ω _ σ _
 
 /-- Over a field `K`, the stalk at `ofOver (𝟙 (Spec (.of K))) Ω` of the étale sheaf of sections

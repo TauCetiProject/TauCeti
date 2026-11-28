@@ -190,17 +190,12 @@ theorem Hom.ringHom_injective {s₁ s₂ : GeometricPoint S} :
   ext : 1
   rw [← Hom.SpecMap_ringHom f, ← Hom.SpecMap_ringHom g, h]
 
-private theorem SpecMap_ofHom_injective {R T : Type u} [CommRing R] [CommRing T]
-    {f g : R →+* T} (h : Spec.map (CommRingCat.ofHom f) = Spec.map (CommRingCat.ofHom g)) :
-    f = g :=
-  congrArg CommRingCat.Hom.hom (Spec.map_injective h)
-
 /-- Extracting the ring homomorphism from `homOfRingHom ι w` recovers `ι`. -/
 @[simp]
 theorem Hom.ringHom_homOfRingHom {s₁ s₂ : GeometricPoint S} (ι : s₂.Ω →+* s₁.Ω)
     (w : Spec.map (CommRingCat.ofHom ι) ≫ s₂.hom = s₁.hom) :
     (homOfRingHom ι w).ringHom = ι :=
-  SpecMap_ofHom_injective ((Hom.SpecMap_ringHom _).trans (homOfRingHom_hom ι w))
+  congrArg CommRingCat.Hom.hom (Spec.preimage_map (CommRingCat.ofHom ι))
 
 /-- Reconstructing a morphism of geometric points from its underlying ring homomorphism recovers the
 morphism. -/
@@ -213,17 +208,14 @@ theorem homOfRingHom_ringHom {s₁ s₂ : GeometricPoint S} (f : s₁ ⟶ s₂) 
 @[simp]
 theorem Hom.ringHom_id (s : GeometricPoint S) :
     Hom.ringHom (𝟙 s) = RingHom.id s.Ω :=
-  SpecMap_ofHom_injective <| by
-    rw [Hom.SpecMap_ringHom, id_hom, CommRingCat.ofHom_id, Spec.map_id]
+  congrArg CommRingCat.Hom.hom (Spec.preimage_id (R := CommRingCat.of s.Ω))
 
 /-- The ring homomorphism of a composite `f ≫ g` of morphisms of geometric points is
 `f.ringHom.comp g.ringHom`. -/
 @[simp]
 theorem Hom.ringHom_comp {s₁ s₂ s₃ : GeometricPoint S} (f : s₁ ⟶ s₂) (g : s₂ ⟶ s₃) :
     (f ≫ g).ringHom = f.ringHom.comp g.ringHom :=
-  SpecMap_ofHom_injective <| by
-    rw [Hom.SpecMap_ringHom, comp_hom, CommRingCat.ofHom_comp, Spec.map_comp,
-      Hom.SpecMap_ringHom, Hom.SpecMap_ringHom]
+  congrArg CommRingCat.Hom.hom (Spec.preimage_comp f.hom g.hom)
 
 /-- A morphism of geometric points lies over a single scheme-theoretic point of `S`. -/
 theorem hom_default_eq_of_hom {s₁ s₂ : GeometricPoint S} (f : s₁ ⟶ s₂) :

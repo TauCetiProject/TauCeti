@@ -29,9 +29,9 @@ When `a : Spec (.of R) ⟶ S` is a monomorphism (such as `𝟙 (Spec (.of R))` o
 
 ## Main definitions
 
-* `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.homOfAlgHom`, `isoOfAlgEquiv`,
-  `autOfAlgEquiv`, `autToAlgEquiv`: conversion between `R`-algebra maps / automorphisms and
-  morphisms / automorphisms in `GeometricPoint S`.
+* `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.homOfAlgHom`, `homEquivAlgHom`,
+  `isoOfAlgEquiv`, `autOfAlgEquiv`, `autToAlgEquiv`: conversion between `R`-algebra maps /
+  automorphisms and morphisms / automorphisms in `GeometricPoint S`.
 * `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.ofOverGaloisStalkAction`: the left action of
   `Ω ≃ₐ[R] Ω` on the stalk functor at `ofOver a Ω`.
 * `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint.ofOverAutMulEquiv`: group isomorphism
@@ -93,10 +93,8 @@ theorem homOfAlgHom_id (Ω : Type u) [Field Ω] [IsSepClosed Ω] [Algebra R Ω] 
 @[simp]
 theorem homOfAlgHom_comp (σ : Ω₂ →ₐ[R] Ω₁) (τ : Ω₃ →ₐ[R] Ω₂) :
     homOfAlgHom a (σ.comp τ) = homOfAlgHom a σ ≫ homOfAlgHom a τ := by
-  apply Hom.ringHom_injective
-  rw [Hom.ringHom_comp, Hom.ringHom_homOfAlgHom, Hom.ringHom_homOfAlgHom,
-    Hom.ringHom_homOfAlgHom]
-  rfl
+  ext : 1
+  simp [AlgHom.comp_toRingHom]
 
 /-- An `R`-algebra isomorphism `σ : Ω₂ ≃ₐ[R] Ω₁` induces an isomorphism `Spec σ` from
 `ofOver a Ω₁` to `ofOver a Ω₂` in `GeometricPoint S`. -/
@@ -116,9 +114,9 @@ theorem isoOfAlgEquiv_hom (σ : Ω₂ ≃ₐ[R] Ω₁) :
 @[simp]
 theorem isoOfAlgEquiv_inv (σ : Ω₂ ≃ₐ[R] Ω₁) :
     (isoOfAlgEquiv a σ).inv = homOfAlgHom a σ.symm.toAlgHom := by
-  rw [← cancel_epi (isoOfAlgEquiv a σ).hom, Iso.hom_inv_id, isoOfAlgEquiv_hom,
-    ← homOfAlgHom_comp, show σ.toAlgHom.comp σ.symm.toAlgHom = AlgHom.id R Ω₁ by ext; simp,
-    homOfAlgHom_id]
+  ext : 1
+  simp only [isoOfAlgEquiv, isoOfRingEquiv_inv_hom, homOfAlgHom_hom, ← AlgEquiv.symm_toRingEquiv,
+    AlgEquiv.toRingEquiv_toRingHom, AlgEquiv.toAlgHom_toRingHom, AlgHom.toRingHom_eq_coe]
 
 /-- When `a : Spec (.of R) ⟶ S` is a monomorphism, `Spec g : Spec Ω₁ ⟶ Spec Ω₂` is a morphism
 `ofOver a Ω₁ ⟶ ofOver a Ω₂` in `GeometricPoint S` if and only if `g` is `R`-linear. -/
@@ -135,6 +133,45 @@ theorem SpecMap_comp_ofOver_iff [Mono a] (g : Ω₂ →+* Ω₁) :
 theorem Hom.ringHom_comp_algebraMap [Mono a] (f : ofOver a Ω₁ ⟶ ofOver a Ω₂) :
     f.ringHom.comp (algebraMap R Ω₂) = algebraMap R Ω₁ :=
   (SpecMap_comp_ofOver_iff a f.ringHom).mp f.SpecMap_ringHom_comp
+
+/-- When `a : Spec (.of R) ⟶ S` is a monomorphism, morphisms `ofOver a Ω₁ ⟶ ofOver a Ω₂` in
+`GeometricPoint S` are equivalent to `R`-algebra homomorphisms `Ω₂ →ₐ[R] Ω₁`. -/
+noncomputable def homEquivAlgHom [Mono a] :
+    (ofOver a Ω₁ ⟶ ofOver a Ω₂) ≃ (Ω₂ →ₐ[R] Ω₁) where
+  toFun f :=
+    { toRingHom := f.ringHom
+      commutes' := fun r ↦ DFunLike.congr_fun (f.ringHom_comp_algebraMap a) r }
+  invFun σ := homOfAlgHom a σ
+  left_inv f := by
+    ext : 1
+    simp [Hom.SpecMap_ringHom]
+  right_inv σ := by
+    ext x
+    simp
+
+/-- The ring homomorphism underlying `homEquivAlgHom a f` is `f.ringHom`. -/
+@[simp]
+theorem homEquivAlgHom_toRingHom [Mono a] (f : ofOver a Ω₁ ⟶ ofOver a Ω₂) :
+    (homEquivAlgHom a f : Ω₂ →+* Ω₁) = f.ringHom :=
+  (rfl)
+
+/-- The inverse of `homEquivAlgHom a` is `homOfAlgHom a`. -/
+@[simp]
+theorem homEquivAlgHom_symm_apply [Mono a] (σ : Ω₂ →ₐ[R] Ω₁) :
+    (homEquivAlgHom a).symm σ = homOfAlgHom a σ :=
+  (rfl)
+
+/-- Applying `homEquivAlgHom a` to `homOfAlgHom a σ` recovers `σ`. -/
+@[simp]
+theorem homEquivAlgHom_homOfAlgHom [Mono a] (σ : Ω₂ →ₐ[R] Ω₁) :
+    homEquivAlgHom a (homOfAlgHom a σ) = σ :=
+  (homEquivAlgHom a).right_inv σ
+
+/-- Applying `homOfAlgHom a` to `homEquivAlgHom a f` recovers `f`. -/
+@[simp]
+theorem homOfAlgHom_homEquivAlgHom [Mono a] (f : ofOver a Ω₁ ⟶ ofOver a Ω₂) :
+    homOfAlgHom a (homEquivAlgHom a f) = f :=
+  (homEquivAlgHom a).left_inv f
 
 end Maps
 
@@ -202,20 +239,33 @@ theorem ofOverGaloisStalkAction_mul_app_apply (σ τ : Ω ≃ₐ[R] Ω)
         ((ofOverGaloisStalkAction a Ω τ).asIso.hom.app F z) := by
   rw [map_mul, Aut.functor_mul_asIso_hom_app_apply]
 
+private theorem autToRingEquiv_toRingHom (φ : Aut (ofOver a Ω)) :
+    ((Scheme.Spec.preimageIso
+        ((forget S).mapIso φ.asIso)).unop.commRingCatIsoToRingEquiv : Ω →+* Ω) =
+      φ.asIso.hom.ringHom := by
+  calc
+    ((Scheme.Spec.preimageIso
+        ((forget S).mapIso φ.asIso)).unop.commRingCatIsoToRingEquiv : Ω →+* Ω)
+      = ((Scheme.Spec.preimageIso ((forget S).mapIso φ.asIso)).unop.hom).hom :=
+        Iso.commRingCatIsoToRingEquiv_toRingHom
+          (R := CommRingCat.of Ω) (S := CommRingCat.of Ω) _
+    _ = (Spec.preimage φ.asIso.hom.hom).hom := rfl
+    _ = φ.asIso.hom.ringHom := by
+        rw [← Hom.SpecMap_ringHom φ.asIso.hom, Spec.preimage_map, CommRingCat.hom_ofHom]
+
 /-- When `a : Spec (.of R) ⟶ S` is a monomorphism, an automorphism of `ofOver a Ω` in
 `GeometricPoint S` yields an `R`-algebra automorphism of `Ω`. -/
 noncomputable def autToAlgEquiv [Mono a] (φ : Aut (ofOver a Ω)) : Ω ≃ₐ[R] Ω :=
   AlgEquiv.ofRingEquiv
-    (f := RingEquiv.ofRingHom φ.asIso.hom.ringHom φ.asIso.inv.ringHom
-      (by rw [← Hom.ringHom_comp, φ.asIso.hom_inv_id, Hom.ringHom_id])
-      (by rw [← Hom.ringHom_comp, φ.asIso.inv_hom_id, Hom.ringHom_id]))
-    fun r ↦ DFunLike.congr_fun (φ.asIso.hom.ringHom_comp_algebraMap a) r
+    (f := (Scheme.Spec.preimageIso ((forget S).mapIso φ.asIso)).unop.commRingCatIsoToRingEquiv)
+    fun r ↦ (DFunLike.congr_fun (autToRingEquiv_toRingHom a Ω φ) (algebraMap R Ω r)).trans
+      (DFunLike.congr_fun (φ.asIso.hom.ringHom_comp_algebraMap a) r)
 
 /-- The ring homomorphism underlying `autToAlgEquiv a Ω φ` is `φ.asIso.hom.ringHom`. -/
 @[simp]
 theorem autToAlgEquiv_toRingHom [Mono a] (φ : Aut (ofOver a Ω)) :
     (autToAlgEquiv a Ω φ : Ω →+* Ω) = φ.asIso.hom.ringHom :=
-  (rfl)
+  autToRingEquiv_toRingHom a Ω φ
 
 /-- Evaluating `autToAlgEquiv a Ω φ` at `r` applies `φ.asIso.hom.ringHom`. -/
 @[simp]

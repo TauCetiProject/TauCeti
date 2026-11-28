@@ -189,21 +189,27 @@ section Algebraic
 
 variable {S : Scheme.{u}} {k : Type u} [Field k] [Fintype k] (a : Spec (.of k) ⟶ S)
 variable (kbar : Type u) [Field kbar] [Algebra k kbar] [Algebra.IsAlgebraic k kbar]
-variable [PerfectField kbar] [IsSepClosed kbar]
+variable [IsSepClosed kbar]
 variable {A : Type u'} [Category.{w} A] [HasColimitsOfSize.{u, u} A]
 
-/-- Under `[Fintype k]` and `[Algebra.IsAlgebraic k kbar]`, `stalkArithmeticFrobenius a kbar`
-equals the Galois stalk action of Mathlib's `FiniteField.frobeniusAlgEquivOfAlgebraic k kbar`. -/
+/-- For a separably closed algebraic extension `kbar` of a finite field `k` (with `[Fintype k]`
+and `[IsSepClosed kbar]`, and `PerfectField kbar` supplied locally by
+`Algebra.IsAlgebraic.perfectField k`), `stalkArithmeticFrobenius a kbar` equals the Galois stalk
+action of Mathlib's `FiniteField.frobeniusAlgEquivOfAlgebraic k kbar`. -/
 theorem stalkArithmeticFrobenius_eq_ofOverGaloisStalkAction_frobeniusAlgEquivOfAlgebraic :
+    letI := Algebra.IsAlgebraic.perfectField k (L := kbar)
     stalkArithmeticFrobenius a kbar (A := A) =
       ofOverGaloisStalkAction a kbar (_root_.FiniteField.frobeniusAlgEquivOfAlgebraic k kbar) := by
   rw [stalkArithmeticFrobenius_eq,
     TauCeti.FiniteField.frobeniusAlgEquivOfFinite_eq_frobeniusAlgEquivOfAlgebraic]
 
-/-- Under `[Fintype k]` and `[Algebra.IsAlgebraic k kbar]`, `stalkGeometricFrobenius a kbar` equals
-the Galois stalk action of the inverse `(FiniteField.frobeniusAlgEquivOfAlgebraic k kbar)⁻¹` of
-Mathlib's arithmetic Frobenius automorphism. -/
+/-- For a separably closed algebraic extension `kbar` of a finite field `k` (with `[Fintype k]`
+and `[IsSepClosed kbar]`, and `PerfectField kbar` supplied locally by
+`Algebra.IsAlgebraic.perfectField k`), `stalkGeometricFrobenius a kbar` equals the Galois stalk
+action of the inverse `(FiniteField.frobeniusAlgEquivOfAlgebraic k kbar)⁻¹` of Mathlib's
+arithmetic Frobenius automorphism. -/
 theorem stalkGeometricFrobenius_eq_ofOverGaloisStalkAction_frobeniusAlgEquivOfAlgebraic_inv :
+    letI := Algebra.IsAlgebraic.perfectField k (L := kbar)
     stalkGeometricFrobenius a kbar (A := A) =
       ofOverGaloisStalkAction a kbar
         (_root_.FiniteField.frobeniusAlgEquivOfAlgebraic k kbar)⁻¹ := by

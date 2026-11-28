@@ -138,10 +138,9 @@ theorem smul_toPresheafFiber_galoisStalk (σ : Gal(Ω/K))
   have h := ConcreteCategory.congr_hom
     (GeometricPoint.toPresheafFiber_toPointFunctor_map_sheafFiber_app
       (GeometricPoint.homOfAlgHom (𝟙 (Spec (.of K))) σ.toAlgHom) F X t) z
-  -- Unfold `Action` scalar multiplication on the underlying stalk (`galoisStalk_obj_V` is `rfl`).
-  change (((galoisStalk K Ω A).obj F).ρ σ).asHom
-      ((pointSmallEtale _).toPresheafFiber X t F.obj z) = _
-  rw [galoisStalk_obj_ρ_asHom, GeometricPoint.ofOverGaloisStalkAction_asIso_hom,
+  rw [← Action.ρ_apply_eq_smul ((galoisStalk K Ω A).obj F) σ
+      ((pointSmallEtale _).toPresheafFiber X t F.obj z),
+    galoisStalk_obj_ρ_asHom, GeometricPoint.ofOverGaloisStalkAction_asIso_hom,
     GeometricPoint.toPointFunctor_map_hom_app_apply]
   exact (ConcreteCategory.comp_apply ((pointSmallEtale _).toPresheafFiber X t F.obj)
     (((GeometricPoint.toPointFunctor _).map
