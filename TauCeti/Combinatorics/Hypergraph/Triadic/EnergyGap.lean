@@ -117,33 +117,32 @@ private theorem exceptionalPolyadMass_le_of_sum_charge_le
   have hθ : 0 < θ := sub_pos.2 hηδ
   let irr (P : Polyad3 C.skeleton) : ℝ :=
     ∑ Q : Polyad3 D.skeleton with π Q = P ∧ ¬H.IsTopRegularOverPolyad Q η r, (#Q.support : ℝ)
-  have hP_le (P : Polyad3 C.skeleton) :
-      (if ¬H.IsTopRegularOverPolyad P δ r then θ * #P.support else 0) ≤ irr P + charge P := by
-    by_cases hP : H.IsTopRegularOverPolyad P δ r
-    · simp only [hP, not_true_eq_false, ↓reduceIte]
-      exact add_nonneg (sum_nonneg fun _ _ ↦ Nat.cast_nonneg _) (hcharge₀ P)
-    · simp only [hP, not_false_eq_true, ↓reduceIte]
-      exact hloc P hP
   have hirr : ∑ P, irr P =
       ∑ Q : Polyad3 D.skeleton with ¬H.IsTopRegularOverPolyad Q η r, (#Q.support : ℝ) := by
-    rw [sum_filter, ← sum_fiberwise univ π]
-    refine sum_congr rfl fun P _ ↦ ?_
-    rw [← sum_filter, filter_filter]
-  rw [exceptionalPolyadMass_eq_sum_div hC, exceptionalPolyadMass_eq_sum_div hD]
-  obtain hN | hN := (Nat.cast_nonneg (α := ℝ) ((Fintype.card V).descFactorial 3)).eq_or_lt
-  · rw [← hN, div_zero, div_zero, zero_add]
-    exact div_nonneg hβ₀ hθ.le
-  · have htotal : θ * ∑ P : Polyad3 C.skeleton with ¬H.IsTopRegularOverPolyad P δ r,
-        (#P.support : ℝ) ≤
-        (∑ Q : Polyad3 D.skeleton with ¬H.IsTopRegularOverPolyad Q η r, (#Q.support : ℝ)) +
-          β * (Fintype.card V).descFactorial 3 := by
-      rw [mul_sum, sum_filter]
-      calc _ ≤ ∑ P, (irr P + charge P) := sum_le_sum fun P _ ↦ by
-              simpa only [apply_ite (θ * ·), mul_zero] using hP_le P
-        _ = ∑ P, irr P + ∑ P, charge P := sum_add_distrib
-        _ ≤ _ := add_le_add hirr.le (hB hN)
-    rw [div_le_div_iff₀ hN hθ, add_mul, div_mul_cancel₀ _ hN.ne']
-    linarith
+    have h := Finset.sum_fiberwise_of_maps_to
+      (s := univ.filter fun Q : Polyad3 D.skeleton ↦ ¬H.IsTopRegularOverPolyad Q η r)
+      (t := univ) (g := π) (f := fun Q ↦ (#Q.support : ℝ)) (fun _ _ ↦ mem_univ _)
+    simpa only [irr, filter_filter, and_comm] using h
+  refine topRegularOverMostPolyads_iff.1 (topRegularOverMostPolyads_of_sum_charge_le hC
+    (fun P ↦ (irr P + charge P) / θ)
+    (fun P ↦ div_nonneg (add_nonneg (sum_nonneg fun _ _ ↦ Nat.cast_nonneg _) (hcharge₀ P)) hθ.le)
+    (div_nonneg (add_nonneg (exceptionalPolyadMass_nonneg (H := H) (C := D) (η := η) (r := r))
+      hβ₀) hθ.le)
+    (fun hN ↦ ?_)
+    (fun P hP ↦ (le_div_iff₀' hθ).2 (hloc P hP)))
+  have hN' : (0 : ℝ) < (Fintype.card V).descFactorial 3 := Nat.cast_pos.2 hN
+  have hDsum : ∑ Q : Polyad3 D.skeleton with ¬H.IsTopRegularOverPolyad Q η r, (#Q.support : ℝ) =
+      H.exceptionalPolyadMass D η r * (Fintype.card V).descFactorial 3 := by
+    rw [exceptionalPolyadMass_eq_sum_div hD, div_mul_cancel₀ _ hN'.ne']
+  calc ∑ P, (irr P + charge P) / θ
+      = (∑ P, irr P + ∑ P, charge P) / θ := by rw [← sum_div, sum_add_distrib]
+    _ ≤ (H.exceptionalPolyadMass D η r * (Fintype.card V).descFactorial 3 +
+          β * (Fintype.card V).descFactorial 3) / θ := by
+        gcongr
+        · exact (hirr.trans hDsum).le
+        · exact hB hN'
+    _ = (H.exceptionalPolyadMass D η r + β) / θ * (Fintype.card V).descFactorial 3 := by
+        rw [← add_mul, div_mul_eq_mul_div]
 
 open Classical in
 /-- Re-index the fiberwise support-weighted density deviations across `π` into a single sum over

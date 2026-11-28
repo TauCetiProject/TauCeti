@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
 public import Mathlib.Data.Matrix.Basic
 import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.Data.Fintype.Card.Embedding
 import TauCeti.Order.Partition.Finpartition
 
 /-!
@@ -19,7 +20,7 @@ role-ordered injective triples in the chosen cells whose coordinate pairs have t
 Thus a polyad carries no independently chosen support. Conversely, an injective triple determines
 the unique polyad `Polyad3.ofTriple` whose support contains it, so the supports of distinct
 polyads are disjoint and split every finite set of injective triples
-(`Polyad3.sum_card_inter_support`).
+(`Polyad3.sum_card_inter_support`, `Polyad3.sum_card_support_eq_descFactorial`).
 
 The three pair supports expose the colored bigraphs whose arbitrary subgraphs form subpolyads.
 The `faceKey` convention translates colors indexed by role pairs to the omitted-coordinate
@@ -418,6 +419,13 @@ theorem sum_card_inter_support [Fintype κ] (s : Finset {x : Fin 3 → V // Func
   refine sum_congr rfl fun P _ ↦ congrArg card ?_
   ext x
   rw [mem_inter, mem_filter, mem_support_iff_eq_ofTriple, eq_comm]
+
+/-- The supports of all polyads over a lower skeleton contain `|V|.descFactorial 3` injective
+triples in total. -/
+theorem sum_card_support_eq_descFactorial [Fintype κ] (S : PairSkeleton3 κ V) :
+    ∑ P : Polyad3 S, #P.support = (Fintype.card V).descFactorial 3 := by
+  simpa only [univ_inter, card_univ, Fintype.card_subtype_injective, Fintype.card_fin] using
+    sum_card_inter_support (S := S) univ
 
 /-- Summing a function of the polyad of each injective triple over all injective triples gives
 the support-weighted sum of that function over the polyads. -/
