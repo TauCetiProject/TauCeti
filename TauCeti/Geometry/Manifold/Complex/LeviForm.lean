@@ -64,6 +64,7 @@ index is at most `dim_ℂ E + q`.
   `TauCeti.manifoldLeviForm_mul_apply`, `TauCeti.manifoldLeviForm_scalar_comp_apply`: the sum,
   negation, scalar multiple, product and composition rules, and `TauCeti.manifoldLeviForm_const`:
   the Levi form of a constant function vanishes.
+* `TauCeti.manifoldLeviForm_mul_of_eq_zero_of_mvfderiv_eq_zero`: product rule at a first-order zero.
 * `TauCeti.manifoldLeviForm_I_smul_I_smul`: invariance under `I • ·` in both arguments.
 * `TauCeti.manifoldLeviForm_comp_apply`: the pullback rule under a complex `C²` map.
 * `TauCeti.le_re_manifoldLeviForm_scalar_comp_apply_self`: post-composition with an increasing
@@ -237,6 +238,22 @@ theorem manifoldLeviForm_mul_apply {g : M → ℝ} (hf : ContMDiffAt 𝓘(ℝ, E
   rwa [TauCeti.fderiv_comp_chartAt_symm (g := f),
     TauCeti.fderiv_comp_chartAt_symm (g := g), comp_apply, comp_apply,
     (chartAt E x).left_inv (mem_chart_source E x)] at h
+
+/-- For real `C²` functions `r` and `p`, at a first-order zero of `p` the Levi form of `r * p`
+is `r(x)` times that of `p`. -/
+theorem manifoldLeviForm_mul_of_eq_zero_of_mvfderiv_eq_zero
+    {p r : M → ℝ} (hr : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 r x)
+    (hp : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 p x)
+    (h₀ : p x = 0) (h₁ : mvfderiv 𝓘(ℝ, E) p x = 0) :
+    manifoldLeviForm E (r * p) x = (r x : ℂ) • manifoldLeviForm E p x := by
+  ext v w
+  rw [manifoldLeviForm_mul_apply hr hp]
+  have hD : (StrongDual.extendRCLike (F := E) (mvfderiv 𝓘(ℝ, E) p x) : StrongDual ℂ E) = 0 := by
+    trans StrongDual.extendRCLike (0 : StrongDual ℝ E)
+    · exact congrArg StrongDual.extendRCLike h₁
+    · ext u
+      simp [StrongDual.extendRCLike_apply]
+  simp [h₀, hD]
 
 /-- **The composition rule** for the Levi form on a complex manifold, for post-composition with a
 function of one real variable. Writing `∂f` for the complex-linear extension
