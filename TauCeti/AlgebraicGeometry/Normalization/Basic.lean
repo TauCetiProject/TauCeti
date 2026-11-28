@@ -25,6 +25,8 @@ part of `f.normalization` over the open image of `f` is the normalization of `Y`
 
 * `AlgebraicGeometry.Scheme.Hom.normalizationMap`: the morphism of relative normalizations
   induced by a morphism of sources over a common target.
+* `AlgebraicGeometry.Scheme.Hom.normalizationLift`: the lift into `f.normalization` along a
+  commuting square whose source relative normalization is an isomorphism.
 
 ## Main results
 
@@ -35,6 +37,10 @@ part of `f.normalization` over the open image of `f` is the normalization of `Y`
 * `AlgebraicGeometry.Scheme.Hom.normalizationMap_id` and
   `AlgebraicGeometry.Scheme.Hom.normalizationMap_comp`: the construction preserves identities and
   composition.
+* `AlgebraicGeometry.Scheme.Hom.normalizationLift_fromNormalization`,
+  `AlgebraicGeometry.Scheme.Hom.comp_normalizationLift`, and
+  `AlgebraicGeometry.Scheme.Hom.eq_normalizationLift`: the triangle laws and uniqueness of the
+  lift into a relative normalization.
 * `AlgebraicGeometry.Scheme.Hom.isSchemeTheoreticallyDominant_fromNormalization`: relative
   normalization of a scheme-theoretically dominant morphism is scheme-theoretically dominant.
 * `AlgebraicGeometry.Scheme.Hom.isPullback_toNormalization`: over the image of an open immersion
@@ -142,6 +148,62 @@ theorem isPullback_toNormalization [IsOpenImmersion f] :
     ?_ (by simp) (by simp) (by simp)
   rw [asIso_hom, Iso.refl_hom, Category.comp_id, ← cancel_epi (inv (pullback.snd _ _)),
     IsIso.inv_hom_id_assoc, h, pullback.lift_fst]
+
+section Lift
+
+/-- **Lift into a relative normalization along a commuting square.** Given a commuting square
+`u ≫ f = g ≫ v` whose source relative normalization `g.fromNormalization` is an isomorphism, `Y`
+lifts to `f.normalization`. -/
+noncomputable def normalizationLift {U U' Y Y' : Scheme.{u}}
+    (g : U ⟶ Y) [QuasiCompact g] [QuasiSeparated g] [IsIso g.fromNormalization]
+    (f : U' ⟶ Y') [QuasiCompact f] [QuasiSeparated f]
+    (u : U ⟶ U') (v : Y ⟶ Y') (h : u ≫ f = g ≫ v) :
+    Y ⟶ f.normalization :=
+  inv g.fromNormalization ≫
+    g.normalizationMap (pullback.snd f v) (pullback.lift u g h) (pullback.lift_snd _ _ _) ≫
+    f.normalizationPullback v ≫ pullback.fst f.fromNormalization v
+
+/-- The lift into `f.normalization` lies over `v : Y ⟶ Y'`. -/
+@[reassoc (attr := simp)]
+theorem normalizationLift_fromNormalization {U U' Y Y' : Scheme.{u}}
+    (g : U ⟶ Y) [QuasiCompact g] [QuasiSeparated g] [IsIso g.fromNormalization]
+    (f : U' ⟶ Y') [QuasiCompact f] [QuasiSeparated f]
+    (u : U ⟶ U') (v : Y ⟶ Y') (h : u ≫ f = g ≫ v) :
+    g.normalizationLift f u v h ≫ f.fromNormalization = v := by
+  simp only [normalizationLift, Category.assoc, pullback.condition,
+    normalizationPullback_snd_assoc, normalizationMap_fromNormalization_assoc,
+    IsIso.inv_hom_id_assoc]
+
+/-- Precomposing the lift into `f.normalization` with `g` factors `u ≫ f.toNormalization`. -/
+@[reassoc (attr := simp)]
+theorem comp_normalizationLift {U U' Y Y' : Scheme.{u}}
+    (g : U ⟶ Y) [QuasiCompact g] [QuasiSeparated g] [IsIso g.fromNormalization]
+    (f : U' ⟶ Y') [QuasiCompact f] [QuasiSeparated f]
+    (u : U ⟶ U') (v : Y ⟶ Y') (h : u ≫ f = g ≫ v) :
+    g ≫ g.normalizationLift f u v h = u ≫ f.toNormalization := by
+  have hg : g ≫ inv g.fromNormalization = g.toNormalization := by
+    rw [IsIso.comp_inv_eq, toNormalization_fromNormalization]
+  rw [normalizationLift, ← Category.assoc, ← Category.assoc, ← Category.assoc, hg,
+    toNormalization_normalizationMap, Category.assoc, Category.assoc,
+    toNormalization_normalizationPullback_fst, pullback.lift_fst_assoc]
+
+/-- **Uniqueness of the lift into a relative normalization.** If `g : U ⟶ Y` is
+scheme-theoretically dominant with `g.fromNormalization` an isomorphism, then any morphism
+`k : Y ⟶ f.normalization` making both triangles commute agrees with
+`g.normalizationLift f u v h`. -/
+theorem eq_normalizationLift {U U' Y Y' : Scheme.{u}}
+    (g : U ⟶ Y) [QuasiCompact g] [QuasiSeparated g] [IsIso g.fromNormalization]
+    [IsSchemeTheoreticallyDominant g]
+    (f : U' ⟶ Y') [QuasiCompact f] [QuasiSeparated f]
+    {u : U ⟶ U'} {v : Y ⟶ Y'} (h : u ≫ f = g ≫ v)
+    {k : Y ⟶ f.normalization}
+    (hk₁ : g ≫ k = u ≫ f.toNormalization)
+    (hk₂ : k ≫ f.fromNormalization = v) :
+    k = g.normalizationLift f u v h :=
+  TauCeti.ext_of_isSchemeTheoreticallyDominant g f.fromNormalization
+    (by simp [hk₂]) (by simp [hk₁])
+
+end Lift
 
 end AlgebraicGeometry.Scheme.Hom
 
