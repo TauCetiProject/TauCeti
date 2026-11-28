@@ -75,23 +75,12 @@ private theorem pi_injective (b : Module.Basis ι K (V →L[K] K)) :
   conv_lhs => rw [← b.linearCombination_repr φ]
   simp [Finsupp.linearCombination_apply, Finsupp.sum, hbv]
 
-omit [IsTopologicalAddGroup V] [IsLinearTopology K V] [T2Space V] in
-private theorem pi_surjective (b : Module.Basis ι K (V →L[K] K)) :
-    Function.Surjective (ContinuousLinearMap.pi b).toLinearMap := by
-  rw [ContinuousLinearMap.coe_pi, ← Set.range_eq_univ]
-  have hclosed : IsClosed (Set.range (LinearMap.pi fun i ↦ (b i).toLinearMap)) := by
-    rw [← ContinuousLinearMap.coe_pi, ContinuousLinearMap.coe_coe]
-    exact (isCompact_range (ContinuousLinearMap.pi b).continuous).isClosed
-  rw [← hclosed.closure_eq]
-  exact (b.linearIndependent.map' (ContinuousLinearMap.coeLM K)
-    (LinearMap.ker_eq_bot_of_injective ContinuousLinearMap.coe_injective)).denseRange_pi.closure_eq
-
 /-- **Lefschetz product decomposition from a continuous dual basis**: a `K`-basis
 `b : Module.Basis ι K (V →L[K] K)` induces `V ≃L[K] (ι → K)` sending `v` to `fun i ↦ b i v`. -/
 noncomputable def continuousDualEquivPi (b : Module.Basis ι K (V →L[K] K)) :
     V ≃L[K] (ι → K) :=
   let e := LinearEquiv.ofBijective (ContinuousLinearMap.pi b).toLinearMap
-    ⟨pi_injective b, pi_surjective b⟩
+    ⟨pi_injective b, b.linearIndependent.surjective_continuousLinearMap_pi⟩
   { toLinearEquiv := e
     continuous_toFun := (ContinuousLinearMap.pi b).continuous
     continuous_invFun :=

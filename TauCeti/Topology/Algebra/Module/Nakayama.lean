@@ -14,6 +14,7 @@ public import Mathlib.Topology.Algebra.Module.Compact
 public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 public import TauCeti.Topology.Algebra.Module.Compact.Basic
 import Mathlib.Topology.Homeomorph.Lemmas
+import TauCeti.LinearAlgebra.Quotient.Basic
 
 /-!
 # The topological Nakayama lemma
@@ -211,10 +212,12 @@ theorem LinearMap.injective_of_injective_mapQ_of_compactSpace {N : Type*}
   rw [← LinearMap.ker_eq_bot, ← le_bot_iff]
   refine Submodule.le_of_le_sup_span_singleton_smul ha (by simp)
     (ContinuousLinearMap.mk f hf).isClosed_ker.isCompact fun m hm ↦ ?_
-  have hmk : (I • (⊤ : Submodule R M)).mkQ m = 0 :=
-    hinj (by simp [LinearMap.mem_ker.mp hm])
+  have hcomap : (I • (⊤ : Submodule R N)).comap f ≤ I • (⊤ : Submodule R M) :=
+    (Submodule.mapQ_injective_iff (I • ⊤) (I • ⊤) f
+      (Submodule.smul_top_le_comap_smul_top I f)).mp hinj
   have hm_smul : m ∈ Ideal.span ({a} : Set R) • (⊤ : Submodule R M) := by
-    rwa [← hI, ← Submodule.Quotient.mk_eq_zero, ← Submodule.mkQ_apply]
+    rw [← hI]
+    exact hcomap (by simp [LinearMap.mem_ker.mp hm])
   rw [Submodule.ideal_span_singleton_smul, Submodule.mem_smul_pointwise_iff_exists] at hm_smul
   obtain ⟨m', -, rfl⟩ := hm_smul
   rw [bot_sup_eq, Submodule.ideal_span_singleton_smul, Submodule.mem_smul_pointwise_iff_exists]

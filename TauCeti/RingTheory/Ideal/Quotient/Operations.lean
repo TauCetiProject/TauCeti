@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors, Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 -/
 module
 
-public import Mathlib.Algebra.Regular.Basic
 public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.Algebra.Module.SpanRank
@@ -59,10 +58,6 @@ A linear endomorphism commuting with multiplication by each element of a set `s`
 endomorphism of the quotient by `Ideal.span s` (`Ideal.exists_quotient_linearMap_of_map_mul`).
 Left scalar multiplication on a residue class is multiplication of representatives
 (`Ideal.Quotient.smul_mk`).
-
-For `Ideal.span {a} * I ≤ J`, `Ideal.Quotient.mulLeft a h : (R ⧸ I) →ₗ[R] (R ⧸ J)`
-is multiplication by `a`, compatible with `Ideal.Quotient.factor` and injective when
-`J ≤ Ideal.span {a} * I` and `a` is left-regular.
 -/
 
 public section
@@ -280,49 +275,3 @@ theorem mk_span_singleton_one_sub_self {R : Type*} [CommRing R] (e : R) :
   exact Ideal.mem_span_singleton'.mpr ⟨-1, by ring⟩
 
 end TauCeti.Ideal.Quotient
-
-namespace Ideal.Quotient
-
-section MulLeft
-
-variable {R : Type*} [CommRing R] {I J : Ideal R}
-
-/-- Multiplication by `a` induces `(R ⧸ I) →ₗ[R] (R ⧸ J)` whenever `Ideal.span {a} * I ≤ J`. -/
-def mulLeft (a : R) (h : Ideal.span {a} * I ≤ J) : (R ⧸ I) →ₗ[R] (R ⧸ J) :=
-  Submodule.mapQ I J (LinearMap.lsmul R R a) fun _ hr ↦
-    h (Ideal.mul_mem_mul (Ideal.mem_span_singleton_self a) hr)
-
-/-- Evaluating `Ideal.Quotient.mulLeft a h` on the residue class of `r` gives the class of
-`a * r`. -/
-@[simp, grind =]
-theorem mulLeft_mk (a : R) (h : Ideal.span {a} * I ≤ J) (r : R) :
-    mulLeft a h (mk I r) = mk J (a * r) := by
-  rw [mulLeft, ← mk_eq_mk, Submodule.mapQ_apply, LinearMap.lsmul_apply, smul_eq_mul, mk_eq_mk]
-
-/-- Composing `Ideal.Quotient.mulLeft a h` with the quotient transition map `factor hJI` is
-scalar multiplication by `a`. -/
-@[simp, grind =]
-theorem mulLeft_factor (a : R) (h : Ideal.span {a} * I ≤ J) (hJI : J ≤ I) (q : R ⧸ J) :
-    mulLeft a h (factor hJI q) = a • q := by
-  obtain ⟨r, rfl⟩ := mk_surjective q
-  simp [Algebra.smul_def, algebraMap_eq]
-
-/-- `Ideal.Quotient.mulLeft a h` is injective if and only if `a * r ∈ J` implies `r ∈ I`. -/
-theorem mulLeft_injective_iff (a : R) (h : Ideal.span {a} * I ≤ J) :
-    Function.Injective (mulLeft a h) ↔ ∀ r : R, a * r ∈ J → r ∈ I := by
-  refine ⟨fun hker r hr ↦ eq_zero_iff_mem.mp (hker <| by simp [eq_zero_iff_mem.mpr hr]),
-    fun hdiv ↦ (injective_iff_map_eq_zero _).mpr fun q hq ↦ ?_⟩
-  obtain ⟨r, rfl⟩ := mk_surjective q
-  exact eq_zero_iff_mem.mpr (hdiv r (eq_zero_iff_mem.mp hq))
-
-/-- If `a` is left-regular and `J ≤ Ideal.span {a} * I` (so `J = Ideal.span {a} * I`), then
-`Ideal.Quotient.mulLeft a h` is injective. -/
-theorem mulLeft_injective {a : R} (h : Ideal.span {a} * I ≤ J) (hJI : J ≤ Ideal.span {a} * I)
-    (ha : IsLeftRegular a) : Function.Injective (mulLeft a h) :=
-  (mulLeft_injective_iff a h).mpr fun _ hr ↦ by
-    obtain ⟨s, hs, hsr⟩ := Ideal.mem_span_singleton_mul.mp (hJI hr)
-    exact ha hsr ▸ hs
-
-end MulLeft
-
-end Ideal.Quotient
