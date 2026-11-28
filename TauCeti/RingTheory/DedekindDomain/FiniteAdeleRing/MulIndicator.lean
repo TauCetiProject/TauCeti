@@ -14,6 +14,12 @@ A multiplicative indicator keeps the components on a set of places and replaces 
 components by one. The set need not be finite: replacing components by one preserves the
 restricted product condition. Applied to a diagonal idele, this gives a principal component on a
 chosen set of primes without introducing any new denominators elsewhere.
+
+Applied to `0` on the complement of a set `S` of places, it gives the idempotent
+`IsDedekindDomain.FiniteAdeleRing.indicatorOne S`, with component `1` at the places of `S` and `0`
+elsewhere. Multiplying by it keeps the components on `S` and kills the others, so it cuts objects
+over the finite adeles (for instance invertible matrices, through `IsIdempotentElem.cutGL`) into
+their parts at the places of `S` and away from `S`.
 -/
 
 public noncomputable section
@@ -70,5 +76,76 @@ theorem mulIndicator_mem_integralAdeles {S : Set (HeightOneSpectrum R)}
   by_cases hv : v ∈ S
   · simpa [hv] using h v hv
   · simp [hv]
+
+/-- The **indicator of a set `S` of places**: the finite adele with component `1` at the places of
+`S` and `0` elsewhere. It is the multiplicative indicator of the complement of `S` applied to `0`.
+-/
+def indicatorOne (S : Set (HeightOneSpectrum R)) : 𝔸ᶠ[R, K] :=
+  mulIndicator Sᶜ 0
+
+open Classical in
+/-- The component of the indicator of `S` is `1` on `S` and `0` elsewhere. -/
+theorem indicatorOne_apply (S : Set (HeightOneSpectrum R)) (v : HeightOneSpectrum R) :
+    indicatorOne (K := K) S v = if v ∈ S then 1 else 0 := by
+  by_cases hv : v ∈ S
+  · rw [indicatorOne, mulIndicator_apply_of_notMem _ (Set.notMem_compl_iff.2 hv), ite_eq_left hv]
+  · rw [indicatorOne, mulIndicator_apply_of_mem _ (Set.mem_compl hv), ite_eq_right hv,
+      zero_apply]
+
+/-- The indicator of `S` has component `1` at the places of `S`. -/
+@[simp]
+theorem indicatorOne_apply_of_mem {S : Set (HeightOneSpectrum R)} {v : HeightOneSpectrum R}
+    (hv : v ∈ S) : indicatorOne (K := K) S v = 1 := by
+  classical
+  rw [indicatorOne_apply, ite_eq_left hv]
+
+/-- The indicator of `S` has component `0` away from `S`. -/
+@[simp]
+theorem indicatorOne_apply_of_notMem {S : Set (HeightOneSpectrum R)} {v : HeightOneSpectrum R}
+    (hv : v ∉ S) : indicatorOne (K := K) S v = 0 := by
+  classical
+  rw [indicatorOne_apply, ite_eq_right hv]
+
+/-- The indicator of the empty set of places is `0`. -/
+@[simp]
+theorem indicatorOne_empty : indicatorOne (K := K) (∅ : Set (HeightOneSpectrum R)) = 0 :=
+  ext K fun _ ↦ indicatorOne_apply_of_notMem (Set.notMem_empty _)
+
+/-- The indicator of the set of all finite places is `1`. -/
+@[simp]
+theorem indicatorOne_univ : indicatorOne (K := K) (Set.univ : Set (HeightOneSpectrum R)) = 1 :=
+  ext K fun _ ↦ indicatorOne_apply_of_mem (Set.mem_univ _)
+
+/-- The indicator of `S` times the indicator of `T` is the indicator of `S ∩ T`. -/
+@[simp]
+theorem indicatorOne_mul_indicatorOne (S T : Set (HeightOneSpectrum R)) :
+    indicatorOne (K := K) S * indicatorOne T = indicatorOne (S ∩ T) := by
+  classical
+  refine ext K fun v ↦ ?_
+  simpa [indicatorOne_apply, Set.indicator_apply] using
+    (congrFun (Set.inter_indicator_one (M₀ := v.adicCompletion K) (s := S) (t := T)) v).symm
+
+/-- The indicator of a set of places is idempotent. -/
+@[simp]
+theorem isIdempotentElem_indicatorOne (S : Set (HeightOneSpectrum R)) :
+    IsIdempotentElem (indicatorOne (K := K) S) := by
+  rw [IsIdempotentElem, indicatorOne_mul_indicatorOne, Set.inter_self]
+
+/-- `1` minus the indicator of `S` is the indicator of the complement of `S`. -/
+@[simp]
+theorem one_sub_indicatorOne (S : Set (HeightOneSpectrum R)) :
+    1 - indicatorOne (K := K) S = indicatorOne Sᶜ := by
+  classical
+  refine ext K fun v ↦ ?_
+  simpa [indicatorOne_apply, Set.indicator_apply] using
+    (congrFun (Set.indicator_compl S (1 : HeightOneSpectrum R → v.adicCompletion K)) v).symm
+
+/-- The indicator of a set of places is an integral finite adele. It takes priority over the
+place-by-place unfolding `IsDedekindDomain.FiniteAdeleRing.mem_integralAdeles` as a `simp` lemma.
+-/
+@[simp high]
+theorem indicatorOne_mem_integralAdeles (S : Set (HeightOneSpectrum R)) :
+    indicatorOne (K := K) S ∈ integralAdeles R K :=
+  mulIndicator_mem_integralAdeles.2 fun _ _ ↦ zero_mem _
 
 end IsDedekindDomain.FiniteAdeleRing

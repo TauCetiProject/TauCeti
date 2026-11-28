@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.WaveFrontSet.NormalTopology
+public import TauCeti.Analysis.Distribution.WaveFrontSet.NormalTopology.Transport
 public import TauCeti.Analysis.Distribution.WaveFrontSet.TensorProduct
 import TauCeti.Algebra.Module.ZLattice.Scaling
 import TauCeti.Algebra.Module.ZLattice.Summable
@@ -20,6 +21,7 @@ import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.Normed.Module.Seminorm.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Topology.Sets.Opens
 
 /-!
 # Continuity of the tensor product in the normal topology
@@ -38,7 +40,12 @@ normal topologies of Hörmander's spaces (`TauCeti.WaveFrontSpace.tensorProductR
 
 `· ⊗ v : 𝓓'_{Γ₁}(Ω) →L[ℂ] 𝓓'_{Γ₁ ⊠ Γ₂}(W)`.
 
-This is the continuity of the tensor product in its first variable.
+This is the continuity of the tensor product in its first variable. Continuity in the second
+variable follows by swapping the factors (`TauCeti.WaveFrontSpace.tensorProductLeftCLM`): the
+swap `WithLp 2 (E × D) ≃ₗᵢ[ℝ] WithLp 2 (D × E)` carries `v ⊗ u` to `u ⊗ v`
+(`Distribution.transportCLM_withLpProdComm_transportCLM_tensorProduct`) and `Γ₂ ⊠ Γ₁` to
+`Γ₁ ⊠ Γ₂`, and transport along it is continuous for the normal topologies
+(`TauCeti.WaveFrontSpace.transportCLM`). So the tensor product is separately continuous.
 
 ## The estimates
 
@@ -76,6 +83,10 @@ argument follows that of `TauCeti.WaveFrontSpace.pullbackInlCLM`.
   `· ⊗ v : 𝓓'_{Γ₁}(Ω) →L[ℂ] 𝓓'_{Γ₁ ⊠ Γ₂}(W)` with a fixed `v ∈ 𝓓'_{Γ₂}(O)`.
 * `TauCeti.WaveFrontSpace.toDistribution_tensorProductRightCLM`: it is
   `Distribution.tensorProduct`, transported to `W`.
+* `TauCeti.WaveFrontSpace.tensorProductLeftCLM`: the tensor product
+  `u ⊗ · : 𝓓'_{Γ₂}(O) →L[ℂ] 𝓓'_{Γ₁ ⊠ Γ₂}(W)` with a fixed `u ∈ 𝓓'_{Γ₁}(Ω)`, with
+  `TauCeti.WaveFrontSpace.toDistribution_tensorProductLeftCLM` and
+  `TauCeti.WaveFrontSpace.tensorProductLeftCLM_apply`.
 
 ## References
 
@@ -911,6 +922,41 @@ private theorem exists_seminorm_tensorProduct_apply_le (T : 𝓓'(O, ℂ)) {Q : 
 
 end Lattice
 
+/-! ### Swapping the factors of a product -/
+
+section Swap
+
+variable {E D : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup D]
+  [NormedSpace ℝ D]
+
+private theorem mapsTo_comap_withLpProdComm {V : Opens (E × D)} {W : Opens (WithLp 2 (E × D))}
+    (hW : MapsTo (prodContinuousLinearEquiv 2 ℝ E D) W V) :
+    MapsTo (prodContinuousLinearEquiv 2 ℝ D E)
+      (Opens.comap (LinearIsometryEquiv.withLpProdComm 2 ℝ D E :
+        C(WithLp 2 (D × E), WithLp 2 (E × D))) W : Set (WithLp 2 (D × E)))
+      (Opens.comap ContinuousMap.prodSwap V : Set (D × E)) := by
+  intro p hp
+  -- Both memberships are that of the swapped point.
+  simpa using hW hp
+
+private theorem mapsTo_withLpProdComm_comap (W : Opens (WithLp 2 (E × D))) :
+    MapsTo (LinearIsometryEquiv.withLpProdComm 2 ℝ E D).toContinuousLinearEquiv W
+      (Opens.comap (LinearIsometryEquiv.withLpProdComm 2 ℝ D E :
+        C(WithLp 2 (D × E), WithLp 2 (E × D))) W : Set (WithLp 2 (D × E))) := by
+  intro p hp
+  -- The swap of `D × E` inverts the swap of `E × D`.
+  simpa [← WithLp.ofLp_fst, ← WithLp.ofLp_snd] using hp
+
+private theorem mapsTo_withLpProdComm_symm_comap (W : Opens (WithLp 2 (E × D))) :
+    MapsTo (LinearIsometryEquiv.withLpProdComm 2 ℝ E D).toContinuousLinearEquiv.symm
+      (Opens.comap (LinearIsometryEquiv.withLpProdComm 2 ℝ D E :
+        C(WithLp 2 (D × E), WithLp 2 (E × D))) W : Set (WithLp 2 (D × E))) W := by
+  intro p hp
+  -- The inverse of the swap of `E × D` is the swap of `D × E`.
+  simpa using hp
+
+end Swap
+
 /-! ### The tensor product as a continuous linear map -/
 
 namespace WaveFrontSpace
@@ -925,18 +971,18 @@ variable {E D : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 `𝓓'_{Γ₁}(Ω) → 𝓓'_{Γ₁ ⊠ Γ₂}(W)`, before its continuity is proved. -/
 private def tensorProductRightₗ (v : WaveFrontSpace O Γ₂) :
     WaveFrontSpace Ω Γ₁ →ₗ[ℂ] WaveFrontSpace W (tensorCone Γ₁ Γ₂) where
-  toFun u := mk (transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
+  toFun u := mk (Distribution.transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
       (u.toDistribution.tensorProduct v.toDistribution hV.subset))
     (waveFrontSet_transportCLM_tensorProduct_subset_tensorCone _ _ hV hW
       u.waveFrontSet_toDistribution_subset v.waveFrontSet_toDistribution_subset)
   map_add' u v := ext (by simp)
   map_smul' c u := ext <| by
     ext φ
-    simp [transportCLM_apply]
+    simp [Distribution.transportCLM_apply]
 
 private theorem toDistribution_tensorProductRightₗ (v : WaveFrontSpace O Γ₂)
     (u : WaveFrontSpace Ω Γ₁) :
-    (tensorProductRightₗ hV hW v u).toDistribution = transportCLM
+    (tensorProductRightₗ hV hW v u).toDistribution = Distribution.transportCLM
       (prodContinuousLinearEquiv 2 ℝ E D) hW (u.toDistribution.tensorProduct v.toDistribution
         hV.subset) :=
   toDistribution_mk _ _
@@ -979,9 +1025,57 @@ theorem toDistribution_tensorProductRightCLM (hΓ₁ : IsOpen (((Ω : Set E) ×�
     (hcone₂ : ∀ p ∈ Γ₂, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ₂) (hΓ₂0 : ∀ p ∈ Γ₂, p.2 ≠ 0)
     (v : WaveFrontSpace O Γ₂) (u : WaveFrontSpace Ω Γ₁) :
     (tensorProductRightCLM hV hW hΓ₁ hcone₁ hΓ₁0 hΓ₂ hcone₂ hΓ₂0 v u).toDistribution =
-      transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
+      Distribution.transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
         (u.toDistribution.tensorProduct v.toDistribution hV.subset) :=
   toDistribution_tensorProductRightₗ hV hW v u
+
+/-! ### Continuity in the second variable -/
+
+/-- **Continuity of the tensor product in the normal topology, second variable.** Let `Γ₁` and
+`Γ₂` be cones of nonzero covectors over `Ω` and `O`, closed in `Ω × (E \ {0})` and
+`O × (D \ {0})`. For a fixed `u ∈ 𝓓'_{Γ₁}(Ω)`, the tensor product `v ↦ u ⊗ v`, transported to the
+Euclidean product `W ⊆ WithLp 2 (E × D)`, is a continuous linear map from `𝓓'_{Γ₂}(O)` to
+`𝓓'_{Γ₁ ⊠ Γ₂}(W)` (Brouder, Dang and Hélein, Theorem 4.6, continuity in the second variable).
+Together with `TauCeti.WaveFrontSpace.tensorProductRightCLM`, the tensor product is separately
+continuous (`TauCeti.WaveFrontSpace.tensorProductLeftCLM_apply`). -/
+def tensorProductLeftCLM (hΓ₁ : IsOpen (((Ω : Set E) ×ˢ {0}ᶜ) \ Γ₁))
+    (hcone₁ : ∀ p ∈ Γ₁, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ₁) (hΓ₁0 : ∀ p ∈ Γ₁, p.2 ≠ 0)
+    (hΓ₂ : IsOpen (((O : Set D) ×ˢ {0}ᶜ) \ Γ₂))
+    (hcone₂ : ∀ p ∈ Γ₂, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ₂) (hΓ₂0 : ∀ p ∈ Γ₂, p.2 ≠ 0)
+    (u : WaveFrontSpace Ω Γ₁) :
+    WaveFrontSpace O Γ₂ →L[ℂ] WaveFrontSpace W (tensorCone Γ₁ Γ₂) :=
+  -- `u ⊗ v` is the transport of `v ⊗ u` along the swap of the factors.
+  (inclusionCLM (preimage_withLpProdComm_tensorCone Γ₁ Γ₂).subset).comp <|
+    (transportCLM (LinearIsometryEquiv.withLpProdComm 2 ℝ E D) (mapsTo_withLpProdComm_comap W)
+      (mapsTo_withLpProdComm_symm_comap W)).comp <|
+    tensorProductRightCLM (Opens.coe_comap_prodSwap hV) (mapsTo_comap_withLpProdComm hW) hΓ₂ hcone₂
+      hΓ₂0 hΓ₁ hcone₁ hΓ₁0 u
+
+@[simp]
+theorem toDistribution_tensorProductLeftCLM (hΓ₁ : IsOpen (((Ω : Set E) ×ˢ {0}ᶜ) \ Γ₁))
+    (hcone₁ : ∀ p ∈ Γ₁, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ₁) (hΓ₁0 : ∀ p ∈ Γ₁, p.2 ≠ 0)
+    (hΓ₂ : IsOpen (((O : Set D) ×ˢ {0}ᶜ) \ Γ₂))
+    (hcone₂ : ∀ p ∈ Γ₂, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ₂) (hΓ₂0 : ∀ p ∈ Γ₂, p.2 ≠ 0)
+    (u : WaveFrontSpace Ω Γ₁) (v : WaveFrontSpace O Γ₂) :
+    (tensorProductLeftCLM hV hW hΓ₁ hcone₁ hΓ₁0 hΓ₂ hcone₂ hΓ₂0 u v).toDistribution =
+      Distribution.transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
+        (u.toDistribution.tensorProduct v.toDistribution hV.subset) := by
+  simp only [tensorProductLeftCLM, ContinuousLinearMap.comp_apply, toDistribution_inclusionCLM,
+    toDistribution_transportCLM, toDistribution_tensorProductRightCLM]
+  exact Distribution.transportCLM_withLpProdComm_transportCLM_tensorProduct _ _ hV hW
+    (Opens.coe_comap_prodSwap hV) (mapsTo_comap_withLpProdComm hW) (mapsTo_withLpProdComm_comap W)
+
+/-- The tensor product `u ⊗ v` is the same whether it is regarded as continuous in `u`
+(`TauCeti.WaveFrontSpace.tensorProductRightCLM`) or in `v`
+(`TauCeti.WaveFrontSpace.tensorProductLeftCLM`). -/
+theorem tensorProductLeftCLM_apply (hΓ₁ : IsOpen (((Ω : Set E) ×ˢ {0}ᶜ) \ Γ₁))
+    (hcone₁ : ∀ p ∈ Γ₁, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ₁) (hΓ₁0 : ∀ p ∈ Γ₁, p.2 ≠ 0)
+    (hΓ₂ : IsOpen (((O : Set D) ×ˢ {0}ᶜ) \ Γ₂))
+    (hcone₂ : ∀ p ∈ Γ₂, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ₂) (hΓ₂0 : ∀ p ∈ Γ₂, p.2 ≠ 0)
+    (u : WaveFrontSpace Ω Γ₁) (v : WaveFrontSpace O Γ₂) :
+    tensorProductLeftCLM hV hW hΓ₁ hcone₁ hΓ₁0 hΓ₂ hcone₂ hΓ₂0 u v =
+      tensorProductRightCLM hV hW hΓ₁ hcone₁ hΓ₁0 hΓ₂ hcone₂ hΓ₂0 v u :=
+  ext (by rw [toDistribution_tensorProductLeftCLM, toDistribution_tensorProductRightCLM])
 
 end WaveFrontSpace
 

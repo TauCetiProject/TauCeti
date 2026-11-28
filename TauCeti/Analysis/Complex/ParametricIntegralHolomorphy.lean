@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Calculus.FDeriv.Pi
@@ -23,6 +24,8 @@ integrand is needed: on a disc, the Cauchy estimates bound the derivative by the
   integral is differentiable with derivative the integral of the derivatives.
 * `TauCeti.analyticOnNhd_integral_of_dominated`: for a parameter in a finite-dimensional complex
   normed space, the integral is analytic.
+* `TauCeti.differentiableOn_integral_mul_cpow`: `s ↦ ∫ F(x) a(x) ^ s dν` is holomorphic on every
+  half-plane `α < re s` on which `‖F‖ a ^ σ` is integrable for all `σ > α`.
 
 ## Implementation notes
 
@@ -137,5 +140,38 @@ theorem analyticOnNhd_integral_of_dominated {V : Type*} [NormedAddCommGroup V] [
       exact hud.mono fun a ha ↦ ha.comp (fun w _ ↦
         (hasFDerivAt_update (𝕜 := ℂ) y w).differentiableAt.differentiableWithinAt) fun w hw ↦ hw
   simpa [Function.comp_def] using h.comp (e.analyticAt x)
+
+/-- **Holomorphy on a half-plane of absolute convergence.** Let `a` be a positive measurable
+function and `F` an almost everywhere strongly measurable function on a measure space, such that
+`‖F‖ a ^ σ` is integrable for every `σ > α`. Then `s ↦ ∫ F(x) a(x) ^ s dν` is holomorphic on the
+half-plane `α < re s`. -/
+theorem differentiableOn_integral_mul_cpow {X : Type*} [MeasurableSpace X] (ν : Measure X)
+    {F : X → ℂ} {a : X → ℝ} (ha : ∀ x, 0 < a x) (hF : AEStronglyMeasurable F ν)
+    (ham : Measurable a) {α : ℝ}
+    (hint : ∀ σ : ℝ, α < σ → Integrable (fun x ↦ ‖F x‖ * a x ^ σ) ν) :
+    DifferentiableOn ℂ (fun s : ℂ ↦ ∫ x, F x * (a x : ℂ) ^ s ∂ν) {s | α < s.re} := by
+  have hU : IsOpen {s : ℂ | α < s.re} := isOpen_lt continuous_const Complex.continuous_re
+  refine (analyticOnNhd_integral_of_dominated (F := fun s x ↦ F x * (a x : ℂ) ^ s) hU
+    (fun s _ ↦ hF.mul ((Complex.measurable_ofReal.comp ham).pow_const s).aestronglyMeasurable) ?_
+    (ae_of_all _ fun x s _ ↦ ?_)).differentiableOn
+  · intro s (hs : α < s.re)
+    obtain ⟨δ, hδ, hδα⟩ : ∃ δ : ℝ, 0 < δ ∧ α < s.re - δ :=
+      ⟨(s.re - α) / 2, by linarith, by linarith⟩
+    refine ⟨{w | s.re - δ < w.re ∧ w.re < s.re + δ},
+      ((isOpen_lt continuous_const Complex.continuous_re).inter
+        (isOpen_lt Complex.continuous_re continuous_const)).mem_nhds
+        ⟨show s.re - δ < s.re by linarith, show s.re < s.re + δ by linarith⟩,
+      fun x ↦ ‖F x‖ * a x ^ (s.re - δ) + ‖F x‖ * a x ^ (s.re + δ),
+      (hint _ hδα).add (hint _ (by linarith)), ae_of_all _ fun x w hw ↦ ?_⟩
+    dsimp only
+    rw [norm_mul, Complex.norm_cpow_eq_rpow_re_of_pos (ha x), ← mul_add]
+    refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
+    rcases le_total (a x) 1 with h1 | h1
+    · exact (Real.rpow_le_rpow_of_exponent_ge (ha x) h1 hw.1.le).trans
+        (le_add_of_nonneg_right (Real.rpow_pos_of_pos (ha x) _).le)
+    · exact (Real.rpow_le_rpow_of_exponent_le h1 hw.2.le).trans
+        (le_add_of_nonneg_left (Real.rpow_pos_of_pos (ha x) _).le)
+  · exact ((differentiableAt_id.const_cpow
+      (Or.inl (Complex.ofReal_ne_zero.2 (ha x).ne'))).const_mul (F x)).differentiableWithinAt
 
 end TauCeti

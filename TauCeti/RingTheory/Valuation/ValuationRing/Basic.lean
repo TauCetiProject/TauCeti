@@ -56,6 +56,8 @@ as soon as they are domains.
 
 * `TauCeti.ValuationRing.isSquare_one_add_four_mul_iff`: `1 + 4c` is a square if and only if
   `c = t ^ 2 + t` for some `t`.
+* `IsRegular.isSquare_sq_mul_iff`: in a commutative monoid with total divisibility, multiplying by
+  the square of a regular element preserves and reflects being a square.
 * `TauCeti.ValuationRing.isInteger_of_isInteger_algebraMap`: an element of `K` whose image in `L`
   lies in a ring `S` dominating `R` already lies in `R`.
 * `Irreducible.maximalIdeal_eq_of_preValuationRing`: an irreducible element
@@ -111,6 +113,20 @@ theorem isSquare_one_add_four_mul_iff (h2 : IsRegular (2 : R)) {c : R} :
     exact hu.mul_right_dvd.mpr dvd_rfl
   -- With `y = 1 + 2 * t`, the equation `y * y = 1 + 4 * c` is `4 * (t ^ 2 + t) = 4 * c`.
   exact ⟨t, (h2.mul h2).left <| by linear_combination -hy - (y + 1 + 2 * t) * ht⟩
+
+/-- In a commutative monoid with total divisibility, multiplying by the square of a regular element
+does not change whether an element is a square. -/
+theorem _root_.IsRegular.isSquare_sq_mul_iff {R : Type*} [CommMonoid R] [PreValuationRing R]
+    {a x : R} (ha : IsRegular a) : IsSquare (a ^ 2 * x) ↔ IsSquare x := by
+  refine ⟨fun ⟨y, hyy⟩ ↦ ?_, fun ⟨z, hz⟩ ↦ ⟨a * z, by rw [hz, sq]; ac_rfl⟩⟩
+  rcases _root_.ValuationRing.dvd_total a y with ⟨z, rfl⟩ | ⟨w, rfl⟩
+  · exact ⟨z, (ha.mul ha).left <| by dsimp only; rw [← sq, hyy, sq]; ac_rfl⟩
+  · have hy : IsRegular y := ha.of_mul_left
+    have h1 : w * w * x = 1 := (hy.mul hy).left <| by
+      calc y * y * (w * w * x) = (y * w) ^ 2 * x := by rw [sq]; ac_rfl
+        _ = y * y * 1 := by rw [hyy, mul_one]
+    exact ⟨w * x, by calc x = w * w * x * x := by rw [h1, one_mul]
+      _ = w * x * (w * x) := by ac_rfl⟩
 
 section Domination
 

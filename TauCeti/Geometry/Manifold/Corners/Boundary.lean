@@ -32,7 +32,7 @@ topological manifold without boundary of one dimension less. Its topology is the
 since it is a structure on the subtype `(𝓡c (m + 1)).boundary M`. It is the instance of the general
 construction `ModelWithCorners.boundaryChartedSpaceOfHomeomorph` for the homeomorphism above, and
 its characteristic lemmas follow those of `TauCeti.halfSpaceBoundaryChartedSpace` in
-`TauCeti/Geometry/Manifold/Boundary/ProductHalfSpace.lean`.
+`TauCeti/Geometry/Manifold/Boundary/ProductHalfSpace/Basic.lean`.
 
 The corners of `M` are invisible in this structure: the boundary of the square `[0, 1]²` is a
 topological circle. This is the structure under which statements about closed manifolds, such as

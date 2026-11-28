@@ -16,7 +16,9 @@ map, so `Rep.ofHom W.subtype` is a morphism of `Rep k G` into `Rep.of ρ`. This 
 the categorical properties of that morphism read off `W`: it is always a monomorphism, it is zero
 exactly when `W = ⊥`, and it is an isomorphism exactly when `W = ⊤`. These are the facts through
 which simplicity of an object of `Rep k G` or `FDRep k G` is compared with irreducibility of the
-representation it carries.
+representation it carries. It also identifies the underlying functions of Mathlib's inclusion
+`Rep.subtype` and projection `Rep.mkQ` for an invariant submodule with `Submodule.subtype` and
+`Submodule.mkQ`.
 
 ## Main results
 
@@ -25,6 +27,8 @@ representation it carries.
   subrepresentation is `⊥`.
 * `Subrepresentation.isIso_ofHom_subtype_iff`: the inclusion is an isomorphism exactly when the
   subrepresentation is `⊤`.
+* `Rep.coe_subtype_hom`, `Rep.coe_mkQ_hom`: the inclusion of and projection onto the quotient by
+  an invariant submodule are `Submodule.subtype` and `Submodule.mkQ` as functions.
 
 ## Implementation notes
 
@@ -62,4 +66,20 @@ theorem isIso_ofHom_subtype_iff : IsIso (Rep.ofHom W.subtype) ↔ W = ⊤ := by
   exact and_iff_right inferInstance
 
 end Subrepresentation
+
+namespace Rep
+
+variable {k : Type u} {G : Type v} [Ring k] [Monoid G] (A : Rep k G) (W : Submodule k A)
+  (le_comap : ∀ g, W ≤ W.comap (A.ρ g))
+
+/-- The inclusion `Rep.subtype` of an invariant submodule is `Submodule.subtype` as a function. -/
+@[simp]
+theorem coe_subtype_hom : ⇑(Rep.subtype A W le_comap).hom = W.subtype := rfl
+
+/-- The projection `Rep.mkQ` onto the quotient by an invariant submodule is `Submodule.mkQ` as a
+function. -/
+@[simp]
+theorem coe_mkQ_hom : ⇑(Rep.mkQ A W le_comap).hom = W.mkQ := rfl
+
+end Rep
 
