@@ -6,22 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.Card
-public import Mathlib.Data.Nat.Prime.Defs
+public import Mathlib.Data.Nat.PrimeFin
 public import Mathlib.Order.Interval.Finset.Nat
-import Mathlib.Data.Nat.Prime.Basic
+import Mathlib.Data.Nat.GCD.Prime
 
 /-!
 # Finite sets of primes: ordered prime factorizations and smallest prime factors
 
 By unique factorization, a natural number `s` has at most two ordered factorizations `s = p * q`
 into two primes, namely `(p, q)` and `(q, p)`. Also, the smallest prime factor of any `1 < n ≤ N`
-is a prime in `[1, N]`.
+is a prime in `[1, N]`. The prime factors of the least common multiple of two nonzero natural
+numbers are exactly those of its two inputs.
 
 ## Main results
 
 * `Nat.card_le_two_of_forall_prime_mul_eq`: a finite set of ordered pairs of primes with a fixed
   product `s` has at most two elements.
 * `Nat.minFac_mem_filter_prime_Icc`: for `1 < n ≤ N`, `n.minFac` is a prime in `Finset.Icc 1 N`.
+* `Nat.primeFactors_lcm`: the prime factors of `m.lcm n` are those of `m` or `n`.
 -/
 
 public section
@@ -55,5 +57,14 @@ theorem minFac_mem_filter_prime_Icc {n N : ℕ} (hn : 1 < n) (hnN : n ≤ N) :
   have hp := minFac_prime hn.ne'
   exact Finset.mem_filter.mpr
     ⟨Finset.mem_Icc.mpr ⟨hp.one_le, (minFac_le (zero_lt_one.trans hn)).trans hnN⟩, hp⟩
+
+/-- The prime factors of the least common multiple of two nonzero naturals form the union
+of their sets of prime factors. -/
+theorem primeFactors_lcm {m n : ℕ} (hm : m ≠ 0) (hn : n ≠ 0) :
+    (m.lcm n).primeFactors = m.primeFactors ∪ n.primeFactors := by
+  ext p
+  by_cases hp : p.Prime
+  · simp [mem_primeFactors, hp, hm, hn, lcm_ne_zero hm hn, hp.dvd_lcm]
+  · simp [mem_primeFactors, hp]
 
 end Nat
