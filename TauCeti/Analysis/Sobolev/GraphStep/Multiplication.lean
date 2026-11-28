@@ -41,6 +41,8 @@ composition `ι.compLpL p (mu.restrict Ω)` with a continuous linear map `ι : D
 * `TauCeti.WeakDerivStep.norm_smulLeftCLM_apply_le`: the bound `‖ψ u‖ ≤ (√2 C₀ + C₁) ‖u‖`, and
   `TauCeti.WeakDerivStep.norm_smulLeftCLM_apply_le_mul_opNorm`, `‖ψ u‖ ≤ (√2 C₀ + C₁ ‖T‖) ‖u‖`
   over a base `T`.
+* `TauCeti.WeakDerivStep.inner_prev_smulLeftCLM`: multiplication by `ψ` is symmetric for the
+  `L²` pairing of fields, `⟪ψ u, v⟫ = ⟪u, ψ v⟫`.
 * `TauCeti.WeakDerivStep.sum_smulLeftCLM`: if `∑ᵢ ψᵢ = 1` on `Ω`, then `∑ᵢ ψᵢ u = u`.
 * `TauCeti.WeakDerivStep.exists_forall_norm_fderiv_le_of_abs_deriv_le`: a bound on `|ψ'|` over an
   open `U ⊆ ℝ` in the form of the derivative hypothesis of `smulLeftCLM`.
@@ -302,5 +304,31 @@ of the derivative hypothesis of `TauCeti.WeakDerivStep.smulLeftCLM`. -/
 theorem exists_forall_norm_fderiv_le_of_abs_deriv_le {U : Opens ℝ} {χ : ℝ → ℝ} {C : ℝ}
     (h : ∀ s ∈ U, |deriv χ s| ≤ C) : ∃ C, ∀ s ∈ U, ‖fderiv ℝ χ s‖ ≤ C :=
   ⟨C, fun s hs ↦ by rw [← norm_deriv_eq_norm_fderiv, Real.norm_eq_abs]; exact h s hs⟩
+
+end TauCeti.WeakDerivStep
+
+namespace TauCeti.WeakDerivStep
+
+variable {E F D : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [BorelSpace E] [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+  [NormedAddCommGroup D] [InnerProductSpace ℝ D] {mu : Measure E} [IsFiniteMeasureOnCompacts mu]
+  {Omega : Opens E} {ψ : E → ℝ} {T : Lp D 2 (mu.restrict Omega) →L[ℝ] Lp F 2 (mu.restrict Omega)}
+
+open scoped InnerProductSpace
+
+/-- **Multiplication by a real function is symmetric for the `L²` pairing of fields**:
+`⟪ψ u, v⟫ = ⟪u, ψ v⟫`. -/
+theorem inner_prev_smulLeftCLM (hψ : ContDiffOn ℝ ∞ ψ Omega)
+    (h₀ : ∃ C, ∀ x ∈ Omega, ‖ψ x‖ ≤ C) (h₁ : ∃ C, ∀ x ∈ Omega, ‖fderiv ℝ ψ x‖ ≤ C)
+    (hT : ∀ (a : Lp ℝ ∞ (mu.restrict Omega)) g,
+      T (Lp.multiplicationOperator a g) = Lp.multiplicationOperator a (T g))
+    (u v : WeakDerivStep mu Omega 2 T) :
+    ⟪prev _ (smulLeftCLM ψ hψ h₀ h₁ hT u), prev _ v⟫_ℝ =
+      ⟪prev _ u, prev _ (smulLeftCLM ψ hψ h₀ h₁ hT v)⟫_ℝ := by
+  rw [L2.inner_def, L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [prev_smulLeftCLM_ae hψ h₀ h₁ hT u, prev_smulLeftCLM_ae hψ h₀ h₁ hT v]
+    with x hu hv
+  rw [hu, hv, real_inner_smul_left, real_inner_smul_right]
 
 end TauCeti.WeakDerivStep
