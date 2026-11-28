@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.Abelian
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
+public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 
 /-!
 # The differential onto the boundaries
@@ -26,6 +27,8 @@ boundaries and homology, used for splitting complexes and for the universal coef
 * `HomologicalComplex.toBoundaries`: the corestriction `Kᵢ ⟶ Bⱼ` of the differential.
 * `HomologicalComplex.epi_toBoundaries`: it is an epimorphism for a relation `i → j`.
 * `HomologicalComplex.toBoundariesIsCokernel`: it is then the cokernel of `Zᵢ ⟶ Kᵢ`.
+* `HomologicalComplex.boundaries_shortExact`: the short exact sequence
+  `0 ⟶ Bⱼ ⟶ Zⱼ ⟶ Hⱼ ⟶ 0`.
 * `HomologicalComplex.ExactAt.isIso_kernel_ι_homologyπ`: at a degree where `K` is exact, the
   boundaries are all of the cycles.
 -/
@@ -98,5 +101,13 @@ def toBoundariesIsCokernel {i j : ι} (hij : c.Rel i j) :
   Abelian.epiIsCokernelOfKernel _
     (isKernelOfComp (kernel.ι _ ≫ K.iCycles j) (K.d i j) (K.cyclesIsKernel i j (c.next_eq' hij))
       (K.iCycles_toBoundaries i j) (by simp))
+
+/-- `ShortComplex.kernelSequence` for `0 ⟶ Bⱼ ⟶ Zⱼ ⟶ Hⱼ(K) ⟶ 0`, with the terms of the
+sequence unfolded so that its extension class has source `Hⱼ(K)` and target `Bⱼ` up to
+reducible definitional equality. -/
+lemma boundaries_shortExact (j : ι) :
+    (ShortComplex.mk (kernel.ι (K.homologyπ j)) (K.homologyπ j) (kernel.condition _)).ShortExact
+    where
+  exact := ShortComplex.kernelSequence_exact (K.homologyπ j)
 
 end HomologicalComplex

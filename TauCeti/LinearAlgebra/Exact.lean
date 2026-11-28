@@ -112,6 +112,32 @@ theorem comp_prod {R U' U V B A : Type*} [Semiring R] [AddCommMonoid U']
   · rintro ⟨u', rfl⟩
     exact ⟨by simp [hhf', hfg'.apply_apply_eq_zero], hfg.apply_apply_eq_zero _⟩
 
+section SplitSurjectiveEquiv
+
+variable {R M N P : Type*} [Semiring R] [AddCommGroup M] [AddCommGroup N] [AddCommGroup P]
+  [Module R M] [Module R N] [Module R P] {f : M →ₗ[R] N} {g : N →ₗ[R] P}
+
+/-- The inverse of `Function.Exact.splitSurjectiveEquiv` adds the inclusion `f` on the first
+coordinate and the chosen section `s` on the second coordinate. -/
+@[simp]
+lemma splitSurjectiveEquiv_symm_apply (h : Exact f g) (hf : Function.Injective f)
+    (s : { l : P →ₗ[R] N // g ∘ₗ l = LinearMap.id }) (m : M) (p : P) :
+    (h.splitSurjectiveEquiv hf s).val.symm (m, p) = f m + s.val p := by
+  have hm : (h.splitSurjectiveEquiv hf s).val.symm (m, 0) = f m :=
+    (LinearMap.congr_fun (h.splitSurjectiveEquiv hf s).property.left m).symm
+  have hp : (h.splitSurjectiveEquiv hf s).val.symm (0, p) = s.val p :=
+    LinearMap.congr_fun (congrArg Subtype.val ((h.splitSurjectiveEquiv hf).left_inv s)) p
+  simpa only [← map_add, Prod.mk_add_mk, add_zero, zero_add] using congrArg₂ (· + ·) hm hp
+
+/-- The second coordinate of `Function.Exact.splitSurjectiveEquiv` is the surjection `g`. -/
+@[simp]
+lemma splitSurjectiveEquiv_apply_snd (h : Exact f g) (hf : Function.Injective f)
+    (s : { l : P →ₗ[R] N // g ∘ₗ l = LinearMap.id }) (n : N) :
+    ((h.splitSurjectiveEquiv hf s).val n).snd = g n :=
+  (LinearMap.congr_fun (h.splitSurjectiveEquiv hf s).property.right n).symm
+
+end SplitSurjectiveEquiv
+
 section ProdMapId
 
 variable {R U V W Z : Type*} [Semiring R] [AddCommMonoid U] [AddCommMonoid V] [AddCommMonoid W]

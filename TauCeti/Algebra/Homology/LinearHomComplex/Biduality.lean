@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Homology.LinearHomComplex.Bidual
 public import TauCeti.Algebra.Module.Injective.Bidual
 
 import Mathlib.Algebra.Category.ModuleCat.Injective
-import TauCeti.Algebra.Homology.LinearHomComplex.Single
+import TauCeti.Algebra.Homology.UniversalCoefficient.Cochain.Basic
 
 /-!
 # Biduality on the cohomology of complexes

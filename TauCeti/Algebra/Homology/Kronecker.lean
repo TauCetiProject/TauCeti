@@ -32,9 +32,9 @@ over a field.
 * `TauCeti.ChainComplex.homologyClassOfComp`: the class of the cocycle `f ≫ g` for a cochain
   `f : Xᵢ ⟶ A` vanishing on boundaries, with
   `TauCeti.ChainComplex.homologyπ_kronecker_homologyClassOfComp` computing its Kronecker image.
-* `TauCeti.ChainComplex.kroneckerSection`: a `k`-linear right inverse of the Kronecker map, built
-  from a retraction of the inclusion of the cycles, with
-  `TauCeti.ChainComplex.kronecker_surjective_of_isSplitMono`.
+* `TauCeti.ChainComplex.kroneckerSectionOfRetraction` and `TauCeti.ChainComplex.kroneckerSection`:
+  a `k`-linear right inverse of the Kronecker map, built from an explicit or chosen retraction
+  of the inclusion of the cycles, with `TauCeti.ChainComplex.kronecker_surjective_of_isSplitMono`.
 * `TauCeti.ChainComplex.kronecker_bijective` and `TauCeti.ChainComplex.kroneckerEquiv`: for an
   injective object `Y`, the Kronecker map is a `k`-linear equivalence.
 * `TauCeti.ChainComplex.kronecker_bijective_of_isIso`: the Kronecker map is bijective in a degree
@@ -193,6 +193,17 @@ lemma homologyπ_kronecker_homologyClassOfComp {i : α} {A : C} (f : X.X i ⟶ A
   rw [homologyClassOfComp_eq f hf g _ (iCycles_cocycleOfComp f hf g), kronecker_homologyπ,
     iCycles_cocycleOfComp]
 
+/-- `homologyClassOfComp` commutes with changing the coefficient object. -/
+lemma homologyClassOfComp_coefficient_naturality {i : α} {A Z : C} (f : X.X i ⟶ A)
+    (hf : X.d ((ComplexShape.up α).next i) i ≫ f = 0) (g : A ⟶ Y) (h : Y ⟶ Z) :
+    homologyMap (X.linearYonedaObjMap k h) i (homologyClassOfComp k Y f hf g) =
+      homologyClassOfComp k Z f hf (g ≫ h) := by
+  rw [homologyClassOfComp_eq f hf g _ (iCycles_cocycleOfComp f hf g),
+    X.homologyMap_linearYonedaObjMap_homologyπ_apply k h i]
+  exact (homologyClassOfComp_eq f hf (g ≫ h) _ (by
+    rw [X.iCycles_cyclesMap_linearYonedaObjMap_apply k h i,
+      iCycles_cocycleOfComp, Category.assoc])).symm
+
 /-- For an injective object `Y`, every morphism `Hᵢ(X) ⟶ Y` is the evaluation of a cohomology
 class: it extends from the cycles of `X` to a cochain, which is a cocycle. -/
 private lemma kronecker_surjective [Injective Y] (i : α) :
@@ -246,12 +257,42 @@ lemma kroneckerEquiv_apply [Injective Y] (i : α) (x : (X.linearYonedaObj k Y).h
     kroneckerEquiv k X Y i x = kronecker k X Y i x :=
   (rfl)
 
-/-- The cochain `Xᵢ ⟶ Zᵢ ⟶ Hᵢ(X)` built from a retraction of the inclusion of the cycles vanishes
-on boundaries. -/
-@[reassoc (attr := simp)]
-lemma d_comp_retraction_iCycles_comp_homologyπ (j i : α) [IsSplitMono (X.iCycles i)] :
-    X.d j i ≫ retraction (X.iCycles i) ≫ X.homologyπ i = 0 := by
-  rw [← X.toCycles_i, Category.assoc, IsSplitMono.id_assoc, toCycles_comp_homologyπ]
+variable (k X Y) in
+/-- **A splitting of the universal coefficient sequence from an explicit retraction**: given a
+retraction `r : Xᵢ ⟶ Zᵢ` of the inclusion of the cycles `Zᵢ ⟶ Xᵢ`, the `k`-linear right inverse
+of the Kronecker map sending `g : Hᵢ(X) ⟶ Y` to the class of the cocycle `Xᵢ ⟶ Zᵢ ⟶ Hᵢ(X) ⟶ Y`.
+-/
+def kroneckerSectionOfRetraction (i : α) (r : X.X i ⟶ X.cycles i)
+    (hr : X.iCycles i ≫ r = 𝟙 _) :
+    (X.homology i ⟶ Y) →ₗ[k] (X.linearYonedaObj k Y).homology i :=
+  homologyClassOfComp k Y (r ≫ X.homologyπ i) (by
+    rw [← X.toCycles_i, Category.assoc, reassoc_of% hr, toCycles_comp_homologyπ])
+
+/-- `kroneckerSectionOfRetraction k X Y i r hr g` is the class of the cocycle
+`Xᵢ ⟶ Zᵢ ⟶ Hᵢ(X) ⟶ Y` built from the explicit retraction `r`. -/
+lemma kroneckerSectionOfRetraction_apply (i : α) (r : X.X i ⟶ X.cycles i)
+    (hr : X.iCycles i ≫ r = 𝟙 _) (g : X.homology i ⟶ Y)
+    (φ : (X.linearYonedaObj k Y).cycles i)
+    (hφ : (X.linearYonedaObj k Y).iCycles i φ = r ≫ X.homologyπ i ≫ g) :
+    kroneckerSectionOfRetraction k X Y i r hr g = (X.linearYonedaObj k Y).homologyπ i φ :=
+  homologyClassOfComp_eq _ _ g φ (hφ.trans (Category.assoc ..).symm)
+
+/-- `TauCeti.ChainComplex.kroneckerSectionOfRetraction` is a right inverse of the Kronecker
+map. -/
+@[simp]
+lemma kronecker_kroneckerSectionOfRetraction (i : α) (r : X.X i ⟶ X.cycles i)
+    (hr : X.iCycles i ≫ r = 𝟙 _) (g : X.homology i ⟶ Y) :
+    kronecker k X Y i (kroneckerSectionOfRetraction k X Y i r hr g) = g := by
+  rw [← cancel_epi (X.homologyπ i), kroneckerSectionOfRetraction,
+    homologyπ_kronecker_homologyClassOfComp, Category.assoc, reassoc_of% hr]
+
+/-- **Coefficient naturality of `kroneckerSectionOfRetraction`**: postcomposing with `h : Y ⟶ Z`
+commutes with `kroneckerSectionOfRetraction`. -/
+lemma kroneckerSectionOfRetraction_coefficient_naturality {Z : C} (h : Y ⟶ Z) (i : α)
+    (r : X.X i ⟶ X.cycles i) (hr : X.iCycles i ≫ r = 𝟙 _) (g : X.homology i ⟶ Y) :
+    homologyMap (X.linearYonedaObjMap k h) i (kroneckerSectionOfRetraction k X Y i r hr g) =
+      kroneckerSectionOfRetraction k X Z i r hr (g ≫ h) :=
+  homologyClassOfComp_coefficient_naturality _ _ g h
 
 variable (k X Y) in
 /-- **The splitting of the universal coefficient sequence**: given a retraction of the inclusion
@@ -259,8 +300,7 @@ of the cycles `Zᵢ ⟶ Xᵢ`, the `k`-linear right inverse of the Kronecker map
 to the class of the cocycle `Xᵢ ⟶ Zᵢ ⟶ Hᵢ(X) ⟶ Y`. It depends on the chosen retraction. -/
 def kroneckerSection (i : α) [IsSplitMono (X.iCycles i)] :
     (X.homology i ⟶ Y) →ₗ[k] (X.linearYonedaObj k Y).homology i :=
-  homologyClassOfComp k Y (retraction (X.iCycles i) ≫ X.homologyπ i)
-    (d_comp_retraction_iCycles_comp_homologyπ _ i)
+  kroneckerSectionOfRetraction k X Y i (retraction (X.iCycles i)) (IsSplitMono.id _)
 
 /-- `kroneckerSection k X Y i g` is the class of the cocycle `Xᵢ ⟶ Zᵢ ⟶ Hᵢ(X) ⟶ Y` built from the
 chosen retraction of the cycles. -/
@@ -268,14 +308,13 @@ lemma kroneckerSection_apply (i : α) [IsSplitMono (X.iCycles i)] (g : X.homolog
     (φ : (X.linearYonedaObj k Y).cycles i)
     (hφ : (X.linearYonedaObj k Y).iCycles i φ = retraction (X.iCycles i) ≫ X.homologyπ i ≫ g) :
     kroneckerSection k X Y i g = (X.linearYonedaObj k Y).homologyπ i φ :=
-  homologyClassOfComp_eq _ _ g φ (hφ.trans (Category.assoc ..).symm)
+  kroneckerSectionOfRetraction_apply i (retraction (X.iCycles i)) (IsSplitMono.id _) g φ hφ
 
 /-- `TauCeti.ChainComplex.kroneckerSection` is a right inverse of the Kronecker map. -/
 @[simp]
 lemma kronecker_kroneckerSection (i : α) [IsSplitMono (X.iCycles i)] (g : X.homology i ⟶ Y) :
-    kronecker k X Y i (kroneckerSection k X Y i g) = g := by
-  rw [← cancel_epi (X.homologyπ i), kroneckerSection, homologyπ_kronecker_homologyClassOfComp,
-    Category.assoc, IsSplitMono.id_assoc]
+    kronecker k X Y i (kroneckerSection k X Y i g) = g :=
+  kronecker_kroneckerSectionOfRetraction i (retraction (X.iCycles i)) (IsSplitMono.id _) g
 
 /-- If the inclusion of the cycles `Zᵢ ⟶ Xᵢ` is a split monomorphism, then every morphism
 `Hᵢ(X) ⟶ Y` is the evaluation of a cohomology class of `Hom(X, Y)`. -/
@@ -303,6 +342,7 @@ theorem kronecker_injective_of_isIso (i : α) [IsIso (X.iCycles i)] :
 map `Hⁱ(Hom(X, Y)) →ₗ[k] (Hᵢ(X) ⟶ Y)` is bijective, for every object `Y`. -/
 theorem kronecker_bijective_of_isIso (i : α) [IsIso (X.iCycles i)] :
     Function.Bijective (kronecker k X Y i) :=
+  have : IsSplitMono (X.iCycles i) := .mk' ⟨inv (X.iCycles i), IsIso.hom_inv_id _⟩
   ⟨kronecker_injective_of_isIso i, kronecker_surjective_of_isSplitMono i⟩
 
 end TauCeti.ChainComplex
