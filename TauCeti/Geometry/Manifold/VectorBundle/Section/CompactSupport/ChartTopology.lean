@@ -179,15 +179,11 @@ private theorem exists_sum_chartLocalization [FiniteDimensional ℝ E] [IsManifo
     exact mem_image_of_mem _ hx
   refine ⟨s, ρ, L, hL, hψ, LinearMap.ext fun sec ↦ Subtype.ext ?_⟩
   ext x
-  simp only [LinearMap.sum_apply, LinearMap.coe_comp, Function.comp_apply, Submodule.coe_sum,
-    ContinuousLinearMap.coe_coe, TestFunction.coe_ofSupportedInCLM, Submodule.coe_subtype,
-    chartTestSection_chartLocalization _ _ _ _ _ _ _ _ (hc _) (hρ_sub _),
-    ContMDiffSection.coe_sum, Finset.sum_apply, ContMDiffSection.smul_apply]
-  rw [← Finset.sum_smul, ofSupportedIn_apply]
   by_cases hx : x ∈ (K : Set M)
-  · rw [hρ_sum x hx, one_smul]
-  · rw [sec.val.eq_zero_of_notMem_tsupport fun h ↦ hx (mem_supportedIn.1 sec.property h),
-      smul_zero]
+  · simp [chartTestSection_chartLocalization _ _ _ _ _ _ _ _ (hc _) (hρ_sub _), ← Finset.sum_smul,
+      hρ_sum x hx]
+  · simp [chartTestSection_chartLocalization _ _ _ _ _ _ _ _ (hc _) (hρ_sub _),
+      sec.val.eq_zero_of_notMem_tsupport fun h ↦ hx (mem_supportedIn.1 sec.property h)]
 
 private theorem exists_sum_chartLocalization_apply [FiniteDimensional ℝ E] [IsManifold I n M]
     (hc_symm : ∀ j, ContMDiffOn 𝓘(ℝ, E) I n (c j).symm (c j).target)

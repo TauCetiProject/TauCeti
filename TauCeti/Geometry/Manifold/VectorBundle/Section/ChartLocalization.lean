@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Manifold.PartitionOfUnity.ChartCutoffs
 import TauCeti.Analysis.Distribution.TestFunction.WeakWhitney
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
 # Chart localization of smooth bundle sections
@@ -357,39 +356,6 @@ theorem ChartCutoffs.exists_source_subset_baseSet {n : ℕ∞} [FiniteDimensiona
 
 end BaseSetChart
 
-section TestChart
-
-variable (I F) in
-/-- The extended chart at `x`, restricted to the base set of the trivialization at `x`: an open
-partial homeomorphism onto an open subset of `E`. -/
-private def testChart {n : ℕ∞ω} [IsManifold I n M] (x : M) : OpenPartialHomeomorph M E :=
-  (TauCeti.extChartPartialDiffeomorph I n x).toOpenPartialHomeomorph.restrOpen
-    (trivializationAt F V x).baseSet (trivializationAt F V x).open_baseSet
-
-private theorem testChart_source_subset {n : ℕ∞ω} [IsManifold I n M] (x : M) :
-    (testChart F I V (n := n) x).source ⊆ (trivializationAt F V x).baseSet := by
-  rw [testChart, OpenPartialHomeomorph.restrOpen_source]
-  exact inter_subset_right
-
-private theorem mem_testChart_source {n : ℕ∞ω} [IsManifold I n M] [BoundarylessManifold I M]
-    (x : M) : x ∈ (testChart F I V (n := n) x).source := by
-  rw [testChart, OpenPartialHomeomorph.restrOpen_source,
-    PartialDiffeomorph.toOpenPartialHomeomorph_source]
-  exact ⟨(TauCeti.mem_extChartPartialDiffeomorph_source I n x).2
-    (BoundarylessManifold.isInteriorPoint (I := I)), mem_baseSet_trivializationAt F V x⟩
-
-private theorem contMDiffOn_testChart {n : ℕ∞ω} [IsManifold I n M] (x : M) :
-    ContMDiffOn I 𝓘(ℝ, E) n (testChart F I V (n := n) x)
-      (testChart F I V (n := n) x).source :=
-  (TauCeti.extChartPartialDiffeomorph I n x).contMDiffOn_toOpenPartialHomeomorph_restrOpen
-    (trivializationAt F V x).open_baseSet
-
-private theorem contMDiffOn_testChart_symm {n : ℕ∞ω} [IsManifold I n M] (x : M) :
-    ContMDiffOn 𝓘(ℝ, E) I n (testChart F I V (n := n) x).symm
-      (testChart F I V (n := n) x).target :=
-  PartialDiffeomorph.contMDiffOn_toOpenPartialHomeomorph_restrOpen_symm
-    (TauCeti.extChartPartialDiffeomorph I n x) (trivializationAt F V x).open_baseSet
-
 variable (I F) in
 /-- On a boundaryless manifold, every point `x` lies in the source of a smooth chart into the
 model space with smooth inverse, whose source lies in the base set of the trivialization at `x`. -/
@@ -398,10 +364,8 @@ theorem exists_chart_source_subset_baseSet {n : ℕ∞ω} [IsManifold I n M]
     ∃ c : OpenPartialHomeomorph M E, ContMDiffOn I 𝓘(ℝ, E) n c c.source ∧
       ContMDiffOn 𝓘(ℝ, E) I n c.symm c.target ∧ c.source ⊆ (trivializationAt F V x).baseSet ∧
       x ∈ c.source :=
-  ⟨testChart F I V (n := n) x, contMDiffOn_testChart V x, contMDiffOn_testChart_symm V x,
-    testChart_source_subset V x, mem_testChart_source V x⟩
-
-end TestChart
+  exists_chart_source_subset (trivializationAt F V x).open_baseSet
+    (mem_baseSet_trivializationAt F V x)
 
 end TauCeti
 

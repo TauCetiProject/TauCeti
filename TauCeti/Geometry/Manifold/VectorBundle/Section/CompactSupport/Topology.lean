@@ -26,13 +26,13 @@ zero to a compactly supported section (`Bundle.Trivialization.chartTestSection`)
 extensions are continuous from the native LF topology of `TestFunction`
 (`Bundle.Trivialization.continuous_chartTestSection`), so precomposing a continuous linear
 functional on bundle tests with a chart extension gives a continuous linear functional on the
-native test functions of the chart target. When a single chart with `C^n` inverse covers the
-entire manifold inside a bundle frame, chart extension is a continuous linear equivalence with
-Mathlib's `TestFunction` (`Bundle.Trivialization.chartTestSectionEquiv`). In any smooth frame the
-coefficients of an extended test are the test function composed with the chart and multiplied by the
-smooth transition matrix, and both operations are continuous in the weak Whitney topology on
-coefficient functions
-(`Bundle.Trivialization.continuous_frameCoordinates_chartTestSection_ofSupportedIn`).
+native test functions of the chart target. When the model space is locally compact and a single
+chart with `C^n` inverse covers the entire manifold inside a bundle frame, chart extension is a
+continuous linear equivalence with Mathlib's `TestFunction`
+(`Bundle.Trivialization.chartTestSectionEquiv`). In any smooth frame the coefficients of an
+extended test are the test function composed with the chart and multiplied by the smooth
+transition matrix, and both operations are continuous in the weak Whitney topology on coefficient
+functions (`Bundle.Trivialization.continuous_frameCoordinates_chartTestSection_ofSupportedIn`).
 
 The topology is Hausdorff for a covering frame system, is independent of that frame cover,
 and on a compact base agrees with the compact derivative topology on all sections. In
@@ -367,11 +367,13 @@ private def chartReadback (s : compactlySupported I F n V) :
     (hcsource ▸ subset_univ _) ⟨s.val, mem_supportedIn.2 Subset.rfl⟩
 
 omit [LocallyCompactSpace E] [T2Space M] [IsManifold I n M] in
-private theorem chartReadback_def (s : compactlySupported I F n V) :
-    chartReadback t c hc hct hcsource s =
-      stageReadback t c hc hct (supportCompacts s)
-        (hcsource ▸ subset_univ _) ⟨s.val, mem_supportedIn.2 Subset.rfl⟩ :=
-  rfl
+private theorem chartReadback_apply_of_mem (s : compactlySupported I F n V)
+    {y : E} (hy : y ∈ c.target) :
+    chartReadback t c hc hct hcsource s y =
+      t.continuousLinearMapAt ℝ (c.symm y) (s.val (c.symm y)) := by
+  rw [chartReadback, stageReadback, LinearMap.coe_comp, Function.comp_apply,
+    ContinuousLinearMap.coe_coe, TestFunction.coe_ofSupportedInCLM, TestFunction.coe_ofSupportedIn,
+    chartTestCoeff_apply_of_mem t c hc hct _ _ _ hy]
 
 omit [LocallyCompactSpace E] [IsManifold I n M] in
 private theorem chartTestSection_chartReadback (s : compactlySupported I F n V) :
@@ -411,10 +413,11 @@ private theorem continuous_chartTestSectionLinearEquiv_symm :
         ((chartTestSectionLinearEquiv t c hc hct hc' hcsource).apply_symm_apply
           (ofSupportedIn K sec)).symm
 
-/-- **Global-chart equivalence with native test functions.** When a smooth chart with `C^n` inverse
-covers the entire manifold inside a smooth bundle frame (for instance, an open subset of a normed
-space with a trivial bundle), chart extension is a continuous linear equivalence from Mathlib's
-`TestFunction` to compactly supported sections with their fixed-compact inductive topology. -/
+/-- **Global-chart equivalence with native test functions.** When the model space is locally
+compact and a smooth chart with `C^n` inverse covers the entire manifold inside a smooth bundle
+frame (for instance, an open subset of a finite-dimensional real normed space with a trivial
+bundle), chart extension is a continuous linear equivalence from Mathlib's `TestFunction` to
+compactly supported sections with their fixed-compact inductive topology. -/
 def chartTestSectionEquiv :
     letI := compactlySupportedTopology (I := I) (n := n) e U hU
     𝓓^{n}(⟨c.target, c.open_target⟩, F) ≃L[ℝ] compactlySupported I F n V :=
@@ -443,10 +446,8 @@ theorem chartTestSectionEquiv_symm_apply_of_mem (s : compactlySupported I F n V)
     letI := compactlySupportedTopology (I := I) (n := n) e U hU
     (t.chartTestSectionEquiv c hc hct hc' hcsource e U hU hcover).symm s y =
       t.continuousLinearMapAt ℝ (c.symm y) (s.val (c.symm y)) := by
-  rw [chartTestSectionEquiv_symm_eq, chartTestSectionLinearEquiv_symm_apply, chartReadback_def,
-    stageReadback, LinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.coe_coe,
-    TestFunction.coe_ofSupportedInCLM, TestFunction.coe_ofSupportedIn,
-    chartTestCoeff_apply_of_mem t c hc hct _ _ _ hy]
+  simp [chartTestSectionEquiv_symm_eq, chartTestSectionLinearEquiv_symm_apply,
+    chartReadback_apply_of_mem t c hc hct hcsource s hy]
 
 /-- Outside the chart target, the inverse of `chartTestSectionEquiv` vanishes. -/
 @[simp]

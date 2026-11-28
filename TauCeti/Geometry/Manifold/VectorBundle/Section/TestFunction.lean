@@ -193,6 +193,19 @@ theorem chartTestSection_mem_supportedIn (φ : 𝓓^{n}(⟨c.target, c.open_targ
   rw [ContMDiffSection.mem_supportedIn, tsupport_chartTestSection]
   exact image_mono hφ
 
+/-- A test function supported in `L ⊆ c.target` extends to a section supported in `K` whenever
+`c.symm '' L ⊆ K`. -/
+theorem chartTestSection_ofSupportedIn_mem_supportedIn
+    {L : Compacts E} (hL : (L : Set E) ⊆ c.target)
+    {K : Set M} (hLK : c.symm '' (L : Set E) ⊆ K) (φ : 𝓓^{n}_{L}(E, F)) :
+    (e.chartTestSection c hc hce (TestFunction.ofSupportedIn hL φ)).val ∈
+      ContMDiffSection.supportedIn I F n V K :=
+  ContMDiffSection.mem_supportedIn.2
+    ((ContMDiffSection.mem_supportedIn.1 (e.chartTestSection_mem_supportedIn c hc hce
+      (TestFunction.ofSupportedIn hL φ) (K := (L : Set E)) (by
+        rw [TestFunction.coe_ofSupportedIn]
+        exact φ.tsupport_subset))).trans hLK)
+
 /-- In a second bundle frame, the extended section has the actual vector-bundle transition
 applied to its defining coefficients. -/
 theorem continuousLinearMapAt_chartTestSection_eq_coordChangeL
@@ -416,10 +429,7 @@ theorem chartTestCoeff_chartTestSection_ofSupportedIn [T2Space M]
     (hLK : c.symm '' (L : Set E) ⊆ K) (φ : 𝓓^{n}_{L}(E, F)) :
     t.chartTestCoeff c hc_symm hct hK hKL
       ⟨(t.chartTestSection c hc hct (TestFunction.ofSupportedIn hL φ)).val,
-        mem_supportedIn.2 ((mem_supportedIn.1 (t.chartTestSection_mem_supportedIn c hc hct
-          (TestFunction.ofSupportedIn hL φ) (K := (L : Set E)) (by
-            rw [TestFunction.coe_ofSupportedIn]
-            exact φ.tsupport_subset))).trans hLK)⟩ = φ := by
+        t.chartTestSection_ofSupportedIn_mem_supportedIn c hc hct hL hLK φ⟩ = φ := by
   ext y
   by_cases hy : y ∈ c.target
   · rw [chartTestCoeff_apply_of_mem t c hc_symm hct hK hKL _ hy,

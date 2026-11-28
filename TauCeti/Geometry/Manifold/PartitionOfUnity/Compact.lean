@@ -163,6 +163,14 @@ private theorem exists_finset_contMDiff_sum_eq_one_of_partition {ι E H M : Type
     rw [hsum_eq]
     exact P.sum_eq_one hx
 
+private noncomputable def toBumpCoveringOfIsManifold {ι : Type*} {n : ℕ∞ω} [ENat.LEInfty n]
+    [IsManifold I n M] {K : Set M} (f : SmoothBumpCovering ι I M K) : BumpCovering ι M K where
+  toFun i := ⟨f i, ((f i).contMDiff_of_isManifold (n := n)).continuous⟩
+  locallyFinite' := f.locallyFinite
+  nonneg' i _ := (f i).nonneg
+  le_one' i _ := (f i).le_one
+  eventuallyEq_one' := f.eventuallyEq_one'
+
 variable (I) in
 /-- **A finite `C^n` partition of unity on a compact set.** Let `K` be a compact subset of a
 Hausdorff `C^n` manifold (`n ≤ ∞`) modelled on a finite-dimensional real space, covered by open
@@ -188,12 +196,7 @@ theorem IsCompact.exists_finset_contMDiff_sum_eq_one
   have hW : ∀ x ∈ K, W x ∈ 𝓝 x := fun x hx ↦ by
     simpa only [W, dite_eq_left hx] using (hU _).mem_nhds (hcover x hx).choose_spec
   obtain ⟨ι, _, f, hf⟩ := hK.exists_smoothBumpCovering_isSubordinate I hW
-  let b : BumpCovering ι M K :=
-    { toFun := fun i ↦ ⟨f i, ((f i).contMDiff_of_isManifold (n := n)).continuous⟩
-      locallyFinite' := f.locallyFinite
-      nonneg' := fun i _ ↦ (f i).nonneg
-      le_one' := fun i _ ↦ (f i).le_one
-      eventuallyEq_one' := f.eventuallyEq_one' }
+  let b := toBumpCoveringOfIsManifold (n := n) f
   have hP_tsupp (i : ι) : tsupport (b.toPartitionOfUnity i) ⊆ tsupport (f i) :=
     closure_mono (b.support_toPartitionOfUnity_subset i)
   let j₀ : ι → κ := fun i ↦ (hcover (f.c i) (f.c_mem' i)).choose
@@ -215,18 +218,14 @@ theorem IsCompact.exists_finite_smooth_sum_eq_one_subordinate [IsManifold I ∞ 
     (hKU : K ⊆ ⋃ i, U i) :
     ∃ (n : ℕ) (χ : Fin n → C^∞⟮I, M; ℝ⟯) (j : Fin n → ι),
       (∀ k, tsupport (χ k) ⊆ U (j k)) ∧ ∀ x ∈ K, ∑ k, χ k x = 1 := by
-  rcases isEmpty_or_nonempty ι with hι | hι
-  · -- With no open sets, `K` is empty and the empty family works.
-    refine ⟨0, Fin.elim0, Fin.elim0, fun k ↦ k.elim0, fun x hx ↦ ?_⟩
-    exact isEmptyElim (mem_iUnion.1 (hKU hx)).choose
-  choose! idx hidx using fun x (hx : x ∈ K) ↦ mem_iUnion.1 (hKU hx)
-  obtain ⟨κ, _, f, hf⟩ := hK.exists_smoothBumpCovering_isSubordinate I
-    (U := fun x ↦ U (idx x)) fun x hx ↦ (hU _).mem_nhds (hidx x hx)
-  let e := Fintype.equivFin κ
-  refine ⟨Fintype.card κ, fun k ↦ f.toSmoothPartitionOfUnity (e.symm k),
-    fun k ↦ idx (f.c (e.symm k)), fun k ↦ hf.toSmoothPartitionOfUnity _, fun x hx ↦ ?_⟩
-  rw [← f.toSmoothPartitionOfUnity.sum_eq_one hx, finsum_eq_sum_of_fintype]
-  exact e.symm.sum_comp fun i ↦ f.toSmoothPartitionOfUnity i x
+  obtain ⟨s, ρ, hρ_sub, -, -, -, hρ_sum⟩ :=
+    hK.exists_finset_contMDiff_sum_eq_one I (n := (∞ : ℕ∞ω)) le_rfl hU
+      fun x hx ↦ mem_iUnion.1 (hKU hx)
+  let e := Fintype.equivFin s
+  refine ⟨Fintype.card s, fun k ↦ ρ (e.symm k), fun k ↦ (e.symm k).val,
+    fun k ↦ hρ_sub (e.symm k).val, fun x hx ↦ ?_⟩
+  rw [← hρ_sum x hx, ← Finset.sum_coe_sort s fun i ↦ ρ i x]
+  exact e.symm.sum_comp fun i : s ↦ ρ i.val x
 
 variable (I) in
 /-- Decompose a compactly supported `C^k` vector field `X` into a finite sum of compactly
@@ -245,16 +244,11 @@ theorem HasCompactSupport.exists_subordinate_vectorField_sum
   classical
   have : IsManifold I k M := IsManifold.of_le (n := k + 1) le_self_add
   obtain ⟨ι, _, bc, hbc⟩ := hc.exists_smoothBumpCovering_isSubordinate I hU
-  let bc' : BumpCovering ι M (tsupport (α := E) X) :=
-    { toFun i := ⟨bc i, (SmoothBumpFunction.contMDiff_of_isManifold (n := k) (bc i)).continuous⟩
-      locallyFinite' := bc.locallyFinite
-      nonneg' i _ := (bc i).nonneg
-      le_one' i _ := (bc i).le_one
-      eventuallyEq_one' := bc.eventuallyEq_one' }
+  let bc' := toBumpCoveringOfIsManifold (n := k) bc
   let ρ := bc'.toPartitionOfUnity
   have hρ_diff (i : ι) : ContMDiff I 𝓘(ℝ) k (ρ i) :=
     bc'.contMDiff_toPartitionOfUnity_of_contMDiff
-      (fun j ↦ SmoothBumpFunction.contMDiff_of_isManifold (n := k) (bc j)) i
+      (fun j ↦ (bc j).contMDiff_of_isManifold) i
   let Y : ι → (x : M) → TangentSpace I x := fun i x ↦ ρ i x • X x
   have hY (i : ι) : ContMDiff I I.tangent k (T% (Y i)) := (hρ_diff i).smul_section hX
   have hsum (x : M) : X x = ∑ i, Y i x := by
