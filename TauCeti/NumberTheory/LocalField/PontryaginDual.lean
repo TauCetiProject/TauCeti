@@ -61,7 +61,9 @@ theorem isTorsion_dual_of_isCompactModule {N : Type*} [AddCommGroup N] [Module �
     Module.IsTorsion 𝒪[L] (ModulePontryaginDual 𝒪[L] (L ⧸ (1 : Submodule 𝒪[L] L)) N) := by
   have := hN.compactSpace; exact continuousSMul_iff_isTorsion.mp inferInstance
 
-variable {L} in
+section
+variable {L}
+
 /-- **Self-duality of `𝒪[L] ⧸ 𝓂[L]^n`**: choosing a uniformizer `ϖ`, the Pontryagin dual of
 `𝒪[L] ⧸ 𝓂[L]^n` with respect to `L ⧸ 𝒪[L]` is continuously `𝒪[L]`-linearly equivalent to
 `𝒪[L] ⧸ 𝓂[L]^n`. -/
@@ -74,6 +76,58 @@ def dualQuotientMaximalIdealPowEquiv {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ) (n : 
       (((𝓂[L] ^ n : Ideal 𝒪[L]).quotientLinearMapEquivTorsionBySet _).trans
         (quotientMaximalIdealPowEquivTorsionBySet hϖ n).symm),
     continuous_of_discreteTopology, continuous_of_discreteTopology⟩
+
+/-- Evaluating `(dualQuotientMaximalIdealPowEquiv hϖ n).symm [a]` at `[b]` gives
+`[a * b / ϖ ^ n]`. -/
+@[simp]
+theorem dualQuotientMaximalIdealPowEquiv_symm_apply_mk {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ)
+    (n : ℕ) (a b : 𝒪[L]) :
+    (dualQuotientMaximalIdealPowEquiv hϖ n).symm (Ideal.Quotient.mk (𝓂[L] ^ n) a)
+        (Ideal.Quotient.mk (𝓂[L] ^ n) b) =
+      Submodule.Quotient.mk ((a : L) * (b : L) / (ϖ : L) ^ n) := by
+  have : DiscreteTopology (𝒪[L] ⧸ (𝓂[L] ^ n : Ideal 𝒪[L])) :=
+    Submodule.Quotient.discreteTopology_of_isOpen _ ((isAdic_maximalIdeal L).isOpen_pow n)
+  rw [← ContinuousLinearEquiv.coe_symm_toLinearEquiv]
+  simp only [dualQuotientMaximalIdealPowEquiv, LinearEquiv.trans_symm, LinearEquiv.symm_symm,
+    LinearEquiv.trans_apply, equivLinearMap_symm_apply,
+    Ideal.quotientLinearMapEquivTorsionBySet_symm_apply_mk,
+    quotientMaximalIdealPowEquivTorsionBySet_mk, ← Submodule.Quotient.mk_smul, Algebra.smul_def,
+    Algebra.algebraMap_ofSubsemiring_apply]
+  rw [mul_div_assoc', mul_comm (b : L) (a : L)]
+
+/-- Evaluating `(dualQuotientMaximalIdealPowEquiv hϖ n).symm [a]` at `1` gives `[a / ϖ ^ n]`. -/
+@[simp]
+theorem dualQuotientMaximalIdealPowEquiv_symm_apply_one {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ)
+    (n : ℕ) (a : 𝒪[L]) :
+    (dualQuotientMaximalIdealPowEquiv hϖ n).symm (Ideal.Quotient.mk (𝓂[L] ^ n) a) 1 =
+      Submodule.Quotient.mk ((a : L) / (ϖ : L) ^ n) := by
+  simpa using dualQuotientMaximalIdealPowEquiv_symm_apply_mk hϖ n a 1
+
+/-- Evaluating `dualQuotientMaximalIdealPowEquiv hϖ n φ` under the torsion identification
+`quotientMaximalIdealPowEquivTorsionBySet hϖ n` recovers `φ 1`. -/
+@[simp]
+theorem quotientMaximalIdealPowEquivTorsionBySet_dualQuotientMaximalIdealPowEquiv
+    {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ) (n : ℕ)
+    (φ : ModulePontryaginDual 𝒪[L] (L ⧸ (1 : Submodule 𝒪[L] L))
+      (𝒪[L] ⧸ (𝓂[L] ^ n : Ideal 𝒪[L]))) :
+    (quotientMaximalIdealPowEquivTorsionBySet hϖ n
+        (dualQuotientMaximalIdealPowEquiv hϖ n φ) : L ⧸ (1 : Submodule 𝒪[L] L)) = φ 1 := by
+  have : DiscreteTopology (𝒪[L] ⧸ (𝓂[L] ^ n : Ideal 𝒪[L])) :=
+    Submodule.Quotient.discreteTopology_of_isOpen _ ((isAdic_maximalIdeal L).isOpen_pow n)
+  simp [dualQuotientMaximalIdealPowEquiv]
+
+/-- `dualQuotientMaximalIdealPowEquiv hϖ n φ = [a]` if and only if `φ 1 = [a / ϖ ^ n]`. -/
+theorem dualQuotientMaximalIdealPowEquiv_eq_mk_iff {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ) (n : ℕ)
+    (φ : ModulePontryaginDual 𝒪[L] (L ⧸ (1 : Submodule 𝒪[L] L))
+      (𝒪[L] ⧸ (𝓂[L] ^ n : Ideal 𝒪[L]))) (a : 𝒪[L]) :
+    dualQuotientMaximalIdealPowEquiv hϖ n φ = Ideal.Quotient.mk (𝓂[L] ^ n) a ↔
+      φ 1 = Submodule.Quotient.mk ((a : L) / (ϖ : L) ^ n) := by
+  rw [← quotientMaximalIdealPowEquivTorsionBySet_dualQuotientMaximalIdealPowEquiv hϖ n φ]
+  refine ⟨fun h ↦ by rw [h, quotientMaximalIdealPowEquivTorsionBySet_mk], fun h ↦ ?_⟩
+  rw [← quotientMaximalIdealPowEquivTorsionBySet_mk hϖ n a] at h
+  exact (quotientMaximalIdealPowEquivTorsionBySet hϖ n).injective (Subtype.ext h)
+
+end
 
 end SingleField
 
