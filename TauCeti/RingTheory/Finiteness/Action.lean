@@ -18,12 +18,13 @@ import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 Let an `R`-algebra `S` act on an `R`-module `M` compatibly with scalars. The image of
 `Algebra.lsmul R R M` is the quotient of `S` by the annihilator of `M`. If `M` is Noetherian
-over `R`, this action image is finite over `R`. Already for finitely generated `M`,
+over `R`, this action image is Noetherian over `R`. Already for finitely generated `M`,
 the image is integral. Lying over then identifies the base support with the image of the
 support over `S`, and the two supports have the same dimension.
 
-For a Noetherian base module, if `S` is a domain of finite Krull dimension and the base support
-has dimension at least `dim S`, the action is faithful and `S` itself is finite over `R`.
+For a finite base module, if `S` is a domain of finite Krull dimension and the base support
+has dimension at least `dim S`, the action is faithful. If the base module is Noetherian,
+then `S` itself is finite over `R`.
 This is the dimension argument in M. Kisin, *Moduli of finite flat group schemes, and modularity*,
 Lemma 3.3.4.
 -/
@@ -73,10 +74,11 @@ theorem isIntegral_quotient_annihilator [Module.Finite R M] :
     Algebra.IsIntegral R (S ⧸ annihilator S M) :=
   (quotientAnnihilatorEquivRangeLsmul R S M).isIntegral_iff.mpr inferInstance
 
-/-- For a Noetherian base module the algebra acting effectively is finite over the base. -/
-theorem Finite.quotientAnnihilator [IsNoetherian R M] : Module.Finite R (S ⧸ annihilator S M) := by
+/-- The effective action algebra of a Noetherian base module is Noetherian as a base module. -/
+theorem isNoetherian_quotient_annihilator [IsNoetherian R M] :
+    IsNoetherian R (S ⧸ annihilator S M) := by
   let e := quotientAnnihilatorEquivRangeLsmul R S M
-  exact Module.Finite.of_injective ((Algebra.lsmul R R M (A := S)).range.val.toLinearMap ∘ₗ
+  exact isNoetherian_of_injective ((Algebra.lsmul R R M (A := S)).range.val.toLinearMap ∘ₗ
     e.toLinearMap) (Subtype.val_injective.comp e.injective)
 
 end Finiteness
@@ -117,20 +119,40 @@ theorem supportDim_eq_of_restrictScalars_finite [Module.Finite R M] :
     supportDim_eq_ringKrullDim_quotient_annihilator]
   exact TauCeti.ringKrullDim_eq_of_isIntegral_of_faithfulSMul
 
-/-- A domain of finite dimension acting on a Noetherian base module acts faithfully if the
-base support has dimension at least that of the domain. The domain is then a finite algebra. -/
-theorem finite_and_faithfulSMul_of_ringKrullDim_le_supportDim
-    [IsNoetherian R M] [IsDomain S] [FiniteRingKrullDim S]
-    (hdim : ringKrullDim S ≤ supportDim R M) : Module.Finite R S ∧ FaithfulSMul S M := by
+/-- A finite-dimensional domain acting on a finite base module acts faithfully if the base
+support has dimension at least that of the domain. -/
+theorem faithfulSMul_of_ringKrullDim_le_supportDim
+    [Module.Finite R M] [IsDomain S] [FiniteRingKrullDim S]
+    (hdim : ringKrullDim S ≤ supportDim R M) : FaithfulSMul S M := by
   have : Module.Finite S M := .of_restrictScalars_finite R S M
   rw [← supportDim_eq_of_restrictScalars_finite R S M,
     supportDim_eq_ringKrullDim_quotient_annihilator] at hdim
   have hinj := (RingHom.injective_iff_ringKrullDim_le_of_surjective
     (Ideal.Quotient.mk (annihilator S M)) Ideal.Quotient.mk_surjective).2 hdim
-  have hann := (RingHom.injective_iff_ker_eq_bot _).1 hinj
-  rw [Ideal.mk_ker] at hann
-  have hfin := Module.Finite.quotientAnnihilator R S M
+  apply annihilator_eq_bot.mp
+  simpa only [Ideal.mk_ker] using (RingHom.injective_iff_ker_eq_bot _).1 hinj
+
+/-- If the base module is Noetherian and its support has dimension at least that of the
+finite-dimensional acting domain, the domain is finite over the base and acts faithfully. -/
+theorem finite_and_faithfulSMul_of_ringKrullDim_le_supportDim
+    [IsNoetherian R M] [IsDomain S] [FiniteRingKrullDim S]
+    (hdim : ringKrullDim S ≤ supportDim R M) : Module.Finite R S ∧ FaithfulSMul S M := by
+  have hfaith := faithfulSMul_of_ringKrullDim_le_supportDim R S M hdim
+  have hann := annihilator_eq_bot.mpr hfaith
+  have : IsNoetherian R (S ⧸ annihilator S M) := isNoetherian_quotient_annihilator R S M
+  have hfin := IsNoetherian.finite R (S ⧸ annihilator S M)
   rw [hann] at hfin
-  exact ⟨Module.Finite.equiv (AlgEquiv.quotientBot R S).toLinearEquiv, annihilator_eq_bot.mp hann⟩
+  exact ⟨Module.Finite.equiv (AlgEquiv.quotientBot R S).toLinearEquiv, hfaith⟩
+
+/-- A finite-dimensional domain acting on a Noetherian module faithful over the base
+is finite over the base and acts faithfully if its dimension is at most that of the base. -/
+theorem finite_and_faithfulSMul_of_ringKrullDim_le
+    [IsDomain S] [FiniteRingKrullDim S] [IsNoetherian R M] [FaithfulSMul R M]
+    (hdim : ringKrullDim S ≤ ringKrullDim R) : Module.Finite R S ∧ FaithfulSMul S M := by
+  have hs : supportDim R M = ringKrullDim R := by
+    rw [supportDim_eq_ringKrullDim_quotient_annihilator,
+      annihilator_eq_bot.mpr (inferInstance : FaithfulSMul R M)]
+    exact (RingEquiv.quotientBot R).ringKrullDim
+  exact finite_and_faithfulSMul_of_ringKrullDim_le_supportDim R S M (hdim.trans_eq hs.symm)
 
 end Module

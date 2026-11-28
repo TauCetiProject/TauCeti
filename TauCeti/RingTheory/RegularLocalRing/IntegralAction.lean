@@ -79,22 +79,18 @@ theorem projective_of_isIntegral_of_flat [TauCeti.Ring.IsCohenMacaulay R] [IsReg
       exact WithBot.coe_le_coe.mpr (h ▸ le_self_add)
   exact Projective.of_equiv (LocalizedModule.equivTensorProduct q.primeCompl M).symm
 
-/-- A nonzero finite flat module over a Noetherian domain detects any compatible action by a
-domain of at most the same finite dimension. The algebra is finite over the base and acts
-faithfully. The module is projective over it when the base is Cohen–Macaulay and the algebra
-is regular.
-In particular this applies to finite projective base modules over regular domains. -/
-theorem finite_and_faithfulSMul_and_projective_of_ringKrullDim_le
+/-- A nonzero finite flat module over a Cohen–Macaulay domain is projective over a regular
+domain acting compatibly, provided the acting domain has finite dimension at most that of
+the base. -/
+theorem projective_of_isCohenMacaulay_of_isRegularRing_of_ringKrullDim_le
     [IsDomain R] [IsDomain S] [FiniteRingKrullDim S]
-    [IsNoetherian R M] [Nontrivial M] [Flat R M] (hdim : ringKrullDim S ≤ ringKrullDim R) :
-    Module.Finite R S ∧ FaithfulSMul S M ∧
-      (TauCeti.Ring.IsCohenMacaulay R → IsRegularRing S → Projective S M) := by
-  have hs : supportDim R M = ringKrullDim R := by
-    rw [supportDim, support_of_isTorsionFree (R := R) (M := M)]
-    exact Order.krullDim_eq_of_orderIso OrderIso.Set.univ
-  obtain ⟨hfin, hfaith⟩ := finite_and_faithfulSMul_of_ringKrullDim_le_supportDim R S M
-    (hdim.trans_eq hs.symm)
+    [TauCeti.Ring.IsCohenMacaulay R] [IsRegularRing S]
+    [Module.Finite R M] [Nontrivial M] [Flat R M] (hdim : ringKrullDim S ≤ ringKrullDim R) :
+    Projective S M := by
+  obtain ⟨m, hm⟩ := exists_ne (0 : M)
+  have : FaithfulSMul R M := ⟨fun h ↦ smul_left_injective R hm (h m)⟩
+  have : Module.Finite R S := (finite_and_faithfulSMul_of_ringKrullDim_le R S M hdim).1
   have : Module.Finite S M := .of_restrictScalars_finite R S M
-  exact ⟨hfin, hfaith, fun _ _ ↦ projective_of_isIntegral_of_flat R S M⟩
+  exact projective_of_isIntegral_of_flat R S M
 
 end Module
