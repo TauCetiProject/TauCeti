@@ -286,6 +286,23 @@ theorem isCharacterMap_chevalleyGraphAut_symm (hσ : σ ∈ t.diagramSymmetry)
   rw [diagramAut_weightMap, torusPointMap_funCongrLeft]
   exact t.chevalleyGraphAut_symm_torusPoints ht hσ A s
 
+/-- Left-conjugating an endomorphism `F` of `(t.scChevalleyDatum ht).points A` by the graph
+automorphism `γ_σ` (`γ_σ ∘ F ∘ γ_σ⁻¹`) sends its character map `φ` to
+`w * φ * (diagramAut ht hσ)⁻¹.toHom.weightMap` (i.e. `w * φ * w⁻¹`), where
+`w = (diagramAut ht hσ).toHom.weightMap`. -/
+theorem isCharacterMap_chevalleyGraphAut_comp_comp_inv (hσ : σ ∈ t.diagramSymmetry)
+    (A : Type v) [CommRing A]
+    {F : (t.scChevalleyDatum ht).points A →* (t.scChevalleyDatum ht).points A}
+    {φ : Module.End ℤ (Fin t.rank → ℤ)}
+    (hφ : IsCharacterMap ((t.scChevalleyDatum ht).torusPoints A) F φ) :
+    IsCharacterMap ((t.scChevalleyDatum ht).torusPoints A)
+      (((t.chevalleyGraphAut ht hσ A).toMonoidHom.comp F).comp
+        (t.chevalleyGraphAut ht hσ A)⁻¹.toMonoidHom)
+      ((diagramAut ht hσ).toHom.weightMap * φ * (diagramAut ht hσ)⁻¹.toHom.weightMap) := by
+  rw [mul_assoc]
+  exact ((t.isCharacterMap_chevalleyGraphAut ht hσ A).comp hφ).comp
+    (t.isCharacterMap_chevalleyGraphAut_symm ht hσ A)
+
 /-- Graph automorphisms are natural under every change of value ring. In particular, they
 commute with arbitrary field endomorphisms, including all iterates of Frobenius. -/
 theorem map_chevalleyGraphAut (hσ : σ ∈ t.diagramSymmetry)

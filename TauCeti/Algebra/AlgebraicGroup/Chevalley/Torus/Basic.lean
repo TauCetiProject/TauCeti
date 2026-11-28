@@ -47,42 +47,13 @@ noncomputable section
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
-/-- The inclusion `Λ(D) ↪ P`, with the source written in the chosen basis of `Λ(D)`. -/
-def weightLatticeEmbedding : Module.End ℤ (Fin t.rank → ℤ) :=
-  D.weightLattice.subtype ∘ₗ D.weightLatticeBasis.equivFun.symm.toLinearMap
-
-/-- Including the coordinates of a lattice element recovers its ambient weight. -/
-@[simp]
-theorem weightLatticeEmbedding_repr (μ : D.weightLattice) :
-    D.weightLatticeEmbedding (D.weightLatticeBasis.repr μ) = (μ : Fin t.rank → ℤ) := by
-  simp [weightLatticeEmbedding]
-
-/-- The coordinate lattice inclusion has image exactly the weight lattice. -/
-theorem range_weightLatticeEmbedding :
-    LinearMap.range D.weightLatticeEmbedding = D.weightLattice := by
-  rw [weightLatticeEmbedding, LinearMap.range_comp,
-    LinearEquiv.range, Submodule.map_top, Submodule.range_subtype]
-
-/-- The coordinate lattice inclusion sends a standard basis vector to the corresponding chosen
-basis vector of `Λ(D)`, read in the full weight lattice. -/
-@[simp]
-theorem weightLatticeEmbedding_single (i : Fin t.rank) :
-    D.weightLatticeEmbedding (Pi.single i 1) = (D.weightLatticeBasis i : Fin t.rank → ℤ) := by
-  simp [weightLatticeEmbedding]
-
-/-- Reconstructing a coordinate weight through the lattice inclusion recovers its original weight.
--/
-@[simp]
-theorem weightLatticeEmbedding_coordinateWeight (j : Fin D.dim) :
-    D.weightLatticeEmbedding (D.coordinateWeight j) = D.weight j := by
-  rw [← D.weightLatticeBasis.equivFun.apply_symm_apply (D.coordinateWeight j),
-    Module.Basis.equivFun_apply, weightLatticeEmbedding_repr]
-  simpa only [Module.Basis.equivFun_symm_apply, Submodule.coe_sum, Submodule.coe_smul] using
-    D.sum_coordinateWeight_smul j
-
-/-- The coordinate lattice inclusion is injective, even when the weight lattice is proper. -/
-theorem weightLatticeEmbedding_injective : Function.Injective D.weightLatticeEmbedding :=
-  Subtype.val_injective.comp D.weightLatticeBasis.equivFun.symm.injective
+/-- Over an infinite field, every root character of a Chevalley datum is nontrivial at some torus
+parameter. -/
+theorem exists_torusCharacter_coordinateRoot_ne_one {K : Type*} [Field K] [Infinite K]
+    (γ : Fin t.numRoots) :
+    ∃ s : Fin t.rank → Kˣ, torusCharacter s (D.coordinateRoot γ) ≠ 1 := by
+  obtain ⟨s, hs⟩ := exists_torusCharacter_ne (K := K) (D.coordinateRoot_ne_zero γ)
+  exact ⟨s, by simpa only [torusCharacter_zero] using hs⟩
 
 variable (A : Type*) [CommRing A]
 

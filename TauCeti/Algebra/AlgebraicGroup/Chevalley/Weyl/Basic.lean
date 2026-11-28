@@ -89,6 +89,20 @@ theorem weylElement_simpleIndex_one_mem_weylSubgroup (A : Type v) [CommRing A] (
     D.weylElement (t.simpleIndex ht i) A 1 ∈ D.weylSubgroup A :=
   Subgroup.subset_closure (Or.inr ⟨i, rfl⟩)
 
+/-- Any subgroup of `D.weylSubgroup A` containing the actual torus and all pinned simple Weyl
+representatives is the whole Weyl subgroup. -/
+theorem subgroup_eq_top_of_torusPoints_mem_of_weylElement_mem {A : Type v} [CommRing A]
+    (H : Subgroup (D.weylSubgroup A))
+    (hT : ∀ s : Fin t.rank → Aˣ, ⟨D.torusPoints A s, D.torusPoints_mem_weylSubgroup A s⟩ ∈ H)
+    (hw : ∀ i : Fin t.rank,
+      ⟨D.weylElement (t.simpleIndex ht i) A 1,
+        D.weylElement_simpleIndex_one_mem_weylSubgroup A i⟩ ∈ H) :
+    H = ⊤ := by
+  rw [eq_top_iff, ← D.closure_weylSubgroup_generators A, Subgroup.closure_le]
+  rintro ⟨_, hx⟩ (⟨s, rfl⟩ | ⟨i, rfl⟩)
+  · exact hT s
+  · exact hw i
+
 /-- The `i`-th pinned simple Weyl representative viewed as an element of `D.weylSubgroup A`. -/
 noncomputable def simpleWeylLift (A : Type v) [CommRing A] (i : Fin t.rank) :
     D.weylSubgroup A :=

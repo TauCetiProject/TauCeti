@@ -42,10 +42,8 @@ not asserted here.
 
 * `TauCeti.DynkinType.isCharacterMap_geckFrobenius`: the Frobenius acts on the weight torus
   through `p ^ k • 1`.
-* `TauCeti.DynkinType.exists_geckWeightTorusPoints_eq_mul_inv`: Lang's equation on the weight
-  torus.
-* `TauCeti.DynkinType.exists_geckWeightTorusPoints_eq_mul_inv_geckFrobenius`: its instance for
-  the Frobenius in prime characteristic.
+* `TauCeti.DynkinType.exists_geckWeightTorusPoints_eq_mul_inv_geckFrobenius`: Lang's equation on
+  the weight torus for the Frobenius in prime characteristic.
 * `TauCeti.DynkinType.isCharacterMap_geckGraphAutPoints` and
   `TauCeti.DynkinType.isCharacterMap_geckTwistedFrobenius`: the graph automorphism and the
   graph-twisted Frobenius act on the weight torus through the inverse diagram automorphism of the
@@ -77,24 +75,6 @@ theorem isCharacterMap_geckFrobenius (p k : ℕ) (A : Type v) [CommRing A] [ExpC
     rw [geckFrobenius_geckWeightTorusPoints, torusPointMap_nsmul, torusPointMap_one,
       MonoidHom.pow_apply, MonoidHom.id_apply]
 
-/-- **Lang's equation on the weight torus of the Geck carrier.** Over a ring of characteristic `p`
-whose units are divisible, for instance an algebraically closed field, if `φ` is a character map
-of an endomorphism `F` with `φ ^ n = p ^ r • 1` for some `r > 0`, then every point of the weight
-torus is `T u * (F (T u))⁻¹` for some `u`. -/
-theorem exists_geckWeightTorusPoints_eq_mul_inv {K : Type v} [CommRing K]
-    [RootableBy Kˣ ℕ] (p : ℕ) [CharP K p] {F : t.geckPoints ht K →* t.geckPoints ht K}
-    {φ : Module.End ℤ (Fin t.rank → ℤ)} (hF : IsCharacterMap (t.geckWeightTorusPoints ht K) F φ)
-    {n r : ℕ} (hr : 0 < r) (hφ : φ ^ n = (p ^ r : ℕ) • 1) (s : Fin t.rank → Kˣ) :
-    ∃ u, t.geckWeightTorusPoints ht K s =
-      t.geckWeightTorusPoints ht K u * (F (t.geckWeightTorusPoints ht K u))⁻¹ := by
-  obtain hK | _ := subsingleton_or_nontrivial K
-  · exact ⟨s, Subsingleton.elim _ _⟩
-  have hpr : ((p ^ r : ℕ) : ℤ) ≠ 1 := by
-    rw [Nat.cast_ne_one, Ne, pow_eq_one_iff, not_or]
-    exact ⟨CharP.char_ne_one K p, hr.ne'⟩
-  exact hF.exists_eq_mul_inv
-    (injective_one_sub_of_pow_eq_smul_one (by rwa [Nat.cast_smul_eq_nsmul]) hpr) s
-
 /-- **Lang's equation on the weight torus for the Frobenius.** Over a ring of prime characteristic
 `p` whose units are divisible, for instance an algebraically closed field, and for `k > 0`, every
 point of the weight torus of the Geck carrier is `T u * (F (T u))⁻¹` for the `p ^ k`-power
@@ -105,8 +85,7 @@ theorem exists_geckWeightTorusPoints_eq_mul_inv_geckFrobenius {K : Type v} [Comm
     ∃ u, t.geckWeightTorusPoints ht K s =
       t.geckWeightTorusPoints ht K u *
         (t.geckFrobenius ht p k K (t.geckWeightTorusPoints ht K u))⁻¹ :=
-  t.exists_geckWeightTorusPoints_eq_mul_inv ht p (t.isCharacterMap_geckFrobenius ht p k K) hk
-    (pow_one _) s
+  (t.isCharacterMap_geckFrobenius ht p k K).exists_eq_mul_inv_of_charP p hk (pow_one _) s
 
 /-! ## The graph automorphism and the graph-twisted Frobenius -/
 
@@ -147,9 +126,8 @@ theorem exists_geckWeightTorusPoints_eq_mul_inv_geckTwistedFrobenius {K : Type v
     ∃ u, t.geckWeightTorusPoints ht K s =
       t.geckWeightTorusPoints ht K u *
         (t.geckTwistedFrobenius ht hsigma p k K (t.geckWeightTorusPoints ht K u))⁻¹ := by
-  refine t.exists_geckWeightTorusPoints_eq_mul_inv ht p
-    (t.isCharacterMap_geckTwistedFrobenius ht hsigma p k K) (n := orderOf sigma)
-    (Nat.mul_pos hk (orderOf_pos sigma)) ?_ s
+  refine (t.isCharacterMap_geckTwistedFrobenius ht hsigma p k K).exists_eq_mul_inv_of_charP p
+    (n := orderOf sigma) (Nat.mul_pos hk (orderOf_pos sigma)) ?_ s
   -- The weight map is multiplicative in the automorphism, and `σ` has finite order.
   have hweight (g : (t.simplyConnectedRootDatum ht).Aut) : g.toHom.weightMap =
       LinearEquiv.automorphismGroup.toLinearMapMonoidHom

@@ -24,8 +24,10 @@ the endomorphism semiring beyond nontriviality itself.
 A vector on which every endomorphism of a list acts by the same scalar `z` is acted on by their
 product through `z ^ l.length` (`Module.End.list_prod_apply_eq_pow_smul`).
 
-An endomorphism of a torsion-free module over a domain some power of which is a scalar other than
-one has no nonzero fixed vectors (`TauCeti.injective_one_sub_of_pow_eq_smul_one`).
+An endomorphism of a torsion-free module over a domain some power of which is a nonzero scalar
+`m ≠ 0` (`m ≠ 1` when `n = 0`) is injective (`TauCeti.injective_of_pow_eq_smul_one`), and when any
+power is a scalar other than one (`m ≠ 1`) it has no nonzero fixed vectors
+(`TauCeti.injective_one_sub_of_pow_eq_smul_one`).
 
 Rescaling an involution by a scalar `μ` with `μ * μ = 1` gives an endomorphism squaring to `1`
 (`Module.End.smul_mul_smul_self_eq_one`).
@@ -61,6 +63,25 @@ theorem nontrivial_of_nontrivial_end {R M : Type*} [Semiring R] [AddCommMonoid M
     [Nontrivial (Module.End R M)] : Nontrivial M := by
   have : Nontrivial (M → M) := (DFunLike.coe_injective (F := Module.End R M)).nontrivial
   exact Function.nontrivial_of_nontrivial M M
+
+/-- **`φ` is injective when a power of `φ` is a nonzero scalar** (`m ≠ 0`, and `m ≠ 1` if
+`n = 0`), for an endomorphism of a torsion-free module over a domain. -/
+theorem injective_of_pow_eq_smul_one {A M : Type*} [CommRing A] [IsDomain A]
+    [AddCommGroup M] [Module A M] [Module.IsTorsionFree A M] {φ : Module.End A M} {n : ℕ} {m : A}
+    (h : φ ^ n = m • 1) (hm0 : m ≠ 0) (hn : n = 0 → m ≠ 1) : Function.Injective ⇑φ := by
+  rw [injective_iff_map_eq_zero]
+  intro v hv
+  cases n with
+  | zero =>
+    have hmv : (m - 1) • v = 0 := by
+      have hmx : v = m • v := by simpa [pow_zero] using LinearMap.congr_fun h v
+      rw [sub_smul, one_smul, ← hmx, sub_self]
+    exact (smul_eq_zero.mp hmv).resolve_left (sub_ne_zero.mpr (hn rfl))
+  | succ k =>
+    have hmv : m • v = 0 := by
+      simpa only [pow_succ, _root_.mul_apply_eq_comp, hv, map_zero, LinearMap.smul_apply,
+        one_apply_eq_self] using (LinearMap.congr_fun h v).symm
+    exact (smul_eq_zero.mp hmv).resolve_left hm0
 
 /-- **`1 - φ` is injective when a power of `φ` is a scalar other than one**, for an endomorphism
 of a torsion-free module over a domain. If `φ v = v` then `m • v = φ ^ n v = v`, so

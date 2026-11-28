@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 public import TauCeti.LinearAlgebra.End.Basic
 -- Baer's criterion for divisible groups, used only in `torusPointMap_surjective_of_injective`.
 import Mathlib.Algebra.Category.Grp.Injective
+import TauCeti.Algebra.CharP.Lemmas
 
 /-!
 # Character maps of endomorphisms of a split torus
@@ -336,6 +337,43 @@ theorem IsCharacterMap.map_range_eq [RootableBy Rˣ ℕ] (h : IsCharacterMap T F
     MonoidHom.range_eq_top.mpr (torusPointMap_surjective_of_injective hφ),
     ← MonoidHom.range_eq_map]
 
+/-- If an automorphism `F` acts on `T` through a lattice automorphism `φ`, then `F.symm` acts
+on `T` through `φ.symm`. -/
+theorem IsCharacterMap.symm {F : G ≃* G} {φ : (κ → ℤ) ≃ₗ[ℤ] (κ → ℤ)}
+    (h : IsCharacterMap T F.toMonoidHom φ.toLinearMap) :
+    IsCharacterMap T F.symm.toMonoidHom φ.symm.toLinearMap := by
+  intro s
+  have hhom : (torusPointMap (R := R) φ.toLinearMap).comp
+      (torusPointMap φ.symm.toLinearMap) = MonoidHom.id _ := by
+    rw [← torusPointMap_comp, φ.symm_comp, torusPointMap_id]
+  have hmap : torusPointMap φ.toLinearMap (torusPointMap φ.symm.toLinearMap s) = s :=
+    DFunLike.congr_fun hhom s
+  have hF := congrArg F.symm (h.map_apply (torusPointMap φ.symm.toLinearMap s))
+  simpa [hmap] using hF.symm
+
+/-- Conjugating by a product `g₁ * g₂` has character map `ψ * φ` when conjugation by `g₁` has
+character map `φ` and conjugation by `g₂` has character map `ψ`. -/
+theorem IsCharacterMap.conj_mul {g₁ g₂ : G}
+    (h₁ : IsCharacterMap T (MulAut.conj g₁).toMonoidHom φ)
+    (h₂ : IsCharacterMap T (MulAut.conj g₂).toMonoidHom ψ) :
+    IsCharacterMap T (MulAut.conj (g₁ * g₂)).toMonoidHom (ψ * φ) := by
+  have hcomp := h₁.comp h₂
+  have hconj : (MulAut.conj (g₁ * g₂)).toMonoidHom =
+      (MulAut.conj g₁).toMonoidHom.comp (MulAut.conj g₂).toMonoidHom :=
+    MonoidHom.ext fun _ => by simp [MulAut.conj_apply, mul_assoc]
+  rwa [hconj]
+
+/-- Conjugating by `g⁻¹` has character map `φ.symm` when conjugation by `g` has character map
+`φ`. -/
+theorem IsCharacterMap.conj_inv {g : G} {φ : (κ → ℤ) ≃ₗ[ℤ] (κ → ℤ)}
+    (h : IsCharacterMap T (MulAut.conj g).toMonoidHom φ.toLinearMap) :
+    IsCharacterMap T (MulAut.conj g⁻¹).toMonoidHom φ.symm.toLinearMap := by
+  have hsymm := h.symm
+  have hconj : (MulAut.conj g).symm.toMonoidHom = (MulAut.conj g⁻¹).toMonoidHom := by
+    ext z
+    simp
+  rwa [hconj] at hsymm
+
 /-- **Lang's equation on the torus.** If the units of `R` are divisible and `1 - φ` is injective,
 then every torus point is `T u * (F (T u))⁻¹` for some torus point `T u`: the homomorphism
 `t ↦ t * F(t)⁻¹` of the torus is surjective. Its character map is `1 - φ`, whose dual is
@@ -347,6 +385,19 @@ theorem IsCharacterMap.exists_eq_mul_inv [RootableBy Rˣ ℕ] (h : IsCharacterMa
   refine ⟨u, ?_⟩
   rw [h, torusPointMap_sub, torusPointMap_one, MonoidHom.div_apply, MonoidHom.id_apply, map_div,
     div_eq_mul_inv]
+
+/-- **Lang's equation on the torus in characteristic `p`.** Over a commutative ring of
+characteristic `p` with divisible units, if `φ ^ n = (p ^ r) • 1` for some `r > 0`, then every
+torus point `T s` equals `T u * (F (T u))⁻¹` for some `u`. -/
+theorem IsCharacterMap.exists_eq_mul_inv_of_charP [RootableBy Rˣ ℕ] (p : ℕ) [CharP R p]
+    (h : IsCharacterMap T F φ) {n r : ℕ} (hr : 0 < r) (hpow : φ ^ n = (p ^ r : ℕ) • 1)
+    (s : κ → Rˣ) : ∃ u, T s = T u * (F (T u))⁻¹ := by
+  obtain hR | _ := subsingleton_or_nontrivial R
+  · refine ⟨1, ?_⟩
+    rw [Subsingleton.elim s 1, map_one, map_one, inv_one, mul_one]
+  exact h.exists_eq_mul_inv
+    (injective_one_sub_of_pow_eq_smul_one (by rwa [Nat.cast_smul_eq_nsmul])
+      (Nat.cast_ne_one.mpr (pow_ne_one_of_charP R p hr))) s
 
 end Group
 

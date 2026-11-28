@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Isomorphism.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
+import TauCeti.LinearAlgebra.RootSystem.Weyl.BasedAut
 
 /-!
 # Diagram automorphisms of the pinned simply connected root datum
@@ -55,6 +56,8 @@ The group of node permutations that the construction consumes is
 
 * `TauCeti.DynkinType.diagramRootPerm_simpleIndex`: the induced permutation extends `σ` along the
   Bourbaki numbering of the simple roots.
+* `TauCeti.DynkinType.isPos_diagramRootPerm_iff`: the induced permutation preserves positivity
+  with respect to `t.rationalBase ht`.
 * `TauCeti.DynkinType.root_diagramRootPerm` and `TauCeti.DynkinType.coroot_diagramRootPerm`: every
   root and coroot has its coordinates permuted by `σ`.
 * `TauCeti.DynkinType.eq_diagramAut`: an automorphism of the pinned datum whose weight map is the
@@ -126,6 +129,24 @@ numbering of the simple roots. -/
     (t.simpleSupportEquiv ht i)
   rw [diagramRootPerm, rationalDiagramAut, ← coe_simpleSupportEquiv, h]
   simp
+
+/-- The induced permutation of the root enumeration preserves positive roots. -/
+@[simp] theorem isPos_diagramRootPerm_iff (hσ : σ ∈ t.diagramSymmetry)
+    (α : Fin t.numRoots) :
+    (t.rationalBase ht).IsPos (t.diagramRootPerm ht hσ α) ↔
+      (t.rationalBase ht).IsPos α := by
+  have hmem : t.rationalDiagramAut ht hσ ∈ (t.rationalBase ht).basedAut :=
+    RootPairing.Base.mem_basedAut_iff_forall_mem_support.mpr fun k hk => by
+      obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hk
+      rw [rationalDiagramAut_indexEquiv, diagramRootPerm_simpleIndex]
+      exact simpleIndex_mem_support (σ i)
+  have himg := RootPairing.Base.image_posRoots_of_mem_basedAut hmem
+  rw [rationalDiagramAut_indexEquiv] at himg
+  refine ⟨fun h => ?_, fun h => (mem_posRoots _ _ _).mp
+    (himg ▸ Set.mem_image_of_mem _ ((mem_posRoots _ _ _).mpr h))⟩
+  obtain ⟨γ, hγ, hγeq⟩ := himg ▸ (mem_posRoots _ _ _).mpr h
+  rw [← (t.diagramRootPerm ht hσ).injective hγeq]
+  exact (mem_posRoots _ _ _).mp hγ
 
 /-! ## The coordinates are permuted by the node permutation -/
 

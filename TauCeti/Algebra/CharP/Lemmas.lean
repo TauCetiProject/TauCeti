@@ -37,6 +37,8 @@ law.
 * `TauCeti.one_lt_expChar_of_ne_one`: an exponential characteristic other than one exceeds one.
 * `TauCeti.natCast_pow_expChar_eq_zero`: the natural-number cast of `p ^ n` vanishes when
   `1 < p ^ n`.
+* `TauCeti.pow_ne_one_of_charP`: in a nontrivial ring of characteristic `p`, every positive power
+  `p ^ r` differs from `1`.
 * `TauCeti.exists_prime_natCast_ne_zero`: if `1 ≠ 0`, some prime has nonzero cast.
 * `TauCeti.exists_prime_lt_natCast_ne_zero`: in a nontrivial ring, arbitrarily large primes have
   nonzero cast.
@@ -76,6 +78,11 @@ theorem natCast_pow_expChar_eq_zero {R : Type*} [AddMonoidWithOne R] {p n : ℕ}
   rcases ‹ExpChar R p› with _ | hp
   · simp at hq
   · exact (CharP.cast_eq_zero_iff R p (p ^ n)).2 (dvd_pow_self p hn)
+
+/-- In a nontrivial ring of characteristic `p`, every positive power `p ^ r` differs from `1`. -/
+theorem pow_ne_one_of_charP (R : Type*) [NonAssocSemiring R] [Nontrivial R] (p : ℕ)
+    [CharP R p] {r : ℕ} (hr : 0 < r) : p ^ r ≠ 1 := by
+  simpa [hr.ne'] using CharP.char_ne_one R p
 
 /-- **Some prime has nonzero cast** in an additive monoid with one in which `1 ≠ 0`, such as a
 field: if `2` vanishes, then `3 = 2 + 1` does not. -/

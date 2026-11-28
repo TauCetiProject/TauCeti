@@ -128,6 +128,26 @@ theorem map_frobenius {B : Type v'} [CommRing B] [ExpChar B p] (f : A →+* B)
     GeneralLinear.IntegralPointsPresentation.map_comp (Q := D.pointsPresentation B)] at h
   simpa only [frobenius_def, MonoidHom.comp_apply] using DFunLike.congr_fun h g
 
+/-- Frobenius raises the parameter of every pinned Weyl representative to its `p ^ k`-th power. -/
+@[simp]
+theorem frobenius_weylElement (γ : Fin t.numRoots) (u : Aˣ) :
+    D.frobenius p k A (D.weylElement γ A u) = D.weylElement γ A (u ^ p ^ k) := by
+  apply Subtype.ext
+  rw [coe_frobenius]
+  have hu : Units.map (iterateFrobenius A p k : A →* A) u = u ^ p ^ k :=
+    Units.ext (by simp)
+  rw [D.map_weylElement (iterateFrobenius A p k) γ u, hu]
+
+/-- Frobenius preserves the root–torus subgroup `D.rootTorusSubgroup A`. -/
+theorem map_rootTorusSubgroup_frobenius_le :
+    (D.rootTorusSubgroup A).map (D.frobenius p k A) ≤ D.rootTorusSubgroup A := by
+  rw [Subgroup.map_le_iff_le_comap, D.rootTorusSubgroup_le_iff]
+  refine ⟨fun γ u => ?_, fun s => ?_⟩
+  · rw [Subgroup.mem_comap, ← ofAdd_toAdd u, D.frobenius_rootSubgroupPoints]
+    exact D.rootSubgroupPoints_mem_rootTorusSubgroup γ A _
+  · rw [Subgroup.mem_comap, D.frobenius_torusPoints]
+    exact D.torusPoints_mem_rootTorusSubgroup A _
+
 end
 
 end TauCeti.DynkinType.ChevalleyDatum

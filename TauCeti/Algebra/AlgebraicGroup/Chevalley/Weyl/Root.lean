@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Weyl
+import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 
 /-!
@@ -130,14 +131,10 @@ theorem map_range_rootSubgroupPoints_conj (g : D.weylSubgroup K) (γ : Fin t.num
       (D.rootSubgroupPoints
         ((t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection K g) γ) K).range := by
   obtain ⟨c, hc⟩ := D.exists_unit_conj_rootSubgroupPoints K g γ
-  apply le_antisymm
-  · rintro _ ⟨_, ⟨u, rfl⟩, rfl⟩
-    refine ⟨ofAdd ((c : K) * toAdd u), ?_⟩
-    simpa [MulAut.conj_apply] using (hc (toAdd u)).symm
-  · rintro _ ⟨u, rfl⟩
-    refine ⟨D.rootSubgroupPoints γ K (ofAdd (((c⁻¹ : Kˣ) : K) * toAdd u)),
-      ⟨_, rfl⟩, ?_⟩
-    simp [hc]
+  exact MonoidHom.map_range_eq_range_of_comp_eq _ _ _
+    (ofAdd.surjective.comp ((Units.mulLeft_bijective c).surjective.comp toAdd.surjective))
+    (fun u => by
+      simpa only [MulEquiv.coe_toMonoidHom, Function.comp_apply, ofAdd_toAdd] using hc (toAdd u))
 
 /-- Conjugating a root subgroup element `x ∈ X_γ(K)` by a Weyl lift `g` lands in the root
 subgroup at the projected root `w(γ)`. -/
