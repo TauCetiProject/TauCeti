@@ -22,8 +22,6 @@ group objects.
 
 ## Main declarations
 
-* `TauCeti.GroupScheme.baseChangePointMulEquiv_pointMap`: the point-group identification
-  intertwines a base-changed morphism with the original morphism.
 * `TauCeti.GroupScheme.HasCentralKernel.baseChange`: central kernels remain central after arbitrary
   base change.
 * `TauCeti.GroupScheme.IsCentralIsogeny.baseChange`: central isogenies remain central after base
@@ -53,18 +51,6 @@ section BaseChange
 
 variable {X Y : Scheme.{u}} {G H : Grp (Over X)}
 
-/-- The point-group identification intertwines a base-changed morphism with the original
-morphism. -/
-theorem baseChangePointMulEquiv_pointMap
-    (s : Y ⟶ X) (f : G ⟶ H) (T : Over Y)
-    (p : T ⟶ ((Over.pullback s).mapGrp.obj G).X) :
-    baseChangePointMulEquiv s H T
-        (pointMap ((Over.pullback s).mapGrp.map f) T p) =
-      pointMap f ((Over.map s).obj T) (baseChangePointMulEquiv s G T p) := by
-  simp only [baseChangePointMulEquiv_apply, pointMap_apply,
-    Functor.mapGrp_map_hom_hom]
-  exact ((Over.mapPullbackAdj s).homEquiv_naturality_right_symm p f.hom.hom)
-
 /-- Arbitrary base change preserves central kernels of group-scheme morphisms. -/
 theorem HasCentralKernel.baseChange
     (s : Y ⟶ X) {f : G ⟶ H} (hf : HasCentralKernel f) :
@@ -77,7 +63,7 @@ theorem HasCentralKernel.baseChange
   have hp₀ : pointMap ((Over.pullback s).mapGrp.map f) T p = 1 :=
     (MonoidHom.mem_ker).mp hp
   have hp' : pointMap f ((Over.map s).obj T) (eG p) = 1 := by
-    rw [← baseChangePointMulEquiv_pointMap, hp₀, map_one]
+    rw [pointMap_apply, ← baseChangePointMulEquiv_naturality_right, ← pointMap_apply, hp₀, map_one]
   have hf' := (hasCentralKernel_iff_pointMap_ker_le_center f).mp hf
   have hc := Subgroup.mem_center_iff.mp
     (hf' ((Over.map s).obj T) ((MonoidHom.mem_ker).mpr hp')) (eG q)

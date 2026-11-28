@@ -228,11 +228,9 @@ lemma lift_comp_fst_snd {A B C : AbelianVariety K} (f : C ⟶ prod A B) :
     lift (f ≫ fst A B) (f ≫ snd A B) = f := by
   apply hom_ext <;> simp
 
-private def binaryFan (A B : AbelianVariety K) : BinaryFan A B :=
-  BinaryFan.mk (fst A B) (snd A B)
-
-private def binaryFanIsLimit (A B : AbelianVariety K) :
-    IsLimit (binaryFan A B) :=
+/-- `BinaryFan.mk (prod.fst A B) (prod.snd A B)` is a limit cone in `AbelianVariety K`. -/
+def binaryFanIsLimit (A B : AbelianVariety K) :
+    IsLimit (BinaryFan.mk (fst A B) (snd A B)) :=
   BinaryFan.IsLimit.mk _
     (fun f g ↦ lift f g)
     (fun f g ↦ lift_fst f g)
@@ -246,7 +244,7 @@ end prod
 
 /-- The concrete product supplies the categorical binary product of abelian varieties. -/
 instance hasBinaryProduct (A B : AbelianVariety K) : HasBinaryProduct A B :=
-  HasLimit.mk ⟨prod.binaryFan A B, prod.binaryFanIsLimit A B⟩
+  HasLimit.mk ⟨BinaryFan.mk (prod.fst A B) (prod.snd A B), prod.binaryFanIsLimit A B⟩
 
 /-- Abelian varieties over a field have categorical binary products. -/
 instance hasBinaryProducts : HasBinaryProducts (AbelianVariety K) :=

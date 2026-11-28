@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Jointly
 public import Mathlib.CategoryTheory.MorphismProperty.Limits
+import TauCeti.CategoryTheory.Adjunction.Mates
 public import TauCeti.CategoryTheory.Comma.Over
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.EqToHom
 
@@ -24,6 +25,12 @@ equalities `f ≫ 𝟙 Y = f`, `𝟙 X ≫ f = f` and `f ≫ g ≫ h = (f ≫ g)
   followed by `pullbackId` is the identity of base change along `f`;
 * `CategoryTheory.Over.pullbackCompIsoOfEq_hom_app_eq`: the two identifications of base
   change along `f ≫ g ≫ h` with the composite of the three base changes agree;
+* `CategoryTheory.Over.mapPullbackAdj_homEquiv_symm_left` and
+  `CategoryTheory.Over.mapPullbackAdj_homEquiv_left`: underlying morphisms of the forward and
+  inverse pullback-adjunction equivalences;
+* `CategoryTheory.Over.mapPullbackAdj_id_homEquiv_symm` and
+  `CategoryTheory.Over.mapPullbackAdj_comp_homEquiv_symm`: compatibility of the inverse pullback
+  adjunction equivalence with `pullbackId`/`mapId` and `pullbackComp`/`mapComp`;
 * `CategoryTheory.Over.pullback_iso_triangle`: for an isomorphism `e : X ≅ Y`, the unit and
   counit built from `pullbackId` and `pullbackComp` satisfy the triangle identity for
   `pullback e.hom` and `pullback e.inv`.
@@ -106,6 +113,50 @@ theorem pullbackComp_id_left_hom_app_comp_pullbackId {X Y : C} (f : X ⟶ Y) [Ha
   apply pullback.hom_ext
   · simp [pullbackComp, pullbackId, eqToHom_comp_pullback_fst A.hom (Category.id_comp f)]
   · simp [pullbackComp, pullbackId, eqToHom_comp_pullback_snd A.hom (Category.id_comp f)]
+
+/-- The underlying morphism of the inverse pullback-adjunction equivalence is postcomposition with
+the first pullback projection. -/
+@[simp]
+theorem mapPullbackAdj_homEquiv_symm_left {X Y : C} (s : Y ⟶ X) [HasPullbacksAlong s]
+    (G : Over X) (T : Over Y) (p : T ⟶ (pullback s).obj G) :
+    (((mapPullbackAdj s).homEquiv T G).symm p).left = p.left ≫ pullback.fst G.hom s := by
+  rw [Adjunction.homEquiv_counit]
+  simp
+
+/-- The underlying morphism of the forward pullback-adjunction equivalence is the pullback lift
+with second component the structure morphism of `T`. -/
+@[simp]
+theorem mapPullbackAdj_homEquiv_left {X Y : C} (s : Y ⟶ X) [HasPullbacksAlong s]
+    (G : Over X) (T : Over Y) (p : (map s).obj T ⟶ G) :
+    ((mapPullbackAdj s).homEquiv T G p).left = pullback.lift p.left T.hom (by simp) := by
+  apply pullback.hom_ext
+  · rw [← mapPullbackAdj_homEquiv_symm_left s G T ((mapPullbackAdj s).homEquiv T G p),
+      Equiv.symm_apply_apply, pullback.lift_fst]
+  · rw [pullback.lift_snd]
+    exact Over.w ((mapPullbackAdj s).homEquiv T G p)
+
+/-- The adjunction equivalence for `Over.pullback (𝟙 X)` agrees with `Over.pullbackId`. -/
+theorem mapPullbackAdj_id_homEquiv_symm {X : C} (G T : Over X)
+    (p : T ⟶ (pullback (𝟙 X)).obj G) :
+    (mapId X).inv.app T ≫ ((mapPullbackAdj (𝟙 X)).homEquiv T G).symm p =
+      p ≫ (pullbackId (X := X)).hom.app G := by
+  have h := Adjunction.homEquiv_symm_conjugateEquiv
+    (mapPullbackAdj (𝟙 X)) Adjunction.id (mapId X).inv p
+  rw [Adjunction.homEquiv_counit] at h
+  simpa [pullbackId, Adjunction.id] using h.symm
+
+/-- The adjunction equivalence for `Over.pullback (s₁ ≫ s₂)` agrees with `Over.pullbackComp`. -/
+theorem mapPullbackAdj_comp_homEquiv_symm {X Y Z : C} (s₁ : Z ⟶ Y) (s₂ : Y ⟶ X)
+    [HasPullbacksAlong s₁] [HasPullbacksAlong s₂] (G : Over X) (T : Over Z)
+    (p : T ⟶ (pullback (s₁ ≫ s₂)).obj G) :
+    ((mapPullbackAdj s₂).homEquiv ((map s₁).obj T) G).symm
+        (((mapPullbackAdj s₁).homEquiv T ((pullback s₂).obj G)).symm
+          (p ≫ (pullbackComp s₁ s₂).hom.app G)) =
+      (mapComp s₁ s₂).inv.app T ≫ ((mapPullbackAdj (s₁ ≫ s₂)).homEquiv T G).symm p := by
+  have h := Adjunction.homEquiv_symm_conjugateEquiv (mapPullbackAdj (s₁ ≫ s₂))
+    ((mapPullbackAdj s₁).comp (mapPullbackAdj s₂)) (mapComp s₁ s₂).inv p
+  simpa only [pullbackComp, conjugateIsoEquiv_apply_hom, Iso.symm_hom,
+    Adjunction.comp_homEquiv, Equiv.symm_trans_apply] using h
 
 /-- For an isomorphism `e : X ≅ Y`, the unit and counit built from `pullbackId` and `pullbackComp`
 for `pullback e.hom` and `pullback e.inv` satisfy the triangle identity on every object `A` of

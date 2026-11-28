@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 public import TauCeti.AlgebraicGeometry.Scheme.FunctionField
 public import TauCeti.AlgebraicGeometry.Morphisms.RelativeDimension
 public import TauCeti.RingTheory.Smooth.KrullDimension
+import TauCeti.RingTheory.RingHom.StandardSmooth
 
 /-!
 # The relative dimension of smooth morphisms
@@ -54,6 +55,24 @@ subsets of a Jacobson scheme, so they contain closed points.
 public section
 
 open CategoryTheory Limits AlgebraicGeometry Order RingHom
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+universe u
+
+/-- Every scheme-theoretic fibre of a smooth morphism is smooth over the residue field. -/
+instance smooth_fiberToSpecResidueField {X Y : Scheme.{u}} (f : X ⟶ Y) [Smooth f] (y : Y) :
+    Smooth (f.fiberToSpecResidueField y) :=
+  inferInstanceAs (Smooth (pullback.snd f (Y.fromSpecResidueField y)))
+
+/-- Every scheme-theoretic fibre of a morphism smooth of relative dimension `n` is smooth of
+relative dimension `n` over the residue field. -/
+instance smoothOfRelativeDimension_fiberToSpecResidueField {X Y : Scheme.{u}} {n : ℕ}
+    (f : X ⟶ Y) [SmoothOfRelativeDimension n f] (y : Y) :
+    SmoothOfRelativeDimension n (f.fiberToSpecResidueField y) :=
+  inferInstanceAs (SmoothOfRelativeDimension n (pullback.snd f (Y.fromSpecResidueField y)))
+
+end AlgebraicGeometry.Scheme.Hom
 
 namespace TauCeti.AlgebraicGeometry
 
@@ -103,14 +122,11 @@ theorem smoothOfRelativeDimension_iff_ringKrullDim_stalk_eq (n : ℕ) :
     -- The only nonempty open of `Spec k` is `⊤`.
     obtain rfl : U = ⊤ := eq_top_iff.mpr fun z _ ↦ Subsingleton.elim (f x) z ▸ e hxV
     -- The chart is standard smooth of some relative dimension `m`.
-    let := (f.appLE ⊤ V e).hom.toAlgebra
-    obtain ⟨ι, σ, _, _, ⟨P⟩⟩ := hst
-    have hm : (f.appLE ⊤ V e).hom.IsStandardSmoothOfRelativeDimension P.dimension :=
-      ⟨_, _, _, ‹_›, P, rfl⟩
+    obtain ⟨m, hm⟩ := hst.exists_isStandardSmoothOfRelativeDimension
     -- Comparing with a closed point of `X` in the chart shows `m = n`.
     have : JacobsonSpace X := LocallyOfFiniteType.jacobsonSpace f
     obtain ⟨y, hyV, hy⟩ := nonempty_inter_closedPoints ⟨x, hxV⟩ V.isOpen.isLocallyClosed
-    have hmn : P.dimension = n := by
+    have hmn : m = n := by
       exact_mod_cast (ringKrullDim_stalk_eq_of_isStandardSmoothOfRelativeDimension f hV hm hyV
         hy).symm.trans (hdim y hy)
     exact ⟨⊤, hU, V, hV, hxV, e, hmn ▸ hm⟩

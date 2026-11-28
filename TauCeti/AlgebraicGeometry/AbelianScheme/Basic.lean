@@ -13,6 +13,7 @@ public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 public import TauCeti.AlgebraicGeometry.Geometrically.Integral
 public import TauCeti.AlgebraicGeometry.Geometrically.Irreducible
 public import TauCeti.AlgebraicGeometry.Morphisms.OverTensorUnit
+public import TauCeti.CategoryTheory.Monoidal.Cartesian.Grp
 
 /-!
 # Abelian schemes
@@ -29,6 +30,10 @@ the zero section is `zeroSection`, a section of the structure morphism.
 
 The file also provides:
 
+* `AbelianScheme.mulBy`: the multiplication-by-`n` endomorphism `[n]` of the underlying group
+  scheme over `S`, defined via `CategoryTheory.GrpObj.zpowMap`.
+* `AbelianScheme.ofGroupScheme`: constructor packaging a proper, smooth, geometrically connected
+  group scheme over `S` as an abelian scheme.
 * `AbelianScheme.baseChange`: for `f : T ⟶ S`, the pullback of `A` along `f`, with the group law
   transported by the monoidal pullback functor. Its group object is
   `(Over.pullback f).mapGrp.obj (Grp.mk A.toOver)` (`grpMk_baseChange_toOver`), so the point-group
@@ -56,6 +61,7 @@ with properness this is what identifies abelian schemes over a field with Tau Ce
 public section
 
 open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory AlgebraicGeometry MonObj
+open scoped CategoryTheory.MonObj
 
 namespace TauCeti
 
@@ -110,6 +116,112 @@ noncomputable abbrev zeroSection (A : AbelianScheme S) : S ⟶ A.toScheme :=
 lemma zeroSection_comp_toOver_hom (A : AbelianScheme S) :
     A.zeroSection ≫ A.toOver.hom = 𝟙 S := by
   simpa only [Over.tensorUnit_hom] using η[A.toOver].w
+
+/-- Multiplication by `n` on an abelian scheme, `[n] = GrpObj.zpowMap A.toOver n` on the
+underlying group object in `Over S`. -/
+noncomputable def mulBy (A : AbelianScheme S) (n : ℤ) : A.toOver ⟶ A.toOver :=
+  GrpObj.zpowMap A.toOver n
+
+/-- `A.mulBy n` is `GrpObj.zpowMap A.toOver n`. -/
+lemma mulBy_eq_zpowMap (A : AbelianScheme S) (n : ℤ) :
+    A.mulBy n = GrpObj.zpowMap A.toOver n :=
+  (rfl)
+
+/-- Multiplication by `n` is the `n`-th power of the identity morphism in `End A.toOver`. -/
+lemma mulBy_eq_zpow (A : AbelianScheme S) (n : ℤ) :
+    A.mulBy n = 𝟙 A.toOver ^ n :=
+  GrpObj.zpowMap_eq_zpow A.toOver n
+
+/-- Multiplication by `0` is the constant morphism through the zero section. -/
+@[simp]
+lemma mulBy_zero (A : AbelianScheme S) : A.mulBy 0 = 1 :=
+  GrpObj.zpowMap_zero A.toOver
+
+/-- Multiplication by `1` is the identity morphism. -/
+@[simp]
+lemma mulBy_one (A : AbelianScheme S) : A.mulBy 1 = 𝟙 A.toOver :=
+  GrpObj.zpowMap_one A.toOver
+
+/-- Multiplication by `-1` is the inversion morphism of the group law. -/
+@[simp]
+lemma mulBy_neg_one (A : AbelianScheme S) : A.mulBy (-1) = ι[A.toOver] :=
+  GrpObj.zpowMap_neg_one A.toOver
+
+/-- Multiplication by a sum is the pointwise product of the multiplication maps. -/
+@[simp]
+lemma mulBy_add (A : AbelianScheme S) (m n : ℤ) :
+    A.mulBy (m + n) = A.mulBy m * A.mulBy n :=
+  GrpObj.zpowMap_add A.toOver m n
+
+/-- Multiplication by `-n` is the pointwise inverse of multiplication by `n`. Not a simp lemma,
+as it conflicts with `mulBy_neg_one`. -/
+lemma mulBy_neg (A : AbelianScheme S) (n : ℤ) :
+    A.mulBy (-n) = (A.mulBy n)⁻¹ :=
+  GrpObj.zpowMap_neg A.toOver n
+
+/-- Multiplication by a difference is the pointwise quotient of the multiplication maps. -/
+@[simp]
+lemma mulBy_sub (A : AbelianScheme S) (m n : ℤ) :
+    A.mulBy (m - n) = A.mulBy m / A.mulBy n :=
+  GrpObj.zpowMap_sub A.toOver m n
+
+/-- Multiplication by a product of integers is the composition of the multiplication maps. -/
+@[simp]
+lemma mulBy_mul (A : AbelianScheme S) (m n : ℤ) :
+    A.mulBy (m * n) = A.mulBy n ≫ A.mulBy m :=
+  GrpObj.zpowMap_mul A.toOver m n
+
+/-- Every homomorphism of group objects commutes with multiplication by `n`. -/
+@[reassoc]
+lemma mulBy_comp (A : AbelianScheme S) {H : Over S} [GrpObj H] (n : ℤ) (f : A.toOver ⟶ H)
+    [IsMonHom f] : A.mulBy n ≫ f = f ≫ GrpObj.zpowMap H n :=
+  GrpObj.zpowMap_comp n f
+
+/-- Postcomposing a `T`-point with `[n]` raises that point to the `n`-th power. -/
+@[simp]
+lemma comp_mulBy (A : AbelianScheme S) {T : Over S} (x : T ⟶ A.toOver) (n : ℤ) :
+    x ≫ A.mulBy n = x ^ n :=
+  GrpObj.comp_zpowMap x n
+
+/-- Multiplication by `n` on a commutative abelian scheme is a homomorphism of group schemes over
+`S`. -/
+instance isMonHom_mulBy (A : AbelianScheme S) [IsCommMonObj A.toOver] (n : ℤ) :
+    IsMonHom (A.mulBy n) :=
+  GrpObj.isMonHom_zpowMap A.toOver n
+
+/-- Construct an abelian scheme from a group object in `Over S` whose structure morphism is proper
+and smooth with geometrically connected fibres. -/
+noncomputable def ofGroupScheme (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
+    [GeometricallyConnected G.hom] : AbelianScheme S where
+  toOver := G
+  grpObj := inferInstance
+  isProper := inferInstance
+  smooth := inferInstance
+  geometricallyConnected := inferInstance
+
+@[simp]
+lemma ofGroupScheme_toOver (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
+    [GeometricallyConnected G.hom] : (ofGroupScheme G).toOver = G :=
+  (rfl)
+
+/-- The underlying scheme of `ofGroupScheme G` is `G.left`. -/
+lemma ofGroupScheme_toScheme (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
+    [GeometricallyConnected G.hom] : (ofGroupScheme G).toScheme = G.left :=
+  (rfl)
+
+/-- The group object underlying `ofGroupScheme G` is `Grp.mk G`. -/
+lemma grpMk_ofGroupScheme_toOver (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
+    [GeometricallyConnected G.hom] :
+    Grp.mk (ofGroupScheme G).toOver = Grp.mk G :=
+  (rfl)
+
+/-- The zero section of `ofGroupScheme G` is the unit section `η[G].left` of `G`, after
+transporting its codomain along `ofGroupScheme_toScheme G`. -/
+@[reassoc (attr := simp)]
+lemma zeroSection_ofGroupScheme (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
+    [GeometricallyConnected G.hom] :
+    (ofGroupScheme G).zeroSection ≫ eqToHom (ofGroupScheme_toScheme G) = η[G].left :=
+  Category.comp_id η[G].left
 
 /-! ### Base change -/
 
@@ -183,6 +295,20 @@ lemma grpMk_identity_toOver (S : Scheme.{u}) :
 lemma zeroSection_identity (S : Scheme.{u}) : (identity S).zeroSection = 𝟙 S :=
   (rfl)
 
+/-- The scheme underlying the identity abelian scheme is the base `S`. -/
+@[simp]
+lemma identity_toScheme (S : Scheme.{u}) : (identity S).toScheme = S := by
+  simp only [toScheme, identity_toOver, Over.tensorUnit_left]
+
+/-- The scheme over `S` underlying the identity abelian scheme is terminal. -/
+noncomputable def isTerminalIdentityToOver (S : Scheme.{u}) : IsTerminal (identity S).toOver :=
+  IsTerminal.ofIso isTerminalTensorUnit (eqToIso (identity_toOver S).symm)
+
+/-- Every integer multiplication map on the identity abelian scheme is the identity. -/
+@[simp]
+lemma identity_mulBy (S : Scheme.{u}) (n : ℤ) : (identity S).mulBy n = 𝟙 (identity S).toOver :=
+  (mulBy_eq_zpowMap _ n).trans (GrpObj.zpowMap_eq_id_of_isTerminal (isTerminalIdentityToOver S) n)
+
 /-! ### Homomorphisms -/
 
 noncomputable section
@@ -251,6 +377,12 @@ lemma inv_hom {A B : AbelianScheme S} (f : A ⟶ B) :
     ι[A.toOver] ≫ toOverHom f = toOverHom f ≫ ι[B.toOver] :=
   GrpObj.inv_hom _
 
+/-- A homomorphism of abelian schemes commutes with multiplication by `n`. -/
+@[reassoc]
+lemma mulBy_comp_toOverHom {A B : AbelianScheme S} (f : A ⟶ B) (n : ℤ) :
+    A.mulBy n ≫ toOverHom f = toOverHom f ≫ B.mulBy n := by
+  rw [mulBy_eq_zpowMap, mulBy_eq_zpowMap, GrpObj.zpowMap_comp]
+
 /-- A homomorphism of abelian schemes carries the zero section of its source to the zero section
 of its target. -/
 @[reassoc]
@@ -266,6 +398,17 @@ lemma toOverHom_homMk {A B : AbelianScheme S} (f : A.toOver ⟶ B.toOver)
     (mul_f : μ[A.toOver] ≫ f = (f ⊗ₘ f) ≫ μ[B.toOver] := by cat_disch) :
     toOverHom (homMk f one_f mul_f) = f :=
   (rfl)
+
+/-- Multiplication by `n` on a commutative abelian scheme, as a homomorphism `A ⟶ A` in
+`AbelianScheme S`. -/
+def mulByHom (A : AbelianScheme S) [IsCommMonObj A.toOver] (n : ℤ) : A ⟶ A :=
+  homMk (A.mulBy n) (IsMonHom.one_hom _) (IsMonHom.mul_hom _)
+
+/-- The morphism over `S` underlying `A.mulByHom n` is `A.mulBy n`. -/
+@[simp]
+lemma toOverHom_mulByHom (A : AbelianScheme S) [IsCommMonObj A.toOver] (n : ℤ) :
+    toOverHom (A.mulByHom n) = A.mulBy n :=
+  toOverHom_homMk _ _ _
 
 /-- Two homomorphisms of abelian schemes are equal when their underlying scheme morphisms are
 equal. -/

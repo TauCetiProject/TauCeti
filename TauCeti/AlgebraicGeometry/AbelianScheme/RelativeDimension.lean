@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AbelianScheme.Basic
+public import TauCeti.AlgebraicGeometry.AbelianScheme.Hom
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.PureRelativeDimension
 import Mathlib.CategoryTheory.Monoidal.Cartesian.Mon
 import TauCeti.AlgebraicGeometry.Morphisms.Unramified.Section
@@ -56,10 +56,16 @@ one) is an isomorphism (`TauCeti.AlgebraicGeometry.isIso_of_comp_eq_id_of_unrami
   isomorphic underlying schemes over `S` have the same relative dimension.
 * `TauCeti.AlgebraicGeometry.AbelianScheme.isIso_zeroSection_iff_isIso_hom`: the zero section is
   an isomorphism exactly when the structure morphism is one.
-* `TauCeti.AlgebraicGeometry.AbelianScheme.isIso_zeroSection_iff`: the zero section is an
-  isomorphism exactly when the relative dimension is zero everywhere.
+* `TauCeti.AlgebraicGeometry.AbelianScheme.isIso_zeroSection_iff` and
+  `TauCeti.AlgebraicGeometry.AbelianScheme.isIso_toOver_hom_iff`: the zero section and structure
+  morphism are isomorphisms exactly when the relative dimension is zero everywhere.
 * `TauCeti.AlgebraicGeometry.AbelianScheme.isoIdentity`: an abelian scheme of relative dimension
   zero is isomorphic to the identity abelian scheme through its structure morphism.
+* `TauCeti.AlgebraicGeometry.AbelianScheme.isZero_iff_forall_relativeDimension_eq_zero`: an abelian
+  scheme is a zero object iff its relative dimension is identically zero.
+* `TauCeti.AlgebraicGeometry.AbelianScheme.mulBy_eq_id_of_forall_relativeDimension_eq_zero` and
+  `TauCeti.AlgebraicGeometry.AbelianScheme.isIso_mulBy_of_forall_relativeDimension_eq_zero`: on a
+  relative-dimension-zero abelian scheme, multiplication by any integer is the identity.
 
 ## References
 
@@ -198,6 +204,41 @@ lemma toOverHom_isoIdentity_inv (A : AbelianScheme S) (h : ∀ s, A.relativeDime
   have h₁ : η[(identity S).toOver] = 𝟙 _ := toUnit_unique _ _
   rw [← one_hom (A.isoIdentity h).inv, h₁]
   exact (Category.id_comp _).symm
+
+/-- The structure morphism of an abelian scheme is an isomorphism if and only if its relative
+dimension is identically `0`. -/
+theorem isIso_toOver_hom_iff (A : AbelianScheme S) :
+    IsIso A.toOver.hom ↔ ∀ s : S, A.relativeDimension s = 0 :=
+  (isIso_zeroSection_iff_isIso_hom A).symm.trans (isIso_zeroSection_iff A)
+
+/-- An abelian scheme over `S` is a zero object in `AbelianScheme S` if and only if its relative
+dimension is identically `0`. -/
+theorem isZero_iff_forall_relativeDimension_eq_zero (A : AbelianScheme S) :
+    IsZero A ↔ ∀ s : S, A.relativeDimension s = 0 := by
+  constructor
+  · intro hA s
+    have h := congrFun
+      (relativeDimension_eq_of_iso (toOverFunctor.mapIso (hA.iso (isZeroIdentity S)))) s
+    simpa using h
+  · intro h
+    exact (isZeroIdentity S).of_iso (isoIdentity A h)
+
+/-- On an abelian scheme of relative dimension `0` everywhere, multiplication by any integer `n` is
+the identity morphism. -/
+theorem mulBy_eq_id_of_forall_relativeDimension_eq_zero {A : AbelianScheme S}
+    (h : ∀ s : S, A.relativeDimension s = 0) (n : ℤ) :
+    A.mulBy n = 𝟙 A.toOver := by
+  have : IsIso A.toOver.hom := (isIso_toOver_hom_iff A).mpr h
+  apply Over.OverMorphism.ext
+  rw [← cancel_mono A.toOver.hom, Over.w, Over.id_left, Category.id_comp]
+
+/-- On an abelian scheme of relative dimension `0` everywhere, multiplication by any integer `n` is
+an isomorphism. -/
+theorem isIso_mulBy_of_forall_relativeDimension_eq_zero {A : AbelianScheme S}
+    (h : ∀ s : S, A.relativeDimension s = 0) (n : ℤ) :
+    IsIso (A.mulBy n) := by
+  rw [mulBy_eq_id_of_forall_relativeDimension_eq_zero h n]
+  infer_instance
 
 end AbelianScheme
 

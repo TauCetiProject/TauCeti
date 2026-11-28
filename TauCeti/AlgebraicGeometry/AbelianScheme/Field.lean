@@ -1,0 +1,236 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicGeometry.AbelianScheme.AbelianVariety
+public import TauCeti.AlgebraicGeometry.AbelianScheme.BaseChange
+public import TauCeti.AlgebraicGeometry.AbelianScheme.Product
+public import TauCeti.AlgebraicGeometry.AbelianVariety.Hom.BaseChange
+public import TauCeti.AlgebraicGeometry.AbelianVariety.Hom.Rigidity
+public import TauCeti.AlgebraicGeometry.AbelianVariety.Product
+
+/-!
+# Abelian schemes over a field: commutativity, rigidity, morphism groups, and products
+
+`TauCeti.AlgebraicGeometry.AbelianScheme.AbelianVariety` establishes the adapters
+`AbelianScheme.ofAbelianVariety` and `AbelianScheme.toAbelianVariety` and the equivalence of
+categories `AbelianScheme.fieldEquivalence : AbelianScheme (Spec (.of K)) ≌ AbelianVariety K`.
+
+This file supplies the additional structure and compatibility results over a field:
+
+* `AbelianScheme.isCommMonObj_field`: the group law of an abelian scheme over a field is
+  commutative;
+* `AbelianScheme.homEquivPointed`: over a field, homomorphisms of abelian schemes are equivalent
+  to zero-preserving morphisms over `Spec K`;
+* `AbelianScheme.toAbelianVarietyMulEquiv`: the pointwise commutative group equivalence on
+  homomorphisms over a field, specializing `AbelianScheme.instCommGroup`;
+* `AbelianScheme.toAbelianVarietyIdentityIso`, `AbelianScheme.ofAbelianVarietyTrivialIso`,
+  `AbelianScheme.toAbelianVarietyProdIso`, `AbelianScheme.ofAbelianVarietyProdIso`, and
+  `AbelianScheme.toAbelianVarietyBaseChangeNatIso`: compatibility of the adapters with the zero
+  object, binary products, and base change along field extensions;
+* `AbelianScheme.relativeDimension_ofAbelianVariety` and `AbelianScheme.dim_toAbelianVariety`:
+  agreement between `AbelianScheme.relativeDimension` and `AbelianVariety.dim`.
+-/
+
+public section
+
+open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory AlgebraicGeometry MonObj
+open scoped CategoryTheory.Obj CategoryTheory.MonObj
+
+namespace TauCeti
+
+namespace AlgebraicGeometry
+
+universe u
+
+namespace AbelianScheme
+
+variable {K : Type u} [Field K]
+
+noncomputable section
+
+/-! ### Commutativity and pointwise group structure on homomorphisms over a field -/
+
+/-- The group law of an abelian scheme over a field is commutative. -/
+instance isCommMonObj_field (A : AbelianScheme (Spec (.of K))) : IsCommMonObj A.toOver :=
+  isCommMonObj_of_isProper_of_geometricallyIntegral A.toOver
+
+section
+
+open scoped TauCeti.AlgebraicGeometry.AbelianScheme AbelianVariety.Hom
+
+/-- Over a field, `toAbelianVarietyFunctor.map` is a group isomorphism for the pointwise group
+laws. -/
+def toAbelianVarietyMulEquiv (A B : AbelianScheme (Spec (.of K))) :
+    (A ⟶ B) ≃* (toAbelianVariety A ⟶ toAbelianVariety B) where
+  toFun f := toAbelianVarietyFunctor.map f
+  invFun g := (Functor.FullyFaithful.ofFullyFaithful
+    (toAbelianVarietyFunctor (K := K))).preimage g
+  left_inv f := (Functor.FullyFaithful.ofFullyFaithful
+    (toAbelianVarietyFunctor (K := K))).preimage_map f
+  right_inv g := (Functor.FullyFaithful.ofFullyFaithful
+    (toAbelianVarietyFunctor (K := K))).map_preimage g
+  map_mul' f g := AbelianVariety.Hom.toOverHom_injective <| by
+    have hL := (toOverHom_toAbelianVarietyFunctor_map (f * g)).trans (toOverHom_mul f g)
+    have hR := AbelianVariety.Hom.toOverHom_mul
+      (toAbelianVarietyFunctor.map f) (toAbelianVarietyFunctor.map g)
+    simp only [toOverHom_toAbelianVarietyFunctor_map] at hR
+    exact hL.trans hR.symm
+
+@[simp]
+lemma toAbelianVarietyMulEquiv_apply {A B : AbelianScheme (Spec (.of K))} (f : A ⟶ B) :
+    toAbelianVarietyMulEquiv A B f = toAbelianVarietyFunctor.map f :=
+  (rfl)
+
+end
+
+/-- Over a field, homomorphisms of abelian schemes are equivalent to morphisms over `Spec K`
+preserving the identity section. -/
+def homEquivPointed (A B : AbelianScheme (Spec (.of K))) :
+    (A ⟶ B) ≃ {f : A.toOver ⟶ B.toOver // η[A.toOver] ≫ f = η[B.toOver]} :=
+  ((Functor.FullyFaithful.ofFullyFaithful (toAbelianVarietyFunctor (K := K))).homEquiv).trans
+    (AbelianVariety.Hom.equivPointed A.toAbelianVariety B.toAbelianVariety)
+
+@[simp]
+lemma coe_homEquivPointed_apply {A B : AbelianScheme (Spec (.of K))} (f : A ⟶ B) :
+    (homEquivPointed A B f : A.toOver ⟶ B.toOver) = toOverHom f :=
+  (AbelianVariety.coe_equivPointed_apply
+    ((Functor.FullyFaithful.ofFullyFaithful (toAbelianVarietyFunctor (K := K))).homEquiv f)).trans
+    (toOverHom_toAbelianVarietyFunctor_map f)
+
+@[simp]
+lemma toOverHom_homEquivPointed_symm_apply {A B : AbelianScheme (Spec (.of K))}
+    (f : {f : A.toOver ⟶ B.toOver // η[A.toOver] ≫ f = η[B.toOver]}) :
+    toOverHom ((homEquivPointed A B).symm f) = f.val :=
+  (toOverHom_toAbelianVarietyFunctor_map _).symm.trans <|
+    (congrArg AbelianVariety.Hom.toOverHom
+      ((Functor.FullyFaithful.ofFullyFaithful
+        (toAbelianVarietyFunctor (K := K))).homEquiv.apply_symm_apply _)).trans
+      (AbelianVariety.Hom.toOverHom_equivPointed_symm_apply
+        (A := A.toAbelianVariety) (B := B.toAbelianVariety) f)
+
+/-! ### Compatibility with zero, products, and base change along field extensions -/
+
+/-- `toAbelianVariety` sends `identity (Spec K)` to `AbelianVariety.trivial K`. -/
+def toAbelianVarietyIdentityIso (K : Type u) [Field K] :
+    toAbelianVariety (identity (Spec (.of K))) ≅ AbelianVariety.trivial K :=
+  (((isZeroIdentity (Spec (.of K))).isTerminal).isTerminalObj
+    (toAbelianVarietyFunctor (K := K))).uniqueUpToIso (AbelianVariety.isTerminalTrivial K)
+
+/-- `ofAbelianVariety` sends `AbelianVariety.trivial K` to `identity (Spec K)`. -/
+def ofAbelianVarietyTrivialIso (K : Type u) [Field K] :
+    ofAbelianVariety (AbelianVariety.trivial K) ≅ identity (Spec (.of K)) :=
+  ((AbelianVariety.isTerminalTrivial K).isTerminalObj
+    (ofAbelianVarietyFunctor (K := K))).uniqueUpToIso (isZeroIdentity (Spec (.of K))).isTerminal
+
+private def toAbelianVarietyProdIsLimit (A B : AbelianScheme (Spec (.of K))) :
+    IsLimit (BinaryFan.mk (toAbelianVarietyFunctor.map (prod.fst A B))
+      (toAbelianVarietyFunctor.map (prod.snd A B))) :=
+  mapIsLimitOfPreservesOfIsLimit toAbelianVarietyFunctor (prod.fst A B) (prod.snd A B)
+    (prod.isLimit A B)
+
+private def ofAbelianVarietyProdIsLimit (A B : AbelianVariety K) :
+    IsLimit (BinaryFan.mk (ofAbelianVarietyFunctor.map (AbelianVariety.prod.fst A B))
+      (ofAbelianVarietyFunctor.map (AbelianVariety.prod.snd A B))) :=
+  mapIsLimitOfPreservesOfIsLimit ofAbelianVarietyFunctor
+    (AbelianVariety.prod.fst A B) (AbelianVariety.prod.snd A B)
+    (AbelianVariety.prod.binaryFanIsLimit A B)
+
+/-- `toAbelianVariety` preserves binary products, compatibly with projections. -/
+def toAbelianVarietyProdIso (A B : AbelianScheme (Spec (.of K))) :
+    toAbelianVariety (A.prod B) ≅ (toAbelianVariety A).prod (toAbelianVariety B) :=
+  (toAbelianVarietyProdIsLimit A B).conePointUniqueUpToIso
+    (AbelianVariety.prod.binaryFanIsLimit (toAbelianVariety A) (toAbelianVariety B))
+
+@[simp]
+lemma toAbelianVarietyProdIso_hom_fst (A B : AbelianScheme (Spec (.of K))) :
+    (toAbelianVarietyProdIso A B).hom ≫
+        AbelianVariety.prod.fst (toAbelianVariety A) (toAbelianVariety B) =
+      toAbelianVarietyFunctor.map (prod.fst A B) :=
+  (toAbelianVarietyProdIsLimit A B).conePointUniqueUpToIso_hom_comp
+    (AbelianVariety.prod.binaryFanIsLimit (toAbelianVariety A) (toAbelianVariety B))
+    ⟨WalkingPair.left⟩
+
+@[simp]
+lemma toAbelianVarietyProdIso_hom_snd (A B : AbelianScheme (Spec (.of K))) :
+    (toAbelianVarietyProdIso A B).hom ≫
+        AbelianVariety.prod.snd (toAbelianVariety A) (toAbelianVariety B) =
+      toAbelianVarietyFunctor.map (prod.snd A B) :=
+  (toAbelianVarietyProdIsLimit A B).conePointUniqueUpToIso_hom_comp
+    (AbelianVariety.prod.binaryFanIsLimit (toAbelianVariety A) (toAbelianVariety B))
+    ⟨WalkingPair.right⟩
+
+/-- `ofAbelianVariety` preserves binary products, compatibly with projections. -/
+def ofAbelianVarietyProdIso (A B : AbelianVariety K) :
+    ofAbelianVariety (A.prod B) ≅ (ofAbelianVariety A).prod (ofAbelianVariety B) :=
+  (ofAbelianVarietyProdIsLimit A B).conePointUniqueUpToIso
+    (prod.isLimit (ofAbelianVariety A) (ofAbelianVariety B))
+
+@[simp]
+lemma ofAbelianVarietyProdIso_hom_fst (A B : AbelianVariety K) :
+    (ofAbelianVarietyProdIso A B).hom ≫ prod.fst (ofAbelianVariety A) (ofAbelianVariety B) =
+      ofAbelianVarietyFunctor.map (AbelianVariety.prod.fst A B) :=
+  (ofAbelianVarietyProdIsLimit A B).conePointUniqueUpToIso_hom_comp
+    (prod.isLimit (ofAbelianVariety A) (ofAbelianVariety B)) ⟨WalkingPair.left⟩
+
+@[simp]
+lemma ofAbelianVarietyProdIso_hom_snd (A B : AbelianVariety K) :
+    (ofAbelianVarietyProdIso A B).hom ≫ prod.snd (ofAbelianVariety A) (ofAbelianVariety B) =
+      ofAbelianVarietyFunctor.map (AbelianVariety.prod.snd A B) :=
+  (ofAbelianVarietyProdIsLimit A B).conePointUniqueUpToIso_hom_comp
+    (prod.isLimit (ofAbelianVariety A) (ofAbelianVariety B)) ⟨WalkingPair.right⟩
+
+/-- Naturality of `toAbelianVariety_baseChange`: the adapter functor commutes with base change
+along a field extension `K → L`. -/
+def toAbelianVarietyBaseChangeNatIso (L : Type u) [Field L] [Algebra K L] :
+    baseChangeFunctor (Spec.map (CommRingCat.ofHom (algebraMap K L))) ⋙
+        toAbelianVarietyFunctor (K := L) ≅
+      toAbelianVarietyFunctor (K := K) ⋙ AbelianVariety.baseChangeFunctor L :=
+  NatIso.ofComponents
+    (fun A ↦ eqToIso (by simp [toAbelianVariety_baseChange]))
+    fun {A B} φ ↦ by
+      apply AbelianVariety.Hom.toOverHom_injective
+      simp only [eqToIso.hom, Functor.comp_map, AbelianVariety.Hom.toOverHom_comp,
+        toOverHom_toAbelianVarietyFunctor_map, toOverHom_baseChangeFunctor_map,
+        AbelianVariety.Hom.toOverHom_baseChangeFunctor_map, AbelianVariety.Hom.toOverHom_eqToHom,
+        eqToHom_trans_assoc]
+      -- The `eqToHom` on the left of the RHS connects `((A.baseChange _).toAbelianVariety).toOver`
+      -- to `(Over.pullback _).obj A.toAbelianVariety.toOver`, both of which unfold definitionally
+      -- to `(Over.pullback _).obj A.toOver`; `rw` cannot rewrite endpoints inside `eqToHom`'s
+      -- type inside a composition, so `change` displays the common endpoint before `eqToHom_refl`.
+      change (Over.pullback _).map (toOverHom φ) ≫ eqToHom _ =
+        eqToHom rfl ≫ (Over.pullback _).map (toOverHom φ) ≫ eqToHom _
+      rw [eqToHom_refl, Category.id_comp]
+
+/-- Over a field, the relative dimension of `ofAbelianVariety A` agrees with `A.dim`. -/
+theorem relativeDimension_ofAbelianVariety (A : AbelianVariety K) (s : Spec (.of K)) :
+    ((ofAbelianVariety A).relativeDimension s : WithBot ℕ∞) = A.dim := by
+  have hhom : (ofAbelianVariety A).toOver.hom =
+      eqToHom (ofAbelianVariety_toScheme A) ≫ A.toOver.hom := by
+    rw [← Over.eqToHom_left (ofAbelianVariety_toOver A)]
+    exact (eqToHom (ofAbelianVariety_toOver A)).w.symm
+  have hsm : SmoothOfRelativeDimension (Module.finrank K A.TangentSpace)
+      (ofAbelianVariety A).toOver.hom := by
+    rw [hhom]
+    exact SmoothOfRelativeDimension.of_zero_comp
+  rw [((ofAbelianVariety A).smoothOfRelativeDimension_iff
+    (Module.finrank K A.TangentSpace)).mp hsm s]
+  exact AbelianVariety.finrank_tangentSpace_eq_dim A
+
+/-- Over a field, the dimension of `toAbelianVariety A` agrees with `A.relativeDimension`. -/
+theorem dim_toAbelianVariety (A : AbelianScheme (Spec (.of K))) (s : Spec (.of K)) :
+    (toAbelianVariety A).dim = A.relativeDimension s := by
+  have h := relativeDimension_ofAbelianVariety (toAbelianVariety A) s
+  rw [ofAbelianVariety_toAbelianVariety] at h
+  exact h.symm
+
+end
+
+end AbelianScheme
+
+end AlgebraicGeometry
+
+end TauCeti

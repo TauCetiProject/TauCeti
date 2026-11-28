@@ -30,8 +30,8 @@ with the identity abelian scheme is canonically the other factor.
 * `TauCeti.AlgebraicGeometry.AbelianScheme.prod`: the product `A ×_S B`.
 * `TauCeti.AlgebraicGeometry.AbelianScheme.prod.isLimit`: the product with its projections is a
   limit cone, so abelian schemes over `S` have finite products.
-* `TauCeti.AlgebraicGeometry.AbelianScheme.identityIsTerminal`: the identity abelian scheme is
-  terminal.
+* `TauCeti.AlgebraicGeometry.AbelianScheme.hasTerminal`: the identity abelian scheme is
+  terminal (via `(isZeroIdentity S).isTerminal`).
 * `TauCeti.AlgebraicGeometry.AbelianScheme.baseChangeProdIso`: `(A ×_S B)_T ≅ A_T ×_T B_T`.
 * `TauCeti.AlgebraicGeometry.AbelianScheme.relativeDimension_prod`: relative dimensions add.
 * `TauCeti.AlgebraicGeometry.AbelianScheme.prodIdentityIso` and
@@ -181,14 +181,8 @@ instance hasBinaryProduct (A B : AbelianScheme S) : HasBinaryProduct A B :=
 instance hasBinaryProducts : HasBinaryProducts (AbelianScheme S) :=
   hasBinaryProducts_of_hasLimit_pair _
 
-/-- The identity abelian scheme `S` is a terminal object: the unique homomorphism from `A` is its
-structure morphism. -/
-def identityIsTerminal : IsTerminal (identity S) :=
-  IsTerminal.ofUniqueHom (fun A ↦ homMk (toUnit A.toOver) (IsMonHom.one_hom (toUnit A.toOver))
-    (IsMonHom.mul_hom (toUnit A.toOver))) fun _ _ ↦ toOverHom_injective (toUnit_unique _ _)
-
 instance hasTerminal : HasTerminal (AbelianScheme S) :=
-  identityIsTerminal.hasTerminal
+  (isZeroIdentity S).isTerminal.hasTerminal
 
 instance hasFiniteProducts : HasFiniteProducts (AbelianScheme S) :=
   hasFiniteProducts_of_has_binary_and_terminal
@@ -266,9 +260,9 @@ theorem relativeDimension_prod (A B : AbelianScheme S) (s : S) :
 /-! ### Products with the identity abelian scheme -/
 
 /-- The product of `A` with the identity abelian scheme is canonically `A`, through the first
-projection, since the identity abelian scheme is terminal (`identityIsTerminal`). -/
+projection, since the identity abelian scheme is terminal (`(isZeroIdentity S).isTerminal`). -/
 def prodIdentityIso (A : AbelianScheme S) : A.prod (identity S) ≅ A :=
-  BinaryFan.rightUnitor identityIsTerminal (prod.isLimit A (identity S))
+  BinaryFan.rightUnitor (isZeroIdentity S).isTerminal (prod.isLimit A (identity S))
 
 /-- The isomorphism `A ×_S S ≅ A` is the first projection. -/
 @[simp]
@@ -290,9 +284,9 @@ lemma prodIdentityIso_inv_fst (A : AbelianScheme S) :
   rw [← prodIdentityIso_hom, Iso.inv_hom_id]
 
 /-- The product of the identity abelian scheme with `A` is canonically `A`, through the second
-projection, since the identity abelian scheme is terminal (`identityIsTerminal`). -/
+projection, since the identity abelian scheme is terminal (`(isZeroIdentity S).isTerminal`). -/
 def identityProdIso (A : AbelianScheme S) : (identity S).prod A ≅ A :=
-  BinaryFan.leftUnitor identityIsTerminal (prod.isLimit (identity S) A)
+  BinaryFan.leftUnitor (isZeroIdentity S).isTerminal (prod.isLimit (identity S) A)
 
 /-- The isomorphism `S ×_S A ≅ A` is the second projection. -/
 @[simp]

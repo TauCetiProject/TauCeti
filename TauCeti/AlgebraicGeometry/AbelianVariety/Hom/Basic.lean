@@ -72,6 +72,14 @@ lemma Hom.toOverHom_comp {A B C : AbelianVariety K} (f : A ⟶ B) (g : B ⟶ C) 
     Hom.toOverHom (f ≫ g) = Hom.toOverHom f ≫ Hom.toOverHom g :=
   (Hom.toOverFunctor).map_comp f g
 
+/-- `toOverHom` sends `eqToHom` between abelian varieties to `eqToHom` between their underlying
+group schemes over `Spec K`. -/
+@[simp]
+lemma Hom.toOverHom_eqToHom {A B : AbelianVariety K} (h : A = B) :
+    Hom.toOverHom (eqToHom h) = eqToHom (congrArg AbelianVariety.toOver h) := by
+  subst h
+  exact Hom.toOverHom_id A
+
 /-- `toOverHom` is definitionally the iterated underlying-morphism projection through the two
 induced categories, `CommGrp`, and `Grp`. -/
 private lemma Hom.toOverHom_def {A B : AbelianVariety K} (f : A ⟶ B) :
