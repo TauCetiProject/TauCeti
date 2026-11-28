@@ -221,7 +221,8 @@ private noncomputable def biprodSigmaIso {J K : Type} (X : J → C) (Y : K → C
       (coproductIsCoproduct fun j ↦ preadditiveYoneda.obj (X j))
       (coproductIsCoproduct fun k ↦ preadditiveYoneda.obj (Y k)))
 
-private theorem IsFiniteSumOfRepresentables.biprod {A B : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
+/-- The binary biproduct of two finite sums of representable functors is again such a sum. -/
+theorem IsFiniteSumOfRepresentables.biprod {A B : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
     (hA : IsFiniteSumOfRepresentables A) (hB : IsFiniteSumOfRepresentables B) :
     IsFiniteSumOfRepresentables (A ⊞ B) := by
   obtain ⟨m, X, ⟨eA⟩⟩ := hA
