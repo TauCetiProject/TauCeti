@@ -35,6 +35,8 @@ slice.
   same bridge for `C^n` maps on a set and at a point.
 * `ContMDiffAt.contMDiffAt_prod_fst_slice`, `ContMDiffAt.contMDiffAt_prod_snd_slice`: fixing
   one of the last two factors of a three-factor product preserves joint regularity.
+* `ContMDiffAt.differentiableAt_slice_fst`: a jointly differentiable family is differentiable
+  in its scalar variable at a fixed manifold parameter.
 * `TauCeti.contMDiff_prod_prod_modelWithCornersSelf_iff`,
   `TauCeti.contMDiffOn_prod_prod_modelWithCornersSelf_iff`,
   `TauCeti.contMDiffAt_prod_prod_modelWithCornersSelf_iff`: the same bridge on the left factor of
@@ -113,6 +115,15 @@ theorem ContMDiffAt.contMDiffAt_prod_snd_slice {f : E₁ → E₂ × E₃ → M}
     ContDiff 𝕜 n (fun p : E₁ × E₃ ↦ (p.1, (z.1, p.2))))).contMDiffAt
 
 end Slices
+
+/-- A jointly differentiable family is differentiable in the scalar variable at a fixed
+manifold parameter. -/
+theorem ContMDiffAt.differentiableAt_slice_fst
+    {u : 𝕜 → M → E₂} {t : 𝕜} {x : M} {k : ℕ∞ω}
+    (hu : ContMDiffAt (𝓘(𝕜).prod I') 𝓘(𝕜, E₂) k (Function.uncurry u) (t, x))
+    (hk : k ≠ 0) :
+    DifferentiableAt 𝕜 (fun s ↦ u s x) t :=
+  (hu.comp t (contMDiffAt_id.prodMk contMDiffAt_const)).contDiffAt.differentiableAt hk
 
 namespace TauCeti
 

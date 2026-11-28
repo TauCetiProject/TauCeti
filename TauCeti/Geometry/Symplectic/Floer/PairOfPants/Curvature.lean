@@ -290,8 +290,7 @@ private theorem hamiltonianCurvature_perturbationPullback_endChart (ω : SmoothT
           stdComplexLineImag) z x =
       q.endSign * deriv smoothTransition (q.endSign * z.1 - 1) * H q z.2 x := by
   have hHt : DifferentiableAt ℝ (fun t ↦ H q t x) z.2 :=
-    (((hHs q).contMDiffAt.comp (f := fun t : ℝ ↦ (t, x)) z.2
-      (contMDiffAt_id.prodMk contMDiffAt_const)).contDiffAt).differentiableAt one_ne_zero
+    (hHs q).contMDiffAt.differentiableAt_slice_fst (t := z.2) (x := x) one_ne_zero
   rw [perturbationPullback_endChart, perturbationPullback_endChart,
     equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag,
     ω.hamiltonianCurvature_pairOfPantsEndComponent (hH q) hz hHt]

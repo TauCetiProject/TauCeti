@@ -40,6 +40,8 @@ its regularity at a point also loses one derivative.
   family is jointly `C^n` when `n + 1 ≤ m`.
 * `ContMDiffAt.deriv_uncurry`: the partial derivative in a scalar parameter of a jointly `C^m`
   function is jointly `C^n` when `n + 1 ≤ m`.
+* `TauCeti.continuous_deriv_slice_fst_of_contMDiffAt`: the partial derivative in a scalar
+  parameter is continuous along any slice where the family is jointly `C¹`.
 * `ContMDiffAt.iteratedFDeriv_right`: the `i`-th iterated derivative in the vector-space variable
   of a jointly `C^n` family is jointly `C^m` when `m + i ≤ n`.
 * `ContMDiff.contMDiff_tangentMap_family`: the tangent maps of a jointly `C^m` family of maps
@@ -196,6 +198,20 @@ theorem ContMDiffAt.deriv_uncurry {f : 𝕜 → P → F} {p₀ : 𝕜 × P}
   have h := (hswap.fderiv_right hnm).comp p₀ (contMDiffAt_snd.prodMk contMDiffAt_fst)
   simpa only [Function.comp_def, ContinuousLinearMap.apply_apply, fderiv_apply_one_eq_deriv]
     using (ContinuousLinearMap.apply 𝕜 F (1 : 𝕜)).contMDiff.contMDiffAt.comp p₀ h
+
+namespace TauCeti
+
+/-- The derivatives of scalar slices at a fixed scalar value depend continuously on
+the manifold parameter when the family is jointly `C¹` along that slice. -/
+theorem continuous_deriv_slice_fst_of_contMDiffAt {u : 𝕜 → P → F} {t : 𝕜}
+    (hu : ∀ x, ContMDiffAt (𝓘(𝕜).prod J) 𝓘(𝕜, F) 1 (Function.uncurry u) (t, x)) :
+    Continuous (fun x ↦ deriv (fun s ↦ u s x) t) := by
+  apply continuous_iff_continuousAt.2
+  intro x
+  exact ((hu x).deriv_uncurry (n := 0) (by simp)).continuousAt.comp
+    (continuousAt_const.prodMk continuousAt_id)
+
+end TauCeti
 
 section TangentMap
 

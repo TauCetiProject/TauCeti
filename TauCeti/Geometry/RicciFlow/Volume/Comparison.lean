@@ -6,8 +6,9 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Variation
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 import TauCeti.Analysis.ODE.ScalarComparison
+import TauCeti.Geometry.RicciFlow.Volume.Variation
 
 /-!
 # Fixed-set volume comparison along Ricci flow
@@ -49,38 +50,7 @@ namespace Bundle.ContMDiffRiemannianMetric
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
-  {n : ℕ∞ω}
-  (g₀ : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
   {g : ℝ → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
-
-/-- Along the native Ricci equation the relative volume density satisfies
-`J' = -Scal(g) J`, for an arbitrary fixed reference metric. -/
-theorem hasDerivWithinAt_relativeVolumeDensity_of_ricciFlow
-    {s : Set ℝ} {t : ℝ} (x : M)
-    (hg : ∀ v w, HasDerivWithinAt (fun τ ↦ (g τ).inner x v w)
-      (-2 * (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-          ⟨(g t).toRiemannianMetric⟩;
-        (CovariantDerivative.leviCivitaConnection I M).ricciTensor x v w)) s t) :
-    HasDerivWithinAt (fun τ ↦ relativeVolumeDensity g₀ (g τ) x)
-      (-(g t).scalarCurvature x * relativeVolumeDensity g₀ (g t) x) s t := by
-  let ρ (τ : ℝ) : ℝ :=
-    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-      ⟨(g τ).toRiemannianMetric⟩
-    TauCeti.chartVolumeDensity (I := I) x x
-  let ρ₀ : ℝ := TauCeti.chartVolumeDensity (I := I)
-    (TauCeti.WithMetric.toWithMetric g₀ x) (TauCeti.WithMetric.toWithMetric g₀ x)
-  have heq (τ : ℝ) : relativeVolumeDensity g₀ (g τ) x = ρ τ / ρ₀ := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-      ⟨(g τ).toRiemannianMetric⟩
-    rw [relativeVolumeDensity_eq_div_chartVolumeDensity g₀ (g τ) (mem_chart_source H x)]
-    congr 1
-    simp only [TauCeti.chartVolumeDensity_def, chartGramMatrix_toWithMetric, ρ]
-    congr 2
-    ext i j
-    exact (chartGramMatrix_apply (I := I) (E := E) x x i j).symm
-  have hd : HasDerivWithinAt ρ (-(g t).scalarCurvature x * ρ t) s t :=
-    TauCeti.hasDerivWithinAt_chartVolumeDensity_of_ricciFlow x (mem_chart_source H x) hg
-  simpa only [← heq, mul_div_assoc] using hd.div_const ρ₀
 
 /-- A time-dependent scalar-curvature lower bound controls the relative volume
 density across a closed interval. The bound is required only at interior times. -/
