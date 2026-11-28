@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Ideal
 import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.Convex.Combination
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.Normed.Ring.Basic

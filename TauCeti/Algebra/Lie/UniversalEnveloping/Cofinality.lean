@@ -65,11 +65,10 @@ theorem degreeFiltration_le_augmentation_pow (hneg : ∀ n, d n < 0 → ℒ n = 
   intro n hn x hx
   -- The piece of degree `n` is spanned by words in the generators of total degree `n`, and each
   -- such word has at least `k` letters because every letter has degree at most `B`.
-  rw [GradedAlgebra.grade_eq_span_list_prod_map (homogeneousSubmodule ℒ) (fun s => ι R (e s)) deg
-    hgen
-    (fun s => ι_mem_homogeneousSubmodule ℒ (hhom s)) n] at hx
-  refine (Submodule.span_le (p := (_ ^ k : Ideal _).restrictScalars R)).mpr ?_ hx
-  rintro _ ⟨l, rfl, rfl⟩
+  rw [GradedAlgebra.grade_eq_wordSpan (homogeneousSubmodule ℒ) (fun s => ι R (e s)) deg
+    hgen (fun s => ι_mem_homogeneousSubmodule ℒ (hhom s)) n] at hx
+  refine (GradedAlgebra.wordSpan_le_iff n ((_ ^ k : Ideal _).restrictScalars R)).mpr ?_ hx
+  rintro l rfl
   have hlen : k ≤ l.length := by
     have hle : (l.map fun s => d (deg s)).sum ≤ l.length • (B : ℤ) := by
       simpa only [List.length_map] using List.sum_le_length_nsmul (l.map fun s => d (deg s)) _ (by

@@ -55,14 +55,18 @@ norm (`PositiveContinuousLinearMap.opNorm_liftOfSurjective`).
 For a functional `φ : WeakDual ℂ A` on a C⋆-algebra that is nonnegative on nonnegative elements,
 this file records the norm facts about positive functionals in the form used on the weak-* dual.
 
+* `WeakDual.toPositiveLinearMap`: bundles `φ` as a positive linear map `A →ₚ[ℂ] ℂ`.
+* `WeakDual.norm_apply_sq_le_mul_of_map_nonneg`: the Cauchy–Schwarz inequality
+  `‖φ a‖ ^ 2 ≤ ‖φ‖ * ‖φ (star a * a)‖`.
 * `WeakDual.monotone_toStrongDual_of_map_nonneg`: `φ` is monotone.
 * `WeakDual.tendsto_approximateUnit_norm_of_map_nonneg`: along the approximate unit, `φ` tends
   to its norm.
 * `WeakDual.norm_toStrongDual_eq_map_one_of_map_nonneg`: if `A` is unital, the norm of `φ` is
   `φ 1`.
 
-These are Mathlib's `ContinuousLinearMap.monotone_iff_tendsto_nhds_opNorm` and
-`ContinuousLinearMap.monotone_iff_opNorm_eq_map_one`, restated for `WeakDual ℂ A`.
+These restate Mathlib's `PositiveContinuousLinearMap.norm_map_sq_le_opNorm_mul`,
+`ContinuousLinearMap.monotone_iff_tendsto_nhds_opNorm`, and
+`ContinuousLinearMap.monotone_iff_opNorm_eq_map_one` for `WeakDual ℂ A`.
 
 Finally, `WeakDual.ext_nonneg`: a functional on a C⋆-algebra is determined by its values on
 nonnegative elements, since these span the algebra.
@@ -210,6 +214,22 @@ end NonUnital
 
 section Unital
 
+/-- A positive contraction `e` bounds the value of a positive functional on the positive
+square of `1 - e` by the norm of the functional minus the real part of its value at `e`. -/
+theorem norm_map_star_one_sub_mul_one_sub_le {A : Type*}
+    [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+    (f : A →P[ℂ] ℂ) {e : A} (he : 0 ≤ e) (he₁ : ‖e‖ ≤ 1) :
+    ‖f (star (1 - e) * (1 - e))‖ ≤ ‖(f : A →L[ℂ] ℂ)‖ - (f e).re := by
+  have hnonneg : 0 ≤ 1 - e :=
+    sub_nonneg.mpr ((CStarAlgebra.norm_le_one_iff_of_nonneg e he).mp he₁)
+  have hnorm : ‖1 - e‖ ≤ 1 :=
+    (CStarAlgebra.norm_le_one_iff_of_nonneg _ hnonneg).mpr (sub_le_self _ he)
+  have hle : f ((1 - e) * (1 - e)) ≤ f (1 - e) :=
+    f.mono (CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one hnonneg hnorm)
+  rw [← Complex.re_eq_norm.mpr (f.map_nonneg (star_mul_self_nonneg _)), hnonneg.star_eq]
+  simpa only [map_sub, ← f.ofReal_opNorm_eq_map_one, Complex.sub_re, Complex.ofReal_re] using
+    (Complex.le_def.mp hle).1
+
 /-- Pulling a positive functional on a unital C⋆-algebra back along a star homomorphism that
 preserves `1` preserves its operator norm. -/
 theorem opNorm_comp_ofClass_of_map_one {A B F : Type*}
@@ -266,6 +286,49 @@ section NonUnital
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   {φ : WeakDual ℂ A}
+
+/-- Bundle a weak-* functional that is nonnegative on nonnegative elements as a `PositiveLinearMap`
+`A →ₚ[ℂ] ℂ`. -/
+noncomputable def toPositiveLinearMap (φ : WeakDual ℂ A) (hφ : ∀ a, 0 ≤ a → 0 ≤ φ a) :
+    A →ₚ[ℂ] ℂ :=
+  .mk₀ (toStrongDual φ : A →ₗ[ℂ] ℂ) hφ
+
+/-- `φ.toPositiveLinearMap hφ` evaluates as `φ`. -/
+@[simp]
+theorem toPositiveLinearMap_apply (φ : WeakDual ℂ A) (hφ : ∀ a, 0 ≤ a → 0 ≤ φ a) (a : A) :
+    φ.toPositiveLinearMap hφ a = φ a :=
+  (rfl)
+
+/-- The underlying linear map of `φ.toPositiveLinearMap hφ` is `toStrongDual φ`. -/
+@[simp]
+theorem toLinearMap_toPositiveLinearMap (φ : WeakDual ℂ A) (hφ : ∀ a, 0 ≤ a → 0 ≤ φ a) :
+    (φ.toPositiveLinearMap hφ).toLinearMap = (toStrongDual φ : A →ₗ[ℂ] ℂ) :=
+  (rfl)
+
+/-- Bundling `φ.toPositiveLinearMap hφ` as a continuous positive functional recovers
+`toStrongDual φ`. -/
+@[simp]
+theorem toContinuousLinearMap_ofClass_toPositiveLinearMap (φ : WeakDual ℂ A)
+    (hφ : ∀ a, 0 ≤ a → 0 ≤ φ a) :
+    (PositiveContinuousLinearMap.ofClass (φ.toPositiveLinearMap hφ) : A →L[ℂ] ℂ) =
+      toStrongDual φ := by
+  ext a
+  simp
+
+/-- Two positive functionals define the same `PositiveLinearMap` if and only if they are equal. -/
+@[simp]
+theorem toPositiveLinearMap_inj {φ ψ : WeakDual ℂ A}
+    {hφ : ∀ a, 0 ≤ a → 0 ≤ φ a} {hψ : ∀ a, 0 ≤ a → 0 ≤ ψ a} :
+    φ.toPositiveLinearMap hφ = ψ.toPositiveLinearMap hψ ↔ φ = ψ :=
+  ⟨fun h => DFunLike.ext _ _ fun a => by simpa using DFunLike.congr_fun h a,
+    fun h => by subst h; rfl⟩
+
+/-- Cauchy–Schwarz inequality for a positive functional in the weak-* dual:
+`‖φ a‖ ^ 2 ≤ ‖φ‖ * ‖φ (star a * a)‖`. -/
+theorem norm_apply_sq_le_mul_of_map_nonneg (hφ : ∀ a, 0 ≤ a → 0 ≤ φ a) (a : A) :
+    ‖φ a‖ ^ 2 ≤ ‖toStrongDual φ‖ * ‖φ (star a * a)‖ := by
+  simpa using
+    (PositiveContinuousLinearMap.ofClass (φ.toPositiveLinearMap hφ)).norm_map_sq_le_opNorm_mul a
 
 /-- A functional on a C⋆-algebra is determined by its values on nonnegative elements, since
 these span the algebra. In particular two states that agree on nonnegative elements are equal. -/

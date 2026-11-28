@@ -50,11 +50,13 @@ stabilizer `Z_G(X) = {g | Ad_g X = X}` of `X ∈ t` from the roots that vanish a
   (`stabilizer_continuousAdjointRepresentation_le_iff`). Thus the stabilizer `Z_G(X)` itself, not
   just its conjugacy class, is determined by the set of roots vanishing at `X`, the pattern of root
   hyperplanes through `X` (`stabilizer_continuousAdjointRepresentation_eq_stabilizer_iff`).
+  Since the roots not vanishing at `X` do not vanish near `X`, every `Y ∈ t` close enough to `X`
+  has `Z_G(Y) ≤ Z_G(X)` (`eventually_stabilizer_continuousAdjointRepresentation_le`).
   Conjugate stabilizers can have different patterns: in `SU(3)`, an element where only `α₁`
   vanishes and one where only `α₂` vanishes have conjugate stabilizers. So stabilizer types, the
   conjugacy classes of stabilizers, correspond to vanishing patterns only up to the Weyl group. On
-  a closed Weyl chamber these patterns are its faces; that comparison needs the Weyl group action
-  on the roots and is not made here.
+  a closed Weyl chamber these patterns are its faces; that comparison needs the Weyl group and is
+  made in `TauCeti.Geometry.Lie.Subgroup.Weyl.StabilizerType`.
 * **Regular elements.** If the roots are nonzero, `Lie Z_G(X) = t` exactly when no root vanishes
   at `X` (`toSubmodule_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_eq_iff`),
   and for a torus `T`, such as a maximal torus, of a compact connected group with `t = Lie(T)`,
@@ -76,6 +78,8 @@ starting with `IsRootPlane.` are in the namespace `TauCeti`.
   `stabilizer_continuousAdjointRepresentation_le_iff`,
   `stabilizer_continuousAdjointRepresentation_eq_stabilizer_iff`: the stabilizers of `X, Y ∈ t`
   are compared by the roots vanishing at `X` and `Y`.
+* `eventually_stabilizer_continuousAdjointRepresentation_le`: stabilizers of points of `t` near
+  `X` lie in `Z_G(X)`.
 * `stabilizer_continuousAdjointRepresentation_eq_iff`: the stabilizer of `X` is the torus exactly
   when `X` is regular.
 
@@ -251,6 +255,30 @@ theorem stabilizer_continuousAdjointRepresentation_eq_stabilizer_iff
   rw [le_antisymm_iff, hD.stabilizer_continuousAdjointRepresentation_le_iff hB hsep hV,
     hD.stabilizer_continuousAdjointRepresentation_le_iff hB hsep hV]
   exact ⟨fun h i ↦ ⟨h.1 i, h.2 i⟩, fun h ↦ ⟨fun i ↦ (h i).1, fun i ↦ (h i).2⟩⟩
+
+open Filter Topology in
+/-- **Stabilizers near a point of `t` are smaller.** For a compact connected Lie group, a
+separating invariant form, and a decomposition of `𝔤` over `t` into nonzero root planes, every
+`Y ∈ t` close enough to `X ∈ t` has adjoint stabilizer `Z_G(Y) ≤ Z_G(X)`: the finitely many roots
+not vanishing at `X` do not vanish near `X`. -/
+theorem eventually_stabilizer_continuousAdjointRepresentation_le
+    (hD : IsRootPlaneDecomposition B t α V J) (hB : B.lieInvariant (LeftInvariantDerivation I G))
+    (hsep : B.SeparatingLeft) (hV : ∀ i, V i ≠ ⊥) (X : t) :
+    ∀ᶠ Y : t in 𝓝 X,
+      (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer
+          (Y : LeftInvariantDerivation I G) ≤
+        (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer
+          (X : LeftInvariantDerivation I G) := by
+  have : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  simp_rw [hD.stabilizer_continuousAdjointRepresentation_le_iff hB hsep hV]
+  refine eventually_all.2 fun i ↦ ?_
+  rcases eq_or_ne (α i X) 0 with hi | hi
+  · exact Eventually.of_forall fun _ _ ↦ hi
+  · -- `α_i` is continuous, so it does not vanish near `X`.
+    filter_upwards [(LinearMap.continuous_of_finiteDimensional (α i)).continuousAt.eventually_ne
+      hi] with Y hY hY0
+    exact absurd hY0 hY
 
 end Compact
 

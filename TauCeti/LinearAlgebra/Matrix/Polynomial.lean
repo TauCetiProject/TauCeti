@@ -33,6 +33,8 @@ dimension, being the determinant of the transpose (`Matrix.reflect_det_X_smul_tr
 
 Taking entrywise coefficients commutes with multiplication by constant matrices on either side.
 In particular, linear coefficients of matrix-valued curves commute with constant conjugation.
+Right multiplication by a pencil `A + X B` sends coefficient `d + 1` to the combination of
+coefficients `d + 1` and `d` against `A` and `B` (`Matrix.map_coeff_mul_map_C_add_X_smul`).
 
 Evaluating a polynomial in a matrix commutes with applying a ring homomorphism to the coefficients
 and to the entries (`Matrix.aeval_map`), and a rectangular matrix intertwining two square matrices
@@ -118,6 +120,19 @@ theorem map_coeff_mul_map_C [Semiring R] {m p : Type*}
     (P * A.map C).map (fun p ↦ p.coeff d) = P.map (fun p ↦ p.coeff d) * A := by
   ext i j
   simp [Matrix.mul_apply, coeff_mul_C]
+
+omit [DecidableEq n] in
+/-- Taking coefficient `d + 1` after right multiplication by the pencil `A + X B`
+combines coefficient `d + 1` of the input with `A` and coefficient `d` with `B`. -/
+@[simp]
+theorem map_coeff_mul_map_C_add_X_smul [Semiring R] {m p : Type*}
+    (P : Matrix m n R[X]) (A B : Matrix n p R) (d : ℕ) :
+    (P * (A.map C + (X : R[X]) • B.map C)).map (fun p ↦ p.coeff (d + 1)) =
+      P.map (fun p ↦ p.coeff (d + 1)) * A + P.map (fun p ↦ p.coeff d) * B := by
+  rw [Matrix.mul_add]
+  ext i j
+  simp only [Matrix.map_apply, Matrix.add_apply, Matrix.mul_apply, Matrix.smul_apply, smul_eq_mul,
+    coeff_add, finsetSum_coeff, ← mul_assoc, coeff_mul_C, coeff_mul_X]
 
 variable [CommRing R]
 

@@ -25,6 +25,9 @@ product with the factor `f k` replaced by `δ (f k)`. The rule covers both a der
 commutative ring and the inner derivation `⁅a, -⁆` of an associative ring, which is how the
 commutator with a Lie generator acts on a word in a universal enveloping algebra.
 
+Expanding the `n`-th power of a finite sum in a noncommutative semiring gives one ordered
+product for every word of length `n` in the summands.
+
 A ring homomorphism sending each scalar `c i • 1` to `d i • 1` carries the ordered product
 `(M₀ - c₀ • 1) ⋯ (M_{m-1} - c_{m-1} • 1)` to the ordered product of the images, as for a change
 of coefficients of matrices.
@@ -45,6 +48,8 @@ be nonzero.
   negates the product.
 * `List.prod_ofFn_comp_perm`: for pairwise anticommuting factors,
   `(ofFn (x ∘ σ)).prod = sign σ • (ofFn x).prod`.
+* `TauCeti.sum_pow_eq_sum_prod_ofFn`: in a noncommutative semiring, `(∑ i, f i) ^ n` is the sum
+  over all words `w : Fin n → ι` of the ordered products `f (w 0) * ⋯ * f (w (n - 1))`.
 -/
 
 public section
@@ -151,5 +156,17 @@ theorem map_list_prod_ofFn_sub_smul_one {R S B C Φ : Type*} [Ring R] [Ring S] [
     {c : Fin m → B} {d : Fin m → C} (hφ : ∀ i, φ (c i • 1) = d i • 1) :
     φ (List.ofFn fun i ↦ M i - c i • 1).prod = (List.ofFn fun i ↦ φ (M i) - d i • 1).prod := by
   simp only [map_list_prod, List.map_ofFn, Function.comp_def, map_sub, hφ]
+
+/-- **Noncommutative multinomial expansion.** In a possibly noncommutative semiring, the `n`-th
+power of a finite sum `∑ i, f i` is the sum, over all words `w : Fin n → ι`, of the ordered
+products `f (w 0) * ⋯ * f (w (n - 1))`. -/
+theorem sum_pow_eq_sum_prod_ofFn {ι R : Type*} [Fintype ι] [Semiring R] (f : ι → R) (n : ℕ) :
+    (∑ i, f i) ^ n = ∑ w : Fin n → ι, (List.ofFn fun j ↦ f (w j)).prod := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ', ih, ← (Fin.consEquiv fun _ ↦ ι).sum_comp, Fintype.sum_prod_type,
+      Finset.sum_mul_sum]
+    simp [Fin.consEquiv, List.ofFn_succ]
 
 end TauCeti

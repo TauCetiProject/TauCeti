@@ -97,6 +97,13 @@ theorem IsFiniteRank.zero : (0 : M →ₗ[R] N).IsFiniteRank :=
 theorem IsFiniteRank.of_finite_rng [Module.Finite R N] {f : M →ₗ[R] N} : f.IsFiniteRank :=
   ⟨⊤, Module.Finite.fg_top, le_top⟩
 
+/-- The codomain of a surjective map of finite rank is finitely generated. -/
+theorem IsFiniteRank.finite_of_surjective {f : M →ₗ[R] N} (hf : f.IsFiniteRank)
+    (hs : Function.Surjective f) : Module.Finite R N := by
+  obtain ⟨Q, hQ, h⟩ := hf
+  rw [range_eq_top.mpr hs, top_le_iff] at h
+  exact ⟨h ▸ hQ⟩
+
 theorem IsFiniteRank.add {f g : M →ₗ[R] N} (hf : f.IsFiniteRank) (hg : g.IsFiniteRank) :
     (f + g).IsFiniteRank := by
   obtain ⟨Q₁, hQ₁, hf⟩ := hf
@@ -122,6 +129,17 @@ theorem IsFiniteRank.smul {S : Type*} [Monoid S] [DistribMulAction S N] [SMulCom
   exact h ▸ hf.comp_left _
 
 end Semiring
+
+/-- If two endomorphisms differ by a map of finite rank, so do their `n`-th powers. -/
+theorem IsFiniteRank.pow_sub_pow [Semiring R] [AddCommGroup M] [Module R M]
+    {f g : Module.End R M} (h : (f - g).IsFiniteRank) (n : ℕ) :
+    (f ^ n - g ^ n).IsFiniteRank := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    -- Split the difference at the mixed product g ^ n * f.
+    simpa only [← Module.End.mul_eq_comp, sub_mul, mul_sub, sub_add_sub_cancel, pow_succ]
+      using (ih.comp_right f).add (h.comp_left (g ^ n))
 
 section Ring
 

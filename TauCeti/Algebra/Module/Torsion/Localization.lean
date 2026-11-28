@@ -11,6 +11,8 @@ public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 import Mathlib.Algebra.Module.LocalizedModule.Submodule
 import Mathlib.RingTheory.Flat.Localization
 import TauCeti.Algebra.Module.LocalizedModule.BaseChange
+import TauCeti.Algebra.Module.LocalizedModule.Basic
+import TauCeti.Algebra.Module.LocalizedModule.Submodule
 
 /-!
 # Torsion modules are those killed by localization
@@ -52,6 +54,10 @@ localization at every generator is zero. This identifies modules supported on th
   with torsion kernel and cokernel.
 * `Module.IsTorsion.of_isLocalizedModule`, `Module.IsTorsion.localizedModule`: the localization of
   a torsion module is torsion.
+* `Submodule.localized'_torsionBySet_ideal`: localization commutes with taking the
+  submodule killed by a finitely generated ideal.
+* `AlgHom.isLocalizedModule_id_of_isTorsionBySet_ker`: a module killed by an augmentation
+  kernel is already local at any submonoid whose elements the augmentation sends to units.
 * `Module.IsTorsion'.isUnit_addOrderOf`: in an abelian group which is `S`-torsion for a submonoid
   `S` of `ℤ`, the order of every element is a unit of every ring in which `S` becomes invertible,
   such as the localization of `ℤ` at `S`.
@@ -64,6 +70,22 @@ localization at every generator is zero. This identifies modules supported on th
 public section
 
 open TensorProduct
+
+/-- If an augmentation `φ` sends every element of `S` to a unit, the identity of any module
+killed by its kernel is a localization map at `S`. -/
+theorem AlgHom.isLocalizedModule_id_of_isTorsionBySet_ker
+    {O A X : Type*} [CommRing O] [CommRing A] [Algebra O A]
+    (φ : A →ₐ[O] O) (S : Submonoid A) (hS : ∀ s : S, IsUnit (φ s))
+    [AddCommGroup X] [Module O X] [Module A X] [IsScalarTower O A X]
+    (hX : Module.IsTorsionBySet A X (RingHom.ker φ)) :
+    IsLocalizedModule S (LinearMap.id : X →ₗ[A] X) := by
+  apply TauCeti.isLocalizedModule_id_of_bijective_smul
+  intro s hs
+  have hker : s - algebraMap O A (φ s) ∈ RingHom.ker φ := by simp
+  have heq (x : X) : s • x = φ s • x := by
+    have h := hX (x := x) (a := ⟨_, hker⟩)
+    rwa [sub_smul, algebraMap_smul, sub_eq_zero] at h
+  simpa only [heq] using (hS ⟨s, hs⟩).smul_bijective (β := X)
 
 namespace Submonoid
 
@@ -164,6 +186,42 @@ theorem baseChange_bijective_iff_isTorsion :
   f.baseChange_bijective_iff_isTorsion' (nonZeroDivisors R) K
 
 end LinearMap
+
+namespace Submodule
+
+/-- Localizing the submodule killed by a finitely generated ideal gives the submodule
+killed by the extended ideal. The ambient module can be arbitrary. -/
+theorem localized'_torsionBySet_ideal {R B M N : Type*} [CommSemiring R] [CommSemiring B]
+    [Algebra R B] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] [Module B N]
+    [IsScalarTower R B N] (S : Submonoid R) [IsLocalization S B]
+    (f : M →ₗ[R] N) [IsLocalizedModule S f] (I : Ideal R) (hI : I.FG) :
+    (torsionBySet R M I).localized' B S f =
+      torsionBySet B N (I.map (algebraMap R B)) := by
+  classical
+  obtain ⟨t, hspan⟩ := hI
+  have hs : torsionBySet R M I = torsionBySet R M (t : Set R) := by
+    rw [← hspan, ← torsionBySet_eq_torsionBySet_span]
+  have ht' : torsionBySet B N (I.map (algebraMap R B)) =
+      torsionBySet B N (algebraMap R B '' (t : Set R)) := by
+    rw [← hspan, Ideal.map_span, ← torsionBySet_eq_torsionBySet_span]
+  ext x
+  obtain ⟨⟨m, s⟩, rfl⟩ := IsLocalizedModule.mk'_surjective S f x
+  rw [Function.uncurry_apply_pair, mk'_mem_localized'_iff B, hs, ht']
+  simp only [mem_torsionBySet_iff, SetCoe.forall, Set.forall_mem_image, Finset.mem_coe,
+    algebraMap_smul, ← IsLocalizedModule.mk'_smul, IsLocalizedModule.mk'_eq_zero' f,
+    Submonoid.smul_def]
+  constructor
+  · rintro ⟨u, hu⟩ a ha
+    exact ⟨u, by rw [smul_comm, hu a ha]⟩
+  · intro h
+    -- One denominator per generator suffices, and their product clears all of them.
+    have hgen (a : R) (ha : a ∈ t) : ∃ d : S, (d : R) • a • m = 0 := @h a ha
+    choose! d hd using hgen
+    refine ⟨∏ a ∈ t, d a, fun a ha => ?_⟩
+    rw [smul_comm, ← Finset.prod_erase_mul _ _ ha, Submonoid.coe_mul, mul_smul, hd a ha,
+      smul_zero]
+
+end Submodule
 
 namespace Module.IsTorsion
 
