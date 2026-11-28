@@ -6,13 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.IntegralIdeal
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 
 /-!
 # Finite adelic fractional ideals
 
 For a nonzero fractional ideal `I`, its finite adelic extension `finiteAdelicIdeal I` is the
 module `I Ô` over the integral finite adeles. It is defined independently of a generator.
-Any finite idele representing `I` gives its usual local divisibility criterion.
+Any finite idele representing `I` gives its usual local divisibility criterion. A finite adele
+supported at one place `v` lies in `I Ô` exactly when its `v`-component has valuation at most
+`exp (-ord_v I)` (`IsDedekindDomain.FiniteAdeleRing.single_mem_finiteAdelicIdeal_iff`).
 -/
 
 public section
@@ -104,5 +107,19 @@ theorem closure_image_algebraMap_fractionalIdeal (I : (FractionalIdeal R⁰ K)ˣ
   rw [hideal, Set.image_preimage_eq_inter_range]
   exact le_antisymm (closure_minimal Set.inter_subset_left hclosed)
     ((denseRange_algebraMap R K).open_subset_closure_inter hopen)
+
+/-- **Local membership in an adelic ideal.** The finite adele supported at the single place `v`
+with `v`-component `x` lies in `I Ô` exactly when `x` lies in the `v`-adic completion of `I`, that
+is, when `Valued.v x ≤ exp (-ord_v I)`. -/
+theorem single_mem_finiteAdelicIdeal_iff (I : (FractionalIdeal R⁰ K)ˣ) (v : HeightOneSpectrum R)
+    (x : v.adicCompletion K) :
+    single K v x ∈ finiteAdelicIdeal I ↔
+      Valued.v x ≤ WithZero.exp (-FractionalIdeal.count K v (I : FractionalIdeal R⁰ K)) := by
+  obtain ⟨t, rfl⟩ := toFractionalIdeal_surjective I
+  have h0 := valued_coe_units_apply_ne_zero t v
+  rw [mem_finiteAdelicIdeal_iff t rfl, ← mul_single, mem_integralAdeles,
+    single_mem_integralAdeles_iff, mem_adicCompletionIntegers, map_mul,
+    valued_coe_units_inv_apply, count_coe_toFractionalIdeal, adicOrd_def, neg_neg,
+    WithZero.exp_log h0, inv_mul_le_one₀ (pos_iff_ne_zero.mpr h0)]
 
 end IsDedekindDomain.FiniteAdeleRing

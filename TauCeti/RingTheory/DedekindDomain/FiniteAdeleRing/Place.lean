@@ -46,6 +46,8 @@ places; it is a closed embedding as well.
   is the set of finite adeles vanishing away from `v`;
   `IsDedekindDomain.FiniteAdeleRing.isClosedEmbedding_ofAdicCompletion` is the multiplicative
   counterpart.
+* `IsDedekindDomain.FiniteAdeleRing.sum_single_apply`: a finite sum of finite adeles supported at
+  the places of `S` has the prescribed components at `S` and `0` elsewhere.
 * `IsDedekindDomain.FiniteAdeleRing.tendsto_ofAdicCompletion_cofinite`: local integers placed at
   single places tend to `1` in the finite adeles.
 * `IsDedekindDomain.FiniteAdeleRing.single_mem_integralAdeles_iff`: a finite adele supported at
@@ -153,6 +155,20 @@ theorem mul_single (v : HeightOneSpectrum R) (x : v.adicCompletion K) (a : Finit
 theorem single_mul (v : HeightOneSpectrum R) (x : v.adicCompletion K) (a : FiniteAdeleRing R K) :
     single K v (x * a v) = single K v x * a := by
   rw [mul_comm x, mul_single, mul_comm]
+
+/-- A finite sum of finite adeles supported at single places: the sum over `u ∈ S` of the finite
+adeles supported at `u` with component `x u` has the component `x w` at `w ∈ S` and `0`
+elsewhere. -/
+theorem sum_single_apply [DecidableEq (HeightOneSpectrum R)]
+    (x : ∀ v : HeightOneSpectrum R, v.adicCompletion K) (S : Finset (HeightOneSpectrum R))
+    (w : HeightOneSpectrum R) :
+    (∑ u ∈ S, single K u (x u)) w = if w ∈ S then x w else 0 := by
+  rw [← proj_apply, map_sum]
+  simp only [proj_apply]
+  split_ifs with hw
+  · rw [Finset.sum_eq_single_of_mem w hw fun u _ hu ↦ single_apply_of_ne hu.symm _,
+      single_apply_self]
+  · exact Finset.sum_eq_zero fun u hu ↦ single_apply_of_ne (ne_of_mem_of_not_mem hu hw).symm _
 
 /-- `single K v` is a closed embedding of the completion at `v` into the finite adele ring. -/
 theorem isClosedEmbedding_single (v : HeightOneSpectrum R) :
