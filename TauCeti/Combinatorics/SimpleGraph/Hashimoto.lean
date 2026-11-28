@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.DegreeSum
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.Combinatorics.SimpleGraph.Backtracking
+public import TauCeti.Combinatorics.SimpleGraph.Dart.Matrix
 import Mathlib.Data.Set.Finite.List
 
 /-!
@@ -36,6 +37,9 @@ the determinant formula `ζ(u) = det(1 - u B)⁻¹`.
   send `0` to `0` and `1` to `1`.
 * `SimpleGraph.sum_row_hashimotoMatrix`, `SimpleGraph.sum_col_hashimotoMatrix`: the row of a dart
   `a` sums to `deg a.snd - 1` and the column of a dart `b` sums to `deg b.fst - 1`.
+* `SimpleGraph.hashimotoMatrix_add_dartSymmMatrix`: `B + J = Tᵀ S` for the dart start, end and
+  reversal matrices `S`, `T`, `J`, the form in which Bass's three-term determinant formula
+  (`SimpleGraph.bass_determinant_formula_of_add_dartSymmMatrix_eq`) applies to `B`.
 * `SimpleGraph.hashimotoMatrix_pow_apply`: the entry `(Bᵏ) a b` is the number of sequences of darts
   `a = d₀, d₁, …, d_k = b` in which each dart ends where the next starts and is not followed by its
   reverse.
@@ -119,6 +123,15 @@ theorem hashimotoMatrix_map [Zero R] [One R] {S : Type*} [Zero S] [One S] (f : R
   ext a b
   simp only [map_apply, hashimotoMatrix_apply]
   split_ifs <;> assumption
+
+/-- Adding the backtracking steps back to the Hashimoto matrix gives all steps between adjacent
+darts: `B + J = Tᵀ S`, for `S`, `T` the dart start and end matrices and `J` the reversal matrix. -/
+theorem hashimotoMatrix_add_dartSymmMatrix [Fintype V] [NonAssocSemiring R] :
+    G.hashimotoMatrix R + G.dartSymmMatrix R = (G.dartSndMatrix R)ᵀ * G.dartFstMatrix R := by
+  ext a b
+  rw [Matrix.add_apply, transpose_dartSndMatrix_mul_dartFstMatrix_apply, hashimotoMatrix_apply,
+    dartSymmMatrix_apply]
+  by_cases hb : b = a.symm <;> simp [hb]
 
 variable [Fintype V] [DecidableRel G.Adj]
 

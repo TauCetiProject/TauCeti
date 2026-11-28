@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Measure.WithDensity
-public import TauCeti.NumberTheory.LocalField.HaarCharacter
+public import TauCeti.NumberTheory.LocalField.Haar.Character
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.NumberTheory.LocalField.NormedField

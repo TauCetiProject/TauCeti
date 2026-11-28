@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Compact.Basic
+public import TauCeti.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 import Mathlib.Analysis.SpecificLimits.Basic
 
@@ -28,6 +29,11 @@ is measured in an intermediate norm can be rewritten with the error term in any 
 (`IsCompactOperator.exists_norm_le_of_compact_estimate`). For elliptic estimates on a compact
 base this replaces the lower-order Sobolev norm by any weaker norm of the Sobolev scale.
 
+Integrating the inequality in a parameter gives its `Lᵖ` form
+`‖i ∘ f‖_{Lᵖ} ≤ ε ‖f‖_{Lᵖ} + C ‖j ∘ i ∘ f‖_{Lᵖ}` for continuous `i`
+(`IsCompactOperator.exists_eLpNorm_le_mul_eLpNorm_add_mul_eLpNorm`), the form used in the
+Aubin–Lions compactness theorem.
+
 No completeness is assumed, the domain and the intermediate space may be seminormed, and the
 scalar field is any nontrivially normed field.
 
@@ -41,6 +47,8 @@ images under the compact operator lie in a fixed shell.
 * `IsCompactOperator.exists_norm_le_mul_norm_add_mul_norm`: Ehrling's inequality.
 * `IsCompactOperator.exists_norm_le_of_compact_estimate`: weakening the norm of the error term
   in an a priori estimate.
+* `IsCompactOperator.exists_eLpNorm_le_mul_eLpNorm_add_mul_eLpNorm`: Ehrling's inequality in
+  `Lᵖ`.
 
 ## References
 
@@ -108,5 +116,35 @@ theorem exists_norm_le_of_compact_estimate {F : Type*} [SeminormedAddCommGroup F
     ∃ D, 0 ≤ D ∧ ∀ x, ‖x‖ ≤ 2 * C * ‖T x‖ + D * ‖j (i x)‖ := by
   obtain ⟨D, hD, h⟩ := hi.exists_norm_le_mul_norm_add_mul_norm hj (by norm_num : (0 : ℝ) < 1 / 2)
   exact ⟨2 * D, by positivity, fun x ↦ by linarith [hbound x, h x]⟩
+
+end IsCompactOperator
+
+namespace IsCompactOperator
+
+open MeasureTheory
+open scoped ENNReal
+
+variable {𝕜 X Y Z α : Type*} [NontriviallyNormedField 𝕜]
+variable [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+variable [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+variable [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+variable [MeasurableSpace α] {μ : Measure α} {i : X →L[𝕜] Y} {j : Y →L[𝕜] Z}
+
+/-- **Ehrling's inequality in `Lᵖ`.** If `i : X → Y` is a compact operator and `j : Y → Z` is an
+injective continuous linear map, then for every `ε > 0` there is `C ≥ 0` with
+`‖i ∘ f‖_p ≤ ε ‖f‖_p + C ‖j ∘ i ∘ f‖_p` for every `1 ≤ p ≤ ∞` and every `f : α → X`. -/
+theorem exists_eLpNorm_le_mul_eLpNorm_add_mul_eLpNorm (hi : IsCompactOperator i)
+    (hj : Function.Injective j) {ε : ℝ} (hε : 0 < ε) :
+    ∃ C, 0 ≤ C ∧ ∀ {p : ℝ≥0∞}, 1 ≤ p → ∀ f : α → X,
+      eLpNorm (fun x ↦ i (f x)) p μ ≤ ENNReal.ofReal ε * eLpNorm f p μ +
+        ENNReal.ofReal C * eLpNorm (fun x ↦ j (i (f x))) p μ := by
+  obtain ⟨C, hC, h⟩ := exists_norm_le_mul_norm_add_mul_norm (i := (i : X →ₗ[𝕜] Y)) hi hj hε
+  refine ⟨C, hC, fun {p} hp f ↦ ?_⟩
+  by_cases! hf : ¬ AEStronglyMeasurable f μ
+  · simp [eLpNorm_of_not_aestronglyMeasurable hf, ENNReal.mul_top (ENNReal.ofReal_pos.2 hε).ne']
+  exact TauCeti.eLpNorm_le_mul_add_mul_of_ae_norm_le hp (i.continuous.comp_aestronglyMeasurable hf)
+    hf ((j.comp i).continuous.comp_aestronglyMeasurable hf) (A := ε.toNNReal) (B := C.toNNReal)
+    (Filter.Eventually.of_forall fun x ↦ by
+      simpa [Real.coe_toNNReal _ hε.le, Real.coe_toNNReal _ hC] using h (f x))
 
 end IsCompactOperator

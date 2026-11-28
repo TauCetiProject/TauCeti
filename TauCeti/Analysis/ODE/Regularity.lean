@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
+public import Mathlib.Analysis.ODE.Basic
+import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Regularity of solutions to first-order ODEs
@@ -14,16 +17,42 @@ This file contains the basic regularity theorem that a solution of a first-order
 derivative over a right-hand side that is already differentiable on its range. The parameter
 set only needs unique derivatives, so the result also applies at closed interval endpoints. It
 holds over any nontrivially normed field and for finite or infinite order of differentiability.
-A solution of a time-dependent equation `x' = X(t, x)` with a jointly continuous right-hand side
-is `C¹` (`TauCeti.contDiff_one_of_hasDerivAt`).
+A solution of a time-dependent equation `x' = X(t, x)` with a jointly `C^n` right-hand side is
+`C^(n + 1)` (`TauCeti.contDiff_succ_of_hasDerivAt`); in particular it is `C¹` when the right-hand
+side is jointly continuous (`TauCeti.contDiff_one_of_hasDerivAt`).
 The same holds for a linear equation `f' = A_t f` whose coefficient `A` is `C^n` in `t`
 (`TauCeti.contDiff_succ_of_hasDerivAt_clm_apply`).
+For a field that is Lipschitz in time and state, a bound on the speed of a solution gives
+a Lipschitz constant for its velocity (`IsIntegralCurveOn.lipschitzOnWith_velocity`).
 -/
 
 public section
 
 open Set
-open scoped ContDiff
+open scoped ContDiff NNReal
+
+/-- On a convex time set, a solution with speed at most `B` has `(K + L * B)`-Lipschitz
+velocity if the field is `K`-Lipschitz in time and `L`-Lipschitz in state along the solution's
+range. -/
+theorem IsIntegralCurveOn.lipschitzOnWith_velocity {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {y : ℝ → E} {f : ℝ → E → E} {s : Set ℝ}
+    {K L B : ℝ≥0} (hy : IsIntegralCurveOn y f s) (hs : Convex ℝ s)
+    (hK : ∀ u ∈ y '' s, LipschitzOnWith K (fun t ↦ f t u) s)
+    (hL : ∀ t ∈ s, LipschitzOnWith L (f t) (y '' s))
+    (hB : ∀ t ∈ s, ‖f t (y t)‖₊ ≤ B) :
+    LipschitzOnWith (K + L * B) (fun t ↦ f t (y t)) s := by
+  have hyLip := hs.lipschitzOnWith_of_nnNorm_hasDerivWithin_le (fun t ht ↦ hy t ht) hB
+  rw [lipschitzOnWith_iff_dist_le_mul]
+  intro t ht r hr
+  calc
+    dist (f t (y t)) (f r (y r)) ≤ dist (f t (y t)) (f r (y t)) +
+        dist (f r (y t)) (f r (y r)) := dist_triangle _ _ _
+    _ ≤ K * dist t r + L * dist (y t) (y r) :=
+      add_le_add ((hK _ (mem_image_of_mem y ht)).dist_le_mul t ht r hr)
+        ((hL r hr).dist_le_mul _ (mem_image_of_mem y ht) _ (mem_image_of_mem y hr))
+    _ ≤ K * dist t r + L * (B * dist t r) :=
+      add_le_add le_rfl (mul_le_mul_of_nonneg_left (hyLip.dist_le_mul t ht r hr) L.coe_nonneg)
+    _ = (↑(K + L * B) : ℝ) * dist t r := by push_cast; ring
 
 namespace TauCeti
 
@@ -46,15 +75,26 @@ theorem contDiffOn_succ_of_hasDerivWithinAt_comp {𝕜 F : Type*} [NontriviallyN
         fun t ht ↦ (hf t ht).derivWithin (hs t ht)
   exact_mod_cast contDiffOn_iff_forall_nat_le.mpr key
 
+/-- A solution of a time-dependent first-order equation `x' = X(t, x)` with a jointly `C^n`
+right-hand side is `C^(n + 1)`: the curve `t ↦ (t, x t)` solves the autonomous equation of the
+vector field `(t, y) ↦ (1, X(t, y))`. The order `n` may be infinite. -/
+theorem contDiff_succ_of_hasDerivAt {𝕜 F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ∞} {X : 𝕜 → F → F} {x : 𝕜 → F}
+    (hX : ContDiff 𝕜 n (Function.uncurry X)) (hx : ∀ t, HasDerivAt x (X t (x t)) t) :
+    ContDiff 𝕜 (n + 1) x := by
+  have h := contDiffOn_succ_of_hasDerivWithinAt_comp (f := fun t ↦ (t, x t)) (s := univ)
+    (u := univ) (v := fun p ↦ ((1 : 𝕜), Function.uncurry X p)) uniqueDiffOn_univ
+    (contDiff_const.prodMk hX).contDiffOn (mapsTo_univ _ _)
+    fun t _ ↦ (HasDerivAt.prodMk (hasDerivAt_id t) (hx t)).hasDerivWithinAt
+  exact contDiff_snd.comp (contDiffOn_univ.1 h)
+
 /-- A solution of a time-dependent first-order equation `x' = X(t, x)` with a jointly continuous
 right-hand side is `C¹`. -/
 theorem contDiff_one_of_hasDerivAt {𝕜 F : Type*} [NontriviallyNormedField 𝕜]
     [NormedAddCommGroup F] [NormedSpace 𝕜 F] {X : 𝕜 → F → F} {x : 𝕜 → F}
     (hX : Continuous (Function.uncurry X)) (hx : ∀ t, HasDerivAt x (X t (x t)) t) :
     ContDiff 𝕜 1 x := by
-  refine contDiff_one_iff_deriv.2 ⟨fun t ↦ (hx t).differentiableAt, ?_⟩
-  rw [funext fun t ↦ (hx t).deriv]
-  exact hX.comp (continuous_id.prodMk (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt))
+  simpa using contDiff_succ_of_hasDerivAt (n := 0) (contDiff_zero.2 hX) hx
 
 /-- A solution of a linear equation `f' = A_t f` whose coefficient `A` is `C^n` is `C^(n + 1)`.
 The order `n` may be infinite. -/

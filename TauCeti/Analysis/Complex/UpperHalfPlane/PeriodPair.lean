@@ -112,8 +112,9 @@ so it is finite.
   matrix of `c` in the two lattice bases, and is finite.
 * `PeriodPair.relIndex_div_mul_mem_lattice`: with `n = [Λ' : c Λ]`, `(n / c) Λ' ⊆ Λ`.
 * `PeriodPair.G_smul`, `PeriodPair.g₂_smul`, `PeriodPair.g₃_smul`,
-  `PeriodPair.weierstrassP_smul`, `PeriodPair.derivWeierstrassP_smul`: rescaling the lattice by
-  `c` rescales `G n` by `c⁻ⁿ`, `℘` by `c⁻²` and `℘'` by `c⁻³`.
+  `PeriodPair.weierstrassP_smul`, `PeriodPair.derivWeierstrassP_smul`,
+  `PeriodPair.deriv_derivWeierstrassP_smul`: rescaling the lattice by `c` rescales `G n` by `c⁻ⁿ`,
+  `℘` by `c⁻²`, `℘'` by `c⁻³` and `℘''` by `c⁻⁴`.
 * `PeriodPair.weierstrassZeta_smul`, `PeriodPair.quasiPeriod_smul`: rescaling the lattice by `c`
   rescales `ζ` and the quasi-periods by `c⁻¹`.
 * `PeriodPair.G_eq_of_lattice_eq`, `PeriodPair.weierstrassP_eq_of_lattice_eq`,
@@ -953,6 +954,16 @@ lemma derivWeierstrassP_smul (z : ℂ) : ℘'[c • L] (c * z) = ℘'[L] z / (c 
     mul_inv]
   ring
 
+/-- `℘''(c z; c Λ) = c⁻⁴ ℘''(z; Λ)`. -/
+@[simp]
+lemma deriv_derivWeierstrassP_smul (z : ℂ) :
+    deriv ℘'[c • L] (c * z) = deriv ℘'[L] z / (c : ℂ) ^ 4 := by
+  have h : ℘'[c • L] = fun w ↦ ℘'[L] ((c : ℂ)⁻¹ * w) / (c : ℂ) ^ 3 := by
+    ext w
+    rw [← derivWeierstrassP_smul, mul_inv_cancel_left₀ c.ne_zero]
+  rw [h, deriv_div_const, deriv_comp_mul_left, smul_eq_mul, inv_mul_cancel_left₀ c.ne_zero]
+  field_simp
+
 /-- `ζ(c z; c Λ) = c⁻¹ ζ(z; Λ)`. -/
 @[simp]
 lemma weierstrassZeta_smul (z : ℂ) :
@@ -1296,6 +1307,31 @@ theorem isIntegral_of_mem_leftOrder_lattice {α : ℂ} (hα : α ∈ L.lattice.l
   isIntegral_of_smul_mem_submodule L.lattice
     (fun h ↦ L.ω₁_ne_zero ((Submodule.eq_bot_iff _).mp h _ L.ω₁_mem_lattice))
     (Submodule.fg_span (Set.toFinite _)) α (Submodule.mem_leftOrder_iff.mp hα)
+
+variable (L) in
+/-- Some half-period is moved out of the lattice by `α`, if `α + conj(α) = 1`: otherwise `α / 2`
+would be a multiplier of the lattice, hence an algebraic integer, and so would be
+`α / 2 + conj(α) / 2 = 1 / 2`. -/
+theorem exists_two_mul_mem_mul_notMem {α : ℂ} (hα : α + (starRingEnd ℂ) α = 1) :
+    ∃ x : ℂ, 2 * x ∈ L.lattice ∧ α * x ∉ L.lattice := by
+  by_contra! h
+  have hmem : α / 2 ∈ L.lattice.leftOrder := by
+    rw [Submodule.mem_leftOrder_iff]
+    intro l hl
+    have := h (l / 2) (by rwa [mul_div_cancel₀ _ two_ne_zero])
+    rwa [mul_div_assoc', ← div_mul_eq_mul_div] at this
+  have hint := L.isIntegral_of_mem_leftOrder_lattice hmem
+  have hhalf : IsIntegral ℤ ((1 / 2 : ℚ) : ℂ) := by
+    have heq : α / 2 + (starRingEnd ℂ).toIntAlgHom (α / 2) = ((1 / 2 : ℚ) : ℂ) := by
+      rw [RingHom.toIntAlgHom_apply, map_div₀, map_ofNat, ← add_div, hα]
+      push_cast
+      ring
+    exact heq ▸ hint.add (hint.map (starRingEnd ℂ).toIntAlgHom)
+  rw [isIntegral_ratCast_iff, IsIntegrallyClosed.isIntegral_iff (R := ℤ)] at hhalf
+  obtain ⟨n, hn⟩ := hhalf
+  have : (2 * n : ℚ) = 1 := by simp only [eq_intCast] at hn; rw [hn]; norm_num
+  norm_cast at this
+  omega
 
 /-- The real multipliers are the integers. -/
 theorem exists_intCast_eq_of_mem_leftOrder_lattice_of_im_eq_zero {α : ℂ}

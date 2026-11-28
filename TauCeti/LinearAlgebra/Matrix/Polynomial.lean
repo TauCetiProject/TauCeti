@@ -34,10 +34,13 @@ dimension, being the determinant of the transpose (`Matrix.reflect_det_X_smul_tr
 
 Taking entrywise coefficients commutes with multiplication by constant matrices on either side.
 In particular, linear coefficients of matrix-valued curves commute with constant conjugation.
+Right multiplication by a pencil `A + X B` sends coefficient `d + 1` to the combination of
+coefficients `d + 1` and `d` against `A` and `B` (`Matrix.map_coeff_mul_map_C_add_X_smul`).
 
 Evaluating a polynomial in a matrix commutes with applying a ring homomorphism to the coefficients
 and to the entries (`Matrix.aeval_map`), and a rectangular matrix intertwining two square matrices
-intertwines every polynomial in them (`Matrix.aeval_mul_eq_mul_aeval`). Natural matrix identities
+intertwines every polynomial in them (`Matrix.aeval_mul_eq_mul_aeval`). A polynomial in a diagonal
+matrix is the diagonal matrix of its values (`Matrix.aeval_diagonal`). Natural matrix identities
 valid at unit parameters extend to all parameters by polynomial specialization
 (`Matrix.identity_of_units`).
 
@@ -111,6 +114,14 @@ theorem aeval_mul_eq_mul_aeval {m : Type*} [Fintype m] [DecidableEq m] [CommSemi
   rw [toLin'_mul, toLin'_mul, hA, hB, ← aeval_algHom_apply, ← aeval_algHom_apply]
   exact Module.End.aeval_comp_of_comp_eq hAV q
 
+/-- A polynomial evaluated at a diagonal matrix is the diagonal matrix of its values at the
+diagonal entries. -/
+@[simp]
+theorem aeval_diagonal [CommSemiring R] (d : n → R) (q : R[X]) :
+    aeval (diagonal d) q = diagonal fun i ↦ q.eval (d i) := by
+  rw [← diagonalAlgHom_apply R, aeval_algHom_apply, aeval_pi_apply, diagonalAlgHom_apply]
+  simp only [coe_aeval_eq_eval]
+
 omit [DecidableEq n] in
 /-- Taking an entrywise polynomial coefficient commutes with multiplication on the left by a
 constant matrix. -/
@@ -132,6 +143,19 @@ theorem map_coeff_mul_map_C [Semiring R] {m p : Type*}
     (P * A.map C).map (fun p ↦ p.coeff d) = P.map (fun p ↦ p.coeff d) * A := by
   ext i j
   simp [Matrix.mul_apply, coeff_mul_C]
+
+omit [DecidableEq n] in
+/-- Taking coefficient `d + 1` after right multiplication by the pencil `A + X B`
+combines coefficient `d + 1` of the input with `A` and coefficient `d` with `B`. -/
+@[simp]
+theorem map_coeff_mul_map_C_add_X_smul [Semiring R] {m p : Type*}
+    (P : Matrix m n R[X]) (A B : Matrix n p R) (d : ℕ) :
+    (P * (A.map C + (X : R[X]) • B.map C)).map (fun p ↦ p.coeff (d + 1)) =
+      P.map (fun p ↦ p.coeff (d + 1)) * A + P.map (fun p ↦ p.coeff d) * B := by
+  rw [Matrix.mul_add]
+  ext i j
+  simp only [Matrix.map_apply, Matrix.add_apply, Matrix.mul_apply, Matrix.smul_apply, smul_eq_mul,
+    coeff_add, finsetSum_coeff, ← mul_assoc, coeff_mul_C, coeff_mul_X]
 
 variable [CommRing R]
 
