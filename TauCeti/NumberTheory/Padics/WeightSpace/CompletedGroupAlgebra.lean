@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.Padics.UnitsDecomposition.Logarithm
 public import TauCeti.RingTheory.RegularLocalRing.PowerSeries
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.CoordinateTopology
 import TauCeti.NumberTheory.Padics.PadicIntegers
-import TauCeti.RingTheory.PowerSeries.PiTopology
+import TauCeti.Topology.Algebra.MonoidAlgebra.PowerSeries
 
 /-!
 # The completed group algebra `ℤ_p[[ℤ_pˣ]]` in weight coordinates
@@ -291,29 +291,19 @@ open scoped PadicUnitsModuleTopology
 /-- The odd-prime splitting `padicUnitsCompletedGroupAlgebraSplitting` is continuous. -/
 theorem continuous_padicUnitsCompletedGroupAlgebraSplitting :
     Continuous (padicUnitsCompletedGroupAlgebraSplitting hp) := by
-  refine continuous_pi fun ψ ↦
-    ((PowerSeries.WithPiTopology.continuous_map
-      (IsModuleTopology.continuous_of_linearMap ψ.charEval.toLinearMap)).comp
-      (continuous_padicUnitsCoordinate_symm p)).congr fun z ↦
-        (padicUnitsPowerSeriesSplitting_apply hp _ ψ).symm
+  have := hasEnoughRootsOfUnity_zmodUnits_padicUnitsDepth p
+  exact (continuous_powerSeriesCharEvalEquiv (isUnit_card_zmodUnits_padicUnitsDepth hp)).comp
+    (continuous_padicUnitsCoordinate_symm p)
 
 /-- The inverse of `padicUnitsCompletedGroupAlgebraSplitting` is continuous. -/
 theorem continuous_padicUnitsCompletedGroupAlgebraSplitting_symm :
     Continuous (padicUnitsCompletedGroupAlgebraSplitting hp).symm := by
-  let Δ := (ZMod (p ^ padicUnitsDepth p))ˣ
-  have : ContinuousAdd (MonoidAlgebra ℤ_[p] Δ) := IsModuleTopology.toContinuousAdd ℤ_[p] _
-  have : ContinuousSMul ℤ_[p] (MonoidAlgebra ℤ_[p] Δ) := IsModuleTopology.toContinuousSMul ℤ_[p] _
   have := hasEnoughRootsOfUnity_zmodUnits_padicUnitsDepth p
-  let _ : Fintype (Δ →* ℤ_[p]ˣ) := Fintype.ofFinite _
-  refine ((continuous_padicUnitsCoordinate p).comp
-    (continuous_iff_continuousAt (f := (padicUnitsPowerSeriesSplitting hp).symm).mpr fun F ↦
-      (PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto _ _ _ _).mpr fun n ↦ ?_)).congr
-        fun F ↦ by simp [padicUnitsCompletedGroupAlgebraSplitting, AlgEquiv.symm_trans_apply]
-  refine ((continuous_finsetSum (s := Finset.univ)
-    (f := fun (χ : Δ →* ℤ_[p]ˣ) (G : (Δ →* ℤ_[p]ˣ) → ℤ_[p]⟦X⟧) ↦ (G χ).coeff n • charIdempotent χ)
-    fun χ _ ↦ ((PowerSeries.WithPiTopology.continuous_coeff ℤ_[p] n).comp
-      (continuous_apply χ)).smul continuous_const).congr fun G ↦ ?_).continuousAt
-  rw [padicUnitsPowerSeriesSplitting, coeff_powerSeriesCharEvalEquiv_symm, charEvalEquiv_symm_apply]
+  exact ((continuous_padicUnitsCoordinate p).comp
+    (continuous_powerSeriesCharEvalEquiv_symm
+      (isUnit_card_zmodUnits_padicUnitsDepth hp))).congr fun F ↦ by
+    simp [padicUnitsCompletedGroupAlgebraSplitting, padicUnitsPowerSeriesSplitting,
+      AlgEquiv.symm_trans_apply]
 
 end
 

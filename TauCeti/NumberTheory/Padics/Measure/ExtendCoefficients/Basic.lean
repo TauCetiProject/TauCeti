@@ -463,12 +463,12 @@ end OperatorNorm
 section WeakContinuity
 
 variable [CompactSpace X] [T2Space X] [TotallyDisconnectedSpace X] {K O : Type*}
-  [NontriviallyNormedField K] [CompleteSpace K] [IsUltrametricDist K] [NormedCommRing O]
+  [NormedCommRing K] [CompleteSpace K] [IsUltrametricDist K] [NormedCommRing O]
 
 open Topology in
-/-- For a continuous contractive `j : O →+* K`, `μ ↦ extendCoefficients j hj μ f` is weakly
-continuous on `D(X, O)` for every `f : C(X, K)`. -/
-theorem continuous_extendCoefficients_apply_weak {j : O →+* K} (hj : ∀ a, ‖j a‖ ≤ 1)
+/-- For a continuous uniformly norm-bounded `j : O →+* K`, `μ ↦ extendCoefficients j hj μ f` is
+weakly continuous on `D(X, O)` for every `f : C(X, K)`. -/
+theorem continuous_extendCoefficients_apply_weak {B : ℝ} {j : O →+* K} (hj : ∀ a, ‖j a‖ ≤ B)
     (hjc : Continuous j) (f : C(X, K)) :
     @Continuous _ _ (WeakTopology (X := X) (R := O) (E := O)) _ fun μ : D(X, O) ↦
       extendCoefficients j hj μ f := by
@@ -485,11 +485,16 @@ theorem continuous_extendCoefficients_apply_weak {j : O →+* K} (hj : ∀ a, �
       hjc.comp <| (continuous_apply a).comp (continuous_finiteProjection q)
   refine continuous_of_uniform_approx_of_continuous fun u hu ↦ ?_
   obtain ⟨ε, hε, hεu⟩ := Metric.mem_uniformity_dist.mp hu
-  obtain ⟨φ, hφf⟩ := LocallyConstant.denseRange_toContinuousMap.exists_dist_lt f hε
+  have hB' : 0 < max B 1 := zero_lt_one.trans_le (le_max_right _ _)
+  obtain ⟨φ, hφf⟩ := LocallyConstant.denseRange_toContinuousMap.exists_dist_lt f (div_pos hε hB')
   refine ⟨_, hloc φ, fun μ ↦ hεu ?_⟩
-  rw [dist_eq_norm, ← map_sub, ← coe_toCLMEquiv]
-  exact ((ContinuousLinearMap.le_opNorm _ _).trans <| mul_le_of_le_one_left (norm_nonneg _) <|
-    norm_toCLMEquiv_extendCoefficients_le j hj _).trans_lt (by rwa [← dist_eq_norm])
+  rw [dist_eq_norm, ← map_sub]
+  calc ‖extendCoefficients j hj μ (f - (φ : C(X, K)))‖
+      ≤ B * ‖f - (φ : C(X, K))‖ := norm_extendCoefficients_apply_le μ j hj _
+    _ ≤ max B 1 * ‖f - (φ : C(X, K))‖ := by gcongr; exact le_max_left _ _
+    _ < max B 1 * (ε / max B 1) := by
+        gcongr; rwa [← dist_eq_norm]
+    _ = ε := mul_div_cancel₀ _ hB'.ne'
 
 end WeakContinuity
 

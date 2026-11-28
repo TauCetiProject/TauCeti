@@ -23,6 +23,8 @@ factors that can affect it. Over a discrete commutative ring, the coefficientwis
   is continuous for the coefficientwise topology.
 * `PowerSeries.WithPiTopology.continuous_map`: `PowerSeries.map` of a continuous ring homomorphism
   is continuous for the coefficientwise topology.
+* `PowerSeries.WithPiTopology.ringHom_ext` and `PowerSeries.WithPiTopology.algHom_ext`: continuous
+  ring and algebra homomorphisms out of `R⟦X⟧` agree once they agree on `C` and `X`.
 * `PowerSeries.WithPiTopology.hasProd_of_X_pow_dvd_sub_one`: convergence and finite-cutoff
   coefficients for products whose factors approach `1` modulo increasing powers of `X`.
 * `PowerSeries.WithPiTopology.isAdic_span_X`: over a discrete commutative ring, the
@@ -59,6 +61,24 @@ theorem continuous_map [Semiring R] [Semiring S] {f : R →+* S} (hf : Continuou
     exact fun n ↦ by
       simp only [coeff_map]
       exact (hf.comp (continuous_coeff R n)).continuousAt.tendsto
+
+/-- Two continuous ring homomorphisms out of `R⟦X⟧` (for the coefficientwise topology) into a
+Hausdorff space agree if they agree on constants and on `X`. -/
+theorem ringHom_ext [CommSemiring R] [Semiring S] [T2Space S] {φ ψ : R⟦X⟧ →+* S}
+    (hφ : Continuous φ) (hψ : Continuous ψ) (hC : ∀ r, φ (C r) = ψ (C r)) (hX : φ X = ψ X) :
+    φ = ψ := by
+  have hpoly : φ.comp Polynomial.coeToPowerSeries.ringHom =
+      ψ.comp Polynomial.coeToPowerSeries.ringHom :=
+    Polynomial.ringHom_ext (fun r ↦ by simpa using hC r) (by simpa using hX)
+  exact DFunLike.coe_injective <|
+    (denseRange_toPowerSeries R).equalizer hφ hψ (funext fun P ↦ RingHom.congr_fun hpoly P)
+
+/-- Two continuous `A`-algebra homomorphisms out of `R⟦X⟧` (for the coefficientwise topology) into
+a Hausdorff space agree if they agree on constants and on `X`. -/
+theorem algHom_ext {A : Type*} [CommSemiring A] [CommSemiring R] [Semiring S] [Algebra A R]
+    [Algebra A S] [T2Space S] {φ ψ : R⟦X⟧ →ₐ[A] S} (hφ : Continuous φ) (hψ : Continuous ψ)
+    (hC : ∀ r, φ (C r) = ψ (C r)) (hX : φ X = ψ X) : φ = ψ :=
+  AlgHom.toRingHom_injective (ringHom_ext hφ hψ hC hX)
 
 end Semiring
 

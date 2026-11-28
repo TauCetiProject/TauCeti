@@ -93,7 +93,10 @@ noncomputable def powerSeriesCharEvalEquiv (hG : IsUnit (Nat.card G : O)) :
   { AlgHom.pi fun ψ : G →* Oˣ ↦ PowerSeries.mapAlgHom ψ.charEval with
     invFun F := PowerSeries.mk fun n ↦ (charEvalEquiv hG).symm (fun ψ ↦ PowerSeries.coeff n (F ψ))
     left_inv φ := PowerSeries.ext fun n ↦ by
-      simp only [PowerSeries.coeff_mk]; exact (charEvalEquiv hG).symm_apply_apply _
+      simp only [PowerSeries.coeff_mk, AlgHom.toFun_eq_coe, AlgHom.pi_apply,
+        PowerSeries.mapAlgHom_apply, PowerSeries.coeff_map, RingHom.coe_coe,
+        ← charEvalEquiv_apply hG]
+      exact (charEvalEquiv hG).symm_apply_apply _
     right_inv F := funext fun ψ ↦ PowerSeries.ext fun n ↦ by
       simpa only [AlgHom.toFun_eq_coe, AlgHom.pi_apply, PowerSeries.mapAlgHom_apply,
         PowerSeries.coeff_map, PowerSeries.coeff_mk, RingHom.coe_coe, ← charEvalEquiv_apply hG]

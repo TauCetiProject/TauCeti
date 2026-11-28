@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.PiTopology
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
+public import TauCeti.Algebra.MonoidAlgebra.CharGroupRing.Splitting
 public import TauCeti.Algebra.MonoidAlgebra.PowerSeries
 import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.RingTheory.PowerSeries.PiTopology
@@ -26,6 +27,12 @@ commuting with the image of `η`, then the lifted map through `(powerSeriesAlgEq
 evaluates `F ∈ A[M]⟦X⟧` via the convergent series whose `n`-th term applies the coefficientwise lift
 to `F.coeff n` multiplied by `t ^ n`.
 
+When `G` is a finite commutative group, `O` is a topological domain with enough roots of unity of
+exponent `exp(G)` in which `#G` is a unit, and `O[G]` carries the `O`-module topology, the character
+splitting `TauCeti.powerSeriesCharEvalEquiv hG : O[G]⟦X⟧ ≃ₐ[O] ((G →* Oˣ) → O⟦X⟧)` is a
+homeomorphism (`TauCeti.continuous_powerSeriesCharEvalEquiv`,
+`TauCeti.continuous_powerSeriesCharEvalEquiv_symm`).
+
 ## Main results
 
 * `TauCeti.continuous_coeff_powerSeriesAlgEquiv_symm`: extracting the `m`-coefficient series
@@ -38,6 +45,10 @@ to `F.coeff n` multiplied by `t ^ n`.
 * `TauCeti.hasSum_liftNCAlgHom_powerSeriesAlgEquiv_symm`: convergent power-series expansion of
   `MonoidAlgebra.liftNCAlgHom ε η h_comm` along `(MonoidAlgebra.powerSeriesAlgEquiv R R M).symm`
   using `MonoidAlgebra.lift R B M η`.
+* `TauCeti.continuous_powerSeriesCharEvalEquiv` and
+  `TauCeti.continuous_powerSeriesCharEvalEquiv_symm`: `TauCeti.powerSeriesCharEvalEquiv` is a
+  homeomorphism for the `O`-module topology on `O[G]` and the coefficientwise topologies on
+  `O[G]⟦X⟧` and `(G →* Oˣ) → O⟦X⟧`.
 -/
 
 public section
@@ -120,5 +131,43 @@ theorem hasSum_liftNCAlgHom_powerSeriesAlgEquiv_symm {R M B : Type*} [CommSemiri
     hasSum_liftNC_powerSeriesAlgEquiv_symm (R := R) (A := R) (ε := (ε : PowerSeries R →+ B))
       (f := (algebraMap R B : R →+ B))
       (fun φ ↦ by simpa only [Algebra.smul_def, AddMonoidHom.coe_ofClass] using hε φ) η ht F
+
+section CharEval
+
+variable {O G : Type*} [CommRing O] [IsDomain O] [TopologicalSpace O] [CommGroup G]
+  [Finite G] [HasEnoughRootsOfUnity O (Monoid.exponent G)]
+  [TopologicalSpace (MonoidAlgebra O G)] [IsModuleTopology O (MonoidAlgebra O G)]
+
+/-- **Continuity of the character splitting on `O[G]⟦X⟧`.** For the `O`-module topology on `O[G]`
+and the coefficientwise topologies on `O[G]⟦X⟧` and `(G →* Oˣ) → O⟦X⟧`, `powerSeriesCharEvalEquiv`
+is continuous. -/
+theorem continuous_powerSeriesCharEvalEquiv [ContinuousAdd O] [ContinuousSMul O O]
+    (hG : IsUnit (Nat.card G : O)) :
+    Continuous (powerSeriesCharEvalEquiv hG) :=
+  continuous_pi fun ψ ↦
+    (PowerSeries.WithPiTopology.continuous_map
+      (IsModuleTopology.continuous_of_linearMap ψ.charEval.toLinearMap)).congr fun φ ↦
+        (powerSeriesCharEvalEquiv_apply hG φ ψ).symm
+
+/-- **Continuity of the inverse character splitting on `O[G]⟦X⟧`.** For the `O`-module topology
+on `O[G]` and the coefficientwise topologies on `(G →* Oˣ) → O⟦X⟧` and `O[G]⟦X⟧`,
+`(powerSeriesCharEvalEquiv hG).symm` is continuous. -/
+theorem continuous_powerSeriesCharEvalEquiv_symm (hG : IsUnit (Nat.card G : O)) :
+    Continuous (powerSeriesCharEvalEquiv hG).symm := by
+  classical
+  have : ContinuousAdd (MonoidAlgebra O G) := IsModuleTopology.toContinuousAdd O _
+  have : ContinuousSMul O (MonoidAlgebra O G) := IsModuleTopology.toContinuousSMul O _
+  let _ : Fintype G := Fintype.ofFinite G
+  let _ : Fintype (G →* Oˣ) := Fintype.ofFinite _
+  refine continuous_iff_continuousAt.mpr fun F ↦
+    (PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto _ _ _ _).mpr fun n ↦ ?_
+  refine ((continuous_finsetSum (s := Finset.univ)
+    (f := fun (χ : G →* Oˣ) (H : (G →* Oˣ) → PowerSeries O) ↦
+      (H χ).coeff n • charIdempotent χ)
+    fun χ _ ↦ ((PowerSeries.WithPiTopology.continuous_coeff O n).comp
+      (continuous_apply χ)).smul continuous_const).congr fun H ↦ ?_).continuousAt
+  rw [coeff_powerSeriesCharEvalEquiv_symm, charEvalEquiv_symm_apply]
+
+end CharEval
 
 end TauCeti

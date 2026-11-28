@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.Padics.WeightSpace.GeneratorChange
 import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.RingTheory.PowerSeries.Binomial
+import TauCeti.RingTheory.PowerSeries.PiTopology
 import TauCeti.Topology.Algebra.MonoidAlgebra.PowerSeries
 
 /-!
@@ -89,6 +90,17 @@ private theorem continuous_liftPS [TopologicalSpace B] [IsTopologicalRing B] (h�
   (continuous_liftNCAlgHom_powerSeriesAlgEquiv_symm hε
     ((Units.coeHom B).comp η) (fun _ _ ↦ Commute.all _ _)).comp
     (continuous_padicUnitsCoordinate_symm p)
+
+private theorem hasSum_liftPS_padicUnitsCoordinate [TopologicalSpace B] [ContinuousAdd B]
+    [ContinuousMul B] {t : B}
+    (hε : ∀ φ : PowerSeries ℤ_[p], HasSum (fun n : ℕ ↦ φ.coeff n • t ^ n) (ε φ))
+    (F : PowerSeries (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ)) :
+    HasSum (fun n : ℕ ↦ MonoidAlgebra.lift ℤ_[p] B (ZMod (p ^ padicUnitsDepth p))ˣ
+        ((Units.coeHom B).comp η) (F.coeff n) * t ^ n)
+      (liftPS ε η (padicUnitsCoordinate p F)) := by
+  simpa only [liftPS, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.symm_apply_apply] using
+    hasSum_liftNCAlgHom_powerSeriesAlgEquiv_symm hε ((Units.coeHom B).comp η)
+      (fun _ _ ↦ Commute.all _ _) (fun _ ↦ Commute.all _ _) F
 end LiftHelper
 
 namespace WeightSpace
@@ -237,11 +249,8 @@ theorem hasSum_adicSpecialize_padicUnitsCoordinate (κ : WeightSpace p S)
     (F : PowerSeries (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ)) :
     HasSum (fun n : ℕ ↦ MonoidAlgebra.lift ℤ_[p] S (ZMod (p ^ padicUnitsDepth p))ˣ
         ((Units.coeHom S).comp κ.finiteChar) (F.coeff n) * κ.coord ^ n)
-      (κ.adicSpecialize (padicUnitsCoordinate p F)) := by
-  simpa only [adicSpecialize, liftPS, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-    AlgEquiv.symm_apply_apply] using
-    hasSum_liftNCAlgHom_powerSeriesAlgEquiv_symm (PowerSeries.hasSum_aeval κ.hasEval_coord)
-      ((Units.coeHom S).comp κ.finiteChar) (fun _ _ ↦ Commute.all _ _) (fun _ ↦ Commute.all _ _) F
+      (κ.adicSpecialize (padicUnitsCoordinate p F)) :=
+  hasSum_liftPS_padicUnitsCoordinate κ.finiteChar (PowerSeries.hasSum_aeval κ.hasEval_coord) F
 theorem adicSpecialize_padicUnitsCoordinate_eq_tsum (κ : WeightSpace p S)
     (F : PowerSeries (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ)) :
     κ.adicSpecialize (padicUnitsCoordinate p F) = ∑' n : ℕ,
@@ -283,7 +292,9 @@ theorem existsUnique_continuous_algHom_of_hasEval (η : (ZMod (p ^ padicUnitsDep
       (∀ δ, φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsSection p δ)) = η δ) ∧
       φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p) - 1) = z :=
   existsUnique_of_specializeEquiv adicSpecializeEquiv (fun κ x ↦ κ.adicSpecialize_of x)
-    (fun _ _ ↦ rfl) (existsUnique_character_of_hasEval η hz)
+    (fun _ x ↦ by
+      simp only [adicSpecializeEquiv_symm_apply]; exact coe_ofContinuousRingHom_apply _ _ x)
+    (existsUnique_character_of_hasEval η hz)
 
 @[simp] theorem adicSpecialize_universal :
     (universal p).adicSpecialize = AlgHom.id ℤ_[p] (completedGroupAlgebra ℤ_[p] ℤ_[p]ˣ) :=
@@ -330,11 +341,9 @@ theorem hasSum_normedSpecialize_padicUnitsCoordinate (κ : WeightSpace p R)
     (F : PowerSeries (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ)) :
     HasSum (fun n : ℕ ↦ MonoidAlgebra.lift ℤ_[p] R (ZMod (p ^ padicUnitsDepth p))ˣ
         ((Units.coeHom R).comp κ.finiteChar) (F.coeff n) * κ.coord ^ n)
-      (κ.normedSpecialize (padicUnitsCoordinate p F)) := by
-  simpa only [normedSpecialize, liftPS, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-    AlgEquiv.symm_apply_apply] using
-    hasSum_liftNCAlgHom_powerSeriesAlgEquiv_symm (hasSum_padicPowerSeriesEval p κ.tendsto_coord_pow)
-      ((Units.coeHom R).comp κ.finiteChar) (fun _ _ ↦ Commute.all _ _) (fun _ ↦ Commute.all _ _) F
+      (κ.normedSpecialize (padicUnitsCoordinate p F)) :=
+  hasSum_liftPS_padicUnitsCoordinate κ.finiteChar
+    (hasSum_padicPowerSeriesEval p κ.tendsto_coord_pow) F
 theorem normedSpecialize_padicUnitsCoordinate_eq_tsum (κ : WeightSpace p R)
     (F : PowerSeries (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ)) :
     κ.normedSpecialize (padicUnitsCoordinate p F) = ∑' n : ℕ,
@@ -377,7 +386,9 @@ theorem existsUnique_continuous_algHom_of_tendsto_pow
       (∀ δ, φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsSection p δ)) = η δ) ∧
       φ (completedGroupAlgebra.of ℤ_[p] ℤ_[p]ˣ (padicUnitsGenerator p) - 1) = t :=
   existsUnique_of_specializeEquiv normedSpecializeEquiv (fun κ x ↦ κ.normedSpecialize_of x)
-    (fun _ _ ↦ rfl) (existsUnique_character_of_tendsto_pow η ht)
+    (fun _ x ↦ by
+      simp only [normedSpecializeEquiv_symm_apply]; exact coe_ofContinuousRingHom_apply _ _ x)
+    (existsUnique_character_of_tendsto_pow η ht)
 
 /-- When `‖t‖ < 1`, `η` and `t` determine a unique continuous `ℤ_p`-algebra homomorphism out of
 `ℤ_p[[ℤ_pˣ]]`. -/
@@ -402,25 +413,17 @@ theorem normedSpecialize_comp_padicUnitsCoordinateAt (κ : WeightSpace p R) (u :
         ((Units.coeHom R).comp κ.finiteChar) fun _ _ ↦ Commute.all _ _).comp
         (MonoidAlgebra.powerSeriesAlgEquiv ℤ_[p] ℤ_[p]
           (ZMod (p ^ padicUnitsDepth p))ˣ).symm.toAlgHom := by
-  let Δ := (ZMod (p ^ padicUnitsDepth p))ˣ
-  let L₁ := κ.normedSpecialize.comp (padicUnitsCoordinateAt p u).toAlgHom
-  let L₂ := (MonoidAlgebra.liftNCAlgHom (padicPowerSeriesEval p (κ.tendsto_coordAt_pow u))
-    ((Units.coeHom R).comp κ.finiteChar) fun _ _ ↦ Commute.all _ _).comp
-    (MonoidAlgebra.powerSeriesAlgEquiv ℤ_[p] ℤ_[p] Δ).symm.toAlgHom
-  have hpoly : L₁.toRingHom.comp Polynomial.coeToPowerSeries.ringHom =
-      L₂.toRingHom.comp Polynomial.coeToPowerSeries.ringHom := by
-    refine Polynomial.ringHom_ext' ?_ ?_
-    · refine MonoidAlgebra.ringHom_ext (fun a ↦ ?_) (fun δ ↦ ?_)
-      · simp [L₁, L₂, Δ, AlgHom.commutes]
-      · simp [L₁, L₂, Δ, ← finiteChar_apply]
-    · simp [L₁, L₂, Δ, coordAt_eq_principalChar_sub_one, principalChar_apply]
-  exact AlgHom.coe_fn_injective <|
-    (PowerSeries.WithPiTopology.denseRange_toPowerSeries (MonoidAlgebra ℤ_[p] Δ)).equalizer
-      (κ.continuous_normedSpecialize.comp (continuous_padicUnitsCoordinateAt p u))
-      (continuous_liftNCAlgHom_powerSeriesAlgEquiv_symm
-        (continuous_padicPowerSeriesEval p (κ.tendsto_coordAt_pow u))
-        ((Units.coeHom R).comp κ.finiteChar) (fun _ _ ↦ Commute.all _ _))
-      (funext fun P ↦ RingHom.congr_fun hpoly P)
+  refine PowerSeries.WithPiTopology.algHom_ext
+    (κ.continuous_normedSpecialize.comp (continuous_padicUnitsCoordinateAt p u))
+    (continuous_liftNCAlgHom_powerSeriesAlgEquiv_symm
+      (continuous_padicPowerSeriesEval p (κ.tendsto_coordAt_pow u))
+      ((Units.coeHom R).comp κ.finiteChar) (fun _ _ ↦ Commute.all _ _))
+    (fun r ↦ ?_) ?_
+  · induction r using MonoidAlgebra.induction_linear with
+    | zero => simp
+    | add x y hx hy => simp [map_add, hx, hy]
+    | single δ a => simp [AlgHom.commutes, ← finiteChar_apply]
+  · simp [coordAt_eq_principalChar_sub_one, principalChar_apply]
 
 /-- **Generator-change series expansion.** Specialising `padicUnitsCoordinateAt p u F` at `κ`
 evaluates the finite-part coefficients against powers of `κ.coordAt u`. -/
