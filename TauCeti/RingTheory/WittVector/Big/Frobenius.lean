@@ -7,8 +7,6 @@ module
 
 public import TauCeti.RingTheory.WittVector.Big.Basic
 
-import Mathlib.Algebra.Module.Torsion.Free
-import Mathlib.Algebra.MvPolynomial.Counit
 import TauCeti.RingTheory.MvPolynomial.Expand
 
 /-!
@@ -73,13 +71,6 @@ private theorem frobeniusFun_map (n : ℕ) (f : R →+* R') (x : BigWittVector S
     exact (comp_aeval_apply x.coeff f.toIntAlgHom
       ((exists_frobeniusPolynomial S n).choose k)).symm
   · simp [coeff_eq_zero_of_notMem _ k hk]
-
--- Ghosts determine the vectors over the integral polynomial ring, so their equality survives
--- specialization by evaluating each variable at the coefficient it names.
-private theorem map_counit_eq_of_ghostMap_eq {x y : BigWittVector T (MvPolynomial R ℤ)}
-    (h : ghostMap x = ghostMap y) : map (counit R) x = map (counit R) y :=
-  congrArg (map (counit R))
-    (ghostMap_injective (fun _ _ hp ↦ .of_ne_zero (Nat.cast_ne_zero.2 hp.ne_zero)) h)
 
 -- A surjective parametrization lifts all inputs at once, including pairs of Witt vectors.
 -- Naturality then specializes an identity proved by comparing integral polynomial ghosts.
