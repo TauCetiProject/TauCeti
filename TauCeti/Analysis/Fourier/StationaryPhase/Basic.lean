@@ -19,11 +19,39 @@ open Metric
 
 namespace TauCeti
 
+private theorem neg_gradient_bound_vanishes {n : ℕ} {x x₀ : Fin n → ℂ} {Λ : ℝ}
+    (hΛ : Λ < 0) (D : (Fin n → ℂ) →L[ℂ] ℂ)
+    (hgrad : ‖x - x₀‖ ≤ Λ * ‖fun k : Fin n ↦ D (Pi.single k 1)‖) :
+    ‖x - x₀‖ = 0 ∧ D = 0 := by
+  have hGzero : ‖fun k : Fin n ↦ D (Pi.single k 1)‖ = 0 := by
+    by_contra hG
+    have hGpos : 0 < ‖fun k : Fin n ↦ D (Pi.single k 1)‖ :=
+      lt_of_le_of_ne (norm_nonneg _) (Ne.symm hG)
+    have hneg : Λ * ‖fun k : Fin n ↦ D (Pi.single k 1)‖ < 0 :=
+      mul_neg_of_neg_of_pos hΛ hGpos
+    linarith [norm_nonneg (x - x₀), hgrad]
+  have hdist : ‖x - x₀‖ = 0 := by
+    have h := hgrad
+    rw [hGzero, mul_zero] at h
+    exact le_antisymm h (norm_nonneg _)
+  have hcoords : (fun k : Fin n ↦ D (Pi.single k 1)) = 0 := norm_eq_zero.mp hGzero
+  have hcoordzero (k : Fin n) : D (Pi.single k 1) = 0 := by
+    have h := congrFun hcoords k
+    simpa using h
+  have hD : D = 0 := by
+    ext y
+    have hy : y = ∑ k : Fin n, y k • Pi.single k (1 : ℂ) := by
+      ext j
+      simp [Pi.single_apply]
+    rw [hy, map_sum]
+    simp [hcoordzero]
+  exact ⟨hdist, hD⟩
+
 /-- A lower bound on the complex gradient transfers to the real part of any rotation
 of the phase, with a loss depending only on the modulus of the multiplier. -/
 theorem norm_le_mul_norm_fderiv_re_of_norm_le_gradient {n : ℕ}
     {g : (Fin n → ℂ) → ℂ} {x x₀ : Fin n → ℂ} {c : ℂ} (hc : c ≠ 0)
-    (hg : DifferentiableAt ℂ g x) {Λ : ℝ} (hΛ : 0 ≤ Λ)
+    (hg : DifferentiableAt ℂ g x) {Λ : ℝ}
     (hgrad : ‖x - x₀‖ ≤ Λ * ‖fun k : Fin n ↦ fderiv ℂ g x (Pi.single k 1)‖) :
     ‖x - x₀‖ ≤ (2 * Λ / ‖c‖) *
       ‖fderiv ℝ (fun y ↦ (c * g y).re) x‖ := by
@@ -51,7 +79,17 @@ theorem norm_le_mul_norm_fderiv_re_of_norm_le_gradient {n : ℕ}
       ‖D v‖ * ‖c‖ = ‖c * D v‖ := by rw [norm_mul, mul_comm]
       _ ≤ |(c * D v).re| + |(c * D v).im| := Complex.norm_le_abs_re_add_abs_im _
       _ ≤ 2 * ‖A‖ := by linarith
-  exact hgrad.trans ((mul_le_mul_of_nonneg_left hcoord hΛ).trans_eq (by ring))
+  by_cases hΛ : 0 ≤ Λ
+  · exact hgrad.trans ((mul_le_mul_of_nonneg_left hcoord hΛ).trans_eq (by ring))
+  · obtain ⟨hdist, hD⟩ := neg_gradient_bound_vanishes (lt_of_not_ge hΛ) D hgrad
+    have hAzero : A = 0 := by
+      ext v
+      rw [hA, hD]
+      simp
+    rw [hdist]
+    change 0 ≤ (2 * Λ / ‖c‖) * ‖A‖
+    rw [hAzero]
+    simp
 
 /-- Cauchy estimates on two concentric balls, with a bound uniform in the analytic function
 and in the point of the smaller closed ball. -/

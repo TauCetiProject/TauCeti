@@ -127,7 +127,7 @@ private theorem exists_imaginary_phase_extension (n N : ℕ) {r Λ d : ℝ}
   · intro x hx
     have hxg := closedBall_subset_ball (show r < 2 * r by linarith) hx.1
     have hgl := norm_le_mul_norm_fderiv_re_of_norm_le_gradient (x₀ := 0)
-      (c := -I) (neg_ne_zero.mpr I_ne_zero) (hg x hxg).differentiableAt hΛ.le
+      (c := -I) (neg_ne_zero.mpr I_ne_zero) (hg x hxg).differentiableAt
       (by simpa only [sub_zero] using hgrad x hx.1)
     have heq : φ =ᶠ[nhds x] fun y ↦ (-I * g y).re := by
       filter_upwards [hg'eq x hx.1] with y hy
