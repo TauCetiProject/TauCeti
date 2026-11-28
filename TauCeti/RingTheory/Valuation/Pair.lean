@@ -33,6 +33,9 @@ valuation pair inside `F` (`ValuationSubring.isValuationPair_toSubring`).
 * `Subring.isValuationPair_top`: every `PreValuationRing A` is a valuation pair inside itself.
 * `Subring.IsValuationPair.pi`: the product `⨅ w, (R w).comap (Pi.evalRingHom B w)` of valuation
   pairs `R w ⊆ B w` is a valuation pair in `∀ w, B w`.
+* `Subring.IsValuationPair.comap`: a valuation pair `R ⊆ B` pulls back along an injective ring
+  homomorphism `A →+* B` whose range contains `R`; for instance, the integral finite adeles of a
+  Dedekind domain form a valuation pair, as the pullback of the full product of local integers.
 * `ValuationSubring.isValuationPair_toSubring`: every valuation subring of a field is a valuation
   pair inside that field.
 
@@ -124,6 +127,37 @@ theorem IsValuationPair.pi {R : ∀ w, Subring (B w)} (hR : ∀ w, (R w).IsValua
   · exact le_sup_right.trans (hle w) (mem_span_singleton_self _)
 
 end Pi
+
+section Comap
+
+variable {B : Type*} [CommRing B]
+
+/-- A valuation pair `R ⊆ B` pulls back along an injective ring homomorphism `f : A →+* B` whose
+range contains `R`: then `R.comap f` is a valuation pair in `A`. The idempotent and the
+multipliers that witness the condition in `B` lie in `R`, hence come from `A`. -/
+theorem IsValuationPair.comap {R : Subring B} (hR : R.IsValuationPair) {f : A →+* B}
+    (hf : Function.Injective f) (hRf : R ≤ f.range) : (R.comap f).IsValuationPair := by
+  have lift (x : R) : ∃ y : R.comap f, f y = x := by
+    obtain ⟨y, hy⟩ := hRf x.property
+    exact ⟨⟨y, by simp [hy]⟩, hy⟩
+  refine isValuationPair_iff.2 fun a b ↦ ?_
+  obtain ⟨e, he, hle⟩ := isValuationPair_iff.1 hR (f a) (f b)
+  obtain ⟨e', he'⟩ := lift e
+  -- a multiple in `B` of `f (a - e' * (a - b))` by an element of `R` is a multiple in `A`
+  have mem_of_mem {x : A} (hx : f x ∈ R ∙ (f a - e * (f a - f b))) :
+      x ∈ R.comap f ∙ (a - e' * (a - b)) := by
+    obtain ⟨r, hr⟩ := mem_span_singleton.1 hx
+    obtain ⟨r', hr'⟩ := lift r
+    refine mem_span_singleton.2 ⟨r', hf ?_⟩
+    simpa [Subring.smul_def, hr', he'] using hr
+  refine ⟨e', ?_, sup_le ((span_singleton_le_iff_mem _ _).2 ?_)
+    ((span_singleton_le_iff_mem _ _).2 ?_)⟩
+  · refine Subtype.ext (hf ?_)
+    simpa [he'] using congrArg Subtype.val he.eq
+  · exact mem_of_mem (le_sup_left.trans hle (mem_span_singleton_self _))
+  · exact mem_of_mem (le_sup_right.trans hle (mem_span_singleton_self _))
+
+end Comap
 
 end Subring
 
