@@ -90,6 +90,8 @@ elements has no proper subgroup of index less than `p`.
   products of representatives for the two successive ranges.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
   two facts on `Γ.withCenter`, when the centre is `{1, a}` and `a ∉ Γ`.
+* `Subgroup.index_pi'`: the index of a dependent product subgroup `Subgroup.pi Set.univ K` is the
+  product of the indices `(K i).index`.
 -/
 
 
@@ -526,6 +528,20 @@ theorem index_eq_two_mul_index_withCenter (ha : a ∈ Subgroup.center G) (haΓ :
     (hcenter : ∀ c ∈ Subgroup.center G, c = 1 ∨ c = a) : Γ.index = 2 * Γ.withCenter.index :=
   Subgroup.withCenter_def Γ ▸
     index_eq_two_mul_index_sup _ Subgroup.le_normalizer_of_normal ha haΓ hcenter
+
+/-- The index of a dependent product subgroup `Subgroup.pi Set.univ K` is the product of the
+indices `(K i).index`, generalizing Mathlib's `Subgroup.index_pi` to a dependent family of
+groups. -/
+@[to_additive /-- The index of a dependent product additive subgroup `AddSubgroup.pi Set.univ K`
+is the product of the indices `(K i).index`, generalizing Mathlib's `AddSubgroup.index_pi` to a
+dependent family of additive groups. -/]
+theorem index_pi' {ι : Type*} [Fintype ι] {F : ι → Type*} [∀ i, Group (F i)]
+    (K : ∀ i, Subgroup (F i)) :
+    (Subgroup.pi Set.univ K).index = ∏ i, (K i).index := by
+  simp_rw [index, ← Nat.card_pi]
+  refine Nat.card_congr
+    ((Quotient.congrRight fun x y ↦ ?_).trans (Setoid.piQuotientEquiv _).symm)
+  rw [QuotientGroup.leftRel_pi]
 
 end Subgroup
 

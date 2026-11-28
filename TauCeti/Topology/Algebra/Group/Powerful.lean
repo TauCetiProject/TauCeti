@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Powerful
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries
 
 /-!
@@ -44,13 +45,22 @@ separately where it is needed, as in `TauCeti.IsUniform`.
 * `TauCeti.closedPowerSubgroup_mul_le_map_subtype_closedPowerSubgroup`: `G^{mn} ≤ Kⁿ` for a closed
   subgroup `K` containing every `m`-th power.
 * `TauCeti.closedPowerSubgroup_pow_le_pLowerCentralSeries`: `G^{p^k} ≤ λ_k`.
+* `TauCeti.closedPowerSubgroup_zero`, `TauCeti.closedPowerSubgroup_of_subsingleton`,
+  `TauCeti.closedPowerSubgroup_eq_of_discreteTopology`: zero, subsingleton and discrete-topology
+  identifications for `closedPowerSubgroup`.
+* `TauCeti.isTopCharacteristic_closedPowerSubgroup`, `TauCeti.closedPowerSubgroup_prod`,
+  `TauCeti.closedPowerSubgroup_pi`: characteristicity and binary/indexed product compatibility.
 * `TauCeti.commutator_le_closedPowerSubgroup_two`: the commutator subgroup always lies in `G²`.
+* `TauCeti.isPowerful_iff_isPowerfullyEmbedded_top`: equivalence with
+  `Subgroup.IsPowerfullyEmbedded` on discrete groups.
+* `TauCeti.pow_ite_eq_ite_four`, `TauCeti.dvd_choose_two_ite_four`: arithmetic identities for the
+  powerful exponent `if p = 2 then 4 else p`.
 * `TauCeti.IsPowerful.closedPowerSubgroup_eq_pLowerCentralSeries_one`: in a powerful group,
   `Gᵖ = λ_1`.
-* `TauCeti.IsPowerful.of_surjective`, `TauCeti.isPowerful_congr`, `TauCeti.IsPowerful.prod`,
-  `TauCeti.isPowerful_of_isMulCommutative`: powerful groups are stable under continuous
-  surjections, topological group isomorphisms and binary products, and include the commutative
-  groups.
+* `TauCeti.IsPowerful.of_surjective`, `TauCeti.IsPowerful.quotient`, `TauCeti.isPowerful_congr`,
+  `TauCeti.IsPowerful.prod`, `TauCeti.IsPowerful.pi`, `TauCeti.isPowerful_of_isMulCommutative`:
+  powerful groups are stable under continuous surjections, quotients, topological group
+  isomorphisms and binary and indexed products, and include the commutative groups.
 
 ## References
 
@@ -146,6 +156,23 @@ theorem closedPowerSubgroup_mul_le_map_subtype_closedPowerSubgroup {K : Subgroup
 theorem closedPowerSubgroup_one : closedPowerSubgroup 1 G = ⊤ :=
   eq_top_iff.mpr fun g _ ↦ by simpa using pow_mem_closedPowerSubgroup (n := 1) g
 
+/-- In a `T1` topological group, `closedPowerSubgroup 0 G = ⊥`. -/
+@[simp]
+theorem closedPowerSubgroup_zero [T1Space G] : closedPowerSubgroup 0 G = ⊥ :=
+  le_bot_iff.mp <| (closedPowerSubgroup_le_iff (by simp)).mpr fun _ ↦ by simp
+
+/-- In a subsingleton topological group, every closed power subgroup is `⊤`. -/
+theorem closedPowerSubgroup_of_subsingleton [Subsingleton G] (n : ℕ) :
+    closedPowerSubgroup n G = ⊤ :=
+  Subsingleton.elim _ _
+
+/-- On a discrete group, `closedPowerSubgroup n G` agrees with `(⊤ : Subgroup G).powClosure n`. -/
+theorem closedPowerSubgroup_eq_of_discreteTopology [DiscreteTopology G] (n : ℕ) :
+    closedPowerSubgroup n G = (⊤ : Subgroup G).powClosure n := by
+  rw [closedPowerSubgroup_eq_topologicalClosure, ← Subgroup.powClosure_top]
+  exact le_antisymm (topologicalClosure_minimal _ le_rfl (isClosed_discrete _))
+    (le_topologicalClosure _)
+
 /-- The closed power subgroup `Gᵖ` lies in the first term `λ_1` of the lower `p`-series. -/
 theorem closedPowerSubgroup_le_pLowerCentralSeries_one {p : ℕ} :
     closedPowerSubgroup p G ≤ pLowerCentralSeries p G 1 :=
@@ -191,6 +218,11 @@ theorem _root_.ContinuousMulEquiv.map_closedPowerSubgroup_eq (e : G ≃ₜ* H) :
   (e : G →* H).map_closedPowerSubgroup_eq_of_surjective e.continuous
     e.toHomeomorph.isClosedMap e.surjective
 
+/-- Every closed power subgroup is topologically characteristic. -/
+theorem isTopCharacteristic_closedPowerSubgroup (n : ℕ) :
+    IsTopCharacteristic G (closedPowerSubgroup n G) :=
+  isTopCharacteristic_iff_map_eq.mpr fun φ ↦ φ.map_closedPowerSubgroup_eq
+
 /-- The product of the closed power subgroups of two groups lies in the closed power subgroup of
 their product. -/
 theorem prod_closedPowerSubgroup_le :
@@ -198,6 +230,37 @@ theorem prod_closedPowerSubgroup_le :
   prod_le_iff.mpr
     ⟨(MonoidHom.inl G H).map_closedPowerSubgroup_le (continuous_id.prodMk continuous_const),
       (MonoidHom.inr G H).map_closedPowerSubgroup_le (continuous_const.prodMk continuous_id)⟩
+
+/-- The closed `n`-th power subgroup of a product is the product of the closed `n`-th power
+subgroups. -/
+theorem closedPowerSubgroup_prod (n : ℕ) :
+    closedPowerSubgroup n (G × H) = (closedPowerSubgroup n G).prod (closedPowerSubgroup n H) :=
+  le_antisymm
+    ((closedPowerSubgroup_le_iff (by
+      rw [coe_prod]
+      exact isClosed_closedPowerSubgroup.prod isClosed_closedPowerSubgroup)).mpr fun x ↦
+      ⟨pow_mem_closedPowerSubgroup x.1, pow_mem_closedPowerSubgroup x.2⟩)
+    prod_closedPowerSubgroup_le
+
+/-- The closed `n`-th power subgroup of an arbitrary product is the product of the closed `n`-th
+power subgroups. -/
+theorem closedPowerSubgroup_pi {ι : Type*} {F : ι → Type*} [∀ i, Group (F i)]
+    [∀ i, TopologicalSpace (F i)] [∀ i, IsTopologicalGroup (F i)] (n : ℕ) :
+    closedPowerSubgroup n (∀ i, F i) =
+      Subgroup.pi Set.univ (fun i ↦ closedPowerSubgroup n (F i)) := by
+  classical
+  refine le_antisymm ((closedPowerSubgroup_le_iff (by
+    rw [coe_pi]; exact isClosed_set_pi fun _ _ ↦ isClosed_closedPowerSubgroup)).mpr
+      fun x i _ ↦ pow_mem_closedPowerSubgroup (x i)) fun x hx ↦ ?_
+  rw [← SetLike.mem_coe, ← (isClosed_closedPowerSubgroup (n := n) (G := ∀ i, F i)).closure_eq,
+    mem_closure_iff]
+  intro V hV hxV
+  obtain ⟨I, t, ht, htV⟩ := isOpen_pi_iff.mp hV x hxV
+  refine ⟨fun i ↦ if i ∈ I then x i else 1,
+    htV fun i hi ↦ by simpa [Finset.mem_coe.mp hi] using (ht i (Finset.mem_coe.mp hi)).2,
+    Submonoid.pi_mem_of_mulSingle_mem_aux I _ (fun i hi ↦ by simp [hi]) fun i hi ↦ by
+      simpa [hi] using (MonoidHom.mulSingle F i).map_closedPowerSubgroup_le
+        (continuous_mulSingle i) ⟨x i, hx i (Set.mem_univ i), rfl⟩⟩
 
 end PowerSubgroup
 
@@ -221,6 +284,31 @@ variable {p G}
 theorem isPowerful_iff :
     IsPowerful p G ↔ commutator G ≤ closedPowerSubgroup (if p = 2 then 4 else p) G := by
   rw [IsPowerful]
+
+/-- The power `p ^ (if p = 2 then 2 else 1)` equals the exponent `if p = 2 then 4 else p` appearing
+in `TauCeti.IsPowerful`. -/
+theorem pow_ite_eq_ite_four (p : ℕ) : p ^ (if p = 2 then 2 else 1) = if p = 2 then 4 else p := by
+  split_ifs with hp2
+  · subst hp2; decide
+  · exact pow_one p
+
+/-- For every prime `p`, `p` divides `(if p = 2 then 4 else p).choose 2`. -/
+theorem dvd_choose_two_ite_four {p : ℕ} (hp : p.Prime) :
+    p ∣ (if p = 2 then 4 else p).choose 2 := by
+  rcases hp.eq_two_or_odd' with rfl | ⟨k, rfl⟩
+  · decide
+  · split_ifs with h
+    · omega
+    · rw [Nat.choose_two_right, Nat.add_sub_cancel, mul_comm (2 * k + 1), mul_assoc,
+        Nat.mul_div_cancel_left _ two_pos]
+      exact dvd_mul_left _ _
+
+/-- On a discrete group, `IsPowerful p G` agrees with `(⊤ : Subgroup G).IsPowerfullyEmbedded p`. -/
+theorem isPowerful_iff_isPowerfullyEmbedded_top [DiscreteTopology G] :
+    IsPowerful p G ↔ (⊤ : Subgroup G).IsPowerfullyEmbedded p := by
+  rw [isPowerful_iff, Subgroup.isPowerfullyEmbedded_iff, closedPowerSubgroup_eq_of_discreteTopology,
+    commutator_def]
+  exact ⟨fun h ↦ ⟨inferInstance, h⟩, fun h ↦ h.2⟩
 
 /-- At an exponent other than `2`, powerfulness asks for the commutator subgroup to lie in
 `Gᵖ`. -/
@@ -266,6 +354,12 @@ theorem IsPowerful.of_surjective (hG : IsPowerful p G) (f : G →* H) (hf : Cont
   rw [commutator_def, ← map_top_of_surjective f hsurj, ← map_commutator, ← commutator_def]
   exact (map_mono hG).trans (f.map_closedPowerSubgroup_le hf)
 
+/-- A quotient of a powerful group by a normal subgroup is powerful. -/
+theorem IsPowerful.quotient (hG : IsPowerful p G) (N : Subgroup G) [N.Normal] :
+    IsPowerful p (G ⧸ N) :=
+  hG.of_surjective (QuotientGroup.mk' N) QuotientGroup.continuous_mk
+    (QuotientGroup.mk'_surjective N)
+
 /-- Powerfulness is invariant under topological group isomorphism. -/
 theorem isPowerful_congr (e : G ≃ₜ* H) : IsPowerful p G ↔ IsPowerful p H :=
   ⟨fun hG ↦ hG.of_surjective (e : G →* H) e.continuous e.surjective,
@@ -276,6 +370,13 @@ theorem IsPowerful.prod (hG : IsPowerful p G) (hH : IsPowerful p H) : IsPowerful
   rw [isPowerful_iff] at hG hH ⊢
   rw [commutator_def, ← top_prod_top, commutator_prod_prod, ← commutator_def, ← commutator_def]
   exact (prod_mono hG hH).trans prod_closedPowerSubgroup_le
+
+/-- **An arbitrary product of powerful groups is powerful.** -/
+theorem IsPowerful.pi {ι : Type*} {F : ι → Type*} [∀ i, Group (F i)] [∀ i, TopologicalSpace (F i)]
+    [∀ i, IsTopologicalGroup (F i)] (hF : ∀ i, IsPowerful p (F i)) : IsPowerful p (∀ i, F i) := by
+  rw [isPowerful_iff, closedPowerSubgroup_pi, commutator_def, Subgroup.commutator_le]
+  exact fun x _ y _ i _ ↦ (isPowerful_iff.mp (hF i)) (commutator_def (F i) ▸
+    commutator_mem_commutator (mem_top (x i)) (mem_top (y i)))
 
 end Powerful
 

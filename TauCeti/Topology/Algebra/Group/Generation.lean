@@ -43,11 +43,11 @@ criterion is in `TauCeti/Topology/Algebra/Group/Profinite/Generation.lean`.
 * `MonoidHom.ker_eq_topologicalClosure_normalClosure_insert_pow_of_orderOf_eq`: if a character
   kills all but one topological generator, whose image has finite order `m > 0`, its kernel is the
   closed normal closure of the killed generators and the `m`-th power of the remaining one.
-* `TauCeti.IsTopologicallyFinitelyGenerated.prod`: topological finite generation passes to binary
-  products.
 * `TauCeti.IsTopologicallyFinitelyGenerated.of_openSubgroup_of_finiteIndex`,
   `TauCeti.IsTopologicallyFinitelyGenerated.of_openSubgroup`: topological finite generation
   passes to open finite-index subgroups, in particular to open subgroups of compact groups.
+* `TauCeti.IsTopologicallyFinitelyGenerated.prod`, `TauCeti.IsTopologicallyFinitelyGenerated.pi`:
+  topological finite generation passes to binary and finite indexed products.
 * `MonoidHom.eqOn_topologicalClosure_closure` and
   `MonoidHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top`: continuous homomorphisms into a
   Hausdorff monoid agreeing on a set agree on the closed subgroup it generates, so such a
@@ -313,6 +313,27 @@ theorem IsTopologicallyFinitelyGenerated.prod (hG : IsTopologicallyFinitelyGener
   have hx : x = MonoidHom.inl G H x.1 * MonoidHom.inr G H x.2 := by simp
   rw [hx]
   exact mul_mem (hinl (Subgroup.mem_top x.1)) (hinr (Subgroup.mem_top x.2))
+
+/-- A finite indexed product of topologically finitely generated groups is topologically finitely
+generated. -/
+theorem IsTopologicallyFinitelyGenerated.pi {ι : Type*} [Finite ι] {M : ι → Type*}
+    [∀ i, Group (M i)] [∀ i, TopologicalSpace (M i)] [∀ i, IsTopologicalGroup (M i)]
+    (hM : ∀ i, IsTopologicallyFinitelyGenerated (M i)) :
+    IsTopologicallyFinitelyGenerated (∀ i, M i) := by
+  classical
+  choose s hs using hM
+  let u : Set (∀ i, M i) := ⋃ i, (MonoidHom.mulSingle M i) '' (s i : Set (M i))
+  have hu : u.Finite := Set.finite_iUnion fun i ↦ (s i).finite_toSet.image _
+  refine hu.isTopologicallyFinitelyGenerated
+    (eq_top_iff.mpr <| topologicalClosure_iSup_range_mulSingle_eq_top.ge.trans <|
+      Subgroup.topologicalClosure_minimal _ (iSup_le fun i ↦ ?_)
+        (Subgroup.isClosed_topologicalClosure _))
+  rintro _ ⟨x, rfl⟩
+  refine map_mem_closure (continuous_mulSingle i)
+    (by rw [← Subgroup.topologicalClosure_coe, hs i]; exact Subgroup.mem_top x) fun y hy ↦ ?_
+  exact ((Subgroup.closure_le _).mpr fun g hg ↦
+    Subgroup.subset_closure (Set.mem_iUnion.mpr ⟨i, g, hg, rfl⟩) :
+      Subgroup.closure (s i : Set (M i)) ≤ (Subgroup.closure u).comap (MonoidHom.mulSingle M i)) hy
 
 section OpenKernel
 
