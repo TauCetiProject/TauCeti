@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Milnor.Basic
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
+import TauCeti.Algebra.Homology.HomologySequenceLemmas
 
 /-!
 # Naturality of the Milnor sequence
@@ -15,6 +16,9 @@ A map of towers of complexes induces maps on their limit and product complexes. 
 commute with the inclusion and the difference map, so the two maps of the Milnor short
 exact sequence are natural. The connecting square retains the actual connecting morphism
 of the product-complex short exact sequence.
+
+A levelwise quasi-isomorphism of towers induces one on product complexes, and hence on limit
+complexes when both towers have surjective shifts (`ComplexTower.quasiIso_limComplexMap`).
 
 The complex shape is arbitrary, in particular allowing integer-graded chain and cochain
 complexes. Naturality of the map to the limit of homology requires no surjectivity;
@@ -196,5 +200,62 @@ theorem limOneToHomology_naturality (f : C ⟶ D)
       ((C.productHomologyEquiv i).symm x)
     simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using hn
   exact congrArg ((D.shortComplex_shortExact hD).δ i j hij) hp
+
+private def productComplexIsoPi (C : ComplexTower.{v} R c) :
+    C.productComplex ≅ ∏ᶜ fun n ↦ C.obj (op n) :=
+  C.isLimitProductComplexFan.conePointUniqueUpToIso (limit.isLimit _)
+
+private theorem productComplexMap_eq (f : C ⟶ D) :
+    productComplexMap f =
+      (productComplexIsoPi C).hom ≫ Limits.Pi.map (fun n ↦ f.app (op n)) ≫
+        (productComplexIsoPi D).inv := by
+  apply D.isLimitProductComplexFan.hom_ext
+  rintro ⟨n⟩
+  have hD : (productComplexIsoPi D).inv ≫ D.productComplexπ n = Pi.π _ n :=
+    D.isLimitProductComplexFan.conePointUniqueUpToIso_inv_comp (limit.isLimit _) ⟨n⟩
+  have hC : (productComplexIsoPi C).hom ≫ Pi.π _ n = C.productComplexπ n :=
+    C.isLimitProductComplexFan.conePointUniqueUpToIso_hom_comp (limit.isLimit _) ⟨n⟩
+  simp [hD, reassoc_of% hC]
+
+/-- A levelwise degree-`i` quasi-isomorphism of towers induces one on product complexes. -/
+instance quasiIsoAt_productComplexMap (f : C ⟶ D) (i : ι) [∀ n, QuasiIsoAt (f.app (op n)) i] :
+    QuasiIsoAt (productComplexMap f) i := by
+  rw [productComplexMap_eq f]
+  have : QuasiIsoAt (Limits.Pi.map fun n ↦ f.app (op n)) i :=
+    TauCeti.quasiIsoAt_pi_map (fun n ↦ f.app (op n)) i fun n ↦ inferInstance
+  infer_instance
+
+/-- A levelwise quasi-isomorphism of towers induces a quasi-isomorphism of product complexes. -/
+instance quasiIso_productComplexMap (f : C ⟶ D) [∀ n, QuasiIso (f.app (op n))] :
+    QuasiIso (productComplexMap f) :=
+  (quasiIso_iff _).2 fun i ↦
+    have := fun n ↦ (inferInstance : QuasiIso (f.app (op n))).quasiIsoAt i
+    inferInstance
+
+/-- For towers with surjective shifts, a levelwise quasi-isomorphism in degree `j` and all
+preceding degrees `i` with `c.Rel i j` induces an isomorphism on `H_j(lim)`. -/
+theorem isIso_homologyMap_limComplexMap (f : C ⟶ D)
+    (hC : ∀ k, Function.Surjective (C.term k).shift)
+    (hD : ∀ k, Function.Surjective (D.term k).shift) (j : ι)
+    (hrel : ∀ i, c.Rel i j → ∀ n, QuasiIsoAt (f.app (op n)) i)
+    [∀ n, QuasiIsoAt (f.app (op n)) j] :
+    IsIso (HomologicalComplex.homologyMap (limComplexMap f) j) := by
+  have h := HomologicalComplex.HomologySequence.isIso_homologyMap_τ₁ (shortComplexMap f)
+    (C.shortComplex_shortExact hC) (D.shortComplex_shortExact hD) j
+  rw [shortComplexMap_τ₁, shortComplexMap_τ₂, shortComplexMap_τ₃] at h
+  have hi (i : ι) (hij : c.Rel i j) :
+      IsIso (HomologicalComplex.homologyMap (productComplexMap f) i) :=
+    have := hrel i hij; (quasiIsoAt_iff_isIso_homologyMap _ i).1 inferInstance
+  have : IsIso (HomologicalComplex.homologyMap (productComplexMap f) j) :=
+    (quasiIsoAt_iff_isIso_homologyMap _ j).1 inferInstance
+  exact h (fun i hij ↦ by have := hi i hij; infer_instance) hi this inferInstance
+/-- For towers with surjective shifts, a levelwise quasi-iso induces a quasi-iso on `lim`. -/
+theorem quasiIso_limComplexMap (f : C ⟶ D) (hC : ∀ i, Function.Surjective (C.term i).shift)
+    (hD : ∀ i, Function.Surjective (D.term i).shift) [∀ n, QuasiIso (f.app (op n))] :
+    QuasiIso (limComplexMap f) := by
+  have h := HomologicalComplex.HomologySequence.quasiIso_τ₁ (shortComplexMap f)
+    (C.shortComplex_shortExact hC) (D.shortComplex_shortExact hD)
+  rw [shortComplexMap_τ₁, shortComplexMap_τ₂, shortComplexMap_τ₃] at h
+  exact h inferInstance inferInstance
 
 end TauCeti.ComplexTower
