@@ -203,19 +203,20 @@ noncomputable def IsOpen.quotientComapHomeomorphImage {r : Setoid X} {W : Set X}
   have hg : IsOpenQuotientMap g :=
     ⟨fun ⟨_, x, hxW, hx⟩ ↦ ⟨⟨x, hxW⟩, Subtype.ext hx⟩,
       g.continuous, (hq.comp hW.isOpenMap_subtypeVal).subtype_mk _⟩
+  have hr_iff (w₁ w₂ : W) : (r.comap (Subtype.val : W → X)) w₁ w₂ ↔ Setoid.ker g w₁ w₂ := by
+    rw [Setoid.comap_rel, Setoid.ker_def, Subtype.ext_iff]
+    exact (@Quotient.eq _ r w₁.val w₂.val).symm
   let h₀ : Quotient (r.comap (Subtype.val : W → X)) ≃ₜ Quotient.mk r '' W :=
-    (Homeomorph.Quotient.congrRight fun w₁ w₂ ↦ by
-      rw [Setoid.comap_rel, Setoid.ker_def, Subtype.ext_iff]
-      exact (@Quotient.eq _ r w₁.val w₂.val).symm).trans hg.isQuotientMap.homeomorph
+    (Homeomorph.Quotient.congrRight hr_iff).trans hg.isQuotientMap.homeomorph
   have heq : h₀.toEquiv = Setoid.comapValQuotientEquiv r W := by
-    ext x
-    induction x using Quotient.inductionOn with
-    | h w =>
-      change (h₀ (Quotient.mk _ w) : Quotient r) =
-        (Setoid.comapValQuotientEquiv r W ⟦w⟧ : Quotient r)
-      simp only [h₀, Homeomorph.trans_apply, IsQuotientMap.homeomorph_apply,
-        Setoid.comapValQuotientEquiv_mk]
-      exact congrArg Subtype.val (Setoid.kerLift_mk _ w)
+    refine Equiv.ext fun x ↦ Quotient.inductionOn x fun w ↦ Subtype.ext ?_
+    have hcongr : Homeomorph.Quotient.congrRight hr_iff ⟦w⟧ = ⟦w⟧ :=
+      Quot.congr_mk (Equiv.refl W) hr_iff w
+    rw [Homeomorph.coe_toEquiv]
+    simp only [h₀, Homeomorph.trans_apply, hcongr, IsQuotientMap.homeomorph_apply,
+      Setoid.kerLift_mk, Setoid.comapValQuotientEquiv_mk]
+    dsimp only [g]
+    rfl
   { toEquiv := Setoid.comapValQuotientEquiv r W
     continuous_toFun := heq ▸ h₀.continuous_toFun
     continuous_invFun := heq ▸ h₀.continuous_invFun }
