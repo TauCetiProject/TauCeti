@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
 public import TauCeti.NumberTheory.NumberField.ClassNumber.RingEquiv
+import TauCeti.Algebra.MonoidAlgebra.Basic
 
 /-!
 # The Galois action on the ideal class group of a cyclotomic field
@@ -22,19 +24,25 @@ cyclotomic class group are cut out and on which Stickelberger elements act.
 
 The action is covariant: no inverse is inserted, so `a` acts through `σ_a` itself and not through
 `σ_a⁻¹`. Both actions are bundled as monoid homomorphisms, so the identity residue acts trivially
-and products of residues act by composition (`map_one`, `map_mul`).
+and products of residues act by composition (`map_one`, `map_mul`). When `R` is commutative,
+`cyclotomicClassActionAlgHom` lifts the action to the group ring `MonoidAlgebra R (ZMod m)ˣ`.
 
 ## Main definitions
 
 * `TauCeti.cyclotomicClassGroupAction m K`: the action `(ZMod m)ˣ →* MulAut (ClassGroup (𝓞 K))`.
 * `TauCeti.cyclotomicClassAction R m K`: its scalar extension
   `(ZMod m)ˣ →* Module.End R (R ⊗[ℤ] Additive (ClassGroup (𝓞 K)))`.
+* `TauCeti.cyclotomicClassActionAlgHom R m K`: the `R`-algebra lift
+  `MonoidAlgebra R (ZMod m)ˣ →ₐ[R] Module.End R (R ⊗[ℤ] Additive (ClassGroup (𝓞 K)))`.
 
 ## Main results
 
 * `TauCeti.cyclotomicClassGroupAction_mk0`: `σ_a` sends the class of a nonzero ideal `𝔞` to the
   class of its image `σ_a 𝔞`.
 * `TauCeti.cyclotomicClassAction_tmul`: on a pure tensor, `r ⊗ c ↦ r ⊗ σ_a c`.
+* `TauCeti.cyclotomicClassActionAlgHom_single`, `TauCeti.cyclotomicClassActionAlgHom_apply`, and
+  `TauCeti.cyclotomicClassActionAlgHom_tmul`: basis and coefficient-sum evaluations of the
+  group-ring action.
 
 ## References
 
@@ -47,6 +55,8 @@ open NumberField IsCyclotomicExtension.Rat
 open scoped TensorProduct nonZeroDivisors
 
 namespace TauCeti
+
+section
 
 variable (R : Type*) [Ring R] (m : ℕ) [NeZero m] (K : Type*) [Field K] [NumberField K]
   [IsCyclotomicExtension {m} ℚ K]
@@ -106,5 +116,45 @@ theorem cyclotomicClassAction_tmul (a : (ZMod m)ˣ) (r : R) (c : ClassGroup (�
     cyclotomicClassAction R m K a (r ⊗ₜ Additive.ofMul c) =
       r ⊗ₜ Additive.ofMul (cyclotomicClassGroupAction m K a c) := by
   simp [cyclotomicClassAction_apply]
+
+end
+
+section CommRing
+
+variable (R : Type*) [CommRing R] (m : ℕ) [NeZero m] (K : Type*) [Field K] [NumberField K]
+  [IsCyclotomicExtension {m} ℚ K]
+
+/-- **The group-ring lift of the cyclotomic class action.** Extends `cyclotomicClassAction R m K`
+to an `R`-algebra homomorphism `MonoidAlgebra R (ZMod m)ˣ →ₐ[R] Module.End R (...)`. -/
+noncomputable def cyclotomicClassActionAlgHom :
+    MonoidAlgebra R (ZMod m)ˣ →ₐ[R] Module.End R (R ⊗[ℤ] Additive (ClassGroup (𝓞 K))) :=
+  MonoidAlgebra.lift R (Module.End R (R ⊗[ℤ] Additive (ClassGroup (𝓞 K)))) (ZMod m)ˣ
+    (cyclotomicClassAction R m K)
+
+variable {R m K}
+
+/-- Basis evaluation for `cyclotomicClassActionAlgHom`: `single a r` acts as `r` times
+`cyclotomicClassAction R m K a`. -/
+@[simp]
+theorem cyclotomicClassActionAlgHom_single (a : (ZMod m)ˣ) (r : R) :
+    cyclotomicClassActionAlgHom R m K (MonoidAlgebra.single a r) =
+      r • cyclotomicClassAction R m K a :=
+  MonoidAlgebra.lift_single _ a r
+
+/-- Coefficient-sum evaluation for `cyclotomicClassActionAlgHom`. -/
+theorem cyclotomicClassActionAlgHom_apply (x : MonoidAlgebra R (ZMod m)ˣ) :
+    cyclotomicClassActionAlgHom R m K x =
+      ∑ a : (ZMod m)ˣ, x.coeff a • cyclotomicClassAction R m K a :=
+  MonoidAlgebra.lift_apply_eq_sum _ x
+
+/-- Action of a group-ring element on a pure tensor `r ⊗ c`. -/
+theorem cyclotomicClassActionAlgHom_tmul (x : MonoidAlgebra R (ZMod m)ˣ) (r : R)
+    (c : ClassGroup (𝓞 K)) :
+    cyclotomicClassActionAlgHom R m K x (r ⊗ₜ Additive.ofMul c) =
+      ∑ a : (ZMod m)ˣ,
+        (x.coeff a * r) ⊗ₜ Additive.ofMul (cyclotomicClassGroupAction m K a c) := by
+  simp [cyclotomicClassActionAlgHom_apply, TensorProduct.smul_tmul']
+
+end CommRing
 
 end TauCeti
