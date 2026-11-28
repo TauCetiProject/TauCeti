@@ -44,6 +44,8 @@ values are exactly `isotypicComponents R R`.
   submodules of `M`, as the quotient type `TauCeti.SimpleSubmoduleClasses R M`, correspond to the
   isotypic components of `M`, the class of `N` going to the `N`-isotypic component. This needs no
   hypothesis on the ring; for `M = R` it is the bijection with the Artin-Wedderburn blocks.
+* `TauCeti.isotypicComponent_eq_isotypicComponent_iff`: two simple submodules have the same
+  isotypic component exactly when they are isomorphic.
 * `TauCeti.simpleModuleClass`: over a semisimple ring, the class in `SimpleSubmoduleClasses R R`
   of the simple left ideals realizing an abstract simple module. Its fibres are the isomorphism
   classes (`TauCeti.simpleModuleClass_eq_iff`) and it hits every class
@@ -165,6 +167,13 @@ noncomputable def simpleSubmoduleClassesEquiv :
 @[simp]
 theorem coe_simpleSubmoduleClassesEquiv_mk (N : Submodule R M) [IsSimpleModule R N] :
     (simpleSubmoduleClassesEquiv R M (.mk N) : Submodule R M) = isotypicComponent R M N := (rfl)
+
+/-- Two simple submodules have the same isotypic component exactly when they are isomorphic. -/
+theorem isotypicComponent_eq_isotypicComponent_iff {N N' : Submodule R M} [IsSimpleModule R N]
+    [IsSimpleModule R N'] :
+    isotypicComponent R M N = isotypicComponent R M N' ↔ Nonempty (N ≃ₗ[R] N') := by
+  rw [← SimpleSubmoduleClasses.mk_eq_mk_iff, ← (simpleSubmoduleClassesEquiv R M).injective.eq_iff,
+    Subtype.ext_iff, coe_simpleSubmoduleClassesEquiv_mk, coe_simpleSubmoduleClassesEquiv_mk]
 
 /-- A Noetherian module has only finitely many isomorphism classes of simple submodules. -/
 instance [IsNoetherian R M] : Finite (SimpleSubmoduleClasses R M) :=

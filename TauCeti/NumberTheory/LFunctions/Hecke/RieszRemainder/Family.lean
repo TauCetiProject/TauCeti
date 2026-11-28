@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Hecke.RieszRemainder
 import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+import TauCeti.Analysis.Normed.Group.Finsupp
 
 /-!
 # First Riesz remainders of finitely supported character families
@@ -82,15 +83,24 @@ theorem ofReal_finsuppRieszRemainder_of_mapDomain_inv_eq (w : PrimitiveRayClassC
   exact continuous_finsetSum _ fun ψ _ ↦
     (continuous_re.comp ψ.continuous_rieszRemainder).const_mul _
 
+/-- A power bound on the remainder of each character in the support of the weights gives
+one for the family remainder. The weights may have either sign. -/
+theorem exists_norm_finsuppRieszRemainder_le_rpow_of_forall_mem_support
+    (w : PrimitiveRayClassCharacter K →₀ ℝ) {a σ : ℝ}
+    (h : ∀ ψ ∈ w.support, ∃ C : ℝ, ∀ y ≥ a, ‖ψ.rieszRemainder y‖ ≤ C * y ^ σ) :
+    ∃ C : ℝ, ∀ y ≥ a, ‖finsuppRieszRemainder w y‖ ≤ C * y ^ σ := by
+  obtain ⟨C, hC⟩ := w.exists_norm_sum_smul_le_of_forall_mem_support
+    (fun ψ y ↦ (ψ.rieszRemainder y).re) (· ^ σ) (Set.Ici a) fun ψ hψ ↦ by
+      obtain ⟨C, hC⟩ := h ψ hψ
+      exact ⟨C, fun y hy ↦ (Complex.abs_re_le_norm _).trans (hC y hy)⟩
+  refine ⟨C, fun y hy ↦ ?_⟩
+  simpa only [finsuppRieszRemainder_apply, smul_eq_mul] using hC y hy
+
 /-- The family remainder has growth at most `y ^ σ` for each `σ > 1` on `[1, ∞)`. -/
 theorem exists_norm_finsuppRieszRemainder_le_rpow (w : PrimitiveRayClassCharacter K →₀ ℝ)
-    {σ : ℝ} (hσ : 1 < σ) : ∃ C : ℝ, ∀ y ≥ 1, ‖finsuppRieszRemainder w y‖ ≤ C * y ^ σ := by
-  choose C hC using fun ψ : PrimitiveRayClassCharacter K ↦ ψ.exists_norm_rieszRemainder_le_rpow hσ
-  refine ⟨∑ ψ ∈ w.support, ‖w ψ‖ * C ψ, fun y hy ↦ ?_⟩
-  rw [finsuppRieszRemainder_apply, Finsupp.sum, Finset.sum_mul]
-  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun ψ _ ↦ ?_)
-  rw [norm_mul, mul_assoc, Real.norm_eq_abs (ψ.rieszRemainder y).re]
-  exact mul_le_mul_of_nonneg_left ((abs_re_le_norm _).trans (hC ψ y hy)) (norm_nonneg _)
+    {σ : ℝ} (hσ : 1 < σ) : ∃ C : ℝ, ∀ y ≥ 1, ‖finsuppRieszRemainder w y‖ ≤ C * y ^ σ :=
+  exists_norm_finsuppRieszRemainder_le_rpow_of_forall_mem_support w
+    fun ψ _ ↦ ψ.exists_norm_rieszRemainder_le_rpow hσ
 
 /-- The upper-tail Mellin integrand for the family remainder is absolutely integrable for
 `Re s > 1`. -/

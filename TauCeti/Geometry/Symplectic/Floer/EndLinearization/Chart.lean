@@ -298,7 +298,7 @@ private theorem contDiff_covectorPullback_of_chart {Je : ℝ → V → AlmostCom
 `ψ`, where the structures are `J_e(t)`, the pulled-back perturbation is `H_e(t) dt` and `u` solves
 the Floer equation, the formal adjoint of the cylindrical datum `(J_e, 0, H_e)` along `u ∘ ψ` on
 the pulled-back form `η (ψ ·) ∘ (a + b J)` is the Jacobian of `ψ` times `D_u^* η` at `ψ ζ`. -/
-private theorem floerLinearizationAdjoint_covectorPullback_of_chart (ω : SymplecticForm V)
+theorem floerLinearizationAdjoint_covectorPullback_of_chart (ω : SymplecticForm V)
     {He : ℝ → V → ℝ} (hHe : ContDiff ℝ 2 (uncurry He)) {Je : ℝ → V → AlmostComplexStructure V}
     {ψ : ℝ × ℝ → ℝ × ℝ} {R₁ : ℝ} (hψ : ∀ ζ : ℝ × ℝ, R₁ < ζ.1 → ContDiffAt ℝ 2 ψ ζ)
     (hψJ : ∀ ζ : ℝ × ℝ, R₁ < ζ.1 → IsComplexLinearMap (AlmostComplexStructure.product ℝ)
