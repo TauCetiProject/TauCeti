@@ -198,6 +198,13 @@ def ofClosedAnalyticSubspace {n : ℕ} {U : Opens (Fin n → ℂ)}
     (hJ : J.FG) : ComplexAnalyticSpace.{u} :=
   ⟨closedAnalyticSubspace.toOver.{u} J, isComplexAnalyticSpace_toOver hJ⟩
 
+/-- The underlying object of the closed analytic model over the complex base. -/
+@[simp]
+theorem ofClosedAnalyticSubspace_obj {n : ℕ} {U : Opens (Fin n → ℂ)}
+    (J : Ideal ((holomorphicStructureSheaf 𝓘(ℂ, Fin n → ℂ) U).presheaf.obj (op ⊤)))
+    (hJ : J.FG) : (ofClosedAnalyticSubspace.{u} J hJ).obj = closedAnalyticSubspace.toOver.{u} J :=
+  (rfl)
+
 end ComplexAnalyticSpace
 
 end TauCeti
