@@ -89,23 +89,20 @@ theorem mul_mem_finiteAdelicIdeal {I J : (FractionalIdeal R⁰ K)ˣ} {x y : 𝔸
 
 /-- The finite adelic extension of a fractional ideal is the image of the integral finite adeles
 under multiplication by any finite idele representing it. -/
-theorem coe_finiteAdelicIdeal_eq_image {I : (FractionalIdeal R⁰ K)ˣ} (t : 𝔸ᶠ[R, K]ˣ)
-    (ht : toFractionalIdeal t = I) :
+theorem _root_.Units.coe_finiteAdelicIdeal_eq_image (t : 𝔸ᶠ[R, K]ˣ)
+    {I : (FractionalIdeal R⁰ K)ˣ} (ht : toFractionalIdeal t = I) :
     (finiteAdelicIdeal I : Set 𝔸ᶠ[R, K]) =
-      (fun x : 𝔸ᶠ[R, K] ↦ (t : 𝔸ᶠ[R, K]) * x) '' (integralAdeles R K : Set 𝔸ᶠ[R, K]) := by
-  ext x
-  rw [SetLike.mem_coe, mem_finiteAdelicIdeal_iff t ht]
-  refine ⟨fun hx ↦ ⟨_, hx, Units.mul_inv_cancel_left t x⟩, ?_⟩
-  rintro ⟨y, hy, rfl⟩
-  rwa [Units.inv_mul_cancel_left]
+      (fun x : 𝔸ᶠ[R, K] ↦ (t : 𝔸ᶠ[R, K]) * x) '' (integralAdeles R K : Set 𝔸ᶠ[R, K]) :=
+  (Set.ext fun _ ↦ mem_finiteAdelicIdeal_iff t ht).trans
+    ((Units.mulLeft t).image_eq_preimage_symm _).symm
 
 /-- The finite adelic extension of a fractional ideal is compact when every local integer ring is
 compact. -/
-theorem isCompact_finiteAdelicIdeal
+theorem _root_.Units.isCompact_finiteAdelicIdeal
     [∀ v : HeightOneSpectrum R, CompactSpace (v.adicCompletionIntegers K)]
     (I : (FractionalIdeal R⁰ K)ˣ) : IsCompact (finiteAdelicIdeal I : Set 𝔸ᶠ[R, K]) := by
   obtain ⟨t, ht⟩ := toFractionalIdeal_surjective I
-  rw [coe_finiteAdelicIdeal_eq_image t ht]
+  rw [t.coe_finiteAdelicIdeal_eq_image ht]
   exact isCompact_integralAdeles.image (continuous_const.mul continuous_id)
 
 /-- The finite adelic extension of a fractional ideal is the closure of its diagonal image. -/

@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
-public import Mathlib.Topology.Algebra.InfiniteSum.Constructions
+public import TauCeti.Algebra.Group.AddSubgroup.CharacterAnnihilator
 public import TauCeti.NumberTheory.NumberField.CMField.AdeleStar
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.AddChar
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.BorelSpace
 public import TauCeti.Topology.Algebra.Star.SelfAdjoint
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.NumberTheory.NumberField.Countable
+import TauCeti.Topology.Algebra.Group.CharacterAnnihilator
 
 /-!
 # The self-adjoint finite adeles of a CM field and their dual lattice
@@ -63,15 +64,12 @@ namespace TauCeti
 variable (E : Type*) [Field E] [NumberField E] [IsCMField E]
 
 /-- The **dual lattice** `𝔡 = {z ∈ 𝔸_f⁺ : ψ_f(zÔ) = 1}` of the self-adjoint finite adeles of a CM
-field: the self-adjoint finite adeles `z` with `ψ_f (z u) = 1` for every integral finite adele
-`u`. -/
-def selfAdjointFiniteAdeleDual : AddSubgroup (selfAdjoint 𝔸ᶠ[E]) where
-  carrier := {z | ∀ u ∈ integralAdeles (𝓞 E) E, finiteAdeleAddChar E ((z : 𝔸ᶠ[E]) * u) = 1}
-  zero_mem' := by simp
-  add_mem' {a b} ha hb u hu := by
-    rw [AddMemClass.coe_add, add_mul, AddChar.map_add_eq_mul, ha u hu, hb u hu, one_mul]
-  neg_mem' {a} ha u hu := by
-    rw [NegMemClass.coe_neg, neg_mul, AddChar.map_neg_eq_inv, ha u hu, inv_one]
+field: the trace on `𝔸_f⁺` of the annihilator of the integral finite adeles `Ô` under the pairing
+`(u, z) ↦ ψ_f (u z)`, that is, the self-adjoint finite adeles `z` with `ψ_f (z u) = 1` for every
+integral finite adele `u`. -/
+def selfAdjointFiniteAdeleDual : AddSubgroup (selfAdjoint 𝔸ᶠ[E]) :=
+  ((integralAdeles (𝓞 E) E).toSubring.toAddSubgroup.characterAnnihilator (finiteAdeleAddChar E)
+    (LinearMap.mul 𝔸ᶠ[E] 𝔸ᶠ[E])).comap (selfAdjoint 𝔸ᶠ[E]).subtype
 
 variable {E}
 
@@ -79,8 +77,10 @@ variable {E}
 every integral finite adele `u`. -/
 theorem mem_selfAdjointFiniteAdeleDual_iff {z : selfAdjoint 𝔸ᶠ[E]} :
     z ∈ selfAdjointFiniteAdeleDual E ↔
-      ∀ u ∈ integralAdeles (𝓞 E) E, finiteAdeleAddChar E ((z : 𝔸ᶠ[E]) * u) = 1 :=
-  Iff.rfl
+      ∀ u ∈ integralAdeles (𝓞 E) E, finiteAdeleAddChar E ((z : 𝔸ᶠ[E]) * u) = 1 := by
+  simp_rw [selfAdjointFiniteAdeleDual, AddSubgroup.mem_comap, AddSubgroup.mem_characterAnnihilator,
+    LinearMap.mul_apply', mul_comm]
+  rfl
 
 /-- A self-adjoint finite adele lies in the dual lattice `𝔡` exactly when it lies in the finite
 adelic ideal `𝔇⁻¹Ô` of the inverse different `𝔇⁻¹ = FractionalIdeal.dual ℤ ℚ 1`. -/
@@ -88,7 +88,7 @@ theorem mem_selfAdjointFiniteAdeleDual_iff_mem_finiteAdelicIdeal {z : selfAdjoin
     z ∈ selfAdjointFiniteAdeleDual E ↔
       (z : 𝔸ᶠ[E]) ∈ finiteAdelicIdeal (Units.mk0 (FractionalIdeal.dual ℤ ℚ 1)
         (FractionalIdeal.dual_ne_zero ℤ ℚ one_ne_zero)) :=
-  forall_finiteAdeleAddChar_mul_eq_one_iff (z : 𝔸ᶠ[E])
+  mem_selfAdjointFiniteAdeleDual_iff.trans (forall_finiteAdeleAddChar_mul_eq_one_iff (z : 𝔸ᶠ[E]))
 
 /-- The dual lattice `𝔡` is the preimage in `𝔸_f⁺` of the finite adelic ideal of the inverse
 different. -/
@@ -104,22 +104,17 @@ variable (E)
 /-- The dual lattice `𝔡` is open in the self-adjoint finite adeles. -/
 theorem isOpen_selfAdjointFiniteAdeleDual :
     IsOpen (selfAdjointFiniteAdeleDual E : Set (selfAdjoint 𝔸ᶠ[E])) := by
-  -- `𝔡` is cut out by `t⁻¹ z ∈ Ô` for a finite idele `t` representing the inverse different
-  obtain ⟨t, ht⟩ := toFractionalIdeal_surjective (R := 𝓞 E) (K := E)
-    (Units.mk0 (FractionalIdeal.dual ℤ ℚ 1) (FractionalIdeal.dual_ne_zero ℤ ℚ one_ne_zero))
-  have h𝔡 : (selfAdjointFiniteAdeleDual E : Set (selfAdjoint 𝔸ᶠ[E])) =
-      (fun z : selfAdjoint 𝔸ᶠ[E] ↦ (↑t⁻¹ : 𝔸ᶠ[E]) * z) ⁻¹' (integralAdeles (𝓞 E) E : Set 𝔸ᶠ[E]) :=
-    Set.ext fun _ ↦ mem_selfAdjointFiniteAdeleDual_iff_mem_finiteAdelicIdeal.trans
-      (mem_finiteAdelicIdeal_iff t ht)
-  rw [h𝔡]
-  exact (isOpen_integralAdeles _ _).preimage (continuous_const.mul continuous_subtypeVal)
+  rw [selfAdjointFiniteAdeleDual, AddSubgroup.coe_comap]
+  exact (AddSubgroup.isOpen_characterAnnihilator isCompact_integralAdeles
+    ((continuous_finiteAdeleAddChar.comp continuous_mul).congr fun _ ↦ by simp)).preimage
+      continuous_subtypeVal
 
 /-- The dual lattice `𝔡` is compact. -/
 theorem isCompact_selfAdjointFiniteAdeleDual :
     IsCompact (selfAdjointFiniteAdeleDual E : Set (selfAdjoint 𝔸ᶠ[E])) := by
   rw [coe_selfAdjointFiniteAdeleDual]
   exact (isClosed_setOfPred_isSelfAdjoint (α := 𝔸ᶠ[E])).isClosedEmbedding_subtypeVal
-    |>.isCompact_preimage (isCompact_finiteAdelicIdeal _)
+    |>.isCompact_preimage (Units.isCompact_finiteAdelicIdeal _)
 
 /-- The dual lattice `𝔡`, as a compact subset of `𝔸_f⁺` with nonempty interior. -/
 def selfAdjointFiniteAdeleDualPositiveCompacts : PositiveCompacts (selfAdjoint 𝔸ᶠ[E]) where
@@ -169,12 +164,14 @@ namespace MeasureTheory.Measure
 
 variable {E : Type*} [Field E] [NumberField E] [IsCMField E]
 
-/-- A Haar measure on `𝔸_f⁺` giving the dual lattice `𝔡` measure one is the Haar measure
-`selfAdjointFiniteAdeleHaar`. -/
+/-- A left invariant measure on `𝔸_f⁺` giving the dual lattice `𝔡` measure one is the Haar
+measure `selfAdjointFiniteAdeleHaar`. -/
 theorem eq_selfAdjointFiniteAdeleHaar_of_apply_selfAdjointFiniteAdeleDual_eq_one
-    (μ : Measure (selfAdjoint 𝔸ᶠ[E])) [μ.IsAddHaarMeasure]
+    (μ : Measure (selfAdjoint 𝔸ᶠ[E])) [μ.IsAddLeftInvariant]
     (hμ : μ (selfAdjointFiniteAdeleDual E) = 1) : μ = selfAdjointFiniteAdeleHaar E := by
-  rw [addHaarMeasure_unique μ (selfAdjointFiniteAdeleDualPositiveCompacts E),
-    coe_selfAdjointFiniteAdeleDualPositiveCompacts, hμ, one_smul, selfAdjointFiniteAdeleHaar_def]
+  have : μ.IsAddHaarMeasure := isAddHaarMeasure_of_isCompact_nonempty_interior μ _
+    (isCompact_selfAdjointFiniteAdeleDual E)
+    (selfAdjointFiniteAdeleDualPositiveCompacts E).interior_nonempty (by simp [hμ]) (by simp [hμ])
+  exact ((addHaarMeasure_eq_iff (selfAdjointFiniteAdeleDualPositiveCompacts E) μ).2 hμ).symm
 
 end MeasureTheory.Measure
