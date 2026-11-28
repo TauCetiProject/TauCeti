@@ -88,9 +88,9 @@ private lemma exists_norm_expRem_le (α R : ℝ) {L : ℝ} (hL : 0 ≤ L) :
   have h1 : 4 * (u ^ 3 + v ^ 3) * Ke + (c₃ * |x| * a + c₄ * a ^ 2) ≤
       c₁ * (D * x ^ 2) + c₂ * a ^ 2 + (c₃ * D * a + c₄ * a ^ 2) := by
     simp only [u, v, mul_pow, c₁, c₂]
-    have hcube : 4 * (|α| ^ 3 * |x| ^ 3 + (α ^ 2 / 2) ^ 3 * a ^ 3) * Ke ≤
-        4 * (|α| ^ 3 * (D * x ^ 2) + (α ^ 2 / 2) ^ 3 * (L * a ^ 2)) * Ke := by gcongr
-    linarith [show c₃ * |x| * a ≤ c₃ * D * a by gcongr]
+    linarith [show 4 * (|α| ^ 3 * |x| ^ 3 + (α ^ 2 / 2) ^ 3 * a ^ 3) * Ke ≤
+        4 * (|α| ^ 3 * (D * x ^ 2) + (α ^ 2 / 2) ^ 3 * (L * a ^ 2)) * Ke by gcongr,
+      show c₃ * |x| * a ≤ c₃ * D * a by gcongr]
   have hnn : 0 ≤ (c₂ + c₃ + c₄) * (D * x ^ 2) + (c₁ + c₂ + c₄) * (D * a) +
       (c₁ + c₃) * a ^ 2 := by positivity
   exact hexp ▸ (norm_add_le _ _).trans ((add_le_add hrem hmid).trans <| h1.trans <|
@@ -108,8 +108,7 @@ private lemma ae_norm_expProc_le {X A : ℝ≥0 → Ω → ℝ} {c : ℝ} (hA0 :
 private lemma exists_ae_norm_sum_expRem_le {X A : ℝ≥0 → Ω → ℝ} {R c : ℝ}
     (hXR : ∀ u, ∀ᵐ ω ∂P, |X u ω| ≤ R) (hA0 : ∀ᵐ ω ∂P, A 0 ω = 0)
     (hA_step : ∀ u v, u ≤ v → ∀ᵐ ω ∂P, 0 ≤ A v ω - A u ω ∧ A v ω - A u ω ≤ c * ((v : ℝ) - u))
-    (hc : 0 ≤ c) (α : ℝ) {s t : ℝ≥0} (hst : s ≤ t) :
-    ∃ K ≥ 0, ∀ m : ℕ, ∀ᵐ ω ∂P,
+    (hc : 0 ≤ c) (α : ℝ) {s t : ℝ≥0} (hst : s ≤ t) : ∃ K ≥ 0, ∀ m : ℕ, ∀ᵐ ω ∂P,
       ‖∑ k : Fin (m + 1),
         remTerm X A α (uniformGridFin s t m k.castSucc) (uniformGridFin s t m k.succ) ω‖ ≤
       Real.exp (α ^ 2 / 2 * (c * (t : ℝ))) * K * remBound X c s t m ω := by
@@ -159,13 +158,12 @@ private lemma setIntegral_expProc_step (hA0 : ∀ᵐ ω ∂P, A 0 ω = 0) (α : 
         ∫ ω in E, remTerm X A α u v ω ∂P := by
   have hA : StronglyAdapted ℱ A := hX.stronglyAdapted.of_sq_sub hQ.stronglyAdapted
   have hZ_bd := ae_norm_expProc_le (X := X) hA0 hA_step α u
-  have hZ_asm : AEStronglyMeasurable (expProc X A α u) P :=
-    ((hZ_adapt u).mono (ℱ.le u)).aestronglyMeasurable
+  have hZ_asm := ((hZ_adapt u).mono (ℱ.le u)).aestronglyMeasurable (μ := P)
   have hmul {f : Ω → ℝ} (hf : Integrable f P) (c₀ : ℂ) :
       IntegrableOn (fun ω ↦ c₀ * (f ω • expProc X A α u ω)) E P :=
     (((Complex.ofRealCLM.integrable_comp hf).mul_bdd hZ_asm hZ_bd).const_mul c₀).integrableOn
   have hZs : IntegrableOn (fun ω ↦ expProc X A α v ω - expProc X A α u ω) E P :=
-    ((hZ_int v).sub (hZ_int u)).integrableOn (s := E)
+    ((hZ_int v).sub (hZ_int u)).integrableOn
   have h1 := hmul (f := fun ω ↦ X v ω - X u ω) ((hX.integrable v).sub (hX.integrable u)) (I * α)
   have h2 := hmul (f := fun ω ↦ (X v ω - X u ω) ^ 2 - (A v ω - A u ω))
     (((memLp_sub_sq_of_bound 2 ((hX.stronglyAdapted v).mono (ℱ.le v)).aestronglyMeasurable
@@ -180,7 +178,7 @@ private lemma setIntegral_expProc_step (hA0 : ∀ᵐ ω ∂P, A 0 ω = 0) (α : 
         expProc X A α v ω := by rw [← Complex.exp_add]; congr 1; push_cast; ring
     dsimp only [remTerm, expRem]; rw [mul_sub, mul_sub, mul_one, hexp_mul]
     simp [Complex.real_smul]; ring
-  have hZs1 : IntegrableOn (fun ω ↦ expProc X A α v ω - expProc X A α u ω -
+  have hZs1 : IntegrableOn (fun ω ↦ (expProc X A α v ω - expProc X A α u ω) -
       (I * (α : ℂ)) * ((X v ω - X u ω) • expProc X A α u ω)) E P := hZs.sub h1
   refine ⟨by simp_rw [hdec]; exact hZs1.add h2, ?_⟩
   simp_rw [hdec]
@@ -196,8 +194,7 @@ private lemma setIntegral_expProc_step (hA0 : ∀ᵐ ω ∂P, A 0 ω = 0) (α : 
   simp
 
 private lemma integral_uniformGridMaxAbsSub_remBound_le (hc : 0 ≤ c) {s t : ℝ≥0} (hst : s ≤ t)
-    (m : ℕ) :
-    let L := c * ((t : ℝ) - s)
+    (m : ℕ) : let L := c * ((t : ℝ) - s)
     Integrable (remBound X c s t m) P ∧ ∫ ω, remBound X c s t m ω ∂P ≤
       (√((4 * R ^ 2 * L + 2 * L ^ 2) * P.real univ) + L * √(P.real univ)) *
         √(∫ ω, uniformGridMaxAbsSub X s t m ω ^ 2 ∂P) + L ^ 2 * P.real univ / (m + 1 : ℝ) := by
@@ -207,7 +204,7 @@ private lemma integral_uniformGridMaxAbsSub_remBound_le (hc : 0 ≤ c) {s t : �
   have hL : 0 ≤ L := mul_nonneg hc (sub_nonneg.2 (NNReal.coe_le_coe.2 hst))
   have hD_lp := memLp_uniformGridMaxAbsSub 2 s t m
     (fun k ↦ ((hXa (g k)).mono (ℱ.le _)).aestronglyMeasurable) (fun _ ↦ hXR _)
-  have hS_lp : MemLp S 2 P := memLp_quadraticSum_of_bound 2 g
+  have hS_lp := memLp_quadraticSum_of_bound 2 g
     (fun k ↦ ((hXa (g k)).mono (ℱ.le _)).aestronglyMeasurable) (fun _ ↦ hXR _)
   have hCS := (le_abs_self (∫ ω, D ω * S ω ∂P)).trans <|
     (abs_integral_mul_le_sqrt_integral_sq_mul_sqrt_integral_sq hD_lp hS_lp).trans <|
@@ -220,8 +217,7 @@ private lemma integral_uniformGridMaxAbsSub_remBound_le (hc : 0 ≤ c) {s t : �
       (abs_setIntegral_le_sqrt_integral_sq_mul_sqrt_measureReal hD_lp (measure_ne_top P univ))
   have hDS := hD_lp.integrable_mul hS_lp; have hLD := (hD_lp.integrable one_le_two).const_mul L
   have hterm : P.real univ * (L ^ 2 / (m + 1 : ℝ)) = L ^ 2 * P.real univ / (m + 1 : ℝ) := by ring
-  refine ⟨(hDS.add hLD).add (integrable_const _), ?_⟩
-  dsimp only [remBound]
+  refine ⟨(hDS.add hLD).add (integrable_const _), ?_⟩; dsimp only [remBound]
   rw [integral_add (f := fun ω ↦ D ω * S ω + L * D ω) (hDS.add hLD) (integrable_const _),
     integral_add (f := fun ω ↦ D ω * S ω) hDS hLD, integral_const_mul, integral_const, smul_eq_mul]
   nlinarith [mul_le_mul_of_nonneg_left hD1 hL, hterm]
@@ -240,8 +236,7 @@ private lemma exists_norm_setIntegral_expProc_sub_le (hc : 0 ≤ c) (hA0 : ∀�
   have hstepk (k : Fin (m + 1)) := setIntegral_expProc_step hX hQ hXR hA_step hA0 α hZ_adapt
     hZ_int (uniformGridFin_monotone s t m (Fin.castSucc_le_succ k))
     (uniformGridFin_mem_Icc hst m k.castSucc).1 hE
-  obtain ⟨hf_int, hf_le⟩ :=
-    integral_uniformGridMaxAbsSub_remBound_le hX hQ hXR hA_step hc hst m
+  obtain ⟨hf_int, hf_le⟩ := integral_uniformGridMaxAbsSub_remBound_le hX hQ hXR hA_step hc hst m
   have hL : 0 ≤ L := mul_nonneg hc (sub_nonneg.2 (NNReal.coe_le_coe.2 hst))
   have htele : ∫ ω in E, (expProc X A α t ω - expProc X A α s ω) ∂P =
       ∫ ω in E, ∑ k : Fin (m + 1), remTerm X A α (g k.castSucc) (g k.succ) ω ∂P := by
@@ -272,8 +267,7 @@ theorem exp_I_mul_add_of_bounded {X A : ℝ≥0 → Ω → ℝ} {R c : ℝ}
     (hcont : ∀ᵐ ω ∂P, Continuous (X · ω)) (hXR : ∀ u, ∀ᵐ ω ∂P, |X u ω| ≤ R)
     (hA0 : ∀ᵐ ω ∂P, A 0 ω = 0)
     (hA_step : ∀ u v, u ≤ v → ∀ᵐ ω ∂P, 0 ≤ A v ω - A u ω ∧ A v ω - A u ω ≤ c * ((v : ℝ) - u))
-    (α : ℝ) :
-    Martingale (fun t ω ↦ exp (I * α * X t ω + ((α ^ 2 / 2 * A t ω : ℝ) : ℂ))) ℱ P := by
+    (α : ℝ) : Martingale (fun t ω ↦ exp (I * α * X t ω + ((α ^ 2 / 2 * A t ω : ℝ) : ℂ))) ℱ P := by
   have hA_adapt : StronglyAdapted ℱ A := hX.stronglyAdapted.of_sq_sub hQ.stronglyAdapted
   have hA_step' u v (huv : u ≤ v) := (hA_step u v huv).mono fun _ hω ↦ And.intro hω.1 <| hω.2.trans
     (mul_le_mul_of_nonneg_right (le_max_left c 0) (sub_nonneg.2 (NNReal.coe_le_coe.2 huv)))

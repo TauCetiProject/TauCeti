@@ -81,8 +81,7 @@ private lemma integral_stopPos_linProc_nonneg {N : ℝ≥0 → Ω → ℝ} {c : 
     (hN0 : ∀ ω, N 0 ω = 0) (τ : Ω → WithTop ℝ≥0)
     (hQ : Martingale (fun t ω ↦ stopPos N τ t ω ^ 2 - stopPos (linProc c) τ t ω) ℱ P)
     (hAm : AEStronglyMeasurable (stopPos (linProc c) τ 1) P)
-    (hAbd : ∀ ω, ‖stopPos (linProc c) τ 1 ω‖ ≤ |c|) :
-    0 ≤ ∫ ω, stopPos (linProc c) τ 1 ω ∂P := by
+    (hAbd : ∀ ω, ‖stopPos (linProc c) τ 1 ω‖ ≤ |c|) : 0 ≤ ∫ ω, stopPos (linProc c) τ 1 ω ∂P := by
   have h0 := hQ.setIntegral_eq (i := 0) (j := 1) bot_le MeasurableSet.univ
   have h0_eq : (fun ω ↦ stopPos N τ 0 ω ^ 2 - stopPos (linProc c) τ 0 ω) = fun _ ↦ 0 := by
     ext ω; simp [stopPos_zero, Set.indicator_apply, hN0, linProc]
@@ -121,8 +120,7 @@ private lemma exists_predictable_centered_linProc {M : ℝ≥0 → Ω → ℝ} {
     hM.exists_isStronglyPredictable_indist_sub_initialValue_sq_sub (A := linProc c) hQ
       (ℱ.isStronglyPredictable_const_mul_coe c)
       (ae_of_all P fun _ ↦ (continuous_const.mul NNReal.continuous_coe).isRightContinuous)
-      hcont (ae_of_all P fun _ _ ↦ rfl)
-  ⟨N, hNp, hN0, hNM, hNc, hNl, hQN⟩
+      hcont (ae_of_all P fun _ _ ↦ rfl); ⟨N, hNp, hN0, hNM, hNc, hNl, hQN⟩
 
 /-- **Nonnegativity of a linear bracket coefficient.**
 If `M` is an almost-surely continuous real local martingale on a nonzero finite measure space and
@@ -149,12 +147,10 @@ private lemma martingale_stopped_exp {N : ℝ≥0 → Ω → ℝ} {c : ℝ} (hc 
     (hNc.mono fun _ hω ↦ by simpa only [stopPos] using hω.stoppedProcess_indicator)
     (R := R) (fun u ↦ hρ_bd.mono fun ω hω ↦ by
       have hstep := stoppedProcess_indicator_pos_stoppedProcess_of_le N hle u ω
-      rw [bot_eq_zero] at hstep; rw [hstep]
-      split_ifs
+      rw [bot_eq_zero] at hstep; rw [hstep]; split_ifs
       · exact hω (min (u : WithTop ℝ≥0) (σ ω)).untopA
       · simpa only [Real.norm_eq_abs, abs_zero] using hR)
-    (ae_of_all P fun ω ↦ by simp [stopPos_zero])
-    (fun _ _ huv ↦ ae_of_all P fun ω ↦ by
+    (ae_of_all P fun ω ↦ by simp [stopPos_zero]) (fun _ _ huv ↦ ae_of_all P fun ω ↦ by
       simp only [stoppedProcess_indicator_linear, ← mul_sub,
         WithTop.map_untopA_min_coe (f := NNReal.toReal) (fun _ _ ↦ NNReal.coe_le_coe.2)]
       exact ⟨mul_nonneg hc (sub_nonneg.2 (WithTop.monotone_untopA_min_coe
@@ -226,8 +222,7 @@ required. -/
 theorem martingale_exp_I_mul_sub_initialValue_add {M : ℝ≥0 → Ω → ℝ} {c : ℝ}
     (hM : Locally (fun Y ↦ Martingale Y ℱ P) ℱ M P)
     (hQ : Locally (fun Y ↦ Martingale Y ℱ P) ℱ (fun t ω ↦ M t ω ^ 2 - M 0 ω ^ 2 - c * (t : ℝ)) P)
-    (hcont : ∀ᵐ ω ∂P, Continuous (M · ω)) (hA : Adapted ℱ M) (α : ℝ) :
-    Martingale (fun t ω ↦
+    (hcont : ∀ᵐ ω ∂P, Continuous (M · ω)) (hA : Adapted ℱ M) (α : ℝ) : Martingale (fun t ω ↦
       exp (I * α * (M t ω - M 0 ω) + ((α ^ 2 * c * (t : ℝ) / 2 : ℝ) : ℂ))) ℱ P := by
   obtain ⟨N, hNp, hN0, hNM, hNc, hNl, hQN⟩ := exists_predictable_centered_linProc hM hQ hcont
   refine (martingale_exp_predictable hNp hN0 hNl hQN hNc α).congr (fun t ↦ ?_)
@@ -244,8 +239,7 @@ theorem setIntegral_exp_I_mul_sub {M : ℝ≥0 → Ω → ℝ} {c : ℝ}
     (hM : Locally (fun Y ↦ Martingale Y ℱ P) ℱ M P)
     (hQ : Locally (fun Y ↦ Martingale Y ℱ P) ℱ (fun t ω ↦ M t ω ^ 2 - M 0 ω ^ 2 - c * (t : ℝ)) P)
     (hcont : ∀ᵐ ω ∂P, Continuous (M · ω)) (α : ℝ) {s t : ℝ≥0} (hst : s ≤ t)
-    {A : Set Ω} (hA : MeasurableSet[ℱ s] A) :
-    ∫ ω in A, exp (I * α * (M t ω - M s ω)) ∂P =
+    {A : Set Ω} (hA : MeasurableSet[ℱ s] A) : ∫ ω in A, exp (I * α * (M t ω - M s ω)) ∂P =
       ((P A).toReal : ℂ) * exp (-((α ^ 2 * c * ((t : ℝ) - s) / 2 : ℝ) : ℂ)) := by
   obtain ⟨N, hNp, hN0, hNM, hNc, hNl, hQN⟩ := exists_predictable_centered_linProc hM hQ hcont
   have hZ := martingale_exp_predictable hNp hN0 hNl hQN hNc α

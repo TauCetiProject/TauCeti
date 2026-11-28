@@ -61,12 +61,15 @@ theorem abs_sub_le_uniformGridMaxAbsSub {Ω : Type*} (X : ℝ≥0 → Ω → ℝ
 /-- The maximal uniform-grid increment is at most `C` if and only if every adjacent absolute
 increment along the uniform grid is at most `C`. -/
 @[simp]
-theorem uniformGridMaxAbsSub_le_iff {Ω : Type*} (X : ℝ≥0 → Ω → ℝ) (s t : ℝ≥0) (m : ℕ)
-    (ω : Ω) (C : ℝ) :
-    uniformGridMaxAbsSub X s t m ω ≤ C ↔
-      ∀ k : Fin (m + 1),
-        |X (uniformGridFin s t m k.succ) ω - X (uniformGridFin s t m k.castSucc) ω| ≤ C := by
+theorem uniformGridMaxAbsSub_le_iff {Ω : Type*} (X : ℝ≥0 → Ω → ℝ) (s t : ℝ≥0) (m : ℕ) (ω : Ω)
+    (C : ℝ) : uniformGridMaxAbsSub X s t m ω ≤ C ↔ ∀ k : Fin (m + 1),
+      |X (uniformGridFin s t m k.succ) ω - X (uniformGridFin s t m k.castSucc) ω| ≤ C := by
   simp [uniformGridMaxAbsSub_apply]
+
+/-- When both grid endpoints coincide, the maximal uniform-grid increment is `0`. -/
+@[simp]
+theorem uniformGridMaxAbsSub_self {Ω : Type*} (X : ℝ≥0 → Ω → ℝ) (s : ℝ≥0) (m : ℕ) (ω : Ω) :
+    uniformGridMaxAbsSub X s s m ω = 0 := by simp [uniformGridMaxAbsSub_apply]
 
 /-- The maximal uniform-grid increment is nonnegative everywhere. -/
 theorem uniformGridMaxAbsSub_nonneg {Ω : Type*} (X : ℝ≥0 → Ω → ℝ) (s t : ℝ≥0) (m : ℕ) (ω : Ω) :
@@ -78,9 +81,8 @@ maximal uniform-grid increment is almost surely at most `2 * R`. -/
 theorem ae_uniformGridMaxAbsSub_le {Ω : Type*} {_ : MeasurableSpace Ω} {P : Measure Ω}
     {X : ℝ≥0 → Ω → ℝ} {R : ℝ} (s t : ℝ≥0) (m : ℕ)
     (hXR : ∀ k : Fin (m + 2), ∀ᵐ ω ∂P, |X (uniformGridFin s t m k) ω| ≤ R) :
-    ∀ᵐ ω ∂P, uniformGridMaxAbsSub X s t m ω ≤ 2 * R :=
-  (ae_all_iff.2 fun k : Fin (m + 1) ↦
-    ae_abs_sub_le_two_mul (hXR k.succ) (hXR k.castSucc)).mono fun _ h ↦ by simpa using h
+    ∀ᵐ ω ∂P, uniformGridMaxAbsSub X s t m ω ≤ 2 * R := (ae_all_iff.2 fun k : Fin (m + 1) ↦
+  ae_abs_sub_le_two_mul (hXR k.succ) (hXR k.castSucc)).mono fun _ h ↦ by simpa using h
 
 /-- Under a finite measure, the maximal uniform-grid increment of a process whose grid values are
 a.e. strongly measurable and almost surely bounded by `R` lies in `Lᵖ` for every `p`. -/

@@ -81,8 +81,11 @@ theorem uniformGrid_of_le {s t : ℝ≥0} (hst : s ≤ t) (m : ℕ) {k : ℕ} (h
 
 /-- At `m + 1`, the clamped uniform grid on `[s, t]` equals `t` whenever `s ≤ t`. -/
 theorem uniformGrid_last {s t : ℝ≥0} (hst : s ≤ t) (m : ℕ) :
-    uniformGrid s t m (m + 1) = t :=
-  uniformGrid_of_le hst m le_rfl
+    uniformGrid s t m (m + 1) = t := uniformGrid_of_le hst m le_rfl
+
+/-- When both endpoints coincide, `TauCeti.uniformGrid` is constantly `s`. -/
+@[simp]
+theorem uniformGrid_self (s : ℝ≥0) (m k : ℕ) : uniformGrid s s m k = s := by simp [uniformGrid]
 
 /-- The uniform grid on `[s, t]` is nondecreasing in the grid index. -/
 theorem uniformGrid_monotone (s t : ℝ≥0) (m : ℕ) : Monotone (uniformGrid s t m) :=
@@ -100,10 +103,10 @@ theorem coe_uniformGrid_succ_sub {s t : ℝ≥0} (hst : s ≤ t) (m : ℕ) {k : 
 
 /-- Every point of the uniform grid on `[s, t]` (`s ≤ t`) lies in `[s, t]`. -/
 theorem uniformGrid_mem_Icc {s t : ℝ≥0} (hst : s ≤ t) (m k : ℕ) :
-    uniformGrid s t m k ∈ Set.Icc s t := by
-  refine ⟨by simpa only [uniformGrid_zero] using uniformGrid_monotone s t m (Nat.zero_le k), ?_⟩
-  exact (by simp [uniformGrid] : uniformGrid s t m k = uniformGrid s t m (min k (m + 1))) ▸
-    (uniformGrid_monotone s t m (min_le_right k (m + 1))).trans_eq (uniformGrid_last hst m)
+    uniformGrid s t m k ∈ Set.Icc s t :=
+  ⟨by simpa only [uniformGrid_zero] using uniformGrid_monotone s t m (Nat.zero_le k),
+    (by simp [uniformGrid] : uniformGrid s t m k = uniformGrid s t m (min k (m + 1))) ▸
+      (uniformGrid_monotone s t m (min_le_right k (m + 1))).trans_eq (uniformGrid_last hst m)⟩
 
 /-- The `Fin (m + 2)` restriction of the uniform grid of `m + 1` subintervals on `[s, t]`. -/
 noncomputable def uniformGridFin (s t : ℝ≥0) (m : ℕ) (k : Fin (m + 2)) : ℝ≥0 :=
@@ -121,8 +124,12 @@ theorem uniformGridFin_zero (s t : ℝ≥0) (m : ℕ) : uniformGridFin s t m 0 =
 /-- The terminal point of `uniformGridFin` on `[s, t]` (`s ≤ t`) is `t`. -/
 @[simp]
 theorem uniformGridFin_last {s t : ℝ≥0} (hst : s ≤ t) (m : ℕ) :
-    uniformGridFin s t m (Fin.last (m + 1)) = t :=
-  uniformGrid_last hst m
+    uniformGridFin s t m (Fin.last (m + 1)) = t := uniformGrid_last hst m
+
+/-- When both endpoints coincide, `TauCeti.uniformGridFin` is constantly `s`. -/
+@[simp]
+theorem uniformGridFin_self (s : ℝ≥0) (m : ℕ) (k : Fin (m + 2)) : uniformGridFin s s m k = s :=
+  uniformGrid_self s m k
 
 /-- `uniformGridFin` is nondecreasing in the finite grid index. -/
 theorem uniformGridFin_monotone (s t : ℝ≥0) (m : ℕ) : Monotone (uniformGridFin s t m) :=
@@ -132,8 +139,7 @@ theorem uniformGridFin_monotone (s t : ℝ≥0) (m : ℕ) : Monotone (uniformGri
 `((t : ℝ) - s) / (m + 1)`. -/
 theorem coe_uniformGridFin_succ_sub_castSucc {s t : ℝ≥0} (hst : s ≤ t) (m : ℕ) (k : Fin (m + 1)) :
     (uniformGridFin s t m k.succ : ℝ) - uniformGridFin s t m k.castSucc =
-      ((t : ℝ) - s) / (m + 1) :=
-  coe_uniformGrid_succ_sub hst m k.isLt
+      ((t : ℝ) - s) / (m + 1) := coe_uniformGrid_succ_sub hst m k.isLt
 
 /-- Every point of `uniformGridFin` on `[s, t]` (`s ≤ t`) lies in `[s, t]`. -/
 theorem uniformGridFin_mem_Icc {s t : ℝ≥0} (hst : s ≤ t) (m : ℕ) (k : Fin (m + 2)) :
@@ -163,8 +169,8 @@ theorem tendsto_sup'_dist_uniformGridFin {E : Type*} [PseudoMetricSpace E] {f : 
     (fun k : Fin (m + 1) ↦ dist _ _) (Finset.mem_univ 0))]
   exact (Finset.sup'_lt_iff _).2 fun k _ ↦ hδp _ (uniformGridFin_mem_Icc hst m k.succ) _
     (uniformGridFin_mem_Icc hst m k.castSucc) (by
-      rw [NNReal.dist_eq, coe_uniformGridFin_succ_sub_castSucc hst m k,
-        abs_of_nonneg (div_nonneg (sub_nonneg.2 (NNReal.coe_le_coe.2 hst)) (by positivity))]
+      rw [NNReal.dist_eq, coe_uniformGridFin_succ_sub_castSucc hst m k, abs_of_nonneg
+        (div_nonneg (sub_nonneg.2 (NNReal.coe_le_coe.2 hst)) (by positivity))]
       simpa only [Nat.cast_add, Nat.cast_one] using hN m hm)
 
 end TauCeti

@@ -114,12 +114,10 @@ process `W` such that `M` is indistinguishable from `t ↦ Y₀ + W t`, `W` is i
 from `t ↦ M t - M 0`, `W` is a real Brownian motion, and `W` is a filtered pre-Brownian motion
 relative to `ℱ`. -/
 theorem exists_isStronglyPredictable_indist_sub_initialValue_isFilteredPreBrownianReal
-    [IsProbabilityMeasure P] {M : ℝ≥0 → Ω → ℝ}
-    (hM : Locally (fun Y ↦ Martingale Y ℱ P) ℱ M P)
+    [IsProbabilityMeasure P] {M : ℝ≥0 → Ω → ℝ} (hM : Locally (fun Y ↦ Martingale Y ℱ P) ℱ M P)
     (hQ : Locally (fun Y ↦ Martingale Y ℱ P) ℱ (fun t ω ↦ M t ω ^ 2 - M 0 ω ^ 2 - (t : ℝ)) P)
     (hcont : ∀ᵐ ω ∂P, Continuous (M · ω)) :
-    ∃ Y₀ : Ω → ℝ, ∃ W : ℝ≥0 → Ω → ℝ,
-      StronglyMeasurable[ℱ 0] Y₀ ∧ IsStronglyPredictable ℱ W ∧
+    ∃ Y₀ : Ω → ℝ, ∃ W : ℝ≥0 → Ω → ℝ, StronglyMeasurable[ℱ 0] Y₀ ∧ IsStronglyPredictable ℱ W ∧
       M ≡ᵐ[P] (fun t ω ↦ Y₀ ω + W t ω) ∧ W ≡ᵐ[P] (fun t ω ↦ M t ω - M 0 ω) ∧
       IsBrownianReal W P ∧ IsFilteredPreBrownianReal ℱ W P := by
   obtain ⟨Y, hYp, hYM, hYc, hYl, _, hQY⟩ :=
@@ -215,10 +213,8 @@ theorem isFilteredPreBrownianReal_of_locally_martingale (hB : IsBrownianReal B P
   have hsq_lim := hB.toIsPreBrownianReal.tendsto_integral_sq_quadraticSum_sub (a := s) (b := t)
     (grid := uniformGridFin s t) (δ := fun k ↦ ((t : ℝ) - s) / ((k + 1 : ℕ) : ℝ))
     (uniformGridFin_monotone s t) (fun _ ↦ uniformGridFin_zero s t _)
-    (fun _ ↦ uniformGridFin_last hst _)
-    (fun k i ↦ by simpa only [Nat.cast_add, Nat.cast_one] using
-      (coe_uniformGridFin_succ_sub_castSucc hst k i).le)
-    (tendsto_uniformGrid_mesh s t)
+    (fun _ ↦ uniformGridFin_last hst _) (fun k i ↦ by simpa only [Nat.cast_add, Nat.cast_one] using
+      (coe_uniformGridFin_succ_sub_castSucc hst k i).le) (tendsto_uniformGrid_mesh s t)
   have hEq k : ∫ ω in E, (B t ω ^ 2 - B s ω ^ 2) ∂P - ∫ _ in E, ((t : ℝ) - s) ∂P =
       ∫ ω in E, (quadraticSum B (uniformGridFin s t k) ω - ((t : ℝ) - s)) ∂P := by
     rw [integral_sub ((hB.memLp_quadraticSum _).integrable one_le_two).integrableOn
@@ -249,8 +245,7 @@ theorem exists_isStronglyPredictable_indist_isFilteredPreBrownianReal (hB : IsBr
     hloc.exists_isStronglyPredictable_indist_locally_martingale_of_ae_continuous hB.cont
   have hBW : IsBrownianReal W P :=
     ⟨hB.toIsPreBrownianReal.congr fun t ↦ hWB.mono fun _ hω ↦ (hω t).symm, hWc⟩
-  exact ⟨W, hWp, hWB, hBW,
-    hBW.isFilteredPreBrownianReal_of_locally_martingale
-      hWp.isStronglyProgressive.stronglyAdapted.adapted hWloc⟩
+  exact ⟨W, hWp, hWB, hBW, hBW.isFilteredPreBrownianReal_of_locally_martingale
+    hWp.isStronglyProgressive.stronglyAdapted.adapted hWloc⟩
 
 end ProbabilityTheory.IsBrownianReal

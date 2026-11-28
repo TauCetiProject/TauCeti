@@ -44,6 +44,8 @@ also provided:
   `Y ^ 2 - A` is a martingale and `A` has `c`-Lipschitz increments.
 * `MeasureTheory.Martingale.integral_sub_sq_le`: the unweighted second-moment increment bound
   `E[(Y v - Y u) ^ 2] ≤ c * (v - u) * μ.real univ`.
+* `MeasureTheory.Martingale.integral_sub_pow_four_le`: the unweighted fourth-moment bound
+  `E[(Y v - Y u) ^ 4] ≤ B ^ 2 * (c * (v - u) * μ.real univ)` for a bounded increment.
 * `MeasureTheory.Martingale.integral_quadraticSum_le`: the first-moment bound
   `E[quadraticSum Y g] ≤ c * (g (Fin.last n) - g 0) * μ.real univ`.
 * `MeasureTheory.Martingale.integral_quadraticSum_sq_le`: a bounded continuous-bracket real
@@ -347,6 +349,28 @@ theorem integral_sub_sq_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω → ℝ} {
     hY.integral_mul_sub_sq_le hQ hA_step huv hYu hYv (W := fun _ ↦ (1 : ℝ))
       stronglyMeasurable_const (C := 1) (ae_of_all μ fun _ ↦ le_rfl) (fun _ ↦ zero_le_one)
 
+/-- Fourth-moment bound for a bounded increment of a real `L²` martingale `Y` whose
+compensated square `Y ^ 2 - A` is a martingale with `c`-Lipschitz increments. -/
+theorem integral_sub_pow_four_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω → ℝ} {B c : ℝ}
+    (hY : Martingale Y ℱ μ) (hQ : Martingale (fun u ω ↦ Y u ω ^ 2 - A u ω) ℱ μ)
+    (hA_step : ∀ u v, u ≤ v → ∀ᵐ ω ∂μ, 0 ≤ A v ω - A u ω ∧ A v ω - A u ω ≤ c * ((v : ℝ) - u))
+    {u v : ℝ≥0} (huv : u ≤ v) (hYu : MemLp (Y u) 2 μ) (hYv : MemLp (Y v) 2 μ)
+    (hB : ∀ᵐ ω ∂μ, |Y v ω - Y u ω| ≤ B) :
+    ∫ ω, (Y v ω - Y u ω) ^ 4 ∂μ ≤ B ^ 2 * (c * ((v : ℝ) - u) * μ.real Set.univ) := by
+  have hd2 : ∀ᵐ ω ∂μ, (Y v ω - Y u ω) ^ 2 ≤ B ^ 2 :=
+    hB.mono fun _ hω ↦ by simpa only [sq_abs] using pow_le_pow_left₀ (abs_nonneg _) hω 2
+  have hd_lp : MemLp (fun ω ↦ (Y v ω - Y u ω) ^ 2) 2 μ := MemLp.of_bound
+    ((hYv.sub hYu).aestronglyMeasurable.pow 2) (B ^ 2)
+    (hd2.mono fun _ hω ↦ by rwa [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)])
+  have hint2 : Integrable (fun ω ↦ (Y v ω - Y u ω) ^ 2) μ := by
+    simpa only [Pi.sub_apply] using (hYv.sub hYu).integrable_sq
+  have h2 := hY.integral_sub_sq_le hQ hA_step huv hYu hYv
+  refine ((integral_mono_ae (by simpa only [← pow_mul] using hd_lp.integrable_sq)
+    (hint2.const_mul (B ^ 2)) (hd2.mono fun ω hω ↦
+      (show (Y v ω - Y u ω) ^ 4 = (Y v ω - Y u ω) ^ 2 * (Y v ω - Y u ω) ^ 2 by ring) ▸
+        mul_le_mul_of_nonneg_right hω (sq_nonneg _))).trans_eq
+    (integral_const_mul _ _)).trans (by gcongr)
+
 /-- First-moment bound for the discrete quadratic sum of a real `L²` martingale `Y` along a
 nondecreasing finite grid `g : Fin (n + 1) → ℝ≥0`, when `Y ^ 2 - A` is a martingale and `A` has
 nonnegative `c`-Lipschitz increments. -/
@@ -372,37 +396,14 @@ private lemma integral_quadraticSum_mul_last_sq_le [IsFiniteMeasure μ] {Y A : �
       c * ((g (Fin.last (n + 1)) : ℝ) - g (Fin.last n).castSucc) *
         (c * ((g (Fin.last n).castSucc : ℝ) - g 0) * μ.real Set.univ) := by
   let g' : Fin (n + 1) → ℝ≥0 := g ∘ Fin.castSucc
-  refine (hY.integral_mul_sub_sq_le hQ hA_step hstep_le
-    (hmem (Fin.last n).castSucc) (hmem (Fin.last (n + 1)))
-    (hY.stronglyAdapted.stronglyMeasurable_quadraticSum hg')
+  refine (hY.integral_mul_sub_sq_le hQ hA_step hstep_le (hmem (Fin.last n).castSucc)
+    (hmem (Fin.last (n + 1))) (hY.stronglyAdapted.stronglyMeasurable_quadraticSum hg')
     (ae_quadraticSum_le_of_bound g' fun k ↦ hYR k.castSucc)
     (fun _ ↦ quadraticSum_nonneg Y g' _)).trans ?_
   exact mul_le_mul_of_nonneg_left
     (by simpa only [g', Function.comp_apply, Fin.castSucc_zero] using
       integral_quadraticSum_le hY hQ hA_step hg' fun k ↦ hmem k.castSucc)
     (mul_nonneg hc (sub_nonneg.2 (NNReal.coe_le_coe.2 hstep_le)))
-
-private lemma integral_last_increment_pow_four_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω → ℝ}
-    {R c : ℝ} (hY : Martingale Y ℱ μ) (hQ : Martingale (fun u ω ↦ Y u ω ^ 2 - A u ω) ℱ μ)
-    (hA_step : ∀ u v, u ≤ v → ∀ᵐ ω ∂μ, 0 ≤ A v ω - A u ω ∧ A v ω - A u ω ≤ c * ((v : ℝ) - u))
-    {n : ℕ} {g : Fin (n + 2) → ℝ≥0}
-    (hstep_le : g (Fin.last n).castSucc ≤ g (Fin.last (n + 1)))
-    (hYR : ∀ k, ∀ᵐ ω ∂μ, |Y (g k) ω| ≤ R) (hmem : ∀ k, MemLp (Y (g k)) 2 μ)
-    (hd_lp : MemLp (fun ω ↦ (Y (g (Fin.last (n + 1))) ω - Y (g (Fin.last n).castSucc) ω) ^ 2)
-      2 μ) :
-    ∫ ω, ((Y (g (Fin.last (n + 1))) ω - Y (g (Fin.last n).castSucc) ω) ^ 2) ^ 2 ∂μ ≤
-      4 * R ^ 2 * (c * ((g (Fin.last (n + 1)) : ℝ) - g (Fin.last n).castSucc) *
-        μ.real Set.univ) := by
-  have hd_bd : ∀ᵐ ω ∂μ, (Y (g (Fin.last (n + 1))) ω - Y (g (Fin.last n).castSucc) ω) ^ 2 ≤
-      (2 * R) ^ 2 := ae_sq_sub_le (hYR (Fin.last (n + 1))) (hYR (Fin.last n).castSucc)
-  have hd_last := hY.integral_sub_sq_le hQ hA_step hstep_le
-    (hmem (Fin.last n).castSucc) (hmem (Fin.last (n + 1)))
-  rw [show (4 * R ^ 2 : ℝ) = (2 * R) ^ 2 by ring]
-  refine ((integral_mono_ae hd_lp.integrable_sq
-    ((hd_lp.integrable one_le_two).const_mul ((2 * R) ^ 2))
-    (hd_bd.mono fun _ hω ↦ (sq _).trans_le
-      (mul_le_mul_of_nonneg_right hω (sq_nonneg _)))).trans_eq
-    (integral_const_mul _ _)).trans (by gcongr)
 
 /-- Second-moment bound for the discrete quadratic sum of a uniformly bounded real martingale `Y`
 along a nondecreasing finite grid `g : Fin (n + 1) → ℝ≥0`, when `Y ^ 2 - A` is a martingale and
@@ -427,13 +428,17 @@ theorem integral_quadraticSum_sq_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω �
       MemLp.of_bound ((hY.stronglyAdapted (g k)).mono (ℱ.le _)).aestronglyMeasurable R
         ((hYR k).mono fun _ hω ↦ by rwa [Real.norm_eq_abs])
     let d (ω : Ω) : ℝ := (Y (g (Fin.last (n + 1))) ω - Y (g (Fin.last n).castSucc) ω) ^ 2
-    have hd_lp : MemLp d 2 μ := memLp_sub_sq_of_bound 2
-      (hmem _).aestronglyMeasurable (hmem _).aestronglyMeasurable (hYR _) (hYR _)
-    have hS'_lp : MemLp (quadraticSum Y g') 2 μ := memLp_quadraticSum_of_bound 2 g'
+    have hd_lp : MemLp d 2 μ := memLp_sub_sq_of_bound 2 (hmem _).aestronglyMeasurable
+      (hmem _).aestronglyMeasurable (hYR _) (hYR _)
+    have hS'_lp := memLp_quadraticSum_of_bound 2 g'
       (fun k ↦ (hmem k.castSucc).aestronglyMeasurable) (fun k ↦ hYR k.castSucc)
     have ih' := ih hg' fun k ↦ hYR k.castSucc
     have hcross := integral_quadraticSum_mul_last_sq_le hY hQ hA_step hc hg' hstep_le hYR hmem
-    have hquart := integral_last_increment_pow_four_le hY hQ hA_step hstep_le hYR hmem hd_lp
+    have hquart : ∫ ω, d ω ^ 2 ∂μ ≤ 4 * R ^ 2 * (c * ((g (Fin.last (n + 1)) : ℝ) -
+        g (Fin.last n).castSucc) * μ.real Set.univ) := by
+      rw [show (4 * R ^ 2 : ℝ) = (2 * R) ^ 2 by ring]
+      simpa only [d, ← pow_mul] using hY.integral_sub_pow_four_le hQ hA_step hstep_le
+        (hmem _) (hmem _) (ae_abs_sub_le_two_mul (hYR _) (hYR _))
     have hS_sq (ω : Ω) : quadraticSum Y g ω ^ 2 = quadraticSum Y g' ω ^ 2 +
         2 * (quadraticSum Y g' ω * d ω) + d ω ^ 2 := by rw [quadraticSum_castSucc_add Y g ω]; ring
     have h2S : Integrable (fun ω ↦ 2 * (quadraticSum Y g' ω * d ω)) μ :=
@@ -443,8 +448,8 @@ theorem integral_quadraticSum_sq_le [IsFiniteMeasure μ] {Y A : ℝ≥0 → Ω �
         (hS'_lp.integrable_sq.add h2S) hd_lp.integrable_sq,
       integral_add hS'_lp.integrable_sq h2S, integral_const_mul]
     simp only [g', Function.comp_apply, Fin.castSucc_zero] at ih'
-    have hL0 :=
-      mul_nonneg hc (sub_nonneg.2 (NNReal.coe_le_coe.2 (hg (Fin.zero_le (Fin.last n).castSucc))))
+    have hL0 := mul_nonneg hc (sub_nonneg.2 (NNReal.coe_le_coe.2
+      (hg (Fin.zero_le (Fin.last n).castSucc))))
     have hδ0 := mul_nonneg hc (sub_nonneg.2 (NNReal.coe_le_coe.2 hstep_le))
     have hsplit : (g (Fin.last (n + 1)) : ℝ) - g 0 = ((g (Fin.last n).castSucc : ℝ) - g 0) +
         ((g (Fin.last (n + 1)) : ℝ) - g (Fin.last n).castSucc) := by ring
