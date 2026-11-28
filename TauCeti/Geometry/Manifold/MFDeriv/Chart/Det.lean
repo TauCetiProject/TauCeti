@@ -13,7 +13,8 @@ import Mathlib.Analysis.Calculus.FDeriv.Comp
 
 Continuity, strict positivity, and the chain rule for the absolute Jacobian determinant of `C¹`
 extended coordinate changes `I.extendCoordChange e e'`, together with continuity of the product of
-the Jacobian determinant with a continuous function supported in the target chart's source.
+the Jacobian determinant with a continuous function whose topological support (the closure of its
+nonzero locus) is contained in the target chart's source.
 
 ## Main results
 
@@ -26,7 +27,8 @@ the Jacobian determinant with a continuous function supported in the target char
 * `ModelWithCorners.abs_det_fderivWithin_extendCoordChange_comp`: chain rule on triple chart
   overlaps.
 * `OpenPartialHomeomorph.continuousOn_abs_det_fderivWithin_extendCoordChange_mul`: continuity
-  of the extension-by-zero product with a continuous function supported in the target chart.
+  of the extension-by-zero product with a continuous function whose topological support (the closure
+  of its nonzero locus) is contained in the target chart's source.
 -/
 
 public section
@@ -104,33 +106,23 @@ theorem abs_det_fderivWithin_extendCoordChange_comp
     I.extend_mem_extendCoordChange_source hxe hxe'
   have hz_e'e'' : z ∈ (I.extendCoordChange e' e'').source :=
     I.extend_mem_extendCoordChange_source hxe' hxe''
-  have hΦy : I.extendCoordChange e e' y = z := by
-    simp only [y, z, OpenPartialHomeomorph.extend_coe, Function.comp_apply,
-      I.extendCoordChange_apply hxe]
+  have hΦy : I.extendCoordChange e e' y = z := I.extendCoordChange_extend hxe
   have hd1 : DifferentiableWithinAt ℝ (I.extendCoordChange e e') (Set.range I) y :=
     (I.contDiffWithinAt_extendCoordChange he he' hy_ee').differentiableWithinAt one_ne_zero
   have hd2 : DifferentiableWithinAt ℝ (I.extendCoordChange e' e'') (Set.range I) z :=
     (I.contDiffWithinAt_extendCoordChange he' he'' hz_e'e'').differentiableWithinAt one_ne_zero
   have hU : UniqueDiffWithinAt ℝ (Set.range I) y :=
-    I.uniqueDiffOn y (e.extend_target_subset_range
-      ((e.extend I).map_source (by rwa [e.extend_source])))
+    I.uniqueDiffOn y
+      (e.extend_target_subset_range (I.mem_extend_target_of_mem_extendCoordChange_source hy_ee'))
   have hmaps : Set.MapsTo (I.extendCoordChange e e') (Set.range I) (Set.range I) := fun _ _ ↦
     Set.mem_range_self _
   have heq : I.extendCoordChange e e'' =ᶠ[𝓝[Set.range I] y]
       I.extendCoordChange e' e'' ∘ I.extendCoordChange e e' := by
-    have hmem : (I.extendCoordChange e e').source ∩ (I.extendCoordChange e e'').source ∈
-        𝓝[Set.range I] y :=
-      Filter.inter_mem (I.extendCoordChange_source_mem_nhdsWithin' hxe hxe')
-        (I.extendCoordChange_source_mem_nhdsWithin' hxe hxe'')
-    filter_upwards [hmem] with w hw
-    rw [Function.comp_apply, PartialEquiv.trans_apply (e.extend I).symm (e'.extend I),
-      OpenPartialHomeomorph.extend_coe, Function.comp_apply,
-      I.extendCoordChange_apply (e'.extend_source (I := I) ▸ hw.1.2)]
-    rfl
+    filter_upwards [I.extendCoordChange_source_mem_nhdsWithin' hxe hxe'] with w hw
+    exact (I.extendCoordChange_comp_apply hw).symm
   have heq0 : I.extendCoordChange e e'' y =
-      (I.extendCoordChange e' e'' ∘ I.extendCoordChange e e') y := by
-    simp only [y, Function.comp_apply, OpenPartialHomeomorph.extend_coe,
-      I.extendCoordChange_apply hxe, I.extendCoordChange_apply hxe']
+      (I.extendCoordChange e' e'' ∘ I.extendCoordChange e e') y :=
+    (I.extendCoordChange_comp_apply hy_ee').symm
   rw [heq.fderivWithin_eq heq0, fderivWithin_comp y (hΦy ▸ hd2) hd1 hmaps hU, hΦy]
   simp only [ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_comp, LinearMap.det_comp,
     abs_mul]
@@ -139,8 +131,9 @@ end ModelWithCorners
 
 open Classical in
 /-- Multiplying the absolute Jacobian determinant of a `C¹` extended coordinate change by a
-continuous function supported in the target chart's source and extending by zero outside the
-overlap gives a function continuous on `(e₀.extend I).target`. -/
+continuous function whose topological support (the closure of its nonzero locus) is contained in
+the target chart's source and extending by zero outside the overlap gives a function continuous on
+`(e₀.extend I).target`. -/
 theorem OpenPartialHomeomorph.continuousOn_abs_det_fderivWithin_extendCoordChange_mul
     (e₀ e₁ : OpenPartialHomeomorph M H) (I : ModelWithCorners ℝ E H)
     (he₀ : e₀ ∈ IsManifold.maximalAtlas I 1 M) (he₁ : e₁ ∈ IsManifold.maximalAtlas I 1 M)
@@ -159,7 +152,8 @@ theorem OpenPartialHomeomorph.continuousOn_abs_det_fderivWithin_extendCoordChang
     have hcont : ContinuousOn
         (fun z ↦ |(fderivWithin ℝ Φ (range I) z).det| * f ((e₀.extend I).symm z)) Φ.source :=
       (I.continuousOn_abs_det_fderivWithin_extendCoordChange he₀ he₁).mul
-        (hf.comp_continuousOn (e₀.continuousOn_extend_symm.mono fun _ hz ↦ hz.1))
+        (hf.comp_continuousOn (e₀.continuousOn_extend_symm.mono
+          (I.extendCoordChange_source_subset_extend_target e₀ e₁)))
     refine ((hcont y hyΦ).mono_of_mem_nhdsWithin hmem).congr_of_eventuallyEq
       (Filter.eventuallyEq_of_mem hmem fun z hz ↦ Set.indicator_of_mem hz _)
       (Set.indicator_of_mem hyΦ _)

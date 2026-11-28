@@ -5,14 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
-public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.Geometry.Manifold.Measure.PositiveDensity.Basic
-import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ExtChartAt.Integral
 import TauCeti.Geometry.Manifold.ExtChartAt.Measurable
-import TauCeti.Geometry.Manifold.ExtChartAt.Measure
-import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Det
 import TauCeti.Geometry.Manifold.ModelWithCorners.Measure
 import TauCeti.MeasureTheory.Measure.Haar.Unique
@@ -30,17 +26,17 @@ This file extends `TauCeti.IsPositiveDensityMeasure` (defined in
   a strictly positive continuous coordinate density in every chart `e` of `IsManifold.maximalAtlas`
   relative to every additive Haar measure (`TauCeti.IsPositiveDensityMeasure.chartWeight`,
   `TauCeti.isPositiveDensityMeasure_iff_forall_mem_maximalAtlas`).
-* The canonical chart weight `IsPositiveDensityMeasure.chartWeight` (extended by zero outside
-  `(e.extend I).target`) is uniquely determined by `μ`, `e`, and `ν`, scales by
-  `Measure.addHaarScalarFactor` under a change of additive Haar measure, and transforms by the
-  absolute Jacobian determinant under `C¹` coordinate changes
+* The canonical chart weight `IsPositiveDensityMeasure.chartWeight` (continuous and strictly
+  positive on `(e.extend I).target` and zero elsewhere) is measurable, is uniquely determined by
+  `μ`, `e`, and `ν`, scales by `Measure.addHaarScalarFactor` under a change of additive Haar
+  measure, and transforms by the absolute Jacobian determinant under `C¹` coordinate changes
   (`TauCeti.IsPositiveDensityMeasure.chartWeight_changeChart`).
 
 ## Main definitions
 
-* `TauCeti.IsPositiveDensityMeasure.chartWeight`: the canonical strictly positive continuous
-  coordinate weight of a positive continuous density measure in a chart of the `C¹` maximal atlas,
-  extended by zero off `(e.extend I).target`.
+* `TauCeti.IsPositiveDensityMeasure.chartWeight`: the canonical coordinate weight of a positive
+  continuous density measure in a chart of the `C¹` maximal atlas, continuous and strictly
+  positive on `(e.extend I).target` and zero elsewhere.
 
 ## Main results
 
@@ -49,6 +45,8 @@ This file extends `TauCeti.IsPositiveDensityMeasure` (defined in
   `TauCeti.isPositiveDensityMeasure_iff_forall_mem_maximalAtlas`: one covering `C¹` atlas and one
   additive Haar measure suffice, and every `IsPositiveDensityMeasure` has densities in every chart
   of the `C¹` maximal atlas.
+* `TauCeti.IsPositiveDensityMeasure.measurable_chartWeight`: measurability of the canonical chart
+  weight on the model space.
 * `TauCeti.IsPositiveDensityMeasure.chartWeight_eqOn_target_of_map_restrict_eq`,
   `TauCeti.IsPositiveDensityMeasure.chartWeight_eq_of_map_restrict_eq`: uniqueness of the
   continuous chart weight on the extended chart target and as a function on the model space.
@@ -97,9 +95,9 @@ private theorem atlasPullbackWeight_eq {μ : Measure M} {ν : Measure E} [ν.IsA
       |(fderivWithin ℝ (I.extendCoordChange e (φ j)) (range I) y).det| *
         w j (I.extendCoordChange e (φ j) y) := by
   set x := (e.extend I).symm y
-  have hxe : x ∈ e.source := e.extend_source (I := I) ▸ (e.extend I).map_target hyi.1
-  have hxi : x ∈ (φ i).source := (φ i).extend_source (I := I) ▸ hyi.2
-  have hxj : x ∈ (φ j).source := (φ j).extend_source (I := I) ▸ hyj.2
+  have hxe : x ∈ e.source := I.extend_symm_mem_source_of_mem_extendCoordChange_source hyi
+  have hxi : x ∈ (φ i).source := I.extend_symm_mem_of_mem_extendCoordChange_source hyi
+  have hxj : x ∈ (φ j).source := I.extend_symm_mem_of_mem_extendCoordChange_source hyj
   have hzij : (φ i).extend I x ∈ (I.extendCoordChange (φ i) (φ j)).source :=
     I.extend_mem_extendCoordChange_source hxi hxj
   have htr := I.eqOn_abs_det_mul_of_map_restrict_eq (hφ i) (hφ j)
@@ -107,15 +105,11 @@ private theorem atlasPullbackWeight_eq {μ : Measure M} {ν : Measure E} [ν.IsA
     (hw_map i) (hw_map j) hzij
   dsimp only at htr
   have hchain := I.abs_det_fderivWithin_extendCoordChange_comp he (hφ i) (hφ j) hxe hxi hxj
-  have hΦij : I.extendCoordChange (φ i) (φ j) ((φ i).extend I x) = (φ j).extend I x := by
-    simp only [OpenPartialHomeomorph.extend_coe, Function.comp_apply,
-      I.extendCoordChange_apply hxi]
-  have hyx : e.extend I x = y := (e.extend I).right_inv hyi.1
-  have hΦi : I.extendCoordChange e (φ i) y = (φ i).extend I x :=
-    PartialEquiv.trans_apply (e.extend I).symm ((φ i).extend I)
-  have hΦj : I.extendCoordChange e (φ j) y = (φ j).extend I x :=
-    PartialEquiv.trans_apply (e.extend I).symm ((φ j).extend I)
-  rw [hΦi, hΦj, htr, hΦij, ← hyx, hchain]
+  have hyx : e.extend I x = y :=
+    (e.extend I).right_inv (I.mem_extend_target_of_mem_extendCoordChange_source hyi)
+  rw [I.extendCoordChange_apply' y, I.extendCoordChange_apply' y, htr,
+    I.extendCoordChange_extend hxi, ← hyx,
+    (e.extend I).left_inv (e.extend_source (I := I) ▸ hxe), hchain]
   ring
 
 omit [ChartedSpace H M] in
@@ -129,17 +123,20 @@ private theorem atlasPullback_map_eq {μ : Measure M} {ν : Measure E}
     (μ.restrict e.source).map (e.extend I) =
       (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w0 y) := by
   have hT_meas := e.measurableSet_extend_target I
-  obtain ⟨t, ht, htcover⟩ := I.exists_countable_coordChange_cover e hcov_e
+  obtain ⟨t, ht, htcover⟩ := I.exists_countable_subcover_extendCoordChange_source e hcov_e
   have hunion : ⋃ i ∈ t, (I.extendCoordChange e (φ i)).source = (e.extend I).target :=
-    Subset.antisymm (iUnion₂_subset fun _ _ _ hy ↦ hy.1) htcover
+    Subset.antisymm (iUnion₂_subset fun _ _ ↦ I.extendCoordChange_source_subset_extend_target e _)
+      htcover
+  have hae : AEMeasurable (e.extend I) (μ.restrict e.source) :=
+    ((e.continuousOn_extend (I := I)).mono (e.extend_source (I := I)).ge).aemeasurable
+      e.open_source.measurableSet
+  have hsub : e.source ⊆ e.extend I ⁻¹' (e.extend I).target := fun x hx ↦
+    (e.extend I).map_source (e.extend_source (I := I) ▸ hx)
   have hμT : ((μ.restrict e.source).map (e.extend I)).restrict (e.extend I).target =
       (μ.restrict e.source).map (e.extend I) := by
-    ext A hA
-    rw [Measure.restrict_apply hA, e.map_restrict_extend_apply I μ (hA.inter hT_meas),
-      e.map_restrict_extend_apply I μ hA]
-    congr 1; ext x
-    exact ⟨fun ⟨⟨hxA, _⟩, hxe⟩ ↦ ⟨hxA, hxe⟩,
-      fun ⟨hxA, hxe⟩ ↦ ⟨⟨hxA, (e.extend I).map_source (e.extend_source (I := I) ▸ hxe)⟩, hxe⟩⟩
+    rw [Measure.restrict_map_of_aemeasurable hae hT_meas,
+      ← Measure.restrict_comm e.open_source.measurableSet,
+      Measure.restrict_restrict_of_subset hsub]
   have hνT : ((ν.restrict (e.extend I).target).withDensity
       fun y ↦ ENNReal.ofReal (w0 y)).restrict (e.extend I).target =
       (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w0 y) := by
@@ -150,12 +147,11 @@ private theorem atlasPullback_map_eq {μ : Measure M} {ν : Measure E}
           fun y ↦ ENNReal.ofReal (w0 y)).restrict (I.extendCoordChange e (φ i)).source := by
     intro i _
     have hU := I.measurableSet_extendCoordChange_source e (φ i)
-    have hUsub : (I.extendCoordChange e (φ i)).source ⊆ (e.extend I).target := fun _ hy ↦ hy.1
-    ext A hA
-    rw [Measure.restrict_apply hA, hpiece i (hA.inter hU) inter_subset_right,
-      Measure.restrict_apply hA, withDensity_apply _ (hA.inter hU),
-      Measure.restrict_restrict (hA.inter hU),
-      inter_eq_left.2 (inter_subset_right.trans hUsub)]
+    have hUsub : (I.extendCoordChange e (φ i)).source ⊆ (e.extend I).target :=
+      I.extendCoordChange_source_subset_extend_target e (φ i)
+    refine (Measure.restrict_congr_meas hU).2 fun A hAsub hA ↦ ?_
+    rw [hpiece i hA hAsub, withDensity_apply _ hA, Measure.restrict_restrict hA,
+      inter_eq_left.2 (hAsub.trans hUsub)]
   have hbi := (Measure.restrict_biUnion_congr ht).2 hrest
   rw [hunion, hμT, hνT] at hbi
   exact hbi
@@ -188,7 +184,7 @@ private theorem exists_density_mem_maximalAtlas_of_atlas {μ : Measure M}
       w i (I.extendCoordChange e (φ i) y)
   let w0 (y : E) : ℝ := if hy : y ∈ (e.extend I).target then g (hcov_e y hy).choose y else 0
   have hw0_eq (i : ι) : EqOn w0 (g i) (I.extendCoordChange e (φ i)).source := fun y hy ↦ by
-    have hyT : y ∈ (e.extend I).target := hy.1
+    have hyT : y ∈ (e.extend I).target := I.mem_extend_target_of_mem_extendCoordChange_source hy
     dsimp only [w0]; rw [dite_eq_left hyT]
     exact atlasPullbackWeight_eq hφ hw_cont hw_pos hw_map he (hcov_e y hyT).choose_spec hy
   have hw0_cont : ContinuousOn w0 (e.extend I).target := fun y hy ↦ by
@@ -198,19 +194,19 @@ private theorem exists_density_mem_maximalAtlas_of_atlas {μ : Measure M}
     have hgi : ContinuousOn (g i) (I.extendCoordChange e (φ i)).source :=
       (I.continuousOn_abs_det_fderivWithin_extendCoordChange he (hφ i)).mul
         ((hw_cont i).comp (I.contDiffOn_extendCoordChange he (hφ i)).continuousOn
-          fun _ hz ↦ ((I.extendCoordChange e (φ i)).map_source hz).1)
+          fun _ hz ↦ I.extendCoordChange_mem_extend_target hz)
     exact ((hgi y hyi).mono_of_mem_nhdsWithin hmem).congr_of_eventuallyEq
       (Filter.eventuallyEq_of_mem hmem fun z hz ↦ hw0_eq i hz) (hw0_eq i hyi)
   have hw0_pos : ∀ y ∈ (e.extend I).target, 0 < w0 y := fun y hy ↦ by
     obtain ⟨i, hyi⟩ := hcov_e y hy
     rw [hw0_eq i hyi]
     exact mul_pos (I.abs_det_fderivWithin_extendCoordChange_pos he (hφ i) hyi)
-      (hw_pos i _ ((I.extendCoordChange e (φ i)).map_source hyi).1)
+      (hw_pos i _ (I.extendCoordChange_mem_extend_target hyi))
   have hmap_nu : (μ.restrict e.source).map (e.extend I) =
       (ν.restrict (e.extend I).target).withDensity fun y ↦ ENNReal.ofReal (w0 y) :=
     atlasPullback_map_eq (I := I) (μ := μ) (ν := ν) hcov_e fun i A hA hAsub ↦ by
       rw [e.map_restrict_extend_apply_of_subset_extendCoordChange_source (φ i) I he (hφ i)
-        (hw_cont i) (hw_map i) hA hAsub]
+        (hw_map i) hA hAsub]
       exact setLIntegral_congr_fun hA fun y hy ↦ by
         rw [hw0_eq i (hAsub hy), ENNReal.ofReal_mul (abs_nonneg _)]
   refine ⟨fun y ↦ (Measure.addHaarScalarFactor ν ν' : ℝ) * w0 y,
@@ -305,6 +301,22 @@ theorem IsPositiveDensityMeasure.continuousOn_chartWeight {μ : Measure M}
     ContinuousOn (hμ.chartWeight he ν) (e.extend I).target :=
   (hμ.exists_density_of_mem_maximalAtlas he ν).choose_spec.1.congr fun _ hy ↦
     indicator_of_mem hy _
+
+/-- The canonical chart weight is measurable on the model space. -/
+theorem IsPositiveDensityMeasure.measurable_chartWeight {μ : Measure M}
+    (hμ : IsPositiveDensityMeasure I μ) {e : OpenPartialHomeomorph M H}
+    (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure] :
+    Measurable (hμ.chartWeight he ν) := by
+  classical
+  have hpiece : (e.extend I).target.piecewise (hμ.chartWeight he ν) 0 = hμ.chartWeight he ν := by
+    rw [Set.piecewise_eq_indicator]
+    ext y
+    by_cases hy : y ∈ (e.extend I).target
+    · exact indicator_of_mem hy _
+    · rw [indicator_of_notMem hy, hμ.chartWeight_eq_zero_of_notMem he ν hy]
+  rw [← hpiece]
+  exact (hμ.continuousOn_chartWeight he ν).measurable_piecewise continuousOn_const
+    (e.measurableSet_extend_target I)
 
 /-- The canonical chart weight is strictly positive on `(e.extend I).target`. -/
 theorem IsPositiveDensityMeasure.chartWeight_pos {μ : Measure M}
@@ -453,8 +465,13 @@ theorem IsPositiveDensityMeasure.measure_eq_zero_iff_extend_image_of_subset
     (he : e ∈ IsManifold.maximalAtlas I 1 M) (ν : Measure E) [ν.IsAddHaarMeasure]
     {s : Set M} (hsub : s ⊆ e.source) :
     μ s = 0 ↔ ν (e.extend I '' s) = 0 := by
-  obtain ⟨w, hwc, hwpos, hw⟩ := hμ.exists_density_of_mem_maximalAtlas he ν
-  exact e.measure_eq_zero_iff_image_extend_of_map_restrict_eq I hwc hwpos hw hsub
+  have htgt := e.measurableSet_extend_target I
+  exact e.measure_eq_zero_iff_image_extend_of_map_restrict_eq I
+    ((ENNReal.continuous_ofReal.comp_continuousOn
+      (hμ.continuousOn_chartWeight he ν)).aemeasurable htgt)
+    ((ae_restrict_iff' htgt).2 (Filter.Eventually.of_forall fun y hy ↦
+      (ENNReal.ofReal_pos.2 (hμ.chartWeight_pos he ν hy)).ne'))
+    (hμ.map_restrict_eq_withDensity_chartWeight he ν) hsub
 
 end ChartWeight
 

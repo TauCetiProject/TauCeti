@@ -27,6 +27,9 @@ the preimage of `s` under the inclusion of `(s \ {x})ᶜ` lies in `{x}`
 
 For `h : MapsTo f s t`, the image in `α` of the preimage of `A ⊆ t` under `h.restrict` is
 `s ∩ f ⁻¹' A` (`Set.MapsTo.image_val_preimage_restrict`).
+
+For `hf : InjOn f u` and `s ⊆ u`, the preimage of `f '' s` under `u.domRestrict f` is
+`Subtype.val ⁻¹' s` (`Set.InjOn.preimage_domRestrict_image`).
 -/
 
 public section
@@ -95,5 +98,13 @@ theorem MapsTo.image_val_preimage_restrict {s : Set α} {u : Set β} (h : MapsTo
     (A : Set u) : Subtype.val '' (h.restrict f s u ⁻¹' A) = s ∩ f ⁻¹' (Subtype.val '' A) := by
   rw [← Subtype.image_preimage_coe, ← preimage_comp, ← h.restrict_commutes, preimage_comp,
     preimage_image_eq _ Subtype.val_injective]
+
+/-- For a map `f` injective on `u` and a subset `s ⊆ u`, the preimage of `f '' s` under the
+domain restriction `u.domRestrict f` is `Subtype.val ⁻¹' s`. -/
+theorem InjOn.preimage_domRestrict_image {u s : Set α} {f : α → β}
+    (hf : InjOn f u) (hsub : s ⊆ u) :
+    u.domRestrict f ⁻¹' (f '' s) = Subtype.val ⁻¹' s := by
+  ext z
+  exact hf.mem_image_iff hsub z.property
 
 end Set

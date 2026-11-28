@@ -55,12 +55,16 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [IsContinuousRiemannianBundle (EuclideanSpace ℝ (Fin (n + 1)))
     (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
 
+omit [IsContinuousRiemannianBundle (EuclideanSpace ℝ (Fin (n + 1)))
+  (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)] in
 /-- The **Riemannian boundary volume measure** on `(𝓡∂ (n + 1)).boundary M`, i.e.
 `TauCeti.riemannianVolume` of `TauCeti.halfSpaceBoundaryMetric` (`LindelofSpace` descends). -/
 noncomputable def halfSpaceBoundaryVolume : Measure ((𝓡∂ (n + 1)).boundary M) :=
   let _ := isManifold_boundary (n := n) (k := 1) M
   riemannianVolume 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) ((𝓡∂ (n + 1)).boundary M)
 
+omit [IsContinuousRiemannianBundle (EuclideanSpace ℝ (Fin (n + 1)))
+  (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)] in
 /-- Unfold `TauCeti.halfSpaceBoundaryVolume` as `TauCeti.riemannianVolume` on the boundary. -/
 theorem halfSpaceBoundaryVolume_eq_riemannianVolume
     [IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1 ((𝓡∂ (n + 1)).boundary M)] :
@@ -82,7 +86,6 @@ section ZeroDimBoundary
 variable {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace 1) M]
   [IsManifold (𝓡∂ 1) 1 M] [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡∂ 1) x)]
-  [IsContinuousRiemannianBundle (EuclideanSpace ℝ (Fin 1)) (fun x : M ↦ TangentSpace (𝓡∂ 1) x)]
 
 /-- For `n = 0`, the induced boundary measure is counting measure on the boundary. -/
 theorem halfSpaceBoundaryVolume_zero_eq_count :

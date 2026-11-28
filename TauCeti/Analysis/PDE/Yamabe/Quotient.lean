@@ -107,6 +107,7 @@ def yamabeQuotient (u : M → ℝ) : ℝ :=
     (∫ x, |u x| ^ criticalExponent (finrank ℝ E) ∂riemannianVolume I M) ^
       (2 / criticalExponent (finrank ℝ E))
 
+omit [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
 /-- Unfolding lemma for `TauCeti.Yamabe.yamabeQuotient`. -/
 theorem yamabeQuotient_def (u : M → ℝ) :
     yamabeQuotient I u =
@@ -119,6 +120,7 @@ theorem yamabeQuotient_def (u : M → ℝ) :
 
 variable {I}
 
+omit [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
 /-- Nonnegative scalar curvature makes the total Yamabe quotient nonnegative, even without
 regularity or integrability assumptions on the function. In dimension `n = 2` the coefficient and
 exponent are junk values of the real division by zero; for `n = 0, 1` they are the algebraic
@@ -132,6 +134,7 @@ theorem yamabeQuotient_nonneg_of_scalarCurvature_nonneg (u : M → ℝ)
     (mul_nonneg (hS x) (sq_nonneg _)))
     (Real.rpow_nonneg (integral_nonneg fun x ↦ Real.rpow_nonneg (abs_nonneg _) _) _)
 
+omit [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
 /-- **Scale invariance of the Yamabe quotient.** In dimension `n > 2`, multiplying a
 function by a nonzero constant does not change its Yamabe quotient. -/
 theorem yamabeQuotient_smul (hn : 2 < finrank ℝ E) {u : M → ℝ} {c : ℝ} (hc : c ≠ 0) :

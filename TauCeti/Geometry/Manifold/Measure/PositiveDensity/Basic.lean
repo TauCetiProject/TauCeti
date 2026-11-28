@@ -134,8 +134,17 @@ theorem IsPositiveDensityMeasure.measure_eq_zero_iff_image_of_subset
     (ν : Measure E) [ν.IsAddHaarMeasure] : μ s = 0 ↔ ν ((extChartAt I x) '' s) = 0 := by
   obtain ⟨w, hwc, hwpos, hw⟩ := hμ x ν
   rw [extChartAt_source, extChartAt_eq_extend] at hw
-  exact (chartAt H x).measure_eq_zero_iff_image_extend_of_map_restrict_eq I hwc hwpos hw
-    (extChartAt_source (I := I) x ▸ hsub)
+  have htgt : MeasurableSet ((chartAt H x).extend I).target := by
+    simpa only [← extChartAt_eq_extend] using measurableSet_extChartAt_target x
+  have hwc' : ContinuousOn w ((chartAt H x).extend I).target := by
+    simpa only [extChartAt_eq_extend] using hwc
+  have hwpos' : ∀ y ∈ ((chartAt H x).extend I).target, 0 < w y := by
+    simpa only [extChartAt_eq_extend] using hwpos
+  exact (chartAt H x).measure_eq_zero_iff_image_extend_of_map_restrict_eq I
+    (ContinuousOn.aemeasurable (ENNReal.continuous_ofReal.comp_continuousOn hwc') htgt)
+    ((ae_restrict_iff' htgt).2 (Filter.Eventually.of_forall fun y hy ↦
+      (ENNReal.ofReal_pos.2 (hwpos' y hy)).ne'))
+    hw (extChartAt_source (I := I) x ▸ hsub)
 
 /-- Every point has measure zero for a positive continuous density measure on a manifold of
 positive dimension. -/
@@ -202,7 +211,7 @@ theorem IsPositiveDensityMeasure.isLocallyFiniteMeasure [FiniteDimensional ℝ E
     exists_isOpen_setLIntegral_image_extChartAt_lt_top hwc (Measure.addHaar : Measure E)
   have hUm : MeasurableSet (extChartAt I x '' U) := hUo.measurableSet.image_extChartAt x hUsub
   refine ⟨U, hUo.mem_nhds hxU, ?_⟩
-  rwa [← map_restrict_extChartAt_source_apply_image hUo.measurableSet hUsub, hw,
+  rwa [← map_restrict_extChartAt_source_apply_image hUsub, hw,
     withDensity_apply _ hUm, Measure.restrict_restrict hUm,
     inter_eq_left.2 ((image_mono hUsub).trans (extChartAt I x).image_source_eq_target.subset)]
 

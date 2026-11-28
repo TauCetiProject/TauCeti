@@ -56,6 +56,9 @@ requiring the reference measure itself to be sigma-finite.
   weight is the image measure weighted by that weight.
 * `MeasurableEmbedding.map_withDensity_comp`: the same along a measurable embedding, with no
   measurability of the weight.
+* `MeasurableEmbedding.comap_withDensity` and
+  `MeasureTheory.Measure.comap_subtypeVal_restrict_withDensity`: pulling a weighted measure back
+  along a measurable embedding or measurable subtype inclusion pulls the weight back.
 * `MeasureTheory.Measure.map_add_right_withDensity`: translating a weighted right-invariant
   measure translates the weight.
 * `MeasureTheory.Measure.map_affine_withDensity`: the image of a weighted Haar measure under an
@@ -119,6 +122,18 @@ theorem map_withDensity_comp {μ : Measure α} {f : α → β}
     withDensity_apply _ hs, ← lintegral_indicator (hf.measurable hs), ← lintegral_indicator hs,
     hf.lintegral_map]
   exact lintegral_congr fun x ↦ Set.indicator_comp_right f
+
+/-- Pulling a weighted measure back along a measurable embedding pulls the weight back along the
+embedding. No measurability of the weight `g` is needed. -/
+theorem comap_withDensity {μ : Measure β} {f : α → β} (hf : MeasurableEmbedding f)
+    (g : β → ℝ≥0∞) :
+    (μ.withDensity g).comap f = (μ.comap f).withDensity (g ∘ f) := by
+  ext s hs
+  rw [hf.comap_apply, withDensity_apply _ (hf.measurableSet_image.2 hs), withDensity_apply _ hs,
+    hf.restrict_comap]
+  dsimp only [Function.comp_apply]
+  rw [← hf.lintegral_map g, hf.map_comap, Measure.restrict_restrict hf.measurableSet_range,
+    Set.inter_eq_right.2 (Set.image_subset_range f s)]
 
 end MeasurableEmbedding
 
@@ -479,6 +494,17 @@ theorem Measure.restrict_withDensity_restrict {α : Type*} [MeasurableSpace α] 
     (∫⁻ x in t, f x ∂μ.restrict s) = ∫⁻ x in t ∩ s, f x ∂μ.restrict s := by
       rw [Measure.restrict_restrict ht, Measure.restrict_restrict_of_subset Set.inter_subset_right]
     _ ≤ (μ.restrict s).withDensity f (t ∩ s) := withDensity_apply_le _ _
+
+/-- Pulling a weighted restriction `(μ.restrict s).withDensity f` back along the measurable
+subtype inclusion `Subtype.val : s → α` yields
+`(μ.comap Subtype.val).withDensity (f ∘ Subtype.val)`.
+The weight `f` is arbitrary; no measurability of it is required. -/
+theorem Measure.comap_subtypeVal_restrict_withDensity {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {s : Set α} (hs : MeasurableSet s) (f : α → ℝ≥0∞) :
+    ((μ.restrict s).withDensity f).comap (Subtype.val : s → α) =
+      (μ.comap (Subtype.val : s → α)).withDensity (f ∘ Subtype.val) := by
+  have hval : MeasurableEmbedding (Subtype.val : s → α) := .subtypeVal hs
+  rw [hval.comap_withDensity, hval.comap_restrict, Subtype.coe_preimage_self, Measure.restrict_univ]
 
 /-- A measure restricted to a measurable set `s` and then weighted gives no mass to the complement
 of `s`. The weight `f` is arbitrary; no measurability of it is required. -/

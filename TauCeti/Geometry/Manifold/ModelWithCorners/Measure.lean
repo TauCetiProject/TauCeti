@@ -14,20 +14,20 @@ import TauCeti.MeasureTheory.Measure.Subtype
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
-# Additive Haar measures on relatively open subsets of model ranges
+# Measures on relatively open subsets of model ranges
 
-Pulling an additive Haar measure on a real normed space `E` back to a relatively open subset
-`I.symm ⁻¹' U ∩ Set.range I` of the range of a `ModelWithCorners ℝ E H` yields a measure positive
+Pulling an open-positive measure on a normed space `E` back to a relatively open subset
+`I.symm ⁻¹' U ∩ Set.range I` of the range of a `ModelWithCorners 𝕜 E H` yields a measure positive
 on nonempty relatively open subsets
 (`ModelWithCorners.isOpenPosMeasure_comap_preimage_inter_range`).
-Consequently, on a finite-dimensional model space, two continuous nonnegative real densities
+Consequently, on a finite-dimensional real model space, two continuous nonnegative real densities
 presenting the same weighted Haar measure on `I.symm ⁻¹' U ∩ Set.range I` agree pointwise there
 (`ModelWithCorners.eqOn_of_withDensity_ofReal_eq`).
 
 ## Main results
 
-* `ModelWithCorners.isOpenPosMeasure_comap_preimage_inter_range`: pulling an additive Haar
-  measure back to a relatively open subset of `Set.range I` yields an open-positive measure.
+* `ModelWithCorners.isOpenPosMeasure_comap_preimage_inter_range`: pulling an open-positive measure
+  back to a relatively open subset of `Set.range I` yields an open-positive measure.
 * `ModelWithCorners.eqOn_of_withDensity_ofReal_eq`: continuous nonnegative real densities presenting
   the same weighted Haar measure on a relatively open subset of `Set.range I` agree pointwise there.
 -/
@@ -42,10 +42,12 @@ namespace ModelWithCorners
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H]
 
-/-- Pulling an additive Haar measure back to a relatively open subset of `range I` yields a
+/-- Pulling an open-positive measure back to a relatively open subset of `range I` yields a
 measure positive on nonempty relatively open subsets. -/
-theorem isOpenPosMeasure_comap_preimage_inter_range (I : ModelWithCorners ℝ E H)
-    [MeasurableSpace E] [BorelSpace E] (ν : Measure E) [ν.IsAddHaarMeasure]
+theorem isOpenPosMeasure_comap_preimage_inter_range {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H)
+    [MeasurableSpace E] [OpensMeasurableSpace E] (ν : Measure E) [ν.IsOpenPosMeasure]
     {U : Set H} (hU : IsOpen U) :
     (ν.comap (Subtype.val : (I.symm ⁻¹' U ∩ range I : Set E) → E)).IsOpenPosMeasure := by
   set V : Set E := I.symm ⁻¹' U ∩ range I
@@ -79,23 +81,14 @@ theorem eqOn_of_withDensity_ofReal_eq (I : ModelWithCorners ℝ E H) [FiniteDime
   set V : Set E := I.symm ⁻¹' U ∩ range I
   have hV : MeasurableSet V :=
     (hU.preimage I.continuous_symm).measurableSet.inter I.isClosed_range.measurableSet
-  have hval : MeasurableEmbedding (Subtype.val : V → E) := .subtypeVal hV
   have : (ν.comap (Subtype.val : V → E)).IsOpenPosMeasure :=
     I.isOpenPosMeasure_comap_preimage_inter_range ν hU
-  have hcomap (w : E → ℝ) :
-      ((ν.restrict V).withDensity (fun y ↦ ENNReal.ofReal (w y))).comap (Subtype.val : V → E) =
-        (ν.comap (Subtype.val : V → E)).withDensity fun y ↦ ENNReal.ofReal (w y.val) := by
-    ext A hA
-    rw [hval.comap_apply, withDensity_apply _ (hval.measurableSet_image' hA),
-      withDensity_apply _ hA, Measure.restrict_restrict (hval.measurableSet_image' hA),
-      inter_eq_left.2 (Subtype.coe_image_subset V A),
-      hval.restrict_comap, ← hval.lintegral_map (fun y ↦ ENNReal.ofReal (w y)), hval.map_comap,
-      Subtype.range_coe, Measure.restrict_restrict hV,
-      inter_eq_right.2 (Subtype.coe_image_subset V A)]
   have hsubEq :
       (ν.comap (Subtype.val : V → E)).withDensity (fun y ↦ ENNReal.ofReal (w₁ y.val)) =
         (ν.comap (Subtype.val : V → E)).withDensity fun y ↦ ENNReal.ofReal (w₂ y.val) := by
-    rw [← hcomap w₁, ← hcomap w₂, heq]
+    have h := congrArg (Measure.comap (Subtype.val : V → E)) heq
+    rwa [Measure.comap_subtypeVal_restrict_withDensity hV,
+      Measure.comap_subtypeVal_restrict_withDensity hV] at h
   have hfun := MeasureTheory.continuous_eq_of_withDensity_ofReal_eq
     (continuousOn_iff_continuous_domRestrict.1 hw₁)
     (continuousOn_iff_continuous_domRestrict.1 hw₂)

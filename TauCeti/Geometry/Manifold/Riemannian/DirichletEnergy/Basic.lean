@@ -51,7 +51,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
 variable (I) in
 /-- The Dirichlet energy `∫ ‖grad φ‖² dV` of a real function, without the factor `1 / 2`. -/
@@ -115,7 +114,9 @@ theorem dirichletEnergyOn_nonneg (φ : M → ℝ) (s : Set M) : 0 ≤ dirichletE
   integral_nonneg fun _ ↦ sq_nonneg _
 
 /-- The squared length of the gradient of a compactly supported `C¹` function is integrable. -/
-theorem integrable_norm_sq_mgradient {φ : M → ℝ} (hφ : ContMDiff I 𝓘(ℝ) 1 φ)
+theorem integrable_norm_sq_mgradient
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+    {φ : M → ℝ} (hφ : ContMDiff I 𝓘(ℝ) 1 φ)
     (hc : HasCompactSupport φ) :
     Integrable (fun x ↦ ‖mgradient I φ x‖ ^ 2) (riemannianVolume I M) := by
   refine (continuous_norm_sq_mgradient hφ).integrable_of_hasCompactSupport ?_

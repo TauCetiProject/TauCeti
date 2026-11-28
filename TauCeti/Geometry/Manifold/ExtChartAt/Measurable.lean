@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+import TauCeti.Geometry.Manifold.ExtChartAt.CoordChange
 
 /-!
 # Measurability for extended charts and coordinate changes
@@ -24,8 +25,6 @@ change-of-variables or Haar integration dependencies.
   measurable iff its image under `e.extend I` is Borel measurable.
 * `OpenPartialHomeomorph.measurableSet_image_extend`: the image under `e.extend I` of a
   measurable subset of `e.source` is measurable.
-* `OpenPartialHomeomorph.continuous_domRestrict_extend`: `e.extend I` restricted to `e.source` is
-  continuous.
 * `OpenPartialHomeomorph.measurableSet_preimage_extend_inter`: Borel preimages under `e.extend I`
   intersected with `e.source` are measurable.
 * `ModelWithCorners.measurableSet_extendCoordChange_source`: the source of an extended
@@ -91,13 +90,6 @@ theorem measurableSet_image_extend [MeasurableSpace E] [OpensMeasurableSpace E]
     have : BorelSpace E := ⟨rfl⟩
     exact (e.measurableSet_image_extend_iff I hsub).2 hs
 
-/-- Restricting an extended chart `e.extend I` to `e.source` gives a continuous map. -/
-theorem continuous_domRestrict_extend (e : OpenPartialHomeomorph M H)
-    (I : ModelWithCorners 𝕜 E H) :
-    Continuous (e.source.domRestrict (e.extend I)) := by
-  rw [← continuousOn_iff_continuous_domRestrict, ← e.extend_source (I := I)]
-  exact e.continuousOn_extend
-
 /-- The preimage of a Borel measurable set in `E` under `e.extend I`, intersected with `e.source`,
 is measurable whenever open subsets of `M` are measurable. -/
 theorem measurableSet_preimage_extend_inter [MeasurableSpace E] [BorelSpace E]
@@ -122,9 +114,9 @@ are measurable. -/
 theorem measurableSet_extendCoordChange_source [MeasurableSpace E] [OpensMeasurableSpace E]
     (I : ModelWithCorners 𝕜 E H) (e e' : OpenPartialHomeomorph M H) :
     MeasurableSet (I.extendCoordChange e e').source := by
-  rw [I.extendCoordChange_source, I.image_eq]
-  exact ((e.symm ≫ₕ e').open_source.preimage I.continuous_symm).measurableSet.inter
-    I.isClosed_range.measurableSet
+  simpa only [OpenPartialHomeomorph.extend_target', OpenPartialHomeomorph.symm_target,
+    ← I.extendCoordChange_source] using
+    ((e.symm ≫ₕ e').symm).measurableSet_extend_target I
 
 end ModelWithCorners
 

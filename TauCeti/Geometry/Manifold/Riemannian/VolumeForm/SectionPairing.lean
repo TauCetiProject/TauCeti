@@ -68,7 +68,6 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I 1 M] [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
@@ -169,6 +168,8 @@ theorem l2Pairing_self_eq_zero_iff_ae {ξ : ∀ x, V x}
   refine ⟨fun hz ↦ ?_, fun hz ↦ by simp [hz]⟩
   by_contra hx
   exact (h.pos x _ hx).ne' hz
+
+variable [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
 /-- For a continuous section with integrable squared norm, the diagonal pairing vanishes exactly
 when the section is zero. No compact-support or positive-dimension hypothesis is needed. -/

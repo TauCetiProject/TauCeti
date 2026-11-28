@@ -83,6 +83,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
+section
+
+omit [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
 variable (I M) in
 /-- The chart volume measures glue to a unique measure on the manifold. -/
 private theorem existsUnique_restrict_eq_chartRiemannianVolume :
@@ -95,6 +98,7 @@ private theorem existsUnique_restrict_eq_chartRiemannianVolume :
       (fun α : M ↦ (chartAt H α).open_source.measurableSet) ht hcover fun α _ β ↦ by
         simpa only [extChartAt_source] using chartRiemannianVolume_restrict_overlap (I := I) α β
 
+omit [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
 variable (I M) in
 /-- The **Riemannian volume measure** of a manifold `M` with a continuous Riemannian metric: the
 unique measure whose restriction to the source of each preferred chart is the chart volume
@@ -103,12 +107,14 @@ metric Gram determinant. It is characterized by `TauCeti.eq_riemannianVolume_iff
 def riemannianVolume : Measure M :=
   (existsUnique_restrict_eq_chartRiemannianVolume I M).exists.choose
 
+omit [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
 /-- On the source of each preferred chart, the Riemannian volume is the chart volume. -/
 @[simp]
 theorem riemannianVolume_restrict_source (α : M) :
     (riemannianVolume I M).restrict (chartAt H α).source = chartRiemannianVolume (I := I) α :=
   (existsUnique_restrict_eq_chartRiemannianVolume I M).exists.choose_spec α
 
+omit [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
 /-- The Riemannian volume is the only measure agreeing with the chart volume on the source of
 every preferred chart. -/
 theorem eq_riemannianVolume_iff {ν : Measure M} :
@@ -118,10 +124,13 @@ theorem eq_riemannianVolume_iff {ν : Measure M} :
   exact (existsUnique_restrict_eq_chartRiemannianVolume I M).unique h
     riemannianVolume_restrict_source
 
+omit [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
 /-- The Riemannian volume of a subset of a chart source is its chart volume. -/
 theorem riemannianVolume_apply_of_subset {α : M} {s : Set M} (hs : s ⊆ (chartAt H α).source) :
     riemannianVolume I M s = chartRiemannianVolume (I := I) α s := by
   rw [← riemannianVolume_restrict_source α, Measure.restrict_eq_self _ hs]
+
+end
 
 section Coordinates
 
@@ -369,8 +378,7 @@ theorem riemannianVolume_eq_count_of_subsingleton
     {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
     {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
     [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] :
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] :
     riemannianVolume I M = Measure.count := by
   let _ : MeasurableSpace E := borel E
   have _ : BorelSpace E := ⟨rfl⟩

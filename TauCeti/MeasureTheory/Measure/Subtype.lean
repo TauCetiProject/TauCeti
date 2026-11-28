@@ -52,6 +52,8 @@ of `μ.comap (↑)`:
 * `MeasureTheory.Measure.comap_preimage_le`: `(μ.comap f) (f ⁻¹' v) ≤ μ v` for measurable `f`.
 * `MeasureTheory.Measure.comap_inclusion_comap_subtype_coe`: compatibility of `Measure.comap` along
   nested subtypes `s ⊆ t` with `t` measurable.
+* `MeasureTheory.Measure.map_restrict_eq_map_comap_subtypeVal`: factoring the pushforward of a
+  restricted measure along an a.e.-measurable map through the subtype pullback.
 * `MeasureTheory.Measure.isProbabilityMeasure_comap_subtype`: pulling `μ` back to a measurable
   subtype of `μ`-mass `1` yields a probability measure.
 * `MeasureTheory.Measure.isFiniteMeasure_comap_subtype_coe`: finiteness of `μ.comap ((↑) : s → α)`
@@ -108,6 +110,15 @@ theorem comap_inclusion_comap_subtype_coe {s t : Set α} (ht : MeasurableSet t) 
     (μ : Measure α) :
     (μ.comap ((↑) : t → α)).comap (Set.inclusion hst) = μ.comap ((↑) : s → α) :=
   (MeasurableEmbedding.subtypeVal ht).comap_comap (Set.inclusion hst) μ
+
+/-- Factoring the pushforward of a restricted measure `μ.restrict s` along a map a.e.-measurable
+on `s` through the subtype pullback `μ.comap (Subtype.val : s → α)` and `s.domRestrict f`. -/
+theorem map_restrict_eq_map_comap_subtypeVal {f : α → β} {s : Set α} (hs : MeasurableSet s)
+    (μ : Measure α) (hf : AEMeasurable f (μ.restrict s)) :
+    (μ.restrict s).map f = (μ.comap (Subtype.val : s → α)).map (s.domRestrict f) := by
+  rw [← map_comap_subtypeVal hs μ]
+  exact AEMeasurable.map_map_of_aemeasurable (by rwa [map_comap_subtypeVal hs μ])
+    measurable_subtypeVal.aemeasurable
 
 /-- Pulling a measure `μ` back to a measurable subtype `{x // p x}` of mass `1` yields a
 probability measure. -/

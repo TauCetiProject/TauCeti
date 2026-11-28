@@ -6,13 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Compactness.Paracompact
+public import Mathlib.Topology.PartitionOfUnity
+public import TauCeti.Geometry.Manifold.ExtChartAt.Measure
 public import TauCeti.Geometry.Manifold.Measure.PositiveDensity.Basic
-import Mathlib.Topology.PartitionOfUnity
 import TauCeti.Geometry.Manifold.ChartedSpace
-import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ExtChartAt.Integral
 import TauCeti.Geometry.Manifold.ExtChartAt.Measurable
-import TauCeti.Geometry.Manifold.ExtChartAt.Measure
-import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Det
 
 /-!
@@ -21,12 +20,15 @@ import TauCeti.Geometry.Manifold.MFDeriv.Chart.Det
 Every Hausdorff paracompact finite-dimensional real `C¹` manifold `M` (possibly with boundary or
 corners) admits a positive continuous density measure (`TauCeti.exists_isPositiveDensityMeasure`),
 built by summing chart-localized additive Haar measures (`OpenPartialHomeomorph.localChartMeasure`)
-weighted by a continuous partition of unity subordinate to the preferred charts. In particular,
-every Hausdorff Lindelöf `C¹` manifold admits one
-(`TauCeti.exists_isPositiveDensityMeasure_of_lindelof`).
+weighted by a continuous partition of unity subordinate to the preferred charts
+(`TauCeti.isPositiveDensityMeasure_sum_localChartMeasure`). In particular, every Hausdorff Lindelöf
+`C¹` manifold admits one (`TauCeti.exists_isPositiveDensityMeasure_of_lindelof`).
 
 ## Main results
 
+* `TauCeti.isPositiveDensityMeasure_sum_localChartMeasure`: summing `localChartMeasure` weighted by
+  a supplied continuous partition of unity subordinate to the preferred charts produces a positive
+  continuous density measure, with no Hausdorff or paracompactness assumption.
 * `TauCeti.exists_isPositiveDensityMeasure`: existence of a positive continuous density measure on
   every Hausdorff paracompact `C¹` manifold via a partition of unity.
 * `TauCeti.exists_isPositiveDensityMeasure_of_lindelof`: existence on every Hausdorff Lindelöf `C¹`
@@ -105,12 +107,7 @@ private theorem finsum_partitionSummand_pos (ρ : PartitionOfUnity M M univ)
     rw [partitionSummand, indicator_of_mem hyΦ]
     exact mul_pos (I.abs_det_fderivWithin_extendCoordChange_pos
       (IsManifold.chart_mem_maximalAtlas x₀) (IsManifold.chart_mem_maximalAtlas i) hyΦ) hi_pos
-  calc (0 : ℝ) < partitionSummand (I := I) ρ x₀ i y := hhi_pos
-    _ ≤ ∑ j ∈ hfin.toFinset, partitionSummand (I := I) ρ x₀ j y :=
-      Finset.single_le_sum (fun j _ ↦ partitionSummand_nonneg (I := I) ρ x₀ j y)
-        (hfin.mem_toFinset.2 hhi_pos.ne')
-    _ = ∑ᶠ j : M, partitionSummand (I := I) ρ x₀ j y :=
-      (finsum_eq_sum_of_support_subset _ fun j hj ↦ hfin.mem_toFinset.2 hj).symm
+  exact finsum_pos (partitionSummand_nonneg (I := I) ρ x₀ · y) ⟨i, hhi_pos⟩ hfin
 
 omit [MeasurableSpace E] [BorelSpace E] [IsManifold I 1 M] [MeasurableSpace M] [BorelSpace M] in
 private theorem countable_support_partitionSummand (ρ : PartitionOfUnity M M univ) (x₀ : M) :
@@ -153,7 +150,9 @@ the finsum density `∑ᶠ i, partitionSummand ρ x₀ i`. -/
 private theorem map_restrict_sum_localChartMeasure (ν : Measure E) [ν.IsAddHaarMeasure]
     (ρ : PartitionOfUnity M M univ) (hρ : ρ.IsSubordinate fun x : M ↦ (chartAt H x).source)
     (x₀ : M) :
-    (((Measure.sum fun i : M ↦ (chartAt H i).localChartMeasure I ν (ρ i)).restrict
+    (((Measure.sum fun i : M ↦
+        (chartAt H i).localChartMeasure I ν fun y ↦
+          ENNReal.ofReal (ρ i ((extChartAt I i).symm y))).restrict
         (extChartAt I x₀).source).map (extChartAt I x₀)) =
       (ν.restrict (extChartAt I x₀).target).withDensity
         fun y ↦ ENNReal.ofReal (∑ᶠ i : M, partitionSummand (I := I) ρ x₀ i y) := by
@@ -168,13 +167,20 @@ private theorem map_restrict_sum_localChartMeasure (ν : Measure E) [ν.IsAddHaa
   conv_lhs => rw [extChartAt_eq_extend]
   rw [(chartAt H x₀).map_restrict_extend_apply I _ hA, Measure.sum_apply _ hpre,
     withDensity_apply _ hA, Measure.restrict_restrict hA]
-  have hterm (i : M) : (chartAt H i).localChartMeasure I ν (ρ i)
+  have hterm (i : M) : ((chartAt H i).localChartMeasure I ν fun y ↦
+        ENNReal.ofReal (ρ i ((extChartAt I i).symm y)))
       ((chartAt H x₀).extend I ⁻¹' A ∩ (chartAt H x₀).source) =
       ∫⁻ y in A ∩ (extChartAt I x₀).target,
         ENNReal.ofReal (partitionSummand (I := I) ρ x₀ i y) ∂ν := by
-    rw [← (chartAt H x₀).map_restrict_extend_apply I _ hA, ← extChartAt_eq_extend]
-    exact (chartAt H x₀).map_restrict_localChartMeasure_apply (chartAt H i) I
-      (IsManifold.chart_mem_maximalAtlas x₀) (IsManifold.chart_mem_maximalAtlas i) ν (ρ i) hA
+    rw [← (chartAt H x₀).map_restrict_extend_apply I _ hA,
+      (chartAt H x₀).map_restrict_localChartMeasure_apply (chartAt H i) I
+        (IsManifold.chart_mem_maximalAtlas x₀) (IsManifold.chart_mem_maximalAtlas i) ν _ hA]
+    refine setLIntegral_congr_fun (hA.inter hT₀) fun y _ ↦ ?_
+    by_cases hy : y ∈ (I.extendCoordChange (chartAt H x₀) (chartAt H i)).source
+    · rw [indicator_of_mem hy, partitionSummand, indicator_of_mem hy,
+        ENNReal.ofReal_mul (abs_nonneg _), extChartAt_eq_extend, extChartAt_eq_extend,
+        I.extend_symm_extendCoordChange hy]
+    · rw [indicator_of_notMem hy, partitionSummand, indicator_of_notMem hy, ENNReal.ofReal_zero]
   have haem (i : S) : AEMeasurable
       (fun y ↦ ENNReal.ofReal (partitionSummand (I := I) ρ x₀ i.val y))
       (ν.restrict (A ∩ (extChartAt I x₀).target)) :=
@@ -194,6 +200,21 @@ private theorem map_restrict_sum_localChartMeasure (ν : Measure E) [ν.IsAddHaa
   exact setLIntegral_congr_fun (hA.inter hT₀) fun y hy ↦
     tsum_ofReal_partitionSummand (I := I) ρ x₀ hy.2
 
+/-- **Partition-of-unity sum measure.** Given an additive Haar measure `ν` on the model and a
+continuous partition of unity `ρ` subordinate to the preferred charts `(chartAt H x).source`,
+summing the weighted local chart measures yields a positive continuous density measure. -/
+theorem isPositiveDensityMeasure_sum_localChartMeasure (ν : Measure E) [ν.IsAddHaarMeasure]
+    (ρ : PartitionOfUnity M M univ) (hρ : ρ.IsSubordinate fun x : M ↦ (chartAt H x).source) :
+    IsPositiveDensityMeasure I
+      (Measure.sum fun i : M ↦
+        (chartAt H i).localChartMeasure I ν fun y ↦
+          ENNReal.ofReal (ρ i ((extChartAt I i).symm y))) :=
+  (isPositiveDensityMeasure_iff_of_isAddHaarMeasure ν).2 fun x₀ ↦
+    ⟨fun y ↦ ∑ᶠ i : M, partitionSummand (I := I) ρ x₀ i y,
+      continuousOn_finsum_partitionSummand (I := I) ρ hρ x₀,
+      fun _ hy ↦ finsum_partitionSummand_pos (I := I) ρ hρ x₀ hy,
+      map_restrict_sum_localChartMeasure (I := I) ν ρ hρ x₀⟩
+
 /-- **Existence of a positive continuous density measure.** Every Hausdorff paracompact
 finite-dimensional `C¹` manifold (possibly with boundary or corners) admits a positive continuous
 density measure, built from a continuous partition of unity subordinate to the preferred charts. -/
@@ -203,13 +224,8 @@ theorem exists_isPositiveDensityMeasure [T2Space M] [ParacompactSpace M] :
   obtain ⟨ρ, hρ⟩ := PartitionOfUnity.exists_isSubordinate (X := M) isClosed_univ
     (fun x : M ↦ (chartAt H x).source) (fun x ↦ (chartAt H x).open_source)
     fun x _ ↦ mem_iUnion.2 ⟨x, mem_chart_source H x⟩
-  let ν : Measure E := (Module.finBasis ℝ E).addHaar
-  refine ⟨Measure.sum fun i : M ↦ (chartAt H i).localChartMeasure I ν (ρ i),
-    (isPositiveDensityMeasure_iff_of_isAddHaarMeasure ν).2 fun x₀ ↦
-      ⟨fun y ↦ ∑ᶠ i : M, partitionSummand (I := I) ρ x₀ i y,
-        continuousOn_finsum_partitionSummand (I := I) ρ hρ x₀,
-        fun _ hy ↦ finsum_partitionSummand_pos (I := I) ρ hρ x₀ hy,
-        map_restrict_sum_localChartMeasure (I := I) ν ρ hρ x₀⟩⟩
+  exact ⟨_, isPositiveDensityMeasure_sum_localChartMeasure (I := I)
+    (Module.finBasis ℝ E).addHaar ρ hρ⟩
 
 /-- Every Hausdorff Lindelöf finite-dimensional `C¹` manifold admits a positive continuous density
 measure. -/

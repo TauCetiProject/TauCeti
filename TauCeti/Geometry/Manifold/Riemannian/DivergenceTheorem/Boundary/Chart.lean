@@ -250,6 +250,8 @@ private theorem neg_integral_stdChartFlux_zero_eq_boundaryFlux (α₀ : (𝓡∂
   exact setIntegral_congr_fun (isOpen_extChartAt_target α₀).measurableSet fun _ hw ↦
     indicator_of_mem hw _
 
+omit [IsContinuousRiemannianBundle (EuclideanSpace ℝ (Fin (n + 1)))
+  (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)] in
 /-- Both the `x₀ = 0` slice integral and boundary flux vanish when `tsupport X` misses `∂M`. -/
 private theorem neg_integral_stdChartFlux_zero_eq_boundaryFlux_of_disjoint {α : M}
     {X : (x : M) → TangentSpace (𝓡∂ (n + 1)) x}

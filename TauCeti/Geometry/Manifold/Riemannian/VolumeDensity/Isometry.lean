@@ -107,14 +107,10 @@ theorem chartVolumeDensity_eq_abs_det_mul_of_inner_mfderiv
 section Measure
 
 variable [MeasurableSpace M] [BorelSpace M] [MeasurableSpace N] [BorelSpace N]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle F (fun y : N ↦ TangentSpace I' y)]
 
 attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
 
-omit [MeasurableSpace N] [BorelSpace N]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle F (fun y : N ↦ TangentSpace I' y)] in
+omit [MeasurableSpace N] [BorelSpace N] in
 private theorem setLIntegral_chartVolumeDensity_image_of_inner_mfderiv
     {C : E ≃L[ℝ] F} {σ : Fin (Module.finrank ℝ F) ≃ Fin (Module.finrank ℝ E)}
     (hb : (Module.finBasis ℝ E).map C.toLinearEquiv = (Module.finBasis ℝ F).reindex σ)
@@ -276,8 +272,6 @@ end Measure
 namespace RiemannianIsometry
 
 variable [MeasurableSpace M] [BorelSpace M] [MeasurableSpace N] [BorelSpace N]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle F (fun y : N ↦ TangentSpace I' y)]
 
 /-- A Riemannian isometry preserves the Riemannian volume measure.
 
@@ -300,7 +294,6 @@ section SMul
 open scoped ContDiff
 
 variable [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
   {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M]
 
 /-- **Isometric translations preserve volume.** For a group acting on `M` by smooth maps, if the

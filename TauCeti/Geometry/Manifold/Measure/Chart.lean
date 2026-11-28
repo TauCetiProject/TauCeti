@@ -32,7 +32,7 @@ the target are integrable.
 ## Main results
 
 * `TauCeti.map_restrict_extChartAt_source_apply_image`: the chart pushforward gives the chart
-  image of a measurable subset of the source the measure of the subset.
+  image of any subset of the source the measure of the subset.
 * `TauCeti.setLIntegral_eq_setLIntegral_map_extChartAt`: lower integrals over a subset of a chart
   source are lower integrals in the chart against the chart pushforward, with no measurability
   assumption.
@@ -130,13 +130,13 @@ theorem map_restrict_extChartAt_source_apply (x : M) {A : Set E} (hA : Measurabl
   rw [extChartAt_source, extChartAt_eq_extend]
   exact (chartAt H x).map_restrict_extend_apply I μ hA
 
-/-- The pushforward of `μ` restricted to a chart source gives the coordinate image of a measurable
-subset of the source the measure that `μ` gives the subset. -/
-theorem map_restrict_extChartAt_source_apply_image {x : M} {s : Set M} (hs : MeasurableSet s)
+/-- The pushforward of `μ` restricted to a chart source gives the coordinate image of any
+(not necessarily measurable) subset of the source the measure that `μ` gives the subset. -/
+theorem map_restrict_extChartAt_source_apply_image {x : M} {s : Set M}
     (hsub : s ⊆ (extChartAt I x).source) :
     (μ.restrict (extChartAt I x).source).map (extChartAt I x) ((extChartAt I x) '' s) = μ s := by
-  rw [map_restrict_extChartAt_source_apply x (hs.image_extChartAt x hsub),
-    (extChartAt I x).injOn.preimage_image_inter hsub]
+  rw [extChartAt_source, extChartAt_eq_extend]
+  exact (chartAt H x).map_restrict_extend_apply_image I μ (extChartAt_source (I := I) x ▸ hsub)
 
 /-- **Integration in a chart.** Over a subset `s` of a chart source, the lower integral of `φ`
 against `μ` is the lower integral, over the chart image of `s`, of `φ` read in the chart against the
@@ -154,11 +154,10 @@ theorem restrict_extChartAt_source_eq_of_map_eq {x : M} {α β : Measure M}
     (h : (α.restrict (extChartAt I x).source).map (extChartAt I x) =
       (β.restrict (extChartAt I x).source).map (extChartAt I x)) :
     α.restrict (extChartAt I x).source = β.restrict (extChartAt I x).source := by
-  have hsrc : MeasurableSet (extChartAt I x).source := (isOpen_extChartAt_source x).measurableSet
   ext B hB
   rw [Measure.restrict_apply hB, Measure.restrict_apply hB,
-    ← map_restrict_extChartAt_source_apply_image (hB.inter hsrc) inter_subset_right, h,
-    map_restrict_extChartAt_source_apply_image (hB.inter hsrc) inter_subset_right]
+    ← map_restrict_extChartAt_source_apply_image inter_subset_right, h,
+    map_restrict_extChartAt_source_apply_image inter_subset_right]
 
 /-- In a chart where `μ` has a continuous density `w`, reweighting `μ` by a nonnegative continuous
 function `h` read in the chart multiplies the chart density by `h`. -/
