@@ -169,21 +169,7 @@ theorem rankPart_apply (n : ℕ) (F : HallAlgebra k) (c : SimilarityClass k) :
 otherwise. -/
 theorem rankPart_rankPart (m n : ℕ) (F : HallAlgebra k) :
     rankPart m (rankPart n F) = if m = n then rankPart n F else 0 := by
-  have hind (d : ℕ) (G : HallAlgebra k) :
-      (rankPart d G : SimilarityClass k → ℂ) =
-        Set.indicator {c : SimilarityClass k | c.dim = d} G :=
-    funext fun c ↦ by simp [Set.indicator]
-  split_ifs with h
-  · subst h
-    ext c
-    exact congrFun (by rw [hind, hind, Set.indicator_indicator, Set.inter_self, ← hind]) c
-  · ext c
-    have hdisj : {c : SimilarityClass k | c.dim = m} ∩ {c : SimilarityClass k | c.dim = n} = ∅ := by
-      ext x
-      simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
-      rintro ⟨h1, h2⟩
-      exact h (h1.symm.trans h2)
-    exact congrFun (by rw [hind, hind, Set.indicator_indicator, hdisj, Set.indicator_empty]; rfl) c
+  split_ifs with h <;> ext c <;> by_cases hc : c.dim = n <;> simp_all [rankPart_apply, eq_comm]
 
 /-- Applying `rankPart n` twice is the same as applying it once. -/
 @[simp]
