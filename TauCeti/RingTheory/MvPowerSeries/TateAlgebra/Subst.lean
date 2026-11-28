@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Coefficients
-public import TauCeti.RingTheory.MvPowerSeries.Basic
-public import Mathlib.RingTheory.MvPowerSeries.Substitution
+public import TauCeti.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.MvPolynomial.NormCoeff
 import TauCeti.Algebra.MvPolynomial.Degrees
 
@@ -31,8 +30,6 @@ here.
 
 ## Main results
 
-* `MvPowerSeries.hasSubst_coe`: polynomials without constant term in finitely many variables
-  form a substitutable family.
 * `MvPowerSeries.norm_coeff_subst_le`: each coefficient of a substitution is bounded by the
   supremum of the terms contributing to it, in any ultrametric seminormed commutative ring.
 * `MvPowerSeries.norm_coeff_subst_coe_le` and `MvPowerSeries.norm_coeff_subst_coe_sub_le`: for a
@@ -61,21 +58,6 @@ namespace MvPowerSeries
 
 open Filter
 open scoped Topology
-
-section CommRing
-
-variable {σ τ R : Type*} [CommRing R]
-
-/-- Polynomials without constant term form a substitutable family over finitely many
-variables. -/
-theorem hasSubst_coe [Finite σ] {a : σ → MvPolynomial τ R}
-    (ha : ∀ s, (a s).constantCoeff = 0) :
-    HasSubst fun s ↦ (a s : MvPowerSeries τ R) :=
-  hasSubst_of_constantCoeff_zero fun s ↦ by
-    rw [← coeff_zero_eq_constantCoeff_apply, MvPolynomial.coeff_coe,
-      ← MvPolynomial.constantCoeff_eq, ha]
-
-end CommRing
 
 section SeminormedCommRing
 

@@ -10,11 +10,13 @@ public import Mathlib.RingTheory.MvPowerSeries.Basic
 import Mathlib.Algebra.MvPolynomial.Coeff
 
 /-!
-# Polynomial products as power series
+# Polynomials as power series
 
 `MvPolynomial.coe_finsuppProd_pow` moves a finitely supported product of polynomial powers
 through the coercion to multivariate power series. It lets coefficient computations for such
 products use the polynomial API, for example when substituting polynomials into power series.
+`MvPolynomial.constantCoeff_coe` identifies the constant coefficient before and after coercion
+using Mathlib's `MvPolynomial.coeff_coe`.
 The coefficient semiring need only be commutative; no norm or topology is required.
 
 `MvPowerSeries.isScalarTower_right` records that coefficientwise left scalar multiplication on
@@ -33,6 +35,13 @@ public section
 namespace MvPolynomial
 
 variable {σ τ R : Type*} [CommSemiring R]
+
+/-- The constant coefficient of a polynomial viewed as a power series is its constant
+coefficient as a polynomial. -/
+@[simp]
+theorem constantCoeff_coe (p : MvPolynomial σ R) :
+    MvPowerSeries.constantCoeff (p : MvPowerSeries σ R) = constantCoeff p := by
+  rw [← MvPowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_coe, constantCoeff_eq]
 
 /-- The coercion of polynomials to power series commutes with products of powers. -/
 @[simp, norm_cast]

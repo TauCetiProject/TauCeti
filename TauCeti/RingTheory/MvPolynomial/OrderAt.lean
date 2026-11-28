@@ -12,6 +12,7 @@ public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 public import TauCeti.Algebra.MvPolynomial.Equiv
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
+public import TauCeti.RingTheory.MvPowerSeries.Basic
 public import TauCeti.RingTheory.MvPowerSeries.Derivative
 public import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.Algebra.MvPolynomial.Degrees
@@ -372,13 +373,6 @@ end TaylorRing
 section Substitution
 
 variable [CommSemiring R]
-
-/-- The constant coefficient of a polynomial viewed as a power series is its constant
-coefficient as a polynomial. -/
-@[simp]
-theorem constantCoeff_coe (p : MvPolynomial σ R) :
-    MvPowerSeries.constantCoeff (p : MvPowerSeries σ R) = constantCoeff p :=
-  (rfl)
 
 /-- Substituting polynomials without constant terms into a polynomial does not decrease its
 order. -/
