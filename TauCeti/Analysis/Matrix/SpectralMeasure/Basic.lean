@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.MeasureTheory.Measure.ResolventTransform
 public import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
-public import TauCeti.Analysis.Matrix.Resolvent.Basic
+public import TauCeti.Analysis.Matrix.Resolvent.NormalizedTrace
 public import TauCeti.Analysis.Matrix.Spectrum
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
 public import TauCeti.Probability.Process.EmpiricalMeasure
@@ -453,9 +453,9 @@ theorem gram_spectralMeasure_moments_mul_card_eq {p q : Type*} [Fintype p] [Deci
 of a complex Hermitian matrix is the normalized trace of its resolvent `(A - z • 1)⁻¹`. -/
 theorem resolventTransform_spectralMeasure (A : Matrix n n ℂ) (hA : A.IsHermitian) {z : ℂ}
     (hz : z ∉ spectrum ℂ A) :
-    resolventTransform (A.spectralMeasure hA : Measure ℝ) z =
-      ((Fintype.card n : ℕ) : ℂ)⁻¹ * (A - z • 1)⁻¹.trace := by
-  rw [resolventTransform_apply, integral_spectralMeasure, hA.trace_inv_sub_smul_one hz,
+    resolventTransform (A.spectralMeasure hA : Measure ℝ) z = A.normalizedResolventTrace z := by
+  rw [normalizedResolventTrace_def, resolventTransform_apply, integral_spectralMeasure,
+    hA.trace_inv_sub_smul_one hz,
     Complex.real_smul]
   simp [resolvent, Ring.inverse_eq_inv']
 

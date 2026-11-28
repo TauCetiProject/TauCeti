@@ -24,7 +24,8 @@ the blowup of `Spec R` along `V(a, g)`, is a regular ring as soon as `S` and `R 
 
 * away from `a`, the chart is `S` itself, since `R[g/a]` is an intermediate ring of `S`;
 * along `a`, the element `a` is a nonzerodivisor of `R[g/a]` and the quotient
-  `R[g/a] ⧸ (a) ≅ R[X] ⧸ (aX - g, a) = R[X] ⧸ (a, g)` is the polynomial ring `(R ⧸ (a, g))[X]`,
+  `R[g/a] ⧸ (a) ≅ R[X] ⧸ (aX - g, a) = R[X] ⧸ (a, g)` is the polynomial ring `(R ⧸ (a, g))[X]`
+  (`Ideal.affineBlowupQuotEquivPolynomial`),
   which is regular; regularity then lifts along the nonzerodivisor `a`.
 
 The main instance is the blowup of a two-dimensional regular local ring `A` at its closed point.
@@ -61,46 +62,6 @@ variable {R : Type*} [CommRing R] {a g : R}
 
 variable (S : Type*) [CommRing S] [Algebra R S] [IsLocalization.Away a S]
 
-/-- The quotient of the affine blowup algebra `R[(a, g)/a]` by `a` is a regular ring when
-`R ⧸ (a, g)` is: it is the polynomial ring `(R ⧸ (a, g))[X]`. -/
-private theorem isRegularRing_affineBlowup_quotient (hag : IsWeaklyRegular R [a, g])
-    [IsRegularRing (R ⧸ Ideal.span {a, g})] :
-    IsRegularRing ((Ideal.span {a, g}).affineBlowup a S ⧸
-      Ideal.span {algebraMap R ((Ideal.span {a, g}).affineBlowup a S) a}) := by
-  let I := Ideal.span {a}
-  -- `R[X] ⧸ (aX - g, a) = (R ⧸ (a))[X] ⧸ (g)`, since modulo `a` the relation `aX - g` is `-g`.
-  have hmap : I.map (AdjoinRoot.of (C a * X - C g)) =
-      Ideal.span {AdjoinRoot.of (C a * X - C g) a} := by
-    rw [Ideal.map_span, Set.image_singleton]
-  have hrel : Ideal.span {(C a * X - C g).map (Ideal.Quotient.mk I)} =
-      (Ideal.span {Ideal.Quotient.mk I g}).map C := by
-    rw [Ideal.map_span, Set.image_singleton, Polynomial.map_sub, Polynomial.map_mul, map_C, map_C,
-      map_X, Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self a), map_zero,
-      zero_mul, zero_sub, Ideal.span_singleton_neg]
-  let e₀ : AdjoinRoot (C a * X - C g) ⧸ Ideal.span {AdjoinRoot.of (C a * X - C g) a} ≃+*
-      ((R ⧸ I) ⧸ Ideal.span {Ideal.Quotient.mk I g})[X] :=
-    (Ideal.quotEquivOfEq hmap.symm).trans
-      ((AdjoinRoot.quotAdjoinRootEquivQuotPolynomialQuot I _).trans
-        ((Ideal.quotEquivOfEq hrel).trans (Ideal.polynomialQuotientEquivQuotientPolynomial _).symm))
-  let e := Ideal.adjoinRootEquivAffineBlowup S hag
-  -- `(R ⧸ (a)) ⧸ (g) = R ⧸ (a, g)`
-  have : IsRegularRing ((R ⧸ Ideal.span {a}) ⧸
-      Ideal.span {Ideal.Quotient.mk (Ideal.span {a}) g}) := by
-    have h₁ : Ideal.span {Ideal.Quotient.mk (Ideal.span {a}) g} =
-        (Ideal.span {g}).map (Ideal.Quotient.mk (Ideal.span {a})) := by
-      rw [Ideal.map_span, Set.image_singleton]
-    have h₂ : Ideal.span {a} ⊔ Ideal.span {g} = Ideal.span {a, g} := by
-      rw [← Ideal.span_insert]
-    exact .of_ringEquiv ((Ideal.quotEquivOfEq h₁).trans
-      ((DoubleQuot.quotQuotEquivQuotSup (Ideal.span {a}) (Ideal.span {g})).trans
-        (Ideal.quotEquivOfEq h₂))).symm
-  have hspan : Ideal.span {algebraMap R ((Ideal.span {a, g}).affineBlowup a S) a} =
-      (Ideal.span {AdjoinRoot.of (C a * X - C g) a}).map e := by
-    rw [Ideal.map_span, Set.image_singleton, ← AdjoinRoot.algebraMap_eq, AlgEquiv.commutes]
-  exact IsRegularRing.of_ringEquiv
-    (R := ((R ⧸ Ideal.span {a}) ⧸ Ideal.span {Ideal.Quotient.mk (Ideal.span {a}) g})[X])
-    ((Ideal.quotientEquiv _ _ e.toRingEquiv hspan).symm.trans e₀).symm
-
 /-- **The chart of a blowup along a regular pair is regular.** Let `a, g` be a weakly regular
 sequence on a Noetherian ring `R`, and let `S` be a localization of `R` away from `a`. If `S` and
 `R ⧸ (a, g)` are regular rings, then so is the affine blowup algebra `R[(a, g)/a] ⊆ S`, the chart
@@ -111,7 +72,9 @@ theorem isRegularRing_affineBlowup [IsNoetherianRing R] (hag : IsWeaklyRegular R
   set T := (Ideal.span {a, g}).affineBlowup a S
   have : IsNoetherianRing T :=
     isNoetherianRing_of_ringEquiv _ (Ideal.adjoinRootEquivAffineBlowup S hag).toRingEquiv
-  have := isRegularRing_affineBlowup_quotient S hag
+  -- `T ⧸ (a)` is the regular polynomial ring `(R ⧸ (a, g))[X]`.
+  have : IsRegularRing (T ⧸ Ideal.span {algebraMap R T a}) :=
+    .of_ringEquiv (Ideal.affineBlowupQuotEquivPolynomial S hag).toRingEquiv.symm
   let M := Algebra.algebraMapSubmonoid T (Submonoid.powers a)
   have : IsLocalization M S := IsLocalization.isLocalization_algebraMapSubmonoid_of_injective
     (Submonoid.powers a) Subtype.val_injective

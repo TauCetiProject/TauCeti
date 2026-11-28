@@ -34,6 +34,8 @@ the dimension.
 * `Matrix.coeff_charpolyRev`: the `k`-th coefficient is `(-1) ^ k` times the sum of the `k × k`
   principal minors. In particular the constant coefficient is `1` and the coefficient in degree
   `Fintype.card ι` is `(-1) ^ Fintype.card ι * det A`.
+* `Matrix.natDegree_charpolyRev_of_det_ne_zero`: if `det A ≠ 0`, then `det (1 - X A)` has degree
+  exactly `Fintype.card ι`.
 * `Matrix.coeff_charpolyRev_card_sub`: the coefficient in degree `Fintype.card ι - k` is the
   coefficient of `X ^ k` in the characteristic polynomial.
 * `Matrix.coeff_charpolyRev_card_sub_of_mem_unitaryGroup`: for a unitary matrix, the coefficients
@@ -127,6 +129,14 @@ theorem coeff_charpolyRev_card (A : Matrix ι ι R) :
     A.charpolyRev.coeff (Fintype.card ι) = (-1) ^ Fintype.card ι * A.det := by
   simpa [det_eq_sign_charpoly_coeff, ← mul_assoc, ← mul_pow] using
     A.coeff_charpolyRev_card_sub (Nat.zero_le _)
+
+/-- For a matrix with nonzero determinant, `det (1 - X A)` has degree equal to its size. -/
+theorem natDegree_charpolyRev_of_det_ne_zero {A : Matrix ι ι R} (hA : A.det ≠ 0) :
+    A.charpolyRev.natDegree = Fintype.card ι := by
+  apply le_antisymm (natDegree_charpolyRev_le A)
+  apply le_natDegree_of_ne_zero
+  rw [coeff_charpolyRev_card]
+  exact (isUnit_neg_one.pow _).mul_right_eq_zero.not.mpr hA
 
 /-- **Reciprocity for unitary matrices.** For a unitary `A` and `k ≤ Fintype.card ι`, the
 coefficient of `det (1 - X A)` in degree `Fintype.card ι - k` is `(-1) ^ Fintype.card ι * det A`

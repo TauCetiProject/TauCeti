@@ -51,6 +51,17 @@ multiplicative counterpart of the additivity of the trace `LinearMap.trace_eq_ad
 * `LinearMap.charpoly_eq_mul_of_exact`: the characteristic polynomial of the middle endomorphism
   of a short exact sequence of finite free modules is the product of those of the outer ones.
 
+* `LinearMap.not_irreducible_charpoly_of_le_comap`: over a field, an endomorphism preserving a
+  subspace other than `⊥` and `⊤` has a characteristic polynomial that is not irreducible.
+
+* `LinearMap.charpoly_eq_charpoly_of_sub_mem`: if `g` preserves `W`, an endomorphism `f` equal to
+  `g` on `W` and congruent to `g` modulo `W` has the same characteristic polynomial.
+
+* `LinearMap.charpoly_comp_eq_charpoly`: `g ∘ u` and `g` have the same characteristic polynomial
+  when `g` preserves `W` and `W'`, `u - 1` maps `V` into `W'` and `W'` into `W`, and `u` fixes `W`
+  pointwise (as an element of the unipotent radical of the stabiliser of a flag does). The
+  inclusion `W ≤ W'` is not needed: the proof works with `W ⊓ W'` inside `W'`.
+
 * `Submodule.charpoly_lsmul_eq_mul_quotient`: for an algebra `A` over a field `k` and an
   `A`-submodule `P` of a finite-dimensional `A`-module `M`, the characteristic polynomial of
   `a : A` on `M` is the product of those on `P` and on `M ⧸ P`.
@@ -185,6 +196,59 @@ theorem charpoly_dvd_of_surjective_of_comp_eq_comp (f : V →ₗ[K] V) (g : U �
   refine ⟨(g.restrict hW).charpoly, ?_⟩
   rw [charpoly_eq_mul_of_exact (ker p).injective_subtype hp (exact_subtype_ker_map p)
     (subtype_comp_restrict hW).symm h, mul_comm]
+
+open Polynomial in
+/-- An endomorphism of a finite-dimensional vector space that preserves a subspace `W` other than
+`⊥` and `⊤` has a characteristic polynomial that is not irreducible: it is the product of the
+characteristic polynomials on `W` and on `V ⧸ W`, both of positive degree. -/
+theorem not_irreducible_charpoly_of_le_comap (f : V →ₗ[K] V) {W : Submodule K V}
+    (hf : W ≤ W.comap f) (hbot : W ≠ ⊥) (htop : W ≠ ⊤) : ¬ Irreducible f.charpoly := by
+  intro h
+  rw [charpoly_eq_charpoly_restrict_mul_charpoly_mapQ W f hf] at h
+  rcases h.isUnit_or_isUnit rfl with h | h
+  · have h1 := congrArg natDegree ((charpoly_monic _).isUnit_iff.mp h)
+    rw [charpoly_natDegree, natDegree_one, Submodule.finrank_eq_zero] at h1
+    exact hbot h1
+  · have h1 := congrArg natDegree ((charpoly_monic _).isUnit_iff.mp h)
+    rw [charpoly_natDegree, natDegree_one, Module.finrank_zero_iff,
+      Submodule.Quotient.subsingleton_iff] at h1
+    exact htop h1
+
+/-- If `g` preserves a subspace `W`, and `f` agrees with `g` on `W` and differs from `g` by a map
+with values in `W`, then `f` and `g` have the same characteristic polynomial: `f` also preserves
+`W`, and they induce the same endomorphisms of `W` and of `V ⧸ W`. -/
+theorem charpoly_eq_charpoly_of_sub_mem {f g : V →ₗ[K] V} {W : Submodule K V}
+    (hg : W ≤ W.comap g) (hW : ∀ x ∈ W, f x = g x) (hV : ∀ x, f x - g x ∈ W) :
+    f.charpoly = g.charpoly := by
+  have hf : W ≤ W.comap f := fun x hx ↦ by simpa [hW x hx] using hg hx
+  rw [charpoly_eq_charpoly_restrict_mul_charpoly_mapQ W f hf,
+    charpoly_eq_charpoly_restrict_mul_charpoly_mapQ W g hg]
+  congr 2
+  · ext x
+    simp [hW x x.property]
+  · ext x
+    simpa [Submodule.Quotient.eq] using hV x
+
+/-- **The characteristic polynomial is unchanged by a unipotent element of the stabiliser of a
+flag.** If `g` preserves `W` and `W'`, and `u` satisfies `u x - x ∈ W'` for all `x`,
+`u x - x ∈ W` for `x ∈ W'` and `u x = x` for `x ∈ W`, then `g ∘ u` and `g` have the same
+characteristic polynomial. -/
+theorem charpoly_comp_eq_charpoly {g u : V →ₗ[K] V} {W W' : Submodule K V}
+    (hgW : W ≤ W.comap g) (hgW' : W' ≤ W'.comap g) (hu : ∀ x, u x - x ∈ W')
+    (hu' : ∀ x ∈ W', u x - x ∈ W) (hu'' : ∀ x ∈ W, u x = x) :
+    (g ∘ₗ u).charpoly = g.charpoly := by
+  have hfW' : W' ≤ W'.comap (g ∘ₗ u) := fun x hx ↦ by
+    simpa using hgW' (by simpa using W'.add_mem (hu x) hx)
+  rw [charpoly_eq_charpoly_restrict_mul_charpoly_mapQ W' _ hfW',
+    charpoly_eq_charpoly_restrict_mul_charpoly_mapQ W' g hgW']
+  congr 1
+  · refine charpoly_eq_charpoly_of_sub_mem (W := W.comap W'.subtype) (fun x hx ↦ hgW hx)
+      (fun x hx ↦ ?_) (fun x ↦ ?_)
+    · exact Subtype.ext (by simp [hu'' x hx])
+    · simpa [← map_sub] using hgW (hu' x x.property)
+  · congr 1
+    ext x
+    simpa [Submodule.Quotient.eq, ← map_sub] using hgW' (hu x)
 
 end LinearMap
 

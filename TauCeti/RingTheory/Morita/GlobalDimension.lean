@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Morita.Matrix
-public import TauCeti.Algebra.Homology.Ext.Equivalence
 public import TauCeti.RingTheory.GlobalDimension
 
 /-!
@@ -23,8 +22,6 @@ dimension in every universe in which both are small.
 
 ## Main results
 
-* `CategoryTheory.Equivalence.globalDimension_eq`: rings with equivalent module categories have
-  the same global dimension.
 * `RingEquiv.globalDimension_eq`: isomorphic rings have the same global dimension.
 * `IsMoritaEquivalent.globalDimension_eq`: Morita equivalent algebras have the same global
   dimension.
@@ -43,21 +40,6 @@ universe v v' u u' u₁ u₂
 open CategoryTheory
 
 namespace TauCeti
-
-/-- **Rings with equivalent module categories have the same global dimension.** No linearity of
-the equivalence is needed: an equivalence of module categories is automatically additive. The
-two module categories may live in different universes. -/
-theorem _root_.CategoryTheory.Equivalence.globalDimension_eq {R : Type u} [Ring R] {S : Type u'}
-    [Ring S] (e : ModuleCat.{v} R ≌ ModuleCat.{v'} S) :
-    globalDimension.{v} R = globalDimension.{v'} S := by
-  refine le_antisymm ((globalDimension_le_iff R _).mpr fun M ↦ ?_)
-    ((globalDimension_le_iff S _).mpr fun N ↦ ?_)
-  · rw [← e.projectiveDimension_functor_obj M]
-    exact ModuleCat.projectiveDimension_le_globalDimension _
-  · have hN : projectiveDimension (e.functor.obj (e.inverse.obj N)) = projectiveDimension N :=
-      projectiveDimension_eq_of_iso (e.counitIso.app N)
-    rw [← hN, e.projectiveDimension_functor_obj]
-    exact ModuleCat.projectiveDimension_le_globalDimension _
 
 /-- Isomorphic rings have the same global dimension. -/
 theorem _root_.RingEquiv.globalDimension_eq {R : Type u} [Ring R] {S : Type u'} [Ring S]

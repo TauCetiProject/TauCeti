@@ -76,7 +76,7 @@ theorem variance_id_irwinHallMeasure (n : ℕ) :
     ext x
     simp
   rw [hsum, variance_sum_pi (fun _ ↦ hLp)]
-  simp [variance_id_uniformMeasure zero_lt_one, div_eq_mul_inv]
+  simp [variance_id_uniformMeasure zero_lt_one.le, div_eq_mul_inv]
 
 /-- Away from zero, the Irwin–Hall mgf is `((exp t - 1) / t) ^ n`.
 At zero it is one by the probability-measure mgf identity. -/
@@ -85,7 +85,7 @@ theorem mgf_id_irwinHallMeasure (n : ℕ) {t : ℝ} (ht : t ≠ 0) :
     mgf id (irwinHallMeasure n) t = ((exp t - 1) / t) ^ n := by
   have hpower := (uniformMeasure 0 1).mgf_addMonoidHom_convolutionPower
     (AddMonoidHom.id ℝ) measurable_id n t
-  simpa [irwinHallMeasure_def, mgf_id_uniformMeasure zero_lt_one ht] using hpower
+  simpa [irwinHallMeasure_def, mgf_id_uniformMeasure zero_lt_one.le ht] using hpower
 
 /-- The Irwin–Hall cgf is `n * log ((exp t - 1) / t)`.
 At zero both sides are zero. -/

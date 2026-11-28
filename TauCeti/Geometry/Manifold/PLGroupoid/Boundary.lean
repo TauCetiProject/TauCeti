@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Charts
-public import TauCeti.Geometry.Manifold.Boundary.ProductHalfSpace
+public import TauCeti.Geometry.Manifold.Boundary.ProductHalfSpace.Basic
 public import TauCeti.Geometry.Manifold.PLGroupoid.Inverse
 public import TauCeti.Geometry.Manifold.PLGroupoid.Map
 
