@@ -15,6 +15,7 @@ import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.IntermediateField.ScalarTower
 import TauCeti.NumberTheory.NumberField.ComplexConjugation.MaximalRealSubfield
+import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
 # The maximal real subfield of a cyclotomic field
@@ -278,20 +279,11 @@ theorem adjoin_add_inv_eq_fixedField (hζ : IsPrimitiveRoot ζ n) :
   have hext {σ₁ σ₂ : Gal(K/ℚ)} (h : σ₁ ζ = σ₂ ζ) : σ₁ = σ₂ :=
     TauCeti.IntermediateField.algEquiv_ext_of_adjoin_eq_top (adjoin_eq_top_of_algebra _ _
       (_root_.IsCyclotomicExtension.adjoin_primitive_root_eq_top hζ)) (by rintro _ rfl; exact h)
-  have hs : σ ζ + (σ ζ)⁻¹ = ζ + ζ⁻¹ := by
-    rw [← map_inv₀, ← map_add]
-    exact hσ ⟨_, mem_adjoin_simple_self ℚ _⟩
-  have hζ0 : ζ ≠ 0 := hζ.ne_zero (NeZero.ne n)
-  have hσζ0 : σ ζ ≠ 0 := (map_ne_zero σ).2 hζ0
-  -- `w = σ ζ` satisfies `w + w⁻¹ = ζ + ζ⁻¹`, so `(w - ζ) * (w * ζ - 1) = 0`.
-  have hprod : (σ ζ - ζ) * (σ ζ * ζ - 1) = σ ζ * ζ * ((σ ζ + (σ ζ)⁻¹) - (ζ + ζ⁻¹)) := by
-    field_simp
-    ring
-  rw [hs, sub_self, mul_zero] at hprod
-  rcases mul_eq_zero.1 hprod with h | h
-  · rw [hext (σ₂ := 1) (sub_eq_zero.1 h)]
+  have hs : σ (ζ + ζ⁻¹) = ζ + ζ⁻¹ := hσ ⟨_, mem_adjoin_simple_self ℚ _⟩
+  rcases (hζ.autToPow_eq_one_or_neg_one_iff σ).mpr hs with h | h
+  · rw [hext (σ₂ := 1) ((hζ.autToPow_eq_one_iff σ).mp h)]
     exact Subgroup.one_mem _
-  · rw [hext (σ₂ := τ) ((eq_inv_of_mul_eq_one_left (sub_eq_zero.1 h)).trans hτζ.symm)]
+  · rw [hext (σ₂ := τ) (((hζ.autToPow_eq_neg_one_iff σ).mp h).trans hτζ.symm)]
     exact Subgroup.mem_zpowers τ
 
 end IsPrimitiveRoot

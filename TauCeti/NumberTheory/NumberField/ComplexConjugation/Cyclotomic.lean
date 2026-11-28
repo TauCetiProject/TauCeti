@@ -65,16 +65,9 @@ variable {K L : Type*} [Field K] [Field L]
 primitive root of unity. -/
 theorem autToPow_complexConjugationAt (hζ : IsPrimitiveRoot ζ m)
     (w : InfinitePlace L) (hw : w.IsRamified K) :
-    hζ.autToPow K (complexConjugationAt K w hw) = -1 := by
-  have hinv : ζ ^ (m - 1) = ζ⁻¹ := by
-    apply eq_inv_of_mul_eq_one_left
-    rw [← pow_succ, Nat.sub_add_cancel (NeZero.pos m), hζ.pow_eq_one]
-  have hc : complexConjugationAt K w hw ζ = ζ ^ (m - 1) := by
-    rw [hinv, (isConj_complexConjugationAt K w hw).apply_eq_inv_of_pow_eq_one (NeZero.ne m)
-      hζ.pow_eq_one]
-  apply Units.ext
-  rw [hζ.coe_autToPow_eq_natCast_iff.2 hc, Nat.cast_sub (NeZero.pos m), ZMod.natCast_self]
-  simp
+    hζ.autToPow K (complexConjugationAt K w hw) = -1 :=
+  (hζ.autToPow_eq_neg_one_iff _).mpr
+    ((isConj_complexConjugationAt K w hw).apply_eq_inv_of_pow_eq_one (NeZero.ne m) hζ.pow_eq_one)
 
 end IsPrimitiveRoot
 

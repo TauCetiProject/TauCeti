@@ -40,6 +40,9 @@ element of the inertia group, which surjects onto the inertia group below
 * `NumberField.image_restrictNormal_setOf_forall_quotient_mk_smul_eq_pow`: over a Galois
   extension, if some automorphism acts on residues by `x ↦ x ^ q`, the automorphisms doing so
   restrict onto those of a normal intermediate field doing so at the contracted prime.
+* `IsArithFrobAt.exists_isArithFrobAt_restrictNormal_eq`: over a Galois extension, a given
+  arithmetic Frobenius of a normal intermediate field lifts to an arithmetic Frobenius at any
+  nonzero prime above.
 -/
 
 public section
@@ -141,3 +144,33 @@ theorem image_restrictNormal_setOf_forall_quotient_mk_smul_eq_pow (E : Intermedi
   · simp only [← hr, map_mul, hδeq, inv_mul_cancel_right]
 
 end NumberField
+
+namespace IsArithFrobAt
+
+variable {K L : Type*} [Field K] [Field L] [NumberField K] [NumberField L] [Algebra K L]
+  [IsGalois K L]
+
+/-- **A specified arithmetic Frobenius lifts along restriction.** Let `L/K` be a Galois extension
+of number fields and `E` a normal intermediate field. If `σ ∈ Gal(E/K)` is an arithmetic Frobenius
+at `P`, then at every nonzero prime `Q` of `𝓞 L` over `P` there is an arithmetic Frobenius
+`τ ∈ Gal(L/K)` restricting to `σ` itself, not merely to some Frobenius at `P`. -/
+theorem exists_isArithFrobAt_restrictNormal_eq (E : IntermediateField K L) [Normal K E]
+    {P : Ideal (𝓞 E)} (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver P] (hQ : Q ≠ ⊥)
+    {σ : E ≃ₐ[K] E} (hσ : IsArithFrobAt (𝓞 K) σ P) :
+    ∃ τ : L ≃ₐ[K] L, IsArithFrobAt (𝓞 K) τ Q ∧ τ.restrictNormal E = σ := by
+  obtain ⟨τ₀, hτ₀⟩ := NumberField.exists_isArithFrobAt K Q hQ
+  have himage := NumberField.image_restrictNormal_setOf_forall_quotient_mk_smul_eq_pow
+    E Q (q := Nat.card (𝓞 K ⧸ Q.under (𝓞 K))) ⟨τ₀, fun x ↦ hτ₀.mk_apply x⟩
+  -- `σ` acts on residues modulo `P = Q ∩ 𝓞 E` by the residue cardinality of `Q ∩ 𝓞 K`.
+  have hmem : σ ∈ {τ : E ≃ₐ[K] E | ∀ x : 𝓞 E,
+      Ideal.Quotient.mk (Q.under (𝓞 E)) (τ • x) =
+        Ideal.Quotient.mk (Q.under (𝓞 E)) x ^ Nat.card (𝓞 K ⧸ Q.under (𝓞 K))} := by
+    intro x
+    rw [← Ideal.under_under (A := 𝓞 K) (B := 𝓞 E) Q, ← Q.over_def P]
+    exact hσ.mk_apply x
+  rw [← himage] at hmem
+  obtain ⟨τ, hτ, hres⟩ := hmem
+  exact ⟨τ, fun x ↦ Ideal.Quotient.eq.mp ((hτ x).trans (map_pow (Ideal.Quotient.mk Q) _ _).symm),
+    hres⟩
+
+end IsArithFrobAt
