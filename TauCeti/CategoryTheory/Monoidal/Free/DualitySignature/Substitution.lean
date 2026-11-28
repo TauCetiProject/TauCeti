@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Monoidal.Diagram.RigidObject.Substitution
 public import TauCeti.CategoryTheory.Monoidal.Free.DualitySignature.Basic
 public import TauCeti.CategoryTheory.Monoidal.Free.DualitySignature.Interpretation
+import TauCeti.CategoryTheory.EqToHom
 import TauCeti.CategoryTheory.Monoidal.EqToHom
 
 /-!
@@ -854,57 +855,40 @@ theorem extensionReindexIso_inv_hom_hom_app_of (I : Interpretation T D) (σ : Su
       𝟙 (RigidObject.eval I.obj (σ.obj a).as) :=
   (extensionReindexIso_inv_hom_hom_app I σ (of a)).trans (eqToHom_refl _ _)
 
-private theorem hext {I J : Interpretation S D} (hobj : I.obj = J.obj)
-    (hcoupon : ∀ g, I.coupon g ≍ J.coupon g) : I = J := by
-  obtain ⟨obj, coupon⟩ := I
-  obtain ⟨obj', coupon'⟩ := J
-  subst hobj
-  congr
-  funext g
-  exact eq_of_heq (hcoupon g)
-
-private theorem eqToHom_comp_heq {C : Type*} [Category C] {X X' Y Y' : C}
-    (hX : X' = X) (hY : Y = Y') (f : X ⟶ Y) :
-    eqToHom hX ≫ f ≫ eqToHom hY ≍ f := by
-  subst hX hY
-  simp
-
-private theorem comp_eqToHom_heq {C : Type*} [Category C] {X Y Y' : C}
-    (f : X ⟶ Y) (hY : Y = Y') : f ≫ eqToHom hY ≍ f := by
-  subst hY
-  simp
-
-private theorem eqToHom_comp_left_heq {C : Type*} [Category C] {X X' Y : C}
-    (hX : X' = X) (f : X ⟶ Y) : eqToHom hX ≫ f ≍ f := by
-  subst hX
-  simp
-
-private theorem functor_map_heq {C₁ C₂ : Type*} [Category C₁] [Category C₂] (F : C₁ ⥤ C₂)
-    {X X' Y Y' : C₁} {f : X ⟶ Y} {f' : X' ⟶ Y'}
-    (hX : X = X') (hY : Y = Y') (hf : f ≍ f') :
-    F.map f ≍ F.map f' := by
-  subst hX hY
-  rw [eq_of_heq hf]
-
 /-- Reindexing an interpretation along the identity substitution leaves it unchanged. -/
 @[simp]
 theorem reindex_id (I : Interpretation T D) : I.reindex (Substitution.id T) = I := by
-  refine hext rfl fun g ↦ ?_
-  refine (eqToHom_comp_heq _ _ _).trans ?_
+  obtain ⟨obj, coupon⟩ := I
+  dsimp only [reindex]
+  congr 1
+  funext g
+  refine eq_of_heq ((CategoryTheory.eqToHom_comp_heq _ _).trans
+    ((CategoryTheory.comp_eqToHom_heq _ _).trans ?_))
   have hmk : FreeRigid.homMk ((Substitution.id T).coupon g) ≍ FreeRigid.coupon g := by
     rw [← FreeRigid.homMk_coupon]
     exact homMk_heq (congrArg FreeRigid.as (FreeRigid.eval_of (T.src g)))
       (congrArg FreeRigid.as (FreeRigid.eval_of (T.tgt g))) (Substitution.id_coupon_heq g)
-  have hmap := functor_map_heq (FreeRigid.lift I.obj I.coupon)
-    (FreeRigid.eval_of (T.src g)) (FreeRigid.eval_of (T.tgt g)) hmk
-  exact hmap.trans (FreeRigid.lift_map_coupon I.obj I.coupon g).heq
+  exact (Functor.map_heq (FreeRigid.lift obj coupon)
+    (FreeRigid.eval_of (T.src g)) (FreeRigid.eval_of (T.tgt g)) hmk).trans
+    (FreeRigid.lift_map_coupon obj coupon g).heq
 
 /-- Reindexing along a composite substitution agrees with iterated reindexing in contravariant
 order. -/
 theorem reindex_comp (I : Interpretation U D) (σ : Substitution S T) (τ : Substitution T U) :
     I.reindex (σ.comp τ) = (I.reindex τ).reindex σ := by
-  refine hext (funext fun a ↦ FreeRigid.eval_eval τ.obj I.obj (σ.obj a).as) fun g ↦ ?_
-  refine (eqToHom_comp_heq _ _ _).trans ((eqToHom_comp_heq _ _ _).trans ?_).symm
+  have hext : ∀ {x y : Interpretation S D}, x.obj = y.obj → x.coupon ≍ y.coupon → x = y := by
+    rintro ⟨obj₁, c₁⟩ ⟨obj₂, c₂⟩ h1 h2
+    dsimp at h1 h2
+    subst h1
+    exact congrArg _ (eq_of_heq h2)
+  refine hext (funext fun a ↦ FreeRigid.eval_eval τ.obj I.obj (σ.obj a).as) ?_
+  refine Function.hfunext rfl fun g _ hg ↦ ?_
+  cases hg
+  rw [reindex_coupon, reindex_coupon]
+  refine (CategoryTheory.eqToHom_comp_heq _ _).trans
+    ((CategoryTheory.comp_eqToHom_heq _ _).trans ?_)
+  refine ((CategoryTheory.eqToHom_comp_heq _ _).trans
+    ((CategoryTheory.comp_eqToHom_heq _ _).trans ?_)).symm
   have hmk : FreeRigid.homMk ((σ.comp τ).coupon g) ≍
       τ.toFunctor.map (FreeRigid.homMk (σ.coupon g)) := by
     rw [τ.toFunctor_map_homMk]
@@ -914,7 +898,7 @@ theorem reindex_comp (I : Interpretation U D) (σ : Substitution S T) (τ : Subs
   have hmap :
       (FreeRigid.lift I.obj I.coupon).map (FreeRigid.homMk ((σ.comp τ).coupon g)) ≍
         (τ.toFunctor ⋙ FreeRigid.lift I.obj I.coupon).map (FreeRigid.homMk (σ.coupon g)) :=
-    functor_map_heq (FreeRigid.lift I.obj I.coupon)
+    Functor.map_heq (FreeRigid.lift I.obj I.coupon)
       (FreeRigid.eval_eval σ.obj τ.obj (S.src g)).symm
       (FreeRigid.eval_eval σ.obj τ.obj (S.tgt g)).symm hmk
   have hcomm := (extensionReindexIso I τ).hom.hom.hom.naturality (FreeRigid.homMk (σ.coupon g))
@@ -922,7 +906,8 @@ theorem reindex_comp (I : Interpretation U D) (σ : Substitution S T) (τ : Subs
   have hnat :
       (FreeRigid.lift (I.reindex τ).obj (I.reindex τ).coupon).map (FreeRigid.homMk (σ.coupon g)) ≍
         (τ.toFunctor ⋙ FreeRigid.lift I.obj I.coupon).map (FreeRigid.homMk (σ.coupon g)) :=
-    (comp_eqToHom_heq _ _).symm.trans (hcomm.heq.trans (eqToHom_comp_left_heq _ _))
+    (CategoryTheory.comp_eqToHom_heq _ _).symm.trans
+      (hcomm.heq.trans (CategoryTheory.eqToHom_comp_heq _ _))
   exact hnat.trans hmap.symm
 
 /-- Iterated reindexing collapses to reindexing along the composite substitution. -/
