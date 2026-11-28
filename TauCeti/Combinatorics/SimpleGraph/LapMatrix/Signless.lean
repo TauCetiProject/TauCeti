@@ -171,13 +171,13 @@ theorem unsignedIncMatrix_mul_transpose (R : Type*) [NonAssocSemiring R] :
   rcases eq_or_ne i j with rfl | hij
   · rw [incMatrix_mul_transpose_diag, signlessLapMatrix_apply_self]
   rw [signlessLapMatrix_apply_of_ne _ hij, adjMatrix_apply, Matrix.mul_apply]
-  simp only [transpose_apply, incMatrix_apply_mul_incMatrix_apply]
+  simp only [transpose_apply]
   split_ifs with ha
-  · rw [G.incidenceSet_inter_incidenceSet_of_adj ha, sum_eq_single s(i, j)
+  · simp only [incMatrix_apply_mul_incMatrix_apply]
+    rw [G.incidenceSet_inter_incidenceSet_of_adj ha, sum_eq_single s(i, j)
       (fun e _ he ↦ Set.indicator_of_notMem he _) (fun h ↦ (h (mem_univ _)).elim)]
     simp
-  · rw [G.incidenceSet_inter_incidenceSet_of_not_adj ha hij]
-    simp
+  · exact sum_eq_zero fun e _ ↦ G.incMatrix_apply_mul_incMatrix_apply_of_not_adj hij ha
 
 /-- **Sign conjugation.** For a proper `2`-colouring `c` with sign matrix
 `S = diag(if c x then -1 else 1)`, the conjugate `S L S` of the Laplacian is the signless
