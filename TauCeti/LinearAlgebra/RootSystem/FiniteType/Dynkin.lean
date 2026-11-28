@@ -169,7 +169,7 @@ private def corootsF4 : _root_.Matrix (Fin 4) (Fin 4) ℚ :=
 
 /-- The standard Cartan matrix of type `F₄` is of finite type. -/
 theorem isFiniteType_cartanMatrix_F4 : IsFiniteType F4.cartanMatrix := by
-  have hd : ∀ i, (0 : ℚ) < ![1, 1, 2, 2] i := by intro i; fin_cases i <;> norm_num
+  have hd : ∀ i, (![1, 1, 2, 2] : Fin 4 → ℚ) i ≠ 0 := by intro i; fin_cases i <;> norm_num
   have hgram : _root_.Matrix.of (fun i j ↦ ![1, 1, 2, 2] i * (CartanMatrix.F₄ i j : ℚ))
       = corootsF4ᴴ * corootsF4 := by
     ext i j
@@ -194,7 +194,7 @@ private def corootsG2 : _root_.Matrix (Fin 3) (Fin 2) ℚ :=
 
 /-- The standard Bourbaki-numbered Cartan matrix of type `G₂` is of finite type. -/
 theorem isFiniteType_cartanMatrix_G2 : IsFiniteType G2.cartanMatrix := by
-  have hd : ∀ i, (0 : ℚ) < ![3, 1] i := by intro i; fin_cases i <;> norm_num
+  have hd : ∀ i, (![3, 1] : Fin 2 → ℚ) i ≠ 0 := by intro i; fin_cases i <;> norm_num
   have hgram : _root_.Matrix.of (fun i j ↦ ![3, 1] i * (CartanMatrix.G₂ᵀ i j : ℚ))
       = corootsG2ᴴ * corootsG2 := by
     ext i j

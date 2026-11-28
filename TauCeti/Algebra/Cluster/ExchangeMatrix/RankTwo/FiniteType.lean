@@ -63,7 +63,7 @@ theorem isFiniteType_cartanCompanion_iff_of_card_le_two
       rw [hdiag]
       exact mul_pos (by norm_num) (hd i)
     refine isFiniteType_of B.cartanCompanion_apply_self
-      (fun _ _ hij ↦ B.cartanCompanion_nonpos_of_ne hij) hd
+      (fun _ _ hij ↦ B.cartanCompanion_nonpos_of_ne hij)
       (hM.posDef_of_card_le_two hK hdM ?_)
     intro i j hij
     have hdet : M i i * M j j - M i j * M j i =

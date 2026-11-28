@@ -370,7 +370,7 @@ theorem exists_equiv_forall_eq_starCartanMatrix_of_isSimplyLaced_of_degree_eq_th
     ∃ (ℓ : Fin 3 → ℕ) (e : B ≃ StarIndex ℓ),
       (∀ i, ℓ i ≠ 0) ∧ e c = none ∧ ∀ i j, A i j = starCartanMatrix ℓ (e i) (e j) :=
   exists_equiv_forall_eq_starCartanMatrix_of_isTree_of_isSimplyLaced
-    (h.isTree_diagramGraph hconn) h.apply_self (fun _ _ ↦ h.apply_eq_zero_iff) hsl
+    (h.isTree_diagramGraph hconn) h.isGeneralizedCartan.diag h.isGeneralizedCartan.zero_comm hsl
     h.degree_le_three hc fun _ hi ↦ h.eq_of_degree_eq_three hsl hconn hi hc
 
 open Classical in

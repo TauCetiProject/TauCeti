@@ -49,7 +49,7 @@ theorem isFiniteType_foldedCartanMatrix (hB : B.PosDef) (hdiag : ∀ i, B i i = 
     TauCeti.IsFiniteType (B.foldedCartanMatrix σ) := by
   refine TauCeti.isFiniteType_of (foldedCartanMatrix_apply_self hB hdiag hoff hσ)
     (fun _ _ ↦ foldedCartanMatrix_nonpos hB hdiag hoff hσ)
-    (foldingSymmetrizer_pos hB hdiag hoff hσ) ?_
+    (d := B.foldingSymmetrizer σ) ?_
   convert posDef_foldedGramMatrix σ hB using 1
   ext O P
   exact foldingSymmetrizer_mul_foldedCartanMatrix hB hdiag hoff hσ O P

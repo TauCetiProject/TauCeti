@@ -46,9 +46,10 @@ variable {ι X Y X' Y' : Type*} [AddCommGroup X] [AddCommGroup Y]
 symmetrizer while forgetting the lattices. -/
 def toSymmetrizableDatum : SymmetrizableDatum ι where
   cartan := D.cartan
-  diag := D.cartan_apply_self
-  offDiag_nonpos _ _ hij := D.cartan_nonpos hij
-  zero_comm := D.cartan_eq_zero_iff
+  isGeneralizedCartan :=
+    { diag := D.cartan_apply_self
+      offDiag_nonpos _ _ hij := D.cartan_nonpos hij
+      zero_comm := D.cartan_eq_zero_iff }
   symmetrizer := D.symmetrizer
   symmetrizer_pos := D.symmetrizer_pos
   symmetrizes := D.symmetrizer_mul_cartan
@@ -148,8 +149,8 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] (A : SymmetrizableDatum ι)
 coweight lattice `ℤ^ι` and its dual weight lattice `Hom(ℤ^ι, ℤ)`. -/
 def simplyConnectedCartanDatum (hdet : A.cartan.det ≠ 0) :
     CartanDatum ι (Dual ℤ (ι → ℤ)) (ι → ℤ) :=
-  CartanDatum.simplyConnected A.cartan A.symmetrizer A.diag A.offDiag_nonpos
-    A.symmetrizer_pos A.symmetrizes hdet
+  CartanDatum.simplyConnected A.cartan A.symmetrizer A.isGeneralizedCartan.diag
+    A.isGeneralizedCartan.offDiag_nonpos A.symmetrizer_pos A.symmetrizes hdet
 
 @[simp]
 lemma simplyConnectedCartanDatum_pairing_apply (hdet : A.cartan.det ≠ 0)
@@ -175,8 +176,8 @@ lemma simplyConnectedCartanDatum_symmetrizer (hdet : A.cartan.det ≠ 0) :
 @[simp]
 lemma cartan_simplyConnectedCartanDatum (hdet : A.cartan.det ≠ 0) :
     (A.simplyConnectedCartanDatum hdet).cartan = A.cartan :=
-  CartanDatum.cartan_simplyConnected A.cartan A.symmetrizer A.diag A.offDiag_nonpos
-    A.symmetrizer_pos A.symmetrizes hdet
+  CartanDatum.cartan_simplyConnected A.cartan A.symmetrizer A.isGeneralizedCartan.diag
+    A.isGeneralizedCartan.offDiag_nonpos A.symmetrizer_pos A.symmetrizes hdet
 
 @[simp]
 lemma toSymmetrizableDatum_simplyConnectedCartanDatum (hdet : A.cartan.det ≠ 0) :

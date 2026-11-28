@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Combinatorics.SimpleGraph.PathGraph.Basic
-import TauCeti.Logic.Equiv.Fin.Basic
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.DoubleEdge.Basic
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.TwoDoubleEdges
@@ -48,103 +47,7 @@ open SimpleGraph
 
 variable {B : Type*} {A : Matrix B B ℤ} {n : ℕ}
 
-/-! ## The double-edge model read along its path -/
-
-/-- The entries of a double-edge model, read along its underlying path. The only oriented
-exception to the value `-1` on adjacent vertices is the `-2` half of the double edge. -/
-private lemma doubleEdgeCartanMatrix_apply_eq_path (p q n : ℕ) (hp : 0 < p) (hq : 0 < q)
-    (hpq : p + q = n) (x y : Fin p ⊕ Fin q) :
-    doubleEdgeCartanMatrix p q x y =
-      if x = y then 2
-      else if x = Sum.inr ⟨q - 1, by omega⟩ ∧ y = Sum.inl ⟨p - 1, by omega⟩ then -2
-      else if (finSumFinRevEquiv p q n hpq x : ℕ) + 1 =
-          (finSumFinRevEquiv p q n hpq y : ℕ) ∨
-          (finSumFinRevEquiv p q n hpq y : ℕ) + 1 =
-            (finSumFinRevEquiv p q n hpq x : ℕ) then -1 else 0 := by
-  rcases x with x | x <;> rcases y with y | y <;>
-    simp only [doubleEdgeCartanMatrix_inl_inl, doubleEdgeCartanMatrix_inr_inr,
-      doubleEdgeCartanMatrix_inl_inr, doubleEdgeCartanMatrix_inr_inl, Sum.inl.injEq,
-      Sum.inr.injEq, Sum.inl.injEq, Sum.inr.injEq, Sum.inl_ne_inr, Sum.inr_ne_inl,
-      false_and, and_false, ite_false, finSumFinRevEquiv_inl_val,
-      finSumFinRevEquiv_inr_val, Fin.ext_iff]
-  · have _ := x.isLt
-    have _ := y.isLt
-    rw [chainEntry_def]
-    split_ifs <;> omega
-  · have hx := x.isLt
-    have hy := y.isLt
-    split_ifs <;> omega
-  · have hx := x.isLt
-    have hy := y.isLt
-    split_ifs <;> omega
-  · have hx := x.isLt
-    have hy := y.isLt
-    have _ : (x : ℕ) ≤ q - 1 := by omega
-    have _ : (y : ℕ) ≤ q - 1 := by omega
-    rw [chainEntry_def]
-    split_ifs <;> omega
-
 /-! ## Reindexing a path-shaped diagram -/
-
-/-- The reindexing theorem with an already oriented path numbering. -/
-private theorem exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv
-    (h : IsFiniteType A) (k : B ≃ Fin n)
-    (hk : ∀ i j, (diagramGraph A).Adj i j ↔
-      (k i : ℕ) + 1 = (k j : ℕ) ∨ (k j : ℕ) + 1 = (k i : ℕ))
-    {u v : B} (horder : (k u : ℕ) + 1 = (k v : ℕ)) (hvu : A v u = -2)
-    (hsimple : ∀ {i j}, i ≠ j → A i j ≠ 0 → (i = v ∧ j = u) ∨ A i j = -1) :
-    ∃ p q : ℕ, 0 < p ∧ 0 < q ∧ ∃ e : B ≃ Fin p ⊕ Fin q,
-      ∀ i j, A i j = doubleEdgeCartanMatrix p q (e i) (e j) := by
-  let p := (k u : ℕ) + 1
-  let q := n - p
-  -- Cutting immediately after `u` leaves two nonempty intervals, since `v` is its successor.
-  have hp : 0 < p := by simp [p]
-  have hp_le : p ≤ n := by simp only [p]; omega
-  have hpq : p + q = n := Nat.add_sub_of_le hp_le
-  have hq : 0 < q := by
-    simp only [q]
-    omega
-  let e : B ≃ Fin p ⊕ Fin q := k.trans (finSumFinRevEquiv p q n hpq).symm
-  have hge (i : B) : finSumFinRevEquiv p q n hpq (e i) = k i := by simp [e]
-  -- The two endpoints of the cut become the last vertices of the two model chains.
-  have heu : e u = Sum.inl ⟨p - 1, by omega⟩ := by
-    apply (finSumFinRevEquiv p q n hpq).injective
-    rw [hge]
-    apply Fin.ext
-    simp [p]
-  have hev : e v = Sum.inr ⟨q - 1, by omega⟩ := by
-    apply (finSumFinRevEquiv p q n hpq).injective
-    rw [hge]
-    apply Fin.ext
-    simp [p, q]
-    omega
-  refine ⟨p, q, hp, hq, e, fun i j ↦ ?_⟩
-  -- Read both matrices along the same path. Equality, the exceptional oriented edge, and
-  -- adjacency are all reflected by `e`; the finite-type axioms then determine the entry.
-  rw [doubleEdgeCartanMatrix_apply_eq_path p q n hp hq hpq, ← hev, ← heu]
-  have hrev : (e i = e v ∧ e j = e u) ↔ (i = v ∧ j = u) :=
-    and_congr e.injective.eq_iff e.injective.eq_iff
-  have hadj : ((finSumFinRevEquiv p q n hpq (e i) : ℕ) + 1 =
-      (finSumFinRevEquiv p q n hpq (e j) : ℕ) ∨
-      (finSumFinRevEquiv p q n hpq (e j) : ℕ) + 1 =
-        (finSumFinRevEquiv p q n hpq (e i) : ℕ)) ↔ (diagramGraph A).Adj i j := by
-    rw [hge, hge, hk]
-  rcases eq_or_ne i j with rfl | hij
-  · rw [ite_eq_left rfl, h.apply_self]
-  have heij : e i ≠ e j := fun he ↦ hij (e.injective he)
-  rw [ite_eq_right heij]
-  by_cases hpair : i = v ∧ j = u
-  · rcases hpair with ⟨rfl, rfl⟩
-    rw [ite_eq_left (hrev.mpr ⟨rfl, rfl⟩), hvu]
-  have hpair' := fun hp ↦ hpair (hrev.mp hp)
-  rw [ite_eq_right hpair']
-  by_cases ha : (diagramGraph A).Adj i j
-  · rw [ite_eq_left (hadj.mpr ha)]
-    have hne : A i j ≠ 0 := (h.diagramGraph_adj_iff.mp ha).2
-    exact (hsimple hij hne).resolve_left hpair
-  · rw [ite_eq_right (fun hp ↦ ha (hadj.mp hp))]
-    by_contra hne
-    exact ha (h.diagramGraph_adj_iff.mpr ⟨hij, hne⟩)
 
 /-- The reindexing theorem with the uniqueness of the multiple edge assumed. The hypothesis
 `hsimple` on off-diagonal entries is the matrix form of saying that the chosen edge is the only
@@ -158,24 +61,8 @@ private theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_si
     ∃ p q : ℕ, 0 < p ∧ 0 < q ∧ ∃ e : B ≃ Fin p ⊕ Fin q,
       ∀ i j, A i j = doubleEdgeCartanMatrix p q (e i) (e j) := by
   obtain ⟨iso⟩ := (h.isTree_diagramGraph hconn).nonempty_iso_pathGraph_of_degree_le_two hdeg
-  have hvu_ne : v ≠ u := by
-    rintro rfl
-    rw [h.apply_self] at hvu
-    omega
-  have hadj : (diagramGraph A).Adj u v :=
-    (h.diagramGraph_adj_iff.mpr ⟨hvu_ne, by simp [hvu]⟩).symm
-  rcases (iso.adj_iff_of_pathGraph u v).mp hadj with horder | horder
-  · exact exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv h iso.toEquiv
-      iso.adj_iff_of_pathGraph horder hvu hsimple
-  · let iso' : diagramGraph A ≃g pathGraph (Fintype.card B) :=
-      iso.trans (pathGraphRevIso (Fintype.card B))
-    have horder' : (iso' u : ℕ) + 1 = (iso' v : ℕ) := by
-      simp only [iso', RelIso.trans_apply, pathGraphRevIso_apply, Fin.val_rev]
-      have _ := (iso u).isLt
-      have _ := (iso v).isLt
-      omega
-    exact exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv h iso'.toEquiv
-      iso'.adj_iff_of_pathGraph horder' hvu hsimple
+  exact exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv h.isGeneralizedCartan
+    iso.toEquiv iso.adj_iff_of_pathGraph hvu hsimple
 
 /-! ## A path carries at most one multiple edge -/
 
@@ -223,7 +110,7 @@ private theorem apply_mul_apply_eq_one_of_isoPathGraph_of_lt (h : IsFiniteType A
           have := congrArg (fun x : B => (k x : ℕ)) heq
           rw [hv_val s (by omega), hv_val t ht] at this
           omega
-        have hadj := h.diagramGraph_adj_iff.mpr ⟨hvne, hne⟩
+        have hadj := h.isGeneralizedCartan.diagramGraph_adj_iff.mpr ⟨hvne, hne⟩
         rw [hk, hv_val s (by omega), hv_val t ht] at hadj
         omega
       -- Every interior edge is closer to `a` than the target edge, hence single by induction.
@@ -241,10 +128,10 @@ private theorem apply_mul_apply_eq_one_of_isoPathGraph_of_lt (h : IsFiniteType A
       rw [hv_eq (t := r) (by omega) (by omega) (by omega),
         hv_eq (t := r + 1) (by omega) hr (by omega)] at hle
       have hne : A (k.symm ⟨r, by omega⟩) (k.symm ⟨r + 1, hr⟩) ≠ 0 := by
-        apply (h.diagramGraph_adj_iff.mp ?_).2
+        apply (h.isGeneralizedCartan.diagramGraph_adj_iff.mp ?_).2
         rw [hk, k.apply_symm_apply, k.apply_symm_apply]
         exact Or.inl rfl
-      have hone := h.one_le_apply_mul_apply hne
+      have hone := h.isGeneralizedCartan.one_le_apply_mul_apply hne
       omega
 
 /-- In a path numbering, an edge lying strictly beyond a fixed multiple edge has Cartan product
@@ -332,14 +219,14 @@ theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix [Fintype B] [
   have hconn' : (diagramGraph A).Connected := ⟨hconn⟩
   have hvu_ne : v ≠ u := by
     rintro rfl
-    rw [h.apply_self] at hvu
+    rw [h.isGeneralizedCartan.diag] at hvu
     omega
   have hAuv : A u v ≠ 0 := fun hz => by
-    have := h.apply_eq_zero_symm hz
+    have := (h.isGeneralizedCartan.zero_comm _ _).mp hz
     rw [hvu] at this
     omega
   have hadj : (diagramGraph A).Adj u v :=
-    h.diagramGraph_adj_iff.mpr ⟨hvu_ne.symm, hAuv⟩
+    h.isGeneralizedCartan.diagramGraph_adj_iff.mpr ⟨hvu_ne.symm, hAuv⟩
   -- The Cartan product of the double edge is `2`, so its other entry is `-1`.
   have hAuv_eq : A u v = -1 := by
     have hmem := h.apply_mul_apply_mem_of_ne hvu_ne.symm
@@ -365,9 +252,9 @@ theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix [Fintype B] [
   by_cases hreverse : i = u ∧ j = v
   · rcases hreverse with ⟨rfl, rfl⟩
     exact hAuv_eq
-  have hadj' := h.diagramGraph_adj_iff.mpr ⟨hij, hAij⟩
+  have hadj' := h.isGeneralizedCartan.diagramGraph_adj_iff.mpr ⟨hij, hAij⟩
   have hone := hsingle hadj' (by tauto)
-  have hnonpos := h.apply_le_zero_of_ne hij
+  have hnonpos := h.isGeneralizedCartan.offDiag_nonpos i j hij
   rcases Int.eq_one_or_neg_one_of_mul_eq_one' hone with hpos | hneg
   · exact absurd hpos.1 (by omega)
   · exact hneg.1

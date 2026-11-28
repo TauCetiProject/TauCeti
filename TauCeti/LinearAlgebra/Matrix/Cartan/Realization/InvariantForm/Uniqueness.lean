@@ -560,9 +560,10 @@ open Module Matrix TauCeti TauCeti.CartanRealization
 
 private def affineA1Datum : SymmetrizableDatum (Fin 2) where
   cartan := !![2, -2; -2, 2]
-  diag := by decide
-  offDiag_nonpos := by simp [Fin.forall_fin_two]
-  zero_comm := by simp [Fin.forall_fin_two]
+  isGeneralizedCartan :=
+    { diag := by decide
+      offDiag_nonpos := by simp [Fin.forall_fin_two]
+      zero_comm := by simp [Fin.forall_fin_two] }
   symmetrizer := 1
   symmetrizer_pos := by decide
   symmetrizes := by decide
@@ -695,9 +696,10 @@ example :
 
 private def a1Datum : SymmetrizableDatum (Fin 1) where
   cartan := !![2]
-  diag := by decide
-  offDiag_nonpos := by simp [Fin.forall_fin_one]
-  zero_comm := by simp
+  isGeneralizedCartan :=
+    { diag := by decide
+      offDiag_nonpos := by simp [Fin.forall_fin_one]
+      zero_comm := by simp }
   symmetrizer := 1
   symmetrizer_pos := by decide
   symmetrizes := by decide

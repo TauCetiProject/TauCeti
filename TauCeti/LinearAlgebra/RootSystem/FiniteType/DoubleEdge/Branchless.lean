@@ -87,9 +87,10 @@ theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix_eq_one_or_eq_
   -- A double edge has entries `-1` and `-2`, in one order or the other.
   have hne : u ≠ v := by
     rintro rfl
-    rw [h.apply_self] at huv
+    rw [h.isGeneralizedCartan.diag] at huv
     norm_num at huv
-  rcases Int.eq_neg_one_and_eq_neg_two_or_of_mul_eq_two (h.apply_le_zero_of_ne hne) huv with
+  rcases Int.eq_neg_one_and_eq_neg_two_or_of_mul_eq_two
+    (h.isGeneralizedCartan.offDiag_nonpos u v hne) huv with
     ⟨-, hvu⟩ | ⟨huv', -⟩
   · exact key hvu
   · exact key huv'

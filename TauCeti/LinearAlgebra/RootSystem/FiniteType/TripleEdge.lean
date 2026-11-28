@@ -71,19 +71,19 @@ theorem eq_or_eq_of_apply_mul_apply_eq_three (h : IsFiniteType A)
     · subst v
       have hw : w = j := by
         by_contra hwj
-        have hiw : i ≠ w := (h.diagramGraph_adj_iff.mp hvw).1
+        have hiw : i ≠ w := (h.isGeneralizedCartan.diagramGraph_adj_iff.mp hvw).1
         have hzero := h.apply_eq_zero_of_apply_mul_apply_eq_three hiw (Ne.symm hwj) hij
-        exact (h.diagramGraph_adj_iff.mp hvw).2 hzero
+        exact (h.isGeneralizedCartan.diagramGraph_adj_iff.mp hvw).2 hzero
       subst w
       simpa only [H, SimpleGraph.Subgraph.induce_adj, SimpleGraph.Subgraph.top_adj,
         Set.mem_insert_iff, Set.mem_singleton_iff, true_or, or_true, true_and] using hvw
     · subst v
       have hw : w = i := by
         by_contra hwi
-        have hjw : j ≠ w := (h.diagramGraph_adj_iff.mp hvw).1
+        have hjw : j ≠ w := (h.isGeneralizedCartan.diagramGraph_adj_iff.mp hvw).1
         have hzero := h.apply_eq_zero_of_apply_mul_apply_eq_three hjw (Ne.symm hwi) (by
           simpa [mul_comm] using hij)
-        exact (h.diagramGraph_adj_iff.mp hvw).2 hzero
+        exact (h.isGeneralizedCartan.diagramGraph_adj_iff.mp hvw).2 hzero
       subst w
       simpa only [H, SimpleGraph.Subgraph.induce_adj, SimpleGraph.Subgraph.top_adj,
         Set.mem_insert_iff, Set.mem_singleton_iff, true_or, or_true, true_and] using hvw
@@ -97,7 +97,7 @@ theorem card_eq_two_of_apply_mul_apply_eq_three [Fintype B] (h : IsFiniteType A)
     Fintype.card B = 2 := by
   have hij_ne : i ≠ j := by
     rintro rfl
-    rw [h.apply_self] at hij
+    rw [h.isGeneralizedCartan.diag] at hij
     omega
   rw [← Nat.card_eq_fintype_card]
   refine Nat.card_eq_two_iff.mpr ⟨i, j, hij_ne, Set.eq_univ_of_forall ?_⟩
@@ -117,7 +117,7 @@ theorem exists_equiv_cartanMatrix_eq_G2_of_apply_mul_apply_eq_three (h : IsFinit
   have : Fintype B := Fintype.ofFinite B
   have hij_ne : i ≠ j := by
     rintro rfl
-    rw [h.apply_self] at hij
+    rw [h.isGeneralizedCartan.diag] at hij
     omega
   have hcard := h.card_eq_two_of_apply_mul_apply_eq_three hconn hij
   have hnonzero : ∀ x y : B, x ≠ y → A x y ≠ 0 := by

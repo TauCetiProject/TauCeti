@@ -117,7 +117,8 @@ theorem IsFiniteType.exists_equiv_forall_eq_cartanMatrix_A (h : IsFiniteType A)
     ∃ e : B ≃ Fin (Fintype.card B),
       ∀ i j, A i j = DynkinType.cartanMatrix (.A (Fintype.card B)) (e i) (e j) := by
   exact exists_equiv_forall_eq_cartanMatrix_A_of_isTree_of_isSimplyLaced_of_degree_le_two
-    (h.isTree_diagramGraph hconn) h.apply_self (fun _ _ ↦ h.apply_eq_zero_iff) hsl hdeg
+    (h.isTree_diagramGraph hconn) h.isGeneralizedCartan.diag h.isGeneralizedCartan.zero_comm hsl
+    hdeg
 
 section RootPairing
 

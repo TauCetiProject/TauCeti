@@ -155,7 +155,7 @@ theorem cartanCompanion_bipartiteMatrix : (A.bipartiteMatrix c).cartanCompanion 
   · subst j
     simp
   · rw [Matrix.cartanCompanion_apply_of_ne _ hij, A.bipartiteMatrix_apply_of_ne c hij]
-    have hnonpos := A.offDiag_nonpos i j hij
+    have hnonpos := A.isGeneralizedCartan.offDiag_nonpos i j hij
     cases c i <;> simp [abs_of_nonpos hnonpos]
 
 /-- A true-coloured row consists of nonnegative entries. -/
@@ -164,7 +164,7 @@ theorem bipartiteMatrix_nonneg {i : I} (hc : c i = true) (j : I) :
   by_cases hij : i = j
   · subst j
     simp
-  · simp [A.bipartiteMatrix_apply_of_ne c hij, hc, A.offDiag_nonpos i j hij]
+  · simp [A.bipartiteMatrix_apply_of_ne c hij, hc, A.isGeneralizedCartan.offDiag_nonpos i j hij]
 
 /-- A false-coloured row consists of nonpositive entries. -/
 theorem bipartiteMatrix_nonpos {i : I} (hc : c i = false) (j : I) :
@@ -172,7 +172,7 @@ theorem bipartiteMatrix_nonpos {i : I} (hc : c i = false) (j : I) :
   by_cases hij : i = j
   · subst j
     simp
-  · simp [A.bipartiteMatrix_apply_of_ne c hij, hc, A.offDiag_nonpos i j hij]
+  · simp [A.bipartiteMatrix_apply_of_ne c hij, hc, A.isGeneralizedCartan.offDiag_nonpos i j hij]
 
 /-- Every two-coloured symmetrizable Cartan datum yields a bipartite exchange matrix. -/
 @[simp]

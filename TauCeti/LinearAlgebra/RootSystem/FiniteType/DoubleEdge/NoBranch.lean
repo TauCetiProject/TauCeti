@@ -54,22 +54,6 @@ namespace IsFiniteType
 
 variable {B : Type*} [DecidableEq B] {A : Matrix B B ℤ}
 
-omit [DecidableEq B] in
-/-- Transposing a matrix does not change its unoriented diagram. -/
-private lemma diagramGraph_transpose (A : Matrix B B ℤ) :
-    diagramGraph A.transpose = diagramGraph A := by
-  ext i j
-  simp only [diagramGraph_adj, Matrix.transpose_apply]
-  tauto
-
-omit [DecidableEq B] in
-/-- Along an edge of a finite-type diagram, the corresponding Cartan entry is at most `-1`. -/
-private lemma apply_le_neg_one_of_adj (h : IsFiniteType A) {i j : B}
-    (hij : (diagramGraph A).Adj i j) : A i j ≤ -1 := by
-  have hij' := h.diagramGraph_adj_iff.mp hij
-  have hle := h.apply_le_zero_of_ne hij'.1
-  omega
-
 /-- Add an off-path vertex to a path, using `none` for the extra vertex. -/
 private def forkedPathEmbedding {u v x : B} {n : ℕ} (r : (diagramGraph A).Walk u v) :
     Option (Fin (n + 3)) → B
@@ -79,7 +63,7 @@ private def forkedPathEmbedding {u v x : B} {n : ℕ} (r : (diagramGraph A).Walk
 omit [DecidableEq B] in
 /-- The forked-path indexing is injective when the extra vertex lies off the path. -/
 private lemma forkedPathEmbedding_injective {u v x : B} {n : ℕ}
-    {r : (diagramGraph A).Walk u v} (hr : r.IsPath) (hlen : r.length = n + 2)
+    {r : (diagramGraph A).Walk u v} (hr : r.IsPath) (hlen : n + 2 ≤ r.length)
     (hx : x ∉ r.support) :
     Function.Injective (forkedPathEmbedding (A := A) (x := x) (n := n) r) := by
   intro i j hij
@@ -94,59 +78,61 @@ private lemma forkedPathEmbedding_injective {u v x : B} {n : ℕ}
     simp only [forkedPathEmbedding] at hij
     have hi := i.isLt
     have hj := j.isLt
-    have hi' : (i : ℕ) ≤ n + 2 := by omega
-    have hj' : (j : ℕ) ≤ n + 2 := by omega
-    exact hr.getVert_injOn (by simpa only [Set.mem_Iic, hlen] using hi')
-      (by simpa only [Set.mem_Iic, hlen] using hj') hij
+    exact hr.getVert_injOn (Set.mem_Iic.2 (by omega)) (Set.mem_Iic.2 (by omega)) hij
 
 omit [DecidableEq B] in
 /-- A forked path ending in an oriented double edge is bounded above by the affine `B` matrix. -/
 private lemma submatrix_forkedPath_le_affineBCartanMatrix
-    (h : IsFiniteType A) {u v x : B} {n : ℕ} {r : (diagramGraph A).Walk u v}
-    (hr : r.IsPath) (hlen : r.length = n + 2) (hx : x ∉ r.support)
+    (h : A.IsGeneralizedCartan) {u v x : B} {n : ℕ} {r : (diagramGraph A).Walk u v}
+    (hr : r.IsPath) (hx : x ∉ r.support)
     (hx1 : (diagramGraph A).Adj x (r.getVert 1))
     (hlast : A (r.getVert (n + 1)) (r.getVert (n + 2)) = -2) :
     ∀ i j, A.submatrix (forkedPathEmbedding (A := A) (x := x) (n := n) r)
       (forkedPathEmbedding (A := A) (x := x) (n := n) r) i j
         ≤ affineBCartanMatrix n i j := by
+  have hlen : n + 2 ≤ r.length := by
+    by_contra! hlt
+    rw [r.getVert_of_length_le (by omega), r.getVert_of_length_le (by omega), h.diag] at hlast
+    omega
   let e := forkedPathEmbedding (A := A) (x := x) (n := n) r
   have he : Function.Injective e := forkedPathEmbedding_injective hr hlen hx
   intro i j
   rcases i with _ | i <;> rcases j with _ | j
   · simp only [Matrix.submatrix_apply, forkedPathEmbedding,
-      affineBCartanMatrix_diag, h.apply_self]
+      affineBCartanMatrix_diag, h.diag]
     norm_num
   · simp only [Matrix.submatrix_apply, forkedPathEmbedding,
       affineBCartanMatrix_none_some]
     split_ifs with hj
     · have : j = ⟨1, by omega⟩ := Fin.ext hj
       rw [this]
-      exact h.apply_le_neg_one_of_adj hx1
+      exact apply_le_neg_one_of_adj h.offDiag_nonpos hx1
     · have hne : x ≠ r.getVert j := fun hEq ↦ hx (hEq ▸ r.getVert_mem_support j)
-      exact h.apply_le_zero_of_ne hne
+      exact h.offDiag_nonpos _ _ hne
   · simp only [Matrix.submatrix_apply, forkedPathEmbedding,
       affineBCartanMatrix_some_none]
     split_ifs with hi
     · have : i = ⟨1, by omega⟩ := Fin.ext hi
       rw [this]
-      exact h.apply_le_neg_one_of_adj hx1.symm
+      exact apply_le_neg_one_of_adj h.offDiag_nonpos hx1.symm
     · have hne : r.getVert i ≠ x := fun hEq ↦ hx (hEq.symm ▸ r.getVert_mem_support i)
-      exact h.apply_le_zero_of_ne hne
+      exact h.offDiag_nonpos _ _ hne
   · rw [affineBCartanMatrix_some_some, ← chainBEntry_eq_cartanMatrix_B,
       chainBEntry_def]
     simp only [Matrix.submatrix_apply, forkedPathEmbedding]
     split_ifs with hij hsucc hlastIdx hpred
     · have : i = j := Fin.ext hij
       subst j
-      exact le_of_eq (h.apply_self _)
+      exact le_of_eq (h.diag _)
     · have hi : (i : ℕ) = n + 1 := by omega
       have hj : (j : ℕ) = n + 2 := by omega
       simpa only [hi, hj] using le_of_eq hlast
-    · have hijLt : (i : ℕ) < r.length := by rw [hlen]; omega
-      simpa only [hsucc] using h.apply_le_neg_one_of_adj (r.adj_getVert_succ hijLt)
+    · have hijLt : (i : ℕ) < r.length := by omega
+      simpa only [hsucc] using apply_le_neg_one_of_adj h.offDiag_nonpos (r.adj_getVert_succ hijLt)
     · have hijLt : (j : ℕ) < r.length := by omega
-      simpa only [hpred] using h.apply_le_neg_one_of_adj (r.adj_getVert_succ hijLt).symm
-    · apply h.apply_le_zero_of_ne
+      simpa only [hpred] using
+        apply_le_neg_one_of_adj h.offDiag_nonpos (r.adj_getVert_succ hijLt).symm
+    · apply h.offDiag_nonpos
       exact fun hEq ↦ hij (congrArg Fin.val (Option.some.inj (he hEq)))
 
 omit [DecidableEq B] in
@@ -157,8 +143,9 @@ private lemma false_of_forkedPath_of_apply_eq_neg_two
     (hx1 : (diagramGraph A).Adj x (r.getVert 1))
     (hlast : A (r.getVert (n + 1)) (r.getVert (n + 2)) = -2) : False := by
   let e := forkedPathEmbedding (A := A) (x := x) (n := n) r
-  have he : Function.Injective e := forkedPathEmbedding_injective hr hrlen hxoff
-  have hle := submatrix_forkedPath_le_affineBCartanMatrix h hr hrlen hxoff hx1 hlast
+  have he : Function.Injective e := forkedPathEmbedding_injective hr hrlen.ge hxoff
+  have hle := submatrix_forkedPath_le_affineBCartanMatrix h.isGeneralizedCartan
+    hr hxoff hx1 hlast
   have hsub : IsFiniteType (A.submatrix e e) := h.submatrix he
   have hzero := hsub.eq_zero_of_forall_mul_sum_apply_mul_nonpos
       (x := affineBComark n) fun i ↦ by
@@ -256,9 +243,9 @@ theorem degree_le_two_of_reachable_of_apply_mul_apply_eq_two [Fintype B] (h : Is
     omega
   have huvNe : u ≠ v := by
     rintro rfl
-    rw [h.apply_self] at huv
+    rw [h.isGeneralizedCartan.diag] at huv
     norm_num at huv
-  have huvAdj : (diagramGraph A).Adj u v := h.diagramGraph_adj_iff.mpr
+  have huvAdj : (diagramGraph A).Adj u v := h.isGeneralizedCartan.diagramGraph_adj_iff.mpr
     ⟨huvNe, fun hzero ↦ by rw [hzero] at huv; norm_num at huv⟩
   have hgraph := diagramGraph_transpose A
   let hgraphIso : diagramGraph A.transpose ≃g diagramGraph A :=
@@ -272,7 +259,8 @@ theorem degree_le_two_of_reachable_of_apply_mul_apply_eq_two [Fintype B] (h : Is
     exact hdegree
   rcases h.isAcyclic_diagramGraph.dist_eq_dist_add_one_of_adj_of_reachable
       c huvAdj hreach with hdist | hdist
-  · rcases Int.eq_neg_one_and_eq_neg_two_or_of_mul_eq_two (h.apply_le_zero_of_ne huvNe) huv with
+  · rcases Int.eq_neg_one_and_eq_neg_two_or_of_mul_eq_two
+      (h.isGeneralizedCartan.offDiag_nonpos u v huvNe) huv with
       ⟨_, hvuEntry⟩ | ⟨huvEntry, _⟩
     · exact false_of_degree_eq_three_of_dist_eq_add_one_of_apply_eq_neg_two
         (c := c) (near := v) (far := u) h hreachV hc huvAdj.symm hdist hvuEntry
@@ -281,7 +269,8 @@ theorem degree_le_two_of_reachable_of_apply_mul_apply_eq_two [Fintype B] (h : Is
         (by rw [hgraph]; exact hreachV) (by rw [hdegree]; exact hc)
         (by rw [hgraph]; exact huvAdj.symm) (by rw [hgraph]; exact hdist)
         (by simpa using huvEntry)
-  · rcases Int.eq_neg_one_and_eq_neg_two_or_of_mul_eq_two (h.apply_le_zero_of_ne huvNe) huv with
+  · rcases Int.eq_neg_one_and_eq_neg_two_or_of_mul_eq_two
+      (h.isGeneralizedCartan.offDiag_nonpos u v huvNe) huv with
       ⟨_, hvuEntry⟩ | ⟨huvEntry, _⟩
     · exact false_of_degree_eq_three_of_dist_eq_add_one_of_apply_eq_neg_two h.transpose
         (c := c) (near := u) (far := v)

@@ -35,8 +35,14 @@ the root-system case is irreducibility, which Mathlib packages as
 
 ## Main results
 
+* `TauCeti.diagramGraph_transpose`: transposing a matrix preserves its diagram.
+* `TauCeti.apply_le_neg_one_of_adj`: along a diagram edge of a matrix with nonpositive
+  off-diagonal entries, the entry is at most `-1`.
 * `TauCeti.diagramGraph_submatrix`: the diagram of a principal submatrix is the pullback of the
   diagram along the reindexing.
+* `Matrix.IsGeneralizedCartan.diagramGraph_adj_iff` and
+  `Matrix.IsGeneralizedCartan.apply_eq_neg_one_iff_adj`: adjacency characterizations for a
+  generalized Cartan matrix.
 * `TauCeti.DynkinType.diagramGraph_cartanMatrix_A` and
   `TauCeti.DynkinType.diagramGraph_cartanMatrix_of_not_isSimplyLaced`: the type `Aₙ` diagram and
   the unweighted diagram of every multiply-laced `DynkinType` (`Bₙ`, `Cₙ`, `F₄`, `G₂`) equal the
@@ -75,9 +81,9 @@ variable {B : Type*} {A : Matrix B B ℤ}
 when both entries of the transposed pair are nonzero.
 
 For a generalized Cartan matrix, and so for a matrix of finite type, one of the two entries is
-nonzero exactly when the other is (`TauCeti.IsFiniteType.diagramGraph_adj_iff`), and the definition
-is the expected one. Asking for both is what makes the relation symmetric for an arbitrary matrix,
-where it is the diagram of the symmetrized vanishing pattern; the symmetrization that
+nonzero exactly when the other is (`Matrix.IsGeneralizedCartan.diagramGraph_adj_iff`), and the
+definition is the expected one. Asking for both is what makes the relation symmetric for an
+arbitrary matrix, where it is the diagram of the symmetrized vanishing pattern; the symmetrization
 `SimpleGraph.fromRel` performs is then a duplication, and `TauCeti.diagramGraph_adj` reads the
 adjacency back off. -/
 def diagramGraph (A : Matrix B B ℤ) : SimpleGraph B :=
@@ -89,6 +95,22 @@ theorem diagramGraph_adj {i j : B} :
   rw [diagramGraph, SimpleGraph.fromRel_adj]
   tauto
 
+/-- Transposing a matrix does not change its unoriented diagram. -/
+@[simp]
+theorem diagramGraph_transpose (A : Matrix B B ℤ) :
+    diagramGraph A.transpose = diagramGraph A := by
+  ext i j
+  simp only [diagramGraph_adj, Matrix.transpose_apply]
+  tauto
+
+/-- Along an edge of a diagram of a matrix with nonpositive off-diagonal entries, the
+corresponding entry is at most `-1`. -/
+theorem apply_le_neg_one_of_adj (hle : ∀ i j, i ≠ j → A i j ≤ 0) {i j : B}
+    (hij : (diagramGraph A).Adj i j) : A i j ≤ -1 := by
+  have hij' := diagramGraph_adj.mp hij
+  have := hle i j hij'.1
+  omega
+
 namespace SymmetrizableDatum
 
 variable {I : Type*} (A : SymmetrizableDatum I) {α : Type*}
@@ -98,7 +120,7 @@ variable {I : Type*} (A : SymmetrizableDatum I) {α : Type*}
 theorem cartan_apply_eq_zero_of_color_eq {i j : I} (hij : i ≠ j) (hc : c i = c j) :
     A.cartan i j = 0 := by
   by_contra h
-  have hji : A.cartan j i ≠ 0 := fun hji ↦ h ((A.zero_comm i j).mpr hji)
+  have hji : A.cartan j i ≠ 0 := fun hji ↦ h ((A.isGeneralizedCartan.zero_comm i j).mpr hji)
   exact c.valid (diagramGraph_adj.mpr ⟨hij, h, hji⟩) hc
 
 end SymmetrizableDatum
@@ -158,10 +180,10 @@ theorem diagramGraph_cartanMatrix_F4 :
   ext i j
   fin_cases i <;> fin_cases j <;> decide
 
-/-- **The diagram of `G₂ᵀ` (the standard `G₂` Cartan matrix) is the path graph on `2` nodes.** -/
+/-- **The diagram of `G₂` is the path graph on `2` nodes.** -/
 @[simp]
 theorem diagramGraph_cartanMatrix_G2 :
-    (diagramGraph CartanMatrix.G₂.transpose : _root_.SimpleGraph (Fin 2)) =
+    (diagramGraph CartanMatrix.G₂ : _root_.SimpleGraph (Fin 2)) =
       _root_.SimpleGraph.pathGraph 2 := by
   ext i j
   fin_cases i <;> fin_cases j <;> decide
@@ -175,7 +197,7 @@ theorem diagramGraph_cartanMatrix_of_not_isSimplyLaced {t : DynkinType} (ht : ¬
   | B n => rw [cartanMatrix_B]; exact diagramGraph_cartanMatrix_B n
   | C n => rw [cartanMatrix_C]; exact diagramGraph_cartanMatrix_C n
   | F4 => rw [cartanMatrix_F4]; exact diagramGraph_cartanMatrix_F4
-  | G2 => rw [cartanMatrix_G2]; exact diagramGraph_cartanMatrix_G2
+  | G2 => simp only [rank_G2, cartanMatrix_G2, diagramGraph_transpose, diagramGraph_cartanMatrix_G2]
 
 end DynkinType
 
@@ -206,16 +228,31 @@ theorem not_diagramGraph_D_adj {n : ℕ} (hn : n < 3) (i j : Fin n) :
   have hn' : n ≤ 2 := by omega
   simp [CartanMatrix.D, hn', hij] at h
 
-namespace IsFiniteType
-
-
-/-- **Adjacency in the diagram of a finite-type matrix is a single nonvanishing condition**, the
-vanishing pattern of such a matrix being symmetric. -/
-theorem diagramGraph_adj_iff (h : IsFiniteType A) {i j : B} :
+/-- **Adjacency in the diagram of a generalized Cartan matrix is a single nonvanishing condition**,
+the vanishing pattern of such a matrix being symmetric. -/
+theorem _root_.Matrix.IsGeneralizedCartan.diagramGraph_adj_iff (h : A.IsGeneralizedCartan)
+    {i j : B} :
     (diagramGraph A).Adj i j ↔ i ≠ j ∧ A i j ≠ 0 := by
   rw [diagramGraph_adj]
   exact ⟨fun hadj ↦ ⟨hadj.1, hadj.2.1⟩,
-    fun hadj ↦ ⟨hadj.1, hadj.2, fun hc ↦ hadj.2 (h.apply_eq_zero_symm hc)⟩⟩
+    fun hadj ↦ ⟨hadj.1, hadj.2, fun hc ↦ hadj.2 ((h.zero_comm _ _).mpr hc)⟩⟩
+
+/-- When an entry of a generalized Cartan matrix is `0` or `-1`, it equals `-1` if and only if
+its indices are adjacent in the diagram. -/
+theorem _root_.Matrix.IsGeneralizedCartan.apply_eq_neg_one_iff_adj (h : A.IsGeneralizedCartan)
+    {i j : B} (hsl : A i j = 0 ∨ A i j = -1) :
+    A i j = -1 ↔ (diagramGraph A).Adj i j := by
+  have hij : i ≠ j := by
+    rintro rfl
+    have := h.diag i
+    omega
+  rw [h.diagramGraph_adj_iff]
+  constructor
+  · exact fun hij' ↦ ⟨hij, by omega⟩
+  · rintro ⟨-, hij'⟩
+    exact hsl.resolve_left hij'
+
+namespace IsFiniteType
 
 /-- **The diagram of a finite-type matrix is a forest.** No walk of the diagram that returns to its
 start is a cycle.
@@ -260,14 +297,14 @@ theorem exists_chain_of_reachable (h : IsFiniteType A) {u v : B}
   · exact q.getVert_length
   · exact hq.getVert_injOn
   · intro i hi
-    exact (h.diagramGraph_adj_iff.mp (q.adj_getVert_succ hi)).2
+    exact (h.isGeneralizedCartan.diagramGraph_adj_iff.mp (q.adj_getVert_succ hi)).2
   · intro i j hij hj
     by_contra hne
     have hne' : q.getVert i ≠ q.getVert j := fun heq ↦ by
       have := hq.getVert_injOn (by omega : i ≤ q.length) hj heq
       omega
     exact h.isAcyclic_diagramGraph.not_adj_getVert_of_add_one_lt hq hij hj
-      (h.diagramGraph_adj_iff.mpr ⟨hne', hne⟩)
+      (h.isGeneralizedCartan.diagramGraph_adj_iff.mpr ⟨hne', hne⟩)
 
 /-- **The degree bound in graph form**: no index of a finite-type matrix has four neighbours in the
 diagram, so a finite-type diagram branches into at most three arms. -/

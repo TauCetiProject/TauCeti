@@ -42,53 +42,13 @@ acts as a rotation.
 
 public section
 
-open Matrix Relation
+open Matrix
 
 namespace TauCeti
 
 namespace IsFiniteType
 
 variable {B : Type*} {A : Matrix B B ℤ}
-
-/-- The real matrix `2 - A`, with zero diagonal and entries `-A i j` off the diagonal. -/
-private noncomputable def offDiagNeg [DecidableEq B] (A : Matrix B B ℤ) : Matrix B B ℝ :=
-  of fun i j ↦ if i = j then 0 else -(A i j : ℝ)
-
-private theorem map_intCast_eq_two_smul_one_sub [DecidableEq B] (h : IsFiniteType A) :
-    A.map (Int.cast : ℤ → ℝ) = (2 : ℝ) • (1 : Matrix B B ℝ) - offDiagNeg A := by
-  ext i j
-  by_cases hij : i = j
-  · subst hij
-    simp [offDiagNeg, h.apply_self]
-  · simp [offDiagNeg, hij]
-
-/-- For an indecomposable finite-type matrix on at least two indices, the matrix `2 - A` is
-irreducible. -/
-private theorem isIrreducible_offDiagNeg [DecidableEq B] [Nontrivial B] (h : IsFiniteType A)
-    (hA : A.IsIndecomposable) : (offDiagNeg A).IsIrreducible := by
-  have := h.finite
-  have hnonneg (i j : B) : 0 ≤ offDiagNeg A i j := by
-    by_cases hij : i = j
-    · simp [offDiagNeg, hij]
-    · simpa [offDiagNeg, hij] using h.apply_le_zero_of_ne hij
-  refine (isIrreducible_iff_forall_transGen hnonneg).2 ?_
-  -- The nonzero entries of `A` connect all indices; off the diagonal they are positive entries
-  -- of `2 - A`, and the diagonal steps can be dropped.
-  have hrefl (i j : B) : ReflTransGen (fun i j ↦ 0 < offDiagNeg A i j) i j := by
-    induction (isIndecomposable_iff_reflTransGen A).1 hA i j with
-    | refl => exact .refl
-    | @tail k l _ hkl ih =>
-      by_cases hkl' : k = l
-      · exact hkl' ▸ ih
-      · refine ih.tail ?_
-        simpa [offDiagNeg, hkl'] using lt_of_le_of_ne (h.apply_le_zero_of_ne hkl') hkl
-  have htrans {i j : B} (hij : i ≠ j) : TransGen (fun i j ↦ 0 < offDiagNeg A i j) i j := by
-    rcases (hrefl i j).cases_head with rfl | ⟨k, hik, hkj⟩
-    · exact absurd rfl hij
-    · exact TransGen.head' hik hkj
-  intro i j
-  obtain ⟨k, hk⟩ := exists_ne j
-  exact TransGen.trans_right (hrefl i j) ((htrans hk.symm).trans (htrans hk))
 
 /-- **The Perron eigenvector of a finite-type Cartan matrix.** An indecomposable integer matrix of
 finite type on at least two indices has an eigenvector whose entries are strictly positive reals,
@@ -98,9 +58,11 @@ theorem exists_pos_mulVec_eq_smul [Fintype B] [Nontrivial B] (h : IsFiniteType A
     ∃ κ : ℝ, 0 < κ ∧ κ < 2 ∧
       ∃ y : B → ℝ, (∀ i, 0 < y i) ∧ A.map (Int.cast : ℤ → ℝ) *ᵥ y = κ • y := by
   classical
-  obtain ⟨r, hr, y, hy, hNy⟩ := (isIrreducible_offDiagNeg h hA).exists_mulVec_eq_smul
+  obtain ⟨r, hr, y, hy, hNy⟩ :=
+    (isIrreducible_offDiagNeg h.isGeneralizedCartan.offDiag_nonpos hA).exists_mulVec_eq_smul
   have hAy : A.map (Int.cast : ℤ → ℝ) *ᵥ y = (2 - r) • y := by
-    rw [map_intCast_eq_two_smul_one_sub h, sub_mulVec, smul_mulVec, one_mulVec, hNy, sub_smul]
+    rw [map_intCast_eq_two_smul_one_sub h.isGeneralizedCartan.diag, sub_mulVec, smul_mulVec,
+      one_mulVec, hNy, sub_smul]
   refine ⟨2 - r, ?_, by linarith, y, hy, hAy⟩
   -- Evaluate the positive definite symmetrization `D A` at `y`: it is `(2 - r) ∑ d i * y i ^ 2`.
   obtain ⟨d, hd, hpd⟩ := h.exists_symmetrizer

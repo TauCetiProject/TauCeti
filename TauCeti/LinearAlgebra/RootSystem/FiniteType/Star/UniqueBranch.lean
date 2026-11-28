@@ -53,18 +53,6 @@ namespace IsFiniteType
 
 variable {B : Type*} [DecidableEq B] {A : Matrix B B ℤ}
 
-omit [DecidableEq B] in
-private lemma matrix_apply_eq_neg_one_iff_adj (h : IsFiniteType A) {i j : B} (hij : i ≠ j)
-    (hsl : A i j = 0 ∨ A i j = -1) :
-    A i j = -1 ↔ (diagramGraph A).Adj i j := by
-  rw [h.diagramGraph_adj_iff]
-  constructor
-  · exact fun hij' ↦ ⟨hij, by omega⟩
-  · rintro ⟨-, hij'⟩
-    rcases hsl with hij0 | hij1
-    · exact (hij' hij0).elim
-    · exact hij1
-
 /-- Embed the two left leaves, the path, and the two right leaves in their corresponding
 summands. -/
 private def doubleForkEmbedding {V : Type*} {G : SimpleGraph V} {u v : V} {n : ℕ}
@@ -102,14 +90,14 @@ omit [DecidableEq B] in
 /-- The matrix on a double-fork embedding is the affine-`D` Cartan matrix when the entries along
 the embedding are simply laced and the leaves have exactly the endpoint adjacencies and no
 cross-edge. -/
-private lemma submatrix_doubleForkEmbedding_eq (h : IsFiniteType A)
+private lemma submatrix_doubleForkEmbedding_eq (h : A.IsGeneralizedCartan)
+    (hacyc : (diagramGraph A).IsAcyclic)
     {u v : B} {q : (diagramGraph A).Walk u v} (hq : q.IsPath) {n : ℕ}
     (hn : q.length = n + 1) (left right : Fin 2 → B)
     (he : Function.Injective (doubleForkEmbedding (n := n) q left right))
     (hsl : ∀ i j : DoubleForkIndex n, i ≠ j →
       A (doubleForkEmbedding q left right i) (doubleForkEmbedding q left right j) = 0 ∨
         A (doubleForkEmbedding q left right i) (doubleForkEmbedding q left right j) = -1)
-    (hleft_inj : Function.Injective left) (hright_inj : Function.Injective right)
     (hleft_adj : ∀ i, (diagramGraph A).Adj u (left i))
     (hleft_ne_snd : ∀ i, left i ≠ q.snd)
     (hright_adj : ∀ i, (diagramGraph A).Adj v (right i))
@@ -120,9 +108,12 @@ private lemma submatrix_doubleForkEmbedding_eq (h : IsFiniteType A)
       doubleForkCartanMatrix n := by
   classical
   set e : DoubleForkIndex n → B := doubleForkEmbedding (n := n) q left right with he_def
+  have hleft_inj : Function.Injective left := fun _ _ hij' ↦ Sum.inl.inj (he hij')
+  have hright_inj : Function.Injective right :=
+    fun _ _ hij' ↦ Sum.inr.inj (Sum.inr.inj (he hij'))
   have hA : ∀ i j, i ≠ j → A (e i) (e j) = if (diagramGraph A).Adj (e i) (e j) then -1 else 0 := by
     intro i j hij
-    have hentry := matrix_apply_eq_neg_one_iff_adj h (fun heq ↦ hij (he heq)) (hsl i j hij)
+    have hentry := h.apply_eq_neg_one_iff_adj (hsl i j hij)
     split_ifs with hadj
     · exact hentry.mpr hadj
     · exact (hsl i j hij).resolve_right (hadj ∘ hentry.mp)
@@ -130,7 +121,7 @@ private lemma submatrix_doubleForkEmbedding_eq (h : IsFiniteType A)
   apply Matrix.ext
   intro i j
   rcases eq_or_ne i j with rfl | hij
-  · simp only [Matrix.submatrix_apply, h.apply_self, doubleForkCartanMatrix_diag]
+  · simp only [Matrix.submatrix_apply, h.diag, doubleForkCartanMatrix_diag]
   rw [Matrix.submatrix_apply, hA _ _ hij]
   -- The nine cases are the row-major left/path/right blocks of the double-fork matrix.
   -- Endpoint blocks use the supplied leaf adjacencies; the middle block uses path chordlessness.
@@ -143,30 +134,30 @@ private lemma submatrix_doubleForkEmbedding_eq (h : IsFiniteType A)
   · have hij' : i ≠ j := fun h' ↦ hij (congrArg Sum.inl h')
     have hnadj : ¬(diagramGraph A).Adj (left i) (left j) :=
       SimpleGraph.isIndepSet_neighborSet_of_triangleFree _
-        h.isAcyclic_diagramGraph.cliqueFree_three _ (hleft_adj i) (hleft_adj j)
+        hacyc.cliqueFree_three _ (hleft_adj i) (hleft_adj j)
         fun heq ↦ hij' (hleft_inj heq)
     simp only [hij', hnadj, ↓reduceIte]
-  · exact if_congr (h.isAcyclic_diagramGraph.adj_getVert_iff_eq_zero hq (hleft_adj i)
+  · exact if_congr (hacyc.adj_getVert_iff_eq_zero hq (hleft_adj i)
       (hleft_ne_snd i) (hlen j)) rfl rfl
   · simp only [hleft_right_not_adj i j, ↓reduceIte]
   · exact if_congr ((SimpleGraph.adj_comm _ _ _).trans
-      (h.isAcyclic_diagramGraph.adj_getVert_iff_eq_zero hq (hleft_adj j)
+      (hacyc.adj_getVert_iff_eq_zero hq (hleft_adj j)
         (hleft_ne_snd j) (hlen i))) rfl rfl
   · have hij' : i ≠ j := fun h' ↦ hij (congrArg (Sum.inr ∘ Sum.inl) h')
     simp only [hij', ↓reduceIte]
-    exact if_congr (h.isAcyclic_diagramGraph.adj_getVert_iff_succ hq (hlen i) (hlen j)) rfl rfl
+    exact if_congr (hacyc.adj_getVert_iff_succ hq (hlen i) (hlen j)) rfl rfl
   · refine if_congr ((SimpleGraph.adj_comm _ _ _).trans
-      ((h.isAcyclic_diagramGraph.adj_getVert_iff_eq_length hq (hright_adj j)
+      ((hacyc.adj_getVert_iff_eq_length hq (hright_adj j)
         (hright_ne_penultimate j) (hlen i)).trans ?_)) rfl rfl
     omega
   · simp only [mt SimpleGraph.Adj.symm (hleft_right_not_adj j i), ↓reduceIte]
-  · refine if_congr ((h.isAcyclic_diagramGraph.adj_getVert_iff_eq_length hq (hright_adj i)
+  · refine if_congr ((hacyc.adj_getVert_iff_eq_length hq (hright_adj i)
       (hright_ne_penultimate i) (hlen j)).trans ?_) rfl rfl
     omega
   · have hij' : i ≠ j := fun h' ↦ hij (congrArg (Sum.inr ∘ Sum.inr) h')
     have hnadj : ¬(diagramGraph A).Adj (right i) (right j) :=
       SimpleGraph.isIndepSet_neighborSet_of_triangleFree _
-        h.isAcyclic_diagramGraph.cliqueFree_three _ (hright_adj i) (hright_adj j)
+        hacyc.cliqueFree_three _ (hright_adj i) (hright_adj j)
         fun heq ↦ hij' (hright_inj heq)
     simp only [hij', hnadj, ↓reduceIte]
 
@@ -226,8 +217,9 @@ theorem exists_doubleFork_submatrix [Fintype B] (h : IsFiniteType A) {u v : B}
         A (doubleForkEmbedding q leftVertex rightVertex i)
           (doubleForkEmbedding q leftVertex rightVertex j) = -1 :=
     hsl (hreach i) (hreach j) fun heq ↦ hij (he' heq)
-  have hmatrix' := submatrix_doubleForkEmbedding_eq h hq hn leftVertex rightVertex he' hslE
-    hleft_inj hright_inj hleft_adj hleft_ne_snd hright_adj hright_ne_penultimate
+  have hmatrix' := submatrix_doubleForkEmbedding_eq h.isGeneralizedCartan h.isAcyclic_diagramGraph
+    hq hn leftVertex rightVertex he' hslE
+    hleft_adj hleft_ne_snd hright_adj hright_ne_penultimate
     hleft_right_not_adj
   let e : DoubleForkIndex n → B := doubleForkEmbedding q leftVertex rightVertex
   have he : Function.Injective e := by simpa only [e] using he'

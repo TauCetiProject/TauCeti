@@ -301,9 +301,10 @@ open Module Matrix TauCeti TauCeti.CartanRealization
 
 private def a1Datum : SymmetrizableDatum (Fin 1) where
   cartan := !![2]
-  diag := by decide
-  offDiag_nonpos := by simp [Fin.forall_fin_one]
-  zero_comm := by simp
+  isGeneralizedCartan :=
+    { diag := by decide
+      offDiag_nonpos := by simp [Fin.forall_fin_one]
+      zero_comm := by simp }
   symmetrizer := 1
   symmetrizer_pos := by decide
   symmetrizes := by decide
@@ -342,9 +343,12 @@ realization `R` on `Fin N → ℚ` carrying a nondegenerate standard invariant f
 `(h₀, h₀) = 2`, `(h₁, h₁) = 1`, `(α₀, α₀) = 2`, `(α₁, α₁) = 4`, and `(α₀, α₁) = -2`. -/
 example :
     let A : SymmetrizableDatum (Fin 2) :=
-      { cartan := !![2, -2; -1, 2], diag := by decide,
-        offDiag_nonpos := by simp [Fin.forall_fin_two],
-        zero_comm := by simp [Fin.forall_fin_two], symmetrizer := ![1, 2],
+      { cartan := !![2, -2; -1, 2],
+        isGeneralizedCartan :=
+          { diag := by decide,
+            offDiag_nonpos := by simp [Fin.forall_fin_two],
+            zero_comm := by simp [Fin.forall_fin_two] },
+        symmetrizer := ![1, 2],
         symmetrizer_pos := by simp [Fin.forall_fin_two], symmetrizes := by decide }
     let N := 2 * Fintype.card (Fin 2) - (A.cartan.map (Int.cast : ℤ → ℚ)).rank
     ∃ (R : CartanRealization (A.cartan.map (Int.cast : ℤ → ℚ)) (Fin N → ℚ))
