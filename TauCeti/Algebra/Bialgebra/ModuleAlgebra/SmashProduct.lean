@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Bialgebra.ModuleAlgebra.Basic
+public import Mathlib.RingTheory.Bialgebra.Equiv
+public import TauCeti.Algebra.Bialgebra.ModuleAlgebra.Compatibility
 public import Mathlib.RingTheory.Flat.Basic
 
 /-!
@@ -34,12 +35,14 @@ operator of the smash-product formula. The ring axioms are inherited from `End_R
 * `SmashProduct.includeA` and `SmashProduct.includeH`: the algebra maps `a ↦ a # 1` and
   `h ↦ 1 # h`, related by the covariance law `SmashProduct.includeH_mul_includeA`.
 * `LeftModuleAlgebra.SmashCompatible`: the covariance relation
-  `fH(h) fA(a) = Σ fA(h₁ · a) fH(h₂)` for a pair of algebra maps.
+  `fH(h) fA(a) = Σ fA(h₁ · a) fH(h₂)` for a pair of algebra maps (re-exported from
+  `TauCeti.Algebra.Bialgebra.ModuleAlgebra.Compatibility`).
 * `SmashProduct.lift` and `SmashProduct.liftEquiv`: the universal property, under which algebra
   maps out of `A # H` are the same as covariant pairs.
 * `SmashProduct.includeA_injective`, and `SmashProduct.includeH_injective` for flat `H` and
   `R → A` injective.
-* `SmashProduct.map`: functoriality in equivariant algebra maps.
+* `SmashProduct.mapBialg`, `SmashProduct.map`, and `SmashProduct.congr`: joint and fixed-bialgebra
+  functoriality in bialgebra and equivariant algebra maps and equivalences.
 * `SmashProduct.trivialAlgEquiv`: for the trivial action, `A # H ≅ A ⊗ H` as algebras.
 
 ## References
@@ -79,27 +82,19 @@ private theorem regH_tmul {h : H} {ι : Type*} (r : Repr R h ι) (b : A) (l : H)
     μ.regH h (b ⊗ₜ[R] l) = ∑ i ∈ r.index, μ.action (r.left i) b ⊗ₜ[R] (r.right i * l) := by
   simp [regH, ← r.eq, map_sum, Module.endTensorEndAlgHom_apply]
 
-private theorem regH_tmul_arbitrary (h : H) (b : A) (l : H) :
-    μ.regH h (b ⊗ₜ[R] l) =
-      ∑ i ∈ (ℛ R h).index, μ.action ((ℛ R h).left i) b ⊗ₜ[R] ((ℛ R h).right i * l) :=
-  μ.regH_tmul (ℛ R h) b l
-
 /-- The covariance relation between the two halves of the regular representation. -/
 private theorem regH_mul_regA {h : H} {ι : Type*} (r : Repr R h ι) (a : A) :
     μ.regH h * regA a =
       ∑ i ∈ r.index, regA (μ.action (r.left i) a) * μ.regH (r.right i) := by
-  ext b l
-  simp only [AlgebraTensorModule.curry_apply, curry_apply, LinearMap.restrictScalars_apply,
-    mul_apply_eq_comp, LinearMap.coe_sum, Finset.sum_apply, regA_tmul, μ.regH_tmul r,
-    regH_tmul_arbitrary, map_sum, μ.action_mul_eq_sum (ℛ R (r.left _)), TensorProduct.sum_tmul]
-  -- Both sides are images of the two bracketings of `Δ² h` under the same linear map.
-  let T : H ⊗[R] (H ⊗[R] H) →ₗ[R] A ⊗[R] H :=
-    (LinearMap.mul' R A).rTensor H ∘ₗ (TensorProduct.assoc R A A H).symm.toLinearMap ∘ₗ
-      TensorProduct.map (LinearMap.applyₗ a ∘ₗ μ.action.toLinearMap)
-        (TensorProduct.map (LinearMap.applyₗ b ∘ₗ μ.action.toLinearMap)
-          (LinearMap.mulRight R l))
-  have := congrArg T (sum_tmul_tmul_eq r (fun i => ℛ R (r.left i)) (fun i => ℛ R (r.right i)))
-  simpa [T, map_sum, mul_assoc] using this
+  have hc := (μ.smashCompatible_lsmul_action.includeLeft_map_comul (Algebra.lmul R H)).comp
+    (Module.endTensorEndAlgHom (R := R) (S := R) (A := R))
+  have hA : (Module.endTensorEndAlgHom (R := R) (S := R) (A := R)).comp
+      ((Algebra.TensorProduct.includeLeft (R := R) (A := Module.End R A)
+        (B := Module.End R H)).comp (Algebra.lsmul R R A)) = regA := by
+    refine AlgHom.ext fun x => TensorProduct.ext' fun b l => ?_
+    simp [regA, Module.endTensorEndAlgHom_apply]
+  rw [hA] at hc
+  exact hc.mul_eq_sum r a
 
 /-- The regular representation, `a ⊗ h ↦ L_a L_h`. -/
 private noncomputable def reg : A ⊗[R] H →ₗ[R] Module.End R (A ⊗[R] H) :=
@@ -177,6 +172,9 @@ noncomputable def linearEquivTensor : SmashProduct μ ≃ₗ[R] A ⊗[R] H :=
   μ.smashSubalgebra.toSubmoduleEquiv.symm ≪≫ₗ
     LinearEquiv.ofEq _ _ (Submodule.toSubalgebra_toSubmodule _ _ _) ≪≫ₗ
       (LinearEquiv.ofInjective μ.reg μ.reg_injective).symm
+
+instance instSubsingleton [Subsingleton A] : Subsingleton (SmashProduct μ) :=
+  (linearEquivTensor μ).injective.subsingleton
 
 variable {μ}
 
@@ -319,48 +317,25 @@ theorem inductionOn {motive : SmashProduct μ → Prop} (x : SmashProduct μ)
   | tmul a h => exact pure a h
   | add x y hx hy => simpa only [map_add] using add _ _ hx hy
 
+/-- Two `R`-linear maps out of `A # H` agree when they agree on pure elements `a # h`. -/
+@[ext]
+theorem lhom_ext {M : Type*} [AddCommMonoid M] [Module R M]
+    {f g : SmashProduct μ →ₗ[R] M} (h : ∀ a x, f (pure a x) = g (pure a x)) : f = g :=
+  (LinearMap.cancel_right (linearEquivTensor μ).symm.surjective).mp <|
+    TensorProduct.ext' fun a x => by simpa using h a x
+
 end SmashProduct
 
 /-! ### The universal property -/
 
-variable {C D : Type*} [Semiring C] [Algebra R C] [Semiring D] [Algebra R D]
-
-/-- A pair of algebra maps out of `A` and `H` is smash-compatible when it satisfies the
-covariance relation `fH(h) fA(a) = Σ fA(h₁ · a) fH(h₂)`, stated without a choice of
-representation of `Δ h`. These are the pairs that factor through the smash product. -/
-def SmashCompatible (fA : A →ₐ[R] C) (fH : H →ₐ[R] C) : Prop :=
-  ∀ h a, fH h * fA a = LinearMap.mul' R C (TensorProduct.map
-    (fA.toLinearMap ∘ₗ LinearMap.applyₗ a ∘ₗ μ.action.toLinearMap) fH.toLinearMap (comul h))
-
-variable {μ}
-
-/-- The covariance relation in any representation of `Δ h`. -/
-theorem SmashCompatible.mul_eq_sum {fA : A →ₐ[R] C} {fH : H →ₐ[R] C}
-    (hc : μ.SmashCompatible fA fH) {h : H} {ι : Type*} (r : Repr R h ι) (a : A) :
-    fH h * fA a = ∑ i ∈ r.index, fA (μ.action (r.left i) a) * fH (r.right i) := by
-  simp [hc h a, ← r.eq, map_sum]
-
-/-- Smash compatibility is the covariance relation in the chosen representation `ℛ R h` of
-`Δ h`. -/
-theorem smashCompatible_iff {fA : A →ₐ[R] C} {fH : H →ₐ[R] C} :
-    μ.SmashCompatible fA fH ↔ ∀ h a,
-      fH h * fA a = ∑ i ∈ (ℛ R h).index, fA (μ.action ((ℛ R h).left i) a) * fH ((ℛ R h).right i) :=
-  ⟨fun hc h a => hc.mul_eq_sum (ℛ R h) a, fun hc h a => by
-    simp [hc h a, ← (ℛ R h).eq, map_sum]⟩
-
-/-- Smash-compatible pairs are stable under postcomposition. -/
-theorem SmashCompatible.comp {fA : A →ₐ[R] C} {fH : H →ₐ[R] C}
-    (hc : μ.SmashCompatible fA fH) (g : C →ₐ[R] D) :
-    μ.SmashCompatible (g.comp fA) (g.comp fH) :=
-  smashCompatible_iff.mpr fun h a => by
-    simp [← map_mul, hc.mul_eq_sum (ℛ R h) a, map_sum]
+variable {μ} {C D : Type*} [Semiring C] [Algebra R C] [Semiring D] [Algebra R D]
 
 namespace SmashProduct
 
 /-- The canonical maps into the smash product form a smash-compatible pair. -/
 theorem smashCompatible_includeA_includeH :
     μ.SmashCompatible (includeA (μ := μ)) includeH :=
-  smashCompatible_iff.mpr fun h a => includeH_mul_includeA (ℛ R h) a
+  (smashCompatible_iff (ℛ R)).mpr fun h a => includeH_mul_includeA (ℛ R h) a
 
 /-- The linear map `a # h ↦ fA(a) fH(h)` underlying `SmashProduct.lift`. -/
 private noncomputable def liftLinear (fA : A →ₐ[R] C) (fH : H →ₐ[R] C) :
@@ -463,12 +438,36 @@ theorem coe_liftEquiv_symm_apply (f : SmashProduct μ →ₐ[R] C) :
 
 /-! ### Injectivity of the inclusions -/
 
+variable (μ) in
+/-- The `R`-linear retraction `A # H →ₗ[R] A` sending `a # h` to `counit h • a`. -/
+noncomputable def retractA : SmashProduct μ →ₗ[R] A :=
+  (TensorProduct.rid R A).toLinearMap ∘ₗ
+    (counit (R := R) (A := H)).lTensor A ∘ₗ (linearEquivTensor μ).toLinearMap
+
+/-- `retractA μ` acts by contracting the `H` tensor factor of `linearEquivTensor μ` against
+`Coalgebra.counit`. -/
+theorem retractA_apply (x : SmashProduct μ) :
+    retractA μ x =
+      TensorProduct.rid R A ((counit (R := R) (A := H)).lTensor A (linearEquivTensor μ x)) := by
+  rfl
+
+@[simp]
+theorem retractA_pure (a : A) (h : H) :
+    retractA μ (pure a h) = counit (R := R) h • a := by
+  simp [retractA]
+
+@[simp]
+theorem retractA_includeA (a : A) : retractA μ (includeA a) = a := by
+  simp [includeA_eq_pure]
+
+@[simp]
+theorem retractA_comp_includeA :
+    (retractA μ).comp includeA.toLinearMap = LinearMap.id :=
+  LinearMap.ext retractA_includeA
+
 /-- The map `a ↦ a # 1` is injective for every module algebra. -/
-theorem includeA_injective : Function.Injective (includeA (μ := μ)) := by
-  intro a b hab
-  have := congrArg (fun x => TensorProduct.rid R A ((counit (R := R) (A := H)).lTensor A
-    (linearEquivTensor μ x))) hab
-  simpa using this
+theorem includeA_injective : Function.Injective (includeA (μ := μ)) :=
+  Function.LeftInverse.injective retractA_includeA
 
 /-- The map `h ↦ 1 # h` is injective when `H` is flat and `R → A` is injective, for instance
 for a nonzero algebra over a field. -/
@@ -483,26 +482,194 @@ theorem includeH_injective [Module.Flat R H] (hA : Function.Injective (algebraMa
   exact (TensorProduct.lid R H).symm.injective
     (Module.Flat.rTensor_preserves_injective_linearMap (Algebra.linearMap R A) hA this)
 
+variable (μ) in
+/-- The `R`-linear map `A # H →ₗ[R] H` induced by a linear functional `φ : A →ₗ[R] R`,
+sending `a # h` to `φ a • h`. -/
+noncomputable def retractH (φ : A →ₗ[R] R) : SmashProduct μ →ₗ[R] H :=
+  (TensorProduct.lid R H).toLinearMap ∘ₗ φ.rTensor H ∘ₗ (linearEquivTensor μ).toLinearMap
+
+@[simp]
+theorem retractH_pure (φ : A →ₗ[R] R) (a : A) (h : H) :
+    retractH μ φ (pure a h) = φ a • h := by
+  simp [retractH]
+
+@[simp]
+theorem retractH_includeH {φ : A →ₗ[R] R} (hφ : φ 1 = 1) (h : H) :
+    retractH μ φ (includeH h) = h := by
+  simp [includeH_eq_pure, hφ]
+
+/-- If `1 : A` admits an `R`-linear functional sending it to `1 : R`, then
+`includeH : H →ₐ[R] A # H` (`h ↦ 1 # h`) is injective, without flatness hypotheses on `H`. -/
+theorem includeH_injective_of_apply_one_eq_one (φ : A →ₗ[R] R) (hφ : φ 1 = 1) :
+    Function.Injective (includeH (μ := μ)) :=
+  Function.LeftInverse.injective (retractH_includeH hφ)
+
 /-! ### Functoriality and the trivial action -/
+
+section JointFunctoriality
+
+variable {K : Type*} [Semiring K] [Bialgebra R K]
+  {L : Type*} [Semiring L] [Bialgebra R L]
+  {B : Type*} [Semiring B] [Algebra R B]
+  {E : Type*} [Semiring E] [Algebra R E]
+
+/-- Joint functoriality of the smash product: a bialgebra homomorphism `g : K →ₐc[R] H` and an
+equivariant algebra homomorphism `f : Hom μ (ν.restrict g)` induce an `R`-algebra homomorphism
+`A # K →ₐ[R] B # H` sending `a # k` to `f a # g k`. -/
+noncomputable def mapBialg {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B}
+    (g : K →ₐc[R] H) (f : Hom μ (ν.restrict g)) :
+    SmashProduct μ →ₐ[R] SmashProduct ν :=
+  lift (includeA.comp f.toAlgHom) (includeH.comp g.toAlgHom) <|
+    (smashCompatible_iff (ℛ R)).mpr fun k a => by
+      have hcomul : Coalgebra.comul (R := R) (g k) =
+          ∑ i ∈ (ℛ R k).index, g ((ℛ R k).left i) ⊗ₜ[R] g ((ℛ R k).right i) := by
+        simpa [← (ℛ R k).eq, map_sum] using (CoalgHomClass.map_comp_comul_apply g k).symm
+      let rg : Coalgebra.Repr R (g k) _ :=
+        ⟨(ℛ R k).index, fun i => g ((ℛ R k).left i), fun i => g ((ℛ R k).right i), hcomul.symm⟩
+      simp only [AlgHom.comp_apply, BialgHom.coe_toAlgHom, Hom.coe_toAlgHom,
+        includeH_mul_includeA (μ := ν) rg]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      simp only [rg, ← ν.restrict_action g, ← f.map_action]
+
+@[simp]
+theorem mapBialg_pure {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B}
+    (g : K →ₐc[R] H) (f : Hom μ (ν.restrict g)) (a : A) (k : K) :
+    mapBialg g f (pure a k) = pure (f a) (g k) := by
+  simp [mapBialg]
+
+@[simp]
+theorem mapBialg_includeA {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B}
+    (g : K →ₐc[R] H) (f : Hom μ (ν.restrict g)) (a : A) :
+    mapBialg g f (includeA a) = includeA (f a) := by
+  simp [mapBialg]
+
+@[simp]
+theorem mapBialg_includeH {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B}
+    (g : K →ₐc[R] H) (f : Hom μ (ν.restrict g)) (k : K) :
+    mapBialg g f (includeH k) = includeH (g k) := by
+  simp [mapBialg]
+
+@[simp]
+theorem mapBialg_comp_includeA {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B}
+    (g : K →ₐc[R] H) (f : Hom μ (ν.restrict g)) :
+    (mapBialg g f).comp includeA = includeA.comp f.toAlgHom :=
+  lift_comp_includeA ..
+
+@[simp]
+theorem mapBialg_comp_includeH {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B}
+    (g : K →ₐc[R] H) (f : Hom μ (ν.restrict g)) :
+    (mapBialg g f).comp includeH = includeH.comp g.toAlgHom :=
+  lift_comp_includeH ..
+
+theorem toLinearMap_mapBialg {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B}
+    (g : K →ₐc[R] H) (f : Hom μ (ν.restrict g)) :
+    (mapBialg g f).toLinearMap =
+      (linearEquivTensor ν).symm.toLinearMap ∘ₗ
+        TensorProduct.map f.toAlgHom.toLinearMap g.toAlgHom.toLinearMap ∘ₗ
+        (linearEquivTensor μ).toLinearMap :=
+  lhom_ext fun a k => by simp [AlgHom.toLinearMap_apply]
+
+@[simp]
+theorem mapBialg_comp {μ : LeftModuleAlgebra R L A} {ν : LeftModuleAlgebra R K B}
+    {ξ : LeftModuleAlgebra R H E} (g₂ : K →ₐc[R] H) (g₁ : L →ₐc[R] K)
+    (f₂ : Hom ν (ξ.restrict g₂)) (f₁ : Hom μ (ν.restrict g₁)) :
+    (mapBialg g₂ f₂).comp (mapBialg g₁ f₁) =
+      mapBialg (g₂.comp g₁) ⟨f₂.toAlgHom.comp f₁.toAlgHom, fun _ _ => by simp⟩ := by
+  ext <;> simp
+
+/-- Algebra equivalence `A # K ≃ₐ[R] B # H` induced by a bialgebra equivalence `g : K ≃ₐc[R] H`
+and an equivariant algebra equivalence `f : A ≃ₐ[R] B`. -/
+noncomputable def congr {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B}
+    (g : K ≃ₐc[R] H) (f : A ≃ₐ[R] B) (hf : ∀ k a, f (μ.action k a) = ν.action (g k) (f a)) :
+    SmashProduct μ ≃ₐ[R] SmashProduct ν :=
+  AlgEquiv.ofAlgHom
+    (mapBialg (g : K →ₐc[R] H) ⟨f.toAlgHom, fun k a => by simp [hf]⟩)
+    (mapBialg (g.symm : H →ₐc[R] K) ⟨f.symm.toAlgHom, fun _ _ => f.injective (by simp [hf])⟩)
+    (by ext <;> simp)
+    (by ext <;> simp)
+
+@[simp]
+theorem congr_pure {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B}
+    (g : K ≃ₐc[R] H) (f : A ≃ₐ[R] B) (hf : ∀ k a, f (μ.action k a) = ν.action (g k) (f a))
+    (a : A) (k : K) :
+    congr g f hf (pure a k) = pure (f a) (g k) :=
+  mapBialg_pure (g : K →ₐc[R] H) ⟨f.toAlgHom, fun k' a' => by simp [hf]⟩ a k
+
+@[simp]
+theorem congr_includeA {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B}
+    (g : K ≃ₐc[R] H) (f : A ≃ₐ[R] B) (hf : ∀ k a, f (μ.action k a) = ν.action (g k) (f a))
+    (a : A) :
+    congr g f hf (includeA a) = includeA (f a) := by
+  simp [includeA_eq_pure]
+
+@[simp]
+theorem congr_includeH {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B}
+    (g : K ≃ₐc[R] H) (f : A ≃ₐ[R] B) (hf : ∀ k a, f (μ.action k a) = ν.action (g k) (f a))
+    (k : K) :
+    congr g f hf (includeH k) = includeH (g k) := by
+  simp [includeH_eq_pure]
+
+@[simp]
+theorem congr_symm_pure {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B}
+    (g : K ≃ₐc[R] H) (f : A ≃ₐ[R] B) (hf : ∀ k a, f (μ.action k a) = ν.action (g k) (f a))
+    (b : B) (h : H) :
+    (congr g f hf).symm (pure b h) = pure (f.symm b) (g.symm h) :=
+  mapBialg_pure (g.symm : H →ₐc[R] K) ⟨f.symm.toAlgHom, fun _ _ => f.injective (by simp [hf])⟩ b h
+
+@[simp]
+theorem congr_symm_includeA {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B}
+    (g : K ≃ₐc[R] H) (f : A ≃ₐ[R] B) (hf : ∀ k a, f (μ.action k a) = ν.action (g k) (f a))
+    (b : B) :
+    (congr g f hf).symm (includeA b) = includeA (f.symm b) := by
+  simp [includeA_eq_pure]
+
+@[simp]
+theorem congr_symm_includeH {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B}
+    (g : K ≃ₐc[R] H) (f : A ≃ₐ[R] B) (hf : ∀ k a, f (μ.action k a) = ν.action (g k) (f a))
+    (h : H) :
+    (congr g f hf).symm (includeH h) = includeH (g.symm h) := by
+  simp [includeH_eq_pure]
+
+/-- The inverse of `SmashProduct.congr` is `SmashProduct.congr` of the inverse equivalences. -/
+theorem congr_symm {μ : LeftModuleAlgebra R K A} {ν : LeftModuleAlgebra R H B}
+    (g : K ≃ₐc[R] H) (f : A ≃ₐ[R] B) (hf : ∀ k a, f (μ.action k a) = ν.action (g k) (f a)) :
+    (congr g f hf).symm = congr g.symm f.symm (fun _ _ => f.injective (by simp [hf])) := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  ext <;> simp
+
+/-- `SmashProduct.congr` of identity equivalences is the identity algebra equivalence. -/
+@[simp]
+theorem congr_refl (μ : LeftModuleAlgebra R H A) :
+    congr (BialgEquiv.refl R H) (AlgEquiv.refl : A ≃ₐ[R] A) (fun _ _ => by simp) =
+      (AlgEquiv.refl : SmashProduct μ ≃ₐ[R] SmashProduct μ) := by
+  apply AlgEquiv.coe_toAlgHom_injective
+  ext <;> simp
+
+end JointFunctoriality
 
 variable {B : Type*} [Semiring B] [Algebra R B] {ν : LeftModuleAlgebra R H B}
 
+private theorem coe_restrict_id_symm_rec {ν' : LeftModuleAlgebra R H B} (e : ν' = ν)
+    (f : Hom μ ν) (a : A) : (e.symm ▸ f) a = f a := by
+  subst e
+  rfl
+
 /-- An equivariant algebra map `A → B` induces `A # H → B # H`, `a # h ↦ f(a) # h`. -/
 noncomputable def map (f : Hom μ ν) : SmashProduct μ →ₐ[R] SmashProduct ν :=
-  lift (includeA.comp f.toAlgHom) includeH <| smashCompatible_iff.mpr fun h a => by
-    simp [includeH_mul_includeA (ℛ R h)]
+  mapBialg (BialgHom.id R H) ((LeftModuleAlgebra.restrict_id ν).symm ▸ f)
 
 @[simp]
 theorem map_pure (f : Hom μ ν) (a : A) (h : H) : map f (pure a h) = pure (f a) h := by
-  simp [map]
+  rw [map, mapBialg_pure, BialgHom.id_apply,
+    coe_restrict_id_symm_rec (LeftModuleAlgebra.restrict_id ν)]
 
 @[simp]
 theorem map_includeA (f : Hom μ ν) (a : A) : map f (includeA a) = includeA (f a) := by
-  simp [map]
+  rw [map, mapBialg_includeA, coe_restrict_id_symm_rec (LeftModuleAlgebra.restrict_id ν)]
 
 @[simp]
 theorem map_includeH (f : Hom μ ν) (h : H) : map f (includeH h) = includeH h := by
-  simp [map]
+  rw [map, mapBialg_includeH, BialgHom.id_apply]
 
 @[simp]
 theorem map_id : map (Hom.id μ) = AlgHom.id R (SmashProduct μ) := by
@@ -519,7 +686,7 @@ noncomputable def trivialAlgEquiv :
     SmashProduct (trivial (R := R) (H := H) (A := A)) ≃ₐ[R] A ⊗[R] H :=
   AlgEquiv.ofAlgHom
     (lift Algebra.TensorProduct.includeLeft Algebra.TensorProduct.includeRight <|
-      smashCompatible_iff.mpr fun h a => by
+      (smashCompatible_iff (ℛ R)).mpr fun h a => by
         simp only [Algebra.TensorProduct.includeLeft_apply,
           Algebra.TensorProduct.includeRight_apply, Algebra.TensorProduct.tmul_mul_tmul, one_mul,
           mul_one, trivial_action, TensorProduct.smul_tmul, smul_mul_assoc,
@@ -540,6 +707,23 @@ theorem trivialAlgEquiv_pure (a : A) (h : H) :
 theorem trivialAlgEquiv_symm_tmul (a : A) (h : H) :
     (trivialAlgEquiv R H A).symm (a ⊗ₜ[R] h) = pure a h := by
   rw [AlgEquiv.symm_apply_eq, trivialAlgEquiv_pure]
+
+variable (R H) in
+/-- For the base ring `A = R` with the trivial action, `R # H` is canonically isomorphic as an
+`R`-algebra to `H`, with inverse `includeH` (`h ↦ 1 # h`). -/
+noncomputable def baseAlgEquiv :
+    SmashProduct (trivial (R := R) (H := H) (A := R)) ≃ₐ[R] H :=
+  (trivialAlgEquiv R H R).trans (Algebra.TensorProduct.lid R H)
+
+@[simp]
+theorem baseAlgEquiv_pure (r : R) (h : H) :
+    baseAlgEquiv R H (pure r h) = r • h := by
+  simp [baseAlgEquiv]
+
+@[simp]
+theorem baseAlgEquiv_symm_apply (h : H) :
+    (baseAlgEquiv R H).symm h = includeH h := by
+  simp [baseAlgEquiv, includeH_eq_pure]
 
 end SmashProduct
 

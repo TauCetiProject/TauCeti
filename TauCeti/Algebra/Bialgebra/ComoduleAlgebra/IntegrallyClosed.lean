@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
-public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
+public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.Basic
 public import TauCeti.RingTheory.TensorProduct.MulRight
 
 /-!

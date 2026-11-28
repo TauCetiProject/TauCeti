@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
+public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.Galois
 public import TauCeti.Algebra.Coalgebra.Comodule.Antipode
 public import TauCeti.Algebra.Coalgebra.Comodule.TensorProduct
 public import TauCeti.RingTheory.TensorProduct.Module

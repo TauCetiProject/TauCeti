@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
+public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.BaseChange
 public import TauCeti.Algebra.TensorProduct.BaseChange
 public import Mathlib.RingTheory.Bialgebra.TensorProduct

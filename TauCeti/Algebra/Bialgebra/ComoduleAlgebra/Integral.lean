@@ -5,7 +5,8 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
+public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.Basic
+public import TauCeti.Algebra.HopfAlgebra.TensorShear
 public import TauCeti.LinearAlgebra.Charpoly.Projective
 import TauCeti.RingTheory.TensorProduct.Maps
 

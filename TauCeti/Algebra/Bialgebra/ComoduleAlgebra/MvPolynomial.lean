@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
-public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
+public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.GroupLike
 public import TauCeti.RingTheory.MvPolynomial.Basic
 

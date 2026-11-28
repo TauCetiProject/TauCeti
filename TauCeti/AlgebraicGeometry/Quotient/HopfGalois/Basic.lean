@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EffectiveEpi
 public import Mathlib.AlgebraicGeometry.Pullbacks
-public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
+public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.Galois
 
 /-!
 # The base of a Hopf–Galois torsor is a categorical quotient of schemes

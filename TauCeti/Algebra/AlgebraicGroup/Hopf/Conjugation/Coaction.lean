@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.ClassFunction.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Conjugation.Basic
-public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
+public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.Basic
 
+import Mathlib.Tactic.Group
 import TauCeti.Algebra.TensorProduct.MapLinear
 
 /-!

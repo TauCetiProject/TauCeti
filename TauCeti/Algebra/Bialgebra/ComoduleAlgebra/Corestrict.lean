@@ -5,7 +5,8 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
+public import Mathlib.RingTheory.Bialgebra.Hom
+public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 
 /-!
