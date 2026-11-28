@@ -74,6 +74,45 @@ theorem map_eq_zero_of_ofKaehler_eq_zero {M : Type*} [AddCommGroup M]
   exact (Submodule.Quotient.mk_eq_zero P).mp <|
     (ofKaehler_eq_zero_iff.mp hx) (LinearMap.ker q) (Module.Finite.equiv q.quotKerEquivRange.symm)
 
+private noncomputable def mapSemilinearOfFiniteResidueKaehler (f : A →ₐ[R] B) :
+    letI : Module A (Omega R B) := Module.compHom (Omega R B) f.toRingHom
+    Ω[A⁄R] →ₗ[A] Omega R B :=
+  letI : Module A (Omega R B) := Module.compHom (Omega R B) f.toRingHom
+  let g : Ω[A⁄R] →ₛₗ[f.toRingHom] Omega R B :=
+    (ofKaehler R B).comp (KaehlerDifferential.mapSemilinear f)
+  { toFun := g, map_add' := g.map_add
+    map_smul' := fun a z ↦ by simpa [MulAction.compHom_smul_def] using g.map_smulₛₗ a z }
+
+private theorem ker_le_ker_mapSemilinearOfFiniteResidueKaehler [Module.Finite B (Omega R B)]
+    (hm : ∀ (m : Ideal B) [m.IsMaximal], Module.Finite R (B ⧸ m))
+    (f : A →ₐ[R] B) :
+    letI : Module A (Omega R B) := Module.compHom (Omega R B) f.toRingHom
+    LinearMap.ker (ofKaehler R A) ≤ LinearMap.ker (mapSemilinearOfFiniteResidueKaehler f) :=
+  fun _ hx ↦ map_eq_zero_of_ofKaehler_eq_zero hm f
+    ((ofKaehler R B).comp (KaehlerDifferential.mapSemilinear f)) hx
+
+private noncomputable def mapSemilinearOfFiniteResidueHom [Module.Finite B (Omega R B)]
+    (hm : ∀ (m : Ideal B) [m.IsMaximal], Module.Finite R (B ⧸ m))
+    (f : A →ₐ[R] B) :
+    letI : Module A (Omega R B) := Module.compHom (Omega R B) f.toRingHom
+    Omega R A →ₗ[A] Omega R B :=
+  letI : Module A (Omega R B) := Module.compHom (Omega R B) f.toRingHom
+  (ofKaehler R A).liftOfSurjective (ofKaehler_surjective R A)
+    ⟨mapSemilinearOfFiniteResidueKaehler f,
+      ker_le_ker_mapSemilinearOfFiniteResidueKaehler hm f⟩
+
+private theorem mapSemilinearOfFiniteResidueHom_ofKaehler [Module.Finite B (Omega R B)]
+    (hm : ∀ (m : Ideal B) [m.IsMaximal], Module.Finite R (B ⧸ m))
+    (f : A →ₐ[R] B) (x : Ω[A⁄R]) :
+    mapSemilinearOfFiniteResidueHom hm f (ofKaehler R A x) =
+      ofKaehler R B (KaehlerDifferential.mapSemilinear f x) := by
+  -- Restate the local `A`-module structure from `mapSemilinearOfFiniteResidueHom` so
+  -- `LinearMap.equivOfSurjective_apply` matches `liftOfSurjective`.
+  let : Module A (Omega R B) := Module.compHom (Omega R B) f.toRingHom
+  rw [mapSemilinearOfFiniteResidueHom, LinearMap.equivOfSurjective_apply]
+  simp only [mapSemilinearOfFiniteResidueKaehler, LinearMap.coe_mk, AddHom.coe_mk,
+    LinearMap.comp_apply]
+
 /-- **Semilinear functoriality of `Omega`** along `f : A →ₐ[R] B` when `R` and `B` are noetherian,
 every maximal residue field `B ⧸ m` is module-finite over `R`, and `Omega R B` is finite over `B`.
 The induced `f`-semilinear map `Omega R A →ₛₗ[f.toRingHom] Omega R B` sends `d R A a` to
@@ -82,12 +121,7 @@ noncomputable def mapSemilinearOfFiniteResidue [Module.Finite B (Omega R B)]
     (hm : ∀ (m : Ideal B) [m.IsMaximal], Module.Finite R (B ⧸ m))
     (f : A →ₐ[R] B) : Omega R A →ₛₗ[f.toRingHom] Omega R B :=
   letI : Module A (Omega R B) := Module.compHom (Omega R B) f.toRingHom
-  let g : Ω[A⁄R] →ₛₗ[f.toRingHom] Omega R B :=
-    (ofKaehler R B).comp (KaehlerDifferential.mapSemilinear f)
-  let hA : Omega R A →ₗ[A] Omega R B := (ofKaehler R A).liftOfSurjective (ofKaehler_surjective R A)
-    ⟨{ toFun := g, map_add' := g.map_add
-       map_smul' := fun a z ↦ by simpa [MulAction.compHom_smul_def] using g.map_smulₛₗ a z },
-      fun _ hx ↦ map_eq_zero_of_ofKaehler_eq_zero hm f g hx⟩
+  let hA := mapSemilinearOfFiniteResidueHom hm f
   { toFun := hA, map_add' := hA.map_add
     map_smul' := fun a ω ↦ by simp [MulAction.compHom_smul_def] }
 
@@ -96,9 +130,10 @@ noncomputable def mapSemilinearOfFiniteResidue [Module.Finite B (Omega R B)]
     (f : A →ₐ[R] B) (x : Ω[A⁄R]) :
     mapSemilinearOfFiniteResidue hm f (ofKaehler R A x) =
       ofKaehler R B (KaehlerDifferential.mapSemilinear f x) := by
+  -- Restate the local `A`-module structure so `mapSemilinearOfFiniteResidueHom_ofKaehler` applies.
   let : Module A (Omega R B) := Module.compHom (Omega R B) f.toRingHom
   dsimp only [mapSemilinearOfFiniteResidue, LinearMap.coe_mk, AddHom.coe_mk]
-  exact LinearMap.equivOfSurjective_apply (ofKaehler_surjective R A) _ (m := x)
+  exact mapSemilinearOfFiniteResidueHom_ofKaehler hm f x
 @[simp] theorem mapSemilinearOfFiniteResidue_d [Module.Finite B (Omega R B)]
     (hm : ∀ (m : Ideal B) [m.IsMaximal], Module.Finite R (B ⧸ m))
     (f : A →ₐ[R] B) (a : A) :

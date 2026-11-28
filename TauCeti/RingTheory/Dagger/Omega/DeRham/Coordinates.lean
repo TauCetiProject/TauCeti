@@ -117,7 +117,7 @@ private theorem washnitzerBasis_exteriorPower_two_repr_extDerivPow_one [Finite �
   rw [washnitzerBasis_exteriorPower_repr_extDerivPow]
   have hatt : u.val.attach = {⟨i, by simp [u]⟩, ⟨j, by simp [u]⟩} := by
     ext ⟨x, hx⟩; simp only [Finset.mem_attach, Finset.mem_insert, Finset.mem_singleton,
-      Subtype.ext_iff, true_iff]; simpa [u, Set.powersetCard.ofCard] using hx
+      Subtype.ext_iff, true_iff]; simpa [u, Set.powersetCard.val_ofCard] using hx
   rw [hatt, Finset.sum_pair (fun h ↦ hij.ne (congrArg Subtype.val h))]
   have hei (hi : i ∈ u) :
       Set.powersetCard.erase u i hi = Set.powersetCard.ofCard (Finset.card_singleton j) :=

@@ -12,10 +12,11 @@ public import TauCeti.RingTheory.Dagger.Omega.DeRham.Basic
 
 Over a base ring `R` of characteristic `p`, `d R A (f ^ p) = 0` for every `f : A` in any
 `R`-algebra `A` (`d_pow_charP`). Over a complete ultrametric normed field `K` of prime
-characteristic `p > 0`, the degree-zero and degree-one Poincaré lemmas fail on every nonempty dagger
-polydisc `K⟨X_σ⟩†` (`Xᵢ ^ (p - 1) dXᵢ` has no potential in `K⟨X_σ⟩†`), and on `K⟨X₀⟩†` the
-overconvergent de Rham complex fails to be exact in degree `1` and `H¹_dR(K⟨X₀⟩† / K)` is
-nontrivial.
+characteristic `p > 0`, the degree-zero Poincaré lemma fails on every nonempty dagger polydisc
+`K⟨X_σ⟩†` (`d(Xᵢ ^ p) = 0`), on every nonempty finite dagger polydisc `K⟨X_σ⟩†` the form
+`Xᵢ ^ (p - 1) • d Xᵢ` is not exact (has no potential in `K⟨X_σ⟩†`), and on `K⟨X₀⟩†` it is
+closed so the degree-one Poincaré lemma fails (the overconvergent de Rham complex is not exact
+in degree `1` and `H¹_dR(K⟨X₀⟩† / K)` is nontrivial).
 -/
 
 public section
@@ -51,9 +52,8 @@ theorem exists_d_eq_zero_and_notMem_range_algebraMap_charP {σ : Type*} (i : σ)
         f ∉ Set.range (algebraMap K (washnitzerAlgebra σ K)) :=
   ⟨X σ K i ^ p, d_X_pow_charP i p, X_pow_notMem_range_algebraMap i (Fact.out : p.Prime).pos⟩
 
-/-- **Failure of the degree-one Poincaré lemma in characteristic `p > 0`** on every dagger
-polydisc with at least one variable `i : σ`: `Xᵢ ^ (p - 1) • d Xᵢ` has no potential
-`g ∈ K⟨X_σ⟩†`. -/
+/-- In characteristic `p > 0`, on every finite dagger polydisc `K⟨X_σ⟩†` with a variable `i : σ`,
+the `1`-form `Xᵢ ^ (p - 1) • d Xᵢ` is not exact (has no potential `g ∈ K⟨X_σ⟩†`). -/
 theorem not_exists_d_eq_X_pow_sub_one_smul_d_X_charP {σ : Type*} [Finite σ] (i : σ) (p : ℕ)
     [CharP K p] [Fact p.Prime] :
     ¬∃ g : washnitzerAlgebra σ K,
