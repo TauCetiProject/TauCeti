@@ -76,8 +76,8 @@ theorem encard_isNondegenerateSolution_le_of_absoluteLogHeightAff_le {n : ℕ}
         IsNondegenerateSolution (a * fun i ↦ ((b i : Kˣ) : K)) w ∧
           scalarSumHeight w < 1 / q}.encard := by
   classical
-  let v : (Fin n → (S : Set (HeightOneSpectrum (𝓞 K))).unit K) → Fin n → K :=
-    fun b i ↦ ((b i : Kˣ) : K)
+  let v : (Fin n → (S : Set (HeightOneSpectrum (𝓞 K))).unit K) →* (Fin n → K) :=
+    ((Units.coeHom K).comp (Subgroup.subtype _)).compLeft (Fin n)
   -- With no unknowns the equation reads `0 = 1`.
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · rw [Set.encard_eq_zero.2 (Set.eq_empty_of_forall_notMem fun y hy ↦ by
@@ -96,10 +96,8 @@ theorem encard_isNondegenerateSolution_le_of_absoluteLogHeightAff_le {n : ℕ}
                   (fun _ ↦ Algebra.IsAlgebraic.isAlgebraic _)
             _ < 1 / (2 * q) + 1 / (2 * q) := add_lt_add hxb hz
             _ = 1 / q := by rw [div_mul_eq_div_div_swap, add_halves]
-        · have hv : v (b * (x / b)) = v b * v (x / b) := by
-            funext i
-            simp only [v, Pi.mul_apply, Subgroup.coe_mul, Units.val_mul]
-          rw [hy, ← mul_assoc, ← hv, mul_div_cancel]
+        · rw [← mul_assoc, ← map_mul v, mul_div_cancel]
+          exact hy
     _ ≤ #(B.image v) * ⨆ b ∈ B.image v,
         {w | IsNondegenerateSolution (a * b) w ∧ w ∈ {w | scalarSumHeight w < 1 / q}}.encard :=
         encard_isNondegenerateSolution_le_card_mul _ _ _
