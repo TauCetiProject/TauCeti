@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.UnitCompati
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Away
 
 import Mathlib.FieldTheory.AlgebraicClosure
+import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.PrincipalFinite
 
 /-!
 # The ideal character of a Hecke character
@@ -223,24 +224,7 @@ theorem idealCharacter_apply_toPrincipalIdeal_eq_prod_inv_mul_prod_inv (χ : Hec
     exact toFractionalIdeal_unitEmbedding x
   rw [← hideal, idealCharacter_apply_toIdealsAway]
   simp only [a, ideleFiniteCoord_ofFiniteIdele_unitEmbedding]
-  congr 1
-  -- The full diagonal idele is principal, so its infinite and finite values multiply to one.
-  have hprincipal :
-      (QuotientGroup.mk (IdeleGroup.unitEmbedding (𝓞 K) K x) : IdeleClassGroup (𝓞 K) K) = 1 :=
-    (QuotientGroup.eq_one_iff _).mpr ⟨x, rfl⟩
-  have hsplit := congrArg (fun z : IdeleGroup (𝓞 K) K ↦ χ (QuotientGroup.mk z))
-    (IdeleGroup.prod_ofCompletion_mul_ofFiniteIdele (IdeleGroup.unitEmbedding (𝓞 K) K x))
-  rw [QuotientGroup.mk_mul, map_mul, hprincipal, map_one,
-    QuotientGroup.mk_prod, map_prod] at hsplit
-  have hinf : (∏ w : InfinitePlace K,
-      χ (QuotientGroup.mk (IdeleGroup.ofCompletion (𝓞 K) K w
-        (w.ideleInfiniteCoord (IdeleGroup.unitEmbedding (𝓞 K) K x))))) =
-      ∏ w : InfinitePlace K,
-        χ.infiniteComponent w (Units.map (algebraMap K w.Completion).toMonoidHom x) := by
-    simp only [infiniteComponent_apply, IdeleClassGroup.ofCompletion_apply,
-      InfinitePlace.ideleInfiniteCoord_unitEmbedding]
-  rw [hinf, IdeleGroup.toFiniteIdele_unitEmbedding] at hsplit
-  exact eq_inv_of_mul_eq_one_right hsplit
+  rw [χ.apply_ofFiniteIdele_unitEmbedding]
 
 /-- Congruence to `1` modulo the finite conductor kills the correction factors at the
 conductor primes: the local component of `χ` at such a prime is trivial at `x`. -/
