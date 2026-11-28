@@ -276,6 +276,30 @@ private theorem exists_truncTubeWeight_pos (ρ : PartitionOfUnity ι B)
     max_eq_right (tubeWeight_nonneg ρ H m₀ α₀ a)]
   exact hα₀
 
+/-- A positive truncated tube weight at level `m` forces `m` below the explicit bound
+`max (m₀ + 1) (⌈1 / c⌉₊ + 1)` when `c` is below the level maximum `levelMax ρ H m₀ a`: the levels
+at and above the bound would have a running sum of level maxima exceeding one. -/
+private theorem lt_max_of_truncTubeWeight_pos (ρ : PartitionOfUnity ι B)
+    (H : C(I × A, B)) {m₀ m : ℕ} {α : Fin (m + 1) → ι} {a : A} {c : ℝ} (hc : 0 < c)
+    (hc_lt : c < levelMax ρ H m₀ a) (hpos : 0 < truncTubeWeight ρ H ⟨m, α⟩ a) :
+    m < max (m₀ + 1) (⌈1 / c⌉₊ + 1) := by
+  set N : ℕ := max (m₀ + 1) (⌈1 / c⌉₊ + 1)
+  by_contra hm_ge
+  have hm_le : N ≤ m := not_lt.1 hm_ge
+  have hm₀_lt : m₀ < m := (Nat.lt_succ_self m₀).trans_le ((le_max_left _ _).trans hm_le)
+  have hsum_ge : c ≤ ∑ j ∈ Finset.range m, levelMax ρ H j a :=
+    hc_lt.le.trans <| Finset.single_le_sum (fun j _ ↦ levelMax_nonneg ρ H j a)
+      (Finset.mem_range.2 hm₀_lt)
+  have hNc : 1 ≤ (N : ℝ) * c := by
+    have hceil : 1 / c ≤ ⌈1 / c⌉₊ := Nat.le_ceil (1 / c)
+    have hN_ge : (⌈1 / c⌉₊ : ℝ) ≤ N := by exact_mod_cast (Nat.le_succ _).trans (le_max_right _ _)
+    linarith [(div_le_iff₀ hc).1 (hceil.trans hN_ge)]
+  have hm_cast : (N : ℝ) ≤ m := by exact_mod_cast hm_le
+  have hmul : 1 ≤ (m : ℝ) * ∑ j ∈ Finset.range m, levelMax ρ H j a :=
+    hNc.trans (mul_le_mul hm_cast hsum_ge hc.le m.cast_nonneg)
+  have hsub := (lt_max_iff.1 hpos).resolve_left (lt_irrefl 0)
+  linarith [tubeWeight_le_one ρ H m α a]
+
 private theorem locallyFinite_truncTubeWeight (ρ : PartitionOfUnity ι B)
     (H : C(I × A, B)) :
     LocallyFinite fun idx ↦ support (truncTubeWeight ρ H idx) := by
@@ -296,22 +320,7 @@ private theorem locallyFinite_truncTubeWeight (ρ : PartitionOfUnity ι B)
   have hpos : 0 < truncTubeWeight ρ H ⟨m, α⟩ a :=
     lt_of_le_of_ne (truncTubeWeight_nonneg ρ H ⟨m, α⟩ a) (Ne.symm hne)
   have hη_pos : 0 < tubeWeight ρ H m α a := tubeWeight_pos_of_truncTubeWeight_pos hpos
-  have hmN : m < N := by
-    by_contra hm_ge
-    have hm_le : N ≤ m := not_lt.1 hm_ge
-    have hm₀_lt : m₀ < m := (Nat.lt_succ_self m₀).trans_le ((le_max_left _ _).trans hm_le)
-    have hsum_ge : c ≤ ∑ j ∈ Finset.range m, levelMax ρ H j a :=
-      hc_lt.le.trans <| Finset.single_le_sum (fun j _ ↦ levelMax_nonneg ρ H j a)
-        (Finset.mem_range.2 hm₀_lt)
-    have hNc : 1 ≤ (N : ℝ) * c := by
-      have hceil : 1 / c ≤ ⌈1 / c⌉₊ := Nat.le_ceil (1 / c)
-      have hN_ge : (⌈1 / c⌉₊ : ℝ) ≤ N := by exact_mod_cast (Nat.le_succ _).trans (le_max_right _ _)
-      linarith [(div_le_iff₀ hc).1 (hceil.trans hN_ge)]
-    have hm_cast : (N : ℝ) ≤ m := by exact_mod_cast hm_le
-    have hmul : 1 ≤ (m : ℝ) * ∑ j ∈ Finset.range m, levelMax ρ H j a :=
-      hNc.trans (mul_le_mul hm_cast hsum_ge hc.le m.cast_nonneg)
-    have hsub := (lt_max_iff.1 hpos).resolve_left (lt_irrefl 0)
-    linarith [tubeWeight_le_one ρ H m α a]
+  have hmN : m < N := lt_max_of_truncTubeWeight_pos ρ H hc hc_lt hpos
   refine Finset.mem_coe.2 (Finset.mem_sigma.2 ⟨Finset.mem_range.2 hmN, ?_⟩)
   exact Fintype.mem_piFinset.2 fun k ↦ hF (segEndpt m k.castSucc)
     (pos_of_tubeWeight_pos hη_pos k (left_mem_Icc.2 (segEndpt_mono m k.castSucc_le_succ))).ne'
