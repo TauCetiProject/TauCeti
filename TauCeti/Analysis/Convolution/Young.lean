@@ -78,10 +78,7 @@ Hölder's inequality at each point.
 
 The norm of a convolution of Bochner-integrable functions is bounded pointwise by the convolution
 of their norms, so this inequality also bounds the `Lᵠ` norm of `f ⋆[L] g`
-(`MeasureTheory.eLpNorm_convolution_le_of_inv_add_inv_eq`). Hence for `f ∈ Lᵖ` and `g ∈ Lʳ` the
-convolution `f ⋆[L] g` lies in `Lᵠ` (`MeasureTheory.MemLp.convolution`), and, since the convolution
-of their norms is finite almost everywhere, the integral defining it converges absolutely at almost
-every point (`MeasureTheory.MemLp.ae_convolution_exists`).
+(`MeasureTheory.eLpNorm_convolution_le_of_inv_add_inv_eq`).
 
 ## Main declarations
 
@@ -99,9 +96,6 @@ every point (`MeasureTheory.MemLp.ae_convolution_exists`).
 * `MeasureTheory.eLpNorm_lconvolution_le`: Young's inequality `Lᵖ ⋆ Lʳ ⊆ Lᵠ`.
 * `MeasureTheory.eLpNorm_convolution_le_of_inv_add_inv_eq`: the same bound for the convolution
   `f ⋆[L, μ] g` of vector-valued functions along a continuous bilinear map `L`.
-* `MeasureTheory.MemLp.convolution`: `Lᵖ ⋆ Lʳ ⊆ Lᵠ` along a continuous bilinear map.
-* `MeasureTheory.MemLp.ae_convolution_exists`: the convolution of `f ∈ Lᵖ` and `g ∈ Lʳ` exists
-  almost everywhere.
 
 ## References
 
@@ -428,47 +422,5 @@ theorem eLpNorm_convolution_le_of_inv_add_inv_eq {𝕜 E E' F : Type*} [Nontrivi
         exact eLpNorm_lconvolution_le hp hr hpqr hf.eNorm hg.eNorm
     _ = ‖L‖ₑ * eLpNorm f p μ * eLpNorm g r μ := by
         rw [eLpNorm_eNorm f hf, eLpNorm_eNorm g hg, mul_assoc]
-
-section MemLp
-
-open scoped Convolution
-
-variable {𝕜 E E' F : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] (L : E →L[𝕜] E' →L[𝕜] F)
-  {f : G → E} {g : G → E'} {p q r : ℝ≥0∞}
-
-/-- **Young's convolution inequality**, membership form: for `1 ≤ p, r ≤ ∞` and
-`1/p + 1/r = 1 + 1/q`, the convolution along a continuous bilinear map `L` of `f ∈ Lᵖ` and
-`g ∈ Lʳ` lies in `Lᵠ`. -/
-protected theorem MemLp.convolution (hf : MemLp f p μ) (hg : MemLp g r μ) (hp : 1 ≤ p)
-    (hr : 1 ≤ r) (hpqr : p⁻¹ + r⁻¹ = 1 + q⁻¹) : MemLp (f ⋆[L, μ] g) q μ :=
-  (eLpNorm_convolution_le_of_inv_add_inv_eq L hp hr hpqr hf.aestronglyMeasurable
-    hg.aestronglyMeasurable).trans_lt
-    (ENNReal.mul_lt_top (ENNReal.mul_lt_top eNorm_lt_top hf.eLpNorm_lt_top) hg.eLpNorm_lt_top)
-
-omit [NormedSpace ℝ F] in
-/-- For `1 ≤ p, r ≤ ∞` and `1/p + 1/r = 1 + 1/q`, the integral `∫ L (f t) (g (x - t)) dμ(t)`
-defining the convolution of `f ∈ Lᵖ` and `g ∈ Lʳ` converges absolutely at almost every `x`.
-For an integrable `f` on a group that need not be commutative, see
-`MeasureTheory.Integrable.ae_convolution_exists_of_memLp`. -/
-theorem MemLp.ae_convolution_exists (hf : MemLp f p μ) (hg : MemLp g r μ) (hp : 1 ≤ p)
-    (hr : 1 ≤ r) (hpqr : p⁻¹ + r⁻¹ = 1 + q⁻¹) : ∀ᵐ x ∂μ, ConvolutionExistsAt f g x L μ := by
-  have hq : q ≠ 0 := by
-    rintro rfl
-    simp [(zero_lt_one.trans_le hp).ne', (zero_lt_one.trans_le hr).ne'] at hpqr
-  -- The convolution of `‖f‖ₑ` and `‖g‖ₑ` lies in `Lᵠ` by Young's inequality, so it is finite
-  -- almost everywhere, and it dominates the integral of the norm of the integrand.
-  have hfin : eLpNorm ((fun t ↦ ‖f t‖ₑ) ⋆ₗ[μ] fun t ↦ ‖g t‖ₑ) q μ ≠ ∞ := by
-    refine ((eLpNorm_lconvolution_le hp hr hpqr hf.aestronglyMeasurable.eNorm
-      hg.aestronglyMeasurable.eNorm).trans_lt ?_).ne
-    rw [eLpNorm_eNorm f hf.aestronglyMeasurable, eLpNorm_eNorm g hg.aestronglyMeasurable]
-    exact ENNReal.mul_lt_top hf.eLpNorm_lt_top hg.eLpNorm_lt_top
-  filter_upwards [TauCeti.ae_lt_top_of_eLpNorm_ne_top hq hfin] with x hx
-  refine convolutionExistsAt_of_lintegral_lt_top L hf.aestronglyMeasurable
-    hg.aestronglyMeasurable ?_
-  simpa only [lconvolution_def, neg_add_eq_sub] using hx
-
-end MemLp
 
 end MeasureTheory
