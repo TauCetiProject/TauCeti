@@ -12,9 +12,10 @@ public import Mathlib.Algebra.Homology.SpectralSequence.Basic
 
 The components of an isomorphism `e : E ≅ E'` of spectral sequences at each position of each page
 are inverse to each other (`CategoryTheory.SpectralSequence.hom_inv_id_hom_f`,
-`CategoryTheory.SpectralSequence.inv_hom_id_hom_f`). A morphism of spectral sequences also commutes
-with the inverses of the isomorphisms between the homology of a page and the next page
-(`CategoryTheory.SpectralSequence.Hom.hom_f_comp_iso_inv`).
+`CategoryTheory.SpectralSequence.inv_hom_id_hom_f`). Any isomorphism of spectral sequences
+induces isomorphisms on every page (`CategoryTheory.SpectralSequence.isIso_hom_of_isIso`), and a
+morphism of spectral sequences commutes with the inverses of the isomorphisms between the
+homology of a page and the next page (`CategoryTheory.SpectralSequence.Hom.hom_f_comp_iso_inv`).
 -/
 
 public section
@@ -39,6 +40,11 @@ lemma inv_hom_id_hom_f (e : E ≅ E') (r : ℤ) (hr : r₀ ≤ r) (pq : κ) :
     (e.inv.hom r hr).f pq ≫ (e.hom.hom r hr).f pq = 𝟙 _ := by
   rw [← HomologicalComplex.comp_f, ← comp_hom _ _ r hr, e.inv_hom_id, id_hom,
     HomologicalComplex.id_f]
+
+/-- An isomorphism of spectral sequences induces an isomorphism on every page. -/
+instance isIso_hom_of_isIso (f : E ⟶ E') [IsIso f] (r : ℤ) (hr : r₀ ≤ r) :
+    IsIso (f.hom r hr) :=
+  Functor.map_isIso (pageFunctor C c r₀ r hr) f
 
 /-- A morphism of spectral sequences commutes with the inverses of the isomorphisms between the
 homology of a page and the next page: this is the inverse form of `Hom.comm`. -/

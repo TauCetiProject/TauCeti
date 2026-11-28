@@ -548,6 +548,24 @@ end HomologyTransport
 
 variable {C : Type*} [Category* C] [HasZeroMorphisms C] {ι : Type*} {c : ComplexShape ι}
 
+/-- The differential `dFrom i` vanishes if and only if every differential leaving `i` vanishes. -/
+lemma dFrom_eq_zero_iff (K : HomologicalComplex C c) (i : ι) :
+    K.dFrom i = 0 ↔ ∀ j : ι, K.d i j = 0 :=
+  ⟨fun h j ↦ by
+      by_cases hrel : c.Rel i j
+      · obtain rfl := c.next_eq' hrel; exact h
+      · exact K.shape i j hrel,
+   fun h ↦ h (c.next i)⟩
+
+/-- The differential `dTo i` vanishes if and only if every differential entering `i` vanishes. -/
+lemma dTo_eq_zero_iff (K : HomologicalComplex C c) (i : ι) :
+    K.dTo i = 0 ↔ ∀ j : ι, K.d j i = 0 :=
+  ⟨fun h j ↦ by
+      by_cases hrel : c.Rel j i
+      · obtain rfl := c.prev_eq' hrel; exact h
+      · exact K.shape j i hrel,
+   fun h ↦ h (c.prev i)⟩
+
 /-- A morphism between acyclic homological complexes is a quasi-isomorphism. -/
 lemma quasiIso_of_acyclic {K L : HomologicalComplex C c} (f : K ⟶ L) [∀ i, K.HasHomology i]
     [∀ i, L.HasHomology i] (hK : K.Acyclic) (hL : L.Acyclic) : QuasiIso f :=

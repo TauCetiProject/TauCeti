@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.ImageToKernel
+public import Mathlib.Algebra.Homology.ShortComplex.Abelian
 public import Mathlib.CategoryTheory.Abelian.Exact
 public import TauCeti.CategoryTheory.Abelian.SubquotientPresentation
 import TauCeti.CategoryTheory.Subobject.Image
@@ -112,5 +113,45 @@ lemma homologyPresentation_mapsTo {S' : ShortComplex C} (α : S ⟶ S') :
       ofLE _ _ S'.homologyPresentation_Z.ge, by simp, ?_⟩
   rw [π_homologyPresentation', π_homologyPresentation']
   simp [ofLE_comp_ofLE_assoc, reassoc_of% h]
+
+/-- A morphism `φ : S ⟶ S'` maps `kernelSubobject S.g` into `kernelSubobject S'.g`. -/
+lemma exists_kernelSubobject_le {C : Type*} [Category* C] [HasZeroMorphisms C] [HasImages C]
+    {S S' : ShortComplex C} (φ : S ⟶ S') [HasKernel S.g] [HasKernel S'.g] :
+    (Subobject.exists φ.τ₂).obj (kernelSubobject S.g) ≤ kernelSubobject S'.g :=
+  Subobject.exists_le_of_comm φ.τ₂ (kernelSubobjectMap (Arrow.homMk φ.τ₂ φ.τ₃ φ.comm₂₃))
+    (kernelSubobjectMap_arrow _)
+
+/-- A morphism `φ : S ⟶ S'` maps `imageSubobject S.f` into `imageSubobject S'.f`. -/
+lemma exists_imageSubobject_le {C : Type*} [Category* C] [HasZeroMorphisms C] [HasImages C]
+    {S S' : ShortComplex C} (φ : S ⟶ S')
+    [HasImageMap (Arrow.homMk (f := Arrow.mk S.f) (g := Arrow.mk S'.f) φ.τ₁ φ.τ₂ φ.comm₁₂)] :
+    (Subobject.exists φ.τ₂).obj (imageSubobject S.f) ≤ imageSubobject S'.f :=
+  Subobject.exists_le_of_comm φ.τ₂
+    (imageSubobjectMap (Arrow.homMk (f := Arrow.mk S.f) (g := Arrow.mk S'.f) φ.τ₁ φ.τ₂ φ.comm₁₂))
+    (imageSubobjectMap_arrow _)
+
+/-- When `S.f = 0` and `S.g = 0`, `S.homologyPresentation` is the identity presentation transported
+along `(S.cyclesIsoX₂ hg).symm ≪≫ S.asIsoHomologyπ hf`. -/
+lemma homologyPresentation_eq_refl_mapIso (hf : S.f = 0) (hg : S.g = 0) :
+    S.homologyPresentation = (TauCeti.SubquotientPresentation.refl S.X₂).mapIso
+      ((S.cyclesIsoX₂ hg).symm ≪≫ S.asIsoHomologyπ hf) := by
+  refine TauCeti.SubquotientPresentation.ext (by simp [hf]) (by simp [hg]) ?_
+  calc S.homologyPresentation.π
+      = S.homologyPresentation.Z.arrow ≫ (S.cyclesIsoX₂ hg).inv ≫ S.homologyπ := by
+        rw [π_homologyPresentation', ← Category.assoc, ← Category.assoc]
+        refine congrArg (· ≫ S.homologyπ) ?_
+        rw [← cancel_mono S.iCycles]
+        simp [cyclesIsoX₂_inv_hom_id]
+    _ = _ := by
+        rw [TauCeti.SubquotientPresentation.π_mapIso', TauCeti.SubquotientPresentation.π_refl,
+          Subobject.ofLE_comp_ofLE_assoc, Subobject.ofLE_arrow_assoc]
+        simp [asIsoHomologyπ_hom]
+
+/-- Naturality of `homologyPresentation`: the induced map is `ShortComplex.homologyMap φ`. -/
+lemma mapInduced_homologyPresentation {S S' : ShortComplex C} (φ : S ⟶ S') :
+    S.homologyPresentation.mapInduced S'.homologyPresentation φ.τ₂
+        (exists_kernelSubobject_le φ) (exists_imageSubobject_le φ) =
+      ShortComplex.homologyMap φ :=
+  (S.homologyPresentation_mapsTo φ).mapInduced_eq _ _
 
 end CategoryTheory.ShortComplex

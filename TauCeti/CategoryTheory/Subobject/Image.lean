@@ -7,15 +7,17 @@ module
 
 public import Mathlib.CategoryTheory.Balanced
 public import Mathlib.CategoryTheory.Subobject.Limits
+import TauCeti.CategoryTheory.Subobject.Limits
 
 /-!
 # Image subobjects in balanced categories
 
 In a balanced category with images, precomposing with an epimorphism does not change an image
-subobject (`imageSubobject_comp_eq_of_epi`). Hence the direct image of the image subobject of `f`
-along `g` is the image subobject of `f ≫ g` (`Subobject.exists_obj_imageSubobject`).
-The image subobject is the top subobject exactly for epimorphisms
-(`imageSubobject_eq_top_iff_epi`).
+subobject (`imageSubobject_comp_eq_of_epi`). Hence precomposing with an epimorphism does not change
+whether a morphism factors through a subobject (`Subobject.factors_comp_iff_of_epi`), and the direct
+image of the image subobject of `f` along `g` is the image subobject of `f ≫ g`
+(`Subobject.exists_obj_imageSubobject`). The image subobject is the top subobject exactly for
+epimorphisms (`imageSubobject_eq_top_iff_epi`).
 -/
 
 public section
@@ -45,6 +47,13 @@ lemma imageSubobject_comp_eq_of_epi {X' : C} (h : X' ⟶ X) [Epi h] (f : X ⟶ Y
   have := isIso_of_mono_of_epi (Subobject.ofLE _ _ (imageSubobject_comp_le h f))
   exact le_antisymm (imageSubobject_comp_le h f)
     (Subobject.le_of_comm (inv (Subobject.ofLE _ _ (imageSubobject_comp_le h f))) (by simp))
+
+/-- Precomposing with an epimorphism does not change whether a morphism factors through a
+subobject. -/
+lemma Subobject.factors_comp_iff_of_epi {Z : C} (S : Subobject Z) {X' : C} (h : X' ⟶ X) [Epi h]
+    (f : X ⟶ Z) : S.Factors (h ≫ f) ↔ S.Factors f := by
+  rw [← imageSubobject_le_iff_factors, ← imageSubobject_le_iff_factors,
+    imageSubobject_comp_eq_of_epi]
 
 /-- The direct image of the image subobject of `f` along `g` is the image subobject of `f ≫ g`. -/
 lemma Subobject.exists_obj_imageSubobject (f : X ⟶ Y) {Z : C} (g : Y ⟶ Z) :

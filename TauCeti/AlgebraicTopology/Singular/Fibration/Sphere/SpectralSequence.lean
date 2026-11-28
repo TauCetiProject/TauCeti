@@ -191,12 +191,13 @@ theorem isZero_sphereSerreSpectralSequence_page_X_of_isZero (pq : ℤ × ℤ)
   let _ := sphereRelCWComplex h
   let S := sphereSerreSpectralSequence h p R
   -- From the page `n + 2` on, the object at `pq` survives unchanged to the page `n + 3 + m`.
-  have hsurvive := S.pageXIsoOfLEOfIsZero (r := n + 2) (by lia) (pq := pq) (fun s hs pq' hpq' ↦ by
-    have := ComplexShape.snd_eq_of_up'_rel hpq'
-    exact S.isZero_page_X_of_le le_rfl
-      (isZero_sphereSerreSpectralSequence_page_two_X h p R pq' (by lia) (by lia)) _ (by lia))
+  have hsurvive := S.pageXIsoOfStabilises pq (n + 2) (by lia)
+    (S.stabilisesAt_of_forall_isZero (by lia) (fun s hs pq' hpq' ↦ by
+      have := ComplexShape.snd_eq_of_up'_rel hpq'
+      exact S.isZero_page_X_of_le le_rfl
+        (isZero_sphereSerreSpectralSequence_page_two_X h p R pq' (by lia) (by lia)) _ (by lia)))
     (n + 3 + m) (by lia)
-  refine IsZero.of_iso ?_ hsurvive.symm
+  refine IsZero.of_iso ?_ hsurvive
   have hpq : 0 ≤ pq.2 + 1 := by rcases hb with hb | hb <;> lia
   -- On that page it is a graded piece of the filtration of `Hₘ(E; R)`, which vanishes.
   have e := filteredSpaceSpectralSequencePageXIsoGradedOfExhaustive

@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Abelian.Basic
 public import Mathlib.CategoryTheory.Abelian.Exact
 public import Mathlib.CategoryTheory.Subobject.Limits
+public import TauCeti.CategoryTheory.Subobject.Limits
 import Mathlib.CategoryTheory.Abelian.Subobject
 import TauCeti.CategoryTheory.Abelian.ImageSubobject
 import TauCeti.CategoryTheory.Subobject.Image
@@ -34,8 +35,6 @@ of a subquotient back to the ambient object.
 * `CategoryTheory.epi_comp_iff_kernelSubobject_sup_imageSubobject_eq_top` says that for an
   epimorphism `p`, the composite `f ≫ p` is epic exactly when
   `kernelSubobject p ⊔ imageSubobject f = ⊤`.
-* `CategoryTheory.Limits.kernelSubobject_cokernel_π`: the kernel of the cokernel of a
-  monomorphism `f` is the subobject represented by `f`.
 * `CategoryTheory.ShortComplex.Exact.imageSubobject_comp_inv_eq_kernelSubobject_hom_comp`: the
   exactness of a short complex, as an equality of subobjects, transported along an isomorphism
   `A ≅ S.X₂`.
@@ -48,18 +47,6 @@ open CategoryTheory Limits
 universe v u
 
 variable {C : Type u} [Category.{v} C] [Abelian C] {X Y : C}
-
-namespace CategoryTheory.Limits
-
-/-- The kernel of the cokernel of a monomorphism `f` is the subobject represented by `f`. -/
-@[simp]
-lemma kernelSubobject_cokernel_π {W : C} (f : W ⟶ Y) [Mono f] :
-    kernelSubobject (cokernel.π f) = Subobject.mk f := by
-  rw [← imageSubobject_mono f]
-  exact ((ShortComplex.mk f (cokernel.π f) (cokernel.condition f)).exact_iff_image_eq_kernel.1
-    (ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel f))).symm
-
-end CategoryTheory.Limits
 
 namespace CategoryTheory.ShortComplex
 

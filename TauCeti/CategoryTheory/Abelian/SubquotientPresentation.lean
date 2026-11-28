@@ -7,8 +7,11 @@ module
 
 public import Mathlib.Order.Bounds.Basic
 public import TauCeti.CategoryTheory.Abelian.Subobject
+public import TauCeti.CategoryTheory.Subobject.Basic
 public import TauCeti.CategoryTheory.Subobject.Pullback
 import Mathlib.CategoryTheory.Abelian.Refinements
+import TauCeti.CategoryTheory.Subobject.Image
+import TauCeti.CategoryTheory.Subobject.Limits
 
 /-!
 # Subquotient presentations
@@ -41,9 +44,12 @@ pages.
 ## Main definitions
 
 * `TauCeti.SubquotientPresentation A X`: a presentation of `X` as a subquotient of `A`.
-* `TauCeti.SubquotientPresentation.π`: the projection `Z ⟶ X`.
+* `TauCeti.SubquotientPresentation.π`: the projection `Z ⟶ X`; `desc`: universal property out
+  of `Z`.
 * `TauCeti.SubquotientPresentation.ofEpi`: the presentation given by an epimorphism out of `Z`
   whose kernel is `B`.
+* `TauCeti.SubquotientPresentation.ofIsColimit`: the presentation given by a colimit cokernel
+  cofork `B ⟶ Z ⟶ X`.
 * `TauCeti.SubquotientPresentation.preimage`, `TauCeti.SubquotientPresentation.image`: transport
   of subobjects between `X` and the interval `[B, Z]`.
 * `TauCeti.SubquotientPresentation.orderIso`: the order isomorphism from the subobjects of `X`
@@ -55,11 +61,15 @@ pages.
 * `TauCeti.SubquotientPresentation.mapIso`: transport along an isomorphism `X ≅ Y`.
 * `TauCeti.SubquotientPresentation.isoOfEq`: the isomorphism between two objects presented by the
   same subobjects.
+* `TauCeti.SubquotientPresentation.mapInduced`: the morphism `X ⟶ X'` induced by a morphism
+  `f : A ⟶ A'` sending `P.Z` into `P'.Z` and `P.B` into `P'.B`.
 * `TauCeti.SubquotientPresentation.MapsTo`: a morphism maps one presentation to another over a
   morphism of the presented objects.
 
 ## Main results
 
+* `TauCeti.SubquotientPresentation.isZero_iff_B_eq_Z`: the presented object is zero exactly when
+  the two subobjects agree.
 * `TauCeti.SubquotientPresentation.isGLB_preimage_iff`,
   `TauCeti.SubquotientPresentation.isLUB_preimage_iff`: preimages preserve and reflect
   greatest lower bounds and least upper bounds of nonempty families; and
@@ -73,8 +83,10 @@ pages.
 * `TauCeti.SubquotientPresentation.trans_subquotient_image`,
   `TauCeti.SubquotientPresentation.subquotient_subquotient_image`: naturality of the presentation
   of a cokernel.
-* `TauCeti.SubquotientPresentation.isZero_iff_B_eq_Z`: the presented object is zero exactly when
-  the two subobjects agree.
+* `TauCeti.SubquotientPresentation.mapInduced_comp`,
+  `TauCeti.SubquotientPresentation.mapInduced_trans`,
+  `TauCeti.SubquotientPresentation.exists_preimage_le_preimage_iff`: functoriality and
+  compatibility of `mapInduced`.
 * `TauCeti.SubquotientPresentation.MapsTo.Z_le_pullback`,
   `TauCeti.SubquotientPresentation.MapsTo.B_le_pullback`: a morphism mapping one presentation to
   another maps the larger and the smaller subobjects into those of the other;
@@ -138,8 +150,20 @@ lemma ofLE_π : ofLE P.B P.Z P.le ≫ P.π = 0 := by
 
 /-- The kernel of the projection is the smaller subobject, seen inside the larger one. -/
 lemma kernelSubobject_π : kernelSubobject P.π = (Subobject.pullback P.Z.arrow).obj P.B := by
-  rw [← cokernel_π_iso_hom, kernelSubobject_comp_mono, kernelSubobject_cokernel_π,
-    pullback_arrow_of_le]
+  rw [← cokernel_π_iso_hom, kernelSubobject_comp_mono,
+    kernelSubobject_cokernel_π_of_isNormalMonoCategory, pullback_arrow_of_le]
+
+/-- A morphism out of `P.Z` that vanishes on `P.B` descends uniquely to `X`. -/
+noncomputable def desc (f : (P.Z : C) ⟶ Y) (hf : ofLE P.B P.Z P.le ≫ f = 0) : X ⟶ Y :=
+  P.iso.inv ≫ cokernel.desc (ofLE P.B P.Z P.le) f hf
+
+@[reassoc (attr := simp)]
+lemma π_desc (f : (P.Z : C) ⟶ Y) (hf : ofLE P.B P.Z P.le ≫ f = 0) :
+    P.π ≫ P.desc f hf = f := by
+  rw [← cokernel_π_iso_hom, Category.assoc, desc, Iso.hom_inv_id_assoc, cokernel.π_desc]
+
+lemma hom_ext {g₁ g₂ : X ⟶ Y} (h : P.π ≫ g₁ = P.π ≫ g₂) : g₁ = g₂ :=
+  (cancel_epi P.π).mp h
 
 end Basic
 
@@ -203,6 +227,33 @@ lemma ofEpi_π (P : SubquotientPresentation A X) : ofEpi P.le P.π P.kernelSubob
   ext rfl rfl (by
     rw [π_ofEpi]
     exact (ofLE_self_comp _ _).symm)
+
+section OfIsColimit
+
+variable {B Z : Subobject A} (le : B ≤ Z) (g : (Z : C) ⟶ X)
+  (w : ofLE B Z le ≫ g = 0) (hc : IsColimit (CokernelCofork.ofπ g w))
+
+/-- The subquotient presentation given by a cokernel colimit cocone `B ⟶ Z ⟶ X`. -/
+noncomputable def ofIsColimit : SubquotientPresentation A X where
+  B := B
+  Z := Z
+  le := le
+  iso := (cokernelIsCokernel _).coconePointUniqueUpToIso hc
+
+@[simp]
+lemma ofIsColimit_B : (ofIsColimit le g w hc).B = B := (rfl)
+
+@[simp]
+lemma ofIsColimit_Z : (ofIsColimit le g w hc).Z = Z := (rfl)
+
+/-- The projection of the presentation given by a colimit cokernel cocone, as a morphism out of
+`Z`. -/
+lemma π_ofIsColimit :
+    (ofIsColimit le g w hc).π = ofLE _ Z (ofIsColimit_Z le g w hc).le ≫ g :=
+  ((cokernelIsCokernel _).comp_coconePointUniqueUpToIso_hom hc WalkingParallelPair.one).trans
+    (ofLE_self_comp _ _).symm
+
+end OfIsColimit
 
 section Preimage
 
@@ -280,6 +331,14 @@ lemma preimage_le_preimage_iff {K L : Subobject X} : P.preimage K ≤ P.preimage
 lemma preimage_inj {K L : Subobject X} : P.preimage K = P.preimage L ↔ K = L :=
   P.preimage_injective.eq_iff
 
+@[simp]
+lemma preimage_eq_Z_iff {K : Subobject X} : P.preimage K = P.Z ↔ K = ⊤ := by
+  rw [← P.preimage_top, P.preimage_inj]
+
+@[simp]
+lemma preimage_eq_B_iff {K : Subobject X} : P.preimage K = P.B ↔ K = ⊥ := by
+  rw [← P.preimage_bot, P.preimage_inj]
+
 /-- The presented object is zero exactly when the two subobjects of the presentation agree. -/
 lemma isZero_iff_B_eq_Z : IsZero X ↔ P.B = P.Z := by
   rw [← P.preimage_bot, ← P.preimage_top, preimage_inj]
@@ -351,6 +410,22 @@ lemma isLUB_preimage_iff (hs : s.Nonempty) {K : Subobject X} :
         (h.2 fun L hL ↦ P.preimage_le_preimage_iff.1 ((hup L hL).trans_eq hmem.symm))
     _ = S ⊓ P.Z := hmem
     _ ≤ S := inf_le_left
+
+/-- Existence of a greatest lower bound for a nonempty family is preserved and reflected by
+`P.preimage`. -/
+lemma exists_isGLB_preimage_iff (hs : s.Nonempty) :
+    (∃ M, IsGLB (P.preimage '' s) M) ↔ ∃ m, IsGLB s m :=
+  ⟨fun ⟨M, hM⟩ ↦ ⟨P.image M, (P.isGLB_preimage_iff hs).1 <| by
+      rwa [P.preimage_image_of_isGLB hs hM]⟩,
+   fun ⟨m, hm⟩ ↦ ⟨P.preimage m, (P.isGLB_preimage_iff hs).2 hm⟩⟩
+
+/-- Existence of a least upper bound for a nonempty family is preserved and reflected by
+`P.preimage`. -/
+lemma exists_isLUB_preimage_iff (hs : s.Nonempty) :
+    (∃ M, IsLUB (P.preimage '' s) M) ↔ ∃ m, IsLUB s m :=
+  ⟨fun ⟨M, hM⟩ ↦ ⟨P.image M, (P.isLUB_preimage_iff hs).1 <| by
+      rwa [P.preimage_image_of_isLUB hs hM]⟩,
+   fun ⟨m, hm⟩ ↦ ⟨P.preimage m, (P.isLUB_preimage_iff hs).2 hm⟩⟩
 
 end Bounds
 
@@ -585,6 +660,16 @@ lemma π_mapIso' (e : X ≅ Y) : (P.mapIso e).π = ofLE _ P.Z (P.mapIso_Z e).le 
   exact (ofLE_self_comp _ _).symm
 
 @[simp]
+lemma mapIso_refl : P.mapIso (Iso.refl X) = P :=
+  ext rfl rfl (by rw [π_mapIso', Iso.refl_hom, Category.comp_id])
+
+@[simp]
+lemma mapIso_trans (e₁ : X ≅ Y) (e₂ : Y ≅ W) :
+    (P.mapIso e₁).mapIso e₂ = P.mapIso (e₁ ≪≫ e₂) :=
+  ext rfl rfl (by
+    simp only [π_mapIso', ofLE_comp_ofLE_assoc, Iso.trans_hom, Category.assoc])
+
+@[simp]
 lemma preimage_mapIso (e : X ≅ Y) (K : Subobject Y) :
     (P.mapIso e).preimage K = P.preimage ((Subobject.pullback e.hom).obj K) := by
   rw [preimage, preimage, π_mapIso]
@@ -616,6 +701,93 @@ subobjects gives that presentation. -/
 lemma mapIso_isoOfEq (P' : SubquotientPresentation A Y) (hB : P.B = P'.B) (hZ : P.Z = P'.Z) :
     P.mapIso (P.isoOfEq P' hB hZ) = P' :=
   ext hB hZ (by rw [π_mapIso', π_isoOfEq_hom, ofLE_comp_ofLE_assoc])
+
+/-- Equal subquotient presentations of `Y` inside `A` have equal projections out of any common
+subobject `S ≤ Q₁.Z, Q₂.Z`. -/
+lemma π_congr {Q₁ Q₂ : SubquotientPresentation A Y} (h : Q₁ = Q₂)
+    {S : Subobject A} (h₁ : S ≤ Q₁.Z) (h₂ : S ≤ Q₂.Z) :
+    ofLE S Q₁.Z h₁ ≫ Q₁.π = ofLE S Q₂.Z h₂ ≫ Q₂.π := by
+  subst h; rfl
+
+lemma mapIso_injective : Function.Injective (P.mapIso (Y := Y)) := fun e₁ e₂ h ↦ by
+  -- Plain `congrArg π` fails because the domain `(Q.Z : C)` of `Q.π` depends on `Q.Z`.
+  have hπ : P.π ≫ e₁.hom = P.π ≫ e₂.hom := by
+    simpa only [π_mapIso', ofLE_comp_ofLE_assoc, ofLE_refl, Category.id_comp] using
+      π_congr h (P.mapIso_Z e₁).ge (P.mapIso_Z e₂).ge
+  exact Iso.ext ((cancel_epi P.π).mp hπ)
+
+lemma isoOfEq_congr {P₁ P₂ : SubquotientPresentation A X}
+    {Q₁ Q₂ : SubquotientPresentation A Y} (hP : P₁ = P₂) (hQ : Q₁ = Q₂)
+    {hB₁ : P₁.B = Q₁.B} {hZ₁ : P₁.Z = Q₁.Z} {hB₂ : P₂.B = Q₂.B} {hZ₂ : P₂.Z = Q₂.Z} :
+    P₁.isoOfEq Q₁ hB₁ hZ₁ = P₂.isoOfEq Q₂ hB₂ hZ₂ := by
+  subst hP hQ; rfl
+
+@[simp]
+lemma isoOfEq_self (hB : P.B = P.B) (hZ : P.Z = P.Z) :
+    P.isoOfEq P hB hZ = Iso.refl X :=
+  P.mapIso_injective (by simp)
+
+lemma isoOfEq_eq_refl {P Q : SubquotientPresentation A X} (h : P = Q)
+    {hB : P.B = Q.B} {hZ : P.Z = Q.Z} :
+    P.isoOfEq Q hB hZ = Iso.refl X := by
+  subst h; simp
+
+@[simp]
+lemma isoOfEq_trans {P' : SubquotientPresentation A Y} {P'' : SubquotientPresentation A W}
+    (hB : P.B = P'.B) (hZ : P.Z = P'.Z) (hB' : P'.B = P''.B) (hZ' : P'.Z = P''.Z) :
+    P.isoOfEq P' hB hZ ≪≫ P'.isoOfEq P'' hB' hZ' =
+      P.isoOfEq P'' (hB.trans hB') (hZ.trans hZ') :=
+  P.mapIso_injective (by simp [← mapIso_trans])
+
+@[simp]
+lemma isoOfEq_symm (P' : SubquotientPresentation A Y) (hB : P.B = P'.B) (hZ : P.Z = P'.Z) :
+    (P.isoOfEq P' hB hZ).symm = P'.isoOfEq P hB.symm hZ.symm :=
+  P'.mapIso_injective (calc
+    P'.mapIso (P.isoOfEq P' hB hZ).symm
+      = (P.mapIso (P.isoOfEq P' hB hZ)).mapIso (P.isoOfEq P' hB hZ).symm := by
+        rw [mapIso_isoOfEq]
+    _ = P := by rw [mapIso_trans, Iso.self_symm_id, mapIso_refl]
+    _ = P'.mapIso (P'.isoOfEq P hB.symm hZ.symm) := (P'.mapIso_isoOfEq P hB.symm hZ.symm).symm)
+
+@[simp]
+lemma isoOfEq_mapIso (P' : SubquotientPresentation A Y) (e : Y ≅ W)
+    (hB : P.B = (P'.mapIso e).B) (hZ : P.Z = (P'.mapIso e).Z) :
+    P.isoOfEq (P'.mapIso e) hB hZ =
+      P.isoOfEq P' (hB.trans (P'.mapIso_B e)) (hZ.trans (P'.mapIso_Z e)) ≪≫ e :=
+  P.mapIso_injective (by rw [mapIso_isoOfEq, ← mapIso_trans, mapIso_isoOfEq])
+
+lemma isoOfEq_trans_iso (P' : SubquotientPresentation A Y) (e : Y ≅ W)
+    (hB : P.B = P'.B) (hZ : P.Z = P'.Z) :
+    P.isoOfEq P' hB hZ ≪≫ e =
+      P.isoOfEq (P'.mapIso e) (hB.trans (P'.mapIso_B e).symm)
+        (hZ.trans (P'.mapIso_Z e).symm) :=
+  (P.isoOfEq_mapIso P' e _ _).symm
+
+@[simp]
+lemma mapIso_isoOfEq_left (e : X ≅ Y) (P' : SubquotientPresentation A W)
+    (hB : (P.mapIso e).B = P'.B) (hZ : (P.mapIso e).Z = P'.Z) :
+    (P.mapIso e).isoOfEq P' hB hZ =
+      e.symm ≪≫ P.isoOfEq P' ((P.mapIso_B e).symm.trans hB) ((P.mapIso_Z e).symm.trans hZ) :=
+  (P.mapIso e).mapIso_injective (by
+    rw [mapIso_isoOfEq, ← mapIso_trans, mapIso_trans P e e.symm, Iso.self_symm_id, mapIso_refl,
+      mapIso_isoOfEq])
+
+/-- An isomorphism between two composite presentations with a common left factor `P` agrees with
+the isomorphism between the right factors. -/
+@[simp]
+lemma trans_isoOfEq (Q₁ : SubquotientPresentation X Y) (Q₂ : SubquotientPresentation X W)
+    (hB : (P.trans Q₁).B = (P.trans Q₂).B) (hZ : (P.trans Q₁).Z = (P.trans Q₂).Z) :
+    (P.trans Q₁).isoOfEq (P.trans Q₂) hB hZ =
+      Q₁.isoOfEq Q₂ (P.preimage_inj.mp hB) (P.preimage_inj.mp hZ) :=
+  (P.trans Q₁).mapIso_injective (by rw [mapIso_isoOfEq, ← trans_mapIso, mapIso_isoOfEq])
+
+/-- Lifting `isoOfEq` along a left composition factor `P` agrees with `isoOfEq` on the composite
+presentations. -/
+lemma isoOfEq_eq_trans (Q₁ : SubquotientPresentation X Y) (Q₂ : SubquotientPresentation X W)
+    (hB : Q₁.B = Q₂.B) (hZ : Q₁.Z = Q₂.Z) :
+    Q₁.isoOfEq Q₂ hB hZ = (P.trans Q₁).isoOfEq (P.trans Q₂)
+      (by rw [trans_B, trans_B, hB]) (by rw [trans_Z, trans_Z, hZ]) :=
+  (P.trans_isoOfEq Q₁ Q₂ _ _).symm
 
 end MapIso
 
@@ -655,6 +827,117 @@ lemma subquotient_subquotient_image {I I' K' K : Subobject X} (h : I ≤ K) (hI 
   P.trans_subquotient_image _ hI h' hK
 
 end Naturality
+
+section MapInduced
+
+variable {A' A'' X' X'' : C} (P : SubquotientPresentation A X)
+  (P' : SubquotientPresentation A' X')
+
+/-- Lift a morphism `f : A ⟶ A'` to `P.Z ⟶ P'.Z` when `(Subobject.exists f).obj P.Z ≤ P'.Z`. -/
+noncomputable def liftZ (f : A ⟶ A') (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z) :
+    (P.Z : C) ⟶ (P'.Z : C) :=
+  P'.Z.factorThru (P.Z.arrow ≫ f) (Subobject.factors_of_exists_le hZ)
+
+@[reassoc (attr := simp)]
+lemma liftZ_arrow (f : A ⟶ A') (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z) :
+    P.liftZ P' f hZ ≫ P'.Z.arrow = P.Z.arrow ≫ f :=
+  factorThru_arrow _ _ _
+
+/-- Lift a morphism `f : A ⟶ A'` to `P.B ⟶ P'.B` when `(Subobject.exists f).obj P.B ≤ P'.B`. -/
+noncomputable def liftB (f : A ⟶ A') (hB : (Subobject.exists f).obj P.B ≤ P'.B) :
+    (P.B : C) ⟶ (P'.B : C) :=
+  P'.B.factorThru (P.B.arrow ≫ f) (Subobject.factors_of_exists_le hB)
+
+@[reassoc (attr := simp)]
+lemma liftB_arrow (f : A ⟶ A') (hB : (Subobject.exists f).obj P.B ≤ P'.B) :
+    P.liftB P' f hB ≫ P'.B.arrow = P.B.arrow ≫ f :=
+  factorThru_arrow _ _ _
+
+/-- The morphism `X ⟶ X'` induced by `f : A ⟶ A'` sending `P.Z` into `P'.Z` and `P.B` into
+`P'.B`. -/
+noncomputable def mapInduced (f : A ⟶ A') (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z)
+    (hB : (Subobject.exists f).obj P.B ≤ P'.B) : X ⟶ X' :=
+  P.desc (P.liftZ P' f hZ ≫ P'.π) (by
+    have hsq : ofLE P.B P.Z P.le ≫ P.liftZ P' f hZ =
+        P.liftB P' f hB ≫ ofLE P'.B P'.Z P'.le := by
+      simp [← cancel_mono P'.Z.arrow]
+    rw [reassoc_of% hsq, P'.ofLE_π, comp_zero])
+
+@[reassoc (attr := simp)]
+lemma π_mapInduced (f : A ⟶ A') (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z)
+    (hB : (Subobject.exists f).obj P.B ≤ P'.B) :
+    P.π ≫ P.mapInduced P' f hZ hB = P.liftZ P' f hZ ≫ P'.π :=
+  P.π_desc _ _
+
+lemma mapInduced_unique (f : A ⟶ A') (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z)
+    (hB : (Subobject.exists f).obj P.B ≤ P'.B) {g : X ⟶ X'}
+    (hg : P.π ≫ g = P.liftZ P' f hZ ≫ P'.π) : g = P.mapInduced P' f hZ hB :=
+  P.hom_ext (by rw [hg, P.π_mapInduced])
+
+/-- `mapInduced` is invariant under replacing the presentations or the morphism by equal ones. -/
+lemma mapInduced_congr {P₁ P₂ : SubquotientPresentation A X}
+    {P₁' P₂' : SubquotientPresentation A' X'} {f g : A ⟶ A'} (hp : P₁ = P₂) (hp' : P₁' = P₂')
+    (hfg : f = g) (hZ₁ : (Subobject.exists f).obj P₁.Z ≤ P₁'.Z)
+    (hB₁ : (Subobject.exists f).obj P₁.B ≤ P₁'.B) (hZ₂ : (Subobject.exists g).obj P₂.Z ≤ P₂'.Z)
+    (hB₂ : (Subobject.exists g).obj P₂.B ≤ P₂'.B) :
+    P₁.mapInduced P₁' f hZ₁ hB₁ = P₂.mapInduced P₂' g hZ₂ hB₂ := by
+  subst hp hp' hfg; rfl
+
+@[simp]
+lemma mapInduced_id
+    (hZ : (Subobject.exists (𝟙 A)).obj P.Z ≤ P.Z := (Subobject.exists_id P.Z).le)
+    (hB : (Subobject.exists (𝟙 A)).obj P.B ≤ P.B := (Subobject.exists_id P.B).le) :
+    P.mapInduced P (𝟙 A) hZ hB = 𝟙 X := by
+  have hlift : P.liftZ P (𝟙 A) hZ = 𝟙 (P.Z : C) := by
+    rw [← cancel_mono P.Z.arrow]; simp
+  exact (P.mapInduced_unique P (𝟙 A) hZ hB (by rw [hlift, Category.comp_id, Category.id_comp])).symm
+
+@[simp]
+lemma refl_mapInduced_refl (f : A ⟶ A')
+    (hZ : (Subobject.exists f).obj (refl A).Z ≤ (refl A').Z)
+    (hB : (Subobject.exists f).obj (refl A).B ≤ (refl A').B) :
+    (refl A).mapInduced (refl A') f hZ hB = f :=
+  ((refl A).mapInduced_unique (refl A') f hZ hB (by
+    rw [π_refl, π_refl]
+    exact ((refl A).liftZ_arrow (refl A') f hZ).symm)).symm
+
+lemma mapInduced_comp (P'' : SubquotientPresentation A'' X'') (f : A ⟶ A') (g : A' ⟶ A'')
+    (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z) (hB : (Subobject.exists f).obj P.B ≤ P'.B)
+    (hZ' : (Subobject.exists g).obj P'.Z ≤ P''.Z) (hB' : (Subobject.exists g).obj P'.B ≤ P''.B) :
+    P.mapInduced P'' (f ≫ g)
+        ((Subobject.exists_comp f g P.Z).symm ▸ ((Subobject.exists g).monotone hZ).trans hZ')
+        ((Subobject.exists_comp f g P.B).symm ▸ ((Subobject.exists g).monotone hB).trans hB') =
+      P.mapInduced P' f hZ hB ≫ P'.mapInduced P'' g hZ' hB' :=
+  (P.mapInduced_unique P'' (f ≫ g) _ _ (by
+    rw [P.π_mapInduced_assoc, P'.π_mapInduced, ← Category.assoc]
+    congr 1; rw [← cancel_mono P''.Z.arrow]; simp)).symm
+
+/-- Compatibility of `mapInduced` with preimages. -/
+lemma exists_preimage_le_preimage_iff (f : A ⟶ A')
+    (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z) (hB : (Subobject.exists f).obj P.B ≤ P'.B)
+    (S : Subobject X) (S' : Subobject X') :
+    (Subobject.exists f).obj (P.preimage S) ≤ P'.preimage S' ↔
+      (Subobject.exists (P.mapInduced P' f hZ hB)).obj S ≤ S' := by
+  have hLift : (P.preimage S).arrow ≫ f =
+      (ofLE (P.preimage S) P.Z (P.preimage_le_Z S) ≫ P.liftZ P' f hZ) ≫ P'.Z.arrow := by
+    simp
+  have hProj : (ofLE (P.preimage S) P.Z (P.preimage_le_Z S) ≫ P.liftZ P' f hZ) ≫ P'.π =
+      P.preimageπ S ≫ S.arrow ≫ P.mapInduced P' f hZ hB := by
+    simp
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have hfac : S'.Factors (S.arrow ≫ P.mapInduced P' f hZ hB) := by
+      have h1 := Subobject.factors_of_exists_le h
+      rw [hLift, P'.factors_preimage_iff, hProj, Subobject.factors_comp_iff_of_epi] at h1
+      exact h1
+    exact Subobject.exists_le_of_comm _ (S'.factorThru _ hfac) (S'.factorThru_arrow _ _)
+  · have hfac : (P'.preimage S').Factors ((P.preimage S).arrow ≫ f) := by
+      have h1 := Subobject.factors_of_exists_le h
+      rw [hLift, P'.factors_preimage_iff, hProj]
+      exact Subobject.factors_of_factors_right _ h1
+    exact Subobject.exists_le_of_comm f ((P'.preimage S').factorThru _ hfac)
+      ((P'.preimage S').factorThru_arrow _ _)
+
+end MapInduced
 
 section MapsTo
 
@@ -699,6 +982,35 @@ lemma MapsTo.Z_le_pullback (h : P.MapsTo P' φ g) : P.Z ≤ (Subobject.pullback 
 lemma MapsTo.B_le_pullback (h : P.MapsTo P' φ g) : P.B ≤ (Subobject.pullback φ).obj P'.B :=
   (P.B_le_preimage _).trans (by simpa using h.le_pullback_preimage ⊥)
 
+/-- If `φ` maps `P` to `P'` over `g`, then the induced morphism equals `g`. -/
+lemma MapsTo.mapInduced_eq (h : P.MapsTo P' φ g)
+    (hZ : (Subobject.exists φ).obj P.Z ≤ P'.Z :=
+      (Subobject.existsPullbackAdj φ).gc.le_iff_le.mpr h.Z_le_pullback)
+    (hB : (Subobject.exists φ).obj P.B ≤ P'.B :=
+      (Subobject.existsPullbackAdj φ).gc.le_iff_le.mpr h.B_le_pullback) :
+    P.mapInduced P' φ hZ hB = g := by
+  obtain ⟨ψ, hψ, hψπ⟩ := h
+  have hlift : ψ = P.liftZ P' φ hZ := by
+    rw [← cancel_mono P'.Z.arrow, hψ, liftZ_arrow]
+  exact (P.mapInduced_unique P' φ hZ hB (by rw [← hψπ, hlift])).symm
+
+/-- The induced morphism makes `f` map `P` to `P'` over `P.mapInduced P' f hZ hB`. -/
+lemma mapsTo_mapInduced (P : SubquotientPresentation A X) (P' : SubquotientPresentation A' X')
+    (f : A ⟶ A') (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z)
+    (hB : (Subobject.exists f).obj P.B ≤ P'.B) :
+    P.MapsTo P' f (P.mapInduced P' f hZ hB) :=
+  ⟨P.liftZ P' f hZ, P.liftZ_arrow P' f hZ, (P.π_mapInduced P' f hZ hB).symm⟩
+
+/-- A morphism `φ : A ⟶ A'` maps `P` to `P'` over `g` if and only if it maps `P.Z` into `P'.Z`
+and `P.B` into `P'.B` and the induced morphism equals `g`. -/
+lemma mapsTo_iff_mapInduced :
+    P.MapsTo P' φ g ↔
+      ∃ (hZ : (Subobject.exists φ).obj P.Z ≤ P'.Z)
+        (hB : (Subobject.exists φ).obj P.B ≤ P'.B), P.mapInduced P' φ hZ hB = g :=
+  ⟨fun h ↦ ⟨(Subobject.existsPullbackAdj φ).gc.le_iff_le.mpr h.Z_le_pullback,
+      (Subobject.existsPullbackAdj φ).gc.le_iff_le.mpr h.B_le_pullback, h.mapInduced_eq⟩,
+   fun ⟨hZ, hB, hg⟩ ↦ hg ▸ P.mapsTo_mapInduced P' φ hZ hB⟩
+
 /-- The identity presentations are mapped to each other by any morphism, over itself. -/
 lemma mapsTo_refl (φ : A ⟶ A') : (refl A).MapsTo (refl A') φ φ :=
   ⟨(refl A').Z.factorThru ((refl A).Z.arrow ≫ φ) (by rw [refl_Z]; exact top_factors _),
@@ -734,6 +1046,41 @@ lemma MapsTo.mapIso (h : P.MapsTo P' φ g) {e : X ≅ Y} {e' : X' ≅ Y'} {g' : 
   refine ⟨ofLE _ _ (P.mapIso_Z e).le ≫ ψ ≫ ofLE _ _ (P'.mapIso_Z e').ge, by simp [hψ], ?_⟩
   rw [π_mapIso', π_mapIso']
   simp [ofLE_comp_ofLE_assoc, reassoc_of% hψπ, hg]
+
+lemma mapInduced_mapIso (P : SubquotientPresentation A X) (P' : SubquotientPresentation A' X')
+    (e : X ≅ Y) (e' : X' ≅ W) (f : A ⟶ A')
+    (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z) (hB : (Subobject.exists f).obj P.B ≤ P'.B) :
+    (P.mapIso e).mapInduced (P'.mapIso e') f hZ hB =
+      e.inv ≫ P.mapInduced P' f hZ hB ≫ e'.hom :=
+  ((P.mapsTo_mapInduced P' f hZ hB).mapIso (e := e) (e' := e')
+    (by rw [Iso.hom_inv_id_assoc])).mapInduced_eq hZ hB
+
+/-- Isomorphisms `isoOfEq` commute with morphisms induced by the same ambient morphism. -/
+@[reassoc]
+lemma mapInduced_comp_isoOfEq_hom (P : SubquotientPresentation A X)
+    (P' : SubquotientPresentation A' X') {Q : SubquotientPresentation A Y}
+    {Q' : SubquotientPresentation A' Y'} (hB : P.B = Q.B) (hZ : P.Z = Q.Z)
+    (hB' : P'.B = Q'.B) (hZ' : P'.Z = Q'.Z) (f : A ⟶ A')
+    (hZP : (Subobject.exists f).obj P.Z ≤ P'.Z) (hBP : (Subobject.exists f).obj P.B ≤ P'.B) :
+    P.mapInduced P' f hZP hBP ≫ (P'.isoOfEq Q' hB' hZ').hom =
+      (P.isoOfEq Q hB hZ).hom ≫
+        Q.mapInduced Q' f (by rw [← hZ, ← hZ']; exact hZP) (by rw [← hB, ← hB']; exact hBP) := by
+  have h := (mapInduced_congr (P.mapIso_isoOfEq Q hB hZ) (P'.mapIso_isoOfEq Q' hB' hZ') rfl
+    hZP hBP (by rw [← hZ, ← hZ']; exact hZP) (by rw [← hB, ← hB']; exact hBP)).symm.trans
+    (P.mapInduced_mapIso P' (P.isoOfEq Q hB hZ) (P'.isoOfEq Q' hB' hZ') f hZP hBP)
+  rw [h, Iso.hom_inv_id_assoc]
+
+/-- Compatibility of `mapInduced` with composition of subquotient presentations. -/
+lemma mapInduced_trans (P : SubquotientPresentation A X) (P' : SubquotientPresentation A' X')
+    (Q : SubquotientPresentation X Y) (Q' : SubquotientPresentation X' Y') (f : A ⟶ A')
+    (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z) (hB : (Subobject.exists f).obj P.B ≤ P'.B)
+    (hZq : (Subobject.exists (P.mapInduced P' f hZ hB)).obj Q.Z ≤ Q'.Z)
+    (hBq : (Subobject.exists (P.mapInduced P' f hZ hB)).obj Q.B ≤ Q'.B) :
+    (P.trans Q).mapInduced (P'.trans Q') f
+        ((P.exists_preimage_le_preimage_iff P' f hZ hB Q.Z Q'.Z).mpr hZq)
+        ((P.exists_preimage_le_preimage_iff P' f hZ hB Q.B Q'.B).mpr hBq) =
+      Q.mapInduced Q' (P.mapInduced P' f hZ hB) hZq hBq :=
+  ((P.mapsTo_mapInduced P' f hZ hB).trans (Q.mapsTo_mapInduced Q' _ hZq hBq)).mapInduced_eq _ _
 
 end MapsTo
 

@@ -289,9 +289,10 @@ def serreCohomologySpectralSequenceIdSecondPageXIsoSingularCohomology (s : ℕ) 
     (hs : st.1 = s) (ht : st.2 = 0) :
     ((serreCohomologySpectralSequence univ (𝟙 B) R k M).page 2).X st ≅
       B.singularCohomology (ModuleCat.of R R) k M s :=
-  ((serreCohomologySpectralSequence univ (𝟙 B) R k M).pageXIsoOfLEOfIsZero (r := 2) (by norm_num)
-      (isZero_serreCohomologySpectralSequence_id_page_two_X_of_rel R k M ht) (s + 3)
-        (by lia)).symm ≪≫
+  (serreCohomologySpectralSequence univ (𝟙 B) R k M).pageXIsoOfStabilises st 2 (by norm_num)
+      ((serreCohomologySpectralSequence univ (𝟙 B) R k M).stabilisesAt_of_forall_isZero
+        (by norm_num) (isZero_serreCohomologySpectralSequence_id_page_two_X_of_rel R k M ht))
+      (s + 3) (by lia) ≪≫
     serreCohomologySpectralSequencePageXIsoGraded (MorphismProperty.id_mem _ B) R k M (K := univ)
       (subset_univ _) (s + 3) (by lia) st.1 st.2 (by lia) (by lia) ≪≫
     cokernelSerreCohomologySpectralObjectIdAbutmentFiltrationMapIso R k M s _ _ (by lia) (by lia)
@@ -304,9 +305,11 @@ graded piece with `H^s(B; M)`
 lemma serreCohomologySpectralSequenceIdSecondPageXIsoSingularCohomology_hom (s : ℕ) (st : ℤ × ℤ)
     (hs : st.1 = s) (ht : st.2 = 0) :
     (serreCohomologySpectralSequenceIdSecondPageXIsoSingularCohomology R k M s st hs ht).hom =
-      ((serreCohomologySpectralSequence univ (𝟙 B) R k M).pageXIsoOfLEOfIsZero (r := 2)
-          (by norm_num) (isZero_serreCohomologySpectralSequence_id_page_two_X_of_rel R k M ht)
-          (s + 3) (by lia)).inv ≫
+      ((serreCohomologySpectralSequence univ (𝟙 B) R k M).pageXIsoOfStabilises st 2
+        (by norm_num)
+        ((serreCohomologySpectralSequence univ (𝟙 B) R k M).stabilisesAt_of_forall_isZero
+          (by norm_num) (isZero_serreCohomologySpectralSequence_id_page_two_X_of_rel R k M ht))
+        (s + 3) (by lia)).hom ≫
         (serreCohomologySpectralSequencePageXIsoGraded (MorphismProperty.id_mem _ B) R k M
           (K := univ) (subset_univ _) (s + 3) (by lia) st.1 st.2 (by lia) (by lia)).hom ≫
         (cokernelSerreCohomologySpectralObjectIdAbutmentFiltrationMapIso R k M s _ _ (by lia)
