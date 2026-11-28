@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
 public import TauCeti.AlgebraicTopology.SimplicialSet.KanComplex.PtSimplex
 import TauCeti.AlgebraicTopology.Quasicategory.Core
 
@@ -23,6 +24,8 @@ Functions on `π n X x` are defined by `SSet.KanComplex.π.lift` from functions 
 which agree on homotopic ones.
 A morphism `f : X ⟶ Y` sending `x` to `y` induces `SSet.KanComplex.π.map f : π n X x → π n Y y`,
 functorially, and a group homomorphism `SSet.KanComplex.π.mapHom f` between Kan complexes.
+In degree zero, `SSet.KanComplex.π.zeroEquiv` identifies these pointed homotopy classes with
+the connected components `SSet.π₀ X`, naturally in simplicial maps, without a Kan assumption.
 
 These combinatorial homotopy groups are the ones to compare with the homotopy groups of a
 topological space `T` through the Kan complex `TopCat.toSSet.obj T`.
@@ -125,6 +128,43 @@ lemma map_map (g : Y ⟶ Z) (hz : g.app _ y = z) (a : π n X x) :
 
 end map
 
+/-- Degree-zero pointed homotopy classes are the connected components of the simplicial set.
+The chosen base vertex determines the distinguished class but does not restrict the vertices
+represented in degree zero. -/
+def zeroEquiv (X : SSet.{u}) (x : X _⦋0⦌) : π 0 X x ≃ π₀ X where
+  toFun := lift (fun p ↦ π₀.mk (PtSimplex.equiv₀ x p)) fun _ _ h ↦
+    π₀.sound (PtSimplex.RelStruct₀.equiv₀ h.relStruct₀Zero)
+  invFun := π₀.lift (fun y ↦ mk ((PtSimplex.equiv₀ x).symm y)) fun a b e ↦
+    mk_eq_mk_of_homotopy ((PtSimplex.RelStruct₀.equiv₀
+      (f := (PtSimplex.equiv₀ x).symm b) (g := (PtSimplex.equiv₀ x).symm a)).symm
+        (by simpa using e)).homotopy
+  left_inv a := by
+    induction a with
+    | mk p => exact congrArg mk ((PtSimplex.equiv₀ x).symm_apply_apply p)
+  right_inv c := by
+    induction c using π₀.rec with
+    | mk y => exact congrArg π₀.mk ((PtSimplex.equiv₀ x).apply_symm_apply y)
+
+@[simp]
+lemma zeroEquiv_mk (p : X.PtSimplex 0 x) :
+    zeroEquiv X x (mk p) = π₀.mk (PtSimplex.equiv₀ x p) :=
+  (rfl)
+
+@[simp]
+lemma zeroEquiv_symm_mk (y : X _⦋0⦌) :
+    (zeroEquiv X x).symm (π₀.mk y) = mk ((PtSimplex.equiv₀ x).symm y) :=
+  (rfl)
+
+@[simp]
+lemma zeroEquiv_one : zeroEquiv X x 1 = π₀.mk x := by
+  simp [one_def, PtSimplex.equiv₀_apply, yonedaEquiv_const]
+
+/-- The degree-zero comparison commutes with the maps induced by simplicial maps. -/
+@[simp]
+lemma zeroEquiv_map {Y : SSet.{u}} {y : Y _⦋0⦌} (f : X ⟶ Y) (hy : f.app _ x = y)
+    (a : π 0 X x) : zeroEquiv Y y (map f hy a) = mapπ₀ f (zeroEquiv X x a) := by
+  induction a with | mk p => simp [PtSimplex.equiv₀_apply, yonedaEquiv_comp]
+
 variable [KanComplex X]
 
 /-- In a Kan complex, two pointed simplices have the same class exactly when they are related by
@@ -132,20 +172,9 @@ variable [KanComplex X]
 lemma mk_eq_mk_iff {p q : X.PtSimplex n x} :
     mk p = mk q ↔ Nonempty (p.RelStruct₀ q) := by
   obtain _ | n := n
-  · refine ⟨fun h ↦ ?_, fun ⟨h⟩ ↦ (mk_eq_mk_of_homotopy h.homotopy).symm⟩
-    -- Two homotopic vertices are joined by an edge, so they lie in the same component of `X`;
-    -- in a Kan complex, vertices of the same component are joined by an edge.
-    suffices π₀.mk (PtSimplex.equiv₀ x q) = π₀.mk (PtSimplex.equiv₀ x p) from
-      ((π₀.mk_eq_mk_iff_nonempty_edge _ _).1 this).map PtSimplex.RelStruct₀.equiv₀.symm
-    have r := Quot.eq.1 h
-    clear h
-    induction r with
-    | rel p q h =>
-      obtain ⟨h⟩ := h
-      exact (π₀.sound (PtSimplex.RelStruct₀.equiv₀ (PtSimplex.Homotopy.relStruct₀Zero h))).symm
-    | refl p => rfl
-    | symm _ _ _ h => exact h.symm
-    | trans _ _ _ _ _ h₁ h₂ => exact h₂.trans h₁
+  · rw [← (zeroEquiv X x).injective.eq_iff, zeroEquiv_mk, zeroEquiv_mk,
+      eq_comm, π₀.mk_eq_mk_iff_nonempty_edge]
+    exact (PtSimplex.RelStruct₀.equiv₀ (f := p) (g := q)).nonempty_congr.symm
   refine Quot.eq.trans ⟨fun r ↦ ?_, fun ⟨h⟩ ↦ .rel _ _ ⟨h.symm.homotopy⟩⟩
   induction r with
   | rel p q h => exact ⟨PtSimplex.Homotopy.relStruct₀ h.some⟩
