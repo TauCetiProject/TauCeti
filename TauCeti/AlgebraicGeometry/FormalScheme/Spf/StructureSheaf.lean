@@ -666,8 +666,6 @@ theorem toQuotientSheaf_app_basicOpen_comp_quotientSheafBasicOpenIso_hom {I : Id
       (basicOpenSectionsAdicCompletionIso hI f).hom ≫
         CommRingCat.ofHom (AdicCompletion.toQuotient (I.map (algebraMap A (Localization.Away f)))
           ⟨n + 1, (Ideal.map_pow _ _ _).ge.trans (Ideal.map_mono hn)⟩) := by
-  rw [AdicCompletion.toQuotient_eq _ _ ((Ideal.map_pow _ _ _).ge.trans (Ideal.map_mono hn)),
-    AlgHom.toRingHom_eq_coe, CommRingCat.ofHom_comp]
   have hfactor :
       CommRingCat.ofHom
           (Ideal.quotEquivOfEq (Ideal.map_pow (algebraMap A (Localization.Away f)) I
@@ -677,13 +675,22 @@ theorem toQuotientSheaf_app_basicOpen_comp_quotientSheafBasicOpenIso_hom {I : Id
             (Ideal.map_mono hn))) =
       CommRingCat.ofHom (Ideal.Quotient.factor
         (Ideal.map_mono (f := algebraMap A (Localization.Away f)) hn)) := by
-    apply CommRingCat.hom_ext
-    apply Ideal.Quotient.ringHom_ext
-    ext x
-    simp
-  rw [toQuotientSheaf_eq hI hJ hn, TopCat.Sheaf.comp_app, Category.assoc,
-    quotientTransition_app_basicOpen_comp_quotientSheafBasicOpenIso_hom, ← hfactor,
-    basicOpenSectionsAdicCompletionIso_hom_comp_evalₐ_assoc]
+    refine CommRingCat.hom_ext (RingHom.ext fun x ↦ ?_)
+    simp only [CommRingCat.hom_comp, CommRingCat.hom_ofHom, RingHom.comp_apply,
+      RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, Ideal.quotEquivOfEq_eq_factor,
+      Ideal.Quotient.factor_comp_apply]
+  calc
+    _ = (quotientProjection hI n).hom.app (op (basicOpen f)) ≫
+        (quotientSheafBasicOpenIso (is_ideal_adic_pow hI n.succ_pos) f).hom ≫
+          CommRingCat.ofHom (Ideal.Quotient.factor
+            (Ideal.map_mono (f := algebraMap A (Localization.Away f)) hn)) := by
+          rw [toQuotientSheaf_eq hI hJ hn]
+          simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app, Category.assoc]
+          rw [quotientTransition_app_basicOpen_comp_quotientSheafBasicOpenIso_hom]
+    _ = _ := by
+      rw [AdicCompletion.toQuotient_eq _ _ ((Ideal.map_pow _ _ _).ge.trans (Ideal.map_mono hn))]
+      simp only [AlgHom.toRingHom_eq_coe, CommRingCat.ofHom_comp]
+      rw [basicOpenSectionsAdicCompletionIso_hom_comp_evalₐ_assoc, hfactor]
 
 /-- Projection to an infinitesimal thickening is surjective on every basic open. -/
 theorem quotientProjection_app_basicOpen_surjective (hI : IsAdic I) (f : A) (n : ℕ) :

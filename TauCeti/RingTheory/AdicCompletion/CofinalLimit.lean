@@ -23,7 +23,8 @@ extension of the quotient ideal. These projections form a limit cone, and when a
 `I` lies in `J` they assemble into an `R`-algebra homomorphism `AdicCompletion I R →ₐ[R]
 AdicCompletion J R` (`AdicCompletion.ofPowLe`), giving an isomorphism `AdicCompletion.equivOfPowLe`
 whenever `I` and `J` have mutually cofinal powers (for instance when they share a finitely
-generated radical). Neither finite generation nor completeness of the original ring is required.
+generated radical). The limit-cone and completion-comparison results require neither finite
+generation nor completeness of the original ring. The kernel formula assumes `I.FG`.
 
 Reference: Grothendieck–Dieudonné, EGA I, Ch. 0, §7.2 and 7.7.1.
 -/
@@ -63,10 +64,12 @@ theorem ker_toQuotient {K : Ideal R} (hK : ∃ n : ℕ, I ^ n ≤ K) (hfg : I.FG
   have hker : RingHom.ker (evalₐ I n).toRingHom =
       (I ^ n).map (algebraMap R (AdicCompletion I R)) :=
     ker_evalₐ_eq_map_pow hfg n
-  -- Pull back the factor kernel along evaluation and absorb the extended power of `I`.
-  rw [toQuotient_eq I _ hn, ← RingHom.comap_ker, Ideal.Quotient.factor_ker, ← hcomp,
-    ← Ideal.map_map, Ideal.comap_map_of_surjective (evalₐ I n).toRingHom (surjective_evalₐ I n),
-    ← RingHom.ker_eq_comap_bot, hker, sup_eq_left.mpr (Ideal.map_mono hn)]
+  have hpullback : (K.map (Ideal.Quotient.mk (I ^ n))).comap (evalₐ I n).toRingHom =
+      K.map (algebraMap R (AdicCompletion I R)) := by
+    rw [← hcomp, ← Ideal.map_map,
+      Ideal.comap_map_of_surjective' (evalₐ I n).toRingHom (surjective_evalₐ I n), hker]
+    exact sup_eq_left.mpr (Ideal.map_mono hn)
+  simpa only [toQuotient_eq I _ hn, ← RingHom.comap_ker, Ideal.Quotient.factor_ker] using hpullback
 
 /-- On elements of the original ring, projection to a quotient is the quotient map. -/
 @[simp]

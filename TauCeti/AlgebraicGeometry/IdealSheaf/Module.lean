@@ -11,6 +11,7 @@ public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Submodule
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Submodule
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.IdealKernel
 
 /-!
 # The ideal sheaf as a sheaf of modules
@@ -144,17 +145,16 @@ lemma sections_inf {I J : X.IdealSheafData} (U : X.Opens) :
       ⟨map_mem_ideal hI V i, map_mem_ideal hJ V i⟩
 
 /-- The ideal sheaf `I ⊆ 𝒪_X` as a submodule of the sheaf of modules `𝒪_X`. -/
-def submodule : (SheafOfModules.unit X.ringCatSheaf).Submodule where
-  obj U := I.sections U.unop
-  map i _ hs := I.map_mem_sections i.unop hs
-  isSheaf {U} s hs := I.mem_sections_of_forall_exists fun x hx ↦ by
-    obtain ⟨V, i, hi, hxV⟩ := hs x hx
-    exact ⟨V, i, hxV, hi⟩
+def submodule : (SheafOfModules.unit X.ringCatSheaf).Submodule :=
+  Sheaf.idealKernel
+    (J := Opens.grothendieckTopology X)
+    (R := X.sheaf) (S := (TopCat.Sheaf.pushforward CommRingCat I.subschemeι.base).obj
+      I.subscheme.sheaf) ⟨I.subschemeι.c⟩
 
 /-- The component of the submodule `I ⊆ 𝒪_X` at an open is `sections I`. -/
 @[simp]
 lemma submodule_obj (U : X.Opensᵒᵖ) : I.submodule.toSubmodule.obj U = I.sections U.unop :=
-  (rfl)
+  Sheaf.idealKernel_obj _ U
 
 /-- The ideal sheaf `I ⊆ 𝒪_X` as an `𝒪_X`-module. -/
 def sheaf : X.Modules :=
@@ -169,7 +169,9 @@ instance : Mono I.sheafι :=
 
 /-- A regular function lying in `sections I U`, as a section of the ideal sheaf over `U`. -/
 def sectionMk {U : X.Opens} (s : Γ(X, U)) (hs : s ∈ I.sections U) : Γ(I.sheaf, U) :=
-  ⟨s, hs⟩
+  ⟨s, by
+    rw [submodule_obj]
+    exact hs⟩
 
 /-- Including a section built from a regular function recovers that function. -/
 @[simp]
@@ -205,8 +207,10 @@ lemma sheafι_app_map {U V : X.Opens} (i : V ⟶ U) (t : Γ(I.sheaf, U)) :
 
 /-- The inclusion `I ⟶ 𝒪_X` sends a section of the ideal sheaf over `U` into `sections I U`. -/
 lemma sheafι_app_mem (U : X.Opens) (t : Γ(I.sheaf, U)) :
-    Scheme.Modules.Hom.app I.sheafι U t ∈ I.sections U :=
-  t.property
+    Scheme.Modules.Hom.app I.sheafι U t ∈ I.sections U := by
+  have ht : Scheme.Modules.Hom.app I.sheafι U t ∈ I.submodule.toSubmodule.obj (op U) :=
+    t.property
+  rwa [submodule_obj] at ht
 
 /-- Rebuilding a section of `I` from its image in `Γ(X, U)` gives back the section. -/
 @[simp]
@@ -221,8 +225,9 @@ lemma sheafι_app_injective (U : X.Opens) : Function.Injective (Scheme.Modules.H
 /-- The image of the sections of the ideal sheaf in `Γ(X, U)` is `sections I U`. -/
 @[simp]
 lemma range_sheafι_app (U : X.Opens) :
-    Set.range (Scheme.Modules.Hom.app I.sheafι U) = (I.sections U : Set Γ(X, U)) :=
-  I.submodule.toSubmodule.range_ι_app (op U)
+    Set.range (Scheme.Modules.Hom.app I.sheafι U) = (I.sections U : Set Γ(X, U)) := by
+  rw [← I.submodule_obj (op U)]
+  exact I.submodule.toSubmodule.range_ι_app (op U)
 
 /-- Over an affine open `U`, the sections of `Iⁿ` are the regular functions in the ideal
 `I(U)ⁿ`. -/
@@ -235,7 +240,9 @@ theorem range_sheafι_app_pow (U : X.affineOpens) (n : ℕ) :
 def sheafLift {M : X.Modules} (φ : M ⟶ SheafOfModules.unit X.ringCatSheaf)
     (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ I.sections U) :
     M ⟶ I.sheaf :=
-  I.submodule.lift φ fun U s ↦ hφ U.unop s
+  I.submodule.lift φ fun U s ↦ by
+    rw [submodule_obj]
+    exact hφ U.unop s
 
 /-- `sheafLift` factors `φ` through `I`: composing it with the inclusion `I ⟶ 𝒪_X` recovers
 `φ`. -/
