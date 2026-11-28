@@ -13,16 +13,14 @@ public import Mathlib.Combinatorics.SimpleGraph.CompleteMultipartite
 The complete equipartite graph `K_{m × a}` (Mathlib's `SimpleGraph.completeEquipartiteGraph m a`)
 has the vertex set `Fin m × Fin a`, and two vertices are adjacent when they lie in different
 parts, that is, when their first coordinates differ. Its complement `m K_a` is the disjoint union
-of `m` complete graphs on `a` vertices. This file describes the adjacency of the complement, the
-common neighbours in both graphs and the degrees of the complement. These counts are what the
-strong regularity of both graphs needs.
+of `m` complete graphs on `a` vertices. This file describes the common neighbours in both graphs
+and the degrees of the complement. These counts are what the strong regularity of both graphs
+needs.
 
 ## Main results
 
 * `SimpleGraph.commonNeighbors_completeEquipartiteGraph`: the common neighbours of `v` and `w`
   in `K_{m × a}` are the vertices outside the parts of `v` and `w`.
-* `SimpleGraph.compl_completeEquipartiteGraph_adj`: two vertices are adjacent in `m K_a` exactly
-  when they are distinct and lie in the same part.
 * `SimpleGraph.commonNeighbors_compl_completeEquipartiteGraph`: the common neighbours of `v` and
   `w` in `m K_a` are the other vertices of their common part, if they have one.
 * `SimpleGraph.degree_compl_completeEquipartiteGraph`: every vertex of `m K_a` has degree
@@ -42,12 +40,6 @@ theorem commonNeighbors_completeEquipartiteGraph (v w : Fin m × Fin a) :
   ext u
   simp [commonNeighbors, ne_comm]
 
-/-- Two vertices are adjacent in the complement `m K_a` of `K_{m × a}` exactly when they are
-distinct and lie in the same part. -/
-theorem compl_completeEquipartiteGraph_adj {v w : Fin m × Fin a} :
-    (completeEquipartiteGraph m a)ᶜ.Adj v w ↔ v ≠ w ∧ v.1 = w.1 := by
-  simp
-
 /-- The common neighbours of `v` and `w` in the complement `m K_a` of `K_{m × a}` are the
 vertices other than `v` and `w` that lie in the part of `v` and in the part of `w`. This set is
 empty when the two parts differ. -/
@@ -55,8 +47,8 @@ theorem commonNeighbors_compl_completeEquipartiteGraph (v w : Fin m × Fin a) :
     (completeEquipartiteGraph m a)ᶜ.commonNeighbors v w =
       (({v.1} ∩ {w.1}) ×ˢ Set.univ) \ {v, w} := by
   ext u
-  simp only [commonNeighbors, Set.mem_inter_iff, mem_neighborSet,
-    compl_completeEquipartiteGraph_adj, Set.mem_sdiff, Set.mem_prod, Set.mem_singleton_iff,
+  simp only [commonNeighbors, Set.mem_inter_iff, mem_neighborSet, compl_adj,
+    completeEquipartiteGraph_adj, not_not, Set.mem_sdiff, Set.mem_prod, Set.mem_singleton_iff,
     Set.mem_univ, and_true, Set.mem_insert_iff]
   grind
 

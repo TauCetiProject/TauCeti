@@ -64,7 +64,7 @@ theorem compl_completeEquipartiteGraph_isSRGWith (m a : ℕ) :
   card := by simp
   regular := degree_compl_completeEquipartiteGraph
   of_adj v w h := by
-    obtain ⟨hne, hvw⟩ := compl_completeEquipartiteGraph_adj.1 h
+    obtain ⟨hne, hvw⟩ : v ≠ w ∧ v.1 = w.1 := by simpa using h
     have hsub : ({v, w} : Finset (Fin m × Fin a)) ⊆ {w.1} ×ˢ Finset.univ := by
       intro u hu
       rw [Finset.mem_insert, Finset.mem_singleton] at hu
@@ -76,7 +76,7 @@ theorem compl_completeEquipartiteGraph_isSRGWith (m a : ℕ) :
     rw [Finset.card_sdiff_of_subset hsub, Finset.card_product, Finset.card_pair hne,
       Finset.card_singleton, Finset.card_univ, Fintype.card_fin, one_mul]
   of_not_adj v w hne h := by
-    have hvw : v.1 ≠ w.1 := fun hvw ↦ h (compl_completeEquipartiteGraph_adj.2 ⟨hne, hvw⟩)
+    have hvw : v.1 ≠ w.1 := fun hvw ↦ h (by simp [hne, hvw])
     simp [commonNeighbors_compl_completeEquipartiteGraph, hvw]
 
 end SimpleGraph
