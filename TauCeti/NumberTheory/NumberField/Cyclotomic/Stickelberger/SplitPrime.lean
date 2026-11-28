@@ -13,6 +13,7 @@ public import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
 
 import Mathlib.Algebra.Algebra.ZMod
 import TauCeti.Algebra.Algebra.Equiv
+import TauCeti.NumberTheory.MulChar.Cyclic
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Galois
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Splitting
 import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.StickelbergerPhi.Relation
@@ -224,10 +225,11 @@ private theorem char_unitHom_pow_eq_one (d : SplitPrimeGaussData m K p) :
 
 private theorem char_pow_eq_one (d : SplitPrimeGaussData m K p) (t : (ZMod p)ˣ) :
     d.char (t : ZMod p) ^ m = 1 := by
-  obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp (d.zpowers_gen ▸ Subgroup.mem_top t)
-  change (d.char.toUnitHom t : 𝓞 K) ^ m = 1
-  rw [← hk, map_zpow, ← Units.val_pow_eq_pow_val, ← zpow_natCast, ← zpow_mul, mul_comm k m,
-    zpow_mul, zpow_natCast, char_unitHom_pow_eq_one, one_zpow, Units.val_one]
+  have hord : orderOf d.char = m := by
+    rw [← d.char.orderOf_apply_eq_orderOf (fun x ↦ d.zpowers_gen ▸ Subgroup.mem_top x),
+      d.char_gen, ← d.isPrimitiveRoot_root.eq_orderOf]
+  have hpow : d.char ^ m = 1 := orderOf_dvd_iff_pow_eq_one.mp hord.dvd
+  rw [← MulChar.pow_apply_coe, hpow, MulChar.one_apply_coe]
 
 private theorem mk_char_inv_gen_of_eq (P : Ideal (𝓞 K)) [P.IsMaximal]
     [Algebra (ZMod p) (𝓞 K ⧸ P)] (hNP : Ideal.absNorm P = p) (hcop : p.Coprime m)
@@ -252,49 +254,25 @@ private theorem mk_char_inv_gen_of_eq (P : Ideal (𝓞 K)) [P.IsMaximal]
 private theorem invPowerResidueMulChar_isPrimitiveRoot (P : Ideal (𝓞 K)) [P.IsMaximal]
     (hNP : Ideal.absNorm P = p) (hcop : p.Coprime m)
     (g : (ZMod p)ˣ) (hg : Subgroup.zpowers g = ⊤) [Algebra (ZMod p) (𝓞 K ⧸ P)] :
-    IsPrimitiveRoot (invPowerResidueMulChar m P (g : ZMod p)) m :=
+    IsPrimitiveRoot (invPowerResidueMulChar m P (g : ZMod p)) m := by
   let _ := Ideal.Quotient.field P
-  have hζ_pow : invPowerResidueMulChar m P (g : ZMod p) ^ m = 1 := by
-    have h1 : (P.powerResidueSymbol m
-        (algebraMap (ZMod p) (𝓞 K ⧸ P) (g : ZMod p))) ^ m = 1 :=
-      Ideal.powerResidueSymbol_pow_eq_one
-        ((map_ne_zero_iff _ (RingHom.injective _)).mpr g.ne_zero)
-    obtain ⟨u, hu⟩ := IsUnit.of_pow_eq_one h1 (NeZero.ne m)
-    have hum : u ^ m = 1 := Units.ext (by simpa [hu] using h1)
-    rw [invPowerResidueMulChar_apply, MulChar.inv_apply_eq_inv, ← hu, Ring.inverse_unit,
-      ← Units.val_pow_eq_pow_val, inv_pow, hum, inv_one, Units.val_one]
-  { pow_eq_one := hζ_pow
-    dvd_of_pow_eq_one := fun k hζk ↦ by
-      let _ : Fintype (𝓞 K ⧸ P) := Fintype.ofFinite _
-      have hcard : Fintype.card (𝓞 K ⧸ P) = p := by
-        rw [← Nat.card_eq_fintype_card, ← Ideal.absNorm_eq_natCard, hNP]
-      have hbij := (Fintype.bijective_iff_injective_and_card
-        (algebraMap (ZMod p) (𝓞 K ⧸ P))).mpr ⟨RingHom.injective _, by rw [ZMod.card, hcard]⟩
-      have hpow_one : (Ideal.powerResidueSymbol P m)⁻¹ ^ k = 1 := by
-        refine MulChar.ext fun u ↦ ?_
-        obtain ⟨t, ht⟩ := hbij.2 (u : 𝓞 K ⧸ P)
-        have ht0 : t ≠ 0 := fun h0 ↦ u.ne_zero (by rw [← ht, h0, map_zero])
-        obtain ⟨t', ht'⟩ := ht0.isUnit
-        rw [← ht'] at ht
-        obtain ⟨j, hj⟩ := Subgroup.mem_zpowers_iff.mp (hg ▸ Subgroup.mem_top t')
-        let ug : (𝓞 K ⧸ P)ˣ := Units.map (algebraMap (ZMod p) (𝓞 K ⧸ P)).toMonoidHom g
-        have hu : u = ug ^ j := by rw [← map_zpow, hj]; exact Units.ext ht.symm
-        have hug : (Ideal.powerResidueSymbol P m)⁻¹.toUnitHom ug =
-            (invPowerResidueMulChar m P).toUnitHom g := by
-          ext; simp [ug, invPowerResidueMulChar_apply]
-        have hmap : ((Ideal.powerResidueSymbol P m)⁻¹ ((ug ^ j : (𝓞 K ⧸ P)ˣ) : 𝓞 K ⧸ P)) =
-            (((invPowerResidueMulChar m P).toUnitHom g ^ j : (𝓞 K)ˣ) : 𝓞 K) := by
-          rw [← MulChar.coe_toUnitHom, map_zpow, hug]
-        have hgk : (invPowerResidueMulChar m P).toUnitHom g ^ k = 1 :=
-          Units.ext (by
-            rw [Units.val_pow_eq_pow_val, Units.val_one, MulChar.coe_toUnitHom]
-            exact hζk)
-        rw [MulChar.pow_apply_coe, MulChar.one_apply_coe, hu, hmap,
-          ← Units.val_pow_eq_pow_val, ← zpow_natCast, ← zpow_mul, mul_comm j k,
-          zpow_mul, zpow_natCast, hgk, one_zpow, Units.val_one]
-      have hPm : (Ideal.absNorm P).Coprime m := hNP ▸ hcop
-      rw [← Ideal.orderOf_powerResidueSymbol hPm, ← orderOf_inv]
-      exact orderOf_dvd_of_pow_eq_one hpow_one }
+  let _ : Fintype (𝓞 K ⧸ P) := Fintype.ofFinite _
+  have hcard : Fintype.card (𝓞 K ⧸ P) = p := by
+    rw [← Nat.card_eq_fintype_card, ← Ideal.absNorm_eq_natCard, hNP]
+  have hbij := (Fintype.bijective_iff_injective_and_card
+    (algebraMap (ZMod p) (𝓞 K ⧸ P))).mpr ⟨RingHom.injective _, by rw [ZMod.card, hcard]⟩
+  let eQ : ZMod p ≃+* (𝓞 K ⧸ P) := RingEquiv.ofBijective (algebraMap (ZMod p) (𝓞 K ⧸ P)) hbij
+  let eU : (ZMod p)ˣ ≃* (𝓞 K ⧸ P)ˣ := Units.mapEquiv eQ.toMulEquiv
+  have hug : ∀ u : (𝓞 K ⧸ P)ˣ, u ∈ Subgroup.zpowers (eU g) := by
+    have hz : Subgroup.zpowers (eU g) = ⊤ := by
+      rw [← MulEquiv.coe_toMonoidHom, ← MonoidHom.map_zpowers eU.toMonoidHom g, hg]
+      exact eq_top_iff.mpr fun u _ ↦
+        Subgroup.mem_map.mpr ⟨eU.symm u, Subgroup.mem_top _, eU.apply_symm_apply u⟩
+    exact fun u ↦ hz ▸ Subgroup.mem_top u
+  rw [IsPrimitiveRoot.iff_orderOf, invPowerResidueMulChar_apply]
+  change orderOf ((Ideal.powerResidueSymbol P m)⁻¹ ((eU g : (𝓞 K ⧸ P)ˣ) : 𝓞 K ⧸ P)) = m
+  rw [MulChar.orderOf_apply_eq_orderOf _ hug, orderOf_inv,
+    Ideal.orderOf_powerResidueSymbol (hNP ▸ hcop)]
 
 /-- Construct compatible split-prime Gauss data from a prime ideal `P ∣ (p)` of norm `p`
 coprime to `m` and any generator `g` of `(ZMod p)ˣ`, deriving the character from
@@ -435,21 +413,10 @@ noncomputable def withGen (d : SplitPrimeGaussData m K p) (g' : (ZMod p)ˣ)
   { P := d.P, isMaximal := d.isMaximal, liesOver := d.liesOver, absNorm_eq := d.absNorm_eq
     coprime := d.coprime, gen := g', zpowers_gen := hg', char := d.char
     root := d.char (g' : ZMod p), char_gen := rfl
-    isPrimitiveRoot_root :=
-      { pow_eq_one := char_pow_eq_one d g'
-        dvd_of_pow_eq_one := fun r hζr ↦ by
-          obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp (hg' ▸ Subgroup.mem_top d.gen)
-          have hroot_r : d.root ^ r = 1 := by
-            have hr : (d.char.toUnitHom g') ^ r = 1 := Units.ext (by
-              simpa only [Units.val_pow_eq_pow_val, Units.val_one,
-                MulChar.coe_toUnitHom] using hζr)
-            have hd : (d.char.toUnitHom d.gen) ^ r = 1 := by
-              rw [← hk, map_zpow, ← zpow_natCast, ← zpow_mul, mul_comm k r, zpow_mul,
-                zpow_natCast, hr, one_zpow]
-            simpa only [Units.val_pow_eq_pow_val, Units.val_one,
-              show (d.char.toUnitHom d.gen : 𝓞 K) = d.root from d.char_gen] using
-              congrArg Units.val hd
-          exact d.isPrimitiveRoot_root.dvd_of_pow_eq_one r hroot_r }
+    isPrimitiveRoot_root := IsPrimitiveRoot.iff_orderOf.mpr <| by
+      rw [d.char.orderOf_apply_eq_orderOf (fun x ↦ hg' ▸ Subgroup.mem_top x),
+        ← d.char.orderOf_apply_eq_orderOf (fun x ↦ d.zpowers_gen ▸ Subgroup.mem_top x),
+        d.char_gen, ← d.isPrimitiveRoot_root.eq_orderOf]
     mk_char_inv_gen := by
       have := d.isMaximal; have := d.liesOver; let _ := Ideal.Quotient.field d.P
       have : CharP (𝓞 K ⧸ d.P) p :=

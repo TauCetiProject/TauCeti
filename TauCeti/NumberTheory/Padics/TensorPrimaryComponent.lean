@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Torsion
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.RingHoms
+public import TauCeti.Algebra.Group.Exponent
 import Mathlib.LinearAlgebra.TensorProduct.Map
 import TauCeti.GroupTheory.Torsion
 import TauCeti.NumberTheory.Padics.PadicIntegers
@@ -270,11 +271,6 @@ end TauCeti.AddCommGroup
 
 namespace TauCeti.CommGroup
 
-private theorem addExponentExists {G : Type*} [CommGroup G] (hG : Monoid.ExponentExists G) :
-    AddMonoid.ExponentExists (Additive G) := by
-  obtain ⟨n, hn, h⟩ := hG
-  exact ⟨n, hn, fun x ↦ h (Additive.toMul x)⟩
-
 variable (p : ℕ) [Fact p.Prime] (G : Type*) [CommGroup G]
 
 /-- **The canonical `p`-primary projection on a commutative group.** For a prime `p` and a
@@ -284,16 +280,16 @@ component via `TauCeti.AddCommGroup.primaryComponentEquivPadicIntTensor`, sendin
 noncomputable def primaryProj (hG : Monoid.ExponentExists G) :
     G →* _root_.CommGroup.primaryComponent G p where
   toFun g :=
-    ⟨Additive.toMul (TauCeti.AddCommGroup.primaryProj p (Additive G) (addExponentExists hG)
+    ⟨Additive.toMul (TauCeti.AddCommGroup.primaryProj p (Additive G) hG.additive
         (Additive.ofMul g) : Additive G),
-      (TauCeti.AddCommGroup.primaryProj p (Additive G) (addExponentExists hG)
+      (TauCeti.AddCommGroup.primaryProj p (Additive G) hG.additive
         (Additive.ofMul g)).property⟩
   map_one' := Subtype.ext <| by
     change Additive.toMul (TauCeti.AddCommGroup.primaryProj p (Additive G)
-      (addExponentExists hG) 0 : Additive G) = 1
+      hG.additive 0 : Additive G) = 1
     rw [map_zero, AddSubgroup.coe_zero, toMul_zero]
   map_mul' g₁ g₂ := Subtype.ext <| by
-    change Additive.toMul (TauCeti.AddCommGroup.primaryProj p (Additive G) (addExponentExists hG)
+    change Additive.toMul (TauCeti.AddCommGroup.primaryProj p (Additive G) hG.additive
       (Additive.ofMul g₁ + Additive.ofMul g₂) : Additive G) = _
     rw [map_add, AddSubgroup.coe_add, toMul_add]
     rfl
@@ -303,12 +299,11 @@ variable {p G}
 /-- Comparing `CommGroup.primaryProj` with `AddCommGroup.primaryComponentEquivPadicIntTensor`: the
 `p`-primary projection of `g` maps to `(1 : ℤ_[p]) ⊗ₜ[ℤ] Additive.ofMul g`. -/
 theorem primaryComponentEquivPadicIntTensor_primaryProj (hG : Monoid.ExponentExists G) (g : G) :
-    TauCeti.AddCommGroup.primaryComponentEquivPadicIntTensor p (Additive G)
-        (by obtain ⟨n, hn, h⟩ := hG; exact ⟨n, hn, fun x ↦ h (Additive.toMul x)⟩)
+    TauCeti.AddCommGroup.primaryComponentEquivPadicIntTensor p (Additive G) hG.additive
         ⟨Additive.ofMul (primaryProj p G hG g : G), (primaryProj p G hG g).property⟩ =
       (1 : ℤ_[p]) ⊗ₜ[ℤ] Additive.ofMul g :=
   TauCeti.AddCommGroup.primaryComponentEquivPadicIntTensor_primaryProj
-    (addExponentExists hG) (Additive.ofMul g)
+    hG.additive (Additive.ofMul g)
 
 /-- Canonical `simp`-normal form for the image of `CommGroup.primaryProj` in
 `ℤ_p ⊗[ℤ] Additive G`: together with `AddCommGroup.primaryComponentEquivPadicIntTensor_apply`,
@@ -318,7 +313,7 @@ this simplifies `primaryComponentEquivPadicIntTensor ... (primaryProj p G hG g)`
 theorem one_tmul_primaryProj (hG : Monoid.ExponentExists G) (g : G) :
     (1 : ℤ_[p]) ⊗ₜ[ℤ] Additive.ofMul (primaryProj p G hG g : G) =
       (1 : ℤ_[p]) ⊗ₜ[ℤ] Additive.ofMul g :=
-  TauCeti.AddCommGroup.one_tmul_primaryProj (addExponentExists hG) (Additive.ofMul g)
+  TauCeti.AddCommGroup.one_tmul_primaryProj hG.additive (Additive.ofMul g)
 
 /-- `CommGroup.primaryProj` restricts to the identity on the `p`-primary component. -/
 @[simp]
@@ -326,7 +321,7 @@ theorem primaryProj_coe (hG : Monoid.ExponentExists G)
     (g : _root_.CommGroup.primaryComponent G p) :
     primaryProj p G hG (g : G) = g := by
   apply Subtype.ext
-  have h := TauCeti.AddCommGroup.primaryProj_coe (addExponentExists hG)
+  have h := TauCeti.AddCommGroup.primaryProj_coe hG.additive
     ⟨Additive.ofMul (g : G), g.property⟩
   exact congrArg (fun z : _root_.AddCommGroup.primaryComponent (Additive G) p ↦
     Additive.toMul (z : Additive G)) h
@@ -336,7 +331,7 @@ theorem primaryProj_map {H : Type*} [CommGroup H]
     (hG : Monoid.ExponentExists G) (hH : Monoid.ExponentExists H)
     (f : G →* H) (g : G) :
     (primaryProj p H hH (f g) : H) = f (primaryProj p G hG g : G) :=
-  TauCeti.AddCommGroup.primaryProj_map (addExponentExists hG) (addExponentExists hH)
+  TauCeti.AddCommGroup.primaryProj_map hG.additive hH.additive
     f.toAdditive (Additive.ofMul g)
 
 end TauCeti.CommGroup

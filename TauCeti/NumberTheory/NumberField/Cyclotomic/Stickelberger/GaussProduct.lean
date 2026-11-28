@@ -613,17 +613,15 @@ theorem inv_powerResidueSymbol_algebraMap_eq_of_zpowers {m : ℕ} [NeZero m]
   obtain rfl | ht := eq_or_ne t 0
   · rw [map_zero, MulChar.map_zero, MulChar.map_zero]
   lift t to (ZMod p)ˣ using ht.isUnit
-  obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp (hg ▸ Subgroup.mem_top t)
-  rw [← hk]
   let φ₁ : (ZMod p)ˣ →* (𝓞 K)ˣ :=
     (Ideal.powerResidueSymbol P m)⁻¹.toUnitHom.comp
       (Units.map (algebraMap (ZMod p) (𝓞 K ⧸ P)).toMonoidHom)
   let φ₂ : (ZMod p)ˣ →* (𝓞 K)ˣ := χ.toUnitHom
-  have hφ : φ₁ g = φ₂ g := Units.ext h_gen_inv
-  have hφk : (φ₁ (g ^ k) : 𝓞 K) = (φ₂ (g ^ k) : 𝓞 K) := by
-    rw [map_zpow, map_zpow, hφ]
+  have hφ := (MonoidHom.eq_iff_eq_on_generator (fun u ↦ hg ▸ Subgroup.mem_top u) φ₁ φ₂).2
+    (Units.ext h_gen_inv)
   simpa only [φ₁, φ₂, MonoidHom.comp_apply, MulChar.coe_toUnitHom, Units.coe_map,
-    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass] using hφk
+    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass] using
+    congrArg (fun f : (ZMod p)ˣ →* (𝓞 K)ˣ ↦ (f t : 𝓞 K)) hφ
 
 /-- **Split-prime comparison for the native Gauss sum.** If `(Ideal.powerResidueSymbol P m)⁻¹`
 agrees with `χ : MulChar (ZMod p) (𝓞 K)` on `algebraMap (ZMod p) (𝓞 K ⧸ P)` and

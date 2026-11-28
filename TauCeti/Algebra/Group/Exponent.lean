@@ -45,6 +45,9 @@ latter making the reduction `M` itself (`TauCeti.modNEquiv`).
   and multiplication is zero.
 * `Monoid.exists_forall_pow_mul_eq_self`: a natural number coprime to the exponent of a monoid is
   invertible modulo that exponent.
+* `AddMonoid.exponentExists_additive`, `Monoid.exponentExists_multiplicative`,
+  `Monoid.ExponentExists.additive`, and `AddMonoid.ExponentExists.multiplicative`: transport of
+  `ExponentExists` across `Additive` and `Multiplicative`.
 -/
 
 public section
@@ -171,3 +174,28 @@ theorem Monoid.exists_forall_pow_mul_eq_self {M : Type*} [Monoid M] {n : ℕ}
     refine ⟨m, fun g ↦ ?_⟩
     have hg := Monoid.pow_exponent_eq_one g
     rw [pow_eq_pow_mod _ hg, hm, ← pow_eq_pow_mod _ hg, pow_one]
+
+/-- An additive reading `Additive G` of a monoid has finite exponent exactly when `G` does. -/
+@[simp]
+theorem AddMonoid.exponentExists_additive {G : Type*} [Monoid G] :
+    AddMonoid.ExponentExists (Additive G) ↔ Monoid.ExponentExists G :=
+  ⟨fun ⟨n, hn, h⟩ ↦ ⟨n, hn, fun g ↦ h (Additive.ofMul g)⟩,
+   fun ⟨n, hn, h⟩ ↦ ⟨n, hn, fun g ↦ h (Additive.toMul g)⟩⟩
+
+/-- A multiplicative reading `Multiplicative A` of an additive monoid has finite exponent exactly
+when `A` does. -/
+@[simp]
+theorem Monoid.exponentExists_multiplicative {A : Type*} [AddMonoid A] :
+    Monoid.ExponentExists (Multiplicative A) ↔ AddMonoid.ExponentExists A :=
+  ⟨fun ⟨n, hn, h⟩ ↦ ⟨n, hn, fun a ↦ h (Multiplicative.ofAdd a)⟩,
+   fun ⟨n, hn, h⟩ ↦ ⟨n, hn, fun a ↦ h (Multiplicative.toAdd a)⟩⟩
+
+/-- If a monoid `G` has finite exponent, then so does `Additive G`. -/
+theorem Monoid.ExponentExists.additive {G : Type*} [Monoid G] (hG : Monoid.ExponentExists G) :
+    AddMonoid.ExponentExists (Additive G) :=
+  AddMonoid.exponentExists_additive.mpr hG
+
+/-- If an additive monoid `A` has finite exponent, then so does `Multiplicative A`. -/
+theorem AddMonoid.ExponentExists.multiplicative {A : Type*} [AddMonoid A]
+    (hA : AddMonoid.ExponentExists A) : Monoid.ExponentExists (Multiplicative A) :=
+  Monoid.exponentExists_multiplicative.mpr hA
