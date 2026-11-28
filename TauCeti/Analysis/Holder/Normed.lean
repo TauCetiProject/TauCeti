@@ -43,9 +43,14 @@ parallel notion of Hölder continuity.
 * `TauCeti.HolderSpace.constL`, `TauCeti.HolderSpace.evalCLM`, and
   `TauCeti.HolderSpace.toBoundedContinuousFunctionCLM`: continuous linear maps for constants,
   evaluation, and inclusion, with operator-norm bounds.
-* `TauCeti.HolderSpace.compLipschitzL`: precomposition with a `K`-Lipschitz map, of operator norm
-  at most `max 1 (K ^ α)`, and `TauCeti.HolderSpace.compIsometryEquivLIE`, precomposition with an
-  isometric equivalence, as a linear isometric equivalence.
+* `TauCeti.HolderSpace.castLIE`: transport along an equality of Hölder exponents as a linear
+  isometric equivalence.
+* `TauCeti.HolderSpace.compHolderL`: precomposition with a continuous `β`-Hölder map of constant
+  `K` into `HolderSpace (α * β)`, of operator norm at most `max 1 (K ^ α)`.
+* `TauCeti.HolderSpace.compLipschitzL`: precomposition with a `K`-Lipschitz map (the `β = 1`
+  special case of `compHolderL`), of operator norm at most `max 1 (K ^ α)`, and
+  `TauCeti.HolderSpace.compIsometryEquivLIE`, precomposition with an isometric equivalence, as a
+  linear isometric equivalence.
 * `TauCeti.HolderSpace.compLeftL`: postcomposition with a continuous linear map `g`, of operator
   norm at most `‖g‖`, and norm-preserving when `g` is a linear isometry; an element of
   `HolderSpace α X (ι → Y)` is determined by its coordinates
@@ -572,32 +577,53 @@ theorem evalCLM_comp_constL (x : X) :
   ext y
   simp
 
-section compLipschitz
+/-- Changing the Hölder exponent along an equality `α = β`, as a linear isometric equivalence. -/
+def castLIE {β : ℝ≥0} (h : α = β) : HolderSpace α X Y ≃ₗᵢ[ℝ] HolderSpace β X Y where
+  toFun f := ofBoundedContinuousFunction f.toBoundedContinuousFunction (h ▸ f.memHolder)
+  invFun f := ofBoundedContinuousFunction f.toBoundedContinuousFunction (h.symm ▸ f.memHolder)
+  left_inv _ := ext fun _ ↦ rfl
+  right_inv _ := ext fun _ ↦ rfl
+  map_add' _ _ := ext fun _ ↦ rfl
+  map_smul' _ _ := ext fun _ ↦ rfl
+  norm_map' f := by
+    subst h
+    rfl
 
-variable {X' : Type*} [MetricSpace X'] {K : ℝ≥0}
+@[simp]
+theorem castLIE_apply {β : ℝ≥0} (h : α = β) (f : HolderSpace α X Y) (x : X) :
+    castLIE h f x = f x := (rfl)
 
-/-- Precomposition with a `K`-Lipschitz map, as a continuous linear map between bounded Hölder
-spaces of the same exponent. -/
-def compLipschitzL (g : X' → X) (hg : LipschitzWith K g) :
-    HolderSpace α X Y →L[ℝ] HolderSpace α X' Y :=
+@[simp]
+theorem toBoundedContinuousFunction_castLIE {β : ℝ≥0} (h : α = β) (f : HolderSpace α X Y) :
+    (castLIE h f).toBoundedContinuousFunction = f.toBoundedContinuousFunction := (rfl)
+
+@[simp]
+theorem castLIE_symm {β : ℝ≥0} (h : α = β) :
+    (castLIE (α := α) (X := X) (Y := Y) h).symm = castLIE h.symm := (rfl)
+
+section compHolder
+
+variable {X' : Type*} [MetricSpace X'] {K β : ℝ≥0}
+
+/-- Precomposition with a continuous `β`-Hölder map of constant `K`, as a continuous linear map
+from `HolderSpace α X Y` to `HolderSpace (α * β) X' Y`. -/
+def compHolderL (g : X' → X) (hg_cont : Continuous g) (hg : HolderWith K β g) :
+    HolderSpace α X Y →L[ℝ] HolderSpace (α * β) X' Y :=
   LinearMap.mkContinuous
     { toFun f := ofBoundedContinuousFunction
-        (f.toBoundedContinuousFunction.compContinuous ⟨g, hg.continuous⟩) (by
-          have h := f.memHolder.holderWith.comp (holderWith_one.2 hg)
-          rw [mul_one] at h
+        (f.toBoundedContinuousFunction.compContinuous ⟨g, hg_cont⟩) (by
           simpa only [BoundedContinuousFunction.coe_compContinuous, ContinuousMap.coe_mk] using
-            h.memHolder)
-      map_add' f₁ f₂ := by ext; rfl
-      map_smul' c f := by ext; rfl }
+            (f.memHolder.holderWith.comp hg).memHolder)
+      map_add' _ _ := by ext; rfl
+      map_smul' _ _ := by ext; rfl }
     (max 1 ((K : ℝ) ^ (α : ℝ))) fun f ↦ by
       have h₁ := BoundedContinuousFunction.norm_compContinuous_le
-        f.toBoundedContinuousFunction ⟨g, hg.continuous⟩
-      -- The Hölder seminorm grows by at most the factor `K ^ α`, since `g` is `K`-Lipschitz.
-      have h₂ : (nnHolderNorm α ((f : X → Y) ∘ g) : ℝ) ≤
+        f.toBoundedContinuousFunction ⟨g, hg_cont⟩
+      -- The Hölder seminorm grows by at most the factor `K ^ α`, since `g` has constant `K`.
+      have h₂ : (nnHolderNorm (α * β) ((f : X → Y) ∘ g) : ℝ) ≤
           nnHolderNorm α (f : X → Y) * (K : ℝ) ^ (α : ℝ) := by
-        have h := f.holderWith.memHolder.nnHolderNorm_comp_le hg.holderWith.memHolder
-        rw [mul_one] at h
-        exact_mod_cast h.trans (by gcongr; exact hg.holderWith.nnholderNorm_le)
+        have h := f.holderWith.memHolder.nnHolderNorm_comp_le hg.memHolder
+        exact_mod_cast h.trans (by gcongr; exact hg.nnholderNorm_le)
       have hM₁ : (1 : ℝ) ≤ max 1 ((K : ℝ) ^ (α : ℝ)) := le_max_left _ _
       have hMK : (K : ℝ) ^ (α : ℝ) ≤ max 1 ((K : ℝ) ^ (α : ℝ)) := le_max_right _ _
       have hH : (0 : ℝ) ≤ nnHolderNorm α (f : X → Y) := NNReal.coe_nonneg _
@@ -608,6 +634,42 @@ def compLipschitzL (g : X' → X) (hg : LipschitzWith K g) :
       nlinarith [norm_nonneg f.toBoundedContinuousFunction]
 
 variable {g : X' → X}
+
+@[simp]
+theorem compHolderL_apply (hg_cont : Continuous g) (hg : HolderWith K β g)
+    (f : HolderSpace α X Y) (x : X') :
+    compHolderL g hg_cont hg f x = f (g x) := (rfl)
+
+@[simp]
+theorem toBoundedContinuousFunction_compHolderL (hg_cont : Continuous g) (hg : HolderWith K β g)
+    (f : HolderSpace α X Y) : (compHolderL g hg_cont hg f).toBoundedContinuousFunction =
+      f.toBoundedContinuousFunction.compContinuous ⟨g, hg_cont⟩ := (rfl)
+
+/-- Precomposition with a continuous `β`-Hölder map of constant `K` has operator norm at most
+`max 1 (K ^ α)`. -/
+theorem norm_compHolderL_le (hg_cont : Continuous g) (hg : HolderWith K β g) :
+    ‖compHolderL (α := α) (Y := Y) g hg_cont hg‖ ≤ max 1 ((K : ℝ) ^ (α : ℝ)) :=
+  LinearMap.mkContinuous_norm_le _ (le_max_of_le_left zero_le_one) _
+
+/-- Precomposition with a continuous `β`-Hölder map of constant `1` does not increase the
+Hölder-space norm. -/
+theorem norm_compHolderL_le_one (hg_cont : Continuous g) (hg : HolderWith 1 β g) :
+    ‖compHolderL (α := α) (Y := Y) g hg_cont hg‖ ≤ 1 := by
+  simpa using norm_compHolderL_le (α := α) (Y := Y) hg_cont hg
+
+/-- Precomposing a Hölder function with a continuous `β`-Hölder map of constant `1` does not
+increase its norm. -/
+theorem norm_compHolderL_apply_le (hg_cont : Continuous g) (hg : HolderWith 1 β g)
+    (f : HolderSpace α X Y) :
+    ‖compHolderL g hg_cont hg f‖ ≤ ‖f‖ := by
+  simpa using (compHolderL g hg_cont hg).le_of_opNorm_le (norm_compHolderL_le_one hg_cont hg) f
+
+/-- Precomposition with a `K`-Lipschitz map, as a continuous linear map between bounded Hölder
+spaces of the same exponent. -/
+def compLipschitzL (g : X' → X) (hg : LipschitzWith K g) :
+    HolderSpace α X Y →L[ℝ] HolderSpace α X' Y :=
+  (castLIE (mul_one α)).toLinearIsometry.toContinuousLinearMap.comp
+    (compHolderL g hg.continuous (holderWith_one.2 hg))
 
 @[simp]
 theorem compLipschitzL_apply (hg : LipschitzWith K g) (f : HolderSpace α X Y) (x : X') :
@@ -625,8 +687,11 @@ theorem toBoundedContinuousFunction_compLipschitzL (hg : LipschitzWith K g)
 
 /-- Precomposition with a `K`-Lipschitz map has operator norm at most `max 1 (K ^ α)`. -/
 theorem norm_compLipschitzL_le (hg : LipschitzWith K g) :
-    ‖compLipschitzL (α := α) (Y := Y) g hg‖ ≤ max 1 ((K : ℝ) ^ (α : ℝ)) :=
-  LinearMap.mkContinuous_norm_le _ (le_max_of_le_left zero_le_one) _
+    ‖compLipschitzL (α := α) (Y := Y) g hg‖ ≤ max 1 ((K : ℝ) ^ (α : ℝ)) := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (le_max_of_le_left zero_le_one) fun f ↦ ?_
+  simpa [compLipschitzL] using
+    (compHolderL (α := α) (Y := Y) g hg.continuous (holderWith_one.2 hg)).le_of_opNorm_le
+      (norm_compHolderL_le hg.continuous (holderWith_one.2 hg)) f
 
 /-- Precomposition with a `1`-Lipschitz map, for instance an isometry or the inclusion of a
 subspace, does not increase the Hölder-space norm. -/
@@ -660,10 +725,12 @@ theorem compIsometryEquivLIE_apply (g : X' ≃ᵢ X) (f : HolderSpace α X Y) (x
 theorem compIsometryEquivLIE_symm (g : X' ≃ᵢ X) :
     (compIsometryEquivLIE α Y g).symm = compIsometryEquivLIE α Y g.symm := (rfl)
 
+/-- Precomposing with an isometric equivalence agrees with `compLipschitzL` for its Lipschitz
+constant `1`. -/
 theorem compIsometryEquivLIE_eq_compLipschitzL (g : X' ≃ᵢ X) (f : HolderSpace α X Y) :
     compIsometryEquivLIE α Y g f = compLipschitzL g g.isometry.lipschitzWith f := (rfl)
 
-end compLipschitz
+end compHolder
 
 section compLeft
 
