@@ -31,7 +31,6 @@ and when `|f|sup > 0` the powers satisfy the quantitative bound `‖f ^ n‖ ≤
 
 ## Main results
 
-* `TauCeti.supSeminorm_le_norm_pow_rpow`: `|f|sup ≤ ‖f ^ n‖ ^ (1 / n)` for `n ≠ 0`.
 * `TauCeti.IsAffinoidAlgebra.pow_norm_pow_one_div_tendsto_nhds_supSeminorm`: the sequence
   `‖f ^ n‖ ^ (1 / n)` tends to `|f|sup` (for any complete `K`-algebra norm over a complete
   nontrivially normed ultrametric field `K`).
@@ -59,16 +58,6 @@ public section
 namespace TauCeti
 
 open Filter Topology
-
-/-- **The supremum seminorm is bounded by the normalised norms of powers.** For every algebra
-norm with summable geometric series over a complete ultrametric field `K`,
-`|f|sup ≤ ‖f ^ n‖ ^ (1 / n)` for `n ≠ 0`. -/
-theorem supSeminorm_le_norm_pow_rpow {K A : Type*} [NormedField K] [IsUltrametricDist K]
-    [CompleteSpace K] [NormedCommRing A] [NormedAlgebra K A] [HasSummableGeomSeries A]
-    (f : A) {n : ℕ} (hn : n ≠ 0) :
-    supSeminorm K f ≤ ‖f ^ n‖ ^ (1 / n : ℝ) :=
-  ((AlgHom.id K A).supSeminorm_apply_le_gelfandRadius f).trans <| by
-    simpa only [one_div] using gelfandRadius_le_norm_pow f hn
 
 namespace IsAffinoidAlgebra
 

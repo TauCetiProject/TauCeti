@@ -66,9 +66,10 @@ geometric series on `A`. The kernel computation uses that affinoid algebras are 
 
 ## Main results
 
-* `MaximalSpectrum.pointNorm_le_norm` and `TauCeti.supSeminorm_le_norm`:
-  `pointNorm K x f ≤ ‖f‖` and `supSeminorm K f ≤ ‖f‖` over a complete ultrametric normed field `K`
-  for every algebra norm with summable geometric series.
+* `MaximalSpectrum.pointNorm_le_norm`, `TauCeti.supSeminorm_le_norm`, and
+  `TauCeti.supSeminorm_le_norm_pow_rpow`: `pointNorm K x f ≤ ‖f‖`, `supSeminorm K f ≤ ‖f‖`, and
+  `supSeminorm K f ≤ ‖f ^ n‖ ^ (1 / n)` (`n ≠ 0`) over a complete ultrametric normed field `K` for
+  every algebra norm with summable geometric series.
 * `TauCeti.IsAffinoidAlgebra.isUnit_iff_forall_pointNorm_ne_zero`: `f` is a unit if and only if
   `|f(x)| ≠ 0` at every classical point `x`.
 * `TauCeti.IsAffinoidAlgebra.bddAbove_range_pointNorm`: the point norms of `f` are bounded.
@@ -363,6 +364,16 @@ theorem supSeminorm_le_norm [IsUltrametricDist K] [CompleteSpace K]
     {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [HasSummableGeomSeries A] (f : A) :
     supSeminorm K f ≤ ‖f‖ :=
   (AlgHom.id K A).supSeminorm_apply_le_norm f
+
+/-- **The supremum seminorm is bounded by the normalised norms of powers.** For every algebra
+norm with summable geometric series over a complete ultrametric field `K`,
+`|f|sup ≤ ‖f ^ n‖ ^ (1 / n)` for `n ≠ 0`. -/
+theorem supSeminorm_le_norm_pow_rpow [IsUltrametricDist K] [CompleteSpace K]
+    {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [HasSummableGeomSeries A]
+    (f : A) {n : ℕ} (hn : n ≠ 0) :
+    supSeminorm K f ≤ ‖f ^ n‖ ^ (1 / n : ℝ) :=
+  ((AlgHom.id K A).supSeminorm_apply_le_gelfandRadius f).trans <| by
+    simpa only [one_div] using gelfandRadius_le_norm_pow f hn
 
 /-- If the residue-field spectral values of `f` over maximal ideals are bounded above, then each
 of them is at most `supSeminorm K f`. -/
