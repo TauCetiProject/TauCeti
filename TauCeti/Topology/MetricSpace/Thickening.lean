@@ -30,7 +30,10 @@ In a pseudometric space, the closed `δ`-thickening of a nonempty set, for `δ �
 points at distance at most `δ` from it (`TauCeti.mem_cthickening_iff_infDist_le`). This is the
 closed counterpart of Mathlib's `Metric.mem_thickening_iff_infDist_lt`, and describes closed
 thickenings as sublevel sets of the distance function, and their complements as strict
-superlevel sets (`TauCeti.compl_cthickening_eq_setOf_lt_infDist`). If a compact set does not meet
+superlevel sets (`TauCeti.compl_cthickening_eq_setOf_lt_infDist`). If the Hausdorff extended
+distance between `s` and `t` is at most `η ≥ 0`, the closed `r`-thickening of `s` lies in the closed
+`(r + η)`-thickening of `t` for every `r ≥ 0`
+(`TauCeti.cthickening_subset_cthickening_add_of_hausdorffEDist_le`). If a compact set does not meet
 the closed `δ`-thickening of a set `t`, its own closed `δ`-thickening does not meet `t`
 (`IsCompact.disjoint_cthickening_left`). A point is not in the closed `δ`-thickening of the
 complement of a ball around it of larger radius (`TauCeti.notMem_cthickening_compl_ball`). A ball
@@ -115,6 +118,15 @@ theorem compl_cthickening_eq_setOf_lt_infDist {X : Type*} [PseudoMetricSpace X] 
     (hs : s.Nonempty) {δ : ℝ} (hδ : 0 ≤ δ) : (cthickening δ s)ᶜ = {x | δ < infDist x s} := by
   ext x
   simp [mem_cthickening_iff_infDist_le hs hδ]
+
+/-- If the Hausdorff extended distance between `s` and `t` is at most `η ≥ 0`, then for `r ≥ 0`
+the closed `r`-thickening of `s` lies in the closed `(r + η)`-thickening of `t`. -/
+theorem cthickening_subset_cthickening_add_of_hausdorffEDist_le {X : Type*}
+    [PseudoEMetricSpace X] {s t : Set X} {r η : ℝ} (hr : 0 ≤ r) (hη : 0 ≤ η)
+    (h : hausdorffEDist s t ≤ ENNReal.ofReal η) : cthickening r s ⊆ cthickening (r + η) t :=
+  fun x hx ↦ mem_cthickening_iff.2 <| (infEDist_le_infEDist_add_hausdorffEDist).trans <| by
+    rw [ENNReal.ofReal_add hr hη]
+    exact add_le_add (mem_cthickening_iff.1 hx) h
 
 /-- If the open balls `ball p η`, `p ∈ J`, cover a set `T`, then `T` lies in the union of the closed
 balls `closedBall p η` about the centres `p ∈ J` whose balls meet `T`, and this union has extended

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Density
 public import TauCeti.Analysis.Distribution.TestFunction.DualEquiv
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
+import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.ChartTopology
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
@@ -523,8 +524,9 @@ end Bundle.Trivialization
 namespace TauCeti.BundleTest
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  [BoundarylessManifold I M]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
@@ -532,7 +534,7 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
   {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
 
 /-- **Functionals on bundle tests are determined by their local representatives.** On a
-boundaryless Hausdorff `σ`-compact manifold with finite-dimensional model, two functionals agree
+boundaryless Hausdorff manifold with finite-dimensional model, two functionals agree
 once their local representatives agree in every smooth chart lying over the base set of a
 trivialization of the bundle atlas: bundle tests are finite sums of chart extensions of native
 test functions (`ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`). -/

@@ -233,10 +233,10 @@ Stacks, Proposition 10.110.1 (00O7); the residue field attains it. -/
 theorem globalDimension_eq_ringKrullDim : globalDimension.{v} R = ringKrullDim R := by
   refine le_antisymm ?_ ?_
   · rw [← spanFinrank_maximalIdeal (R := R)]
-    exact (globalDimension_le_iff_hasProjectiveDimensionLE R _).mpr
+    exact (Abelian.globalDimension_le_iff_hasProjectiveDimensionLE (ModuleCat R) _).mpr
       hasProjectiveDimensionLE_spanFinrank_maximalIdeal
   · rw [← projectiveDimension_quotient_maximalIdeal_eq_ringKrullDim.{v}]
-    exact ModuleCat.projectiveDimension_le_globalDimension _
+    exact Abelian.projectiveDimension_le_globalDimension _
 
 end IsRegularLocalRing
 
@@ -284,7 +284,7 @@ theorem _root_.ModuleCat.projectiveDimension_le_ringKrullDim (M : ModuleCat.{v} 
 
 /-- **The global dimension of a regular ring is at most its Krull dimension.** -/
 theorem globalDimension_le_ringKrullDim : globalDimension.{v} R ≤ ringKrullDim R :=
-  (globalDimension_le_iff R _).mpr ModuleCat.projectiveDimension_le_ringKrullDim
+  (Abelian.globalDimension_le_iff (ModuleCat R) _).mpr ModuleCat.projectiveDimension_le_ringKrullDim
 
 /-- Over a regular ring of finite Krull dimension (`ringKrullDim R < ⊤`), there is a uniform
 natural-number bound on the projective dimension of all modules. -/
@@ -392,7 +392,7 @@ is a regular local ring: its residue field has finite projective dimension. -/
 theorem of_globalDimension_lt_top {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
     [Small.{v} R] (h : globalDimension.{v} R < ⊤) : IsRegularLocalRing R :=
   isRegularLocalRing_iff_projectiveDimension_ne_top.mpr
-    ((ModuleCat.projectiveDimension_le_globalDimension _).trans_lt h).ne
+    ((Abelian.projectiveDimension_le_globalDimension _).trans_lt h).ne
 
 end IsRegularLocalRing
 

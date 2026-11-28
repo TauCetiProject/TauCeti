@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.R
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Sha
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Torsion
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Basic
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SelmerStructure.Comparison
 
 /-!
 # The Selmer group of an isogeny
@@ -80,6 +81,8 @@ group.
 
 * `TauCeti.Isogeny.mem_selmerGroup_iff`: a class is `φ`-Selmer exactly when its image in
   `H¹(G_K, E₁)` lies in the Shafarevich–Tate group.
+* `TauCeti.Isogeny.selmerGroup_le_selmerGroup_relaxedAt`: the `φ`-Selmer group lies in any
+  relaxed `φ`-Selmer group.
 * `TauCeti.Isogeny.mem_selmerGroup_iff_forall_kerRes_mem_range_kummerMap`: the `φ`-Selmer group
   is cut out by the images of the local Kummer maps.
 * `TauCeti.Isogeny.card_shafarevichTateGroupKer_eq_card_ker_shaMap` and
@@ -193,6 +196,12 @@ theorem selmerGroup_le_comp {κ : Type*} (f : κ → ι) :
     φ.selmerGroup τ ≤ φ.selmerGroup fun j ↦ τ (f j) := fun _ hc ↦ by
   rw [mem_selmerGroup_iff] at hc ⊢
   exact W₁.shafarevichTateGroup_le_comp τ f hc
+
+/-- Every class in `φ.selmerGroup τ` lies in the `T`-relaxed Selmer group for any set `T` of
+indices. -/
+theorem selmerGroup_le_selmerGroup_relaxedAt (T : Set ι) :
+    φ.selmerGroup τ ≤ ((φ.selmerStructure τ).relaxedAt T).selmerGroup :=
+  (φ.selmerGroup_def τ).symm ▸ (φ.selmerStructure τ).selmerGroup_le_selmerGroup_relaxedAt T
 
 /-- **The `φ`-Selmer group is cut out by the local Kummer images**: for a separable isogeny `φ`, a
 class in `H¹(G_K, E₁(Kˢ)[φ])` is `φ`-Selmer exactly when its restriction to every `L i` comes

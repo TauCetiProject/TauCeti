@@ -20,6 +20,10 @@ For families `f` and `y` in seminormed groups with `∑ i, ‖f i‖ * ‖y i‖
 `∑' i, ‖f i‖ₑ * ‖y i‖ₑ` is the extended real `ENNReal.ofReal (∑' i, ‖f i‖ * ‖y i‖)`
 (`TauCeti.tsum_enorm_mul_enorm_eq_ofReal`).
 
+For an absolutely summable sequence `r`, the sum of any injective subfamily `l ↦ r (φ l)` indexed
+at or beyond `N` is bounded in norm by the tail `∑' k, ‖r (k + N)‖`
+(`TauCeti.norm_tsum_comp_le_tsum_norm_add`).
+
 A family whose finite partial sums are not Cauchy, for instance a non-summable family in a complete
 space, has pairwise disjoint finite blocks whose sums all have norm at least some fixed `ε > 0`
 (`TauCeti.exists_pairwise_disjoint_le_norm_sum_of_not_cauchySeq`). Each block is chosen disjoint
@@ -49,6 +53,19 @@ theorem tsum_enorm_mul_enorm_eq_ofReal {ι G H : Type*} [SeminormedAddGroup G]
     (hfy : Summable fun i ↦ ‖f i‖ * ‖y i‖) :
     ∑' i, ‖f i‖ₑ * ‖y i‖ₑ = ENNReal.ofReal (∑' i, ‖f i‖ * ‖y i‖) := by
   simp [ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity) hfy, ENNReal.ofReal_mul]
+
+/-- The sum of an injective subfamily of an absolutely summable sequence, indexed at or beyond `N`,
+is bounded in norm by the tail of the sequence from `N` on. -/
+theorem norm_tsum_comp_le_tsum_norm_add {E : Type*} [SeminormedAddCommGroup E] {r : ℕ → E}
+    (hr : Summable fun k ↦ ‖r k‖) {φ : ℕ → ℕ} (hφ : Function.Injective φ) {N : ℕ}
+    (hN : ∀ l, N ≤ φ l) :
+    ‖∑' l, r (φ l)‖ ≤ ∑' k, ‖r (k + N)‖ := by
+  have hrφ : Summable fun l ↦ ‖r (φ l)‖ := hr.comp_injective hφ
+  have hinj : Function.Injective fun l ↦ φ l - N := fun l l' h ↦
+    hφ (by have := hN l; have := hN l'; simp only at h; omega)
+  refine (norm_tsum_le_tsum_norm hrφ).trans (hrφ.tsum_le_tsum_of_inj _ hinj
+    (fun _ _ ↦ norm_nonneg _) (fun l ↦ by rw [Nat.sub_add_cancel (hN l)]) ?_)
+  exact (summable_nat_add_iff (f := fun k ↦ ‖r k‖) N).2 hr
 
 open Function in
 /-- A family whose finite partial sums are not Cauchy has pairwise disjoint finite blocks whose

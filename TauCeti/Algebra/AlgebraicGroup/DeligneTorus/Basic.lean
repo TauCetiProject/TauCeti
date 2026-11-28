@@ -135,7 +135,7 @@ the points of `𝔾ₘ` over `ℂ` with `ℂˣ`. -/
 theorem isHomeomorph_realPointsMulEquiv : IsHomeomorph realPointsMulEquiv := by
   have := isModuleTopologyOfFiniteDimensional (𝕜 := ℝ) (E := ℂ)
   let h := (PointTopology.isHomeomorph_ofConv.homeomorph _).trans
-    ((WeilRestriction.pointsHomeomorph ℝ ℂ ℂ[T;T⁻¹]).trans
+    ((WeilRestriction.basePointsHomeomorph ℝ ℂ ℂ[T;T⁻¹]).trans
       ((PointTopology.isHomeomorph_ofConv.homeomorph _).symm.trans
         (MultiplicativeGroup.pointsContinuousMulEquiv ℂ ℂ).toHomeomorph))
   have heq : ⇑realPointsMulEquiv = ⇑h := funext fun f => Units.ext <| by

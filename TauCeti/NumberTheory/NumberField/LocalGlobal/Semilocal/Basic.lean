@@ -204,4 +204,13 @@ theorem semilocalContinuousEquiv_symm_algebraMap (x : L) :
     semilocalContinuousEquiv_toAlgEquiv]
   exact v.adicCompletionSemilocalEquiv_symm_algebraMap x
 
+/-- The continuous semi-local comparison sends `1 ⊗ x` to the diagonal field element. -/
+theorem semilocalContinuousEquiv_one_tmul (x : L) :
+    semilocalContinuousEquiv L v (1 ⊗ₜ[K] x) =
+      algebraMap L
+        ((w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
+          w.val.adicCompletion L) x := by
+  ext w
+  simp
+
 end TauCeti
