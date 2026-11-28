@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Lattice.Full
-public import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Basic
-import TauCeti.Algebra.Module.LocalizedModule.Submodule
-import TauCeti.LinearAlgebra.QuadraticForm.TensorProduct
 
 /-!
 # Integral lattices in a quadratic space
@@ -25,8 +22,6 @@ including when two is a nonunit. The values of the integral form determine `Q` u
 -/
 
 public section
-
-open scoped TensorProduct
 
 namespace TauCeti
 
@@ -89,29 +84,6 @@ theorem eq_iff_forall_eq_integralForm (Q' : QuadraticForm K V) :
   exact ⟨fun h x ↦ DFunLike.congr_fun h (x : V),
     QuadraticMap.ext_of_span_range_eq_top L.carrier.subtype
       (by rw [Submodule.range_subtype, Submodule.IsFullLattice.span_eq_top])⟩
-
-section FractionField
-
-open scoped nonZeroDivisors
-
-variable {F : Type*} [Field F] [Algebra R F] [IsFractionRing R F]
-  [Module F V] [IsScalarTower R F V] {q : QuadraticForm F V} (N : IntegralQuadraticLattice R q)
-
-/-- The generic space is the scalar extension of the lattice to the fraction field. -/
-theorem isBaseChange_subtype : IsBaseChange F N.carrier.subtype :=
-  have := N.carrier.isLocalizedModule_subtype_of_span_eq_top (R⁰ : Submonoid R)
-    (Submodule.IsFullLattice.span_eq_top (A := F))
-  IsLocalizedModule.isBaseChange R⁰ F N.carrier.subtype
-
-/-- The pullback of the generic form to the scalar extension is characterized by the values
-of the integral form on pure tensors with first factor one. -/
-theorem eq_comp_isBaseChange_subtype_iff (q' : QuadraticForm F (F ⊗[R] N.carrier)) :
-    q' = q.comp N.isBaseChange_subtype.equiv.toLinearMap ↔
-      ∀ x : N.carrier, q' (1 ⊗ₜ[R] x) = algebraMap R F (N.integralForm x) := by
-  simpa only [Submodule.subtype_apply, algebraMap_integralForm] using
-    N.isBaseChange_subtype.eq_comp_quadraticMap_iff q q'
-
-end FractionField
 
 end IntegralQuadraticLattice
 

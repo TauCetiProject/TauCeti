@@ -14,6 +14,8 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Binary
 public import TauCeti.LinearAlgebra.QuadraticForm.MvPolynomial
 public import TauCeti.LinearAlgebra.TensorProduct.Pi
 import Mathlib.LinearAlgebra.QuadraticForm.Basis
+import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
+import TauCeti.RingTheory.TensorProduct.IsBaseChange
 import TauCeti.Algebra.Algebra.Pi
 import TauCeti.LinearAlgebra.QuadraticForm.Basic
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
@@ -49,8 +51,8 @@ derived from this characterization. Anisotropy is not preserved in general: the 
 
 ## Main results
 
-* `QuadraticMap.ext_algebraMap_comp`: a quadratic map on `ι → L` is determined by its values on
-  vectors with coordinates in `K`.
+* `QuadraticMap.ext_algebraMap_comp`: when `ι` is finite, a quadratic map on `ι → L` is determined
+  by its values on vectors obtained by applying `algebraMap K L` coordinatewise.
 * `QuadraticForm.extendScalars_toQuadraticMap`: the extension of `x ↦ B x x` is read off the Gram
   matrix of `B` mapped into `L`, for every bilinear form `B`.
 * `QuadraticForm.extendScalars_apply`, `QuadraticForm.toMvPolynomial_extendScalars`: the
@@ -110,20 +112,12 @@ namespace QuadraticMap
 variable {K L N ι : Type*} [CommSemiring K] [CommSemiring L] [Algebra K L]
 variable [AddCancelCommMonoid N] [Module L N] [Finite ι]
 
-/-- A quadratic map on `ι → L` is determined by its values on vectors with coordinates in
-`K`. -/
+/-- When `ι` is finite, a quadratic map on `ι → L` is determined by its values on the vectors
+obtained from `ι → K` by applying `algebraMap K L` coordinatewise. -/
 theorem ext_algebraMap_comp ⦃Q₁ Q₂ : QuadraticMap L (ι → L) N⦄
-    (h : ∀ v : ι → K, Q₁ (algebraMap K L ∘ v) = Q₂ (algebraMap K L ∘ v)) : Q₁ = Q₂ := by
-  classical
-  have := Fintype.ofFinite ι
-  let f : (ι → K) →ₗ[K] (ι → L) := LinearMap.piMap fun _ ↦ Algebra.linearMap K L
-  apply ext_of_span_range_eq_top f ?_ h
-  apply top_unique
-  rw [← (Pi.basisFun L ι).span_eq]
-  apply Submodule.span_mono
-  exact fun _ ⟨i, hi⟩ ↦
-    ⟨Pi.single i 1, (Pi.single_one_eq_algebraMap_comp K i).symm.trans
-      ((Pi.basisFun_apply L ι i).symm.trans hi)⟩
+    (h : ∀ v : ι → K, Q₁ (algebraMap K L ∘ v) = Q₂ (algebraMap K L ∘ v)) : Q₁ = Q₂ :=
+  ext_of_span_range_eq_top ((Algebra.linearMap K L).compLeft ι)
+    ((IsBaseChange.linearMap K L).finitePow ι).span_range_eq_top h
 
 end QuadraticMap
 

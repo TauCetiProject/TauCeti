@@ -149,8 +149,10 @@ theorem ext_of_span_range_eq_top (f : M →ₗ[R] U)
   obtain ⟨B, hB⟩ := Q.exists_companion
   obtain ⟨B', hB'⟩ := Q'.exists_companion
   have hpair (x y : M) : B (f x) (f y) = B' (f x) (f y) := by
-    apply add_left_cancel (a := Q' (f x) + Q' (f y))
-    rw [← h x, ← h y, ← hB, ← map_add, h, map_add, hB', h x, h y]
+    have hxy := hB (f x) (f y)
+    have hxy' := hB' (f x) (f y)
+    simp only [← map_add, h] at hxy hxy'
+    exact add_left_cancel (hxy.symm.trans hxy')
   have hcompanion : B = B' := by
     apply LinearMap.ext_on_range hf
     intro x

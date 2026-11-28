@@ -23,6 +23,8 @@ This file records general properties of quadratic-map isometries.
 * `QuadraticMap.Isometry.associated_apply`: an isometry preserves the associated bilinear map.
 * `QuadraticForm.isIsometry_polarBilin_of_forall_map_app`: a form-preserving linear map preserves
   the polar bilinear form.
+* `QuadraticMap.IsometryEquiv.ext_on_range`: an isometric equivalence is determined by its values
+  on a spanning family.
 * `QuadraticMap.apply_eq_zero_of_apply_eq_smul`: an eigenvector of a form-preserving endomorphism
   whose eigenvalue does not square to `1` (in the sense of regularity of `μ² - 1`) is isotropic.
 * `QuadraticMap.IsometryEquiv.polar_apply`: an isometric equivalence preserves polarization.
@@ -51,6 +53,17 @@ namespace TauCeti
 open QuadraticMap
 
 universe u v w
+
+/-- Isometric equivalences that agree on a family spanning the source module are equal. -/
+theorem _root_.QuadraticMap.IsometryEquiv.ext_on_range
+    {R M N P : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] [AddCommMonoid P] [Module R P]
+    {Q : QuadraticMap R M P} {Q' : QuadraticMap R N P} {ι : Sort*} {v : ι → M}
+    {e f : Q.IsometryEquiv Q'} (hv : Submodule.span R (Set.range v) = ⊤)
+    (h : ∀ i, e (v i) = f (v i)) : e = f := by
+  have hlin : e.toLinearEquiv.toLinearMap = f.toLinearEquiv.toLinearMap :=
+    LinearMap.ext_on_range hv h
+  exact DFunLike.ext _ _ fun x ↦ DFunLike.congr_fun hlin x
 
 /-- An isometry of quadratic maps, regarded as an isometry of their negatives. The underlying
 linear map is unchanged. -/

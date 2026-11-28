@@ -36,6 +36,10 @@ space, with the integral quadratic form extended to the localized ring.
 * John Voight, *Quaternion algebras*, §9.4, especially Lemma 9.4.6 and Corollary 9.4.7.
 * Mathlib's `Submodule.localized'` and `Submodule.toLocalized'` for the carrier and inclusion,
   and `IsLocalizedModule.mapEquiv` for the underlying linear equivalence.
+* `Submodule.mem_of_localization_maximal` in `Mathlib.RingTheory.LocalProperties.Submodule`.
+  The containment and equality criteria follow from membership, as in Mathlib's
+  `Submodule.le_of_localization_maximal` and
+  `Submodule.eq_of_localization_maximal`.
 -/
 
 public section
@@ -44,11 +48,11 @@ open scoped nonZeroDivisors TensorProduct
 
 namespace TauCeti.IntegralQuadraticLattice
 
-variable {R K V : Type*} [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
+section Localization
+
+variable {R K V : Type*} [CommRing R] [CommRing K] [Algebra R K] [IsFractionRing R K]
   [AddCommGroup V] [Module R V] [Module K V] [IsScalarTower R K V] {Q : QuadraticForm K V}
   (L : IntegralQuadraticLattice R Q)
-
-section Localization
 
 variable (S : Submonoid R) (hS : S ≤ R⁰)
 
@@ -157,20 +161,13 @@ theorem localizeIsometryEquiv_toLocalize (e : L.integralForm.IsometryEquiv M.int
   simp only [IsLocalizedModule.mapEquiv_apply, IsLocalizedModule.map_apply,
     LinearEquiv.coe_coe, QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
 
-private theorem localizeIsometryEquiv_ext
-    {e f : (L.localize S hS).integralForm.IsometryEquiv (M.localize S hS).integralForm}
-    (h : ∀ x : L.carrier, e (L.toLocalize S hS x) = f (L.toLocalize S hS x)) : e = f := by
-  have hlin : e.toLinearEquiv.toLinearMap = f.toLinearEquiv.toLinearMap :=
-    LinearMap.ext_on_range
-      (IsLocalizedModule.isBaseChange S Rₛ (L.toLocalize S hS)).span_range_eq_top h
-  exact DFunLike.ext _ _ fun x ↦ DFunLike.congr_fun hlin x
-
 /-- Localization preserves the identity isometric equivalence. -/
 @[simp]
 theorem localizeIsometryEquiv_refl :
     L.localizeIsometryEquiv S hS L (.refl L.integralForm) =
       .refl (L.localize S hS).integralForm := by
-  apply L.localizeIsometryEquiv_ext S hS L
+  apply QuadraticMap.IsometryEquiv.ext_on_range
+    (IsLocalizedModule.isBaseChange S Rₛ (L.toLocalize S hS)).span_range_eq_top
   intro x
   simp only [localizeIsometryEquiv_toLocalize, QuadraticMap.IsometryEquiv.refl_apply]
 
@@ -182,7 +179,8 @@ theorem localizeIsometryEquiv_trans {U : Type*} [AddCommGroup U] [Module R U] [M
     (f : M.integralForm.IsometryEquiv N.integralForm) :
     L.localizeIsometryEquiv S hS N (e.trans f) =
       (L.localizeIsometryEquiv S hS M e).trans (M.localizeIsometryEquiv S hS N f) := by
-  apply L.localizeIsometryEquiv_ext S hS N
+  apply QuadraticMap.IsometryEquiv.ext_on_range
+    (IsLocalizedModule.isBaseChange S Rₛ (L.toLocalize S hS)).span_range_eq_top
   intro x
   simp only [QuadraticMap.IsometryEquiv.trans_apply, localizeIsometryEquiv_toLocalize]
 
@@ -190,24 +188,23 @@ theorem localizeIsometryEquiv_trans {U : Type*} [AddCommGroup U] [Module R U] [M
 @[simp]
 theorem localizeIsometryEquiv_symm (e : L.integralForm.IsometryEquiv M.integralForm) :
     M.localizeIsometryEquiv S hS L e.symm = (L.localizeIsometryEquiv S hS M e).symm := by
-  apply M.localizeIsometryEquiv_ext S hS L
+  apply QuadraticMap.IsometryEquiv.ext_on_range
+    (IsLocalizedModule.isBaseChange S Rₛ (M.toLocalize S hS)).span_range_eq_top
   intro x
   rw [localizeIsometryEquiv_toLocalize, QuadraticMap.IsometryEquiv.eq_symm_apply]
   simp only [localizeIsometryEquiv_toLocalize, QuadraticMap.IsometryEquiv.apply_symm_apply]
 
 end Localization
 
+variable {R K V : Type*} [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
+  [AddCommGroup V] [Module R V] [Module K V] [IsScalarTower R K V] {Q : QuadraticForm K V}
+  (L : IntegralQuadraticLattice R Q)
+
 local notation "Sₚ" p => (@Ideal.primeCompl_le_nonZeroDivisors R _
   (Function.Injective.noZeroDivisors (algebraMap R K) (IsFractionRing.injective R K)
     (map_zero _) (map_mul _)) p _)
 
 local notation "Rₚ'" p => (Localization.subalgebra K (Ideal.primeCompl p) (Sₚ p))
-
-include K in
-private theorem isLocalizedModule_id_primeCompl :
-    ∀ (p : Ideal R) [p.IsMaximal],
-      IsLocalizedModule p.primeCompl (LinearMap.id (R := R) (M := V)) :=
-  fun p _ ↦ isLocalizedModule_id p.primeCompl V (Rₚ' p)
 
 /-- An embedded lattice is the intersection of its localizations at the maximal ideals. -/
 theorem mem_iff_local {x : V} :
@@ -217,7 +214,7 @@ theorem mem_iff_local {x : V} :
   intro h
   apply +allowSynthFailures @Submodule.mem_of_localization_maximal (Mₚ := fun _ _ ↦ V)
     (f := fun _ _ ↦ LinearMap.id)
-  case inst => exact isLocalizedModule_id_primeCompl (K := K)
+  case inst => exact fun p _ ↦ isLocalizedModule_id p.primeCompl V (Rₚ' p)
   intro p _
   simpa only [← Submodule.restrictScalars_localized' (Rₚ' p), Submodule.restrictScalars_mem,
     LinearMap.id_apply, carrier_localize_eq_localized'] using h p
@@ -230,13 +227,8 @@ theorem le_iff_local {Q' : QuadraticForm K V} (M : IntegralQuadraticLattice R Q'
   refine ⟨fun h p _ ↦ ?_, ?_⟩
   · rw [L.carrier_localize, M.carrier_localize]
     exact Submodule.span_mono h
-  · intro h
-    apply +allowSynthFailures @Submodule.le_of_localization_maximal (Mₚ := fun _ _ ↦ V)
-      (f := fun _ _ ↦ LinearMap.id)
-    case inst => exact isLocalizedModule_id_primeCompl (K := K)
-    intro p _
-    simpa only [← Submodule.restrictScalars_localized' (Rₚ' p), carrier_localize_eq_localized']
-      using Submodule.restrictScalars_mono R (h p)
+  · intro h x hx
+    exact M.mem_iff_local.mpr fun p _ ↦ h p (L.mem_iff_local.mp hx p)
 
 /-- In a fixed quadratic space two embedded lattices are equal exactly when their
 localizations at every maximal ideal are equal. -/
@@ -244,12 +236,8 @@ theorem eq_iff_local (M : IntegralQuadraticLattice R Q) :
     L = M ↔ ∀ (p : Ideal R) [p.IsMaximal],
       L.localize p.primeCompl (Sₚ p) = M.localize p.primeCompl (Sₚ p) := by
   refine ⟨fun h p _ ↦ congrArg (fun N ↦ N.localize p.primeCompl (Sₚ p)) h, fun h ↦ ?_⟩
-  apply IntegralQuadraticLattice.ext
-  apply +allowSynthFailures @Submodule.eq_of_localization_maximal (R := R) (M := V)
-    (Rₚ := fun p _ ↦ Rₚ' p) (Mₚ := fun _ _ ↦ V) (f := fun _ _ ↦ LinearMap.id)
-  all_goals try (intro p _; infer_instance)
-  case inst => exact isLocalizedModule_id_primeCompl (K := K)
-  intro p _
-  simpa only [carrier_localize_eq_localized'] using congrArg carrier (h p)
+  exact IntegralQuadraticLattice.ext (le_antisymm
+    ((L.le_iff_local M).mpr fun p _ ↦ (congrArg carrier (h p)).le)
+    ((M.le_iff_local L).mpr fun p _ ↦ (congrArg carrier (h p)).ge))
 
 end TauCeti.IntegralQuadraticLattice
