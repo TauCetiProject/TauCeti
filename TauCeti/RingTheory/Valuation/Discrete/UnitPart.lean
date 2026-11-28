@@ -140,6 +140,16 @@ theorem unitPartResidue_apply (t : Fˣ) (ht : v.ord (t : F) = 1) (f : Fˣ) :
       v.valuationSubring.unitGroupToResidueFieldUnits (v.unitPart t ht f) :=
   (rfl)
 
+/-- The reduced unit part of `f` is the residue of any element of the valuation ring whose value
+is the unit part `f * t ^ (-ord_v f)`. -/
+theorem coe_unitPartResidue_eq_residue (t : Fˣ) (ht : v.ord (t : F) = 1) {f : Fˣ}
+    {x : v.valuationSubring} (hx : (x : F) = (v.unitPart t ht f : Fˣ)) :
+    (v.unitPartResidue t ht f : IsLocalRing.ResidueField v.valuationSubring) =
+      IsLocalRing.residue v.valuationSubring x := by
+  rw [unitPartResidue_apply, ValuationSubring.coe_unitGroupToResidueFieldUnits_apply,
+    ← IsLocalRing.residue_def]
+  exact congrArg _ (Subtype.ext hx.symm)
+
 /-- The reduced unit part of a unit of the valuation ring is its residue. -/
 @[simp]
 theorem unitPartResidue_coe (t : Fˣ) (ht : v.ord (t : F) = 1)
@@ -174,6 +184,14 @@ theorem unitPartResidue_map_algebraMap {E : Type*} [Field E] [Algebra F E]
   rw [hf, map_mul, map_zpow, mul_comm, unitPartResidue_coe]
   exact congrArg (· * _)
     (HasExtension.unitGroupToResidueFieldUnits_map v w (v.unitPart t ht f).property)
+
+/-- A field unit of order zero has reduced unit part `1` exactly when it is a principal unit. -/
+theorem unitPartResidue_eq_one_iff_of_ord_eq_zero (t : Fˣ) (ht : v.ord (t : F) = 1) {f : Fˣ}
+    (hord : v.ord (f : F) = 0) :
+    v.unitPartResidue t ht f = 1 ↔ f ∈ v.valuationSubring.principalUnitGroup := by
+  rw [v.unitPartResidue_of_ord_eq_zero t ht hord, ← MonoidHom.mem_ker,
+    ValuationSubring.ker_unitGroupToResidueFieldUnits, Subgroup.mem_comap]
+  exact Iff.rfl
 
 /-- If `r + s = 1` and `r` has positive order, then `s` has reduced unit part `1`. -/
 theorem unitPartResidue_eq_one_of_add_eq_one (t : Fˣ) (ht : v.ord (t : F) = 1) {r s : Fˣ}

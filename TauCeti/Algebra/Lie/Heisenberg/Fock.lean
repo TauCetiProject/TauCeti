@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.BilinearForm.Isometry
 public import TauCeti.Algebra.Lie.Heisenberg.Affine
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.OfEnd
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.PDeriv
@@ -64,6 +65,7 @@ to be additively torsion-free (`HasUniqueDiv R`). For `B = 0` every positive mod
 ## Main results
 
 * `TauCeti.HeisenbergFockSpace.modeOperator_commutator`: the Heisenberg relations.
+* `TauCeti.HeisenbergFockSpace.map_modeOperator`: isometries intertwine the modes.
 * `TauCeti.HeisenbergAlgebra.fockRepresentation_mode` and
   `TauCeti.HeisenbergAlgebra.fockRepresentation_centralElement`: the modes act by the mode
   operators and the central element acts by `1`.
@@ -281,6 +283,26 @@ theorem modeOperator_commutator (hB : B.IsSymm) (m n : ℤ) (h k : H) :
     · omega
     ext p
     simp [mul_left_comm]
+
+variable {B} in
+/-- **Isometries intertwine the modes.** For an isometry `f : (H, B) → (H', B')`, the induced map
+of Fock spaces carries `h(n) p` to `(f h)(n) f(p)`. -/
+theorem map_modeOperator {H' : Type*} [AddCommGroup H'] [Module R H']
+    {B' : LinearMap.BilinForm R H'} (f : B →bᵢ B') (n : ℤ) (h : H) (p : HeisenbergFockSpace R H) :
+    SymmetricAlgebra.map R (Finsupp.mapRange.linearMap f.toLinearMap) (modeOperator B n h p) =
+      modeOperator B' n (f h)
+        (SymmetricAlgebra.map R (Finsupp.mapRange.linearMap f.toLinearMap) p) := by
+  rcases n with (_ | j) | j
+  · simp
+  · rw [Int.ofNat_eq_natCast, Nat.cast_succ, modeOperator_natCast_add_one_apply,
+      modeOperator_natCast_add_one_apply]
+    -- Both sides are derivations along the induced algebra map, so compare them on generators.
+    induction p using SymmetricAlgebra.induction with
+    | algebraMap r => simp
+    | ι v => simp
+    | mul p q hp hq => simp [Derivation.leibniz, hp, hq]
+    | add p q hp hq => simp [hp, hq]
+  · simp [modeOperator_negSucc]
 
 /-- **The negative modes generate the Fock space from the vacuum**: a submodule containing the
 vacuum and stable under every negative mode is the whole Fock space. -/

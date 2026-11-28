@@ -197,12 +197,8 @@ noncomputable def narrowSignBoundary :
     ({w : InfinitePlace K // w.IsReal} → (ℝˣ ⧸ Units.posSubgroup ℝ)) →*
       MonoidHom.ker (classMap (Modulus.one_dvd (narrowModulus K))) :=
   (narrowSignRayClass (K := K)).codRestrict _ fun s ↦ by
-    have hs : rayClassToClassGroup (narrowModulus K) (narrowSignRayClass s) = 1 := by
-      rw [← MonoidHom.mem_ker, ← range_residueSignRayClass]
-      exact ⟨narrowSignResidueEquiv s, rfl⟩
-    rw [rayClassToClassGroup_eq_oneEquivClassGroup_comp_classMap,
-      MonoidHom.comp_apply] at hs
-    exact MonoidHom.mem_ker.mpr <| oneEquivClassGroup.injective <| by simpa only [map_one]
+    rw [← ker_rayClassToClassGroup_eq_ker_classMap_one_dvd, ← range_residueSignRayClass]
+    exact ⟨narrowSignResidueEquiv s, rfl⟩
 
 private theorem coe_narrowSignBoundary
     (s : {w : InfinitePlace K // w.IsReal} → (ℝˣ ⧸ Units.posSubgroup ℝ)) :
@@ -241,11 +237,9 @@ theorem ker_narrowSignBoundary :
 theorem narrowSignBoundary_surjective :
     Function.Surjective (narrowSignBoundary (K := K)) := by
   rintro ⟨c, hc⟩
-  have hc' : c ∈ (rayClassToClassGroup (narrowModulus K)).ker := by
-    rw [MonoidHom.mem_ker, rayClassToClassGroup_eq_oneEquivClassGroup_comp_classMap,
-      MonoidHom.comp_apply, hc, map_one]
-  rw [← range_residueSignRayClass, MonoidHom.mem_range] at hc'
-  obtain ⟨a, ha⟩ := hc'
+  rw [← ker_rayClassToClassGroup_eq_ker_classMap_one_dvd, ← range_residueSignRayClass,
+    MonoidHom.mem_range] at hc
+  obtain ⟨a, ha⟩ := hc
   obtain ⟨s, rfl⟩ := (narrowSignResidueEquiv (K := K)).surjective a
   exact ⟨s, Subtype.ext ha⟩
 

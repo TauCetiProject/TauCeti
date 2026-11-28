@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.SymmetricAlgebra.GradedMap
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Integral
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.KrullDimension
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 import TauCeti.LinearAlgebra.SymmetricAlgebra.KrullDimension
 

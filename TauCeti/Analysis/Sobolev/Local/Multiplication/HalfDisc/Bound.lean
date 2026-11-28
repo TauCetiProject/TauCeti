@@ -49,6 +49,9 @@ reflection bound returns to `Ω⁺`.
 * `TauCeti.exists_eLpNorm_bilin_le_eLpNormWkp_one_halfPlane`: the order-zero bound.
 * `TauCeti.exists_eLpNormWkp_succ_bilin_le_halfPlane`: the bound at every positive order. At
   `q = p` it is the local bound for the algebra property of `W^{k+1,p}_loc(Ω⁺)`.
+* `TauCeti.exists_eLpNormWkp_bilin_le_mul_eLpNormWkp_succ_halfPlane` and
+  `TauCeti.exists_eLpNormWkp_clm_apply_le_mul_eLpNormWkp_succ_halfPlane`: the bound of order `k`
+  with a `W^{k+1,q}` factor, which loses no derivative of the `W^{k,p}` factor.
 * `TauCeti.exists_eLpNormWkp_succ_clm_apply_le_halfPlane` and
   `TauCeti.exists_eLpNormWkp_succ_compL_le_halfPlane`: the coefficient-field and composition
   forms.
@@ -177,6 +180,52 @@ theorem exists_eLpNormWkp_succ_bilin_le_halfPlane [CompleteSpace H] (hp : 2 < p)
     (Opens.closure_inter_setOf_im_nonneg_subset_reflectionCore hUΩ)
   have hq1 : (1 : ℝ≥0∞) ≤ q := by exact_mod_cast hq.le
   exact exists_bilin_le_halfPlane_of_reflectionCore (hq1.trans (by exact_mod_cast hqp)) hq1 hC
+
+/-- **Local bound for mixed-exponent products on half-discs with one derivative to spare.** Fix
+real normed spaces `F`, `G` and `H` with `F` and `G` finite-dimensional and `H` complete. For
+`p > 2`, `1 < q ≤ p`, every `k` and a set `U` whose closure is compact and contained in `Ω`, there
+is a constant `C` such that, with `U⁺ = U ∩ {0 ≤ im}` and `Ω⁺ = Ω ∩ {0 ≤ im}`,
+`‖B(f, g)‖_{W^{k,q}(U⁺)} ≤ C ‖B‖ ‖f‖_{W^{k,p}(Ω⁺)} ‖g‖_{W^{k+1,q}(Ω⁺)}` for every continuous
+bilinear map `B : F →L[ℝ] G →L[ℝ] H` and all `f : ℂ → F` and `g : ℂ → G`. At `k = 0` the extra
+derivative of `g` makes it integrable to the exponent conjugate to `p` relative to `q`. -/
+theorem exists_eLpNormWkp_bilin_le_mul_eLpNormWkp_succ_halfPlane [CompleteSpace H] (hp : 2 < p)
+    (hq : 1 < q) (hqp : q ≤ p) (k : ℕ) {U : Set ℂ} (hU : IsCompact (closure U))
+    (hUΩ : closure U ⊆ Ω) :
+    ∃ C : ℝ≥0, ∀ (B : F →L[ℝ] G →L[ℝ] H) (f : ℂ → F) (g : ℂ → G),
+      eLpNormWkp q (U ∩ {z | 0 ≤ z.im}) k (fun z => B (f z) (g z)) ≤
+        C * ‖B‖ₑ * eLpNormWkp p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k f *
+          eLpNormWkp q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) g := by
+  cases k with
+  | zero =>
+    obtain ⟨C, hC⟩ := exists_eLpNorm_bilin_le_eLpNormWkp_one_halfPlane (F := F) (G := G) (H := H)
+      hp hq.le hqp hU hUΩ
+    refine ⟨C, fun B f g => ?_⟩
+    rw [eLpNormWkp_zero, eLpNormWkp_zero]
+    refine (hC B f g).trans ?_
+    gcongr
+    exact subset_closure.trans hUΩ
+  | succ k =>
+    obtain ⟨C, hC⟩ := exists_eLpNormWkp_succ_bilin_le_halfPlane (F := F) (G := G) (H := H) hp hq
+      hqp k hU hUΩ
+    exact ⟨C, fun B f g => (hC B f g).trans (by gcongr; exact eLpNormWkp_mono_order k.succ.le_succ)⟩
+
+/-- **Local bound for coefficient fields on half-discs with one derivative to spare.** Fix
+finite-dimensional real normed spaces `F` and `G`. For `p > 2`, `1 < q ≤ p`, every `k` and a set
+`U` whose closure is compact and contained in `Ω`, there is a constant `C` such that, with
+`U⁺ = U ∩ {0 ≤ im}` and `Ω⁺ = Ω ∩ {0 ≤ im}`,
+`‖z ↦ A z (u z)‖_{W^{k,q}(U⁺)} ≤ C ‖A‖_{W^{k,p}(Ω⁺)} ‖u‖_{W^{k+1,q}(Ω⁺)}` for every coefficient
+field `A : ℂ → F →L[ℝ] G` and every `u : ℂ → F`. This is the half-disc form of
+`TauCeti.exists_eLpNormWkp_clm_apply_le_mul_eLpNormWkp_succ`. -/
+theorem exists_eLpNormWkp_clm_apply_le_mul_eLpNormWkp_succ_halfPlane (hp : 2 < p) (hq : 1 < q)
+    (hqp : q ≤ p) (k : ℕ) {U : Set ℂ} (hU : IsCompact (closure U)) (hUΩ : closure U ⊆ Ω) :
+    ∃ C : ℝ≥0, ∀ (A : ℂ → F →L[ℝ] G) (u : ℂ → F),
+      eLpNormWkp q (U ∩ {z | 0 ≤ z.im}) k (fun z => A z (u z)) ≤
+        C * eLpNormWkp p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k A *
+          eLpNormWkp q ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) u := by
+  obtain ⟨C, hC⟩ := exists_eLpNormWkp_bilin_le_mul_eLpNormWkp_succ_halfPlane (F := F →L[ℝ] G)
+    (G := F) (H := G) hp hq hqp k hU hUΩ
+  exact ⟨C, fun A u => le_mul_mul_of_le_mul_eNorm_mul_mul ContinuousLinearMap.norm_id_le
+    (hC (ContinuousLinearMap.id ℝ (F →L[ℝ] G)) A u)⟩
 
 /-- **Local bound for coefficient fields on half-discs.** Fix finite-dimensional real normed spaces
 `F` and `G`. For `p > 2`, `1 < q ≤ p`, every `k` and a set `U` whose closure is compact and
