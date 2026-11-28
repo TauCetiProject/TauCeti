@@ -136,8 +136,9 @@ range, so the value is a `dite` rather than a plain application.
   change its final partial product.
 * `Fin.prod_contractNth_castSucc` and `Fin.sum_contractNth_castSucc`: multiplying (adding) two
   adjacent entries of a tuple does not change the product (sum) of all its entries.
-* `Fin.dfoldl_castLE_zero` and `Fin.dfoldl_castLE_succ`: the zero and successor equations for the
-  dependent left fold `Fin.dfoldl` restricted along `Fin.castLE`.
+* `Fin.dfoldl_castLE_zero`, `Fin.dfoldl_castLE_succ` and `Fin.dfoldl_castLE_last`: the zero,
+  successor and last-index equations for the dependent left fold `Fin.dfoldl` restricted along
+  `Fin.castLE`.
 * `Fin.eq_dfoldl_of_zero_of_succ`: a dependent family indexed by `Fin (n + 1)` satisfying the
   zero and successor equations equals the restricted dependent left fold `Fin.dfoldl`.
 * `TauCeti.add_one_ne_self`: adding one in `Fin n` is nontrivial when `2 ≤ n`.
@@ -869,6 +870,17 @@ theorem dfoldl_castLE_succ {n : ℕ} {α : Fin (n + 1) → Type*}
   -- `Fin.last i.val` to `i`.
   Fin.dfoldl_succ_last (α := fun j => α (Fin.castLE i.succ.isLt j))
     (fun j => f (Fin.castLE (Nat.le_of_lt_succ i.succ.isLt) j)) x
+
+/-- Evaluating the restricted dependent left fold `Fin.dfoldl` along `Fin.castLE` at the final
+prefix index `Fin.last n` agrees with the unrestricted dependent left fold `Fin.dfoldl n`. -/
+theorem dfoldl_castLE_last {n : ℕ} {α : Fin (n + 1) → Type*}
+    (f : ∀ i : Fin n, α i.castSucc → α i.succ) (x : α 0) :
+    Fin.dfoldl (Fin.last n).val (fun j => α (Fin.castLE (Fin.last n).isLt j))
+      (fun j => f (Fin.castLE (Nat.le_of_lt_succ (Fin.last n).isLt) j)) x =
+      Fin.dfoldl n α f x :=
+  -- `Fin.last n` has `.val = n`, and both `Fin.castLE` maps are `Fin.castLE_rfl`, reducing
+  -- definitionally to `id`.
+  rfl
 
 /-- A dependent family indexed by `Fin (n + 1)` that agrees with `x` at `0` and satisfies the step
 equation `g i.succ = f i (g i.castSucc)` equals the restricted dependent left fold `Fin.dfoldl` at

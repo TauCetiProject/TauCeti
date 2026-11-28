@@ -160,9 +160,11 @@ theorem polynomialChain_eq_dfoldl
       Fin.dfoldl n (fun k => I k → MvPolynomial ((Σ i, W i) ⊕ I 0) K)
         (fun i prev o => aeval (Sum.elim (fun w => X (Sum.inl ⟨i, w⟩)) prev) (P i o))
         (fun a => X (Sum.inr a)) :=
-  -- At `k = Fin.last n`, both `Fin.castLE` maps are `Fin.castLE_rfl` and reduce definitionally
-  -- to `id`.
-  polynomialChainPrefix_eq_dfoldl P (Fin.last n)
+  (polynomialChainPrefix_eq_dfoldl P (Fin.last n)).trans
+    (Fin.dfoldl_castLE_last
+      (α := fun k => I k → MvPolynomial ((Σ i, W i) ⊕ I 0) K)
+      (fun i prev o => aeval (Sum.elim (fun w => X (Sum.inl ⟨i, w⟩)) prev) (P i o))
+      (fun a => X (Sum.inr a)))
 
 /-- The empty chain of polynomial models is the tuple of input variables. -/
 @[simp] theorem polynomialChain_zero {I : Fin 1 → Type*} {W : Fin 0 → Type*}
@@ -279,13 +281,6 @@ theorem polynomialChain_succ_last {I : Fin (n + 2) → Type*} {W : Fin (n + 1) �
 
 /-! ### Evaluation and neuromanifolds -/
 
-/-- Prefix `0` of `polynomialChainPrefix` realizes the identity on inputs at every parameter. -/
-theorem polynomialRealization_polynomialChainPrefix_zero
-    (P : ∀ i, I i.succ → MvPolynomial (W i ⊕ I i.castSucc) K) :
-    polynomialRealization (polynomialChainPrefix P 0) = fun _ x => x := by
-  funext w x a
-  simp
-
 /-- Step `i + 1` of `polynomialChainPrefix` evaluates layer `P i` on the output of step `i`, using
 the layer's slice `v ↦ w ⟨i, v⟩` of parameter coordinates. -/
 @[simp] theorem polynomialRealization_polynomialChainPrefix_succ
@@ -311,7 +306,7 @@ theorem polynomialRealization_polynomialChainPrefix_eq_dfoldl
   Fin.eq_dfoldl_of_zero_of_succ
     (fun i => polynomialRealization (P i) (fun v => w ⟨i, v⟩))
     x (fun j => polynomialRealization (polynomialChainPrefix P j) w x)
-    (congrFun (congrFun (polynomialRealization_polynomialChainPrefix_zero P) w) x)
+    (by rw [polynomialChainPrefix_zero, polynomialRealization_X_inr]; simp only [Function.comp_def])
     (fun i => polynomialRealization_polynomialChainPrefix_succ P i w x) k
 
 /-- Evaluating `polynomialChain P` realizes the finite chain of layer realizations
@@ -324,9 +319,9 @@ theorem polynomialRealization_polynomialChainPrefix_eq_dfoldl
         Equiv.piCurry (fun _ _ => K) := by
   funext w x
   rw [polynomialChain_def, Function.comp_apply, chain_eq_dfoldl]
-  -- At `k = Fin.last n`, both `Fin.castLE` maps are `Fin.castLE_rfl` and reduce definitionally
-  -- to `id`.
-  exact polynomialRealization_polynomialChainPrefix_eq_dfoldl P w x (Fin.last n)
+  exact (polynomialRealization_polynomialChainPrefix_eq_dfoldl P w x (Fin.last n)).trans
+    (Fin.dfoldl_castLE_last (α := fun k => I k → K)
+      (fun i => polynomialRealization (P i) (fun v => w ⟨i, v⟩)) x)
 
 /-- Composing a finite chain of polynomial models by substitution realizes the same functions as
 composing their realization maps with `chain`. -/
@@ -338,13 +333,6 @@ theorem realizedFunctions_polynomialChain
     (Equiv.piCurry fun _ _ => K).surjective.range_comp]
 
 /-! ### Input polynomials, reparametrization, homogeneity, and scalar transport -/
-
-/-- The collected input polynomials at prefix `0` are the initial input variables. -/
-theorem inputPolynomial_polynomialChainPrefix_zero
-    (P : ∀ i, I i.succ → MvPolynomial (W i ⊕ I i.castSucc) K) (a : I 0) :
-    inputPolynomial (polynomialChainPrefix P 0) a = X a :=
-  (congrArg (fun Q => inputPolynomial Q a) (polynomialChainPrefix_zero P)).trans
-    (inputPolynomial_X_inr id a)
 
 /-- Collecting the inputs at step `i + 1` of `polynomialChainPrefix` substitutes the collected
 input polynomials of step `i` into those of layer `P i`, tagging layer `i`'s parameter variables
@@ -408,7 +396,7 @@ theorem polynomialInputDegree_polynomialChainPrefix_le [∀ k, Fintype (I k)]
   | zero =>
     rw [Fin.partialProd_zero]
     refine (polynomialInputDegree_le_iff _).2 fun a => ?_
-    rw [inputPolynomial_polynomialChainPrefix_zero]
+    rw [polynomialChainPrefix_zero, inputPolynomial_X_inr]
     exact (isHomogeneous_X _ a).totalDegree_le
   | succ i ih =>
     rw [polynomialChainPrefix_succ_eq_rename_polynomialCompose_last, Fin.partialProd_succ]
@@ -434,7 +422,7 @@ theorem isHomogeneous_inputPolynomial_polynomialChainPrefix
     (inputPolynomial (polynomialChainPrefix P k) o).IsHomogeneous (Fin.partialProd d k) := by
   induction k using Fin.induction with
   | zero =>
-    rw [inputPolynomial_polynomialChainPrefix_zero, Fin.partialProd_zero]
+    rw [polynomialChainPrefix_zero, inputPolynomial_X_inr, Fin.partialProd_zero]
     exact isHomogeneous_X _ o
   | succ i ih =>
     rw [polynomialChainPrefix_succ_eq_rename_polynomialCompose_last, Fin.partialProd_succ]
