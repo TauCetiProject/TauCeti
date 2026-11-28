@@ -397,6 +397,13 @@ theorem liftLineHom_right {L' : Type*} [LieRing L'] [LieAlgebra R L']
     (liftLineHom D D' f hf x).right = x.right :=
   (rfl)
 
+@[simp]
+theorem liftLineHom_mk {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (f : L →ₗ⁅R⁆ L') (hf : ∀ x, f (D x) = D' (f x)) (x : L) (t : R) :
+    liftLineHom D D' f hf ⟨x, t⟩ = ⟨f x, t⟩ :=
+  (rfl)
+
 theorem liftLineHom_inl {L' : Type*} [LieRing L'] [LieAlgebra R L']
     (D : LieDerivation R L L) (D' : LieDerivation R L' L')
     (f : L →ₗ⁅R⁆ L') (hf : ∀ x, f (D x) = D' (f x)) (x : L) :
@@ -445,6 +452,14 @@ theorem liftLineEquiv_right {L' : Type*} [LieRing L'] [LieAlgebra R L']
     (liftLineEquiv D D' e he x).right = x.right :=
   (rfl)
 
+/-- Evaluating `liftLineEquiv` on `⟨x, t⟩`. -/
+@[simp]
+theorem liftLineEquiv_mk {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, e (D x) = D' (e x)) (x : L) (t : R) :
+    liftLineEquiv D D' e he ⟨x, t⟩ = ⟨e x, t⟩ :=
+  (rfl)
+
 /-- The inverse of `liftLineEquiv` is `liftLineEquiv` of `e.symm`. -/
 theorem liftLineEquiv_symm {L' : Type*} [LieRing L'] [LieAlgebra R L']
     (D : LieDerivation R L L) (D' : LieDerivation R L' L')
@@ -467,6 +482,14 @@ theorem liftLineEquiv_symm_right {L' : Type*} [LieRing L'] [LieAlgebra R L']
     (D : LieDerivation R L L) (D' : LieDerivation R L' L')
     (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, e (D x) = D' (e x)) (x : L' ⋊⁅D'.lineHom⁆ R) :
     ((liftLineEquiv D D' e he).symm x).right = x.right :=
+  (rfl)
+
+/-- Evaluating `(liftLineEquiv D D' e he).symm` on `⟨x, t⟩`. -/
+@[simp]
+theorem liftLineEquiv_symm_mk {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, e (D x) = D' (e x)) (x : L') (t : R) :
+    (liftLineEquiv D D' e he).symm ⟨x, t⟩ = ⟨e.symm x, t⟩ :=
   (rfl)
 
 /-- Every element of `L ⋊⁅D.lineHom⁆ R` is the sum of an element of `L` and a multiple of the
