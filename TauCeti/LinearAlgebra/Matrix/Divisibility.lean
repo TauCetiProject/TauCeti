@@ -9,6 +9,7 @@ module
 -- `Mathlib.Data.Matrix.Diagonal`, which supplies `Matrix.diagonal_apply_eq`.
 public import Mathlib.Data.Matrix.Mul
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.RingTheory.Ideal.Quotient.Basic
@@ -71,6 +72,8 @@ proves the uniqueness of the Smith normal form, from one diagonal factor to two.
 * `Matrix.prod_castLE_mul_prod_castLE_dvd_of_mul_diagonal_mul_diagonal_mul_eq`: if
   `P * diagonal c₁ * Q * diagonal c₂ * S = diagonal d`, then the product of the first `k`
   entries of `d` is divisible by those of `c₁` and `c₂`.
+* `Matrix.GeneralLinearGroup.dvd_of_forall_dvd_mul_inv_apply`: if `z` divides `c * P⁻¹.val j i`
+  for every `j` in a column of an invertible matrix `P`, then `z ∣ c`.
 -/
 
 public section
@@ -311,5 +314,16 @@ theorem prod_castLE_mul_prod_castLE_dvd_of_mul_diagonal_mul_diagonal_mul_eq
     (Fin.castLE hk) (Fin.castLE hk)
 
 end ChainMinor
+
+/-- If `z` divides `c * P⁻¹.val j i` for every `j` in a column of an invertible matrix `P`, then
+`z ∣ c`. -/
+theorem GeneralLinearGroup.dvd_of_forall_dvd_mul_inv_apply {O I : Type*} [CommSemiring O]
+    [Fintype I] [DecidableEq I] (P : GL I O) {z c : O} {i : I}
+    (h_col : ∀ j : I, z ∣ c * P⁻¹.val j i) : z ∣ c := by
+  have h_diag : ∑ j : I, P.val i j * (c * P⁻¹.val j i) = c := by
+    simp only [mul_left_comm, ← Finset.mul_sum, ← Matrix.mul_apply, P.mul_inv, one_apply_eq,
+      mul_one]
+  rw [← h_diag]
+  exact Finset.dvd_sum fun j _ ↦ (h_col j).mul_left _
 
 end Matrix
