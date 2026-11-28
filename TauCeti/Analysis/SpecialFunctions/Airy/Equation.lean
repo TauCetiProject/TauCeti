@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.Airy.Basic
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import TauCeti.Analysis.ODE.Wronskian
 import TauCeti.Analysis.Calculus.Deriv.Second
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # Airy's equation
@@ -31,6 +32,8 @@ solution satisfies the Riccati equation `W' = z − W²`.
   are equal;
 * `TauCeti.hasDerivAt_deriv_div_of_airy_ode_at`, `TauCeti.hasDerivAt_deriv_div_of_airy_ode`: the
   Riccati form (DLMF 9.2.16), pointwise and for entire solutions;
+* `TauCeti.airy_ode_comp_mul_left`: if `w'' = z w` and `ν³ = 1`, then `z ↦ w(νz)` solves the same
+  equation;
 * `TauCeti.airy_inhomogeneous_ode_rotation`: for a cube root of unity `ν`, the rotation
   `f ↦ (z ↦ ν f(ν z))` preserves every equation `w'' = z w + c`.
 
@@ -183,11 +186,8 @@ theorem wronskian_airyAi_airyBi (z : ℂ) :
   rw [wronskian_eq_of_airy_ode differentiable_airyAi differentiable_airyBi airyAi_ode airyBi_ode
     z 0, airyAi_zero, airyBi_zero, deriv_airyAi_zero, deriv_airyBi_zero]
   have hG : Gamma (1 / 3) * Gamma (2 / 3) * (3 : ℂ) ^ (1 / 2 : ℂ) = 2 * π := by
-    have h3 : (3 : ℂ) ^ (1 / 2 : ℂ) = (Real.sqrt 3 : ℂ) := by
-      rw [Real.sqrt_eq_rpow, ofReal_cpow (by norm_num : (0 : ℝ) ≤ 3)]
-      norm_num
     have h30 : (Real.sqrt 3 : ℂ) ≠ 0 := by simp
-    rw [Complex.Gamma_one_third_mul_Gamma_two_thirds, h3]
+    rw [Complex.Gamma_one_third_mul_Gamma_two_thirds, ofNat_cpow_one_half]
     field_simp
   have h1 : Gamma (1 / 3 : ℂ) ≠ 0 := Gamma_ne_zero_of_re_pos (by norm_num)
   have h2 : Gamma (2 / 3 : ℂ) ≠ 0 := Gamma_ne_zero_of_re_pos (by norm_num)
@@ -258,6 +258,15 @@ theorem hasDerivAt_deriv_div_of_airy_ode {w : ℂ → ℂ} (hw : Differentiable 
     (hode : ∀ z, deriv^[2] w z = z * w z) {z : ℂ} (hz : w z ≠ 0) :
     HasDerivAt (fun u => deriv w u / w u) (z - (deriv w z / w z) ^ 2) z :=
   hasDerivAt_deriv_div_of_airy_ode_at (hw z) (hw.deriv z) (hode z) hz
+
+/-- **Rotation symmetry** of Airy's equation: if `w'' = z w` and `ν³ = 1`, then `z ↦ w(νz)` solves
+the same equation. No differentiability of `w` is needed. -/
+theorem airy_ode_comp_mul_left {w : ℂ → ℂ} {ν : ℂ} (hw : ∀ z, deriv^[2] w z = z * w z)
+    (hν : ν ^ 3 = 1) (z : ℂ) :
+    deriv^[2] (fun u => w (ν * u)) z = z * w (ν * z) := by
+  simp only [← iteratedDeriv_eq_iterate, iteratedDeriv_comp_mul_left, smul_eq_mul]
+  rw [iteratedDeriv_eq_iterate, hw]
+  linear_combination z * w (ν * z) * hν
 
 /-- **Rotation symmetry** of the inhomogeneous Airy equation: if `f'' = z f + c` and `ν³ = 1`,
 then the rotated function `z ↦ ν f(ν z)` satisfies the same equation. No differentiability of `f`

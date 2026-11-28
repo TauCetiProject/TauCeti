@@ -108,6 +108,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `Complex.neg_cpow_half_eq_or_eq_neg` -- algebraic identities for principal `±1/2` powers,
   including at `w = 0`, and the sign dichotomy `(-w) ^ (1/2) = ±(I * w ^ (1/2))`.
 * `Complex.ofReal_cpow_neg_one_half` -- for `x ≥ 0`, `x ^ (-1 / 2) = (√x)⁻¹`.
+* `Complex.ofReal_cpow_one_half`, `Complex.ofNat_cpow_one_half` -- for `x ≥ 0`,
+  `x ^ (1 / 2) = √x`.
 * `HasDerivAt.cpow_half` -- derivative of `w ↦ f w ^ (1/2)` in the slit plane over any
   nontrivially normed field `𝕜` with `[NormedAlgebra 𝕜 ℂ]`.
 * `Complex.tendsto_ofReal_add_cpow_neg` -- for any complex `x` and real `s > 0`,
@@ -819,6 +821,17 @@ theorem ofReal_cpow_neg_one_half {x : ℝ} (hx : 0 ≤ x) :
     (x : ℂ) ^ (-1 / 2 : ℂ) = ((√x : ℝ) : ℂ)⁻¹ := by
   rw [Real.sqrt_eq_rpow, ← ofReal_inv, ← Real.rpow_neg hx, ofReal_cpow hx]
   norm_num
+
+/-- For `x ≥ 0`, `x ^ (1 / 2) = √x` as complex numbers. -/
+theorem ofReal_cpow_one_half {x : ℝ} (hx : 0 ≤ x) : (x : ℂ) ^ (1 / 2 : ℂ) = ((√x : ℝ) : ℂ) := by
+  rw [Real.sqrt_eq_rpow, ofReal_cpow hx]
+  norm_num
+
+/-- For a numeral `n`, `n ^ (1 / 2) = √n` as complex numbers, for instance
+`(3 : ℂ) ^ (1 / 2 : ℂ) = √3`. -/
+theorem ofNat_cpow_one_half (n : ℕ) [n.AtLeastTwo] :
+    (ofNat(n) : ℂ) ^ (1 / 2 : ℂ) = ((√(ofNat(n) : ℝ) : ℝ) : ℂ) := by
+  rw [← ofReal_cpow_one_half (Nat.ofNat_nonneg _), ofReal_ofNat]
 
 /-- Multiplying the principal power `w ^ (-1/2)` by `w` gives `w ^ (1/2)`, including at
 `w = 0`. -/
