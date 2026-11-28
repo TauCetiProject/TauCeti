@@ -53,6 +53,9 @@ of operator norm at most `‖B‖` (`ContinuousLinearMap.norm_compLeftContinuous
 `LinearIsometry.norm_compLeftContinuousBounded` says that postcomposition with a linear isometry
 preserves the norm.
 
+`BoundedContinuousFunction.compContinuousₗ` is linear precomposition over a semiring
+with a bounded scalar action.
+
 `BoundedContinuousFunction.ofContinuousOn` is the bounded continuous function on a set given by
 a function continuous and bounded on that set.
 
@@ -304,6 +307,36 @@ theorem compContinuousPositiveLinearMap_toLinearMap (g : C(Y, X)) :
   (rfl)
 
 end compContinuousPositiveLinearMap
+
+section LinearPrecomposition
+
+variable {X Y V 𝕜 : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+  [Semiring 𝕜] [PseudoMetricSpace 𝕜] [SeminormedAddCommGroup V]
+  [Module 𝕜 V] [IsBoundedSMul 𝕜 V]
+
+/-- Precomposition by a continuous map as a linear map on bounded continuous functions. -/
+def compContinuousₗ (V 𝕜 : Type*) [SeminormedAddCommGroup V] [Semiring 𝕜]
+    [PseudoMetricSpace 𝕜] [Module 𝕜 V] [IsBoundedSMul 𝕜 V]
+    (g : C(Y, X)) : (X →ᵇ V) →ₗ[𝕜] (Y →ᵇ V) where
+  toFun f := f.compContinuous g
+  map_add' _ _ := by ext; simp
+  map_smul' _ _ := by ext; simp
+
+/-- Linear precomposition agrees with precomposition of bounded continuous functions. -/
+@[simp]
+theorem compContinuousₗ_apply (g : C(Y, X)) (f : X →ᵇ V) :
+    compContinuousₗ V 𝕜 g f = f.compContinuous g := (rfl)
+
+end LinearPrecomposition
+
+/-- Precomposition with a surjective continuous map preserves the supremum norm. -/
+theorem norm_compContinuous_eq_of_surjective {X Y V : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [SeminormedAddCommGroup V] (f : X →ᵇ V) (a : C(Y, X))
+    (ha : Function.Surjective a) : ‖f.compContinuous a‖ = ‖f‖ := by
+  refine le_antisymm (f.norm_compContinuous_le a) ((norm_le (norm_nonneg _)).2 ?_)
+  intro x
+  obtain ⟨y, rfl⟩ := ha x
+  exact (f.compContinuous a).norm_coe_le_norm y
 
 variable {α 𝕜 β S : Type*} [TopologicalSpace α] [NormedField 𝕜] [SeminormedAddCommGroup β]
   [NormedSpace 𝕜 β] [SetLike S (α →ᵇ β)] [AddSubgroupClass S (α →ᵇ β)]
