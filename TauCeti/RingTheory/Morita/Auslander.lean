@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.CategoryTheory.Generator.GeneratorCogenerator
 public import TauCeti.CategoryTheory.Preadditive.AdditiveGenerator
 public import TauCeti.RingTheory.DominantDimension
-public import TauCeti.RingTheory.GlobalDimension
 
 import Mathlib.RingTheory.HopkinsLevitzki
 import TauCeti.Algebra.Category.FGModuleCat.End
@@ -139,7 +138,8 @@ theorem IsAdditiveGenerator.globalDimension_moduleEnd_eq_two_and_dominantDimensi
     (hA : ¬ IsSemisimpleRing A) :
     globalDimension.{w} (Module.End A M.obj) = 2 ∧ dominantDimension (Module.End A M.obj) = 2 :=
   (isAuslanderAlgebra_end R M hM).globalDimension_eq_two_and_dominantDimension_eq_two
-    fun hinj ↦ hA (isSemisimpleRing_of_selfInjective_moduleEnd (fun _ ↦ hM.additiveClosure _) hinj)
+    fun hinj ↦ hA (isSemisimpleRing_of_selfInjective_moduleEnd (hM.additiveClosure _)
+      (fun _ _ ↦ hM.additiveClosure _) hinj)
 
 open scoped ModuleCat.Algebra in
 /-- **Generator-cogenerators with endomorphism ring of global dimension at most two are additive

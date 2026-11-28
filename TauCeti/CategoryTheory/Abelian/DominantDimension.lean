@@ -255,8 +255,9 @@ theorem HasProjectiveInjectiveCoresolution.of_shortExact {S : ShortComplex C} (h
   ObjectProperty.IsSyzygy.of_shortExact (fun _ h ↦ h.2)
     (fun A B ↦ projective_and_injective_biprod A B) hS h₁ h₃
 
-/-- An object of injective dimension at most `n` with a projective-injective coresolution of
-length `n + 1` is itself projective and injective. -/
+/-- An object of injective dimension at most `n` is projective and injective if it has an
+initial segment of a projective-injective coresolution with `n + 1` terms.
+Exactness is required only at the starting object and the first `n` projective-injective terms. -/
 theorem HasProjectiveInjectiveCoresolution.projective_and_injective_of_hasInjectiveDimensionLE
     {X : C} {n : ℕ} (h : HasProjectiveInjectiveCoresolution X (n + 1))
     (hdim : HasInjectiveDimensionLE X n) : Projective X ∧ Injective X := by

@@ -8,13 +8,11 @@ module
 public import Mathlib.Algebra.Module.Injective
 public import Mathlib.RingTheory.SimpleModule.Basic
 public import TauCeti.Algebra.Category.FGModuleCat.Generator.Basic
-public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Basic
 
 import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.Algebra.Category.FGModuleCat.End
 import TauCeti.Algebra.Category.FGModuleCat.Injective
 import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.Projectivization
-import TauCeti.Algebra.Module.Projective.Complement
 import TauCeti.Algebra.Subalgebra.Center
 import TauCeti.CategoryTheory.Preadditive.Projectivization.SelfInjective
 import TauCeti.RingTheory.Artinian.FiniteLength
@@ -56,8 +54,9 @@ object of `mod B`.
 * `TauCeti.isCoseparator_end_of_injective`: over a commutative Artinian ring `R`, an injective
   module finitely generated over `R` is a coseparator of `mod B` for its endomorphism ring `B`.
 
-* `TauCeti.isSemisimpleRing_of_selfInjective_moduleEnd`: if `add M` contains every cyclic
-  left `A`-module and `Module.End A M` is left self-injective, then `A` is semisimple.
+* `TauCeti.isSemisimpleRing_of_selfInjective_moduleEnd`: if `add M` contains the regular
+  left `A`-module and its simple quotients and `Module.End A M` is left self-injective,
+  then `A` is semisimple.
 
 ## References
 
@@ -124,34 +123,42 @@ theorem isCoseparator_end_of_injective (R : Type u) [CommRing R] [IsArtinianRing
     exists_linearMap_end_apply_ne_zero_of_injective hf.length_quotient_linearMap_eq_one
       (isFiniteLength_of_finite R Q) hx
 
-/-- If the additive closure of `M` contains every cyclic left `A`-module, shrunk to the universe
-of `M`, and `Module.End A M` is left self-injective, then `A` is semisimple. -/
+/-- If the additive closure of `M` contains the regular left `A`-module and its simple quotients,
+all shrunk to the universe of `M`, and `Module.End A M` is left self-injective, then `A` is
+semisimple. -/
 theorem isSemisimpleRing_of_selfInjective_moduleEnd {A : Type v} [Ring A] [Small.{w} A]
     {M : FGModuleCat.{w} A}
-    (hM : ∀ I : Ideal A, additiveClosure M (FGModuleCat.of A (Shrink.{w} (A ⧸ I))))
+    (hA : additiveClosure M (FGModuleCat.of A (Shrink.{w} A)))
+    (hM : ∀ I : Ideal A, I.IsMaximal → additiveClosure M (FGModuleCat.of A (Shrink.{w} (A ⧸ I))))
     (hinj : Module.Injective (Module.End A M.obj) (Module.End A M.obj)) : IsSemisimpleRing A := by
   let e := (FGModuleCat.endRingEquiv M).symm
   have hEnd : Module.Injective (End M) (End M) :=
     Module.Injective.of_ringEquiv e e.toSemilinearEquiv
   let eA := Shrink.linearEquiv.{w} A A
-  let eBot := ((Shrink.linearEquiv.{w} A (A ⧸ (⊥ : Ideal A))).trans
-    ((⊥ : Submodule A A).quotEquivOfEqBot rfl)).trans eA.symm
-  have hA : additiveClosure M (FGModuleCat.of A (Shrink.{w} A)) :=
-    (additiveClosure M).prop_of_iso eBot.toFGModuleCatIso (hM ⊥)
-  refine (isSemisimpleModule_iff A A).mpr ⟨fun I ↦ ?_⟩
+  refine sSup_simples_eq_top_iff_isSemisimpleModule.mp ?_
+  -- A maximal left ideal containing the sum of the simple submodules cannot have a complement.
+  let S := sSup { N : Submodule A A | IsSimpleModule A N }
+  rcases eq_top_or_exists_le_coatom S with hS | ⟨I, hI, hSI⟩
+  · exact hS
+  exfalso
+  have hmax : Ideal.IsMaximal I := Ideal.isMaximal_def.mpr hI
   -- Bring the quotient map into the module universe of `M` before applying projectivization.
   let eQ := Shrink.linearEquiv.{w} A (A ⧸ I)
   let q := eQ.symm.toLinearMap ∘ₗ I.mkQ ∘ₗ eA.toLinearMap
   let f := FGModuleCat.ofHom q
   have hf : Function.Surjective q := eQ.symm.surjective.comp (I.mkQ_surjective.comp eA.surjective)
   have : Epi f := (ModuleCat.isFG A).ι.epi_of_epi_map ((ModuleCat.epi_iff_surjective _).2 hf)
-  have := isSplitEpi_of_selfInjective_end hA (hM I) hEnd f
+  have := isSplitEpi_of_selfInjective_end hA (hM I hmax) hEnd f
   let s := (section_ f).hom.hom
   have hs : q.comp s = LinearMap.id := by
     simpa only [s, f, FGModuleCat.hom_hom_comp, FGModuleCat.hom_hom_ofHom, FGModuleCat.hom_hom_id]
       using congrArg (fun g ↦ g.hom.hom) (IsSplitEpi.id f)
   have : Module.Projective A (Shrink.{w} (A ⧸ I)) := Module.Projective.of_split s q hs
   have : Module.Projective A (A ⧸ I) := Module.Projective.of_shrink.{w}
-  exact I.isComplemented_of_projective_quotient
+  obtain ⟨N, hIN⟩ := I.isComplemented_of_projective_quotient
+  have hN : IsSimpleModule A N :=
+    isSimpleModule_iff_isAtom.mpr (hIN.symm.isAtom_iff_isCoatom.mpr hI)
+  have hNI : N ≤ I := (le_sSup hN : N ≤ S).trans hSI
+  exact hI.ne_top ((sup_eq_left.mpr hNI).symm.trans hIN.sup_eq_top)
 
 end TauCeti
