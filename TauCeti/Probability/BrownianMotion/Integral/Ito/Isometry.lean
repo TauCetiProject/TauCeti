@@ -11,6 +11,7 @@ public import TauCeti.Probability.BrownianMotion.Integral.L2
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.LpSeminorm.SquaredNorm
 import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Basic
 import TauCeti.Probability.BrownianMotion.Integral.Ito.Substitution
@@ -405,10 +406,11 @@ theorem martingale_sq_sub_integral (hI : IsItoIntegral ℱ P W H I)
     fun t ↦ ?_
   have hG_lim : Tendsto (fun m ↦ eLpNorm
       (fun ω ↦ Finance.simpleGains (h.τ m) (h.n m) (h.a m) W t ω ^ 2 - I t ω ^ 2) 1 P)
-      atTop (𝓝 0) :=
-    TauCeti.tendsto_eLpNorm_one_sq_sub_sq (hI.memLp hW hH t).eLpNorm_ne_top <|
-      (h.tendsto_holding t).congr fun m ↦ (hI.eLpNorm_simpleGains_sub_eq hW hH
-        (h.strictMonoOn m).monotoneOn (h.stronglyMeasurable m) (h.height_memLp m) t).symm
+      atTop (𝓝 0) := by
+    simpa only [Real.norm_eq_abs, sq_abs] using
+      MeasureTheory.tendsto_eLpNorm_norm_sq_sub (hI.memLp hW hH t) <|
+        (h.tendsto_holding t).congr fun m ↦ (hI.eLpNorm_simpleGains_sub_eq hW hH
+          (h.strictMonoOn m).monotoneOn (h.stronglyMeasurable m) (h.height_memLp m) t).symm
   have hA_lim := TauCeti.tendsto_eLpNorm_one_integral_sq_sub (hH.memLp_timeMeasure t)
     (.of_forall fun m ↦ (BrownianIntegrable.simpleHolding
       (h.stronglyMeasurable m) (h.height_memLp m)).memLp_timeMeasure t)
@@ -492,23 +494,19 @@ theorem eq_predictableMeasure_withDensity_iff (hI : IsItoIntegral ℱ P W H I)
     simpa only [ν, Real.enorm_sq_eq_ofReal_sq, Function.uncurry_def] using
       isFiniteMeasure_withDensity_ofReal
         (hH.memLp_predictableMeasure T).integrable_sq.hasFiniteIntegral
+  have hcompl : (Ioc 0 T ×ˢ (univ : Set Ω))ᶜ = ({0} ×ˢ univ) ∪ (Ioi T ×ˢ univ) := by
+    rw [compl_prod_eq_union, compl_univ, prod_empty, union_empty, compl_Ioc, ← bot_eq_zero,
+      Iic_bot, union_prod]
   have hν_compl : ν (Ioc 0 T ×ˢ (univ : Set Ω))ᶜ = 0 :=
     mem_ae_iff.1 <| (withDensity_absolutelyContinuous _ _).ae_le
       (ℱ.ae_mem_Ioc_prod_predictableMeasure P T)
-  have hν0 : ν ({0} ×ˢ univ) = 0 := by
-    refine measure_mono_null ?_ hν_compl
-    rintro ⟨r, _⟩ ⟨hr, _⟩ ⟨hr', _⟩
-    exact hr'.1.ne' hr
-  have hνT : ν (Ioi T ×ˢ univ) = 0 := by
-    refine measure_mono_null ?_ hν_compl
-    rintro ⟨r, _⟩ ⟨hr, _⟩ ⟨hr', _⟩
-    exact hr.not_ge hr'.2
+  obtain ⟨hν0, hνT⟩ := measure_union_null_iff.1 (hcompl ▸ hν_compl)
   have hνIoc : ∀ ⦃s t : ℝ≥0⦄, s ≤ t → t ≤ T → ∀ ⦃A : Set Ω⦄, MeasurableSet[ℱ s] A →
       ν (Ioc s t ×ˢ A) = ENNReal.ofReal (∫ ω in A, (I t ω - I s ω) ^ 2 ∂P) := by
     intro s t hst ht A hA
     have hres_time : (timeMeasure T).restrict (Ioc s t) = (timeMeasure t).restrict (Ioc s t) := by
-      rw [← timeMeasure_restrict_of_le ht, Measure.restrict_restrict measurableSet_Ioc,
-        Ioc_inter_Ioc, max_eq_left zero_le, min_self]
+      rw [← timeMeasure_restrict_of_le ht,
+        Measure.restrict_restrict_of_subset (Ioc_subset_Ioc_left zero_le)]
     have hres : ((timeMeasure T).prod P).restrict (Ioc s t ×ˢ A) =
         ((timeMeasure t).prod P).restrict (Ioc s t ×ˢ A) := by
       rw [← Measure.prod_restrict (Ioc s t) A, ← Measure.prod_restrict (Ioc s t) A, hres_time]
@@ -518,15 +516,8 @@ theorem eq_predictableMeasure_withDensity_iff (hI : IsItoIntegral ℱ P W H I)
   · rintro rfl
     exact ⟨hν0, hνT, hνIoc⟩
   · rintro ⟨hμ0, hμT, hμIoc⟩
-    have hμ_compl : μ (Ioc 0 T ×ˢ (univ : Set Ω))ᶜ = 0 := by
-      have hsub : (Ioc 0 T ×ˢ (univ : Set Ω))ᶜ ⊆ ({0} ×ˢ univ) ∪ (Ioi T ×ˢ univ) := by
-        rintro ⟨r, _⟩ hr
-        simp only [mem_compl_iff, mem_prod, mem_Ioc, mem_univ, and_true, not_and, not_le] at hr
-        rcases eq_or_ne r 0 with rfl | hr0
-        · exact Or.inl ⟨rfl, trivial⟩
-        · exact Or.inr ⟨hr (bot_lt_iff_ne_bot.mpr hr0), trivial⟩
-      exact le_antisymm ((measure_mono hsub).trans
-        ((measure_union_le _ _).trans_eq (by rw [hμ0, hμT, zero_add]))) bot_le
+    have hμ_compl : μ (Ioc 0 T ×ˢ (univ : Set Ω))ᶜ = 0 :=
+      hcompl ▸ measure_union_null_iff.2 ⟨hμ0, hμT⟩
     symm
     exact ℱ.ext_predictable_of_Ioc_prod hν_compl hμ_compl fun s t hst ht A hA ↦
       (hνIoc hst ht hA).trans (hμIoc hst ht hA).symm

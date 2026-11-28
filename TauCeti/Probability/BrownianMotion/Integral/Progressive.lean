@@ -29,8 +29,8 @@ right continuity, or even s-finiteness of the sample measure is required.
 The selection reuses
 `MeasureTheory.IsStronglyProgressive.exists_isStronglyPredictable_ae_time`; this file supplies
 the local square-energy domain, not a construction of the stochastic integral itself.
-Both the energy hypothesis and the pathwise agreement use nonnegative time with pullback
-Lebesgue measure. Under s-finiteness of the sample measure,
+The energy hypothesis and product-a.e. agreement use `TauCeti.Probability.timeMeasure`, while the
+pathwise agreement uses `TauCeti.nnvolume`. Under s-finiteness of the sample measure,
 `MeasureTheory.IsStronglyProgressive.exists_locallyBrownianIntegrable_ae_prod` supplies one
 locally Brownian-integrable representative agreeing product-a.e. across all finite horizons.
 
@@ -58,8 +58,7 @@ theorem exists_locallyBrownianIntegrable_ae_time
     {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
     {P : Measure Ω} {H : ℝ≥0 → Ω → ℝ} (hH : IsStronglyProgressive ℱ H)
     (henergy : ∀ n : ℕ, ∀ᵐ ω ∂P,
-      (∫⁻ t, ‖H t ω‖ₑ ^ 2 ∂((volume.restrict (Ioc 0 (n : ℝ))).comap
-        ((↑) : ℝ≥0 → ℝ))) < ∞) :
+      (∫⁻ t, ‖H t ω‖ₑ ^ 2 ∂TauCeti.Probability.timeMeasure n) < ∞) :
     ∃ G : ℝ≥0 → Ω → ℝ, TauCeti.LocallyBrownianIntegrable ℱ P G ∧
       ∀ ω, (fun t ↦ G t ω) =ᵐ[TauCeti.nnvolume] (fun t ↦ H t ω) := by
   obtain ⟨G, hG, heq⟩ := hH.exists_isStronglyPredictable_ae_time
@@ -73,14 +72,14 @@ theorem exists_locallyBrownianIntegrable_ae_time
   refine ⟨G, TauCeti.locallyBrownianIntegrable_iff_nat.2 ⟨hG, fun n ↦ ?_⟩, heq'⟩
   have hm : StronglyMeasurable (Function.uncurry G) := hG.mono ℱ.predictable_le_prod
   filter_upwards [henergy n] with ω hω
-  have heqn : (fun t ↦ G t ω) =ᵐ[((volume.restrict (Ioc 0 (n : ℝ))).comap
-      ((↑) : ℝ≥0 → ℝ))] (fun t ↦ H t ω) := by
-    rw [← NNReal.coe_natCast n, NNReal.comap_volume_restrict_Ioc, ← TauCeti.nnvolume_def]
+  have heqn : (fun t ↦ G t ω) =ᵐ[TauCeti.Probability.timeMeasure n] (fun t ↦ H t ω) := by
+    rw [TauCeti.Probability.timeMeasure_def, ← TauCeti.nnvolume_def]
     exact ae_restrict_of_ae (heq' ω)
-  have hfinite : (∫⁻ t, ‖G t ω‖ₑ ^ 2 ∂((volume.restrict (Ioc 0 (n : ℝ))).comap
-      ((↑) : ℝ≥0 → ℝ))) < ∞ := by
+  have hfinite : (∫⁻ t, ‖G t ω‖ₑ ^ 2 ∂TauCeti.Probability.timeMeasure n) < ∞ := by
     simpa only [Function.comp_apply] using
       (lintegral_congr_ae (heqn.fun_comp (fun x : ℝ ↦ ‖x‖ₑ ^ 2))).trans_lt hω
+  rw [← NNReal.coe_natCast n, NNReal.comap_volume_restrict_Ioc,
+    ← TauCeti.Probability.timeMeasure_def]
   exact (hm.of_uncurry_right (y := ω)).aestronglyMeasurable
     |>.memLp_two_iff_lintegral_enorm_sq_lt_top.mpr hfinite
 
@@ -91,14 +90,12 @@ theorem exists_locallyBrownianIntegrable_ae_prod
     {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
     {P : Measure Ω} [SFinite P] {H : ℝ≥0 → Ω → ℝ} (hH : IsStronglyProgressive ℱ H)
     (henergy : ∀ n : ℕ, ∀ᵐ ω ∂P,
-      (∫⁻ t, ‖H t ω‖ₑ ^ 2 ∂((volume.restrict (Ioc 0 (n : ℝ))).comap
-        ((↑) : ℝ≥0 → ℝ))) < ∞) :
+      (∫⁻ t, ‖H t ω‖ₑ ^ 2 ∂TauCeti.Probability.timeMeasure n) < ∞) :
     ∃ G : ℝ≥0 → Ω → ℝ, TauCeti.LocallyBrownianIntegrable ℱ P G ∧ ∀ T : ℝ≥0,
-      Function.uncurry G =ᵐ[((volume.restrict (Ioc 0 (T : ℝ))).comap
-        ((↑) : ℝ≥0 → ℝ)).prod P] Function.uncurry H := by
+      Function.uncurry G =ᵐ[(TauCeti.Probability.timeMeasure T).prod P] Function.uncurry H := by
   obtain ⟨G, hG, heq⟩ := hH.exists_locallyBrownianIntegrable_ae_time henergy
   refine ⟨G, hG, fun T ↦ ?_⟩
-  rw [NNReal.comap_volume_restrict_Ioc, ← TauCeti.nnvolume_def]
+  rw [TauCeti.Probability.timeMeasure_def, ← TauCeti.nnvolume_def]
   exact hG.isStronglyPredictable.isStronglyProgressive.isProgressive.ae_eq_prod_of_ae_eq
     hH.isProgressive (Eventually.of_forall fun ω ↦ ae_restrict_of_ae (heq ω))
 

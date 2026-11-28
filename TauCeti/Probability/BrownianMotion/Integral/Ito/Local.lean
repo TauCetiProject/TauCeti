@@ -219,17 +219,9 @@ theorem _root_.MeasureTheory.IsStronglyProgressive.exists_isItoIntegral
           Function.uncurry H) →
         Probability.IsItoIntegral ℱ P W G' I' → I ≡ᵐ[P] I' := by
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
-  have henergy' (n : ℕ) : ∀ᵐ ω ∂P,
-      (∫⁻ t, ‖H t ω‖ₑ ^ 2 ∂((volume.restrict (Ioc 0 (n : ℝ))).comap
-        ((↑) : ℝ≥0 → ℝ))) < ∞ := by
-    simpa only [← NNReal.coe_natCast n, NNReal.comap_volume_restrict_Ioc,
-      ← Probability.timeMeasure_def] using henergy n
-  obtain ⟨G, hG, hGH⟩ := hH.exists_locallyBrownianIntegrable_ae_prod henergy'
-  have hGH' (T : ℝ≥0) : Function.uncurry G =ᵐ[(Probability.timeMeasure T).prod P]
-      Function.uncurry H := by
-    simpa only [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def] using hGH T
+  obtain ⟨G, hG, hGH⟩ := hH.exists_locallyBrownianIntegrable_ae_prod henergy
   obtain ⟨I, hI_ito, hI_prog, hI_loc⟩ := hG.exists_isItoIntegral hW hcont
-  refine ⟨G, I, hG, hGH', hI_ito, hI_prog, hI_loc, fun G' I' hG'H hI' ↦ ?_⟩
-  exact hI_ito.indist_of_ae_eq hW (fun T ↦ (hGH' T).trans (hG'H T).symm) hI'
+  refine ⟨G, I, hG, hGH, hI_ito, hI_prog, hI_loc, fun G' I' hG'H hI' ↦ ?_⟩
+  exact hI_ito.indist_of_ae_eq hW (fun T ↦ (hGH T).trans (hG'H T).symm) hI'
 
 end TauCeti

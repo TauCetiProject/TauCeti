@@ -9,7 +9,6 @@ public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.Probability.ConditionalProbability
 public import TauCeti.MeasureTheory.Integral.PiSystem
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-import TauCeti.MeasureTheory.Integral.Bind
 import TauCeti.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Measure.Typeclasses.SFinite
 
@@ -99,20 +98,10 @@ theorem eLpNorm_one_integral_prod_left_le {α β E : Type*} [MeasurableSpace α]
     [NormedAddCommGroup E] [NormedSpace ℝ E] (φ : α × β → E) :
     eLpNorm (fun y ↦ ∫ x, φ (x, y) ∂μ) 1 ν ≤ eLpNorm φ 1 (μ.prod ν) := by
   by_cases hφ : AEStronglyMeasurable φ (μ.prod ν)
-  · let K : β → Measure (α × β) := fun y ↦ μ.map (fun x ↦ (x, y))
-    have hK : Measurable K := by
-      refine Measure.measurable_of_measurable_coe _ fun s hs ↦ ?_
-      simp_rw [K, Measure.map_apply measurable_prodMk_right hs]
-      exact measurable_measure_prodMk_right hs
-    have hbind : ν.bind K = μ.prod ν := by
-      refine (Measure.map_uncurry_prod_eq_bind_map ν μ (f := fun y x ↦ (x, y))
-        measurable_swap.aemeasurable).symm.trans ?_
-      exact (Measure.measurePreserving_swap (μ := ν) (ν := μ)).map_eq
-    have hcongr : (fun y ↦ ∫ x, φ (x, y) ∂μ) =ᵐ[ν] fun y ↦ ∫ z, φ z ∂K y := by
-      filter_upwards [Measure.ae_aestronglyMeasurable_bind hK.aemeasurable (hbind ▸ hφ)] with y hy
-      rw [integral_map measurable_prodMk_right.aemeasurable hy]
-    rw [eLpNorm_congr_ae hcongr, ← hbind]
-    exact Measure.eLpNorm_one_integral_bind_le hK.aemeasurable
+  · rw [eLpNorm_one_eq_lintegral_eNorm
+        (by simpa only [Prod.swap_prod_mk] using hφ.prod_swap.integral_prod_right'),
+      eLpNorm_one_eq_lintegral_eNorm hφ, lintegral_prod_symm _ hφ.eNorm]
+    exact lintegral_mono fun y ↦ eNorm_integral_le_lintegral_eNorm (fun x ↦ φ (x, y))
   · rw [eLpNorm_of_not_aestronglyMeasurable hφ]
     exact le_top
 

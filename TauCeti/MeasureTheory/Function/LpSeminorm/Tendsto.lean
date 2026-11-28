@@ -8,9 +8,8 @@ module
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Function.L2Space
-import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.LpSeminorm.Monotonicity
-import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
+import TauCeti.MeasureTheory.Function.LpSeminorm.SquaredNorm
 import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.Topology.UniformSpace.HeineCantor
 
@@ -25,10 +24,9 @@ a family that eventually becomes uniformly small almost everywhere tends to `0` 
 finite measure, or uniform convergence of a coefficient multiplying a fixed `Lᵖ` function, is
 turned into convergence in `Lᵖ`. No lower bound on `p` is needed.
 
-In a normed ring, `L²` convergence `eLpNorm (f i - g) 2 μ → 0` to a limit with finite `L²`
-seminorm implies `L¹` convergence of the squares (`TauCeti.tendsto_eLpNorm_one_sq_sub_sq`). On a
-product of s-finite measures, `L²` convergence of `MemLp` functions implies `L¹` convergence of
-their first-factor squared section integrals (`TauCeti.tendsto_eLpNorm_one_integral_sq_sub`).
+On a product of s-finite measures, `L²` convergence of real `MemLp` functions implies `L¹`
+convergence of their first-factor squared section integrals
+(`TauCeti.tendsto_eLpNorm_one_integral_sq_sub`).
 
 The case `p = ∞` needs no finiteness of the measure. A family of fields `M ν`, depending on a
 parameter `ν` in a topological space `X`, which is jointly continuous at every point of `{ν₀} × K`
@@ -74,59 +72,22 @@ theorem tendsto_eLpNorm_zero_of_eventually_ae_le [IsFiniteMeasure μ]
   filter_upwards [hi] with x hx
   simpa using hx
 
-/-- In a normed ring, `L²` convergence `eLpNorm (f i - g) 2 μ → 0` to a function with finite `L²`
-seminorm implies `L¹` convergence of the squares `f i ^ 2 → g ^ 2`. No measurability assumption on
-`f i` or `g` is needed. -/
-theorem tendsto_eLpNorm_one_sq_sub_sq {R : Type*} [NormedRing R] {f : ι → α → R} {g : α → R}
-    (hg : eLpNorm g 2 μ ≠ ∞)
-    (hlim : Tendsto (fun i ↦ eLpNorm (f i - g) 2 μ) l (𝓝 0)) :
-    Tendsto (fun i ↦ eLpNorm (fun x ↦ f i x ^ 2 - g x ^ 2) 1 μ) l (𝓝 0) := by
-  let : ENNReal.HolderTriple 2 2 1 := ⟨by simp [ENNReal.inv_two_add_inv_two]⟩
-  have hbound (i : ι) : eLpNorm (fun x ↦ f i x ^ 2 - g x ^ 2) 1 μ ≤
-      eLpNorm (f i - g) 2 μ * eLpNorm (f i - g) 2 μ +
-        (eLpNorm (f i - g) 2 μ * eLpNorm g 2 μ + eLpNorm g 2 μ * eLpNorm (f i - g) 2 μ) := by
-    have hsplit : (fun x ↦ f i x ^ 2 - g x ^ 2) =
-        ((f i - g) • (f i - g)) + (((f i - g) • g) + (g • (f i - g))) := by
-      ext x
-      simp only [smul_eq_mul, Pi.add_apply, Pi.mul_apply, Pi.sub_apply, sq]
-      noncomm_ring
-    rw [hsplit]
-    refine (eLpNorm_add_le le_rfl).trans (add_le_add
-      (eLpNorm_smul_le_mul_eLpNorm_of_pos (p := 2) (q := 2) zero_lt_one)
-      ((eLpNorm_add_le le_rfl).trans (add_le_add
-        (eLpNorm_smul_le_mul_eLpNorm_of_pos (p := 2) (q := 2) zero_lt_one)
-        (eLpNorm_smul_le_mul_eLpNorm_of_pos (p := 2) (q := 2) zero_lt_one))))
-  have hrhs : Tendsto (fun i ↦ eLpNorm (f i - g) 2 μ * eLpNorm (f i - g) 2 μ +
-      (eLpNorm (f i - g) 2 μ * eLpNorm g 2 μ + eLpNorm g 2 μ * eLpNorm (f i - g) 2 μ)) l (𝓝 0) := by
-    have h1 : Tendsto (fun i ↦ eLpNorm (f i - g) 2 μ * eLpNorm (f i - g) 2 μ) l (𝓝 0) := by
-      simpa only [zero_mul] using
-        ENNReal.Tendsto.mul hlim (Or.inr ENNReal.zero_ne_top) hlim (Or.inr ENNReal.zero_ne_top)
-    have h2 : Tendsto (fun i ↦ eLpNorm (f i - g) 2 μ * eLpNorm g 2 μ) l (𝓝 0) := by
-      simpa only [zero_mul] using ENNReal.Tendsto.mul_const hlim (Or.inr hg)
-    have h3 : Tendsto (fun i ↦ eLpNorm g 2 μ * eLpNorm (f i - g) 2 μ) l (𝓝 0) := by
-      simpa only [mul_zero] using ENNReal.Tendsto.const_mul hlim (Or.inr hg)
-    simpa only [zero_add] using h1.add (h2.add h3)
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hrhs (fun _ ↦ bot_le) hbound
-
 /-- On a product of s-finite measures, `L²` convergence `eLpNorm (f i - g) 2 (μ.prod ν) → 0` for
-`MemLp` functions implies `L¹(ν)` convergence of the squared section integrals
+real `MemLp` functions implies `L¹(ν)` convergence of the squared section integrals
 `y ↦ ∫ x, f i (x, y) ^ 2 ∂μ` to `y ↦ ∫ x, g (x, y) ^ 2 ∂μ`. -/
-theorem tendsto_eLpNorm_one_integral_sq_sub {β R : Type*} [MeasurableSpace β]
-    {ν : Measure β} [SFinite μ] [SFinite ν] [NormedRing R] [NormedSpace ℝ R]
-    {f : ι → α × β → R} {g : α × β → R}
+theorem tendsto_eLpNorm_one_integral_sq_sub {β : Type*} [MeasurableSpace β]
+    {ν : Measure β} [SFinite μ] [SFinite ν]
+    {f : ι → α × β → ℝ} {g : α × β → ℝ}
     (hg : MemLp g 2 (μ.prod ν)) (hf : ∀ᶠ i in l, MemLp (f i) 2 (μ.prod ν))
     (hlim : Tendsto (fun i ↦ eLpNorm (f i - g) 2 (μ.prod ν)) l (𝓝 0)) :
     Tendsto (fun i ↦ eLpNorm (fun y ↦ (∫ x, f i (x, y) ^ 2 ∂μ) - ∫ x, g (x, y) ^ 2 ∂μ) 1 ν)
       l (𝓝 0) := by
-  let : ENNReal.HolderTriple 2 2 1 := ⟨by simp [ENNReal.inv_two_add_inv_two]⟩
-  have hg_sq : Integrable (fun p ↦ g p ^ 2) (μ.prod ν) := by
-    simpa only [sq, Pi.mul_def] using hg.integrable_mul hg
+  have hg_sq : Integrable (fun p ↦ g p ^ 2) (μ.prod ν) := hg.integrable_sq
   have hg_ae : ∀ᵐ y ∂ν, Integrable (fun x ↦ g (x, y) ^ 2) μ := hg_sq.prod_left_ae
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (tendsto_eLpNorm_one_sq_sub_sq hg.eLpNorm_ne_top hlim)
+    (by simpa only [Real.norm_eq_abs, sq_abs] using tendsto_eLpNorm_norm_sq_sub hg hlim)
     (.of_forall fun _ ↦ bot_le) (hf.mono fun i hfi ↦ ?_)
-  have hfi_sq : Integrable (fun p ↦ f i p ^ 2) (μ.prod ν) := by
-    simpa only [sq, Pi.mul_def] using hfi.integrable_mul hfi
+  have hfi_sq : Integrable (fun p ↦ f i p ^ 2) (μ.prod ν) := hfi.integrable_sq
   have hcongr : (fun y ↦ (∫ x, f i (x, y) ^ 2 ∂μ) - ∫ x, g (x, y) ^ 2 ∂μ) =ᵐ[ν]
       fun y ↦ ∫ x, (f i (x, y) ^ 2 - g (x, y) ^ 2) ∂μ := by
     filter_upwards [hfi_sq.prod_left_ae, hg_ae] with y hfy hgy
