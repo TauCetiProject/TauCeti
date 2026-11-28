@@ -90,13 +90,13 @@ theorem countableSequence_nat : countableSequence (ℕᵒᵖ) = 𝟭 (ℕᵒᵖ)
   unfold countableSequence
   have e : Nonempty (ℕᵒᵖ ≌ ℕᵒᵖ) := ⟨CategoryTheory.Equivalence.refl⟩
   rw [dite_eq_left e]
-  -- An order automorphism of ℕ and its inverse both lie pointwise above the identity.
-  let o := e.some.unop.toOrderIso
-  have h (n : ℕ) : o n = n := by
-    have hn := o.symm.strictMono.le_apply (x := o n)
-    exact (by simpa using hn : o n ≤ n).antisymm o.strictMono.le_apply
-  exact CategoryTheory.Functor.ext (fun n ↦ Opposite.unop_injective (h n.unop))
-    (fun _ _ _ ↦ Subsingleton.elim _ _)
+  -- A well-order has only the identity order automorphism.
+  have h : e.some.unop.toOrderIso = OrderIso.refl ℕ := Subsingleton.elim _ _
+  refine CategoryTheory.Functor.ext (fun n ↦ ?_) (fun _ _ _ ↦ Subsingleton.elim _ _)
+  apply Opposite.unop_injective
+  simpa only [Equivalence.toOrderIso_apply, Equivalence.unop_functor, Functor.unop_obj,
+    Opposite.op_unop, Functor.id_obj, OrderIso.refl_apply] using
+    congrArg (fun o : ℕ ≃o ℕ ↦ o n.unop) h
 
 end Cofiltered
 
