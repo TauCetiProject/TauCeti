@@ -91,14 +91,13 @@ theorem IsRieszColemanProjection.inverse_completedBaseChange (hM : HasPr R M)
     (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) :
     (hE.completedBaseChange hS hM α hQ).toIsSpectralProjection.inverse =
       hE.toIsSpectralProjection.inverse.completedBaseChange α α := by
-  have hinv := hE.inverse_map (completedBaseChangeRingHom α)
+  have hinv := hE.toIsSpectralProjection.inverse_map (completedBaseChangeRingHom α)
+    (hE.completedBaseChange hS hM α hQ).toIsSpectralProjection
     (by
       rw [completedBaseChangeRingHom_apply,
         Polynomial.reverse_map_of_isUnit_leadingCoeff hQ (algebraMap R S),
-        aeval_completedBaseChange, completedBaseChangeRingHom_apply])
-    (fun {v} hv ↦ by
-      simpa only [completedBaseChangeRingHom_apply] using
-        completedBaseChange_mem_closure_adjoin hS hM α hv)
+        aeval_completedBaseChange])
+    (completedBaseChangeRingHom_apply α E).symm
   simpa only [completedBaseChangeRingHom_apply] using hinv
 
 include hS in

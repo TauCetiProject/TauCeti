@@ -70,9 +70,8 @@ and complementary inverses for the same polynomial `Q` (via
 `u` commutes with `E` and preserves both spectral summands
 (`ContinuousLinearMap.IsRieszColemanProjection.commute_of_commute`), and ring homomorphisms
 between endomorphism algebras matching reversed-polynomial evaluation and closure membership
-transport Riesz–Coleman projections and their complementary inverses
-(`ContinuousLinearMap.IsRieszColemanProjection.map`,
-`ContinuousLinearMap.IsRieszColemanProjection.inverse_map`).
+transport Riesz–Coleman projections
+(`ContinuousLinearMap.IsRieszColemanProjection.map`).
 
 ## Main definitions
 
@@ -135,8 +134,9 @@ omit [TauCeti.NormedRing.IsTate R] in
 private theorem aeval_reverse_eq_algebraMap_leadingCoeff (u : M →L[R] M) {Q : R[X]}
     (hd : Q.natDegree = 0) :
     Polynomial.aeval u Q.reverse = algebraMap R (M →L[R] M) Q.leadingCoeff := by
-  nth_rw 1 [Polynomial.eq_C_of_natDegree_eq_zero hd]
-  rw [Polynomial.reverse_C, ← hd, Polynomial.coeff_natDegree, Polynomial.aeval_C]
+  simpa [Polynomial.reverse_C, Polynomial.aeval_C, ← hd, Polynomial.coeff_natDegree] using
+    congrArg (fun p : R[X] ↦ Polynomial.aeval u p.reverse)
+      (Polynomial.eq_C_of_natDegree_eq_zero hd)
 
 omit [TauCeti.NormedRing.IsTate R] in
 private theorem isUnit_aeval_reverse_of_natDegree_eq_zero (u : M →L[R] M) {Q : R[X]}
@@ -385,18 +385,16 @@ namespace IsRieszColemanProjection
 /-- Every bounded operator commuting with `u` commutes with its Riesz–Coleman projection. -/
 theorem commute_of_commute (hE : IsRieszColemanProjection u Q E) {g : M →L[R] M}
     (hg : Commute g u) : Commute g E :=
-  ContinuousLinearMap.ext fun x ↦
-    hE.toIsSpectralProjection.semiconj hE.toIsSpectralProjection
-      g.toLinearMap
-      (Function.Semiconj.aeval (f := g.toLinearMap) (fun y ↦ congr($(hg.eq) y)) Q.reverse) x
+  hE.toIsSpectralProjection.commute_of_commute <| by
+    simpa only [Polynomial.aeval_eq_smeval] using
+      (Polynomial.smeval_commute_left R Q.reverse hg.symm).symm
 
 /-- Every bounded operator commuting with `u` commutes with the complementary inverse. -/
 theorem commute_inverse_of_commute (hE : IsRieszColemanProjection u Q E) {g : M →L[R] M}
     (hg : Commute g u) : Commute g hE.toIsSpectralProjection.inverse :=
-  ContinuousLinearMap.ext fun x ↦
-    hE.toIsSpectralProjection.semiconj_inverse hE.toIsSpectralProjection
-      g.toLinearMap
-      (Function.Semiconj.aeval (f := g.toLinearMap) (fun y ↦ congr($(hg.eq) y)) Q.reverse) x
+  hE.toIsSpectralProjection.commute_inverse_of_commute <| by
+    simpa only [Polynomial.aeval_eq_smeval] using
+      (Polynomial.smeval_commute_left R Q.reverse hg.symm).symm
 
 end IsRieszColemanProjection
 
@@ -423,21 +421,6 @@ theorem IsRieszColemanProjection.map (Φ : (M₁ →L[R₁] M₁) →+* (M₂ �
     IsRieszColemanProjection (Φ u) Q' (Φ E) :=
   isRieszColemanProjection_def.mpr <| by
     simpa only [← haeval] using hE.toIsSpectralProjection.map Φ hclosure
-
-/-- **Transport of the complementary inverse along a ring homomorphism.** Under the hypotheses of
-`IsRieszColemanProjection.map`, the complementary inverse of the transported projection `Φ E` is
-`Φ hE.toIsSpectralProjection.inverse`. -/
-theorem IsRieszColemanProjection.inverse_map (Φ : (M₁ →L[R₁] M₁) →+* (M₂ →L[R₂] M₂))
-    {u E : M₁ →L[R₁] M₁} {Q : R₁[X]} {Q' : R₂[X]}
-    (hE : IsRieszColemanProjection u Q E)
-    (haeval : Polynomial.aeval (Φ u) Q'.reverse = Φ (Polynomial.aeval u Q.reverse))
-    (hclosure : ∀ {v : M₁ →L[R₁] M₁},
-      v ∈ closure (Algebra.adjoin R₁ {u} : Set (M₁ →L[R₁] M₁)) →
-      Φ v ∈ closure (Algebra.adjoin R₂ {Φ u} : Set (M₂ →L[R₂] M₂))) :
-    (hE.map Φ haeval hclosure).toIsSpectralProjection.inverse =
-      Φ hE.toIsSpectralProjection.inverse :=
-  hE.toIsSpectralProjection.inverse_map Φ
-    (hE.map Φ haeval hclosure).toIsSpectralProjection haeval rfl
 
 end Map
 
@@ -517,9 +500,8 @@ theorem IsRieszColemanProjection.coe_rangeEquivOfRetract_symm_apply (hri : r.com
     (hE' : IsRieszColemanProjection (i.comp (u.comp r)) Q E')
     (hQ : IsUnit Q.leadingCoeff) (y : E'.range) :
     (((hE.rangeEquivOfRetract hri hE' hQ).symm y : M)) = r y := by
-  obtain ⟨x, rfl⟩ := (hE.rangeEquivOfRetract hri hE' hQ).surjective y
-  rw [ContinuousLinearEquiv.symm_apply_apply, coe_rangeEquivOfRetract_apply]
-  exact (DFunLike.congr_fun hri (x : M)).symm
+  rw [← ContinuousLinearEquiv.coe_symm_toLinearEquiv]
+  simp [rangeEquivOfRetract]
 
 end Retract
 

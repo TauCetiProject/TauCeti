@@ -191,6 +191,15 @@ private theorem ker_aeval_units_smul {R M : Type*} [CommSemiring R]
   simp only [Units.smul_def, map_smul, LinearMap.mem_ker, coe_coe, smul_apply,
     c.isUnit.smul_eq_zero]
 
+private theorem aeval_eq_aeval_X_mul_divX_add_one {R W : Type*} [CommSemiring R]
+    [TopologicalSpace W] [AddCommGroup W] [Module R W] [IsTopologicalAddGroup W]
+    [ContinuousConstSMul R W] (w : W →L[R] W) {Q : Polynomial R}
+    (hQ : Q = Polynomial.X * Q.divX + 1) :
+    ((Polynomial.aeval w Q : W →L[R] W) : W →ₗ[R] W) =
+      ((Polynomial.aeval w (Polynomial.X * Q.divX) : W →L[R] W) : W →ₗ[R] W) + 1 := by
+  simpa only [map_add, map_one, toLinearMap_add, toLinearMap_one] using
+    congrArg (fun p : Polynomial R ↦ ((Polynomial.aeval w p : W →L[R] W) : W →ₗ[R] W)) hQ
+
 private theorem aeval_eq_splitEnd {R M N : Type*} [CommSemiring R]
     [TopologicalSpace M] [AddCommGroup M] [Module R M] [IsTopologicalAddGroup M]
     [ContinuousConstSMul R M]
@@ -205,14 +214,9 @@ private theorem aeval_eq_splitEnd {R M N : Type*} [CommSemiring R]
   have hQ : Q = Polynomial.X * Q.divX + 1 := by
     simpa [hQ0] using (Polynomial.X_mul_divX_add Q).symm
   have hB := aeval_comp_comp_of_retract hri u (B := Polynomial.X * Q.divX) (by simp)
-  have hQu : ((Polynomial.aeval u Q : M →L[R] M) : M →ₗ[R] M) - 1 =
-      ((Polynomial.aeval u (Polynomial.X * Q.divX) : M →L[R] M) : M →ₗ[R] M) := by
-    apply sub_eq_iff_eq_add.mpr
-    nth_rw 1 [hQ]
-    simp only [map_add, map_one, toLinearMap_add, toLinearMap_one]
-  rw [LinearMap.splitEnd_eq_one_add, hQu, ← toLinearMap_comp, ← toLinearMap_comp, ← hB]
-  nth_rw 1 [hQ]
-  simp only [map_add, map_one, toLinearMap_add, toLinearMap_one, add_comm]
+  rw [aeval_eq_aeval_X_mul_divX_add_one (i.comp (u.comp r)) hQ, LinearMap.splitEnd_eq_one_add,
+    aeval_eq_aeval_X_mul_divX_add_one u hQ, add_sub_cancel_right, ← toLinearMap_comp,
+    ← toLinearMap_comp, ← hB, add_comm]
 
 /-- Along a continuous linear retract `r ∘ i = id`, if a polynomial `P` has invertible constant
 coefficient, then `r` and `i` identify `ker P(i ∘ u ∘ r)` with `ker P(u)` as topological

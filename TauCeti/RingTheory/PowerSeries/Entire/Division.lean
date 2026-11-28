@@ -19,6 +19,7 @@ import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.PowerSeries.Basic
 import TauCeti.RingTheory.PowerSeries.Inverse
 import TauCeti.RingTheory.PowerSeries.Trunc
+import TauCeti.RingTheory.PowerSeries.Weierstrass.Factors
 
 /-!
 # Division of entire power series by polynomials with invertible leading coefficient
@@ -801,16 +802,14 @@ theorem dvd_of_coe_eq_coe_mul_entire {g : Polynomial R} {q : R⟦X⟧}
   have : Nontrivial R := NormOneClass.nontrivial
   let P : Polynomial R := hp.unit⁻¹ • p
   have hP : P.Monic := Polynomial.monic_of_isUnit_leadingCoeff_inv_smul hp
-  have h0deg : (0 : Polynomial R).degree < P.degree := by
-    rw [Polynomial.degree_zero, bot_lt_iff_ne_bot, ne_eq, Polynomial.degree_eq_bot]
-    exact hP.ne_zero
-  have heq : ((g %ₘ P : Polynomial R) : R⟦X⟧) + (P : R⟦X⟧) * ((g /ₘ P : Polynomial R) : R⟦X⟧) =
-      ((0 : Polynomial R) : R⟦X⟧) + (P : R⟦X⟧) * (hp.unit • q) := by
-    rw [← Polynomial.coe_mul, ← Polynomial.coe_add, Polynomial.modByMonic_add_div g P,
-      Polynomial.coe_zero, zero_add, coe_inv_unit_smul_mul_unit_smul hp, h]
-  obtain ⟨-, hmod⟩ := _root_.PowerSeries.eq_and_eq_of_add_mul_eq hP (isEntire_coe _) (hq.smul _)
-    (Polynomial.degree_modByMonic_lt g hP) h0deg heq
-  have hPdvd : P ∣ g := (Polynomial.modByMonic_eq_zero_iff_dvd hP).mp hmod
+  set c := 1 + ∑ i ∈ P.support, ‖P.coeff i‖
+  have hPdist : IsMulDistinguished c P.natDegree (P : R⟦X⟧) :=
+    ⟨hP.isDistinguished_one_add_sum_norm_coeff, by
+      simpa only [Polynomial.coeff_coe, hP.coeff_natDegree] using isNormMulUnit_one⟩
+  have hPdvd : P ∣ g := hPdist.dvd_of_mul_eq (e := ⟨(hp.unit : R) • q, (hq.smul _).isRestricted c⟩)
+    (by positivity) ⟨rfl, hP⟩ <| by
+      simpa only [← Units.smul_def, mul_comm _ (P : R⟦X⟧)] using
+        (coe_inv_unit_smul_mul_unit_smul hp q).trans h.symm
   obtain ⟨k, rfl⟩ := hPdvd
   refine ⟨hp.unit⁻¹ • k, ?_⟩
   rw [mul_smul_comm, ← smul_mul_assoc]

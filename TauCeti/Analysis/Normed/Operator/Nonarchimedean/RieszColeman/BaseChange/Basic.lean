@@ -76,12 +76,12 @@ theorem IsRieszColemanProjection.inverse_mapCoeffs {u E : C₀(I, R) →L[R] C�
     (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
     (hE.mapCoeffs hQ f hf).toIsSpectralProjection.inverse =
       hE.toIsSpectralProjection.inverse.mapCoeffs f hf := by
-  have hinv := hE.inverse_map (mapCoeffsRingHom f hf)
+  have hinv := hE.toIsSpectralProjection.inverse_map (mapCoeffsRingHom f hf)
+    (hE.mapCoeffs hQ f hf).toIsSpectralProjection
     (by
       simp only [mapCoeffsRingHom_apply]
       rw [reverse_map_of_isUnit_leadingCoeff hQ f, aeval_mapCoeffs])
-    (fun {v} hv ↦ by
-      simpa only [mapCoeffsRingHom_apply] using mapCoeffs_mem_closure_adjoin f hf hv)
+    (mapCoeffsRingHom_apply f hf E).symm
   simpa only [mapCoeffsRingHom_apply] using hinv
 
 /-- **Bounded base change of the explicit Riesz–Coleman projector.** For a row-compact operator `u`
