@@ -372,6 +372,32 @@ private def PartialLift.restrict {X : Type*} [TopologicalSpace X] {p : E → B}
   zero_eq x := L.zero_eq x.val
   const_of_ge t x h := L.const_of_ge t x.val h
 
+open scoped Classical in
+/-- A map on `I × X` that agrees with `h` off a set `S` and with `g` on an open set `O` containing
+`closure S` is continuous, when `g` and `h` agree on `O ∖ S`. -/
+private theorem continuous_dite_of_closure_subset {X : Type*} [TopologicalSpace X] {S O : Set X}
+    (hO : IsOpen O) (hclos : closure S ⊆ O) (g : C(I × O, E)) (h : C(I × X, E))
+    (hgh : ∀ (t : I) (x : O), x.val ∉ S → g (t, x) = h (t, x.val)) :
+    Continuous fun z : I × X ↦ if hz : z.2 ∈ O then g (z.1, ⟨z.2, hz⟩) else h z := by
+  refine continuous_iff_continuousAt.2 fun ⟨t₀, x₀⟩ ↦ ?_
+  by_cases hx₀ : x₀ ∈ O
+  · have hOn : ContinuousOn
+        (fun z : I × X ↦ if hz : z.2 ∈ O then g (z.1, ⟨z.2, hz⟩) else h z) (univ ×ˢ O) :=
+      continuousOn_iff_continuous_domRestrict.2 <|
+        (by fun_prop : Continuous fun z : univ ×ˢ O ↦ g (z.val.1, ⟨z.val.2, z.property.2⟩)).congr
+          fun z ↦ by simp [Set.domRestrict, z.property.2]
+    exact hOn.continuousAt ((isOpen_univ.prod hO).mem_nhds ⟨mem_univ t₀, hx₀⟩)
+  · refine h.continuous.continuousAt.congr (Filter.eventually_of_mem
+      ((isOpen_univ.prod isClosed_closure.isOpen_compl).mem_nhds
+        ⟨mem_univ t₀, fun hmem ↦ hx₀ (hclos hmem)⟩) fun z hz ↦ ?_)
+    by_cases hzO : z.2 ∈ O
+    · beta_reduce
+      rw [dite_eq_left hzO]
+      exact (hgh z.1 ⟨z.2, hzO⟩ fun hs ↦ hz.2 (subset_closure hs)).symm
+    · beta_reduce
+      rw [dite_eq_right hzO]
+
+open scoped Classical in
 /-- Extend a `PartialLift` defined on an open neighbourhood `O` of `closure {x | τ₁ x < τ₂ x}`
 to `X` by keeping `L` outside `O`. -/
 private theorem PartialLift.extendFromOpen {X : Type*} [TopologicalSpace X] {p : E → B}
@@ -383,43 +409,23 @@ private theorem PartialLift.extendFromOpen {X : Type*} [TopologicalSpace X] {p :
     ∃ L' : PartialLift p f H τ₂,
       (∀ t x, τ₁ x = τ₂ x → L'.map (t, x) = L.map (t, x)) ∧
         ∀ (t : I) (x : O), L'.map (t, x.val) = LO.map (t, x) := by
-  classical
   let raw (z : I × X) : E :=
     if hz : z.2 ∈ O then LO.map (z.1, ⟨z.2, hz⟩) else L.map z
-  have hraw_pos : ∀ (t : I) {x : X} (hx : x ∈ O), raw (t, x) = LO.map (t, ⟨x, hx⟩) := by
-    intro t x hx; dsimp only [raw]; split_ifs; rfl
-  have hraw_neg : ∀ (t : I) {x : X}, x ∉ O → raw (t, x) = L.map (t, x) := by
-    intro t x hx; dsimp only [raw]; split_ifs; rfl
-  have hraw_eq_of_eq : ∀ t x, τ₁ x = τ₂ x → raw (t, x) = L.map (t, x) := fun t x heq ↦ by
-    by_cases hx : x ∈ O
-    · rw [hraw_pos t hx]; exact hLO t ⟨x, hx⟩ heq
-    · exact hraw_neg t hx
+  have hraw_pos : ∀ (t : I) {x : X} (hx : x ∈ O), raw (t, x) = LO.map (t, ⟨x, hx⟩) :=
+    fun t x hx ↦ dite_eq_left hx
+  have hraw_neg : ∀ t {x : X}, x ∉ O → raw (t, x) = L.map (t, x) := fun t x hx ↦ dite_eq_right hx
+  have hraw_eq_of_eq : ∀ t x, τ₁ x = τ₂ x → raw (t, x) = L.map (t, x) := fun t x heq ↦
+    if hx : x ∈ O then (hraw_pos t hx).trans (hLO t ⟨x, hx⟩ heq) else hraw_neg t hx
   have heq_of_notMem : ∀ {x : X}, x ∉ O → τ₁ x = τ₂ x := fun {x} hx ↦
     le_antisymm (hτ x) (not_lt.1 fun hlt ↦ hx (hclos (subset_closure hlt)))
-  have hraw_cont : Continuous raw := by
-    refine continuous_iff_continuousAt.2 fun ⟨t₀, x₀⟩ ↦ ?_
-    by_cases hx₀ : x₀ ∈ O
-    · have hOn : ContinuousOn raw (univ ×ˢ O) :=
-        continuousOn_iff_continuous_domRestrict.2 <|
-          (by fun_prop : Continuous fun z : univ ×ˢ O ↦ LO.map (z.val.1, ⟨z.val.2,
-              z.property.2⟩)).congr
-            fun z ↦ (hraw_pos z.val.1 z.property.2).symm
-      exact hOn.continuousAt ((isOpen_univ.prod hO).mem_nhds ⟨mem_univ t₀, hx₀⟩)
-    · have hx₀_compl : x₀ ∈ (closure {x : X | τ₁ x < τ₂ x})ᶜ := fun hmem ↦ hx₀ (hclos hmem)
-      have hopen_compl : IsOpen ((univ : Set I) ×ˢ (closure {x : X | τ₁ x < τ₂ x})ᶜ) :=
-        isOpen_univ.prod isClosed_closure.isOpen_compl
-      refine L.map.continuous.continuousAt.congr
-        (Filter.eventually_of_mem (hopen_compl.mem_nhds ⟨mem_univ t₀, hx₀_compl⟩) fun z hz ↦ ?_)
-      exact (hraw_eq_of_eq z.1 z.2
-        (le_antisymm (hτ z.2) (not_lt.1 fun hlt ↦ hz.2 (subset_closure hlt)))).symm
   refine ⟨{
-    map := ⟨raw, hraw_cont⟩
+    map := ⟨raw, continuous_dite_of_closure_subset hO hclos LO.map L.map
+      fun t x hx ↦ hLO t x (le_antisymm (hτ _) (not_lt.1 hx))⟩
     proj_eq := fun t x ↦ by
       rw [ContinuousMap.coe_mk]
       by_cases hx : x ∈ O
       · rw [hraw_pos t hx, LO.proj_eq]; rfl
-      · have heq := heq_of_notMem hx
-        rw [hraw_eq_of_eq t x heq, L.proj_eq, heq]
+      · rw [hraw_neg t hx, L.proj_eq, heq_of_notMem hx]
     zero_eq := fun x ↦ by
       rw [ContinuousMap.coe_mk]
       by_cases hx : x ∈ O
@@ -430,9 +436,8 @@ private theorem PartialLift.extendFromOpen {X : Type*} [TopologicalSpace X] {p :
       by_cases hx : x ∈ O
       · rw [hraw_pos t hx, hraw_pos (τ₂ x) hx]
         exact LO.const_of_ge t ⟨x, hx⟩ ht
-      · have heq := heq_of_notMem hx
-        rw [hraw_eq_of_eq t x heq, hraw_eq_of_eq (τ₂ x) x heq, ← heq]
-        exact L.const_of_ge t x (heq ▸ ht)
+      · rw [hraw_neg t hx, hraw_neg (τ₂ x) hx, ← heq_of_notMem hx]
+        exact L.const_of_ge t x (heq_of_notMem hx ▸ ht)
   }, hraw_eq_of_eq, fun t x ↦ hraw_pos t x.property⟩
 
 private def stepTime {X : Type*} [TopologicalSpace X] (τ₁ τ₂ : C(X, I)) : C(I × X, I) :=
@@ -613,6 +618,48 @@ private theorem Icc_clipSegTime_subset {X : Type*} [TopologicalSpace X] {τ₁ �
   exact ⟨((min_eq_right hx.1).symm.trans_le (le_max_right _ _)).trans ht.1,
     ht.2.trans (max_le hx.2 (min_le_right _ _))⟩
 
+/-- One step of `advanceTube`: advance a `PartialLift` from the clipped time of segment endpoint
+`k` to that of endpoint `k + 1`, on an open stratum `S ⊆ A` whose `k`-th segment maps into
+`{b | 0 < ρ (α k) b}`. -/
+private theorem PartialLift.advanceSegment {ι : Type*} {A : Type w} [TopologicalSpace A]
+    {p : E → B} {U : ι → Set B} (ρ : PartitionOfUnity ι B) (hρ : ∀ i, support (ρ i) ⊆ U i)
+    (hlift : ∀ i (W : Set A), IsOpen W →
+      HasHomotopyLiftingProperty
+        ((U i).restrictPreimage p) W)
+    {S : Set A} (hS : IsOpen S) {f : C(S, E)} {H : C(I × S, B)} {τ₁ τ₂ : C(S, I)}
+    (m : ℕ) (α : Fin (m + 1) → ι) (k : Fin (m + 1))
+    (hseg : ∀ x : S, ∀ t ∈ Icc (segEndpt m k.castSucc) (segEndpt m k.succ), 0 < ρ (α k) (H (t, x)))
+    (Lk : PartialLift p f H (clipSegTime τ₁ τ₂ m k.castSucc)) :
+    ∃ L' : PartialLift p f H (clipSegTime τ₁ τ₂ m k.succ),
+      ∀ t x, τ₁ x = τ₂ x → L'.map (t, x) = Lk.map (t, x) := by
+  let σ₁ := clipSegTime τ₁ τ₂ m k.castSucc
+  let σ₂ := clipSegTime τ₁ τ₂ m k.succ
+  let hσ : ∀ x, σ₁ x ≤ σ₂ x := clipSegTime_mono τ₁ τ₂ m k
+  have hφ_cont : Continuous fun z : I × S ↦
+      ρ (α k) (H (Icc.convexComb (σ₁ z.2) (σ₂ z.2) z.1, z.2)) :=
+    (ρ (α k)).continuous.comp <| H.continuous.comp <|
+      (Icc.continuous_convexComb_prod.comp
+        (by fun_prop : Continuous fun z : I × S ↦ (σ₁ z.2, σ₂ z.2, z.1))).prodMk continuous_snd
+  have hφx_cont : ∀ x : S, Continuous fun u : I ↦
+      ρ (α k) (H (Icc.convexComb (σ₁ x) (σ₂ x) u, x)) :=
+    fun x ↦ hφ_cont.comp (continuous_id.prodMk continuous_const)
+  let O : Set S := {x : S | 0 < ⨅ u : I, ρ (α k) (H (Icc.convexComb (σ₁ x) (σ₂ x) u, x))}
+  have hO : IsOpen O := isOpen_lt continuous_const hφ_cont.iInf_of_compactSpace
+  have hclos : closure {x : S | σ₁ x < σ₂ x} ⊆ O := by
+    refine (closure_lt_clipSegTime_subset m k).trans fun x hx ↦ ?_
+    rw [mem_ofPred_eq]
+    refine (hφx_cont x).lowerSemicontinuous.lt_ciInf_iff.2 fun u ↦ ?_
+    exact hseg x _ (Icc_clipSegTime_subset hx
+      ⟨Icc.le_convexComb (hσ x) u, Icc.convexComb_le (hσ x) u⟩)
+  have hHU : ∀ x ∈ O, ∀ t ∈ Icc (σ₁ x) (σ₂ x), H (t, x) ∈ U (α k) := by
+    intro x hx t ht
+    rw [Icc.eq_convexComb ht.1 ht.2]
+    exact hρ (α k) (((hφx_cont x).lowerSemicontinuous.lt_ciInf_iff.1 hx) _).ne'
+  obtain ⟨Lk', hLk'⟩ := Lk.advanceOpen hσ hO hclos
+    (.of_isOpenEmbedding (hlift (α k))
+      (hS.isOpenEmbedding_subtypeVal.comp hO.isOpenEmbedding_subtypeVal)) hHU
+  exact ⟨Lk', fun t x heq ↦ hLk' t x (clipSegTime_eq_of_eq m k heq)⟩
+
 /-- Advance a `PartialLift` across `m + 1` uniform segments on an open stratum `S ⊆ A` where each
 segment `[k/(m+1), (k+1)/(m+1)]` maps into `{b | 0 < ρ (α k) b} ⊆ U (α k)`. -/
 private theorem PartialLift.advanceTube {ι : Type*} {A : Type w} [TopologicalSpace A]
@@ -631,33 +678,8 @@ private theorem PartialLift.advanceTube {ι : Type*} {A : Type w} [TopologicalSp
     refine Fin.induction ?_ ?_
     · exact ⟨L.congrTime fun x ↦ (clipSegTime_zero m x).symm, fun _ _ _ ↦ rfl⟩
     · intro k ⟨Lk, hLk⟩
-      let σ₁ := clipSegTime τ₁ τ₂ m k.castSucc
-      let σ₂ := clipSegTime τ₁ τ₂ m k.succ
-      let hσ : ∀ x, σ₁ x ≤ σ₂ x := clipSegTime_mono τ₁ τ₂ m k
-      have hφ_cont : Continuous fun z : I × S ↦
-          ρ (α k) (H (Icc.convexComb (σ₁ z.2) (σ₂ z.2) z.1, z.2)) :=
-        (ρ (α k)).continuous.comp <| H.continuous.comp <|
-          (Icc.continuous_convexComb_prod.comp
-            (by fun_prop : Continuous fun z : I × S ↦ (σ₁ z.2, σ₂ z.2, z.1))).prodMk continuous_snd
-      have hφx_cont : ∀ x : S, Continuous fun u : I ↦
-          ρ (α k) (H (Icc.convexComb (σ₁ x) (σ₂ x) u, x)) :=
-        fun x ↦ hφ_cont.comp (continuous_id.prodMk continuous_const)
-      let O : Set S := {x : S | 0 < ⨅ u : I, ρ (α k) (H (Icc.convexComb (σ₁ x) (σ₂ x) u, x))}
-      have hO : IsOpen O := isOpen_lt continuous_const hφ_cont.iInf_of_compactSpace
-      have hclos : closure {x : S | σ₁ x < σ₂ x} ⊆ O := by
-        refine (closure_lt_clipSegTime_subset m k).trans fun x hx ↦ ?_
-        rw [mem_ofPred_eq]
-        refine (hφx_cont x).lowerSemicontinuous.lt_ciInf_iff.2 fun u ↦ ?_
-        exact hseg x k _ (Icc_clipSegTime_subset hx
-          ⟨Icc.le_convexComb (hσ x) u, Icc.convexComb_le (hσ x) u⟩)
-      have hHU : ∀ x ∈ O, ∀ t ∈ Icc (σ₁ x) (σ₂ x), H (t, x) ∈ U (α k) := by
-        intro x hx t ht
-        rw [Icc.eq_convexComb ht.1 ht.2]
-        exact hρ (α k) (((hφx_cont x).lowerSemicontinuous.lt_ciInf_iff.1 hx) _).ne'
-      obtain ⟨Lk', hLk'⟩ := Lk.advanceOpen hσ hO hclos
-        (.of_isOpenEmbedding (hlift (α k))
-          (hS.isOpenEmbedding_subtypeVal.comp hO.isOpenEmbedding_subtypeVal)) hHU
-      exact ⟨Lk', fun t x heq ↦ (hLk' t x (clipSegTime_eq_of_eq m k heq)).trans (hLk t x heq)⟩
+      obtain ⟨Lk', hLk'⟩ := PartialLift.advanceSegment ρ hρ hlift hS m α k (fun x ↦ hseg x k) Lk
+      exact ⟨Lk', fun t x heq ↦ (hLk' t x heq).trans (hLk t x heq)⟩
   obtain ⟨Llast, hLlast⟩ := step (Fin.last (m + 1))
   exact ⟨Llast.congrTime (fun x ↦ clipSegTime_last (hτ x) m), hLlast⟩
 
