@@ -23,7 +23,8 @@ Sorting the integers in `[1, N]` that are not `(k + 1)`-smooth by their largest 
   `#{n ≤ N : n is (k + 1)-smooth} + ∑_{k < p ≤ N} #{m ≤ N / p : m is (p + 1)-smooth} = N`,
 
 the sum being over primes. For real cutoffs this is the recursion
-`Ψ(x, y) + ∑_{y < p ≤ x} Ψ(x / p, p) = ⌊x⌋₊` for the smooth-number counting function, which
+`Ψ(x, y) + ∑_{y < p ≤ x} Ψ(x / p, p) = ⌊x⌋₊` for the smooth-number counting function, where
+`⌊x⌋₊` is the natural floor (zero for negative `x`), which
 underlies the delay differential equation of the Dickman function (Hildebrand and Tenenbaum,
 p. 414).
 
@@ -39,8 +40,11 @@ p. 414).
   `n.maxPrimeFac < k`.
 * `Nat.Prime.maxPrimeFac_eq_iff`: `n.maxPrimeFac = p ↔ p ∣ n ∧ n / p ∈ Nat.smoothNumbers (p + 1)`.
 * `Nat.Prime.card_filter_Icc_maxPrimeFac_eq`: the number of integers in `[1, N]` with largest
-  prime factor `p`.
-* `Nat.smoothNumbersUpTo_card_add_sum`: the identity above.
+  prime factor `p` equals the number of positive integers up to `N / p` with all prime factors
+  at most `p`.
+* `Nat.mem_roughNumbersUpTo_iff_maxPrimeFac`: `n ∈ Nat.roughNumbersUpTo N k` exactly when
+  `1 < n ≤ N` and `k ≤ n.maxPrimeFac`.
+* `Nat.smoothNumbersUpTo_card_add_sum`: the counting identity above.
 
 ## References
 
@@ -130,32 +134,44 @@ theorem Nat.Prime.coe_smoothNumbersUpToEquiv_symm_apply {p : ℕ} (hp : p.Prime)
     ((hp.smoothNumbersUpToEquiv N).symm n : ℕ) = n / p :=
   (rfl)
 
-/-- For a prime `p`, the integers in `[1, N]` whose largest prime factor is `p` are as many as
-the positive integers up to `N / p` with all prime factors at most `p`. -/
+/-- For a prime `p`, the number of integers in `[1, N]` whose largest prime factor is `p` equals
+the number of positive integers up to `N / p` with all prime factors at most `p`. The underlying
+correspondence, multiplication by `p`, is `Nat.Prime.smoothNumbersUpToEquiv`. -/
 theorem Nat.Prime.card_filter_Icc_maxPrimeFac_eq {p : ℕ} (hp : p.Prime) (N : ℕ) :
     #{n ∈ Icc 1 N | n.maxPrimeFac = p} = #(Nat.smoothNumbersUpTo (N / p) (p + 1)) :=
   (card_eq_of_equiv (hp.smoothNumbersUpToEquiv N)).symm
 
-/-- **Decomposition by the largest prime factor.** The integers in `[1, N]` are those with all
-prime factors at most `k` together with, for each prime `k < p ≤ N`, the products `p * m` with
-`m` an integer up to `N / p` with all prime factors at most `p`. -/
+/-- An integer lies in `Nat.roughNumbersUpTo N k`, the integers in `[1, N]` with a prime factor
+at least `k`, exactly when it is greater than `1`, at most `N`, and its largest prime factor is
+at least `k`. -/
+theorem Nat.mem_roughNumbersUpTo_iff_maxPrimeFac {N k n : ℕ} :
+    n ∈ Nat.roughNumbersUpTo N k ↔ 1 < n ∧ n ≤ N ∧ k ≤ n.maxPrimeFac := by
+  simp only [Nat.roughNumbersUpTo, mem_filter, mem_range, Nat.lt_add_one_iff]
+  rcases Nat.lt_or_ge 1 n with h1 | h1
+  · rw [Nat.mem_smoothNumbers_iff_maxPrimeFac_lt h1]
+    omega
+  · have hsmooth : n ≠ 0 → n ∈ Nat.smoothNumbers k := fun h0 ↦ by
+      obtain rfl : n = 1 := by omega
+      exact Nat.mem_smoothNumbers'.2 fun q hq hq1 ↦ absurd (Nat.dvd_one.1 hq1) hq.ne_one
+    constructor
+    · rintro ⟨-, h0, hns⟩
+      exact absurd (hsmooth h0) hns
+    · rintro ⟨h, -⟩
+      omega
+
+/-- **Decomposition by the largest prime factor.** The number of integers in `[1, N]` with all
+prime factors at most `k`, plus the sum over the primes `k < p ≤ N` of the number of positive
+integers up to `N / p` with all prime factors at most `p`, equals `N`: each integer in `[1, N]`
+with a prime factor greater than `k` is counted once, at its largest prime factor. -/
 theorem Nat.smoothNumbersUpTo_card_add_sum (N k : ℕ) :
     #(Nat.smoothNumbersUpTo N (k + 1)) +
       ∑ p ∈ Ioc k N with p.Prime, #(Nat.smoothNumbersUpTo (N / p) (p + 1)) = N := by
-  -- An integer in `[1, N]` that is not `(k + 1)`-smooth has largest prime factor in `(k, N]`.
   have hmaps : Set.MapsTo Nat.maxPrimeFac (Nat.roughNumbersUpTo N (k + 1) : Set ℕ)
       ({p ∈ Ioc k N | p.Prime} : Finset ℕ) := by
     intro n hn
-    simp only [Nat.roughNumbersUpTo, mem_coe, mem_filter, mem_range] at hn
-    obtain ⟨hnN, hn0, hns⟩ := hn
-    have h1 : 1 < n := by
-      by_contra h
-      obtain rfl : n = 1 := by omega
-      exact hns (Nat.mem_smoothNumbers'.2 fun q hq hq1 ↦ absurd (Nat.dvd_one.1 hq1) hq.ne_one)
-    have hk : ¬n.maxPrimeFac < k + 1 := mt (Nat.mem_smoothNumbers_iff_maxPrimeFac_lt h1).2 hns
+    obtain ⟨h1, hnN, hk⟩ := Nat.mem_roughNumbersUpTo_iff_maxPrimeFac.1 (mem_coe.1 hn)
     rw [mem_coe, mem_filter, mem_Ioc]
-    exact ⟨⟨by omega, Nat.maxPrimeFac_le.trans (by omega)⟩, Nat.prime_maxPrimeFac_of_one_lt h1⟩
-  -- Conversely, an integer with largest prime factor `p > k` is not `(k + 1)`-smooth.
+    exact ⟨⟨hk, Nat.maxPrimeFac_le.trans hnN⟩, Nat.prime_maxPrimeFac_of_one_lt h1⟩
   have hfiber : ∀ p ∈ ({p ∈ Ioc k N | p.Prime} : Finset ℕ),
       #{n ∈ Nat.roughNumbersUpTo N (k + 1) | n.maxPrimeFac = p} =
         #(Nat.smoothNumbersUpTo (N / p) (p + 1)) := by
@@ -164,14 +180,12 @@ theorem Nat.smoothNumbersUpTo_card_add_sum (N k : ℕ) :
     rw [← hp.2.card_filter_Icc_maxPrimeFac_eq N]
     congr 1
     ext n
-    simp only [Nat.roughNumbersUpTo, mem_filter, mem_range, mem_Icc]
+    rw [mem_filter, mem_filter, mem_Icc, Nat.mem_roughNumbersUpTo_iff_maxPrimeFac]
     constructor
-    · rintro ⟨⟨hnN, hn0, -⟩, hmax⟩
-      exact ⟨⟨by omega, by omega⟩, hmax⟩
+    · rintro ⟨⟨h1, hnN, -⟩, hmax⟩
+      exact ⟨⟨h1.le, hnN⟩, hmax⟩
     · rintro ⟨⟨-, hnN⟩, hmax⟩
-      have h1 : 1 < n := Nat.one_lt_maxPrimeFac_iff.1 (by rw [hmax]; exact hp.2.one_lt)
-      refine ⟨⟨by omega, by omega, fun hs ↦ ?_⟩, hmax⟩
-      have := (Nat.mem_smoothNumbers_iff_maxPrimeFac_lt h1).1 hs
+      refine ⟨⟨Nat.one_lt_maxPrimeFac_iff.1 (by rw [hmax]; exact hp.2.one_lt), hnN, ?_⟩, hmax⟩
       omega
   have h := Nat.smoothNumbersUpTo_card_add_roughNumbersUpTo_card N (k + 1)
   rwa [card_eq_sum_card_fiberwise hmaps, sum_congr rfl hfiber] at h
