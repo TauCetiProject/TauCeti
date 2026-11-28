@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Path
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
-public import TauCeti.Topology.Path.Basic
 
 /-!
 # Arcs: ranges of paths in Hausdorff spaces
