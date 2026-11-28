@@ -99,6 +99,11 @@ theorem conj_def (ι : PrimePadicIso) :
 /-- The conjugate embedding has the same index in the type of rational primes. -/
 @[simp] theorem conj_primeIndex (ι : PrimePadicIso) : ι.conj.primeIndex = ι.primeIndex := (rfl)
 
+/-- After transport to the original target field, the conjugate embedding applies the
+original embedding to `star z`. -/
+@[simp] theorem conj_iso_apply (ι : PrimePadicIso) (z : ℂ) :
+    (cast (by simp only [conj_prime]) (ι.conj.iso z) : PadicAlgCl ι.prime) = ι.iso (star z) := (rfl)
+
 /-- Norms at the conjugate embedding are norms of conjugate scalars at the original one. -/
 @[simp] theorem norm_conj_iso (ι : PrimePadicIso) (z : ℂ) :
     ‖ι.conj.iso z‖ = ‖ι.iso (star z)‖ := (rfl)
@@ -121,6 +126,12 @@ theorem mem_integers {ι : PrimePadicIso} {z : ℂ} : z ∈ ι.integers ↔ ‖�
   rw [integers, Valuation.mem_integer_iff, Valuation.comap_apply, ← PadicAlgCl.valuation_coe,
     NNReal.coe_le_one]
   simp only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom]
+
+/-- A scalar is integral at the conjugate embedding exactly when its conjugate is integral at the
+original embedding. -/
+theorem mem_integers_conj {ι : PrimePadicIso} {z : ℂ} :
+    z ∈ ι.conj.integers ↔ star z ∈ ι.integers := by
+  simp only [mem_integers, norm_conj_iso]
 
 /-- A local integer is a unit exactly when its image has norm one. -/
 @[simp]
