@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Parameters
+import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.DigitBox
 import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Ranks
 import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Scales
 
@@ -16,7 +17,9 @@ import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Scales
 The large cutoff must be rounded to a multiple of the cyclotomic order at the very same
 rank used to choose the sparse places and the level primes. The least dyadic rank fixes
 that order as a function of the initial cutoff, so the polynomial bound for the order
-can be used in the rounding theorem without changing the rank.
+can be used in the rounding theorem without changing the rank. The digit box for the
+sparse places must fit in that tower, with a cardinality budget paid by the same rounded
+cutoff.
 
 The choices are those of `New.eventually_exists_data_of_isAdmissibleData` in
 `grh/src/New/Reduction/Data/Existence.lean` in [lsernau/grh-lean][short-proof].
@@ -34,10 +37,12 @@ namespace TauCeti.OneSidedBound.Parameters
 ternary target rank admit the prescribed separated cutoffs. In particular `b` is rounded
 to a multiple of `q₁ * x₁` for the tower determined by that chain length. The same tower
 satisfies the sparsity threshold and the search-modulus bound for the level primes.
-The real parameter `C` is the required lower bound for `log (log b)`. -/
+A fixed digit dimension `n` works at all sufficiently large cutoffs; at each cutoff the
+side length `H` fits modulo `2 ^ s` and its sphere-count lower bound, multiplied by `log b`,
+covers the tower degree. The real parameter `C` is the required lower bound for `log (log b)`. -/
 theorem eventually_exists_admissible_ranks_and_scales (P : Parameters) (C : ℝ) {ε : ℝ}
     (hε : 0 < ε) (hε' : ε < 1 / 100) :
-    ∀ᶠ x : ℕ in atTop, ∃ e e' x₁ b : ℕ,
+    ∃ n : ℕ, 0 < n ∧ ∀ᶠ x : ℕ in atTop, ∃ e e' x₁ b H : ℕ,
       let m : ℕ := 2 ^ e
       let r : ℕ := 3 ^ e'
       let s := 22 * e
@@ -53,7 +58,9 @@ theorem eventually_exists_admissible_ranks_and_scales (P : Parameters) (C : ℝ)
         (x : ℝ) ^ (ε / 6) - 1 ≤ log x₁ ∧
         (x : ℝ) ^ ε ≤ log b ∧ log b ≤ (x : ℝ) ^ ε + 1 ∧
         C ≤ log (log b) ∧ (log b) ^ (100 : ℕ) ≤ x ∧
-        x ^ (10 ^ 6) ≤ x₁ ∧ x₁ ^ (10 ^ 6) ≤ b ∧ (log x₁) ^ (6 : ℕ) ≤ log b := by
+        x ^ (10 ^ 6) ≤ x₁ ∧ x₁ ^ (10 ^ 6) ≤ b ∧ (log x₁) ^ (6 : ℕ) ≤ log b ∧
+        0 < H ∧ (2 * l₀ s * H) ^ n ≤ 2 ^ s ∧
+        (towerDeg s : ℝ) ≤ ((H : ℝ) ^ n / (n * H ^ 2)) * log b := by
   have hranks := eventually_exists_admissible_ranks P.q₀ P.d P.q₀_pos
   have hcanonical : ∀ (x e : ℕ),
       IsLeast {u : ℕ | (∃ i : ℕ, u = 2 ^ i) ∧ √(x : ℝ) ≤ u} (2 ^ e) →
@@ -72,18 +79,30 @@ theorem eventually_exists_admissible_ranks_and_scales (P : Parameters) (C : ℝ)
       ((Nat.clog_le_iff_le_pow (by decide)).mpr ((hmem e).mp hm.1.2))
   let q (x : ℕ) := P.q₁ (22 * Nat.clog 4 x)
   have hq : ∀ᶠ x : ℕ in atTop, (q x : ℝ) ≤ (x : ℝ) ^ (12 : ℝ) := by
-    filter_upwards [hranks] with x ⟨e, _, _, _, hm, _, _, _, _, _, hq₁, _, _⟩
+    filter_upwards [hranks] with x ⟨e, _, _, _, hm, _, _, _, _, _, _, hq₁, _, _⟩
     rw [← Nat.cast_ofNat (R := ℝ) (n := 12), Real.rpow_natCast]
     exact_mod_cast (by simpa only [q, ← hcanonical x e hm, q₁_def, towerDeg_def, l₀_def] using hq₁ :
       q x ≤ x ^ 12)
   have hscales := eventually_exists_admissible_scales (C := C) hε (10 ^ 6) (10 ^ 6) 100
     (by norm_num; linarith only [hε']) (Eventually.of_forall fun x ↦ P.q₁_pos _) hq
-  filter_upwards [hranks, hscales] with x hr hs
-  obtain ⟨e, e', he, he', hm, hr, hm', hr', hlog, _, hq₁, hq₂, hsparse⟩ := hr
+  obtain ⟨n, hn, hbox⟩ := eventually_exists_sparse_place_digit_bound hε
+  refine ⟨n, hn, ?_⟩
+  filter_upwards [hranks, hscales, tendsto_natCast_atTop_atTop.eventually hbox] with x hr hs hdigit
+  obtain ⟨e, e', he, he', hm, hr, hm', hr', hlog, hlo, _, hq₁, hq₂, hsparse⟩ := hr
   rw [← hcanonical x e hm] at hs
-  obtain ⟨x₁, b, hcutoffs⟩ := hs
-  exact ⟨e, e', x₁, b, he, he', hm, hr, hm', hr', hlog,
-    by simpa only [q₁_def, towerDeg_def, l₀_def] using hq₁,
-    by simpa only [q₂_def] using hq₂, by simpa only [l₀_def] using hsparse, hcutoffs⟩
+  obtain ⟨x₁, b, hx₁, hx₁pos, hbpos, hleast, hlogx₁, hlogb, hlogb', hC, hb, hxx₁,
+    hx₁b, hlogs⟩ := hs
+  have horder : P.q₁ (22 * e) ≤ x ^ 12 := by
+    simpa only [q₁_def, towerDeg_def, l₀_def] using hq₁
+  have hup : 2 ^ (22 * e) ≤ P.q₁ (22 * e) := by
+    have hfactor : 0 < P.q₀ * (3 * l₀ (22 * e)) :=
+      Nat.mul_pos P.q₀_pos (by rw [l₀_def]; positivity)
+    rw [q₁_def, towerDeg_def, ← mul_assoc]
+    exact Nat.le_mul_of_pos_left _ hfactor
+  obtain ⟨H, hH, hfit, hcard⟩ := hdigit (22 * e) (b : ℝ) (by exact_mod_cast hlo)
+    (by exact_mod_cast hup.trans horder) hlogb
+  exact ⟨e, e', x₁, b, H, he, he', hm, hr, hm', hr', hlog, horder,
+    by simpa only [q₂_def] using hq₂, by simpa only [l₀_def] using hsparse,
+    hx₁, hx₁pos, hbpos, hleast, hlogx₁, hlogb, hlogb', hC, hb, hxx₁, hx₁b, hlogs, hH, hfit, hcard⟩
 
 end TauCeti.OneSidedBound.Parameters

@@ -26,6 +26,10 @@ constructed, in particular for discrete subgroups acting by left multiplication.
 
 * `MeasureTheory.IsFundamentalDomain.measure_lt_top_of_compactSpace`: every fundamental domain
   has finite measure when the orbit space is compact.
+* `MeasureTheory.IsFundamentalDomain.measure_lt_top_of_compactSpace_quotientGroup`: the case of
+  the right action of a subgroup `Γ`, whose orbit space is `G ⧸ Γ`.
+
+Both statements have additive versions.
 
 ## Provenance
 
@@ -55,6 +59,9 @@ variable {G X : Type*} [Group G] [Countable G] [MulAction G X] [TopologicalSpace
 
 /-- Every fundamental domain of a countable group action with compact orbit space has finite
 measure for an invariant measure finite on compact sets, on a weakly locally compact space. -/
+@[to_additive /-- Every fundamental domain of a countable additive group action with compact orbit
+space has finite measure for an invariant measure finite on compact sets, on a weakly locally
+compact space. -/]
 theorem measure_lt_top_of_compactSpace (hD : IsFundamentalDomain G D μ) : μ D < ∞ := by
   obtain ⟨K, hK, hKG⟩ :=
     TauCeti.MulAction.compactSpace_orbitRelQuotient_iff_exists_isCompact.mp ‹_›
@@ -65,5 +72,26 @@ theorem measure_lt_top_of_compactSpace (hD : IsFundamentalDomain G D μ) : μ D 
           exact mem_iUnion.mpr ⟨g⁻¹, ⟨g • x, hg, inv_smul_smul g x⟩, hx⟩
     _ ≤ ∑' g : G, μ (g • K ∩ D) := measure_iUnion_le _
     _ = μ K := (hD.measure_eq_tsum K).symm
+
+end MeasureTheory.IsFundamentalDomain
+
+namespace MeasureTheory.IsFundamentalDomain
+
+variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+  [WeaklyLocallyCompactSpace G] [MeasurableSpace G] [MeasurableMul G] {Γ : Subgroup G}
+  [Countable Γ] [CompactSpace (G ⧸ Γ)] {μ : Measure G} [SMulInvariantMeasure Γ.op G μ]
+  [IsFiniteMeasureOnCompacts μ] {D : Set G}
+
+/-- A fundamental domain for the right action of a countable subgroup `Γ` of a weakly locally
+compact group `G` with compact quotient `G ⧸ Γ` has finite measure for a measure finite on compact
+sets and invariant under right multiplication by `Γ`. -/
+@[to_additive /-- A fundamental domain for the action by right addition of a countable subgroup
+`Γ` of a weakly locally compact additive group `G` with compact quotient `G ⧸ Γ` has finite
+measure for a measure finite on compact sets and invariant under right addition of `Γ`. -/]
+theorem measure_lt_top_of_compactSpace_quotientGroup (hD : IsFundamentalDomain Γ.op D μ) :
+    μ D < ∞ :=
+  -- `G ⧸ Γ` is by definition the orbit space of the right action of `Γ` on `G`
+  have : CompactSpace (MulAction.orbitRel.Quotient Γ.op G) := ‹CompactSpace (G ⧸ Γ)›
+  hD.measure_lt_top_of_compactSpace
 
 end MeasureTheory.IsFundamentalDomain

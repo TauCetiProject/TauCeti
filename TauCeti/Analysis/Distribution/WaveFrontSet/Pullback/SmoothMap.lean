@@ -78,6 +78,9 @@ need composition with maps that are not submersions, which is
   for instance a smooth one, `f^* F = F ∘ f`.
 * `Distribution.pullback_eq_pullbackInl`: `f^* T` is the restriction to `E × {0}` of the pullback
   `Distribution.addSndPullback` of `T` along the submersion `TauCeti.addSnd`.
+* `TauCeti.mem_covectorPullback_addSnd_iff`, `TauCeti.notMem_covectorPullback_addSnd`: the
+  covectors of `g^* Γ` are the `(Df(x)ᵀ η, η)` with `(g (x, y), η) ∈ Γ`, so none over `(x, 0)` is
+  conormal to `E × {0}` unless `Γ` meets the normal set of `f` over `x`.
 * `Distribution.pullback_add`, `Distribution.pullback_smul`,
   `Distribution.pullback_smul_of_ne_zero`, `Distribution.pullback_zero`,
   `Distribution.pullback_neg`, `Distribution.pullback_sub`: linearity in `T`.
@@ -115,6 +118,38 @@ noncomputable section
 
 open Filter Function Metric Set TopologicalSpace TestFunction MeasureTheory WithLp TauCeti
 open scoped Distributions ContDiff Convolution Topology Pointwise
+
+/-! ### The cone `g^* Γ` of the submersion `(x, y) ↦ f x + y` -/
+
+namespace TauCeti
+
+variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [CompleteSpace E'] {f : E → E'}
+  {U : Set (WithLp 2 (E × E'))} {Γ : Set (E' × E')}
+
+/-- Since `Dg(x, y)ᵀ η = (Df(x)ᵀ η, η)`, a covector `ζ` over `p = (x, y)` lies in `g^* Γ` exactly
+when `(g (x, y), ζ.snd) ∈ Γ` and `ζ.fst = Df(x)ᵀ ζ.snd`. -/
+theorem mem_covectorPullback_addSnd_iff {p ζ : WithLp 2 (E × E')}
+    (hf : DifferentiableAt ℝ f p.fst) :
+    (p, ζ) ∈ covectorPullback (addSnd f) U Γ ↔
+      p ∈ U ∧ (addSnd f p, ζ.snd) ∈ Γ ∧ (fderiv ℝ f p.fst).adjoint ζ.snd = ζ.fst := by
+  simp only [mem_covectorPullback, adjoint_fderiv_addSnd_apply hf]
+  refine and_congr_right fun _ ↦ ⟨?_, fun ⟨hmem, h⟩ ↦ ⟨ζ.snd, hmem, ?_⟩⟩
+  · rintro ⟨η, hη, rfl⟩
+    simpa using hη
+  · rw [WithLp.ext_iff]
+    ext <;> simp [h]
+
+/-- If `Γ` does not meet the normal set of `f` over `x`, the cone `g^* Γ` contains no conormal
+covector `((x, 0), (0, η))` of `E × {0}`: it would come from some `(f x, η) ∈ Γ` with
+`Df(x)ᵀ η = 0`. -/
+theorem notMem_covectorPullback_addSnd {x : E} (hf : DifferentiableAt ℝ f x)
+    (hN : ∀ η, (f x, η) ∈ Γ → (fderiv ℝ f x).adjoint η ≠ 0) (η : E') :
+    (toLp 2 (x, (0 : E')), toLp 2 ((0 : E), η)) ∉ covectorPullback (addSnd f) U Γ := fun hmem ↦ by
+  obtain ⟨-, hΓ, h0⟩ := (mem_covectorPullback_addSnd_iff (p := toLp 2 (x, 0)) hf).1 hmem
+  exact hN η (by simpa using hΓ) (by simpa using h0)
+
+end TauCeti
 
 namespace Distribution
 
@@ -161,15 +196,10 @@ theorem notMem_waveFrontSet_addSndPullback (hf : ContDiffOn ℝ ∞ f Ω) {T : �
     (h : ∀ x ∈ Ω, ∀ η, (f x, η) ∈ T.waveFrontSet → (fderiv ℝ f x).adjoint η ≠ 0) :
     ∀ x ∈ Ω, ∀ η : E', η ≠ 0 →
       (toLp 2 (x, (0 : E')), toLp 2 ((0 : E), η)) ∉ (addSndPullback hf T).waveFrontSet := by
-  intro x hx η' _ hmem
-  rw [addSndPullback_eq_compCLMOfSubmersion, waveFrontSet_compCLMOfSubmersion] at hmem
-  obtain ⟨-, η, hη, hadj⟩ := mem_covectorPullback.1 hmem
-  dsimp only at hη hadj
-  rw [adjoint_fderiv_addSnd_apply (p := toLp 2 (x, 0))
-    ((hf.differentiableOn (by simp) x hx).differentiableAt (Ω.isOpen.mem_nhds hx))] at hadj
-  have hfst := congrArg WithLp.fst hadj
-  simp only [toLp_fst] at hfst
-  exact h x hx η (by simpa using hη) hfst
+  intro x hx η _
+  rw [addSndPullback_eq_compCLMOfSubmersion, waveFrontSet_compCLMOfSubmersion]
+  exact notMem_covectorPullback_addSnd
+    ((hf.differentiableOn (by simp) x hx).differentiableAt (Ω.isOpen.mem_nhds hx)) (h x hx) η
 
 /-! ### The pullback -/
 

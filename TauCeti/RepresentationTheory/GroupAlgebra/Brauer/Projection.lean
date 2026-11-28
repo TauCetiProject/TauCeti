@@ -66,6 +66,8 @@ is nonzero; this is not formalized here.
 * `TauCeti.brauerProjection_sSup_ne_zero_of_directedOn`: if `Br_Q(x) ≠ 0` for every `Q` in a
   nonempty directed family `c`, then `Br_{sSup c}(x) ≠ 0`.
 * `TauCeti.brauerProjection_conj_eq_zero_iff`: `Br_{gPg⁻¹}(g x g⁻¹) = 0 ↔ Br_P(x) = 0`.
+* `TauCeti.brauerProjection_map_domCongr_eq_zero_iff`: `Br_{σ(P)}(σ x) = 0 ↔ Br_P(x) = 0` for a
+  group isomorphism `σ`.
 * `TauCeti.brauerProjection_conj_eq_zero_iff_of_conjRepresentation_eq`: if `g x g⁻¹ = x`, for
   instance if `x` is central, then `Br_{gPg⁻¹}(x) = 0 ↔ Br_P(x) = 0`.
 * `TauCeti.brauerProjection_mul`: `Br_P(x y) = Br_P(x) Br_P(y)` for `x, y ∈ R[G]^P`.
@@ -182,20 +184,25 @@ theorem brauerProjection_sSup_ne_zero_of_directedOn {c : Set (Subgroup G)} (hne 
   obtain ⟨T, hT, hgT⟩ := (Subgroup.mem_sSup_of_directedOn hne hc).1 hg
   exact Subgroup.mem_centralizer_iff.1 (hall T hT) g hgT
 
+/-- **The Brauer projection under a group isomorphism.** `Br_{σ(P)}(σ x) = 0` exactly when
+`Br_P(x) = 0`, because `σ` carries `C_G(P)` onto `C_{G'}(σ(P))`. -/
+theorem brauerProjection_map_domCongr_eq_zero_iff {G' : Type*} [Group G'] (σ : G ≃* G')
+    {P : Subgroup G} {x : MonoidAlgebra R G} :
+    brauerProjection (P.map σ.toMonoidHom) (domCongr R R σ x) = 0 ↔ brauerProjection P x = 0 := by
+  have hC : Subgroup.centralizer (P.map σ.toMonoidHom : Set G') =
+      (Subgroup.centralizer (P : Set G)).map σ.toMonoidHom := by
+    simpa using (σ.map_centralizer P).symm
+  rw [brauerProjection_eq_zero_iff, brauerProjection_eq_zero_iff, hC]
+  simp only [Subgroup.mem_map_equiv, coeff_domCongr]
+  exact ⟨fun h c hc ↦ by simpa using h (σ c) (by simpa using hc), fun h c hc ↦ h _ hc⟩
+
 /-- **Conjugation and the Brauer projection.** `Br_{gPg⁻¹}(g x g⁻¹) = 0` exactly when
 `Br_P(x) = 0`. -/
 theorem brauerProjection_conj_eq_zero_iff (g : G) {P : Subgroup G} {x : MonoidAlgebra R G} :
     brauerProjection (MulAut.conj g • P) (conjRepresentation R G g x) = 0 ↔
       brauerProjection P x = 0 := by
-  rw [brauerProjection_eq_zero_iff, brauerProjection_eq_zero_iff, Subgroup.coe_pointwise_smul,
-    Subgroup.centralizer_pointwise_smul]
-  constructor
-  · intro h c hc
-    simpa [mul_assoc] using h _ (Subgroup.smul_mem_pointwise_smul c (MulAut.conj g) _ hc)
-  · intro h c hc
-    rw [coeff_conjRepresentation]
-    refine h _ ((Subgroup.smul_mem_pointwise_smul_iff (a := MulAut.conj g)).1 ?_)
-    simpa [mul_assoc] using hc
+  rw [conjRepresentation_apply, Subgroup.pointwise_smul_def]
+  exact brauerProjection_map_domCongr_eq_zero_iff (MulAut.conj g)
 
 /-- **The Brauer projection of a conjugation-fixed element.** If conjugation by `g` fixes `x`, for
 instance if `x` is central, then `Br_{gPg⁻¹}(x) = 0` exactly when `Br_P(x) = 0`. -/

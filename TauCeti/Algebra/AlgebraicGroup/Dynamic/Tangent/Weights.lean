@@ -5,21 +5,33 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Levi.Representability
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Tangent.Adjoint
+public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Differential
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Differential
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.RootSpace
 import Mathlib.Algebra.DirectSum.Decomposition
+import TauCeti.Algebra.Bialgebra.MonoidAlgebra.Equiv
 
 /-!
 # Adjoint weights of dynamic tangent spaces
 
 For a cocharacter, the Lie algebra of its dynamic parabolic is the sum of the
-nonnegative adjoint weight spaces, and that of its dynamic unipotent subgroup is the
-sum of the strictly positive weight spaces. The coefficient of infinitesimal conjugation
-extracts the corresponding weight component.
+nonnegative adjoint weight spaces, that of its dynamic unipotent subgroup is the
+sum of the strictly positive weight spaces, and that of its dynamic Levi subgroup is the
+zero adjoint weight space. The coefficient of infinitesimal conjugation extracts the
+corresponding weight component.
 
 These statements use the existing adjoint comodule and its internal weight decomposition.
 They assume finite projectivity of the augmentation cotangent module, but impose no field,
-characteristic, reducedness or smoothness assumption.
+characteristic, reducedness or smoothness assumption. Over a characteristic-zero domain `R`,
+characters of `𝔾ₘ` are separated by the unit tangent vector
+(`BialgHom.weightSpace_cocharacter_eq_eigenspace` in `MultiplicativeGroup.Differential`),
+identifying each `m`-adjoint weight space on `Lie(G)` with the `(m : R)`-eigenspace of the
+cocharacter's unit tangent differential (`BialgHom.adjointWeightSpace_cocharacter_eq_eigenspace`,
+`BialgHom.lieSubalgebra_parabolicDefiningHopfIdeal_eq_iSup_eigenspace`,
+`BialgHom.lieSubalgebra_unipotentDefiningHopfIdeal_eq_iSup_eigenspace`,
+`BialgHom.lieSubalgebra_leviDefiningHopfIdeal_eq_eigenspace`).
 
 ## References
 
@@ -29,8 +41,8 @@ characteristic, reducedness or smoothness assumption.
 
 public section
 
-open TauCeti TauCeti.Cocharacter WithConv
-open scoped TensorProduct DirectSum
+open LieAlgebra TauCeti TauCeti.Cocharacter WithConv
+open scoped TensorProduct DirectSum LaurentPolynomial
 
 namespace BialgHom
 
@@ -228,5 +240,112 @@ theorem lieSubalgebra_unipotentDefiningHopfIdeal_toSubmodule
     LieSubalgebra.mem_toSubmodule, mem_lieSubalgebra_unipotentDefiningHopfIdeal_iff]
   simpa only [Set.mem_Ioi, not_lt] using
     (mem_iSup_adjointWeightSpace_iff_coeff_conjugationAlgHom l (Set.Ioi 0) x).symm
+
+/-- The tangent Lie algebra of the dynamic Levi subgroup is the zero adjoint weight space,
+transported from the cotangent-dual model of the ambient Lie algebra. -/
+theorem lieSubalgebra_leviDefiningHopfIdeal_toSubmodule
+    (l : H →ₐc[R] LaurentPolynomial R) :
+    ((leviDefiningHopfIdeal l).lieSubalgebra (B := R)).toSubmodule =
+      (Derivation.adjointWeightSpace
+        ((AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ).toBialgHom.comp l)
+        (Multiplicative.ofAdd (0 : ℤ))).map
+        (Derivation.cotangentLinearEquiv (R := R) (A := H) (B := R)).toLinearMap := by
+  have hopp (h : H) (n : ℤ) :
+      (Cocharacter.conjugationAlgHom l.oppositeCocharacter h).coeff n =
+        (Cocharacter.conjugationAlgHom l h).coeff (-n) := by
+    have hc := congrArg (fun p : WithConv (H →ₐ[R] LaurentPolynomial H) ↦ (p.ofConv h).coeff n)
+      (Cocharacter.conjugate_oppositeCocharacter l (toConv (AlgHom.id R H)))
+    simpa only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply,
+      AlgHom.restrictScalars_apply, AlgEquiv.coe_toAlgHom, LaurentPolynomial.invert_apply,
+      Cocharacter.coeff_conjugate, AlgHom.id_apply] using hc
+  ext d
+  obtain ⟨x, rfl⟩ := (Derivation.cotangentLinearEquiv (R := R) (A := H) (B := R)).surjective d
+  rw [Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply, LieSubalgebra.mem_toSubmodule,
+    leviDefiningHopfIdeal_def, HopfIdeal.mem_lieSubalgebra_sup_iff,
+    mem_lieSubalgebra_parabolicDefiningHopfIdeal_iff,
+    mem_lieSubalgebra_parabolicDefiningHopfIdeal_iff]
+  have hsing := mem_iSup_adjointWeightSpace_iff_coeff_conjugationAlgHom l {0} x
+  rw [iSup_singleton] at hsing
+  rw [hsing]
+  constructor
+  · rintro ⟨h₁, h₂⟩ h n hn
+    rcases lt_or_gt_of_ne hn with hlt | hgt
+    · exact h₁ h n hlt
+    · simpa only [hopp, neg_neg] using h₂ h (-n) (neg_neg_of_pos hgt)
+  · intro h
+    refine ⟨fun a n hn ↦ h a n hn.ne, fun a n hn ↦ ?_⟩
+    rw [hopp]
+    exact h a (-n) (neg_pos.mpr hn).ne'
+
+/-- Over a characteristic-zero domain `R`, the `m`-adjoint weight space of a cocharacter
+`l : H →ₐc[R] R[T;T⁻¹]` coincides with the `(m : R)`-eigenspace of `ad` of its unit tangent
+differential in the cotangent-dual Lie algebra. -/
+theorem adjointWeightSpace_cocharacter_eq_eigenspace [IsDomain R] [CharZero R]
+    (l : H →ₐc[R] LaurentPolynomial R) (m : ℤ) :
+    Derivation.adjointWeightSpace
+        ((AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ).toBialgHom.comp l)
+        (Multiplicative.ofAdd m) =
+      Module.End.eigenspace (ad R (Module.Dual R (Bialgebra.CotangentSpace R H))
+        ((Derivation.cotangentDualLieEquiv (R := R) (H := H)).symm (derivationComp (B := R) l
+          ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := R)).symm 1)))) (m : R) := by
+  rw [Derivation.adjointWeightSpace_eq_weightSpace,
+    l.weightSpace_cocharacter_eq_eigenspace (Module.Dual R (Bialgebra.CotangentSpace R H)) m]
+  exact congrArg (Module.End.eigenspace · (m : R))
+    (LinearMap.ext fun x ↦ Derivation.differential_adjointComodule _ x)
+
+/-- Transporting the `n`-adjoint weight space of `l : H →ₐc[R] R[T;T⁻¹]` across
+`Derivation.cotangentLinearEquiv` yields the `(n : R)`-eigenspace of `ad` of its unit tangent
+differential on `Der_R(H, R)`. -/
+theorem map_cotangentLinearEquiv_adjointWeightSpace_cocharacter [IsDomain R] [CharZero R]
+    (l : H →ₐc[R] LaurentPolynomial R) (n : ℤ) :
+    Submodule.map (Derivation.cotangentLinearEquiv (R := R) (A := H) (B := R) : _ →ₗ[R] _)
+        (Derivation.adjointWeightSpace
+          ((AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ).toBialgHom.comp l)
+          (Multiplicative.ofAdd n)) =
+      Module.End.eigenspace (ad R (Derivation R H (Bialgebra.CounitAlgebra R H R))
+        (derivationComp (B := R) l
+          ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := R)).symm 1))) (n : R) := by
+  rw [l.adjointWeightSpace_cocharacter_eq_eigenspace]; ext d
+  obtain ⟨x, rfl⟩ := (Derivation.cotangentLinearEquiv (R := R) (A := H) (B := R)).surjective d
+  rw [Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply,
+    Module.End.mem_eigenspace_iff, Module.End.mem_eigenspace_iff, ad_apply, ad_apply]
+  simp only [← (Derivation.cotangentDualLieEquiv (R := R) (H := H)).injective.eq_iff,
+    LieEquiv.coe_toLieHom, LieEquiv.map_lie, LieEquiv.apply_symm_apply,
+    Derivation.cotangentDualLieEquiv_apply]
+  rw [map_smul]
+  exact Iff.rfl
+
+/-- Over a characteristic-zero domain `R`, the underlying submodule of `Lie(P_G(l))` is the
+supremum of the `(n : R)`-eigenspaces of `ad` of its unit tangent differential for `0 ≤ n`. -/
+theorem lieSubalgebra_parabolicDefiningHopfIdeal_eq_iSup_eigenspace [IsDomain R] [CharZero R]
+    (l : H →ₐc[R] LaurentPolynomial R) :
+    ((parabolicDefiningHopfIdeal l).lieSubalgebra (B := R)).toSubmodule =
+      ⨆ (n : ℤ) (_ : 0 ≤ n), Module.End.eigenspace
+        (ad R (Derivation R H (Bialgebra.CounitAlgebra R H R)) (derivationComp (B := R) l
+          ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := R)).symm 1))) (n : R) := by
+  rw [l.lieSubalgebra_parabolicDefiningHopfIdeal_toSubmodule]
+  simp_rw [Submodule.map_iSup, l.map_cotangentLinearEquiv_adjointWeightSpace_cocharacter]
+
+/-- Over a characteristic-zero domain `R`, the underlying submodule of `Lie(U_G(l))` is the
+supremum of the `(n : R)`-eigenspaces of `ad` of its unit tangent differential for `0 < n`. -/
+theorem lieSubalgebra_unipotentDefiningHopfIdeal_eq_iSup_eigenspace [IsDomain R] [CharZero R]
+    (l : H →ₐc[R] LaurentPolynomial R) :
+    (l.unipotentDefiningHopfIdeal.lieSubalgebra (B := R)).toSubmodule =
+      ⨆ (n : ℤ) (_ : 0 < n), Module.End.eigenspace
+        (ad R (Derivation R H (Bialgebra.CounitAlgebra R H R)) (derivationComp (B := R) l
+          ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := R)).symm 1))) (n : R) := by
+  rw [l.lieSubalgebra_unipotentDefiningHopfIdeal_toSubmodule]
+  simp_rw [Submodule.map_iSup, l.map_cotangentLinearEquiv_adjointWeightSpace_cocharacter]
+
+/-- Over a characteristic-zero domain `R`, the underlying submodule of `Lie(Z_G(l))` is the
+zero eigenspace of `ad` of its unit tangent differential. -/
+theorem lieSubalgebra_leviDefiningHopfIdeal_eq_eigenspace [IsDomain R] [CharZero R]
+    (l : H →ₐc[R] LaurentPolynomial R) :
+    ((leviDefiningHopfIdeal l).lieSubalgebra (B := R)).toSubmodule =
+      Module.End.eigenspace
+        (ad R (Derivation R H (Bialgebra.CounitAlgebra R H R)) (derivationComp (B := R) l
+          ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := R)).symm 1))) 0 := by
+  rw [l.lieSubalgebra_leviDefiningHopfIdeal_toSubmodule]
+  simpa only [Int.cast_zero] using l.map_cotangentLinearEquiv_adjointWeightSpace_cocharacter 0
 
 end BialgHom

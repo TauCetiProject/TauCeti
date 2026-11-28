@@ -38,6 +38,8 @@ commutativity is assumed.
 * `TauCeti.BalancedExtension.lift` and `TauCeti.BalancedExtension.liftEquiv`: the universal
   property. `S`-linear maps `S ⊗_R P → Q` correspond to `f`-semilinear maps `P → Q`, that is, to
   additive maps that are `R`-linear for the action on `Q` restricted along `f`.
+* `TauCeti.BalancedExtension.equivOfSemilinearEquiv`: the `S`-linear equivalence
+  `S ⊗_R P ≃ Q` induced by an `f`-semilinear equivalence `P ≃ₛₗ[f] Q`.
 * `TauCeti.BalancedExtension.map`: functoriality in `R`-linear maps, and
   `TauCeti.BalancedExtension.congr` for `R`-linear equivalences.
 * `TauCeti.BalancedExtension.lid`: extension along the identity, `R ⊗_R P ≃ P`.
@@ -46,6 +48,8 @@ commutativity is assumed.
 * `TauCeti.BalancedExtension.cancelBaseChange`: extension along a composite,
   `T ⊗_S (S ⊗_R P) ≃ T ⊗_R P`.
 * `TauCeti.BalancedExtension.rid`: extension of the regular module, `S ⊗_R R ≃ S`.
+* `TauCeti.BalancedExtension.tensorProductEquiv`: comparison with Mathlib's ordinary tensor
+  product `TensorProduct R S P` when `R` is commutative and `S` is an `R`-algebra.
 * `TauCeti.BalancedExtension.piScalarRight`: extension of a finite free module,
   `S ⊗_R Rⁿ ≃ Sⁿ`.
 * `TauCeti.BalancedExtension.rangeVecMulLinearEquiv`: extension of the image of an idempotent
@@ -302,6 +306,28 @@ theorem liftEquiv_apply (g : P →ₛₗ[f] Q) : liftEquiv g = lift g := (rfl)
 theorem liftEquiv_symm_apply (φ : BalancedExtension f P →ₗ[S] Q) :
     liftEquiv.symm φ = φ.comp (includeRight f P) := (rfl)
 
+section SemilinearEquiv
+
+variable {σ' : S →+* R} [RingHomInvPair f σ'] [RingHomInvPair σ' f]
+
+/-- A semilinear equivalence `j : P ≃ₛₗ[f] Q` induces an `S`-linear equivalence
+`S ⊗_R P ≃ₗ[S] Q`, sending `s ⊗ p` to `s • j p` and `q` to `1 ⊗ j.symm q`. -/
+def equivOfSemilinearEquiv (j : P ≃ₛₗ[f] Q) : BalancedExtension f P ≃ₗ[S] Q :=
+  LinearEquiv.ofLinearMap (lift j.toLinearMap) ((includeRight f P).comp j.symm.toLinearMap)
+    (by ext y; simp) (hom_ext fun p ↦ by simp)
+
+@[simp]
+theorem equivOfSemilinearEquiv_tmul (j : P ≃ₛₗ[f] Q) (s : S) (p : P) :
+    equivOfSemilinearEquiv j (tmul f s p) = s • j p :=
+  lift_tmul j.toLinearMap s p
+
+@[simp]
+theorem equivOfSemilinearEquiv_symm_apply (j : P ≃ₛₗ[f] Q) (q : Q) :
+    (equivOfSemilinearEquiv j).symm q = tmul f 1 (j.symm q) := by
+  simp [equivOfSemilinearEquiv]
+
+end SemilinearEquiv
+
 section Map
 
 variable {P' P'' : Type*} [AddCommGroup P'] [Module R P'] [AddCommGroup P''] [Module R P'']
@@ -386,6 +412,15 @@ theorem congr_tmul (θ : P ≃ₗ[R] P') (s : S) (p : P) :
 theorem congr_symm (θ : P ≃ₗ[R] P') : (congr f θ).symm = congr f θ.symm := (rfl)
 
 end Map
+
+/-- Conjugating `BalancedExtension.map f T` by `equivOfSemilinearEquiv j` gives
+`j.conjRingEquiv T`. -/
+@[simp]
+theorem conjRingEquiv_equivOfSemilinearEquiv_map {σ' : S →+* R} [RingHomInvPair f σ']
+    [RingHomInvPair σ' f] (j : P ≃ₛₗ[f] Q) (T : Module.End R P) :
+    (equivOfSemilinearEquiv j).conjRingEquiv (map f T) = j.conjRingEquiv T := by
+  ext q
+  simp
 
 /-- Transport balanced extension along equality of the scalar ring homomorphisms. -/
 def congrRingHom {g : R →+* S} (h : f = g) :
@@ -753,6 +788,73 @@ theorem rangeMulVecBilinEquiv_symm_apply (he : IsIdempotentElem e)
   simpa [mulVec, dotProduct] using (congrFun hw i).symm
 
 end Idempotent
+
+section TensorProduct
+
+variable (R S P : Type*) [CommRing R] [Ring S] [Algebra R S] [AddCommGroup P] [Module R P]
+
+/-- Comparison between the balanced extension of scalars `S ⊗_R P` along `algebraMap R S`
+and Mathlib's tensor product `TensorProduct R S P`, sending `s ⊗ p` to `s ⊗ₜ[R] p`. -/
+def tensorProductEquiv : BalancedExtension (algebraMap R S) P ≃ₗ[S] TensorProduct R S P :=
+  let _ : Module R (BalancedExtension (algebraMap R S) P) := Module.compHom _ (algebraMap R S)
+  -- Under `Module.compHom _ (algebraMap R S)`, `r • y` is `algebraMap R S r • y` by definition.
+  have hsmul (r : R) (y : BalancedExtension (algebraMap R S) P) :
+      r • y = algebraMap R S r • y := rfl
+  have : IsScalarTower R S (BalancedExtension (algebraMap R S) P) :=
+    ⟨fun r s x ↦ by rw [hsmul, Algebra.smul_def, mul_smul, ← hsmul]⟩
+  let f : P →ₛₗ[algebraMap R S] TensorProduct R S P :=
+    { toFun := fun p ↦ (1 : S) ⊗ₜ[R] p, map_add' := TensorProduct.tmul_add 1,
+      map_smul' := fun r p ↦ by rw [TensorProduct.tmul_smul, algebraMap_smul] }
+  let g : S →ₗ[S] P →ₗ[R] BalancedExtension (algebraMap R S) P :=
+    { toFun := fun s ↦
+        { toFun := tmul (algebraMap R S) s, map_add' := tmul_add s,
+          map_smul' := fun r p ↦ by
+            rw [tmul_smul, ← Algebra.commutes]
+            exact (smul_tmul (algebraMap R S r) s p).symm }
+      map_add' := fun s₁ s₂ ↦ LinearMap.ext (add_tmul s₁ s₂)
+      map_smul' := fun s₁ s₂ ↦ LinearMap.ext fun p ↦ (smul_tmul s₁ s₂ p).symm }
+  have hf (p : P) : f p = (1 : S) ⊗ₜ[R] p := rfl
+  have hg (s : S) (p : P) : g s p = tmul (algebraMap R S) s p := rfl
+  LinearEquiv.ofLinearMap (lift f) (TensorProduct.AlgebraTensorModule.lift g)
+    (LinearMap.ext fun x ↦ x.inductionOn
+      (fun s p ↦ by
+        simp only [LinearMap.comp_apply, LinearMap.id_apply,
+          TensorProduct.AlgebraTensorModule.lift_tmul, hg, lift_tmul, hf,
+          TensorProduct.smul_tmul', smul_eq_mul, mul_one])
+      fun _ _ hx hy ↦ by rw [_root_.map_add, _root_.map_add, hx, hy])
+    (hom_ext fun p ↦ by
+      simp only [LinearMap.comp_apply, LinearMap.id_apply, lift_tmul, one_smul, hf,
+        TensorProduct.AlgebraTensorModule.lift_tmul, hg])
+
+@[simp]
+theorem tensorProductEquiv_tmul (s : S) (p : P) :
+    tensorProductEquiv R S P (tmul (algebraMap R S) s p) = s ⊗ₜ[R] p := by
+  simp [tensorProductEquiv, TensorProduct.smul_tmul']
+
+@[simp]
+theorem tensorProductEquiv_symm_tmul (s : S) (p : P) :
+    (tensorProductEquiv R S P).symm (s ⊗ₜ[R] p) = tmul (algebraMap R S) s p := by
+  rw [LinearEquiv.symm_apply_eq, tensorProductEquiv_tmul]
+
+/-- `tensorProductEquiv` intertwines `BalancedExtension.map` with `LinearMap.baseChange`. -/
+@[simp]
+theorem tensorProductEquiv_map {P' : Type*} [AddCommGroup P'] [Module R P']
+    (g : P →ₗ[R] P') (x : BalancedExtension (algebraMap R S) P) :
+    tensorProductEquiv R S P' (map (algebraMap R S) g x) =
+      g.baseChange S (tensorProductEquiv R S P x) := by
+  induction x using induction_on with
+  | tmul s p => simp
+  | add x y hx hy => simp [hx, hy]
+
+/-- Naturality square identifying `BalancedExtension.map` with `LinearMap.baseChange` under
+`tensorProductEquiv`. -/
+theorem tensorProductEquiv_comp_map {P' : Type*} [AddCommGroup P'] [Module R P']
+    (g : P →ₗ[R] P') :
+    (tensorProductEquiv R S P').toLinearMap ∘ₗ map (algebraMap R S) g =
+      g.baseChange S ∘ₗ (tensorProductEquiv R S P).toLinearMap :=
+  hom_ext fun p ↦ by simp
+
+end TensorProduct
 
 end BalancedExtension
 

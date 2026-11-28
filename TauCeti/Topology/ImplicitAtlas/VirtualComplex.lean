@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Homology.Embedding.ExtendHomology
 public import Mathlib.Algebra.Homology.Embedding.StupidTrunc
-public import TauCeti.Topology.ImplicitAtlas.PartialComplex.Basic
+public import TauCeti.Algebra.Homology.Embedding.Extend
+public import TauCeti.Topology.ImplicitAtlas.PartialComplex.HomotopyKSheaf
+public import TauCeti.Topology.Sheaves.KSheaf.IntervalDiagram
 
 /-!
 # The virtual cochain complex of an implicit atlas
@@ -54,6 +56,14 @@ proves the first checks of the construction.
   In particular every virtual complex of an atlas on the empty space is zero
   (`TauCeti.ImplicitAtlas.isZero_virtualComplex_obj_of_isEmpty`).
 
+* **Homotopy K-sheaf.** On a locally compact Hausdorff space, `C_vir(−; B)` is a homotopy
+  K-sheaf (`TauCeti.ImplicitAtlas.isHomotopyKSheaf_virtualComplex`), by Pardon's Lemma A.8.1
+  (`TopCat.KPresheaf.isHomotopyKSheaf_comp_intervalDiagramTotalFunctor_comp_extendFunctor`):
+  the partial complexes are homotopy K-sheaves in every cochain grading
+  (`TauCeti.ImplicitAtlas.isHomotopyKSheaf_deformationPairPresheaf_comp_invariantChainsFunctor`).
+  Together with the purity of the partial complexes, which is not treated here, this is the input
+  of the comparison of the virtual cohomology with Čech cohomology.
+
 The atlases here have no boundary, so the relative and absolute virtual complexes of Pardon
 coincide.
 
@@ -61,7 +71,8 @@ coincide.
 
 * J. Pardon, *An algebraic approach to virtual fundamental cycles on moduli spaces of
   pseudo-holomorphic curves*, Geom. Topol. 20 (2016), 779–1034, Definition 4.2.6 (the virtual
-  cochain complex), Definition A.7.2 (the total of an interval diagram) and Lemma A.7.3.
+  cochain complex), Definition A.7.2 (the total of an interval diagram), Lemma A.7.3 and
+  Lemma A.8.1.
 -/
 
 public section
@@ -235,5 +246,51 @@ theorem isZero_virtualComplex_obj_of_coe_eq_empty (B : Finset A)
 theorem isZero_virtualComplex_obj_of_isEmpty [IsEmpty X] (B : Finset A)
     (K : (Compacts (TopCat.of X))ᵒᵖ) : IsZero ((𝒜.virtualComplex k hΓ B).obj K) :=
   𝒜.isZero_virtualComplex_obj_of_coe_eq_empty k hΓ B (Set.eq_empty_of_isEmpty _)
+
+/-! ### The virtual complex is a homotopy K-sheaf -/
+
+/-- The values of the diagram of partial virtual complexes in chain degrees on an interval
+`I ⊆ J`, read in cochain degrees `n - •` for any integer `n`, are the invariant chains of the
+deformation pairs in these degrees. -/
+private def partialVirtualChainDiagramCompEvaluationIso (B : Finset A)
+    (x : NonemptyInterval (Set.Iic B)) (n : ℤ) :
+    𝒜.deformationPairPresheaf x.fst.val x.snd.property ⋙ invariantChainsFunctor ρ k B n ≅
+      𝒜.partialVirtualChainDiagram k hΓ B ⋙ (evaluation _ _).obj (op x) ⋙
+        (ComplexShape.embeddingUpIntLE n).extendFunctor _ :=
+  let Φ := 𝒜.deformationPairPresheaf x.fst.val x.snd.property ⋙
+    TopPair.diagonalChainActionFunctor (partialVirtualCoefficients ρ k B) ⋙ lim
+  let eN := ComplexShape.embeddingUpIntLE (d + ∑ α ∈ B, (finrank ℝ (E α) : ℤ))
+  let en := ComplexShape.embeddingUpIntLE n
+  -- the invariant chains in degrees `n - •` are the limit of the diagonal action, extended
+  have h₀ : 𝒜.deformationPairPresheaf x.fst.val x.snd.property ⋙ invariantChainsFunctor ρ k B n =
+      Φ ⋙ en.extendFunctor _ := rfl
+  -- the values of the diagram are the partial complexes, in degrees `d + m_B - •`, restricted
+  have h₁ : 𝒜.partialVirtualChainDiagram k hΓ B ⋙ (evaluation _ _).obj (op x) ⋙
+      en.extendFunctor _ =
+        Φ ⋙ (eN.extendFunctor _ ⋙ eN.restrictionFunctor _) ⋙ en.extendFunctor _ := by
+    rw [← Functor.assoc, partialVirtualChainDiagram, flip_comp_evaluation]
+    rfl
+  eqToIso h₀ ≪≫ Functor.isoWhiskerLeft Φ ((Functor.leftUnitor _).symm ≪≫
+    Functor.isoWhiskerRight (eN.extendFunctorCompRestrictionFunctorIso _).symm
+      (en.extendFunctor _)) ≪≫ eqToIso h₁.symm
+
+include hΓ in
+/-- **The virtual cochain complex is a homotopy K-sheaf** (Pardon, Lemma A.8.1). For an implicit
+atlas on a locally compact Hausdorff space and coefficients in a commutative ring in which the
+orders of the isotropy groups are units, the virtual cochain complex `K ↦ C_vir(K; B)` of a finite
+set `B` of indices is a homotopy K-sheaf: it is the flag total of the interval diagram of the
+partial virtual complexes, which are homotopy K-sheaves in every cochain grading. -/
+theorem isHomotopyKSheaf_virtualComplex [T2Space X] [LocallyCompactSpace X] (B : Finset A) :
+    (𝒜.virtualComplex k hΓ B).IsHomotopyKSheaf := by
+  have hF (x : NonemptyInterval (Set.Iic B)) (n : ℤ) :
+      TopCat.KPresheaf.IsHomotopyKSheaf (𝒜.partialVirtualChainDiagram k hΓ B ⋙
+        (evaluation _ _).obj (op x) ⋙ (ComplexShape.embeddingUpIntLE n).extendFunctor _) :=
+    (𝒜.isHomotopyKSheaf_deformationPairPresheaf_comp_invariantChainsFunctor hΓ x.fst.val
+      x.snd.property n).of_iso (𝒜.partialVirtualChainDiagramCompEvaluationIso k hΓ B x n)
+  -- the subsets of `B` are finitely many
+  have : Finite (Set.Iic B) := (B.powerset.finite_toSet.subset fun I hI ↦
+    Finset.mem_coe.2 (Finset.mem_powerset.2 hI)).to_subtype
+  exact TopCat.KPresheaf.isHomotopyKSheaf_comp_intervalDiagramTotalFunctor_comp_extendFunctor
+    (𝒜.partialVirtualChainDiagram k hΓ B) hF (d + ∑ α ∈ B, (finrank ℝ (E α) : ℤ))
 
 end TauCeti.ImplicitAtlas

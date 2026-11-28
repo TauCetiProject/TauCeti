@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Bimodule
+public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Support
 public import TauCeti.Algebra.Homology.DG.Bimodule.TensorProduct.Lift
 
 /-!
@@ -697,6 +698,22 @@ theorem cubicalChainPairing_cubicalChainModuleLinearMap_right (f : C(X × Y, Z))
       cubicalChainPairing H K R (f.comp ((ContinuousMap.id X).prodMap k)) m n := by
   rw [← cubicalChainPairing_cubicalChainModuleLinearMap, cubicalChainModuleLinearMap_id,
     LinearMap.id_apply]
+
+/-- **Pairing preserves support on the right**: if `f : X × Y → Z` sends `X × T` into `S`, then
+pairing by `f` with a chain supported in `T` gives a chain supported in `S`. -/
+theorem cubicalChainPairing_mem_cubicalChainModuleSupportedIn {f : C(X × Y, Z)} {T : Set Y}
+    {S : Set Z} (hf : ∀ x, ∀ y ∈ T, f (x, y) ∈ S) (m : cubicalChainModule X H R)
+    {n : cubicalChainModule Y K R} (hn : n ∈ cubicalChainModuleSupportedIn K R T) :
+    cubicalChainPairing H K R f m n ∈ cubicalChainModuleSupportedIn K R S := by
+  obtain ⟨n, rfl⟩ := mem_cubicalChainModuleSupportedIn_iff.1 hn
+  -- Pairing with the inclusion of `T` factors through the inclusion of `S`.
+  let g : C(X × T, S) := ⟨fun z ↦ ⟨f (z.1, z.2), hf z.1 z.2 z.2.property⟩, by fun_prop⟩
+  have hg : f.comp ((ContinuousMap.id X).prodMap (ContinuousMap.subtypeVal T)) =
+      (ContinuousMap.subtypeVal S).comp g :=
+    ContinuousMap.ext fun _ ↦ rfl
+  rw [cubicalChainPairing_cubicalChainModuleLinearMap_right, hg,
+    ← cubicalChainModuleLinearMap_cubicalChainPairing]
+  exact mem_cubicalChainModuleSupportedIn_iff.2 ⟨_, rfl⟩
 
 end Map
 

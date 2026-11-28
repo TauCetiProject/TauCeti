@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
-import Mathlib.MeasureTheory.Integral.Gamma
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.Analysis.SpecialFunctions.Integrals.ExponentialSqrt
 
 /-!
 # Tails with mixed linear and square-root exponential decay
@@ -67,18 +67,6 @@ theorem integrableOn_Ioi_exp_neg_mul_sqrt {r : ℝ} (hr : 0 < r) :
   simpa [sqrt_eq_rpow] using integrableOn_rpow_mul_exp_neg_mul_rpow (s := 0) (p := 1 / 2)
     (by norm_num) (by norm_num) hr
 
-/-- The integral of the square-root exponential: `∫_{0}^{∞} exp (-r √v) dv = 2 / r ^ 2`. -/
-theorem integral_Ioi_exp_neg_mul_sqrt {r : ℝ} (hr : 0 < r) :
-    ∫ v in Ioi (0 : ℝ), exp (-r * √v) = 2 / r ^ 2 := by
-  have h := integral_exp_neg_mul_rpow (p := 1 / 2) (b := r) (by norm_num) hr
-  have hGamma : Gamma (1 / (1 / 2 : ℝ) + 1) = 2 := by
-    norm_num [Gamma_nat_eq_factorial 2]
-  have hpow : r ^ (-1 / (1 / 2 : ℝ)) = (r ^ 2)⁻¹ := by
-    norm_num [rpow_neg hr.le, rpow_two]
-  rw [hGamma, hpow] at h
-  simp_rw [sqrt_eq_rpow, h]
-  ring
-
 /-- The mixed exponential majorant is integrable on the positive ray. -/
 theorem integrableOn_exp_neg_div_sqrt_add {c ℓ : ℝ} (hc : 0 < c) (hℓ : 0 ≤ ℓ) :
     IntegrableOn (fun v : ℝ ↦ exp (-(c * (v / (√v + ℓ))))) (Ioi 0) := by
@@ -134,9 +122,9 @@ theorem integral_Ioi_exp_neg_div_sqrt_add_le {c ℓ V : ℝ} (hc : 0 < c) (hℓ 
           (Filter.Eventually.of_forall hsub)) (exp_nonneg _)
     _ = A * (32 / c ^ 2 + 4 * (1 + ℓ) / c) := by
       rw [integral_add (integrableOn_Ioi_exp_neg_mul_sqrt hr)
-        (integrableOn_exp_mul_Ioi (neg_neg_of_pos hs) 0), integral_Ioi_exp_neg_mul_sqrt hr,
-        integral_exp_mul_Ioi (neg_neg_of_pos hs)]
-      simp only [mul_zero, exp_zero, div_neg]
+        (integrableOn_exp_mul_Ioi (neg_neg_of_pos hs) 0),
+        TauCeti.integral_Ioi_exp_neg_mul_sqrt hr le_rfl, integral_exp_mul_Ioi (neg_neg_of_pos hs)]
+      simp only [sqrt_zero, mul_zero, add_zero, mul_one, exp_zero, div_neg]
       dsimp [r, s]
       congr 1
       field_simp
