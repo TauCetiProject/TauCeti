@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.Grp.Preadditive
+public import Mathlib.Algebra.Module.Equiv.Basic
 
 /-!
-# Multiples of the identity of an abelian group
+# Morphisms of abelian groups
+
+`AddCommGrpCat.homLinearEquiv` identifies morphisms of abelian groups with
+`ℤ`-linear maps between the underlying groups.
 
 A natural number `e` kills an abelian group `M` exactly when the endomorphism `e • 𝟙 M` vanishes
 (`AddCommGrpCat.nsmul_id_eq_zero_iff`). This is the analogue for `AddCommGrpCat` of
@@ -20,6 +24,21 @@ public section
 open CategoryTheory
 
 namespace AddCommGrpCat
+
+variable {M N : AddCommGrpCat}
+
+/-- The morphisms of abelian groups are the `ℤ`-linear maps between their underlying groups. -/
+def homLinearEquiv : (M ⟶ N) ≃ₗ[ℤ] (M →ₗ[ℤ] N) :=
+  homAddEquiv.toIntLinearEquiv.trans (addMonoidHomLequivInt ℤ)
+
+/-- The forward equivalence takes the underlying additive map as a `ℤ`-linear map. -/
+@[simp]
+theorem homLinearEquiv_apply (f : M ⟶ N) : homLinearEquiv f = f.hom.toIntLinearMap := (rfl)
+
+/-- The inverse equivalence bundles the underlying additive map as a categorical morphism. -/
+@[simp]
+theorem homLinearEquiv_symm_apply (f : M →ₗ[ℤ] N) :
+    homLinearEquiv.symm f = ofHom f.toAddMonoidHom := (rfl)
 
 /-- A natural number `e` kills an abelian group `M`, in the sense that `e • 𝟙 M = 0`, exactly
 when `e • x = 0` for every element `x` of `M`. -/
