@@ -58,7 +58,7 @@ instance isEmpty_toTop_boundary_zero : IsEmpty |(∂Δ[0] : SSet.{u})| :=
 
 /-- Every point of `|∂Δ[n + 1]|` lies in the image of one of the codimension-one faces
 `|boundary.ι j| : |Δ[n]| ⟶ |∂Δ[n + 1]|`. -/
-lemma exists_toTop_map_boundaryFace_ι_eq {n : ℕ} (x : |(∂Δ[n + 1] : SSet.{u})|) :
+lemma exists_toTop_map_stdSimplex_boundary_ι_eq {n : ℕ} (x : |(∂Δ[n + 1] : SSet.{u})|) :
     ∃ (j : Fin (n + 2)) (z : |(Δ[n] : SSet.{u})|),
       toTop.map (boundary.ι j) z = x := by
   let c := (boundary.multicoequalizerDiagram.{u} (n + 1)).multicofork.toLinearOrder.map
@@ -89,13 +89,13 @@ instance compactSpace_toTop_boundary (n : ℕ) : CompactSpace |(∂Δ[n] : SSet.
     have hf_cont : Continuous f :=
       continuous_prod_of_discrete_left.2 fun j ↦ (toTop.map (boundary.ι j)).hom.continuous
     have hf_surj : Function.Surjective f := fun x ↦ by
-      obtain ⟨j, z, rfl⟩ := exists_toTop_map_boundaryFace_ι_eq x
+      obtain ⟨j, z, rfl⟩ := exists_toTop_map_stdSimplex_boundary_ι_eq x
       exact ⟨(j, z), rfl⟩
     refine ⟨?_⟩
     rw [← hf_surj.range_eq, ← Set.image_univ]
     exact isCompact_univ.image hf_cont
 
-private lemma toTopHomeo_toTop_map_boundary_ι_boundaryFace {m : ℕ} (j : Fin (m + 2))
+private lemma toTopHomeo_toTop_map_boundary_ι_stdSimplex_boundary_ι {m : ℕ} (j : Fin (m + 2))
     (z : |(Δ[m] : SSet.{u})|) :
     ⦋m + 1⦌.toTopHomeo
         (toTop.map (∂Δ[m + 1].ι : (∂Δ[m + 1] : SSet.{u}) ⟶ Δ[m + 1])
@@ -103,7 +103,7 @@ private lemma toTopHomeo_toTop_map_boundary_ι_boundaryFace {m : ℕ} (j : Fin (
       (⦋m⦌.toTopHomeo z).map j.succAbove := by
   rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, boundary.ι_ι, toTopHomeo_toTop_map_δ]
 
-private lemma toTop_map_boundaryFace_ι_eq_of_lt {m : ℕ} {j k : Fin (m + 2)} (hjk : j < k)
+private lemma toTop_map_stdSimplex_boundary_ι_eq_of_lt {m : ℕ} {j k : Fin (m + 2)} (hjk : j < k)
     {z₁ z₂ : |(Δ[m] : SSet.{u})|}
     (h : (⦋m⦌.toTopHomeo z₁).map j.succAbove = (⦋m⦌.toTopHomeo z₂).map k.succAbove) :
     toTop.map (boundary.ι j) z₁ = toTop.map (boundary.ι k) z₂ := by
@@ -143,17 +143,17 @@ lemma toTop_map_boundary_ι_injective (n : ℕ) :
   | zero => exact Function.injective_of_subsingleton _
   | succ m =>
     intro x₁ x₂ hx
-    obtain ⟨j, z₁, rfl⟩ := exists_toTop_map_boundaryFace_ι_eq x₁
-    obtain ⟨k, z₂, rfl⟩ := exists_toTop_map_boundaryFace_ι_eq x₂
+    obtain ⟨j, z₁, rfl⟩ := exists_toTop_map_stdSimplex_boundary_ι_eq x₁
+    obtain ⟨k, z₂, rfl⟩ := exists_toTop_map_stdSimplex_boundary_ι_eq x₂
     have hmap : (⦋m⦌.toTopHomeo z₁).map j.succAbove = (⦋m⦌.toTopHomeo z₂).map k.succAbove := by
-      rw [← toTopHomeo_toTop_map_boundary_ι_boundaryFace j z₁,
-        ← toTopHomeo_toTop_map_boundary_ι_boundaryFace k z₂, hx]
+      rw [← toTopHomeo_toTop_map_boundary_ι_stdSimplex_boundary_ι j z₁,
+        ← toTopHomeo_toTop_map_boundary_ι_stdSimplex_boundary_ι k z₂, hx]
     rcases lt_trichotomy j k with hjk | rfl | hkj
-    · exact toTop_map_boundaryFace_ι_eq_of_lt hjk hmap
+    · exact toTop_map_stdSimplex_boundary_ι_eq_of_lt hjk hmap
     · have hz : z₁ = z₂ := ⦋m⦌.toTopHomeo.injective
         (StdSimplex.map_injective Fin.succAbove_right_injective hmap)
       rw [hz]
-    · exact (toTop_map_boundaryFace_ι_eq_of_lt hkj hmap.symm).symm
+    · exact (toTop_map_stdSimplex_boundary_ι_eq_of_lt hkj hmap.symm).symm
 
 /-- The geometric realization of the boundary inclusion `∂Δ[n].ι : ∂Δ[n] ⟶ Δ[n]` is a closed
 embedding. -/
@@ -182,14 +182,14 @@ lemma range_toTopHomeo_comp_toTop_map_boundary_ι (n : ℕ) :
     simp only [Set.mem_ofPred_eq]
     constructor
     · rintro ⟨x, rfl⟩
-      obtain ⟨j, z, rfl⟩ := exists_toTop_map_boundaryFace_ι_eq x
+      obtain ⟨j, z, rfl⟩ := exists_toTop_map_stdSimplex_boundary_ι_eq x
       refine ⟨j, ?_⟩
-      simp only [Function.comp_apply, toTopHomeo_toTop_map_boundary_ι_boundaryFace]
+      simp only [Function.comp_apply, toTopHomeo_toTop_map_boundary_ι_stdSimplex_boundary_ι]
       exact StdSimplex.weights_map_succAbove_self j _
     · rintro ⟨j, hj⟩
       obtain ⟨w, rfl⟩ := (StdSimplex.mem_range_map_succAbove_iff j y).2 hj
       refine ⟨toTop.map (boundary.ι j) (⦋m⦌.toTopHomeo.symm w), ?_⟩
-      simp only [Function.comp_apply, toTopHomeo_toTop_map_boundary_ι_boundaryFace,
+      simp only [Function.comp_apply, toTopHomeo_toTop_map_boundary_ι_stdSimplex_boundary_ι,
         Homeomorph.apply_symm_apply]
 
 /-- The isomorphism `|Δ[n]| ≅ 𝔻 n` in `TopCat` obtained by composing

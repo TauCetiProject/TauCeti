@@ -378,6 +378,7 @@ lemma stdSimplex.coe_homeomorph_toSSetObjEquiv_toSSetObjI_app {n : ℕ}
 
 /-- Realizing the classifying map `yonedaEquiv.symm σ : Δ[n] ⟶ X` of an `n`-simplex `σ` sends
 the point with barycentric coordinates `w` to `SSet.toTopObjMk σ w`. -/
+@[simp]
 lemma toTop_map_yonedaEquiv_symm_toTopHomeo_symm {n : ℕ} (σ : X _⦋n⦌)
     (w : StdSimplex ℝ (Fin (n + 1))) :
     toTop.map (yonedaEquiv.symm σ) (⦋n⦌.toTopHomeo.symm w) = toTopObjMk σ w := by

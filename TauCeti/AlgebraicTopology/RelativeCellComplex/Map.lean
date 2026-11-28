@@ -79,25 +79,19 @@ along `c.map_F F`. -/
 @[simp, reassoc]
 lemma map_incl_app (j : J) :
     (c.map F).incl.app j =
-      eqToHom (congrArg (fun G ↦ G.obj j) (c.map_F F)) ≫ F.map (c.incl.app j) := by
-  suffices (c.map F).incl.app j = F.map (c.incl.app j) by
-    rw [this]
-    change F.map (c.incl.app j) =
-      eqToHom (rfl : F.obj (c.F.obj j) = F.obj (c.F.obj j)) ≫ F.map (c.incl.app j)
-    simp
-  simp [map]
-  rfl
+      eqToHom (congrArg (fun G ↦ G.obj j) (c.map_F F)) ≫ F.map (c.incl.app j) :=
+  have h : (c.map F).incl.app j = F.map (c.incl.app j) := Category.comp_id _
+  h.trans ((Category.id_comp _).symm.trans
+    (congrArg (· ≫ F.map (c.incl.app j)) (eqToHom_refl (F.obj (c.F.obj j)) rfl).symm))
 
 /-- The initial stage isomorphism of `c.map F` is `F.mapIso c.isoBot`, aligned along
 `c.map_F F`. -/
 @[simp]
 lemma map_isoBot :
     (c.map F).isoBot =
-      eqToIso (congrArg (fun G ↦ G.obj ⊥) (c.map_F F)) ≪≫ F.mapIso c.isoBot := by
-  ext
-  change F.map c.isoBot.hom =
-    (eqToIso (rfl : F.obj (c.F.obj ⊥) = F.obj (c.F.obj ⊥))).hom ≫ F.map c.isoBot.hom
-  simp
+      eqToIso (congrArg (fun G ↦ G.obj ⊥) (c.map_F F)) ≪≫ F.mapIso c.isoBot :=
+  Iso.ext <| (Category.id_comp _).symm.trans
+    (congrArg (· ≫ F.map c.isoBot.hom) (eqToHom_refl (F.obj (c.F.obj ⊥)) rfl).symm)
 
 /-- The attachment indices at step `j` of `c.map F` identify with those of `c`. -/
 def mapAttachCellsEquiv (j : J) (hj : ¬IsMax j) :
@@ -120,6 +114,11 @@ def mapCellsEquiv : (c.map F).Cells ≃ c.Cells where
   left_inv γ := by cases γ; simp
   right_inv γ := by cases γ; simp
 
+/-- The basic-cell index of `γ : (c.map F).Cells` agrees with that of `c.mapCellsEquiv F γ`. -/
+lemma mapCellsEquiv_i (γ : (c.map F).Cells) :
+    γ.i ≍ (c.mapCellsEquiv F γ).i :=
+  heq_of_eq (c.mapAttachCellsEquiv_π F γ.j γ.hj γ.k)
+
 @[simp]
 lemma mapCellsEquiv_apply_j (γ : (c.map F).Cells) : (c.mapCellsEquiv F γ).j = γ.j := by rfl
 
@@ -136,20 +135,36 @@ lemma mapCellsEquiv_symm_mk (j : J) (hj : ¬IsMax j) (k : (c.attachCells j hj).�
     (c.mapCellsEquiv F).symm ⟨j, hj, k⟩ = ⟨j, hj, (c.mapAttachCellsEquiv F j hj).symm k⟩ := by
   rfl
 
+private lemma map_incl_app_direct (j : J) :
+    (c.map F).incl.app j = F.map (c.incl.app j) :=
+  Category.comp_id _
+
+private lemma map_attachCells_cell (j : J) (hj : ¬IsMax j)
+    (k : ((c.map F).attachCells j hj).ι) :
+    ((c.map F).attachCells j hj).cell k =
+      eqToHom (congrArg (fun i ↦ F.obj (B j i)) (c.mapAttachCellsEquiv_π F j hj k)) ≫
+        F.map ((c.attachCells j hj).cell (c.mapAttachCellsEquiv F j hj k)) :=
+  (c.attachCells j hj).map_cell F k
+
 /-- The inclusion of a cell in `c.map F` is `F.map` of the inclusion of the corresponding cell of
 `c`. -/
 @[simp, reassoc]
-lemma map_cells_ι (j : J) (hj : ¬IsMax j) (k : ((c.map F).attachCells j hj).ι) :
-    Cells.ι (c := c.map F) ⟨j, hj, k⟩ =
-      eqToHom (congrArg (fun i ↦ F.obj (B j i)) (c.mapAttachCellsEquiv_π F j hj k)) ≫
-        F.map (Cells.ι (c := c) ⟨j, hj, c.mapAttachCellsEquiv F j hj k⟩) := by
-  let k' : ((c.attachCells j hj).map F).ι := k
-  have h1 : Cells.ι (c := c.map F) ⟨j, hj, k⟩ =
-      ((c.attachCells j hj).map F).cell k' ≫ F.map (c.incl.app (Order.succ j)) := by
-    change ((c.attachCells j hj).map F).cell k' ≫ (c.map F).incl.app (Order.succ j) = _
-    simp [map]
-  rw [h1, AttachCells.map_cell, Category.assoc, ← F.map_comp]
-  rfl
+lemma map_cells_ι (γ : (c.map F).Cells) :
+    γ.ι =
+      eqToHom (congrArg (fun p : Σ j, α j ↦ F.obj (B p.1 p.2))
+        (Sigma.ext_iff.2 ⟨(c.mapCellsEquiv_apply_j F γ).symm, c.mapCellsEquiv_i F γ⟩ :
+          (⟨γ.j, γ.i⟩ : Σ j, α j) =
+            ⟨(c.mapCellsEquiv F γ).j, (c.mapCellsEquiv F γ).i⟩)) ≫
+        F.map (c.mapCellsEquiv F γ).ι := by
+  cases γ with
+  | mk j hj k =>
+    exact (Eq.trans
+      (congrArg (· ≫ (c.map F).incl.app (Order.succ j)) (c.map_attachCells_cell F j hj k))
+      (congrArg (_ ≫ ·) (c.map_incl_app_direct F (Order.succ j)))).trans
+      ((Category.assoc _ _ _).trans
+        (congrArg
+          (eqToHom (congrArg (fun i ↦ F.obj (B j i)) (c.mapAttachCellsEquiv_π F j hj k)) ≫ ·)
+          (F.map_comp _ _).symm))
 
 end Map
 
@@ -173,10 +188,9 @@ lemma ofArrowIso_F : (c.ofArrowIso e).F = c.F := by
 @[simp, reassoc]
 lemma ofArrowIso_incl_app (j : J) :
     (c.ofArrowIso e).incl.app j =
-      eqToHom (congrArg (fun G ↦ G.obj j) (c.ofArrowIso_F e)) ≫ c.incl.app j ≫ e.hom.right := by
-  change c.incl.app j ≫ e.hom.right =
-    eqToHom (rfl : c.F.obj j = c.F.obj j) ≫ c.incl.app j ≫ e.hom.right
-  simp
+      eqToHom (congrArg (fun G ↦ G.obj j) (c.ofArrowIso_F e)) ≫ c.incl.app j ≫ e.hom.right :=
+  (Category.id_comp _).symm.trans
+    (congrArg (· ≫ c.incl.app j ≫ e.hom.right) (eqToHom_refl (c.F.obj j) rfl).symm)
 
 /-- The initial stage isomorphism of `c.ofArrowIso e` is `c.isoBot ≪≫ Arrow.leftFunc.mapIso e`,
 aligned along `c.ofArrowIso_F e`. -/
@@ -184,11 +198,10 @@ aligned along `c.ofArrowIso_F e`. -/
 lemma ofArrowIso_isoBot :
     (c.ofArrowIso e).isoBot =
       eqToIso (congrArg (fun G ↦ G.obj ⊥) (c.ofArrowIso_F e)) ≪≫
-        c.isoBot ≪≫ Arrow.leftFunc.mapIso e := by
-  ext
-  change c.isoBot.hom ≫ e.hom.left =
-    (eqToIso (rfl : c.F.obj ⊥ = c.F.obj ⊥)).hom ≫ c.isoBot.hom ≫ e.hom.left
-  simp
+        c.isoBot ≪≫ Arrow.leftFunc.mapIso e :=
+  Iso.ext <| (Category.id_comp _).symm.trans
+    (congrArg (· ≫ c.isoBot.hom ≫ (Arrow.leftFunc.mapIso e).hom)
+      (eqToHom_refl (c.F.obj ⊥) rfl).symm)
 
 /-- The attachment indices at step `j` of `c.ofArrowIso e` identify with those of `c`. -/
 def ofArrowIsoAttachCellsEquiv (j : J) (hj : ¬IsMax j) :
@@ -210,6 +223,12 @@ def ofArrowIsoCellsEquiv : (c.ofArrowIso e).Cells ≃ c.Cells where
   invFun γ := ⟨γ.j, γ.hj, (c.ofArrowIsoAttachCellsEquiv e γ.j γ.hj).symm γ.k⟩
   left_inv _ := (rfl)
   right_inv _ := (rfl)
+
+/-- The basic-cell index of `γ : (c.ofArrowIso e).Cells` agrees with that of
+`c.ofArrowIsoCellsEquiv e γ`. -/
+lemma ofArrowIsoCellsEquiv_i (γ : (c.ofArrowIso e).Cells) :
+    γ.i ≍ (c.ofArrowIsoCellsEquiv e γ).i :=
+  HEq.rfl
 
 @[simp]
 lemma ofArrowIsoCellsEquiv_apply_j (γ : (c.ofArrowIso e).Cells) :
@@ -234,16 +253,23 @@ lemma ofArrowIsoCellsEquiv_symm_mk (j : J) (hj : ¬IsMax j) (k : (c.attachCells 
 /-- The inclusion of a cell in `c.ofArrowIso e` is the inclusion of the corresponding cell of `c`
 followed by the target isomorphism `e.hom.right`. -/
 @[simp, reassoc]
-lemma ofArrowIso_cells_ι (j : J) (hj : ¬IsMax j)
-    (k : ((c.ofArrowIso e).attachCells j hj).ι) :
-    Cells.ι (c := c.ofArrowIso e) ⟨j, hj, k⟩ =
-      eqToHom (congrArg (fun i ↦ B j i) (c.ofArrowIsoAttachCellsEquiv_π e j hj k)) ≫
-        Cells.ι (c := c) ⟨j, hj, c.ofArrowIsoAttachCellsEquiv e j hj k⟩ ≫ e.hom.right := by
-  dsimp only [Cells.ι, ofArrowIso, ofArrowIsoAttachCellsEquiv] at k ⊢
-  change (c.attachCells j hj).cell k ≫ c.incl.app (Order.succ j) ≫ e.hom.right =
-    eqToHom (rfl : B j ((c.attachCells j hj).π k) = B j ((c.attachCells j hj).π k)) ≫
-      ((c.attachCells j hj).cell k ≫ c.incl.app (Order.succ j)) ≫ e.hom.right
-  simp
+lemma ofArrowIso_cells_ι (γ : (c.ofArrowIso e).Cells) :
+    γ.ι =
+      eqToHom (congrArg (fun p : Σ j, α j ↦ B p.1 p.2)
+        (Sigma.ext_iff.2 ⟨(c.ofArrowIsoCellsEquiv_apply_j e γ).symm, c.ofArrowIsoCellsEquiv_i e γ⟩ :
+          (⟨γ.j, γ.i⟩ : Σ j, α j) =
+            ⟨(c.ofArrowIsoCellsEquiv e γ).j, (c.ofArrowIsoCellsEquiv e γ).i⟩)) ≫
+        (c.ofArrowIsoCellsEquiv e γ).ι ≫ e.hom.right := by
+  cases γ with
+  | mk j hj k =>
+    have h : (⟨j, hj, k⟩ : (c.ofArrowIso e).Cells).ι =
+        (c.ofArrowIsoCellsEquiv e ⟨j, hj, k⟩).ι ≫ e.hom.right :=
+      (Category.assoc ((c.attachCells j hj).cell k) (c.incl.app (Order.succ j)) e.hom.right).symm
+    exact h.trans
+      ((Category.id_comp ((c.ofArrowIsoCellsEquiv e ⟨j, hj, k⟩).ι ≫ e.hom.right)).symm.trans
+        (congrArg (· ≫ (c.ofArrowIsoCellsEquiv e ⟨j, hj, k⟩).ι ≫ e.hom.right)
+          (eqToHom_refl (B (c.ofArrowIsoCellsEquiv e ⟨j, hj, k⟩).j
+            (c.ofArrowIsoCellsEquiv e ⟨j, hj, k⟩).i) rfl).symm))
 
 end OfArrowIso
 
@@ -272,9 +298,9 @@ along `c.reindexCellTypes_F`. -/
 lemma reindexCellTypes_incl_app (j : J) :
     (c.reindexCellTypes basicCell' a ha).incl.app j =
       eqToHom (congrArg (fun G ↦ G.obj j) (c.reindexCellTypes_F basicCell' a ha)) ≫
-        c.incl.app j := by
-  change c.incl.app j = eqToHom (rfl : c.F.obj j = c.F.obj j) ≫ c.incl.app j
-  simp
+        c.incl.app j :=
+  (Category.id_comp _).symm.trans
+    (congrArg (· ≫ c.incl.app j) (eqToHom_refl (c.F.obj j) rfl).symm)
 
 /-- The initial stage isomorphism of `c.reindexCellTypes basicCell' a ha` is `c.isoBot`, aligned
 along `c.reindexCellTypes_F`. -/
@@ -282,10 +308,9 @@ along `c.reindexCellTypes_F`. -/
 lemma reindexCellTypes_isoBot :
     (c.reindexCellTypes basicCell' a ha).isoBot =
       eqToIso (congrArg (fun G ↦ G.obj ⊥) (c.reindexCellTypes_F basicCell' a ha)) ≪≫
-        c.isoBot := by
-  ext
-  change c.isoBot.hom = (eqToIso (rfl : c.F.obj ⊥ = c.F.obj ⊥)).hom ≫ c.isoBot.hom
-  simp
+        c.isoBot :=
+  Iso.ext <| (Category.id_comp _).symm.trans
+    (congrArg (· ≫ c.isoBot.hom) (eqToHom_refl (c.F.obj ⊥) rfl).symm)
 
 /-- The attachment indices at step `j` of `c.reindexCellTypes basicCell' a ha` identify with those
 of `c`. -/
@@ -312,6 +337,13 @@ def reindexCellTypesCellsEquiv :
   left_inv _ := (rfl)
   right_inv _ := (rfl)
 
+/-- The basic-cell index of `γ : (c.reindexCellTypes basicCell' a ha).Cells` is `a γ.j` applied
+to the basic-cell index of `c.reindexCellTypesCellsEquiv basicCell' a ha γ`. -/
+lemma reindexCellTypesCellsEquiv_i (γ : (c.reindexCellTypes basicCell' a ha).Cells) :
+    γ.i ≍ a (c.reindexCellTypesCellsEquiv basicCell' a ha γ).j
+      (c.reindexCellTypesCellsEquiv basicCell' a ha γ).i :=
+  HEq.rfl
+
 @[simp]
 lemma reindexCellTypesCellsEquiv_apply_j (γ : (c.reindexCellTypes basicCell' a ha).Cells) :
     (c.reindexCellTypesCellsEquiv basicCell' a ha γ).j = γ.j := (rfl)
@@ -333,34 +365,51 @@ lemma reindexCellTypesCellsEquiv_symm_mk (j : J) (hj : ¬IsMax j) (k : (c.attach
       ⟨j, hj, (c.reindexCellTypesAttachCellsEquiv basicCell' a ha j hj).symm k⟩ :=
   (rfl)
 
+private lemma reindexCellTypes_attachCells_cell (j : J) (hj : ¬IsMax j)
+    (k : ((c.reindexCellTypes basicCell' a ha).attachCells j hj).ι) :
+    ((c.reindexCellTypes basicCell' a ha).attachCells j hj).cell k =
+      Arrow.rightFunc.map
+        (ha j ((c.attachCells j hj).π
+          (c.reindexCellTypesAttachCellsEquiv basicCell' a ha j hj k))).inv ≫
+        (c.attachCells j hj).cell
+          (c.reindexCellTypesAttachCellsEquiv basicCell' a ha j hj k) :=
+  (c.attachCells j hj).reindexCellTypes_cell (basicCell' j) (a j) (ha j) k
+
 /-- The inclusion of a cell in `c.reindexCellTypes basicCell' a ha` is the inclusion of the
 corresponding cell of `c` precomposed with the inverse target isomorphism. -/
 @[simp, reassoc]
-lemma reindexCellTypes_cells_ι (j : J) (hj : ¬IsMax j)
-    (k : ((c.reindexCellTypes basicCell' a ha).attachCells j hj).ι) :
-    Cells.ι (c := c.reindexCellTypes basicCell' a ha) ⟨j, hj, k⟩ =
-      eqToHom (congrArg (fun i' ↦ B' j i')
-          (c.reindexCellTypesAttachCellsEquiv_π basicCell' a ha j hj k)) ≫
-        Arrow.rightFunc.map (ha j ((c.attachCells j hj).π
-          (c.reindexCellTypesAttachCellsEquiv basicCell' a ha j hj k))).inv ≫
-          Cells.ι (c := c)
-            ⟨j, hj, c.reindexCellTypesAttachCellsEquiv basicCell' a ha j hj k⟩ := by
-  let k' : (c.attachCells j hj).ι := k
-  have h1 : Cells.ι (c := c.reindexCellTypes basicCell' a ha) ⟨j, hj, k⟩ =
-      (Arrow.rightFunc.map (ha j ((c.attachCells j hj).π k')).inv ≫
-        (c.attachCells j hj).cell k') ≫ c.incl.app (Order.succ j) := by
-    change ((c.attachCells j hj).reindexCellTypes (basicCell' j) (a j) (ha j)).cell k' ≫
-        c.incl.app (Order.succ j) = _
-    rw [AttachCells.reindexCellTypes_cell]
-    rfl
-  rw [h1, Category.assoc]
-  change Arrow.rightFunc.map (ha j ((c.attachCells j hj).π k')).inv ≫
-      (c.attachCells j hj).cell k' ≫ c.incl.app (Order.succ j) =
-    eqToHom (rfl : B' j (a j ((c.attachCells j hj).π k')) =
-      B' j (a j ((c.attachCells j hj).π k'))) ≫
-      Arrow.rightFunc.map (ha j ((c.attachCells j hj).π k')).inv ≫
-        (c.attachCells j hj).cell k' ≫ c.incl.app (Order.succ j)
-  simp
+lemma reindexCellTypes_cells_ι (γ : (c.reindexCellTypes basicCell' a ha).Cells) :
+    γ.ι =
+      eqToHom (congrArg (fun p : Σ j, α' j ↦ B' p.1 p.2)
+        (Sigma.ext_iff.2 ⟨(c.reindexCellTypesCellsEquiv_apply_j basicCell' a ha γ).symm,
+          c.reindexCellTypesCellsEquiv_i basicCell' a ha γ⟩ :
+          (⟨γ.j, γ.i⟩ : Σ j, α' j) =
+            ⟨(c.reindexCellTypesCellsEquiv basicCell' a ha γ).j,
+              a (c.reindexCellTypesCellsEquiv basicCell' a ha γ).j
+                (c.reindexCellTypesCellsEquiv basicCell' a ha γ).i⟩)) ≫
+        Arrow.rightFunc.map
+          (ha (c.reindexCellTypesCellsEquiv basicCell' a ha γ).j
+            (c.reindexCellTypesCellsEquiv basicCell' a ha γ).i).inv ≫
+          (c.reindexCellTypesCellsEquiv basicCell' a ha γ).ι := by
+  cases γ with
+  | mk j hj k =>
+    have h : (⟨j, hj, k⟩ : (c.reindexCellTypes basicCell' a ha).Cells).ι =
+        Arrow.rightFunc.map
+          (ha j ((c.attachCells j hj).π
+            (c.reindexCellTypesAttachCellsEquiv basicCell' a ha j hj k))).inv ≫
+          (⟨j, hj, c.reindexCellTypesAttachCellsEquiv basicCell' a ha j hj k⟩ : c.Cells).ι :=
+      (congrArg (· ≫ c.incl.app (Order.succ j))
+        (c.reindexCellTypes_attachCells_cell basicCell' a ha j hj k)).trans
+        (Category.assoc _ _ _)
+    exact h.trans ((Category.id_comp _).symm.trans
+      (congrArg (· ≫ Arrow.rightFunc.map
+          (ha (c.reindexCellTypesCellsEquiv basicCell' a ha ⟨j, hj, k⟩).j
+            (c.reindexCellTypesCellsEquiv basicCell' a ha ⟨j, hj, k⟩).i).inv ≫
+          (c.reindexCellTypesCellsEquiv basicCell' a ha ⟨j, hj, k⟩).ι)
+        (eqToHom_refl
+          (B' (c.reindexCellTypesCellsEquiv basicCell' a ha ⟨j, hj, k⟩).j
+            (a (c.reindexCellTypesCellsEquiv basicCell' a ha ⟨j, hj, k⟩).j
+              (c.reindexCellTypesCellsEquiv basicCell' a ha ⟨j, hj, k⟩).i)) rfl).symm))
 
 end ReindexCellTypes
 

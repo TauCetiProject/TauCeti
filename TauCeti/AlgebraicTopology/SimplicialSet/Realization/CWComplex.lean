@@ -80,6 +80,11 @@ theorem isClosedEmbedding_toTop_map {X Y : SSet.{u}} (i : X ⟶ Y) [Mono i] :
     IsClosedEmbedding (toTop.map i) :=
   (toTopRelativeCWComplex i).isClosedEmbedding
 
+/-- Geometric realization preserves monomorphisms of simplicial sets. -/
+instance preservesMonomorphisms_toTop : toTop.{u}.PreservesMonomorphisms where
+  preserves {_ _} {i} _ :=
+    (TopCat.mono_iff_injective _).2 (isClosedEmbedding_toTop_map i).injective
+
 private def toTopBotArrowIso (X : SSet.{u}) :
     Arrow.mk (toTop.map (Subcomplex.ι (⊥ : X.Subcomplex))) ≅ Arrow.mk (initial.to |X|) :=
   Arrow.isoMk ((isInitialToTopBot X).uniqueUpToIso initialIsInitial) (Iso.refl _)
@@ -136,6 +141,19 @@ lemma toTopRelativeCWComplexStageIso_inv_comp {X Y : SSet.{u}} (i : X ⟶ Y) [Mo
       toTop.map (skeletonOfMono i n).ι := by
   rw [← toTopRelativeCWComplexStageIso_hom_comp, Iso.inv_hom_id_assoc]
 
+private lemma stageIso_hom_naturality_of_comp {Y : SSet.{u}} {W : TopCat.{u}} {f : W ⟶ |Y|}
+    (c : TopCat.RelativeCWComplex f)
+    {S : ℕ → Y.Subcomplex} (hS : Monotone S) {m n : ℕ} (h : m ≤ n)
+    {eₘ : c.F.obj m ≅ |(S m : SSet.{u})|} {eₙ : c.F.obj n ≅ |(S n : SSet.{u})|}
+    (hm : eₘ.hom ≫ toTop.map (S m).ι = c.incl.app m)
+    (hn : eₙ.hom ≫ toTop.map (S n).ι = c.incl.app n) :
+    c.F.map (homOfLE h) ≫ eₙ.hom =
+      eₘ.hom ≫ toTop.map (Subcomplex.homOfLE (hS h)) := by
+  have hnat := c.incl.naturality (homOfLE h)
+  simp only [Functor.const_obj_obj, Functor.const_obj_map, Category.comp_id] at hnat
+  rw [← cancel_mono (toTop.map (S n).ι), Category.assoc, Category.assoc,
+    hn, hnat, ← toTop.map_comp, Subcomplex.homOfLE_ι, hm]
+
 /-- The stage isomorphism `SSet.toTopRelativeCWComplexStageIso` intertwines the categorical
 transition maps of `SSet.toTopRelativeCWComplex i` with the realizations of the skeletal
 inclusions of `SSet.skeletonOfMono i`. -/
@@ -144,14 +162,9 @@ lemma toTopRelativeCWComplexStageIso_hom_naturality {X Y : SSet.{u}} (i : X ⟶ 
     {m n : ℕ} (h : m ≤ n) :
     (toTopRelativeCWComplex i).F.map (homOfLE h) ≫ (toTopRelativeCWComplexStageIso i n).hom =
       (toTopRelativeCWComplexStageIso i m).hom ≫
-        toTop.map (Subcomplex.homOfLE ((skeletonOfMono i).monotone h)) := by
-  have : Mono (toTop.map (skeletonOfMono i n).ι) :=
-    (TopCat.mono_iff_injective _).2 (isClosedEmbedding_toTop_map (skeletonOfMono i n).ι).injective
-  have hnat := (toTopRelativeCWComplex i).incl.naturality (homOfLE h)
-  simp only [Functor.const_obj_obj, Functor.const_obj_map, Category.comp_id] at hnat
-  rw [← cancel_mono (toTop.map (skeletonOfMono i n).ι), Category.assoc, Category.assoc,
-    toTopRelativeCWComplexStageIso_hom_comp, hnat, ← toTop.map_comp, Subcomplex.homOfLE_ι,
-    toTopRelativeCWComplexStageIso_hom_comp]
+        toTop.map (Subcomplex.homOfLE ((skeletonOfMono i).monotone h)) :=
+  stageIso_hom_naturality_of_comp (toTopRelativeCWComplex i) (skeletonOfMono i).monotone h
+    (toTopRelativeCWComplexStageIso_hom_comp i m) (toTopRelativeCWComplexStageIso_hom_comp i n)
 
 /-- The `n`-th categorical stage of `SSet.toTopCWComplex X` identifies with the geometric
 realization of `X.skeleton n`. -/
@@ -193,14 +206,9 @@ maps of `SSet.toTopCWComplex X` with the realizations of the skeletal inclusions
 lemma toTopCWComplexStageIso_hom_naturality (X : SSet.{u}) {m n : ℕ} (h : m ≤ n) :
     (toTopCWComplex X).F.map (homOfLE h) ≫ (toTopCWComplexStageIso X n).hom =
       (toTopCWComplexStageIso X m).hom ≫
-        toTop.map (Subcomplex.homOfLE (X.skeleton.monotone h)) := by
-  have : Mono (toTop.map (X.skeleton n).ι) :=
-    (TopCat.mono_iff_injective _).2 (isClosedEmbedding_toTop_map (X.skeleton n).ι).injective
-  have hnat := (toTopCWComplex X).incl.naturality (homOfLE h)
-  simp only [Functor.const_obj_obj, Functor.const_obj_map, Category.comp_id] at hnat
-  rw [← cancel_mono (toTop.map (X.skeleton n).ι), Category.assoc, Category.assoc,
-    toTopCWComplexStageIso_hom_comp, hnat, ← toTop.map_comp, Subcomplex.homOfLE_ι,
-    toTopCWComplexStageIso_hom_comp]
+        toTop.map (Subcomplex.homOfLE (X.skeleton.monotone h)) :=
+  stageIso_hom_naturality_of_comp (toTopCWComplex X) X.skeleton.monotone h
+    (toTopCWComplexStageIso_hom_comp X m) (toTopCWComplexStageIso_hom_comp X n)
 
 private noncomputable abbrev toTopRelativeCWComplexReindexEquiv
     {X Y : SSet.{u}} (i : X ⟶ Y) [Mono i] (n : ℕ) :=
@@ -224,19 +232,32 @@ lemma toTopRelativeCWComplex_cells_ι {X Y : SSet.{u}} (i : X ⟶ Y) [Mono i] (n
     (⟨n, not_isMax n, c⟩ : (toTopRelativeCWComplex i).Cells).ι =
       (toTopStdSimplexIsoDisk.{u} n).inv ≫
         toTop.map (yonedaEquiv.symm (toTopRelativeCWComplexCellEquiv i n c).simplex) := by
-  have h1 := RelativeCellComplex.reindexCellTypes_cells_ι
-    ((relativeCellComplexOfMono i).map toTop) TopCat.RelativeCWComplex.basicCell
-    (fun _ _ ↦ .unit) (fun k _ ↦ toTopBoundaryInclusionArrowIso k) n (not_isMax n) c
-  have h2 := RelativeCellComplex.map_cells_ι
-    (relativeCellComplexOfMono i) toTop n (not_isMax n)
-    (toTopRelativeCWComplexReindexEquiv i n c)
-  have h3 := congrArg toTop.map (relativeCellComplexOfMono.Cell.ι_b_ι
-    (toTopRelativeCWComplexCellEquiv i n c))
-  refine h1.trans ?_
-  rw [eqToHom_refl, Category.id_comp, h2, eqToHom_refl, Category.id_comp]
-  dsimp only [Arrow.rightFunc_map]
-  rw [toTopBoundaryInclusionArrowIso_inv_right]
-  exact congrArg ((toTopStdSimplexIsoDisk.{u} n).inv ≫ ·) h3
+  dsimp only [toTopRelativeCWComplex] at c ⊢
+  rw [RelativeCellComplex.reindexCellTypes_cells_ι]
+  have hstep1 :
+      ∀ (γ : ((relativeCellComplexOfMono i).map toTop).Cells)
+        (_ : γ = ⟨n, not_isMax n, toTopRelativeCWComplexReindexEquiv i n c⟩)
+        (hp : TopCat.disk.{u} n = TopCat.disk.{u} γ.j),
+        eqToHom hp ≫ Arrow.rightFunc.map (toTopBoundaryInclusionArrowIso γ.j).inv ≫ γ.ι =
+          (toTopStdSimplexIsoDisk.{u} n).inv ≫
+            toTop.map (yonedaEquiv.symm (toTopRelativeCWComplexCellEquiv i n c).simplex) := by
+    rintro _ rfl _
+    rw [eqToHom_refl, Category.id_comp, RelativeCellComplex.map_cells_ι]
+    have hstep2 :
+        ∀ (δ : (relativeCellComplexOfMono i).Cells)
+          (_ : δ = ⟨n, not_isMax n, toTopRelativeCWComplexCellEquiv i n c⟩)
+          (hp : toTop.obj (Δ[n] : SSet.{u}) = toTop.obj (Δ[δ.j] : SSet.{u})),
+          eqToHom hp ≫ toTop.map δ.ι =
+            toTop.map (yonedaEquiv.symm (toTopRelativeCWComplexCellEquiv i n c).simplex) := by
+      rintro _ rfl _
+      rw [eqToHom_refl, Category.id_comp]
+      exact congrArg toTop.map
+        (relativeCellComplexOfMono.Cell.ι_b_ι (toTopRelativeCWComplexCellEquiv i n c))
+    dsimp only [Arrow.rightFunc_map]
+    rw [toTopBoundaryInclusionArrowIso_inv_right]
+    exact congrArg ((toTopStdSimplexIsoDisk.{u} n).inv ≫ ·)
+      (hstep2 _ (RelativeCellComplex.mapCellsEquiv_mk _ _ _ _ _) _)
+  exact hstep1 _ (RelativeCellComplex.reindexCellTypesCellsEquiv_mk _ _ _ _ _ _ _) _
 
 /-- The `n`-cells attached in `toTopCWComplex X` identify canonically with the simplicial
 `n`-cells of `relativeCellComplexOfMono (Subcomplex.ι (⊥ : X.Subcomplex))`. -/
@@ -248,15 +269,6 @@ def toTopCWComplexCellEquiv (X : SSet.{u}) (n : ℕ) :
       (toTopBotArrowIso X) n (not_isMax n)).trans
     (toTopRelativeCWComplexCellEquiv (Subcomplex.ι (⊥ : X.Subcomplex)) n)
 
-private lemma toTopCWComplexCellEquiv_apply (X : SSet.{u}) (n : ℕ)
-    (c : ((toTopCWComplex X).attachCells n (not_isMax n)).ι) :
-    toTopCWComplexCellEquiv X n c =
-      toTopRelativeCWComplexCellEquiv (Subcomplex.ι (⊥ : X.Subcomplex)) n
-        (RelativeCellComplex.ofArrowIsoAttachCellsEquiv
-          (c := toTopRelativeCWComplex (Subcomplex.ι (⊥ : X.Subcomplex)))
-          (toTopBotArrowIso X) n (not_isMax n) c) :=
-  Equiv.trans_apply _ _ c
-
 /-- The inclusion of an `n`-cell of `toTopCWComplex X` is the classifying map of its
 nondegenerate simplex, precomposed with `(toTopStdSimplexIsoDisk n).inv`. -/
 lemma toTopCWComplex_cells_ι (X : SSet.{u}) (n : ℕ)
@@ -264,12 +276,22 @@ lemma toTopCWComplex_cells_ι (X : SSet.{u}) (n : ℕ)
     (⟨n, not_isMax n, c⟩ : (toTopCWComplex X).Cells).ι =
       (toTopStdSimplexIsoDisk.{u} n).inv ≫
         toTop.map (yonedaEquiv.symm (toTopCWComplexCellEquiv X n c).simplex) := by
-  have h1 := RelativeCellComplex.ofArrowIso_cells_ι
-    (c := toTopRelativeCWComplex (Subcomplex.ι (⊥ : X.Subcomplex)))
-    (toTopBotArrowIso X) n (not_isMax n) c
-  refine h1.trans ?_
-  rw [eqToHom_refl, Category.id_comp, toTopBotArrowIso_hom_right, Category.comp_id,
-    toTopRelativeCWComplex_cells_ι, toTopCWComplexCellEquiv_apply]
+  dsimp only [toTopCWComplex] at c ⊢
+  rw [RelativeCellComplex.ofArrowIso_cells_ι]
+  have hstep :
+      ∀ (γ : (toTopRelativeCWComplex (Subcomplex.ι (⊥ : X.Subcomplex))).Cells)
+        (_ : γ = ⟨n, not_isMax n,
+          RelativeCellComplex.ofArrowIsoAttachCellsEquiv
+            (c := toTopRelativeCWComplex (Subcomplex.ι (⊥ : X.Subcomplex)))
+            (toTopBotArrowIso X) n (not_isMax n) c⟩)
+        (hp : TopCat.disk.{u} n = TopCat.disk.{u} γ.j),
+        eqToHom hp ≫ γ.ι ≫ (toTopBotArrowIso X).hom.right =
+          (toTopStdSimplexIsoDisk.{u} n).inv ≫
+            toTop.map (yonedaEquiv.symm (toTopCWComplexCellEquiv X n c).simplex) := by
+    rintro _ rfl _
+    simp [toTopRelativeCWComplex_cells_ι]
+    rfl
+  exact hstep _ (RelativeCellComplex.ofArrowIsoCellsEquiv_mk _ _ _ _ _) _
 
 /-- The classical CW complex structure on the geometric realization `|X|` of a simplicial set `X`
 induced by `SSet.toTopCWComplex X`. Its `n`-cells correspond canonically to the nondegenerate
@@ -318,8 +340,9 @@ lemma simplicialRealizationCW_map_cellEquiv_symm_apply (X : SSet.{u}) (n : ℕ)
     letI := simplicialRealizationCW X
     RelCWComplex.map (C := (Set.univ : Set |X|)) n
         ((simplicialRealizationCWCellEquiv X n).symm σ) x =
-      toTopObjMk σ.val (TauCeti.standardCellBallToOrderedSimplex n x) :=
-  (simplicialRealizationCW_map_apply X n _ x).trans (by simp)
+      toTopObjMk σ.val (TauCeti.standardCellBallToOrderedSimplex n x) := by
+  let _ := simplicialRealizationCW X
+  rw [simplicialRealizationCW_map_apply, Equiv.apply_symm_apply]
 
 /-- The open cell of `SSet.simplicialRealizationCW X` indexed by a nondegenerate `n`-simplex `σ`
 is the image under `SSet.toTopObjMk σ.val` of the points with strictly positive barycentric

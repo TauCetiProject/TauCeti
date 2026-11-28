@@ -106,6 +106,24 @@ lemma map_π (F : C ⥤ D)
     (c.map F).π i = c.π (c.mapEquiv F i) :=
   (rfl)
 
+private lemma map_cofan₂_inj (F : C ⥤ D)
+    [PreservesColimit (Discrete.functor fun i ↦ A (c.π i)) F]
+    [PreservesColimit (Discrete.functor fun i ↦ B (c.π i)) F]
+    [PreservesColimit (span c.g₁ c.m) F] (i : (c.map F).ι) :
+    (c.map F).cofan₂.inj i =
+      eqToHom (congrArg (fun a ↦ F.obj (B a)) (c.map_π F i)) ≫
+        F.map (c.cofan₂.inj (c.mapEquiv F i)) :=
+  (Category.id_comp _).symm.trans
+    (congrArg (· ≫ F.map (c.cofan₂.inj (c.mapEquiv F i)))
+      (eqToHom_refl (F.obj (B (c.π (c.mapEquiv F i)))) rfl).symm)
+
+private lemma map_g₂ (F : C ⥤ D)
+    [PreservesColimit (Discrete.functor fun i ↦ A (c.π i)) F]
+    [PreservesColimit (Discrete.functor fun i ↦ B (c.π i)) F]
+    [PreservesColimit (span c.g₁ c.m) F] :
+    (c.map F).g₂ = F.map c.g₂ :=
+  rfl
+
 /-- The inclusion of a cell in `c.map F` is `F.map` of the original cell inclusion. -/
 @[simp, reassoc]
 lemma map_cell (F : C ⥤ D)
@@ -115,10 +133,9 @@ lemma map_cell (F : C ⥤ D)
     (c.map F).cell i =
       eqToHom (congrArg (fun a ↦ F.obj (B a)) (c.map_π F i)) ≫
         F.map (c.cell (c.mapEquiv F i)) := by
-  change F.map (c.cofan₂.inj i) ≫ F.map c.g₂ =
-    eqToHom (rfl : F.obj (B (c.π i)) = F.obj (B (c.π i))) ≫
-      F.map (c.cofan₂.inj i ≫ c.g₂)
-  simp
+  rw [AttachCells.cell, AttachCells.cell, map_cofan₂_inj, map_g₂]
+  dsimp only [map]
+  rw [Category.assoc, F.map_comp]
 
 /-- The inclusion of a cell after reindexing cell types is the original cell inclusion precomposed
 with the inverse target isomorphism. -/
