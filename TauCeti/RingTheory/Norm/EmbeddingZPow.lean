@@ -5,41 +5,38 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.RingTheory.Norm.Transitivity
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
-import TauCeti.FieldTheory.Normal.Embeddings
 
 /-!
 # Weighted products of field norms over embeddings
 
-For a finite separable extension L / K of fields and a separably closed field F with finitely
-many ring homomorphisms from K and L, grouping the embeddings σ : L →+* F by their
-restriction s = σ ∘ algebraMap K L : K →+* F identifies the fibre over s with L →ₐ[K] F
-and rewrites a weighted product of norms as a weighted product over the embeddings of L:
+For a finite separable extension `L / K` of fields and a field `F` with finitely many ring
+homomorphisms from `K` and `L` into which every minimal polynomial over `K` of an element of `L`
+splits, grouping the embeddings `σ : L →+* F` by their restriction
+`s = σ.comp (algebraMap K L) : K →+* F` identifies the fibre over `s` with `L →ₐ[K] F` and
+rewrites a weighted product of norms as a weighted product over the embeddings of `L`:
 
-`	ext
+```text
 ∏ s : K →+* F, s (Algebra.norm K x) ^ n s =
   ∏ σ : L →+* F, σ x ^ n (σ.comp (algebraMap K L)).
-`
+```
 
-This is proved for both integer exponents (Algebra.prod_ringHom_norm_zpow) and natural-number
-exponents (Algebra.prod_ringHom_norm_pow).
+This is proved for both integer exponents (`Algebra.prod_ringHom_norm_zpow`) and natural-number
+exponents (`Algebra.prod_ringHom_norm_pow`).
 
 ## Main results
 
-* Algebra.prod_ringHom_norm_zpow: weighted product of s (Algebra.norm K x) ^ n s for
-  
- : (K →+* F) → ℤ.
-* Algebra.prod_ringHom_norm_pow: weighted product of s (Algebra.norm K x) ^ n s for
-  
- : (K →+* F) → ℕ.
+* `Algebra.prod_ringHom_norm_zpow`: weighted product of `s (Algebra.norm K x) ^ n s` for
+  `n : (K →+* F) → ℤ`.
+* `Algebra.prod_ringHom_norm_pow`: weighted product of `s (Algebra.norm K x) ^ n s` for
+  `n : (K →+* F) → ℕ`.
 
 ## Provenance
 
 Adapted from grh-lean (https://github.com/lsernau/grh-lean at commit
-72fead102f663d5c7a407964a13dc0cf9d977207, Apache 2.0, Copyright 2026 Anthropic, PBC), file
-src/Lib/ClassField/Avatar/HeckeBaseChange.lean (prod_norm_zpow).
+`72fead102f663d5c7a407964a13dc0cf9d977207`, Apache 2.0, Copyright 2026 Anthropic, PBC), file
+`src/Lib/ClassField/Avatar/HeckeBaseChange.lean` (`prod_norm_zpow`).
 -/
 
 public section
@@ -48,10 +45,9 @@ namespace Algebra
 
 private lemma algebraMap_norm_eq_prod_algHom
     {K L F : Type*} [Field K] [Field L] [Field F] [Algebra K L] [Algebra K F]
-    [FiniteDimensional K L] [Algebra.IsSeparable K L] [IsSepClosed F] (x : L) :
+    [FiniteDimensional K L] [Algebra.IsSeparable K L]
+    (hsplits : ∀ y : L, ((minpoly K y).map (algebraMap K F)).Splits) (x : L) :
     algebraMap K F (Algebra.norm K x) = ∏ τ : L →ₐ[K] F, τ x := by
-  have hsplits : ∀ y : L, ((minpoly K y).map (algebraMap K F)).Splits := fun y ↦
-    IsSepClosed.splits_codomain _ (Algebra.IsSeparable.isSeparable K y)
   refine (algebraMap F (AlgebraicClosure F)).injective ?_
   rw [map_prod, ← IsScalarTower.algebraMap_apply K F (AlgebraicClosure F),
     Algebra.norm_eq_prod_embeddings (K := K) (L := L) (E := AlgebraicClosure F) x]
@@ -61,13 +57,15 @@ private lemma algebraMap_norm_eq_prod_algHom
   exact (Algebra.IsAlgebraic.algHomEquivAlgHomOfSplits_apply_apply
     (AlgebraicClosure F) F hsplits τ x).symm
 
-/-- For a finite separable extension L / K and a separably closed field F, the weighted product
-of s (Algebra.norm K x) ^ n s over all ring homomorphisms s : K →+* F equals the product of
-σ x ^ n (σ.comp (algebraMap K L)) over all ring homomorphisms σ : L →+* F. -/
+/-- For a finite separable extension `L / K` and a field `F` in which `(minpoly K y).map s`
+splits for every `s : K →+* F` and `y : L`, the weighted product of `s (Algebra.norm K x) ^ n s`
+over all ring homomorphisms `s : K →+* F` equals the product of
+`σ x ^ n (σ.comp (algebraMap K L))` over all ring homomorphisms `σ : L →+* F`. -/
 theorem prod_ringHom_norm_zpow
     {K L F : Type*} [Field K] [Field L] [Field F] [Algebra K L]
-    [FiniteDimensional K L] [Algebra.IsSeparable K L] [IsSepClosed F]
+    [FiniteDimensional K L] [Algebra.IsSeparable K L]
     [Fintype (K →+* F)] [Fintype (L →+* F)]
+    (hsplits : ∀ (s : K →+* F) (y : L), ((minpoly K y).map s).Splits)
     (x : L) (n : (K →+* F) → ℤ) :
     ∏ s : K →+* F, s (Algebra.norm K x) ^ n s =
       ∏ σ : L →+* F, σ x ^ n (σ.comp (algebraMap K L)) := by
@@ -79,22 +77,24 @@ theorem prod_ringHom_norm_zpow
     { toFun σ := ⟨σ.val, RingHom.congr_fun σ.property⟩
       invFun τ := ⟨τ.toRingHom, τ.comp_algebraMap⟩ }
   have hnorm : s (Algebra.norm K x) = ∏ τ : L →ₐ[K] F, τ x :=
-    algebraMap_norm_eq_prod_algHom x
+    algebraMap_norm_eq_prod_algHom (hsplits s) x
   rw [hnorm, ← Finset.prod_zpow]
   exact (Fintype.prod_equiv extensions _ (fun τ ↦ τ x ^ n s)
     fun σ ↦ congrArg (fun t ↦ σ.val x ^ n t) σ.property).symm
 
-/-- For a finite separable extension L / K and a separably closed field F, the weighted product
-of s (Algebra.norm K x) ^ n s over all ring homomorphisms s : K →+* F equals the product of
-σ x ^ n (σ.comp (algebraMap K L)) over all ring homomorphisms σ : L →+* F, for natural-number
-exponents. -/
+/-- For a finite separable extension `L / K` and a field `F` in which `(minpoly K y).map s`
+splits for every `s : K →+* F` and `y : L`, the weighted product of `s (Algebra.norm K x) ^ n s`
+over all ring homomorphisms `s : K →+* F` equals the product of
+`σ x ^ n (σ.comp (algebraMap K L))` over all ring homomorphisms `σ : L →+* F`, for
+natural-number exponents. -/
 theorem prod_ringHom_norm_pow
     {K L F : Type*} [Field K] [Field L] [Field F] [Algebra K L]
-    [FiniteDimensional K L] [Algebra.IsSeparable K L] [IsSepClosed F]
+    [FiniteDimensional K L] [Algebra.IsSeparable K L]
     [Fintype (K →+* F)] [Fintype (L →+* F)]
+    (hsplits : ∀ (s : K →+* F) (y : L), ((minpoly K y).map s).Splits)
     (x : L) (n : (K →+* F) → ℕ) :
     ∏ s : K →+* F, s (Algebra.norm K x) ^ n s =
       ∏ σ : L →+* F, σ x ^ n (σ.comp (algebraMap K L)) := by
-  simpa only [zpow_natCast] using prod_ringHom_norm_zpow x (fun s ↦ (n s : ℤ))
+  simpa only [zpow_natCast] using prod_ringHom_norm_zpow hsplits x (fun s ↦ (n s : ℤ))
 
 end Algebra
