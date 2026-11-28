@@ -85,6 +85,9 @@ The statement `Set.ncard_preimage_div` needs no hypotheses: `Set.ncard` is `0` o
 and `i / 0 = 0` makes the preimage under division by zero either `∅` or all of `ℕ`, so both
 sides are `0` when `S` is infinite or `n = 0`.
 
+The natural numbers strictly below `m : ℕ∞` have extended cardinality `m`
+(`Set.encard_setOf_natCast_lt`).
+
 The fibre of the first pullback projection has the same `Set.ncard` as the original fibre
 (`Function.Pullback.ncard_preimage_fst_singleton`). An equivalence onto the preimage of a subset
 transfers `Set.ncard` of fibres over that subset (`Equiv.ncard_fiber_eq_of_preimage`). These
@@ -449,6 +452,13 @@ theorem ncard_preimage_succAbove {n : ℕ} (k : Fin (n + 1)) (s : Set (Fin (n + 
     (k.succAbove ⁻¹' s).ncard = (s \ {k}).ncard := by
   rw [← ncard_image_of_injective _ Fin.succAbove_right_injective, image_preimage_eq_inter_range,
     Fin.range_succAbove, ← sdiff_eq]
+
+/-- The natural numbers strictly below `m : ℕ∞` have extended cardinality `m`. -/
+@[simp]
+theorem encard_setOf_natCast_lt (m : ℕ∞) : {k : ℕ | (k : ℕ∞) < m}.encard = m := by
+  induction m using ENat.recTopCoe with
+  | top => simp
+  | coe n => simpa using Nat.encard_range n
 
 /-- For finite sets, equality of `Set.encard` is equivalent to equality of `Set.ncard`. -/
 theorem encard_eq_encard_iff_ncard_eq_ncard {α β : Type*} {s : Set α} {t : Set β}
