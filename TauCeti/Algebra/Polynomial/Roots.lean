@@ -18,8 +18,8 @@ splitting assumptions on the polynomial family.
 
 We also count the root zero: it occurs in `f.roots` with multiplicity the order of vanishing
 `f.natTrailingDegree`, so the roots satisfying a predicate that holds at zero number
-`f.natTrailingDegree` plus the nonzero roots satisfying it. Over any commutative ring, zero is a
-simple root, that is `f.natTrailingDegree = 1`, exactly when the constant coefficient vanishes and
+`f.natTrailingDegree` plus the nonzero roots satisfying it. Over any ring, zero is a simple
+root, that is `f.natTrailingDegree = 1`, exactly when the constant coefficient vanishes and
 the linear one does not (`Polynomial.natTrailingDegree_eq_one_iff`,
 `Polynomial.rootMultiplicity_zero_eq_one_iff`). Over any integral domain, summing
 `f.rootMultiplicity` over any finite set of points never exceeds `f.natDegree`
@@ -229,9 +229,9 @@ theorem natTrailingDegree_eq_one_iff {R : Type*} [Semiring R] {p : R[X]} :
     · obtain rfl : m = 0 := by omega
       exact h0
 
-/-- **Simple root at zero.** Over any commutative ring, `0` is a simple root of `p` exactly when the
-constant coefficient of `p` vanishes and its linear coefficient does not. -/
-theorem rootMultiplicity_zero_eq_one_iff {R : Type*} [CommRing R] {p : R[X]} :
+/-- **Simple root at zero.** Over any ring, `0` is a simple root of `p` exactly when the constant
+coefficient of `p` vanishes and its linear coefficient does not. -/
+theorem rootMultiplicity_zero_eq_one_iff {R : Type*} [Ring R] {p : R[X]} :
     p.rootMultiplicity 0 = 1 ↔ p.coeff 0 = 0 ∧ p.coeff 1 ≠ 0 := by
   rw [rootMultiplicity_eq_natTrailingDegree', natTrailingDegree_eq_one_iff]
 

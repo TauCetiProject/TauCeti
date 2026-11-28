@@ -153,24 +153,25 @@ theorem hasSimpleZero_map_iff [FaithfulSMul R K] {M : Matrix n n R} :
 /-- Conjugating a matrix with a simple zero by an element of `GL_n(R)` gives a matrix with a simple
 zero. -/
 theorem HasSimpleZero.conj {g : Matrix n n K} (hg : HasSimpleZero R g) (k : GL n R) :
-    HasSimpleZero R ((GeneralLinearGroup.map (algebraMap R K) k : Matrix n n K) * g *
-      (GeneralLinearGroup.map (algebraMap R K) k⁻¹ : Matrix n n K)) := by
+    HasSimpleZero R ((k : Matrix n n R).map (algebraMap R K) * g *
+      ((k : Matrix n n R).map (algebraMap R K))⁻¹) := by
   obtain ⟨M, rfl, hM⟩ := hg
+  rw [← GeneralLinearGroup.val_map_apply, ← coe_units_inv, ← map_inv]
   refine ⟨(k : Matrix n n R) * M * (k⁻¹ : GL n R), ?_, ?_⟩
   · simp only [Matrix.map_mul, GeneralLinearGroup.val_map_apply]
   -- Modulo the maximal ideal the conjugate has the same characteristic polynomial.
-  have h_inv : ((k⁻¹ : GL n R) : Matrix n n R).map (residue R) * (k : Matrix n n R).map (residue R)
-      = 1 := by
-    rw [← Matrix.map_mul, Units.inv_mul, Matrix.map_one _ (map_zero _) (map_one _)]
-  rwa [Matrix.map_mul, Matrix.map_mul, charpoly_mul_comm, ← mul_assoc, h_inv, one_mul]
+  rwa [Matrix.map_mul, Matrix.map_mul, ← GeneralLinearGroup.val_map_apply,
+    ← GeneralLinearGroup.val_map_apply, map_inv, coe_units_inv, charpoly_units_conj]
 
 /-- Conjugation by an element of `GL_n(R)` preserves and reflects simple zeros. -/
+@[simp]
 theorem hasSimpleZero_conj_iff {g : Matrix n n K} (k : GL n R) :
-    HasSimpleZero R ((GeneralLinearGroup.map (algebraMap R K) k : Matrix n n K) * g *
-      (GeneralLinearGroup.map (algebraMap R K) k⁻¹ : Matrix n n K)) ↔ HasSimpleZero R g := by
+    HasSimpleZero R ((k : Matrix n n R).map (algebraMap R K) * g *
+      ((k : Matrix n n R).map (algebraMap R K))⁻¹) ↔ HasSimpleZero R g := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.conj k⟩
   convert h.conj k⁻¹ using 1
-  simp only [map_inv, inv_inv, mul_assoc, Units.inv_mul, Units.inv_mul_cancel_left, mul_one]
+  simp only [← GeneralLinearGroup.val_map_apply, ← coe_units_inv, map_inv, inv_inv, mul_assoc,
+    Units.inv_mul, Units.inv_mul_cancel_left, mul_one]
 
 /-- **Block criterion.** Let `M` be a matrix over `R` whose column `i` lies in the maximal ideal,
 and whose square block on the indices other than `i` has a unit determinant. Modulo the maximal
