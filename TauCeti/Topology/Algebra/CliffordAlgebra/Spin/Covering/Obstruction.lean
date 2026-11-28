@@ -13,8 +13,8 @@ import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Rotation
 # Continuous lift obstructions for the compact real Spin double cover
 
 Using path-lifting uniqueness along the Spin covering map
-`CliffordAlgebra.isCoveringMap_spinToSpecialOrthogonal_realCliffordForm` and the explicit rotation
-path from `1` to `-1` in `Spin(n + 2)`
+`CliffordAlgebra.isCoveringMap_spinToSpecialOrthogonal_realCliffordForm_zero` and the explicit
+rotation path from `1` to `-1` in `Spin(n + 2)`
 (`CliffordAlgebra.joined_one_negOne_realCliffordSpinGroupZero_add_two`),
 any map `φ : SO(n + 2) → SO(N)` covered by a continuous map `ψ : Spin(n + 2) → Spin(N)` with
 `ψ (-1) ≠ ψ 1` admits no continuous lift `SO(n + 2) → Spin(N)`. In particular, the Spin double
@@ -69,7 +69,7 @@ theorem not_exists_continuous_lift_of_spinLift_ne {n N : ℕ}
   obtain ⟨γ⟩ := joined_one_negOne_realCliffordSpinGroupZero_add_two n
   have heq : (fun t : unitInterval ↦ f' (spinToSpecialOrthogonal (realCliffordForm (n + 2) 0)
       (γ t))) = fun t ↦ ψ (γ t) := by
-    refine (isCoveringMap_spinToSpecialOrthogonal_realCliffordForm N).eq_of_comp_eq
+    refine (isCoveringMap_spinToSpecialOrthogonal_realCliffordForm_zero N).eq_of_comp_eq
       ((continuous_const.mul hf_cont).comp
         ((continuous_spinToSpecialOrthogonal_pi (realCliffordForm (n + 2) 0)).comp γ.continuous))
       (hψ_cont.comp γ.continuous) ?_ 0 ?_

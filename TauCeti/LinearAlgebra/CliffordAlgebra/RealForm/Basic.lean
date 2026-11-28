@@ -85,7 +85,8 @@ unfolding.
   `TauCeti.realCliffordMiddleSwapIsometry`: coordinate reindexing of positive-definite signature
   forms along `Fin m ≃ Fin n`, its specialization to the block swap `finAddFlip`, and the
   four-block middle-block exchange (`TauCeti.realCliffordMiddleSwapIsometry_apply`,
-  `TauCeti.realCliffordMiddleSwapIsometry_symm`).
+  `TauCeti.realCliffordMiddleSwapIsometry_symm`,
+  `TauCeti.realCliffordNestedSplitIsometry_symm_trans_realCliffordMiddleSwapIsometry`).
 * `TauCeti.realBottSplitIsometry`: the two-coordinate specialization of the same signature
   splitter, separating a hyperbolic plane.
 * `TauCeti.realCliffordSignSwitchStandardIsometry`: the isometry which puts a sign-switched form
@@ -799,6 +800,21 @@ theorem realCliffordMiddleSwapIsometry_symm (p q : ℕ) :
       realCliffordFormZeroReindex (finSumFinSumFinComm p q p q) := by
   rw [realCliffordMiddleSwapIsometry, realCliffordFormZeroReindex_symm,
     finSumFinSumFinComm_symm]
+
+/-- Composing the nested four-block join `(realCliffordNestedSplitIsometry p q p q).symm` with
+`realCliffordMiddleSwapIsometry p q` agrees with swapping the middle two factors via
+`IsometryEquiv.prodProdProdComm` and then joining
+`(realCliffordNestedSplitIsometry p p q q).symm`. -/
+theorem realCliffordNestedSplitIsometry_symm_trans_realCliffordMiddleSwapIsometry (p q : ℕ) :
+    (realCliffordNestedSplitIsometry p q p q).symm.trans (realCliffordMiddleSwapIsometry p q) =
+      (IsometryEquiv.prodProdProdComm
+          (realCliffordForm p 0) (realCliffordForm q 0)
+          (realCliffordForm p 0) (realCliffordForm q 0)).trans
+        (realCliffordNestedSplitIsometry p p q q).symm :=
+  DFunLike.ext _ _ fun x ↦ by
+    rw [QuadraticMap.IsometryEquiv.trans_apply, QuadraticMap.IsometryEquiv.trans_apply,
+      realCliffordNestedSplitIsometry_symm_apply, realCliffordMiddleSwapIsometry_append,
+      IsometryEquiv.prodProdProdComm_toFun, realCliffordNestedSplitIsometry_symm_apply]
 
 /-- The coordinate isometry which separates the last positive and negative coordinates of the
 signature form as a hyperbolic plane. -/

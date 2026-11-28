@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Prod
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonal.LowRank
 
 /-!
@@ -33,10 +32,9 @@ of the compact groups `SO(k)`, and over separably closed fields
 This is the group-level input of the distinguished spin structure on the ordered double `E ⊕ E` of
 an oriented vector bundle `E`, which needs no spin structure on `E` itself.
 
-The one-block inclusion `A ↦ A ⊕ 1` has no such lift as soon as `Q` contains an orthogonal pair
-`u, w` with `Q u * Q w = 1` (for instance an orthonormal pair of a real positive-definite form):
-the Spin element `ι u ι w` squares to `-1`, but its image in `SO(Q)` squares to `1`
-(`CliffordAlgebra.not_exists_spinLift_prod_one`).
+By contrast, the one-block inclusion `A ↦ A ⊕ 1` has no such lift as soon as `Q` contains an
+orthogonal pair `u, w` with `Q u * Q w = 1` (`CliffordAlgebra.not_exists_spinLift_prod_one` in
+`TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Prod`).
 
 ## Main definitions
 
@@ -62,7 +60,6 @@ the Spin element `ι u ι w` squares to `-1`, but its image in `SO(Q)` squares t
 * `CliffordAlgebra.diagSpinLift_specialOrthogonalGroupProd`: the ordered direct-sum law; the lift
   for `Q₁ ⊕ Q₂` is the product of the lifts for `Q₁` and `Q₂`, transported along the block
   permutation `(Q₁ ⊕ Q₁) ⊕ (Q₂ ⊕ Q₂) ≃ (Q₁ ⊕ Q₂) ⊕ (Q₁ ⊕ Q₂)`.
-* `CliffordAlgebra.not_exists_spinLift_prod_one`: the one-block inclusion `A ↦ A ⊕ 1` has no lift.
 
 ## References
 
@@ -199,41 +196,5 @@ theorem spinGroupEquiv_prodComm_diagSpinLift (A : specialOrthogonalGroup Q) :
   obtain ⟨x, rfl⟩ := hsurj A
   rw [diagSpinLift_spinToSpecialOrthogonal, spinGroupEquiv_prodComm_spinGroupProd,
     Prod.swap_prod_mk]
-
-/-- **The one-block inclusion `A ↦ A ⊕ 1` has no Spin lift.** If `Q` has an orthogonal pair `u, w`
-with `Q u * Q w = 1`, no homomorphism `SO(Q) →* Spin(Q ⊕ Q₂)` lifts `A ↦ A ⊕ 1`: the Spin
-element `ι u ι w` squares to `-1` and its image `A` squares to `1`, while every lift of `A ⊕ 1` is
-`±(ι u ι w)` and squares to `-1`. Doubling, as in `diagSpinLift`, is what makes the lift exist. -/
-theorem not_exists_spinLift_prod_one {M₂ : Type*} [AddCommGroup M₂] [Module K M₂]
-    [FiniteDimensional K M₂] {Q₂ : QuadraticForm K M₂} (hQ : Q.Nondegenerate)
-    (hQ₂ : Q₂.Nondegenerate) {u w : M} (huw : Q.IsOrtho u w) (h : Q u * Q w = 1) :
-    ¬∃ s : specialOrthogonalGroup Q →* spinGroup (Q.prod Q₂),
-      ∀ A, spinToSpecialOrthogonal (Q.prod Q₂) (s A) = specialOrthogonalGroupProd Q Q₂ (A, 1) := by
-  rintro ⟨s, hs⟩
-  have hQ0 : Q ≠ 0 := by rintro rfl; simp at h
-  have : Nontrivial M := ⟨⟨u, 0, by rintro rfl; simp at h⟩⟩
-  let x : spinGroup Q := ⟨ι Q u * ι Q w, ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one u w h⟩
-  have hx : x * x = spinGroup.negOne Q hQ0 :=
-    Subtype.ext <| by simp [x, ι_mul_ι_mul_self_of_isOrtho huw, h]
-  have hA : spinToSpecialOrthogonal Q x * spinToSpecialOrthogonal Q x = 1 := by
-    rw [← map_mul, hx, spinGroup.spinToSpecialOrthogonal_negOne]
-  have hy : spinToSpecialOrthogonal (Q.prod Q₂) (s (spinToSpecialOrthogonal Q x)) =
-      spinToSpecialOrthogonal (Q.prod Q₂) (spinGroupProd Q Q₂ (x, 1)) := by
-    rw [hs, spinToSpecialOrthogonal_spinGroupProd, map_one]
-  have hyy : spinGroupProd Q Q₂ (x, 1) * spinGroupProd Q Q₂ (x, 1) =
-      spinGroupProd Q Q₂ (spinGroup.negOne Q hQ0, 1) := by
-    rw [← map_mul, Prod.mk_mul_mk, hx, one_mul]
-  have hsA : s (spinToSpecialOrthogonal Q x) * s (spinToSpecialOrthogonal Q x) = 1 := by
-    rw [← map_mul, hA, map_one]
-  rcases eq_or_eq_negOne_mul_of_spinToSpecialOrthogonal_eq (Q.prod Q₂) (hQ.prod hQ₂) _ _ hy
-    with h' | h'
-  · rw [h', hyy, spinGroupProd_negOne_one] at hsA
-    exact spinGroup.negOne_ne_one _ _ hsA
-  · have hc : Commute (spinGroupProd Q Q₂ (x, 1))
-        (spinGroup.negOne (Q.prod Q₂) (hQ.prod hQ₂).ne_zero) :=
-      (spinGroup.negOne_mul_comm _ _ _).symm
-    rw [h', hc.mul_mul_mul_comm, spinGroup.negOne_mul_self, one_mul, hyy,
-      spinGroupProd_negOne_one] at hsA
-    exact spinGroup.negOne_ne_one _ _ hsA
 
 end CliffordAlgebra

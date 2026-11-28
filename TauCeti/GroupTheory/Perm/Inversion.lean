@@ -240,33 +240,22 @@ theorem sign_finSumFinSumFinComm_trans_finCongr (a b c d : ℕ) :
     obtain ⟨y, rfl⟩ := e.surjective x
     rw [Equiv.permCongr_apply, Equiv.symm_apply_apply]
     rcases y with i | (x | l)
-    · have hi : e (Sum.inl i) = Fin.castAdd (c + d) (Fin.castAdd b i) :=
-        Fin.ext (by simp [e])
-      have hi' : e (τ (Sum.inl i)) =
-          Fin.cast (add_add_add_comm a c b d) (Fin.castAdd (b + d) (Fin.castAdd c i)) :=
-        Fin.ext (by simp [e, τ])
-      rw [hi, hi', Equiv.trans_apply, finSumFinSumFinComm_castAdd_castAdd, finCongr_apply]
+    · rw [show e (Sum.inl i) = Fin.castAdd (c + d) (Fin.castAdd b i) from Fin.ext (by simp [e])]
+      simp only [Equiv.trans_apply, finSumFinSumFinComm_castAdd_castAdd]
+      exact Fin.ext (by simp [e, τ])
     · refine Fin.addCases (fun j ↦ ?_) (fun k ↦ ?_) x
-      · have hj : e (Sum.inr (Sum.inl (Fin.castAdd c j))) =
-            Fin.castAdd (c + d) (Fin.natAdd a j) :=
-          Fin.ext (by simp [e])
-        have hj' : e (τ (Sum.inr (Sum.inl (Fin.castAdd c j)))) =
-            Fin.cast (add_add_add_comm a c b d) (Fin.natAdd (a + c) (Fin.castAdd d j)) :=
-          Fin.ext (by simp [e, τ, finAddFlip_apply_castAdd]; omega)
-        rw [hj, hj', Equiv.trans_apply, finSumFinSumFinComm_castAdd_natAdd, finCongr_apply]
-      · have hk : e (Sum.inr (Sum.inl (Fin.natAdd b k))) =
-            Fin.natAdd (a + b) (Fin.castAdd d k) :=
-          Fin.ext (by simp [e]; omega)
-        have hk' : e (τ (Sum.inr (Sum.inl (Fin.natAdd b k)))) =
-            Fin.cast (add_add_add_comm a c b d) (Fin.castAdd (b + d) (Fin.natAdd a k)) :=
-          Fin.ext (by simp [e, τ, finAddFlip_apply_natAdd])
-        rw [hk, hk', Equiv.trans_apply, finSumFinSumFinComm_natAdd_castAdd, finCongr_apply]
-    · have hl : e (Sum.inr (Sum.inr l)) = Fin.natAdd (a + b) (Fin.natAdd c l) :=
-        Fin.ext (by simp [e]; omega)
-      have hl' : e (τ (Sum.inr (Sum.inr l))) =
-          Fin.cast (add_add_add_comm a c b d) (Fin.natAdd (a + c) (Fin.natAdd b l)) :=
-        Fin.ext (by simp [e, τ]; omega)
-      rw [hl, hl', Equiv.trans_apply, finSumFinSumFinComm_natAdd_natAdd, finCongr_apply]
+      · rw [show e (Sum.inr (Sum.inl (Fin.castAdd c j))) =
+            Fin.castAdd (c + d) (Fin.natAdd a j) from Fin.ext (by simp [e])]
+        simp only [Equiv.trans_apply, finSumFinSumFinComm_castAdd_natAdd]
+        exact Fin.ext (by simp [e, τ, finAddFlip_apply_castAdd]; omega)
+      · rw [show e (Sum.inr (Sum.inl (Fin.natAdd b k))) =
+            Fin.natAdd (a + b) (Fin.castAdd d k) from Fin.ext (by simp [e]; omega)]
+        simp only [Equiv.trans_apply, finSumFinSumFinComm_natAdd_castAdd]
+        exact Fin.ext (by simp [e, τ, finAddFlip_apply_natAdd])
+    · rw [show e (Sum.inr (Sum.inr l)) =
+          Fin.natAdd (a + b) (Fin.natAdd c l) from Fin.ext (by simp [e]; omega)]
+      simp only [Equiv.trans_apply, finSumFinSumFinComm_natAdd_natAdd]
+      exact Fin.ext (by simp [e, τ]; omega)
   rw [← hperm, Equiv.Perm.sign_permCongr]
   simp [τ, sign_finAddFlip_trans_finCongr]
 

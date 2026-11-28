@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Defs
 public import Mathlib.Algebra.Notation.Pi.Basic
 public import Mathlib.Data.Fin.Tuple.Basic
+public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Order.Interval.Set.Defs
 import Mathlib.Algebra.NeZero
 import Mathlib.Data.Set.Image
@@ -55,6 +56,8 @@ set of the earlier ones.
 * `Fin.comp_append`, `Fin.comp_append_comp_cast`, `Fin.comp_cast_comp_cast`: postcomposing an
   appended (or casted appended) tuple with a function, and collapsing nested `Fin.cast`
   precompositions.
+* `Fin.append_comp_finSumFinEquiv`, `Fin.sumElim_comp_finSumFinEquiv_symm`: converting between
+  `Fin.append` and `Sum.elim` across `finSumFinEquiv`.
 * `Fin.append_single_zero`, `Fin.append_zero_single`: padding `Pi.single` on the right or left by
   `0` reindexes `Pi.single` by `Fin.castAdd` or `Fin.natAdd`.
 * `Fin.contractNth_zero_cons`, `Fin.contractNth_succ_cons`: contracting entries of a tuple
@@ -247,6 +250,17 @@ theorem comp_append_comp_cast {β : Sort*} {n k : ℕ} (f : α → β) (u : Fin 
 theorem comp_cast_comp_cast {k n : ℕ} (u : Fin n → α) (h₁ : k = m) (h₂ : m = n) :
     (u ∘ Fin.cast h₂) ∘ Fin.cast h₁ = u ∘ Fin.cast (h₁.trans h₂) :=
   rfl
+
+/-- Reindexing `Fin.append u v` along `finSumFinEquiv` gives `Sum.elim u v`. -/
+theorem append_comp_finSumFinEquiv {n : ℕ} (u : Fin m → α) (v : Fin n → α) :
+    (append u v : Fin (m + n) → α) ∘ finSumFinEquiv = Sum.elim u v :=
+  Fin.append_comp_sumElim
+
+/-- Reindexing `Sum.elim u v` along `finSumFinEquiv.symm` gives `Fin.append u v`. -/
+theorem sumElim_comp_finSumFinEquiv_symm {n : ℕ} (u : Fin m → α) (v : Fin n → α) :
+    Sum.elim u v ∘ finSumFinEquiv.symm = append u v := by
+  rw [← append_comp_finSumFinEquiv u v, Function.comp_assoc, Equiv.self_comp_symm,
+    Function.comp_id]
 
 /-- Padding `Pi.single i a` on the right with `0` gives `Pi.single (Fin.castAdd n i) a`. -/
 @[simp]

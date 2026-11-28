@@ -761,17 +761,11 @@ theorem spinGroupEquiv_realCliffordMiddleSwapIsometry_realCliffordSpinBlockSum (
           (realCliffordSpinBlockSum p q (x₁, x₂), realCliffordSpinBlockSum p q (x₃, x₄))) =
       realCliffordSpinBlockSum (p + p) (q + q)
         (realCliffordSpinBlockSum p p (x₁, x₃), realCliffordSpinBlockSum q q (x₂, x₄)) := by
-  have he : (realCliffordNestedSplitIsometry p q p q).symm.trans
-      (realCliffordMiddleSwapIsometry p q) =
-      (IsometryEquiv.prodProdProdComm _ _ _ _).trans
-        (realCliffordNestedSplitIsometry p p q q).symm :=
-    DFunLike.ext _ _ fun x ↦ by
-      rw [QuadraticMap.IsometryEquiv.trans_apply, QuadraticMap.IsometryEquiv.trans_apply,
-        realCliffordNestedSplitIsometry_symm_apply, realCliffordMiddleSwapIsometry_append,
-        IsometryEquiv.prodProdProdComm_toFun, realCliffordNestedSplitIsometry_symm_apply]
   rw [← realCliffordNestedSplitIsometry_symm_spinGroupEquiv p q p q, ← MulEquiv.trans_apply,
-    ← IsometryEquiv.spinGroupEquiv_trans, he, IsometryEquiv.spinGroupEquiv_trans,
-    MulEquiv.trans_apply, spinGroupEquiv_prodProdProdComm_spinGroupProd,
+    ← IsometryEquiv.spinGroupEquiv_trans,
+    realCliffordNestedSplitIsometry_symm_trans_realCliffordMiddleSwapIsometry,
+    IsometryEquiv.spinGroupEquiv_trans, MulEquiv.trans_apply,
+    spinGroupEquiv_prodProdProdComm_spinGroupProd,
     realCliffordNestedSplitIsometry_symm_spinGroupEquiv p p q q]
 
 /-- **Middle-block exchange coherence of `realCliffordSpecialOrthogonalBlockSum`**: transporting a
@@ -798,15 +792,10 @@ theorem
     (realCliffordForm p 0) (posDef_realCliffordForm_zero p) g₃
   obtain ⟨x₄, rfl⟩ := spinToSpecialOrthogonal_surjective_of_posDef
     (realCliffordForm q 0) (posDef_realCliffordForm_zero q) g₄
-  rw [← spinToSpecialOrthogonal_realCliffordSpinBlockSum p q (x₁, x₂),
-    ← spinToSpecialOrthogonal_realCliffordSpinBlockSum p q (x₃, x₄),
-    ← spinToSpecialOrthogonal_realCliffordSpinBlockSum (p + q) (p + q)
-      (realCliffordSpinBlockSum p q (x₁, x₂), realCliffordSpinBlockSum p q (x₃, x₄)),
-    IsometryEquiv.specialOrthogonalGroupCongr_spinToSpecialOrthogonal,
-    spinGroupEquiv_realCliffordMiddleSwapIsometry_realCliffordSpinBlockSum,
-    spinToSpecialOrthogonal_realCliffordSpinBlockSum,
-    spinToSpecialOrthogonal_realCliffordSpinBlockSum,
-    spinToSpecialOrthogonal_realCliffordSpinBlockSum]
+  simpa only [← IsometryEquiv.specialOrthogonalGroupCongr_spinToSpecialOrthogonal,
+    spinToSpecialOrthogonal_realCliffordSpinBlockSum] using
+    congrArg (spinToSpecialOrthogonal (realCliffordForm ((p + p) + (q + q)) 0))
+      (spinGroupEquiv_realCliffordMiddleSwapIsometry_realCliffordSpinBlockSum p q x₁ x₃ x₂ x₄)
 
 end
 

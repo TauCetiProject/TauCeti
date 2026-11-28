@@ -34,8 +34,8 @@ of the Clifford algebra over the trivial group `SO(0)`
   compact real Spin projection as a quotient covering map by its kernel.
 * `CliffordAlgebra.isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom` packages the projection
   as an ordinary covering map.
-* `CliffordAlgebra.isCoveringMap_spinToSpecialOrthogonal_realCliffordForm` states the same covering
-  property directly for `spinToSpecialOrthogonal (realCliffordForm n 0)`.
+* `CliffordAlgebra.isCoveringMap_spinToSpecialOrthogonal_realCliffordForm_zero` states the same
+  covering property directly for `spinToSpecialOrthogonal (realCliffordForm n 0)`.
 * `CliffordAlgebra.isCoveringMap_realCliffordSpinProjectionZero` gives the same result for the
   bundled continuous homomorphism.
 * `CliffordAlgebra.realCliffordSpinHomEquivKer` identifies continuous homomorphisms out of
@@ -116,7 +116,7 @@ theorem isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom
   (isQuotientCoveringMap_realCliffordSpinDoubleCoverZero_rightHom n).isCoveringMap
 
 /-- The Spin projection `spinToSpecialOrthogonal (realCliffordForm n 0)` is a covering map. -/
-theorem isCoveringMap_spinToSpecialOrthogonal_realCliffordForm
+theorem isCoveringMap_spinToSpecialOrthogonal_realCliffordForm_zero
     (n : ℕ) :
     IsCoveringMap (spinToSpecialOrthogonal (realCliffordForm n 0)) := by
   obtain rfl | hn := n.eq_zero_or_pos

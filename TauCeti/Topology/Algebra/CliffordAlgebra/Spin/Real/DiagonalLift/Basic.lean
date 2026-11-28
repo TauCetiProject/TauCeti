@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.DiagonalLift.Basic
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Stabilization
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Stabilization.Basic
+import TauCeti.Data.Fin.Tuple.Basic
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering.Basic
 
 /-!
-# Topology, uniqueness, and full-turn loop for the compact real diagonal Spin lift
+# Topology and uniqueness of the compact real diagonal Spin lift
 
 This module develops the topological properties of the compact real diagonal Spin lift
 `TauCeti.realCliffordSpinDiagonalLift k : SO(k) →* Spin(k + k)`:
@@ -32,10 +33,9 @@ This module develops the topological properties of the compact real diagonal Spi
   `g ↦ diag(g, g)`) equals `realCliffordSpinDiagonalLift k`. In positive rank, any continuous lift
   without basepoint normalization equals either `realCliffordSpinDiagonalLift k` or its left
   translate by `-1`; in rank zero, `Spin(0)` is trivial and the continuous lift is unique.
-* **Closed full-turn rotation loop**: a full `2π` coordinate-plane rotation loop lifts under
-  `realCliffordSpinDiagonalLift k` to a closed loop (`1` to `1`) in `Spin(k + k)`, contrasting with
-  the open path (`1` to `-1`) under a one-block embedding in
-  `TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Stabilization`.
+
+For the closed full-turn coordinate-plane rotation loop under `realCliffordSpinDiagonalLift`, see
+`TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.DiagonalLift.Rotation`.
 
 ## Main definitions
 
@@ -46,8 +46,6 @@ This module develops the topological properties of the compact real diagonal Spi
   `Spin(k + k)`.
 * `TauCeti.matrixSpecialOrthogonalSpinDiagonalLift`: the continuous diagonal lift from the matrix
   group `Matrix.specialOrthogonalGroup (Fin k) ℝ` to `Spin(k + k)`.
-* `TauCeti.realCliffordSpinDiagonalLiftRotationLoop`: explicit closed loop lift (`1` to `1`) of a
-  full `2π` coordinate-plane rotation under the diagonal lift.
 
 ## Main results
 
@@ -62,9 +60,6 @@ This module develops the topological properties of the compact real diagonal Spi
   `TauCeti.eq_or_eq_negOne_mul_realCliffordSpinDiagonalLift_of_continuous_lift`, and
   `TauCeti.eq_realCliffordSpinDiagonalLift_of_continuous_monoidHom_lift`: uniqueness of continuous
   and homomorphic diagonal lifts.
-* `TauCeti.realCliffordSpinDiagonalLiftRotationLoop_apply` and
-  `TauCeti.spinToSpecialOrthogonal_realCliffordSpinDiagonalLiftRotationLoop`: evaluation and
-  projection of the closed diagonal rotation loop.
 
 ## References
 
@@ -229,15 +224,10 @@ theorem coe_symm_spinToSpecialOrthogonal_matrixSpecialOrthogonalSpinDiagonalLift
   apply _root_.Matrix.toLin'.injective
   rw [_root_.Matrix.toLin'_toMatrix']
   refine LinearMap.ext fun x ↦ ?_
-  have happend (a b : Fin k → ℝ) :
-      (Fin.append a b : Fin (k + k) → ℝ) ∘ finSumFinEquiv = Sum.elim a b :=
-    funext (Sum.rec (Fin.append_left a b) (Fin.append_right a b))
-  have hsum (a b : Fin k → ℝ) :
-      Sum.elim a b ∘ finSumFinEquiv.symm = (Fin.append a b : Fin (k + k) → ℝ) := by
-    rw [← happend a b, Function.comp_assoc, Equiv.self_comp_symm, Function.comp_id]
   rw [← Fin.append_castAdd_natAdd (m := k) (n := k) (f := x), LinearEquiv.coe_coe]
   simp [realCliffordSpecialOrthogonalBlockSum_apply_append, LinearMap.funLeft,
-    _root_.Matrix.fromBlocks_mulVec, happend, hsum]
+    _root_.Matrix.fromBlocks_mulVec, Fin.append_comp_finSumFinEquiv,
+    Fin.sumElim_comp_finSumFinEquiv_symm]
 
 /-! ### Uniqueness of continuous lifts -/
 
@@ -252,7 +242,7 @@ theorem eq_realCliffordSpinDiagonalLift_of_continuous_lift (k : ℕ)
       realCliffordSpecialOrthogonalBlockSum k k (g, g))
     (h1 : f 1 = 1) :
     f = realCliffordSpinDiagonalLift k := by
-  refine (isCoveringMap_spinToSpecialOrthogonal_realCliffordForm (k + k)).eq_of_comp_eq
+  refine (isCoveringMap_spinToSpecialOrthogonal_realCliffordForm_zero (k + k)).eq_of_comp_eq
     hf (continuous_realCliffordSpinDiagonalLift k) ?_ 1 (by rw [h1, map_one])
   funext g
   exact (hlift g).trans (spinToSpecialOrthogonal_realCliffordSpinDiagonalLift k g).symm
@@ -304,52 +294,6 @@ theorem eq_realCliffordSpinDiagonalLift_of_continuous_monoidHom_lift (k : ℕ)
     f = realCliffordSpinDiagonalLiftContinuousMonoidHom k :=
   ContinuousMonoidHom.ext <| congrFun <|
     eq_realCliffordSpinDiagonalLift_of_continuous_lift k f.continuous hlift (map_one f)
-
-/-! ### Closed full-turn rotation loop -/
-
-/-- **Closed loop lift of a full `2π` coordinate-plane rotation under the diagonal Spin lift**:
-in the ordered `(e_i, e_j)` coordinate plane (where `Q(e_i) = Q(e_j) = 1`, so `spinRotation` at
-Spin angle `π t` projects to `R(−2π t)`), the path in `Spin(k + k)` lifting
-`t ↦ diag(R(−2π t), R(−2π t))` starts and ends at `1`. -/
-def realCliffordSpinDiagonalLiftRotationLoop {k : ℕ} {i j : Fin k} (hij : i ≠ j) :
-    Path (1 : realCliffordSpinGroupZero (k + k)) 1 :=
-  ((spinRotationPath (realCliffordForm k 0) (Pi.single i 1) (Pi.single j 1)
-      (realCliffordForm_zero_single_one k i) (realCliffordForm_zero_single_one k j)
-      (isOrtho_realCliffordForm_single (p := k) (q := 0) hij 1 1)).map
-    ((continuous_realCliffordSpinDiagonalLift k).comp
-      (continuous_spinToSpecialOrthogonal_pi (realCliffordForm k 0)))).cast
-    (by simp) (by simp)
-
-/-- Evaluating `realCliffordSpinDiagonalLiftRotationLoop` at `t` gives the diagonal lift of the
-coordinate-plane rotation at Spin angle `π t`. -/
-@[simp]
-theorem realCliffordSpinDiagonalLiftRotationLoop_apply {k : ℕ} {i j : Fin k} (hij : i ≠ j)
-    (t : unitInterval) :
-    realCliffordSpinDiagonalLiftRotationLoop hij t =
-      realCliffordSpinDiagonalLift k
-        (spinToSpecialOrthogonal (realCliffordForm k 0)
-          (spinRotation (realCliffordForm k 0) (Pi.single i 1) (Pi.single j 1)
-            (realCliffordForm_zero_single_one k i) (realCliffordForm_zero_single_one k j)
-            (isOrtho_realCliffordForm_single (p := k) (q := 0) hij 1 1) (Real.pi * (t : ℝ)))) := by
-  simp [realCliffordSpinDiagonalLiftRotationLoop]
-
-/-- The closed loop `realCliffordSpinDiagonalLiftRotationLoop` projects to the diagonal block sum
-of the coordinate-plane rotation loop. -/
-theorem spinToSpecialOrthogonal_realCliffordSpinDiagonalLiftRotationLoop {k : ℕ} {i j : Fin k}
-    (hij : i ≠ j) (t : unitInterval) :
-    spinToSpecialOrthogonal (realCliffordForm (k + k) 0)
-        (realCliffordSpinDiagonalLiftRotationLoop hij t) =
-      realCliffordSpecialOrthogonalBlockSum k k
-        (spinToSpecialOrthogonal (realCliffordForm k 0)
-          (spinRotation (realCliffordForm k 0) (Pi.single i 1) (Pi.single j 1)
-            (realCliffordForm_zero_single_one k i) (realCliffordForm_zero_single_one k j)
-            (isOrtho_realCliffordForm_single (p := k) (q := 0) hij 1 1) (Real.pi * (t : ℝ))),
-          spinToSpecialOrthogonal (realCliffordForm k 0)
-          (spinRotation (realCliffordForm k 0) (Pi.single i 1) (Pi.single j 1)
-            (realCliffordForm_zero_single_one k i) (realCliffordForm_zero_single_one k j)
-            (isOrtho_realCliffordForm_single (p := k) (q := 0) hij 1 1) (Real.pi * (t : ℝ)))) := by
-  rw [realCliffordSpinDiagonalLiftRotationLoop_apply,
-    spinToSpecialOrthogonal_realCliffordSpinDiagonalLift]
 
 end
 
