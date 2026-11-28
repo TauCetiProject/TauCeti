@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed
 public import TauCeti.NumberTheory.LFunctions.Hecke.ChangeModulus
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Cancellation
 import TauCeti.NumberTheory.LFunctions.DedekindZeta.WeightedClassSum
-import TauCeti.NumberTheory.LFunctions.Hecke.Landau
+import TauCeti.NumberTheory.LFunctions.Hecke.Cancellation
 import TauCeti.NumberTheory.LFunctions.Hecke.Orthogonality
 
 /-!

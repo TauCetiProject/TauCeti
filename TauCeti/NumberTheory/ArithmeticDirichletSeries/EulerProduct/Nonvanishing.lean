@@ -23,8 +23,8 @@ automatically unitary (`TauCeti.MultiplicativeIdealWeight.unitaryOfIsNormTwistOn
 finitely many Euler factors removed. By
 `TauCeti.exists_differentiableOn_eq_LSeries_ofBadPrimes`, that translate continues
 continuously to every point of `Re s = 1` except `1 + u * I`, so the `3-4-1` inequality rules out
-zeros of any continuation `L` of `L(χ, ·)` everywhere on the line `Re s = 1` except possibly at
-`s = 1 + (u / 2) * I`.
+zeros at any point `s` of the line `Re s = 1` except possibly `s = 1 + (u / 2) * I` for any
+continuation `L` of `L(χ, ·)` that is complex differentiable at `s`.
 
 ## Main results
 
@@ -49,7 +49,8 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-- **The `3-4-1` nonvanishing criterion on `Re s = 1` away from `1 + (u / 2) * I`** for a
 completely multiplicative ideal weight `χ` whose square is a purely imaginary norm twist
-`I ↦ N(I) ^ (u * I)` on its good ideals. -/
+`I ↦ N(I) ^ (u * I)` on its good ideals: if `L` agrees with `L(χ, ·)` on `Re z > 1` and is
+complex differentiable at `s` (with `Re s = 1` and `s ≠ 1 + (u / 2) * I`), then `L s ≠ 0`. -/
 theorem ne_zero_of_eqOn_LSeries_of_isNormTwistOnGood_sq
     (χ : MultiplicativeIdealWeight K) {u : ℝ} (hχ₂ : (χ ^ 2).IsNormTwistOnGood u)
     {L : ℂ → ℂ} {s : ℂ} (hs : s.re = 1) (hsu : s ≠ 1 + (u : ℂ) / 2 * Complex.I)

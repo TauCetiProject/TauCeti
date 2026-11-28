@@ -68,8 +68,9 @@ Dirichlet character `χ.toDirichletCharacter` modulo `n = Ideal.absNorm 𝔪.fin
   `toDirichletCharacter_apply_natCast`: image characterization, evaluation, and triviality for
   `toDirichletCharacter`.
 * `TauCeti.GlobalNumberFields.normCoeff_rayClassCharacter_rat_eq` and
-  `TauCeti.GlobalNumberFields.LSeries_rayClassCharacter_rat_eq`: coefficientwise and `L`-series
-  identification between a ray class character over `ℚ` and its associated Dirichlet character.
+  `TauCeti.GlobalNumberFields.LSeries_rayClassCharacter_rat_eq`: coefficientwise (at every
+  positive index) and `L`-series identification between a ray class character over `ℚ` and its
+  associated Dirichlet character.
 
 ## References
 
@@ -303,8 +304,10 @@ theorem toDirichletCharacter_apply {𝔪 : Modulus ℚ} (χ : RayClassCharacter 
 /-- The conversion from ray class characters of `𝔪` to Dirichlet characters modulo
 `Ideal.absNorm 𝔪.finitePart` is injective. -/
 theorem toDirichletCharacter_injective {𝔪 : Modulus ℚ} :
-    Function.Injective (toDirichletCharacter (𝔪 := 𝔪)) := fun _ _ h ↦
-  induced_injective (dvd_ratModulus_absNorm 𝔪) ((ratDirichletEquiv _ _).injective h)
+    Function.Injective (toDirichletCharacter (𝔪 := 𝔪)) := by
+  intro χ₁ χ₂ h
+  rw [toDirichletCharacter_apply, toDirichletCharacter_apply] at h
+  exact induced_injective (dvd_ratModulus_absNorm 𝔪) ((ratDirichletEquiv _ _).injective h)
 
 /-- A ray class character over `ℚ` maps to the principal Dirichlet character iff it is trivial. -/
 @[simp]
@@ -320,7 +323,7 @@ theorem mem_range_toDirichletCharacter_iff {𝔪 : Modulus ℚ}
     ψ ∈ Set.range (toDirichletCharacter (𝔪 := 𝔪)) ↔ 𝔪.infinitePart.Nonempty ∨ ψ.Even := by
   let n := Ideal.absNorm 𝔪.finitePart
   have hn : n ≠ 0 := Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot
-  have hfin : 𝔪.finitePart = (ratModulus n hn).finitePart := (ratModulus_absNorm_finitePart 𝔪).symm
+  have hfin : 𝔪.finitePart = (ratModulus n hn).finitePart := (ratModulus_finitePart_absNorm 𝔪).symm
   have hiff : ψ ∈ Set.range (toDirichletCharacter (𝔪 := 𝔪)) ↔
       ∃ χ : RayClassCharacter 𝔪,
         χ.induced (dvd_ratModulus_absNorm 𝔪) = (ratDirichletEquiv n hn).symm ψ := by
@@ -381,7 +384,7 @@ theorem toDirichletCharacter_apply_absNorm {𝔪 : Modulus ℚ} (χ : RayClassCh
   by_cases hI : J.IsPrimeTo 𝔪.support
   · have hI' : J ∈ integralIdealsPrimeTo (ratModulus n hn) :=
       Modulus.mem_integralIdealsPrimeTo.mpr
-        ((Modulus.isCoprimeTo_iff_of_finitePart_eq (ratModulus_absNorm_finitePart 𝔪).symm).mp
+        ((Modulus.isCoprimeTo_iff_of_finitePart_eq (ratModulus_finitePart_absNorm 𝔪).symm).mp
           (Modulus.isCoprimeTo_iff.mpr (Ideal.isPrimeTo_iff.mp hI)))
     have hval := ratDirichletEquiv_absNorm (χ.induced h𝔪) ⟨J, hI'⟩
     have hincl : (⟨J, NumberFieldArithmetic.mem_integralIdealsAway_iff.mpr
@@ -412,8 +415,8 @@ section NormCoeff
 
 open scoped nonZeroDivisors
 
-/-- **Over `ℚ`, the nonzero norm-regrouped ideal coefficients of a ray class character equal those
-of its associated Dirichlet character.** -/
+/-- **Over `ℚ`, the norm-regrouped ideal coefficients of a ray class character equal those of its
+associated Dirichlet character at every positive index.** -/
 theorem normCoeff_rayClassCharacter_rat_eq {𝔪 : Modulus ℚ} (χ : RayClassCharacter 𝔪)
     {k : ℕ} (hk : k ≠ 0) :
     normCoeff ℚ χ.toUnitaryIdealWeight.toIdealArithmeticFunction k =

@@ -271,7 +271,7 @@ theorem dvd_ratModulus_absNorm (𝔪 : Modulus ℚ) :
 
 /-- For any modulus `𝔪` of `ℚ`, the modulus `(Ideal.absNorm 𝔪.finitePart)·∞` has the same finite
 part as `𝔪`. -/
-theorem ratModulus_absNorm_finitePart (𝔪 : Modulus ℚ) :
+theorem ratModulus_finitePart_absNorm (𝔪 : Modulus ℚ) :
     (ratModulus (Ideal.absNorm 𝔪.finitePart)
       (Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot)).finitePart = 𝔪.finitePart := by
   rw [ratModulus_finitePart, Rat.RingOfIntegers.ideal_span_absNorm_eq_self]
@@ -285,7 +285,7 @@ theorem isPrimeTo_iff_isUnit_absNorm {𝔪 : Modulus ℚ} {J : Ideal (𝓞 ℚ)}
   have : NeZero (Ideal.absNorm 𝔪.finitePart) := ⟨hn⟩
   rw [Modulus.support_eq_of_finitePart_eq
     (𝔫 := ratModulus (Ideal.absNorm 𝔪.finitePart) hn)
-    (ratModulus_absNorm_finitePart 𝔪).symm,
+    (ratModulus_finitePart_absNorm 𝔪).symm,
     ← (Modulus.isCoprimeTo_iff.trans Ideal.isPrimeTo_iff.symm),
     isCoprimeTo_ratModulus_iff hJ, ZMod.isUnit_iff_coprime]
 

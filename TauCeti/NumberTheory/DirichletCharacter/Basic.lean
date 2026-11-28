@@ -705,14 +705,4 @@ theorem ne_one_of_mul_eq_one_right {R : Type*} [CommMonoidWithZero R] {M N : ℕ
     rw [DirichletCharacter.mul, map_one, mul_one, changeLevel_eq_one_iff] at hχψ
     exact hχ hχψ
 
-/-- When `N = M`, equality `changeLevel hMN ψ = χ` transports natural-number evaluations from `ψ`
-to `χ`. -/
-theorem apply_natCast_eq_of_level_eq_of_changeLevel_eq {R : Type*} [CommMonoidWithZero R]
-    {M N : ℕ} (hMN : M ∣ N) (hNM : N = M) (ψ : DirichletCharacter R M)
-    {χ : DirichletCharacter R N} (h : changeLevel hMN ψ = χ) (k : ℕ) : χ k = ψ k := by
-  subst hNM
-  rw [changeLevel_self] at h
-  subst h
-  rfl
-
 end DirichletCharacter

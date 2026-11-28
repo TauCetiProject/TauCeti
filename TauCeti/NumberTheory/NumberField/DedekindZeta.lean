@@ -58,6 +58,8 @@ Tauberian theorem needs to count prime ideals.
   `ρ x + O(x ^ (1 - 1 / [K : ℚ]))`.
 * `TauCeti.exists_differentiableOn_eq_dedekindZeta_sub`: `ζ_K(s) - ρ / (s - 1)` extends
   holomorphically from `Re s > 1` to `Re s > 1 - 1 / [K : ℚ]`.
+* `TauCeti.exists_differentiableOn_eq_dedekindZeta`: `ζ_K` extends holomorphically from
+  `Re s > 1` to `{s | 1 - 1 / [K : ℚ] < s.re} \ {1}`.
 * `TauCeti.exists_differentiableOn_eq_LSeries_ofBadPrimes_sub`: the same for the Dedekind zeta
   function with the Euler factors at a finite set of primes deleted, with the correspondingly
   corrected residue.
@@ -68,9 +70,6 @@ Tauberian theorem needs to count prime ideals.
   `dedekindZeta_residue K` at `1` and nonvanishing on `Re s ≥ 1`.
 * `TauCeti.exists_continuousOn_eq_neg_deriv_dedekindZeta_div_sub`: `-ζ_K'(s) / ζ_K(s) - 1 / (s - 1)`
   extends continuously from `Re s > 1` to `Re s ≥ 1`.
-* `TauCeti.tendsto_sub_one_mul_re_dedekindZeta_nhdsGT`: `(σ - 1) * (ζ_K σ).re → ρ` as real
-  `σ → 1⁺`.
-* `TauCeti.tendsto_re_dedekindZeta_nhdsGT_one`: `(ζ_K σ).re → +∞` as real `σ → 1⁺`.
 * `TauCeti.tendsto_sub_one_mul_of_eventuallyEq_dedekindZeta`:
   `(s - 1) * f s → dedekindZeta_residue K` as `s → 1` along `𝓝[≠] 1` for any local continuation
   `f` of `ζ_K` differentiable on a punctured neighbourhood of `1`.
@@ -169,6 +168,17 @@ theorem exists_differentiableOn_eq_dedekindZeta_sub : ∃ G : ℂ → ℂ,
     fun s hs ↦ (LSeriesSummable_dedekindZetaCoeff_iff K).mpr hs
   exact ⟨G, hG, fun s hs ↦ by rw [hGζ s hs, dedekindZeta_eq_LSeries_dedekindZetaCoeff]⟩
 
+/-- **Meromorphic continuation of the Dedekind zeta function across `Re s = 1`.** There is a
+function holomorphic on `{s | 1 - 1 / [K : ℚ] < s.re} \ {1}` agreeing with `ζ_K` on `Re s > 1`. -/
+theorem exists_differentiableOn_eq_dedekindZeta :
+    ∃ T : ℂ → ℂ, DifferentiableOn ℂ T ({s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} \ {1}) ∧
+      Set.EqOn T (dedekindZeta K) {s | 1 < s.re} := by
+  obtain ⟨G, hG, hGζ⟩ := exists_differentiableOn_eq_dedekindZeta_sub K
+  refine ⟨fun s ↦ G s + (dedekindZeta_residue K : ℂ) / (s - 1), (hG.mono Set.sdiff_subset).add
+    ((differentiableOn_const _).div (differentiableOn_id.sub_const 1) fun _ hs ↦
+      sub_ne_zero.mpr hs.2), fun s hs ↦ ?_⟩
+  simp only [hGζ s hs, sub_add_cancel]
+
 /-- **The Dedekind zeta function with finitely many Euler factors deleted, across `Re s = 1`.**
 For a finite set `S` of primes of `𝓞 K`, there is a function holomorphic on the half-plane
 `Re s > 1 - 1 / [K : ℚ]` that agrees on `Re s > 1` with `L_S(s) - ρ_S / (s - 1)`. Here `L_S` is
@@ -214,31 +224,26 @@ theorem exists_differentiableOn_eq_LSeries_ofBadPrimes (S : Finset (HeightOneSpe
 variable {K} in
 /-- **The Dedekind zeta function has no zeros on the line `Re s = 1` away from its pole.** If `f`
 agrees with `ζ_K` on `Re s > 1` and is complex differentiable at a point `s ≠ 1` with `Re s = 1`,
-then `f s ≠ 0`. By `exists_differentiableOn_eq_dedekindZeta_sub`, such an `f` exists: the
+then `f s ≠ 0`. By `exists_differentiableOn_eq_dedekindZeta`, such an `f` exists: the
 meromorphic continuation of `ζ_K`. -/
 theorem ne_zero_of_eqOn_dedekindZeta {f : ℂ → ℂ} {s : ℂ} (hs : s.re = 1) (hs1 : s ≠ 1)
     (hf : DifferentiableAt ℂ f s) (hfζ : Set.EqOn f (dedekindZeta K) {z | 1 < z.re}) :
     f s ≠ 0 := by
-  obtain ⟨G, hG, hGζ⟩ := exists_differentiableOn_eq_dedekindZeta_sub K
-  -- `ζ_K` continues to `T = G + ρ / (s - 1)`, which is continuous at `2s - 1 ≠ 1`.
-  set T : ℂ → ℂ := fun z ↦ G z + dedekindZeta_residue K / (z - 1)
+  obtain ⟨T, hT, hTζ⟩ := exists_differentiableOn_eq_dedekindZeta K
   have hs₂1 : 2 * s - 1 ≠ 1 := fun h ↦ hs1 (by linear_combination h / 2)
-  have hT : ContinuousAt T (2 * s - 1) := by
-    have hmem : {z : ℂ | 1 - 1 / (Module.finrank ℚ K : ℝ) < z.re} ∈ 𝓝 (2 * s - 1) :=
-      (isOpen_lt continuous_const Complex.continuous_re).mem_nhds
-        (setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K
-          (show 1 ≤ (2 * s - 1).re by norm_num [hs]))
-    exact (hG.differentiableAt hmem).continuousAt.add
-      (continuousAt_const.div (continuousAt_id.sub continuousAt_const) (sub_ne_zero.mpr hs₂1))
-  have hTζ : Set.EqOn T (dedekindZeta K) {z | 1 < z.re} := fun z hz ↦ by
-    simp only [T, hGζ z hz, sub_add_cancel]
+  have hTcont : ContinuousAt T (2 * s - 1) := by
+    have hopen : IsOpen ({z : ℂ | 1 - 1 / (Module.finrank ℚ K : ℝ) < z.re} \ {1}) :=
+      (isOpen_lt continuous_const Complex.continuous_re).sdiff isClosed_singleton
+    exact (hT.differentiableAt (hopen.mem_nhds
+      ⟨setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K
+        (show 1 ≤ (2 * s - 1).re by norm_num [hs]), hs₂1⟩)).continuousAt
   -- `ζ_K` is the `L`-series of the trivial unitary weight, whose pointwise square is itself; so
   -- the `3-4-1` criterion for unitary weights applies, with `T` continuing the square's series.
   have hζ : LSeries (normCoeff K (1 : UnitaryIdealWeight K).toIdealArithmeticFunction) =
       dedekindZeta K := by
     funext z
     rw [UnitaryIdealWeight.toIdealArithmeticFunction_one, dedekindZeta_eq_LSeries_normCoeff_one]
-  exact (1 : UnitaryIdealWeight K).ne_zero_of_eqOn_LSeries hs hf (by rwa [hζ]) hT
+  exact (1 : UnitaryIdealWeight K).ne_zero_of_eqOn_LSeries hs hf (by rwa [hζ]) hTcont
     (by rwa [one_pow, hζ])
 
 /-- **The regularized Dedekind zeta function across `Re s = 1`.** There is a function `H`

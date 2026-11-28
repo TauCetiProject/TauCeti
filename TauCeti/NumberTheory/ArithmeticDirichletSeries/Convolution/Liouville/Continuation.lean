@@ -34,9 +34,9 @@ analytic continuation across `s = 1` alone does not rule out `L 1 = 0`.
   der Tschebyschefschen Primzahlentheorie auf das Problem der Vertheilung der Primideale*,
   J. Reine Angew. Math. 125 (1903), 64–188.
 * H. Davenport, *Multiplicative Number Theory*, Chapter 4.
-* The Dirichlet-character prototype is Mathlib's `zetaMul` positivity and Liouville
-  counterexample in `Mathlib/NumberTheory/LSeries/Nonvanishing.lean` (Michael Stoll,
-  David Loeffler, and Terence Tao).
+* Mathlib's `zetaMul` positivity argument in `Mathlib/NumberTheory/LSeries/Nonvanishing.lean`
+  (Michael Stoll, David Loeffler, and Terence Tao) provides the positivity background for the
+  quadratic case.
 -/
 
 public section

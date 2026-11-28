@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Meromorphic.Order
+public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 public import TauCeti.NumberTheory.LFunctions.UnitaryCancelling
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Cancellation
 import Mathlib.Analysis.Meromorphic.NormalForm
-import TauCeti.Analysis.Complex.HalfPlaneIdentity
+import TauCeti.Analysis.Meromorphic.Identity
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Cancellation.Nonvanishing
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.ThreeFourOne
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Landau
 import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed
+import TauCeti.NumberTheory.LFunctions.DedekindZeta.Nonvanishing
 import TauCeti.NumberTheory.LFunctions.Hecke.EulerCorrection
 import TauCeti.NumberTheory.NumberField.DedekindZeta
 
@@ -41,9 +43,9 @@ meromorphic-order-zero criteria on `Re s ≥ 1`: on `Re s > 1` only series agree
 `Re s = 1` away from `χ ^ 2 = 1 ∧ s = 1`, `3-4-1` / punctured germ comparison with
 `continuedLFunctionOfWeight χ.toUnitaryIdealWeight` (or `dedekindZetaC K` times the trivial-modulus
 Euler correction when `χ = 1`) requires only local differentiability (`MeromorphicAt` for order
-zero); and only at `χ ^ 2 = 1 ∧ s = 1` do they ask for a holomorphic continuation `Z` of `ζ_K` on
-`{z | 1 / 2 < z.re} \ {1}`, holomorphy of `L` on `{z | 1 / 2 < z.re}`, and the sharp boundary
-condition that `(Z σ * L σ).re` does not tend to `+∞` as real `σ → (1 / 2)⁺`.
+zero); and only at `χ ^ 2 = 1 ∧ s = 1` do they ask for holomorphy of `L` on `{z | 1 / 2 < z.re}`
+and the sharp boundary condition that `(dedekindZetaC K σ * L σ).re` does not tend to `+∞` as
+real `σ → (1 / 2)⁺` (supplying `dedekindZetaC K` internally).
 
 ## Main results
 
@@ -124,15 +126,6 @@ theorem continuedLFunctionOfWeight_toUnitaryIdealWeight_ne_zero {χ : RayClassCh
     continuedLFunctionOfWeight χ.toUnitaryIdealWeight s ≠ 0 :=
   (isUnitaryCharacterFamily_toUnitaryIdealWeight 𝔪).continuedLFunctionOfWeight_ne_zero hχ hs hquad
 
-private theorem eventuallyEq_nhdsNE_of_meromorphicAt_of_analyticAt
-    {L F : ℂ → ℂ} {s : ℂ} (hs : s.re = 1) (hLF : EqOn L F {z | 1 < z.re})
-    (hLM : MeromorphicAt L s) (hF : AnalyticAt ℂ F s) :
-    L =ᶠ[𝓝[≠] s] F :=
-  TauCeti.eventuallyEq_of_differentiableAt_nhdsNE_of_eventuallyEq_re_gt
-    (hLM.eventually_analyticAt.mono fun _ h ↦ h.differentiableAt)
-    (hF.meromorphicAt.eventually_analyticAt.mono fun _ h ↦ h.differentiableAt)
-    (eventually_nhdsWithin_of_forall fun _ hz ↦ hLF (hs ▸ hz))
-
 /-- **Shared punctured-germ comparison on `Re s = 1` away from `χ ^ 2 = 1 ∧ s = 1`.** Any
 `L : ℂ → ℂ` that is meromorphic at `s` and agrees with the `L`-series of `χ` on `Re z > 1` shares
 its punctured germ at `s` with an analytic nonvanishing function:
@@ -154,8 +147,7 @@ theorem exists_analyticAt_ne_zero_eventuallyEq_nhdsNE_of_eqOn_LSeries
       hζ.mul (((1 : RayClassCharacter (Modulus.one K)).differentiable_eulerCorrection
         𝔪).analyticAt s)
     have hFne : F s ≠ 0 := mul_ne_zero
-      (ne_zero_of_eqOn_dedekindZeta hs hs1 hζ.differentiableAt
-        fun _ hz ↦ dedekindZetaC_eq_dedekindZeta K hz)
+      (dedekindZetaC_ne_zero_of_one_le_re K hs.ge hs1)
       ((1 : RayClassCharacter (Modulus.one K)).eulerCorrection_ne_zero 𝔪 (by norm_num [hs]))
     have hLF : EqOn L F {z | 1 < z.re} := fun z hz ↦ by
       dsimp only [F]
@@ -165,7 +157,8 @@ theorem exists_analyticAt_ne_zero_eventuallyEq_nhdsNE_of_eqOn_LSeries
         RayClassCharacter.toUnitaryIdealWeight_one,
         UnitaryIdealWeight.toIdealArithmeticFunction_one,
         ← dedekindZeta_eq_LSeries_normCoeff_one, dedekindZetaC_eq_dedekindZeta K hz]
-    exact ⟨F, hF, hFne, eventuallyEq_nhdsNE_of_meromorphicAt_of_analyticAt hs hLF hLM hF⟩
+    exact ⟨F, hF, hFne, hLM.eventuallyEq_nhdsNE_of_eventuallyEq_re_gt hF.meromorphicAt
+      (eventually_nhdsWithin_of_forall fun _ hz ↦ hLF (hs ▸ hz))⟩
   · set F : ℂ → ℂ := continuedLFunctionOfWeight χ.toUnitaryIdealWeight
     have hUopen : IsOpen {z : ℂ | 1 - 1 / (Module.finrank ℚ K : ℝ) < z.re} :=
       isOpen_lt continuous_const Complex.continuous_re
@@ -177,7 +170,8 @@ theorem exists_analyticAt_ne_zero_eventuallyEq_nhdsNE_of_eqOn_LSeries
     have hLF : EqOn L F {z | 1 < z.re} := fun z hz ↦ by
       dsimp only [F]
       rw [hLL hz, continuedLFunctionOfWeight_eq_LSeries χ.toUnitaryIdealWeight hz]
-    exact ⟨F, hF, hFne, eventuallyEq_nhdsNE_of_meromorphicAt_of_analyticAt hs hLF hLM hF⟩
+    exact ⟨F, hF, hFne, hLM.eventuallyEq_nhdsNE_of_eventuallyEq_re_gt hF.meromorphicAt
+      (eventually_nhdsWithin_of_forall fun _ hz ↦ hLF (hs ▸ hz))⟩
 
 /-- **Pointwise nonvanishing criterion on `Re s ≥ 1` for ray class L-functions.**
 For any `L : ℂ → ℂ` agreeing with the `L`-series of `χ` on `{z | 1 < z.re}` and any `s` with
@@ -186,19 +180,16 @@ For any `L : ℂ → ℂ` agreeing with the `L`-series of `χ` on `{z | 1 < z.re
 * on `s.re = 1` away from `χ ^ 2 = 1 ∧ s = 1`, complex differentiability of `L` at `s` suffices
   by `3-4-1` (supplying `continuedLFunctionOfWeight (χ ^ 2).toUnitaryIdealWeight` when
   `χ ^ 2 ≠ 1`);
-* at `χ ^ 2 = 1 ∧ s = 1`, Landau's theorem applies given a continuation `Z` of `dedekindZeta K`
-  holomorphic on `{z | 1 / 2 < z.re} \ {1}`, holomorphy of `L` on `{z | 1 / 2 < z.re}`, and the
-  sharp boundary condition that `(Z σ * L σ).re` does not tend to `+∞` as real `σ → (1 / 2)⁺`.
--/
+* at `χ ^ 2 = 1 ∧ s = 1`, Landau's theorem applies (supplying `dedekindZetaC K` internally) given
+  holomorphy of `L` on `{z | 1 / 2 < z.re}` and the sharp boundary condition that
+  `(dedekindZetaC K σ * L σ).re` does not tend to `+∞` as real `σ → (1 / 2)⁺`. -/
 theorem ne_zero_of_one_le_re {χ : RayClassCharacter 𝔪} {L : ℂ → ℂ}
     (hLL : EqOn L
       (LSeries (normCoeff K χ.toUnitaryIdealWeight.toIdealArithmeticFunction)) {z | 1 < z.re})
     {s : ℂ} (hs : 1 ≤ s.re) (hLs : s.re = 1 → χ ^ 2 ≠ 1 ∨ s ≠ 1 → DifferentiableAt ℂ L s)
-    (hlandau : χ ^ 2 = 1 → s = 1 → ∃ Z : ℂ → ℂ,
-      DifferentiableOn ℂ Z ({z | (1 / 2 : ℝ) < z.re} \ {1}) ∧
-      EqOn Z (dedekindZeta K) {z | 1 < z.re} ∧
+    (hlandau : χ ^ 2 = 1 → s = 1 →
       DifferentiableOn ℂ L {z | (1 / 2 : ℝ) < z.re} ∧
-      ¬ Tendsto (fun σ : ℝ ↦ (Z σ * L σ).re) (𝓝[>] (1 / 2 : ℝ)) atTop) :
+      ¬ Tendsto (fun σ : ℝ ↦ (dedekindZetaC K σ * L σ).re) (𝓝[>] (1 / 2 : ℝ)) atTop) :
     L s ≠ 0 := by
   rcases hs.lt_or_eq with hsgt | hseq
   · rw [hLL hsgt, ← continuedLFunctionOfWeight_eq_LSeries χ.toUnitaryIdealWeight hsgt]
@@ -211,7 +202,11 @@ theorem ne_zero_of_one_le_re {χ : RayClassCharacter 𝔪} {L : ℂ → ℂ}
           val_toUnitaryIdealWeight] using hLL
       exact MultiplicativeIdealWeight.ne_zero_of_one_le_re_of_isTrivialOnGood_sq
         (χ.isTrivialOnGood_sq_iff_sq_eq_one.mpr hsq) hLL' hs
-        (fun hre hs1 ↦ hLs hre (.inr hs1)) (hlandau hsq)
+        (fun hre hs1 ↦ hLs hre (.inr hs1)) fun hs1 ↦ by
+          obtain ⟨hL, hnot⟩ := hlandau hsq hs1
+          exact ⟨dedekindZetaC K,
+            fun _ hz ↦ (analyticAt_dedekindZetaC K hz.2).differentiableWithinAt,
+            fun _ hz ↦ dedekindZetaC_eq_dedekindZeta K hz, hL, hnot⟩
     · exact χ.toUnitaryIdealWeight.ne_zero_of_eqOn_LSeries hseq.symm
         (hLs hseq.symm (.inl hsq)) hLL
         (differentiableAt_continuedLFunctionOfWeight (hasCancellation_toUnitaryIdealWeight hsq)
@@ -222,16 +217,15 @@ theorem ne_zero_of_one_le_re {χ : RayClassCharacter 𝔪} {L : ℂ → ℂ}
 
 /-- **Pointwise meromorphic order zero on `Re s ≥ 1` for ray class L-functions.** Under series
 agreement on `Re z > 1`, `MeromorphicAt L s` away from `χ ^ 2 = 1 ∧ s = 1`, and the Landau
-conditions at `χ ^ 2 = 1 ∧ s = 1`, `meromorphicOrderAt L s = 0`. -/
+conditions (with `dedekindZetaC K` supplied internally) at `χ ^ 2 = 1 ∧ s = 1`,
+`meromorphicOrderAt L s = 0`. -/
 theorem meromorphicOrderAt_eq_zero_of_one_le_re {χ : RayClassCharacter 𝔪} {L : ℂ → ℂ}
     (hLL : EqOn L
       (LSeries (normCoeff K χ.toUnitaryIdealWeight.toIdealArithmeticFunction)) {z | 1 < z.re})
     {s : ℂ} (hs : 1 ≤ s.re) (hLM : s.re = 1 → χ ^ 2 ≠ 1 ∨ s ≠ 1 → MeromorphicAt L s)
-    (hlandau : χ ^ 2 = 1 → s = 1 → ∃ Z : ℂ → ℂ,
-      DifferentiableOn ℂ Z ({z | (1 / 2 : ℝ) < z.re} \ {1}) ∧
-      EqOn Z (dedekindZeta K) {z | 1 < z.re} ∧
+    (hlandau : χ ^ 2 = 1 → s = 1 →
       DifferentiableOn ℂ L {z | (1 / 2 : ℝ) < z.re} ∧
-      ¬ Tendsto (fun σ : ℝ ↦ (Z σ * L σ).re) (𝓝[>] (1 / 2 : ℝ)) atTop) :
+      ¬ Tendsto (fun σ : ℝ ↦ (dedekindZetaC K σ * L σ).re) (𝓝[>] (1 / 2 : ℝ)) atTop) :
     meromorphicOrderAt L s = 0 := by
   rcases hs.lt_or_eq with hsgt | hseq
   · exact (χ.toUnitaryIdealWeight.analyticAt_of_eqOn_LSeries hLL hsgt
@@ -239,7 +233,7 @@ theorem meromorphicOrderAt_eq_zero_of_one_le_re {χ : RayClassCharacter 𝔪} {L
       rw [hLL hsgt, ← continuedLFunctionOfWeight_eq_LSeries χ.toUnitaryIdealWeight hsgt]
       exact continuedLFunctionOfWeight_ne_zero_of_one_lt_re χ.toUnitaryIdealWeight hsgt
   · by_cases hboth : χ ^ 2 = 1 ∧ s = 1
-    · obtain ⟨_, _, _, hL, _⟩ := hlandau hboth.1 hboth.2
+    · obtain ⟨hL, _⟩ := hlandau hboth.1 hboth.2
       have hopen : IsOpen {z : ℂ | (1 / 2 : ℝ) < z.re} :=
         isOpen_lt continuous_const Complex.continuous_re
       have hne : L s ≠ 0 := ne_zero_of_one_le_re hLL hs

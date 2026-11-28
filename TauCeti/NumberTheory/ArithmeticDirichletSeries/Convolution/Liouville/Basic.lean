@@ -54,9 +54,10 @@ For the local continuation counterexample across `s = 1`, see
   J. Reine Angew. Math. 125 (1903), 64–188.
 * H. Davenport, *Multiplicative Number Theory*, Chapter 4.
 * G. Tenenbaum, *Introduction to Analytic and Probabilistic Number Theory*, Chapter II.1.
-* The Dirichlet-character prototype is Mathlib's `zetaMul` positivity and Liouville
-  counterexample in `Mathlib/NumberTheory/LSeries/Nonvanishing.lean` (Michael Stoll,
-  David Loeffler, and Terence Tao).
+* Mathlib's `zetaMul` positivity argument in `Mathlib/NumberTheory/LSeries/Nonvanishing.lean`
+  (Michael Stoll, David Loeffler, and Terence Tao) motivated the comparison; the ideal Liouville
+  counterexample itself is in
+  `TauCeti/NumberTheory/ArithmeticDirichletSeries/Convolution/Liouville/Continuation.lean`.
 -/
 
 public section

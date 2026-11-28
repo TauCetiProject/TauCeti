@@ -21,6 +21,8 @@ every non-square term of `LSeries f.dilateSq s` vanishes, and the square-indexed
 
 ## Main results
 
+* `ArithmeticFunction.LSeries_term_dilateSq_eq_zero_of_notMem_range`:
+  `LSeries.term f.dilateSq s n = 0` when `n` is not a square.
 * `ArithmeticFunction.LSeries_term_dilateSq_sq`:
   `LSeries.term f.dilateSq s (m ^ 2) = LSeries.term f (2 * s) m`.
 * `ArithmeticFunction.LSeries_dilateSq`: `LSeries f.dilateSq s = LSeries f (2 * s)`.
@@ -33,7 +35,7 @@ public section
 namespace ArithmeticFunction
 
 /-- Terms of `LSeries f.dilateSq s` vanish off the range of squaring. -/
-private theorem LSeries_term_dilateSq_eq_zero_of_notMem_range (f : ArithmeticFunction ℂ) (s : ℂ)
+theorem LSeries_term_dilateSq_eq_zero_of_notMem_range (f : ArithmeticFunction ℂ) (s : ℂ)
     {n : ℕ} (hn : n ∉ Set.range (· ^ 2 : ℕ → ℕ)) :
     LSeries.term (f.dilateSq : ℕ → ℂ) s n = 0 := by
   by_cases h0 : n = 0

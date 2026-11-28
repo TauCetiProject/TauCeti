@@ -202,15 +202,6 @@ theorem exists_norm_LFunction_changeLevel_le_rpow {δ ε : ℝ} (hδ : 0 < δ) (
     rw [hi, norm_mul, mul_comm]
     exact mul_le_mul_of_nonneg_right hinv (norm_nonneg _)
 
-/-- When `N = M`, equality `changeLevel hMN ψ = χ` identifies `χ.LFunction` with `ψ.LFunction`. -/
-theorem LFunction_eq_of_level_eq_of_changeLevel_eq {M N : ℕ} [NeZero M] [NeZero N]
-    (hMN : M ∣ N) (hNM : N = M) (ψ : DirichletCharacter ℂ M) {χ : DirichletCharacter ℂ N}
-    (h : changeLevel hMN ψ = χ) : χ.LFunction = ψ.LFunction := by
-  subst hNM
-  rw [changeLevel_self] at h
-  subst h
-  rfl
-
 end DirichletCharacter
 
 namespace TauCeti
