@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.Topology.Algebra.Module.Multilinear.ModuleTopology
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Operations
 public import TauCeti.RepresentationTheory.SymmetricPower
@@ -31,6 +32,9 @@ for joint continuity.
 ## Main results
 
 * `TauCeti.ContinuousRep.res_symmetricPower`: restriction commutes with symmetric powers.
+* `TauCeti.ContinuousRep.isSemisimpleRepresentation_symmetricPower`: the underlying
+  representation of `ρ.symmetricPower d` is semisimple whenever the symmetric power of the
+  underlying representation of `ρ` is.
 -/
 
 public section
@@ -84,5 +88,21 @@ theorem res_symmetricPower {Γ' : Type*} [Monoid Γ'] [TopologicalSpace Γ']
     (ρ : ContinuousRep Γ A M) (φ : Γ' →ₜ* Γ) :
     (ρ.symmetricPower d).res φ = (ρ.res φ).symmetricPower d :=
   ext fun _ _ ↦ by simp
+
+section Semisimple
+
+variable {k : Type} {V : Type*} [Field k] [TopologicalSpace k] [IsTopologicalRing k]
+  [AddCommGroup V] [Module k V] [TopologicalSpace V] [IsModuleTopology k V] [FiniteDimensional k V]
+  [TopologicalSpace (Sym[k]^d V)] [IsModuleTopology k (Sym[k]^d V)]
+
+/-- The underlying representation of `ρ.symmetricPower d` is semisimple whenever
+`Sym^d` of the underlying representation of `ρ` is. -/
+instance isSemisimpleRepresentation_symmetricPower (ρ : ContinuousRep Γ k V)
+    [(ρ.toRepresentation.symmetricPower d).IsSemisimpleRepresentation] :
+    (ρ.symmetricPower d).toRepresentation.IsSemisimpleRepresentation := by
+  rw [toRepresentation_symmetricPower]
+  infer_instance
+
+end Semisimple
 
 end TauCeti.ContinuousRep

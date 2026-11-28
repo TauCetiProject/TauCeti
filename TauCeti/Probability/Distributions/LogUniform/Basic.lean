@@ -390,7 +390,7 @@ theorem integral_rpow_logUniformMeasure (ha : 0 < a) (hab : a < b) (hq : q ≠ 0
     simp only [id_eq, ← exp_mul]
     congr 1
     ring
-  rw [hmgf, mgf_id_uniformMeasure hlog hq]
+  rw [hmgf, mgf_id_uniformMeasure hlog.le hq]
   have hbq : exp (q * log b) = b ^ q := by
     rw [Real.rpow_def_of_pos hb]
     congr 1

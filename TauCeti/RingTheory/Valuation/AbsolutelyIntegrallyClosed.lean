@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.IntegralClosure.AbsolutelyIntegrallyClosed
 
 import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 import TauCeti.FieldTheory.IsAlgClosed.Cardinal
-import TauCeti.RingTheory.Valuation.ValuationRing
+import TauCeti.RingTheory.Valuation.ValuationRing.Basic
 
 /-!
 # Absolutely integrally closed valuation rings
@@ -33,7 +33,7 @@ them within a fixed universe.
 The subring `V₀` is the trace `V ∩ L` of `V` on an algebraically closed subfield `L` of the
 fraction field of `V`. For any subfield `L` of a field containing `V`, this trace is a valuation
 ring whose inclusion into `V` is local (`Subfield.valuationRing_comap` and
-`Subfield.isLocalHom_subtype_comap`, in `TauCeti.RingTheory.Valuation.ValuationRing`). It is
+`Subfield.isLocalHom_subtype_comap`, in `TauCeti.RingTheory.Valuation.ValuationRing.Basic`). It is
 absolutely integrally closed when `L` is algebraically closed and contained in the fraction field
 (`Subfield.isAbsolutelyIntegrallyClosed_comap`, in
 `TauCeti.RingTheory.IntegralClosure.AbsolutelyIntegrallyClosed`); this only uses that `V` is

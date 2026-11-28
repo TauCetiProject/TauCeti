@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.AdditiveFrobeniusKernel.Unipotent
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Unipotent
 public import TauCeti.Algebra.AlgebraicGroup.RootsOfUnity.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Comodule
@@ -22,6 +23,9 @@ Examples and non-examples of unipotent affine groups under the comodule definiti
   characteristic `p` this holds although `μₚ` has only the trivial point over an algebraic
   closure: the comodule definition sees the nonreduced structure that the geometric-point
   criterion misses. The multiplicative group `𝔾ₘ = μ₀` is not unipotent either.
+* In characteristic `p`, the Frobenius kernel `αₚ` is unipotent
+  (`TauCeti.AlphaP.unipotentCommHopfAlgProperty_coordinateRing`) and not smooth, its coordinate
+  ring `k[x] / (xᵖ)` being nonreduced (`TauCeti.AlphaP.coordinateRing_not_isReduced`).
 -/
 
 public section
@@ -60,5 +64,11 @@ theorem not_unipotent_multiplicativeGroup :
 /-- `𝔾ₐ` is unipotent. -/
 example : unipotentCommHopfAlgProperty k (AdditiveGroup.coordinateHopfAlgebra k) :=
   AdditiveGroup.unipotentCommHopfAlgProperty_coordinateHopfAlgebra k
+
+/-- In characteristic `p`, `αₚ` is unipotent, and its coordinate ring is not reduced. -/
+example (p : ℕ) [Fact p.Prime] [CharP k p] :
+    unipotentCommHopfAlgProperty k (CommHopfAlgCat.of k (AlphaP.CoordinateRing (R := k) p)) ∧
+      ¬ IsReduced (AlphaP.CoordinateRing (R := k) p) :=
+  ⟨AlphaP.unipotentCommHopfAlgProperty_coordinateRing p k, AlphaP.coordinateRing_not_isReduced p⟩
 
 end TauCeti.Examples.UnipotentComodule

@@ -733,6 +733,14 @@ theorem cubicalChainOfCube_def {P : TopPair.{u}} {m : ℕ} (c : SingularCube P.f
           (NormalizedCubicalChain.ofCube P.fst k c)) :=
   (rfl)
 
+/-- The projection to the relative chains sends a cube of the ambient space to its relative
+chain. -/
+theorem cokernel_π_f_ofCube {P : TopPair.{u}} {m : ℕ} (c : SingularCube P.fst m) :
+    ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f m).hom
+        (NormalizedCubicalChain.ofCube P.fst k c) =
+      cubicalChainOfCube k c := by
+  rw [cubicalChainOfCube_def, normalizedCubicalChainComplexXEquiv_symm_apply]
+
 /-- A degenerate cube vanishes as a relative chain. -/
 @[simp]
 theorem cubicalChainOfCube_eq_zero {P : TopPair.{u}} {m : ℕ} {c : SingularCube P.fst m}
@@ -862,8 +870,7 @@ theorem exists_isCubicalRepresentative_ofCube {P : TopPair.{u}} {n : ℕ} (c : S
   | zero => exact exists_isCubicalRepresentative_of_dim_zero _
   | succ m =>
     exact ⟨_, (isCubicalRepresentative_iff _ _).2 ⟨cubicalCycleOfCube k c hc, by
-      rw [iCycles_cubicalCycleOfCube, cubicalChainOfCube_def,
-        normalizedCubicalChainComplexXEquiv_symm_apply], rfl⟩⟩
+      rw [iCycles_cubicalCycleOfCube, cokernel_π_f_ofCube], rfl⟩⟩
 
 /-! ### The boundary of a relative cube -/
 

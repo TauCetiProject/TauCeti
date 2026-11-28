@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Analysis.Analytic.Constructions
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 import Mathlib.Analysis.Analytic.ChangeOrigin
 import Mathlib.Analysis.Analytic.Polynomial
 import Mathlib.RingTheory.Algebraic.Integral

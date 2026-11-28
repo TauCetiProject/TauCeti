@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
-import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Data.Finset.Basic
+public import TauCeti.Analysis.Normed.Module.Alternating.ConjCoeff
+public import TauCeti.Analysis.Normed.Module.Alternating.Complex
+import Mathlib.Analysis.Calculus.FDeriv.CompCLM
+import TauCeti.Data.Finset.Sort
 
 /-!
 # The operator `bar∂` on `(0,q)`-forms in coordinates
@@ -51,6 +54,25 @@ public section
 open Complex Filter Finset Topology
 
 namespace TauCeti
+
+/-- Alternation of the conjugate-linear derivative of an alternating-map field is the signed
+sum of the conjugate Wirtinger derivatives of its evaluations on the omitted tuples. -/
+theorem alternatizeUncurryFin_complexAntilinearPartL_fderiv_apply
+    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [NormedAddCommGroup F] [NormedSpace ℂ F] {k : ℕ}
+    {Θ : E → E [⋀^Fin k]→L[ℝ] F} {z : E} (hd : DifferentiableAt ℝ Θ z)
+    (v : Fin (k + 1) → E) :
+    ContinuousAlternatingMap.alternatizeUncurryFin
+        (ContinuousLinearMap.complexAntilinearPartL (fderiv ℝ Θ z)) v =
+      ∑ i : Fin (k + 1), (-1 : ℂ) ^ (i : ℕ) •
+        conjWirtingerDeriv (fun y ↦ Θ y (i.removeNth v)) z (v i) := by
+  rw [ContinuousAlternatingMap.alternatizeUncurryFin_apply]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [conjWirtingerDeriv_apply_eq_complexAntilinearPartL]
+  simp only [ContinuousLinearMap.complexAntilinearPartL_apply_apply,
+    fderiv_continuousAlternatingMap_apply_const_apply hd,
+    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.add_apply]
+  norm_cast
 
 variable {ι : Type*} [LinearOrder ι] [Fintype ι] {F : Type*} [NormedAddCommGroup F]
   [NormedSpace ℂ F]
@@ -106,6 +128,35 @@ theorem delBarCoeff_congr {u w : Finset ι → (ι → ℂ) → F} {I : Finset �
     (h : ∀ j ∈ I, u (I.erase j) =ᶠ[𝓝 z] w (I.erase j)) :
     delBarCoeff u I z = delBarCoeff w I z :=
   Finset.sum_congr rfl fun j hj ↦ by rw [(h j hj).conjWirtingerDeriv_eq]
+
+/-- The coordinate differential of coefficients agreeing near a point with evaluations of a
+differentiable alternating-map field is the alternation of its conjugate-linear derivative. -/
+theorem delBarCoeff_eq_alternatizeUncurryFin {k : ℕ}
+    {Θ : (ι → ℂ) → (ι → ℂ) [⋀^Fin k]→L[ℝ] F} {z : ι → ℂ}
+    (hd : DifferentiableAt ℝ Θ z) {a : Finset ι → (ι → ℂ) → F}
+    {I : Finset ι} (hI : #I = k + 1)
+    (ha : ∀ J, #J = k → a J =ᶠ[𝓝 z] fun y ↦ (Θ y).conjCoeff J) :
+    delBarCoeff a I z = ContinuousAlternatingMap.alternatizeUncurryFin
+      (ContinuousLinearMap.complexAntilinearPartL (fderiv ℝ Θ z))
+        (fun i ↦ Pi.single (I.orderEmbOfFin hI i) 1) := by
+  let e := I.orderEmbOfFin hI
+  rw [alternatizeUncurryFin_complexAntilinearPartL_fderiv_apply hd, delBarCoeff_def]
+  conv_lhs => rw [← Finset.sum_coe_sort I, ← (I.orderIsoOfFin hI).toEquiv.sum_comp]
+  refine Finset.sum_congr rfl fun b _ ↦ ?_
+  have hcard : #(I.erase (e b)) = k := by
+    rw [card_erase_of_mem (I.orderEmbOfFin_mem hI b), hI, Nat.add_sub_cancel]
+  have herase := removeNth_orderEmbOfFin_symm_eq (e b) I (I.orderEmbOfFin_mem hI b) hI hcard
+  have heb : (⟨e b, I.orderEmbOfFin_mem hI b⟩ : I) = I.orderIsoOfFin hI b :=
+    Subtype.ext (coe_orderIsoOfFin_apply ..).symm
+  rw [heb, OrderIso.symm_apply_apply] at herase
+  have hcoeff : a (I.erase (e b)) =ᶠ[𝓝 z]
+      fun y ↦ Θ y (b.removeNth fun c ↦ (Pi.single (e c) 1 : ι → ℂ)) := by
+    filter_upwards [ha _ hcard] with y hy
+    rw [hy, ContinuousAlternatingMap.conjCoeff_of_card_eq _ hcard, ← herase]
+    exact congrArg _ (funext fun c ↦
+      (Fin.removeNth_apply b (fun c ↦ (Pi.single (e c) 1 : ι → ℂ)) c).symm)
+  rw [RelIso.coe_fn_toEquiv, coe_orderIsoOfFin_apply, card_filter_lt_orderEmbOfFin,
+    hcoeff.conjWirtingerDeriv_eq]
 
 /-- `bar∂` is additive on forms whose coefficients are real-differentiable. -/
 theorem delBarCoeff_add {u w : Finset ι → (ι → ℂ) → F} {I : Finset ι} {z : ι → ℂ}

@@ -502,13 +502,11 @@ there is a unique real `σ` with `‖χ(z)‖ = |z|_ℂ ^ σ`, for the normalize
 `|z|_ℂ = z conj(z) = normSq z`. -/
 theorem existsUnique_norm_coe_complexUnits_eq_rpow (χ : ℂˣ →ₜ* ℂˣ) :
     ∃! σ : ℝ, ∀ z : ℂˣ, ‖(χ z : ℂ)‖ = normSq (z : ℂ) ^ σ := by
-  have hnormSq (z : ℂ) (σ : ℝ) : normSq z ^ σ = ‖z‖ ^ (2 * σ) := by
-    rw [normSq_eq_norm_sq, Real.rpow_mul (norm_nonneg z), Real.rpow_two]
   obtain ⟨s, k, rfl⟩ := exists_eq_complexUnitsCharacter χ
   refine ⟨s.re / 2, fun z ↦ ?_, fun σ hσ ↦ ?_⟩
-  · rw [norm_coe_complexUnitsCharacter_apply, hnormSq, mul_div_cancel₀ _ two_ne_zero]
+  · rw [norm_coe_complexUnitsCharacter_apply, normSq_rpow, mul_div_cancel₀ _ two_ne_zero]
   · have h := (hσ (Units.mk0 2 two_ne_zero)).symm
-    rw [norm_coe_complexUnitsCharacter_apply, hnormSq, Units.val_mk0, norm_ofNat] at h
+    rw [norm_coe_complexUnitsCharacter_apply, normSq_rpow, Units.val_mk0, norm_ofNat] at h
     linarith [(Real.rpow_right_inj two_pos (by norm_num)).1 h]
 
 /-- In Kudla's normal form, `realUnitsCharacter (s - a) a` is `x ↦ x ^ (-a) |x| ^ s` with

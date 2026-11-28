@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.PontryaginDual
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Polish
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # Topology of Pontryagin duals
@@ -23,6 +24,10 @@ any point of the unit circle. This file packages that correspondence as an isomo
 topological groups between the unit circle and the Pontryagin dual of `ℤ`. It lets statements
 about the dual of `ℤ`, such as Fourier–Stieltjes transforms of measures on it, be read on the
 concrete unit circle, where a character becomes the monomial `z ↦ zⁿ`.
+
+For a subgroup of a topological group, `Subgroup.pontryaginAnnihilator` is the kernel
+of restriction to that subgroup via Mathlib's `PontryaginDual.map`. The lemma
+`Subgroup.mem_pontryaginAnnihilator` characterizes membership by evaluation.
 
 ## Main definitions
 
@@ -86,3 +91,31 @@ theorem circleEquivPontryaginDualInt_symm_apply (χ : PontryaginDual (Multiplica
   (rfl)
 
 end TauCeti
+
+namespace Subgroup
+
+variable {G : Type*} [Group G] [TopologicalSpace G]
+
+/-- The characters of the ambient group that are trivial on a subgroup. -/
+def pontryaginAnnihilator (H : Subgroup G) : Subgroup (PontryaginDual G) :=
+  (PontryaginDual.map (TauCeti.ContinuousMonoidHom.subgroupSubtype H)).ker
+
+/-- The annihilator is the kernel of restriction to the subgroup. -/
+theorem pontryaginAnnihilator_eq_ker (H : Subgroup G) :
+    H.pontryaginAnnihilator =
+      (PontryaginDual.map (TauCeti.ContinuousMonoidHom.subgroupSubtype H)).ker := (rfl)
+
+/-- Membership in the annihilator means that every element of the subgroup has value one. -/
+@[simp]
+theorem mem_pontryaginAnnihilator {H : Subgroup G} {χ : PontryaginDual G} :
+    χ ∈ H.pontryaginAnnihilator ↔ ∀ x ∈ H, χ x = 1 := by
+  rw [pontryaginAnnihilator_eq_ker, MonoidHom.mem_ker]
+  constructor
+  · intro h x hx
+    simpa using DFunLike.congr_fun h (⟨x, hx⟩ : H)
+  · intro h
+    apply PontryaginDual.ext
+    intro x
+    simpa using h x x.property
+
+end Subgroup

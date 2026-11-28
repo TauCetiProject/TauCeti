@@ -166,6 +166,13 @@ theorem map_comp (f : M → M') (g : M' → M'')
       (M := M) (M' := M') (M'' := M'') f g hf hg k]
   rfl
 
+/-- Equal smooth maps induce the same map on de Rham cohomology, whichever proofs of smoothness
+accompany them. -/
+theorem map_congr {f g : M → M'} (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I I' ∞ g) (h : f = g)
+    (k : ℕ) : map f hf k = map g hg k := by
+  subst h
+  rfl
+
 /-- A constant map induces zero on de Rham cohomology in positive degrees: its derivative
 vanishes, so it pulls every form of positive degree back to zero. -/
 theorem map_const_eq_zero {k : ℕ} (hk : k ≠ 0) (c : M') :

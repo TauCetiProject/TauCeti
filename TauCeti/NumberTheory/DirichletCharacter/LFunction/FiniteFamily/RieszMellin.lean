@@ -6,18 +6,19 @@ Authors: Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finsupp.Order
-public import TauCeti.NumberTheory.DirichletCharacter.LFunction.RieszMellin
-public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Bundle
+public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Riesz
 import TauCeti.Analysis.Contour.Residue.Germ
 import TauCeti.Analysis.Contour.Residue.Noncancellation
+import TauCeti.Analysis.MellinTransform.WeightedReal
 import TauCeti.Analysis.Meromorphic.Order
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 
 /-!
-# Poles of weighted Dirichlet Riesz remainder Mellin expressions
+# Transforms and poles of weighted Dirichlet Riesz remainders
 
 Take the weighted sum of the Mellin expressions for primitive Dirichlet characters, pairing
-each character with its inverse to match the real part of its Riesz remainder. For nonnegative
+each character with its inverse to match the real part of its Riesz remainder. This gives the
+Laplace transform of the real weighted remainder in logarithmic coordinates. For nonnegative
 weights, the residues away from `0` do not cancel: they share a common Riesz factor.
 Thus at a point other than `0` there is a pole exactly when a positively weighted member's
 `L`-function vanishes there or at the conjugate point, and poles on the positive real axis
@@ -77,6 +78,19 @@ of the expressions for it and its inverse. -/
   rw [Pi.smul_apply, Complex.real_smul, dirichletFamilyRieszRemainderMellin_apply,
     dirichletFamilyRieszRemainderMellin_apply, Finsupp.sum_smul_index (by simp), Finsupp.mul_sum]
   exact Finset.sum_congr rfl fun χ _ ↦ by simp only [ofReal_mul, mul_div_assoc, mul_assoc]
+
+/-- The real-weighted sum of real remainders, in logarithmic coordinates, has the
+inverse-averaged Laplace transform even for signed weights. -/
+theorem hasLaplace_dirichletFamilyRieszRemainder_comp_exp
+    (w : PrimitiveDirichletCharacter →₀ ℝ) {s : ℂ} (hs : 1 < s.re) :
+    HasLaplace (fun u ↦ ((w.sum fun χ c ↦ c * (χ.rieszRemainder (Real.exp u)).re : ℝ) : ℂ)) s
+      (dirichletFamilyRieszRemainderMellin w s) := by
+  have h := hasLaplace_comp_exp_finsupp_sum_re w (j := Inv.inv) (s := s)
+    (fun χ _ y _ ↦ χ.rieszRemainder_inv y)
+    (fun χ _ ↦ by simpa only [mul_comm, neg_add'] using χ.integrableOn_rieszRemainder_mul_cpow hs)
+    (fun χ _ ↦ by simpa only [mul_comm, neg_add'] using χ.integral_rieszRemainder_mul_cpow hs)
+  rw [dirichletFamilyRieszRemainderMellin_apply]
+  simpa only [mul_div_assoc, div_mul_eq_mul_div] using h
 
 private theorem meromorphic_rieszPair (χ : PrimitiveDirichletCharacter) :
     Meromorphic (rieszRemainderMellin χ.character.LFunction +

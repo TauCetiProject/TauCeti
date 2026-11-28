@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
-public import TauCeti.AlgebraicGeometry.AdicSpace.Affinoid
+public import TauCeti.AlgebraicGeometry.AdicSpace.Affinoid.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.TensorProduct.Sheafy
 public import TauCeti.RingTheory.Huber.TensorProduct.Pushout
 

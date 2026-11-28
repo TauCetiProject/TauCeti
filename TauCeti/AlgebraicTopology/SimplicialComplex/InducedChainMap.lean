@@ -293,6 +293,26 @@ theorem map_single_of_strictMonoOn (c : RealizationCell K n)
   rw [map_single, ← RealizationCell.vertexEmbedding_map c f hc, tupleChain_vertexEmbedding,
     smul_single, smul_eq_mul, mul_one]
 
+/-- A simplicial map not injective on a cell sends every multiple of that cell to `0`. -/
+theorem map_single_eq_zero_of_not_injOn (c : RealizationCell K n)
+    (hc : ¬Set.InjOn f (↑c.val.val : Set ι)) (r : R) :
+    map R f n (single c r) = 0 := by
+  have hinj : ¬Function.Injective (f ∘ c.vertexEmbedding) := fun h ↦ hc fun x hx y hy hxy ↦ by
+    rw [Finset.mem_coe, ← c.image_vertexEmbedding] at hx hy
+    obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hx
+    obtain ⟨j, -, rfl⟩ := Finset.mem_image.mp hy
+    exact congrArg _ (h hxy)
+  rw [map_single, tupleChain_eq_zero_of_not_injective hinj, smul_zero]
+
+/-- A simplicial map injective on a cell sends a multiple of that cell to a multiple of its image
+cell. -/
+theorem map_single_eq_single_map_of_injOn (c : RealizationCell K n)
+    (hc : Set.InjOn f (↑c.val.val : Set ι)) (r : R) :
+    map R f n (single c r) = single (c.map f hc) (map R f n (single c r) (c.map f hc)) :=
+  eq_single_of_forall_mem_support_subset fun d hd ↦ by
+    rw [val_eq_image_of_mem_support_map_single f hd, RealizationCell.map_face,
+      TauCeti.PreAbstractSimplicialComplex.SimplicialMap.coe_faceOrderHom_apply]
+
 /-- The induced map on `0`-chains preserves the augmentation, the sum of the coefficients. -/
 theorem augmentation_comp_map_zero :
     linearCombination R (fun _ : RealizationCell L 0 ↦ (1 : R)) ∘ₗ map R f 0 =
