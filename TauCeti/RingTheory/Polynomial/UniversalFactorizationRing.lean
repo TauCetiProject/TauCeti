@@ -84,7 +84,8 @@ theorem coeff_freePoly_of_le {k : ℕ} (hk : k ≤ n) :
 theorem coeff_freePoly_of_lt {k : ℕ} (hk : n < k) : (freePoly R n).coeff k = 0 := by
   rw [coeff_freePoly, dite_eq_right hk.not_ge]
 
-/-- Over a nontrivial ring, `Polynomial.freePoly R n` has `natDegree` equal to `n`. -/
+/-- Over a nontrivial commutative semiring, `Polynomial.freePoly R n` has `natDegree` equal to
+`n`. -/
 @[simp]
 theorem natDegree_freePoly [Nontrivial R] : (freePoly R n).natDegree = n := by
   refine le_antisymm ?_ ?_
@@ -94,7 +95,7 @@ theorem natDegree_freePoly [Nontrivial R] : (freePoly R n).natDegree = n := by
     rw [coeff_freePoly, dite_eq_left le_rfl]
     exact MvPolynomial.X_ne_zero _
 
-/-- Over a nontrivial ring, `Polynomial.freePoly R n` has degree `n`. -/
+/-- Over a nontrivial commutative semiring, `Polynomial.freePoly R n` has degree `n`. -/
 @[simp]
 theorem degree_freePoly [Nontrivial R] : (freePoly R n).degree = n := by
   rw [degree_eq_natDegree (fun h ↦ by
@@ -102,7 +103,7 @@ theorem degree_freePoly [Nontrivial R] : (freePoly R n).degree = n := by
     rw [coeff_freePoly, dite_eq_left le_rfl, coeff_zero] at hc
     exact MvPolynomial.X_ne_zero _ hc), natDegree_freePoly]
 
-/-- Over a nontrivial ring, the leading coefficient of `Polynomial.freePoly R n` is
+/-- Over a nontrivial commutative semiring, the leading coefficient of `Polynomial.freePoly R n` is
 `MvPolynomial.X (Fin.last n)`. -/
 @[simp]
 theorem leadingCoeff_freePoly [Nontrivial R] :
