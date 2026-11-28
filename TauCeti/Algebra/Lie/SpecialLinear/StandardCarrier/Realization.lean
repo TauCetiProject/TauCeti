@@ -29,8 +29,7 @@ including nonreduced rings and rings of positive characteristic.
 the positive and negative simple root subgroups of the datum are the numbered raising and lowering
 subgroups of the carrier with the same number and the same additive parameter, the torus of the
 datum is the weight torus of the carrier with the same parameters, and the functorial maps along
-ring homomorphisms and the `p ^ k`-power Frobenius maps of the two sides agree. Every root subgroup
-of the datum, at every root of `A_r`, is injective over every commutative ring.
+ring homomorphisms and the `p ^ k`-power Frobenius maps of the two sides agree.
 
 This is the type-`A_r` input to Chevalley's comparison theorem for the standard special linear
 model: the explicit carrier is the group scheme of a full-weight Chevalley datum of type `A_r`,
@@ -55,8 +54,6 @@ with matching pinning, torus and Frobenius.
 * `TauCeti.SlStd.chevalleyDatumPointsEquiv_map` and
   `TauCeti.SlStd.chevalleyDatumPointsEquiv_frobenius`: naturality in the value ring and
   compatibility with Frobenius.
-* `TauCeti.SlStd.chevalleyDatum_rootSubgroupPoints_injective`: injectivity of every root
-  subgroup of the datum.
 
 ## References
 
@@ -269,22 +266,6 @@ theorem chevalleyDatumPointsEquiv_symm_frobenius (p k : ℕ) (A : Type v) [CommR
     (chevalleyDatumPointsEquiv r ht A).symm (frobenius r p k A g) =
       (chevalleyDatum r ht).frobenius p k A ((chevalleyDatumPointsEquiv r ht A).symm g) := by
   rw [MulEquiv.symm_apply_eq, chevalleyDatumPointsEquiv_frobenius, MulEquiv.apply_symm_apply]
-
-/-! ## Injectivity of every root subgroup -/
-
-/-- **Every root subgroup of the standard type-`A_r` datum is injective**, at every root of
-`A_r` and over every commutative ring. -/
-theorem chevalleyDatum_rootSubgroupPoints_injective (γ : Fin (DynkinType.A r).numRoots)
-    (A : Type v) [CommRing A] :
-    Function.Injective ((chevalleyDatum r ht).rootSubgroupPoints γ A) := by
-  refine (chevalleyDatum r ht).rootSubgroupPoints_injective_of_simple A (fun i => ?_) γ
-  intro u v huv
-  have h := congrArg (fun g => (chevalleyDatumPointsEquiv r ht A g :
-    Matrix.GeneralLinearGroup (Fin (r + 1)) A)) huv
-  simp only [chevalleyDatumPointsEquiv_rootSubgroupPoints_simpleIndex,
-    coe_rootSubgroupPoints_eq_transvectionUnit] at h
-  exact Multiplicative.toAdd.injective
-    (transvectionUnit_injective (rootTarget_ne_rootSource r (.inl i)) h)
 
 end
 

@@ -32,6 +32,8 @@ acts on a single morphism as the composite of the induced functors.
 * `Path.Homotopic.Quotient.mk_eq_eqToHom_of_forall_apply_eq`: a path that stays at its start has
   the class of an identity, read along the equality of its endpoints.
 * `FundamentalGroupoid.map_comp_map`: the morphism-level form of `FundamentalGroupoid.map_comp`.
+* `FundamentalGroupoid.fromPath_naturality_eqToHom`: naturality of `fromPath` up to `eqToHom`
+  along a continuous map carrying one path to another.
 * `FundamentalGroupoidFunctor.homotopicMapsNatIso_app`: the component at `x` of the natural
   isomorphism induced by a homotopy is the class of its trace at `x`.
 -/
@@ -96,6 +98,19 @@ theorem map_comp_map (g : C(Y, Z)) (f : C(X, Y)) {a b : FundamentalGroupoid X} (
     (map (g.comp f)).map p = (map g).map ((map f).map p) := by
   simp only [map_map]
   exact Path.Homotopic.Quotient.map_comp
+
+/-- Naturality of `FundamentalGroupoid.fromPath` up to `eqToHom` when a continuous map `φ` pushes
+a path `p` forward to `q` up to `Path.cast`. -/
+lemma fromPath_naturality_eqToHom {A : Type*} [TopologicalSpace A] {B : Type*}
+    [TopologicalSpace B] {φ : C(A, B)} {a₁ a₂ : A} {b₁ b₂ : B} (h₁ : φ a₁ = b₁)
+    (h₂ : φ a₂ = b₂) (p : Path a₁ a₂) (q : Path b₁ b₂)
+    (hpq : q = (p.map φ.continuous).cast h₁.symm h₂.symm) :
+    fromPath (.mk q) ≫ eqToHom (_root_.FundamentalGroupoid.ext h₂.symm) =
+      eqToHom (_root_.FundamentalGroupoid.ext h₁.symm) ≫ (map φ).map (fromPath (.mk p)) := by
+  rw [hpq, Path.Homotopic.Quotient.mk_cast]
+  exact (comp_eqToHom_iff _ _ _).2 <|
+    ((Category.assoc _ _ _).trans
+      (conj_eqToHom (p := .mk (p.map φ.continuous)) h₁.symm h₂.symm)).symm
 
 end FundamentalGroupoid
 

@@ -11,6 +11,8 @@ public import TauCeti.LinearAlgebra.Matrix.SimilarityClass
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.Charpoly.Degree
+import TauCeti.LinearAlgebra.Charpoly.Quotient
 
 /-!
 # The ring of class functions on all square matrices over a finite field
@@ -46,8 +48,13 @@ subgroups is not proved here.
   annihilators exchange the roles of `W` and `V ⧸ W`.
 * `TauCeti.HallAlgebra.isUnit_constOne`: `𝟙` is invertible, since `(1 - 𝟙)^m` vanishes on the
   classes of size less than `m`, so the geometric series in `1 - 𝟙` is finite on each class.
+* `Module.End.sum_moebius_ofEnd_invtRestrict`: `μ ∗ 𝟙 = 1` at the class of `g` on a
+  `g`-invariant subspace `W`, as `∑_{U ≤ W} μ(g|_U) = [W = 0]` over the `g`-invariant `U`.
 * `TauCeti.HallAlgebra.greenCuspidal_ofEnd`: `C_η` at the class of `g` is the sum of `β_η · μ` at
   the classes of `g` on the `g`-invariant subspaces.
+* `TauCeti.HallAlgebra.eigenvalueSum_ofEnd_eq_add`,
+  `TauCeti.HallAlgebra.eigenvalueSum_ofEnd_prodMap`: `β_η` is additive along an invariant subspace
+  and its quotient, and on block diagonal maps.
 
 ## References
 
@@ -453,6 +460,29 @@ theorem constOne_mul_moebius : (constOne : HallAlgebra k) * moebius = 1 :=
 theorem moebius_mul_constOne : (moebius : HallAlgebra k) * constOne = 1 :=
   Ring.inverse_mul_cancel _ isUnit_constOne
 
+open scoped Classical in
+/-- For a `g`-invariant subspace `W`, the values of `μ` at the restrictions of `g` to the
+`g`-invariant subspaces `U ≤ W` sum to `1` if `W = 0` and to `0` otherwise. This is `μ ∗ 𝟙 = 1`
+at the class of `g` on `W`. -/
+theorem _root_.Module.End.sum_moebius_ofEnd_invtRestrict (g : Module.End k V)
+    [Fintype g.invtSubmodule] (W : g.invtSubmodule) :
+    ∑ U ∈ Finset.univ.filter (fun U : g.invtSubmodule ↦ U ≤ W),
+      moebius (ofEnd (g.invtRestrict U.prop)) = if W = ⊥ then 1 else 0 := by
+  have : Fintype (g.invtRestrict W.prop).invtSubmodule := Fintype.ofFinite _
+  have h := congrArg (· (ofEnd (g.invtRestrict W.prop))) (moebius_mul_constOne (k := k))
+  simp only [mul_ofEnd_eq_sum, constOne_apply, mul_one, one_apply, dim_ofEnd,
+    Submodule.finrank_eq_zero] at h
+  -- The invariant subspaces of `g` on `W` are the invariant subspaces of `g` inside `W`.
+  rw [← Finset.filter_true_of_mem (s := Finset.univ)
+      (p := fun U' ↦ LinearMap.ker W.val.subtype ≤ U'.val) (by simp),
+    LinearMap.sum_invtSubmodule_comap W.val.subtype (g.coe_invtRestrict_apply W.prop)] at h
+  simp only [Submodule.range_subtype] at h
+  have hW : W = ⊥ ↔ (W : Submodule k V) = ⊥ := Module.End.invtSubmodule.mk_eq_bot_iff g W.prop
+  simp only [hW, ← h]
+  refine Finset.sum_congr rfl fun U hU ↦ ?_
+  rw [ofEnd_invtRestrict_comap _ (g.coe_invtRestrict_apply W.prop) W.val.injective_subtype
+    U.prop (by simpa using (Finset.mem_filter.1 hU).2)]
+
 end Ring
 
 /-! ### Green's cuspidal functions -/
@@ -474,6 +504,39 @@ theorem eigenvalueSum_ofEnd (η : K → ℂ) {V : Type*} [AddCommGroup V] [Modul
     [Module.Finite k V] (g : Module.End k V) :
     eigenvalueSum K η (ofEnd g) = ((g.charpoly.aroots K).map η).sum := by
   rw [eigenvalueSum, charpoly_ofEnd]
+
+variable {V V' W : Type*} [AddCommGroup V] [Module k V] [Module.Finite k V] [AddCommGroup V']
+  [Module k V'] [Module.Finite k V'] [AddCommGroup W] [Module k W] [Module.Finite k W]
+
+/-- If the characteristic polynomial of `g` is the product of those of `a` and `b`, the eigenvalue
+sum at `g` is the sum of those at `a` and at `b`. -/
+theorem eigenvalueSum_ofEnd_eq_add_of_charpoly_eq_mul (η : K → ℂ) {g : Module.End k V}
+    {a : Module.End k V'} {b : Module.End k W} (h : g.charpoly = a.charpoly * b.charpoly) :
+    eigenvalueSum K η (ofEnd g) = eigenvalueSum K η (ofEnd a) + eigenvalueSum K η (ofEnd b) := by
+  rw [eigenvalueSum_ofEnd, eigenvalueSum_ofEnd, eigenvalueSum_ofEnd, h,
+    Polynomial.aroots_mul (mul_ne_zero a.charpoly_monic.ne_zero b.charpoly_monic.ne_zero),
+    Multiset.map_add, Multiset.sum_add]
+
+/-- The eigenvalue sum is additive along an invariant subspace and its quotient. -/
+theorem eigenvalueSum_ofEnd_eq_add (η : K → ℂ) {g : Module.End k V} {U : Submodule k V}
+    (hU : U ∈ g.invtSubmodule) :
+    eigenvalueSum K η (ofEnd g) = eigenvalueSum K η (ofEnd (g.invtRestrict hU)) +
+      eigenvalueSum K η (ofEnd (g.invtQuot hU)) :=
+  eigenvalueSum_ofEnd_eq_add_of_charpoly_eq_mul K η
+    (Module.End.charpoly_invtRestrict_mul_charpoly_invtQuot hU).symm
+
+/-- The eigenvalue sum of a block diagonal map is the sum of those of the blocks. -/
+theorem eigenvalueSum_ofEnd_prodMap (η : K → ℂ) (a : Module.End k V) (b : Module.End k W) :
+    eigenvalueSum K η (ofEnd (a.prodMap b)) =
+      eigenvalueSum K η (ofEnd a) + eigenvalueSum K η (ofEnd b) :=
+  eigenvalueSum_ofEnd_eq_add_of_charpoly_eq_mul K η (LinearMap.charpoly_prodMap a b)
+
+/-- The eigenvalue sum vanishes on the class of size `0`. -/
+theorem eigenvalueSum_eq_zero_of_dim_eq_zero (η : K → ℂ) {o : SimilarityClass k} (h : o.dim = 0) :
+    eigenvalueSum K η o = 0 := by
+  have : Subsingleton (Fin o.dim → k) := by rw [h]; infer_instance
+  rw [← ofEnd_rep o, eigenvalueSum_ofEnd, LinearMap.charpoly_eq_one_of_subsingleton]
+  simp
 
 /-- *Green's cuspidal function* `C_η = (β_η · μ) ∗ 𝟙`, where `β_η · μ` is the pointwise product of
 the eigenvalue sum with the inverse `μ` of `𝟙`, and `∗` the induction product. -/

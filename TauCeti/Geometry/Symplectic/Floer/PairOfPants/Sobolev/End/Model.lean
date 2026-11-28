@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.Operator
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.Transfer
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Asymptotic
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.UnitaryFrame
+import TauCeti.Topology.Circle.AddCircle
+import TauCeti.Topology.Circle.Metric
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
@@ -55,7 +57,9 @@ to a parametrix of `D_u` spliced from inverses of its end models.
   `TauCeti.Floer.positiveEndChartScale_add_fst`), so the unit tangent
   `TauCeti.Floer.endUnitTangent` of the chart and the rotation depend only on `t`
   (`TauCeti.Floer.endModelRotation_eq_of_snd_eq`), and so does the end model
-  (`TauCeti.Floer.endModelCoeff_eq_of_snd_eq`).
+  (`TauCeti.Floer.endModelCoeff_eq_of_snd_eq`). For loops of period one, both are therefore
+  uniformly continuous in `exp (2π i t)`
+  (`TauCeti.Floer.exists_pos_forall_norm_endModelCoeff_sub_lt`).
 * **Invertibility.** Since `a² + b² = r²` and `J_t² = -1`, the rotation is invertible with inverse
   `r⁻¹ (a - b J_t)` (`TauCeti.Floer.isInvertible_endModelRotation`, from
   `TauCeti.AlmostComplexStructure.isInvertible_smul_id_add_smul`), and for continuous loops it
@@ -137,6 +141,72 @@ theorem abs_snd_endUnitTangent_le_one (q : Puncture) (ζ : ℝ × ℝ) :
     |(endUnitTangent q ζ).2| ≤ 1 :=
   sq_le_one_iff_abs_le_one _ |>.1 <| by
     linarith [fst_endUnitTangent_sq_add_snd_sq q ζ, sq_nonneg (endUnitTangent q ζ).1]
+
+/-- The unit tangent of the end chart has period one in the angular coordinate. -/
+theorem endUnitTangent_add_one (q : Puncture) (s t : ℝ) :
+    endUnitTangent q (s, t + 1) = endUnitTangent q (s, t) := by
+  have hφ : (fun ζ ↦ positiveEndChart q (ζ + (0, 1))) = positiveEndChart q := by
+    funext ζ
+    rw [show ζ + (0, 1) = (ζ.1, ζ.2 + 1) by simp [Prod.ext_iff]]
+    exact positiveEndChart_add_one q ζ.1 ζ.2
+  have hd : fderiv ℝ (positiveEndChart q) ((s, t) + (0, 1)) =
+      fderiv ℝ (positiveEndChart q) (s, t) := by
+    rw [← fderiv_comp_add_right, hφ]
+  have hs : positiveEndChartScale q ((s, t) + (0, 1)) = positiveEndChartScale q (s, t) := by
+    rw [positiveEndChartScale_apply, positiveEndChartScale_apply, congrFun hφ (s, t)]
+  have h : (s, t + 1) = (s, t) + (0, 1) := by simp
+  rw [h, endUnitTangent_def, endUnitTangent_def, hd, hs]
+
+omit [FiniteDimensional ℝ V] in
+/-- The jet coefficients of the transfer along an end chart with the cutoff `1` at two points
+differ by at most the difference of their weighted conformal scales `r √ρ` plus twice the
+difference of the unit tangents of the chart. -/
+theorem norm_endTransferCoeff_one_sub_le (q : Puncture) (ζ ζ' : ℝ × ℝ) :
+    ‖endTransferCoeff (V := V) q (fun _ ↦ 1) ζ - endTransferCoeff q (fun _ ↦ 1) ζ'‖ ≤
+      |positiveEndChartScale q ζ * √(cylindricalWeight (positiveEndChart q ζ)) -
+          positiveEndChartScale q ζ' * √(cylindricalWeight (positiveEndChart q ζ'))| +
+        2 * ‖endUnitTangent q ζ - endUnitTangent q ζ'‖ := by
+  set d := ‖endUnitTangent q ζ - endUnitTangent q ζ'‖
+  have h1 : |(endUnitTangent q ζ).1 - (endUnitTangent q ζ').1| ≤ d := by
+    simpa using norm_fst_le (endUnitTangent q ζ - endUnitTangent q ζ')
+  have h2 : |(endUnitTangent q ζ).2 - (endUnitTangent q ζ').2| ≤ d := by
+    simpa using norm_snd_le (endUnitTangent q ζ - endUnitTangent q ζ')
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
+  have hv1 : ‖v.1‖ ≤ ‖v‖ := norm_fst_le v
+  have hv2 : ‖v.2.1‖ ≤ ‖v‖ := (norm_fst_le v.2).trans (norm_snd_le v)
+  have hv3 : ‖v.2.2‖ ≤ ‖v‖ := (norm_snd_le v.2).trans (norm_snd_le v)
+  simp only [sub_apply, endTransferCoeff_apply, fderiv_const_apply, zero_apply, mul_zero,
+    zero_smul, zero_add, mul_one, one_mul]
+  have hu (ζ : ℝ × ℝ) : endUnitTangent q ζ =
+      ((fderiv ℝ (positiveEndChart q) ζ (1, 0)).1 / positiveEndChartScale q ζ,
+        (fderiv ℝ (positiveEndChart q) ζ (1, 0)).2 / positiveEndChartScale q ζ) := by
+    rw [endUnitTangent_def, smul_apply]
+    ext <;> simp [div_eq_inv_mul]
+  rw [hu ζ, hu ζ'] at h1 h2
+  dsimp only at h1 h2
+  set X := |positiveEndChartScale q ζ * √(cylindricalWeight (positiveEndChart q ζ)) -
+    positiveEndChartScale q ζ' * √(cylindricalWeight (positiveEndChart q ζ'))|
+  have hX : 0 ≤ X := abs_nonneg _
+  have hd : 0 ≤ d := norm_nonneg _
+  -- Each rotation component differs by at most `2 d ‖v‖`.
+  have key (a a' b b' : ℝ) (x y : V) (ha : |a - a'| ≤ d) (hb : |b - b'| ≤ d) (hx : ‖x‖ ≤ ‖v‖)
+      (hy : ‖y‖ ≤ ‖v‖) (σ : ℝ) (hσ : |σ| = 1) :
+      ‖(a • x + (σ * b) • y) - (a' • x + (σ * b') • y)‖ ≤ (X + 2 * d) * ‖v‖ := by
+    have he : (a • x + (σ * b) • y) - (a' • x + (σ * b') • y) =
+        (a - a') • x + (σ * (b - b')) • y := by module
+    rw [he]
+    refine (norm_add_le _ _).trans ?_
+    rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, abs_mul, hσ, one_mul]
+    nlinarith [abs_nonneg (a - a'), abs_nonneg (b - b'), norm_nonneg x, norm_nonneg y]
+  refine (norm_prod_le_iff.2 ⟨?_, norm_prod_le_iff.2 ⟨?_, ?_⟩⟩)
+  · rw [Prod.fst_sub, ← sub_smul, norm_smul, Real.norm_eq_abs]
+    nlinarith [norm_nonneg v, norm_nonneg v.1]
+  · have := key _ _ _ _ v.2.1 v.2.2 h1 h2 hv2 hv3 (-1) (by norm_num)
+    simp only [neg_one_mul, neg_smul, ← sub_eq_add_neg] at this
+    simpa only [Prod.fst_sub, Prod.snd_sub] using this
+  · have := key _ _ _ _ v.2.2 v.2.1 h1 h2 hv3 hv2 1 (by norm_num)
+    simp only [one_mul] at this
+    simpa only [Prod.fst_sub, Prod.snd_sub, add_comm] using this
 
 /-- The **rotation of the end model** of the end `q` at `ζ = (s, t)`, for a loop `J_t` of almost
 complex structures: `r⁻¹ (a + b J_t)`, where `(a, b) = dφ'_q (1, 0)` is the image of the unit
@@ -230,6 +300,46 @@ theorem memLp_endModelCoeff (q : Puncture) {J : ℝ → AlmostComplexStructure V
     (continuous_stationaryJetCoeff hJ hS)).comp (continuous_const.prodMk continuous_id))
     fun _ ↦ endModelCoeff_eq_of_snd_eq q J S rfl
 
+/-- **The end model is uniformly continuous in the angle.** For continuous loops `L_t` and `S_t` of
+period one and every `η > 0`, two points of the strip whose angular coordinates `t`, `t'` have
+images `exp (2π i t)`, `exp (2π i t')` within `δ` on the circle have unit tangents of the end chart,
+and end models, within `η`. -/
+theorem exists_pos_forall_norm_endModelCoeff_sub_lt (q : Puncture)
+    {L : ℝ → AlmostComplexStructure V}
+    {S : ℝ → V →L[ℝ] V} (hL : Continuous fun t ↦ (L t).toLinearMap.toContinuousLinearMap)
+    (hS : Continuous S) (hLp : Periodic L 1) (hSp : Periodic S 1) {η : ℝ} (hη : 0 < η) :
+    ∃ δ > 0, ∀ ζ ζ' : ℝ × ℝ,
+      ‖(Circle.exp (2 * π * ζ.2) : ℂ) - Circle.exp (2 * π * ζ'.2)‖ < δ →
+        ‖endUnitTangent q ζ - endUnitTangent q ζ'‖ < η ∧
+          ‖endModelCoeff q L S ζ - endModelCoeff q L S ζ'‖ < η := by
+  -- Both depend only on `t`, through a continuous function of period one.
+  set P : ℝ → (ℝ × ℝ) × (V × V × V →L[ℝ] V) :=
+    fun t ↦ (endUnitTangent q (0, t), endModelCoeff q L S (0, t))
+  have hGeq : endModelCoeff q L S =
+      fun ζ ↦ (endModelRotation q L ζ).comp (stationaryJetCoeff L S ζ) :=
+    funext fun ζ ↦ endModelCoeff_def q L S ζ
+  have hPc : Continuous P := by
+    refine ((continuous_endUnitTangent q).comp (continuous_const.prodMk continuous_id)).prodMk ?_
+    rw [hGeq]
+    exact ((continuous_endModelRotation q hL).clm_comp
+      (continuous_stationaryJetCoeff hL hS)).comp (continuous_const.prodMk continuous_id)
+  have hPp : Periodic P 1 := fun t ↦ by
+    simp only [P, endUnitTangent_add_one, hGeq, endModelRotation_eq, hLp t]
+    congr 2
+    exact ContinuousLinearMap.ext fun v ↦ by simp only [stationaryJetCoeff_apply, hLp t, hSp t]
+  obtain ⟨G, hGu, hGg⟩ := hPp.exists_uniformContinuous_eq_comp_circleExp one_ne_zero hPc
+  simp only [div_one] at hGg
+  obtain ⟨δ, hδ, hG⟩ := Metric.uniformContinuous_iff.1 hGu η hη
+  refine ⟨δ, hδ, fun ζ ζ' h ↦ ?_⟩
+  -- The metric of `Circle` is the subspace metric of `ℂ`.
+  rw [← Circle.dist_eq_norm_coe_sub] at h
+  have hd := hG h
+  rw [← hGg, ← hGg, Prod.dist_eq, max_lt_iff, dist_eq_norm, dist_eq_norm] at hd
+  rwa [endUnitTangent_eq_of_snd_eq q (ζ := ζ) (ζ' := (0, ζ.2)) rfl,
+    endUnitTangent_eq_of_snd_eq q (ζ := ζ') (ζ' := (0, ζ'.2)) rfl,
+    endModelCoeff_eq_of_snd_eq q L S (ζ := ζ) (ζ' := (0, ζ.2)) rfl,
+    endModelCoeff_eq_of_snd_eq q L S (ζ := ζ') (ζ' := (0, ζ'.2)) rfl]
+
 variable (q : Puncture) (J : ℝ → AlmostComplexStructure V) (S : ℝ → V →L[ℝ] V) in
 /-- The **end model operator** of the end `q`: the first-order operator of
 `TauCeti.Floer.endModelCoeff` on the cylinder, realized from `W^{1,2}(ℝ × S¹, V)` to
@@ -297,6 +407,16 @@ open Floer
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {H : Puncture → ℝ → V → ℝ}
 
+/-- Along a continuous loop `x`, the derivatives `dX_{H'_q(t)}(x(t))` of the Hamiltonian vector
+fields of a jointly `C²` end Hamiltonian form a continuous loop of endomorphisms. -/
+theorem continuous_fderiv_hamiltonianVectorField_positiveEndHamiltonian (ω : SymplecticForm V)
+    {q : Puncture} (hHs : ContDiff ℝ 2 (uncurry (H q))) {x : ℝ → V} (hxc : Continuous x) :
+    Continuous fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (x t) :=
+  (continuous_fderiv_slice_right
+    (f := fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t))
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1)
+      (contDiff_uncurry_positiveEndHamiltonian hHs))).comp (continuous_id.prodMk hxc)
+
 /-- **The linearized operator of a pair of pants along an end chart.** Let `u` solve the Floer
 equation for the pair-of-pants perturbation of period-one `C²` Hamiltonians `H_q` at the point
 `w = φ'_q(ζ)` of the end `q`, with `ζ = (s, t)` and `s ≥ 2`, and let the cutoff `β` be `1` with
@@ -328,12 +448,7 @@ theorem floerConformalJetCoeff_positiveEndChart_comp_endTransferCoeff (ω : Symp
           (fun ζ' y ↦ (J (positiveEndChart q ζ') y).toLinearMap.toContinuousLinearMap)
           (fun _ _ ↦ 0) (fun ζ' ↦ positiveEndHamiltonian H q ζ'.2) (u ∘ positiveEndChart q) ζ) := by
   have hr := positiveEndChartScale_pos q ζ
-  -- The weight is positive at `φ'_q(ζ)`, which is not the center of the end.
-  have hρ : 0 < √(cylindricalWeight (positiveEndChart q ζ)) := by
-    have hd := norm_pos_iff.2
-      (sub_ne_zero.2 (equivRealProdCLM_symm_positiveEndChart_ne_endCenter q ζ))
-    exact Real.sqrt_pos.2 ((inv_pos.2 (pow_pos hd 2)).trans_le
-      (inv_norm_sub_endCenter_sq_le_cylindricalWeight q _))
+  have hρ := sqrt_cylindricalWeight_positiveEndChart_pos q ζ
   -- The Jacobian of the chart is `a² + b² = r²`.
   have hdet := sq_positiveEndChartScale_eq_sq_add_sq q ζ
   refine ContinuousLinearMap.ext fun v ↦ ?_
@@ -489,10 +604,8 @@ theorem eventually_forall_norm_floerConformalJetCoeff_comp_endTransferCoeff_sub_
   set S : ℝ → V →L[ℝ] V :=
     fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (x t)
   have hJx : Continuous fun t ↦ Jc (t, x t) := hJq.continuous.comp (continuous_id.prodMk hxc)
-  have hS : Continuous S := (continuous_fderiv_slice_right
-    (f := fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t))
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1)
-      (contDiff_uncurry_positiveEndHamiltonian hHs))).comp (continuous_id.prodMk hxc)
+  have hS : Continuous S :=
+    ω.continuous_fderiv_hamiltonianVectorField_positiveEndHamiltonian hHs hxc
   -- The model and the structure along the orbit are bounded over a period.
   obtain ⟨BM, hBM⟩ := (isCompact_singleton.prod isCompact_Icc).exists_bound_of_continuousOn
     (s := {(0 : ℝ)} ×ˢ Icc (0 : ℝ) 1)
