@@ -20,8 +20,7 @@ Over a finite field `k`, let `L` be a finite field extension of `k` and let `g :
 be a semisimple `k`-linear endomorphism whose characteristic polynomial is a power `P ^ j` of an
 irreducible polynomial `P : k[X]`. Then `P` annihilates `g`, giving `L` the structure of a vector
 space over `k[X]/(P)`. Comparing dimensions shows `[k[X]/(P) : k] ∣ [L : k]`, so `k[X]/(P)` embeds
-into `L` and `g` is conjugate to left multiplication `Algebra.lmul k L y` by some `y ∈ L`
-(ShortGRH `IntegralRepresentationsOfGeneralLinearGroups` §4.3(f)).
+into `L` and `g` is conjugate to left multiplication `Algebra.lmul k L y` by some `y ∈ L`).
 
 * `TauCeti.HallAlgebra.exists_conj_lmul_eq`: `g` is conjugate to `Algebra.lmul k L y` for some
   `e : L ≃ₗ[k] L` and `y : L`.
