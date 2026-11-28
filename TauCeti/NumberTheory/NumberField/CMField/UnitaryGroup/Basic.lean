@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.IntegralGL
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
 import Mathlib.Topology.Algebra.Group.Matrix
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
@@ -83,8 +84,6 @@ operators; `G(s)` acts on the hermitian spaces with an adelic frame
   `TauCeti.IsUnitaryLevel.isCompact`, `TauCeti.IsUnitaryLevel.relIndex_ne_zero`,
   `TauCeti.IsUnitaryLevel.inf`, `TauCeti.IsUnitaryLevel.mono`: levels are compact, of finite
   index in `K₀`, and stable under intersections and enlargement inside `K₀`.
-* `TauCeti.isUnit_diagonal_intCast_units`: the diagonal matrix `diag(s)` of a sign vector is
-  invertible.
 * `TauCeti.exists_mem_adelicUnitaryGroup_iff`: an adelic matrix lies in `G(s)` exactly when it
   preserves the form `diag(s)` at the infinite places and `1_n` at the finite places.
 * `TauCeti.finiteAdelicUnitaryGroup.continuous_proj`,
@@ -373,12 +372,6 @@ end IsUnitaryLevel
 end FiniteAdelicUnitaryGroup
 
 /-! ### The adelic unitary group of a sign vector -/
-
-/-- **A diagonal matrix of signs is invertible**: for a sign vector `s : ι → ℤˣ`, the diagonal
-matrix `diag(s)` over any commutative ring is invertible, as each `s i` is. -/
-theorem isUnit_diagonal_intCast_units {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
-    (s : ι → ℤˣ) : IsUnit (diagonal fun i ↦ ((s i : ℤ) : R)) :=
-  isUnit_diagonal.2 (Pi.isUnit_iff.2 fun i ↦ (s i).isUnit.map (Int.castRingHom R))
 
 section InfiniteAdelicUnitaryGroup
 

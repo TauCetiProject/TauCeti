@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NumberField.CMField.UnitaryGroup.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
 import Mathlib.Analysis.CStarAlgebra.Matrix
 import Mathlib.Analysis.Normed.Field.ProperSpace
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 
 /-!
