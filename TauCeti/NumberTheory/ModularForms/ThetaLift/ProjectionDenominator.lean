@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.NumberTheory.Padics.Complex
+import TauCeti.Analysis.InnerProductSpace.Projection.Completeness
 
 /-!
 # Coordinate integrality and projection denominators
@@ -172,61 +173,6 @@ theorem DenominatorLe.restrict_admissible {p : ℕ} [Fact p.Prime] {K : Type w} 
   obtain ⟨Λ, hdet, hΛ⟩ := h
   exact ⟨Λ, hdet, fun y hy hyU ↦ hΛ y hy (hUW hyU)⟩
 
-/-- Orthogonal subspaces have trivial intersection. -/
-private theorem inf_eq_bot_of_le_orthogonal {Z₁ Z₂ : Submodule ℂ E} (hZ : Z₁ ≤ Z₂ᗮ) :
-    Z₁ ⊓ Z₂ = ⊥ := by
-  rw [eq_bot_iff]
-  intro x hx
-  have hinner : ⟪x, x⟫_ℂ = 0 := (Submodule.mem_orthogonal Z₂ x).mp (hZ hx.1) x hx.2
-  exact inner_self_eq_zero.mp hinner
-
-/-- The orthogonal projection onto the supremum of two orthogonal finite-dimensional subspaces is
-the sum of their orthogonal projections. -/
-private theorem starProjection_sup_of_le_orthogonal {Z₁ Z₂ : Submodule ℂ E}
-    [FiniteDimensional ℂ Z₁] [FiniteDimensional ℂ Z₂] (hZ : Z₁ ≤ Z₂ᗮ) (y : E) :
-    (Z₁ ⊔ Z₂).starProjection y = Z₁.starProjection y + Z₂.starProjection y := by
-  apply Submodule.eq_starProjection_of_mem_of_inner_eq_zero
-  · exact Submodule.add_mem_sup (Submodule.starProjection_apply_mem Z₁ y)
-      (Submodule.starProjection_apply_mem Z₂ y)
-  · intro w hw
-    rcases Submodule.mem_sup.mp hw with ⟨w₁, hw₁, w₂, hw₂, rfl⟩
-    have h₁ : ⟪y - Z₁.starProjection y, w₁⟫_ℂ = 0 :=
-      (Submodule.mem_orthogonal' Z₁ _).mp (Submodule.sub_starProjection_mem_orthogonal y) w₁ hw₁
-    have h₂ : ⟪y - Z₂.starProjection y, w₂⟫_ℂ = 0 :=
-      (Submodule.mem_orthogonal' Z₂ _).mp (Submodule.sub_starProjection_mem_orthogonal y) w₂ hw₂
-    have h₁₂ : ⟪Z₂.starProjection y, w₁⟫_ℂ = 0 :=
-      (Submodule.mem_orthogonal Z₂ w₁).mp (hZ hw₁) _ (Submodule.starProjection_apply_mem Z₂ y)
-    have h₂₁ : ⟪Z₁.starProjection y, w₂⟫_ℂ = 0 := by
-      rw [← inner_conj_symm]
-      have h := (Submodule.mem_orthogonal Z₂ _).mp
-        (hZ (Submodule.starProjection_apply_mem Z₁ y)) w₂ hw₂
-      simp [h]
-    rw [inner_add_right, sub_add_eq_sub_sub, inner_sub_left, h₁, h₁₂, sub_self, zero_add,
-      sub_right_comm, inner_sub_left, h₂, h₂₁, sub_self]
-
-/-- The canonical linear equivalence `Z₁ × Z₂ ≃ₗ[ℂ] ↥(Z₁ ⊔ Z₂)` for orthogonal subspaces. -/
-private noncomputable def orthogonalSupEquiv {Z₁ Z₂ : Submodule ℂ E} (hZ : Z₁ ≤ Z₂ᗮ) :
-    (Z₁ × Z₂) ≃ₗ[ℂ] ↥(Z₁ ⊔ Z₂) :=
-  LinearEquiv.ofBijective
-    { toFun := fun z ↦ ⟨(z.1 : E) + (z.2 : E), Submodule.add_mem_sup z.1.property z.2.property⟩
-      map_add' := fun x y ↦ by ext; simp [add_assoc, add_left_comm]
-      map_smul' := fun c x ↦ by ext; simp [smul_add] }
-    ⟨by
-      intro x y hxy
-      have h : (x.1 : E) + (x.2 : E) = (y.1 : E) + (y.2 : E) := congrArg Subtype.val hxy
-      have hdiff : (x.1 : E) - (y.1 : E) = (y.2 : E) - (x.2 : E) :=
-        sub_eq_sub_iff_add_eq_add.mpr (by rw [h, add_comm])
-      have hmem : (x.1 : E) - (y.1 : E) ∈ Z₁ ⊓ Z₂ :=
-        ⟨Z₁.sub_mem x.1.property y.1.property, hdiff ▸ Z₂.sub_mem y.2.property x.2.property⟩
-      rw [inf_eq_bot_of_le_orthogonal hZ, Submodule.mem_bot] at hmem
-      ext
-      · exact sub_eq_zero.mp hmem
-      · exact (sub_eq_zero.mp (hdiff.symm.trans hmem)).symm,
-     by
-      rintro ⟨w, hw⟩
-      rcases Submodule.mem_sup.mp hw with ⟨w₁, hw₁, w₂, hw₂, rfl⟩
-      exact ⟨(⟨w₁, hw₁⟩, ⟨w₂, hw₂⟩), rfl⟩⟩
-
 /-- Denominator bounds are closed under orthogonal direct sums: if `Z₁` and `Z₂` are orthogonal
 finite-dimensional subspaces satisfying `DenominatorLe` with the same budget `β`, then `Z₁ ⊔ Z₂`
 also satisfies `DenominatorLe` with budget `β`. -/
@@ -239,12 +185,15 @@ theorem DenominatorLe.sup_of_orthogonal {p : ℕ} [Fact p.Prime] {K : Type w} [N
     DenominatorLe p place b (Z₁ ⊔ Z₂) admissible r β := by
   obtain ⟨Λ₁, hdet₁, hΛ₁⟩ := h₁
   obtain ⟨Λ₂, hdet₂, hΛ₂⟩ := h₂
-  let e : (Z₁ × Z₂) ≃ₗ[ℂ] ↥(Z₁ ⊔ Z₂) := orthogonalSupEquiv hZ
+  have hortho : Z₁.IsOrtho Z₂ := Submodule.isOrtho_iff_le.mpr hZ
+  have hdisj : Disjoint Z₁ Z₂ := hortho.disjoint
+  let e : (Z₁ × Z₂) ≃ₗ[ℂ] ↥(Z₁ ⊔ Z₂) :=
+    (LinearEquiv.ofInjective (Z₁.subtype.coprod Z₂.subtype)
+      (by rw [← LinearMap.ker_eq_bot, LinearMap.ker_coprod_of_disjoint_range] <;> simp [hdisj]))
+      |>.trans (LinearEquiv.ofEq _ _ (Submodule.sup_eq_range Z₁ Z₂).symm)
   refine ⟨e.toLinearMap ∘ₗ LinearMap.prodMap Λ₁ Λ₂ ∘ₗ e.symm.toLinearMap, ?_, ?_⟩
   · have hdim : Module.finrank ℂ ↥(Z₁ ⊔ Z₂) = Module.finrank ℂ Z₁ + Module.finrank ℂ Z₂ := by
-      have h := Submodule.finrank_sup_add_finrank_inf_eq Z₁ Z₂
-      rw [inf_eq_bot_of_le_orthogonal hZ, finrank_bot, add_zero] at h
-      exact h
+      rw [← e.finrank_eq, Module.finrank_prod]
     rw [LinearMap.det_conj, LinearMap.det_prodMap, map_mul, norm_mul, hdim, Nat.add_mul,
       Nat.cast_add, neg_add, add_mul, Real.exp_add]
     exact mul_le_mul hdet₁ hdet₂ (Real.exp_nonneg _) (norm_nonneg _)
@@ -253,15 +202,13 @@ theorem DenominatorLe.sup_of_orthogonal {p : ℕ} [Fact p.Prime] {K : Type w} [N
         (Z₁.orthogonalProjectionOnto y, Z₂.orthogonalProjectionOnto y) := by
       apply e.injective
       ext
-      simp only [LinearEquiv.apply_symm_apply, Submodule.coe_orthogonalProjectionOnto_apply, e,
-        orthogonalSupEquiv]
-      exact starProjection_sup_of_le_orthogonal hZ y
+      simpa [e] using DFunLike.congr_fun hortho.starProjection_sup y
     have hval : (((e.toLinearMap ∘ₗ LinearMap.prodMap Λ₁ Λ₂ ∘ₗ e.symm.toLinearMap)
         ((Z₁ ⊔ Z₂).orthogonalProjectionOnto y) : ↥(Z₁ ⊔ Z₂)) : E) =
         ((Λ₁ (Z₁.orthogonalProjectionOnto y) : Z₁) : E) +
           ((Λ₂ (Z₂.orthogonalProjectionOnto y) : Z₂) : E) := by
       simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, hproj, LinearMap.prodMap_apply]
-      rfl
+      simp [e]
     rw [hval]
     refine ⟨add_mem (hΛ₁ y hy hadm).1 (hΛ₂ y hy hadm).1, fun y' hy' ↦ ?_⟩
     rw [inner_add_right, map_add]
