@@ -125,10 +125,7 @@ theorem natCard_H1_eq_mul (M : Type) [AddCommGroup M] [TopologicalSpace M]
     exact h
   intro _
   let A := galRepOfZModModule (Nat.card M) F M
-  have : Fact (IsSmoothDiscrete (ZMod (Nat.card M)) A) :=
-    ⟨isSmoothDiscrete_galRepOfZModModule (Nat.card M) F M⟩
-  have h := eulerCharacteristic_mixed p F (Nat.card M) Nat.card_pos.ne' A
-    (Finite.of_equiv M (galRepOfZModModuleEquiv (Nat.card M) F M).toEquiv)
+  have h := eulerCharacteristic_mixed p F (Nat.card M) Nat.card_pos.ne' A inferInstance
   rw [← Nat.card_congr (galRepOfZModModuleH0Equiv (Nat.card M) F M).toEquiv,
     ← Nat.card_congr (galRepOfZModModuleH1Equiv (Nat.card M) F M).toEquiv,
     ← Nat.card_congr (galRepOfZModModuleH2Equiv (Nat.card M) F M).toEquiv,

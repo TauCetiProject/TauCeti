@@ -246,29 +246,54 @@ private theorem galRepOfZModModuleTransport_galRepOfZModModuleEquiv
 in `GalRep n F`.** -/
 def galRepOfZModModuleMap (f : M →+[AbsoluteGaloisGroup F] N) :
     galRepOfZModModule n F M ⟶ galRepOfZModModule n F N :=
-  TopRep.ofHom
-    { toContinuousLinearMap :=
-        ⟨f.toAddMonoidHom.toZModLinearMap n, continuous_of_discreteTopology⟩
-      isIntertwining' g := ContinuousLinearMap.ext fun m : (galRepOfZModModule n F M).V ↦ by
-        have h := map_smul (galRepOfZModModuleTransport n F f) g m
-        rw [TopRep.distribMulAction_smul, TopRep.distribMulAction_smul] at h
-        exact h }
+  have : ContinuousSMul (ZMod n) M := ⟨continuous_of_discreteTopology⟩
+  have : ContinuousSMul (ZMod n) N := ⟨continuous_of_discreteTopology⟩
+  (TopRep.resFunctor
+      (absoluteGaloisGroupRestrictEquiv F :
+        Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F)).map
+    (ofDiscreteModuleMap (f.toAddMonoidHom.toZModLinearMap n)
+      (fun g m ↦ show (f.toAddMonoidHom.toZModLinearMap n) (g • m) =
+        g • (f.toAddMonoidHom.toZModLinearMap n) m from f.map_smul g m))
 
 /-- `galRepOfZModModuleMap` intertwines the coefficient dictionaries `galRepOfZModModuleEquiv`. -/
 @[simp]
 theorem galRepOfZModModuleMap_hom_galRepOfZModModuleEquiv
     (f : M →+[AbsoluteGaloisGroup F] N) (m : M) :
     (galRepOfZModModuleMap n F f).hom (galRepOfZModModuleEquiv n F M m) =
-      galRepOfZModModuleEquiv n F N (f m) :=
-  galRepOfZModModuleTransport_galRepOfZModModuleEquiv n F f m
+      galRepOfZModModuleEquiv n F N (f m) := by
+  have : ContinuousSMul (ZMod n) M := ⟨continuous_of_discreteTopology⟩
+  have : ContinuousSMul (ZMod n) N := ⟨continuous_of_discreteTopology⟩
+  have h : ((TopRep.resFunctor
+      (absoluteGaloisGroupRestrictEquiv F :
+        Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F)).map
+    (ofDiscreteModuleMap (f.toAddMonoidHom.toZModLinearMap n)
+      (fun g x ↦ show (f.toAddMonoidHom.toZModLinearMap n) (g • x) =
+        g • (f.toAddMonoidHom.toZModLinearMap n) x from f.map_smul g x))).hom m = f m := by
+    rw [TopRep.resFunctor_map_hom]
+    exact ofDiscreteModuleMap_hom_apply (G := AbsoluteGaloisGroup F)
+      (f.toAddMonoidHom.toZModLinearMap n)
+      (fun g x ↦ show (f.toAddMonoidHom.toZModLinearMap n) (g • x) =
+        g • (f.toAddMonoidHom.toZModLinearMap n) x from f.map_smul g x) m
+  exact h
 
 /-- The identity coefficient map induces the identity morphism in `GalRep n F`. -/
 @[simp]
 theorem galRepOfZModModuleMap_id :
     galRepOfZModModuleMap n F (DistribMulActionHom.id (AbsoluteGaloisGroup F) : M →+[_] M) =
       𝟙 (galRepOfZModModule n F M) := by
-  ext m
-  rfl
+  have : ContinuousSMul (ZMod n) M := ⟨continuous_of_discreteTopology⟩
+  have hid : ofDiscreteModuleMap
+      ((DistribMulActionHom.id (AbsoluteGaloisGroup F) :
+        M →+[_] M).toAddMonoidHom.toZModLinearMap n)
+      (fun g m ↦ show _ = _ from
+        (DistribMulActionHom.id (AbsoluteGaloisGroup F) : M →+[_] M).map_smul g m) =
+      𝟙 (ofDiscreteModule (ZMod n) (AbsoluteGaloisGroup F) M) := by
+    rw [← ofDiscreteModuleMap_id (R := ZMod n) (G := AbsoluteGaloisGroup F) (M := M)]
+    congr 1
+  exact (congrArg (TopRep.resFunctor
+      (absoluteGaloisGroupRestrictEquiv F :
+        Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F)).map hid).trans
+    ((TopRep.resFunctor _).map_id _)
 
 /-- Composition of equivariant coefficient maps induces composition of morphisms in `GalRep n F`. -/
 theorem galRepOfZModModuleMap_comp {P : Type u} [AddCommGroup P] [Module (ZMod n) P]
@@ -276,8 +301,21 @@ theorem galRepOfZModModuleMap_comp {P : Type u} [AddCommGroup P] [Module (ZMod n
     (f : M →+[AbsoluteGaloisGroup F] N) (q : N →+[AbsoluteGaloisGroup F] P) :
     galRepOfZModModuleMap n F (q.comp f) =
       galRepOfZModModuleMap n F f ≫ galRepOfZModModuleMap n F q := by
-  ext m
-  rfl
+  have : ContinuousSMul (ZMod n) M := ⟨continuous_of_discreteTopology⟩
+  have : ContinuousSMul (ZMod n) N := ⟨continuous_of_discreteTopology⟩
+  have : ContinuousSMul (ZMod n) P := ⟨continuous_of_discreteTopology⟩
+  have hcomp : ofDiscreteModuleMap ((q.comp f).toAddMonoidHom.toZModLinearMap n)
+      (fun g m ↦ show _ = _ from (q.comp f).map_smul g m) =
+      ofDiscreteModuleMap (f.toAddMonoidHom.toZModLinearMap n)
+        (fun g m ↦ show _ = _ from f.map_smul g m) ≫
+      ofDiscreteModuleMap (q.toAddMonoidHom.toZModLinearMap n)
+        (fun g m ↦ show _ = _ from q.map_smul g m) := by
+    rw [ofDiscreteModuleMap_comp_ofDiscreteModuleMap]
+    congr 1
+  exact (congrArg (TopRep.resFunctor
+      (absoluteGaloisGroupRestrictEquiv F :
+        Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F)).map hcomp).trans
+    ((TopRep.resFunctor _).map_comp _ _)
 
 /-- **Degree-zero naturality of `galRepOfZModModuleH0Equiv`**: the degree-zero comparison carries
 `explicitCoeff0` to `TauCeti.ContinuousCohomology.coeffMap (galRepOfZModModuleMap n F f) 0`. -/

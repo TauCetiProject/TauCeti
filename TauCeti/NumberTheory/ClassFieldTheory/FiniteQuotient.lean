@@ -294,7 +294,6 @@ theorem exists_openNormalSubgroup_le_muNRep_ρ_eq_self (hn : IsUnit (n : F))
     (Nat.card_congr (galRepOfZModModuleEquiv n F (KummerCoeff F n)).toEquiv).symm.trans
       (natCard_kummerCoeff hn)
   have : NeZero n := NeZero.of_neZero_natCast F (h := ⟨hn.ne_zero⟩)
-  have : Finite (muNRep n F).V := Nat.finite_of_card_ne_zero (hcard.trans_ne (NeZero.ne n))
   have : IsAddCyclic (muNRep n F).V :=
     isAddCyclic_of_surjective _
       ((kummerCoeffAddEquivZMod hn).symm.trans
@@ -350,8 +349,6 @@ theorem exists_fdGalRepOfQuotient_iso_muNRep {n : ℕ} {F : Type} [Field F]
       Nonempty ((fdGalRepOfQuotient n F V).obj M ≅ muNRep n F) := by
   have : NeZero n := NeZero.of_neZero_natCast F (h := ⟨hn.ne_zero⟩)
   obtain ⟨M, ⟨e⟩⟩ := exists_galRepOfQuotient_iso_of_trivial n F V (muNRep n F) hV
-  have : Finite (muNRep n F).V :=
-    Finite.of_equiv (KummerCoeff F n) (galRepOfZModModuleEquiv n F (KummerCoeff F n)).toEquiv
   have : Finite M.V := Finite.of_equiv _ ((forget (GalRep n F)).mapIso e).toEquiv.symm
   have : Module.Finite (ZMod n) M.V := Module.Finite.of_finite
   exact ⟨FDRep.of M.ρ, ⟨eqToIso (fdGalRepOfQuotient_obj_of n F V M) ≪≫ e⟩⟩

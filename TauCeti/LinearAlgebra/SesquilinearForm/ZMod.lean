@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
 import TauCeti.Algebra.Module.ZMod.Annihilator
-import TauCeti.LinearAlgebra.SesquilinearForm.Orthogonal
 
 /-!
 # Orthogonal complements in finite pairings over `ℤ/n`
@@ -68,16 +66,20 @@ omit [Finite M] in
 adjoint of the pairing is bijective. Neither module need be finite. -/
 theorem natCard_orthogonalBilin_zmod (hB : Function.Bijective B.flip) :
     Nat.card (S.orthogonalBilin B) = Nat.card (M ⧸ S) := by
-  let e : N →+ M →+ ZMod n :=
-    (AddMonoidHom.toZModLinearMapEquiv n).symm.toAddMonoidHom.comp B.flip.toAddMonoidHom
+  let e := (AddMonoidHom.toZModLinearMapEquiv n).symm.toAddMonoidHom.comp
+    B.flip.toAddMonoidHom
   have he : Function.Bijective e :=
     (AddMonoidHom.toZModLinearMapEquiv n).symm.bijective.comp hB
-  have he_eq : e = LinearMap.toAddMonoidHom'.comp B.flip.toAddMonoidHom := by
-    dsimp only [e]
-    rw [AddMonoidHom.toZModLinearMapEquiv_symm_toAddMonoidHom]
+  have hker : (e.compl₂ S.toAddSubgroup.subtype).ker =
+      (S.orthogonalBilin B).toAddSubgroup := by
+    ext y
+    simp only [AddMonoidHom.mem_ker, AddMonoidHom.ext_iff, AddMonoidHom.compl₂_apply,
+      AddMonoidHom.zero_apply, Subtype.forall, mem_toAddSubgroup, mem_orthogonalBilin]
+    -- Forgetting linearity and flipping the pairing preserve its pointwise values.
+    rfl
   have h := e.natCard_ker_compl₂_subtype_eq_index_zmod he
     (ZModModule.char_nsmul_eq_zero n) S.toAddSubgroup
-  rw [he_eq, ker_compl₂_toAddSubgroup_eq_orthogonalBilin] at h
+  rw [hker] at h
   -- Submodules and their additive subgroups have the same carrier and quotient types.
   exact h
 
