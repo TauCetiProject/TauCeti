@@ -173,16 +173,6 @@ theorem isControllable_add_mul_iff (A : Matrix n n R) (B : Matrix n m R) (F : Ma
     IsControllable (A + B * F) B ↔ IsControllable A B := by
   simp only [isControllable_iff, reachableSubspace_add_mul]
 
-/-- Under a change of state coordinates `P`, an invertible change of input coordinates `G` and
-state feedback `F`, the reachable subspace transforms by `P.mulVecLin`. -/
-theorem reachableSubspace_units_conj_add_mul [DecidableEq m] (A : Matrix n n R)
-    (B : Matrix n m R) (P : (Matrix n n R)ˣ) (G : (Matrix m m R)ˣ) (F : Matrix m n R) :
-    reachableSubspace
-        ((P : Matrix n n R) * (A + B * F) * ((P⁻¹ : (Matrix n n R)ˣ) : Matrix n n R))
-        ((P : Matrix n n R) * B * (G : Matrix m m R)) =
-      (reachableSubspace A B).map (P : Matrix n n R).mulVecLin := by
-  rw [reachableSubspace_mul_units, reachableSubspace_units_conj, reachableSubspace_add_mul]
-
 /-- Controllability is invariant under a change of state coordinates `P`, an invertible change of
 input coordinates `G` and state feedback `F`. -/
 theorem isControllable_units_conj_iff [DecidableEq m] (A : Matrix n n R) (B : Matrix n m R)
