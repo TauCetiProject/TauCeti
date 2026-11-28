@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.MeasureTheory.Function.Holder
-import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.Normed.Operator.Norming
@@ -53,10 +53,13 @@ to composition with `T` on the other side.
   `MeasureTheory.Lp.norm_bochnerDualMap_apply`: the pairing is isometric.
 * `MeasureTheory.Lp.norm_flip_bochnerDualMap_apply_of_ne_top`,
   `MeasureTheory.Lp.norm_flip_bochnerDualMap_apply`: its range norms `L^q(μ; X)`.
-* `MeasureTheory.Lp.bochnerDualMapₗᵢ`: on a σ-finite measure space, the integral pairing as a
-  linear isometry.
-* `MeasureTheory.Lp.isClosed_range_bochnerDualMap`: on a σ-finite measure space the range is
-  closed.
+* `MeasureTheory.Lp.flip_bochnerDualMap_apply`: read from the side of `X`, the integral pairing
+  is the pairing induced by the canonical map of `X` into its bidual.
+* `MeasureTheory.Lp.bochnerDualMapₗᵢOfNeTop`, `MeasureTheory.Lp.bochnerDualMapₗᵢ`: the integral
+  pairing as a linear isometry, for `p < ∞` or on a σ-finite measure space.
+* `MeasureTheory.Lp.isClosed_range_bochnerDualMap_of_ne_top`,
+  `MeasureTheory.Lp.isClosed_range_bochnerDualMap`: the range is closed, for `p < ∞` or on a
+  σ-finite measure space.
 
 ## References
 
@@ -311,6 +314,30 @@ theorem coe_bochnerDualMapₗᵢ [SigmaFinite μ] :
     ⇑(bochnerDualMapₗᵢ 𝕜 μ p q (X := X)) = bochnerDualMap 𝕜 μ p q :=
   (rfl)
 
+variable (𝕜 μ q) in
+/-- For `p < ∞` on an arbitrary measure space, the integral pairing `bochnerDualMap 𝕜 μ p q`
+bundled as a linear isometry `Lᵖ(μ; X⋆) →ₗᵢ[𝕜] (L^q(μ; X))⋆`. -/
+noncomputable def bochnerDualMapₗᵢOfNeTop (hp : p ≠ ∞) :
+    Lp (StrongDual 𝕜 X) p μ →ₗᵢ[𝕜] StrongDual 𝕜 (Lp X q μ) where
+  toLinearMap := (bochnerDualMap 𝕜 μ p q).toLinearMap
+  norm_map' := norm_bochnerDualMap_apply_of_ne_top hp
+
+/-- The bundled isometry `bochnerDualMapₗᵢOfNeTop` is `bochnerDualMap` as a function. -/
+@[simp]
+theorem coe_bochnerDualMapₗᵢOfNeTop (hp : p ≠ ∞) :
+    ⇑(bochnerDualMapₗᵢOfNeTop 𝕜 μ q hp (X := X)) = bochnerDualMap 𝕜 μ p q :=
+  (rfl)
+
+/-- For `p < ∞` on an arbitrary measure space, the integral pairing is an isometry. -/
+theorem isometry_bochnerDualMap_of_ne_top (hp : p ≠ ∞) :
+    Isometry (bochnerDualMap 𝕜 μ p q (X := X)) :=
+  AddMonoidHomClass.isometry_of_norm _ (norm_bochnerDualMap_apply_of_ne_top hp)
+
+/-- For `p < ∞` on an arbitrary measure space, the integral pairing has closed range. -/
+theorem isClosed_range_bochnerDualMap_of_ne_top (hp : p ≠ ∞) :
+    IsClosed (Set.range (bochnerDualMap 𝕜 μ p q (X := X))) :=
+  (isometry_bochnerDualMap_of_ne_top hp).isClosedEmbedding.isClosed_range
+
 /-- On a σ-finite measure space, the integral pairing is an isometry. -/
 theorem isometry_bochnerDualMap [SigmaFinite μ] :
     Isometry (bochnerDualMap 𝕜 μ p q (X := X)) :=
@@ -323,7 +350,7 @@ theorem isClosed_range_bochnerDualMap [SigmaFinite μ] :
 
 /-- The pairing of `Lᵖ(μ; X⋆)` with `L^q(μ; X)`, read from the side of `X`, is the pairing of
 `L^q(μ; X)` with `Lᵖ(μ; X⋆)` induced by the canonical map of `X` into its bidual. -/
-private theorem flip_bochnerDualMap_apply (f : Lp X q μ) :
+theorem flip_bochnerDualMap_apply (f : Lp X q μ) :
     (bochnerDualMap 𝕜 μ p q).flip f = (NormedSpace.inclusionInDoubleDual 𝕜 X).lpPairing μ q p f :=
   ContinuousLinearMap.ext fun g ↦ by
     simp [ContinuousLinearMap.lpPairing_eq_integral]
