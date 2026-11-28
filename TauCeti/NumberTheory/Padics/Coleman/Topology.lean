@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.PowerSeries.PiTopology
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import TauCeti.NumberTheory.Padics.Coleman.Norm
 
@@ -17,14 +16,15 @@ import Mathlib.Topology.Instances.Matrix
 # Continuity of Coleman operators
 
 For a prime `p` and `(p)`-adically complete ring `O` equipped with its `(p)`-adic topology, this
-file proves continuity of the Coleman coordinates `coord`, trace `trace`, norm `norm`, and unit
-norm `normUnits` in the coefficientwise topology `PowerSeries.WithPiTopology` on `O⟦X⟧`.
-(Continuity of `frobeniusHom` sits in `TauCeti.NumberTheory.Padics.Coleman.Frobenius`.)
+file proves continuity of the Frobenius coordinates `PowerSeries.frobeniusCoord`, trace `trace`,
+norm `norm`, and unit norm `normUnits` in the coefficientwise topology `PowerSeries.WithPiTopology`
+on `O⟦X⟧`. (Continuity of `PowerSeries.frobeniusSubst` sits in
+`TauCeti.RingTheory.PowerSeries.FrobeniusBasis`.)
 
 ## Main results
 
-* `TauCeti.Coleman.continuous_coord`: each `coord p O i` is continuous for the coefficientwise
-  topology on `O⟦X⟧` when `O` has its `(p)`-adic topology.
+* `TauCeti.Coleman.continuous_frobeniusCoord`: each `PowerSeries.frobeniusCoord O p i` is
+  continuous for the coefficientwise topology on `O⟦X⟧` when `O` has its `(p)`-adic topology.
 * `TauCeti.Coleman.continuous_trace`: `trace p O` is continuous for the coefficientwise topology
   on `O⟦X⟧` when `O` has its `(p)`-adic topology.
 * `TauCeti.Coleman.continuous_norm`: `norm p O` is continuous for the coefficientwise topology on
@@ -49,11 +49,11 @@ namespace TauCeti.Coleman
 variable {p : ℕ} {O : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
 variable [Fact p.Prime] [IsAdicComplete (Ideal.span {(p : O)}) O]
 
-/-- Each Coleman coordinate `coord p O i` is continuous for the coefficientwise topology on
-`O⟦X⟧` when `O` has its `(p)`-adic topology. -/
-theorem continuous_coord (hAdic : IsAdic (Ideal.span {(p : O)})) (i : Fin p) :
-    Continuous (coord p O i) := by
-  refine continuous_of_continuousAt_zero (coord p O i).toAddMonoidHom ?_
+/-- Each Frobenius coordinate `frobeniusCoord O p i` is continuous for the coefficientwise topology
+on `O⟦X⟧` when `O` has its `(p)`-adic topology. -/
+theorem continuous_frobeniusCoord (hAdic : IsAdic (Ideal.span {(p : O)})) (i : Fin p) :
+    Continuous (frobeniusCoord O p i) := by
+  refine continuous_of_continuousAt_zero (frobeniusCoord O p i).toAddMonoidHom ?_
   rw [ContinuousAt, map_zero, PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto]
   intro n
   simp only [map_zero, hAdic.hasBasis_nhds_zero.tendsto_right_iff]
@@ -62,14 +62,14 @@ theorem continuous_coord (hAdic : IsAdic (Ideal.span {(p : O)})) (i : Fin p) :
     ((Filter.biInter_finset_mem _).mpr fun s _ ↦
       (PowerSeries.WithPiTopology.continuous_coeff O s).continuousAt (x := 0) <| by
         rw [map_zero]; exact hAdic.hasBasis_nhds_zero.mem_of_mem (i := k) trivial)
-    fun f hf ↦ coeff_coord_mem_span_pow_of_coeff_mem_span_pow k
+    fun f hf ↦ coeff_frobeniusCoord_mem_span_pow_of_coeff_mem_span_pow p k
       (by simpa only [Set.mem_iInter, Set.mem_ofPred_eq, Finset.mem_range] using hf) i
 
 /-- Coleman's trace operator is continuous for the coefficientwise topology on `O⟦X⟧` when `O` has
 its `(p)`-adic topology. -/
 theorem continuous_trace (hAdic : IsAdic (Ideal.span {(p : O)})) : Continuous (trace p O) :=
-  (funext trace_eq_p_mul_coord_zero : (trace p O : O⟦X⟧ → O⟦X⟧) = _).symm ▸
-    continuous_const.mul (continuous_coord hAdic _)
+  (continuous_const.mul (continuous_frobeniusCoord hAdic _)).congr fun f ↦
+    (trace_eq_p_mul_frobeniusCoord_zero f).symm
 
 /-- Coleman's norm operator is continuous for the coefficientwise topology on `O⟦X⟧` when `O` has
 its `(p)`-adic topology. -/
@@ -77,14 +77,15 @@ theorem continuous_norm (hAdic : IsAdic (Ideal.span {(p : O)})) : Continuous (no
   have hmat : Continuous (leftMulMatrix p O) := continuous_matrix fun i j ↦ by
     simp_rw [leftMulMatrix_apply]
     split_ifs
-    · exact continuous_coord hAdic _
-    · exact (continuous_coord hAdic _).mul continuous_const
+    · exact continuous_frobeniusCoord hAdic _
+    · exact (continuous_frobeniusCoord hAdic _).mul continuous_const
   exact hmat.matrix_det.congr fun f ↦ (norm_eq_det_leftMulMatrix f).symm
 
 /-- Coleman's norm on units is continuous for the coefficientwise topology on `O⟦X⟧` when `O` has
 its `(p)`-adic topology. -/
 theorem continuous_normUnits (hAdic : IsAdic (Ideal.span {(p : O)})) :
-    Continuous (normUnits p O) :=
-  normUnits_eq_unitsMap_norm p O ▸ Units.continuous_map (continuous_norm hAdic)
+    Continuous (normUnits p O) := by
+  rw [normUnits_eq_unitsMap_norm]
+  exact Units.continuous_map (continuous_norm hAdic)
 
 end TauCeti.Coleman

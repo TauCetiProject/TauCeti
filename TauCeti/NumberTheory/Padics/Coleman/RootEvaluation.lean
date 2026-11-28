@@ -13,7 +13,6 @@ public import TauCeti.NumberTheory.Padics.Coleman.Norm
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.LinearAlgebra.Vandermonde
 import Mathlib.RingTheory.PowerSeries.NoZeroDivisors
-import Mathlib.RingTheory.PowerSeries.PiTopology
 import TauCeti.RingTheory.PowerSeries.Evaluation
 
 /-!
@@ -22,24 +21,24 @@ import TauCeti.RingTheory.PowerSeries.Evaluation
 For a prime `p`, a `(p)`-adically complete commutative ring `O`, a ring homomorphism `ρ : O →+* S`
 into a complete Hausdorff linearly topologized domain `S`, and a primitive `p`-th root of unity
 `ζ ∈ S` with `ζ - 1` topologically nilpotent, this file proves:
-1. Topological evaluation at `ζ ^ i * (1 + X) - 1` fixes the image of `frobeniusHom` (proved for
-   any `p : ℕ` without primality).
+1. Topological evaluation at `ζ ^ i * (1 + X) - 1` fixes the image of
+   `PowerSeries.frobeniusSubst` (proved for any `p : ℕ` without primality).
 2. The sum of `(map ρ F)(ζ ^ i * (1 + X) - 1)` over `i : Fin p` equals `map ρ (Φ(τ(F)))`
-   (`IsPrimitiveRoot.sum_eval₂_map_eq_map_frobeniusHom_trace`).
+   (`IsPrimitiveRoot.sum_eval₂_map_eq_map_frobeniusSubst_trace`).
 3. The product of `(map ρ F)(ζ ^ i * (1 + X) - 1)` over `i : Fin p` equals `map ρ (Φ(N(F)))`
-   (`IsPrimitiveRoot.prod_eval₂_map_eq_map_frobeniusHom_norm`), giving the norm characterization
+   (`IsPrimitiveRoot.prod_eval₂_map_eq_map_frobeniusSubst_norm`), giving the norm characterization
    `map ρ (Φ(G)) = ∏ i, (map ρ F)(ζ ^ i * (1 + X) - 1) ↔ G = N(F)` whenever `ρ` is injective
-   (`IsPrimitiveRoot.map_frobeniusHom_eq_prod_eval₂_map_iff`).
+   (`IsPrimitiveRoot.map_frobeniusSubst_eq_prod_eval₂_map_iff`).
 
 ## Main results
 
-* `TauCeti.Coleman.eval₂_frobeniusHom`: `eval₂ C (C (ζ ^ i) * (1 + X) - 1)` fixes `Φ(g)` over a
-  complete Hausdorff linearly topologized ring `S`.
-* `IsPrimitiveRoot.sum_eval₂_map_eq_map_frobeniusHom_trace`: trace identity at primitive `p`-th
+* `TauCeti.Coleman.eval₂_frobeniusSubst`: `eval₂ C (C (ζ ^ i) * (1 + X) - 1)` fixes `Φ(g)` over
+  a complete Hausdorff linearly topologized ring `S`.
+* `IsPrimitiveRoot.sum_eval₂_map_eq_map_frobeniusSubst_trace`: trace identity at primitive `p`-th
   roots of unity.
-* `IsPrimitiveRoot.prod_eval₂_map_eq_map_frobeniusHom_norm`: norm product formula at primitive
+* `IsPrimitiveRoot.prod_eval₂_map_eq_map_frobeniusSubst_norm`: norm product formula at primitive
   `p`-th roots of unity.
-* `IsPrimitiveRoot.map_frobeniusHom_eq_prod_eval₂_map_iff`: uniqueness characterization of
+* `IsPrimitiveRoot.map_frobeniusSubst_eq_prod_eval₂_map_iff`: uniqueness characterization of
   Coleman's norm via root-of-unity products for injective `ρ`.
 
 ## References
@@ -78,13 +77,6 @@ private theorem rootEvalHom_apply
   congrFun (coe_eval₂Hom PowerSeries.WithPiTopology.continuous_C
     (PowerSeries.hasEval_C_pow_mul_one_add_X_sub_one hζ_nil i)) f
 
-private theorem rootEvalHom_C
-    {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [T2Space S]
-    [CompleteSpace S] [IsTopologicalRing S] [IsLinearTopology S S]
-    {ζ : S} (hζ_nil : IsTopologicallyNilpotent (ζ - 1)) (i : ℕ) (a : S) :
-    rootEvalHom hζ_nil i (C a) = C a := by
-  rw [rootEvalHom_apply, eval₂_C]
-
 private theorem rootEvalHom_one_add_X
     {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [T2Space S]
     [CompleteSpace S] [IsTopologicalRing S] [IsLinearTopology S S]
@@ -96,29 +88,32 @@ end RootEvalHelpers
 
 /-- For a complete Hausdorff linearly topologized commutative ring `S`, `ζ ∈ S` with `ζ ^ p = 1`,
 and `ζ - 1` topologically nilpotent, topological evaluation at `ζ ^ i * (1 + X) - 1` fixes the
-image of `frobeniusHom p S`. -/
-theorem eval₂_frobeniusHom
+image of `frobeniusSubst S p`. -/
+theorem eval₂_frobeniusSubst
     {p : ℕ} {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [T2Space S]
     [CompleteSpace S] [IsTopologicalRing S] [IsLinearTopology S S]
     {ζ : S} (hζp : ζ ^ p = 1) (hζ_nil : IsTopologicallyNilpotent (ζ - 1)) (i : ℕ) (g : S⟦X⟧) :
-    eval₂ C (C (ζ ^ i) * (1 + X) - 1) (frobeniusHom p S g) = frobeniusHom p S g := by
+    eval₂ C (C (ζ ^ i) * (1 + X) - 1) (frobeniusSubst S p g) = frobeniusSubst S p g := by
   rw [← rootEvalHom_apply hζ_nil i]
   have hcont : Continuous (rootEvalHom hζ_nil i) := by
     simp_rw [funext (rootEvalHom_apply hζ_nil i)]
     exact continuous_eval₂ PowerSeries.WithPiTopology.continuous_C
       (PowerSeries.hasEval_C_pow_mul_one_add_X_sub_one hζ_nil i)
   refine congrFun ((PowerSeries.WithPiTopology.denseRange_toPowerSeries S).equalizer
-    (hcont.comp (continuous_frobeniusHom (p := p))) (continuous_frobeniusHom (p := p)) ?_) g
+    (hcont.comp (continuous_frobeniusSubst p)) (continuous_frobeniusSubst p) ?_) g
   funext P; simp only [Function.comp_apply]
   induction P using Polynomial.induction_on' with
   | add P Q hP hQ => simp only [Polynomial.coe_add, map_add, hP, hQ]
   | monomial n a =>
-    have hX : rootEvalHom hζ_nil i (frobeniusHom p S X) = frobeniusHom p S X := by
-      rw [frobeniusHom_X, map_sub, map_one, map_pow, rootEvalHom_one_add_X, mul_pow,
-        ← map_pow, ← pow_mul, mul_comm i p, pow_mul, hζp, one_pow, map_one, one_mul]
+    have hζ_pow : ((C ζ : S⟦X⟧) ^ i) ^ p = 1 := by
+      rw [← pow_mul, mul_comm, pow_mul, ← map_pow, hζp, map_one, one_pow]
+    have hX : rootEvalHom hζ_nil i (frobeniusSubst S p X) = frobeniusSubst S p X := by
+      simp [rootEvalHom_one_add_X, mul_pow, hζ_pow]
+    have hC : rootEvalHom hζ_nil i (C a) = C a := by
+      rw [rootEvalHom_apply, eval₂_C]
     rw [← Polynomial.C_mul_X_pow_eq_monomial]
     simp only [Polynomial.coe_mul, Polynomial.coe_C, Polynomial.coe_pow, Polynomial.coe_X,
-      map_mul, map_pow, frobeniusHom_C, rootEvalHom_C, hX]
+      map_mul, map_pow, frobeniusSubst_C, hX, hC]
 
 end TauCeti.Coleman
 
@@ -129,42 +124,44 @@ open TauCeti TauCeti.Coleman
 variable {p : ℕ} [Fact p.Prime]
 
 omit [Fact p.Prime] in
-private theorem rootEvalHom_map_frobeniusHom_mul_pow
+private theorem rootEvalHom_map_frobeniusSubst_mul_pow
     {O S : Type*} [CommRing O] [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [T2Space S]
     [CompleteSpace S] [IsTopologicalRing S] [IsLinearTopology S S]
     {ζ : S} (hζp : ζ ^ p = 1) (hζ_nil : IsTopologicallyNilpotent (ζ - 1))
     (ρ : O →+* S) (i n : ℕ) (a : O⟦X⟧) :
-    rootEvalHom hζ_nil i (PowerSeries.map ρ (frobeniusHom p O a * (1 + X) ^ n)) =
-      PowerSeries.map ρ (frobeniusHom p O a) * (C (ζ ^ i) * (1 + X)) ^ n := by
-  rw [map_mul, map_mul, map_pow, map_add, map_one, map_X, map_pow, rootEvalHom_one_add_X,
-    rootEvalHom_apply, map_frobeniusHom, eval₂_frobeniusHom hζp hζ_nil i]
+    rootEvalHom hζ_nil i (PowerSeries.map ρ ((1 + X) ^ n * frobeniusSubst O p a)) =
+      PowerSeries.map ρ (frobeniusSubst O p a) * (C (ζ ^ i) * (1 + X)) ^ n := by
+  have h1 : PowerSeries.map ρ (1 + X) = 1 + X := by simp
+  simp only [map_mul, map_pow, h1, map_frobeniusSubst]
+  rw [rootEvalHom_one_add_X, rootEvalHom_apply, eval₂_frobeniusSubst hζp hζ_nil i]
+  simp [mul_comm]
 
 /-- **Root-of-unity sum equals Frobenius of Coleman's trace** (Sharifi, Lemma 5.4.14; RJW,
 Lemma 10.8): for prime `p`, `(p)`-adically complete `O`, a homomorphism `ρ : O →+* S` into a
 complete Hausdorff linearly topologized domain `S`, and primitive `p`-th root `ζ ∈ S` with
 `ζ - 1` topologically nilpotent,
 `∑ i : Fin p, (map ρ F)(ζ ^ i * (1 + X) - 1) = map ρ (Φ(τ(F)))`. -/
-theorem sum_eval₂_map_eq_map_frobeniusHom_trace
+theorem sum_eval₂_map_eq_map_frobeniusSubst_trace
     {O : Type*} [CommRing O] [IsAdicComplete (Ideal.span {(p : O)}) O]
     {S : Type*} [CommRing S] [IsDomain S] [UniformSpace S] [IsUniformAddGroup S] [T2Space S]
     [CompleteSpace S] [IsTopologicalRing S] [IsLinearTopology S S]
     {ζ : S} (hζ : IsPrimitiveRoot ζ p) (hζ_nil : IsTopologicallyNilpotent (ζ - 1))
     (ρ : O →+* S) (F : O⟦X⟧) :
     ∑ i : Fin p, eval₂ C (C (ζ ^ (i : ℕ)) * (1 + X) - 1) (PowerSeries.map ρ F) =
-      PowerSeries.map ρ (frobeniusHom p O (trace p O F)) := by
+      PowerSeries.map ρ (frobeniusSubst O p (trace p O F)) := by
   have hterm (i : Fin p) :
       eval₂ C (C (ζ ^ (i : ℕ)) * (1 + X) - 1) (PowerSeries.map ρ F) =
-        ∑ j : Fin p, PowerSeries.map ρ (frobeniusHom p O (coord p O j F)) *
+        ∑ j : Fin p, PowerSeries.map ρ (frobeniusSubst O p (frobeniusCoord O p j F)) *
           (1 + X) ^ (j : ℕ) * C ((ζ ^ (j : ℕ)) ^ (i : ℕ)) := by
-    conv_lhs => rw [← sum_frobeniusHom_coord (p := p) F]
+    conv_lhs => rw [← sum_one_add_X_pow_mul_frobeniusSubst_frobeniusCoord p F]
     rw [← rootEvalHom_apply hζ_nil (i : ℕ), map_sum, map_sum]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [rootEvalHom_map_frobeniusHom_mul_pow hζ.pow_eq_one hζ_nil, mul_pow,
+    rw [rootEvalHom_map_frobeniusSubst_mul_pow hζ.pow_eq_one hζ_nil, mul_pow,
       ← map_pow, ← pow_mul, mul_comm (i : ℕ) (j : ℕ), pow_mul]
     ring
   simp_rw [hterm]
   rw [Finset.sum_comm, Finset.sum_eq_single ⟨0, (Fact.out : p.Prime).pos⟩ ?_ (by simp)]
-  · simp [trace_eq_p_mul_coord_zero, mul_comm]
+  · simp [trace_eq_p_mul_frobeniusCoord_zero, mul_comm]
   · intro j _ hj
     rw [← Finset.mul_sum, ← map_sum]
     have hsum : ∑ i : Fin p, (ζ ^ (j : ℕ)) ^ (i : ℕ) = 0 :=
@@ -179,15 +176,15 @@ Lemmas 10.8–10.11): for prime `p`, `(p)`-adically complete `O`, a homomorphism
 complete Hausdorff linearly topologized domain `S`, and primitive `p`-th root `ζ ∈ S` with
 `ζ - 1` topologically nilpotent,
 `∏ i : Fin p, (map ρ F)(ζ ^ i * (1 + X) - 1) = map ρ (Φ(N(F)))`. -/
-theorem prod_eval₂_map_eq_map_frobeniusHom_norm
+theorem prod_eval₂_map_eq_map_frobeniusSubst_norm
     {O : Type*} [CommRing O] [IsAdicComplete (Ideal.span {(p : O)}) O]
     {S : Type*} [CommRing S] [IsDomain S] [UniformSpace S] [IsUniformAddGroup S] [T2Space S]
     [CompleteSpace S] [IsTopologicalRing S] [IsLinearTopology S S]
     {ζ : S} (hζ : IsPrimitiveRoot ζ p) (hζ_nil : IsTopologicallyNilpotent (ζ - 1))
     (ρ : O →+* S) (F : O⟦X⟧) :
     ∏ i : Fin p, eval₂ C (C (ζ ^ (i : ℕ)) * (1 + X) - 1) (PowerSeries.map ρ F) =
-      PowerSeries.map ρ (frobeniusHom p O (norm p O F)) := by
-  let ψ : O⟦X⟧ →+* S⟦X⟧ := (PowerSeries.map ρ).comp (frobeniusHom p O).toRingHom
+      PowerSeries.map ρ (frobeniusSubst O p (norm p O F)) := by
+  let ψ : O⟦X⟧ →+* S⟦X⟧ := (PowerSeries.map ρ).comp (frobeniusSubst O p).toRingHom
   let V : Matrix (Fin p) (Fin p) S⟦X⟧ := Matrix.vandermonde fun i ↦ C (ζ ^ (i : ℕ)) * (1 + X)
   -- Intertwining identity: `diag(F(ζⁱ(1+X)-1)) * V = V * ψ(M)`; take determinants and cancel
   -- `det V ≠ 0`.
@@ -203,9 +200,9 @@ theorem prod_eval₂_map_eq_map_frobeniusHom_norm
     rw [Matrix.diagonal_mul, Matrix.mul_apply]; dsimp only [V]
     rw [Matrix.vandermonde_apply, ← rootEvalHom_apply hζ_nil (i : ℕ), hcol]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [Matrix.vandermonde_apply, rootEvalHom_apply, map_frobeniusHom,
-      eval₂_frobeniusHom hζ.pow_eq_one hζ_nil, mul_comm]
-    simp [ψ, map_frobeniusHom]
+    rw [Matrix.vandermonde_apply, rootEvalHom_apply, map_frobeniusSubst,
+      eval₂_frobeniusSubst hζ.pow_eq_one hζ_nil]
+    simp [ψ]
   have hdet := congrArg Matrix.det hmat
   rw [Matrix.det_mul, Matrix.det_mul, Matrix.det_diagonal] at hdet
   have hV : V.det ≠ 0 := Matrix.det_vandermonde_ne_zero_iff.mpr fun i j hij ↦
@@ -221,16 +218,16 @@ Lemmas 10.8–10.11): for prime `p`, `(p)`-adically complete `O`, an injective h
 `ρ : O →+* S` into a complete Hausdorff linearly topologized domain `S`, and primitive `p`-th root
 `ζ ∈ S` with `ζ - 1` topologically nilpotent,
 `map ρ (Φ(G)) = ∏ i, (map ρ F)(ζ ^ i * (1 + X) - 1)` iff `G = N(F)`. -/
-theorem map_frobeniusHom_eq_prod_eval₂_map_iff
+theorem map_frobeniusSubst_eq_prod_eval₂_map_iff
     {O : Type*} [CommRing O] [IsAdicComplete (Ideal.span {(p : O)}) O]
     {S : Type*} [CommRing S] [IsDomain S] [UniformSpace S] [IsUniformAddGroup S] [T2Space S]
     [CompleteSpace S] [IsTopologicalRing S] [IsLinearTopology S S]
     {ζ : S} (hζ : IsPrimitiveRoot ζ p) (hζ_nil : IsTopologicallyNilpotent (ζ - 1))
     {ρ : O →+* S} (hρ : Function.Injective ρ) (F G : O⟦X⟧) :
-    PowerSeries.map ρ (frobeniusHom p O G) =
+    PowerSeries.map ρ (frobeniusSubst O p G) =
         ∏ i : Fin p, eval₂ C (C (ζ ^ (i : ℕ)) * (1 + X) - 1) (PowerSeries.map ρ F) ↔
       G = norm p O F := by
-  rw [hζ.prod_eval₂_map_eq_map_frobeniusHom_norm hζ_nil ρ F,
-    (PowerSeries.map_injective ρ hρ).eq_iff, (frobeniusHom_injective (p := p)).eq_iff]
+  rw [hζ.prod_eval₂_map_eq_map_frobeniusSubst_norm hζ_nil ρ F,
+    (PowerSeries.map_injective ρ hρ).eq_iff, (frobeniusSubst_injective (R := O) p).eq_iff]
 
 end IsPrimitiveRoot

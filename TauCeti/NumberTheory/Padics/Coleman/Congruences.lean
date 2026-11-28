@@ -65,7 +65,7 @@ private theorem norm_eq_map_frobenius_of_isReduced {R : Type*} [CommRing R] [IsR
   have hp : p ≠ 0 := (Fact.out : p.Prime).ne_zero
   have hpow : (norm p R f) ^ p = (PowerSeries.map (frobenius R p) f) ^ p := by
     rw [← map_pow (norm p R), ← PowerSeries.map_frobenius_expand p hp, PowerSeries.map_expand,
-      ← frobeniusHom_eq_expand (CharP.cast_eq_zero R p), norm_frobeniusHom]
+      ← frobeniusSubst_eq_expand p (CharP.cast_eq_zero R p), norm_frobeniusSubst]
   rw [← PowerSeries.map_frobenius_expand p hp, ← PowerSeries.map_frobenius_expand p hp] at hpow
   exact PowerSeries.expand_injective p hp (PowerSeries.map_injective _ (frobenius_inj R p) hpow)
 
@@ -99,8 +99,8 @@ theorem norm_sub_norm_mem_span_pow {k : ℕ} {f g : O⟦X⟧}
   have hpk : q (C ((p : O) ^ k)) = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr <| by
     rw [map_pow, map_natCast]; exact Ideal.pow_mem_pow (Ideal.subset_span rfl) k
   have hf : f = g + C ((p : O) ^ k) * h := by rw [map_pow, map_natCast, ← hh]; ring
-  have hcoord (r : Fin p) : q (coord p O r f) = q (coord p O r g) := by
-    rw [hf, map_add, coord_C_mul, map_add, map_mul, hpk, zero_mul, add_zero]
+  have hcoord (r : Fin p) : q (frobeniusCoord O p r f) = q (frobeniusCoord O p r g) := by
+    rw [hf, map_add, frobeniusCoord_C_mul, map_add, map_mul, hpk, zero_mul, add_zero]
   congr 1; refine Matrix.ext fun i j ↦ ?_
   simp only [RingHom.mapMatrix_apply, Matrix.map_apply, leftMulMatrix_apply]
   split_ifs <;> simp [hcoord]
@@ -109,11 +109,11 @@ theorem norm_sub_norm_mem_span_pow {k : ℕ} {f g : O⟦X⟧}
 for all primes `p` including `p = 2` (Coleman Lemma 13; Sharifi Prop. 5.4.6; RJW Lemma 10.11). -/
 theorem norm_one_add_sub_one_mem_span_pow_succ {k : ℕ} (hk : 1 ≤ k) (h : O⟦X⟧) :
     norm p O (1 + (p : O⟦X⟧) ^ k * h) - 1 ∈ Ideal.span {(p : O⟦X⟧)} ^ (k + 1) := by
-  obtain ⟨r, hr⟩ := norm_one_add_frobeniusHom_mul (p := p) ((p : O⟦X⟧) ^ k) h
+  obtain ⟨r, hr⟩ := norm_one_add_frobeniusSubst_mul (p := p) ((p : O⟦X⟧) ^ k) h
   rw [map_pow, map_natCast] at hr
   rw [Ideal.span_singleton_pow, Ideal.mem_span_singleton]
-  refine ⟨coord p O ⟨0, (Fact.out : p.Prime).pos⟩ h + r * (p : O⟦X⟧) ^ (k - 1), ?_⟩
-  rw [hr, trace_eq_p_mul_coord_zero]
+  refine ⟨frobeniusCoord O p ⟨0, (Fact.out : p.Prime).pos⟩ h + r * (p : O⟦X⟧) ^ (k - 1), ?_⟩
+  rw [hr, trace_eq_p_mul_frobeniusCoord_zero]
   have hk' : (p : O⟦X⟧) ^ (k + 1) * (p : O⟦X⟧) ^ (k - 1) = ((p : O⟦X⟧) ^ k) ^ 2 := by
     rw [← pow_add, ← pow_mul]; congr 1; omega
   rw [mul_add, mul_left_comm _ r, hk', pow_succ']; ring

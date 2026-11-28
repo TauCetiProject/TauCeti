@@ -8,8 +8,8 @@ module
 public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.Norm.Defs
 public import Mathlib.RingTheory.Trace.Defs
-public import TauCeti.NumberTheory.Padics.Coleman.Basic
 public import TauCeti.RingTheory.Norm.Units
+public import TauCeti.RingTheory.PowerSeries.FrobeniusBasis
 
 import Mathlib.RingTheory.Norm.Basic
 import Mathlib.RingTheory.NormTrace
@@ -21,23 +21,22 @@ import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 # Coleman's norm and trace operators on power series
 
 For a prime `p` and `(p)`-adically complete commutative ring `O`, Frobenius substitution
-`Φ = TauCeti.Coleman.frobeniusHom p O` equips `O⟦X⟧` with the `@[instance_reducible]`
-`O⟦X⟧`-algebra `TauCeti.Coleman.scalarAlgebra p O` (avoiding a clash with `Algebra.id O⟦X⟧`). By
-`Coleman.Basic`, `O⟦X⟧` is free of rank `p` (for `[Nontrivial O]`) with basis `{(1 + X) ^ i}`
-(`TauCeti.Coleman.basis p O`) and isomorphic to `AdjoinRoot (X ^ p - C (1 + X))` via
-`TauCeti.Coleman.adjoinRootEquiv p O`. Mathlib's `Algebra.norm` and `Algebra.trace` yield
+`Φ = PowerSeries.frobeniusSubst O p` equips `O⟦X⟧` with the `@[instance_reducible]`
+`O⟦X⟧`-algebra `PowerSeries.frobeniusAlgebra O p` (free of rank `p` for `[Nontrivial O]` with basis
+`PowerSeries.frobeniusBasis O p` and isomorphic to `AdjoinRoot (X ^ p - C (1 + X))` via
+`TauCeti.Coleman.adjoinRootEquiv p O`). Mathlib's `Algebra.norm` and `Algebra.trace` yield
 Coleman's norm `N` and trace `τ`, with matrix, first-order, Kummer, and functoriality formulas.
 
 ## Main definitions and results
 
-* `TauCeti.Coleman.scalarAlgebra`, `TauCeti.Coleman.basis`, `TauCeti.Coleman.adjoinRootEquiv`,
-  `TauCeti.Coleman.module_free_scalarAlgebra`, `TauCeti.Coleman.module_finite_scalarAlgebra`,
-  `TauCeti.Coleman.finrank_scalarAlgebra`: Frobenius algebra, rank-`p` basis, and `AdjoinRoot`.
+* `TauCeti.Coleman.adjoinRootEquiv`: `AdjoinRoot (X ^ p - C (1 + X)) ≃ₐ[O⟦X⟧] O⟦X⟧` over
+  `PowerSeries.frobeniusAlgebra O p`.
 * `TauCeti.Coleman.norm`, `TauCeti.Coleman.normUnits`, `TauCeti.Coleman.trace`,
   `TauCeti.Coleman.leftMulMatrix`: Coleman's norm, unit norm, trace, and multiplication matrix.
 * `TauCeti.Coleman.norm_eq_det_leftMulMatrix`, `TauCeti.Coleman.trace_eq_trace_leftMulMatrix`,
-  `TauCeti.Coleman.trace_eq_p_mul_coord_zero`, `TauCeti.Coleman.norm_one_add_frobeniusHom_mul`,
-  `TauCeti.Coleman.norm_frobeniusHom_sub_one_add_X`, `TauCeti.Coleman.norm_one_add_X`,
+  `TauCeti.Coleman.trace_eq_p_mul_frobeniusCoord_zero`,
+  `TauCeti.Coleman.norm_one_add_frobeniusSubst_mul`,
+  `TauCeti.Coleman.norm_frobeniusSubst_sub_one_add_X`, `TauCeti.Coleman.norm_one_add_X`,
   `TauCeti.Coleman.norm_X`, `TauCeti.Coleman.map_norm`, `TauCeti.Coleman.map_trace`: matrix,
   trace, first-order, Kummer, and functoriality formulas.
 
@@ -65,30 +64,7 @@ section Definitions
 
 variable (p : ℕ) (O : Type*) [CommRing O]
 
-/-- The `O⟦X⟧`-algebra structure on `O⟦X⟧` via `Φ : f ↦ f((1 + X) ^ p - 1)`. Marked
-`@[instance_reducible]` rather than `instance` to avoid clashing with `Algebra.id O⟦X⟧`. -/
-@[instance_reducible]
-def scalarAlgebra : Algebra O⟦X⟧ O⟦X⟧ := (frobeniusHom p O).toRingHom.toAlgebra
-
-/-- `scalarAlgebra p O` is the algebra structure induced by `(frobeniusHom p O).toRingHom`. -/
-theorem scalarAlgebra_eq : scalarAlgebra p O = (frobeniusHom p O).toRingHom.toAlgebra := (rfl)
-
-/-- The structure map of `scalarAlgebra p O` is `(frobeniusHom p O).toRingHom`. -/
-theorem scalarAlgebra_algebraMap :
-    @algebraMap O⟦X⟧ O⟦X⟧ _ _ (scalarAlgebra p O) = (frobeniusHom p O).toRingHom := (rfl)
-
-/-- Pointwise, the structure map of `scalarAlgebra p O` is `frobeniusHom p O`. -/
-@[simp]
-theorem scalarAlgebra_algebraMap_apply {p : ℕ} {O : Type*} [CommRing O] (c : O⟦X⟧) :
-    @algebraMap O⟦X⟧ O⟦X⟧ _ _ (scalarAlgebra p O) c = frobeniusHom p O c := (rfl)
-
-/-- Scalar multiplication under `scalarAlgebra p O` is multiplication by `frobeniusHom p O c`. -/
-@[simp]
-theorem scalarAlgebra_smul_def {p : ℕ} {O : Type*} [CommRing O] (c f : O⟦X⟧) :
-    @HSMul.hSMul O⟦X⟧ O⟦X⟧ O⟦X⟧ (@instHSMul _ _ (scalarAlgebra p O).toSMul) c f =
-      frobeniusHom p O c * f := (rfl)
-
-/-- Internal type synonym for `O⟦X⟧` with `scalarAlgebra p O`, avoiding module diamonds. -/
+/-- Internal type synonym for `O⟦X⟧` with `frobeniusAlgebra O p`, avoiding module diamonds. -/
 private def OverFrobenius (_p : ℕ) (O : Type*) := O⟦X⟧
 
 private instance : CommRing (OverFrobenius p O) := inferInstanceAs (CommRing O⟦X⟧)
@@ -96,29 +72,27 @@ private instance : CommRing (OverFrobenius p O) := inferInstanceAs (CommRing O�
 private def overFrobeniusRingEquiv : OverFrobenius p O ≃+* O⟦X⟧ := RingEquiv.refl _
 
 private instance : Algebra O⟦X⟧ (OverFrobenius p O) :=
-  ((overFrobeniusRingEquiv p O).symm.toRingHom.comp (frobeniusHom p O).toRingHom).toAlgebra
+  ((overFrobeniusRingEquiv p O).symm.toRingHom.comp (frobeniusSubst O p).toRingHom).toAlgebra
 
 private theorem overFrobeniusRingEquiv_algebraMap (c : O⟦X⟧) :
-    overFrobeniusRingEquiv p O (algebraMap O⟦X⟧ (OverFrobenius p O) c) = frobeniusHom p O c := rfl
-
-private theorem overFrobeniusRingEquiv_smul (c : O⟦X⟧) (x : OverFrobenius p O) :
-    overFrobeniusRingEquiv p O (c • x) = frobeniusHom p O c * overFrobeniusRingEquiv p O x := rfl
+    overFrobeniusRingEquiv p O (algebraMap O⟦X⟧ (OverFrobenius p O) c) = frobeniusSubst O p c :=
+  rfl
 
 private theorem overFrobenius_smul_eq (a f : O⟦X⟧) :
-    (overFrobeniusRingEquiv p O).symm (frobeniusHom p O a * f) =
+    (overFrobeniusRingEquiv p O).symm (frobeniusSubst O p a * f) =
       a • (overFrobeniusRingEquiv p O).symm f := rfl
 
 private theorem overFrobenius_algebraMap_eq (a : O⟦X⟧) :
-    (overFrobeniusRingEquiv p O).symm (frobeniusHom p O a) =
+    (overFrobeniusRingEquiv p O).symm (frobeniusSubst O p a) =
       algebraMap O⟦X⟧ (OverFrobenius p O) a := rfl
 
 variable {p O}
 
 private def overFrobeniusToScalarAlgEquiv :
-    @AlgEquiv O⟦X⟧ (OverFrobenius p O) O⟦X⟧ _ _ _ _ (scalarAlgebra p O) :=
-  @AlgEquiv.mk O⟦X⟧ (OverFrobenius p O) O⟦X⟧ _ _ _ _ (scalarAlgebra p O)
+    @AlgEquiv O⟦X⟧ (OverFrobenius p O) O⟦X⟧ _ _ _ _ (frobeniusAlgebra O p) :=
+  @AlgEquiv.mk O⟦X⟧ (OverFrobenius p O) O⟦X⟧ _ _ _ _ (frobeniusAlgebra O p)
     (overFrobeniusRingEquiv p O).toEquiv (overFrobeniusRingEquiv p O).map_mul'
-    (overFrobeniusRingEquiv p O).map_add' (fun _ ↦ rfl)
+    (overFrobeniusRingEquiv p O).map_add' (fun c ↦ (algebraMap_frobeniusAlgebra_apply p c).symm)
 
 private theorem overFrobeniusRingEquiv_eq_toScalarAlgEquiv (x : OverFrobenius p O) :
     overFrobeniusRingEquiv p O x = overFrobeniusToScalarAlgEquiv x := rfl
@@ -131,25 +105,24 @@ variable {p : ℕ} [Fact p.Prime] {O : Type*} [CommRing O] [IsAdicComplete (Idea
 
 private def overFrobeniusBasis (p : ℕ) [Fact p.Prime] (O : Type*) [CommRing O]
     [IsAdicComplete (Ideal.span {(p : O)}) O] : Module.Basis (Fin p) O⟦X⟧ (OverFrobenius p O) :=
-  Module.Basis.ofEquivFun
-    { toFun x := coordEquiv p O (overFrobeniusRingEquiv p O x)
-      invFun a := (overFrobeniusRingEquiv p O).symm ((coordEquiv p O).symm a)
-      left_inv _ := by simp only [LinearEquiv.symm_apply_apply, RingEquiv.symm_apply_apply]
-      right_inv _ := by simp only [RingEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
-      map_add' _ _ := by simp only [map_add]
-      map_smul' _ _ := funext fun _ ↦ by
-        simp only [overFrobeniusRingEquiv_smul, coordEquiv_apply, coord_frobeniusHom_mul,
-          RingHom.id_apply, Pi.smul_apply, smul_eq_mul] }
+  let : Module O⟦X⟧ O⟦X⟧ := (frobeniusAlgebra O p).toModule
+  (frobeniusBasis O p).map
+    (@AlgEquiv.toLinearEquiv O⟦X⟧ (OverFrobenius p O) O⟦X⟧ _ _ _ _ (frobeniusAlgebra O p)
+      overFrobeniusToScalarAlgEquiv).symm
 
 private theorem overFrobeniusBasis_apply (i : Fin p) :
     overFrobeniusRingEquiv p O (overFrobeniusBasis p O i) = (1 + X : O⟦X⟧) ^ (i : ℕ) := by
-  simp only [overFrobeniusBasis, Module.Basis.coe_ofEquivFun, LinearEquiv.coe_symm_mk,
-    RingEquiv.apply_symm_apply, coordEquiv_symm_apply]
-  rw [Finset.sum_eq_single i (fun j _ hji ↦ by simp [hji.symm]) (by simp)]; simp
+  let : Module O⟦X⟧ O⟦X⟧ := (frobeniusAlgebra O p).toModule
+  rw [overFrobeniusBasis, Module.Basis.map_apply]
+  simp only [AlgEquiv.coe_symm_toLinearEquiv, overFrobeniusRingEquiv_eq_toScalarAlgEquiv,
+    AlgEquiv.apply_symm_apply, frobeniusBasis_apply]
 
 private theorem overFrobeniusBasis_repr_apply (x : OverFrobenius p O) (i : Fin p) :
-    (overFrobeniusBasis p O).repr x i = coord p O i (overFrobeniusRingEquiv p O x) := by
-  simp [overFrobeniusBasis]
+    (overFrobeniusBasis p O).repr x i =
+      frobeniusCoord O p i (overFrobeniusRingEquiv p O x) := by
+  let : Module O⟦X⟧ O⟦X⟧ := (frobeniusAlgebra O p).toModule
+  rw [overFrobeniusBasis, Module.Basis.map_repr]
+  simp [overFrobeniusRingEquiv_eq_toScalarAlgEquiv]
 
 private def overFrobeniusAdjoinRootHom :
     AdjoinRoot (Polynomial.X ^ p - Polynomial.C (1 + X : O⟦X⟧)) →ₐ[O⟦X⟧] OverFrobenius p O :=
@@ -157,6 +130,13 @@ private def overFrobeniusAdjoinRootHom :
     (Algebra.ofId O⟦X⟧ (OverFrobenius p O))
     ((overFrobeniusRingEquiv p O).symm (1 + X)) <| (overFrobeniusRingEquiv p O).injective <| by
       simp [overFrobeniusRingEquiv_algebraMap]
+
+omit [Fact p.Prime] [IsAdicComplete (Ideal.span {(p : O)}) O] in
+private theorem overFrobeniusAdjoinRootHom_root :
+    overFrobeniusAdjoinRootHom (p := p) (O := O)
+        (AdjoinRoot.root (Polynomial.X ^ p - Polynomial.C (1 + X : O⟦X⟧))) =
+      (overFrobeniusRingEquiv p O).symm (1 + X) :=
+  AdjoinRoot.liftAlgHom_root _ _ _ _
 
 private theorem overFrobeniusAdjoinRootHom_bijective [Nontrivial O] :
     Function.Bijective (overFrobeniusAdjoinRootHom (p := p) (O := O)) := by
@@ -166,10 +146,8 @@ private theorem overFrobeniusAdjoinRootHom_bijective [Nontrivial O] :
     (finCongr ((AdjoinRoot.powerBasis'_dim hp).trans (Polynomial.natDegree_X_pow_sub_C _)))
   have hEq : (overFrobeniusAdjoinRootHom (p := p) (O := O)).toLinearMap = e.toLinearMap :=
     pb.basis.ext fun i ↦ (overFrobeniusRingEquiv p O).injective <| by
-      rw [AlgHom.toLinearMap_apply, LinearEquiv.coe_toLinearMap, Module.Basis.equiv_apply,
-        overFrobeniusBasis_apply, pb.basis_eq_pow, AdjoinRoot.powerBasis'_gen, map_pow,
-        overFrobeniusAdjoinRootHom, AdjoinRoot.liftAlgHom_root, map_pow,
-        (overFrobeniusRingEquiv p O).apply_symm_apply, finCongr_apply, Fin.val_cast]
+      rw [AlgHom.toLinearMap_apply, LinearEquiv.coe_toLinearMap, Module.Basis.equiv_apply]
+      simp [pb, overFrobeniusBasis_apply, overFrobeniusAdjoinRootHom_root]
   exact (congrArg DFunLike.coe hEq).symm ▸ e.bijective
 
 private def overFrobeniusAdjoinRootEquiv [Nontrivial O] :
@@ -180,9 +158,8 @@ private def overFrobeniusAdjoinRootEquiv [Nontrivial O] :
 private theorem overFrobeniusAdjoinRootEquiv_root [Nontrivial O] :
     overFrobeniusAdjoinRootEquiv (p := p) (O := O)
         (AdjoinRoot.root (Polynomial.X ^ p - Polynomial.C (1 + X : O⟦X⟧))) =
-      (overFrobeniusRingEquiv p O).symm (1 + X) := by
-  rw [overFrobeniusAdjoinRootEquiv, AlgEquiv.ofBijective_apply, overFrobeniusAdjoinRootHom,
-    AdjoinRoot.liftAlgHom_root]
+      (overFrobeniusRingEquiv p O).symm (1 + X) :=
+  overFrobeniusAdjoinRootHom_root
 
 end InternalBasis
 
@@ -191,7 +168,7 @@ section Operators
 variable (p : ℕ) [Fact p.Prime] (O : Type*) [CommRing O] [IsAdicComplete (Ideal.span {(p : O)}) O]
 
 /-- The `O`-algebra map `O⟦X⟧ →ₐ[O] Matrix (Fin p) (Fin p) O⟦X⟧` of left multiplication in
-`basis p O`: entry `(i, j)` is `c_{i - j}(f)` (`j ≤ i`) and `c_{p + i - j}(f) * (1 + X)`
+`frobeniusBasis O p`: entry `(i, j)` is `c_{i - j}(f)` (`j ≤ i`) and `c_{p + i - j}(f) * (1 + X)`
 (`i < j`). -/
 def leftMulMatrix : O⟦X⟧ →ₐ[O] Matrix (Fin p) (Fin p) O⟦X⟧ where
   toFun f := Algebra.leftMulMatrix (overFrobeniusBasis p O) ((overFrobeniusRingEquiv p O).symm f)
@@ -200,13 +177,13 @@ def leftMulMatrix : O⟦X⟧ →ₐ[O] Matrix (Fin p) (Fin p) O⟦X⟧ where
   map_zero' := by rw [map_zero, map_zero]
   map_add' _ _ := by rw [map_add, map_add]
   commutes' _ := by
-    rw [PowerSeries.algebraMap_eq, ← frobeniusHom_C (p := p), overFrobenius_algebraMap_eq,
+    rw [PowerSeries.algebraMap_eq, ← frobeniusSubst_C (R := O) p, overFrobenius_algebraMap_eq,
       AlgHom.commutes]
     ext i j; simp [Matrix.algebraMap_eq_diagonal, Pi.algebraMap_def, PowerSeries.algebraMap_eq]
 
 /-- Coleman's multiplicative norm `N : O⟦X⟧ →* O⟦X⟧` for prime `p` and `(p)`-adically complete `O`,
 defined as the determinant of `leftMulMatrix p O`; agrees with `Algebra.norm` for
-`scalarAlgebra p O` (`norm_eq_algebraNorm`). -/
+`frobeniusAlgebra O p` (`norm_eq_algebraNorm`). -/
 def norm : O⟦X⟧ →* O⟦X⟧ :=
   Matrix.detMonoidHom.comp (leftMulMatrix p O).toMonoidHom
 
@@ -216,24 +193,19 @@ def normUnits : O⟦X⟧ˣ →* O⟦X⟧ˣ :=
   Units.map (norm p O)
 
 /-- Coleman's trace `τ : O⟦X⟧ →ₗ[O] O⟦X⟧` for prime `p` and `(p)`-adically complete `O`, defined
-as the trace of `leftMulMatrix p O`; agrees with `Algebra.trace` for `scalarAlgebra p O`
+as the trace of `leftMulMatrix p O`; agrees with `Algebra.trace` for `frobeniusAlgebra O p`
 (`trace_eq_algebraTrace`). -/
 def trace : O⟦X⟧ →ₗ[O] O⟦X⟧ where
   toFun f := Matrix.trace (leftMulMatrix p O f)
   map_add' _ _ := by rw [map_add, Matrix.trace_add]
   map_smul' _ _ := by rw [map_smul, Matrix.trace_smul, RingHom.id_apply]
 
-/-- The Coleman `O⟦X⟧`-basis `{(1 + X) ^ i : i < p}` of `O⟦X⟧` under `scalarAlgebra p O`. -/
-def basis : @Module.Basis (Fin p) O⟦X⟧ O⟦X⟧ _ _ (scalarAlgebra p O).toModule :=
-  @Module.Basis.map _ _ _ _ _ _ _ _ (scalarAlgebra p O).toModule (overFrobeniusBasis p O)
-    (@AlgEquiv.toLinearEquiv _ _ _ _ _ _ _ (scalarAlgebra p O) overFrobeniusToScalarAlgEquiv)
-
-/-- For nontrivial `O`, `AdjoinRoot (X ^ p - C (1 + X)) ≃ₐ[O⟦X⟧] O⟦X⟧` under `scalarAlgebra p O`,
-sending `AdjoinRoot.root` to `1 + X`. -/
+/-- For nontrivial `O`, `AdjoinRoot (X ^ p - C (1 + X)) ≃ₐ[O⟦X⟧] O⟦X⟧` under
+`frobeniusAlgebra O p`, sending `AdjoinRoot.root` to `1 + X`. -/
 def adjoinRootEquiv [Nontrivial O] :
     @AlgEquiv O⟦X⟧ (AdjoinRoot (Polynomial.X ^ p - Polynomial.C (1 + X : O⟦X⟧))) O⟦X⟧ _ _ _ _
-      (scalarAlgebra p O) :=
-  @AlgEquiv.trans _ _ _ _ _ _ _ _ _ _ (scalarAlgebra p O)
+      (frobeniusAlgebra O p) :=
+  @AlgEquiv.trans _ _ _ _ _ _ _ _ _ _ (frobeniusAlgebra O p)
     overFrobeniusAdjoinRootEquiv overFrobeniusToScalarAlgEquiv
 
 private theorem leftMulMatrix_def (f : O⟦X⟧) :
@@ -250,21 +222,24 @@ private theorem norm_eq_overFrobenius_norm (f : O⟦X⟧) :
   (Algebra.norm_eq_matrix_det (overFrobeniusBasis p O)
     ((overFrobeniusRingEquiv p O).symm f)).symm
 
-/-- `Coleman.norm p O` equals Mathlib's `Algebra.norm` for `scalarAlgebra p O`. -/
-theorem norm_eq_algebraNorm : norm p O = @Algebra.norm O⟦X⟧ O⟦X⟧ _ _ (scalarAlgebra p O) :=
+/-- `Coleman.norm p O` equals Mathlib's `Algebra.norm` for `frobeniusAlgebra O p`. -/
+theorem norm_eq_algebraNorm : norm p O = @Algebra.norm O⟦X⟧ O⟦X⟧ _ _ (frobeniusAlgebra O p) :=
   MonoidHom.ext fun f ↦ by
     simpa only [norm_eq_overFrobenius_norm, RingEquiv.symm_refl, RingEquiv.refl_apply,
       RingEquiv.apply_symm_apply] using
       @Algebra.norm_eq_of_equiv_equiv O⟦X⟧ (OverFrobenius p O) O⟦X⟧ O⟦X⟧ _ _ _ _ inferInstance
-        (scalarAlgebra p O) (RingEquiv.refl _) (overFrobeniusRingEquiv p O)
-        (RingHom.ext fun _ ↦ rfl) ((overFrobeniusRingEquiv p O).symm f)
+        (frobeniusAlgebra O p) (RingEquiv.refl _) (overFrobeniusRingEquiv p O)
+        (RingHom.ext fun c ↦ by
+          simp only [RingHom.comp_apply, RingEquiv.coe_toRingHom, RingEquiv.refl_apply,
+            overFrobeniusRingEquiv_algebraMap, algebraMap_frobeniusAlgebra_apply])
+        ((overFrobeniusRingEquiv p O).symm f)
 
-/-- `Coleman.normUnits p O` equals `TauCeti.Algebra.normUnits` for `scalarAlgebra p O`. -/
+/-- `Coleman.normUnits p O` equals `TauCeti.Algebra.normUnits` for `frobeniusAlgebra O p`. -/
 theorem normUnits_eq_algebraNormUnits :
-    normUnits p O = @TauCeti.Algebra.normUnits O⟦X⟧ _ O⟦X⟧ _ (scalarAlgebra p O) :=
+    normUnits p O = @TauCeti.Algebra.normUnits O⟦X⟧ _ O⟦X⟧ _ (frobeniusAlgebra O p) :=
   MonoidHom.ext fun f ↦ Units.ext <| by
     rw [normUnits, Units.coe_map, norm_eq_algebraNorm]
-    exact (@TauCeti.Algebra.coe_normUnits O⟦X⟧ _ O⟦X⟧ _ (scalarAlgebra p O) f).symm
+    exact (@TauCeti.Algebra.coe_normUnits O⟦X⟧ _ O⟦X⟧ _ (frobeniusAlgebra O p) f).symm
 
 /-- `Coleman.normUnits p O` is the restriction of `Coleman.norm p O` via `Units.map`. -/
 theorem normUnits_eq_unitsMap_norm : normUnits p O = Units.map (norm p O) := (rfl)
@@ -277,86 +252,75 @@ theorem coe_normUnits (f : O⟦X⟧ˣ) :
     (normUnits p O f : O⟦X⟧) = norm p O (f : O⟦X⟧) :=
   Units.coe_map (norm p O) f
 
-/-- Pointwise, `Coleman.trace p O` agrees with Mathlib's `Algebra.trace` for `scalarAlgebra p O`. -/
+/-- Pointwise, `Coleman.trace p O` agrees with Mathlib's `Algebra.trace` for
+`frobeniusAlgebra O p`. -/
 theorem trace_eq_algebraTrace (f : O⟦X⟧) :
-    trace p O f = @Algebra.trace O⟦X⟧ O⟦X⟧ _ _ (scalarAlgebra p O) f := by
+    trace p O f = @Algebra.trace O⟦X⟧ O⟦X⟧ _ _ (frobeniusAlgebra O p) f := by
   rw [trace_def]
   simpa only [RingEquiv.symm_refl, RingEquiv.refl_apply, RingEquiv.apply_symm_apply] using
     @Algebra.trace_eq_of_equiv_equiv O⟦X⟧ (OverFrobenius p O) O⟦X⟧ O⟦X⟧ _ _ _ _ inferInstance
-      (scalarAlgebra p O) (RingEquiv.refl _) (overFrobeniusRingEquiv p O) (RingHom.ext fun _ ↦ rfl)
+      (frobeniusAlgebra O p) (RingEquiv.refl _) (overFrobeniusRingEquiv p O)
+      (RingHom.ext fun c ↦ by
+        simp only [RingHom.comp_apply, RingEquiv.coe_toRingHom, RingEquiv.refl_apply,
+          overFrobeniusRingEquiv_algebraMap, algebraMap_frobeniusAlgebra_apply])
       ((overFrobeniusRingEquiv p O).symm f)
 
-/-- Coleman's trace is `O⟦X⟧`-linear for `frobeniusHom`: `τ(Φ(a) * f) = a * τ(f)`. -/
+/-- Coleman's trace is `O⟦X⟧`-linear for `frobeniusSubst`: `τ(Φ(a) * f) = a * τ(f)`. -/
 @[simp]
-theorem trace_frobeniusHom_mul (a f : O⟦X⟧) :
-    trace p O (frobeniusHom p O a * f) = a * trace p O f := by
+theorem trace_frobeniusSubst_mul (a f : O⟦X⟧) :
+    trace p O (frobeniusSubst O p a * f) = a * trace p O f := by
   rw [trace_def, overFrobenius_smul_eq, LinearMap.map_smul, smul_eq_mul, trace_def]
 
-private theorem leftMulMatrix_eq_coord_mul (f : O⟦X⟧) (i j : Fin p) :
-    leftMulMatrix p O f i j = coord p O i (f * (1 + X) ^ (j : ℕ)) := by
+private theorem leftMulMatrix_eq_frobeniusCoord_mul (f : O⟦X⟧) (i j : Fin p) :
+    leftMulMatrix p O f i j = frobeniusCoord O p i (f * (1 + X) ^ (j : ℕ)) := by
   rw [leftMulMatrix_def, Algebra.leftMulMatrix_eq_repr_mul, overFrobeniusBasis_repr_apply, map_mul,
     (overFrobeniusRingEquiv p O).apply_symm_apply, overFrobeniusBasis_apply]
-
-/-- The `i`-th element of `basis p O` is `(1 + X) ^ (i : ℕ)`. -/
-@[simp]
-theorem basis_apply (i : Fin p) : basis p O i = (1 + X : O⟦X⟧) ^ (i : ℕ) :=
-  (@Module.Basis.map_apply _ _ _ _ _ _ _ _ (scalarAlgebra p O).toModule ..).trans
-    (overFrobeniusBasis_apply i)
-
-/-- The `i`-th coordinate of `f` in `basis p O` is `coord p O i f`. -/
-@[simp]
-theorem basis_repr_apply (f : O⟦X⟧) (i : Fin p) :
-    @Module.Basis.repr (Fin p) O⟦X⟧ O⟦X⟧ _ _ (scalarAlgebra p O).toModule (basis p O) f i =
-      coord p O i f := by
-  rw [basis, @Module.Basis.map_repr _ _ _ _ _ _ _ _ (scalarAlgebra p O).toModule,
-    LinearEquiv.trans_apply, overFrobeniusBasis_repr_apply,
-    overFrobeniusRingEquiv_eq_toScalarAlgEquiv]
-  exact congrArg (coord p O i)
-    (@AlgEquiv.apply_symm_apply O⟦X⟧ (OverFrobenius p O) O⟦X⟧ _ _ _ _ (scalarAlgebra p O)
-      overFrobeniusToScalarAlgEquiv f)
 
 /-- `adjoinRootEquiv p O` sends the adjoined root to `1 + X`. -/
 @[simp]
 theorem adjoinRootEquiv_root [Nontrivial O] :
     adjoinRootEquiv p O (AdjoinRoot.root (Polynomial.X ^ p - Polynomial.C (1 + X : O⟦X⟧))) =
       1 + X := by
-  rw [adjoinRootEquiv, @AlgEquiv.trans_apply _ _ _ _ _ _ _ _ _ _ (scalarAlgebra p O),
-    overFrobeniusAdjoinRootEquiv_root]
-  exact (overFrobeniusRingEquiv p O).apply_symm_apply _
+  rw [adjoinRootEquiv, @AlgEquiv.trans_apply _ _ _ _ _ _ _ _ _ _ (frobeniusAlgebra O p),
+    overFrobeniusAdjoinRootEquiv_root, ← overFrobeniusRingEquiv_eq_toScalarAlgEquiv,
+    (overFrobeniusRingEquiv p O).apply_symm_apply]
 
-/-- `adjoinRootEquiv p O` sends `AdjoinRoot.of _ g` to `frobeniusHom p O g`. -/
+/-- `adjoinRootEquiv p O` sends `AdjoinRoot.of _ g` to `frobeniusSubst O p g`. -/
 @[simp]
 theorem adjoinRootEquiv_of [Nontrivial O] (g : O⟦X⟧) :
     adjoinRootEquiv p O (AdjoinRoot.of (Polynomial.X ^ p - Polynomial.C (1 + X : O⟦X⟧)) g) =
-      frobeniusHom p O g := by
+      frobeniusSubst O p g := by
   rw [← AdjoinRoot.algebraMap_eq,
-    @AlgEquiv.commutes _ _ _ _ _ _ _ (scalarAlgebra p O) (adjoinRootEquiv p O) g,
-    scalarAlgebra_algebraMap_apply]
+    @AlgEquiv.commutes _ _ _ _ _ _ _ (frobeniusAlgebra O p) (adjoinRootEquiv p O) g,
+    algebraMap_frobeniusAlgebra_apply]
 
-/-- `Coleman.leftMulMatrix p O` agrees with `Algebra.leftMulMatrix` for `basis p O`. -/
+/-- `Coleman.leftMulMatrix p O` agrees with `Algebra.leftMulMatrix` for `frobeniusBasis O p`. -/
 theorem leftMulMatrix_eq_algebra_leftMulMatrix (f : O⟦X⟧) :
     leftMulMatrix p O f =
-      @Algebra.leftMulMatrix O⟦X⟧ O⟦X⟧ _ _ (scalarAlgebra p O) (Fin p) _ _ (basis p O) f :=
+      @Algebra.leftMulMatrix O⟦X⟧ O⟦X⟧ _ _ (frobeniusAlgebra O p) (Fin p) _ _
+        (frobeniusBasis O p) f :=
   Matrix.ext fun i j ↦ by
-    rw [leftMulMatrix_eq_coord_mul,
-      @Algebra.leftMulMatrix_eq_repr_mul _ _ _ _ (scalarAlgebra p O) (Fin p) _ _ (basis p O),
-      basis_repr_apply, basis_apply]
+    rw [leftMulMatrix_eq_frobeniusCoord_mul,
+      @Algebra.leftMulMatrix_eq_repr_mul _ _ _ _ (frobeniusAlgebra O p) (Fin p) _ _
+        (frobeniusBasis O p),
+      frobeniusBasis_repr_apply, frobeniusBasis_apply]
 
 /-- Left multiplication by `Φ(a)` is represented by the scalar diagonal matrix `a • 1`. -/
 @[simp]
-theorem leftMulMatrix_frobeniusHom (a : O⟦X⟧) :
-    leftMulMatrix p O (frobeniusHom p O a) = Matrix.diagonal fun _ ↦ a := by
+theorem leftMulMatrix_frobeniusSubst (a : O⟦X⟧) :
+    leftMulMatrix p O (frobeniusSubst O p a) = Matrix.diagonal fun _ ↦ a := by
   rw [leftMulMatrix_def, overFrobenius_algebraMap_eq, AlgHom.commutes]
   ext i j; simp [Matrix.algebraMap_eq_diagonal, Pi.algebraMap_def]
 
 /-- Explicit formula for the `(i, j)` entry of `leftMulMatrix p O f`. -/
 theorem leftMulMatrix_apply (f : O⟦X⟧) (i j : Fin p) :
     leftMulMatrix p O f i j =
-      if h : (j : ℕ) ≤ i then coord p O ⟨(i : ℕ) - j, by omega⟩ f
-      else coord p O ⟨p + (i : ℕ) - j, by omega⟩ f * (1 + X) := by
-  rw [leftMulMatrix_eq_coord_mul]
-  conv_lhs => rw [← sum_frobeniusHom_coord (p := p) f, Finset.sum_mul]
-  simp only [map_sum, mul_assoc, ← pow_add, coord_frobeniusHom_mul, coord_one_add_X_pow]
+      if h : (j : ℕ) ≤ i then frobeniusCoord O p ⟨(i : ℕ) - j, by omega⟩ f
+      else frobeniusCoord O p ⟨p + (i : ℕ) - j, by omega⟩ f * (1 + X) := by
+  rw [leftMulMatrix_eq_frobeniusCoord_mul]
+  conv_lhs => rw [← sum_one_add_X_pow_mul_frobeniusSubst_frobeniusCoord p f, Finset.sum_mul]
+  simp only [map_sum, mul_comm ((1 + X : O⟦X⟧) ^ (_ : ℕ)) (frobeniusSubst O p _), mul_assoc,
+    ← pow_add, frobeniusCoord_frobeniusSubst_mul, frobeniusCoord_one_add_X_pow]
   have hmod (r : Fin p) :
       ((r : ℕ) + j) % p = if (r : ℕ) + j < p then (r : ℕ) + j else (r : ℕ) + j - p := by
     split_ifs with h
@@ -374,26 +338,13 @@ theorem leftMulMatrix_apply (f : O⟦X⟧) (i j : Fin p) :
     simp [r₀, not_le.mpr h, hadd, Nat.add_div_left _ (Fact.out : p.Prime).pos,
       Nat.mod_eq_of_lt i.isLt, Nat.div_eq_of_lt i.isLt]
 
-/-- Under `scalarAlgebra p O`, `O⟦X⟧` is a free `O⟦X⟧`-module. -/
-theorem module_free_scalarAlgebra : @Module.Free O⟦X⟧ O⟦X⟧ _ _ (scalarAlgebra p O).toModule :=
-  @Module.Free.of_basis _ _ _ _ (scalarAlgebra p O).toModule _ (basis p O)
-
-/-- Under `scalarAlgebra p O`, `O⟦X⟧` is a finite `O⟦X⟧`-module. -/
-theorem module_finite_scalarAlgebra : @Module.Finite O⟦X⟧ O⟦X⟧ _ _ (scalarAlgebra p O).toModule :=
-  @Module.Finite.of_basis _ _ _ _ _ (scalarAlgebra p O).toModule _ (basis p O)
-
-/-- Under `scalarAlgebra p O`, `O⟦X⟧` has rank `p` over `O⟦X⟧` (for nontrivial `O`). -/
-theorem finrank_scalarAlgebra [Nontrivial O] :
-    @Module.finrank O⟦X⟧ O⟦X⟧ _ _ (scalarAlgebra p O).toModule = p := by
-  rw [@Module.finrank_eq_card_basis _ _ _ _ (scalarAlgebra p O).toModule _ _ _ (basis p O),
-    Fintype.card_fin]
-
-/-- Expanding `f * (1 + X) ^ j` in `basis p O` recovers column `j` of `leftMulMatrix p O f`. -/
+/-- Expanding `f * (1 + X) ^ j` in `frobeniusBasis O p` recovers column `j` of
+`leftMulMatrix p O f`. -/
 theorem mul_one_add_X_pow_eq_sum_leftMulMatrix (f : O⟦X⟧) (j : Fin p) :
     f * (1 + X) ^ (j : ℕ) =
-      ∑ i : Fin p, frobeniusHom p O (leftMulMatrix p O f i j) * (1 + X) ^ (i : ℕ) := by
-  simpa only [leftMulMatrix_eq_coord_mul] using
-    (sum_frobeniusHom_coord (p := p) (f * (1 + X) ^ (j : ℕ))).symm
+      ∑ i : Fin p, (1 + X) ^ (i : ℕ) * frobeniusSubst O p (leftMulMatrix p O f i j) := by
+  simpa only [leftMulMatrix_eq_frobeniusCoord_mul] using
+    (sum_one_add_X_pow_mul_frobeniusSubst_frobeniusCoord p (f * (1 + X) ^ (j : ℕ))).symm
 
 /-- **Determinant formula for Coleman's norm.** `norm p O f = det (leftMulMatrix p O f)`. -/
 theorem norm_eq_det_leftMulMatrix (f : O⟦X⟧) : norm p O f = Matrix.det (leftMulMatrix p O f) :=
@@ -403,33 +354,37 @@ theorem norm_eq_det_leftMulMatrix (f : O⟦X⟧) : norm p O f = Matrix.det (left
 theorem trace_eq_trace_leftMulMatrix (f : O⟦X⟧) :
     trace p O f = Matrix.trace (leftMulMatrix p O f) := (rfl)
 
-/-- **Trace formula in the Coleman basis.** `trace p O f` equals `p` times `coord p O 0 f`. -/
-theorem trace_eq_p_mul_coord_zero (f : O⟦X⟧) :
-    trace p O f = (p : O⟦X⟧) * coord p O ⟨0, (Fact.out : p.Prime).pos⟩ f := by
+/-- **Trace formula in the Frobenius basis.** `trace p O f` equals `p` times
+`frobeniusCoord O p 0 f`. -/
+theorem trace_eq_p_mul_frobeniusCoord_zero (f : O⟦X⟧) :
+    trace p O f = (p : O⟦X⟧) * frobeniusCoord O p ⟨0, (Fact.out : p.Prime).pos⟩ f := by
   rw [trace_eq_trace_leftMulMatrix, Matrix.trace]
-  have hdiag (i : Fin p) : leftMulMatrix p O f i i = coord p O ⟨0, (Fact.out : p.Prime).pos⟩ f := by
+  have hdiag (i : Fin p) :
+      leftMulMatrix p O f i i = frobeniusCoord O p ⟨0, (Fact.out : p.Prime).pos⟩ f := by
     simp only [leftMulMatrix_apply, dite_eq_left le_rfl]; congr 1; ext; simp
   simp [Matrix.diag, hdiag]
 
 /-- Coleman's trace of `1` is `p`. -/
 @[simp]
-theorem trace_one : trace p O 1 = (p : O⟦X⟧) := by rw [trace_eq_p_mul_coord_zero, coord_one]; simp
+theorem trace_one : trace p O 1 = (p : O⟦X⟧) := by
+  rw [trace_eq_p_mul_frobeniusCoord_zero, frobeniusCoord_one]; simp
 
 /-- Coleman's trace on `Φ(a)` is `p * a`. -/
 @[simp]
-theorem trace_frobeniusHom (a : O⟦X⟧) : trace p O (frobeniusHom p O a) = (p : O⟦X⟧) * a := by
-  simpa [mul_comm] using trace_frobeniusHom_mul (p := p) a 1
+theorem trace_frobeniusSubst (a : O⟦X⟧) :
+    trace p O (frobeniusSubst O p a) = (p : O⟦X⟧) * a := by
+  simpa [mul_comm] using trace_frobeniusSubst_mul (p := p) a 1
 
 /-- Coleman's trace on a constant series `C c` is `p * C c`. -/
 @[simp]
 theorem trace_C (c : O) : trace p O (C c) = (p : O⟦X⟧) * C c := by
-  simpa only [frobeniusHom_C] using trace_frobeniusHom (p := p) (C c)
+  simpa only [frobeniusSubst_C] using trace_frobeniusSubst (p := p) (C c)
 
 /-- Coleman's trace on `(1 + X) ^ n` is `p * (1 + X) ^ (n / p)` when `p ∣ n`, and `0` otherwise. -/
 @[simp]
 theorem trace_one_add_X_pow (n : ℕ) :
     trace p O ((1 + X : O⟦X⟧) ^ n) = if p ∣ n then (p : O⟦X⟧) * (1 + X) ^ (n / p) else 0 := by
-  simp only [trace_eq_p_mul_coord_zero, coord_one_add_X_pow, eq_comm (a := 0),
+  simp only [trace_eq_p_mul_frobeniusCoord_zero, frobeniusCoord_one_add_X_pow, eq_comm (a := 0),
     Nat.dvd_iff_mod_eq_zero]
   split_ifs <;> simp
 
@@ -446,24 +401,24 @@ theorem trace_X : trace p O X = -(p : O⟦X⟧) := by
 
 /-- Coleman's norm of `Φ(a)` is `a ^ p`. -/
 @[simp]
-theorem norm_frobeniusHom (a : O⟦X⟧) : norm p O (frobeniusHom p O a) = a ^ p := by
+theorem norm_frobeniusSubst (a : O⟦X⟧) : norm p O (frobeniusSubst O p a) = a ^ p := by
   rw [norm_eq_overFrobenius_norm, overFrobenius_algebraMap_eq,
     Algebra.norm_algebraMap_of_basis (overFrobeniusBasis p O), Fintype.card_fin]
 
 /-- Coleman's norm of `0` is `0`. -/
 @[simp]
 theorem norm_zero : norm p O 0 = 0 := by
-  simpa [zero_pow (Fact.out : p.Prime).ne_zero] using norm_frobeniusHom (p := p) (0 : O⟦X⟧)
+  simpa [zero_pow (Fact.out : p.Prime).ne_zero] using norm_frobeniusSubst (p := p) (0 : O⟦X⟧)
 
 /-- Coleman's norm of a constant series `C c` is `C (c ^ p)`. -/
 @[simp]
 theorem norm_C (c : O) : norm p O (C c) = C (c ^ p) := by
-  simpa only [frobeniusHom_C, map_pow] using norm_frobeniusHom (p := p) (C c)
+  simpa only [frobeniusSubst_C, map_pow] using norm_frobeniusSubst (p := p) (C c)
 
 /-- **First-order expansion of Coleman's norm near `1`.** For any `a, f ∈ O⟦X⟧`, there exists
 `r ∈ O⟦X⟧` such that `N(1 + Φ(a) * f) = 1 + τ(f) * a + r * a ^ 2`. -/
-theorem norm_one_add_frobeniusHom_mul (a f : O⟦X⟧) :
-    ∃ r : O⟦X⟧, norm p O (1 + frobeniusHom p O a * f) = 1 + trace p O f * a + r * a ^ 2 := by
+theorem norm_one_add_frobeniusSubst_mul (a f : O⟦X⟧) :
+    ∃ r : O⟦X⟧, norm p O (1 + frobeniusSubst O p a * f) = 1 + trace p O f * a + r * a ^ 2 := by
   have := Module.Free.of_basis (overFrobeniusBasis p O)
   have := Module.Finite.of_basis (overFrobeniusBasis p O)
   obtain ⟨r, hr⟩ := Algebra.norm_one_add_smul a ((overFrobeniusRingEquiv p O).symm f)
@@ -471,12 +426,12 @@ theorem norm_one_add_frobeniusHom_mul (a f : O⟦X⟧) :
     ← trace_def]⟩
 
 /-- **Norm of linear elements `Φ(g) - (1 + X)`.** `N(Φ(g) - (1 + X)) = g ^ p - (1 + X)`. -/
-theorem norm_frobeniusHom_sub_one_add_X (g : O⟦X⟧) :
-    norm p O (frobeniusHom p O g - (1 + X)) = g ^ p - (1 + X) := by
+theorem norm_frobeniusSubst_sub_one_add_X (g : O⟦X⟧) :
+    norm p O (frobeniusSubst O p g - (1 + X)) = g ^ p - (1 + X) := by
   nontriviality O
   set P : Polynomial O⟦X⟧ := Polynomial.X ^ p - Polynomial.C (1 + X : O⟦X⟧)
   have harg : overFrobeniusAdjoinRootEquiv (p := p) (O := O) (AdjoinRoot.of P g - AdjoinRoot.root P)
-      = (overFrobeniusRingEquiv p O).symm (frobeniusHom p O g - (1 + X)) := by
+      = (overFrobeniusRingEquiv p O).symm (frobeniusSubst O p g - (1 + X)) := by
     rw [map_sub, ← AdjoinRoot.algebraMap_eq, AlgEquiv.commutes, ← overFrobenius_algebraMap_eq,
       overFrobeniusAdjoinRootEquiv_root, map_sub]
   rw [norm_eq_overFrobenius_norm, ← harg,
@@ -502,13 +457,13 @@ private theorem norm_eq_neg_one_pow_mul_of_norm_neg {f : O⟦X⟧} (hf : norm p 
 theorem norm_one_add_X : norm p O (1 + X) = (-1 : O⟦X⟧) ^ (p - 1) * (1 + X) :=
   norm_eq_neg_one_pow_mul_of_norm_neg <| by
     simpa [zero_pow (Fact.out : p.Prime).ne_zero] using
-      norm_frobeniusHom_sub_one_add_X (p := p) (0 : O⟦X⟧)
+      norm_frobeniusSubst_sub_one_add_X (p := p) (0 : O⟦X⟧)
 
 /-- **Norm of `X`:** `N(X) = (-1) ^ (p - 1) * X`. -/
 @[simp]
 theorem norm_X : norm p O X = (-1 : O⟦X⟧) ^ (p - 1) * X :=
   norm_eq_neg_one_pow_mul_of_norm_neg <| by
-    simpa using norm_frobeniusHom_sub_one_add_X (p := p) (1 : O⟦X⟧)
+    simpa using norm_frobeniusSubst_sub_one_add_X (p := p) (1 : O⟦X⟧)
 
 /-- Functoriality of Coleman's norm along any homomorphism between `(p)`-adically complete rings. -/
 theorem map_norm {O' : Type*} [CommRing O'] [IsAdicComplete (Ideal.span {(p : O')}) O']
@@ -517,13 +472,14 @@ theorem map_norm {O' : Type*} [CommRing O'] [IsAdicComplete (Ideal.span {(p : O'
   rw [norm_eq_det_leftMulMatrix, norm_eq_det_leftMulMatrix, RingHom.map_det]
   congr 1; refine Matrix.ext fun i j ↦ ?_
   simp only [RingHom.mapMatrix_apply, Matrix.map_apply, leftMulMatrix_apply]
-  split_ifs <;> simp [map_coord]
+  split_ifs <;> simp [map_frobeniusCoord]
 
 /-- Functoriality of Coleman's trace along any homomorphism of `(p)`-adically complete rings. -/
 theorem map_trace {O' : Type*} [CommRing O'] [IsAdicComplete (Ideal.span {(p : O')}) O']
     (φ : O →+* O') (f : O⟦X⟧) :
     PowerSeries.map φ (trace p O f) = trace p O' (PowerSeries.map φ f) := by
-  rw [trace_eq_p_mul_coord_zero, trace_eq_p_mul_coord_zero, map_mul, map_natCast, map_coord]
+  rw [trace_eq_p_mul_frobeniusCoord_zero, trace_eq_p_mul_frobeniusCoord_zero, map_mul, map_natCast,
+    map_frobeniusCoord]
 
 end Operators
 

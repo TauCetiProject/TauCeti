@@ -18,7 +18,8 @@ It takes values in the kernel of `psiSeries`, the series psi operator from
 unit-supported measures.
 
 For the Mahler derivation `∂ = (1 + X) d/dX` and `H = inverseMahler p`, both `∂ H` and `H ∂`
-are the unit projector `F ↦ F - Coleman.frobeniusHom p ℤ_[p] (psiSeries p F)`. Consequently every
+are the unit projector `F ↦ F - PowerSeries.frobeniusSubst ℤ_[p] p (psiSeries p F)`. Consequently
+every
 series killed by psi has a unique primitive killed by psi. This support condition is essential:
 `∂` kills constants, whereas psi fixes them. All primes, including two, are allowed. No topology
 on measures is installed.
@@ -95,7 +96,7 @@ theorem psiSeries_inverseMahler (F : ℤ_[p]⟦X⟧) :
 /-- The Mahler derivative of `H F` is the unit projection of `F`. -/
 theorem mahlerDerivation_inverseMahler (F : ℤ_[p]⟦X⟧) :
     mahlerDerivation ℤ_[p] (inverseMahler p F) =
-      F - Coleman.frobeniusHom p ℤ_[p] (psiSeries p F) := by
+      F - frobeniusSubst ℤ_[p] p (psiSeries p F) := by
   obtain ⟨μ, rfl⟩ := amiceTransformEquiv.surjective F
   rw [amiceTransformEquiv_apply, inverseMahler_amiceTransform,
     ← amiceTransform_weight_id_smul_one, weight_id_smul_one_inverseWeight,
@@ -104,7 +105,7 @@ theorem mahlerDerivation_inverseMahler (F : ℤ_[p]⟦X⟧) :
 /-- Applying `H` after the Mahler derivative also gives the unit projection. -/
 theorem inverseMahler_mahlerDerivation (F : ℤ_[p]⟦X⟧) :
     inverseMahler p (mahlerDerivation ℤ_[p] F) =
-      F - Coleman.frobeniusHom p ℤ_[p] (psiSeries p F) := by
+      F - frobeniusSubst ℤ_[p] p (psiSeries p F) := by
   obtain ⟨μ, rfl⟩ := amiceTransformEquiv.surjective F
   rw [amiceTransformEquiv_apply, ← amiceTransform_weight_id_smul_one,
     inverseMahler_amiceTransform, inverseWeight_weight_id_smul_one,

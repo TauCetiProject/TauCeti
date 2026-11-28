@@ -19,7 +19,7 @@ p-adic topology.
 The average descends uniquely to an integral series before Frobenius, namely `psiSeries p F`.
 Thus neither division by `p` in the receiving integer ring nor an inverse substitution is
 needed to recover psi. The identity follows from `Coleman.Measure`'s trace specialization
-`sum_rootTranslation_eq_map_frobeniusHom_trace` together with `Coleman.trace_eq_p_mul_psiSeries`.
+`sum_rootTranslation_eq_map_frobeniusSubst_trace` together with `Coleman.trace_eq_p_mul_psiSeries`.
 
 ## References
 
@@ -42,10 +42,10 @@ of the original series. This characterizes both the existence and uniqueness of 
 theorem mul_map_subst_eq_sum_rootTranslation_iff (hζ : IsPrimitiveRoot ζ p)
     (F G : ℤ_[p]⟦X⟧) :
     (p : PowerSeries 𝓞_ℂ_[p]) * map (integralCoefficientMap p)
-        (Coleman.frobeniusHom p ℤ_[p] G) =
+        (frobeniusSubst ℤ_[p] p G) =
       ∑ i : Fin p, rootTranslation p ζ hζ.pow_eq_one (i : ℕ) F ↔
       G = psiSeries p F := by
-  rw [hζ.sum_rootTranslation_eq_map_frobeniusHom_trace, Coleman.trace_eq_p_mul_psiSeries,
+  rw [hζ.sum_rootTranslation_eq_map_frobeniusSubst_trace, Coleman.trace_eq_p_mul_psiSeries,
     map_mul, map_natCast, map_mul, map_natCast]
   have hp : (p : PowerSeries 𝓞_ℂ_[p]) ≠ 0 := by
     intro h
@@ -54,12 +54,12 @@ theorem mul_map_subst_eq_sum_rootTranslation_iff (hζ : IsPrimitiveRoot ζ p)
     exact (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero) this
   rw [mul_right_inj' hp, (PowerSeries.map_injective (integralCoefficientMap p)
     (PadicComplex.integralCoefficientMap_injective p)).eq_iff,
-    (Coleman.frobeniusHom_injective (p := p)).eq_iff]
+    (frobeniusSubst_injective (R := ℤ_[p]) p).eq_iff]
 
 -- The characterization provides an actual unique integral preimage, without dividing by `p`.
 example (hζ : IsPrimitiveRoot ζ p) (F : ℤ_[p]⟦X⟧) :
     ∃! G : ℤ_[p]⟦X⟧, (p : PowerSeries 𝓞_ℂ_[p]) * map (integralCoefficientMap p)
-        (Coleman.frobeniusHom p ℤ_[p] G) =
+        (frobeniusSubst ℤ_[p] p G) =
       ∑ i : Fin p, rootTranslation p ζ hζ.pow_eq_one (i : ℕ) F := by
   simp_rw [hζ.mul_map_subst_eq_sum_rootTranslation_iff]
   exact existsUnique_eq
@@ -71,7 +71,7 @@ example (hζ : IsPrimitiveRoot ζ p) :
       (binomialSeries ℤ_[p] (-1 : ℤ_[p])) = 0 := by
   have hu : ¬ (p : ℤ_[p]) ∣ -1 :=
     fun h ↦ PadicInt.p_nonunit (isUnit_of_dvd_unit h (by simp))
-  rw [hζ.sum_rootTranslation_eq_map_frobeniusHom_trace, Coleman.trace_eq_p_mul_psiSeries,
+  rw [hζ.sum_rootTranslation_eq_map_frobeniusSubst_trace, Coleman.trace_eq_p_mul_psiSeries,
     psiSeries_binomialSeries_of_not_dvd hu]
   simp
 
