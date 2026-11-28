@@ -9,7 +9,6 @@ public import Mathlib.NumberTheory.MulChar.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.GLn.HallAlgebra.Basic
 
 import Mathlib.LinearAlgebra.Charpoly.BaseChange
-import TauCeti.LinearAlgebra.Charpoly.Quotient
 
 /-!
 # Determinant character and twisting endomorphisms on the Hall algebra
@@ -32,6 +31,8 @@ multiplied pointwise by `χ ∘ det`.
   `HallAlgebra k` for finite `k`.
 * `MulChar.detTwist_apply`: evaluation rule `(χ.detTwist F) c = χ.detChar c * F c`.
 * `MulChar.detTwist_rankPart`: `χ.detTwist` commutes with `TauCeti.HallAlgebra.rankPart`.
+* `MulChar.toClassFunction_detChar` and `MulChar.toClassFunction_detTwist`: evaluation of
+  `χ.detChar` and `χ.detTwist F` on `GL_n(k)` via `TauCeti.HallAlgebra.toClassFunction`.
 
 ## References
 
@@ -89,6 +90,13 @@ theorem detChar_ofEnd_eq_mul (χ : MulChar k ℂ) {V : Type*} [AddCommGroup V] [
     Module.End.invtQuot_def, ← map_mul,
     LinearMap.det_eq_det_mul_det U g ((Module.End.mem_invtSubmodule g).1 hU)]
 
+/-- Restricting `χ.detChar` to `GL_n(k)` via `toClassFunction` gives `χ ∘ det`. -/
+@[simp]
+theorem toClassFunction_detChar (χ : MulChar k ℂ) {n : Type*} [Fintype n] [DecidableEq n]
+    (g : Matrix.GeneralLinearGroup n k) :
+    (χ.detChar.toClassFunction n).val g = χ (g : Matrix n n k).det := by
+  rw [toClassFunction_apply, detChar_ofEnd, LinearMap.det_toLin']
+
 end Field
 
 section Finite
@@ -99,19 +107,19 @@ variable {k : Type*} [Field k] [Finite k]
 `HallAlgebra k`. -/
 noncomputable def detTwist (χ : MulChar k ℂ) : HallAlgebra k →ₐ[ℂ] HallAlgebra k :=
   let f : HallAlgebra k →ₗ[ℂ] HallAlgebra k :=
-    LinearMap.piMap fun c : SimilarityClass k ↦ LinearMap.mulLeft ℂ (χ.detChar c)
-  have hf (F : HallAlgebra k) (c : SimilarityClass k) : f F c = χ.detChar c * F c := rfl
+    { toFun F c := χ.detChar c * F c
+      map_add' F H := by ext c; simp [mul_add]
+      map_smul' a F := by ext c; simp [mul_left_comm] }
   AlgHom.ofLinearMap f
     (by
       ext c
-      rw [hf]
       by_cases h : c.dim = 0
-      · simp [h, detChar_eq_one_of_dim_eq_zero]
-      · simp [h])
+      · simp [f, h, detChar_eq_one_of_dim_eq_zero]
+      · simp [f, h])
     (by
       intro F H
       refine ext_ofEnd fun n g ↦ ?_
-      simp only [hf, HallAlgebra.mul_ofEnd, mul_finsum]
+      simp only [f, LinearMap.coe_mk, AddHom.coe_mk, HallAlgebra.mul_ofEnd, mul_finsum]
       refine finsum_congr fun U ↦ ?_
       rw [detChar_ofEnd_eq_mul χ U.property]
       ring)
@@ -128,6 +136,16 @@ theorem detTwist_rankPart (χ : MulChar k ℂ) (n : ℕ) (F : HallAlgebra k) :
     χ.detTwist (rankPart n F) = rankPart n (χ.detTwist F) := by
   ext c
   by_cases h : c.dim = n <;> simp [rankPart_apply, h]
+
+/-- Restricting `χ.detTwist F` to `GL_n(k)` via `toClassFunction` multiplies `F` pointwise by
+`χ ∘ det`. -/
+@[simp]
+theorem toClassFunction_detTwist (χ : MulChar k ℂ) (F : HallAlgebra k) {n : Type*} [Fintype n]
+    [DecidableEq n] (g : Matrix.GeneralLinearGroup n k) :
+    ((χ.detTwist F).toClassFunction n).val g =
+      χ (g : Matrix n n k).det * (F.toClassFunction n).val g := by
+  rw [toClassFunction_apply, detTwist_apply, detChar_ofEnd, LinearMap.det_toLin',
+    toClassFunction_apply]
 
 end Finite
 
