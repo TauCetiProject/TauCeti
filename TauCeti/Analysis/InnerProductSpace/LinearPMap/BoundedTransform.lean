@@ -136,7 +136,7 @@ theorem boundedTransform_mul_self_sub_one :
     A.boundedTransform hA * A.boundedTransform hA - 1 = -A.invOneAddSq := by
   rw [← neg_sub, one_sub_boundedTransform_mul_self]
 
-/-- The defect `F_A² - 1` of the bounded transform is compact. -/
+/-- If `A` has compact resolvent, the defect `F_A² - 1` of the bounded transform is compact. -/
 theorem isCompactOperator_boundedTransform_mul_self_sub_one (h : A.HasCompactResolvent) :
     IsCompactOperator ⇑(A.boundedTransform hA * A.boundedTransform hA - 1) := by
   rw [boundedTransform_mul_self_sub_one, FunLike.coe_neg]
@@ -380,8 +380,8 @@ private theorem commutator_boundedTransform_eq_integral (h : A.HasCompactResolve
     integral_sub (integrableOn_bjKernel (lam i)) (integrableOn_bjKernel (lam j)),
     integral_bjKernel, Complex.coe_algebraMap]
 
-/-- **Baaj–Julg compactness theorem.** If `T` and `C` satisfy the domain-aware Sylvester equation
-`A T - T A = C`, then `[F_A, T]` is a compact operator. -/
+/-- **Baaj–Julg compactness theorem.** If `A` has compact resolvent and `T`, `C` satisfy the
+domain-aware Sylvester equation `A T - T A = C`, then `[F_A, T]` is a compact operator. -/
 theorem isCompactOperator_commutator_boundedTransform (h : A.HasCompactResolvent)
     {T C : H →L[ℂ] H} (hTC : SylvesterEquation A A T C) :
     IsCompactOperator ⇑(A.boundedTransform hA * T - T * A.boundedTransform hA) := by
@@ -396,8 +396,8 @@ theorem isCompactOperator_commutator_boundedTransform (h : A.HasCompactResolvent
   rw [bjIntegrand, ← Complex.coe_smul]
   exact (compactOperator (RingHom.id ℂ) H H).smul_mem _ hcomm
 
-/-- **Baaj–Julg norm estimate.** If `T` and `C` satisfy the domain-aware Sylvester equation
-`A T - T A = C`, then `‖[F_A, T]‖ ≤ ‖C‖`. -/
+/-- **Baaj–Julg norm estimate.** If `A` has compact resolvent and `T`, `C` satisfy the
+domain-aware Sylvester equation `A T - T A = C`, then `‖[F_A, T]‖ ≤ ‖C‖`. -/
 theorem norm_commutator_boundedTransform_le (h : A.HasCompactResolvent)
     {T C : H →L[ℂ] H} (hTC : SylvesterEquation A A T C) :
     ‖A.boundedTransform hA * T - T * A.boundedTransform hA‖ ≤ ‖C‖ := by

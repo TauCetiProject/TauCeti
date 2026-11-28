@@ -51,6 +51,8 @@ separation `Module.End.PointSpectraSeparated A ⊤ B ⊤ δ` with `0 < δ` suppl
 
 ## Main statements
 
+* `ContinuousLinearMap.mul_sub_mul_eq_sylvester`: multiplication form
+  `A * X - X * B = A.sylvester B X` for endomorphisms.
 * `ContinuousLinearMap.sub_smul_one_sylvester_sub_smul_one`: the Sylvester operator is unchanged
   when `A` and `B` are shifted by the same scalar.
 * `ContinuousLinearMap.add_mul_norm_le_norm_comp_add_comp`: if the forms of `A` and `B` are
