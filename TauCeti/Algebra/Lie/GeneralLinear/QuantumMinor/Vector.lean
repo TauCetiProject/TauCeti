@@ -18,10 +18,12 @@ the signed row cofactors at the same parameter `u`, each multiplied by the vecto
 (`lie_vector_quantumMinor`). For the full quantum determinant `Δ(u)` this gives
 `Δ(u) * y c = y c * Δ(u) - ∑ j, ± y j * Δ_{c,j}(u)` (`quantumMinor_id_mul_vector`). These
 identities move vector components across quantum (Capelli) determinants in spectral-shift
-computations.
+computations. In a signed cofactor contraction, moving the vector to the right lowers the
+cofactor parameter by one (`sum_vector_mul_quantumMinor_eq`).
 
-The full determinant formula is L. Alpöge's `Formalism.FourierDecayAlt.Qr.DetVec`
-in the formalization of the Riemann hypothesis for Dirichlet L-functions.
+The full determinant formula and the cofactor movement identity are L. Alpöge's
+`Formalism.FourierDecayAlt.Qr.DetVec` and `PI.MoveVec` in the formalization of the Riemann
+hypothesis for Dirichlet L-functions.
 -/
 
 public section
@@ -218,5 +220,95 @@ theorem quantumMinor_id_mul_vector {n : ℕ} (E : Matrix (Fin (n + 1)) (Fin (n +
   · intro i _ hi
     simp [hi.symm]
   · simp
+
+-- In the first-column expansion, separate the term from the fresh row.
+private theorem quantumMinor_vectorRow_firstColumn (E : Matrix ι ι A) (y : ι → A)
+    (u : K) {n : ℕ} (a : Fin (n + 1) → ι) (b : Fin (n + 2) → ι) :
+    (withVectorRow E y).quantumMinor u (Fin.cons none (some ∘ a)) (some ∘ b) =
+      y (b 0) * E.quantumMinor (u - 1) a (Fin.tail b) +
+      ∑ i, (-1 : ℤ) ^ (i.val + 1) •
+        (((if a i = b 0 then algebraMap K A u else 0) + E (a i) (b 0)) *
+          (withVectorRow E y).quantumMinor (u - 1)
+            (Fin.cons none (some ∘ i.removeNth a)) (some ∘ Fin.tail b)) := by
+  have hremove (i : Fin (n + 1)) : i.removeNth (some ∘ a) = some ∘ i.removeNth a :=
+    Fin.removeNth_comp some i a
+  rw [quantumMinor_succ_column_zero, Fin.sum_univ_succ]
+  simp only [Fin.val_zero, pow_zero, one_smul, Fin.cons_zero, Function.comp_apply,
+    reduceCtorEq, ite_false, zero_add, Fin.removeNth_zero, Fin.tail_cons,
+    ← Fin.comp_tail, quantumMinor_withVectorRow_some, Fin.val_succ,
+    Fin.cons_succ, Fin.removeNth_succ_cons, hremove]
+  simp only [withVectorRow, of_apply, Option.elim, Option.some.injEq]
+
+-- The first-column expansion gives the other order of the vector row and the minor.
+private theorem quantumMinor_vectorRow_eq_sum_mul_vector (E : Matrix ι ι A) (y : ι → A)
+    (u : K) {n : ℕ} (a : Fin n → ι) (b : Fin (n + 1) → ι)
+    (hy : ∀ i j k, ⁅y (b k), E (a i) (b j)⁆ = if b k = a i then y (b j) else 0) :
+    (withVectorRow E y).quantumMinor u (Fin.cons none (some ∘ a)) (some ∘ b) =
+      ∑ j, (-1 : ℤ) ^ j.val • (E.quantumMinor (u - 1) a (j.removeNth b) * y (b j)) := by
+  induction n generalizing u with
+  | zero => simp [withVectorRow]
+  | succ n ih =>
+    let C := E.quantumMinor (u - 1) a (Fin.tail b)
+    let B (i : Fin (n + 1)) :=
+      (withVectorRow E y).quantumMinor (u - 1)
+        (Fin.cons none (some ∘ i.removeNth a)) (some ∘ Fin.tail b)
+    let T (v : K) (i : Fin (n + 1)) :=
+      (if a i = b 0 then algebraMap K A v else 0) + E (a i) (b 0)
+    have hleft : (withVectorRow E y).quantumMinor u (Fin.cons none (some ∘ a)) (some ∘ b) =
+        y (b 0) * C + ∑ i, (-1 : ℤ) ^ (i.val + 1) • (T u i * B i) :=
+      quantumMinor_vectorRow_firstColumn E y u a b
+    have hright : (∑ j, (-1 : ℤ) ^ j.val • (E.quantumMinor (u - 1) a (j.removeNth b) * y (b j))) =
+        C * y (b 0) + ∑ i, (-1 : ℤ) ^ (i.val + 1) • (T (u - 1) i * B i) := by
+      rw [Fin.sum_univ_succ]
+      simp only [Fin.val_zero, pow_zero, one_smul, Fin.removeNth_zero]
+      congr 1
+      have hb (j : Fin (n + 1)) : j.succ.removeNth b =
+          Fin.cons (b 0) (j.removeNth (Fin.tail b)) := by
+        conv_lhs => rw [← Fin.cons_self_tail b]
+        rw [Fin.removeNth_succ_cons]
+      simp_rw [hb, quantumMinor_succ_column_zero E (u - 1), Fin.cons_zero, Fin.tail_cons,
+        Finset.sum_mul, Finset.smul_sum, smul_mul_assoc, mul_assoc]
+      rw [Finset.sum_comm]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      dsimp only [B]
+      rw [ih (u - 1) (i.removeNth a) (Fin.tail b) (fun r j k ↦ hy (i.succAbove r) j.succ k.succ),
+        Finset.mul_sum, Finset.smul_sum]
+      refine Finset.sum_congr rfl fun j _ ↦ ?_
+      simp only [T, Fin.tail, Fin.val_succ, mul_smul_comm, smul_smul, ← pow_add]
+      congr 2
+      omega
+    -- Moving `y (b 0)` past `C` cancels the one-unit change in the diagonal shift.
+    have hcomm : y (b 0) * C - C * y (b 0) =
+        ∑ i, if b 0 = a i then (-1 : ℤ) ^ i.val • B i else 0 := by
+      simpa only [Ring.lie_def, C, B] using
+        lie_vector_quantumMinor_rows E y (u - 1) a (Fin.tail b) (b 0)
+          (fun i j ↦ hy i j.succ 0)
+    have hshift (i : Fin (n + 1)) : T u i = T (u - 1) i + if b 0 = a i then 1 else 0 := by
+      by_cases h : b 0 = a i
+      · simp only [T, h.symm, ite_true, map_sub, map_one]; abel
+      · simp only [T, h, Ne.symm h, ite_false, add_zero, zero_add]
+    rw [hleft, hright]
+    simp_rw [hshift, add_mul, smul_add, Finset.sum_add_distrib]
+    have hsign : (∑ i, (-1 : ℤ) ^ (i.val + 1) • ((if b 0 = a i then 1 else 0) * B i)) =
+        -(y (b 0) * C - C * y (b 0)) := by
+      rw [hcomm, ← Finset.sum_neg_distrib]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      by_cases h : b 0 = a i <;> simp [h, pow_succ']
+    rw [hsign]
+    abel
+
+/-- Moving a vector from the left to the right of a signed quantum cofactor contraction
+lowers the cofactor parameters by one. Only the mixed commutators between the vector and
+the selected matrix entries are required. -/
+theorem sum_vector_mul_quantumMinor_eq (E : Matrix ι ι A) (y : ι → A) (u : K)
+    {n : ℕ} (a : Fin n → ι) (b : Fin (n + 1) → ι)
+    (hy : ∀ i j k, ⁅E (a i) (b j), y (b k)⁆ = if a i = b k then -y (b j) else 0) :
+    ∑ j, (-1 : ℤ) ^ j.val • (y (b j) * E.quantumMinor u a (j.removeNth b)) =
+      ∑ j, (-1 : ℤ) ^ j.val • (E.quantumMinor (u - 1) a (j.removeNth b) * y (b j)) := by
+  have hy' (i j k) : ⁅y (b k), E (a i) (b j)⁆ = if b k = a i then y (b j) else 0 := by
+    rw [← lie_skew, hy]
+    by_cases h : a i = b k <;> simp [h, eq_comm (a := b k)]
+  exact (quantumMinor_vectorRow E y u a b hy').symm.trans
+    (quantumMinor_vectorRow_eq_sum_mul_vector E y u a b hy')
 
 end Matrix
