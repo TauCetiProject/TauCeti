@@ -11,7 +11,7 @@ public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.RepresentationTheory.BaseChange
-public import TauCeti.RingTheory.Deformation.Lift
+public import TauCeti.RingTheory.Deformation.Lift.Basic
 
 import TauCeti.LinearAlgebra.Basis.Semilinear
 import TauCeti.RingTheory.Ideal.Operations

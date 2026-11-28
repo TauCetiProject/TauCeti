@@ -42,6 +42,7 @@ ideal of `A₁`. When `f` is surjective, so is `pullbackSnd f g` (Mathlib's
 
 ## Main results
 
+* `RingHom.pullback_ext`: elements of `R ×_T S` agreeing after both projections are equal.
 * `RingHom.pullback_hom_ext`: homomorphisms into `R ×_T S` agreeing after both projections are
   equal.
 * `RingHom.injective_pullbackFst_of_injective`: if `g` is injective then so is the first
@@ -68,6 +69,13 @@ theorem pullback_comm_sq_apply (x : f.pullback g) : f (x : R × S).1 = g (x : R 
   x.property
 
 /-! ## The universal property -/
+
+/-- Elements of the ring pullback are determined by their two projections. -/
+theorem pullback_ext {B C D : Type*} [Ring B] [Semiring C] [Ring D]
+    {p : B →+* C} {q : D →+* C} {x y : p.pullback q}
+    (hfst : p.pullbackFst q x = p.pullbackFst q y)
+    (hsnd : p.pullbackSnd q x = p.pullbackSnd q y) : x = y :=
+  Subtype.ext (Prod.ext hfst hsnd)
 
 section Lift
 

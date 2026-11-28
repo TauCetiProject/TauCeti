@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Subfunctor.Image
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
-public import TauCeti.RingTheory.Deformation.Lift
+public import TauCeti.RingTheory.Deformation.Lift.Basic
 -- Non-public: the rank-one fact `M = scalar n (det M)` is used in proofs only.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Unique
 

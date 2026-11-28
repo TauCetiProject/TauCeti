@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.RingTheory.Deformation.ArtinLocalAlg
 
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Lift
+
 /-!
 # Lifts of a residual representation and their strict classes
 
@@ -48,6 +50,8 @@ exactly when `ρbar` is continuous for the discrete topology on `k`.
 
 ## Main results
 
+* `TauCeti.Deformation.ArtinLocalAlg.strictKernelMap_surjective`: a surjective coefficient map
+  induces a surjection on strict kernels.
 * `TauCeti.Deformation.Lift.isLocallyConstant_residual`: a residual representation with a lift is
   locally constant.
 * `TauCeti.Deformation.Lift.nonempty_residue_iff`: `ρbar` lifts to `k` exactly when it is locally
@@ -112,12 +116,20 @@ theorem mem_strictKernel_iff_apply {A : ArtinLocalAlg Λ k} {a : GL n A.obj.left
   rw [mem_strictKernel_iff, GeneralLinearGroup.ext_iff]
   simp
 
+/-- Strict-kernel membership is preserved and reflected by any coefficient morphism,
+since the morphism commutes with the augmentations. -/
+@[simp↓]
+theorem map_mem_strictKernel_iff {A B : ArtinLocalAlg Λ k} (f : A ⟶ B)
+    {a : GL n A.obj.left} :
+    GeneralLinearGroup.map (f.hom.left.hom : A.obj.left →+* B.obj.left) a ∈ B.strictKernel n ↔
+      a ∈ A.strictKernel n := by
+  rw [mem_strictKernel_iff, mem_strictKernel_iff, map_augmentation_map]
+
 /-- A morphism of `C_Λ` maps the strict kernel of its source into that of its target. -/
 theorem map_mem_strictKernel {A B : ArtinLocalAlg Λ k} (f : A ⟶ B) {a : GL n A.obj.left}
     (ha : a ∈ A.strictKernel n) :
-    GeneralLinearGroup.map (f.hom.left.hom : A.obj.left →+* B.obj.left) a ∈ B.strictKernel n := by
-  rw [mem_strictKernel_iff, map_augmentation_map, ← mem_strictKernel_iff]
-  exact ha
+    GeneralLinearGroup.map (f.hom.left.hom : A.obj.left →+* B.obj.left) a ∈ B.strictKernel n :=
+  (map_mem_strictKernel_iff f).mpr ha
 
 variable (n) in
 /-- The homomorphism `Γ̂ₙ(A) →* Γ̂ₙ(B)` of strict kernels induced by a morphism `f : A ⟶ B` of
@@ -141,6 +153,17 @@ theorem strictKernelMap_comp {A B C : ArtinLocalAlg Λ k} (f : A ⟶ B) (g : B �
     (a : A.strictKernel n) :
     strictKernelMap n (f ≫ g) a = strictKernelMap n g (strictKernelMap n f a) :=
   Subtype.ext <| GeneralLinearGroup.ext fun i j ↦ by simp
+
+/-- A surjection of coefficient rings induces a surjection on the strict kernels. -/
+theorem strictKernelMap_surjective {A B : ArtinLocalAlg Λ k}
+    (f : A ⟶ B) (hf : Function.Surjective f.hom.left.hom) :
+    Function.Surjective (strictKernelMap n f) := by
+  intro a
+  obtain ⟨b, hb, hba⟩ :=
+    (GeneralLinearGroup.map_surjective (f.hom.left.hom : A.obj.left →+* B.obj.left)
+      hf).surjOn_preimage (t := (B.strictKernel n : Set (GL n B.obj.left))) a.property
+  exact ⟨⟨b, (map_mem_strictKernel_iff f).mp hb⟩,
+    Subtype.ext ((coe_strictKernelMap_apply f _).trans hba)⟩
 
 /-- Over the residue field the strict kernel is trivial: reduction to `k` is the identity. -/
 @[simp]
