@@ -8,6 +8,7 @@ module
 public import TauCeti.Data.Fin.Basic
 public import TauCeti.Geometry.Neuromanifold.Chain
 public import TauCeti.Geometry.Neuromanifold.Polynomial.Homogeneous
+import TauCeti.Geometry.Neuromanifold.Polynomial.Map
 
 /-!
 # Finite chains of jointly polynomial models
@@ -447,12 +448,11 @@ theorem isHomogeneous_inputPolynomial_polynomialChain
   induction k using Fin.induction with
   | zero => simp
   | succ i ih =>
-    rw [polynomialChainPrefix_succ, polynomialChainPrefix_succ, map_aeval_eq_aeval_map_map,
-      Function.comp_apply]
-    refine congrArg (fun F => aeval F _) (funext fun x => ?_)
-    rcases x with w | a
-    · simp
-    · exact ih a
+    rw [polynomialChainPrefix_succ_eq_rename_polynomialCompose_last,
+      polynomialChainPrefix_succ_eq_rename_polynomialCompose_last, map_rename,
+      map_polynomialCompose]
+    congr 2
+    exact funext ih
 
 /-- Transporting a prefix of coordinatewise `Polynomial.aeval` layers along a ring homomorphism
 transports each layer model and maps the activation polynomials. -/

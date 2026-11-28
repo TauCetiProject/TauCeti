@@ -419,18 +419,6 @@ def polynomialActivation (p : Polynomial K) : ι → MvPolynomial (W ⊕ ι) K :
 theorem polynomialActivation_apply (p : Polynomial K) (i : ι) :
     polynomialActivation (W := W) p i = Polynomial.aeval (X (Sum.inr i)) p := (rfl)
 
-/-- Composing a polynomial model with a polynomial activation applies the activation polynomial to
-each output and embeds the parameters of the first model into the composite parameter sum. -/
-@[simp] theorem polynomialCompose_polynomialActivation (P : J → MvPolynomial (W ⊕ I) K)
-    (p : Polynomial K) :
-    polynomialCompose P (polynomialActivation (W := V) p) =
-      fun j => rename (Sum.map Sum.inl id) (Polynomial.aeval (P j) p) := by
-  funext j
-  rw [polynomialCompose_apply, polynomialActivation_apply,
-    ← Polynomial.aeval_algHom_apply (aeval _),
-    ← Polynomial.aeval_algHom_apply (rename (Sum.map Sum.inl id))]
-  simp
-
 /-- A polynomial activation realizes the activation layer of its polynomial function, at
 every parameter. -/
 theorem polynomialRealization_polynomialActivation (p : Polynomial K) (w : W → K) :
