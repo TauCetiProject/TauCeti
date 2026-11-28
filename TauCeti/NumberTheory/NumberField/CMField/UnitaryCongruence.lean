@@ -67,7 +67,8 @@ integral ideal `I` with `N(I) > (2n)^[E:ℚ]`, then `γ = 1`. -/
 theorem eq_one_of_trace_sub_one_mem {γ : Matrix n n E} (hγ : γᴴ * γ = 1) {I : Ideal (𝓞 E)}
     (hI : (2 * Fintype.card n) ^ finrank ℚ E < Ideal.absNorm I) {t : 𝓞 E} (ht : t ∈ I)
     (htr : (t : E) = (γ - 1).trace) : γ = 1 :=
-  eq_one_of_trace_sub_one_mem_of_forall_map_mem_unitaryGroup (map_mem_unitaryGroup hγ) hI ht htr
+  eq_one_of_trace_sub_one_mem_of_archimedean_unitary
+    (fun φ ↦ ⟨1, by simpa using map_mem_unitaryGroup hγ φ⟩) hI ht htr
 
 /-- **Adelic form.** Over a CM field `E`, let `γ` be a square matrix of size `n` with
 `γᴴ γ = 1`, and `I` an integral ideal with `N(I) > (2n)^[E:ℚ]`. If `x⁻¹ γ x ≡ 1` modulo `IÔ` for
@@ -80,8 +81,8 @@ theorem eq_one_of_conj_sub_one_mem_completedIdeal {γ : Matrix n n E} (hγ : γ�
       (((x⁻¹ : GL n 𝔸ᶠ[𝓞 E, E]) : Matrix n n 𝔸ᶠ[𝓞 E, E]) *
         γ.map (algebraMap E 𝔸ᶠ[𝓞 E, E]) * (x : Matrix n n 𝔸ᶠ[𝓞 E, E]) - 1) i j) :
     γ = 1 :=
-  eq_one_of_conj_sub_one_mem_completedIdeal_of_forall_map_mem_unitaryGroup
-    (map_mem_unitaryGroup hγ) hI x hx
+  eq_one_of_conj_sub_one_mem_completedIdeal_of_archimedean_unitary
+    (fun φ ↦ ⟨1, by simpa using map_mem_unitaryGroup hγ φ⟩) hI x hx
 
 /-- **Trivial intersections.** Over a CM field `E`, let `I` be an integral ideal with
 `N(I) > (2n)^[E:ℚ]` and `L` a subgroup of `GL_n(𝔸_f)` all of whose elements are congruent to `1`
