@@ -17,13 +17,11 @@ import TauCeti.LinearAlgebra.Charpoly.Quotient
 For a multiplicative character `χ : MulChar k ℂ` of a field `k`, the determinant character
 `χ.detChar` sends a similarity class `c` to `χ ((-1) ^ c.dim * c.charpoly.coeff 0)` (which equals
 `χ g.det` at `ofEnd g`). Because the determinant is multiplicative along invariant subspaces and
-quotients (`Module.End.det_eq_det_invtRestrict_mul_det_invtQuot`), pointwise multiplication by
-`χ.detChar` defines a `ℂ`-algebra endomorphism `χ.detTwist` of `TauCeti.HallAlgebra k` when `k` is
-finite. Restricting `χ.detTwist F` to `GL_n(k)` via `TauCeti.HallAlgebra.toClassFunction` gives
-the restriction of `F` multiplied pointwise by `χ ∘ det`.
+quotients (`LinearMap.det_eq_det_mul_det`), pointwise multiplication by `χ.detChar` defines a
+`ℂ`-algebra endomorphism `χ.detTwist` of `TauCeti.HallAlgebra k` when `k` is finite. Restricting
+`χ.detTwist F` to `GL_n(k)` via `TauCeti.HallAlgebra.toClassFunction` gives the restriction of `F`
+multiplied pointwise by `χ ∘ det`.
 
-* `Module.End.det_eq_det_invtRestrict_mul_det_invtQuot`: `g.det = (g.invtRestrict hU).det *
-  (g.invtQuot hU).det` for an invariant subspace `U ∈ g.invtSubmodule`.
 * `MulChar.detChar`: the class function `c ↦ χ ((-1) ^ c.dim * c.charpoly.coeff 0)`.
 * `MulChar.detChar_apply`: explicit coefficient formula for `χ.detChar c`.
 * `MulChar.detChar_ofEnd`: `χ.detChar (ofEnd g) = χ g.det`.
@@ -50,17 +48,6 @@ the restriction of `F` multiplied pointwise by `χ ∘ det`.
 public section
 
 open TauCeti TauCeti.HallAlgebra TauCeti.SimilarityClass
-
-/-- The determinant of an endomorphism of a finite-dimensional vector space factors as the product
-of the determinants of its restriction to an invariant subspace and the induced endomorphism on the
-quotient. -/
-theorem Module.End.det_eq_det_invtRestrict_mul_det_invtQuot {k V : Type*} [Field k]
-    [AddCommGroup V] [Module k V] [Module.Finite k V] {g : Module.End k V} {U : Submodule k V}
-    (hU : U ∈ g.invtSubmodule) :
-    LinearMap.det g =
-      LinearMap.det (g.invtRestrict hU) * LinearMap.det (g.invtQuot hU) := by
-  rw [Module.End.invtRestrict_def, Module.End.invtQuot_def]
-  exact LinearMap.det_eq_det_mul_det U g ((Module.End.mem_invtSubmodule g).1 hU)
 
 namespace MulChar
 
@@ -98,8 +85,9 @@ theorem detChar_ofEnd_eq_mul (χ : MulChar k ℂ) {V : Type*} [AddCommGroup V] [
     [Module.Finite k V] {g : Module.End k V} {U : Submodule k V} (hU : U ∈ g.invtSubmodule) :
     χ.detChar (ofEnd g) =
       χ.detChar (ofEnd (g.invtRestrict hU)) * χ.detChar (ofEnd (g.invtQuot hU)) := by
-  rw [detChar_ofEnd, detChar_ofEnd, detChar_ofEnd, ← map_mul,
-    g.det_eq_det_invtRestrict_mul_det_invtQuot hU]
+  rw [detChar_ofEnd, detChar_ofEnd, detChar_ofEnd, Module.End.invtRestrict_def,
+    Module.End.invtQuot_def, ← map_mul,
+    LinearMap.det_eq_det_mul_det U g ((Module.End.mem_invtSubmodule g).1 hU)]
 
 end Field
 
