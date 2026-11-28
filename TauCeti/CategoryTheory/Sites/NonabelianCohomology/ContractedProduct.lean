@@ -670,7 +670,7 @@ lemma toMap_mapLift {R : Torsor G'} (u : P.sheaf ⟶ R.sheaf)
 variable (φ P)
 
 /-- The `φ`-equivariant pairing `P × G' → Torsor.map φ P`, `(p, a) ↦ a • [p, 1]`. -/
-private def mulRightPairing :
+def mulRightPairing :
     P.sheaf ⊗ (MulActionSheaf.mulRight φ).sheaf ⟶ (P.map φ).sheaf :=
   ObjectProperty.homMk
     { app U := ↾fun a : P.sheaf.obj.obj U × G'.obj.obj U ↦ a.2 • (P.toMap φ).hom.app U a.1
@@ -678,6 +678,10 @@ private def mulRightPairing :
         ext a
         exact ((P.map φ).map_smul f a.2 _).trans
           (congrArg _ (NatTrans.naturality_apply (P.toMap φ).hom f a.1).symm) |>.symm }
+
+/-- The extension pairing sends `(p, a)` to the translate of the canonical image of `p`. -/
+lemma mulRightPairing_hom_app (U : Cᵒᵖ) (p : P.sheaf.obj.obj U) (a : G'.obj.obj U) :
+    (P.mulRightPairing φ).hom.app U (p, a) = a • (P.toMap φ).hom.app U p := (rfl)
 
 /-- The pairing `(p, a) ↦ a • [p, 1]` is invariant under `g • (p, a) = (g • p, a * φ(g)⁻¹)`:
 `(a * φ(g)⁻¹) • [g • p, 1] = (a * φ(g)⁻¹) • φ(g) • [p, 1] = a • [p, 1]`. -/
@@ -707,6 +711,18 @@ def contractedProductMulRightIso :
       · obtain ⟨a, ha⟩ := MulAction.exists_smul_eq (G'.obj.obj (op U)) ((P.toMap φ).hom.app _ p) q
         exact ⟨a, (h a).trans ha⟩
   asIso f
+
+/-- The extension pairing factors through the contracted product and its comparison isomorphism. -/
+@[reassoc (attr := simp)]
+lemma toContractedProduct_contractedProductMulRightIso_hom :
+    P.toContractedProduct (MulActionSheaf.mulRight φ) ≫
+      (P.contractedProductMulRightIso φ).hom = P.mulRightPairing φ :=
+  toContractedProduct_contractedProductDesc _ (mulRightPairing_smul φ P)
+
+/-- Every section of an extended torsor is locally in the image of the extension pairing. -/
+instance isLocallySurjective_mulRightPairing : Sheaf.IsLocallySurjective (P.mulRightPairing φ) := by
+  rw [← toContractedProduct_contractedProductMulRightIso_hom]
+  infer_instance
 
 variable {φ P}
 

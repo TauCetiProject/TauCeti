@@ -51,23 +51,16 @@ namespace Torsor
 
 variable [HasWeakSheafify J (Type w)] [J.WEqualsLocallyBijective (Type w)]
 
-/-- The induced arrow on extended torsors. Its action is characterized by
-`toMap_mapFunctor_map` and `mapFunctor_map_hom_app_smul_toMap`. -/
-def mapFunctorMap (φ : G ⟶ G') {P Q : Torsor G} (f : P ⟶ Q) :
-    P.map φ ⟶ Q.map φ :=
-  P.mapLift (f.hom ≫ Q.toMap φ) fun U g p ↦ by simp [f.map_smul]
-
 /-- Extension of the structure group along `φ`, as a functor on torsors. It carries the class
 `[p, a]` to `[f p, a]` under an equivariant morphism `f`. -/
-abbrev mapFunctor (φ : G ⟶ G') : Torsor G ⥤ Torsor G' where
+-- Exposed for the object projection to compute to `P.map φ` in section types.
+@[expose] def mapFunctor (φ : G ⟶ G') : Torsor G ⥤ Torsor G' where
   obj P := P.map φ
-  map f := mapFunctorMap φ f
+  map {P Q} f := P.mapLift (f.hom ≫ Q.toMap φ) fun U g p ↦ by simp [f.map_smul]
   map_id P := by
-    dsimp only [mapFunctorMap]
     apply map_hom_ext
     simp
   map_comp f g := by
-    dsimp only [mapFunctorMap]
     apply map_hom_ext
     simp [Category.assoc]
 
@@ -76,10 +69,10 @@ lemma mapFunctor_obj (φ : G ⟶ G') (P : Torsor G) :
     (mapFunctor φ).obj P = P.map φ := (rfl)
 
 /-- The canonical maps into an extension commute with equivariant morphisms of torsors. -/
-@[reassoc (attr := simp)]
+@[reassoc, simp]
 lemma toMap_mapFunctor_map (φ : G ⟶ G') {P Q : Torsor G} (f : P ⟶ Q) :
     P.toMap φ ≫ ((mapFunctor φ).map f).hom = f.hom ≫ Q.toMap φ := by
-  dsimp only [mapFunctor, mapFunctorMap]
+  dsimp only [mapFunctor]
   exact toMap_mapLift _ _
 
 /-- On local contracted-product representatives the induced morphism keeps the coefficient. -/
@@ -103,11 +96,11 @@ def mapIdIso {φ : G ⟶ G} (hφ : φ = 𝟙 G) : mapFunctor φ ≅ 𝟭 (Torsor
       exact asIso (P.mapLift (φ := 𝟙 G) (𝟙 P.sheaf) fun _ _ _ ↦ rfl))
     (fun {P Q} f ↦ by
       apply map_hom_ext
-      dsimp only [mapFunctor, mapFunctorMap]
+      dsimp only [mapFunctor]
       simp [Category.assoc])
 
 /-- The identity-extension comparison carries the image of an original section back to itself. -/
-@[reassoc (attr := simp)]
+@[reassoc, simp]
 lemma toMap_mapIdIso_hom {φ : G ⟶ G} (hφ : φ = 𝟙 G) (P : Torsor G) :
     P.toMap φ ≫ ((mapIdIso hφ).hom.app P).hom = 𝟙 P.sheaf := by
   subst φ
@@ -167,7 +160,8 @@ lemma map_mk_eq_mk_iff {φ : G ⟶ G'} {P : Torsor G} {R : Torsor G'} :
 lemma map_id : map (𝟙 G) = id := by
   funext x
   induction x using ind with | h P => ?_
-  exact map_mk_eq_mk (𝟙 P.sheaf) fun _ _ _ ↦ rfl
+  rw [map_mk]
+  exact mk_eq_mk_iff.2 ⟨(Torsor.mapIdIso rfl).app P⟩
 
 /-- The maps induced on `H¹` by `φ` and `ψ` compose to the map induced by `φ ≫ ψ`. -/
 @[simp]
