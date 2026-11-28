@@ -102,6 +102,17 @@ theorem toRational_apply (x : L) :
     toRational (O := O) x = (1 : ℚ) ⊗ₜ[ℤ] x := (rfl)
 
 omit [StarRing O] [Module.Free ℤ L] [Module.Finite ℤ L] in
+/-- Forgetting the order action on the rational image recovers the integral unit-tensor range. -/
+theorem range_toRational_restrictScalars :
+    (LinearMap.range (toRational (O := O) (L := L))).restrictScalars ℤ =
+      LinearMap.range (TensorProduct.mk ℤ ℚ L 1) := by
+  have h : (toRational (O := O) (L := L)).restrictScalars ℤ = TensorProduct.mk ℤ ℚ L 1 := by
+    ext x
+    exact (LinearMap.restrictScalars_apply ℤ _ x).trans
+      ((toRational_apply (O := O) x).trans (TensorProduct.mk_apply (R := ℤ) (1 : ℚ) x).symm)
+  exact (LinearMap.range_restrictScalars (R := ℤ) _).symm.trans (congrArg LinearMap.range h)
+
+omit [StarRing O] [Module.Free ℤ L] [Module.Finite ℤ L] in
 /-- The unit-tensor map is injective on a flat integral module. -/
 theorem toRational_injective [Module.Flat ℤ L] :
     Function.Injective (toRational (O := O) (L := L)) :=
@@ -132,8 +143,9 @@ theorem dual_restrictScalars :
       (LinearMap.range (TensorProduct.mk ℤ ℚ L 1)) := (rfl)
 
 /-- Integrality of the pairing embeds the original lattice in its dual. -/
-theorem le_dual : LinearMap.range (toRational (O := O) (L := L)) ≤ S.dual :=
-  S.form.range_mk_one_le_dualSubmodule
+theorem le_dual : LinearMap.range (toRational (O := O) (L := L)) ≤ S.dual := by
+  rw [← Submodule.restrictScalars_le ℤ, range_toRational_restrictScalars, S.dual_restrictScalars]
+  exact S.form.range_mk_one_le_dualSubmodule
 
 /-- The index of the integral lattice in its rational dual. -/
 noncomputable def dualIndex : ℕ :=
@@ -145,6 +157,18 @@ theorem dualIndex_def :
       (LinearMap.range (toRational (O := O) (L := L))).toAddSubgroup.relIndex
         S.dual.toAddSubgroup := (rfl)
 
+private theorem dualIndex_eq_relIndex_range_mk_one :
+    let N := LinearMap.range (TensorProduct.mk ℤ ℚ L 1)
+    S.dualIndex =
+      N.toAddSubgroup.relIndex ((S.form.baseChange ℚ).dualSubmodule N).toAddSubgroup := by
+  dsimp only
+  rw [S.dualIndex_def,
+    ← AddSubgroup.toIntSubmodule_toAddSubgroup (LinearMap.range
+      (toRational (O := O) (L := L))).toAddSubgroup,
+    ← AddSubgroup.toIntSubmodule_toAddSubgroup S.dual.toAddSubgroup,
+    Submodule.toIntSubmodule_toAddSubgroup, Submodule.toIntSubmodule_toAddSubgroup,
+    range_toRational_restrictScalars, S.dual_restrictScalars]
+
 /-- The order-stable dual spans the rational space and is a lattice over the integers. -/
 instance instIsFullLatticeDual : (S.dual.restrictScalars ℤ).IsFullLattice ℚ := by
   rw [S.dual_restrictScalars]
@@ -154,11 +178,13 @@ instance instIsFullLatticeDual : (S.dual.restrictScalars ℤ).IsFullLattice ℚ 
 /-- The dual index is the absolute Gram determinant in any integral basis. -/
 theorem dualIndex_eq_natAbs_det {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι ℤ L) :
     S.dualIndex = (S.form.toMatrix b).det.natAbs :=
-  S.form.relIndex_dualSubmodule_range_mk_one_eq_natAbs_det S.nondegenerate_rat b
+  S.dualIndex_eq_relIndex_range_mk_one.trans
+    (S.form.relIndex_dualSubmodule_range_mk_one_eq_natAbs_det S.nondegenerate_rat b)
 
 /-- The rational dual contains the integral lattice with positive finite index. -/
-theorem dualIndex_pos : 0 < S.dualIndex :=
-  S.form.relIndex_dualSubmodule_range_mk_one_pos S.nondegenerate
+theorem dualIndex_pos : 0 < S.dualIndex := by
+  rw [S.dualIndex_eq_relIndex_range_mk_one]
+  exact S.form.relIndex_dualSubmodule_range_mk_one_pos S.nondegenerate
 
 /-- Index one characterizes self-duality in the rational span. -/
 @[simp]
@@ -210,9 +236,10 @@ theorem isSelfDualAt_iff_isPerfPair :
 
 /-- A symplectic lattice is self-dual at `p` exactly when `p` does not divide its dual index. -/
 theorem isSelfDualAt_iff_not_dvd_dualIndex :
-    S.IsSelfDualAt p ↔ ¬p ∣ S.dualIndex :=
-  (S.isSelfDualAt_iff_dualSubmodule_eq p).trans
-    (S.form.baseChange_padic_dualSubmodule_eq_self_iff_not_dvd_relIndex S.nondegenerate p)
+    S.IsSelfDualAt p ↔ ¬p ∣ S.dualIndex := by
+  refine (S.isSelfDualAt_iff_dualSubmodule_eq p).trans ?_
+  rw [S.dualIndex_eq_relIndex_range_mk_one]
+  exact S.form.baseChange_padic_dualSubmodule_eq_self_iff_not_dvd_relIndex S.nondegenerate p
 
 end Padic
 
