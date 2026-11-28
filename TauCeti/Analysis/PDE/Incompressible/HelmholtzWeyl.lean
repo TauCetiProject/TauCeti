@@ -56,6 +56,11 @@ a square integrable harmonic function on the whole space vanishes
   test gradients is the space of square integrable weak gradients.
 * `TauCeti.lerayProjection_eq_iff_exists_hasWeakFDerivOn`: `ℙu = v` for solenoidal `v` exactly
   when `u - v` is a weak gradient, so `u = ℙu + ∇q` uniquely.
+* `TauCeti.curlFreeLp`: the closed subspace of curl-free fields in `L²(μ; E)`, and
+  `TauCeti.orthogonal_solenoidalLp_two_eq_curlFreeLp`: the orthogonal complement of `L²_σ` is the
+  space of curl-free fields.
+* `TauCeti.eq_zero_of_mem_solenoidalLp_of_mem_curlFreeLp`: a square integrable field that is
+  divergence free and curl free vanishes.
 * `TauCeti.HasWeakFDerivOn.mem_orthogonal_solenoidalLp_two` and
   `TauCeti.HasWeakFDerivOn.lerayProjection_eq_zero`: a square integrable weak gradient is
   orthogonal to `L²_σ` and is annihilated by `ℙ`.
@@ -93,35 +98,44 @@ private theorem memLp_curlTestField (φ : 𝓓((⊤ : Opens E), ℝ)) (a b : E) 
     ((∂_{a} φ).continuous.smul continuous_const)).memLp_of_hasCompactSupport
     (((∂_{b} φ).hasCompactSupport.smul_right).sub (∂_{a} φ).hasCompactSupport.smul_right)
 
+/-- A test function times a component of a square integrable field is integrable. -/
+private theorem integrable_testFunction_mul_inner {u : E → E} (hu : MemLp u 2 μ)
+    (ψ : 𝓓((⊤ : Opens E), ℝ)) (c : E) : Integrable (fun x ↦ ψ x * ⟪c, u x⟫) μ :=
+  (ψ.integrable_smul_of_memLp (hu.const_inner c)).congr (.of_forall fun _ ↦ smul_eq_mul _ _)
+
 /-- The pairing of a square integrable field with a curl test field. -/
 private theorem integral_inner_curlTestField {u : E → E} (hu : MemLp u 2 μ)
     (φ : 𝓓((⊤ : Opens E), ℝ)) (a b : E) :
     ∫ x, ⟪curlTestField φ a b x, u x⟫ ∂μ =
       ∫ x, (∂_{b} φ) x * ⟪a, u x⟫ ∂μ - ∫ x, (∂_{a} φ) x * ⟪b, u x⟫ ∂μ := by
-  have hint (ψ : 𝓓((⊤ : Opens E), ℝ)) (c : E) : Integrable (fun x ↦ ψ x * ⟪c, u x⟫) μ :=
-    (ψ.integrable_smul_of_memLp (hu.const_inner c)).congr (.of_forall fun x ↦ smul_eq_mul _ _)
-  rw [← integral_sub (hint _ a) (hint _ b)]
+  rw [← integral_sub (integrable_testFunction_mul_inner hu _ a)
+    (integrable_testFunction_mul_inner hu _ b)]
   simp only [curlTestField, inner_sub_left, real_inner_smul_left]
 
-/-- A square integrable weak gradient is curl free: it annihilates every curl test field. -/
-private theorem integral_inner_curlTestField_eq_zero {q : E → ℝ} {w : E → E} (hw : MemLp w 2 μ)
-    (hq : HasWeakFDerivOn μ ⊤ q fun x ↦ innerSL ℝ (w x)) (φ : 𝓓((⊤ : Opens E), ℝ)) (a b : E) :
-    ∫ x, ⟪curlTestField φ a b x, w x⟫ ∂μ = 0 := by
-  rw [integral_inner_curlTestField hw, sub_eq_zero]
-  have h := (hq.hasWeakLineDerivOn a).integral_inner_lineDeriv_comm (hq.hasWeakLineDerivOn b) φ
-  simpa [TestFunction.lineDerivOp_apply, real_inner_comm, mul_comm] using h
-
 variable (μ) in
-/-- The closed subspace of `L²(μ; E)` of curl-free fields, those annihilating every curl test
-field. -/
-private def curlFreeLp : ClosedSubmodule ℝ (Lp E 2 μ) :=
+/-- The closed subspace of `L²(μ; E)` of **curl-free fields**: the fields `u` whose
+distributional derivatives are symmetric, `∂_b ⟪a, u⟫ = ∂_a ⟪b, u⟫` for all directions `a` and
+`b` (see `TauCeti.mem_curlFreeLp_iff`). -/
+def curlFreeLp : ClosedSubmodule ℝ (Lp E 2 μ) :=
   ⨅ t : 𝓓((⊤ : Opens E), ℝ) × E × E, (⊥ : ClosedSubmodule ℝ ℝ).comap
     (MemLp.innerLpCLM ℝ (memLp_curlTestField (μ := μ) t.1 t.2.1 t.2.2))
 
-private theorem mem_curlFreeLp_iff {u : Lp E 2 μ} :
-    u ∈ curlFreeLp μ ↔ ∀ φ a b, ∫ x, ⟪curlTestField φ a b x, u x⟫ ∂μ = 0 := by
+/-- A field is curl free exactly when `∫ ∂_b φ ⟪a, u⟫ = ∫ ∂_a φ ⟪b, u⟫` for every test function
+`φ` and all directions `a` and `b`. -/
+theorem mem_curlFreeLp_iff {u : Lp E 2 μ} :
+    u ∈ curlFreeLp μ ↔ ∀ (φ : 𝓓((⊤ : Opens E), ℝ)) (a b : E),
+      ∫ x, (∂_{b} φ) x * ⟪a, u x⟫ ∂μ = ∫ x, (∂_{a} φ) x * ⟪b, u x⟫ ∂μ := by
   simp only [curlFreeLp, ClosedSubmodule.mem_iInf, ClosedSubmodule.mem_comap,
-    ClosedSubmodule.mem_bot, MemLp.innerLpCLM_apply, Prod.forall]
+    ClosedSubmodule.mem_bot, MemLp.innerLpCLM_apply, Prod.forall,
+    integral_inner_curlTestField (Lp.memLp u), sub_eq_zero]
+
+/-- **A square integrable weak gradient is curl free**, by the symmetry of weak second
+derivatives. -/
+theorem HasWeakFDerivOn.mem_curlFreeLp {q : E → ℝ} {w : Lp E 2 μ}
+    (hq : HasWeakFDerivOn μ ⊤ q fun x ↦ innerSL ℝ (w x)) : w ∈ curlFreeLp μ := by
+  refine mem_curlFreeLp_iff.2 fun φ a b ↦ ?_
+  have h := (hq.hasWeakLineDerivOn a).integral_inner_lineDeriv_comm (hq.hasWeakLineDerivOn b) φ
+  simpa [TestFunction.lineDerivOp_apply, real_inner_comm, mul_comm] using h
 
 variable [FiniteDimensional ℝ E]
 
@@ -134,8 +148,7 @@ private theorem wassersteinTangentSpace_le_curlFreeLp :
     (hasWeakFDerivOn_testFunction (μ := μ) ψ).congr_ae_deriv (by
       rw [Opens.coe_top, Measure.restrict_univ]
       exact hf.mono fun x hx ↦ congrArg (innerSL ℝ) hx.symm)
-  exact mem_curlFreeLp_iff.2 fun φ' a b ↦
-    integral_inner_curlTestField_eq_zero (Lp.memLp f) hq φ' a b
+  exact hq.mem_curlFreeLp
 
 /-- **A square integrable field that is divergence free and curl free is weakly harmonic.** Its
 pairing with `Δφ = ∑ᵢ ∂ᵢ∂ᵢφ` moves, by the curl-free identities, to a pairing with the gradient of
@@ -145,16 +158,13 @@ private theorem weaklyHarmonicOn_of_mem_curlFreeLp {u : Lp E 2 μ}
   have hu : MemLp (u : E → E) 2 μ := Lp.memLp u
   have hloc : LocallyIntegrableOn (u : E → E) (⊤ : Opens E) μ :=
     (hu.locallyIntegrable (by norm_num)).locallyIntegrableOn _
-  have hint (ψ : 𝓓((⊤ : Opens E), ℝ)) (c : E) : Integrable (fun x ↦ ψ x * ⟪c, u x⟫) μ :=
-    (ψ.integrable_smul_of_memLp (hu.const_inner c)).congr (.of_forall fun x ↦ smul_eq_mul _ _)
   let b := stdOrthonormalBasis ℝ E
   -- The scalar identity `∫ Δφ ⟪a, u⟫ = 0`, for every direction `a`.
   have key (φ : 𝓓((⊤ : Opens E), ℝ)) (a : E) : ∫ x, Δ (φ : E → ℝ) x * ⟪a, u x⟫ ∂μ = 0 := by
     let χ : 𝓓((⊤ : Opens E), ℝ) := ∂_{a} φ
     have hcurl (i) : ∫ x, (∂_{b i} (∂_{b i} φ)) x * ⟪a, u x⟫ ∂μ =
         ∫ x, (∂_{b i} (∂_{a} φ)) x * ⟪b i, u x⟫ ∂μ := by
-      rw [TestFunction.lineDerivOp_comm φ (b i) a, ← sub_eq_zero,
-        ← integral_inner_curlTestField hu]
+      rw [TestFunction.lineDerivOp_comm φ (b i) a]
       exact mem_curlFreeLp_iff.1 hc _ a (b i)
     calc ∫ x, Δ (φ : E → ℝ) x * ⟪a, u x⟫ ∂μ
         = ∑ i, ∫ x, (∂_{b i} (∂_{b i} φ)) x * ⟪a, u x⟫ ∂μ := by
@@ -162,10 +172,10 @@ private theorem weaklyHarmonicOn_of_mem_curlFreeLp {u : Lp E 2 μ}
             rw [← TestFunction.laplacianCLM_apply, laplacianCLM_eq_sum b]
             simp
           simp_rw [hΔ, Finset.sum_mul]
-          exact integral_finsetSum _ fun i _ ↦ hint _ a
+          exact integral_finsetSum _ fun i _ ↦ integrable_testFunction_mul_inner hu _ a
       _ = ∑ i, ∫ x, (∂_{b i} χ) x * ⟪b i, u x⟫ ∂μ := Finset.sum_congr rfl fun i _ ↦ hcurl i
       _ = ∫ x, ⟪u x, ∇ (χ : E → ℝ) x⟫ ∂μ := by
-          rw [← integral_finsetSum _ fun i _ ↦ hint _ (b i)]
+          rw [← integral_finsetSum _ fun i _ ↦ integrable_testFunction_mul_inner hu _ (b i)]
           refine integral_congr_ae (.of_forall fun x ↦ ?_)
           simp only [TestFunction.lineDerivOp_eq_lineDerivCLM ℝ,
             TestFunction.lineDerivCLM_apply_eq_inner]
@@ -180,8 +190,8 @@ private theorem weaklyHarmonicOn_of_mem_curlFreeLp {u : Lp E 2 μ}
 
 /-- **A square integrable field that is divergence free and curl free vanishes**: it is harmonic
 by Weyl's lemma, and a square integrable harmonic function on the whole space is zero. -/
-private theorem eq_zero_of_mem_curlFreeLp {u : Lp E 2 μ} (hs : u ∈ solenoidalLp E 2 μ)
-    (hc : u ∈ curlFreeLp μ) : u = 0 := by
+theorem eq_zero_of_mem_solenoidalLp_of_mem_curlFreeLp {u : Lp E 2 μ}
+    (hs : u ∈ solenoidalLp E 2 μ) (hc : u ∈ curlFreeLp μ) : u = 0 := by
   rcases subsingleton_or_nontrivial E with hE | hE
   · exact Lp.ext (.of_forall fun _ ↦ Subsingleton.elim _ _)
   obtain ⟨h, hh, hae⟩ := (weaklyHarmonicOn_of_mem_curlFreeLp hs hc).exists_harmonicOnNhd_ae_eq
@@ -191,6 +201,19 @@ private theorem eq_zero_of_mem_curlFreeLp {u : Lp E 2 μ} (hs : u ∈ solenoidal
     (fun _ ↦ le_rfl) fun x ↦ by
       rw [(hh x (by simp)).2.eq_of_nhds, Pi.zero_apply, Pi.zero_apply, zero_smul]
   exact Lp.ext (hae.trans (by rw [h0]; exact (Lp.coeFn_zero E 2 μ).symm))
+
+variable (μ) in
+/-- **The orthogonal complement of the solenoidal fields is the space of curl-free fields.** -/
+theorem orthogonal_solenoidalLp_two_eq_curlFreeLp :
+    (solenoidalLp E 2 μ).toSubmoduleᗮ = (curlFreeLp μ).toSubmodule := by
+  refine le_antisymm (orthogonal_solenoidalLp_two μ ▸ wassersteinTangentSpace_le_curlFreeLp)
+    fun u hu ↦ ?_
+  rw [orthogonal_solenoidalLp_two, ← lerayProjection_eq_zero_iff]
+  -- `ℙ u = u - (u - ℙ u)` is solenoidal and, as a difference of curl-free fields, curl free.
+  refine eq_zero_of_mem_solenoidalLp_of_mem_curlFreeLp (lerayProjection_apply_mem u) ?_
+  simpa only [sub_sub_cancel, ClosedSubmodule.mem_toSubmodule_iff] using
+    (curlFreeLp μ).toSubmodule.sub_mem hu
+    (wassersteinTangentSpace_le_curlFreeLp (sub_lerayProjection_mem_wassersteinTangentSpace u))
 
 /-! ### Potentials of limits of test gradients -/
 
@@ -216,32 +239,13 @@ private theorem exists_w1p_gradient_ae_eq_of_mem_wassersteinTangentSpace {U : Op
         have heq : ρ f = gradientTestFunctionLp 2 ψ := Lp.ext <| by
           filter_upwards [hρ f, ae_restrict_of_ae hf, gradientTestFunctionLp_apply_ae 2 ψ]
             with x h₁ h₂ h₃
-          rw [h₁, h₂, h₃]
-          rfl
+          simp only [ψ, h₁, h₂, h₃, TestFunction.coe_mk]
         rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, heq,
           ClosedSubmodule.mem_toSubmodule_iff, ← SetLike.mem_coe, coe_d1p0Submodule]
         exact subset_closure ⟨ψ, rfl⟩
   obtain ⟨v, hv⟩ := D1p0.exists_w1p_gradient_ae_eq le_top hconv hb
     (⟨ρ w, hK hw⟩ : D1p0 μ ⊤ 2)
   exact ⟨v, hv.trans (ae_restrict_of_ae_restrict_of_subset (subset_univ _) (hρ w))⟩
-
-/-- Two Sobolev potentials of the same field, on a preconnected open set `U` and on a larger open
-set, differ almost everywhere on `U` by a constant. -/
-private theorem exists_value_ae_eq_add_const {U V : Opens E} (hUV : U ≤ V)
-    (hU : IsPreconnected (U : Set E)) {w : Lp E 2 μ} {u : W1p μ U 2} {v : W1p μ V 2}
-    (hu : W1p.gradient u =ᵐ[μ.restrict U] w) (hv : W1p.gradient v =ᵐ[μ.restrict V] w) :
-    ∃ e : ℝ, ∀ᵐ x ∂μ.restrict U, W1p.value v x = W1p.value u x + e := by
-  have hd : W1p.gradient (W1p.restrictL hUV v - u) = 0 := Lp.ext <| by
-    filter_upwards [W1p.gradient_sub_ae (W1p.restrictL hUV v) u, W1p.gradient_restrictL_ae hUV v,
-      hu, ae_restrict_of_ae_restrict_of_subset hUV hv, Lp.coeFn_zero E 2 (μ.restrict U)]
-      with x h₁ h₂ h₃ h₄ h₅
-    rw [h₁, Pi.sub_apply, h₂, h₃, h₄, h₅, sub_self, Pi.zero_apply]
-  obtain ⟨e, he⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero hU hd
-  refine ⟨e, ?_⟩
-  filter_upwards [he, W1p.value_sub_ae (W1p.restrictL hUV v) u, W1p.value_restrictL_ae hUV v]
-    with x h₁ h₂ h₃
-  rw [← h₃]
-  linarith [h₂ ▸ h₁, Pi.sub_apply (W1p.value (W1p.restrictL hUV v)) (W1p.value u) x]
 
 /-- **Limits of test gradients are weak gradients.** Every element of the closure in `L²(μ; E)`
 of the test gradients is the weak gradient on the whole space of a locally integrable function.
@@ -270,8 +274,9 @@ private theorem exists_hasWeakFDerivOn_of_mem_wassersteinTangentSpace {w : Lp E 
     simp only [Pi.sub_apply, sub_zero, hx]
   -- Two potentials differ by a constant on the smaller ball, so their normalizations agree.
   have hle {k m : ℕ} (hkm : k ≤ m) : a m =ᵐ[μ.restrict (B k)] a k := by
-    obtain ⟨e, hdiff⟩ := exists_value_ae_eq_add_const (hBmono hkm)
-      (convex_ball (0 : E) _).isPreconnected (hv k) (hv m)
+    obtain ⟨e, hdiff⟩ := W1p.exists_value_ae_eq_add_const_of_gradient_ae_eq_of_le (hBmono hkm)
+      (convex_ball (0 : E) _).isPreconnected (u := v k) (v := v m)
+      (.trans (ae_restrict_of_ae_restrict_of_subset (hBmono hkm) (hv m)) (hv k).symm)
     have hint : IntegrableOn (W1p.value (v k)) (ball (0 : E) 1) μ :=
       IntegrableOn.mono_set ((Lp.memLp (W1p.value (v k))).integrable one_le_two) (hB0 k)
     have hc : c m = c k + e := by
@@ -305,14 +310,8 @@ integrable `q` has weak gradient `w ∈ L²`, then `w` lies in the orthogonal co
 theorem HasWeakFDerivOn.mem_orthogonal_solenoidalLp_two {q : E → ℝ} {w : Lp E 2 μ}
     (hq : HasWeakFDerivOn μ ⊤ q fun x ↦ innerSL ℝ (w x)) :
     w ∈ (solenoidalLp E 2 μ).toSubmoduleᗮ := by
-  rw [orthogonal_solenoidalLp_two, ← lerayProjection_eq_zero_iff]
-  -- `ℙ w = w - (w - ℙ w)` is solenoidal and, as a difference of curl-free fields, curl free.
-  refine eq_zero_of_mem_curlFreeLp (lerayProjection_apply_mem w) ?_
-  have hw : w ∈ curlFreeLp μ := mem_curlFreeLp_iff.2 fun φ a b ↦
-    integral_inner_curlTestField_eq_zero (Lp.memLp w) hq φ a b
-  simpa only [sub_sub_cancel, ClosedSubmodule.mem_toSubmodule_iff] using
-    (curlFreeLp μ).toSubmodule.sub_mem hw
-    (wassersteinTangentSpace_le_curlFreeLp (sub_lerayProjection_mem_wassersteinTangentSpace w))
+  rw [orthogonal_solenoidalLp_two_eq_curlFreeLp]
+  exact hq.mem_curlFreeLp
 
 /-- **The Helmholtz–Weyl decomposition.** The orthogonal complement of the solenoidal fields in
 `L²(μ; E)` is the space of square integrable weak gradients: `w ⊥ L²_σ` exactly when `w` is the

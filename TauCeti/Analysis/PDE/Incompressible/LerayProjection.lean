@@ -109,7 +109,7 @@ theorem lerayProjection_eq_self_iff {u : Lp E 2 μ} :
 theorem lerayProjection_eq_zero_iff {u : Lp E 2 μ} :
     lerayProjection μ u = 0 ↔ u ∈ wassersteinTangentSpace μ := by
   rw [← ker_lerayProjection]
-  rfl
+  exact LinearMap.mem_ker.symm
 
 /-- **Uniqueness of the Helmholtz–Weyl decomposition.** A solenoidal field `v` is the Leray
 projection of `u` exactly when `u - v` is a limit of test gradients. -/
@@ -141,8 +141,7 @@ theorem norm_lerayProjection_apply_le (u : Lp E 2 μ) : ‖lerayProjection μ u�
 
 /-- The Leray projection has operator norm at most `1`. -/
 theorem norm_lerayProjection_le : ‖lerayProjection μ‖ ≤ 1 :=
-  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u ↦ by
-    simpa only [one_mul] using norm_lerayProjection_apply_le u
+  Submodule.starProjection_norm_le _
 
 /-- **The Pythagorean identity of the Helmholtz–Weyl decomposition**:
 `‖u‖² = ‖ℙu‖² + ‖u - ℙu‖²`. -/
