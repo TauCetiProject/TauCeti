@@ -42,20 +42,24 @@ theorem exists_notMem_and_inv_notMem_of_not_isUnit {F : Type*} [DivisionRing F] 
     (b : S) (hb : ¬IsUnit b) (h_one_sub : ¬IsUnit (1 - b)) :
     ∃ t : F, t ∉ S ∧ t⁻¹ ∉ S ∧ (b : F) * (1 - t) = 1 := by
   have hb_ne : (b : F) ≠ 0 := fun h ↦ h_one_sub (by simp [ZeroMemClass.coe_eq_zero.mp h])
-  have hsub_ne : 1 - (b : F) ≠ 0 := fun h ↦
-    hb (by simp [show b = 1 from Subtype.ext (sub_eq_zero.mp h).symm])
+  have hsub_ne : 1 - (b : F) ≠ 0 := fun h ↦ by
+    have hb_one : b = 1 := Subtype.ext (sub_eq_zero.mp h).symm
+    exact hb (by simp [hb_one])
   refine ⟨1 - (b : F)⁻¹, fun h_mem ↦ hb ?_, fun h_mem ↦ h_one_sub ?_, ?_⟩
   · exact (Submonoid.isUnit_iff_of_ne_zero hb_ne).mpr (by simpa using S.sub_mem S.one_mem h_mem)
   · have h_mul : (1 - (b : F)⁻¹) * (1 - (1 - (b : F))⁻¹) = 1 := by
-      have h1 : (1 - (b : F)⁻¹) = ((b : F) - 1) * (b : F)⁻¹ := by
+      have h1 : 1 - (b : F)⁻¹ = ((b : F) - 1) * (b : F)⁻¹ := by
         rw [sub_mul, one_mul, mul_inv_cancel₀ hb_ne]
-      have h2 : (1 - (1 - (b : F))⁻¹) = -(b : F) * (1 - (b : F))⁻¹ := by
+      have h2 : 1 - (1 - (b : F))⁻¹ = -(b : F) * (1 - (b : F))⁻¹ := by
         calc 1 - (1 - (b : F))⁻¹
-            = (1 - (b : F)) * (1 - (b : F))⁻¹ - 1 * (1 - (b : F))⁻¹ := by
-              rw [mul_inv_cancel₀ hsub_ne, one_mul]
-          _ = -(b : F) * (1 - (b : F))⁻¹ := by rw [← sub_mul, sub_sub_cancel_left]
-      rw [h1, h2, mul_assoc, ← mul_assoc (b : F)⁻¹, mul_neg, inv_mul_cancel₀ hb_ne, neg_mul,
-        one_mul, mul_neg, ← neg_mul, neg_sub, mul_inv_cancel₀ hsub_ne]
+            = (1 - (b : F) - 1) * (1 - (b : F))⁻¹ := by
+              rw [sub_mul, mul_inv_cancel₀ hsub_ne, one_mul]
+          _ = -(b : F) * (1 - (b : F))⁻¹ := by simp
+      calc (1 - (b : F)⁻¹) * (1 - (1 - (b : F))⁻¹)
+          = (((b : F) - 1) * ((b : F)⁻¹ * -(b : F))) * (1 - (b : F))⁻¹ := by
+              rw [h1, h2, mul_assoc, mul_assoc, ← mul_assoc (b : F)⁻¹]
+        _ = (1 - (b : F)) * (1 - (b : F))⁻¹ := by simp [inv_mul_cancel₀ hb_ne]
+        _ = 1 := mul_inv_cancel₀ hsub_ne
     have h_inv : (1 - (b : F))⁻¹ = 1 - (1 - (b : F)⁻¹)⁻¹ := by
       rw [inv_eq_of_mul_eq_one_right h_mul, sub_sub_cancel]
     have h_inv_mem : (1 - (b : F))⁻¹ ∈ S := by
