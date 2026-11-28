@@ -24,8 +24,6 @@ This file bridges the two APIs:
   `iwahori m R ≤ parahoricSubgroup τ 𝔪`.
 * `TauCeti.iwahoriOne_le_parahoricSubgroup`: under the same condition,
   `iwahoriOne m R ≤ parahoricSubgroup τ 𝔪`.
-* `TauCeti.parahoricSubgroup_toDual_eq_iwahori`: for `τ = OrderDual.toDual`,
-  `parahoricSubgroup OrderDual.toDual 𝔪 = iwahori m R`.
 
 ## References
 
@@ -58,13 +56,5 @@ theorem iwahoriOne_le_parahoricSubgroup {α : Type*} [LinearOrder α] {τ : m �
     (hτ : ∀ i j : m, τ i < τ j → j < i) :
     iwahoriOne m R ≤ parahoricSubgroup τ (IsLocalRing.maximalIdeal R) :=
   iwahoriOne_le_iwahori.trans (iwahori_le_parahoricSubgroup hτ)
-
-/-- The parahoric subgroup for the dual order labelling `OrderDual.toDual : m → mᵒᵈ` and the
-maximal ideal of a local ring `R` is the Iwahori subgroup `iwahori m R`. -/
-theorem parahoricSubgroup_toDual_eq_iwahori :
-    parahoricSubgroup (OrderDual.toDual : m → mᵒᵈ) (IsLocalRing.maximalIdeal R) = iwahori m R := by
-  ext g
-  simp [mem_parahoricSubgroup, mem_upperTriangularCongruenceSubgroup_iff,
-    OrderDual.toDual_lt_toDual]
 
 end TauCeti
