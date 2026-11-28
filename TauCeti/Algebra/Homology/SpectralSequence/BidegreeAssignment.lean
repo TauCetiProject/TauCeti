@@ -164,30 +164,44 @@ def cohomological (r₀ : ℤ) :
 /-- The **cohomological** bidegree assignment `(p, q) ↦ (p, p + q)`, with page offset `0`, for the
 first-quadrant cohomological shapes `ComplexShape.spectralSequenceNat (r, 1 - r)` of
 `CategoryTheory.CohomologicalSpectralSequenceNat`. -/
-@[expose, simps!]
+@[expose, simps]
 def cohomologicalNat (r₀ : ℤ) :
-    BidegreeAssignment (fun r ↦ ComplexShape.spectralSequenceNat ⟨r, 1 - r⟩) r₀ :=
-  (cohomological r₀).comap 0 (fun pq ↦ ((pq.1 : ℤ), (pq.2 : ℤ)))
-    (Nat.cast_injective.prodMap Nat.cast_injective)
-    (fun r ⟨p, q⟩ ⟨p', q'⟩ h ↦ by
-      simp only [ComplexShape.spectralSequenceNat_rel_iff] at h
-      simp only [add_zero, ComplexShape.up', Prod.mk_add_mk, Prod.mk.injEq]
-      exact ⟨by lia, by lia⟩)
-    (add_zero r₀).ge
+    BidegreeAssignment (fun r ↦ ComplexShape.spectralSequenceNat ⟨r, 1 - r⟩) r₀ where
+  fil pq := pq.1
+  deg pq := pq.1 + pq.2
+  e := 0
+  injective := fun ⟨p, q⟩ ⟨p', q'⟩ h ↦ by
+    simp only [Prod.mk.injEq] at h
+    ext <;> lia
+  deg_rel := by
+    rintro r - ⟨p, q⟩ ⟨p', q'⟩ h
+    simp only [ComplexShape.spectralSequenceNat_rel_iff] at h
+    lia
+  fil_rel := by
+    rintro r - ⟨p, q⟩ ⟨p', q'⟩ h
+    simp only [ComplexShape.spectralSequenceNat_rel_iff] at h
+    lia
 
 /-- The **cohomological** bidegree assignment `(p, q) ↦ (p, p + q)`, with page offset `0`, for the
 cohomological shapes `ComplexShape.spectralSequenceFin l (r, 1 - r)` on `ℤ × Fin l` of
 `CategoryTheory.CohomologicalSpectralSequenceFin`. -/
-@[expose, simps!]
+@[expose, simps]
 def cohomologicalFin (l : ℕ) (r₀ : ℤ) :
-    BidegreeAssignment (fun r ↦ ComplexShape.spectralSequenceFin l ⟨r, 1 - r⟩) r₀ :=
-  (cohomological r₀).comap 0 (fun pq ↦ (pq.1, (pq.2.val : ℤ)))
-    (Function.injective_id.prodMap (Nat.cast_injective.comp Fin.val_injective))
-    (fun r ⟨p, q⟩ ⟨p', q'⟩ h ↦ by
-      simp only [ComplexShape.spectralSequenceFin_rel_iff] at h
-      simp only [add_zero, ComplexShape.up', Prod.mk_add_mk, Prod.mk.injEq]
-      exact ⟨by lia, by lia⟩)
-    (add_zero r₀).ge
+    BidegreeAssignment (fun r ↦ ComplexShape.spectralSequenceFin l ⟨r, 1 - r⟩) r₀ where
+  fil pq := pq.1
+  deg pq := pq.1 + pq.2
+  e := 0
+  injective := fun ⟨p, q⟩ ⟨p', q'⟩ h ↦ by
+    simp only [Prod.mk.injEq] at h
+    ext <;> lia
+  deg_rel := by
+    rintro r - ⟨p, q⟩ ⟨p', q'⟩ h
+    simp only [ComplexShape.spectralSequenceFin_rel_iff] at h
+    lia
+  fil_rel := by
+    rintro r - ⟨p, q⟩ ⟨p', q'⟩ h
+    simp only [ComplexShape.spectralSequenceFin_rel_iff] at h
+    lia
 
 /-- The **homological** bidegree assignment `(p, q) ↦ (-p, -p - q)`, with page offset `0`, for the
 homological shapes `ComplexShape.up' (-r, r - 1)`: the differential
@@ -215,16 +229,23 @@ def homological (r₀ : ℤ) :
 /-- The **homological** bidegree assignment `(p, q) ↦ (-p, -p - q)`, with page offset `0`, for the
 first-quadrant homological shapes `ComplexShape.spectralSequenceNat (-r, r - 1)`, those of the
 spectral sequence of Mathlib's recipe `coreE₂HomologicalNat`. -/
-@[expose, simps!]
+@[expose, simps]
 def homologicalNat (r₀ : ℤ) :
-    BidegreeAssignment (fun r ↦ ComplexShape.spectralSequenceNat ⟨-r, r - 1⟩) r₀ :=
-  (homological r₀).comap 0 (fun pq ↦ ((pq.1 : ℤ), (pq.2 : ℤ)))
-    (Nat.cast_injective.prodMap Nat.cast_injective)
-    (fun r ⟨p, q⟩ ⟨p', q'⟩ h ↦ by
-      simp only [ComplexShape.spectralSequenceNat_rel_iff] at h
-      simp only [add_zero, ComplexShape.up', Prod.mk_add_mk, Prod.mk.injEq]
-      exact ⟨by lia, by lia⟩)
-    (add_zero r₀).ge
+    BidegreeAssignment (fun r ↦ ComplexShape.spectralSequenceNat ⟨-r, r - 1⟩) r₀ where
+  fil pq := -(pq.1 : ℤ)
+  deg pq := -(pq.1 : ℤ) - pq.2
+  e := 0
+  injective := fun ⟨p, q⟩ ⟨p', q'⟩ h ↦ by
+    simp only [Prod.mk.injEq] at h
+    ext <;> lia
+  deg_rel := by
+    rintro r - ⟨p, q⟩ ⟨p', q'⟩ h
+    simp only [ComplexShape.spectralSequenceNat_rel_iff] at h
+    lia
+  fil_rel := by
+    rintro r - ⟨p, q⟩ ⟨p', q'⟩ h
+    simp only [ComplexShape.spectralSequenceNat_rel_iff] at h
+    lia
 
 /-- The **decreasing-filtration** bidegree assignment `(a, b) ↦ (-b - 1, a + b)`, with page offset
 `1`, for the cohomological shapes `ComplexShape.up' (r, 1 - r)`. These are the native positions of
@@ -313,38 +334,19 @@ lemma page_dTo_eq_zero_of_boundedAbove (α : ℤ → ℤ)
   E.page_dTo_eq_zero_of_isZero_of_fil_le A le_rfl pq _
     (fun pq' hpq' h ↦ hα pq' (by rwa [hpq'])) r hr hr hrα
 
-/-- If total degree `n` has only finitely many nonzero positions on page `s`, then page `s`
-vanishes in total degree `n` at all sufficiently high filtration degrees `b ≤ A.fil pq`. -/
-lemma exists_isZero_page_of_le_fil_of_finite {s : ℤ} (hs : r₀ ≤ s) (n : ℤ)
-    (hfin : {pq' | A.deg pq' = n ∧ ¬IsZero ((E.page s hs).X pq')}.Finite) :
-    ∃ b : ℤ, ∀ pq' : κ, A.deg pq' = n → b ≤ A.fil pq' → IsZero ((E.page s hs).X pq') := by
-  obtain ⟨M, hM⟩ := (hfin.image A.fil).bddAbove
-  refine ⟨M + 1, fun pq' hpq' h ↦ ?_⟩
-  by_contra hz
-  have := hM ⟨pq', ⟨hpq', hz⟩, rfl⟩
-  lia
-
-/-- If total degree `n` has only finitely many nonzero positions on page `s`, then page `s`
-vanishes in total degree `n` at all sufficiently low filtration degrees `A.fil pq ≤ a`. -/
-lemma exists_isZero_page_of_fil_le_of_finite {s : ℤ} (hs : r₀ ≤ s) (n : ℤ)
-    (hfin : {pq' | A.deg pq' = n ∧ ¬IsZero ((E.page s hs).X pq')}.Finite) :
-    ∃ a : ℤ, ∀ pq' : κ, A.deg pq' = n → A.fil pq' ≤ a → IsZero ((E.page s hs).X pq') := by
-  obtain ⟨M, hM⟩ := (hfin.image A.fil).bddBelow
-  refine ⟨M - 1, fun pq' hpq' h ↦ ?_⟩
-  by_contra hz
-  have := hM ⟨pq', ⟨hpq', hz⟩, rfl⟩
-  lia
-
 /-- **Finitely many nonzero positions in the next total degree.** If only finitely many positions
 of total degree `deg pq + 1` are nonzero on the page `s`, the differential leaving `pq` vanishes
 on every page from some page on. -/
 lemma exists_page_dFrom_eq_zero_of_finite {s : ℤ} (hs : r₀ ≤ s) (pq : κ)
     (hfin : {pq' | A.deg pq' = A.deg pq + 1 ∧ ¬IsZero ((E.page s hs).X pq')}.Finite) :
     ∃ t : ℤ, ∀ (r : ℤ) (hr : r₀ ≤ r), t ≤ r → (E.page r hr).dFrom pq = 0 := by
-  obtain ⟨b, hb⟩ := E.exists_isZero_page_of_le_fil_of_finite A hs (A.deg pq + 1) hfin
-  exact ⟨max s (b - A.fil pq + A.e), fun r hr hrt ↦
-    E.page_dFrom_eq_zero_of_isZero_of_le_fil A hs pq b hb r hr
+  obtain ⟨M, hM⟩ := (hfin.image A.fil).bddAbove
+  refine ⟨max s (M + 1 - A.fil pq + A.e), fun r hr hrt ↦
+    E.page_dFrom_eq_zero_of_isZero_of_le_fil A hs pq (M + 1) (fun pq' hpq' h ↦ ?_) r hr
       (le_of_max_le_left hrt) (le_of_max_le_right hrt)⟩
+  by_contra hz
+  have := hM ⟨pq', ⟨hpq', hz⟩, rfl⟩
+  lia
 
 /-- **Finitely many nonzero positions in the previous total degree.** If only finitely many
 positions of total degree `deg pq - 1` are nonzero on the page `s`, the differential entering
@@ -352,9 +354,12 @@ positions of total degree `deg pq - 1` are nonzero on the page `s`, the differen
 lemma exists_page_dTo_eq_zero_of_finite {s : ℤ} (hs : r₀ ≤ s) (pq : κ)
     (hfin : {pq' | A.deg pq' = A.deg pq - 1 ∧ ¬IsZero ((E.page s hs).X pq')}.Finite) :
     ∃ t : ℤ, ∀ (r : ℤ) (hr : r₀ ≤ r), t ≤ r → (E.page r hr).dTo pq = 0 := by
-  obtain ⟨a, ha⟩ := E.exists_isZero_page_of_fil_le_of_finite A hs (A.deg pq - 1) hfin
-  exact ⟨max s (A.fil pq - a + A.e), fun r hr hrt ↦
-    E.page_dTo_eq_zero_of_isZero_of_fil_le A hs pq a ha r hr
+  obtain ⟨M, hM⟩ := (hfin.image A.fil).bddBelow
+  refine ⟨max s (A.fil pq - (M - 1) + A.e), fun r hr hrt ↦
+    E.page_dTo_eq_zero_of_isZero_of_fil_le A hs pq (M - 1) (fun pq' hpq' h ↦ ?_) r hr
       (le_of_max_le_left hrt) (le_of_max_le_right hrt)⟩
+  by_contra hz
+  have := hM ⟨pq', ⟨hpq', hz⟩, rfl⟩
+  lia
 
 end CategoryTheory.SpectralSequence
