@@ -210,6 +210,7 @@ theorem descentCount_le {n : ℕ} (σ : Equiv.Perm (Fin n)) : σ.descentCount �
   · exact Nat.le_pred_of_lt (descentCount_lt_of_pos hn σ)
 
 /-- The identity permutation is the unique permutation of `Fin n` with zero descents. -/
+@[simp]
 theorem descentCount_eq_zero_iff {n : ℕ} (σ : Equiv.Perm (Fin n)) :
     σ.descentCount = 0 ↔ σ = 1 := by
   refine ⟨fun h => ?_, fun h => h ▸ descentCount_one_perm n⟩

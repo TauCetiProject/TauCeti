@@ -59,12 +59,9 @@ theorem eulerianNumber_le_pow (n q : ℕ) : eulerianNumber n q ≤ (q + 1) ^ n :
 
 /-- Upper factorial bound on Eulerian numbers: `A(n, q) ≤ n!`. -/
 theorem eulerianNumber_le_factorial (n q : ℕ) : eulerianNumber n q ≤ n.factorial := by
-  rcases le_or_gt q n with hqn | hnq
-  · rw [← sum_range_eulerianNumber n]
-    exact Finset.single_le_sum (f := fun j => eulerianNumber n j)
-      (fun _ _ => Nat.zero_le _) (Finset.mem_range.mpr (Nat.lt_succ_of_le hqn))
-  · rw [eulerianNumber_eq_zero_of_lt hnq]
-    exact Nat.zero_le _
+  simpa [eulerianNumber_def, Fintype.card_perm, Fintype.card_fin] using
+    Finset.card_filter_le (Finset.univ : Finset (Equiv.Perm (Fin n)))
+      (fun σ => σ.descentCount = q)
 
 /-- Additive form of the lower bound in Lemma C.1:
 `(q + 1) ^ n ≤ eulerianNumber n q + (n + 1) * q ^ n`. -/
