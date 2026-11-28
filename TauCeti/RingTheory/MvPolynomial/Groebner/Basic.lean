@@ -130,6 +130,32 @@ theorem IsRemainder.not_degree_le (h : m.IsRemainder f B r) {c : σ →₀ ℕ} 
     {b : MvPolynomial σ R} (hb : b ∈ B) (hb0 : b ≠ 0) : ¬ m.degree b ≤ c :=
   h.2 c hc b hb hb0
 
+/-- Removing `0` from the set of divisors does not change the remainders: the divisor `0`
+contributes nothing to the division representation and is excluded from the support condition. -/
+@[simp]
+theorem isRemainder_sdiff_singleton_zero :
+    m.IsRemainder f (B \ {0}) r ↔ m.IsRemainder f B r := by
+  refine ⟨?_, ?_⟩
+  · rintro ⟨⟨g, hf, hdeg⟩, hr⟩
+    refine ⟨⟨g.mapDomain (Set.inclusion Set.sdiff_subset), ?_, fun b ↦ ?_⟩,
+      fun c hc b hb hb0 ↦ hr c hc b ⟨hb, hb0⟩ hb0⟩
+    · rwa [Finsupp.linearCombination_mapDomain]
+    by_cases hb0 : (b : MvPolynomial σ R) = 0
+    · simp [hb0]
+    rw [Finsupp.mapDomain_apply_of_injective (Set.inclusion_injective _) g ⟨b, b.property, hb0⟩]
+    exact hdeg ⟨b, b.property, hb0⟩
+  · rintro ⟨⟨g, hf, hdeg⟩, hr⟩
+    refine ⟨⟨g.comapDomain (Set.inclusion Set.sdiff_subset) (Set.inclusion_injective _).injOn, ?_,
+      fun b ↦ hdeg (Set.inclusion Set.sdiff_subset b)⟩, fun c hc b hb hb0 ↦ hr c hc b hb.1 hb0⟩
+    rw [hf]
+    congr 1
+    rw [Finsupp.linearCombination_comapDomain, Finsupp.linearCombination_apply, Finsupp.sum]
+    refine (Finset.sum_preimage (Set.inclusion Set.sdiff_subset) g.support
+      (Set.inclusion_injective _).injOn (fun b : B ↦ g b • (b : MvPolynomial σ R))
+      fun b _ hb ↦ ?_).symm
+    have : (b : MvPolynomial σ R) = 0 := by_contra fun h ↦ hb ⟨⟨b, b.property, h⟩, rfl⟩
+    simp [this]
+
 /-- Unfolding lemma for `MonomialOrder.IsGroebnerBasis`. -/
 theorem isGroebnerBasis_iff : m.IsGroebnerBasis G I ↔
     G ⊆ I ∧ Ideal.span (m.leadingTerm '' I) = Ideal.span (m.leadingTerm '' G) :=
@@ -357,18 +383,14 @@ theorem exists_isRemainder (hB : ∀ b ∈ B, b ≠ 0 → IsUnit (m.leadingCoeff
   classical
   rcases eq_or_ne f 0 with rfl | hf
   · exact ⟨0, isRemainder_zero_left_iff.2 rfl⟩
-  -- Divide by the nonzero elements of `B`, then extend the quotients by `0` to all of `B`.
+  -- Divide by the nonzero elements of `B`; the divisor `0` does not change remainders
+  -- (`isRemainder_sdiff_singleton_zero`).
   obtain ⟨g, r, hfgr, hdeg, hr⟩ := m.div_set (B := B \ {0}) (fun b hb ↦ hB b hb.1 hb.2) f
-  refine ⟨r, ⟨g.mapDomain (Set.inclusion Set.sdiff_subset), ?_, fun b ↦ ?_⟩,
-    fun c hc b hb hb0 ↦ hr c hc b ⟨hb, hb0⟩⟩
-  · rwa [Finsupp.linearCombination_mapDomain]
-  by_cases hb0 : (b : MvPolynomial σ R) = 0
-  · simp [hb0]
-  have hgb : g.mapDomain (Set.inclusion Set.sdiff_subset) b = g ⟨b, b.property, hb0⟩ :=
-    Finsupp.mapDomain_apply_of_injective (Set.inclusion_injective _) g ⟨b, b.property, hb0⟩
-  rw [hgb, ← map_add, ← withBotDegree_mul_of_left_mem_nonZeroDivisors
-    (hB b b.property hb0).mem_nonZeroDivisors, withBotDegree_le_withBotDegree_iff]
-  exact ⟨hdeg ⟨b, b.property, hb0⟩, fun h ↦ absurd h hf⟩
+  refine ⟨r, isRemainder_sdiff_singleton_zero.1 ⟨⟨g, hfgr, fun b ↦ ?_⟩,
+    fun c hc b hb _ ↦ hr c hc b hb⟩⟩
+  rw [← map_add, ← withBotDegree_mul_of_left_mem_nonZeroDivisors
+    (hB b b.property.1 b.property.2).mem_nonZeroDivisors, withBotDegree_le_withBotDegree_iff]
+  exact ⟨hdeg b, fun h ↦ absurd h hf⟩
 
 /-- **Remainders modulo a Gröbner basis.** If `r₁` and `r₂` are remainders of `f₁` and `f₂` on
 division by a Gröbner basis of `I`, then `f₁ - f₂ ∈ I` if and only if `r₁ = r₂`. -/
