@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Basic
+import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.BigOperators.Intervals
 
@@ -56,6 +57,8 @@ commutative ring.
   `1 + X ^ d i` with `k < d i` does not change the `k`-th coefficient.
 * `PowerSeries.coeff_prod_sum_type`: the coefficients of a product over `σ ⊕ τ` of mapped factors
   are a convolution over the antidiagonal.
+* `PowerSeries.coeff_prod_eq_sum_sym`: the `n`-th coefficient of a finite product `∏ i ∈ s, f i`
+  expressed as a sum over `s.sym n`.
 * `PowerSeries.coeff_one_prod_sum_one_sub_X_pow_mul_two`: twice the linear coefficient of
   `∏_{i ∈ s} ∑_{j < dᵢ} (1 - X) ^ j` is `-(∏ dᵢ) ∑ (dᵢ - 1)`.
 -/
@@ -110,6 +113,29 @@ theorem coeff_prod_sum_type {A B : Type*} [CommSemiring A] [CommSemiring B] {σ 
     coeff n (∏ k, h k) = ∑ p ∈ antidiagonal n,
       φ (coeff p.1 (∏ i, f i)) * ψ (coeff p.2 (∏ j, g j)) := by
   simp only [Fintype.prod_sum_type, hf, hg, ← map_prod, coeff_mul, coeff_map]
+
+/-- **Symmetric-power expansion of a product coefficient.** The `n`-th coefficient of a finite
+product `∏ i ∈ s, f i` is the sum over `k ∈ s.sym n` of the product of the `Multiset.count i k`-th
+coefficients of the factors `f i`. -/
+theorem coeff_prod_eq_sum_sym [DecidableEq ι] (s : Finset ι) (f : ι → R⟦X⟧) (n : ℕ) :
+    coeff n (∏ i ∈ s, f i) =
+      ∑ k ∈ s.sym n, ∏ i ∈ s, coeff (Multiset.count i (k : Multiset ι)) (f i) := by
+  have hs : ((univ : Finset s).map (Function.Embedding.subtype (· ∈ s))).sym n = s.sym n := by
+    congr 1
+    ext a
+    simp
+  rw [coeff_prod, ← hs, Finset.sym_map, Finset.sym_univ, Finset.sum_map,
+    ← Finset.sum_coe_sort (s.finsuppAntidiag n)]
+  refine (Equiv.sum_comp (s.finsuppAntidiagEquiv n).symm
+    (fun l : s.finsuppAntidiag n ↦ ∏ i ∈ s, coeff (l.val i) (f i))).symm.trans ?_
+  refine sum_congr rfl fun k _ ↦ ?_
+  rw [← Finset.prod_attach s, ← Finset.prod_attach s]
+  refine prod_congr rfl fun i _ ↦ ?_
+  dsimp only [Function.Embedding.coeFn_mk]
+  rw [Finset.finsuppAntidiagEquiv_symm_apply_apply, Sym.coe_map]
+  congr 2
+  exact (Multiset.count_map_eq_count' _ _
+    (Function.Embedding.subtype (· ∈ s)).injective i).symm
 
 /-- Multiplying a power series by a finite product of factors `1 + X ^ d i` with `k < d i`
 does not change the `k`-th coefficient. -/

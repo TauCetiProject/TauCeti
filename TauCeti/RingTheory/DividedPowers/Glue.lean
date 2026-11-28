@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.DividedPowers.Generators
 public import Mathlib.RingTheory.DividedPowers.DPMorphism
+import TauCeti.RingTheory.DividedPowers.Exp
 
 /-!
 # Gluing divided powers on a sum of ideals
@@ -62,7 +63,7 @@ theorem convolution_def (n : ℕ) (x y : A) :
 /-- The convolution is the `n`-th coefficient of the product of the exponential series. -/
 theorem convolution_eq_coeff_exp_mul (n : ℕ) (x y : A) :
     convolution γ ε n x y = PowerSeries.coeff n (γ.exp x * ε.exp y) := by
-  simp [convolution_def, PowerSeries.coeff_mul, exp]
+  simp [convolution_def, PowerSeries.coeff_mul]
 
 /-- Exchanging the two structures and the two arguments leaves the convolution unchanged. -/
 theorem convolution_comm (n : ℕ) (x y : A) : convolution γ ε n x y = convolution ε γ n y x := by
@@ -123,7 +124,7 @@ theorem convolution_eq_of_add_eq (h : ∀ n, ∀ w ∈ I ⊓ J, γ.dpow n w = ε
     exact J.sub_mem hy' hy
   have hexp : γ.exp (x - x') = ε.exp (x - x') := by
     ext k
-    simp [exp, h k _ hw]
+    simp [h k _ hw]
   have hx₀ : γ.exp x = γ.exp x' * γ.exp (x - x') := by
     rw [← γ.exp_add hx' hw.1, add_sub_cancel]
   have hy₀ : ε.exp y' = ε.exp (x - x') * ε.exp y := by
