@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # The Cauchy–Schwarz inequality for real integrals
@@ -22,6 +24,10 @@ For square-integrable real functions `f` and `g`,
 for real integrals with real exponents and roots
 (`MeasureTheory.integral_mul_le_Lp_mul_Lq_of_nonneg`); this is the squared form for `p = q = 2`,
 without roots or sign conditions, as it is used in energy estimates.
+
+Also provides the square-root form
+`TauCeti.abs_integral_mul_le_sqrt_integral_sq_mul_sqrt_integral_sq` and the finite-measure set
+integral bound `TauCeti.abs_setIntegral_le_sqrt_integral_sq_mul_sqrt_measureReal`.
 
 Against the constant function `1` it gives the set-integral form
 `(∫ x in S, f x ∂μ)² ≤ μ(S) ∫ x in S, f x² ∂μ` on a set of finite measure
@@ -60,6 +66,27 @@ theorem sq_integral_mul_le_integral_sq_mul_integral_sq {α : Type*} [MeasurableS
         pow_le_pow_left₀ (integral_nonneg fun x ↦ by positivity) h 2
     _ = (∫ x, f x ^ 2 ∂μ) * ∫ x, g x ^ 2 ∂μ := by
         rw [mul_pow, Real.sq_sqrt hF, Real.sq_sqrt hG]
+
+/-- **The Cauchy–Schwarz inequality in square-root form:** `|∫ f g| ≤ √(∫ f²) * √(∫ g²)`. -/
+theorem abs_integral_mul_le_sqrt_integral_sq_mul_sqrt_integral_sq {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {f g : α → ℝ} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+    |∫ x, f x * g x ∂μ| ≤ √(∫ x, f x ^ 2 ∂μ) * √(∫ x, g x ^ 2 ∂μ) := by
+  rw [← Real.sqrt_mul (integral_nonneg fun x ↦ sq_nonneg (f x))]
+  exact Real.le_sqrt_of_sq_le
+    (by rw [sq_abs]; exact sq_integral_mul_le_integral_sq_mul_integral_sq hf hg)
+
+/-- **Cauchy–Schwarz bound for a set integral:** `|∫ x in s, f x ∂μ| ≤ √(∫ f²) * √(μ.real s)`. -/
+theorem abs_setIntegral_le_sqrt_integral_sq_mul_sqrt_measureReal {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {f : α → ℝ} {s : Set α} (hf : MemLp f 2 μ) (hs : μ s ≠ ⊤) :
+    |∫ x in s, f x ∂μ| ≤ √(∫ x, f x ^ 2 ∂μ) * √(μ.real s) := by
+  have : IsFiniteMeasure (μ.restrict s) := ⟨by simpa using hs.lt_top⟩
+  have h := abs_integral_mul_le_sqrt_integral_sq_mul_sqrt_integral_sq (hf.restrict s)
+    (memLp_const (1 : ℝ))
+  simp only [mul_one, one_pow, integral_const, smul_eq_mul, Measure.real,
+    Measure.restrict_apply_univ] at h ⊢
+  exact h.trans (mul_le_mul_of_nonneg_right (Real.sqrt_le_sqrt
+    (setIntegral_le_integral hf.integrable_sq (.of_forall fun _ ↦ sq_nonneg _)))
+    (Real.sqrt_nonneg _))
 
 /-- Cauchy--Schwarz for a real-valued set integral over a set of finite measure, in squared form.
 Only `f²` needs to be integrable on `S`. -/

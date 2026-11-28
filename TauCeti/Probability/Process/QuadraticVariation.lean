@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+public import Mathlib.Probability.Process.Adapted
 public import Mathlib.Topology.Instances.NNReal.Lemmas
 public import TauCeti.Analysis.QuadraticSums.BoundedVariation
+import TauCeti.MeasureTheory.Function.Lp.Bounded
 
 /-!
 # Quadratic sums and continuous finite-variation perturbations
@@ -25,6 +27,12 @@ The result concerns deterministic partitions and their limits, not construction 
 It requires neither adaptation nor a martingale hypothesis. Path regularity and finite variation
 hold outside a common sample-null set; no moment bound on total variation is assumed.
 
+Also provides basic measurability, `Lᵖ` membership, and bound lemmas for `quadraticSum`
+(`MeasureTheory.StronglyAdapted.stronglyMeasurable_quadraticSum`,
+`TauCeti.Probability.memLp_quadraticSum_of_bound`,
+`TauCeti.Probability.ae_quadraticSum_le_of_bound`, and
+`TauCeti.Probability.quadraticSum_castSucc_add`).
+
 ## References
 
 * D. Revuz and M. Yor, *Continuous Martingales and Brownian Motion*, third edition,
@@ -36,7 +44,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory Set
-open scoped NNReal Topology
+open scoped ENNReal NNReal Topology
 
 namespace TauCeti.Probability
 
@@ -53,14 +61,56 @@ theorem quadraticSum_def {Ω : Type*} {n : ℕ} (B : ℝ≥0 → Ω → ℝ)
 /-- A grid with no intervals has zero quadratic sum. -/
 @[simp]
 theorem quadraticSum_zero {Ω : Type*} (B : ℝ≥0 → Ω → ℝ) (t : Fin 1 → ℝ≥0) :
-    quadraticSum B t = 0 := by
-  ext ω
-  simp [quadraticSum_def]
+    quadraticSum B t = 0 := by ext ω; simp [quadraticSum_def]
 
 /-- Quadratic sums are nonnegative, independently of the order of the grid. -/
 theorem quadraticSum_nonneg {Ω : Type*} {n : ℕ} (B : ℝ≥0 → Ω → ℝ)
     (t : Fin (n + 1) → ℝ≥0) (ω : Ω) : 0 ≤ quadraticSum B t ω :=
   Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
+
+/-- Splitting off the last interval of a grid decomposes the quadratic sum into the prefix
+quadratic sum plus the last squared increment. -/
+theorem quadraticSum_castSucc_add {Ω : Type*} {n : ℕ} (B : ℝ≥0 → Ω → ℝ)
+    (g : Fin (n + 2) → ℝ≥0) (ω : Ω) :
+    quadraticSum B g ω =
+      quadraticSum B (g ∘ Fin.castSucc) ω +
+        (B (g (Fin.last (n + 1))) ω - B (g (Fin.last n).castSucc) ω) ^ 2 := by
+  simp only [quadraticSum_def, Fin.sum_univ_castSucc, Function.comp_apply,
+    Fin.succ_castSucc, Fin.succ_last]
+
+/-- Under a finite measure, the quadratic sum of a process whose grid values are measurable and
+almost surely bounded by `R` lies in `Lᵖ` for every `p`. -/
+theorem memLp_quadraticSum_of_bound {Ω : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
+    [IsFiniteMeasure μ] {X : ℝ≥0 → Ω → ℝ} {R : ℝ} (p : ℝ≥0∞) {n : ℕ}
+    (t : Fin (n + 1) → ℝ≥0) (hX : ∀ k, AEStronglyMeasurable (X (t k)) μ)
+    (hXR : ∀ k, ∀ᵐ ω ∂μ, |X (t k) ω| ≤ R) :
+    MemLp (quadraticSum X t) p μ :=
+  quadraticSum_def X t ▸ memLp_finsetSum _ fun k _ ↦
+    memLp_sub_sq_of_bound p (hX k.succ) (hX k.castSucc) (hXR k.succ) (hXR k.castSucc)
+
+/-- If the grid values of `X` are almost surely bounded in absolute value by `R`, then the
+quadratic sum along `t : Fin (n + 1) → ℝ≥0` is almost surely at most `n * (2 * R) ^ 2`. -/
+theorem ae_quadraticSum_le_of_bound {Ω : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
+    {X : ℝ≥0 → Ω → ℝ} {R : ℝ} {n : ℕ} (t : Fin (n + 1) → ℝ≥0)
+    (hXR : ∀ k, ∀ᵐ ω ∂μ, |X (t k) ω| ≤ R) :
+    ∀ᵐ ω ∂μ, quadraticSum X t ω ≤ (n : ℝ) * (2 * R) ^ 2 :=
+  quadraticSum_def X t ▸
+    (ae_all_iff.2 fun k : Fin n ↦ ae_sq_sub_le (hXR k.succ) (hXR k.castSucc)).mono
+      fun _ hω ↦ (Finset.sum_le_sum fun k _ ↦ hω k).trans_eq (by simp)
+
+end TauCeti.Probability
+
+/-- The quadratic sum of a strongly adapted real process along a nondecreasing finite grid is
+strongly measurable at the final grid date. -/
+theorem MeasureTheory.StronglyAdapted.stronglyMeasurable_quadraticSum {Ω : Type*}
+    {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ} {Y : ℝ≥0 → Ω → ℝ}
+    (hY : StronglyAdapted ℱ Y) {n : ℕ} {g : Fin (n + 1) → ℝ≥0} (hg : Monotone g) :
+    StronglyMeasurable[ℱ (g (Fin.last n))] (TauCeti.Probability.quadraticSum Y g) :=
+  TauCeti.Probability.quadraticSum_def Y g ▸ Finset.stronglyMeasurable_fun_sum _ fun j _ ↦
+    (((hY (g j.succ)).mono (ℱ.mono (hg (Fin.le_last _)))).sub
+      ((hY (g j.castSucc)).mono (ℱ.mono (hg (Fin.le_last _))))).pow 2
+
+namespace TauCeti.Probability
 
 variable {Ω : Type*} {X A : ℝ≥0 → Ω → ℝ} {s : Set ℝ≥0}
 

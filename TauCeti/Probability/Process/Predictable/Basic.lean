@@ -434,11 +434,72 @@ theorem MeasureTheory.StronglyAdapted.exists_isStronglyPredictable_indist_of_ae_
 theorem MeasureTheory.Filtration.measurable_fst_predictable {ι Ω : Type*} {m : MeasurableSpace Ω}
     [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι] [OrderTopology ι]
     [SecondCountableTopology ι] [MeasurableSpace ι] [BorelSpace ι]
-    (ℱ : Filtration ι m) : Measurable[ℱ.predictable] (Prod.fst : ι × Ω → ι) := by
-  apply measurable_of_Ioi
-  intro t
-  simpa only [Set.prod_univ] using
-    measurableSet_predictable_Ioi_prod (𝓕 := ℱ) (i := t) MeasurableSet.univ
+    (ℱ : Filtration ι m) : Measurable[ℱ.predictable] (Prod.fst : ι × Ω → ι) :=
+  measurable_of_Ioi fun t ↦ by
+    simpa only [Set.prod_univ] using measurableSet_predictable_Ioi_prod (𝓕 := ℱ) (i := t) .univ
+
+/-- A strongly measurable function of calendar time alone defines a strongly predictable
+process. -/
+theorem MeasureTheory.StronglyMeasurable.isStronglyPredictable_fst {ι Ω E : Type*}
+    {m : MeasurableSpace Ω} [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι]
+    [OrderTopology ι] [SecondCountableTopology ι] [MeasurableSpace ι] [BorelSpace ι]
+    [TopologicalSpace E] {ℱ : Filtration ι m} {f : ι → E} (hf : StronglyMeasurable f) :
+    IsStronglyPredictable ℱ (fun t _ ↦ f t) :=
+  hf.comp_measurable ℱ.measurable_fst_predictable
+
+/-- A continuous function of calendar time alone defines a strongly predictable process. -/
+theorem Continuous.isStronglyPredictable_fst {ι Ω E : Type*} {m : MeasurableSpace Ω}
+    [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι] [OrderTopology ι]
+    [SecondCountableTopology ι] [MeasurableSpace ι] [BorelSpace ι]
+    [TopologicalSpace E] [PseudoMetrizableSpace E] [SecondCountableTopologyEither ι E]
+    {ℱ : Filtration ι m} {f : ι → E} (hf : Continuous f) :
+    IsStronglyPredictable ℱ (fun t _ ↦ f t) :=
+  hf.stronglyMeasurable.isStronglyPredictable_fst
+
+/-- A linear deterministic drift `t ↦ c * (t : ℝ)` defines a strongly predictable process. -/
+theorem MeasureTheory.Filtration.isStronglyPredictable_const_mul_coe {Ω : Type*}
+    {m : MeasurableSpace Ω} (ℱ : Filtration ℝ≥0 m) (c : ℝ) :
+    IsStronglyPredictable ℱ (fun t _ ↦ c * (t : ℝ)) :=
+  (continuous_const.mul NNReal.continuous_coe).isStronglyPredictable_fst
+
+/-- The sample-space projection is measurable from the predictable sigma-algebra to `ℱ ⊥`. -/
+theorem MeasureTheory.Filtration.measurable_snd_bot_predictable {ι Ω : Type*}
+    {m : MeasurableSpace Ω} [PartialOrder ι] [OrderBot ι] (ℱ : Filtration ι m) :
+    @Measurable (ι × Ω) Ω ℱ.predictable (ℱ ⊥) Prod.snd := by
+  intro A hA
+  rw [show (Prod.snd : ι × Ω → Ω) ⁻¹' A = ({⊥} ×ˢ A) ∪ (Ioi ⊥ ×ˢ A) from by
+    ext ⟨t, ω⟩; by_cases ht : t = ⊥ <;> simp [ht, bot_lt_iff_ne_bot]]
+  exact (MeasurableSpace.measurableSet_generateFrom (Or.inl ⟨A, hA, rfl⟩)).union
+    (MeasurableSpace.measurableSet_generateFrom (Or.inr ⟨⊥, A, hA, rfl⟩))
+
+/-- A time-constant process equal to an `ℱ ⊥`-strongly measurable random variable is strongly
+predictable. -/
+theorem MeasureTheory.StronglyMeasurable.isStronglyPredictable_snd {ι Ω E : Type*}
+    {m : MeasurableSpace Ω} [PartialOrder ι] [OrderBot ι] [TopologicalSpace E]
+    {ℱ : Filtration ι m} {ξ : Ω → E} (hξ : StronglyMeasurable[ℱ ⊥] ξ) :
+    IsStronglyPredictable ℱ (fun _ ω ↦ ξ ω) :=
+  hξ.comp_measurable ℱ.measurable_snd_bot_predictable
+
+/-- The initial value of a strongly predictable process is `ℱ ⊥`-strongly measurable. -/
+theorem MeasureTheory.IsStronglyPredictable.stronglyMeasurable_bot {ι Ω E : Type*}
+    {m : MeasurableSpace Ω} [Preorder ι] [OrderBot ι] [TopologicalSpace E]
+    {ℱ : Filtration ι m} {H : ι → Ω → E} (hH : IsStronglyPredictable ℱ H) :
+    StronglyMeasurable[ℱ ⊥] (H ⊥) := by
+  let : MeasurableSpace Ω := ℱ ⊥
+  let : MeasurableSpace (ι × Ω) := ℱ.predictable
+  refine hH.comp_measurable (measurable_generateFrom (f := fun ω : Ω ↦ (⊥, ω)) fun u hu ↦ ?_)
+  rcases hu with ⟨A, hA, rfl⟩ | ⟨s, A, _, rfl⟩
+  · simpa [Set.preimage] using hA
+  · simp [Set.preimage, not_lt_of_ge (bot_le : ⊥ ≤ s)]
+
+/-- Centering a strongly predictable process by its initial value preserves strong
+predictability. -/
+theorem MeasureTheory.IsStronglyPredictable.sub_initialValue {ι Ω E : Type*}
+    {m : MeasurableSpace Ω} [PartialOrder ι] [OrderBot ι] [TopologicalSpace E]
+    [Sub E] [ContinuousSub E] {ℱ : Filtration ι m} {H : ι → Ω → E}
+    (hH : IsStronglyPredictable ℱ H) :
+    IsStronglyPredictable ℱ (fun t ω ↦ H t ω - H ⊥ ω) :=
+  StronglyMeasurable.sub hH hH.stronglyMeasurable_bot.isStronglyPredictable_snd
 
 /-- A predictably measurable function, extended by zero outside a measurable set of times,
 defines a strongly predictable process. In particular, the time predicate can impose a

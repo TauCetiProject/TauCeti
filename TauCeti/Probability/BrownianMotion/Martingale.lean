@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.BrownianMotion.Filtered
 public import Mathlib.Probability.Martingale.Basic
+public import Mathlib.Probability.Process.LocalProperty
+public import TauCeti.Probability.BrownianMotion.Filtered
+import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.Probability.ConditionalExpectation
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
-import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Martingale.Basic
+import TauCeti.Probability.Martingale.Local.Dominated
+import TauCeti.Probability.Martingale.MaximalInequality.Lp
 
 /-!
 # Brownian motion and its compensated square as martingales
@@ -19,12 +22,14 @@ import TauCeti.Probability.Martingale.Basic
 For a real pre-Brownian motion relative to a filtration, both `B` and `B² - t` are
 martingales on that filtration. The compensated square has every finite `Lᵖ` moment, even
 without a filtration. The conditional second moment of an increment is its elapsed time, and
-`E[B_t² | F_s] = B_s² + (t - s)` for `s ≤ t`.
+`E[B_t² | F_s] = B_s² + (t - s)` for `s ≤ t`. Moreover, any real Brownian motion that is adapted
+to a filtration `ℱ` and is a native local martingale on `ℱ` is already a true `ℱ`-martingale
+(`ProbabilityTheory.IsBrownianReal.martingale_of_locally_martingale`).
 
 These identities are the elementary square decomposition behind Brownian quadratic variation.
 Only finite-dimensional Brownian laws, adaptation and independence from the filtration's past
-are used: path continuity and usual conditions on the filtration are not required. In
-particular, the results do not infer independence from Brownian marginal laws alone.
+are used for the pre-Brownian results: path continuity and usual conditions on the filtration
+are not required, and they do not infer independence from Brownian marginal laws alone.
 
 ## References
 
@@ -123,3 +128,27 @@ theorem martingale_sq_sub (hB : IsFilteredPreBrownianReal ℱ B P) :
   ring
 
 end TauCeti.Probability.IsFilteredPreBrownianReal
+
+namespace ProbabilityTheory.IsBrownianReal
+
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {ℱ : Filtration ℝ≥0 mΩ}
+  {B : ℝ≥0 → Ω → ℝ}
+
+/-- A real Brownian motion that is adapted to a filtration `ℱ` and is a native local martingale on
+`ℱ` is a true `ℱ`-martingale. -/
+theorem martingale_of_locally_martingale (hB : IsBrownianReal B P) (hA : Adapted ℱ B)
+    (hloc : Locally (fun Y ↦ Martingale Y ℱ P) ℱ B P) : Martingale B ℱ P := by
+  have : IsProbabilityMeasure P := (hB.hasLaw_eval 0).isProbabilityMeasure
+  have hnat := hB.toIsPreBrownianReal.isFilteredPreBrownianReal_natural
+    fun t ↦ (hA.stronglyAdapted t).mono (ℱ.le t)
+  refine hA.stronglyAdapted.martingale_of_locally_martingale_of_dominated hloc fun T ↦ ?_
+  have hrc : ∀ᵐ ω ∂P, ∀ t < T, ContinuousWithinAt (fun u ↦ B u ω) (Set.Ioi t) t :=
+    hB.cont.mono fun _ hω _ _ ↦ hω.continuousWithinAt
+  refine ⟨fun ω ↦ (⨆ s ≤ T, ‖B s ω‖ₑ).toReal,
+    (hnat.martingale.memLp_toReal_iSup_eNorm hrc (by norm_num) ENNReal.ofNat_ne_top
+      (hB.memLp_eval T ENNReal.ofNat_ne_top)).integrable one_le_two, ?_⟩
+  filter_upwards [hnat.martingale.ae_iSup_eNorm_lt_top hrc] with ω hfin s hs
+  rw [← ENNReal.toReal_ofReal (norm_nonneg _), ofReal_norm]
+  exact ENNReal.toReal_mono hfin.ne (le_iSup₂_of_le s hs le_rfl)
+
+end ProbabilityTheory.IsBrownianReal

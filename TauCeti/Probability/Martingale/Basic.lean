@@ -34,7 +34,11 @@ integral:
   bounded multiplier (`MeasureTheory.Martingale.mul_left_of_eq_zero`).
 
 Together they show that a position chosen at `r`, times the change of a martingale over
-`(r, r']`, is a martingale whenever this product is integrable at every time.
+`(r, r']`, is a martingale whenever this product is integrable at every time. Over any event
+`S ∈ ℱ s`, a real martingale increment is orthogonal to any `ℱ s`-measurable Banach-valued
+multiplier (`MeasureTheory.Martingale.setIntegral_sub_smul_eq_zero`), and the same holds for a
+compensated squared increment `(Y t - Y s) ^ 2 - (A t - A s)` when `Y ^ 2 - A` is also a martingale
+(`MeasureTheory.Martingale.setIntegral_sq_sub_smul_eq_zero`).
 
 The following results need only a preordered time index. Sampling along a monotone time map
 preserves martingales, supermartingales, and submartingales with respect to the sampled
@@ -366,6 +370,50 @@ theorem Submartingale.memLp_of_le (hY : Submartingale Y ℱ μ) {i j : ι} (hij 
     ((hY.stronglyAdapted i).mono (ℱ.le i)).aestronglyMeasurable
   filter_upwards [hpos, hY.ae_le_condExp hij] with ω hposω hω
   simpa only [Real.norm_eq_abs, abs_of_nonneg hposω] using hω
+
+/-- An increment of a real martingale is orthogonal to every `ℱ s`-measurable Banach-valued
+multiplier over every event in `ℱ s`, provided the restricted product is integrable. -/
+theorem Martingale.setIntegral_sub_smul_eq_zero [SigmaFiniteFiltration μ ℱ] (hY : Martingale Y ℱ μ)
+    {s t : ι} (hst : s ≤ t) {S : Set Ω} (hS : MeasurableSet[ℱ s] S) {Z : Ω → E}
+    (hZ : AEStronglyMeasurable[ℱ s] Z μ) (hint : IntegrableOn (fun ω ↦ (Y t ω - Y s ω) • Z ω) S μ) :
+    ∫ ω in S, (Y t ω - Y s ω) • Z ω ∂μ = 0 := by
+  have hind : S.indicator (fun ω ↦ (Y t ω - Y s ω) • Z ω) = (Y t - Y s) • S.indicator Z := by
+    ext ω; exact congrFun (Set.indicator_smul S (fun ω ↦ Y t ω - Y s ω) Z) ω
+  have hZS : AEStronglyMeasurable[ℱ s] (S.indicator Z) μ := by
+    obtain ⟨g, hg, hZg⟩ := hZ
+    exact ⟨S.indicator g, hg.indicator hS,
+      hZg.mono fun ω hω ↦ by by_cases h : ω ∈ S <;> simp [h, hω]⟩
+  have hint' : Integrable ((Y t - Y s) • S.indicator Z) μ :=
+    hind ▸ (integrable_indicator_iff (ℱ.le s S hS)).2 hint
+  have hpull := condExp_smul_of_aestronglyMeasurable_right ((hY.integrable t).sub (hY.integrable s))
+    hint' hZS
+  rw [← integral_indicator (ℱ.le s S hS), hind, ← integral_condExp (ℱ.le s),
+    integral_congr_ae (g := fun _ ↦ (0 : E)) ?_, integral_zero]
+  filter_upwards [hpull, condExp_sub (m := ℱ s) (hY.integrable t) (hY.integrable s),
+    hY.condExp_ae_eq hst] with ω hp hd hm
+  simp only [Pi.smul_apply', Pi.sub_apply] at *
+  rw [hp, hd, hm, condExp_of_stronglyMeasurable (ℱ.le s) (hY.stronglyAdapted s) (hY.integrable s),
+    sub_self, zero_smul]
+
+/-- If `Y` and `Y ^ 2 - A` are real martingales, the compensated squared increment
+`(Y t - Y s) ^ 2 - (A t - A s)` is orthogonal to every `ℱ s`-measurable Banach-valued multiplier
+over every event in `ℱ s`, under the corresponding integrability assumptions. -/
+theorem Martingale.setIntegral_sq_sub_smul_eq_zero [SigmaFiniteFiltration μ ℱ] {A : ι → Ω → ℝ}
+    (hY : Martingale Y ℱ μ) (hQ : Martingale (fun u ω ↦ Y u ω ^ 2 - A u ω) ℱ μ)
+    {s t : ι} (hst : s ≤ t) {S : Set Ω} (hS : MeasurableSet[ℱ s] S) {Z : Ω → E}
+    (hZ : AEStronglyMeasurable[ℱ s] Z μ)
+    (hintQ : IntegrableOn (fun ω ↦ ((Y t ω ^ 2 - A t ω) - (Y s ω ^ 2 - A s ω)) • Z ω) S μ)
+    (hintY : IntegrableOn (fun ω ↦ (Y t ω - Y s ω) • (Y s ω • Z ω)) S μ) :
+    ∫ ω in S, ((Y t ω - Y s ω) ^ 2 - (A t ω - A s ω)) • Z ω ∂μ = 0 := by
+  have hid (ω : Ω) : ((Y t ω - Y s ω) ^ 2 - (A t ω - A s ω)) • Z ω =
+      ((Y t ω ^ 2 - A t ω) - (Y s ω ^ 2 - A s ω)) • Z ω -
+        (2 : ℝ) • ((Y t ω - Y s ω) • (Y s ω • Z ω)) := by
+    rw [smul_smul, smul_smul, ← sub_smul]; congr 1; ring
+  simp_rw [hid]
+  rw [integral_sub (g := fun ω ↦ (2 : ℝ) • ((Y t ω - Y s ω) • (Y s ω • Z ω))) hintQ
+      (hintY.smul (2 : ℝ)), integral_smul, hQ.setIntegral_sub_smul_eq_zero hst hS hZ hintQ,
+    hY.setIntegral_sub_smul_eq_zero hst hS (Z := fun ω ↦ Y s ω • Z ω)
+      ((hY.stronglyAdapted s).aestronglyMeasurable.smul hZ) hintY, smul_zero, sub_self]
 
 end NormAndMultipliers
 
