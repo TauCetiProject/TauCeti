@@ -252,25 +252,13 @@ theorem norm_apply_one_le_of_isPeak_of_act
   exact norm_apply_one_le_of_forall_isPeak_of_weight_le_one hx.ne_zero hδ hI hwe hq hq_le
     hK hK' hW_le hW_mean hW_int hint' horth hrepr hm'
 
-/-- A truncated factor is at most the product of all truncated factors. -/
-theorem max_one_le_prod_max_one {ι : Type*} [Fintype ι] (f : ι → ℝ) (τ : ι) :
-    max 1 (f τ) ≤ ∏ σ, max 1 (f σ) := by
-  have hsub : ({τ} : Finset ι) ⊆ Finset.univ := by simp
-  have hnonneg : ∀ σ ∈ ({τ} : Finset ι), 0 ≤ max 1 (f σ) := by
-    intro σ _
-    exact zero_le_one.trans (le_max_left _ _)
-  have hone : ∀ σ ∈ Finset.univ, σ ∉ ({τ} : Finset ι) → 1 ≤ max 1 (f σ) := by
-    intro σ _ _
-    exact le_max_left _ _
-  simpa using Finset.prod_le_prod_of_subset_of_one_le₀ hsub hnonneg hone
-
 /-- A finite maximum power is at most the product of truncated powers. -/
 theorem iSup_pow_le_prod_max_one_pow {ι : Type*} [Fintype ι] [Nonempty ι]
     (f : ι → ℝ) (hf : ∀ τ, 0 ≤ f τ) (A : ℕ) :
     (⨆ τ, f τ) ^ A ≤ ∏ τ, (max 1 (f τ)) ^ A := by
   rw [Finset.prod_pow]
   apply pow_le_pow_left₀ (Real.iSup_nonneg hf)
-  exact ciSup_le fun τ ↦ (le_max_right _ _).trans (max_one_le_prod_max_one f τ)
+  exact ciSup_le fun τ ↦ by simpa only [max_comm] using Finset.le_prod_max_one (Finset.mem_univ τ) f
 
 /-- The weighted product is dominated by its placewise weighted majorant. -/
 theorem prod_norm_mul_iSup_pow_le {ι : Type*} [Fintype ι] [Nonempty ι]
