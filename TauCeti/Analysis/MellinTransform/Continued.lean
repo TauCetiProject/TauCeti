@@ -68,6 +68,10 @@ of integrals `∫₀^∞ f(t) h(xt) dt` (DLMF §2.5(iii)) and of the distributio
   the principal parts `a_k/(z + α_k)` (DLMF 2.5.25) and `-b_k/(z - β_k)` (DLMF 2.5.27).
 * `TauCeti.differentiableAt_mellinContAtZero`, `TauCeti.differentiableAt_mellinContAtTop`:
   holomorphy away from the poles `-α_k` and `β_k`.
+* `TauCeti.tendsto_mellinContAtTop_add_inv_smul`: at a candidate pole `β_j` inside the strip, the
+  continuation minus its principal part tends to `mellinContAtTop f b β n β_j`, the finite part
+  (DLMF 2.6.29). `TauCeti.tendsto_mellinContAtTop_add_inv_smul_of_integrableOn`: the same limit
+  within a closed half-plane `σ ≤ Re z`, when `t ^ (σ - 1) f(t)` is integrable on `(0, 1]`.
 * `TauCeti.add_re_pos_of_mellinConvergent`, `TauCeti.re_lt_of_mellinConvergent`: a nonzero
   coefficient bounds the strip of absolute convergence.
 * `TauCeti.mellinContAtZero_spec`, `TauCeti.mellinContAtTop_spec`: these properties assembled
@@ -505,6 +509,92 @@ theorem differentiableAt_mellinContAtTop (hf : LocallyIntegrableOn f (Ioi 0))
         (sub_ne_zero.mpr (hpole k (Finset.mem_range.mp hk)))).smul_const (b k)
   simpa only [add_sub_cancel_right] using h₁.fun_sub h₂
 
+/-- The principal parts at the poles other than `β_j` are continuous at `β_j`. -/
+private theorem continuousAt_sum_erase_inv_smul {j : ℕ} (hβ : ∀ k < n, k ≠ j → β k ≠ β j) :
+    ContinuousAt (fun z ↦ ∑ k ∈ (Finset.range n).erase j, (z - β k)⁻¹ • b k) (β j) :=
+  tendsto_finsetSum _ fun k hk ↦ ContinuousAt.tendsto <|
+    ((continuousAt_id.sub continuousAt_const).inv₀ (sub_ne_zero.mpr
+      (hβ k (Finset.mem_range.mp (Finset.mem_of_mem_erase hk)) (Finset.ne_of_mem_erase hk)).symm
+      )).smul continuousAt_const
+
+/-- **The finite part at a candidate pole** (DLMF 2.5.27, 2.6.29). Let `β_j`, `j < n`, lie in the
+strip `-c < Re z < Re β_n`, and let no other `β_k`, `k < n`, equal it; it is a simple pole when
+`b_j ≠ 0`. Removing the principal part
+`-b_j/(z - β_j)` from the continuation at `+∞` leaves a function with a limit at `β_j`, namely
+`mellinContAtTop f b β n β_j`: at `z = β_j` the defining formula drops the singular term, since
+`(β_j - β_j)⁻¹ = 0`. -/
+theorem tendsto_mellinContAtTop_add_inv_smul (hf : LocallyIntegrableOn f (Ioi 0))
+    (hn : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-β k) • b k) =O[atTop]
+      fun t ↦ (t : ℂ) ^ (-β n))
+    {c : ℝ} (hc : f =O[𝓝[>] 0] (· ^ c)) {j : ℕ} (hj : j < n) (hjc : -c < (β j).re)
+    (hjn : (β j).re < (β n).re) (hβ : ∀ k < n, k ≠ j → β k ≠ β j) :
+    Tendsto (fun z ↦ mellinContAtTop f b β n z + (z - β j)⁻¹ • b j) (𝓝[≠] (β j))
+      (𝓝 (mellinContAtTop f b β n (β j))) := by
+  have hopen : IsOpen {z : ℂ | -c < z.re ∧ z.re < (β n).re} :=
+    (isOpen_lt continuous_const continuous_re).inter (isOpen_lt continuous_re continuous_const)
+  -- the continuation plus all principal parts is continuous at `β j`
+  have h₁ := ((differentiableOn_mellinContAtTop_add_sum hf hn hc).differentiableAt
+    (hopen.mem_nhds ⟨hjc, hjn⟩)).continuousAt
+  -- and so are the principal parts at the other poles
+  have h₂ := continuousAt_sum_erase_inv_smul (b := b) hβ
+  have hsplit (z : ℂ) : mellinContAtTop f b β n z + (z - β j)⁻¹ • b j =
+      (mellinContAtTop f b β n z + ∑ k ∈ Finset.range n, (z - β k)⁻¹ • b k) -
+        ∑ k ∈ (Finset.range n).erase j, (z - β k)⁻¹ • b k := by
+    rw [← Finset.add_sum_erase _ _ (Finset.mem_range.mpr hj)]
+    abel
+  have h := (h₁.fun_sub h₂).tendsto.mono_left (nhdsWithin_le_nhds (s := {β j}ᶜ))
+  rw [← hsplit, sub_self, inv_zero, zero_smul, add_zero] at h
+  exact h.congr fun z ↦ (hsplit z).symm
+
+/-- **The finite part from the right** (DLMF 2.6.29). A variant of
+`TauCeti.tendsto_mellinContAtTop_add_inv_smul` that replaces the power bound at `0+` by
+integrability of `t ^ (σ - 1) f(t)` on `(0, 1]`, which makes the integral over `(0, 1]` converge on
+the closed half-plane `σ ≤ Re z` but possibly nowhere to its left. Let `β_j`, `j < n`, satisfy
+`Re β_j < Re β_n`, and let no other `β_k`, `k < n`, equal it. Then removing the principal part
+`-b_j/(z - β_j)` from the continuation at `+∞` leaves a function that tends to
+`mellinContAtTop f b β n β_j` as `z → β_j` within `σ ≤ Re z`. The statement has content when
+`σ ≤ Re β_j`; otherwise `β_j` is not in the closure of the half-plane. -/
+theorem tendsto_mellinContAtTop_add_inv_smul_of_integrableOn (hf : LocallyIntegrableOn f (Ioi 0))
+    (hn : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-β k) • b k) =O[atTop]
+      fun t ↦ (t : ℂ) ^ (-β n))
+    {σ : ℝ} (hσ : IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ ((σ : ℂ) - 1) • f t) (Ioc 0 1)) {j : ℕ}
+    (hj : j < n) (hjn : (β j).re < (β n).re)
+    (hβ : ∀ k < n, k ≠ j → β k ≠ β j) :
+    Tendsto (fun z ↦ mellinContAtTop f b β n z + (z - β j)⁻¹ • b j) (𝓝[{z | σ ≤ z.re}] (β j))
+      (𝓝 (mellinContAtTop f b β n (β j))) := by
+  -- on `σ ≤ Re z` the integral over `(0, 1]` is dominated by `‖t ^ (σ - 1) f(t)‖`
+  have h₀ : ContinuousWithinAt (fun z : ℂ ↦ ∫ t : ℝ in Ioc 0 1, (t : ℂ) ^ (z - 1) • f t)
+      {z | σ ≤ z.re} (β j) := by
+    refine continuousWithinAt_of_dominated (Eventually.of_forall fun z ↦
+      (by fun_prop : Measurable fun t : ℝ ↦ (t : ℂ) ^ (z - 1)).aestronglyMeasurable.smul
+        (hf.aestronglyMeasurable.mono_set Ioc_subset_Ioi_self)) ?_ hσ.norm ?_
+    · filter_upwards [self_mem_nhdsWithin] with z (hz : σ ≤ z.re)
+      filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ⟨ht0, ht1⟩
+      rw [norm_smul, norm_smul, norm_cpow_eq_rpow_re_of_pos ht0,
+        norm_cpow_eq_rpow_re_of_pos ht0, sub_re, sub_re, ofReal_re, one_re]
+      exact mul_le_mul_of_nonneg_right
+        (Real.rpow_le_rpow_of_exponent_ge ht0 ht1 (by linarith)) (norm_nonneg _)
+    · filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
+      exact ((continuous_id.sub continuous_const).const_cpow
+        (Or.inl (ofReal_ne_zero.mpr ht.1.ne'))).continuousWithinAt.smul continuousWithinAt_const
+  -- the remainder integral over `(1, ∞)` is holomorphic at `β j`
+  have h₁ := (differentiableAt_integral_Ioi_cpow_smul_of_isBigO
+    (hf.sub (locallyIntegrableOn_sum_cpow_smul (fun k ↦ -β k) b n))
+    (hn.trans_ofReal_cpow_rpow (eventually_gt_atTop 0) (neg_re (β n))) hjn).continuousAt
+  have hsplit (z : ℂ) : mellinContAtTop f b β n z + (z - β j)⁻¹ • b j =
+      (∫ t : ℝ in Ioc 0 1, (t : ℂ) ^ (z - 1) • f t) +
+        (∫ t : ℝ in Ioi 1, (t : ℂ) ^ (z - 1) •
+          (f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-β k) • b k)) -
+        ∑ k ∈ (Finset.range n).erase j, (z - β k)⁻¹ • b k := by
+    rw [mellinContAtTop_def, ← Finset.add_sum_erase _ _ (Finset.mem_range.mpr hj)]
+    abel
+  have h : ContinuousWithinAt (fun z ↦ mellinContAtTop f b β n z + (z - β j)⁻¹ • b j)
+      {z | σ ≤ z.re} (β j) :=
+    ((h₀.add h₁.continuousWithinAt).sub
+      (continuousAt_sum_erase_inv_smul (b := b) hβ).continuousWithinAt).congr
+      (fun z _ ↦ hsplit z) (hsplit _)
+  simpa only [sub_self, inv_zero, zero_smul, add_zero] using h.tendsto
+
 /-- A nonzero coefficient `b_k` of an expansion of `f` at `+∞` with strictly increasing `Re β_k`
 bounds the strip of absolute convergence of the Mellin transform of `f`: if it converges at `z`,
 then `Re z < Re β_k`. -/
@@ -627,9 +717,8 @@ section PowerExpansion
 
 variable {α : ℝ} {f : ℝ → E} {a : ℕ → E}
 
-
 /-- Near `0`, `t ^ m f(t)` is integrable on `(0, 1]`. -/
-private theorem integrableOn_Ioc_pow_smul (hf : LocallyIntegrableOn f (Ici 0)) (m : ℕ) :
+theorem integrableOn_Ioc_pow_smul (hf : LocallyIntegrableOn f (Ici 0)) (m : ℕ) :
     IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ m • f t) (Ioc 0 1) := by
   refine ((hf.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set
     Ioc_subset_Icc_self).bdd_smul 1
@@ -638,25 +727,25 @@ private theorem integrableOn_Ioc_pow_smul (hf : LocallyIntegrableOn f (Ici 0)) (
   rw [norm_pow, norm_real, Real.norm_of_nonneg ht.1.le]
   exact pow_le_one₀ ht.1.le ht.2
 
-/-- Near `0`, `t ^ m t ^ (-k-α) c` is integrable on `(0, 1]` for `k ≤ m`. -/
-private theorem integrableOn_Ioc_pow_smul_cpow_smul (hα₁ : α < 1) {m k : ℕ} (hk : k ≤ m)
-    (c : E) :
+/-- Near `0`, `t ^ m t ^ (-k-α) c` is integrable on `(0, 1]` for `k + α < m + 1`. -/
+theorem integrableOn_Ioc_pow_smul_cpow_smul {m k : ℕ} (hkm : (k : ℝ) + α < m + 1) (c : E) :
     IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ m • ((t : ℂ) ^ (-((k : ℂ) + α)) • c)) (Ioc 0 1) := by
-  have hk' : (k : ℝ) ≤ m := by exact_mod_cast hk
   refine (integrableOn_Ioc_cpow_smul_cpow_smul (z := (m : ℂ) + 1) (w := -((k : ℂ) + α))
     (by simp only [add_re, neg_re, natCast_re, ofReal_re, one_re]; linarith) c).congr_fun
     (fun t _ ↦ ?_) measurableSet_Ioc
   simp only [add_sub_cancel_right, cpow_natCast]
 
-/-- Near `0`, `t ^ m` times the remainder after `j ≤ m + 1` terms is integrable on `(0, 1]`. -/
-theorem integrableOn_Ioc_pow_smul_sub_sum (hα₁ : α < 1)
-    (hf : LocallyIntegrableOn f (Ici 0)) {m j : ℕ} (hj : j ≤ m + 1) :
+/-- Near `0`, `t ^ m` times the remainder after `j` terms, `j + α < m + 2`, is integrable on
+`(0, 1]`. -/
+theorem integrableOn_Ioc_pow_smul_sub_sum
+    (hf : LocallyIntegrableOn f (Ici 0)) {m j : ℕ} (hj : (j : ℝ) + α < m + 2) :
     IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ m •
       (f t - ∑ k ∈ Finset.range j, (t : ℂ) ^ (-((k : ℂ) + α)) • a k)) (Ioc 0 1) := by
   simp_rw [smul_sub, Finset.smul_sum]
-  exact (integrableOn_Ioc_pow_smul hf m).sub (integrable_finsetSum _ fun k hk ↦
-    integrableOn_Ioc_pow_smul_cpow_smul hα₁
-      (Nat.lt_succ_iff.mp ((Finset.mem_range.mp hk).trans_le hj)) (a k))
+  refine (integrableOn_Ioc_pow_smul hf m).sub (integrable_finsetSum _ fun k hk ↦
+    integrableOn_Ioc_pow_smul_cpow_smul ?_ (a k))
+  have hk : (k : ℝ) + 1 ≤ j := by exact_mod_cast Finset.mem_range.mp hk
+  linarith
 
 /-- At `+∞`, `t ^ (w - 1)` times the remainder after `j ≥ Re w` terms is integrable on
 `(1, ∞)`. -/
@@ -682,7 +771,7 @@ theorem integrableOn_pow_smul_sub_sum_succ (hα₀ : 0 < α) (hα₁ : α < 1)
     IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ n •
       (f t - ∑ k ∈ Finset.range (n + 1), (t : ℂ) ^ (-((k : ℂ) + α)) • a k)) (Ioi 0) := by
   rw [← Ioc_union_Ioi_eq_Ioi zero_le_one]
-  refine (integrableOn_Ioc_pow_smul_sub_sum hα₁ hf le_rfl).union ?_
+  refine (integrableOn_Ioc_pow_smul_sub_sum hf (by push_cast; linarith)).union ?_
   simpa only [add_sub_cancel_right, cpow_natCast] using
     integrableOn_Ioi_cpow_smul_sub_sum hα₀ hf hn (w := (n : ℂ) + 1) (by simp)
 
@@ -742,8 +831,10 @@ theorem mellinContAtTop_natCast_add_one_eq_integral [CompleteSpace E] (hα₀ : 
     have h := integral_Ioc_cpow_smul_cpow_smul (z := (n : ℂ) + 1) (w := -((k : ℂ) + α))
       (by simp only [add_re, neg_re, natCast_re, ofReal_re, one_re]; linarith) (a k)
     simpa only [add_sub_cancel_right, cpow_natCast, ← sub_eq_add_neg] using h
-  have hint (k : ℕ) (hk : k ∈ Finset.range (n + 1)) :=
-    integrableOn_Ioc_pow_smul_cpow_smul hα₁ (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)) (a k)
+  have hint (k : ℕ) (hk : k ∈ Finset.range (n + 1)) :
+      IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ n • ((t : ℂ) ^ (-((k : ℂ) + α)) • a k)) (Ioc 0 1) := by
+    have hk' : (k : ℝ) ≤ n := by exact_mod_cast Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
+    exact integrableOn_Ioc_pow_smul_cpow_smul (by linarith) (a k)
   rw [← Finset.sum_congr rfl hterm]
   simp_rw [smul_sub (_ : ℂ) (f _), Finset.smul_sum]
   rw [integral_sub (integrableOn_Ioc_pow_smul hf n) (integrable_finsetSum _ hint),

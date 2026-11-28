@@ -69,6 +69,8 @@ In the other direction, a small logarithm bounds a power from above: if `log z �
 * `TauCeti.pow_le_one_add_two_mul_of_log_le`: `z^n ≤ 1 + 2 ε` when `log z ≤ L`, `n L ≤ ε` and
   `0 ≤ ε ≤ 1 / 2`.
 * `Real.log_sub_one_div_le_log`: `log a - 1 / m ≤ log m` for `0 ≤ m` and `0 ≤ a ≤ m + 1`.
+* `Real.log_add_sub_log_le`: `log (T + r) - log T ≤ (log (T + 1) + 1) log r` for `T ≥ 1`, `r ≥ 1`
+  and `log r ≥ 1`.
 -/
 
 public section
@@ -207,6 +209,18 @@ theorem log_sub_one_div_le_log {a m : ℝ} (ha : 0 ≤ a) (hm : 0 ≤ m) (h : a 
     rw [div_sub_one hm.ne', div_le_div_iff_of_pos_right hm]
     linarith
   linarith
+
+/-- A shift by `T ≥ 1` of a logarithmically large argument costs at most a factor
+`log (T + 1) + 1`: `log (T + r) - log T ≤ (log (T + 1) + 1) log r` for `T ≥ 1`, `r ≥ 1` and
+`log r ≥ 1`. -/
+theorem log_add_sub_log_le {T r : ℝ} (hT : 1 ≤ T) (hr : 1 ≤ r) (hlog : 1 ≤ log r) :
+    log (T + r) - log T ≤ (log (T + 1) + 1) * log r := by
+  have h₁ : 0 ≤ log T := log_nonneg hT
+  have h₂ : 0 ≤ log (T + 1) := log_nonneg (by linarith)
+  have h₃ : log (T + r) ≤ log (T + 1) + log r := by
+    rw [← log_mul (by positivity) (by positivity)]
+    exact log_le_log (by positivity) (by nlinarith)
+  nlinarith
 
 end Real
 
