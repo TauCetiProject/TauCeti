@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.Topology.Algebra.ConstMulAction
 public import TauCeti.Analysis.Normed.Lp.BoundedContinuous
 
@@ -42,6 +44,9 @@ Specializing to `X = G` gives the sequence-space counterpart of
 * `lp.tsum_leftTranslation`: left translation preserves `∑' x, u x`.
 * `lp.norm_leftTranslation_one_sub`: `‖L_g u - u‖₁ = ∑' x, ‖u (g⁻¹ • x) - u x‖`.
 * `lp.bcfPairing_leftTranslation`: `⟨L_g u, f⟩ = ⟨u, f (g • ·)⟩`.
+* `lp.leftTranslationUnitary`, `lp.leftTranslation_mem_unitary`, `lp.coe_leftTranslation_mul`,
+  `lp.star_coe_leftTranslation`: unitary-operator API on `ℓ²(X, E)` for an inner product space
+  `E`.
 -/
 
 public section
@@ -214,5 +219,53 @@ theorem leftTranslation_toLpInfty_mulLeft {G E 𝕜 : Type*} [Group G] [Topologi
     leftTranslation ∞ 𝕜 g (BoundedContinuousFunction.toLpInfty 𝕜 f) =
       BoundedContinuousFunction.toLpInfty 𝕜 (f.compContinuous (ContinuousMap.mulLeft g⁻¹)) :=
   leftTranslation_toLpInfty (X := G) g f
+
+section Hilbert
+
+variable {G X E 𝕜 : Type*} [Group G] [MulAction G X] [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+
+/-- Left translation on `ℓ²(X, E)` as a group homomorphism into unitary operators. -/
+def leftTranslationUnitary :
+    G →* unitary (lp (fun _ : X ↦ E) 2 →L[𝕜] lp (fun _ : X ↦ E) 2) :=
+  Unitary.linearIsometryEquiv.symm.toMonoidHom.comp (leftTranslation 2 𝕜 (X := X) (E := E))
+
+/-- Coercing `leftTranslationUnitary g` to a continuous linear map recovers
+`(leftTranslation 2 𝕜 g : _ →L[𝕜] _)`. -/
+@[simp]
+theorem coe_leftTranslationUnitary (g : G) :
+    (leftTranslationUnitary (X := X) (E := E) (𝕜 := 𝕜) g :
+        lp (fun _ : X ↦ E) 2 →L[𝕜] lp (fun _ : X ↦ E) 2) =
+      (leftTranslation 2 𝕜 (X := X) (E := E) g :
+        lp (fun _ : X ↦ E) 2 →L[𝕜] lp (fun _ : X ↦ E) 2) :=
+  (rfl)
+
+/-- Every left translation operator on `ℓ²(X, E)` is unitary. -/
+theorem leftTranslation_mem_unitary (g : G) :
+    (leftTranslation 2 𝕜 (X := X) (E := E) g :
+        lp (fun _ : X ↦ E) 2 →L[𝕜] lp (fun _ : X ↦ E) 2) ∈
+      unitary (lp (fun _ : X ↦ E) 2 →L[𝕜] lp (fun _ : X ↦ E) 2) :=
+  (leftTranslationUnitary (X := X) (E := E) (𝕜 := 𝕜) g).property
+
+/-- As a continuous linear map on `ℓ²(X, E)`, left translation is multiplicative. -/
+theorem coe_leftTranslation_mul (g h : G) :
+    (leftTranslation 2 𝕜 (X := X) (E := E) (g * h) :
+        lp (fun _ : X ↦ E) 2 →L[𝕜] lp (fun _ : X ↦ E) 2) =
+      (leftTranslation 2 𝕜 (X := X) (E := E) g :
+          lp (fun _ : X ↦ E) 2 →L[𝕜] lp (fun _ : X ↦ E) 2) *
+        (leftTranslation 2 𝕜 (X := X) (E := E) h :
+          lp (fun _ : X ↦ E) 2 →L[𝕜] lp (fun _ : X ↦ E) 2) := by
+  simpa only [coe_leftTranslationUnitary, MulMemClass.coe_mul] using
+    congrArg Subtype.val (map_mul (leftTranslationUnitary (X := X) (E := E) (𝕜 := 𝕜)) g h)
+
+/-- The `star` of left translation by `g` on `ℓ²(X, E)` is left translation by `g⁻¹`. -/
+theorem star_coe_leftTranslation (g : G) :
+    star (leftTranslation 2 𝕜 (X := X) (E := E) g :
+        lp (fun _ : X ↦ E) 2 →L[𝕜] lp (fun _ : X ↦ E) 2) =
+      (leftTranslation 2 𝕜 (X := X) (E := E) g⁻¹ :
+        lp (fun _ : X ↦ E) 2 →L[𝕜] lp (fun _ : X ↦ E) 2) := by
+  rw [LinearIsometryEquiv.star_eq_symm, leftTranslation_symm]
+
+end Hilbert
 
 end lp

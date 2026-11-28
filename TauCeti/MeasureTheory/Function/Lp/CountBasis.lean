@@ -130,6 +130,13 @@ theorem hasSum_countHilbertBasis (f : Lp 𝕜 2 (Measure.count : Measure α)) :
     HasSum (fun a : α => f a • countHilbertBasis 𝕜 α a) f := by
   simpa only [countHilbertBasis_repr_apply] using (countHilbertBasis 𝕜 α).hasSum_repr f
 
+/-- On a nonempty space with measurable singletons, counting-measure `L²` is nontrivial. -/
+instance instNontrivialCount [Nonempty α] :
+    Nontrivial (Lp 𝕜 2 (Measure.count : Measure α)) :=
+  ⟨⟨countHilbertBasis 𝕜 α (Classical.arbitrary α), 0, fun h ↦ by
+    have h' := congrArg norm h
+    simp at h'⟩⟩
+
 end Basis
 
 section NormSq
