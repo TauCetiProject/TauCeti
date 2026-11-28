@@ -61,6 +61,8 @@ pointwise with members of a finite group on a dense set of rational points.
   separated scheme is a separated scheme.
 * `AlgebraicGeometry.isClosedImmersion_pullbackMap_id`: the canonical map `X ×_S Y ⟶ X ×_T Y` over
   a separated `S ⟶ T` is a closed immersion.
+* `AlgebraicGeometry.Scheme.Opens.isClosedImmersion_pullbackLift_inf`: the restricted graph of a
+  universally closed morphism on an open of a separated scheme over the base is a closed immersion.
 * `AlgebraicGeometry.surjective_of_isDominant_of_comp_eq_id`: a section of a separated morphism
   with dense range is surjective.
 * `AlgebraicGeometry.IsSeparated.of_comp_surjective`: separatedness descends along universally
@@ -160,6 +162,33 @@ scheme, by `isClosedImmersion_pullbackMap_id`. -/
 noncomputable abbrev pullbackToProd {Y : Scheme.{u}} (f : X ⟶ S) (g : Y ⟶ S) :
     pullback f g ⟶ pullback (terminal.from X) (terminal.from Y) :=
   pullback.map f g _ _ (𝟙 X) (𝟙 Y) (terminal.from S) (terminal.hom_ext _ _) (terminal.hom_ext _ _)
+
+/-- The graph of a universally closed map `V ⟶ X` on an open of `Y`, restricted over
+`W ⊆ Y`, is closed in `X ×[S] W` when `Y ⟶ S` is separated. -/
+theorem Scheme.Opens.isClosedImmersion_pullbackLift_inf {X Y S : Scheme.{u}} (V W : Y.Opens)
+    (p : V.toScheme ⟶ X) [UniversallyClosed p] (f : X ⟶ S) (g : Y ⟶ S) [IsSeparated g]
+    (hp : p ≫ f = V.ι ≫ g) :
+    IsClosedImmersion (pullback.lift (f := f) (g := W.ι ≫ g)
+      (Y.homOfLE (inf_le_left : V ⊓ W ≤ V) ≫ p) (Y.homOfLE inf_le_right)
+      (by simp [hp])) := by
+  let e := (isPullback_opens_inf V W).isoPullback
+  let baseChange := pullback.lift (f := f) (g := W.ι ≫ g)
+    (pullback.fst (V.ι ≫ g) (W.ι ≫ g) ≫ p) (pullback.snd _ _) (by simp [hp, pullback.condition])
+  have : UniversallyClosed baseChange :=
+    MorphismProperty.pullbackLift_fst_snd (W.ι ≫ g) hp.symm ‹UniversallyClosed p›
+  let graph := pullback.lift (f := f) (g := W.ι ≫ g)
+    (Y.homOfLE (inf_le_left : V ⊓ W ≤ V) ≫ p) (Y.homOfLE inf_le_right) (by simp [hp])
+  -- Pass first from the product over Y to the product over S, then base change p.
+  have hgraph : graph = e.hom ≫ pullback.mapDesc V.ι W.ι g ≫ baseChange := by
+    apply pullback.hom_ext <;> simp [graph, baseChange, e]
+  have : UniversallyClosed graph := by
+    rw [hgraph]
+    infer_instance
+  have : IsImmersion (graph ≫ pullback.snd f (W.ι ≫ g)) := by
+    rw [pullback.lift_snd (f := f)]
+    infer_instance
+  have := IsImmersion.of_comp graph (pullback.snd f (W.ι ≫ g))
+  exact IsClosedImmersion.of_isPreimmersion graph graph.isClosedMap.isClosed_range
 
 /-- A section of a separated morphism with dense range is surjective: it is a closed immersion,
 so its range is closed as well as dense. -/

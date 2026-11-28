@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
 public import Mathlib.CategoryTheory.Monoidal.CommGrp_
 public import Mathlib.CategoryTheory.Preadditive.Basic
+public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 
 /-!
 # Commutative group objects form a preadditive category
@@ -51,6 +52,9 @@ so `f + g` corresponds to the product of the underlying morphisms (`CommGrp.add_
   `CategoryTheory.Functor.mapCommGrp_map_natCast`: a braided functor takes multiplication by `n` to
   multiplication by `n`. For group schemes, this is the compatibility of multiplication by `n` with
   base change.
+* `CategoryTheory.Functor.additive_mapCommGrp`: a braided functor induces an additive functor on
+  commutative group objects, so it induces ring homomorphisms of endomorphism rings
+  (`CategoryTheory.Functor.mapEndRingHom`).
 -/
 
 public section
@@ -198,5 +202,14 @@ to multiplication by `n` on the image of `A`. -/
 theorem mapCommGrp_map_natCast (A : CommGrp C) (n : ℕ) :
     F.mapCommGrp.map (n : End A).asHom = (n : End (F.mapCommGrp.obj A)).asHom := by
   simpa only [Int.cast_natCast] using F.mapCommGrp_map_intCast A n
+
+/-- A braided functor induces an additive functor on commutative group objects: it takes the
+pointwise sum of two homomorphisms to the pointwise sum of their images. -/
+instance additive_mapCommGrp : F.mapCommGrp.Additive where
+  map_add {_ _ f g} := CommGrp.hom_ext _ _ <| by
+    rw [CommGrp.add_hom_hom_hom]
+    -- The underlying morphism of `F.mapCommGrp.map h` is `F.map` of the underlying morphism of `h`.
+    exact (congrArg F.map (CommGrp.add_hom_hom_hom f g)).trans
+      (F.map_mul f.hom.hom.hom g.hom.hom.hom)
 
 end CategoryTheory.Functor

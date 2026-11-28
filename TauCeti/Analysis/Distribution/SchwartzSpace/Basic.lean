@@ -52,11 +52,16 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_iteratedFDeriv_comp_left`,
   `SchwartzMap.integral_norm_iteratedFDeriv_comp_left_le`: for a continuous linear map `L`, the
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
+* `SchwartzMap.seminorm_eq_seminorm`: the Schwartz seminorms do not depend on the scalar field.
+* `SchwartzMap.seminorm_postcompCLM_linearIsometry`: postcomposition with a linear isometry
+  preserves the Schwartz seminorms.
 * `SchwartzMap.norm_toLp_sq`: the squared `L²` norm of `f` is `∫ ‖f x‖²`.
 * `SchwartzMap.conjnegCLM`: the continuous conjugate-linear reversed-conjugation involution,
   with exact reflected-support, compact-support and near-origin cutoff laws.
 * `SchwartzMap.bilinLeftCLM_apply_eq_sum`: the pointwise product of Schwartz functions with
   `A x = ∑ i ∈ s, c i x • L i` is `∑ i ∈ s, L i (c i f)`.
+* `SchwartzMap.smulLeftCLM_pow_apply`: the `k`-th power of multiplication by `g` multiplies by
+  `g ^ k`.
 * `SchwartzMap.bilinLeftCLM_eq_sum_smulLeftCLM`: the expansion of `x ↦ B (u x) (g x)` in a basis
   of `G` as a finite sum of scalar multiplications.
 * `SchwartzMap.conjCLM`: pointwise conjugation of scalar Schwartz functions, a continuous
@@ -139,6 +144,22 @@ theorem one_add_norm_smul_sq_rpow_mul_norm_le (c m : ℝ) (k : ℕ) (f : 𝓢(E,
     _ = _ := by ring
 
 end Weight
+
+section SmulLeftPow
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedAddCommGroup E]
+  [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
+
+/-- The `k`-th power of multiplication by a function `g` of temperate growth is multiplication
+by `g ^ k`. -/
+theorem smulLeftCLM_pow_apply {g : E → 𝕜} (hg : g.HasTemperateGrowth) (k : ℕ) (f : 𝓢(E, F))
+    (x : E) : (smulLeftCLM F g ^ k) f x = g x ^ k • f x := by
+  induction k generalizing f with
+  | zero => simp
+  | succ k ih =>
+    rw [pow_succ', mul_apply_eq_comp, smulLeftCLM_apply_apply hg, ih, smul_smul, ← pow_succ']
+
+end SmulLeftPow
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
   [BorelSpace E] [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -323,12 +344,39 @@ variable {𝕜 E F G : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedSpace 𝕜 G]
 
+/-- The Schwartz seminorms do not depend on the scalar field: over any field, `p_{k,n}(f)` is the
+best constant `c` with `‖x‖ ^ k * ‖iteratedFDeriv ℝ n f x‖ ≤ c`. -/
+theorem seminorm_eq_seminorm (𝕜₁ 𝕜₂ : Type*) [NormedField 𝕜₁] [NormedSpace 𝕜₁ F]
+    [SMulCommClass ℝ 𝕜₁ F] [NormedField 𝕜₂] [NormedSpace 𝕜₂ F] [SMulCommClass ℝ 𝕜₂ F]
+    (k n : ℕ) (f : 𝓢(E, F)) :
+    SchwartzMap.seminorm 𝕜₁ k n f = SchwartzMap.seminorm 𝕜₂ k n f := by
+  rw [seminorm_apply, seminorm_apply]
+
 /-- As a function, the postcomposition of a Schwartz function `f` with a continuous linear map
 `L` is the composite `L ∘ f`. -/
 @[simp]
 theorem coe_postcompCLM (f : 𝓢(E, F)) (L : F →L[𝕜] G) : ⇑(f.postcompCLM L) = L ∘ f := by
   ext x
   rw [postcompCLM_apply, Function.comp_apply]
+
+/-- **Postcomposition with a linear isometry preserves the Schwartz seminorms.** The iterated
+derivatives of `L ∘ f` are those of `f` followed by `L`, with the same norms. -/
+theorem seminorm_postcompCLM_linearIsometry (L : F →ₗᵢ[𝕜] G) (f : 𝓢(E, F)) (k n : ℕ) :
+    SchwartzMap.seminorm 𝕜 k n (f.postcompCLM L.toContinuousLinearMap) =
+      SchwartzMap.seminorm 𝕜 k n f := by
+  -- The derivatives are real derivatives, so view `L` as a real-linear isometry.
+  let Lℝ : F →ₗᵢ[ℝ] G := ⟨L.toLinearMap.restrictScalars ℝ, fun x ↦ by
+    rw [LinearMap.coe_restrictScalars, LinearIsometry.coe_toLinearMap, L.norm_map]⟩
+  -- `Lℝ` and `L` have the same underlying function.
+  have hcoe : ⇑(f.postcompCLM L.toContinuousLinearMap) = Lℝ ∘ f := by
+    ext x
+    simp [Lℝ]
+  have h (x : E) :
+      ‖iteratedFDeriv ℝ n (f.postcompCLM L.toContinuousLinearMap) x‖ =
+        ‖iteratedFDeriv ℝ n f x‖ := by
+    rw [hcoe]
+    exact Lℝ.norm_iteratedFDeriv_comp_left (f.smooth ⊤).contDiffAt (mod_cast le_top)
+  simp only [seminorm_apply, h]
 
 end Postcomp
 

@@ -6,19 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UnitDisc.RotatingLine.Isomorphism
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Prod
 
 /-!
 # The normalized real-boundary disc solver on `ℂⁿ`
 
 Let `D` be the open unit disc, `0 < α < 1` and `ι` a finite index type, so that `ι → ℂ` is a
-copy of `ℂⁿ`. For an integer `k`, the elements `u` of `C^{1,α}(D, ι → ℂ)` whose continuous
-extension to the closed disc takes boundary values in the totally real subspaces
-`e^{ikθ/2} ℝ^ι`, that is
+copy of `ℂⁿ`. For integers `k : ι → ℤ`, the elements `u` of `C^{1,α}(D, ι → ℂ)` whose
+continuous extension to the closed disc takes boundary values in the diagonal totally real
+subspaces `⊕ᵢ e^{i kᵢ θ/2} ℝ`, that is
 
-`u w i = w ^ k * conj (u w i)` for every `w` on the unit circle and every coordinate `i`,
+`u w i = w ^ k i * conj (u w i)` for every `w` on the unit circle and every coordinate `i`,
 
 form a closed real subspace `X_k` of `C^{1,α}(D, ι → ℂ)` (`TauCeti.rotatingLinePiSubspace`). It
-consists of the maps whose coordinates lie in the rank-one subspace `TauCeti.rotatingLineSubspace`.
+consists of the maps whose `i`-th coordinate lies in the rank-one subspace
+`TauCeti.rotatingLineSubspace (k i)`. For a constant `k` the boundary condition is
+`e^{ikθ/2} ℝ^ι`.
 The augmented Cauchy–Riemann operator
 
 `u ↦ (∂u/∂(conj z), u 0, ∂ₛu(0))`
@@ -26,8 +29,9 @@ The augmented Cauchy–Riemann operator
 of `TauCeti.augmentedConjWirtingerDerivL` commutes with the coordinate projections, which are
 complex linear, so it acts coordinatewise. The rank-one existence and uniqueness theorems of
 `TauCeti.Analysis.Complex.UnitDisc.RotatingLine.Isomorphism` therefore give the same statements on
-`ℂ^ι`: for `k ≥ 3` the augmented operator maps `X_k` onto `C^{0,α}(D, ι → ℂ) × (ι → ℂ) × (ι → ℂ)`,
-and for the normalization `k = 3` it is injective on `X_3`. By the open mapping theorem it is a
+`ℂ^ι`: when every `k i ≥ 3` the augmented operator maps `X_k` onto
+`C^{0,α}(D, ι → ℂ) × (ι → ℂ) × (ι → ℂ)`, and for the normalization `k = 3` it is injective on
+`X_3`. By the open mapping theorem it is a
 Banach isomorphism
 
 `X_3 ≃L[ℝ] C^{0,α}(D, ι → ℂ) × (ι → ℂ) × (ι → ℂ)`
@@ -42,8 +46,10 @@ operators `∂u/∂(conj z) + A(z) ∂u/∂z + B(z) u` with small Hölder coeffi
 
 * `TauCeti.rotatingLinePiSubspace`: the closed subspace `X_k` of `C^{1,α}(D, ι → ℂ)`, with
   `TauCeti.mem_rotatingLinePiSubspace_iff`.
+* `TauCeti.rotatingLinePiSubspaceEquiv`: the coordinates, a continuous linear equivalence of `X_k`
+  with the product of the rank-one subspaces `X_{k i}`.
 * `TauCeti.exists_mem_rotatingLinePiSubspace_augmentedConjWirtingerDerivL_eq`: surjectivity on
-  `X_k` for `k ≥ 3`.
+  `X_k` when every `k i ≥ 3`.
 * `TauCeti.injOn_augmentedConjWirtingerDerivL_pi`: injectivity on `X_3`.
 * `TauCeti.rotatingLinePiAugmentedEquiv`: the Banach isomorphism
   `X_3 ≃L[ℝ] C^{0,α}(D, ι → ℂ) × (ι → ℂ) × (ι → ℂ)`.
@@ -64,34 +70,35 @@ namespace TauCeti
 open Complex Metric Set TopologicalSpace CkHolderSpaceOn
 open scoped ComplexConjugate NNReal
 
-variable {ι : Type*} [Fintype ι] {k : ℤ} {α : ℝ≥0}
+variable {ι : Type*} [Fintype ι] {k : ι → ℤ} {α : ℝ≥0}
 
 /-! ### The boundary subspace -/
 
-variable (ι k α) in
-/-- The closed subspace of `C^{1,α}(D, ι → ℂ)`, for the open unit disc `D`, of the maps each of
-whose coordinates lies in `TauCeti.rotatingLineSubspace k α`: their continuous extension to the
-closed disc takes boundary values in `e^{ikθ/2} ℝ^ι`, that is `u w i = w ^ k * conj (u w i)` for
-`w` on the unit circle (`TauCeti.mem_rotatingLinePiSubspace_iff`). -/
+variable (k α) in
+/-- The closed subspace of `C^{1,α}(D, ι → ℂ)`, for the open unit disc `D`, of the maps whose
+`i`-th coordinate lies in `TauCeti.rotatingLineSubspace (k i) α` for every `i`: their continuous
+extension to the closed disc takes boundary values in `⊕ᵢ e^{i kᵢ θ/2} ℝ`, that is
+`u w i = w ^ k i * conj (u w i)` for `w` on the unit circle
+(`TauCeti.mem_rotatingLinePiSubspace_iff`). -/
 def rotatingLinePiSubspace : Submodule ℝ (CkHolderSpaceOn 1 α (unitBallOpens ℂ) (ι → ℂ)) :=
-  ⨅ i : ι, (rotatingLineSubspace k α).comap (compLeftL (k := 1) (α := α) (Ω := unitBallOpens ℂ)
+  ⨅ i : ι, (rotatingLineSubspace (k i) α).comap (compLeftL (k := 1) (α := α) (Ω := unitBallOpens ℂ)
     ((ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : ι ↦ ℂ) i).restrictScalars ℝ)).toLinearMap
 
-/-- An element of `C^{1,α}(D, ι → ℂ)` lies in `rotatingLinePiSubspace ι k α` exactly when each of
-its coordinates lies in `rotatingLineSubspace k α`. -/
+/-- An element of `C^{1,α}(D, ι → ℂ)` lies in `rotatingLinePiSubspace k α` exactly when its
+`i`-th coordinate lies in `rotatingLineSubspace (k i) α` for every `i`. -/
 theorem mem_rotatingLinePiSubspace_iff_forall_compLeftL_mem
     {u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) (ι → ℂ)} :
-    u ∈ rotatingLinePiSubspace ι k α ↔ ∀ i : ι,
+    u ∈ rotatingLinePiSubspace k α ↔ ∀ i : ι,
       compLeftL ((ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : ι ↦ ℂ) i).restrictScalars ℝ) u ∈
-        rotatingLineSubspace k α := by
+        rotatingLineSubspace (k i) α := by
   simp [rotatingLinePiSubspace, Submodule.mem_iInf]
 
-/-- An element of `C^{1,α}(D, ι → ℂ)` lies in `rotatingLinePiSubspace ι k α` exactly when its
-extension to the closed disc satisfies `u w i = w ^ k * conj (u w i)` on the unit circle, for
+/-- An element of `C^{1,α}(D, ι → ℂ)` lies in `rotatingLinePiSubspace k α` exactly when its
+extension to the closed disc satisfies `u w i = w ^ k i * conj (u w i)` on the unit circle, for
 every coordinate `i`. -/
 theorem mem_rotatingLinePiSubspace_iff {u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) (ι → ℂ)} :
-    u ∈ rotatingLinePiSubspace ι k α ↔ ∀ w ∈ sphere (0 : ℂ) 1, ∀ i : ι,
-      u.closureExtend w i = w ^ k * conj (u.closureExtend w i) := by
+    u ∈ rotatingLinePiSubspace k α ↔ ∀ w ∈ sphere (0 : ℂ) 1, ∀ i : ι,
+      u.closureExtend w i = w ^ k i * conj (u.closureExtend w i) := by
   have h {w : ℂ} (hw : w ∈ sphere (0 : ℂ) 1) (i : ι) :
       (compLeftL ((ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : ι ↦ ℂ) i).restrictScalars ℝ)
         u).closureExtend w = u.closureExtend w i :=
@@ -100,32 +107,78 @@ theorem mem_rotatingLinePiSubspace_iff {u : CkHolderSpaceOn 1 α (unitBallOpens 
   simp only [mem_rotatingLinePiSubspace_iff_forall_compLeftL_mem, mem_rotatingLineSubspace_iff]
   exact ⟨fun H w hw i ↦ h hw i ▸ H i w hw, fun H i w hw ↦ (h hw i).symm ▸ H w hw i⟩
 
-/-- The boundary condition `e^{ikθ/2} ℝ^ι` defines a closed subspace of `C^{1,α}(D, ι → ℂ)`. -/
-theorem isClosed_rotatingLinePiSubspace (ι : Type*) [Fintype ι] (k : ℤ) (α : ℝ≥0) :
-    IsClosed (rotatingLinePiSubspace ι k α :
+/-- The boundary condition `⊕ᵢ e^{i kᵢ θ/2} ℝ` defines a closed subspace of
+`C^{1,α}(D, ι → ℂ)`. -/
+theorem isClosed_rotatingLinePiSubspace (k : ι → ℤ) (α : ℝ≥0) :
+    IsClosed (rotatingLinePiSubspace k α :
       Set (CkHolderSpaceOn 1 α (unitBallOpens ℂ) (ι → ℂ))) := by
   rw [rotatingLinePiSubspace, Submodule.coe_iInf]
   exact isClosed_iInter fun i ↦
-    (isClosed_rotatingLineSubspace k α).preimage (compLeftL _).continuous
+    (isClosed_rotatingLineSubspace (k i) α).preimage (compLeftL _).continuous
 
 /-- The boundary subspace `X_k` of `C^{1,α}(D, ι → ℂ)` is a Banach space. -/
-instance : CompleteSpace (rotatingLinePiSubspace ι k α) :=
-  (isClosed_rotatingLinePiSubspace ι k α).completeSpace_coe
+instance : CompleteSpace (rotatingLinePiSubspace k α) :=
+  (isClosed_rotatingLinePiSubspace k α).completeSpace_coe
+
+/-- Elements `v i` of the rank-one subspaces `TauCeti.rotatingLineSubspace (k i) α`, each put in
+its place as the `i`-th coordinate, add up to an element of `rotatingLinePiSubspace k α`. -/
+theorem sum_compLeftL_single_mem_rotatingLinePiSubspace [DecidableEq ι]
+    (v : ι → CkHolderSpaceOn 1 α (unitBallOpens ℂ) ℂ)
+    (hv : ∀ i, v i ∈ rotatingLineSubspace (k i) α) :
+    ∑ i, compLeftL (.single ℝ (fun _ ↦ ℂ) i) (v i) ∈ rotatingLinePiSubspace k α := by
+  refine mem_rotatingLinePiSubspace_iff_forall_compLeftL_mem.2 fun i ↦ ?_
+  rw [ContinuousLinearMap.restrictScalars_proj, compLeftL_proj_sum_compLeftL_single]
+  exact hv i
 
 /-- **Assembling coordinates.** Elements `v i` of the rank-one subspaces
-`TauCeti.rotatingLineSubspace k α`, one for each coordinate `i`, are the coordinates of an element
-of `rotatingLinePiSubspace ι k α`. -/
+`TauCeti.rotatingLineSubspace (k i) α`, one for each coordinate `i`, are the coordinates of an
+element of `rotatingLinePiSubspace k α`. -/
 theorem exists_mem_rotatingLinePiSubspace_compLeftL_eq
-    (v : ι → CkHolderSpaceOn 1 α (unitBallOpens ℂ) ℂ) (hv : ∀ i, v i ∈ rotatingLineSubspace k α) :
-    ∃ u ∈ rotatingLinePiSubspace ι k α, ∀ i : ι, compLeftL
+    (v : ι → CkHolderSpaceOn 1 α (unitBallOpens ℂ) ℂ)
+    (hv : ∀ i, v i ∈ rotatingLineSubspace (k i) α) :
+    ∃ u ∈ rotatingLinePiSubspace k α, ∀ i : ι, compLeftL
       ((ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : ι ↦ ℂ) i).restrictScalars ℝ) u = v i := by
   classical
-  set u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) (ι → ℂ) := ∑ j : ι,
-    compLeftL ((ContinuousLinearMap.single ℂ (fun _ : ι ↦ ℂ) j).restrictScalars ℝ) (v j)
-  have hu (i : ι) : compLeftL
-      ((ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : ι ↦ ℂ) i).restrictScalars ℝ) u = v i :=
-    compLeftL_proj_sum_compLeftL_single v i
-  exact ⟨u, mem_rotatingLinePiSubspace_iff_forall_compLeftL_mem.2 fun i ↦ hu i ▸ hv i, hu⟩
+  refine ⟨_, sum_compLeftL_single_mem_rotatingLinePiSubspace v hv, fun i ↦ ?_⟩
+  rw [ContinuousLinearMap.restrictScalars_proj, compLeftL_proj_sum_compLeftL_single]
+
+variable (k α) in
+/-- **Coordinates of the diagonal boundary subspace.** Taking coordinates is a continuous linear
+equivalence from `rotatingLinePiSubspace k α` onto the product of the rank-one subspaces
+`TauCeti.rotatingLineSubspace (k i) α`; its inverse puts the coordinates back in their places. -/
+def rotatingLinePiSubspaceEquiv [DecidableEq ι] :
+    rotatingLinePiSubspace k α ≃L[ℝ] ∀ i, rotatingLineSubspace (k i) α where
+  toFun u i := ⟨compLeftL (.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i) u, by
+    rw [← ContinuousLinearMap.restrictScalars_proj (A := ℂ)]
+    exact mem_rotatingLinePiSubspace_iff_forall_compLeftL_mem.1 u.property i⟩
+  invFun v := ⟨∑ i, compLeftL (.single ℝ (fun _ ↦ ℂ) i) (v i).val,
+    sum_compLeftL_single_mem_rotatingLinePiSubspace _ fun i ↦ (v i).property⟩
+  map_add' _ _ := funext fun _ ↦ Subtype.ext (map_add _ _ _)
+  map_smul' _ _ := funext fun _ ↦ Subtype.ext (map_smul _ _ _)
+  left_inv u := Subtype.ext (sum_compLeftL_single_compLeftL_proj u.val)
+  right_inv v := funext fun i ↦
+    Subtype.ext (compLeftL_proj_sum_compLeftL_single (fun j ↦ (v j).val) i)
+  continuous_toFun := continuous_pi fun _ ↦
+    ((compLeftL _).continuous.comp continuous_subtypeVal).subtype_mk _
+  continuous_invFun := (continuous_finsetSum _ fun i _ ↦
+    (compLeftL _).continuous.comp (continuous_subtypeVal.comp (continuous_apply i))).subtype_mk _
+
+/-- The `i`-th component of `TauCeti.rotatingLinePiSubspaceEquiv` is the `i`-th coordinate. -/
+@[simp]
+theorem coe_rotatingLinePiSubspaceEquiv_apply [DecidableEq ι] (u : rotatingLinePiSubspace k α)
+    (i : ι) :
+    (rotatingLinePiSubspaceEquiv k α u i : CkHolderSpaceOn 1 α (unitBallOpens ℂ) ℂ) =
+      compLeftL (.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i) u :=
+  (rfl)
+
+/-- The inverse of `TauCeti.rotatingLinePiSubspaceEquiv` puts the coordinates back in their
+places. -/
+@[simp]
+theorem coe_rotatingLinePiSubspaceEquiv_symm_apply [DecidableEq ι]
+    (v : ∀ i, rotatingLineSubspace (k i) α) :
+    ((rotatingLinePiSubspaceEquiv k α).symm v : CkHolderSpaceOn 1 α (unitBallOpens ℂ) (ι → ℂ)) =
+      ∑ i, compLeftL (.single ℝ (fun _ ↦ ℂ) i) (v i).val :=
+  (rfl)
 
 /-! ### The augmented operator acts coordinatewise -/
 
@@ -154,17 +207,17 @@ private theorem augmentedConjWirtingerDerivL_pi_eq_iff
 
 /-! ### Surjectivity and injectivity -/
 
-/-- **Existence with prescribed centre value and first jet on `ℂ^ι`.** Let `k ≥ 3` and
-`0 < α < 1`. For every `α`-Hölder forcing `f` on the open unit disc with values in `ι → ℂ` and all
-`a b : ι → ℂ`, some element `u` of `C^{1,α}(D, ι → ℂ)` with boundary values in `e^{ikθ/2} ℝ^ι`
-has `∂u/∂(conj z) = f`, `u 0 = a` and `∂ₛu(0) = b`. -/
-theorem exists_mem_rotatingLinePiSubspace_augmentedConjWirtingerDerivL_eq (hk : 3 ≤ k)
+/-- **Existence with prescribed centre value and first jet on `ℂ^ι`.** Let `k i ≥ 3` for every
+`i` and `0 < α < 1`. For every `α`-Hölder forcing `f` on the open unit disc with values in
+`ι → ℂ` and all `a b : ι → ℂ`, some element `u` of `C^{1,α}(D, ι → ℂ)` with boundary values in
+`⊕ᵢ e^{i kᵢ θ/2} ℝ` has `∂u/∂(conj z) = f`, `u 0 = a` and `∂ₛu(0) = b`. -/
+theorem exists_mem_rotatingLinePiSubspace_augmentedConjWirtingerDerivL_eq (hk : ∀ i, 3 ≤ k i)
     (hα0 : 0 < α) (hα1 : α < 1)
     (y : HolderSpace α (unitBallOpens ℂ) (ι → ℂ) × (ι → ℂ) × (ι → ℂ)) :
-    ∃ u ∈ rotatingLinePiSubspace ι k α, augmentedConjWirtingerDerivL α (ι → ℂ) u = y := by
+    ∃ u ∈ rotatingLinePiSubspace k α, augmentedConjWirtingerDerivL α (ι → ℂ) u = y := by
   -- Solve the rank-one problem in each coordinate.
   choose v hv hLv using fun i : ι ↦
-    exists_mem_rotatingLineSubspace_augmentedConjWirtingerDerivL_eq hk hα0 hα1
+    exists_mem_rotatingLineSubspace_augmentedConjWirtingerDerivL_eq (hk i) hα0 hα1
       (HolderSpace.compLeftL
         ((ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : ι ↦ ℂ) i).restrictScalars ℝ) y.1,
         y.2.1 i, y.2.2 i)
@@ -175,7 +228,7 @@ theorem exists_mem_rotatingLinePiSubspace_augmentedConjWirtingerDerivL_eq (hk : 
 `C^{1,α}(D, ι → ℂ)` with boundary values in `e^{3iθ/2} ℝ^ι`, the augmented operator
 `u ↦ (∂u/∂(conj z), u 0, ∂ₛu(0))` is injective. -/
 theorem injOn_augmentedConjWirtingerDerivL_pi :
-    InjOn (augmentedConjWirtingerDerivL α (ι → ℂ)) (rotatingLinePiSubspace ι 3 α) := by
+    InjOn (augmentedConjWirtingerDerivL α (ι → ℂ)) (rotatingLinePiSubspace (fun _ : ι ↦ 3) α) := by
   intro u hu v hv huv
   have h (i : ι) := injOn_augmentedConjWirtingerDerivL
     (mem_rotatingLinePiSubspace_iff_forall_compLeftL_mem.1 hu i)
@@ -191,21 +244,22 @@ Cauchy–Riemann operator `u ↦ (∂u/∂(conj z), u 0, ∂ₛu(0))` is a Banac
 elements of `C^{1,α}(D, ι → ℂ)` with boundary values in `e^{3iθ/2} ℝ^ι` onto
 `C^{0,α}(D, ι → ℂ) × (ι → ℂ) × (ι → ℂ)`. -/
 def rotatingLinePiAugmentedEquiv (hα0 : 0 < α) (hα1 : α < 1) :
-    rotatingLinePiSubspace ι 3 α ≃L[ℝ]
+    rotatingLinePiSubspace (fun _ : ι ↦ 3) α ≃L[ℝ]
       HolderSpace α (unitBallOpens ℂ) (ι → ℂ) × (ι → ℂ) × (ι → ℂ) :=
   ContinuousLinearEquiv.ofBijective
-    (augmentedConjWirtingerDerivL α (ι → ℂ) ∘L (rotatingLinePiSubspace ι 3 α).subtypeL)
+    (augmentedConjWirtingerDerivL α (ι → ℂ) ∘L (rotatingLinePiSubspace (fun _ : ι ↦ 3) α).subtypeL)
     (LinearMap.ker_eq_bot.2 fun u v huv ↦ Subtype.ext
       (injOn_augmentedConjWirtingerDerivL_pi u.property v.property huv))
     (LinearMap.range_eq_top.2 fun y ↦ by
       obtain ⟨u, hu, rfl⟩ :=
-        exists_mem_rotatingLinePiSubspace_augmentedConjWirtingerDerivL_eq le_rfl hα0 hα1 y
+        exists_mem_rotatingLinePiSubspace_augmentedConjWirtingerDerivL_eq (fun _ ↦ le_rfl) hα0
+          hα1 y
       exact ⟨⟨u, hu⟩, rfl⟩)
 
 /-- The isomorphism `TauCeti.rotatingLinePiAugmentedEquiv` is the augmented operator. -/
 @[simp]
 theorem rotatingLinePiAugmentedEquiv_apply (hα0 : 0 < α) (hα1 : α < 1)
-    (u : rotatingLinePiSubspace ι 3 α) :
+    (u : rotatingLinePiSubspace (fun _ : ι ↦ 3) α) :
     rotatingLinePiAugmentedEquiv hα0 hα1 u = augmentedConjWirtingerDerivL α (ι → ℂ) u :=
   (rfl)
 
@@ -213,7 +267,7 @@ theorem rotatingLinePiAugmentedEquiv_apply (hα0 : 0 < α) (hα1 : α < 1)
 constant `C` such that every element `u` of `C^{1,α}(D, ι → ℂ)` with boundary values in
 `e^{3iθ/2} ℝ^ι` satisfies `‖u‖ ≤ C ‖(∂u/∂(conj z), u 0, ∂ₛu(0))‖`. -/
 theorem exists_norm_le_mul_norm_augmentedConjWirtingerDerivL_pi (hα0 : 0 < α) (hα1 : α < 1) :
-    ∃ C, ∀ u ∈ rotatingLinePiSubspace ι 3 α,
+    ∃ C, ∀ u ∈ rotatingLinePiSubspace (fun _ : ι ↦ 3) α,
       ‖u‖ ≤ C * ‖augmentedConjWirtingerDerivL α (ι → ℂ) u‖ := by
   set e := rotatingLinePiAugmentedEquiv (ι := ι) hα0 hα1
   refine ⟨‖e.symm.toContinuousLinearMap‖, fun u hu ↦ ?_⟩

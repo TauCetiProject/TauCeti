@@ -14,7 +14,7 @@ public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 import Mathlib.Analysis.Normed.Ring.Units
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 import TauCeti.Analysis.CStarAlgebra.InductiveLimit.Ideal
-import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
+import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal.Basic
 
 /-!
 # The CAR algebra as a C⋆-inductive limit
