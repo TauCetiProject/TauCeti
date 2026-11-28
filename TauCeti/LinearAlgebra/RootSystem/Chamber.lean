@@ -249,6 +249,12 @@ lemma smul_mem_dominantChamber [PosMulMono R] {t : R} (ht : 0 ≤ t) {x : M}
     t • x ∈ dominantChamber P b :=
   fun i hi ↦ by simpa using mul_nonneg ht (hx i hi)
 
+/-- The closed dominant chamber is closed under natural-number scaling. -/
+lemma nsmul_mem_dominantChamber [IsOrderedAddMonoid R] (n : ℕ) {x : M}
+    (hx : x ∈ dominantChamber P b) :
+    n • x ∈ dominantChamber P b :=
+  fun i hi ↦ by simpa using nsmul_nonneg (hx i hi) n
+
 /-- The open dominant chamber is closed under addition. -/
 lemma add_mem_openDominantChamber [AddLeftStrictMono R] {x y : M} (hx : x ∈ openDominantChamber P b)
     (hy : y ∈ openDominantChamber P b) : x + y ∈ openDominantChamber P b :=

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Crystal.Component
+import TauCeti.LinearAlgebra.RootSystem.Positive
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Vector
 import Mathlib.Order.WellFoundedSet
 
@@ -87,10 +88,8 @@ theorem exists_fWord_eq_some_of_unique_highest {h : B}
 
 /-- A finite normal crystal with a unique highest element is connected. -/
 theorem connected_graph_of_unique_highest {h : B}
-    (hh : ∀ x, (∀ i, c.e i x = none) → x = h) : c.graph.Connected := by
-  refine c.graph.connected_iff_exists_forall_reachable.mpr ⟨h, fun x ↦ ?_⟩
-  obtain ⟨w, hw⟩ := c.exists_fWord_eq_some_of_unique_highest hh x
-  exact c.reachable_of_fWord_eq_some hw
+    (hh : ∀ x, (∀ i, c.e i x = none) → x = h) : c.graph.Connected :=
+  c.connected_graph_of_forall_exists_fWord_eq_some (c.exists_fWord_eq_some_of_unique_highest hh)
 
 end Finite
 
@@ -101,6 +100,28 @@ theorem eq_of_highest_of_exists_fWord_eq_some {h x : B} (hx : ∀ i, c.e i x = n
   obtain ⟨w, hw⟩ := hgen
   exact ((c.eWord_eq_some_iff_of_highest hx w.reverse).mp
     (c.fWord_eq_some_iff.mp hw)).2
+
+/-- An element that generates the whole crystal by lowering words is automatically a highest
+element, since simple roots are `ℤ`-linearly independent. No finiteness assumption is needed. -/
+theorem e_eq_none_of_forall_exists_fWord_eq_some {h : B}
+    (hgen : ∀ x, ∃ w : List b.support, c.fWord w h = some x) (i : b.support) :
+    c.e i h = none := by
+  by_contra hne
+  obtain ⟨y, hy⟩ := Option.ne_none_iff_exists'.mp hne
+  obtain ⟨w, hw⟩ := hgen y
+  have hsum : P.root i + (w.map fun j : b.support ↦ P.root j).sum = 0 :=
+    add_left_cancel (a := c.wt h) <| by
+      have h1 := c.wt_of_e_eq_some hy
+      have h2 := c.wt_of_fWord_eq_some hw
+      calc c.wt h + (P.root i + (w.map fun j : b.support ↦ P.root j).sum)
+          = c.wt y + (w.map fun j : b.support ↦ P.root j).sum := by rw [h1, add_assoc]
+        _ = c.wt h + 0 := by rw [h2]; abel
+  exact root_add_ne_zero_of_mem_posRoots_of_mem_posRootCone P b
+    (support_subset_posRoots P b i.property)
+    ((posRootCone P b).list_sum_mem fun _ hv ↦ by
+      obtain ⟨j, -, rfl⟩ := List.mem_map.mp hv
+      exact root_mem_posRootCone_of_mem_posRoots P b (support_subset_posRoots P b j.property))
+    hsum
 
 /-- For a finite normal crystal, generation from a given element is equivalent to that
 element being the only possible highest element. -/
