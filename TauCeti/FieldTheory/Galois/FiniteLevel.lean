@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.GaloisClosure
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
 public import TauCeti.FieldTheory.Galois.Restriction
+import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.Topology.Algebra.Group.DirectedIntersection
 
 /-!
@@ -69,12 +70,12 @@ theorem antitone_comap_restrictNormalHom
     (hH : ∀ ⦃M N : FiniteGaloisIntermediateField K L⦄ (hMN : M ≤ N),
       (H N).map (inclusion ((FiniteGaloisIntermediateField.le_iff M N).mp hMN)).restrictNormalHom ≤
         H M) :
-    Antitone (fun M ↦ (H M).comap (AlgEquiv.restrictNormalHom M : Gal(L/K) →* Gal(M/K))) := by
-  intro M N hMN σ hσ
-  simp only [Subgroup.mem_comap] at hσ ⊢
-  apply hH hMN
-  refine ⟨AlgEquiv.restrictNormalHom N σ, hσ, ?_⟩
-  exact IntermediateField.restrictNormalHom_inclusion _ σ
+    Antitone (fun M ↦ (H M).comap (AlgEquiv.restrictNormalHom M : Gal(L/K) →* Gal(M/K))) :=
+  antitone_comap_of_map_le (ι := FiniteGaloisIntermediateField K L)
+    (fun M ↦ AlgEquiv.restrictNormalHom M)
+    (fun {_ _} h ↦ (inclusion ((FiniteGaloisIntermediateField.le_iff _ _).mp h)).restrictNormalHom)
+    H (fun _ _ h ↦ MonoidHom.ext (IntermediateField.restrictNormalHom_inclusion
+      ((FiniteGaloisIntermediateField.le_iff _ _).mp h))) hH
 
 /-- In a normal extension, every compatible family of subgroups of the finite Galois groups
 is realized by its intersection of pullbacks: restriction from that intersection surjects onto

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Group.Subgroup
+import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.Topology.Compactness.Compact
 
 /-!
@@ -58,11 +59,7 @@ theorem map_iInf_comap_of_compatible {ι G : Type*} [Preorder ι] [IsDirectedOrd
     (⨅ j, (H j).comap (p j)).map (p i) = H i := by
   have : Nonempty ι := ⟨i⟩
   let S (j : ι) := (H j).comap (p j)
-  have hanti : Antitone S := by
-    intro j k hjk
-    dsimp only [S]
-    rw [← hcomp hjk, ← Subgroup.comap_comap]
-    exact Subgroup.comap_mono (Subgroup.map_le_iff_le_comap.mp (hH hjk).le)
+  have hanti : Antitone S := antitone_comap_of_map_le p r H hcomp fun _ _ h ↦ (hH h).le
   have hmap {k : ι} (hik : i ≤ k) : (S k).map (p i) = H i := by
     dsimp only [S]
     rw [← hcomp hik, ← Subgroup.map_map,
