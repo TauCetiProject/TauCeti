@@ -44,11 +44,6 @@ over all triples, `(#s₀ * #s₁ * #s₂) * (p * q * r)`, as a sum of three one
 
 `Finset.sum_filter_mem_mul_eq`: when the weight `w` vanishes outside a set `U`, the weighted sum
 `∑ s ∈ S, w s * r s` only sees the points of `S` lying in `U`.
-
-## Distributing multiplication across weighted double sums
-
-`Finset.mul_sum_mul_sum`: in a non-unital commutative semiring,
-`a * ∑ i ∈ s, w i * ∑ k ∈ t i, g i k = ∑ i ∈ s, w i * ∑ k ∈ t i, a * g i k`.
 -/
 
 public section
@@ -138,13 +133,5 @@ theorem sq_dvd_prod_sub_one_sub_sum_add_card {R ι : Type*} [CommRing R] (s : Fi
     push_cast
     refine ⟨f + c * (r * f + e), ?_⟩
     linear_combination (∏ i ∈ s, u i - 1) * hc + (1 + r * c) * hf + r * c * he
-
-/-- Distribute multiplication by `a` across a weighted double sum
-`∑ i ∈ s, w i * ∑ k ∈ t i, g i k`. -/
-theorem mul_sum_mul_sum {ι R : Type*} {κ : ι → Type*} [NonUnitalCommSemiring R]
-    (s : Finset ι) (t : ∀ i, Finset (κ i)) (w : ι → R) (a : R) (g : ∀ i, κ i → R) :
-    a * (∑ i ∈ s, w i * ∑ k ∈ t i, g i k) =
-      ∑ i ∈ s, w i * ∑ k ∈ t i, a * g i k := by
-  simp only [Finset.mul_sum, mul_left_comm]
 
 end Finset

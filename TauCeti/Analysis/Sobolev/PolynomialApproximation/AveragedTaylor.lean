@@ -14,7 +14,6 @@ public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.MeasureTheory.Function.Lp.Restriction
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import Mathlib.MeasureTheory.Function.Holder
-import TauCeti.Algebra.BigOperators.Ring.Finset
 import TauCeti.Analysis.Calculus.Taylor.Pairing.Basic
 import TauCeti.LinearAlgebra.Multilinear.Basis
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -23,9 +22,10 @@ import TauCeti.MeasureTheory.Integral.OddSymmetric
 /-!
 # The averaged Taylor polynomial on `L¹` and `Lᵖ`
 
-Classically, `TauCeti.taylorPolynomial m u y x` requires `m` derivatives of `u` at `y` (in Lean it
-defaults to `0` at non-differentiable steps, while integration by parts assumes ambient
-`ContDiffAt ℝ m u y` at every `y ∈ tsupport φ`). Following Sobolev and Brenner–Scott
+Classically, `TauCeti.taylorPolynomial m u y x` requires `m` derivatives of `u` at `y` (in Lean the
+definition uses Mathlib's totalized `iteratedFDeriv`, where higher-order derivatives default to `0`
+at non-differentiable steps while its constant term remains `u y`, and integration by parts assumes
+ambient `ContDiffAt ℝ m u y` at every `y ∈ tsupport φ`). Following Sobolev and Brenner–Scott
 (Chapter 4, §4.1), averaging against a `C^m` compactly supported cutoff `φ` and integrating every
 `y`-derivative onto `z ↦ (∏ l, (x (I l) - z (I l))) * φ z` yields the **averaged Taylor kernel**
 `TauCeti.averagedTaylorKernel φ m x y`:
@@ -40,14 +40,16 @@ compact support:
 2. Pairing against `Ψ_m` defines `TauCeti.averagedTaylorPolynomial : Lp ℝ 1 μ →L[ℝ]
    polynomialsDegLE ι m` for any Borel measure `μ`, and `TauCeti.averagedTaylorPolynomialLp :
    Lp ℝ p μ →L[ℝ] polynomialsDegLE ι m` (`[IsFiniteMeasureOnCompacts μ]`, `1 ≤ p`, agreeing with
-   `averagedTaylorPolynomial` at `p = 1`).
+   `averagedTaylorPolynomial` at `p = 1`). Both factor through restriction to any superset of
+   `tsupport φ` (`TauCeti.averagedTaylorPolynomial_eq_comp_LpToLpRestrictCLM` and
+   `TauCeti.averagedTaylorPolynomialLp_eq_comp_LpToL1RestrictCLM`).
 3. Both operators expand into the weighted `iteratedFDeriv` pairing form matching
    `TauCeti.Wkp.iteratedFDeriv_sum_setIntegral_iteratedFDeriv`, using only
    `L¹`/`Lᵖ` membership and cutoff regularity.
-4. On an additive Haar measure `μ`, when `u` is `C^m` at every point of `tsupport φ`, integration
-   by parts gives `Q^m f (x) = ∫ y, taylorPolynomial m u y x * φ y ∂μ`, reproducing every
-   `q ∈ polynomialsDegLE ι m` in `L¹(μ.restrict Ω)` / `Lᵖ(μ.restrict Ω)` whenever `tsupport φ ⊆ Ω`
-   and `∫ y, φ y ∂μ = 1`.
+4. On an additive Haar measure `μ`, when `u` is ambient `C^m` at every point of `tsupport φ`,
+   integration by parts gives `Q^m f (x) = ∫ y, taylorPolynomial m u y x * φ y ∂μ`, reproducing
+   every `q ∈ polynomialsDegLE ι m` in `L¹(μ.restrict Ω)` / `Lᵖ(μ.restrict Ω)` whenever
+   `tsupport φ ⊆ Ω` and `∫ y, φ y ∂μ = 1`.
 
 Limit of polynomial reproduction: on `EuclideanSpace ℝ ι` with an additive Haar measure `μ` and an
 even `C¹` compactly supported cutoff `φ` supported in `B`, `averagedTaylorPolynomial (μ.restrict B)
@@ -67,8 +69,12 @@ whenever `∫ y, φ y ∂μ = 1` (in particular for `(ballBump 0 hρ).normed μ`
 
 ## Main results
 
-* `TauCeti.averagedTaylorKernel_one`, `TauCeti.averagedTaylorKernel_mem_polynomialsDegLE`:
-  explicit `m = 1` formula and polynomial-degree membership in `x`.
+* `TauCeti.averagedTaylorKernelTerm_zero`, `TauCeti.averagedTaylorKernel_one`,
+  `TauCeti.averagedTaylorKernel_mem_polynomialsDegLE`: order-`0` simp normal form, explicit `m = 1`
+  formula, and polynomial-degree membership in `x`.
+* `TauCeti.averagedTaylorPolynomial_eq_comp_LpToLpRestrictCLM`,
+  `TauCeti.averagedTaylorPolynomialLp_eq_comp_LpToL1RestrictCLM`: factorization through
+  restriction to any superset of `tsupport φ`.
 * `TauCeti.setIntegral_mul_averagedTaylorKernel_eq_sum_setIntegral_iteratedFDeriv`,
   `TauCeti.averagedTaylorPolynomial_eq_sum_integral_iteratedFDeriv`,
   `TauCeti.averagedTaylorPolynomial_restrict_eq_sum_setIntegral_iteratedFDeriv`,
@@ -140,6 +146,13 @@ theorem averagedTaylorKernelTerm_def (φ : EuclideanSpace ℝ ι → ℝ) (j : �
   simp [averagedTaylorKernelTerm, taylorKernelTerm_def, EuclideanSpace.basisFun_inner,
     Function.comp_def]
 
+/-- At order `0`, `averagedTaylorKernelTerm` reduces to `φ y`. -/
+@[simp]
+theorem averagedTaylorKernelTerm_zero (φ : EuclideanSpace ℝ ι → ℝ)
+    (x y : EuclideanSpace ℝ ι) :
+    averagedTaylorKernelTerm φ 0 x y = φ y :=
+  taylorKernelTerm_zero (EuclideanSpace.basisFun ι ℝ) φ x y
+
 /-- **Averaged Taylor kernel.** For a cutoff `φ : EuclideanSpace ℝ ι → ℝ`, order `m : ℕ`, target
 point `x`, and integration variable `y`, `y ↦ averagedTaylorKernel φ m x y` is the formal adjoint
 of `u ↦ (y ↦ taylorPolynomial m u y x)` applied to `φ`. -/
@@ -155,7 +168,7 @@ theorem averagedTaylorKernel_def (φ : EuclideanSpace ℝ ι → ℝ) (m : ℕ)
 @[simp]
 theorem averagedTaylorKernel_zero (φ : EuclideanSpace ℝ ι → ℝ) (x y : EuclideanSpace ℝ ι) :
     averagedTaylorKernel φ 0 x y = φ y := by
-  simp [averagedTaylorKernel_def, averagedTaylorKernelTerm]
+  simp [averagedTaylorKernel_def]
 
 /-- Recurrence separating the top-order derivative sum of `averagedTaylorKernel`. -/
 theorem averagedTaylorKernel_succ (φ : EuclideanSpace ℝ ι → ℝ) (m : ℕ)
@@ -260,11 +273,9 @@ private theorem averagedTaylorKernel_eq_sum_monomial {φ : EuclideanSpace ℝ ι
   have hlen : (List.ofFn (EuclideanSpace.basisFun ι ℝ ∘ I)).length ≤ (m : ℕ∞ω) := by
     simp only [List.length_ofFn, Nat.cast_le]
     exact Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
-  rw [show List.ofFn (⇑(EuclideanSpace.basisFun ι ℝ) ∘ I) =
-      List.ofFn (fun l ↦ EuclideanSpace.basisFun ι ℝ (I l)) from rfl,
-    iteratedFDerivAlong_prod_inner_sub_mul_eq_sum (𝕜 := ℝ) Finset.univ
+  rw [iteratedFDerivAlong_prod_inner_sub_mul_eq_sum (𝕜 := ℝ) Finset.univ
       (fun l ↦ EuclideanSpace.basisFun ι ℝ (I l)) hφ
-      (List.ofFn fun l ↦ EuclideanSpace.basisFun ι ℝ (I l)) hlen x y]
+      (List.ofFn (EuclideanSpace.basisFun ι ℝ ∘ I)) hlen x y]
   refine Finset.sum_congr rfl fun S _ ↦ congrArg (· * kernelMonomialWeight φ I S y) ?_
   simp [EuclideanSpace.basisFun_inner]
 
@@ -335,8 +346,8 @@ private theorem memLp_top_kernelMonomialWeight (μ : Measure (EuclideanSpace ℝ
   (contDiff_kernelMonomialWeight hφ hj I S).continuous.memLp_top_of_hasCompactSupport
     (hasCompactSupport_kernelMonomialWeight hsupp I S) μ
 
-/-- Monomial expansion of `x ↦ ∫ y, f y * averagedTaylorKernel φ m x y ∂μ`, applying
-`TauCeti.setIntegral_iteratedFDerivAlong_prod_inner_sub_mul_eq_sum` termwise on `Set.univ`. -/
+/-- Monomial expansion of `x ↦ ∫ y, f y * averagedTaylorKernel φ m x y ∂μ`, integrating
+`TauCeti.averagedTaylorKernel_eq_sum_monomial` termwise. -/
 private theorem integral_mul_averagedTaylorKernel_eq_sum_monomial
     {μ : Measure (EuclideanSpace ℝ ι)} {m : ℕ} {φ f : EuclideanSpace ℝ ι → ℝ}
     (hφ : ContDiff ℝ m φ) (hsupp : HasCompactSupport φ) (hf : Integrable f μ) :
@@ -345,44 +356,39 @@ private theorem integral_mul_averagedTaylorKernel_eq_sum_monomial
         ∑ I : Fin j → ι, ∑ S ∈ (Finset.univ : Finset (Fin j)).powerset,
           (∫ y, f y * kernelMonomialWeight φ I S y ∂μ) •
             fun x : EuclideanSpace ℝ ι ↦ ∏ l ∈ S, x (I l) := by
-  let b := EuclideanSpace.basisFun ι ℝ
   ext x
-  have hlen (j : ℕ) (hj : j ∈ Finset.range (m + 1)) (I : Fin j → ι) :
-      (List.ofFn fun l ↦ b (I l)).length ≤ (m : ℕ∞ω) := by
-    simp only [List.length_ofFn, Nat.cast_le]
-    exact Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
-  have hint (j : ℕ) (hj : j ∈ Finset.range (m + 1)) (I : Fin j → ι) :
-      Integrable (fun y ↦ iteratedFDerivAlong ℝ (List.ofFn fun l ↦ b (I l))
-        (fun z ↦ (∏ l : Fin j, ⟪b (I l), x - z⟫_ℝ) * φ z) y * f y) μ := by
-    have hcont : ContDiff ℝ 0 (iteratedFDerivAlong ℝ (List.ofFn fun l ↦ b (I l))
-        (fun z ↦ (∏ l : Fin j, ⟪b (I l), x - z⟫_ℝ) * φ z)) :=
-      (((contDiff_prod fun l _ ↦ (innerSL ℝ (b (I l))).contDiff.comp
-        (contDiff_const.sub contDiff_id)).of_le le_top).mul hφ).iteratedFDerivAlong _
-        (by simpa only [zero_add] using hlen j hj I)
-    exact (hf.mul_of_top_left (hcont.continuous.memLp_top_of_hasCompactSupport
-      (hsupp.mul_left.iteratedFDerivAlong ℝ _) μ)).congr (.of_forall fun _ ↦ mul_comm _ _)
+  have hint_w {j : ℕ} (hj : j ≤ m) (I : Fin j → ι) (S : Finset (Fin j)) :
+      Integrable (fun y ↦ f y * kernelMonomialWeight φ I S y) μ :=
+    (hf.mul_of_top_right (memLp_top_kernelMonomialWeight μ hφ hsupp hj I S)).congr
+      (.of_forall fun _ ↦ mul_comm _ _)
+  have hint_S {j : ℕ} (hj : j ≤ m) (I : Fin j → ι) (S : Finset (Fin j)) :
+      Integrable (fun y ↦ (∏ l ∈ S, x (I l)) * (f y * kernelMonomialWeight φ I S y)) μ :=
+    (hint_w hj I S).const_mul _
+  have hint_j (j : ℕ) (hj : j ∈ Finset.range (m + 1)) :
+      Integrable (fun y ↦ ((-1 : ℝ) ^ j / (j.factorial : ℝ)) *
+        ∑ I : Fin j → ι, ∑ S ∈ (Finset.univ : Finset (Fin j)).powerset,
+          (∏ l ∈ S, x (I l)) * (f y * kernelMonomialWeight φ I S y)) μ := by
+    have hjm : j ≤ m := Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
+    exact (integrable_finsetSum _ fun I _ ↦ integrable_finsetSum _ fun S _ ↦
+      hint_S hjm I S).const_mul _
   have hpt (y : EuclideanSpace ℝ ι) : f y * averagedTaylorKernel φ m x y =
       ∑ j ∈ Finset.range (m + 1), ((-1 : ℝ) ^ j / (j.factorial : ℝ)) *
-        ∑ I : Fin j → ι, iteratedFDerivAlong ℝ (List.ofFn fun l ↦ b (I l))
-          (fun z ↦ (∏ l : Fin j, ⟪b (I l), x - z⟫_ℝ) * φ z) y * f y := by
-    rw [averagedTaylorKernel, mul_comm (f y)]
-    simp_rw [averagedTaylorKernelTerm, taylorKernelTerm_def, Finset.sum_mul]
-    exact Finset.sum_congr rfl fun j _ ↦ by rw [mul_assoc, Finset.sum_mul]; rfl
+        ∑ I : Fin j → ι, ∑ S ∈ (Finset.univ : Finset (Fin j)).powerset,
+          (∏ l ∈ S, x (I l)) * (f y * kernelMonomialWeight φ I S y) := by
+    rw [averagedTaylorKernel_eq_sum_monomial hφ x y]
+    simp only [Finset.mul_sum]
+    exact Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun I _ ↦
+      Finset.sum_congr rfl fun S _ ↦ by ring
   simp_rw [hpt]
-  rw [MeasureTheory.integral_sum_mul_sum (Finset.range (m + 1))
-    (fun j ↦ (Finset.univ : Finset (Fin j → ι)))
-    (fun j ↦ (-1 : ℝ) ^ j / (j.factorial : ℝ)) _ fun j hj I _ ↦ hint j hj I]
+  rw [integral_finsetSum _ hint_j]
   simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
-  refine Finset.sum_congr rfl fun j hj ↦ congrArg _ (Finset.sum_congr rfl fun I _ ↦ ?_)
-  rw [← setIntegral_univ, setIntegral_iteratedFDerivAlong_prod_inner_sub_mul_eq_sum (𝕜 := ℝ)
-    Finset.univ (fun l ↦ b (I l)) hφ hsupp (subset_univ _) (List.ofFn fun l ↦ b (I l))
-    (hlen j hj I) (hf.locallyIntegrable.locallyIntegrableOn Set.univ) x]
-  simp_rw [setIntegral_univ, b]
-  refine Finset.sum_congr rfl fun S _ ↦ ?_
-  have hS : (∏ l ∈ S, ⟪EuclideanSpace.basisFun ι ℝ (I l), x⟫_ℝ) = ∏ l ∈ S, x (I l) := by
-    simp [EuclideanSpace.basisFun_inner]
-  rw [hS, mul_comm (∏ l ∈ S, x (I l))]
-  congr 1; exact integral_congr_ae (.of_forall fun _ ↦ mul_comm _ _)
+  refine Finset.sum_congr rfl fun j hj ↦ ?_
+  have hjm : j ≤ m := Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
+  rw [integral_const_mul, integral_finsetSum _ fun I _ ↦
+    integrable_finsetSum _ fun S _ ↦ hint_S hjm I S]
+  refine congrArg _ (Finset.sum_congr rfl fun I _ ↦ ?_)
+  rw [integral_finsetSum _ fun S _ ↦ hint_S hjm I S]
+  exact Finset.sum_congr rfl fun S _ ↦ by rw [integral_const_mul, mul_comm]
 
 /-- Since `y ↦ averagedTaylorKernel φ m x y` is supported in `tsupport φ`, integrating
 `f y * averagedTaylorKernel φ m x y` over any superset `s` of `tsupport φ` equals the
@@ -478,6 +484,20 @@ theorem averagedTaylorPolynomial_apply (μ : Measure (EuclideanSpace ℝ ι)) (m
   exact Finset.sum_congr rfl fun j _ ↦ congrArg _ (Finset.sum_congr rfl fun I _ ↦
     Finset.sum_congr rfl fun S _ ↦ mul_comm _ _)
 
+/-- Factoring `averagedTaylorPolynomial` on `L¹(μ)` through `LpToLpRestrictCLM` onto any set `s`
+containing `tsupport φ`. -/
+theorem averagedTaylorPolynomial_eq_comp_LpToLpRestrictCLM
+    {μ : Measure (EuclideanSpace ℝ ι)} {m : ℕ} {φ : EuclideanSpace ℝ ι → ℝ}
+    (hφ : ContDiff ℝ m φ) (hsupp : HasCompactSupport φ)
+    {s : Set (EuclideanSpace ℝ ι)} (hs : tsupport φ ⊆ s) :
+    averagedTaylorPolynomial μ m φ hφ hsupp =
+      (averagedTaylorPolynomial (μ.restrict s) m φ hφ hsupp).comp
+        (LpToLpRestrictCLM (EuclideanSpace ℝ ι) ℝ ℝ μ 1 s) := by
+  ext f x
+  simp only [ContinuousLinearMap.comp_apply, averagedTaylorPolynomial_apply]
+  rw [integral_congr_ae ((LpToLpRestrictCLM_coeFn ℝ s f).mono fun y hy ↦ by rw [hy]),
+    setIntegral_mul_averagedTaylorKernel_eq_integral hs]
+
 /-- Weighted `iteratedFDeriv` pairing evaluation formula for `averagedTaylorPolynomial` on
 `L¹(μ)`, requiring only `L¹` membership and cutoff regularity. -/
 theorem averagedTaylorPolynomial_eq_sum_integral_iteratedFDeriv
@@ -496,22 +516,18 @@ theorem averagedTaylorPolynomial_eq_sum_integral_iteratedFDeriv
   simp_rw [setIntegral_univ]
 
 /-- Weighted `iteratedFDeriv` pairing evaluation formula for `averagedTaylorPolynomial` on
-`L¹(μ.restrict Ω)` when `tsupport φ ⊆ Ω`, matching
-`TauCeti.Wkp.iteratedFDeriv_sum_setIntegral_iteratedFDeriv`. -/
+`L¹(μ.restrict Ω)`, matching `TauCeti.Wkp.iteratedFDeriv_sum_setIntegral_iteratedFDeriv`. -/
 theorem averagedTaylorPolynomial_restrict_eq_sum_setIntegral_iteratedFDeriv
     {μ : Measure (EuclideanSpace ℝ ι)} {Ω : Set (EuclideanSpace ℝ ι)} {m : ℕ}
     {φ : EuclideanSpace ℝ ι → ℝ} (hφ : ContDiff ℝ m φ) (hsupp : HasCompactSupport φ)
-    (hΩ : tsupport φ ⊆ Ω) (f : Lp ℝ 1 (μ.restrict Ω)) (x : EuclideanSpace ℝ ι) :
+    (f : Lp ℝ 1 (μ.restrict Ω)) (x : EuclideanSpace ℝ ι) :
     (averagedTaylorPolynomial (μ.restrict Ω) m φ hφ hsupp f : EuclideanSpace ℝ ι → ℝ) x =
       ∑ j ∈ Finset.range (m + 1), ((-1 : ℝ) ^ j / (j.factorial : ℝ)) *
         ∑ I : Fin j → ι, ∫ y in Ω,
           iteratedFDeriv ℝ j (fun z ↦
             (∏ l : Fin j, ⟪EuclideanSpace.basisFun ι ℝ (I l), x - z⟫_ℝ) * φ z)
-            y (EuclideanSpace.basisFun ι ℝ ∘ I) * f y ∂μ := by
-  rw [averagedTaylorPolynomial_apply]
-  exact setIntegral_mul_averagedTaylorKernel_eq_sum_setIntegral_iteratedFDeriv hφ hsupp hΩ
-    (locallyIntegrableOn_of_locallyIntegrable_restrict (L1.integrable_coeFn f).locallyIntegrable)
-    x
+            y (EuclideanSpace.basisFun ι ℝ ∘ I) * f y ∂μ :=
+  averagedTaylorPolynomial_eq_sum_integral_iteratedFDeriv (μ.restrict Ω) m φ hφ hsupp f x
 
 /-- If `φ` is `C^m` and compactly supported, integrating any `Integrable f μ` against
 `averagedTaylorKernel φ m` produces a polynomial of total degree at most `m`. -/
@@ -613,8 +629,7 @@ private theorem integral_mul_averagedTaylorKernel_eq_sum_ibp
         ∑ I : Fin j → ι,
           u y * iteratedFDerivAlong ℝ (coordDirections I) (kernelTestTerm φ x I) y := by
     simp_rw [averagedTaylorKernel_def, averagedTaylorKernelTerm_def]
-    rw [Finset.mul_sum_mul_sum (Finset.range (m + 1)) (fun j ↦ (Finset.univ : Finset (Fin j → ι)))
-      (fun j ↦ (-1 : ℝ) ^ j / (j.factorial : ℝ)) (u y)]
+    simp only [Finset.mul_sum, mul_left_comm]
     rfl
   simp_rw [hpt]
   exact MeasureTheory.integral_sum_mul_sum (Finset.range (m + 1))
@@ -688,8 +703,8 @@ private theorem setIntegral_mul_averagedTaylorKernel_eq_integral_taylorPolynomia
   exact integral_mul_averagedTaylorKernel_eq_integral_taylorPolynomial hφ hsupp hu x
 
 /-- **Integration-by-parts identity for `averagedTaylorPolynomial` on `L¹(μ)`.** On an additive
-Haar measure `μ`, if `φ` is `C^m` with compact support, `u` is `C^m` on `tsupport φ`, and
-`f =ᵐ[μ] u`, then `averagedTaylorPolynomial μ m φ hφ hsupp f` evaluates to
+Haar measure `μ`, if `φ` is `C^m` with compact support, `u` is ambient `C^m` at every point of
+`tsupport φ`, and `f =ᵐ[μ] u`, then `averagedTaylorPolynomial μ m φ hφ hsupp f` evaluates to
 `∫ y, taylorPolynomial m u y x * φ y ∂μ`. -/
 theorem averagedTaylorPolynomial_eq_integral_taylorPolynomial
     {m : ℕ} {φ u : EuclideanSpace ℝ ι → ℝ}
@@ -703,9 +718,9 @@ theorem averagedTaylorPolynomial_eq_integral_taylorPolynomial
     hφ hsupp (subset_univ _) hu (by simpa using hf) x
 
 /-- **Integration-by-parts identity for `averagedTaylorPolynomial` on `L¹(μ.restrict B)`.** On an
-additive Haar measure `μ`, if `φ` is `C^m` with compact support `tsupport φ ⊆ B`, `u` is `C^m` on
-`tsupport φ`, and `f =ᵐ[μ.restrict B] u`, then `averagedTaylorPolynomial (μ.restrict B)` evaluates
-to `∫ y, taylorPolynomial m u y x * φ y ∂μ`. -/
+additive Haar measure `μ`, if `φ` is `C^m` with compact support `tsupport φ ⊆ B`, `u` is ambient
+`C^m` at every point of `tsupport φ`, and `f =ᵐ[μ.restrict B] u`, then
+`averagedTaylorPolynomial (μ.restrict B)` evaluates to `∫ y, taylorPolynomial m u y x * φ y ∂μ`. -/
 theorem averagedTaylorPolynomial_restrict_eq_integral_taylorPolynomial
     {B : Set (EuclideanSpace ℝ ι)} {m : ℕ} {φ u : EuclideanSpace ℝ ι → ℝ}
     (hφ : ContDiff ℝ m φ) (hsupp : HasCompactSupport φ) (hB : tsupport φ ⊆ B)
@@ -746,7 +761,7 @@ def averagedTaylorPolynomialLp (μ : Measure (EuclideanSpace ℝ ι))
   (averagedTaylorPolynomial (μ.restrict (tsupport φ)) m φ hφ hsupp).comp
     (Set.LpToL1RestrictCLM (𝕜 := ℝ) (tsupport φ) hsupp.measure_lt_top)
 
-theorem averagedTaylorPolynomialLp_def (μ : Measure (EuclideanSpace ℝ ι))
+private theorem averagedTaylorPolynomialLp_def (μ : Measure (EuclideanSpace ℝ ι))
     [IsFiniteMeasureOnCompacts μ] (p : ℝ≥0∞) [Fact (1 ≤ p)] (m : ℕ)
     (φ : EuclideanSpace ℝ ι → ℝ) (hφ : ContDiff ℝ m φ) (hsupp : HasCompactSupport φ) :
     averagedTaylorPolynomialLp μ p m φ hφ hsupp =
@@ -775,6 +790,23 @@ theorem averagedTaylorPolynomialLp_one (μ : Measure (EuclideanSpace ℝ ι))
     averagedTaylorPolynomialLp μ 1 m φ hφ hsupp = averagedTaylorPolynomial μ m φ hφ hsupp := by
   ext f x; simp [averagedTaylorPolynomialLp_apply, averagedTaylorPolynomial_apply]
 
+/-- Factoring `averagedTaylorPolynomialLp` on `Lᵖ(μ)` through `Set.LpToL1RestrictCLM` onto any
+finite-measure set `s` containing `tsupport φ`. -/
+theorem averagedTaylorPolynomialLp_eq_comp_LpToL1RestrictCLM
+    {μ : Measure (EuclideanSpace ℝ ι)} [IsFiniteMeasureOnCompacts μ]
+    (p : ℝ≥0∞) [Fact (1 ≤ p)] {m : ℕ} {φ : EuclideanSpace ℝ ι → ℝ}
+    (hφ : ContDiff ℝ m φ) (hsupp : HasCompactSupport φ)
+    {s : Set (EuclideanSpace ℝ ι)} (hμs : μ s < (∞ : ℝ≥0∞)) (hs : tsupport φ ⊆ s) :
+    averagedTaylorPolynomialLp μ p m φ hφ hsupp =
+      (averagedTaylorPolynomial (μ.restrict s) m φ hφ hsupp).comp
+        (Set.LpToL1RestrictCLM (𝕜 := ℝ) s hμs) := by
+  ext f x
+  simp only [averagedTaylorPolynomialLp_apply, ContinuousLinearMap.comp_apply,
+    averagedTaylorPolynomial_apply]
+  rw [integral_congr_ae ((Set.LpToL1RestrictCLM_coeFn (𝕜 := ℝ) s hμs f).mono
+      fun y hy ↦ by rw [hy]),
+    setIntegral_mul_averagedTaylorKernel_eq_integral hs]
+
 /-- Weighted `iteratedFDeriv` pairing evaluation formula for `averagedTaylorPolynomialLp` on
 `Lᵖ(μ)`, requiring only `Lᵖ` membership and cutoff regularity. -/
 theorem averagedTaylorPolynomialLp_eq_sum_integral_iteratedFDeriv
@@ -794,27 +826,24 @@ theorem averagedTaylorPolynomialLp_eq_sum_integral_iteratedFDeriv
   simp_rw [setIntegral_univ]
 
 /-- Weighted `iteratedFDeriv` pairing evaluation formula for `averagedTaylorPolynomialLp` on
-`Lᵖ(μ.restrict Ω)` when `tsupport φ ⊆ Ω`, matching
-`TauCeti.Wkp.iteratedFDeriv_sum_setIntegral_iteratedFDeriv`. -/
+`Lᵖ(μ.restrict Ω)`, matching `TauCeti.Wkp.iteratedFDeriv_sum_setIntegral_iteratedFDeriv`. -/
 theorem averagedTaylorPolynomialLp_restrict_eq_sum_setIntegral_iteratedFDeriv
     {μ : Measure (EuclideanSpace ℝ ι)} [IsFiniteMeasureOnCompacts μ]
     (p : ℝ≥0∞) [Fact (1 ≤ p)] {Ω : Set (EuclideanSpace ℝ ι)} {m : ℕ}
     {φ : EuclideanSpace ℝ ι → ℝ} (hφ : ContDiff ℝ m φ) (hsupp : HasCompactSupport φ)
-    (hΩ : tsupport φ ⊆ Ω) (f : Lp ℝ p (μ.restrict Ω)) (x : EuclideanSpace ℝ ι) :
+    (f : Lp ℝ p (μ.restrict Ω)) (x : EuclideanSpace ℝ ι) :
     (averagedTaylorPolynomialLp (μ.restrict Ω) p m φ hφ hsupp f :
       EuclideanSpace ℝ ι → ℝ) x =
       ∑ j ∈ Finset.range (m + 1), ((-1 : ℝ) ^ j / (j.factorial : ℝ)) *
         ∑ I : Fin j → ι, ∫ y in Ω,
           iteratedFDeriv ℝ j (fun z ↦
             (∏ l : Fin j, ⟪EuclideanSpace.basisFun ι ℝ (I l), x - z⟫_ℝ) * φ z)
-            y (EuclideanSpace.basisFun ι ℝ ∘ I) * f y ∂μ := by
-  rw [averagedTaylorPolynomialLp_apply]
-  exact setIntegral_mul_averagedTaylorKernel_eq_sum_setIntegral_iteratedFDeriv hφ hsupp hΩ
-    (Lp.locallyIntegrableOn f Fact.out) x
+            y (EuclideanSpace.basisFun ι ℝ ∘ I) * f y ∂μ :=
+  averagedTaylorPolynomialLp_eq_sum_integral_iteratedFDeriv (μ.restrict Ω) p m φ hφ hsupp f x
 
 /-- **Integration-by-parts identity for `averagedTaylorPolynomialLp` on `Lᵖ(μ)`.** On an additive
-Haar measure `μ`, if `φ` is `C^m` with compact support, `u` is `C^m` on `tsupport φ`, and
-`f =ᵐ[μ] u`, then `averagedTaylorPolynomialLp μ p m φ hφ hsupp f` evaluates to
+Haar measure `μ`, if `φ` is `C^m` with compact support, `u` is ambient `C^m` at every point of
+`tsupport φ`, and `f =ᵐ[μ] u`, then `averagedTaylorPolynomialLp μ p m φ hφ hsupp f` evaluates to
 `∫ y, taylorPolynomial m u y x * φ y ∂μ`. -/
 theorem averagedTaylorPolynomialLp_eq_integral_taylorPolynomial
     {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure]
@@ -829,9 +858,10 @@ theorem averagedTaylorPolynomialLp_eq_integral_taylorPolynomial
     hφ hsupp (subset_univ _) hu (by simpa using hf) x
 
 /-- **Integration-by-parts identity for `averagedTaylorPolynomialLp` on `Lᵖ(μ.restrict Ω)`.** On an
-additive Haar measure `μ`, if `φ` is `C^m` with compact support `tsupport φ ⊆ Ω`, `u` is `C^m` on
-`tsupport φ`, and `f =ᵐ[μ.restrict Ω] u`, then `averagedTaylorPolynomialLp (μ.restrict Ω)`
-evaluates to `∫ y, taylorPolynomial m u y x * φ y ∂μ`. -/
+additive Haar measure `μ`, if `φ` is `C^m` with compact support `tsupport φ ⊆ Ω`, `u` is ambient
+`C^m` at every point of `tsupport φ`, and `f =ᵐ[μ.restrict Ω] u`, then
+`averagedTaylorPolynomialLp (μ.restrict Ω)` evaluates to
+`∫ y, taylorPolynomial m u y x * φ y ∂μ`. -/
 theorem averagedTaylorPolynomialLp_restrict_eq_integral_taylorPolynomial
     {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure]
     (p : ℝ≥0∞) [Fact (1 ≤ p)] {Ω : Set (EuclideanSpace ℝ ι)}
@@ -935,13 +965,15 @@ theorem averagedTaylorPolynomial_normed_ballBump_sq_one_ne_self
     rw [(ballBump 0 hρ).support_normed_eq, ballBump_rOut, mem_ball_zero_iff, norm_smul,
       (EuclideanSpace.basisFun ι ℝ).orthonormal.1 i, mul_one, Real.norm_of_nonneg (by positivity)]
     linarith
+  have hz₀_coord : z₀ i = ρ / 4 := by simp [z₀, EuclideanSpace.basisFun_apply]
   have hpos : 0 < ∫ y : EuclideanSpace ℝ ι, (y i) ^ 2 * φ y ∂μ :=
     (((PiLp.continuous_apply 2 (fun _ : ι ↦ ℝ) i).pow 2).mul
         (ballBump 0 hρ).continuous_normed).integral_pos_of_hasCompactSupport_nonneg_ne_zero
       (x := z₀) (ballBump 0 hρ).hasCompactSupport_normed.mul_left
       (fun y ↦ mul_nonneg (sq_nonneg _) ((ballBump 0 hρ).nonneg_normed y))
-      ((show z₀ i = ρ / 4 by simp [z₀, EuclideanSpace.basisFun_apply]) ▸
-        mul_ne_zero (pow_ne_zero 2 (by linarith)) (Function.mem_support.mp hz₀_ball))
+      (by
+        rw [hz₀_coord]
+        exact mul_ne_zero (pow_ne_zero 2 (by linarith)) (Function.mem_support.mp hz₀_ball))
   linarith
 
 /-- Evaluating `averagedTaylorPolynomial` at order `0` with `(ballBump 0 hρ).normed μ` on the

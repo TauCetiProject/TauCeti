@@ -30,7 +30,7 @@ domains, as used for averaged Taylor polynomials and higher-order weak derivativ
   continuous bilinear pairing against a compactly supported test map `g`, requiring `f` to be
   `C^{vs.length}` at each point of `tsupport g`.
 * `TauCeti.integral_smul_iteratedFDerivAlong_eq`, `TauCeti.integral_mul_iteratedFDerivAlong_eq`:
-  specializations to scalar multiplication and multiplication over a normed `ℝ`-algebra field `𝕜`.
+  specializations to scalar multiplication and multiplication over a normed `ℝ`-algebra `𝕜`.
 * `TauCeti.setIntegral_bilinear_iteratedFDerivAlong_eq`,
   `TauCeti.setIntegral_smul_iteratedFDerivAlong_eq`,
   `TauCeti.setIntegral_mul_iteratedFDerivAlong_eq`: set-integral forms on any domain `s` containing
@@ -89,7 +89,8 @@ theorem integral_bilinear_iteratedFDerivAlong_eq
 
 /-- Scalar-multiplication form of `integral_bilinear_iteratedFDerivAlong_eq`. -/
 theorem integral_smul_iteratedFDerivAlong_eq
-    {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedSpace 𝕜 V]
+    {𝕜 : Type*} [NormedRing 𝕜] [NormedAlgebra ℝ 𝕜] [Module 𝕜 V] [IsBoundedSMul 𝕜 V]
+    [IsScalarTower ℝ 𝕜 V]
     (vs : List E) {f : E → 𝕜} {g : E → V}
     (hf : ∀ x ∈ tsupport g, ContDiffAt ℝ vs.length f x)
     (hg : ContDiff ℝ vs.length g) (hsupp : HasCompactSupport g) :
@@ -100,7 +101,7 @@ theorem integral_smul_iteratedFDerivAlong_eq
 
 /-- Scalar-product form of `integral_bilinear_iteratedFDerivAlong_eq`. -/
 theorem integral_mul_iteratedFDerivAlong_eq
-    {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+    {𝕜 : Type*} [NormedRing 𝕜] [NormedAlgebra ℝ 𝕜]
     (vs : List E) {f g : E → 𝕜}
     (hf : ∀ x ∈ tsupport g, ContDiffAt ℝ vs.length f x)
     (hg : ContDiff ℝ vs.length g) (hsupp : HasCompactSupport g) :
@@ -127,7 +128,8 @@ theorem setIntegral_bilinear_iteratedFDerivAlong_eq
 /-- Set-integral scalar-multiplication form of `integral_bilinear_iteratedFDerivAlong_eq` over any
 set `s` containing `tsupport g`. -/
 theorem setIntegral_smul_iteratedFDerivAlong_eq
-    {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedSpace 𝕜 V]
+    {𝕜 : Type*} [NormedRing 𝕜] [NormedAlgebra ℝ 𝕜] [Module 𝕜 V] [IsBoundedSMul 𝕜 V]
+    [IsScalarTower ℝ 𝕜 V]
     (vs : List E) {f : E → 𝕜} {g : E → V} {s : Set E}
     (hf : ∀ x ∈ tsupport g, ContDiffAt ℝ vs.length f x)
     (hg : ContDiff ℝ vs.length g) (hsupp : HasCompactSupport g) (hs : tsupport g ⊆ s) :
@@ -139,7 +141,7 @@ theorem setIntegral_smul_iteratedFDerivAlong_eq
 /-- Set-integral scalar-product form of `integral_bilinear_iteratedFDerivAlong_eq` over any set `s`
 containing `tsupport g`. -/
 theorem setIntegral_mul_iteratedFDerivAlong_eq
-    {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+    {𝕜 : Type*} [NormedRing 𝕜] [NormedAlgebra ℝ 𝕜]
     (vs : List E) {f g : E → 𝕜} {s : Set E}
     (hf : ∀ x ∈ tsupport g, ContDiffAt ℝ vs.length f x)
     (hg : ContDiff ℝ vs.length g) (hsupp : HasCompactSupport g) (hs : tsupport g ⊆ s) :

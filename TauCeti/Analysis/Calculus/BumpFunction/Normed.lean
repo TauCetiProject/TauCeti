@@ -211,15 +211,28 @@ end ContDiffBump
 
 namespace TauCeti
 
+section
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [HasContDiffBump E]
-  [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] (μ : Measure E)
+  [MeasurableSpace E] (μ : Measure E)
 
 /-- The topological support of `(ballBump x₀ hρ).normed μ` is contained in `Metric.ball x₀ ρ`. -/
-theorem tsupport_normed_ballBump_subset_ball [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure]
-    (x₀ : E) {ρ : ℝ} (hρ : 0 < ρ) :
+theorem tsupport_normed_ballBump_subset_ball (x₀ : E) {ρ : ℝ} (hρ : 0 < ρ) :
     tsupport ((ballBump x₀ hρ).normed μ) ⊆ ball x₀ ρ := by
-  rw [(ballBump x₀ hρ).tsupport_normed_eq, ballBump_rOut]
-  exact closedBall_subset_ball (half_lt_self hρ)
+  have hnorm : ((ballBump x₀ hρ).normed μ) =
+      fun x ↦ (ballBump x₀ hρ) x * (∫ y, ballBump x₀ hρ y ∂μ)⁻¹ :=
+    funext fun x ↦ by rw [ContDiffBump.normed_def, div_eq_mul_inv]
+  have hsub : tsupport ((ballBump x₀ hρ).normed μ) ⊆ tsupport (ballBump x₀ hρ) := by
+    rw [hnorm]
+    exact tsupport_mul_subset_left
+  exact hsub.trans <| by
+    rw [ContDiffBump.tsupport_eq, ballBump_rOut]
+    exact closedBall_subset_ball (half_lt_self hρ)
+
+end
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [HasContDiffBump E]
+  [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] (μ : Measure E)
 
 /-- Explicit `O(ρ ^ (-finrank ℝ E))` pointwise bound on `(ballBump x₀ hρ).normed μ` with respect to
 an additive Haar measure `μ`, uniform in the center `x₀`, radius `ρ > 0`, and evaluation point

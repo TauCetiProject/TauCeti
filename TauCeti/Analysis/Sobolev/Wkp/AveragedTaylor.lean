@@ -143,22 +143,19 @@ theorem iteratedFDeriv_sum_setIntegral_iteratedFDeriv
   have hS_smooth : ∀ {k : ℕ∞ω} {r : ℕ}, r ≤ m → ContDiff ℝ k (fun x' => ∑ I : Fin r → ι,
       ∫ y in Omega, iteratedFDeriv ℝ r (fun z => (∏ l : Fin r, ⟪b (I l), x' - z⟫_ℝ) * φ z)
         y (b ∘ I) * value (j + 1) u y ∂mu) := fun hr => ContDiff.sum fun I _ => hI hr I
+  have hterm_eq : ∀ {r : ℕ}, r ≤ m →
+      term r = fun x' => ((-1 : ℝ) ^ r / (r.factorial : ℝ)) * ∑ I : Fin r → ι,
+        ∫ y in Omega, iteratedFDeriv ℝ r (fun z => (∏ l : Fin r, ⟪b (I l), x' - z⟫_ℝ) * φ z)
+          y (b ∘ I) * value (j + 1) u y ∂mu := fun hrm => funext fun x' =>
+    setIntegral_taylorKernelTerm_mul_eq (⇑b) (hφ.of_le (by exact_mod_cast hrm)) hφc hφs hloc x'
   have hterm_smooth : ∀ {k : ℕ∞ω}, ∀ r ∈ Finset.range (m + 1), ContDiff ℝ k (term r) :=
     fun r hr => by
       have hrm : r ≤ m := Nat.lt_succ_iff.1 (Finset.mem_range.1 hr)
-      rw [show term r = fun x' => ((-1 : ℝ) ^ r / (r.factorial : ℝ)) * ∑ I : Fin r → ι,
-          ∫ y in Omega, iteratedFDeriv ℝ r (fun z => (∏ l : Fin r, ⟪b (I l), x' - z⟫_ℝ) * φ z)
-            y (b ∘ I) * value (j + 1) u y ∂mu from
-        funext fun x' => setIntegral_taylorKernelTerm_mul_eq (⇑b)
-          (hφ.of_le (by exact_mod_cast hrm)) hφc hφs hloc x']
+      rw [hterm_eq hrm]
       exact contDiff_const.mul (hS_smooth hrm)
   have hvanish : ∀ r ≤ m, r ≤ j →
       iteratedFDerivAlong ℝ (List.ofFn v) (term r) x = 0 := fun r hrm hrj => by
-    rw [show term r = fun x' => ((-1 : ℝ) ^ r / (r.factorial : ℝ)) * ∑ I : Fin r → ι,
-        ∫ y in Omega, iteratedFDeriv ℝ r (fun z => (∏ l : Fin r, ⟪b (I l), x' - z⟫_ℝ) * φ z)
-          y (b ∘ I) * value (j + 1) u y ∂mu from
-      funext fun x' => setIntegral_taylorKernelTerm_mul_eq (⇑b)
-        (hφ.of_le (by exact_mod_cast hrm)) hφc hφs hloc x',
+    rw [hterm_eq hrm,
       congrFun (iteratedFDerivAlong_const_mul (n := ∞) (hS_smooth hrm) _ _ (by simp)) x,
       iteratedFDerivAlong_fun_sum (n := ∞) Finset.univ (fun I _ => hI hrm I) _ (by simp),
       Finset.sum_eq_zero fun I _ => by
@@ -169,8 +166,8 @@ theorem iteratedFDeriv_sum_setIntegral_iteratedFDeriv
       fun x' => ∑ r ∈ Finset.range (m + 1), ((-1 : ℝ) ^ r / (r.factorial : ℝ)) * ∑ I : Fin r → ι,
         ∫ y in Omega, iteratedFDeriv ℝ r (fun z => (∏ l : Fin r, ⟪b (I l), x' - z⟫_ℝ) * φ z)
           y (b ∘ I) * value (j + 1) u y ∂mu := funext fun x' =>
-    Finset.sum_congr rfl fun r hr => setIntegral_taylorKernelTerm_mul_eq (⇑b)
-      (hφ.of_le (by exact_mod_cast Nat.lt_succ_iff.1 (Finset.mem_range.1 hr))) hφc hφs hloc x'
+    Finset.sum_congr rfl fun r hr =>
+      congrFun (hterm_eq (Nat.lt_succ_iff.1 (Finset.mem_range.1 hr))) x'
   rw [← hgoal, ← iteratedFDerivAlong_ofFn_eq_iteratedFDeriv
       (ContDiff.sum hterm_smooth) v x,
     iteratedFDerivAlong_fun_sum (n := ∞) _ hterm_smooth _ (by simp)]

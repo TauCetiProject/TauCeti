@@ -447,8 +447,8 @@ end Expect
 /-- Commute Bochner integration with a weighted finite sum of finite sums of integrable
 functions. -/
 theorem _root_.MeasureTheory.integral_sum_smul_sum {α ι 𝕜 E : Type*} {κ : ι → Type*}
-    [MeasurableSpace α] {μ : Measure α} [NormedDivisionRing 𝕜] [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [Module 𝕜 E] [NormSMulClass 𝕜 E] [SMulCommClass ℝ 𝕜 E]
+    [MeasurableSpace α] {μ : Measure α} [NormedRing 𝕜] [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [SMulCommClass ℝ 𝕜 E]
     (s : Finset ι) (t : ∀ i, Finset (κ i)) (w : ι → 𝕜) (g : ∀ i, κ i → α → E)
     (hg : ∀ i ∈ s, ∀ k ∈ t i, Integrable (g i k) μ) :
     ∫ y, (∑ i ∈ s, w i • ∑ k ∈ t i, g i k y) ∂μ =
@@ -456,7 +456,8 @@ theorem _root_.MeasureTheory.integral_sum_smul_sum {α ι 𝕜 E : Type*} {κ : 
   rw [integral_finsetSum (f := fun i y ↦ w i • ∑ k ∈ t i, g i k y) s fun i hi ↦
     (integrable_finsetSum (t i) fun k hk ↦ hg i hi k hk).smul _]
   refine Finset.sum_congr rfl fun i hi ↦ ?_
-  rw [integral_smul, integral_finsetSum (t i) fun k hk ↦ hg i hi k hk]
+  rw [(integrable_finsetSum (t i) fun k hk ↦ hg i hi k hk).integral_smul,
+    integral_finsetSum (t i) fun k hk ↦ hg i hi k hk]
 
 /-- Scalar-multiplication form of `MeasureTheory.integral_sum_smul_sum` over `[RCLike 𝕜]`. -/
 theorem _root_.MeasureTheory.integral_sum_mul_sum {α ι 𝕜 : Type*} {κ : ι → Type*}
