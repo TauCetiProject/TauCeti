@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Group.GlidingHump
+import TauCeti.Analysis.Normed.Group.InfiniteSum
 import TauCeti.Analysis.Normed.Module.Annihilator
 import TauCeti.Analysis.Normed.Module.WeakDual.SeqCompact
 
@@ -40,8 +41,9 @@ zero after re-indexing. The scalar matrix `zⱼ (uₖ)` then contradicts the gli
 subseries summable series tend to zero in norm.
 
 If a weakly subseries summable series were not unconditionally Cauchy, it would contain disjoint
-finite blocks whose sums have norm at least some `ε > 0`. These block sums again form a weakly
-subseries summable series, whose terms must tend to zero: a contradiction. Finally, an
+finite blocks whose sums have norm at least some `ε > 0`
+(`TauCeti.exists_pairwise_disjoint_le_norm_sum_of_not_cauchySeq`). These block sums again form a
+weakly subseries summable series, whose terms must tend to zero: a contradiction. Finally, an
 unconditionally Cauchy series converges in norm to its weak sum, because the norm of a vector is
 the supremum of its pairings with functionals of norm at most one.
 
@@ -164,19 +166,13 @@ private theorem tendsto_zero_of_forall_hasSum_indicator {u : ℕ → X}
   exact (hφ₁ε (ψ j)).not_gt (by simpa [φ] using hj)
 
 /-- A weakly subseries summable series satisfies the unconditional Cauchy criterion. -/
-private theorem exists_forall_disjoint_norm_sum_lt {x : ℕ → X}
-    (hx : ∀ A : Set ℕ, ∃ y : X, ∀ f : StrongDual 𝕜 X, HasSum (fun n ↦ f (A.indicator x n)) (f y))
-    {ε : ℝ} (hε : 0 < ε) :
-    ∃ s : Finset ℕ, ∀ t : Finset ℕ, Disjoint t s → ‖∑ n ∈ t, x n‖ < ε := by
+private theorem cauchySeq_finset_sum_of_forall_hasSum_indicator {x : ℕ → X}
+    (hx : ∀ A : Set ℕ, ∃ y : X, ∀ f : StrongDual 𝕜 X, HasSum (fun n ↦ f (A.indicator x n)) (f y)) :
+    CauchySeq fun s : Finset ℕ ↦ ∑ n ∈ s, x n := by
   -- Otherwise there are disjoint finite blocks whose sums have norm at least `ε`; these block sums
   -- form a weakly subseries summable series whose terms do not tend to zero.
-  by_contra! h
-  choose T hTs hTε using h
-  -- Each finite family of blocks is avoided by a further block `T (⋃ S)`.
-  obtain ⟨B, hBε, hdisj⟩ := exists_seq_of_forall_finset_exists'
-    (fun B : Finset ℕ ↦ ε ≤ ‖∑ n ∈ B, x n‖) Disjoint fun S _ ↦
-      ⟨T (S.biUnion id), hTε _,
-        fun B hB ↦ ((Finset.disjoint_biUnion_right _ S id).1 (hTs _) B hB).symm⟩
+  by_contra h
+  obtain ⟨ε, hε, B, hdisj, hBε⟩ := exists_pairwise_disjoint_le_norm_sum_of_not_cauchySeq h
   have h0 := tendsto_zero_of_forall_hasSum_indicator (exists_hasSum_indicator_sum hx hdisj)
   obtain ⟨k, hk⟩ := (h0.norm.eventually (gt_mem_nhds (by simpa using hε))).exists
   exact (hBε k).not_gt hk
@@ -190,7 +186,8 @@ theorem hasSum_of_forall_hasSum_strongDual_indicator {x : ℕ → X}
     {y : X} (hy : ∀ f : StrongDual 𝕜 X, HasSum (fun n ↦ f (x n)) (f y)) : HasSum x y := by
   -- An unconditionally Cauchy series converges in norm to its weak sum.
   refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
-  obtain ⟨s, hs⟩ := exists_forall_disjoint_norm_sum_lt hx (half_pos hε)
+  obtain ⟨s, hs⟩ := cauchySeq_finset_iff_vanishing_norm.1
+    (cauchySeq_finset_sum_of_forall_hasSum_indicator hx) _ (half_pos hε)
   refine ⟨s, fun F hF ↦ ?_⟩
   rw [dist_eq_norm]
   refine (NormedSpace.norm_le_dual_bound 𝕜 _ (half_pos hε).le fun f ↦ ?_).trans_lt
