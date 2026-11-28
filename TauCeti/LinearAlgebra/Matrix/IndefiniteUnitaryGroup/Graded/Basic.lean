@@ -65,6 +65,7 @@ pass to vectors with coefficients in any `E`-algebra, such as the finite adeles.
   matrix is hermitian, and for `N * N' = 1` its inverse is the graded Gram matrix of `N'`.
 * `TauCeti.gradedGrade_inr_rev`, `TauCeti.gradedGrade_inr_lt_iff`: reversing the string negates
   the grade, and the grade strictly decreases along the string.
+* `TauCeti.even_gradedGrade`: for a string of odd length every grade is even.
 * `TauCeti.gradedGram_inr_inr_rev`: the pairing of a string vector with its partner.
 * `TauCeti.gradedGram_mul_apply_inl`, `TauCeti.gradedGram_mul_apply_inr`: the rows of
   `gradedGram X s N * M`.
@@ -213,6 +214,13 @@ theorem gradedGrade_inr_rev_lt_iff {a b : Fin s} :
     gradedGrade X s (.inr a.rev) < gradedGrade X s (.inr b) ↔
       gradedGrade X s (.inr b.rev) < gradedGrade X s (.inr a) := by
   simp only [gradedGrade_inr_rev, neg_lt]
+
+/-- For a string of odd length every grade is even. -/
+theorem even_gradedGrade (hs : Odd s) (k : X ⊕ Fin s) : Even (gradedGrade X s k) := by
+  obtain ⟨m, rfl⟩ := hs
+  rcases k with x | a
+  · simp
+  · exact ⟨m - a, by simp only [gradedGrade_inr]; push_cast; ring⟩
 
 /-- The grade strictly decreases along the string. -/
 theorem gradedGrade_inr_lt_iff {a b : Fin s} :
