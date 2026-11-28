@@ -41,7 +41,7 @@ representative are sums over `range n` (`ZMod.sum_val_eq_sum_range`, in
 representative divided by `n / m`, summed over the representatives that are multiples of `n / m`,
 is the sum of that function over the representatives modulo `m` (`ZMod.sum_ite_dvd_val`). As a
 special case of the first identity, the reciprocals of the representatives sum to the harmonic
-number `H_{n-1}`.
+number `H_{n-1}`; the residue `0` contributes `0⁻¹ = 0`.
 
 ## Main results
 
@@ -49,7 +49,8 @@ number `H_{n-1}`.
 * `ZMod.sum_comp_natCast_val`: summing a function of the reduction modulo `m ∣ n`.
 * `ZMod.sum_val_filter_castHom_eq_sum_range`: summing a function of the representatives over a
   fibre of the reduction `ZMod (k * m) → ZMod m`.
-* `ZMod.sum_inv_val_eq_harmonic`: the reciprocals of the representatives sum to `H_{n-1}`.
+* `ZMod.sum_inv_val_eq_harmonic`: the reciprocals of the representatives sum to `H_{n-1}`, the
+  residue `0` contributing `0⁻¹ = 0`.
 * `ZMod.sum_inv_val_le_one_add_log`: a logarithmic bound for reciprocal representatives.
 * `ZMod.sum_Ico_mul`: splitting an integer interval into complete residue blocks.
 * `ZMod.sum_ite_dvd_val`: summing over the representatives that are multiples of `n / m`.

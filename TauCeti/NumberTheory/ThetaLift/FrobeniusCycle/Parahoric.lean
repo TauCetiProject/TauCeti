@@ -18,10 +18,6 @@ parahoric subgroup, `p` divides the entry `(i, j)` of `g_s` when `τ i < τ j` a
 `s` and, since odd letters use the inverse transpose, when `τ j < τ i` at an odd letter `s`. For
 `g` in the Levi subgroup, the entries of every `g_s` between indices of distinct labels vanish.
 
-For a labelling `τ : Fin k → ℕ`, the Hopf-ideal subgroups `TauCeti.GeneralLinear.leviSubgroup W τ`
-and `TauCeti.GeneralLinear.parahoricSubgroup W τ` have the same members as these
-(`TauCeti.GeneralLinear.mem_leviSubgroup_iff`, `TauCeti.GeneralLinear.mem_parahoricSubgroup_iff`).
-
 ## Main results
 
 * `TauCeti.FrobeniusCycle.p_dvd_letterMatrix_of_mem_parahoricSubgroup`: for `g` in the parahoric

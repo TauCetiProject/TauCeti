@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Block.Triangular
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 
 /-!
@@ -29,9 +30,9 @@ antipode calculations.
   scheme of `GL_N`.
 * `TauCeti.GeneralLinear.mem_weightLeviDefiningPointsSubgroup_iff_apply_eq_zero`: its
   algebra-valued points are exactly the matrices preserving every weight space.
-* `TauCeti.GeneralLinear.leviSubgroup`, `TauCeti.GeneralLinear.mem_leviSubgroup_iff`: the
-  subgroup of `GL_k(W)` of the weight Levi of a labelling `τ : Fin k → ℕ`, the matrices with
-  `g i j = 0` whenever `τ i ≠ τ j`.
+* `TauCeti.GeneralLinear.hopfIdealPointsSubgroup_weightLeviDefiningHopfIdeal_eq_leviSubgroup`:
+  the points over `W` of the weight Levi of a labelling `τ : Fin k → ℕ` form the Levi subgroup
+  `TauCeti.leviSubgroup τ W`, the matrices with `g i j = 0` whenever `τ i ≠ τ j`.
 
 ## References
 
@@ -148,35 +149,20 @@ theorem mem_weightLeviDefiningPointsSubgroup_iff_apply_eq_zero (w : Fin N → �
 
 section LeviSubgroup
 
-variable (W : Type*) [CommRing W] {k : ℕ}
+variable {W : Type*} [CommRing W] {k : ℕ}
 
-/-- The Levi subgroup `L_τ(W)` of a labelling `τ : Fin k → ℕ` of the indices: the matrix points
-over `W` of the weight Levi of `τ`, that is, the `g ∈ GL_k(W)` with `g i j = 0` whenever
-`τ i ≠ τ j` (`mem_leviSubgroup_iff`). -/
-noncomputable def leviSubgroup (τ : Fin k → ℕ) : Subgroup (GL (Fin k) W) :=
-  hopfIdealPointsSubgroup k (weightLeviDefiningHopfIdeal ℤ fun i ↦ (τ i : ℤ)) W
-
-variable {W}
-
-/-- The Levi subgroup is the subgroup of `GL_k(W)` cut out by the weight-Levi Hopf ideal of `τ`. -/
-theorem leviSubgroup_def (τ : Fin k → ℕ) :
-    leviSubgroup W τ =
-      hopfIdealPointsSubgroup k (weightLeviDefiningHopfIdeal ℤ fun i ↦ (τ i : ℤ)) W := (rfl)
-
-/-- Membership in the Levi subgroup: the entries between distinct labels vanish. -/
-@[simp]
-theorem mem_leviSubgroup_iff (τ : Fin k → ℕ) (g : GL (Fin k) W) :
-    g ∈ leviSubgroup W τ ↔ ∀ i j, τ i ≠ τ j → (g : Matrix (Fin k) (Fin k) W) i j = 0 := by
+/-- The matrix points over `W` of the weight Levi of a labelling `τ : Fin k → ℕ` of the indices
+form the Levi subgroup `TauCeti.leviSubgroup τ W`: the `g ∈ GL_k(W)` with `g i j = 0` whenever
+`τ i ≠ τ j`. -/
+theorem hopfIdealPointsSubgroup_weightLeviDefiningHopfIdeal_eq_leviSubgroup (τ : Fin k → ℕ) :
+    hopfIdealPointsSubgroup k (weightLeviDefiningHopfIdeal ℤ fun i ↦ (τ i : ℤ)) W =
+      TauCeti.leviSubgroup τ W := by
+  ext g
   have h := mem_weightLeviDefiningPointsSubgroup_iff_apply_eq_zero ℤ (fun i ↦ (τ i : ℤ))
     ((pointsMulEquiv k).symm g)
   rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, MulEquiv.apply_symm_apply] at h
-  rw [leviSubgroup, mem_hopfIdealPointsSubgroup_iff, h]
+  rw [mem_hopfIdealPointsSubgroup_iff, h, TauCeti.mem_leviSubgroup]
   simp only [ne_eq, Nat.cast_inj]
-
-/-- For a constant labelling, the Levi subgroup is all of `GL_k(W)`. -/
-@[simp]
-theorem leviSubgroup_const (c : ℕ) : leviSubgroup W (k := k) (fun _ ↦ c) = ⊤ :=
-  eq_top_iff.mpr fun g _ ↦ (mem_leviSubgroup_iff _ g).mpr fun _ _ h ↦ (h rfl).elim
 
 end LeviSubgroup
 

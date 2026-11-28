@@ -10,10 +10,9 @@ public import Mathlib.Data.Fin.Basic
 /-!
 # The two-block labelling of the indices
 
-A labelling `τ : Fin k → ℕ` of the indices of `GL_k` defines its weight Levi and parahoric
-subgroups (`TauCeti.GeneralLinear.leviSubgroup`, `TauCeti.GeneralLinear.parahoricSubgroup`). The
-labelling `twoBlockLabel r` splits the indices into two blocks: label `0` on the indices below
-`r` and label `1` on the others.
+A labelling `τ : Fin k → ℕ` of the indices of `GL_k` defines its Levi and parahoric subgroups
+(`TauCeti.leviSubgroup`, `TauCeti.parahoricSubgroup`). The labelling `twoBlockLabel r` splits
+the indices into two blocks: label `0` on the indices below `r` and label `1` on the others.
 
 ## Main definitions
 
@@ -52,6 +51,11 @@ theorem twoBlockLabel_of_le {r : ℕ} {b : Fin k} (h : r ≤ (b : ℕ)) : twoBlo
 /-- `τ_r` vanishes exactly on the indices below `r`. -/
 @[simp]
 theorem twoBlockLabel_eq_zero_iff (r : ℕ) (b : Fin k) : twoBlockLabel r b = 0 ↔ (b : ℕ) < r := by
+  simp [twoBlockLabel]
+
+/-- `τ_r` is `1` exactly on the indices from `r` on. -/
+@[simp]
+theorem twoBlockLabel_eq_one_iff (r : ℕ) (b : Fin k) : twoBlockLabel r b = 1 ↔ r ≤ (b : ℕ) := by
   simp [twoBlockLabel]
 
 /-- Two indices have the same label exactly when both or neither lie below `r`. -/

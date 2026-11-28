@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ThetaLift.FrobeniusCycle.Root.Basic
 public import TauCeti.RingTheory.MvPolynomial.GaussFiltration
 import Mathlib.Algebra.CharP.Lemmas
+import Mathlib.Algebra.MvPolynomial.CommRing
 import Mathlib.Algebra.MvPolynomial.Equiv
 import Mathlib.Data.Finsupp.Weight
 import Mathlib.RingTheory.Ideal.Quotient.Operations

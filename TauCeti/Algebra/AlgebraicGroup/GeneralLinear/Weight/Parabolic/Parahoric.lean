@@ -6,16 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Levi.Basic
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Block.Triangular
 
 /-!
-# Parahoric subgroups of `GL_k` attached to a labelling
+# Parahoric subgroups of `GL_k` as preimages of weight parabolics
 
 A labelling `τ : Fin k → ℕ` of the indices splits them into blocks. Over a local ring `W`, its
-parahoric subgroup is the preimage of the weight parabolic
-`TauCeti.GeneralLinear.weightParabolicPoints` of `τ` over the residue field: the matrices whose
-entry `(i, j)` lies in the maximal ideal whenever the row label `τ i` is strictly smaller than
-the column label `τ j`. It contains the Levi subgroup `TauCeti.GeneralLinear.leviSubgroup` of `τ`.
+parahoric subgroup `TauCeti.parahoricSubgroup τ (maximalIdeal W)` consists of the matrices whose
+entry `(i, j)` lies in the maximal ideal whenever the row label `τ i` is strictly smaller than the
+column label `τ j`. This file identifies it with the preimage of the weight parabolic
+`TauCeti.GeneralLinear.weightParabolicPoints` of `τ` over the residue field. It contains the Levi
+subgroup `TauCeti.leviSubgroup τ W` (`TauCeti.leviSubgroup_le_parahoricSubgroup`).
 
 The point of the construction: after reduction to the residue field, an element of the parahoric
 subgroup preserves, for every threshold `t`, the span of the standard basis vectors `e b` with
@@ -23,22 +25,15 @@ subgroup preserves, for every threshold `t`, the span of the standard basis vect
 labelling `TauCeti.GeneralLinear.twoBlockLabel r` with `0 < r < k`, the span of the `e b` with
 `b ≥ r` is the unique nonzero proper threshold subspace; for `r = 0` or `r ≥ k` there is none. In
 the letter matrices of a Frobenius cycle
-(`TauCeti.FrobeniusCycle.p_dvd_letterMatrix_of_mem_parahoricSubgroup`, stated for the subgroup
-`TauCeti.parahoricSubgroup τ (maximalIdeal W)`, which has the same members by
-`TauCeti.GeneralLinear.mem_parahoricSubgroup_iff`), the entries forced into the maximal ideal
-give divisibility by `p` of the entry `(i, j)` when `τ i < τ j` at an even letter, and, since odd
-letters use the inverse transpose, when `τ j < τ i` at an odd letter.
-
-## Main definitions
-
-* `TauCeti.GeneralLinear.parahoricSubgroup`: the block-triangular modulo the maximal ideal
-  subgroup of a labelling.
+(`TauCeti.FrobeniusCycle.p_dvd_letterMatrix_of_mem_parahoricSubgroup`), the entries forced into
+the maximal ideal give divisibility by `p` of the entry `(i, j)` when `τ i < τ j` at an even
+letter, and, since odd letters use the inverse transpose, when `τ j < τ i` at an odd letter.
 
 ## Main results
 
-* `TauCeti.GeneralLinear.mem_parahoricSubgroup_iff`: membership in terms of entries.
-* `TauCeti.GeneralLinear.leviSubgroup_le_parahoricSubgroup`: the Levi subgroup lies in the
-  parahoric subgroup.
+* `TauCeti.GeneralLinear.comap_weightParabolicPoints_eq_parahoricSubgroup`: the preimage of the
+  weight parabolic of `τ` over the residue field is the parahoric subgroup of `τ` for the maximal
+  ideal.
 
 ## References
 
@@ -52,42 +47,15 @@ open IsLocalRing
 
 namespace TauCeti.GeneralLinear
 
-variable (W : Type*) [CommRing W] [IsLocalRing W] {k : ℕ}
+variable {W : Type*} [CommRing W] [IsLocalRing W] {k : ℕ}
 
-/-- The parahoric subgroup `P_τ(W)` of a labelling `τ` of the indices: the `g ∈ GL_k(W)` with
-`g i j` in the maximal ideal whenever `τ i < τ j`, that is, the preimage of the weight parabolic
-of `τ` over the residue field (`mem_parahoricSubgroup_iff`). -/
-noncomputable def parahoricSubgroup (τ : Fin k → ℕ) : Subgroup (GL (Fin k) W) :=
-  (weightParabolicPoints ℤ τ (ResidueField W)).comap
-    (Matrix.GeneralLinearGroup.map (residue W))
-
-variable {W}
-
-/-- The parahoric subgroup is the preimage of the weight parabolic of `τ` over the residue
-field. -/
-theorem parahoricSubgroup_def (τ : Fin k → ℕ) :
-    parahoricSubgroup W τ = (weightParabolicPoints ℤ τ (ResidueField W)).comap
-      (Matrix.GeneralLinearGroup.map (residue W)) := (rfl)
-
-/-- Membership in the parahoric subgroup: the entry `(i, j)` lies in the maximal ideal whenever
-the row label `τ i` is strictly smaller than the column label `τ j`. -/
-@[simp]
-theorem mem_parahoricSubgroup_iff (τ : Fin k → ℕ) (g : GL (Fin k) W) :
-    g ∈ parahoricSubgroup W τ ↔
-      ∀ i j, τ i < τ j → (g : Matrix (Fin k) (Fin k) W) i j ∈ maximalIdeal W := by
-  simp [parahoricSubgroup_def, Matrix.GeneralLinearGroup.map_apply, residue_eq_zero_iff]
-
-/-- The Levi subgroup of a labelling lies in its parahoric subgroup. -/
-theorem leviSubgroup_le_parahoricSubgroup (τ : Fin k → ℕ) :
-    leviSubgroup W τ ≤ parahoricSubgroup W τ := fun g hg ↦
-  (mem_parahoricSubgroup_iff τ g).mpr fun i j h ↦ by
-    rw [(mem_leviSubgroup_iff τ g).mp hg i j h.ne]
-    exact zero_mem _
-
-/-- For a constant labelling, the parahoric subgroup is all of `GL_k(W)`: it contains the Levi
-subgroup, which is all of `GL_k(W)` (`leviSubgroup_const`). -/
-@[simp]
-theorem parahoricSubgroup_const (c : ℕ) : parahoricSubgroup W (k := k) (fun _ ↦ c) = ⊤ :=
-  eq_top_iff.mpr ((leviSubgroup_const c).symm.le.trans (leviSubgroup_le_parahoricSubgroup _))
+/-- The preimage of the weight parabolic of `τ` over the residue field is the parahoric subgroup
+of `τ` for the maximal ideal: the `g ∈ GL_k(W)` with `g i j` in the maximal ideal whenever
+`τ i < τ j`. -/
+theorem comap_weightParabolicPoints_eq_parahoricSubgroup (τ : Fin k → ℕ) :
+    (weightParabolicPoints ℤ τ (ResidueField W)).comap
+      (Matrix.GeneralLinearGroup.map (residue W)) = parahoricSubgroup τ (maximalIdeal W) := by
+  ext g
+  simp [Matrix.GeneralLinearGroup.map_apply, residue_eq_zero_iff]
 
 end TauCeti.GeneralLinear
