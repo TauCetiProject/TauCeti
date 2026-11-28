@@ -9,6 +9,7 @@ public import Mathlib.RepresentationTheory.Character
 public import TauCeti.LinearAlgebra.Trace.Basic
 public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.Invariants
+import TauCeti.RepresentationTheory.AsAlgebraHom
 -- Non-public: a space of linear maps is finite-dimensional only when both spaces are.
 import TauCeti.LinearAlgebra.FiniteDimensional.LinearMap
 
@@ -18,6 +19,9 @@ import TauCeti.LinearAlgebra.FiniteDimensional.LinearMap
 The trace character vanishes when the representation space is not finite-dimensional.
 The character of the restriction of a representation along a monoid homomorphism `f` is the
 composite of its character with `f` (`Representation.character_comp`).
+
+The trace of a monoid-algebra action after `ρ x` is the sum of the translated character values
+weighted by the algebra element's coefficients (`Representation.trace_mul_asAlgebraHom_eq_sum`).
 
 As the character vanishes in infinite dimension, a representation whose character is nonzero at
 some element is finite-dimensional
@@ -64,6 +68,18 @@ public section
 universe u v w
 
 namespace Representation
+
+/-- The trace of the action of a monoid-algebra element `a` after `ρ x` is the sum of the
+character values at `x * g` weighted by the coefficients of `a` at `g`. -/
+theorem trace_mul_asAlgebraHom_eq_sum {k G V : Type*} [Field k] [Monoid G] [Fintype G]
+    [AddCommGroup V] [Module k V] (ρ : Representation k G V) (a : MonoidAlgebra k G) (x : G) :
+    LinearMap.trace k V (ρ x * ρ.asAlgebraHom a) =
+      ∑ g : G, a.coeff g • ρ.character (x * g) := by
+  -- This is the coefficient calculation of
+  -- TauCeti.Representation.trace_mul_asAlgebraHom_characterSum for arbitrary a.
+  rw [asAlgebraHom_eq_sum, Finset.mul_sum, map_sum]
+  refine Finset.sum_congr rfl fun g _ ↦ ?_
+  rw [mul_smul_comm, ← map_mul ρ, map_smul, character]
 
 /-- The character vanishes on a representation space that is not finite-dimensional. -/
 theorem character_eq_zero_of_not_finite {k G V : Type*} [Field k] [Monoid G]

@@ -8,13 +8,15 @@ module
 public import TauCeti.RepresentationTheory.CharacterTable.Pairing
 import TauCeti.RepresentationTheory.AsAlgebraHom
 import TauCeti.RepresentationTheory.CharacterTable.ClassSum.Basis
+import TauCeti.RepresentationTheory.NormInvariants
 
 /-!
 # Character constituents of class functions with constant complement sum
 
 Suppose that a class function on a finite group satisfies `f(g) + f(cg) = d`.
-If the group order is invertible in the coefficient field, twice the trivial coefficient equals
-`d`. On every nontrivial irreducible with nonzero coefficient, `c` acts as minus the identity.
+If the group order is invertible in the coefficient field, twice the pairing of `f` with the
+trivial character equals `d`. On every nontrivial irreducible whose character pairs nontrivially
+with `f`, `c` acts as minus the identity.
 When the order is invertible and the class function has an expansion in irreducible characters
 with coefficients given by the character pairing, these two conditions also recover the
 complement identity.
@@ -38,12 +40,9 @@ open scoped MonoidAlgebra
 
 variable {k G : Type*} [Field k] [Group G] [Fintype G]
 
-/-- On a nontrivial irreducible constituent of a class function with constant complement sum,
-the translating element acts by minus the identity. In particular all its conjugates act by
-the same sign. The proof uses the central group-algebra element with coefficients `f(g⁻¹)`,
-extending the character-sum construction and trace calculation in
-`TauCeti.Representation.characterSumCenter` and
-`TauCeti.Representation.trace_mul_asAlgebraHom_characterSum`. -/
+/-- If a class function has constant complement sum, the translating element acts by minus the
+identity on every nontrivial irreducible representation whose character pairs nontrivially with
+that class function. Its conjugates act by the same sign. -/
 theorem apply_eq_neg_one_of_add_apply_mul_left_eq_const_of_characterPairing_ne_zero
     (f : ClassFunction k G)
     {c : G} {d : k} (hf : ∀ g, f.val g + f.val (c * g) = d)
@@ -51,25 +50,27 @@ theorem apply_eq_neg_one_of_add_apply_mul_left_eq_const_of_characterPairing_ne_z
     (hρ : ρ ≠ trivial k G V) (hp : characterPairing (ofCharacter ρ) f ≠ 0) :
     ρ c = -1 := by
   classical
-  -- The central element with coefficients f(g⁻¹) acts with nonzero trace on this constituent.
+  -- As in TauCeti.Representation.characterSumCenter, use the central element with coefficients
+  -- f(g⁻¹). The nonzero character pairing ensures its action has nonzero trace.
   let z := ofConjClassesCenter (toConjClasses (invMap f))
   have hz (g : G) : (z : k[G]).coeff g = f.val g⁻¹ := by simp [z]
   have htrace : characterPairing (ofCharacter ρ) f =
       (Nat.card G : k)⁻¹ * LinearMap.trace k V (ρ.asAlgebraHom (z : k[G])) := by
-    simp [characterPairing_apply, asAlgebraHom_eq_sum, hz, character, mul_comm]
+    have h := ρ.trace_mul_asAlgebraHom_eq_sum (z : k[G]) 1
+    simp only [map_one, one_mul, hz, smul_eq_mul] at h
+    simp only [characterPairing_apply, ofCharacter_apply, h, mul_comm]
   have hnorm : ρ.norm = 0 := by
     ext v
-    have hv := (ρ.mem_invariants (ρ.norm v)).2 fun g ↦ ρ.self_norm_apply g v
-    rwa [IsIrreducible.invariants_eq_bot inferInstance hρ, Submodule.mem_bot] at hv
+    have hv := (ρ.normInvariants v).property
+    rwa [coe_normInvariants_apply, IsIrreducible.invariants_eq_bot inferInstance hρ,
+      Submodule.mem_bot] at hv
   -- The complement identity multiplies z by 1 + c to give a multiple of the norm.
   have hcomp : (z : k[G]) + (z : k[G]) * MonoidAlgebra.of k G c =
       d • ∑ g : G, MonoidAlgebra.single g (1 : k) := by
     ext g
-    simp only [MonoidAlgebra.of_apply, MonoidAlgebra.coeff_add, Finsupp.add_apply,
-      MonoidAlgebra.coeff_mul_single_apply, hz, mul_one, mul_inv_rev, inv_inv,
-      MonoidAlgebra.coeff_smul_apply, MonoidAlgebra.coeff_sum, MonoidAlgebra.coeff_single,
-      Finsupp.finsetSum_apply, Finsupp.univ_sum_single_apply', smul_eq_mul]
-    exact hf g⁻¹
+    have hcoeff : (∑ h : G, MonoidAlgebra.single h (1 : k)).coeff g = 1 := by
+      simp
+    simpa [MonoidAlgebra.of_apply, MonoidAlgebra.coeff_mul_single_apply, hz, hcoeff] using hf g⁻¹
   have hzero := congrArg ρ.asAlgebraHom hcomp
   rw [map_add, map_mul, asAlgebraHom_of, map_smul, asAlgebraHom_sum_single_one, hnorm,
     smul_zero] at hzero
@@ -80,8 +81,7 @@ theorem apply_eq_neg_one_of_add_apply_mul_left_eq_const_of_characterPairing_ne_z
   have hinj := (IsIrreducible.injective_or_eq_zero T).resolve_right fun hT ↦ hp (by
     have hz0 : ρ.asAlgebraHom (z : k[G]) = 0 := by
       ext v
-      rw [← hT_apply, hT]
-      rfl
+      simp [← hT_apply, hT]
     rw [htrace, hz0, map_zero, mul_zero])
   ext v
   apply hinj
@@ -89,9 +89,11 @@ theorem apply_eq_neg_one_of_add_apply_mul_left_eq_const_of_characterPairing_ne_z
     LinearMap.neg_apply, one_apply_eq_self, map_neg] using
     eq_neg_of_add_eq_zero_right (LinearMap.congr_fun hzero v)
 
-/-- Given an irreducible character expansion with coefficients given by the character pairing, the
-sum of a class function and its left translate equals `d` precisely when twice the trivial
-coefficient equals `d` and every nontrivial constituent acts by minus the identity at `c`. -/
+/-- Suppose the group order is invertible in the coefficient field and a class function has an
+irreducible character expansion with coefficients given by the character pairing. The sum of the
+class function and its left translate equals `d` precisely when twice the trivial coefficient
+equals `d` and `c` acts by minus the identity on every nontrivial representation with nonzero
+coefficient in the expansion. -/
 theorem add_apply_mul_left_eq_const_iff_characterPairing_trivial_and_apply_eq_neg_one_of_expansion
     (f : ClassFunction k G) {ι : Type*} [Fintype ι] {V : ι → Type*}
     [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]

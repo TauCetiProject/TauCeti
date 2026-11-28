@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.AsAlgebraHom
 public import TauCeti.RepresentationTheory.QuasiIdempotent
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Comparison
 public import TauCeti.RepresentationTheory.Symmetric.Specht.Ideal.Idempotent
+import TauCeti.RepresentationTheory.Character.Basic
 
 /-!
 # The Specht character from the coefficients of a Young symmetrizer
@@ -199,8 +200,8 @@ theorem factorial_mul_finrank_range_asAlgebraHom_youngSymmetrizerOver
   -- the same trace is the pairing of the coefficients of `c_t` with the character of `M`
   have hsum : LinearMap.trace k M (ρ.asAlgebraHom (YoungTableau.youngSymmetrizerOver k t)) =
       ∑ σ, (YoungTableau.youngSymmetrizer (R := ℚ) t).coeff σ • ρ.character σ := by
-    simp_rw [asAlgebraHom_eq_sum, map_sum, map_smul, YoungTableau.youngSymmetrizerOver_coeff,
-      algebraMap_smul, character]
+    simpa only [map_one, one_mul, YoungTableau.youngSymmetrizerOver_coeff, algebraMap_smul] using
+      ρ.trace_mul_asAlgebraHom_eq_sum (YoungTableau.youngSymmetrizerOver k t) 1
   rw [YoungTableau.sum_char_spechtSubrepresentation_smul t ρ.character fun g σ => ρ.char_conj g σ,
     ← hsum, htrace, Algebra.smul_def, ← mul_assoc, ← map_mul, mul_div_cancel₀ _ hf, map_natCast]
 

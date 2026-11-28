@@ -187,10 +187,8 @@ comparing the two is how `TauCeti.Representation.characterSum_mul_characterSum` 
 theorem trace_mul_asAlgebraHom_characterSum (x : G) :
     LinearMap.trace k W (σ x⁻¹ * σ.asAlgebraHom (characterSum ρ)) =
       ∑ g : G, ρ.character g⁻¹ * σ.character (x⁻¹ * g) := by
-  rw [asAlgebraHom_characterSum, Finset.mul_sum, map_sum]
-  refine Finset.sum_congr rfl fun g _ => ?_
-  rw [mul_smul_comm, ← _root_.map_mul σ, map_smul, smul_eq_mul]
-  rfl
+  simpa only [characterSum_coeff, smul_eq_mul] using
+    σ.trace_mul_asAlgebraHom_eq_sum (characterSum ρ) x⁻¹
 
 end Defs
 

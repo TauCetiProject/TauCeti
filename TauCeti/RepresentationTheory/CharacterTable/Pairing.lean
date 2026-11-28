@@ -167,7 +167,7 @@ end Semifield
 variable [Field k]
 
 /-- If the group order is invertible in the coefficient field and the sum of a class function and
-its left translate is constant, that constant is twice the coefficient of the trivial character.
+its left translate is constant, that constant is twice the pairing with the trivial character.
 The identity also applies in characteristic two. -/
 theorem two_mul_characterPairing_trivial_of_add_apply_mul_left_eq_const (f : ClassFunction k G)
     {c : G} {d : k} (hf : ∀ g, f.val g + f.val (c * g) = d)
