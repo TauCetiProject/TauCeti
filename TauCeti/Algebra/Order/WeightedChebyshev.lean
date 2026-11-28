@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Chebyshev
-public import Mathlib.Algebra.Order.Monovary
+public import TauCeti.Algebra.Order.Monovary
 public import TauCeti.Algebra.BigOperators.Finset.WeightedVariance
 public import TauCeti.Algebra.Order.Ring.Basic
 public import TauCeti.Logic.Function.Basic
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
 
 /-!
 # Weighted Chebyshev inequalities
@@ -34,22 +34,6 @@ public section
 open Finset
 variable {ι R : Type*} [CommSemiring R] [LinearOrder R] [IsStrictOrderedRing R]
   [ExistsAddOfLE R]
-
-private theorem monovary_pair_le {s : Finset ι} {a b : ι → R}
-    (hab : MonovaryOn a b s) {i j : ι} (hi : i ∈ s) (hj : j ∈ s) :
-    a i * b j + a j * b i ≤ a i * b i + a j * b j := by
-  rcases lt_trichotomy (a i) (a j) with h | h | h
-  · exact mul_add_mul_le_mul_add_mul h.le (hab.symm hi hj h)
-  · simp [h, add_comm]
-  · simpa only [add_comm] using mul_add_mul_le_mul_add_mul h.le (hab.symm hj hi h)
-
-private theorem antivary_pair_le {s : Finset ι} {a b : ι → R}
-    (hab : AntivaryOn a b s) {i j : ι} (hi : i ∈ s) (hj : j ∈ s) :
-    a i * b i + a j * b j ≤ a i * b j + a j * b i := by
-  rcases lt_trichotomy (a i) (a j) with h | h | h
-  · exact mul_add_mul_le_mul_add_mul h.le (hab.symm hi hj h)
-  · simp [h, add_comm]
-  · simpa only [add_comm] using mul_add_mul_le_mul_add_mul h.le (hab.symm hj hi h)
 
 private theorem weighted_pair_eq_iff {s : Finset ι} {w a b : ι → R}
     (hw : ∀ i ∈ s, 0 < w i)
@@ -98,7 +82,8 @@ theorem MonovaryOn.sum_mul_sum_le_sum_mul_sum {s : Finset ι} {w a b : ι → R}
     (∑ i ∈ s, w i * a i) * (∑ i ∈ s, w i * b i) ≤
       (∑ i ∈ s, w i) * (∑ i ∈ s, w i * a i * b i) := by
   have h := sum_le_sum (s := s) fun i hi ↦ sum_le_sum (s := s) fun j hj ↦
-    mul_le_mul_of_nonneg_left (monovary_pair_le hab hi hj) (mul_nonneg (hw i hi) (hw j hj))
+    mul_le_mul_of_nonneg_left (TauCeti.MonovaryOn.mul_add_mul_le_mul_add_mul hab hi hj)
+      (mul_nonneg (hw i hi) (hw j hj))
   rw [sum_sum_weight_mul_cross, sum_sum_weight_mul_diagonal] at h
   exact (mul_le_mul_iff_right₀ (zero_lt_two : (0 : R) < 2)).mp h
 
@@ -108,7 +93,8 @@ theorem MonovaryOn.sum_mul_sum_eq_sum_mul_sum_iff {s : Finset ι} {w a b : ι �
     (∑ i ∈ s, w i * a i) * (∑ i ∈ s, w i * b i) =
       (∑ i ∈ s, w i) * (∑ i ∈ s, w i * a i * b i) ↔
       (∀ i ∈ s, ∀ j ∈ s, a i = a j) ∨ (∀ i ∈ s, ∀ j ∈ s, b i = b j) :=
-  weighted_pair_eq_iff hw (Or.inl fun _ hi _ hj ↦ monovary_pair_le hab hi hj)
+  weighted_pair_eq_iff hw
+    (Or.inl fun _ hi _ hj ↦ TauCeti.MonovaryOn.mul_add_mul_le_mul_add_mul hab hi hj)
 
 /-- Reversed weighted Chebyshev inequality on a finite set, without normalized weights. -/
 theorem AntivaryOn.sum_mul_sum_le_sum_mul_sum {s : Finset ι} {w a b : ι → R}
@@ -116,7 +102,8 @@ theorem AntivaryOn.sum_mul_sum_le_sum_mul_sum {s : Finset ι} {w a b : ι → R}
     (∑ i ∈ s, w i) * (∑ i ∈ s, w i * a i * b i) ≤
       (∑ i ∈ s, w i * a i) * (∑ i ∈ s, w i * b i) := by
   have h := sum_le_sum (s := s) fun i hi ↦ sum_le_sum (s := s) fun j hj ↦
-    mul_le_mul_of_nonneg_left (antivary_pair_le hab hi hj) (mul_nonneg (hw i hi) (hw j hj))
+    mul_le_mul_of_nonneg_left (TauCeti.AntivaryOn.mul_add_mul_le_mul_add_mul hab hi hj)
+      (mul_nonneg (hw i hi) (hw j hj))
   rw [sum_sum_weight_mul_diagonal, sum_sum_weight_mul_cross] at h
   exact (mul_le_mul_iff_right₀ (zero_lt_two : (0 : R) < 2)).mp h
 
@@ -126,7 +113,8 @@ theorem AntivaryOn.sum_mul_sum_eq_sum_mul_sum_iff {s : Finset ι} {w a b : ι �
     (∑ i ∈ s, w i) * (∑ i ∈ s, w i * a i * b i) =
       (∑ i ∈ s, w i * a i) * (∑ i ∈ s, w i * b i) ↔
       (∀ i ∈ s, ∀ j ∈ s, a i = a j) ∨ (∀ i ∈ s, ∀ j ∈ s, b i = b j) :=
-  eq_comm.trans (weighted_pair_eq_iff hw (Or.inr fun _ hi _ hj ↦ antivary_pair_le hab hi hj))
+  eq_comm.trans (weighted_pair_eq_iff hw
+    (Or.inr fun _ hi _ hj ↦ TauCeti.AntivaryOn.mul_add_mul_le_mul_add_mul hab hi hj))
 
 variable [Fintype ι]
 
