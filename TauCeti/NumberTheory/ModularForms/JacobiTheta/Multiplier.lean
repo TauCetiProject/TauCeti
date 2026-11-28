@@ -97,7 +97,9 @@ theorem thetaEpsilon_eq_zero_of_even {d : ℤ} (hd : Even d) :
     thetaEpsilon d = 0 := by
   obtain ⟨k, rfl⟩ := hd
   rw [thetaEpsilon_def]
-  simp [show (k + k) % 4 ≠ 1 by omega, show (k + k) % 4 ≠ 3 by omega]
+  have h1 : (k + k) % 4 ≠ 1 := by omega
+  have h3 : (k + k) % 4 ≠ 3 := by omega
+  simp [h1, h3]
 
 /-- `ε_0 = 0`. -/
 @[simp]
@@ -149,10 +151,18 @@ theorem thetaEpsilon_sq (d : ℤ) :
   rw [thetaEpsilon_def, ZMod.χ₄_int_eq_if_mod_four]
   have hd : d % 4 = 0 ∨ d % 4 = 1 ∨ d % 4 = 2 ∨ d % 4 = 3 := by omega
   rcases hd with h | h | h | h
-  · simp [show d % 2 = 0 by omega, show d % 4 ≠ 1 by omega, show d % 4 ≠ 3 by omega]
-  · simp [show d % 2 ≠ 0 by omega, h]
-  · simp [show d % 2 = 0 by omega, show d % 4 ≠ 1 by omega, show d % 4 ≠ 3 by omega]
-  · simp [show d % 2 ≠ 0 by omega, h]
+  · have h2 : d % 2 = 0 := by omega
+    have h1 : d % 4 ≠ 1 := by omega
+    have h3 : d % 4 ≠ 3 := by omega
+    simp [h2, h1, h3]
+  · have h2 : d % 2 ≠ 0 := by omega
+    simp [h2, h]
+  · have h2 : d % 2 = 0 := by omega
+    have h1 : d % 4 ≠ 1 := by omega
+    have h3 : d % 4 ≠ 3 := by omega
+    simp [h2, h1, h3]
+  · have h2 : d % 2 ≠ 0 := by omega
+    simp [h2, h]
 
 /-- For odd `d`, `‖ε_d‖ = 1`. -/
 @[simp]
@@ -292,7 +302,8 @@ theorem sum_thetaEtaExp : ∑ δ ∈ (4 : ℕ).divisors, thetaEtaExp δ = 1 := b
 /-- Expanding a `thetaEtaExp`-weighted product over the divisors of `4`. -/
 theorem prod_zpow_thetaEtaExp {G : Type*} [DivisionCommMonoid G] (f : ℕ → G) :
     ∏ δ ∈ (4 : ℕ).divisors, f δ ^ thetaEtaExp δ = f 2 ^ 5 / (f 1 ^ 2 * f 4 ^ 2) := by
-  rw [show (4 : ℕ) = 2 ^ 2 by norm_num, Nat.prod_divisors_prime_pow Nat.prime_two,
+  have h4 : (4 : ℕ) = 2 ^ 2 := by norm_num
+  rw [h4, Nat.prod_divisors_prime_pow Nat.prime_two,
     Finset.prod_range_succ, Finset.prod_range_succ, Finset.prod_range_one]
   simp only [pow_zero, pow_one, Nat.reducePow, thetaEtaExp_one, thetaEtaExp_two, thetaEtaExp_four,
     zpow_neg, zpow_ofNat, div_eq_mul_inv, mul_inv]
@@ -301,7 +312,8 @@ theorem prod_zpow_thetaEtaExp {G : Type*} [DivisionCommMonoid G] (f : ℕ → G)
 /-- Expanding a `thetaEtaExp`-weighted sum over the divisors of `4`. -/
 theorem sum_thetaEtaExp_mul (f : ℕ → ℤ) :
     ∑ δ ∈ (4 : ℕ).divisors, thetaEtaExp δ * f δ = 5 * f 2 - 2 * f 1 - 2 * f 4 := by
-  rw [show (4 : ℕ) = 2 ^ 2 by norm_num, Nat.sum_divisors_prime_pow Nat.prime_two,
+  have h4 : (4 : ℕ) = 2 ^ 2 := by norm_num
+  rw [h4, Nat.sum_divisors_prime_pow Nat.prime_two,
     Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_range_one]
   simp only [pow_zero, pow_one, Nat.reducePow, thetaEtaExp_one, thetaEtaExp_two, thetaEtaExp_four]
   ring
@@ -321,24 +333,31 @@ private theorem kroneckerSym_two_mul_e24 {d : ℤ} (hd : Odd d) :
     convert Complex.exp_pi_div_two_mul_I using 2
     push_cast
     ring
+  have h2 : d % 2 ≠ 0 := by
+    obtain ⟨k, rfl⟩ := hd
+    omega
   have hmod : d % 8 = 1 ∨ d % 8 = 3 ∨ d % 8 = 5 ∨ d % 8 = 7 := by
     obtain ⟨k, rfl⟩ := hd
     omega
   rcases hmod with h | h | h | h
   · have he : 3 * d - 3 ≡ 0 [ZMOD 24] := by rw [Int.ModEq]; omega
+    have h4 : d % 4 = 1 := by omega
     rw [ModularForm.e24_congr he, ModularForm.e24_zero]
-    simp [show d % 2 ≠ 0 by omega, h, show d % 4 = 1 by omega]
+    simp [h2, h, h4]
   · have he : 3 * d - 3 ≡ 6 [ZMOD 24] := by rw [Int.ModEq]; omega
+    have h8 : d % 8 ≠ 1 ∧ d % 8 ≠ 7 := by omega
+    have h4 : d % 4 ≠ 1 := by omega
     rw [ModularForm.e24_congr he, he24_6]
-    simp [show d % 2 ≠ 0 by omega, show d % 8 ≠ 1 ∧ d % 8 ≠ 7 by omega,
-      show d % 4 ≠ 1 by omega]
+    simp [h2, h8, h4]
   · have he : 3 * d - 3 ≡ 12 * (1 : ℕ) [ZMOD 24] := by rw [Int.ModEq]; omega
+    have h8 : d % 8 ≠ 1 ∧ d % 8 ≠ 7 := by omega
+    have h4 : d % 4 = 1 := by omega
     rw [ModularForm.e24_congr he, ModularForm.e24_twelve_mul]
-    simp [show d % 2 ≠ 0 by omega, show d % 8 ≠ 1 ∧ d % 8 ≠ 7 by omega,
-      show d % 4 = 1 by omega]
+    simp [h2, h8, h4]
   · have he : 3 * d - 3 ≡ 12 * (1 : ℕ) + 6 [ZMOD 24] := by rw [Int.ModEq]; omega
+    have h4 : d % 4 ≠ 1 := by omega
     rw [ModularForm.e24_congr he, ModularForm.e24_add, ModularForm.e24_twelve_mul, he24_6]
-    simp [show d % 2 ≠ 0 by omega, h, show d % 4 ≠ 1 by omega]
+    simp [h2, h, h4]
 
 private theorem prod_kroneckerSym_thetaEtaExp (t d : ℤ) :
     ∏ δ ∈ (4 : ℕ).divisors, (kroneckerSym ((4 / δ : ℕ) * t) d : ℂ) ^ thetaEtaExp δ =
@@ -367,12 +386,14 @@ private theorem prod_kroneckerSym_thetaEtaExp (t d : ℤ) :
     · have h2t : kroneckerSym (2 * t) d = kroneckerSym 2 d * kroneckerSym t d :=
         kroneckerSym_mul_left_of_ne_neg_one hd1 2 t
       have h4t : kroneckerSym (4 * t) d = kroneckerSym t d := by
-        rw [show 4 * t = t * 2 ^ 2 by ring, kroneckerSym_mul_sq two_ne_zero hcop2d]
+        have hsq : 4 * t = t * 2 ^ 2 := by ring
+        rw [hsq, kroneckerSym_mul_sq two_ne_zero hcop2d]
       rw [h2t, h4t, Int.cast_mul]
   · have hnot2 : ¬ IsCoprime (2 * t) d := fun h ↦
       hcop (by
         have h2d : IsCoprime 2 d := h.of_isCoprime_of_dvd_left (dvd_mul_right 2 t)
-        simpa [show 2 * (2 * t) = 4 * t by ring] using h2d.mul_left h)
+        have h4 : 2 * (2 * t) = 4 * t := by ring
+        simpa [h4] using h2d.mul_left h)
     have h4z : kroneckerSym (4 * t) d = 0 :=
       kroneckerSym_eq_zero_iff.mpr (mt Int.isCoprime_iff_gcd_eq_one.mpr hcop)
     have h2z : kroneckerSym (2 * t) d = 0 :=
@@ -431,7 +452,8 @@ theorem thetaAutomorphy_eq_of_mem_Gamma0 {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 
     simp only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, Int.cast_neg] at hmain
     have hsqrt : Complex.sqrt (-(γ 1 0 : ℂ) * z + -(γ 1 1 : ℂ)) =
         I * Complex.sqrt ((γ 1 0 : ℂ) * z + γ 1 1) := by
-      rw [show -(γ 1 0 : ℂ) * z + -(γ 1 1 : ℂ) = -((γ 1 0 : ℂ) * z + γ 1 1) by ring]
+      have hneg : -(γ 1 0 : ℂ) * z + -(γ 1 1 : ℂ) = -((γ 1 0 : ℂ) * z + γ 1 1) := by ring
+      rw [hneg]
       exact Complex.sqrt_neg_of_im_neg <| by
         simpa using mul_neg_of_neg_of_pos (Int.cast_lt_zero.mpr hc) z.im_pos
     have hsym_sq : (kroneckerSym (-1) (γ 1 1) : ℂ) ^ 2 = 1 :=

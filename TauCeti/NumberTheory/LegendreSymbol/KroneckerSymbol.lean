@@ -341,8 +341,10 @@ theorem kroneckerSym_neg_neg_of_neg {a : ℤ} (ha : a < 0) (b : ℤ) :
   rcases eq_or_ne b 0 with rfl | hb
   · rcases eq_or_ne a (-1) with rfl | ha1
     · simp [kroneckerSym_zero_right]
-    · simp [kroneckerSym_zero_right, ha1, show a ≠ 1 by omega, show -a ≠ 1 by omega,
-        show -a ≠ -1 by omega]
+    · have ha_ne_one : a ≠ 1 := by omega
+      have hna_ne_one : -a ≠ 1 := by omega
+      have hna_ne_neg_one : -a ≠ -1 := by omega
+      simp [kroneckerSym_zero_right, ha1, ha_ne_one, hna_ne_one, hna_ne_neg_one]
   · rw [neg_eq_neg_one_mul a, kroneckerSym_mul_left (by norm_num) ha.ne,
       neg_eq_neg_one_mul b, kroneckerSym_mul_right _ (by norm_num) hb,
       kroneckerSym_mul_right _ (by norm_num) hb, kroneckerSym_neg_one_right]
@@ -431,7 +433,8 @@ theorem kroneckerSym_two_left (b : ℤ) : kroneckerSym 2 b = χ₈ b := by
       norm_num at hd
     rw [h0, (χ₈_intCast_eq_zero_iff (k + k)).mpr h2]
   · rw [kroneckerSym_of_odd 2 hb, jacobiSym.at_two (Int.natAbs_odd.mpr hb)]
-    simp only [show ¬((2 : ℤ) < 0 ∧ b < 0) by omega, ↓reduceIte, one_mul]
+    have hneg : ¬((2 : ℤ) < 0 ∧ b < 0) := by omega
+    simp only [hneg, ↓reduceIte, one_mul]
     rcases Int.natAbs_eq b with h | h
     · rw [h, Int.natAbs_natCast, Int.cast_natCast]
     · rw [h, Int.natAbs_neg, Int.natAbs_natCast, Int.cast_neg, Int.cast_natCast, χ₈_neg]

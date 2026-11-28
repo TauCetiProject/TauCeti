@@ -78,9 +78,9 @@ theorem jacobiTheta_two_mul_eq_eta_div {τ : ℂ} (hτ : 0 < τ.im) :
   have h4τ : 0 < (4 * τ).im := by simpa using mul_pos (by norm_num : (0 : ℝ) < 4) hτ
   have hs : ‖s‖ < 1 := by
     simpa [s, mul_assoc, mul_left_comm] using UpperHalfPlane.norm_exp_pi_I_lt_one h2τ
+  have hpi : π * I * (2 * τ) = 2 * π * I * τ := by ring
   have hs2 : cexp (2 * π * I * (2 * τ)) = s ^ 2 := by
-    simpa [s, show π * I * (2 * τ) = 2 * π * I * τ by ring] using
-      UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq (2 * τ)
+    simpa [s, hpi] using UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq (2 * τ)
   have hsplit : ∏' n : ℕ, (1 + s ^ (n + 1)) =
       (∏' n : ℕ, (1 + s ^ (2 * n + 1))) * ∏' n : ℕ, (1 + (s ^ 2) ^ (n + 1)) := by
     have hm1 := multipliable_one_add_pow_odd hs
@@ -89,17 +89,18 @@ theorem jacobiTheta_two_mul_eq_eta_div {τ : ℂ} (hτ : 0 < τ.im) :
     simp [← pow_mul, mul_add]
   have hθ : jacobiTheta (2 * τ) =
       (∏' n : ℕ, (1 + s ^ (2 * n + 1))) ^ 2 * ∏' n : ℕ, (1 - (s ^ 2) ^ (n + 1)) := by
-    rw [jacobiTheta_eq_tprod h2τ, show π * I * (2 * τ) = 2 * π * I * τ by ring, hs2]
+    rw [jacobiTheta_eq_tprod h2τ, hpi, hs2]
   have hη2 : η (2 * τ) = cexp (π * I * τ / 12) * η τ *
       ((∏' n : ℕ, (1 + s ^ (2 * n + 1))) * ∏' n : ℕ, (1 + (s ^ 2) ^ (n + 1))) := by
     rw [ModularForm.eta_two_mul hτ, hsplit]
   have hη4 : η (4 * τ) =
       cexp (π * I * τ / 6) * η (2 * τ) * ∏' n : ℕ, (1 + (s ^ 2) ^ (n + 1)) := by
-    rw [show (4 : ℂ) * τ = 2 * (2 * τ) by ring, ModularForm.eta_two_mul h2τ, hs2,
-      show π * I * (2 * τ) / 12 = π * I * τ / 6 by ring]
+    have h4 : (4 : ℂ) * τ = 2 * (2 * τ) := by ring
+    have hpi6 : π * I * (2 * τ) / 12 = π * I * τ / 6 := by ring
+    rw [h4, ModularForm.eta_two_mul h2τ, hs2, hpi6]
   have hη2_prod : η (2 * τ) = cexp (π * I * τ / 6) * ∏' n : ℕ, (1 - (s ^ 2) ^ (n + 1)) := by
-    rw [ModularForm.eta_eq_exp_mul_tprod, hs2,
-      show 2 * π * I * (2 * τ) / 24 = π * I * τ / 6 by ring]
+    have hpi24 : 2 * π * I * (2 * τ) / 24 = π * I * τ / 6 := by ring
+    rw [ModularForm.eta_eq_exp_mul_tprod, hs2, hpi24]
   have hexp : cexp (π * I * τ / 12) ^ 2 = cexp (π * I * τ / 6) := by
     rw [← Complex.exp_natCast_mul]; congr 1; push_cast; ring
   refine eq_div_of_mul_eq (mul_ne_zero (pow_ne_zero 2 (_root_.ModularForm.eta_ne_zero hτ))
