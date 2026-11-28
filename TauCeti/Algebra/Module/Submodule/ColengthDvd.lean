@@ -49,7 +49,7 @@ An endomorphism `y` of `V` is *onto `M` modulo `p ^ n` up to colength `c`* (`p �
   coordinate module gives a square matrix whose rows lie in the submodule and whose determinant
   divides the bound.
 * `Submodule.ColengthDvd.comap`, `Submodule.ColengthDvd.map`: pull-back and push-forward along a
-  linear map.
+  linear map; `Submodule.ColengthDvd.comap_pow` bounds the cost of iterating a pullback.
 * `Submodule.ColengthDvd.map_sup_smul`: if `f(M) ⊆ M`, `M ⊸_z (f(M) + a • M)` and
   `M ⊸_{z'} (N + a • M)`, then `M ⊸_{z * z'} (f(N) + a • M)`; `Submodule.ColengthDvd.map_sup` is
   the same with any `Q` satisfying `f(Q) ⊆ Q` in place of `a • M`.
@@ -175,6 +175,19 @@ theorem ColengthDvd.comap (h : M.ColengthDvd N z) {M' N' : Submodule O U} (f : U
   obtain ⟨m, hdet, hm⟩ := h n (f ∘ Φ) fun k => hM (mem_map_of_mem (hΦ k))
   refine ⟨m, hdet, fun i => hN ⟨sum_mem fun k _ => M'.smul_mem _ (hΦ k), ?_⟩⟩
   simpa [mem_comap, map_sum, map_smul] using hm i
+
+/-- If `N` has colength dividing `z` in `M` and `f` sends `N` into `M`, then the preimage of `N`
+under `f ^ n` has colength dividing `z ^ (n + 1)` in `M`. Each pullback costs at most one
+additional factor of `z`. -/
+theorem ColengthDvd.comap_pow (h : M.ColengthDvd N z) {f : Module.End O V}
+    (hf : N.map f ≤ M) (n : ℕ) :
+    M.ColengthDvd (N.comap (f ^ n : Module.End O V)) (z ^ (n + 1)) := by
+  induction n with
+  | zero => simpa [Module.End.one_eq_id] using h
+  | succ n ih =>
+    have hstep := ih.comap f hf (M' := N) inf_le_right
+    simpa only [pow_succ f, Module.End.mul_eq_comp, comap_comp, pow_succ' z (n + 1)] using
+      h.trans hstep
 
 /-- Intersecting two target submodules multiplies their colength bounds over the same source. -/
 theorem ColengthDvd.inf (hN : M.ColengthDvd N z) (hP : M.ColengthDvd P a) :
