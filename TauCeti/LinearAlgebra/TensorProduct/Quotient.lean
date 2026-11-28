@@ -90,6 +90,8 @@ relations, for instance the rationalisation of a module over an integral group r
 * `TensorProduct.AlgebraTensorModule.ker_lTensor_mkQ_smul_top` and
   `TensorProduct.AlgebraTensorModule.ker_rTensor_mkQ_smul_top`: tensoring the quotient map by a
   scalar on either factor has kernel the multiples of that scalar.
+* `TensorProduct.AlgebraTensorModule.tensorQuotientEquiv_comp_lTensor_mapQ`: Mathlib's
+  `M ⊗[R] (N ⧸ n) ≃ (M ⊗[R] N) ⧸ (M ⊗ n)` is natural in the pair `(N, n)`.
 * `TensorProduct.AlgebraTensorModule.range_lTensor_subtype_smul_top_le`: the image of
   `N ⊗[R] I M` in `N ⊗[R] M` lies in `J (N ⊗[R] M)` when `I S ≤ J`.
 * `Submodule.baseChange_eq_top_iff_subsingleton`: the extension of scalars of `p ≤ M` to `A` is
@@ -440,6 +442,57 @@ theorem range_lTensor_subtype_smul_top_le {I : Ideal R} {J : Ideal S}
       exact Submodule.smul_mem_smul (hIJ (Ideal.mem_map_of_mem _ ha)) trivial
     · rw [tmul_add]
       exact add_mem hx hz
+
+end TensorProduct.AlgebraTensorModule
+
+namespace TensorProduct.AlgebraTensorModule
+
+/-! ### Naturality of `tensorQuotientEquiv` -/
+
+section Semiring
+
+variable {R : Type*} (A B : Type*) [CommSemiring R] [Semiring A] [Algebra R A] [Semiring B]
+  [Algebra R B] (M : Type*) [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M]
+  {N N' : Type*} [AddCommMonoid N] [Module R N] [Module B N] [IsScalarTower R B N]
+  [AddCommMonoid N'] [Module R N'] [Module B N'] [IsScalarTower R B N']
+
+/-- A map `f : N → N'` sending `n` into `n'` sends the image of `M ⊗[R] n` in `M ⊗[R] N` into the
+image of `M ⊗[R] n'` in `M ⊗[R] N'`. These images are the submodules by which
+`tensorQuotientEquiv` presents `M ⊗[R] (N ⧸ n)` and `M ⊗[R] (N' ⧸ n')` as quotients. -/
+theorem range_lTensor_subtype_le_comap {n : Submodule B N} {n' : Submodule B N'}
+    {f : N →ₗ[B] N'} (h : n ≤ n'.comap f) :
+    LinearMap.range (lTensor A M (n.subtype.restrictScalars R)) ≤
+      (LinearMap.range (lTensor A M (n'.subtype.restrictScalars R))).comap
+        (lTensor A M (f.restrictScalars R)) := by
+  have hf : f.restrictScalars R ∘ₗ n.subtype.restrictScalars R =
+      n'.subtype.restrictScalars R ∘ₗ (f.restrict h).restrictScalars R := by
+    ext
+    simp
+  rintro _ ⟨x, rfl⟩
+  exact ⟨lTensor A M ((f.restrict h).restrictScalars R) x, by
+    simp only [← LinearMap.comp_apply, ← lTensor_comp, hf]⟩
+
+end Semiring
+
+variable {R : Type*} (A B : Type*) [CommRing R] [CommRing A] [Algebra R A] [CommRing B]
+  [Algebra R B] (M : Type*) [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
+  {N N' : Type*} [AddCommGroup N] [Module R N] [Module B N] [IsScalarTower R B N]
+  [AddCommGroup N'] [Module R N'] [Module B N'] [IsScalarTower R B N']
+
+/-- **Naturality of `tensorQuotientEquiv`.** For a map `f : N → N'` sending `n` into `n'`, the
+identification `M ⊗[R] (N ⧸ n) ≃ (M ⊗[R] N) ⧸ (M ⊗ n)` intertwines `M ⊗ (N ⧸ n) → M ⊗ (N' ⧸ n')`,
+the tensor product with the map induced by `f`, with the map induced by `M ⊗ f` on the quotients
+of `M ⊗[R] N` and `M ⊗[R] N'`. No flatness is needed. -/
+theorem tensorQuotientEquiv_comp_lTensor_mapQ {n : Submodule B N} {n' : Submodule B N'}
+    (f : N →ₗ[B] N') (h : n ≤ n'.comap f) :
+    (tensorQuotientEquiv A B M n').toLinearMap ∘ₗ
+        lTensor A M ((n.mapQ n' f h).restrictScalars R) =
+      (LinearMap.range (lTensor A M (n.subtype.restrictScalars R))).mapQ _
+          (lTensor A M (f.restrictScalars R)) (range_lTensor_subtype_le_comap A B M h) ∘ₗ
+        (tensorQuotientEquiv A B M n).toLinearMap := by
+  ext m y
+  obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ y
+  simp
 
 end TensorProduct.AlgebraTensorModule
 
