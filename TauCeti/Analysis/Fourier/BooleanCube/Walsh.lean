@@ -240,6 +240,27 @@ lemma walshCoeff_def (f : (ι → ZMod 2) → ℝ) (S : Finset ι) :
     walshCoeff (f - g) S = walshCoeff f S - walshCoeff g S := by
   simp [sub_eq_add_neg]
 
+/-- Translating a function on the cube multiplies each Walsh coefficient by its character. -/
+lemma walshCoeff_add_right (f : (ι → ZMod 2) → ℝ) (a : ι → ZMod 2) (S : Finset ι) :
+    walshCoeff (fun x ↦ f (x + a)) S = walsh S a * walshCoeff f S := by
+  rw [walshCoeff_def, walshCoeff_def, mul_expect]
+  refine Fintype.expect_equiv (Equiv.addRight a) _ _ fun x ↦ ?_
+  simp only [Equiv.coe_addRight, walsh_add]
+  linear_combination -(f (x + a) * walsh S x) * walsh_mul_self S a
+
+/-- The Walsh coefficient at `S` of the directional Laplacian
+`x ↦ (f x - f (x + Pi.single i 1)) / 2` is `walshCoeff f S` if `i ∈ S` and `0` otherwise. -/
+@[simp] theorem walshCoeff_sub_add_single_div_two (i : ι)
+    (f : (ι → ZMod 2) → ℝ) (S : Finset ι) :
+    walshCoeff (fun x ↦ (f x - f (x + Pi.single i 1)) / 2) S =
+      if i ∈ S then walshCoeff f S else 0 := by
+  have hL : (fun x ↦ (f x - f (x + Pi.single i 1)) / 2) =
+      (1 / 2 : ℝ) • (f - fun x ↦ f (x + Pi.single i 1)) := by
+    ext x
+    simp [div_eq_inv_mul]
+  rw [hL, walshCoeff_smul, walshCoeff_sub, walshCoeff_add_right, walsh_single_one]
+  split_ifs <;> ring
+
 lemma walshCoeff_sum {κ : Type*} (s : Finset κ) (f : κ → (ι → ZMod 2) → ℝ) (S : Finset ι) :
     walshCoeff (∑ k ∈ s, f k) S = ∑ k ∈ s, walshCoeff (f k) S := by
   simp_rw [walshCoeff_def, Finset.sum_apply, sum_mul]
