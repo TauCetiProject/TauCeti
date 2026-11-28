@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Length
 -- only inside proofs.
 import Mathlib.LinearAlgebra.Dimension.Free
 import Mathlib.RingTheory.Finiteness.Basic
+import TauCeti.CategoryTheory.Preadditive.Endomorphism
 import TauCeti.RingTheory.Length.Free
 import TauCeti.RingTheory.Semisimple.Schur
 
@@ -228,6 +229,52 @@ theorem irreducibleMorphismValuation_eq_one_one_of_forall_sub_smul_mem {A : Type
     ((irreducibleMorphismValuation_snd_eq_one_iff k X Y).2 ⟨f, hf, fun u hu =>
       let ⟨c, hc⟩ := h u hu
       ⟨c • 𝟙 X, by rwa [Linear.smul_comp, Category.id_comp]⟩⟩)
+
+private def quotientJacobsonCongr {R S : Type*} [Ring R] [Ring S] (e : R ≃+* S) :
+    R ⧸ Ring.jacobson R ≃+* S ⧸ Ring.jacobson S :=
+  Ideal.quotientEquiv _ _ e (by
+    rw [Ideal.map_eq_submodule_map, Module.map_jacobson_of_bijective e.bijective])
+
+private theorem quotientJacobsonCongr_mk {R S : Type*} [Ring R] [Ring S]
+    (e : R ≃+* S) (r : R) :
+    quotientJacobsonCongr e (Ideal.Quotient.mk _ r) = Ideal.Quotient.mk _ (e r) :=
+  Ideal.quotientEquiv_mk _ _ e _ r
+
+omit [Limits.HasBinaryBiproducts C] in
+/-- Isomorphisms of the endpoints preserve both entries of the irreducible-morphism valuation. -/
+theorem irreducibleMorphismValuation_congr {X X' Y Y' : C} (e : X ≅ X') (e' : Y ≅ Y') :
+    irreducibleMorphismValuation k X Y = irreducibleMorphismValuation k X' Y' := by
+  let i := (irreducibleMorphismSpaceCongr k e e').toAddEquiv
+  refine Prod.ext (congrArg Cardinal.toNat ?_) (congrArg Cardinal.toNat ?_)
+  · refine rank_eq_of_equiv_equiv (quotientJacobsonCongr e'.endRingEquiv) i
+      (quotientJacobsonCongr e'.endRingEquiv).bijective ?_
+    intro r m
+    obtain ⟨g, rfl⟩ := Ideal.Quotient.mk_surjective r
+    obtain ⟨f, rfl⟩ := irreducibleMorphismMk_surjective m
+    change irreducibleMorphismSpaceCongr k e e' (_ • _) =
+      _ • irreducibleMorphismSpaceCongr k e e' _
+    simp only [quotientJacobsonCongr_mk,
+      irreducibleMorphismSpace_residue_smul_eq, irreducibleMorphismPostcomp_irreducibleMorphismMk,
+      irreducibleMorphismSpaceCongr_mk]
+    apply congrArg (irreducibleMorphismMk k X' Y')
+    apply Subtype.ext
+    simp [Category.assoc]
+  · let d := RingEquiv.op e.endRingEquiv
+    refine rank_eq_of_equiv_equiv (quotientJacobsonCongr d) i
+      (quotientJacobsonCongr d).bijective ?_
+    intro r m
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective r
+    obtain ⟨f, rfl⟩ := irreducibleMorphismMk_surjective m
+    change irreducibleMorphismSpaceCongr k e e' (_ • _) =
+      _ • irreducibleMorphismSpaceCongr k e e' _
+    simp only [quotientJacobsonCongr_mk,
+      irreducibleMorphismSpace_residueOp_smul_eq,
+      irreducibleMorphismPrecomp_irreducibleMorphismMk, irreducibleMorphismSpaceCongr_mk]
+    apply congrArg (irreducibleMorphismMk k X' Y')
+    apply Subtype.ext
+    simp only [coe_jacobsonRadicalPrecomp]
+    change _ = (e.endRingEquiv a.unop).asHom ≫ _
+    simp [Category.assoc]
 
 end Valuation
 
