@@ -286,7 +286,7 @@ theorem proj_vectorFieldExtensionDerivation (h : R⸨X⸩) (v : E) :
 @[simp]
 theorem vectorFieldExtensionDerivation_centralElement (h : R⸨X⸩) :
     vectorFieldExtensionDerivation Φ hΦ hΦs h (centralElement c) = 0 :=
-  (ofProd c).symm.injective (by simp)
+  ofTwoCocycle.derivation_centralElement c (vectorFieldDerivation R L h) _
 
 end Extension
 

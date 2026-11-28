@@ -49,7 +49,11 @@ product, and solvable when both factors are, because it is an extension of `L` b
 * `LieDerivation.lineHom`: a single derivation `D`, as the Lie homomorphism `t ↦ t • D` out of the
   one-dimensional abelian Lie algebra `R`. The semidirect sum `L ⋊⁅D.lineHom⁆ R` adjoins `D` to `L`
   as an element `inr 1` whose bracket with `inl x` is `inl (D x)`
-  (`LieDerivation.lie_inr_lineHom_one_inl`).
+  (`LieDerivation.lie_inr_lineHom_one_inl`), with general bracket `LieDerivation.lie_lineHom_eq_mk`.
+* `LieDerivation.liftLineHom`: lifting a Lie homomorphism `f : L →ₗ⁅R⁆ L'` intertwining derivations
+  `D` and `D'` to `L ⋊⁅D.lineHom⁆ R →ₗ⁅R⁆ L' ⋊⁅D'.lineHom⁆ R`.
+* `LieDerivation.lineHomLift` and `LieDerivation.lineHom_ext`: universal mapping-out property and
+  uniqueness rule for `L ⋊⁅D.lineHom⁆ R`.
 
 ## Main statements
 
@@ -357,10 +361,209 @@ def lineHom (D : LieDerivation R L L) : R →ₗ⁅R⁆ LieDerivation R L L wher
 theorem lineHom_apply (D : LieDerivation R L L) (t : R) : D.lineHom t = t • D :=
   LinearMap.toSpanSingleton_apply R _ D t
 
+/-- The bracket in the one-dimensional semidirect sum adjoining `D`:
+`⁅(x, a), (y, b)⁆ = (⁅x, y⁆ + a • D y - b • D x, 0)`. -/
+theorem lie_lineHom_eq_mk (D : LieDerivation R L L) (x y : L ⋊⁅D.lineHom⁆ R) :
+    ⁅x, y⁆ = ⟨⁅x.left, y.left⁆ + x.right • D y.left - y.right • D x.left, 0⟩ := by
+  simp [lie_eq_mk, Ring.lie_def, mul_comm]
+
 /-- In the semidirect sum adjoining `D`, the bracket of the adjoined generator with `x` is `D x`. -/
 theorem lie_inr_lineHom_one_inl (D : LieDerivation R L L) (x : L) :
     ⁅inr D.lineHom (1 : R), inl D.lineHom x⁆ = inl D.lineHom (D x) := by
-  simp only [inl_eq_mk, inr_eq_mk, lie_eq_mk]
-  ext <;> simp [Ring.lie_def]
+  rw [lie_lineHom_eq_mk]
+  simp
+
+/-- Lifting a Lie algebra homomorphism `f : L →ₗ⁅R⁆ L'` intertwining derivations `D` and `D'` to
+the one-dimensional semidirect sums `L ⋊⁅D.lineHom⁆ R →ₗ⁅R⁆ L' ⋊⁅D'.lineHom⁆ R`. -/
+def liftLineHom {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (f : L →ₗ⁅R⁆ L') (hf : ∀ x, f (D x) = D' (f x)) :
+    (L ⋊⁅D.lineHom⁆ R) →ₗ⁅R⁆ (L' ⋊⁅D'.lineHom⁆ R) where
+  toFun x := ⟨f x.left, x.right⟩
+  map_add' _ _ := by simp
+  map_smul' _ _ := by simp
+  map_lie' {x y} := by
+    simp only [lie_lineHom_eq_mk, map_sub, map_add, map_smul, LieHom.map_lie, hf]
+
+@[simp]
+theorem liftLineHom_left {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (f : L →ₗ⁅R⁆ L') (hf : ∀ x, f (D x) = D' (f x)) (x : L ⋊⁅D.lineHom⁆ R) :
+    (liftLineHom D D' f hf x).left = f x.left :=
+  (rfl)
+
+@[simp]
+theorem liftLineHom_right {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (f : L →ₗ⁅R⁆ L') (hf : ∀ x, f (D x) = D' (f x)) (x : L ⋊⁅D.lineHom⁆ R) :
+    (liftLineHom D D' f hf x).right = x.right :=
+  (rfl)
+
+@[simp]
+theorem liftLineHom_mk {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (f : L →ₗ⁅R⁆ L') (hf : ∀ x, f (D x) = D' (f x)) (x : L) (t : R) :
+    liftLineHom D D' f hf ⟨x, t⟩ = ⟨f x, t⟩ :=
+  (rfl)
+
+theorem liftLineHom_inl {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (f : L →ₗ⁅R⁆ L') (hf : ∀ x, f (D x) = D' (f x)) (x : L) :
+    liftLineHom D D' f hf (inl D.lineHom x) = inl D'.lineHom (f x) :=
+  (rfl)
+
+theorem liftLineHom_inr {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (f : L →ₗ⁅R⁆ L') (hf : ∀ x, f (D x) = D' (f x)) (t : R) :
+    liftLineHom D D' f hf (inr D.lineHom t) = inr D'.lineHom t := by
+  ext <;> simp
+
+/-- Lifting a Lie algebra isomorphism `e : L ≃ₗ⁅R⁆ L'` intertwining derivations `D` and `D'` to
+the one-dimensional semidirect sums `(L ⋊⁅D.lineHom⁆ R) ≃ₗ⁅R⁆ (L' ⋊⁅D'.lineHom⁆ R)`. -/
+def liftLineEquiv {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, e (D x) = D' (e x)) :
+    (L ⋊⁅D.lineHom⁆ R) ≃ₗ⁅R⁆ (L' ⋊⁅D'.lineHom⁆ R) where
+  __ := liftLineHom D D' e.toLieHom he
+  invFun := liftLineHom D' D e.symm.toLieHom fun y ↦ by
+    simpa using congrArg e.symm (he (e.symm y)).symm
+  left_inv x := by ext <;> simp [liftLineHom]
+  right_inv y := by ext <;> simp [liftLineHom]
+
+/-- The Lie homomorphism underlying `liftLineEquiv` is `liftLineHom` of `e.toLieHom`. -/
+@[simp]
+theorem toLieHom_liftLineEquiv {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, e (D x) = D' (e x)) :
+    (liftLineEquiv D D' e he).toLieHom = liftLineHom D D' e.toLieHom he :=
+  (rfl)
+
+/-- The left coordinate of `liftLineEquiv` applies `e`. -/
+@[simp]
+theorem liftLineEquiv_left {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, e (D x) = D' (e x)) (x : L ⋊⁅D.lineHom⁆ R) :
+    (liftLineEquiv D D' e he x).left = e x.left :=
+  (rfl)
+
+/-- The right coordinate of `liftLineEquiv` is the identity on `R`. -/
+@[simp]
+theorem liftLineEquiv_right {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, e (D x) = D' (e x)) (x : L ⋊⁅D.lineHom⁆ R) :
+    (liftLineEquiv D D' e he x).right = x.right :=
+  (rfl)
+
+/-- Evaluating `liftLineEquiv` on `⟨x, t⟩`. -/
+@[simp]
+theorem liftLineEquiv_mk {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, e (D x) = D' (e x)) (x : L) (t : R) :
+    liftLineEquiv D D' e he ⟨x, t⟩ = ⟨e x, t⟩ :=
+  (rfl)
+
+/-- The inverse of `liftLineEquiv` is `liftLineEquiv` of `e.symm`. -/
+theorem liftLineEquiv_symm {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, e (D x) = D' (e x)) :
+    (liftLineEquiv D D' e he).symm =
+      liftLineEquiv D' D e.symm (fun y ↦ by simpa using congrArg e.symm (he (e.symm y)).symm) :=
+  (rfl)
+
+/-- The left coordinate of `(liftLineEquiv D D' e he).symm` applies `e.symm`. -/
+@[simp]
+theorem liftLineEquiv_symm_left {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, e (D x) = D' (e x)) (x : L' ⋊⁅D'.lineHom⁆ R) :
+    ((liftLineEquiv D D' e he).symm x).left = e.symm x.left :=
+  (rfl)
+
+/-- The right coordinate of `(liftLineEquiv D D' e he).symm` is the identity on `R`. -/
+@[simp]
+theorem liftLineEquiv_symm_right {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, e (D x) = D' (e x)) (x : L' ⋊⁅D'.lineHom⁆ R) :
+    ((liftLineEquiv D D' e he).symm x).right = x.right :=
+  (rfl)
+
+/-- Evaluating `(liftLineEquiv D D' e he).symm` on `⟨x, t⟩`. -/
+@[simp]
+theorem liftLineEquiv_symm_mk {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (D' : LieDerivation R L' L')
+    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, e (D x) = D' (e x)) (x : L') (t : R) :
+    (liftLineEquiv D D' e he).symm ⟨x, t⟩ = ⟨e.symm x, t⟩ :=
+  (rfl)
+
+/-- Map out of `L ⋊⁅D.lineHom⁆ R` into a Lie algebra `L'` by specifying a Lie homomorphism
+`f : L →ₗ⁅R⁆ L'` and an image `z : L'` for the adjoined derivation generator `inr D.lineHom 1`,
+satisfying `⁅z, f x⁆ = f (D x)`. -/
+def lineHomLift {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (f : L →ₗ⁅R⁆ L') (z : L') (hz : ∀ x, ⁅z, f x⁆ = f (D x)) :
+    (L ⋊⁅D.lineHom⁆ R) →ₗ⁅R⁆ L' where
+  toFun v := f v.left + v.right • z
+  map_add' _ _ := by simp only [add_eq_mk, map_add, add_smul]; abel
+  map_smul' _ _ := by
+    simp only [smul_eq_mk, RingHom.id_apply, map_smul, smul_add, smul_smul, smul_eq_mul]
+  map_lie' {v w} := by
+    simp only [lie_lineHom_eq_mk, map_sub, map_add, map_smul, LieHom.map_lie]
+    rw [add_lie, lie_add, lie_add, smul_lie, smul_lie, lie_smul, lie_smul, lie_self,
+      hz, ← lie_skew (f v.left) z, hz]
+    simp only [smul_neg, smul_zero, zero_smul, add_zero, sub_eq_add_neg]
+    abel
+
+@[simp]
+theorem lineHomLift_mk {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (f : L →ₗ⁅R⁆ L') (z : L') (hz : ∀ x, ⁅z, f x⁆ = f (D x))
+    (x : L) (t : R) :
+    lineHomLift D f z hz ⟨x, t⟩ = f x + t • z :=
+  (rfl)
+
+theorem lineHomLift_inl {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (f : L →ₗ⁅R⁆ L') (z : L') (hz : ∀ x, ⁅z, f x⁆ = f (D x))
+    (x : L) :
+    lineHomLift D f z hz (inl D.lineHom x) = f x := by
+  simp
+
+theorem lineHomLift_inr {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (f : L →ₗ⁅R⁆ L') (z : L') (hz : ∀ x, ⁅z, f x⁆ = f (D x))
+    (t : R) :
+    lineHomLift D f z hz (inr D.lineHom t) = t • z := by
+  simp
+
+theorem lineHomLift_inr_one {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (D : LieDerivation R L L) (f : L →ₗ⁅R⁆ L') (z : L') (hz : ∀ x, ⁅z, f x⁆ = f (D x)) :
+    lineHomLift D f z hz (inr D.lineHom (1 : R)) = z := by
+  simp
+
+/-- Every element of `L ⋊⁅D.lineHom⁆ R` is the sum of an element of `L` and a multiple of the
+adjoined generator `inr D.lineHom 1`. -/
+theorem exists_eq_add_smul_inr_one (D : LieDerivation R L L) (y : L ⋊⁅D.lineHom⁆ R) :
+    ∃ (x : L) (t : R), y = inl D.lineHom x + t • inr D.lineHom (1 : R) :=
+  ⟨y.left, y.right, by ext <;> simp⟩
+
+/-- Two Lie homomorphisms out of `L ⋊⁅D.lineHom⁆ R` agree if they agree on `inl` and
+`inr 1`. -/
+theorem lineHom_ext {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    {D : LieDerivation R L L} {g₁ g₂ : (L ⋊⁅D.lineHom⁆ R) →ₗ⁅R⁆ L'}
+    (hinl : ∀ x, g₁ (inl D.lineHom x) = g₂ (inl D.lineHom x))
+    (hinr : g₁ (inr D.lineHom (1 : R)) = g₂ (inr D.lineHom (1 : R))) :
+    g₁ = g₂ := by
+  ext v
+  obtain ⟨x, t, rfl⟩ := exists_eq_add_smul_inr_one D v
+  rw [map_add, map_smul, map_add, map_smul, hinl x, hinr]
+
+/-- When `D` kills `z`, the adjoined generator commutes with `inl D.lineHom z`. -/
+theorem lie_inr_lineHom_one_inl_eq_zero (D : LieDerivation R L L) {z : L} (hz : D z = 0) :
+    ⁅inr D.lineHom (1 : R), inl D.lineHom z⁆ = 0 := by
+  rw [lie_inr_lineHom_one_inl, hz, map_zero]
+
+/-- A central element of `L` killed by `D` remains central in `L ⋊⁅D.lineHom⁆ R`. -/
+theorem inl_lineHom_mem_center (D : LieDerivation R L L) {z : L}
+    (hz_cent : z ∈ LieAlgebra.center R L) (hz : D z = 0) :
+    inl D.lineHom z ∈ LieAlgebra.center R (L ⋊⁅D.lineHom⁆ R) := by
+  refine (LieModule.mem_maxTrivSubmodule R _ _ _).2 fun y ↦ ?_
+  obtain ⟨x, t, rfl⟩ := exists_eq_add_smul_inr_one D y
+  rw [add_lie, smul_lie, lie_inr_lineHom_one_inl_eq_zero D hz, smul_zero, add_zero,
+    ← LieHom.map_lie, (LieModule.mem_maxTrivSubmodule R L L _).1 hz_cent x, map_zero]
 
 end LieDerivation

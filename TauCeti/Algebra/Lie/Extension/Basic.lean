@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Derivation.Basic
 public import Mathlib.Algebra.Lie.Extension
 public import Mathlib.Algebra.Lie.Prod
 public import Mathlib.RingTheory.Finiteness.Prod
+public import TauCeti.Algebra.Lie.SemiDirect.Basic
 
 /-!
 # Extensions built from 2-cocycles
@@ -34,10 +35,18 @@ and comparisons with extensions whose kernels are themselves abelian Lie algebra
   splitting of its preimage;
 * `LieAlgebra.ofTwoCocycle.derivation`: for trivial coefficients, the derivation
   `(x, m) ↦ (D x, 0)` induced by a derivation `D` of the quotient for which the cocycle is skew;
+* `LieAlgebra.ofTwoCocycle.derivationExtension`: the semidirect sum `ofTwoCocycle c ⋊ R d`
+  adjoining `derivation c D hD`, together with its inclusion `toDerivationExtension`, adjoined
+  element `derivationElement`, projection `derivationProj`, mapping-out rule
+  `derivationExtensionLift` / `derivationExtension_hom_ext`, and rescaling transport
+  `smulMapDerivationHom` / `smulMapDerivationEquiv`;
 * `LieAlgebra.ofTwoCocycle.centralElement`: for coefficients the trivial module `R`, the central
   element `K = (0, 1)`, which is nonzero over a nontrivial ring, and in terms of which every
   element is an element of `L` plus a multiple of `K`
-  (`LieAlgebra.ofTwoCocycle.ofProd_eq_add_smul_centralElement`);
+  (`LieAlgebra.ofTwoCocycle.ofProd_eq_add_smul_centralElement`), remaining central in
+  `derivationExtension`;
+* `LieAlgebra.Extension.ofSurjective`: bundling a surjective Lie homomorphism `f : L →ₗ⁅R⁆ M` as an
+  `Extension R f.ker M` with middle algebra `L`;
 * `LieAlgebra.Extension.ofTwoCocycleEquiv`: the comparison of an extension with abelian kernel
   and a linear section with the model of Mathlib's native `Extension.twoCocycleOf`.
 
@@ -262,6 +271,69 @@ lemma toLieHom_mapEquiv :
     (mapEquiv c φ e c' h).toLieHom = map c φ.toLieHom e.toLinearMap c' h :=
   (rfl)
 
+section Smul
+
+/-- Scaling a 2-cocycle by `r : R` induces the morphism `(x, m) ↦ (x, r • m)` of central
+extensions. -/
+def smulMap (c' : twoCocycle R L M) (r : R) (hc : c' = r • c) :
+    ofTwoCocycle c →ₗ⁅R⁆ ofTwoCocycle c' :=
+  map c LieHom.id (r • LinearMap.id) c' fun x y ↦ by subst hc; simp
+
+@[simp]
+lemma smulMap_ofProd (c' : twoCocycle R L M) (r : R) (hc : c' = r • c) (x : L) (m : M) :
+    smulMap c c' r hc (ofProd c (x, m)) = ofProd c' (x, r • m) :=
+  map_ofProd c LieHom.id (r • LinearMap.id) c' _ x m
+
+@[simp]
+lemma ofProd_symm_smulMap (c' : twoCocycle R L M) (r : R) (hc : c' = r • c) (v : ofTwoCocycle c) :
+    (ofProd c').symm (smulMap c c' r hc v) =
+      (((ofProd c).symm v).fst, r • ((ofProd c).symm v).snd) :=
+  ofProd_symm_map c LieHom.id (r • LinearMap.id) c' _ v
+
+lemma proj_smulMap (c' : twoCocycle R L M) (r : R) (hc : c' = r • c) (v : ofTwoCocycle c) :
+    proj c' (smulMap c c' r hc v) = proj c v :=
+  proj_map c LieHom.id (r • LinearMap.id) c' _ v
+
+/-- Scaling a 2-cocycle by a unit `u : Rˣ` induces the isomorphism `(x, m) ↦ (x, u • m)` of
+central extensions. -/
+def smulMapEquiv (c' : twoCocycle R L M) (u : Rˣ) (hc : c' = (u : R) • c) :
+    ofTwoCocycle c ≃ₗ⁅R⁆ ofTwoCocycle c' :=
+  mapEquiv c LieEquiv.refl (LinearEquiv.smulOfUnit u) c' fun x y ↦ by
+    subst hc; simp [LinearEquiv.smulOfUnit, Units.smul_def]
+
+@[simp]
+lemma smulMapEquiv_ofProd (c' : twoCocycle R L M) (u : Rˣ) (hc : c' = (u : R) • c)
+    (x : L) (m : M) :
+    smulMapEquiv c c' u hc (ofProd c (x, m)) = ofProd c' (x, u • m) :=
+  mapEquiv_ofProd c LieEquiv.refl (LinearEquiv.smulOfUnit u) c' _ x m
+
+@[simp]
+lemma ofProd_symm_smulMapEquiv (c' : twoCocycle R L M) (u : Rˣ) (hc : c' = (u : R) • c)
+    (v : ofTwoCocycle c) :
+    (ofProd c').symm (smulMapEquiv c c' u hc v) =
+      (((ofProd c).symm v).fst, u • ((ofProd c).symm v).snd) :=
+  ofProd_symm_mapEquiv c LieEquiv.refl (LinearEquiv.smulOfUnit u) c' _ v
+
+@[simp]
+lemma smulMapEquiv_symm_ofProd (c' : twoCocycle R L M) (u : Rˣ) (hc : c' = (u : R) • c)
+    (x : L) (m : M) :
+    (smulMapEquiv c c' u hc).symm (ofProd c' (x, m)) = ofProd c (x, u⁻¹ • m) :=
+  mapEquiv_symm_ofProd c LieEquiv.refl (LinearEquiv.smulOfUnit u) c' _ x m
+
+@[simp]
+lemma toLieHom_smulMapEquiv (c' : twoCocycle R L M) (u : Rˣ) (hc : c' = (u : R) • c) :
+    (smulMapEquiv c c' u hc).toLieHom = smulMap c c' (u : R) hc :=
+  LieHom.ext fun v ↦ by
+    obtain ⟨⟨x, m⟩, rfl⟩ := (ofProd c).surjective v; simp [Units.smul_def]
+
+/-- The inverse of `smulMapEquiv` is the transport by the reciprocal unit `u⁻¹`. -/
+theorem smulMapEquiv_symm (c' : twoCocycle R L M) (u : Rˣ) (hc : c' = (u : R) • c) :
+    (smulMapEquiv c c' u hc).symm =
+      smulMapEquiv c' c u⁻¹ (by rw [hc, smul_smul, Units.inv_mul, one_smul]) := by
+  ext v; obtain ⟨⟨x, m⟩, rfl⟩ := (ofProd c').surjective v; simp
+
+end Smul
+
 section Derivation
 
 variable (D : LieDerivation R L L)
@@ -306,11 +378,293 @@ lemma proj_derivation (v : ofTwoCocycle c) : proj c (derivation c D hD v) = D (p
 
 end Derivation
 
+section DerivationExtension
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+variable (D : LieDerivation R L L)
+  (hD : ∀ x y, (c : twoCochain R L M) (D x) y + (c : twoCochain R L M) x (D y) = 0)
+
+/-- The derivation-extended central extension `ofTwoCocycle c ⋊ R d`, adjoining the lifted
+derivation `derivation c D hD` to `ofTwoCocycle c`. -/
+@[expose]
+def derivationExtension : Type _ :=
+  ofTwoCocycle c ⋊⁅(derivation c D hD).lineHom⁆ R
+
+instance : LieRing (derivationExtension c D hD) :=
+  inferInstanceAs (LieRing (ofTwoCocycle c ⋊⁅(derivation c D hD).lineHom⁆ R))
+
+instance : LieAlgebra R (derivationExtension c D hD) :=
+  inferInstanceAs (LieAlgebra R (ofTwoCocycle c ⋊⁅(derivation c D hD).lineHom⁆ R))
+
+/-- The inclusion of `ofTwoCocycle c` into `derivationExtension c D hD`. -/
+@[expose]
+def toDerivationExtension : ofTwoCocycle c →ₗ⁅R⁆ derivationExtension c D hD :=
+  SemiDirectSum.inl (derivation c D hD).lineHom
+
+/-- The adjoined derivation element `d` of `derivationExtension c D hD`. -/
+@[expose]
+def derivationElement : derivationExtension c D hD :=
+  SemiDirectSum.inr (derivation c D hD).lineHom (1 : R)
+
+/-- The projection from `derivationExtension c D hD` onto the derivation coordinate `R`. -/
+def derivationProj : derivationExtension c D hD →ₗ⁅R⁆ R :=
+  SemiDirectSum.projr (derivation c D hD).lineHom
+
+/-- The derivation projection vanishes on `ofTwoCocycle c`. -/
+@[simp]
+theorem derivationProj_toDerivationExtension (x : ofTwoCocycle c) :
+    derivationProj c D hD (toDerivationExtension c D hD x) = 0 :=
+  SemiDirectSum.projr_inl_apply (derivation c D hD).lineHom
+
+/-- The derivation projection sends `derivationElement` to `1`. -/
+@[simp]
+theorem derivationProj_derivationElement :
+    derivationProj c D hD (derivationElement c D hD) = 1 :=
+  SemiDirectSum.projr_inr_apply (derivation c D hD).lineHom
+
+/-- The linear equivalence identifying `derivationExtension c D hD` with `ofTwoCocycle c × R`. -/
+def derivationToProd : derivationExtension c D hD ≃ₗ[R] ofTwoCocycle c × R :=
+  SemiDirectSum.toProdl (derivation c D hD).lineHom
+
+@[simp]
+theorem derivationToProd_toDerivationExtension (x : ofTwoCocycle c) :
+    derivationToProd c D hD (toDerivationExtension c D hD x) = (x, 0) :=
+  (rfl)
+
+@[simp]
+theorem derivationToProd_derivationElement :
+    derivationToProd c D hD (derivationElement c D hD) = (0, 1) :=
+  (rfl)
+
+/-- Reconstructing an element of `derivationExtension` from `ofTwoCocycle c × R` coordinates. -/
+theorem derivationToProd_symm_apply (x : ofTwoCocycle c) (t : R) :
+    (derivationToProd c D hD).symm (x, t) =
+      toDerivationExtension c D hD x + t • derivationElement c D hD :=
+  (derivationToProd c D hD).injective (by rw [map_add, map_smul]; simp)
+
+/-- The second coordinate under `derivationToProd` is `derivationProj`. -/
+theorem snd_derivationToProd (y : derivationExtension c D hD) :
+    (derivationToProd c D hD y).snd = derivationProj c D hD y :=
+  (rfl)
+
+/-- The Lie bracket in `derivationExtension c D hD` in `ofTwoCocycle c × R` coordinates. -/
+theorem derivationToProd_lie (x y : derivationExtension c D hD) :
+    derivationToProd c D hD ⁅x, y⁆ =
+      (⁅(derivationToProd c D hD x).fst, (derivationToProd c D hD y).fst⁆ +
+          (derivationToProd c D hD x).snd •
+            derivation c D hD (derivationToProd c D hD y).fst -
+          (derivationToProd c D hD y).snd •
+            derivation c D hD (derivationToProd c D hD x).fst, 0) :=
+  congrArg (derivationToProd c D hD) (LieDerivation.lie_lineHom_eq_mk (derivation c D hD) x y)
+
+/-- The Lie bracket in `derivationExtension c D hD` in `(L × M) × R` coordinates. -/
+theorem derivationToProd_lie_ofProd (x y : derivationExtension c D hD) :
+    let px := (ofProd c).symm (derivationToProd c D hD x).fst
+    let py := (ofProd c).symm (derivationToProd c D hD y).fst
+    let ax := (derivationToProd c D hD x).snd
+    let ay := (derivationToProd c D hD y).snd
+    derivationToProd c D hD ⁅x, y⁆ =
+      (ofProd c (⁅px.fst, py.fst⁆ + ax • D py.fst - ay • D px.fst,
+        (c : twoCochain R L M) px.fst py.fst), 0) := by
+  dsimp only
+  rw [derivationToProd_lie]
+  refine Prod.ext ((ofProd c).symm.injective ?_) rfl
+  rw [Equiv.symm_apply_apply, ← coe_ofProdLinearEquiv_symm, map_sub, map_add, map_smul, map_smul]
+  have hx := (Equiv.apply_symm_apply (ofProd c) (derivationToProd c D hD x).fst).symm
+  have hy := (Equiv.apply_symm_apply (ofProd c) (derivationToProd c D hD y).fst).symm
+  conv_lhs =>
+    rw [hx, hy, bracket_ofTwoCocycle, derivation_ofProd, derivation_ofProd]
+  simp [trivial_lie_zero, sub_eq_add_neg]
+
+/-- The inclusion of `ofTwoCocycle c` into `derivationExtension c D hD` is injective. -/
+theorem toDerivationExtension_injective :
+    Function.Injective (toDerivationExtension c D hD) :=
+  SemiDirectSum.inl_injective (derivation c D hD).lineHom
+
+/-- The range of `toDerivationExtension` is the kernel of `derivationProj`. -/
+theorem range_toDerivationExtension_eq_ker_derivationProj :
+    (toDerivationExtension c D hD).range.toSubmodule =
+      (derivationProj c D hD).ker.toSubmodule :=
+  SetLike.ext fun x ↦ SetLike.ext_iff.mp
+    (IsExtension.exact (i := SemiDirectSum.inl _) (p := SemiDirectSum.projr _)) x
+
+/-- Every element of `derivationExtension c D hD` is `x + t • d` for `x ∈ ofTwoCocycle c`,
+`t ∈ R`. -/
+theorem exists_eq_add_smul_derivationElement (y : derivationExtension c D hD) :
+    ∃ (x : ofTwoCocycle c) (t : R),
+      y = toDerivationExtension c D hD x + t • derivationElement c D hD :=
+  LieDerivation.exists_eq_add_smul_inr_one (derivation c D hD) y
+
+/-- The adjoined derivation element acts on `ofTwoCocycle c` by `derivation c D hD`. -/
+theorem lie_derivationElement_toDerivationExtension (x : ofTwoCocycle c) :
+    ⁅derivationElement c D hD, toDerivationExtension c D hD x⁆ =
+      toDerivationExtension c D hD (derivation c D hD x) :=
+  LieDerivation.lie_inr_lineHom_one_inl (derivation c D hD) x
+
+/-- Universal mapping-out property of `derivationExtension c D hD`: extend a Lie algebra
+homomorphism `f : ofTwoCocycle c →ₗ⁅R⁆ L'` by sending `derivationElement c D hD` to `z`,
+provided `⁅z, f x⁆ = f (derivation c D hD x)` for all `x`. -/
+def derivationExtensionLift {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (f : ofTwoCocycle c →ₗ⁅R⁆ L') (z : L')
+    (hz : ∀ x, ⁅z, f x⁆ = f (derivation c D hD x)) :
+    derivationExtension c D hD →ₗ⁅R⁆ L' :=
+  LieDerivation.lineHomLift (derivation c D hD) f z hz
+
+@[simp]
+theorem derivationExtensionLift_toDerivationExtension {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (f : ofTwoCocycle c →ₗ⁅R⁆ L') (z : L')
+    (hz : ∀ x, ⁅z, f x⁆ = f (derivation c D hD x)) (x : ofTwoCocycle c) :
+    derivationExtensionLift c D hD f z hz (toDerivationExtension c D hD x) = f x :=
+  LieDerivation.lineHomLift_inl (derivation c D hD) f z hz x
+
+@[simp]
+theorem derivationExtensionLift_derivationElement {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (f : ofTwoCocycle c →ₗ⁅R⁆ L') (z : L')
+    (hz : ∀ x, ⁅z, f x⁆ = f (derivation c D hD x)) :
+    derivationExtensionLift c D hD f z hz (derivationElement c D hD) = z :=
+  LieDerivation.lineHomLift_inr_one (derivation c D hD) f z hz
+
+/-- Uniqueness of maps out of `derivationExtension c D hD`: two Lie homomorphisms agreeing
+on `ofTwoCocycle c` (via `toDerivationExtension`) and on `derivationElement` are equal. -/
+theorem derivationExtension_hom_ext {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    {g₁ g₂ : derivationExtension c D hD →ₗ⁅R⁆ L'}
+    (hbase : ∀ x, g₁ (toDerivationExtension c D hD x) = g₂ (toDerivationExtension c D hD x))
+    (hderiv : g₁ (derivationElement c D hD) = g₂ (derivationElement c D hD)) :
+    g₁ = g₂ :=
+  LieDerivation.lineHom_ext hbase hderiv
+
+section SmulDerivation
+
+variable (c' : twoCocycle R L M)
+  (hD' : ∀ x y, (c' : twoCochain R L M) (D x) y + (c' : twoCochain R L M) x (D y) = 0)
+
+/-- Rescaling a 2-cocycle by `r` lifts `smulMap` to a Lie homomorphism between derivation-extended
+central extensions. -/
+def smulMapDerivationHom (r : R) (hc : c' = r • c) :
+    derivationExtension c D hD →ₗ⁅R⁆ derivationExtension c' D hD' :=
+  LieDerivation.liftLineHom (derivation c D hD) (derivation c' D hD')
+    (smulMap c c' r hc) fun x ↦ by
+      obtain ⟨⟨u, m⟩, rfl⟩ := (ofProd c).surjective x; simp
+
+@[simp]
+theorem derivationToProd_smulMapDerivationHom (r : R) (hc : c' = r • c)
+    (x : derivationExtension c D hD) :
+    derivationToProd c' D hD' (smulMapDerivationHom c D hD c' hD' r hc x) =
+      (smulMap c c' r hc (derivationToProd c D hD x).fst,
+        (derivationToProd c D hD x).snd) :=
+  Prod.ext (LieDerivation.liftLineHom_left _ _ _ _ x)
+    (LieDerivation.liftLineHom_right _ _ _ _ x)
+
+/-- `smulMapDerivationHom` restricts to `smulMap` on `ofTwoCocycle c`. -/
+@[simp]
+theorem smulMapDerivationHom_toDerivationExtension (r : R) (hc : c' = r • c)
+    (x : ofTwoCocycle c) :
+    smulMapDerivationHom c D hD c' hD' r hc (toDerivationExtension c D hD x) =
+      toDerivationExtension c' D hD' (smulMap c c' r hc x) :=
+  LieDerivation.liftLineHom_inl _ _ _ _ x
+
+/-- `smulMapDerivationHom` preserves the adjoined derivation element `d`. -/
+@[simp]
+theorem smulMapDerivationHom_derivationElement (r : R) (hc : c' = r • c) :
+    smulMapDerivationHom c D hD c' hD' r hc (derivationElement c D hD) =
+      derivationElement c' D hD' :=
+  LieDerivation.liftLineHom_inr _ _ _ _ 1
+
+/-- Rescaling a 2-cocycle by a unit `u` lifts `smulMapEquiv` to a Lie isomorphism between
+derivation-extended central extensions. -/
+def smulMapDerivationEquiv (u : Rˣ) (hc : c' = (u : R) • c) :
+    derivationExtension c D hD ≃ₗ⁅R⁆ derivationExtension c' D hD' :=
+  LieDerivation.liftLineEquiv (derivation c D hD) (derivation c' D hD')
+    (smulMapEquiv c c' u hc) fun x ↦ by
+      obtain ⟨⟨v, m⟩, rfl⟩ := (ofProd c).surjective x; simp
+
+@[simp]
+theorem toLieHom_smulMapDerivationEquiv (u : Rˣ) (hc : c' = (u : R) • c) :
+    (smulMapDerivationEquiv c D hD c' hD' u hc).toLieHom =
+      smulMapDerivationHom c D hD c' hD' (u : R) hc := by
+  rw [smulMapDerivationEquiv, LieDerivation.toLieHom_liftLineEquiv]
+  ext x <;> simp [smulMapDerivationHom]
+
+@[simp]
+theorem derivationToProd_smulMapDerivationEquiv (u : Rˣ) (hc : c' = (u : R) • c)
+    (x : derivationExtension c D hD) :
+    derivationToProd c' D hD' (smulMapDerivationEquiv c D hD c' hD' u hc x) =
+      (smulMapEquiv c c' u hc (derivationToProd c D hD x).fst,
+        (derivationToProd c D hD x).snd) := by
+  rw [← LieEquiv.coe_toLieHom, toLieHom_smulMapDerivationEquiv,
+    derivationToProd_smulMapDerivationHom, ← toLieHom_smulMapEquiv, LieEquiv.coe_toLieHom]
+
+/-- The inverse of `smulMapDerivationEquiv` is the transport by the reciprocal unit `u⁻¹`. -/
+theorem smulMapDerivationEquiv_symm (u : Rˣ) (hc : c' = (u : R) • c) :
+    (smulMapDerivationEquiv c D hD c' hD' u hc).symm =
+      smulMapDerivationEquiv c' D hD' c hD u⁻¹
+        (by rw [hc, smul_smul, Units.inv_mul, one_smul]) := by
+  refine LieEquiv.ext fun x ↦ (LieEquiv.symm_apply_eq _).mpr ?_
+  apply (derivationToProd c' D hD').injective
+  rw [derivationToProd_smulMapDerivationEquiv, derivationToProd_smulMapDerivationEquiv,
+    ← smulMapEquiv_symm c c' u hc, LieEquiv.apply_symm_apply, Prod.mk.eta]
+
+@[simp]
+theorem smulMapDerivationEquiv_derivationElement (u : Rˣ) (hc : c' = (u : R) • c) :
+    smulMapDerivationEquiv c D hD c' hD' u hc (derivationElement c D hD) =
+      derivationElement c' D hD' := by
+  rw [← LieEquiv.coe_toLieHom, toLieHom_smulMapDerivationEquiv,
+    smulMapDerivationHom_derivationElement]
+
+@[simp]
+theorem smulMapDerivationEquiv_symm_derivationElement (u : Rˣ) (hc : c' = (u : R) • c) :
+    (smulMapDerivationEquiv c D hD c' hD' u hc).symm (derivationElement c' D hD') =
+      derivationElement c D hD := by
+  rw [smulMapDerivationEquiv_symm, smulMapDerivationEquiv_derivationElement]
+
+end SmulDerivation
+
+end DerivationExtension
+
 end Trivial
 
 end ofTwoCocycle
 
 namespace Extension
+
+section OfSurjective
+
+/-- Bundle a surjective Lie algebra homomorphism `f : L →ₗ⁅R⁆ M` as an `Extension R f.ker M`
+with middle algebra `L`. -/
+abbrev ofSurjective {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    [LieRing M] [LieAlgebra R M] (f : L →ₗ⁅R⁆ M) (hf : Function.Surjective f) :
+    Extension R f.ker M :=
+  ⟨L, inferInstance, inferInstance, f.ker.incl, f, isExtension_of_surjective f hf⟩
+
+theorem ofSurjective_L {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    [LieRing M] [LieAlgebra R M] (f : L →ₗ⁅R⁆ M) (hf : Function.Surjective f) :
+    (ofSurjective f hf).L = L :=
+  (rfl)
+
+@[simp]
+theorem ofSurjective_incl {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    [LieRing M] [LieAlgebra R M] (f : L →ₗ⁅R⁆ M) (hf : Function.Surjective f) :
+    (ofSurjective f hf).incl = f.ker.incl :=
+  (rfl)
+
+@[simp]
+theorem ofSurjective_proj {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    [LieRing M] [LieAlgebra R M] (f : L →ₗ⁅R⁆ M) (hf : Function.Surjective f) :
+    (ofSurjective f hf).proj = f :=
+  (rfl)
+
+theorem ofSurjective_incl_apply {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    [LieRing M] [LieAlgebra R M] (f : L →ₗ⁅R⁆ M) (hf : Function.Surjective f) (x : f.ker) :
+    (ofSurjective f hf).incl x = (x : L) :=
+  (rfl)
+
+theorem ofSurjective_proj_apply {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    [LieRing M] [LieAlgebra R M] (f : L →ₗ⁅R⁆ M) (hf : Function.Surjective f) (x : L) :
+    (ofSurjective f hf).proj x = f x :=
+  (rfl)
+
+end OfSurjective
 
 noncomputable section
 
@@ -491,5 +845,84 @@ theorem ofProd_eq_add_smul_centralElement (u : L) (z : TrivialLieModule R L R) :
     smul_zero, Prod.mk_add_mk, add_zero, zero_add, Prod.mk.injEq, true_and]
   apply (TrivialLieModule.equiv R L R).injective
   simp
+
+/-- Scaling a 2-cocycle by `r` sends the canonical central element `K` to `r • K`. -/
+@[simp]
+theorem smulMap_centralElement (c' : twoCocycle R L (TrivialLieModule R L R)) (r : R)
+    (hc : c' = r • c) :
+    smulMap c c' r hc (centralElement c) = r • centralElement c' :=
+  (ofProd c').symm.injective (by simp)
+
+/-- Scaling a 2-cocycle by a unit `u` sends the canonical central element `K` to `u • K`. -/
+@[simp]
+theorem smulMapEquiv_centralElement (c' : twoCocycle R L (TrivialLieModule R L R)) (u : Rˣ)
+    (hc : c' = (u : R) • c) :
+    smulMapEquiv c c' u hc (centralElement c) = (u : R) • centralElement c' :=
+  (ofProd c').symm.injective (by simp [Units.smul_def])
+
+/-- The lifted derivation `derivation c D hD` kills the canonical central element `K`. -/
+@[simp]
+theorem derivation_centralElement (D : LieDerivation R L L)
+    (hD : ∀ x y, (c : twoCochain R L (TrivialLieModule R L R)) (D x) y +
+      (c : twoCochain R L (TrivialLieModule R L R)) x (D y) = 0) :
+    derivation c D hD (centralElement c) = 0 :=
+  (ofProd c).symm.injective (by simp)
+
+/-- Scaling a 2-cocycle by a unit `u` acts by `u⁻¹` on `K` under the inverse isomorphism. -/
+@[simp]
+theorem smulMapEquiv_symm_centralElement (c' : twoCocycle R L (TrivialLieModule R L R)) (u : Rˣ)
+    (hc : c' = (u : R) • c) :
+    (smulMapEquiv c c' u hc).symm (centralElement c') = (↑u⁻¹ : R) • centralElement c := by
+  rw [smulMapEquiv_symm, smulMapEquiv_centralElement]
+
+section DerivationCentral
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+variable (D : LieDerivation R L L)
+  (hD : ∀ x y, (c : twoCochain R L (TrivialLieModule R L R)) (D x) y +
+    (c : twoCochain R L (TrivialLieModule R L R)) x (D y) = 0)
+
+/-- The adjoined derivation element commutes with `K`. -/
+@[simp]
+theorem lie_derivationElement_centralElement :
+    ⁅derivationElement c D hD, toDerivationExtension c D hD (centralElement c)⁆ = 0 :=
+  LieDerivation.lie_inr_lineHom_one_inl_eq_zero (derivation c D hD)
+    (derivation_centralElement c D hD)
+
+/-- `K` is central in `derivationExtension c D hD`. -/
+theorem toDerivationExtension_centralElement_mem_center :
+    toDerivationExtension c D hD (centralElement c) ∈ center R (derivationExtension c D hD) :=
+  LieDerivation.inl_lineHom_mem_center (derivation c D hD) (centralElement_mem_center c)
+    (derivation_centralElement c D hD)
+
+variable (c' : twoCocycle R L (TrivialLieModule R L R))
+  (hD' : ∀ x y, (c' : twoCochain R L (TrivialLieModule R L R)) (D x) y +
+    (c' : twoCochain R L (TrivialLieModule R L R)) x (D y) = 0)
+
+/-- `smulMapDerivationHom` scales `K` by `r`. -/
+theorem smulMapDerivationHom_centralElement (r : R) (hc : c' = r • c) :
+    smulMapDerivationHom c D hD c' hD' r hc (toDerivationExtension c D hD (centralElement c)) =
+      r • toDerivationExtension c' D hD' (centralElement c') := by
+  rw [smulMapDerivationHom_toDerivationExtension, smulMap_centralElement, map_smul]
+
+/-- `smulMapDerivationEquiv` scales `K` by `u`. -/
+@[simp]
+theorem smulMapDerivationEquiv_centralElement (u : Rˣ) (hc : c' = (u : R) • c) :
+    smulMapDerivationEquiv c D hD c' hD' u hc
+        (toDerivationExtension c D hD (centralElement c)) =
+      (u : R) • toDerivationExtension c' D hD' (centralElement c') := by
+  rw [← LieEquiv.coe_toLieHom, toLieHom_smulMapDerivationEquiv,
+    smulMapDerivationHom_centralElement]
+
+/-- The inverse of `smulMapDerivationEquiv` scales `K` by `u⁻¹`. -/
+@[simp]
+theorem smulMapDerivationEquiv_symm_centralElement (u : Rˣ) (hc : c' = (u : R) • c) :
+    (smulMapDerivationEquiv c D hD c' hD' u hc).symm
+        (toDerivationExtension c' D hD' (centralElement c')) =
+      (↑u⁻¹ : R) • toDerivationExtension c D hD (centralElement c) := by
+  rw [smulMapDerivationEquiv_symm, smulMapDerivationEquiv_centralElement]
+
+end DerivationCentral
 
 end LieAlgebra.ofTwoCocycle

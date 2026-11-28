@@ -78,67 +78,64 @@ variable {Φ Ψ : LinearMap.BilinForm R L} (hΦ : Φ.lieInvariant L) (hΦs : Φ.
 local notation "cΦ" => twoCocycleOfBilinear R L Φ hΦ hΦs
 local notation "cΨ" => twoCocycleOfBilinear R L Ψ hΨ hΨs
 
+private theorem twoCocycleOfBilinear_eq_smul {r : R} (h : Ψ = r • Φ) : cΨ = r • cΦ := by
+  subst h
+  exact twoCocycleOfBilinear_smul R L r Φ hΦ hΦs _ _
+
 /-- Rescaling the level of a residue central extension: if `Ψ = r • Φ`, the Lie algebra morphism
 from the extension of `Φ` to that of `Ψ` which is the identity on currents and multiplies the
 central coordinate by `r`, so that `K ↦ r • K`. -/
 def levelHom {r : R} (h : Ψ = r • Φ) : ofTwoCocycle cΦ →ₗ⁅R⁆ ofTwoCocycle cΨ :=
-  ofTwoCocycle.map cΦ LieHom.id (r • LinearMap.id) cΨ fun u v ↦ by
-    subst h
-    simp [twoCocycleOfBilinear_smul R L r Φ hΦ hΦs, smul_apply_apply]
+  ofTwoCocycle.smulMap cΦ cΨ r (twoCocycleOfBilinear_eq_smul hΦ hΦs hΨ hΨs h)
 
 /-- Level rescaling fixes the current coordinate and multiplies the central coordinate by `r`. -/
 @[simp]
 theorem levelHom_ofProd {r : R} (h : Ψ = r • Φ) (u : C) (z : Z) :
-    levelHom hΦ hΦs hΨ hΨs h (ofProd cΦ (u, z)) = ofProd cΨ (u, r • z) := by
-  simp [levelHom]
+    levelHom hΦ hΦs hΨ hΨs h (ofProd cΦ (u, z)) = ofProd cΨ (u, r • z) :=
+  ofTwoCocycle.smulMap_ofProd cΦ cΨ r _ u z
 
 /-- The coordinates of the image under level rescaling. -/
 @[simp]
 theorem ofProd_symm_levelHom {r : R} (h : Ψ = r • Φ) (v : ofTwoCocycle cΦ) :
     (ofProd cΨ).symm (levelHom hΦ hΦs hΨ hΨs h v) =
-      (((ofProd cΦ).symm v).1, r • ((ofProd cΦ).symm v).2) := by
-  simp [levelHom]
+      (((ofProd cΦ).symm v).fst, r • ((ofProd cΦ).symm v).snd) :=
+  ofTwoCocycle.ofProd_symm_smulMap cΦ cΨ r _ v
 
 /-- Level rescaling is the identity on the current coordinate. -/
 theorem proj_levelHom {r : R} (h : Ψ = r • Φ) (v : ofTwoCocycle cΦ) :
-    ofTwoCocycle.proj cΨ (levelHom hΦ hΦs hΨ hΨs h v) = ofTwoCocycle.proj cΦ v := by
-  simp [levelHom]
+    ofTwoCocycle.proj cΨ (levelHom hΦ hΦs hΨ hΨs h v) = ofTwoCocycle.proj cΦ v :=
+  ofTwoCocycle.proj_smulMap cΦ cΨ r _ v
 
 /-- If `Ψ = u • Φ` for a unit `u`, the residue central extensions of `Φ` and `Ψ` are isomorphic
 by the identity on currents and `K ↦ u • K`. -/
 def levelEquiv {u : Rˣ} (h : Ψ = (u : R) • Φ) : ofTwoCocycle cΦ ≃ₗ⁅R⁆ ofTwoCocycle cΨ :=
-  ofTwoCocycle.mapEquiv cΦ (LieEquiv.refl : C ≃ₗ⁅R⁆ C) (LinearEquiv.smulOfUnit u) cΨ fun v w ↦ by
-    subst h
-    simp [twoCocycleOfBilinear_smul R L (u : R) Φ hΦ hΦs, smul_apply_apply,
-      LinearEquiv.smulOfUnit, Units.smul_def]
+  ofTwoCocycle.smulMapEquiv cΦ cΨ u (twoCocycleOfBilinear_eq_smul hΦ hΦs hΨ hΨs h)
 
 /-- The level isomorphism fixes the current coordinate and multiplies the central coordinate by
 `u`. -/
 @[simp]
 theorem levelEquiv_ofProd {u : Rˣ} (h : Ψ = (u : R) • Φ) (v : C) (z : Z) :
-    levelEquiv hΦ hΦs hΨ hΨs h (ofProd cΦ (v, z)) = ofProd cΨ (v, u • z) := by
-  simp [levelEquiv, LinearEquiv.smulOfUnit]
+    levelEquiv hΦ hΦs hΨ hΨs h (ofProd cΦ (v, z)) = ofProd cΨ (v, u • z) :=
+  ofTwoCocycle.smulMapEquiv_ofProd cΦ cΨ u _ v z
 
 /-- The coordinates of the image under the level isomorphism. -/
 @[simp]
 theorem ofProd_symm_levelEquiv {u : Rˣ} (h : Ψ = (u : R) • Φ) (v : ofTwoCocycle cΦ) :
     (ofProd cΨ).symm (levelEquiv hΦ hΦs hΨ hΨs h v) =
-      (((ofProd cΦ).symm v).1, u • ((ofProd cΦ).symm v).2) := by
-  simp [levelEquiv, LinearEquiv.smulOfUnit]
+      (((ofProd cΦ).symm v).fst, u • ((ofProd cΦ).symm v).snd) :=
+  ofTwoCocycle.ofProd_symm_smulMapEquiv cΦ cΨ u _ v
 
 /-- The inverse level isomorphism multiplies the central coordinate by `u⁻¹`. -/
 @[simp]
 theorem levelEquiv_symm_ofProd {u : Rˣ} (h : Ψ = (u : R) • Φ) (v : C) (z : Z) :
-    (levelEquiv hΦ hΦs hΨ hΨs h).symm (ofProd cΨ (v, z)) = ofProd cΦ (v, u⁻¹ • z) := by
-  simp [levelEquiv, LinearEquiv.smulOfUnit]
+    (levelEquiv hΦ hΦs hΨ hΨs h).symm (ofProd cΨ (v, z)) = ofProd cΦ (v, u⁻¹ • z) :=
+  ofTwoCocycle.smulMapEquiv_symm_ofProd cΦ cΨ u _ v z
 
 /-- The level isomorphism is the level rescaling morphism of the unit. -/
 @[simp]
 theorem toLieHom_levelEquiv {u : Rˣ} (h : Ψ = (u : R) • Φ) :
     (levelEquiv hΦ hΦs hΨ hΨs h).toLieHom = levelHom hΦ hΦs hΨ hΨs h :=
-  LieHom.ext fun v ↦ by
-    obtain ⟨⟨w, z⟩, rfl⟩ := (ofProd cΦ).surjective v
-    simp [Units.smul_def]
+  ofTwoCocycle.toLieHom_smulMapEquiv cΦ cΨ u _
 
 end Level
 
