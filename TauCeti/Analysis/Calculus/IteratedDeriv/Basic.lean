@@ -18,6 +18,9 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 This file collects general results about `iteratedDeriv`:
 
 * `TauCeti.iteratedDeriv_iteratedDeriv`: iterated derivatives compose additively.
+* `TauCeti.iteratedDeriv_eqOn_of_derivative_tower`: in a finite sequence of functions linked by
+  ordinary derivatives on an open set, the iterated derivatives of the initial function agree
+  there with the later functions.
 * `TauCeti.contDiff_of_finite_derivative_tower`, `TauCeti.iteratedDeriv_eq_of_derivative_tower`,
   `TauCeti.contDiff_of_derivative_tower`: in a finite or infinite sequence of functions linked by
   ordinary derivatives, the iterated derivatives of the initial function are the later functions,
@@ -37,7 +40,7 @@ This file collects general results about `iteratedDeriv`:
 
 public section
 
-open scoped ContDiff
+open scoped ContDiff Topology
 
 namespace TauCeti
 
@@ -48,6 +51,21 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
 theorem iteratedDeriv_iteratedDeriv (n k : ℕ) (f : 𝕜 → E) :
     iteratedDeriv n (iteratedDeriv k f) = iteratedDeriv (n + k) f := by
   simp only [iteratedDeriv_eq_iterate, Function.iterate_add_apply]
+
+/-- In a tower of functions whose first `n` members have the stated successive ordinary
+derivatives on an open set `U`, the `n`-th iterated derivative of the zeroth function agrees with
+the `n`-th function on `U`. -/
+theorem iteratedDeriv_eqOn_of_derivative_tower {F : ℕ → 𝕜 → E} {U : Set 𝕜} (hU : IsOpen U)
+    {n : ℕ} (hF : ∀ k < n, ∀ x ∈ U, HasDerivAt (F k) (F (k + 1) x) x) :
+    Set.EqOn (iteratedDeriv n (F 0)) (F n) U := by
+  induction n with
+  | zero => exact fun x _ ↦ by rw [iteratedDeriv_zero]
+  | succ n ih =>
+    intro x hx
+    have h : iteratedDeriv n (F 0) =ᶠ[𝓝 x] F n :=
+      Filter.eventually_of_mem (hU.mem_nhds hx) (ih fun k hk ↦ hF k (Nat.lt_succ_of_lt hk))
+    rw [iteratedDeriv_succ]
+    exact ((hF n n.lt_succ_self x hx).congr_of_eventuallyEq h).deriv
 
 /-- A finite tower of functions up to order `m` with successive ordinary derivatives and
 continuous top level gives a `C^m` zeroth function. -/
@@ -72,10 +90,9 @@ theorem contDiff_of_finite_derivative_tower (F : ℕ → 𝕜 → E) (m : ℕ)
 /-- In a tower of functions with the stated successive ordinary derivatives, the `k`-th iterated
 derivative of the zeroth function is the `k`-th function. -/
 theorem iteratedDeriv_eq_of_derivative_tower {F : ℕ → 𝕜 → E}
-    (hF : ∀ k x, HasDerivAt (F k) (F (k + 1) x) x) (k : ℕ) : iteratedDeriv k (F 0) = F k := by
-  -- `F` semiconjugates the successor to `deriv`, so `F k = deriv^[k] (F 0)`.
-  have h : Function.Semiconj F Nat.succ deriv := fun n => (funext fun x => (hF n x).deriv).symm
-  simpa [iteratedDeriv_eq_iterate, Nat.succ_iterate] using ((h.iterate_right k).eq 0).symm
+    (hF : ∀ k x, HasDerivAt (F k) (F (k + 1) x) x) (k : ℕ) : iteratedDeriv k (F 0) = F k :=
+  funext fun x ↦
+    iteratedDeriv_eqOn_of_derivative_tower isOpen_univ (fun j _ y _ ↦ hF j y) (Set.mem_univ x)
 
 /-- A tower of functions with the stated successive ordinary derivatives gives a smooth zeroth
 function. -/
