@@ -162,6 +162,8 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   every `Lᵖ` on its measurable subsets.
 * `Continuous.memLp_restrict_Ioc`: a continuous function is in every `Lᵖ` on a bounded interval
   `(a, b]`.
+* `Continuous.memLp_restrict_of_isBounded`: in a proper metric space, a continuous function is in
+  every `Lᵖ` on any bounded set, without requiring the set to be measurable.
 * `Continuous.integrable_of_support_subset_isCompact`: a continuous function supported in a
   compact set is integrable, without a separation assumption on the domain.
 * `Continuous.integrable_norm_sq_of_hasCompactSupport`: the squared norm of a continuous
@@ -825,6 +827,16 @@ theorem Continuous.memLp_restrict_Ioc [LinearOrder X] [OrderClosedTopology X] [C
     Ioc_subset_Icc_self p
 
 end ContinuousOn
+
+/-- A continuous function on a proper metric space lies in every `Lᵖ` on each bounded set, for
+any measure finite on compact sets, without requiring the bounded set to be measurable. -/
+theorem Continuous.memLp_restrict_of_isBounded {X E : Type*}
+    [PseudoMetricSpace X] [ProperSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+    {μ : Measure X} [IsFiniteMeasureOnCompacts μ] [NormedAddCommGroup E]
+    {f : X → E} (hf : Continuous f) {Ω : Set X} (hΩ : Bornology.IsBounded Ω) (p : ENNReal) :
+    MemLp f p (μ.restrict Ω) :=
+  (hf.continuousOn.memLp_restrict_of_subset_isCompact hΩ.isCompact_closure measurableSet_closure
+    Subset.rfl p).mono_measure (Measure.restrict_mono subset_closure le_rfl)
 
 namespace MeasureTheory.LocallyIntegrableOn
 
