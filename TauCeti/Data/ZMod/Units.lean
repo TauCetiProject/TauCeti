@@ -66,6 +66,8 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   element in `TauCeti/NumberTheory/Cyclotomic/Stickelberger/Smoothing.lean`.
 * `ZMod.unitsMap_unitOfCoprime` — `ZMod.unitsMap` sends the class of `a` modulo `n` to the
   class of `a` modulo a divisor of `n`.
+* `ZMod.unitsMap_neg` — `ZMod.unitsMap` commutes with negation. Its consumer is the signed
+  Frobenius criterion in `TauCeti/NumberTheory/NumberField/Cyclotomic/RealSubfield.lean`.
 * `ZMod.unitOfCoprime_mem_ker_unitsMap_iff` — the class of `a` prime to `n` lies in the kernel
   of `ZMod.unitsMap` to a divisor `m` of `n` exactly when `a ≡ 1 (mod m)`. Its consumer is the
   group form of the Jacobi symbol on the class of `1` in
@@ -289,6 +291,11 @@ theorem ZMod.unitsMap_unitOfCoprime {m n : ℕ} (hmn : m ∣ n) {a : ℕ} (ha : 
       ZMod.unitOfCoprime a (ha.coprime_dvd_right hmn) :=
   Units.ext (by rw [ZMod.unitsMap_val, ZMod.coe_unitOfCoprime, ZMod.coe_unitOfCoprime,
     ZMod.cast_natCast hmn])
+
+/-- **Reduction of units commutes with negation.** -/
+theorem ZMod.unitsMap_neg {m n : ℕ} (hmn : m ∣ n) (u : (ZMod n)ˣ) :
+    ZMod.unitsMap hmn (-u) = -ZMod.unitsMap hmn u := by
+  rw [ZMod.unitsMap_def, Units.map_neg]
 
 /-- For `m ∣ n`, the class of a natural number `a` prime to `n` lies in the kernel of the reduction
 `ZMod.unitsMap : (ZMod n)ˣ →* (ZMod m)ˣ` exactly when `a ≡ 1 (mod m)`. -/

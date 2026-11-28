@@ -32,6 +32,8 @@ via `(ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p`, proving
   (`inner_operatorMultiplication_compLpL`, and `inner_compLpL_compLpL` for a constant one), and
   the skew-adjointness `⟪J ∘ f, g⟫ = -⟪f, J ∘ g⟫` for a skew-adjoint `J`
   (`inner_compLpL_eq_neg_inner_compLpL`);
+* the `L²` adjoint of postcomposition by a bounded operator `L` between Hilbert spaces is
+  postcomposition by `L†` (`ContinuousLinearMap.adjoint_compLpL`);
 * `‖operatorMultiplication p A‖ = ‖A‖` and `isometry_operatorMultiplication` for `[SigmaFinite μ]`.
 
 Multiplication by the indicator of a measurable set `s` is the operator
@@ -406,5 +408,26 @@ adjoints `B(b x, ·)†`. -/
   filter_upwards [coeFn_holder (r := 2) B b f, coeFn_holder (r := 2) (adjointRealCLM ∘L B) b h]
     with x h₁ h₂
   rw [h₁, h₂, comp_apply, adjointRealCLM_apply, adjoint_inner_left]
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+
+variable {α 𝕜 E F : Type*} {mα : MeasurableSpace α} {μ : Measure α} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E] [NormedAddCommGroup F]
+  [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
+/-- **The adjoint of a postcomposition operator.** For a bounded operator `L : E →L[𝕜] F`
+between Hilbert spaces, the Hilbert space adjoint of postcomposition `f ↦ L ∘ f` from `L²(μ; E)`
+to `L²(μ; F)` is postcomposition by the adjoint `L†`. -/
+@[simp] theorem adjoint_compLpL (L : E →L[𝕜] F) :
+    adjoint (L.compLpL 2 μ) = (adjoint L).compLpL 2 μ := by
+  refine ((eq_adjoint_iff _ _).2 fun f g ↦ ?_).symm
+  rw [L2.inner_def, L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [(adjoint L).coeFn_compLpL f, L.coeFn_compLpL g] with x hf hg
+  rw [hf, hg, adjoint_inner_left]
 
 end ContinuousLinearMap

@@ -11,6 +11,7 @@ public import TauCeti.Probability.Process.PathLaw.Shift
 public import Mathlib.Probability.ProductMeasure
 public import Mathlib.Dynamics.SymbolicDynamics.Basic
 import TauCeti.Dynamics.SymbolicDynamics.Shift
+import TauCeti.Probability.Ergodic.Bernoulli.Shift
 import Mathlib.Probability.Independence.InfinitePi
 
 /-!
@@ -38,6 +39,11 @@ namespace TauCeti.MeasureEntropyExamples
 /-- The fair Bernoulli law on one-sided paths: i.i.d. fair bits. -/
 noncomputable abbrev fairBernoulli : Measure (ℕ → Bool) :=
   Measure.infinitePi fun _ : ℕ ↦ fairBit
+
+/-- The fair Bernoulli shift preserves the fair Bernoulli law. -/
+theorem measurePreserving_shift_fairBernoulli :
+    MeasurePreserving (shift Bool) fairBernoulli fairBernoulli :=
+  (Measure.ergodic_shift_infinitePi_const fairBit).toMeasurePreserving
 
 /-- The coordinate label of the one-sided Bernoulli shift. -/
 def coordZero (x : ℕ → Bool) : Bool := x 0

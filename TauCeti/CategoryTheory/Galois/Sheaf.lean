@@ -41,6 +41,8 @@ continuous `G`-set because `G` is compact and stabilizers are open.
 * `ContAction.sheafEquiv G`: for compact `G`, sheaves of sets on finite continuous `G`-sets are
   equivalent to smooth `G`-sets (`Action.SmoothSet G`, from
   `TauCeti.CategoryTheory.Action.Smooth`).
+* `ContAction.fromSheafFullyFaithful G`: for compact `G`, taking stalks is fully faithful on
+  sheaves of sets.
 
 ## Main results
 
@@ -545,5 +547,10 @@ theorem sheafEquiv_functor : (sheafEquiv G).functor = fromSheaf G :=
 @[simp]
 theorem sheafEquiv_inverse : (sheafEquiv G).inverse = toSheaf G :=
   (rfl)
+
+/-- For compact `G`, taking stalks is a fully faithful functor from sheaves of sets on finite
+continuous `G`-sets to smooth `G`-sets. -/
+noncomputable def fromSheafFullyFaithful : (fromSheaf G).FullyFaithful :=
+  (sheafEquiv G).fullyFaithfulFunctor
 
 end ContAction

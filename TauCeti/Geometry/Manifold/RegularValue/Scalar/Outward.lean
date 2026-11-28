@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Orientation
+public import TauCeti.Geometry.Manifold.Boundary.TangentSpace
 public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Sublevel.Basic
 
 /-!
@@ -19,13 +20,17 @@ tangent vector `v` of the sublevel points outward (`TauCeti.IsOutwardPointing`) 
 increases along it, that is, when the derivative of the restriction of `f` to the sublevel is
 positive on `v` (`TauCeti.isOutwardPointing_scalarRegularSublevel_iff`). Read in `M` through the
 differential of the inclusion `j`, this says that `v` points outward exactly when `df(dj v) > 0`
-(`TauCeti.isOutwardPointing_scalarRegularSublevel_iff_mfderiv`).
+(`TauCeti.isOutwardPointing_scalarRegularSublevel_iff_mfderiv`). Since tangent vectors of the
+boundary are exactly those pointing neither outward nor inward, they are exactly the `v` with
+`df(dj v) = 0` (`TauCeti.mvfderiv_mfderiv_subtypeVal_scalarRegularSublevel_eq_zero_iff`).
 
 For a band `f⁻¹([a, b])` between regular values `a < b`, with atlas
 `TauCeti.scalarRegularBandChartedSpace`, the derivative of `f` is negative on outward vectors at the
 lower level `f⁻¹(a)` and positive on them at the upper level `f⁻¹(b)`
 (`TauCeti.isOutwardPointing_scalarRegularBand_iff_of_eq_left` and
-`TauCeti.isOutwardPointing_scalarRegularBand_iff_of_eq_right`).
+`TauCeti.isOutwardPointing_scalarRegularBand_iff_of_eq_right`), and likewise for the derivative of
+`f` read in `M` (`TauCeti.isOutwardPointing_scalarRegularBand_iff_mfderiv_of_eq_left` and
+`TauCeti.isOutwardPointing_scalarRegularBand_iff_mfderiv_of_eq_right`).
 
 These co-orientations involve no metric and no orientation of `M`: they are read off from the
 sign of the derivative of `f` alone.
@@ -41,10 +46,15 @@ band, and a vector is outward exactly when the derivative of that coordinate is 
   vectors are those on which `df > 0`.
 * `TauCeti.isOutwardPointing_scalarRegularSublevel_iff_mfderiv`: the same criterion, with the
   derivative of `f` read in `M` through the differential of the inclusion.
+* `TauCeti.mvfderiv_mfderiv_subtypeVal_scalarRegularSublevel_eq_zero_iff`: the tangent space of the
+  boundary of `{f ≤ a}` is the kernel of `df`, read in `M`.
 * `TauCeti.isOutwardPointing_scalarRegularBand_iff_of_eq_left`: on the lower face of
   `f⁻¹([a, b])`, outward vectors are those on which `df < 0`.
 * `TauCeti.isOutwardPointing_scalarRegularBand_iff_of_eq_right`: on the upper face of
   `f⁻¹([a, b])`, outward vectors are those on which `df > 0`.
+* `TauCeti.isOutwardPointing_scalarRegularBand_iff_mfderiv_of_eq_left` and
+  `TauCeti.isOutwardPointing_scalarRegularBand_iff_mfderiv_of_eq_right`: the same two criteria,
+  with the derivative of `f` read in `M` through the differential of the inclusion.
 
 ## References
 
@@ -104,6 +114,29 @@ theorem isOutwardPointing_scalarRegularSublevel_iff_mfderiv (hreg : IsRegularVal
     ((contMDiff_subtypeVal_scalarRegularSublevel hreg hn le_rfl hf).mdifferentiableAt
       one_ne_zero) v))
 
+/-- **The tangent space of the boundary of a regular sublevel is the kernel of `df`.** At a
+boundary point `q` of the sublevel `{f ≤ a}`, a tangent vector `v` of the sublevel satisfies
+`df(dj v) = 0`, where `j` is the inclusion, exactly when `v` is tangent to the boundary. -/
+theorem mvfderiv_mfderiv_subtypeVal_scalarRegularSublevel_eq_zero_iff
+    (hreg : IsRegularValue I 𝓘(ℝ) f a)
+    {q : letI := scalarRegularSublevelChartedSpace hf hreg hn
+      (𝓡∂ (n + 1)).boundary {x | f x ≤ a}}
+    (v : letI := scalarRegularSublevelChartedSpace hf hreg hn
+      TangentSpace (𝓡∂ (n + 1)) (q : {x | f x ≤ a})) :
+    letI := scalarRegularSublevelChartedSpace hf hreg hn
+    haveI := isManifold_scalarRegularSublevel hreg hn le_rfl hf
+    mvfderiv I f q (mfderiv (𝓡∂ (n + 1)) I (Subtype.val : {x | f x ≤ a} → M) q v) = 0 ↔
+      v ∈ boundaryTangentSpace q := by
+  let := scalarRegularSublevelChartedSpace hf hreg hn
+  have := isManifold_scalarRegularSublevel hreg hn le_rfl hf
+  have hq : f q = a :=
+    (Set.ext_iff.1 (boundary_scalarRegularSublevel hreg hn le_rfl hf) q).1 q.property
+  rw [mem_boundaryTangentSpace_iff_not_isOutwardPointing_and_not_isOutwardPointing_neg,
+    isOutwardPointing_scalarRegularSublevel_iff_mfderiv hf hn hreg hq,
+    isOutwardPointing_scalarRegularSublevel_iff_mfderiv hf hn hreg hq, map_neg, map_neg,
+    neg_pos, not_lt, not_lt]
+  exact ⟨fun h ↦ ⟨h.le, h.ge⟩, fun h ↦ le_antisymm h.1 h.2⟩
+
 section Band
 
 variable (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) (hab : a < b)
@@ -148,6 +181,43 @@ theorem isOutwardPointing_scalarRegularBand_iff_of_eq_right {x : f ⁻¹' Icc a 
     ring
   rw [isOutwardPointing_iff_mul_mvfderiv_neg hxb (by norm_num)
     (Filter.eventually_of_mem (chart_source_mem_nhds _ x) hchart), neg_one_mul, neg_lt_zero]
+
+/-- The derivative of the restriction of `f` to the band `f⁻¹([a, b])` is the derivative of `f`
+applied to the differential of the inclusion. -/
+private theorem mvfderiv_restrict_scalarRegularBand (x : f ⁻¹' Icc a b)
+    (v : letI := scalarRegularBandChartedSpace hf hn ha hb hab; TangentSpace (𝓡∂ (n + 1)) x) :
+    letI := scalarRegularBandChartedSpace hf hn ha hb hab
+    mvfderiv (𝓡∂ (n + 1)) (fun w : f ⁻¹' Icc a b ↦ f w) x v =
+      mvfderiv I f x (mfderiv (𝓡∂ (n + 1)) I (Subtype.val : f ⁻¹' Icc a b → M) x v) := by
+  let := scalarRegularBandChartedSpace hf hn ha hb hab
+  have := isManifold_scalarRegularBand hn ha hb le_rfl hf hab
+  exact mvfderiv_comp_apply (g := f) (f := Subtype.val) x (hf.mdifferentiableAt one_ne_zero)
+    ((contMDiff_subtypeVal_scalarRegularBand hn ha hb le_rfl hf hab).mdifferentiableAt
+      one_ne_zero) v
+
+/-- **The outward co-orientation of a band at its lower level, read in `M`.** At a point `x` of the
+lower level `f⁻¹(a)` of a band `f⁻¹([a, b])` between regular values, a tangent vector `v` of the
+band points outward exactly when `df(dj v) < 0`, where `j` is the inclusion. -/
+theorem isOutwardPointing_scalarRegularBand_iff_mfderiv_of_eq_left {x : f ⁻¹' Icc a b}
+    (hx : f x = a)
+    (v : letI := scalarRegularBandChartedSpace hf hn ha hb hab; TangentSpace (𝓡∂ (n + 1)) x) :
+    letI := scalarRegularBandChartedSpace hf hn ha hb hab
+    IsOutwardPointing x v ↔
+      mvfderiv I f x (mfderiv (𝓡∂ (n + 1)) I (Subtype.val : f ⁻¹' Icc a b → M) x v) < 0 := by
+  rw [isOutwardPointing_scalarRegularBand_iff_of_eq_left hf hn ha hb hab hx v,
+    mvfderiv_restrict_scalarRegularBand hf hn ha hb hab x v]
+
+/-- **The outward co-orientation of a band at its upper level, read in `M`.** At a point `x` of the
+upper level `f⁻¹(b)` of a band `f⁻¹([a, b])` between regular values, a tangent vector `v` of the
+band points outward exactly when `df(dj v) > 0`, where `j` is the inclusion. -/
+theorem isOutwardPointing_scalarRegularBand_iff_mfderiv_of_eq_right {x : f ⁻¹' Icc a b}
+    (hx : f x = b)
+    (v : letI := scalarRegularBandChartedSpace hf hn ha hb hab; TangentSpace (𝓡∂ (n + 1)) x) :
+    letI := scalarRegularBandChartedSpace hf hn ha hb hab
+    IsOutwardPointing x v ↔
+      0 < mvfderiv I f x (mfderiv (𝓡∂ (n + 1)) I (Subtype.val : f ⁻¹' Icc a b → M) x v) := by
+  rw [isOutwardPointing_scalarRegularBand_iff_of_eq_right hf hn ha hb hab hx v,
+    mvfderiv_restrict_scalarRegularBand hf hn ha hb hab x v]
 
 end Band
 

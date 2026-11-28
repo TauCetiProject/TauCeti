@@ -18,6 +18,8 @@ A **morphism** of `(𝔤, K)`-modules `M → N` is a `𝔤`-module morphism comm
 * `TauCeti.GKModule.Hom M N`: the morphisms of `(𝔤, K)`-modules, with `id` and `comp`.
 * `TauCeti.GKModule.Hom.toIntertwiningMap φ`: the underlying intertwining map of the actions of
   `K`.
+* `TauCeti.GKModule.Hom.eigenspace f c`: the eigenspace of an endomorphism for the eigenvalue
+  `c`, as a `(𝔤, K)`-submodule.
 
 ## Main statements
 
@@ -101,6 +103,17 @@ def toIntertwiningMap (φ : Hom M N) : IntertwiningMap M.ρ N.ρ :=
 @[simp]
 theorem coe_toIntertwiningMap (φ : Hom M N) : ⇑φ.toIntertwiningMap = φ :=
   (rfl)
+
+/-- The **eigenspace** of an endomorphism `f` of a `(𝔤, K)`-module for the eigenvalue `c`: the
+kernel of `f - c`, a `(𝔤, K)`-submodule because `f` commutes with `𝔤` and `K`. -/
+def eigenspace (f : Hom M M) (c : k) : GKSubmodule M where
+  toLieSubmodule := (f.toLieModuleHom - c • LieModuleHom.id).ker
+  apply_mem g v hv := by
+    simp_all [LieModuleHom.mem_ker, sub_eq_zero]
+
+@[simp]
+theorem mem_eigenspace {f : Hom M M} {c : k} {v : V} : v ∈ f.eigenspace c ↔ f v = c • v := by
+  simp [← GKSubmodule.mem_toLieSubmodule, eigenspace, LieModuleHom.mem_ker, sub_eq_zero]
 
 variable (M) in
 /-- The identity morphism. -/

@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.BoundaryFlow.Basic
-public import TauCeti.Geometry.Manifold.IntegralCurve.SmoothFlow
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
+import TauCeti.Geometry.Manifold.Boundary.BoundaryFlow.Global
 
 /-!
 # The forward flow of an inward field on a compact manifold with boundary
@@ -32,14 +32,11 @@ boundary point with the outward velocity `-v (γ t)`, which
 `TauCeti.not_isOutwardPointing_curveVelocityWithin_Ici` excludes.
 
 The existence statement follows the uniform-time argument for compact manifolds without boundary
-(Lee, Lemma 9.15 and Theorem 9.16). Near an interior point the local flow of
-`TauCeti.Manifold.exists_contMDiffAt_localFlow` provides integral curves for a common time, and
-near a boundary point the forward local flow of
-`TauCeti.exists_contMDiffOn_localFlow_of_isOutwardPointing_neg` does. By compactness one positive
-time `ε` serves every point, and attaching curves of length `ε / 2` end to end gives forward curves
-of every length. Integral curves through boundary points are unique
-(`IsMIntegralCurveOn.eqOn_of_isPreconnected`), so these curves are compatible and assemble into
-the forward flow.
+(Lee, Lemma 9.15 and Theorem 9.16). By compactness one positive time `ε` serves every point
+(`TauCeti.exists_pos_forall_exists_isMIntegralCurveOn_Ico_of_isOutwardPointing_neg`), and attaching
+curves of length `ε / 2` end to end gives forward curves of every length. Integral curves through
+boundary points are unique (`IsMIntegralCurveOn.eqOn_of_isPreconnected`), so these curves are
+compatible and assemble into the forward flow.
 
 ## Main results
 
@@ -105,39 +102,6 @@ namespace TauCeti
 
 variable [IsManifold (𝓡∂ (n + 1)) ∞ M] {v : (x : M) → TangentSpace (𝓡∂ (n + 1)) x}
 
-/-- On a compact manifold, the forward integral curves of an inward field exist for one common
-positive time through every point. -/
-private theorem exists_pos_forall_exists_isMIntegralCurveOn_Ico [CompactSpace M]
-    (hv : ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent ∞
-      (fun x ↦ (⟨x, v x⟩ : TangentBundle (𝓡∂ (n + 1)) M)))
-    (hin : ∀ a ∈ (𝓡∂ (n + 1)).boundary M, IsOutwardPointing a (-v a)) :
-    ∃ ε > 0, ∀ x, ∃ γ : ℝ → M, γ 0 = x ∧ IsMIntegralCurveOn γ v (Ico 0 ε) := by
-  -- Near every point, the forward integral curves exist for a common time.
-  have hloc (a : M) : ∃ U ∈ 𝓝 a, ∃ ε > 0, ∀ x ∈ U,
-      ∃ γ : ℝ → M, γ 0 = x ∧ IsMIntegralCurveOn γ v (Ico 0 ε) := by
-    rcases (𝓡∂ (n + 1)).isInteriorPoint_or_isBoundaryPoint a with ha | ha
-    · obtain ⟨U, hU, s, hs, -, Φ, -, hΦ⟩ :=
-        Manifold.exists_contMDiffAt_localFlow v a hv.contMDiffOn univ_mem ha
-      obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp hs
-      refine ⟨U, hU, ε, hε, fun x hx ↦ ⟨Φ x, (hΦ x hx).1, (hΦ x hx).2.1.mono fun r hr ↦ hball ?_⟩⟩
-      rw [Metric.mem_ball, Real.dist_eq, sub_zero, abs_lt]
-      exact ⟨by linarith [hr.1], hr.2⟩
-    · obtain ⟨U, hU, ε, hε, Φ, -, hΦ⟩ :=
-        exists_contMDiffOn_localFlow_of_isOutwardPointing_neg v hv.contMDiffOn univ_mem (hin a ha)
-      exact ⟨U, hU, ε, hε, fun x hx ↦ ⟨Φ x, (hΦ x hx).1, (hΦ x hx).2.1⟩⟩
-  choose U hU ε hε hγ using hloc
-  -- Finitely many of these neighbourhoods cover `M`; take the least of their times.
-  obtain ⟨T, -, hT⟩ := isCompact_univ.elim_nhds_subcover U fun a _ ↦ hU a
-  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
-  · exact ⟨1, one_pos, fun x ↦ isEmptyElim x⟩
-  have hTne : T.Nonempty := by
-    obtain ⟨a, ha, -⟩ := mem_iUnion₂.mp (hT (mem_univ x₀))
-    exact ⟨a, ha⟩
-  refine ⟨T.inf' hTne ε, (Finset.lt_inf'_iff hTne).2 fun a _ ↦ hε a, fun x ↦ ?_⟩
-  obtain ⟨a, ha, hxa⟩ := mem_iUnion₂.mp (hT (mem_univ x))
-  obtain ⟨γ, hγ0, hγc⟩ := hγ a x hxa
-  exact ⟨γ, hγ0, hγc.mono (Ico_subset_Ico_right (Finset.inf'_le ε ha))⟩
-
 /-- On a compact manifold, the forward integral curves of an inward field exist through every
 point for every length of time. -/
 private theorem exists_isMIntegralCurveOn_Icc [CompactSpace M]
@@ -145,7 +109,10 @@ private theorem exists_isMIntegralCurveOn_Icc [CompactSpace M]
       (fun x ↦ (⟨x, v x⟩ : TangentBundle (𝓡∂ (n + 1)) M)))
     (hin : ∀ a ∈ (𝓡∂ (n + 1)).boundary M, IsOutwardPointing a (-v a)) (T : ℝ) (x : M) :
     ∃ γ : ℝ → M, γ 0 = x ∧ IsMIntegralCurveOn γ v (Icc 0 T) := by
-  obtain ⟨ε, hε, hloc⟩ := exists_pos_forall_exists_isMIntegralCurveOn_Ico hv hin
+  obtain ⟨ε, hε, hloc⟩ :=
+    exists_pos_forall_exists_isMIntegralCurveOn_Ico_of_isOutwardPointing_neg hv hin
+  replace hloc (x : M) : ∃ γ : ℝ → M, γ 0 = x ∧ IsMIntegralCurveOn γ v (Ico 0 ε) :=
+    (hloc x).imp fun _ h ↦ ⟨h.1, h.2.1⟩
   -- Curves of length `k * (ε / 2)`, by attaching a curve of length `ε / 2` at the end point.
   have hstep (k : ℕ) (x : M) :
       ∃ γ : ℝ → M, γ 0 = x ∧ IsMIntegralCurveOn γ v (Icc 0 (k * (ε / 2))) := by

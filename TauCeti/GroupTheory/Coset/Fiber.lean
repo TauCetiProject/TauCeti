@@ -13,6 +13,7 @@ public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Module.End
 -- Proof-only: `Set.Finite.preimage'`, for the kernel of a composite.
 import Mathlib.Data.Set.Finite.Lattice
+import TauCeti.Algebra.BigOperators.Finset.Filter
 
 /-!
 # A nonempty fiber of a group homomorphism is a copy of the kernel
@@ -55,6 +56,8 @@ therefore take a point in the fiber as an argument, while the finiteness result 
 * `AddMonoidHom.natCard_preimage_of_surjective` (and `MonoidHom.natCard_preimage_of_surjective`):
   the preimage of a set under a surjective homomorphism has as many elements as the set times the
   kernel.
+* `MonoidHom.card_filter_ker_mul_mem` and `MonoidHom.sum_ite_mul_mem_over_ker`: count and sum
+  the contributions from a finite subset of a fiber along a left translate of the kernel.
 * `TauCeti.card_zsmul_fiber_eq_card_zsmul_eq_zero`: the same for `n • ·` on an additive commutative
   group, with the kernel written as the `n`-torsion.
 * `AddMonoidHom.expect_comp_of_surjective`: the mean of `φ ∘ f` along a surjective homomorphism
@@ -188,6 +191,46 @@ theorem MonoidHom.natCard_preimage_of_surjective {G H : Type*} [Group G] [MulOne
   exact Nat.card_congr <| (Equiv.sigmaSubtypeFiberEquivSubtype f fun _ ↦ Iff.rfl).symm.trans <|
     (Equiv.sigmaCongrRight fun y : t ↦ f.subtypeFiberEquivKer (hs y)).trans
       (Equiv.sigmaEquivProd _ _)
+
+namespace MonoidHom
+
+open Finset
+
+variable {G H : Type*} [Group G] [MulOneClass H] [Fintype G] [DecidableEq G] [DecidableEq H]
+
+/-- If `B` is contained in the fiber of `π` over `c`, then left multiplication by `g` maps
+exactly `B.card` kernel elements into `B` when `π g = c`, and none otherwise. -/
+theorem card_filter_ker_mul_mem (π : G →* H) (B : Finset G) {c : H}
+    (hB : ∀ b ∈ B, π b = c) (g : G) :
+    ((univ.filter fun t ↦ π t = 1).filter fun t ↦ g * t ∈ B).card =
+      if π g = c then B.card else 0 := by
+  split_ifs with he
+  · apply card_bij (fun t _ ↦ g * t)
+    · exact fun _ ht ↦ (mem_filter.mp ht).2
+    · exact fun _ _ _ _ h ↦ mul_left_cancel h
+    · intro b hb
+      let t := π.subtypeFiberEquivKer he ⟨b, hB b hb⟩
+      have ht : g * (t : G) = b := by simp [t]
+      exact ⟨t, by simp [π.mem_ker.mp t.property, ht, hb], ht⟩
+  · apply card_eq_zero.mpr
+    apply eq_empty_iff_forall_notMem.mpr
+    intro t ht
+    obtain ⟨htA, htB⟩ := mem_filter.mp ht
+    have ht1 := (mem_filter.mp htA).2
+    exact he (by simpa [ht1] using hB _ htB)
+
+/-- Sum a two-valued function over a left translate of the kernel. Each element contributes
+`v` by default, with an extra `u - v` when its translate lies in `B`. If `B` lies in the fiber
+over `c`, the correction occurs `B.card` times when `π g = c` and never otherwise. -/
+theorem sum_ite_mul_mem_over_ker {M : Type*} [AddCommGroup M] (π : G →* H) (B : Finset G)
+    {c : H} (hB : ∀ b ∈ B, π b = c) (g : G) (u v : M) :
+    let A := univ.filter fun t ↦ π t = 1
+    ∑ t ∈ A, (if g * t ∈ B then u else v) =
+      A.card • v + (if π g = c then B.card else 0) • (u - v) := by
+  dsimp only
+  rw [sum_ite_eq_card_nsmul_add, π.card_filter_ker_mul_mem B hB]
+
+end MonoidHom
 
 open scoped BigOperators in
 /-- **A mean along a surjective homomorphism.** Every fiber of a surjective `f : G →+ H` of finite
