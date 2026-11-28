@@ -17,6 +17,8 @@ element `F` of it at a tuple `x : Fin n → G`, giving the function
 how the structure of the resolution reads on these values:
 
 * evaluation is injective (`TopRep.resolutionEval_injective`);
+* evaluation commutes with the maps induced by changes of group and coefficients
+  (`TopRep.resolutionEval_resolutionMap_apply`);
 * the action becomes the diagonal action, `(g • F) x = g • F (g⁻¹ x)`
   (`TopRep.resolutionEval_ρ_apply`), so that an invariant `F` satisfies `F (g x) = g • F x`
   (`TopRep.resolutionEval_mul_left_of_forall_ρ_eq`);
@@ -73,6 +75,23 @@ theorem resolutionEval_zero_apply (F : (resolutionX X 0).V) (x : Fin 0 → G) :
 theorem resolutionEval_succ_apply (n : ℕ) (F : (resolutionX X (n + 1)).V) (x : Fin (n + 1) → G) :
     resolutionEval X (n + 1) F x = resolutionEval X n (F (x 0)) (Fin.tail x) :=
   (rfl)
+
+/-- Evaluating a map of coinduced resolutions induced by a group map `φ` and a coefficient
+map `f` amounts to applying `φ` to the tuple and then applying `f` to the value. -/
+theorem resolutionEval_resolutionMap_apply {H : Type v} [Group H] [TopologicalSpace H]
+    [IsTopologicalGroup H] {Y : TopRep.{max v w} k H} (φ : H →ₜ* G)
+    (f : res φ X ⟶ Y) (n : ℕ) (F : (resolutionX X n).V) (x : Fin n → H) :
+    resolutionEval Y n ((ContinuousCohomology.resolutionMap φ f n).hom F) x =
+      f.hom (resolutionEval X n F (φ ∘ x)) := by
+  induction n with
+  | zero =>
+    rw [ContinuousCohomology.resolutionMap_zero,
+      resolutionEval_zero_apply, resolutionEval_zero_apply]
+  | succ n ih =>
+    rw [resolutionEval_succ_apply, resolutionEval_succ_apply,
+      ContinuousCohomology.resolutionMap_succ, hom_ofHom, ContRepresentation.coind₁ResMap_apply]
+    rw [← Fin.comp_tail]
+    exact ih _ (Fin.tail x)
 
 /-- An element of the coinduced resolution is determined by its values at tuples. -/
 theorem resolutionEval_injective : ∀ n : ℕ, Function.Injective (resolutionEval X n)

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Evaluation
 public import TauCeti.Topology.Algebra.Monoid
+import TauCeti.RepresentationTheory.Continuous.Intertwining
 
 /-!
 # The complex of continuous inhomogeneous cochains
@@ -46,6 +47,8 @@ discrete groups behind Mathlib's `groupCohomology.inhomogeneousCochainsIso`, thr
   cochains.
 * `TopRep.continuousInhomogeneousCochains`: the complex of continuous inhomogeneous cochains.
 * `TopRep.homogenization`: the homogeneous partner of a continuous inhomogeneous cochain.
+* `TopRep.continuousInhomogeneousCochainsMap`: the cochain map given by postcomposition with a
+  continuous equivariant linear map, using Mathlib's `ContinuousLinearMap.compLeftContinuous`.
 
 ## Main results
 
@@ -230,5 +233,75 @@ theorem continuousInhomogeneousCochains_d_one_apply
     fin_cases i
     rfl
   simp [h₀, h₁, h₂, sub_eq_add_neg, add_assoc]
+
+section CoefficientMaps
+
+variable {Y Z : TopRep.{max v w} k G}
+  {hX : Continuous fun p : G × X.V ↦ X.ρ p.1 p.2}
+  {hY : Continuous fun p : G × Y.V ↦ Y.ρ p.1 p.2}
+  {hZ : Continuous fun p : G × Z.V ↦ Z.ρ p.1 p.2}
+
+-- The bundled cochain map exposes this square via `HomologicalComplex.Hom.comm`.
+private theorem compLeftContinuous_comm_continuousInhomogeneousCochains_d (f : X ⟶ Y) (n : ℕ) :
+    ModuleCat.ofHom (f.hom.toContinuousLinearMap.compLeftContinuous k (Fin n → G)).toLinearMap ≫
+        (continuousInhomogeneousCochains Y hY).d n (n + 1) =
+      (continuousInhomogeneousCochains X hX).d n (n + 1) ≫
+        ModuleCat.ofHom
+          (f.hom.toContinuousLinearMap.compLeftContinuous k (Fin (n + 1) → G)).toLinearMap := by
+  ext a x : 3
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, CochainComplex.of_d, ModuleCat.hom_ofHom]
+  simp only [ContIntertwiningMap.compLeftContinuous_apply_apply,
+    continuousInhomogeneousCochainsD_apply, map_add, map_sum, map_zsmul, hom_comm_apply]
+
+/-- The map on continuous inhomogeneous cochains induced by a continuous equivariant linear map
+between representations with jointly continuous actions. It postcomposes each cochain with
+the coefficient map. -/
+noncomputable def continuousInhomogeneousCochainsMap (f : X ⟶ Y) :
+    continuousInhomogeneousCochains X hX ⟶ continuousInhomogeneousCochains Y hY where
+  f n := ModuleCat.ofHom
+    (f.hom.toContinuousLinearMap.compLeftContinuous k (Fin n → G)).toLinearMap
+  comm' n _ h := h ▸ compLeftContinuous_comm_continuousInhomogeneousCochains_d f n
+
+/-- The component of the induced cochain map in degree `n` is continuous postcomposition. -/
+theorem continuousInhomogeneousCochainsMap_f (f : X ⟶ Y) (n : ℕ) :
+    (continuousInhomogeneousCochainsMap (hX := hX) (hY := hY) f).f n =
+      ModuleCat.ofHom (f.hom.toContinuousLinearMap.compLeftContinuous k (Fin n → G)).toLinearMap :=
+  (rfl)
+
+/-- Evaluating the induced cochain map applies the coefficient map to the cochain value. -/
+@[simp]
+theorem continuousInhomogeneousCochainsMap_f_apply (f : X ⟶ Y) (n : ℕ)
+    (a : C(Fin n → G, X.V)) (x : Fin n → G) :
+    ((continuousInhomogeneousCochainsMap (hX := hX) (hY := hY) f).f n).hom a x =
+      f.hom (a x) := by
+  rw [continuousInhomogeneousCochainsMap_f, ModuleCat.hom_ofHom]
+  exact f.hom.compLeftContinuous_apply_apply a x
+
+/-- The identity on coefficients induces the identity on continuous inhomogeneous cochains. -/
+@[simp]
+theorem continuousInhomogeneousCochainsMap_id :
+    continuousInhomogeneousCochainsMap (hX := hX) (hY := hX) (𝟙 X) = 𝟙 _ := by
+  ext n a : 3
+  apply ContinuousMap.ext
+  intro x
+  simp only [HomologicalComplex.id_f, ModuleCat.hom_id, LinearMap.id_apply]
+  rw [continuousInhomogeneousCochainsMap_f_apply, hom_id, ContIntertwiningMap.id_apply]
+
+/-- Continuous inhomogeneous cochain maps respect composition of coefficient maps.
+The joint continuity proof `hY` for the middle representation is needed on the right only,
+so this is not a `simp` lemma. -/
+@[reassoc]
+theorem continuousInhomogeneousCochainsMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
+    continuousInhomogeneousCochainsMap (hX := hX) (hY := hZ) (f ≫ g) =
+      continuousInhomogeneousCochainsMap (hY := hY) f ≫ continuousInhomogeneousCochainsMap g := by
+  ext n a : 3
+  apply ContinuousMap.ext
+  intro x
+  simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply]
+  rw [continuousInhomogeneousCochainsMap_f_apply, continuousInhomogeneousCochainsMap_f_apply,
+    continuousInhomogeneousCochainsMap_f_apply]
+  exact TopRep.comp_apply f g (a x)
+
+end CoefficientMaps
 
 end TopRep
