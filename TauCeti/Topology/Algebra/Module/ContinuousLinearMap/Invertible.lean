@@ -42,10 +42,11 @@ completeness assumption; this is how invertibility of a derivative of a composit
 the factors.
 
 An endomorphism is invertible exactly when it is a unit of the endomorphism ring
-(`ContinuousLinearMap.isInvertible_iff_isUnit`). A map is invertible exactly when its negation is
-(`ContinuousLinearMap.isInvertible_neg_iff`), negating a map negates its totalized inverse
-(`ContinuousLinearMap.inverse_neg`), and a difference `f - g` is invertible exactly when `g - f`
-is (`ContinuousLinearMap.isInvertible_sub_comm`).
+(`ContinuousLinearMap.isInvertible_iff_isUnit`), and two invertible maps determine a transition
+unit (`ContinuousLinearMap.IsInvertible.transitionUnit`). A map is invertible exactly when its
+negation is (`ContinuousLinearMap.isInvertible_neg_iff`), negating a map negates its totalized
+inverse (`ContinuousLinearMap.inverse_neg`), and a difference `f - g` is invertible exactly when
+`g - f` is (`ContinuousLinearMap.isInvertible_sub_comm`).
 
 A map agreeing pointwise with an equality cast is invertible
 (`ContinuousLinearMap.isInvertible_of_eq_cast`), including zero modules.
@@ -107,6 +108,27 @@ theorem isInvertible_iff_isUnit {f : M →L[R] M} : f.IsInvertible ↔ IsUnit f 
     fun ⟨u, hu⟩ ↦ ⟨ContinuousLinearEquiv.unitsEquiv R M u, hu ▸ rfl⟩⟩
 
 end IsUnit
+
+section TransitionUnit
+
+variable {R E F : Type*} [Semiring R]
+  [TopologicalSpace E] [AddCommMonoid E] [Module R E]
+  [TopologicalSpace F] [AddCommMonoid F] [Module R F]
+
+/-- The transition automorphism `S.inverse ∘L T` in `(E →L[R] E)ˣ` between two invertible
+continuous linear maps `S, T : E →L[R] F`. -/
+noncomputable def IsInvertible.transitionUnit {S T : E →L[R] F}
+    (hS : S.IsInvertible) (hT : T.IsInvertible) : (E →L[R] E)ˣ :=
+  (isInvertible_iff_isUnit.1 (hS.inverse.comp hT)).unit
+
+/-- Coercing `hS.transitionUnit hT` to `E →L[R] E` gives `S.inverse ∘L T`. -/
+@[simp]
+theorem IsInvertible.val_transitionUnit {S T : E →L[R] F}
+    (hS : S.IsInvertible) (hT : T.IsInvertible) :
+    ((hS.transitionUnit hT : (E →L[R] E)ˣ) : E →L[R] E) = S.inverse ∘L T :=
+  IsUnit.unit_spec _
+
+end TransitionUnit
 
 section Sub
 
