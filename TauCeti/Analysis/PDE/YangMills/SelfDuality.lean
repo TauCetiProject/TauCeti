@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.VectorValued
-public import TauCeti.Analysis.PDE.YangMills.StructureGroup
+public import TauCeti.Analysis.PDE.YangMills.StructureGroup.Basic
 
 /-!
 # Self-duality of Lie-algebra-valued two-forms in dimension four

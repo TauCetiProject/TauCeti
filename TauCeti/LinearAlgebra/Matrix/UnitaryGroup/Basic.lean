@@ -151,6 +151,23 @@ theorem toSpecialUnitaryAt_of_det_eq_one (j : n) {A : unitaryGroup n R}
 
 end UnitaryGroup
 
+section SpecialUnitary
+
+variable (n : Type*) (R : Type*) [Fintype n] [DecidableEq n] [CommRing R] [StarRing R]
+
+/-- The special unitary group `SU(n)` as a subgroup of `Matrix.unitaryGroup n R`. -/
+def UnitaryGroup.specialUnitarySubgroup : Subgroup (unitaryGroup n R) :=
+  (Matrix.detMonoidHom.comp (Matrix.unitaryGroup n R).subtype).ker
+
+/-- A unitary matrix lies in `specialUnitarySubgroup` iff its determinant is `1`. -/
+@[simp]
+theorem UnitaryGroup.mem_specialUnitarySubgroup_iff {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] [StarRing R] {U : unitaryGroup n R} :
+    U ∈ UnitaryGroup.specialUnitarySubgroup n R ↔ (U : Matrix n n R).det = 1 :=
+  MonoidHom.mem_ker
+
+end SpecialUnitary
+
 variable {R : Type u} [Semiring R] [StarRing R]
 variable {n : Type v} [Fintype n] [DecidableEq n]
 

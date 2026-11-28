@@ -15,7 +15,9 @@ public import Mathlib.Algebra.CharP.Invertible
 
 A diagonal matrix with real entries is Hermitian after scalar inclusion into any `RCLike`
 field. This supplies Hermiticity witnesses for real diagonal perturbations. The self-adjoint part
-`(X + Xᴴ) / 2` of a matrix is Hermitian (`Matrix.isHermitian_selfAdjointPart`).
+`(X + Xᴴ) / 2` of a matrix is Hermitian (`Matrix.isHermitian_selfAdjointPart`), and a skew-Hermitian
+matrix `Xᴴ = -X` has purely imaginary diagonal entries
+(`Matrix.re_apply_self_eq_zero_of_conjTranspose_eq_neg`).
 -/
 
 public section
@@ -32,5 +34,16 @@ theorem isHermitian_diagonal_ofReal {n 𝕜 : Type*} [DecidableEq n] [RCLike �
 theorem isHermitian_selfAdjointPart {n 𝕜 : Type*} [RCLike 𝕜] (X : Matrix n n 𝕜) :
     (selfAdjointPart ℝ X : Matrix n n 𝕜).IsHermitian :=
   (selfAdjoint.isSelfAdjoint (x := selfAdjointPart ℝ X)).isHermitian
+
+/-- A skew-Hermitian matrix `Xᴴ = -X` over an `RCLike` field has purely imaginary diagonal
+entries (`RCLike.re (X i i) = 0`). -/
+theorem re_apply_self_eq_zero_of_conjTranspose_eq_neg {𝕜 ι : Type*} [RCLike 𝕜]
+    {X : Matrix ι ι 𝕜} (hX : Xᴴ = -X) (i : ι) :
+    RCLike.re (X i i) = 0 := by
+  have h : star (X i i) = -X i i := by
+    simpa [conjTranspose_apply] using congrFun (congrFun hX i) i
+  have hre := congrArg RCLike.re h
+  simp only [RCLike.star_def, RCLike.conj_re, map_neg] at hre
+  exact self_eq_neg.mp hre
 
 end Matrix

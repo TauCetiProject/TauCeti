@@ -12,6 +12,8 @@ public import Mathlib.Topology.Algebra.Star.Unitary
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SpecialUnitary
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
+public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
+public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup.Basic
 public import TauCeti.Topology.Algebra.Star.Unitary
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
@@ -44,9 +46,15 @@ unitary group under the continuous coercion `Units.val`.  That is the form in wh
 closed-subgroup theorem consumes it.  As a topological group it is the matrix special unitary
 group (`TauCeti.GLSpecialUnitary.continuousMulEquiv`), so over `ℝ` or `ℂ` it is compact.  Over
 `ℝ` or `ℂ`, compactness of the matrix unitary group
-likewise passes to the unitary subgroup `unitarySubgroup (GL n 𝕜)`. For the same reason the
-block-diagonal product `{diag(g₁, g₂)}` of two closed subgroups of `U(n)` and `U(m)` is a closed
-subgroup of `U(n ⊕ m)`.
+likewise passes to the unitary subgroup `unitarySubgroup (GL n 𝕜)`.
+
+The file also packages closed subgroups directly inside `Matrix.unitaryGroup n 𝕜` as
+`ClosedSubgroup`: the full unitary group `ClosedSubgroup.unitary`, the special unitary group
+`ClosedSubgroup.specialUnitary` (closed over any `T1Space` topological commutative star ring),
+composition laws for transporting closed subgroups via `ContinuousMulEquiv.closedSubgroupOrderIso`
+applied to `Matrix.unitaryReindexContinuousMulEquiv`, and, over `ℝ` or `ℂ`, the block-diagonal
+product `ClosedSubgroup.fromBlocksProd` `{diag(g₁, g₂)}` of two closed subgroups of `U(n)` and
+`U(m)`, closed by compactness.
 
 This is the setup the compact-group representation theory of `SU(2)` runs on; see
 `TauCeti/RepresentationTheory/SU2/Basic.lean`.
@@ -57,6 +65,8 @@ This is the setup the compact-group representation theory of `SU(2)` runs on; se
   group is the matrix special unitary group, as a topological group.
 * `TauCeti.GLSpecialUnitary.fromBlocksInl`: the block inclusion `g ↦ diag(g, 1)` of special unitary
   groups, as a continuous homomorphism.
+* `ClosedSubgroup.unitary`: the full unitary group `U(n)` as a `ClosedSubgroup`.
+* `ClosedSubgroup.specialUnitary`: the special unitary group `SU(n)` as a `ClosedSubgroup`.
 * `ClosedSubgroup.fromBlocksProd`: the block-diagonal product `{diag(g₁, g₂)} ≤ U(n ⊕ m)` of
   closed subgroups `G₁ ≤ U(n)` and `G₂ ≤ U(m)`, closed by compactness.
 
@@ -74,6 +84,10 @@ This is the setup the compact-group representation theory of `SU(2)` runs on; se
 * `Matrix.UnitaryGroup.continuous_fromBlocksOne`,
   `Matrix.specialUnitaryGroup.continuous_fromBlocksOne`: the block embeddings `B ↦ diag(1_r, B)`
   of `U(m)` in `U(r + m)` and of `SU(m)` in `SU(r + m)` are continuous.
+* `ClosedSubgroup.closedSubgroupOrderIso_unitaryReindexContinuousMulEquiv_refl`,
+  `ClosedSubgroup.closedSubgroupOrderIso_unitaryReindexContinuousMulEquiv_trans`: identity and
+  composition laws for transporting closed subgroups along
+  `Matrix.unitaryReindexContinuousMulEquiv`.
 -/
 
 public section
@@ -314,6 +328,77 @@ end Matrix.specialUnitaryGroup
 
 namespace ClosedSubgroup
 
+section Unitary
+
+variable (n 𝕜 : Type*) [Fintype n] [DecidableEq n] [CommRing 𝕜] [StarRing 𝕜]
+  [TopologicalSpace 𝕜]
+
+/-- The full unitary group `U(n)` as a closed subgroup of `Matrix.unitaryGroup n 𝕜`. -/
+def unitary : ClosedSubgroup (Matrix.unitaryGroup n 𝕜) where
+  toSubgroup := ⊤
+  isClosed' := isClosed_univ
+
+/-- Every unitary matrix belongs to `ClosedSubgroup.unitary n 𝕜`. -/
+@[simp] theorem mem_unitary (U : Matrix.unitaryGroup n 𝕜) : U ∈ unitary n 𝕜 := trivial
+
+end Unitary
+
+section SpecialUnitary
+
+variable (n 𝕜 : Type*) [Fintype n] [DecidableEq n] [CommRing 𝕜] [StarRing 𝕜]
+  [TopologicalSpace 𝕜] [IsTopologicalRing 𝕜] [T1Space 𝕜]
+
+/-- The special unitary group `SU(n)` as a closed subgroup of `Matrix.unitaryGroup n 𝕜`. -/
+def specialUnitary : ClosedSubgroup (Matrix.unitaryGroup n 𝕜) where
+  toSubgroup := Matrix.UnitaryGroup.specialUnitarySubgroup n 𝕜
+  isClosed' := by
+    convert (isClosed_singleton (x := (1 : 𝕜))).preimage
+      (continuous_subtypeVal : Continuous ((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜)).matrix_det
+    ext U; simp
+
+/-- Membership in `ClosedSubgroup.specialUnitary n 𝕜` is having determinant `1`. -/
+@[simp] theorem mem_specialUnitary_iff {U : Matrix.unitaryGroup n 𝕜} :
+    U ∈ specialUnitary n 𝕜 ↔ (U : Matrix n n 𝕜).det = 1 :=
+  Matrix.UnitaryGroup.mem_specialUnitarySubgroup_iff
+
+end SpecialUnitary
+
+section Reindex
+
+variable {n m p 𝕜 : Type*} [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m]
+  [Fintype p] [DecidableEq p] [CommRing 𝕜] [StarRing 𝕜] [TopologicalSpace 𝕜]
+
+/-- Reindexing a closed subgroup `G ≤ U(n)` along the identity equivalence leaves `G` unchanged. -/
+theorem closedSubgroupOrderIso_unitaryReindexContinuousMulEquiv_refl
+    (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) :
+    (Matrix.unitaryReindexContinuousMulEquiv 𝕜 (Equiv.refl n)).closedSubgroupOrderIso G = G := by
+  apply ClosedSubgroup.toSubgroup_injective
+  rw [ContinuousMulEquiv.closedSubgroupOrderIso_apply_toSubgroup,
+    Matrix.unitaryReindexContinuousMulEquiv_refl]
+  exact Subgroup.map_id _
+
+/-- Reindexing a closed subgroup `G ≤ U(n)` along a composite equivalence `e.trans f` equals
+reindexing along `e` then `f`. -/
+@[simp]
+theorem closedSubgroupOrderIso_unitaryReindexContinuousMulEquiv_trans
+    (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) (e : n ≃ m) (f : m ≃ p) :
+    (Matrix.unitaryReindexContinuousMulEquiv 𝕜 (e.trans f)).closedSubgroupOrderIso G =
+      (Matrix.unitaryReindexContinuousMulEquiv 𝕜 f).closedSubgroupOrderIso
+        ((Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).closedSubgroupOrderIso G) := by
+  apply ClosedSubgroup.toSubgroup_injective
+  rw [ContinuousMulEquiv.closedSubgroupOrderIso_apply_toSubgroup,
+    ContinuousMulEquiv.closedSubgroupOrderIso_apply_toSubgroup,
+    ContinuousMulEquiv.closedSubgroupOrderIso_apply_toSubgroup, Subgroup.map_map]
+  congr 1
+  exact congrArg
+    (fun φ : Matrix.unitaryGroup n 𝕜 ≃ₜ* Matrix.unitaryGroup p 𝕜 ↦ φ.toMulEquiv.toMonoidHom)
+    (Matrix.unitaryReindexContinuousMulEquiv_trans_unitaryReindexContinuousMulEquiv
+      (α := 𝕜) e f).symm
+
+end Reindex
+
+section FromBlocksProd
+
 variable {n m 𝕜 : Type*} [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m] [RCLike 𝕜]
 
 /-- The block-diagonal product `G₁ × G₂ ≤ U(n ⊕ m)` of closed subgroups `G₁ ≤ U(n)` and
@@ -341,16 +426,16 @@ theorem mem_fromBlocksProd_iff {g : Matrix.unitaryGroup (n ⊕ m) 𝕜} :
   -- The underlying subgroup of `fromBlocksProd` is, by definition, the image of `G₁ × G₂`.
   change g ∈ ((G₁ : Subgroup _).prod G₂).map Matrix.UnitaryGroup.sum ↔ _
   simp only [Subgroup.mem_map, Subgroup.mem_prod, Prod.exists]
-  constructor
-  · rintro ⟨g₁, g₂, ⟨h₁, h₂⟩, rfl⟩
-    exact ⟨g₁, h₁, g₂, h₂, Matrix.UnitaryGroup.coe_sum _⟩
-  · rintro ⟨g₁, h₁, g₂, h₂, hg⟩
-    exact ⟨g₁, g₂, ⟨h₁, h₂⟩, Subtype.ext ((Matrix.UnitaryGroup.coe_sum _).trans hg.symm)⟩
+  exact ⟨fun ⟨g₁, g₂, ⟨h₁, h₂⟩, hg⟩ ↦ ⟨g₁, h₁, g₂, h₂, hg ▸ Matrix.UnitaryGroup.coe_sum _⟩,
+    fun ⟨g₁, h₁, g₂, h₂, hg⟩ ↦ ⟨g₁, g₂, ⟨h₁, h₂⟩,
+      Subtype.ext ((Matrix.UnitaryGroup.coe_sum _).trans hg.symm)⟩⟩
 
 /-- The block-diagonal sum `diag(g₁, g₂)` of `g₁ ∈ G₁` and `g₂ ∈ G₂` lies in the product. -/
 theorem sum_mem_fromBlocksProd {g₁ : Matrix.unitaryGroup n 𝕜}
     {g₂ : Matrix.unitaryGroup m 𝕜} (h₁ : g₁ ∈ G₁) (h₂ : g₂ ∈ G₂) :
     Matrix.UnitaryGroup.sum (g₁, g₂) ∈ G₁.fromBlocksProd G₂ :=
   mem_fromBlocksProd_iff.mpr ⟨g₁, h₁, g₂, h₂, Matrix.UnitaryGroup.coe_sum _⟩
+
+end FromBlocksProd
 
 end ClosedSubgroup

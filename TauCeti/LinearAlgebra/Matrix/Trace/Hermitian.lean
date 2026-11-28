@@ -7,13 +7,15 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
+import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 
 /-!
 # Trace of a Hermitian square
 
 The trace of the square of a Hermitian complex matrix is the sum of its squared entry norms. The
 trace of the product of a Hermitian and a skew-Hermitian matrix is purely imaginary
-(`Matrix.IsHermitian.re_trace_mul_eq_zero_of_conjTranspose_eq_neg`).
+(`Matrix.IsHermitian.re_trace_mul_eq_zero_of_conjTranspose_eq_neg`), and the trace of the product of
+two skew-Hermitian matrices is real (`Matrix.im_trace_mul_eq_zero_of_conjTranspose_eq_neg`).
 -/
 
 public section
@@ -39,5 +41,12 @@ theorem IsHermitian.re_trace_mul_eq_zero_of_conjTranspose_eq_neg {𝕜 ι : Type
   have := congrArg RCLike.re h
   simp only [RCLike.star_def, RCLike.conj_re, map_neg] at this
   linarith
+
+/-- The trace `tr(X Y)` of the product of two skew-Hermitian matrices `X` and `Y` is real. -/
+theorem im_trace_mul_eq_zero_of_conjTranspose_eq_neg {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι]
+    {X Y : Matrix ι ι 𝕜} (hX : Xᴴ = -X) (hY : Yᴴ = -Y) :
+    RCLike.im (X * Y).trace = 0 :=
+  RCLike.conj_eq_iff_im.mp
+    (by simpa only [← RCLike.star_def] using star_trace_mul_of_conjTranspose_eq_neg hX hY)
 
 end Matrix

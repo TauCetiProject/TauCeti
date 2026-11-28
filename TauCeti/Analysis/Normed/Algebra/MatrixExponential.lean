@@ -173,6 +173,12 @@ theorem IsUpperTriangular.exp_submatrix_castSucc {n : ℕ}
     exact Set.ordConnected_Iio (a := Fin.last n)
   simpa only [Fin.coe_castSuccEmb] using hX.exp_submatrix Fin.castSuccEmb he
 
+/-- Matrix exponentiation commutes with simultaneous row and column reindexing. -/
+theorem exp_reindex {p q : Type*} [Fintype p] [Fintype q] [DecidableEq p] [DecidableEq q]
+    (e : p ≃ q) (M : Matrix p p R) :
+    exp (M.reindex e e) = (exp M).reindex e e :=
+  (NormedSpace.map_exp (Matrix.reindexRingEquiv R e) (continuous_id.matrix_reindex e e) M).symm
+
 end EntrySeries
 
 section PositiveDiagonal

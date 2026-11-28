@@ -5,12 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Lie.Adjoint.Units.Basic
+public import TauCeti.Geometry.Lie.Subgroup.Differential
 public import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
 import TauCeti.Geometry.Lie.Subgroup.CartanChart
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+import TauCeti.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 
 /-!
-# The Lie algebra of a closed subgroup of the units of a normed algebra
+# The Lie algebra and tangent spaces of a subgroup of the units of a normed algebra
 
 For the Lie group `Rˣ` of units of a finite-dimensional real normed algebra, the canonical
 identification `TauCeti.Lie.unitsLieAlgebraLieEquiv` of its Lie algebra with `R` turns the
@@ -22,6 +26,11 @@ The exponential-line set `Subgroup.linearLieAlgebra` is defined for any complete
 algebra. Its elementary closure properties need no finite-dimensionality or closedness. In finite
 dimension, `Subgroup.linearLieSubalgebra` transports the intrinsic Lie subalgebra as a bundled
 Lie subalgebra; for a closed subgroup its carrier is the exponential-line set.
+
+For an embedded Lie subgroup `K ≤ Rˣ`, the differential of the inclusion `K → R` at the identity
+has range `K.linearLieSubalgebra`; left translation by `g ∈ K` carries this range onto
+`g · K.linearLieSubalgebra`, and adjoint invariance `Ad(g) 𝔤 = 𝔤` identifies the left and right
+translates `g · 𝔤 = 𝔤 · g`.
 
 ## Main results
 
@@ -36,10 +45,15 @@ Lie subalgebra; for a closed subgroup its carrier is the exponential-line set.
 * `Subgroup.star_mem_linearLieAlgebra`: the exponential-line set of a subgroup is invariant under
   a star that preserves the subgroup.
 * `Subgroup.star_mem_linearLieSubalgebra`: the same for the Lie algebra of a closed subgroup.
-* `Subgroup.conj_mem_linearLieSubalgebra`: the Lie algebra of a subgroup is invariant under
-  conjugation by the subgroup.
+* `Subgroup.conj_mem_linearLieSubalgebra`,
+  `Subgroup.conj_mem_linearLieSubalgebra_of_mem_normalizer`,
+  and `Subgroup.map_mulLeft_linearLieSubalgebra_eq_map_mulRight`: adjoint invariance and equality
+  `g · 𝔤 = 𝔤 · g` for elements of the normalizer.
 * `Subgroup.le_of_linearLieSubalgebra_le`: a closed connected subgroup lies in every closed
   subgroup whose Lie algebra contains its own.
+* `TauCeti.Lie.EmbeddedLieSubgroupData.range_mvfderiv_unitsVal_subtypeVal` and
+  `TauCeti.Lie.EmbeddedLieSubgroupData.range_mvfderiv_unitsVal_subtypeVal_eq_mulRight`: the
+  tangent space in `R` at `g ∈ K` of an embedded Lie subgroup `K ≤ Rˣ` is `g · 𝔤 = 𝔤 · g`.
 -/
 
 public section
@@ -211,17 +225,22 @@ theorem commutator_mem_linearLieAlgebra (hG : IsClosed (G : Set Rˣ))
   rw [← mem_linearLieSubalgebra_iff hG] at hx hy ⊢
   exact G.linearLieSubalgebra.lie_mem hx hy
 
+/-- Conjugation by an element of the normalizer of `K` preserves `K.linearLieSubalgebra`. -/
+theorem conj_mem_linearLieSubalgebra_of_mem_normalizer {K : Subgroup Rˣ} {g : Rˣ}
+    (hg : g ∈ Subgroup.normalizer (K : Set Rˣ)) {x : R} (hx : x ∈ K.linearLieSubalgebra) :
+    (g : R) * x * ((g⁻¹ : Rˣ) : R) ∈ K.linearLieSubalgebra := by
+  rw [mem_linearLieSubalgebra] at hx ⊢
+  convert TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) hg hx using 1
+  rw [LieEquiv.symm_apply_eq, TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
+    TauCeti.Lie.unitsLieAlgebraEquiv_Ad, ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
+    LieEquiv.apply_symm_apply]
+
 /-- The Lie algebra of a subgroup `G` of `Rˣ` is invariant under conjugation by `G`: this is
 `TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup`, read through `TauCeti.Lie.unitsLieAlgebraLieEquiv`,
 under which the adjoint action is conjugation in `R` (`TauCeti.Lie.unitsLieAlgebraEquiv_Ad`). -/
 theorem conj_mem_linearLieSubalgebra {y : Rˣ} (hy : y ∈ G) (hx : x ∈ G.linearLieSubalgebra) :
-    (y : R) * x * ↑y⁻¹ ∈ G.linearLieSubalgebra := by
-  rw [mem_linearLieSubalgebra] at hx ⊢
-  convert TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) (Subgroup.le_normalizer hy)
-    hx using 1
-  rw [LieEquiv.symm_apply_eq, TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
-    TauCeti.Lie.unitsLieAlgebraEquiv_Ad, ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
-    LieEquiv.apply_symm_apply]
+    (y : R) * x * ↑y⁻¹ ∈ G.linearLieSubalgebra :=
+  conj_mem_linearLieSubalgebra_of_mem_normalizer (Subgroup.le_normalizer hy) hx
 
 /-- The Lie algebra of a closed subgroup stable under a continuous star is stable under the
 star. -/
@@ -240,6 +259,152 @@ theorem le_of_linearLieSubalgebra_le {L : Subgroup Rˣ} (hG : IsClosed (G : Set 
   rw [← (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := R)).symm_apply_apply x] at hx ⊢
   exact mem_linearLieSubalgebra.1 (h (mem_linearLieSubalgebra.2 hx))
 
+/-- A larger subgroup of `Rˣ` has a larger linear Lie subalgebra in `R`. -/
+theorem linearLieSubalgebra_mono {K K' : Subgroup Rˣ} (h : K ≤ K') :
+    K.linearLieSubalgebra ≤ K'.linearLieSubalgebra := fun _ hx ↦
+  mem_linearLieSubalgebra.2
+    (TauCeti.Lie.lieSubalgebraOfSubgroup_mono h (mem_linearLieSubalgebra.1 hx))
+
+/-- For closed subgroups of `Rˣ`, the linear Lie subalgebra of an intersection is the intersection
+of the linear Lie subalgebras. -/
+theorem linearLieSubalgebra_inf {K K' : Subgroup Rˣ}
+    (hK : IsClosed (K : Set Rˣ)) (hK' : IsClosed (K' : Set Rˣ)) :
+    (K ⊓ K').linearLieSubalgebra = K.linearLieSubalgebra ⊓ K'.linearLieSubalgebra := by
+  ext x
+  simp only [mem_linearLieSubalgebra, LieSubalgebra.mem_inf,
+    TauCeti.Lie.lieSubalgebraOfSubgroup_inf hK hK']
+
+/-- For `g` in the normalizer of `K`, the left and right translates of `K.linearLieSubalgebra`
+by `g` coincide: `g · 𝔤 = 𝔤 · g`. -/
+theorem map_mulLeft_linearLieSubalgebra_eq_map_mulRight {K : Subgroup Rˣ} {g : Rˣ}
+    (hg : g ∈ Subgroup.normalizer (K : Set Rˣ)) :
+    K.linearLieSubalgebra.toSubmodule.map (LinearMap.mulLeft ℝ (g : R)) =
+      K.linearLieSubalgebra.toSubmodule.map (LinearMap.mulRight ℝ (g : R)) := by
+  ext v
+  simp only [Submodule.mem_map, LieSubalgebra.mem_toSubmodule, LinearMap.mulLeft_apply,
+    LinearMap.mulRight_apply]
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    refine ⟨(g : R) * x * ((g⁻¹ : Rˣ) : R),
+      conj_mem_linearLieSubalgebra_of_mem_normalizer hg hx, ?_⟩
+    simp [mul_assoc]
+  · rintro ⟨x, hx, rfl⟩
+    have hg' : g⁻¹ ∈ Subgroup.normalizer (K : Set Rˣ) := inv_mem hg
+    refine ⟨((g⁻¹ : Rˣ) : R) * x * (g : R), ?_, ?_⟩
+    · simpa only [inv_inv] using conj_mem_linearLieSubalgebra_of_mem_normalizer hg' hx
+    · simp [mul_assoc]
+
 end FiniteDimensional
 
 end Subgroup
+
+namespace TauCeti.Lie
+
+section EmbeddedTangent
+
+variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [FiniteDimensional ℝ R]
+  {K : Subgroup Rˣ} {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+
+local instance finiteDimensionalCompleteSpaceEmbeddedTangent : CompleteSpace R :=
+  FiniteDimensional.completeSpace ℝ R
+
+/-- The inclusion of an embedded Lie subgroup `K ≤ Rˣ` into the ambient normed algebra `R` is
+smooth. -/
+theorem EmbeddedLieSubgroupData.contMDiff_unitsVal_subtypeVal
+    (d : EmbeddedLieSubgroupData 𝓘(ℝ, R) K E') :
+    let _ : ChartedSpace E' K := d.chartedSpace
+    ContMDiff 𝓘(ℝ, E') 𝓘(ℝ, R) ∞ (fun k : K ↦ ((k : Rˣ) : R)) := by
+  let _ : ChartedSpace E' K := d.chartedSpace
+  exact (Units.contMDiff_val (𝕜 := ℝ) (n := ∞)).comp d.contMDiff_subtypeVal
+
+variable [FiniteDimensional ℝ E']
+
+/-- At the identity, the range of the differential of the inclusion `K → R` of an embedded Lie
+subgroup `K ≤ Rˣ` is `K.linearLieSubalgebra`. -/
+theorem EmbeddedLieSubgroupData.range_mvfderiv_unitsVal_subtypeVal_one
+    (d : EmbeddedLieSubgroupData 𝓘(ℝ, R) K E') :
+    let _ : ChartedSpace E' K := d.chartedSpace
+    (mvfderiv 𝓘(ℝ, E') (fun k : K ↦ ((k : Rˣ) : R)) (1 : K)).range =
+      K.linearLieSubalgebra.toSubmodule := by
+  let _ : ChartedSpace E' K := d.chartedSpace
+  let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
+  let eK := leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := 𝓘(ℝ, E')) (G := K)
+  have hval_D (D : LeftInvariantDerivation 𝓘(ℝ, E') K) :
+      mvfderiv 𝓘(ℝ, E') (fun k : K ↦ ((k : Rˣ) : R)) (1 : K) (eK D) =
+        unitsLieAlgebraLieEquiv (R := R) (d.lieMapSubtypeVal D) := by
+    have hfun : (fun k : K ↦ ((k : Rˣ) : R)) = (Units.val : Rˣ → R) ∘ ⇑d.subtypeVal :=
+      funext fun k ↦ (congrArg Units.val (d.subtypeVal_apply k)).symm
+    have hsub := ((d.contMDiff_subtypeVal.congr fun k ↦ d.subtypeVal_apply k).mdifferentiable
+      (by simp)).mdifferentiableAt (x := (1 : K))
+    have hval := ((Units.contMDiff_val (𝕜 := ℝ) (n := ∞)).mdifferentiable
+      (by simp)).mdifferentiableAt (x := (1 : Rˣ))
+    have h1 := mvfderiv_comp_apply_of_eq (I' := 𝓘(ℝ, E')) (I := 𝓘(ℝ, R)) (x := (1 : K))
+      hval hsub (map_one d.subtypeVal) (eK D)
+    rw [← hfun, Units.mvfderiv_val] at h1
+    have hlie := leftInvariantDerivationLinearIsometryEquivModelVectorSpace_lieMap d.subtypeVal D
+    dsimp only at hlie
+    refine h1.trans ?_
+    -- Unfold `mvfderiv` on `d.subtypeVal` to `mfderiv` so `hlie` applies.
+    change mfderiv 𝓘(ℝ, E') 𝓘(ℝ, R) (⇑d.subtypeVal) (1 : K) (eK D) = _
+    rw [← hlie]
+    simp only [unitsLieAlgebraLieEquiv_apply, unitsLieAlgebraEquiv_apply,
+      leftInvariantDerivationLinearIsometryEquivModelVectorSpace_apply_eq_lieEquiv_apply,
+      leftInvariantDerivationLieEquivGroupLieAlgebra_apply,
+      EmbeddedLieSubgroupData.lieMapSubtypeVal_apply]
+    rfl
+  have hcomp :
+      (mvfderiv 𝓘(ℝ, E') (fun k : K ↦ ((k : Rˣ) : R)) (1 : K)).toLinearMap.comp
+          eK.toLinearEquiv.toLinearMap =
+        (unitsLieAlgebraLieEquiv (R := R)).toLieHom.toLinearMap.comp
+          d.lieMapSubtypeVal.toLinearMap := LinearMap.ext hval_D
+  dsimp only
+  rw [← LinearMap.range_comp_of_range_eq_top
+      (mvfderiv 𝓘(ℝ, E') (fun k : K ↦ ((k : Rˣ) : R)) (1 : K)).toLinearMap
+      (LinearEquiv.range eK.toLinearEquiv),
+    hcomp, LinearMap.range_comp, ← LieHom.range_toSubmodule, d.range_lieMapSubtypeVal_eq,
+    Subgroup.linearLieSubalgebra_eq_map]
+  rfl
+
+/-- At any `g ∈ K`, the tangent space in `R` of an embedded Lie subgroup `K ≤ Rˣ` is the left
+translate `g · 𝔤` of its Lie subalgebra. -/
+theorem EmbeddedLieSubgroupData.range_mvfderiv_unitsVal_subtypeVal
+    (d : EmbeddedLieSubgroupData 𝓘(ℝ, R) K E') (g : K) :
+    let _ : ChartedSpace E' K := d.chartedSpace
+    (mvfderiv 𝓘(ℝ, E') (fun k : K ↦ ((k : Rˣ) : R)) g).range =
+      K.linearLieSubalgebra.toSubmodule.map (LinearMap.mulLeft ℝ ((g : Rˣ) : R)) := by
+  let _ : ChartedSpace E' K := d.chartedSpace
+  let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
+  let ι : K → R := fun k ↦ ((k : Rˣ) : R)
+  let L_R : R →L[ℝ] R := LinearMap.toContinuousLinearMap (LinearMap.mulLeft ℝ ((g : Rˣ) : R))
+  have hfun : ι ∘ Diffeomorph.smul 𝓘(ℝ, E') 𝓘(ℝ, E') ∞ g = L_R ∘ ι :=
+    funext fun k ↦ by simp [ι, L_R]
+  have hι :=
+    (d.contMDiff_unitsVal_subtypeVal.mdifferentiable (by simp)).mdifferentiableAt (x := (1 : K))
+  have h1 : (mvfderiv 𝓘(ℝ, E') ι g).range =
+      (mvfderiv 𝓘(ℝ, E') (ι ∘ Diffeomorph.smul 𝓘(ℝ, E') 𝓘(ℝ, E') ∞ g) 1).range := by
+    have h := (Diffeomorph.smul 𝓘(ℝ, E') 𝓘(ℝ, E') ∞ g).range_mvfderiv_comp_diffeomorph
+      (by simp) ι 1
+    simp only [Diffeomorph.smul_apply, smul_eq_mul] at h
+    rw [mul_one] at h; exact h.symm
+  have hcomp : mvfderiv 𝓘(ℝ, E') (L_R ∘ ι) 1 = L_R.comp (mvfderiv 𝓘(ℝ, E') ι 1) :=
+    ContinuousLinearMap.ext fun w ↦ L_R.mvfderiv_comp_apply hι w
+  dsimp only
+  rw [show (mvfderiv 𝓘(ℝ, E') (fun k : K ↦ ((k : Rˣ) : R)) g).range =
+      (mvfderiv 𝓘(ℝ, E') ι g).range from rfl, h1, hfun, hcomp,
+    ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp,
+    d.range_mvfderiv_unitsVal_subtypeVal_one]
+  rfl
+
+/-- At any `g ∈ K`, the tangent space in `R` of an embedded Lie subgroup `K ≤ Rˣ` is also the
+right translate `𝔤 · g` of its Lie subalgebra. -/
+theorem EmbeddedLieSubgroupData.range_mvfderiv_unitsVal_subtypeVal_eq_mulRight
+    (d : EmbeddedLieSubgroupData 𝓘(ℝ, R) K E') (g : K) :
+    let _ : ChartedSpace E' K := d.chartedSpace
+    (mvfderiv 𝓘(ℝ, E') (fun k : K ↦ ((k : Rˣ) : R)) g).range =
+      K.linearLieSubalgebra.toSubmodule.map (LinearMap.mulRight ℝ ((g : Rˣ) : R)) := by
+  dsimp only; rw [d.range_mvfderiv_unitsVal_subtypeVal g]
+  exact Subgroup.map_mulLeft_linearLieSubalgebra_eq_map_mulRight (Subgroup.le_normalizer g.property)
+
+end EmbeddedTangent
+
+end TauCeti.Lie
