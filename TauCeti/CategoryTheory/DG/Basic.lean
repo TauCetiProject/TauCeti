@@ -517,4 +517,37 @@ theorem dgDifferential_eq_zero_of_dgComp_eq_dgId {X Y : C} {p q : ℤ} {f : DGHo
           (by omega) := dgComp_assoc R g f _ (by omega) _ (by omega)
     _ = 0 := by rw [h, dgComp_zero]
 
+/-! ### Object transport -/
+
+/-- Transport homogeneous morphisms of degree `n` along equalities of source and target objects. -/
+noncomputable def dgHomCongr {X X' Y Y' : C} (hX : X = X') (hY : Y = Y') (n : ℤ) :
+    DGHom R n X Y ≃ₗ[R] DGHom R n X' Y' :=
+  (eqToIso (congrArg₂ (fun A B ↦ (dgHomComplex R A B).X n) hX hY)).toLinearEquiv
+
+/-- `TauCeti.dgHomCongr` is induced by `CategoryTheory.eqToIso` on degree-`n` Hom modules. -/
+theorem dgHomCongr_def {X X' Y Y' : C} (hX : X = X') (hY : Y = Y') (n : ℤ) :
+    dgHomCongr R hX hY n =
+      (eqToIso (congrArg₂ (fun A B ↦ (dgHomComplex R A B).X n) hX hY)).toLinearEquiv := (rfl)
+
+/-- Object transport along reflexive equalities is the identity linear equivalence. -/
+@[simp] theorem dgHomCongr_rfl (X Y : C) (n : ℤ) :
+    dgHomCongr R (rfl : X = X) (rfl : Y = Y) n = LinearEquiv.refl R (DGHom R n X Y) := by
+  ext; simp [dgHomCongr]
+
+/-- Inverting `TauCeti.dgHomCongr` reverses both object equalities. -/
+@[simp] theorem dgHomCongr_symm {X X' Y Y' : C} (hX : X = X') (hY : Y = Y') (n : ℤ) :
+    (dgHomCongr R hX hY n).symm = dgHomCongr R hX.symm hY.symm n := by subst hX hY; ext; simp
+
+/-- Two successive object transports compose to transport along the transitive equalities. -/
+@[simp] theorem dgHomCongr_trans {X X' X'' Y Y' Y'' : C} (hX : X = X') (hX' : X' = X'')
+    (hY : Y = Y') (hY' : Y' = Y'') (n : ℤ) :
+    (dgHomCongr R hX hY n).trans (dgHomCongr R hX' hY' n) =
+      dgHomCongr R (hX.trans hX') (hY.trans hY') n := by subst hX hX' hY hY'; ext; simp
+
+/-- Object transport commutes with homogeneous DG composition `TauCeti.dgComp`. -/
+theorem dgHomCongr_dgComp {X X' Y Y' Z Z' : C} (hX : X = X') (hY : Y = Y') (hZ : Z = Z')
+    {p q n : ℤ} (f : DGHom R p X Y) (g : DGHom R q Y Z) (h : p + q = n) :
+    dgHomCongr R hX hZ n (dgComp R f g h) =
+      dgComp R (dgHomCongr R hX hY p f) (dgHomCongr R hY hZ q g) h := by subst hX hY hZ; simp
+
 end TauCeti

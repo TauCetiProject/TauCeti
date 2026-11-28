@@ -101,6 +101,30 @@ theorem isQuasiFullyFaithful_iff_isIso_homologyMap
     intro n
     exact (quasiIsoAt_iff_isIso_homologyMap (F.map X Y) n).mpr (hF X Y n)
 
+/-- A quasi-fully faithful DG functor induces linear equivalences on all Hom cohomology groups. -/
+noncomputable def IsQuasiFullyFaithful.homologyLinearEquiv
+    {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D}
+    (hF : F.IsQuasiFullyFaithful) (X Y : C) (d : ℤ) :
+    (TauCeti.dgHomComplex R X Y).homology d ≃ₗ[R]
+      (TauCeti.dgHomComplex R (F.obj X) (F.obj Y)).homology d :=
+  have := hF.isIso_homologyMap X Y d; (asIso (homologyMap (F.map X Y) d)).toLinearEquiv
+
+/-- `IsQuasiFullyFaithful.homologyLinearEquiv` acts via `HomologicalComplex.homologyMap`. -/
+@[simp] theorem IsQuasiFullyFaithful.homologyLinearEquiv_apply
+    {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D} (hF : F.IsQuasiFullyFaithful)
+    (X Y : C) (d : ℤ) (x : (TauCeti.dgHomComplex R X Y).homology d) :
+    hF.homologyLinearEquiv X Y d x = (homologyMap (F.map X Y) d).hom x := (rfl)
+
+/-- `IsQuasiFullyFaithful.homologyLinearEquiv` commutes with graded cohomology composition. -/
+theorem IsQuasiFullyFaithful.homologyLinearEquiv_dgHomologyComp
+    {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D} (hF : F.IsQuasiFullyFaithful)
+    {X Y Z : C} {p q n : ℤ} (hpq : p + q = n) (x : (TauCeti.dgHomComplex R X Y).homology p)
+    (y : (TauCeti.dgHomComplex R Y Z).homology q) :
+    hF.homologyLinearEquiv X Z n (TauCeti.dgHomologyComp R X Y Z hpq x y) =
+      TauCeti.dgHomologyComp R (F.obj X) (F.obj Y) (F.obj Z) hpq
+        (hF.homologyLinearEquiv X Y p x) (hF.homologyLinearEquiv Y Z q y) :=
+  F.homologyMap_dgHomologyComp hpq x y
+
 /-- The identity DG functor is quasi-fully faithful. -/
 @[simp]
 theorem isQuasiFullyFaithful_id :

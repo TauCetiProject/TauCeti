@@ -278,6 +278,23 @@ public theorem piCongrRight_single {R ι : Type*} [Semiring R] [DecidableEq ι]
   funext j
   exact Pi.apply_single (fun i => e i) (fun _ => map_zero _) i x j
 
+/-- `Equiv.piComm` as a `LinearEquiv`, swapping the two arguments of a dependent family of
+modules. -/
+public def piComm (R : Type*) [Semiring R] {α β : Type*} (M : α → β → Type*)
+    [∀ a b, AddCommMonoid (M a b)] [∀ a b, Module R (M a b)] :
+    (∀ a b, M a b) ≃ₗ[R] ∀ b a, M a b :=
+  { toEquiv := Equiv.piComm M, map_add' _ _ := rfl, map_smul' _ _ := rfl }
+
+/-- Evaluating `LinearEquiv.piComm` swaps the two arguments. -/
+@[simp] public theorem piComm_apply (R : Type*) [Semiring R] {α β : Type*} (M : α → β → Type*)
+    [∀ a b, AddCommMonoid (M a b)] [∀ a b, Module R (M a b)] (f : ∀ a b, M a b) (b : β)
+    (a : α) : piComm R M f b a = f a b := (rfl)
+
+/-- The inverse of `LinearEquiv.piComm` is `LinearEquiv.piComm` on `Function.swap M`. -/
+@[simp] public theorem piComm_symm (R : Type*) [Semiring R] {α β : Type*} (M : α → β → Type*)
+    [∀ a b, AddCommMonoid (M a b)] [∀ a b, Module R (M a b)] :
+    (piComm R M).symm = piComm R (Function.swap M) := (rfl)
+
 section FinSnoc
 
 variable (R : Type*) [Semiring R] {n : ℕ} (M : Fin (n + 1) → Type*)

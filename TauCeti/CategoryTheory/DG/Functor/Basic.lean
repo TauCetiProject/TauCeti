@@ -261,6 +261,26 @@ theorem dgMap_mem_dgBoundaries {X Y : C} {f : DGHom R 0 X Y} (hf : f ∈ dgBound
 
 /-! ### The induced functor on homotopy categories -/
 
+/-- Every DG functor preserves `TauCeti.dgHomologyId`. -/
+@[simp]
+theorem homologyMap_dgHomologyId (X : C) :
+    (homologyMap (F.map X X) 0).hom (dgHomologyId R X) = dgHomologyId R (F.obj X) := by
+  rw [dgHomologyId_def, dgHomologyId_def, homologyMap_dgHomologyClass]
+  exact dgHomologyClass_congr R _ _ ((F.dgMap_apply (dgId R X)).symm.trans (F.dgMap_dgId X))
+
+/-- Every DG functor commutes with `TauCeti.dgHomologyComp` in all degrees. -/
+theorem homologyMap_dgHomologyComp {X Y Z : C} {p q n : ℤ} (h : p + q = n)
+    (a : (dgHomComplex R X Y).homology p) (b : (dgHomComplex R Y Z).homology q) :
+    (homologyMap (F.map X Z) n).hom (dgHomologyComp R X Y Z h a b) =
+      dgHomologyComp R (F.obj X) (F.obj Y) (F.obj Z) h
+        ((homologyMap (F.map X Y) p).hom a) ((homologyMap (F.map Y Z) q).hom b) := by
+  obtain ⟨f, hf, rfl⟩ := exists_dgHomologyClass_eq R a
+  obtain ⟨g, hg, rfl⟩ := exists_dgHomologyClass_eq R b
+  simp only [dgHomologyComp_dgHomologyClass, homologyMap_dgHomologyClass]
+  exact dgHomologyClass_congr R _ _ <|
+    ((F.dgMap_apply (dgComp R f g h)).symm.trans (F.dgMap_dgComp f g h)).trans
+      (by rw [F.dgMap_apply, F.dgMap_apply])
+
 /-- The map induced by a DG functor on degree-zero cohomology of Hom complexes is compatible with
 the composition of homotopy classes. -/
 theorem homologyMap_dgHomotopyComp {X Y Z : C} (a : DGHomotopyClass R X Y)
@@ -268,10 +288,8 @@ theorem homologyMap_dgHomotopyComp {X Y Z : C} (a : DGHomotopyClass R X Y)
     (homologyMap (F.map X Z) 0).hom (dgHomotopyComp R X Y Z a b) =
       dgHomotopyComp R (F.obj X) (F.obj Y) (F.obj Z) ((homologyMap (F.map X Y) 0).hom a)
         ((homologyMap (F.map Y Z) 0).hom b) := by
-  obtain ⟨f, hf, rfl⟩ := exists_dgHomotopyClass_eq R a
-  obtain ⟨g, hg, rfl⟩ := exists_dgHomotopyClass_eq R b
-  simp_rw [dgHomotopyComp_dgHomotopyClass, homologyMap_dgHomotopyClass, ← dgMap_apply,
-    dgHomotopyComp_dgHomotopyClass, dgCompZero_def, dgMap_dgComp]
+  rw [dgHomotopyComp_eq_dgHomologyComp, dgHomotopyComp_eq_dgHomologyComp]
+  exact F.homologyMap_dgHomologyComp (zero_add 0) a b
 
 /-- The functor `H⁰(F) : H⁰(C) ⥤ H⁰(D)` induced by a DG functor `F`.  On morphisms it is the map
 induced by `F.map X Y` on degree-zero cohomology of Hom complexes; by
