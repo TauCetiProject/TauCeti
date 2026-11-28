@@ -273,10 +273,8 @@ theorem lift_injective (I : OrderIdeal G) (f : G →+o H) (hf : ∀ x ∈ I, f x
 
 /-- `Quotient.lift` is surjective when `f` is surjective. -/
 theorem lift_surjective (I : OrderIdeal G) (f : G →+o H) (hf : ∀ x ∈ I, f x = 0)
-    (hsurj : Function.Surjective f) : Function.Surjective (lift I f hf) := by
-  intro y
-  obtain ⟨x, rfl⟩ := hsurj y
-  exact ⟨mk I x, lift_mk I f hf x⟩
+    (hsurj : Function.Surjective f) : Function.Surjective (lift I f hf) :=
+  QuotientAddGroup.lift_surjective_of_surjective _ f.toAddMonoidHom hsurj hf
 
 /-- Canonical map between quotients `G ⧸ I →+o G ⧸ J` for `I ≤ J`. -/
 def factor {I J : OrderIdeal G} (hIJ : I ≤ J) : (G ⧸ I) →+o (G ⧸ J) :=

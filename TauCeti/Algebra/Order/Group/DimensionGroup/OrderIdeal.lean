@@ -444,16 +444,6 @@ theorem mem_inf (h : HasRieszInterpolation G) {I J : OrderIdeal G} {x : G} :
     x ∈ inf h I J ↔ x ∈ I ∧ x ∈ J :=
   Iff.rfl
 
-private theorem inf_le_left' (h : HasRieszInterpolation G) (I J : OrderIdeal G) : inf h I J ≤ I :=
-  fun _ hx ↦ hx.1
-
-private theorem inf_le_right' (h : HasRieszInterpolation G) (I J : OrderIdeal G) : inf h I J ≤ J :=
-  fun _ hx ↦ hx.2
-
-private theorem le_inf' (h : HasRieszInterpolation G) {K I J : OrderIdeal G}
-    (hI : K ≤ I) (hJ : K ≤ J) : K ≤ inf h I J :=
-  fun _ hx ↦ ⟨hI hx, hJ hx⟩
-
 private theorem exists_decomposition_of_le_mem_sup (h : HasRieszInterpolation G)
     {I J : OrderIdeal G} {g b : G} (hg : 0 ≤ g) (hgb : g ≤ b)
     (hb : b ∈ I.toAddSubgroup ⊔ J.toAddSubgroup) :
@@ -484,16 +474,6 @@ theorem mem_sup (h : HasRieszInterpolation G) {I J : OrderIdeal G} {x : G} :
     x ∈ sup h I J ↔ ∃ a ∈ I, ∃ b ∈ J, a + b = x :=
   AddSubgroup.mem_sup
 
-private theorem le_sup_left' (h : HasRieszInterpolation G) (I J : OrderIdeal G) : I ≤ sup h I J :=
-  toAddSubgroup_le.1 _root_.le_sup_left
-
-private theorem le_sup_right' (h : HasRieszInterpolation G) (I J : OrderIdeal G) : J ≤ sup h I J :=
-  toAddSubgroup_le.1 _root_.le_sup_right
-
-private theorem sup_le' (h : HasRieszInterpolation G) {I J K : OrderIdeal G}
-    (hI : I ≤ K) (hJ : J ≤ K) : sup h I J ≤ K :=
-  toAddSubgroup_le.1 (_root_.sup_le (toAddSubgroup_le.2 hI) (toAddSubgroup_le.2 hJ))
-
 private theorem inf_sup_le (h : HasRieszInterpolation G) (I J K : OrderIdeal G) :
     inf h I (sup h J K) ≤ sup h (inf h I J) (inf h I K) := by
   refine le_of_forall_nonneg fun g hg0 ⟨hgI, hgJK⟩ ↦ ?_
@@ -508,15 +488,11 @@ private theorem inf_sup_le (h : HasRieszInterpolation G) (I J K : OrderIdeal G) 
 and subgroup sum as `⊔`. -/
 @[instance_reducible]
 def distribLattice (h : HasRieszInterpolation G) : DistribLattice (OrderIdeal G) :=
+  letI : Max (OrderIdeal G) := ⟨sup h⟩
+  letI : Min (OrderIdeal G) := ⟨inf h⟩
   letI : Lattice (OrderIdeal G) :=
-    { inf := inf h
-      sup := sup h
-      inf_le_left := inf_le_left' h
-      inf_le_right := inf_le_right' h
-      le_inf := fun _ _ _ ↦ le_inf' h
-      le_sup_left := le_sup_left' h
-      le_sup_right := le_sup_right' h
-      sup_le := fun _ _ _ ↦ sup_le' h }
+    toAddSubgroup_injective.lattice _ toAddSubgroup_le toAddSubgroup_lt
+      (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
   DistribLattice.ofInfSupLe (inf_sup_le h)
 
 /-- Under `distribLattice h`, `I ⊓ J` equals `inf h I J`. -/
