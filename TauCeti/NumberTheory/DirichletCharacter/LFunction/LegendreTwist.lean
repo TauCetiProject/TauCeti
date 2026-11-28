@@ -38,11 +38,6 @@ theorem LFunction_mul_jacobiChar_eq_legendreTwist {q d : ℕ} [NeZero q] [Fact d
         (χ.legendreTwist d).LFunction by
     exact this _ hqd.lcm_eq_mul (Nat.dvd_lcm_left ..) (Nat.dvd_lcm_right ..)
   intro m _ rfl hq hdm
-  congr 1
-  refine MulChar.ext fun u ↦ ?_
-  rw [MulChar.mul_apply, changeLevel_eq_cast_of_dvd, changeLevel_eq_cast_of_dvd,
-    ZMod.cast_eq_val, ZMod.cast_eq_val, TauCeti.jacobiChar_natCast,
-    ← jacobiSym.legendreSym.to_jacobiSym, ← χ.legendreTwist_apply_natCast d,
-    ZMod.natCast_zmod_val]
+  rw [TauCeti.jacobiChar_eq_ringHomComp_quadraticChar, legendreTwist_def]
 
 end DirichletCharacter

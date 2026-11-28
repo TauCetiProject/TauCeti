@@ -66,6 +66,6 @@ theorem exists_prime_entireLFunction_legendreTwist_ne_zero_of_density
   intro χ s hs him
   have h := hfree χ s hs him
   rw [LFunction_mul_jacobiChar_eq_legendreTwist χ hqd] at h
-  simpa only [entireLFunction_of_ne_one (χ.legendreTwist_ne_one d hd₂.ne' hqd)] using h
+  simpa only [entireLFunction_legendreTwist χ d hd₂.ne' hqd] using h
 
 end TauCeti
