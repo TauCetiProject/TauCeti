@@ -182,22 +182,16 @@ theorem IsPositive.one_sub_of_le_smul_one {b : ℝ} (hb : b ≤ 1) {T : E →L[�
 theorem mul_norm_sq_le_re_inner_of_smul_one_le {c : ℝ} {T : E →L[𝕜] E}
     (hT : (c : 𝕜) • (1 : E →L[𝕜] E) ≤ T) (v : E) :
     c * ‖v‖ ^ 2 ≤ RCLike.re ⟪T v, v⟫_𝕜 := by
-  have h := (le_def.mp hT).re_inner_nonneg_left v
-  rw [sub_apply, smul_apply, one_apply_eq_self, inner_sub_left, inner_smul_left,
-    RCLike.conj_ofReal, inner_self_eq_norm_sq_to_K, ← RCLike.ofReal_pow, map_sub,
-    RCLike.re_ofReal_mul, RCLike.ofReal_re, sub_nonneg] at h
-  exact h
+  simpa [inner_sub_left, inner_smul_left, inner_self_eq_norm_sq_to_K] using
+    (le_def.mp hT).re_inner_nonneg_left v
 
 /-- A Loewner upper bound `T ≤ c • 1` gives the quadratic-form upper bound
 `Re ⟪T v, v⟫ ≤ c ‖v‖²`. -/
 theorem re_inner_le_mul_norm_sq_of_le_smul_one {c : ℝ} {T : E →L[𝕜] E}
     (hT : T ≤ (c : 𝕜) • (1 : E →L[𝕜] E)) (v : E) :
     RCLike.re ⟪T v, v⟫_𝕜 ≤ c * ‖v‖ ^ 2 := by
-  have h := (le_def.mp hT).re_inner_nonneg_left v
-  rw [sub_apply, smul_apply, one_apply_eq_self, inner_sub_left, inner_smul_left,
-    RCLike.conj_ofReal, inner_self_eq_norm_sq_to_K, ← RCLike.ofReal_pow, map_sub,
-    RCLike.re_ofReal_mul, RCLike.ofReal_re, sub_nonneg] at h
-  exact h
+  simpa [inner_sub_left, inner_smul_left, inner_self_eq_norm_sq_to_K] using
+    (le_def.mp hT).re_inner_nonneg_left v
 
 /-- Left multiplication `a ↦ T * a` on `E →L[𝕜] E` preserves the Loewner positive cone if and only
 if `T = c • 1` for some nonnegative scalar `c : 𝕜`. -/
