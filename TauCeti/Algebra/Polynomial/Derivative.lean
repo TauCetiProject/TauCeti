@@ -77,6 +77,9 @@ with explicit coefficients (`Polynomial.derivative_sum_smul_X_add_C_pow_mul_X_ad
 Over an additively cancellative semiring in which multiplication by each nonzero natural number is
 injective, such as `ℕ` or a `ℚ`-algebra, a polynomial is determined by its derivative together
 with its value at one point (`Polynomial.eq_of_derivative_eq_of_eval_eq`).
+
+The constant coefficient of `derivative^[k] (X ^ m)` is `m !` when `k = m` and `0` otherwise
+(`Polynomial.coeff_zero_iterate_derivative_X_pow`).
 -/
 
 public section
@@ -453,5 +456,18 @@ theorem eq_of_derivative_eq_of_eval_eq {R : Type*} [Semiring R] [IsCancelAdd R] 
   -- The common part `divX * X` cancels from the two values at `x`, leaving the constant terms.
   rw [← divX_mul_X_add p, ← divX_mul_X_add q, hdiv, eval_add, eval_add, eval_C, eval_C] at he
   rw [← divX_mul_X_add p, ← divX_mul_X_add q, hdiv, add_left_cancel he]
+
+section
+
+open scoped Nat
+
+/-- The constant coefficient of the `k`-th derivative of `X ^ m` is `m !` when `k = m` and `0`
+otherwise. -/
+theorem coeff_zero_iterate_derivative_X_pow {R : Type*} [Semiring R] (m k : ℕ) :
+    (derivative^[k] (X ^ m : R[X])).coeff 0 = if k = m then (m ! : R) else 0 := by
+  rw [coeff_iterate_derivative, zero_add, Nat.descFactorial_self, coeff_X_pow]
+  split_ifs with h <;> simp [h]
+
+end
 
 end Polynomial

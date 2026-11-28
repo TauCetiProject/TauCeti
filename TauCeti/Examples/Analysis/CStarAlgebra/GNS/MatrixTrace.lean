@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.GNS.Conjugation.Basic
 public import TauCeti.Analysis.CStarAlgebra.GNS.ProductRepresentation
-public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
+public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace.Basic
 
 /-!
 # Checks for the GNS representation of the normalized trace on matrices
