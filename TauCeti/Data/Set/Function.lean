@@ -28,6 +28,8 @@ public import Mathlib.Data.Set.Function
   containing `K`.
 * `Function.Injective.apply_notMem_pair`: an injective map sends a point other than `b` and `c`
   outside the pair `{f b, f c}`.
+* `Function.eq_of_comp_eq_of_eqOn_compl`: two functions agreeing after precomposition with `f`
+  and outside `Set.range f` are equal.
 * `Function.Injective.val_mem_of_subset_insert`: an injective map into a set `T ⊆ insert z₀ S`
   sends every point other than a preimage of `z₀` into `S`.
 -/
@@ -77,7 +79,14 @@ end Set
 
 open Set
 
-namespace Function.Injective
+namespace Function
+
+/-- Two functions agreeing after precomposition with `f` and outside `Set.range f` are equal. -/
+theorem eq_of_comp_eq_of_eqOn_compl {ι : Sort*} {α β : Type*} (f : ι → α) {g₁ g₂ : α → β}
+    (h₁ : g₁ ∘ f = g₂ ∘ f) (h₂ : EqOn g₁ g₂ (range f)ᶜ) : g₁ = g₂ :=
+  (eqOn_univ g₁ g₂).mp <| union_compl_self (range f) ▸ (eqOn_range.mpr h₁).union h₂
+
+namespace Injective
 
 /-- An injective map fixing every point outside `K` maps `K` into itself. -/
 theorem mapsTo_of_eq_self {α : Type*} {f : α → α} (hf : Injective f) {K : Set α}
@@ -105,4 +114,6 @@ theorem val_mem_of_subset_insert {α : Sort*} {β : Type*} {T S : Set β} {z₀ 
     (ha : a ≠ a₀) : (e a).val ∈ S :=
   mem_of_mem_insert_of_ne (hT (e a).property) fun h ↦ ha (he (Subtype.ext (h.trans he₀.symm)))
 
-end Function.Injective
+end Injective
+
+end Function

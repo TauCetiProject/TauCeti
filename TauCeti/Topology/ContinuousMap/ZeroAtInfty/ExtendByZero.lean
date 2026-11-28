@@ -1,0 +1,256 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
+import TauCeti.Data.Set.Function
+
+/-!
+# Extension by zero of functions vanishing at infinity along open embeddings
+
+Given an open embedding `e : X → Y` into an `R₁` space `Y`, every continuous function vanishing at
+infinity `f : C₀(X, R)` extends by `0` outside `Set.range e` to a continuous function vanishing at
+infinity `ZeroAtInftyContinuousMap.extendByZero he f : C₀(Y, R)`. In the opposite direction, for any
+topological embedding `e : X → Y` (with no separation assumption on `Y`), restricting a function
+`g : C₀(Y, R)` that vanishes outside `Set.range e` along `e` produces a function
+`ZeroAtInftyContinuousMap.restrictOfEqZero he g hg : C₀(X, R)`.
+
+Together these operations identify `C₀(X, R)` isometrically with the subspace of `C₀(Y, R)`
+consisting of functions vanishing outside `Set.range e`. Key instances are the inclusions of open
+intervals `(0, 1) ↪ (0, 1] ↪ [0, 1]`, which identify the suspension and cone of a normed or
+C⋆-algebra with the endpoint-vanishing ideals of the cone and path algebras.
+
+## Main declarations
+
+* `ZeroAtInftyContinuousMap.extendByZero`: extend `f : C₀(X, R)` by `0` outside the range of an
+  open embedding `e : X → Y` into an `R₁` space `Y`.
+* `ZeroAtInftyContinuousMap.norm_extendByZero` and `ZeroAtInftyContinuousMap.isometry_extendByZero`:
+  extension by zero preserves the supremum norm and is an isometry.
+* `ZeroAtInftyContinuousMap.restrictOfEqZero`: restrict `g : C₀(Y, R)` vanishing outside
+  `Set.range e` along an embedding `e : X → Y` to `C₀(X, R)`.
+* `ZeroAtInftyContinuousMap.range_extendByZero`: the range of `extendByZero he` is
+  `{g : C₀(Y, R) | ∀ y ∉ Set.range e, g y = 0}`.
+-/
+
+public section
+
+open Filter Set Topology
+open scoped ZeroAtInfty
+
+namespace ZeroAtInftyContinuousMap
+
+section Ext
+
+/-- Two functions in `C₀(Y, R)` agreeing at every `e x` and vanishing outside `Set.range e` are
+equal. -/
+theorem eq_of_apply_eq_of_notMem {X : Sort*} {Y R : Type*} [TopologicalSpace Y] [TopologicalSpace R]
+    [Zero R] (e : X → Y) {g₁ g₂ : C₀(Y, R)} (h₁ : ∀ x, g₁ (e x) = g₂ (e x))
+    (h₂ : ∀ y ∉ range e, g₁ y = 0) (h₃ : ∀ y ∉ range e, g₂ y = 0) : g₁ = g₂ :=
+  DFunLike.coe_injective <| Function.eq_of_comp_eq_of_eqOn_compl e (funext h₁)
+    fun y hy => (h₂ y hy).trans (h₃ y hy).symm
+
+end Ext
+
+section Topological
+
+variable {X Y R : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace R]
+
+section Extend
+
+variable [R1Space Y] [Zero R] {e : X → Y}
+
+private theorem extend_mem_of_notMem_image {X Y R : Type*} [Zero R] {e : X → Y}
+    (he : Function.Injective e) (f : X → R) {V : Set R} {K : Set X} {z : Y}
+    (hKV : Kᶜ ⊆ f ⁻¹' V) (h0 : (0 : R) ∈ V) (hz : z ∉ e '' K) :
+    Function.extend e f (0 : Y → R) z ∈ V := by
+  by_cases hze : z ∈ range e
+  · obtain ⟨x, rfl⟩ := hze
+    rw [he.extend_apply]
+    exact hKV fun hx => hz (mem_image_of_mem e hx)
+  · rw [Function.extend_apply' f (0 : Y → R) z hze, Pi.zero_apply]
+    exact h0
+
+/-- Extend `f : C₀(X, R)` by `0` outside `Set.range e` along an open embedding `e : X → Y` into an
+`R₁` space `Y`. -/
+noncomputable def extendByZero (he : IsOpenEmbedding e) (f : C₀(X, R)) : C₀(Y, R) where
+  toFun := Function.extend e f (0 : Y → R)
+  continuous_toFun := continuous_iff_continuousAt.mpr fun y => by
+    by_cases hy : y ∈ range e
+    · obtain ⟨x, rfl⟩ := hy
+      have hcomp : Function.extend e f (0 : Y → R) ∘ e = f :=
+        funext (he.injective.extend_apply f (0 : Y → R))
+      rw [ContinuousAt, he.injective.extend_apply, ← he.map_nhds_eq x, tendsto_map'_iff, hcomp]
+      exact f.continuous.tendsto x
+    · rw [ContinuousAt, Function.extend_apply' f (0 : Y → R) y hy, Pi.zero_apply, tendsto_def]
+      intro V hV
+      obtain ⟨K, hK, hKV⟩ := mem_cocompact.mp (zero_at_infty f hV)
+      have hcl : closure (e '' K) ⊆ range e :=
+        (hK.image he.continuous).closure_subset_of_isOpen he.isOpen_range (image_subset_range e K)
+      refine mem_of_superset (isClosed_closure.isOpen_compl.mem_nhds fun hyc => hy (hcl hyc))
+        fun z hz => extend_mem_of_notMem_image he.injective f hKV (mem_of_mem_nhds hV)
+          fun hzk => hz (subset_closure hzk)
+  zero_at_infty' := fun V hV => by
+    obtain ⟨K, hK, hKV⟩ := mem_cocompact.mp (zero_at_infty f hV)
+    exact mem_cocompact.mpr ⟨e '' K, hK.image he.continuous, fun z hz =>
+      extend_mem_of_notMem_image he.injective f hKV (mem_of_mem_nhds hV) hz⟩
+
+theorem coe_extendByZero (he : IsOpenEmbedding e) (f : C₀(X, R)) :
+    ⇑(extendByZero he f) = Function.extend e f (0 : Y → R) := (rfl)
+
+@[simp] theorem extendByZero_apply_mem (he : IsOpenEmbedding e) (f : C₀(X, R)) (x : X) :
+    extendByZero he f (e x) = f x := he.injective.extend_apply f (0 : Y → R) x
+
+theorem extendByZero_apply_of_notMem (he : IsOpenEmbedding e) (f : C₀(X, R)) {y : Y}
+    (hy : y ∉ range e) : extendByZero he f y = 0 := Function.extend_apply' f (0 : Y → R) y hy
+
+theorem extendByZero_injective (he : IsOpenEmbedding e) :
+    Function.Injective (extendByZero (R := R) he) := fun f g h =>
+  ext fun x => by rw [← extendByZero_apply_mem he f x, ← extendByZero_apply_mem he g x, h]
+
+@[simp] theorem extendByZero_inj (he : IsOpenEmbedding e) {f g : C₀(X, R)} :
+    extendByZero he f = extendByZero he g ↔ f = g := (extendByZero_injective he).eq_iff
+
+@[simp] theorem extendByZero_zero (he : IsOpenEmbedding e) :
+    extendByZero he (0 : C₀(X, R)) = 0 :=
+  eq_of_apply_eq_of_notMem e (fun _ => by simp) (fun _ => extendByZero_apply_of_notMem he _)
+    fun _ _ => rfl
+
+@[simp] theorem extendByZero_eq_zero_iff (he : IsOpenEmbedding e) {f : C₀(X, R)} :
+    extendByZero he f = 0 ↔ f = 0 := by rw [← extendByZero_zero he, extendByZero_inj]
+
+end Extend
+
+section Restrict
+
+variable [Zero R] {e : X → Y}
+
+/-- Restrict `g : C₀(Y, R)` vanishing outside `Set.range e` along an embedding `e : X → Y` to
+`C₀(X, R)`. -/
+def restrictOfEqZero (he : IsEmbedding e) (g : C₀(Y, R)) (hg : ∀ y ∉ range e, g y = 0) :
+    C₀(X, R) where
+  toFun x := g (e x)
+  continuous_toFun := g.continuous.comp he.continuous
+  zero_at_infty' := (nhds_basis_opens (0 : R)).tendsto_right_iff.mpr fun V ⟨hV0, hVopen⟩ => by
+    obtain ⟨K, hK, hKV⟩ := mem_cocompact.mp (zero_at_infty g (hVopen.mem_nhds hV0))
+    have hC_compact : IsCompact (g ⁻¹' V)ᶜ :=
+      hK.of_isClosed_subset (hVopen.preimage g.continuous).isClosed_compl (compl_subset_comm.mp hKV)
+    have hC_range : (g ⁻¹' V)ᶜ ⊆ range e := fun y hy => by
+      by_contra hye
+      exact hy (by simpa only [mem_preimage, hg y hye] using hV0)
+    exact mem_cocompact.mpr ⟨e ⁻¹' (g ⁻¹' V)ᶜ,
+      he.isCompact_iff.mpr (by rwa [image_preimage_eq_of_subset hC_range]),
+      fun _ hx => not_not.mp hx⟩
+
+@[simp] theorem restrictOfEqZero_apply (he : IsEmbedding e) (g : C₀(Y, R))
+    (hg : ∀ y ∉ range e, g y = 0) (x : X) : restrictOfEqZero he g hg x = g (e x) := (rfl)
+
+@[simp] theorem restrictOfEqZero_zero (he : IsEmbedding e) :
+    restrictOfEqZero he (0 : C₀(Y, R)) (fun _ _ => rfl) = 0 := ext fun _ => rfl
+
+@[simp]
+theorem restrictOfEqZero_extendByZero [R1Space Y] (he : IsOpenEmbedding e) (f : C₀(X, R)) :
+    restrictOfEqZero he.isEmbedding (extendByZero he f)
+      (fun _ hy => extendByZero_apply_of_notMem he f hy) = f := ext (extendByZero_apply_mem he f)
+
+@[simp] theorem extendByZero_restrictOfEqZero [R1Space Y] (he : IsOpenEmbedding e) (g : C₀(Y, R))
+    (hg : ∀ y ∉ range e, g y = 0) :
+    extendByZero he (restrictOfEqZero he.isEmbedding g hg) = g :=
+  eq_of_apply_eq_of_notMem e (fun _ => by simp) (fun _ => extendByZero_apply_of_notMem he _) hg
+
+theorem range_extendByZero [R1Space Y] (he : IsOpenEmbedding e) :
+    range (extendByZero (R := R) he) = {g : C₀(Y, R) | ∀ y ∉ range e, g y = 0} :=
+  Set.ext fun g => ⟨fun ⟨f, hf⟩ _ hy => hf ▸ extendByZero_apply_of_notMem he f hy,
+    fun hg => ⟨restrictOfEqZero he.isEmbedding g hg, extendByZero_restrictOfEqZero he g hg⟩⟩
+
+end Restrict
+
+section Algebraic
+
+variable [R1Space Y] {e : X → Y}
+
+@[simp] theorem extendByZero_add [AddZeroClass R] [ContinuousAdd R] (he : IsOpenEmbedding e)
+    (f g : C₀(X, R)) : extendByZero he (f + g) = extendByZero he f + extendByZero he g :=
+  eq_of_apply_eq_of_notMem e (fun _ => by simp) (fun _ => extendByZero_apply_of_notMem he _)
+    fun _ hy => by simp [extendByZero_apply_of_notMem he _ hy]
+
+@[simp] theorem extendByZero_neg [AddGroup R] [IsTopologicalAddGroup R] (he : IsOpenEmbedding e)
+    (f : C₀(X, R)) : extendByZero he (-f) = -extendByZero he f :=
+  eq_of_apply_eq_of_notMem e (fun _ => by simp) (fun _ => extendByZero_apply_of_notMem he _)
+    fun _ hy => by simp [extendByZero_apply_of_notMem he _ hy]
+
+@[simp] theorem extendByZero_sub [AddGroup R] [IsTopologicalAddGroup R] (he : IsOpenEmbedding e)
+    (f g : C₀(X, R)) : extendByZero he (f - g) = extendByZero he f - extendByZero he g :=
+  eq_of_apply_eq_of_notMem e (fun _ => by simp) (fun _ => extendByZero_apply_of_notMem he _)
+    fun _ hy => by simp [extendByZero_apply_of_notMem he _ hy]
+
+@[simp] theorem extendByZero_mul [MulZeroClass R] [ContinuousMul R] (he : IsOpenEmbedding e)
+    (f g : C₀(X, R)) : extendByZero he (f * g) = extendByZero he f * extendByZero he g :=
+  eq_of_apply_eq_of_notMem e (fun _ => by simp) (fun _ => extendByZero_apply_of_notMem he _)
+    fun _ hy => by simp [extendByZero_apply_of_notMem he _ hy]
+
+@[simp]
+theorem extendByZero_smul {S : Type*} [Zero R] [SMulZeroClass S R] [ContinuousConstSMul S R]
+    (he : IsOpenEmbedding e) (c : S) (f : C₀(X, R)) :
+    extendByZero he (c • f) = c • extendByZero he f :=
+  eq_of_apply_eq_of_notMem e (fun _ => by simp) (fun _ => extendByZero_apply_of_notMem he _)
+    fun _ hy => by simp [extendByZero_apply_of_notMem he _ hy]
+
+@[simp] theorem extendByZero_star [AddMonoid R] [StarAddMonoid R] [ContinuousStar R]
+    (he : IsOpenEmbedding e) (f : C₀(X, R)) :
+    extendByZero he (star f) = star (extendByZero he f) :=
+  eq_of_apply_eq_of_notMem e (fun _ => by simp) (fun _ => extendByZero_apply_of_notMem he _)
+    fun _ hy => by simp [extendByZero_apply_of_notMem he _ hy]
+
+end Algebraic
+
+end Topological
+
+section PseudoMetric
+
+variable {X Y β : Type*} [TopologicalSpace X] [TopologicalSpace Y] [PseudoMetricSpace β] [Zero β]
+  {e : X → Y}
+
+theorem isometry_extendByZero [R1Space Y] (he : IsOpenEmbedding e) :
+    Isometry (extendByZero (R := β) he) :=
+  Isometry.of_dist_eq fun f g => by
+    refine le_antisymm ?_ ?_
+    · rw [← dist_toBCF_eq_dist]
+      refine (BoundedContinuousFunction.dist_le dist_nonneg).mpr fun y => ?_
+      by_cases hy : y ∈ range e
+      · obtain ⟨x, rfl⟩ := hy
+        simpa only [toBCF_apply, extendByZero_apply_mem, ← dist_toBCF_eq_dist] using
+          BoundedContinuousFunction.dist_coe_le_dist (f := f.toBCF) (g := g.toBCF) x
+      · simp [extendByZero_apply_of_notMem he _ hy, dist_nonneg]
+    · rw [← dist_toBCF_eq_dist]
+      refine (BoundedContinuousFunction.dist_le dist_nonneg).mpr fun x => ?_
+      simpa only [toBCF_apply, extendByZero_apply_mem, ← dist_toBCF_eq_dist] using
+        BoundedContinuousFunction.dist_coe_le_dist
+          (f := (extendByZero he f).toBCF) (g := (extendByZero he g).toBCF) (e x)
+
+end PseudoMetric
+
+section Normed
+
+variable {X Y E : Type*} [TopologicalSpace X] [TopologicalSpace Y] [SeminormedAddCommGroup E]
+  {e : X → Y}
+
+@[simp] theorem norm_extendByZero [R1Space Y] (he : IsOpenEmbedding e) (f : C₀(X, E)) :
+    ‖extendByZero he f‖ = ‖f‖ :=
+  (isometry_extendByZero he).norm_map_of_map_zero (extendByZero_zero he) f
+
+@[simp]
+theorem norm_restrictOfEqZero (he : IsEmbedding e) (g : C₀(Y, E)) (hg : ∀ y ∉ range e, g y = 0) :
+    ‖restrictOfEqZero he g hg‖ = ‖g‖ :=
+  le_antisymm ((norm_le (norm_nonneg g)).mpr fun x => norm_coe_le_norm g (e x))
+    ((norm_le (norm_nonneg _)).mpr fun y => by
+      by_cases hy : y ∈ range e
+      · obtain ⟨x, rfl⟩ := hy
+        exact norm_coe_le_norm (restrictOfEqZero he g hg) x
+      · simp [hg y hy])
+
+end Normed
+
+end ZeroAtInftyContinuousMap
