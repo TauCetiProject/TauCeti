@@ -38,7 +38,8 @@ The results on the blowup along an ideal sheaf are in the namespace
 * `blowupLift_eq_id`: the lift of `Bl_I X ⟶ X` through itself is the identity.
 * `isIso_blowupToBase_iff`: `Bl_I X ⟶ X` is an isomorphism if and only if `V(I)` is an effective
   Cartier divisor on `X`.
-* `isSplitEpi_blowupToBase_iff`: the same criterion for the blowup morphism to admit a section.
+* `isIso_blowupToBase_of_isSplitEpi`: a section of the blowup morphism is its inverse.
+* `isSplitEpi_blowupToBase_iff`: the Cartier criterion for the blowup to admit a section.
 
 ## References
 
@@ -131,8 +132,7 @@ theorem blowupLift_eq_id :
 
 /-- A section of the blowup morphism is its inverse by uniqueness in the blowup universal
 property. -/
-private theorem isIso_blowupToBase_of_isSplitEpi [IsSplitEpi I.blowupToBase] :
-    IsIso I.blowupToBase := by
+theorem isIso_blowupToBase_of_isSplitEpi [IsSplitEpi I.blowupToBase] : IsIso I.blowupToBase := by
   refine ⟨section_ I.blowupToBase, ?_, IsSplitEpi.id _⟩
   symm
   apply I.blowup_hom_ext

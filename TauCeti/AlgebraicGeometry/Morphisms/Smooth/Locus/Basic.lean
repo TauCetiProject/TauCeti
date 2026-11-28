@@ -33,8 +33,6 @@ localizations of affine source charts as `R`-algebras.
   locus is smooth.
 * `AlgebraicGeometry.Scheme.Hom.smooth_ι_comp_iff_le_smoothLocus`: `f` is smooth on an open `U`
   exactly when `U` lies in the smooth locus of `f`.
-* `Scheme.Hom.preimage_le_smoothLocus_of_smooth_morphismRestrict`: the inverse image
-  of a base open over which `f` is smooth lies in its smooth locus.
 * `TauCeti.AlgebraicGeometry.smooth_smoothLocus_over`: the same for the smooth locus of a
   scheme over `S`, regarded as a scheme over `S`.
 * `AlgebraicGeometry.Scheme.Hom.preimage_smoothLocus_le_smoothLocus_pullback_snd`: the preimage
@@ -67,15 +65,6 @@ theorem smooth_ι_comp_iff_le_smoothLocus (f : X ⟶ S) [LocallyOfFinitePresenta
     (U : X.Opens) : Smooth (U.ι ≫ f) ↔ U ≤ f.smoothLocus := by
   rw [← smoothLocus_eq_top_iff, ← preimage_smoothLocus_eq, ← top_le_iff]
   exact ⟨fun h x hx ↦ h (Set.mem_univ (⟨x, hx⟩ : U)), fun h x _ ↦ h x.property⟩
-
-/-- The inverse image of an open in the base lies in the smooth locus if the restriction
-of the morphism to that open is smooth. -/
-theorem preimage_le_smoothLocus_of_smooth_morphismRestrict (f : X ⟶ S)
-    [LocallyOfFinitePresentation f] (V : S.Opens) (h : Smooth (f ∣_ V)) :
-    f ⁻¹ᵁ V ≤ f.smoothLocus := by
-  apply (f.smooth_ι_comp_iff_le_smoothLocus _).mp
-  rw [← morphismRestrict_ι]
-  infer_instance
 
 /-- **The smooth locus is stable under base change.** For `f : X ⟶ S` locally of finite
 presentation and `g : T ⟶ S`, the preimage of the smooth locus of `f` under the projection

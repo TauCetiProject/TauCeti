@@ -13,7 +13,10 @@ public import Mathlib.CategoryTheory.EpiMono
 If `f ≫ g` and `g ≫ h` are isomorphisms, then `g` is an isomorphism: the second composite makes
 `g` a split monomorphism and the first makes it a split epimorphism. This is the core of the
 two-out-of-six property of isomorphisms, and is how a homotopy equivalence is shown to induce
-isomorphisms on a homotopy-invariant functor.
+isomorphisms on a homotopy-invariant functor (`IsIso.of_isIso_comp_of_isIso_comp`).
+
+`Functor.isSplitEpi_of_map_comp_eq_id` reflects a section equation using injectivity
+on the endomorphisms of the target and the functor's composition and identity laws.
 -/
 
 public section
@@ -30,3 +33,16 @@ theorem of_isIso_comp_of_isIso_comp {f : W ⟶ X} {g : X ⟶ Y} {h : Y ⟶ Z} (_
   isIso_of_mono_of_isSplitEpi g
 
 end CategoryTheory.IsIso
+
+namespace CategoryTheory.Functor
+
+/-- If `F` is injective on endomorphisms of `Y` and sends `g` to a section of `F.map f`,
+then `f : X ⟶ Y` is a split epimorphism. -/
+theorem isSplitEpi_of_map_comp_eq_id {C D : Type*} [Category* C] [Category* D]
+    (F : C ⥤ D) {X Y : C} {f : X ⟶ Y} {g : Y ⟶ X}
+    (hinj : Function.Injective (F.map : (Y ⟶ Y) → _))
+    (h : F.map g ≫ F.map f = 𝟙 (F.obj Y)) : IsSplitEpi f := by
+  refine IsSplitEpi.mk' ⟨g, hinj ?_⟩
+  simpa only [F.map_comp, F.map_id] using h
+
+end CategoryTheory.Functor
