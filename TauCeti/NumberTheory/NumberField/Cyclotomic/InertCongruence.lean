@@ -10,12 +10,15 @@ public import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import Mathlib.RingTheory.Unramified.Locus
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Compositum
+import TauCeti.FieldTheory.Galois.Basic
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
-import TauCeti.NumberTheory.NumberField.Frobenius.Congruence
 import TauCeti.NumberTheory.NumberField.Frobenius.Restriction
 import TauCeti.NumberTheory.NumberField.Frobenius
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
+import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import TauCeti.NumberTheory.RamificationInertia.Tower
+import TauCeti.RingTheory.Frobenius
+import TauCeti.RingTheory.Ideal.LiesOver
 
 /-!
 # The inert-prime congruence in a cyclotomic compositum
@@ -55,14 +58,14 @@ private theorem restrictNormal_pow_eq_complexConj (Q : Ideal (𝓞 E)) [Q.IsPrim
     ((Ideal.isArithFrobAt_ringOfIntegers_rat_iff φ Q).mpr hφ).restrictNormal
   have hdiv := Ideal.inertiaDeg_dvd_orderOf (Q.under (𝓞 K)) hφK
   rw [hf] at hdiv
-  apply AlgEquiv.eq_complexConj_of_ne_one
+  have hc : (complexConj K).restrictScalars ℚ ≠ 1 := fun h ↦
+    complexConj_ne_one K (AlgEquiv.restrictScalars_injective ℚ h)
+  refine (Algebra.IsQuadraticExtension.algEquiv_eq_one_or_eq ℚ K hc _).resolve_left ?_
   intro h
   let r : (E ≃ₐ[ℚ] E) →* (K ≃ₐ[ℚ] K) := AlgEquiv.restrictNormalHom K
   have hpow : r (φ ^ n) = 1 := h
   rw [map_pow] at hpow
-  have he := hdiv.trans (orderOf_dvd_iff_pow_eq_one.mpr hpow)
-  obtain ⟨k, hk⟩ := hn
-  omega
+  exact hn.not_two_dvd_nat (hdiv.trans (orderOf_dvd_iff_pow_eq_one.mpr hpow))
 
 omit [NumberField E] [IsCMField K] [IsCMField E] [Algebra.IsQuadraticExtension ℚ K] in
 /-- The prime of the quadratic subfield below a prime above an inert `p` is `(p)` itself. -/
@@ -98,9 +101,9 @@ theorem isUnramifiedAt_of_inertiaDeg_span_natCast_eq_two
     rw [hPf, RingOfIntegers.rank, Algebra.IsQuadraticExtension.finrank_eq_two] at hb
     have hpos := Ideal.ramificationIdx_pos ℤ P
     omega
-  have hm : (m : 𝓞 K) ∉ P := fun h ↦ hp (by
-    have hi := (Ideal.mem_of_liesOver P (span {(p : ℤ)}) (m : ℤ)).mpr (by simpa using h)
-    exact Int.natCast_dvd_natCast.mp (Ideal.mem_span_singleton.mp hi))
+  have hm : (m : 𝓞 K) ∉ P := by
+    simpa using (Ideal.algebraMap_mem_iff_dvd_of_liesOver P (m : ℤ)).not.mpr
+      (Int.natCast_dvd_natCast.not.mpr hp)
   have := IsCyclotomicExtension.isUnramifiedAt_of_natCast_notMem E m hm Q
   apply Ideal.ramificationIdx_eq_one_iff.mp
   rw [Ideal.ramificationIdx_ringOfIntegers_rat_eq_int, Ideal.ramificationIdx_tower P Q,
@@ -139,11 +142,11 @@ theorem natCast_dvd_pow_sub_smul_complexConj_of_inert {ζ : E} (hζ : IsPrimitiv
   have hP := under_eq_span_of_inertiaDeg_eq_two hf Q
   obtain ⟨φ, hφ⟩ := NumberField.exists_isArithFrobAt_int_of_liesOver Q (p := p)
   have hφζ : φ ζ = ζ ^ p := by
-    have hm : (m : 𝓞 E) ∉ Q := fun h ↦ hp (by
-      have hi := (Ideal.mem_of_liesOver Q (span {(p : ℤ)}) (m : ℤ)).mpr (by simpa using h)
-      exact Int.natCast_dvd_natCast.mp (Ideal.mem_span_singleton.mp hi))
+    have hm : (m : 𝓞 E) ∉ Q := by
+      simpa using (Ideal.algebraMap_mem_iff_dvd_of_liesOver Q (m : ℤ)).not.mpr
+        (Int.natCast_dvd_natCast.not.mpr hp)
     have hi := hφ.apply_of_pow_eq_one hζ.toInteger_isPrimitiveRoot.pow_eq_one hm
-    rw [← Q.over_def (span {(p : ℤ)}), Int.card_ideal_quot] at hi
+    rw [Q.natCard_quotient_under_of_liesOver (n := p)] at hi
     simpa [MulSemiringAction.toAlgHom_apply, NumberField.algebraMap_smul_eq_apply,
       ← RingOfIntegers.coe_eq_algebraMap, hζ.coe_toInteger] using
       congrArg (algebraMap (𝓞 E) E) hi
@@ -154,8 +157,8 @@ theorem natCast_dvd_pow_sub_smul_complexConj_of_inert {ζ : E} (hζ : IsPrimitiv
   have heq : φ ^ n = τ := hζ.algEquiv_eq_of_restrictNormal_eq_of_apply_eq
     ((restrictNormal_pow_eq_complexConj Q hφ (hP.symm ▸ hf) hn).trans hτK.symm)
     ((hpw n).trans hτζ.symm)
-  have h := hφ.quotient_mk_pow_smul n x
-  rw [← Q.over_def (span {(p : ℤ)}), Int.card_ideal_quot, heq, ← map_pow] at h
+  have h := hφ.mk_pow_smul n x
+  rw [Q.natCard_quotient_under_of_liesOver (n := p), heq, ← map_pow] at h
   exact Ideal.Quotient.eq.mp h.symm
 
 end

@@ -61,6 +61,12 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   forms are isometric.
 * `LinearMap.BilinForm.exists_forall_restrict_eq_of_isInternal`: forms on the summands of an
   internal direct sum are the restrictions of a form for which the summands are orthogonal.
+* `LinearMap.BilinForm.mem_map_subtype_ker_restrict_iff`,
+  `LinearMap.BilinForm.map_subtype_ker_restrict_sup` and
+  `LinearMap.BilinForm.finrank_ker_restrict_sup`: the kernel of a restricted form, and its
+  invariance under adjoining an orthogonal summand on which the form is anisotropic; this is the
+  nullity half of the finite reduction for the Morse index theorem, whose index half is
+  `LinearMap.BilinForm.negativeIndexOn_sup_eq_left`.
 * `LinearMap.BilinForm.IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton`: an
   orthogonal basis of `x^⊥` extends by `x` to an orthogonal basis of the whole space.
 * `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_apply_zero_eq` and
@@ -86,6 +92,8 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   a non-zero-divisor dividing all its pairings splits off.
 * `LinearMap.BilinForm.isCompl_span_singleton_orthogonal_of_isUnit`: a vector with unit
   self-pairing splits off.
+* `LinearMap.BilinForm.eq_of_apply_eq_of_forall_ker_orthogonal`: for an anisotropic form, a vector
+  of a submodule orthogonal to the kernel of a linear map on it is determined by its image.
 * `LinearMap.BilinForm.IsAlt.sup_span_singleton_le_orthogonal`: adjoining an orthogonal vector
   to an isotropic submodule preserves isotropy for an alternating form.
 * `LinearMap.BilinForm.IsAlt.linearIndependent_pair_of_mem_nonZeroDivisors`: two vectors whose
@@ -334,6 +342,49 @@ theorem exists_forall_restrict_eq_of_isInternal {ι : Type*} [DecidableEq ι]
       · rw [hp_ne hik a.property, hp_ne hik.symm b.property, map_zero, map_zero]
     simpa using LinearMap.congr_fun₂ key (e.symm y) (e.symm x)
 
+/-- The kernel of a restricted form, viewed in the ambient space, consists of the vectors of the
+submodule that are left-orthogonal to all of it. -/
+theorem mem_map_subtype_ker_restrict_iff {B : LinearMap.BilinForm K V} {W : Submodule K V}
+    {x : V} :
+    x ∈ (LinearMap.ker (B.restrict W)).map W.subtype ↔ x ∈ W ∧ ∀ y ∈ W, B x y = 0 := by
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨y.property, fun z hz ↦ by simpa using congr($hy ⟨z, hz⟩)⟩
+  · rintro ⟨hx, h⟩
+    refine ⟨⟨x, hx⟩, ?_, rfl⟩
+    ext ⟨z, hz⟩
+    simpa using h z hz
+
+/-- **Nullity reduction.** If `C` is right-orthogonal to `A` and the form is anisotropic on `C`,
+then the kernel of the form restricted to `A ⊔ C` is the kernel of its restriction to `A`. -/
+theorem map_subtype_ker_restrict_sup {B : LinearMap.BilinForm K V} {A C : Submodule K V}
+    (hAC : ∀ a ∈ A, ∀ c ∈ C, B a c = 0) (hC : ∀ c ∈ C, B c c = 0 → c = 0) :
+    (LinearMap.ker (B.restrict (A ⊔ C))).map (A ⊔ C).subtype =
+      (LinearMap.ker (B.restrict A)).map A.subtype := by
+  ext x
+  simp only [mem_map_subtype_ker_restrict_iff]
+  constructor
+  · rintro ⟨hx, h⟩
+    obtain ⟨a, ha, c, hc, rfl⟩ := Submodule.mem_sup.mp hx
+    have hcc : B c c = 0 := by
+      simpa [hAC a ha c hc] using h c (Submodule.mem_sup_right hc)
+    obtain rfl := hC c hc hcc
+    rw [add_zero] at h ⊢
+    exact ⟨ha, fun y hy ↦ h y (Submodule.mem_sup_left hy)⟩
+  · rintro ⟨hx, h⟩
+    refine ⟨Submodule.mem_sup_left hx, fun y hy ↦ ?_⟩
+    obtain ⟨a, ha, c, hc, rfl⟩ := Submodule.mem_sup.mp hy
+    simp [h a ha, hAC x hx c hc]
+
+/-- **Nullity reduction.** If `C` is right-orthogonal to `A` and the form is anisotropic on `C`,
+then the form restricted to `A ⊔ C` has the same nullity as its restriction to `A`. -/
+theorem finrank_ker_restrict_sup {B : LinearMap.BilinForm K V} {A C : Submodule K V}
+    (hAC : ∀ a ∈ A, ∀ c ∈ C, B a c = 0) (hC : ∀ c ∈ C, B c c = 0 → c = 0) :
+    Module.finrank K (LinearMap.ker (B.restrict (A ⊔ C))) =
+      Module.finrank K (LinearMap.ker (B.restrict A)) := by
+  rw [← Submodule.finrank_map_subtype_eq, map_subtype_ker_restrict_sup hAC hC,
+    Submodule.finrank_map_subtype_eq]
+
 end LinearMap.BilinForm
 
 namespace LinearMap.BilinForm
@@ -381,6 +432,18 @@ namespace LinearMap.BilinForm
 open Module
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- For an anisotropic form, a vector `c` of a submodule `W` that is orthogonal to the kernel of a
+linear map `f` on `W` is determined by `f c`: the difference of two such vectors lies in `ker f`
+and is orthogonal to itself. -/
+theorem eq_of_apply_eq_of_forall_ker_orthogonal {B : LinearMap.BilinForm R M}
+    (hB : B.toQuadraticMap.Anisotropic) {W : Submodule R M} {N : Type*} [AddCommGroup N]
+    [Module R N] {f : W →ₗ[R] N} {c c' : W} (hcc' : f c = f c')
+    (hc : ∀ X, f X = 0 → B (X : M) c = 0) (hc' : ∀ X, f X = 0 → B (X : M) c' = 0) : c = c' := by
+  have hd : f (c - c') = 0 := by rw [map_sub, hcc', sub_self]
+  have hdd : B (c - c' : W) ((c : M) - c') = 0 := by rw [map_sub, hc _ hd, hc' _ hd, sub_zero]
+  rw [← Submodule.coe_sub, ← LinearMap.BilinMap.toQuadraticMap_apply] at hdd
+  exact sub_eq_zero.mp (Submodule.coe_eq_zero.mp (hB _ hdd))
 
 /-- Adjoining an orthogonal vector to an isotropic submodule preserves isotropy for an
 alternating form. No nondegeneracy or characteristic assumption is needed. -/

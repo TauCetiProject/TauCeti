@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.ResidueField.Basic
 public import Mathlib.RingTheory.Valuation.ValuationSubring
 import Mathlib.RingTheory.Valuation.LocalSubring
-import TauCeti.RingTheory.Valuation.ValuationRing
+import TauCeti.RingTheory.Valuation.ValuationRing.Basic
 
 /-!
 # Lifting points of the valuation spectrum along a ring map

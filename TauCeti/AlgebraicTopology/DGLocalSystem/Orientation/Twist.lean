@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Sign
-public import TauCeti.Topology.VectorBundle.Orientation.Cover.Character
+public import TauCeti.Topology.VectorBundle.Orientation.Cover.Character.Basic
 
 /-!
 # The orientation twist on the free loop space

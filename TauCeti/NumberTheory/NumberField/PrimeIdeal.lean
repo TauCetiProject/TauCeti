@@ -44,6 +44,8 @@ prime into them.
   lie over a nonzero prime of `ℤ`.
 * `TauCeti.NumberField.span_natCast_eq_prod_primesOverFinset`: a rational prime unramified in
   `K` generates the squarefree product of the primes of `𝓞 K` above it.
+* `TauCeti.NumberField.natCast_dvd_iff_forall_mem_primesOver`: divisibility by an unramified
+  rational prime is equivalent to membership in all the primes above it.
 * `TauCeti.NumberField.isPrime_span_natCast_iff_of_eq_prod_primesOverFinset_pow`: if a rational
   prime generates a power `e` of the product of the primes above it, it stays prime iff a single
   prime lies above it and `e = 1`.
@@ -224,6 +226,24 @@ theorem span_natCast_eq_prod_primesOverFinset {p : ℕ} [Fact p.Prime]
   have := hun P
   rw [← Ideal.ramificationIdx_ringOfIntegers_rat_eq_int P,
     Ideal.ramificationIdx_eq_one_of_isUnramifiedAt, pow_one]
+
+/-- At an unramified rational prime, an algebraic integer is divisible by `p` if and only if
+it belongs to every prime above `p`. -/
+theorem natCast_dvd_iff_forall_mem_primesOver {p : ℕ} [Fact p.Prime]
+    (hun : ∀ (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})],
+      Algebra.IsUnramifiedAt (𝓞 ℚ) Q) (x : 𝓞 K) :
+    (p : 𝓞 K) ∣ x ↔ ∀ Q ∈ (span {(p : ℤ)}).primesOver (𝓞 K), x ∈ Q := by
+  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
+    simpa using (Fact.out : p.Prime).ne_zero
+  have hmem {Q : Ideal (𝓞 K)} := IsDedekindDomain.mem_primesOverFinset_iff hp0 (𝓞 K) (P := Q)
+  rw [← mem_span_singleton, span_natCast_eq_prod_primesOverFinset hun,
+    prod_eq_iInf_of_pairwise_isCoprime (J := fun Q ↦ Q)]
+  · simp only [mem_iInf, hmem]
+  · intro I hI J hJ hne
+    obtain ⟨hIp, hIo⟩ := hmem.mp hI
+    obtain ⟨hJp, hJo⟩ := hmem.mp hJ
+    exact (heightOneSpectrumOfLiesOver p I).isCoprime_of_ne (heightOneSpectrumOfLiesOver p J)
+      (fun h ↦ hne (congrArg IsDedekindDomain.HeightOneSpectrum.asIdeal h))
 
 /-- **Primes above distinct rational primes are distinct.** The finsets of primes of `𝓞 K` lying
 over two distinct rational primes are disjoint, since a prime lies over exactly one of them. -/

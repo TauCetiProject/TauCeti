@@ -135,6 +135,8 @@ identity when `polar Q v = 0`; over a general ring it can be the identity in oth
   kernel of the determinant restricted there.
 * `TauCeti.QuadraticMap.orthogonalDet_sq`: if the polar form is left-separating on a finite free
   module over a domain, every orthogonal automorphism has determinant squaring to one.
+* `TauCeti.QuadraticMap.orthogonalDet_eq_one_or_eq_neg_one`: under the same hypotheses, every
+  orthogonal determinant is `1` or `-1`.
 * `TauCeti.QuadraticMap.finiteIndex_specialOrthogonalWithin`: under the same hypotheses, `SO(Q)`
   has finite index in `O(Q)`.
 * `TauCeti.QuadraticMap.range_orthogonalDet` and
@@ -1399,6 +1401,14 @@ theorem orthogonalDet_sq {Q : QuadraticForm R M} (hQ : Q.polarBilin.SeparatingLe
     (mem_nonZeroDivisors_of_ne_zero ((LinearMap.separatingLeft_iff_det_ne_zero _).mp hQ))
   ext
   simpa [LinearEquiv.coe_det] using h
+
+/-- **The determinant of an isometry is `1` or `-1`** when the polar form is left-separating,
+since it squares to one (`TauCeti.QuadraticMap.orthogonalDet_sq`). -/
+theorem orthogonalDet_eq_one_or_eq_neg_one {Q : QuadraticForm R M}
+    (hQ : Q.polarBilin.SeparatingLeft) (g : orthogonalGroup Q) :
+    orthogonalDet Q g = 1 ∨ orthogonalDet Q g = -1 := by
+  simpa only [Units.ext_iff, Units.val_one, Units.val_neg] using
+    sq_eq_one_iff.mp (congrArg (fun u : Rˣ ↦ (u : R)) (orthogonalDet_sq hQ g))
 
 /-- If the polar form is left-separating on a finite free module over an integral domain, then
 `SO(Q)` has finite index in `O(Q)`: every orthogonal determinant is a square root of unity, and
