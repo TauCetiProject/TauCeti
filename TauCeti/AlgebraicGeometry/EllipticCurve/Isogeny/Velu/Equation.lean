@@ -11,6 +11,7 @@ import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
 import Mathlib.RingTheory.Adjoin.Polynomial.Transcendental
 import Mathlib.RingTheory.Valuation.IsTrivialOn
 import TauCeti.FieldTheory.FunctionField.AffineModel.IntegralClosure
+import TauCeti.RingTheory.Valuation.PowSubPow
 
 /-!
 # The Weierstrass equation of Vélu's coordinates
@@ -26,9 +27,10 @@ the quotient curve `W / Φ`: its function field, embedded in `F(W)` by sending i
 `(X, Y)`, is the translation fixed field. This works in every characteristic, including when the
 characteristic divides `#Φ`.
 
-The coefficients `Aᵢ` are characterized here but not computed; Vélu's explicit formulas express
-them through `W` and the coordinates of the points of `Φ`. The isogeny `W → veluCurve W Φ`, and
-nonsingularity of `veluCurve W Φ`, are in `Isogeny/Velu/Isogeny.lean`.
+The coefficients `A₁` and `A₂` agree with those of `W`. This follows by comparing the terms
+of pole orders five and four, using that `X - x` and `Y - y` vanish at infinity.
+The isogeny `W → veluCurve W Φ` and nonsingularity of `veluCurve W Φ` are in
+`Isogeny/Velu/Isogeny.lean`.
 
 ## Main definitions
 
@@ -39,6 +41,8 @@ nonsingularity of `veluCurve W Φ`, are in `Isogeny/Velu/Isogeny.lean`.
 
 * `WeierstrassCurve.Affine.equation_veluX_veluY`: Vélu's coordinates satisfy the equation of
   `veluCurve W Φ`.
+* `WeierstrassCurve.Affine.veluCurve_a₁` and `WeierstrassCurve.Affine.veluCurve_a₂`: the first
+  two coefficients are unchanged.
 * `WeierstrassCurve.Affine.eq_veluCurve_of_equation` and
   `WeierstrassCurve.Affine.equation_veluX_veluY_iff`: no other Weierstrass curve over `F` has
   this property.
@@ -157,73 +161,52 @@ private theorem infinityPlace_aeval_mul_add {p q : F[X]} (hq : q ≠ 0) :
       Ne, WithZero.exp_inj]
     omega
 
-/-- Subtracting a coordinate-ring function from its `Φ`-normalized sum leaves a function regular
-at infinity: only the identity translation contributes a pole there. -/
-private theorem infinityPlace_normalized_sum_sub_le_one (r : W.CoordinateRing) (c : F) :
-    W.infinityPlace ((∑ Q : Φ, translation W Q (algebraMap W.CoordinateRing W.FunctionField r)) -
-      algebraMap F W.FunctionField c - algebraMap W.CoordinateRing W.FunctionField r) ≤ 1 := by
-  classical
-  rw [← Finset.add_sum_erase _ _ (Finset.mem_univ 0), AddSubgroup.coe_zero, translation_zero,
-    AlgEquiv.one_apply, show ∀ a b s : W.FunctionField, a + s - b - a = s - b from
-      fun _ _ _ ↦ by ring]
-  refine W.infinityPlace.map_sub_le (W.infinityPlace.map_sum_le fun Q hQ ↦ ?_)
-    (Valuation.IsTrivialOn.valuation_algebraMap_le_one _ _)
-  exact valuation_translation_le_one W (fun h ↦ (Finset.mem_erase.mp hQ).1 (Subtype.ext h)) r
+/-- Replacing the original coordinates by Vélu's coordinates changes `y² - x³` by a
+function with pole order strictly below four at infinity. -/
+private theorem infinityPlace_veluY_sq_sub_veluX_pow_three_sub_lt :
+    W.infinityPlace ((veluY W Φ ^ 2 - veluX W Φ ^ 3) -
+        (genericY W ^ 2 - genericX W ^ 3)) < WithZero.exp 4 := by
+  have hdecomp : (veluY W Φ ^ 2 - veluX W Φ ^ 3) - (genericY W ^ 2 - genericX W ^ 3) =
+      (veluY W Φ ^ 2 - genericY W ^ 2) - (veluX W Φ ^ 3 - genericX W ^ 3) := by ring
+  rw [hdecomp]
+  refine W.infinityPlace.map_sub_lt ?_ ?_
+  · refine (W.infinityPlace.map_pow_sub_pow_le
+      (infinityPlace_veluY W Φ).le (infinityPlace_genericY W).le 2).trans_lt ?_
+    simpa only [Nat.reduceSub, pow_one] using
+      (mul_lt_of_lt_one_left WithZero.exp_pos (infinityPlace_veluY_sub_genericY_lt_one W Φ)).trans
+        (WithZero.exp_lt_exp.mpr (by decide : (3 : ℤ) < 4))
+  · refine (W.infinityPlace.map_pow_sub_pow_le
+      (infinityPlace_veluX W Φ).le (infinityPlace_genericX W).le 3).trans_lt ?_
+    have hpow : WithZero.exp (2 : ℤ) ^ (3 - 1) = WithZero.exp 4 := by
+      norm_num [← WithZero.exp_nsmul]
+    rw [hpow]
+    exact mul_lt_of_lt_one_left WithZero.exp_pos (infinityPlace_veluX_sub_genericX_lt_one W Φ)
 
-/-- `Y² - X³` has a pole of order at most five at infinity, since `X - x` and `Y - y` are regular
-there and `y² - x³` has a pole of order at most five. -/
+/-- `Y² - X³` has a pole of order at most five at infinity, since replacing the original
+coordinates does not affect terms of pole order four or greater. -/
 private theorem infinityPlace_veluY_sq_sub_veluX_pow_three_le :
     W.infinityPlace (veluY W Φ ^ 2 - veluX W Φ ^ 3) ≤ WithZero.exp 5 := by
-  classical
-  have hXx : W.infinityPlace (veluX W Φ - genericX W) ≤ 1 := by
-    rw [veluX_def, genericX_def]
-    exact infinityPlace_normalized_sum_sub_le_one W Φ _ _
-  have hYy : W.infinityPlace (veluY W Φ - genericY W) ≤ 1 := by
-    rw [veluY_def, genericY_def]
-    exact infinityPlace_normalized_sum_sub_le_one W Φ _ _
-  set v := W.infinityPlace
-  set x := genericX W
-  set y := genericY W
-  have hX := infinityPlace_veluX W Φ
-  have hY := infinityPlace_veluY W Φ
-  have hc : ∀ a : F, v (algebraMap F W.FunctionField a) ≤ 1 :=
-    Valuation.IsTrivialOn.valuation_algebraMap_le_one _
   have heq := (equation_baseChange_iff _ _ _).mp (equation_genericX_genericY W)
-  have hexp : ∀ m n : ℤ, m ≤ n → WithZero.exp m ≤ WithZero.exp n := fun _ _ h ↦
-    WithZero.exp_le_exp.mpr h
-  have h1 : (1 : ℤᵐ⁰) ≤ WithZero.exp 5 := by
-    rw [← WithZero.exp_zero]; exact hexp _ _ (by norm_num)
-  -- `Y² - X³ = (Y - y)(Y + y) - (X - x)(X² + X x + x²) + (y² - x³)`, and every term is small.
-  have hdecomp : veluY W Φ ^ 2 - veluX W Φ ^ 3 =
-      (veluY W Φ - y) * (veluY W Φ + y) -
-        (veluX W Φ - x) * (veluX W Φ ^ 2 + veluX W Φ * x + x ^ 2) +
-        (algebraMap F _ W.a₂ * x ^ 2 + algebraMap F _ W.a₄ * x + algebraMap F _ W.a₆ -
-          algebraMap F _ W.a₁ * x * y - algebraMap F _ W.a₃ * y) := by
-    linear_combination heq
-  rw [hdecomp]
-  refine (v.map_add_le (v.map_sub_le ?_ ?_) ?_)
-  · rw [map_mul]
-    refine (mul_le_of_le_one_left' hYy).trans ((v.map_add_le ?_ ?_))
-    · rw [hY]; exact hexp _ _ (by norm_num)
-    · rw [infinityPlace_genericY]; exact hexp _ _ (by norm_num)
-  · rw [map_mul]
-    refine (mul_le_of_le_one_left' hXx).trans (v.map_add_le (v.map_add_le ?_ ?_) ?_)
-    · rw [map_pow, hX, ← WithZero.exp_nsmul]; exact hexp _ _ (by norm_num)
-    · rw [map_mul, hX, infinityPlace_genericX, ← WithZero.exp_add]
-      exact hexp _ _ (by norm_num)
-    · rw [map_pow, infinityPlace_genericX, ← WithZero.exp_nsmul]
-      exact hexp _ _ (by norm_num)
-  · refine v.map_sub_le (v.map_sub_le (v.map_add_le (v.map_add_le ?_ ?_) ?_) ?_) ?_
-    · rw [map_mul, map_pow, infinityPlace_genericX, ← WithZero.exp_nsmul]
-      exact (mul_le_of_le_one_left' (hc _)).trans (hexp _ _ (by norm_num))
-    · rw [map_mul, infinityPlace_genericX]
-      exact (mul_le_of_le_one_left' (hc _)).trans (hexp _ _ (by norm_num))
-    · exact (hc _).trans h1
-    · rw [map_mul, map_mul, infinityPlace_genericX, infinityPlace_genericY, mul_assoc,
-        ← WithZero.exp_add]
-      exact (mul_le_of_le_one_left' (hc _)).trans (hexp _ _ (by norm_num))
-    · rw [map_mul, infinityPlace_genericY]
-      exact (mul_le_of_le_one_left' (hc _)).trans (hexp _ _ (by norm_num))
+  have hgeneric : genericY W ^ 2 - genericX W ^ 3 =
+      algebraMap F _ W.a₂ * genericX W ^ 2 + algebraMap F _ W.a₄ * genericX W +
+        algebraMap F _ W.a₆ - algebraMap F _ W.a₁ * (genericX W * genericY W) -
+        algebraMap F _ W.a₃ * genericY W := by linear_combination heq
+  have hc (a : F) (z : W.FunctionField) :
+      W.infinityPlace (algebraMap F _ a * z) ≤ W.infinityPlace z := by
+    rw [map_mul]
+    exact mul_le_of_le_one_left' (Valuation.IsTrivialOn.valuation_algebraMap_le_one _ _)
+  have hval : W.infinityPlace (genericY W ^ 2 - genericX W ^ 3) ≤ WithZero.exp 5 := by
+    rw [hgeneric]
+    repeat' first | apply W.infinityPlace.map_sub_le | apply W.infinityPlace.map_add_le
+    · exact (hc _ _).trans (by norm_num [map_pow, infinityPlace_genericX, ← WithZero.exp_nsmul])
+    · exact (hc _ _).trans (by simp [infinityPlace_genericX])
+    · exact (Valuation.IsTrivialOn.valuation_algebraMap_le_one _ _).trans (by simp)
+    · exact (hc _ _).trans (by simp [map_mul, infinityPlace_genericX, infinityPlace_genericY,
+        ← WithZero.exp_add])
+    · exact (hc _ _).trans (by simp [infinityPlace_genericY])
+  simpa only [sub_add_cancel] using W.infinityPlace.map_add_le
+    ((infinityPlace_veluY_sq_sub_veluX_pow_three_sub_lt W Φ).le.trans
+      (WithZero.exp_le_exp.mpr (by norm_num))) hval
 
 section Relation
 
@@ -353,6 +336,85 @@ noncomputable def _root_.WeierstrassCurve.Affine.veluCurve : WeierstrassCurve F 
 theorem _root_.WeierstrassCurve.Affine.equation_veluX_veluY :
     ((veluCurve W Φ).baseChange W.FunctionField).toAffine.Equation (veluX W Φ) (veluY W Φ) :=
   (exists_equation_veluX_veluY W Φ).choose_spec
+
+/-- The two highest pole terms in the difference of the Weierstrass equations cancel up to
+terms of pole order strictly below four. -/
+private theorem infinityPlace_veluCurve_coeff_difference_lt :
+    W.infinityPlace
+        (algebraMap F _ ((veluCurve W Φ).a₁ - W.a₁) * (veluX W Φ * veluY W Φ) -
+          algebraMap F _ ((veluCurve W Φ).a₂ - W.a₂) * veluX W Φ ^ 2) < WithZero.exp 4 := by
+  set v := W.infinityPlace
+  set X := veluX W Φ
+  set Y := veluY W Φ
+  set x := genericX W
+  set y := genericY W
+  set V := veluCurve W Φ
+  let C := algebraMap F W.FunctionField
+  have hc (a : F) (z : W.FunctionField) : v (C a * z) ≤ v z := by
+    rw [map_mul]
+    exact mul_le_of_le_one_left' (Valuation.IsTrivialOn.valuation_algebraMap_le_one _ _)
+  have hx := infinityPlace_veluX_sub_genericX_lt_one W Φ
+  have hXY : v (X * Y - x * y) < WithZero.exp 4 := by
+    have h : X * Y - x * y = (X - x) * Y + x * (Y - y) := by ring
+    rw [h]
+    refine v.map_add_lt ?_ ?_
+    · rw [map_mul, infinityPlace_veluY]
+      exact (mul_le_of_le_one_left' hx.le).trans_lt (by simp)
+    · rw [map_mul, infinityPlace_genericX]
+      exact (mul_le_of_le_one_right' (infinityPlace_veluY_sub_genericY_lt_one W Φ).le).trans_lt
+        (by simp)
+  have hX2 : v (X ^ 2 - x ^ 2) < WithZero.exp 4 := by
+    refine (v.map_pow_sub_pow_le (infinityPlace_veluX W Φ).le
+      (infinityPlace_genericX W).le 2).trans_lt ?_
+    exact (mul_le_of_le_one_left' hx.le).trans_lt (by simp)
+  have hW := (equation_baseChange_iff _ _ _).mp (equation_genericX_genericY W)
+  have hV := (equation_baseChange_iff _ _ _).mp (equation_veluX_veluY W Φ)
+  have h : C (V.a₁ - W.a₁) * (X * Y) - C (V.a₂ - W.a₂) * X ^ 2 =
+      -((Y ^ 2 - X ^ 3) - (y ^ 2 - x ^ 3)) - C W.a₁ * (X * Y - x * y) +
+        C W.a₂ * (X ^ 2 - x ^ 2) - C V.a₃ * Y + C W.a₃ * y +
+        C V.a₄ * X - C W.a₄ * x + C (V.a₆ - W.a₆) := by grind
+  rw [h]
+  repeat' first | apply v.map_sub_lt | apply v.map_add_lt
+  · simpa only [Valuation.map_neg] using infinityPlace_veluY_sq_sub_veluX_pow_three_sub_lt W Φ
+  · exact (hc _ _).trans_lt hXY
+  · exact (hc _ _).trans_lt hX2
+  · exact (hc _ _).trans_lt (by simp [v, Y])
+  · exact (hc _ _).trans_lt (by simp [v, y])
+  · exact (hc _ _).trans_lt (by simp [v, X])
+  · exact (hc _ _).trans_lt (by simp [v, x])
+  · exact (Valuation.IsTrivialOn.valuation_algebraMap_le_one _ _).trans_lt (by simp)
+
+/-- Vélu's quotient equation preserves the coefficient `a₁` (Vélu, 1971). -/
+@[simp]
+theorem _root_.WeierstrassCurve.Affine.veluCurve_a₁ : (veluCurve W Φ).a₁ = W.a₁ := by
+  by_contra hne
+  have h₁ : W.infinityPlace
+      (algebraMap F _ ((veluCurve W Φ).a₁ - W.a₁) * (veluX W Φ * veluY W Φ)) =
+        WithZero.exp 5 := by
+    -- A nonzero constant does not change the pole order of `XY`.
+    rw [map_mul, Valuation.IsTrivialOn.eq_one (v := W.infinityPlace) _ (sub_ne_zero.mpr hne),
+      one_mul, map_mul, infinityPlace_veluX, infinityPlace_veluY, ← WithZero.exp_add]
+    norm_num
+  have h₂ : W.infinityPlace
+      (algebraMap F _ ((veluCurve W Φ).a₂ - W.a₂) * veluX W Φ ^ 2) ≤ WithZero.exp 4 := by
+    rw [map_mul, map_pow, infinityPlace_veluX, ← WithZero.exp_nsmul]
+    exact (mul_le_of_le_one_left'
+      (Valuation.IsTrivialOn.valuation_algebraMap_le_one _ _)).trans (by norm_num)
+  have h := infinityPlace_veluCurve_coeff_difference_lt W Φ
+  rw [Valuation.map_sub_eq_of_lt_left _ (h₂.trans_lt (h₁ ▸
+    WithZero.exp_lt_exp.mpr (by decide))), h₁, WithZero.exp_lt_exp] at h
+  omega
+
+/-- Vélu's quotient equation preserves the coefficient `a₂` (Vélu, 1971). -/
+@[simp]
+theorem _root_.WeierstrassCurve.Affine.veluCurve_a₂ : (veluCurve W Φ).a₂ = W.a₂ := by
+  by_contra hne
+  have h := infinityPlace_veluCurve_coeff_difference_lt W Φ
+  -- The first term vanishes, leaving a nonzero multiple of `X²` with a pole of order four.
+  simp only [veluCurve_a₁, sub_self, map_zero, zero_mul, zero_sub, Valuation.map_neg] at h
+  rw [map_mul, Valuation.IsTrivialOn.eq_one (v := W.infinityPlace) _ (sub_ne_zero.mpr hne)] at h
+  norm_num only [one_mul, map_pow, infinityPlace_veluX, ← WithZero.exp_nsmul,
+    WithZero.exp_lt_exp, nsmul_eq_mul] at h
 
 /-- **The quotient curve is unique**: a Weierstrass curve over `F` whose affine equation is
 satisfied by Vélu's coordinates is `veluCurve W Φ`. -/
