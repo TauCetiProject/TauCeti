@@ -76,7 +76,9 @@ namespace CategoryTheory
 variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C)
 
 /-- An abelian sheaf, viewed as a sheaf of groups: its sections are written multiplicatively. -/
-def abelianSheafToGrpSheaf : Sheaf J AddCommGrpCat.{w} ⥤ Sheaf J GrpCat.{w} :=
+-- Exposed so that torsors on slice sites retain the same coefficient type when
+-- multiplicative presentation is performed before or after restriction.
+@[expose] def abelianSheafToGrpSheaf : Sheaf J AddCommGrpCat.{w} ⥤ Sheaf J GrpCat.{w} :=
   sheafCompose J (forget₂ AddCommGrpCat AddGrpCat) ⋙
     sheafCompose J groupAddGroupEquivalence.inverse
 
@@ -84,7 +86,7 @@ variable {J}
 
 /-- The sections of the sheaf of groups underlying an abelian sheaf `F` are the sections of `F`,
 written multiplicatively. -/
-def abelianSheafToGrpSheafObjEquiv (F : Sheaf J AddCommGrpCat.{w}) (U : Cᵒᵖ) :
+@[expose] def abelianSheafToGrpSheafObjEquiv (F : Sheaf J AddCommGrpCat.{w}) (U : Cᵒᵖ) :
     Multiplicative (F.obj.obj U) ≃* ((abelianSheafToGrpSheaf J).obj F).obj.obj U :=
   MulEquiv.refl _
 
