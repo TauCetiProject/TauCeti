@@ -260,13 +260,14 @@ theorem mem_integralAdelicUnitaryGroup_iff_forall_place {g : finiteAdelicUnitary
     g ∈ integralAdelicUnitaryGroup E ι ↔ ∀ w : HeightOneSpectrum (𝓞 E),
       finiteAdelicUnitaryGroup.proj E ι w g ∈
         (GeneralLinearGroup.map (n := ι) (w.adicCompletionIntegers E).subtype).range := by
-  -- Membership in `GL_n(𝒪_w)` is integrality of the entries of `g_w` and of `(g_w)⁻¹`.
-  have hS (w : HeightOneSpectrum (𝓞 E)) :
-      (w.adicCompletionIntegers E).subtype.range = (w.adicCompletionIntegers E).toSubring :=
-    Subring.range_subtype _
-  simp only [GeneralLinearGroup.mem_range_map_iff_of_injective
-    (ValuationSubring.subtype_injective _), hS, ValuationSubring.mem_toSubring, ← map_inv,
-    finiteAdelicUnitaryGroup.proj_apply, InvMemClass.coe_inv]
+  -- Membership in `GL_n(𝒪_w)` is integrality of the entries of `g_w` and of `(g_w)⁻¹`; here
+  -- `ValuationSubring.subtype A` is by definition the inclusion of the subring `A.toSubring`.
+  have hS (w : HeightOneSpectrum (𝓞 E)) (h : GL ι (w.adicCompletion E)) :
+      h ∈ (GeneralLinearGroup.map (n := ι) (w.adicCompletionIntegers E).subtype).range ↔
+        (∀ i j, (h : Matrix ι ι _) i j ∈ w.adicCompletionIntegers E) ∧
+          ∀ i j, (↑h⁻¹ : Matrix ι ι _) i j ∈ w.adicCompletionIntegers E :=
+    GeneralLinearGroup.mem_range_map_subtype_iff (w.adicCompletionIntegers E).toSubring
+  simp only [hS, ← map_inv, finiteAdelicUnitaryGroup.proj_apply, InvMemClass.coe_inv]
   refine ⟨fun hg w ↦ ⟨fun i j ↦ ?_, fun i j ↦ ?_⟩, fun h ↦ ?_⟩
   · exact FiniteAdeleRing.mem_integralAdeles.1 (mem_integralAdelicUnitaryGroup_iff.1 hg i j) w
   · exact FiniteAdeleRing.mem_integralAdeles.1

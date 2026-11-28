@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import Mathlib.RingTheory.Localization.FractionRing
 public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 public import TauCeti.Topology.Algebra.Valued.WithVal
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
 /-!
 # Adic valuations and completions transport along an isomorphism of Dedekind domains
@@ -45,7 +47,8 @@ how an automorphism permuting the places above a given place acts on their compl
   `continuous_adicCompletionCongr`, its universal property `eq_adicCompletionCongr_of_continuous`,
   its identity, composition, and inverse laws, `valued_adicCompletionCongr` (it preserves the
   valuations) and `adicCompletionCongr_mem_adicCompletionIntegers_iff` (so it carries the local
-  integers onto the local integers).
+  integers onto the local integers), and `map_adicCompletionCongr_mem_range_map_subtype_iff` (so,
+  applied entrywise, it carries `GL_n(𝒪_v)` onto `GL_n(𝒪'_w)`).
 
 The ideal-level input this rests on — that `Ideal.map e` preserves divisibility and
 factorisation multiplicities, and that Mathlib's `equivOfRingEquiv` is `Ideal.map e` on
@@ -246,6 +249,23 @@ theorem adicCompletionCongr_mem_adicCompletionIntegers_iff {x : v.adicCompletion
     adicCompletionCongr v w σ hσ x ∈ w.adicCompletionIntegers K' ↔
       x ∈ v.adicCompletionIntegers K := by
   rw [mem_adicCompletionIntegers, mem_adicCompletionIntegers, valued_adicCompletionCongr]
+
+/-- Applied entrywise, `adicCompletionCongr` carries `GL_n(𝒪_v)` onto `GL_n(𝒪'_w)`: an element
+`g ∈ GL_n(K_v)` lies in the image of `GL_n(𝒪_v)` exactly when its transport lies in the image of
+`GL_n(𝒪'_w)`. -/
+theorem map_adicCompletionCongr_mem_range_map_subtype_iff {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {g : Matrix.GeneralLinearGroup ι (v.adicCompletion K)} :
+    Matrix.GeneralLinearGroup.map
+        (adicCompletionCongr v w σ hσ : v.adicCompletion K →+* w.adicCompletion K') g ∈
+      (Matrix.GeneralLinearGroup.map (n := ι) (w.adicCompletionIntegers K').subtype).range ↔
+      g ∈ (Matrix.GeneralLinearGroup.map (n := ι) (v.adicCompletionIntegers K).subtype).range := by
+  -- `ValuationSubring.subtype A` is by definition the inclusion of the subring `A.toSubring`.
+  refine ((Matrix.GeneralLinearGroup.mem_range_map_subtype_iff
+    (w.adicCompletionIntegers K').toSubring).trans ?_).trans
+      (Matrix.GeneralLinearGroup.mem_range_map_subtype_iff
+        (v.adicCompletionIntegers K).toSubring).symm
+  simp only [ValuationSubring.mem_toSubring, ← map_inv, Matrix.GeneralLinearGroup.map_apply,
+    RingEquiv.coe_toRingHom, adicCompletionCongr_mem_adicCompletionIntegers_iff]
 
 end Completion
 
