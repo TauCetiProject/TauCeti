@@ -19,8 +19,9 @@ import Mathlib.Tactic.Ring
 
 Linear relaxation methods for the certification of neural networks replace the ReLU function
 `z ↦ max 0 z` on an interval `[l, u]` of pre-activation values by an affine upper bound and an
-affine lower bound. This file proves the scalar facts behind these relaxations, over any linearly
-ordered field.
+affine lower bound. This file proves the scalar facts behind these relaxations. The facts about
+the upper chord and the relaxation hold over any linearly ordered field, and the facts about the
+lower lines hold over any linearly ordered (semi)ring.
 
 For `l < 0 < u` the *upper chord* `z ↦ u / (u - l) * (z - l)` is the line through `(l, 0)` and
 `(u, u)`. It lies above ReLU on `[l, u]`, it meets ReLU exactly at the two endpoints, and it lies
@@ -30,9 +31,9 @@ below ReLU on `[l, u]`.
 
 `TauCeti.crownRelax a l u α` is the slope and the intercept of the affine function that the CROWN
 method uses in place of ReLU for one neuron with output coefficient `a` and pre-activation bounds
-`l ≤ z ≤ u`: the identity when `0 ≤ l`, zero when `u ≤ 0`, the lower line of slope `α` when
-`a ≥ 0`, and the upper chord when `a < 0`. For `α ∈ [0, 1]`, `a` times this affine function is
-at most `a` times ReLU on `[l, u]`.
+`l ≤ z ≤ u`: the identity when `0 ≤ l`, zero when `l < 0` and `u ≤ 0`, the lower line of slope
+`α` when `l < 0 < u` and `0 ≤ a`, and the upper chord when `l < 0 < u` and `a < 0`. For
+`α ∈ [0, 1]`, `a` times this affine function is at most `a` times ReLU on `[l, u]`.
 
 ## Main declarations
 
@@ -63,6 +64,33 @@ public section
 open Set
 
 namespace TauCeti
+
+section LowerLine
+
+variable {R : Type*} [LinearOrder R] {l u α : R}
+
+/-! ### The lower lines -/
+
+/-- The line `z ↦ α * z` lies below ReLU for every slope `α ∈ [0, 1]`. -/
+theorem mul_le_max_zero [Semiring R] [IsOrderedRing R] (hα : α ∈ Icc 0 1) (z : R) :
+    α * z ≤ max 0 z := by
+  rcases le_total 0 z with hz | hz
+  · exact (mul_le_of_le_one_left hz hα.2).trans (le_max_right 0 z)
+  · exact (mul_nonpos_of_nonneg_of_nonpos hα.1 hz).trans (le_max_left 0 z)
+
+/-- For `l < 0 < u`, the line `z ↦ α * z` lies below ReLU on `[l, u]` if and only if
+`α ∈ [0, 1]`. -/
+theorem forall_mul_le_max_zero_iff [Ring R] [IsStrictOrderedRing R] (hl : l < 0) (hu : 0 < u) :
+    (∀ z ∈ Icc l u, α * z ≤ max 0 z) ↔ α ∈ Icc 0 1 := by
+  refine ⟨fun h => ⟨?_, ?_⟩, fun hα z _ => mul_le_max_zero hα z⟩
+  · have h' := h l ⟨le_rfl, (hl.trans hu).le⟩
+    rw [max_eq_left hl.le] at h'
+    exact not_lt.1 fun hα => (mul_pos_of_neg_of_neg hα hl).not_ge h'
+  · have h' := h u ⟨(hl.trans hu).le, le_rfl⟩
+    rw [max_eq_right hu.le] at h'
+    exact not_lt.1 fun hα => (lt_mul_of_one_lt_left hu hα).not_ge h'
+
+end LowerLine
 
 variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] {a l u α z c d : 𝕜}
 
@@ -114,26 +142,6 @@ theorem chord_le_of_forall_max_zero_le (h : ∀ y ∈ Icc l u, max 0 y ≤ c * y
     exact (le_max_left 0 z).trans (h z ⟨hlz, hzu⟩)
   · rw [div_mul_eq_mul_div, div_le_iff₀ h0]
     nlinarith [mul_nonneg (sub_nonneg.2 hzu) hcl, mul_nonneg (sub_nonneg.2 hlz) (sub_nonneg.2 hcu)]
-
-/-! ### The lower lines -/
-
-/-- The line `z ↦ α * z` lies below ReLU for every slope `α ∈ [0, 1]`. -/
-theorem mul_le_max_zero (hα : α ∈ Icc 0 1) (z : 𝕜) : α * z ≤ max 0 z := by
-  rcases le_total 0 z with hz | hz
-  · exact (mul_le_of_le_one_left hz hα.2).trans (le_max_right 0 z)
-  · exact (mul_nonpos_of_nonneg_of_nonpos hα.1 hz).trans (le_max_left 0 z)
-
-/-- For `l < 0 < u`, the line `z ↦ α * z` lies below ReLU on `[l, u]` if and only if
-`α ∈ [0, 1]`. -/
-theorem forall_mul_le_max_zero_iff (hl : l < 0) (hu : 0 < u) :
-    (∀ z ∈ Icc l u, α * z ≤ max 0 z) ↔ α ∈ Icc 0 1 := by
-  refine ⟨fun h => ⟨?_, ?_⟩, fun hα z _ => mul_le_max_zero hα z⟩
-  · have h' := h l ⟨le_rfl, (hl.trans hu).le⟩
-    rw [max_eq_left hl.le] at h'
-    nlinarith
-  · have h' := h u ⟨(hl.trans hu).le, le_rfl⟩
-    rw [max_eq_right hu.le] at h'
-    nlinarith
 
 end IsStrictOrderedRing
 
@@ -192,6 +200,9 @@ example (z : ℝ) : 1 / (1 - -1) * (z - -1) = (z + 1) / 2 := by ring
 example : (1 : ℝ) / (1 - -1) * (-1 - -1) = max 0 (-1) ∧ (1 : ℝ) / (1 - -1) * (1 - -1) = max 0 1 ∧
     (1 : ℝ) / (1 - -1) * (0 - -1) = 1 / 2 := by
   norm_num
+
+/-- The slope `α = 1` gives the lower line `z ≤ max 0 z`. -/
+example (z : ℝ) : 1 * z ≤ max 0 z := mul_le_max_zero ⟨zero_le_one, le_rfl⟩ z
 
 /-- The slope `α = 2` gives no lower line of ReLU: it fails at `z = 1`. -/
 example : ¬ (2 : ℝ) * 1 ≤ max 0 1 := by norm_num
