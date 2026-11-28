@@ -256,7 +256,7 @@ theorem isFactorizable_of_projective_bassModule [Projective (bassModule c f)] :
   have : Projective (colimit F) := ‹Projective (bassModule c f)›
   let s := Projective.factorThru (𝟙 (colimit F)) (bassTelescope c f).g
   have hs : s ≫ (bassTelescope c f).g = 𝟙 (colimit F) := Projective.factorThru_comp _ _
-  apply Functor.IsFactorizable.of_exists_factorization
+  rw [Functor.isFactorizable_iff]
   intro i
   -- Bound the finite support of the split leg and then compare the two maps at that stage.
   obtain ⟨j, hij, p, hp⟩ := bassDiagram_factors_at_stage c f (i := i) s
