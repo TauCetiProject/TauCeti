@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Sigma
 public import Mathlib.Data.PNat.Defs
 public import Mathlib.NumberTheory.Divisors
 import Mathlib.Algebra.GCDMonoid.Nat
+import Mathlib.Data.Finset.NatDivisors
 import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Algebra.Order.Ring.GeomSum
 import Mathlib.Data.Fintype.BigOperators
@@ -48,6 +49,9 @@ by their sum and by a positive square discriminant.
 
 `Nat.card_divisors_le_two_mul_sqrt` bounds the number of divisors of `n` by `2 * Nat.sqrt n`,
 pairing each divisor `d > √n` with `n / d`.
+
+`Nat.card_divisors_mul_le` is the submultiplicativity `τ(a b) ≤ τ(a) τ(b)` of the number of
+divisors, for all `a` and `b`.
 
 `Nat.le_div_two_of_mem_properDivisors` bounds a proper divisor of `n` by `n / 2`. Hence
 `Nat.pow_sub_two_mul_pow_div_two_le_of_le_sum_divisors`: if `q ^ n ≤ 1 + ∑_{d ∣ n} f d` and
@@ -194,6 +198,14 @@ theorem le_div_two_of_mem_properDivisors {n d : ℕ} (hd : d ∈ n.properDivisor
   obtain ⟨k, hk, rfl⟩ :=
     (mem_properDivisors_iff_exists (Nat.ne_zero_of_lt (one_lt_of_mem_properDivisors hd))).mp hd
   exact (Nat.le_div_iff_mul_le two_pos).mpr (Nat.mul_le_mul_left d hk)
+
+open Finset in
+/-- The number of divisors is submultiplicative: `τ(a b) ≤ τ(a) τ(b)` for all `a` and `b`, coprime
+or not, because every divisor of `a b` is a product of a divisor of `a` and a divisor of `b`. For
+coprime arguments this is Mathlib's equality `Nat.Coprime.card_divisors_mul`. -/
+theorem card_divisors_mul_le (a b : ℕ) : #(a * b).divisors ≤ #a.divisors * #b.divisors := by
+  rw [Nat.divisors_mul]
+  exact card_mul_le
 
 open Finset in
 /-- A natural number `n` has at most `2 * Nat.sqrt n` divisors: every divisor `d` of `n` with
