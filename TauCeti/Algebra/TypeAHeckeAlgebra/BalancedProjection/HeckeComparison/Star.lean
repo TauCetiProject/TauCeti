@@ -87,7 +87,7 @@ variable (q) in
 `InfiniteTypeAHeckeAlgebra R q` are isomorphic as `⋆`-algebras whenever `τ * (q + q⁻¹) ^ 2 = 1`. -/
 def heckeStarAlgEquiv (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) :
     BalancedProjectionAlgebra R τ ≃⋆ₐ[R] InfiniteTypeAHeckeAlgebra R q :=
-  { heckeEquiv q hτ with map_star' := heckeEquiv_star hτ, map_smul' := map_smul (heckeEquiv q hτ) }
+  StarAlgEquiv.ofAlgEquiv (heckeEquiv q hτ) (heckeEquiv_star hτ)
 
 @[simp]
 theorem toAlgEquiv_heckeStarAlgEquiv (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) :
@@ -140,7 +140,7 @@ variable (q) in
 `InfiniteTypeAHeckeAlgebra R q` are isomorphic as `⋆`-algebras whenever `τ * (q + q⁻¹) ^ 2 = 1`. -/
 def heckeStarAlgEquiv (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) :
     BalancedProjectionAlgebra R τ ≃⋆ₐ[R] InfiniteTypeAHeckeAlgebra R q :=
-  { heckeEquiv q hτ with map_star' := heckeEquiv_star hτ, map_smul' := map_smul (heckeEquiv q hτ) }
+  StarAlgEquiv.ofAlgEquiv (heckeEquiv q hτ) (heckeEquiv_star hτ)
 
 @[simp]
 theorem toAlgEquiv_heckeStarAlgEquiv (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) :

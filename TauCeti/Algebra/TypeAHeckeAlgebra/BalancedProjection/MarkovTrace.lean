@@ -22,6 +22,7 @@ along `heckeEquiv` is in
 
 * `TauCeti.BalancedProjectionAlgebra.IsMarkovTrace`: Markov trace predicate on
   `BalancedProjectionAlgebra R τ`.
+* `TauCeti.BalancedProjectionAlgebra.IsMarkovTrace.unique`: uniqueness of Markov traces.
 * `TauCeti.BalancedProjectionAlgebra.isMarkovTrace_character`: every scalar character is a Markov
   trace.
 * `TauCeti.BalancedProjectionAlgebra.IsMarkovTrace.comp_complementEquiv`,
@@ -63,6 +64,11 @@ theorem map_algebraMap (hμ : IsMarkovTrace η μ) (r : R) : μ (algebraMap R _ 
 /-- Every generator has trace equal to the projection parameter `η`. -/
 theorem map_e (hμ : IsMarkovTrace η μ) (i : ℕ) : μ (e τ i) = η := by
   simpa [hμ.map_one] using hμ.map_mul_e (n := i) (Subalgebra.one_mem _)
+
+/-- Two Markov traces on `BalancedProjectionAlgebra R τ` with the same parameter `η` are equal. -/
+theorem unique {μ' : BalancedProjectionAlgebra R τ →ₗ[R] R}
+    (hμ : IsMarkovTrace η μ) (hμ' : IsMarkovTrace η μ') : μ = μ' :=
+  eq_of_markov hμ.map_one hμ.map_mul_comm hμ.map_mul_e hμ'.map_one hμ'.map_mul_comm hμ'.map_mul_e
 
 /-- Precomposing a Markov trace of parameter `η` with `complementEquiv` produces a Markov trace of
 parameter `1 - η`. -/

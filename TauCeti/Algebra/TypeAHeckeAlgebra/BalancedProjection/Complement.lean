@@ -75,14 +75,12 @@ theorem complementEquiv_mem_stage_iff {n : ℕ} {x : BalancedProjectionAlgebra R
   exact ⟨fun hx ↦ by simpa using hle hx, fun hx ↦ hle hx⟩
 
 /-- The complement automorphism restricted to `stage R τ n`. -/
-def stageComplementEquiv (n : ℕ) : stage R τ n ≃ₐ[R] stage R τ n where
-  toFun x := ⟨complementEquiv τ x, (complementEquiv_mem_stage_iff τ).2 x.property⟩
-  invFun x := ⟨complementEquiv τ x, (complementEquiv_mem_stage_iff τ).2 x.property⟩
-  left_inv x := Subtype.ext (complementEquiv_complementEquiv τ x)
-  right_inv x := Subtype.ext (complementEquiv_complementEquiv τ x)
-  map_mul' x y := Subtype.ext (map_mul (complementEquiv τ) (x : BalancedProjectionAlgebra R τ) y)
-  map_add' x y := Subtype.ext (map_add (complementEquiv τ) (x : BalancedProjectionAlgebra R τ) y)
-  commutes' r := Subtype.ext ((complementEquiv τ).commutes r)
+def stageComplementEquiv (n : ℕ) : stage R τ n ≃ₐ[R] stage R τ n :=
+  ((complementEquiv τ).subalgebraMap (stage R τ n)).trans
+    (Subalgebra.equivOfEq _ _ <| Subalgebra.ext fun x ↦
+      ⟨fun ⟨_, hy, h⟩ ↦ h ▸ (complementEquiv_mem_stage_iff τ).2 hy,
+        fun hx ↦ ⟨complementEquiv τ x, (complementEquiv_mem_stage_iff τ).2 hx,
+          complementEquiv_complementEquiv τ x⟩⟩)
 
 @[simp]
 theorem coe_stageComplementEquiv (n : ℕ) (x : stage R τ n) :
@@ -91,7 +89,9 @@ theorem coe_stageComplementEquiv (n : ℕ) (x : stage R τ n) :
 
 @[simp]
 theorem stageComplementEquiv_symm (n : ℕ) :
-    (stageComplementEquiv (R := R) τ n).symm = stageComplementEquiv τ n := (rfl)
+    (stageComplementEquiv (R := R) τ n).symm = stageComplementEquiv τ n :=
+  AlgEquiv.ext fun x ↦ (stageComplementEquiv τ n).symm_apply_eq.mpr
+    (Subtype.ext (complementEquiv_complementEquiv τ x).symm)
 
 @[simp]
 theorem stageComplementEquiv_stageComplementEquiv (n : ℕ) (x : stage R τ n) :

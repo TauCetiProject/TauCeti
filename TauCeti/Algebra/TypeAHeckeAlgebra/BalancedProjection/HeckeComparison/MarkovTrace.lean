@@ -15,13 +15,12 @@ import Mathlib.Tactic.LinearCombination
 
 When `τ * (q + q⁻¹) ^ 2 = 1`, projection Markov traces of parameter `η` on
 `BalancedProjectionAlgebra R τ` correspond bijectively under `heckeEquiv` to Hecke Markov traces
-of parameter `z = q * η - q⁻¹ * (1 - η)`, which implies uniqueness for each `η`.
+of parameter `z = q * η - q⁻¹ * (1 - η)`.
 
 ## Main results
 
 * `TauCeti.BalancedProjectionAlgebra.isMarkovTrace_comp_heckeEquiv_iff`,
-  `TauCeti.BalancedProjectionAlgebra.IsMarkovTrace.unique_of_hecke`,
-  `TauCeti.BalancedProjectionAlgebra.heckeParam_eq`: Markov trace transport and uniqueness.
+  `TauCeti.BalancedProjectionAlgebra.heckeParam_eq`: Markov trace transport and parameter recovery.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_heckeEquiv_mul_e`: projection parameter of a
   Hecke Markov trace.
 
@@ -86,24 +85,6 @@ theorem isMarkovTrace_comp_heckeEquiv_iff {q : Rˣ} (hτ : τ * ((q : R) + ↑q�
     simpa only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_mul, heckeEquiv_e,
       ← val_inv_addInvUnit hτ] using
       hμ.map_mul_eigenprojection (addInvUnit hτ) (val_addInvUnit hτ) hz hw'
-
-/-- When `τ * (q + q⁻¹) ^ 2 = 1`, there is at most one Markov trace on
-`BalancedProjectionAlgebra R τ` with a given projection parameter `η`. -/
-theorem IsMarkovTrace.unique_of_hecke {q : Rˣ} (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) {η : R}
-    {μ μ' : BalancedProjectionAlgebra R τ →ₗ[R] R}
-    (hμ : IsMarkovTrace η μ) (hμ' : IsMarkovTrace η μ') : μ = μ' := by
-  have toH {ν : BalancedProjectionAlgebra R τ →ₗ[R] R} (hν : IsMarkovTrace η ν) :
-      InfiniteTypeAHeckeAlgebra.IsMarkovTrace ((q : R) * η - ↑q⁻¹ * (1 - η))
-        (ν.comp (heckeEquiv q hτ).symm.toLinearMap) := by
-    refine (isMarkovTrace_comp_heckeEquiv_iff hτ rfl).mp ?_
-    have hcomp : (ν.comp (heckeEquiv q hτ).symm.toLinearMap).comp (heckeEquiv q hτ).toLinearMap =
-        ν := LinearMap.ext fun x ↦ by
-      simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, AlgEquiv.symm_apply_apply]
-    rwa [hcomp]
-  have heq := InfiniteTypeAHeckeAlgebra.IsMarkovTrace.unique (toH hμ) (toH hμ')
-  exact LinearMap.ext fun x ↦ by
-    simpa only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, AlgEquiv.symm_apply_apply] using
-      LinearMap.congr_fun heq (heckeEquiv q hτ x)
 
 /-- Recovering the Hecke Markov parameter `z` from the transported balanced-projection parameter
 `η = τ * (q + q⁻¹) * (z + q⁻¹)` when `τ * (q + q⁻¹) ^ 2 = 1`. -/

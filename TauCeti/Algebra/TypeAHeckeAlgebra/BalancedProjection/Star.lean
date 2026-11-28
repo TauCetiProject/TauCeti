@@ -184,9 +184,7 @@ variable (τ) in
 /-- `complementEquiv` bundled as an involutive `⋆`-algebra equivalence. -/
 def complementStarAlgEquiv :
     BalancedProjectionAlgebra R τ ≃⋆ₐ[R] BalancedProjectionAlgebra R τ :=
-  { complementEquiv τ with
-    map_star' := complementEquiv_star
-    map_smul' := map_smul (complementEquiv τ) }
+  StarAlgEquiv.ofAlgEquiv (complementEquiv τ) complementEquiv_star
 
 @[simp]
 theorem toAlgEquiv_complementStarAlgEquiv :

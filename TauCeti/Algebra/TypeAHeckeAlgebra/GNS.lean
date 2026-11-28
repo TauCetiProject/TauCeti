@@ -171,7 +171,10 @@ theorem isometry_leftMul_T (i : ℕ) : Isometry (φ.leftMul (T q i)) :=
 
 /-- In the unit-circle fiber, every element acts boundedly on `φ.GNS` (including `q = ±i`). -/
 theorem boundedSubalgebra_eq_top : φ.boundedSubalgebra = ⊤ :=
-  φ.boundedSubalgebra_eq_top_of_adjoin_unitary adjoin_range_T
+  φ.boundedSubalgebra_eq_top_of_adjoin_unitary (s := Set.range (T q))
+    (StarSubalgebra.toSubalgebra_eq_top.mp <| eq_top_iff.mpr <| by
+      rw [← adjoin_range_T (R := ℂ) (q := q)]
+      exact Algebra.adjoin_le fun _ hx ↦ StarAlgebra.subset_adjoin ℂ _ hx)
     (by rintro _ ⟨i, rfl⟩; exact T_mem_unitary i)
 
 /-- In the unit-circle fiber, left multiplication on `φ.GNS` is continuous for every element. -/

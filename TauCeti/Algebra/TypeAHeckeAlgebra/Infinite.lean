@@ -712,12 +712,6 @@ theorem isIdempotentElem_eigenprojection (s : Rˣ) (hs : (s : R) = q + ↑q⁻¹
   rw [IsIdempotentElem, smul_mul_smul_comm, hmul, smul_smul, mul_assoc (↑s⁻¹ : R), s.inv_mul,
     mul_one]
 
-/-- Scaling the normalized eigenprojection by `s` cancels `s⁻¹` and recovers `T q i + q⁻¹`. -/
-private theorem smul_eigenprojection (s : Rˣ) (i : ℕ) :
-    (s : R) • ((↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) =
-      T q i + algebraMap R _ (↑q⁻¹ : R) := by
-  rw [smul_smul, s.mul_inv, one_smul]
-
 /-- The generator `T i` is `q` on its eigenprojection `P` and `-q⁻¹` on the complement:
 `T i = q • P - q⁻¹ • (1 - P)`. -/
 theorem T_eq_smul_eigenprojection_sub_smul (s : Rˣ) (hs : (s : R) = q + ↑q⁻¹) (i : ℕ) :
@@ -728,7 +722,9 @@ theorem T_eq_smul_eigenprojection_sub_smul (s : Rˣ) (hs : (s : R) = q + ↑q⁻
     calc (q : R) • P - (↑q⁻¹ : R) • (1 - P)
         = ((q : R) + ↑q⁻¹) • P - (↑q⁻¹ : R) • 1 := by rw [smul_sub, add_smul]; abel
       _ = (s : R) • P - algebraMap R _ (↑q⁻¹ : R) := by rw [← hs, Algebra.algebraMap_eq_smul_one]
-  rw [h1, smul_eigenprojection s i, add_sub_cancel_right]
+  rw [h1]
+  dsimp only [P]
+  rw [← Units.smul_def s, ← Units.smul_def s⁻¹, smul_inv_smul, add_sub_cancel_right]
 
 /-- The inverse generator is `q⁻¹` on the eigenprojection `P` of `T i` and `-q` on the
 complement: `T i⁻¹ = q⁻¹ • P - q • (1 - P)`. -/
@@ -742,7 +738,9 @@ theorem val_inv_unitT_eq_smul_eigenprojection_sub_smul (s : Rˣ) (hs : (s : R) =
     calc (↑q⁻¹ : R) • P - (q : R) • (1 - P)
         = ((q : R) + ↑q⁻¹) • P - (q : R) • 1 := by rw [smul_sub, add_smul]; abel
       _ = (s : R) • P - algebraMap R _ (q : R) := by rw [← hs, Algebra.algebraMap_eq_smul_one]
-  rw [h1, smul_eigenprojection s i, val_inv_unitT, map_sub]
+  rw [h1]
+  dsimp only [P]
+  rw [← Units.smul_def s, ← Units.smul_def s⁻¹, smul_inv_smul, val_inv_unitT, map_sub]
   abel
 
 /-- Whenever `s = q + q⁻¹` is a unit, the normalized eigenprojections

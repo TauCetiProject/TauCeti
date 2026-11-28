@@ -22,9 +22,10 @@ exceptional regimes:
   (`TauCeti.Algebra.TypeAHeckeAlgebra.RepeatedRoot`) forces `gnsRepresentation φ` to factor
   through `indexCharacter ℂ q`, so `indexCharacter ℂ q` is the unique normalized positive
   functional;
-* for `(q + q⁻¹) ^ 2 ≤ 1` (including `q = ±i` and `l = 3`, `q ^ 4 + q ^ 2 + 1 = 0`),
-  balanced-projection collapse for `τ = ((q + q⁻¹) ^ 2)⁻¹ ∉ [0, 1)` shows that the only
-  positive Markov traces are `indexCharacter ℂ q` and `signCharacter ℂ q`.
+* for `(q + q⁻¹) ^ 2 ≤ 1` (including `q = ±i` and `l = 3`, `q ^ 4 + q ^ 2 + 1 = 0`), the only
+  positive Markov traces are `indexCharacter ℂ q` and `signCharacter ℂ q`: at `q + q⁻¹ = 0`
+  this follows from the preceding scalar-collapse result, while for `q + q⁻¹ ≠ 0` it follows
+  from balanced-projection collapse at `τ = ((q + q⁻¹) ^ 2)⁻¹ ∉ [0, 1)`.
 
 ## Main results
 

@@ -51,14 +51,11 @@ theorem map_T_eq_algebraMap_of_isStarNormal (hq : (q : R) + ↑q⁻¹ = 0) (φ :
     φ (T q i) = algebraMap R A (q : R) := by
   have hd_sq : (φ (T q i) - algebraMap R A (q : R)) ^ 2 = 0 := by
     rw [← AlgHomClass.commutes φ, ← map_sub, ← map_pow, T_sub_algebraMap_sq_eq_zero hq i, map_zero]
-  have hcomm_star (a : A) : Commute (star (algebraMap R A (q : R))) a := by
-    rw [commute_iff_eq]
-    simpa only [star_mul, star_star] using congrArg star (Algebra.commutes (q : R) (star a)).symm
+  have hcomm_star (a : A) : Commute a (star (algebraMap R A (q : R))) :=
+    (Algebra.commute_algebraMap_right (q : R) (star a)).star_right
+  have : IsStarNormal (algebraMap R A (q : R)) := ⟨(hcomm_star _).symm⟩
   have hd_norm : IsStarNormal (φ (T q i) - algebraMap R A (q : R)) :=
-    ⟨by
-      rw [star_sub]
-      exact (hφ.star_comm_self.sub_right (Algebra.commute_algebraMap_right _ _)).sub_left
-        ((hcomm_star _).sub_right (hcomm_star _))⟩
+    (hcomm_star _).isStarNormal_sub
   exact sub_eq_zero.mp (hd_norm.eq_zero_of_isNilpotent ⟨2, hd_sq⟩)
 
 /-- **Representations by normal generators at `q + q⁻¹ = 0` factor through `indexCharacter`.** -/
