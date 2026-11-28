@@ -58,7 +58,7 @@ In particular:
 * `TauCeti.supSeminorm_eq_reducedSpectralAlgNorm`: base-change formula for `supSeminorm K` via
   `reducedSpectralAlgNorm`.
 * `TauCeti.IsAffinoidAlgebra.SupNormModel`, `TauCeti.IsAffinoidAlgebra.SupNormModel.map`,
-  `TauCeti.IsAffinoidAlgebra.SupNormModel.isometry_map_of_supSeminorm_eq`, and
+  `TauCeti.IsAffinoidAlgebra.SupNormModel.isometry_map_iff`, and
   `TauCeti.IsAffinoidAlgebra.SupNormModel.isometry_map_of_isIntegral_of_ker_le_jacobson`: the
   canonical complete uniform supremum-normed seminormed / Banach algebra model of an affinoid
   algebra, its induced `1`-Lipschitz continuous algebra homomorphisms, and isometry criteria.
@@ -436,14 +436,13 @@ theorem lipschitzWith_map (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K
     (φ : A →ₐ[K] B) : LipschitzWith 1 (map hA hB φ) :=
   lipschitzWith_mapAlgHom hA hB φ
 
-/-- An induced homomorphism `SupNormModel.map hA hB φ` is an isometry whenever `φ` preserves
-the supremum seminorm. -/
-theorem isometry_map_of_supSeminorm_eq (hA : IsAffinoidAlgebra K A)
-    (hB : IsAffinoidAlgebra K B) (φ : A →ₐ[K] B)
-    (hφ : ∀ a : A, supSeminorm K (φ a) = supSeminorm K a) :
-    Isometry (map hA hB φ) :=
-  AddMonoidHomClass.isometry_of_norm (map hA hB φ) fun x ↦ by
-    simp [hφ]
+/-- An induced homomorphism `SupNormModel.map hA hB φ` is an isometry if and only if `φ`
+preserves the supremum seminorm. -/
+theorem isometry_map_iff (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K B)
+    (φ : A →ₐ[K] B) :
+    Isometry (map hA hB φ) ↔ ∀ a : A, supSeminorm K (φ a) = supSeminorm K a :=
+  ⟨fun h a ↦ by simpa [dist_def] using h.dist_eq (toSupNorm a) 0,
+   fun h ↦ AddMonoidHomClass.isometry_of_norm (map hA hB φ) fun x ↦ by simp [h]⟩
 
 /-- An integral `K`-algebra homomorphism `φ : A →ₐ[K] B` between affinoid algebras whose
 kernel lies in the Jacobson radical of `A` induces an isometry on supremum-normed models. -/
@@ -451,7 +450,7 @@ theorem isometry_map_of_isIntegral_of_ker_le_jacobson (hA : IsAffinoidAlgebra K 
     (hB : IsAffinoidAlgebra K B) (φ : A →ₐ[K] B)
     (hφ : φ.toRingHom.IsIntegral) (hker : RingHom.ker φ ≤ Ideal.jacobson (⊥ : Ideal A)) :
     Isometry (map hA hB φ) :=
-  isometry_map_of_supSeminorm_eq hA hB φ
+  (isometry_map_iff hA hB φ).mpr
     (φ.supSeminorm_map_of_isIntegral_of_ker_le_jacobson hφ hker)
 
 end Map
@@ -481,9 +480,9 @@ private theorem completeSpace_of_isReduced [IsReduced A] : CompleteSpace hA.SupN
 ultrametric field `K`, `hA.SupNormModel` is a complete seminormed `K`-algebra. -/
 instance : CompleteSpace hA.SupNormModel := by
   let q := map hA (hA.quotient (nilradical A)) (Ideal.Quotient.mkₐ K (nilradical A))
-  have hq_iso : Isometry q := isometry_map_of_supSeminorm_eq hA (hA.quotient (nilradical A))
-    (Ideal.Quotient.mkₐ K (nilradical A)) fun a ↦ by
-      rw [Ideal.Quotient.mkₐ_eq_mk, supSeminorm_mk_nilradical]
+  have hq_iso : Isometry q :=
+    (isometry_map_iff hA (hA.quotient (nilradical A)) (Ideal.Quotient.mkₐ K (nilradical A))).mpr
+      fun a ↦ by rw [Ideal.Quotient.mkₐ_eq_mk, supSeminorm_mk_nilradical]
   have hq_surj : Function.Surjective q := fun y ↦
     let ⟨a, ha⟩ := Ideal.Quotient.mk_surjective y.ofSupNorm
     ⟨toSupNorm a, ext <| by

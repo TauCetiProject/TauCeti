@@ -44,8 +44,10 @@ restricting `E` to be a field.
 * `IsIntegral.spectralNorm_quotient_le_spectralValue_minpoly`: at every maximal ideal `m`, the
   residue-field spectral norm of `x mod m` for an integral element `x` is at most
   `spectralValue (minpoly K x)` (no global integrality or reducedness needed).
-* `TauCeti.spectralValue_minpoly_eq_iSup_spectralNorm`: `spectralValue (minpoly K x)` is the
-  supremum of the residue-field spectral norms across `MaximalSpectrum E`.
+* `TauCeti.spectralValue_minpoly_eq_iSup_spectralNorm` and
+  `TauCeti.isNonarchimedean_spectralValue_minpoly`: `spectralValue (minpoly K x)` is the supremum
+  of the residue-field spectral norms across `MaximalSpectrum E` and satisfies the nonarchimedean
+  triangle inequality (without requiring `IsReduced E`).
 * `TauCeti.isPowMul_reducedSpectralAlgNorm` and `TauCeti.isNonarchimedean_reducedSpectralAlgNorm`:
   power-multiplicativity and ultrametricity of `reducedSpectralAlgNorm K E`.
 * `TauCeti.IsWeaklyStable.exists_bound_reducedSpectralAlgNorm` and
@@ -142,7 +144,10 @@ theorem spectralValue_minpoly_eq_iSup_spectralNorm (x : E) :
           (Real.iSup_nonneg fun _ ↦ spectralNorm_nonneg _)
           fun m _ ↦ spectralNorm_quotient_le_iSup x m
 
-private theorem isNonarchimedean_spectralValue_minpoly :
+/-- **Ultrametric inequality for minimal-polynomial spectral values.** In a finite commutative
+`K`-algebra `E` over an ultrametric normed field `K` (without assuming `E` is reduced),
+`x ↦ spectralValue (minpoly K x)` satisfies the nonarchimedean triangle inequality. -/
+theorem isNonarchimedean_spectralValue_minpoly :
     IsNonarchimedean (fun x : E ↦ spectralValue (minpoly K x)) := fun x y ↦ by
   simp only [spectralValue_minpoly_eq_iSup_spectralNorm]
   refine Real.iSup_le (fun m ↦ ?_)

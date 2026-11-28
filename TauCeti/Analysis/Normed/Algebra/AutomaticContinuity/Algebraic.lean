@@ -128,16 +128,12 @@ theorem spectralNorm_apply_le_gelfandRadius (φ : B →ₐ[K] L) (b : B) :
     let g : E := IntermediateField.AdjoinSimple.gen K (φ b)
     have hg : algebraMap E L g = φ b := IntermediateField.AdjoinSimple.algebraMap_gen K (φ b)
     set N := Module.finrank K E
-    refine TauCeti.le_gelfandRadius_of_bound (C := (N : ℝ)) fun n hn0 ↦ ?_
-    have hn : 1 ≤ n := Nat.one_le_iff_ne_zero.mpr hn0
+    refine TauCeti.le_gelfandRadius_of_bound (C := (N : ℝ)) fun n _ ↦ ?_
     have hgn : algebraMap E L (g ^ n) = φ (b ^ n) := by rw [map_pow, map_pow, hg]
     have hdeg : (minpoly K (φ (b ^ n))).natDegree ≤ N := by
       rw [← hgn, minpoly.algebraMap_eq (algebraMap E L).injective]
       exact minpoly.natDegree_le (g ^ n)
-    have hpow_spec : spectralNorm K L (φ b) ^ n = spectralNorm K L (φ (b ^ n)) := by
-      rw [← hg, ← spectralNorm.eq_of_tower, ← isPowMul_spectralNorm g hn,
-        spectralNorm.eq_of_tower (L := L), hgn]
-    rw [hpow_spec]
+    rw [← TauCeti.spectralNorm_pow, ← map_pow]
     have hint : IsIntegral K (φ (b ^ n)) := by
       rw [← hgn]
       exact (Algebra.IsIntegral.isIntegral (g ^ n)).map (IsScalarTower.toAlgHom K E L)

@@ -36,6 +36,8 @@ Mathlib's `NormedAlgebra.norm_eq_spectralNorm`), giving `‖x‖ ^ d = ‖a₀�
 
 * `TauCeti.spectralNorm_eq_zero_of_not_isAlgebraic`: the spectral norm over `K` of an element that
   is transcendental over `K` is zero.
+* `TauCeti.spectralNorm_pow`: in any field extension `L / K` over an ultrametric normed field `K`,
+  `spectralNorm K L (x ^ n) = spectralNorm K L x ^ n` for all `x : L` and `n : ℕ`.
 * `RingHom.spectralValue_map_of_norm_eq`: mapping a polynomial along a norm-preserving ring
   homomorphism out of a normed ring preserves `spectralValue`.
 * `Polynomial.spectralValue_C`, `Polynomial.spectralValue_one`, and
@@ -437,6 +439,23 @@ theorem spectralNorm_eq_zero_of_not_isAlgebraic {K L : Type*} [NormedField K] [F
     funext fun n ↦ spectralValueTerms_of_natDegree_le _ (by simp)
   rw [spectralNorm, minpoly.eq_zero fun h ↦ hy h.isAlgebraic, spectralValue, h0]
   exact ciSup_const
+
+/-- In an arbitrary field extension `L / K` over an ultrametric normed field `K` (not assumed
+algebraic over `K`), `spectralNorm K L (x ^ n) = spectralNorm K L x ^ n` for all `x : L` and
+`n : ℕ`. -/
+theorem spectralNorm_pow {K L : Type*} [NormedField K] [IsUltrametricDist K]
+    [Field L] [Algebra K L] (x : L) (n : ℕ) :
+    spectralNorm K L (x ^ n) = spectralNorm K L x ^ n := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simpa only [pow_zero, map_one, norm_one] using spectralNorm_extends (K := K) (L := L) 1
+  by_cases hx : IsAlgebraic K x
+  · have : FiniteDimensional K K⟮x⟯ := IntermediateField.adjoin.finiteDimensional hx.isIntegral
+    have hg : algebraMap K⟮x⟯ L (IntermediateField.AdjoinSimple.gen K x) = x :=
+      IntermediateField.AdjoinSimple.algebraMap_gen K x
+    rw [← hg, ← map_pow, ← spectralNorm.eq_of_tower, ← spectralNorm.eq_of_tower]
+    exact isPowMul_spectralNorm (K := K) (L := K⟮x⟯) _ hn
+  · rw [spectralNorm_eq_zero_of_not_isAlgebraic hx,
+      spectralNorm_eq_zero_of_not_isAlgebraic fun h ↦ hx (h.of_pow hn), zero_pow hn.ne']
 
 /-- Over a trivially normed field (`∀ c : K, ‖c‖ ≤ 1`), every nonzero element integral over `K`
 has spectral norm `1`. -/

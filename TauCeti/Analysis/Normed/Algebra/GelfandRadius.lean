@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Unbundled.SmoothingSeminorm
 public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
+public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 
 import TauCeti.Analysis.Normed.Unbundled.RootBound
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
@@ -74,6 +75,10 @@ In any seminormed commutative ring `A`, `gelfandRadius` agrees with Mathlib's sm
   `spectrum ℂ a ⊆ Metric.eball z₀ p.radius`.
 * `TauCeti.le_gelfandRadius_of_bound`: lower bound `r ≤ gelfandRadius a` from
   `∀ n ≠ 0, r ^ n ≤ C * ‖a ^ n‖`.
+* `TauCeti.gelfandRadius_eq_norm_of_norm_pow_eq`: `gelfandRadius a = ‖a‖` when
+  `‖a ^ n‖ = ‖a‖ ^ n` for all `n ≠ 0`.
+* `TauCeti.isTopologicallyNilpotent_iff_gelfandRadius_lt_one`: in any seminormed ring,
+  `IsTopologicallyNilpotent a ↔ gelfandRadius a < 1`.
 * `Commute.gelfandRadius_add_le_max` and `TauCeti.isNonarchimedean_gelfandRadius`: ultrametric
   subadditivity of `gelfandRadius` without `‖1‖ ≤ 1`.
 * `TauCeti.smoothingFun_normRingSeminorm_eq_gelfandRadius` and
@@ -323,6 +328,34 @@ theorem le_gelfandRadius_of_bound {A : Type*} [SeminormedRing A] {a : A} {C r : 
       _ = max C 1 ^ (n : ℝ)⁻¹ * ‖a ^ n‖ ^ (n : ℝ)⁻¹ :=
         Real.mul_rpow hC.le (norm_nonneg _)
   · exact (le_of_not_ge hr).trans (gelfandRadius_nonneg a)
+
+/-- If `‖a ^ n‖ = ‖a‖ ^ n` for all `n ≠ 0`, then `gelfandRadius a = ‖a‖`. -/
+theorem gelfandRadius_eq_norm_of_norm_pow_eq {R : Type*} [SeminormedRing R] {a : R}
+    (ha : ∀ n : ℕ, n ≠ 0 → ‖a ^ n‖ = ‖a‖ ^ n) : gelfandRadius a = ‖a‖ := by
+  refine tendsto_nhds_unique (tendsto_gelfandRadius a) (tendsto_const_nhds.congr' ?_)
+  filter_upwards [eventually_ne_atTop 0] with n hn
+  have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
+  rw [ha n hn, ← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg a), mul_inv_cancel₀ hnR,
+    Real.rpow_one]
+
+/-- In any seminormed ring, an element is topologically nilpotent if and only if its Gelfand
+radius is strictly less than one. -/
+theorem isTopologicallyNilpotent_iff_gelfandRadius_lt_one {R : Type*} [SeminormedRing R]
+    {a : R} : IsTopologicallyNilpotent a ↔ gelfandRadius a < 1 := by
+  refine ⟨fun ha ↦ ?_, fun ha ↦ ?_⟩
+  · -- Some positive power of `a` has norm less than one.
+    obtain ⟨N, hN⟩ := eventually_atTop.mp (ha.eventually (Metric.ball_mem_nhds 0 one_pos))
+    have hlt : ‖a ^ (N + 1)‖ < 1 := mem_ball_zero_iff.mp (hN _ N.le_succ)
+    exact (gelfandRadius_le_norm_pow a N.succ_ne_zero).trans_lt <| by
+      simpa only [one_div] using Real.rpow_lt_one (norm_nonneg _) hlt (by positivity)
+  · -- Choose `r` with `gelfandRadius a < r < 1` so `‖a ^ n‖ ≤ C * r ^ n → 0`.
+    obtain ⟨r, har, hr1⟩ := exists_between ha
+    obtain ⟨C, _, hC⟩ := norm_pow_le_mul_pow_of_gelfandRadius_lt a har
+    have hr0 : 0 ≤ r := (gelfandRadius_nonneg a).trans har.le
+    have hC_lim : Tendsto (fun n : ℕ ↦ C * r ^ n) atTop (𝓝 0) := by
+      simpa only [mul_zero] using (tendsto_pow_atTop_nhds_zero_of_lt_one hr0 hr1).const_mul C
+    exact tendsto_zero_iff_norm_tendsto_zero.mpr <|
+      squeeze_zero (fun _ ↦ norm_nonneg _) hC hC_lim
 
 /-- In any seminormed commutative ring, `smoothingFun (normRingSeminorm A)` agrees with Mathlib's
 `gelfandRadius`, without requiring `‖(1 : A)‖ ≤ 1`. -/

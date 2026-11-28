@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Huber.PowerBounded
 public import TauCeti.Analysis.Normed.Ring.Ultra
 
 import Mathlib.RingTheory.Polynomial.RationalRoot
+import TauCeti.Analysis.Normed.Algebra.GelfandRadius
 import TauCeti.RingTheory.Affinoid.FunctionAlgebra
 import TauCeti.RingTheory.Affinoid.MaximumModulus
 import TauCeti.RingTheory.Affinoid.MinimalPolynomial
@@ -161,7 +162,7 @@ end AlgHom
 
 namespace TauCeti.IsAffinoidAlgebra
 
-open Filter Topology
+open Filter
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
@@ -171,21 +172,7 @@ only if its supremum seminorm is less than one. -/
 theorem isTopologicallyNilpotent_iff_supSeminorm_lt_one {A : Type*} [NormedCommRing A]
     [NormedAlgebra K A] [CompleteSpace A] (hA : IsAffinoidAlgebra K A) {f : A} :
     IsTopologicallyNilpotent f ↔ supSeminorm K f < 1 := by
-  rw [hA.supSeminorm_eq_gelfandRadius f]
-  refine ⟨fun hf ↦ ?_, fun hf ↦ ?_⟩
-  · -- Some positive power of `f` has norm less than one.
-    obtain ⟨N, hN⟩ := eventually_atTop.mp (hf.eventually (Metric.ball_mem_nhds 0 one_pos))
-    have hlt : ‖f ^ (N + 1)‖ < 1 := mem_ball_zero_iff.mp (hN _ N.le_succ)
-    exact (gelfandRadius_le_norm_pow f N.succ_ne_zero).trans_lt <| by
-      simpa only [one_div] using Real.rpow_lt_one (norm_nonneg _) hlt (by positivity)
-  · -- Choose `r` with `gelfandRadius f < r < 1` so `‖f ^ n‖ ≤ C * r ^ n → 0`.
-    obtain ⟨r, hfr, hr1⟩ := exists_between hf
-    obtain ⟨C, _, hC⟩ := norm_pow_le_mul_pow_of_gelfandRadius_lt f hfr
-    have hr0 : 0 ≤ r := (gelfandRadius_nonneg f).trans hfr.le
-    have hC_lim : Tendsto (fun n : ℕ ↦ C * r ^ n) atTop (𝓝 0) := by
-      simpa only [mul_zero] using (tendsto_pow_atTop_nhds_zero_of_lt_one hr0 hr1).const_mul C
-    exact tendsto_zero_iff_norm_tendsto_zero.mpr <|
-      squeeze_zero (fun _ ↦ norm_nonneg _) hC hC_lim
+  rw [hA.supSeminorm_eq_gelfandRadius f, isTopologicallyNilpotent_iff_gelfandRadius_lt_one]
 
 /-- **Topologically nilpotent elements, pointwise.** For any complete `K`-algebra norm on an
 affinoid algebra (not assumed ultrametric), an element is topologically nilpotent if and only if it

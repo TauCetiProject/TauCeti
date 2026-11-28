@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Algebra.GelfandRadius
 public import TauCeti.RingTheory.Affinoid.PowerBounded
 public import TauCeti.RingTheory.Affinoid.ValueGroup
 public import Mathlib.Analysis.Normed.Unbundled.SmoothingSeminorm
@@ -15,29 +16,34 @@ import TauCeti.RingTheory.Huber.Normed
 /-!
 # The supremum seminorm as a spectral radius
 
-Let `A` be an affinoid algebra over a complete nonarchimedean field `K`, equipped with a complete
-algebra norm `‖·‖`. This file records the spectral-radius formula
+Let `A` be an affinoid algebra over a complete nontrivially normed nonarchimedean field `K`,
+equipped with a complete algebra norm `‖·‖`. This file records the spectral-radius formula
 
 `|f|sup = lim_{n → ∞} ‖f ^ n‖ ^ (1 / n) = inf_{n ≥ 1} ‖f ^ n‖ ^ (1 / n)`.
 
 Since `|f|sup = gelfandRadius f` (`TauCeti.IsAffinoidAlgebra.supSeminorm_eq_gelfandRadius`) and
-`gelfandRadius f` coincides with Mathlib's `smoothingFun (normRingSeminorm A) f`, both the limit
-formula and the smoothing formula hold for every complete `K`-algebra norm on `A` without requiring
-ultrametricity or reducedness. When `‖·‖` is ultrametric and `‖1‖ ≤ 1`, the bundled seminorms
-`TauCeti.IsAffinoidAlgebra.supRingSeminorm` and `smoothingSeminorm` coincide, and when `|f|sup > 0`
-the powers satisfy the quantitative bound `‖f ^ n‖ ≤ C |f|sup ^ n`.
+`gelfandRadius f` coincides with Mathlib's `smoothingFun (normRingSeminorm A) f`, the limit formula,
+the smoothing formula, and the bundled identity
+`TauCeti.IsAffinoidAlgebra.supRingSeminorm_eq_gelfandRadiusRingSeminorm` hold for every complete
+`K`-algebra norm on `A` without requiring ultrametricity, reducedness, or `‖1‖ ≤ 1`. When `‖·‖`
+is ultrametric and `‖1‖ ≤ 1`, the bundled seminorm coincides with Mathlib's `smoothingSeminorm`,
+and when `|f|sup > 0` the powers satisfy the quantitative bound `‖f ^ n‖ ≤ C |f|sup ^ n`.
 
 ## Main results
 
 * `TauCeti.supSeminorm_le_norm_pow_rpow`: `|f|sup ≤ ‖f ^ n‖ ^ (1 / n)` for `n ≠ 0`.
 * `TauCeti.IsAffinoidAlgebra.pow_norm_pow_one_div_tendsto_nhds_supSeminorm`: the sequence
-  `‖f ^ n‖ ^ (1 / n)` tends to `|f|sup` (for any complete `K`-algebra norm).
+  `‖f ^ n‖ ^ (1 / n)` tends to `|f|sup` (for any complete `K`-algebra norm over a complete
+  nontrivially normed ultrametric field `K`).
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_smoothingFun`: `|f|sup = inf_{n ≥ 1} ‖f ^ n‖ ^ (1 / n)`
-  (for any complete `K`-algebra norm).
+  (for any complete `K`-algebra norm over a complete nontrivially normed ultrametric field `K`).
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_norm_of_norm_pow_eq` and
   `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_norm_of_normMulClass`: `|f|sup = ‖f‖` when
-  `‖f ^ n‖ = ‖f‖ ^ n` for all `n ≠ 0` (in particular for any multiplicative algebra norm, without
-  requiring `‖1‖ = 1`).
+  `‖f ^ n‖ = ‖f‖ ^ n` for all `n ≠ 0` (in particular for any complete multiplicative algebra norm
+  over a complete nontrivially normed ultrametric field `K`, without requiring `‖1‖ = 1`).
+* `TauCeti.IsAffinoidAlgebra.supRingSeminorm_eq_gelfandRadiusRingSeminorm`:
+  `hA.supRingSeminorm = gelfandRadiusRingSeminorm A` for every complete `K`-algebra norm over a
+  complete nontrivially normed ultrametric field `K` (without ultrametricity or `‖1‖ ≤ 1`).
 * `TauCeti.IsAffinoidAlgebra.exists_norm_pow_le_mul_supSeminorm_pow`: for a complete ultrametric
   algebra norm, if `|f|sup > 0`, then `‖f ^ n‖ ≤ C |f|sup ^ n` for some constant `C` and every `n`.
 * `TauCeti.IsAffinoidAlgebra.supRingSeminorm_eq_smoothingSeminorm`: the smoothing identity for the
@@ -68,38 +74,36 @@ namespace IsAffinoidAlgebra
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
-/-- **The spectral-radius formula.** For every complete algebra norm on an affinoid algebra (not
-assumed ultrametric or reduced), `‖f ^ n‖ ^ (1 / n)` tends to the supremum seminorm `|f|sup`. -/
+/-- **The spectral-radius formula.** Over a complete nontrivially normed ultrametric field `K`,
+for every complete algebra norm on an affinoid algebra (not assumed ultrametric or reduced),
+`‖f ^ n‖ ^ (1 / n)` tends to the supremum seminorm `|f|sup`. -/
 theorem pow_norm_pow_one_div_tendsto_nhds_supSeminorm {A : Type*} [NormedCommRing A]
     [NormedAlgebra K A] [CompleteSpace A] (hA : IsAffinoidAlgebra K A) (f : A) :
     Tendsto (fun n : ℕ ↦ ‖f ^ n‖ ^ (1 / n : ℝ)) atTop (𝓝 (supSeminorm K f)) := by
   rw [hA.supSeminorm_eq_gelfandRadius f]
   simpa only [one_div] using tendsto_gelfandRadius f
 
-/-- **The supremum seminorm is the smoothing of the norm.** For every complete algebra norm on an
-affinoid algebra (not assumed ultrametric or reduced), `|f|sup = inf_{n ≥ 1} ‖f ^ n‖ ^ (1 / n)`,
-which is Mathlib's `smoothingFun` of the norm. -/
+/-- **The supremum seminorm is the smoothing of the norm.** Over a complete nontrivially normed
+ultrametric field `K`, for every complete algebra norm on an affinoid algebra (not assumed
+ultrametric or reduced), `|f|sup = inf_{n ≥ 1} ‖f ^ n‖ ^ (1 / n)`, which is Mathlib's
+`smoothingFun` of the norm. -/
 theorem supSeminorm_eq_smoothingFun {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
     [CompleteSpace A] (hA : IsAffinoidAlgebra K A) (f : A) :
     supSeminorm K f = smoothingFun (normRingSeminorm A) f := by
   rw [hA.supSeminorm_eq_gelfandRadius f, smoothingFun_normRingSeminorm_eq_gelfandRadius]
 
-/-- A complete algebra norm on an affinoid algebra agrees with `supSeminorm K` at any element
-whose positive powers satisfy `‖f ^ n‖ = ‖f‖ ^ n` (for instance, for a power-multiplicative
-norm). -/
+/-- Over a complete nontrivially normed ultrametric field `K`, a complete algebra norm on an
+affinoid algebra agrees with `supSeminorm K` at any element whose positive powers satisfy
+`‖f ^ n‖ = ‖f‖ ^ n` (for instance, for a power-multiplicative norm). -/
 theorem supSeminorm_eq_norm_of_norm_pow_eq {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
     [CompleteSpace A] (hA : IsAffinoidAlgebra K A) {f : A}
     (hf : ∀ n : ℕ, n ≠ 0 → ‖f ^ n‖ = ‖f‖ ^ n) :
     supSeminorm K f = ‖f‖ := by
-  refine tendsto_nhds_unique (hA.pow_norm_pow_one_div_tendsto_nhds_supSeminorm f) ?_
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [eventually_ne_atTop 0] with n hn
-  have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  rw [hf n hn, ← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg f), mul_one_div_cancel hnR,
-    Real.rpow_one]
+  rw [hA.supSeminorm_eq_gelfandRadius f, gelfandRadius_eq_norm_of_norm_pow_eq hf]
 
-/-- A complete multiplicative algebra norm on an affinoid algebra is its supremum norm.
-No normalisation of `‖1‖` or of a Tate presentation is needed. -/
+/-- Over a complete nontrivially normed ultrametric field `K`, every complete multiplicative algebra
+norm on an affinoid algebra is its supremum norm. No normalisation of `‖1‖` or of a Tate
+presentation is needed. -/
 @[simp]
 theorem supSeminorm_eq_norm_of_normMulClass {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
     [CompleteSpace A] [NormMulClass A]
@@ -107,6 +111,17 @@ theorem supSeminorm_eq_norm_of_normMulClass {A : Type*} [NormedCommRing A] [Norm
   hA.supSeminorm_eq_norm_of_norm_pow_eq fun n hn ↦
     Nat.le_induction (by simp) (fun k _ ih ↦ by rw [pow_succ, norm_mul, ih, pow_succ]) n
       (Nat.one_le_iff_ne_zero.mpr hn)
+
+/-- **The supremum seminorm is the Gelfand-radius ring seminorm.** Over a complete nontrivially
+normed ultrametric field `K`, for every complete `K`-algebra norm on an affinoid algebra (not
+assumed ultrametric, reduced, or to satisfy `‖1‖ ≤ 1`), the bundled supremum seminorm coincides with
+`gelfandRadiusRingSeminorm A`. -/
+theorem supRingSeminorm_eq_gelfandRadiusRingSeminorm {A : Type*} [NormedCommRing A]
+    [NormedAlgebra K A] [CompleteSpace A] (hA : IsAffinoidAlgebra K A) :
+    hA.supRingSeminorm = gelfandRadiusRingSeminorm A :=
+  RingSeminorm.ext fun f ↦ by
+    rw [coe_supRingSeminorm, gelfandRadiusRingSeminorm_apply]
+    exact hA.supSeminorm_eq_gelfandRadius f
 
 variable {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A] [CompleteSpace A]
 

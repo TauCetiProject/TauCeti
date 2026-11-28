@@ -29,8 +29,9 @@ ultrametric absolute value on `A ⧸ x` extending the norm of `K`, with no embed
 algebraic closure entering. The function `TauCeti.supSeminorm K f` is the conditional real `iSup`
 of `pointNorm K x f` over all maximal ideals `x`, returning `0` on the zero algebra (empty maximal
 spectrum) and `0` when the family is unbounded above; whenever point values are bounded above (for
-instance on an affinoid algebra or on the image of an `AlgHom` from a normed algebra with summable
-geometric series), it is the genuine bounded pointwise supremum.
+instance on an affinoid algebra or, over a complete ultrametric normed field, on the image of an
+`AlgHom` from a normed algebra with summable geometric series), it is the genuine bounded pointwise
+supremum.
 
 For an affinoid algebra over a complete nonarchimedean field `K`, the point norms are
 multiplicative, ultrametric and compatible with scalars, and they are bounded by every complete
@@ -66,14 +67,15 @@ geometric series on `A`. The kernel computation uses that affinoid algebras are 
 ## Main results
 
 * `MaximalSpectrum.pointNorm_le_norm` and `TauCeti.supSeminorm_le_norm`:
-  `pointNorm K x f ≤ ‖f‖` and `supSeminorm K f ≤ ‖f‖` over a complete ultrametric field `K` for
-  every algebra norm with summable geometric series.
+  `pointNorm K x f ≤ ‖f‖` and `supSeminorm K f ≤ ‖f‖` over a complete ultrametric normed field `K`
+  for every algebra norm with summable geometric series.
 * `TauCeti.IsAffinoidAlgebra.isUnit_iff_forall_pointNorm_ne_zero`: `f` is a unit if and only if
   `|f(x)| ≠ 0` at every classical point `x`.
 * `TauCeti.IsAffinoidAlgebra.bddAbove_range_pointNorm`: the point norms of `f` are bounded.
 * `TauCeti.isUnit_one_sub_of_supSeminorm_lt_one`: if the residue-field spectral values of `a` are
   bounded above and `supSeminorm K a < 1`, then `1 - a` is a unit.
-* `TauCeti.isPowMul_supSeminorm`: `supSeminorm K (f ^ n) = supSeminorm K f ^ n` for `n ≥ 1`.
+* `TauCeti.isPowMul_supSeminorm`: over an ultrametric normed field `K`,
+  `supSeminorm K (f ^ n) = supSeminorm K f ^ n` for `n ≥ 1`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_aeval_le`: a polynomial over the unit ball of `K`
   without constant term, evaluated at elements with `|xᵢ|sup ≤ ε ≤ 1`, has `|·|sup ≤ ε`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_zero_iff`: `|f|sup = 0` if and only if `f` is
@@ -96,9 +98,9 @@ geometric series on `A`. The kernel computation uses that affinoid algebras are 
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_le_iSup_coeff_rpow_of_eval_eq_zero`: the bound of
   `|f|sup` by the coefficients of a monic polynomial vanishing at `f`.
 * `AlgHom.pointNorm_apply_le_gelfandRadius`, `AlgHom.bddAbove_range_pointNorm`,
-  `AlgHom.supSeminorm_apply_le_gelfandRadius`, and `AlgHom.supSeminorm_apply_le_norm`: spectral
-  contraction and point-value boundedness from arbitrary normed `K`-algebras with summable geometric
-  series into commutative `K`-algebras.
+  `AlgHom.supSeminorm_apply_le_gelfandRadius`, and `AlgHom.supSeminorm_apply_le_norm`: over a
+  complete ultrametric normed field `K`, spectral contraction and point-value boundedness from
+  arbitrary normed `K`-algebras with summable geometric series into commutative `K`-algebras.
 
 ## References
 
@@ -232,25 +234,13 @@ theorem _root_.MaximalSpectrum.pointNorm_smul [IsUltrametricDist K] (x : Maximal
       rw [spectralNorm_eq_zero_of_not_isAlgebraic hf, spectralNorm_eq_zero_of_not_isAlgebraic hcf,
         mul_zero]
 
-open Polynomial IntermediateField in
-/-- `pointNorm K x (f ^ n) = pointNorm K x f ^ n` at every maximal ideal `x`. -/
+/-- Over an ultrametric normed field `K`, `pointNorm K x (f ^ n) = pointNorm K x f ^ n` at every
+maximal ideal `x`. -/
 theorem _root_.MaximalSpectrum.pointNorm_pow [IsUltrametricDist K] (x : MaximalSpectrum A) (f : A)
     (n : ℕ) :
     pointNorm K x (f ^ n) = pointNorm K x f ^ n := by
   let := Ideal.Quotient.field x.asIdeal
-  simp only [pointNorm, map_pow]
-  generalize Ideal.Quotient.mk x.asIdeal f = y
-  rcases n.eq_zero_or_pos with rfl | hn
-  · simpa using spectralNorm_extends (K := K) (L := A ⧸ x.asIdeal) 1
-  by_cases hy : IsAlgebraic K y
-  · -- Pass to the finite extension `K⟮y⟯`, where the spectral norm is power-multiplicative.
-    have : FiniteDimensional K K⟮y⟯ := IntermediateField.adjoin.finiteDimensional hy.isIntegral
-    have hg : algebraMap K⟮y⟯ (A ⧸ x.asIdeal) (IntermediateField.AdjoinSimple.gen K y) = y :=
-      IntermediateField.AdjoinSimple.algebraMap_gen K y
-    rw [← hg, ← map_pow, ← spectralNorm.eq_of_tower, ← spectralNorm.eq_of_tower]
-    exact isPowMul_spectralNorm (K := K) (L := K⟮y⟯) _ hn
-  · rw [spectralNorm_eq_zero_of_not_isAlgebraic hy,
-      spectralNorm_eq_zero_of_not_isAlgebraic fun h ↦ hy (h.of_pow hn), zero_pow hn.ne']
+  simp only [pointNorm, map_pow, TauCeti.spectralNorm_pow]
 
 /-- Over a complete ultrametric normed field `K`, any `K`-algebra homomorphism from a normed
 `K`-algebra `B` with summable geometric series into a commutative `K`-algebra `A` is bounded at
@@ -367,7 +357,8 @@ theorem _root_.AlgHom.bddAbove_range_pointNorm [IsUltrametricDist K] [CompleteSp
     BddAbove (Set.range fun x : MaximalSpectrum A ↦ pointNorm K x (φ b)) :=
   ⟨gelfandRadius b, Set.forall_mem_range.mpr fun x ↦ φ.pointNorm_apply_le_gelfandRadius x b⟩
 
-/-- `TauCeti.supSeminorm K` is bounded by every algebra norm with summable geometric series. -/
+/-- Over a complete ultrametric normed field `K`, `TauCeti.supSeminorm K` is bounded by every
+algebra norm with summable geometric series. -/
 theorem supSeminorm_le_norm [IsUltrametricDist K] [CompleteSpace K]
     {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [HasSummableGeomSeries A] (f : A) :
     supSeminorm K f ≤ ‖f‖ :=
@@ -424,15 +415,15 @@ theorem supSeminorm_smul [IsUltrametricDist K] (c : K) (f : A) :
     supSeminorm K (c • f) = ‖c‖ * supSeminorm K f := by
   simp only [supSeminorm, MaximalSpectrum.pointNorm_smul, Real.mul_iSup_of_nonneg (norm_nonneg c)]
 
-/-- `supSeminorm K (f ^ n) = supSeminorm K f ^ n` for `n ≠ 0`, including on the zero algebra.
-For `n = 0` the statement fails on the zero algebra. -/
+/-- Over an ultrametric normed field `K`, `supSeminorm K (f ^ n) = supSeminorm K f ^ n` for
+`n ≠ 0`, including on the zero algebra. For `n = 0` the statement fails on the zero algebra. -/
 theorem supSeminorm_pow [IsUltrametricDist K] (f : A) {n : ℕ} (hn : n ≠ 0) :
     supSeminorm K (f ^ n) = supSeminorm K f ^ n := by
   simp only [supSeminorm, MaximalSpectrum.pointNorm_pow,
     Real.iSup_pow_of_ne_zero (fun _ ↦ pointNorm_nonneg f) hn]
 
-/-- `supSeminorm K` is power-multiplicative: `supSeminorm K (f ^ n) = supSeminorm K f ^ n` for
-`n ≥ 1`. -/
+/-- Over an ultrametric normed field `K`, `supSeminorm K` is power-multiplicative:
+`supSeminorm K (f ^ n) = supSeminorm K f ^ n` for `n ≥ 1`. -/
 theorem isPowMul_supSeminorm [IsUltrametricDist K] : IsPowMul (supSeminorm K : A → ℝ) :=
   fun f _ hn ↦ supSeminorm_pow f (Nat.one_le_iff_ne_zero.mp hn)
 
