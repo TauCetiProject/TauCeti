@@ -321,13 +321,13 @@ section IsCancelAdd
 variable [IsCancelAdd A]
 
 /-- Over an additively cancellative semiring, the unsigned polynomial `D(X + xy)`
-is invariant under exchanging the factors. This adapts the original cancellation proof of
-`TauCeti.Determinant.map_one_add_mul_comm` from
-[Chenevier, Lemma 1.12(i)](https://arxiv.org/abs/0809.0415). A second polynomial variable allows
-specialization without changing `X`. -/
+is invariant under exchanging the factors
+([Chenevier, Lemma 1.12(i)](https://arxiv.org/abs/0809.0415)). -/
 theorem rid_toFun_one_tmul_mul_add_X_tmul_one_comm (x y : R) :
     Algebra.TensorProduct.rid A A A[X] (D.toLaw.toFun A[X] (1 ⊗ₜ (x * y) + X ⊗ₜ 1)) =
       Algebra.TensorProduct.rid A A A[X] (D.toLaw.toFun A[X] (1 ⊗ₜ (y * x) + X ⊗ₜ 1)) := by
+  -- Adapt the former cancellation proof of `TauCeti.Determinant.map_one_add_mul_comm`.
+  -- The outer variable can be specialized to zero without changing the inner variable.
   let u : A[X][X] ⊗[A] R := 1 ⊗ₜ x + X ⊗ₜ 1
   let v : A[X][X] ⊗[A] R := 1 ⊗ₜ y
   let t : A[X][X] ⊗[A] R := C X ⊗ₜ 1
@@ -475,12 +475,9 @@ theorem charpoly_eq_sum (x : R) :
   rw [Algebra.TensorProduct.rid_tmul, smul_eq_C_mul, C_mul, C_pow, C_neg, C_1]
   ring
 
-/-- The characteristic polynomial of a product is invariant under exchanging its two factors,
-extending `Matrix.charpoly_mul_comm` to arbitrary determinants. This is the characteristic
-polynomial form of [Chenevier, Lemma 1.12(i)](https://arxiv.org/abs/0809.0415). It follows from
-unsigned cyclicity, whose proof adapts the original argument for
-`TauCeti.Determinant.map_one_add_mul_comm` with a second polynomial variable to preserve the
-characteristic-polynomial variable. -/
+/-- Over a commutative ring, the characteristic polynomial of a product is invariant under
+exchanging its two factors, extending `Matrix.charpoly_mul_comm` to determinants. This is the
+characteristic-polynomial form of [Chenevier, Lemma 1.12(i)](https://arxiv.org/abs/0809.0415). -/
 theorem charpoly_mul_comm (x y : R) : D.charpoly (x * y) = D.charpoly (y * x) := by
   simp only [charpoly_eq_sum, D.charCoeff_mul_comm]
 
