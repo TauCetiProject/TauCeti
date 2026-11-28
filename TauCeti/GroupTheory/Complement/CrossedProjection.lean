@@ -36,6 +36,12 @@ Conjugating a complement `D` by `g` conjugates its crossed projection `c` to
 projections differ by that principal crossed map
 (`Subgroup.IsComplement'.eq_conj_smul_iff_crossedProjection_eq`).
 
+Crossed projections are natural under a group isomorphism `e : G ≃* G'`: the crossed projection
+along `e D` sends `e g` to `e` applied to the crossed projection of `g` along `D`
+(`Subgroup.IsComplement'.coe_crossedProjection_map_apply`), compatibly with the identity and with
+composition. For the inner automorphism `MulAut.conj g` this agrees with the conjugation formula
+above (`Subgroup.IsComplement'.coe_crossedProjection_map_conj`).
+
 The conjugation action is explicit rather than a global instance. The additive
 coefficient action uses `Additive.distribMulAction`, and kernels use the existing
 `groupCohomology.zeroLocus` rather than a second notion of cocycle kernel.
@@ -167,6 +173,61 @@ theorem crossedProjection_conj_smul (g x : G) :
   exact (h.conj_smul g).crossedProjection_mul _ _
 
 end IsComplement'
+
+/-! ### Naturality under group isomorphisms -/
+
+section Map
+
+variable {G' : Type*} [Group G'] {D : Subgroup G} (e : G ≃* G')
+
+omit [N.Normal] in
+/-- The crossed projection along the image of a complement under `e` is the image under `e` of the
+crossed projection along the original complement, recovered with `isComplement'_map_iff`. -/
+@[simp]
+theorem IsComplement'.crossedProjection_map
+    (h : (N.map (e : G →* G')).IsComplement' (D.map (e : G →* G'))) (g : G') :
+    h.crossedProjection g =
+      e.subgroupMap N (((isComplement'_map_iff e).mp h).crossedProjection (e.symm g)) := by
+  rw [crossedProjection_eq_iff]
+  refine (mem_map_equiv (f := e)).mpr ?_
+  simpa using (((isComplement'_map_iff e).mp h).crossedProjection_eq_iff _ _).mp rfl
+
+omit [N.Normal] in
+/-- **Naturality of crossed projections.** If `D` complements `N`, the crossed projection along
+`e D` evaluated at `e g` is `e` applied to the crossed projection along `D` at `g`. -/
+theorem IsComplement'.coe_crossedProjection_map_apply (h : N.IsComplement' D)
+    (h' : (N.map (e : G →* G')).IsComplement' (D.map (e : G →* G'))) (g : G) :
+    (h'.crossedProjection (e g) : G') = e (h.crossedProjection g) := by
+  rw [crossedProjection_map, MulEquiv.coe_subgroupMap_apply, MulEquiv.symm_apply_apply]
+
+omit [N.Normal] in
+/-- Transport along the identity does not change the values of the crossed projection. -/
+theorem IsComplement'.coe_crossedProjection_map_refl (h : N.IsComplement' D)
+    (h' : (N.map (MulEquiv.refl G : G →* G)).IsComplement' (D.map (MulEquiv.refl G : G →* G)))
+    (g : G) : (h'.crossedProjection g : G) = h.crossedProjection g :=
+  h.coe_crossedProjection_map_apply (MulEquiv.refl G) h' g
+
+omit [N.Normal] in
+/-- Transporting a complement along `e` and then `e'` gives the same values of the crossed
+projection as transporting it along `e.trans e'`. -/
+theorem IsComplement'.coe_crossedProjection_map_map {G'' : Type*} [Group G''] (e' : G' ≃* G'')
+    (h : ((N.map (e : G →* G')).map (e' : G' →* G'')).IsComplement'
+      ((D.map (e : G →* G')).map (e' : G' →* G'')))
+    (h' : (N.map (e.trans e' : G →* G'')).IsComplement' (D.map (e.trans e' : G →* G'')))
+    (g : G'') : (h.crossedProjection g : G'') = h'.crossedProjection g := by
+  simp only [crossedProjection_map, MulEquiv.coe_subgroupMap_apply, MulEquiv.trans_apply,
+    MulEquiv.symm_trans_apply]
+
+/-- For the inner automorphism `MulAut.conj g`, the naturality of crossed projections recovers
+`Subgroup.IsComplement'.crossedProjection_conj_smul`: the crossed projection along the image of `D`
+has the same values as the one along the conjugate complement `g D g⁻¹`. -/
+theorem IsComplement'.coe_crossedProjection_map_conj (h : N.IsComplement' D) (g : G)
+    (h' : (N.map (MulAut.conj g : G →* G)).IsComplement' (D.map (MulAut.conj g : G →* G)))
+    (x : G) : (h'.crossedProjection x : G) = (h.conj_smul g).crossedProjection x := by
+  rw [h.crossedProjection_conj_smul, crossedProjection_map, MulEquiv.coe_subgroupMap_apply,
+    coe_conjugationAction_smul, MulAut.conj_apply, MulAut.conj_symm_apply]
+
+end Map
 
 /-- For `H = ⊤`, the local left projection agrees with
 `Subgroup.IsComplement'.crossedProjection`. -/

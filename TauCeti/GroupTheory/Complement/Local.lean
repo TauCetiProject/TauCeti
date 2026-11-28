@@ -29,6 +29,12 @@ along `K` and `G` acts on `N` by conjugation.
 These constructions reuse Mathlib's `Subgroup.IsComplement.equiv` for global complements.
 Restriction of a complement to an intermediate subgroup uses Dedekind's modular law, and local
 complements pull back along injective homomorphisms (`Subgroup.exists_isLocalComplement_map_iff`).
+Global and local complements transport along a group isomorphism `e : G ≃* G'`
+(`Subgroup.isComplement'_map_iff`, `Subgroup.isLocalComplement_map_iff`), and both projections
+of a local complement are natural: they commute with `e` and the induced equivalences
+`MulEquiv.subgroupMap` (`Subgroup.IsLocalComplement.leftProjection_map_subgroupMap`,
+`Subgroup.IsLocalComplement.rightProjection_map_subgroupMap`), compatibly with the identity and
+with composition of isomorphisms.
 -/
 
 public section
@@ -182,6 +188,17 @@ theorem IsComplement'.of_map {f : G →* G'} {D : Subgroup G'}
     refine ⟨n, hn, n⁻¹ * x, ?_, by simp⟩
     exact mem_comap.mpr (hfd.symm ▸ d.property)
 
+/-- Complements transport in both directions along a group isomorphism. -/
+theorem isComplement'_map_iff {D : Subgroup G} (e : G ≃* G') :
+    (N.map (e : G →* G')).IsComplement' (D.map (e : G →* G')) ↔ N.IsComplement' D := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · simpa only [comap_map_eq_self_of_injective (f := (e : G →* G')) e.injective] using
+      h.of_map (f := (e : G →* G')) e.injective
+  · have hN : (N.map (e : G →* G')).map (e.symm : G' →* G) = N := by
+      simp [map_map]
+    rw [← hN] at h
+    simpa [map_equiv_eq_comap_symm] using h.of_map e.symm.injective
+
 /-- A local complement of the image of a subgroup in the image of an ambient subgroup pulls back
 along an injective homomorphism. -/
 theorem IsLocalComplement.of_map {f : G →* G'} {K : Subgroup G'}
@@ -198,6 +215,15 @@ theorem exists_isLocalComplement_map_iff {f : G →* G'} (hf : Function.Injectiv
     (∃ K : Subgroup G', (N.map f).IsLocalComplement K (H.map f)) ↔
       ∃ K : Subgroup G, N.IsLocalComplement K H :=
   ⟨fun ⟨_, hK⟩ => ⟨_, hK.of_map hf⟩, fun ⟨_, hK⟩ => ⟨_, hK.map hf⟩⟩
+
+/-- Normality of `N` inside `H` transports along a group isomorphism. This makes the projections
+of a local complement transported along `e` available. -/
+instance normal_map_subgroupOf_map [hN : (N.subgroupOf H).Normal] (e : G ≃* G') :
+    ((N.map (e : G →* G')).subgroupOf (H.map (e : G →* G'))).Normal where
+  conj_mem n hn k := by
+    have h := hN.conj_mem ((e.subgroupMap H).symm n) ((mem_map_equiv (f := e)).mp hn)
+      ((e.subgroupMap H).symm k)
+    exact (mem_map_equiv (f := e)).mpr (by simpa [mem_subgroupOf] using h)
 
 /-- Local complementation is global complementation inside the specified subgroup. -/
 theorem isLocalComplement_iff_isComplement'_subgroupOf [(N.subgroupOf H).Normal]
@@ -444,6 +470,100 @@ theorem leftProjection_mul_eq (x y : H) :
   simp [leftProjection, rightProjection_apply, equiv]
 
 end IsLocalComplement
+
+/-! ### Naturality under group isomorphisms
+
+Both projections commute with a group isomorphism `e : G ≃* G'` and the induced equivalences
+`e.subgroupMap`. The local-complement hypothesis on the image is an arbitrary proof, so the
+statements apply whatever proof of `(N.map e).IsLocalComplement (K.map e) (H.map e)` is at hand;
+the `simp` forms recover the original local complement from it with `isLocalComplement_map_iff`.
+-/
+
+section Map
+
+variable [(N.subgroupOf H).Normal] (e : G ≃* G')
+
+/-- The left projection along the image of a local complement under `e` is the image under `e` of
+the left projection along the original local complement. -/
+@[simp]
+theorem IsLocalComplement.leftProjection_map
+    (h : (N.map (e : G →* G')).IsLocalComplement (K.map (e : G →* G')) (H.map (e : G →* G')))
+    (x : H.map (e : G →* G')) :
+    h.leftProjection x = e.subgroupMap N
+      (((isLocalComplement_map_iff e).mp h).leftProjection ((e.subgroupMap H).symm x)) := by
+  rw [leftProjection_eq_iff]
+  refine (mem_map_equiv (f := e)).mpr ?_
+  simpa using (((isLocalComplement_map_iff e).mp h).leftProjection_eq_iff _ _).mp rfl
+
+/-- The right projection along the image of a local complement under `e` is the image under `e`
+of the right projection along the original local complement. -/
+@[simp]
+theorem IsLocalComplement.rightProjection_map
+    (h : (N.map (e : G →* G')).IsLocalComplement (K.map (e : G →* G')) (H.map (e : G →* G')))
+    (x : H.map (e : G →* G')) :
+    h.rightProjection x = e.subgroupMap K
+      (((isLocalComplement_map_iff e).mp h).rightProjection ((e.subgroupMap H).symm x)) := by
+  apply Subtype.ext
+  apply mul_left_cancel (a := (h.leftProjection x : G'))
+  rw [h.leftProjection_mul_rightProjection, leftProjection_map, MulEquiv.coe_subgroupMap_apply,
+    MulEquiv.coe_subgroupMap_apply, ← map_mul, leftProjection_mul_rightProjection]
+  simp
+
+/-- **Naturality of the left projection.** Transporting a local complement `K` of `N` in `H` along
+`e : G ≃* G'`, the left projection of `e x` is `e` applied to the left projection of `x`. -/
+theorem IsLocalComplement.leftProjection_map_subgroupMap (h : N.IsLocalComplement K H)
+    (h' : (N.map (e : G →* G')).IsLocalComplement (K.map (e : G →* G')) (H.map (e : G →* G')))
+    (x : H) : h'.leftProjection (e.subgroupMap H x) = e.subgroupMap N (h.leftProjection x) := by
+  rw [leftProjection_map, MulEquiv.symm_apply_apply]
+
+/-- **Naturality of the right projection.** Transporting a local complement `K` of `N` in `H`
+along `e : G ≃* G'`, the right projection of `e x` is `e` applied to the right projection of `x`. -/
+theorem IsLocalComplement.rightProjection_map_subgroupMap (h : N.IsLocalComplement K H)
+    (h' : (N.map (e : G →* G')).IsLocalComplement (K.map (e : G →* G')) (H.map (e : G →* G')))
+    (x : H) : h'.rightProjection (e.subgroupMap H x) = e.subgroupMap K (h.rightProjection x) := by
+  rw [rightProjection_map, MulEquiv.symm_apply_apply]
+
+/-- Transport along the identity does not change the values of the left projection. -/
+theorem IsLocalComplement.coe_leftProjection_map_refl (h : N.IsLocalComplement K H)
+    (h' : (N.map (MulEquiv.refl G : G →* G)).IsLocalComplement (K.map (MulEquiv.refl G : G →* G))
+      (H.map (MulEquiv.refl G : G →* G))) (x : H) :
+    (h'.leftProjection ((MulEquiv.refl G).subgroupMap H x) : G) = h.leftProjection x := by
+  rw [h.leftProjection_map_subgroupMap, MulEquiv.coe_subgroupMap_apply, MulEquiv.refl_apply]
+
+/-- Transport along the identity does not change the values of the right projection. -/
+theorem IsLocalComplement.coe_rightProjection_map_refl (h : N.IsLocalComplement K H)
+    (h' : (N.map (MulEquiv.refl G : G →* G)).IsLocalComplement (K.map (MulEquiv.refl G : G →* G))
+      (H.map (MulEquiv.refl G : G →* G))) (x : H) :
+    (h'.rightProjection ((MulEquiv.refl G).subgroupMap H x) : G) = h.rightProjection x := by
+  rw [h.rightProjection_map_subgroupMap, MulEquiv.coe_subgroupMap_apply, MulEquiv.refl_apply]
+
+variable {G'' : Type*} [Group G''] (e' : G' ≃* G'')
+
+/-- Transporting along `e` and then `e'` gives the same values of the left projection as
+transporting along `e.trans e'`. -/
+theorem IsLocalComplement.coe_leftProjection_map_map
+    (h : ((N.map (e : G →* G')).map (e' : G' →* G'')).IsLocalComplement
+      ((K.map (e : G →* G')).map (e' : G' →* G'')) ((H.map (e : G →* G')).map (e' : G' →* G'')))
+    (h' : (N.map (e.trans e' : G →* G'')).IsLocalComplement (K.map (e.trans e' : G →* G''))
+      (H.map (e.trans e' : G →* G''))) (x : H) :
+    (h.leftProjection (e'.subgroupMap _ (e.subgroupMap H x)) : G'') =
+      h'.leftProjection ((e.trans e').subgroupMap H x) := by
+  simp only [leftProjection_map, MulEquiv.symm_apply_apply, MulEquiv.coe_subgroupMap_apply,
+    MulEquiv.trans_apply]
+
+/-- Transporting along `e` and then `e'` gives the same values of the right projection as
+transporting along `e.trans e'`. -/
+theorem IsLocalComplement.coe_rightProjection_map_map
+    (h : ((N.map (e : G →* G')).map (e' : G' →* G'')).IsLocalComplement
+      ((K.map (e : G →* G')).map (e' : G' →* G'')) ((H.map (e : G →* G')).map (e' : G' →* G'')))
+    (h' : (N.map (e.trans e' : G →* G'')).IsLocalComplement (K.map (e.trans e' : G →* G''))
+      (H.map (e.trans e' : G →* G''))) (x : H) :
+    (h.rightProjection (e'.subgroupMap _ (e.subgroupMap H x)) : G'') =
+      h'.rightProjection ((e.trans e').subgroupMap H x) := by
+  simp only [rightProjection_map, MulEquiv.symm_apply_apply, MulEquiv.coe_subgroupMap_apply,
+    MulEquiv.trans_apply]
+
+end Map
 
 /-- For `H = ⊤`, the local product decomposition agrees with Mathlib's global complement
 decomposition. -/
