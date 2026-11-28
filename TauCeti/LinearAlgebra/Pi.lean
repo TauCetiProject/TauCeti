@@ -48,6 +48,8 @@ weights.
 * `Submodule.span_image_map_pi_bot`: over a finite index type, the families vanishing on `J` with
   coefficients in `S` are spanned by the coordinatewise images under a ring map `R →+* S` of
   those with coefficients in `R`.
+* `Pi.image_sigma_single`: the image of a sigma-indexed family of one-point vectors on a
+  sigma set is the union of the coordinate images.
 * `Submodule.span_iUnion_single`: the span of a union of coordinate embeddings is the product of
   the summand spans.
 * `Submodule.isCompl_pi_bot_of_single_mem`: a submodule of `ι → R` containing `Pi.single i 1` at
@@ -113,6 +115,20 @@ public theorem Fin.snoc_zero_eq_single {n : ℕ} {M : Fin (n + 1) → Type*} [�
   induction i using Fin.lastCases with
   | last => simp
   | cast i => simp
+
+namespace Pi
+
+/-- The image of a sigma-indexed family of one-point vectors `fun p ↦ Pi.single p.1 (v p.1 p.2)`
+on a sigma set `t.sigma s` is the union of the coordinate images `Pi.single c '' (v c '' s c)`
+over `c ∈ t`. -/
+public theorem image_sigma_single {κ : Type*} [DecidableEq κ] {ι M : κ → Type*}
+    [∀ c, Zero (M c)] (v : ∀ c, ι c → M c) (t : Set κ) (s : ∀ c, Set (ι c)) :
+    (fun p : Σ c, ι c ↦ Pi.single p.1 (v p.1 p.2)) '' (t.sigma s) =
+      ⋃ c ∈ t, Pi.single c '' (v c '' s c) := by
+  simp only [Set.image_sigma_eq_iUnion, Set.image_image]
+  rfl
+
+end Pi
 
 namespace Submodule
 

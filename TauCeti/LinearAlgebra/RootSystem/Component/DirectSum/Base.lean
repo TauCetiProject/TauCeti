@@ -45,9 +45,7 @@ theorem Base.internalDirectSum_componentBase [NeZero (2 : K)] [Finite ι] [P.IsR
   classical
   ext p
   obtain ⟨i, rfl⟩ := P.equivInternalDirectSumComponentPairing.indexEquiv.surjective p
-  rw [Base.support_map_eq]
-  conv_rhs => lhs; rw [← _root_.Equiv.coe_toEmbedding, ← Finset.map_eq_image]
-  rw [Finset.mem_map_equiv, _root_.Equiv.symm_apply_apply]
+  rw [Base.mem_support_map_iff, _root_.Equiv.symm_apply_apply]
   simp
 
 end RootPairing

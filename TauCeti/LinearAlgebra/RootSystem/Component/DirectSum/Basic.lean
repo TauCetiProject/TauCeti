@@ -15,7 +15,9 @@ A finite root system `P : RootPairing ι K M N` over a field with `2 ≠ 0` is c
 equivalent to the internal direct sum of its irreducible component pairings
 `P.componentPairing : ∀ C : P.Component, RootPairing C.supp K (P.componentSpace C) _`. This file
 constructs that equivalence `RootPairing.equivInternalDirectSumComponentPairing` and records the
-formulas for its maps.
+formulas for its maps: the identity weight map on `M`, the contravariant coweight map sending
+ambient functionals in `Module.Dual K M` back to original coweights `N` via the inverse perfect
+pairing `P.flip.toPerfPair.symm`, and the index bijection tagging each root with its component.
 
 ## Main definitions
 
@@ -72,18 +74,25 @@ noncomputable def equivInternalDirectSumComponentPairing [NeZero (2 : K)] [Finit
   bijective_weightMap := Function.bijective_id
   bijective_coweightMap := LinearEquiv.bijective _
 
+/-- The weight map of `RootPairing.equivInternalDirectSumComponentPairing` is the identity
+`LinearMap.id : M →ₗ[K] M`. -/
 @[simp]
 theorem equivInternalDirectSumComponentPairing_weightMap [NeZero (2 : K)] [Finite ι]
     [P.IsRootSystem] :
     (P.equivInternalDirectSumComponentPairing).weightMap = LinearMap.id :=
   (rfl)
 
+/-- The contravariant coweight map of `RootPairing.equivInternalDirectSumComponentPairing` sends
+ambient functionals `Module.Dual K M` back to `N` via the inverse perfect pairing
+`P.flip.toPerfPair.symm`. -/
 @[simp]
 theorem equivInternalDirectSumComponentPairing_coweightMap [NeZero (2 : K)] [Finite ι]
     [P.IsRootSystem] :
     (P.equivInternalDirectSumComponentPairing).coweightMap = P.flip.toPerfPair.symm.toLinearMap :=
   (rfl)
 
+/-- The index bijection of `RootPairing.equivInternalDirectSumComponentPairing` tags each root
+index `i` with its irreducible component as `⟨P.componentOf i, ⟨i, rfl⟩⟩`. -/
 @[simp]
 theorem equivInternalDirectSumComponentPairing_indexEquiv [NeZero (2 : K)] [Finite ι]
     [P.IsRootSystem] (i : ι) :

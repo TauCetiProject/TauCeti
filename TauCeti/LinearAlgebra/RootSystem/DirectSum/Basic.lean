@@ -252,9 +252,11 @@ if and only if each coordinate lies in the `S`-span of `(P c).root '' s c`. -/
 theorem mem_span_pi_root_image_iff (S : Type*) [Semiring S] [∀ c, Module S (M c)]
     (s : ∀ c, Set (ι c)) (x : ∀ c, M c) :
     x ∈ span S ((pi P).root '' (Set.univ.sigma s)) ↔ ∀ c, x c ∈ span S ((P c).root '' s c) := by
+  have hfn : ⇑(pi P).root = fun p : Σ c, ι c ↦ Pi.single p.1 ((P p.1).root p.2) :=
+    funext fun ⟨c, i⟩ ↦ pi_root P c i
   have himage : (pi P).root '' (Set.univ.sigma s) = ⋃ c, Pi.single c '' ((P c).root '' s c) := by
-    rw [Set.image_sigma_eq_iUnion]
-    simp [Set.image_image]
+    rw [hfn, Pi.image_sigma_single (fun c ↦ ⇑(P c).root)]
+    simp only [Set.mem_univ, Set.iUnion_true]
   rw [himage, Submodule.span_iUnion_single]
   simp
 

@@ -5,22 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import TauCeti.LinearAlgebra.RootSystem.DirectSum.Internal
 public import TauCeti.LinearAlgebra.RootSystem.Height
 import TauCeti.Algebra.Group.Pi.Lemmas
 import TauCeti.LinearAlgebra.LinearIndependent.Pi
+import TauCeti.LinearAlgebra.Pi
 
 /-!
-# Bases, Cartan matrices, and heights for direct sums of root pairings
+# Bases and heights for direct sums of root pairings
 
 Bases of the summands of a finite external or internal direct sum of root pairings assemble into a
 base of the direct sum (`RootPairing.Base.pi` and `RootPairing.Base.internalDirectSum`), and every
 base of a direct sum restricts back to bases of the summands (`RootPairing.Base.restrictPi` and
 `RootPairing.Base.restrictInternalDirectSum`).
 
-Cartan matrices decompose block-diagonally across summands, heights and positivity of roots match
-those in their own summands, and direct-sum congruences carry assembled bases to assembled bases.
+Heights and positivity of roots match those in their own summands, and direct-sum congruences carry
+assembled bases to assembled bases.
 
 ## Main definitions
 
@@ -35,10 +35,6 @@ those in their own summands, and direct-sum congruences carry assembled bases to
   `RootPairing.Base.internalDirectSum_restrictInternalDirectSum`,
   `RootPairing.Base.restrictInternalDirectSum_internalDirectSum`: mutual inverse laws for
   assembling and restricting bases.
-* `RootPairing.Base.cartanMatrixIn_pi_same`, `RootPairing.Base.cartanMatrixIn_pi_ne`,
-  `RootPairing.Base.cartanMatrixIn_internalDirectSum_same`,
-  `RootPairing.Base.cartanMatrixIn_internalDirectSum_ne`: block-diagonal decomposition of Cartan
-  matrices.
 * `RootPairing.Base.height_pi`, `RootPairing.Base.isPos_pi_iff`,
   `RootPairing.Base.height_internalDirectSum`, `RootPairing.Base.isPos_internalDirectSum_iff`:
   heights and positivity on direct sums.
@@ -66,6 +62,12 @@ variable {κ R : Type*} [Fintype κ] [DecidableEq κ] [CommRing R] [NeZero (2 : 
   [∀ c, AddCommGroup (N c)] [∀ c, Module R (N c)]
   (P : ∀ c, RootPairing (ι c) R (M c) (N c))
 
+private theorem coe_sigma_preimage_eq {κ : Type*} {ι : κ → Type*} (t : Finset (Σ c, ι c)) :
+    (Set.univ.sigma fun d ↦
+        ((t.preimage (Sigma.mk d) sigma_mk_injective.injOn : Finset (ι d)) : Set (ι d))) =
+      (t : Set (Σ d, ι d)) := by
+  simp only [Finset.coe_preimage, Set.univ_sigma_preimage_mk]
+
 private theorem linearIndepOn_pi_single_of_eq {κ R : Type*} [Fintype κ] [DecidableEq κ] [CommRing R]
     {ι M : κ → Type*} [∀ c, AddCommGroup (M c)] [∀ c, Module R (M c)]
     {w : (Σ c, ι c) → ∀ c, M c} {v : ∀ c, ι c → M c}
@@ -85,50 +87,20 @@ private theorem linearIndepOn_restrictPi_of_eq {κ R : Type*} [DecidableEq κ] [
       ((t.preimage (Sigma.mk c) sigma_mk_injective.injOn : Finset (ι c)) : Set (ι c)) := by
   have hfn : (fun p : Σ d, ι d ↦ Pi.single p.1 (v p.1 p.2)) = w :=
     funext fun ⟨d, i⟩ ↦ (hw d i).symm
-  have hsupp : (t : Set (Σ d, ι d)) = Set.univ.sigma fun d ↦
-      ((t.preimage (Sigma.mk d) sigma_mk_injective.injOn : Finset (ι d)) : Set (ι d)) := by
-    simp only [Finset.coe_preimage, Set.univ_sigma_preimage_mk]
-  exact (Pi.linearIndepOn_single_iff v).mp (by rw [hfn, ← hsupp]; exact ht) c (Set.mem_univ c)
+  rw [← coe_sigma_preimage_eq t] at ht
+  exact (Pi.linearIndepOn_single_iff v).mp (by rwa [hfn]) c (Set.mem_univ c)
 
-private theorem image_sigma_pi_single_eq_iUnion {κ : Type*} [DecidableEq κ]
-    {ι M : κ → Type*} [∀ c, Zero (M c)]
-    {w : (Σ c, ι c) → ∀ c, M c} {v : ∀ c, ι c → M c}
-    (hw : ∀ c i, w ⟨c, i⟩ = Pi.single c (v c i)) (s : ∀ c, Set (ι c)) :
-    w '' (Set.univ.sigma s) = ⋃ c, Pi.single c '' (v c '' s c) := by
-  have hfn : w = fun p : Σ d, ι d ↦ Pi.single p.1 (v p.1 p.2) := funext fun ⟨d, i⟩ ↦ hw d i
-  simp only [hfn, Set.image_sigma_eq_iUnion, Set.mem_univ, iUnion_true, Function.comp_def,
-    Set.image_image]
-
-private theorem mem_closure_pi_single_or_neg_mem {κ : Type*} [Fintype κ] [DecidableEq κ]
+private theorem pi_single_mem_closure_or_neg_mem_sigma_iff {κ : Type*} [DecidableEq κ]
     {ι M : κ → Type*} [∀ c, AddCommGroup (M c)]
     {w : (Σ c, ι c) → ∀ c, M c} {v : ∀ c, ι c → M c}
-    (hw : ∀ c i, w ⟨c, i⟩ = Pi.single c (v c i)) {s : ∀ c, Finset (ι c)}
-    (hv : ∀ c i, v c i ∈ AddSubmonoid.closure (v c '' (s c : Set (ι c))) ∨
-      -v c i ∈ AddSubmonoid.closure (v c '' (s c : Set (ι c)))) (p : Σ c, ι c) :
-    w p ∈ AddSubmonoid.closure
-        (w '' ((Finset.univ.sigma s : Finset (Σ d, ι d)) : Set (Σ d, ι d))) ∨
-      -w p ∈ AddSubmonoid.closure
-        (w '' ((Finset.univ.sigma s : Finset (Σ d, ι d)) : Set (Σ d, ι d))) := by
-  rcases p with ⟨c, i⟩
-  rw [Finset.coe_sigma, Finset.coe_univ, image_sigma_pi_single_eq_iUnion hw, hw, ← Pi.single_neg]
-  simpa only [AddSubmonoid.single_mem_closure_iUnion_single] using hv c i
-
-private theorem mem_closure_restrictPi_or_neg_mem {κ : Type*} [DecidableEq κ]
-    {ι M : κ → Type*} [∀ c, AddCommGroup (M c)]
-    {w : (Σ c, ι c) → ∀ c, M c} {v : ∀ c, ι c → M c}
-    (hw : ∀ c i, w ⟨c, i⟩ = Pi.single c (v c i)) {t : Finset (Σ c, ι c)}
-    (ht : ∀ p, w p ∈ AddSubmonoid.closure (w '' (t : Set (Σ d, ι d))) ∨
-      -w p ∈ AddSubmonoid.closure (w '' (t : Set (Σ d, ι d)))) (c : κ) (i : ι c) :
-    v c i ∈ AddSubmonoid.closure (v c '' ((t.preimage (Sigma.mk c)
-        sigma_mk_injective.injOn : Finset (ι c)) : Set (ι c))) ∨
-      -v c i ∈ AddSubmonoid.closure (v c '' ((t.preimage (Sigma.mk c)
-        sigma_mk_injective.injOn : Finset (ι c)) : Set (ι c))) := by
-  have hsupp : (t : Set (Σ d, ι d)) = Set.univ.sigma fun d ↦
-      ((t.preimage (Sigma.mk d) sigma_mk_injective.injOn : Finset (ι d)) : Set (ι d)) := by
-    simp only [Finset.coe_preimage, Set.univ_sigma_preimage_mk]
-  have h := ht ⟨c, i⟩
-  rw [hsupp, image_sigma_pi_single_eq_iUnion hw, hw, ← Pi.single_neg] at h
-  simpa only [AddSubmonoid.single_mem_closure_iUnion_single] using h
+    (hw : ∀ c i, w ⟨c, i⟩ = Pi.single c (v c i)) (s : ∀ c, Set (ι c)) (c : κ) (i : ι c) :
+    w ⟨c, i⟩ ∈ AddSubmonoid.closure (w '' (Set.univ.sigma s)) ∨
+        -w ⟨c, i⟩ ∈ AddSubmonoid.closure (w '' (Set.univ.sigma s)) ↔
+      v c i ∈ AddSubmonoid.closure (v c '' s c) ∨
+        -v c i ∈ AddSubmonoid.closure (v c '' s c) := by
+  have hfn : w = fun p : Σ d, ι d ↦ Pi.single p.1 (v p.1 p.2) := funext fun ⟨d, j⟩ ↦ hw d j
+  rw [hfn, Pi.image_sigma_single]
+  simp [← Pi.single_neg]
 
 /-- **The base of a finite direct sum of root pairings** assembled from bases of its summands.
 Its simple-root support is the disjoint union `Finset.univ.sigma fun c ↦ (b c).support`. -/
@@ -138,10 +110,14 @@ noncomputable def Base.pi {P : ∀ c, RootPairing (ι c) R (M c) (N c)} (b : ∀
   linearIndepOn_root := linearIndepOn_pi_single_of_eq (pi_root P) fun c ↦ (b c).linearIndepOn_root
   linearIndepOn_coroot :=
     linearIndepOn_pi_single_of_eq (pi_coroot P) fun c ↦ (b c).linearIndepOn_coroot
-  root_mem_or_neg_mem :=
-    mem_closure_pi_single_or_neg_mem (pi_root P) fun c ↦ (b c).root_mem_or_neg_mem
-  coroot_mem_or_neg_mem :=
-    mem_closure_pi_single_or_neg_mem (pi_coroot P) fun c ↦ (b c).coroot_mem_or_neg_mem
+  root_mem_or_neg_mem p := by
+    rw [Finset.coe_sigma, Finset.coe_univ]
+    exact (pi_single_mem_closure_or_neg_mem_sigma_iff (pi_root P) _ p.1 p.2).mpr
+      ((b p.1).root_mem_or_neg_mem p.2)
+  coroot_mem_or_neg_mem p := by
+    rw [Finset.coe_sigma, Finset.coe_univ]
+    exact (pi_single_mem_closure_or_neg_mem_sigma_iff (pi_coroot P) _ p.1 p.2).mpr
+      ((b p.1).coroot_mem_or_neg_mem p.2)
 
 variable {P}
 
@@ -156,8 +132,14 @@ noncomputable def Base.restrictPi (b : (RootPairing.pi P).Base) (c : κ) : (P c)
   support := b.support.preimage (Sigma.mk c) sigma_mk_injective.injOn
   linearIndepOn_root := linearIndepOn_restrictPi_of_eq (pi_root P) b.linearIndepOn_root c
   linearIndepOn_coroot := linearIndepOn_restrictPi_of_eq (pi_coroot P) b.linearIndepOn_coroot c
-  root_mem_or_neg_mem := mem_closure_restrictPi_or_neg_mem (pi_root P) b.root_mem_or_neg_mem c
-  coroot_mem_or_neg_mem := mem_closure_restrictPi_or_neg_mem (pi_coroot P) b.coroot_mem_or_neg_mem c
+  root_mem_or_neg_mem i :=
+    (pi_single_mem_closure_or_neg_mem_sigma_iff (pi_root P)
+      (fun d ↦ (b.support.preimage (Sigma.mk d) sigma_mk_injective.injOn : Finset (ι d))) c i).mp <|
+      by rw [coe_sigma_preimage_eq]; exact b.root_mem_or_neg_mem ⟨c, i⟩
+  coroot_mem_or_neg_mem i :=
+    (pi_single_mem_closure_or_neg_mem_sigma_iff (pi_coroot P)
+      (fun d ↦ (b.support.preimage (Sigma.mk d) sigma_mk_injective.injOn : Finset (ι d))) c i).mp <|
+      by rw [coe_sigma_preimage_eq]; exact b.coroot_mem_or_neg_mem ⟨c, i⟩
 
 @[simp]
 theorem Base.mem_support_restrictPi (b : (RootPairing.pi P).Base) (c : κ) (i : ι c) :
@@ -176,26 +158,6 @@ theorem Base.pi_restrictPi (b : (RootPairing.pi P).Base) :
 theorem Base.restrictPi_pi (b : ∀ c, (P c).Base) (c : κ) : (Base.pi b).restrictPi c = b c := by
   ext i
   simp
-
-/-- The diagonal block at summand `c` of the Cartan matrix of `Base.pi b` is the Cartan matrix of
-`b c`. -/
-@[simp]
-theorem Base.cartanMatrixIn_pi_same (S : Type*) [CommRing S] [Algebra S R] [FaithfulSMul S R]
-    [∀ c, (P c).IsValuedIn S] (b : ∀ c, (P c).Base) (c : κ)
-    (i j : (b c).support) :
-    (Base.pi b).cartanMatrixIn S ⟨⟨c, i.val⟩, by simp [i.property]⟩
-        ⟨⟨c, j.val⟩, by simp [j.property]⟩ =
-      (b c).cartanMatrixIn S i j := by
-  simp [Base.cartanMatrixIn_def]
-
-/-- The off-diagonal blocks of the Cartan matrix of `Base.pi b` vanish. -/
-@[simp]
-theorem Base.cartanMatrixIn_pi_ne (S : Type*) [CommRing S] [Algebra S R] [FaithfulSMul S R]
-    [∀ c, (P c).IsValuedIn S] (b : ∀ c, (P c).Base) {c d : κ} (hcd : c ≠ d)
-    (i : (b c).support) (j : (b d).support) :
-    (Base.pi b).cartanMatrixIn S ⟨⟨c, i.val⟩, by simp [i.property]⟩
-        ⟨⟨d, j.val⟩, by simp [j.property]⟩ = 0 := by
-  simp [Base.cartanMatrixIn_def, pi_pairingIn_ne P S hcd]
 
 /-- The height of a root in a finite direct sum is its height in its own summand. -/
 @[simp]
@@ -276,26 +238,6 @@ theorem Base.restrictInternalDirectSum_internalDirectSum (b : ∀ c, (P c).Base)
   ext i
   simp
 
-/-- The diagonal block at summand `c` of the Cartan matrix of `Base.internalDirectSum hEi hEt b`
-is the Cartan matrix of `b c`. -/
-@[simp]
-theorem Base.cartanMatrixIn_internalDirectSum_same (S : Type*) [CommRing S] [Algebra S R]
-    [FaithfulSMul S R] [∀ c, (P c).IsValuedIn S] (b : ∀ c, (P c).Base) (c : κ)
-    (i j : (b c).support) :
-    (Base.internalDirectSum hEi hEt b).cartanMatrixIn S
-        ⟨⟨c, i.val⟩, by simp [i.property]⟩ ⟨⟨c, j.val⟩, by simp [j.property]⟩ =
-      (b c).cartanMatrixIn S i j := by
-  simp [Base.cartanMatrixIn_def]
-
-/-- The off-diagonal blocks of the Cartan matrix of `Base.internalDirectSum hEi hEt b` vanish. -/
-@[simp]
-theorem Base.cartanMatrixIn_internalDirectSum_ne (S : Type*) [CommRing S] [Algebra S R]
-    [FaithfulSMul S R] [∀ c, (P c).IsValuedIn S] (b : ∀ c, (P c).Base) {c d : κ} (hcd : c ≠ d)
-    (i : (b c).support) (j : (b d).support) :
-    (Base.internalDirectSum hEi hEt b).cartanMatrixIn S
-        ⟨⟨c, i.val⟩, by simp [i.property]⟩ ⟨⟨d, j.val⟩, by simp [j.property]⟩ = 0 := by
-  simp [Base.cartanMatrixIn_def, internalDirectSum_pairingIn_ne hEi hEt P S hcd]
-
 /-- The height of a root in a finite internal direct sum is its height in its own summand. -/
 @[simp]
 theorem Base.height_internalDirectSum [CharZero R] (b : ∀ c, (P c).Base) (c : κ) (i : ι c) :
@@ -344,15 +286,9 @@ theorem Base.map_piCongr_pi (eκ : κ ≃ κ') (e : ∀ c, (P c).Equiv (Q (eκ c
   classical
   ext p
   obtain ⟨⟨c, i⟩, rfl⟩ := (Equiv.piCongr eκ e).indexEquiv.surjective p
-  rw [Base.support_map_eq]
-  conv_lhs => lhs; rw [← _root_.Equiv.coe_toEmbedding, ← Finset.map_eq_image]
-  rw [Finset.mem_map_equiv, _root_.Equiv.symm_apply_apply]
+  rw [Base.mem_support_map_iff, _root_.Equiv.symm_apply_apply]
   simp only [Base.support_pi, Finset.mem_sigma, Finset.mem_univ, true_and,
-    Equiv.piCongr_indexEquiv]
-  have hcoe : (⇑(e c).indexEquiv : ι c → ι' (eκ c)) = (e c).indexEquiv.toEmbedding := rfl
-  rw [← hb c, Base.support_map_eq]
-  conv_rhs => lhs; rw [hcoe, ← Finset.map_eq_image]
-  rw [Finset.mem_map_equiv, _root_.Equiv.symm_apply_apply]
+    Equiv.piCongr_indexEquiv, ← hb c, Base.mem_support_map_iff, _root_.Equiv.symm_apply_apply]
 
 /-- Mapping an assembled base `Base.pi b` along `Equiv.piCongr (.refl κ) e` assembles the
 transported summand bases. -/

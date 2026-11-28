@@ -228,26 +228,18 @@ end Chain
 
 end Hom
 
-private theorem span_range_eq_top_of_equiv {R M₁ M₂ ι₁ ι₂ : Type*}
-    [Semiring R] [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
-    (eM : M₁ ≃ₗ[R] M₂) (eι : ι₁ ≃ ι₂) (v₁ : ι₁ → M₁) (v₂ : ι₂ → M₂)
-    (hv : ∀ i, eM (v₁ i) = v₂ (eι i)) (hspan : Submodule.span R (Set.range v₁) = ⊤) :
-    Submodule.span R (Set.range v₂) = ⊤ := by
-  have h := congrArg (Submodule.map eM.toLinearMap) hspan
-  rw [Submodule.map_span, Submodule.map_top, LinearEquiv.range] at h
-  have himage : (eM.toLinearMap : M₁ → M₂) '' Set.range v₁ = Set.range v₂ := by
-    rw [← Set.range_comp, show (eM.toLinearMap : M₁ → M₂) ∘ v₁ = v₂ ∘ eι from funext hv,
-      EquivLike.range_comp]
-  rwa [himage] at h
-
 /-- An equivalence of root pairings transports `IsRootSystem` from the source to the target. -/
 theorem Equiv.isRootSystem (e : P.Equiv P₂) [P.IsRootSystem] : P₂.IsRootSystem where
-  span_root_eq_top := span_range_eq_top_of_equiv e.weightEquiv e.indexEquiv P.root P₂.root
-    (fun i ↦ Hom.root_weightMap_apply P P₂ i e.toHom) IsRootSystem.span_root_eq_top
-  span_coroot_eq_top := span_range_eq_top_of_equiv e.coweightEquiv.symm e.indexEquiv P.coroot
-    P₂.coroot (fun i ↦ e.coweightEquiv.symm_apply_eq.mpr (by
-      rw [Equiv.coweightEquiv_apply, Hom.coroot_coweightMap_apply, _root_.Equiv.symm_apply_apply]))
-    IsRootSystem.span_coroot_eq_top
+  span_root_eq_top := Submodule.eq_top_iff'.mpr fun y ↦ by
+    obtain ⟨x, rfl⟩ := e.bijective_weightMap.surjective y
+    refine e.toHom.weightMap_mem_rootSpan ?_
+    rw [RootPairing.rootSpan, IsRootSystem.span_root_eq_top]
+    exact Submodule.mem_top
+  span_coroot_eq_top := Submodule.eq_top_iff'.mpr fun y ↦ by
+    obtain ⟨x, rfl⟩ := e.symm.bijective_coweightMap.surjective y
+    refine e.symm.toHom.coweightMap_mem_corootSpan ?_
+    rw [RootPairing.corootSpan, IsRootSystem.span_coroot_eq_top]
+    exact Submodule.mem_top
 
 /-- An equivalence of root pairings transports reducedness from the source to the target. -/
 theorem Equiv.isReduced (e : P.Equiv P₂) [P.IsReduced] : P₂.IsReduced :=

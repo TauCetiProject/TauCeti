@@ -17,6 +17,7 @@ base in Mathlib and `RootPairing.corootKer`.
 ## Main results
 
 * `RootPairing.Base.ext`: a base is determined by its support, the indices of its simple roots.
+* `RootPairing.Base.mem_support_map_iff`: the simple roots of a transported base.
 * `RootPairing.coroot'_eq_zero_of_forall_mem_support`: a weight killed by the simple coroots is
   killed by every coroot.
 * `RootPairing.Base.iInf_ker_coroot'_support_eq_corootKer`: the common kernel of the simple coroot
@@ -38,6 +39,16 @@ theorem Base.ext {P : RootPairing ι R M N} {b b' : P.Base} (h : b.support = b'.
   cases b'
   subst h
   rfl
+
+/-- A root index is simple for the transported base `b.map e` exactly when its preimage under `e`
+is simple for `b`. -/
+theorem Base.mem_support_map_iff {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup N₂] [Module R N₂] {P : RootPairing ι R M N} {P₂ : RootPairing ι₂ R M₂ N₂}
+    (b : P.Base) (e : P.Equiv P₂) (j : ι₂) :
+    j ∈ (b.map e).support ↔ e.indexEquiv.symm j ∈ b.support := by
+  classical
+  rw [Base.support_map_eq, ← _root_.Equiv.coe_toEmbedding, ← Finset.map_eq_image,
+    Finset.mem_map_equiv]
 
 /-- **A weight killed by the simple coroots is killed by every coroot**, since every coroot is an
 integer combination of the simple coroots. -/
