@@ -62,11 +62,15 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   rows.
 * `Matrix.mulVec_surjective_iff_linearIndependent_row`: over a field, `A.mulVec` is surjective
   exactly when the rows of `A` are linearly independent.
+* `Matrix.toLin_surjective_iff_linearIndependent_row`: the same surjectivity criterion in any
+  pair of finite bases, using `Matrix.repr_toLin`.
 * `Matrix.rank_left_factor_eq` and `Matrix.range_left_factor_eq`: an exact-rank
   factorization gives a full-column-rank left factor with the same column range.
 * `Matrix.rank_mul_eq_right_of_rank_eq_card`: left multiplication by a full-column-rank matrix
   preserves rank.
 * `LinearMap.rank_toMatrix`: the rank of the matrix of a linear map is the dimension of its range.
+* `TauCeti.natCard_matrix_rank_eq_natCard_linearMap_finrank_range`: `Matrix.toLin'` identifies
+  the counts of matrices and coordinate linear maps of a given rank.
 * `LinearMap.finrank_range_eq_of_toMatrix_eq_transpose`: over a field, maps with transposed
   matrices have ranges of the same dimension.
 * `Matrix.natCard_range_mulVec_eq_pow_rank`: the column space of a matrix over a field `K` has
@@ -501,6 +505,32 @@ theorem range_left_factor_eq {ι : Type*} [Fintype ι]
 end ExactRankFactorRange
 
 section ToMatrix
+
+/-- Over a field, the map represented by `A` in finite bases `v` and `w` is surjective
+exactly when the rows of `A` are linearly independent. -/
+theorem toLin_surjective_iff_linearIndependent_row {K V W m n : Type*}
+    [Field K] [AddCommMonoid V] [Module K V] [AddCommMonoid W] [Module K W]
+    [Fintype n] [DecidableEq n] [Finite m] (A : Matrix m n K)
+    (v : Module.Basis n K V) (w : Module.Basis m K W) :
+    Function.Surjective (toLin v w A) ↔ LinearIndependent K A.row := by
+  let := Fintype.ofFinite m
+  have hcoords : w.equivFun ∘ toLin v w A = A.mulVec ∘ v.equivFun := by
+    funext x
+    simpa only [Function.comp_apply, Module.Basis.equivFun_apply] using repr_toLin v w A x
+  rw [← mulVec_surjective_iff_linearIndependent_row,
+    ← Function.Surjective.of_comp_iff _ v.equivFun.surjective, ← hcoords,
+    Function.Surjective.of_comp_iff' w.equivFun.bijective]
+
+/-- Over a commutative semiring, with finitely many columns, matrices of rank `r` and
+their standard-coordinate linear maps of rank `r` have the same cardinality. -/
+theorem _root_.TauCeti.natCard_matrix_rank_eq_natCard_linearMap_finrank_range
+    (K m n : Type*) [CommSemiring K] [Finite n] (r : ℕ) :
+    Nat.card {A : Matrix m n K // A.rank = r} =
+      Nat.card {f : (n → K) →ₗ[K] (m → K) // Module.finrank K f.range = r} := by
+  classical
+  let := Fintype.ofFinite n
+  exact Nat.card_congr <| (toLin' (R := K) (m := m) (n := n)).toEquiv.subtypeEquiv
+    (fun A ↦ by rw [LinearEquiv.coe_toEquiv, toLin'_apply', finrank_range_mulVecLin])
 
 /-- The rank of the matrix of a linear map in any pair of bases is the dimension of its range. -/
 theorem _root_.LinearMap.rank_toMatrix {R M₁ M₂ : Type*} [CommSemiring R] [AddCommMonoid M₁]

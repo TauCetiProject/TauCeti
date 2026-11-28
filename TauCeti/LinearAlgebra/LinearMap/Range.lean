@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Module.Submodule.Range
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 
 /-!
-# Ranges in commuting squares of linear maps
+# Ranges of linear maps
 
 In a commuting square `g ∘ e₁ = e₂ ∘ f` of linear maps whose left side `e₁` is surjective, the
 right side `e₂` carries the range of `f` onto the range of `g`. Transporting cokernels along a
@@ -17,7 +17,9 @@ commuting square of linear isomorphisms uses this. When `e₂` is an isomorphism
 have the same dimension (`LinearMap.finrank_range_eq_of_comp_eq`). In any commuting square
 `g ∘ i = i' ∘ f`, the map `g` sends the range of `i` into the range of `i'`, so it induces a map of
 cokernels. A linear map whose range contains a spanning family of the target is surjective
-(`LinearMap.surjective_of_span_range_eq_top`).
+(`LinearMap.surjective_of_span_range_eq_top`). The equivalence
+`Submodule.rangeEqEquivSurjective` uses `LinearMap.codRestrict` to identify maps with a
+prescribed range with surjections onto that submodule.
 -/
 
 public section
@@ -79,3 +81,40 @@ theorem surjective_of_span_range_eq_top
   exact h j
 
 end LinearMap
+
+namespace Submodule
+
+variable {R S M N : Type*} [Semiring R] [Semiring S]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module S N]
+  {σ : R →+* S} [RingHomSurjective σ] (W : Submodule S N)
+
+/-- Semilinear maps with range `W` are equivalent to surjective semilinear maps into `W`.
+The equivalence restricts the codomain and its inverse composes with `W.subtype`. -/
+def rangeEqEquivSurjective :
+    {f : M →ₛₗ[σ] N // f.range = W} ≃ {g : M →ₛₗ[σ] W // Function.Surjective g} where
+  toFun f := ⟨f.val.codRestrict W (fun x ↦ f.property.le (LinearMap.mem_range_self f.val x)), by
+    rw [← LinearMap.range_eq_top, LinearMap.range_codRestrict, f.property, comap_subtype_self]⟩
+  invFun g := ⟨W.subtype.comp g.val, by
+    rw [LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.mpr g.property),
+      range_subtype]⟩
+  left_inv f := Subtype.ext (LinearMap.subtype_comp_codRestrict ..)
+  right_inv g := by
+    apply Subtype.ext
+    exact (LinearMap.cancel_left W.subtype_injective).mp (LinearMap.subtype_comp_codRestrict ..)
+
+/-- The forward equivalence is the bundled codomain restriction to `W`. -/
+@[simp]
+theorem rangeEqEquivSurjective_apply_val
+    (f : {f : M →ₛₗ[σ] N // f.range = W}) :
+    (W.rangeEqEquivSurjective f).val =
+      f.val.codRestrict W (fun x ↦ f.property.le (LinearMap.mem_range_self f.val x)) :=
+  (rfl)
+
+/-- The inverse equivalence composes with the submodule inclusion. -/
+@[simp]
+theorem rangeEqEquivSurjective_symm_apply_coe
+    (g : {g : M →ₛₗ[σ] W // Function.Surjective g}) :
+    (W.rangeEqEquivSurjective.symm g).val = W.subtype.comp g.val :=
+  (rfl)
+
+end Submodule

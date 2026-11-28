@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import TauCeti.Algebra.Ring.QPochhammer.Basic
 public import TauCeti.Analysis.Matrix.MeasurableSpace
 public import TauCeti.MeasureTheory.Group.Measure
+import TauCeti.Data.Nat.Cast.Basic
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 
@@ -97,13 +98,9 @@ theorem measureReal_setOf_isUnit (hm : MeasurableSet (maximalIdeal R : Set R))
   rw [measureReal_def, measure_setOf_isUnit n hm μ, measure_univ, mul_one, ENNReal.toReal_div]
   set q := Nat.card (ResidueField R)
   have hq : (q : ℝ) ≠ 0 := by exact_mod_cast Nat.card_pos.ne'
-  have hcast : ((∏ i : Fin n, (q ^ n - q ^ (i : ℕ)) : ℕ) : ℝ) =
-      ∏ i : Fin n, ((q : ℝ) ^ n - (q : ℝ) ^ (i : ℕ)) := by
-    rw [Nat.cast_prod]
-    refine Finset.prod_congr rfl fun i _ => ?_
-    rw [Nat.cast_sub (Nat.pow_le_pow_right Nat.card_pos i.isLt.le), Nat.cast_pow, Nat.cast_pow]
   simp only [ENNReal.toReal_natCast]
-  rw [hcast, Nat.cast_pow, Fin.prod_univ_eq_prod_range (fun i => (q : ℝ) ^ n - (q : ℝ) ^ i),
+  rw [Nat.cast_prod_pow_sub_pow (q := q) Nat.card_pos n n, Nat.cast_pow,
+    Fin.prod_univ_eq_prod_range (fun i => (q : ℝ) ^ n - (q : ℝ) ^ i),
     TauCeti.prod_range_pow_sub_pow_div_pow hq]
 
 end Matrix

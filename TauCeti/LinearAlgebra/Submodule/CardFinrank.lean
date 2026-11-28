@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.RingTheory.Polynomial.GaussianBinomial
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
+import TauCeti.Data.Nat.Cast.Basic
 import TauCeti.LinearAlgebra.LinearIndependent.SpanEq
 
 /-!
@@ -69,8 +70,6 @@ theorem card_submodule_finrank_eq_gaussianBinomial (k : ℕ) :
       Nat.card_sigma, sum_congr rfl fun W _ ↦ hfiber W]
     simp [Nat.card_eq_fintype_card]
   have hq : 1 < q := Fintype.one_lt_card
-  have hle {m : ℕ} (hm : k ≤ m) (i : Fin k) : q ^ i.val ≤ q ^ m :=
-    Nat.pow_le_pow_right hq.le (i.isLt.le.trans hm)
   have hpos : 0 < ∏ i : Fin k, (q ^ k - q ^ i.val) :=
     prod_pos fun i _ ↦ Nat.sub_pos_of_lt (Nat.pow_lt_pow_right hq i.isLt)
   refine Nat.eq_of_mul_eq_mul_right hpos (hcount.trans ?_)
@@ -80,7 +79,7 @@ theorem card_submodule_finrank_eq_gaussianBinomial (k : ℕ) :
   have hG : ((gaussianBinomial q n k : ℕ) : ℤ) = gaussianBinomial (q : ℤ) n k :=
     map_gaussianBinomial (Nat.castRingHom ℤ) q n k
   apply Nat.cast_injective (R := ℤ)
-  push_cast [hG, Nat.cast_sub, hle le_rfl, hle hkn]
+  rw [Nat.cast_mul, hG, Nat.cast_prod_pow_sub_pow hq.le, Nat.cast_prod_pow_sub_pow hq.le]
   exact key.symm
 
 end TauCeti
