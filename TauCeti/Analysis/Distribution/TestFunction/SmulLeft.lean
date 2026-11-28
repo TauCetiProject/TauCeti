@@ -13,7 +13,7 @@ import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.Matrix
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Basic
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Alternating
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Wedge
 
 /-!
 # Smooth multiplication of test forms and the Leibniz rule for currents

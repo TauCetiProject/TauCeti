@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.Mass.Extension
 public import TauCeti.Analysis.Distribution.Mass.Normal
 public import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Analysis.Normed.Module.Multilinear.SecondCountable
+import TauCeti.Analysis.Normed.Module.Alternating.SecondCountable
 
 /-!
 # Slicing currents by a function
@@ -53,13 +53,17 @@ form is zero, so every current and every slice is zero.
 ## Main declarations
 
 * `Distribution.slice`, `Distribution.slice_def`, `Distribution.slice_apply`,
-  `Distribution.slice_congr`, `Distribution.slice_eq_zero_of_not_finiteDimensional`: the slice
-  `⟨T, u, t⟩`, zero by convention when `u` is not measurable on `Ω` or `E` is infinite-dimensional,
-  and dependent only on `{x ∈ Ω | u x < t}`.
+  `Distribution.massRestrict_lt_comp_extDerivCLM`, `Distribution.slice_congr`,
+  `Distribution.slice_eq_zero_of_not_finiteDimensional`: the slice `⟨T, u, t⟩`, zero by convention
+  when `u` is not measurable on `Ω` or `E` is infinite-dimensional, the sublevel boundary identity
+  `∂(T ⌞ {u < t}) = ⟨T, u, t⟩ + (∂T) ⌞ {u < t}`, and determination by `{x ∈ Ω | u x < t}` when
+  both slicing functions are measurable on `Ω`.
 * `Distribution.slice_const`: the slice of a locally normal current by a constant is zero.
 * `Distribution.slice_comp_extDerivCLM`: the boundary law `∂⟨T, u, t⟩ = -⟨∂T, u, t⟩`.
-* `Distribution.tendsto_slice_apply`: slices converge when the slicing functions converge pointwise
-  on `Ω`, at levels charged neither by `‖T‖` nor by `‖∂T‖`.
+* `Distribution.tendsto_slice_apply_of_eventually_iff`, `Distribution.tendsto_slice_apply`: slices
+  converge when sublevel membership eventually agrees almost everywhere for `‖T‖` and `‖∂T‖`, and
+  in particular when measurable slicing functions converge pointwise on `Ω` at levels charged
+  neither by `‖T‖` nor by `‖∂T‖`.
 * `Distribution.dsupport_slice_subset`, `Distribution.dsupport_slice_inter_subset`: support
   localization of a slice.
 * `Distribution.measurable_slice_apply`, `Distribution.measurable_localMass_slice`,
@@ -131,12 +135,21 @@ theorem slice_apply (hu : Measurable fun x : Ω => u x) (φ : 𝓓(Ω, E [⋀^Fi
         massRestrict (T ∘L extDerivCLM) (measurableSet_lt hu (measurable_const (a := t))) φ := by
   simp [slice_def T hu]
 
+/-- **Sublevel boundary identity.** For `u` measurable on `Ω`,
+`∂(T ⌞ {u < t}) = ⟨T, u, t⟩ + (∂T) ⌞ {u < t}`. -/
+theorem massRestrict_lt_comp_extDerivCLM (hu : Measurable fun x : Ω => u x) (t : ℝ) :
+    massRestrict T (measurableSet_lt hu (measurable_const (a := t))) ∘L extDerivCLM =
+      slice T u t +
+        massRestrict (T ∘L extDerivCLM) (measurableSet_lt hu (measurable_const (a := t))) := by
+  rw [slice_def T hu, sub_add_cancel]
+
 /-- The slice by a function not measurable on `Ω` is zero by convention. -/
 @[simp]
 theorem slice_of_not_measurable (hu : ¬Measurable fun x : Ω => u x) : slice T u t = 0 := by
   simp [slice, hu]
 
-/-- A slice depends on the slicing function only through its sublevel set in `Ω`. -/
+/-- Two slicing functions that are both measurable on `Ω` and share the same sublevel set in `Ω`
+give the same slice. -/
 theorem slice_congr {v : E → ℝ} (hu : Measurable fun x : Ω => u x)
     (hv : Measurable fun x : Ω => v x) (h : {x : Ω | u x < t} = {x : Ω | v x < t}) :
     slice T u t = slice T v t := by
@@ -488,6 +501,20 @@ theorem slice_comp_pullbackCLM_of_measurable {E' : Type*} [NormedAddCommGroup E'
   slice_comp_pullbackCLM_of_measurable_comp hT (hu.comp measurable_subtypeVal)
     (hu.comp hΦ.continuousOn.domRestrict.measurable) t
 
+/-- **Convergence of slices from sublevel-set agreement.** If functions `vᵢ` measurable on `Ω`
+eventually share sublevel membership `{vᵢ < t} ↔ {u < t}` almost everywhere for both `‖T‖` and
+`‖∂T‖`, then `⟨T, vᵢ, t⟩ φ → ⟨T, u, t⟩ φ` for every test form `φ`. -/
+theorem tendsto_slice_apply_of_eventually_iff {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated]
+    (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ) {v : ι → E → ℝ}
+    (hv : ∀ i, Measurable fun x : Ω => v i x) (hu : Measurable fun x : Ω => u x)
+    (hT : ∀ᵐ x : Ω ∂massMeasure T, ∀ᶠ i in l, (v i x < t ↔ u x < t))
+    (hdT : ∀ᵐ x : Ω ∂massMeasure (T ∘L extDerivCLM), ∀ᶠ i in l, (v i x < t ↔ u x < t))
+    (φ : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
+    Tendsto (fun i => slice T (v i) t φ) l (𝓝 (slice T u t φ)) := by
+  simp_rw [slice_apply _ (hv _), slice_apply _ hu]
+  exact (tendsto_massRestrict_apply _ _ hT (extDerivCLM φ)).sub
+    (tendsto_massRestrict_apply _ _ hdT φ)
+
 /-- **Convergence of slices.** If functions `vᵢ` measurable on `Ω` converge pointwise on `Ω` to
 a function `u` measurable on `Ω`, and neither `‖T‖` nor `‖∂T‖` charges the level set `u⁻¹{t}`,
 then `⟨T, vᵢ, t⟩ → ⟨T, u, t⟩` on every test form. -/
@@ -505,9 +532,9 @@ theorem tendsto_slice_apply {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated
       simp [hi, h]
     · filter_upwards [(hlim x x.property).eventually_const_lt h] with i hi
       simp [hi.not_gt, h.not_gt]
-  simp_rw [slice_apply _ (hv _), slice_apply _ hu]
-  exact (tendsto_massRestrict_apply _ _ (measure_eq_zero_iff_ae_notMem.1 hT |>.mono hev) _).sub
-    (tendsto_massRestrict_apply _ _ (measure_eq_zero_iff_ae_notMem.1 hdT |>.mono hev) _)
+  exact tendsto_slice_apply_of_eventually_iff T hv hu
+    (measure_eq_zero_iff_ae_notMem.1 hT |>.mono hev)
+    (measure_eq_zero_iff_ae_notMem.1 hdT |>.mono hev) φ
 
 /-! ### The slicing inequality for smooth functions
 

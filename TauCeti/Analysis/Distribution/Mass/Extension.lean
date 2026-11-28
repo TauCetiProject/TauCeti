@@ -56,8 +56,8 @@ splitting `T = R + R'` into maps of locally finite mass whose mass measures are 
 * `Distribution.massRestrict`: the Borel restriction `T ⌞ A`.
 * `Distribution.enorm_massRestrict_apply_le`: `|(T ⌞ A) φ| ≤ ∫_A ‖φ‖ d‖T‖`.
 * `Distribution.mass_massRestrict_le`, `Distribution.mass_massRestrict_ne_top`,
-  `Distribution.massMeasure_massRestrict_le`: the mass bounds `M(T ⌞ A) ≤ ‖T‖ A`, finite mass
-  of Borel restrictions, and `‖T ⌞ A‖ ≤ ‖T‖ ⌞ A`.
+  `Distribution.massMeasure_massRestrict_le`: the mass bounds `M(T ⌞ A) ≤ ‖T‖ A`, preservation
+  of finite mass by Borel restrictions, and `‖T ⌞ A‖ ≤ ‖T‖ ⌞ A`.
 * `Distribution.massMeasure_massRestrict`, `Distribution.mass_massRestrict`: exact mass-measure
   localization and total mass for `T` of locally finite mass.
 * `Distribution.massRestrict_eq_of_massMeasure_eq`: `T = R + R'` with `R`, `R'` of locally finite
@@ -656,9 +656,9 @@ private theorem tendsto_apply_of_lintegral_eNorm_sub_le (hT : HasLocallyFiniteMa
     (fun m => TestFunction.memLp_subtype (ψ m))
     ((TestFunction.memLp_subtype φ).indicator hA.nullMeasurableSet) he hC hle
 
-/-- If scalar test functions `χ m` approximate `1_{A ∩ K}` in `L¹(μ; ℝ)` on
-`K = (↑) ⁻¹' tsupport φ`, then `S (χ m • φ) → (S ⌞ A) φ` for every functional `S` of locally
-finite mass with `‖S‖ ≤ μ`. -/
+/-- If scalar test functions `χ m` converge in `L¹(Ω, μ; ℝ)` to the indicator of `A ∩ K`,
+extended by zero off `A ∩ K` (where `K = (↑) ⁻¹' tsupport φ`), then `T (χ m • φ) → (T ⌞ A) φ`
+for every functional `T` of locally finite mass with `‖T‖ ≤ μ`. -/
 theorem tendsto_apply_smulLeftCLM_of_tendsto_lintegral_indicator {μ : Measure Ω}
     (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)) {χ : ℕ → 𝓓(Ω, ℝ)}
     (hχ : Tendsto (fun m => ∫⁻ x : Ω,

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
+import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
+import TauCeti.MeasureTheory.Function.SimpleFunc.Basic
 
 /-!
 # Additional lemmas for the lower Lebesgue integral
@@ -14,7 +16,8 @@ This file records null-measurable monotonicity and constant lower bounds for set
 extending Mathlib's `MeasureTheory.setLIntegral_mono_ae'` and `MeasureTheory.setLIntegral_mono'`
 from `MeasurableSet` to `NullMeasurableSet` (parallel to `MeasureTheory.setLIntegral_congr_fun_ae₀`
 and `MeasureTheory.setLIntegral_congr_fun₀`). It also records the matching upper bound: if
-`μ t ≤ m` and `f x · m ≤ w` on `t`, then `∫_t f dμ ≤ w`, with no measurability assumptions.
+`μ t ≤ m` and `f x · m ≤ w` on `t`, then `∫_t f dμ ≤ w`, with no measurability assumptions, and
+the countable fibre-sum expansion of `∫⁻ x, w x ∂ρ` along `SimpleFunc.eapproxDiff w`.
 
 ## Main statements
 
@@ -28,6 +31,8 @@ and `MeasureTheory.setLIntegral_congr_fun₀`). It also records the matching upp
   `TauCeti.mul_measure_le_setLIntegral_ae₀`.
 * `TauCeti.setLIntegral_le_of_measure_le_of_forall_mul_le`: if `μ t ≤ m` and `f x * m ≤ w` for
   every `x ∈ t`, then `∫⁻ x in t, f x ∂μ ≤ w`.
+* `MeasureTheory.Measure.lintegral_eq_tsum_eapproxDiff_fibre`: expansion of `∫⁻ x, w x ∂ρ` as the
+  countable sum over the nonzero fibres of `MeasureTheory.SimpleFunc.eapproxDiff w`.
 -/
 
 public section
@@ -85,3 +90,26 @@ theorem setLIntegral_le_of_measure_le_of_forall_mul_le {f : α → ℝ≥0∞} {
     _ ≤ w := ENNReal.mul_div_le
 
 end TauCeti
+
+namespace MeasureTheory.Measure
+
+open scoped ENNReal NNReal
+
+/-- The lower Lebesgue integral of a measurable `ℝ≥0∞`-valued function is the countable sum of its
+`SimpleFunc.eapproxDiff` values weighted by the `ρ`-measures of their nonzero fibres. -/
+theorem lintegral_eq_tsum_eapproxDiff_fibre {α : Type*} [MeasurableSpace α] (ρ : Measure α)
+    {w : α → ℝ≥0∞} (hw : Measurable w) :
+    ∫⁻ x, w x ∂ρ =
+      ∑' p : Σ n : ℕ, {r : ℝ≥0 // r ∈ (SimpleFunc.eapproxDiff w n).range.erase 0},
+        (p.snd.val : ℝ≥0∞) * ρ (SimpleFunc.eapproxDiff w p.fst ⁻¹' {p.snd.val}) := by
+  rw [lintegral_congr (SimpleFunc.eapproxDiff_eq_tsum_indicator hw)]
+  have hmeas (p : Σ n : ℕ, {r : ℝ≥0 // r ∈ (SimpleFunc.eapproxDiff w n).range.erase 0}) :
+      MeasurableSet (SimpleFunc.eapproxDiff w p.fst ⁻¹' {p.snd.val}) :=
+    (SimpleFunc.eapproxDiff w p.fst).measurableSet_fiber p.snd.val
+  rw [lintegral_tsum fun p =>
+    ((measurable_one.indicator (hmeas p)).const_mul (p.snd.val : ℝ≥0∞)).aemeasurable]
+  refine tsum_congr fun p => ?_
+  rw [lintegral_const_mul _ (measurable_one.indicator (hmeas p)),
+    lintegral_indicator_one (hmeas p)]
+
+end MeasureTheory.Measure

@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.Mass.Slice.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.SmoothApprox
 import TauCeti.Analysis.Calculus.FDeriv.Basic
-import TauCeti.Analysis.Normed.Module.Multilinear.SecondCountable
+import TauCeti.Analysis.Normed.Module.Alternating.SecondCountable
 import TauCeti.MeasureTheory.Measure.Regular
 
 /-!
@@ -18,15 +18,20 @@ This file extends slicing of locally normal currents from smooth functions to Li
 Lipschitz functions, following Federer, *Geometric Measure Theory*, §§4.3.1–4.3.2, and Simon,
 *Introduction to Geometric Measure Theory*, Chapter 6, §5.
 
-Given `K`-Lipschitz `u : E → ℝ` on `Ω`, McShane extension (`LipschitzOnWith.extend_real`),
-bump-convolution smoothing (`LipschitzWith.exists_contDiff_lipschitzWith_dist_lt`), and an upward
-shift yield smooth `K`-Lipschitz `g_j` with `u < g_j` on `Ω` converging uniformly to `u`. Hence
+When `E` is finite-dimensional and `u : E → ℝ` is `K`-Lipschitz on `Ω`, McShane extension
+(`LipschitzOnWith.extend_real`), bump-convolution smoothing
+(`LipschitzWith.exists_contDiff_lipschitzWith_dist_lt`), and an upward shift yield smooth
+`K`-Lipschitz `g_j` with `u < g_j` on `Ω` converging uniformly to `u`. Hence
 `1_{g_j < t} → 1_{u < t}` everywhere on `Ω` for every `t`, so `⟨T, g_j, t⟩ → ⟨T, u, t⟩` weakly.
+By contrast, the slicing inequalities, normality, local normality, and measurability results below
+hold without assuming finite-dimensionality, since in infinite dimensions every test form and
+slice is zero.
 
 ## Main declarations
 
-* `Distribution.exists_contDiff_lipschitzWith_slice_tendsto`: shifted smooth `K`-Lipschitz
-  approximants `g_j` whose slices converge pointwise on test forms at every level `t ∈ ℝ`.
+* `Distribution.exists_contDiff_lipschitzWith_slice_tendsto`: on a finite-dimensional space `E`,
+  shifted smooth `K`-Lipschitz approximants `g_j` whose slices converge pointwise on test forms
+  at every level `t ∈ ℝ`.
 * `Distribution.slice_eq_zero_of_lipschitzOnWith_zero`: a slice by a `0`-Lipschitz function on `Ω`
   is zero.
 * `Distribution.lintegral_mass_slice_le_of_lipschitzOnWith`,
@@ -42,10 +47,11 @@ shift yield smooth `K`-Lipschitz `g_j` with `u < g_j` on `Ω` converging uniform
   `Distribution.ae_isNormal_massRestrict_lt_of_lipschitzOnWith`: for normal `T` and `u` Lipschitz
   on `Ω`, `⟨T, u, t⟩` and `T ⌞ {u < t}` are normal for Lebesgue-a.e. `t`.
 * `Distribution.ae_isLocallyNormal_slice_of_locallyLipschitzOn`,
+  `Distribution.ae_isLocallyNormal_massRestrict_lt_of_locallyLipschitzOn`,
   `Distribution.aemeasurable_lintegral_massMeasure_slice_of_locallyLipschitzOn`: for locally
-  normal `T` and `u` locally Lipschitz on `Ω`, `⟨T, u, t⟩` is locally normal for Lebesgue-a.e.
-  `t`, and weighted mass integrals `t ↦ ∫⁻ x, w x ∂‖⟨T, u, t⟩‖` are a.e. measurable when `F` is
-  second countable.
+  normal `T` and `u` locally Lipschitz on `Ω`, `⟨T, u, t⟩` and `T ⌞ {u < t}` are locally normal
+  for Lebesgue-a.e. `t`, and weighted mass integrals `t ↦ ∫⁻ x, w x ∂‖⟨T, u, t⟩‖` are a.e.
+  measurable when `F` is second countable.
 -/
 
 public section
@@ -63,10 +69,11 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-! ### Smooth Lipschitz approximation of slices -/
 
-/-- **Shifted smooth Lipschitz approximation for slices.** For `u` that is `K`-Lipschitz on `Ω`,
-there exists a sequence of globally smooth `K`-Lipschitz functions `g_j : E → ℝ` converging to `u`
-on `Ω` from strictly above (`u x < g_j x` on `Ω`) such that `⟨T, g_j, t⟩ φ → ⟨T, u, t⟩ φ` as
-`j → ∞` for every current `T` on `Ω`, every `t ∈ ℝ`, and every test form `φ`. -/
+/-- **Shifted smooth Lipschitz approximation for slices.** On a finite-dimensional space `E`,
+for `u` that is `K`-Lipschitz on `Ω`, there exists a sequence of globally smooth `K`-Lipschitz
+functions `g_j : E → ℝ` converging to `u` on `Ω` from strictly above (`u x < g_j x` on `Ω`)
+such that `⟨T, g_j, t⟩ φ → ⟨T, u, t⟩ φ` as `j → ∞` for every current `T` on `Ω`, every `t ∈ ℝ`,
+and every test form `φ`. -/
 theorem exists_contDiff_lipschitzWith_slice_tendsto [FiniteDimensional ℝ E]
     (hu : LipschitzOnWith K u Ω) :
     ∃ g : ℕ → E → ℝ,
@@ -106,13 +113,8 @@ theorem exists_contDiff_lipschitzWith_slice_tendsto [FiniteDimensional ℝ E]
     by_cases hx : u x < t
     · exact ((tendsto_order.1 (hg_lim x)).2 t hx).mono fun j hj => iff_of_true hj hx
     · exact .of_forall fun j => iff_of_false (fun hj => hx ((hg_bounds x j).1.trans hj)) hx
-  simp only [slice_apply _ hu_meas, slice_apply _ (hg_meas _)]
-  exact (tendsto_massRestrict_apply
-      (fun j => measurableSet_lt (hg_meas j) measurable_const)
-      (measurableSet_lt hu_meas measurable_const) (ae_of_all _ hiff) (extDerivCLM φ)).sub
-    (tendsto_massRestrict_apply
-      (fun j => measurableSet_lt (hg_meas j) measurable_const)
-      (measurableSet_lt hu_meas measurable_const) (ae_of_all _ hiff) φ)
+  exact tendsto_slice_apply_of_eventually_iff T hg_meas hu_meas (ae_of_all _ hiff)
+    (ae_of_all _ hiff) φ
 
 /-! ### The slicing inequality for Lipschitz functions -/
 
@@ -272,14 +274,11 @@ theorem ae_isNormal_massRestrict_lt_of_lipschitzOnWith
   filter_upwards [ae_mass_slice_lt_top_of_lipschitzOnWith hT.isLocallyNormal hT1 hu] with t ht
   have hA : MeasurableSet {x : Ω | u x < t} :=
     measurableSet_lt hu_meas (measurable_const (a := t))
-  have hbd : massRestrict T hA ∘L extDerivCLM =
-      slice T u t + massRestrict (T ∘L extDerivCLM) hA := by
-    ext φ; simp [slice_apply _ hu_meas]
   rw [massRestrict_congr_set (T := T)
     (measurableSet_lt hu.continuousOn.domRestrict.measurable (measurable_const (a := t)))
     hA (by ext x; rfl)]
   refine isNormal_succ_iff.2 ⟨mass_massRestrict_ne_top hT1 hA, ?_⟩
-  rw [hbd, FunLike.coe_add]
+  rw [massRestrict_lt_comp_extDerivCLM T hu_meas t, FunLike.coe_add]
   exact ne_top_of_le_ne_top
     (ENNReal.add_ne_top.2 ⟨ht.ne, mass_massRestrict_ne_top hT2 hA⟩) mass_add_le
 
@@ -332,13 +331,29 @@ theorem ae_isLocallyNormal_slice_of_locallyLipschitzOn
     simpa only [isLocallyNormal_finZero_iff] using
       ae_hasLocallyFiniteMass_slice_of_locallyLipschitzOn hT hu
   | succ k =>
-    have hbd : IsLocallyNormal (T ∘L extDerivCLM) := isLocallyNormal_succ_iff.2
-      ⟨(isLocallyNormal_succ_iff.1 hT).2,
-        by simp [comp_assoc, extDerivCLM_comp_extDerivCLM, hasLocallyFiniteMass_zero]⟩
     filter_upwards [ae_hasLocallyFiniteMass_slice_of_locallyLipschitzOn hT hu,
-      ae_hasLocallyFiniteMass_slice_of_locallyLipschitzOn hbd hu] with t ht1 ht2
+      ae_hasLocallyFiniteMass_slice_of_locallyLipschitzOn hT.comp_extDerivCLM hu] with t ht1 ht2
     rw [isLocallyNormal_succ_iff, slice_comp_extDerivCLM T u t]
     exact ⟨ht1, ht2.neg⟩
+
+/-- **Sublevel restrictions `T ⌞ {u < t}` of a locally normal current are locally normal almost
+everywhere.** -/
+theorem ae_isLocallyNormal_massRestrict_lt_of_locallyLipschitzOn
+    {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T)
+    (hu : LocallyLipschitzOn Ω u) :
+    ∀ᵐ t : ℝ,
+      IsLocallyNormal (massRestrict T (measurableSet_lt hu.continuousOn.domRestrict.measurable
+        (measurable_const (a := t)))) := by
+  have hu_meas : Measurable fun x : Ω => u x := hu.continuousOn.domRestrict.measurable
+  filter_upwards [ae_hasLocallyFiniteMass_slice_of_locallyLipschitzOn hT hu] with t ht
+  have hA : MeasurableSet {x : Ω | u x < t} :=
+    measurableSet_lt hu_meas (measurable_const (a := t))
+  rw [massRestrict_congr_set (T := T)
+    (measurableSet_lt hu.continuousOn.domRestrict.measurable (measurable_const (a := t)))
+    hA (by ext x; rfl)]
+  refine isLocallyNormal_succ_iff.2 ⟨hasLocallyFiniteMass_massRestrict hA, ?_⟩
+  rw [massRestrict_lt_comp_extDerivCLM T hu_meas t, FunLike.coe_add]
+  exact ht.add (hasLocallyFiniteMass_massRestrict hA)
 
 /-- **A slice by a `0`-Lipschitz function on `Ω` is zero** for any locally normal current. -/
 theorem slice_eq_zero_of_lipschitzOnWith_zero

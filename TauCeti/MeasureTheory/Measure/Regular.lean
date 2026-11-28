@@ -10,6 +10,8 @@ public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import Mathlib.MeasureTheory.Measure.Regular
 public import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
+import TauCeti.MeasureTheory.Function.SimpleFunc.Basic
+import TauCeti.MeasureTheory.Integral.Lebesgue.Basic
 
 /-!
 # Regularity under almost everywhere continuous maps, finite sums and absolute continuity
@@ -139,71 +141,6 @@ theorem InnerRegularWRT.add {p q : Set α → Prop} (hp : ∀ s t, p s → p t �
   calc a + b ≤ μ K + ν L := add_le_add haK.le hbL.le
     _ ≤ μ (K ∪ L) + ν (K ∪ L) := by gcongr <;> simp
 
-private theorem eapproxDiff_eq_tsum_indicator {w : α → ℝ≥0∞} (hw : Measurable w) (x : α) :
-    w x = ∑' p : Σ n : ℕ, {r : ℝ≥0 // r ∈ (SimpleFunc.eapproxDiff w n).range.erase 0},
-      (p.snd.val : ℝ≥0∞) * (SimpleFunc.eapproxDiff w p.fst ⁻¹' {p.snd.val}).indicator 1 x := by
-  rw [tsum_sigma', ← SimpleFunc.tsum_eapproxDiff w hw x]
-  refine tsum_congr fun n => ?_
-  have hsum : ((SimpleFunc.eapproxDiff w n) x : ℝ≥0∞) =
-      ∑ r ∈ (SimpleFunc.eapproxDiff w n).range.erase 0,
-        (r : ℝ≥0∞) * (SimpleFunc.eapproxDiff w n ⁻¹' {r}).indicator 1 x := by
-    by_cases h0 : SimpleFunc.eapproxDiff w n x = 0
-    · rw [h0, ENNReal.coe_zero, eq_comm]
-      exact Finset.sum_eq_zero fun r hr => by
-        simp [(Finset.ne_of_mem_erase hr).symm, h0]
-    · have hmem : SimpleFunc.eapproxDiff w n x ∈ (SimpleFunc.eapproxDiff w n).range.erase 0 :=
-        Finset.mem_erase.2 ⟨h0, SimpleFunc.mem_range_self _ x⟩
-      rw [Finset.sum_eq_single_of_mem (SimpleFunc.eapproxDiff w n x) hmem]
-      · simp
-      · intro r _ hne
-        simp [Ne.symm hne]
-  rw [hsum, ← Finset.tsum_subtype' ((SimpleFunc.eapproxDiff w n).range.erase 0) fun r =>
-    (r : ℝ≥0∞) * (SimpleFunc.eapproxDiff w n ⁻¹' {r}).indicator 1 x]
-  -- `Finset.tsum_subtype'` uses `Coe.coe` on the subtype while `tsum_sigma'` uses `.val`.
-  rfl
-
-private theorem lintegral_eq_tsum_eapproxDiff_fibre (ρ : Measure α) {w : α → ℝ≥0∞}
-    (hw : Measurable w) :
-    ∫⁻ x, w x ∂ρ =
-      ∑' p : Σ n : ℕ, {r : ℝ≥0 // r ∈ (SimpleFunc.eapproxDiff w n).range.erase 0},
-        (p.snd.val : ℝ≥0∞) * ρ (SimpleFunc.eapproxDiff w p.fst ⁻¹' {p.snd.val}) := by
-  rw [lintegral_congr (eapproxDiff_eq_tsum_indicator hw)]
-  have hmeas (p : Σ n : ℕ, {r : ℝ≥0 // r ∈ (SimpleFunc.eapproxDiff w n).range.erase 0}) :
-      MeasurableSet (SimpleFunc.eapproxDiff w p.fst ⁻¹' {p.snd.val}) :=
-    (SimpleFunc.eapproxDiff w p.fst).measurableSet_fiber p.snd.val
-  rw [lintegral_tsum fun p =>
-    ((measurable_one.indicator (hmeas p)).const_mul (p.snd.val : ℝ≥0∞)).aemeasurable]
-  refine tsum_congr fun p => ?_
-  rw [lintegral_const_mul _ (measurable_one.indicator (hmeas p)),
-    lintegral_indicator_one (hmeas p)]
-
-private theorem tsum_eapproxDiff_weight_le_one (d : ℕ → SimpleFunc α ℝ≥0) :
-    ∑' p : Σ n : ℕ, {r : ℝ≥0 // r ∈ (d n).range.erase 0},
-      (2⁻¹ : ℝ≥0∞) ^ (p.fst + 1) * ((d p.fst).range.card + 1 : ℝ≥0∞)⁻¹ ≤ 1 := by
-  rw [tsum_sigma']
-  calc ∑' n : ℕ, ∑' _ : {r : ℝ≥0 // r ∈ (d n).range.erase 0},
-          (2⁻¹ : ℝ≥0∞) ^ (n + 1) * ((d n).range.card + 1 : ℝ≥0∞)⁻¹
-      = ∑' n : ℕ, ((d n).range.erase 0).card *
-          ((2⁻¹ : ℝ≥0∞) ^ (n + 1) * ((d n).range.card + 1 : ℝ≥0∞)⁻¹) := by
-        refine tsum_congr fun n => ?_
-        rw [tsum_fintype, Finset.sum_const, Finset.card_univ, Fintype.card_coe, nsmul_eq_mul]
-    _ ≤ ∑' n : ℕ, (2⁻¹ : ℝ≥0∞) ^ (n + 1) := by
-        refine tsum_le_tsum fun n => ?_
-        have hcard : (((d n).range.erase 0).card : ℝ≥0∞) ≤ ((d n).range.card + 1 : ℝ≥0∞) := by
-          exact_mod_cast (Finset.card_erase_le.trans (Nat.le_succ _))
-        calc (((d n).range.erase 0).card : ℝ≥0∞) *
-                ((2⁻¹ : ℝ≥0∞) ^ (n + 1) * ((d n).range.card + 1 : ℝ≥0∞)⁻¹)
-            ≤ ((d n).range.card + 1 : ℝ≥0∞) *
-                ((2⁻¹ : ℝ≥0∞) ^ (n + 1) * ((d n).range.card + 1 : ℝ≥0∞)⁻¹) := by gcongr
-          _ = ((d n).range.card + 1 : ℝ≥0∞) * ((d n).range.card + 1 : ℝ≥0∞)⁻¹ *
-                (2⁻¹ : ℝ≥0∞) ^ (n + 1) := by ring
-          _ = (2⁻¹ : ℝ≥0∞) ^ (n + 1) := by
-              rw [ENNReal.mul_inv_cancel (by positivity) (by finiteness), one_mul]
-    _ = 1 := by
-        simp_rw [pow_succ', ENNReal.tsum_mul_left, ENNReal.tsum_geometric]
-        norm_num
-        exact ENNReal.inv_mul_cancel two_ne_zero ENNReal.ofNat_ne_top
-
 variable [TopologicalSpace α]
 
 /-- The sum of two outer regular measures is outer regular. -/
@@ -268,10 +205,11 @@ instance dirac.innerRegular (x : α) : (dirac x).InnerRegular where
         by rwa [dirac_apply_of_mem (mem_singleton x), ← dirac_apply_of_mem hx]⟩
     · simp [dirac_apply' x hU, hx] at hr
 
-/-- **Passage from open-set domination to Borel-weight domination.** If a family of measures `μ t`
-on `α` is dominated on every open set `U` by a measurable majorant `m` with
-`∫⁻ t, m t ∂ν ≤ c₀ * ρ U` for an outer regular measure `ρ`, then for every measurable weight
-`w : α → ℝ≥0∞`, `∫⁻ t, ∫⁻ x, w x ∂μ t ∂ν ≤ c₀ * ∫⁻ x, w x ∂ρ`. -/
+/-- **Passage from open-set domination to Borel-weight domination.** If `c₀ < ∞` and a family of
+measures `μ t` on `α` is dominated on each open set `U` by a measurable majorant `m` (which may
+depend on `U`) satisfying `μ t U ≤ m t` for `ν`-almost every `t` and `∫⁻ t, m t ∂ν ≤ c₀ * ρ U`
+for an outer regular measure `ρ`, then for every measurable weight `w : α → ℝ≥0∞`,
+`∫⁻ t, ∫⁻ x, w x ∂μ t ∂ν ≤ c₀ * ∫⁻ x, w x ∂ρ`. -/
 theorem lintegral_lintegral_le_of_isOpen {β : Type*} [MeasurableSpace β] [OpensMeasurableSpace α]
     {ν : Measure β} {μ : β → Measure α} {ρ : Measure α} [ρ.OuterRegular] {c₀ : ℝ≥0∞}
     (hc₀top : c₀ ≠ ⊤)
@@ -305,7 +243,7 @@ theorem lintegral_lintegral_le_of_isOpen {β : Type*} [MeasurableSpace β] [Open
   let A (p : ι) : Set α := (d p.fst) ⁻¹' {p.snd.val}
   have hc_pos (p : ι) : c p ≠ 0 :=
     ENNReal.coe_ne_zero.2 (Finset.mem_erase.1 p.snd.property).1
-  have hw_eq := eapproxDiff_eq_tsum_indicator hw
+  have hw_eq := SimpleFunc.eapproxDiff_eq_tsum_indicator hw
   have hw_int_eq := lintegral_eq_tsum_eapproxDiff_fibre ρ hw
   have hA_fin (p : ι) : ρ (A p) ≠ ⊤ := by
     have hle : c p * ρ (A p) ≤ ∫⁻ x, w x ∂ρ := by
@@ -313,12 +251,11 @@ theorem lintegral_lintegral_le_of_isOpen {β : Type*} [MeasurableSpace β] [Open
       exact le_tsum (fun p => c p * ρ (A p)) p
     exact fun htop => hwint (top_le_iff.1 (by rw [← ENNReal.mul_top (hc_pos p), ← htop]; exact hle))
   -- Thicken each fibre `A p` to an open set `U p` with `ρ (U p) < ρ (A p) + δ p`.
-  let δ (p : ι) : ℝ≥0∞ :=
-    ((ε : ℝ≥0∞) / c₀) / (c p * 2 ^ (p.fst + 1) * ((d p.fst).range.card + 1 : ℝ≥0∞))
-  have hδ_pos (p : ι) : δ p ≠ 0 :=
-    ENNReal.div_ne_zero.2 ⟨hε'.ne', by finiteness⟩
+  obtain ⟨δ, hδ_pos, hδ_sum⟩ :=
+    ENNReal.exists_pos_tsum_mul_lt_of_countable hε'.ne' c fun _ => ENNReal.coe_ne_top
   have hU_ex (p : ι) : ∃ U : Set α, A p ⊆ U ∧ IsOpen U ∧ ρ U < ρ (A p) + δ p :=
-    (A p).exists_isOpen_lt_of_lt _ (ENNReal.lt_add_right (hA_fin p) (hδ_pos p))
+    (A p).exists_isOpen_lt_of_lt _
+      (ENNReal.lt_add_right (hA_fin p) (ENNReal.coe_pos.2 (hδ_pos p)).ne')
   choose U hAU hUo hU_lt using hU_ex
   choose m hm_meas hm_le hm_int using fun p : ι => hmaj (U p) (hUo p)
   -- Bound `∫⁻ x, w x ∂μ t` by `∑' p, c p * m p t` a.e., then integrate and sum the `δ p` errors.
@@ -358,28 +295,7 @@ theorem lintegral_lintegral_le_of_isOpen {β : Type*} [MeasurableSpace β] [Open
         congr 1
         rw [tsum_congr fun p => mul_add (c p) _ _,
           Summable.tsum_add CompleteLattice.summable CompleteLattice.summable, hw_int_eq]
-    _ ≤ c₀ * (∫⁻ x, w x ∂ρ + (ε : ℝ≥0∞) / c₀) := by
-        gcongr
-        have hterm (p : ι) : c p * δ p = ((ε : ℝ≥0∞) / c₀) *
-            ((2⁻¹ : ℝ≥0∞) ^ (p.fst + 1) * ((d p.fst).range.card + 1 : ℝ≥0∞)⁻¹) := by
-          calc c p * δ p
-              = ((ε : ℝ≥0∞) / c₀) * ((c p * (c p)⁻¹) *
-                  ((2 ^ (p.fst + 1) : ℝ≥0∞)⁻¹ * ((d p.fst).range.card + 1 : ℝ≥0∞)⁻¹)) := by
-                dsimp [δ]
-                rw [div_eq_mul_inv,
-                  ENNReal.mul_inv (Or.inl (mul_ne_zero (hc_pos p) (by positivity)))
-                    (Or.inl (by finiteness)),
-                  ENNReal.mul_inv (Or.inl (hc_pos p)) (Or.inl ENNReal.coe_ne_top)]
-                ring
-            _ = ((ε : ℝ≥0∞) / c₀) *
-                  ((2⁻¹ : ℝ≥0∞) ^ (p.fst + 1) * ((d p.fst).range.card + 1 : ℝ≥0∞)⁻¹) := by
-                rw [ENNReal.mul_inv_cancel (hc_pos p) ENNReal.coe_ne_top, one_mul,
-                  ENNReal.inv_pow]
-        simp_rw [hterm, ENNReal.tsum_mul_left]
-        calc ((ε : ℝ≥0∞) / c₀) *
-                ∑' p : ι, (2⁻¹ : ℝ≥0∞) ^ (p.fst + 1) * ((d p.fst).range.card + 1 : ℝ≥0∞)⁻¹
-            ≤ ((ε : ℝ≥0∞) / c₀) * 1 := by gcongr; exact tsum_eapproxDiff_weight_le_one d
-          _ = (ε : ℝ≥0∞) / c₀ := mul_one _
+    _ ≤ c₀ * (∫⁻ x, w x ∂ρ + (ε : ℝ≥0∞) / c₀) := by gcongr
     _ = c₀ * ∫⁻ x, w x ∂ρ + (ε : ℝ≥0∞) := by
         rw [mul_add, ENNReal.mul_div_cancel hc₀0 hc₀top]
 

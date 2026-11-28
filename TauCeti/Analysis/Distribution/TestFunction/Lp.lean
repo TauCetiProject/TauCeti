@@ -8,9 +8,11 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Analysis.Distribution.Mass.Basic
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
@@ -36,6 +38,9 @@ evaluation on integrable forms (`Distribution.extendL1`).
 
 ## Main declarations
 
+* `TestFunction.memLp_smul_of_continuous`, `TestFunction.memLp_intervalIntegral_smul`:
+  multiplying a test function by a continuous scalar function on `Ω`, or by the interval integral
+  of a jointly continuous scalar kernel on `Ω × ℝ`, stays in `Lᵖ(μ)`.
 * `TestFunction.toLp`: the class in `Lᵖ(μ)` of the restriction of a test function to `Ω`.
 * `TestFunction.ambientToLp`: the class in `Lᵖ(ν)` of a test function, for a measure `ν` on the
   ambient space, as a `𝕜`-linear map.
@@ -51,8 +56,8 @@ evaluation on integrable forms (`Distribution.extendL1`).
 * `HasCompactSupport.exists_testFunction_eLpNorm_sub_le`: a continuous compactly supported
   function on `Ω` is an `Lᵖ(μ)` limit of test functions for `p < ∞`.
 * `TestFunction.denseRange_toLp`: test functions are dense in `Lᵖ(μ)` for `p < ∞`.
-* `TestFunction.exists_tendsto_lintegral_indicator`: approximation of `1_{A ∩ K}` in `L¹(μ; ℝ)` by
-  smooth scalar test functions on `Ω`.
+* `TestFunction.exists_tendsto_lintegral_indicator`: on a finite-dimensional space `E`,
+  approximation of `1_{A ∩ K}` in `L¹(μ; ℝ)` by smooth scalar test functions on `Ω`.
 * `TestFunction.integrable_bilin_of_memLp`: a continuous bilinear map applied to a test function
   and an `Lᵖ` function is integrable.
 * `TestFunction.integrable_smul_of_memLp`: a test function times an `Lᵖ` function is integrable.
@@ -120,6 +125,27 @@ theorem memLp_subtype [IsFiniteMeasureOnCompacts μ] (φ : 𝓓^{n}(Ω, F)) :
   rw [← funext (toCompactlySupportedContinuousMap_apply φ)]
   exact (map_continuous _).memLp_of_hasCompactSupport
     φ.toCompactlySupportedContinuousMap.hasCompactSupport
+
+/-- Multiplying a test function on `Ω` by a continuous scalar function on `Ω` lies in `Lᵖ(μ)` for
+every measure `μ` on `Ω` that is finite on compact sets. -/
+theorem memLp_smul_of_continuous [IsFiniteMeasureOnCompacts μ] {c : Ω → ℝ}
+    (hc : Continuous c) (φ : 𝓓^{n}(Ω, F)) :
+    MemLp (fun x : Ω => c x • φ x) p μ := by
+  refine (hc.smul (φ.continuous.comp continuous_subtypeVal)).memLp_of_hasCompactSupport
+    (HasCompactSupport.of_support_subset_isCompact (TestFunction.isCompact_preimage_tsupport φ)
+      fun x hx => ?_)
+  by_contra h
+  exact hx (by simp [image_eq_zero_of_notMem_tsupport h])
+
+/-- Multiplying a test function on `Ω` by the interval integral of a scalar kernel jointly
+continuous on `Ω × ℝ` lies in `Lᵖ(μ)` for every measure `μ` on `Ω` that is finite on compact
+sets. -/
+theorem memLp_intervalIntegral_smul [IsFiniteMeasureOnCompacts μ] {K : E → ℝ → ℝ}
+    (hK : Continuous fun p : Ω × ℝ => K p.1 p.2) (a b : ℝ) (φ : 𝓓^{n}(Ω, F)) :
+    MemLp (fun x : Ω => (∫ t in a..b, K x t) • φ x) p μ :=
+  memLp_smul_of_continuous
+    (intervalIntegral.continuous_parametric_intervalIntegral_of_continuous'
+      (f := fun (x : Ω) (t : ℝ) => K x t) hK a b) φ
 
 variable {A : Set Ω}
 
@@ -388,9 +414,9 @@ theorem denseRange_toLp [FiniteDimensional ℝ E] [CompleteSpace F] [μ.Regular]
     ← ENNReal.add_halves ε, ← sub_add_sub_cancel (⇑f) g]
   exact (eLpNorm_add_le Fact.out).trans (add_le_add hfg hφ)
 
-/-- For any locally finite Borel measure `μ` on `Ω`, a measurable set `A ⊆ Ω`, and a compact set
-`K ⊆ Ω`, the indicator `1_{A ∩ K}` can be approximated in `L¹(μ; ℝ)` by scalar test functions on
-`Ω`. -/
+/-- On a finite-dimensional space `E`, for any locally finite Borel measure `μ` on `Ω`, a
+measurable set `A ⊆ Ω`, and a compact set `K ⊆ Ω`, the indicator `1_{A ∩ K}` can be approximated in
+`L¹(μ; ℝ)` by scalar test functions on `Ω`. -/
 theorem exists_tendsto_lintegral_indicator [FiniteDimensional ℝ E] (μ : Measure Ω)
     [IsFiniteMeasureOnCompacts μ] (hA : MeasurableSet A) {K : Set Ω} (hK : IsCompact K) :
     ∃ χ : ℕ → 𝓓(Ω, ℝ),
@@ -400,17 +426,14 @@ theorem exists_tendsto_lintegral_indicator [FiniteDimensional ℝ E] (μ : Measu
     memLp_indicator_const 1 (hA.inter hK.isClosed.measurableSet).nullMeasurableSet (1 : ℝ)
       (Or.inr ((measure_mono inter_subset_right).trans_lt hK.measure_lt_top).ne)
   have hd := denseRange_toLp (Ω := Ω) (n := ⊤) (F := ℝ) (μ := μ) ENNReal.one_ne_top (hmem.toLp _)
-  have step (m : ℕ) : ∃ χ : 𝓓(Ω, ℝ),
-      ∫⁻ x : Ω, ‖χ x - (A ∩ K).indicator (1 : Ω → ℝ) x‖ₑ ∂μ ≤ ((m + 1 : ℕ) : ℝ≥0∞)⁻¹ := by
-    obtain ⟨_, ⟨χ, rfl⟩, hχ⟩ := (mem_closure_iff_nhds_basis Metric.nhds_basis_closedEBall).1 hd _
-      (ENNReal.inv_pos.2 (ENNReal.natCast_ne_top (m + 1)))
-    refine ⟨χ, ?_⟩
-    rw [Metric.mem_closedEBall, toLp_apply, Lp.edist_toLp_toLp,
-      eLpNorm_one_eq_lintegral_eNorm ((memLp_subtype χ).sub hmem).aestronglyMeasurable] at hχ
-    simpa [Pi.sub_apply] using hχ
-  choose χ hχ using step
-  exact ⟨χ, tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1)) (fun _ => bot_le) hχ⟩
+  obtain ⟨u, hu_mem, hu_lim⟩ := mem_closure_iff_seq_limit.mp hd
+  choose χ hχ using hu_mem
+  refine ⟨χ, ?_⟩
+  rw [tendsto_iff_edist_tendsto_0] at hu_lim
+  refine hu_lim.congr fun m => ?_
+  rw [← hχ m, toLp_apply, Lp.edist_toLp_toLp,
+    eLpNorm_one_eq_lintegral_eNorm ((memLp_subtype (χ m)).sub hmem).aestronglyMeasurable]
+  rfl
 
 /-- A continuous bilinear map applied to a test function and an `Lᵖ` function, `1 ≤ p`, is
 integrable, for a measure that is finite on compact sets. -/
