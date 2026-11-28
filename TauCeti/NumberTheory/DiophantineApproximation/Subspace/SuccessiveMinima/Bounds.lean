@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.SuccessiveMinima.Basic
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Volume
-public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SuccessiveMinima
 import TauCeti.LinearAlgebra.Dual.AbsoluteValue
 import TauCeti.NumberTheory.Height.FundamentalInequality
 
@@ -47,11 +47,16 @@ nonzero coordinate, bounded at each place in terms of the values of the forms, s
 on one minimum is the upper bound on the product with every other minimum replaced by this lower
 bound. The uniformity in `c` is what lets exponent families that move with `Q` be treated at once.
 
+## Main definitions
+
+* `TauCeti.NumberField.approxLowerConst` and `TauCeti.NumberField.approxUpperConst`: the two
+  constants of the displayed bounds.
+
 ## Main results
 
 * `TauCeti.NumberField.le_prod_successiveMinimum_approx`: the lower bound on `∏ l, μ l ^ d`.
-* `TauCeti.NumberField.exists_pos_mul_rpow_le_successiveMinimum_pow`: when every minimum but the
-  last is at most `1`, the lower bound holds for the `d`-th power of the last one alone.
+* `TauCeti.NumberField.approxLowerConst_mul_rpow_le_last_successiveMinimum_pow`: when every minimum
+  but the last is at most `1`, the lower bound holds for the `d`-th power of the last one alone.
 * `TauCeti.NumberField.prod_successiveMinimum_approx_le`: the upper bound on `∏ l, μ l ^ d`.
 * `TauCeti.NumberField.exists_pos_forall_rpow_le_successiveMinimum`: every minimum is at least
   `Q ^ (-B)` for `Q ≥ Q₀`, uniformly in the exponents of absolute weight at most `A`.
@@ -75,20 +80,85 @@ namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι]
 
+/-- **The constant of the lower Minkowski bound for an approximation domain**:
+`2 ^ N / (N! · c_K ^ N · approxConst S₀ L)`, where `N = [K : ℚ] · card ι` and
+`c_K = integralBasisHouse K` (`TauCeti.NumberField.le_prod_successiveMinimum_approx`). -/
+noncomputable def approxLowerConst (S₀ : Finset (FinitePlace K))
+    (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) : ℝ :=
+  2 ^ (finrank ℚ K * Fintype.card ι) /
+    (((finrank ℚ K * Fintype.card ι).factorial : ℝ) *
+      integralBasisHouse K ^ (finrank ℚ K * Fintype.card ι) * approxConst S₀ L)
+
+/-- Explicit quotient formula for `approxLowerConst`. -/
+theorem approxLowerConst_def (S₀ : Finset (FinitePlace K))
+    (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) :
+    approxLowerConst S₀ L = 2 ^ (finrank ℚ K * Fintype.card ι) /
+      (((finrank ℚ K * Fintype.card ι).factorial : ℝ) *
+        integralBasisHouse K ^ (finrank ℚ K * Fintype.card ι) * approxConst S₀ L) := (rfl)
+
+/-- The lower Minkowski constant depends on the forms only at the infinite places and at `S₀`. -/
+theorem approxLowerConst_congr {S₀ : Finset (FinitePlace K)}
+    {L₁ L₂ : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hInf : ∀ v : InfinitePlace K, L₁ v.val = L₂ v.val)
+    (hFin : ∀ v ∈ S₀, L₁ v.val = L₂ v.val) :
+    approxLowerConst S₀ L₁ = approxLowerConst S₀ L₂ := by
+  rw [approxLowerConst_def, approxLowerConst_def, approxConst_congr hInf hFin]
+
+/-- **The constant of the upper Minkowski bound for an approximation domain**:
+`2 ^ N · ∏ v ∈ S₀, N 𝔭_v ^ card ι / approxConst S₀ L`, where `N = [K : ℚ] · card ι`
+(`TauCeti.NumberField.prod_successiveMinimum_approx_le`). -/
+noncomputable def approxUpperConst (S₀ : Finset (FinitePlace K))
+    (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) : ℝ :=
+  2 ^ (finrank ℚ K * Fintype.card ι) *
+    (∏ v ∈ S₀, (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ Fintype.card ι) / approxConst S₀ L
+
+/-- Explicit quotient formula for `approxUpperConst`. -/
+theorem approxUpperConst_def (S₀ : Finset (FinitePlace K))
+    (L : AbsoluteValue K ℝ → ι → Dual K (ι → K)) :
+    approxUpperConst S₀ L = 2 ^ (finrank ℚ K * Fintype.card ι) *
+      (∏ v ∈ S₀, (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ Fintype.card ι) / approxConst S₀ L :=
+  (rfl)
+
+/-- The upper Minkowski constant depends on the forms only at the infinite places and at `S₀`. -/
+theorem approxUpperConst_congr {S₀ : Finset (FinitePlace K)}
+    {L₁ L₂ : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hInf : ∀ v : InfinitePlace K, L₁ v.val = L₂ v.val)
+    (hFin : ∀ v ∈ S₀, L₁ v.val = L₂ v.val) :
+    approxUpperConst S₀ L₁ = approxUpperConst S₀ L₂ := by
+  rw [approxUpperConst_def, approxUpperConst_def, approxConst_congr hInf hFin]
+
+/-- The constant of the lower Minkowski bound is positive for forms independent at the infinite
+places and at `S₀`. -/
+theorem approxLowerConst_pos {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) :
+    0 < approxLowerConst S₀ L :=
+  div_pos (by positivity) (mul_pos (mul_pos (by positivity) (pow_pos integralBasisHouse_pos _))
+    (approxConst_pos hLInf hLFin))
+
+/-- The constant of the upper Minkowski bound is positive for forms independent at the infinite
+places and at `S₀`. -/
+theorem approxUpperConst_pos {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) :
+    0 < approxUpperConst S₀ L :=
+  div_pos (mul_pos (by positivity) (FinitePlace.prod_absNorm_pow_pos S₀ _))
+    (approxConst_pos hLInf hLFin)
+
 /-- **The successive minima of an approximation domain, lower bound** (Bombieri–Gubler, Theorem
 C.2.11 with Corollary 7.5.8): for `0 < Q` and linearly independent forms at the infinite places and
 at `S₀`, the product of the `[K : ℚ]`-th powers of the successive minima over `K` of
-`approxDomain S₀ L c Q` is at least `2 ^ N / (N! · c_K ^ N · approxConst S₀ L) · Q ^ (-weight)`,
-where `N = [K : ℚ] · card ι` and `c_K = integralBasisHouse K`. -/
+`approxDomain S₀ L c Q` is at least `approxLowerConst S₀ L · Q ^ (-weight)`, where
+`approxLowerConst S₀ L = 2 ^ N / (N! · c_K ^ N · approxConst S₀ L)`, `N = [K : ℚ] · card ι` and
+`c_K = integralBasisHouse K`. -/
 theorem le_prod_successiveMinimum_approx {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
     (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
     (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
     (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) :
-    (2 : ℝ) ^ (finrank ℚ K * Fintype.card ι) /
-        (((finrank ℚ K * Fintype.card ι).factorial : ℝ) *
-          integralBasisHouse K ^ (finrank ℚ K * Fintype.card ι) * approxConst S₀ L) *
-        Q ^ (-approxWeight S₀ c) ≤
+    approxLowerConst S₀ L * Q ^ (-approxWeight S₀ c) ≤
       ∏ l : Fin (Fintype.card ι),
         (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ^ finrank ℚ K := by
   classical
@@ -118,33 +188,30 @@ theorem le_prod_successiveMinimum_approx {S₀ : Finset (FinitePlace K)}
     calc A * C ≤ P * V := hmink
       _ ≤ P * (approxConst S₀ L * Q ^ approxWeight S₀ c * C) := mul_le_mul_of_nonneg_left hV hP
       _ = P * (approxConst S₀ L * Q ^ approxWeight S₀ c) * C := by ring
-  calc (2 : ℝ) ^ N / ((N.factorial : ℝ) * integralBasisHouse K ^ N * approxConst S₀ L) *
-        Q ^ (-approxWeight S₀ c)
+  calc approxLowerConst S₀ L * Q ^ (-approxWeight S₀ c)
       = A / (approxConst S₀ L * Q ^ approxWeight S₀ c) := by
-        rw [Real.rpow_neg hQ.le]
-        simp only [A]
+        rw [Real.rpow_neg hQ.le, approxLowerConst]
+        simp only [A, N]
         ring
     _ ≤ P := (div_le_iff₀ (mul_pos hconst hQw)).2 hA
 
-/-- **The last minimum of a domain controls its weight.** For forms independent at the infinite
-places and at `S₀` there is `A > 0` such that for all exponents `c` and levels `0 < Q`, if every
-successive minimum over `K` of `approxDomain S₀ L c Q` but the last is at most `1`, then the
-`[K : ℚ]`-th power of the last is at least `A · Q ^ (-approxWeight S₀ c)`. -/
-theorem exists_pos_mul_rpow_le_successiveMinimum_pow {S₀ : Finset (FinitePlace K)}
+/-- **The last minimum of a domain controls its weight.** For a nonempty coordinate type, forms
+independent at the infinite places and at `S₀`, and a positive level `Q`, suppose every successive
+minimum over `K` of `approxDomain S₀ L c Q` before index `card ι - 1` is at most `1`. Then the
+`[K : ℚ]`-th power of the minimum at that last index is at least
+`approxLowerConst S₀ L · Q ^ (-approxWeight S₀ c)`. -/
+theorem approxLowerConst_mul_rpow_le_last_successiveMinimum_pow {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
     (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
-    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) (hι : 0 < Fintype.card ι) :
-    ∃ A : ℝ, 0 < A ∧ ∀ (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}, 0 < Q →
-      (∀ l < Fintype.card ι - 1,
-        (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ≤ 1) →
-      A * Q ^ (-approxWeight S₀ c) ≤
-        (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
-          (Fintype.card ι - 1) ^ finrank ℚ K := by
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) (hι : 0 < Fintype.card ι)
+    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q)
+    (h₁ : ∀ l < Fintype.card ι - 1,
+      (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ≤ 1) :
+    approxLowerConst S₀ L * Q ^ (-approxWeight S₀ c) ≤
+      (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
+        (Fintype.card ι - 1) ^ finrank ℚ K := by
   classical
-  have := approxConst_pos hLinf hLfin
-  have := zero_lt_one.trans_le (one_le_integralBasisHouse (K := K))
-  refine ⟨_, by positivity, fun c Q hQ h₁ ↦
-    (le_prod_successiveMinimum_approx hLinf hLfin c hQ).trans ?_⟩
+  refine (le_prod_successiveMinimum_approx hLinf hLfin c hQ).trans ?_
   -- Split off the last factor; the others are at most `1`.
   let l₀ : Fin (Fintype.card ι) := ⟨Fintype.card ι - 1, by omega⟩
   rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ l₀)]
@@ -158,8 +225,8 @@ theorem exists_pos_mul_rpow_le_successiveMinimum_pow {S₀ : Finset (FinitePlace
 /-- **The successive minima of an approximation domain, upper bound** (Bombieri–Gubler, Theorem
 C.2.11 with Corollary 7.5.8): for `0 < Q` and linearly independent forms at the infinite places and
 at `S₀`, the product of the `[K : ℚ]`-th powers of the successive minima over `K` of
-`approxDomain S₀ L c Q` is at most
-`2 ^ N · ∏ v ∈ S₀, N 𝔭_v ^ card ι / approxConst S₀ L · Q ^ (-weight)`, where
+`approxDomain S₀ L c Q` is at most `approxUpperConst S₀ L · Q ^ (-weight)`, where
+`approxUpperConst S₀ L = 2 ^ N · ∏ v ∈ S₀, N 𝔭_v ^ card ι / approxConst S₀ L` and
 `N = [K : ℚ] · card ι`. -/
 theorem prod_successiveMinimum_approx_le {S₀ : Finset (FinitePlace K)}
     {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
@@ -168,10 +235,7 @@ theorem prod_successiveMinimum_approx_le {S₀ : Finset (FinitePlace K)}
     (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) :
     ∏ l : Fin (Fintype.card ι),
         (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ^ finrank ℚ K ≤
-      (2 : ℝ) ^ (finrank ℚ K * Fintype.card ι) *
-          (∏ v ∈ S₀, (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ Fintype.card ι) /
-          approxConst S₀ L *
-        Q ^ (-approxWeight S₀ c) := by
+      approxUpperConst S₀ L * Q ^ (-approxWeight S₀ c) := by
   classical
   let _ := discreteTopology_mixedImage_approxModule hLFin c Q
   let _ := isZLattice_mixedImage_approxModule hLFin c hQ.ne'
@@ -182,8 +246,7 @@ theorem prod_successiveMinimum_approx_le {S₀ : Finset (FinitePlace K)}
   set C := ZLattice.covolume (approxModule S₀ L c Q).mixedImage
   set V := volume.real (approxBody L c Q)
   have hC : 0 < C := covolume_approxLattice_pos hLFin c hQ.ne'
-  have hD : 0 < D := Finset.prod_pos fun v _ ↦ pow_pos (by
-    exact_mod_cast (HeightOneSpectrum.one_lt_absNorm v.maximalIdeal).pos) _
+  have hD : 0 < D := FinitePlace.prod_absNorm_pow_pos S₀ _
   have hk : 0 < approxConst S₀ L / D * Q ^ approxWeight S₀ c :=
     mul_pos (div_pos (approxConst_pos hLInf hLFin) hD) (Real.rpow_pos_of_pos hQ _)
   -- Minkowski's second theorem over `K`, upper bound: `P · V ≤ 2 ^ N · C`.
@@ -203,8 +266,9 @@ theorem prod_successiveMinimum_approx_le {S₀ : Finset (FinitePlace K)}
       _ ≤ P * V := mul_le_mul_of_nonneg_left hV hP
       _ ≤ 2 ^ N * C := hmink
   calc P ≤ 2 ^ N / (approxConst S₀ L / D * Q ^ approxWeight S₀ c) := (le_div_iff₀ hk).2 hPk
-    _ = 2 ^ N * D / approxConst S₀ L * Q ^ (-approxWeight S₀ c) := by
-      rw [Real.rpow_neg hQ.le]
+    _ = approxUpperConst S₀ L * Q ^ (-approxWeight S₀ c) := by
+      rw [Real.rpow_neg hQ.le, approxUpperConst]
+      simp only [N, D]
       field_simp
 
 /-! ### Bounds on each successive minimum -/
@@ -290,32 +354,6 @@ private theorem exists_pos_forall_mul_rpow_le_pow {S₀ : Finset (FinitePlace K)
     inv_le_iff_one_le_mul₀' (mul_pos hC' (Real.rpow_pos_of_pos (zero_lt_one.trans_le hQ) _))]
   exact one_le_mul_rpow_approxAbsWeight_mul_pow hLInf hLFin D hD c hQ ht.le hxΛ hx hxB
 
-open scoped Classical Pointwise in
-/-- Below `#ι`, the `l`-th successive minimum over `K` of an approximation domain of positive level
-is positive, and its dilate of the body contains the mixed embedding of a nonzero point of the
-module. -/
-private theorem exists_ne_zero_mem_smul_approxBody {S₀ : Finset (FinitePlace K)}
-    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
-    (hLInf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
-    (hLFin : ∀ v ∈ S₀, LinearIndependent K (L v.val))
-    (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ} (hQ : 0 < Q) {l : ℕ} (hl : l < Fintype.card ι) :
-    0 < (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ∧
-      ∃ x ∈ approxModule S₀ L c Q, x ≠ 0 ∧ (fun j ↦ mixedEmbedding K (x j)) ∈
-        (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l • approxBody L c Q := by
-  let _ := discreteTopology_mixedImage_approxModule hLFin c Q
-  let _ := isZLattice_mixedImage_approxModule hLFin c hQ.ne'
-  let B : ConvexBody (ι → mixedSpace K) :=
-    ⟨approxBody L c Q, convex_approxBody L c Q, isCompact_approxBody hLInf c Q,
-      ⟨0, mem_of_mem_nhds (approxBody_mem_nhds_zero L c hQ)⟩⟩
-  have hcoe : (B : Set (ι → mixedSpace K)) = approxBody L c Q := ConvexBody.coe_mk _ _ _ _
-  have hB : 0 ∈ interior (B : Set (ι → mixedSpace K)) := by
-    rw [hcoe]
-    exact mem_interior_iff_mem_nhds.2 (approxBody_mem_nhds_zero L c hQ)
-  have hpos := Submodule.successiveMinimum_pos (Λ := approxModule S₀ L c Q) hB hl
-  obtain ⟨x, hx, hxB⟩ := (Submodule.successiveMinimum_le_iff hB hl hpos).1 le_rfl
-  rw [hcoe] at hpos hxB
-  exact ⟨hpos, x 0, (hxB 0).1, hx.ne_zero 0, (hxB 0).2⟩
-
 /-- Each successive minimum over `K` of an approximation domain has `d`-th power at least
 `C * Q ^ (-approxAbsWeight S₀ c)`, with `C > 0` independent of `c` and of `Q ≥ 1`. -/
 private theorem exists_pos_forall_mul_rpow_le_successiveMinimum_pow
@@ -327,9 +365,12 @@ private theorem exists_pos_forall_mul_rpow_le_successiveMinimum_pow
         (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) l ^ finrank ℚ K := by
   obtain ⟨C, hC, h⟩ := exists_pos_forall_mul_rpow_le_pow hLInf hLFin
   refine ⟨C, hC, fun c Q hQ l hl ↦ ?_⟩
-  obtain ⟨hpos, x, hxΛ, hx, hxB⟩ :=
-    exists_ne_zero_mem_smul_approxBody hLInf hLFin c (zero_lt_one.trans_le hQ) hl
-  exact h c hQ hpos x hxΛ hx ((mixedEmbedding_mem_smul_approxBody_iff hpos).1 hxB)
+  have hQ₀ : 0 < Q := zero_lt_one.trans_le hQ
+  have hpos := successiveMinimum_approx_pos hLInf hLFin c hQ₀ hl
+  obtain ⟨x, hx, hxB⟩ :=
+    exists_linearIndependent_mem_smul_successiveMinimum_approx hLInf hLFin c hQ₀
+  exact h c hQ hpos (x ⟨l, hl⟩) (hxB _).1 (hx.ne_zero _)
+    ((mixedEmbedding_mem_smul_approxBody_iff hpos).1 (hxB ⟨l, hl⟩).2)
 
 /-- Each successive minimum over `K` of an approximation domain has `d`-th power at most
 `C * Q ^ (#ι * approxAbsWeight S₀ c)`, with `C > 0` independent of `c` and of `Q ≥ 1`: Minkowski's
@@ -345,14 +386,8 @@ private theorem exists_pos_forall_successiveMinimum_pow_le_mul_rpow
           C * Q ^ ((Fintype.card ι : ℝ) * approxAbsWeight S₀ c) := by
   obtain ⟨C₁, hC₁, h₁⟩ := exists_pos_forall_mul_rpow_le_successiveMinimum_pow hLInf hLFin
   set n := Fintype.card ι
-  set C₂ : ℝ := 2 ^ (finrank ℚ K * n) *
-    (∏ v ∈ S₀, (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ n) / approxConst S₀ L
-  have hC₂ : 0 < C₂ := by
-    have hN : 0 < ∏ v ∈ S₀, (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ n :=
-      Finset.prod_pos fun v _ ↦ pow_pos (by
-        exact_mod_cast (HeightOneSpectrum.one_lt_absNorm v.maximalIdeal).pos) _
-    have := approxConst_pos hLInf hLFin
-    positivity
+  set C₂ := approxUpperConst S₀ L
+  have hC₂ : 0 < C₂ := approxUpperConst_pos hLInf hLFin
   refine ⟨C₂ / C₁ ^ (n - 1), by positivity, fun c Q hQ l hl ↦ ?_⟩
   have hQ0 : 0 < Q := zero_lt_one.trans_le hQ
   set y := Q ^ approxAbsWeight S₀ c

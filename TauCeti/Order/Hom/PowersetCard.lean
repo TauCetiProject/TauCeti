@@ -410,9 +410,10 @@ theorem mem_topBlock {k : ℕ} (h : k + p = N) {j : Fin N} : j ∈ topBlock h �
   · simp only [val_ofFinEmbEquiv_symm_topBlock]
     omega
 
-/-- **A `p`-subset other than the top block meets the first `k` indices.** -/
-theorem exists_lt_of_ne_topBlock {k : ℕ} (h : k + p = N) {J : Set.powersetCard (Fin N) p}
-    (hJ : J ≠ topBlock h) : ∃ j ∈ J, (j : ℕ) < k := by
+/-- A `p`-subset meets the first `k` indices exactly when it differs from the top block. -/
+theorem exists_lt_iff_ne_topBlock {k : ℕ} (h : k + p = N) {J : Set.powersetCard (Fin N) p} :
+    (∃ j ∈ J, (j : ℕ) < k) ↔ J ≠ topBlock h := by
+  refine ⟨fun ⟨j, hj, hjk⟩ heq ↦ hjk.not_ge ((mem_topBlock h).1 (heq ▸ hj)), fun hJ ↦ ?_⟩
   by_contra! hc
   exact hJ (eq_iff_subset.2 fun j hj ↦ (mem_topBlock h).2 (hc j hj))
 

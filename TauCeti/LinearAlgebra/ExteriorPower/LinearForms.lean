@@ -240,10 +240,9 @@ theorem wedgeSpan_eq_ker (hf : ∀ i j, f i (x j) = if i = j then 1 else 0) {k :
     wedgeSpan k p x = LinearMap.ker (wedgeForms f p (topBlock h)) := by
   have hx : LinearIndependent K x :=
     .of_pairwise_dual_eq_zero_one x f (fun i j hij ↦ by simp [hf, hij]) (by simp [hf])
-  refine le_antisymm (wedgeSpan_le_iff.2 fun J ⟨j, hjJ, hjk⟩ ↦ ?_) fun z hz ↦ ?_
+  refine le_antisymm (wedgeSpan_le_iff.2 fun J hJ ↦ ?_) fun z hz ↦ ?_
   · rw [LinearMap.mem_ker, wedgeForms_plucker_comp_eq_ite hf, ite_eq_right_iff]
-    rintro rfl
-    exact absurd ((mem_topBlock h).1 hjJ) (by omega)
+    exact fun heq ↦ ((exists_lt_iff_ne_topBlock h).1 hJ heq.symm).elim
   · -- expand `z` in the basis of Plücker vectors; the coefficient of the top block vanishes
     have hsp := (linearIndependent_plucker_comp hx p).span_eq_top_of_card_eq_finrank'
       (by simp only [Module.finrank_fintype_fun_eq_card, Fintype.card_eq_nat_card,
@@ -255,7 +254,8 @@ theorem wedgeSpan_eq_ker (hf : ∀ i j, f i (x j) = if i = j then 1 else 0) {k :
     refine Submodule.sum_mem _ fun J _ ↦ ?_
     obtain rfl | hJ := eq_or_ne J (topBlock h)
     · simp [hc₀]
-    · exact Submodule.smul_mem _ _ (plucker_comp_mem_wedgeSpan x (exists_lt_of_ne_topBlock h hJ))
+    · exact Submodule.smul_mem _ _
+        (plucker_comp_mem_wedgeSpan x ((exists_lt_iff_ne_topBlock h).2 hJ))
 
 /-- For a basis `x` with biorthogonal forms `f`, a vector lies in the span of the first `k`
 vectors exactly when the wedge of the last `p` forms kills every wedge of `p` vectors through it. -/
@@ -362,18 +362,25 @@ theorem plucker_topBlock_notMem_wedgeSpan (hx : LinearIndependent K x) {k : ℕ}
   rw [wedgeSpan_eq_ker hf h, LinearMap.mem_ker, wedgeForms_plucker_comp_eq_ite hf]
   simp
 
-/-- **The span of the wedges meeting the first `k` indices has codimension one.** -/
-theorem finrank_wedgeSpan_add_one (hx : LinearIndependent K x) {k : ℕ}
-    (h : k + p = Fintype.card ι) :
-    finrank K (wedgeSpan k p x) + 1 = Fintype.card (powersetCard ι p) := by
-  obtain ⟨f, hf⟩ := hx.exists_dual_forall_apply_eq_ite
-  rw [wedgeSpan_eq_ker hf h, Dual.finrank_ker_add_one_of_ne_zero, finrank_fintype_fun_eq_card]
-  -- the kernel form takes the value `1` on the wedge of the top block
-  intro h₀
-  simpa [wedgeForms_plucker_comp_eq_ite hf] using
-    congr($h₀ (plucker (x ∘ ofFinEmbEquiv.symm (topBlock h))))
-
 end WedgeSpan
+
+/-- For `k + p = N`, the wedges of an independent family of length `N` that meet the first `k`
+indices span a space of dimension `N.choose p - 1`. Only the top block is omitted. -/
+theorem finrank_wedgeSpan_add_one [Finite ι] {K : Type*} [Field K] {N k : ℕ}
+    {x : Fin N → ι → K} (hx : LinearIndependent K x) (h : k + p = N) :
+    finrank K (wedgeSpan k p x) + 1 = N.choose p := by
+  classical
+  have hsets : {J : powersetCard (Fin N) p | ∃ j ∈ J, (j : ℕ) < k} =
+      {J | J ≠ topBlock h} := by
+    ext J
+    exact exists_lt_iff_ne_topBlock h
+  have hli : LinearIndependent K (fun J : ({J : powersetCard (Fin N) p | J ≠ topBlock h} : Set _) ↦
+      plucker (x ∘ ofFinEmbEquiv.symm J.val)) :=
+    (linearIndependent_plucker_comp hx p).comp _ Subtype.val_injective
+  rw [wedgeSpan, hsets, Set.image_eq_range]
+  rw [finrank_span_eq_card hli, Set.card_ne_eq (topBlock h), Set.powersetCard.fintypeCard,
+    Fintype.card_fin]
+  exact Nat.sub_add_cancel (Nat.choose_pos (by omega))
 
 /-! ### Examples -/
 
