@@ -594,6 +594,15 @@ theorem IsComplexLinearMap.apply_apply_eq_zero_of_apply_eq_zero
     (hf : IsComplexLinearMap j J f) {u : V} (hu : f u = 0) : f (j u) = 0 := by
   rw [(isComplexLinearMap_iff_apply j J f).1 hf u, hu, J.apply_zero]
 
+/-- The kernel of a complex-linear map is invariant under the source structure, in both
+directions: `f (j u) = 0` exactly when `f u = 0`, since `f (j u) = J (f u)` and `J` is
+injective. -/
+theorem IsComplexLinearMap.apply_apply_eq_zero_iff
+    {j : AlmostComplexStructure V} {J : AlmostComplexStructure W} {f : V →ₗ[ℝ] W}
+    (hf : IsComplexLinearMap j J f) (u : V) : f (j u) = 0 ↔ f u = 0 := by
+  rw [(isComplexLinearMap_iff_apply j J f).1 hf u]
+  exact J.map_eq_zero_iff
+
 /-- A complex-linear map preserving a `J`-invariant submodule restricts to a complex-linear map of
 the restricted complex structure. -/
 lemma IsComplexLinearMap.restrict {J : AlmostComplexStructure V} {f : V →ₗ[ℝ] V}
@@ -778,6 +787,17 @@ lemma exists_apply_eq_one (ω : SymplecticForm V) {x : V} (hx : x ≠ 0) : ∃ y
     by_contra hcon
     exact hx (ω.separatingLeft x fun y => not_not.1 fun hne => hcon ⟨y, hne⟩)
   exact ⟨(ω x y)⁻¹ • y, by simp [inv_mul_cancel₀ hy]⟩
+
+/-- An additive map that is conformally symplectic with nonzero multiplier `c`, that is
+`ω(A u, A w) = c ω(u, w)`, is injective, since `ω` is nondegenerate. -/
+theorem injective_of_map_eq_mul {F : Type*} [FunLike F V V] [AddMonoidHomClass F V V]
+    (ω : SymplecticForm V) {A : F} {c : ℝ} (hc : c ≠ 0)
+    (hA : ∀ u w, ω (A u) (A w) = c * ω u w) : Function.Injective A := by
+  refine (injective_iff_map_eq_zero A).2 fun u hu ↦ ω.separatingLeft u fun w ↦ ?_
+  have h := hA u w
+  rw [hu] at h
+  have h₀ : ω 0 (A w) = 0 := LinearMap.map_zero₂ _ _
+  exact (mul_eq_zero.1 (h.symm.trans h₀)).resolve_left hc
 
 /-- The bilinear form `ω(J ·, J ·)`. -/
 @[expose] def pullback (ω : SymplecticForm V) (J : AlmostComplexStructure V) :

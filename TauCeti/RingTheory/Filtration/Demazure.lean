@@ -9,10 +9,14 @@ public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Filtration
 public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
+public import TauCeti.Combinatorics.Enumerative.Partition.Dominance
+import Mathlib.Data.Nat.Count
 import Mathlib.LinearAlgebra.TensorProduct.Quotient
 import Mathlib.RingTheory.Ideal.Colon
 import TauCeti.Algebra.Module.DiscreteValuationRing.ElementaryDivisors
 import TauCeti.Algebra.Order.BigOperators.Sum.Min
+import TauCeti.Combinatorics.Enumerative.GaleRyser
+import TauCeti.Combinatorics.Enumerative.Partition.Conjugate
 import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.Length.SMulTop
@@ -34,8 +38,9 @@ For the Witt vectors `A = W(R)` of a perfect ring `R`, the ideal `I = (p)` and a
 vector affine Grassmannian of Bhatt and Scholze: the resolution classifies a lattice together
 with such a filtration of its quotient, and maps onto the locus of quotient type `≤ μ`.
 
-At a geometric point the base is a field, and this file shows the filtration is then determined by
-its type whenever the module has exact type `μ`. More precisely:
+At a geometric point the base is a field, and this file shows which modules carry a Demazure
+filtration of type `μ`, and that the filtration is determined by its type whenever the module has
+exact type `μ`. More precisely:
 
 * For a maximal ideal `I`, the graded pieces have length `#{j | i < μ j}` over `A`, so
   `M ⧸ N i` has length `∑ j, min i (μ j)` and `M` has length `∑ j, μ j`. Since always
@@ -45,6 +50,14 @@ its type whenever the module has exact type `μ`. More precisely:
   `𝔪`-adic filtration `𝔪 ^ i • ⊤` is a Demazure filtration of type `μ`, and it is the only one.
   This is the statement that the Demazure resolution is an isomorphism over the locus of exact
   type, at geometric points.
+* Over a discrete valuation ring, `M ≃ ∏ l, A ⧸ 𝔪 ^ ν l` carries a Demazure filtration of type
+  `μ` exactly when `μ` and `ν` have the same total and `∑ j, min k (μ j) ≤ ∑ l, min k (ν l)` for
+  every `k`, that is, when the type `ν` of `M` is at most `μ` in the dominance order of partitions.
+  This is the statement that the Demazure resolution maps onto the locus of type `≤ μ`, at
+  geometric points. The inequalities come from `𝔪 ^ k M ≤ N k`. Conversely, a `0`-`1` matrix with
+  rows `S l` of sizes `ν l` and columns of sizes `#{j | i < μ j}`, which exists by the Gale–Ryser
+  theorem (`TauCeti.exists_finset_card_eq_card_filter_mem`), gives the filtration
+  `N i = ∏ l, 𝔪 ^ #{a ∈ S l | a < i} (A ⧸ 𝔪 ^ ν l)`.
 
 In general, if `M` has a lower type a Demazure filtration of type `μ` need not be unique: the
 first step chooses a quotient of `M ⧸ I • M` of the prescribed rank, rather than `M ⧸ I • M`
@@ -69,11 +82,21 @@ itself.
   whenever `M ⧸ I ^ i • ⊤` has length `∑ j, min i (μ j)`.
 * `Ideal.DemazureFiltration.N_eq_maximalIdeal_pow_smul_top`: over a discrete valuation ring, every
   Demazure filtration of a module of exact type `μ` is the `𝔪`-adic filtration.
+* `Ideal.DemazureFiltration.sum_min_le_length_quotient_pow_smul_top`: for maximal `I`,
+  `∑ j, min k (μ j)` is at most the length of `M ⧸ I ^ k • ⊤`.
+* `Ideal.DemazureFiltration.nonempty_iff_sum_min_le`: over a discrete valuation ring,
+  `M ≃ ∏ l, A ⧸ 𝔪 ^ ν l` carries a Demazure filtration of type `μ` exactly when the totals agree
+  and `∑ j, min k (μ j) ≤ ∑ l, min k (ν l)` for every `k`.
+* `Ideal.DemazureFiltration.nonempty_iff_dominates`: the same condition, as dominance of the
+  partitions with parts `μ` and `ν`.
 
 ## References
 
 * B. Bhatt, P. Scholze, *Projectivity of the Witt vector affine Grassmannian*, Invent. Math. 209
   (2017), §7, especially 7.10–7.13.
+* I. G. Macdonald, *Symmetric functions and Hall polynomials*, 2nd ed. (1995), Chapter I, §1, for
+  the dominance order, and Chapter II, §1, for the types of modules over a discrete valuation
+  ring.
 -/
 
 public section
@@ -278,6 +301,12 @@ theorem length_quotient_N (i : ℕ) :
     rw [TauCeti.length_quotient_eq_length_quotient_comap_subtype_add (F.mono i), F.length_gr, ih,
       sum_min_add_one, Nat.cast_add, add_comm]
 
+/-- For a maximal ideal `I`, the truncations of the `I`-adic filtration are at least as long as
+those of a Demazure filtration of type `μ`: `∑ j, min k (μ j) ≤ length (M ⧸ I ^ k M)`. -/
+theorem sum_min_le_length_quotient_pow_smul_top (F : I.DemazureFiltration μ M) (k : ℕ) :
+    ((∑ j, min k (μ j) : ℕ) : ℕ∞) ≤ Module.length A (M ⧸ I ^ k • (⊤ : Submodule A M)) :=
+  F.length_quotient_N k ▸ TauCeti.length_quotient_anti (F.pow_smul_top_le k)
+
 /-- For a maximal ideal `I`, a module carrying a Demazure filtration of type `μ` has length
 `∑ j, μ j`. -/
 theorem length_eq_sum (F : I.DemazureFiltration μ M) : Module.length A M = (∑ j, μ j : ℕ) := by
@@ -352,6 +381,110 @@ noncomputable def uniqueOfLinearEquiv (f : M ≃ₗ[A] ∀ j, A ⧸ maximalIdeal
     Unique ((maximalIdeal A).DemazureFiltration μ M) where
   default := adic f
   uniq F := ext fun i ↦ by rw [adic_N, F.N_eq_maximalIdeal_pow_smul_top f]
+
+variable {κ : Type*} [Fintype κ] {ν : κ → ℕ}
+
+/-- **The type of a module is dominated by the type of its Demazure filtrations.** Over a discrete
+valuation ring with maximal ideal `𝔪`, if `M ≃ ∏ l, A ⧸ 𝔪 ^ ν l` carries a Demazure filtration of
+type `μ`, then `∑ j, min k (μ j) ≤ ∑ l, min k (ν l)` for every `k`. -/
+theorem sum_min_le (F : (maximalIdeal A).DemazureFiltration μ M)
+    (f : M ≃ₗ[A] ∀ l, A ⧸ maximalIdeal A ^ ν l) (k : ℕ) :
+    ∑ j, min k (μ j) ≤ ∑ l, min k (ν l) := by
+  have h := F.sum_min_le_length_quotient_pow_smul_top k
+  rw [TauCeti.IsDiscreteValuationRing.length_quotient_pow_maximalIdeal_smul_top f] at h
+  exact_mod_cast h
+
+/-- Over a discrete valuation ring with maximal ideal `𝔪`, if `M ≃ ∏ l, A ⧸ 𝔪 ^ ν l` carries a
+Demazure filtration of type `μ`, then `μ` and `ν` have the same total `∑ j, μ j = ∑ l, ν l`, the
+length of `M`. -/
+theorem sum_eq (F : (maximalIdeal A).DemazureFiltration μ M)
+    (f : M ≃ₗ[A] ∀ l, A ⧸ maximalIdeal A ^ ν l) : ∑ j, μ j = ∑ l, ν l := by
+  have h := F.length_eq_sum
+  rw [f.length_eq, Module.length_pi_of_fintype] at h
+  simp only [_root_.IsDiscreteValuationRing.length_quotient_pow_maximalIdeal] at h
+  exact_mod_cast h.symm
+
+/-- For `M ≃ ∏ l, A ⧸ 𝔪 ^ ν l` and finite sets `S l ⊆ ℕ`, the `𝔪`-filtration of `M` whose
+`i`-th step is `∏ l, 𝔪 ^ #{a ∈ S l | a < i} (A ⧸ 𝔪 ^ ν l)`, the exponent being
+`Nat.count (· ∈ S l) i`: in the summand `l`, the step from `i` to `i + 1` multiplies by `𝔪`
+exactly when `i ∈ S l`. -/
+private noncomputable def piFiltration (f : M ≃ₗ[A] ∀ l, A ⧸ maximalIdeal A ^ ν l)
+    (S : κ → Finset ℕ) : (maximalIdeal A).Filtration M where
+  N i := (Submodule.pi Set.univ fun l ↦
+    (maximalIdeal A ^ Nat.count (· ∈ S l) i • ⊤ :
+      Submodule A (A ⧸ maximalIdeal A ^ ν l))).comap f.toLinearMap
+  mono i := Submodule.comap_mono (Submodule.pi_mono fun l _ ↦ Submodule.smul_mono_left
+    (Ideal.pow_le_pow_right (Nat.count_monotone _ i.le_succ)))
+  smul_le i := (Submodule.smul_comap_le_comap_smul _ _ _).trans <| Submodule.comap_mono <|
+    Submodule.smul_le.2 fun r hr x hx l _ ↦ by
+      have h := Submodule.smul_mem_smul hr (hx l (Set.mem_univ l))
+      rw [← Submodule.mul_smul, ← pow_succ'] at h
+      refine Submodule.smul_mono_left (Ideal.pow_le_pow_right ?_) h
+      rw [Nat.count_succ]
+      split_ifs <;> omega
+
+/-- The quotient of `M` by the `i`-th step of `piFiltration f S` has length
+`∑ l, Nat.count (· ∈ S l) i`, when `#(S l) = ν l`. -/
+private theorem length_quotient_piFiltration (f : M ≃ₗ[A] ∀ l, A ⧸ maximalIdeal A ^ ν l)
+    {S : κ → Finset ℕ} (hS : ∀ l, #(S l) = ν l) (i : ℕ) :
+    Module.length A (M ⧸ (piFiltration f S).N i) = (∑ l, Nat.count (· ∈ S l) i : ℕ) := by
+  refine (Submodule.Quotient.equiv _ _ f
+    (Submodule.map_comap_eq_of_surjective f.surjective _)).length_eq.trans ?_
+  rw [TauCeti.IsDiscreteValuationRing.length_quotient_pi_pow_maximalIdeal_smul_top]
+  refine congrArg _ (sum_congr rfl fun l _ ↦ min_eq_left ?_)
+  exact (Nat.count_le_card (p := (· ∈ S l)) (S l).finite_toSet i).trans_eq
+    (by rw [finite_toSet_toFinset, hS l])
+
+/-- **Demazure filtrations below the exact type.** Over a discrete valuation ring with maximal
+ideal `𝔪`, a module `M ≃ ∏ l, A ⧸ 𝔪 ^ ν l` carries a Demazure filtration of type `μ` if and only if
+`μ` and `ν` have the same total and `∑ j, min k (μ j) ≤ ∑ l, min k (ν l)` for every `k`, that is,
+when `μ` dominates `ν` (`Ideal.DemazureFiltration.nonempty_iff_dominates`). -/
+theorem nonempty_iff_sum_min_le (f : M ≃ₗ[A] ∀ l, A ⧸ maximalIdeal A ^ ν l) :
+    Nonempty ((maximalIdeal A).DemazureFiltration μ M) ↔
+      ∑ j, μ j = ∑ l, ν l ∧ ∀ k, ∑ j, min k (μ j) ≤ ∑ l, min k (ν l) := by
+  classical
+  refine ⟨fun ⟨F⟩ ↦ ⟨F.sum_eq f, F.sum_min_le f⟩, fun ⟨hsum, h⟩ ↦ ?_⟩
+  -- A `0`-`1` matrix with rows `S l` of sizes `ν l` and columns of sizes `#{j | i < μ j}`.
+  obtain ⟨S, hS, hcol⟩ := TauCeti.exists_finset_card_eq_card_filter_mem μ ν hsum h
+  have hlen := length_quotient_piFiltration f hS
+  refine ⟨ofLength (piFiltration f S) ?_ (fun i hi ↦ ?_) fun i ↦ ?_⟩
+  · simp only [piFiltration, Nat.count_zero, pow_zero, Ideal.one_eq_top, Submodule.top_smul,
+      Submodule.pi_top, Submodule.comap_top]
+  · -- Past every part of `μ` the columns are empty, so every row `S l` lies below `i`.
+    have hlt (l : κ) : Nat.count (· ∈ S l) i = ν l := by
+      rw [Nat.count_eq_card_filter_range, filter_mem_eq_inter, ← hS l, inter_eq_right.2]
+      refine fun a ha ↦ mem_range.2 ?_
+      by_contra hai
+      have h₀ : #{j | a < μ j} = 0 :=
+        card_eq_zero.2 (filter_eq_empty_iff.2 fun j _ ↦ by have := hi j; omega)
+      rw [← hcol a, card_eq_zero, filter_eq_empty_iff] at h₀
+      exact h₀ (mem_univ l) ha
+    have hb (l : κ) : (maximalIdeal A ^ Nat.count (· ∈ S l) i • ⊤ :
+        Submodule A (A ⧸ maximalIdeal A ^ ν l)) = ⊥ := by
+      refine Submodule.le_annihilator_iff.1 ?_
+      rw [hlt l, Submodule.annihilator_top]
+      exact Ideal.annihilator_quotient.ge
+    simp only [piFiltration, hb, Submodule.pi_univ_bot, Submodule.comap_bot, LinearEquiv.ker]
+  · have h₁ := TauCeti.length_quotient_eq_length_quotient_comap_subtype_add
+      ((piFiltration f S).mono i)
+    rw [hlen, hlen] at h₁
+    have h₂ : ∑ l, Nat.count (· ∈ S l) (i + 1) = ∑ l, Nat.count (· ∈ S l) i + #{j | i < μ j} := by
+      simp_rw [Nat.count_succ, sum_add_distrib, ← hcol i, card_filter]
+    rw [h₂, Nat.cast_add, add_comm] at h₁
+    exact (WithTop.add_right_cancel (ENat.natCast_ne_top _) h₁).symm
+
+/-- **The image of the Demazure resolution at a geometric point.** Over a discrete valuation ring
+with maximal ideal `𝔪`, let `μ` and `ν` be families of natural numbers with the same total `n`. The
+module `M ≃ ∏ l, A ⧸ 𝔪 ^ ν l`, of length `n` and type `ν`, carries a Demazure filtration of type
+`μ` exactly when the partition of `n` with parts the nonzero `μ j` dominates the one with parts the
+nonzero `ν l`, that is, when the type of `M` is at most `μ` in the dominance order. -/
+theorem nonempty_iff_dominates (f : M ≃ₗ[A] ∀ l, A ⧸ maximalIdeal A ^ ν l) {n : ℕ}
+    (hμ : ∑ j, μ j = n) (hν : ∑ l, ν l = n) :
+    Nonempty ((maximalIdeal A).DemazureFiltration μ M) ↔
+      (Nat.Partition.ofSums n _ ((sum_eq_multiset_sum _ μ).symm.trans hμ)).Dominates
+        (Nat.Partition.ofSums n _ ((sum_eq_multiset_sum _ ν).symm.trans hν)) := by
+  rw [nonempty_iff_sum_min_le f, Nat.Partition.ofSums_dominates_ofSums_iff hμ hν, hμ, hν]
+  exact and_iff_right rfl
 
 end DemazureFiltration
 

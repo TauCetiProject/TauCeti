@@ -36,6 +36,8 @@ identifies the two when `J` is multiplication by `i`. Here `α` may be degenerat
 * `ContinuousAlternatingMap.hermitianForm`: the Hermitian form `H_α` of a real two-form `α`.
 * `ContinuousAlternatingMap.hermitianSesqForm`: for `α` of type (1,1), `H_α` as a sesquilinear
   form, conjugate linear in the first slot.
+* `TauCeti.AlmostComplexStructure.realOneOneForms E`: the real two-forms of type (1,1), those
+  with `α(i u, i v) = α(u, v)`, as a real subspace.
 
 ## Main results
 
@@ -276,3 +278,30 @@ theorem apply_I_smul_I_smul_of_hermitianForm_I_smul_left
   simpa using congrArg Complex.re (h u v)
 
 end ContinuousAlternatingMap
+
+namespace TauCeti.AlmostComplexStructure
+
+variable (E : Type*) [AddCommGroup E] [Module ℂ E] [TopologicalSpace E]
+
+/-- The real two-forms of type (1,1) on a complex vector space, those invariant under
+multiplication by `i` in both arguments: `α(i u, i v) = α(u, v)`. -/
+def realOneOneForms : Submodule ℝ (E [⋀^Fin 2]→L[ℝ] ℝ) where
+  carrier := {α | ∀ u v : E, α ![I • u, I • v] = α ![u, v]}
+  add_mem' {α β} hα hβ u v := by
+    rw [ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.add_apply, hα u v, hβ u v]
+  zero_mem' _ _ := rfl
+  smul_mem' c α hα u v := by
+    rw [ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.smul_apply, hα u v]
+
+variable {E}
+
+@[simp]
+theorem mem_realOneOneForms {α : E [⋀^Fin 2]→L[ℝ] ℝ} :
+    α ∈ realOneOneForms E ↔ ∀ u v : E, α ![I • u, I • v] = α ![u, v] := Iff.rfl
+
+/-- A real (1,1)-form satisfies `α(i u, i v) = α(u, v)`. -/
+theorem realOneOneForms_apply_I_smul (α : realOneOneForms E) (u v : E) :
+    (α : E [⋀^Fin 2]→L[ℝ] ℝ) ![I • u, I • v] = (α : E [⋀^Fin 2]→L[ℝ] ℝ) ![u, v] :=
+  mem_realOneOneForms.1 α.property u v
+
+end TauCeti.AlmostComplexStructure

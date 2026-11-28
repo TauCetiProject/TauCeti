@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousFunctions
+public import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 
 import Mathlib.MeasureTheory.Function.FactorsThrough
 
@@ -32,6 +33,8 @@ one-sided inverse has that inverse on both sides.
   linear isometry. Mathlib's `@[simps!]` generates only `compMeasurePreservingₗᵢ_apply_coe`,
   which unfolds one level too far to rewrite with. `MeasureTheory.Lp.coe_compMeasurePreservingₗᵢ`
   is its unapplied form, for statements about the map itself.
+* `MeasureTheory.Lp.compMeasurePreserving_castLpₗᵢ_eq`: precomposition commutes with
+  transporting the target measure along `TauCeti.castLpₗᵢ`.
 * `MeasureTheory.Lp.compMeasurePreserving_monotone` and
   `MeasureTheory.Lp.compMeasurePreserving_nonneg`: for ordered values, precomposition is monotone
   and hence positive, since the order on `Lp` is almost everywhere pointwise.
@@ -144,6 +147,15 @@ isometry induces. -/
 theorem coe_compMeasurePreservingₗᵢ (hf : MeasurePreserving f μ μb) :
     ⇑(compMeasurePreservingₗᵢ 𝕜 f hf : Lp E p μb →ₗᵢ[𝕜] Lp E p μ) = compMeasurePreserving f hf :=
   funext (compMeasurePreservingₗᵢ_apply 𝕜 hf)
+
+/-- Precomposition on `Lp` commutes with transporting the target measure along
+`TauCeti.castLpₗᵢ`. -/
+theorem compMeasurePreserving_castLpₗᵢ_eq {ν₁ ν₂ : Measure β} (h : ν₁ = ν₂) (f : α → β)
+    (hf₁ : MeasurePreserving f μ ν₁) (hf₂ : MeasurePreserving f μ ν₂) (x : Lp E p ν₁) :
+    compMeasurePreserving f hf₁ x =
+      compMeasurePreserving f hf₂ (_root_.TauCeti.castLpₗᵢ (𝕜 := 𝕜) h x) := by
+  subst h
+  simp only [_root_.TauCeti.castLpₗᵢ_apply, cast_eq]
 
 section CompleteSpace
 

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.SSetPair
-public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
+public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom.Basic
 
 /-!
 # Homotopies of simplicial sets and of pairs of simplicial sets
@@ -38,7 +38,7 @@ simplicial homotopies `SSet.Homotopy`, and defines homotopies of morphisms of pa
   transport bijectively along `SSet.uliftFunctor`.
 * `SSet.ihomEdgeEquiv`: the vertices of the simplicial set `Fun(X, Z) = (ihom X).obj Z` are the
   maps `X ⟶ Z` (`SSet.ihomObj₀Equiv`, from
-  `TauCeti/AlgebraicTopology/SimplicialSet/InternalHom.lean`), and its edges between two such
+  `TauCeti/AlgebraicTopology/SimplicialSet/InternalHom/Basic.lean`), and its edges between two such
   vertices are the homotopies between them.
 
 ## The combinatorial homotopy

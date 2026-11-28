@@ -16,6 +16,8 @@ Laurent polynomial ring `R[t₁^{±1}, …, t_N^{±1}]`. A regular class functio
 symmetric Laurent polynomial: it is fixed by every permutation of the coordinates
 (`TauCeti.GeneralLinear.domCongr_characterRelabel_apply_of_mem_classFunctions`). This holds over
 every commutative ring, since the permutation matrices are rational points normalizing `T`.
+Pointwise, the value of a class function at a diagonal point is symmetric in its diagonal entries
+(`TauCeti.GeneralLinear.diagonalPoint_apply_comp_perm_of_mem_classFunctions`).
 
 Over a domain the Weyl-invariant functions on `T` are exactly the symmetric Laurent polynomials
 (`TauCeti.GeneralLinear.mem_weylInvariants_diagonalTorusCoordinateMap_iff`). The Chevalley
@@ -27,6 +29,8 @@ coefficients of the characteristic polynomial with invertible constant term.
 
 * `TauCeti.GeneralLinear.domCongr_characterRelabel_apply_of_mem_classFunctions`: the restriction of
   a class function of `GL_N` to the diagonal torus is a symmetric Laurent polynomial.
+* `TauCeti.GeneralLinear.diagonalPoint_apply_comp_perm_of_mem_classFunctions`: a class function
+  is symmetric in the entries of a diagonal point.
 
 ## References
 
@@ -56,5 +60,18 @@ theorem domCongr_characterRelabel_apply_of_mem_classFunctions (σ : Equiv.Perm (
   simpa [HopfAlgebra.pointConjugationAlgHom_apply_of_mem_classFunctions hf] using
     (AlgHom.congr_fun (diagonalTorusCoordinateMap_comp_pointConjugationAlgHom_permutationGL σ)
       f).symm
+
+/-- Permuting the entries of a diagonal point does not change the value of a class function. -/
+theorem diagonalPoint_apply_comp_perm_of_mem_classFunctions {f : coordinateHopfAlgebra R N}
+    (hf : f ∈ HopfAlgebra.classFunctions R (coordinateHopfAlgebra R N))
+    {A : Type*} [CommRing A] [Algebra R A] (t : Fin N → Aˣ) (σ : Equiv.Perm (Fin N)) :
+    (diagonalPoint (R := R) fun i ↦ t (σ i)).ofConv f = (diagonalPoint (R := R) t).ofConv f := by
+  let g := (pointsMulEquiv (R := R) (A := A) N).symm (permutationGL σ⁻¹)
+  have h : (diagonalPoint (R := R) fun i ↦ t (σ i)) = g * diagonalPoint (R := R) t * g⁻¹ := by
+    apply (pointsMulEquiv (R := R) (A := A) N).injective
+    rw [map_mul, map_mul, map_inv, pointsMulEquiv_diagonalPoint, pointsMulEquiv_diagonalPoint,
+      MulEquiv.apply_symm_apply, permutationGL_mul_diagGL_mul_inv]
+    simp
+  rw [h, HopfAlgebra.apply_mul_mul_inv_of_mem_classFunctions hf]
 
 end TauCeti.GeneralLinear

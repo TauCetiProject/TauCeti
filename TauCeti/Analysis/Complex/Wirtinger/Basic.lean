@@ -589,7 +589,7 @@ theorem _root_.ContinuousLinearEquiv.conjWirtingerDeriv_comp_left_apply {X : Typ
   rw [ContinuousLinearEquiv.coe_restrictScalars', Function.comp_def] at h
   rw [conjWirtingerDeriv_apply, h, ContinuousLinearMap.complexAntilinearPartL_apply_apply,
     RCLike.real_smul_eq_coe_smul (K := ℂ) (E := X), e.map_smul, e.map_add, e.map_smul]
-  simp [ContinuousLinearEquiv.coe_restrictScalars']
+  simp
 
 section Mul
 
