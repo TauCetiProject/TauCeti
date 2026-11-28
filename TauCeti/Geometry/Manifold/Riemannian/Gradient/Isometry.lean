@@ -75,6 +75,13 @@ theorem norm_mgradient_comp (hf : IsLocalRiemannianIsometry I J f)
   obtain ⟨e, he⟩ := hf.exists_linearIsometryEquiv_eq_mfderiv x
   rw [← e.norm_map, he, hf.mfderiv_mgradient_comp hφ]
 
+/-- For a local isometry `f` and `φ` differentiable at `f x`, the differential of `φ ∘ f` at `x`
+has the length of the gradient of `φ` at `f x`. -/
+theorem norm_mvfderiv_comp_eq_norm_mgradient (hf : IsLocalRiemannianIsometry I J f)
+    {φ : N → ℝ} {x : M} (hφ : MDifferentiableAt J 𝓘(ℝ) φ (f x)) :
+    ‖mvfderiv I (φ ∘ f) x‖ = ‖mgradient J φ (f x)‖ := by
+  rw [← norm_mgradient_eq_norm_mvfderiv, hf.norm_mgradient_comp hφ]
+
 section Symmetry
 
 variable {f : M → M} {φ : M → ℝ} {γ : ℝ → M}

@@ -177,13 +177,13 @@ variable [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ 
 theorem liouvilleForm_hamiltonianVectorField_kineticEnergy (z : CotangentBundle I M) :
     (liouvilleForm I M).val z ![(symplecticForm I M).hamiltonianVectorField (kineticEnergy I M) z] =
       ‖z.snd‖ ^ 2 := by
-  set X := (symplecticForm I M).hamiltonianVectorField (kineticEnergy I M) z
-  -- Contract `ι_Z ω = -λ` with `X_K`, and use `ω(X_K, Z) = dK(Z)`.
-  have h := congrArg (fun α ↦ α z ![X]) symplecticForm_interior_vectorBundleEulerField
-  simp only [RoughForm.interior_apply, Pi.neg_apply, ContinuousAlternatingMap.neg_apply] at h
-  rw [← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_swap,
-    isSymplectic_symplecticForm.isNondegenerate.eval₂_hamiltonianVectorField, neg_inj] at h
-  rw [← h, mvfderiv_kineticEnergy_vectorBundleEulerField]
+  -- Since `ι_Z ω = -λ`, `(-λ)(X_K) = -dK(Z)`.
+  have h := isSymplectic_symplecticForm.isNondegenerate.apply_hamiltonianVectorField_of_interior_eq
+    (α := -liouvilleForm I M) (z := vectorBundleEulerField I z)
+    (fun v ↦ by rw [Submodule.coe_neg, ← symplecticForm_interior_vectorBundleEulerField,
+      RoughForm.interior_apply]) (kineticEnergy I M)
+  rwa [Submodule.coe_neg, Pi.neg_apply, ContinuousAlternatingMap.neg_apply, neg_inj,
+    mvfderiv_kineticEnergy_vectorBundleEulerField] at h
 
 end Liouville
 

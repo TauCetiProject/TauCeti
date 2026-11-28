@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.LinearAlgebra.Matrix.Unique
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.RingTheory.Finiteness.Basic
 
@@ -50,10 +51,14 @@ vanishing on the range is a dot product with such a `z`.
   rows and columns are reindexed along equivalences via `Matrix.submatrix`.
 * `Matrix.rangeMulVecBilinOneEquiv` and `Matrix.rangeMulVecBilinSingleOneEquiv`: the column ranges
   of `1 : Matrix m m R` and of a diagonal matrix unit `Eᵢᵢ` are `m → Rᵐᵒᵖ` and `Rᵐᵒᵖ`.
+* `Matrix.rangeMulVecBilinOfUniqueEquivSpan`: the column range of the `1 × 1` matrix
+  `Matrix.uniqueRingEquiv.symm a` with entry `a` is the principal right ideal `aR`.
 
 ## Main result
 
 * `Matrix.col_mem_range_mulVecLin`: every column of `L` lies in the range of `L.mulVecLin`.
+* `Matrix.range_mulVecLin_transpose_of_cons_cons`: the column range of the matrix with columns
+  `u` and `v` is the span of `u` and `v`.
 * `Matrix.row_mem_range_vecMulLinear`: every row of `e` lies in the range of `e.vecMulLinear`.
 * `Matrix.col_mem_range_mulVecBilin`: every column of `M` lies in the range of
   `M.mulVecBilin R Rᵐᵒᵖ`.
@@ -80,6 +85,8 @@ vanishing on the range is a dot product with such a `z`.
   supported on the top row.
 * `Matrix.mem_range_mulVecLin_iff_forall_vecMul_eq_zero`: over a field, `v` is in the column range
   of `A` if and only if `z ⬝ᵥ v = 0` whenever `z ᵥ* A = 0`.
+* `Matrix.forall_mulVec_mem_span_singleton_iff`: the column range of `A` lies in the line spanned
+  by `y` if and only if `A` is an outer product `vecMulVec y ξ`.
 -/
 
 public section
@@ -111,6 +118,12 @@ theorem col_mem_range_mulVecLin (L : Matrix m ι R) (j : ι) :
     L.col j ∈ LinearMap.range L.mulVecLin := by
   classical
   exact ⟨Pi.single j 1, by rw [mulVecLin_apply, mulVec_single_one]⟩
+
+/-- The column range of the matrix with the two columns `u` and `v` is the span of `u` and `v`. -/
+theorem range_mulVecLin_transpose_of_cons_cons (u v : m → R) :
+    LinearMap.range (of ![u, v])ᵀ.mulVecLin = Submodule.span R {u, v} := by
+  rw [range_mulVecLin, col_transpose, row_def, ← range_cons_cons_empty u v ![]]
+  exact congrArg (fun f ↦ Submodule.span R (Set.range f)) (funext₂ (of_apply ![u, v]))
 
 /-- If every column of `L'` lies in the range of `L`, then `L' = L * G` for some `G`.
 The index type of the columns of `L'` need not be finite. -/
@@ -216,6 +229,27 @@ theorem range_mulVecLin_eq_of_succ {n : ℕ} {L : Submodule R (Fin (n + 1) → R
   simpa using add_mem hmem (LinearMap.mem_range_self H.mulVecLin c)
 
 end Succ
+
+section OuterProduct
+
+variable {R m n : Type*} [CommSemiring R] [Fintype n]
+
+/-- Every vector `A *ᵥ v` lies in the line spanned by `y` if and only if `A` is an outer product
+`vecMulVec y ξ`. -/
+theorem forall_mulVec_mem_span_singleton_iff {A : Matrix m n R} {y : m → R} :
+    (∀ v, A *ᵥ v ∈ Submodule.span R {y}) ↔ ∃ ξ, A = vecMulVec y ξ := by
+  classical
+  constructor
+  · intro h
+    choose ξ hξ using fun k ↦ Submodule.mem_span_singleton.mp (h (Pi.single k 1))
+    refine ⟨ξ, ?_⟩
+    ext j k
+    simpa [mulVec_single_one, vecMulVec_apply, mul_comm] using (congrFun (hξ k) j).symm
+  · rintro ⟨ξ, rfl⟩ v
+    rw [vecMulVec_mulVec, op_smul_eq_smul]
+    exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self y)
+
+end OuterProduct
 
 section RowRange
 
@@ -559,5 +593,37 @@ theorem finrank_range_mulVecBilin_single_one (R : Type*) [Semiring R] [StrongRan
     {m : Type*} [Fintype m] [DecidableEq m] (i : m) :
     Module.finrank Rᵐᵒᵖ (LinearMap.range ((single i i (1 : R)).mulVecBilin R Rᵐᵒᵖ)) = 1 :=
   (rangeMulVecBilinSingleOneEquiv R i).finrank_eq.trans (Module.finrank_self Rᵐᵒᵖ)
+
+/-- The column range of the `1 × 1` matrix `Matrix.uniqueRingEquiv.symm a` with entry `a` is the
+principal right ideal `aR`, a submodule of `Rᵐᵒᵖ`: a column is sent to the opposite of its unique
+entry. -/
+def rangeMulVecBilinOfUniqueEquivSpan (R : Type*) [Semiring R] (m : Type*) [Unique m] (a : R) :
+    LinearMap.range ((uniqueRingEquiv.symm a : Matrix m m R).mulVecBilin R Rᵐᵒᵖ) ≃ₗ[Rᵐᵒᵖ]
+      Submodule.span Rᵐᵒᵖ {MulOpposite.op a} where
+  toFun w := ⟨MulOpposite.op ((w : m → R) default), by
+    obtain ⟨v, hv⟩ := w.property
+    rw [← hv, Submodule.mem_span_singleton]
+    exact ⟨MulOpposite.op (v default), by simp [mulVec, dotProduct]⟩⟩
+  invFun x := ⟨fun _ ↦ MulOpposite.unop (x : Rᵐᵒᵖ), by
+    obtain ⟨r, hr⟩ := Submodule.mem_span_singleton.1 x.property
+    exact ⟨fun _ ↦ MulOpposite.unop r, funext fun _ ↦ by simp [mulVec, dotProduct, ← hr]⟩⟩
+  map_add' _ _ := Subtype.ext (MulOpposite.op_add _ _)
+  map_smul' r w := Subtype.ext (by simp)
+  left_inv w := Subtype.ext (funext fun i ↦ by simp [Unique.eq_default i])
+  right_inv _ := Subtype.ext (by simp)
+
+@[simp]
+theorem coe_rangeMulVecBilinOfUniqueEquivSpan_apply (R : Type*) [Semiring R] (m : Type*)
+    [Unique m] (a : R)
+    (w : LinearMap.range ((uniqueRingEquiv.symm a : Matrix m m R).mulVecBilin R Rᵐᵒᵖ)) :
+    (rangeMulVecBilinOfUniqueEquivSpan R m a w : Rᵐᵒᵖ) = MulOpposite.op ((w : m → R) default) :=
+  (rfl)
+
+@[simp]
+theorem coe_rangeMulVecBilinOfUniqueEquivSpan_symm_apply (R : Type*) [Semiring R] (m : Type*)
+    [Unique m] (a : R) (x : Submodule.span Rᵐᵒᵖ {MulOpposite.op a}) :
+    ((rangeMulVecBilinOfUniqueEquivSpan R m a).symm x : m → R) =
+      fun _ ↦ MulOpposite.unop (x : Rᵐᵒᵖ) :=
+  (rfl)
 
 end Matrix

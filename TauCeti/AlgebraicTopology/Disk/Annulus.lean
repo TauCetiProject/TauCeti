@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.Disk.RadialPush
 
+import TauCeti.Analysis.InnerProductSpace.PiL2
+
 /-!
 # Annulus coordinates on the Euclidean disk
 
@@ -67,6 +69,14 @@ theorem continuous_annulusDir (hd : 0 < d) : Continuous (annulusDir.{u} (k := k)
 theorem coe_annulusDir (hd : 0 < d) (w : {w : TopCat.disk.{u} k // d ≤ ‖w.down.val‖}) :
     ((annulusDir hd w).down : EuclideanSpace ℝ (Fin k)) = ‖w.val.down.val‖⁻¹ • w.val.down.val :=
   coe_diskRadialPush_one_of_le_norm hd w.property
+
+/-- On the `1`-disk, the coordinate of the direction of `w` is the sign `|w|⁻¹ * w` of the
+coordinate of `w`. -/
+theorem annulusDir_down_apply_zero (hd : 0 < d)
+    (w : {w : TopCat.disk.{u} 1 // d ≤ ‖w.down.val‖}) :
+    ((annulusDir hd w).down : EuclideanSpace ℝ (Fin 1)) 0 =
+      |w.val.down.val 0|⁻¹ * w.val.down.val 0 := by
+  rw [coe_annulusDir, PiLp.smul_apply, smul_eq_mul, EuclideanSpace.norm_fin_one]
 
 /-- Viewed in the disk, the direction of `w` is the end of the radial push with radius `d`. -/
 theorem diskBoundaryInclusion_annulusDir (hd : 0 < d)

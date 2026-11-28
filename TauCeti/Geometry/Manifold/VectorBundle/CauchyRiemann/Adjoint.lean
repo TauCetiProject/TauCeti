@@ -13,7 +13,7 @@ import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Dual
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Inner
 import TauCeti.Geometry.Manifold.VectorBundle.Trivial
@@ -60,12 +60,15 @@ is of `∂`-type.
 ## Main definitions
 
 * `TauCeti.IsRealCauchyRiemannOperator.formalAdjoint`: the formal adjoint `D*`.
+* `TauCeti.IsRealCauchyRiemannOperator.kerFormalAdjoint`: the smooth `(0,1)`-forms `η` with
+  `D* η = 0`.
 
 ## Main results
 
 * `TauCeti.IsRealCauchyRiemannOperator.inner_formalAdjoint`: `⟪D* η, e⟫ = ⟪∇* η, e⟫ + ⟪η, a e⟫_HS`.
 * `TauCeti.IsRealCauchyRiemannOperator.formalAdjoint_add`, `formalAdjoint_const_smul` and
   their variants: linearity of `D*`.
+* `TauCeti.IsRealCauchyRiemannOperator.formalAdjoint_congr_of_eventuallyEq`: `D*` is local.
 * `TauCeti.IsRealCauchyRiemannOperator.contMDiff_formalAdjoint`: for compatible metrics, `D*`
   sends smooth `(0,1)`-forms to smooth sections.
 * `TauCeti.IsRealCauchyRiemannOperator.integral_inner_formalAdjoint`: Green's formula
@@ -257,6 +260,80 @@ theorem formalAdjoint_sub {η η' : Π x : M, TangentSpace I x →L[ℝ] V x} {x
     simp only [inner_formalAdjoint, CovariantDerivative.formalAdjoint_sub _ _ hη hη',
       Pi.sub_apply, ContinuousLinearMap.hilbertSchmidtInner_sub_left, inner_sub_left]
     ring
+
+omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ F V] in
+/-- **The kernel of the formal adjoint**: the real subspace of smooth `(0,1)`-forms `η` with
+`D* η = 0`. On a closed surface, with compatible metrics and a smooth metric connection, it is the
+cokernel of `D` (McDuff–Salamon, (C.1.3)). -/
+def kerFormalAdjoint : Submodule ℝ (Π x : M, TangentSpace I x →L[ℝ] V x) where
+  carrier := {η | ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) ∞
+      (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun y ↦ TangentSpace I y →L[ℝ] V y) x (η x)) ∧
+    (∀ x, j.IsZeroOneForm (η x)) ∧ ∀ x, hD.formalAdjoint cov η x = 0}
+  add_mem' := fun {η η'} ⟨hη, hη01, hDη⟩ ⟨hη', hη'01, hDη'⟩ ↦
+    ⟨hη.add_section hη', fun x ↦ isZeroOneForm_iff.2 fun v ↦ by
+      simp only [Pi.add_apply, add_apply, isZeroOneForm_iff.1 (hη01 x),
+        isZeroOneForm_iff.1 (hη'01 x), smul_add, neg_add],
+      fun x ↦ by
+        rw [hD.formalAdjoint_add cov ((hη x).mdifferentiableAt (by simp))
+          ((hη' x).mdifferentiableAt (by simp)), hDη, hDη', add_zero]⟩
+  zero_mem' := ⟨Bundle.contMDiff_zeroSection ℝ (fun y ↦ TangentSpace I y →L[ℝ] V y),
+    fun _ ↦ isZeroOneForm_iff.2 fun _ ↦ by simp, formalAdjoint_zero hD cov⟩
+  smul_mem' := fun c {η} ⟨hη, hη01, hDη⟩ ↦
+    ⟨contMDiff_const.smul_section hη, fun x ↦ isZeroOneForm_iff.2 fun v ↦ by
+      simp only [Pi.smul_apply, smul_apply, isZeroOneForm_iff.1 (hη01 x),
+        smul_neg, smul_comm c Complex.I],
+      fun x ↦ by rw [formalAdjoint_const_smul, hDη, smul_zero]⟩
+
+omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ F V] in
+/-- Membership in `TauCeti.IsRealCauchyRiemannOperator.kerFormalAdjoint`: `η` is a smooth
+`(0,1)`-form with `D* η = 0`. -/
+theorem mem_kerFormalAdjoint :
+    η ∈ hD.kerFormalAdjoint cov ↔ ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) ∞
+      (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun y ↦ TangentSpace I y →L[ℝ] V y) x (η x)) ∧
+        (∀ x, j.IsZeroOneForm (η x)) ∧ ∀ x, hD.formalAdjoint cov η x = 0 :=
+  Iff.rfl
+
+omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ F V] in
+/-- **Locality of the formal adjoint.** The formal adjoint at `x` of a one-form only depends on
+the germ of the one-form at `x`. -/
+theorem formalAdjoint_congr_of_eventuallyEq {η η' : Π x : M, TangentSpace I x →L[ℝ] V x} {x : M}
+    (h : ∀ᶠ y in 𝓝 x, η y = η' y) :
+    hD.formalAdjoint cov η x = hD.formalAdjoint cov η' x := by
+  rw [formalAdjoint, formalAdjoint, h.self_of_nhds]
+  congr 1
+  have hT : (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y
+      (η' y)) =ᶠ[𝓝 x] fun y ↦ TotalSpace.mk' (E →L[ℝ] F)
+        (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η y) :=
+    h.mono fun y hy ↦ by simp only [hy]
+  by_cases hη : MDiffAt
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η y)) x
+  · rw [CovariantDerivative.formalAdjoint_def, CovariantDerivative.formalAdjoint_def,
+      ((leviCivitaConnection I M).hom cov).isCovariantDerivativeOnUniv.congr_of_eventuallyEq hη
+        (hη.congr_of_eventuallyEq hT) Filter.univ_mem h]
+  · -- Neither one-form is differentiable at `x`, so both connection terms vanish.
+    rw [CovariantDerivative.formalAdjoint_eq_zero_of_not_mdifferentiableAt _ _ hη,
+      CovariantDerivative.formalAdjoint_eq_zero_of_not_mdifferentiableAt _ _
+        fun hη' ↦ hη (hη'.congr_of_eventuallyEq (hT.mono fun y hy ↦ hy.symm))]
+
+omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ F V] in
+/-- The formal adjoint is additive on finite sums of one-forms differentiable at the point. -/
+theorem formalAdjoint_sum {ι : Type*} (s : Finset ι) {η : ι → Π x : M, TangentSpace I x →L[ℝ] V x}
+    {x : M}
+    (hη : ∀ k ∈ s, MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] F)
+      (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η k y)) x) :
+    hD.formalAdjoint cov (∑ k ∈ s, η k) x = ∑ k ∈ s, hD.formalAdjoint cov (η k) x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert k s hk ih =>
+    have hs : MDiffAt (fun y ↦ TotalSpace.mk' (E →L[ℝ] F)
+        (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y ((∑ l ∈ s, η l) y)) x := by
+      have := MDifferentiableAt.sum_section (s := s) (t := η) fun l hl ↦
+        hη l (Finset.mem_insert_of_mem hl)
+      simpa using this
+    rw [Finset.sum_insert hk, Finset.sum_insert hk,
+      hD.formalAdjoint_add cov (hη k (Finset.mem_insert_self k s)) hs,
+      ih fun l hl ↦ hη l (Finset.mem_insert_of_mem hl)]
 
 include hD in
 omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]

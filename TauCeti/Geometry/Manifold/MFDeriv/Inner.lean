@@ -25,6 +25,7 @@ at a zero of the map, this differential vanishes.
 ## Main results
 
 * `TauCeti.mvfderiv_inner_apply`: the product rule for the inner product.
+* `TauCeti.mvfderiv_inner_const_apply`: the derivative of `⟪g, e⟫` for a constant vector `e`.
 * `TauCeti.mvfderiv_norm_sq_comp`: the chain rule for the squared norm.
 * `TauCeti.mvfderiv_norm_sq_comp_eq_zero_of_eq_zero`: the squared norm of a differentiable
   vector-valued map has vanishing differential at a zero.
@@ -68,6 +69,14 @@ theorem mvfderiv_inner_apply {g g' : M → F} {x : M} (hg : MDiffAt g x) (hg' : 
     hinner.differentiableAt hpair.mdifferentiableAt, hinner.fderiv,
     hpair']
   simp only [fderivInnerCLM_apply, ContinuousLinearMap.prod_apply, add_comm]
+
+/-- The derivative of the inner product of a vector-valued function with a constant vector `e`:
+`d⟪g, e⟫ = ⟪dg, e⟫`. -/
+theorem mvfderiv_inner_const_apply {g : M → F} {x : M} (hg : MDiffAt g x) (e : F)
+    (v : TangentSpace I x) :
+    mvfderiv I (fun y ↦ inner 𝕜 (g y) e) x v = inner 𝕜 (mvfderiv I g x v) e := by
+  rw [mvfderiv_inner_apply hg mdifferentiableAt_const v, mvfderiv_const]
+  simp
 
 section Real
 

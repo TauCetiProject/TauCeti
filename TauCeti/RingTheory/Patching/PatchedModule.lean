@@ -56,6 +56,7 @@ square of opposite rings.
   `TauCeti.PatchedModule.fstHom` and `TauCeti.PatchedModule.sndHom`.
 * `TauCeti.PatchedModule.lift`: the universal property of the patched module.
 * `TauCeti.PatchedModule.map`: the `D`-linear map induced by a morphism of patching triples.
+* `TauCeti.PatchedModule.equivOfEq`: the isomorphism of the patched modules of equal gluing maps.
 * `TauCeti.BalancedExtension.commSqEquiv h P`: the gluing isomorphism
   `Q ⊗_{A₁} (A₁ ⊗_D P) ≃ Q ⊗_{A₂} (A₂ ⊗_D P)`, `t ⊗ (s ⊗ p) ↦ (t * π₁ s) ⊗ (1 ⊗ p)`, with
   inverse `t ⊗ (s ⊗ p) ↦ (t * π₂ s) ⊗ (1 ⊗ p)`.
@@ -72,7 +73,8 @@ square of opposite rings.
   compatible pair of maps `A₁ ⊗_D P → A₁ ⊗_D P'`, `A₂ ⊗_D P → A₂ ⊗_D P'` comes from exactly one
   `D`-linear map `P → P'`, when `P'` is finitely generated projective.
 * `RingHom.existsUnique_pullbackFst_eq_and_pullbackSnd_eq`: `RingHom.pullback π₁ π₂` is a fibre
-  product in this sense.
+  product in this sense, and `RingHom.existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq`: so is
+  its opposite ring, over the square `RingHom.op_pullback_comm_sq` of opposite rings.
 
 ## References
 
@@ -274,6 +276,41 @@ theorem map_comp (g₁ : P₁ →ₗ[A₁] P₁') (g₂ : P₂ →ₗ[A₂] P₂
 
 end Map
 
+section EquivOfEq
+
+variable {α' : BalancedExtension π₁ P₁ →ₗ[Q] BalancedExtension π₂ P₂}
+
+/-- The `D`-linear isomorphism `M(P₁, P₂, α) ≃ M(P₁, P₂, α')`, `(x, y) ↦ (x, y)`, for equal gluing
+maps `α = α'`. -/
+def equivOfEq (hα : α = α') : PatchedModule h α ≃ₗ[D] PatchedModule h α' :=
+  LinearEquiv.ofLinearMap (map LinearMap.id LinearMap.id fun _ ↦ by simp [hα])
+    (map LinearMap.id LinearMap.id fun _ ↦ by simp [hα]) (LinearMap.ext fun _ ↦ rfl)
+    (LinearMap.ext fun _ ↦ rfl)
+
+@[simp]
+theorem fst_equivOfEq (hα : α = α') (x : PatchedModule h α) : (equivOfEq hα x).fst = x.fst :=
+  (rfl)
+
+@[simp]
+theorem snd_equivOfEq (hα : α = α') (x : PatchedModule h α) : (equivOfEq hα x).snd = x.snd :=
+  (rfl)
+
+@[simp]
+theorem equivOfEq_symm (hα : α = α') : (equivOfEq (h := h) hα).symm = equivOfEq hα.symm :=
+  LinearEquiv.ext fun _ ↦ rfl
+
+@[simp]
+theorem equivOfEq_rfl : equivOfEq (h := h) (rfl : α = α) = LinearEquiv.refl D _ :=
+  LinearEquiv.ext fun _ ↦ rfl
+
+@[simp]
+theorem equivOfEq_trans {α'' : BalancedExtension π₁ P₁ →ₗ[Q] BalancedExtension π₂ P₂}
+    (hα : α = α') (hα' : α' = α'') :
+    (equivOfEq (h := h) hα).trans (equivOfEq hα') = equivOfEq (hα.trans hα') :=
+  LinearEquiv.ext fun _ ↦ rfl
+
+end EquivOfEq
+
 end PatchedModule
 
 end PatchedModule
@@ -372,9 +409,9 @@ private theorem bijective_toPatchedModule_pi (n : ℕ) :
     have h₁ := congrArg (fun x ↦ piScalarRight p₁ (Fin n) (PatchedModule.fst x) i) hd
     have h₂ := congrArg (fun x ↦ piScalarRight p₂ (Fin n) (PatchedModule.snd x) i) hd
     simp only [PatchedModule.fst_toPatchedModule, PatchedModule.snd_toPatchedModule,
-      PatchedModule.fst_zero, PatchedModule.snd_zero, piScalarRight_tmul, one_mul, map_zero,
+      PatchedModule.fst_zero, PatchedModule.snd_zero, piScalarRight_tmul, one_mul, _root_.map_zero,
       Pi.zero_apply] at h₁ h₂
-    exact (hD 0 0 (by simp)).unique ⟨h₁, h₂⟩ ⟨map_zero p₁, map_zero p₂⟩
+    exact (hD 0 0 (by simp)).unique ⟨h₁, h₂⟩ ⟨_root_.map_zero p₁, _root_.map_zero p₂⟩
   · intro m
     have key := (commSqEquiv_one_tmul_eq_iff h (Fin n) _ _).1 (PatchedModule.apply_one_tmul_fst m)
     choose d hd using fun i ↦ (hD _ _ (key i)).exists
@@ -482,5 +519,27 @@ theorem existsUnique_pullbackFst_eq_and_pullbackSnd_eq (π₁ : A₁ →+* Q) (�
     {a₂ : A₂} (h : π₁ a₁ = π₂ a₂) :
     ∃! d : π₁.pullback π₂, π₁.pullbackFst π₂ d = a₁ ∧ π₁.pullbackSnd π₂ d = a₂ :=
   ⟨⟨(a₁, a₂), h⟩, ⟨rfl, rfl⟩, fun _ hd ↦ Subtype.ext (Prod.ext hd.1 hd.2)⟩
+
+/-- The commuting square `π₁ ∘ p₁ = π₂ ∘ p₂` of `RingHom.pullback π₁ π₂`
+(`RingHom.pullback_comm_sq`), read on opposite rings: the square over which right modules over the
+fibre product are patched, as left modules over the opposite rings. -/
+theorem op_pullback_comm_sq (π₁ : A₁ →+* Q) (π₂ : A₂ →+* Q) :
+    (RingHom.op π₁).comp (RingHom.op (π₁.pullbackFst π₂)) =
+      (RingHom.op π₂).comp (RingHom.op (π₁.pullbackSnd π₂)) :=
+  RingHom.ext fun x ↦ congrArg MulOpposite.op (RingHom.congr_fun (π₁.pullback_comm_sq π₂) x.unop)
+
+/-- The square `RingHom.op_pullback_comm_sq` of opposite rings satisfies the fibre-product
+hypothesis of `TauCeti.bijective_toPatchedModule`: a pair `(a₁, a₂)` of elements of `A₁ᵐᵒᵖ` and
+`A₂ᵐᵒᵖ` with the same image in `Qᵐᵒᵖ` is the image of exactly one element of the opposite ring of
+`RingHom.pullback π₁ π₂`. -/
+theorem existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq (π₁ : A₁ →+* Q) (π₂ : A₂ →+* Q)
+    {a₁ : A₁ᵐᵒᵖ} {a₂ : A₂ᵐᵒᵖ} (h : RingHom.op π₁ a₁ = RingHom.op π₂ a₂) :
+    ∃! d : (π₁.pullback π₂)ᵐᵒᵖ,
+      RingHom.op (π₁.pullbackFst π₂) d = a₁ ∧ RingHom.op (π₁.pullbackSnd π₂) d = a₂ := by
+  obtain ⟨d, hd, hu⟩ :=
+    existsUnique_pullbackFst_eq_and_pullbackSnd_eq π₁ π₂ (congrArg MulOpposite.unop h)
+  refine ⟨MulOpposite.op d, ⟨congrArg MulOpposite.op hd.1, congrArg MulOpposite.op hd.2⟩,
+    fun d' hd' ↦ congrArg MulOpposite.op (hu d'.unop ?_)⟩
+  exact ⟨congrArg MulOpposite.unop hd'.1, congrArg MulOpposite.unop hd'.2⟩
 
 end RingHom

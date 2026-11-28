@@ -30,11 +30,17 @@ diffeomorphism, so its differentials identify the tangent spaces of `M` with tho
 The same criterion is stated for an arbitrary surjective local diffeomorphism, such as a covering
 map (`IsLocalDiffeomorph.isSymplectic_mpullback_iff`).
 
+The descent criteria also hold for additive groups acting additively, such as lattices acting by
+translations (`TauCeti.SmoothTwoForm.isNondegenerate_addDescend_iff`,
+`TauCeti.SmoothTwoForm.isSymplectic_addDescend_iff`).
+
 ## Main results
 
 * `TauCeti.SmoothTwoForm.isNondegenerate_descend_iff`,
   `TauCeti.SmoothTwoForm.isSymplectic_descend_iff`: the descent of an invariant two-form to the
   orbit space is nondegenerate, respectively symplectic, exactly when the form is.
+* `TauCeti.SmoothTwoForm.isNondegenerate_addDescend_iff`,
+  `TauCeti.SmoothTwoForm.isSymplectic_addDescend_iff`: the same for additive group actions.
 
 ## References
 
@@ -65,7 +71,8 @@ variable {G : Type*} [Group G] [MulAction G M] [ProperlyDiscontinuousSMul G M]
 
 /-- The descent of a `G`-invariant two-form to the orbit space of `G` is nondegenerate exactly when
 the form is. -/
-@[simp]
+@[to_additive (attr := simp) isNondegenerate_addDescend_iff /-- The descent of a two-form invariant
+under an additive group to its orbit space is nondegenerate exactly when the form is. -/]
 theorem isNondegenerate_descend_iff :
     SmoothTwoForm.IsNondegenerate (SmoothForm.descend σ hσ) ↔ σ.IsNondegenerate := by
   rw [← isLocalDiffeomorph_quotientMk.isNondegenerate_mpullback_iff
@@ -74,7 +81,10 @@ theorem isNondegenerate_descend_iff :
 /-- **Symplectic quotients by discrete groups.** The descent of a two-form invariant under a free,
 properly discontinuous group of diffeomorphisms is a symplectic form on the orbit space exactly
 when the form is symplectic. -/
-@[simp]
+@[to_additive (attr := simp) isSymplectic_addDescend_iff /-- **Symplectic quotients by discrete
+additive groups.** The descent of a two-form invariant under a free, properly discontinuous additive
+group of diffeomorphisms is a symplectic form on the orbit space exactly when the form is
+symplectic. -/]
 theorem isSymplectic_descend_iff :
     SmoothTwoForm.IsSymplectic (SmoothForm.descend σ hσ) ↔ σ.IsSymplectic := by
   rw [← isLocalDiffeomorph_quotientMk.isSymplectic_mpullback_iff

@@ -10,8 +10,13 @@ public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import Mathlib.Topology.Algebra.Valued.ValuedField
+public import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
+public import TauCeti.RingTheory.Valuation.AbsoluteValue
+public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 -- Proof-only: a uniformiser of `𝒪[K]` has norm less than one.
 import Mathlib.Topology.Algebra.Valued.LocallyCompact
+-- Proof-only: a topologically nilpotent element of a normed field has norm less than one.
+import TauCeti.Analysis.Normed.Ring.UnitBall
 
 /-!
 # Adic completeness of the ring of integers of a complete nonarchimedean field
@@ -53,6 +58,18 @@ this is the completeness input for the ring of integers `𝒪_F` required to mak
   through `TauCeti.IsAdicComplete.henselianLocalRing`.
 * `Valuation.Integers.isAdicComplete_maximalIdeal`: if the maximal ideal of `O` is principal, then
   `O` is complete for its maximal ideal.
+* `Valued.integer.fact_not_isUnit_natCast`, `Valued.integer.norm_natCast_lt_one` and
+  `Valued.integer.isAdicComplete_span_natCast`: if `p` is topologically nilpotent in `K`, then `p`
+  is not a unit of `𝒪[K]`; if `p` is not a unit of `𝒪[K]`, then `‖p‖ < 1`, and `𝒪[K]` is
+  `p`-adically complete when `K` is complete. These make Mathlib's tilt `PreTilt 𝒪[K] p` and its
+  untilt available.
+
+## Absolute values
+
+* `NormedField.toValuation_toAbsoluteValue`: `NormedField.valuation` is the valuation
+  `AbsoluteValue.toValuation` attached to the norm, viewed as a nonarchimedean absolute value.
+* `Valuation.isNonarchimedean_absoluteValue`: Mathlib's absolute value `Valuation.absoluteValue`
+  of a valuation of rank at most one is nonarchimedean.
 -/
 
 public section
@@ -198,3 +215,52 @@ instance Valuation.integer.isAdicComplete_maximalIdeal {K : Type*} [NormedField 
     IsAdicComplete (IsLocalRing.maximalIdeal (NormedField.valuation (K := K)).integer)
       (NormedField.valuation (K := K)).integer :=
   (Valuation.integer.integers _).isAdicComplete_maximalIdeal (IsPrincipalIdealRing.principal _)
+
+namespace Valued.integer
+
+open scoped NormedField
+
+variable {p : ℕ} {K : Type*} [NormedField K] [IsUltrametricDist K]
+
+/-- If `p` is topologically nilpotent in the nonarchimedean field `K`, then `p` is not a unit of
+`𝒪[K]`, as `‖p‖ < 1`; so for a prime `p` Mathlib's tilt `PreTilt 𝒪[K] p` is a ring of
+characteristic `p`. -/
+instance fact_not_isUnit_natCast [hp : Fact (IsTopologicallyNilpotent (p : K))] :
+    Fact ¬IsUnit (p : 𝒪[K]) :=
+  ⟨(Valuation.integer.integers (NormedField.valuation (K := K))).norm_algebraMap_lt_one_iff.mp <| by
+    simpa using (TauCeti.isTopologicallyNilpotent_iff_norm_lt_one_of_isPowMul
+      fun x n _ ↦ norm_pow x n).mp hp.out⟩
+
+/-- If `p` is not a unit of the valuation ring `𝒪[K]` of the nonarchimedean field `K`, then
+`‖p‖ < 1`. -/
+theorem norm_natCast_lt_one [h : Fact ¬IsUnit (p : 𝒪[K])] : ‖(p : K)‖ < 1 := by
+  simpa using
+    (Valuation.integer.integers (NormedField.valuation (K := K))).norm_algebraMap_lt_one_iff.2 h.out
+
+/-- If `K` is complete and `p` is not a unit of `𝒪[K]`, then `𝒪[K]` is `p`-adically complete, as
+`‖p‖ < 1`; so for a prime `p` the untilt `PreTilt 𝒪[K] p → 𝒪[K]` is defined. -/
+instance isAdicComplete_span_natCast [CompleteSpace K] [Fact ¬IsUnit (p : 𝒪[K])] :
+    IsAdicComplete (Ideal.span {(p : 𝒪[K])}) 𝒪[K] :=
+  (Valuation.integer.integers (NormedField.valuation (K := K))).isAdicComplete_span_singleton <| by
+    simpa using norm_natCast_lt_one (p := p) (K := K)
+
+end Valued.integer
+
+namespace NormedField
+
+open scoped NNReal
+
+variable (K : Type*) [NormedField K] [IsUltrametricDist K]
+
+/-- Mathlib's valuation of a nonarchimedean normed field is the valuation attached to its norm. -/
+theorem toValuation_toAbsoluteValue :
+    (toAbsoluteValue K).toValuation (isNonarchimedean_toAbsoluteValue K) = valuation :=
+  Valuation.ext fun x ↦ NNReal.eq (by simp [NormedField.valuation_apply])
+
+end NormedField
+
+/-- Mathlib's absolute value of a valuation of rank at most one is nonarchimedean. -/
+theorem Valuation.isNonarchimedean_absoluteValue {K Γ₀ : Type*} [DivisionRing K]
+    [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation K Γ₀) [RankLeOne v] :
+    IsNonarchimedean v.absoluteValue := fun x y ↦ by
+  simpa using v.norm_add_le x y

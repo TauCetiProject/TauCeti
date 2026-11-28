@@ -107,6 +107,12 @@ theorem noisyScore_apply (μ₀ : Measure (EuclideanSpace ℝ ι)) (c s : ℝ) (
 
 /-! ### The density of the noisy observation -/
 
+/-- The smoothed density of the zero measure vanishes. -/
+@[simp]
+theorem smoothedDensity_zero (c s : ℝ) :
+    smoothedDensity (0 : Measure (EuclideanSpace ℝ ι)) c s = 0 :=
+  funext fun y ↦ by rw [smoothedDensity_apply, integral_zero_measure, Pi.zero_apply]
+
 /-- For `s ≠ 0`, the smoothed density is the integral of the heat kernel at time `s² / 2`. -/
 theorem smoothedDensity_eq_integral_heatKernel (hs : s ≠ 0) (y : EuclideanSpace ℝ ι) :
     smoothedDensity μ₀ c s y = ∫ x, heatKernel (s ^ 2 / 2) (y - c • x) ∂μ₀ := by
@@ -294,6 +300,13 @@ theorem hasGradientAt_log_smoothedDensity [IsFiniteMeasure μ₀] [NeZero μ₀]
     (smoothedDensity_pos hs y).ne')
   rw [hasGradientAt_iff_hasFDerivAt, map_smul, (hasGradientAt_smoothedDensity hs y).gradient]
   exact h
+
+/-- The score of the zero measure vanishes, since its smoothed density does. -/
+@[simp]
+theorem noisyScore_zero (c s : ℝ) :
+    noisyScore (0 : Measure (EuclideanSpace ℝ ι)) c s = 0 := by
+  funext y
+  simp [noisyScore_apply]
 
 /-- **The score is `∇p / p`.** -/
 theorem noisyScore_eq_inv_smul_gradient [IsFiniteMeasure μ₀] [NeZero μ₀] (hs : s ≠ 0)

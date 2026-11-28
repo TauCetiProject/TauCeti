@@ -111,6 +111,11 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   is a `C^n` map with bounded derivatives through order `n`.
 * `TauCeti.norm_iteratedFDeriv_smul_le_of_isOpen`: the Leibniz bound for `z ↦ c z • f z` at a
   point of an open set on which both factors are smooth.
+* `TauCeti.norm_iteratedFDeriv_smul_le_of_forall_le`: the Leibniz bound for `z ↦ c z • f z` at a
+  point from bounds on the derivatives of both factors there.
+* `ContDiff.exists_forall_norm_iteratedFDeriv_le_mul_pow_of_eq_pow_smul`: a function
+  `h^n • Q (p, h)` with `Q` of class `C^k` has derivatives in `p` through order `k` bounded by
+  `C |h|^n`, uniformly for `p` in a compact set and `h` in a bounded interval.
 * `ContDiff.pow_mul_norm_iteratedFDeriv_smul_le_of_le_left`,
   `ContDiff.pow_mul_norm_iteratedFDeriv_smul_le_of_le_right`: the Leibniz rule in scaled units. If
   one factor of `g • f` has `hⁱ ‖Dⁱ ·‖ ≤ B` for `i ≤ k`, then
@@ -686,6 +691,25 @@ theorem norm_iteratedFDeriv_smul_le_of_isOpen {𝕜' : Type*} [NormedField 𝕜'
   refine h.trans_eq (Finset.sum_congr rfl fun i _ ↦ ?_)
   rw [iteratedFDerivWithin_of_isOpen i hU hx, iteratedFDerivWithin_of_isOpen _ hU hx]
 
+/-- **Leibniz bound from bounds at a point.** If the derivatives of order `i ≤ n` of `c` at `x`
+are bounded by `M i` and those of `f` by a single constant `C`, then the order-`n` derivative of
+`z ↦ c z • f z` at `x` is at most `(∑_{i ≤ n} C(n, i) M i) C`. -/
+theorem norm_iteratedFDeriv_smul_le_of_forall_le {𝕜' : Type*} [NormedField 𝕜']
+    [NormedAlgebra 𝕜 𝕜'] [NormedSpace 𝕜' F] [IsScalarTower 𝕜 𝕜' F] {c : E → 𝕜'} {f : E → F}
+    {N : ℕ∞ω} (hc : ContDiff 𝕜 N c) (hf : ContDiff 𝕜 N f) (x : E) {n : ℕ} (hn : n ≤ N)
+    {M : ℕ → ℝ} {C : ℝ} (hcM : ∀ i ≤ n, ‖iteratedFDeriv 𝕜 i c x‖ ≤ M i)
+    (hfC : ∀ i ≤ n, ‖iteratedFDeriv 𝕜 i f x‖ ≤ C) :
+    ‖iteratedFDeriv 𝕜 n (fun z ↦ c z • f z) x‖ ≤
+      (∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ) * M i) * C := by
+  refine (norm_iteratedFDeriv_smul_le hc hf x hn).trans ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun i hi ↦ ?_
+  have hi : i ≤ n := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
+  have hM := hcM i hi
+  have hM0 : 0 ≤ M i := (norm_nonneg _).trans hM
+  gcongr
+  exact hfC _ (Nat.sub_le n i)
+
 /-- A bound `hⁱ ‖Dⁱ f‖ ≤ B` on the derivatives of order `i ≤ k` of a map `f` forces `0 ≤ B`, by
 its order-zero case. -/
 theorem nonneg_of_forall_pow_mul_norm_iteratedFDeriv_le {k : ℕ} {h B : ℝ} {f : E → F}
@@ -711,6 +735,30 @@ theorem ContDiffOn.exists_nonneg_bound_iteratedFDeriv_uncurry_of_isOpen {P : Typ
     hf.contDiffAt (hW.mem_nhds (hCKW hpx))
   exact ⟨hfpx.comp x (contDiffAt_const.prodMk contDiffAt_id), fun i hi ↦
     (hfpx.norm_iteratedFDeriv_prod_right_le i (mod_cast hi)).trans (hA i hi _ hpx)⟩
+
+/-- **Uniform estimates from a residual identity.** If `f (p, h) = h^n • Q (p, h)` for a `C^k`
+function `Q`, then on every compact set `K` of parameters and for `|h| ≤ h₀`, the derivatives in
+`p` through order `k` of `f (·, h)` are at most `C |h|^n`, with `C` depending only on the order,
+`K` and `h₀`. -/
+theorem ContDiff.exists_forall_norm_iteratedFDeriv_le_mul_pow_of_eq_pow_smul {P G : Type*}
+    [NormedAddCommGroup P] [NormedSpace ℝ P] [NormedAddCommGroup G] [NormedSpace ℝ G] {k : ℕ∞}
+    {n : ℕ} {f Q : P × ℝ → G} (hQ : ContDiff ℝ k Q) (hfQ : ∀ p h, f (p, h) = h ^ n • Q (p, h))
+    {j : ℕ} (hj : (j : ℕ∞) ≤ k) {K : Set P} (hK : IsCompact K) (h₀ : ℝ) :
+    ∃ C, ∀ p ∈ K, ∀ h : ℝ, |h| ≤ h₀ →
+      ‖iteratedFDeriv ℝ j (fun q ↦ f (q, h)) p‖ ≤ C * |h| ^ n := by
+  have hj' : (j : WithTop ℕ∞) ≤ k := by exact_mod_cast hj
+  -- The full `j`-th derivative of the quotient is bounded on the compact set `K × [-h₀, h₀]`.
+  obtain ⟨C, hC⟩ := (hK.prod isCompact_Icc).exists_bound_of_continuousOn
+    (hQ.continuous_iteratedFDeriv hj').continuousOn (f := fun q ↦ iteratedFDeriv ℝ j Q q)
+      (s := K ×ˢ Set.Icc (-h₀) h₀)
+  refine ⟨C, fun p hp h hh ↦ ?_⟩
+  have hQh : ContDiffAt ℝ j (fun q ↦ Q (q, h)) p :=
+    ((hQ.of_le hj').comp (by fun_prop : ContDiff ℝ j fun q : P ↦ (q, h))).contDiffAt
+  simp_rw [hfQ, iteratedFDeriv_const_smul_apply' hQh, norm_smul, norm_pow, Real.norm_eq_abs]
+  rw [mul_comm]
+  gcongr
+  exact (((hQ.of_le hj').contDiffAt).norm_iteratedFDeriv_prod_left_le j le_rfl).trans
+    (hC (p, h) ⟨hp, abs_le.1 hh⟩)
 
 /-! ### The Leibniz rule in scaled units -/
 

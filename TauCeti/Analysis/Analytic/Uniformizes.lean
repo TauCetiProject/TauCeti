@@ -178,7 +178,7 @@ theorem uniformizes_one (φ : 𝕜 → 𝕜) : Uniformizes φ (1 : PowerSeries K
 @[simp]
 theorem uniformizes_X (φ : 𝕜 → 𝕜) : Uniformizes φ (PowerSeries.X : PowerSeries K) φ := by
   refine ⟨fun z ↦ z, analyticAt_id, ?_, EventuallyEq.rfl⟩
-  simpa using taylorSeries_sub_const (𝕜 := 𝕜) (a := 0)
+  simp
 
 /-- Uniformizations along a fixed `φ` add. -/
 theorem Uniformizes.add (h₁ : Uniformizes φ f₁ g₁) (h₂ : Uniformizes φ f₂ g₂) :

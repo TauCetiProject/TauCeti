@@ -389,7 +389,7 @@ theorem TwistingChainSystem.exists_isRepresenting_of_faces
   -- The face chains: the signed cross products of the representatives, carried to `A x y`.
   let c (z : T) : NormalizedCubicalChain (A x y) k (ind x - ind y - 2).toNat :=
     (ind x - ind z.val).negOnePow •
-      map k (g z) _ (cast k (hpq z) (crossProduct _ _ k _ _ (a z) (b z)))
+      NormalizedCubicalChain.map k (g z) _ (cast k (hpq z) (crossProduct _ _ k _ _ (a z) (b z)))
   -- The twisting sum is the sum of the face chains, pushed forward from the boundary.
   have hsum := twistingChainSum_eq_sum_face hs (fun z ↦ hιA x z.val y z.prop.1 z.prop.2) a ha b
     hb hpq

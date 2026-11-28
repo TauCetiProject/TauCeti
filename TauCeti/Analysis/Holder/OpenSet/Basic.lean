@@ -83,6 +83,8 @@ domain `Ω`, shared with `TauCeti.CkHolderSpace`.
   `TauCeti.CkHolderSpaceOn.inclusionSuccLOfHolderOnWith` builds the inclusion on any open set from
   a uniform Hölder bound on the `k`-th derivative field of the elements of `C^{k+1,α}(Ω)`.
 
+* `TauCeti.CkHolderSpaceOn.topEquiv`: linear isometry identifying `C^{k,α}(⊤)` with
+  `CkHolderSpace k α E F`.
 * `ContDiffOn.exists_ckHolderSpaceOn_ball`: local `C^{n,α}` data define an element on a positive
   ball with the original pointwise values, without an extra derivative or compactness assumption.
 
@@ -450,6 +452,26 @@ theorem norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith {f : CkHolderSpa
   · exact (BoundedContinuousFunction.norm_le (hM0 i)).2 (hM i)
   · exact_mod_cast hK.nnholderNorm_le
 
+/-- An element `f` of `C^{k,α}(Ω)` agreeing on `Ω` with a function `g` whose derivatives of order at
+most `k` are bounded by `N` on `Ω`, and whose `k`-th derivative is `α`-Hölder on `Ω` with constant
+`N`, has norm at most `(k + 2) N`. -/
+theorem norm_le_of_forall_norm_iteratedFDeriv_le {f : CkHolderSpaceOn k α Ω F} {g : E → F}
+    (hg : ∀ x : Ω, g x = f x) {N : ℝ≥0}
+    (hN : ∀ i ≤ k, ∀ x : Ω, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ N)
+    (hH : HolderOnWith N α (_root_.iteratedFDeriv ℝ k g) Ω) : ‖f‖ ≤ (k + 2) * N := by
+  have he : (Ω : Set E).domRestrict (_root_.iteratedFDeriv ℝ k g) =
+      (f.iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F) :=
+    funext fun x ↦ f.iteratedFDeriv_eq hg (Fin.last k) x
+  have h := hH.holderWith
+  rw [he] at h
+  refine (norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith (M := fun _ ↦ (N : ℝ))
+    (fun _ ↦ N.property) (fun i x ↦ ?_) h).trans_eq ?_
+  · rw [← f.iteratedFDeriv_eq hg i x]
+    exact hN i (Nat.lt_succ_iff.1 i.isLt) x
+  · simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+    push_cast
+    ring
+
 /-- The `i`-th derivative field, as a continuous linear map to bounded continuous fields on `Ω`.
 It is bounded by the `C^{k,α}(Ω)` norm pointwise, by `CkHolderSpaceOn.norm_iteratedFDeriv_le`. -/
 def iteratedFDerivL (i : Fin (k + 1)) :
@@ -556,14 +578,17 @@ theorem coe_smul (c : ℝ) (f : CkHolderSpaceOn k α Ω F) : ⇑(c • f) = c �
 theorem coe_sub (f g : CkHolderSpaceOn k α Ω F) : ⇑(f - g) = f - g := by
   rw [eq_sub_iff_add_eq, ← coe_add, sub_add_cancel]
 
+/-- The underlying function of a finite sum is the sum of the underlying functions. -/
+@[simp]
+theorem coe_sum {ι : Type*} (s : Finset ι) (f : ι → CkHolderSpaceOn k α Ω F) :
+    ⇑(∑ i ∈ s, f i) = ∑ i ∈ s, ⇑(f i) :=
+  map_sum (⟨⟨(⇑), coe_zero⟩, coe_add⟩ : CkHolderSpaceOn k α Ω F →+ Ω → F) f s
+
 /-- The value of a finite sum at a point is the sum of the values. -/
 @[simp]
 theorem sum_apply {ι : Type*} (s : Finset ι) (f : ι → CkHolderSpaceOn k α Ω F) (x : Ω) :
     (∑ i ∈ s, f i) x = ∑ i ∈ s, f i x := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert i s hi ih => simp [Finset.sum_insert hi, ih]
+  rw [coe_sum, Finset.sum_apply]
 
 /-- The derivative field of order zero has the norm of the underlying function at each point. -/
 theorem norm_iteratedFDeriv_zero (f : CkHolderSpaceOn k α Ω F) (x : Ω) :
@@ -611,6 +636,11 @@ theorem extend_apply_of_notMem (f : CkHolderSpaceOn k α Ω F) {x : E} (hx : x �
 on `Ω`. -/
 theorem contDiffOn_extend (f : CkHolderSpaceOn k α Ω F) : ContDiffOn ℝ k f.extend Ω :=
   f.contDiffOn f.extend_apply
+
+/-- From order one on, the extension by zero is differentiable at each point of `Ω`. -/
+theorem differentiableAt_extend (f : CkHolderSpaceOn (k + 1) α Ω F) {x : E} (hx : x ∈ Ω) :
+    DifferentiableAt ℝ f.extend x :=
+  (f.contDiffOn_extend.differentiableOn (by simp)).differentiableAt (Ω.isOpen.mem_nhds hx)
 
 /-- The iterated derivatives of the extension by zero at points of `Ω` are the derivative fields. -/
 theorem iteratedFDeriv_extend (f : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1)) (x : Ω) :
@@ -911,6 +941,15 @@ theorem norm_restrictL_le_one (h : Ω' ≤ Ω) :
     ‖restrictL (k := k) (α := α) (F := F) h‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
 
+/-- Restricting to the same open set is the identity. -/
+@[simp] theorem restrictL_self (f : CkHolderSpaceOn k α Ω F) :
+    restrictL le_rfl f = f := ext fun x ↦ by simp
+
+/-- Restricting twice along `Ω'' ≤ Ω' ≤ Ω` agrees with restricting directly to `Ω''`. -/
+@[simp] theorem restrictL_restrictL {Ω'' : Opens E} (h₁ : Ω'' ≤ Ω') (h₂ : Ω' ≤ Ω)
+    (f : CkHolderSpaceOn k α Ω F) :
+    restrictL h₁ (restrictL h₂ f) = restrictL (h₁.trans h₂) f := by ext x; simp
+
 end restrict
 
 section inclusionSucc
@@ -1110,7 +1149,94 @@ theorem iteratedFDeriv_restrictOnL (f : CkHolderSpace k α E F) (i : Fin (k + 1)
 theorem norm_restrictOnL_le_one : ‖restrictOnL (k := k) (α := α) (F := F) Ω‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
 
+/-- Restricting from `E` to `Ω` and then to `Ω' ≤ Ω` agrees with restricting directly to `Ω'`. -/
+@[simp]
+theorem restrictL_comp_restrictOnL {Ω' : Opens E} (h : Ω' ≤ Ω) :
+    (CkHolderSpaceOn.restrictL (k := k) (α := α) (F := F) h).comp (restrictOnL Ω) =
+      restrictOnL Ω' := by
+  ext g x
+  simp
+
+/-- Restricting a whole-space function to `Ω` and then to `Ω' ≤ Ω` agrees with restricting
+directly to `Ω'`. -/
+@[simp]
+theorem restrictL_restrictOnL {Ω' : Opens E} (h : Ω' ≤ Ω) (g : CkHolderSpace k α E F) :
+    CkHolderSpaceOn.restrictL h (restrictOnL Ω g) = restrictOnL Ω' g := by
+  ext x
+  simp
+
 end CkHolderSpace
+
+namespace CkHolderSpaceOn
+
+variable {k α F}
+
+section Equiv
+
+private def toTop (f : CkHolderSpaceOn k α (⊤ : Opens E) F) :
+    CkHolderSpace k α E F :=
+  CkHolderSpace.ofContDiff f.extend
+    (contDiffOn_univ.mp f.contDiffOn_extend)
+    (fun _ hi ↦ ⟨‖f‖, fun x ↦ f.norm_iteratedFDeriv_extend_le hi ⟨x, trivial⟩⟩)
+    (holderOnWith_univ.mp f.holderOnWith_iteratedFDeriv_extend).memHolder
+
+private theorem toTop_apply (f : CkHolderSpaceOn k α (⊤ : Opens E) F) (x : E) :
+    toTop f x = f ⟨x, trivial⟩ := by
+  simp only [toTop, CkHolderSpace.coe_ofContDiff]
+  exact f.extend_apply ⟨x, trivial⟩
+
+private theorem norm_toTop_le (f : CkHolderSpaceOn k α (⊤ : Opens E) F) :
+    ‖toTop f‖ ≤ ‖f‖ := by
+  have hcoe : ⇑(toTop f) = f.extend := CkHolderSpace.coe_ofContDiff ..
+  have hfield (i : Fin (k + 1)) : ‖(toTop f).iteratedFDeriv i‖ ≤ ‖f.iteratedFDeriv i‖ := by
+    refine (BoundedContinuousFunction.norm_le (norm_nonneg (f.iteratedFDeriv i))).2 fun x ↦ ?_
+    rw [← CkHolderSpace.iteratedFDeriv_eq, hcoe, f.iteratedFDeriv_extend i ⟨x, trivial⟩]
+    exact (f.iteratedFDeriv i).norm_coe_le_norm ⟨x, trivial⟩
+  have htop : (nnHolderNorm α (_root_.iteratedFDeriv ℝ k (toTop f)) : ℝ) ≤
+      nnHolderNorm α (f.iteratedFDeriv (Fin.last k) : (⊤ : Opens E) →
+        E [×k]→L[ℝ] F) := by
+    rw [hcoe]
+    exact_mod_cast (holderOnWith_univ.mp f.holderOnWith_iteratedFDeriv_extend).nnholderNorm_le
+  rw [CkHolderSpace.norm_eq, norm_eq]
+  exact add_le_add (Finset.sum_le_sum fun i _ ↦ hfield i) htop
+
+/-- On `⊤ : Opens E`, `CkHolderSpaceOn k α ⊤ F ≃ₗᵢ[ℝ] CkHolderSpace k α E F`. -/
+def topEquiv :
+    CkHolderSpaceOn k α (⊤ : Opens E) F ≃ₗᵢ[ℝ] CkHolderSpace k α E F :=
+  LinearIsometryEquiv.ofBounds
+    { toFun := toTop
+      invFun := CkHolderSpace.restrictOnL (⊤ : Opens E)
+      left_inv f := ext fun x ↦ (CkHolderSpace.restrictOnL_apply ..).trans (toTop_apply f x.val)
+      right_inv g := CkHolderSpace.ext fun x ↦
+        (toTop_apply _ x).trans (CkHolderSpace.restrictOnL_apply _ g ⟨x, trivial⟩)
+      map_add' f g := CkHolderSpace.ext fun x ↦ by
+        simp only [toTop_apply, coe_add, Pi.add_apply, CkHolderSpace.coe_add]
+      map_smul' c f := CkHolderSpace.ext fun x ↦ by
+        simp only [toTop_apply, coe_smul, Pi.smul_apply, RingHom.id_apply, CkHolderSpace.coe_smul] }
+    norm_toTop_le
+    fun g ↦ ((CkHolderSpace.restrictOnL (⊤ : Opens E)).le_of_opNorm_le
+      (CkHolderSpace.norm_restrictOnL_le_one _) g).trans_eq (one_mul _)
+
+/-- The linear isometry `topEquiv` preserves pointwise values on `E`. -/
+@[simp] theorem topEquiv_apply (f : CkHolderSpaceOn k α (⊤ : Opens E) F) (x : E) :
+    topEquiv f x = f ⟨x, trivial⟩ := toTop_apply f x
+
+/-- The inverse of `topEquiv` is restriction to `⊤`. -/
+@[simp] theorem topEquiv_symm_eq_restrictOnL (g : CkHolderSpace k α E F) :
+    topEquiv.symm g = CkHolderSpace.restrictOnL (⊤ : Opens E) g :=
+  topEquiv.symm_apply_eq.mpr <| CkHolderSpace.ext fun x ↦ by
+    rw [topEquiv_apply, CkHolderSpace.restrictOnL_apply]
+
+/-- The derivative fields of `topEquiv f` agree with those of `f`. -/
+@[simp] theorem iteratedFDeriv_topEquiv (f : CkHolderSpaceOn k α (⊤ : Opens E) F)
+    (i : Fin (k + 1)) (x : E) :
+    (topEquiv f).iteratedFDeriv i x = f.iteratedFDeriv i ⟨x, trivial⟩ := by
+  rw [← CkHolderSpace.iteratedFDeriv_eq]
+  exact f.iteratedFDeriv_eq (fun y ↦ topEquiv_apply f y.val) i ⟨x, trivial⟩
+
+end Equiv
+
+end CkHolderSpaceOn
 
 open scoped Topology in
 open Metric Filter in
