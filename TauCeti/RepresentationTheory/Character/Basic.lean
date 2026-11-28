@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Character
+public import TauCeti.RepresentationTheory.OfGL
 public import TauCeti.LinearAlgebra.Trace.Basic
 public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.Invariants
@@ -15,6 +16,8 @@ import TauCeti.LinearAlgebra.FiniteDimensional.LinearMap
 /-!
 # Basic facts about characters
 
+The character of `Representation.ofGL` is the trace of its defining matrix
+(`Representation.character_ofGL_apply`).
 The trace character vanishes when the representation space is not finite-dimensional.
 The character of the restriction of a representation along a monoid homomorphism `f` is the
 composite of its character with `f` (`Representation.character_comp`).
@@ -64,6 +67,13 @@ public section
 universe u v w
 
 namespace Representation
+
+/-- The character of a matrix representation is the trace of its defining matrix. -/
+@[simp]
+theorem character_ofGL_apply {k G n : Type*} [Field k] [Monoid G]
+    [Fintype n] [DecidableEq n] (ρ : G →* Matrix.GeneralLinearGroup n k) (g : G) :
+    (ofGL ρ).character g = (ρ g).val.trace := by
+  rw [character, ofGL_apply, Matrix.trace_toLin'_eq]
 
 /-- The character vanishes on a representation space that is not finite-dimensional. -/
 theorem character_eq_zero_of_not_finite {k G V : Type*} [Field k] [Monoid G]

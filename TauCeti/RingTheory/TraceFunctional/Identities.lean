@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.TraceFunctional.Radical
-public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
+public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum.IntegralNewton
-import TauCeti.LinearAlgebra.Matrix.Charpoly.IntegralNewton
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Newton
 import TauCeti.LinearAlgebra.LinearIndependent.Evaluation
-import Mathlib.LinearAlgebra.Dimension.Finite
 
 /-!
 # Rank bounds and Newton identities for trace quotients
@@ -47,15 +46,26 @@ open Matrix LinearMap Module Submodule Ideal.Quotient MvPolynomial
 
 namespace LinearMap
 
+/-- A linear form satisfying every polynomial matrix trace identity is cyclic. -/
+theorem map_mul_comm_of_trace_identities
+    {k A n : Type*} [CommRing k] [Ring A] [Algebra k A] [Fintype n] [DecidableEq n]
+    (t : A →ₗ[k] k)
+    (h_alg : ∀ B : MvPolynomial A k,
+      (∀ ρ : A →ₐ[k] Matrix n n k, eval (fun x ↦ (ρ x).trace) B = 0) → eval t B = 0)
+    (x y : A) : t (x * y) = t (y * x) := by
+  simpa [Matrix.trace_mul_comm (m := n) (n := n), sub_eq_zero] using
+    h_alg (X (x * y - y * x))
+
 /-- The rank of an algebra's quotient by the trace radical is at most the square of the matrix
 size if the trace satisfies all polynomial trace identities of matrices of that size. -/
 theorem rank_quotient_traceRadical_le_of_trace_identities
     {k A n : Type*} [Field k] [Ring A] [Algebra k A] [Fintype n] [DecidableEq n]
-    (t : A →ₗ[k] k) (t_comm : ∀ x y, t (x * y) = t (y * x))
+    (t : A →ₗ[k] k)
     (h_alg : ∀ B : MvPolynomial A k,
       (∀ ρ : A →ₐ[k] Matrix n n k, eval (fun x ↦ (ρ x).trace) B = 0) → eval t B = 0) :
-    Module.rank k (A ⧸ t.traceRadical t_comm) ≤
+    Module.rank k (A ⧸ t.traceRadical (t.map_mul_comm_of_trace_identities h_alg)) ≤
       (↑(Fintype.card n * Fintype.card n) : Cardinal) := by
+  let t_comm := t.map_mul_comm_of_trace_identities h_alg
   let N : ℕ := Fintype.card n * Fintype.card n + 1
   refine le_of_not_gt fun h_rank ↦ ?_
   have hN : (N : Cardinal) ≤ Module.rank k (A ⧸ t.traceRadical t_comm) := by
@@ -94,22 +104,22 @@ theorem rank_quotient_traceRadical_le_of_trace_identities
 all polynomial trace identities of matrices of a fixed finite size. -/
 theorem finite_quotient_traceRadical_of_trace_identities
     {k A n : Type*} [Field k] [Ring A] [Algebra k A] [Fintype n] [DecidableEq n]
-    (t : A →ₗ[k] k) (t_comm : ∀ x y, t (x * y) = t (y * x))
+    (t : A →ₗ[k] k)
     (h_alg : ∀ B : MvPolynomial A k,
       (∀ ρ : A →ₐ[k] Matrix n n k, eval (fun x ↦ (ρ x).trace) B = 0) → eval t B = 0) :
-    Module.Finite k (A ⧸ t.traceRadical t_comm) :=
-  rank_lt_aleph0_iff.mp ((t.rank_quotient_traceRadical_le_of_trace_identities t_comm h_alg).trans_lt
+    Module.Finite k (A ⧸ t.traceRadical (t.map_mul_comm_of_trace_identities h_alg)) :=
+  rank_lt_aleph0_iff.mp ((t.rank_quotient_traceRadical_le_of_trace_identities h_alg).trans_lt
     Cardinal.natCast_lt_aleph0)
 
 /-- Every element of the trace quotient satisfies the integral Newton identity of the given
 matrix size when the original trace satisfies all polynomial trace identities of that size. -/
 theorem eval_integralNewtonPolynomial_quotientTrace_eq_zero
     {k A n : Type*} [CommRing k] [Ring A] [Algebra k A] [Fintype n] [DecidableEq n]
-    (t : A →ₗ[k] k) (t_comm : ∀ x y, t (x * y) = t (y * x))
+    (t : A →ₗ[k] k)
     (h_alg : ∀ B : MvPolynomial A k,
       (∀ ρ : A →ₐ[k] Matrix n n k, eval (fun x ↦ (ρ x).trace) B = 0) → eval t B = 0)
-    (x : A ⧸ t.traceRadical t_comm) :
-    eval (fun i : ℕ ↦ t.quotientTrace t_comm (x ^ i))
+    (x : A ⧸ t.traceRadical (t.map_mul_comm_of_trace_identities h_alg)) :
+    eval (fun i : ℕ ↦ t.quotientTrace (t.map_mul_comm_of_trace_identities h_alg) (x ^ i))
       (TauCeti.integralNewtonPolynomial (Fintype.card n + 1) 1) = 0 := by
   obtain ⟨x, rfl⟩ := mk_surjective x
   have hz : eval t (rename (fun i : ℕ ↦ x ^ i)

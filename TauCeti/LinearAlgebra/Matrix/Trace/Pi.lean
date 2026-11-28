@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Trace
-public import Mathlib.Algebra.Algebra.Pi
-import Mathlib.Data.Matrix.Basis
 
 /-!
 # Tracial forms on products of matrix algebras
@@ -38,28 +36,33 @@ namespace LinearMap
 attribute [local ext] Matrix.ext_linearMap
 
 /-- A cyclic linear form on a finite product of matrix algebras is the sum of the block traces
-weighted by its value on a chosen diagonal matrix unit in each block. -/
+weighted by coefficients agreeing with every diagonal matrix unit in their block.
+Empty blocks are allowed. -/
 theorem apply_eq_sum_mul_trace_of_map_mul_comm
     {k ι : Type*} [CommSemiring k] [Fintype ι] [DecidableEq ι]
     {n : ι → Type*} [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)]
     (τ : (Π i, Matrix (n i) (n i) k) →ₗ[k] k)
-    (hcomm : ∀ x y, τ (x * y) = τ (y * x)) (a : Π i, n i)
-    (z : Π i, Matrix (n i) (n i) k) :
-    τ z = ∑ i, τ (Pi.single i (Matrix.single (a i) (a i) 1)) * (z i).trace := by
+    (hcomm : ∀ x y, τ (x * y) = τ (y * x)) :
+    ∃ c : ι → k,
+      (∀ i (b : n i), τ (Pi.single i (Matrix.single b b 1)) = c i) ∧
+      ∀ z, τ z = ∑ i, c i * (z i).trace := by
   classical
-  let c (i : ι) := τ (Pi.single i (Matrix.single (a i) (a i) 1))
+  let c (i : ι) := if h : Nonempty (n i) then
+    τ (Pi.single i (Matrix.single (Classical.choice h) (Classical.choice h) 1)) else 0
   have hunit (i : ι) (b e : n i) :
       τ (Pi.single i (Matrix.single b e 1)) = if b = e then c i else 0 := by
-    have h := hcomm (Pi.single i (Matrix.single b (a i) 1))
-      (Pi.single i (Matrix.single (a i) e 1))
+    let a : n i := Classical.choice ⟨b⟩
+    have h := hcomm (Pi.single i (Matrix.single b a 1))
+      (Pi.single i (Matrix.single a e 1))
     split_ifs with hbe
-    · simpa [hbe, c, ← Pi.single_mul] using h
+    · simpa [hbe, c, dite_eq_left (Nonempty.intro b), a, ← Pi.single_mul] using h
     · simpa [Ne.symm hbe, ← Pi.single_mul] using h
   have hτ : τ = lsum k _ k fun i ↦ c i • traceLinearMap (n i) k k := by
     ext i b e
     have ht : (Matrix.single b e (1 : k)).trace = if b = e then 1 else 0 := by
       split_ifs with hbe <;> simp [hbe]
     simpa [-lsum_apply, lsum_piSingle, ht] using hunit i b e
+  refine ⟨c, fun i b ↦ by simpa using hunit i b b, fun z ↦ ?_⟩
   simpa only [lsum_apply, LinearMap.sum_apply, comp_apply, proj_apply, LinearMap.smul_apply,
     traceLinearMap_apply, smul_eq_mul] using
     DFunLike.congr_fun hτ z

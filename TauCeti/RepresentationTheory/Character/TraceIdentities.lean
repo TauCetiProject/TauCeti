@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Semisimplification
-public import TauCeti.RepresentationTheory.OfGL
+public import TauCeti.RepresentationTheory.Character.Basic
 import TauCeti.LinearAlgebra.Matrix.Trace.Realization
 import TauCeti.RingTheory.TraceFunctional.Newton
 import TauCeti.RingTheory.TraceFunctional.Identities
@@ -127,17 +127,16 @@ private lemma exists_matrix_trace [IsAlgClosed k] [CharZero k] {T : G → k}
   have h_alg : ∀ B : MvPolynomial k[G] k,
       (∀ ρ : k[G] →ₐ[k] Matrix n n k, eval (fun x ↦ (ρ x).trace) B = 0) → eval t B = 0 :=
     eval_linearExtension_eq_zero h_identities
-  have t_comm (x y : k[G]) : t (x * y) = t (y * x) := by
-    simpa [trace_mul_comm (m := n) (n := n), sub_eq_zero] using h_alg (X (x * y - y * x))
+  let t_comm := t.map_mul_comm_of_trace_identities h_alg
   let I : Ideal k[G] := t.traceRadical t_comm
   let τ : k[G] ⧸ I →ₗ[k] k := t.quotientTrace t_comm
   have hτ (x : k[G]) : τ (mk I x) = t x := t.quotientTrace_mk t_comm x
   have τ_nat (l : k) (x : k[G] ⧸ I) (hx : x * x = l • x) :
       ∃ j : ℕ, j ≤ Fintype.card n ∧ τ x = j * l :=
     τ.exists_nat_mul_of_integralNewtonPolynomial_eq_zero hx
-      (t.eval_integralNewtonPolynomial_quotientTrace_eq_zero t_comm h_alg x)
+      (t.eval_integralNewtonPolynomial_quotientTrace_eq_zero h_alg x)
   have : Module.Finite k (k[G] ⧸ I) :=
-    t.finite_quotient_traceRadical_of_trace_identities t_comm h_alg
+    t.finite_quotient_traceRadical_of_trace_identities h_alg
   have : IsArtinianRing (k[G] ⧸ I) := IsArtinianRing.of_finite k _
   have : IsSemisimpleRing (k[G] ⧸ I) :=
     t.isSemisimpleRing_quotient_traceRadical t_comm fun x hx ↦ by
@@ -150,10 +149,10 @@ private lemma exists_matrix_trace [IsAlgClosed k] [CharZero k] {T : G → k}
   obtain ⟨m, d, _, ⟨e⟩⟩ := IsSemisimpleRing.exists_algEquiv_pi_matrix_of_isAlgClosed k (k[G] ⧸ I)
   obtain ⟨φ, hφ⟩ := (τ.comp e.symm.toLinearMap).exists_algHom_trace_eq_pi_matrix
     (N := n)
-    (fun x y ↦ by simpa using t.quotientTrace_mul_comm t_comm (e.symm x) (e.symm y)) (fun _ ↦ 0)
-    (fun i ↦ by
+    (τ.comp_algHom_mul_comm (t.quotientTrace_mul_comm t_comm) e.symm.toAlgHom)
+    (fun i b ↦ by
       have hi : IsIdempotentElem (Pi.single i
-          (Matrix.single (0 : Fin (d i)) (0 : Fin (d i)) (1 : k)) :
+          (Matrix.single b b (1 : k)) :
             Π j, Matrix (Fin (d j)) (Fin (d j)) k) := by
         simp [IsIdempotentElem, ← Pi.single_mul]
       obtain ⟨j, -, hj⟩ := τ_nat 1 _ (by simpa using (hi.map e.symm).eq)
@@ -178,7 +177,7 @@ theorem exists_isSemisimpleRepresentation_character_eq_of_trace_identities
   let ρ := Representation.ofGL r
   have hchar : ρ.character = T := by
     ext g
-    simpa [ρ, Representation.character, Matrix.trace_toLin'_eq] using hr g
+    simpa only [ρ, Representation.character_ofGL_apply] using hr g
   let σ := ρ.semisimplification
   have hdim : Module.finrank k (TauCeti.semisimplification k[G] ρ.asModule) = Fintype.card n := by
     apply Nat.cast_injective (R := k)
@@ -203,14 +202,20 @@ theorem exists_gl_trace_eq_of_trace_identities [IsAlgClosed k] [CharZero k] {T :
       (Representation.ofGL r).IsSemisimpleRepresentation ∧ ∀ g, (r g).val.trace = T g := by
   classical
   obtain ⟨ρ, hρ, hchar⟩ := exists_isSemisimpleRepresentation_character_eq_of_trace_identities h
-  let r := (Units.map (LinearMap.toMatrixAlgEquiv (Pi.basisFun k n)).toMonoidHom).comp
+  let r := (Units.map (LinearMap.toMatrixAlgEquiv').toMonoidHom).comp
     ρ.asGroupHom
   have heq : Representation.ofGL r = ρ := by
-    ext g v i
-    simp [r, Representation.ofGL_apply, LinearMap.toMatrixAlgEquiv_apply,
-      Representation.asGroupHom_apply]
+    apply MonoidHom.ext
+    intro g
+    apply LinearMap.ext
+    intro v
+    have hv := congrArg (fun f : Module.End k (n → k) ↦ f v)
+      (Matrix.toLinAlgEquiv'_toMatrixAlgEquiv' (ρ g))
+    simp only [Matrix.toLinAlgEquiv'_apply] at hv
+    simpa [r, Representation.ofGL_apply, Representation.asGroupHom_apply,
+      Matrix.toLin'_apply] using hv
   refine ⟨r, heq ▸ hρ, fun g ↦ ?_⟩
   have hg := congrFun hchar g
-  simpa [← heq, Representation.character, Matrix.trace_toLin'_eq] using hg
+  simpa only [← heq, Representation.character_ofGL_apply] using hg
 
 end TauCeti

@@ -8,7 +8,8 @@ module
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum.NewtonPolynomial
-public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum.IntegralNewton
+import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.LinearAlgebra.Matrix.MvPolynomial
 import TauCeti.Algebra.Regular.NatCast
 import TauCeti.LinearAlgebra.Charpoly.Nilpotent
@@ -41,8 +42,13 @@ without additive torsion, such as a field of characteristic zero, or over a fiel
 characteristic `p > d`, the traces of the first `d` powers of a `d × d` matrix determine its
 characteristic polynomial.
 
+The integral Newton polynomial of degree one greater than the matrix size also vanishes at
+the traces of its powers, without characteristic assumptions.
+
 ## Main results
 
+* `Matrix.eval_integralNewtonPolynomial_trace_pow_eq_zero`: the integral Newton vanishing
+  identity over any commutative ring.
 * `Matrix.mul_coeff_charpolyRev_eq_neg_sum`: **Newton's identities** for the traces of the powers
   of a matrix over any commutative ring; `LinearMap.mul_coeff_reverse_charpoly_eq_neg_sum` is the
   same statement for an endomorphism of a finite free module.
@@ -71,6 +77,14 @@ characteristic polynomial.
 * `Matrix.pow_card_eq_zero_of_trace_pow_eq_zero` and
   `LinearMap.pow_finrank_eq_zero_of_trace_pow_eq_zero`: without additive torsion, if these traces
   all vanish then `A ^ d = 0`, by `Matrix.pow_eq_zero_of_charpoly_eq_X_pow`.
+
+## Provenance
+
+`Matrix.eval_integralNewtonPolynomial_trace_pow_eq_zero` adapts the Newton-vanishing
+step of `New.exists_rep_of_trace_identities` in
+`src/Lib/GaloisRep/Pseudocharacter/Pseudorepresentations.lean` in grh-lean
+(https://github.com/lsernau/grh-lean, commit `72fead1`, Apache 2.0,
+Copyright 2026 Anthropic, PBC). The commutative-ring formulation is new here.
 
 ## References
 
@@ -135,17 +149,56 @@ an algebraically closed field, in which the characteristic polynomial of the uni
 splits. Identities in the coefficients of `det (1 - X A)` and the traces of the powers of `A`
 proved in the split case pull back along this embedding, then specialise to every matrix along
 `Xᵢⱼ ↦ Aᵢⱼ` (`Matrix.mvPolynomialX_map_eval₂`). -/
-noncomputable def universalEmbedding (n : Type*) :
+private noncomputable def universalEmbedding (n : Type*) :
     MvPolynomial (n × n) ℤ →+* AlgebraicClosure (FractionRing (MvPolynomial (n × n) ℤ)) :=
   (algebraMap (FractionRing (MvPolynomial (n × n) ℤ)) _).comp
     (algebraMap (MvPolynomial (n × n) ℤ) (FractionRing (MvPolynomial (n × n) ℤ)))
 
 /-- The embedding `Matrix.universalEmbedding` of `ℤ[Xᵢⱼ]` into an algebraically closed field is
 injective. -/
-theorem universalEmbedding_injective (n : Type*) :
+private theorem universalEmbedding_injective (n : Type*) :
     Function.Injective (universalEmbedding n) :=
   (algebraMap (FractionRing (MvPolynomial (n × n) ℤ)) _).injective.comp
     (IsFractionRing.injective _ _)
+
+private theorem map_eval_integralNewtonPolynomial_trace_pow
+    {k S n : Type*} [CommRing k] [CommRing S] [Fintype n] [DecidableEq n]
+    (f : k →+* S) (A : Matrix n n k) (j m : ℕ) :
+    f (MvPolynomial.eval (fun i : ℕ ↦ (A ^ i).trace)
+      (TauCeti.integralNewtonPolynomial j m)) =
+    MvPolynomial.eval (fun i : ℕ ↦ ((A.map f) ^ i).trace)
+      (TauCeti.integralNewtonPolynomial j m) := by
+  rw [MvPolynomial.map_eval, TauCeti.map_integralNewtonPolynomial]
+  simp only [Function.comp_def, AddMonoidHom.map_trace, Matrix.map_pow]
+
+/-- Traces of powers of a square matrix annihilate the integral Newton polynomial of degree
+one greater than its size, over any commutative ring. -/
+theorem eval_integralNewtonPolynomial_trace_pow_eq_zero
+    {k n : Type*} [CommRing k] [Fintype n] [DecidableEq n] (A : Matrix n n k) :
+    MvPolynomial.eval (fun i : ℕ ↦ (A ^ i).trace)
+      (TauCeti.integralNewtonPolynomial (Fintype.card n + 1) 1) = 0 := by
+  -- Prove the identity on the universal matrix, whose characteristic polynomial splits after
+  -- `universalEmbedding`.
+  let U := mvPolynomialX n n ℤ
+  have hsplit := IsAlgClosed.splits (U.map (universalEmbedding n)).charpoly
+  have hp (i : ℕ) : ((U.map (universalEmbedding n)) ^ i).trace =
+      ((U.map (universalEmbedding n)).charpoly.roots.map fun a ↦ a ^ i).sum := by
+    simpa using trace_aeval_eq_sum_roots_charpoly_of_splits hsplit (Polynomial.X ^ i)
+  have hU : MvPolynomial.eval (fun i : ℕ ↦ (U ^ i).trace)
+      (TauCeti.integralNewtonPolynomial (Fintype.card n + 1) 1) = 0 := by
+    apply universalEmbedding_injective n
+    rw [map_zero, map_eval_integralNewtonPolynomial_trace_pow]
+    simp_rw [hp]
+    rw [Multiset.eval_integralNewtonPolynomial]
+    simp [Multiset.esymm_of_card_lt, ← hsplit.natDegree_eq_card_roots,
+      charpoly_natDegree_eq_dim]
+  -- Every matrix is a specialization of the universal matrix.
+  let g : MvPolynomial (n × n) ℤ →+* k := MvPolynomial.eval₂Hom (Int.castRingHom k)
+    fun p ↦ A p.1 p.2
+  have hmap : U.map g = A := mvPolynomialX_map_eval₂ _ A
+  have h := congrArg g hU
+  rw [map_zero, map_eval_integralNewtonPolynomial_trace_pow, hmap] at h
+  exact h
 
 variable {n m R : Type*} [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m] [CommRing R]
 

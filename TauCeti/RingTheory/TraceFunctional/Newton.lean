@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum.IntegralNewton
-public import Mathlib.Algebra.Module.LinearMap.Defs
 import Mathlib.Tactic.Ring
 
 /-!
@@ -58,15 +57,15 @@ lemma eval_integralNewtonPolynomial_of_geometric
     | zero => simp
     | succ m ih =>
       rw [pow_succ, ih, smul_mul_assoc, hy, smul_smul, ← pow_succ]
+  have htrace (m : ℕ) : τ (y ^ (m + 1)) = l ^ m * τ y := by
+    rw [hpow, map_smul, smul_eq_mul]
   induction j with
-  | zero => simp [integralNewtonPolynomial_succ, integralNewtonPolynomial_zero, hpow]
+  | zero => simp [integralNewtonPolynomial_succ, integralNewtonPolynomial_zero, htrace]
   | succ j ih =>
     intro m
-    -- unfold one step: `X (m + 1) * integralNewtonPolynomial (j + 1) 1 - (j + 1) •
-    -- integralNewtonPolynomial (j + 1) (m + 2)`;
-    -- `ih` at `0` and at `m + 1` turns both into products
-    rw [integralNewtonPolynomial_succ (j + 1), map_sub, map_mul, map_nsmul, eval_X, ih 0,
-      ih (m + 1), hpow, map_smul, prod_range_succ _ (j + 1), smul_eq_mul, nsmul_eq_mul]
+    simp only [integralNewtonPolynomial_succ (j + 1), map_sub, map_mul, map_natCast,
+      eval_X, ih, htrace, pow_zero, one_mul, nsmul_eq_mul]
+    rw [prod_range_succ _ (j + 1)]
     ring
 
 /-- Let `τ` be a linear form on a `k`-algebra `A` and `y : A` with `y * y = l • y`.
