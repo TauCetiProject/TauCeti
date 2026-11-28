@@ -76,6 +76,8 @@ is bounded on `x ≥ 0`.
   `1 + a x ≤ (1 + a) exp (a (x - 1))` for every real `a` and `x ≥ 1`.
 * `TauCeti.inv_one_sub_le_one_add_mul_exp_sq_div_one_sub_sq`:
   `(1 - x)⁻¹ ≤ (1 + x) exp (t² / (1 - t²))` for `0 ≤ x ≤ t < 1`.
+* `TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp`: product bound for two polynomial–exponential
+  profiles `C * (1 + |y|) ^ R * exp (α * |y|)` with signed rates.
 * `TauCeti.exp_mul_le_exp_abs_mul_mul_exp_of_abs_sub_le`: `exp (c u) ≤ exp (|c| A) exp (c v)`
   for `|u - v| ≤ A`, with its squared form `TauCeti.sq_exp_mul_le_of_abs_sub_le`.
 -/
@@ -505,6 +507,23 @@ theorem inv_one_sub_le_one_add_mul_exp_sq_div_one_sub_sq {x t : ℝ} (hx : 0 ≤
   calc (1 - x)⁻¹ = (1 + x) * (1 - x ^ 2)⁻¹ := by field_simp [(by linarith : (1 : ℝ) - x ≠ 0)]; ring
     _ ≤ (1 + x) * (1 - t ^ 2)⁻¹ := by gcongr
     _ ≤ (1 + x) * Real.exp (t ^ 2 / (1 - t ^ 2)) := by gcongr
+
+/-- Product bound for two nonnegative quantities bounded by polynomial–exponential profiles
+`C * (1 + |y|) ^ R * exp (α * |y|)` with signed rates `α₁` and `α₂`. -/
+theorem mul_le_mul_one_add_abs_rpow_mul_exp {x₁ x₂ C₁ R₁ α₁ C₂ R₂ α₂ y : ℝ}
+    (hx₁ : 0 ≤ x₁) (hx₂ : 0 ≤ x₂)
+    (h₁ : x₁ ≤ C₁ * (1 + |y|) ^ R₁ * Real.exp (α₁ * |y|))
+    (h₂ : x₂ ≤ C₂ * (1 + |y|) ^ R₂ * Real.exp (α₂ * |y|)) :
+    x₁ * x₂ ≤ C₁ * C₂ * (1 + |y|) ^ (R₁ + R₂) * Real.exp ((α₁ + α₂) * |y|) := by
+  have h1y : 0 < 1 + |y| := by positivity
+  calc x₁ * x₂
+      ≤ (C₁ * (1 + |y|) ^ R₁ * Real.exp (α₁ * |y|)) *
+          (C₂ * (1 + |y|) ^ R₂ * Real.exp (α₂ * |y|)) :=
+        mul_le_mul h₁ h₂ hx₂ (hx₁.trans h₁)
+    _ = C₁ * C₂ * ((1 + |y|) ^ R₁ * (1 + |y|) ^ R₂) *
+          (Real.exp (α₁ * |y|) * Real.exp (α₂ * |y|)) := by ring
+    _ = C₁ * C₂ * (1 + |y|) ^ (R₁ + R₂) * Real.exp ((α₁ + α₂) * |y|) := by
+        rw [← Real.rpow_add h1y, ← Real.exp_add, ← add_mul]
 
 /-- Changing the exponent of an exponential weight by at most `A` changes it by at most the factor
 `exp (|c| A)`: `exp (c u) ≤ exp (|c| A) exp (c v)` for `|u - v| ≤ A`. -/

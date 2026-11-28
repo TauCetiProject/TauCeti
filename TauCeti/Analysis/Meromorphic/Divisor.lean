@@ -30,12 +30,16 @@ of support finite and bounds sums over their subsets by the corresponding closed
 * `MeromorphicOn.inter_support_analyticOrderNatAt_subset_support_divisor`,
   `AnalyticOnNhd.support_divisor_eq`, and `AnalyticOnNhd.support_divisor_univ_eq` — support
   relations between `analyticOrderNatAt f` and `MeromorphicOn.divisor f`.
+* `AnalyticOnNhd.support_divisor_subset` — the divisor support of an analytic function is
+  contained in any set containing its zeros on the domain.
 * `AnalyticOnNhd.divisor_closedBall_apply` and `AnalyticOnNhd.finsum_subtype_eq_finsum_divisor` —
   on a closed ball where `f` is analytic, the divisor records the orders of the zeros in the ball,
   so order-weighted sums over those zeros are divisor sums.
 * `AnalyticAt.divisor_apply_eq_zero` — the divisor vanishes where `f` is analytic and nonzero.
 * `AnalyticAt.notMem_divisor_support_of_ne_zero`, `AnalyticAt.apply_eq_zero_of_divisor_ne_zero` —
   such a point is off the divisor support, so any support point where `f` is analytic is a zero.
+* `AnalyticOnNhd.divisor_neg_eq_of_even` — the whole-space divisor of an even analytic function is
+  even.
 * `MeromorphicOn.divisor_norm_sublevel_finite` — finitely many support points occur in each
   norm sublevel over a proper normed field.
 * `AnalyticOnNhd.tsum_divisor_subtype_le_sum_closedBall` — a support-subset multiplicity sum
@@ -198,6 +202,16 @@ theorem AnalyticOnNhd.support_divisor_univ_eq {𝕜 E : Type*} [NontriviallyNorm
     (MeromorphicOn.divisor f Set.univ).support = Function.support (analyticOrderNatAt f) := by
   rw [hf.support_divisor_eq, Set.univ_inter]
 
+/-- For a function analytic on a neighbourhood of `U`, the support of its divisor on `U` is
+contained in any set `S` containing all zeros of `f` in `U`. -/
+theorem AnalyticOnNhd.support_divisor_subset {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {U S : Set 𝕜}
+    (hf : AnalyticOnNhd 𝕜 f U) (hzeros : ∀ z ∈ U, f z = 0 → z ∈ S) :
+    (MeromorphicOn.divisor f U).support ⊆ S :=
+  fun z hz ↦ hzeros z ((MeromorphicOn.divisor f U).supportWithinDomain hz)
+    ((hf z ((MeromorphicOn.divisor f U).supportWithinDomain hz)).apply_eq_zero_of_divisor_ne_zero
+      hz)
+
 /-- On a closed ball where `f` is analytic, the divisor of `f` is the order of vanishing
 `analyticOrderNatAt f` at the zeros of `f` in the ball, and zero elsewhere. -/
 theorem AnalyticOnNhd.divisor_closedBall_apply {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
@@ -226,6 +240,24 @@ theorem AnalyticOnNhd.finsum_subtype_eq_finsum_divisor {𝕜 E R : Type*}
     (finsum_congr fun ρ ↦ ?_)
   rw [finsum_eq_if, hf.divisor_closedBall_apply]
   split_ifs <;> simp
+
+/-- The whole-space divisor of an even analytic function is invariant under negation. -/
+theorem AnalyticOnNhd.divisor_neg_eq_of_even
+    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {g : 𝕜 → E} (hg : AnalyticOnNhd 𝕜 g Set.univ) (heven : g.Even) (ρ : 𝕜) :
+    MeromorphicOn.divisor g Set.univ (-ρ) = MeromorphicOn.divisor g Set.univ ρ := by
+  rw [MeromorphicOn.divisor_eq_analyticOrderNatAt hg.meromorphicOn (hg (-ρ) (Set.mem_univ _))
+      (Set.mem_univ _),
+    MeromorphicOn.divisor_eq_analyticOrderNatAt hg.meromorphicOn (hg ρ (Set.mem_univ _))
+      (Set.mem_univ _), analyticOrderNatAt, analyticOrderNatAt]
+  have hcomp : g ∘ Neg.neg = g := funext heven
+  have hneg : AnalyticAt 𝕜 (fun z : 𝕜 ↦ -z) ρ := analyticAt_id.neg
+  have hsub : analyticOrderAt (fun z : 𝕜 ↦ -z - -ρ) ρ = 1 :=
+    hneg.analyticOrderAt_sub_eq_one_of_deriv_ne_zero (by rw [deriv_neg]; simp)
+  have hord := (hg (-ρ) (Set.mem_univ _)).analyticOrderAt_comp (g := fun z : 𝕜 ↦ -z)
+    (z₀ := ρ) hneg
+  rw [hcomp, hsub, mul_one] at hord
+  rw [hord]
 
 /-- Equal divisors determine equal meromorphic orders at a point where both orders are finite.
 The two functions may take values in different normed spaces over the same field. -/

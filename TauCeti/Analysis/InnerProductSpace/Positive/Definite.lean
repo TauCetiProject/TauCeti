@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.Analysis.Matrix.Hermitian
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 import TauCeti.Analysis.InnerProductSpace.Reflection
@@ -188,26 +189,6 @@ theorem _root_.ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_
     refine e.norm_symm_apply_le_inv_sqrt_mul_norm hlam (fun y => ?_) x
     have h := hRn (O y)
     rwa [← he, O.norm_map] at h
-
-omit [FiniteDimensional 𝕜 V] in
-/-- The symmetric part `(A + A†) / 2` of an operator `A` is symmetric. -/
-theorem _root_.ContinuousLinearMap.isSymmetric_two_inv_smul_add_adjoint [CompleteSpace V]
-    (A : V →L[𝕜] V) : (((2⁻¹ : 𝕜) • (A + A.adjoint) : V →L[𝕜] V) : V →ₗ[𝕜] V).IsSymmetric :=
-  fun x y => by
-    simp only [ContinuousLinearMap.coe_coe, smul_apply, add_apply, inner_smul_left,
-      inner_smul_right, inner_add_left, inner_add_right, ContinuousLinearMap.adjoint_inner_left,
-      ContinuousLinearMap.adjoint_inner_right, map_inv₀, map_ofNat]
-    ring
-
-omit [FiniteDimensional 𝕜 V] in
-/-- The symmetric part `(A + A†) / 2` of an operator `A` has the same real quadratic form
-`re ⟪A ξ, ξ⟫` as `A`. -/
-theorem _root_.ContinuousLinearMap.re_inner_two_inv_smul_add_adjoint_apply [CompleteSpace V]
-    (A : V →L[𝕜] V) (ξ : V) :
-    re ⟪((2⁻¹ : 𝕜) • (A + A.adjoint)) ξ, ξ⟫_𝕜 = re ⟪A ξ, ξ⟫_𝕜 := by
-  simp [inner_add_left, inner_smul_left, ContinuousLinearMap.adjoint_inner_left,
-    inner_re_symm ξ (A ξ), normSq_apply]
-  ring
 
 /-- **Factoring the symmetric part of a coercive operator through a prescribed direction.** Let
 `A` be an operator on a finite-dimensional inner product space, not necessarily symmetric, with
