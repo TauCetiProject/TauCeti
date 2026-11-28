@@ -185,8 +185,8 @@ theorem sq_dvd_eval_cyclotomic_prime_pow_comp_X_add_one_sub {t : R} {k n : ℕ}
   rw [hsum]
   exact dvd_sum fun i _ ↦ hn.trans (sub_one_dvd_pow_sub_one _ i)
 
-/-- Over an integral domain `R` with `(p : R) ≠ 0`, a non-unit polynomial divides at most one
-shifted prime-power cyclotomic polynomial `Φ_{p ^ j}(X + 1)`. -/
+/-- For a prime `p`, over an integral domain `R` with `(p : R) ≠ 0`, a non-unit polynomial
+divides at most one shifted prime-power cyclotomic polynomial `Φ_{p ^ j}(X + 1)`. -/
 theorem eq_of_dvd_cyclotomic_prime_pow_comp_X_add_one [IsDomain R] (hp0 : (p : R) ≠ 0)
     {F : R[X]} (hF : ¬ IsUnit F) {i j : ℕ}
     (hi : F ∣ (cyclotomic (p ^ i) R).comp (X + 1))

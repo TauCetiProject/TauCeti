@@ -338,12 +338,11 @@ theorem finite_smul_top_iff_of_finite_ker_of_finite_coker {R M N : Type*} [CommR
   let φ' : ↥(r • (⊤ : Submodule R M)) →ₗ[R] ↥(r • (⊤ : Submodule R N)) := φ.restrict hmap
   have : Finite (LinearMap.ker φ') := φ.finite_ker_restrict hmap
   let toSmul : N →ₗ[R] ↥(r • (⊤ : Submodule R N)) :=
-    (LinearEquiv.ofEq _ _ (by rw [Submodule.map_top, range_lsmul_eq_smul_top])).toLinearMap ∘ₗ
-      ((LinearMap.lsmul R N r).submoduleMap ⊤ ∘ₗ Submodule.topEquiv.symm.toLinearMap)
+    (LinearEquiv.ofEq _ _ (range_lsmul_eq_smul_top r)).toLinearMap ∘ₗ
+      (LinearMap.lsmul R N r).rangeRestrict
   have htoSmul_surj : Function.Surjective toSmul := by
     simpa only [toSmul, LinearMap.coe_comp, LinearEquiv.coe_coe] using
-      (LinearEquiv.surjective _).comp
-        ((LinearMap.submoduleMap_surjective _ ⊤).comp Submodule.topEquiv.symm.surjective)
+      (LinearEquiv.surjective _).comp (LinearMap.lsmul R N r).surjective_rangeRestrict
   have hq : Function.Surjective ((LinearMap.range φ).mapQ (LinearMap.range φ') toSmul fun n hn ↦ by
       rcases hn with ⟨m, rfl⟩
       refine ⟨⟨r • m, Submodule.smul_mem_pointwise_smul m r ⊤ Submodule.mem_top⟩, Subtype.ext ?_⟩

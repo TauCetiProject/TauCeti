@@ -35,12 +35,6 @@ which a natural number generates a positive power of the maximal ideal has chara
   `c * ϖ ^ n ∈ 𝔪 ^ (n + 1)` for a uniformizer `ϖ`, then `c ∈ 𝔪`.
 * `TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal`: `x ∈ 𝔪 ^ n` is
   `n ≤ addVal x`.
-* `TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_of_addVal_eq`: an element with positive finite
-  `addVal` lies in `𝔪`.
-* `TauCeti.IsDiscreteValuationRing.ne_zero_of_addVal_eq`: an element with finite `addVal` is
-  nonzero.
-* `TauCeti.IsDiscreteValuationRing.span_singleton_eq_maximalIdeal_pow`: if `addVal x = n`, then
-  `Ideal.span {x} = 𝔪 ^ n`.
 * `TauCeti.IsDiscreteValuationRing.addVal_eq_multiplicity_span_singleton`: for `x ≠ 0`,
   `addVal x` is the multiplicity of `𝔪` in the ideal `(x)`.
 * `TauCeti.IsDiscreteValuationRing.addVal_eq_one_iff_irreducible`: the uniformizers are the
@@ -114,30 +108,6 @@ theorem mem_maximalIdeal_pow_iff_le_addVal {n : ℕ} {x : S} :
   obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
   rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton,
     ← _root_.IsDiscreteValuationRing.addVal_le_iff_dvd, hϖ.addVal_pow]
-
-/-- In a discrete valuation ring, an element of positive finite additive valuation lies in the
-maximal ideal. -/
-theorem mem_maximalIdeal_of_addVal_eq {x : S} {n : ℕ}
-    (hx : _root_.IsDiscreteValuationRing.addVal S x = n) (hn : 0 < n) :
-    x ∈ maximalIdeal S := by
-  rw [← pow_one (maximalIdeal S), mem_maximalIdeal_pow_iff_le_addVal, hx]
-  exact_mod_cast hn
-
-/-- In a discrete valuation ring, an element of finite additive valuation is nonzero. -/
-theorem ne_zero_of_addVal_eq {x : S} {n : ℕ}
-    (hx : _root_.IsDiscreteValuationRing.addVal S x = n) : x ≠ 0 :=
-  _root_.IsDiscreteValuationRing.addVal_eq_top_iff.not.mp (hx ▸ ENat.natCast_ne_top n)
-
-/-- In a discrete valuation ring, an element of finite additive valuation `n` generates the `n`-th
-power of the maximal ideal. -/
-theorem span_singleton_eq_maximalIdeal_pow {x : S} {n : ℕ}
-    (hx : _root_.IsDiscreteValuationRing.addVal S x = n) :
-    Ideal.span {x} = maximalIdeal S ^ n := by
-  rw [← _root_.IsDiscreteValuationRing.idealOrderIsoENat_symm_apply_coe,
-    OrderIso.eq_symm_apply, _root_.IsDiscreteValuationRing.idealOrderIsoENat_apply]
-  exact congrArg OrderDual.toDual <|
-    ((_root_.IsDiscreteValuationRing.addVal_eq_iff_associated _ _).mpr
-      (Submodule.IsPrincipal.associated_generator_span_self x)).trans hx
 
 /-- Equality of two classes modulo a maximal-ideal power is measured by the additive valuation
 of the difference of their representatives. -/

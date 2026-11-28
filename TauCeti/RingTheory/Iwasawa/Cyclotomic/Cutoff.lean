@@ -64,7 +64,7 @@ cyclotomic polynomial `Φ_{p ^ j}(X + 1)` is a power of `X`, so `X` kills the de
 
 ## Main results
 
-* `TauCeti.Iwasawa.iSup_torsionBy_growthTransition_zero`: `⨆ m, M[ν_{0,m}] = M_δ`.
+* `TauCeti.Iwasawa.iSup_torsionBy_growthTransition_zero`: for prime `p`, `⨆ m, M[ν_{0,m}] = M_δ`.
 * `TauCeti.Iwasawa.finite_quotSMulTop_growthTransition_iff_resultant_charPoly_ne_zero`: without
   assuming `p` is prime or `(p : O) ≠ 0`, all `M ⧸ ν_{n₀,n} M` are finite iff
   `Res(F_M, ξ_j) ≠ 0` for all `j ≥ n₀`.
@@ -102,7 +102,7 @@ namespace TauCeti.Iwasawa
 
 section TransitionHelpers
 
-/-- The supremum of the kernels `M[ν_{0,m}]` is `deltaSubmodule p O M`. -/
+/-- For prime `p`, the supremum of the kernels `M[ν_{0,m}]` is `deltaSubmodule p O M`. -/
 theorem iSup_torsionBy_growthTransition_zero (p : ℕ) [Fact p.Prime] (O M : Type*) [CommRing O]
     [AddCommGroup M] [Module O⟦X⟧ M] :
     (⨆ m, torsionBy O⟦X⟧ M (growthTransition p O 0 m : O⟦X⟧)) = deltaSubmodule p O M := by
@@ -299,34 +299,11 @@ theorem exists_natCard_quotSMulTop_growthTransition_of_isTorsion {p e : ℕ} [Fa
       Nat.card (QuotSMulTop (growthTransition p O n₀ k : O⟦X⟧) M) =
         Nat.card (ResidueField O) ^
           ((muInvariant O M * p ^ k + e * lambdaInvariant O M * k : ℤ) + ν).toNat := by
-  obtain ⟨n₀, ν, hν⟩ := exists_eventually_natCard_quotSMulTop_growthTransition_eq_of_isTorsion
-    (M := M) he hpe hM
-  obtain ⟨N, hN⟩ := eventually_atTop.mp hν
-  refine ⟨n₀, ν, N, fun k hk ↦ ?_⟩
-  have hcard := hN k hk
-  have hq : (1 : ℚ) < Nat.card (ResidueField O) := by
-    have : Nontrivial (ResidueField O) := inferInstance
-    exact_mod_cast Finite.one_lt_card
-  have hge1 : (1 : ℚ) ≤ (Nat.card (ResidueField O) : ℚ) ^
-      (((muInvariant O M * p ^ k + e * lambdaInvariant O M * k : ℕ) : ℤ) + ν) := by
-    rw [← hcard]
-    rcases Nat.eq_zero_or_pos (Nat.card (QuotSMulTop (growthTransition p O n₀ k : O⟦X⟧) M)) with
-      h0 | hpos
-    · exfalso
-      rw [h0, Nat.cast_zero] at hcard
-      exact (zpow_ne_zero _ (by positivity)) hcard.symm
-    · exact_mod_cast hpos
-  have hnn : 0 ≤ ((muInvariant O M * p ^ k + e * lambdaInvariant O M * k : ℕ) : ℤ) + ν := by
-    by_contra hlt
-    have hlt' : (Nat.card (ResidueField O) : ℚ) ^
-        (((muInvariant O M * p ^ k + e * lambdaInvariant O M * k : ℕ) : ℤ) + ν) < 1 :=
-      (zpow_lt_one_iff_right₀ hq).mpr (not_le.mp hlt)
-    exact hlt'.not_ge hge1
-  refine ⟨by simpa using hnn, ?_⟩
-  apply Nat.cast_injective (R := ℚ)
-  rw [hcard, ← Int.toNat_of_nonneg hnn]
-  push_cast
-  rw [zpow_natCast]
+  have := TauCeti.IsDiscreteValuationRing.charZero_of_span_natCast_eq_maximalIdeal_pow he hpe
+  obtain ⟨n₀, hn₀⟩ := exists_finite_quotSMulTop_growthTransition p (Nat.cast_ne_zero.mpr
+    (Fact.out : p.Prime).ne_zero) hM
+  exact ⟨n₀, exists_natCard_quotSMulTop_growthTransition he hpe n₀
+    (Filter.eventually_atTop.mpr ⟨n₀, hn₀⟩)⟩
 
 /-- **Unconditional Iwasawa growth formula over `ℤ_p`.** For any finitely generated torsion
 `ℤ_p⟦X⟧`-module `M`, there exist a cutoff level `n₀` and an integer `ν` such that
@@ -365,38 +342,33 @@ example (p : ℕ) [Fact p.Prime] :
     ((1 + X) ^ p ^ 0 - 1 : ((ZMod p)⟦X⟧)⟦X⟧) • deltaSubmodule p (ZMod p)⟦X⟧ M = ⊥ ∧
       Infinite (QuotSMulTop (growthTransition p (ZMod p)⟦X⟧ 1 1 : ((ZMod p)⟦X⟧)⟦X⟧) M) := by
   intro M
+  dsimp only [M]
   have hp : p.Prime := Fact.out
   have : CharP (ZMod p)⟦X⟧ p :=
     charP_of_injective_ringHom (Function.LeftInverse.injective (constantCoeff_C (R := ZMod p))) p
+  have hX : (X : ((ZMod p)⟦X⟧)⟦X⟧) •
+      (⊤ : Submodule ((ZMod p)⟦X⟧)⟦X⟧ (((ZMod p)⟦X⟧)⟦X⟧ ⧸ Ideal.span {(X : ((ZMod p)⟦X⟧)⟦X⟧)})) =
+      ⊥ := by
+    rw [Ideal.Quotient.smul_top, Submodule.span_singleton_eq_bot, Submodule.Quotient.mk_eq_zero]
+    exact Ideal.mem_span_singleton_self _
   refine ⟨?_, ?_⟩
-  · rw [eq_bot_iff]
-    intro x hx
-    obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists x _ _).mp hx
-    obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective y
-    simp only [pow_zero, pow_one, add_sub_cancel_left]
-    rw [Submodule.mem_bot, ← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul,
-      Submodule.Quotient.mk_eq_zero, smul_eq_mul]
-    exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self _)
+  · have hω : ((1 + X) ^ p ^ 0 - 1 : ((ZMod p)⟦X⟧)⟦X⟧) = X := by simp
+    rw [hω]
+    exact eq_bot_iff.mpr ((smul_mono_right _ le_top).trans_eq hX)
   · -- In char `p`, `ν_{1, 1} = Φ_p(X + 1) = X ^ (p - 1)` kills `M`, so `M ⧸ ν_{1, 1} M ≃ M`.
     have hν : (growthTransition p (ZMod p)⟦X⟧ 1 1 : ((ZMod p)⟦X⟧)⟦X⟧) = X ^ (p - 1) := by
       rw [growthTransition_self, Polynomial.cyclotomic_prime_pow_comp_X_add_one_eq_X_pow,
         pow_one, Nat.totient_prime hp, Polynomial.coe_pow, Polynomial.coe_X]
     have hsmul : (growthTransition p (ZMod p)⟦X⟧ 1 1 : ((ZMod p)⟦X⟧)⟦X⟧) •
-        (⊤ : Submodule ((ZMod p)⟦X⟧)⟦X⟧ M) = ⊥ := by
-      rw [eq_bot_iff]
-      intro x hx
-      obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists x _ _).mp hx
-      obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective y
-      rw [hν, Submodule.mem_bot, ← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul,
-        Submodule.Quotient.mk_eq_zero, smul_eq_mul, Ideal.mem_span_singleton]
-      exact (dvd_pow_self _ (Nat.sub_pos_of_lt hp.one_lt).ne').trans (dvd_mul_right _ _)
+        (⊤ : Submodule ((ZMod p)⟦X⟧)⟦X⟧
+          (((ZMod p)⟦X⟧)⟦X⟧ ⧸ Ideal.span {(X : ((ZMod p)⟦X⟧)⟦X⟧)})) = ⊥ := by
+      rw [hν, Ideal.Quotient.smul_top, Submodule.span_singleton_eq_bot,
+        Submodule.Quotient.mk_eq_zero, Ideal.mem_span_singleton]
+      exact dvd_pow_self _ (Nat.sub_pos_of_lt hp.one_lt).ne'
     have hO : Infinite (ZMod p)⟦X⟧ := TauCeti.IsDiscreteValuationRing.infinite
-    have hM : Infinite M :=
-      (Equiv.infinite_iff
-        ((Ideal.quotEquivOfEq PowerSeries.ker_constantCoeff.symm).trans
-          (RingHom.quotientKerEquivOfSurjective
-            (f := (constantCoeff : ((ZMod p)⟦X⟧)⟦X⟧ →+* (ZMod p)⟦X⟧))
-            fun r ↦ ⟨C r, constantCoeff_C r⟩)).toEquiv).mpr hO
+    have hM : Infinite (((ZMod p)⟦X⟧)⟦X⟧ ⧸ Ideal.span {(X : ((ZMod p)⟦X⟧)⟦X⟧)}) := by
+      let : Algebra (ZMod p)⟦X⟧ ((ZMod p)⟦X⟧)⟦X⟧ := MvPowerSeries.instAlgebra
+      exact (Equiv.infinite_iff (PowerSeries.quotientSpanXAlgEquiv (ZMod p)⟦X⟧).toEquiv).mpr hO
     exact (Equiv.infinite_iff (Submodule.quotEquivOfEqBot _ hsmul).toEquiv).mpr hM
 
 -- 2. Equal characteristic breaks linear `λ`-growth:
@@ -456,7 +428,7 @@ example {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
     TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow, hq]
   norm_num
 
--- 4. Explicit `ℤ_p` cutoff on `M = ℤ_p⟦X⟧ ⧸ (X)`: `n₀ = 0` fails, while `n₀ = 1` gives `p ^ k`.
+-- 4. Explicit `ℤ_p` cutoff on `ℤ_p⟦X⟧ ⧸ (X)`: `n₀ = 0` (`ω_k`) fails, while `n₀ = 1` gives `p ^ k`.
 example (p : ℕ) [Fact p.Prime] (k : ℕ) :
     let M := ℤ_[p]⟦X⟧ ⧸ Ideal.span {(X : ℤ_[p]⟦X⟧)}
     Infinite (QuotSMulTop (growthTransition p ℤ_[p] 0 k : ℤ_[p]⟦X⟧) M) ∧
@@ -464,17 +436,14 @@ example (p : ℕ) [Fact p.Prime] (k : ℕ) :
   intro M
   dsimp only [M]
   refine ⟨?_, ?_⟩
-  · obtain ⟨q, hq⟩ := Polynomial.X_dvd_iff.mpr (coeff_zero_growthTransition_zero p ℤ_[p] k)
-    have hsmul : (growthTransition p ℤ_[p] 0 k : ℤ_[p]⟦X⟧) •
+  · have hsmul : (growthTransition p ℤ_[p] 0 k : ℤ_[p]⟦X⟧) •
         (⊤ : Submodule ℤ_[p]⟦X⟧ (ℤ_[p]⟦X⟧ ⧸ Ideal.span {(X : ℤ_[p]⟦X⟧)})) = ⊥ := by
-      rw [eq_bot_iff]
-      intro x hx
-      obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists x _ _).mp hx
-      obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective y
-      rw [Submodule.mem_bot, ← Ideal.Quotient.mk_eq_mk, ← Submodule.Quotient.mk_smul,
-        Submodule.Quotient.mk_eq_zero, smul_eq_mul, hq, Polynomial.coe_mul, Polynomial.coe_X,
-        mul_assoc]
-      exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self _)
+      rw [Ideal.Quotient.smul_top, Submodule.span_singleton_eq_bot, Submodule.Quotient.mk_eq_zero,
+        Ideal.mem_span_singleton]
+      have hX : (Polynomial.X : ℤ_[p][X]) ∣ (1 + Polynomial.X) ^ p ^ k - 1 := by
+        rw [Polynomial.X_dvd_iff, Polynomial.coeff_sub, Polynomial.coeff_zero_eq_eval_zero]
+        simp
+      simpa [growthTransition_zero_left] using map_dvd Polynomial.coeToPowerSeries.ringHom hX
     exact (Equiv.infinite_iff ((Submodule.quotEquivOfEqBot _ hsmul).toEquiv.trans
       (PowerSeries.quotientSpanXAlgEquiv ℤ_[p]).toEquiv)).mpr
       TauCeti.IsDiscreteValuationRing.infinite

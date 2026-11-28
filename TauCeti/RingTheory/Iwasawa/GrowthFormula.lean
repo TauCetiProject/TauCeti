@@ -90,6 +90,9 @@ module `Λ ⧸ (X - ϖ)` has `μ = 0` and `λ = 1`, but `#(M ⧸ ω_n M) = p ^ p
   `ν_{n₀,n}` is `p ^ (n + 1 - n₀)`, and for `n₀ = 0` it is `0`.
 * `TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition_eq`: Iwasawa's growth
   formula `#(M ⧸ ν_{n₀,n} M) = q ^ (μ pⁿ + e λ n + ν)` for all large `n`.
+* `TauCeti.Iwasawa.exists_natCard_quotSMulTop_growthTransition` and
+  `TauCeti.Iwasawa.exists_natCard_quotSMulTop_growthTransition_pow`: natural-number cardinality
+  forms at a fixed cutoff, with base `q` and with `q = p ^ f`.
 * `TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition_eq_padicInt`: the
   case `O = ℤ_p`.
 
@@ -363,6 +366,66 @@ theorem exists_eventually_natCard_quotSMulTop_growthTransition_eq {e : ℕ} (he 
     ((hK k (by omega)).trans (hK a (by omega)).symm), ht, hv, ← hexp, zpow_natCast]
   push_cast
   ring
+
+omit [IsDomain O] [IsDiscreteValuationRing O] [IsAdicComplete (maximalIdeal O) O]
+  [Finite (ResidueField O)] [Module.Finite O⟦X⟧ M] [Fact p.Prime] in
+private theorem nonneg_and_natCard_eq_pow_of_cast_eq_zpow {α : Type*} {b : ℕ} {m : ℤ}
+    (hb : 1 < b) (hcard : (Nat.card α : ℚ) = (b : ℚ) ^ m) :
+    0 ≤ m ∧ Nat.card α = b ^ m.toNat := by
+  have hq : (1 : ℚ) < b := by exact_mod_cast hb
+  have hge1 : (1 : ℚ) ≤ (b : ℚ) ^ m := by
+    rw [← hcard]
+    rcases Nat.eq_zero_or_pos (Nat.card α) with h0 | hpos
+    · exfalso
+      rw [h0, Nat.cast_zero] at hcard
+      exact (zpow_ne_zero _ (by positivity)) hcard.symm
+    · exact_mod_cast hpos
+  have hnn : 0 ≤ m := by
+    by_contra hlt
+    exact ((zpow_lt_one_iff_right₀ hq).mpr (not_le.mp hlt)).not_ge hge1
+  refine ⟨hnn, Nat.cast_injective (R := ℚ) ?_⟩
+  rw [hcard, Nat.cast_pow, ← zpow_natCast, Int.toNat_of_nonneg hnn]
+
+/-- **Iwasawa's growth formula (natural-number cardinality form).** Let `O` be a complete discrete
+valuation ring with finite residue field of cardinality `q`, in which `(p) = 𝔪 ^ e` for a prime `p`
+and some `e > 0`, and let `M` be a finitely generated `O⟦X⟧`-module with Iwasawa invariants
+`μ = μ(M)` and `λ = λ(M)`. If `M ⧸ ν_{n₀,k} M` is finite for all large `k`, then there exist an
+integer `ν` and a threshold `N` such that for all `k ≥ N`, `0 ≤ μ p ^ k + e λ k + ν` and
+`#(M ⧸ ν_{n₀,k} M) = q ^ (μ p ^ k + e λ k + ν)`. -/
+theorem exists_natCard_quotSMulTop_growthTransition {e : ℕ} (he : 0 < e)
+    (hpe : Ideal.span {(p : O)} = maximalIdeal O ^ e) (n₀ : ℕ)
+    (hfin : ∀ᶠ k in atTop, Finite (QuotSMulTop (growthTransition p O n₀ k : O⟦X⟧) M)) :
+    ∃ (ν : ℤ) (N : ℕ), ∀ k ≥ N,
+      0 ≤ (muInvariant O M * p ^ k + e * lambdaInvariant O M * k : ℤ) + ν ∧
+      Nat.card (QuotSMulTop (growthTransition p O n₀ k : O⟦X⟧) M) =
+        Nat.card (ResidueField O) ^
+          ((muInvariant O M * p ^ k + e * lambdaInvariant O M * k : ℤ) + ν).toNat := by
+  obtain ⟨ν, hν⟩ := exists_eventually_natCard_quotSMulTop_growthTransition_eq he hpe n₀ hfin
+  obtain ⟨N, hN⟩ := eventually_atTop.mp hν
+  refine ⟨ν, N, fun k hk ↦ ?_⟩
+  have hq : 1 < Nat.card (ResidueField O) := Finite.one_lt_card
+  simpa using nonneg_and_natCard_eq_pow_of_cast_eq_zpow hq (hN k hk)
+
+/-- **Iwasawa's growth formula for residue degree `f` (natural-number cardinality form).** Under
+the hypotheses of `exists_natCard_quotSMulTop_growthTransition`, if the residue field of `O` has
+cardinality `p ^ f`, then there exist an integer `ν` and a threshold `N` such that for all `k ≥ N`,
+`0 ≤ f μ p ^ k + e f λ k + ν` and `#(M ⧸ ν_{n₀,k} M) = p ^ (f μ p ^ k + e f λ k + ν)`. -/
+theorem exists_natCard_quotSMulTop_growthTransition_pow {e f : ℕ} (he : 0 < e)
+    (hpe : Ideal.span {(p : O)} = maximalIdeal O ^ e) (hf : Nat.card (ResidueField O) = p ^ f)
+    (n₀ : ℕ)
+    (hfin : ∀ᶠ k in atTop, Finite (QuotSMulTop (growthTransition p O n₀ k : O⟦X⟧) M)) :
+    ∃ (ν : ℤ) (N : ℕ), ∀ k ≥ N,
+      0 ≤ (f * muInvariant O M * p ^ k + e * f * lambdaInvariant O M * k : ℤ) + ν ∧
+      Nat.card (QuotSMulTop (growthTransition p O n₀ k : O⟦X⟧) M) =
+        p ^ ((f * muInvariant O M * p ^ k + e * f * lambdaInvariant O M * k : ℤ) + ν).toNat := by
+  obtain ⟨ν, N, hN⟩ := exists_natCard_quotSMulTop_growthTransition he hpe n₀ hfin
+  refine ⟨(f : ℤ) * ν, N, fun k hk ↦ ?_⟩
+  obtain ⟨hnn, hcard⟩ := hN k hk
+  have hexp : (f * muInvariant O M * p ^ k + e * f * lambdaInvariant O M * k : ℤ) + (f : ℤ) * ν =
+      (f : ℤ) * ((muInvariant O M * p ^ k + e * lambdaInvariant O M * k : ℤ) + ν) := by
+    ring
+  refine ⟨hexp ▸ mul_nonneg (Nat.cast_nonneg f) hnn, ?_⟩
+  rw [hcard, hf, ← pow_mul, hexp, Int.toNat_mul (Nat.cast_nonneg f) hnn, Int.toNat_natCast]
 
 end Growth
 

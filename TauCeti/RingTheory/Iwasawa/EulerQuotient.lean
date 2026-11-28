@@ -167,10 +167,11 @@ theorem resultant_ne_zero_of_finite_quotSMulTop_elementary {ϖ : O}
   have hsurj : Function.Surjective π := fun y ↦ ⟨(0, 0, Pi.single j y), by simp [π]⟩
   exact Finite.of_surjective _ (QuotSMulTop.map_surjective _ hsurj)
 
-/-- **The cokernel of a Weierstrass polynomial on a torsion elementary module.** Let `ϖ` be a
-uniformiser, let the `Fⱼ` be distinguished at the maximal ideal with `Res(∏ⱼ Fⱼ ^ nⱼ, G) ≠ 0`, and
-let `(G : O⟦X⟧) = P * h` be a Weierstrass factorization at the maximal ideal. Then the cokernel of
-`G` on `∏ᵢ O⟦X⟧ ⧸ (ϖ ^ mᵢ) × ∏ⱼ O⟦X⟧ ⧸ (Fⱼ ^ nⱼ)` has
+/-- **The cokernel of a polynomial admitting a Weierstrass factorization on a torsion elementary
+module.** Let `ϖ` be a uniformiser, let the `Fⱼ` be distinguished at the maximal ideal with
+`Res(∏ⱼ Fⱼ ^ nⱼ, G) ≠ 0`, and let `(G : O⟦X⟧) = P * h` be a Weierstrass factorization at the
+maximal ideal with distinguished factor `P`. Then the cokernel of `G` on
+`∏ᵢ O⟦X⟧ ⧸ (ϖ ^ mᵢ) × ∏ⱼ O⟦X⟧ ⧸ (Fⱼ ^ nⱼ)` has
 `q ^ ((Σ mᵢ) deg P) · #(O ⧸ Res(∏ⱼ Fⱼ ^ nⱼ, G))` elements, where `q` is the cardinality of the
 residue field. -/
 theorem natCard_quotSMulTop_elementary_of_isWeierstrassFactorization {ϖ : O} (hϖ : Irreducible ϖ)
