@@ -8,8 +8,10 @@ module
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Abelian
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Monoidal
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Morphism
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Regular
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.TensorProduct
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Trivial
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
 
 /-!
@@ -37,6 +39,8 @@ subquotient hull of one comodule `W` consists exactly of the comodules with coef
 
 ## Main declarations
 
+* `TauCeti.FGComoduleCat.exists_matrixCoefficient_eq`: every element of a projective coalgebra
+  over a commutative semiring is a coefficient of a finite comodule.
 * `TauCeti.FGComoduleCat.matrixCoefficientSubmodule_le_of_epi`,
   `TauCeti.FGComoduleCat.matrixCoefficientSubmodule_le_of_mono`,
   `TauCeti.FGComoduleCat.matrixCoefficientSubmodule_eq_of_iso`: functoriality of `C(-)`.
@@ -117,6 +121,25 @@ theorem matrixCoefficientSubmodule_biproduct {ι : Type} [Finite ι]
     Comodule.matrixCoefficient_mem_submodule (R := R) (C := C) _ _
 
 end Ring
+
+section Semiring
+
+variable {K : Type u} [CommSemiring K] {B : Type v}
+variable [AddCommMonoid B] [Module K B] [Coalgebra K B] [Module.Projective K B]
+
+/-- Every coalgebra element is a coefficient of a finite comodule: take a finite regular
+subcomodule containing it and pair with the restricted counit. This holds for coalgebras
+that are projective over a commutative semiring, in particular for coalgebras over a field. -/
+theorem exists_matrixCoefficient_eq (b : B) :
+    ∃ (M : FGComoduleCat.{u, v, v} K B) (φ : Module.Dual K M) (m : M),
+      Comodule.matrixCoefficient (C := B) φ m = b := by
+  obtain ⟨D, hD, hb⟩ := Subcomodule.exists_finite_subcomodule_mem (R := K) (C := B) b
+  let : Module.Finite K D := hD
+  refine ⟨of (R := K) (C := B) D,
+    Coalgebra.counit ∘ₗ SMulMemClass.subtype D, ⟨b, hb⟩, ?_⟩
+  exact Comodule.matrixCoefficient_counit_comp_subtype D ⟨b, hb⟩
+
+end Semiring
 
 section Field
 
