@@ -95,6 +95,11 @@ noncomputable def basis (u : Rˣ) (Λ : LinearMap.BilinForm ℤ L) :
 theorem basis_apply (a : L) : basis u Λ a = monomial u Λ a := by
   simp [basis, monomial]
 
+/-- The quantum torus basis is the twisted monoid basis reindexed by additive exponents. -/
+theorem basis_eq_reindex :
+    basis u Λ = (TwistedMonoidAlgebra.basis R (Multiplicative L) (factorSet u Λ)).reindex
+      Multiplicative.toAdd := by simp only [basis]
+
 @[simp]
 theorem basis_repr_monomial (a : L) :
     (basis u Λ).repr (monomial u Λ a) = Finsupp.single a 1 := by
