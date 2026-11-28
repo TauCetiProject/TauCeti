@@ -833,6 +833,16 @@ private theorem continuous_torusFamilyLogGaugeEquiv :
   let _ := logTranslationMulAction P l
   refine continuous_induced_rng.2
     (continuous_iff_continuousAt.2 fun q ↦ ?_)
+  have hcomp : Subtype.val ∘ ⇑((logTranslationQuotientNonzeroOpensEquiv P l).trans
+        ((torusFamilyLogGaugeEquiv P l hr).trans
+          (torusFamilyNonzeroOpensEquiv Subtype.val P continuous_subtypeVal).symm)) =
+      (fun q ↦ torusFamilyLogGauge P l (Quotient.out q)) ∘ Subtype.val := by
+    ext q'
+    simp only [Function.comp_apply, Equiv.trans_apply, coe_torusFamilyNonzeroOpensEquiv_symm,
+      logTranslationQuotientNonzeroOpensEquiv]
+    dsimp only [torusFamilyLogGaugeEquiv, Equiv.coe_fn_mk]
+    rw [coe_torusFamilyCyclicQuotientNonzeroOpensEquiv]
+  rw [hcomp]
   exact (continuousAt_torusFamilyLogGauge_out P l hcont
     ((mem_torusFamilyCyclicQuotientNonzeroOpens _ _ _ _ _ _ _ _ _ q.val).1
       (SetLike.mem_coe.1 q.property))).comp continuousAt_subtypeVal
@@ -850,6 +860,16 @@ private theorem continuous_torusFamilyLogGaugeEquiv_symm :
   let _ := logTranslationMulAction P l
   refine continuous_induced_rng.2
     (continuous_iff_continuousAt.2 fun y ↦ ?_)
+  have hcomp : Subtype.val ∘ ⇑((logTranslationQuotientNonzeroOpensEquiv P l).trans
+        ((torusFamilyLogGaugeEquiv P l hr).trans
+          (torusFamilyNonzeroOpensEquiv Subtype.val P continuous_subtypeVal).symm)).symm =
+      torusFamilyLogGaugeInv P l hr ∘ Subtype.val := by
+    ext y'
+    simp only [Function.comp_apply, Equiv.symm_trans_apply, Equiv.symm_symm,
+      logTranslationQuotientNonzeroOpensEquiv, coe_torusFamilyCyclicQuotientNonzeroOpensEquiv_symm]
+    dsimp only [torusFamilyLogGaugeEquiv, Equiv.coe_fn_symm_mk]
+    rw [coe_torusFamilyNonzeroOpensEquiv]
+  rw [hcomp]
   exact (continuousAt_torusFamilyLogGaugeInv P l hr hcont
     ((mem_torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal y.val).1
       (SetLike.mem_coe.1 y.property))).comp continuousAt_subtypeVal

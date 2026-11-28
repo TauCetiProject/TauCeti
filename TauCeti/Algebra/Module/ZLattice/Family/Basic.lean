@@ -348,7 +348,6 @@ vanish at its base projection. -/
 
 /-- Canonical equivalence between the open-subset subtype `torusFamilyNonzeroOpens φ P hφ` and the
 predicate subtype `{y // φ (torusFamilyProjection P y) ≠ 0}`. -/
-@[expose]
 def torusFamilyNonzeroOpensEquiv {Y Λ E F : Type*} [AddCommGroup Λ] [AddCommGroup E]
     [TopologicalSpace Y] [TopologicalSpace E] [TopologicalSpace F] [Zero F] [T1Space F]
     (φ : Y → F) (P : Y → Λ →ₗ[ℤ] E) (hφ : Continuous φ) :

@@ -220,7 +220,6 @@ theorem mem_torusFamilyCyclicQuotientNonzeroOpens [TopologicalSpace E]
 
 /-- Canonical equivalence between the open-subset subtype `torusFamilyCyclicQuotientNonzeroOpens`
 and the predicate subtype `{q // torusFamilyCyclicQuotientProjection ... q ≠ 0}`. -/
-@[expose]
 noncomputable def torusFamilyCyclicQuotientNonzeroOpensEquiv [TopologicalSpace E] :
     letI := periodAddAction P
     letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
