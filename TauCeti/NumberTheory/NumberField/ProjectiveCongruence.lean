@@ -13,7 +13,7 @@ import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.ComplexTrace
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
-# Torsion in principal Bianchi congruence subgroups
+# Torsion in projective principal congruence subgroups
 
 If an integral matrix `A` of determinant one reduces to the identity modulo `I`, then
 `det (1 - A) = 2 - tr A` lies in `I²`. If its projective class is nontrivial of finite order,
