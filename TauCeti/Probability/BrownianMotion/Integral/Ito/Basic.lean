@@ -17,7 +17,7 @@ import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
 import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Bound
 import TauCeti.Probability.Finance.SimpleStrategy.Refinement
-import TauCeti.Probability.Process.ContinuousAE
+import TauCeti.Probability.Process.Indistinguishable
 
 /-!
 # Itô integrals against Brownian motion: specification, algebra, and uniqueness
@@ -223,7 +223,7 @@ filtration, two Itô integrals of the same integrand are indistinguishable. Neit
 continuity of the integrator nor usual conditions on the filtration are needed. -/
 theorem isItoIntegral_unique (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W H J) : I ≡ᵐ[P] J := by
-  refine indist_of_forall_ae_eq hI.ae_continuous hJ.ae_continuous fun t ↦ ?_
+  refine indist_of_ae_continuous hI.ae_continuous hJ.ae_continuous fun t ↦ ?_
   obtain ⟨m, σ, b, hσ, hb, hLH, hLJ⟩ := hJ.exists_approx t
   exact hI.ae_eq_of_tendstoInMeasure hW hσ hb hLH hLJ
 
@@ -267,6 +267,23 @@ theorem congr_integrator (hI : IsItoIntegral ℱ P W H I) (hWB : ∀ s, W s =ᵐ
     exact ((ae_ball_iff (finite_Iic (n k)).countable).2 fun j _ ↦ hWB (min (τ k j) t)).mono
       Finance.simpleGains_congr_price
 
+/-- Transporting an elementary approximation witness at horizon `t` across product-a.e. agreement
+of the integrands. -/
+private theorem exists_approx_of_ae_eq [SFinite P] (hI : IsItoIntegral ℱ P W H I) {t : ℝ≥0}
+    (hHK : Function.uncurry H =ᵐ[(timeMeasure t).prod P] Function.uncurry K) :
+    ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ),
+      (∀ k, MonotoneOn (τ k) (Iic (n k))) ∧
+      (∀ k j, j < n k → StronglyMeasurable[ℱ (τ k j)] (a k j)) ∧
+      (∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
+        ∫⁻ s, ‖Finance.simpleHolding (τ k) (n k) (a k) s ω - K s ω‖ₑ ^ 2 ∂timeMeasure t})
+          atTop (𝓝 0)) ∧
+      TendstoInMeasure P (fun k ↦ Finance.simpleGains (τ k) (n k) (a k) W t) atTop (I t) := by
+  obtain ⟨n, τ, a, hτ, ha, henergy, hgains⟩ := hI.exists_approx t
+  exact ⟨n, τ, a, hτ, ha, fun _ hε ↦ MeasureTheory.tendsto_measure_lintegral_congr_ae
+    (.of_forall fun k ↦ hHK.mono fun p hp ↦
+      congrArg (‖Finance.simpleHolding (τ k) (n k) (a k) p.1 p.2 - ·‖ₑ ^ 2) hp)
+    (henergy _ hε), hgains⟩
+
 /-- For an `SFinite` measure `P`, replacing the integrand by a predictable process agreeing
 `(dt × P)`-a.e. on each finite horizon preserves `IsItoIntegral`. -/
 theorem congr_integrand [SFinite P] (hI : IsItoIntegral ℱ P W H I)
@@ -276,12 +293,7 @@ theorem congr_integrand [SFinite P] (hI : IsItoIntegral ℱ P W H I)
     IsItoIntegral ℱ P W K I where
   isStronglyPredictable := hK
   ae_continuous := hI.ae_continuous
-  exists_approx t := by
-    obtain ⟨n, τ, a, hτ, ha, henergy, hgains⟩ := hI.exists_approx t
-    exact ⟨n, τ, a, hτ, ha, fun _ hε ↦ MeasureTheory.tendsto_measure_lintegral_congr_ae
-      (.of_forall fun k ↦ (hHK t).mono fun p hp ↦
-        congrArg (‖Finance.simpleHolding (τ k) (n k) (a k) p.1 p.2 - ·‖ₑ ^ 2) hp)
-      (henergy _ hε), hgains⟩
+  exists_approx t := hI.exists_approx_of_ae_eq (hHK t)
 
 /-- Enlarging the filtration preserves `IsItoIntegral`. -/
 theorem mono_filtration {𝒢 : Filtration ℝ≥0 mΩ} (hI : IsItoIntegral ℱ P W H I) (hle : ℱ ≤ 𝒢) :
@@ -457,17 +469,12 @@ theorem ae_eqOn_Iic_of_ae_eq (hW : IsFilteredPreBrownianReal ℱ W P) {T : ℝ�
     ∀ᵐ ω ∂P, EqOn (I · ω) (J · ω) (Iic T) := by
   let : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
   have hpoint {t : ℝ≥0} (ht : t ≤ T) : I t =ᵐ[P] J t := by
-    obtain ⟨n, τ, a, hτ, ha, henergy, hgains⟩ := hI.exists_approx t
-    exact (hJ.ae_eq_of_tendstoInMeasure hW hτ ha
-      (fun _ hε ↦ MeasureTheory.tendsto_measure_lintegral_congr_ae
-        (.of_forall fun k ↦ Eventually.mono
-          (ae_mono (Measure.prod_mono (timeMeasure_mono ht) le_rfl) hHK)
-          fun p hp ↦ congrArg (‖Finance.simpleHolding (τ k) (n k) (a k) p.1 p.2 - ·‖ₑ ^ 2) hp)
-        (henergy _ hε))
-      hgains).symm
+    obtain ⟨n, τ, a, hτ, ha, henergy, hgains⟩ :=
+      hI.exists_approx_of_ae_eq (ae_mono (Measure.prod_mono (timeMeasure_mono ht) le_rfl) hHK)
+    exact (hJ.ae_eq_of_tendstoInMeasure hW hτ ha henergy hgains).symm
   have hind : ProbabilityTheory.Indistinguishable P
       (fun t : Iic T ↦ I t.val) (fun t : Iic T ↦ J t.val) :=
-    indist_of_forall_ae_eq (hI.ae_continuous.mono fun _ h ↦ h.comp continuous_subtypeVal)
+    indist_of_ae_continuous (hI.ae_continuous.mono fun _ h ↦ h.comp continuous_subtypeVal)
       (hJ.ae_continuous.mono fun _ h ↦ h.comp continuous_subtypeVal) fun t ↦ hpoint t.property
   exact hind.mono fun _ h t ht ↦ h ⟨t, ht⟩
 

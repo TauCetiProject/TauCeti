@@ -547,6 +547,17 @@ theorem lintegral_predictableMeasure [SFinite P] {f : ℝ≥0 × Ω → ℝ≥0�
   rw [predictableMeasure_def, lintegral_trim ℱ.predictable_le_prod hf]
   exact lintegral_prod _ (hf.mono ℱ.predictable_le_prod le_rfl).aemeasurable
 
+/-- The weighted predictable measure of a predictable set equals the set lower integral under the
+ambient time-product measure for any measurable predictable density. -/
+theorem predictableMeasure_withDensity_apply (T : ℝ≥0) {f : ℝ≥0 × Ω → ℝ≥0∞}
+    (hf : Measurable[ℱ.predictable] f) {S : Set (ℝ≥0 × Ω)}
+    (hS : MeasurableSet[ℱ.predictable] S) :
+    ((ℱ.predictableMeasure P T).withDensity f) S =
+      ∫⁻ p in S, f p ∂(timeMeasure T).prod P := by
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  rw [withDensity_apply _ hS, predictableMeasure_def,
+    setLIntegral_trim ℱ.predictable_le_prod hf hS]
+
 /-- Equality of predictable representatives almost everywhere is the same for the
 predictable measure and the ambient time-product measure. -/
 theorem ae_eq_predictableMeasure_iff {E : Type*} [MeasurableSpace E] [MeasurableEq E]
