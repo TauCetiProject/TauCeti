@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Distributions.Gaussian.Basic
+public import TauCeti.Probability.Distributions.Gaussian.MeanVariance
 public import TauCeti.Probability.Moments.Determinacy
 import TauCeti.Probability.Distributions.Chi.Gaussian
 import TauCeti.Probability.Distributions.Chi.Moments

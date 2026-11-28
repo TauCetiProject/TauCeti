@@ -254,22 +254,3 @@ theorem hasDerivAt_gaussianPDFRealEReal (v : ℝ≥0) (e : EReal) (μ : ℝ) :
       ring
 
 end TauCeti.Probability
-
-namespace ProbabilityTheory.HasLaw
-
-open MeasureTheory
-open scoped ENNReal Nat NNReal Real
-
-variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} {m : ℝ} {v : ℝ≥0}
-
-/-- The expectation of a real Gaussian random variable is its mean parameter. -/
-theorem integral_gaussianReal (hX : HasLaw X (gaussianReal m v) P) :
-    ∫ ω, X ω ∂P = m := by
-  rw [hX.integral_eq, integral_id_gaussianReal]
-
-/-- The variance of a real Gaussian random variable is its variance parameter. -/
-theorem variance_gaussianReal (hX : HasLaw X (gaussianReal m v) P) :
-    variance X P = v := by
-  rw [hX.variance_eq, variance_id_gaussianReal]
-
-end ProbabilityTheory.HasLaw
