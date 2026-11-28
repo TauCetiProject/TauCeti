@@ -9,8 +9,6 @@ public import Mathlib.NumberTheory.GaussSum
 public import Mathlib.RingTheory.Ideal.Prime
 
 import Mathlib.Algebra.CharP.Quotient
-import Mathlib.FieldTheory.Finite.Basic
-import Mathlib.NumberTheory.MulChar.Lemmas
 
 /-!
 # Divisibility and prime-ideal congruences for Gauss sums
@@ -18,9 +16,9 @@ import Mathlib.NumberTheory.MulChar.Lemmas
 Two basic arithmetic properties of Gauss sums `gaussSum χ ψ` over finite fields and finite
 commutative rings:
 
-* `TauCeti.gaussSum_dvd_card`: over a finite field `F`, for any multiplicative character `χ` and
-  any primitive additive character `ψ` with values in a commutative ring `R`, `gaussSum χ ψ` divides
-  `(Fintype.card F : R)`. When `χ = 1`, `gaussSum 1 ψ = -1`; when `χ ≠ 1`, Mathlib's
+* `MulChar.gaussSum_dvd_card`: over a finite field `F`, for any multiplicative character `χ` and
+  any primitive additive character `ψ` with values in a commutative domain `R`, `gaussSum χ ψ`
+  divides `(Fintype.card F : R)`. When `χ = 1`, `gaussSum 1 ψ = -1`; when `χ ≠ 1`, Mathlib's
   `gaussSum_mul_gaussSum_eq_card` gives a cofactor directly.
 * `TauCeti.gaussSum_mul_sub_gaussSum_mem_of_pow_eq_one`: over a finite commutative ring `F`, if `P`
   is a prime ideal of a commutative ring `R` containing a prime `q`, and `χ₂ : MulChar F R` takes
@@ -43,7 +41,8 @@ namespace TauCeti
 
 /-- Over a finite field `F`, the Gauss sum of any multiplicative character `χ` and any primitive
 additive character `ψ` with values in a commutative domain `R` divides `(Fintype.card F : R)`. -/
-theorem gaussSum_dvd_card {F R : Type*} [Field F] [Fintype F] [CommRing R] [IsDomain R]
+theorem _root_.MulChar.gaussSum_dvd_card {F R : Type*} [Field F] [Fintype F] [CommRing R]
+    [IsDomain R]
     (χ : MulChar F R) {ψ : AddChar F R} (hψ : ψ.IsPrimitive) :
     gaussSum χ ψ ∣ (Fintype.card F : R) := by
   classical
