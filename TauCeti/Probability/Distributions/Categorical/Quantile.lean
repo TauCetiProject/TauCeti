@@ -33,15 +33,16 @@ namespace Convexity.StdSimplex
 
 variable {I : Type*} [Fintype I] [MeasurableSpace I] [MeasurableSingletonClass I]
 
-/-- A real number is the quantile of a categorical law with supplied real labels exactly when
-the level strictly exceeds the total weight of smaller labels and is at most the total weight of
-labels no larger than it. This sorts distinct labels and aggregates equal labels automatically. -/
+/-- At a level in `(0, 1]`, the endpoint level `1` included, a real number is the quantile of a
+categorical law with supplied real labels exactly when the level strictly exceeds the total
+weight of smaller labels and is at most the total weight of labels no larger than it. This sorts
+distinct labels and aggregates equal labels automatically. -/
 theorem quantile_map_categoricalMeasure_eq_iff (p : StdSimplex NNReal I) (label : I → ℝ)
-    {u x : ℝ} (hu : u ∈ Ioo 0 1) :
+    {u x : ℝ} (hu : u ∈ Ioc 0 1) :
     ((categoricalMeasure p).map label).quantile u = x ↔
       (∑ i with label i < x, (p.weights i : ℝ)) < u ∧
         u ≤ ∑ i with label i ≤ x, (p.weights i : ℝ) := by
-  rw [Measure.quantile_map_finite_eq_iff _ label (Ioo_subset_Ioc_self hu),
+  rw [Measure.quantile_map_finite_eq_iff _ label hu,
     ← map_measureReal_apply (measurable_of_finite label) measurableSet_Iio,
     p.map_categoricalMeasure_real_Iio,
     ← Measure.cdf_map _ label (measurable_of_finite label).aemeasurable,
@@ -70,18 +71,19 @@ theorem tendsto_quantile_map_categoricalMeasure_nhdsLT_one
     exact hmax j (by simpa only [categoricalMeasure_real_singleton] using hj)
 
 open Classical in
-/-- Compute a categorical quantile by taking the minimum of the distinct positive-weight labels
-whose cumulative weight reaches the level. -/
+/-- Compute a categorical quantile at a level in `(0, 1]`, the endpoint level `1` included, by
+taking the minimum of the distinct positive-weight labels whose cumulative weight reaches the
+level. -/
 theorem quantile_map_categoricalMeasure (p : StdSimplex ℝ≥0 I) (f : I → ℝ)
-    {u : ℝ} (hu : u ∈ Ioo 0 1) :
+    {u : ℝ} (hu : u ∈ Ioc 0 1) :
     ((categoricalMeasure p).map f).quantile u =
       ((p.weights.support.image f).filter fun y ↦
         u ≤ ∑ i with f i ≤ y, (p.weights i : ℝ)).min' (by
           simpa only [cdf_map_categoricalMeasure] using
             ((categoricalMeasure p).map f).nonempty_filter_le_cdf
-              (ae_mem_image_support_map_categoricalMeasure p f) (Ioo_subset_Ioc_self hu)) := by
+              (ae_mem_image_support_map_categoricalMeasure p f) hu.2) := by
   simpa only [cdf_map_categoricalMeasure] using
     ((categoricalMeasure p).map f).quantile_eq_min'_of_ae_mem_finset
-      (ae_mem_image_support_map_categoricalMeasure p f) (Ioo_subset_Ioc_self hu)
+      (ae_mem_image_support_map_categoricalMeasure p f) hu
 
 end Convexity.StdSimplex

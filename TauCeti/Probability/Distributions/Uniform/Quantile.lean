@@ -99,16 +99,17 @@ namespace TauCeti.Probability
 
 variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
 
-/-- A real number is the quantile of a uniformly sampled finite collection of supplied labels
-exactly when the level strictly exceeds the proportion of smaller labels and is at most the
-proportion of labels no larger than it. This is the cumulative-crossing description obtained by
-sorting the distinct labels and aggregating equal ones. -/
+/-- At a level in `(0, 1]`, the endpoint level `1` included, a real number is the quantile of a
+uniformly sampled finite collection of supplied labels exactly when the level strictly exceeds the
+proportion of smaller labels and is at most the proportion of labels no larger than it. This is
+the cumulative-crossing description obtained by sorting the distinct labels and aggregating equal
+ones. -/
 theorem quantile_map_uniformOn_univ_eq_iff [Fintype α] [Nonempty α] (label : α → ℝ)
-    {u x : ℝ} (hu : u ∈ Set.Ioo 0 1) :
+    {u x : ℝ} (hu : u ∈ Set.Ioc 0 1) :
     ((uniformOn (Set.univ : Set α)).map label).quantile u = x ↔
       ((Finset.univ.filter fun i ↦ label i < x).card : ℝ) / Fintype.card α < u ∧
         u ≤ ((Finset.univ.filter fun i ↦ label i ≤ x).card : ℝ) / Fintype.card α := by
-  rw [Measure.quantile_map_finite_eq_iff _ label (Ioo_subset_Ioc_self hu)]
+  rw [Measure.quantile_map_finite_eq_iff _ label hu]
   have hpreimage_lt : label ⁻¹' Set.Iio x =
       (Finset.univ.filter fun i ↦ label i < x : Finset α) := by
     ext i
@@ -157,34 +158,36 @@ namespace Finset
 variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
 
 open Classical in
-/-- The uniform quantile is the least distinct label whose cumulative input count reaches the
-requested fraction of the sample size. This retains multiplicities of repeated labels. -/
+/-- At a level in `(0, 1]`, the endpoint level `1` included, the uniform quantile is the least
+distinct label whose cumulative input count reaches the requested fraction of the sample size.
+This retains multiplicities of repeated labels. -/
 theorem quantile_map_uniformOn_finset_eq_iff (s : Finset α) (hs : s.Nonempty) (f : α → ℝ)
-    {u x : ℝ} (hu : u ∈ Set.Ioo 0 1) :
+    {u x : ℝ} (hu : u ∈ Set.Ioc 0 1) :
     ((uniformOn (s : Set α)).map f).quantile u = x ↔
       IsLeast {y | y ∈ s.image f ∧
         u ≤ ((s.filter fun i ↦ f i ≤ y).card : ℝ) / s.card} x := by
   let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
   simpa only [s.cdf_map_uniformOn_finset hs] using
     ((uniformOn (s : Set α)).map f).quantile_eq_iff_of_ae_mem_finset
-      (s.ae_mem_image_map_uniformOn_finset f) (Set.Ioo_subset_Ioc_self hu)
+      (s.ae_mem_image_map_uniformOn_finset f) hu
 
 open Classical in
-/-- Compute a finite uniform quantile by a minimum over distinct labels, with cumulative counts
-including every input carrying each label. -/
+/-- Compute a finite uniform quantile at a level in `(0, 1]`, the endpoint level `1` included, by
+a minimum over distinct labels, with cumulative counts including every input carrying each
+label. -/
 theorem quantile_map_uniformOn_finset (s : Finset α) (hs : s.Nonempty) (f : α → ℝ)
-    {u : ℝ} (hu : u ∈ Set.Ioo 0 1) :
+    {u : ℝ} (hu : u ∈ Set.Ioc 0 1) :
     ((uniformOn (s : Set α)).map f).quantile u =
       ((s.image f).filter fun y ↦
         u ≤ ((s.filter fun i ↦ f i ≤ y).card : ℝ) / s.card).min' (by
           let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
           simpa only [s.cdf_map_uniformOn_finset hs] using
             ((uniformOn (s : Set α)).map f).nonempty_filter_le_cdf
-              (s.ae_mem_image_map_uniformOn_finset f) (Set.Ioo_subset_Ioc_self hu)) := by
+              (s.ae_mem_image_map_uniformOn_finset f) hu.2) := by
   let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
   simpa only [s.cdf_map_uniformOn_finset hs] using
     ((uniformOn (s : Set α)).map f).quantile_eq_min'_of_ae_mem_finset
-      (s.ae_mem_image_map_uniformOn_finset f) (Set.Ioo_subset_Ioc_self hu)
+      (s.ae_mem_image_map_uniformOn_finset f) hu
 
 open Filter Topology in
 /-- Uniform quantiles tend to the smallest attained label as the level decreases to zero. -/

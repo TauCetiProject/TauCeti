@@ -27,12 +27,13 @@ candidate whenever that candidate has positive mass.
 * `MeasureTheory.Measure.quantile_mem_finset` places a quantile at a level in `(0, 1]` in a
   carrying set, and `MeasureTheory.Measure.quantile_eq_min'_of_ae_mem_finset` computes it by a
   finite minimum over that set;
+* `MeasureTheory.Measure.quantile_eq_iff_measureReal_Iio_lt_of_ae_mem_finset` characterizes it by
+  the strict cumulative crossing below a point and the weak crossing at it;
 * `MeasureTheory.Measure.tendsto_quantile_nhdsGT_zero_of_ae_mem_finset` and
   `MeasureTheory.Measure.tendsto_quantile_nhdsLT_one_of_ae_mem_finset` give its endpoint limits;
 
-* `MeasureTheory.Measure.quantile_map_finite_eq_iff` characterizes the quantile at a level in
-  `(0, 1]` by the strict
-  cumulative crossing below a label and the weak crossing at it;
+* `MeasureTheory.Measure.quantile_map_finite_eq_iff` is its labelled form, characterizing the
+  quantile at a level in `(0, 1]` by the mass below and at a label;
 * `MeasureTheory.Measure.tendsto_quantile_map_finite_nhdsGT_zero` and
   `MeasureTheory.Measure.tendsto_quantile_map_finite_nhdsLT_one` give the endpoint limits at the
   least and greatest labels of positive mass.
@@ -103,21 +104,63 @@ theorem quantile_eq_iff_of_ae_mem_finset (hs : ∀ᵐ y ∂μ, y ∈ s) (hu : u 
       (hx.2 ⟨μ.quantile_mem_finset hs hu, le_cdf_quantile_of_nonempty μ hreach⟩)
 
 open Classical in
-/-- The finite set of cumulative crossings at a level in `(0, 1]` is nonempty. -/
-theorem nonempty_filter_le_cdf (hs : ∀ᵐ y ∂μ, y ∈ s) (hu : u ∈ Ioc 0 1) :
-    (s.filter fun y ↦ u ≤ cdf μ y).Nonempty :=
-  ⟨μ.quantile u, Finset.mem_filter.mpr ⟨μ.quantile_mem_finset hs hu,
-    le_cdf_quantile_of_nonempty μ (μ.nonempty_setOf_le_cdf_of_ae_mem_finset hs hu.2)⟩⟩
+/-- The finite set of cumulative crossings at a level at most `1` is nonempty: it contains the
+largest point of the carrying set, where the law reaches full cumulative mass. -/
+theorem nonempty_filter_le_cdf (hs : ∀ᵐ y ∂μ, y ∈ s) (hu : u ≤ 1) :
+    (s.filter fun y ↦ u ≤ cdf μ y).Nonempty := by
+  obtain ⟨y, hy⟩ := hs.exists
+  exact ⟨s.max' ⟨y, hy⟩, Finset.mem_filter.mpr ⟨s.max'_mem _,
+    hu.trans_eq (cdf_eq_one_of_ae_le μ (hs.mono fun z hz ↦ s.le_max' z hz)).symm⟩⟩
 
 open Classical in
 /-- A finite minimum computes the quantile at a level in `(0, 1]`, the endpoint level `1`
 included. -/
 theorem quantile_eq_min'_of_ae_mem_finset (hs : ∀ᵐ y ∂μ, y ∈ s) (hu : u ∈ Ioc 0 1) :
     μ.quantile u = (s.filter fun y ↦ u ≤ cdf μ y).min'
-      (μ.nonempty_filter_le_cdf hs hu) := by
+      (μ.nonempty_filter_le_cdf hs hu.2) := by
   apply (μ.quantile_eq_iff_of_ae_mem_finset hs hu).2
   simpa only [Finset.coe_filter, Finset.mem_coe] using
-    (s.filter fun y ↦ u ≤ cdf μ y).isLeast_min' (μ.nonempty_filter_le_cdf hs hu)
+    (s.filter fun y ↦ u ≤ cdf μ y).isLeast_min' (μ.nonempty_filter_le_cdf hs hu.2)
+
+/-- At a level in `(0, 1]`, the endpoint level `1` included, the quantile of a law carried by a
+finite set is the point strictly below which the mass is less than the level and at which the
+cumulative distribution function reaches it. Unlike for a general law, the strict crossing below
+the quantile holds because the mass below it is the cumulative mass at the largest point of the
+carrying set lying below it. -/
+theorem quantile_eq_iff_measureReal_Iio_lt_of_ae_mem_finset (hs : ∀ᵐ y ∂μ, y ∈ s)
+    (hu : u ∈ Ioc 0 1) : μ.quantile u = x ↔ μ.real (Iio x) < u ∧ u ≤ cdf μ x := by
+  classical
+  have hreach := μ.nonempty_setOf_le_cdf_of_ae_mem_finset hs hu.2
+  constructor
+  · rintro rfl
+    refine ⟨?_, le_cdf_quantile_of_nonempty μ hreach⟩
+    by_contra! hleft
+    let t := s.filter (· < μ.quantile u)
+    have ht : t.Nonempty := by
+      by_contra h
+      have he : μ.real (Iio (μ.quantile u)) = 0 := by
+        rw [← measureReal_empty (μ := μ)]
+        apply measureReal_congr
+        filter_upwards [hs] with y hy
+        simp only [mem_Iio, mem_empty_iff_false, iff_false]
+        exact fun hlt ↦ h ⟨y, Finset.mem_filter.mpr ⟨hy, hlt⟩⟩
+      rw [he] at hleft
+      exact hu.1.not_ge hleft
+    have hlt : t.max' ht < μ.quantile u := (Finset.mem_filter.mp (t.max'_mem ht)).2
+    have he : cdf μ (t.max' ht) = μ.real (Iio (μ.quantile u)) := by
+      rw [cdf_eq_real]
+      apply measureReal_congr
+      filter_upwards [hs] with y hy
+      exact ⟨fun h ↦ h.trans_lt hlt, fun h ↦ t.le_max' y (Finset.mem_filter.mpr ⟨hy, h⟩)⟩
+    rw [← he] at hleft
+    exact hlt.not_ge ((μ.quantile_le_iff_of_nonempty hu.1 hreach).2 hleft)
+  · rintro ⟨hleft, hright⟩
+    refine le_antisymm ((μ.quantile_le_iff_of_nonempty hu.1 hreach).2 hright) ?_
+    by_contra! hlt
+    have hmono : cdf μ (μ.quantile u) ≤ μ.real (Iio x) := by
+      rw [cdf_eq_real]
+      exact measureReal_mono fun y hy ↦ lt_of_le_of_lt hy hlt
+    exact hleft.not_ge ((le_cdf_quantile_of_nonempty μ hreach).trans hmono)
 
 /-- For a finite carrying set whose smallest point has positive mass, the lower endpoint
 limit is that point. -/
@@ -162,54 +205,12 @@ theorem quantile_map_finite_eq_iff (μ : Measure I) [IsProbabilityMeasure μ] (l
       μ.real (label ⁻¹' Iio x) < u ∧ u ≤ μ.real (label ⁻¹' Iic x) := by
   classical
   let _ := Fintype.ofFinite I
-  have hreach := (μ.map label).nonempty_setOf_le_cdf_of_ae_mem_finset
-    (s := Finset.univ.image label) ((ae_map_iff (measurable_of_finite label).aemeasurable
-      (Finset.univ.image label).measurableSet).2
-        (ae_of_all _ fun i ↦ Finset.mem_image_of_mem label (Finset.mem_univ i))) hu.2
-  constructor
-  · intro hquantile
-    subst x
-    constructor
-    · by_contra! hleft
-      let labelsBelow := (Finset.univ.image label).filter (· < (μ.map label).quantile u)
-      have hlabelsBelow : labelsBelow.Nonempty := by
-        by_contra hempty
-        have hpreimage : label ⁻¹' Iio ((μ.map label).quantile u) = ∅ := by
-          ext i
-          simp only [mem_preimage, mem_Iio, Set.mem_empty_iff_false]
-          exact ⟨fun hi ↦ hempty ⟨label i, by simp [labelsBelow, hi]⟩, False.elim⟩
-        rw [hpreimage, measureReal_empty] at hleft
-        exact (not_lt_of_ge hleft) hu.1
-      let y := labelsBelow.max' hlabelsBelow
-      have hylt : y < (μ.map label).quantile u :=
-        (Finset.mem_filter.mp (labelsBelow.max'_mem hlabelsBelow)).2
-      have hpreimage : label ⁻¹' Iic y = label ⁻¹' Iio ((μ.map label).quantile u) := by
-        ext i
-        simp only [mem_preimage, mem_Iic, mem_Iio]
-        constructor
-        · exact fun hi ↦ hi.trans_lt hylt
-        · intro hi
-          exact Finset.le_max' labelsBelow (label i) (by simp [labelsBelow, hi])
-      have hlevel : u ≤ cdf (μ.map label) y := by
-        rw [cdf_map _ label (measurable_of_finite label).aemeasurable, hpreimage]
-        exact hleft
-      have hquantile_le : (μ.map label).quantile u ≤ y :=
-        (quantile_le_iff_of_nonempty _ hu.1 hreach).2 hlevel
-      exact (not_lt_of_ge hquantile_le) hylt
-    · have hlevel := le_cdf_quantile_of_nonempty (μ.map label) hreach
-      rwa [cdf_map _ label (measurable_of_finite label).aemeasurable] at hlevel
-  · rintro ⟨hleft, hright⟩
-    apply le_antisymm
-    · rw [quantile_le_iff_of_nonempty _ hu.1 hreach,
-        cdf_map _ label (measurable_of_finite label).aemeasurable]
-      exact hright
-    · by_contra! hquantile_lt
-      have hcdf := le_cdf_quantile_of_nonempty (μ.map label) hreach
-      have hmono : cdf (μ.map label) ((μ.map label).quantile u) ≤
-          μ.real (label ⁻¹' Iio x) := by
-        rw [cdf_map _ label (measurable_of_finite label).aemeasurable]
-        exact measureReal_mono fun i hi ↦ hi.trans_lt hquantile_lt
-      exact (not_lt_of_ge (hcdf.trans hmono)) hleft
+  have hlabel : Measurable label := measurable_of_finite label
+  rw [(μ.map label).quantile_eq_iff_measureReal_Iio_lt_of_ae_mem_finset
+      (s := Finset.univ.image label) ((ae_map_iff hlabel.aemeasurable
+        (Finset.univ.image label).measurableSet).2
+          (ae_of_all _ fun i ↦ Finset.mem_image_of_mem label (Finset.mem_univ i))) hu,
+    map_measureReal_apply hlabel measurableSet_Iio, cdf_map _ label hlabel.aemeasurable]
 
 /-- For a finite labelled law, quantiles tend to any least label of positive mass as the level
 tends to zero from above. Labels of zero mass do not affect the endpoint. -/

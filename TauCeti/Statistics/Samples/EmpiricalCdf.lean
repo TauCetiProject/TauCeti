@@ -230,27 +230,16 @@ theorem tendsto_empiricalCdf_atTop [Nonempty κ] (x : κ → ℝ) :
 @[fun_prop]
 theorem measurable_uncurry_empiricalCdf :
     Measurable (Function.uncurry (empiricalCdf : (κ → ℝ) → ℝ → ℝ)) := by
-  -- The empirical distribution of the sample, as a kernel from (sample, point) pairs, evaluated
-  -- on the moving section `Iic t` of a measurable set.
-  let η : Kernel ((κ → ℝ) × ℝ) ℝ :=
-    Kernel.mk (fun q ↦ (empiricalFiniteMeasure q.1 : Measure ℝ))
-      ((measurable_subtypeVal.comp Probability.measurable_empiricalFiniteMeasure).comp
-        measurable_fst)
-  have hηq (q : (κ → ℝ) × ℝ) : η q = (empiricalFiniteMeasure q.1 : Measure ℝ) :=
-    congrFun (Kernel.coe_mk _ _) q
-  have hsec (q : (κ → ℝ) × ℝ) :
-      Prod.mk q ⁻¹' {r : ((κ → ℝ) × ℝ) × ℝ | r.2 ≤ r.1.2} = Iic q.2 := by
-    ext r
-    simp
-  have hη := Kernel.measurable_kernel_prodMk_left_of_finite (κ := η)
-    (measurableSet_le measurable_snd (measurable_snd.comp measurable_fst))
-    fun q ↦ hηq q ▸ inferInstance
+  -- This is the mass of `Iic t` under the empirical distribution, measurable in the sample.
   have h : Function.uncurry (empiricalCdf : (κ → ℝ) → ℝ → ℝ) =
-      fun q ↦ (η q (Prod.mk q ⁻¹' {r : ((κ → ℝ) × ℝ) × ℝ | r.2 ≤ r.1.2})).toReal := by
+      Function.uncurry (fun (μ : FiniteMeasure ℝ) (t : ℝ) ↦ (μ : Measure ℝ).real (Iic t)) ∘
+        Prod.map empiricalFiniteMeasure id := by
     ext ⟨x, t⟩
-    rw [Function.uncurry_apply_pair, empiricalCdf_def, measureReal_def, hηq, hsec]
+    rw [Function.comp_apply, Prod.map_apply, Function.uncurry_apply_pair,
+      Function.uncurry_apply_pair, empiricalCdf_def, id]
   rw [h]
-  exact hη.ennreal_toReal
+  exact FiniteMeasure.measurable_uncurry_measureReal_Iic.comp
+    (Probability.measurable_empiricalFiniteMeasure.prodMap measurable_id)
 
 /-- At each point, the empirical distribution function is a measurable function of the
 sample. -/

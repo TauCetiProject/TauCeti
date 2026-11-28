@@ -368,12 +368,24 @@ algebraic multiplicity. -/
 theorem eigenvalueMeasure_apply (A : Matrix n n ℂ) {s : Set ℂ} [DecidablePred (· ∈ s)] :
     (A.eigenvalueMeasure : Measure ℂ) s =
       ((Fintype.card n : ℕ) : ℝ≥0∞)⁻¹ * Multiset.card (A.charpoly.roots.filter (· ∈ s)) := by
-  rw [eigenvalueMeasure_toMeasure, _root_.smul_apply, smul_eq_mul]
-  congr 1
-  induction A.charpoly.roots using Multiset.induction_on with
-  | empty => simp
-  | cons z m ih =>
-    by_cases hz : z ∈ s <;> simp [Measure.dirac_apply, hz, ih, add_comm]
+  classical
+  let x : A.charpoly.roots → ℂ := fun z ↦ z
+  -- The eigenvalue measure is carried by the finite set of roots, so `s` may be replaced by its
+  -- measurable trace on that set, where the empirical count formula applies.
+  let T : Finset ℂ := Finset.univ.image x
+  have hT : (T : Set ℂ) =ᵐ[(empiricalFiniteMeasure x : Measure ℂ)] Set.univ :=
+    Filter.eventuallyEqSet_univ.2 (ae_mem_image_empiricalFiniteMeasure x)
+  have hcount : (Finset.univ.filter fun i ↦ x i ∈ s ∩ T) = Finset.univ.filter fun i ↦ x i ∈ s :=
+    Finset.filter_congr fun i _ ↦ and_iff_left (Finset.mem_image_of_mem x (Finset.mem_univ i))
+  rw [eigenvalueMeasure_def, ← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
+    toFiniteMeasure_empiricalMeasureOfFintype,
+    ← measure_congr (inter_ae_eq_left_of_ae_eq_univ hT),
+    empiricalFiniteMeasure_apply_eq_card_filter (T.finite_toSet.inter_of_right s).measurableSet,
+    hcount, Finset.card_def, Finset.filter_val, Multiset.card_coe,
+    IsAlgClosed.card_roots_eq_natDegree, charpoly_natDegree_eq_dim]
+  conv_rhs => rw [← Multiset.map_univ_coe A.charpoly.roots, Multiset.filter_map,
+    Multiset.card_map]
+  rfl
 
 /-- Integrating against the eigenvalue measure is averaging over the characteristic roots,
 counted with algebraic multiplicity. -/
