@@ -42,6 +42,11 @@ the exact improper-integral representation
 formula on sectors and to the Stieltjes representation of the Stirling remainder, corresponding to
 [DLMF 5.11.1](https://dlmf.nist.gov/5.11.E1) and [DLMF 5.11.2](https://dlmf.nist.gov/5.11.E2).
 
+On the closed right half-plane, `Complex.abs_re_digamma_sub_le_of_re_nonneg` bounds the error in
+the real part by `1 / (2 * √2 * ‖z‖ ^ 2)`, using the sector bound and Mathlib's
+`Complex.abs_re_le_norm`. The shifted form `Complex.re_digamma_div_two_add_one_le` bounds
+the digamma term in explicit formulas for the Riemann zeta function.
+
 The positive-strip estimate `Complex.exists_norm_digamma_le_log` supplies the logarithmic
 growth needed in the archimedean term of explicit formulas. Its proof adapts Robby
 Sneiderman’s strip argument from
@@ -432,6 +437,43 @@ theorem norm_digamma_sub_log_add_inv_two_mul_le_of_abs_arg_le {s : ℂ} {δ : �
   have : 0 < ‖s‖ := norm_pos_iff.mpr hs0
   exact (norm_digamma_sub_log_add_inv_two_mul_le
     (Or.inl (mem_slitPlane_of_abs_arg_le hδ hs hs0))).trans (by gcongr)
+
+/-- On the closed right half-plane, the real part of the two-term digamma expansion has error
+at most `1 / (2 * √2 * ‖z‖ ^ 2)`, by Nemes's sector bound for `|arg z| ≤ π / 2`. -/
+theorem abs_re_digamma_sub_le_of_re_nonneg {z : ℂ} (hz : 0 ≤ z.re) :
+    |(digamma z).re - (Real.log ‖z‖ - ((2 * z)⁻¹).re)| ≤
+      1 / (2 * √2 * ‖z‖ ^ 2) := by
+  have hangle : |z.arg| ≤ π - π / 2 := by
+    linarith [abs_arg_le_pi_div_two_iff.mpr hz]
+  have hbound := norm_digamma_sub_log_add_inv_two_mul_le_of_abs_arg_le
+    (half_pos Real.pi_pos) hangle
+  have hsin : 8 * Real.sin (π / 2 / 2) ^ 3 = 2 * √2 := by
+    have hangle' : (π : ℝ) / 2 / 2 = π / 4 := by ring
+    rw [hangle', Real.sin_pi_div_four]
+    linear_combination (√(2 : ℝ)) * Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)
+  rw [hsin] at hbound
+  have hre := abs_re_le_norm (digamma z - Complex.log z + (2 * z)⁻¹)
+  simp only [add_re, sub_re, log_re] at hre
+  rw [sub_sub_eq_add_sub, add_sub_right_comm]
+  exact hre.trans hbound
+
+/-- The digamma term at `s / 2 + 1` in the zeta explicit formula has an explicit upper bound
+when `-2 ≤ s.re`. -/
+theorem re_digamma_div_two_add_one_le {s : ℂ} (hs : -2 ≤ s.re) :
+    (digamma (s / 2 + 1)).re ≤
+      Real.log (‖s + 2‖ / 2) - ((s + 2)⁻¹).re + √2 / ‖s + 2‖ ^ 2 := by
+  have harg : s / 2 + 1 = (s + 2) / 2 := by ring
+  have hre : 0 ≤ (s / 2 + 1).re := by
+    simp only [add_re, div_ofNat_re, one_re]
+    linarith only [hs]
+  have h := abs_re_digamma_sub_le_of_re_nonneg hre
+  have hmul : 2 * (s / 2 + 1) = s + 2 := by ring
+  have hnorm : ‖s / 2 + 1‖ = ‖s + 2‖ / 2 := by
+    rw [harg, Complex.norm_div, Complex.norm_two]
+  rw [hmul, hnorm] at h
+  have herr : 1 / (2 * √2 * (‖s + 2‖ / 2) ^ 2) = √2 / ‖s + 2‖ ^ 2 := by grind
+  rw [herr] at h
+  linarith only [(abs_le.mp h).2]
 
 /-! ### Logarithmic growth on positive vertical strips -/
 
