@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.InformationTheory.Hamming
+public import Mathlib.Basic.Real.Sign
 import TauCeti.InformationTheory.Hamming
 
 /-!
@@ -29,12 +30,19 @@ approximation of `x` (Foucart–Rauhut, Def 2.2).
 ## Main results
 
 * `EuclideanSpace.restrictedL1Norm_add_le`, `EuclideanSpace.restrictedL1Norm_smul`: the
-  restricted norm is a seminorm in `x`; `EuclideanSpace.restrictedL1Norm_univ_eq_norm`: on
-  `Finset.univ` it is the norm of `PiLp 1`.
+  restricted norm is a seminorm in `x`, continuous (`EuclideanSpace.continuous_restrictedL1Norm`)
+  and convex (`EuclideanSpace.convexOn_restrictedL1Norm`);
+  `EuclideanSpace.restrictedL1Norm_univ_eq_norm`: on `Finset.univ` it is the norm of `PiLp 1`,
+  and it dominates the Euclidean norm (`EuclideanSpace.norm_le_restrictedL1Norm_univ`).
 * `EuclideanSpace.restrictedL1Norm_toLp_indicator`: on `T`, the restricted norm of the
   truncation of `x` to `S` is the restricted norm of `x` on `T ∩ S`.
 * `EuclideanSpace.restrictedL1Norm_univ_add_restrictedL1Norm_compl_le`: for `β` vanishing
   outside `S`, `‖β‖₁ + ‖Δ_{Sᶜ}‖₁ ≤ ‖β + Δ‖₁ + ‖Δ_S‖₁`.
+* `EuclideanSpace.forall_sum_mul_sub_le_iff`: the subgradients of `λ ‖·‖₁` at `x` for `λ ≥ 0`,
+  computed coordinatewise: `cⱼ = λ sign xⱼ` where `xⱼ ≠ 0` and `|cⱼ| ≤ λ` where `xⱼ = 0`.
+  `EuclideanSpace.forall_sum_mul_sub_le_iff_forall_mul_sub_le` is the reduction to one
+  coordinate, valid for every `λ`, and `forall_mul_le_mul_abs_iff` is the scalar case at `0`:
+  `d t ≤ λ |t|` for every `t` iff `|d| ≤ λ`.
 * `EuclideanSpace.bestSparseL1Error_le_restrictedL1Norm_sub`,
   `EuclideanSpace.le_bestSparseL1Error_iff_forall_sparse`: `σₛ(x)₁` is the greatest lower bound
   of the `ℓ¹` distances from `x` to `s`-sparse vectors.
@@ -145,6 +153,23 @@ theorem restrictedL1Norm_smul (c : ℝ) (x : EuclideanSpace ℝ ι) (S : Finset 
   rw [restrictedL1Norm_def, restrictedL1Norm_def, mul_sum]
   simp only [PiLp.smul_apply, smul_eq_mul, abs_mul]
 
+/-- The restricted `ℓ¹` norm is continuous. -/
+@[fun_prop]
+theorem continuous_restrictedL1Norm (S : Finset ι) :
+    Continuous fun x : EuclideanSpace ℝ ι ↦ x.restrictedL1Norm S := by
+  simp only [restrictedL1Norm_def]
+  fun_prop
+
+/-- The restricted `ℓ¹` norm is convex. -/
+theorem convexOn_restrictedL1Norm (S : Finset ι) :
+    ConvexOn ℝ Set.univ fun x : EuclideanSpace ℝ ι ↦ x.restrictedL1Norm S := by
+  refine ⟨convex_univ, fun x _ y _ a b ha hb _ ↦ ?_⟩
+  calc (a • x + b • y).restrictedL1Norm S
+      ≤ (a • x).restrictedL1Norm S + (b • y).restrictedL1Norm S := restrictedL1Norm_add_le _ _ S
+    _ = a • x.restrictedL1Norm S + b • y.restrictedL1Norm S := by
+      rw [restrictedL1Norm_smul, restrictedL1Norm_smul, abs_of_nonneg ha, abs_of_nonneg hb,
+        smul_eq_mul, smul_eq_mul]
+
 /-- If every coordinate of `|x|` in `S` dominates every coordinate outside `S`, then the
 restricted norm of `x` on any set `T` with at most as many elements as `S` is at most its
 restricted norm on `S`. -/
@@ -186,6 +211,14 @@ theorem restrictedL1Norm_univ_eq_norm (x : EuclideanSpace ℝ ι) :
   rw [restrictedL1Norm_def, PiLp.norm_eq_of_L1]
   simp
 
+/-- The Euclidean norm is at most the `ℓ¹` norm. -/
+theorem norm_le_restrictedL1Norm_univ (x : EuclideanSpace ℝ ι) :
+    ‖x‖ ≤ x.restrictedL1Norm univ := by
+  rw [EuclideanSpace.norm_eq, Real.sqrt_le_left (x.restrictedL1Norm_nonneg univ),
+    restrictedL1Norm_def]
+  simpa only [Real.norm_eq_abs, sq_abs] using
+    sum_sq_le_sq_sum_of_nonneg (s := univ) fun j _ ↦ abs_nonneg (x j)
+
 /-- The restricted `ℓ¹` norms on a set and on its complement add up to the `ℓ¹` norm. -/
 theorem restrictedL1Norm_add_restrictedL1Norm_compl [DecidableEq ι] (x : EuclideanSpace ℝ ι)
     (S : Finset ι) : x.restrictedL1Norm S + x.restrictedL1Norm Sᶜ = x.restrictedL1Norm univ := by
@@ -208,6 +241,75 @@ theorem restrictedL1Norm_univ_add_restrictedL1Norm_compl_le [DecidableEq ι]
   have hβ' := β.restrictedL1Norm_add_restrictedL1Norm_compl S
   have hβΔ := (β + Δ).restrictedL1Norm_add_restrictedL1Norm_compl S
   linarith
+
+/-- The subgradient inequality of `λ‖·‖₁` at `x`, for the pairing `(c, d) ↦ ∑ⱼ cⱼ dⱼ`,
+separates over the coordinates: it holds for every `b` iff `cⱼ (t - xⱼ) ≤ λ (|t| - |xⱼ|)` for
+every coordinate `j` and every real `t`. -/
+theorem forall_sum_mul_sub_le_iff_forall_mul_sub_le (x : EuclideanSpace ℝ ι) (c : ι → ℝ)
+    (lam : ℝ) :
+    (∀ b : EuclideanSpace ℝ ι,
+        ∑ j, c j * (b j - x j) ≤ lam * (b.restrictedL1Norm univ - x.restrictedL1Norm univ)) ↔
+      ∀ j t, c j * (t - x j) ≤ lam * (|t| - |x j|) := by
+  classical
+  simp only [restrictedL1Norm_def, ← sum_sub_distrib, mul_sum]
+  refine ⟨fun H j t ↦ ?_, fun H b ↦ sum_le_sum fun j _ ↦ H j (b j)⟩
+  -- Test the inequality with the vector that agrees with `x` except at `j`, where it is `t`.
+  have hb := H (x + EuclideanSpace.single j (t - x j))
+  rw [sum_eq_single j (fun k _ hk ↦ by simp [hk]) (by simp),
+    sum_eq_single j (fun k _ hk ↦ by simp [hk]) (by simp)] at hb
+  simpa using hb
+
+/-- The bound `d t ≤ λ |t|` holds for every real `t` iff `|d| ≤ λ`: the subgradients of `λ |·|`
+at `0` form the interval `[-λ, λ]`. -/
+theorem _root_.forall_mul_le_mul_abs_iff {d lam : ℝ} :
+    (∀ t : ℝ, d * t ≤ lam * |t|) ↔ |d| ≤ lam := by
+  refine ⟨fun H ↦ abs_le.2 ⟨?_, by simpa using H 1⟩, fun h t ↦ ?_⟩
+  · have h1 := H (-1)
+    simp only [mul_neg, mul_one, abs_neg, abs_one] at h1
+    linarith
+  · calc d * t ≤ |d| * |t| := (le_abs_self _).trans (abs_mul d t).le
+      _ ≤ lam * |t| := by gcongr
+
+/-- For `λ ≥ 0`, the subgradients of `λ‖·‖₁` at `x`, for the pairing `(c, d) ↦ ∑ⱼ cⱼ dⱼ`: the
+inequality `∑ⱼ cⱼ (bⱼ - xⱼ) ≤ λ (‖b‖₁ - ‖x‖₁)` holds for every `b` iff for every `j`,
+`cⱼ = λ sign xⱼ` when `xⱼ ≠ 0` and `|cⱼ| ≤ λ` when `xⱼ = 0`. -/
+theorem forall_sum_mul_sub_le_iff (x : EuclideanSpace ℝ ι) (c : ι → ℝ) {lam : ℝ}
+    (hlam : 0 ≤ lam) :
+    (∀ b : EuclideanSpace ℝ ι,
+        ∑ j, c j * (b j - x j) ≤ lam * (b.restrictedL1Norm univ - x.restrictedL1Norm univ)) ↔
+      ∀ j, (x j ≠ 0 → c j = lam * Real.sign (x j)) ∧ (x j = 0 → |c j| ≤ lam) := by
+  rw [forall_sum_mul_sub_le_iff_forall_mul_sub_le]
+  refine forall_congr' fun j ↦ ?_
+  generalize x j = a
+  generalize c j = d
+  constructor
+  · intro H
+    refine ⟨fun ha ↦ ?_, fun ha ↦ ?_⟩
+    · -- Test with `t = 0` and `t = 2a`.
+      have h0 := H 0
+      have h2 := H (2 * a)
+      rw [abs_mul, abs_two] at h2
+      rcases ha.lt_or_gt with ha' | ha'
+      · rw [abs_of_neg ha'] at h0 h2
+        have hda : (d + lam) * a = 0 := by simp only [abs_zero] at h0; linarith
+        rw [Real.sign_of_neg ha']
+        linarith [(mul_eq_zero.1 hda).resolve_right ha]
+      · rw [abs_of_pos ha'] at h0 h2
+        have hda : (d - lam) * a = 0 := by simp only [abs_zero] at h0; linarith
+        rw [Real.sign_of_pos ha']
+        linarith [(mul_eq_zero.1 hda).resolve_right ha]
+    · subst ha
+      exact forall_mul_le_mul_abs_iff.1 fun t ↦ by simpa using H t
+  · rintro ⟨h1, h2⟩ t
+    rcases eq_or_ne a 0 with rfl | ha
+    · rw [sub_zero, abs_zero, sub_zero]
+      exact forall_mul_le_mul_abs_iff.2 (h2 rfl) t
+    · rw [h1 ha]
+      rcases ha.lt_or_gt with ha' | ha'
+      · rw [Real.sign_of_neg ha', abs_of_neg ha']
+        nlinarith [neg_abs_le t]
+      · rw [Real.sign_of_pos ha', abs_of_pos ha']
+        nlinarith [le_abs_self t]
 
 /-! ### The best `s`-sparse `ℓ¹` error -/
 

@@ -50,6 +50,7 @@ diagonal matrix `diag(w)` the quadratic form `x ↦ ⟪x, diag(w) x⟫` is `x �
 
 * `Matrix.inner_toEuclideanLin_toEuclideanLin` — the quadratic form of `B` at `A x` is the
   quadratic form of `Aᴴ * B * A` at `x`;
+* `Matrix.inner_toEuclideanLin_eq_sum` — for a real matrix, `⟪r, X d⟫ = ∑ⱼ (Xᵀ r)ⱼ dⱼ`;
 * `Matrix.inner_toEuclideanLin_piLpExtendByZero` — the form `y ↦ ⟪A y, y⟫` (the conjugate of the
   quadratic form `⟪y, A y⟫`) at a vector extended by zero is the same form of the principal
   submatrix at the original vector;
@@ -190,6 +191,15 @@ theorem inner_toEuclideanLin_toEuclideanLin (A : Matrix κ ι 𝕜) (B : Matrix 
       ⟪x, (Aᴴ * B * A).toEuclideanLin x⟫_𝕜 := by
   rw [← LinearMap.adjoint_inner_right, ← toEuclideanLin_conjTranspose_eq_adjoint]
   simp only [toEuclideanLin, toLpLin_mul_same, LinearMap.comp_apply]
+
+/-- For a real matrix `X`, the inner product `⟪r, X d⟫` is `∑ⱼ (Xᵀ r)ⱼ dⱼ`: the `j`-th
+coordinate of `Xᵀ r` is the inner product of `r` with the `j`-th column of `X`. -/
+theorem inner_toEuclideanLin_eq_sum (X : Matrix κ ι ℝ) (r : EuclideanSpace ℝ κ)
+    (d : EuclideanSpace ℝ ι) :
+    ⟪r, X.toEuclideanLin d⟫_ℝ = ∑ j, Xᵀ.toEuclideanLin r j * d j := by
+  rw [← LinearMap.adjoint_inner_left, ← conjTranspose_eq_transpose_of_trivial,
+    ← toEuclideanLin_conjTranspose_eq_adjoint]
+  simp [PiLp.inner_apply, mul_comm]
 
 /-- The form `y ↦ ⟪A y, y⟫`, the conjugate of the quadratic form `⟪y, A y⟫`, at a vector extended
 by zero along `f` is the same form of the principal submatrix `A.submatrix f f` at the original
