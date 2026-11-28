@@ -925,6 +925,7 @@ theorem tailVec_apply (t : ℝ) (g : EuclideanSpace ℝ ι) (i : ι) :
   simp [tailVec, Set.indicator_apply]
 
 /-- Splitting a real Euclidean vector into its coordinatewise truncation and tail. -/
+@[simp]
 theorem truncVec_add_tailVec (t : ℝ) (g : EuclideanSpace ℝ ι) :
     truncVec t g + tailVec t g = g := by
   have hcompl : {r : ℝ | |r| ≤ t}ᶜ = {r : ℝ | t < |r|} := by

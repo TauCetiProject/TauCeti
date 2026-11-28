@@ -55,10 +55,19 @@ theorem gaussianSumCLM_apply (y : ι → Y) (g : EuclideanSpace ℝ ι) :
   EuclideanSpace.basisFun_toBasis_constrL_apply y g
 
 /-- `gaussianSumCLM y` maps the `i`-th standard orthonormal basis vector to `y i`. -/
+@[simp high]
 theorem gaussianSumCLM_basisFun (y : ι → Y) (i : ι) :
     gaussianSumCLM y (EuclideanSpace.basisFun ι ℝ i) = y i := by
   rw [gaussianSumCLM, ← (EuclideanSpace.basisFun ι ℝ).coe_toBasis]
   exact Module.Basis.constrL_basis (EuclideanSpace.basisFun ι ℝ).toBasis y i
+
+/-- `gaussianSumCLM y` maps `EuclideanSpace.single i c` to `c • y i`. -/
+@[simp high]
+theorem gaussianSumCLM_single [DecidableEq ι] (y : ι → Y) (i : ι) (c : ℝ) :
+    gaussianSumCLM y (EuclideanSpace.single i c) = c • y i := by
+  rw [gaussianSumCLM_apply, Finset.sum_eq_single i
+    (fun j _ hj ↦ by simp [hj]) (fun hi ↦ (hi (Finset.mem_univ i)).elim)]
+  simp
 
 /-- A finite Gaussian sum has every finite moment, even in an incomplete target. -/
 theorem memLp_gaussianSum (x : ι → Y) (p : ℝ≥0∞) (hp : p ≠ ∞) :

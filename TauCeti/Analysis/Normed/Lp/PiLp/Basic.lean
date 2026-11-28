@@ -453,6 +453,7 @@ theorem coordIndicator_apply [Zero α] (s : Set α) (g : PiLp p fun _ : ι' ↦ 
   simp [coordIndicator]
 
 /-- Masking onto `s` and onto `sᶜ` partition a `PiLp` vector into two summands. -/
+@[simp]
 theorem coordIndicator_add_compl [AddCommGroup α] (s : Set α) (g : PiLp p fun _ : ι' ↦ α) :
     coordIndicator s g + coordIndicator sᶜ g = g := by
   ext i

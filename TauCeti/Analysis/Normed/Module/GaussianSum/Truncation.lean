@@ -25,10 +25,10 @@ with Rademacher contraction bounds the truncated term by `t * R₂(y)` whenever 
 
 ## Main declarations
 
-* `TauCeti.integral_norm_sq_truncVec_le`: `𝔼[‖∑ i, truncVec t g i • y i‖²] ≤ (t * R₂(y))²`
-  for `0 ≤ t`.
-* `TauCeti.gaussianSecondMoment_le_truncVec_add_tailVec`: splits `G₂(y)` into its truncated and tail
-  `L²` norms.
+* `TauCeti.integral_norm_sq_truncatedGaussianSum_le`:
+  `𝔼[‖∑ i, truncVec t g i • y i‖²] ≤ (t * R₂(y))²` for `0 ≤ t`.
+* `TauCeti.gaussianSecondMoment_le_trunc_add_tail_lpNorm`: splits `G₂(y)` into its truncated and
+  tail `L²` norms.
 -/
 
 public section
@@ -44,7 +44,8 @@ variable {ι Y : Type*} [Fintype ι] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
 
 /-- Sign-flip invariance and Rademacher contraction bound the truncated Gaussian sum by
 `t * R₂(y)`. -/
-theorem integral_norm_sq_truncVec_le [DecidableEq ι] (y : ι → Y) {t : ℝ} (ht : 0 ≤ t) :
+theorem integral_norm_sq_truncatedGaussianSum_le [DecidableEq ι] (y : ι → Y) {t : ℝ}
+    (ht : 0 ≤ t) :
     ∫ g, ‖∑ i, EuclideanSpace.truncVec t g i • y i‖ ^ 2 ∂stdGaussian (EuclideanSpace ℝ ι) ≤
       (t * rademacherSecondMoment y) ^ 2 := by
   have hint : Integrable (fun g : EuclideanSpace ℝ ι ↦
@@ -65,7 +66,7 @@ theorem integral_norm_sq_truncVec_le [DecidableEq ι] (y : ι → Y) {t : ℝ} (
   rw [Probability.truncVec_signFlip, smul_assoc]
 
 /-- The `L²` Minkowski triangle inequality splits `G₂(y)` into its truncated and tail parts. -/
-theorem gaussianSecondMoment_le_truncVec_add_tailVec (y : ι → Y) (t : ℝ) :
+theorem gaussianSecondMoment_le_trunc_add_tail_lpNorm (y : ι → Y) (t : ℝ) :
     gaussianSecondMoment y ≤
       √(∫ g, ‖∑ i, EuclideanSpace.truncVec t g i • y i‖ ^ 2
           ∂stdGaussian (EuclideanSpace ℝ ι)) +

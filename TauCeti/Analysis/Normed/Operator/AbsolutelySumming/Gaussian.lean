@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Normed.Module.GaussianSum.Cotype.Basic
 public import TauCeti.Analysis.Normed.Operator.AbsolutelySumming.Basic
 
 import TauCeti.Analysis.Normed.Module.GaussianSum.Comparison
 import TauCeti.Analysis.Normed.Module.GaussianSum.WeakTwo
+import TauCeti.Analysis.Normed.Operator.AbsolutelySumming.Pietsch
 import TauCeti.Analysis.RCLike.Basic
+import TauCeti.Probability.Distributions.Gaussian.CoordinateTails
 
 /-!
 # Gaussian cotype-2 summing bounds
@@ -27,16 +30,22 @@ Gaussian comparison (`TauCeti.gaussianSecondMoment_le_of_weakTwo_le`) then gives
 specializing to `π₂(U) ≤ C * G₂(U ∘ b)` over `ℝ` and `π₂(U) ≤ 2 * C * G₂(U ∘ b)` in general
 (Pisier, Proposition 3.7).
 
+We also record `ContinuousLinearMap.integral_norm_sq_comp_tailVec_le_of_summingENorm_le`, which
+combines integrated Pietsch domination with the coordinate-tail covariance identity to bound
+`𝔼[‖U (tailVec t g)‖²]` for any `2`-summing operator `U : EuclideanSpace ℝ ι →L[ℝ] Y`.
+
 ## Main declarations
 
-* `ContinuousLinearMap.summingENorm_two_le_ofReal_one_add_norm_I_mul_gaussianSecondMoment`:
+* `summingENorm_two_le_ofReal_one_add_norm_I_mul_const_mul_gaussianSecondMoment`:
   `π₂(U) ≤ (1 + ‖(RCLike.I : 𝕜)‖) * C * G₂(U ∘ b)` over any `RCLike` field under Gaussian
   cotype `2`.
-* `ContinuousLinearMap.summingENorm_two_le_ofReal_two_mul_gaussianSecondMoment`:
+* `ContinuousLinearMap.summingENorm_two_le_ofReal_two_mul_const_mul_gaussianSecondMoment`:
   `π₂(U) ≤ 2 * C * G₂(U ∘ b)` over any `RCLike` field under Gaussian cotype `2`.
 * `ContinuousLinearMap.summingENorm_two_le_of_hasGaussianCotype`,
-  `ContinuousLinearMap.summingENorm_two_le_of_hasCotype`: `π₂(U) ≤ C * G₂(U ∘ b)` for a real
+  `ContinuousLinearMap.summingENorm_two_le_of_hasCotype`: `π₂(U) ≤ C * G₂(U eᵢ)` for a real
   operator out of an inner product space with a finite orthonormal basis.
+* `ContinuousLinearMap.integral_norm_sq_comp_tailVec_le_of_summingENorm_le`:
+  `𝔼[‖U (tailVec t g)‖²] ≤ A² ∫_{|r| > t} r² dγ₁` whenever `π₂(U) ≤ A`.
 
 ## References
 
@@ -48,7 +57,7 @@ public section
 
 noncomputable section
 
-open TauCeti
+open MeasureTheory ProbabilityTheory TauCeti
 open scoped BigOperators ENNReal NNReal
 
 namespace ContinuousLinearMap
@@ -57,7 +66,7 @@ namespace ContinuousLinearMap
 with constant `C`, then every bounded `𝕜`-linear operator `U : E →L[𝕜] Y` from an inner product
 space with a finite orthonormal basis `b` satisfies
 `π₂(U) ≤ (1 + ‖(RCLike.I : 𝕜)‖) * C * G₂(U ∘ b)`. -/
-theorem summingENorm_two_le_ofReal_one_add_norm_I_mul_gaussianSecondMoment
+theorem summingENorm_two_le_ofReal_one_add_norm_I_mul_const_mul_gaussianSecondMoment
     {𝕜 ι E Y : Type*} [RCLike 𝕜] [Fintype ι]
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
     [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [NormedSpace ℝ Y]
@@ -98,14 +107,15 @@ theorem summingENorm_two_le_ofReal_one_add_norm_I_mul_gaussianSecondMoment
 /-- **Pisier's Gaussian summing bound (`RCLike` case).** If `Y` has Gaussian cotype `2` with
 constant `C`, then every bounded `𝕜`-linear operator `U : E →L[𝕜] Y` from an inner product space
 with a finite orthonormal basis `b` satisfies `π₂(U) ≤ 2 * C * G₂(U ∘ b)`. -/
-theorem summingENorm_two_le_ofReal_two_mul_gaussianSecondMoment
+theorem summingENorm_two_le_ofReal_two_mul_const_mul_gaussianSecondMoment
     {𝕜 ι E Y : Type*} [RCLike 𝕜] [Fintype ι]
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
     [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [NormedSpace ℝ Y]
     {C : ℝ≥0} (hY : HasGaussianCotype Y 2 C)
     (b : OrthonormalBasis ι 𝕜 E) (U : E →L[𝕜] Y) :
     U.summingENorm 2 ≤ ENNReal.ofReal (2 * C * gaussianSecondMoment (U ∘ b)) := by
-  refine (summingENorm_two_le_ofReal_one_add_norm_I_mul_gaussianSecondMoment hY b U).trans ?_
+  refine
+    (summingENorm_two_le_ofReal_one_add_norm_I_mul_const_mul_gaussianSecondMoment hY b U).trans ?_
   apply ENNReal.ofReal_le_ofReal
   have hI : ‖(RCLike.I : 𝕜)‖ ≤ 1 := RCLike.norm_I_le_one
   have hG : 0 ≤ (C : ℝ) * gaussianSecondMoment (U ∘ b) :=
@@ -121,7 +131,7 @@ theorem summingENorm_two_le_of_hasGaussianCotype
     (U : E →L[ℝ] Y) (b : OrthonormalBasis ι ℝ E) (h : HasGaussianCotype Y 2 C) :
     U.summingENorm 2 ≤ ENNReal.ofReal (C * gaussianSecondMoment fun i ↦ U (b i)) := by
   simpa [RCLike.norm_I, Function.comp_def] using
-    summingENorm_two_le_ofReal_one_add_norm_I_mul_gaussianSecondMoment h b U
+    summingENorm_two_le_ofReal_one_add_norm_I_mul_const_mul_gaussianSecondMoment h b U
 
 /-- **The `2`-summing norm under cotype `2`.** If `Y` has Rademacher cotype `2` with constant
 `C`, then every operator `U` from a real inner product space with orthonormal basis `(eᵢ)` into
@@ -132,5 +142,24 @@ theorem summingENorm_two_le_of_hasCotype
     (U : E →L[ℝ] Y) (b : OrthonormalBasis ι ℝ E) (h : HasCotype Y 2 C) :
     U.summingENorm 2 ≤ ENNReal.ofReal (C * gaussianSecondMoment fun i ↦ U (b i)) :=
   U.summingENorm_two_le_of_hasGaussianCotype b h.hasGaussianCotype_two
+
+/-- Integrated Pietsch domination bounds the expected squared norm of
+`U (EuclideanSpace.tailVec t g)` for any operator `U : EuclideanSpace ℝ ι →L[ℝ] Y` satisfying
+`π₂(U) ≤ A`. -/
+theorem integral_norm_sq_comp_tailVec_le_of_summingENorm_le {ι Y : Type*} [Fintype ι]
+    [SeminormedAddCommGroup Y] [NormedSpace ℝ Y] (U : EuclideanSpace ℝ ι →L[ℝ] Y)
+    {A : ℝ} (hA : 0 ≤ A) (hU : U.summingENorm 2 ≤ ENNReal.ofReal A) (t : ℝ) :
+    ∫ g, ‖U (EuclideanSpace.tailVec t g)‖ ^ 2 ∂stdGaussian (EuclideanSpace ℝ ι) ≤
+      A ^ 2 * ∫ r in {r : ℝ | t < |r|}, r ^ 2 ∂gaussianReal 0 1 := by
+  have hmem := TauCeti.Probability.memLp_tailVec (ι := ι) t (p := 2) (by simp)
+  have hs : MeasurableSet {r : ℝ | t < |r|} :=
+    measurableSet_lt measurable_const continuous_abs.measurable
+  have hpietsch := U.integral_norm_apply_rpow_le_of_summingENorm_le (p := 2)
+    (by simp) hA hU hmem (M := ∫ r in {r : ℝ | t < |r|}, r ^ 2 ∂gaussianReal 0 1) fun f hf ↦ by
+      simp only [ENNReal.toReal_ofNat, Real.rpow_two, Real.norm_eq_abs,
+        ContinuousLinearMap.integral_sq_apply_tailVec]
+      exact mul_le_of_le_one_left (setIntegral_nonneg hs fun _ _ ↦ sq_nonneg _)
+        (by nlinarith [norm_nonneg f])
+  simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using hpietsch
 
 end ContinuousLinearMap

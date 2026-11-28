@@ -17,10 +17,11 @@ Rademacher cotype `2` with constant `C`), then the Gaussian second moment of eve
 `y` is controlled by its Rademacher second moment:
 `G₂(y) = (𝔼_g ‖∑ i, gᵢ yᵢ‖²)^(1/2) ≤ 4 √3 C R₂(y)`.
 
-The proof applies the threshold comparison `gaussianSecondMoment_le_two_mul_rademacherSecondMoment`
-at `t = 2 √3 C` together with the tail certificate `mul_sqrt_setIntegral_sq_tail_gaussianReal_le`
-(and `subsingleton_of_lt_one` when `C = 0`). Combining this with Gaussian cotype `2` yields
-Rademacher cotype `2` with constant `4 √3 C²`.
+The proof applies the threshold comparison
+`gaussianSecondMoment_le_mul_rademacherSecondMoment_of_tail_bound` at `t = 2 √3 C` together
+with the tail certificate `mul_sqrt_setIntegral_sq_tail_gaussianReal_le` (and
+`subsingleton_of_lt_one` when `C = 0`). Combining this with Gaussian cotype `2` yields Rademacher
+cotype `2` with constant `4 √3 C²`.
 
 ## Main declarations
 
@@ -64,7 +65,7 @@ theorem HasGaussianCotype.gaussianSecondMoment_le (h : HasGaussianCotype Y 2 C) 
         1 / 2 :=
     mul_sqrt_setIntegral_sq_tail_gaussianReal_le ht (by
       rw [show (C : ℝ) * √3 / (2 * √3 * (C : ℝ)) = 1 / 2 by field_simp])
-  refine (gaussianSecondMoment_le_two_mul_rademacherSecondMoment h htail y).trans_eq ?_
+  refine (gaussianSecondMoment_le_mul_rademacherSecondMoment_of_tail_bound h htail y).trans_eq ?_
   ring
 
 /-- **Gaussian sums under cotype `2`.** If `Y` has Rademacher cotype `2` with constant `C`,
