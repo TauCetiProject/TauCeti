@@ -396,17 +396,6 @@ lemma singularChainComplexπ_coefficient_naturality
   simp only [toSSetPair_obj_right] at h
   exact h
 
-variable {R} in
-/-- The quotient map from ambient to relative singular chains commutes with coefficient
-morphisms. -/
-@[reassoc]
-lemma singularChainComplexπ_comp_singularChainComplexCoefficientMap {R' : C} (φ : R ⟶ R') :
-    P.singularChainComplexπ R ≫ P.singularChainComplexCoefficientMap φ =
-      ((SSet.chainComplexFunctor C).map φ).app (TopCat.toSSet.obj P.fst) ≫
-        P.singularChainComplexπ R' := by
-  rw [← TauCeti.singularChainComplexFunctor_map_app]
-  exact (P.singularChainComplexπ_coefficient_naturality φ).symm
-
 @[simp]
 lemma chainComplexMap_comp_singularChainComplexπ :
     SSet.chainComplexMap (TopCat.toSSet.map P.map) R ≫ P.singularChainComplexπ R = 0 := by

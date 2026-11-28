@@ -347,8 +347,9 @@ lemma relativeShuffleToSmallChains_coefficient_naturality (X Y : TopCat.{w}) (A 
   let : MonoidalCategory (ChainComplex C ℕ) := monoidalCategory C (ComplexShape.down ℕ)
   have hπ := NatTrans.congr_app ((SSetPair.chainComplexFunctorπ C).naturality (φ ⊗ₘ ψ))
     ((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair
-  have hA := (TopPair.ofSubset A).singularChainComplexπ_comp_singularChainComplexCoefficientMap φ
-  have hB := (TopPair.ofSubset B).singularChainComplexπ_comp_singularChainComplexCoefficientMap ψ
+  have hA := ((TopPair.ofSubset A).singularChainComplexπ_coefficient_naturality φ).symm
+  have hB := ((TopPair.ofSubset B).singularChainComplexπ_coefficient_naturality ψ).symm
+  simp only [TauCeti.singularChainComplexFunctor_map_app] at hA hB
   exact TauCeti.tensorHom_comp_eq_of_epi_tensorHom hA hB
     (singularChainComplexπ_tensorHom_relativeShuffleToSmallChains X Y A B R S)
     (singularChainComplexπ_tensorHom_relativeShuffleToSmallChains X Y A B R' S')
