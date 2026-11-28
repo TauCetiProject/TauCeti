@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-!
 # The sine substitution with an inverse square-root weight
@@ -21,6 +22,9 @@ These formulas turn trigonometric elliptic integrals into algebraic integrals.
 The integral identity adapts B. Braams' `Carlson.integral_legendre_eq` in
 `lean-codes/Carlson/Elliptic/Standard.lean` (Apache-2.0), allowing either orientation
 and arbitrary endpoints in the monotone branch. Integrability uses the same substitution.
+
+Also proved here are the cosecant integrals `TauCeti.integral_inv_sin` and
+`TauCeti.integral_inv_sin_pi_sub` on `(0, π)`.
 -/
 
 public section
@@ -67,5 +71,26 @@ theorem intervalIntegrable_comp_sin_iff {a b : ℝ}
   · simp only [Function.comp_apply] at hsub
     exact (intervalIntegrable_congr_uIoo (sin_substitution_pullback ha hb g)).symm.trans hsub
   · exact (cos_pos_of_mem_uIoo ha hb hθ).le
+
+/-- For `a, b ∈ (0, π)`, `∫ x in a..b, (sin x)⁻¹ = log (tan (b / 2)) - log (tan (a / 2))`. -/
+theorem integral_inv_sin {a b : ℝ} (ha₀ : 0 < a) (haπ : a < π) (hb₀ : 0 < b) (hbπ : b < π) :
+    ∫ x in a..b, (sin x)⁻¹ = log (tan (b / 2)) - log (tan (a / 2)) := by
+  have hsub : Set.uIcc a b ⊆ Set.Ioo 0 π := by
+    intro x hx
+    rcases Set.mem_uIcc.mp hx with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> exact ⟨by linarith, by linarith⟩
+  refine intervalIntegral.integral_eq_sub_of_hasDerivAt
+    (f := fun t : ℝ ↦ log (tan (t / 2))) (f' := fun t : ℝ ↦ (sin t)⁻¹) ?_ ?_
+  · intro x hx
+    have hx' : x ∈ Set.Ioo 0 π := hsub hx
+    exact hasDerivAt_log_tan_div_two hx'.1 hx'.2
+  · exact (continuousOn_inv_sin_Ioo.mono hsub).intervalIntegrable
+
+/-- Integral of `(sin x)⁻¹` over `[a, π - a]` for `a ∈ (0, π)`. -/
+theorem integral_inv_sin_pi_sub {a : ℝ} (ha₀ : 0 < a) (haπ : a < π) :
+    ∫ x in a..(π - a), (sin x)⁻¹ = 2 * log (tan (a / 2))⁻¹ := by
+  have hhalf : (π - a) / 2 = π / 2 - a / 2 := by ring
+  rw [integral_inv_sin ha₀ haπ (sub_pos.mpr haπ) (sub_lt_self π ha₀), hhalf, tan_pi_div_two_sub,
+    log_inv]
+  ring
 
 end TauCeti

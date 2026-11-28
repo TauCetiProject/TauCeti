@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Data.ZMod.Basic
+public import Mathlib.Order.Interval.Finset.Nat
 
 /-!
 # Applying `ZMod.finEquiv`
@@ -24,6 +25,10 @@ function of the least nonnegative representative is a sum or product over `range
   `(ZMod.finEquiv n).symm z` of `z : ZMod n` has natural value `z.val`.
 * `ZMod.prod_val_eq_prod_range`, `ZMod.sum_val_eq_sum_range`: multiplying or summing a function
   of the representatives over `range n`.
+* `ZMod.prod_val_erase_zero_eq_prod_Ico_one`, `ZMod.sum_val_erase_zero_eq_sum_Ico_one`:
+  multiplying or summing a function of the representatives over the nonzero residues as `Ico 1 n`.
+* `ZMod.prod_val_eq_prod_Ico_one`, `ZMod.sum_val_eq_sum_Ico_one`: the same over all residues when
+  the value at `0` is `1` or `0`.
 * `ZMod.prod_val_sub_eq_prod_range`, `ZMod.sum_val_sub_eq_sum_range`: the same for the
   representatives of a shift `x - c`.
 * `TauCeti.mulModEquiv`: multiplication by `d` modulo `p` as a permutation of `Fin p`, for `d`
@@ -70,6 +75,43 @@ theorem prod_val_eq_prod_range {n : ℕ} {M : Type*} [CommMonoid M] [NeZero n] (
     ∏ x : ZMod n, f x.val = ∏ i ∈ Finset.range n, f i := by
   rw [Finset.prod_range, ← (finEquiv n).symm.toEquiv.prod_comp]
   simp
+
+/-- **Multiplying over the nonzero representatives.** For `n > 0`, a function of the least
+nonnegative representative multiplied over the nonzero residues modulo `n` is its product over
+`Finset.Ico 1 n`. -/
+@[to_additive sum_val_erase_zero_eq_sum_Ico_one
+/-- **Summing over the nonzero representatives.** For `n > 0`, a function of the least
+nonnegative representative summed over the nonzero residues modulo `n` is its sum over
+`Finset.Ico 1 n`. -/]
+theorem prod_val_erase_zero_eq_prod_Ico_one {n : ℕ} {M : Type*} [CommMonoid M] [NeZero n]
+    (f : ℕ → M) :
+    ∏ x ∈ Finset.univ.erase (0 : ZMod n), f x.val = ∏ i ∈ Finset.Ico 1 n, f i := by
+  refine Finset.prod_nbij' (fun x ↦ x.val) (fun i ↦ (i : ZMod n)) ?_ ?_ ?_ ?_ (fun _ _ ↦ rfl)
+  · intro x hx
+    simp only [Finset.mem_erase, ne_eq, Finset.mem_univ, and_true] at hx
+    refine Finset.mem_Ico.mpr ⟨Nat.pos_of_ne_zero fun h ↦ hx ?_, x.val_lt⟩
+    rw [← ZMod.natCast_zmod_val x, h, Nat.cast_zero]
+  · intro i hi
+    rw [Finset.mem_Ico] at hi
+    simp only [Finset.mem_erase, ne_eq, Finset.mem_univ, and_true]
+    intro h0
+    have hval := congrArg ZMod.val h0
+    rw [ZMod.val_natCast_of_lt hi.2, ZMod.val_zero] at hval
+    omega
+  · intro x _
+    exact ZMod.natCast_zmod_val x
+  · intro i hi
+    exact ZMod.val_natCast_of_lt (Finset.mem_Ico.mp hi).2
+
+/-- **Multiplying over representatives when the zero term is one.** If `f 0 = 1`, multiplying
+`f x.val` over `x : ZMod n` equals the product of `f i` over `i ∈ Finset.Ico 1 n`. -/
+@[to_additive sum_val_eq_sum_Ico_one
+/-- **Summing over representatives when the zero term vanishes.** If `f 0 = 0`,
+summing `f x.val` over `x : ZMod n` equals the sum of `f i` over `i ∈ Finset.Ico 1 n`. -/]
+theorem prod_val_eq_prod_Ico_one {n : ℕ} {M : Type*} [CommMonoid M] [NeZero n] (f : ℕ → M)
+    (hf0 : f 0 = 1) : ∏ x : ZMod n, f x.val = ∏ i ∈ Finset.Ico 1 n, f i := by
+  rw [← Finset.mul_prod_erase Finset.univ (fun x : ZMod n ↦ f x.val) (Finset.mem_univ 0),
+    ZMod.val_zero, hf0, one_mul, prod_val_erase_zero_eq_prod_Ico_one]
 
 /-- **Multiplying over shifted representatives.** For `n > 0`, a function of the representative
 of `x - c` multiplied over the residues modulo `n` is its product over `range n`. -/

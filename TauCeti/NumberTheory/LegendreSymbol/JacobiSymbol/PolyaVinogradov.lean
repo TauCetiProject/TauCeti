@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Order.Interval.Finset.Nat
 public import Mathlib.Data.Nat.Factorization.Basic
 public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
-import TauCeti.NumberTheory.DirichletCharacter.PolyaVinogradov
+import TauCeti.NumberTheory.DirichletCharacter.PolyaVinogradov.Basic
 import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol.Conductor
 
 /-!

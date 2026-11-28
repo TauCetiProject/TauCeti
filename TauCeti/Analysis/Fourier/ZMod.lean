@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Fourier.ZMod
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
+import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Data.ZMod.Count
 
 /-!
@@ -31,6 +32,8 @@ function with values in a subring `R ⊆ ℂ` containing them again has its valu
 
 * `DirichletCharacter.IsPrimitive.invDFT_apply` evaluates the normalized inverse transform
   by Mathlib’s primitive Gauss-sum formula.
+* `DirichletCharacter.norm_sum_range_add_le_fourier`: discrete Fourier inversion bound for
+  interval sums of a primitive nonprincipal complex Dirichlet character.
 * `ZMod.norm_invDFT_le_of_forall_norm_le`: a pointwise bound on a function also bounds every
   coefficient of its inverse Fourier transform.
 * `ZMod.stdAddChar_intCast_natCast_mul`: the additive character modulo `m n` at `n x` is the
@@ -185,3 +188,41 @@ theorem DirichletCharacter.IsPrimitive.invDFT_apply {N : ℕ} [NeZero N]
     𝓕⁻ (χ : ZMod N → ℂ) k = (gaussSum χ ZMod.stdAddChar / (N : ℂ)) * χ⁻¹ k := by
   rw [ZMod.invDFT_apply', hχ.fourierTransform_eq_inv_mul_gaussSum, neg_neg, smul_eq_mul]
   ring
+
+open Finset ZMod in
+/-- Discrete Fourier inversion bound for character sums over `range H`: for a primitive
+nonprincipal complex Dirichlet character `χ` modulo `N`,
+`‖∑ j < H, χ (a + j)‖ ≤ (√N / N) * ∑ k ≠ 0, ‖∑ j < H, stdAddChar (k * (a + j))‖`. -/
+theorem DirichletCharacter.norm_sum_range_add_le_fourier {N : ℕ} [NeZero N]
+    (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive) (hχ₀ : χ ≠ 1) (a : ZMod N) (H : ℕ) :
+    ‖∑ j ∈ range H, χ (a + (j : ZMod N))‖ ≤
+      (Real.sqrt N / N) * ∑ k ∈ univ.erase (0 : ZMod N),
+        ‖∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod N)))‖ := by
+  have hz : 𝓕 (χ : ZMod N → ℂ) 0 = 0 := by
+    rw [dft_apply_zero]
+    exact MulChar.sum_eq_zero_of_ne_one hχ₀
+  have hi (x : ZMod N) : χ x = (N : ℂ)⁻¹ *
+      ∑ k ∈ univ.erase (0 : ZMod N), stdAddChar (k * x) * 𝓕 χ k := by
+    have h := congr_fun ((dft (N := N) (E := ℂ)).symm_apply_apply χ) x
+    rw [invDFT_apply] at h
+    rw [← h, smul_eq_mul, ← sum_erase_add _ _ (mem_univ (0 : ZMod N))]
+    simp only [hz, mul_zero, add_zero, smul_eq_mul]
+  have heq : ∑ j ∈ range H, χ (a + (j : ZMod N)) = (N : ℂ)⁻¹ *
+      ∑ k ∈ univ.erase (0 : ZMod N),
+        (∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod N)))) * 𝓕 χ k := by
+    simp_rw [hi, ← mul_sum]
+    rw [sum_comm]
+    simp_rw [sum_mul]
+  rw [heq, norm_mul, norm_inv, Complex.norm_natCast]
+  calc (N : ℝ)⁻¹ * ‖∑ k ∈ univ.erase (0 : ZMod N),
+        (∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod N)))) * 𝓕 χ k‖
+      ≤ (N : ℝ)⁻¹ * ∑ k ∈ univ.erase (0 : ZMod N),
+          ‖∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod N)))‖ * Real.sqrt N := by
+        gcongr
+        refine (norm_sum_le _ _).trans (sum_le_sum fun k _ ↦ ?_)
+        rw [norm_mul, hχ.fourierTransform_eq_inv_mul_gaussSum, norm_mul,
+          χ.norm_gaussSum_stdAddChar hχ]
+        exact mul_le_mul_of_nonneg_left
+          (mul_le_of_le_one_left (Real.sqrt_nonneg _) (χ⁻¹.norm_le_one (-k)))
+          (norm_nonneg _)
+    _ = _ := by rw [← sum_mul]; ring

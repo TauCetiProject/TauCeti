@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Function
+public import Mathlib.Analysis.Normed.Field.Basic
 import Mathlib.Analysis.Convex.Slope
 import Mathlib.LinearAlgebra.AffineSpace.Slope
 import Mathlib.Tactic.Linarith
@@ -22,7 +23,9 @@ inequality.
 A strictly convex function of one variable takes each value at most twice
 (`StrictConvexOn.eq_or_eq_of_apply_eq`), since its slopes on adjacent intervals strictly increase.
 The increments of a convex function of one variable over a fixed width `c ≥ 0` increase
-(`ConvexOn.sub_le_sub_of_le`).
+(`ConvexOn.sub_le_sub_of_le`), and a function convex on `[a, b]` satisfies the midpoint bound
+`2 * g ((a + b) / 2) ≤ g x + g (a + b - x)` (`ConvexOn.two_mul_add_div_two_le`) and is bounded
+in norm on `(a, b)` (`ConvexOn.norm_le_on_Ioo`).
 
 `StrictConvexOn.comp_affineMap_of_injective` is extracted from the tangent argument adapted
 from the [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/e60bc39b18ef691263c66e2dba8d64726f18060d/formalization/FunctionalInequalities/Analysis/Convex/ContactMeasure.lean#L993).
@@ -98,3 +101,43 @@ theorem ConvexOn.sub_le_sub_of_le {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
     _ = slope f t (t + c) := slope_comm f (t + c) t
   simp only [slope_def_field, add_sub_cancel_left] at key
   exact (div_le_div_iff_of_pos_right hc).1 key
+
+/-- Midpoint inequality for a convex function on `[a, b]`:
+`2 * g ((a + b) / 2) ≤ g x + g (a + b - x)` for all `x ∈ [a, b]`. -/
+theorem ConvexOn.two_mul_add_div_two_le {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
+    [IsStrictOrderedRing 𝕜] {g : 𝕜 → 𝕜} {a b x : 𝕜} (hg : ConvexOn 𝕜 (Icc a b) g)
+    (hx : x ∈ Icc a b) :
+    2 * g ((a + b) / 2) ≤ g x + g (a + b - x) := by
+  have hx' : a + b - x ∈ Icc a b := ⟨by linarith [hx.2], by linarith [hx.1]⟩
+  have htwo : (0 : 𝕜) < 2 := zero_lt_two
+  have hhalf : (0 : 𝕜) ≤ (2 : 𝕜)⁻¹ := inv_nonneg.mpr htwo.le
+  have hsum : (2 : 𝕜)⁻¹ + (2 : 𝕜)⁻¹ = 1 := by rw [← two_mul, mul_inv_cancel₀ htwo.ne']
+  have hmid := hg.2 hx hx' hhalf hhalf hsum
+  have hmid_pt : (2 : 𝕜)⁻¹ • x + (2 : 𝕜)⁻¹ • (a + b - x) = (a + b) / 2 := by
+    simp only [smul_eq_mul]
+    rw [← mul_add, add_sub_cancel, inv_mul_eq_div]
+  rw [hmid_pt, smul_eq_mul, smul_eq_mul, ← mul_add] at hmid
+  calc
+    2 * g ((a + b) / 2) ≤ 2 * ((2 : 𝕜)⁻¹ * (g x + g (a + b - x))) :=
+      mul_le_mul_of_nonneg_left hmid htwo.le
+    _ = g x + g (a + b - x) := by rw [← mul_assoc, mul_inv_cancel₀ htwo.ne', one_mul]
+
+/-- A real-valued function convex on `[a, b]` is bounded in norm on `(a, b)`. -/
+theorem ConvexOn.norm_le_on_Ioo {g : ℝ → ℝ} {a b : ℝ} (hg : ConvexOn ℝ (Icc a b) g) :
+    ∃ C : ℝ, ∀ x ∈ Ioo a b, ‖g x‖ ≤ C := by
+  rcases le_or_gt b a with hba | hab
+  · exact ⟨0, fun _ hx ↦ False.elim (not_lt.mpr hba (hx.1.trans hx.2))⟩
+  let M : ℝ := max (g a) (g b)
+  refine ⟨max |M| |2 * g ((a + b) / 2) - M|, fun x hx ↦ ?_⟩
+  have hupper (y : ℝ) (hy : y ∈ Ioo a b) : g y ≤ M :=
+    hg.le_on_segment (left_mem_Icc.mpr hab.le) (right_mem_Icc.mpr hab.le)
+      (by rw [segment_eq_Icc hab.le]; exact Ioo_subset_Icc_self hy)
+  have hy' : a + b - x ∈ Ioo a b := ⟨by linarith [hx.2], by linarith [hx.1]⟩
+  have hmid := hg.two_mul_add_div_two_le (Ioo_subset_Icc_self hx)
+  have hgx_le : g x ≤ M := hupper x hx
+  have hgx_ge : 2 * g ((a + b) / 2) - M ≤ g x := by linarith [hupper (a + b - x) hy']
+  rw [Real.norm_eq_abs, abs_le]
+  exact ⟨by
+      linarith [neg_abs_le (2 * g ((a + b) / 2) - M),
+        le_max_right |M| |2 * g ((a + b) / 2) - M|],
+    by linarith [le_abs_self M, le_max_left |M| |2 * g ((a + b) / 2) - M|]⟩

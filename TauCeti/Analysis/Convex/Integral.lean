@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Integral
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Topology.Semicontinuity.Basic
+import Mathlib.Analysis.Convex.Continuous
+import TauCeti.Analysis.Convex.Function.Basic
 
 /-!
 # Jensen's inequality for semicontinuous functions and closed convex hulls
@@ -51,6 +54,10 @@ semicontinuity through `lowerSemicontinuousOn_iff_isClosed_epigraph` and
   `MeasureTheory.IntegrableOn.setAverage_mem_closedConvexHull_image`: an integral against a
   probability measure, or an average, lies in the closed convex hull of the values of the
   function on any set of full measure.
+* `ConvexOn.intervalIntegrable`: a real function convex on `uIcc a b` is interval integrable on
+  `a..b`.
+* `ConvexOn.sub_mul_le_intervalIntegral`: midpoint Jensen's inequality (left Hermite–Hadamard
+  inequality) for a convex function on `[a, b]`.
 
 ## References
 
@@ -180,3 +187,43 @@ theorem MeasureTheory.IntegrableOn.setAverage_mem_closedConvexHull_image
     ⨍ x in t, f x ∂μ ∈ closedConvexHull ℝ (f '' t) :=
   convex_closedConvexHull.set_average_mem isClosed_closedConvexHull h0 ht
     ((ae_restrict_mem₀ htm).mono fun _ hx ↦ subset_closedConvexHull (mem_image_of_mem f hx)) hfi
+
+/-! ### Interval integrability and midpoint Jensen's inequality -/
+
+/-- A real-valued function convex on `uIcc a b` is interval integrable on `a..b` with respect
+to Lebesgue measure. -/
+theorem ConvexOn.intervalIntegrable {g : ℝ → ℝ} {a b : ℝ} (hg : ConvexOn ℝ (Set.uIcc a b) g) :
+    IntervalIntegrable g volume a b := by
+  wlog hab : a ≤ b generalizing a b
+  · rw [Set.uIcc_comm] at hg
+    exact (this hg (le_of_not_ge hab)).symm
+  rw [Set.uIcc_of_le hab] at hg
+  obtain ⟨C, hC⟩ := hg.norm_le_on_Ioo
+  have hcont : ContinuousOn g (Set.Ioo a b) := by
+    simpa only [interior_Icc] using hg.continuousOn_interior
+  exact (intervalIntegrable_iff_integrableOn_Icc_of_le hab).2 <|
+    (integrableOn_Icc_iff_integrableOn_Ioo).2 <|
+      IntegrableOn.of_bound measure_Ioo_lt_top
+        (hcont.aestronglyMeasurable measurableSet_Ioo) C
+        (ae_restrict_of_forall_mem measurableSet_Ioo hC)
+
+/-- **Midpoint Jensen's inequality** (left Hermite–Hadamard inequality) on `[a, b]`: for `a ≤ b`
+and a function `g : ℝ → ℝ` convex on `[a, b]`,
+`(b - a) * g ((a + b) / 2) ≤ ∫ x in a..b, g x`. -/
+theorem ConvexOn.sub_mul_le_intervalIntegral {g : ℝ → ℝ} {a b : ℝ}
+    (hg : ConvexOn ℝ (Set.Icc a b) g) (hab : a ≤ b) :
+    (b - a) * g ((a + b) / 2) ≤ ∫ x in a..b, g x := by
+  have hg_int : IntervalIntegrable g volume a b := (Set.uIcc_of_le hab ▸ hg).intervalIntegrable
+  have hg_ref_int : IntervalIntegrable (fun x ↦ g (a + b - x)) volume a b := by
+    simpa only [add_sub_cancel_left, add_sub_cancel_right] using
+      (hg_int.comp_sub_left (a + b)).symm
+  have hmono := intervalIntegral.integral_mono_on hab intervalIntegrable_const
+    (hg_int.add hg_ref_int) fun x hx ↦ hg.two_mul_add_div_two_le hx
+  have hconst : ∫ _ in a..b, 2 * g ((a + b) / 2) = 2 * ((b - a) * g ((a + b) / 2)) := by
+    rw [intervalIntegral.integral_const, smul_eq_mul]
+    ring
+  have href : ∫ x in a..b, g (a + b - x) = ∫ x in a..b, g x := by
+    simpa only [add_sub_cancel_left, add_sub_cancel_right] using
+      intervalIntegral.integral_comp_sub_left g (a + b) (a := a) (b := b)
+  rw [hconst, intervalIntegral.integral_add hg_int hg_ref_int, href, ← two_mul] at hmono
+  linarith

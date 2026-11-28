@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Real.Sqrt
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 public import Mathlib.NumberTheory.DirichletCharacter.Bounds
 
-import Mathlib.Analysis.Fourier.ZMod
-import Mathlib.NumberTheory.LSeries.Nonvanishing
+import TauCeti.Analysis.Fourier.ZMod
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.NumberTheory.ArithmeticFunction.Zeta
 import TauCeti.NumberTheory.DirichletCharacter.Basic
@@ -24,10 +24,10 @@ import TauCeti.NumberTheory.DirichletCharacter.PartialSum
 Primitive nonprincipal complex Dirichlet characters have interval sums bounded uniformly in the
 length of the interval. The same estimate holds on progressions with invertible step.
 
-We use discrete Fourier inversion and the primitive-character Gauss-sum formula from Mathlib,
-then bound the resulting geometric sums by the chord inequality and a harmonic sum. This is the
-classical Fourier proof; see Montgomery and Vaughan, *Multiplicative Number Theory I: Classical
-Theory*, Chapter 9, Theorem 9.18.
+We use discrete Fourier inversion and the primitive-character Gauss-sum formula
+(`DirichletCharacter.norm_sum_range_add_le_fourier`), then bound the resulting geometric sums by
+the chord inequality and a harmonic sum. This is the classical Fourier proof; see Montgomery and
+Vaughan, *Multiplicative Number Theory I: Classical Theory*, Chapter 9, Theorem 9.18.
 
 Imprimitive characters are handled by sieving the partial sums to the integers prime to a fixed
 `m`, at the cost of a factor `2 ^ ω m`
@@ -51,40 +51,6 @@ open scoped ArithmeticFunction.omega
 
 variable {N : ℕ} [NeZero N]
 
-private lemma norm_interval_sum_le_fourier (χ : DirichletCharacter ℂ N)
-    (hχ : χ.IsPrimitive) (hχ₀ : χ ≠ 1) (a : ZMod N) (H : ℕ) :
-    ‖∑ j ∈ range H, χ (a + (j : ZMod N))‖ ≤
-      (Real.sqrt N / N) * ∑ k ∈ univ.erase (0 : ZMod N),
-        ‖∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod N)))‖ := by
-  have hz : 𝓕 (χ : ZMod N → ℂ) 0 = 0 := by
-    rw [dft_apply_zero]
-    exact MulChar.sum_eq_zero_of_ne_one hχ₀
-  have hi (x : ZMod N) : χ x = (N : ℂ)⁻¹ *
-      ∑ k ∈ univ.erase (0 : ZMod N), stdAddChar (k * x) * 𝓕 χ k := by
-    have h := congr_fun ((dft (N := N) (E := ℂ)).symm_apply_apply χ) x
-    rw [invDFT_apply] at h
-    rw [← h, smul_eq_mul, ← sum_erase_add _ _ (mem_univ (0 : ZMod N))]
-    simp only [hz, mul_zero, add_zero, smul_eq_mul]
-  have heq : ∑ j ∈ range H, χ (a + (j : ZMod N)) = (N : ℂ)⁻¹ *
-      ∑ k ∈ univ.erase (0 : ZMod N),
-        (∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod N)))) * 𝓕 χ k := by
-    simp_rw [hi, ← mul_sum]
-    rw [sum_comm]
-    simp_rw [sum_mul]
-  rw [heq, norm_mul, norm_inv, Complex.norm_natCast]
-  calc (N : ℝ)⁻¹ * ‖∑ k ∈ univ.erase (0 : ZMod N),
-        (∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod N)))) * 𝓕 χ k‖
-      ≤ (N : ℝ)⁻¹ * ∑ k ∈ univ.erase (0 : ZMod N),
-          ‖∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod N)))‖ * Real.sqrt N := by
-        gcongr
-        refine (norm_sum_le _ _).trans (sum_le_sum fun k _ ↦ ?_)
-        rw [norm_mul, hχ.fourierTransform_eq_inv_mul_gaussSum, norm_mul,
-          χ.norm_gaussSum_stdAddChar hχ]
-        exact mul_le_mul_of_nonneg_left
-          (mul_le_of_le_one_left (Real.sqrt_nonneg _) (χ⁻¹.norm_le_one (-k)))
-          (norm_nonneg _)
-    _ = _ := by rw [← sum_mul]; ring
-
 /-- **Pólya–Vinogradov inequality** for intervals of arbitrary length and starting residue.
 The character may be any primitive nonprincipal complex Dirichlet character. -/
 theorem norm_sum_range_add_le (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimitive)
@@ -93,7 +59,7 @@ theorem norm_sum_range_add_le (χ : DirichletCharacter ℂ N) (hχ : χ.IsPrimit
   calc
     _ ≤ (Real.sqrt N / N) * ∑ k ∈ univ.erase (0 : ZMod N),
         ‖∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod N)))‖ :=
-      norm_interval_sum_le_fourier χ hχ hχ₀ a H
+      norm_sum_range_add_le_fourier χ hχ hχ₀ a H
     _ ≤ (Real.sqrt N / N) * (N * (1 + Real.log N)) := by
       exact mul_le_mul_of_nonneg_left
         (ZMod.sum_norm_sum_range_stdAddChar_mul_add_le a H) (by positivity)
