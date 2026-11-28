@@ -34,9 +34,10 @@ compatibility lemmas with `AddSubmonoid.toGroupClosure`).
 
 ## Main results
 
-* `AddSubmonoid.nsmulSaturated_map_prod_id`: the image of a submonoid under `n ↦ (f n, n)`
-  is saturated exactly when the submonoid is saturated, provided positive natural multiples
-  are injective on the target `M` (`[HasUniqueDiv M]`).
+* `Submonoid.mem_map_prod_id_iff`: membership in the graph image records membership of the
+  second coordinate and equality of the first coordinate with its image.
+* `Submonoid.powSaturated_map_prod_id`: the image under `n ↦ (f n, n)` is saturated exactly when
+  the source submonoid is saturated, provided positive powers are injective on the target.
 * `Submonoid.PowSaturated.comap` and `Submonoid.PowSaturated.inf`: `PowSaturated` is preserved by
   pullbacks and binary intersections.
 * `Submonoid.powSaturation`: the elements of `M` having a positive power in `s`.
@@ -62,6 +63,39 @@ namespace Submonoid
 section Monoid
 
 variable {M N : Type*} [Monoid M] [Monoid N]
+
+/-- A point of the graph image is determined by its second coordinate in the source monoid. -/
+@[to_additive AddSubmonoid.mem_map_prod_id_iff]
+theorem mem_map_prod_id_iff {N M : Type*} [Monoid N] [Monoid M]
+    (s : Submonoid N) (f : N →* M) (x : M × N) :
+    x ∈ s.map (f.prod (MonoidHom.id N)) ↔ x.2 ∈ s ∧ x.1 = f x.2 := by
+  have hf : ⇑(f.prod (MonoidHom.id N)) = fun n => (f n, n) := by
+    funext n
+    simp only [MonoidHom.prod_apply, MonoidHom.id_apply]
+  rw [← SetLike.mem_coe, Submonoid.coe_map, hf]
+  simpa only [SetLike.mem_coe] using Set.mem_image_prodMk_self_snd_iff f (s : Set N) x
+
+/-- The image of `s` under `n ↦ (f n, n)` is `PowSaturated` exactly when `s` is,
+provided nonzero powers are injective on the first coordinate `M`. -/
+@[to_additive AddSubmonoid.nsmulSaturated_map_prod_id
+/-- The image of `s` under `n ↦ (f n, n)` is `NSMulSaturated` exactly when `s` is,
+provided nonzero natural multiples are injective on the first coordinate `M`. -/]
+theorem powSaturated_map_prod_id {N M : Type*} [Monoid N] [Monoid M]
+    [HasUniqueRoots M] (s : Submonoid N) (f : N →* M) :
+    (s.map (f.prod (MonoidHom.id N))).PowSaturated ↔ s.PowSaturated := by
+  constructor
+  · intro h a n hn
+    have hmem : (f n, n) ^ a ∈ s.map (f.prod (MonoidHom.id N)) :=
+      ⟨n ^ a, hn, Prod.ext (map_pow f n a) rfl⟩
+    exact (h hmem).imp_right fun hgraph =>
+      ((s.mem_map_prod_id_iff f (f n, n)).mp hgraph).1
+  · rintro h a ⟨m, n⟩ hmem
+    by_cases ha : a = 0
+    · exact Or.inl ha
+    · have hgraph := (s.mem_map_prod_id_iff f (m ^ a, n ^ a)).mp hmem
+      exact Or.inr ((s.mem_map_prod_id_iff f (m, n)).mpr
+        ⟨(h hgraph.1).resolve_left ha,
+          pow_left_injective ha (hgraph.2.trans (map_pow f n a))⟩)
 
 /-- The pullback of a `PowSaturated` submonoid along a monoid homomorphism is `PowSaturated`. -/
 @[to_additive /-- The pullback of an `NSMulSaturated` additive submonoid along an additive monoid
@@ -319,35 +353,6 @@ end Group
 end Submonoid
 
 namespace AddSubmonoid
-
-/-- A point of the graph image is determined by its second coordinate in the source monoid. -/
-theorem mem_map_prod_id_iff {N M : Type*} [AddMonoid N] [AddMonoid M]
-    (s : AddSubmonoid N) (f : N →+ M) (x : M × N) :
-    x ∈ s.map (f.prod (AddMonoidHom.id N)) ↔ x.2 ∈ s ∧ x.1 = f x.2 := by
-  have hf : ⇑(f.prod (AddMonoidHom.id N)) = fun n => (f n, n) := by
-    funext n
-    simp only [AddMonoidHom.prod_apply, AddMonoidHom.id_apply]
-  rw [← SetLike.mem_coe, AddSubmonoid.coe_map, hf]
-  simpa only [SetLike.mem_coe] using Set.mem_image_prodMk_self_snd_iff f (s : Set N) x
-
-/-- The image of `s` under `n ↦ (f n, n)` is `NSMulSaturated` exactly when `s` is,
-provided nonzero natural multiples are injective on the first coordinate `M`. -/
-theorem nsmulSaturated_map_prod_id {N M : Type*} [AddMonoid N] [AddMonoid M]
-    [HasUniqueDiv M] (s : AddSubmonoid N) (f : N →+ M) :
-    (s.map (f.prod (AddMonoidHom.id N))).NSMulSaturated ↔ s.NSMulSaturated := by
-  constructor
-  · intro h a n hn
-    have hmem : a • (f n, n) ∈ s.map (f.prod (AddMonoidHom.id N)) :=
-      ⟨a • n, hn, Prod.ext (map_nsmul f a n) rfl⟩
-    exact (h hmem).imp_right fun hgraph =>
-      ((s.mem_map_prod_id_iff f (f n, n)).mp hgraph).1
-  · rintro h a ⟨m, n⟩ hmem
-    by_cases ha : a = 0
-    · exact Or.inl ha
-    · have hgraph := (s.mem_map_prod_id_iff f (a • m, a • n)).mp hmem
-      exact Or.inr ((s.mem_map_prod_id_iff f (m, n)).mpr
-        ⟨(h hgraph.1).resolve_left ha,
-          nsmul_right_injective ha (hgraph.2.trans (map_nsmul f a n))⟩)
 
 variable {G : Type*} [AddCommGroup G] (S : AddSubmonoid G)
 
