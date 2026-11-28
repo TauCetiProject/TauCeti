@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Geometry.Manifold.Density.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
+public import TauCeti.Geometry.Manifold.ExtChartAt.Integral
 import TauCeti.Geometry.Manifold.DifferentialForm.Chart
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.CompactSupport
 import TauCeti.Geometry.Manifold.ExtChartAt
-import TauCeti.Geometry.Manifold.ExtChartAt.Integral
 import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
@@ -52,6 +52,11 @@ have boundary or corners: only the model carries its Borel measurable structure.
 * `TauCeti.integralTopForm_eq_integralDensity`: `∫_o φ = ∫ φ.toDensity o`.
 * `TauCeti.integralDensity_modelSpace`: on the model space the integral is the Lebesgue integral
   of the value on a model basis.
+* `TauCeti.integralDensity_eq_sum_chooseChartCover`,
+  `TauCeti.integralDensity_eq_integral_inChartAt_of_ae_support`: chosen-cover and almost-everywhere
+  single-chart formulas.
+* `TauCeti.integralDensity_real_eq_integral`: real-line specialization.
+* `TauCeti.integralDensity_zeroDim`: zero-dimensional density integration.
 
 ## References
 
@@ -567,6 +572,42 @@ theorem integralDensity_eq_integral_inChartAt [IsManifold I 1 M] [MeasurableSpac
   refine setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ ?_
   exact μ.inChartAt_of_notMem_target b α hy
 
+/-- The integral of an integrable density is the sum of its chart integrals over the disjointed
+pieces of `chooseChartCover` for its support. -/
+theorem integralDensity_eq_sum_chooseChartCover [IsManifold I 1 M]
+    [MeasurableSpace E] [BorelSpace E] {μ : RoughDensity I M m} (hi : IntegrableDensity μ)
+    (b : Basis (Fin m) ℝ E) :
+    let c := chooseChartCover (I := I) (_root_.tsupport (α := Density E m) μ) hi.isCompact
+    integralDensity μ =
+      ∑ i, ∫ y in (extChartAt I (c.center i)) '' disjointed c.domain i,
+        μ.inChartAt b (c.center i) y ∂b.addHaar := by
+  let c := chooseChartCover (I := I) (_root_.tsupport (α := Density E m) μ) hi.isCompact
+  exact integralDensity_eq_sum_disjointed_chart_integrals hi b c.center c.domain
+    (fun i ↦ (c.isOpen_domain i).isChartMeasurable) c.domain_subset
+    fun x hx ↦ c.covers (subset_closure hx)
+
+/-- A single preferred chart computes `integralDensity` whenever `μ` vanishes outside that chart up
+to a chartwise null set. -/
+theorem integralDensity_eq_integral_inChartAt_of_ae_support [IsManifold I 1 M]
+    [MeasurableSpace E] [BorelSpace E] {μ : RoughDensity I M m} (hi : IntegrableDensity μ)
+    (b : Basis (Fin m) ℝ E) (α : M) (hs : IsNullSet I ({x | μ x ≠ 0} \ (extChartAt I α).source)) :
+    integralDensity μ = ∫ y, μ.inChartAt b α y ∂b.addHaar := by
+  have : FiniteDimensional ℝ E := Module.Finite.of_basis b
+  let : LocallyCompactSpace H := I.locallyCompactSpace
+  let c := chooseChartCover (I := I) (_root_.tsupport (α := Density E m) μ) hi.isCompact
+  rw [integralDensity_eq_sum_chooseChartCover hi b]
+  simp_rw [← ChartCover.piece_def]
+  refine sum_setIntegral_image_extChartAt_piece_eq_integral c α (hi.integrable_inChartAt b α)
+    (μ.support_inChartAt_subset_target b α)
+    (fun _ hx hn ↦ μ.inChartAt_eq_zero_of_notMem_tsupport b α hx hn)
+    (fun i s hsub hsm ↦ (μ.setIntegral_inChartAt_changeChart b (c.center i) α hsub
+      (hsm.image_extChartAt (c.center i) (hsub.trans inter_subset_left)) b.addHaar).1)
+    fun i ↦ ?_
+  filter_upwards [hs.ae_extChartAt_symm_notMem_of_sdiff_source (c.center i) b.addHaar] with y hy
+  intro hxo ⟨x, hx, hxy⟩
+  exact μ.inChartAt_eq_zero_of_apply_eq_zero b (c.center i)
+    (not_not.mp (hy hxo (hxy ▸ (extChartAt I (c.center i)).map_source (c.piece_subset i hx))))
+
 /-- On the model space, the integral of an integrable density is the Lebesgue integral of its
 value on a model basis, for the Haar measure of that basis. -/
 theorem integralDensity_modelSpace [MeasurableSpace E] [BorelSpace E]
@@ -586,6 +627,109 @@ theorem integrableDensity_modelSpace_iff [MeasurableSpace E] [BorelSpace E]
     exact hi.integrable_inChartAt b 0
   · refine (μ.integrableDensity_iff_of_tsupport_subset_chart b 0 hc (by simp)).mpr ?_
     rwa [μ.inChartAt_modelSpace b 0]
+
+/-- Evaluating a `1`-density on `ℝ` at `Basis.singleton (Fin 1) ℝ` agrees with evaluating it on the
+constant tuple `fun _ ↦ 1`. -/
+private theorem apply_basis_singleton (μ : RoughDensity 𝓘(ℝ, ℝ) ℝ 1) (t : ℝ) :
+    μ t (Basis.singleton (Fin 1) ℝ) = μ t (fun _ ↦ (1 : ℝ)) :=
+  congrArg (μ t) (by rw [Basis.coe_singleton, Pi.one_def])
+
+/-- On `ℝ`, a `1`-density `μ` is integrable iff `tsupport μ` is compact and
+`t ↦ μ t (fun _ ↦ 1)` is Lebesgue-integrable. -/
+theorem integrableDensity_real_iff {μ : RoughDensity 𝓘(ℝ, ℝ) ℝ 1} :
+    IntegrableDensity μ ↔
+      IsCompact (_root_.tsupport (α := Density ℝ 1) μ) ∧
+        Integrable (fun t ↦ μ t (fun _ ↦ (1 : ℝ))) := by
+  simp only [integrableDensity_modelSpace_iff (Basis.singleton (Fin 1) ℝ),
+    Basis.addHaar_singleton, apply_basis_singleton]
+
+/-- On `ℝ`, the integral of an integrable `1`-density is `∫ t, μ t (fun _ ↦ 1)`. -/
+theorem integralDensity_real_eq_integral {μ : RoughDensity 𝓘(ℝ, ℝ) ℝ 1}
+    (hi : IntegrableDensity μ) : integralDensity μ = ∫ t, μ t (fun _ ↦ (1 : ℝ)) := by
+  simp only [integralDensity_modelSpace hi (Basis.singleton (Fin 1) ℝ),
+    Basis.addHaar_singleton, apply_basis_singleton]
+
+section ZeroDim
+
+variable [Subsingleton E]
+
+/-- On a zero-dimensional manifold, a rough density is integrable iff its support is finite. -/
+theorem integrableDensity_zeroDim_iff (μ : RoughDensity I M 0) :
+    IntegrableDensity μ ↔ {x | μ x ≠ 0}.Finite := by
+  have : DiscreteTopology M := I.discreteTopology M
+  let : MeasurableSpace E := borel E
+  have : BorelSpace E := ⟨rfl⟩
+  rw [integrableDensity_iff]
+  unfold _root_.tsupport
+  rw [closure_discrete, isCompact_iff_finite]
+  exact ⟨fun h ↦ h.1, fun hfin ↦ ⟨hfin, ⟨Basis.empty E⟩, fun _ _ ↦ by
+    rw [Basis.addHaar_eq_dirac]
+    exact integrable_dirac (by simp)⟩⟩
+
+/-- On a zero-dimensional charted manifold, `integralDensity μ = ∑ᶠ x : M, μ x 0` unconditionally,
+with no orientation signs or smoothness hypothesis. -/
+theorem integralDensity_zeroDim (μ : RoughDensity I M 0) :
+    integralDensity μ = ∑ᶠ x : M, μ x 0 := by
+  classical
+  have hsupp_eq : Function.support (fun x : M ↦ μ x 0) = {x | μ x ≠ 0} := Set.ext fun x ↦
+    not_congr ⟨fun h ↦ by
+      dsimp only at h
+      ext v
+      rw [Subsingleton.elim v 0, h, Density.zero_apply],
+      fun h ↦ by dsimp only; rw [h, Density.zero_apply]⟩
+  by_cases hfin : {x | μ x ≠ 0}.Finite
+  swap
+  · rw [integralDensity_eq_zero_of_not_integrable (mt (integrableDensity_zeroDim_iff μ).mp hfin),
+      finsum_of_infinite_support (by rwa [hsupp_eq])]
+  have : DiscreteTopology M := I.discreteTopology M
+  have : IsManifold I 1 M := isManifold_of_contDiffOn I 1 M fun _ _ _ _ ↦
+    contDiffOn_const (c := (0 : E)).congr fun _ _ ↦ Subsingleton.elim _ _
+  let : MeasurableSpace E := borel E
+  have : BorelSpace E := ⟨rfl⟩
+  let b : Basis (Fin 0) ℝ E := Basis.empty E
+  let s := hfin.toFinset
+  let e := s.equivFin
+  let α (i : Fin s.card) : M := e.symm i
+  have hdisj : Pairwise fun i j ↦ Disjoint ({α i} : Set M) {α j} := fun _ _ hij ↦
+    disjoint_singleton.mpr fun h ↦ hij (e.symm.injective (Subtype.ext h))
+  rw [integralDensity_eq_sum_disjointed_chart_integrals
+      ((integrableDensity_zeroDim_iff μ).mpr hfin) b α (fun i ↦ {α i})
+      (fun i ↦ (extChartAt_source_zeroDim (I := I) (α i) ▸
+        isOpen_extChartAt_source (α i)).isChartMeasurable)
+      (fun i ↦ (extChartAt_source_zeroDim (I := I) (α i)).ge)
+      (fun x hx ↦ mem_iUnion.mpr ⟨e ⟨x, hfin.mem_toFinset.mpr hx⟩, by simp [α]⟩)]
+  have hterm (i : Fin s.card) : (∫ y in (extChartAt I (α i)) '' disjointed (fun j ↦ {α j}) i,
+      μ.inChartAt b (α i) y ∂b.addHaar) = μ (α i) 0 := by
+    rw [disjointed_eq_self fun j hj ↦ hdisj hj.ne, image_singleton,
+      b.setIntegral_addHaar_of_subsingleton _ (singleton_nonempty _) (extChartAt I (α i) (α i)),
+      μ.inChartAt_self]
+    exact congrArg (μ (α i)) (Subsingleton.elim _ 0)
+  simp_rw [hterm]
+  rw [finsum_eq_sum_of_support_subset (f := fun x : M ↦ μ x 0) (s := s)
+    (hsupp_eq ▸ hfin.coe_toFinset.ge)]
+  exact (Fintype.sum_equiv e.symm (fun i ↦ μ (α i) 0) (fun x : s ↦ μ x.val 0) fun _ ↦ rfl).trans
+    (Finset.sum_attach s fun x ↦ μ x 0)
+
+/-- On a zero-dimensional charted manifold, any rough density supported in `{x}` is integrable. -/
+theorem integrableDensity_zeroDim_singleton (μ : RoughDensity I M 0) (x : M)
+    (hs : _root_.tsupport (α := Density E 0) μ ⊆ {x}) : IntegrableDensity μ :=
+  (integrableDensity_zeroDim_iff μ).mpr
+    ((finite_singleton x).subset fun _ hy ↦ hs (_root_.subset_tsupport (α := Density E 0) μ hy))
+
+/-- On a zero-dimensional manifold, a rough density supported in `{x}` integrates to `μ x 0`. -/
+theorem integralDensity_zeroDim_singleton (μ : RoughDensity I M 0) (x : M)
+    (hs : _root_.tsupport (α := Density E 0) μ ⊆ {x}) : integralDensity μ = μ x 0 := by
+  rw [integralDensity_zeroDim, finsum_eq_single _ x]
+  intro y hy
+  have h0 : μ y = 0 := _root_.image_eq_zero_of_notMem_tsupport (α := Density E 0) fun h ↦ hy (hs h)
+  rw [h0, Density.zero_apply]
+
+/-- On a finite zero-dimensional charted manifold, `integralDensity μ = ∑ x : M, μ x 0`. -/
+theorem integralDensity_finite_zeroDim [Fintype M] (μ : RoughDensity I M 0) :
+    integralDensity μ = ∑ x : M, μ x 0 := by
+  rw [integralDensity_zeroDim, finsum_eq_sum_of_fintype]
+
+end ZeroDim
 
 /-- The zero density has zero integral. -/
 @[simp]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Density.Regularity
 import TauCeti.Geometry.Manifold.ExtChartAt.Integral
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
@@ -34,13 +35,6 @@ namespace TauCeti
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {m : ℕ}
-
-/-- Mapping a model basis along `(tangentSpaceCastModel I x).symm` preserves its underlying
-function into `TangentSpace I x`. -/
-private theorem coe_map_tangentSpaceCastModel_symm (x : M) (b : Basis (Fin m) ℝ E) :
-    (⇑(b.map (tangentSpaceCastModel I x).symm.toLinearEquiv) : Fin m → TangentSpace I x) =
-      (⇑b : Fin m → E) :=
-  rfl
 
 /-- **Nonnegativity of density integration.** A rough density nonnegative on every tangent basis
 has nonnegative integral, in every dimension `m : ℕ` (no regularity, support, or orientation). -/
@@ -102,7 +96,7 @@ theorem integralDensity_pos_of_continuousOn_inChartAt [IsManifold I 1 M]
     rw [μ.inChartAt_self b₀ x₀]
     let b₀' : Basis (Fin m) ℝ (TangentSpace I x₀) :=
       b₀.map (tangentSpaceCastModel I x₀).symm.toLinearEquiv
-    rw [← coe_map_tangentSpaceCastModel_symm x₀ b₀, (μ x₀).apply_eq_abs_det_mul c₀ b₀']
+    rw [← b₀.coe_map_tangentSpaceCastModel_symm x₀, (μ x₀).apply_eq_abs_det_mul c₀ b₀']
     exact mul_pos (abs_pos.mpr (c₀.isUnit_det b₀').ne_zero) hpos
   rw [hpiece]
   exact setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target (μ := b₀.addHaar) x₀
