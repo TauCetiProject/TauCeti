@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Enumerative.ExteriorWeights.Basic
 public import Mathlib.Data.Fintype.BigOperators
-import Mathlib.Algebra.BigOperators.GroupWithZero.Finset
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 import Mathlib.Algebra.Order.Ring.Nat
 import Mathlib.Algebra.Ring.Defs
@@ -31,11 +30,30 @@ namespace TauCeti
 variable {m : ℕ}
 
 /-- The distinct weights among the indexed entries of a weight list. -/
-@[expose] def weightSupport (w : Fin m → ℤ) : Finset ℤ := Finset.univ.image w
+def weightSupport (w : Fin m → ℤ) : Finset ℤ := Finset.univ.image w
+
+/-- The support is the image of the whole index set under the weight function. -/
+theorem weightSupport_def (w : Fin m → ℤ) : weightSupport w = Finset.univ.image w := by
+  rfl
+
+/-- A weight belongs to the support exactly when some index carries it. -/
+@[simp] theorem mem_weightSupport {w : Fin m → ℤ} {j : ℤ} :
+    j ∈ weightSupport w ↔ ∃ i, w i = j := by
+  simp [weightSupport_def]
 
 /-- All indices carrying a given weight. -/
-@[expose] def weightFiber (w : Fin m → ℤ) (j : weightSupport w) : Finset (Fin m) :=
+def weightFiber (w : Fin m → ℤ) (j : weightSupport w) : Finset (Fin m) :=
   Finset.univ.filter fun i => w i = j.val
+
+/-- The fiber is the subset of all indices whose weights equal its label. -/
+theorem weightFiber_def (w : Fin m → ℤ) (j : weightSupport w) :
+    weightFiber w j = Finset.univ.filter fun i => w i = j.val := by
+  rfl
+
+/-- Membership in a weight fiber is equality with the indexed weight. -/
+@[simp] theorem mem_weightFiber {w : Fin m → ℤ} {j : weightSupport w} {i : Fin m} :
+    i ∈ weightFiber w j ↔ w i = j.val := by
+  simp [weightFiber_def]
 
 /-- A histogram chooses an occupancy between zero and the size of each weight fiber. -/
 abbrev WeightHistogram (w : Fin m → ℤ) :=
@@ -45,29 +63,40 @@ private def weightPart (w : Fin m → ℤ) (s : Finset (Fin m)) (j : weightSuppo
   s.filter fun i => w i = j.val
 
 /-- The histogram of a subset records how many indices it selects at each weight. -/
-@[expose] def weightHistogram (w : Fin m → ℤ) (s : Finset (Fin m)) : WeightHistogram w := fun j =>
+def weightHistogram (w : Fin m → ℤ) (s : Finset (Fin m)) : WeightHistogram w := fun j =>
   ⟨(s.filter fun i => w i = j.val).card, Nat.lt_succ_of_le
     (Finset.card_le_card (Finset.filter_subset_filter _ (Finset.subset_univ s)))⟩
 
 /-- The occupancy of a subset at a weight is its number of selected indices of that weight. -/
 theorem weightHistogram_apply (w : Fin m → ℤ) (s : Finset (Fin m)) (j : weightSupport w) :
-    (weightHistogram w s j : ℕ) = (s.filter fun i => w i = j.val).card := rfl
+    (weightHistogram w s j : ℕ) = (s.filter fun i => w i = j.val).card := by
+  rfl
+
+private theorem weightHistogram_eq_card_weightPart (w : Fin m → ℤ) (s : Finset (Fin m))
+    (j : weightSupport w) : (weightHistogram w s j : ℕ) = (weightPart w s j).card := by
+  rw [weightHistogram_apply, weightPart]
 
 private def indexWeight (w : Fin m → ℤ) (i : Fin m) : weightSupport w :=
-  ⟨w i, Finset.mem_image_of_mem _ (Finset.mem_univ _)⟩
+  ⟨w i, mem_weightSupport.mpr ⟨i, rfl⟩⟩
+
+private theorem indexWeight_eq_iff {w : Fin m → ℤ} {i : Fin m} {j : weightSupport w} :
+    indexWeight w i = j ↔ w i = j.val :=
+  Subtype.ext_iff
+
+private theorem indexWeight_val (w : Fin m → ℤ) (i : Fin m) : (indexWeight w i).val = w i := rfl
 
 /-- The sum of the occupancies recovers the selected cardinality. -/
 theorem sum_weightHistogram (w : Fin m → ℤ) (s : Finset (Fin m)) :
     ∑ j, (weightHistogram w s j : ℕ) = s.card := by
   have h := Finset.sum_card_fiberwise_eq_card_filter s Finset.univ (indexWeight w)
-  simpa [weightHistogram_apply, indexWeight, Subtype.ext_iff] using h
+  simpa [weightHistogram_apply, indexWeight_eq_iff] using h
 
 /-- Weighting each occupancy by its weight recovers the sum over the selected indices. -/
 theorem sum_weight_mul_weightHistogram (w : Fin m → ℤ) (s : Finset (Fin m)) :
     ∑ j, (weightHistogram w s j : ℤ) * j.val = ∑ i ∈ s, w i := by
   have h := Finset.sum_fiberwise_of_maps_to' (s := s) (t := Finset.univ) (g := indexWeight w)
     (fun i _ => Finset.mem_univ _) (fun j => j.val)
-  simpa [weightHistogram_apply, indexWeight, Subtype.ext_iff, nsmul_eq_mul] using h
+  simpa [weightHistogram_apply, indexWeight_eq_iff, indexWeight_val, nsmul_eq_mul] using h
 
 private def joinWeightParts (w : Fin m → ℤ) (p : weightSupport w → Finset (Fin m)) :=
   Finset.univ.filter fun i => i ∈ p (indexWeight w i)
@@ -90,10 +119,10 @@ private theorem weightPart_joinWeightParts (w : Fin m → ℤ)
   simp only [weightPart, joinWeightParts, Finset.mem_filter, Finset.mem_univ, true_and]
   constructor
   · rintro ⟨hi, hj⟩
-    rwa [show indexWeight w i = j from Subtype.ext hj] at hi
+    rwa [indexWeight_eq_iff.mpr hj] at hi
   · intro hi
-    have hj : w i = j.val := (Finset.mem_filter.mp (hp j hi)).2
-    exact ⟨(show indexWeight w i = j from Subtype.ext hj).symm ▸ hi, hj⟩
+    have hj := mem_weightFiber.mp (hp j hi)
+    exact ⟨by rwa [indexWeight_eq_iff.mpr hj], hj⟩
 
 private theorem card_histogram_fiber (w : Fin m → ℤ) (h : WeightHistogram w) :
     (Finset.univ.filter fun s => weightHistogram w s = h).card =
@@ -108,7 +137,8 @@ private theorem card_histogram_fiber (w : Fin m → ℤ) (h : WeightHistogram w)
         exact Fintype.mem_piFinset.mpr fun j =>
           Finset.mem_powersetCard.mpr
             ⟨Finset.filter_subset_filter _ (Finset.subset_univ s),
-              congrArg Fin.val (congrFun hh j)⟩
+              (weightHistogram_eq_card_weightPart w s j).symm.trans
+                (congrArg Fin.val (congrFun hh j))⟩
       · intro s _ t _ heq
         simpa only [joinWeightParts_weightPart] using congrArg (joinWeightParts w) heq
       · intro p hp
@@ -117,8 +147,7 @@ private theorem card_histogram_fiber (w : Fin m → ℤ) (h : WeightHistogram w)
         refine ⟨joinWeightParts w p, Finset.mem_filter.mpr ⟨Finset.mem_univ _, ?_⟩, heq⟩
         funext j
         apply Fin.ext
-        change (weightPart w (joinWeightParts w p) j).card = _
-        rw [heq]
+        rw [weightHistogram_eq_card_weightPart, heq]
         exact (Finset.mem_powersetCard.mp (hmem j)).2
     _ = _ := by simp [choices]
 
@@ -131,13 +160,6 @@ theorem exists_weightHistogram_eq (w : Fin m → ℤ) (u : WeightHistogram w) :
   rw [← card_histogram_fiber] at hpos
   obtain ⟨s, hs⟩ := Finset.card_pos.mp hpos
   exact ⟨s, (Finset.mem_filter.mp hs).2⟩
-
-/-- A request exceeding the capacity of any weight fiber has binomial product zero. -/
-theorem prod_choose_eq_zero_of_weightFiber_card_lt (w : Fin m → ℤ) (u : weightSupport w → ℕ)
-    (hu : ∃ j, (weightFiber w j).card < u j) :
-    (∏ j, (weightFiber w j).card.choose (u j)) = 0 := by
-  obtain ⟨j, hj⟩ := hu
-  exact Finset.prod_eq_zero (Finset.mem_univ j) (Nat.choose_eq_zero_of_lt hj)
 
 /-- The multiplicity of weight `t` in the `k`th exterior power is the sum over histograms
 of total occupancy `k` and total weight `t`. Each fiber contributes a binomial coefficient. -/
