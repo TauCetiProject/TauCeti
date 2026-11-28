@@ -34,13 +34,14 @@ and `extendedLevelEquiv`, scaling `extendedBilinForm` by `r`.
 
 * `TauCeti.LieAlgebra.LoopAlgebra.degreeDerivationOf`, `degreeDerivation`, `constantTermPairing`,
   `extensionDegreeDerivation`, `extendedResidueExtension`, `toExtendedResidueExtension`,
-  `degreeElement`, `degreeProj`, `extendedToProd`, `mode`, `constHom`, `extendedBilinForm`,
-  `extendedLevelHom`, `extendedLevelEquiv`.
+  `degreeElement`, `degreeProj`, `extendedToProd`, `extendedResidueExtensionLift`, `mode`,
+  `constHom`, `extendedBilinForm`, `extendedLevelHom`, `extendedLevelEquiv`.
 
 ## Main results
 
-* `TauCeti.LieAlgebra.LoopAlgebra.lie_mode_mode`, `lie_degreeElement_mode`,
-  `toExtendedResidueExtension_centralElement_mem_center`, `mode_injective`, `constHom_injective`.
+* `TauCeti.LieAlgebra.LoopAlgebra.extendedResidueExtension_hom_ext`, `lie_mode_mode`,
+  `lie_degreeElement_mode`, `toExtendedResidueExtension_centralElement_mem_center`,
+  `mode_injective`, `constHom_injective`.
 * `TauCeti.LieAlgebra.LoopAlgebra.extendedBilinForm_isSymm`, `extendedBilinForm_lieInvariant`,
   `extendedBilinForm_nondegenerate`, `extendedBilinForm_extendedLevelHom`,
   `extendedBilinForm_extendedLevelEquiv`, `extendedLevelEquiv_symm`.
@@ -83,6 +84,15 @@ theorem degreeDerivationOf_single_tmul {A : Type*} [AddCommMonoid A] [DecidableE
       χ a • (AddMonoidAlgebra.single a (1 : R) ⊗ₜ[R] x) :=
   LieDerivation.ofGrading_apply_apply _ χ
     (DirectSum.tmul_mem_decomposeTensor (AddMonoidAlgebra.single_mem_grade a 1) x)
+
+/-- On Laurent modes, `degreeDerivationOf R L χ` scales `T n ⊗ x` by `χ n`. -/
+@[simp]
+theorem degreeDerivationOf_T_tmul (χ : ℤ →+ R) (n : ℤ) (x : L) :
+    degreeDerivationOf R L χ (LaurentPolynomial.T n ⊗ₜ[R] x) =
+      χ n • (LaurentPolynomial.T n ⊗ₜ[R] x) := by
+  have h : LaurentPolynomial.T n = AddMonoidAlgebra.single n (1 : R) := by
+    simp only [LaurentPolynomial.single_eq_C_mul_T, map_one, one_mul]
+  rw [h, degreeDerivationOf_single_tmul]
 
 /-- `degreeDerivationOf R L χ` vanishes on constant loops `1 ⊗ x`. -/
 @[simp]
@@ -141,6 +151,18 @@ theorem constantTermPairing_single_tmul {A : Type*} [AddCommGroup A] [DecidableE
   · exact absurd (by rw [h₁, add_neg_cancel]) h₂
   · exact absurd (eq_neg_of_add_eq_zero_right h₃) h₁
   · exact map_zero (Φ x)
+
+/-- On Laurent modes, `constantTermPairing Φ` pairs `T m ⊗ x` with `T n ⊗ y` to
+`Φ(x, y) δ_{m + n, 0}`. -/
+@[simp]
+theorem constantTermPairing_T_tmul (Φ : LinearMap.BilinForm R L) (m n : ℤ) (x y : L) :
+    constantTermPairing Φ (LaurentPolynomial.T m ⊗ₜ[R] x) (LaurentPolynomial.T n ⊗ₜ[R] y) =
+      if m + n = 0 then Φ x y else 0 := by
+  have hm : LaurentPolynomial.T m = AddMonoidAlgebra.single m (1 : R) := by
+    simp only [LaurentPolynomial.single_eq_C_mul_T, map_one, one_mul]
+  have hn : LaurentPolynomial.T n = AddMonoidAlgebra.single n (1 : R) := by
+    simp only [LaurentPolynomial.single_eq_C_mul_T, map_one, one_mul]
+  rw [hm, hn, constantTermPairing_single_tmul]
 
 /-- Rescaling `Φ` rescales `constantTermPairing Φ`. -/
 @[simp]
@@ -404,6 +426,37 @@ theorem lie_degreeElement_centralElement :
 theorem toExtendedResidueExtension_centralElement_mem_center :
     toExtendedResidueExtension Φ hΦ hΦs (centralElement c) ∈ center R E' :=
   ofTwoCocycle.toDerivationExtension_centralElement_mem_center c (degreeDerivation R L) _
+
+/-- Universal mapping-out property of `extendedResidueExtension Φ hΦ hΦs`: extend a Lie algebra
+homomorphism `f : E →ₗ⁅R⁆ L'` by sending `degreeElement Φ hΦ hΦs` to `z`, provided
+`⁅z, f x⁆ = f (extensionDegreeDerivation Φ hΦ hΦs x)` for all `x`. -/
+def extendedResidueExtensionLift {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (f : E →ₗ⁅R⁆ L') (z : L') (hz : ∀ x, ⁅z, f x⁆ = f (δ x)) :
+    E' →ₗ⁅R⁆ L' :=
+  ofTwoCocycle.derivationExtensionLift c (degreeDerivation R L)
+    (twoCocycleOfBilinear_degreeDerivation_add_eq_zero Φ hΦ hΦs) f z hz
+
+@[simp]
+theorem extendedResidueExtensionLift_toExtendedResidueExtension {L' : Type*} [LieRing L']
+    [LieAlgebra R L'] (f : E →ₗ⁅R⁆ L') (z : L') (hz : ∀ x, ⁅z, f x⁆ = f (δ x)) (x : E) :
+    extendedResidueExtensionLift Φ hΦ hΦs f z hz (toExtendedResidueExtension Φ hΦ hΦs x) = f x :=
+  ofTwoCocycle.derivationExtensionLift_toDerivationExtension c (degreeDerivation R L) _ f z hz x
+
+@[simp]
+theorem extendedResidueExtensionLift_degreeElement {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (f : E →ₗ⁅R⁆ L') (z : L') (hz : ∀ x, ⁅z, f x⁆ = f (δ x)) :
+    extendedResidueExtensionLift Φ hΦ hΦs f z hz (degreeElement Φ hΦ hΦs) = z :=
+  ofTwoCocycle.derivationExtensionLift_derivationElement c (degreeDerivation R L) _ f z hz
+
+/-- Uniqueness of maps out of `extendedResidueExtension Φ hΦ hΦs`: two Lie homomorphisms
+agreeing on `ĝ` (via `toExtendedResidueExtension`) and on `degreeElement` are equal. -/
+theorem extendedResidueExtension_hom_ext {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    {g₁ g₂ : E' →ₗ⁅R⁆ L'}
+    (hbase : ∀ x,
+      g₁ (toExtendedResidueExtension Φ hΦ hΦs x) = g₂ (toExtendedResidueExtension Φ hΦ hΦs x))
+    (hdeg : g₁ (degreeElement Φ hΦ hΦs) = g₂ (degreeElement Φ hΦ hΦs)) :
+    g₁ = g₂ :=
+  ofTwoCocycle.derivationExtension_hom_ext c (degreeDerivation R L) _ hbase hdeg
 
 /-- **The `n`-th mode map** `x ↦ tⁿ ⊗ x` from `L` into the extended affine loop algebra. -/
 def mode (n : ℤ) : L →ₗ[R] E' :=

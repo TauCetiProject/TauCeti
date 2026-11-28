@@ -37,13 +37,16 @@ and comparisons with extensions whose kernels are themselves abelian Lie algebra
   `(x, m) ↦ (D x, 0)` induced by a derivation `D` of the quotient for which the cocycle is skew;
 * `LieAlgebra.ofTwoCocycle.derivationExtension`: the semidirect sum `ofTwoCocycle c ⋊ R d`
   adjoining `derivation c D hD`, together with its inclusion `toDerivationExtension`, adjoined
-  element `derivationElement`, projection `derivationProj`, and rescaling transport
+  element `derivationElement`, projection `derivationProj`, mapping-out rule
+  `derivationExtensionLift` / `derivationExtension_hom_ext`, and rescaling transport
   `smulMapDerivationHom` / `smulMapDerivationEquiv`;
 * `LieAlgebra.ofTwoCocycle.centralElement`: for coefficients the trivial module `R`, the central
   element `K = (0, 1)`, which is nonzero over a nontrivial ring, and in terms of which every
   element is an element of `L` plus a multiple of `K`
   (`LieAlgebra.ofTwoCocycle.ofProd_eq_add_smul_centralElement`), remaining central in
   `derivationExtension`;
+* `LieAlgebra.Extension.ofSurjective`: bundling a surjective Lie homomorphism `f : L →ₗ⁅R⁆ M` as an
+  `Extension R f.ker M` with middle algebra `L`;
 * `LieAlgebra.Extension.ofTwoCocycleEquiv`: the comparison of an extension with abelian kernel
   and a linear section with the model of Mathlib's native `Extension.twoCocycleOf`.
 
@@ -499,6 +502,38 @@ theorem lie_derivationElement_toDerivationExtension (x : ofTwoCocycle c) :
       toDerivationExtension c D hD (derivation c D hD x) :=
   LieDerivation.lie_inr_lineHom_one_inl (derivation c D hD) x
 
+/-- Universal mapping-out property of `derivationExtension c D hD`: extend a Lie algebra
+homomorphism `f : ofTwoCocycle c →ₗ⁅R⁆ L'` by sending `derivationElement c D hD` to `z`,
+provided `⁅z, f x⁆ = f (derivation c D hD x)` for all `x`. -/
+def derivationExtensionLift {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (f : ofTwoCocycle c →ₗ⁅R⁆ L') (z : L')
+    (hz : ∀ x, ⁅z, f x⁆ = f (derivation c D hD x)) :
+    derivationExtension c D hD →ₗ⁅R⁆ L' :=
+  LieDerivation.lineHomLift (derivation c D hD) f z hz
+
+@[simp]
+theorem derivationExtensionLift_toDerivationExtension {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (f : ofTwoCocycle c →ₗ⁅R⁆ L') (z : L')
+    (hz : ∀ x, ⁅z, f x⁆ = f (derivation c D hD x)) (x : ofTwoCocycle c) :
+    derivationExtensionLift c D hD f z hz (toDerivationExtension c D hD x) = f x :=
+  LieDerivation.lineHomLift_inl (derivation c D hD) f z hz x
+
+@[simp]
+theorem derivationExtensionLift_derivationElement {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (f : ofTwoCocycle c →ₗ⁅R⁆ L') (z : L')
+    (hz : ∀ x, ⁅z, f x⁆ = f (derivation c D hD x)) :
+    derivationExtensionLift c D hD f z hz (derivationElement c D hD) = z :=
+  LieDerivation.lineHomLift_inr_one (derivation c D hD) f z hz
+
+/-- Uniqueness of maps out of `derivationExtension c D hD`: two Lie homomorphisms agreeing
+on `ofTwoCocycle c` (via `toDerivationExtension`) and on `derivationElement` are equal. -/
+theorem derivationExtension_hom_ext {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    {g₁ g₂ : derivationExtension c D hD →ₗ⁅R⁆ L'}
+    (hbase : ∀ x, g₁ (toDerivationExtension c D hD x) = g₂ (toDerivationExtension c D hD x))
+    (hderiv : g₁ (derivationElement c D hD) = g₂ (derivationElement c D hD)) :
+    g₁ = g₂ :=
+  LieDerivation.lineHom_ext hbase hderiv
+
 section SmulDerivation
 
 variable (c' : twoCocycle R L M)
@@ -592,6 +627,44 @@ end Trivial
 end ofTwoCocycle
 
 namespace Extension
+
+section OfSurjective
+
+/-- Bundle a surjective Lie algebra homomorphism `f : L →ₗ⁅R⁆ M` as an `Extension R f.ker M`
+with middle algebra `L`. -/
+abbrev ofSurjective {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    [LieRing M] [LieAlgebra R M] (f : L →ₗ⁅R⁆ M) (hf : Function.Surjective f) :
+    Extension R f.ker M :=
+  ⟨L, inferInstance, inferInstance, f.ker.incl, f, isExtension_of_surjective f hf⟩
+
+theorem ofSurjective_L {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    [LieRing M] [LieAlgebra R M] (f : L →ₗ⁅R⁆ M) (hf : Function.Surjective f) :
+    (ofSurjective f hf).L = L :=
+  (rfl)
+
+@[simp]
+theorem ofSurjective_incl {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    [LieRing M] [LieAlgebra R M] (f : L →ₗ⁅R⁆ M) (hf : Function.Surjective f) :
+    (ofSurjective f hf).incl = f.ker.incl :=
+  (rfl)
+
+@[simp]
+theorem ofSurjective_proj {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    [LieRing M] [LieAlgebra R M] (f : L →ₗ⁅R⁆ M) (hf : Function.Surjective f) :
+    (ofSurjective f hf).proj = f :=
+  (rfl)
+
+theorem ofSurjective_incl_apply {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    [LieRing M] [LieAlgebra R M] (f : L →ₗ⁅R⁆ M) (hf : Function.Surjective f) (x : f.ker) :
+    (ofSurjective f hf).incl x = (x : L) :=
+  (rfl)
+
+theorem ofSurjective_proj_apply {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    [LieRing M] [LieAlgebra R M] (f : L →ₗ⁅R⁆ M) (hf : Function.Surjective f) (x : L) :
+    (ofSurjective f hf).proj x = f x :=
+  (rfl)
+
+end OfSurjective
 
 noncomputable section
 

@@ -47,8 +47,10 @@ form `κ` is the case `Φ = -κ`.
 ## Main definitions
 
 * `TauCeti.CurrentAlgebra.extendedResidueExtension`: the extended affine algebra `ĝ ⋊ R d`.
-* `TauCeti.CurrentAlgebra.toExtendedResidueExtension` and
-  `TauCeti.CurrentAlgebra.degreeElement`: the inclusion of `ĝ` and the adjoined element `d`.
+* `TauCeti.CurrentAlgebra.toExtendedResidueExtension`,
+  `TauCeti.CurrentAlgebra.degreeElement`, `TauCeti.CurrentAlgebra.extendedResidueExtensionLift`,
+  and `TauCeti.CurrentAlgebra.extendedResidueExtension_hom_ext`: the inclusion of `ĝ`, the
+  adjoined element `d`, and the universal mapping-out property and uniqueness rule.
 * `TauCeti.CurrentAlgebra.toExtendedEnveloping`: the algebra map `U → U'`.
 * `TauCeti.CurrentAlgebra.extendedEnvelopingOreEquiv`: the isomorphism `U' ≃ U[X; d]`.
 * `TauCeti.CurrentAlgebra.extendedLevelEnvelopingEquiv`: the level comparison for `U'`.
@@ -175,6 +177,42 @@ theorem lie_degreeElement_centralElement :
 theorem toExtendedResidueExtension_centralElement_mem_center :
     toExtendedResidueExtension Φ hΦ hΦs (centralElement c) ∈ center R E' :=
   ofTwoCocycle.toDerivationExtension_centralElement_mem_center c d₀ _
+
+/-- Universal mapping-out property of `extendedResidueExtension Φ hΦ hΦs`: extend a Lie algebra
+homomorphism `f : E →ₗ⁅R⁆ L'` by sending `degreeElement Φ hΦ hΦs` to `z`, provided
+`⁅z, f x⁆ = f (vectorFieldExtensionDerivation Φ hΦ hΦs (single 1 1) x)` for all `x`. -/
+def extendedResidueExtensionLift {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (f : E →ₗ⁅R⁆ L') (z : L')
+    (hz : ∀ x, ⁅z, f x⁆ = f (vectorFieldExtensionDerivation Φ hΦ hΦs (single 1 1) x)) :
+    E' →ₗ⁅R⁆ L' :=
+  ofTwoCocycle.derivationExtensionLift c d₀
+    (twoCocycleOfBilinear_vectorFieldDerivation_single_one_add_eq_zero Φ hΦ hΦs) f z fun x ↦ by
+      rw [← vectorFieldExtensionDerivation_single_one_eq_derivation]
+      exact hz x
+
+@[simp]
+theorem extendedResidueExtensionLift_toExtendedResidueExtension {L' : Type*} [LieRing L']
+    [LieAlgebra R L'] (f : E →ₗ⁅R⁆ L') (z : L')
+    (hz : ∀ x, ⁅z, f x⁆ = f (vectorFieldExtensionDerivation Φ hΦ hΦs (single 1 1) x)) (x : E) :
+    extendedResidueExtensionLift Φ hΦ hΦs f z hz (toExtendedResidueExtension Φ hΦ hΦs x) = f x :=
+  ofTwoCocycle.derivationExtensionLift_toDerivationExtension c d₀ _ f z _ x
+
+@[simp]
+theorem extendedResidueExtensionLift_degreeElement {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (f : E →ₗ⁅R⁆ L') (z : L')
+    (hz : ∀ x, ⁅z, f x⁆ = f (vectorFieldExtensionDerivation Φ hΦ hΦs (single 1 1) x)) :
+    extendedResidueExtensionLift Φ hΦ hΦs f z hz (degreeElement Φ hΦ hΦs) = z :=
+  ofTwoCocycle.derivationExtensionLift_derivationElement c d₀ _ f z _
+
+/-- Uniqueness of maps out of `extendedResidueExtension Φ hΦ hΦs`: two Lie homomorphisms
+agreeing on `ĝ` (via `toExtendedResidueExtension`) and on `degreeElement` are equal. -/
+theorem extendedResidueExtension_hom_ext {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    {g₁ g₂ : E' →ₗ⁅R⁆ L'}
+    (hbase : ∀ x,
+      g₁ (toExtendedResidueExtension Φ hΦ hΦs x) = g₂ (toExtendedResidueExtension Φ hΦ hΦs x))
+    (hdeg : g₁ (degreeElement Φ hΦ hΦs) = g₂ (degreeElement Φ hΦ hΦs)) :
+    g₁ = g₂ :=
+  ofTwoCocycle.derivationExtension_hom_ext c d₀ _ hbase hdeg
 
 end Extension
 

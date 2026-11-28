@@ -49,12 +49,6 @@ namespace LieAlgebra.ofTwoCocycle
 
 section UniversalCentralExtension
 
-/-- Package a surjective `πQ : Q →ₗ⁅K⁆ L₀` as an `Extension` with middle algebra `Q`. -/
-private abbrev quotientExtension {K L₀ Q : Type*} [Field K] [LieRing L₀] [LieAlgebra K L₀]
-    [LieRing Q] [LieAlgebra K Q] (πQ : Q →ₗ⁅K⁆ L₀) (hπQ : Function.Surjective πQ) :
-    LieAlgebra.Extension K πQ.ker L₀ :=
-  ⟨Q, inferInstance, inferInstance, πQ.ker.incl, πQ, LieAlgebra.isExtension_of_surjective πQ hπQ⟩
-
 /-- Bracket-evaluation identity for `ψ = μ ∘ splittingCoordinate + e ∘ η ∘ πQ` attached to a
 decomposition `t • c₀ + d₁₂ η` of the pushed-forward section cocycle. -/
 private theorem splittingCoordinate_add_eta_lie
@@ -66,19 +60,19 @@ private theorem splittingCoordinate_add_eta_lie
     (η : oneCochain K L₀ (TrivialLieModule K L₀ K)) {t : K}
     (hω :
       letI : IsLieAbelian πQ.ker := ⟨fun _ b ↦ Subtype.ext (hcent _ b.property _)⟩
-      letI := (quotientExtension πQ hπQ).ringModuleOf
-      letI := (quotientExtension πQ hπQ).lieModuleOf
+      letI := (Extension.ofSurjective πQ hπQ).ringModuleOf
+      letI := (Extension.ofSurjective πQ hπQ).lieModuleOf
       twoCochainMap ((TrivialLieModule.equiv K L₀ K).symm.toLinearMap ∘ₗ μ) LieHom.id
-          ((quotientExtension πQ hπQ).twoCocycleOf (s := sec) hsec).val =
+          ((Extension.ofSurjective πQ hπQ).twoCocycleOf (s := sec) hsec).val =
         t • (c₀ : twoCochain K L₀ _) + d₁₂ K L₀ (TrivialLieModule K L₀ K) η)
     (y₁ y₂ : Q) :
     let e := TrivialLieModule.equiv K L₀ K
-    (μ ∘ₗ (quotientExtension πQ hπQ).splittingCoordinate hsec +
+    (μ ∘ₗ (Extension.ofSurjective πQ hπQ).splittingCoordinate hsec +
       e.toLinearMap ∘ₗ η ∘ₗ πQ.toLinearMap) ⁅y₁, y₂⁆ =
       t * e ((c₀ : twoCochain K L₀ _) (πQ y₁) (πQ y₂)) := by
   let : IsLieAbelian πQ.ker := ⟨fun _ b ↦ Subtype.ext (hcent _ b.property _)⟩
-  let := (quotientExtension πQ hπQ).ringModuleOf
-  let := (quotientExtension πQ hπQ).lieModuleOf
+  let := (Extension.ofSurjective πQ hπQ).ringModuleOf
+  let := (Extension.ofSurjective πQ hπQ).lieModuleOf
   let e := TrivialLieModule.equiv K L₀ K
   have hbra : ⁅y₁, y₂⁆ = ⁅sec (πQ y₁), sec (πQ y₂)⁆ := by
     have h1 := hcent (y₁ - sec (πQ y₁)) (by simp [hsec (πQ y₁)]) y₂
@@ -93,7 +87,8 @@ private theorem splittingCoordinate_add_eta_lie
     d₁₂_apply_apply_ofTrivial, map_add, map_smul, map_neg, smul_eq_mul] at hω_eval
   simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
     LieHom.coe_toLinearMap, LieHom.map_lie]
-  rw [hbra, ← (quotientExtension πQ hπQ).twoCocycleOf_eq_splittingCoordinate hsec (πQ y₁) (πQ y₂),
+  rw [hbra,
+    ← (Extension.ofSurjective πQ hπQ).twoCocycleOf_eq_splittingCoordinate hsec (πQ y₁) (πQ y₂),
     twoCochain_val_apply, hω_eval]
   ring
 
@@ -110,31 +105,32 @@ private theorem exists_linearMap_lie_eq_mul_of_twoCocycle_eq
       (∀ y₁ y₂ : Q, ψ ⁅y₁, y₂⁆ =
         t * TrivialLieModule.equiv K L₀ K ((c₀ : twoCochain K L₀ _) (πQ y₁) (πQ y₂))) := by
   have : IsLieAbelian πQ.ker := ⟨fun _ b ↦ Subtype.ext (hcent _ b.property _)⟩
-  let := (quotientExtension πQ hπQ).ringModuleOf
-  let := (quotientExtension πQ hπQ).lieModuleOf
+  let := (Extension.ofSurjective πQ hπQ).ringModuleOf
+  let := (Extension.ofSurjective πQ hπQ).lieModuleOf
   have : LieModule.IsTrivial L₀ πQ.ker := ⟨fun p z ↦ by
-    obtain ⟨y, rfl⟩ := (quotientExtension πQ hπQ).proj_surjective p
-    have hyz : ⁅y, (quotientExtension πQ hπQ).toKer z⁆ = 0 := Subtype.ext (hcent _ z.property y)
-    rw [(quotientExtension πQ hπQ).ringModuleOf_bracket_proj, hyz, map_zero]⟩
+    obtain ⟨y, rfl⟩ := (Extension.ofSurjective πQ hπQ).proj_surjective p
+    have hyz : ⁅y, (Extension.ofSurjective πQ hπQ).toKer z⁆ = 0 :=
+      Subtype.ext (hcent _ z.property y)
+    rw [(Extension.ofSurjective πQ hπQ).ringModuleOf_bracket_proj, hyz, map_zero]⟩
   obtain ⟨sec, hsec⟩ := LinearMap.exists_rightInverse_of_surjective πQ.toLinearMap
     (LinearMap.range_eq_top.mpr hπQ)
-  have hsec' : Function.LeftInverse (quotientExtension πQ hπQ).proj sec :=
+  have hsec' : Function.LeftInverse (Extension.ofSurjective πQ hπQ).proj sec :=
     fun p ↦ congrArg (fun g : L₀ →ₗ[K] L₀ ↦ g p) hsec
   let e := TrivialLieModule.equiv K L₀ K
   have hω := twoCochainMap_mem_twoCocycle (e.symm.toLinearMap ∘ₗ μ) LieHom.id
-    ((quotientExtension πQ hπQ).twoCocycleOf hsec').property
+    ((Extension.ofSurjective πQ hπQ).twoCocycleOf hsec').property
   rw [hc₀] at hω
   obtain ⟨_, hmem, _, ⟨η, rfl⟩, hω_eq⟩ := Submodule.mem_sup.mp hω
   obtain ⟨t, rfl⟩ := Submodule.mem_span_singleton.mp hmem
-  refine ⟨μ ∘ₗ (quotientExtension πQ hπQ).splittingCoordinate hsec' +
+  refine ⟨μ ∘ₗ (Extension.ofSurjective πQ hπQ).splittingCoordinate hsec' +
       e.toLinearMap ∘ₗ η ∘ₗ πQ.toLinearMap, t, fun x hx ↦ ?_,
     splittingCoordinate_add_eta_lie c₀ hπQ hcent μ hsec' η hω_eq.symm⟩
-  have hsplit : (quotientExtension πQ hπQ).splittingCoordinate hsec' x = ⟨x, hx⟩ :=
-    (quotientExtension πQ hπQ).splittingCoordinate_incl hsec' ⟨x, hx⟩
+  have hsplit : (Extension.ofSurjective πQ hπQ).splittingCoordinate hsec' x = ⟨x, hx⟩ :=
+    (Extension.ofSurjective πQ hπQ).splittingCoordinate_incl hsec' ⟨x, hx⟩
   simp [hsplit, LieHom.mem_ker.mp hx]
 
-/-- Dual-separation criterion: if `c₀` spans `H²(L₀, K)`, any central ideal `Z ≤ πQ.ker` missing
-a bracket-sum lift `cQ` with nonzero `c₀`-pairing is `⊥`. -/
+/-- Dual-separation criterion: if `c₀` spans `H²(L₀, K)` and `Q` is perfect, any central ideal
+`Z ≤ πQ.ker` missing a bracket-sum lift `cQ` with nonzero `c₀`-pairing is `⊥`. -/
 private theorem eq_bot_of_central_extension
     {K L₀ Q : Type*} [Field K] [LieRing L₀] [LieAlgebra K L₀] [LieRing Q] [LieAlgebra K Q]
     (c₀ : twoCocycle K L₀ (TrivialLieModule K L₀ K))

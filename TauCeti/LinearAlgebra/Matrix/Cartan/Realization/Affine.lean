@@ -13,22 +13,26 @@ public import TauCeti.LinearAlgebra.RootSystem.Affine.CartanMatrix
 /-!
 # The minimal realization and symmetrizability of `b.affineCartanMatrix`
 
-For a base `b` of a finite crystallographic root pairing `P` over a characteristic-zero ring with
-maximal-height root `θ = b.highestRoot` (which is the highest root, making `b.affineCartanMatrix`
-the untwisted affine Cartan matrix, when `P` is reduced and irreducible; see
+For a base `b` of a finite crystallographic root pairing `P` with maximal-height root
+`θ = b.highestRoot` (which is the highest root, making `b.affineCartanMatrix` the untwisted affine
+Cartan matrix, when `P` is reduced and irreducible; see
 `TauCeti/LinearAlgebra/RootSystem/Affine/CartanMatrix.lean`), `b.affineCartanMatrix` has entries
 `⟨αₖ, αₗ^∨⟩` with `α₀ = -θ` at `none`. Since `TauCeti.SymmetrizableDatum` and
-`TauCeti.CartanRealization` use the row convention `Aₖₗ = αₗ(hₖ)`, this file equips
-`b.affineCartanMatrixᵀ` with:
+`TauCeti.CartanRealization` use the row convention `Aₖₗ = αₗ(hₖ)`, this file constructs for
+`b.affineCartanMatrixᵀ`:
 
-* `RootPairing.Base.affineCartanSymmetrizableDatum`: symmetrizability by root lengths
-  `(P.posRootForm ℤ).rootLength (b.affineSimpleRootIndex k)`.
-* `RootPairing.Base.affineCartanRealization`: the standard realization on `N × K × K`
-  (`𝔥 ⊕ K c ⊕ K d`) with coroots `affineCoroot` and roots `affineRoot`, central element
-  `affineCentralElement` (`= (0, 1, 0)`), and null root `affineNullRoot` (`(h, a, t) ↦ t`).
+* over a characteristic-zero integral domain `R` (`[CommRing R] [IsDomain R] [CharZero R]`), the
+  symmetrizability datum `RootPairing.Base.affineCartanSymmetrizableDatum` with symmetrizer
+  `(P.posRootForm ℤ).rootLength (b.affineSimpleRootIndex k)`;
+* over a characteristic-zero commutative ring `R`, the coroots `RootPairing.Base.affineCoroot` and
+  roots `RootPairing.Base.affineRoot` on `N × R × R`;
+* over a characteristic-zero field `K` (`[Field K] [CharZero K]`), the standard realization
+  `RootPairing.Base.affineCartanRealization` on `N × K × K` (`𝔥 ⊕ K c ⊕ K d`), with central element
+  `affineCentralElement` (`= (0, 1, 0)`) and null root `affineNullRoot` (`(h, a, t) ↦ t`).
 
-When `P` is a root system, `cartanCenter_affineCartanRealization` shows the Cartan center is
-`K ∙ c`, so `b.affineCartanRealization` is minimal (`isMinimal_affineCartanRealization`).
+When `P` is a root system over a characteristic-zero field `K`,
+`cartanCenter_affineCartanRealization` shows the Cartan center is `K ∙ c`, so
+`b.affineCartanRealization` is minimal (`isMinimal_affineCartanRealization`).
 
 ## References
 
