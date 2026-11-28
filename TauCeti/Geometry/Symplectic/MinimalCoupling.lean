@@ -121,6 +121,13 @@ theorem minimalCouplingPrimitive_apply_const (σ : V →L[ℝ] V →L[ℝ] ℝ)
     minimalCouplingPrimitive σ A (z, w) (fun _ ↦ (v, n)) = σ w (n + A z v w) / 2 :=
   minimalCouplingPrimitive_apply σ A (z, w) _
 
+/-- The minimal coupling primitive vanishes along the zero section. -/
+@[simp]
+theorem minimalCouplingPrimitive_zero (σ : V →L[ℝ] V →L[ℝ] ℝ) (A : E → E →L[ℝ] V →L[ℝ] V)
+    (z : E) : minimalCouplingPrimitive σ A (z, 0) = 0 := by
+  ext u
+  simp
+
 /-- The minimal coupling primitive of a connection form that is `C^n` at `z` is `C^n` at every
 point `(z, w)` of the fibre over `z`. -/
 theorem contDiffAt_minimalCouplingPrimitive {n : WithTop ℕ∞} (hA : ContDiffAt ℝ n A z) (w : V) :

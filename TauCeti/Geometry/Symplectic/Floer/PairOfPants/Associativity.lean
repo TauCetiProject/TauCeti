@@ -44,7 +44,16 @@ stated, and `N`, `N'` are the neck data of the two compositions
   input end and the part `s ≤ -1` of the output end
   (`associativityPerturbation_add_mul_cylindricalEndLift_eq_puncturedSpherePerturbation`,
   `associativityPerturbation_cylindricalEndLift_inf_eq_puncturedSpherePerturbation`, in the
-  namespace `TauCeti.Floer`);
+  namespace `TauCeti.Floer`). Read in the end chart `ψ_i = realChart (z ↦ c i + a i φ₀(z))` of
+  each input end and the positive end chart `φ'_∞` of the output end this is
+  `TauCeti.Floer.associativityPerturbation_realChart_eq` and
+  `TauCeti.Floer.associativityPerturbation_positiveEndChart_inf_eq`, and on the components
+  `K(∂s)`, `K(∂t)`, the form consumed by the analysis on spheres with moving input ends,
+  `TauCeti.Floer.associativityPerturbation_realChart_apply_one_eq_and_apply_I_eq` and
+  `TauCeti.Floer.associativityPerturbation_positiveEndChart_inf_apply_one_eq_and_apply_I_eq`.
+  That analysis also asks of the configuration at `τ` nonzero scales, disjoint input discs and
+  input discs inside the disc of radius `2 e^{2π}`, which hold for `L ≥ 0`
+  (`TauCeti.Floer.associativityScale_ne_zero_and_pairwise_add_le_norm_sub_and_norm_add_le`);
 * for `L > 4` it is `C^n` jointly in the neck length `L`, `τ`, the domain point and the target
   point, away from the three moving input punctures
   (`TauCeti.Floer.contMDiffAt_associativityPerturbation`, and
@@ -79,6 +88,7 @@ public noncomputable section
 
 open Set Real Manifold Topology Function Filter
 open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
+open TauCeti.Complex (realChart equivRealProdCLM_symm_realChart)
 
 namespace TauCeti.Floer
 
@@ -227,6 +237,24 @@ private theorem exp_neg_two_pi_mul_div_four_pos_and_three_mul_le_one (hL : 0 ≤
   have : Real.exp (-(2 * π * L)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
   exact ⟨by positivity, by linarith⟩
 
+/-- For `L ≥ 0`, the configuration at `τ` of the associativity path of plumbing factor
+`e^{-2πL} / 4` has nonzero scales `a i`, pairwise disjoint input discs of radii `‖a i‖ / 2` about
+the centers `c i`, and input discs inside the disc of radius `2 e^{2π}`: the hypotheses on the
+configuration of the analysis on spheres with moving input ends. -/
+theorem associativityScale_ne_zero_and_pairwise_add_le_norm_sub_and_norm_add_le (hL : 0 ≤ L)
+    (τ : ℝ) :
+    (∀ i, associativityScale (Real.exp (-(2 * π * L)) / 4) τ i ≠ 0) ∧
+      (Pairwise fun i j ↦ ‖associativityScale (Real.exp (-(2 * π * L)) / 4) τ i‖ / 2 +
+          ‖associativityScale (Real.exp (-(2 * π * L)) / 4) τ j‖ / 2 ≤
+        ‖associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i -
+          associativityCenter (Real.exp (-(2 * π * L)) / 4) τ j‖) ∧
+      ∀ i, ‖associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i‖ +
+          ‖associativityScale (Real.exp (-(2 * π * L)) / 4) τ i‖ / 2 ≤ 2 * Real.exp (2 * π) := by
+  obtain ⟨hf₀, hf₃⟩ := exp_neg_two_pi_mul_div_four_pos_and_three_mul_le_one hL
+  exact ⟨associativityScale_ne_zero hf₀ τ,
+    pairwise_add_le_norm_associativityCenter_sub hf₀.le hf₃ τ,
+    norm_associativityCenter_add_le hf₀.le (by linarith) τ⟩
+
 /-! ### The ends of the family -/
 
 /-- **The family on the input ends.** For `L > 2` and every `τ`, on the part `s > 0` of the
@@ -348,6 +376,88 @@ theorem associativityPerturbation_cylindricalEndLift_inf_eq_puncturedSpherePertu
   rw [associativityPerturbation_cylindricalEndLift_inf_of_le hL τ hHout hz,
     puncturedSpherePerturbation_cylindricalEndLift_inf_of_le
       (norm_associativityCenter_add_le hf₀.le (by linarith) τ) hHout hz]
+
+/-- On the part `s > 0` of the input end `i`, read in the chart
+`ψ_i = realChart (z ↦ c i + a i φ₀(z))` of the configuration at `τ`, the associativity family is
+the datum of the moving input ends. -/
+theorem associativityPerturbation_realChart_eq (hL : 2 < L)
+    (hH : ∀ i, Periodic (H i) 1) (i : Fin 3) {ζ : ℝ × ℝ} (hζ : 0 < ζ.1) :
+    associativityPerturbation H Hout G G' L τ (Complex.equivRealProdCLM.symm
+        (realChart (fun z ↦ associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i +
+          associativityScale (Real.exp (-(2 * π * L)) / 4) τ i * zero.cylindricalEndLift z) ζ)) =
+      puncturedSpherePerturbation (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
+        (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) H Hout
+        (Complex.equivRealProdCLM.symm
+          (realChart (fun z ↦ associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i +
+            associativityScale (Real.exp (-(2 * π * L)) / 4) τ i * zero.cylindricalEndLift z)
+            ζ)) := by
+  funext y
+  rw [equivRealProdCLM_symm_realChart]
+  exact associativityPerturbation_add_mul_cylindricalEndLift_eq_puncturedSpherePerturbation hL τ
+    (hH i) (by simpa using hζ) y
+
+/-- On the part `s ≥ 1` of the output end, read in the positive end chart `φ'_∞`, the
+associativity family is the datum of the moving input ends. -/
+theorem associativityPerturbation_positiveEndChart_inf_eq (hL : 2 < L)
+    (hHout : Periodic Hout 1) {ζ : ℝ × ℝ} (hζ : 1 ≤ ζ.1) :
+    associativityPerturbation H Hout G G' L τ
+        (Complex.equivRealProdCLM.symm (positiveEndChart inf ζ)) =
+      puncturedSpherePerturbation (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
+        (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) H Hout
+        (Complex.equivRealProdCLM.symm (positiveEndChart inf ζ)) := by
+  funext y
+  rw [positiveEndChart_apply, equivRealProdCLM_symm_endChart]
+  refine associativityPerturbation_cylindricalEndLift_inf_eq_puncturedSpherePerturbation hL τ hHout
+    ?_ y
+  simpa only [endSign_inf, Complex.equivRealProdCLM_symm_apply_re, Prod.smul_fst, smul_eq_mul,
+    neg_one_mul, neg_le_neg_iff] using hζ
+
+/-- On the part `s > 0` of the input end `i`, read in the chart
+`ψ_i = realChart (z ↦ c i + a i φ₀(z))` of the configuration at `τ`, the components `K(∂s)` and
+`K(∂t)` of the associativity family are those of the datum of the moving input ends, the form of
+the end agreement consumed by the analysis on spheres with moving input ends. -/
+theorem associativityPerturbation_realChart_apply_one_eq_and_apply_I_eq (hL : 2 < L)
+    (hH : ∀ i, Periodic (H i) 1) (i : Fin 3) {ζ : ℝ × ℝ} (hζ : 0 < ζ.1) :
+    (fun y ↦ associativityPerturbation H Hout G G' L τ (Complex.equivRealProdCLM.symm
+        (realChart (fun z ↦ associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i +
+          associativityScale (Real.exp (-(2 * π * L)) / 4) τ i * zero.cylindricalEndLift z) ζ))
+          y 1) =
+      (fun y ↦ puncturedSpherePerturbation (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
+        (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) H Hout
+        (Complex.equivRealProdCLM.symm
+          (realChart (fun z ↦ associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i +
+            associativityScale (Real.exp (-(2 * π * L)) / 4) τ i * zero.cylindricalEndLift z)
+            ζ)) y 1) ∧
+    (fun y ↦ associativityPerturbation H Hout G G' L τ (Complex.equivRealProdCLM.symm
+        (realChart (fun z ↦ associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i +
+          associativityScale (Real.exp (-(2 * π * L)) / 4) τ i * zero.cylindricalEndLift z) ζ))
+          y Complex.I) =
+      fun y ↦ puncturedSpherePerturbation (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
+        (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) H Hout
+        (Complex.equivRealProdCLM.symm
+          (realChart (fun z ↦ associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i +
+            associativityScale (Real.exp (-(2 * π * L)) / 4) τ i * zero.cylindricalEndLift z)
+            ζ)) y Complex.I := by
+  rw [associativityPerturbation_realChart_eq hL hH i hζ]
+  exact ⟨rfl, rfl⟩
+
+/-- On the part `s ≥ 1` of the output end, read in the positive end chart `φ'_∞`, the components
+`K(∂s)` and `K(∂t)` of the associativity family are those of the datum of the moving input ends,
+the form of the end agreement consumed by the analysis on spheres with moving input ends. -/
+theorem associativityPerturbation_positiveEndChart_inf_apply_one_eq_and_apply_I_eq (hL : 2 < L)
+    (hHout : Periodic Hout 1) {ζ : ℝ × ℝ} (hζ : 1 ≤ ζ.1) :
+    (fun y ↦ associativityPerturbation H Hout G G' L τ
+        (Complex.equivRealProdCLM.symm (positiveEndChart inf ζ)) y 1) =
+      (fun y ↦ puncturedSpherePerturbation (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
+        (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) H Hout
+        (Complex.equivRealProdCLM.symm (positiveEndChart inf ζ)) y 1) ∧
+    (fun y ↦ associativityPerturbation H Hout G G' L τ
+        (Complex.equivRealProdCLM.symm (positiveEndChart inf ζ)) y Complex.I) =
+      fun y ↦ puncturedSpherePerturbation (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
+        (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) H Hout
+        (Complex.equivRealProdCLM.symm (positiveEndChart inf ζ)) y Complex.I := by
+  rw [associativityPerturbation_positiveEndChart_inf_eq hL hHout hζ]
+  exact ⟨rfl, rfl⟩
 
 /-! ### Smoothness -/
 

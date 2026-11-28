@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialObject.ChainHomotopy
 public import Mathlib.Topology.Homotopy.Equiv
-public import TauCeti.AlgebraicTopology.AlexanderSpanier.Basic
+public import TauCeti.AlgebraicTopology.AlexanderSpanier.Relative
 import TauCeti.Data.Fin.Basic
 
 /-!
@@ -18,6 +18,14 @@ Homotopic maps `f₀ ≃ f₁ : X → Y` out of a compact space `X` induce the s
 (`TauCeti.AlexanderSpanier.cohomologyMap_eq_of_homotopic`). Consequently a homotopy equivalence
 between compact spaces induces isomorphisms in Alexander–Spanier cohomology
 (`TauCeti.AlexanderSpanier.cohomologyIsoOfHomotopyEquiv`).
+
+The same holds for relative cohomology and maps of pairs. Let `X` be compact and `A` closed in `Y`.
+Maps of pairs `f₀ f₁ : (X, B) → (Y, A)` that are homotopic through maps of pairs, that is, by a
+homotopy `F` with `F_t(B) ⊆ A` for every `t` (Mathlib's `ContinuousMap.HomotopicWith`), induce the
+same map `H^n(Y, A; M) ⟶ H^n(X, B; M)`
+(`TauCeti.AlexanderSpanier.homologyMap_relativeCochainComplexMap_eq_of_homotopicWith`). So a
+homotopy equivalence of pairs between compact spaces with closed subspaces induces isomorphisms in
+relative cohomology (`TauCeti.AlexanderSpanier.relativeCohomologyIsoOfHomotopicWith`).
 
 ## The prism operator
 
@@ -40,7 +48,21 @@ The prism operator does not preserve locally zero functions in general. It does 
 of `X` (`TauCeti.AlexanderSpanier.isLocallyZero_prism`). So two maps `f`, `g` induce the same map on
 the class of a cocycle `φ` as soon as they are close relative to the coboundary of `φ`: every point
 of `X` has a neighbourhood `V` such that `δ φ` vanishes on all tuples of points of `f(V) ∪ g(V)`
-(`TauCeti.AlexanderSpanier.cohomologyMap_homologyπ_eq_of_forall_nhds`).
+(`TauCeti.AlexanderSpanier.cohomologyMap_homologyπ_eq_of_forall_nhds`). On cochains, the pullbacks
+of the class of `φ` along `f` and `g` then differ by the coboundary of the class of `P φ`
+(`TauCeti.AlexanderSpanier.cochainComplexMap_f_succ_cochainClass_eq_add_of_forall_nhds`), and agree
+in degree `0` (`TauCeti.AlexanderSpanier.cochainComplexMap_f_zero_cochainClass_eq_of_forall_nhds`).
+
+For maps of pairs `f g : (X, B) → (Y, A)` and a relative cocycle represented by a function `φ`
+that vanishes on all tuples of points of `A`, the prism `P φ` vanishes on all tuples of points of
+`B`, since the entries of its prism tuples lie in `f(B) ∪ g(B) ⊆ A`
+(`TauCeti.AlexanderSpanier.prism_apply_eq_zero_of_mapsTo`). So `P φ` is a relative cochain
+of `(X, B)`, and the same closeness condition makes `f` and `g` induce the same map on the relative
+class
+(`TauCeti.AlexanderSpanier.homologyMap_relativeCochainComplexMap_homologyπ_eq_of_forall_nhds`).
+When `A` is closed every relative cochain of `(Y, A)` has such a representative
+(`TauCeti.AlexanderSpanier.exists_relativeCochainComplexι_f_eq_cochainClass_of_isClosed`), which is
+where closedness of `A` enters.
 
 ## Implementation notes
 
@@ -53,7 +75,8 @@ Let `F` be a homotopy from `f₀` to `f₁` and fix a cocycle `φ` on `Y`. Its c
 zero, so each point of `Y` has a neighbourhood on whose tuples `δ φ` vanishes. By continuity of
 `F` and compactness of `X` (the tube lemma `IsCompact.eventually_forall_of_forall_eventually`), the
 maps `F_s` and `F_t` are close relative to `δ φ` for all `s` near `t`. So `t ↦ F_t^* [φ]` is locally
-constant on the unit interval, hence constant since the interval is connected.
+constant on the unit interval, hence constant since the interval is connected. The same argument
+applies to a homotopy through maps of pairs and a relative cocycle.
 
 The compactness of `X` is what makes the subdivision of the homotopy uniform. Spanier proves the
 homotopy axiom for Alexander–Spanier cohomology on arbitrary spaces by a different argument; the
@@ -275,6 +298,18 @@ theorem coboundary_prism_add_prism_coboundary_apply (f g : X → Y) {n : ℕ}
   rw [this]
   abel
 
+/-- If `f` and `g` map `B` into `A` and `ψ` vanishes on all tuples of points of `A`, then the prism
+`P ψ` vanishes on all tuples of points of `B`. -/
+lemma prism_apply_eq_zero_of_mapsTo {f g : X → Y} {B : Set X} {A : Set Y} (hf : Set.MapsTo f B A)
+    (hg : Set.MapsTo g B A) {n : ℕ} {ψ : (Fin (n + 2) → Y) → M}
+    (hψ : ∀ y : Fin (n + 2) → Y, (∀ i, y i ∈ A) → ψ y = 0) {x : Fin (n + 1) → X}
+    (hx : ∀ i, x i ∈ B) : prism R M f g n ψ x = 0 := by
+  rw [prism_apply]
+  refine Finset.sum_eq_zero fun k _ ↦ ?_
+  rw [hψ _ fun j ↦ ?_, smul_zero]
+  obtain h | h := prismTuple_mem f g k x j <;> obtain ⟨_, ⟨i, rfl⟩, h⟩ := h
+  exacts [h ▸ hf (hx i), h ▸ hg (hx i)]
+
 variable [TopologicalSpace X]
 
 /-- The prism of a function `ψ` is locally zero when every point of `X` has a neighbourhood `V`
@@ -299,6 +334,44 @@ variable {R : Type w} [Ring R] {M : Type v} [AddCommGroup M] [Module R M] {X Y :
   [TopologicalSpace X] [TopologicalSpace Y]
 
 variable (R M) in
+/-- **Maps close relative to a function, in degree zero.** Let `φ` be a function on points of `Y`.
+If every point of `X` has a neighbourhood `V` such that the coboundary of `φ` vanishes on all pairs
+of points of `f(V) ∪ g(V)`, then the continuous maps `f g : X → Y` pull the class of `φ` back to the
+same Alexander–Spanier `0`-cochain. -/
+theorem cochainComplexMap_f_zero_cochainClass_eq_of_forall_nhds {f g : C(X, Y)}
+    {φ : (Fin 1 → Y) → M}
+    (h : ∀ x, ∃ V ∈ 𝓝 x, ∀ y : Fin 2 → Y, (∀ i, y i ∈ f '' V ∪ g '' V) →
+      ∑ i : Fin 2, (-1 : ℤ) ^ (i : ℕ) • φ (y ∘ Fin.succAbove i) = 0) :
+    ((cochainComplexMap R M f).f 0).hom (cochainClass R Y M 0 φ) =
+      ((cochainComplexMap R M g).f 0).hom (cochainClass R Y M 0 φ) := by
+  rw [cochainComplexMap_f_cochainClass, cochainComplexMap_f_cochainClass,
+    cochainClass_eq_cochainClass_iff]
+  convert (isLocallyZero_prism (R := R) h).smul (-1 : ℤ) using 1
+  funext x
+  rw [Pi.sub_apply, Pi.smul_apply, prism_zero_apply_coboundary]
+  abel
+
+variable (R M) in
+/-- **Maps close relative to a function, in positive degree.** Let `φ` be a function on
+`(n + 2)`-tuples of `Y`. If every point of `X` has a neighbourhood `V` such that the coboundary of
+`φ` vanishes on all tuples of points of `f(V) ∪ g(V)`, then the pullbacks of the class of `φ` along
+the continuous maps `f g : X → Y` differ by the coboundary of the class of the prism `P φ`. -/
+theorem cochainComplexMap_f_succ_cochainClass_eq_add_of_forall_nhds {f g : C(X, Y)} {n : ℕ}
+    {φ : (Fin (n + 2) → Y) → M}
+    (h : ∀ x, ∃ V ∈ 𝓝 x, ∀ y : Fin (n + 3) → Y, (∀ i, y i ∈ f '' V ∪ g '' V) →
+      ∑ i : Fin (n + 3), (-1 : ℤ) ^ (i : ℕ) • φ (y ∘ Fin.succAbove i) = 0) :
+    ((cochainComplexMap R M g).f (n + 1)).hom (cochainClass R Y M (n + 1) φ) =
+      ((cochainComplexMap R M f).f (n + 1)).hom (cochainClass R Y M (n + 1) φ) +
+        ((cochainComplex R X M).d n (n + 1)).hom (cochainClass R X M n (prism R M f g n φ)) := by
+  rw [cochainComplexMap_f_cochainClass, cochainComplexMap_f_cochainClass,
+    cochainComplex_d_cochainClass, ← map_add, cochainClass_eq_cochainClass_iff]
+  convert isLocallyZero_prism (R := R) h using 1
+  funext x
+  rw [Pi.sub_apply, Pi.add_apply, sub_add_eq_sub_sub,
+    ← coboundary_prism_add_prism_coboundary_apply (R := R)]
+  abel
+
+variable (R M) in
 /-- **Maps close relative to a cocycle induce the same class.** Let `z` be an Alexander–Spanier
 `n`-cocycle of `Y`, represented by `φ`. If every point of `X` has a neighbourhood `V` such that the
 coboundary of `φ` vanishes on all tuples of points of `f(V) ∪ g(V)`, then the continuous maps
@@ -310,51 +383,60 @@ theorem cohomologyMap_homologyπ_eq_of_forall_nhds {f g : C(X, Y)} {n : ℕ}
       ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • φ (y ∘ Fin.succAbove i) = 0) :
     (cohomologyMap R M f n).hom (((cochainComplex R Y M).homologyπ n).hom z) =
       (cohomologyMap R M g n).hom (((cochainComplex R Y M).homologyπ n).hom z) := by
-  have hnat (k : C(X, Y)) :
-      (cohomologyMap R M k n).hom (((cochainComplex R Y M).homologyπ n).hom z) =
-        ((cochainComplex R X M).homologyπ n).hom
-          ((HomologicalComplex.cyclesMap (cochainComplexMap R M k) n).hom z) :=
-    (ConcreteCategory.congr_hom
-      (HomologicalComplex.homologyπ_naturality (cochainComplexMap R M k) n) z)
-  rw [hnat, hnat]
+  rw [HomologicalComplex.moduleCat_homologyMap_homologyπ,
+    HomologicalComplex.moduleCat_homologyMap_homologyπ]
+  have hinj := (ModuleCat.mono_iff_injective ((cochainComplex R X M).iCycles n)).1 inferInstance
   have hi (k : C(X, Y)) : ((cochainComplex R X M).iCycles n).hom
       ((HomologicalComplex.cyclesMap (cochainComplexMap R M k) n).hom z) =
-        cochainClass R X M n fun x ↦ φ (k ∘ x) := by
-    rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply,
-      hz, cochainComplexMap_f_cochainClass]
-  have hP := isLocallyZero_prism (R := R) h
+        ((cochainComplexMap R M k).f n).hom (cochainClass R Y M n φ) := by
+    rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, hz]
   cases n with
   | zero =>
-    -- In degree zero the pullbacks of `φ` along `f` and `g` differ by a locally zero function.
+    -- In degree zero the pullbacks of `φ` along `f` and `g` agree.
     congr 1
-    refine (ModuleCat.mono_iff_injective ((cochainComplex R X M).iCycles 0)).1 inferInstance ?_
-    rw [hi, hi, cochainClass_eq_cochainClass_iff]
-    convert hP.smul (-1 : ℤ) using 1
-    funext x
-    rw [Pi.sub_apply, Pi.smul_apply, prism_zero_apply_coboundary]
-    abel
+    refine hinj ?_
+    rw [hi, hi]
+    exact cochainComplexMap_f_zero_cochainClass_eq_of_forall_nhds R M h
   | succ m =>
-    -- In positive degree they differ by the coboundary of the prism of `φ`, up to a locally zero
-    -- function.
+    -- In positive degree they differ by the coboundary of the prism of `φ`.
     have key : (HomologicalComplex.cyclesMap (cochainComplexMap R M g) (m + 1)).hom z =
         (HomologicalComplex.cyclesMap (cochainComplexMap R M f) (m + 1)).hom z +
           ((cochainComplex R X M).toCycles m (m + 1)).hom
             (cochainClass R X M m (prism R M f g m φ)) := by
-      refine (ModuleCat.mono_iff_injective ((cochainComplex R X M).iCycles (m + 1))).1
-        inferInstance ?_
-      rw [map_add, hi, hi, ← ConcreteCategory.comp_apply, HomologicalComplex.toCycles_i,
-        cochainComplex_d_cochainClass, ← map_add, cochainClass_eq_cochainClass_iff]
-      convert hP using 1
-      funext x
-      rw [Pi.sub_apply, Pi.add_apply, sub_add_eq_sub_sub,
-        ← coboundary_prism_add_prism_coboundary_apply (R := R)]
-      abel
+      refine hinj ?_
+      rw [map_add, hi, hi, ← ConcreteCategory.comp_apply, HomologicalComplex.toCycles_i]
+      exact cochainComplexMap_f_succ_cochainClass_eq_add_of_forall_nhds R M h
     have h0 : ((cochainComplex R X M).homologyπ (m + 1)).hom
         (((cochainComplex R X M).toCycles m (m + 1)).hom
           (cochainClass R X M m (prism R M f g m φ))) = 0 := by
       rw [← ConcreteCategory.comp_apply, HomologicalComplex.toCycles_comp_homologyπ]
       simp
     rw [key, map_add, h0, add_zero]
+
+/-- **The tube lemma for homotopies.** Let `F` be a homotopy of maps out of a compact space `X`,
+and `ψ` a locally zero function on tuples of points of `Y`. For all `s` near `t`, the maps `F_s` and
+`F_t` are close relative to `ψ`: every point of `X` has a neighbourhood `V` such that `ψ` vanishes
+on all tuples of points of `F_s(V) ∪ F_t(V)`. -/
+private lemma eventually_forall_exists_nhds_of_isLocallyZero [CompactSpace X] {ι : Type*}
+    {f₀ f₁ : C(X, Y)} (F : f₀.Homotopy f₁) {ψ : (ι → Y) → M} (hψ : IsLocallyZero ψ)
+    (t : unitInterval) :
+    ∀ᶠ s in 𝓝 t, ∀ x, ∃ V ∈ 𝓝 x, ∀ y : ι → Y,
+      (∀ i, y i ∈ F.curry s '' V ∪ F.curry t '' V) → ψ y = 0 := by
+  have hclose : ∀ᶠ s in 𝓝 t, ∀ x ∈ Set.univ, ∃ V ∈ 𝓝 x, ∀ y : ι → Y,
+      (∀ i, y i ∈ F.curry s '' V ∪ F.curry t '' V) → ψ y = 0 := by
+    refine isCompact_univ.eventually_forall_of_forall_eventually fun x _ ↦ ?_
+    obtain ⟨U, hU, hψU⟩ := isLocallyZero_iff.1 hψ (F (t, x))
+    obtain ⟨A, hA, B, hB, hAB⟩ :=
+      mem_nhds_prod_iff.1 (F.continuous.continuousAt.preimage_mem_nhds hU)
+    obtain ⟨B', hB'B, hB'o, hxB'⟩ := mem_nhds_iff.1 hB
+    filter_upwards [prod_mem_nhds hA (hB'o.mem_nhds hxB')] with p hp
+    refine ⟨B', hB'o.mem_nhds hp.2, fun y hy ↦ hψU y fun i ↦ ?_⟩
+    rcases hy i with ⟨b, hb, hby⟩ | ⟨b, hb, hby⟩
+    · rw [← hby, F.curry_apply]
+      exact hAB ⟨hp.1, hB'B hb⟩
+    · rw [← hby, F.curry_apply]
+      exact hAB ⟨mem_of_mem_nhds hA, hB'B hb⟩
+  filter_upwards [hclose] with s hs x using hs x trivial
 
 variable (R M) in
 /-- **Homotopy invariance of Alexander–Spanier cohomology.** Homotopic continuous maps
@@ -372,32 +454,15 @@ theorem cohomologyMap_eq_of_homotopic [CompactSpace X] {f₀ f₁ : C(X, Y)}
     rw [← cochainClass_eq_zero_iff (R := R), ← cochainComplex_d_cochainClass, hφ,
       ← ConcreteCategory.comp_apply, HomologicalComplex.iCycles_d]
     simp
-  -- The class `F_t^* [φ]` is a locally constant function of `t`.
+  -- The class `F_t^* [φ]` is a locally constant function of `t`, since `F_s` and `F_t` are close
+  -- relative to the coboundary of `φ` for all `s` near `t`.
   have hT : IsLocallyConstant fun t : unitInterval ↦
       (cohomologyMap R M (F.curry t) n).hom (((cochainComplex R Y M).homologyπ n).hom z) := by
     refine (IsLocallyConstant.iff_eventually_eq _).2 fun t ↦ ?_
-    -- For `s` near `t`, the maps `F_s` and `F_t` are close relative to the coboundary of `φ`.
-    have hclose : ∀ᶠ s in 𝓝 t, ∀ x ∈ Set.univ, ∃ V ∈ 𝓝 x, ∀ y : Fin (n + 2) → Y,
-        (∀ i, y i ∈ F.curry s '' V ∪ F.curry t '' V) →
-          ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • φ (y ∘ Fin.succAbove i) = 0 := by
-      refine isCompact_univ.eventually_forall_of_forall_eventually fun x _ ↦ ?_
-      obtain ⟨U, hU, hδU⟩ := isLocallyZero_iff.1 hδ (F (t, x))
-      obtain ⟨A, hA, B, hB, hAB⟩ :=
-        mem_nhds_prod_iff.1 (F.continuous.continuousAt.preimage_mem_nhds hU)
-      obtain ⟨B', hB'B, hB'o, hxB'⟩ := mem_nhds_iff.1 hB
-      filter_upwards [prod_mem_nhds hA (hB'o.mem_nhds hxB')] with p hp
-      refine ⟨B', hB'o.mem_nhds hp.2, fun y hy ↦ hδU y fun i ↦ ?_⟩
-      rcases hy i with ⟨b, hb, hby⟩ | ⟨b, hb, hby⟩
-      · rw [← hby, F.curry_apply]
-        exact hAB ⟨hp.1, hB'B hb⟩
-      · rw [← hby, F.curry_apply]
-        exact hAB ⟨mem_of_mem_nhds hA, hB'B hb⟩
-    filter_upwards [hclose] with s hs
-    exact cohomologyMap_homologyπ_eq_of_forall_nhds R M z hφ.symm fun x ↦ hs x trivial
+    filter_upwards [eventually_forall_exists_nhds_of_isLocallyZero F hδ t] with s hs
+    exact cohomologyMap_homologyπ_eq_of_forall_nhds R M z hφ.symm hs
   have h01 := hT.apply_eq_of_preconnectedSpace 0 1
-  have hF₀ : F.curry 0 = f₀ := by ext x; simp
-  have hF₁ : F.curry 1 = f₁ := by ext x; simp
-  rwa [hF₀, hF₁] at h01
+  rwa [F.curry_zero, F.curry_one] at h01
 
 variable (R M) in
 /-- A homotopy equivalence `e : X ≃ₕ Y` between compact spaces induces isomorphisms
@@ -429,5 +494,152 @@ lemma cohomologyIsoOfHomotopyEquiv_inv [CompactSpace X] [CompactSpace Y]
   (rfl)
 
 end Homotopy
+
+section Pairs
+
+variable {R : Type w} [Ring R] {M : Type v} [AddCommGroup M] [Module R M] {X Y : Type u}
+  [TopologicalSpace X] [TopologicalSpace Y] {B : Set X} {A : Set Y}
+
+variable (R M) in
+/-- **Maps of pairs close relative to a cocycle induce the same relative class.** Let `f g : X → Y`
+be maps of pairs `(X, B) → (Y, A)`, and let `z` be a relative Alexander–Spanier `n`-cocycle of
+`(Y, A)`, represented by a function `φ` that vanishes on all tuples of points of `A`. If every point
+of `X` has a neighbourhood `V` such that the coboundary of `φ` vanishes on all tuples of points of
+`f(V) ∪ g(V)`, then `f` and `g` send the class of `z` to the same class in `H^n(X, B; M)`. -/
+theorem homologyMap_relativeCochainComplexMap_homologyπ_eq_of_forall_nhds {f g : C(X, Y)}
+    (hf : Set.MapsTo f B A) (hg : Set.MapsTo g B A) {n : ℕ}
+    (z : (relativeCochainComplex R M A).cycles n) {φ : (Fin (n + 1) → Y) → M}
+    (hz : ((relativeCochainComplexι R M A).f n).hom
+      (((relativeCochainComplex R M A).iCycles n).hom z) = cochainClass R Y M n φ)
+    (hφA : ∀ y : Fin (n + 1) → Y, (∀ i, y i ∈ A) → φ y = 0)
+    (h : ∀ x, ∃ V ∈ 𝓝 x, ∀ y : Fin (n + 2) → Y, (∀ i, y i ∈ f '' V ∪ g '' V) →
+      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • φ (y ∘ Fin.succAbove i) = 0) :
+    (HomologicalComplex.homologyMap (relativeCochainComplexMap R M A B f hf) n).hom
+        (((relativeCochainComplex R M A).homologyπ n).hom z) =
+      (HomologicalComplex.homologyMap (relativeCochainComplexMap R M A B g hg) n).hom
+        (((relativeCochainComplex R M A).homologyπ n).hom z) := by
+  rw [HomologicalComplex.moduleCat_homologyMap_homologyπ,
+    HomologicalComplex.moduleCat_homologyMap_homologyπ]
+  -- A relative cocycle of `(X, B)` is determined by the underlying absolute cochain of `X`.
+  have hinj : Function.Injective fun c : (relativeCochainComplex R M B).cycles n ↦
+      (relativeCochainComplexι R M B).f n ((relativeCochainComplex R M B).iCycles n c) :=
+    (relativeCochainComplexι_f_injective R M B n).comp
+      ((relativeCochainComplex R M B).moduleCat_iCycles_injective n)
+  have hi (k : C(X, Y)) (hk : Set.MapsTo k B A) :
+      (relativeCochainComplexι R M B).f n ((relativeCochainComplex R M B).iCycles n
+        (HomologicalComplex.cyclesMap (relativeCochainComplexMap R M A B k hk) n z)) =
+        (cochainComplexMap R M k).f n (cochainClass R Y M n φ) := by
+    rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply,
+      relativeCochainComplexι_f_relativeCochainComplexMap_f_apply, hz]
+  cases n with
+  | zero =>
+    -- In degree zero the pullbacks of `φ` along `f` and `g` agree.
+    congr 1
+    refine hinj ?_
+    simp only
+    rw [hi, hi]
+    exact cochainComplexMap_f_zero_cochainClass_eq_of_forall_nhds R M h
+  | succ m =>
+    -- In positive degree they differ by the coboundary of the prism of `φ`. The prism is a
+    -- relative cochain of `(X, B)`: it vanishes on tuples of points of `B`, since every entry of
+    -- its prism tuples then lies in `f(B) ∪ g(B) ⊆ A`.
+    obtain ⟨c, hc⟩ : cochainClass R X M m (prism R M f g m φ) ∈
+        LinearMap.range ((relativeCochainComplexι R M B).f m).hom := by
+      exact mem_range_relativeCochainComplexι_f_iff.2 <| isLocallyZero_iff.2 fun _ ↦
+        ⟨Set.univ, Filter.univ_mem, fun y _ ↦
+          prism_apply_eq_zero_of_mapsTo hf hg hφA fun i ↦ (y i).prop⟩
+    have key : (HomologicalComplex.cyclesMap (relativeCochainComplexMap R M A B g hg)
+          (m + 1)).hom z =
+        (HomologicalComplex.cyclesMap (relativeCochainComplexMap R M A B f hf) (m + 1)).hom z +
+          ((relativeCochainComplex R M B).toCycles m (m + 1)).hom c := by
+      refine hinj ?_
+      simp only
+      rw [map_add, map_add, hi, hi, HomologicalComplex.moduleCat_iCycles_toCycles_apply,
+        ← HomologicalComplex.Hom.comm_apply, hc]
+      exact cochainComplexMap_f_succ_cochainClass_eq_add_of_forall_nhds R M h
+    have h0 : (relativeCochainComplex R M B).homologyπ (m + 1)
+        ((relativeCochainComplex R M B).toCycles m (m + 1) c) = 0 :=
+      (HomologicalComplex.moduleCat_homologyπ_eq_zero_iff _ (by simp) _).2 ⟨c, rfl⟩
+    rw [key, map_add, h0, add_zero]
+
+variable (R M) in
+/-- **Homotopy invariance of relative Alexander–Spanier cohomology.** Let `X` be compact and `A`
+closed in `Y`. Maps of pairs `f₀ f₁ : (X, B) → (Y, A)` that are homotopic through maps of pairs
+induce the same map `H^n(Y, A; M) ⟶ H^n(X, B; M)`. -/
+theorem homologyMap_relativeCochainComplexMap_eq_of_homotopicWith [CompactSpace X]
+    (hA : IsClosed A) {f₀ f₁ : C(X, Y)} (h₀ : Set.MapsTo f₀ B A) (h₁ : Set.MapsTo f₁ B A)
+    (h : f₀.HomotopicWith f₁ fun f ↦ Set.MapsTo f B A) (n : ℕ) :
+    HomologicalComplex.homologyMap (relativeCochainComplexMap R M A B f₀ h₀) n =
+      HomologicalComplex.homologyMap (relativeCochainComplexMap R M A B f₁ h₁) n := by
+  obtain ⟨F⟩ := h
+  ext c
+  obtain ⟨z, rfl⟩ := (relativeCochainComplex R M A).moduleCat_homologyπ_surjective n c
+  -- Since `A` is closed, the cocycle `z` is represented by a function vanishing on `A`.
+  obtain ⟨φ, hφ, hφA⟩ := exists_relativeCochainComplexι_f_eq_cochainClass_of_isClosed hA
+    (((relativeCochainComplex R M A).iCycles n).hom z)
+  -- The coboundary of `φ` is locally zero.
+  have hδ : IsLocallyZero fun y : Fin (n + 2) → Y ↦
+      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • φ (y ∘ Fin.succAbove i) := by
+    rw [← cochainClass_eq_zero_iff (R := R), ← cochainComplex_d_cochainClass, ← hφ,
+      HomologicalComplex.Hom.comm_apply, HomologicalComplex.moduleCat_d_iCycles_apply, map_zero]
+  -- The class `F_t^* [z]` is a locally constant function of `t`.
+  have hT : IsLocallyConstant fun t : unitInterval ↦
+      (HomologicalComplex.homologyMap (relativeCochainComplexMap R M A B _ (F.prop t)) n).hom
+        (((relativeCochainComplex R M A).homologyπ n).hom z) := by
+    refine (IsLocallyConstant.iff_eventually_eq _).2 fun t ↦ ?_
+    filter_upwards [eventually_forall_exists_nhds_of_isLocallyZero F.toHomotopy hδ t] with s hs
+    exact homologyMap_relativeCochainComplexMap_homologyπ_eq_of_forall_nhds R M _ _ z hφ hφA hs
+  have h01 := hT.apply_eq_of_preconnectedSpace 0 1
+  simp only [F.toHomotopy.curry_zero, F.toHomotopy.curry_one] at h01
+  exact h01
+
+variable (R M) in
+/-- A homotopy equivalence of pairs `f : (X, B) → (Y, A)`, with homotopy inverse
+`g : (Y, A) → (X, B)` and both composites homotopic to the identity through maps of pairs, between
+compact spaces with closed subspaces, induces isomorphisms `H^n(Y, A; M) ≅ H^n(X, B; M)` in
+relative Alexander–Spanier cohomology, given by pulling back along `f` and along `g`. -/
+def relativeCohomologyIsoOfHomotopicWith [CompactSpace X] [CompactSpace Y] (hB : IsClosed B)
+    (hA : IsClosed A) {f : C(X, Y)} {g : C(Y, X)} (hf : Set.MapsTo f B A)
+    (hg : Set.MapsTo g A B)
+    (hgf : (g.comp f).HomotopicWith (ContinuousMap.id X) fun k ↦ Set.MapsTo k B B)
+    (hfg : (f.comp g).HomotopicWith (ContinuousMap.id Y) fun k ↦ Set.MapsTo k A A) (n : ℕ) :
+    relativeCohomology R M A n ≅ relativeCohomology R M B n where
+  hom := HomologicalComplex.homologyMap (relativeCochainComplexMap R M A B f hf) n
+  inv := HomologicalComplex.homologyMap (relativeCochainComplexMap R M B A g hg) n
+  hom_inv_id := by
+    have hid : Set.MapsTo (ContinuousMap.id Y) A A := Set.mapsTo_id A
+    rw [← HomologicalComplex.homologyMap_comp, ← relativeCochainComplexMap_comp,
+      homologyMap_relativeCochainComplexMap_eq_of_homotopicWith R M hA _ hid hfg,
+      relativeCochainComplexMap_id, HomologicalComplex.homologyMap_id]
+  inv_hom_id := by
+    have hid : Set.MapsTo (ContinuousMap.id X) B B := Set.mapsTo_id B
+    rw [← HomologicalComplex.homologyMap_comp, ← relativeCochainComplexMap_comp,
+      homologyMap_relativeCochainComplexMap_eq_of_homotopicWith R M hB _ hid hgf,
+      relativeCochainComplexMap_id, HomologicalComplex.homologyMap_id]
+
+/-- The isomorphism induced by a homotopy equivalence of pairs `f` is pullback along `f`. -/
+@[simp]
+lemma relativeCohomologyIsoOfHomotopicWith_hom [CompactSpace X] [CompactSpace Y]
+    (hB : IsClosed B) (hA : IsClosed A) {f : C(X, Y)} {g : C(Y, X)} (hf : Set.MapsTo f B A)
+    (hg : Set.MapsTo g A B)
+    (hgf : (g.comp f).HomotopicWith (ContinuousMap.id X) fun k ↦ Set.MapsTo k B B)
+    (hfg : (f.comp g).HomotopicWith (ContinuousMap.id Y) fun k ↦ Set.MapsTo k A A) (n : ℕ) :
+    (relativeCohomologyIsoOfHomotopicWith R M hB hA hf hg hgf hfg n).hom =
+      HomologicalComplex.homologyMap (relativeCochainComplexMap R M A B f hf) n :=
+  (rfl)
+
+/-- The inverse of the isomorphism induced by a homotopy equivalence of pairs is pullback along the
+homotopy inverse `g`. -/
+@[simp]
+lemma relativeCohomologyIsoOfHomotopicWith_inv [CompactSpace X] [CompactSpace Y]
+    (hB : IsClosed B) (hA : IsClosed A) {f : C(X, Y)} {g : C(Y, X)} (hf : Set.MapsTo f B A)
+    (hg : Set.MapsTo g A B)
+    (hgf : (g.comp f).HomotopicWith (ContinuousMap.id X) fun k ↦ Set.MapsTo k B B)
+    (hfg : (f.comp g).HomotopicWith (ContinuousMap.id Y) fun k ↦ Set.MapsTo k A A) (n : ℕ) :
+    (relativeCohomologyIsoOfHomotopicWith R M hB hA hf hg hgf hfg n).inv =
+      HomologicalComplex.homologyMap (relativeCochainComplexMap R M B A g hg) n :=
+  (rfl)
+
+end Pairs
 
 end TauCeti.AlexanderSpanier

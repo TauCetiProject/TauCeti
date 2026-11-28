@@ -139,7 +139,7 @@ theorem exists_eq_mulVec_add_and_apply_eq_actionAngleCover_of_actionAngle_of_sim
         mfderiv J 𝓘(ℝ, ι → ℝ) g b v := by
     have hd : HasMFDerivAt J (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
         (fun b i ↦ (g₀ b i : AddCircle p)) b (mfderiv J 𝓘(ℝ, ι → ℝ) g b) :=
-      ((AddCircle.hasMFDerivAt_coe_pi p (g b)).comp b
+      ((AddCircle.hasMFDerivAt_coe_pi (fun _ ↦ p) (g b)).comp b
         ((hg b).mdifferentiableAt (by simp)).hasMFDerivAt).congr_of_eventuallyEq
         (Filter.Eventually.of_forall fun b ↦ (hgg₀ b).symm)
     rw [hd.mfderiv]

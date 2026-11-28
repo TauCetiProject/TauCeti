@@ -13,7 +13,7 @@ import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 import Mathlib.RingTheory.LocalProperties.Reduced
 import TauCeti.RingTheory.LocalRing.Basic
 import TauCeti.RingTheory.Valuation.AbsolutelyIntegrallyClosed
-import TauCeti.RingTheory.Valuation.ValuationRing
+import TauCeti.RingTheory.Valuation.ValuationRing.Basic
 
 /-!
 # Test rings
