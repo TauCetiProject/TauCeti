@@ -61,16 +61,24 @@ cut.
 
 * `TauCeti.isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero`: a compact band without
   critical points carries no relative homology.
+* `TauCeti.isZero_singularHomology_sublevelPair_of_isEmpty`: in particular, if all critical
+  points in a compact band lie in the image of an empty type, the relative homology vanishes.
 * `TauCeti.isIso_homologyMap_map_sublevelPair_of_mfderiv_ne_zero`: so the inclusion of the lower
   sublevel into the upper one induces isomorphisms on homology.
 * `TauCeti.isIso_singularHomologyMap_bandPairInclusion`: above a regular value, a compact band
   relative to its lower level has the relative homology of the sublevel pair.
 * `TauCeti.singularHomologySublevelPairIsoOfCollars`: regular collars can be cut off a band
-  without changing the relative homology of the sublevel pair.
+  without changing the relative homology of the sublevel pair, and the inclusion across regular
+  collars induces an isomorphism
+  (`TauCeti.isIso_singularHomologyMap_sublevelPair_of_collar`).
 * `TauCeti.singularHomologySublevelPairIsoOfCriticalValue`: the relative homology of a compact
   band around an isolated critical value does not depend on the band; the identification is
   induced by inclusions of pairs
-  (`TauCeti.singularHomologyMap_comp_singularHomologySublevelPairIsoOfCriticalValue_hom`).
+  (`TauCeti.singularHomologyMap_comp_singularHomologySublevelPairIsoOfCriticalValue_hom`) and
+  satisfies identity, symmetry, and composition coherence laws
+  (`TauCeti.singularHomologySublevelPairIsoOfCriticalValue_self`,
+  `TauCeti.singularHomologySublevelPairIsoOfCriticalValue_symm`,
+  `TauCeti.singularHomologySublevelPairIsoOfCriticalValue_trans`).
 * `TauCeti.isIso_singularHomologyMap_ofInclusionMap_sublevelPair_iff`: an inclusion of pairs
   `(K, L) ⟶ ({f ≤ b}, {f ≤ a})` is an isomorphism on relative homology exactly when it is one
   after cutting off regular collars of the band.
@@ -112,6 +120,18 @@ theorem isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero (hf : ContMDiff 
   rw [e] at G
   exact TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel (X := TopCat.of M)
     (sublevel_mono f hab) r G R n
+
+/-- **A band whose critical points lie in the image of an empty type carries no relative homology.**
+If `a ≤ b`, the band `f⁻¹[a, b]` of a smooth function `f` is compact and all its critical points
+lie in the range of a map `i : S → M` from an empty type `S`, then the band has no critical points,
+so `Hₙ({f ≤ b}, {f ≤ a})` vanishes in every degree, with coefficients in any preadditive category
+with homology and coproducts. -/
+theorem isZero_singularHomology_sublevelPair_of_isEmpty {S : Type*} [IsEmpty S] {i : S → M}
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i) (R : C) (n : ℕ) :
+    IsZero ((sublevelPair f hab).singularHomology R n) :=
+  isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf hab hcompact
+    (mfderiv_ne_zero_of_isEmpty hcrit) R n
 
 /-- **Crossing a band without critical points does not change homology.** If the band `f⁻¹[a, b]`
 is compact and contains no critical point of the smooth function `f`, the inclusion of
@@ -396,6 +416,255 @@ lemma singularHomologyMap_comp_singularHomologySublevelPairIsoOfCriticalValue_ho
       (hL := sublevel_mono f (min_le_left s s')),
     singularHomologyMap_comp_singularHomologySublevelPairIsoOfCollars_hom (hK := subset_rfl)
       (hL := sublevel_mono f (min_le_right s s'))]
+
+/-- **The inclusion across regular collars induces an isomorphism on relative homology.** If
+`l ≤ s ≤ v ≤ t` and the bands `f⁻¹[l, s]` and `f⁻¹[v, t]` are compact and contain no critical
+point of the smooth function `f`, then the inclusion of pairs
+`({f ≤ v}, {f ≤ l}) ⟶ ({f ≤ t}, {f ≤ s})` induces isomorphisms on relative singular homology in
+every degree. -/
+theorem isIso_singularHomologyMap_sublevelPair_of_collar (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    {l s v t : ℝ} (hls : l ≤ s) (hsv : s ≤ v) (hvt : v ≤ t)
+    (hcompact₁ : IsCompact (f ⁻¹' Icc l s)) (hcompact₂ : IsCompact (f ⁻¹' Icc v t))
+    (hreg₁ : ∀ x, l ≤ f x → f x ≤ s → mfderiv I 𝓘(ℝ) f x ≠ 0)
+    (hreg₂ : ∀ x, v ≤ f x → f x ≤ t → mfderiv I 𝓘(ℝ) f x ≠ 0) (R : A) (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap (TopPair.ofInclusionMap (X := TopCat.of M)
+      (Y := TopCat.of M) (sublevel_mono f (hls.trans hsv)) (sublevel_mono f (hsv.trans hvt))
+      (ContinuousMap.inclusion (sublevel_mono f hvt))
+      (fun _ hx ↦ sublevel_mono f hls hx)) R n) := by
+  let T₁ := TopTriple.ofInclusions (X := TopCat.of M) (sublevel_mono f (hls.trans hsv))
+    (sublevel_mono f hvt)
+  let T₂ := TopTriple.ofInclusions (X := TopCat.of M) (sublevel_mono f hls)
+    (sublevel_mono f (hsv.trans hvt))
+  let m₁ : TopPair.ofInclusion (X := TopCat.of M) (sublevel_mono f (hls.trans hsv)) ⟶
+      TopPair.ofInclusion (X := TopCat.of M) (sublevel_mono f (hls.trans (hsv.trans hvt))) :=
+    TopTriple.innerToTotal.app T₁
+  let m₂ : TopPair.ofInclusion (X := TopCat.of M)
+      (sublevel_mono f (hls.trans (hsv.trans hvt))) ⟶
+      TopPair.ofInclusion (X := TopCat.of M) (sublevel_mono f (hsv.trans hvt)) :=
+    TopTriple.totalToOuter.app T₂
+  have h₁ : IsIso (TopPair.singularHomologyMap m₁ R n) :=
+    T₁.isIso_singularHomologyMap_innerToTotal_of_isZero R n
+      (isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf hvt hcompact₂ hreg₂ R n)
+      (isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf hvt hcompact₂ hreg₂ R (n + 1))
+  have h₂ : IsIso (TopPair.singularHomologyMap m₂ R n) :=
+    T₂.isIso_singularHomologyMap_totalToOuter_of_isZero R n
+      (isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf hls hcompact₁ hreg₁ R n)
+      fun m _ ↦ isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf hls hcompact₁ hreg₁ R m
+  have hfac : TopPair.ofInclusionMap (X := TopCat.of M) (Y := TopCat.of M)
+      (sublevel_mono f (hls.trans hsv)) (sublevel_mono f (hsv.trans hvt))
+      (ContinuousMap.inclusion (sublevel_mono f hvt)) (fun _ hx ↦ sublevel_mono f hls hx) =
+      m₁ ≫ m₂ := by
+    refine TopPair.hom_ext_of_fst _ <| by
+      ext x
+      apply Subtype.ext
+      refine (congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply
+        (ContinuousMap.inclusion (sublevel_mono f hvt)) _ x)).trans ?_
+      refine (congrArg (fun g ↦ (g x).val)
+        (TopTriple.innerToTotal_app_fst (T := T₁))).symm.trans ?_
+      exact (congrArg (fun g ↦ (g (TopPair.Hom.fst m₁ x)).val)
+        (TopTriple.totalToOuter_app_fst (T := T₂))).symm
+  rw [hfac, TopPair.singularHomologyMap_comp]
+  exact IsIso.comp_isIso' h₁ h₂
+
+/-- Transporting the relative homology of a band around an isolated critical value to itself via
+`TauCeti.singularHomologySublevelPairIsoOfCriticalValue` is the identity isomorphism. -/
+@[simp]
+lemma singularHomologySublevelPairIsoOfCriticalValue_self (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    {c s t : ℝ} (hsc : s < c) (hct : c < t)
+    (hcompact : IsCompact (f ⁻¹' Icc s t)) (hcompact' : IsCompact (f ⁻¹' Icc s t))
+    (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc s t → f x = c)
+    (hcrit' : ∀ x ∈ criticalPoints I f, f x ∈ Icc s t → f x = c)
+    (R : A) (n : ℕ) :
+    singularHomologySublevelPairIsoOfCriticalValue hf hsc hct hsc hct hcompact hcompact'
+        hcrit hcrit' R n = Iso.refl _ :=
+  Iso.ext (by simp [singularHomologySublevelPairIsoOfCriticalValue])
+
+private lemma inclusion_comp_singularHomologySublevelPairIsoOfCriticalValue_hom
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) {c s t s' t' l v : ℝ} (hsc : s < c) (hct : c < t)
+    (hs'c : s' < c) (hct' : c < t') (hls : l ≤ min s s') (hvt : v ≤ min t t') (hlv : l ≤ v)
+    (hcompact : IsCompact (f ⁻¹' Icc s t)) (hcompact' : IsCompact (f ⁻¹' Icc s' t'))
+    (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc s t → f x = c)
+    (hcrit' : ∀ x ∈ criticalPoints I f, f x ∈ Icc s' t' → f x = c)
+    (R : A) (n : ℕ) :
+    TopPair.singularHomologyMap (TopPair.ofInclusionMap (X := TopCat.of M) (Y := TopCat.of M)
+        (sublevel_mono f hlv) (sublevel_mono f (hsc.trans hct).le)
+        (ContinuousMap.inclusion (sublevel_mono f (hvt.trans (min_le_left t t'))))
+        fun _ hx ↦ (hx : f _ ≤ l).trans (hls.trans (min_le_left s s'))) R n ≫
+      (singularHomologySublevelPairIsoOfCriticalValue hf hsc hct hs'c hct' hcompact hcompact'
+        hcrit hcrit' R n).hom =
+      TopPair.singularHomologyMap (TopPair.ofInclusionMap (X := TopCat.of M) (Y := TopCat.of M)
+        (sublevel_mono f hlv) (sublevel_mono f (hs'c.trans hct').le)
+        (ContinuousMap.inclusion (sublevel_mono f (hvt.trans (min_le_right t t'))))
+        fun _ hx ↦ (hx : f _ ≤ l).trans (hls.trans (min_le_right s s'))) R n := by
+  let κ := TopPair.ofInclusionMap (X := TopCat.of M) (Y := TopCat.of M)
+    (sublevel_mono f hlv)
+    (sublevel_mono f ((min_le_left s s').trans (hsc.trans (lt_min hct hct')).le))
+    (ContinuousMap.inclusion (sublevel_mono f hvt))
+    fun _ hx ↦ sublevel_mono f hls hx
+  have hL : TopPair.ofInclusionMap (X := TopCat.of M) (Y := TopCat.of M)
+      (sublevel_mono f hlv) (sublevel_mono f (hsc.trans hct).le)
+      (ContinuousMap.inclusion (sublevel_mono f (hvt.trans (min_le_left t t'))))
+      (fun _ hx ↦ (hx : f _ ≤ l).trans (hls.trans (min_le_left s s'))) =
+      κ ≫ TopPair.ofInclusionMap (X := TopCat.of M) (Y := TopCat.of M)
+        (sublevel_mono f ((min_le_left s s').trans (hsc.trans (lt_min hct hct')).le))
+        (sublevel_mono f (hsc.trans hct).le)
+        (ContinuousMap.inclusion (sublevel_mono f (min_le_left t t')))
+        fun _ hx ↦ (hx : f _ ≤ min s s').trans (min_le_left s s') := by
+    refine Eq.trans ?_ (TopPair.ofInclusionMap_comp (X := TopCat.of M) (Y := TopCat.of M)
+      (Z := TopCat.of M) (sublevel_mono f (hsc.trans hct).le)
+      (ContinuousMap.inclusion (sublevel_mono f hvt))
+      (ContinuousMap.inclusion (sublevel_mono f (min_le_left t t')))
+      (fun _ hx ↦ sublevel_mono f hls hx)
+      (fun _ hx ↦ (hx : f _ ≤ min s s').trans (min_le_left s s')))
+    congr 1
+  have hR : TopPair.ofInclusionMap (X := TopCat.of M) (Y := TopCat.of M)
+      (sublevel_mono f hlv) (sublevel_mono f (hs'c.trans hct').le)
+      (ContinuousMap.inclusion (sublevel_mono f (hvt.trans (min_le_right t t'))))
+      (fun _ hx ↦ (hx : f _ ≤ l).trans (hls.trans (min_le_right s s'))) =
+      κ ≫ TopPair.ofInclusionMap (X := TopCat.of M) (Y := TopCat.of M)
+        (sublevel_mono f ((min_le_left s s').trans (hsc.trans (lt_min hct hct')).le))
+        (sublevel_mono f (hs'c.trans hct').le)
+        (ContinuousMap.inclusion (sublevel_mono f (min_le_right t t')))
+        fun _ hx ↦ (hx : f _ ≤ min s s').trans (min_le_right s s') := by
+    refine Eq.trans ?_ (TopPair.ofInclusionMap_comp (X := TopCat.of M) (Y := TopCat.of M)
+      (Z := TopCat.of M) (sublevel_mono f (hs'c.trans hct').le)
+      (ContinuousMap.inclusion (sublevel_mono f hvt))
+      (ContinuousMap.inclusion (sublevel_mono f (min_le_right t t')))
+      (fun _ hx ↦ sublevel_mono f hls hx)
+      (fun _ hx ↦ (hx : f _ ≤ min s s').trans (min_le_right s s')))
+    congr 1
+  rw [hL, hR, TopPair.singularHomologyMap_comp, TopPair.singularHomologyMap_comp, Category.assoc,
+    singularHomologyMap_comp_singularHomologySublevelPairIsoOfCriticalValue_hom]
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
+/-- For three compact bands around an isolated critical value `c`, the common lower collar
+`[min (min s₁ s₂) s₃, s₀]` up to any `s₀ < c` lies in whichever band achieves the minimum lower
+endpoint, so it is compact and free of critical points. -/
+lemma isCompact_and_mfderiv_ne_zero_lowerCollar (hfc : Continuous f)
+    {c s₁ t₁ s₂ t₂ s₃ t₃ s₀ : ℝ} (hct₁ : c < t₁) (hct₂ : c < t₂) (hct₃ : c < t₃)
+    (hs₀c : s₀ < c)
+    (hcompact₁ : IsCompact (f ⁻¹' Icc s₁ t₁)) (hcompact₂ : IsCompact (f ⁻¹' Icc s₂ t₂))
+    (hcompact₃ : IsCompact (f ⁻¹' Icc s₃ t₃))
+    (hcrit₁ : ∀ x ∈ criticalPoints I f, f x ∈ Icc s₁ t₁ → f x = c)
+    (hcrit₂ : ∀ x ∈ criticalPoints I f, f x ∈ Icc s₂ t₂ → f x = c)
+    (hcrit₃ : ∀ x ∈ criticalPoints I f, f x ∈ Icc s₃ t₃ → f x = c) :
+    IsCompact (f ⁻¹' Icc (min (min s₁ s₂) s₃) s₀) ∧
+      ∀ x, min (min s₁ s₂) s₃ ≤ f x → f x ≤ s₀ → mfderiv I 𝓘(ℝ) f x ≠ 0 := by
+  have of_band {s t : ℝ} (hs : s ≤ min (min s₁ s₂) s₃) (hct : c < t)
+      (hc : IsCompact (f ⁻¹' Icc s t))
+      (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc s t → f x = c) :
+      IsCompact (f ⁻¹' Icc (min (min s₁ s₂) s₃) s₀) ∧
+        ∀ x, min (min s₁ s₂) s₃ ≤ f x → f x ≤ s₀ → mfderiv I 𝓘(ℝ) f x ≠ 0 :=
+    ⟨isCompact_preimage_Icc_of_subset hfc hc hs (hs₀c.trans hct).le,
+      mfderiv_ne_zero_of_notMem_Icc hcrit hs (hs₀c.trans hct).le fun hx ↦ hs₀c.not_ge hx.2⟩
+  rcases min_choice (min s₁ s₂) s₃ with h | h
+  · rcases min_choice s₁ s₂ with h' | h'
+    · exact of_band (h.trans h').ge hct₁ hcompact₁ hcrit₁
+    · exact of_band (h.trans h').ge hct₂ hcompact₂ hcrit₂
+  · exact of_band h.ge hct₃ hcompact₃ hcrit₃
+
+/-- Transporting the relative homology of a band around an isolated critical value through an
+intermediate band via `TauCeti.singularHomologySublevelPairIsoOfCriticalValue` agrees with
+direct transport between the outer bands. -/
+lemma singularHomologySublevelPairIsoOfCriticalValue_trans (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    {c s₁ t₁ s₂ t₂ s₃ t₃ : ℝ} (hs₁c : s₁ < c) (hct₁ : c < t₁) (hs₂c : s₂ < c) (hct₂ : c < t₂)
+    (hs₃c : s₃ < c) (hct₃ : c < t₃)
+    (hcompact₁ : IsCompact (f ⁻¹' Icc s₁ t₁)) (hcompact₂ : IsCompact (f ⁻¹' Icc s₂ t₂))
+    (hcompact₃ : IsCompact (f ⁻¹' Icc s₃ t₃))
+    (hcrit₁ : ∀ x ∈ criticalPoints I f, f x ∈ Icc s₁ t₁ → f x = c)
+    (hcrit₂ : ∀ x ∈ criticalPoints I f, f x ∈ Icc s₂ t₂ → f x = c)
+    (hcrit₃ : ∀ x ∈ criticalPoints I f, f x ∈ Icc s₃ t₃ → f x = c)
+    (R : A) (n : ℕ) :
+    singularHomologySublevelPairIsoOfCriticalValue hf hs₁c hct₁ hs₂c hct₂ hcompact₁ hcompact₂
+        hcrit₁ hcrit₂ R n ≪≫
+      singularHomologySublevelPairIsoOfCriticalValue hf hs₂c hct₂ hs₃c hct₃ hcompact₂ hcompact₃
+        hcrit₂ hcrit₃ R n =
+      singularHomologySublevelPairIsoOfCriticalValue hf hs₁c hct₁ hs₃c hct₃ hcompact₁ hcompact₃
+        hcrit₁ hcrit₃ R n := by
+  let l := min (min s₁ s₂) s₃
+  let v := min (min t₁ t₂) t₃
+  have hlc : l < c := min_lt_of_left_lt (min_lt_of_left_lt hs₁c)
+  have hcv : c < v := lt_min (lt_min hct₁ hct₂) hct₃
+  have hlv : l ≤ v := (hlc.trans hcv).le
+  have hls₁ : l ≤ s₁ := (min_le_left s₁ s₂).trans' (min_le_left _ _)
+  have hvt₁ : v ≤ t₁ := (min_le_left t₁ t₂).trans' (min_le_left _ _)
+  have hcollar := isCompact_and_mfderiv_ne_zero_lowerCollar hf.continuous hct₁ hct₂ hct₃ hs₁c
+    hcompact₁ hcompact₂ hcompact₃ hcrit₁ hcrit₂ hcrit₃
+  have hcompact_vt₁ : IsCompact (f ⁻¹' Icc v t₁) :=
+    isCompact_preimage_Icc_of_subset hf.continuous hcompact₁ (hs₁c.trans hcv).le le_rfl
+  have hreg_vt₁ : ∀ x, v ≤ f x → f x ≤ t₁ → mfderiv I 𝓘(ℝ) f x ≠ 0 :=
+    mfderiv_ne_zero_of_notMem_Icc hcrit₁ (hs₁c.trans hcv).le le_rfl fun hx ↦ hcv.not_ge hx.1
+  let ι : sublevelPair f hlv ⟶ sublevelPair f (hs₁c.trans hct₁).le :=
+    TopPair.ofInclusionMap (X := TopCat.of M) (Y := TopCat.of M) (sublevel_mono f hlv)
+      (sublevel_mono f (hs₁c.trans hct₁).le) (ContinuousMap.inclusion (sublevel_mono f hvt₁))
+      fun _ hx ↦ sublevel_mono f hls₁ hx
+  -- Both collars `[l, s₁]` and `[v, t₁]` are compact and critical-free, so restricting from
+  -- `[l, v]` to `[s₁, t₁]` induces an isomorphism on relative homology.
+  have : IsIso (TopPair.singularHomologyMap ι R n) :=
+    isIso_singularHomologyMap_sublevelPair_of_collar hf hls₁ (hs₁c.trans hcv).le hvt₁
+      hcollar.1 hcompact_vt₁ hcollar.2 hreg_vt₁ R n
+  have h12 := inclusion_comp_singularHomologySublevelPairIsoOfCriticalValue_hom hf
+    hs₁c hct₁ hs₂c hct₂ (le_min ((min_le_left s₁ s₂).trans' (min_le_left _ _))
+      ((min_le_right s₁ s₂).trans' (min_le_left _ _)))
+    (le_min ((min_le_left t₁ t₂).trans' (min_le_left _ _))
+      ((min_le_right t₁ t₂).trans' (min_le_left _ _)))
+    hlv hcompact₁ hcompact₂ hcrit₁ hcrit₂ R n
+  have h23 := inclusion_comp_singularHomologySublevelPairIsoOfCriticalValue_hom hf
+    hs₂c hct₂ hs₃c hct₃ (le_min ((min_le_right s₁ s₂).trans' (min_le_left _ _))
+      (min_le_right _ _))
+    (le_min ((min_le_right t₁ t₂).trans' (min_le_left _ _)) (min_le_right _ _))
+    hlv hcompact₂ hcompact₃ hcrit₂ hcrit₃ R n
+  have h13 := inclusion_comp_singularHomologySublevelPairIsoOfCriticalValue_hom hf
+    hs₁c hct₁ hs₃c hct₃ (le_min ((min_le_left s₁ s₂).trans' (min_le_left _ _))
+      (min_le_right _ _))
+    (le_min ((min_le_left t₁ t₂).trans' (min_le_left _ _)) (min_le_right _ _))
+    hlv hcompact₁ hcompact₃ hcrit₁ hcrit₃ R n
+  -- Composition follows by left-cancellation after precomposing with the map induced by `ι` from
+  -- the common band `({f ≤ v}, {f ≤ l})`.
+  apply Iso.ext
+  rw [Iso.trans_hom, ← cancel_epi (TopPair.singularHomologyMap ι R n), ← Category.assoc, h12, h23,
+    h13]
+
+/-- Morphism-level composition of `TauCeti.singularHomologySublevelPairIsoOfCriticalValue`. -/
+@[reassoc]
+lemma singularHomologySublevelPairIsoOfCriticalValue_hom_comp (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    {c s₁ t₁ s₂ t₂ s₃ t₃ : ℝ} (hs₁c : s₁ < c) (hct₁ : c < t₁) (hs₂c : s₂ < c) (hct₂ : c < t₂)
+    (hs₃c : s₃ < c) (hct₃ : c < t₃)
+    (hcompact₁ : IsCompact (f ⁻¹' Icc s₁ t₁)) (hcompact₂ : IsCompact (f ⁻¹' Icc s₂ t₂))
+    (hcompact₃ : IsCompact (f ⁻¹' Icc s₃ t₃))
+    (hcrit₁ : ∀ x ∈ criticalPoints I f, f x ∈ Icc s₁ t₁ → f x = c)
+    (hcrit₂ : ∀ x ∈ criticalPoints I f, f x ∈ Icc s₂ t₂ → f x = c)
+    (hcrit₃ : ∀ x ∈ criticalPoints I f, f x ∈ Icc s₃ t₃ → f x = c)
+    (R : A) (n : ℕ) :
+    (singularHomologySublevelPairIsoOfCriticalValue hf hs₁c hct₁ hs₂c hct₂ hcompact₁ hcompact₂
+        hcrit₁ hcrit₂ R n).hom ≫
+      (singularHomologySublevelPairIsoOfCriticalValue hf hs₂c hct₂ hs₃c hct₃ hcompact₂ hcompact₃
+        hcrit₂ hcrit₃ R n).hom =
+      (singularHomologySublevelPairIsoOfCriticalValue hf hs₁c hct₁ hs₃c hct₃ hcompact₁ hcompact₃
+        hcrit₁ hcrit₃ R n).hom :=
+  congrArg Iso.hom (singularHomologySublevelPairIsoOfCriticalValue_trans hf hs₁c hct₁ hs₂c hct₂
+    hs₃c hct₃ hcompact₁ hcompact₂ hcompact₃ hcrit₁ hcrit₂ hcrit₃ R n)
+
+/-- Inverting `TauCeti.singularHomologySublevelPairIsoOfCriticalValue` swaps the two bands. -/
+lemma singularHomologySublevelPairIsoOfCriticalValue_symm (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    {c s t s' t' : ℝ} (hsc : s < c) (hct : c < t) (hs'c : s' < c) (hct' : c < t')
+    (hcompact : IsCompact (f ⁻¹' Icc s t)) (hcompact' : IsCompact (f ⁻¹' Icc s' t'))
+    (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc s t → f x = c)
+    (hcrit' : ∀ x ∈ criticalPoints I f, f x ∈ Icc s' t' → f x = c)
+    (R : A) (n : ℕ) :
+    (singularHomologySublevelPairIsoOfCriticalValue hf hsc hct hs'c hct' hcompact hcompact'
+        hcrit hcrit' R n).symm =
+      singularHomologySublevelPairIsoOfCriticalValue hf hs'c hct' hsc hct hcompact' hcompact
+        hcrit' hcrit R n := by
+  have h := (singularHomologySublevelPairIsoOfCriticalValue_trans hf hsc hct hs'c hct' hsc hct
+    hcompact hcompact' hcompact hcrit hcrit' hcrit R n).trans
+    (singularHomologySublevelPairIsoOfCriticalValue_self hf hsc hct hcompact hcompact hcrit hcrit
+      R n)
+  apply Iso.ext
+  rw [Iso.symm_hom, ← Category.comp_id (singularHomologySublevelPairIsoOfCriticalValue hf hsc
+      hct hs'c hct' hcompact hcompact' hcrit hcrit' R n).inv,
+    ← Iso.refl_hom (X := (sublevelPair f (hsc.trans hct).le).singularHomology R n),
+    ← congrArg Iso.hom h, Iso.trans_hom, Iso.inv_hom_id_assoc]
 
 /-- **Regular collars around the target of an inclusion of pairs.** Let `a ≤ s ≤ t ≤ b` be such
 that the bands `f⁻¹[a, s]` and `f⁻¹[t, b]` are compact and contain no critical point of the smooth
