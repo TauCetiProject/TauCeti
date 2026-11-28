@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Pi
+public import TauCeti.Algebra.Lie.Pi.Basic
 public import TauCeti.Algebra.Lie.Subalgebra.Fixed.Basic
 import Mathlib.Data.Fin.Tuple.Basic
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Subalgebra.Fixed.Basic
-public import TauCeti.Algebra.Lie.Pi
+public import TauCeti.Algebra.Lie.Pi.Basic
 
 /-!
 # Fixed Lie algebras of component cycles
