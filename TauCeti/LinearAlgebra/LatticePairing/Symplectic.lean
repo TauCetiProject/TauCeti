@@ -107,10 +107,9 @@ theorem range_toRational_restrictScalars :
     (LinearMap.range (toRational (O := O) (L := L))).restrictScalars ℤ =
       LinearMap.range (TensorProduct.mk ℤ ℚ L 1) := by
   have h : (toRational (O := O) (L := L)).restrictScalars ℤ = TensorProduct.mk ℤ ℚ L 1 := by
-    ext x
-    exact (LinearMap.restrictScalars_apply ℤ _ x).trans
-      ((toRational_apply (O := O) x).trans (TensorProduct.mk_apply (R := ℤ) (1 : ℚ) x).symm)
-  exact (LinearMap.range_restrictScalars (R := ℤ) _).symm.trans (congrArg LinearMap.range h)
+    exact LinearMap.ext fun _ ↦ rfl
+  rw [← LinearMap.range_restrictScalars]
+  exact congrArg LinearMap.range h
 
 omit [StarRing O] [Module.Free ℤ L] [Module.Finite ℤ L] in
 /-- The unit-tensor map is injective on a flat integral module. -/
@@ -161,12 +160,10 @@ private theorem dualIndex_eq_relIndex_range_mk_one :
     let N := LinearMap.range (TensorProduct.mk ℤ ℚ L 1)
     S.dualIndex =
       N.toAddSubgroup.relIndex ((S.form.baseChange ℚ).dualSubmodule N).toAddSubgroup := by
+  have toAddSubgroup_restrictScalars (N : Submodule O (ℚ ⊗[ℤ] L)) :
+      (N.restrictScalars ℤ).toAddSubgroup = N.toAddSubgroup := rfl
   dsimp only
-  rw [S.dualIndex_def,
-    ← AddSubgroup.toIntSubmodule_toAddSubgroup (LinearMap.range
-      (toRational (O := O) (L := L))).toAddSubgroup,
-    ← AddSubgroup.toIntSubmodule_toAddSubgroup S.dual.toAddSubgroup,
-    Submodule.toIntSubmodule_toAddSubgroup, Submodule.toIntSubmodule_toAddSubgroup,
+  rw [S.dualIndex_def, ← toAddSubgroup_restrictScalars, ← toAddSubgroup_restrictScalars,
     range_toRational_restrictScalars, S.dual_restrictScalars]
 
 /-- The order-stable dual spans the rational space and is a lattice over the integers. -/

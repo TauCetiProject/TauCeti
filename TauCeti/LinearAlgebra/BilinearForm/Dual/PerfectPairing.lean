@@ -60,24 +60,21 @@ noncomputable def dualSubmoduleRangeMkOneEquivDual [IsTorsionFree R M]
     (B.baseChange K).dualSubmodule (LinearMap.range (TensorProduct.mk R K M 1)) ≃ₗ[R]
       Module.Dual R M :=
   ((B.baseChange K).dualSubmoduleEquivDual hB (LinearMap.range (TensorProduct.mk R K M 1))).trans
-    (LinearEquiv.ofInjective (TensorProduct.mk R K M 1)
-      (IsTorsionFree.mk_one_injective_of_isFractionRing K)).dualMap
+    (IsTorsionFree.rangeMkOneEquiv K).dualMap
 
 /-- Under `dualSubmoduleRangeMkOneEquivDual`, the inclusion of the unit-tensor image into
 its dual lattice represents the integral pairing map. -/
 theorem dualSubmoduleEquivDual_comp_inclusion_range_mk_one [IsTorsionFree R M]
     (B : LinearMap.BilinForm R M) (hB : (B.baseChange K).Nondegenerate) :
-    let u := LinearEquiv.ofInjective (TensorProduct.mk R K M 1)
-      (IsTorsionFree.mk_one_injective_of_isFractionRing K)
     (B.dualSubmoduleRangeMkOneEquivDual hB).toLinearMap.comp
       ((Submodule.inclusion (B.range_mk_one_le_dualSubmodule (K := K))).comp
-        u.toLinearMap) = B := by
+        (IsTorsionFree.rangeMkOneEquiv K).toLinearMap) = B := by
   ext x y
   apply FaithfulSMul.algebraMap_injective R K
   simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, dualSubmoduleRangeMkOneEquivDual,
     LinearEquiv.trans_apply, LinearEquiv.dualMap_apply, dualSubmoduleEquivDual_apply,
     dualSubmoduleToDual_apply_apply, dualSubmodulePairing_spec, Submodule.coe_inclusion,
-    LinearEquiv.ofInjective_apply, TensorProduct.mk_apply]
+    IsTorsionFree.coe_rangeMkOneEquiv_apply]
   simp [Algebra.algebraMap_eq_smul_one]
 
 /-- An integral form on a finite reflexive module with nondegenerate scalar extension is
@@ -86,26 +83,23 @@ theorem dualSubmodule_range_mk_eq_self_iff_isPerfPair [Module.IsReflexive R M]
     (B : LinearMap.BilinForm R M) (hB : (B.baseChange K).Nondegenerate) :
     let N := LinearMap.range (TensorProduct.mk R K M 1)
     (B.baseChange K).dualSubmodule N = N ↔ B.IsPerfPair := by
-  let N := LinearMap.range (TensorProduct.mk R K M 1)
-  let D := (B.baseChange K).dualSubmodule N
-  have hND : N ≤ D := B.range_mk_one_le_dualSubmodule
-  let i := Submodule.inclusion hND
-  let u := LinearEquiv.ofInjective (TensorProduct.mk R K M 1)
-    (IsTorsionFree.mk_one_injective_of_isFractionRing K)
+  let i := Submodule.inclusion (B.range_mk_one_le_dualSubmodule (K := K))
+  let u := IsTorsionFree.rangeMkOneEquiv (R := R) K (N := M)
   let e := B.dualSubmoduleRangeMkOneEquivDual hB
-  have hcomp : e.toLinearMap.comp (i.comp u.toLinearMap) = B :=
-    B.dualSubmoduleEquivDual_comp_inclusion_range_mk_one hB
   constructor
   · intro h
-    have hD : D = N := h
     have hs : Function.Bijective i :=
-      ⟨Submodule.inclusion_injective hND, fun x ↦ ⟨⟨x, hD ▸ x.property⟩, Subtype.ext rfl⟩⟩
-    exact .of_bijective B (hcomp ▸ e.bijective.comp (hs.comp u.bijective))
+      ⟨Submodule.inclusion_injective _, fun x ↦
+        ⟨⟨x, h.le x.property⟩, Subtype.ext rfl⟩⟩
+    apply IsPerfPair.of_bijective B
+    rw [← B.dualSubmoduleEquivDual_comp_inclusion_range_mk_one hB]
+    exact e.bijective.comp (hs.comp u.bijective)
   · intro h
-    apply le_antisymm (fun x hx ↦ ?_) hND
+    apply le_antisymm (fun x hx ↦ ?_) B.range_mk_one_le_dualSubmodule
     obtain ⟨y, hy⟩ := h.bijective_left.surjective (e ⟨x, hx⟩)
     have hxy : i (u y) = ⟨x, hx⟩ := e.injective (by
-      simpa only [← hcomp, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap] using hy)
+      simpa only [← B.dualSubmoduleEquivDual_comp_inclusion_range_mk_one hB,
+        LinearMap.comp_apply, LinearEquiv.coe_toLinearMap] using hy)
     have heq : (u y : K ⊗[R] M) = x := congrArg Subtype.val hxy
     exact heq ▸ (u y).property
 
@@ -125,24 +119,22 @@ theorem relIndex_dualSubmodule_range_mk_one_eq_natAbs_det (B : LinearMap.BilinFo
       (B.toMatrix b).det.natAbs := by
   have := Module.Free.of_basis b
   have := Module.Finite.of_basis b
-  let N := LinearMap.range (TensorProduct.mk ℤ ℚ M 1)
-  let D := (B.baseChange ℚ).dualSubmodule N
-  have hND : N ≤ D := B.range_mk_one_le_dualSubmodule
-  let u := LinearEquiv.ofInjective (TensorProduct.mk ℤ ℚ M 1)
-    (IsTorsionFree.mk_one_injective_of_isFractionRing ℚ)
+  let u := IsTorsionFree.rangeMkOneEquiv (R := ℤ) ℚ (N := M)
   let e := B.dualSubmoduleRangeMkOneEquivDual hB
-  have hcomp : e.toLinearMap.comp ((Submodule.inclusion hND).comp u.toLinearMap) = B :=
-    B.dualSubmoduleEquivDual_comp_inclusion_range_mk_one hB
-  have hindex : N.toAddSubgroup.relIndex D.toAddSubgroup =
-      ((b.dualBasis.map e.symm).det fun i ↦ Submodule.inclusion hND (b.map u i)).natAbs :=
-    AddSubgroup.relIndex_eq_natAbs_det N.toAddSubgroup D.toAddSubgroup hND (b.map u)
-      (b.dualBasis.map e.symm)
-  have hm : e.symm.symm ∘ (fun i ↦ Submodule.inclusion hND (b.map u i)) = B ∘ b := by
+  let i := Submodule.inclusion (B.range_mk_one_le_dualSubmodule (K := ℚ))
+  let N := LinearMap.range (TensorProduct.mk ℤ ℚ M 1)
+  have hindex : N.toAddSubgroup.relIndex ((B.baseChange ℚ).dualSubmodule N).toAddSubgroup =
+      ((b.dualBasis.map e.symm).det fun j ↦ i (b.map u j)).natAbs :=
+    AddSubgroup.relIndex_eq_natAbs_det N.toAddSubgroup
+      ((B.baseChange ℚ).dualSubmodule N).toAddSubgroup
+      (B.range_mk_one_le_dualSubmodule (K := ℚ)) (b.map u) (b.dualBasis.map e.symm)
+  have hm : e.symm.symm ∘ (fun j ↦ i (b.map u j)) = B ∘ b := by
     funext i
     simpa only [Function.comp_apply, LinearEquiv.symm_symm, Basis.map_apply, LinearMap.comp_apply,
-      LinearEquiv.coe_toLinearMap] using congr($hcomp (b i))
+      LinearEquiv.coe_toLinearMap] using
+        congr($(B.dualSubmoduleEquivDual_comp_inclusion_range_mk_one hB) (b i))
   have hmatrix : (b.dualBasis.map e.symm).toMatrix
-      (fun i ↦ Submodule.inclusion hND (b.map u i)) = (B.toMatrix b).transpose := by
+      (fun j ↦ i (b.map u j)) = (B.toMatrix b).transpose := by
     rw [Basis.toMatrix_map, hm, ← LinearMap.toMatrix_eq_basisToMatrix,
       Basis.toMatrix_dualBasis_eq_transpose_toMatrix₂]
     ext i j
