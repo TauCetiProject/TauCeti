@@ -26,7 +26,7 @@ open Bundle
 open scoped Manifold
 
 local instance circleFinrankFact : Fact (Module.finrank ℝ ℂ = 1 + 1) :=
-  ⟨by norm_num [Complex.finrank_real_complex]⟩
+  Complex.finrank_real_complex_fact
 
 namespace TauCeti
 
@@ -36,10 +36,11 @@ noncomputable local instance circleChartedSpace :
   instChartedSpaceEuclideanSpaceRealFinOfNatNatCircle
 
 /-- The Riemannian bundle carrying the induced round metric on the complex unit circle. -/
-@[instance_reducible]
+@[expose, instance_reducible]
 noncomputable def roundMetricCircle :
     RiemannianBundle (fun x : Circle ↦ TangentSpace (𝓡 1) x) :=
-  ⟨(sphereRoundMetric (E := ℂ) (n := 1)).toRiemannianMetric⟩
+  letI : Fact (Module.finrank ℝ ℂ = 1 + 1) := Complex.finrank_real_complex_fact
+  instRiemannianBundleSphere (E := ℂ) (n := 1)
 
 end TauCeti
 

@@ -32,6 +32,7 @@ by `tangentSpaceCast`.
   vector space.
 * `TauCeti.heq_tangentSpaceCast`: over equal base points, `tangentSpaceCast` is heterogeneously
   the identity.
+* `TauCeti.coe_tangentSpaceCast`: `tangentSpaceCast` preserves the underlying model-space vector.
 * `TauCeti.tangentSpaceCast_self`: identifying a tangent space with itself is the identity.
 * `TauCeti.apply_eq_of_tangentSpaceCast`: evaluating a basepoint-dependent expression at equal
   base points and `tangentSpaceCast`-related tangent vectors gives equal values.
@@ -102,6 +103,12 @@ theorem heq_tangentSpaceCast {x y : M} (hxy : x = y) (w : TangentSpace I x) :
     HEq (tangentSpaceCast I x y w) w := by
   subst hxy
   rfl
+
+variable (I) in
+/-- `tangentSpaceCast I q p` preserves the underlying model-space vector. -/
+theorem coe_tangentSpaceCast (q p : M) (w : TangentSpace I q) :
+    (tangentSpaceCast I q p w : E) = w :=
+  (rfl)
 
 /-- Identifying a tangent space with itself via `tangentSpaceCast` is the identity. -/
 @[simp]

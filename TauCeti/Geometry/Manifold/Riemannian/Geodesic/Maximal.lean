@@ -115,6 +115,14 @@ theorem mem_geodesicInterval_iff {p : M} {v : TangentSpace I p} {t : ℝ} :
       ∃ γ a b, IsGeodesicCurveOnFrom I γ (Ioo a b) p v ∧ t ∈ Ioo a b := by
   rfl
 
+/-- Maximal geodesic intervals from equal base points with equal initial vectors agree. Both
+tangent spaces are the model space, so the initial vectors are compared there. -/
+theorem geodesicInterval_congr {q p : M} (h : q = p) {w : TangentSpace I q}
+    {v : TangentSpace I p} (hw : (w : E) = v) :
+    geodesicInterval I M q w = geodesicInterval I M p v := by
+  subst h hw
+  rfl
+
 /-- Every geodesic witness with initial data `(p, v)` is defined inside
 `geodesicInterval I M p v`. -/
 theorem IsGeodesicCurveOnFrom.subset_geodesicInterval

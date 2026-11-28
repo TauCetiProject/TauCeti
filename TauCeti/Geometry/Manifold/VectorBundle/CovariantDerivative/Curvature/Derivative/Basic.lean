@@ -457,3 +457,23 @@ theorem derivCurvatureTensor_cyclic_eq_zero [ContMDiffCovariantDerivative covT �
     ((isTorsionFree_iff_torsion_eq_zero covT).2 ht) hX hY hZ hσ x
 
 end CovariantDerivative
+
+namespace CovariantDerivative
+
+/-- For connections on the tangent bundle, values of `derivCurvatureTensor` at equal base points on
+tangent vectors with equal model-space coordinates have equal model-space coordinates. -/
+theorem derivCurvatureTensor_tangentSpace_congr
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+    (cov : _root_.CovariantDerivative I E (fun x : M ↦ TangentSpace I x))
+    [ContMDiffCovariantDerivative cov ∞]
+    (covT : _root_.CovariantDerivative I E (fun x : M ↦ TangentSpace I x))
+    {q p : M} (h : q = p) {v u w s : TangentSpace I q} {v' u' w' s' : TangentSpace I p}
+    (hv : (v : E) = v') (hu : (u : E) = u') (hw : (w : E) = w') (hs : (s : E) = s') :
+    (cov.derivCurvatureTensor covT q v u w s : E) =
+      cov.derivCurvatureTensor covT p v' u' w' s' := by
+  subst h hv hu hw hs
+  rfl
+
+end CovariantDerivative

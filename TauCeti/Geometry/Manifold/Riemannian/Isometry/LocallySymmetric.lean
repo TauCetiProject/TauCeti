@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Curvature
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ContractedBianchi
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.LocallySymmetric
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.VectorSpace
 
 /-!
 # The covariant derivative of curvature under Riemannian isometries
@@ -46,6 +48,9 @@ In the namespace `TauCeti.IsLocalRiemannianIsometry`:
 
 In the namespace `TauCeti.RiemannianIsometry`, `hasParallelCurvature_iff`: Riemannian isometric
 manifolds have parallel curvature together.
+
+`TauCeti.hasParallelCurvature_opens_innerProductSpace`: every open subset of a finite-dimensional
+real inner-product space has parallel curvature.
 
 ## References
 
@@ -162,6 +167,21 @@ theorem RiemannianIsometry.hasParallelCurvature_iff (Φ : RiemannianIsometry I J
     (leviCivitaConnection J N).HasParallelCurvature ↔
       (leviCivitaConnection I M).HasParallelCurvature :=
   Φ.isLocalRiemannianIsometry.hasParallelCurvature_iff_of_surjective (EquivLike.surjective Φ)
+
+section EuclideanOpens
+
+open scoped TauCeti
+
+/-- Every open subset of a finite-dimensional real inner-product space, carrying the restricted
+Euclidean metric, has parallel curvature (it is flat, hence locally symmetric). -/
+theorem hasParallelCurvature_opens_innerProductSpace {G : Type*} [NormedAddCommGroup G]
+    [InnerProductSpace ℝ G] [FiniteDimensional ℝ G] (U : TopologicalSpace.Opens G) :
+    (leviCivitaConnection 𝓘(ℝ, G) U).HasParallelCurvature :=
+  (IsLocalRiemannianIsometry.subtype_val (I := 𝓘(ℝ, G)) U).hasParallelCurvature
+    (hasParallelCurvature_of_curvatureTensor_eq_zero _
+      (Manifold.curvatureTensor_leviCivitaConnection_model_space (F := G)))
+
+end EuclideanOpens
 
 end TauCeti
 

@@ -18,11 +18,14 @@ as `Φ ∘ Ψ`. Forgetting the metric condition is an injective group homomorphi
 diffeomorphism group. The action of `Isom(M)` on `M` is in
 `TauCeti.Geometry.Manifold.Riemannian.Isometry.Action`.
 
-## Main definitions
+## Main definitions and results
 
 * `TauCeti.Isom I M`: the isometry group of the Riemannian manifold `M`.
 * `TauCeti.RiemannianIsometry.instGroup`: the group of Riemannian self-isometries.
 * `TauCeti.RiemannianIsometry.toDiff`: the injective homomorphism to the diffeomorphism group.
+* `TauCeti.RiemannianIsometry.tangentSpaceCastModel_mfderiv_mul` and
+  `TauCeti.RiemannianIsometry.tangentSpaceCastModel_mfderiv_mul_of_apply_eq`: chain rule in model
+  coordinates for products of self-isometries, including specialization at a fixed point.
 
 ## References
 
@@ -140,6 +143,28 @@ theorem toDiff_apply (Φ : Isom I M) : toDiff Φ = Φ.toDiffeomorph := (rfl)
 a subgroup of the diffeomorphism group. -/
 theorem toDiff_injective : Function.Injective (toDiff : Isom I M → Diff I M ∞) :=
   fun _ _ h ↦ RiemannianIsometry.ext fun x ↦ DFunLike.congr_fun h x
+
+/-- In model coordinates, the differential of a product `Φ * Ψ` of self-isometries is the
+composite of their differentials. -/
+theorem tangentSpaceCastModel_mfderiv_mul (Φ Ψ : Isom I M) (x : M) (v : TangentSpace I x) :
+    tangentSpaceCastModel I ((Φ * Ψ) x) (mfderiv I I (Φ * Ψ) x v) =
+      tangentSpaceCastModel I (Φ (Ψ x)) (mfderiv I I Φ (Ψ x) (mfderiv I I Ψ x v)) := by
+  rw [coe_mul, mfderiv_comp_apply x (Φ.mdifferentiableAt (Ψ x)) (Ψ.mdifferentiableAt x),
+    Function.comp_apply]
+
+/-- At a fixed point `Ψ x = x` of `Ψ`, the differential of `Φ * Ψ` at `x` in model coordinates
+applies `dΦ_x` to `(tangentSpaceCastModel I x).symm` of the model-coordinate image `dΨ_x v`. -/
+theorem tangentSpaceCastModel_mfderiv_mul_of_apply_eq {Φ Ψ : Isom I M} {x : M}
+    (hΨ : Ψ x = x) (v : TangentSpace I x) :
+    tangentSpaceCastModel I ((Φ * Ψ) x) (mfderiv I I (Φ * Ψ) x v) =
+      tangentSpaceCastModel I (Φ x) (mfderiv I I Φ x
+        ((tangentSpaceCastModel I x).symm
+          (tangentSpaceCastModel I (Ψ x) (mfderiv I I Ψ x v)))) := by
+  rw [tangentSpaceCastModel_mfderiv_mul]
+  generalize mfderiv I I Ψ x v = w
+  generalize Ψ x = y at hΨ w ⊢
+  subst hΨ
+  rw [ContinuousLinearEquiv.symm_apply_apply]
 
 end RiemannianIsometry
 

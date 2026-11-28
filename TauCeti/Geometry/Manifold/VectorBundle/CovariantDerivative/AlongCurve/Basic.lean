@@ -44,9 +44,10 @@ ambient covariant derivative.
 * `CovariantDerivative.alongCurveWithin`: the resulting tangent field along the curve, computed
   by `CovariantDerivative.alongCurveWithin_apply`, and its unrestricted case
   `CovariantDerivative.alongCurve`; `CovariantDerivative.alongCurveWithin_univ` relates them.
-* `CovariantDerivative.alongCurveWithin_add`, `CovariantDerivative.alongCurveWithin_smul` and
-  `CovariantDerivative.alongCurveWithin_const_smul`: additivity, the scalar Leibniz rule, and
-  scalar homogeneity; each has an unrestricted counterpart.
+* `CovariantDerivative.alongCurveWithin_add`, `CovariantDerivative.alongCurveWithin_smul`,
+  `CovariantDerivative.alongCurveWithin_const_smul`, and `CovariantDerivative.alongCurveWithin_neg`:
+  additivity, the scalar Leibniz rule, scalar homogeneity, and negation; each has an unrestricted
+  counterpart.
 * `CovariantDerivative.alongCurveWithin_zero`: the zero-field law, with
   `CovariantDerivative.alongCurve_zero` its unrestricted case.
 * `CovariantDerivative.alongCurveWithin_sum` and `CovariantDerivative.alongCurve_sum`: additivity
@@ -322,6 +323,20 @@ theorem alongCurve_const_smul (c : 𝕜) (t : 𝕜) :
     alongCurve cov γ (fun r ↦ c • V r) t = c • alongCurve cov γ V t := by
   rw [← alongCurveWithin_univ, ← alongCurveWithin_univ]
   exact alongCurveWithin_const_smul cov γ V c Set.univ t
+
+/-- The moving-chart candidate within a parameter set commutes with negation, without a
+differentiability hypothesis on the field. -/
+@[simp]
+theorem alongCurveWithin_neg (s : Set 𝕜) (t : 𝕜) :
+    alongCurveWithin cov γ (fun r ↦ -V r) s t = -alongCurveWithin cov γ V s t := by
+  simpa only [neg_one_smul] using alongCurveWithin_const_smul cov γ V (-1 : 𝕜) s t
+
+/-- The unrestricted moving-chart candidate commutes with negation, without a differentiability
+hypothesis on the field. -/
+@[simp]
+theorem alongCurve_neg (t : 𝕜) :
+    alongCurve cov γ (fun r ↦ -V r) t = -alongCurve cov γ V t := by
+  simpa only [neg_one_smul] using alongCurve_const_smul cov γ V (-1 : 𝕜) t
 
 /-- The moving-chart candidate of the zero field within a parameter set is zero. -/
 @[simp]

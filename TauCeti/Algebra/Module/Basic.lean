@@ -27,7 +27,9 @@ Reidemeister move.
 
 When `2` is invertible in the scalars, the midpoint `2⁻¹ • (x + y)` plus and minus the half
 difference `2⁻¹ • (x - y)` recover `x` and `y`
-(`TauCeti.inv_two_smul_add_add_inv_two_smul_sub`, `TauCeti.inv_two_smul_add_sub_inv_two_smul_sub`).
+(`TauCeti.inv_two_smul_add_add_inv_two_smul_sub`, `TauCeti.inv_two_smul_add_sub_inv_two_smul_sub`);
+more generally, when `2` is `M`-regular, `-x = x` holds only for `x = 0`
+(`IsSMulRegular.neg_eq_self_iff`).
 -/
 
 public section
@@ -45,6 +47,13 @@ theorem _root_.IsSMulRegular.eq_smul_add_one_sub_smul_iff {R M : Type*} [Ring R]
     exact hu hux
   · rintro rfl
     rw [add_sub_cancel]
+
+/-- If `2` is `M`-regular, then `-x = x` holds in `M` if and only if `x = 0`. -/
+theorem _root_.IsSMulRegular.neg_eq_self_iff {R M : Type*} [Semiring R]
+    [AddCommGroup M] [Module R M] (hu : IsSMulRegular M (2 : R)) {x : M} :
+    -x = x ↔ x = 0 := by
+  rw [neg_eq_iff_add_eq_zero, ← two_smul R x]
+  exact ⟨fun h ↦ hu (h.trans (smul_zero (2 : R)).symm), fun h ↦ by rw [h, smul_zero]⟩
 
 /-- **The braid relation for affine combinations.** Three strands enter a triangle with values
 `a`, `b`, `c` and cross pairwise; at a crossing of two strands with entering values `x` and `y`,
