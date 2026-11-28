@@ -223,7 +223,7 @@ theorem tendsto_mul_right_of_dense {ι : Type*} {l : Filter ι} {u : ι → A} {
     (hlim : ∀ d ∈ D, Tendsto (fun i => u i * d) l (𝓝 d)) (x : A) :
     Tendsto (fun i => u i * x) l (𝓝 x) := by
   refine tendsto_of_dense_of_eventually_lipschitz (F := fun i y => u i * y) (g := id) hD
-    (K := ‖C‖₊) (L := 1) ?_ LipschitzWith.id hlim x
+    (K := ‖C‖₊) ?_ continuousAt_id hlim
   filter_upwards [hC] with i hi
   refine LipschitzWith.of_dist_le_mul fun x y => ?_
   rw [dist_eq_norm, dist_eq_norm, ← mul_sub]
@@ -237,7 +237,7 @@ theorem tendsto_commutator_of_dense {ι : Type*} {l : Filter ι} {u : ι → A} 
     (hlim : ∀ d ∈ D, Tendsto (fun i => u i * d - d * u i) l (𝓝 0)) (x : A) :
     Tendsto (fun i => u i * x - x * u i) l (𝓝 0) := by
   refine tendsto_of_dense_of_eventually_lipschitz (F := fun i y => u i * y - y * u i)
-    (g := fun _ => 0) hD (K := 2 * ‖C‖₊) (L := 0) ?_ (LipschitzWith.const 0) hlim x
+    (g := fun _ => 0) hD (K := 2 * ‖C‖₊) ?_ continuousAt_const hlim
   filter_upwards [hC] with i hi
   refine LipschitzWith.of_dist_le_mul fun x y => ?_
   rw [dist_eq_norm, dist_eq_norm]

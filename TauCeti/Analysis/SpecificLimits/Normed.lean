@@ -203,24 +203,6 @@ theorem _root_.Filter.Tendsto.cauchySeq_series_smul_of_summable_norm_sub {R E : 
     rw [mul_comm]
     exact (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left (hzb _) (norm_nonneg _))
 
-/-- A sequence in a seminormed group whose norms are eventually bounded by `(n : ℝ)⁻¹` converges
-to `0`. -/
-theorem tendsto_zero_of_eventually_norm_le_inv {E : Type*} [SeminormedAddCommGroup E]
-    {g : ℕ → E} (hg : ∀ᶠ n in Filter.atTop, ‖g n‖ ≤ (n : ℝ)⁻¹) :
-    Filter.Tendsto g Filter.atTop (nhds 0) := by
-  rw [tendsto_zero_iff_norm_tendsto_zero]
-  exact squeeze_zero' (Filter.Eventually.of_forall fun _ ↦ norm_nonneg _) hg
-    (tendsto_inv_atTop_zero.comp tendsto_natCast_atTop_atTop)
-
-/-- A sequence in a seminormed group whose norms are eventually bounded by `((n + 1 : ℕ) : ℝ)⁻¹`
-converges to `0`. -/
-theorem tendsto_zero_of_eventually_norm_le_inv_add_one {E : Type*} [SeminormedAddCommGroup E]
-    {g : ℕ → E} (hg : ∀ᶠ n in Filter.atTop, ‖g n‖ ≤ ((n + 1 : ℕ) : ℝ)⁻¹) :
-    Filter.Tendsto g Filter.atTop (nhds 0) := by
-  rw [tendsto_zero_iff_norm_tendsto_zero]
-  exact squeeze_zero' (Filter.Eventually.of_forall fun _ ↦ norm_nonneg _) hg
-    (by simpa [one_div] using tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
-
 section SummationByParts
 
 open Finset

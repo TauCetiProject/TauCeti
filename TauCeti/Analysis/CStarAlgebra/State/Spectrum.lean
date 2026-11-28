@@ -126,21 +126,6 @@ theorem exists_positiveContinuousLinearMap_apply_eq_norm {a : M} (ha : 0 ≤ a) 
   let ⟨ω, h1, hn, hp⟩ := exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow ha
   ⟨ω, h1, hn, by simpa using hp 1⟩
 
-/-- On a nontrivial unital C⋆-algebra, every self-adjoint element `a` admits a state `ω` with
-`|(ω a).re| = ‖a‖`. -/
-theorem exists_positiveContinuousLinearMap_abs_re_apply_eq_norm {a : M}
-    (ha : IsSelfAdjoint a) :
-    ∃ ω : M →P[ℂ] ℂ, ω 1 = 1 ∧ ‖(ω : M →L[ℂ] ℂ)‖ = 1 ∧ |(ω a).re| = ‖a‖ := by
-  have : IsStarNormal a := ha.isStarNormal
-  rcases _root_.CStarAlgebra.norm_or_neg_norm_mem_spectrum a ha with hr | hr <;>
-    · obtain ⟨ω, h1, hω_norm, hω_pow⟩ :=
-        exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spectrum
-          (spectrum.algebraMap_mem ℂ hr)
-      refine ⟨ω, h1, hω_norm, ?_⟩
-      have hωa := hω_pow 0 1
-      simp only [pow_zero, one_mul, pow_one] at hωa
-      simp [hωa, abs_of_nonneg (norm_nonneg a)]
-
 /-- On a nontrivial unital C⋆-algebra, every normal element `a` admits a state `ω` with
 `‖ω a‖ = ‖a‖`: evaluate at a spectral value of maximal modulus. -/
 theorem exists_positiveContinuousLinearMap_norm_apply_eq_norm (a : M) [IsStarNormal a] :
@@ -152,6 +137,22 @@ theorem exists_positiveContinuousLinearMap_norm_apply_eq_norm (a : M) [IsStarNor
   refine ⟨ω, h1, hn, ?_⟩
   have hωa : ω a = z := by simpa using hp 0 1
   rw [hωa, ← coe_nnNorm, ← coe_nnNorm, hza]
+
+/-- On a nontrivial unital C⋆-algebra, every self-adjoint element `a` admits a state `ω` with
+`|(ω a).re| = ‖a‖`. -/
+theorem exists_positiveContinuousLinearMap_abs_re_apply_eq_norm {a : M}
+    (ha : IsSelfAdjoint a) :
+    ∃ ω : M →P[ℂ] ℂ, ω 1 = 1 ∧ ‖(ω : M →L[ℂ] ℂ)‖ = 1 ∧ |(ω a).re| = ‖a‖ := by
+  have : IsStarNormal a := ha.isStarNormal
+  obtain ⟨ω, h1, hω_norm, hωa⟩ := exists_positiveContinuousLinearMap_norm_apply_eq_norm a
+  refine ⟨ω, h1, hω_norm, ?_⟩
+  have him : (ω a).im = 0 := by
+    have hstar : star (ω a) = ω a := by rw [← map_star, ha.star_eq]
+    have h := congrArg Complex.im hstar
+    simp only [Complex.star_def, Complex.conj_im] at h
+    linarith
+  rwa [← Complex.re_add_im (ω a), him, Complex.ofReal_zero, zero_mul, add_zero,
+    Complex.norm_real, Real.norm_eq_abs] at hωa
 
 end Unital
 

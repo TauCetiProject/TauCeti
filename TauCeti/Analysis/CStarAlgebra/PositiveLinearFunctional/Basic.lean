@@ -45,9 +45,6 @@ consequences:
 
 ## Cauchy–Schwarz vanishing criteria
 
-* `PositiveContinuousLinearMap.map_eq_zero_of_map_star_mul_self_eq_zero`: a positive continuous
-  linear functional vanishing on `star a * a` vanishes on `a`.
-
 * `PositiveLinearMap.map_mul_eq_zero_of_map_star_mul_eq_zero` and
   `PositiveLinearMap.map_mul_eq_zero_of_map_mul_star_eq_zero`: if a positive linear functional
   vanishes on `star b * b` (resp. `b * star b`), it vanishes on `a * b` (resp. `b * a`).
@@ -165,12 +162,6 @@ theorem tendsto_mul_self_nhds_opNorm (ω : A →P[ℂ] ℂ) {l : Filter A}
   filter_upwards [hl.eventually_nonneg] with e he₀
   have hsq : 0 ≤ e * e := by simpa [he₀.isSelfAdjoint.star_eq] using star_mul_self_nonneg e
   exact Complex.norm_of_nonneg' (ω.map_nonneg hsq)
-
-/-- A positive functional vanishes at every element `a` with `ω (star a * a) = 0`, since
-`‖ω a‖ ^ 2 ≤ ‖ω‖ ‖ω (star a * a)‖`. -/
-theorem map_eq_zero_of_map_star_mul_self_eq_zero (ω : A →P[ℂ] ℂ) {a : A}
-    (ha : ω (star a * a) = 0) : ω a = 0 := by
-  simpa [ha] using ω.norm_map_sq_le_opNorm_mul a
 
 variable {B F : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]

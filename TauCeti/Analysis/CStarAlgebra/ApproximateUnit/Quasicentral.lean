@@ -16,7 +16,6 @@ import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional.Decomposition
 import TauCeti.Analysis.CStarAlgebra.Representation.Ideal
 import TauCeti.Analysis.LocallyConvex.Mazur
 import TauCeti.Analysis.Normed.Ring.ApproximateUnit
-import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.Topology.Algebra.Module.WeakSpace.Basic
 
 /-!
@@ -477,9 +476,11 @@ theorem exists_seq_quasicentral_approximateUnit [TopologicalSpace.SeparableSpace
       (.of_forall fun n => (seq n).property.2.le) <| by
       rintro _ ⟨k, rfl⟩
       refine tendsto_sub_nhds_zero_iff.mp <| (tendsto_add_atTop_iff_nat 1).mp <|
-        TauCeti.tendsto_zero_of_eventually_norm_le_inv_add_one ?_
+        squeeze_zero_norm' ?_
+          (by simpa [one_div] using tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
       filter_upwards [Filter.eventually_ge_atTop k] with m hm
-      exact (hf_approx m (seq m).val (seq m).property.1 (seq m).property.2 k hm).le
+      simpa only [Nat.cast_add, Nat.cast_one] using
+        (hf_approx m (seq m).val (seq m).property.1 (seq m).property.2 k hm).le
   have hu_mul_right : ∀ a ∈ I, Tendsto (fun n => u n * a) atTop (𝓝 a) := fun a ha =>
     ((continuous_subtypeVal.tendsto _).comp
       (hS_lim ⟨a, I.mem_toNonUnitalStarSubalgebra.mpr ha⟩)).congr fun n => by
@@ -500,9 +501,11 @@ theorem exists_seq_quasicentral_approximateUnit [TopologicalSpace.SeparableSpace
       (.of_forall fun n => (hu_prop n).2.2.le) <| by
       rintro _ ⟨k, rfl⟩
       refine (tendsto_add_atTop_iff_nat 1).mp <|
-        TauCeti.tendsto_zero_of_eventually_norm_le_inv_add_one ?_
+        squeeze_zero_norm' ?_
+          (by simpa [one_div] using tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
       filter_upwards [Filter.eventually_ge_atTop k] with m hm
-      exact (hf_comm m (seq m).val (seq m).property.1 (seq m).property.2 k hm).le
+      simpa only [Nat.cast_add, Nat.cast_one] using
+        (hf_comm m (seq m).val (seq m).property.1 (seq m).property.2 k hm).le
   exact ⟨u, hu_mono, hu_prop, hu_mul_right, hu_mul_left, hu_comm⟩
 
 end Quasicentral
