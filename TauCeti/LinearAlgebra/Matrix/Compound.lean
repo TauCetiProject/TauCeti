@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.LinearAlgebra.ExteriorPower.Basis
 public import TauCeti.LinearAlgebra.Matrix.Minor
 public import TauCeti.Order.Hom.PowersetCard
@@ -49,6 +50,8 @@ finite free module `F`, `LinearMap.det φ` multiplies `⋀[R]^r F` into
   the exterior-power bases.
 * `Matrix.compound_mul`: the Cauchy–Binet formula
   `(A * B).compound r = A.compound r * B.compound r`.
+* `Matrix.GeneralLinearGroup.compound`: the `r`-th compound matrix as a homomorphism on
+  `GL ι R`.
 * `Matrix.compound_zero`, `Matrix.compound_one`, `Matrix.compound_diagonal`,
   `Matrix.compound_zero_right`, `Matrix.compound_ofSingleton`, `Matrix.compound_two_eq_pairMinor`,
   `Matrix.compound_card`: the zero, unit, and diagonal rules and the cases `r = 0, 1, 2, #ι`.
@@ -334,6 +337,58 @@ example : IsEmpty (Set.powersetCard (Fin 2) 3) :=
 end Compound
 
 end Matrix
+
+namespace Matrix.GeneralLinearGroup
+
+/-- The `r`-th compound matrix of an invertible square matrix `A : GL ι R`, as an element of
+`GL (Set.powersetCard ι r) R`. -/
+@[expose]
+noncomputable def compound {R ι : Type*} [CommRing R] [Fintype ι] [LinearOrder ι]
+    (A : GL ι R) (r : ℕ) : GL (Set.powersetCard ι r) R where
+  val := (A : Matrix ι ι R).compound r
+  inv := ((A⁻¹ : GL ι R) : Matrix ι ι R).compound r
+  val_inv := by rw [← Matrix.compound_mul, Units.mul_inv, Matrix.compound_one]
+  inv_val := by rw [← Matrix.compound_mul, Units.inv_mul, Matrix.compound_one]
+
+/-- Coercion of `A.compound r` as a unit back to `Matrix (Set.powersetCard ι r) ...` equals
+`(A : Matrix ι ι R).compound r`. -/
+@[simp]
+theorem val_compound {R ι : Type*} [CommRing R] [Fintype ι] [LinearOrder ι]
+    (A : GL ι R) (r : ℕ) :
+    ((A.compound r : GL (Set.powersetCard ι r) R) :
+      Matrix (Set.powersetCard ι r) (Set.powersetCard ι r) R) =
+      (A : Matrix ι ι R).compound r :=
+  rfl
+
+/-- The `r`-th compound matrix of the identity in `GL ι R` is the identity. -/
+@[simp]
+theorem compound_one {R ι : Type*} [CommRing R] [Fintype ι] [LinearOrder ι]
+    (r : ℕ) : (1 : GL ι R).compound r = 1 :=
+  Units.ext <| by rw [val_compound, Units.val_one, Units.val_one, Matrix.compound_one]
+
+/-- The `r`-th compound matrix preserves multiplication in `GL ι R` (Cauchy–Binet). -/
+theorem compound_mul {R ι : Type*} [CommRing R] [Fintype ι] [LinearOrder ι]
+    (A B : GL ι R) (r : ℕ) :
+    (A * B).compound r = A.compound r * B.compound r :=
+  Units.ext <| by
+    rw [val_compound, Units.val_mul, Matrix.compound_mul, Units.val_mul, val_compound,
+      val_compound]
+
+/-- The `r`-th compound matrix commutes with inversion in `GL ι R`. -/
+@[simp]
+theorem compound_inv {R ι : Type*} [CommRing R] [Fintype ι] [LinearOrder ι]
+    (A : GL ι R) (r : ℕ) :
+    A⁻¹.compound r = (A.compound r)⁻¹ :=
+  (inv_eq_of_mul_eq_one_left <| by rw [← compound_mul, inv_mul_cancel, compound_one]).symm
+
+/-- The `0`-th compound matrix of any invertible matrix is `1`. -/
+@[simp]
+theorem compound_zero_right {R ι : Type*} [CommRing R] [Fintype ι] [LinearOrder ι]
+    (A : GL ι R) :
+    A.compound 0 = 1 :=
+  Units.ext <| by rw [val_compound, Units.val_one, Matrix.compound_zero_right]
+
+end Matrix.GeneralLinearGroup
 
 namespace Module.Basis
 
