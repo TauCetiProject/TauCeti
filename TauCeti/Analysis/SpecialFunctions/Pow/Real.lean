@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Quasiconvex
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.Real.Sqrt
@@ -80,6 +81,9 @@ Likewise, if `n ^ b ≤ C * n ^ a` for every natural number `n`, then `b ≤ a`;
 power-law exponent is read off from testing an inequality on `n` copies of one vector.
 If `c ^ e` is bounded for all `c > 0`, then `e = 0`; this is how a scaling argument pins an
 exponent.
+
+On `(0, ∞)` every real power `u ↦ u ^ t` is quasiconvex, being monotone for `t ≥ 0` and antitone
+for `t ≤ 0`.
 
 A two-sided real exponential with positive decay rate is little-o of every real power of
 `|x|` outside compact subsets of the real line.
@@ -193,6 +197,7 @@ with the corresponding integral of `q`-th powers.
   `x ≤ √B * d ^ (β - 1)` for small `d`.
 * `Real.le_rpow_inv_mul_of_rpow_le`: `x ≤ r ^ r⁻¹ n` when `x ^ r ≤ (r - 1) y ^ r + z ^ r` with
   `1 ≤ r` and `0 ≤ y, z ≤ n`, the step turning an `Lʳ` trace inequality into a linear bound.
+* `Real.quasiconvexOn_rpow_Ioi`: `u ↦ u ^ t` is quasiconvex on `(0, ∞)`.
 * `Finsupp.prod_pow_rpow`: `(μ.prod (c · ^ ·)) ^ a = μ.prod fun i k ↦ (c i ^ a) ^ k` for `c`
   nonnegative on `μ.support`.
 -/
@@ -719,6 +724,14 @@ theorem le_rpow_inv_mul_of_rpow_le {r x y z n : ℝ} (hr : 1 ≤ r) (hy : 0 ≤ 
   rw [← rpow_le_rpow_iff hx (by positivity) hr0, mul_rpow (by positivity) hn,
     rpow_inv_rpow hr0.le hr0.ne']
   nlinarith [sub_nonneg.2 hr]
+
+/-- On `(0, ∞)`, every real power `u ↦ u ^ t` is quasiconvex: monotone for `t ≥ 0` and antitone
+for `t ≤ 0`. -/
+theorem quasiconvexOn_rpow_Ioi (t : ℝ) : QuasiconvexOn ℝ (Set.Ioi 0) fun u : ℝ ↦ u ^ t := by
+  rcases le_total 0 t with ht | ht
+  · exact ((monotoneOn_rpow_Ici_of_exponent_nonneg ht).mono Set.Ioi_subset_Ici_self).quasiconvexOn
+      (convex_Ioi 0)
+  · exact (antitoneOn_rpow_Ioi_of_exponent_nonpos ht).quasiconvexOn (convex_Ioi 0)
 
 end Real
 
