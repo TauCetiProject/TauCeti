@@ -80,6 +80,12 @@ lemma actionCategory_map_obj_back {U V : C} (f : V ⟶ U)
     (((actionCategory G X).map f.op.toLoc).toFunctor.obj M).back = f ≫ M.back :=
   ActionCategory.back_map_obj _ _ M
 
+/-- Restricting the action object corresponding to `x` gives the action object of `f ≫ x`. -/
+lemma actionCategory_map_obj_objEquiv {U V : C} {X : C} [ModObj G X] (x : U ⟶ X) (f : V ⟶ U) :
+    ((actionCategory G X).map f.op.toLoc).toFunctor.obj (ActionCategory.objEquiv _ _ x) =
+      ActionCategory.objEquiv (V ⟶ G) (V ⟶ X) (f ≫ x) :=
+  ActionCategory.map_obj _ _ x
+
 /-- An arrow between the restrictions along `p` and `q` is restricted by
 precomposing its label. -/
 @[simp]

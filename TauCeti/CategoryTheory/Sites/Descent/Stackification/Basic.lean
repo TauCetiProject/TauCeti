@@ -400,6 +400,41 @@ instance instCategory : Category (Obj.{w} J F U) where
       comp_app _ _ a b d w hb (hb.symm.trans w),
       comp_app _ _ b c d (hb.symm.trans w) (hb.symm.trans hc) (hc.symm.trans w), Category.assoc]
 
+/-- When the fibres of `F` are groupoids, the category of covering descent data is
+a groupoid (Stacks, Lemma 02ZP). -/
+instance isGroupoid [hF : ∀ T : C, IsGroupoid (F.obj (.mk (op T)))] :
+    IsGroupoid (Obj.{w} J F U) := by
+  constructor
+  intro A B φ
+  let ψ : B ⟶ A := Hom.ofApp (fun _ _ _ b a w ↦ inv (Hom.app φ a b w.symm))
+    (by
+      intro T i j b a w T' g gb ga hgb hga
+      simp only [← inv_pullHom, Hom.pullHom_app])
+    (by
+      intro T i i' j j' b b' a a' w w' hb
+      apply (cancel_epi (Hom.app φ a b w.symm)).mp
+      apply (cancel_mono (Hom.app φ a' b' w'.symm)).mp
+      simp only [Category.assoc, IsIso.inv_hom_id, Category.comp_id, IsIso.hom_inv_id_assoc]
+      rw [Hom.app_comp_descentData_hom φ (b ≫ B.f i) a b b' w.symm rfl hb.symm,
+        Hom.descentData_hom_comp_app φ (b ≫ B.f i) a a' b' w.symm
+          (w'.symm.trans hb.symm) w'.symm])
+  have hψ {T : C} {i : A.ι} {j : B.ι} (a : T ⟶ A.X i) (b : T ⟶ B.X j)
+      (w : a ≫ A.f i = b ≫ B.f j) : Hom.app ψ b a w.symm = inv (Hom.app φ a b w) :=
+    Hom.app_ofApp _ _ _ b a w.symm
+  refine ⟨ψ, ?_, ?_⟩
+  · refine Hom.ext_of_sieve _ B.mem fun T i i' a a' w ha ↦ ?_
+    obtain ⟨j, b, hb⟩ := (Sieve.mem_ofArrows_iff _ _ _).1 ha
+    -- Transport to the source section where the map and its local inverse cancel.
+    rw [comp_app φ ψ a b a' w hb (hb.symm.trans w), id_app,
+      ← Hom.descentData_hom_comp_app φ (a ≫ A.f i) a a' b rfl w.symm (w.symm.trans hb),
+      Category.assoc, hψ a' b (w.symm.trans hb), IsIso.hom_inv_id, Category.comp_id]
+  · refine Hom.ext_of_sieve _ A.mem fun T j j' b b' w hb ↦ ?_
+    obtain ⟨i, a, ha⟩ := (Sieve.mem_ofArrows_iff _ _ _).1 hb
+    -- Transport the second evaluation to the same target section before cancelling.
+    rw [comp_app ψ φ b a b' w ha (ha.symm.trans w), id_app,
+      ← Hom.app_comp_descentData_hom φ (b ≫ B.f j) a b b' ha.symm rfl w.symm,
+      ← Category.assoc, hψ a b ha.symm, IsIso.inv_hom_id, Category.id_comp]
+
 end Obj
 
 end TauCeti.Stack.Stackification
