@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
-public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
+public import TauCeti.Analysis.Asymptotics.Expansion.Basic
 public import TauCeti.Analysis.Calculus.IteratedDeriv.Within
 import TauCeti.Analysis.Calculus.Deriv.InvPow
 import TauCeti.Analysis.MellinTransform.Basic

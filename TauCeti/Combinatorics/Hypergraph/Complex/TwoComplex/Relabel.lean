@@ -157,4 +157,27 @@ theorem adj_relabel (X : TwoComplex V) (e : V ≃ W) (u v : W) :
 theorem adj_relabel_apply (X : TwoComplex V) (e : V ≃ W) (u v : V) :
     (X.relabel e).Adj (e u) (e v) ↔ X.Adj u v := by simp
 
+/-- Evaluating an unoriented edge function on a relabelled complex pulls back along the
+bijection. -/
+theorem edgeEval_relabel {M : Type*} [Zero M] (X : TwoComplex V) (e : V ≃ W)
+    {f : W → W → M} (hf : ∀ u v, (X.relabel e).Adj u v → f v u = f u v) (s : Finset W) :
+    (X.relabel e).edgeEval f s =
+      X.edgeEval (fun u v => f (e u) (e v)) (s.map e.symm.toEmbedding) := by
+  by_cases hs : s ∈ (X.relabel e).edges
+  · obtain ⟨u, v, huv, hu, hv⟩ := (X.relabel e).exists_vertices_of_mem_edges hs
+    rw [(X.relabel e).edgeEval_of_mem_edges hf hs huv hu hv,
+      X.edgeEval_of_mem_edges
+        (fun a b hab => hf (e a) (e b) ((X.adj_relabel_apply e a b).mpr hab))
+        ((X.mem_edges_relabel e s).mp hs) (e.symm.injective.ne huv)
+        (Finset.mem_map_of_mem _ hu) (Finset.mem_map_of_mem _ hv)]
+    simp
+  · rw [edgeEval_of_notMem_edges _ _ hs,
+      edgeEval_of_notMem_edges _ _ (mt (X.mem_edges_relabel e s).mpr hs)]
+
+theorem edgeEval_relabel_map {M : Type*} [Zero M] (X : TwoComplex V) (e : V ≃ W)
+    {f : W → W → M} (hf : ∀ u v, (X.relabel e).Adj u v → f v u = f u v) (s : Finset V) :
+    (X.relabel e).edgeEval f (s.map e.toEmbedding) = X.edgeEval (fun u v => f (e u) (e v)) s := by
+  rw [X.edgeEval_relabel e hf]
+  congr 1; ext; simp
+
 end TauCeti.TwoComplex

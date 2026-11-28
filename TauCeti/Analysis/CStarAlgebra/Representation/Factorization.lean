@@ -35,17 +35,25 @@ variable {A H : Type*} [NonUnitalCStarAlgebra A]
 private def repActionCLM (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) : A →L[ℂ] H →L[ℂ] H :=
   LinearMap.mkContinuous ⟨⟨⇑π, map_add π⟩, map_smul π⟩ 1 fun a => by simpa using norm_apply_le π a
 
+private lemma essentialSubmodule_repActionCLM (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) :
+    (repActionCLM π).essentialSubmodule = π.essentialSubspace := by
+  rw [ContinuousLinearMap.essentialSubmodule_eq_topologicalClosure_span,
+    π.essentialSubspace_eq_topologicalClosure_span]
+  congr 2
+  ext z
+  simp [repActionCLM, Prod.exists]
+
 /-- **Cohen–Hewitt factorization for nondegenerate representations.** Every `ξ : H` factors as
 `ξ = π a η` with `‖a‖ ≤ 1` and `η` arbitrarily close to `ξ`. -/
 theorem IsNondegenerate.exists_apply_eq_of_pos {π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
     (hπ : π.IsNondegenerate) (ξ : H) {ε : ℝ} (hε : 0 < ε) :
     ∃ a η, ‖a‖ ≤ 1 ∧ ‖η - ξ‖ < ε ∧ π a η = ξ := by
-  have htop : (Submodule.span ℂ (⋃ a, Set.range (repActionCLM π a))).topologicalClosure = ⊤ := by
-    simpa [repActionCLM] using
-      Submodule.dense_iff_topologicalClosure_eq_top.mp (isNondegenerate_iff_dense.mp hπ)
+  have hx : ξ ∈ (repActionCLM π).essentialSubmodule := by
+    rw [essentialSubmodule_repActionCLM, π.isNondegenerate_iff_essentialSubspace_eq_top.mp hπ]
+    exact Submodule.mem_top
   obtain ⟨a, η, ha, -, hη, hfac⟩ :=
-    (repActionCLM π).exists_apply_eq_of_mem_topologicalClosure_span_iUnion
-      (fun a b v => by simp [repActionCLM, mul_apply_eq_comp]) (htop.symm ▸ Submodule.mem_top) hε
+    (repActionCLM π).exists_norm_le_one_apply_eq_of_mem_essentialSubmodule
+      (fun a b v => by simp [repActionCLM, mul_apply_eq_comp]) hx hε
   exact ⟨a, η, ha, hη, hfac⟩
 
 /-- Every `ξ : H` factors as `ξ = π a η` when `π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)` is nondegenerate. -/
@@ -57,15 +65,8 @@ theorem IsNondegenerate.exists_apply_eq {π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H
 set, without taking linear spans or closures. -/
 theorem coe_essentialSubspace_eq_iUnion_range (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) :
     (π.essentialSubspace : Set H) = ⋃ a, Set.range (π a) := by
-  have hcl : π.essentialSubspace = (Submodule.span ℂ (⋃ a, Set.range (π a))).topologicalClosure :=
-    le_antisymm
-      ((π.essentialSubspace_le_iff (Submodule.isClosed_topologicalClosure _)).2 fun a ξ =>
-        Submodule.le_topologicalClosure _ <| Submodule.subset_span <| Set.mem_iUnion.2 ⟨a, ξ, rfl⟩)
-      (Submodule.topologicalClosure_minimal _ (Submodule.span_le.2 fun _ hx =>
-        let ⟨a, ξ, h⟩ := Set.mem_iUnion.1 hx; h ▸ π.apply_mem_essentialSubspace a ξ)
-        π.isClosed_essentialSubspace)
-  rw [hcl]
-  exact (repActionCLM π).coe_topologicalClosure_span_iUnion_range_eq fun a b v => by
+  rw [← essentialSubmodule_repActionCLM]
+  exact (repActionCLM π).coe_essentialSubmodule_eq_iUnion_range fun a b v => by
     simp [repActionCLM, mul_apply_eq_comp]
 
 /-- A Hilbert-space representation `π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)` is nondegenerate if and only if

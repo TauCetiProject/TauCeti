@@ -26,11 +26,15 @@ coefficients that is `O(hᵐ)` as `h → 0` has no terms of degree below `m`.
 ## Main results
 
 * `Polynomial.isBigO_eval_of_X_pow_dvd`: if `X ^ N ∣ p`, then `p.eval ∘ w = O(w ^ N)`.
+* `Polynomial.isBigO_eval_pow_of_coeff_eq_zero`: if `p` has zero coefficients below degree `N`,
+  then `p.eval ∘ w = O(w ^ N)`.
 * `Polynomial.isBigO_eval_sub_eval_trunc_coe`: a polynomial has itself as expansion to every
   order.
 * `PowerSeries.isBigO_add_sub_eval_trunc_add`, `PowerSeries.isBigO_sum_sub_eval_trunc_sum`,
-  `PowerSeries.isBigO_mul_sub_eval_trunc_mul`: expansions add and multiply.
-* `PowerSeries.isBigO_one_of_isBigO_sub_eval_trunc`: a function with an expansion is bounded.
+  `PowerSeries.isBigO_eval_trunc_mul_eval_trunc_sub`, `PowerSeries.isBigO_mul_sub_eval_trunc_mul`:
+  expansions add and multiply.
+* `PowerSeries.isBigO_eval_trunc_one`, `PowerSeries.isBigO_one_of_isBigO_sub_eval_trunc`: a
+  truncation or function with an expansion is bounded.
 * `PowerSeries.isBigO_sub_eval_trunc_mk_of_isBigO_sub_sum_inv_pow`: an expansion
   `F = ∑_{q < K} f_q x^{-q} + O(x^{-K})` in inverse powers of `x` is an expansion along `w = x⁻¹`.
 * `TauCeti.eq_zero_of_isBigO_sum_pow_smul`: a polynomial `∑_{k < m} hᵏ bₖ` that is `O(hᵐ)` as
@@ -42,7 +46,7 @@ coefficients that is `O(hᵐ)` as `h → 0` has no terms of degree below `m`.
 public section
 
 open Filter Finset Asymptotics
-open scoped Topology
+open scoped Polynomial Topology
 
 variable {α 𝕜 : Type*} [NormedField 𝕜] {l : Filter α} {w : α → 𝕜}
 
@@ -55,12 +59,19 @@ theorem isBigO_eval_of_X_pow_dvd (hw : Tendsto w l (𝓝 0)) {N : ℕ} {p : 𝕜
   simpa using (isBigO_refl (fun i ↦ w i ^ N) l).mul
     (((q.continuous.tendsto 0).comp hw).isBigO_one 𝕜)
 
+/-- A polynomial whose coefficients below degree `N` vanish is `O(w ^ N)` when evaluated at
+`w → 0`. -/
+theorem isBigO_eval_pow_of_coeff_eq_zero (p : 𝕜[X]) {N : ℕ} (hw : Tendsto w l (𝓝 0))
+    (h : ∀ k < N, p.coeff k = 0) :
+    (fun i ↦ p.eval (w i)) =O[l] fun i ↦ w i ^ N :=
+  isBigO_eval_of_X_pow_dvd hw (X_pow_dvd_iff.mpr h)
+
 /-- A polynomial has itself as expansion to every order. -/
 theorem isBigO_eval_sub_eval_trunc_coe (hw : Tendsto w l (𝓝 0)) (N : ℕ) (p : 𝕜[X]) :
     (fun i ↦ p.eval (w i) - (PowerSeries.trunc N (p : PowerSeries 𝕜)).eval (w i)) =O[l]
       fun i ↦ w i ^ N := by
-  refine (isBigO_eval_of_X_pow_dvd hw (p := p - PowerSeries.trunc N (p : PowerSeries 𝕜))
-    (X_pow_dvd_iff.2 fun d hd ↦ ?_)).congr_left fun i ↦ by simp
+  refine ((p - PowerSeries.trunc N (p : PowerSeries 𝕜)).isBigO_eval_pow_of_coeff_eq_zero hw
+    fun d hd ↦ ?_).congr_left fun i ↦ by simp
   simp [PowerSeries.coeff_trunc, hd]
 
 end Polynomial
@@ -91,14 +102,18 @@ theorem isBigO_sum_sub_eval_trunc_sum {κ : Type*} (s : Finset κ) {F : κ → �
     exact isBigO_add_sub_eval_trunc_add (h k (mem_insert_self k s))
       (ih fun k' hk' ↦ h k' (mem_insert_of_mem hk'))
 
+/-- The `N`-th truncation `(trunc N P).eval (w x)` is `O(1)` when `w → 0`. -/
+theorem isBigO_eval_trunc_one (P : 𝕜⟦X⟧) (N : ℕ) (hw : Tendsto w l (𝓝 0)) :
+    (fun i ↦ (trunc N P).eval (w i)) =O[l] fun _ ↦ (1 : 𝕜) :=
+  (((trunc N P).continuous.tendsto 0).comp hw).isBigO_one 𝕜
+
 /-- A function with an expansion along `w → 0` is bounded. -/
 theorem isBigO_one_of_isBigO_sub_eval_trunc (hw : Tendsto w l (𝓝 0))
     (hF : (fun i ↦ F i - (trunc N P).eval (w i)) =O[l] fun i ↦ w i ^ N) :
     F =O[l] fun _ ↦ (1 : 𝕜) := by
   have hpow : (fun i ↦ w i ^ N) =O[l] fun _ ↦ (1 : 𝕜) :=
     (((continuous_pow N).tendsto 0).comp hw).isBigO_one 𝕜
-  exact ((hF.trans hpow).add ((((trunc N P).continuous.tendsto 0).comp hw).isBigO_one 𝕜))
-    |>.congr_left fun i ↦ by simp
+  exact ((hF.trans hpow).add (P.isBigO_eval_trunc_one N hw)).congr_left fun i ↦ by simp
 
 /-- An expansion `F = ∑_{q < K} f_q x^{-q} + O(x^{-K})` in inverse powers of `x`, in the component
 form used by `Asymptotics.HasAsymptoticExpansion` with the scale `fun q i ↦ (x i ^ q)⁻¹`, is an
@@ -109,23 +124,29 @@ theorem isBigO_sub_eval_trunc_mk_of_isBigO_sub_sum_inv_pow {x : α → 𝕜} {fs
   (hF.congr_left fun i ↦ by simp [eval_trunc, mul_comm]).congr_right
     fun i ↦ (inv_pow _ _).symm
 
-/-- If `F` and `G` have the expansions `P` and `Q` to order `N` along `w → 0`, then `F * G` has
-the expansion `P * Q`. -/
-theorem isBigO_mul_sub_eval_trunc_mul (hw : Tendsto w l (𝓝 0))
-    (hF : (fun i ↦ F i - (trunc N P).eval (w i)) =O[l] fun i ↦ w i ^ N)
-    (hG : (fun i ↦ G i - (trunc N Q).eval (w i)) =O[l] fun i ↦ w i ^ N) :
-    (fun i ↦ F i * G i - (trunc N (P * Q)).eval (w i)) =O[l] fun i ↦ w i ^ N := by
+/-- Multiplying two `N`-th truncations agrees with the `N`-th truncation of the product up to
+`O(w ^ N)` when `w → 0`. -/
+theorem isBigO_eval_trunc_mul_eval_trunc_sub (P Q : 𝕜⟦X⟧) (N : ℕ) (hw : Tendsto w l (𝓝 0)) :
+    (fun i ↦ (trunc N P).eval (w i) * (trunc N Q).eval (w i) -
+      (trunc N (P * Q)).eval (w i)) =O[l] fun i ↦ w i ^ N := by
   -- the product of the truncations agrees with the truncated product below degree `N`
   have hdvd : Polynomial.X ^ N ∣ trunc N P * trunc N Q - trunc N (P * Q) := by
     refine Polynomial.X_pow_dvd_iff.2 fun d hd ↦ ?_
     rw [Polynomial.coeff_sub, ← trunc_trunc_mul_trunc, coeff_trunc, ← Polynomial.coe_mul,
       Polynomial.coeff_coe]
     simp [hd]
+  refine (Polynomial.isBigO_eval_of_X_pow_dvd hw hdvd).congr_left fun i ↦ ?_
+  simp [Polynomial.eval_sub, Polynomial.eval_mul]
+
+/-- If `F` and `G` have the expansions `P` and `Q` to order `N` along `w → 0`, then `F * G` has
+the expansion `P * Q`. -/
+theorem isBigO_mul_sub_eval_trunc_mul (hw : Tendsto w l (𝓝 0))
+    (hF : (fun i ↦ F i - (trunc N P).eval (w i)) =O[l] fun i ↦ w i ^ N)
+    (hG : (fun i ↦ G i - (trunc N Q).eval (w i)) =O[l] fun i ↦ w i ^ N) :
+    (fun i ↦ F i * G i - (trunc N (P * Q)).eval (w i)) =O[l] fun i ↦ w i ^ N := by
   have h1 := (hF.mul (isBigO_one_of_isBigO_sub_eval_trunc hw hG)).congr_right fun i ↦ mul_one _
-  have h2 := (((((trunc N P).continuous.tendsto 0).comp hw).isBigO_one 𝕜).mul hG).congr_right
-    fun i ↦ one_mul _
-  refine ((h1.add h2).add (Polynomial.isBigO_eval_of_X_pow_dvd hw hdvd)).congr_left fun i ↦ ?_
-  simp only [Function.comp_apply, Polynomial.eval_sub, Polynomial.eval_mul]
+  have h2 := ((P.isBigO_eval_trunc_one N hw).mul hG).congr_right fun i ↦ one_mul _
+  refine ((h1.add h2).add (isBigO_eval_trunc_mul_eval_trunc_sub P Q N hw)).congr_left fun i ↦ ?_
   ring
 
 end PowerSeries

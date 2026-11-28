@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+import TauCeti.LinearAlgebra.Projection
 
 /-!
 # Products and norms of orthogonal projections
@@ -81,6 +82,11 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 
 ## Main results
 
+* `Submodule.starProjection_eq_iff_mem_orthogonal_inf`: nested projections of a vector agree
+  exactly when the vector is orthogonal to the complement of the smaller subspace in the larger.
+* `LinearMap.map_starProjection_eq_of_le_comap`: a semilinear map preserving the subspace and
+  its orthogonal complement commutes with the projections, by
+  `Submodule.projection_map_apply_of_mem`.
 * `Submodule.starProjection_starProjection_apply`: `P_U (P_U x) = P_U x`.
 * `Submodule.orthogonalProjectionOnto_comp_subtypeL`: restricting the orthogonal projection
   onto `U` to `U` itself gives the identity map.
@@ -206,6 +212,31 @@ open ContinuousLinearMap
 open scoped InnerProductSpace
 
 variable {𝕜 : Type*} {E : Type u} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+/-- For `Z ≤ V`, the projections of `x` onto `Z` and `V` agree exactly when `x` is orthogonal
+to the complement of `Z` inside `V`. -/
+theorem starProjection_eq_iff_mem_orthogonal_inf {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] {Z V : Submodule 𝕜 E}
+    [Z.HasOrthogonalProjection] [V.HasOrthogonalProjection]
+    (hZ : Z ≤ V) {x : E} :
+    Z.starProjection x = V.starProjection x ↔ x ∈ (V ⊓ Zᗮ)ᗮ := by
+  constructor
+  · intro h
+    have hv := Submodule.orthogonal_le (inf_le_left : V ⊓ Zᗮ ≤ V)
+      (V.sub_starProjection_mem_orthogonal x)
+    have hz := Submodule.orthogonal_le (inf_le_right : V ⊓ Zᗮ ≤ Zᗮ)
+      (Z.le_orthogonal_orthogonal (Z.starProjection_apply_mem x))
+    rw [h] at hz
+    simpa only [sub_add_cancel] using ((V ⊓ Zᗮ)ᗮ).add_mem hv hz
+  · intro hx
+    have hV : Z ⊔ (V ⊓ Zᗮ) = V := by
+      rw [inf_comm, Submodule.sup_orthogonal_inf_of_hasOrthogonalProjection hZ]
+    symm
+    refine V.eq_starProjection_of_mem_orthogonal (hZ (Z.starProjection_apply_mem x)) ?_
+    rw [← hV, ← Submodule.inf_orthogonal]
+    refine ⟨Z.sub_starProjection_mem_orthogonal x, Submodule.sub_mem _ hx ?_⟩
+    exact Submodule.orthogonal_le inf_le_right
+      (Z.le_orthogonal_orthogonal (Z.starProjection_apply_mem x))
+
 variable (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
 
 /-- An orthogonal projection is idempotent, evaluated at a vector: `P_U (P_U x) = P_U x`. -/
@@ -962,6 +993,20 @@ theorem exists_mem_sphere_inner_eq_zero (ι : F →ₗᵢ[ℝ] E)
 end LinearIsometry
 
 namespace LinearMap
+
+open scoped InnerProductSpace
+
+/-- A semilinear map taking `V` into `W` and `Vᗮ` into `Wᗮ` commutes with their orthogonal
+projections. -/
+theorem map_starProjection_eq_of_le_comap {𝕜 𝕝 E F : Type*} [RCLike 𝕜] [RCLike 𝕝]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕝 F]
+    {σ : 𝕜 →+* 𝕝} (f : E →ₛₗ[σ] F) {V : Submodule 𝕜 E} {W : Submodule 𝕝 F}
+    [V.HasOrthogonalProjection] [W.HasOrthogonalProjection]
+    (hV : V ≤ W.comap f) (hV' : Vᗮ ≤ Wᗮ.comap f) (x : E) :
+    f (V.starProjection x) = W.starProjection (f x) := by
+  rw [V.starProjection_apply_eq_isComplProjection, W.starProjection_apply_eq_isComplProjection]
+  exact (Submodule.projection_map_apply_of_mem V.isCompl_orthogonal W.isCompl_orthogonal
+    f.toAddMonoidHom (fun _ hx ↦ hV hx) (fun _ hx ↦ hV' hx) x).symm
 
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [AddCommMonoid F] [Module 𝕜 F]

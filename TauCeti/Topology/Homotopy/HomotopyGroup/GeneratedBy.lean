@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Category.CompactlyGenerated.Coreflection
+public import TauCeti.Topology.Convenient.Category
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
 
 /-!

@@ -49,7 +49,7 @@ theorem lintegral_image_spectralCoordinates (μ : Measure (SelfAdjointCoordinate
     (g : SelfAdjointCoordinates n 𝕜 → ℝ≥0∞) :
     (∫⁻ y in (unitaryConjCoordinates U ∘ spectralCoordinates) '' s, g y ∂μ) =
       ∫⁻ x in s, ENNReal.ofReal (|(spectralAngularFDeriv x.2).det| *
-        ∏ ij : FinStrictUpper n, |x.1 ij.val.2 - x.1 ij.val.1| ^ Module.finrank ℝ 𝕜) *
+        |(vandermonde x.1).det| ^ Module.finrank ℝ 𝕜) *
         g (unitaryConjCoordinates U (spectralCoordinates x)) ∂μ := by
   let T := (unitaryConjCoordinates U).toContinuousLinearMap
   have hF (x : SelfAdjointCoordinates n 𝕜) :=
@@ -73,7 +73,7 @@ theorem lintegral_image_spectralMatrix
     (g : selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) 𝕜) → ℝ≥0∞) :
     (∫⁻ A in spectralMatrix U '' s, g A ∂ν) =
       ∫⁻ x in s, ENNReal.ofReal (|(spectralAngularFDeriv x.2).det| *
-        ∏ ij : FinStrictUpper n, |x.1 ij.val.2 - x.1 ij.val.1| ^ Module.finrank ℝ 𝕜) *
+        |(vandermonde x.1).det| ^ Module.finrank ℝ 𝕜) *
         g (spectralMatrix U x) ∂(ν.map selfAdjointCoordinates) := by
   let c := selfAdjointCoordinates (n := n) (𝕜 := 𝕜)
   let e := c.toHomeomorph.toMeasurableEquiv

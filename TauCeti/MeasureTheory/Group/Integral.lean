@@ -75,6 +75,8 @@ need to be measurable.
   convolution kernel.
 * `TauCeti.setIntegral_smul_set`, `TauCeti.integrableOn_smul_set_iff`: integrals and
   integrability of an invariant integrand over a translated set.
+* `TauCeti.setLIntegral_Ioc_comp_sub_le`: translating by `s ∈ [c, d]` bounds
+  `∫⁻ t in Ioc a b, g (t - s) ∂μ` by `∫⁻ u in Icc (a - d) (b - c), g u ∂μ`.
 * `TauCeti.integral_eq_zero_of_mul_left_eq_smul`, `TauCeti.integral_eq_zero_of_add_left_eq_smul`:
   a function whose left translate by some `g` is `c • f` with `c ≠ 1` has integral `0` against a
   left-invariant measure.
@@ -323,6 +325,20 @@ theorem integral_comp_add_sub_mul_eq {w φ : G → 𝕜} (hw : Integrable w μ) 
         ring
 
 end Translation
+
+/-- Translating by `s ∈ [c, d]` bounds the set Lebesgue integral of `t ↦ g (t - s)` over
+`(a, b]` by the integral of `g` over `[a - d, b - c]`, for any right-invariant measure on an
+ordered additive commutative group. -/
+theorem setLIntegral_Ioc_comp_sub_le {G : Type*} [AddCommGroup G] [PartialOrder G]
+    [IsOrderedAddMonoid G] [MeasurableSpace G] [MeasurableAdd G] {μ : Measure G}
+    [μ.IsAddRightInvariant] (g : G → ℝ≥0∞) {a b c d s : G} (hs : s ∈ Set.Icc c d) :
+    ∫⁻ t in Set.Ioc a b, g (t - s) ∂μ ≤ ∫⁻ u in Set.Icc (a - d) (b - c), g u ∂μ := by
+  have hsub : Set.Ioc a b ⊆ (fun t : G ↦ t - s) ⁻¹' Set.Icc (a - d) (b - c) := by
+    intro t ht
+    exact ⟨sub_le_sub ht.1.le hs.2, sub_le_sub ht.2 hs.1⟩
+  refine (lintegral_mono_set hsub).trans_eq ?_
+  simpa [sub_eq_add_neg] using (measurePreserving_sub_right μ s).setLIntegral_comp_preimage_emb
+    (MeasurableEquiv.subRight s).measurableEmbedding g (Set.Icc (a - d) (b - c))
 
 section TranslationScaling
 

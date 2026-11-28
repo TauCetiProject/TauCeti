@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
-public import TauCeti.RingTheory.DiscreteValuationRing.IntegralClosure
+public import TauCeti.RingTheory.DiscreteValuationRing.IntegralClosure.Basic
 public import TauCeti.RingTheory.Valuation.Discrete.Normalize
 import Mathlib.RingTheory.Valuation.Integral
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic

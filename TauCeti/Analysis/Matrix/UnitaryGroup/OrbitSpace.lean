@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Kostant
+public import TauCeti.Analysis.Matrix.SelfAdjoint
 public import TauCeti.RepresentationTheory.OrbitSpace
 public import TauCeti.Topology.Algebra.UnitaryGroup
 
@@ -82,31 +83,36 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-! ### Unitary conjugation of Hermitian matrices -/
 
+open scoped TauCeti.SelfAdjointMatrix in
 variable (ι) in
 /-- The **conjugation representation** of `U(n)` on the Hermitian matrices, `H ↦ U H Uᴴ`. The trace
 pairing identifies it with the coadjoint representation
 (`TauCeti.unitaryCoadjointRepresentation_unitaryTracePairing`). -/
 def unitaryConjRepresentation :
     Representation ℝ (unitaryGroup ι ℂ) (selfAdjoint.submodule ℝ (Matrix ι ι ℂ)) where
-  toFun U :=
-    { toFun H := ⟨U * H * star (U : Matrix ι ι ℂ),
-        (H.property : IsSelfAdjoint (H : Matrix ι ι ℂ)).conjugate _⟩
-      map_add' H K := Subtype.ext (by simp [Matrix.mul_add, Matrix.add_mul])
-      map_smul' c H := Subtype.ext (by simp) }
-  map_one' := by ext H : 2; simp
-  map_mul' U V := by ext H : 2; simp [Matrix.mul_assoc]
+  toFun U := (UnitaryGroup.selfAdjointConj U).toLinearEquiv.toLinearMap
+  map_one' := by
+    ext H : 2
+    rw [UnitaryGroup.selfAdjointConj_one]
+    rfl
+  map_mul' U V := by
+    ext H : 2
+    exact congrArg Subtype.val (UnitaryGroup.selfAdjointConj_mul_apply U V H)
 
+open scoped TauCeti.SelfAdjointMatrix in
 @[simp]
 theorem coe_unitaryConjRepresentation_apply (U : unitaryGroup ι ℂ)
     (H : selfAdjoint.submodule ℝ (Matrix ι ι ℂ)) :
-    (unitaryConjRepresentation ι U H : Matrix ι ι ℂ) = U * H * star (U : Matrix ι ι ℂ) :=
-  (rfl)
+    (unitaryConjRepresentation ι U H : Matrix ι ι ℂ) = U * H * star (U : Matrix ι ι ℂ) := by
+  rw [star_eq_conjTranspose]
+  exact UnitaryGroup.coe_selfAdjointConj_apply U H
 
+open scoped TauCeti.SelfAdjointMatrix in
 /-- The conjugation action `(U, H) ↦ U H Uᴴ` is jointly continuous. -/
 theorem continuous_unitaryConjRepresentation :
     Continuous fun p : unitaryGroup ι ℂ × selfAdjoint.submodule ℝ (Matrix ι ι ℂ) ↦
       unitaryConjRepresentation ι p.1 p.2 :=
-  Continuous.subtype_mk (by fun_prop) _
+  UnitaryGroup.continuous_selfAdjointConj.comp continuous_swap
 
 /-- The orbit space of the conjugation action is Hausdorff. -/
 instance : T2Space (Quotient (unitaryConjRepresentation ι).orbitRel) :=
@@ -123,8 +129,12 @@ abbrev hermitianEigenvalues₀ (H : selfAdjoint.submodule ℝ (Matrix ι ι ℂ)
 @[simp]
 theorem hermitianEigenvalues₀_unitaryConjRepresentation (U : unitaryGroup ι ℂ)
     (H : selfAdjoint.submodule ℝ (Matrix ι ι ℂ)) :
-    hermitianEigenvalues₀ (unitaryConjRepresentation ι U H) = hermitianEigenvalues₀ H :=
-  IsHermitian.eigenvalues₀_mul_mul_star _ U.property _
+    hermitianEigenvalues₀ (unitaryConjRepresentation ι U H) = hermitianEigenvalues₀ H := by
+  have he := coe_unitaryConjRepresentation_apply U H
+  have hH : ((U : Matrix ι ι ℂ) * H * star (U : Matrix ι ι ℂ)).IsHermitian :=
+    he ▸ (unitaryConjRepresentation ι U H).property.isHermitian
+  exact (IsHermitian.eigenvalues₀_congr he _ hH).trans
+    (IsHermitian.eigenvalues₀_mul_mul_star _ U.property hH)
 
 /-- **Hermitian matrices are unitarily conjugate exactly when they have the same eigenvalues.** -/
 theorem unitaryConjRepresentation_orbitRel_iff {H K : selfAdjoint.submodule ℝ (Matrix ι ι ℂ)} :
@@ -134,7 +144,9 @@ theorem unitaryConjRepresentation_orbitRel_iff {H K : selfAdjoint.submodule ℝ 
   · obtain ⟨U, hU⟩ := (Representation.orbitRel_apply _).mp h
     exact hU ▸ hermitianEigenvalues₀_unitaryConjRepresentation U K
   obtain ⟨U, hU, hKH⟩ := IsHermitian.exists_unitary_conj_of_eigenvalues₀_eq _ _ h.symm
-  exact (Representation.orbitRel_apply _).mpr ⟨⟨U, hU⟩, Subtype.ext hKH.symm⟩
+  refine (Representation.orbitRel_apply _).mpr ⟨⟨U, hU⟩, Subtype.ext ?_⟩
+  rw [coe_unitaryConjRepresentation_apply]
+  exact hKH.symm
 
 variable (ι) in
 /-- The real diagonal matrix `diag(s)` of a list `s` indexed by `Fin n`, transported to the index
@@ -207,7 +219,13 @@ def unitaryConjOrbitEquivCoadjointOrbit :
   Quotient.congr (unitaryTracePairingEquiv ι).toEquiv fun H K ↦ by
     simp only [Representation.orbitRel_apply, LinearEquiv.coe_toEquiv,
       unitaryTracePairingEquiv_apply, unitaryCoadjointRepresentation_unitaryTracePairing]
-    exact exists_congr fun U ↦ (unitaryTracePairing_injective (ι := ι)).eq_iff.symm
+    refine exists_congr fun U ↦ ?_
+    have hU : unitaryConjRepresentation ι U K =
+        ⟨U * K * star (U : Matrix ι ι ℂ),
+          (K.property : IsSelfAdjoint (K : Matrix ι ι ℂ)).conjugate U⟩ :=
+      Subtype.ext (coe_unitaryConjRepresentation_apply U K)
+    rw [← hU]
+    exact (unitaryTracePairing_injective (ι := ι)).eq_iff.symm
 
 @[simp]
 theorem unitaryConjOrbitEquivCoadjointOrbit_mk (H : selfAdjoint.submodule ℝ (Matrix ι ι ℂ)) :

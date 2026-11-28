@@ -13,6 +13,7 @@ import Mathlib.Analysis.Meromorphic.RCLike
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import TauCeti.Analysis.Meromorphic.Conj
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.NumberTheory.NumberField.Discriminant.Basic
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 /-!
@@ -70,19 +71,24 @@ pole of `Λ_K` there), and has a simple pole at `s = 1` whose residue is Mathlib
   (Chapter VII, §5).
 * `TauCeti.LFunctions.completedDedekindZeta_one_sub`: the functional equation
   `Λ_K(1 - s) = Λ_K(s)` for every `s : ℂ`.
-* `TauCeti.LFunctions.dedekindZetaC_eq_mul_completedDedekindZeta`: away from `0` and `1`,
+* `TauCeti.LFunctions.dedekindZetaC_eq_mul_completedDedekindZeta`,
+  `TauCeti.LFunctions.dedekindZetaC_eventuallyEq_invDedekindZetaCompletionFactor_mul`: away from
+  `0` and `1` (and as punctured germs everywhere),
   `ζ_K(s) = |d_K| ^ (-s / 2) Γ_ℝ(s)⁻¹ ^ r₁ Γ_ℂ(s)⁻¹ ^ r₂ Λ_K(s)`.
 * `TauCeti.LFunctions.dedekindZetaC_eq_dedekindZeta`: `dedekindZetaC K` agrees with
   `NumberField.dedekindZeta K` on `Re s > 1`.
 * `TauCeti.LFunctions.eqOn_dedekindZetaC_of_eqOn_dedekindZeta`: uniqueness away from `1` of
   an analytic continuation agreeing with the Dedekind zeta series on `Re s > 1`.
 * `TauCeti.LFunctions.analyticAt_dedekindZetaC_iff`,
-  `TauCeti.LFunctions.meromorphicOrderAt_dedekindZetaC_one`: `ζ_K` is analytic exactly away
-  from `1`, where it has a simple pole.
+  `TauCeti.LFunctions.meromorphicOrderAt_dedekindZetaC_one`,
+  `TauCeti.LFunctions.dedekindZetaC_one`: `ζ_K` is analytic exactly away from `1`, where it has
+  a simple pole.
 * `TauCeti.LFunctions.meromorphicOrderAt_dedekindZetaC_ne_top`: `ζ_K` has finite order
   everywhere.
 * `TauCeti.LFunctions.tendsto_sub_one_mul_dedekindZetaC`: its residue at `s = 1` is
   `NumberField.dedekindZeta_residue K = 2 ^ r₁ (2π) ^ r₂ h R / (w √|d_K|)`.
+* `TauCeti.LFunctions.dedekindZetaC_conj`: reflection symmetry
+  `dedekindZetaC K (conj s) = conj (dedekindZetaC K s)`.
 
 ## References
 
@@ -459,11 +465,9 @@ theorem invDedekindZetaCompletionFactor_def (s : ℂ) :
 /-- The reciprocal of the Dedekind zeta completion factor is entire. -/
 @[fun_prop]
 theorem analyticAt_invDedekindZetaCompletionFactor (s : ℂ) :
-    AnalyticAt ℂ (invDedekindZetaCompletionFactor K) s := by
-  have hd : ((|discr K| : ℤ) : ℂ) ∈ slitPlane := by
-    rw [← ofReal_intCast]
-    exact ofReal_mem_slitPlane.mpr (by exact_mod_cast abs_pos.mpr (discr_ne_zero K))
-  exact ((AnalyticAt.cpow analyticAt_const (by fun_prop) hd).mul
+    AnalyticAt ℂ (invDedekindZetaCompletionFactor K) s :=
+  have hd : ((|discr K| : ℤ) : ℂ) ≠ 0 := by exact_mod_cast (abs_discr_pos K).ne'
+  (((by fun_prop : AnalyticAt ℂ (fun z : ℂ ↦ -z / 2) s).const_cpow (.inl hd)).mul
     ((differentiable_Gammaℝ_inv.analyticAt s).pow _)).mul
     ((differentiable_Gammaℂ_inv.analyticAt s).pow _)
 
@@ -630,6 +634,40 @@ theorem analyticAt_dedekindZetaC_iff {s : ℂ} : AnalyticAt ℂ (dedekindZetaC K
   have hnonneg := han.meromorphicOrderAt_nonneg
   rw [meromorphicOrderAt_dedekindZetaC_one] at hnonneg
   exact absurd hnonneg (by decide)
+
+/-- As a meromorphic normal form, `dedekindZetaC K` takes the canonical value `0` at its pole
+`s = 1`. -/
+@[simp]
+theorem dedekindZetaC_one : dedekindZetaC K 1 = 0 :=
+  not_not.mp <| (meromorphicNFOn_dedekindZetaC K (mem_univ 1)).meromorphicOrderAt_eq_zero_iff.not.mp
+    (by simp [meromorphicOrderAt_dedekindZetaC_one])
+
+/-- **Relation between `ζ_K` and `Λ_K`, as germs.** At every complex number `s` (including `0`
+and `1`), `dedekindZetaC K` has the punctured germ of
+`invDedekindZetaCompletionFactor K z * completedDedekindZeta K z`. -/
+theorem dedekindZetaC_eventuallyEq_invDedekindZetaCompletionFactor_mul (s : ℂ) :
+    dedekindZetaC K =ᶠ[𝓝[≠] s]
+      fun z ↦ invDedekindZetaCompletionFactor K z * completedDedekindZeta K z := by
+  rw [dedekindZetaC_eq_toMeromorphicNFOn]
+  exact (meromorphic_invDedekindZetaCompletionFactor_mul K).meromorphicOn
+    |>.toMeromorphicNFOn_eq_self_on_nhdsNE (mem_univ s)
+
+open scoped ComplexConjugate in
+/-- **Reflection symmetry of the continued Dedekind zeta function**:
+`dedekindZetaC K (conj s) = conj (dedekindZetaC K s)` for every `s : ℂ`, including at its
+pole `s = 1` where both sides are zero. -/
+@[simp]
+theorem dedekindZetaC_conj (s : ℂ) :
+    dedekindZetaC K (conj s) = conj (dedekindZetaC K s) := by
+  have h : conj ∘ dedekindZetaC K ∘ conj = dedekindZetaC K := by
+    apply eq_of_meromorphicNFOn_of_eqOn_halfPlane
+      (meromorphicNFOn_conj_conj_iff.mpr (by simpa using meromorphicNFOn_dedekindZetaC K))
+      (meromorphicNFOn_dedekindZetaC K) (σ := 1)
+    intro z hz
+    have hz' : 1 < (conj z).re := by simpa only [conj_re] using Set.mem_ofPred.mp hz
+    simp only [Function.comp_apply, dedekindZetaC_eq_dedekindZeta K hz',
+      dedekindZetaC_eq_dedekindZeta K hz, dedekindZeta_conj, conj_conj]
+  simpa only [Function.comp_apply, conj_conj] using (congrFun h (conj s)).symm
 
 end Continued
 

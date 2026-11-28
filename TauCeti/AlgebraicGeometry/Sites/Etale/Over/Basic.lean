@@ -251,6 +251,21 @@ end Hom
 
 namespace Etale
 
+/-- The identity of `S`, as an object of the small étale site of `S`, is a terminal object. -/
+noncomputable def mkIdTerminal (S : Scheme.{u}) : IsTerminal (Etale.mk (𝟙 S)) :=
+  IsTerminal.isTerminalOfObj (Etale.forget S) _ CategoryTheory.Over.mkIdTerminal
+
+/-- Pulling back a morphism in `S.Etale` whose underlying morphism of schemes is surjective yields
+a first projection whose underlying morphism of schemes is surjective. -/
+instance surjective_pullback_fst {S : Scheme.{u}} {U V W : S.Etale}
+    (f : U ⟶ W) (g : V ⟶ W) [Surjective g.left] :
+    Surjective (Limits.pullback.fst f g).left :=
+  MorphismProperty.of_isPullback (P := @Surjective)
+    (IsPullback.of_isLimit
+      (Limits.isLimitOfHasPullbackOfPreservesLimit
+        (Etale.forget S ⋙ CategoryTheory.Over.forget S) f g)).flip
+    ‹_›
+
 variable {S : Scheme.{u}} (U : S.Etale)
 
 /-- The slice category `CategoryTheory.Over U` of `S.Etale` over `U` is equivalent to the small

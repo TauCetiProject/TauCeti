@@ -18,7 +18,9 @@ point. This file gives their canonical equivalence and the resulting comparison 
 including its projection identities.
 
 The comparison lets statements about the special fibre be transported between its base-change
-presentation and the fibre over the closed point, while preserving both projections.
+presentation and the fibre over the closed point, while preserving both projections; in
+particular, the underlying set of the special fibre is the preimage of the closed point
+(`TauCeti.range_specialFiberι`).
 
 Every point of the spectrum of a local domain of Krull dimension at most one, such as a discrete
 valuation ring, is its generic point or its closed point, which coincide when the ring is a field
@@ -177,6 +179,24 @@ lemma specialFiberIsoFiberClosedPoint_inv_fiberToSpecResidueField :
   exact h
 
 end ClosedPoint
+
+/-- The special fibre of a scheme over a local ring is, as a set, the preimage of the closed
+point: the special fibre is isomorphic over `X` to Mathlib's fibre of `toBase` at the closed
+point. -/
+theorem range_specialFiberι (R : Type u) [CommRing R] [IsLocalRing R]
+    {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) :
+    Set.range (specialFiberι R toBase) = toBase ⁻¹' {closedPoint R} :=
+  calc Set.range (specialFiberι R toBase)
+      = Set.range (specialFiberι R toBase ∘
+          (specialFiberIsoFiberClosedPoint (.of R) toBase).inv) :=
+        ((specialFiberIsoFiberClosedPoint (.of R) toBase).inv.surjective.range_comp _).symm
+    _ = Set.range ((specialFiberIsoFiberClosedPoint (.of R) toBase).inv ≫
+          specialFiberι R toBase) :=
+        congrArg Set.range (funext fun x ↦ (Scheme.Hom.comp_apply _ _ x).symm)
+    _ = Set.range (toBase.fiberι (closedPoint R)) :=
+        congrArg (fun g : toBase.fiber (closedPoint R) ⟶ X ↦ Set.range g)
+          (specialFiberIsoFiberClosedPoint_inv_specialFiberι (.of R) toBase)
+    _ = toBase ⁻¹' {closedPoint R} := Scheme.Hom.range_fiberι toBase (closedPoint R)
 
 section DimensionLEOne
 

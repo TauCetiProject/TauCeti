@@ -581,14 +581,15 @@ end Prod
 
 section Span
 
-variable {R A V : Type*} [CommRing R] [Field A] [Algebra R A] [IsFractionRing R A]
+variable {R A V : Type*} [CommRing R] [CommRing A] [Algebra R A] [IsFractionRing R A]
 variable [AddCommGroup V] [Module R V] [Module A V] [IsScalarTower R A V]
 
 /-- The `R`-span of a finite set spanning `V` over `A` is a full lattice. In particular every
 finite-dimensional vector space contains a lattice, the span of a basis. -/
 theorem isFullLattice_span {s : Set V} (hs : s.Finite) (hspan : span A s = ⊤) :
     (span R s).IsFullLattice A where
-  __ := IsLattice.of_fg A ⟨hs.toFinset, by simp⟩
+  fg := ⟨hs.toFinset, by simp⟩
+  linearIndepOn _ _ := (LinearIndependent.iff_fractionRing R A).mp
   span_eq_top := by rw [span_span_of_tower, hspan]
 
 /-- The `R`-span of a finite `A`-basis `b` of `V` is a full `R`-lattice in `V` (over `A`). -/

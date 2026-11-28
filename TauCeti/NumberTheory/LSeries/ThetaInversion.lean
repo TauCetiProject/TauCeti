@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import TauCeti.NumberTheory.LSeries.GaussianTheta.Basic
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import Mathlib.NumberTheory.MulChar.Lemmas
+import TauCeti.Analysis.Fourier.ZMod
 import TauCeti.Analysis.SpecialFunctions.Gaussian.PoissonSummation
 import TauCeti.NumberTheory.LSeries.GaussianTheta.Poisson
 
@@ -27,7 +28,8 @@ H. L. Montgomery and R. C. Vaughan, *Multiplicative Number Theory I. Classical T
 
 The normalization of the absolute-value formula is that of `New.norm_thetaSeries_inv` in
 `grh/src/Lib/Analytic/DirichletTheta.lean` of `lsernau/grh-lean` (revision `72fead1`). The
-Poisson formula used here comes from Mathlib's even and odd Hurwitz theta kernels.
+Poisson formula uses `DirichletCharacter.gaussianTheta_eq_invDFT` and
+`DirichletCharacter.IsPrimitive.invDFT_apply`.
 -/
 
 public section
@@ -81,9 +83,7 @@ theorem IsPrimitive.norm_gaussianThetaSeries_inv {N : ℕ} [NeZero N]
   rw [χ.gaussianTheta_eq_invDFT hχ₀ j hpar ht]
   have hDFT (n : ℕ) : (𝓕⁻ (χ : ZMod N → ℂ)) n =
       ((N : ℂ)⁻¹ * gaussSum χ ZMod.stdAddChar) * conj (χ n) := by
-    rw [ZMod.invDFT_apply', hχ.fourierTransform_eq_inv_mul_gaussSum]
-    simp only [neg_neg, smul_eq_mul, ← MulChar.star_apply', Complex.star_def]
-    ring
+    rw [hχ.invDFT_apply, ← MulChar.star_apply', Complex.star_def, div_eq_inv_mul]
   let v := 1 / ((N : ℝ) * t)
   have hconj : (∑' n : ℕ+, conj (χ (n : ℕ)) * gaussianMonomial j (n * v)) =
       conj (∑' n : ℕ+, χ (n : ℕ) * gaussianMonomial j (n * v)) := by
