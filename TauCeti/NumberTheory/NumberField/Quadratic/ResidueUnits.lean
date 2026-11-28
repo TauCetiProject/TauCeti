@@ -8,8 +8,6 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Character
 public import TauCeti.NumberTheory.NumberField.ResidueUnits
 import TauCeti.NumberTheory.NumberField.Quadratic.TotalRamification
-import TauCeti.NumberTheory.RamificationInertia.Inert
-import TauCeti.NumberTheory.RamificationInertia.Splitting
 
 /-!
 # Residue units of a quadratic field modulo a rational integer
@@ -98,30 +96,25 @@ theorem card_units_quotient_span_natCast_of_prime (hK : finrank ℚ K = 2) (p : 
     refine mul_right_cancel₀ (pow_ne_zero (1 * 1) hp0) ?_
     push_cast
     linear_combination key
-  · -- `p` splits: two primes above `p`, each of residue degree `1`, hence of norm `p`.
-    have hg := (Multiquadratic.fundamentalDiscriminantChar_discr_eq_one_iff hK p).mp h
-    have key := card_units_quotient_span_mul_pow_eq (K := K) hK (k := 1) (fun 𝔭 ↦ ?_) hg
-    · rw [h]
-      refine mul_right_cancel₀ (pow_ne_zero (1 * 2) hp0) ?_
-      push_cast
-      linear_combination key
-    rw [← Ideal.pow_inertiaDeg p 𝔭.val,
-      (ramificationIdx_eq_one_and_inertiaDeg_eq_one_of_ncard_primesOver_eq_finrank _ 𝔭.val
-        (by rw [hg, NumberField.RingOfIntegers.rank, hK])).2]
-  · -- `p` is inert: one unramified prime above `p`, of residue degree `2`, hence of norm `p²`.
-    obtain ⟨hram, hg⟩ := (Multiquadratic.fundamentalDiscriminantChar_discr_eq_neg_one_iff hK p).mp h
-    have hunr : Algebra.IsUnramifiedIn (𝓞 K) (span {(p : ℤ)}) := by
-      by_contra hcon
-      exact hram (NumberField.mem_ramifiedPrimes_iff.mpr ⟨hp.out, hcon⟩)
-    have key := card_units_quotient_span_mul_pow_eq (K := K) hK (k := 2) (fun 𝔭 ↦ ?_) hg
-    · rw [h]
-      refine mul_right_cancel₀ (pow_ne_zero (2 * 1) hp0) ?_
-      push_cast
-      linear_combination key
-    rw [← Ideal.pow_inertiaDeg p 𝔭.val,
-      RamificationInertia.inertiaDeg_eq_finrank_of_ncard_primesOver_eq_one _ 𝔭.val hg
-        (Algebra.isUnramifiedIn_iff_forall_ramificationIdx_eq_one.mp hunr 𝔭.val inferInstance),
-      NumberField.RingOfIntegers.rank, hK]
+  · -- `p` splits: two primes above `p`, each of norm `p`.
+    have key := card_units_quotient_span_mul_pow_eq (K := K) hK (k := 1)
+      (fun 𝔭 ↦ by
+        rw [pow_one, Multiquadratic.absNorm_eq_of_fundamentalDiscriminantChar_discr_ne_neg_one hK
+          p 𝔭.val (by rw [h]; decide)])
+      ((Multiquadratic.fundamentalDiscriminantChar_discr_eq_one_iff hK p).mp h)
+    rw [h]
+    refine mul_right_cancel₀ (pow_ne_zero (1 * 2) hp0) ?_
+    push_cast
+    linear_combination key
+  · -- `p` is inert: one prime above `p`, of norm `p²`.
+    have key := card_units_quotient_span_mul_pow_eq (K := K) hK (k := 2)
+      (fun 𝔭 ↦ Multiquadratic.absNorm_eq_sq_of_fundamentalDiscriminantChar_discr_eq_neg_one hK p
+        𝔭.val h)
+      ((Multiquadratic.fundamentalDiscriminantChar_discr_eq_neg_one_iff hK p).mp h).2
+    rw [h]
+    refine mul_right_cancel₀ (pow_ne_zero (2 * 1) hp0) ?_
+    push_cast
+    linear_combination key
 
 /-- **Residue units modulo `f` in a quadratic field.** For a quadratic field `K` with
 discriminant `D` and a positive integer `f`,
