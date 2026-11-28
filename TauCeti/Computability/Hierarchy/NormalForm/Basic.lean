@@ -285,12 +285,19 @@ private theorem computableIn_fin_bool_iff_exists_code {Z : Set ℕ} {k : ℕ}
     refine (heval.comp henc).of_eq fun n => ?_
     simp [Part.bind_eq_bind, Part.bind_assoc, fun x => Part.eq_some_iff.2 (hc x)]
 
+-- Reinterpret matrix validity across an equal `depth + arity` sum.
+private theorem isValid_of_depth_eq {Z : Set ℕ} {p q : QuantifierPrefix} {k j : ℕ} {c : Code}
+    (hdepth : p.depth + k = q.depth + j) (h : (NormalFormCode.mk p k c).IsValid Z) :
+    (NormalFormCode.mk q j c).IsValid Z :=
+  fun l hl => h l (hl.trans hdepth.symm)
+
 -- Soundness for a quantifier-free matrix on `Fin k → ℕ`.
 private theorem isSigma_zero_matrix {Z : Set ℕ} {k : ℕ} {c : Code}
-    (hc : ∀ l : List ℕ, l.length = k → ∃ b : Bool, encode b ∈ Code.eval Z.oracle c (encode l)) :
-    IsSigma Z 0 (fun x : Fin k → ℕ => 1 ∈ Code.eval Z.oracle c (encode (List.ofFn x))) := by
-  have htot : ∀ x : Fin k → ℕ, ∃ b : Bool, encode b ∈ Code.eval Z.oracle c (encode (List.ofFn x)) :=
-    fun x => hc (List.ofFn x) List.length_ofFn
+    (hc : (NormalFormCode.mk .zero k c).IsValid Z) :
+    IsSigma Z 0 ((NormalFormCode.mk .zero k c).Holds Z) := by
+  have htot : ∀ x : Fin k → ℕ, ∃ b : Bool,
+      encode b ∈ Code.eval Z.oracle c (encode (List.ofFn x)) :=
+    fun x => (NormalFormCode.isValid_mk Z .zero k c).1 hc (List.ofFn x) (by simp)
   let b : (Fin k → ℕ) → Bool := fun x => (htot x).choose
   have hb_mem : ∀ x, encode (b x) ∈ Code.eval Z.oracle c (encode (List.ofFn x)) :=
     fun x => (htot x).choose_spec
@@ -298,97 +305,77 @@ private theorem isSigma_zero_matrix {Z : Set ℕ} {k : ℕ} {c : Code}
     computableIn_fin_bool_iff_exists_code.2 ⟨c, hb_mem⟩
   refine isSigma_zero_iff.2 ⟨b, hcomp, fun x => ?_⟩
   have hx := Part.eq_some_iff.2 (hb_mem x)
-  rw [hx, Part.mem_some_iff]
+  simp only [NormalFormCode.holds_mk, QuantifierPrefix.eval_zero, hx, Part.mem_some_iff]
   cases b x <;> simp
 
 -- Soundness at quantifier depth zero as a `QuantifierPrefix.zero` statement.
 private theorem isClass_zero_eval {Z : Set ℕ} {k : ℕ} {c : Code}
-    (hc : ∀ l : List ℕ, l.length = QuantifierPrefix.zero.depth + k →
-      ∃ b : Bool, encode b ∈ Code.eval Z.oracle c (encode l)) :
-    QuantifierPrefix.zero.IsClass Z (fun x : Fin k → ℕ =>
-      QuantifierPrefix.Eval .zero (fun l => 1 ∈ Code.eval Z.oracle c (encode l))
-        (List.ofFn x)) :=
-  QuantifierPrefix.isClass_zero.2 <|
-    (isSigma_zero_matrix fun l hl =>
-      hc l (by simp only [QuantifierPrefix.depth_zero]; omega)).of_eq fun _ => by simp
+    (hc : (NormalFormCode.mk .zero k c).IsValid Z) :
+    QuantifierPrefix.zero.IsClass Z ((NormalFormCode.mk .zero k c).Holds Z) :=
+  QuantifierPrefix.isClass_zero.2 (isSigma_zero_matrix hc)
 
 -- Shared quantifier-peeling step for `isClass_eval_of_valid`.
-private theorem isClass_eval_step {Z : Set ℕ} {p p' : QuantifierPrefix} {k : ℕ}
+private theorem isClass_eval_step {Z : Set ℕ} {p p' : QuantifierPrefix} {k : ℕ} {c : Code}
     {Q_op : (ℕ → Prop) → Prop}
     (hcongr : ∀ {f g : ℕ → Prop}, (∀ y, f y ↔ g y) → (Q_op f ↔ Q_op g))
     (hclosure : ∀ {S : (Fin k → ℕ) × ℕ → Prop}, p.IsClass Z S →
       p'.IsClass Z (fun x => Q_op fun y => S (x, y)))
     (heval : ∀ (R : List ℕ → Prop) (xs : List ℕ), p'.Eval R xs ↔ Q_op fun y => p.Eval R (y :: xs))
-    {R : List ℕ → Prop}
-    (hp : p.IsClass Z (fun v : Fin (k + 1) → ℕ => p.Eval R (List.ofFn v))) :
-    p'.IsClass Z (fun x : Fin k → ℕ => p'.Eval R (List.ofFn x)) :=
+    (hp : p.IsClass Z ((NormalFormCode.mk p (k + 1) c).Holds Z)) :
+    p'.IsClass Z ((NormalFormCode.mk p' k c).Holds Z) :=
   (hclosure (hp.preimage
-    (Primrec.fin_cons.comp Primrec.snd Primrec.fst).computableIn)).of_eq
-      fun x => (hcongr fun y => by simp [List.ofFn_succ]).trans (heval R (List.ofFn x)).symm
+    (Primrec.fin_cons.comp Primrec.snd Primrec.fst).computableIn)).of_eq fun x =>
+      (hcongr fun y => by simp [List.ofFn_succ]).trans
+        (heval (fun l => 1 ∈ Code.eval Z.oracle c (encode l)) (List.ofFn x)).symm
 
 -- Soundness by structural induction on the quantifier prefix.
 private theorem isClass_eval_of_valid {Z : Set ℕ} {p : QuantifierPrefix} {k : ℕ} {c : Code}
-    (hc : ∀ l : List ℕ, l.length = p.depth + k →
-      ∃ b : Bool, encode b ∈ Code.eval Z.oracle c (encode l)) :
-    p.IsClass Z (fun x : Fin k → ℕ =>
-      p.Eval (fun l => 1 ∈ Code.eval Z.oracle c (encode l)) (List.ofFn x)) := by
+    (hc : (NormalFormCode.mk p k c).IsValid Z) :
+    p.IsClass Z ((NormalFormCode.mk p k c).Holds Z) := by
   induction p using QuantifierPrefix.eval_induction generalizing k with
   | zero => exact isClass_zero_eval hc
   | sigma_zero =>
     exact isClass_eval_step exists_congr
       (fun hS => QuantifierPrefix.addExists_zero ▸ hS.exists_nat)
       QuantifierPrefix.eval_sigma_zero_iff_exists_eval_zero <|
-      isClass_zero_eval fun l hl =>
-        hc l (by
-          simp only [QuantifierPrefix.depth_sigma, QuantifierPrefix.depth_zero] at hl ⊢
-          omega)
+      isClass_zero_eval (isValid_of_depth_eq (by simp; omega) hc)
   | pi_zero =>
     exact isClass_eval_step forall_congr'
       (fun hS => QuantifierPrefix.addForall_zero ▸ hS.forall_nat)
       QuantifierPrefix.eval_pi_zero_iff_forall_eval_zero <|
-      isClass_zero_eval fun l hl =>
-        hc l (by
-          simp only [QuantifierPrefix.depth_pi, QuantifierPrefix.depth_zero] at hl ⊢
-          omega)
+      isClass_zero_eval (isValid_of_depth_eq (by simp; omega) hc)
   | sigma_succ n ih =>
     exact isClass_eval_step exists_congr
       (fun hS => QuantifierPrefix.addExists_pi n ▸ hS.exists_nat)
       (QuantifierPrefix.eval_sigma_succ n) <|
-      ih (k := k + 1) fun l hl =>
-        hc l (by simp only [QuantifierPrefix.depth_sigma, QuantifierPrefix.depth_pi] at hl ⊢; omega)
+      ih (isValid_of_depth_eq (by simp; omega) hc)
   | pi_succ n ih =>
     exact isClass_eval_step forall_congr'
       (fun hS => QuantifierPrefix.addForall_sigma n ▸ hS.forall_nat)
       (QuantifierPrefix.eval_pi_succ n) <|
-      ih (k := k + 1) fun l hl =>
-        hc l (by simp only [QuantifierPrefix.depth_sigma, QuantifierPrefix.depth_pi] at hl ⊢; omega)
+      ih (isValid_of_depth_eq (by simp; omega) hc)
 
 /-- **Soundness of displayed normal-form codes.** A valid normal-form code relative to `Z` defines
 a predicate in the arithmetical pointclass named by its quantifier prefix. -/
 theorem NormalFormCode.IsValid.isClass_holds {Z : Set ℕ} {nf : NormalFormCode}
     (h : nf.IsValid Z) : nf.quantifiers.IsClass Z (nf.Holds Z) :=
-  (isClass_eval_of_valid (NormalFormCode.isValid_iff.1 h)).of_eq fun _ =>
-    (QuantifierPrefix.eval_congr fun _ => NormalFormCode.matrixHolds_iff.symm).trans
-      (NormalFormCode.evalList_iff.symm.trans NormalFormCode.holds_iff.symm)
+  isClass_eval_of_valid h
 
 -- Completeness at quantifier depth zero: extract a matrix program from a `Z`-computable Boolean.
 private theorem exists_code_of_isClass_zero {Z : Set ℕ} {k : ℕ}
     {P : (Fin k → ℕ) → Prop} (hP : QuantifierPrefix.zero.IsClass Z P) :
-    ∃ c : Code,
-      (∀ l : List ℕ, l.length = QuantifierPrefix.zero.depth + k →
-        ∃ b : Bool, encode b ∈ Code.eval Z.oracle c (encode l)) ∧
-      ∀ x : Fin k → ℕ,
-        QuantifierPrefix.zero.Eval (fun l => 1 ∈ Code.eval Z.oracle c (encode l))
-          (List.ofFn x) ↔ P x := by
+    ∃ c : Code, (NormalFormCode.mk .zero k c).IsValid Z ∧
+      ∀ x : Fin k → ℕ, (NormalFormCode.mk .zero k c).EvalList Z (List.ofFn x) ↔ P x := by
   obtain ⟨b, hb, heq⟩ := isSigma_zero_iff.1 (QuantifierPrefix.isClass_zero.1 hP)
   obtain ⟨c, hc⟩ := computableIn_fin_bool_iff_exists_code.1 hb
-  refine ⟨c, fun l hl => ?_, fun x => ?_⟩
-  · have hlk : l.length = k := by simp only [QuantifierPrefix.depth_zero] at hl; omega
+  refine ⟨c, (NormalFormCode.isValid_mk Z .zero k c).2 fun l hl => ?_, fun x => ?_⟩
+  · have hlk : l.length = k := by simpa using hl
     let x : Fin k → ℕ := fun i => l[i]'(hlk ▸ i.isLt)
     have hof : List.ofFn x = l := List.ext_getElem (by simp [hlk]) fun i h₁ h₂ => by simp [x]
     exact ⟨b x, hof ▸ hc x⟩
   · have hx := Part.eq_some_iff.2 (hc x)
-    simp only [QuantifierPrefix.eval_zero, hx, Part.mem_some_iff, ← heq x]
+    simp only [NormalFormCode.evalList_mk, QuantifierPrefix.eval_zero, hx, Part.mem_some_iff,
+      ← heq x]
     cases b x <;> simp
 
 -- Shared quantifier-peeling step for `exists_code_of_isClass`.
@@ -401,53 +388,41 @@ private theorem exists_code_step {Z : Set ℕ} {p p' : QuantifierPrefix} {k : �
     {P : (Fin k → ℕ) → Prop} {q : (Fin k → ℕ) × ℕ → Prop}
     (hq : p.IsClass Z q) (heq : ∀ x, P x ↔ Q_op fun y => q (x, y))
     (hrec : ∀ {Q : (Fin (k + 1) → ℕ) → Prop}, p.IsClass Z Q →
-      ∃ c : Code,
-        (∀ l : List ℕ, l.length = p.depth + (k + 1) →
-          ∃ b : Bool, encode b ∈ Code.eval Z.oracle c (encode l)) ∧
+      ∃ c : Code, (NormalFormCode.mk p (k + 1) c).IsValid Z ∧
         ∀ v : Fin (k + 1) → ℕ,
-          p.Eval (fun l => 1 ∈ Code.eval Z.oracle c (encode l)) (List.ofFn v) ↔ Q v) :
-    ∃ c : Code,
-      (∀ l : List ℕ, l.length = p'.depth + k →
-        ∃ b : Bool, encode b ∈ Code.eval Z.oracle c (encode l)) ∧
-      ∀ x : Fin k → ℕ,
-        p'.Eval (fun l => 1 ∈ Code.eval Z.oracle c (encode l)) (List.ofFn x) ↔ P x := by
+          (NormalFormCode.mk p (k + 1) c).EvalList Z (List.ofFn v) ↔ Q v) :
+    ∃ c : Code, (NormalFormCode.mk p' k c).IsValid Z ∧
+      ∀ x : Fin k → ℕ, (NormalFormCode.mk p' k c).EvalList Z (List.ofFn x) ↔ P x := by
   obtain ⟨c, hval, hsem⟩ := hrec (hq.preimage
     (Primrec.fin_tail.pair (Primrec.fin_app.comp Primrec.id (Primrec.const 0))).computableIn)
-  refine ⟨c, fun l hl => hval l (by rw [hdepth] at hl; omega), fun x => ?_⟩
-  rw [heval, heq x]
+  refine ⟨c, isValid_of_depth_eq (by omega) hval, fun x => ?_⟩
+  rw [NormalFormCode.evalList_mk, heval, heq x]
   exact hcongr fun y => by simpa [List.ofFn_succ] using hsem (Fin.cons y x)
 
 -- Completeness by structural induction on the quantifier prefix.
 private theorem exists_code_of_isClass {Z : Set ℕ} {p : QuantifierPrefix} {k : ℕ}
     {P : (Fin k → ℕ) → Prop} (hP : p.IsClass Z P) :
-    ∃ c : Code,
-      (∀ l : List ℕ, l.length = p.depth + k →
-        ∃ b : Bool, encode b ∈ Code.eval Z.oracle c (encode l)) ∧
-      ∀ x : Fin k → ℕ,
-        p.Eval (fun l => 1 ∈ Code.eval Z.oracle c (encode l)) (List.ofFn x) ↔ P x := by
+    ∃ c : Code, (NormalFormCode.mk p k c).IsValid Z ∧
+      ∀ x : Fin k → ℕ, (NormalFormCode.mk p k c).EvalList Z (List.ofFn x) ↔ P x := by
   induction p using QuantifierPrefix.eval_induction generalizing k with
   | zero => exact exists_code_of_isClass_zero hP
   | sigma_zero =>
     obtain ⟨_, hq, heq⟩ := isSigma_succ_iff.1 (QuantifierPrefix.isClass_sigma.1 hP)
-    exact exists_code_step exists_congr
-      (by simp only [QuantifierPrefix.depth_sigma, QuantifierPrefix.depth_zero])
+    exact exists_code_step exists_congr (by simp)
       QuantifierPrefix.eval_sigma_zero_iff_exists_eval_zero
       (QuantifierPrefix.isClass_zero.2 (isPi_zero_iff.1 hq)) heq exists_code_of_isClass_zero
   | pi_zero =>
     obtain ⟨_, hq, heq⟩ := isPi_succ_iff.1 (QuantifierPrefix.isClass_pi.1 hP)
-    exact exists_code_step forall_congr'
-      (by simp only [QuantifierPrefix.depth_pi, QuantifierPrefix.depth_zero])
+    exact exists_code_step forall_congr' (by simp)
       QuantifierPrefix.eval_pi_zero_iff_forall_eval_zero
       (QuantifierPrefix.isClass_zero.2 hq) heq exists_code_of_isClass_zero
   | sigma_succ n ih =>
     obtain ⟨_, hq, heq⟩ := isSigma_succ_iff.1 (QuantifierPrefix.isClass_sigma.1 hP)
-    exact exists_code_step exists_congr (by simp only [QuantifierPrefix.depth_sigma,
-      QuantifierPrefix.depth_pi]) (QuantifierPrefix.eval_sigma_succ n)
+    exact exists_code_step exists_congr (by simp) (QuantifierPrefix.eval_sigma_succ n)
       (QuantifierPrefix.isClass_pi.2 hq) heq (ih (k := k + 1))
   | pi_succ n ih =>
     obtain ⟨_, hq, heq⟩ := isPi_succ_iff.1 (QuantifierPrefix.isClass_pi.1 hP)
-    exact exists_code_step forall_congr' (by simp only [QuantifierPrefix.depth_pi,
-      QuantifierPrefix.depth_sigma]) (QuantifierPrefix.eval_pi_succ n)
+    exact exists_code_step forall_congr' (by simp) (QuantifierPrefix.eval_pi_succ n)
       (QuantifierPrefix.isClass_sigma.2 hq) heq (ih (k := k + 1))
 
 /-- **Normal-form representation theorem for tuple predicates.** A predicate on `Fin k → ℕ` belongs
@@ -461,8 +436,7 @@ theorem isClass_iff_exists_normalFormCode {Z : Set ℕ} {p : QuantifierPrefix} {
   constructor
   · intro hP
     obtain ⟨c, hval, hsem⟩ := exists_code_of_isClass hP
-    exact ⟨⟨p, k, c⟩, rfl, rfl, (NormalFormCode.isValid_mk Z p k c).2 hval,
-      fun x => (NormalFormCode.evalList_mk Z p k c (List.ofFn x)).trans (hsem x)⟩
+    exact ⟨⟨p, k, c⟩, rfl, rfl, hval, hsem⟩
   · rintro ⟨nf, rfl, rfl, hval, hsem⟩
     exact hval.isClass_holds.of_eq fun x => NormalFormCode.holds_iff.trans (hsem x)
 

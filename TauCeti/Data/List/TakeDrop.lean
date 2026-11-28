@@ -46,7 +46,7 @@ theorem drop_take_append_drop_of_le (l : List α) {m n : ℕ} (h : m ≤ n) :
 the length of `l`. -/
 theorem length_map_take_append_drop (f : α → α) (d : ℕ) (l : List α) :
     ((l.take d).map f ++ l.drop d).length = l.length := by
-  simp
+  simp only [length_append, length_map, length_take, length_drop]
   omega
 
 /-- For every function `f` from lists to entries and every length `n` there is a list of length

@@ -90,13 +90,15 @@ theorem isSigma_one_eval_bool :
       Primrec.snd
   have hdom := (isSigma_one_dom_eval (Z := Z) Code.universal).preimage harg.computableIn
   refine hdom.of_eq fun p => ?_
-  rw [Z.oracle_eq_indicator, Code.eval_universal, ← Z.oracle_eq_indicator, ofNat_encode,
-    Code.eval_comp]
+  -- Rewrite `Z.oracle` to its coerced indicator so `Code.eval_universal` applies uniformly.
+  rw [Z.oracle_eq_indicator]
   have hbind : ∀ y : ℕ,
-      y ∈ (Code.eval Z.oracle p.1 p.2 >>= Code.eval Z.oracle guard) ↔
-        ∃ m ∈ Code.eval Z.oracle p.1 p.2, m < 2 ∧ y = 0 := fun y => by
-    refine Part.mem_bind_iff.trans ?_
-    simp [hguard]
+      y ∈ Code.eval ((Z.indicator 1 : ℕ → ℕ) : ℕ →. ℕ) Code.universal
+          (Nat.pair (encode (Code.comp guard p.1)) p.2) ↔
+        ∃ m ∈ Code.eval ((Z.indicator 1 : ℕ → ℕ) : ℕ →. ℕ) p.1 p.2, m < 2 ∧ y = 0 :=
+    fun y => by
+      simp only [Code.eval_universal, ofNat_encode, Code.eval_comp]
+      exact Part.mem_bind_iff.trans (by simp [hguard])
   simp only [Part.dom_iff_mem, hbind]
   constructor
   · rintro ⟨_, m, hm, hlt, _⟩
