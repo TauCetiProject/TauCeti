@@ -16,6 +16,7 @@ import Mathlib.MeasureTheory.Group.LIntegral
 import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.Analysis.Holder.Interpolation
 import TauCeti.MeasureTheory.Function.LpSeminorm.FDeriv
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 
 /-!
 # The `Lᵖ` translation estimate
@@ -54,6 +55,10 @@ for a `C¹` function, and needs no integrability of the function itself.
   equality.
 * `MeasureTheory.MemLp.tendsto_eLpNorm_comp_add_sub`: translation increments of an `Lᵖ` function
   tend to zero.
+* `MeasureTheory.MemLp.tendsto_eLpNorm_comp_add_restrict_closedBall`: translates escaping to
+  infinity tend to zero in `Lᵖ` on every ball, for `p < ∞`.
+* `MeasureTheory.MemLp.ae_eq_zero_of_tendsto_eLpNorm_comp_add_sub`: translates of a nonzero `Lᵖ`
+  function escaping to infinity have no `Lᵖ` limit, for `0 < p < ∞`.
 * `MeasureTheory.eLpNorm_comp_add_sub_le_two_mul`: a translation increment is at most twice the
   function.
 * `ContDiff.setLIntegral_enorm_comp_add_sub_rpow_le`,
@@ -259,6 +264,92 @@ theorem tendsto_eLpNorm_comp_add_sub [TopologicalSpace E] [ContinuousAdd E] [Bor
   exact ((Lp.coeFn_compMeasurePreserving _ _).trans
     ((measurePreserving_add_right mu h).quasiMeasurePreserving.ae_eq_comp hu.coeFn_toLp)).sub
       Filter.EventuallyEq.rfl
+
+section Escape
+
+variable {E F : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
+  [MeasurableAdd E] {mu : Measure E} [mu.IsAddRightInvariant] [NormedAddCommGroup F]
+  {p : ℝ≥0∞} {ι : Type*} {l : Filter ι} {f : E → F} {h : ι → E}
+
+/-- **Translates escaping to infinity vanish locally.** If `‖h i‖ → ∞` and `f ∈ Lᵖ` with
+`p < ∞`, the `Lᵖ` seminorm of the translate `f (· + h i)` over a fixed ball tends to zero. -/
+theorem tendsto_eLpNorm_comp_add_restrict_closedBall [l.IsCountablyGenerated] (hf : MemLp f p mu)
+    (hp : p ≠ ∞) (hh : Filter.Tendsto (fun i ↦ ‖h i‖) l Filter.atTop) (R : ℝ) :
+    Filter.Tendsto (fun i ↦ eLpNorm (fun x ↦ f (x + h i)) p (mu.restrict (Metric.closedBall 0 R)))
+      l (nhds 0) := by
+  -- Over `closedBall 0 R` the translate by `h i` is `f` itself over `closedBall (h i) R`.
+  have hcov (i : ι) : eLpNorm (fun x ↦ f (x + h i)) p (mu.restrict (Metric.closedBall 0 R)) =
+      eLpNorm f p (mu.restrict (Metric.closedBall (h i) R)) := by
+    have hpre : (· + h i) ⁻¹' Metric.closedBall (h i) R = Metric.closedBall 0 R := by
+      ext x
+      simp [dist_eq_norm]
+    have hmp := (measurePreserving_add_right mu (h i)).restrict_preimage_emb
+      (measurableEmbedding_addRight (h i)) (Metric.closedBall (h i) R)
+    rw [hpre] at hmp
+    exact eLpNorm_comp_measurePreserving hf.aestronglyMeasurable.restrict hmp
+  simp only [hcov]
+  -- Each point eventually leaves the escaping balls, so dominated convergence applies.
+  have hout (y : E) : ∀ᶠ i in l, y ∉ Metric.closedBall (h i) R := by
+    filter_upwards [hh.eventually_gt_atTop (‖y‖ + R)] with i hi hy
+    have hy' : ‖y - h i‖ ≤ R := mem_closedBall_iff_norm.1 hy
+    have := norm_sub_norm_le (h i) y
+    rw [norm_sub_rev] at hy'
+    linarith
+  have H := TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto (m := mu) (l := l) (C := 1) hp
+    (f := fun i ↦ (Metric.closedBall (h i) R).indicator f) (g := 0)
+    (Filter.Eventually.of_forall fun i ↦
+      hf.aestronglyMeasurable.indicator Metric.isClosed_closedBall.measurableSet)
+    hf
+    (Filter.Eventually.of_forall fun i ↦ Filter.Eventually.of_forall fun x ↦ by
+      rw [Pi.zero_apply, sub_zero, ENNReal.coe_one, one_mul]
+      exact eNorm_indicator_le_eNorm_self _ x)
+    (Filter.Eventually.of_forall fun y ↦ tendsto_const_nhds.congr' <|
+      (hout y).mono fun i hi ↦ (Set.indicator_of_notMem hi f).symm)
+  simpa only [sub_zero, eLpNorm_indicator_eq_eLpNorm_restrict
+    measurableSet_closedBall.nullMeasurableSet] using H
+
+/-- **Translates escaping to infinity have no `Lᵖ` limit.** If `‖h i‖ → ∞`, `0 < p < ∞` and the
+translates `f (· + h i)` of `f ∈ Lᵖ` converge in `Lᵖ` to some `g`, then `f = 0` almost
+everywhere. -/
+theorem ae_eq_zero_of_tendsto_eLpNorm_comp_add_sub [l.NeBot] [l.IsCountablyGenerated] {g : E → F}
+    (hf : MemLp f p mu) (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (hh : Filter.Tendsto (fun i ↦ ‖h i‖) l Filter.atTop)
+    (hg : Filter.Tendsto (fun i ↦ eLpNorm (fun x ↦ f (x + h i) - g x) p mu) l (nhds 0)) :
+    f =ᵐ[mu] 0 := by
+  have hball (R : ℝ) : g =ᵐ[mu.restrict (Metric.closedBall 0 R)] 0 := by
+    rw [← eLpNorm_eq_zero_iff hp0]
+    refine le_antisymm (ge_of_tendsto (x := l) (f := fun i ↦ ENNReal.LpAddConst p *
+        (eLpNorm (fun x ↦ f (x + h i)) p (mu.restrict (Metric.closedBall 0 R)) +
+          eLpNorm (fun x ↦ f (x + h i) - g x) p mu)) ?_
+      (Filter.Eventually.of_forall fun i ↦ ?_)) bot_le
+    · simpa only [add_zero, mul_zero] using ENNReal.Tendsto.const_mul
+        ((tendsto_eLpNorm_comp_add_restrict_closedBall hf hp hh R).add hg)
+        (Or.inr (ENNReal.LpAddConst_lt_top p).ne)
+    · calc eLpNorm g p (mu.restrict (Metric.closedBall 0 R))
+          = eLpNorm ((fun x ↦ f (x + h i)) - fun x ↦ f (x + h i) - g x) p
+              (mu.restrict (Metric.closedBall 0 R)) := by
+            congr 1
+            ext x
+            simp
+        _ ≤ _ := by
+          refine (eLpNorm_sub_le' p).trans ?_
+          gcongr
+          exact Measure.restrict_le_self
+  have hg0 : g =ᵐ[mu] 0 := by
+    rw [← Measure.restrict_univ (μ := mu), ← Metric.iUnion_closedBall_nat (0 : E),
+      Filter.EventuallyEq, ae_restrict_iUnion_iff]
+    exact fun n ↦ hball n
+  -- The translates all have the norm of `f`, and they tend to `g = 0`.
+  have hnorm (i : ι) : eLpNorm f p mu = eLpNorm (fun x ↦ f (x + h i) - g x) p mu := by
+    rw [← eLpNorm_comp_measurePreserving hf.aestronglyMeasurable
+      (measurePreserving_add_right mu (h i))]
+    refine eLpNorm_congr_ae ?_
+    filter_upwards [hg0] with x hx
+    simp [hx]
+  rw [← eLpNorm_eq_zero_iff hp0]
+  exact tendsto_nhds_unique (tendsto_const_nhds.congr hnorm) hg
+
+end Escape
 
 end MemLp
 
