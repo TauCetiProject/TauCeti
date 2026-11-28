@@ -24,7 +24,12 @@ An operator has order `-∞` exactly when it is properly supported and all its m
 (`TauCeti.mem_sectionSmoothingPseudodifferentialOperators_iff_sectionEntry`). In a chart over which
 both bundles are trivial, the compression of an operator of order `-∞` is the quantization of a
 smoothing symbol with values in `V →L[ℂ] W`
-(`TauCeti.exists_isSmoothing_quantizeSchwartzValue_eq_apply_chartCutoffSection`).
+(`TauCeti.exists_isSmoothing_quantizeSchwartzValue_eq_apply_chartCutoffSection`). The operators of
+order `-∞` form a two-sided ideal: composing one with a classical pseudodifferential operator on
+either side, through a bundle of finite rank, gives an operator of order `-∞`
+(`TauCeti.comp_mem_sectionSmoothingPseudodifferentialOperators_of_left`,
+`TauCeti.comp_mem_sectionSmoothingPseudodifferentialOperators_of_right`), since the orders of a
+composition add (`TauCeti.comp_mem_sectionClassicalPseudodifferentialOperators`).
 
 The patching of pseudodifferential operators between bundles from local data rests on
 **pseudolocality** (Hörmander III, §18.1; Melrose, §5.3): if `P` is a classical pseudodifferential
@@ -48,6 +53,9 @@ operator between the bundles and `f`, `g` are smooth functions with disjoint sup
 * `TauCeti.smul_mem_sectionSmoothingPseudodifferentialOperators`,
   `TauCeti.comp_smul_mem_sectionSmoothingPseudodifferentialOperators`: multiplying by smooth
   functions on either side keeps the order `-∞`.
+* `TauCeti.comp_mem_sectionSmoothingPseudodifferentialOperators_of_left`,
+  `TauCeti.comp_mem_sectionSmoothingPseudodifferentialOperators_of_right`: the operators of order
+  `-∞` form a two-sided ideal under composition with classical pseudodifferential operators.
 * `TauCeti.smul_comp_smul_mem_sectionSmoothingPseudodifferentialOperators`: pseudolocality.
 * `TauCeti.smul_sub_smul_comp_smul_mem_sectionSmoothingPseudodifferentialOperators`: localization,
   `ρ P` and `ρ P χ` differ by an operator of order `-∞` when `χ = 1` near the support of `ρ`.
@@ -220,5 +228,41 @@ theorem smul_sub_smul_comp_smul_mem_sectionSmoothingPseudodifferentialOperators 
   rw [hdiff]
   exact smul_comp_smul_mem_sectionSmoothingPseudodifferentialOperators hP
     (disjoint_tsupport_iff_eventuallyEq.2 (hχ.mono fun x hx ↦ by simp [hx]))
+
+/-! ### Operators of order `-∞` form a two-sided ideal -/
+
+section Ideal
+
+variable [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
+  {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U]
+  {G : M → Type*} [TopologicalSpace (TotalSpace U G)] [∀ x, AddCommGroup (G x)]
+  [∀ x, Module ℝ (G x)] [∀ x, Module ℂ (G x)] [∀ x, TopologicalSpace (G x)] [FiberBundle U G]
+  [VectorBundle ℝ U G] [VectorBundle ℂ U G] [ContMDiffVectorBundle ∞ U G 𝓘(ℝ, CoordinateSpace n)]
+  [FiniteDimensional ℂ W]
+  {R : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); U, G⟯}
+
+/-- **Operators of order `-∞` absorb composition on the right.** If the middle bundle `F` has
+finite-dimensional fibre, `R : Γ(F) → Γ(G)` has order `-∞` and `P : Γ(E) → Γ(F)` is a classical
+pseudodifferential operator of some order `m`, then `R ∘ P` has order `-∞`. -/
+theorem comp_mem_sectionSmoothingPseudodifferentialOperators_of_left {m : ℝ}
+    (hR : R ∈ sectionSmoothingPseudodifferentialOperators)
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m) :
+    R ∘ₗ P ∈ sectionSmoothingPseudodifferentialOperators :=
+  mem_sectionSmoothingPseudodifferentialOperators_iff.2 fun m' ↦ sub_add_cancel m' m ▸
+    comp_mem_sectionClassicalPseudodifferentialOperators
+      (mem_sectionSmoothingPseudodifferentialOperators_iff.1 hR (m' - m)) hP
+
+/-- **Operators of order `-∞` absorb composition on the left.** If the middle bundle `F` has
+finite-dimensional fibre, `R : Γ(F) → Γ(G)` is a classical pseudodifferential operator of some
+order `m` and `P : Γ(E) → Γ(F)` has order `-∞`, then `R ∘ P` has order `-∞`. -/
+theorem comp_mem_sectionSmoothingPseudodifferentialOperators_of_right {m : ℝ}
+    (hR : R ∈ sectionClassicalPseudodifferentialOperators m)
+    (hP : P ∈ sectionSmoothingPseudodifferentialOperators) :
+    R ∘ₗ P ∈ sectionSmoothingPseudodifferentialOperators :=
+  mem_sectionSmoothingPseudodifferentialOperators_iff.2 fun m' ↦ add_sub_cancel m m' ▸
+    comp_mem_sectionClassicalPseudodifferentialOperators hR
+      (mem_sectionSmoothingPseudodifferentialOperators_iff.1 hP (m' - m))
+
+end Ideal
 
 end TauCeti

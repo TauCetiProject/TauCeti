@@ -8,7 +8,10 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import Mathlib.Algebra.Group.Even
 public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Int.Interval
+import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 import Mathlib.Algebra.Group.Commute.Units
+import Mathlib.Algebra.GroupWithZero.Units.Basic
 
 /-!
 # Collapsing an iterated product of powers into a single product of powers
@@ -28,6 +31,8 @@ allowed to vanish.
 * `Finset.prod_zpow_eq_zpow_sum` and `Finset.prod_zpow_eq_zpow_sum_of_isUnit`:
   `∏ i ∈ s, y ^ e i = y ^ ∑ i ∈ s, e i`, in a commutative group and, for a unit `y`, in a division
   commutative monoid.
+* `Finset.prod_Ioc_ite_div_ite_eq_zpow`: for `|k| ≤ N`, the product over `-N < t ≤ N` of `d` to the
+  power `[t ≤ k] - [t ≤ 0]` is `d ^ k`.
 * `Finset.prod_zpow_mul_eq_prod_of_sq_eq_one`: for `y ^ 2 = 1` and an even exponent sum, the
   factors `y ^ e i` drop out of `∏ i ∈ s, y ^ e i * f i`.
 * `Finset.prod_prod_pow`, `Finset.prod_prod_zpow` and `Finset.prod_prod_zpow_pow`: substituting
@@ -55,6 +60,25 @@ theorem prod_zpow_eq_zpow_sum_of_isUnit [DivisionCommMonoid α] (s : Finset ι) 
     (hy : IsUnit y) (e : ι → ℤ) : ∏ i ∈ s, y ^ e i = y ^ ∑ i ∈ s, e i := by
   obtain ⟨u, rfl⟩ := hy
   simpa using congrArg Units.val (prod_zpow_eq_zpow_sum s u e)
+
+/-- For a nonzero `d` and `|k| ≤ N`, the product over the window `-N < t ≤ N` of `d` to the power
+`[t ≤ k] - [t ≤ 0]` is `d ^ k`. -/
+theorem prod_Ioc_ite_div_ite_eq_zpow {G₀ : Type*} [CommGroupWithZero G₀] {d : G₀} (hd : d ≠ 0)
+    {k : ℤ} {N : ℕ} (hk : k.natAbs ≤ N) :
+    ∏ t ∈ Ioc (-(N : ℤ)) N, (if t ≤ k then d else 1) / (if t ≤ 0 then d else 1) = d ^ k := by
+  have hcard : ∀ m : ℤ, m.natAbs ≤ N → #{t ∈ Ioc (-(N : ℤ)) N | t ≤ m} = m + N := by
+    intro m hm
+    have : ({t ∈ Ioc (-(N : ℤ)) N | t ≤ m} : Finset ℤ) = Ioc (-(N : ℤ)) m := by
+      ext t
+      simp only [mem_filter, mem_Ioc]
+      omega
+    rw [this, Int.card_Ioc]
+    omega
+  rw [prod_div_distrib, prod_ite, prod_ite]
+  simp only [prod_const, one_pow, mul_one]
+  rw [← zpow_natCast, ← zpow_natCast, ← zpow_sub₀ hd, hcard k hk, hcard 0 (by simp)]
+  congr 1
+  omega
 
 /-- If `y ^ 2 = 1` and `∑ i ∈ s, e i` is even, the factors `y ^ e i` drop out of
 `∏ i ∈ s, y ^ e i * f i`. -/

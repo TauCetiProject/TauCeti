@@ -61,7 +61,8 @@ functional `R w : s ↦ Re w (sᵢⱼ)` reconstructed from `w ∈ H^{s,p}(E, ℂ
   (`TemperedDistribution.MemSobolev.conjPostcompCLM`), hence the real part is `H^{s,p}` near every
   point (`TemperedDistribution.MemSobolev.isLocallyMemSobolevAt_re_toDistribution`).
 * Otherwise `χᵢ` vanishes near `x`, and so does `R w`: its components in a chart at `x` vanish near
-  the image of `x` (`Distribution.IsInvariantLocalRegularity.of_notMem_dsupport`).
+  the image of `x` (`TauCeti.SquareChartPartition.isLocallyAt_reconstruction_single_of_notMem`,
+  with `Distribution.IsInvariantLocalRegularity.of_notMem_dsupport`).
 
 The reconstruction then defines a linear map from `∏ᵢⱼ H^{s,p}(E, ℂ)` to the Banach space
 `H^{s,p}`, which is continuous by the closed graph theorem: the functional represented by an
@@ -70,8 +71,6 @@ is needed.
 
 ## Main declarations
 
-* `TauCeti.SquareChartPartition.chartComponent_reconstruction_single`: the components of a
-  reconstructed single entry in the chart of its slot.
 * `TauCeti.SquareChartPartition.isLocallyMemSobolevAt_reconstruction_single` and
   `TauCeti.SquareChartPartition.memBesselPotential_reconstruction`: the reconstruction of a tuple of
   `H^{s,p}` tempered distributions is `H^{s,p}` with respect to `A`.
@@ -121,22 +120,6 @@ variable (A : SquareChartPartition ι I F V)
 
 /-! ### Reconstructing a single localization -/
 
-/-- The component along `v`, in the `i`-th chart and frame, of the functional `s ↦ Re w (sᵢⱼ)`
-reconstructed from `w` in the slot `(i, j)`: the real part of the tempered distribution
-`bⱼ*(v) χᵢ w`, restricted to the chart target. -/
-theorem chartComponent_reconstruction_single [DecidableEq ι] (i : ι)
-    (j : Fin (Module.finrank ℝ F)) (w : 𝓢'(E, ℂ)) (v : F) :
-    (A.chartData i).trivialization.chartComponent (A.chartData i).chart
-        (A.chartData i).contMDiffOn_chart (A.chartData i).source_subset
-        (A.reconstruction (Pi.single (i, j) w)) v =
-      mapCLM (ofRealCLM ∘L reCLM) (TemperedDistribution.toDistribution _
-        (((Module.finBasis ℝ F).repr v j : ℂ) •
-          TemperedDistribution.smulLeftCLM ℂ (A.chartCutoff i : E → ℂ) w)) := by
-  ext φ
-  rw [Bundle.Trivialization.chartComponent_apply, reconstruction_single_apply,
-    testLocalization_chartTestCLM, map_smul]
-  simp
-
 variable [MeasurableSpace E] [BorelSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- Near a point of the support of `χᵢ`, the functional `s ↦ Re w (sᵢⱼ)` reconstructed from
@@ -154,37 +137,6 @@ private theorem isLocallyMemSobolevAt_reconstruction_single_of_mem [DecidableEq 
     ((hw.smulLeftCLM_testFunction hp hp_top (A.chartCutoff i)).smul _)
     ((A.chartData i).chart.map_source hxs)
 
-/-- Away from the support of `χᵢ`, the functional `s ↦ Re w (sᵢⱼ)` vanishes, and so do its
-components near the image of `x` in a chart of the partition at `x`. -/
-private theorem isLocallyMemSobolevAt_reconstruction_single_of_notMem [DecidableEq ι]
-    (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞)) (s : ℝ) (i : ι) (j : Fin (Module.finrank ℝ F))
-    (w : 𝓢'(E, ℂ))
-    {x : M} (hx : x ∉ tsupport (A.cutoff i)) :
-    BundleTest.IsLocallyMemSobolevAt s p (A.reconstruction (Pi.single (i, j) w)) x := by
-  obtain ⟨i', hi'⟩ : ∃ i', A.cutoff i' x ≠ 0 := by
-    by_contra! h
-    simpa [h] using A.sum_sq_cutoff x
-  set c := (A.chartData i').chart
-  have hxs : x ∈ c.source := A.tsupport_cutoff_subset i' (subset_tsupport _ hi')
-  refine (BundleTest.isLocallyMemSobolevAt_iff hp hp_top _ (A.chartData i').contMDiffOn_chart
-    (A.contMDiffOn_chart_symm i') (A.chartData i').source_subset hxs).2 fun v ↦ ?_
-  refine (isInvariantLocalRegularity_isLocallyMemSobolevAt s hp hp_top).of_notMem_dsupport
-    (c.map_source hxs) ?_
-  rw [notMem_dsupport_iff]
-  refine ⟨c.target ∩ c.symm ⁻¹' (tsupport (A.cutoff i))ᶜ, fun φ hφ ↦ ?_,
-    c.isOpen_inter_preimage_symm (_root_.isClosed_tsupport _).isOpen_compl, c.map_source hxs,
-    by rwa [mem_preimage, c.left_inv hxs]⟩
-  rw [Bundle.Trivialization.chartComponent_apply, reconstruction_single_apply,
-    A.testLocalization_eq_zero i j fun z hz ↦ ?_]
-  · simp
-  -- The extended test vanishes where `χᵢ` does not, since `φ` vanishes there in the chart.
-  by_cases hz' : z ∈ c.source
-  · rw [Bundle.Trivialization.chartTestCLM_apply_of_mem _ _ _ _ _ hz']
-    have hφz : φ (c z) = 0 := image_eq_zero_of_notMem_tsupport fun h ↦
-      (hφ h).2 (by rw [c.left_inv hz']; exact subset_tsupport _ hz)
-    simp [TestFunction.postcompCLM_apply, hφz]
-  · exact Bundle.Trivialization.chartTestCLM_apply_of_notMem _ _ _ _ _ hz'
-
 /-- Let `1 < p < ∞`. The functional `s ↦ Re w (sᵢⱼ)` reconstructed from `w ∈ H^{s,p}(E, ℂ)` in the
 slot `(i, j)` is `H^{s,p}` near every point of `M`. -/
 theorem isLocallyMemSobolevAt_reconstruction_single [DecidableEq ι] (hp : 1 < p)
@@ -193,7 +145,10 @@ theorem isLocallyMemSobolevAt_reconstruction_single [DecidableEq ι] (hp : 1 < p
     BundleTest.IsLocallyMemSobolevAt s p (A.reconstruction (Pi.single k w)) x := by
   by_cases hx : x ∈ tsupport (A.cutoff k.1)
   · exact A.isLocallyMemSobolevAt_reconstruction_single_of_mem hp hp_top k.1 k.2 hw hx
-  · exact A.isLocallyMemSobolevAt_reconstruction_single_of_notMem hp hp_top s k.1 k.2 w hx
+  · exact BundleTest.isLocallyMemSobolevAt_def.2 <| A.isLocallyAt_reconstruction_single_of_notMem
+      (fun hy hyT ↦
+        (isInvariantLocalRegularity_isLocallyMemSobolevAt s hp hp_top).of_notMem_dsupport hy hyT)
+      k.1 k.2 w hx
 
 /-! ### The reconstruction as a bounded projection -/
 

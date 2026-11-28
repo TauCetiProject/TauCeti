@@ -33,9 +33,9 @@ is the zero section `a ↦ (a, 0)` of `ℂ × N`, and the structure read in the 
 and differs from `i` by at most `C ‖w‖` at `(a, w)`. Write `u₁ = (φ, b)` in these coordinates.
 
 * The normal component satisfies `‖∂ₛb + i ∂ₜb‖ ≤ C ‖∂ₜ(φ, b)‖ ‖b‖`
-  (`TauCeti.norm_snd_add_I_smul_snd_le`), so by Carleman's similarity principle for this
-  differential inequality (`TauCeti.hasSimilarityFactorizationAt_of_norm_le`) it has a similarity
-  factorization (`TauCeti.hasSimilarityFactorizationAt_snd_of_norm_sub_le`).
+  (`TauCeti.norm_fderiv_snd_add_I_smul_le_of_contDiffOn`), so by Carleman's similarity principle
+  for this differential inequality (`TauCeti.hasSimilarityFactorizationAt_of_norm_le`) it has a
+  similarity factorization (`TauCeti.hasSimilarityFactorizationAt_snd_of_norm_sub_le`).
 * Hence `b` either vanishes near `b₀` or has no zeros in a punctured neighbourhood of `b₀`. A
   coincidence `u₁ ζ = u₀ a` with `a` near `a₀` is a zero of `b`, so `b` vanishes near `b₀`.
 * Then `u₁ ζ = u₀ (φ ζ)`, and along the zero section the structure read in the chart is `i`, so
@@ -88,18 +88,8 @@ theorem hasSimilarityFactorizationAt_snd_of_norm_sub_le {ψ : ℂ → ℂ × N}
     (hA : ∀ ζ ∈ Ω₁, ‖A ζ - I • ContinuousLinearMap.id ℝ (ℂ × N)‖ ≤ C * ‖(ψ ζ).2‖)
     (hCR : ∀ ζ ∈ Ω₁, fderiv ℝ ψ ζ 1 + A ζ (fderiv ℝ ψ ζ I) = 0) {ζ₀ : ℂ} (hζ₀ : ζ₀ ∈ Ω₁) :
     HasSimilarityFactorizationAt (fun ζ ↦ (ψ ζ).2) ζ₀ := by
-  have hDψ : ContinuousOn (fderiv ℝ ψ) Ω₁ := hψ.continuousOn_fderiv_of_isOpen hΩ₁ le_rfl
-  refine hasSimilarityFactorizationAt_of_norm_le (η := fun ζ ↦ (ψ ζ).2)
-    (M := fun ζ ↦ C * ‖fderiv ℝ ψ ζ I‖) hΩ₁ (contDiff_snd.comp_contDiffOn hψ) (fun z hz ↦ ?_)
-    (fun ζ hζ ↦ ?_) hζ₀
-  · -- `C ‖∂ₜψ‖` is continuous, hence locally bounded.
-    have hz : ContinuousAt (fun w ↦ C * ‖fderiv ℝ ψ w I‖) z := continuousAt_const.mul
-      ((hDψ.clm_apply continuousOn_const).continuousAt (hΩ₁.mem_nhds hz)).norm
-    exact ⟨_, (hz.eventually (gt_mem_nhds (lt_add_one _))).mono fun _ h ↦ h.le⟩
-  · rw [((hψ.differentiableOn one_ne_zero ζ hζ).differentiableAt
-      (hΩ₁.mem_nhds hζ)).hasFDerivAt.snd.fderiv]
-    refine (norm_snd_add_I_smul_snd_le (hA ζ hζ) (hCR ζ hζ)).trans_eq ?_
-    ring
+  obtain ⟨hM, hle⟩ := norm_fderiv_snd_add_I_smul_le_of_contDiffOn hΩ₁ hψ hCR hA
+  exact hasSimilarityFactorizationAt_of_norm_le hΩ₁ hψ.snd hM hle hζ₀
 
 /-- **Accumulating coincidences in a prescribed normal frame.** The form of
 `TauCeti.exists_analyticAt_eventuallyEq_comp_of_frequently_mem_image` in which the normal frame

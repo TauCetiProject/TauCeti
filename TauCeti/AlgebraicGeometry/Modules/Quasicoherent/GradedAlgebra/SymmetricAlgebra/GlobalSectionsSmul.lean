@@ -73,17 +73,14 @@ theorem ιTotal_symmetricAlgebraLift_comp_globalSectionsSmul {T : Scheme.{u}} (q
   -- the epimorphisms `𝒪_X ⟶ Sym⁰ F` and `Symⁿ F ⊗ Sym¹ F ⟶ Symⁿ⁺¹ F`.
   induction n with
   | zero =>
-    have h₀ : (Scheme.Modules.pushforward q).map
-        (Scheme.Modules.globalSectionsSmul (𝟙_ T.Modules) (c ^ 0)) = 𝟙 _ := by
-      rw [pow_zero, Scheme.Modules.globalSectionsSmul_one]
-      exact (Scheme.Modules.pushforward q).map_id _
     refine ((cancel_epi ((gradedSymmetricAlgebra X).obj F).obj.toMon.one).1
       ((one_ιTotal_comp _ _).trans (one_ιTotal_comp _
         (symmetricAlgebraLift (B := q.pushforwardStructureAlgebra) φ)).symm)).trans ?_
-    -- `rw [h₀]` cannot build its motive here, as the goal mixes the `X.Modules` and
-    -- `SheafOfModules` category instances, so `h₀` is applied as a term
+    -- `rw` cannot build its motive here, as the goal mixes the `X.Modules` and
+    -- `SheafOfModules` category instances, so the equation is applied as a term
     exact ((congrArg (fun f ↦ ιTotal ((gradedSymmetricAlgebra X).obj F) 0 ≫
-      (symmetricAlgebraLift (B := q.pushforwardStructureAlgebra) φ).hom.hom ≫ f) h₀).trans
+      (symmetricAlgebraLift (B := q.pushforwardStructureAlgebra) φ).hom.hom ≫ f)
+        (q.pushforward_map_globalSectionsSmul_of_eq_one _ (pow_zero c))).trans
         (congrArg (ιTotal ((gradedSymmetricAlgebra X).obj F) 0 ≫ ·) (Category.comp_id _))).symm
   | succ n ih =>
     refine (cancel_epi (((gradedSymmetricAlgebra X).obj F).obj.toMon.mul n 1)).1 ?_

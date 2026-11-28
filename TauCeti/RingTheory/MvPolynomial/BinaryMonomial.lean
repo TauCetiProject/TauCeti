@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.LinearSubst
-import TauCeti.RingTheory.MvPolynomial.Finrank
+public import TauCeti.RingTheory.MvPolynomial.Finrank
 
 /-!
 # Binary monomials
@@ -20,6 +20,7 @@ standard vectors `TauCeti.polynomialAction` scales `x ^ (d - i) * y ^ i` by
 ## Main definitions
 
 * `TauCeti.polynomialMonomial`: the binary monomial `x ^ (d - i) * y ^ i`, zero for `i > d`.
+* `TauCeti.binaryFormMonomialBasis R w`: the monomial basis `Xʲ Yʷ⁻ʲ`, `0 ≤ j ≤ w`.
 
 ## Main results
 
@@ -152,6 +153,22 @@ theorem polynomialAction_diagonal_polynomialMonomial (t : Fin 2 → R) :
       rescale_X, rescale_X, smul_eq_C_mul, mul_pow, mul_pow, map_mul, map_pow, map_pow]
     ring
   · rw [polynomialMonomial_of_lt (not_le.mp h), map_zero, smul_zero]
+
+/-- The monomial basis `Xʲ Yʷ⁻ʲ`, `0 ≤ j ≤ w`, of the binary forms of degree `w`. -/
+noncomputable def binaryFormMonomialBasis (R : Type*) [CommSemiring R] (w : ℕ) :
+    Module.Basis (Fin (w + 1)) R (homogeneousSubmodule (Fin 2) R w) :=
+  (homogeneousMonomialBasis w).reindex (finsuppDegreeFinTwoEquiv w)
+
+@[simp] theorem coe_binaryFormMonomialBasis {R : Type*} [CommSemiring R] {w : ℕ} (j : Fin (w + 1)) :
+    (binaryFormMonomialBasis R w j : MvPolynomial (Fin 2) R) = X 0 ^ (j : ℕ) * X 1 ^ (w - j) := by
+  simp [binaryFormMonomialBasis, X_pow_eq_monomial, monomial_mul_monomial]
+
+/-- The coordinate of a binary form on `Xʲ Yʷ⁻ʲ` in the monomial basis is its coefficient. -/
+theorem binaryFormMonomialBasis_repr_apply {R : Type*} [CommSemiring R] {w : ℕ}
+    (P : homogeneousSubmodule (Fin 2) R w) (j : Fin (w + 1)) :
+    (binaryFormMonomialBasis R w).repr P j =
+      (P : MvPolynomial (Fin 2) R).coeff (Finsupp.single 0 (j : ℕ) + Finsupp.single 1 (w - j)) := by
+  simp [binaryFormMonomialBasis]
 
 end Monomial
 

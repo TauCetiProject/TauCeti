@@ -46,8 +46,7 @@ Two consequences follow.
 ## Main declarations
 
 * `CategoryTheory.abelianSheafToGrpSheaf J`: an abelian sheaf as a sheaf of groups, with
-  `CategoryTheory.abelianSheafToGrpSheafObjEquiv` identifying its sections, which form
-  commutative groups, and
+  `CategoryTheory.abelianSheafToGrpSheafObjEquiv` identifying its sections, and
   `CategoryTheory.abelianSheafToGrpSheafPushforwardIso` commuting it with pushforward.
 * `CategoryTheory.Sheaf.constIntHomMulEquivSections F`: morphisms from the constant integer
   presheaf to `F` are its global sections.
@@ -89,10 +88,12 @@ def abelianSheafToGrpSheafObjEquiv (F : Sheaf J AddCommGrpCat.{w}) (U : Cᵒᵖ)
     Multiplicative (F.obj.obj U) ≃* ((abelianSheafToGrpSheaf J).obj F).obj.obj U :=
   MulEquiv.refl _
 
-/-- The groups of sections of the sheaf of groups underlying an abelian sheaf are commutative. -/
-instance (F : Sheaf J AddCommGrpCat.{w}) (U : Cᵒᵖ) :
-    IsMulCommutative (((abelianSheafToGrpSheaf J).obj F).obj.obj U) :=
-  inferInstanceAs (IsMulCommutative (Multiplicative (F.obj.obj U)))
+/-- The sections of the group sheaf underlying an abelian sheaf form a commutative group. -/
+instance abelianSheafToGrpSheafObjCommGroup (F : Sheaf J AddCommGrpCat.{w}) (U : Cᵒᵖ) :
+    CommGroup (((abelianSheafToGrpSheaf J).obj F).obj.obj U) where
+  mul_comm a b := by
+    apply (abelianSheafToGrpSheafObjEquiv F U).symm.injective
+    simp only [map_mul, mul_comm]
 
 /-- The restriction maps of the sheaf of groups underlying an abelian sheaf are those of the
 abelian sheaf. -/

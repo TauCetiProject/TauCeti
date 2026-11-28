@@ -51,8 +51,9 @@ between Banach spaces, and from the approximation property of a Banach space.
 * `TauCeti.CStarAlgebra.IsNuclear.of_retract`: a retract of a nuclear C⋆-algebra through
   completely positive contractions is nuclear.
 * `TauCeti.CStarAlgebra.IsNuclear.of_starAlgEquiv`: nuclearity is invariant under star
-  isomorphism, and the matrix algebras `M_n(ℂ)` (`TauCeti.CStarAlgebra.isNuclear_cstarMatrix`)
-  and `ℂ` (`TauCeti.CStarAlgebra.isNuclear_complex`) are nuclear.
+  isomorphism, and the matrix algebras `M_n(ℂ)` (`TauCeti.CStarAlgebra.isNuclear_cstarMatrix`),
+  `M_n(M_m(ℂ))` (`TauCeti.CStarAlgebra.isNuclear_cstarMatrix_cstarMatrix`) and `ℂ`
+  (`TauCeti.CStarAlgebra.isNuclear_complex`) are nuclear.
 * `TauCeti.CStarAlgebra.isNuclear_pi_cstarMatrix`: a finite direct sum `⊕_i M_{n_i}` of full
   matrix algebras is nuclear. It embeds unitally in `M_N`, `N = Σ n_i`, through
   `CompletelyPositiveMap.blockDiagonal`, and the compression to the diagonal blocks
@@ -276,6 +277,11 @@ instance isNuclear_cstarMatrix (m : Type*) [Fintype m] :
     IsNuclear (CStarMatrix m m ℂ) :=
   have := isNuclear_cstarMatrix_fin (Fintype.card m)
   .of_starAlgEquiv (CStarMatrix.reindexₐ ℂ ℂ (Fintype.equivFin m))
+
+/-- The matrix algebras `M_n(M_m(ℂ))` are nuclear, through `M_n(M_m(ℂ)) ≃ M_{n × m}(ℂ)`. -/
+instance isNuclear_cstarMatrix_cstarMatrix (n m : Type*) [Fintype n] [Fintype m] :
+    IsNuclear (CStarMatrix n n (CStarMatrix m m ℂ)) :=
+  .of_starAlgEquiv (CStarMatrix.compStarAlgEquiv ℂ n m ℂ)
 
 /-- The complex numbers form a nuclear C⋆-algebra, through `ℂ ≃ M_1(ℂ)`. -/
 instance isNuclear_complex : IsNuclear ℂ :=

@@ -37,8 +37,8 @@ have the same `c₄` valuation too.
   discriminant is not divisible by `ϖ ^ 12` is minimal.
 * `WeierstrassCurve.exists_smul_eq_minimal`: Mathlib's chosen minimal equation is obtained by a
   change of variables.
-* `WeierstrassCurve.isElliptic_minimal`: so the chosen minimal equation of an elliptic curve is
-  elliptic.
+* `WeierstrassCurve.isElliptic_minimal` and `WeierstrassCurve.j_minimal`: so the chosen minimal
+  equation of an elliptic curve is elliptic, with the same `j`-invariant.
 * `WeierstrassCurve.exists_smul_minimal_eq_of_smul_eq`: Mathlib's chosen minimal equation reaches
   every equation in its orbit by a change of variables.
 * `WeierstrassCurve.exists_smul_minimal_eq_minimal`: chosen minimal equations of isomorphic
@@ -91,8 +91,9 @@ have the same `c₄` valuation too.
 * `WeierstrassCurve.hasGoodReduction_baseChange_iff` and
   `WeierstrassCurve.hasMultiplicativeReduction_baseChange_iff`: along a local map of discrete
   valuation rings, good and multiplicative reduction of an integral equation are unchanged.
-* `WeierstrassCurve.HasSplitMultiplicativeReduction.of_isMinimal_smul`: split multiplicative
-  reduction transfers along such a change of variables.
+* `WeierstrassCurve.HasMultiplicativeReduction.of_isMinimal_smul` and
+  `WeierstrassCurve.HasSplitMultiplicativeReduction.of_isMinimal_smul`: multiplicative and split
+  multiplicative reduction transfer along a change of variables between minimal models.
 
 `valuation_u_eq_one_of_isMinimal_smul` and
 `VariableChange.exists_unit_algebraMap_eq_u_of_isMinimal_smul` supply the unit needed for descent.
@@ -245,6 +246,15 @@ of it. -/
 instance isElliptic_minimal (W : WeierstrassCurve K) [W.IsElliptic] : (W.minimal R).IsElliptic :=
   have ⟨_, hC⟩ := W.exists_smul_eq_minimal R
   hC ▸ inferInstance
+
+/-- **The chosen minimal equation has the same `j`-invariant**, being a change of variables. -/
+@[simp]
+theorem j_minimal (W : WeierstrassCurve K) [W.IsElliptic] : (W.minimal R).j = W.j := by
+  -- generalize the minimal equation, so that the change of variables can be substituted
+  suffices ∀ (W' : WeierstrassCurve K) [W'.IsElliptic] (C : VariableChange K), C • W = W' →
+      W'.j = W.j from this _ _ (W.exists_smul_eq_minimal R).choose_spec
+  rintro _ _ C rfl
+  exact variableChange_j ..
 
 /-- **Mathlib's chosen minimal equation reaches every equation in its orbit.** If a change of
 variables carries `W` to `W'`, then some change of variables carries `W.minimal R` to `W'`. -/
@@ -622,6 +632,19 @@ theorem reduction_baseChange [IsLocalHom (algebraMap R S)]
 
 end BaseChange
 
+/-- **Multiplicative reduction is an isomorphism invariant of minimal models.** If two minimal
+Weierstrass models of an elliptic curve over `K` are related by a change of variables
+(`D • W₁ = W₂`), and `W₁` has multiplicative reduction, then so does `W₂`: the scaling factor of
+`D` has valuation `1`, so `Δ` and `c₄` keep their valuations. Minimality of `W₁` is part of having
+multiplicative reduction, so it is not a hypothesis. -/
+theorem HasMultiplicativeReduction.of_isMinimal_smul {W₁ W₂ : WeierstrassCurve K}
+    [IsMinimal R W₂] [W₁.IsElliptic] (D : VariableChange K) (hD : D • W₁ = W₂)
+    (h₁ : W₁.HasMultiplicativeReduction R) : W₂.HasMultiplicativeReduction R :=
+  have : IsMinimal R W₁ := h₁.toIsMinimal
+  { badReduction := by rw [valuation_Δ_eq_of_isMinimal_smul R D hD]; exact h₁.badReduction
+    multiplicativeReduction := by
+      rw [valuation_c₄_eq_of_isMinimal_smul R D hD]; exact h₁.multiplicativeReduction }
+
 /-- **Split multiplicative reduction is an isomorphism invariant of minimal models.** If two
 minimal Weierstrass models of an elliptic curve over `K` are related by a change of variables
 (`D • W₁ = W₂`), and `W₁` has split multiplicative reduction, then so does `W₂`.
@@ -636,14 +659,8 @@ the uniqueness of minimal models over a discrete valuation ring. -/
 theorem HasSplitMultiplicativeReduction.of_isMinimal_smul {W₁ W₂ : WeierstrassCurve K}
     [IsMinimal R W₂] [W₁.IsElliptic] (D : VariableChange K) (hD : D • W₁ = W₂)
     (h₁ : W₁.HasSplitMultiplicativeReduction R) : W₂.HasSplitMultiplicativeReduction R := by
-  -- `W₁` is minimal because it has multiplicative reduction, so that is not a hypothesis.
-  have hm₁ := h₁.toHasMultiplicativeReduction
-  have : IsMinimal R W₁ := hm₁.toIsMinimal
-  -- `W₂` is again multiplicative, since `v (u) = 1` fixes the valuations of both `Δ` and `c₄`.
-  have hmult₂ : W₂.HasMultiplicativeReduction R :=
-    { badReduction := by rw [valuation_Δ_eq_of_isMinimal_smul R D hD]; exact hm₁.badReduction
-      multiplicativeReduction := by
-        rw [valuation_c₄_eq_of_isMinimal_smul R D hD]; exact hm₁.multiplicativeReduction }
+  have : IsMinimal R W₁ := h₁.toIsMinimal
+  have hmult₂ := HasMultiplicativeReduction.of_isMinimal_smul R D hD h₁.toHasMultiplicativeReduction
   -- `D` descends to some `C₀` over `R` carrying the integral model of `W₁` to that of `W₂`, so
   -- their node polynomials split together.
   refine { hmult₂ with splitMultiplicativeReduction := ?_ }

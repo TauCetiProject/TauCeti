@@ -312,6 +312,25 @@ theorem exists_value_ae_eq_and_energyFormH1_eq_of_laplacian_eq
   rw [h1, Pi.neg_apply, h3, h2]
   ring
 
+omit [DecidableEq ι] in
+/-- **A `C²` function vanishing on the frontier lies in `H¹₀`.** Let `Ω` be a bounded open set
+and let `w` be of class `C²` on the whole space and zero on `frontier Ω`. Then `w` represents an
+element of `H¹₀(Ω)`. -/
+theorem exists_w1p0_value_ae_eq_of_contDiff
+    (hb : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ ι))) (hw : ContDiff ℝ 2 w)
+    (hw0 : ∀ x ∈ frontier (Omega : Set (EuclideanSpace ℝ ι)), w x = 0) :
+    ∃ u : W1p0 mu Omega 2, W1p.value (u : W1p mu Omega 2) =ᵐ[mu.restrict Omega] w := by
+  classical
+  have : IsFiniteMeasure (mu.restrict Omega) := isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
+  -- `Δw` is continuous, hence bounded on the compact set `closure Ω`.
+  obtain ⟨S, hS⟩ := hb.isCompact_closure.exists_bound_of_continuousOn
+    hw.continuous_laplacian.continuousOn
+  obtain ⟨u, hu, -⟩ := exists_isWeakSolutionDirichlet_laplacian_of_contDiffOn (mu := mu) hb
+    hw.contDiffOn hw.continuous.continuousOn hw0
+    (MemLp.of_bound hw.continuous_laplacian.aestronglyMeasurable S
+      (ae_restrict_of_forall_mem Omega.isOpen.measurableSet fun x hx => hS x (subset_closure hx)))
+  exact ⟨u, hu⟩
+
 /-- **The weak solution of the Dirichlet problem is the classical one.** Let `Ω ⊆ ℝ^{n+1}` be an
 open set contained in a ball, and let `w` be of class `C²` on `Ω`, continuous on `closure Ω` and
 zero on `frontier Ω`. If `u ∈ H¹₀(Ω)` is the weak solution of `-Δu = f` in `Ω`, `u = 0` on `∂Ω`,

@@ -46,6 +46,10 @@ variable {F A₁ A₂ : Type*} [NonUnitalCStarAlgebra A₁]
 @[simp] theorem coe_toCompletelyPositiveLinearMap (f : F) :
     ⇑(toCompletelyPositiveLinearMap (A₁ := A₁) (A₂ := A₂) f) = f := (rfl)
 
+@[simp] theorem toLinearMap_toCompletelyPositiveLinearMap (f : F) :
+    (toCompletelyPositiveLinearMap (A₁ := A₁) (A₂ := A₂) f).toLinearMap = (f : A₁ →ₗ[ℂ] A₂) :=
+  (rfl)
+
 end CompletelyPositiveMapClass
 
 namespace CompletelyPositiveMap
@@ -173,6 +177,28 @@ def comp (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) : A₁ →CP A₃ :=
 
 @[simp] theorem id_comp (φ : A₁ →CP A₂) : (CompletelyPositiveMap.id A₂).comp φ = φ :=
   ext fun _ ↦ rfl
+
+/-- The amplification of the identity is the identity. -/
+@[simp] theorem mapCStarMatrix_id (n : Type*) [Fintype n] :
+    (CompletelyPositiveMap.id A₁).mapCStarMatrix n = CompletelyPositiveMap.id _ := by
+  ext x i j
+  simp
+
+/-- The amplification of a composite is the composite of the amplifications. -/
+@[simp] theorem mapCStarMatrix_comp (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) (n : Type*) [Fintype n] :
+    (ψ.comp φ).mapCStarMatrix n = (ψ.mapCStarMatrix n).comp (φ.mapCStarMatrix n) := by
+  ext x i j
+  simp
+
+/-- The amplification of an `ℝ≥0`-multiple is the same multiple of the amplification. -/
+@[simp] theorem mapCStarMatrix_smul (c : ℝ≥0) (φ : A₁ →CP A₂) (n : Type*) [Fintype n] :
+    (c • φ).mapCStarMatrix n = c • φ.mapCStarMatrix n :=
+  ext fun x ↦ by
+    rw [smul_apply, mapCStarMatrix_apply, mapCStarMatrix_apply]
+    -- The `ℝ≥0`-action on `CStarMatrix n n A₂` is `NNReal.instSMulOfReal` through its `ℝ`-module
+    -- structure as a C⋆-algebra, which `CStarMatrix.smul_apply` does not match, so `simp` cannot
+    -- evaluate the entries; definitionally both sides have entries `c • φ (x i j)`.
+    exact CStarMatrix.ext fun _ _ ↦ rfl
 
 /-- Converting a composite of non-unital star algebra homomorphisms to a completely positive map
 composes the converted maps. -/

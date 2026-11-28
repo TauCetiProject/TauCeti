@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Lie.Adjoint.Exponential.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.Geometry.Lie.FundamentalVectorField.Linearization
 
+import TauCeti.Analysis.Calculus.Deriv.OperatorCurve
 import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
@@ -69,6 +70,11 @@ as a subrepresentation of the adjoint representation of any subgroup `K` of `G_p
   preserved by every `d(exp (t ξ))_p`.
 * `TauCeti.tangentRepresentation_comp_isotropyLinearization`: `dg_p ∘ A_ξ = A_η ∘ dg_p` for `g` in
   the stabilizer of `p` and `η` in the isotropy algebra with `η = Ad_g ξ`.
+* `TauCeti.isotropyLinearization_apply_apply_eq_of_forall_mem_stabilizer`: `A_ξ` commutes with
+  every operator on `T_p M` that commutes with the differentials of the stabilizer.
+* `TauCeti.commute_isotropyLinearization`,
+  `TauCeti.isotropyLinearization_apply_fundamentalVectorField`: for a commutative group the
+  operators `A_ξ` pairwise commute and vanish on the orbit tangent space `𝔤 · p`.
 * `TauCeti.toSubmodule_isotropySubrepresentation` and
   `TauCeti.mem_isotropySubrepresentation_iff`: the carrier of `TauCeti.isotropySubrepresentation`
   is `𝔤_p`.
@@ -235,6 +241,59 @@ theorem tangentRepresentation_comp_isotropyLinearization
   have hξ' := Tg.hasFDerivAt.comp_hasDerivAt (0 : ℝ)
     (hasDerivAt_mfderiv_mulInvariantExp_smul_smul_apply ξ u)
   exact (hη'.unique (hξ'.congr_of_eventuallyEq (Eventually.of_forall (hcurve u)))).symm
+
+/-- **The linearized isotropy action commutes with invariant operators.** If an operator `T` on
+`T_p M` commutes with the differential at `p` of every element of the stabilizer of `p`, then it
+commutes with every `A_ξ`, the derivative at `t = 0` of `t ↦ d(exp (t ξ))_p`. -/
+theorem isotropyLinearization_apply_apply_eq_of_forall_mem_stabilizer
+    (ξ : (InfinitesimalAction.fundamental I G I' M).isotropy p) (T : E' →L[ℝ] E')
+    (hT : ∀ g ∈ MulAction.stabilizer G p, ∀ v : E',
+      (mfderiv I' I' (fun y : M ↦ g • y) p : E' →L[ℝ] E') (T v) =
+        T ((mfderiv I' I' (fun y : M ↦ g • y) p : E' →L[ℝ] E') v))
+    (v : E') :
+    isotropyLinearization I' p ξ (T v) = T (isotropyLinearization I' p ξ v) :=
+  -- The curve `t ↦ d(exp (t ξ))_p` is read in the operators on the model space `E'`.
+  HasDerivAt.apply_apply_eq_of_eventually_apply_apply_eq (E := E')
+    (hasDerivAt_mfderiv_mulInvariantExp_smul_smul_isotropyLinearization ξ) T
+    (Eventually.of_forall fun t ↦ hT _ (mulInvariantExp_smul_mem_stabilizer ξ t)) v
+
+/-- **The linearized isotropy actions of a commutative group commute.** For a commutative Lie
+group, the operators `A_ξ` and `A_η` on `T_p M` of two elements of the isotropy algebra of `p`
+commute. -/
+theorem commute_isotropyLinearization [IsMulCommutative G]
+    (ξ η : (InfinitesimalAction.fundamental I G I' M).isotropy p) :
+    Commute (isotropyLinearization I' p ξ) (isotropyLinearization I' p η) := by
+  have hd : ∀ g ∈ MulAction.stabilizer G p, MDifferentiableAt I' I' (fun y : M ↦ g • y) p :=
+    fun g _ ↦ ContMDiffSMul.mdifferentiable_const_smul (I := I) (n := ∞) (by simp) g p
+  refine (commute_iff_eq _ _).2 (ContinuousLinearMap.ext fun v ↦ ?_)
+  -- `dg_p ∘ A_η = A_η ∘ dg_p` for `g` fixing `p`, since `Ad_g η = η`.
+  refine isotropyLinearization_apply_apply_eq_of_forall_mem_stabilizer ξ _ (fun g hg u ↦ ?_) v
+  have := congrArg (fun L : E' →L[ℝ] E' ↦ L u)
+    (tangentRepresentation_comp_isotropyLinearization hd ⟨g, hg⟩ η η (by simp))
+  simp only [tangentRepresentation_apply] at this
+  exact this
+
+/-- **The linearized isotropy action of a commutative group kills the orbit directions.** For a
+commutative Lie group, every operator `A_ξ` vanishes on the orbit tangent space `𝔤 · p`: the
+stabilizer fixes every `ζ_M(p)`, since `Ad_g ζ = ζ`. -/
+theorem isotropyLinearization_apply_fundamentalVectorField [IsMulCommutative G]
+    (ξ : (InfinitesimalAction.fundamental I G I' M).isotropy p) (ζ : GroupLieAlgebra I G) :
+    isotropyLinearization I' p ξ (fundamentalVectorField I' ζ p) = 0 := by
+  have : LieGroup I 1 G := lieGroupOne
+  have hd : ∀ g ∈ MulAction.stabilizer G p, MDifferentiableAt I' I' (fun y : M ↦ g • y) p :=
+    fun g _ ↦ ContMDiffSMul.mdifferentiable_const_smul (I := I) (n := ∞) (by simp) g p
+  have hconst (t : ℝ) : (mfderiv I' I'
+      (fun y : M ↦ mulInvariantExp (t • (ξ : GroupLieAlgebra I G)) • y) p : E' →L[ℝ] E')
+        (fundamentalVectorField I' ζ p) = fundamentalVectorField I' ζ p := by
+    have := tangentRepresentation_fundamentalVectorField hd
+      ⟨_, mulInvariantExp_smul_mem_stabilizer ξ t⟩ ζ
+    simp only [tangentRepresentation_apply, Lie.adjointContinuousLinearMap_eq_id,
+      ContinuousLinearMap.id_apply] at this
+    exact this
+  -- The constant curve is read in the model space `E'`, which is `T_p M` by definition.
+  exact (hasDerivAt_mfderiv_mulInvariantExp_smul_smul_apply ξ _).unique
+    ((hasDerivAt_const (0 : ℝ) (show E' from fundamentalVectorField I' ζ p)).congr_of_eventuallyEq
+      (Eventually.of_forall hconst))
 
 end TauCeti
 
