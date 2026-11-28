@@ -73,6 +73,8 @@ taking invariants under it.
 * `Representation.Equiv.ker_eq`: equivalent representations have the same kernel.
 * `Representation.IntertwiningMap.ker_le_ker_of_surjective`: an element acting trivially in a
   representation acts trivially in each of its quotients.
+* `Representation.IntertwiningMap.ker_le_ker_of_injective`: an element acting trivially in a
+  representation acts trivially in each of its subrepresentations.
 * `Representation.mul_mul_inv_eq_smul_of_mul_eq_smul_mul`: a relation `ρ g * f = c • (f * ρ g)`
   says that conjugation by `ρ g` scales `f` by `c`.
 * `Representation.isIntertwiningMap_iff_of_closure_eq_top`: equivariance may be tested on a
@@ -289,6 +291,15 @@ theorem ker_le_ker_of_surjective (f : IntertwiningMap ρ σ) (hf : Function.Surj
   refine LinearMap.ext fun w ↦ ?_
   obtain ⟨v, rfl⟩ := hf w
   rw [← isIntertwining _ _ f g v, hg, one_apply_eq_self, one_apply_eq_self]
+
+/-- **A subrepresentation acts trivially wherever the ambient representation does.** If
+`f : ρ → σ` is an injective intertwining map, every element acting trivially in `σ` acts
+trivially in `ρ`, since `f (ρ g v) = σ g (f v) = f v`. -/
+theorem ker_le_ker_of_injective (f : IntertwiningMap ρ σ) (hf : Function.Injective f) :
+    σ.ker ≤ ρ.ker := fun g hg ↦ by
+  rw [MonoidHom.mem_ker] at hg ⊢
+  refine LinearMap.ext fun v ↦ hf ?_
+  rw [isIntertwining _ _ f g v, hg, one_apply_eq_self, one_apply_eq_self]
 
 end Kernel
 

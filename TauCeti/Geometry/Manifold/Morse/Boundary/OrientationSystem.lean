@@ -421,15 +421,9 @@ theorem IsMorseSmale.signLocalSystemFiberEquiv_twistedMorseBoundaryMap_neg
     have := (hMS.finite_morseTrajectorySlice hf hpq').to_subtype
     have := Fintype.ofFinite (hX.morseTrajectorySlice (Set.equivOfEq criticalPoints_neg p)
       (Set.equivOfEq criticalPoints_neg q))
-    rw [twistedMorseBoundaryMap_of_morseIndex_eq_add_one hqp,
+    rw [twistedMorseBoundaryMap_neg_eq_sum hf _ hqp,
       signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hpq', signedTrajectoryCount_def,
-      ← finsum_subtype_eq_finsum_cond]
-    -- Read the trajectories of `-X` from `q` to `p` as those of `X` from `p` to `q`.
-    have hslice : ∀ y, y ∈ hX.morseTrajectorySlice (Set.equivOfEq criticalPoints_neg p : M)
-        (Set.equivOfEq criticalPoints_neg q) ↔ y ∈ (hX.neg hf).morseTrajectorySlice q p :=
-      fun y ↦ (Set.ext_iff.1 (hX.neg_morseTrajectorySlice hf p q) y).symm
-    rw [← finsum_comp_equiv (Equiv.subtypeEquivRight hslice), finsum_eq_sum_of_fintype,
-      finsum_eq_sum_of_fintype, LinearMap.sum_apply]
+      ← finsum_subtype_eq_finsum_cond, finsum_eq_sum_of_fintype, LinearMap.sum_apply]
     refine (map_sum _ _ _).trans ?_
     rw [Finset.mul_sum, Finset.sum_smul]
     refine Finset.sum_congr rfl fun y _ ↦ ?_
@@ -438,14 +432,11 @@ theorem IsMorseSmale.signLocalSystemFiberEquiv_twistedMorseBoundaryMap_neg
         hX.flow.stableSet (Set.equivOfEq criticalPoints_neg q : M) := ⟨hy.1, hy.2.1⟩
     refine (map_zsmul _ _ _).trans ?_
     exact trajectorySign_smul_signLocalSystemFiberEquiv_transport 𝔬 hf o' hMS q p hpq' hqp hy' _
-      ((hX.neg_trajectoryPathClass hf y _ (Equiv.subtypeEquivRight_apply_coe _ _)).trans (by
+      ((hX.neg_trajectoryPathClass hf y _ rfl).trans (by
         rw [trajectoryPathClass_def]
         exact (Path.Homotopic.Quotient.mk_symm _).symm)) c
-  · have hq' : manifoldMorseIndex 𝓘(ℝ, E) (-f) q ≠ manifoldMorseIndex 𝓘(ℝ, E) (-f) p + 1 := by
-      have := hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-      have := hq.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-      omega
-    rw [twistedMorseBoundaryMap_of_not_morseIndex_eq_add_one hq',
+  · rw [twistedMorseBoundaryMap_of_not_morseIndex_eq_add_one
+        (hp.manifoldMorseIndex_neg_ne_add_one_of_ne_add_one hq hpq),
       signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one
         (p := Set.equivOfEq criticalPoints_neg p) (q := Set.equivOfEq criticalPoints_neg q) hpq,
       mul_zero, zero_smul, LinearMap.zero_apply]
@@ -588,22 +579,16 @@ theorem IsMorseSmale.tensorSignLocalSystemFiberEquiv_twistedMorseBoundaryMap_neg
     have := (hMS.finite_morseTrajectorySlice hf hpq').to_subtype
     have := Fintype.ofFinite (hX.morseTrajectorySlice (Set.equivOfEq criticalPoints_neg p)
       (Set.equivOfEq criticalPoints_neg q))
-    rw [twistedMorseBoundaryMap_of_morseIndex_eq_add_one hqp,
-      twistedMorseBoundaryMap_of_morseIndex_eq_add_one hpq']
-    -- Read the trajectories of `-X` from `q` to `p` as those of `X` from `p` to `q`.
-    have hslice : ∀ y, y ∈ hX.morseTrajectorySlice (Set.equivOfEq criticalPoints_neg p : M)
-        (Set.equivOfEq criticalPoints_neg q) ↔ y ∈ (hX.neg hf).morseTrajectorySlice q p :=
-      fun y ↦ (Set.ext_iff.1 (hX.neg_morseTrajectorySlice hf p q) y).symm
-    rw [← finsum_comp_equiv (Equiv.subtypeEquivRight hslice), LinearMap.dualMap_def,
-      map_finsum _ (Set.toFinite _), finsum_eq_sum_of_fintype, finsum_eq_sum_of_fintype,
-      LinearMap.sum_apply]
+    rw [twistedMorseBoundaryMap_neg_eq_sum hf _ hqp,
+      twistedMorseBoundaryMap_of_morseIndex_eq_add_one hpq', LinearMap.dualMap_def,
+      map_finsum _ (Set.toFinite _), finsum_eq_sum_of_fintype, LinearMap.sum_apply]
     refine (map_sum _ _ _).trans (Eq.trans (Finset.sum_congr rfl fun y _ ↦ ?_)
       ((congrArg (_ • ·) (LinearMap.sum_apply _ _ _)).trans Finset.smul_sum).symm)
     -- Along each trajectory, transport in `L^∨` along the reversed path is the dual map of
     -- transport in `L`, and the twist of `o(TM)` cancels the twist in the sign.
     have hy := hX.mem_morseTrajectorySlice.1 y.property
-    have hP := hX.neg_trajectoryPathClass hf y ((Equiv.subtypeEquivRight hslice) y)
-      (Equiv.subtypeEquivRight_apply_coe _ _)
+    have hP := hX.neg_trajectoryPathClass hf y
+      ⟨y, (Set.ext_iff.1 (hX.neg_morseTrajectorySlice hf p q) y).2 y.property⟩ rfl
     rw [LinearMap.smul_apply, LinearEquiv.coe_coe]
     -- The fibres are read at the points `Set.equivOfEq criticalPoints_neg p` of `f` and `p` of
     -- `-f`, equal only after unfolding, so each step is applied by `Eq.trans` rather than `rw`.
@@ -622,11 +607,8 @@ theorem IsMorseSmale.tensorSignLocalSystemFiberEquiv_twistedMorseBoundaryMap_neg
     -- fibres of `L^∨` and `Module.Dual S L`.
     rw [mul_smul, map_zsmul]
     rfl
-  · have hq' : manifoldMorseIndex 𝓘(ℝ, E) (-f) q ≠ manifoldMorseIndex 𝓘(ℝ, E) (-f) p + 1 := by
-      have := hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-      have := hq.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
-      omega
-    rw [twistedMorseBoundaryMap_of_not_morseIndex_eq_add_one hq',
+  · rw [twistedMorseBoundaryMap_of_not_morseIndex_eq_add_one
+        (hp.manifoldMorseIndex_neg_ne_add_one_of_ne_add_one hq hpq),
       twistedMorseBoundaryMap_of_not_morseIndex_eq_add_one (p := Set.equivOfEq criticalPoints_neg p)
         (q := Set.equivOfEq criticalPoints_neg q) hpq, LinearMap.zero_apply]
     -- Both sides are the zero form.

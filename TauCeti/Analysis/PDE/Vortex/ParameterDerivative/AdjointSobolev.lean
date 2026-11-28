@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.ParameterDerivative
+import TauCeti.Analysis.Calculus.ContDiff.Adjoint
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
@@ -613,12 +614,10 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_fun_fderiv_adjoint_orthogonalR
     ext_inner_left ℝ fun g' ↦ by
       rw [adjoint_inner_right, ← hP,
         inner_fderiv_fun_fderiv_adjoint_orthogonalRightInverse_apply hx hsol hframe hax ha]
-  rw [hP, ← ContinuousLinearMap.adjoint_adjoint P, ← eLpNorm_restrict_coe_opens_top
-    (volume : Measure ℂ), ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)]
-  refine ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le _ (fun f ↦ ?_) g
+  rw [hP, ← ContinuousLinearMap.adjoint_adjoint P]
+  refine ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le_restrict_coe_opens_top _
+    (fun f ↦ ?_) g
   have h := hK x D hx hbound hsol hframe hD hD₀ hax ha v w f
-  rw [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
-    ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)] at h
   simpa only [hP'] using h
 
 /-- **The second derivative of the adjoints of the orthogonal right inverses.** Let `x` be a smooth
@@ -1120,10 +1119,11 @@ theorem iteratedDeriv_adjoint_orthogonalRightInverse {m : ℕ}
       ContinuousLinearMap.adjoint (sobolevFieldValues ∘L iteratedDeriv n (fun t ↦
         orthogonalRightInverse sobolevFieldValues (sobolevGaugeFixedOperator (a t))) t₀) := by
   have hQ := (contDiffAt_adjoint_orthogonalRightInverse hx hsol hframe hax ha).1
-  -- The adjoints are the image of `Q` under the real-linear map `R ↦ (ι ∘ R)†`.
-  simpa only [Function.comp_def, ContinuousLinearMap.comp_apply, compL_apply,
-    adjointRealCLM_apply] using
-    (adjointRealCLM.comp (compL ℝ _ _ _ sobolevFieldValues)).iteratedDeriv_comp_left hQ le_rfl
+  -- The derivatives of the adjoints are the adjoints of the derivatives of `ι ∘ Q`.
+  rw [TauCeti.iteratedDeriv_adjoint]
+  simpa only [Function.comp_def, compL_apply] using
+    congrArg ContinuousLinearMap.adjoint
+      ((compL ℝ _ _ _ sobolevFieldValues).iteratedDeriv_comp_left hQ le_rfl)
 
 /-- **The weighted estimate for the derivatives of every order of the adjoints of the orthogonal
 right inverses, uniformly over a window of divisors.** For every degree `m`, radius `R₀`, rate
@@ -1158,13 +1158,10 @@ theorem exists_forall_eLpNorm_exp_mul_smul_iteratedDeriv_adjoint_orthogonalRight
     m R₀ (c := -c) (by rwa [abs_neg]) n
   refine ⟨K, fun x D hx hbound hsol hframe hD hD₀ a t₀ hax ha M hb g ↦ ?_⟩
   -- `(Q†)ₙ = (ι ∘ Qₙ)†`, and `ι ∘ Qₙ` is estimated at the rate `-c`.
-  rw [iteratedDeriv_adjoint_orthogonalRightInverse hx hsol hframe hax ha,
-    ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
-    ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)]
-  refine ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le _ (fun f ↦ ?_) g
+  rw [iteratedDeriv_adjoint_orthogonalRightInverse hx hsol hframe hax ha]
+  refine ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le_restrict_coe_opens_top _
+    (fun f ↦ ?_) g
   have h := hK x D hx hbound hsol hframe hD hD₀ a t₀ hax ha M hb f
-  rw [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ),
-    ← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)] at h
   simpa only [ContinuousLinearMap.comp_apply, ENNReal.coe_mul, ENNReal.coe_pow] using h
 
 end TauCeti.Vortex

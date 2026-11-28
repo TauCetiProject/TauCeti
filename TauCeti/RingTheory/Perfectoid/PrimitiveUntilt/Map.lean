@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Perfectoid.PrimitiveUntilt.Basic
 
 import Mathlib.Algebra.CharP.Subring
 import TauCeti.RingTheory.Huber.Pair.Complete
+import TauCeti.RingTheory.WittVector.MapEquiv
 
 /-!
 # Functoriality and `p`-recovery of untilts
@@ -135,9 +136,8 @@ theorem map_comp {T : Type*} [CommRing T] [TopologicalSpace T] [IsTopologicalRin
         have hcomp : WittVector.map (p := p) ((g.comp f).restrict P.plus P'.plus
             fun _ hx ↦ hgplus _ (hfplus _ hx)) =
             (WittVector.map (g.restrict Q.plus P'.plus hgplus)).comp
-              (WittVector.map (f.restrict P.plus Q.plus hfplus)) := by
-          ext n
-          simp
+              (WittVector.map (f.restrict P.plus Q.plus hfplus)) :=
+          WittVector.map_comp (f.restrict P.plus Q.plus hfplus) (g.restrict Q.plus P'.plus hgplus)
         rw [Ideal.mem_comap, hcomp, RingHom.comp_apply]
         exact hJ' (hJ hw)) := by
   apply IsLocalization.ringHom_ext ((untiltDenominators p P).map (Ideal.Quotient.mk J))

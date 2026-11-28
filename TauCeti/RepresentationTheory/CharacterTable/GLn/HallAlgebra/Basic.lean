@@ -11,6 +11,8 @@ public import TauCeti.LinearAlgebra.Matrix.SimilarityClass
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.Charpoly.Degree
+import TauCeti.LinearAlgebra.Charpoly.Quotient
 
 /-!
 # The ring of class functions on all square matrices over a finite field
@@ -50,6 +52,9 @@ subgroups is not proved here.
   `g`-invariant subspace `W`, as `∑_{U ≤ W} μ(g|_U) = [W = 0]` over the `g`-invariant `U`.
 * `TauCeti.HallAlgebra.greenCuspidal_ofEnd`: `C_η` at the class of `g` is the sum of `β_η · μ` at
   the classes of `g` on the `g`-invariant subspaces.
+* `TauCeti.HallAlgebra.eigenvalueSum_ofEnd_eq_add`,
+  `TauCeti.HallAlgebra.eigenvalueSum_ofEnd_prodMap`: `β_η` is additive along an invariant subspace
+  and its quotient, and on block diagonal maps.
 
 ## References
 
@@ -499,6 +504,39 @@ theorem eigenvalueSum_ofEnd (η : K → ℂ) {V : Type*} [AddCommGroup V] [Modul
     [Module.Finite k V] (g : Module.End k V) :
     eigenvalueSum K η (ofEnd g) = ((g.charpoly.aroots K).map η).sum := by
   rw [eigenvalueSum, charpoly_ofEnd]
+
+variable {V V' W : Type*} [AddCommGroup V] [Module k V] [Module.Finite k V] [AddCommGroup V']
+  [Module k V'] [Module.Finite k V'] [AddCommGroup W] [Module k W] [Module.Finite k W]
+
+/-- If the characteristic polynomial of `g` is the product of those of `a` and `b`, the eigenvalue
+sum at `g` is the sum of those at `a` and at `b`. -/
+theorem eigenvalueSum_ofEnd_eq_add_of_charpoly_eq_mul (η : K → ℂ) {g : Module.End k V}
+    {a : Module.End k V'} {b : Module.End k W} (h : g.charpoly = a.charpoly * b.charpoly) :
+    eigenvalueSum K η (ofEnd g) = eigenvalueSum K η (ofEnd a) + eigenvalueSum K η (ofEnd b) := by
+  rw [eigenvalueSum_ofEnd, eigenvalueSum_ofEnd, eigenvalueSum_ofEnd, h,
+    Polynomial.aroots_mul (mul_ne_zero a.charpoly_monic.ne_zero b.charpoly_monic.ne_zero),
+    Multiset.map_add, Multiset.sum_add]
+
+/-- The eigenvalue sum is additive along an invariant subspace and its quotient. -/
+theorem eigenvalueSum_ofEnd_eq_add (η : K → ℂ) {g : Module.End k V} {U : Submodule k V}
+    (hU : U ∈ g.invtSubmodule) :
+    eigenvalueSum K η (ofEnd g) = eigenvalueSum K η (ofEnd (g.invtRestrict hU)) +
+      eigenvalueSum K η (ofEnd (g.invtQuot hU)) :=
+  eigenvalueSum_ofEnd_eq_add_of_charpoly_eq_mul K η
+    (Module.End.charpoly_invtRestrict_mul_charpoly_invtQuot hU).symm
+
+/-- The eigenvalue sum of a block diagonal map is the sum of those of the blocks. -/
+theorem eigenvalueSum_ofEnd_prodMap (η : K → ℂ) (a : Module.End k V) (b : Module.End k W) :
+    eigenvalueSum K η (ofEnd (a.prodMap b)) =
+      eigenvalueSum K η (ofEnd a) + eigenvalueSum K η (ofEnd b) :=
+  eigenvalueSum_ofEnd_eq_add_of_charpoly_eq_mul K η (LinearMap.charpoly_prodMap a b)
+
+/-- The eigenvalue sum vanishes on the class of size `0`. -/
+theorem eigenvalueSum_eq_zero_of_dim_eq_zero (η : K → ℂ) {o : SimilarityClass k} (h : o.dim = 0) :
+    eigenvalueSum K η o = 0 := by
+  have : Subsingleton (Fin o.dim → k) := by rw [h]; infer_instance
+  rw [← ofEnd_rep o, eigenvalueSum_ofEnd, LinearMap.charpoly_eq_one_of_subsingleton]
+  simp
 
 /-- *Green's cuspidal function* `C_η = (β_η · μ) ∗ 𝟙`, where `β_η · μ` is the pointwise product of
 the eigenvalue sum with the inverse `μ` of `𝟙`, and `∗` the induction product. -/

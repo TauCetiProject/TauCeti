@@ -204,8 +204,7 @@ private theorem exists_lpNorm_iteratedGradient_le_of_mem_wkp0Submodule (hp : 1 <
       heq] with x hx
     rw [← hx, Matrix.contraction_apply]
   have hkey := hCZ ha (fun x => haΛ.opNorm_matrixBilinearForm_le (mem_univ x)) hosc W _ hWeq
-    (((memLp_indicator_iff_restrict hUm.nullMeasurableSet).2 (Lp.memLp _)).ae_eq
-      (hW.mono fun _ h => h.symm))
+    (Lp.memLp_of_restrict_coe_opens_top _)
     ((memLp_indicator_iff_restrict hUm.nullMeasurableSet).2 hF)
   have e1 : eLpNorm (Wkp.iteratedGradient 1 W : EuclideanSpace ℝ (Fin (n + 1)) →
       EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) p volume =

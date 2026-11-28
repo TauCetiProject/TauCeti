@@ -302,10 +302,11 @@ def subgroupEquiv [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace
     ConnectedPointedCoverClass x₀ n ≃ {H : Subgroup (FundamentalGroup X x₀) // H.index = n} :=
   Equiv.ofBijective subgroup ⟨subgroup_injective, subgroup_surjective⟩
 
+/-- The index-`n` slice sends a class to its recovered subgroup. -/
 @[simp]
-theorem subgroupEquiv_mk [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
-    [NeZero n] (c : ConnectedPointedCover x₀ n) : (subgroupEquiv (mk c)).val = c.subgroup :=
-  subgroup_mk c
+theorem subgroupEquiv_apply [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
+    [NeZero n] (C : ConnectedPointedCoverClass x₀ n) : subgroupEquiv C = subgroup C :=
+  Equiv.ofBijective_apply _ _ C
 
 end ConnectedPointedCoverClass
 
@@ -322,6 +323,8 @@ theorem exists_connectedPointedCoverClass_equiv_index (X : TopCat.{u})
         (e (ConnectedPointedCoverClass.mk c)).val =
           (FundamentalGroup.mapOfEq ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩
             c.e.property).range :=
-  ⟨ConnectedPointedCoverClass.subgroupEquiv, ConnectedPointedCoverClass.subgroupEquiv_mk⟩
+  ⟨ConnectedPointedCoverClass.subgroupEquiv, fun c ↦ by
+    rw [ConnectedPointedCoverClass.subgroupEquiv_apply, ConnectedPointedCoverClass.subgroup_mk,
+      ConnectedPointedCover.subgroup_def]⟩
 
 end TauCeti

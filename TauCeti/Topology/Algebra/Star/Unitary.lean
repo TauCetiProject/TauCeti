@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Star.Unitary
-public import TauCeti.Algebra.Star.Unitary
+public import TauCeti.Algebra.Star.Unitary.Basic
 
 /-!
 # The unitary subgroup of units

@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.OneForm.Basic
 public import TauCeti.Geometry.Manifold.IntegralCurve.Maximal
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
-import TauCeti.Geometry.Manifold.Riemannian.Basic
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
@@ -91,14 +90,8 @@ theorem IsPrimitiveOn.integral_norm_metricDual_sq_eq_sub
     (hγ : IsMIntegralCurveOn γ (-α.metricDual) s)
     (hU : MapsTo γ s U) {a b : ℝ} (hab : uIcc a b ⊆ s) :
     ∫ t in a..b, ‖α.metricDual (γ t)‖ ^ 2 = f (γ a) - f (γ b) := by
-  have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
-    IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 0)
-  have : IsManifold I ((0 : ℕ∞ω) + 1) M := by
-    simpa only [zero_add] using (inferInstance : IsManifold I 1 M)
-  have hdual := hα.contMDiff_metricDual.continuous
-  have hc : ContinuousOn (fun t ↦ ‖α.metricDual (γ t)‖ ^ 2) (uIcc a b) := by
-    exact (((continuous_norm_bundle E (fun x : M ↦ TangentSpace I x)).comp_continuousOn
-      (hdual.comp_continuousOn hγ.continuousOn)).pow 2).mono hab
+  have hc : ContinuousOn (fun t ↦ ‖α.metricDual (γ t)‖ ^ 2) (uIcc a b) :=
+    ((hα.continuous_norm_metricDual.comp_continuousOn hγ.continuousOn).pow 2).mono hab
   have hd (t : ℝ) (ht : t ∈ uIcc a b) :=
     ((hf.hasDerivWithinAt_comp_neg_metricDual hγ (hab ht) (hU (hab ht))).mono hab).neg
   have heq := intervalIntegral.integral_eq_sub_of_hasDeriv_right
