@@ -61,10 +61,15 @@ large jump between consecutive minima makes the wedge domain small.
   corrected minimal vectors lie in the wedge domain.
 * `TauCeti.NumberField.approxWeight_wedgeExponent` and
   `TauCeti.NumberField.rpow_approxWeight_wedgeExponent`: the exact weight of the wedge domain.
-* `TauCeti.NumberField.wedgeExponent_abs` and `TauCeti.NumberField.approxWeight_wedgeExponent_zero`:
-  the sign of the wedge constant does not matter, and a zero constant removes the correction.
+* `TauCeti.NumberField.wedgeExponent_abs`, `TauCeti.NumberField.wedgeExponent_zero` and
+  `TauCeti.NumberField.approxWeight_wedgeExponent_zero`: changing the sign leaves the exponents
+  unchanged, and a zero constant removes the correction.
 * `TauCeti.NumberField.rpow_approxWeight_wedgeExponent_le`: for the successive minima, the
-  wedge domain has weight at most a constant times `(μ (k - 1) / μ k) ^ [K : ℚ]`.
+  wedge domain has exponentiated weight at most a constant times `(μ (k - 1) / μ k) ^ [K : ℚ]`.
+* `TauCeti.NumberField.exists_pos_mul_approxWeight_wedgeExponent_le_add_logb` combines the uniform
+  form of that bound with the Minkowski lower bound on the last minimum to bound wedge weight.
+* `TauCeti.NumberField.eventually_approxWeight_wedgeExponent_le`: a uniform negative margin
+  after a large jump when the original weight is bounded above by a strictly negative constant.
 
 ## References
 
@@ -119,6 +124,14 @@ theorem wedgeExponent_of_not_isNonarchimedean (hv : ¬IsNonarchimedean v)
       Real.logb Q (C * ((if ∀ t ∈ (T : Finset ι), k ≤ ((σ v).symm t : ℕ) then μ (k - 1) / μ k
         else 1) * ∏ t ∈ (T : Finset ι), μ ((σ v).symm t))) := by
   simp [wedgeExponent, hv]
+
+/-- With zero wedge constant the exponent is the subset sum at every absolute value. -/
+@[simp]
+theorem wedgeExponent_zero (T : Set.powersetCard ι p) :
+    wedgeExponent c p k σ μ 0 Q v T = ∑ t ∈ (T : Finset ι), c v t := by
+  by_cases hv : IsNonarchimedean v
+  · exact wedgeExponent_of_isNonarchimedean hv T
+  · rw [wedgeExponent_of_not_isNonarchimedean hv, zero_mul, Real.logb_zero, add_zero]
 
 /-- Taking the absolute value of the wedge constant does not change the exponents. -/
 @[simp]
@@ -311,80 +324,59 @@ private theorem prod_wedgeGain (σ : Fin (Fintype.card ι) ≃ ι) (hp : 0 < p)
   ring
 
 omit [NumberField K] in
-/-- The wedge exponents of all wedge forms at an archimedean absolute value sum to
-`e · ∑ i, c v i + logb Q (C ^ M · (∏ l, μ l) ^ e · μ (k - 1) / μ k)`. -/
-private theorem sum_wedgeExponent_of_not_isNonarchimedean (hv : ¬IsNonarchimedean v)
-    (hp : 0 < p) (hkp : k + p = Fintype.card ι) (hμ : ∀ l < Fintype.card ι, μ l ≠ 0)
-    (hC : C ≠ 0) :
-    ∑ T : Set.powersetCard ι p, wedgeExponent c p k σ μ C Q v T =
-      (Fintype.card ι - 1).choose (p - 1) * ∑ i, c v i +
-        Real.logb Q (C ^ (Fintype.card ι).choose p *
-          (∏ l : Fin (Fintype.card ι), μ l) ^ (Fintype.card ι - 1).choose (p - 1) *
-            (μ (k - 1) / μ k)) := by
+/-- At an archimedean absolute value, the sum of the corrections is the logarithm of the product
+of the gains and constants. -/
+private theorem sum_wedgeExponent_sub_zero (hv : ¬IsNonarchimedean v) (hp : 0 < p)
+    (hkp : k + p = Fintype.card ι) (hμ : ∀ l < Fintype.card ι, μ l ≠ 0) :
+    ∑ T : Set.powersetCard ι p, (wedgeExponent c p k σ μ C Q v T -
+        wedgeExponent c p k σ μ 0 Q v T) =
+      Real.logb Q (C ^ (Fintype.card ι).choose p *
+        (∏ l : Fin (Fintype.card ι), μ l) ^ (Fintype.card ι - 1).choose (p - 1) *
+          (μ (k - 1) / μ k)) := by
   classical
-  have hk : k < Fintype.card ι := by omega
-  simp_rw [wedgeExponent_of_not_isNonarchimedean hv]
-  rw [sum_add_distrib, Set.powersetCard.sum_sum hp, nsmul_eq_mul, ← prod_wedgeGain (σ v) hp hkp,
-    Real.logb_prod]
+  by_cases hC : C = 0
+  · have hM : (Fintype.card ι).choose p ≠ 0 := (Nat.choose_pos (by omega)).ne'
+    simp only [hC, sub_self, sum_const_zero, zero_pow hM, zero_mul, Real.logb_zero]
+  rw [← prod_wedgeGain (σ v) hp hkp]
+  simp_rw [wedgeExponent_zero, wedgeExponent_of_not_isNonarchimedean hv, add_sub_cancel_left]
+  rw [Real.logb_prod]
   intro T _
   refine mul_ne_zero hC (mul_ne_zero ?_ (prod_ne_zero_iff.2 fun t _ ↦ hμ _ ((σ v).symm t).isLt))
   split_ifs
-  · exact div_ne_zero (hμ _ (by omega)) (hμ _ hk)
+  · exact div_ne_zero (hμ _ (by omega)) (hμ _ (by omega))
   · exact one_ne_zero
 
-omit [NumberField K] in
-/-- The wedge exponents of all wedge forms at a nonarchimedean absolute value sum to
-`e · ∑ i, c v i`. -/
-private theorem sum_wedgeExponent_of_isNonarchimedean (hv : IsNonarchimedean v) (hp : 0 < p) :
-    ∑ T : Set.powersetCard ι p, wedgeExponent c p k σ μ C Q v T =
-      (Fintype.card ι - 1).choose (p - 1) * ∑ i, c v i := by
-  simp_rw [wedgeExponent_of_isNonarchimedean hv]
-  rw [Set.powersetCard.sum_sum hp, nsmul_eq_mul]
-
-/-- **The weight of the wedge domain** (Bombieri–Gubler 7.5.30). For `0 < p` and `k + p = card ι`,
-with the minima `μ l`, `l < card ι`, and the constant nonzero, the weight of the wedge exponents is
-`e · approxWeight S₀ c + [K : ℚ] · logb Q (C ^ M · (∏ l, μ l) ^ e · μ (k - 1) / μ k)`, where
-`e = (card ι - 1).choose (p - 1)` is the number of `p`-subsets containing a given index and
-`M = (card ι).choose p` is the number of `p`-subsets. -/
-theorem approxWeight_wedgeExponent (S₀ : Finset (FinitePlace K)) (c : AbsoluteValue K ℝ → ι → ℝ)
-    (hp : 0 < p) (hkp : k + p = Fintype.card ι) (σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι)
-    (hμ : ∀ l < Fintype.card ι, μ l ≠ 0) (hC : C ≠ 0) (Q : ℝ) :
-    approxWeight S₀ (wedgeExponent c p k σ μ C Q) =
-      (Fintype.card ι - 1).choose (p - 1) * approxWeight S₀ c +
-        finrank ℚ K * Real.logb Q (C ^ (Fintype.card ι).choose p *
-          (∏ l : Fin (Fintype.card ι), μ l) ^ (Fintype.card ι - 1).choose (p - 1) *
-            (μ (k - 1) / μ k)) := by
-  have hna (v : FinitePlace K) : IsNonarchimedean v.val := v.add_le
-  simp only [approxWeight_def]
-  simp_rw [sum_wedgeExponent_of_not_isNonarchimedean (InfinitePlace.not_isNonarchimedean _) hp hkp
-    hμ hC, sum_wedgeExponent_of_isNonarchimedean (hna _) hp]
-  -- Both sides are linear in the local sums `∑ i, c v i` and in the common logarithm.
-  have key (E X : ℝ) (m a : InfinitePlace K → ℝ) (b : FinitePlace K → ℝ) :
-      ∑ v, m v * (E * a v + X) + ∑ v ∈ S₀, E * b v =
-        E * (∑ v, m v * a v + ∑ v ∈ S₀, b v) + (∑ v, m v) * X := by
-    have h : ∑ v, m v * (E * a v + X) = E * ∑ v, m v * a v + (∑ v, m v) * X := by
-      rw [mul_sum, sum_mul, ← sum_add_distrib]
-      exact sum_congr rfl fun v _ ↦ by ring
-    rw [h, ← mul_sum]
-    ring
-  rw [← InfinitePlace.sum_mult_eq, Nat.cast_sum]
-  exact key _ _ (fun v ↦ (v.mult : ℝ)) (fun v ↦ ∑ i, c v.val i) fun v ↦ ∑ i, c v.val i
-
-/-- With zero wedge constant, the weight is the original weight times the number of
+/-- For `0 < p` and zero wedge constant, the weight is the original weight times the number of
 `p`-subsets containing each index. No condition on the minima is needed. -/
 @[simp]
 theorem approxWeight_wedgeExponent_zero {S₀ : Finset (FinitePlace K)} (hp : 0 < p) :
     approxWeight S₀ (wedgeExponent c p k σ μ 0 Q) =
       (Fintype.card ι - 1).choose (p - 1) * approxWeight S₀ c := by
-  have h (v : InfinitePlace K) :
-      ∑ T : Set.powersetCard ι p, wedgeExponent c p k σ μ 0 Q v.val T =
-        (Fintype.card ι - 1).choose (p - 1) * ∑ i, c v.val i := by
-    simp_rw [wedgeExponent_of_not_isNonarchimedean v.not_isNonarchimedean, zero_mul,
-      Real.logb_zero, add_zero]
-    rw [Set.powersetCard.sum_sum hp, nsmul_eq_mul]
   simp only [approxWeight_def]
-  simp_rw [h, sum_wedgeExponent_of_isNonarchimedean (FinitePlace.add_le _) hp,
+  simp_rw [wedgeExponent_zero, Set.powersetCard.sum_sum hp, nsmul_eq_mul,
     mul_left_comm (_ : ℝ) ((Fintype.card ι - 1).choose (p - 1) : ℝ), ← mul_sum, mul_add]
+
+/-- **The weight of the wedge domain** (Bombieri–Gubler 7.5.30). For `0 < p` and `k + p = card ι`,
+with the minima `μ l`, `l < card ι`, nonzero, the weight of the wedge exponents is
+`e · approxWeight S₀ c + [K : ℚ] · logb Q (C ^ M · (∏ l, μ l) ^ e · μ (k - 1) / μ k)`, where
+`e = (card ι - 1).choose (p - 1)` is the number of `p`-subsets containing a given index and
+`M = (card ι).choose p` is the number of `p`-subsets. The correction vanishes when `C = 0`. -/
+theorem approxWeight_wedgeExponent (S₀ : Finset (FinitePlace K)) (c : AbsoluteValue K ℝ → ι → ℝ)
+    (hp : 0 < p) (hkp : k + p = Fintype.card ι) (σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι)
+    (hμ : ∀ l < Fintype.card ι, μ l ≠ 0) (Q : ℝ) :
+    approxWeight S₀ (wedgeExponent c p k σ μ C Q) =
+      (Fintype.card ι - 1).choose (p - 1) * approxWeight S₀ c +
+        finrank ℚ K * Real.logb Q (C ^ (Fintype.card ι).choose p *
+          (∏ l : Fin (Fintype.card ι), μ l) ^ (Fintype.card ι - 1).choose (p - 1) *
+            (μ (k - 1) / μ k)) := by
+  rw [← approxWeight_wedgeExponent_zero hp (k := k) (σ := σ) (μ := μ) (Q := Q), add_comm,
+    ← sub_eq_iff_eq_add, ← approxWeight_sub, approxWeight_def]
+  have hfin (v : FinitePlace K) (T : Set.powersetCard ι p) :
+      (wedgeExponent c p k σ μ C Q - wedgeExponent c p k σ μ 0 Q) v.val T = 0 := by
+    simp only [Pi.sub_apply, wedgeExponent_of_isNonarchimedean v.add_le, sub_self]
+  simp_rw [hfin, sum_const_zero, add_zero, Pi.sub_apply,
+    sum_wedgeExponent_sub_zero (InfinitePlace.not_isNonarchimedean _) hp hkp hμ, ← sum_mul,
+    ← Nat.cast_sum, InfinitePlace.sum_mult_eq]
 
 /-- **The weight of the wedge domain, multiplicatively** (Bombieri–Gubler 7.5.30). For
 `0 < Q ≠ 1`, `0 < p`, `k + p = card ι`, positive minima `μ l`, `l < card ι`, and `0 < C`,
@@ -400,7 +392,7 @@ theorem rpow_approxWeight_wedgeExponent (S₀ : Finset (FinitePlace K))
         (C ^ (Fintype.card ι).choose p *
           (∏ l : Fin (Fintype.card ι), μ l) ^ (Fintype.card ι - 1).choose (p - 1) *
             (μ (k - 1) / μ k)) ^ finrank ℚ K := by
-  rw [approxWeight_wedgeExponent S₀ c hp hkp σ (fun l hl ↦ (hμ l hl).ne') hC.ne',
+  rw [approxWeight_wedgeExponent S₀ c hp hkp σ (fun l hl ↦ (hμ l hl).ne'),
     Real.rpow_add hQ]
   set X := C ^ (Fintype.card ι).choose p *
     (∏ l : Fin (Fintype.card ι), μ l) ^ (Fintype.card ι - 1).choose (p - 1) *
@@ -464,5 +456,156 @@ theorem rpow_approxWeight_wedgeExponent_le {S₀ : Finset (FinitePlace K)}
           (Submodule.successiveMinimum_nonneg (approxModule S₀ L c Q) (approxBody L c Q) _)
           (Submodule.successiveMinimum_nonneg (approxModule S₀ L c Q) (approxBody L c Q) _)
         gcongr
+
+/-- For forms independent at the infinite places and at `S₀` and a nonzero constant `C`,
+the constant in `rpow_approxWeight_wedgeExponent_le` can be chosen independently of the degree
+`0 < p` and jump index `k` with `k + p = card ι`. -/
+theorem exists_pos_rpow_approxWeight_wedgeExponent_le {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) {C : ℝ} (hC : C ≠ 0) :
+    ∃ A : ℝ, 0 < A ∧ ∀ {k p : ℕ}, 0 < p → k + p = Fintype.card ι →
+      ∀ (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}, 0 < Q → Q ≠ 1 →
+      ∀ σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι,
+      Q ^ approxWeight S₀ (wedgeExponent c p k σ
+          ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) ≤
+        A * ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) (k - 1) /
+          (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) k) ^ finrank ℚ K := by
+  have hCabs : 0 < |C| := abs_pos.2 hC
+  have hconst := approxConst_pos hLinf hLfin
+  have hprod : 0 < ∏ v ∈ S₀, (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ Fintype.card ι :=
+    prod_pos fun v _ ↦ pow_pos (by
+      exact_mod_cast (HeightOneSpectrum.one_lt_absNorm v.maximalIdeal).pos) _
+  have hex (p : ℕ) : ∃ A : ℝ, 0 < A ∧ ∀ (c : AbsoluteValue K ℝ → ι → ℝ)
+      {Q : ℝ}, 0 < Q → Q ≠ 1 → 0 < p → p ≤ Fintype.card ι → ∀ σ,
+        Q ^ approxWeight S₀ (wedgeExponent c p (Fintype.card ι - p) σ
+            ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) ≤
+          A * ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
+              (Fintype.card ι - p - 1) /
+            (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
+              (Fintype.card ι - p)) ^ finrank ℚ K := by
+    refine ⟨?_, ?_, ?_⟩
+    rotate_left 2
+    · intro c Q hQ hQ₁ hp₀ hp σ
+      have h := rpow_approxWeight_wedgeExponent_le hLinf hLfin c hp₀
+        (Nat.sub_add_cancel hp) σ hCabs hQ hQ₁
+      rw [wedgeExponent_abs] at h
+      exact h
+    · positivity
+  choose A hA hbound using hex
+  let s := range (Fintype.card ι + 1)
+  refine ⟨s.sup' nonempty_range_add_one A, (hA 0).trans_le (le_sup' A (mem_range.2 (by omega))),
+    fun {k p} hp hkp c Q hQ hQ₁ σ ↦ ?_⟩
+  obtain rfl : k = Fintype.card ι - p := by omega
+  exact (hbound p c hQ hQ₁ hp (by omega) σ).trans
+    (mul_le_mul_of_nonneg_right (le_sup' A (mem_range.2 (by omega))) (pow_nonneg
+      (div_nonneg (Submodule.successiveMinimum_nonneg _ _ _)
+        (Submodule.successiveMinimum_nonneg _ _ _)) _))
+
+/-- A large jump between successive minima forces a weight gap for the wedge exponents
+(Bombieri–Gubler, 7.5.30–7.5.32). For `N = card ι`, the wedge weight multiplied by `N²` is
+bounded above by the original weight plus `logb Q D`. For nonzero wedge constant, `D > 0`
+is independent of the exponents, the level, the exterior degree, the jump index and the
+bijections. The forms are independent at the infinite places and at `S₀`, `Q > 1`, and
+`0 < p` with `k + p = N`. The jump criterion is `(μ (k - 1) / μ k)^N ≤ μ (N - 1)⁻¹`. -/
+theorem exists_pos_mul_approxWeight_wedgeExponent_le_add_logb {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) {C : ℝ} (hC : C ≠ 0) :
+    ∃ D : ℝ, 0 < D ∧ ∀ (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}, 1 < Q →
+      ∀ {k p : ℕ}, 0 < p → k + p = Fintype.card ι →
+      ∀ σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι,
+        ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) (k - 1) /
+          (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) k) ^ Fintype.card ι ≤
+          ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
+            (Fintype.card ι - 1))⁻¹ →
+        (Fintype.card ι : ℝ) ^ 2 * approxWeight S₀ (wedgeExponent c p k σ
+          ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) ≤
+          approxWeight S₀ c + Real.logb Q D := by
+  let N := Fintype.card ι
+  let d := finrank ℚ K
+  obtain ⟨A, hA, hlast⟩ := exists_pos_mul_rpow_le_last_successiveMinimum_pow hLinf hLfin
+  obtain ⟨U, hU, hupper⟩ := exists_pos_rpow_approxWeight_wedgeExponent_le hLinf hLfin hC
+  refine ⟨U ^ (N ^ 2) / A, by positivity, fun c Q hQ k p hp hkp σ hjump ↦ ?_⟩
+  set μ := (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
+  set r := μ (k - 1) / μ k
+  set w := approxWeight S₀ c
+  set W := approxWeight S₀ (wedgeExponent c p k σ μ C Q)
+  have hQ₀ : 0 < Q := zero_lt_one.trans hQ
+  have hμ (l : ℕ) (hl : l < N) : 0 < μ l := successiveMinimum_approx_pos hLinf hLfin c hQ₀ hl
+  have hr : 0 < r := div_pos (hμ _ (by omega)) (hμ _ (by omega))
+  have h₁ : Real.logb Q A - w ≤ ((d * N : ℕ) : ℝ) * Real.logb Q (μ (N - 1)) := by
+    have h := Real.logb_le_logb_of_le hQ (mul_pos hA (Real.rpow_pos_of_pos hQ₀ _))
+      (hlast c hQ₀)
+    rwa [Real.logb_mul hA.ne' (Real.rpow_pos_of_pos hQ₀ _).ne',
+      Real.logb_rpow hQ₀ hQ.ne', Real.logb_pow, ← sub_eq_add_neg] at h
+  have h₂ : W ≤ Real.logb Q U + d * Real.logb Q r := by
+    have h : Q ^ W ≤ U * r ^ d := hupper hp hkp c hQ₀ hQ.ne' σ
+    rw [← Real.logb_pow, ← Real.logb_mul hU.ne' (pow_ne_zero _ hr.ne')]
+    exact (Real.le_logb_iff_rpow_le hQ (mul_pos hU (pow_pos hr _))).2 h
+  have h₃ : (N : ℝ) * Real.logb Q r ≤ -Real.logb Q (μ (N - 1)) := by
+    have h := Real.logb_le_logb_of_le hQ (pow_pos hr _) hjump
+    rwa [Real.logb_pow, Real.logb_inv] at h
+  have h₄ : (N : ℝ) ^ 2 * W ≤ w + (N : ℝ) ^ 2 * Real.logb Q U - Real.logb Q A := by
+    calc
+      (N : ℝ) ^ 2 * W ≤ (N : ℝ) ^ 2 * (Real.logb Q U + d * Real.logb Q r) := by gcongr
+      _ = (N : ℝ) ^ 2 * Real.logb Q U + ((d * N : ℕ) : ℝ) * (N * Real.logb Q r) := by
+        push_cast
+        ring
+      _ ≤ (N : ℝ) ^ 2 * Real.logb Q U - ((d * N : ℕ) : ℝ) * Real.logb Q (μ (N - 1)) := by
+        rw [sub_eq_add_neg, ← mul_neg]
+        gcongr
+      _ ≤ _ := by linarith
+  rw [Real.logb_div (pow_ne_zero _ hU.ne') hA.ne', Real.logb_pow]
+  push_cast
+  linarith
+
+/-- Beyond a level uniform in the exponents and bijections, a sufficiently large jump yields
+wedge weight at most `-ε / (2 * (card ι)^2)` when the original weight is at most `-ε < 0`.
+The degree and jump conditions are those of `exists_pos_mul_approxWeight_wedgeExponent_le_add_logb`,
+and the constant `C` may be zero. This margin allows an upward perturbation of the wedge exponents
+while keeping negative weight (Bombieri–Gubler, 7.5.30–7.5.32). -/
+theorem eventually_approxWeight_wedgeExponent_le {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) (C : ℝ) {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ Q : ℝ in Filter.atTop,
+      ∀ (c : AbsoluteValue K ℝ → ι → ℝ), approxWeight S₀ c ≤ -ε →
+      ∀ {k p : ℕ}, 0 < p → k + p = Fintype.card ι →
+      ∀ σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι,
+        ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) (k - 1) /
+          (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) k) ^ Fintype.card ι ≤
+          ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
+            (Fintype.card ι - 1))⁻¹ →
+        approxWeight S₀ (wedgeExponent c p k σ
+          ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) ≤
+          -ε / (2 * (Fintype.card ι : ℝ) ^ 2) := by
+  by_cases hC : C = 0
+  · subst C
+    apply Filter.Eventually.of_forall
+    intro Q c hc k p hp hkp σ _
+    rw [approxWeight_wedgeExponent_zero hp]
+    have he : 1 ≤ (Fintype.card ι - 1).choose (p - 1) :=
+      Nat.choose_pos (by omega)
+    have hN : 1 ≤ Fintype.card ι := by omega
+    have he' : (1 : ℝ) ≤ ((Fintype.card ι - 1).choose (p - 1) : ℝ) := Nat.one_le_cast.mpr he
+    have hN' : (1 : ℝ) ≤ Fintype.card ι := Nat.one_le_cast.mpr hN
+    have hdenom : (1 : ℝ) ≤ 2 * (Fintype.card ι : ℝ) ^ 2 := by nlinarith
+    have hw := mul_le_mul_of_nonpos_right he' (hc.trans (neg_nonpos.mpr hε.le))
+    apply (le_div_iff₀ (zero_lt_one.trans_le hdenom)).2
+    nlinarith only [hw, hc, hdenom, hε]
+  obtain ⟨D, -, hD⟩ := exists_pos_mul_approxWeight_wedgeExponent_le_add_logb hLinf hLfin hC
+  filter_upwards [Filter.eventually_gt_atTop (1 : ℝ),
+    Real.tendsto_log_atTop.eventually_ge_atTop (2 * Real.log D / ε)]
+    with Q hQ hlog c hc k p hp hkp σ hjump
+  have hlogb : Real.logb Q D ≤ ε / 2 := by
+    rw [← Real.log_div_log, div_le_iff₀ (Real.log_pos hQ)]
+    have h := (div_le_iff₀ hε).1 hlog
+    linarith
+  have hcard : 0 < Fintype.card ι := by omega
+  have hN : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.mpr hcard
+  have h := hD c hQ hp hkp σ hjump
+  apply (le_div_iff₀ (mul_pos (by norm_num) (pow_pos hN 2))).2
+  nlinarith only [h, hc, hlogb]
 
 end TauCeti.NumberField
