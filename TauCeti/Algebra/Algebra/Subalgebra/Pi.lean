@@ -10,19 +10,41 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 import Mathlib.Algebra.BigOperators.Pi
 
 /-!
-# Point-separating subalgebras of a finite product of a field
+# Point-separating subalgebras of a finite product of rings
 
 For a field `K` and a finite type `ι`, a subalgebra of `ι → K` that separates the points of `ι`
 (Mathlib's `Set.SeparatesPoints`) is everything (`Subalgebra.eq_top_of_separatesPoints`). This
 is the finite, purely algebraic form of the Stone–Weierstrass theorem. The proof is Lagrange
 interpolation: for each `j ≠ i` some affine function of an element of the subalgebra is `1` at
 `i` and `0` at `j`, and the product of these is the indicator `Pi.single i 1` of `i`
-(`Subalgebra.single_one_mem_of_separatesPoints`).
+(`Subalgebra.single_one_mem_of_separatesPoints`). Over an integral domain `R`, the same product
+without division produces an element vanishing off `i` and nonzero at `i`
+(`Subalgebra.exists_supported_single`).
 -/
 
 public section
 
 namespace Subalgebra
+
+/-- A point-separating subalgebra of `ι → R` over an integral domain `R` with `ι` finite contains,
+for each point `i : ι`, an element vanishing off `i` and nonzero at `i`. -/
+theorem exists_supported_single {R ι : Type*} [CommRing R] [IsDomain R] [Finite ι]
+    {S : Subalgebra R (ι → R)} (h : (S : Set (ι → R)).SeparatesPoints) (i : ι) :
+    ∃ b ∈ S, (∀ j ≠ i, b j = 0) ∧ b i ≠ 0 := by
+  classical
+  have := Fintype.ofFinite ι
+  have hfactor : ∀ j : {j : ι // j ≠ i}, ∃ g ∈ S, g j.val = 0 ∧ g i ≠ 0 := by
+    intro j
+    obtain ⟨f, hf, hji⟩ := h (Ne.symm j.property)
+    refine ⟨f - algebraMap R _ (f j.val), S.sub_mem hf (S.algebraMap_mem _), ?_, ?_⟩
+    · simp
+    · simpa [sub_ne_zero] using hji
+  choose g hgS hgj hgi using hfactor
+  refine ⟨∏ j, g j, S.prod_mem fun j _ ↦ hgS j, fun j hj ↦ ?_, ?_⟩
+  · rw [Finset.prod_apply]
+    exact Finset.prod_eq_zero (Finset.mem_univ ⟨j, hj⟩) (hgj ⟨j, hj⟩)
+  · rw [Finset.prod_apply]
+    exact Finset.prod_ne_zero_iff.mpr fun j _ ↦ hgi j
 
 variable {K ι : Type*} [Field K] [Finite ι] {S : Subalgebra K (ι → K)}
 

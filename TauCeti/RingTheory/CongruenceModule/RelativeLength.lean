@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Length
 import Mathlib.RingTheory.DiscreteValuationRing.TFAE
+import TauCeti.Algebra.Algebra.Subalgebra.Pi
 import TauCeti.RingTheory.CongruenceModule.Basic
 import TauCeti.RingTheory.Length.Endomorphism
 
@@ -19,14 +20,19 @@ For a point-separating subalgebra of a finite product of a discrete valuation ri
 congruence quotient of a lattice along a subset of points has length bounded by the sum of the
 colengths of the pointwise relative congruence ideals, weighted by the corresponding ranks.
 The proof filters the quotient by successively imposing vanishing at each point of the subset.
+
+## References
+
+This bound specializes `GlobalTheory.EtaFromCut.congMod_le_of_family` from Levent Alpöge's
+Riemann hypothesis formalization.
 -/
 
 public section
 
 open scoped BigOperators
-open Submodule
+open Submodule TauCeti
 
-namespace TauCeti
+namespace Subalgebra
 
 variable {O X : Type*} [CommRing O] {A : Subalgebra O (X → O)}
 
@@ -39,24 +45,6 @@ private def supportIdeal (A : Subalgebra O (X → O)) (S : Finset X) : Ideal A :
 private theorem mem_supportIdeal {S : Finset X} {f : A} :
     f ∈ supportIdeal A S ↔ ∀ x ∉ S, evalAt A x f = 0 := by
   simp [supportIdeal]
-
-private theorem exists_supported_single [IsDomain O] [Finite X]
-    (hsep : ∀ x y : X, x ≠ y → ∃ f ∈ A, f x ≠ f y) (x : X) :
-    ∃ b : A, (∀ y ≠ x, evalAt A y b = 0) ∧ evalAt A x b ≠ 0 := by
-  classical
-  let := Fintype.ofFinite X
-  have h (y : {y : X // y ≠ x}) : ∃ g : A, evalAt A y g = 0 ∧ evalAt A x g ≠ 0 := by
-    obtain ⟨f, hf, hxy⟩ := hsep x y (Ne.symm y.property)
-    let g : A := ⟨f, hf⟩
-    refine ⟨g - algebraMap O A (f y), by simp [g, evalAt], ?_⟩
-    rw [map_sub, AlgHom.commutes, sub_ne_zero]
-    exact hxy
-  choose g hg hgx using h
-  refine ⟨∏ y, g y, fun y hy ↦ ?_, ?_⟩
-  · rw [map_prod]
-    exact Finset.prod_eq_zero (Finset.mem_univ ⟨y, hy⟩) (hg ⟨y, hy⟩)
-  · rw [map_prod]
-    exact Finset.prod_ne_zero_iff.mpr fun y _ ↦ hgx y
 
 private theorem mul_eq_smul_of_supported_single {x : X} {b : A}
     (hb : ∀ y ≠ x, evalAt A y b = 0) (g : A) :
@@ -161,7 +149,7 @@ private theorem length_coordinate_step [DecidableEq X] {Z S : Finset X} {x : X} 
   -- These lets abbreviate the source quotient and the scalar ideal for the generic length bound.
   change Module.length O (N ⧸ K) ≤ (Module.finrank O E : ℕ∞) * Module.length O (O ⧸ I)
   rw [← IsPrincipal.span_singleton_generator I]
-  refine length_quotient_le_of_scalar_mem f K (hk.trans (comap_mono le_sup_left)) ha fun n ↦ ?_
+  refine f.length_quotient_le_of_scalar_mem K (hk.trans (comap_mono le_sup_left)) ha fun n ↦ ?_
   -- A lift of the ideal generator acts as a scalar modulo the next step and lands in P.
   have hgn : g • (n : M) ∈ N := (torsionBySet A M (supportIdeal A S)).smul_mem g n.property
   have hgP : g • (n : M) ∈ P := hP (smul_mem_torsionBySet_vanishingOn hg (n : M))
@@ -206,9 +194,10 @@ theorem length_quot_annihilators_le_sum_rank_mul_relCongruence
     induction S using Finset.induction_on with
     | empty => simp
     | @insert x S hx ih =>
-      obtain ⟨b, hb, hbx⟩ := exists_supported_single hsep x
-      have hstep := length_coordinate_step (S := S) (hS (Finset.mem_insert_self x S))
-        hb hbx P le_sup_left
+      obtain ⟨b, hbA, hb, hbx⟩ := Subalgebra.exists_supported_single (S := A)
+        (fun _ _ hne ↦ hsep _ _ hne) x
+      have hstep := length_coordinate_step (S := S) (b := ⟨b, hbA⟩)
+        (hS (Finset.mem_insert_self x S)) hb hbx P le_sup_left
       rw [Finset.sum_insert hx, ← add_assoc]
       exact (ih (Finset.subset_insert x S |>.trans hS)).trans (add_le_add_left hstep _)
   have htop : T ∅ = ⊤ := by
@@ -231,4 +220,4 @@ theorem length_quot_annihilators_le_sum_rank_mul_relCongruence
   rw [restrictScalars_sup, ← hsupport]
   exact h
 
-end TauCeti
+end Subalgebra

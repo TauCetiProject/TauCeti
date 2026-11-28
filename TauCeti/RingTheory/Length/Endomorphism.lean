@@ -321,26 +321,6 @@ theorem length_quotient_le_finrank_mul_ord [IsNoetherianRing A] [Ring.KrullDimLE
   rintro _ ⟨x, rfl⟩
   exact hT x
 
-/-- If `ker f ≤ K` and `aN ≤ K` for a nonzero scalar `a`, then the quotient length of `N ⧸ K`
-is bounded by the rank of a finite torsion-free codomain times `ord a`. -/
-theorem length_quotient_le_of_scalar_mem {O N E : Type*} [CommRing O] [IsDomain O]
-    [IsNoetherianRing O]
-    [Ring.KrullDimLE 1 O] [AddCommGroup N] [Module O N] [Module.Finite O N]
-    [AddCommGroup E] [Module O E] [Module.Finite O E] [Module.IsTorsionFree O E]
-    (f : N →ₗ[O] E) (K : Submodule O N) (hker : LinearMap.ker f ≤ K) {a : O} (ha : a ≠ 0)
-    (hK : ∀ n : N, a • n ∈ K) :
-    Module.length O (N ⧸ K) ≤ (Module.finrank O E : ℕ∞) * Ring.ord O a := by
-  let e := f.quotKerEquivRange
-  let : Module.IsTorsionFree O (N ⧸ LinearMap.ker f) :=
-    e.injective.moduleIsTorsionFree _ (map_smul e)
-  rw [← ((LinearMap.ker f).quotientQuotientEquivQuotient K hker).length_eq]
-  refine (length_quotient_le_finrank_mul_ord ha ?_).trans ?_
-  · rintro ⟨n⟩
-    exact ⟨a • n, hK n, map_smul _ _ _⟩
-  · gcongr
-    exact (f.range.subtype.comp e.toLinearMap).finrank_le_finrank_of_injective
-      (f.range.injective_subtype.comp e.injective)
-
 /-- **The sandwich bound.** Over a principal ideal domain `A` with an irreducible element `ϖ`, let
 `M` be a finitely generated torsion-free module and `T` a submodule with `ϖ ^ e • x ∈ T` for every
 `x : M`. Then `length (M ⧸ T) ≤ e * rank_A M` in `ℕ∞`: this is
@@ -357,3 +337,29 @@ theorem length_quotient_le_mul_finrank [IsPrincipalIdealRing A] [Module.Finite A
 end Scalar
 
 end TauCeti
+
+namespace LinearMap
+
+/-- If `ker f ≤ K` and `aN ≤ K` for a nonzero scalar `a`, then the quotient length of `N ⧸ K`
+is bounded by the rank of a finite torsion-free codomain times `ord a`. -/
+theorem length_quotient_le_of_scalar_mem {O N E : Type*} [CommRing O] [IsDomain O]
+    [IsNoetherianRing O] [Ring.KrullDimLE 1 O] [AddCommGroup N] [Module O N]
+    [AddCommGroup E] [Module O E] [Module.Finite O E] [Module.IsTorsionFree O E]
+    (f : N →ₗ[O] E) (K : Submodule O N) (hker : LinearMap.ker f ≤ K) {a : O} (ha : a ≠ 0)
+    (hK : ∀ n : N, a • n ∈ K) :
+    Module.length O (N ⧸ K) ≤ (Module.finrank O E : ℕ∞) * Ring.ord O a := by
+  let e := f.quotKerEquivRange
+  have hinj : Function.Injective (f.range.subtype.comp e.toLinearMap) :=
+    f.range.injective_subtype.comp e.injective
+  have : Module.Finite O (N ⧸ LinearMap.ker f) :=
+    Module.Finite.of_injective (f.range.subtype.comp e.toLinearMap) hinj
+  have : Module.IsTorsionFree O (N ⧸ LinearMap.ker f) :=
+    e.injective.moduleIsTorsionFree _ (map_smul e)
+  rw [← ((LinearMap.ker f).quotientQuotientEquivQuotient K hker).length_eq]
+  refine (TauCeti.length_quotient_le_finrank_mul_ord ha ?_).trans ?_
+  · rintro ⟨n⟩
+    exact ⟨a • n, hK n, map_smul _ _ _⟩
+  · gcongr
+    exact (f.range.subtype.comp e.toLinearMap).finrank_le_finrank_of_injective hinj
+
+end LinearMap
