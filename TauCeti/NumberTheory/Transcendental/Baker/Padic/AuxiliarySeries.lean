@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.PowerSeries.Exp.Derivative
 public import TauCeti.RingTheory.PowerSeries.Exp.Padic.Polynomial
+import Mathlib.Analysis.Normed.Algebra.Ultra
+import TauCeti.Analysis.Normed.Group.Ultra
 
 /-!
 # Baker's auxiliary series on the diagonal
@@ -32,6 +34,11 @@ vanishing of mixed derivatives into a univariate zero with multiplicity. The pro
 `TauCeti.Baker.hasSum_coeff_diagonalAuxiliarySeries` evaluates the series wherever all its
 exponential arguments `ψ t * x` lie in the open `p`-adic convergence disc, using
 `PowerSeries.hasSum_coeff_coe_mul_rescale_exp`.
+
+`TauCeti.Baker.norm_coeff_diagonalAuxiliarySeries_mul_pow_le` bounds the coefficients
+at a common radius, using `Polynomial.norm_coeff_expDerivFactor_le` and
+`PowerSeries.norm_coeff_coe_mul_rescale_exp_mul_pow_le`. The bound supplies the input
+to the ultrametric Schwarz estimate in Baker's extrapolation.
 
 ## References
 
@@ -123,5 +130,52 @@ theorem hasSum_coeff_diagonalAuxiliarySeries {p : ℕ} [Fact p.Prime] {L : Type*
   refine h.congr_fun fun n ↦ ?_
   simp only [diagonalAuxiliarySeries_apply, map_sum, map_smul, Finset.sum_mul, smul_eq_mul,
     mul_assoc]
+
+/-- At a radius `r ≥ 1`, suppose the frequencies satisfy
+`‖ψ t‖ * r ≤ p ^ (-1 / (p - 1))`. If the polynomials have degrees at most `D` and
+coefficients of norm at most `M`, and the coordinate multipliers have norms at most `B ≥ 1`,
+then the weighted coefficients of the diagonal series are bounded by
+`B ^ (m₀ + ∑ i, m i) * M * r ^ D`. This is the coefficient estimate used in Baker's
+extrapolation (Baker, *Transcendental Number Theory*, Chapter 2). -/
+theorem norm_coeff_diagonalAuxiliarySeries_mul_pow_le {p : ℕ} [Fact p.Prime] {L : Type*}
+    [NormedField L] [Algebra ℚ L] [NormedAlgebra ℚ_[p] L]
+    {ψ a : T → L} {c : T → ι → L} {Q : T → L[X]} {r B M : ℝ} {D : ℕ}
+    (hr : 1 ≤ r) (hB : 1 ≤ B) (hM : 0 ≤ M)
+    (hψ : ∀ t, ‖ψ t‖ * r ≤ (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹))
+    (ha : ∀ t, ‖a t‖ ≤ B) (hc : ∀ t i, ‖c t i‖ ≤ B)
+    (hD : ∀ t, (Q t).natDegree ≤ D) (hQ : ∀ t j, ‖(Q t).coeff j‖ ≤ M)
+    (m₀ : ℕ) (m : ι → ℕ) (k : ℕ) :
+    ‖PowerSeries.coeff k (diagonalAuxiliarySeries ψ a c m₀ m Q)‖ * r ^ k ≤
+      B ^ (m₀ + ∑ i, m i) * M * r ^ D := by
+  have : IsUltrametricDist L := .of_normedAlgebra ℚ_[p]
+  have hr₀ : 0 ≤ r := zero_le_one.trans hr
+  simp only [diagonalAuxiliarySeries_apply, map_sum, map_smul]
+  refine IsUltrametricDist.norm_sum_mul_le_of_forall_le (pow_nonneg hr₀ _) (by positivity)
+    fun t _ ↦ ?_
+  have hpoly (j : ℕ) :
+      ‖(Polynomial.expDerivFactor (a t) m₀ (Q t)).coeff j‖ * r ^ j ≤ B ^ m₀ * M * r ^ D := by
+    by_cases hj : j ≤ D
+    · calc
+        _ ≤ (max 1 ‖a t‖ ^ m₀ * M) * r ^ j := by
+          gcongr
+          exact Polynomial.norm_coeff_expDerivFactor_le (a t) (hQ t) m₀ j
+        _ ≤ _ := by
+          gcongr
+          exact max_le hB (ha t)
+    · have hdeg := (Polynomial.natDegree_expDerivFactor_le (a t) m₀ (Q t)).trans (hD t)
+      rw [Polynomial.coeff_eq_zero_of_natDegree_lt (hdeg.trans_lt (lt_of_not_ge hj)),
+        norm_zero, zero_mul]
+      positivity
+  have hscale : ‖∏ i, c t i ^ m i‖ ≤ B ^ ∑ i, m i := by
+    rw [norm_prod, ← Finset.prod_pow_eq_pow_sum]
+    simp only [norm_pow]
+    exact Finset.prod_le_prod₀ (fun i _ ↦ pow_nonneg (norm_nonneg _) _)
+      (fun i _ ↦ pow_le_pow_left₀ (norm_nonneg _) (hc t i) _)
+  have hterm := PowerSeries.norm_coeff_coe_mul_rescale_exp_mul_pow_le hr₀ hpoly (hψ t) k
+  rw [smul_eq_mul, norm_mul, mul_assoc, pow_add]
+  calc
+    _ ≤ B ^ (∑ i, m i) * (B ^ m₀ * M * r ^ D) :=
+      mul_le_mul hscale hterm (by positivity) (by positivity)
+    _ = _ := by ring
 
 end TauCeti.Baker
