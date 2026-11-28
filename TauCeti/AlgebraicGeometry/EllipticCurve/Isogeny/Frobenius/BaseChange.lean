@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Map.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Basic
 
@@ -32,6 +33,9 @@ the identity, and it is this base change that acts on the points of `W` over `K`
 * `TauCeti.Isogeny.fieldPullback_baseChangeFrobenius_genericX` and
   `TauCeti.Isogeny.fieldPullback_baseChangeFrobenius_genericY`: in particular the generic
   coordinates.
+* `TauCeti.Isogeny.fieldPullback_baseChangeFrobenius_mapBaseChange`: following coefficient
+  Frobenius by pullback raises every function to the `#F`-th power, by extensionality on the
+  constants and generic coordinates.
 
 ## References
 
@@ -43,6 +47,8 @@ public section
 open WeierstrassCurve WeierstrassCurve.Affine
 
 namespace TauCeti.Isogeny
+
+section
 
 variable {F K : Type*} [Field F] [Finite F] [Field K] [Algebra F K] (W : WeierstrassCurve.Affine F)
 
@@ -92,6 +98,34 @@ theorem fieldPullback_baseChangeFrobenius_genericY :
     (baseChangeFrobenius K W).fieldPullback (genericY (W⁄K).toAffine) =
       genericY (W⁄K).toAffine ^ Nat.card F :=
   FunctionField.map_genericY W (algebraMap F K) ▸ fieldPullback_baseChangeFrobenius_map W _
+
+end
+
+section ArithmeticFrobenius
+
+variable {F K : Type*} [Field F] [Fintype F] [Field K] [Algebra F K]
+  (W : WeierstrassCurve.Affine F)
+
+/-- The pullback of base-field Frobenius after Frobenius on coefficients is the
+`#F`-power map on the entire function field, for any extension field `K`. -/
+theorem fieldPullback_baseChangeFrobenius_mapBaseChange
+    (z : (W⁄K).toAffine.FunctionField) :
+    (baseChangeFrobenius K W).fieldPullback
+      (W.functionFieldMapBaseChange (FiniteField.frobeniusAlgHom F K) z) =
+      z ^ Fintype.card F := by
+  obtain ⟨hc, hx, hy⟩ := W.functionFieldMapBaseChange_spec (FiniteField.frobeniusAlgHom F K)
+  have h : (baseChangeFrobenius K W).fieldPullback.toRingHom.comp
+      (W.functionFieldMapBaseChange (FiniteField.frobeniusAlgHom F K)) =
+      (FiniteField.frobeniusAlgHom F (W⁄K).toAffine.FunctionField).toRingHom := by
+    apply FunctionField.ringHom_ext <;>
+      simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, hc, hx, hy,
+        AlgHom.commutes, FiniteField.frobeniusAlgHom_apply, map_pow,
+        fieldPullback_baseChangeFrobenius_genericX, fieldPullback_baseChangeFrobenius_genericY,
+        Fintype.card_eq_nat_card]
+    exact fun _ ↦ trivial
+  exact RingHom.congr_fun h z
+
+end ArithmeticFrobenius
 
 end TauCeti.Isogeny
 

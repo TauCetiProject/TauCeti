@@ -51,6 +51,8 @@ ordinary curve has geometric complex multiplication through its Frobenius endomo
 
 * `WeierstrassCurve.GeometricEnd W`: the endomorphisms of `W` over `SeparableClosure F`.
 * `WeierstrassCurve.HasGeometricCM W`: some geometric endomorphism is not an integer.
+* `WeierstrassCurve.HasExactGeometricCM W R`: the entire geometric endomorphism ring is
+  isomorphic to `R`, with transport by `WeierstrassCurve.hasExactGeometricCM_iff_of_ringEquiv`.
 * `TauCeti.CMAction R W`: a faithful action of a ring `R` on `W` by endomorphisms over `F`,
   with its base change `TauCeti.CMAction.map`.
 * `WeierstrassCurve.gaussianIntCMAction`: the action of `ℤ[i]` on `y² = x³ + a₄x` over a field
@@ -99,6 +101,22 @@ is not multiplication by an integer, so that the geometric endomorphism ring `W.
 strictly larger than `ℤ`. -/
 def HasGeometricCM : Prop :=
   ∃ f : W.GeometricEnd, f ∉ Set.range ((↑) : ℤ → W.GeometricEnd)
+
+/-- **Exact geometric complex multiplication by `R`**: the entire geometric endomorphism
+ring is isomorphic to `R`. No particular action of `R` is chosen. -/
+def HasExactGeometricCM (R : Type*) [Ring R] : Prop :=
+  Nonempty (W.GeometricEnd ≃+* R)
+
+/-- Exact geometric complex multiplication is witnessed by a ring equivalence. -/
+theorem hasExactGeometricCM_iff (R : Type*) [Ring R] :
+    W.HasExactGeometricCM R ↔ Nonempty (W.GeometricEnd ≃+* R) :=
+  Iff.rfl
+
+/-- Exact geometric complex multiplication transports along a ring equivalence of orders. -/
+theorem hasExactGeometricCM_iff_of_ringEquiv {R S : Type*} [Ring R] [Ring S] (e : R ≃+* S) :
+    W.HasExactGeometricCM R ↔ W.HasExactGeometricCM S := by
+  rw [hasExactGeometricCM_iff, hasExactGeometricCM_iff]
+  exact ⟨fun ⟨f⟩ ↦ ⟨f.trans e⟩, fun ⟨f⟩ ↦ ⟨f.trans e.symm⟩⟩
 
 variable {W}
 

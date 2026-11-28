@@ -255,4 +255,35 @@ end FunctionField
 
 end WeierstrassCurve.Affine
 
+open scoped WeierstrassCurve in
+/-- Map the function field of a base-changed curve along an algebra homomorphism of the
+coefficient fields. The target curve is identified by `WeierstrassCurve.Affine.map_baseChange`. -/
+noncomputable def WeierstrassCurve.functionFieldMapBaseChange {k K L : Type*}
+    [Field k] [Field K] [Field L] [Algebra k K] [Algebra k L]
+    (W : WeierstrassCurve k) (f : K →ₐ[k] L) :
+    (W⁄K).toAffine.FunctionField →+* (W⁄L).toAffine.FunctionField :=
+  Eq.ndrec (motive := fun V : WeierstrassCurve.Affine L ↦
+      (W⁄K).toAffine.FunctionField →+* V.FunctionField)
+    (WeierstrassCurve.Affine.FunctionField.map (W⁄K).toAffine f.toRingHom)
+    (WeierstrassCurve.Affine.map_baseChange W.toAffine f)
+
+open scoped WeierstrassCurve in
+/-- The map along a coefficient algebra homomorphism acts on constants and the two generic
+coordinates by the corresponding rules for `Affine.FunctionField.map`. -/
+theorem WeierstrassCurve.functionFieldMapBaseChange_spec {k K L : Type*}
+    [Field k] [Field K] [Field L] [Algebra k K] [Algebra k L]
+    (W : WeierstrassCurve k) (f : K →ₐ[k] L) :
+    (∀ a, W.functionFieldMapBaseChange f (algebraMap K (W⁄K).toAffine.FunctionField a) =
+      algebraMap L (W⁄L).toAffine.FunctionField (f a)) ∧
+    W.functionFieldMapBaseChange f (W⁄K).toAffine.genericX = (W⁄L).toAffine.genericX ∧
+    W.functionFieldMapBaseChange f (W⁄K).toAffine.genericY = (W⁄L).toAffine.genericY := by
+  -- Eliminate the target-curve transport before applying the equations for `FunctionField.map`.
+  unfold WeierstrassCurve.functionFieldMapBaseChange
+  generalize_proofs h
+  generalize (W⁄L).toAffine = V at h ⊢
+  subst V
+  exact ⟨WeierstrassCurve.Affine.FunctionField.map_algebraMap _ _,
+    WeierstrassCurve.Affine.FunctionField.map_genericX _ _,
+    WeierstrassCurve.Affine.FunctionField.map_genericY _ _⟩
+
 end

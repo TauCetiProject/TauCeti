@@ -164,9 +164,10 @@ theorem fixedField_zpowers_frobeniusAlgEquivOfAlgebraic :
     (by rwa [Nat.card_eq_fintype_card])
 
 omit [Fintype k] in
-/-- Every algebraic extension of a finite field is Galois, since the fixed field of arithmetic
-Frobenius is the base field. -/
-theorem _root_.FiniteField.isGalois_of_isAlgebraic [Finite k] : IsGalois k L := by
+/-- Every algebraic extension of a finite field is normal and separable, even in infinite degree.
+This applies infinite Artin’s theorem, `IntermediateField.isGalois_fixedField_of_isAlgebraic`,
+to the fixed field of arithmetic Frobenius. -/
+theorem FiniteField.isGalois_of_isAlgebraic [Finite k] : IsGalois k L := by
   let := Fintype.ofFinite k
   let E := fixedField (Subgroup.zpowers (FiniteField.frobeniusAlgEquivOfAlgebraic k L))
   have : Algebra.IsAlgebraic E L := Algebra.IsAlgebraic.tower_top (K := k) E
