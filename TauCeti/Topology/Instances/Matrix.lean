@@ -15,6 +15,7 @@ public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 public import Mathlib.Topology.UniformSpace.Matrix
 public import Mathlib.Topology.Metrizable.Basic
+public import TauCeti.LinearAlgebra.Matrix.BlockSucc
 public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 public import TauCeti.LinearAlgebra.Matrix.Trace.Partial
 public import TauCeti.LinearAlgebra.Pi
@@ -90,6 +91,11 @@ Flattening a family of matrices `(i : ι) → Matrix (κ i) (μ i) α` to `(Σ i
 homeomorphism for the entrywise product topologies (`TauCeti.piMatrixHomeomorph`), matching
 `TauCeti.piMatrixLinearEquiv` as a bijection and yielding continuity of `piMatrixLinearEquiv` and
 its inverse.
+
+The upper-left block inclusion `Matrix.blockSucc` preserves continuity
+(`Continuous.matrix_blockSucc`) and is a topological embedding (`Matrix.isEmbedding_blockSucc`),
+and over a `T₁` topological semiring it is a closed embedding
+(`Matrix.isClosedEmbedding_blockSucc`).
 
 ## References
 
@@ -458,6 +464,69 @@ theorem isClosed_setOfPred_nonneg_diag {n R : Type*} [TopologicalSpace R] [Zero 
     [OrderClosedTopology R] : IsClosed {M : Matrix n n R | ∀ i, 0 ≤ M i i} := by
   simp only [Set.ofPred_forall]
   exact isClosed_iInter fun i ↦ isClosed_le continuous_const (continuous_id.matrix_elem i i)
+
+end Matrix
+
+/-- Entrywise continuity of the upper-left block extension `Matrix.blockSucc (M x)`. -/
+@[continuity, fun_prop]
+theorem Continuous.matrix_blockSucc {X k : Type*} {n : ℕ} [TopologicalSpace X]
+    [Semiring k] [TopologicalSpace k] {M : X → Matrix (Fin n) (Fin n) k} (hM : Continuous M) :
+    Continuous fun x ↦ Matrix.blockSucc (M x) := by
+  refine continuous_matrix fun i j ↦ ?_
+  induction i using Fin.lastCases <;> induction j using Fin.lastCases <;>
+    simp [hM.matrix_elem, continuous_const]
+
+namespace Matrix
+
+section BlockSucc
+
+variable {k : Type*} {n : ℕ} [Semiring k] [TopologicalSpace k]
+
+/-- Placing a square matrix in the upper-left block (`Matrix.blockSucc`) is a topological
+embedding: reading off the upper-left `n × n` submatrix is a continuous left inverse. -/
+theorem isEmbedding_blockSucc :
+    Topology.IsEmbedding
+      (blockSucc : Matrix (Fin n) (Fin n) k → Matrix (Fin (n + 1)) (Fin (n + 1)) k) := by
+  let r : Matrix (Fin (n + 1)) (Fin (n + 1)) k → Matrix (Fin n) (Fin n) k :=
+    fun M ↦ M.submatrix Fin.castSucc Fin.castSucc
+  have hr : Continuous r :=
+    continuous_matrix fun i j ↦ continuous_id.matrix_elem i.castSucc j.castSucc
+  have hleft : Function.LeftInverse r (blockSucc (k := k) (n := n)) :=
+    submatrix_blockSucc_castSucc
+  exact hleft.isEmbedding hr continuous_id.matrix_blockSucc
+
+/-- Over a `T₁` space, `Matrix.blockSucc` is a closed embedding: its image is cut out by the
+identity entries in the last row and column. -/
+theorem isClosedEmbedding_blockSucc [T1Space k] :
+    Topology.IsClosedEmbedding
+      (blockSucc : Matrix (Fin n) (Fin n) k → Matrix (Fin (n + 1)) (Fin (n + 1)) k) := by
+  refine ⟨isEmbedding_blockSucc, ?_⟩
+  have hrange :
+      (Set.range (blockSucc : Matrix (Fin n) (Fin n) k → _)) =
+        ((fun M : Matrix (Fin (n + 1)) (Fin (n + 1)) k ↦ M (Fin.last n) (Fin.last n)) ⁻¹' {1}) ∩
+          ((⋂ j : Fin n, (fun M : Matrix (Fin (n + 1)) (Fin (n + 1)) k ↦
+              M (Fin.last n) j.castSucc) ⁻¹' {0}) ∩
+            ⋂ i : Fin n, (fun M : Matrix (Fin (n + 1)) (Fin (n + 1)) k ↦
+              M i.castSucc (Fin.last n)) ⁻¹' {0}) := by
+    ext M
+    simp only [Set.mem_range, Set.mem_inter_iff, Set.mem_preimage, Set.mem_singleton_iff,
+      Set.mem_iInter]
+    refine ⟨?_, fun ⟨hll, hrow, hcol⟩ ↦ ⟨M.submatrix Fin.castSucc Fin.castSucc, ?_⟩⟩
+    · rintro ⟨N, rfl⟩
+      exact ⟨blockSucc_last_last N, fun j ↦ blockSucc_last_castSucc N j,
+        fun i ↦ blockSucc_castSucc_last N i⟩
+    · ext i j
+      induction i using Fin.lastCases <;> induction j using Fin.lastCases
+      · simpa using hll.symm
+      · simpa using (hrow _).symm
+      · simpa using (hcol _).symm
+      · simp
+  rw [hrange]
+  exact (isClosed_singleton.preimage (continuous_id.matrix_elem _ _)).inter
+    ((isClosed_iInter fun j ↦ isClosed_singleton.preimage (continuous_id.matrix_elem _ _)).inter
+      (isClosed_iInter fun i ↦ isClosed_singleton.preimage (continuous_id.matrix_elem _ _)))
+
+end BlockSucc
 
 end Matrix
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.ContinuousMap.Sigma
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 import TauCeti.Topology.Homotopy.GenLoop.Homotopic
+import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 
 /-!
 # Homotopy groups only see the path component of the base point
@@ -18,7 +19,11 @@ nonempty (`GenLoop.apply_mem_pathComponent`). So the map induced on `π_N(X, x)`
 map depends only on its restriction to that path component
 (`HomotopyGroup.map_eq_of_eqOn_pathComponent`), and a subspace containing that path component
 has the same homotopy groups at `x`
-(`HomotopyGroup.bijective_map_subtypeVal_of_pathComponent_subset`).
+(`HomotopyGroup.bijective_map_subtypeVal_of_pathComponent_subset`). More generally, any
+topological embedding whose range contains the path component of `f x` induces bijections and
+group isomorphisms on `π_N` in positive dimension
+(`HomotopyGroup.bijective_map_of_isEmbedding_of_pathComponent_subset`,
+`HomotopyGroup.mulEquivOfIsEmbeddingOfPathComponentSubset`).
 
 In particular, for a disjoint union `Σ i, X i` the inclusion of the summand `X i` induces
 bijections `π_N(X i, x) → π_N(Σ i, X i, ⟨i, x⟩)` in positive dimension
@@ -41,6 +46,10 @@ from one approximation for each path component.
 * `FundamentalGroup.bijective_mapOfEq_subtypeVal_of_pathComponent_subset`: the inclusion of such a
   subspace induces a bijection on fundamental groups.
 * `HomotopyGroup.subtypeValMulEquivOfPathComponentSubset`: the same, as a group isomorphism.
+* `HomotopyGroup.bijective_map_of_isEmbedding_of_pathComponent_subset`,
+  `HomotopyGroup.mulEquivOfIsEmbeddingOfPathComponentSubset`: a topological embedding whose range
+  contains the path component of the base point induces bijections and group isomorphisms on
+  positive-dimensional homotopy groups.
 * `HomotopyGroup.bijective_map_sigmaMk`: a summand of a disjoint union has the same
   positive-dimensional homotopy groups as the disjoint union.
 -/
@@ -154,6 +163,46 @@ theorem subtypeValMulEquivOfPathComponentSubset_apply [DecidableEq N] [Nonempty 
     subtypeValMulEquivOfPathComponentSubset hS hx a =
       map ⟨Subtype.val, continuous_subtypeVal⟩ hx a := by
   rw [subtypeValMulEquivOfPathComponentSubset, MulEquiv.ofBijective_apply, mapHom_apply]
+
+/-- **Homotopy groups of a topological embedding whose range contains a path component.** In
+positive dimension, if `f : C(X, Y)` is a topological embedding whose range contains the path
+component of `y = f x`, then `f` induces a bijection `π_N(X, x) → π_N(Y, y)`. -/
+theorem bijective_map_of_isEmbedding_of_pathComponent_subset [Nonempty N]
+    {f : C(X, Y)} (hf : Topology.IsEmbedding f) (hS : pathComponent y ⊆ Set.range f)
+    (hx : f x = y) :
+    Function.Bijective (map (N := N) f hx) := by
+  let e : X ≃ₜ Set.range f := hf.toHomeomorph
+  have hx_eq : ((e x : Set.range f) : Y) = y := (hf.toHomeomorph_apply_coe x).trans hx
+  have hsub := bijective_map_subtypeVal_of_pathComponent_subset
+    (N := N) (x := e x) (hx_eq ▸ hS) hx_eq
+  have he := (homeomorphEquiv (N := N) e x).bijective
+  rw [funext (homeomorphEquiv_apply e x)] at he
+  have hcomp : (⟨Subtype.val, continuous_subtypeVal⟩ : C(Set.range f, Y)).comp ⟨e, e.continuous⟩ =
+      f :=
+    ContinuousMap.ext fun z ↦ hf.toHomeomorph_apply_coe z
+  have hbij := hsub.comp he
+  rwa [map_comp_map_of_comp_eq hcomp hx_eq rfl hx] at hbij
+
+/-- **Homotopy groups of a topological embedding whose range contains a path component**, as a
+group isomorphism. In positive dimension, if `f : C(X, Y)` is a topological embedding whose range
+contains the path component of `y = f x`, then `f` induces a group isomorphism
+`π_N(X, x) ≃* π_N(Y, y)`. -/
+noncomputable def mulEquivOfIsEmbeddingOfPathComponentSubset [DecidableEq N] [Nonempty N]
+    {f : C(X, Y)} (hf : Topology.IsEmbedding f) (hS : pathComponent y ⊆ Set.range f)
+    (hx : f x = y) :
+    HomotopyGroup N X x ≃* HomotopyGroup N Y y :=
+  MulEquiv.ofBijective (mapHom f hx) <|
+    funext (mapHom_apply (N := N) f hx) ▸
+      bijective_map_of_isEmbedding_of_pathComponent_subset hf hS hx
+
+/-- `HomotopyGroup.mulEquivOfIsEmbeddingOfPathComponentSubset` acts on homotopy classes by
+`HomotopyGroup.map`. -/
+@[simp]
+theorem mulEquivOfIsEmbeddingOfPathComponentSubset_apply [DecidableEq N] [Nonempty N]
+    {f : C(X, Y)} (hf : Topology.IsEmbedding f) (hS : pathComponent y ⊆ Set.range f)
+    (hx : f x = y) (a : HomotopyGroup N X x) :
+    mulEquivOfIsEmbeddingOfPathComponentSubset hf hS hx a = map f hx a := by
+  rw [mulEquivOfIsEmbeddingOfPathComponentSubset, MulEquiv.ofBijective_apply, mapHom_apply]
 
 section Sigma
 

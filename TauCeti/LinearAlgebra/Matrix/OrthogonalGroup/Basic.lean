@@ -27,6 +27,7 @@ are the orthogonal matrices.
 ## Main definitions
 
 * `TauCeti.orthogonalDiagonalReflection`: the diagonal orthogonal matrix negating one coordinate.
+* `TauCeti.orthogonalDetSign`: the determinant sign homomorphism `O(n, R) →* ℤˣ`.
 * `Matrix.specialOrthogonalGroup.toOrthogonalGroup`: the inclusion `SO(n) →* O(n)`.
 
 ## Main declarations
@@ -112,6 +113,33 @@ theorem orthogonalDiagonalReflection_mul_self (i : n) :
   by_cases hj : j = i <;> simp [hj]
 
 end DiagonalReflection
+
+section DetSign
+
+open Classical in
+/-- The determinant of an orthogonal matrix over a commutative ring without zero divisors,
+bundled as a homomorphism `O(n, R) →* ℤˣ` taking `det = 1` to `1` and `det ≠ 1` to `-1`. -/
+noncomputable def orthogonalDetSign (n R : Type*) [Fintype n] [DecidableEq n] [CommRing R]
+    [NoZeroDivisors R] :
+    Matrix.orthogonalGroup n R →* ℤˣ where
+  toFun A := if (A : Matrix n n R).det = 1 then 1 else -1
+  map_one' := by simp
+  map_mul' A B := by
+    rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup A.property with hA | hA <;>
+      rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup B.property with hB | hB <;>
+      by_cases h1 : (-1 : R) = 1 <;>
+      simp [hA, hB, Matrix.det_mul, h1]
+
+open Classical in
+/-- Evaluating `TauCeti.orthogonalDetSign` gives `1` when the determinant is `1` and `-1`
+otherwise. -/
+@[simp]
+theorem orthogonalDetSign_apply {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    [NoZeroDivisors R] (A : Matrix.orthogonalGroup n R) :
+    orthogonalDetSign n R A = if (A : Matrix n n R).det = 1 then 1 else -1 :=
+  (rfl)
+
+end DetSign
 
 end TauCeti
 

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Algebra
+import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Product
 
 /-!
@@ -35,6 +37,12 @@ image of `φ` by the image of `g_*`, as for the loop space of a quaternionic pro
 For loops, `f = g = id`, the formula is the first half of the Eckmann--Hilton argument, the
 fundamental-group case of which is `FundamentalGroup.cast_map_prod_mul`.
 
+For a continuous homomorphism `f : G →ₜ* H` of topological groups, left translation intertwines
+`HomotopyGroup.map f` at `1` with `HomotopyGroup.map f` at any base point `x : G`
+(`HomotopyGroup.map_mulLeft_comp_map`), so injectivity or surjectivity on `π_N` at `1` propagates
+to every base point (`HomotopyGroup.injective_map_of_one`,
+`HomotopyGroup.surjective_map_of_one`).
+
 ## Main results
 
 * `HomotopyGroup.map_mul_prod`: `(f * g)_* (a × b) = f_* a * g_* b`.
@@ -44,6 +52,8 @@ fundamental-group case of which is `FundamentalGroup.cast_map_prod_mul`.
 * `HomotopyGroup.bijective_map_mul_of_bijective_comp`: the pointwise product is bijective on a
   homotopy group if `g_*` is injective with image the kernel of a homomorphism `φ`, and
   `φ ∘ f_*` is bijective.
+* `HomotopyGroup.injective_map_of_one`, `HomotopyGroup.surjective_map_of_one`: injectivity and
+  surjectivity of `HomotopyGroup.map f` at `1` propagate to every base point of a topological group.
 -/
 
 public section
@@ -162,5 +172,47 @@ theorem bijective_map_mul_of_subsingleton_of_bijective [Nonempty N] {f : C(X, M)
   exact bijective_map_mul_of_bijective_comp hf hg (1 : HomotopyGroup N M 1 →* Unit)
     (Function.bijective_of_subsingleton' _) hgb.1
     fun c ↦ iff_of_true (Subsingleton.elim _ _) (hgb.2 c)
+
+section ContinuousMonoidHom
+
+/-- Left translation intertwines the homotopy-group maps of a continuous monoid homomorphism at the
+unit and at any element `x`. -/
+theorem map_mulLeft_comp_map {G H : Type*} [Group G] [Group H] [TopologicalSpace G]
+    [TopologicalSpace H] [ContinuousMul G] [ContinuousMul H] (f : G →ₜ* H) (N : Type*) (x : G) :
+    map (N := N) ⟨Homeomorph.mulLeft (f x), (Homeomorph.mulLeft (f x)).continuous⟩
+        (mul_one (f x)) ∘
+      map (N := N) f.toContinuousMap (_root_.map_one f) =
+    map (N := N) f.toContinuousMap rfl ∘
+      map (N := N) ⟨Homeomorph.mulLeft x, (Homeomorph.mulLeft x).continuous⟩ (mul_one x) := by
+  have hcomm :
+      (⟨Homeomorph.mulLeft (f x), (Homeomorph.mulLeft (f x)).continuous⟩ : C(H, H)).comp
+        f.toContinuousMap =
+      f.toContinuousMap.comp
+        ⟨Homeomorph.mulLeft x, (Homeomorph.mulLeft x).continuous⟩ :=
+    ContinuousMap.ext fun y ↦ (_root_.map_mul f x y).symm
+  exact (map_comp_map _ (mul_one (f x)) f.toContinuousMap (_root_.map_one f)).trans
+    (map_comp_map_of_comp_eq hcomm.symm rfl (mul_one x) _).symm
+
+/-- A continuous homomorphism of topological groups that is injective on `π_N` at the identity is
+injective on `π_N` at every base point. -/
+theorem injective_map_of_one {G H : Type*} [Group G] [Group H] [TopologicalSpace G]
+    [TopologicalSpace H] [ContinuousMul G] [ContinuousMul H] (f : G →ₜ* H) (N : Type*)
+    (hinj : Function.Injective (map (N := N) f.toContinuousMap (_root_.map_one f))) (x : G) :
+    Function.Injective (map (N := N) f.toContinuousMap (x := x) rfl) := by
+  have hx := (homeomorphEquivOfEq (N := N) (Homeomorph.mulLeft x) (mul_one x)).bijective
+  have hfx := (homeomorphEquivOfEq (N := N) (Homeomorph.mulLeft (f x)) (mul_one (f x))).bijective
+  exact Function.Injective.of_comp_right
+    (map_mulLeft_comp_map f N x ▸ hfx.1.comp hinj) hx.2
+
+/-- A continuous homomorphism of topological groups that is surjective on `π_N` at the identity is
+surjective on `π_N` at every base point. -/
+theorem surjective_map_of_one {G H : Type*} [Group G] [Group H] [TopologicalSpace G]
+    [TopologicalSpace H] [ContinuousMul G] [ContinuousMul H] (f : G →ₜ* H) (N : Type*)
+    (hsurj : Function.Surjective (map (N := N) f.toContinuousMap (_root_.map_one f))) (x : G) :
+    Function.Surjective (map (N := N) f.toContinuousMap (x := x) rfl) := by
+  have hfx := (homeomorphEquivOfEq (N := N) (Homeomorph.mulLeft (f x)) (mul_one (f x))).bijective
+  exact (map_mulLeft_comp_map f N x ▸ hfx.2.comp hsurj).of_comp
+
+end ContinuousMonoidHom
 
 end HomotopyGroup
