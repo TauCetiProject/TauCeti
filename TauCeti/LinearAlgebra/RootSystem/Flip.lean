@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
+public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 
 /-!
 # Flipping root pairings, their Cartan matrices and their morphisms
@@ -52,8 +53,9 @@ construction of the Langlands dual group with its Galois action.
   its maps of weights and coweights are the inverses of the maps of coweights and weights of `f`.
 * `RootPairing.Equiv.toLinearMap_weightEquiv_autFlip`: `f` and `autFlip P f` preserve the
   pairing of weights with coweights.
-* `RootPairing.Equiv.autFlip_reflection`: `autFlip` sends the reflection in a root to the
-  reflection of the flipped pairing in the same index.
+* `RootPairing.Equiv.autFlip_reflection` and `RootPairing.Equiv.autFlip_mem_weylGroup_iff`:
+  `autFlip` sends reflections to reflections of the flipped pairing and identifies the Weyl groups
+  of `P` and `P.flip`.
 * `RootPairing.Equiv.autFlip_mem_stabilizer_iff`: `autFlip P f` stabilizes a set of root indices,
   such as the support of a base and hence of its flip, exactly when `f` does.
 * `RootPairing.Equiv.forwardCoweightHom_apply`, `RootPairing.Equiv.forwardCoweightHom_injective`
@@ -294,6 +296,15 @@ theorem coweightEquiv_autFlip (f : P.Aut) : (autFlip P f).coweightEquiv = f.weig
 theorem autFlip_smul_index (f : P.Aut) (i : ι) : autFlip P f • i = f • i :=
   (rfl)
 
+/-- `autFlip P f` acts on the coweight space `N` (the weight space of `P.flip`) by
+`f.coweightEquiv.symm`. -/
+@[simp]
+theorem autFlip_smul_coweight (f : P.Aut) (y : N) :
+    autFlip P f • y = f.coweightEquiv.symm y :=
+  -- `P.flip.Aut` acts on the weight space `N` of `P.flip` via `weightHom P.flip`, so
+  -- `autFlip P f • y` unfolds definitionally to `(autFlip P f).weightEquiv y`.
+  congrArg (fun e : N ≃ₗ[R] N ↦ e y) (weightEquiv_autFlip f)
+
 open Pointwise in
 /-- `autFlip P f` acts on sets of root indices as `f` does. -/
 @[simp]
@@ -322,6 +333,23 @@ theorem autFlip_reflection (i : ι) :
   apply weightHom_injective
   ext x
   simp [LinearEquiv.symm_apply_eq, ← coreflection_eq_flip_reflection]
+
+/-- `autFlip` carries the Weyl group of `P` into the Weyl group of `P.flip`. -/
+theorem autFlip_mem_weylGroup {f : P.Aut} (hf : f ∈ P.weylGroup) :
+    autFlip P f ∈ P.flip.weylGroup := by
+  rw [weylGroup, ← range_domRestrict_weylGroup (P := P) (f := (autFlip P).toMonoidHom)
+    (autFlip_reflection (P := P))]
+  exact ⟨⟨f, hf⟩, rfl⟩
+
+/-- `autFlip P f` lies in the Weyl group of `P.flip` if and only if `f` lies in the Weyl group of
+`P`. -/
+@[simp]
+theorem autFlip_mem_weylGroup_iff {f : P.Aut} :
+    autFlip P f ∈ P.flip.weylGroup ↔ f ∈ P.weylGroup := by
+  refine ⟨fun hf ↦ ?_, autFlip_mem_weylGroup⟩
+  have h : (autFlip P).symm (autFlip P f) ∈ P.weylGroup :=
+    autFlip_mem_weylGroup (P := P.flip) hf
+  simpa only [MulEquiv.symm_apply_apply] using h
 
 /-- The covariant linear representation of `P.Aut` on the coweight space `N`, sending an
 automorphism `g` to the contragredient `g.coweightEquiv.symm` of its action on weights. It is the

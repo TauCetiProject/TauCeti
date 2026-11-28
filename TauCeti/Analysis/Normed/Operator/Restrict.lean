@@ -137,4 +137,44 @@ theorem norm_restrictAction_le (M : B →L[𝕜] E →L[𝕜] E) (p : Submodule 
   intro a x
   exact M.le_opNorm₂ a x.val
 
+/-- Restriction to an invariant submodule preserves the left-action law. -/
+theorem restrictAction_mul_apply_of_left [Mul B] {L : B →L[𝕜] E →L[𝕜] E}
+    (hL : ∀ a b x, L (a * b) x = L a (L b x)) (p : Submodule 𝕜 E)
+    (hLp : ∀ a x, x ∈ p → L a x ∈ p) (a b : B) (x : p) :
+    L.restrictAction p hLp (a * b) x =
+      L.restrictAction p hLp a (L.restrictAction p hLp b x) :=
+  Subtype.ext (by simp only [coe_restrictAction_apply, hL])
+
+/-- Restriction to an invariant submodule preserves the right-action law. -/
+theorem restrictAction_mul_apply_of_right [Mul B] {R : B →L[𝕜] E →L[𝕜] E}
+    (hR : ∀ a b x, R (a * b) x = R b (R a x)) (p : Submodule 𝕜 E)
+    (hRp : ∀ a x, x ∈ p → R a x ∈ p) (a b : B) (x : p) :
+    R.restrictAction p hRp (a * b) x =
+      R.restrictAction p hRp b (R.restrictAction p hRp a x) :=
+  Subtype.ext (by simp only [coe_restrictAction_apply, hR])
+
+/-- Restriction to a jointly invariant submodule preserves commutativity of two actions. -/
+theorem restrictAction_apply_comm {L R : B →L[𝕜] E →L[𝕜] E}
+    (hLR : ∀ a b x, L a (R b x) = R b (L a x)) (p : Submodule 𝕜 E)
+    (hLp : ∀ a x, x ∈ p → L a x ∈ p) (hRp : ∀ a x, x ∈ p → R a x ∈ p) (a b : B) (x : p) :
+    L.restrictAction p hLp a (R.restrictAction p hRp b x) =
+      R.restrictAction p hRp b (L.restrictAction p hLp a x) :=
+  Subtype.ext (by simp only [coe_restrictAction_apply, hLR])
+
+/-- Lift an ambient intertwining identity `T (M₁ a x) = M₂ b (T x)` to restricted actions along a
+map `ι : p₁ → p₂` compatible with the subtype inclusions (`(ι x : E₂) = T (x : E₁)`). -/
+theorem restrictAction_intertwine {B₁ B₂ E₁ E₂ : Type*}
+    [SeminormedAddCommGroup B₁] [NormedSpace 𝕜 B₁]
+    [SeminormedAddCommGroup B₂] [NormedSpace 𝕜 B₂]
+    [SeminormedAddCommGroup E₁] [NormedSpace 𝕜 E₁]
+    [SeminormedAddCommGroup E₂] [NormedSpace 𝕜 E₂]
+    {M₁ : B₁ →L[𝕜] E₁ →L[𝕜] E₁} {M₂ : B₂ →L[𝕜] E₂ →L[𝕜] E₂}
+    {p₁ : Submodule 𝕜 E₁} {p₂ : Submodule 𝕜 E₂}
+    {hp₁ : ∀ a x, x ∈ p₁ → M₁ a x ∈ p₁} {hp₂ : ∀ b y, y ∈ p₂ → M₂ b y ∈ p₂}
+    {ι : p₁ → p₂} (T : E₁ → E₂) (hι : ∀ x : p₁, (ι x : E₂) = T (x : E₁))
+    {a : B₁} {b : B₂} (hM : ∀ x : E₁, T (M₁ a x) = M₂ b (T x)) (x : p₁) :
+    ι (M₁.restrictAction p₁ hp₁ a x) = M₂.restrictAction p₂ hp₂ b (ι x) :=
+  Subtype.ext <| by
+    rw [hι, coe_restrictAction_apply, hM, ← hι, coe_restrictAction_apply]
+
 end ContinuousLinearMap

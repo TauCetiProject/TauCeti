@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.ClosedDisc
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Lobachevsky
 import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Conj
+import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Continuity
 
 /-!
 # The Bloch–Wigner dilogarithm
@@ -150,8 +151,11 @@ theorem blochWigner_I_pos : 0 < blochWigner Complex.I := by
 the principal dilogarithm does not commute with conjugation. -/
 theorem blochWigner_conj {z : ℂ} (hz : (1 - z).arg ≠ π) :
     blochWigner (conj z) = -blochWigner z := by
-  rw [blochWigner_def, blochWigner_def, polylog_conj 2 hz, show 1 - conj z = conj (1 - z) by simp,
-    Complex.arg_conj]
+  have hz' : z.im ≠ 0 ∨ z.re ≤ 1 := by
+    by_contra! h
+    exact hz (Complex.arg_eq_pi_iff.2 ⟨by simp [h.2], by simp [h.1]⟩)
+  rw [blochWigner_def, blochWigner_def, polylog_conj 2 (Or.inr hz'),
+    show 1 - conj z = conj (1 - z) by simp, Complex.arg_conj]
   simp only [hz, ↓reduceIte, Complex.conj_im, Complex.norm_conj]
   ring
 

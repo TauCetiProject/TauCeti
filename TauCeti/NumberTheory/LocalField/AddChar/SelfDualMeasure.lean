@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Fourier.CharacterAnnihilator
 public import TauCeti.NumberTheory.LocalField.AddChar.DualLattice
-public import TauCeti.NumberTheory.LocalField.HaarCharacter
+public import TauCeti.NumberTheory.LocalField.Haar.Character
 public import TauCeti.Topology.LocallyConstant.CompactSupport
 import TauCeti.NumberTheory.LocalField.Topology
 import TauCeti.Topology.Algebra.Group.LocallyConstant

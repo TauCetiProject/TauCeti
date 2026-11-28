@@ -31,9 +31,10 @@ comparison `δ` is the field `Functor.OplaxMonoidal.δ` of Mathlib's oplax monoi
 Tau Ceti's oplax monoidal structure `Scheme.Modules.pullbackOplaxMonoidal` on module pullback; it
 is invertible for arbitrary module sheaves (`Scheme.Modules.isIso_pullback_δ`). So pullback is a
 homomorphism of Picard groups (`LineBundleClass.pullbackHom`), as needed for the Picard functor
-`T ↦ Pic(X_T)`, and an isomorphism of schemes induces an equivalence of categories of line bundles
-(`InvertibleSheaf.pullbackEquiv`) and a group isomorphism of Picard groups
-(`LineBundleClass.pullbackEquiv`).
+`T ↦ Pic(X_T)`, a `ℤ`-linear map on the additively written Picard groups
+(`AlgebraicGeometry.Scheme.Hom.picardPullbackLinearMap`), and an isomorphism of schemes induces
+an equivalence of categories of line bundles (`InvertibleSheaf.pullbackEquiv`) and a group
+isomorphism of Picard groups (`LineBundleClass.pullbackEquiv`).
 
 The identity and composition comparisons are restrictions of Mathlib's
 `Scheme.Modules.pullbackId` and `Scheme.Modules.pullbackComp`. The tensor comparison is natural
@@ -618,3 +619,49 @@ end
 end AlgebraicGeometry
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+open TauCeti.AlgebraicGeometry (LineBundleClass)
+
+universe u
+
+variable {X Y Z : Scheme.{u}}
+
+/-- Pullback of line-bundle classes along a scheme morphism `f : X ⟶ Y`, packaged as a `ℤ`-linear
+map on the additively written Picard groups. -/
+noncomputable def picardPullbackLinearMap (f : X ⟶ Y) :
+    Additive (LineBundleClass Y) →ₗ[ℤ] Additive (LineBundleClass X) :=
+  (MonoidHom.toAdditive (LineBundleClass.pullbackHom f)).toIntLinearMap
+
+/-- `picardPullbackLinearMap f` acts on underlying multiplicative classes by
+`LineBundleClass.pullback`. -/
+@[simp]
+lemma toMul_picardPullbackLinearMap_apply (f : X ⟶ Y) (a : Additive (LineBundleClass Y)) :
+    (f.picardPullbackLinearMap a).toMul = LineBundleClass.pullback f a.toMul := by
+  simp [picardPullbackLinearMap]
+
+/-- `picardPullbackLinearMap f` sends `Additive.ofMul a` to
+`Additive.ofMul (LineBundleClass.pullback f a)`. -/
+@[simp]
+lemma picardPullbackLinearMap_ofMul (f : X ⟶ Y) (a : LineBundleClass Y) :
+    f.picardPullbackLinearMap (Additive.ofMul a) =
+      Additive.ofMul (LineBundleClass.pullback f a) := by
+  simp [picardPullbackLinearMap]
+
+/-- Pullback along the identity morphism is the identity `ℤ`-linear map. -/
+@[simp]
+lemma picardPullbackLinearMap_id (X : Scheme.{u}) :
+    picardPullbackLinearMap (𝟙 X) = LinearMap.id := by
+  ext a
+  simp
+
+/-- `picardPullbackLinearMap` is contravariantly functorial under composition of scheme
+morphisms. -/
+@[simp]
+lemma picardPullbackLinearMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
+    picardPullbackLinearMap (f ≫ g) = f.picardPullbackLinearMap ∘ₗ g.picardPullbackLinearMap := by
+  ext a
+  simp [LineBundleClass.pullback_comp]
+
+end AlgebraicGeometry.Scheme.Hom

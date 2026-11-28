@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.LocalizedModule.AtPrime
 public import Mathlib.RingTheory.LocalRing.Length
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
@@ -12,6 +13,7 @@ public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.RingTheory.Spectrum.Maximal.Localization
 import Mathlib.Algebra.GroupWithZero.Indicator
 import Mathlib.RingTheory.RingHom.Surjective
+import Mathlib.RingTheory.SurjectiveOnStalks
 import TauCeti.RingTheory.Ideal.Quotient.Semilocal
 import TauCeti.RingTheory.Length
 
@@ -51,6 +53,46 @@ ideal `m` of `B` under `q`.
 -/
 
 public section
+
+/-- Localizing a module at a submonoid of units preserves its length, measured over the
+localized ring. In particular this applies at the closed point of a local ring. -/
+theorem Module.length_localizedModule_of_le_isUnit {R : Type*} [CommRing R] (M : Type*)
+    [AddCommGroup M] [Module R M] {S : Submonoid R} (hS : S ≤ IsUnit.submonoid R) :
+    length (Localization S) (LocalizedModule S M) = length R M := by
+  have : IsLocalization S R := IsLocalization.of_le_isUnit hS
+  have := isLocalizedModule_id S M R
+  let e := IsLocalization.atUnits R S (S := Localization S) hS
+  have hsurj : Function.Surjective (algebraMap R (Localization S)) := fun x ↦
+    ⟨e.symm x, by simpa using (e.commutes (e.symm x)).symm⟩
+  rw [← length_eq_of_surjective hsurj]
+  exact (IsLocalizedModule.iso S (LinearMap.id : M →ₗ[R] M)).length_eq
+
+/-- Restricting scalars along a surjective algebra map preserves the length of the localization
+of a module at a prime above its contraction. -/
+theorem Module.length_localizedModule_under_of_surjective {R S : Type*} [CommRing R] [CommRing S]
+    [Algebra R S] (M : Type*) [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M]
+    (hs : Function.Surjective (algebraMap R S)) (q : Ideal S) [q.IsPrime] :
+    length (Localization.AtPrime (q.under R)) (LocalizedModule.AtPrime (q.under R) M) =
+      length (Localization.AtPrime q) (LocalizedModule.AtPrime q M) := by
+  let p := q.under R
+  let Rp := Localization.AtPrime p
+  let Sq := Localization.AtPrime q
+  let L := LocalizedModule.AtPrime q M
+  let f := LocalizedModule.mkLinearMap q.primeCompl M
+  let _ := Localization.AtPrime.algebraOfLiesOver p q
+  let _ : Module Rp L := Module.compHom L (algebraMap Rp Sq)
+  have : IsScalarTower Rp Sq L := .of_compHom _ _ _
+  have : IsScalarTower R Rp L := .to₁₂₄ R Rp Sq L
+  have : IsLocalizedModule (Algebra.algebraMapSubmonoid S p.primeCompl) f := by
+    rw [Ideal.algebraMapSubmonoid_primeCompl_of_liesOver_surjective q p hs]
+    infer_instance
+  have := IsLocalizedModule.restrictScalars p.primeCompl f
+  have hsurj : Function.Surjective (algebraMap Rp Sq) := by
+    rw [Localization.AtPrime.algebraMap_eq p q]
+    exact (RingHom.surjectiveOnStalks_of_surjective hs).localRingHom_surjective _ _ _
+  rw [← length_eq_of_surjective (M := L) hsurj]
+  exact ((IsLocalizedModule.iso p.primeCompl (f.restrictScalars R)).extendScalarsOfIsLocalization
+    p.primeCompl Rp).length_eq
 
 namespace Ideal
 

@@ -39,6 +39,10 @@ complex. In particular `ℚ` has no CM type.
 * `TauCeti.CMType.StarCompCommute E`: every ring endomorphism of `ℂ` commutes with complex
   conjugation on the embeddings of `E`, as on a CM field.
 * The action `σΦ = {σ ∘ φ : φ ∈ Φ}` of `Aut(ℂ)` on the CM types of such an `E`.
+* `TauCeti.CMType.embedding Φ w`: for a field `E`, the embedding `Φ_w` of `Φ` inducing the
+  infinite place `w`, so that `Φ` amounts to a choice of complex embedding above each place.
+* `TauCeti.CMType.equivInfinitePlace Φ`: the equivalence between the embeddings of `Φ` and all
+  infinite places, with inverse given by `Φ.embedding`.
 
 ## Main results
 
@@ -70,6 +74,7 @@ complex. In particular `ℚ` has no CM type.
   fixing every embedding acts trivially (`TauCeti.CMType.smul_eq_self_of_forall_comp_eq`), and
   `TauCeti.CMType.star_smul`: `ι(σΦ) = σ(ιΦ)`; complex conjugation acts as `Φ ↦ ιΦ`
   (`TauCeti.CMType.starRingAut_smul`).
+* `TauCeti.CMType.embedding_eq_iff`: `Φ_w` is the unique embedding of `Φ` inducing `w`.
 
 ## References
 
@@ -509,6 +514,90 @@ theorem exists_induced_algebraMap_eq_iff (Φ : CMType E) :
       simp only [Set.mem_ofPred_eq, key this, Φ.star_mem_iff]
     · ext φ
       exact key (ComplexEmbedding.lift_comp_algebraMap E _)
+
+end CMType
+
+/-! ### The embedding of a CM type above an infinite place -/
+
+namespace CMType
+
+variable {E : Type*} [Field E] (Φ : CMType E)
+
+open scoped Classical in
+/-- The **embedding of a CM type `Φ` above an infinite place `w`**: of the two complex embeddings
+inducing `w`, `w.embedding` and its conjugate, the one that lies in `Φ`. -/
+noncomputable def embedding (w : InfinitePlace E) : E →+* ℂ :=
+  if w.embedding ∈ Φ then w.embedding else star w.embedding
+
+/-- The embedding of `Φ` above `w` is `w.embedding` when that lies in `Φ`. -/
+theorem embedding_of_mem {w : InfinitePlace E} (h : w.embedding ∈ Φ) :
+    Φ.embedding w = w.embedding :=
+  ite_eq_left h
+
+/-- The embedding of `Φ` above `w` is the conjugate of `w.embedding` when that is not in `Φ`. -/
+theorem embedding_of_notMem {w : InfinitePlace E} (h : w.embedding ∉ Φ) :
+    Φ.embedding w = star w.embedding :=
+  ite_eq_right h
+
+/-- The embedding of `Φ` above `w` lies in `Φ`. -/
+theorem embedding_mem (w : InfinitePlace E) : Φ.embedding w ∈ Φ := by
+  by_cases h : w.embedding ∈ Φ
+  · rwa [Φ.embedding_of_mem h]
+  · rwa [Φ.embedding_of_notMem h, star_mem_iff]
+
+/-- The embedding of `Φ` above `w` induces `w`. -/
+@[simp]
+theorem mk_embedding (w : InfinitePlace E) : InfinitePlace.mk (Φ.embedding w) = w := by
+  by_cases h : w.embedding ∈ Φ
+  · rw [Φ.embedding_of_mem h, InfinitePlace.mk_embedding]
+  · rw [Φ.embedding_of_notMem h, ← ComplexEmbedding.conjugate, InfinitePlace.mk_conjugate_eq,
+      InfinitePlace.mk_embedding]
+
+/-- **The embedding of `Φ` above `w` is unique**: it is the only embedding of `Φ` inducing `w`,
+since the other embedding inducing `w` is its conjugate. -/
+theorem embedding_eq_iff {w : InfinitePlace E} {φ : E →+* ℂ} :
+    Φ.embedding w = φ ↔ φ ∈ Φ ∧ InfinitePlace.mk φ = w := by
+  refine ⟨fun h ↦ h ▸ ⟨Φ.embedding_mem w, Φ.mk_embedding w⟩, fun ⟨hφ, hw⟩ ↦ ?_⟩
+  rcases InfinitePlace.mk_eq_iff.mp ((Φ.mk_embedding w).trans hw.symm) with h | h
+  · exact h
+  · -- the conjugate of an embedding of `Φ` is not in `Φ`
+    rw [ComplexEmbedding.conjugate] at h
+    have := (Φ.star_mem_iff (Φ.embedding w)).1 (h ▸ hφ)
+    exact absurd (Φ.embedding_mem w) this
+
+/-- An embedding of `Φ` is the embedding of `Φ` above the place it induces. -/
+@[simp]
+theorem embedding_mk {φ : E →+* ℂ} (hφ : φ ∈ Φ) : Φ.embedding (InfinitePlace.mk φ) = φ :=
+  Φ.embedding_eq_iff.2 ⟨hφ, rfl⟩
+
+/-- Passing to the associated infinite place identifies the embeddings of `Φ` with all
+infinite places. The inverse chooses the representative in `Φ`. -/
+noncomputable def equivInfinitePlace : Φ ≃ InfinitePlace E where
+  toFun φ := InfinitePlace.mk φ.val
+  invFun w := ⟨Φ.embedding w, Φ.embedding_mem w⟩
+  left_inv φ := Subtype.ext (Φ.embedding_mk φ.property)
+  right_inv := Φ.mk_embedding
+
+/-- The forward map forgets the choice of representative. -/
+@[simp]
+theorem equivInfinitePlace_apply (φ : Φ) :
+    Φ.equivInfinitePlace φ = InfinitePlace.mk φ.val := (rfl)
+
+/-- The inverse recovers the member of `Φ` that gives the place. -/
+@[simp]
+theorem equivInfinitePlace_symm_mk (φ : Φ) :
+    Φ.equivInfinitePlace.symm (InfinitePlace.mk φ.val) = φ :=
+  Φ.equivInfinitePlace.symm_apply_apply φ
+
+/-- The inverse is the chosen embedding above the place, viewed as a member of `Φ`. -/
+@[simp]
+theorem coe_equivInfinitePlace_symm_apply (w : InfinitePlace E) :
+    (Φ.equivInfinitePlace.symm w).val = Φ.embedding w := (rfl)
+
+/-- The absolute value of `Φ_w x` is `|x|_w`. -/
+@[simp]
+theorem norm_embedding_apply (w : InfinitePlace E) (x : E) : ‖Φ.embedding w x‖ = w x := by
+  rw [← InfinitePlace.apply, mk_embedding]
 
 end CMType
 

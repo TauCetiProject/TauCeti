@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Convenient.CompactlyGenerated
+public import TauCeti.Topology.Category.CompactlyGenerated.Coreflection
+public import TauCeti.Topology.Convenient.Category
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
 
 /-!
@@ -18,7 +19,8 @@ on the whole target is needed. The comparison is the map induced by the counit, 
 independent choice of isomorphism.
 
 In particular, compact generation preserves all based homotopy groups and path components
-of an arbitrary space. This applies to raw compact-open mapping spaces and stopped Moore
+of an arbitrary space, both for the `GeneratedByTopCat` counit and for
+`CompactlyGenerated.adjCounit`. This applies to raw compact-open mapping spaces and stopped Moore
 path spaces without separation or compact-generation assumptions on those spaces. It does
 not assert that the counit is a homeomorphism or a Hurewicz fibration.
 
@@ -193,3 +195,25 @@ theorem isWeakHomotopyEquivalence_compactlyGeneratedCounit (X : TopCat.{u}) :
   isWeakHomotopyEquivalence_generatedByCounit _ X
 
 end TauCeti
+
+open CategoryTheory in
+/-- The compactly generated coreflection counit is a weak homotopy equivalence for every
+space, with no separation assumption and independently of the compact test-space universe. -/
+theorem TopCat.isWeakHomotopyEquivalence_compactlyGeneratedAdjCounit (X : TopCat.{u}) :
+    ((CompactlyGenerated.adjCounit.{v}.app X).hom).IsWeakHomotopyEquivalence := by
+  let e := CompactlyGenerated.toCompactlyGeneratedHomeomorphGeneratedBy.{v} X
+  let d := WithGeneratedByTopology.counit (fun K : CompHaus.{v} ↦ K) X
+  have hc : (CompactlyGenerated.adjCounit.{v}.app X).hom = d.comp (ContinuousMap.ofClass e) := by
+    refine ContinuousMap.ext fun (z : TopCat.toCompactlyGenerated.{v, u}.obj X) ↦ ?_
+    have hz : (CompactlyGenerated.adjCounit.{v}.app X).hom z = z :=
+      CompactlyGenerated.adjCounit_app_apply.{v} X z
+    have hd_apply : d (e z) = z := by
+      simp only [d, e, WithGeneratedByTopology.counit_apply,
+        CompactlyGenerated.toCompactlyGeneratedHomeomorphGeneratedBy_apply]
+      exact Equiv.apply_symm_apply _ z
+    exact hz.trans ((ContinuousMap.comp_apply d (ContinuousMap.ofClass e) z).trans hd_apply).symm
+  have hd : d.IsWeakHomotopyEquivalence := by
+    simpa only [GeneratedByTopCat.adjCounit_app_hom] using!
+      TauCeti.isWeakHomotopyEquivalence_compactlyGeneratedCounit.{u, v} X
+  rw [hc]
+  exact hd.comp e.isWeakHomotopyEquivalence

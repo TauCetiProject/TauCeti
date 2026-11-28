@@ -6,15 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Function
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.MeasureTheory.Function.SchwarzRearrangement.CriticalValues
+import Mathlib.Analysis.Calculus.Rademacher
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.BoundedVariation.LevelSurface
 import TauCeti.Analysis.BoundedVariation.SchwarzRearrangement
 import TauCeti.Analysis.Calculus.FDeriv.Clamp
 import TauCeti.Analysis.Calculus.FDeriv.Measurable
 import TauCeti.Analysis.Calculus.FDeriv.Norm
+import TauCeti.Analysis.Calculus.FDeriv.NormComparison
 import TauCeti.Analysis.Convex.Monotone
+import TauCeti.Analysis.Normed.Group.Lipschitz
 import TauCeti.MeasureTheory.Function.Coarea.Critical
 import TauCeti.MeasureTheory.Function.Monotone
 import TauCeti.MeasureTheory.Integral.ReciprocalWeight
@@ -36,7 +40,8 @@ comparison of gradients (`LipschitzWith.lintegral_enorm_fderiv_toReal_schwarzRea
 When `Φ` is also nondecreasing with `Φ 0 = 0`, integrability of `x ↦ Φ ‖fderiv ℝ h x‖` under `μ`
 transfers to `h*` (`LipschitzWith.integrable_comp_norm_fderiv_toReal_schwarzRearrangement`) with the
 corresponding Bochner integral bound
-(`LipschitzWith.integral_comp_norm_fderiv_toReal_schwarzRearrangement_le`).
+(`LipschitzWith.integral_comp_norm_fderiv_toReal_schwarzRearrangement_le`), yielding signed variants
+for `‖u ·‖` and `Lᵖ` specializations for `1 ≤ p`.
 
 ## Strategy
 
@@ -77,6 +82,17 @@ transfers the inequality from `volume` to any additive Haar measure `μ`.
 * `LipschitzWith.integrable_comp_norm_fderiv_toReal_schwarzRearrangement` and
   `LipschitzWith.integral_comp_norm_fderiv_toReal_schwarzRearrangement_le`: Bochner integrability
   and integral comparison for convex nondecreasing `Φ` with `Φ 0 = 0`.
+* `LipschitzWith.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le`,
+  `LipschitzWith.integrable_comp_norm_fderiv_toReal_schwarzRearrangement_norm`, and
+  `LipschitzWith.integral_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le`: signed variants
+  for `‖u ·‖` in extended, integrability, and Bochner-integral form.
+* `LipschitzWith.lintegral_norm_fderiv_toReal_schwarzRearrangement_rpow_le`,
+  `LipschitzWith.integrable_norm_fderiv_toReal_schwarzRearrangement_rpow`,
+  `LipschitzWith.integral_norm_fderiv_toReal_schwarzRearrangement_rpow_le`,
+  `LipschitzWith.lintegral_norm_fderiv_toReal_schwarzRearrangement_norm_rpow_le`,
+  `LipschitzWith.integrable_norm_fderiv_toReal_schwarzRearrangement_norm_rpow`, and
+  `LipschitzWith.integral_norm_fderiv_toReal_schwarzRearrangement_norm_rpow_le`: `Lᵖ` (`1 ≤ p`)
+  specializations for both the positive part and `‖u ·‖`.
 
 ## References
 
@@ -399,5 +415,112 @@ theorem integral_comp_norm_fderiv_toReal_schwarzRearrangement_le
       hint.aestronglyMeasurable]
   exact ENNReal.toReal_mono hint.lintegral_lt_top.ne
     (hh.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le μ hΦ hΦ0.le)
+
+/-- **Signed convex-integrand Pólya–Szegő inequality for Lipschitz functions.** -/
+theorem lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le
+    (μ : Measure E) [μ.IsAddHaarMeasure] {u : E → ℝ} (hu : LipschitzWith K u)
+    {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦm : MonotoneOn Φ (Ici 0)) (hΦ0 : Φ 0 ≤ 0) :
+    ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ
+        (fun z ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal ‖u y‖) z).toReal) x‖) ∂μ ≤
+      ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ u x‖) ∂μ := by
+  have hu_norm : LipschitzWith K (fun x ↦ ‖u x‖) := hu.norm_comp
+  refine (hu_norm.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le μ hΦ
+    hΦ0).trans (lintegral_mono_ae ?_)
+  filter_upwards [hu.ae_differentiableAt (μ := μ)] with x hx
+  refine ENNReal.ofReal_le_ofReal (hΦm (norm_nonneg _) (norm_nonneg _) ?_)
+  simpa only [NNReal.coe_one, one_mul, Function.comp_def] using
+    lipschitzWith_one_norm.norm_fderiv_comp_le hx
+
+/-- Integrability of `Φ ‖D(|u|*)‖` when `Φ ‖Du‖` is integrable. -/
+theorem integrable_comp_norm_fderiv_toReal_schwarzRearrangement_norm
+    {μ : Measure E} [μ.IsAddHaarMeasure] {u : E → ℝ} (hu : LipschitzWith K u)
+    {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦm : MonotoneOn Φ (Ici 0)) (hΦ0 : Φ 0 = 0)
+    (hint : Integrable (fun x ↦ Φ ‖fderiv ℝ u x‖) μ) :
+    Integrable (fun x ↦ Φ ‖fderiv ℝ
+      (fun z ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal ‖u y‖) z).toReal) x‖) μ :=
+  (lintegral_ofReal_ne_top_iff_integrable
+    (hΦm.measurable_comp (measurable_fderiv ℝ _).norm fun _ ↦ norm_nonneg _).aestronglyMeasurable
+    (ae_comp_norm_fderiv_nonneg hΦm hΦ0 _)).1 <|
+    ne_top_of_le_ne_top hint.lintegral_lt_top.ne
+      (hu.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le μ hΦ hΦm hΦ0.le)
+
+/-- **Signed Bochner-integral Pólya–Szegő inequality** for `‖u ·‖`. -/
+theorem integral_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le
+    {μ : Measure E} [μ.IsAddHaarMeasure] {u : E → ℝ} (hu : LipschitzWith K u)
+    {Φ : ℝ → ℝ} (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦm : MonotoneOn Φ (Ici 0)) (hΦ0 : Φ 0 = 0)
+    (hint : Integrable (fun x ↦ Φ ‖fderiv ℝ u x‖) μ) :
+    ∫ x, Φ ‖fderiv ℝ
+        (fun z ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal ‖u y‖) z).toReal) x‖ ∂μ ≤
+      ∫ x, Φ ‖fderiv ℝ u x‖ ∂μ := by
+  have hint' := hu.integrable_comp_norm_fderiv_toReal_schwarzRearrangement_norm hΦ hΦm hΦ0 hint
+  rw [integral_eq_lintegral_of_nonneg_ae (ae_comp_norm_fderiv_nonneg hΦm hΦ0 _)
+      hint'.aestronglyMeasurable,
+    integral_eq_lintegral_of_nonneg_ae (ae_comp_norm_fderiv_nonneg hΦm hΦ0 u)
+      hint.aestronglyMeasurable]
+  exact ENNReal.toReal_mono hint.lintegral_lt_top.ne
+    (hu.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le μ hΦ hΦm hΦ0.le)
+
+/-- **`Lᵖ` gradient Pólya–Szegő inequality (`1 ≤ p`, `lintegral` form)** for the positive part. -/
+theorem lintegral_norm_fderiv_toReal_schwarzRearrangement_rpow_le
+    (μ : Measure E) [μ.IsAddHaarMeasure] (hh : LipschitzWith K h) {p : ℝ} (hp : 1 ≤ p) :
+    ∫⁻ x, ENNReal.ofReal (‖fderiv ℝ
+        (fun z ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖ ^ p) ∂μ ≤
+      ∫⁻ x, ENNReal.ofReal (‖fderiv ℝ h x‖ ^ p) ∂μ :=
+  hh.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le μ (convexOn_rpow hp)
+    (Real.zero_rpow (zero_lt_one.trans_le hp).ne').le
+
+/-- Integrability of `‖Dh*‖ ^ p` (`1 ≤ p`) when `‖Dh‖ ^ p` is integrable. -/
+theorem integrable_norm_fderiv_toReal_schwarzRearrangement_rpow
+    {μ : Measure E} [μ.IsAddHaarMeasure] (hh : LipschitzWith K h) {p : ℝ} (hp : 1 ≤ p)
+    (hint : Integrable (fun x ↦ ‖fderiv ℝ h x‖ ^ p) μ) :
+    Integrable (fun x ↦ ‖fderiv ℝ
+      (fun z ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖ ^ p) μ :=
+  hh.integrable_comp_norm_fderiv_toReal_schwarzRearrangement (convexOn_rpow hp)
+    (Real.monotoneOn_rpow_Ici_of_exponent_nonneg (zero_le_one.trans hp))
+    (Real.zero_rpow (zero_lt_one.trans_le hp).ne') hint
+
+/-- **`Lᵖ` gradient Pólya–Szegő inequality (`1 ≤ p`, Bochner-integral form)** for the positive
+part. -/
+theorem integral_norm_fderiv_toReal_schwarzRearrangement_rpow_le
+    {μ : Measure E} [μ.IsAddHaarMeasure] (hh : LipschitzWith K h) {p : ℝ} (hp : 1 ≤ p)
+    (hint : Integrable (fun x ↦ ‖fderiv ℝ h x‖ ^ p) μ) :
+    ∫ x, ‖fderiv ℝ
+        (fun z ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (h y)) z).toReal) x‖ ^ p ∂μ ≤
+      ∫ x, ‖fderiv ℝ h x‖ ^ p ∂μ :=
+  hh.integral_comp_norm_fderiv_toReal_schwarzRearrangement_le (convexOn_rpow hp)
+    (Real.monotoneOn_rpow_Ici_of_exponent_nonneg (zero_le_one.trans hp))
+    (Real.zero_rpow (zero_lt_one.trans_le hp).ne') hint
+
+/-- **Signed `Lᵖ` gradient Pólya–Szegő inequality (`1 ≤ p`, `lintegral` form)**. -/
+theorem lintegral_norm_fderiv_toReal_schwarzRearrangement_norm_rpow_le
+    (μ : Measure E) [μ.IsAddHaarMeasure] {u : E → ℝ} (hu : LipschitzWith K u)
+    {p : ℝ} (hp : 1 ≤ p) :
+    ∫⁻ x, ENNReal.ofReal (‖fderiv ℝ
+        (fun z ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal ‖u y‖) z).toReal) x‖ ^ p) ∂μ ≤
+      ∫⁻ x, ENNReal.ofReal (‖fderiv ℝ u x‖ ^ p) ∂μ :=
+  hu.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le μ (convexOn_rpow hp)
+    (Real.monotoneOn_rpow_Ici_of_exponent_nonneg (zero_le_one.trans hp))
+    (Real.zero_rpow (zero_lt_one.trans_le hp).ne').le
+
+/-- Integrability of `‖D(|u|*)‖ ^ p` (`1 ≤ p`) when `‖Du‖ ^ p` is integrable. -/
+theorem integrable_norm_fderiv_toReal_schwarzRearrangement_norm_rpow
+    {μ : Measure E} [μ.IsAddHaarMeasure] {u : E → ℝ} (hu : LipschitzWith K u)
+    {p : ℝ} (hp : 1 ≤ p) (hint : Integrable (fun x ↦ ‖fderiv ℝ u x‖ ^ p) μ) :
+    Integrable (fun x ↦ ‖fderiv ℝ
+      (fun z ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal ‖u y‖) z).toReal) x‖ ^ p) μ :=
+  hu.integrable_comp_norm_fderiv_toReal_schwarzRearrangement_norm (convexOn_rpow hp)
+    (Real.monotoneOn_rpow_Ici_of_exponent_nonneg (zero_le_one.trans hp))
+    (Real.zero_rpow (zero_lt_one.trans_le hp).ne') hint
+
+/-- **Signed `Lᵖ` gradient Pólya–Szegő inequality (`1 ≤ p`, Bochner-integral form)**. -/
+theorem integral_norm_fderiv_toReal_schwarzRearrangement_norm_rpow_le
+    {μ : Measure E} [μ.IsAddHaarMeasure] {u : E → ℝ} (hu : LipschitzWith K u)
+    {p : ℝ} (hp : 1 ≤ p) (hint : Integrable (fun x ↦ ‖fderiv ℝ u x‖ ^ p) μ) :
+    ∫ x, ‖fderiv ℝ
+        (fun z ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal ‖u y‖) z).toReal) x‖ ^ p ∂μ ≤
+      ∫ x, ‖fderiv ℝ u x‖ ^ p ∂μ :=
+  hu.integral_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le (convexOn_rpow hp)
+    (Real.monotoneOn_rpow_Ici_of_exponent_nonneg (zero_le_one.trans hp))
+    (Real.zero_rpow (zero_lt_one.trans_le hp).ne') hint
 
 end LipschitzWith
