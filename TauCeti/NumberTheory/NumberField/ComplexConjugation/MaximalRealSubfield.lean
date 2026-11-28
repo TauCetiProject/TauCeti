@@ -52,6 +52,8 @@ a totally real base `k`, the whole field `k(x + x⁻¹)` is therefore real.
 * `NumberField.IsCMField.algebraMap_norm_eq_mul_complexConj`: the norm from `K` to `K⁺` is
   `x * complexConj K x`, and `NumberField.IsCMField.complexEmbedding_algebraMap_norm`: under a
   complex embedding it is `φ x * star (φ x)`.
+* `TauCeti.NumberField.IsCMField.exists_isSquare_algebraMap_and_neg`: `K⁺` has an element,
+  negative at every real place, that is a square in `K`.
 * `NumberField.comap_subtype_maximalRealSubfield`: if `K` is algebraic over a subfield `E`, the
   maximal real subfield of `E` is `E ∩ K⁺`.
 * `NumberField.map_maximalRealSubfield`: an isomorphism of fields `K ≃+* K'` carries `K⁺` onto
@@ -118,6 +120,51 @@ theorem complexEmbedding_algebraMap_norm (φ : K →+* ℂ) (x : K) :
     Complex.star_def]
 
 end NumberField.IsCMField
+
+namespace TauCeti.NumberField.IsCMField
+
+open _root_.NumberField _root_.NumberField.IsCMField _root_.NumberField.InfinitePlace
+
+variable {K : Type*} [Field K] [CharZero K] [IsCMField K] [Algebra.IsIntegral ℚ K]
+
+/-- **A totally negative element of `K⁺` that is a square in `K`.** The maximal real subfield `K⁺`
+of a CM field `K` has a unit `b`, negative at every real place, that is a square in `K`:
+`b = (x - conj x)²` for any `x ∈ K` with `conj x ≠ x`, since `φ (x - conj x)` is purely imaginary
+and nonzero under every complex embedding `φ`. -/
+theorem exists_isSquare_algebraMap_and_neg :
+    ∃ b : (maximalRealSubfield K)ˣ, IsSquare (algebraMap (maximalRealSubfield K) K b) ∧
+      ∀ v : {v : InfinitePlace (maximalRealSubfield K) // v.IsReal},
+        embedding_of_isReal v.property (b : maximalRealSubfield K) < 0 := by
+  obtain ⟨x, hx⟩ : ∃ x : K, complexConj K x ≠ x := by
+    by_contra! h
+    exact complexConj_ne_one K (AlgEquiv.ext h)
+  set d := x - complexConj K x with hd_def
+  have hd : d ≠ 0 := sub_ne_zero.mpr hx.symm
+  have hdK : d * d ∈ maximalRealSubfield K := by
+    rw [← complexConj_eq_self_iff, map_mul, map_sub, complexConj_apply_apply]
+    ring
+  refine ⟨Units.mk0 ⟨d * d, hdK⟩ fun h ↦ hd (mul_self_eq_zero.mp (congrArg Subtype.val h)),
+    ⟨d, by rw [Units.val_mk0, Subfield.algebraMap_ofSubfield, Subfield.coe_subtype]⟩,
+    fun ⟨v, hv⟩ ↦ ?_⟩
+  -- The real embedding at `v` is `φ` on `K⁺`, for `φ` the embedding at a place `w` above `v`.
+  obtain ⟨w, hwv⟩ := InfinitePlace.comap_surjective (K := K) v
+  set φ := w.embedding
+  have hw : v = mk (φ.comp (algebraMap (maximalRealSubfield K) K)) :=
+    hwv.symm.trans (by rw [← comap_mk, mk_embedding])
+  have hφd : φ d = ((2 * (φ x).im : ℝ) : ℂ) * Complex.I := by
+    rw [hd_def, map_sub, complexEmbedding_complexConj, Complex.sub_conj]
+  have him : 2 * (φ x).im ≠ 0 := fun h ↦ hd (φ.injective (by rw [hφd, h, map_zero]; simp))
+  have h : embedding_of_isReal hv ⟨d * d, hdK⟩ = -(2 * (φ x).im) ^ 2 := by
+    apply Complex.ofReal_injective
+    rw [embedding_of_isReal_apply, hw, embedding_mk_eq_of_isReal (isReal_mk_iff.mp (hw ▸ hv)),
+      RingHom.comp_apply, Subfield.algebraMap_ofSubfield, Subfield.coe_subtype, map_mul, hφd,
+      mul_mul_mul_comm, Complex.I_mul_I]
+    push_cast
+    ring
+  rw [Units.val_mk0, h]
+  exact neg_neg_of_pos (sq_pos_of_ne_zero him)
+
+end TauCeti.NumberField.IsCMField
 
 namespace IsAbelianGalois
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.DistribChar
 public import TauCeti.MeasureTheory.Measure.Haar.DistribChar.Matrix
 public import TauCeti.NumberTheory.LocalField.Uniformizer
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 import TauCeti.MeasureTheory.Group.LocalFieldScaling
 import TauCeti.NumberTheory.LocalField.Topology
 import TauCeti.RingTheory.Valuation.Integers
@@ -57,10 +58,20 @@ The computation reduces to a uniformizer `ϖ`. The maximal ideal `ϖ • 𝒪[K]
 * `MeasureTheory.distribHaarChar_of_isUniformizer`: a uniformizer has character `q⁻¹`.
 * `MeasureTheory.distribHaarChar_eq_one_iff`: the kernel of the character is the unit group
   of `𝒪[K]`.
+* `Irreducible.distribHaarChar_unitsMk0`, `Units.distribHaarChar_map_subtype_eq_one`,
+  `TauCeti.distribHaarChar_eq_one_of_mem_unitFiltration_zero`: character specializations on
+  irreducible elements, valuation-ring units, and `unitFiltration K 0`.
 * `MeasureTheory.Measure.addHaar_smul_eq_normalizedAbsoluteValue_mul`: `μ (a • s) = |a|_K μ s`
   for every `a ∈ K`, including `a = 0`.
 * `MeasureTheory.Measure.map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul`: for `a ≠ 0`,
   multiplication by `a` pushes `μ` forward to `|a|_K⁻¹ • μ`.
+* `MeasureTheory.Measure.addHaar_preimage_mul_left`,
+  `MeasureTheory.Measure.map_units_mul_left_addHaar`,
+  `MeasureTheory.Measure.map_mul_left_addHaar_of_isUniformizer`,
+  `MeasureTheory.Measure.map_integerUnits_mul_left_addHaar`,
+  `MeasureTheory.Measure.lintegral_comp_mul_left_addHaar`,
+  `MeasureTheory.Measure.integral_comp_mul_left_addHaar`: preimage, pushforward, and integral
+  change of variables under multiplication on `K`.
 * `MeasureTheory.Measure.addHaar_image_mulVec`: a square matrix over `𝒪[K]` whose determinant is
   associated to `ϖ ^ k` scales Haar measure on `ι → K` by `q ^ (-k)`.
 * `MeasureTheory.Measure.addHaar_setOf_valuation_le_uniformizer_zpow`: the fractional ideal
@@ -220,7 +231,7 @@ theorem distribHaarChar_eq_zpow (x : Kˣ) :
 
 /-- **The Haar character of a local field is the normalized absolute value.** Multiplication
 by `x ∈ Kˣ` scales additive Haar measure on `K` by `|x|_K`. -/
-@[simp]
+@[simp low]
 theorem distribHaarChar_eq_normalizedAbsoluteValue (x : Kˣ) :
     distribHaarChar K x = normalizedAbsoluteValue K (x : K) := by
   rw [distribHaarChar_eq_zpow, normalizedAbsoluteValue_coe, NNRat.cast_zpow, NNRat.cast_natCast]
@@ -248,9 +259,61 @@ theorem distribHaarChar_eq_one_iff (x : Kˣ) :
   rw [distribHaarChar_eq_normalizedAbsoluteValue, ← normalizedAbsoluteValue_eq_one_iff]
   exact_mod_cast Iff.rfl
 
-namespace Measure
+end MeasureTheory
 
-variable [MeasurableSpace K] [BorelSpace K] (μ : Measure K) [μ.IsAddHaarMeasure]
+section LocalHaarCharacter
+
+variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+
+namespace Irreducible
+
+open TauCeti
+
+/-- An irreducible element `π` of `𝒪[K]` viewed as a unit of `K` has distributive Haar character
+`q⁻¹`. -/
+@[grind =]
+theorem distribHaarChar_unitsMk0 {π : 𝒪[K]} (hπ : Irreducible π) :
+    distribHaarChar K (Units.mk0 (π : K) fun h ↦ hπ.ne_zero (Subtype.ext h)) =
+      (Nat.card 𝓀[K] : ℝ≥0)⁻¹ := by
+  rw [distribHaarChar_eq_zpow, normalizedValuation_irreducible hπ, toAdd_ofAdd, zpow_neg_one]
+
+end Irreducible
+
+namespace Units
+
+open TauCeti
+
+/-- **Character of a valuation-ring unit.** Every unit `u ∈ 𝒪[K]ˣ` has distributive Haar character
+`1` on `K`. -/
+@[simp, grind =]
+theorem distribHaarChar_map_subtype_eq_one (u : 𝒪[K]ˣ) :
+    distribHaarChar K (Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u) = 1 := by
+  rw [distribHaarChar_eq_one_iff]
+  exact (Valuation.Integers.isUnit_iff_valuation_eq_one
+    (Valuation.integer.integers (valuation K))).1 u.isUnit
+
+end Units
+
+namespace TauCeti
+
+/-- Every element of the depth-zero unit filtration `U(K, 0) = 𝒪[K]ˣ` has distributive Haar
+character `1`. -/
+@[grind =]
+theorem distribHaarChar_eq_one_of_mem_unitFiltration_zero {u : Kˣ} (hu : u ∈ unitFiltration K 0) :
+    distribHaarChar K u = 1 :=
+  (distribHaarChar_eq_one_iff u).2 ((mem_unitFiltration_zero u).1 hu)
+
+end TauCeti
+
+end LocalHaarCharacter
+
+namespace MeasureTheory.Measure
+
+open TauCeti
+
+variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [MeasurableSpace K] [BorelSpace K]
+  (μ : Measure K) [μ.IsAddHaarMeasure]
 
 /-- **Scaling of Haar measure on a local field.** For every additive Haar measure `μ` on `K`,
 every `a ∈ K` and every set `s`, `μ (a • s) = |a|_K * μ s`. -/
@@ -367,13 +430,85 @@ theorem addHaar_setOf_valuation_eq_one :
     μ {x : K | valuation K x = 1} = (1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹) * μ 𝒪[K] := by
   simpa using addHaar_setOf_normalizedAbsoluteValue_eq μ (1 : K)
 
-end Measure
+section Scaling
+
+/-- Preimage under `x ↦ a * x` (`a ≠ 0`) multiplies any additive Haar measure on `K` by
+`|a|_K⁻¹`. -/
+@[simp, grind =]
+theorem addHaar_preimage_mul_left {a : K} (ha : a ≠ 0) (s : Set K) :
+    μ ((a * ·) ⁻¹' s) = ((normalizedAbsoluteValue K a : ℝ≥0) : ℝ≥0∞)⁻¹ * μ s := by
+  have hpre : (a * ·) ⁻¹' s = a⁻¹ • s := by
+    ext x
+    simp [Set.mem_smul_set, inv_mul_eq_iff_eq_mul₀ ha]
+  rw [hpre, addHaar_smul_eq_normalizedAbsoluteValue_mul, map_inv₀, NNRat.cast_inv,
+    ENNReal.coe_inv (coe_normalizedAbsoluteValue_ne_zero ha)]
+
+/-- **Pushforward of additive Haar measure by a unit (valuation form).** For `a ∈ Kˣ` and any
+additive Haar measure `μ` on `K`, `Measure.map (a * ·) μ = q ^ (v_K(a)) • μ`, where
+`q = Nat.card 𝓀[K]`. -/
+theorem map_units_mul_left_addHaar (a : Kˣ) :
+    map ((a : K) * ·) μ =
+      ((Nat.card 𝓀[K] : ℝ≥0) ^ (normalizedValuation K a).toAdd) • μ := by
+  have hfun : ((a : K) * ·) = ((a : K) • ·) := funext fun x ↦ (smul_eq_mul (a : K) x).symm
+  rw [hfun, map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul μ a.ne_zero,
+    normalizedAbsoluteValue_coe]
+  congr 1
+  push_cast
+  rw [zpow_neg, inv_inv]
+
+/-- Multiplying by a uniformizer `ϖ ∈ Kˣ` pushes any additive Haar measure `μ` on `K` forward to
+`q • μ`. -/
+theorem map_mul_left_addHaar_of_isUniformizer {ϖ : Kˣ} (hϖ : IsUniformizer K ϖ) :
+    map ((ϖ : K) * ·) μ = (Nat.card 𝓀[K] : ℝ≥0) • μ := by
+  rw [map_units_mul_left_addHaar μ ϖ, (isUniformizer_def ϖ).1 hϖ, toAdd_ofAdd, zpow_one]
+
+/-- **Valuation-ring units preserve additive Haar measure.** Left multiplication by any `u ∈ 𝒪[K]ˣ`
+leaves every additive Haar measure on `K` invariant. -/
+@[simp, grind =]
+theorem map_integerUnits_mul_left_addHaar (u : 𝒪[K]ˣ) :
+    map (((u : 𝒪[K]) : K) * ·) μ = μ := by
+  have hfun : (((u : 𝒪[K]) : K) * ·) = (((u : 𝒪[K]) : K) • ·) :=
+    funext fun x ↦ (smul_eq_mul _ x).symm
+  rw [hfun, map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul μ (by simp)]
+  simp
+
+/-- Lower Lebesgue change of variables on `K` under `x ↦ a * x` (`a ≠ 0`). -/
+theorem lintegral_comp_mul_left_addHaar {a : K} (ha : a ≠ 0) (f : K → ℝ≥0∞) :
+    ∫⁻ x, f (a * x) ∂μ = ((normalizedAbsoluteValue K a : ℝ≥0) : ℝ≥0∞)⁻¹ * ∫⁻ x, f x ∂μ := by
+  let e : K ≃ᵐ K := MeasurableEquiv.mulLeft₀ a ha
+  have h := lintegral_map_equiv f e (μ := μ)
+  simp only [e, MeasurableEquiv.coe_mulLeft₀] at h
+  have he : (fun x : K ↦ a * x) = (a • ·) := funext fun x ↦ (smul_eq_mul a x).symm
+  rw [he, map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul μ ha, lintegral_smul_measure,
+    ENNReal.smul_def, smul_eq_mul, ENNReal.coe_inv] at h
+  · exact h.symm
+  · exact coe_normalizedAbsoluteValue_ne_zero ha
+
+/-- Bochner integral change of variables on `K` under `x ↦ a * x` (`a ≠ 0`). -/
+theorem integral_comp_mul_left_addHaar {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {a : K} (ha : a ≠ 0) (f : K → F) :
+    ∫ x, f (a * x) ∂μ = ((normalizedAbsoluteValue K a : ℝ)⁻¹) • ∫ x, f x ∂μ := by
+  let e : K ≃ᵐ K := MeasurableEquiv.mulLeft₀ a ha
+  have h := integral_map_equiv e f (μ := μ)
+  simp only [e, MeasurableEquiv.coe_mulLeft₀] at h
+  have he : (fun x : K ↦ a * x) = (a • ·) := funext fun x ↦ (smul_eq_mul a x).symm
+  rw [he, map_addHaar_smul_eq_inv_normalizedAbsoluteValue_smul μ ha, integral_smul_nnreal_measure,
+    NNReal.smul_def, NNReal.coe_inv] at h
+  exact h.symm
+
+end Scaling
+
+end MeasureTheory.Measure
 
 /-! ### The scaling law on `ι → K` -/
 
-namespace Measure
+namespace MeasureTheory.Measure
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] [MeasurableSpace (ι → K)] [BorelSpace (ι → K)]
+open TauCeti
+
+variable {K ι : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [Fintype ι] [DecidableEq ι]
+  [MeasurableSpace (ι → K)] [BorelSpace (ι → K)]
 
 /-- **The scaling law for Haar measure.** If the determinant of a square matrix `A` over `𝒪[K]`
 is associated to `ϖ ^ k` for a uniformizer `ϖ`, then for every additive Haar measure `μ`
@@ -407,6 +542,4 @@ theorem addHaar_image_mulVec (μ : Measure (ι → K)) [μ.IsAddHaarMeasure]
   push_cast
   rw [one_div]
 
-end Measure
-
-end MeasureTheory
+end MeasureTheory.Measure

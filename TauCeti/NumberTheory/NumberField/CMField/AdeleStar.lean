@@ -62,6 +62,8 @@ infinite adeles only needs `E` to be an algebraic CM field.
   finite adele.
 * `IsDedekindDomain.FiniteAdeleRing.unitsProj_star_eq_one_iff`: the corresponding criterion
   for a conjugate finite idele to have component `1` at a place, via `coe_unitsProj_apply`.
+* `RingEquiv.finiteAdeleEquiv_star`: transport of finite adeles along an
+  isomorphism of CM fields commutes with conjugation.
 * `NumberField.InfiniteAdeleRing.extensionEmbedding_star_apply`: the components of the conjugate
   of an infinite adele.
 
@@ -179,6 +181,26 @@ instance : StarModule E 𝔸ᶠ[E] :=
 end FiniteAdeleRing
 
 end NumberField.IsCMField
+
+namespace RingEquiv
+
+variable {E E' : Type*} [Field E] [NumberField E] [IsCMField E] [Field E'] [NumberField E']
+  [IsCMField E']
+
+/-- Transport of finite adeles along an isomorphism of CM fields commutes with complex conjugation:
+the isomorphism intertwines the complex conjugations of the two fields
+(`NumberField.IsCMField.complexConj_algebraMap`). -/
+@[simp]
+theorem finiteAdeleEquiv_star (e : E ≃+* E') (a : 𝔸ᶠ[E]) :
+    finiteAdeleEquiv E E' e (star a) = star (finiteAdeleEquiv E E' e a) := by
+  let : Algebra E E' := e.toRingHom.toAlgebra
+  have h : (complexConj E).toRingEquiv.trans e = e.trans (complexConj E').toRingEquiv :=
+    RingEquiv.ext fun x ↦ (complexConj_algebraMap E E' x).symm
+  rw [← finiteAdeleConj_apply, ← finiteAdeleConj_apply, finiteAdeleConj_def, finiteAdeleConj_def,
+    ← RingEquiv.trans_apply, ← RingEquiv.trans_apply, finiteAdeleEquiv_trans,
+    finiteAdeleEquiv_trans, h]
+
+end RingEquiv
 
 namespace IsDedekindDomain.FiniteAdeleRing
 
