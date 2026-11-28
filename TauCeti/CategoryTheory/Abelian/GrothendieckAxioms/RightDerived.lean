@@ -27,7 +27,7 @@ This file proves that `colimitRightDerivedComparison G q` is an isomorphism
 `(colimit G).rightDerived q`.
 For any `X : C` with chosen injective resolution `I`, evaluating `(colimit G)` termwise on
 `I.cocomplex` forms the colimit in `CochainComplex D ℕ` of the complexes `(G.obj t)(I.cocomplex)`
-(`HomologicalComplex.isColimitMapColimitCocone`), and
+(`HomologicalComplex.isColimitMapCocone`), and
 `HomologicalComplex.homologyFunctor D (ComplexShape.up ℕ) q` preserves colimits of shape `T` by
 `TauCeti.homologicalComplexHomologyFunctor_preservesColimitsOfShape`.
 
@@ -117,13 +117,15 @@ instance isIso_colimitRightDerivedComparison (G : T ⥤ C ⥤ D) [∀ t, (G.obj 
     have hc₁ : IsColimit (((evaluation C D).obj X).mapCocone
         (colimit.cocone (rightDerivedDiagram G q))) :=
       isColimitOfPreserves ((evaluation C D).obj X) (colimit.isColimit (rightDerivedDiagram G q))
+    let _ : (colimit.cocone G).pt.PreservesZeroMorphisms :=
+      inferInstanceAs ((colimit G).PreservesZeroMorphisms)
     have hc₂ : IsColimit ((HomologicalComplex.homologyFunctor D _ q).mapCocone
-        (I.cocomplex.mapColimitCocone G)) :=
+        (I.cocomplex.mapCocone (colimit.cocone G))) :=
       isColimitOfPreserves (HomologicalComplex.homologyFunctor D _ q)
-        (I.cocomplex.isColimitMapColimitCocone G)
+        (I.cocomplex.isColimitMapCocone (colimit.isColimit G))
     let c₂' := (Cocone.precompose (rightDerivedEvaluationIso G q I).hom).obj
       ((HomologicalComplex.homologyFunctor D _ q).mapCocone
-        (I.cocomplex.mapColimitCocone G))
+        (I.cocomplex.mapCocone (colimit.cocone G)))
     have hc₂' : IsColimit c₂' :=
       (IsColimit.precomposeHomEquiv (rightDerivedEvaluationIso G q I) _).invFun hc₂
     -- `colimitRightDerivedComparison` followed by `I.isoRightDerivedObj (colimit G) q` is the
@@ -158,18 +160,13 @@ lemma colimitRightDerivedIso_hom (G : T ⥤ C ⥤ D) [∀ t, (G.obj t).Additive]
     (colimitRightDerivedIso G q).hom = colimitRightDerivedComparison G q :=
   (rfl)
 
-@[reassoc]
-lemma ι_colimitRightDerivedIso_hom (G : T ⥤ C ⥤ D) [∀ t, (G.obj t).Additive] (q : ℕ) (t : T) :
-    colimit.ι (rightDerivedDiagram G q) t ≫ (colimitRightDerivedIso G q).hom =
-      (colimit.ι G t).rightDerived q :=
-  ι_colimitRightDerivedComparison G q t
-
 @[reassoc (attr := simp)]
 lemma rightDerived_ι_colimitRightDerivedIso_inv (G : T ⥤ C ⥤ D) [∀ t, (G.obj t).Additive] (q : ℕ)
     (t : T) :
     (colimit.ι G t).rightDerived q ≫ (colimitRightDerivedIso G q).inv =
       colimit.ι (rightDerivedDiagram G q) t := by
-  rw [← ι_colimitRightDerivedIso_hom, Category.assoc, Iso.hom_inv_id, Category.comp_id]
+  rw [← ι_colimitRightDerivedComparison, ← colimitRightDerivedIso_hom, Category.assoc,
+    Iso.hom_inv_id, Category.comp_id]
 
 end RightDerived
 

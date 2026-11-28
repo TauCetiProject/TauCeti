@@ -17,8 +17,7 @@ Given a diagram `G : T ⥤ C ⥤ D` of zero-preserving functors and a homologica
 `HomologicalComplex D c`. Any cocone `s` on `G` whose point preserves zero morphisms yields a
 cocone `K.mapCocone s` on `K.mapDiagram G`, and if `s` is colimiting and evaluation at each
 degree `K.X m` preserves colimits of `G`, then `K.mapCocone s` is colimiting
-(`HomologicalComplex.isColimitMapCocone`). Specializing to `colimit.cocone G` gives
-`K.mapColimitCocone G` and `HomologicalComplex.isColimitMapColimitCocone`.
+(`HomologicalComplex.isColimitMapCocone`).
 
 ## Main definitions
 
@@ -26,9 +25,6 @@ degree `K.X m` preserves colimits of `G`, then `K.mapCocone s` is colimiting
 * `HomologicalComplex.mapCocone`: applies a cocone `s` on `G` termwise to `K`.
 * `HomologicalComplex.isColimitMapCocone`: `K.mapCocone s` is a colimit cocone whenever `s` is
   and evaluation at each `K.X m` preserves colimits of `G`.
-* `HomologicalComplex.mapColimitCocone`: applies `colimit G` termwise to `K`.
-* `HomologicalComplex.isColimitMapColimitCocone`: `K.mapColimitCocone G` is a colimit cocone
-  whenever evaluation at each `K.X m` preserves colimits of `G`.
 -/
 
 public section
@@ -76,32 +72,6 @@ noncomputable def isColimitMapCocone (K : HomologicalComplex C c) {G : T ⥤ C �
   HomologicalComplex.isColimitOfEval _ _ fun m ↦
     IsColimit.ofIsoColimit
       (isColimitOfPreserves ((evaluation C D).obj (K.X m)) hs)
-      (Cocone.ext (Iso.refl _) fun t ↦ by simp)
-
-/-- Applying `colimit G` termwise to a homological complex `K` yields a cocone on
-`K.mapDiagram G`. -/
-@[simps]
-noncomputable abbrev mapColimitCocone (K : HomologicalComplex C c) (G : T ⥤ C ⥤ D)
-    [∀ t, (G.obj t).PreservesZeroMorphisms] [HasColimit G] [(colimit G).PreservesZeroMorphisms] :
-    Cocone (K.mapDiagram G) where
-  pt := ((colimit G).mapHomologicalComplex c).obj K
-  ι :=
-    { app t := (NatTrans.mapHomologicalComplex (colimit.ι G t) c).app K
-      -- each naturality square is `colimit.w` applied termwise to `K`
-      naturality _ _ w := by
-        dsimp
-        rw [Category.comp_id, ← NatTrans.comp_app, ← NatTrans.mapHomologicalComplex_comp,
-          colimit.w] }
-
-/-- `K.mapColimitCocone G` is a colimit cocone on `K.mapDiagram G` whenever evaluation at each
-`K.X m` preserves colimits of `G`. -/
-noncomputable def isColimitMapColimitCocone (K : HomologicalComplex C c) (G : T ⥤ C ⥤ D)
-    [∀ t, (G.obj t).PreservesZeroMorphisms] [HasColimit G] [(colimit G).PreservesZeroMorphisms]
-    [∀ m, PreservesColimit G ((evaluation C D).obj (K.X m))] :
-    IsColimit (K.mapColimitCocone G) :=
-  HomologicalComplex.isColimitOfEval _ _ fun m ↦
-    IsColimit.ofIsoColimit
-      (isColimitOfPreserves ((evaluation C D).obj (K.X m)) (colimit.isColimit G))
       (Cocone.ext (Iso.refl _) fun t ↦ by simp)
 
 end HomologicalComplex
