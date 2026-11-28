@@ -32,6 +32,10 @@ quotient.
   together with quotient pushforward/pullback lemmas `TwoSidedIdeal.comap_map_mk` and
   `TwoSidedIdeal.map_mk_eq_top_iff`.
 * `TwoSidedIdeal.quotEquivOfEq`: ring equivalence between quotients by equal two-sided ideals.
+* `TwoSidedIdeal.Quotient.comapMkRelIso`: order isomorphism between two-sided ideals of `A ⧸ I`
+  and two-sided ideals of `A` containing `I`, with endpoint lemmas
+  `TwoSidedIdeal.Quotient.comap_mk_eq_iff_eq_bot` and
+  `TwoSidedIdeal.Quotient.comap_mk_eq_top_iff`.
 -/
 
 public section
@@ -117,6 +121,17 @@ theorem eq_zero_iff_mem {I : TwoSidedIdeal A} {a : A} :
 protected theorem eq {I : TwoSidedIdeal A} {x y : A} :
     mk I x = mk I y ↔ x - y ∈ I := by
   rw [← sub_eq_zero, ← map_sub, eq_zero_iff_mem]
+
+/-- The quotient `A ⧸ I` is a subsingleton if and only if `I = ⊤`. -/
+protected theorem subsingleton_iff {I : TwoSidedIdeal A} :
+    Subsingleton (A ⧸ I) ↔ I = ⊤ := by
+  rw [subsingleton_iff_forall_eq (0 : A ⧸ I), Quotient.forall]
+  simp [eq_zero_iff_mem, eq_top_iff, IsConcreteLE.le_iff]
+
+/-- The quotient `A ⧸ I` is nontrivial if and only if `I ≠ ⊤`. -/
+protected theorem nontrivial_iff {I : TwoSidedIdeal A} :
+    Nontrivial (A ⧸ I) ↔ I ≠ ⊤ := by
+  rw [← not_subsingleton_iff_nontrivial, Quotient.subsingleton_iff]
 
 @[simp]
 theorem ker_mk (I : TwoSidedIdeal A) : TwoSidedIdeal.ker (mk I) = I := by
@@ -282,6 +297,66 @@ theorem quotEquivOfEq_mk {I J : TwoSidedIdeal A} (h : I = J) (a : A) :
 theorem quotEquivOfEq_symm {I J : TwoSidedIdeal A} (h : I = J) :
     (quotEquivOfEq h).symm = quotEquivOfEq h.symm :=
   RingEquiv.ext <| Quotient.forall.mpr fun _ => rfl
+
+namespace Quotient
+
+/-- Correspondence theorem for two-sided ideals: two-sided ideals of `A ⧸ I` correspond
+order-isomorphically to two-sided ideals of `A` containing `I`, via `comap (mk I)` and
+`map (mk I)`. -/
+def comapMkRelIso (I : TwoSidedIdeal A) :
+    TwoSidedIdeal (A ⧸ I) ≃o Set.Ici I where
+  toFun J := ⟨J.comap (mk I), fun _ ha =>
+    (TwoSidedIdeal.mem_comap (mk I)).mpr ((eq_zero_iff_mem.mpr ha).symm ▸ J.zero_mem)⟩
+  invFun K := K.val.map (mk I)
+  left_inv J := by
+    ext x
+    rw [TwoSidedIdeal.mem_map_iff_of_surjective (mk_surjective I)]
+    refine ⟨?_, fun hx => ?_⟩
+    · rintro ⟨a, ha, rfl⟩
+      exact (TwoSidedIdeal.mem_comap (mk I)).mp ha
+    · obtain ⟨a, rfl⟩ := mk_surjective I x
+      exact ⟨a, (TwoSidedIdeal.mem_comap (mk I)).mpr hx, rfl⟩
+  right_inv K := Subtype.ext <|
+    (TwoSidedIdeal.comap_map_mk K.val I).trans (sup_eq_left.mpr K.property)
+  map_rel_iff' {J₁ J₂} :=
+    ⟨fun h x hx => by
+      have hle : J₁.comap (mk I) ≤ J₂.comap (mk I) := Subtype.mk_le_mk.mp h
+      obtain ⟨a, rfl⟩ := mk_surjective I x
+      exact (TwoSidedIdeal.mem_comap (mk I)).mp
+        (IsConcreteLE.le_iff.mp hle ((TwoSidedIdeal.mem_comap (mk I)).mpr hx)),
+     fun h => TwoSidedIdeal.comap_le_comap (mk I) h⟩
+
+@[simp]
+theorem comapMkRelIso_apply (I : TwoSidedIdeal A) (J : TwoSidedIdeal (A ⧸ I)) :
+    (comapMkRelIso I J).val = J.comap (mk I) :=
+  (rfl)
+
+@[simp]
+theorem comapMkRelIso_symm_apply (I : TwoSidedIdeal A) (K : Set.Ici I) :
+    (comapMkRelIso I).symm K = K.val.map (mk I) :=
+  (rfl)
+
+/-- Under `comapMkRelIso`, the preimage ideal of `J : TwoSidedIdeal (A ⧸ I)` has carrier
+`(mk I) ⁻¹' J`. -/
+theorem coe_comapMkRelIso (I : TwoSidedIdeal A) (J : TwoSidedIdeal (A ⧸ I)) :
+    ((comapMkRelIso I J).val : Set A) = mk I ⁻¹' (J : Set (A ⧸ I)) := by
+  rw [comapMkRelIso_apply]
+  ext a
+  exact TwoSidedIdeal.mem_comap (mk I)
+
+/-- Pulling back `J : TwoSidedIdeal (A ⧸ I)` along `mk I` yields `I` if and only if `J = ⊥`. -/
+@[simp]
+theorem comap_mk_eq_iff_eq_bot {I : TwoSidedIdeal A} {J : TwoSidedIdeal (A ⧸ I)} :
+    J.comap (mk I) = I ↔ J = ⊥ := by
+  rw [← comapMkRelIso_apply I J, ← Set.Ici.eq_bot_iff, map_eq_bot_iff]
+
+/-- Pulling back `J : TwoSidedIdeal (A ⧸ I)` along `mk I` yields `⊤` if and only if `J = ⊤`. -/
+@[simp]
+theorem comap_mk_eq_top_iff {I : TwoSidedIdeal A} {J : TwoSidedIdeal (A ⧸ I)} :
+    J.comap (mk I) = ⊤ ↔ J = ⊤ := by
+  rw [← comapMkRelIso_apply I J, ← Set.Ici.coe_top (a := I), Subtype.coe_inj, map_eq_top_iff]
+
+end Quotient
 
 end NonUnitalRing
 

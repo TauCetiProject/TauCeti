@@ -388,10 +388,23 @@ theorem toNonUnitalStarAlgHom_mkUnitalStarAlgHom :
 theorem mkUnitalStarAlgHom_surjective : Function.Surjective (mkUnitalStarAlgHom I) :=
   mk_surjective I
 
+/-- The kernel of `mkUnitalStarAlgHom I` is `I`. -/
 @[simp]
 theorem ker_mkUnitalStarAlgHom : TwoSidedIdeal.ker (mkUnitalStarAlgHom I) = I := by
   ext a
   simp [TwoSidedIdeal.mem_ker, eq_zero_iff_mem]
+
+/-- Two unital `⋆`-homomorphisms out of `A ⧸ I` agree when their compositions with
+`mkUnitalStarAlgHom I` agree. -/
+@[ext 1100]
+theorem starAlgHom_ext {I : TwoSidedIdeal A} [IsClosed (I : Set A)]
+    ⦃f g : A ⧸ I →⋆ₐ[ℂ] B⦄
+    (h : f.comp (mkUnitalStarAlgHom I) = g.comp (mkUnitalStarAlgHom I)) : f = g := by
+  have h' : f.toNonUnitalStarAlgHom.comp (mkStarAlgHom I) =
+      g.toNonUnitalStarAlgHom.comp (mkStarAlgHom I) := by
+    rw [← toNonUnitalStarAlgHom_mkUnitalStarAlgHom]
+    exact congrArg StarAlgHom.toNonUnitalStarAlgHom h
+  exact StarAlgHom.ext fun x ↦ DFunLike.congr_fun (nonUnitalStarAlgHom_ext h') x
 
 /-- Descend a unital `⋆`-algebra homomorphism `f : A →⋆ₐ[ℂ] B` vanishing on `I` to
 `A ⧸ I →⋆ₐ[ℂ] B`. -/

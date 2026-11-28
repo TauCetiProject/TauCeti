@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
+public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+import Mathlib.Analysis.RCLike.Lemmas
 
 /-!
 # Rank-one operators normalized at a vector
@@ -20,6 +22,12 @@ linearity gives `C x = 0`, so the agreement holds without excluding the zero set
 pointwise coefficient reduction used in vector similarity principles. It follows the replacement
 of a real-linear coefficient by a complex-linear one along the solution in Step 2 of the proof
 of McDuff–Salamon's Theorem 2.3.5.
+
+Sandwiching any continuous linear map `T` with `T x ≠ 0` between `rankOneDivNormSq 𝕜 u (T x)` and
+`rankOne 𝕜 x v` recovers `rankOne 𝕜 u v` (`TauCeti.rankOneDivNormSq_comp_comp_rankOne`,
+`TauCeti.rankOneDivNormSq_mul_mul_rankOne`). Both `rankOne` and `rankOneDivNormSq`
+are compact operators (`InnerProductSpace.isCompactOperator_rankOne`,
+`TauCeti.isCompactOperator_rankOneDivNormSq`).
 
 Over the reals, the symmetric operator `u ↦ ⟪a, u⟫ b + ⟪b, u⟫ a` sends a nonzero `a` to a vector
 pairing positively with a nonzero `b` (`TauCeti.inner_rankOne_add_rankOne_apply_pos`). This
@@ -83,6 +91,34 @@ theorem norm_rankOneDivNormSq (y : F) (x : E) :
 
 end TauCeti
 
+namespace InnerProductSpace
+
+/-- Every rank-one operator is compact. -/
+theorem isCompactOperator_rankOne {𝕜 E F : Type*} [RCLike 𝕜]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F] (x : E) (y : F) :
+    IsCompactOperator (rankOne 𝕜 x y) := by
+  rw [rankOne_def']
+  exact (isCompactOperator_of_locallyCompactSpace_rng
+    (ContinuousLinearMap.toSpanSingleton 𝕜 x)).comp_clm _
+
+end InnerProductSpace
+
+namespace TauCeti
+
+open InnerProductSpace
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Every normalized rank-one operator `TauCeti.rankOneDivNormSq 𝕜 y x` is compact. -/
+theorem isCompactOperator_rankOneDivNormSq (y : F) (x : E) :
+    IsCompactOperator (rankOneDivNormSq 𝕜 y x) := by
+  rw [rankOneDivNormSq_def]
+  exact (isCompactOperator_rankOne y x).smul _
+
+end TauCeti
+
 namespace ContinuousLinearMap
 
 open TauCeti
@@ -111,6 +147,31 @@ end ContinuousLinearMap
 namespace TauCeti
 
 open InnerProductSpace
+
+/-- Sandwiching a continuous linear map `T` with `T x ≠ 0` between
+`rankOneDivNormSq 𝕜 u (T x)` and `InnerProductSpace.rankOne 𝕜 x v` produces
+`InnerProductSpace.rankOne 𝕜 u v`. -/
+theorem rankOneDivNormSq_comp_comp_rankOne {𝕜 E₁ E₂ E₃ E₄ : Type*} [RCLike 𝕜]
+    [SeminormedAddCommGroup E₁] [InnerProductSpace 𝕜 E₁]
+    [SeminormedAddCommGroup E₂] [NormedSpace 𝕜 E₂]
+    [NormedAddCommGroup E₃] [InnerProductSpace 𝕜 E₃]
+    [NormedAddCommGroup E₄] [NormedSpace 𝕜 E₄]
+    {T : E₂ →L[𝕜] E₃} {x : E₂} (hx : T x ≠ 0) (u : E₄) (v : E₁) :
+    (rankOneDivNormSq 𝕜 u (T x)).comp (T.comp (InnerProductSpace.rankOne 𝕜 x v)) =
+      InnerProductSpace.rankOne 𝕜 u v := by
+  ext w
+  simp [map_smul, rankOneDivNormSq_apply_self u hx]
+
+/-- Multiplication form of `rankOneDivNormSq_comp_comp_rankOne` for endomorphisms of an inner
+product space `H`. -/
+theorem rankOneDivNormSq_mul_mul_rankOne {𝕜 H : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
+    {T : H →L[𝕜] H} {x : H} (hx : T x ≠ 0) (u v : H) :
+    rankOneDivNormSq 𝕜 u (T x) * T * InnerProductSpace.rankOne 𝕜 x v =
+      InnerProductSpace.rankOne 𝕜 u v := by
+  simpa [ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_assoc] using
+    rankOneDivNormSq_comp_comp_rankOne hx u v
+
 open scoped RealInnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
