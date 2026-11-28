@@ -8,7 +8,7 @@ module
 public import Mathlib.Basic.Complex.Basic
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import Mathlib.Data.Nat.Factorization.Basic
-public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
+public import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol.Char
 import Mathlib.Data.Nat.ChineseRemainder
 import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol.OddPart
 
@@ -34,6 +34,8 @@ principal, whatever `χ` is.
   twisting by a prime congruent to `3` modulo `4` reverses parity.
 * `DirichletCharacter.legendreTwist_ne_one`: for an odd prime `d` not dividing `N`, the Legendre
   twist is not principal.
+* `DirichletCharacter.changeLevel_mul_jacobiChar_eq_legendreTwist`: the common-level product
+  with the Jacobi character induces the Legendre twist at level `N * d`.
 
 ## Provenance
 
@@ -60,6 +62,14 @@ noncomputable def legendreTwist : DirichletCharacter ℂ (N * d) :=
 theorem legendreTwist_def : χ.legendreTwist d =
     χ.changeLevel (dvd_mul_right N d) * changeLevel (dvd_mul_left d N)
       ((quadraticChar (ZMod d)).ringHomComp (Int.castRingHom ℂ)) := (rfl)
+
+/-- The product of `χ` and the Jacobi character at their least common level induces the
+Legendre twist at the product level. The two levels need not be equal. -/
+@[simp]
+theorem changeLevel_mul_jacobiChar_eq_legendreTwist :
+    (χ.mul (TauCeti.jacobiChar ℂ d)).changeLevel (Nat.lcm_dvd_mul N d) = χ.legendreTwist d := by
+  rw [legendreTwist_def, TauCeti.jacobiChar_eq_ringHomComp_quadraticChar (R := ℂ) d]
+  simp only [DirichletCharacter.mul, map_mul, ← changeLevel_trans]
 
 /-- Raising the base level before applying a Legendre twist gives the same character
 as raising the level after twisting. -/
