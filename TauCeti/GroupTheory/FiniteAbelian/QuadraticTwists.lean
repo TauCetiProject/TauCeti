@@ -158,4 +158,38 @@ theorem card_notMem_zpowers_of_dual_inf_ker (ψ α β : G →* Mˣ)
     _ = 4 * orderOf ψ - orderOf ψ := congrArg (· - orderOf ψ) h
     _ = _ := by omega
 
+/-- The common kernel of the two independent quadratic twists has index `orderOf ψ` over
+its intersection with `ψ.ker`. Thus passing to the common kernel does not lose any of the
+cosets detected by `ψ`. -/
+theorem relIndex_ker_inf_ker_eq_orderOf (ψ α β : G →* Mˣ) (hα : α ^ 2 = 1) (hβ : β ^ 2 = 1)
+    {q d : G} (hqψ : ψ q = 1) (hqα : α q ≠ 1) (hqβ : β q = 1)
+    (hdψ : ψ d = 1) (hdα : α d = 1) (hdβ : β d ≠ 1) :
+    ψ.ker.relIndex (α.ker ⊓ β.ker) = orderOf ψ := by
+  have h₄ : (α.ker ⊓ β.ker).index = 4 := by
+    have h := (1 : G →* Mˣ).card_dual_inf_ker α β hα hβ (by simp) hqα hqβ (by simp) hdα hdβ
+    simpa only [CommGroup.card_subgroupOrderIsoSubgroupMonoidHom, ← index_eq_card,
+      ker_one, top_inf_eq, orderOf_one, mul_one] using h
+  have h := ψ.card_dual_inf_ker α β hα hβ hqψ hqα hqβ hdψ hdα hdβ
+  rw [CommGroup.card_subgroupOrderIsoSubgroupMonoidHom, ← index_eq_card, inf_assoc,
+    ← relIndex_mul_index (inf_le_right : ψ.ker ⊓ (α.ker ⊓ β.ker) ≤ α.ker ⊓ β.ker),
+    inf_relIndex_right, h₄] at h
+  omega
+
+/-- Restricting to the common kernel of two independent quadratic twists leaves the order of
+an untwisted character unchanged. -/
+theorem orderOf_comp_subtype_inf_ker (ψ α β : G →* Mˣ) (hα : α ^ 2 = 1) (hβ : β ^ 2 = 1)
+    {q d : G} (hqψ : ψ q = 1) (hqα : α q ≠ 1) (hqβ : β q = 1)
+    (hdψ : ψ d = 1) (hdα : α d = 1) (hdβ : β d ≠ 1) :
+    orderOf (ψ.comp (α.ker ⊓ β.ker).subtype) = orderOf ψ := by
+  let A := α.ker ⊓ β.ker
+  have : HasEnoughRootsOfUnity M (Monoid.exponent A) :=
+    HasEnoughRootsOfUnity.of_dvd M (Monoid.exponent_submonoid_dvd A.toSubmonoid)
+  calc
+    orderOf (ψ.comp A.subtype) = Nat.card (zpowers (ψ.comp A.subtype)) := (Nat.card_zpowers _).symm
+    _ = (ψ.comp A.subtype).ker.index := by
+      rw [← dual_ker_eq_zpowers, CommGroup.card_subgroupOrderIsoSubgroupMonoidHom, index_eq_card]
+    _ = _ := by
+      rw [← comap_ker]
+      exact ψ.relIndex_ker_inf_ker_eq_orderOf α β hα hβ hqψ hqα hqβ hdψ hdα hdβ
+
 end MonoidHom
