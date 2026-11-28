@@ -379,8 +379,7 @@ abbrev BlockSymbol (r : ℕ) :=
 
 /-- Extract the `(i, j)` scalar `L∞` entry of a block symbol `A : BlockSymbol r`. -/
 def blockSymbolEntry (r : ℕ) (i j : Fin r) : BlockSymbol r →L[ℂ] Lp ℂ ∞ (haarAddCircle (T := 1)) :=
-  (EuclideanSpace.proj i ∘L apply ℂ (EuclideanSpace ℂ (Fin r)) (EuclideanSpace.single j 1)).compLpL
-    ∞ (haarAddCircle (T := 1))
+  (euclideanEntryCLM ℂ i j).compLpL ∞ (haarAddCircle (T := 1))
 
 /-- Insert a scalar `L∞` symbol into the `(i, j)` matrix-unit entry of `BlockSymbol r`. -/
 def blockSymbolSingle (r : ℕ) (i j : Fin r) : Lp ℂ ∞ (haarAddCircle (T := 1)) →L[ℂ] BlockSymbol r :=
@@ -391,9 +390,8 @@ def blockSymbolSingle (r : ℕ) (i j : Fin r) : Lp ℂ ∞ (haarAddCircle (T := 
 theorem coeFn_blockSymbolEntry {r : ℕ} (i j : Fin r) (A : BlockSymbol r) :
     blockSymbolEntry r i j A =ᵐ[haarAddCircle (T := 1)]
       fun x ↦ A x (EuclideanSpace.single j 1) i := by
-  filter_upwards [(EuclideanSpace.proj i ∘L
-    apply ℂ (EuclideanSpace ℂ (Fin r)) (EuclideanSpace.single j 1)).coeFn_compLpL A] with x hx
-  simpa only [blockSymbolEntry, comp_apply, apply_apply, PiLp.proj_apply] using hx
+  filter_upwards [(euclideanEntryCLM ℂ i j).coeFn_compLpL A] with x hx
+  simpa only [blockSymbolEntry, euclideanEntryCLM_apply] using hx
 
 /-- Almost-everywhere evaluation of `blockSymbolSingle r i j a`. -/
 theorem coeFn_blockSymbolSingle {r : ℕ} (i j : Fin r) (a : Lp ℂ ∞ (haarAddCircle (T := 1))) :
@@ -435,7 +433,7 @@ theorem eq_sum_blockSymbolSingle {r : ℕ} (A : BlockSymbol r) :
       b (i, j) = Matrix.toEuclideanCLM (n := Fin r) (𝕜 := ℂ) (Matrix.single i j 1) := by
     simp [b, Matrix.stdBasis_eq_single]
   have hcoord (i j : Fin r) : (b.coord (i, j)).toContinuousLinearMap =
-      EuclideanSpace.proj i ∘L apply ℂ (EuclideanSpace ℂ (Fin r)) (EuclideanSpace.single j 1) :=
+      euclideanEntryCLM ℂ i j :=
     coe_injective <| b.ext fun ⟨k, l⟩ ↦ by
       simp only [coe_coe, LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply,
         Module.Basis.repr_self]
@@ -561,8 +559,7 @@ theorem blockSymbolEntry_smul_one {r : ℕ} (a : Lp ℂ ∞ (haarAddCircle (T :=
 /-- Scalar `(i, j)` Fourier coefficient of `A` equals entry `(i, j)` of `fourierCoeff A n`. -/
 theorem fourierCoeff_blockSymbolEntry {r : ℕ} (A : BlockSymbol r) (i j : Fin r) (n : ℤ) :
     fourierCoeff (blockSymbolEntry r i j A) n = fourierCoeff A n (EuclideanSpace.single j 1) i := by
-  rw [blockSymbolEntry, ContinuousLinearMap.fourierCoeff_compLpL, comp_apply, apply_apply,
-    PiLp.proj_apply]
+  rw [blockSymbolEntry, ContinuousLinearMap.fourierCoeff_compLpL, euclideanEntryCLM_apply]
 
 /-- `fourierCoeff (blockSymbolSingle r i j a) n` is `Matrix.single i j (fourierCoeff a n)`. -/
 theorem fourierCoeff_blockSymbolSingle {r : ℕ} (i j : Fin r) (a : Lp ℂ ∞ (haarAddCircle (T := 1)))

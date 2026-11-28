@@ -5,99 +5,96 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Laplace
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Riesz.Mellin
+public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Laplace
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.FiniteFamily.CompensatedRiesz
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Riesz.OneSided
 
 /-!
-# Zero exclusion from the signed prime remainder
+# One-sided zero exclusion for the signed prime remainder
 
-Multiplying `R_q(exp u)` by `φ(q) exp u` gives a Laplace transform that is a signed sum of
-Dirichlet Riesz transforms. If the quadratic twists have no zeros in a box, the one-sided
-Landau argument turns an eventual upper bound on `R_q` into nonvanishing of the untwisted
-L-functions in that box. The prime specifying the twist is fixed throughout.
+The Laplace transform of the signed Legendre-weighted remainder is a difference of
+ordinary Dirichlet Riesz transforms after shifting the Laplace parameter by one.
+The one-sided Landau argument then rules out an untwisted zero by using twist
+nonvanishing on a real interval and at the point being tested. A zero-free box
+supplies both conditions.
 
-This is the analytic step of `New.LFunction_ne_zero_of_primeRemainder_le` in
-`grh/src/New/Reduction/Zeros/Criterion.lean` of lsernau/grh-lean (`72fead1`), based on Landau's
-theorem for Laplace transforms of functions of one sign.
+The compensated mean and Laplace identification follow
+`grh/src/New/Reduction/Zeros/PrimeError.lean`; the one-sided argument follows
+`grh/src/New/Reduction/Zeros/Criterion.lean`, using Landau's theorem on Laplace transforms.
+Both files are from [grh-lean](https://github.com/lsernau/grh-lean), revision `72fead1`.
 -/
 
 public section
 
-open ArithmeticFunction.vonMangoldt Complex DirichletCharacter Filter MeasureTheory Set
+open Complex DirichletCharacter Filter MeasureTheory Set
 
 namespace TauCeti.OneSidedBound
 
-variable {d q : ℕ} [Fact d.Prime] [NeZero q]
-
-private theorem logDerivMean_eq_residueClassAux (hd : d ≠ 2) (hc : q.Coprime d) (s : ℂ) :
-    logDerivMean d q s = LFunctionResidueClassAux (1 : ZMod q) s +
-      (∑ ψ : DirichletCharacter ℂ q, logDeriv (ψ.legendreTwist d).LFunction s) /
-        (q.totient : ℂ) - (q.totient : ℂ)⁻¹ := by
-  classical
-  let ψ₀ : DirichletCharacter ℂ q := 1
-  have hsplit := Finset.sum_compl_add_sum ({ψ₀} : Finset (DirichletCharacter ℂ q))
-    (fun ψ ↦ logDeriv ψ.entireLFunction s)
-  simp only [Finset.sum_singleton] at hsplit
-  rw [logDerivMean_def, Finset.sum_sub_distrib, ← hsplit]
-  have hsum : (∑ ψ ∈ ({ψ₀}ᶜ : Finset (DirichletCharacter ℂ q)), logDeriv ψ.entireLFunction s) =
-      ∑ ψ ∈ ({ψ₀}ᶜ : Finset (DirichletCharacter ℂ q)), logDeriv ψ.LFunction s := by
-    apply Finset.sum_congr rfl
-    intro ψ hψ
-    rw [entireLFunction_of_ne_one (by simpa [ψ₀] using hψ)]
-  rw [hsum]
-  simp only [quadraticTwist_eq_legendreTwist,
-    entireLFunction_of_ne_one (legendreTwist_ne_one _ d hd hc), ψ₀, entireLFunction_one,
-    LFunctionResidueClassAux, ZMod.inv_one, MulChar.map_one, one_mul, logDeriv_apply,
-    div_eq_mul_inv]
-  ring
-
-/-- The Laplace transform of the prime remainder multiplied by `φ(q) exp u` is the sum of the
-untwisted Riesz transforms minus the sum of their quadratic twists, on `Re s > 1`. -/
-theorem hasLaplace_totient_mul_exp_mul_primeRemainder (hd : d ≠ 2) (hc : q.Coprime d) {s : ℂ}
-    (hs : 1 < s.re) :
-    HasLaplace (fun u ↦ ((q.totient * (Real.exp u * primeRemainder d q (Real.exp u)) : ℝ) : ℂ)) s
+/-- After shifting the Laplace parameter by one and multiplying by `φ(q)`, the signed
+prime remainder has transform equal to the difference of the untwisted and twisted
+Dirichlet Riesz expressions. -/
+theorem hasLaplace_totient_mul_exp_mul_primeRemainder (d q : ℕ) [Fact d.Prime] [NeZero q]
+    (hd : d ≠ 2) (hc : q.Coprime d) {s : ℂ} (hs : 1 < s.re) :
+    HasLaplace (fun u : ℝ ↦ (((q.totient : ℝ) * Real.exp u *
+      primeRemainder d q (Real.exp u) : ℝ) : ℂ)) s
       ((∑ ψ : DirichletCharacter ℂ q, rieszRemainderMellin ψ.LFunction s) -
         ∑ ψ : DirichletCharacter ℂ q, rieszRemainderMellin (ψ.legendreTwist d).LFunction s) := by
-  have ht := hasLaplace_primeRemainder hd hc hs
-  have hshift := ht.cexp_mul_smul (w := 1)
-  simp only [one_mul] at hshift
-  have hsum := sum_sub_rieszRemainderMellin_eq_compensated_mean (fun ψ ↦ ψ.legendreTwist d)
-    (fun ψ ↦ legendreTwist_ne_one ψ d hd hc) hs
-  simp only [← logDerivMean_eq_residueClassAux hd hc, Finset.sum_sub_distrib] at hsum
+  classical
+  let : NeZero (q * d) := ⟨Nat.mul_ne_zero (NeZero.ne q) (Fact.out : d.Prime).ne_zero⟩
+  have h := ((hasLaplace_primeRemainder hd hc hs).cexp_mul_smul (w := 1)).fun_const_smul
+    (q.totient : ℂ)
+  simp only [one_mul, ofReal_mul, ofReal_natCast, ofReal_exp, smul_eq_mul, mul_assoc] at h ⊢
+  convert h using 1
   have hq : (q.totient : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.totient_pos.mpr (NeZero.pos q)).ne'
-  rw [← hsum] at hshift
-  have hscaled := hshift.const_smul (q.totient : ℂ)
-  simp only [smul_eq_mul, mul_div_cancel₀ _ hq] at hscaled
-  refine hscaled.congr_ae (Eventually.of_forall fun u ↦ ?_)
-  simp only [Pi.smul_apply, smul_eq_mul, ofReal_exp, ofReal_mul, ofReal_natCast]
+  have hnonprincipal (ψ : DirichletCharacter ℂ q) : ψ.legendreTwist d ≠ 1 :=
+    legendreTwist_ne_one ψ d hd hc
+  have H := sum_sub_rieszRemainderMellin_eq_compensated_mean (fun ψ ↦ ψ.legendreTwist d)
+    hnonprincipal hs
+  rw [mul_comm ((q.totient : ℂ)), ← div_eq_iff hq,
+    logDerivMean_eq_residueClassAux_add hnonprincipal s,
+    logDerivMean_eq_residueClassAux_add hnonprincipal 1]
+  simpa only [Finset.sum_sub_distrib] using H
 
 /-- An eventual upper bound `R_q(y) ≤ y^(β - 1)` excludes a zero at `ρ` with `β < Re ρ`, provided
-all the quadratic twists are nonzero on the real interval `(β, 1)` and, if `Re ρ < 1`, at `ρ`.
-A zero-free box through height `|Im ρ|` supplies both conditions. The value of a principal
-L-function at its pole is not asserted to be nonzero. -/
+all the Legendre twists are nonzero on the real interval `(β, 1)` and, if `Re ρ < 1`, at `ρ`.
+The value of a principal L-function at its pole is not asserted to be nonzero. -/
 theorem _root_.DirichletCharacter.LFunction_ne_zero_of_primeRemainder_le
+    {q d : ℕ} [NeZero q] [Fact d.Prime]
     (χ : DirichletCharacter ℂ q) (hd : d ≠ 2) (hc : q.Coprime d) {β : ℝ} {ρ : ℂ}
     (hβ : 0 ≤ β) (hρ : β < ρ.re) (hreg : ρ ≠ 1 ∨ χ ≠ 1)
-    (hR : ∀ᶠ y in atTop, primeRemainder d q y ≤ y ^ (β - 1))
+    (hR : ∀ᶠ y : ℝ in atTop, primeRemainder d q y ≤ y ^ (β - 1))
     (hreal : ∀ b ∈ Ioo β 1,
       ∀ ψ : DirichletCharacter ℂ q, (ψ.legendreTwist d).LFunction (b : ℂ) ≠ 0)
     (htwist : ρ.re < 1 → ∀ ψ : DirichletCharacter ℂ q, (ψ.legendreTwist d).LFunction ρ ≠ 0) :
     χ.LFunction ρ ≠ 0 := by
-  let g : ℝ → ℝ := fun u ↦ q.totient * (Real.exp u * primeRemainder d q (Real.exp u))
-  obtain ⟨u₀, hu₀⟩ := eventually_atTop.mp (Real.tendsto_exp_atTop.eventually hR)
-  have hg : ∀ᵐ u ∂volume.restrict (Ioi u₀), g u ≤ q.totient * Real.exp (β * u) := by
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with u hu
-    have hbound := hu₀ u (mem_Ioi.mp hu).le
-    dsimp only [g]
-    refine mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg _)
+  let : NeZero (q * d) := ⟨Nat.mul_ne_zero (NeZero.ne q) (Fact.out : d.Prime).ne_zero⟩
+  let g := fun u : ℝ ↦ (q.totient : ℝ) * Real.exp u * primeRemainder d q (Real.exp u)
+  have hg : ∀ᶠ u : ℝ in atTop, g u ≤ (q.totient : ℝ) * Real.exp (β * u) := by
+    filter_upwards [Real.tendsto_exp_atTop.eventually hR] with u hu
     calc
-      Real.exp u * primeRemainder d q (Real.exp u) ≤ Real.exp u * (Real.exp u) ^ (β - 1) :=
-        mul_le_mul_of_nonneg_left hbound (Real.exp_pos u).le
-      _ = Real.exp (β * u) := by rw [← Real.exp_mul, ← Real.exp_add]; congr 1; ring
-  exact χ.LFunction_ne_zero_of_hasLaplace_sub_rieszRemainderMellin (fun ψ ↦ ψ.legendreTwist d)
-    hβ hρ hreg hg (fun _ hz ↦ hasLaplace_totient_mul_exp_mul_primeRemainder hd hc hz)
+      _ ≤ (q.totient : ℝ) * Real.exp u * Real.exp u ^ (β - 1) := by
+        dsimp only [g]
+        gcongr
+      _ = _ := by rw [← Real.exp_mul, mul_assoc, ← Real.exp_add]; congr 2; ring
+  obtain ⟨u₀, hu₀⟩ := eventually_atTop.mp hg
+  exact χ.LFunction_ne_zero_of_hasLaplace_sub_rieszRemainderMellin
+    (fun ψ ↦ ψ.legendreTwist d) (A := 1) (u₀ := u₀) hβ hρ hreg
+    (ae_restrict_of_forall_mem measurableSet_Ioi fun u hu ↦ hu₀ u hu.le)
+    (fun _ hs ↦ hasLaplace_totient_mul_exp_mul_primeRemainder d q hd hc hs)
     (fun b hb hb₁ ↦ hreal b ⟨hb.1, hb₁⟩) htwist
+
+/-- A one-sided bound for the signed remainder gives zero exclusion at `ρ`, provided the
+Legendre twists by the chosen odd prime have no zero with `β < Re z < 1` and
+`|Im z| ≤ |Im ρ|`. -/
+theorem LFunction_ne_zero_of_primeRemainder_le {q d : ℕ} [NeZero q] [Fact d.Prime]
+    (hd : d ≠ 2) (hc : q.Coprime d) (χ : DirichletCharacter ℂ q) {β : ℝ} {ρ : ℂ}
+    (hβ : 0 ≤ β) (hρ : β < ρ.re) (hreg : ρ ≠ 1 ∨ χ ≠ 1)
+    (hR : ∀ᶠ y : ℝ in atTop, primeRemainder d q y ≤ y ^ (β - 1))
+    (htwist : ∀ ψ : DirichletCharacter ℂ q, ∀ z : ℂ, β < z.re → z.re < 1 →
+      |z.im| ≤ |ρ.im| → (ψ.legendreTwist d).LFunction z ≠ 0) : χ.LFunction ρ ≠ 0 :=
+  χ.LFunction_ne_zero_of_primeRemainder_le hd hc hβ hρ hreg hR
+    (fun b hb ψ ↦ htwist ψ b (by simpa using hb.1) (by simpa using hb.2) (by simp))
+    (fun hρ₁ ψ ↦ htwist ψ ρ hρ hρ₁ le_rfl)
 
 end TauCeti.OneSidedBound

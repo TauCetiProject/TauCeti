@@ -19,7 +19,10 @@ On the point category `Discrete PUnit` with the bottom topology:
 * the connected diagrams `B(C₃)` and `B(S₃)` are gerbes;
 * in the gerbe `B(S₃)`, without commutative inertia, evaluation of central sections at the
   canonical object is injective;
-* in the gerbe `B(C₃)`, with commutative inertia, evaluation at the canonical object is bijective.
+* in the gerbe `B(C₃)`, with commutative inertia, evaluation at the canonical object is bijective;
+* the connected diagrams `Codiscrete Bool × B(C₃)` and `Codiscrete PUnit × B(S₃)` are gerbes, the
+  second with a single object;
+* `Codiscrete Empty × B(C₃)` is a stack but not a gerbe: its fibre has no object.
 -/
 
 public section
@@ -75,5 +78,28 @@ example : Function.Bijective
     (IntrinsicBandSections.evaluation (F := B C₃) (𝟙 star) (canonical C₃)) :=
   ⟨IntrinsicBandSections.evaluation_injective (J := ⊥) _,
     IntrinsicBandSections.evaluation_surjective ⊥ aut_comm _⟩
+
+/-- **`Codiscrete Bool × B(C₃)` and `Codiscrete PUnit × B(S₃)`: gerbes.** -/
+example : (constant pt (Codiscrete Bool × SingleObj C₃)).IsGerbe ⊥ ∧
+    (constant pt (Codiscrete PUnit × SingleObj (Equiv.Perm (Fin 3)))).IsGerbe ⊥ :=
+  ⟨inferInstance, inferInstance⟩
+
+/-- The `S₃` fixture has a single object, so it is connected for a reason other than its
+coefficients. -/
+example : Subsingleton (Codiscrete PUnit × SingleObj (Equiv.Perm (Fin 3))) :=
+  ⟨fun _ _ ↦ Prod.ext (Codiscrete.ext (Subsingleton.elim _ _)) rfl⟩
+
+/-- **`Codiscrete Empty × B(C₃)`: a stack.** -/
+example : (constant pt (Codiscrete Empty × SingleObj C₃)).IsStack ⊥ :=
+  inferInstance
+
+/-- **`Codiscrete Empty × B(C₃)`: not a gerbe**, since its fibre over the point has no object. -/
+example : ¬ (constant pt (Codiscrete Empty × SingleObj C₃)).IsGerbe ⊥ := by
+  intro h
+  obtain ⟨R, hR, hne⟩ := h.exists_covering_nonempty star
+  rw [GrothendieckTopology.bot_covering] at hR
+  subst hR
+  obtain ⟨x⟩ := hne (𝟙 _) trivial
+  exact x.1.as.elim
 
 end TauCeti.Examples.BotGerbe

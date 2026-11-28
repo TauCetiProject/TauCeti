@@ -259,6 +259,17 @@ theorem sectionPrincipalSymbol_sub (hx : I.IsInteriorPoint x) {m : ℕ}
       sectionPrincipalSymbol I hx P₁ ξ - sectionPrincipalSymbol I hx P₂ ξ := by
   simp [sectionPrincipalSymbol_def, smul_sub]
 
+/-- The principal symbol only depends on the underlying operator and on the order `m` through
+its value: the same operator, as an element of `differentialOperators` at equal orders, has the
+same principal symbol. -/
+theorem sectionPrincipalSymbol_congr (hx : I.IsInteriorPoint x) {m m' : ℕ} (h : m = m')
+    {P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m}
+    {P' : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m'}
+    (hP : (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) = P') (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    sectionPrincipalSymbol I hx P ξ = sectionPrincipalSymbol I hx P' ξ := by
+  subst h
+  rw [Subtype.ext hP]
+
 /-! ### Values at differentials of functions -/
 
 /-- The commutator symbol at `x`, evaluated on the differentials at `x` of smooth functions
