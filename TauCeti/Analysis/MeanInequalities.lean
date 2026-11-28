@@ -78,6 +78,9 @@ inequality of arithmetic and geometric means.
   by positive scalars, with the strict form.
 * `Real.sqrt_sum_sq_add_sum_sq_le_sum_sqrt`: the triangle inequality in the plane for finite
   sums of coordinate pairs.
+* `Real.sqrt_sum_le_sqrt_sum_add_sqrt_sum`: Minkowski's inequality for square roots of finite
+  sums, `√(∑ c i) ≤ √(∑ a i) + √(∑ b i)` when `√(c i) ≤ √(a i) + √(b i)` termwise and `a`, `b`
+  are nonnegative.
 * `Real.le_div_add_rpow_mul_of_le_add_mul_rpow_mul_rpow`: absorption of a power `M^θ`, `θ < 1`,
   in a bound `M ≤ A + B M^θ N^(1 - θ)`.
 * `Real.mul_rpow_mul_rpow_le_half_add`: Young's inequality
@@ -255,6 +258,25 @@ theorem sqrt_sum_sq_add_sum_sq_le_sum_sqrt {ι : Type*} (s : Finset ι) (a b : �
   have hsum : (⟨∑ i ∈ s, a i, ∑ i ∈ s, b i⟩ : ℂ) = ∑ i ∈ s, ⟨a i, b i⟩ :=
     Complex.ext (by rw [Complex.re_sum]) (by rw [Complex.im_sum])
   simpa only [h, hsum] using norm_sum_le s fun i => (⟨a i, b i⟩ : ℂ)
+
+/-- **Minkowski's inequality for square roots of finite sums.** If `a` and `b` are nonnegative on
+a finite set `s` and `√(c i) ≤ √(a i) + √(b i)` for every `i ∈ s`, then
+`√(∑ i ∈ s, c i) ≤ √(∑ i ∈ s, a i) + √(∑ i ∈ s, b i)`. -/
+theorem sqrt_sum_le_sqrt_sum_add_sqrt_sum {ι : Type*} {s : Finset ι} {a b c : ι → ℝ}
+    (ha : ∀ i ∈ s, 0 ≤ a i) (hb : ∀ i ∈ s, 0 ≤ b i)
+    (h : ∀ i ∈ s, √(c i) ≤ √(a i) + √(b i)) :
+    √(∑ i ∈ s, c i) ≤ √(∑ i ∈ s, a i) + √(∑ i ∈ s, b i) := by
+  have hCS := sum_mul_le_sqrt_mul_sqrt s (fun i ↦ √(a i)) (fun i ↦ √(b i))
+  rw [Finset.sum_congr rfl fun i hi ↦ sq_sqrt (ha i hi),
+    Finset.sum_congr rfl fun i hi ↦ sq_sqrt (hb i hi)] at hCS
+  have hc : ∀ i ∈ s, c i ≤ a i + b i + 2 * (√(a i) * √(b i)) := fun i hi ↦ by
+    have h2 := (sqrt_le_iff.1 (h i hi)).2
+    rw [add_sq, sq_sqrt (ha i hi), sq_sqrt (hb i hi)] at h2
+    linarith
+  rw [sqrt_le_iff, add_sq, sq_sqrt (Finset.sum_nonneg ha), sq_sqrt (Finset.sum_nonneg hb)]
+  refine ⟨by positivity, (Finset.sum_le_sum hc).trans ?_⟩
+  rw [Finset.sum_add_distrib, Finset.sum_add_distrib, ← Finset.mul_sum]
+  linarith
 
 /-- **Absorption.** If `M ≤ A + B M^θ N^(1 - θ)` with `0 ≤ θ < 1` and `M, B, N ≥ 0`, then
 `M ≤ A / (1 - θ) + B^(1 / (1 - θ)) N`, by Young's inequality
