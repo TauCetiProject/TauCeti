@@ -8,12 +8,13 @@ module
 public import TauCeti.Probability.Kernel.Composition.TotalVariation
 public import Mathlib.Probability.Kernel.Invariance
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import Mathlib.Analysis.SpecialFunctions.Log.Base
 import TauCeti.Probability.Kernel.Composition.Power
 import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 
 /-!
-# Worst-case total variation distances for Markov chains
+# Worst-case total variation distances and mixing times for Markov chains
 
 `Kernel.tvToStationary` measures the worst-case distance from a time-`t` law to a reference
 measure, and `Kernel.tvBetweenStarts` measures the worst-case distance between two time-`t`
@@ -26,10 +27,24 @@ nonincreasing. If the space is also nonempty, point starts attain the worst-case
 all initial probability laws. The distance between starts is submultiplicative and bounds the
 factor by which additional steps contract the distance to an invariant probability measure.
 
+`Kernel.mixingTime κ π ε` is the least time `t` with `κ.tvToStationary π t ≤ ε`, as an element
+of `ℕ∞`, with value `⊤` if there is no such time.
+
+## Main declarations
+
+* `Kernel.mixingTime`: the mixing time `t_mix(ε)`.
+* `Kernel.mixingTime_le_iff`: for a Markov kernel on a finite space with measurable
+  singletons, `t_mix(ε) ≤ t` exactly when `κ.tvToStationary π t ≤ ε`.
+* `Kernel.tvBetweenStarts_mul_le` and `Kernel.tvToStationary_mul_le`: the bounds
+  `d̄(k t) ≤ d̄(t) ^ k` and, for an invariant probability measure, `d(k t) ≤ (2 d(t)) ^ k`.
+* `Kernel.mixingTime_le_ceil_logb_mul`: for an invariant probability measure and `0 < ε`,
+  `t_mix(ε) ≤ ⌈log₂ ε⁻¹⌉ t_mix(1/4)`.
+
 ## References
 
 * D. A. Levin and Y. Peres, with contributions by E. L. Wilmer, *Markov Chains and Mixing Times*,
-  second edition, American Mathematical Society, 2017, Lemmas 4.10 and 4.11 and Exercises 4.1–4.3.
+  second edition, American Mathematical Society, 2017, Lemmas 4.10 and 4.11, Exercises 4.1–4.3
+  and equations (4.32) to (4.34).
 -/
 
 public section
@@ -180,6 +195,63 @@ variable [MeasurableSingletonClass α]
 
 end TimeZero
 
+section MixingTime
+
+variable {ε : ℝ}
+
+/-- The mixing time `t_mix(ε)`: the least time `t` at which the worst-case distance to the
+reference measure `π` is at most `ε`, and `⊤` if there is no such time. -/
+noncomputable def mixingTime (κ : Kernel α α) (π : Measure α) (ε : ℝ) : ℕ∞ :=
+  ⨅ (t : ℕ) (_ : κ.tvToStationary π t ≤ ε), (t : ℕ∞)
+
+/-- The infimum formula for the mixing time. -/
+theorem mixingTime_def (κ : Kernel α α) (π : Measure α) (ε : ℝ) :
+    κ.mixingTime π ε = ⨅ (t : ℕ) (_ : κ.tvToStationary π t ≤ ε), (t : ℕ∞) := (rfl)
+
+/-- The mixing time is at most `t` exactly when the distance to the reference measure is at
+most `ε` at some time `s ≤ t`. -/
+theorem mixingTime_le_iff_exists :
+    κ.mixingTime π ε ≤ t ↔ ∃ s ≤ t, κ.tvToStationary π s ≤ ε := by
+  refine ⟨fun h ↦ ?_, fun ⟨s, hst, hs⟩ ↦ (iInf₂_le s hs).trans (by exact_mod_cast hst)⟩
+  by_contra! hlt
+  have h' : ((t + 1 : ℕ) : ℕ∞) ≤ κ.mixingTime π ε :=
+    le_iInf₂ fun s hs ↦ by
+      by_contra! hs'
+      exact (hlt s (Nat.lt_succ_iff.mp (by exact_mod_cast hs'))).not_ge hs
+  have := h'.trans h
+  norm_cast at this
+  omega
+
+/-- If the distance to the reference measure is at most `ε` at time `t`, then the mixing time
+is at most `t`. -/
+theorem mixingTime_le_of_tvToStationary_le (h : κ.tvToStationary π t ≤ ε) :
+    κ.mixingTime π ε ≤ t :=
+  iInf₂_le t h
+
+/-- The mixing time is `⊤` exactly when the distance to the reference measure stays above
+`ε` at all times. -/
+theorem mixingTime_eq_top_iff : κ.mixingTime π ε = ⊤ ↔ ∀ t, ε < κ.tvToStationary π t := by
+  simp [mixingTime_def, not_le]
+
+/-- The mixing time is antitone in the accuracy `ε`. -/
+theorem mixingTime_antitone : Antitone (κ.mixingTime π) :=
+  fun _ _ hεδ ↦ iInf₂_mono' fun t ht ↦ ⟨t, ht.trans hεδ, le_rfl⟩
+
+/-- For a negative accuracy, the mixing time is `⊤`. -/
+theorem mixingTime_eq_top_of_neg (hε : ε < 0) : κ.mixingTime π ε = ⊤ :=
+  mixingTime_eq_top_iff.mpr fun _ ↦ hε.trans_le tvToStationary_nonneg
+
+/-- For a reference probability measure and an accuracy `ε ≥ 1`, the mixing time is zero. -/
+theorem mixingTime_eq_zero_of_one_le [IsProbabilityMeasure π] (hε : 1 ≤ ε) :
+    κ.mixingTime π ε = 0 := by
+  refine nonpos_iff_eq_zero.mp (mixingTime_le_of_tvToStationary_le (t := 0) ?_)
+  rw [tvToStationary_def]
+  refine Real.iSup_le (fun x ↦ ?_) (zero_le_one.trans hε)
+  rw [pow_zero, one_apply]
+  exact tvDist_div_two_le_one.trans hε
+
+end MixingTime
+
 variable [Finite α] [MeasurableSingletonClass α] (κ)
 
 /-- The distance after `t` steps from any initial distribution to a fixed measure is bounded
@@ -303,5 +375,53 @@ theorem tvBetweenStarts_antitone : Antitone κ.tvBetweenStarts := by
   obtain ⟨u, rfl⟩ := Nat.exists_eq_add_of_le hst
   exact tvBetweenStarts_add_le.trans (mul_le_of_le_one_right tvBetweenStarts_nonneg
     tvBetweenStarts_le_one)
+
+/-- The mixing time is at most `t` exactly when the distance to the reference measure is at most
+`ε` at time `t`, since this distance is nonincreasing in time. -/
+theorem mixingTime_le_iff {ε : ℝ} : κ.mixingTime π ε ≤ t ↔ κ.tvToStationary π t ≤ ε :=
+  mixingTime_le_iff_exists.trans
+    ⟨fun ⟨_, hst, hs⟩ ↦ (tvToStationary_antitone hst).trans hs, fun h ↦ ⟨t, le_rfl, h⟩⟩
+
+/-- The worst-case distance between starts after `k * t` steps is at most its `k`-th power at
+time `t`. -/
+theorem tvBetweenStarts_mul_le (k : ℕ) :
+    κ.tvBetweenStarts (k * t) ≤ κ.tvBetweenStarts t ^ k := by
+  induction k with
+  | zero => simpa using tvBetweenStarts_le_one
+  | succ k ih =>
+    rw [Nat.succ_mul, pow_succ]
+    exact tvBetweenStarts_add_le.trans
+      (mul_le_mul_of_nonneg_right ih tvBetweenStarts_nonneg)
+
+/-- For an invariant probability measure, the distance to stationarity after `k * t` steps is at
+most `(2 d(t)) ^ k`, where `d(t)` is the distance to stationarity at time `t`. -/
+theorem tvToStationary_mul_le [IsProbabilityMeasure π] (hπ : κ.Invariant π) (k : ℕ) :
+    κ.tvToStationary π (k * t) ≤ (2 * κ.tvToStationary π t) ^ k :=
+  (tvToStationary_le_tvBetweenStarts κ hπ).trans <| (tvBetweenStarts_mul_le k).trans <|
+    pow_le_pow_left₀ tvBetweenStarts_nonneg tvBetweenStarts_le_two_mul_tvToStationary k
+
+/-- For an invariant probability measure and `0 < ε`, the mixing time `t_mix(ε)` is at most
+`⌈log₂ ε⁻¹⌉ t_mix(1/4)`. -/
+theorem mixingTime_le_ceil_logb_mul [IsProbabilityMeasure π] (hπ : κ.Invariant π) {ε : ℝ}
+    (hε : 0 < ε) :
+    κ.mixingTime π ε ≤ (⌈Real.logb 2 ε⁻¹⌉₊ : ℕ∞) * κ.mixingTime π (1 / 4) := by
+  set k := ⌈Real.logb 2 ε⁻¹⌉₊
+  have hk : ε⁻¹ ≤ 2 ^ k := by
+    rw [← Real.rpow_natCast]
+    exact (Real.logb_le_iff_le_rpow one_lt_two (inv_pos.mpr hε)).mp (Nat.le_ceil _)
+  rcases eq_or_ne (κ.mixingTime π (1 / 4)) ⊤ with h | h
+  · rcases eq_or_ne k 0 with hk0 | hk0
+    · rw [hk0, pow_zero, inv_le_one₀ hε] at hk
+      simp [mixingTime_eq_zero_of_one_le hk]
+    · rw [h, ENat.mul_top (by exact_mod_cast hk0)]
+      exact le_top
+  · obtain ⟨t, ht⟩ := ENat.ne_top_iff_exists.mp h
+    rw [← ht, ← Nat.cast_mul]
+    refine mixingTime_le_of_tvToStationary_le ((tvToStationary_mul_le hπ k).trans ?_)
+    have h4 : κ.tvToStationary π t ≤ 1 / 4 := mixingTime_le_iff.mp ht.ge
+    calc (2 * κ.tvToStationary π t) ^ k ≤ (2 * (1 / 4)) ^ k :=
+          pow_le_pow_left₀ (mul_nonneg zero_le_two tvToStationary_nonneg) (by linarith) k
+      _ = (2 ^ k)⁻¹ := by rw [show (2 : ℝ) * (1 / 4) = 2⁻¹ by norm_num, inv_pow]
+      _ ≤ ε := inv_le_of_inv_le₀ hε hk
 
 end ProbabilityTheory.Kernel
