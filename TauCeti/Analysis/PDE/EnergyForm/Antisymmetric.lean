@@ -152,7 +152,7 @@ private theorem divergenceCLM_sum_sub_eq_zero (hK : ∀ i j, ContDiffOn ℝ ∞ 
     simp [-inner_gradient_left, PiLp.inner_apply, gradient_apply_eq_fderiv_apply_single,
       TestFunction.lineDeriv_eq_fderiv ψ, mul_comm]
   rw [map_sub, map_sum, sub_apply, sum_apply, Finset.sum_congr rfl fun i _ ↦
-      divergenceCLM_smulTestField (hr i) _ hx, divergenceCLM_smulTestField hgs ψ hx,
+      divergenceCLM_smulOfContDiffOn (hr i) _ hx, divergenceCLM_smulOfContDiffOn hgs ψ hx,
     Finset.sum_add_distrib]
   simp only [coe_lineDerivCLM]
   rw [hhess, htrg, hgrad]

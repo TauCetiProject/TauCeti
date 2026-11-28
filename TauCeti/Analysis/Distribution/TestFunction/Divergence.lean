@@ -49,7 +49,8 @@ total variation of a function and the perimeter of a set are suprema of the pair
   is the translate of its divergence.
 * `TauCeti.integral_divergenceCLM_mul_congr_ae`: the pairing `∫ u div φ` only depends on `u`
   almost everywhere on `Ω`.
-* `TauCeti.divergenceCLM_smulTestField`: the divergence product rule for `φ.smulOfContDiffOn`.
+* `TestFunction.divergenceCLM_smulOfContDiffOn`: the divergence product rule for
+  `φ.smulOfContDiffOn`.
 * `TauCeti.trace_fderiv_smul` and `TauCeti.trace_fderiv_smul_const`: the Leibniz rule
   `div (χ φ) = χ div φ + Dχ φ` for the divergence `tr (D ·)` of a vector field multiplied by a
   scalar function.
@@ -203,21 +204,37 @@ theorem trace_fderiv_eq_sum_fderiv_apply_single {ι : Type*} [Fintype ι] [Decid
   rw [hd.fderiv]
   simp [EuclideanSpace.inner_single_left]
 
-open scoped Gradient InnerProductSpace in
+end TauCeti
+
+namespace TestFunction
+
+open Set TopologicalSpace
+open scoped ContDiff Distributions Gradient InnerProductSpace
+
 /-- On `Ω`, the divergence of `φ b` is `φ div b + ⟪∇φ, b⟫`. -/
-theorem divergenceCLM_smulTestField {F : Type*} [NormedAddCommGroup F]
+theorem divergenceCLM_smulOfContDiffOn {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] {Ω : Opens F} {b : F → F}
     (hb : ContDiffOn ℝ ∞ b Ω) (φ : 𝓓(Ω, ℝ))
     {x : F} (hx : x ∈ Ω) :
-    TestFunction.divergenceCLM (φ.smulOfContDiffOn Ω.isOpen φ.tsupport_subset hb) x =
+    divergenceCLM (φ.smulOfContDiffOn Ω.isOpen φ.tsupport_subset hb) x =
       φ x * LinearMap.trace ℝ F (fderiv ℝ b x : F →ₗ[ℝ] F) +
         ⟪∇ (φ : F → ℝ) x, b x⟫_ℝ := by
   have hcoe : (φ.smulOfContDiffOn Ω.isOpen φ.tsupport_subset hb : F → F) = fun y ↦ φ y • b y :=
     funext (φ.smulOfContDiffOn_apply Ω.isOpen φ.tsupport_subset hb)
-  rw [TestFunction.divergenceCLM_apply, hcoe, trace_fderiv_smul
+  rw [divergenceCLM_apply, hcoe, TauCeti.trace_fderiv_smul
       (φ.contDiff.differentiable (by simp) x)
       ((hb.contDiffAt (Ω.isOpen.mem_nhds hx)).differentiableAt (by simp)), gradient,
     InnerProductSpace.toDual_symm_apply]
+
+end TestFunction
+
+namespace TauCeti
+
+open Set TestFunction TopologicalSpace
+open scoped ContDiff Distributions
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {Ω : Opens E}
 
 /-- **The weighted divergence.** For a differentiable weight `W` and vector field `X`,
 `div (e^{−W} X) = (div X − DW X) e^{−W}`, where `div = tr ∘ D`. -/

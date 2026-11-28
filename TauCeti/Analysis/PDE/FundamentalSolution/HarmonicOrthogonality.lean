@@ -54,7 +54,7 @@ Lax–Malgrange harmonic orthogonality theorem
 
 ## Main declarations
 
-* `TauCeti.HasExteriorMultipoleApprox`,
+* `TauCeti.HasExteriorMultipoleApprox`, `TauCeti.hasExteriorMultipoleApprox_iff`,
   `TauCeti.hasExteriorMultipoleApprox_planarNewtonianKernel`,
   `TauCeti.hasExteriorMultipoleApprox_newtonianKernel`: exterior multipole approximation by
   globally harmonic functions, proved for the planar and Euclidean Newtonian kernels.
@@ -97,10 +97,21 @@ def HasExteriorMultipoleApprox {E : Type*} [NormedAddCommGroup E] [InnerProductS
       ∀ k : ℕ, TendstoUniformlyOn (fun N ↦ iteratedFDeriv ℝ k (P N))
         (iteratedFDeriv ℝ k fun y ↦ G (x - y)) atTop (closedBall 0 (c * ‖x‖))
 
+/-- Characterization of `HasExteriorMultipoleApprox` in terms of the radius fraction `c ∈ (0, 1)`
+and globally harmonic uniform approximants on `closedBall 0 (c * ‖x‖)`. -/
+theorem hasExteriorMultipoleApprox_iff {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [FiniteDimensional ℝ E] {G : E → ℝ} :
+    HasExteriorMultipoleApprox G ↔
+      ∃ c : ℝ, 0 < c ∧ c < 1 ∧ ∀ x : E, x ≠ 0 →
+        ∃ P : ℕ → E → ℝ, (∀ N z, HarmonicAt (P N) z) ∧
+          ∀ k : ℕ, TendstoUniformlyOn (fun N ↦ iteratedFDeriv ℝ k (P N))
+            (iteratedFDeriv ℝ k fun y ↦ G (x - y)) atTop (closedBall 0 (c * ‖x‖)) :=
+  Iff.rfl
+
 /-- The planar Newtonian kernel admits exterior multipole approximation. -/
 theorem hasExteriorMultipoleApprox_planarNewtonianKernel :
     HasExteriorMultipoleApprox planarNewtonianKernel :=
-  ⟨1 / 2, by norm_num, by norm_num, fun x hx ↦
+  hasExteriorMultipoleApprox_iff.2 ⟨1 / 2, by norm_num, by norm_num, fun x hx ↦
     ⟨(planarMultipoleSeries x).partialSum,
       fun N z ↦ harmonicAt_planarMultipoleSeries_partialSum x N z,
       fun k ↦ tendstoUniformlyOn_iteratedFDeriv_planarMultipoleSeries_partialSum
@@ -112,7 +123,8 @@ theorem hasExteriorMultipoleApprox_newtonianKernel (n : ℕ) :
     HasExteriorMultipoleApprox (newtonianKernel n) := by
   obtain ⟨c, hc0, hc1, h⟩ :=
     exists_harmonicAt_mem_polynomialsDegLE_tendstoUniformlyOn_iteratedFDeriv_newtonianKernel_sub n
-  exact ⟨c, hc0, hc1, fun x hx ↦ let ⟨P, hP, _, hlim⟩ := h x hx; ⟨P, hP, hlim⟩⟩
+  exact hasExteriorMultipoleApprox_iff.2
+    ⟨c, hc0, hc1, fun x hx ↦ let ⟨P, hP, _, hlim⟩ := h x hx; ⟨P, hP, hlim⟩⟩
 
 end TauCeti
 
@@ -171,7 +183,7 @@ private theorem exists_radius_kernelPotentialOfSupport_eq_zero {T : 𝓓'(Ω, �
   have hR₁_pos : 0 < R₁ := lt_of_lt_of_le zero_lt_one (le_max_right _ _)
   have hχR₁ : tsupport (χ : E → ℝ) ⊆ closedBall 0 R₁ :=
     hR₀.trans (closedBall_subset_closedBall (le_max_left _ _))
-  obtain ⟨c, hc0, hc1, hmp⟩ := hmp
+  obtain ⟨c, hc0, hc1, hmp⟩ := hasExteriorMultipoleApprox_iff.1 hmp
   refine ⟨(R₁ + 1) / c, div_pos (by linarith) hc0, fun x hx ↦ ?_⟩
   have hcx : R₁ + 1 < c * ‖x‖ := by rw [mul_comm]; exact (div_lt_iff₀ hc0).1 hx
   have hnorm_pos : 0 < ‖x‖ := lt_trans (div_pos (by linarith) hc0) hx

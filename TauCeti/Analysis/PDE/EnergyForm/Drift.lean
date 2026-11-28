@@ -78,7 +78,7 @@ private theorem energyFormH1_drift_ofTestFunctionₗ_eq_integral (hb : ContDiffO
   refine integral_congr_ae (((jetField_ofTestFunctionₗ_ae (mu := mu) (p := 2) φ).and
     (ae_restrict_mem Omega.isOpen.measurableSet)).mono fun x hx ↦ ?_)
   dsimp only
-  rw [hx.1, divergenceCLM_smulTestField hb φ hx.2]
+  rw [hx.1, TestFunction.divergenceCLM_smulOfContDiffOn hb φ hx.2]
   simp only [Pi.zero_apply, energyIntegrand_apply, matrixBilinearForm_apply, Matrix.zero_mulVec,
     dotProduct_zero, driftForm_apply, jetField_apply, massForm_apply, smul_eq_mul,
     real_inner_comm (b x)]

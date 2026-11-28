@@ -10,9 +10,9 @@ public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 public import TauCeti.Analysis.Distribution.Convolution
 public import TauCeti.Analysis.Distribution.LineDeriv
 public import TauCeti.Analysis.Distribution.SmulLeft
+public import TauCeti.Analysis.InnerProductSpace.Harmonic.Analytic
 import TauCeti.Analysis.Distribution.Regularization
 import TauCeti.Analysis.Distribution.Support
-import TauCeti.Analysis.InnerProductSpace.Harmonic.Analytic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Deriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
@@ -124,14 +124,23 @@ def kernelPotentialPairing (T : 𝓓'(Ω, F)) (χ : 𝓓(Ω, ℝ)) {G : E → �
       (hG.contDiffOn_sub_right x))
   else 0
 
+/-- At `x ∉ tsupport χ`, `kernelPotentialPairing` evaluates `T` on the canonical cutoff product
+`χ.smulOfContDiffOn`. -/
+@[simp]
+theorem kernelPotentialPairing_of_notMem_tsupport (T : 𝓓'(Ω, F)) (χ : 𝓓(Ω, ℝ)) {G : E → ℝ}
+    (hG : HarmonicOnNhd G {0}ᶜ) {x : E} (hx : x ∉ tsupport (χ : E → ℝ)) :
+    T.kernelPotentialPairing χ hG x =
+      T (χ.smulOfContDiffOn isOpen_compl_singleton (subset_compl_singleton_iff.2 hx)
+        (hG.contDiffOn_sub_right x)) := by
+  simp [kernelPotentialPairing, hx]
+
 /-- At `x ∉ tsupport χ`, `kernelPotentialPairing` is `T` applied to any test function equal to
 `y ↦ χ y * G (x - y)`. -/
 theorem kernelPotentialPairing_eq (T : 𝓓'(Ω, F)) {χ : 𝓓(Ω, ℝ)} {G : E → ℝ}
     (hG : HarmonicOnNhd G {0}ᶜ) {x : E} (hx : x ∉ tsupport (χ : E → ℝ)) {φ : 𝓓(Ω, ℝ)}
     (hφ : ∀ y, φ y = χ y * G (x - y)) :
     T.kernelPotentialPairing χ hG x = T φ := by
-  unfold kernelPotentialPairing
-  rw [dite_eq_left_of_eq_true (eq_true hx)]
+  rw [kernelPotentialPairing_of_notMem_tsupport T χ hG hx]
   congr 1
   ext y
   rw [TestFunction.smulOfContDiffOn_apply, smul_eq_mul, hφ]

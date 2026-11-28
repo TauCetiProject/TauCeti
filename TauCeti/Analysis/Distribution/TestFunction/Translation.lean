@@ -24,7 +24,9 @@ directional derivatives of regularizations.
 
 * `TestFunction.translateOfMapsTo`: translate a `Cⁿ` test function `ρ` by `x` whenever
   `tsupport ρ + x ⊆ Ω`.
-* `TestFunction.translateOfMapsTo_apply`: evaluation of a translated test function.
+* `TestFunction.translateOfMapsTo_apply`, `TestFunction.translateOfMapsTo_zero`,
+  `TestFunction.translateOfMapsTo_translateOfMapsTo`: evaluation, zero-translation identity, and
+  composition of translated test functions.
 * `TestFunction.tsupport_translateOfMapsTo`: support of a translated test function.
 * `TestFunction.fderiv_translateOfMapsTo`: Fréchet derivatives commute with translation.
 * `TestFunction.lineDeriv_translateOfMapsTo`: directional derivatives commute with translation.
@@ -71,12 +73,34 @@ theorem translateOfMapsTo_apply {n : ℕ∞} (ρ : 𝓓^{n}(V, F)) {x : E}
     (h : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) (y : E) :
     ρ.translateOfMapsTo h y = ρ (y - x) := by rfl
 
+/-- Translating a test function by `0` on the same domain leaves it unchanged. -/
+@[simp]
+theorem translateOfMapsTo_zero {n : ℕ∞} (ρ : 𝓓^{n}(V, F))
+    (h : MapsTo (· + 0) (tsupport (ρ : E → F)) V) :
+    ρ.translateOfMapsTo h = ρ := by
+  ext y
+  simp
+
 /-- The support of `ρ.translateOfMapsTo h` is the translated support of `ρ`. -/
 @[simp]
 theorem tsupport_translateOfMapsTo {n : ℕ∞} (ρ : 𝓓^{n}(V, F)) {x : E}
     (h : MapsTo (· + x) (tsupport (ρ : E → F)) Ω) :
     tsupport (ρ.translateOfMapsTo h : E → F) = (· - x) ⁻¹' tsupport (ρ : E → F) := by
   rw [funext (translateOfMapsTo_apply ρ h), TauCeti.tsupport_comp_sub_right]
+
+/-- Successive admissible translations compose to translation by the sum. -/
+theorem translateOfMapsTo_translateOfMapsTo {n : ℕ∞} {W : Opens E} (ρ : 𝓓^{n}(V, F))
+    {x₁ x₂ : E} (h₁ : MapsTo (· + x₁) (tsupport (ρ : E → F)) W)
+    (h₂ : MapsTo (· + x₂) (tsupport ((ρ.translateOfMapsTo h₁ : 𝓓^{n}(W, F)) : E → F)) Ω) :
+    (ρ.translateOfMapsTo h₁).translateOfMapsTo h₂ =
+      ρ.translateOfMapsTo (x := x₁ + x₂) (by
+        intro z hz
+        have hz' : z + x₁ ∈ tsupport ((ρ.translateOfMapsTo h₁ : 𝓓^{n}(W, F)) : E → F) := by
+          rw [tsupport_translateOfMapsTo]
+          simpa using hz
+        simpa [add_assoc] using h₂ hz') := by
+  ext y
+  simp only [translateOfMapsTo_apply, sub_sub, add_comm x₂ x₁]
 
 /-- The Fréchet derivative of a translated test function is the translated Fréchet
 derivative. -/

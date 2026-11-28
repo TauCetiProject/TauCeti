@@ -157,6 +157,16 @@ theorem eval_ofContDiffOn {U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : 
     {g : E → F} (hg : ContDiffOn ℝ m g U) (k : Fin (m + 1)) (x : K) :
     (ofContDiffOn hK hU hKU m hg).eval k x = iteratedFDeriv ℝ (k : ℕ) g x.val := by rfl
 
+/-- Two `C^m` functions on possibly different open neighbourhoods of `K` that agree near `K`
+define the same `m`-jet on `K`. -/
+theorem ofContDiffOn_congr {U₁ U₂ : Set E} {hK : IsCompact K} {hU₁ : IsOpen U₁} {hKU₁ : K ⊆ U₁}
+    {hU₂ : IsOpen U₂} {hKU₂ : K ⊆ U₂} {m : ℕ} {g₁ g₂ : E → F}
+    (hg₁ : ContDiffOn ℝ m g₁ U₁) (hg₂ : ContDiffOn ℝ m g₂ U₂) (h : g₁ =ᶠ[𝓝ˢ K] g₂) :
+    ofContDiffOn hK hU₁ hKU₁ m hg₁ = ofContDiffOn hK hU₂ hKU₂ m hg₂ :=
+  ext fun k x ↦ by
+    simp only [eval_ofContDiffOn]
+    exact ((h.filter_mono (nhds_le_nhdsSet x.property)).iteratedFDeriv (𝕜 := ℝ) (k : ℕ)).eq_of_nhds
+
 /-- The `m`-jet of the zero function vanishes. -/
 @[simp]
 theorem ofContDiffOn_zero {U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) (m : ℕ) :
