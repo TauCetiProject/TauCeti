@@ -39,6 +39,10 @@ instance `ℝ ⊗[ℤ] H²(X; ℤ)` forgets torsion classes. In particular, when
 set generating `G` modulo torsion spans `A ⊗[ℤ] G` over `A`
 (`TauCeti.span_one_tmul_eq_top_of_isOfFinAddOrder`).
 
+Over a commutative ring without zero divisors, the tensor product of a nontrivial flat module with
+a nontrivial torsion-free module is nontrivial
+(`TauCeti.nontrivial_tensorProduct_of_flat_left_of_isTorsionFree`).
+
 ## References
 
 * J.-P. Serre, *Groupes d'homotopie et classes de groupes abéliens*, Ann. of Math. 58 (1953).
@@ -234,5 +238,15 @@ theorem span_one_tmul_eq_top_of_isOfFinAddOrder {A G : Type*} [Ring A] [Module �
     rw [← sub_add_cancel x y, TensorProduct.tmul_add, tmul_eq_zero_of_isOfFinAddOrder r hxy,
       zero_add]
     exact Submodule.tmul_mem_baseChange_of_mem r hy
+
+/-- The tensor product of a nontrivial flat module with a nontrivial torsion-free module over a
+commutative ring without zero divisors is nontrivial. -/
+theorem nontrivial_tensorProduct_of_flat_left_of_isTorsionFree
+    {R P M : Type*} [CommRing R] [IsCancelMulZero R] [AddCommMonoid P] [Module R P]
+    [Module.Flat R P] [Nontrivial P] [AddCommGroup M] [Module R M] [Module.IsTorsionFree R M]
+    [Nontrivial M] : Nontrivial (P ⊗[R] M) :=
+  let ⟨_, hm₀⟩ := exists_ne (0 : M)
+  TensorProduct.nontrivial_of_linearMap_injective_of_flat_left R P M
+    (LinearMap.toSpanSingleton R M _) (smul_left_injective R hm₀)
 
 end TauCeti

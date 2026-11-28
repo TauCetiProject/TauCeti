@@ -36,12 +36,15 @@ indices are constant, the spaces `ν⁻ s` and `ν⁺ s` have `C^k` local frames
 namespace `TauCeti.SmoothEmbedding`). By the smooth local frame criterion
 `TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle` they are therefore `C^k`
 subbundles of the normal bundle, the **negative and positive normal bundles** `ν⁻` and `ν⁺`.
-Conversely, local frames of the negative normal spaces of any size `r` force the index to be `r`
-(`IsNondegenerateCriticalSubmanifold.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames`), so the
-rank of `ν⁻` is the index of the submanifold. The indices are locally constant along a Morse–Bott
-submanifold, so on a connected one the hypothesis holds automatically (the `_of_preconnectedSpace`
-versions). For a smooth function and a smooth fibre metric, the negative normal spaces of a
-submanifold of constant index therefore form a topological vector bundle whose rank is the index
+Conversely, local frames of the negative normal spaces indexed by a finite type `κ` force the index
+to be the cardinality of `κ`
+(`IsNondegenerateCriticalSubmanifold.manifoldMorseIndex_eq_card_of_hasLocalSubbundleFrames`, and
+`IsNondegenerateCriticalSubmanifold.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames` for frames
+of size `r`), so the rank of `ν⁻` is the index of the submanifold. The indices are locally
+constant along a Morse–Bott submanifold, so on a connected one the hypothesis holds automatically
+(the `_of_preconnectedSpace` versions). For a smooth function and a smooth fibre metric, the
+negative normal spaces of a submanifold of constant index therefore form a topological vector
+bundle whose rank is the index
 (`IsNondegenerateCriticalSubmanifold.hasLocalSubbundleFrames_negativeNormalSpace`). The negative
 normal bundle is the bundle whose disc bundle is attached when the critical level of the
 submanifold is crossed.
@@ -781,14 +784,26 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 /-- **The rank of the negative normal bundle is the Morse index.** If the negative normal spaces
 of a nondegenerate critical submanifold relative to a fibre metric `g` have continuous local frames
-of size `r`, then the Morse index of `f` is `r` all along the submanifold, since every negative
-normal space has the dimension of the index (`finrank_negativeNormalSpace`). This is the converse
-of `hasLocalSubbundleFrames_negativeNormalSpace`. -/
+indexed by a finite type `κ`, then the Morse index of `f` is the cardinality of `κ` all along the
+submanifold, since every negative normal space has the dimension of the index
+(`finrank_negativeNormalSpace`). -/
+theorem manifoldMorseIndex_eq_card_of_hasLocalSubbundleFrames
+    (h : i.IsNondegenerateCriticalSubmanifold f)
+        (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn)
+    {κ : Type*} [Fintype κ] (hV : HasLocalSubbundleFrames P κ (h.negativeNormalSpace hn g))
+    (s : S) : manifoldMorseIndex I f (i s) = Fintype.card κ := by
+  rw [← h.finrank_negativeNormalSpace hn g, hV.finrank_eq]
+
+/-- **The rank of the negative normal bundle is the Morse index.** If the negative normal spaces
+of a nondegenerate critical submanifold relative to a fibre metric `g` have continuous local frames
+of size `r`, then the Morse index of `f` is `r` all along the submanifold
+(`manifoldMorseIndex_eq_card_of_hasLocalSubbundleFrames`). This is the converse of
+`hasLocalSubbundleFrames_negativeNormalSpace`. -/
 theorem manifoldMorseIndex_eq_of_hasLocalSubbundleFrames
     (h : i.IsNondegenerateCriticalSubmanifold f)
         (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn)
     {r : ℕ} (hV : HasLocalSubbundleFrames P (Fin r) (h.negativeNormalSpace hn g)) (s : S) :
-    manifoldMorseIndex I f (i s) = r := by
-  rw [← h.finrank_negativeNormalSpace hn g, hV.finrank_eq, Fintype.card_fin]
+    manifoldMorseIndex I f (i s) = r :=
+  (h.manifoldMorseIndex_eq_card_of_hasLocalSubbundleFrames hn g hV s).trans (Fintype.card_fin r)
 
 end TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold

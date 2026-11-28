@@ -255,7 +255,7 @@ private theorem exists_reebSliceChart_opens {W₀ : Opens E} (p₀ : W₀)
   have hnd₀ : ((mextDerivₗ 𝓘(ℝ, K) 1 β).bilinFormAt s₀).Nondegenerate :=
     hα₀.nondegenerate_bilinFormAt_mextDerivₗ_mpullback hι_K hdimK hι_inj hR
   have h0_dom : ((0 : ℝ), ι_K s₀) ∈ flowDomain α₀.reebVectorField :=
-    mem_flowDomain_zero (hα₀.contMDiff_reebVectorField.of_le (by simp)) _
+    mem_flowDomain_zero (hα₀.contMDiff_reebVectorField.contMDiffAt.of_le (by simp))
   let F : S_K × ℝ → W₀ := fun q ↦ flowOf α₀.reebVectorField q.snd (ι_K q.fst)
   have hloc : IsLocalDiffeomorphAt (𝓘(ℝ, K).prod 𝓘(ℝ)) 𝓘(ℝ, E) ∞ F (s₀, 0) :=
     hα₀.isLocalDiffeomorphAt_flowOf_reebVectorField_comp hι_K hdimK (p := (s₀, 0)) hι_inj hR h0_dom
