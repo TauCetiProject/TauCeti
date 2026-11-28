@@ -40,44 +40,6 @@ local notation "P" => dualNumberFree k
 local notation "S" => dualNumberResidue k
 local notation "s₁" => ModuleCat.Hom.hom (dualNumberProj k) (1 : DualNumber k)
 
-private theorem fst_homDualNumberResidue_eq_zero (f : S →ₗ[B] B) (x : S) :
-    (f x).fst = 0 := by
-  have h : DualNumber.eps * f x = 0 := by
-    rw [← smul_eq_mul, ← map_smul, eps_smul_dualNumberResidue, map_zero]
-  simpa using congrArg TrivSqZeroExt.snd h
-
-/-- The upper right block is read off from the coefficient of `ε` in the image of the
-residue class of `1`. -/
-private noncomputable def homDualNumberResidueToFreeEquiv : (S ⟶ P) ≃ₗ[k] k :=
-  LinearEquiv.ofBijective
-    { toFun := fun f ↦ (f.hom s₁ : B).snd
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl } <| by
-    constructor
-    · intro f g hfg
-      apply (cancel_epi (dualNumberProj k)).1
-      apply (ModuleCat.homSelfLinearEquiv k P).injective
-      rw [ModuleCat.homSelfLinearEquiv_apply, ModuleCat.homSelfLinearEquiv_apply]
-      exact TrivSqZeroExt.ext
-        ((fst_homDualNumberResidue_eq_zero k f.hom s₁).trans
-          (fst_homDualNumberResidue_eq_zero k g.hom s₁).symm) hfg
-    · intro c
-      let g : S →ₗ[B] B := {
-        toFun := fun x ↦ inr (c * dualNumberResidueEquiv k x)
-        map_add' := fun x y ↦ by rw [map_add, mul_add, inr_add]
-        map_smul' := fun a x ↦ by
-          rw [dualNumberResidueEquiv_smul, smul_eq_mul]
-          ext <;> simp [TrivSqZeroExt.snd_mul]
-          ac_rfl
-      }
-      refine ⟨ModuleCat.ofHom (X := S) (Y := P) g, ?_⟩
-      have hone : dualNumberResidueEquiv k s₁ = 1 :=
-        (dualNumberResidueEquiv_apply k s₁).trans <|
-          Eq.trans (dualNumberProj_apply k (1 : B)) (fst_one (R := k))
-      -- Evaluation followed by `snd` extracts the coefficient used to construct the map.
-      change c * dualNumberResidueEquiv k s₁ = c
-      rw [hone, mul_one]
-
 /-- The four blocks of an endomorphism of `B ⊕ S`, in row order. The diagonal blocks and the
 lower left block are evaluated at the corresponding cyclic generators. In the upper right block
 we take the coefficient of `ε`. -/
@@ -115,7 +77,8 @@ theorem endDualNumberBiprodResidueEquiv_apply (f : End (P ⊞ S)) :
   simp only [endDualNumberBiprodResidueEquiv, LinearEquiv.trans_apply, End.linearEquiv_apply,
     homToBiprodLinearEquiv_apply, homBiprodLinearEquiv_apply, LinearEquiv.prodCongr_apply,
     homDualNumberFreeEquiv_apply, homDualNumberResidueEquiv_apply]
-  exact Prod.ext (Prod.ext (ModuleCat.homSelfLinearEquiv_apply _) rfl) rfl
+  exact Prod.ext (Prod.ext (ModuleCat.homSelfLinearEquiv_apply _)
+    (homDualNumberResidueToFreeEquiv_apply k _)) rfl
 
 /-- The endomorphism algebra of the sum of the dual numbers and their residue module has
 rank five over any nontrivial commutative base ring. -/

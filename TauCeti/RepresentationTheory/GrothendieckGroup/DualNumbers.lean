@@ -59,24 +59,6 @@ variable (k : Type u) [Field k]
 
 /-! ### The composition factors of `k[ε]` -/
 
-/-- The inclusion `k[ε]/(ε) ⟶ k[ε]`, `x ↦ x ε`, onto the maximal ideal. -/
-private noncomputable def dualNumberResidueToFree :
-    dualNumberResidue k →ₗ[DualNumber k] DualNumber k where
-  toFun x := inr (dualNumberResidueEquiv k x)
-  map_add' _ _ := by rw [map_add, inr_add]
-  map_smul' a x := by
-    rw [dualNumberResidueEquiv_smul]
-    ext <;> simp [-dualNumberResidueEquiv_apply]
-
-private theorem dualNumberResidueToFree_apply (x : dualNumberResidue k) :
-    dualNumberResidueToFree k x = inr (dualNumberResidueEquiv k x) :=
-  (rfl)
-
-private theorem dualNumberResidueToFree_injective :
-    Function.Injective (dualNumberResidueToFree k) :=
-  fun x y h ↦ (dualNumberResidueEquiv k).injective <| inr_injective <| by
-    rwa [dualNumberResidueToFree_apply, dualNumberResidueToFree_apply] at h
-
 private theorem exact_dualNumberResidueToFree_dualNumberProj :
     Function.Exact (dualNumberResidueToFree k) (dualNumberProj k).hom := by
   intro y
