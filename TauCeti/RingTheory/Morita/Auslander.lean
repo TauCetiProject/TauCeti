@@ -9,11 +9,11 @@ public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.CategoryTheory.Generator.GeneratorCogenerator
 public import TauCeti.CategoryTheory.Preadditive.AdditiveGenerator
 public import TauCeti.RingTheory.DominantDimension
-public import TauCeti.RingTheory.GlobalDimension
 
 import Mathlib.RingTheory.HopkinsLevitzki
 import TauCeti.Algebra.Category.FGModuleCat.End
 import TauCeti.Algebra.Category.FGModuleCat.Generator.Basic
+import TauCeti.Algebra.Category.FGModuleCat.Generator.Endomorphism
 import TauCeti.Algebra.Category.ModuleCat.Algebra
 import TauCeti.CategoryTheory.Preadditive.Projectivization.GlobalDimension
 import TauCeti.RingTheory.GlobalDimension.AdditiveGenerator
@@ -38,8 +38,11 @@ generator is a generator-cogenerator (`TauCeti.IsAdditiveGenerator.isGeneratorCo
 dominant dimension is at least two by the forward direction of the Morita-Tachikawa correspondence
 (`TauCeti.two_le_dominantDimension_end`).
 
-For nonsemisimple `A` both dimensions of `Γ` are exactly two. For semisimple `A` the ring `Γ` is
-semisimple, of global dimension `0` (or `⊥` when `M = 0`) and of dominant dimension `⊤`.
+For nonsemisimple `A` both dimensions of `Γ` are exactly two
+(`IsAdditiveGenerator.globalDimension_moduleEnd_eq_two_and_dominantDimension_moduleEnd_eq_two`).
+The bound on dominant dimension uses the projective-injective coresolution of the left regular
+module (`TauCeti.dominantDimension`). For semisimple `A` the ring `Γ` is semisimple, of global
+dimension `0` (or `⊥` when `M = 0`) and of dominant dimension `⊤`.
 
 It also proves the converse (`TauCeti.exists_isAdditiveGenerator_algEquiv_end`): every Auslander
 algebra `Γ` that is an Artin algebra is `Module.End B M` for an additive generator `M` of `mod B`,
@@ -103,6 +106,21 @@ theorem isAuslanderAlgebra_iff {Γ : Type u} [Ring Γ] :
     IsAuslanderAlgebra Γ ↔ TauCeti.globalDimension.{u} Γ ≤ 2 ∧ 2 ≤ dominantDimension Γ :=
   Iff.rfl
 
+/-- If an Auslander algebra is not left self-injective, its global and dominant dimensions are
+both two. -/
+theorem IsAuslanderAlgebra.globalDimension_eq_two_and_dominantDimension_eq_two
+    {Γ : Type w} [Ring Γ] (hΓ : IsAuslanderAlgebra Γ) (hinj : ¬ Module.Injective Γ Γ) :
+    globalDimension.{w} Γ = 2 ∧ dominantDimension Γ = 2 := by
+  obtain ⟨hgl, hdom⟩ := isAuslanderAlgebra_iff.mp hΓ
+  have hdom_le : dominantDimension Γ ≤ 2 :=
+    dominantDimension_le_of_globalDimension_le (n := 2) (by simpa using hgl) hinj
+  refine ⟨le_antisymm hgl (le_of_not_gt fun hlt ↦ ?_), le_antisymm hdom_le hdom⟩
+  have hgl_one : globalDimension.{w} Γ ≤ 1 :=
+    ENat.WithBot.lt_add_one_iff.mp (by simpa [one_add_one_eq_two] using hlt)
+  have hdom_one : dominantDimension Γ ≤ 1 :=
+    dominantDimension_le_of_globalDimension_le (n := 1) (by simpa using hgl_one) hinj
+  exact (by decide : ¬ (2 : ℕ∞) ≤ 1) (hdom.trans hdom_one)
+
 /-- **The Auslander correspondence, forward direction.** For an additive generator `M` of `mod A`,
 for an Artin algebra `A`, the endomorphism ring `Module.End A M` is an Auslander algebra. The base
 ring `R` may live in any universe, and the modules in any universe in which `A` is small. -/
@@ -111,6 +129,17 @@ theorem isAuslanderAlgebra_end (R : Type u) [CommRing R] [IsArtinianRing R] {A :
     (hM : IsAdditiveGenerator M) : IsAuslanderAlgebra (Module.End A M.obj) :=
   isAuslanderAlgebra_iff.2 ⟨hM.globalDimension_moduleEnd_le_two R,
     two_le_dominantDimension_end R M hM.isGeneratorCogenerator⟩
+
+/-- **Auslander, Reiten and Smalø, Proposition VI.5.4(a).** The endomorphism ring of an additive
+generator of a nonsemisimple Artin algebra has global dimension two and dominant dimension two. -/
+theorem IsAdditiveGenerator.globalDimension_moduleEnd_eq_two_and_dominantDimension_moduleEnd_eq_two
+    (R : Type u) [CommRing R] [IsArtinianRing R] {A : Type v} [Ring A] [Algebra R A]
+    [Module.Finite R A] [Small.{w} A] {M : FGModuleCat.{w} A} (hM : IsAdditiveGenerator M)
+    (hA : ¬ IsSemisimpleRing A) :
+    globalDimension.{w} (Module.End A M.obj) = 2 ∧ dominantDimension (Module.End A M.obj) = 2 :=
+  (isAuslanderAlgebra_end R M hM).globalDimension_eq_two_and_dominantDimension_eq_two
+    fun hinj ↦ hA (isSemisimpleRing_of_selfInjective_moduleEnd (hM.additiveClosure _)
+      (fun _ _ ↦ hM.additiveClosure _) hinj)
 
 open scoped ModuleCat.Algebra in
 /-- **Generator-cogenerators with endomorphism ring of global dimension at most two are additive
