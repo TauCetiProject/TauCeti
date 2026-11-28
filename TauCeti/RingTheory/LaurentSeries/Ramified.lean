@@ -66,6 +66,7 @@ definitionally equal to it, so the algebra maps here are assembled from the ring
 * `LaurentSeries.contract_eq_of_sum_eq`: uniqueness of the congruence components.
 * `LaurentSeries.contract_expand_mul`: `contract d (expand d g * h) r = g * contract d h r`.
 * `LaurentSeries.coeff_ramifiedEmbedding_intCast_div`,
+  `LaurentSeries.coeff_ramifiedEmbedding_coe_natCast_div`,
   `LaurentSeries.coeff_ramifiedEmbedding_of_not_den_dvd`: the coefficients of the level-`n`
   embedding.
 * `LaurentSeries.mem_range_ramifiedEmbedding_iff`: the level-`n` image consists of the Hahn
@@ -483,6 +484,14 @@ in `f`. -/
 theorem coeff_ramifiedEmbedding_intCast_div (n : ℕ+) (f : R⸨X⸩) (k : ℤ) :
     (ramifiedEmbedding R n f).coeff ((k : ℚ) / n) = f.coeff k :=
   embDomain_coeff (f := divOrderEmbedding n)
+
+/-- The `(m / n)`-th coefficient of the level-`n` image of a power series `f` is `coeff m f`. -/
+@[simp]
+theorem coeff_ramifiedEmbedding_coe_natCast_div (n : ℕ+) (f : R⟦X⟧) (m : ℕ) :
+    (ramifiedEmbedding R n (f : R⸨X⸩)).coeff ((m : ℚ) / n) = PowerSeries.coeff m f := by
+  rw [← Int.cast_natCast (R := ℚ), coeff_ramifiedEmbedding_intCast_div, PowerSeries.coeff_coe]
+  have hm : (0 : ℤ) ≤ m := Nat.cast_nonneg m
+  simp [not_lt.mpr hm]
 
 /-- The coefficients of the level-`n` image of `f` vanish at exponents whose denominator does not
 divide `n`. -/

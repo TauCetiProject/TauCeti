@@ -18,12 +18,20 @@ exponential characteristic of `K`.  Transporting the first degree along the iden
 `K(X)` with `K⟮x⟯` gives `[K(x) : K(x ^ n)] = n` for an arbitrary transcendental element `x` of an
 extension of `K`.
 
+## Main definitions
+
+* `RatFunc.expand`: the `K`-algebra endomorphism `K(X) →ₐ[K] K(X)` substituting `X ↦ X ^ N`.
+
 ## Main results
 
 * `TauCeti.RatFunc.finrank_adjoin_X_pow`: `[K(X) : K(X ^ n)] = n`.
 * `TauCeti.RatFunc.isPurelyInseparable_adjoin_X_pow`: `K(X) / K(X ^ q)` is purely inseparable
   for `q` the exponential characteristic of `K`.
 * `Transcendental.relfinrank_adjoin_pow_adjoin`: `[K(x) : K(x ^ n)] = n` for `x` transcendental.
+* `RatFunc.expand_one`, `RatFunc.expand_expand`: identity and composition laws for
+  `RatFunc.expand`.
+* `RatFunc.expand_algebraMap`, `RatFunc.expand_X`, `RatFunc.expand_C`: action of `RatFunc.expand`
+  on polynomials, `X`, and constants.
 
 ## Mathematical context
 
@@ -68,6 +76,56 @@ instance isPurelyInseparable_adjoin_X_pow (K : Type*) [Field K] (q : ℕ) [ExpCh
   exact (_root_.RatFunc.IntermediateField.adjoinXEquiv E).isPurelyInseparable
 
 end TauCeti.RatFunc
+
+namespace RatFunc
+
+open scoped nonZeroDivisors
+
+/-- Substitution `X ↦ X ^ N` as a `K`-algebra endomorphism of `K(X)`. -/
+noncomputable def expand (K : Type*) [CommRing K] [IsDomain K] (N : ℕ+) :
+    RatFunc K →ₐ[K] RatFunc K :=
+  RatFunc.mapAlgHom (Polynomial.expand K N)
+    (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _ (Polynomial.expand_injective N.pos))
+
+/-- Action of `RatFunc.expand` on polynomial elements of `K(X)`. -/
+@[simp]
+theorem expand_algebraMap {K : Type*} [CommRing K] [IsDomain K] (N : ℕ+) (p : K[X]) :
+    expand K N (algebraMap K[X] (RatFunc K) p) =
+      algebraMap K[X] (RatFunc K) (p.comp (Polynomial.X ^ (N : ℕ))) := by
+  rw [expand, RatFunc.coe_mapAlgHom_eq_coe_map, ← div_one (algebraMap K[X] (RatFunc K) p),
+    ← (algebraMap K[X] (RatFunc K)).map_one, RatFunc.map_apply_div, map_one, map_one, div_one,
+    Polynomial.expand_eq_comp_X_pow]
+
+/-- `RatFunc.expand` sends `RatFunc.X` to `RatFunc.X ^ (N : ℕ)`. -/
+@[simp]
+theorem expand_X {K : Type*} [CommRing K] [IsDomain K] (N : ℕ+) :
+    expand K N (RatFunc.X : RatFunc K) = RatFunc.X ^ (N : ℕ) := by
+  rw [← RatFunc.algebraMap_X, expand_algebraMap, Polynomial.X_comp, map_pow, RatFunc.algebraMap_X]
+
+/-- `RatFunc.expand` fixes constant rational functions `RatFunc.C c`. -/
+@[simp]
+theorem expand_C {K : Type*} [CommRing K] [IsDomain K] (N : ℕ+) (c : K) :
+    expand K N (RatFunc.C c) = RatFunc.C c := by
+  rw [← RatFunc.algebraMap_C, expand_algebraMap, Polynomial.C_comp, RatFunc.algebraMap_C]
+
+/-- Expanding by `1` is the identity on `K(X)`. -/
+@[simp]
+theorem expand_one (K : Type*) [CommRing K] [IsDomain K] :
+    expand K 1 = AlgHom.id K (RatFunc K) :=
+  AlgHom.toRingHom_injective <| IsLocalization.ringHom_ext (K[X])⁰ <| RingHom.ext fun p ↦ by
+    simp [expand_algebraMap]
+
+/-- Expanding by `e` and then by `d` is expanding by `d * e`. -/
+theorem expand_expand {K : Type*} [CommRing K] [IsDomain K] (d e : ℕ+) (r : RatFunc K) :
+    expand K d (expand K e r) = expand K (d * e) r := by
+  have hcomp : ((expand K d).comp (expand K e)).toRingHom = (expand K (d * e)).toRingHom :=
+    IsLocalization.ringHom_ext (K[X])⁰ <| RingHom.ext fun p ↦ by
+      simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+        AlgHom.comp_apply, expand_algebraMap, ← Polynomial.expand_eq_comp_X_pow,
+        ← Polynomial.expand_mul, PNat.mul_coe]
+  exact RingHom.congr_fun hcomp r
+
+end RatFunc
 
 open scoped IntermediateField
 

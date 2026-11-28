@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.RingTheory.PowerSeries.Evaluation
 public import TauCeti.RingTheory.MvPowerSeries.Evaluation
+import Mathlib.Algebra.Polynomial.Div
+import TauCeti.RingTheory.PowerSeries.Basic
 
 /-!
 # Evaluation of power series and division by `X - C c`
@@ -53,6 +56,10 @@ topology; `PowerSeries.continuous_eval₂_of_continuous` specializes the multiva
   on polynomials to the polynomial evaluation at the image of `X`.
 * `PowerSeries.constantCoeff_polynomial_aeval`: the constant coefficient of a polynomial evaluated
   at a power series `f` is the polynomial evaluated at the constant coefficient of `f`.
+* `PowerSeries.aeval_taylor_comp_X_pow_mul`: evaluating the shifted Taylor polynomial
+  `(P.taylor b)(X ^ N * Y)` at `g` equals evaluating `P` at `b + X ^ N * g`.
+* `PowerSeries.X_pow_dvd_coeff_zero_of_aeval_eq_zero`: if `aeval g T = 0` and `X ^ m` divides
+  `T.coeff k` for all `k ≥ 1`, then `X ^ m` divides `T.coeff 0`.
 * `PowerSeries.aeval_X`, `PowerSeries.aeval_C`: the values of evaluation on the generators.
 * `PowerSeries.hasSum_smul_pow_aeval`: the series expansion of the evaluation of a power series
   whose coefficients come from a scalar ring.
@@ -136,6 +143,46 @@ theorem constantCoeff_polynomial_aeval (f : A⟦X⟧) (p : Polynomial A) :
     constantCoeff (Polynomial.aeval f p) = p.eval (constantCoeff f) := by
   rw [Polynomial.aeval_def, Polynomial.hom_eval₂, algebraMap_eq, constantCoeff_comp_C,
     Polynomial.eval₂_id]
+
+/-- Evaluating `P(b + X ^ N * g)` at `g` via the shifted Taylor polynomial
+`T = (P.taylor b)(X ^ N * Y)`. -/
+theorem aeval_taylor_comp_X_pow_mul {R : Type*} [CommSemiring R] (P : Polynomial (Polynomial R))
+    (b : Polynomial R) (N : ℕ) (g : R⟦X⟧) :
+    Polynomial.aeval g ((P.taylor b).comp (Polynomial.C (Polynomial.X ^ N) * Polynomial.X)) =
+      Polynomial.aeval ((b : R⟦X⟧) + X ^ N * g) P := by
+  have hcomp :
+      Polynomial.aeval g ((P.taylor b).comp (Polynomial.C (Polynomial.X ^ N) * Polynomial.X)) =
+      Polynomial.aeval (Polynomial.aeval g (Polynomial.C (Polynomial.X ^ N) * Polynomial.X))
+        (P.taylor b) :=
+    Polynomial.aeval_comp g
+  rw [map_mul, Polynomial.aeval_C, Polynomial.aeval_X, algebraMap_polynomial_powerSeries,
+    Polynomial.coe_pow, Polynomial.coe_X] at hcomp
+  rw [hcomp, Polynomial.taylor_apply, Polynomial.aeval_comp, map_add, Polynomial.aeval_X,
+    Polynomial.aeval_C, algebraMap_polynomial_powerSeries, add_comm]
+
+/-- From `aeval g T = 0` and divisibility of `T.coeff k` for `k ≥ 1` by `X ^ m`, deduce that
+`X ^ m` divides `T.coeff 0`. -/
+theorem X_pow_dvd_coeff_zero_of_aeval_eq_zero {R : Type*} [CommSemiring R]
+    {T : Polynomial (Polynomial R)} {g : R⟦X⟧} {m : ℕ} (hT : Polynomial.aeval g T = 0)
+    (hdvd : ∀ k, 1 ≤ k → Polynomial.X ^ m ∣ T.coeff k) :
+    Polynomial.X ^ m ∣ T.coeff 0 := by
+  rw [Polynomial.X_pow_dvd_iff]
+  intro i hi
+  have hev := congrArg (coeff i) hT
+  rw [Polynomial.aeval_eq_sum_range, map_sum, map_zero] at hev
+  have hrest : ∀ k ∈ Finset.range (T.natDegree + 1), k ≠ 0 →
+      coeff i (algebraMap (Polynomial R) R⟦X⟧ (T.coeff k) * g ^ k) = 0 := by
+    intro k _ hk0
+    obtain ⟨q, hq⟩ := hdvd k (Nat.pos_of_ne_zero hk0)
+    rw [algebraMap_polynomial_powerSeries, hq, Polynomial.coe_mul, Polynomial.coe_pow,
+      Polynomial.coe_X, mul_assoc, coeff_X_pow_mul', ite_eq_right (not_le.mpr hi)]
+  rw [← Finset.add_sum_erase _ _ (Finset.mem_range.mpr (Nat.succ_pos T.natDegree)),
+    Finset.sum_eq_zero (fun k hk ↦ by
+      simp only [Algebra.smul_def]
+      exact hrest k (Finset.mem_erase.mp hk).2 (Finset.mem_erase.mp hk).1),
+    add_zero, Algebra.smul_def, pow_zero, mul_one, algebraMap_polynomial_powerSeries,
+    Polynomial.coeff_coe] at hev
+  exact hev
 
 end AlgHom
 

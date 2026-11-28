@@ -32,6 +32,8 @@ elements algebraic over `ℤ` (`Algebra.natDenominator_ne_zero_iff_isAlgebraic`)
   `x` is algebraic over `ℤ`.
 * `Algebra.natDenominator_ne_zero_iff_isAlgebraic_rat`: in a `ℚ`-algebra, the denominator of `x`
   is nonzero exactly when `x` is algebraic over `ℚ`.
+* `Algebra.exists_pos_nat_mul_isIntegral`: a finite set of elements algebraic over `ℚ` admits a
+  common positive natural-number denominator making all products integral over `ℤ`.
 -/
 
 public section
@@ -64,5 +66,14 @@ theorem natDenominator_ne_zero_iff_isAlgebraic {S : Type*} [CommRing S] {x : S} 
 theorem natDenominator_ne_zero_iff_isAlgebraic_rat {S : Type*} [CommRing S] [Algebra ℚ S] {x : S} :
     natDenominator x ≠ 0 ↔ IsAlgebraic ℚ x :=
   natDenominator_ne_zero_iff_isAlgebraic.trans (IsFractionRing.isAlgebraic_iff ℤ ℚ S)
+
+/-- Given a finite subset `T` of a `ℚ`-algebra whose elements are algebraic over `ℚ`, there exists
+a positive natural number `M` such that `M * x` is integral over `ℤ` for every `x ∈ T`. -/
+theorem exists_pos_nat_mul_isIntegral {S : Type*} [CommRing S] [Algebra ℚ S] (T : Finset S)
+    (hT : ∀ x ∈ T, IsAlgebraic ℚ x) :
+    ∃ M : ℕ, 0 < M ∧ ∀ x ∈ T, IsIntegral ℤ ((M : S) * x) := by
+  refine ⟨∏ x ∈ T, natDenominator x, Nat.pos_of_ne_zero (Finset.prod_ne_zero_iff.mpr fun x hx ↦
+    natDenominator_ne_zero_of_isAlgebraic_rat (hT x hx)), fun x hx ↦ ?_⟩
+  simpa [nsmul_eq_mul] using natDenominator_dvd_iff.mp (Finset.dvd_prod_of_mem _ hx)
 
 end Algebra

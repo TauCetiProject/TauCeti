@@ -25,6 +25,10 @@ Over an ordered semiring, products of polynomials with nonnegative coefficients 
 nonnegative coefficients (`Polynomial.coeff_mul_nonneg`), and multiplying on the right by a
 polynomial with nonnegative coefficients and constant term at least `1` does not decrease any
 coefficient (`Polynomial.coeff_le_coeff_mul`).
+
+For a bivariate polynomial `P : R[X][X]`, every coefficient `(P.coeff j).coeff i` is either zero
+or lies in the finite union `P.support.biUnion fun j ↦ (P.coeff j).coeffs`
+(`Polynomial.coeff_eq_zero_or_mem_biUnion_coeffs`).
 -/
 
 public section
@@ -84,5 +88,17 @@ theorem coeff_le_coeff_mul {R : Type*} [Semiring R] [PartialOrder R] [IsOrderedR
       Finset.single_le_sum (f := fun x : ℕ × ℕ ↦ p.coeff x.1 * q.coeff x.2)
         (a := (d, 0)) (fun x _ ↦ mul_nonneg (hp x.1) (hq x.2))
         (Finset.mem_antidiagonal.mpr (add_zero d))
+
+/-- Every coefficient `(P.coeff j).coeff i` of a bivariate polynomial `P : R[X][X]` is either `0`
+or belongs to the finite set `P.support.biUnion fun j ↦ (P.coeff j).coeffs`. -/
+theorem coeff_eq_zero_or_mem_biUnion_coeffs {R : Type*} [Semiring R] [DecidableEq R]
+    (P : R[X][X]) (j i : ℕ) :
+    (P.coeff j).coeff i = 0 ∨
+      (P.coeff j).coeff i ∈ P.support.biUnion fun j ↦ (P.coeff j).coeffs := by
+  by_cases hj : j ∈ P.support
+  · by_cases hi : (P.coeff j).coeff i = 0
+    · exact Or.inl hi
+    · exact Or.inr (Finset.mem_biUnion.mpr ⟨j, hj, Polynomial.coeff_mem_coeffs hi⟩)
+  · simp [Polynomial.notMem_support_iff.mp hj]
 
 end Polynomial

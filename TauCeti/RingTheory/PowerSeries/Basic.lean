@@ -42,6 +42,8 @@ coefficients `map f` acts on the constant coefficient.
   polynomial of degree less than `d₀`.
 * `PowerSeries.coeff_neg_X_pow_mul`: the `Xᵏ`-coefficient of `(-X) ^ n * f` is
   `(-1) ^ n * coeff (k - n) f` for `n ≤ k` and `0` otherwise.
+* `PowerSeries.algebraMap_polynomial_powerSeries`: `algebraMap R[X] R⟦X⟧` is the canonical
+  polynomial-to-power-series coercion.
 * `Polynomial.coeff_coe_eq_zero_of_degree_lt`: a polynomial of degree less than `s`, viewed as a
   power series, has zero coefficients from `s` on.
 * `Polynomial.coe_sum`, `Polynomial.smul_eq_coe_mul`: viewing polynomials as power series
@@ -222,6 +224,12 @@ theorem coeff_neg_X_pow_mul (k n : ℕ) (f : R⟦X⟧) :
     ← map_one C, ← map_neg, ← map_pow, coeff_C_mul, coeff_X_pow_mul']
 
 end CoeffRing
+
+/-- Rewriting `algebraMap R[X] R⟦X⟧` as the canonical polynomial-to-power-series coercion. -/
+@[simp]
+theorem algebraMap_polynomial_powerSeries {R : Type*} [CommSemiring R] (p : Polynomial R) :
+    algebraMap (Polynomial R) R⟦X⟧ p = (p : R⟦X⟧) := by
+  simp [PowerSeries.algebraMap_apply']
 
 end PowerSeries
 
