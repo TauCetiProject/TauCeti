@@ -25,9 +25,9 @@ Jacobi symbol modulo `p` is `-1`. Multiples of `p` have symbol `0` and are not n
 * `TauCeti.SieveApplications.exists_jacobiSym_eq_neg_one`: an odd prime `p` has a nonresidue `n`
   with `0 < n < p`.
 * `TauCeti.SieveApplications.leastNonresidue_pos`,
-  `TauCeti.SieveApplications.jacobiSym_leastNonresidue`,
-  `TauCeti.SieveApplications.leastNonresidue_lt`: at an odd prime, `q(p)` is positive, has symbol
-  `-1`, and is less than `p`.
+  `TauCeti.SieveApplications.jacobiSym_leastNonresidue`: at an odd prime, `q(p)` is positive and
+  has symbol `-1`.
+* `TauCeti.SieveApplications.leastNonresidue_lt`: `q(p) < p` for every positive `p`.
 * `TauCeti.SieveApplications.jacobiSym_ne_neg_one_of_lt_leastNonresidue`,
   `TauCeti.SieveApplications.leastNonresidue_le`: minimality.
 * `TauCeti.SieveApplications.leastNonresidue_eq_iff`: the characterization of the value at an odd
@@ -85,6 +85,7 @@ theorem leastNonresidue_eq_iff (hp : p.Prime) (hp2 : p ≠ 2) :
     fun ⟨hJ, hmin⟩ ↦ ⟨⟨hp, hp2, hpos hJ, hJ⟩, fun m hmn ⟨_, _, _, hJm⟩ ↦ hmin m hmn hJm⟩⟩
 
 /-- The least quadratic nonresidue is `0` when `p` is not prime. -/
+@[simp]
 theorem leastNonresidue_eq_zero_of_not_prime (hp : ¬p.Prime) : leastNonresidue p = 0 := by
   classical
   exact dite_eq_right fun ⟨_, hp', _⟩ ↦ hp hp'
@@ -96,17 +97,20 @@ theorem leastNonresidue_two : leastNonresidue 2 = 0 := by
   exact dite_eq_right fun ⟨_, _, h2, _⟩ ↦ h2 rfl
 
 /-- At an odd prime the least quadratic nonresidue is positive. -/
+@[simp]
 theorem leastNonresidue_pos (hp : p.Prime) (hp2 : p ≠ 2) : 0 < leastNonresidue p := by
   classical
   rw [leastNonresidue, dite_eq_left (exists_search hp hp2)]
   exact (Nat.find_spec (exists_search hp hp2)).2.2.1
 
 /-- At an odd prime the least quadratic nonresidue has Jacobi symbol `-1`. -/
+@[simp]
 theorem jacobiSym_leastNonresidue (hp : p.Prime) (hp2 : p ≠ 2) :
     jacobiSym (leastNonresidue p) p = -1 :=
   ((leastNonresidue_eq_iff hp hp2).1 rfl).1
 
 /-- The least quadratic nonresidue is `0` exactly when `p` is not an odd prime. -/
+@[simp]
 theorem leastNonresidue_eq_zero_iff : leastNonresidue p = 0 ↔ ¬(p.Prime ∧ p ≠ 2) := by
   refine ⟨fun h ⟨hp, hp2⟩ ↦ (leastNonresidue_pos hp hp2).ne' h, fun h ↦ ?_⟩
   by_cases hp : p.Prime
@@ -129,10 +133,13 @@ hypothesis on `p` is needed: outside the odd primes the value is `0`. -/
 theorem leastNonresidue_le (h : jacobiSym n p = -1) : leastNonresidue p ≤ n :=
   not_lt.1 fun hlt ↦ jacobiSym_ne_neg_one_of_lt_leastNonresidue hlt h
 
-/-- At an odd prime `p` the least quadratic nonresidue is less than `p`. -/
-theorem leastNonresidue_lt (hp : p.Prime) (hp2 : p ≠ 2) : leastNonresidue p < p :=
-  let ⟨_, _, hnp, hJ⟩ := exists_jacobiSym_eq_neg_one hp hp2
-  (leastNonresidue_le hJ).trans_lt hnp
+/-- The least quadratic nonresidue modulo a positive `p` is less than `p`: at an odd prime some
+`n < p` has symbol `-1`, and for every other `p` the value is `0`. -/
+theorem leastNonresidue_lt (hp : 0 < p) : leastNonresidue p < p := by
+  by_cases h : p.Prime ∧ p ≠ 2
+  · obtain ⟨_, _, hnp, hJ⟩ := exists_jacobiSym_eq_neg_one h.1 h.2
+    exact (leastNonresidue_le hJ).trans_lt hnp
+  · rwa [leastNonresidue_eq_zero_iff.2 h]
 
 /-! ### Examples -/
 
