@@ -51,6 +51,8 @@ and, since the rows of an invertible matrix are unimodular, it gives every such 
   `Matrix.GeneralLinearGroup.isUnimodular_mulVec_iff`.
 * `TauCeti.Module.isUnimodular_pi_iff`: a finitely indexed coordinate vector `v : ι → R` over a
   semiring is unimodular if and only if `∑ i, v i * b i = 1` for some `b`.
+* `TauCeti.Module.isUnimodular_pi_iff_span_range_eq_top`: over a commutative semiring, such a
+  vector is unimodular if and only if its coordinates generate the unit ideal.
 * `TauCeti.Module.isUnimodular_iff_exists_isUnit`: over a directly finite local semiring, a vector
   with finitely many coordinates is unimodular if and only if one of its coordinates is a unit.
 * `Module.IsUnimodular.ringHom_comp`: applying a ring homomorphism to the coordinates preserves
@@ -224,6 +226,13 @@ theorem isUnimodular_pi_iff {R ι : Type*} [Semiring R] [Fintype ι] {v : ι →
     refine Module.isUnimodular_of_apply_eq_one
       (f := ∑ i : ι, (LinearMap.mulRight R (b i)).comp (LinearMap.proj i)) ?_
     simpa [LinearMap.sum_apply, LinearMap.mulRight_apply] using hb
+
+/-- Over a commutative semiring, a finitely indexed coordinate vector `v : ι → R` is unimodular if
+and only if its coordinates generate the unit ideal. -/
+theorem isUnimodular_pi_iff_span_range_eq_top {R ι : Type*} [CommSemiring R] [Finite ι]
+    {v : ι → R} : Module.IsUnimodular R v ↔ Ideal.span (Set.range v) = ⊤ := by
+  rw [Module.Basis.isUnimodular_iff_span_repr_eq_top (b := Pi.basisFun R ι),
+    show ⇑((Pi.basisFun R ι).repr v) = v from funext (Pi.basisFun_repr R ι v)]
 
 /-- Over a directly finite local semiring, a vector with finitely many coordinates is unimodular
 if and only if one of its coordinates is a unit. -/

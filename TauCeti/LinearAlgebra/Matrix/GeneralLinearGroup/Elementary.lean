@@ -64,6 +64,8 @@ pairs of coordinates, carries every vector to a multiple of a standard basis vec
 
 * `TauCeti.commutator_elementarySubgroup_self`: `⁅E n A, E n A⁆ = E n A` when `3 ≤ card n`.
 * `TauCeti.elementarySubgroup_le_commutator`: `E n A ≤ ⁅GL n A, GL n A⁆` when `3 ≤ card n`.
+* `TauCeti.commutatorElement_diagGL_mulSingle_transvectionUnit`: the commutator of `diag(a, 1, …)`
+  with `eᵢⱼ(c)` is `eᵢⱼ((a - 1) c)`.
 * `TauCeti.elementarySubgroup_le_commutator_of_isUnit_sub_one`: `E n A ≤ ⁅GL n A, GL n A⁆` in every
   size, when some unit `a` of `A` has `a - 1` invertible, as over a division ring other than
   `𝔽₂`.
@@ -194,6 +196,16 @@ theorem elementarySubgroup_le_commutator (hn : 3 ≤ Fintype.card n) :
   rw [← commutator_elementarySubgroup_self hn]
   exact Subgroup.commutator_mono le_top le_top
 
+/-- The commutator of the diagonal matrix with `i`-th entry `a` and all other entries `1` with
+`eᵢⱼ(c)` is `eᵢⱼ((a - 1) c)`, over any ring. So `eᵢⱼ(c)` is a single commutator as soon as `c` is
+a multiple `(a - 1) b` for a unit `a`. -/
+theorem commutatorElement_diagGL_mulSingle_transvectionUnit (hij : i ≠ j) (a : Aˣ) (c : A) :
+    ⁅diagGL (Pi.mulSingle i a), transvectionUnit hij c⁆ =
+      transvectionUnit hij (((a : A) - 1) * c) := by
+  rw [commutatorElement_def, diagGL_mul_transvectionUnit_mul_inv, Pi.mulSingle_eq_same,
+    Pi.mulSingle_eq_of_ne hij.symm, inv_one, Units.val_one, mul_one, transvectionUnit_inv,
+    ← transvectionUnit_add, sub_one_mul, sub_eq_add_neg]
+
 /-- If some unit `a` of `A` has `a - 1` invertible, the elementary subgroup lies in the
 commutator subgroup of `GL n A`, in every size: `eᵢⱼ((a - 1) b)` is the commutator of the
 diagonal matrix with `i`-th entry `a` and all others `1` with `eᵢⱼ(b)`. -/
@@ -203,12 +215,7 @@ theorem elementarySubgroup_le_commutator_of_isUnit_sub_one (a : Aˣ) (ha : IsUni
   refine elementarySubgroup_le_iff.2 fun i j hij c ↦ ?_
   have hc : transvectionUnit hij c =
       ⁅diagGL (Pi.mulSingle i a), transvectionUnit hij (↑u⁻¹ * c)⁆ := by
-    rw [commutatorElement_def, diagGL_mul_transvectionUnit_mul_inv, Pi.mulSingle_eq_same,
-      Pi.mulSingle_eq_of_ne hij.symm, inv_one, Units.val_one, mul_one, transvectionUnit_inv,
-      ← transvectionUnit_add]
-    congr 1
-    -- `a b - b = (a - 1) b` with `b = (a - 1)⁻¹ c`
-    rw [← sub_eq_add_neg, ← sub_one_mul, ← hu, Units.mul_inv_cancel_left]
+    rw [commutatorElement_diagGL_mulSingle_transvectionUnit, ← hu, Units.mul_inv_cancel_left]
   rw [hc, commutator_def]
   exact Subgroup.commutator_mem_commutator (Subgroup.mem_top _) (Subgroup.mem_top _)
 

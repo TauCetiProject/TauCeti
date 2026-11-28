@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.VectorBundle.Riemannian
 
 /-!
@@ -30,6 +31,8 @@ square-integrable sections, apply to the metric `g`. The identity
 * `TauCeti.WithFiberMetric g`: the fibres of `E` carrying the inner product `g`.
 * `TauCeti.WithFiberMetric.toWithFiberMetric`: the identity of a fibre of `E`, as a continuous
   linear equivalence onto the copy.
+* `TauCeti.WithFiberMetric.metricChange`: the identity of a fibre, as a continuous linear
+  equivalence from the copy carrying a metric `g` to the copy carrying a metric `h`.
 
 ## Main results
 
@@ -78,6 +81,11 @@ instance (b : B) : IsTopologicalAddGroup (WithFiberMetric g b) :=
 
 instance (b : B) : ContinuousConstSMul ℝ (WithFiberMetric g b) :=
   inferInstanceAs (ContinuousConstSMul ℝ (E b))
+
+/-- The fibres of the copy are finite-dimensional when those of `E` are. -/
+instance instFiniteDimensional [∀ b, FiniteDimensional ℝ (E b)] (b : B) :
+    FiniteDimensional ℝ (WithFiberMetric g b) :=
+  inferInstanceAs (FiniteDimensional ℝ (E b))
 
 /-- The total space of the copy is the total space of `E`. -/
 instance : TopologicalSpace (TotalSpace F (WithFiberMetric g)) :=
@@ -131,6 +139,68 @@ theorem continuous_totalSpaceMk_toWithFiberMetric_iff {X : Type*} [TopologicalSp
         (toWithFiberMetric g (p x) (s x))) ↔
       Continuous (fun x ↦ TotalSpace.mk' F (p x) (s x)) :=
   Iff.rfl
+
+/-- The inner product of the copy carrying `g` is `g`. -/
+theorem inner_eq (b : B) (u v : WithFiberMetric g b) : ⟪u, v⟫_ℝ = g.inner b u v :=
+  (rfl)
+
+variable (h h' : ContinuousRiemannianMetric F E)
+
+/-- The **change of metric** on the fibre over `b`: the identity of `E b`, as a continuous linear
+equivalence from the copy carrying `g` to the copy carrying `h`. It is not an isometry unless
+`g = h` on the fibre. -/
+def metricChange (b : B) : WithFiberMetric g b ≃L[ℝ] WithFiberMetric h b :=
+  ContinuousLinearEquiv.refl ℝ (E b)
+
+-- Not a simp lemma, like `toWithFiberMetric_apply`: simplifying away the change of metric loses
+-- the target copy in inferred types and can prevent matching lemmas about its metric.
+omit [∀ b, IsTopologicalAddGroup (E b)] [∀ b, ContinuousConstSMul ℝ (E b)] in
+/-- The change of metric preserves the underlying vector. -/
+theorem metricChange_apply (b : B) (v : WithFiberMetric g b) : metricChange g h b v = v :=
+  (rfl)
+
+omit [∀ b, IsTopologicalAddGroup (E b)] [∀ b, ContinuousConstSMul ℝ (E b)] in
+/-- The inverse of the change of metric from `g` to `h` is the change of metric from `h` to `g`. -/
+@[simp]
+theorem metricChange_symm (b : B) : (metricChange g h b).symm = metricChange h g b :=
+  (rfl)
+
+omit [∀ b, IsTopologicalAddGroup (E b)] [∀ b, ContinuousConstSMul ℝ (E b)] in
+/-- Changing the metric from `g` to itself is the identity. -/
+@[simp]
+theorem metricChange_self (b : B) :
+    metricChange g g b = ContinuousLinearEquiv.refl ℝ (WithFiberMetric g b) :=
+  (rfl)
+
+omit [∀ b, IsTopologicalAddGroup (E b)] [∀ b, ContinuousConstSMul ℝ (E b)] in
+/-- Changing the metric from `g` to `h` and then to `h'` is changing it from `g` to `h'`. -/
+@[simp]
+theorem metricChange_trans (b : B) :
+    (metricChange g h b).trans (metricChange h h' b) = metricChange g h' b :=
+  (rfl)
+
+/-- The `h`-inner product of the images under the change of metric is the `h`-inner product of
+the vectors. -/
+@[simp]
+theorem inner_metricChange (b : B) (u v : WithFiberMetric g b) :
+    ⟪metricChange g h b u, metricChange g h b v⟫_ℝ = h.inner b u v :=
+  (rfl)
+
+omit [∀ b, IsTopologicalAddGroup (E b)] [∀ b, ContinuousConstSMul ℝ (E b)] in
+/-- Read in the common coordinates of the two copies, the change of metric is the identity of the
+model fibre near each point. -/
+theorem continuousAt_inCoordinates_metricChange (x₀ : B) :
+    ContinuousAt (fun x ↦ ContinuousLinearMap.inCoordinates F (WithFiberMetric g) F
+      (WithFiberMetric h) x₀ x x₀ x
+      (metricChange g h x : WithFiberMetric g x →L[ℝ] WithFiberMetric h x)) x₀ := by
+  refine continuousAt_const (y := ContinuousLinearMap.id ℝ F) |>.congr ?_
+  filter_upwards [(trivializationAt F E x₀).open_baseSet.mem_nhds
+    (mem_baseSet_trivializationAt F E x₀)] with x hx
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.coe_comp,
+    Function.comp_apply, ContinuousLinearEquiv.coe_coe, metricChange_apply,
+    ContinuousLinearMap.id_apply]
+  exact ((trivializationAt F E x₀).continuousLinearMapAt_symmL (R := ℝ) hx v).symm
 
 end WithFiberMetric
 

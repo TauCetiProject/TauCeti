@@ -16,6 +16,8 @@ public import Mathlib.Topology.VectorBundle.Hom
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
+import TauCeti.Algebra.Group.Units.UnitOrOne
+
 /-!
 # The general linear frame bundle of a vector bundle
 
@@ -270,15 +272,15 @@ theorem matrixIn_smul (g : (GL (Fin n) 𝕜)ᵐᵒᵖ) (v : FrameBundle 𝕜 n F
   ext w
   simp
 
-open Classical in
-/-- The invertible matrix of a frame in the local frame of `e`, over the base set of `e`; it is
-`1` elsewhere. -/
+/-- The matrix of a frame in the local frame of `e`, as a unit when invertible and `1` otherwise.
+It is invertible whenever the frame lies over the base set of `e`. -/
 def unitIn (v : FrameBundle 𝕜 n F E) : GL (Fin n) 𝕜 :=
-  if h : IsUnit (e.matrixIn σ v) then h.unit else 1
+  Units.unitOrOne (e.matrixIn σ v)
 
+/-- Over the base set of `e`, the underlying matrix of `unitIn` is `matrixIn`. -/
 theorem coe_unitIn {v : FrameBundle 𝕜 n F E} (hv : v.proj ∈ e.baseSet) :
     (e.unitIn σ v : Matrix (Fin n) (Fin n) 𝕜) = e.matrixIn σ v := by
-  simp only [unitIn, e.isUnit_matrixIn σ hv, ↓reduceDIte, IsUnit.unit_spec]
+  rw [unitIn, Units.val_unitOrOne_of_isUnit (e.isUnit_matrixIn σ hv)]
 
 open Classical in
 /-- The local frame of `E` determined by `e` and `σ` at a point `x` of the base set of `e`: the
@@ -470,14 +472,23 @@ variable (E) in
 /-- The atlas of the frame bundle consisting of the trivializations induced by the trivializations
 of `E` at each point and an isomorphism `σ : F ≃ 𝕜ⁿ`. -/
 def atlas (σ : F ≃L[𝕜] (Fin n → 𝕜)) :
-    MapFiber.Atlas (GL (Fin n) 𝕜) (proj : FrameBundle 𝕜 n F E → B) where
-  trivAt b := (trivializationAt F E b).frameBundle σ
-  mem_baseSet_trivAt b := mem_baseSet_trivializationAt F E b
+    MapFiber.Atlas (GL (Fin n) 𝕜) (proj : FrameBundle 𝕜 n F E → B) :=
+  MapFiber.Atlas.ofTrivAt
+    (fun b ↦ (trivializationAt F E b).frameBundle σ)
+    (fun b ↦ by
+      simpa only [Bundle.Trivialization.baseSet_frameBundle] using
+        mem_baseSet_trivializationAt F E b)
 
 @[simp]
 theorem atlas_trivAt (σ : F ≃L[𝕜] (Fin n → 𝕜)) (b : B) :
-    (atlas E σ).trivAt b = (trivializationAt F E b).frameBundle σ :=
-  (rfl)
+    (atlas E σ).trivAt b = (trivializationAt F E b).frameBundle σ := by
+  simp [atlas]
+
+/-- The charts of `atlas E σ` are the frame-bundle trivializations induced by
+`trivializationAt F E b` for `b : B`. -/
+theorem atlas_charts (σ : F ≃L[𝕜] (Fin n → 𝕜)) :
+    (atlas E σ).charts = range (fun b ↦ (trivializationAt F E b).frameBundle σ) :=
+  MapFiber.Atlas.charts_ofTrivAt _ _
 
 variable (E) in
 /-- **The frame bundle is a principal bundle.** For an isomorphism `σ : F ≃ 𝕜ⁿ`, the fibres of the
@@ -487,7 +498,9 @@ theorem principalBundle (σ : F ≃L[𝕜] (Fin n → 𝕜)) :
     letI := (atlas E σ).fiberBundle
     letI := MapFiber.mulAction (M := (GL (Fin n) 𝕜)ᵐᵒᵖ) (proj_smul (F := F) (E := E))
     PrincipalBundle (GL (Fin n) 𝕜) (MapFiber (proj : FrameBundle 𝕜 n F E → B)) :=
-  (atlas E σ).principalBundle proj_smul fun b _ hv g ↦
-    (trivializationAt F E b).frameBundle_smul σ hv g
+  (atlas E σ).principalBundle proj_smul (by
+    rw [atlas_charts]
+    rintro _ ⟨b, rfl⟩ _ hv g
+    exact (trivializationAt F E b).frameBundle_smul σ hv g)
 
 end TauCeti.FrameBundle

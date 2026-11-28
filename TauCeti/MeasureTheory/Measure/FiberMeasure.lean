@@ -40,6 +40,7 @@ maps.
 * `TauCeti.IsLeFiberMeasure.trans`: two-step fibration rule for `(π, π₂)`.
 * `TauCeti.IsLeFiberMeasure.map_prod` and `TauCeti.IsLeFiberMeasure.map`: pushforward along
   fiber-preserving families with almost everywhere continuous sections.
+* `TauCeti.IsLeFiberMeasure.prod_right`: adjoining an independent coordinate to the source.
 
 ## References
 
@@ -244,6 +245,18 @@ theorem map_prod [OpensMeasurableSpace X'] [OpensMeasurableSpace B] [FirstCounta
         rw [setLIntegral_map (hπ₀ hS_open.measurableSet) hK_meas hφ, h_pre, ← prod_restrict,
           restrict_univ, lintegral_prod_symm' _ (by fun_prop)]
     _ ≤ C * ν S := hS hS_open
+
+/-- Taking an independent product on the right preserves a fiber bound for a map depending
+only on the first coordinate. -/
+theorem prod_right {Y : Type*} [TopologicalSpace Y] [MeasurableSpace Y]
+    [OpensMeasurableSpace (X × Y)] [OpensMeasurableSpace B] [FirstCountableTopology X]
+    [SFinite μ] [SFinite l] {ρ : Measure Y} [SFinite ρ]
+    (hl : IsLeFiberMeasure μ ν π b l) (hπ : Measurable π) :
+    IsLeFiberMeasure (μ.prod ρ) ν (π ∘ Prod.fst) b (l.prod ρ) := by
+  have h := hl.map_prod (ρ := ρ) (φ := Prod.swap) measurable_swap
+    (Filter.Eventually.of_forall fun _ ↦ continuous_id.prodMk continuous_const)
+    (hπ.comp measurable_fst) (fun _ _ ↦ rfl)
+  simpa only [Measure.prod_swap] using h
 
 /-- If `l` is at most the fiber measure `dμ / dν` of `π₀ ∘ φ` over `b`, with `φ` continuous and
 measurable, then `l.map φ` is at most the fiber measure of `π₀` for `μ.map φ` over `b`. -/
