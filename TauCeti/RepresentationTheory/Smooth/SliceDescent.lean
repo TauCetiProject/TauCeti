@@ -168,13 +168,6 @@ theorem fiberIntegral_comp_mul_left (μ : Measure H) (Ψ : Γ × G → ℂ) (δ 
     fiberIntegral j μ (fun p => Ψ (δ * p.1, p.2)) γ y = fiberIntegral j μ Ψ (δ * γ) y := by
   simp only [fiberIntegral_def, mul_assoc]
 
-/-- If the fibre integral of `Ψ` at `(γ, y)` is nonzero, then `Ψ` is nonzero at some point of the
-orbit of `(γ, y)`. -/
-theorem exists_ne_zero_of_fiberIntegral_ne_zero {μ : Measure H} {Ψ : Γ × G → ℂ} {γ : Γ} {y : G}
-    (h : fiberIntegral j μ Ψ γ y ≠ 0) : ∃ h : H, Ψ (γ * h, (j h)⁻¹ * y * j h) ≠ 0 := by
-  by_contra! h₀
-  exact h (by simp [fiberIntegral_def, h₀])
-
 /-- **The fibre integral is constant on the fibres over `C`.** If two points `(γ, y)` and
 `(γ', y')` of `Γ × X` have the same conjugate `j γ * y * (j γ)⁻¹ = j γ' * y' * (j γ')⁻¹`, their
 fibre integrals agree. -/
@@ -356,7 +349,7 @@ theorem IsSlice.exists_eq_fiberIntegral [T2Space G] [WeaklyLocallyCompactSpace G
   have hcs : HasCompactSupport F := by
     refine HasCompactSupport.intro hK fun c hc => ?_
     by_contra hne
-    obtain ⟨h, hh⟩ := exists_ne_zero_of_fiberIntegral_ne_zero hne
+    obtain ⟨h, hh⟩ := exists_ne_zero_of_integral_ne_zero hne
     refine hc ⟨(g c * h, (j h)⁻¹ * x c * j h), hh, ?_⟩
     rw [← hgx c]
     simp only [map_mul]
