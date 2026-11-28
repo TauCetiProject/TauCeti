@@ -32,7 +32,8 @@ nonzero scalar does not change whether the value vanishes. In the same way
 vector, `hp.aeval_eq_sum_finsuppAntidiag` expands a value as a sum over the exponent vectors of
 degree `n`, `hp.constantCoeff_eq_zero` records that the constant coefficient vanishes in
 positive degree, `hp.natDegree_aeval_le` bounds by `n` the degree of a substitution of
-polynomials of degree at most one, `hp.homogeneousComponent_mul_right` records that
+polynomials of degree at most one (for a binary form, `hp.natDegree_aeval_X_one_le` specializes
+this to the dehomogenization `F(X, 1)`), `hp.homogeneousComponent_mul_right` records that
 multiplying on the right by a homogeneous polynomial of degree `d` shifts homogeneous components
 by `d`, and `hp.not_dvd_X` records that without zero divisors a homogeneous polynomial of degree at
 least two divides no variable. Without zero divisors, the factors of a homogeneous product are
@@ -41,6 +42,9 @@ coefficients along an additive monoid homomorphism preserves homogeneity
 (`hp.addMonoidAlgebra_map`).
 `TauCeti.eval_coe_homogeneousSubmodule_eq_sum` restates the expansion of values for `eval` on
 elements of `homogeneousSubmodule`.
+
+At the tuple `(C (g i) * X)` of a polynomial ring over an algebra, a form of degree `n` takes the
+value `C (p(g)) * X ^ n` (`hp.aeval_C_mul_X`).
 
 The file also records `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a
 product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous, and
@@ -103,6 +107,20 @@ theorem aeval_smul_of_algebra {σ R S A : Type*}
   rw [Pi.smul_def]
   simpa only [_root_.MvPolynomial.aeval_def, Algebra.smul_def, map_pow] using
     hp.eval₂_const_mul (algebraMap R A) g (algebraMap S A a)
+
+/-- At the tuple `(C (g i) * X)` of a polynomial ring, a homogeneous polynomial of degree `n`
+takes the value `C (p(g)) * X ^ n`. -/
+theorem aeval_C_mul_X {σ R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+    {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) (g : σ → A) :
+    _root_.MvPolynomial.aeval (fun i ↦ Polynomial.C (g i) * Polynomial.X) p =
+      Polynomial.C (_root_.MvPolynomial.aeval g p) * Polynomial.X ^ n := by
+  have e : (fun i ↦ Polynomial.C (g i) * Polynomial.X) =
+      (Polynomial.X : Polynomial A) • fun i ↦ Polynomial.C (g i) :=
+    _root_.funext fun _ ↦ mul_comm _ _
+  rw [e, hp.aeval_smul_of_algebra, smul_eq_mul, mul_comm]
+  congr 1
+  simpa [Polynomial.algebraMap_eq, Function.comp_def] using
+    _root_.MvPolynomial.aeval_algebraMap_apply (Polynomial A) g p
 
 /-- At `-x`, a homogeneous polynomial of degree `n` takes `(-1) ^ n` times its value at `x`. -/
 theorem eval_neg {σ R : Type*} [CommRing R] {p : MvPolynomial σ R} {n : ℕ}
@@ -170,6 +188,12 @@ theorem natDegree_aeval_le {σ R : Type*} [CommSemiring R]
   rw [← hp (mem_support_iff.mp hs), Finsupp.weight_apply, Finsupp.sum]
   refine Finset.sum_le_sum fun i _ ↦ (Polynomial.natDegree_pow_le).trans ?_
   simpa using Nat.mul_le_mul_left (s i) (hv i)
+
+/-- The dehomogenization `F(X, 1)` of a binary form `F` of degree `m` has degree at most `m`. -/
+theorem natDegree_aeval_X_one_le {R : Type*} [CommSemiring R]
+    {F : MvPolynomial (Fin 2) R} {m : ℕ} (hF : F.IsHomogeneous m) :
+    (_root_.MvPolynomial.aeval ![Polynomial.X, 1] F : Polynomial R).natDegree ≤ m :=
+  hF.natDegree_aeval_le fun i ↦ by fin_cases i <;> simp [Polynomial.natDegree_X_le]
 
 attribute [local instance] gradedAlgebra in
 /-- Multiplying by a polynomial homogeneous of degree `d` shifts homogeneous components by `d`:

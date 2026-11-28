@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Complex.Chart
 public import TauCeti.Geometry.Manifold.SymmetricPower.Transition
+import TauCeti.Analysis.Calculus.FDeriv.Comp
+import TauCeti.Geometry.Manifold.ChartedSpace
 
 /-!
 # The symmetric power of a complex curve is a complex analytic manifold
@@ -36,10 +38,14 @@ deliberately not an instance; see its docstring.
 * `TauCeti.analyticAt_symChartAt_symm_trans`: the transition between two chosen
   elementary-symmetric charts is analytic, so that analyticity of a map into the symmetric power
   can be checked in any of them (`TauCeti.analyticAt_symChartAt_comp_of_analyticAt`).
+* `TauCeti.exists_injective_hasFDerivAt_symChartAt_ofFn`: near a tuple of distinct points, every
+  chart of the symmetric power is an analytic function of the product coordinates, with injective
+  derivative.
 -/
 
 public section
 
+open Filter Topology
 open scoped Manifold ContDiff
 
 namespace TauCeti
@@ -134,6 +140,71 @@ theorem analyticAt_symChartAt_comp_of_analyticAt {E : Type*} [NormedAddCommGroup
     with t ht
   exact congrArg (symChartAt (K := ℂ) s') ((symChartAt (K := ℂ) s).left_inv ht)
 
+/-- Near a tuple `p` of pairwise distinct points, every chart of the symmetric power is a function
+of the product coordinates `(φᵢ(wᵢ))ᵢ`, where `φᵢ` is the chart of `α` at `p i`, and this function
+is complex analytic at `p`, with injective derivative. -/
+theorem exists_injective_hasFDerivAt_symChartAt_ofFn {p : Fin n → α}
+    (hinj : Function.Injective p) (s : Sym α n)
+    (hs : Sym.ofFn p ∈ (symChartAt (K := ℂ) s).source) :
+    ∃ (T : (Fin n → ℂ) → Fin n → ℂ) (T' : (Fin n → ℂ) →L[ℂ] Fin n → ℂ),
+      AnalyticAt ℂ T (fun j => chartAt ℂ (p j) (p j)) ∧
+      Function.Injective T' ∧ HasFDerivAt T T' (fun j => chartAt ℂ (p j) (p j)) ∧
+      ∀ᶠ w in 𝓝 p, symChartAt (K := ℂ) s (Sym.ofFn w) = T fun j => chartAt ℂ (p j) (w j) := by
+  -- disjoint coordinate patches around the distinct points `p i`
+  obtain ⟨V, hVo, hVsub, hpV, hVdisj⟩ :=
+    exists_pairwise_disjoint_isOpen_subset_chartAt_source (H := ℂ) hinj
+  have hm : ∑ _i : Fin n, 1 = n := by simp
+  set e : (Σ _i : Fin n, Fin 1) ≃ Fin n := Equiv.sigmaUnique (Fin n) fun _ => Fin 1
+  have hq : Nonempty (∀ i, Sym ↥(V i) 1) := ⟨fun i => Sym.ofFn fun _ => ⟨p i, hpV i⟩⟩
+  -- the chart `C` with one block per point reads a nearby tuple as its negated coordinates
+  set C := symOpenPartialHomeomorph (fun i => chartAt ℂ (p i)) V (fun _ => 1) hm hVo hVsub
+    hVdisj e hq
+  have hC_apply : ∀ᶠ w in 𝓝 p, Sym.ofFn w ∈ C.source ∧
+      C (Sym.ofFn w) = -fun j => chartAt ℂ (p j) (w j) :=
+    eventually_mem_source_symOpenPartialHomeomorph_ofFn (K := ℂ) hVo hpV hVsub hVdisj hm hq
+  obtain ⟨hpC, hCp⟩ := hC_apply.self_of_nhds
+  -- the given chart `D` is also elementary-symmetric, so both transitions are analytic
+  obtain ⟨W, r, hr, hWo, hWsub, hWdisj, e', hr', hs'⟩ := symChartAt_spec (K := ℂ) s
+  set D := symChartAt (K := ℂ) s
+  have hpD : Sym.ofFn p ∈ D.source := hs
+  rw [hs'] at hpD
+  have hT : AnalyticAt ℂ (fun c => D (C.symm c)) (C (Sym.ofFn p)) := by
+    rw [hs']
+    exact analyticAt_symOpenPartialHomeomorph_transition _ _ V _ hm W r hr hVo hVsub hVdisj
+      hWo hWsub hWdisj e e' hq hr' hpC hpD fun i j z hz _ =>
+        analyticAt_symm_trans (IsManifold.chart_mem_maximalAtlas _)
+          (IsManifold.chart_mem_maximalAtlas _) (hVsub i hz.1) (hWsub j hz.2)
+  have hS : AnalyticAt ℂ (fun c => C (D.symm c)) (D (Sym.ofFn p)) := by
+    rw [hs']
+    exact analyticAt_symOpenPartialHomeomorph_transition _ _ W _ hr V _ hm hWo hWsub hWdisj
+      hVo hVsub hVdisj e' e hr' hq hpD hpC fun i j z hz _ =>
+        analyticAt_symm_trans (IsManifold.chart_mem_maximalAtlas _)
+          (IsManifold.chart_mem_maximalAtlas _) (hWsub i hz.1) (hVsub j hz.2)
+  rw [← hs'] at hpD
+  set T₀ := fun c => D (C.symm c) with hT₀
+  have hT₀' : HasFDerivAt T₀ (fderiv ℂ T₀ (C (Sym.ofFn p))) (C (Sym.ofFn p)) :=
+    hT.differentiableAt.hasFDerivAt
+  -- the inverse transition is a local left inverse, so the derivative of `T₀` is injective
+  have hinjT₀ : Function.Injective (fderiv ℂ T₀ (C (Sym.ofFn p))) := by
+    have hST : (fun c => C (D.symm c)) ∘ T₀ =ᶠ[𝓝 (C (Sym.ofFn p))] id := by
+      have h₁ : C.target ∈ 𝓝 (C (Sym.ofFn p)) := C.open_target.mem_nhds (C.map_source hpC)
+      have h₂ : C.symm ⁻¹' D.source ∈ 𝓝 (C (Sym.ofFn p)) :=
+        (C.continuousAt_symm (C.map_source hpC)).preimage_mem_nhds
+          (D.open_source.mem_nhds (by rwa [C.left_inv hpC]))
+      filter_upwards [h₁, h₂] with c hc₁ hc₂
+      simp only [Function.comp_apply, hT₀, D.left_inv hc₂, C.right_inv hc₁, id]
+    refine hT₀'.injective_of_eventuallyEq_id
+      (g' := fderiv ℂ (fun c => C (D.symm c)) (T₀ (C (Sym.ofFn p)))) ?_ hST
+    simpa only [hT₀, C.left_inv hpC] using hS.differentiableAt.hasFDerivAt
+  -- compose with the negation, which turns the coordinates of `C` into the product coordinates
+  refine ⟨fun c => T₀ (-c), (fderiv ℂ T₀ (C (Sym.ofFn p))).comp (-ContinuousLinearMap.id ℂ _),
+    ?_, hinjT₀.comp neg_injective, ?_, ?_⟩
+  · refine AnalyticAt.comp (g := T₀) ?_ analyticAt_id.neg
+    simpa [hCp] using hT
+  · refine HasFDerivAt.comp (g := T₀) _ ?_ (hasFDerivAt_id _).neg
+    simpa [hCp] using hT₀'
+  · filter_upwards [hC_apply] with w ⟨hw, hCw⟩
+    simp only [hT₀, ← hCw, C.left_inv hw]
 end TauCeti
 
 end

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Exchange.SemiFredholm
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.SemiFredholm
-import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart.Output
 
 /-!
 # The linearized operator along the input-exchange family on `W^{1,2}`
@@ -164,38 +164,6 @@ theorem norm_floerConformalJetCoeff_positiveEndChart_inf_add_le (ω : Symplectic
     (Je := fun w y ↦ (Jq w.2 y).toLinearMap.toContinuousLinearMap)
     (congrArg (fun j y ↦ (j y).toLinearMap.toContinuousLinearMap) hJz) hB hC
     (inv_sqrt_cylindricalWeight_add_le hc h8) (inv_nonneg.2 pi_pos.le)).trans_eq (by ring)
-
-/-- A point beyond the height `T + 1` of the standard end chart `φ'_∞` of the output end, with
-`T ≥ 0`, lies beyond the height `T` of the end chart `c + φ'_∞` recentred at `c`, for `|c| ≤ 1`:
-it is `φ'_∞(ζ') + c` for some `ζ' = (s, t)` with `s > T` and `t ∈ [0, 1)`. -/
-private theorem exists_positiveEndChart_inf_eq_add {c : ℝ} (hc : |c| ≤ 1) {T : ℝ} (hT : 0 ≤ T)
-    {ζ : ℝ × ℝ} (hζ : T + 1 < ζ.1) :
-    ∃ ζ' : ℝ × ℝ, T < ζ'.1 ∧ ζ'.2 ∈ Ico (0 : ℝ) 1 ∧
-      positiveEndChart inf ζ = positiveEndChart inf ζ' + (c, 0) := by
-  set w := positiveEndChart inf ζ - (c, 0)
-  have hz0 := equivRealProdCLM_symm_positiveEndChart_ne_endCenter inf ζ
-  rw [endCenter_inf] at hz0
-  have hz := (lt_fst_positiveEndCoord_inf_iff hz0).1 (by
-    rwa [fst_positiveEndCoord_positiveEndChart])
-  have hcn : ‖(c : ℂ)‖ ≤ 1 := by rwa [Complex.norm_real, Real.norm_eq_abs]
-  -- `|w| ≥ |φ'_∞(ζ)| - 1 > 2 exp (2π (T + 1)) - 1 ≥ 2 exp (2π T)`.
-  have hw : 2 * exp (2 * π * T) < ‖Complex.equivRealProdCLM.symm w‖ := by
-    have hsub : Complex.equivRealProdCLM.symm w =
-        Complex.equivRealProdCLM.symm (positiveEndChart inf ζ) - c := by
-      have h := TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero w c
-      rw [show w + (c, 0) = positiveEndChart inf ζ from sub_add_cancel _ _] at h
-      rw [h, add_sub_cancel_right]
-    have hexp : 2 * exp (2 * π * T) + 1 ≤ 2 * exp (2 * π * (T + 1)) := by
-      rw [mul_add, mul_one, exp_add]
-      nlinarith [fourteen_le_two_mul_exp_two_pi, one_le_exp (by positivity : 0 ≤ 2 * π * T)]
-    rw [hsub]
-    linarith [norm_sub_norm_le (Complex.equivRealProdCLM.symm (positiveEndChart inf ζ)) (c : ℂ)]
-  have hw0 : Complex.equivRealProdCLM.symm w ≠ 0 :=
-    norm_pos_iff.1 ((by positivity : 0 < 2 * exp (2 * π * T)).trans hw)
-  refine ⟨endBandCoord inf w, ?_, (endBandCoord_mem inf w).2, ?_⟩
-  · rw [endBandCoord_apply]
-    exact (lt_fst_positiveEndCoord_inf_iff hw0).2 hw
-  · rw [positiveEndChart_endBandCoord inf (by rwa [endCenter_inf]), sub_add_cancel]
 
 /-- **The coefficient field on the recentred output end.** Let `|c| ≤ 1`, and far out on the output
 end, beyond the height `T` of the end chart `c + φ'_∞` recentred at `c`, let the data be

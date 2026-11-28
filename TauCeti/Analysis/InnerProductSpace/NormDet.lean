@@ -82,6 +82,8 @@ basis `b` of `U`, and hence by `‖A‖ ^ Module.finrank 𝕜 U`. Equality holds
 * `LinearMap.pow_finrank_le_normDet_of_mul_norm_le`, `LinearMap.normDet_le_pow_finrank_of_norm_le`,
   `LinearMap.normDet_eq_pow_finrank_of_norm_eq`: uniform lower, upper, and exact norm bounds on a
   linear map control its `normDet` by the `finrank`-th power of the factor.
+* `LinearMap.normDet_comp_comp_le_prod_singularValues`: cutting a map `A` down by contractions on
+  both sides to a source of dimension `k` leaves a `normDet` of at most `∏_{i < k} σᵢ(A)`.
 * `LinearMap.normDet_eq_mul_normDet_orthogonal`,
   `LinearMap.normDet_eq_div_mul_normDet_orthogonal`,
   `LinearMap.normDet_eq_norm_mul_normDet_orthogonal`: when `f` maps a submodule `K` and `Kᗮ` to
@@ -530,6 +532,32 @@ theorem normDet_eq_pow_finrank_of_norm_eq (f : E →ₗ[𝕜] F) {c : ℝ}
     (f.pow_finrank_le_normDet_of_mul_norm_le hc fun v ↦ (hf v).ge)
 
 end Bounds
+
+section Contraction
+
+variable {𝕜 E F G H : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [FiniteDimensional 𝕜 G]
+  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [FiniteDimensional 𝕜 H]
+
+/-- **`normDet` of a map cut down by contractions.** If `C` and `D` do not increase norms, then
+the `normDet` of `C A D` is at most the product of the `finrank 𝕜 H` largest singular values of
+`A`, where `H` is the source of `D` (Horn–Johnson, *Topics in Matrix Analysis*, Lemma 3.3.1). -/
+theorem normDet_comp_comp_le_prod_singularValues (C : F →ₗ[𝕜] G) (A : E →ₗ[𝕜] F)
+    (D : H →ₗ[𝕜] E) (hC : ∀ y, ‖C y‖ ≤ ‖y‖) (hD : ∀ x, ‖D x‖ ≤ ‖x‖) :
+    (C ∘ₗ A ∘ₗ D).normDet ≤ ∏ i ∈ Finset.range (Module.finrank 𝕜 H), A.singularValues i := by
+  rw [normDet_eq_prod_singularValues]
+  gcongr with i
+  · exact fun j _ ↦ singularValues_nonneg _ j
+  calc (C ∘ₗ A ∘ₗ D).singularValues i ≤ 1 * (A ∘ₗ D).singularValues i :=
+        singularValues_comp_le C _ (by simpa using hC) i
+    _ ≤ 1 * (1 * A.singularValues i) := by
+        gcongr
+        exact singularValues_comp_le_right A D zero_le_one (by simpa using hD) i
+    _ = A.singularValues i := by ring
+
+end Contraction
 
 section Orthogonal
 
