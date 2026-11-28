@@ -10,7 +10,9 @@ public import TauCeti.Probability.Distributions.Gaussian.IntegrationByParts.Basi
 public import TauCeti.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
+import Mathlib.Analysis.Calculus.Deriv.Pi
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
+import TauCeti.MeasureTheory.Constructions.Pi
 import TauCeti.Probability.Distributions.Gaussian.Independence
 
 /-!
@@ -242,6 +244,35 @@ theorem integral_sub_smul_eq_sum_covariance_smul_integral_fderiv {ι : Type*} [F
 end ProbabilityTheory.HasGaussianLaw
 
 namespace TauCeti.Probability
+
+/-- Gaussian integration by parts in one coordinate of a product of real Gaussian laws.
+Only the partial derivative in that coordinate needs to be integrable. -/
+theorem integral_apply_sub_smul_eq_smul_integral_fderiv_pi_gaussianReal {ι E : Type*}
+    [Fintype ι] [DecidableEq ι] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    (m : ι → ℝ) (v : ι → ℝ≥0) {f : (ι → ℝ) → E} (hf : Differentiable ℝ f) (i : ι)
+    (hxf : Integrable (fun x ↦ (x i - m i) • f x) (Measure.pi fun j ↦ gaussianReal (m j) (v j)))
+    (hdf : Integrable (fun x ↦ fderiv ℝ f x (Pi.single i 1))
+      (Measure.pi fun j ↦ gaussianReal (m j) (v j))) :
+    (∫ x, (x i - m i) • f x ∂(Measure.pi fun j ↦ gaussianReal (m j) (v j))) =
+      (v i : ℝ) • ∫ x, fderiv ℝ f x (Pi.single i 1)
+        ∂(Measure.pi fun j ↦ gaussianReal (m j) (v j)) := by
+  let μ j := gaussianReal (m j) (v j)
+  let update (p : (ι → ℝ) × ℝ) := Function.update p.1 i p.2
+  have hmp : MeasurePreserving update ((Measure.pi μ).prod (μ i)) (Measure.pi μ) :=
+    measurePreserving_update_prod_pi μ i
+  have hd (x : ι → ℝ) (t : ℝ) :
+      HasDerivAt (fun y ↦ f (Function.update x i y))
+        (fderiv ℝ f (Function.update x i t) (Pi.single i 1)) t :=
+    (hf _).hasFDerivAt.comp_hasDerivAt t (hasDerivAt_update x i t)
+  have hh := integral_prod_gaussianReal_sub_smul_eq_smul_integral_deriv
+    (ν := Measure.pi μ) (m i) (v i) (fun x t ↦ f (Function.update x i t))
+    (fun x t ↦ (hd x t).differentiableAt)
+    (by simpa [update, Function.comp_def] using hmp.integrable_comp_of_integrable hxf)
+    (by simpa only [(hd _ _).deriv, update, Function.comp_def] using
+      hmp.integrable_comp_of_integrable hdf)
+  rw [← hmp.hasLaw.integral_comp hxf.aestronglyMeasurable,
+    ← hmp.hasLaw.integral_comp hdf.aestronglyMeasurable]
+  simpa [update, Function.comp_def, (hd _ _).deriv] using hh
 
 /-- **Gaussian integration by parts for a multivariate Gaussian.** For a positive-semidefinite
 covariance matrix `S` and a differentiable test function `f` such that `(x i - m i) • f x` and
