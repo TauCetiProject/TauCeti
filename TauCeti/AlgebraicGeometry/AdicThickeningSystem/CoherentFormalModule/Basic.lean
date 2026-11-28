@@ -65,10 +65,12 @@ described by finite modules over the completed ring (Stacks, Lemmas 30.23.1 and 
   every level (`CoherentFormalModule.epi_iff_forall_epi_app`).
 * `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.pullback`: the pullback of
   coherent formal modules along a morphism of adic thickening systems, an additive functor
-  preserving epimorphisms, and an equivalence along an isomorphism
-  (`CoherentFormalModule.isEquivalence_pullback`).
+  preserving epimorphisms, equipped with identity and composition isomorphisms (`pullbackId`,
+  `pullbackComp`) and inducing an equivalence along isomorphisms (`pullbackEquiv`,
+  `CoherentFormalModule.isEquivalence_pullback`).
 * `AlgebraicGeometry.Scheme.formalCompletion.completionFunctor`: the completion functor from
-  finitely presented `𝒪_X`-modules to coherent formal modules on the formal completion.
+  finitely presented `𝒪_X`-modules to coherent formal modules on the formal completion, an
+  equivalence for the zero ideal sheaf `⊥` (`isEquivalence_completionFunctor_bot`).
 * `AlgebraicGeometry.Scheme.formalCompletion.finiteLocallyFreeCompletionFunctor`: its restriction
   to `FiniteLocallyFreeSheaf X`.
 
@@ -83,6 +85,8 @@ described by finite modules over the completed ring (Stacks, Lemmas 30.23.1 and 
 * `AlgebraicGeometry.Scheme.formalCompletion.isIso_iff_of_isOpenCover`: a morphism of coherent
   formal modules on `X/V(I)` is an isomorphism if and only if its restrictions to the formal
   completions of the members of an open cover of `X` are.
+* `AlgebraicGeometry.Scheme.formalCompletion.isEquivalence_completionFunctor_bot`: completing along
+  `V(⊥) = X` induces an equivalence of categories on every scheme `X`.
 
 ## References
 
@@ -146,6 +150,15 @@ theorem id_app (M : CoherentFormalModule 𝔛) (n : ℕ) : (𝟙 M : M ⟶ M).ap
 theorem comp_app {M N P : CoherentFormalModule 𝔛} (f : M ⟶ N) (g : N ⟶ P) (n : ℕ) :
     (f ≫ g).app n = f.app n ≫ g.app n :=
   (rfl)
+
+/-- Evaluation of a coherent formal module on `𝔛` at level `n`. -/
+-- `@[expose]` is forced by dependent typing: `(eval 𝔛 n).obj M` must reduce definitionally to
+-- `M.obj n` so that `eval_map` and lifted functor properties typecheck.
+@[expose, simps]
+def eval (𝔛 : AdicThickeningSystem.{u}) (n : ℕ) :
+    CoherentFormalModule 𝔛 ⥤ (𝔛.X n).Modules where
+  obj M := M.obj n
+  map f := f.app n
 
 /-- The inverse of a reduction isomorphism is compatible with the components of a morphism. -/
 @[reassoc (attr := simp)]
@@ -450,92 +463,402 @@ theorem isIso_iff_of_isOpenCover_opensRange {ι : Type*} {𝔘 : ι → AdicThic
   rw [← pullback_map_app]
   exact (isIso_iff_forall_isIso_app _).mp (h i) n
 
-section IsIso
+/-- Equal morphisms of adic thickening systems induce naturally isomorphic pullback functors. -/
+def pullbackCongr {f g : 𝔛 ⟶ 𝔜} (h : f = g) : pullback f ≅ pullback g :=
+  eqToIso (h ▸ rfl)
 
-variable (g : 𝔛 ⟶ 𝔜) [IsIso g]
+@[simp]
+theorem pullbackCongr_hom_app_app {f g : 𝔛 ⟶ 𝔜} (h : f = g) (M : CoherentFormalModule 𝔜) (n : ℕ) :
+    ((pullbackCongr h).hom.app M).app n =
+      (Scheme.Modules.pullbackCongr (congrArg (·.app n) h)).hom.app (M.obj n) := by
+  subst h
+  simp only [pullbackCongr, eqToIso_refl, Iso.refl_hom, NatTrans.id_app, id_app,
+    Scheme.Modules.pullbackCongr]
+  rfl
 
-/-- Pullback along an isomorphism is faithful: two morphisms with the same pullback agree, since
-they agree after pullback along every `g.app n`, which is faithful. -/
-private theorem pullback_faithful : (pullback g).Faithful where
-  map_injective {M N} φ ψ h := hom_ext fun n ↦
-    (Scheme.Modules.pullback (g.app n)).map_injective (by
-      rw [← pullback_map_app, ← pullback_map_app, h])
+@[simp]
+theorem pullbackCongr_inv_app_app {f g : 𝔛 ⟶ 𝔜} (h : f = g) (M : CoherentFormalModule 𝔜) (n : ℕ) :
+    ((pullbackCongr h).inv.app M).app n =
+      (Scheme.Modules.pullbackCongr (congrArg (·.app n) h)).inv.app (M.obj n) := by
+  subst h
+  simp only [pullbackCongr, eqToIso_refl, Iso.refl_inv, NatTrans.id_app, id_app,
+    Scheme.Modules.pullbackCongr]
+  rfl
 
-/-- Pullback along an isomorphism is full: a morphism `ψ` between pullbacks is the pullback of the
-morphism whose levels are the preimages of the levels of `ψ` under pullback along `g.app n`, these
-being compatible with the reduction isomorphisms since pullback along `g.app n` is faithful. -/
-private theorem pullback_full : (pullback g).Full where
-  map_surjective {M N} ψ := by
-    refine ⟨{ app n := (Scheme.Modules.pullback (g.app n)).preimage (ψ.app n)
-              naturality n := ?_ }, hom_ext fun n ↦ Functor.map_preimage _ (ψ.app n)⟩
-    apply (Scheme.Modules.pullback (g.app n)).map_injective
-    have h := ψ.naturality n
-    rw [pullback_obj_transitionIso_hom_assoc, pullback_obj_transitionIso_hom,
-      ← Functor.map_preimage (Scheme.Modules.pullback (g.app (n + 1))) (ψ.app (n + 1)),
-      ← Functor.map_preimage (Scheme.Modules.pullback (g.app n)) (ψ.app n)] at h
-    rw [Functor.map_comp, Functor.map_comp, ← cancel_epi
-      ((Scheme.Modules.pullbackCompIsoOfCommSq ⟨g.naturality n⟩).hom.app (M.obj (n + 1)))]
-    -- `Functor.comp_map` unfolds the naturality square of the comparison definitionally.
-    exact ((Scheme.Modules.pullbackCompIsoOfCommSq _).hom.naturality_assoc _ _).symm.trans h
+/-- Pulling coherent formal modules back along the identity morphism of an adic thickening system
+is naturally isomorphic to the identity functor. -/
+def pullbackId (𝔛 : AdicThickeningSystem.{u}) :
+    pullback (𝟙 𝔛) ≅ 𝟭 (CoherentFormalModule 𝔛) :=
+  NatIso.ofComponents
+    (fun M ↦ isoMk
+      (fun n ↦ (Scheme.Modules.pullbackCongr (AdicThickeningSystem.id_app 𝔛 n)).app (M.obj n) ≪≫
+        (Scheme.Modules.pullbackId (𝔛.X n)).app (M.obj n))
+      fun n ↦ by
+        have sq : CommSq (𝔛.ι n) (𝟙 (𝔛.X n)) (𝟙 (𝔛.X (n + 1))) (𝔛.ι n) := ⟨by simp⟩
+        simp only [pullback, Functor.id_obj, Iso.trans_hom, Iso.app_hom, Functor.mapIso_hom,
+          Functor.map_comp, Category.assoc]
+        rw [← Scheme.Modules.pullbackCompIsoOfCommSq_id_hom_app_assoc (𝔛.ι n) sq (M.obj (n + 1))
+            (M.transitionIso n).hom,
+          Scheme.Modules.pullbackCompIsoOfCommSq_congr_assoc
+            (AdicThickeningSystem.id_app 𝔛 (n + 1)) (AdicThickeningSystem.id_app 𝔛 n)
+            ⟨AdicThickeningSystem.Hom.naturality (𝟙 𝔛) n⟩ sq (M.obj (n + 1)),
+          (Scheme.Modules.pullbackCongr
+            (AdicThickeningSystem.id_app 𝔛 n)).hom.naturality_assoc (M.transitionIso n).hom,
+          (Scheme.Modules.pullbackId (𝔛.X n)).hom.naturality (M.transitionIso n).hom,
+          Functor.id_map])
+    fun φ ↦ hom_ext fun n ↦ by
+      simp only [pullback, Functor.id_obj, Functor.id_map, comp_app, isoMk_hom_app, Iso.trans_hom,
+        Iso.app_hom, Category.assoc]
+      rw [(Scheme.Modules.pullbackCongr (AdicThickeningSystem.id_app 𝔛 n)).hom.naturality_assoc,
+        (Scheme.Modules.pullbackId (𝔛.X n)).hom.naturality, Functor.id_map]
 
-section EssSurj
+@[simp]
+theorem pullbackId_hom_app_app (𝔛 : AdicThickeningSystem.{u}) (M : CoherentFormalModule 𝔛)
+    (n : ℕ) :
+    ((pullbackId 𝔛).hom.app M).app n =
+      (Scheme.Modules.pullbackCongr (AdicThickeningSystem.id_app 𝔛 n)).hom.app (M.obj n) ≫
+        (Scheme.Modules.pullbackId (𝔛.X n)).hom.app (M.obj n) := by
+  rfl
 
-variable (M : CoherentFormalModule 𝔛)
+@[simp]
+theorem pullbackId_inv_app_app (𝔛 : AdicThickeningSystem.{u}) (M : CoherentFormalModule 𝔛)
+    (n : ℕ) :
+    ((pullbackId 𝔛).inv.app M).app n =
+      (Scheme.Modules.pullbackId (𝔛.X n)).inv.app (M.obj n) ≫
+        (Scheme.Modules.pullbackCongr (AdicThickeningSystem.id_app 𝔛 n)).inv.app (M.obj n) := by
+  rfl
 
-/-- The identification `g n ^* (g n)⁻¹ ^* M n ≅ M n`. -/
-private def counitApp (n : ℕ) :
-    (Scheme.Modules.pullback (g.app n)).obj
-        ((Scheme.Modules.pullback (inv (g.app n))).obj (M.obj n)) ≅ M.obj n :=
-  (Scheme.Modules.pullbackCompIsoId (IsIso.hom_inv_id (g.app n))).app (M.obj n)
+private lemma pullbackComp_transition_naturality {𝔗 : AdicThickeningSystem.{u}}
+    (f : 𝔛 ⟶ 𝔜) (g : 𝔜 ⟶ 𝔗) (M : CoherentFormalModule 𝔗) (n : ℕ) :
+    (Scheme.Modules.pullback (𝔛.ι n)).map
+        ((Scheme.Modules.pullbackComp (f.app (n + 1)) (g.app (n + 1))).hom.app (M.obj (n + 1)) ≫
+          (Scheme.Modules.pullbackCongr
+            (AdicThickeningSystem.comp_app f g (n + 1)).symm).hom.app (M.obj (n + 1))) ≫
+        (((pullback (f ≫ g)).obj M).transitionIso n).hom =
+      (((pullback g ⋙ pullback f).obj M).transitionIso n).hom ≫
+        (Scheme.Modules.pullbackComp (f.app n) (g.app n)).hom.app (M.obj n) ≫
+        (Scheme.Modules.pullbackCongr
+          (AdicThickeningSystem.comp_app f g n).symm).hom.app (M.obj n) := by
+  have sqfg : CommSq (𝔛.ι n) (f.app n ≫ g.app n) (f.app (n + 1) ≫ g.app (n + 1)) (𝔗.ι n) :=
+    ⟨by rw [← Category.assoc, f.naturality n, Category.assoc, g.naturality n, Category.assoc]⟩
+  simp only [pullback, Functor.comp_obj, Iso.trans_hom, Iso.app_hom, Functor.mapIso_hom,
+    Functor.map_comp, Category.assoc]
+  rw [Scheme.Modules.pullbackCompIsoOfCommSq_congr_assoc
+      (AdicThickeningSystem.comp_app f g (n + 1)).symm
+      (AdicThickeningSystem.comp_app f g n).symm sqfg
+      ⟨AdicThickeningSystem.Hom.naturality (f ≫ g) n⟩ (M.obj (n + 1)),
+    Scheme.Modules.pullback_map_pullbackComp_hom_app_comp_pullbackCompIsoOfCommSq_hom_app_assoc
+      ⟨f.naturality n⟩ ⟨g.naturality n⟩ sqfg (M.obj (n + 1)),
+    ← (Scheme.Modules.pullbackCongr
+      (AdicThickeningSystem.comp_app f g n).symm).hom.naturality (M.transitionIso n).hom,
+    ← (Scheme.Modules.pullbackComp (f.app n) (g.app n)).hom.naturality_assoc
+      (M.transitionIso n).hom,
+    Functor.comp_map]
 
-/-- The isomorphism `g n ^* ι n ^* N (n + 1) ≅ g n ^* N n` whose preimage is the reduction
-isomorphism of the descended module `N n = (g n)⁻¹ ^* M n`. -/
-private def descentTransitionIso (n : ℕ) :
-    (Scheme.Modules.pullback (g.app n)).obj ((Scheme.Modules.pullback (𝔜.ι n)).obj
-        ((Scheme.Modules.pullback (inv (g.app (n + 1)))).obj (M.obj (n + 1)))) ≅
-      (Scheme.Modules.pullback (g.app n)).obj
-        ((Scheme.Modules.pullback (inv (g.app n))).obj (M.obj n)) :=
-  (Scheme.Modules.pullbackCompIsoOfCommSq ⟨g.naturality n⟩).symm.app _ ≪≫
-    (Scheme.Modules.pullback (𝔛.ι n)).mapIso (counitApp g M (n + 1)) ≪≫ M.transitionIso n ≪≫
-      (counitApp g M n).symm
+/-- Pulling coherent formal modules back along a composite `f ≫ g` is naturally isomorphic to
+pulling back along `g` and then along `f`. -/
+def pullbackComp {𝔗 : AdicThickeningSystem.{u}} (f : 𝔛 ⟶ 𝔜) (g : 𝔜 ⟶ 𝔗) :
+    pullback g ⋙ pullback f ≅ pullback (f ≫ g) :=
+  NatIso.ofComponents
+    (fun M ↦ isoMk
+      (fun n ↦ (Scheme.Modules.pullbackComp (f.app n) (g.app n)).app (M.obj n) ≪≫
+        (Scheme.Modules.pullbackCongr (AdicThickeningSystem.comp_app f g n).symm).app (M.obj n))
+      (pullbackComp_transition_naturality f g M))
+    fun φ ↦ hom_ext fun n ↦ by
+      simp only [pullback, Functor.comp_obj, Functor.comp_map, comp_app, isoMk_hom_app,
+        Iso.trans_hom, Iso.app_hom, Category.assoc]
+      rw [← Functor.comp_map,
+        (Scheme.Modules.pullbackComp (f.app n) (g.app n)).hom.naturality_assoc,
+        (Scheme.Modules.pullbackCongr
+          (AdicThickeningSystem.comp_app f g n).symm).hom.naturality]
 
-/-- The coherent formal module on `𝔜` whose pullback along the isomorphism `g` is isomorphic to
-`M`. -/
-private abbrev descent : CoherentFormalModule 𝔜 where
-  obj n := (Scheme.Modules.pullback (inv (g.app n))).obj (M.obj n)
-  isFinitePresentation _ := inferInstance
-  transitionIso n := (Scheme.Modules.pullback (g.app n)).preimageIso (descentTransitionIso g M n)
+@[simp]
+theorem pullbackComp_hom_app_app {𝔗 : AdicThickeningSystem.{u}} (f : 𝔛 ⟶ 𝔜) (g : 𝔜 ⟶ 𝔗)
+    (M : CoherentFormalModule 𝔗) (n : ℕ) :
+    ((pullbackComp f g).hom.app M).app n =
+      (Scheme.Modules.pullbackComp (f.app n) (g.app n)).hom.app (M.obj n) ≫
+        (Scheme.Modules.pullbackCongr (AdicThickeningSystem.comp_app f g n).symm).hom.app
+          (M.obj n) := by
+  rfl
 
-private lemma counitApp_naturality (n : ℕ) :
-    (Scheme.Modules.pullback (𝔛.ι n)).map (counitApp g M (n + 1)).hom ≫ (M.transitionIso n).hom =
-      ((Scheme.Modules.pullbackCompIsoOfCommSq ⟨g.naturality n⟩).hom.app _ ≫
-        (descentTransitionIso g M n).hom) ≫ (counitApp g M n).hom := by
-  rw [descentTransitionIso, Iso.trans_hom, Iso.app_hom, Iso.symm_hom, Iso.hom_inv_id_app_assoc]
+@[simp]
+theorem pullbackComp_inv_app_app {𝔗 : AdicThickeningSystem.{u}} (f : 𝔛 ⟶ 𝔜) (g : 𝔜 ⟶ 𝔗)
+    (M : CoherentFormalModule 𝔗) (n : ℕ) :
+    ((pullbackComp f g).inv.app M).app n =
+      (Scheme.Modules.pullbackCongr (AdicThickeningSystem.comp_app f g n).symm).inv.app
+          (M.obj n) ≫
+        (Scheme.Modules.pullbackComp (f.app n) (g.app n)).inv.app (M.obj n) := by
+  rfl
+
+/-- `pullbackCongr` along `rfl` is the identity isomorphism. -/
+@[simp]
+theorem pullbackCongr_refl (f : 𝔛 ⟶ 𝔜) : pullbackCongr (rfl : f = f) = Iso.refl _ := by
+  simp [pullbackCongr]
+
+/-- `pullbackCongr` respects transitivity of morphism equalities. -/
+theorem pullbackCongr_trans {f g h : 𝔛 ⟶ 𝔜} (h₁ : f = g) (h₂ : g = h) :
+    pullbackCongr (h₁.trans h₂) = pullbackCongr h₁ ≪≫ pullbackCongr h₂ := by
+  subst h₁ h₂
+  simp [pullbackCongr]
+
+/-- Compatibility of `pullbackComp` with replacing the first morphism by an equal one. -/
+@[reassoc]
+theorem pullbackCongr_hom_whiskerLeft_pullbackComp_hom {𝔗 : AdicThickeningSystem.{u}}
+    {f f' : 𝔛 ⟶ 𝔜} (hf : f = f') (g : 𝔜 ⟶ 𝔗) :
+    Functor.whiskerLeft (pullback g) (pullbackCongr hf).hom ≫ (pullbackComp f' g).hom =
+      (pullbackComp f g).hom ≫ (pullbackCongr (congrArg (· ≫ g) hf)).hom := by
+  subst hf
   simp
 
-/-- The pullback of `descent g M` along `g` is isomorphic to `M`. -/
-private def pullbackDescentIso : (pullback g).obj (descent g M) ≅ M :=
-  isoMk (counitApp g M) fun n ↦ by
-    rw [pullback_obj_transitionIso_hom, Functor.preimageIso_hom, Functor.map_preimage]
-    -- The goal and `counitApp_naturality` differ only in how the levels of
-    -- `(pullback g).obj (descent g M)` are written.
-    exact counitApp_naturality g M n
+/-- Compatibility of `pullbackComp` with replacing the second morphism by an equal one. -/
+@[reassoc]
+theorem pullbackComp_hom_comp_pullbackCongr_hom {𝔗 : AdicThickeningSystem.{u}}
+    (f : 𝔛 ⟶ 𝔜) {g g' : 𝔜 ⟶ 𝔗} (hg : g = g') :
+    Functor.whiskerRight (pullbackCongr hg).hom (pullback f) ≫ (pullbackComp f g').hom =
+      (pullbackComp f g).hom ≫ (pullbackCongr (congrArg (f ≫ ·) hg)).hom := by
+  subst hg
+  simp
 
-/-- Pullback along an isomorphism is essentially surjective: `M` is isomorphic to the pullback of
-the system `(g.app n)⁻¹ ^* M n`. -/
-private theorem pullback_essSurj : (pullback g).EssSurj where
-  mem_essImage M := ⟨descent g M, ⟨pullbackDescentIso g M⟩⟩
+/-- Associativity of pullback of coherent formal modules: the two ways of identifying
+`pullback h ⋙ pullback g ⋙ pullback f` with `pullback (f ≫ g ≫ h)` agree. -/
+@[reassoc]
+theorem pullbackComp_assoc {𝔗 𝔘 : AdicThickeningSystem.{u}}
+    (f : 𝔛 ⟶ 𝔜) (g : 𝔜 ⟶ 𝔗) (h : 𝔗 ⟶ 𝔘) :
+    Functor.whiskerLeft (pullback h) (pullbackComp f g).hom ≫ (pullbackComp (f ≫ g) h).hom ≫
+        (pullbackCongr (Category.assoc f g h)).hom =
+      (Functor.associator (pullback h) (pullback g) (pullback f)).inv ≫
+        Functor.whiskerRight (pullbackComp g h).hom (pullback f) ≫
+          (pullbackComp f (g ≫ h)).hom := by
+  refine NatTrans.ext (funext fun M ↦ hom_ext fun n ↦ ?_)
+  dsimp only [NatTrans.comp_app, Functor.whiskerLeft_app, Functor.associator_inv_app,
+    Functor.whiskerRight_app, Functor.comp_obj, pullback]
+  simp only [Category.id_comp, comp_app, pullbackComp_hom_app_app,
+    pullbackCongr_hom_app_app, Functor.map_comp, Category.assoc]
+  rw [Scheme.Modules.pullbackCongr_hom_app_comp_pullbackComp_hom_app_assoc]
+  have hr : (Scheme.Modules.pullback (f.app n)).map
+        ((Scheme.Modules.pullbackCongr (AdicThickeningSystem.comp_app g h n).symm).hom.app
+          (M.obj n)) ≫
+      (Scheme.Modules.pullbackComp (f.app n) ((g ≫ h).app n)).hom.app (M.obj n) =
+    (Scheme.Modules.pullbackComp (f.app n) (g.app n ≫ h.app n)).hom.app (M.obj n) ≫
+      eqToHom (by rw [AdicThickeningSystem.comp_app]) := by
+    rw [← cancel_epi ((Scheme.Modules.pullbackComp (f.app n) (g.app n ≫ h.app n)).inv.app
+      (M.obj n)), Iso.inv_hom_id_app_assoc]
+    rw [Scheme.Modules.pullbackComp_inv_app_comp_pullback_map_pullbackCongr_hom_app_assoc,
+      Iso.inv_hom_id_app, Category.comp_id]
+  rw [reassoc_of% hr,
+    Scheme.Modules.pullback_map_pullbackComp_hom_app_comp_pullbackComp_hom_app_assoc]
+  simp [Scheme.Modules.pullbackCongr]
 
-end EssSurj
+/-- Component form of `pullbackComp_assoc` at a coherent formal module `M`. -/
+@[reassoc]
+theorem pullbackComp_assoc_app {𝔗 𝔘 : AdicThickeningSystem.{u}}
+    (f : 𝔛 ⟶ 𝔜) (g : 𝔜 ⟶ 𝔗) (h : 𝔗 ⟶ 𝔘) (M : CoherentFormalModule 𝔘) :
+    (pullbackComp f g).hom.app ((pullback h).obj M) ≫ (pullbackComp (f ≫ g) h).hom.app M ≫
+        (pullbackCongr (Category.assoc f g h)).hom.app M =
+      (pullback f).map ((pullbackComp g h).hom.app M) ≫ (pullbackComp f (g ≫ h)).hom.app M := by
+  simpa using NatTrans.congr_app (pullbackComp_assoc f g h) M
+
+/-- Left unitality of pullback of coherent formal modules: `pullbackComp f (𝟙 𝔜)` agrees with
+`pullbackId 𝔜` up to `pullbackCongr (Category.comp_id f)`. -/
+@[reassoc]
+theorem pullbackComp_id (f : 𝔛 ⟶ 𝔜) :
+    (pullbackComp f (𝟙 𝔜)).hom ≫ (pullbackCongr (Category.comp_id f)).hom =
+      Functor.whiskerRight (pullbackId 𝔜).hom (pullback f) ≫
+        (Functor.leftUnitor (pullback f)).hom := by
+  refine NatTrans.ext (funext fun M ↦ ?_)
+  dsimp only [NatTrans.comp_app, Functor.whiskerRight_app, Functor.leftUnitor_hom_app]
+  refine Eq.trans ?_ (Category.comp_id _).symm
+  refine hom_ext fun n ↦ ?_
+  dsimp only [Functor.comp_obj, pullback]
+  simp only [comp_app, pullbackComp_hom_app_app,
+    pullbackCongr_hom_app_app, pullbackId_hom_app_app, Functor.map_comp,
+    Category.assoc]
+  have hid := Scheme.Modules.pullbackComp_inv_app_comp_pullback_map_pullbackCongr_hom_app
+    (f.app n) (AdicThickeningSystem.id_app 𝔜 n) (M.obj n)
+  rw [← cancel_epi ((Scheme.Modules.pullbackComp (f.app n)
+    ((𝟙 𝔜 : 𝔜 ⟶ 𝔜).app n)).inv.app (M.obj n)), Iso.inv_hom_id_app_assoc]
+  rw [reassoc_of% hid, Scheme.Modules.pseudofunctor_left_unitality_app]
+  simp [Scheme.Modules.pullbackCongr]
+
+/-- Component form of `pullbackComp_id` at a coherent formal module `M`. -/
+@[reassoc]
+theorem pullbackComp_id_app (f : 𝔛 ⟶ 𝔜) (M : CoherentFormalModule 𝔜) :
+    (pullbackComp f (𝟙 𝔜)).hom.app M ≫ (pullbackCongr (Category.comp_id f)).hom.app M =
+      (pullback f).map ((pullbackId 𝔜).hom.app M) := by
+  simpa using NatTrans.congr_app (pullbackComp_id f) M
+
+/-- Right unitality of pullback of coherent formal modules: `pullbackComp (𝟙 𝔛) f` agrees with
+`pullbackId 𝔛` up to `pullbackCongr (Category.id_comp f)`. -/
+@[reassoc]
+theorem pullback_id_comp (f : 𝔛 ⟶ 𝔜) :
+    (pullbackComp (𝟙 𝔛) f).hom ≫ (pullbackCongr (Category.id_comp f)).hom =
+      Functor.whiskerLeft (pullback f) (pullbackId 𝔛).hom ≫
+        (Functor.rightUnitor (pullback f)).hom := by
+  refine NatTrans.ext (funext fun M ↦ ?_)
+  dsimp only [NatTrans.comp_app, Functor.whiskerLeft_app, Functor.rightUnitor_hom_app]
+  refine Eq.trans ?_ (Category.comp_id _).symm
+  refine hom_ext fun n ↦ ?_
+  dsimp only [Functor.comp_obj, pullback]
+  simp only [comp_app, pullbackComp_hom_app_app,
+    pullbackCongr_hom_app_app, pullbackId_hom_app_app, Category.assoc]
+  rw [← cancel_epi ((Scheme.Modules.pullbackCongr (AdicThickeningSystem.id_app 𝔛 n).symm).hom.app
+    ((Scheme.Modules.pullback (f.app n)).obj (M.obj n)))]
+  rw [Scheme.Modules.pullbackCongr_hom_app_comp_pullbackComp_hom_app_assoc
+    (AdicThickeningSystem.id_app 𝔛 n).symm (f.app n) (M.obj n)]
+  rw [← cancel_epi ((Scheme.Modules.pullbackComp (𝟙 (𝔛.X n)) (f.app n)).inv.app (M.obj n)),
+    Iso.inv_hom_id_app_assoc]
+  have hid := Scheme.Modules.pseudofunctor_right_unitality_app (f.app n) (M.obj n)
+  simp only [Scheme.Modules.pullbackCongr, eqToIso.hom, NatTrans.id_app,
+    eqToHom_refl, Category.id_comp] at hid ⊢
+  rw [hid]
+  simp
+
+/-- Component form of `pullback_id_comp` at a coherent formal module `M`. -/
+@[reassoc]
+theorem pullback_id_comp_app (f : 𝔛 ⟶ 𝔜) (M : CoherentFormalModule 𝔜) :
+    (pullbackComp (𝟙 𝔛) f).hom.app M ≫ (pullbackCongr (Category.id_comp f)).hom.app M =
+      (pullbackId 𝔛).hom.app ((pullback f).obj M) := by
+  simpa using NatTrans.congr_app (pullback_id_comp f) M
+
+/-- An isomorphism `e : 𝔛 ≅ 𝔜` of adic thickening systems induces an equivalence of categories of
+coherent formal modules by pullback along `e.hom` and `e.inv`. -/
+-- `@[expose]` is forced by dependent typing: clients must identify the types of
+-- `(pullbackEquiv e).unitIso` and `(pullbackEquiv e).counitIso` with the pullback coherence
+-- isomorphisms.
+@[expose]
+def pullbackEquiv (e : 𝔛 ≅ 𝔜) : CoherentFormalModule 𝔜 ≌ CoherentFormalModule 𝔛 :=
+  CategoryTheory.Equivalence.mk' (pullback e.hom) (pullback e.inv)
+    ((pullbackId 𝔜).symm ≪≫ pullbackCongr e.inv_hom_id.symm ≪≫ (pullbackComp e.inv e.hom).symm)
+    (pullbackComp e.hom e.inv ≪≫ pullbackCongr e.hom_inv_id ≪≫ pullbackId 𝔛)
+    fun M ↦ hom_ext fun n ↦ by
+      have htri := (Scheme.Modules.pullbackEquiv
+        { hom := e.hom.app n
+          inv := e.inv.app n
+          hom_inv_id := congrArg (·.app n) e.hom_inv_id
+          inv_hom_id := congrArg (·.app n) e.inv_hom_id }).functor_unitIso_comp (M.obj n)
+      dsimp only [CategoryTheory.Equivalence.unit, CategoryTheory.Equivalence.counit,
+        Scheme.Modules.pullbackEquiv] at htri
+      simp only [Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, comp_app, pullback_map_app,
+        pullbackId_inv_app_app, pullbackId_hom_app_app, pullbackComp_hom_app_app,
+        pullbackComp_inv_app_app, pullbackCongr_hom_app_app, Functor.map_comp,
+        Category.assoc] at htri ⊢
+      simp only [Scheme.Modules.pullbackCongr, eqToIso.hom, eqToIso.inv, eqToHom_app,
+        eqToHom_refl] at htri ⊢
+      exact htri
+
+@[simp]
+theorem pullbackEquiv_functor (e : 𝔛 ≅ 𝔜) : (pullbackEquiv e).functor = pullback e.hom := by
+  rfl
+
+@[simp]
+theorem pullbackEquiv_inverse (e : 𝔛 ≅ 𝔜) : (pullbackEquiv e).inverse = pullback e.inv := by
+  rfl
+
+/-- Pulling back coherent formal modules along an isomorphism of adic thickening systems preserves
+addition of morphisms. -/
+instance (e : 𝔛 ≅ 𝔜) : (pullbackEquiv e).functor.Additive :=
+  inferInstanceAs (pullback e.hom).Additive
+
+/-- The unit isomorphism of `pullbackEquiv e` is the pullback coherence isomorphism
+`(pullbackId 𝔜).symm ≪≫ pullbackCongr e.inv_hom_id.symm ≪≫ (pullbackComp e.inv e.hom).symm`. -/
+theorem pullbackEquiv_unitIso (e : 𝔛 ≅ 𝔜) :
+    (pullbackEquiv e).unitIso =
+      (pullbackId 𝔜).symm ≪≫ pullbackCongr e.inv_hom_id.symm ≪≫ (pullbackComp e.inv e.hom).symm :=
+  (rfl)
+
+/-- The counit isomorphism of `pullbackEquiv e` is the pullback coherence isomorphism
+`pullbackComp e.hom e.inv ≪≫ pullbackCongr e.hom_inv_id ≪≫ pullbackId 𝔛`. -/
+theorem pullbackEquiv_counitIso (e : 𝔛 ≅ 𝔜) :
+    (pullbackEquiv e).counitIso =
+      pullbackComp e.hom e.inv ≪≫ pullbackCongr e.hom_inv_id ≪≫ pullbackId 𝔛 :=
+  (rfl)
+
+/-- On components, the unit of `pullbackEquiv e` factors through `pullbackId`, `pullbackCongr`,
+and `pullbackComp`. -/
+@[simp]
+theorem pullbackEquiv_unitIso_hom_app (e : 𝔛 ≅ 𝔜) (M : CoherentFormalModule 𝔜) :
+    (pullbackEquiv e).unitIso.hom.app M =
+      (pullbackId 𝔜).inv.app M ≫ (pullbackCongr e.inv_hom_id.symm).hom.app M ≫
+        (pullbackComp e.inv e.hom).inv.app M :=
+  (rfl)
+
+/-- On components, the inverse unit of `pullbackEquiv e` factors through `pullbackComp`,
+`pullbackCongr`, and `pullbackId`. -/
+@[simp]
+theorem pullbackEquiv_unitIso_inv_app (e : 𝔛 ≅ 𝔜) (M : CoherentFormalModule 𝔜) :
+    (pullbackEquiv e).unitIso.inv.app M =
+      (pullbackComp e.inv e.hom).hom.app M ≫ (pullbackCongr e.inv_hom_id.symm).inv.app M ≫
+        (pullbackId 𝔜).hom.app M :=
+  (rfl)
+
+/-- On components, the counit of `pullbackEquiv e` factors through `pullbackComp`, `pullbackCongr`,
+and `pullbackId`. -/
+@[simp]
+theorem pullbackEquiv_counitIso_hom_app (e : 𝔛 ≅ 𝔜) (M : CoherentFormalModule 𝔛) :
+    (pullbackEquiv e).counitIso.hom.app M =
+      (pullbackComp e.hom e.inv).hom.app M ≫ (pullbackCongr e.hom_inv_id).hom.app M ≫
+        (pullbackId 𝔛).hom.app M :=
+  (rfl)
+
+/-- On components, the inverse counit of `pullbackEquiv e` factors through `pullbackId`,
+`pullbackCongr`, and `pullbackComp`. -/
+@[simp]
+theorem pullbackEquiv_counitIso_inv_app (e : 𝔛 ≅ 𝔜) (M : CoherentFormalModule 𝔛) :
+    (pullbackEquiv e).counitIso.inv.app M =
+      (pullbackId 𝔛).inv.app M ≫ (pullbackCongr e.hom_inv_id).inv.app M ≫
+        (pullbackComp e.hom e.inv).inv.app M :=
+  (rfl)
+
+/-- For a section `f ≫ g = 𝟙 𝔛` of adic thickening systems, the level-`n` component of
+`pullbackComp f g ≪≫ pullbackCongr h ≪≫ pullbackId 𝔛` agrees with
+`Scheme.Modules.pullbackCompIsoId` at level `n`. -/
+theorem pullbackComp_hom_comp_pullbackCongr_hom_comp_pullbackId_hom_app_app
+    {f : 𝔛 ⟶ 𝔜} {g : 𝔜 ⟶ 𝔛} (h : f ≫ g = 𝟙 𝔛) (M : CoherentFormalModule 𝔛) (n : ℕ) :
+    ((pullbackComp f g).hom.app M).app n ≫
+      ((pullbackCongr h).hom.app M).app n ≫
+        ((pullbackId 𝔛).hom.app M).app n =
+      (Scheme.Modules.pullbackCompIsoId (by rw [← AdicThickeningSystem.comp_app, h,
+        AdicThickeningSystem.id_app] : f.app n ≫ g.app n = 𝟙 (𝔛.X n))).hom.app (M.obj n) := by
+  let h1 := (AdicThickeningSystem.comp_app f g n).symm
+  let h2 := congrArg (·.app n) h
+  let h3 := AdicThickeningSystem.id_app 𝔛 n
+  have heq :
+      ((Scheme.Modules.pullbackComp (f.app n) (g.app n)).hom.app (M.obj n) ≫
+          (Scheme.Modules.pullbackCongr h1).hom.app (M.obj n)) ≫
+        (Scheme.Modules.pullbackCongr h2).hom.app (M.obj n) ≫
+          ((Scheme.Modules.pullbackCongr h3).hom.app (M.obj n) ≫
+            (Scheme.Modules.pullbackId (𝔛.X n)).hom.app (M.obj n)) =
+        (Scheme.Modules.pullbackCompIsoId ((h1.trans h2).trans h3)).hom.app (M.obj n) := by
+    rw [Category.assoc,
+      Scheme.Modules.pullbackCongr_hom_app_comp_pullbackCongr_hom_app_assoc,
+      Scheme.Modules.pullbackCongr_hom_app_comp_pullbackCongr_hom_app_assoc,
+      ← Scheme.Modules.pullbackCompIsoId_hom_app]
+  rw [pullbackComp_hom_app_app, pullbackCongr_hom_app_app, pullbackId_hom_app_app]
+  exact heq
+
+/-- At level `n`, the inverse unit of `pullbackEquiv e` is `Scheme.Modules.pullbackCompIsoId`. -/
+theorem pullbackEquiv_unitIso_inv_app_app (e : 𝔛 ≅ 𝔜) (M : CoherentFormalModule 𝔜) (n : ℕ) :
+    ((pullbackEquiv e).unitIso.inv.app M).app n =
+      (Scheme.Modules.pullbackCompIsoId (by rw [← AdicThickeningSystem.comp_app, e.inv_hom_id,
+        AdicThickeningSystem.id_app] : e.inv.app n ≫ e.hom.app n = 𝟙 (𝔜.X n))).hom.app
+        (M.obj n) := by
+  have hcongr : (pullbackCongr e.inv_hom_id.symm).inv = (pullbackCongr e.inv_hom_id).hom := by
+    simp only [pullbackCongr, eqToIso.inv, eqToIso.hom]
+  rw [pullbackEquiv_unitIso_inv_app, hcongr, comp_app, comp_app]
+  exact pullbackComp_hom_comp_pullbackCongr_hom_comp_pullbackId_hom_app_app e.inv_hom_id M n
+
+/-- At level `n`, the counit of `pullbackEquiv e` is `Scheme.Modules.pullbackCompIsoId`. -/
+theorem pullbackEquiv_counitIso_hom_app_app (e : 𝔛 ≅ 𝔜) (M : CoherentFormalModule 𝔛) (n : ℕ) :
+    ((pullbackEquiv e).counitIso.hom.app M).app n =
+      (Scheme.Modules.pullbackCompIsoId (by rw [← AdicThickeningSystem.comp_app, e.hom_inv_id,
+        AdicThickeningSystem.id_app] : e.hom.app n ≫ e.inv.app n = 𝟙 (𝔛.X n))).hom.app
+        (M.obj n) :=
+  pullbackComp_hom_comp_pullbackCongr_hom_comp_pullbackId_hom_app_app e.hom_inv_id M n
 
 /-- **Pullback along an isomorphism of adic thickening systems is an equivalence** of categories of
 coherent formal modules. -/
-instance isEquivalence_pullback : (pullback g).IsEquivalence where
-  faithful := pullback_faithful g
-  full := pullback_full g
-  essSurj := pullback_essSurj g
-
-end IsIso
+instance isEquivalence_pullback (g : 𝔛 ⟶ 𝔜) [IsIso g] : (pullback g).IsEquivalence :=
+  (pullbackEquiv (asIso g)).isEquivalence_functor
 
 end
 
@@ -550,6 +873,8 @@ end TauCeti.AlgebraicGeometry.AdicThickeningSystem
 namespace AlgebraicGeometry.Scheme.formalCompletion
 
 open TauCeti.AlgebraicGeometry TauCeti.AlgebraicGeometry.AdicThickeningSystem
+
+section General
 
 variable (X : Scheme.{u}) (I : X.IdealSheafData)
 
@@ -635,5 +960,154 @@ theorem isIso_iff_of_isOpenCover {ι : Type*} {U : ι → X.Opens}
   CoherentFormalModule.isIso_iff_of_isOpenCover_opensRange _ (fun n ↦ by
     simp only [opensRange_map_app, Scheme.Opens.opensRange_ι]
     exact hU.comap (toScheme X I n).base.hom) φ
+
+end General
+
+section Bot
+
+variable (X : Scheme.{u})
+
+instance faithful_completionFunctor_bot : (completionFunctor X ⊥).Faithful where
+  map_injective {_ _} _ _ h :=
+    ObjectProperty.hom_ext _ <|
+      (Modules.pullback (toScheme X ⊥ 0)).map_injective (congrArg (·.app 0) h)
+
+instance full_completionFunctor_bot : (completionFunctor X ⊥).Full where
+  map_surjective {M N} f := by
+    let g : M ⟶ N := ObjectProperty.homMk ((Modules.pullback (toScheme X ⊥ 0)).preimage (f.app 0))
+    refine ⟨g, CoherentFormalModule.hom_ext fun n ↦ ?_⟩
+    induction n with
+    | zero => exact (Modules.pullback (toScheme X ⊥ 0)).map_preimage (f.app 0)
+    | succ n ih =>
+      refine (Modules.pullback ((X.formalCompletion ⊥).ι n)).map_injective
+        ((cancel_mono (((completionFunctor X ⊥).obj N).transitionIso n).hom).mp ?_)
+      exact (((completionFunctor X ⊥).map g).naturality n).trans
+        ((congrArg (fun u ↦ (((completionFunctor X ⊥).obj M).transitionIso n).hom ≫ u) ih).trans
+          (f.naturality n).symm)
+
+/-- Recovering a finitely presented `𝒪_X`-module from a coherent formal module on `X/V(⊥)` by
+evaluating at level `0` and pulling back along `inv (toScheme X ⊥ 0)`. -/
+-- `@[expose]` is forced by dependent typing: `((completionFunctorBotInv X).obj N).obj` must reduce
+-- definitionally to `(Modules.pullback (inv (toScheme X ⊥ 0))).obj (N.obj 0)` so that
+-- `completionFunctorBotInv_map_hom` typechecks.
+@[expose, simps! obj_obj map_hom]
+noncomputable def completionFunctorBotInv :
+    CoherentFormalModule (X.formalCompletion ⊥) ⥤ FinitelyPresentedSheaf X :=
+  (_root_.SheafOfModules.isFinitePresentation X.ringCatSheaf).lift
+    (CoherentFormalModule.eval (X.formalCompletion ⊥) 0 ⋙
+      Modules.pullback (inv (toScheme X ⊥ 0)))
+    fun N ↦ Modules.isFinitePresentation_pullback _ (M := N.obj 0)
+
+/-- Composing `completionFunctorBotInv X` with the inclusion into `X.Modules` gives evaluation at
+level `0` followed by pullback along `inv (toScheme X ⊥ 0)`. -/
+theorem completionFunctorBotInv_comp_ι :
+    completionFunctorBotInv X ⋙ ObjectProperty.ι _ =
+      CoherentFormalModule.eval (X.formalCompletion ⊥) 0 ⋙
+        Modules.pullback (inv (toScheme X ⊥ 0)) :=
+  (rfl)
+
+private noncomputable def botCompletionLevelIso (N : CoherentFormalModule (X.formalCompletion ⊥)) :
+    ∀ n, ((completionFunctor X ⊥).obj ((completionFunctorBotInv X).obj N)).obj n ≅ N.obj n
+  | 0 => (Modules.pullbackComp (toScheme X ⊥ 0) (inv (toScheme X ⊥ 0)) ≪≫
+      Modules.pullbackCongr (IsIso.hom_inv_id (toScheme X ⊥ 0)) ≪≫
+      Modules.pullbackId _).app (N.obj 0)
+  | n + 1 =>
+    (Functor.FullyFaithful.ofFullyFaithful
+      (Modules.pullback ((X.formalCompletion ⊥).ι n))).preimageIso
+        ((((completionFunctor X ⊥).obj _).transitionIso n) ≪≫ botCompletionLevelIso N n ≪≫
+          (N.transitionIso n).symm)
+
+private lemma botCompletionLevelIso_naturality
+    {M N : CoherentFormalModule (X.formalCompletion ⊥)} (φ : M ⟶ N) (n : ℕ) :
+    ((completionFunctor X ⊥).map ((completionFunctorBotInv X).map φ)).app n ≫
+        (botCompletionLevelIso X N n).hom =
+      (botCompletionLevelIso X M n).hom ≫ φ.app n := by
+  induction n with
+  | zero =>
+    exact (Modules.pullbackComp (toScheme X ⊥ 0) (inv (toScheme X ⊥ 0)) ≪≫
+      Modules.pullbackCongr (IsIso.hom_inv_id (toScheme X ⊥ 0)) ≪≫
+      Modules.pullbackId _).hom.naturality (φ.app 0)
+  | succ n ih =>
+    refine (Modules.pullback ((X.formalCompletion ⊥).ι n)).map_injective ?_
+    have hpre (P : CoherentFormalModule (X.formalCompletion ⊥)) :
+        (Modules.pullback ((X.formalCompletion ⊥).ι n)).map
+            (botCompletionLevelIso X P (n + 1)).hom =
+          (((completionFunctor X ⊥).obj ((completionFunctorBotInv X).obj P)).transitionIso n).hom ≫
+            (botCompletionLevelIso X P n).hom ≫ (P.transitionIso n).inv :=
+      (Functor.FullyFaithful.ofFullyFaithful
+        (Modules.pullback ((X.formalCompletion ⊥).ι n))).map_preimage _
+    rw [Functor.map_comp, Functor.map_comp, hpre N, hpre M,
+      CoherentFormalModule.Hom.naturality_assoc, Category.assoc,
+      ← Category.assoc ((completionFunctor X ⊥).map ((completionFunctorBotInv X).map φ) |>.app n),
+      ih, Category.assoc, Category.assoc, ← CoherentFormalModule.Hom.transitionIso_inv_naturality,
+      ← Category.assoc, ← Category.assoc]
+
+/-- Completing the explicit inverse `completionFunctorBotInv X` along `⊥` recovers the coherent
+formal module, naturally in `N`. At level `0`, this is the pullback cancellation isomorphism
+(`botCompletionCounitIso_hom_app_app_zero`). -/
+noncomputable def botCompletionCounitIso :
+    completionFunctorBotInv X ⋙ completionFunctor X ⊥ ≅ 𝟭 _ :=
+  NatIso.ofComponents
+    (fun N ↦ CoherentFormalModule.isoMk (botCompletionLevelIso X N) fun n ↦ by
+      have h := (Functor.FullyFaithful.ofFullyFaithful
+        (Modules.pullback ((X.formalCompletion ⊥).ι n))).map_preimage
+          ((((completionFunctor X ⊥).obj _).transitionIso n) ≪≫ botCompletionLevelIso X N n ≪≫
+            (N.transitionIso n).symm).hom
+      dsimp only [Functor.comp_obj]
+      refine (congrArg (· ≫ (N.transitionIso n).hom) h).trans ?_
+      rw [Iso.trans_hom, Iso.trans_hom, Iso.symm_hom, Category.assoc, Category.assoc,
+        Iso.inv_hom_id, Category.comp_id])
+    fun φ ↦ CoherentFormalModule.hom_ext (botCompletionLevelIso_naturality X φ)
+
+/-- At level `0`, `botCompletionCounitIso X` is the pullback cancellation isomorphism for
+`toScheme X ⊥ 0`. -/
+@[simp]
+theorem botCompletionCounitIso_hom_app_app_zero
+    (N : CoherentFormalModule (X.formalCompletion ⊥)) :
+    ((botCompletionCounitIso X).hom.app N).app 0 =
+      (Modules.pullbackComp (toScheme X ⊥ 0) (inv (toScheme X ⊥ 0))).hom.app (N.obj 0) ≫
+        (Modules.pullbackCongr (IsIso.hom_inv_id (toScheme X ⊥ 0))).hom.app (N.obj 0) ≫
+          (Modules.pullbackId ((X.formalCompletion ⊥).X 0)).hom.app (N.obj 0) :=
+  (rfl)
+
+/-- At level `0`, the inverse of `botCompletionCounitIso X` is the inverse pullback cancellation
+isomorphism for `toScheme X ⊥ 0`. -/
+@[simp]
+theorem botCompletionCounitIso_inv_app_app_zero
+    (N : CoherentFormalModule (X.formalCompletion ⊥)) :
+    ((botCompletionCounitIso X).inv.app N).app 0 =
+      (Modules.pullbackId ((X.formalCompletion ⊥).X 0)).inv.app (N.obj 0) ≫
+        (Modules.pullbackCongr (IsIso.hom_inv_id (toScheme X ⊥ 0))).inv.app (N.obj 0) ≫
+          (Modules.pullbackComp (toScheme X ⊥ 0) (inv (toScheme X ⊥ 0))).inv.app (N.obj 0) :=
+  (rfl)
+
+instance essSurj_completionFunctor_bot : (completionFunctor X ⊥).EssSurj where
+  mem_essImage N :=
+    ⟨(completionFunctorBotInv X).obj N, ⟨(botCompletionCounitIso X).app N⟩⟩
+
+/-- On any scheme `X`, completing along the zero ideal sheaf `⊥` (`V(⊥) = X`) is an equivalence of
+categories. -/
+instance isEquivalence_completionFunctor_bot : (completionFunctor X ⊥).IsEquivalence where
+
+/-- The chosen inverse `(completionFunctor X ⊥).inv` of zero-ideal completion is naturally
+isomorphic to `completionFunctorBotInv X`, which evaluates at level `0` and pulls back along
+`inv (toScheme X ⊥ 0)`. -/
+noncomputable def completionFunctorBotInvIso :
+    (completionFunctor X ⊥).inv ≅ completionFunctorBotInv X :=
+  (Functor.leftUnitor _).symm ≪≫
+    Functor.isoWhiskerRight (botCompletionCounitIso X).symm _ ≪≫
+    Functor.associator _ _ _ ≪≫
+    Functor.isoWhiskerLeft _ (completionFunctor X ⊥).asEquivalence.unitIso.symm ≪≫
+    Functor.rightUnitor _
+
+/-- On underlying `X.Modules`, `(completionFunctor X ⊥).inv` is naturally isomorphic to evaluation
+at level `0` followed by pullback along `inv (toScheme X ⊥ 0)`. -/
+noncomputable def completionFunctorBotInvCompιIso :
+    (completionFunctor X ⊥).inv ⋙ ObjectProperty.ι _ ≅
+      CoherentFormalModule.eval (X.formalCompletion ⊥) 0 ⋙
+        Modules.pullback (inv (toScheme X ⊥ 0)) :=
+  Functor.isoWhiskerRight (completionFunctorBotInvIso X) _
+
+end Bot
 
 end AlgebraicGeometry.Scheme.formalCompletion
