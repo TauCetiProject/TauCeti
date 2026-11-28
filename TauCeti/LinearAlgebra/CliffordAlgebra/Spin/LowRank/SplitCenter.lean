@@ -290,31 +290,13 @@ theorem evenAlgEquivSplitEvenCorners_reverseEven (Q : QuadraticForm K V)
     (e : Subalgebra.center K (even Q) ≃ₐ[K] K × K) (x : even Q) :
     evenAlgEquivSplitEvenCorners Q hQ hV e (reverseEven Q x) =
       star (evenAlgEquivSplitEvenCorners Q hQ hV e x) := by
-  apply Prod.ext <;> apply Subtype.ext
-  · calc
-      ((evenAlgEquivSplitEvenCorners Q hQ hV e (reverseEven Q x)).1).val =
-          splitCenterIdempotent Q e 0 * reverseEven Q x * splitCenterIdempotent Q e 0 :=
-        congrArg Prod.fst
-          (evenAlgEquivSplitCenterCorners_apply Q e (reverseEven Q x))
-      _ = reverseEven Q (splitCenterIdempotent Q e 0 * x * splitCenterIdempotent Q e 0) :=
-        (reverseEven_splitCenterProjection Q hQ hV e 0 x).symm
-      _ = reverseEven Q ((evenAlgEquivSplitEvenCorners Q hQ hV e x).1).val := by
-        exact congrArg (reverseEven Q)
-          (congrArg Prod.fst (evenAlgEquivSplitCenterCorners_apply Q e x)).symm
-      _ = (star (evenAlgEquivSplitEvenCorners Q hQ hV e x).1).val :=
-        (val_star_splitEvenCorner Q hQ hV e 0 _).symm
-  · calc
-      ((evenAlgEquivSplitEvenCorners Q hQ hV e (reverseEven Q x)).2).val =
-          splitCenterIdempotent Q e 1 * reverseEven Q x * splitCenterIdempotent Q e 1 :=
-        congrArg Prod.snd
-          (evenAlgEquivSplitCenterCorners_apply Q e (reverseEven Q x))
-      _ = reverseEven Q (splitCenterIdempotent Q e 1 * x * splitCenterIdempotent Q e 1) :=
-        (reverseEven_splitCenterProjection Q hQ hV e 1 x).symm
-      _ = reverseEven Q ((evenAlgEquivSplitEvenCorners Q hQ hV e x).2).val := by
-        exact congrArg (reverseEven Q)
-          (congrArg Prod.snd (evenAlgEquivSplitCenterCorners_apply Q e x)).symm
-      _ = (star (evenAlgEquivSplitEvenCorners Q hQ hV e x).2).val :=
-        (val_star_splitEvenCorner Q hQ hV e 1 _).symm
+  have h1 := Prod.mk.inj (evenAlgEquivSplitCenterCorners_apply Q e (reverseEven Q x))
+  have h2 := Prod.mk.inj (evenAlgEquivSplitCenterCorners_apply Q e x)
+  refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)
+  · exact h1.1.trans <| (reverseEven_splitCenterProjection Q hQ hV e 0 x).symm.trans
+      (congrArg (reverseEven Q) h2.1.symm)
+  · exact h1.2.trans <| (reverseEven_splitCenterProjection Q hQ hV e 1 x).symm.trans
+      (congrArg (reverseEven Q) h2.2.symm)
 
 /-- In dimension four, a split centre identifies Spin with the product of the reverse-unitary
 groups of the two central corners. -/
