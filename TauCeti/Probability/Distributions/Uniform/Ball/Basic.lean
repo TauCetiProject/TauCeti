@@ -11,6 +11,7 @@ public import TauCeti.Probability.Distributions.Uniform.Sphere.Basic
 public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Integral.OddSymmetric
+import TauCeti.MeasureTheory.Measure.Dirac
 import TauCeti.Probability.ConditionalProbability
 import TauCeti.Probability.Distributions.Beta.Cdf
 import TauCeti.Probability.Distributions.Beta.Quantile
@@ -131,6 +132,16 @@ theorem isProbabilityMeasure_uniformBallMeasure (hr : 0 ≤ r) :
   · rw [uniformBallMeasure_of_ne_zero hr.ne']
     exact cond_isProbabilityMeasure_of_finite (measure_ball_pos volume c hr).ne'
       measure_ball_lt_top.ne
+
+/-- In dimension zero every nonnegative-radius ball law is the point mass at its unique center;
+negative radii still give the zero measure. -/
+@[simp]
+theorem uniformBallMeasure_of_subsingleton [Subsingleton E] (c : E) (r : ℝ) :
+    uniformBallMeasure c r = if 0 ≤ r then Measure.dirac c else 0 := by
+  split_ifs with hr
+  · let _ := isProbabilityMeasure_uniformBallMeasure (c := c) hr
+    exact Measure.eq_dirac_of_subsingleton _ _
+  · exact uniformBallMeasure_of_neg (lt_of_not_ge hr)
 
 /-- The uniform law on a ball is a probability measure exactly when the radius is
 nonnegative. -/

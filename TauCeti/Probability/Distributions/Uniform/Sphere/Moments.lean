@@ -49,8 +49,7 @@ theorem covarianceBilin_map_coe_uniformSphereMeasure :
     covarianceBilin ((uniformSphereMeasure E).map ((↑) : sphere (0 : E) 1 → E)) =
       (1 / (finrank ℝ E : ℝ)) • innerSL ℝ := by
   rcases subsingleton_or_nontrivial E with hE | hE
-  · have hzero : uniformSphereMeasure E = 0 := Subsingleton.elim _ _
-    simp [hzero, Module.finrank_zero_of_subsingleton]
+  · simp [Module.finrank_zero_of_subsingleton]
   have hinv (f : E ≃ₗᵢ[ℝ] E) :
       ((uniformSphereMeasure E).map ((↑) : sphere (0 : E) 1 → E)).map f =
         (uniformSphereMeasure E).map ((↑) : sphere (0 : E) 1 → E) := by
@@ -93,8 +92,7 @@ theorem integral_inner_mul_inner_uniformSphereMeasure (u v : E) :
     ∫ x : sphere (0 : E) 1, ⟪u, (x : E)⟫ * ⟪v, (x : E)⟫ ∂uniformSphereMeasure E =
       ⟪u, v⟫ / (finrank ℝ E : ℝ) := by
   rcases subsingleton_or_nontrivial E with hE | hE
-  · have hzero : uniformSphereMeasure E = 0 := Subsingleton.elim _ _
-    simp [hzero, Subsingleton.elim u 0]
+  · simp [Subsingleton.elim u 0]
   have hmean (w : E) : ∫ x : sphere (0 : E) 1, ⟪w, (x : E)⟫ ∂uniformSphereMeasure E = 0 := by
     rw [integral_inner ((memLp_coe_uniformSphereMeasure 1).integrable le_rfl),
       integral_coe_uniformSphereMeasure, inner_zero_right]
