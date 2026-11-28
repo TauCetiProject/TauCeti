@@ -22,7 +22,8 @@ For an `R`-algebra `A`, an `R`-algebra `S` and an `S`-algebra map `q : S →ₐ[
 (`AlgHom.restrictScalars_comp_bijective_iff`). This reduces lifting problems for algebras over an
 arbitrary base `R` to lifting problems over `S` itself.
 
-`AlgHom.liftEquiv_rTensor_ofId_apply` describes evaluation after extending the left tensor factor.
+`AlgHom.liftEquiv_rTensor_apply` describes evaluation after mapping the left tensor factor
+and postcomposing the evaluation map compatibly.
 
 When an `R`-algebra map `φ : A →ₐ[R] B` into an `S`-algebra `B` carries an `R`-basis of `A` to an
 `S`-basis of `B`, the induced `S`-algebra multiplication map `AlgHom.liftEquiv R S A B φ` is
@@ -48,19 +49,21 @@ theorem liftEquiv_comp_includeRight {R S A B : Type*} [CommSemiring R] [CommSemi
     ((f.liftEquiv R S A B).restrictScalars R).comp Algebra.TensorProduct.includeRight = f :=
   (AlgHom.liftEquiv R S A B).left_inv f
 
-/-- Evaluating a tensor after extending its left factor along `S → U` agrees with evaluating
-over `S` and applying the `S`-algebra map `q` to the result. -/
-theorem liftEquiv_rTensor_ofId_apply {R S A T U : Type*} [CommSemiring R] [CommSemiring S]
-    [Semiring A] [Semiring T] [CommSemiring U] [Algebra R S] [Algebra R A]
-    [Algebra R T] [Algebra S T] [IsScalarTower R S T]
-    [Algebra R U] [Algebra S U] [IsScalarTower R S U]
-    (f : A →ₐ[R] T) (q : T →ₐ[S] U) (x : S ⊗[R] A) :
-    liftEquiv R U A U ((q.restrictScalars R).comp f)
-        (Algebra.TensorProduct.rTensor A (Algebra.ofId S U) x) =
+/-- Tensor evaluation commutes with mapping the left factor by `g` and postcomposing by `q`
+when `q` acts on the scalars through `g`. -/
+theorem liftEquiv_rTensor_apply {R S U A T V : Type*} [CommSemiring R] [CommSemiring S]
+    [CommSemiring U] [Semiring A] [Semiring T] [Semiring V]
+    [Algebra R S] [Algebra R U] [Algebra R A] [Algebra R T] [Algebra R V]
+    [Algebra S T] [Algebra U V] [IsScalarTower R S T] [IsScalarTower R U V]
+    (f : A →ₐ[R] T) (g : S →ₐ[R] U) (q : T →ₐ[R] V)
+    (h : ∀ s, q (algebraMap S T s) = algebraMap U V (g s)) (x : S ⊗[R] A) :
+    liftEquiv R U A V (q.comp f) (Algebra.TensorProduct.rTensor A g x) =
       q (liftEquiv R S A T f x) := by
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy => simp [hx, hy]
-  | tmul s a => simp [Algebra.smul_def]
+  have he : ((liftEquiv R U A V (q.comp f)).restrictScalars R).comp
+        (Algebra.TensorProduct.rTensor A g) =
+      q.comp ((liftEquiv R S A T f).restrictScalars R) :=
+    Algebra.TensorProduct.ext' fun s a ↦ by simp [Algebra.smul_def, h]
+  exact DFunLike.congr_fun he x
 
 section Comp
 

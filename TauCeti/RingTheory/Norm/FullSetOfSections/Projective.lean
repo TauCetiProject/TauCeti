@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.RingTheory.Norm.FullSetOfSections.Basic
 public import TauCeti.RingTheory.Norm.Projective
+import TauCeti.RingTheory.TensorProduct.LiftEquiv
 
 /-!
 # Full sets of sections of finite locally free algebras
@@ -93,7 +94,10 @@ theorem IsFullSetOfSections.projectiveNorm_eq (h : IsFullSetOfSections s) (T : T
     .of_equiv (Algebra.TensorProduct.cancelBaseChange A (Localization.AtPrime P) (T' P) (T' P)
       B).toLinearEquiv
   rw [← Algebra.projectiveNorm_rTensor, Algebra.projectiveNorm_eq_norm, h.norm_eq, map_prod]
-  simp
+  refine Finset.prod_congr rfl fun i _ ↦ ?_
+  let g := IsScalarTower.toAlgHom A T (T' P)
+  simpa only [AlgHom.sectionBaseChange, ← AlgHom.comp_assoc, Algebra.comp_ofId] using
+    AlgHom.liftEquiv_rTensor_apply ((Algebra.ofId A T).comp (s i)) g g (fun _ ↦ rfl) f
 
 /-- A family of sections of a finite projective algebra is a full set of sections if and only if
 the norm identity `Norm_{T ⊗[A] B / T}(f) = ∏ i, sᵢ(f)` holds on every base change, with the norm
@@ -137,16 +141,19 @@ theorem span_coeff_normIdentityPolynomial_le_ker_iff {κ : Type*} [Fintype κ] {
     Ideal.span (Set.range (normIdentityPolynomial b s).coeff) ≤ RingHom.ker (algebraMap A T) ↔
       IsFullSetOfSections fun i ↦ (s i).sectionBaseChange T := by
   -- the generic element over `T`
+  let xA : MvPolynomial κ A ⊗[A] B := ∑ j, (X j : MvPolynomial κ A) ⊗ₜ[A] b j
   set xT : MvPolynomial κ T ⊗[A] B := ∑ j, (X j : MvPolynomial κ T) ⊗ₜ[A] b j
   let φ : MvPolynomial κ A →ₐ[A] MvPolynomial κ T := MvPolynomial.mapAlgHom (Algebra.ofId A T)
-  have hφ : Algebra.TensorProduct.rTensor B φ (∑ j, (X j : MvPolynomial κ A) ⊗ₜ[A] b j) = xT := by
-    simp [φ, xT]
+  have hφ : Algebra.TensorProduct.rTensor B φ xA = xT := by simp [φ, xA, xT]
   have hmap : MvPolynomial.map (algebraMap A T) (normIdentityPolynomial b s) =
       Algebra.projectiveNorm (MvPolynomial κ T) xT -
         ∏ i, (s i).sectionBaseChange (MvPolynomial κ T) xT := by
     rw [← hφ, Algebra.projectiveNorm_rTensor, normIdentityPolynomial_def, map_sub, map_prod]
-    simp only [AlgHom.sectionBaseChange_rTensor, φ, MvPolynomial.mapAlgHom_apply,
-      Algebra.toRingHom_ofId]
+    apply congrArg (_ - ·)
+    refine Finset.prod_congr rfl fun i _ ↦ ?_
+    simpa only [AlgHom.sectionBaseChange, ← AlgHom.comp_assoc, Algebra.comp_ofId, φ,
+      MvPolynomial.mapAlgHom_apply, Algebra.toRingHom_ofId] using
+      (AlgHom.liftEquiv_rTensor_apply ((Algebra.ofId A _).comp (s i)) φ φ (fun _ ↦ rfl) xA).symm
   have hle : Ideal.span (Set.range (normIdentityPolynomial b s).coeff) ≤
       RingHom.ker (algebraMap A T) ↔
       MvPolynomial.map (algebraMap A T) (normIdentityPolynomial b s) = 0 := by
@@ -167,8 +174,10 @@ theorem span_coeff_normIdentityPolynomial_le_ker_iff {κ : Type*} [Fintype κ] {
       Algebra.projectiveNorm_rTensor, H, map_prod]
     refine Finset.prod_congr rfl fun i _ ↦ ?_
     rw [AlgHom.sectionBaseChange_sectionBaseChange]
-    exact (congrArg ((s i).sectionBaseChange T') hψ.symm).trans
-      ((s i).sectionBaseChange_rTensor ψ xT) |>.symm
+    have hn := AlgHom.liftEquiv_rTensor_apply ((Algebra.ofId A _).comp (s i)) ψ ψ
+      (fun _ ↦ rfl) xT
+    rw [← hψ]
+    simpa only [AlgHom.sectionBaseChange, ← AlgHom.comp_assoc, Algebra.comp_ofId] using hn.symm
   · intro H
     have := H.projectiveNorm_eq (MvPolynomial κ T)
       ((Algebra.TensorProduct.cancelBaseChange A T (MvPolynomial κ T) (MvPolynomial κ T) B).symm xT)
