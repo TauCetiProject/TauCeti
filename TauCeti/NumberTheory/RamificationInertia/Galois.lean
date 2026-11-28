@@ -39,6 +39,7 @@ transitivity.
 ## Main results
 
 * `TauCeti.coe_galRestrict_eq_toRingHom`: restriction agrees with the canonical action.
+* `TauCeti.smul_primesOver_galRestrict_eq`: the two actions agree on the prime fiber.
 * `TauCeti.coe_smul_primesOver_ringOfIntegers` and
   `TauCeti.stabilizer_primesOver_ringOfIntegers`: the primes-over action and its stabilizers
   agree with those on the underlying ideals.
@@ -313,6 +314,18 @@ theorem coe_smul_primesOver_ringOfIntegers [FiniteDimensional K L] {p : Ideal A}
     (σ • P).val = σ • P.val := by
   rw [Ideal.coe_smul_primesOver_eq_map_galRestrict, Ideal.pointwise_smul_def,
     ← Ideal.map_coe, coe_galRestrict_eq_toRingHom]
+
+/-- On the prime fiber, the `galRestrict` action agrees with the action induced by the
+canonical automorphism action on the ring of integers. Open the `PrimesOver` scope to use
+this normalization with `simp`. -/
+theorem smul_primesOver_galRestrict_eq [FiniteDimensional K L] [SMulCommClass Gal(L/K) A (𝓞 L)]
+    {p : Ideal A} (σ : Gal(L/K)) (P : p.primesOver (𝓞 L)) :
+    σ • P = (letI : MulAction Gal(L/K) (p.primesOver (𝓞 L)) :=
+      Ideal.instMulActionElemPrimesOver
+      σ • P) :=
+  Subtype.ext (coe_smul_primesOver_ringOfIntegers K L σ P)
+
+scoped[PrimesOver] attribute [simp] TauCeti.smul_primesOver_galRestrict_eq
 
 end GalRestrict
 

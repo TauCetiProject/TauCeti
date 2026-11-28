@@ -43,9 +43,7 @@ private theorem chosenPrimeOrbit_bijective (w : InfinitePlace E)
   have hstab : (stabilizer Gal(E/ℚ) w : Set Gal(E/ℚ)) = {1, c} := by
     rw [← mk_embedding w, hconj.coe_stabilizer_mk]
   have hm (g : Gal(E/ℚ)) : e (c * g) = c • e g := by
-    apply Subtype.ext
-    simp only [e, galEquivPrimesOver_apply, TauCeti.coe_smul_primesOver_ringOfIntegers,
-      coe_smul_primesOver, mul_smul]
+    simp only [e, galEquivPrimesOver_apply, TauCeti.smul_primesOver_galRestrict_eq, mul_smul]
   refine ⟨?_, ?_⟩
   · intro R R' h
     let g := e.symm R.val
@@ -87,19 +85,18 @@ noncomputable def equivPrimesOverTransversal (w : InfinitePlace E) (Q : P.primes
     InfinitePlace E ≃ S :=
   (Equiv.ofBijective _ (chosenPrimeOrbit_bijective w Q hP hS)).symm
 
+-- Evaluate before simp normalizes the action inside the subtype argument.
 /-- A translate of the finite base prime in the transversal corresponds to the same
 translate of the infinite base place. -/
-@[simp]
+@[simp↓]
 theorem equivPrimesOverTransversal_symm_apply (w : InfinitePlace E) (Q : P.primesOver (𝓞 E))
     (hP : (P.primesOver (𝓞 E)).ncard = Module.finrank ℚ E)
     {S : Set (P.primesOver (𝓞 E))}
     (hS : ∀ R, (IsCMField.complexConj E).restrictScalars ℚ • R ∈ S ↔ R ∉ S)
     (g : Gal(E/ℚ)) (hg : g • Q ∈ S) :
     (w.equivPrimesOverTransversal Q hP (S := S) hS).symm ⟨g • Q, hg⟩ = g • w := by
-  have he : (P.galEquivPrimesOver Q hP).symm (g • Q) = g := by
-    convert P.galEquivPrimesOver_symm_apply_smul Q hP g using 2
-    exact Subtype.ext (TauCeti.coe_smul_primesOver_ringOfIntegers ℚ E g Q)
-  simp only [equivPrimesOverTransversal, Equiv.symm_symm, Equiv.ofBijective_apply, he]
+  simp only [equivPrimesOverTransversal, Equiv.symm_symm, Equiv.ofBijective_apply,
+    TauCeti.smul_primesOver_galRestrict_eq, galEquivPrimesOver_symm_apply_smul]
 
 /-- If the translate of `Q` belongs to the transversal, it labels the corresponding translate
 of the infinite base place. -/

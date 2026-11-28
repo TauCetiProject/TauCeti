@@ -138,7 +138,7 @@ noncomputable def galEquivPrimesOver (P : Ideal A)
     rw [← Fintype.card_eq_nat_card, Nat.card_coe_set_eq, hP]
     exact AlgEquiv.card_le
   have h : stabilizer Gal(L/K) Q = ⊥ := TauCeti.stabilizer_eq_bot_of_natCard_eq hcard Q
-  exact ((QuotientGroup.quotientEquivSelf Gal(L/K)).symm.trans
+  exact (QuotientGroup.quotientBot.symm.toEquiv.trans
     (Subgroup.quotientEquivOfEq h.symm)).trans
     (TauCeti.quotientStabilizerEquiv Gal(L/K) Q)
 
@@ -147,10 +147,10 @@ noncomputable def galEquivPrimesOver (P : Ideal A)
 theorem galEquivPrimesOver_apply (P : Ideal A)
     (Q : P.primesOver (𝓞 L)) (hP : (P.primesOver (𝓞 L)).ncard = finrank K L)
     (g : Gal(L/K)) : P.galEquivPrimesOver Q hP g = g • Q := by
-  -- Mathlib gives no evaluation lemma for this inverse; its `invFun` is the quotient map.
-  have hmk : (QuotientGroup.quotientEquivSelf Gal(L/K)).symm g = QuotientGroup.mk g := rfl
-  rw [galEquivPrimesOver, Equiv.trans_apply, Equiv.trans_apply, hmk,
-    Subgroup.quotientEquivOfEq_mk, TauCeti.quotientStabilizerEquiv_mk]
+  have hmk : QuotientGroup.quotientBot.symm.toEquiv g = QuotientGroup.mk g :=
+    QuotientGroup.quotientBot_symm_apply g
+  simp only [galEquivPrimesOver, Equiv.trans_apply, hmk, Subgroup.quotientEquivOfEq_mk,
+    TauCeti.quotientStabilizerEquiv_mk]
 
 /-- The inverse Galois torsor bijection recovers the automorphism carrying `Q` to `g • Q`. -/
 @[simp]
@@ -158,6 +158,13 @@ theorem galEquivPrimesOver_symm_apply_smul (P : Ideal A)
     (Q : P.primesOver (𝓞 L)) (hP : (P.primesOver (𝓞 L)).ncard = finrank K L)
     (g : Gal(L/K)) : (P.galEquivPrimesOver Q hP).symm (g • Q) = g := by
   rw [← P.galEquivPrimesOver_apply Q hP, Equiv.symm_apply_apply]
+
+/-- The automorphism assigned to `R` by the inverse torsor bijection carries `Q` to `R`. -/
+@[simp]
+theorem galEquivPrimesOver_symm_apply_smul_self (P : Ideal A)
+    (Q : P.primesOver (𝓞 L)) (hP : (P.primesOver (𝓞 L)).ncard = finrank K L)
+    (R : P.primesOver (𝓞 L)) : (P.galEquivPrimesOver Q hP).symm R • Q = R := by
+  simpa only [galEquivPrimesOver_apply] using (P.galEquivPrimesOver Q hP).apply_symm_apply R
 
 end Galois
 
