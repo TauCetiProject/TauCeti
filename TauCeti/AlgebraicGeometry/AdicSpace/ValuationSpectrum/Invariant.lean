@@ -87,8 +87,12 @@ theorem comap_algebraMap_eq_comap_algebraMap_iff_of_isInvariant [SMulCommClass G
     (RingHom.ext fun r ↦ congrArg ψ (((includeLeft (S := R)).commutes r).trans
       (includeRight.commutes r).symm))
   refine ⟨g⁻¹, ?_⟩
-  rw [smul_def, inv_inv, ← hvy, ← hvy', ← hv, comap_comap, comap_comap, comap_comap, ← hg,
-    RingHom.comp_assoc]
+  set w := ofValuation (residueFieldValuation v)
+  calc y' = comap (ψ.comp (includeRight (R := R) (A := A)).toRingHom) w := by
+        rw [← comap_comap, hv, hvy']
+    _ = comap ((ψ.comp includeLeftRingHom).comp (MulSemiringAction.toRingHom G A g)) w :=
+        congrArg (comap · w) hg.symm
+    _ = g⁻¹ • y := by rw [smul_def, inv_inv, ← comap_comap, ← comap_comap, hv, hvy]
 
 variable [TopologicalSpace R] [TopologicalSpace A] [IsTopologicalRing A] [ContinuousConstSMul G A]
 

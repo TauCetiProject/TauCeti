@@ -190,6 +190,13 @@ theorem invariantPair.toRingHom_inclusion (P : Pair A) :
     (invariantPair.inclusion G P).toRingHom = algebraMap (FixedPoints.subring A G) A :=
   (rfl)
 
+variable (G) in
+/-- The plus ring `A^{+G}` of the invariant pair is the preimage of `A⁺` under the algebra map of
+the fixed subring, which underlies `invariantPair.inclusion`. -/
+theorem invariantPair.comap_algebraMap_plus (P : Pair A) :
+    P.plus.comap (algebraMap (FixedPoints.subring A G) A) = (invariantPair G P).plus := by
+  rw [invariantPair_plus, Algebra.algebraMap_ofSubring]
+
 /-- The inclusion of the invariant pair is injective. -/
 theorem invariantPair.inclusion_injective (P : Pair A) :
     Function.Injective (invariantPair.inclusion G P).toRingHom := by

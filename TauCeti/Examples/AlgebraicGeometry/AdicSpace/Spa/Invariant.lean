@@ -36,9 +36,10 @@ variable [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A] [Finite G]
   [ContinuousConstSMul G A]
 
 /-- For an action fixing every element, restriction to the invariants is injective on
-`Spa(A, A⁺)`: the orbits are points. -/
-example (h : ∀ (g : G) (a : A), g • a = a) (P : Pair A) [IsInvariantSubring G P.plus] :
+`Spa(A, A⁺)`: the orbits are points. Such an action preserves `A⁺`. -/
+example (h : ∀ (g : G) (a : A), g • a = a) (P : Pair A) :
     Function.Injective (invariantPair.inclusion G P).spaComap := by
+  have : IsInvariantSubring G P.plus := ⟨fun g a ha ↦ (h g a).symm ▸ ha⟩
   intro x y hxy
   obtain ⟨g, rfl⟩ := (invariantPair.spaComap_inclusion_eq_spaComap_inclusion_iff G P).mp hxy
   exact Subtype.ext (by rw [val_smul, smul_eq_self h])

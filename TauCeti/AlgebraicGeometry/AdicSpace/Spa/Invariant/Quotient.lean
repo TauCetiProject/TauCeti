@@ -45,7 +45,7 @@ invariants gives `Spa(A, A⁺) / G ≅ Spa(Aᴳ, A^{+G})`. Nothing is assumed ab
 * `TauCeti.Huber.invariantPair.spaComap_inclusion_preimage_rationalSubset`: the preimage of the
   rational subset `U(T / s)` of `Spa(Aᴳ, A^{+G})` is the rational subset `U(T / s)` of
   `Spa(A, A⁺)`, which is `G`-stable
-  (`TauCeti.Huber.invariantPair.smul_mem_preimage_rationalSubset_iff`).
+  (`TauCeti.Huber.invariantPair.smul_mem_val_preimage_rationalSubset_iff`).
 
 ## References
 
@@ -133,19 +133,6 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [Is
 
 namespace invariantPair
 
-omit [IsTopologicalRing A] [IsTateRing A] [Finite G] [ContinuousConstSMul G A] in
-/-- The algebra map of the fixed subring, which underlies `invariantPair.inclusion`, is
-inducing. -/
-theorem isInducing_algebraMap : IsInducing (algebraMap (FixedPoints.subring A G) A) := by
-  rw [Algebra.algebraMap_ofSubring, Subring.coe_subtype]
-  exact IsInducing.subtypeVal
-
-/-- The plus ring `A^{+G}` of the invariant pair is the preimage of `A⁺` under the algebra map of
-the fixed subring. -/
-theorem comap_algebraMap_plus :
-    P.plus.comap (algebraMap (FixedPoints.subring A G) A) = (invariantPair G P).plus := by
-  rw [invariantPair_plus, Algebra.algebraMap_ofSubring]
-
 variable [IsInvariantSubring G P.plus]
 
 /-- Restriction to the invariants is constant on `G`-orbits of `Spa(A, A⁺)`. -/
@@ -174,7 +161,7 @@ completeness or sheafiness of `(A, A⁺)`. -/
 noncomputable def invariantSpectrumHomeomorph :
     MulAction.orbitRel.Quotient G (spa P.plus) ≃ₜ spa (invariantPair G P).plus :=
   Pair.Hom.orbitRelQuotientHomeomorphOfIsInvariant (G := G) (invariantPair.toRingHom_inclusion P)
-    (invariantPair.isInducing_algebraMap G) (invariantPair.comap_algebraMap_plus G P).le
+    (Subring.isInducing_algebraMap _) (invariantPair.comap_algebraMap_plus G P).le
 
 /-- The orbit of a point of `Spa(A, A⁺)` corresponds to its restriction to the invariants. -/
 @[simp]
@@ -196,7 +183,7 @@ namespace invariantPair
 theorem isOpenQuotientMap_spaComap_inclusion :
     IsOpenQuotientMap (inclusion G P).spaComap :=
   Pair.Hom.isOpenQuotientMap_spaComap_of_isInvariant (G := G) (toRingHom_inclusion P)
-    (isInducing_algebraMap G) (comap_algebraMap_plus G P).le
+    (Subring.isInducing_algebraMap _) (comap_algebraMap_plus G P).le
 
 omit [IsInvariantSubring G P.plus] in
 /-- **Rational subsets of `Spa(Aᴳ, A^{+G})` pull back to rational subsets.** The preimage of the
@@ -210,15 +197,29 @@ theorem spaComap_inclusion_preimage_rationalSubset (T : Finset (FixedPoints.subr
   rw [Pair.Hom.spaComap_preimage_rationalSubset, Finset.map_eq_image, toRingHom_inclusion,
     Algebra.algebraMap_ofSubring, Function.Embedding.coe_subtype, Subring.coe_subtype]
 
-/-- **The rational subset cut out by invariant elements is `G`-stable.** For `T` and `s` in `Aᴳ`,
-a point `x` of `Spa(A, A⁺)` lies in the rational subset `U(T / s)` exactly when `g • x` does. -/
-theorem smul_mem_preimage_rationalSubset_iff (T : Finset (FixedPoints.subring A G))
-    (s : FixedPoints.subring A G) (g : G) (x : spa P.plus) :
-    g • x ∈ Subtype.val ⁻¹' rationalSubset P.plus (T.map (Function.Embedding.subtype _)) s ↔
-      x ∈ Subtype.val ⁻¹' rationalSubset P.plus (T.map (Function.Embedding.subtype _)) s := by
-  simp only [← spaComap_inclusion_preimage_rationalSubset, Set.mem_preimage,
-    spaComap_inclusion_smul]
-
 end invariantPair
 
 end TauCeti.Huber
+
+namespace TauCeti.Huber.invariantPair
+
+open ValuationSpectrum
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+  (G : Type*) [Group G] [MulSemiringAction G A] [ContinuousConstSMul G A] (P : Pair A)
+  [IsInvariantSubring G P.plus]
+
+/-- **The rational subset cut out by invariant elements is `G`-stable.** For `T` and `s` in `Aᴳ`,
+a point `x` of `Spa(A, A⁺)` lies in the rational subset `U(T / s)` exactly when `g • x` does. This
+is the case of `TauCeti.ValuationSpectrum.smul_mem_rationalSubset_iff` where every element of `G`
+fixes `T` and `s`. -/
+theorem smul_mem_val_preimage_rationalSubset_iff (T : Finset (FixedPoints.subring A G))
+    (s : FixedPoints.subring A G) (g : G) (x : spa P.plus) :
+    g • x ∈ Subtype.val ⁻¹' rationalSubset P.plus (T.map (Function.Embedding.subtype _)) s ↔
+      x ∈ Subtype.val ⁻¹' rationalSubset P.plus (T.map (Function.Embedding.subtype _)) s := by
+  rw [Set.mem_preimage, Set.mem_preimage, val_smul]
+  refine smul_mem_rationalSubset_iff (fun t ht ↦ ?_) (s.property g)
+  obtain ⟨t, -, rfl⟩ := Finset.mem_map.mp ht
+  exact t.property g
+
+end TauCeti.Huber.invariantPair

@@ -29,6 +29,7 @@ Pullback along a `G`-equivariant ring map is `G`-equivariant
 ## Main results
 
 * `TauCeti.ValuationSpectrum.smul_def`: `g • v = comap (g⁻¹ • ·) v`.
+* `TauCeti.ValuationSpectrum.suppFun_smul`: the support map to `PrimeSpectrum A` is equivariant.
 * `TauCeti.ValuationSpectrum.comap_smul`: pullback along an equivariant ring map is equivariant.
 * `TauCeti.ValuationSpectrum.comap_smul_eq_comap`: pullback along a ring map with `G`-fixed image
   is constant on `G`-orbits.
@@ -62,7 +63,16 @@ instance : MulAction G (Spv A) where
 
 /-- `G` acts on `Spv A` by homeomorphisms. -/
 instance : ContinuousConstSMul G (Spv A) :=
-  ⟨fun _ ↦ continuous_comap _⟩
+  ⟨fun g ↦ (continuous_comap _).congr fun v ↦ (smul_def g v).symm⟩
+
+open scoped Pointwise in
+/-- The support of `g • v` is the translate of the support of `v`: the support map
+`Spv A → PrimeSpectrum A` is equivariant for Mathlib's action on `PrimeSpectrum A`. -/
+@[simp]
+theorem suppFun_smul (g : G) (v : Spv A) : suppFun (g • v) = g • suppFun v := by
+  ext a
+  rw [smul_def, suppFun_comap, PrimeSpectrum.comap_asIdeal, PrimeSpectrum.asIdeal_smul,
+    Ideal.mem_comap, Ideal.mem_pointwise_smul_iff_inv_smul_mem, MulSemiringAction.toRingHom_apply]
 
 /-- **Pullback along an equivariant ring map is equivariant.** If `f : R → A` commutes with the
 actions of `G`, then `comap f (g • v) = g • comap f v`. -/

@@ -86,10 +86,10 @@ theorem comap_algebraMap_eq_comap_algebraMap_iff_of_fixedPoints_le
   refine ⟨fun h ↦ ?_, fun ⟨g, hg⟩ ↦ by rw [hg, comap_algebraMap_smul]⟩
   obtain ⟨g, hg⟩ := ValuationSubring.exists_smul_eq_of_comap_eq hG
     ((comap_eq_comap_iff_valuationSubring_comap_eq _).mp h)
-  refine ⟨g, ?_⟩
-  rw [smul_def, ← ofValuation_valuationSubring_valuation y', ← hg,
-    ValuationSubring.pointwise_smul_eq_comap, ← comap_ofValuation_valuation,
-    ofValuation_valuationSubring_valuation]
+  -- `hg` identifies the valuation subrings of `y'` and `g • y`
+  refine ⟨g, valuationSubring_valuation_injective ?_⟩
+  change y'.valuation.valuationSubring = (g • y).valuation.valuationSubring
+  rw [smul_def, valuationSubring_valuation_comap, ← ValuationSubring.pointwise_smul_eq_comap, hg]
 
 omit [Group G] [Finite G] [MulSemiringAction G L] [SMulCommClass G K L] in
 /-- **The extensions of a valuation to a normal extension are conjugate.** If `L / K` is normal

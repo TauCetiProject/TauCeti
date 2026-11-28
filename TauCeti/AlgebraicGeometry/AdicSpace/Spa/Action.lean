@@ -29,6 +29,8 @@ when the image of `φ` is fixed by `G` (`TauCeti.Huber.Pair.Hom.spaComap_smul_eq
 
 * `TauCeti.ValuationSpectrum.smul_mem_spa_iff`: `G` preserves `Spa(A, A⁺)` when it preserves
   `A⁺`.
+* `TauCeti.ValuationSpectrum.smul_mem_rationalSubset_iff`: a rational subset `U(T / s)` is
+  stable under every `g` fixing `s` and the elements of `T`.
 * `TauCeti.Huber.Pair.Hom.spaComap_smul`: the map of adic spectra induced by an equivariant
   morphism of Huber pairs is equivariant.
 * `TauCeti.Huber.Pair.Hom.spaComap_smul_eq_spaComap`: the map of adic spectra induced by a
@@ -45,9 +47,21 @@ variable {G A : Type*} [Group G] [CommRing A] [TopologicalSpace A] [MulSemiringA
 /-- A group acting on `A` by continuous ring automorphisms preserving `A⁺` preserves
 `Spa(A, A⁺)`. -/
 theorem smul_mem_spa_iff (g : G) {v : Spv A} : g • v ∈ spa Aplus ↔ v ∈ spa Aplus := by
-  have key (g : G) {v : Spv A} (hv : v ∈ spa Aplus) : g • v ∈ spa Aplus :=
-    comap_mem_spa (continuous_const_smul g⁻¹) (fun _ ha ↦ IsInvariantSubring.smul_mem g⁻¹ ha) hv
+  have key (g : G) {v : Spv A} (hv : v ∈ spa Aplus) : g • v ∈ spa Aplus := by
+    rw [smul_def]
+    exact comap_mem_spa (continuous_const_smul g⁻¹) (fun _ ha ↦ IsInvariantSubring.smul_mem g⁻¹ ha)
+      hv
   exact ⟨fun h ↦ inv_smul_smul g v ▸ key g⁻¹ h, key g⟩
+
+/-- **Rational subsets cut out by fixed elements are stable.** If `g` fixes `s` and every element
+of `T`, then `g • v` lies in the rational subset `U(T / s)` exactly when `v` does. -/
+theorem smul_mem_rationalSubset_iff {g : G} {T : Finset A} {s : A} (hT : ∀ t ∈ T, g • t = t)
+    (hs : g • s = s) {v : Spv A} :
+    g • v ∈ rationalSubset Aplus T s ↔ v ∈ rationalSubset Aplus T s := by
+  have hinv {a : A} (ha : g • a = a) : g⁻¹ • a = a := inv_smul_eq_iff.mpr ha.symm
+  rw [mem_rationalSubset_iff, mem_rationalSubset_iff, smul_mem_spa_iff, smul_def]
+  simp +contextual only [comap_vle, MulSemiringAction.toRingHom_apply, hinv hs, hinv (hT _ _),
+    smul_zero]
 
 /-- The action of `G` on `Spa(A, A⁺)` for an action on `A` by continuous ring automorphisms
 preserving `A⁺`: `(g • v)(a) = v(g⁻¹ • a)`. -/
