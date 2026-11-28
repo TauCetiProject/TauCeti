@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.NeuralNetwork.ReLU.Basic
-public import TauCeti.Geometry.Neuromanifold.Activation
-import TauCeti.Geometry.Neuromanifold.MLP.Composition
-import TauCeti.Topology.Algebra.Module.Matrix
+public import TauCeti.Geometry.Neuromanifold.Activation.PiecewiseAffine
+import TauCeti.Geometry.Neuromanifold.MLP.PiecewiseAffine
 
 /-!
 # ReLU networks compute piecewise affine functions
@@ -16,7 +15,7 @@ import TauCeti.Topology.Algebra.Module.Matrix
 On each closed coordinate orthant, the rectifier is a linear projection. Composing its
 finite polyhedral cover with the affine layers gives a finite cover for every prefix of a
 network, including the vector-valued output. In particular, every scalar function computed
-by the network is continuous piecewise linear.
+by the network is piecewise affine and hence continuous by `IsPiecewiseAffineOn.continuousOn`.
 
 This is the forward direction of Theorem 2.1 of Arora, Basu, Mianjy and Mukherjee,
 *Understanding Deep Neural Networks with Rectified Linear Units*.
@@ -37,36 +36,33 @@ polyhedral cover of the input space. This includes the final, unrectified output
 theorem isPiecewiseAffineOn_evalPrefix_reluSpec (θ : (reluSpec d).Parameters)
     (i : Fin (L + 1)) :
     IsPiecewiseAffineOn (fun x => (reluSpec d).evalPrefix θ x i) univ := by
-  induction i using Fin.induction with
-  | zero =>
-    exact (isPiecewiseAffineOn_continuousAffineMap (ContinuousAffineMap.id ℝ _) univ).congr
-      fun x _ => (reluSpec d).evalPrefix_zero θ x
-  | succ i ih =>
-    let A := reluSpec d
-    have hAffine : IsPiecewiseAffineOn (dense (θ i)) univ := by
-      let layer := (θ i).1.mulVecCLM.toContinuousAffineMap + ContinuousAffineMap.const ℝ _ (θ i).2
-      exact (isPiecewiseAffineOn_continuousAffineMap layer univ).congr
-        (fun x _ => by simp [layer])
-    have hAct : IsPiecewiseAffineOn
-        (activation (ι := Fin (d i.succ)) (A.layerActivation i) ()) univ := by
-      by_cases hi : i.val + 1 < L
-      · rw [A.layerActivation_of_lt _ hi, reluSpec_activation]
-        simpa only [reluActivation_def] using isPiecewiseAffineOn_reluActivation
-          (ι := Fin (d i.succ)) () univ
-      · rw [A.layerActivation_of_val_add_one_eq _ (by omega), activation_id]
-        exact isPiecewiseAffineOn_continuousAffineMap (ContinuousAffineMap.id ℝ _) univ
-    exact (hAct.comp (hAffine.comp ih (mapsTo_univ _ _)) (mapsTo_univ _ _)).congr
-      fun x _ => A.evalPrefix_succ_eq_activation_dense θ x i
+  refine (reluSpec d).isPiecewiseAffineOn_evalPrefix θ ?_ i
+  intro j _
+  simpa only [reluSpec_activation, reluActivation_def] using
+    isPiecewiseAffineOn_reluActivation (ι := Fin ((reluSpec d).width j.succ)) () univ
 
-/-- Every scalar function computed by a ReLU network is continuous piecewise linear, in
-the sense of a finite cover of the whole input space by convex polyhedra. -/
+/-- A scalar function computed by a ReLU network agrees with a continuous affine map on
+each cell of a finite cover of the whole input space by convex polyhedra. -/
 theorem isPiecewiseAffineOn_of_reluNetComputes {f : (Fin n → ℝ) → ℝ}
     (hf : ReLUNetComputes d f) : IsPiecewiseAffineOn f univ := by
   obtain ⟨rfl, hout, θ, hθ⟩ := hf
   let output : (Fin (d (Fin.last L)) → ℝ) →L[ℝ] ℝ :=
     ContinuousLinearMap.proj (Fin.cast hout.symm 0)
-  exact ((isPiecewiseAffineOn_continuousAffineMap output.toContinuousAffineMap univ).comp
-    (isPiecewiseAffineOn_evalPrefix_reluSpec θ (Fin.last L)) (mapsTo_univ _ _)).congr
-      fun x _ => (hθ x).symm.trans (congrFun ((reluSpec d).realize_def θ x) _)
+  have houtput (y : Fin (d (Fin.last L)) → ℝ) :
+      output.toContinuousAffineMap y = y (Fin.cast hout.symm 0) := by
+    simp only [ContinuousLinearMap.coe_toContinuousAffineMap, output,
+      ContinuousLinearMap.proj_apply]
+  refine ((isPiecewiseAffineOn_continuousAffineMap output.toContinuousAffineMap univ).comp
+    (isPiecewiseAffineOn_evalPrefix_reluSpec θ (Fin.last L)) (mapsTo_univ _ _)).congr ?_
+  intro x _
+  have hinput (y : Fin (d 0) → ℝ) : y ∘ (Fin.cast rfl : Fin (d 0) → Fin (d 0)) = y := by
+    rw [Fin.cast_refl, Function.comp_id]
+  have hx := congrArg (fun y : Fin (d 0) → ℝ => (reluSpec d).realize θ y (Fin.cast hout.symm 0))
+    (hinput x)
+  calc
+    f x = (reluSpec d).realize θ x (Fin.cast hout.symm 0) := (hθ x).symm.trans hx
+    _ = (reluSpec d).evalPrefix θ x (Fin.last L) (Fin.cast hout.symm 0) :=
+      congrFun ((reluSpec d).realize_def θ x) _
+    _ = output.toContinuousAffineMap ((reluSpec d).evalPrefix θ x (Fin.last L)) := (houtput _).symm
 
 end TauCeti
