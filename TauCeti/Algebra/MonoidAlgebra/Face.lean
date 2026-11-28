@@ -169,6 +169,30 @@ theorem faceIdeal_le_faceIdeal_iff [Nontrivial R] (G : AddSubmonoid M)
     rintro _ ⟨a, ha, rfl⟩
     exact Ideal.subset_span ⟨a, fun hmem ↦ ha (h hmem), rfl⟩
 
+include hF in
+/-- Pulling back a monomial face ideal along an injective monoid map gives the ideal of the
+preimage face. -/
+theorem faceIdeal_comap_mapDomainRingHom_of_injective {P : Type*} [AddCommMonoid P]
+    (j : P →+ M) (hj : Function.Injective j) :
+    (F.faceIdeal R).comap (mapDomainRingHom R j) = (F.comap j).faceIdeal R := by
+  have hcomap : (F.comap j).AddSaturated := by
+    intro a b hab
+    simp only [AddSubmonoid.mem_comap, map_add] at hab ⊢
+    exact hF hab
+  ext f
+  rw [Ideal.mem_comap, F.mem_faceIdeal_iff hF, (F.comap j).mem_faceIdeal_iff hcomap]
+  simp only [mapDomainRingHom_apply, coeff_mapDomain]
+  constructor
+  · intro hf a
+    simpa only [Finsupp.mapDomain_apply_of_injective hj] using
+      hf ⟨j a, AddSubmonoid.mem_comap.mp a.property⟩
+  · intro hf a
+    by_cases ha : (a : M) ∈ Set.range j
+    · obtain ⟨b, hb⟩ := ha
+      rw [← hb, Finsupp.mapDomain_apply_of_injective hj]
+      exact hf ⟨b, AddSubmonoid.mem_comap.mpr (hb ▸ a.property)⟩
+    · exact Finsupp.mapDomain_of_notMem_range _ _ ha
+
 section CoefficientChange
 
 variable {S : Type*} [CommSemiring S] (φ : R →+* S)
@@ -199,6 +223,14 @@ over the new coefficients. -/
 theorem faceIdeal_le_comap_mapRingHom :
     F.faceIdeal R ≤ (F.faceIdeal S).comap (mapRingHom M φ) :=
   Ideal.map_le_iff_le_comap.mp (F.faceIdeal_map φ).le
+
+include hF in
+/-- An injective coefficient map pulls the monomial face ideal back to the same face ideal. -/
+theorem faceIdeal_comap_mapRingHom_of_injective (hφ : Function.Injective φ) :
+    (F.faceIdeal S).comap (mapRingHom M φ) = F.faceIdeal R := by
+  ext f
+  rw [Ideal.mem_comap, F.mem_faceIdeal_iff hF, F.mem_faceIdeal_iff hF]
+  exact forall_congr' fun m ↦ by rw [coeff_mapRingHom, ← map_zero φ, hφ.eq_iff]
 
 end CoefficientChange
 
