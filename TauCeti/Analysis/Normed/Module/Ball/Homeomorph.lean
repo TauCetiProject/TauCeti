@@ -41,6 +41,8 @@ valued in the closed unit ball.
 * `ContinuousLinearEquiv.norm_unitBallHomeomorph_le_one_iff` and its variants: the same
   statements read pointwise on norms, for the homeomorphism and its inverse.
 * `TauCeti.isOpenEmbedding_inclusion_comp_unitBall`: `E` embeds openly in its closed unit ball.
+* `TauCeti.sphereHomeomorphOfPos`: dilation and translation identify the unit sphere with any sphere
+  of positive radius.
 * `Homeomorph.unitBall_symm_apply_coe`: the inverse radial map in explicit coordinates.
 * `OpenPartialHomeomorph.univBall_apply` and `OpenPartialHomeomorph.univBall_symm_apply`: the
   radial map onto a ball and its inverse, in explicit coordinates.
@@ -223,6 +225,24 @@ theorem isOpenEmbedding_inclusion_comp_unitBall :
       Homeomorph.unitBall) :=
   (IsOpenEmbedding.inclusion _ (isOpen_ball.preimage continuous_subtypeVal)).comp
     Homeomorph.unitBall.isOpenEmbedding
+
+/-- Dilation by `r > 0` followed by translation by `c` identifies the unit sphere of a real
+seminormed space with `sphere c r`. -/
+def sphereHomeomorphOfPos (c : E) {r : ℝ} (hr : 0 < r) :
+    sphere (0 : E) 1 ≃ₜ sphere c r :=
+  ((Homeomorph.smulOfNeZero r hr.ne').trans (Homeomorph.addRight c)).subtype fun x ↦ by
+    simp [mem_sphere_iff_norm, Homeomorph.smulOfNeZero_apply, norm_smul, Real.norm_eq_abs,
+      abs_of_pos hr, hr.ne']
+
+@[simp]
+theorem coe_sphereHomeomorphOfPos_apply (c : E) {r : ℝ} (hr : 0 < r) (x : sphere (0 : E) 1) :
+    (sphereHomeomorphOfPos c hr x : E) = r • (x : E) + c :=
+  (rfl)
+
+@[simp]
+theorem coe_sphereHomeomorphOfPos_symm_apply (c : E) {r : ℝ} (hr : 0 < r) (y : sphere c r) :
+    ((sphereHomeomorphOfPos c hr).symm y : E) = r⁻¹ • ((y : E) - c) := by
+  simp [sphereHomeomorphOfPos, Homeomorph.subtype, Homeomorph.addRight_symm, sub_eq_add_neg]
 
 section Cube
 

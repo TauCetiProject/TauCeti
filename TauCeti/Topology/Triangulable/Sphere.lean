@@ -56,10 +56,7 @@ theorem isTriangulable_sphere {E : Type u} [NormedAddCommGroup E] [NormedSpace �
     exact (isTriangulable_of_discreteTopology _).lift_of_compactSpace
   | succ n =>
     let e : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 ≃ₜ sphere x r :=
-      (sphereHomeomorphOfFinrankEq (by simp [hE])).trans <|
-        ((Homeomorph.smulOfNeZero r hr.ne').trans (Homeomorph.addRight x)).subtype fun y => by
-          simp [mem_sphere_iff_norm, Homeomorph.smulOfNeZero_apply, norm_smul, Real.norm_eq_abs,
-            abs_of_pos hr, hr.ne']
+      (sphereHomeomorphOfFinrankEq (by simp [hE])).trans (sphereHomeomorphOfPos x hr)
     exact e.isTriangulable_iff.1 (isTriangulable_sphere_euclideanSpace n)
 
 /-- The one-point compactification of a finite-dimensional real vector space is triangulable:

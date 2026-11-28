@@ -62,6 +62,10 @@ compatibility with composition characterizes the transport
 * `TauCeti.localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom`: the
   local homology isomorphism of a chart is the map induced by the chart on its source.
 * `TauCeti.isZero_localHomology_empty`: `Hₖ(M, M) = 0`.
+* `TauCeti.mono_singularHomologyMap_subtype_comp_singularHomologyπ_of_isZero_localHomology_frontier`
+  and `TauCeti.mono_singularHomologyMap_subtype_of_isZero_localHomology_frontier`: when `U ⊆ M` is
+  open and `Hₖ₊₁(M, M ∖ frontier U) = 0`, the composite `Hₖ(U) ⟶ Hₖ(M) ⟶ Hₖ(M, M ∖ closure U)`
+  and the inclusion `Hₖ(U) ⟶ Hₖ(M)` are monomorphisms.
 * `TauCeti.isIso_singularHomologyδ_ofSubset_compl`: the connecting morphism of the triple
   `(M, M ∖ T, M ∖ S)` is an isomorphism when the local homology along `S` vanishes.
 * `TauCeti.isIso_localHomologyRestriction_symm_image`: the restriction from a compact set in a
@@ -209,6 +213,61 @@ theorem isZero_localHomology_empty (k : ℕ) : IsZero (localHomology R (∅ : Se
   rw [IsZero.iff_id_eq_zero, ← TopPair.singularHomologyMap_id]
   exact TopPair.singularHomologyMap_eq_zero_of_fac _ R
     (TopCat.ofHom (⟨fun x ↦ ⟨x, by simp⟩, by fun_prop⟩ : C(M, ((∅ : Set M)ᶜ : Set M)))) rfl k
+
+/-- **Injectivity into local homology along the closure of an open subset.** Let `U ⊆ M` be open.
+If the local homology `Hₖ₊₁(M, M ∖ frontier U)` along the frontier vanishes, then the composite
+`Hₖ(U) ⟶ Hₖ(M) ⟶ Hₖ(M, M ∖ closure U)` is a monomorphism. -/
+theorem mono_singularHomologyMap_subtype_comp_singularHomologyπ_of_isZero_localHomology_frontier
+    {U : Set M} (hU : IsOpen U) {k : ℕ} (hfr : IsZero (localHomology R (frontier U) (k + 1))) :
+    Mono (((AlgebraicTopology.singularHomologyFunctor A k).obj R).map
+        (TopCat.ofHom (ContinuousMap.subtypeVal U)) ≫
+      (TopPair.ofSubset ((closure U)ᶜ : Set (TopCat.of M))).singularHomologyπ R k) := by
+  let T := TopTriple.ofSubset (X := TopCat.of M)
+    (compl_subset_compl.mpr (frontier_subset_closure (s := U)))
+  have hmono_inner : Mono (TopPair.singularHomologyMap (TopTriple.innerToTotal.app T) R k) :=
+    (T.singularHomology_exact_inner R (k + 1) k rfl).mono_g (hfr.eq_of_src _ _)
+  have : IsEmpty (TopPair.ofSubset (∅ : Set (TopCat.of U))).snd :=
+    inferInstanceAs (IsEmpty (∅ : Set U))
+  have := TopPair.isIso_singularHomologyMap_openToFrontierComplPair R (X := TopCat.of M) hU k
+  have hmono_comp : Mono ((TopPair.ofSubset (∅ : Set (TopCat.of U))).singularHomologyπ R k ≫
+      TopPair.singularHomologyMap (TopPair.openToFrontierComplPair (X := TopCat.of M) hU ≫
+        TopTriple.innerToTotal.app T) R k) := by
+    have hcomp := TopPair.singularHomologyMap_comp
+      (TopPair.openToFrontierComplPair (X := TopCat.of M) hU) R
+      (TopTriple.innerToTotal.app T) k
+    let f₂ : (TopPair.ofInclusion (X := TopCat.of M)
+        (compl_subset_compl.mpr (frontier_subset_closure (s := U)))).singularHomology R k ⟶
+        (TopTriple.totalPair.obj T).singularHomology R k :=
+      TopPair.singularHomologyMap (TopTriple.innerToTotal.app T) R k
+    have : Mono f₂ := hmono_inner
+    have : Mono ((TopPair.ofSubset (∅ : Set (TopCat.of U))).singularHomologyπ R k ≫
+        (TopPair.singularHomologyMap
+          (TopPair.openToFrontierComplPair (X := TopCat.of M) hU) R k ≫ f₂)) := by
+      have := mono_comp (TopPair.singularHomologyMap
+        (TopPair.openToFrontierComplPair (X := TopCat.of M) hU) R k) f₂
+      exact mono_comp _ _
+    rwa [hcomp]
+  have hfst : TopPair.Hom.fst (TopPair.openToFrontierComplPair (X := TopCat.of M) hU ≫
+        TopTriple.innerToTotal.app T) =
+      TopCat.ofHom (ContinuousMap.subtypeVal U) := by
+    ext x
+    -- `TopTriple.innerToTotal.app T` acts on the ambient space by `Subtype.val : (frontier U)ᶜ → M`
+    -- by definition, and `TopTriple.innerPair.obj T` is definitionally `TopPair.ofInclusion _`.
+    exact TopPair.openToFrontierComplPair_fst_apply (X := TopCat.of M) hU x
+  rw [singularHomologyFunctor_obj_map, ← hfst]
+  rwa [← TopPair.singularHomologyπ_naturality] at hmono_comp
+
+/-- **Injectivity of open-subset homology when frontier local homology vanishes.** If `U ⊆ M` is
+open and `Hₖ₊₁(M, M ∖ frontier U) = 0`, then the inclusion `U ↪ M` induces a monomorphism
+`Hₖ(U; R) ⟶ Hₖ(M; R)`. -/
+theorem mono_singularHomologyMap_subtype_of_isZero_localHomology_frontier
+    {U : Set M} (hU : IsOpen U) {k : ℕ} (hfr : IsZero (localHomology R (frontier U) (k + 1))) :
+    Mono (((AlgebraicTopology.singularHomologyFunctor A k).obj R).map
+      (TopCat.ofHom (ContinuousMap.subtypeVal U))) :=
+  have :=
+    mono_singularHomologyMap_subtype_comp_singularHomologyπ_of_isZero_localHomology_frontier R hU
+      hfr
+  mono_of_mono _ ((TopPair.ofSubset ((closure U)ᶜ : Set (TopCat.of M))).singularHomologyπ R k)
 
 /-- The connecting morphism `Hₖ₊₁(M, M ∖ T) ⟶ Hₖ(M ∖ T, M ∖ S)` of the triple
 `(M, M ∖ T, M ∖ S)` for `T ⊆ S` is an isomorphism when the local homology along `S` vanishes in

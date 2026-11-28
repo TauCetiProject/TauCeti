@@ -75,6 +75,11 @@ interiors cover `X`: a morphism into `Hₙ(X, ⋂ j, U j)` is determined by its 
 in `Hₙ(X, U ∪ V)`, for open `U` and `V`, comes from `Hₙ(V, V ∩ U)`
 (`TopPair.exists_singularHomologyMap_excisionMap_eq`).
 
+For an open subset `U ⊆ X`, `X ∖ frontier U` is covered by the two disjoint open subsets `U` and
+`X ∖ closure U`, so the inclusion of pairs `(U, ∅) ⟶ (X ∖ frontier U, X ∖ closure U)`
+(`TopPair.openToFrontierComplPair`) induces isomorphisms on relative singular homology in every
+degree (`TopPair.isIso_singularHomologyMap_openToFrontierComplPair`).
+
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Section 2.1, Theorem 2.20 and Proposition 2.21.
@@ -863,5 +868,56 @@ theorem exists_singularHomologyMap_excisionMap_eq (hU : IsOpen U) (hV : IsOpen V
   exact ConcreteCategory.congr_hom (IsIso.inv_hom_id _) y₁
 
 end Union
+
+section Frontier
+
+variable {X : TopCat.{w}} {U : Set X}
+
+/-- For an open subset `U ⊆ X`, the inclusion of topological pairs
+`(U, ∅) ⟶ (X ∖ frontier U, X ∖ closure U)`, the inner pair of the triple
+`(X, X ∖ frontier U, X ∖ closure U)`. -/
+def openToFrontierComplPair (hU : IsOpen U) :
+    ofSubset (∅ : Set (TopCat.of U)) ⟶
+      ofInclusion (X := X) (Set.compl_subset_compl.mpr (frontier_subset_closure (s := U))) :=
+  ofHom
+    (TopCat.ofHom (ContinuousMap.inclusion (disjoint_frontier_iff_isOpen.mpr hU).subset_compl_left))
+    (TopCat.ofHom ⟨fun x ↦ x.property.elim, by fun_prop⟩)
+    (by ext x; exact x.property.elim)
+
+@[simp]
+lemma openToFrontierComplPair_fst_apply (hU : IsOpen U)
+    (x : (ofSubset (∅ : Set (TopCat.of U))).fst) :
+    (Hom.fst (openToFrontierComplPair hU) x).val = x.val :=
+  (rfl)
+
+/-- **Excision of the complement of the closure from the complement of the frontier.** For an open
+subset `U ⊆ X`, the space `X ∖ frontier U` is covered by the two disjoint open subsets `U` and
+`X ∖ closure U`, so `(U, ∅) ⟶ (X ∖ frontier U, X ∖ closure U)` induces isomorphisms on relative
+singular homology in every degree. -/
+theorem isIso_singularHomologyMap_openToFrontierComplPair (hU : IsOpen U) (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap (openToFrontierComplPair hU) R n) := by
+  refine isIso_singularHomologyMap_of_open_cover R (openToFrontierComplPair hU)
+    (IsEmbedding.inclusion (disjoint_frontier_iff_isOpen.mpr hU).subset_compl_left)
+    (fun x hx ↦ ?_)
+    (fun b : Bool ↦ bif b then Subtype.val ⁻¹' U else Subtype.val ⁻¹' (closure U)ᶜ)
+    (fun b ↦ by
+      cases b
+      · exact isClosed_closure.isOpen_compl.preimage continuous_subtypeVal
+      · exact hU.preimage continuous_subtypeVal)
+    (Set.eq_univ_of_forall fun y ↦ by
+      by_cases hy : y.val ∈ closure U
+      · refine Set.mem_iUnion.mpr ⟨true, ?_⟩
+        by_contra hyU
+        exact y.property ⟨hy, by rwa [hU.interior_eq]⟩
+      · exact Set.mem_iUnion.mpr ⟨false, hy⟩)
+    (fun b ↦ by
+      cases b
+      · exact Or.inl fun y hy ↦ ⟨⟨y.val, hy⟩, rfl⟩
+      · exact Or.inr fun y hy ↦ ⟨⟨y.val, hy⟩, rfl⟩)
+    n
+  obtain ⟨y, hy⟩ := hx
+  exact (y.property (subset_closure (congrArg Subtype.val hy ▸ x.property))).elim
+
+end Frontier
 
 end TopPair

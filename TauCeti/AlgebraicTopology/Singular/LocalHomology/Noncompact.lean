@@ -53,6 +53,8 @@ subset of a preconnected `n`-manifold has vanishing homology in degrees `k ≥ n
 * `TauCeti.eq_zero_of_forall_isCompact_singularHomologyπ_eq_zero`: in a weakly locally compact
   Hausdorff space whose compact subsets have vanishing local homology in degree `k + 1`, a class in
   `Hₖ(M; N)` vanishing in `Hₖ(M, M ∖ L; N)` for all compact `L` is zero.
+* `TauCeti.mono_singularHomologyMap_subtype_of_isCompact_closure`: on a Hausdorff `n`-manifold, the
+  inclusion of an open subset with compact closure induces a monomorphism on `Hₖ` for `k ≥ n`.
 * `TauCeti.isZero_singularHomology_of_lt`: `Hₖ(M; N) = 0` for `k > n` on every Hausdorff
   `n`-manifold without boundary.
 * `TauCeti.isZero_singularHomology_of_forall_not_isCompact_connectedComponent`: `Hₖ(M; N) = 0` for
@@ -274,6 +276,15 @@ private lemma isZero_singularHomology_of_forall_not_isCompact_connectedComponent
           hUK u
   · exact isZero_singularHomology_of_lt_aux N hn hk
 
+private lemma mono_singularHomologyMap_subtype_of_isCompact_closure_aux
+    (hn : finrank ℝ E = n) {U : Set M} (hU : IsOpen U) (hcpt : IsCompact (closure U)) {k : ℕ}
+    (hk : n ≤ k) :
+    Mono (((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).map
+      (ofHom (ContinuousMap.subtypeVal U))) :=
+  mono_singularHomologyMap_subtype_of_isZero_localHomology_frontier N hU
+    (isZero_localHomology_of_isCompact N hn
+      (hcpt.of_isClosed_subset isClosed_frontier frontier_subset_closure) (by lia))
+
 end SameUniverse
 
 section General
@@ -357,6 +368,20 @@ theorem isZero_singularHomology_of_isOpen_ne_univ [PreconnectedSpace M] (hn : fi
     have hUniv : Subtype.val '' connectedComponent x = univ :=
       hClopen.eq_univ ⟨x.val, x, mem_connectedComponent, rfl⟩
     exact univ_subset_iff.1 (hUniv ▸ image_subset_iff.2 fun y _ ↦ y.property)
+
+/-- **Injectivity of relatively compact open-subset homology on a manifold.** On a Hausdorff
+space `M` modelled on a real normed space of dimension `n`, the inclusion `U ↪ M` of an open subset
+with compact closure induces a monomorphism `Hₖ(U; N) ⟶ Hₖ(M; N)` in every degree `k ≥ n`. -/
+theorem mono_singularHomologyMap_subtype_of_isCompact_closure (hn : finrank ℝ E = n)
+    {U : Set M} (hU : IsOpen U) (hcpt : IsCompact (closure U)) {k : ℕ} (hk : n ≤ k) :
+    Mono (((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).map
+      (ofHom (ContinuousMap.subtypeVal U))) := by
+  let _ : ChartedSpace (ULift.{w} (Fin n) → ℝ) M :=
+    ChartedSpace.ofFinrankEq (𝕜 := ℝ) (E := E) M (by simp [hn])
+  let φ : ULift.{w} ℤ →+* Λ := (Int.castRingHom Λ).comp ULift.ringEquiv.toRingHom
+  exact (ModuleCat.restrictScalars.{w} φ).mono_singularHomologyFunctor_map_of_mono N _ k
+    (mono_singularHomologyMap_subtype_of_isCompact_closure_aux
+      (E := ULift.{w} (Fin n) → ℝ) _ (by simp) hU hcpt hk)
 
 end General
 

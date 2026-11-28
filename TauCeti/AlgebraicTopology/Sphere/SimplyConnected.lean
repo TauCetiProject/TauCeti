@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.AlgebraicTopology.Sphere.Puncture
 public import TauCeti.Analysis.InnerProductSpace.Sphere.Stereographic
 import Mathlib.Analysis.Convex.Combination
+import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Topology.Homotopy.HomotopyEquiv
 
 /-!
@@ -442,11 +443,7 @@ theorem simplyConnectedSpace_sphere (h : 2 < Module.rank ℝ E) (c : E) {r : ℝ
     refine simply_connected_iff_loops_nullhomotopic.mpr ⟨hpc, fun x γ => ?_⟩
     obtain ⟨γ', hγγ', p, hp⟩ := γ.exists_homotopic_notMem_range h
     exact hγγ'.trans (γ'.homotopic_refl_of_notMem_range hp)
-  let e : sphere (0 : E) 1 ≃ₜ sphere c r :=
-    ((Homeomorph.smulOfNeZero r hr.ne').trans (Homeomorph.addRight c)).subtype fun x => by
-      simp [mem_sphere_iff_norm, Homeomorph.smulOfNeZero_apply,
-        norm_smul, Real.norm_eq_abs, abs_of_pos hr, hr.ne']
-  exact e.symm.toHomotopyEquiv.simplyConnectedSpace
+  exact (sphereHomeomorphOfPos c hr).symm.toHomotopyEquiv.simplyConnectedSpace
 
 /-- **The `n`-sphere is simply connected for `2 ≤ n`.** -/
 theorem simplyConnectedSpace_sphere_euclideanSpace {n : ℕ} (hn : 2 ≤ n) :
