@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Base
+public import TauCeti.LinearAlgebra.RootSystem.Base.Basic
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Balanced.Basic
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Restrict.Basic
 import TauCeti.Algebra.Group.Submonoid.Closure

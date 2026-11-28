@@ -195,21 +195,20 @@ noncomputable def componentCycleFoldedIndicesEquiv :
   invFun w := ⟨P.componentProj C w.val, by
     obtain ⟨i, hi⟩ : w.val ∈ Set.range fun i : C.supp ↦ P.orbitSum σ (i : ι) :=
       P.componentCycleFoldedIndices_eq_range_supp σ C ▸ w.property
-    dsimp only at hi
+    have hi' : P.orbitSum σ (i : ι) = w.val := hi
     refine (P.componentPairing C).mem_foldedIndices.mpr ⟨i, ?_⟩
-    rw [← hi, ← P.coe_componentCycleDiag_orbitSum σ C i, P.componentProj_componentCycleDiag,
+    rw [← hi', ← P.coe_componentCycleDiag_orbitSum σ C i, P.componentProj_componentCycleDiag,
       P.coe_componentReturnOrbitSumFixed]⟩
   left_inv v := Subtype.ext <| Equiv.componentProj_componentCycleMap σ C
     ⟨v.val, (P.componentPairing C).foldedIndices_subset_fixedSubmodule
       (σ.componentReturn C) v.property⟩
   right_inv w := Subtype.ext <| by
-    obtain ⟨i, hi⟩ : w.val ∈ Set.range fun i : C.supp ↦ P.orbitSum σ (i : ι) :=
-      P.componentCycleFoldedIndices_eq_range_supp σ C ▸ w.property
-    dsimp only at hi
     rw [P.coe_componentCycleDiag_apply]
     exact P.sum_range_pow_weightMap_componentProj
       (P.componentCycleFoldedIndices_subset_componentCycleSpace σ C w.property)
-      (hi ▸ P.weightMap_orbitSum_self σ (i : ι))
+      (LinearMap.mem_fixedSubmodule_iff.mp
+        (P.foldedIndices_subset_fixedSubmodule σ
+          (P.componentCycleFoldedIndices_subset_foldedIndices σ C w.property)))
 
 @[simp] theorem coe_componentCycleFoldedIndicesEquiv_apply
     (v : (P.componentPairing C).foldedIndices (σ.componentReturn C)) :
@@ -369,10 +368,8 @@ noncomputable def componentCycleFixedPiEquiv :
   let e₁ := LinearEquiv.ofBijective (DirectSum.coeLinearMap Q)
     (P.isInternal_componentCycleFixedSubmodule σ)
   have hy : y = ∑ O', (e₁.symm y O').val := by
-    calc y = DirectSum.coeLinearMap Q (e₁.symm y) := (e₁.apply_symm_apply y).symm
-      _ = DirectSum.coeLinearMap Q (∑ O', DirectSum.of _ O' (e₁.symm y O')) := by
-        rw [DirectSum.sum_univ_of (e₁.symm y)]
-      _ = ∑ O', (e₁.symm y O').val := by simp
+    simpa using (e₁.apply_symm_apply y).symm.trans
+      (congrArg (DirectSum.coeLinearMap Q) (DirectSum.sum_univ_of (e₁.symm y)).symm)
   dsimp [componentCycleFixedPiEquiv]
   rw [DirectSum.linearEquivFunOnFintype_apply, componentCycleDiag_symm_apply]
   conv_rhs => rw [hy, map_sum]
@@ -411,13 +408,12 @@ theorem mem_addSubmonoid_componentCycleDiag_iff (A : AddSubmonoid M) {σ : P.Aut
     (u : LinearMap.fixedSubmodule (σ.componentReturn C).toHom.weightMap) :
     ((P.componentCycleDiag σ C u : LinearMap.fixedSubmodule σ.weightMap) : M) ∈ A ↔
       (u : M) ∈ A := by
-  have hmap : Set.MapsTo σ.weightMap A A := fun _ h ↦ hstep h
-  have hpow (r : ℕ) {x : M} (hx : x ∈ A) : (σ.weightMap ^ r) x ∈ A := by
-    rw [pow_apply_eq_iterate]
-    exact hmap.iterate r hx
   refine ⟨fun hD ↦ ?_, fun hu ↦ ?_⟩
   · have h := hproj hD; rwa [P.componentProj_componentCycleDiag] at h
-  · rw [P.coe_componentCycleDiag_apply]; exact AddSubmonoid.sum_mem _ fun r _ ↦ hpow r hu
+  · rw [P.coe_componentCycleDiag_apply]
+    exact AddSubmonoid.sum_mem _ fun r _ ↦ by
+      rw [pow_apply_eq_iterate]
+      exact Set.MapsTo.iterate (fun _ h ↦ hstep h) r hu
 
 /-- **Root-lattice preservation under `componentCycleDiag`** for any compatible scalar ring `S`. -/
 theorem mem_rootSpan_componentCycleDiag_iff (S : Type*) [CommRing S] [Module S M]

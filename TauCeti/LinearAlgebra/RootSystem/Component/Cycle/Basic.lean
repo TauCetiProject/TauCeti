@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.FixedSubmodule
 public import TauCeti.LinearAlgebra.RootSystem.Component.Base
-public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Hom
 public import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
 import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Dynamics.PeriodicPts.Basic
@@ -76,7 +75,7 @@ theorem componentEquiv_pow_minimalPeriod :
   exact isPeriodicPt_minimalPeriod _ _
 
 /-- The cycle of a component has positive length. -/
-theorem minimalPeriod_componentEquiv_pos [Finite ι] :
+theorem minimalPeriod_componentEquiv_pos [Finite P.Component] :
     0 < minimalPeriod σ.componentEquiv C :=
   minimalPeriod_pos_of_mem_periodicPts (σ.componentEquiv.injective.mem_periodicPts C)
 
@@ -180,12 +179,6 @@ theorem componentCycleSpace_eq_biSup_componentCycle [Finite P.Component] :
     Submodule.map_mono (f := σ.weightMap) (hle σ⁻¹ fun _ hD ↦ by
       rw [σ.componentEquiv_inv, Perm.inv_def]; exact Perm.sameCycle_symm_apply_right.mpr hD)
 
-/-- Distinct exponents below the minimal period produce distinct components along the cycle. -/
-theorem pow_componentEquiv_ne_of_ne_lt {r s : ℕ}
-    (hr : r < minimalPeriod σ.componentEquiv C) (hs : s < minimalPeriod σ.componentEquiv C)
-    (hrs : r ≠ s) : (σ.componentEquiv ^ r) C ≠ (σ.componentEquiv ^ s) C := fun hEq ↦ hrs <| by
-  rw [Perm.coe_pow, Perm.coe_pow] at hEq
-  exact (iterate_eq_iterate_iff_of_lt_minimalPeriod hr hs).mp hEq
 
 /-- The submodule of `σ`-fixed weights lying in the component-cycle space of `C`. -/
 def componentCycleFixedSubmodule : Submodule R (LinearMap.fixedSubmodule σ.weightMap) :=
@@ -207,10 +200,8 @@ theorem weightMap_mem_componentCycleSpace {x : M} (hx : x ∈ P.componentCycleSp
 
 theorem pow_weightMap_mem_componentCycleSpace {x : M} (hx : x ∈ P.componentCycleSpace σ C)
     (n : ℕ) : (σ.weightMap ^ n) x ∈ P.componentCycleSpace σ C := by
-  have hmap : Set.MapsTo σ.weightMap (P.componentCycleSpace σ C) (P.componentCycleSpace σ C) :=
-    fun _ h ↦ P.weightMap_mem_componentCycleSpace h
   rw [pow_apply_eq_iterate]
-  exact hmap.iterate n hx
+  exact Set.MapsTo.iterate (fun _ h ↦ P.weightMap_mem_componentCycleSpace h) n hx
 
 @[simp] theorem mem_componentCycleFixedSubmodule {y : LinearMap.fixedSubmodule σ.weightMap} :
     y ∈ P.componentCycleFixedSubmodule σ C ↔ (y : M) ∈ P.componentCycleSpace σ C := Iff.rfl
@@ -245,50 +236,9 @@ variable {σ C}
 theorem componentCycleSum_mem_fixedSubmodule {x : M}
     (hx : (σ ^ minimalPeriod σ.componentEquiv C).toHom.weightMap x = x) :
     σ.componentCycleSum C x ∈ LinearMap.fixedSubmodule σ.weightMap := by
-  rw [LinearMap.mem_fixedSubmodule_iff, componentCycleSum_apply, map_sum]
-  simp_rw [← weightMap_mul_apply, ← pow_succ']
-  have h := sum_range_succ' (fun r ↦ (σ ^ r).toHom.weightMap x) (minimalPeriod σ.componentEquiv C)
-  rw [sum_range_succ, hx, pow_zero, toHom_one, Hom.weightMap_one, LinearMap.id_apply] at h
-  exact (add_right_cancel h).symm
-
-/-- **Projection inverts the cycle sum on the component.** The projection onto the component space
-of `C` of the cycle sum of a vector of that component space is the vector itself. -/
-theorem componentProj_componentCycleSum [Finite ι] [P.IsRootSystem] {x : M}
-    (hx : x ∈ P.componentSpace C) :
-    P.componentProj C (σ.componentCycleSum C x) = ⟨x, hx⟩ := by
-  rw [componentCycleSum_apply, map_sum,
-    Finset.sum_eq_single_of_mem 0 (mem_range.mpr (minimalPeriod_componentEquiv_pos σ C))]
-  · simp [componentProj_apply_of_mem hx]
-  · intro r hr hr0
-    refine componentProj_apply_of_ne (fun h ↦ hr0 ?_) (weightMap_mem_componentSpace _ hx)
-    exact componentEquiv_pow_injOn σ C (mem_range.mp hr)
-      (minimalPeriod_componentEquiv_pos σ C) (by simpa using h)
-
-/-- **The cycle sum scales invariant forms by the length of the cycle.** For an invariant form `B`
-preserved by `σ`, the cycle sums of two vectors of the component space of `C` pair under `B` to
-`c` times their pairing, where `c` is the length of the cycle of `C`. -/
-theorem form_componentCycleSum [IsDomain R] [NeZero (2 : R)] (B : P.InvariantForm)
-    (hB : ∀ x y, B.form (σ.weightMap x) (σ.weightMap y) = B.form x y) {x y : M}
-    (hx : x ∈ P.componentSpace C) (hy : y ∈ P.componentSpace C) :
-    B.form (σ.componentCycleSum C x) (σ.componentCycleSum C y) =
-      minimalPeriod σ.componentEquiv C * B.form x y := by
-  simp_rw [componentCycleSum_apply, map_sum, LinearMap.sum_apply]
-  trans ∑ _r ∈ range (minimalPeriod σ.componentEquiv C), B.form x y
-  · refine sum_congr rfl fun r hr ↦ ?_
-    rw [sum_eq_single_of_mem r hr, InvariantForm.form_weightMap_pow hB]
-    intro s hs hsr
-    refine B.apply_eq_zero_of_mem_componentSpace (fun h ↦ hsr ?_)
-      (weightMap_mem_componentSpace _ hx) (weightMap_mem_componentSpace _ hy)
-    exact componentEquiv_pow_injOn σ C (mem_range.mp hs) (mem_range.mp hr) h
-  · rw [sum_const, card_range, nsmul_eq_mul]
-
-/-- The cycle sums of two vectors of the component space of `C` pair under the canonical root form
-to `c` times their pairing, where `c` is the length of the cycle of `C`. -/
-theorem rootForm_componentCycleSum [Fintype ι] [IsDomain R] [NeZero (2 : R)] [P.IsAnisotropic]
-    {x y : M} (hx : x ∈ P.componentSpace C) (hy : y ∈ P.componentSpace C) :
-    P.RootForm (σ.componentCycleSum C x) (σ.componentCycleSum C y) =
-      minimalPeriod σ.componentEquiv C * P.RootForm x y :=
-  form_componentCycleSum P.toInvariantForm (Hom.rootForm_weightMap σ.toHom) hx hy
+  rw [componentCycleSum_apply]
+  simp_rw [σ.weightMap_pow] at hx ⊢
+  exact LinearMap.sum_range_pow_apply_mem_fixedSubmodule hx
 
 end Equiv
 
@@ -402,15 +352,21 @@ theorem sum_range_componentProj_of_mem_componentCycleSpace {x : M}
 theorem componentProj_sum_range_pow_weightMap {u : M} (hu : u ∈ P.componentSpace C) :
     P.componentProj C (∑ r ∈ range (minimalPeriod σ.componentEquiv C), (σ.weightMap ^ r) u) =
       ⟨u, hu⟩ := by
-  have hpos : 0 < minimalPeriod σ.componentEquiv C :=
-    minimalPeriod_pos_of_mem_periodicPts (σ.componentEquiv.injective.mem_periodicPts C)
-  rw [map_sum, Finset.sum_eq_single 0]
-  · simpa using P.componentProj_apply_of_mem hu
+  have hpos := Equiv.minimalPeriod_componentEquiv_pos σ C
+  rw [map_sum, Finset.sum_eq_single_of_mem 0 (mem_range.mpr hpos)]
+  · simp [P.componentProj_apply_of_mem hu]
   · intro r hr hr0
-    have hne : (σ.componentEquiv ^ r) C ≠ C := by
-      simpa using P.pow_componentEquiv_ne_of_ne_lt σ C (Finset.mem_range.mp hr) hpos hr0
-    exact P.componentProj_apply_of_ne hne (σ.pow_weightMap_mem_componentSpace hu r)
-  · exact fun h0 ↦ absurd (Finset.mem_range.mpr hpos) h0
+    refine P.componentProj_apply_of_ne (fun h ↦ hr0 ?_)
+      (σ.pow_weightMap_mem_componentSpace hu r)
+    exact σ.componentEquiv_pow_injOn C (mem_range.mp hr) hpos
+      (by simpa [σ.componentEquiv_pow] using h)
+
+/-- **Projection inverts the cycle sum on the component.** The projection onto the component space
+of `C` of the cycle sum of a vector of that component space is the vector itself. -/
+theorem Equiv.componentProj_componentCycleSum {x : M} (hx : x ∈ P.componentSpace C) :
+    P.componentProj C (σ.componentCycleSum C x) = ⟨x, hx⟩ := by
+  simpa [Equiv.componentCycleSum_apply, σ.weightMap_pow] using
+    P.componentProj_sum_range_pow_weightMap hx
 
 /-- **Right-inverse identity for the diagonal cycle sum.** -/
 theorem sum_range_pow_weightMap_componentProj {x : M} (hx : x ∈ P.componentCycleSpace σ C)
@@ -466,9 +422,7 @@ theorem componentCycleFoldedIndices_eq_of_sameCycle (h : SameCycle σ.componentE
 variable {P σ C} in
 theorem orbitSum_mem_componentCycleFoldedIndices_of_mem_supp (i : C.supp) :
     P.orbitSum σ (i : ι) ∈ P.componentCycleFoldedIndices σ C :=
-  ⟨i, by
-    have hi : P.componentOf (i : ι) = C := (C.mem_supp_iff (i : ι)).mp i.property
-    rw [hi], rfl⟩
+  ⟨i, by have hi : P.componentOf (i : ι) = C := (C.mem_supp_iff _).mp i.property; rw [hi], rfl⟩
 
 /-- Every folded vector on the `σ`-cycle of `C` is the `σ`-orbit sum of a root in `C.supp`. -/
 theorem componentCycleFoldedIndices_eq_range_supp :
@@ -492,10 +446,9 @@ theorem componentCycleFoldedIndices_subset_componentCycleSpace :
   rw [P.orbitSum_def]
   refine Submodule.sum_mem _ fun k hk ↦ ?_
   obtain ⟨r, rfl⟩ := P.mem_orbitIndices_iff_exists_pow.mp hk
-  have hcomp : SameCycle σ.componentEquiv C (P.componentOf ((σ.indexEquiv ^ r) j)) := by
-    rw [(P.semiconj_componentOf σ).perm_pow_right r j]
-    exact hj.trans ⟨(r : ℤ), by simp⟩
-  exact P.componentSpace_le_componentCycleSpace hcomp (P.root_mem_componentSpace _)
+  exact P.componentSpace_le_componentCycleSpace
+    (((P.semiconj_componentOf σ).perm_pow_right r j).symm ▸ hj.trans ⟨(r : ℤ), by simp⟩)
+    (P.root_mem_componentSpace _)
 
 /-- **The folded indices of `σ` are the union of the cycle-folded indices over all cycles.** -/
 theorem iUnion_componentCycleFoldedIndices :

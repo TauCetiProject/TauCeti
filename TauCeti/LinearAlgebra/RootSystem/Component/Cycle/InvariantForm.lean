@@ -17,6 +17,10 @@ component pairing of a component cycle via `RootPairing.componentCycleDiag`:
 
 * `RootPairing.rootForm_apply_eq_zero_of_mem_componentCycleSpace`: distinct component-cycle
   spaces are orthogonal under `P.RootForm`, over any commutative ring.
+* `RootPairing.Equiv.bilinForm_componentCycleSum`, `RootPairing.Equiv.form_componentCycleSum`,
+  and `RootPairing.Equiv.rootForm_componentCycleSum`: the cycle sum scales any `σ`-invariant
+  bilinear form orthogonal across distinct component spaces (in particular any `InvariantForm`
+  or `RootForm` over any commutative ring) by the cycle length.
 * `RootPairing.InvariantForm.form_componentCycleDiag` and
   `RootPairing.InvariantForm.cartanRatio_componentCycleDiag`: a `σ`-invariant form scales by the
   cycle length under diagonal transport, preserving Cartan ratios when the cycle length is nonzero.
@@ -36,11 +40,10 @@ namespace RootPairing
 section CommRing
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  (P : RootPairing ι R M N) [Fintype ι] (σ : P.Aut)
 
 /-- Distinct component-cycle spaces are orthogonal under `P.RootForm`. -/
-theorem rootForm_apply_eq_zero_of_mem_componentCycleSpace {C₁ C₂ : P.Component}
-    (h : ¬SameCycle σ.componentEquiv C₁ C₂) {x y : M}
+theorem rootForm_apply_eq_zero_of_mem_componentCycleSpace (P : RootPairing ι R M N) [Fintype ι]
+    (σ : P.Aut) {C₁ C₂ : P.Component} (h : ¬SameCycle σ.componentEquiv C₁ C₂) {x y : M}
     (hx : x ∈ P.componentCycleSpace σ C₁) (hy : y ∈ P.componentCycleSpace σ C₂) :
     P.RootForm x y = 0 := by
   have hle :
@@ -54,6 +57,53 @@ theorem rootForm_apply_eq_zero_of_mem_componentCycleSpace {C₁ C₂ : P.Compone
     exact h (h₂.trans h₁.symm)
   exact (Submodule.mem_bot R).mp (hle (Submodule.apply_mem_map₂ _ hx hy))
 
+namespace Equiv
+
+/-- **The cycle sum scales any `σ`-invariant bilinear form that vanishes between distinct
+component spaces by the length of the cycle.** -/
+theorem bilinForm_componentCycleSum {P : RootPairing ι R M N} {σ : P.Aut} {C : P.Component}
+    (B : LinearMap.BilinForm R M) (hB : ∀ x y, B (σ.weightMap x) (σ.weightMap y) = B x y)
+    (horth : ∀ {D E : P.Component}, D ≠ E → ∀ {x y : M},
+      x ∈ P.componentSpace D → y ∈ P.componentSpace E → B x y = 0)
+    {x y : M} (hx : x ∈ P.componentSpace C) (hy : y ∈ P.componentSpace C) :
+    B (σ.componentCycleSum C x) (σ.componentCycleSum C y) =
+      minimalPeriod σ.componentEquiv C * B x y := by
+  have hpow (r : ℕ) :
+      B ((σ ^ r).toHom.weightMap x) ((σ ^ r).toHom.weightMap y) = B x y := by
+    rw [σ.weightMap_pow]
+    induction r with
+    | zero => simp
+    | succ r ih => simp only [pow_succ', mul_apply_eq_comp, hB, ih]
+  simp_rw [componentCycleSum_apply, map_sum, LinearMap.sum_apply]
+  rw [Finset.sum_congr rfl fun r hr ↦ by
+    rw [sum_eq_single_of_mem r hr (fun s hs hsr ↦ horth
+      (fun h ↦ hsr (componentEquiv_pow_injOn σ C (mem_range.mp hs) (mem_range.mp hr) h))
+      (weightMap_mem_componentSpace _ hx) (weightMap_mem_componentSpace _ hy)), hpow r],
+    sum_const, card_range, nsmul_eq_mul]
+
+/-- **The cycle sum scales invariant forms by the length of the cycle.** For an invariant form `B`
+preserved by `σ`, the cycle sums of two vectors of the component space of `C` pair under `B` to
+`c` times their pairing, where `c` is the length of the cycle of `C`. -/
+theorem form_componentCycleSum [IsDomain R] [NeZero (2 : R)] {P : RootPairing ι R M N}
+    {σ : P.Aut} {C : P.Component} (B : P.InvariantForm)
+    (hB : ∀ x y, B.form (σ.weightMap x) (σ.weightMap y) = B.form x y) {x y : M}
+    (hx : x ∈ P.componentSpace C) (hy : y ∈ P.componentSpace C) :
+    B.form (σ.componentCycleSum C x) (σ.componentCycleSum C y) =
+      minimalPeriod σ.componentEquiv C * B.form x y :=
+  bilinForm_componentCycleSum B.form hB
+    (fun h _ _ ha hb ↦ B.apply_eq_zero_of_mem_componentSpace h ha hb) hx hy
+
+/-- The cycle sums of two vectors of the component space of `C` pair under the canonical root form
+to `c` times their pairing, where `c` is the length of the cycle of `C`. -/
+theorem rootForm_componentCycleSum {P : RootPairing ι R M N} [Fintype ι] {σ : P.Aut}
+    {C : P.Component} {x y : M} (hx : x ∈ P.componentSpace C) (hy : y ∈ P.componentSpace C) :
+    P.RootForm (σ.componentCycleSum C x) (σ.componentCycleSum C y) =
+      minimalPeriod σ.componentEquiv C * P.RootForm x y :=
+  bilinForm_componentCycleSum P.RootForm (fun a b ↦ σ.toHom.rootForm_weightMap a b)
+    (fun h _ _ ha hb ↦ P.rootForm_apply_eq_zero_of_mem_componentSpace h ha hb) hx hy
+
+end Equiv
+
 end CommRing
 
 section Field
@@ -64,26 +114,6 @@ section Finite
 
 variable (P : RootPairing ι K M N) [Finite ι] [P.IsRootSystem] (σ : P.Aut) (C : P.Component)
 
-private theorem bilinear_componentCycleDiag (B : M →ₗ[K] M →ₗ[K] K)
-    (hB : ∀ x y, B (σ.weightMap x) (σ.weightMap y) = B x y)
-    (horth : ∀ {D E : P.Component}, D ≠ E → ∀ {x y : M},
-      x ∈ P.componentSpace D → y ∈ P.componentSpace E → B x y = 0)
-    (u v : LinearMap.fixedSubmodule (σ.componentReturn C).toHom.weightMap) :
-    B ((P.componentCycleDiag σ C u : LinearMap.fixedSubmodule σ.weightMap) : M)
-        ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) =
-      (minimalPeriod σ.componentEquiv C : K) * B (u : M) (v : M) := by
-  have hpow (r : ℕ) (x y : M) : B ((σ.weightMap ^ r) x) ((σ.weightMap ^ r) y) = B x y :=
-    Nat.recOn r rfl fun r ih ↦ by
-      simp only [pow_succ', mul_apply_eq_comp, hB, ih]
-  rw [P.coe_componentCycleDiag_apply, P.coe_componentCycleDiag_apply]
-  simp only [map_sum, LinearMap.sum_apply]
-  rw [Finset.sum_congr rfl fun s hs ↦ by
-    rw [Finset.sum_eq_single s (fun r hr hrs ↦ horth (P.pow_componentEquiv_ne_of_ne_lt σ C
-      (Finset.mem_range.mp hr) (Finset.mem_range.mp hs) hrs)
-      (σ.pow_weightMap_mem_componentSpace u.val.property r)
-      (σ.pow_weightMap_mem_componentSpace v.val.property s)) (fun h ↦ absurd hs h), hpow s],
-    Finset.sum_const, Finset.card_range, nsmul_eq_mul]
-
 /-- **Scaling of a `σ`-invariant `B : P.InvariantForm` along `componentCycleDiag`** (`2 ≠ 0`). -/
 theorem InvariantForm.form_componentCycleDiag [NeZero (2 : K)] (B : P.InvariantForm) {σ : P.Aut}
     (hB : ∀ x y, B.form (σ.weightMap x) (σ.weightMap y) = B.form x y) (C : P.Component)
@@ -91,9 +121,10 @@ theorem InvariantForm.form_componentCycleDiag [NeZero (2 : K)] (B : P.InvariantF
     B.form ((P.componentCycleDiag σ C u : LinearMap.fixedSubmodule σ.weightMap) : M)
         ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) =
       (minimalPeriod σ.componentEquiv C : K) * (B.restrictComponent C).form u.val v.val := by
-  rw [B.restrictComponent_form_apply]
-  exact P.bilinear_componentCycleDiag σ C B.form hB
-    (fun h _ _ hx hy ↦ B.apply_eq_zero_of_mem_componentSpace h hx hy) u v
+  rw [B.restrictComponent_form_apply, P.coe_componentCycleDiag_apply,
+    P.coe_componentCycleDiag_apply]
+  simp_rw [← σ.weightMap_pow, ← Equiv.componentCycleSum_apply]
+  exact Equiv.form_componentCycleSum B hB u.val.property v.val.property
 
 /-- **Cartan ratios for a `σ`-invariant `B : P.InvariantForm` are preserved** when the cycle length
 is nonzero in `K`. -/
@@ -124,8 +155,9 @@ theorem rootForm_componentCycleDiag [Fintype C.supp]
     P.RootForm ((P.componentCycleDiag σ C u : LinearMap.fixedSubmodule σ.weightMap) : M)
         ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) =
       (minimalPeriod σ.componentEquiv C : K) * (P.componentPairing C).RootForm u.val v.val := by
-  rw [P.bilinear_componentCycleDiag σ C P.RootForm (fun x y ↦ σ.toHom.rootForm_weightMap x y)
-    (fun h _ _ hx hy ↦ P.rootForm_apply_eq_zero_of_mem_componentSpace h hx hy) u v,
+  rw [P.coe_componentCycleDiag_apply, P.coe_componentCycleDiag_apply]
+  simp_rw [← σ.weightMap_pow, ← Equiv.componentCycleSum_apply]
+  rw [Equiv.rootForm_componentCycleSum u.val.property v.val.property,
     P.rootForm_componentPairing C, LinearMap.BilinForm.restrict_apply,
     LinearMap.domRestrict_apply]
 
@@ -160,23 +192,10 @@ theorem rootForm_eq_sum_componentCycleFixedProj
   rw [P.coe_componentCycleFixedPiEquiv_symm_apply, P.coe_componentCycleFixedPiEquiv_symm_apply]
   simp only [map_sum, LinearMap.sum_apply, componentCycleFixedPiEquiv_apply]
   refine Finset.sum_congr rfl fun O _ ↦ ?_
-  have hsum_single :
-      (∑ d : Quotient (SameCycle.setoid σ.componentEquiv),
-        P.RootForm ((P.componentCycleDiag σ d.out (P.componentCycleFixedProj σ d.out x) :
-          LinearMap.fixedSubmodule σ.weightMap) : M)
-          ((P.componentCycleDiag σ O.out (P.componentCycleFixedProj σ O.out y) :
-            LinearMap.fixedSubmodule σ.weightMap) : M)) =
-        P.RootForm ((P.componentCycleDiag σ O.out (P.componentCycleFixedProj σ O.out x) :
-          LinearMap.fixedSubmodule σ.weightMap) : M)
-          ((P.componentCycleDiag σ O.out (P.componentCycleFixedProj σ O.out y) :
-            LinearMap.fixedSubmodule σ.weightMap) : M) :=
-    Finset.sum_eq_single O (fun O' _ hO' ↦ P.rootForm_apply_eq_zero_of_mem_componentCycleSpace σ
-      (C₁ := O'.out) (C₂ := O.out)
-      (_root_.Equiv.Perm.not_sameCycle_out_of_ne σ.componentEquiv hO')
-      (P.mem_componentCycleFixedSubmodule.mp (P.componentCycleDiag σ O'.out _).property)
-      (P.mem_componentCycleFixedSubmodule.mp (P.componentCycleDiag σ O.out _).property))
-      (by simp)
-  rw [hsum_single]
+  rw [Finset.sum_eq_single O (fun O' _ hO' ↦ P.rootForm_apply_eq_zero_of_mem_componentCycleSpace σ
+    (_root_.Equiv.Perm.not_sameCycle_out_of_ne σ.componentEquiv hO')
+    (P.mem_componentCycleFixedSubmodule.mp (P.componentCycleDiag σ O'.out _).property)
+    (P.mem_componentCycleFixedSubmodule.mp (P.componentCycleDiag σ O.out _).property)) (by simp)]
   exact P.rootForm_componentCycleDiag σ O.out _ _
 
 end RootForm

@@ -5,21 +5,52 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Base
+public import Mathlib.LinearAlgebra.RootSystem.Base
+public import TauCeti.LinearAlgebra.RootSystem.Basic
 import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Bases and simple-root support transport of a root pairing
 
-This file records the action of automorphisms on bases (`RootPairing.Base.map_one`,
-`RootPairing.Base.map_mul`, `RootPairing.Base.map_eq_of_forall_mem_support`,
-`RootPairing.Base.mem_support_indexEquiv_iff`), and the bijection on simple-root supports induced
-by a base-preserving equivalence of root pairings (`RootPairing.Equiv.supportEquiv`).
+This file records basic properties of `RootPairing.Base` (`RootPairing.Base.ext`,
+`RootPairing.coroot'_eq_zero_of_forall_mem_support`,
+`RootPairing.Base.iInf_ker_coroot'_support_eq_corootKer`), the action of automorphisms on bases
+(`RootPairing.Base.map_one`, `RootPairing.Base.map_mul`,
+`RootPairing.Base.map_eq_of_forall_mem_support`, `RootPairing.Base.mem_support_indexEquiv_iff`),
+and the bijection on simple-root supports induced by a base-preserving equivalence of root
+pairings (`RootPairing.Equiv.supportEquiv`).
 -/
 
 public section
 
 namespace RootPairing
+
+section Basic
+
+variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- **A base is determined by its simple roots.** The other fields of a base are propositions about
+its support. -/
+@[ext]
+theorem Base.ext {P : RootPairing ι R M N} {b b' : P.Base} (h : b.support = b'.support) :
+    b = b' := by
+  cases b; cases b'; subst h; rfl
+
+/-- **A weight killed by the simple coroots is killed by every coroot**, since every coroot is an
+integer combination of the simple coroots. -/
+theorem coroot'_eq_zero_of_forall_mem_support (P : RootPairing ι R M N) (b : P.Base) {x : M}
+    (hx : ∀ i ∈ b.support, P.coroot' i x = 0) (j : ι) : P.coroot' j x = 0 :=
+  LinearMap.eqOn_span (R := ℤ) (f := (P.toLinearMap x).toAddMonoidHom.toIntLinearMap) (g := 0)
+    (by rintro _ ⟨i, hi, rfl⟩; exact hx i hi) (b.coroot_mem_span_int j)
+
+/-- For any base `b`, the common kernel of the *simple* coroot functionals equals `P.corootKer`. -/
+theorem Base.iInf_ker_coroot'_support_eq_corootKer {P : RootPairing ι R M N} (b : P.Base) :
+    (⨅ i ∈ b.support, LinearMap.ker (P.coroot' i)) = P.corootKer := by
+  ext x
+  simp only [Submodule.mem_iInf, LinearMap.mem_ker, RootPairing.mem_corootKer]
+  exact ⟨fun hx ↦ P.coroot'_eq_zero_of_forall_mem_support b hx, fun hx i _ ↦ hx i⟩
+
+end Basic
 
 namespace Base
 
