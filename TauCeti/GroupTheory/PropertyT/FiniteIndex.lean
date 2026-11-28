@@ -226,11 +226,11 @@ private theorem forall_posSemidef_norm_sub_one_lt_subgroupOf {𝕜 : Type*} [RCL
   let x₀ : Γ ⧸ H := ((1 : Γ) : Γ ⧸ H)
   let s : Γ ⧸ H → Γ := Function.update Quotient.out x₀ 1
   have hs (x : Γ ⧸ H) : (s x : Γ ⧸ H) = x := by
+    have hout : ((↑) : Γ → Γ ⧸ H) ∘ Quotient.out = id := funext Quotient.out_eq
     have hcomp : ((↑) : Γ → Γ ⧸ H) ∘ s = id := by
       dsimp only [s]
-      rw [Function.comp_update, show QuotientGroup.mk ∘ Quotient.out = id from
-        funext Quotient.out_eq, Function.update_eq_self_iff]
-      rfl
+      rw [Function.comp_update, hout, Function.update_eq_self_iff]
+      simp only [id_eq, x₀]
     exact congrFun hcomp x
   have hs1 : s x₀ = 1 := Function.update_self x₀ 1 Quotient.out
   intro ε hε
