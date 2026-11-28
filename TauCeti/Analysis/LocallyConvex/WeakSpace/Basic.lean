@@ -7,14 +7,18 @@ module
 
 public import Mathlib.Analysis.Convex.Quasiconvex
 public import Mathlib.Analysis.LocallyConvex.WeakSpace
+public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Topology.Semicontinuity.Basic
+import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
 # Weak lower semicontinuity of quasiconvex functions and Hermitian forms
 
 In a locally convex space, a convex set has the same closure in the original and in the weak
 topology (`Convex.toWeakSpace_closure`), so any closed convex set is weakly closed
-(`Convex.isClosed_toWeakSpace_image`). Applied to the relative sublevel sets of a function on a
+(`Convex.isClosed_toWeakSpace_image`); in particular, closed norm balls in a real or complex
+seminormed space are closed in the weak topology (`TauCeti.isClosed_toWeakSpace_closedBall`).
+Applied to the relative sublevel sets of a function on a
 set `s`, this shows that a relatively lower semicontinuous function whose sublevel sets in `s` are
 convex, that is, a quasiconvex function on `s`, is also lower semicontinuous on the weak image
 `toWeakSpace 𝕜 E '' s` (`QuasiconvexOn.lowerSemicontinuousOn_comp_toWeakSpace_symm`), without
@@ -33,7 +37,7 @@ this argument needs no real scalar structure on the space.
 ## References
 
 * H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*, Springer,
-  2011, Corollary 3.9.
+  2011, Theorem 3.7 and Corollary 3.9.
 -/
 
 public section
@@ -53,6 +57,21 @@ theorem isClosed_toWeakSpace_image (𝕜 : Type*) [RCLike 𝕜] [Module 𝕜 E] 
   exact isClosed_closure
 
 end Convex
+
+namespace TauCeti
+
+variable {𝕜 V : Type*} [RCLike 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+
+/-- Closed balls in a real or complex seminormed space are closed in the weak topology. -/
+theorem isClosed_toWeakSpace_closedBall (x : V) (r : ℝ) :
+    IsClosed (toWeakSpace 𝕜 V '' Metric.closedBall x r) := by
+  let : NormedSpace ℝ V := .restrictScalars ℝ 𝕜 V
+  let : Module ℝ V := .restrictScalars ℝ 𝕜 V
+  have : IsScalarTower ℝ 𝕜 V := .restrictScalars ℝ 𝕜 V
+  have : LocallyConvexSpace ℝ V := NormedSpace.toLocallyConvexSpace
+  exact (convex_closedBall x r).isClosed_toWeakSpace_image 𝕜 Metric.isClosed_closedBall
+
+end TauCeti
 
 namespace QuasiconvexOn
 

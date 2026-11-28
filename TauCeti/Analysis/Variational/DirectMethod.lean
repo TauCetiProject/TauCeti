@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Order.Filter.Extr
-public import TauCeti.Analysis.Variational.BoundedSublevels
-public import TauCeti.Analysis.Normed.Module.DoubleDual
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Topology.Semicontinuity.Basic
+public import TauCeti.Analysis.Normed.Module.DoubleDual
+public import TauCeti.Analysis.Variational.BoundedSublevels
+public import TauCeti.Order.Filter.Extr
+import TauCeti.Analysis.LocallyConvex.WeakSpace.Basic
 
 /-!
 # The direct method in the weak topology
@@ -18,9 +20,14 @@ closed admissible set attains its minimum if its sublevels are norm bounded and 
 bidual map is surjective. No lower bound on the energy is assumed: compactness of one nonempty
 sublevel provides it. Every sublevel and the entire set of minimizers are weakly compact.
 
+Over `ℝ` or `ℂ`, an energy with norm-bounded sublevels on `S` is globally weakly lower
+semicontinuous on `S` as soon as it is weakly lower semicontinuous on every norm-bounded subset
+of `S` (`TauCeti.lowerSemicontinuousOn_comp_toWeakSpace_symm_of_hasBoundedSublevelsOn`).
+
 The reflexivity hypothesis is surjectivity of the continuous bidual inclusion, not
-algebraic reflexivity. Completeness is not needed as a separate hypothesis. The proofs
-work over any proper nontrivially normed field, and in seminormed spaces.
+algebraic reflexivity. Completeness is not needed as a separate hypothesis. Except for the
+bounded-sublevel localization of weak lower semicontinuity (which uses geometric Hahn–Banach over
+`ℝ` or `ℂ`), the proofs work over any proper nontrivially normed field, and in seminormed spaces.
 
 ## References
 
@@ -115,5 +122,47 @@ theorem isCompact_toWeakSpace_minimizers
     (hb : HasBoundedSublevelsOn E S) :
     IsCompact (toWeakSpace 𝕜 V '' {u ∈ S | IsMinOn E S u}) :=
   isCompact_toWeakSpace_minimizers_of_isBounded hV hS hE hb.isBounded_minimizers
+
+section RCLike
+
+/-- **Sublevel localization of weak lower semicontinuity.** Over `ℝ` or `ℂ`, an energy `E` with
+norm-bounded sublevels on `S` is globally weakly lower semicontinuous on `S` as soon as it is
+weakly lower semicontinuous on every norm-bounded subset of `S`. No weak closedness assumption on
+`S` is needed. -/
+theorem lowerSemicontinuousOn_comp_toWeakSpace_symm_of_hasBoundedSublevelsOn {𝕜 V β : Type*}
+    [RCLike 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V] [LinearOrder β] {E : V → β}
+    {S : Set V} (hb : HasBoundedSublevelsOn E S)
+    (hloc : ∀ ⦃B : Set V⦄, B ⊆ S → IsBounded B →
+      LowerSemicontinuousOn (fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w))
+        (toWeakSpace 𝕜 V '' B)) :
+    LowerSemicontinuousOn (fun w : WeakSpace 𝕜 V ↦ E ((toWeakSpace 𝕜 V).symm w))
+      (toWeakSpace 𝕜 V '' S) := by
+  let f : WeakSpace 𝕜 V → β := fun w ↦ E ((toWeakSpace 𝕜 V).symm w)
+  rw [lowerSemicontinuousOn_iff_preimage_Iic]
+  intro b
+  -- Every point of `S` with `E u ≤ b` lies in a closed norm ball `closedBall 0 R`, which is weakly
+  -- closed by Hahn–Banach.
+  obtain ⟨R, hR⟩ := (Metric.isBounded_iff_subset_closedBall (0 : V)).1 (hb.isBounded_sublevel b)
+  let B : Set V := S ∩ Metric.closedBall 0 R
+  have hB_lsc : LowerSemicontinuousOn f (toWeakSpace 𝕜 V '' B) :=
+    hloc inter_subset_left (Metric.isBounded_closedBall.subset inter_subset_right)
+  obtain ⟨v₀, hv₀, hBv₀⟩ := lowerSemicontinuousOn_iff_preimage_Iic.1 hB_lsc b
+  refine ⟨(toWeakSpace 𝕜 V '' Metric.closedBall 0 R) ∩ v₀,
+    (isClosed_toWeakSpace_closedBall (0 : V) R).inter hv₀, ?_⟩
+  have hinter : (toWeakSpace 𝕜 V '' S) ∩ ((toWeakSpace 𝕜 V '' Metric.closedBall 0 R) ∩ v₀) =
+      (toWeakSpace 𝕜 V '' B) ∩ v₀ := by
+    rw [← inter_assoc, ← image_inter (toWeakSpace 𝕜 V).injective]
+  rw [hinter, ← hBv₀]
+  have hsub : {u ∈ S | E u ≤ b} = {u ∈ B | E u ≤ b} :=
+    ((inter_right_comm S (Metric.closedBall (0 : V) R) {u | E u ≤ b}).trans
+      (inter_eq_left.2 hR)).symm
+  calc (toWeakSpace 𝕜 V '' S) ∩ (f ⁻¹' Iic b)
+      = toWeakSpace 𝕜 V '' {u ∈ S | E u ≤ b} :=
+        (image_inter_preimage (toWeakSpace 𝕜 V) S (f ⁻¹' Iic b)).symm
+    _ = toWeakSpace 𝕜 V '' {u ∈ B | E u ≤ b} := by rw [hsub]
+    _ = (toWeakSpace 𝕜 V '' B) ∩ (f ⁻¹' Iic b) :=
+        image_inter_preimage (toWeakSpace 𝕜 V) B (f ⁻¹' Iic b)
+
+end RCLike
 
 end TauCeti
