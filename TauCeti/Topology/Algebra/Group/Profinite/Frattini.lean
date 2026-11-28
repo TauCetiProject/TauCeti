@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.Frattini
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Characteristic
 import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 import Mathlib.Topology.Separation.Connected
+import TauCeti.Algebra.Group.Subgroup.ModularLaw
 import TauCeti.Topology.Algebra.Group.Generation
 
 /-!
@@ -46,6 +47,8 @@ this needs no finiteness of the family, and the lift is arbitrary.
   continuous automorphism, and so it is normal (`TauCeti.profiniteFrattini_normal`).
 * `MonoidHom.map_profiniteFrattini_le`: a continuous surjection carries the Frattini subgroup into
   the Frattini subgroup of the target.
+* `Subgroup.map_subtype_profiniteFrattini_le`: the Frattini subgroup of a compact normal
+  subgroup lies in that of the ambient group.
 * `TauCeti.profiniteFrattini_eq_frattini`: for a discrete group, the Frattini subgroup is Mathlib's
   `frattini`.
 * `TauCeti.eq_top_of_sup_profiniteFrattini_eq_top`: the Frattini subgroup of a profinite group
@@ -69,6 +72,7 @@ index `p` by maximal open subgroups.
 ## References
 
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Section 2.8.
+* D. Masser and U. Zannier, *Abelian varieties isogenous to no Jacobian*, Lemma 5.1.
 -/
 
 public section
@@ -158,6 +162,35 @@ subgroups. -/
 theorem profiniteFrattini_eq_frattini [DiscreteTopology G] : profiniteFrattini G = frattini G := by
   rw [profiniteFrattini_def, frattini, Order.radical]
   simp only [isOpen_discrete, iInf_true, Set.mem_ofPred_eq]
+
+/-- The Frattini subgroup of a compact normal subgroup `N` is contained in the Frattini subgroup
+of the ambient group. See Masser–Zannier (2020), proof of Lemma 5.1. -/
+theorem _root_.Subgroup.map_subtype_profiniteFrattini_le [SeparatelyContinuousMul G]
+    (N : Subgroup G) [N.Normal] [CompactSpace N] :
+    (profiniteFrattini N).map N.subtype ≤ profiniteFrattini G := by
+  let K := (profiniteFrattini N).map N.subtype
+  have hKN : K ≤ N := Subgroup.map_subtype_le _
+  have : K.Normal := isTopCharacteristic_profiniteFrattini.map_subtype_normal
+  refine fun x hx ↦ mem_profiniteFrattini_iff.mpr fun M hMo hM ↦ ?_
+  by_contra hxM
+  have hxSup : x ∈ M ⊔ K := (le_sup_right : K ≤ M ⊔ K) hx
+  have hsup : M ⊔ K = ⊤ := (SetLike.isCoatom_iff.mp hM).2 _ x le_sup_left hxM hxSup
+  have hproper : M.comap N.subtype ≠ ⊤ := by
+    intro h
+    have hx' := (Subgroup.eq_top_iff' _).mp h (⟨x, hKN hx⟩ : N)
+    exact hxM (Subgroup.mem_comap.mp hx')
+  -- Intersect the join with `N` to see that `M ∩ N` and the Frattini subgroup generate `N`.
+  have hMeet : (N ⊓ M) ⊔ K = N := by
+    rw [Subgroup.inf_sup_assoc_of_le (Subgroup.mul_normal M K) hKN, hsup, inf_top_eq]
+  have hlocal : M.comap N.subtype ⊔ profiniteFrattini N = ⊤ := by
+    apply Subgroup.map_subtype_inj.mp
+    simpa only [Subgroup.map_sup, Subgroup.map_comap_eq, Subgroup.map_top, N.range_subtype]
+      using hMeet
+  have hOpen : IsOpen (M.comap N.subtype : Set N) := hMo.preimage continuous_subtypeVal
+  let U : OpenSubgroup N := ⟨M.comap N.subtype, hOpen⟩
+  have : (M.comap N.subtype).FiniteIndex := U.finiteIndex_toSubgroup
+  obtain ⟨L, hLo, hL, hML⟩ := Subgroup.exists_isOpen_isCoatom_le_of_isOpen hOpen hproper
+  exact hL.1 (top_unique (hlocal ▸ sup_le hML (profiniteFrattini_le hLo hL)))
 
 /-! ### Non-generators -/
 
