@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Basis.Flag
+public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.Block
+import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 import Mathlib.LinearAlgebra.Matrix.Reindex
 import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.LinearAlgebra.Matrix.Triangular
@@ -31,7 +33,8 @@ a basis `b` with diagonal coefficients `c` when each `v i - c i • b i` is a co
 `ℕ` refining `f j < f i`, so its determinant in `b` is the product of the `c i`. Taking `f = id`
 gives the same for a preordered index type and the `b j` with `j < i`. In the same way, an
 endomorphism `f` with each `f (b j) - c j • b j` in the span of the earlier basis vectors has an
-upper-triangular matrix in `b` with diagonal `c`.
+upper-triangular matrix in `b` with diagonal `c`, and its characteristic polynomial is
+`∏ j, (X - C (c j))`.
 
 ## Main results
 
@@ -49,6 +52,8 @@ upper-triangular matrix in `b` with diagonal `c`.
   `Module.Basis.linearMap_toMatrix_apply_self_of_sub_smul_mem_flag`: an endomorphism that is
   triangular with respect to the flag of a basis has an upper-triangular matrix in that basis,
   with the given diagonal.
+* `Module.Basis.linearMap_charpoly_eq_prod_of_sub_smul_mem_flag`: the characteristic polynomial
+  of such an endomorphism is the product of the `X - C (c j)`.
 -/
 
 public section
@@ -242,6 +247,16 @@ theorem linearMap_toMatrix_apply_self_of_sub_smul_mem_flag
     (h : ∀ j, f (b j) - c j • b j ∈ b.flag j.castSucc) (i : Fin n) :
     LinearMap.toMatrix b b f i i = c i := by
   rw [linearMap_toMatrix_apply_of_sub_smul_mem_flag b h le_rfl, Finsupp.single_eq_same, mul_one]
+
+open Polynomial in
+/-- If each `f (b j) - c j • b j` lies in the span `b.flag j.castSucc` of the earlier basis
+vectors, the characteristic polynomial of `f` is `∏ j, (X - C (c j))`. -/
+theorem linearMap_charpoly_eq_prod_of_sub_smul_mem_flag [Module.Free R M] [Module.Finite R M]
+    (h : ∀ j, f (b j) - c j • b j ∈ b.flag j.castSucc) :
+    f.charpoly = ∏ j, (X - C (c j)) := by
+  rw [← LinearMap.charpoly_toMatrix f b, Matrix.charpoly_of_isUpperTriangular _
+    (b.linearMap_toMatrix_isUpperTriangular_of_sub_smul_mem_flag h)]
+  simp only [b.linearMap_toMatrix_apply_self_of_sub_smul_mem_flag h]
 
 end Flag
 
