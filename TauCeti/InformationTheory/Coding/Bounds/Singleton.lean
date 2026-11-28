@@ -5,17 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import TauCeti.InformationTheory.Coding.Basic
 public import TauCeti.InformationTheory.Coding.MinimumDistance.Basic
-public import TauCeti.InformationTheory.Coding.Puncture.Basic
 
 /-!
 # The Singleton bound
 
-A code `C` of length `n` with minimum distance `d` over an alphabet of `q` letters has at most
-`q ^ (n - d + 1)` words, and a linear code of dimension `k` over a field has `k + d ≤ n + 1`.
-Both follow from one observation: if fewer than `d` coordinates lie outside a set `s` of
-coordinates, then two distinct words of `C` differ somewhere in `s`, so restriction to `s` is
-injective on `C`.
+A code `C` of length `n` with at least two words and minimum distance `d` over an alphabet of
+`q` letters has at most `q ^ (n - d + 1)` words. A linear code of rank `k` over a semiring with
+the strong rank condition, for instance a field, has `k + d ≤ n + 1`. Both follow from one
+observation: if fewer than `d` coordinates lie outside a set `s` of coordinates, then two distinct
+words of `C` differ somewhere in `s`, so restriction to `s` is injective on `C`.
 
 ## Main results
 
@@ -28,7 +29,8 @@ injective on `C`.
 * `Set.natCard_le_pow_card_sub_hammingMinDist_add_one`: **the Singleton bound**
   `|C| ≤ q ^ (n - d + 1)` for a code with at least two words.
 * `TauCeti.finrank_add_hammingMinDist_le`: **the Singleton bound for linear codes**,
-  `k + d ≤ n + 1`, over any field.
+  `k + d ≤ n + 1`, over any semiring with the strong rank condition, in particular over any
+  field.
 
 ## References
 
@@ -90,24 +92,27 @@ namespace TauCeti
 
 open Set
 
-/-- **The Singleton bound for linear codes.** A linear code of length `n`, dimension `k` and
-minimum distance `d` over a field has `k + d ≤ n + 1`. The zero code has `k = d = 0`. -/
-theorem finrank_add_hammingMinDist_le {F ι : Type*} [Field F] [Fintype ι] [DecidableEq F]
-    (C : LinearCode F ι) :
-    Module.finrank F C + (C : Set (ι → F)).hammingMinDist ≤ Fintype.card ι + 1 := by
+/-- **The Singleton bound for linear codes.** A linear code of length `n`, rank `k` and minimum
+distance `d` has `k + d ≤ n + 1`. The scalars form a semiring with the strong rank condition, for
+instance a field, and `k` is `Module.finrank R C`. The zero code has `k = d = 0`. -/
+theorem finrank_add_hammingMinDist_le {R ι : Type*} [Semiring R] [StrongRankCondition R]
+    [Fintype ι] [DecidableEq R] (C : LinearCode R ι) :
+    Module.finrank R C + (C : Set (ι → R)).hammingMinDist ≤ Fintype.card ι + 1 := by
   classical
-  rcases eq_or_ne C ⊥ with rfl | hC
-  · simp [Submodule.bot_coe, hammingMinDist_singleton]
-  -- Keep `n - d + 1` coordinates; a codeword vanishing on them has weight below `d`.
-  obtain ⟨x, hx, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hC
-  have hdn : (C : Set (ι → F)).hammingMinDist ≤ Fintype.card ι := hammingMinDist_le_card
-  obtain ⟨s, hs, hsc⟩ := exists_finset_card_eq_card_compl_lt_hammingMinDist (C := (C : Set (ι → F)))
-    ⟨x, hx, 0, C.zero_mem, hx0⟩
+  rcases (C : Set (ι → R)).subsingleton_or_nontrivial with hC | hC
+  · -- The zero code has `d = 0`, and `k ≤ n` holds for each code.
+    have hk : Module.finrank R C ≤ Fintype.card ι := by simpa using Submodule.finrank_le C
+    rw [hammingMinDist_eq_zero_of_subsingleton hC]
+    omega
+  -- Restriction to `n - d + 1` retained coordinates is an injective linear map on `C`.
+  have hdn : (C : Set (ι → R)).hammingMinDist ≤ Fintype.card ι := hammingMinDist_le_card
+  obtain ⟨s, hs, hsc⟩ := exists_finset_card_eq_card_compl_lt_hammingMinDist hC
   have hinj := injOn_restrict_of_card_compl_lt_hammingMinDist s hsc
-  have hk := finrank_puncture_eq C (s : Set ι) fun y hy hy0 ↦
-    hinj hy C.zero_mem (funext fun i ↦ by simpa using hy0 ⟨i, i.property⟩)
-  have hle : Module.finrank F (puncture C (s : Set ι)) ≤ #s :=
-    (Submodule.finrank_le _).trans (by simp)
+  have hk : Module.finrank R C ≤ #s :=
+    (LinearMap.finrank_le_finrank_of_injective
+      (f := (LinearMap.funLeft R R ((↑) : s → ι)).domRestrict C) fun x y hxy ↦
+        Subtype.ext (hinj x.property y.property
+          (funext fun i ↦ by simpa using congrFun hxy i))).trans_eq (by simp)
   omega
 
 end TauCeti
