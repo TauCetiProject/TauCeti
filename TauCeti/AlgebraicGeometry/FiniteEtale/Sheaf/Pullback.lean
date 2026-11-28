@@ -149,6 +149,12 @@ lemma toSheafCompSmallEtaleMapPushforwardIso_inv_app (p : T ⟶ S) [Etale p]
   simp [toSheafCompSmallEtaleMapPushforwardIso, toSheafCompSmallEtalePullbackIso, toSheaf,
     yonedaCompSmallEtalePullbackIso_inv_app_of_etale]
 
+private lemma yoneda_map_hom_app_apply {C : Type*} [Category* C] (J : GrothendieckTopology C)
+    [J.Subcanonical] {X Y W : C} (g : X ⟶ Y) (f : W ⟶ X) :
+    ((J.yoneda.map g).hom.app (Opposite.op W)) f = f ≫ g := by
+  rw [GrothendieckTopology.yoneda_map_hom, yoneda_map_app, ConcreteCategory.hom_ofHom,
+    TypeCat.Fun.coe_mk]
+
 /-- Transporting a section of `(toSheaf S).obj X` along
 `p.toSheafCompSmallEtaleMapPushforwardIso` applies the base-change adjunction
 `p.smallEtaleMapBaseChangeAdj`. -/
@@ -170,18 +176,12 @@ lemma toSheafCompSmallEtaleMapPushforwardIso_hom_app_hom_app_apply (p : T ⟶ S)
             (Opposite.op W) s) :=
     congrArg (fun η ↦ (η.hom.app (Opposite.op W)) s)
       (p.toSheafCompSmallEtaleMapPushforwardIso_hom_app X)
-  rw [hs]
+  rw [hs, p.yonedaCompSmallEtaleMapPushforwardIso_hom_app_hom_app_apply,
+    yoneda_map_hom_app_apply (smallEtaleTopology T)
+      ((toEtaleCompSmallEtaleBaseChangeIso p).hom.app X)]
   apply MorphismProperty.Over.Hom.ext
-  have h :
-      (((smallEtaleTopology T).yoneda.map
-            ((toEtaleCompSmallEtaleBaseChangeIso p).hom.app X)).hom.app (Opposite.op W)
-          ((p.yonedaCompSmallEtaleMapPushforwardIso.hom.app ((toEtale S).obj X)).hom.app
-            (Opposite.op W) s)).left =
-        (p.smallEtaleMapBaseChangeAdj.homEquiv W ((toEtale S).obj X) s).left ≫
-          𝟙 (Limits.pullback X.obj.hom p) := by
-    simp
-    rfl
-  exact h.trans (Category.comp_id _)
+  rw [Etale.comp_left, toEtaleCompSmallEtaleBaseChangeIso_hom_app_left]
+  exact Category.comp_id _
 
 /-- Transporting a section of `(toSheaf T).obj ((FiniteEtaleScheme.pullback p).obj X)` along the
 inverse of `p.toSheafCompSmallEtaleMapPushforwardIso` applies the inverse of
@@ -202,22 +202,13 @@ lemma toSheafCompSmallEtaleMapPushforwardIso_inv_app_hom_app_apply (p : T ⟶ S)
             ((toEtaleCompSmallEtaleBaseChangeIso p).inv.app X)).hom.app (Opposite.op W) t) :=
     congrArg (fun η ↦ (η.hom.app (Opposite.op W)) t)
       (p.toSheafCompSmallEtaleMapPushforwardIso_inv_app X)
-  rw [ht]
-  dsimp only [toSheaf]
-  have h1 :
-      (p.yonedaCompSmallEtaleMapPushforwardIso.inv.app ((toEtale S).obj X)).hom.app
-          (Opposite.op W)
-          (((smallEtaleTopology T).yoneda.map
-            ((toEtaleCompSmallEtaleBaseChangeIso p).inv.app X)).hom.app (Opposite.op W) t) =
-        (p.smallEtaleMapBaseChangeAdj.homEquiv W ((toEtale S).obj X)).symm
-          (t ≫ (toEtaleCompSmallEtaleBaseChangeIso p).inv.app X) := by
-    simp
-    rfl
-  refine h1.trans (congrArg (p.smallEtaleMapBaseChangeAdj.homEquiv W ((toEtale S).obj X)).symm ?_)
+  rw [ht, yoneda_map_hom_app_apply (smallEtaleTopology T)
+      ((toEtaleCompSmallEtaleBaseChangeIso p).inv.app X),
+    p.yonedaCompSmallEtaleMapPushforwardIso_inv_app_hom_app_apply]
+  refine congrArg (p.smallEtaleMapBaseChangeAdj.homEquiv W ((toEtale S).obj X)).symm ?_
   apply MorphismProperty.Over.Hom.ext
-  exact (MorphismProperty.Comma.comp_left _ _).trans
-    ((congrArg (_ ≫ ·) (toEtaleCompSmallEtaleBaseChangeIso_inv_app_left p X)).trans
-      (Category.comp_id _))
+  rw [Etale.comp_left, toEtaleCompSmallEtaleBaseChangeIso_inv_app_left]
+  exact Category.comp_id _
 
 /-- When `p` is étale, `p.toSheafCompSmallEtalePullbackIso.hom.app X` factors through
 `p.smallEtalePullbackIsoMapPushforward` and `p.toSheafCompSmallEtaleMapPushforwardIso`. -/

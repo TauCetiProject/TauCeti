@@ -640,6 +640,14 @@ private lemma sheafPushforwardContinuous_map_hom_app_apply
       (ψ.hom.app (Opposite.op (G'.obj Y))) s' :=
   hs ▸ rfl
 
+private lemma compYonedaIso_symm_hom_app_apply {C₁ : Type*} [Category.{v} C₁] {D₁ : Type*}
+    [Category.{v} D₁] {F₁ : C₁ ⥤ D₁} {G₁ : D₁ ⥤ C₁} (adj₁ : F₁ ⊣ G₁) (X : D₁) (W : C₁)
+    (s : F₁.obj W ⟶ X) :
+    (((adj₁.compYonedaIso.app X).symm.hom.app (Opposite.op W)) s) = adj₁.homEquiv W X s := by
+  rw [Iso.symm_hom]
+  simp only [Adjunction.compYonedaIso, NatIso.ofComponents.app, NatIso.ofComponents_inv_app,
+    Iso.symm_inv, Opposite.unop_op, Equiv.toIso_hom_hom_apply]
+
 omit [(G'.sheafPushforwardContinuous (Type v) K' J').IsRightAdjoint] in
 include adj' hF' in
 private lemma homEquiv_preimageIso_compYonedaIso_symm_hom (X : D') :
@@ -672,8 +680,8 @@ private lemma homEquiv_preimageIso_compYonedaIso_symm_hom (X : D') :
     hφ]
   have he : (e.hom.app (Opposite.op (G'.obj X))) (adj'.counit.app X) =
       adj'.homEquiv (G'.obj X) X (adj'.counit.app X) := by
-    simp [e, Adjunction.compYonedaIso]
-    rfl
+    dsimp only [e]
+    exact compYonedaIso_symm_hom_app_apply adj' X (G'.obj X) (adj'.counit.app X)
   exact he.trans ((adj'.homEquiv_unit _ _ _).trans (adj'.right_triangle_components X))
 
 include adj' hF' in
