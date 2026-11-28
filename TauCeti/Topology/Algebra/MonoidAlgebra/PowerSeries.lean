@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.PowerSeries.PiTopology
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.Algebra.MonoidAlgebra.PowerSeries
 import TauCeti.Algebra.MonoidAlgebra.Basic
+import TauCeti.RingTheory.PowerSeries.PiTopology
 
 /-!
 # Continuity and series expansions for power series over finite monoid algebras
@@ -54,17 +55,11 @@ theorem continuous_coeff_powerSeriesAlgEquiv_symm {R A M : Type*} [CommSemiring 
     [IsModuleTopology R (MonoidAlgebra A M)] (m : M) :
     Continuous fun ψ : PowerSeries (MonoidAlgebra A M) ↦
       ((MonoidAlgebra.powerSeriesAlgEquiv R A M).symm ψ).coeff m := by
-  refine continuous_iff_continuousAt.mpr fun ψ ↦
-    (PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto A _ _ _).mpr fun n ↦ ?_
   let l : MonoidAlgebra A M →ₗ[R] A :=
     (Finsupp.lapply m).comp (MonoidAlgebra.coeffLinearEquiv R).toLinearMap
-  have hl : ∀ a : MonoidAlgebra A M, l a = a.coeff m := fun a ↦ by
-    simp only [l, LinearMap.comp_apply, LinearEquiv.coe_coe,
-      MonoidAlgebra.coeffLinearEquiv_apply, Finsupp.lapply_apply]
-  simpa only [MonoidAlgebra.coeff_coeff_powerSeriesAlgEquiv_symm, ContinuousAt,
-    Function.comp_def, hl] using
-      ((IsModuleTopology.continuous_of_linearMap l).comp
-        (PowerSeries.WithPiTopology.continuous_coeff (MonoidAlgebra A M) n)).continuousAt
+  exact (PowerSeries.WithPiTopology.continuous_mk_comp_coeff
+    (IsModuleTopology.continuous_of_linearMap l)).congr fun ψ ↦
+      PowerSeries.ext fun n ↦ by simp [l]
 
 /-- For a finite monoid `M` and a continuous `ε : A⟦X⟧ →ₐ[R] B` commuting with `η : M →* B`, the
 induced map `A[M]⟦X⟧ →ₐ[R] B` through `(MonoidAlgebra.powerSeriesAlgEquiv R A M).symm` is

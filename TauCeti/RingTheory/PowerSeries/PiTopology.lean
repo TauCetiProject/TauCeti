@@ -19,6 +19,10 @@ factors that can affect it. Over a discrete commutative ring, the coefficientwis
 
 ## Main results
 
+* `PowerSeries.WithPiTopology.continuous_mk_comp_coeff`: applying a continuous map coefficientwise
+  is continuous for the coefficientwise topology.
+* `PowerSeries.WithPiTopology.continuous_map`: `PowerSeries.map` of a continuous ring homomorphism
+  is continuous for the coefficientwise topology.
 * `PowerSeries.WithPiTopology.hasProd_of_X_pow_dvd_sub_one`: convergence and finite-cutoff
   coefficients for products whose factors approach `1` modulo increasing powers of `X`.
 * `PowerSeries.WithPiTopology.isAdic_span_X`: over a discrete commutative ring, the
@@ -32,6 +36,24 @@ open Finset
 namespace PowerSeries.WithPiTopology
 
 open scoped PowerSeries.WithPiTopology Topology
+
+section Semiring
+
+variable {R S : Type*} [TopologicalSpace R] [TopologicalSpace S]
+
+/-- Applying a continuous map coefficientwise to a power series is continuous for the
+coefficientwise topology. -/
+theorem continuous_mk_comp_coeff [Semiring R] {f : R → S} (hf : Continuous f) :
+    Continuous fun ψ : R⟦X⟧ ↦ mk fun n ↦ f (coeff n ψ) :=
+  continuous_pi fun d ↦ hf.comp (continuous_coeff R (d ()))
+
+/-- Mapping coefficients along a continuous ring homomorphism is continuous for the
+coefficientwise topology. -/
+theorem continuous_map [Semiring R] [Semiring S] {f : R →+* S} (hf : Continuous f) :
+    Continuous (PowerSeries.map f) :=
+  continuous_pi fun d ↦ hf.comp (continuous_apply d)
+
+end Semiring
 
 variable {R ι : Type*} [CommRing R] [TopologicalSpace R]
 

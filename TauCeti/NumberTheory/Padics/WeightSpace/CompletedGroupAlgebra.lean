@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.Padics.UnitsDecomposition.Logarithm
 public import TauCeti.RingTheory.RegularLocalRing.PowerSeries
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.CoordinateTopology
 import TauCeti.NumberTheory.Padics.PadicIntegers
+import TauCeti.RingTheory.PowerSeries.PiTopology
 
 /-!
 # The completed group algebra `ℤ_p[[ℤ_pˣ]]` in weight coordinates
@@ -291,12 +292,8 @@ open scoped PadicUnitsModuleTopology
 theorem continuous_padicUnitsCompletedGroupAlgebraSplitting :
     Continuous (padicUnitsCompletedGroupAlgebraSplitting hp) := by
   refine continuous_pi fun ψ ↦
-    ((continuous_iff_continuousAt.mpr fun φ ↦
-      (PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto ℤ_[p] _ _ _).mpr fun n ↦ by
-        simpa only [PowerSeries.coeff_map, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ContinuousAt,
-          Function.comp_def, AlgHom.coe_toLinearMap] using
-            ((IsModuleTopology.continuous_of_linearMap ψ.charEval.toLinearMap).comp
-              (PowerSeries.WithPiTopology.continuous_coeff _ n)).continuousAt).comp
+    ((PowerSeries.WithPiTopology.continuous_map
+      (IsModuleTopology.continuous_of_linearMap ψ.charEval.toLinearMap)).comp
       (continuous_padicUnitsCoordinate_symm p)).congr fun z ↦
         (padicUnitsPowerSeriesSplitting_apply hp _ ψ).symm
 
