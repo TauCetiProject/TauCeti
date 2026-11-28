@@ -72,8 +72,8 @@ respect to these characters, for all `n` at once.
   is `|U|` times the indicator of its annihilator `U^⊥`.
 * `AddChar.fourierTransform_compAddMonoidHom_trace_apply`: the transform over `L` with respect to
   `φ ∘ Tr_{L/K}` at `w'` is the transform over `K` with respect to `φ` at `Tr_{L/K} ∘ w'`.
-* `AddChar.fourierTransform_compAddMonoidHom_trace_traceCompEquiv_symm`: the same identity read
-  through the identification `Module.Dual.traceCompEquiv` of the two duals.
+* `AddChar.fourierTransform_compAddMonoidHom_trace_dualTransferEquiv_symm`: the same identity read
+  through the identification `LinearMap.dualTransferEquiv` of the two duals.
 * `AddChar.sum_compAddMonoidHom_trace_eq_zero`: the orthogonality hypothesis `∑ r, φ r = 0` passes
   from a finite field `K` to `φ ∘ Tr_{L/K}` on a finite extension `L`.
 * `AddChar.fourierTransform_stdAddChar_mul`: for `ZMod.stdAddChar` on `ZMod N`, the transform is
@@ -353,11 +353,11 @@ variable {K L : Type*} [Field K] [Field L] [Algebra K L] (φ : AddChar K Λ)
 transform of the underlying `K`-module with respect to `φ`, at a `K`-linear form `μ`, is the
 transform over `L` with respect to `φ ∘ Tr_{L/K}`, at the `L`-linear form whose trace is `μ`. -/
 @[simp]
-theorem fourierTransform_compAddMonoidHom_trace_traceCompEquiv_symm [FiniteDimensional K L]
+theorem fourierTransform_compAddMonoidHom_trace_dualTransferEquiv_symm [FiniteDimensional K L]
     [Algebra.IsSeparable K L] [Module L W] [Module K W] [IsScalarTower K L W] (t : W → Λ)
     (μ : Module.Dual K W) :
     (φ.compAddMonoidHom (Algebra.trace K L).toAddMonoidHom).fourierTransform t
-        ((Module.Dual.traceCompEquiv K L W).symm μ) =
+        (((Algebra.trace K L).dualTransferEquiv (M := W)).symm μ) =
       φ.fourierTransform t μ := by
   simp [fourierTransform_apply]
 

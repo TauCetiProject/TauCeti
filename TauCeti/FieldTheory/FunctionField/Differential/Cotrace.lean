@@ -30,7 +30,7 @@ many fibres where the repartition is not already bounded by `B'`
 `B' = Con D + Diff(F'/F)`, the trace estimate `TauCeti.repartitionTrace_mem_adeleFiltration`
 shows that `α ↦ ω (Tr α)` is well defined on `A_{F'} ⧸ A_{F'}(B')`, which gives a `k`-linear form
 on `A_{F'}`; the trace form of `k' / k` turns it into a `k'`-linear one
-(`Module.Dual.traceCompEquiv`).
+(`LinearMap.dualTransferEquiv`).
 
 This gives `Con (ω) + Diff(F'/F) ≤ (Cotr ω)`.  The reverse inequality is the sharpness of the trace
 estimate (`TauCeti.Place.exists_forall_valuation_le_and_trace_eq`): if `Cotr ω` were bounded by
@@ -163,16 +163,16 @@ theorem exists_mem_weilDifferentialFiltration_trace_apply_eq (hF : IsFunctionFie
   have hμN (a : V) (ha : a ∈ N) : μ a = 0 := by
     simp [μ, (Submodule.Quotient.mk_eq_zero N).mpr ha]
   -- the `k'`-linear form with trace `μ` is the required Weil differential
-  refine ⟨(Module.Dual.traceCompEquiv k k' V).symm μ,
+  refine ⟨((Algebra.trace k k').dualTransferEquiv (M := V)).symm μ,
     mem_weilDifferentialFiltration_of_apply_eq_zero (fun a ha ↦ ?_) (fun a ha ↦ ?_),
     fun β ↦ by
-      rw [Module.Dual.trace_traceCompEquiv_symm_apply, hμp]
+      rw [LinearMap.apply_dualTransferEquiv_symm_apply, hμp]
       simp only [traceDual, LinearMap.comp_apply, LinearMap.restrictScalars_apply]⟩
   · refine (Module.Dual.apply_eq_zero_iff_forall_trace_eq_zero (K := k) _ a).mpr fun b ↦ ?_
-    rw [Module.Dual.trace_traceCompEquiv_symm_apply]
+    rw [LinearMap.apply_dualTransferEquiv_symm_apply]
     exact hμN _ ((adeleFiltration B').smul_mem b ha)
   · refine (Module.Dual.apply_eq_zero_iff_forall_trace_eq_zero (K := k) _ a).mpr fun b ↦ ?_
-    rw [Module.Dual.trace_traceCompEquiv_symm_apply]
+    rw [LinearMap.apply_dualTransferEquiv_symm_apply]
     obtain ⟨β, hβ⟩ := smul_mem_range_relativeRepartitionPullback (k := k) (F := F) hF' b
       (const_mem_range_relativeRepartitionPullback (F := F) hF' ha)
     obtain ⟨x, hx⟩ := mem_diagonalRepartitions_iff.mp ha
