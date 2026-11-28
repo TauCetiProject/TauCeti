@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
 
 /-!
 # Continuous linear maps on products and Pi types
@@ -22,6 +23,9 @@ This file collects supplementary results about continuous linear maps on indexed
   coordinate `j` of `Function.update v i (α v)`.
 * `ContinuousLinearMap.mem_ker_pi_proj_comp`: a vector lies in the kernel of the coordinates of
   `q` labelled by a set `t` exactly when these coordinates of `q` vanish at it.
+* `ContinuousLinearMap.restrictScalars_proj`: restricting the scalars of a coordinate projection
+  gives the coordinate projection over the smaller ring, for example the complex projection of
+  `ι → ℂ` viewed as a real-linear map is the real projection.
 -/
 
 public section
@@ -68,6 +72,15 @@ theorem mem_ker_pi_proj_comp {q : M →L[R] ∀ i, φ i} {t : Set ι} {v : M} :
     v ∈ (pi fun i : t ↦ (proj (i : ι)).comp q).ker ↔ ∀ i ∈ t, q v i = 0 := by
   rw [LinearMap.mem_ker, funext_iff, Subtype.forall]
   simp only [coe_coe, pi_apply, comp_apply, proj_apply, Pi.zero_apply]
+
+/-- Restricting the scalars of the coordinate projection over `A` to `R` gives the coordinate
+projection over `R`; for example, the complex projection of `ι → ℂ`, viewed as a real-linear map,
+is the real projection. -/
+@[simp]
+theorem restrictScalars_proj {A : Type*} [Semiring A] [∀ i, Module A (φ i)] (i : ι)
+    [LinearMap.CompatibleSMul (∀ i, φ i) (φ i) R A] :
+    (proj (R := A) (φ := φ) i).restrictScalars R = proj i :=
+  rfl
 
 end Pi
 

@@ -72,8 +72,9 @@ structures are (`TauCeti.Floer.tames_cappedAlmostComplex`,
 The comparison family is `TauCeti.Floer.cappedComparisonAlmostComplex h₀ J hJ R`, the structure
 with `r = 3R - 1` and the neck length `L = TauCeti.Floer.comparisonNeckLength R` of the family of
 Hamiltonian data `TauCeti.Floer.cutoffNeckFamily`. It is the domain-independent `J₀` for
-`R ≤ 1/3`, in particular at `R = 0`; it is constant, without necks, on the collar
-`2/3 ≤ R ≤ 3/2`; it has necks of length `R - 1` for `R ≥ 2`, so on the truncation `S_T` it is
+`R ≤ 1/3`, in particular at `R = 0`; it is compatible when the end structures are
+(`TauCeti.Floer.compatible_cappedComparisonAlmostComplex`); it is constant, without necks, on the
+collar `2/3 ≤ R ≤ 3/2`; it has necks of length `R - 1` for `R ≥ 2`, so on the truncation `S_T` it is
 the structure with neck length `T` once `T ≤ R + 1`
 (`TauCeti.Floer.cappedComparisonAlmostComplex_eq_cappedAlmostComplex_of_mem_truncation`); and it
 is smooth in `R`. The structure is switched on during `1/3 ≤ R ≤ 2/3`, where the cutoff
@@ -524,6 +525,13 @@ theorem cappedComparisonAlmostComplex_def (h₀ : ω.Compatible J₀) (R : ℝ) 
       cappedAlmostComplex h₀ J hJ (3 * R - 1) (comparisonNeckLength R) :=
   (rfl)
 
+/-- The structures of the comparison family are `ω`-compatible when the structures on the ends
+are. -/
+theorem compatible_cappedComparisonAlmostComplex (h₀ : ω.Compatible J₀)
+    (hJc : ∀ q t x, ω.Compatible (J q t x)) (R : ℝ) (w : ℂ) (x : M) :
+    ω.Compatible (cappedComparisonAlmostComplex h₀ J hJ R w x) :=
+  compatible_cappedAlmostComplex h₀ hJc _ _ w x
+
 /-- For `R ≤ 1/3`, in particular at the start `R = 0` of the family, the structure is the
 domain-independent base structure `J₀`. -/
 theorem cappedComparisonAlmostComplex_of_le (h₀ : ω.Compatible J₀) (hR : R ≤ 1 / 3) (w : ℂ)
@@ -589,5 +597,37 @@ theorem contMDiff_cappedComparisonAlmostComplex (h₀ : ω.Compatible J₀) {n :
   simp only [Function.comp_apply, cappedComparisonAlmostComplex_def]
 
 end FamilySmooth
+
+section FamilySmoothNormed
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
+  {J : Puncture → ℝ → V → AlmostComplexStructure V}
+
+/-- The comparison family, read in the plane chart, is `C^n` jointly in the family parameter `R`,
+the real coordinates of `ℂ` and the target point, for `C^n` families of structures on the ends. -/
+theorem contDiff_cappedComparisonAlmostComplex (h₀ : ω.Compatible J₀)
+    (hJ : ∀ q t x, ω.Tames (J q t x)) {n : ℕ∞} (hJp : ∀ q, Function.Periodic (J q) 1)
+    (hJs : ∀ q, ContDiff ℝ n fun p : ℝ × V ↦ (J q p.1 p.2).toLinearMap.toContinuousLinearMap) :
+    ContDiff ℝ n fun p : ℝ × ((ℝ × ℝ) × V) ↦ (cappedComparisonAlmostComplex h₀ J hJ p.1
+      (Complex.equivRealProdCLM.symm p.2.1) p.2.2).toLinearMap.toContinuousLinearMap := by
+  have hg : ContMDiff 𝓘(ℝ, ℝ × ((ℝ × ℝ) × V)) (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V))) n
+      fun p : ℝ × ((ℝ × ℝ) × V) ↦ (Complex.equivRealProdCLM.symm p.2.1, (p.1, p.2.2)) :=
+    (Complex.equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff.prodMk
+      (contDiff_fst.contMDiff.prodMk (contDiff_snd.comp contDiff_snd).contMDiff)
+  exact ((contMDiff_cappedComparisonAlmostComplex h₀ hJp
+    fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hJs q).contMDiff).comp hg).contDiff
+
+/-- A member `R` of the comparison family, read in the plane chart, is `C^n` jointly in the real
+coordinates of `ℂ` and the target point, for `C^n` families of structures on the ends. -/
+theorem contDiff_cappedComparisonAlmostComplex_equivRealProdCLM (h₀ : ω.Compatible J₀)
+    (hJ : ∀ q t x, ω.Tames (J q t x)) {n : ℕ∞} (hJp : ∀ q, Function.Periodic (J q) 1)
+    (hJs : ∀ q, ContDiff ℝ n fun p : ℝ × V ↦ (J q p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (R : ℝ) :
+    ContDiff ℝ n fun p : (ℝ × ℝ) × V ↦ (cappedComparisonAlmostComplex h₀ J hJ R
+      (Complex.equivRealProdCLM.symm p.1) p.2).toLinearMap.toContinuousLinearMap :=
+  (contDiff_cappedComparisonAlmostComplex h₀ hJ hJp hJs).comp (contDiff_const.prodMk contDiff_id)
+
+end FamilySmoothNormed
 
 end TauCeti.Floer

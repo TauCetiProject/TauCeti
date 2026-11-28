@@ -15,6 +15,7 @@ public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Units
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
+import TauCeti.LinearAlgebra.TensorProduct.Submodule
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.CompactOpen
 
 /-!
@@ -90,6 +91,8 @@ finitely many vectors.
   jointly continuous action.
 * `TauCeti.ContinuousRep.finite_range`: a continuous representation on a finite carrier has
   finite image.
+* `TauCeti.ContinuousRep.isClosed_ker`: a continuous representation of a group on a Hausdorff
+  module has closed kernel.
 * `TauCeti.ContinuousRep.continuous_toMatrix`: the matrix coefficients in a finite basis are
   continuous.
 * `TauCeti.ContinuousRep.nonempty_iso_ofCharacter_iff`: two character lines are isomorphic
@@ -604,6 +607,22 @@ end Iso
 
 end Basic
 
+section Kernel
+
+variable {Γ A M : Type*} [Group Γ] [TopologicalSpace Γ] [Semiring A] [AddCommMonoid M]
+  [Module A M] [TopologicalSpace M] [T2Space M]
+
+/-- **The kernel of a continuous representation on a Hausdorff module is closed**: it is the
+intersection over `x : M` of the closed sets `{g | ρ g x = x}`. -/
+theorem isClosed_ker (ρ : ContinuousRep Γ A M) : IsClosed (ρ.toRepresentation.ker : Set Γ) := by
+  have : (ρ.toRepresentation.ker : Set Γ) = ⋂ x : M, {g | ρ g x = x} := by
+    ext g
+    simp [MonoidHom.mem_ker, LinearMap.ext_iff]
+  rw [this]
+  exact isClosed_iInter fun x ↦ isClosed_eq (ρ.continuous_orbit x) continuous_const
+
+end Kernel
+
 section ofCharacter
 
 variable {Γ A : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommSemiring A] [TopologicalSpace A]
@@ -670,11 +689,7 @@ private theorem continuous_baseChange_action (ρ : ContinuousRep Γ A M) :
       map_smul' a x := by simp [TensorProduct.tmul_smul, algebraMap_smul] }
   have hι : Continuous ι := IsModuleTopology.continuous_of_linearMapₛₗ (continuous_algebraMap A B) ι
   -- The family `1 ⊗ m i` spans `B ⊗[A] M`, and its orbits `g ↦ 1 ⊗ ρ g (m i)` are continuous.
-  have hspan : Submodule.span B (Set.range fun i => (1 : B) ⊗ₜ[A] m i) = ⊤ := by
-    have hrange : (Set.range fun i => (1 : B) ⊗ₜ[A] m i) =
-        TensorProduct.mk A B M 1 '' Set.range m :=
-      Set.range_comp (TensorProduct.mk A B M 1) m
-    rw [hrange, ← Submodule.baseChange_span, hm, Submodule.baseChange_top]
+  have hspan := span_one_tmul_eq_top (A := B) hm
   refine (IsModuleTopology.continuous_linearMap_apply_iff_of_span_eq_top
     (Representation.baseChange B ρ.toRepresentation) hspan).mpr fun i => ?_
   refine (hι.comp (ρ.continuous_orbit (m i))).congr fun g => ?_

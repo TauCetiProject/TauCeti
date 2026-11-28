@@ -31,7 +31,8 @@ the coordinate vectors, and then `ξ = ∑ j, I_j dθ_j`. This file studies the 
 `θ ∈ ℝ^ι`, defined modulo `p ℤ^ι`, and action coordinates `I ∈ ℝ^ι`.
 
 * The actions `I_j = ξ(e_j)` of a covector (`TauCeti.CotangentBundle.torusActions`) of `κ(θ, I)`
-  are `I` (`TauCeti.CotangentBundle.torusActions_actionAngleCover`).
+  are `I` (`TauCeti.CotangentBundle.torusActions_actionAngleCover`), and a covector is determined
+  by its base point and its actions (`TauCeti.CotangentBundle.ext_torusActions`).
 * `κ` is surjective, and `κ(θ, I) = κ(θ', I')` exactly when `I' = I` and `θ' - θ ∈ p ℤ^ι`
   (`TauCeti.CotangentBundle.surjective_actionAngleCover`,
   `TauCeti.CotangentBundle.actionAngleCover_eq_actionAngleCover_iff`).
@@ -191,13 +192,23 @@ theorem surjective_actionAngleCover :
   -- `z.2` is a covector on the tangent space, a type synonym of `ι → ℝ`.
   rfl
 
+/-- **A covector of the torus is determined by its base point and its actions.** -/
+theorem ext_torusActions [DecidableEq ι]
+    {z w : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)}
+    (hproj : z.proj = w.proj) (h : torusActions p z = torusActions p w) : z = w := by
+  obtain ⟨x, rfl⟩ := surjective_actionAngleCover p z
+  obtain ⟨y, rfl⟩ := surjective_actionAngleCover p w
+  rw [torusActions_actionAngleCover, torusActions_actionAngleCover] at h
+  exact CotangentBundle.ext hproj fun v ↦ (actionAngleCover_snd_apply p x v).trans
+    ((congrArg (fun I : ι → ℝ ↦ ∑ j, I j * v j) h).trans (actionAngleCover_snd_apply p y v).symm)
+
 /-- **The action–angle covering map is smooth.** -/
 theorem contMDiff_actionAngleCover :
     ContMDiff 𝓘(ℝ, (ι → ℝ) × (ι → ℝ))
       ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) ∞
       (actionAngleCover (ι := ι) p) := by
   -- The base map `(θ, I) ↦ [θ]` is the smooth covering map of the torus after `fst`.
-  have hb := (AddCircle.contMDiff_coe_pi (ι := ι) p ∞).comp
+  have hb := (AddCircle.contMDiff_coe_pi (fun _ : ι ↦ p) ∞).comp
     (ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ)).contMDiff
   refine ContMDiff.sum_sectionAlong Finset.univ _ hb fun j _ ↦ ?_
   -- Each term is a smooth coefficient times the smooth section `dθ_j` along the base map.
@@ -220,7 +231,7 @@ theorem mpullback_liouvilleForm_actionAngleCover_apply (x : (ι → ℝ) × (ι 
   have hb (u : TangentSpace 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) x) :
       mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
         (fun x : (ι → ℝ) × (ι → ℝ) ↦ fun i ↦ (x.1 i : AddCircle p)) x u = u.1 :=
-    DFunLike.congr_fun ((AddCircle.hasMFDerivAt_coe_pi (ι := ι) p x.1).comp x
+    DFunLike.congr_fun ((AddCircle.hasMFDerivAt_coe_pi (fun _ : ι ↦ p) x.1).comp x
       (ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ)).hasMFDerivAt).mfderiv u
   rw [mpullback_liouvilleForm_apply_of_proj_comp_eq (g := fun x : (ι → ℝ) × (ι → ℝ) ↦
       fun i ↦ (x.1 i : AddCircle p)) (fun _ ↦ rfl)
@@ -414,7 +425,7 @@ theorem eval₂_symplecticForm_eq_dotProduct_sub [DecidableEq ι]
             (actionAngleCover p) x w) = w.1 := by
     rw [← mfderiv_comp_apply x
       ((Bundle.contMDiff_proj (n := ∞) _ (actionAngleCover p x)).mdifferentiableAt (by simp)) hκ]
-    exact DFunLike.congr_fun ((AddCircle.hasMFDerivAt_coe_pi (ι := ι) p x.1).comp x
+    exact DFunLike.congr_fun ((AddCircle.hasMFDerivAt_coe_pi (fun _ : ι ↦ p) x.1).comp x
       (ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ)).hasMFDerivAt).mfderiv w
   -- Along `κ` the action differential reads the second component, since `I ∘ κ = snd`.
   have hI (w : TangentSpace 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) x) :

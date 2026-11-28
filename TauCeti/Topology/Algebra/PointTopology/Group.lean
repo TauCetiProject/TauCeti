@@ -199,6 +199,32 @@ theorem ContinuousAlgEquiv.mapValueContinuousMulEquiv_symm_apply_apply (e : R �
   obtain ⟨y, rfl⟩ := (e.mapValueContinuousMulEquiv (H₁ := H₁)).surjective x
   simp
 
+/-- Forgetting continuity from `ContinuousAlgEquiv.mapValueContinuousMulEquiv` recovers
+`AlgEquiv.mapValueMulEquiv`. -/
+@[simp]
+theorem ContinuousAlgEquiv.toMulEquiv_mapValueContinuousMulEquiv (e : R ≃A[k] R') :
+    (e.mapValueContinuousMulEquiv (H₁ := H₁) :
+        WithConv (H₁ →ₐ[k] R) ≃* WithConv (H₁ →ₐ[k] R')) =
+      e.toAlgEquiv.mapValueMulEquiv := (rfl)
+
+/-- `ContinuousAlgEquiv.mapValueContinuousMulEquiv` acts by `AlgHom.mapValue` in the forward
+direction. -/
+theorem ContinuousAlgEquiv.mapValueContinuousMulEquiv_apply (e : R ≃A[k] R')
+    (f : WithConv (H₁ →ₐ[k] R)) :
+    e.mapValueContinuousMulEquiv f = AlgHom.mapValue (e : R →ₐ[k] R') f := by
+  have he : (e.toAlgEquiv : R →ₐ[k] R') = (e : R →ₐ[k] R') := AlgHom.ext fun _ ↦ rfl
+  exact (e.toAlgEquiv.mapValueMulEquiv_apply f).trans (by rw [he])
+
+/-- Inverting `ContinuousAlgEquiv.mapValueContinuousMulEquiv` is `mapValueContinuousMulEquiv` of
+the inverse continuous algebra equivalence. -/
+theorem ContinuousAlgEquiv.mapValueContinuousMulEquiv_symm (e : R ≃A[k] R') :
+    (e.mapValueContinuousMulEquiv (H₁ := H₁)).symm = e.symm.mapValueContinuousMulEquiv :=
+  ContinuousMulEquiv.ext fun f ↦ e.mapValueContinuousMulEquiv.symm_apply_eq.2 <| by
+    have hcomp : (e : R →ₐ[k] R').comp (e.symm : R' →ₐ[k] R) = AlgHom.id k R' :=
+      AlgHom.ext fun x ↦ e.apply_symm_apply x
+    simp only [ContinuousAlgEquiv.mapValueContinuousMulEquiv_apply, ← MonoidHom.comp_apply,
+      ← AlgHom.mapValue_comp, hcomp, AlgHom.mapValue_id, MonoidHom.id_apply]
+
 /-- An isomorphism `e : H₁ ≃ₐc[k] H₂` of bialgebras induces, by pre-composition, an isomorphism of
 topological monoids of points `WithConv (H₂ →ₐ[k] R) ≃ₜ* WithConv (H₁ →ₐ[k] R)`; it is
 `BialgEquiv.mapDomainMulEquiv` with its continuity in both directions. -/
@@ -229,6 +255,22 @@ theorem BialgEquiv.mapDomainContinuousMulEquiv_symm_apply (e : H₁ ≃ₐc[k] H
     (e.mapDomainContinuousMulEquiv (R := R)).symm x =
       BialgHom.mapDomain (e.symm : H₂ →ₐc[k] H₁) x :=
   e.mapDomainMulEquiv_symm_apply x
+
+/-- Forgetting continuity from `BialgEquiv.mapDomainContinuousMulEquiv` recovers
+`BialgEquiv.mapDomainMulEquiv`. -/
+@[simp]
+theorem BialgEquiv.toMulEquiv_mapDomainContinuousMulEquiv (e : H₁ ≃ₐc[k] H₂) :
+    (e.mapDomainContinuousMulEquiv (R := R) :
+        WithConv (H₂ →ₐ[k] R) ≃* WithConv (H₁ →ₐ[k] R)) =
+      e.mapDomainMulEquiv := (rfl)
+
+/-- Inverting `BialgEquiv.mapDomainContinuousMulEquiv` is `mapDomainContinuousMulEquiv` of the
+inverse bialgebra equivalence. -/
+theorem BialgEquiv.mapDomainContinuousMulEquiv_symm (e : H₁ ≃ₐc[k] H₂) :
+    (e.mapDomainContinuousMulEquiv (R := R)).symm = e.symm.mapDomainContinuousMulEquiv :=
+  ContinuousMulEquiv.ext fun f ↦ e.mapDomainContinuousMulEquiv.symm_apply_eq.2 <| by
+    simp only [BialgEquiv.mapDomainContinuousMulEquiv_apply, ← MonoidHom.comp_apply,
+      ← BialgHom.mapDomain_comp, BialgEquiv.symm_comp, BialgHom.mapDomain_id, MonoidHom.id_apply]
 
 end Functoriality
 

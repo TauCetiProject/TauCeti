@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import TauCeti.Analysis.Distribution.WaveFrontSet.LineDeriv
+import TauCeti.Analysis.Distribution.TestFunction.Compact
 import TauCeti.Analysis.Normed.Module.Seminorm.WeightedSup
 
 /-!
@@ -60,6 +61,11 @@ differentiation and restriction to an open subset are continuous linear maps of 
   `TauCeti.WaveFrontSpace.continuous_iff`, `TauCeti.WaveFrontSpace.continuous_of_le`,
   `TauCeti.WaveFrontSpace.continuous_linearMap_iff`: convergence and continuity of maps into
   `𝓓'_Γ(Ω)`.
+* `TauCeti.WaveFrontSpace.continuous_linearMap_of_forall_isCompact_le`: a linear map into
+  `𝓓'_Γ(Ω)` is continuous when its values on compact sets of test functions and its decay
+  estimates are bounded by continuous seminorms.
+* `TauCeti.WaveFrontSpace.exists_continuous_seminorm_norm_complexPairing_le`: on a compact set of
+  test functions, the values of the members of `𝓓'_Γ(Ω)` are bounded by a continuous seminorm.
 * `TauCeti.WaveFrontSpace.inclusionCLM`, `TauCeti.WaveFrontSpace.smulLeftCLM`,
   `TauCeti.WaveFrontSpace.lineDerivCLM`, `TauCeti.WaveFrontSpace.restrictCLM`: the
   inclusion for a larger cone, multiplication by a smooth real-valued function, differentiation
@@ -536,6 +542,76 @@ theorem continuous_linearMap_iff {F : Type*} [AddCommGroup F] [Module ℂ F] [To
     Continuous A ↔ Continuous (toDistribution ∘ₗ A) ∧
       ∀ i, Continuous ((WaveFrontSpace.seminorm i).comp A) :=
   continuous_iff
+
+/-- **Continuity of linear maps into `𝓓'_Γ(Ω)` from estimates.** A linear map `A` into `𝓓'_Γ(Ω)`
+is continuous when two families of estimates hold with continuous seminorms `q`:
+- for every compact set `Q` of complex test functions supported in a common compact subset of
+  `Ω`, the bound `‖A u (φ)‖ ≤ q u` on `Q`, stated as `‖(A u).localFourier φ 0‖ ≤ q u`;
+- for every seminorm index `(φ, V, N)`, the decay estimate
+  `(1 + ‖η‖) ^ N ‖(A u).localFourier φ η‖ ≤ q u` for `η ∈ V`. -/
+theorem continuous_linearMap_of_forall_isCompact_le {F : Type*} [AddCommGroup F] [Module ℂ F]
+    [TopologicalSpace F] [IsTopologicalAddGroup F] (A : F →ₗ[ℂ] WaveFrontSpace Ω Γ)
+    (h₁ : ∀ K : Compacts E, (K : Set E) ⊆ Ω → ∀ Q : Set 𝓓(Ω, ℂ), IsCompact Q →
+      (∀ φ ∈ Q, tsupport φ ⊆ K) → ∃ q : Seminorm ℂ F, Continuous q ∧
+        ∀ u, ∀ φ ∈ Q, ‖(A u).toDistribution.localFourier φ 0‖ ≤ q u)
+    (h₂ : ∀ i : WaveFrontSeminormIndex Ω Γ, ∃ q : Seminorm ℂ F, Continuous q ∧ ∀ u, ∀ η ∈ i.cone,
+      (1 + ‖η‖) ^ i.order * ‖(A u).toDistribution.localFourier i.cutoff η‖ ≤ q u) :
+    Continuous A := by
+  refine continuous_linearMap_of_le _ ?_ fun i ↦ ?_
+  · -- Continuity into `𝓓'(Ω)`: the values on a compact set of real test functions.
+    refine continuous_of_tendsto_nhds_zero (toDistribution ∘ₗ A) ?_
+    refine CompactConvergenceCLM.hasBasis_nhds_zero.tendsto_right_iff.2 fun ⟨Q, V⟩ ⟨hQ, hV⟩ ↦ ?_
+    obtain ⟨r, hr, hrV⟩ := Metric.mem_nhds_iff.1 hV
+    -- The complexified test functions of `Q` are supported in one compact set `K`.
+    have hQc := hQ.image (TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM).continuous
+    obtain ⟨K, hKΩ, hQK⟩ := TestFunction.exists_compacts_forall_tsupport_subset_of_isCompact hQc
+    obtain ⟨q, hq, hqQ⟩ := h₁ K hKΩ _ hQc hQK
+    filter_upwards [(hq.tendsto' 0 0 (map_zero q)) (Iio_mem_nhds hr)] with u hu ψ hψ
+    have h := hqQ u _ ⟨ψ, hψ, rfl⟩
+    rw [localFourier_at_zero, complexPairing_postcompCLM_ofRealCLM] at h
+    exact hrV (mem_ball_zero_iff.2 (h.trans_lt hu))
+  · obtain ⟨q, hq, hqi⟩ := h₂ i
+    exact ⟨q, hq, fun u ↦ seminorm_le_bound i _ (apply_nonneg _ _) (hqi u)⟩
+
+/-- **Distributions on a compact set of test functions.** For a compact set `Q` of complex test
+functions, `‖T φ‖` is bounded, uniformly for `φ ∈ Q`, by a continuous seminorm of `T` in
+`𝓓'_Γ(Ω)`: the normal topology is finer than the topology of `𝓓'(Ω)`, the topology of uniform
+convergence on compact sets of test functions. -/
+theorem exists_continuous_seminorm_norm_complexPairing_le {Q : Set 𝓓(Ω, ℂ)} (hQ : IsCompact Q) :
+    ∃ q : Seminorm ℂ (WaveFrontSpace Ω Γ), Continuous q ∧
+      ∀ u : WaveFrontSpace Ω Γ, ∀ φ ∈ Q, ‖u.toDistribution.complexPairing φ‖ ≤ q u := by
+  let P : Q → WaveFrontSpace Ω Γ →ₗ[ℂ] ℂ := fun φ ↦
+    { toFun := fun u ↦ u.toDistribution.complexPairing φ
+      map_add' := fun u v ↦ by simp
+      map_smul' := fun c u ↦ by simp }
+  have hP (u : WaveFrontSpace Ω Γ) : ∃ C, ∀ φ : Q, ‖P φ u‖ ≤ C * 1 := by
+    obtain ⟨C, hC⟩ :=
+      hQ.exists_bound_of_continuousOn (u.toDistribution.complexPairing.continuous.continuousOn)
+    exact ⟨C, fun φ ↦ by simpa [P] using hC φ φ.property⟩
+  refine ⟨Seminorm.weightedSup P (fun _ ↦ 1) (fun _ ↦ one_pos), ?_, fun u φ hφ ↦ by
+    simpa [P] using Seminorm.norm_le_weightedSup P _ _ hP u ⟨φ, hφ⟩⟩
+  refine Seminorm.continuous_of_forall fun r hr ↦ ?_
+  -- The real and imaginary parts of the members of `Q` form a compact set of real test functions.
+  set Q' : Set 𝓓(Ω, ℝ) :=
+    TestFunction.postcompCLM (𝕜 := ℝ) Complex.reCLM '' Q ∪
+      TestFunction.postcompCLM (𝕜 := ℝ) Complex.imCLM '' Q
+  have hQ' : IsCompact Q' :=
+    (hQ.image (TestFunction.postcompCLM _).continuous).union
+      (hQ.image (TestFunction.postcompCLM _).continuous)
+  have hnhds : {S : 𝓓'(Ω, ℂ) | ∀ g ∈ Q', S g ∈ ball (0 : ℂ) (r / 4)} ∈ 𝓝 (0 : 𝓓'(Ω, ℂ)) :=
+    CompactConvergenceCLM.hasBasis_nhds_zero.mem_of_mem (i := (Q', ball (0 : ℂ) (r / 4)))
+      ⟨hQ', ball_mem_nhds _ (by positivity)⟩
+  filter_upwards [(continuous_toDistribution.tendsto' 0 0 (map_zero _)) hnhds] with u hu
+  rw [Seminorm.mem_ball_zero]
+  refine (Seminorm.weightedSup_le P _ _ (by positivity : (0 : ℝ) ≤ r / 2) fun φ ↦ ?_).trans_lt
+    (half_lt_self hr)
+  have h1 := mem_ball_zero_iff.1 (hu _ (Or.inl ⟨φ, φ.property, rfl⟩))
+  have h2 := mem_ball_zero_iff.1 (hu _ (Or.inr ⟨φ, φ.property, rfl⟩))
+  calc ‖P φ u‖ = ‖u.toDistribution (TestFunction.postcompCLM (𝕜 := ℝ) Complex.reCLM φ) +
+        Complex.I * u.toDistribution (TestFunction.postcompCLM (𝕜 := ℝ) Complex.imCLM φ)‖ := by
+        simp [P, complexPairing_apply]
+    _ ≤ r / 4 + r / 4 := (norm_add_le _ _).trans (add_le_add h1.le (by simpa using h2.le))
+    _ = r / 2 * 1 := by ring
 
 end Topology
 

@@ -37,12 +37,19 @@ depends continuously, and over `ℝ` or `ℂ` real-smoothly, on `κ`.
 
 ## Main results
 
-* `ContinuousLinearMap.starProjection_range_eq_comp_comp_adjoint`: if `B† B G B† = B†`, the
-  orthogonal projection onto the range of `B` is `B G B†`.
+* `ContinuousLinearMap.isClosed_range_of_isUnit_adjoint_comp`,
+  `ContinuousLinearMap.hasOrthogonalProjection_range_of_isUnit_adjoint_comp`: an operator with
+  invertible Gram operator `B† B` has closed range and admits an orthogonal projection onto it.
+* `ContinuousLinearMap.sub_comp_comp_adjoint_mem_orthogonal_range`,
+  `ContinuousLinearMap.hasOrthogonalProjection_range_of_adjoint_comp_self_comp`,
+  `ContinuousLinearMap.starProjection_range_eq_comp_comp_adjoint`: if `B† B G B† = B†`, then
+  `v - (B G B†) v ∈ B.rangeᗮ`, the range of `B` admits an orthogonal projection, and that
+  projection is `B G B†`.
 * `ContinuousLinearMap.starProjection_range_eq`: the formula `B (B† B)⁻¹ B†` for the orthogonal
   projection onto the range of `B`.
-* `ContinuousLinearMap.comp_adjoint_eq_starProjection_range`: for an isometry `B` it reduces to
-  `B B†`.
+* `ContinuousLinearMap.hasOrthogonalProjection_range_of_isometry`,
+  `ContinuousLinearMap.comp_adjoint_eq_starProjection_range`: for an isometry `B`, `B.range` admits
+  an orthogonal projection and that projection is `B B†`.
 * `ContinuousLinearMap.gramLeftInverse`: the left inverse `(A† A)⁻¹ A†`
   (`ContinuousLinearMap.gramLeftInverse_def`) of `A` when `A† A` is invertible
   (`ContinuousLinearMap.gramLeftInverse_comp_self`,
@@ -157,32 +164,65 @@ theorem contDiffAt_gramLeftInverse
     (hi.comp (f := fun B : F →L[𝕜] V ↦ adjoint B ∘L B) A hgram.contDiffAt)).clm_apply
       ha.contDiffAt
 
-/-- If `B† B G B† = B†`, the orthogonal projection onto the range of `B` is `B G B†`. -/
-theorem starProjection_range_eq_comp_comp_adjoint {B : F →L[𝕜] V}
-    [B.range.HasOrthogonalProjection] {G : F →L[𝕜] F}
-    (hG : adjoint B ∘L B ∘L G ∘L adjoint B = adjoint B) :
-    B.range.starProjection = B ∘L G ∘L adjoint B := by
-  ext v
-  refine Submodule.eq_starProjection_of_mem_of_inner_eq_zero (LinearMap.mem_range_self _ _) ?_
-  rintro _ ⟨x, rfl⟩
-  -- Move `B` across the inner product: `B† (v - B G B† v) = B† v - B† v = 0`.
-  rw [coe_coe, ← adjoint_inner_left, map_sub]
+/-- An operator whose Gram operator `B† B` is invertible has closed range. -/
+theorem isClosed_range_of_isUnit_adjoint_comp {B : F →L[𝕜] V}
+    (hB : IsUnit (adjoint B ∘L B)) : IsClosed (Set.range B) :=
+  Function.LeftInverse.isClosed_range (gramLeftInverse_apply_apply hB)
+    (gramLeftInverse B).continuous B.continuous
+
+/-- If `B† B G B† = B†`, then `v - (B G B†) v` is orthogonal to the range of `B`. -/
+theorem sub_comp_comp_adjoint_mem_orthogonal_range {B : F →L[𝕜] V} {G : F →L[𝕜] F}
+    (hG : adjoint B ∘L B ∘L G ∘L adjoint B = adjoint B) (v : V) :
+    v - (B ∘L G ∘L adjoint B) v ∈ B.rangeᗮ := by
+  rw [ContinuousLinearMap.orthogonal_range, LinearMap.mem_ker, coe_coe, map_sub]
   have h := congr($hG v)
   simp only [comp_apply] at h ⊢
-  rw [h, sub_self, inner_zero_left]
+  rw [h, sub_self]
+
+/-- If `B† B G B† = B†`, the range of `B` admits an orthogonal projection. -/
+theorem hasOrthogonalProjection_range_of_adjoint_comp_self_comp {B : F →L[𝕜] V} {G : F →L[𝕜] F}
+    (hG : adjoint B ∘L B ∘L G ∘L adjoint B = adjoint B) : B.range.HasOrthogonalProjection :=
+  ⟨fun v ↦ ⟨(B ∘L G ∘L adjoint B) v, LinearMap.mem_range_self _ _,
+    sub_comp_comp_adjoint_mem_orthogonal_range hG v⟩⟩
+
+/-- The range of an operator whose Gram operator `B† B` is invertible admits an orthogonal
+projection. -/
+theorem hasOrthogonalProjection_range_of_isUnit_adjoint_comp {B : F →L[𝕜] V}
+    (hB : IsUnit (adjoint B ∘L B)) : B.range.HasOrthogonalProjection :=
+  hasOrthogonalProjection_range_of_adjoint_comp_self_comp
+    (adjoint_comp_self_comp_gramLeftInverse hB)
+
+/-- The range of an isometry admits an orthogonal projection. -/
+theorem hasOrthogonalProjection_range_of_isometry {B : F →L[𝕜] V} (hB : Isometry B) :
+    B.range.HasOrthogonalProjection :=
+  hasOrthogonalProjection_range_of_isUnit_adjoint_comp (by
+    rw [(isometry_iff_adjoint_comp_self B).1 hB]
+    exact isUnit_one)
+
+/-- If `B† B G B† = B†`, the orthogonal projection onto the range of `B` is `B G B†`. -/
+theorem starProjection_range_eq_comp_comp_adjoint {B : F →L[𝕜] V} {G : F →L[𝕜] F}
+    (hG : adjoint B ∘L B ∘L G ∘L adjoint B = adjoint B) :
+    letI := hasOrthogonalProjection_range_of_adjoint_comp_self_comp hG
+    B.range.starProjection = B ∘L G ∘L adjoint B := by
+  let := hasOrthogonalProjection_range_of_adjoint_comp_self_comp hG
+  ext v
+  exact Submodule.eq_starProjection_of_mem_orthogonal
+    (LinearMap.mem_range_self (B : F →ₗ[𝕜] V) ((G ∘L adjoint B) v))
+    (sub_comp_comp_adjoint_mem_orthogonal_range hG v)
 
 /-- The orthogonal projection onto the range of `B` is `B (B† B)⁻¹ B†`, that is `B` composed with
 `ContinuousLinearMap.gramLeftInverse B`, when the Gram operator `B† B` is invertible. -/
-theorem starProjection_range_eq {B : F →L[𝕜] V} [B.range.HasOrthogonalProjection]
-    (hB : IsUnit (adjoint B ∘L B)) :
+theorem starProjection_range_eq {B : F →L[𝕜] V} (hB : IsUnit (adjoint B ∘L B)) :
+    letI := hasOrthogonalProjection_range_of_isUnit_adjoint_comp hB
     B.range.starProjection = B ∘L gramLeftInverse B := by
   rw [gramLeftInverse_def]
   exact starProjection_range_eq_comp_comp_adjoint <| by
     simpa only [gramLeftInverse_def] using adjoint_comp_self_comp_gramLeftInverse hB
 
 /-- For an isometry `B`, the operator `B B†` is the orthogonal projection onto the range of `B`. -/
-theorem comp_adjoint_eq_starProjection_range {B : F →L[𝕜] V} (hB : Isometry B)
-    [B.range.HasOrthogonalProjection] : B ∘L adjoint B = B.range.starProjection := by
+theorem comp_adjoint_eq_starProjection_range {B : F →L[𝕜] V} (hB : Isometry B) :
+    letI := hasOrthogonalProjection_range_of_isometry hB
+    B ∘L adjoint B = B.range.starProjection := by
   have h := (isometry_iff_adjoint_comp_self B).1 hB
   rw [starProjection_range_eq (h ▸ isUnit_one), gramLeftInverse_def, h, Ring.inverse_one,
     one_def, id_comp]

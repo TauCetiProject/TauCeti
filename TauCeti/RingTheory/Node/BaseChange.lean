@@ -64,39 +64,26 @@ def baseChange : S ⊗[R] NodeAlgebra R a ≃ₐ[S]
     · simp [f, g, m]
     · simp [f, g, m]
 
-/-- The ring map taking the original nodal coordinates into the changed coefficient ring. -/
-def map : NodeAlgebra R a →+* NodeAlgebra S (algebraMap R S a) :=
-  (baseChange a).toAlgHom.toRingHom.comp
-    (Algebra.TensorProduct.includeRight : NodeAlgebra R a →ₐ[R] S ⊗[R] NodeAlgebra R a).toRingHom
-
-/-- Changing coefficients sends constants to their images in the new coefficient ring. -/
-@[simp]
-theorem map_algebraMap (r : R) :
-    map a (algebraMap R (NodeAlgebra R a) r) =
-      algebraMap S (NodeAlgebra S (algebraMap R S a)) (algebraMap R S r) := by
-  -- Expose the underlying ring maps before using the algebra-map commutation laws.
-  change (baseChange a)
-    ((Algebra.TensorProduct.includeRight : NodeAlgebra R a →ₐ[R] S ⊗[R] NodeAlgebra R a)
-      (algebraMap R (NodeAlgebra R a) r)) = _
-  rw [(Algebra.TensorProduct.includeRight :
-    NodeAlgebra R a →ₐ[R] S ⊗[R] NodeAlgebra R a).commutes r]
-  rw [IsScalarTower.algebraMap_apply R S (S ⊗[R] NodeAlgebra R a) r]
-  exact (baseChange a).commutes (algebraMap R S r)
-
-/-- Changing coefficients preserves each nodal coordinate. -/
-@[simp]
-theorem map_coord (i : Fin 2) :
-    map a (coord a i) = coord (algebraMap R S a) i := by
-  fin_cases i <;> simp [map, baseChange]
-
 /-- Base change of a pure tensor is scalar multiplication of the changed coordinate map. -/
 @[simp]
 theorem baseChange_tmul (s : S) (x : NodeAlgebra R a) :
-    baseChange a (s ⊗ₜ[R] x) = s • map a x := by
-  have hmap : map a x = baseChange a ((1 : S) ⊗ₜ[R] x) := by
-    simp only [map, RingHom.comp_apply, AlgHom.toRingHom_eq_coe,
-      AlgHom.coe_toRingHom, AlgEquiv.toAlgHom_apply,
-      Algebra.TensorProduct.includeRight_apply]
+    baseChange a (s ⊗ₜ[R] x) = s • mapRingHom (algebraMap R S) rfl x := by
+  have hcomp :
+      (baseChange a).toAlgHom.toRingHom.comp
+          (Algebra.TensorProduct.includeRight :
+            NodeAlgebra R a →ₐ[R] S ⊗[R] NodeAlgebra R a).toRingHom =
+        mapRingHom (algebraMap R S) rfl := by
+    refine ringHom_ext (fun r ↦ ?_) (by simp [baseChange]) (by simp [baseChange])
+    simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
+      AlgEquiv.toAlgHom_apply, mapRingHom_algebraMap]
+    rw [(Algebra.TensorProduct.includeRight :
+      NodeAlgebra R a →ₐ[R] S ⊗[R] NodeAlgebra R a).commutes r,
+      IsScalarTower.algebraMap_apply R S (S ⊗[R] NodeAlgebra R a) r]
+    exact (baseChange a).commutes (algebraMap R S r)
+  have hmap : mapRingHom (algebraMap R S) rfl x = baseChange a ((1 : S) ⊗ₜ[R] x) := by
+    simpa only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
+      AlgEquiv.toAlgHom_apply, Algebra.TensorProduct.includeRight_apply] using
+      (RingHom.congr_fun hcomp x).symm
   rw [hmap]
   simp only [baseChange, AlgEquiv.ofAlgHom_apply, AlgHom.liftEquiv_tmul, one_smul]
 

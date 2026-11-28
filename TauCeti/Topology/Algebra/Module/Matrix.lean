@@ -13,9 +13,11 @@ public import Mathlib.Algebra.Module.BigOperators
 public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
+public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 public import Mathlib.Data.Matrix.Block
 public import TauCeti.LinearAlgebra.Matrix.Module
+public import TauCeti.LinearAlgebra.Matrix.Triangular.Coordinates
 
 /-!
 # Continuous matrix actions and block maps over a topological module
@@ -24,7 +26,8 @@ A matrix `A : Matrix κ ι R` acts on vectors `x : ι → M` with entries in an 
 which `R` acts additively by `k ↦ ∑ i, A k i • x i`. When `M` is a topological additive monoid on
 which each scalar acts continuously, this is the continuous additive map
 `Matrix.smulVecHom A M : (ι → M) →ₜ+ (κ → M)`. When `M` is an `R`-module it is functorial in the
-matrix (`Matrix.smulVecHom_one`, `Matrix.smulVecHom_mul`). For `M = R` it is `Matrix.mulVec`
+matrix (`Matrix.smulVecHom_one`, `Matrix.smulVecHom_mul`), so the iterates of the map of a square
+matrix are the maps of its powers (`Matrix.iterate_smulVecHom`). For `M = R` it is `Matrix.mulVec`
 (`Matrix.smulVecHom_self_apply`); over a topological commutative semiring, bundling linearity as
 well gives `Matrix.mulVecCLM : (ι → R) →L[R] (κ → R)`, which varies continuously with the matrix
 entries over any normed field (`Matrix.continuous_mulVecCLM`, `Matrix.continuousOn_mulVecCLM`).
@@ -36,6 +39,9 @@ The upper-right block projection and the matching insertion are continuous linea
 any semiring and topological module, with arbitrary row and column index types. Their application
 lemmas are `Matrix.toBlocks₁₂CLM_apply` and `Matrix.fromBlocks₁₂CLM_apply`.
 
+The upper and strict lower entries of a square matrix also give a continuous linear
+equivalence with the product of the two coordinate spaces.
+
 ## Main definitions
 
 * `Matrix.smulVecHom`: the continuous additive action of a matrix on vectors in an additive monoid
@@ -43,6 +49,7 @@ lemmas are `Matrix.toBlocks₁₂CLM_apply` and `Matrix.fromBlocks₁₂CLM_appl
 * `Matrix.mulVecCLM`: `Matrix.mulVec` as a continuous linear map `(ι → R) →L[R] (κ → R)`, with
   continuity in families over a normed field (`Matrix.continuous_mulVecCLM`,
   `Matrix.continuousOn_mulVecCLM`).
+* `TauCeti.schurMatrixCLE`: continuous linear assembly from upper and strict lower entries.
 * `TauCeti.dotProductCLM`: the covector `v ↦ c ⬝ᵥ v` as a continuous linear functional on `ι → R`.
 * `Matrix.toBlocks₁₂CLM`: projection onto the upper-right block as a continuous linear map.
 * `Matrix.fromBlocks₁₂CLM`: insertion into the upper-right block as a continuous linear map.
@@ -97,6 +104,14 @@ theorem smulVecHom_mul [Fintype κ] (B : Matrix μ κ R) :
     (B * A).smulVecHom M = (B.smulVecHom M).comp (A.smulVecHom M) := by
   ext x m
   simp only [smulVecHom_apply, ContinuousAddMonoidHom.comp_toFun, Matrix.sum_mul_apply_smul]
+
+/-- The iterates of the map induced by a square matrix are the maps induced by its powers. -/
+theorem iterate_smulVecHom [DecidableEq ι] (A : Matrix ι ι R) (n : ℕ) :
+    (⇑(A.smulVecHom M))^[n] = ⇑((A ^ n).smulVecHom M) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Function.iterate_succ, ih, pow_succ, smulVecHom_mul, ContinuousAddMonoidHom.coe_comp]
 
 end Module
 
@@ -259,5 +274,48 @@ theorem toLinearMap_dotProductCLM (c : ι → R) :
     (dotProductCLM c : (ι → R) →ₗ[R] R) = dotProductBilin R R c := (rfl)
 
 end DotProductCLM
+
+section SchurCoordinates
+
+variable {𝕜 ι R : Type*} [CommSemiring 𝕜] [LinearOrder ι] [Semiring R]
+  [Algebra 𝕜 R] [TopologicalSpace R]
+
+/-- Assemble a matrix from its upper and strict lower coordinates, as a continuous linear
+equivalence for the product topologies. -/
+noncomputable def schurMatrixCLE : SchurCoordinates ι R ≃L[𝕜] Matrix ι ι R where
+  toLinearEquiv := schurMatrixEquiv.restrictScalars 𝕜
+  continuous_toFun := by
+    refine continuous_matrix fun i j ↦ ?_
+    -- Scalar restriction keeps the underlying assembly function.
+    change Continuous (fun x : SchurCoordinates ι R ↦ schurMatrixEquiv x i j)
+    rcases le_or_gt i j with h | h
+    · simp only [schurMatrixEquiv_apply_of_le _ h]
+      exact (continuous_apply _).comp continuous_fst
+    · simp only [schurMatrixEquiv_apply_of_gt _ h]
+      exact (continuous_apply _).comp continuous_snd
+  continuous_invFun := by
+    -- The inverse of the restricted map also has the same underlying function.
+    change Continuous (fun A : Matrix ι ι R ↦ schurMatrixEquiv.symm A)
+    have hUpper (ij : {ij : ι × ι // ij.1 ≤ ij.2}) :
+        Continuous (fun A : Matrix ι ι R ↦ (schurMatrixEquiv.symm A).1 ij) := by
+      simp only [Matrix.schurMatrixEquiv_symm_fst]
+      exact continuous_id.matrix_elem _ _
+    have hLower (ij : SchurLowerIndex ι) :
+        Continuous (fun A : Matrix ι ι R ↦ (schurMatrixEquiv.symm A).2 ij) := by
+      simp only [Matrix.schurMatrixEquiv_symm_snd]
+      exact continuous_id.matrix_elem _ _
+    exact (continuous_pi hUpper).prodMk (continuous_pi hLower)
+
+/-- Continuous linear assembly agrees with the algebraic entry assembly. -/
+@[simp] theorem schurMatrixCLE_apply (x : SchurCoordinates ι R) :
+    schurMatrixCLE (𝕜 := 𝕜) x = schurMatrixEquiv x :=
+  (rfl)
+
+/-- Reading coordinates with the continuous linear split agrees with the algebraic split. -/
+@[simp] theorem _root_.Matrix.schurMatrixCLE_symm_apply (A : Matrix ι ι R) :
+    (schurMatrixCLE (𝕜 := 𝕜)).symm A = schurMatrixEquiv.symm A :=
+  (rfl)
+
+end SchurCoordinates
 
 end TauCeti
