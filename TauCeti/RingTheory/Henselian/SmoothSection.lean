@@ -5,181 +5,194 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.AdicCompletion.Algebra
 public import Mathlib.RingTheory.Henselian
-public import Mathlib.RingTheory.Kaehler.Basic
-public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.RingTheory.Smooth.Basic
-import Mathlib.LinearAlgebra.TensorProduct.Quotient
-import Mathlib.RingTheory.LocalRing.Module
-import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+import TauCeti.RingTheory.Henselian.Ideal
 import TauCeti.RingTheory.Henselian.Section
-import TauCeti.RingTheory.Kaehler.Conormal
-import TauCeti.RingTheory.Kaehler.FormallyEtale
-import TauCeti.RingTheory.Kaehler.Localization
+import TauCeti.RingTheory.Smooth.EtaleSlice
+import TauCeti.RingTheory.TensorProduct.LiftEquiv
 
 /-!
 # Sections of smooth algebras over a Henselian pair
 
-Let `(R, I)` be a Henselian pair and `A` a smooth `R`-algebra. An `R`-algebra map
-`σ : A → R ⧸ I` is a section of `Spec A → Spec R` over the closed subscheme `V(I)`. Elkik's
-theorem says that every such section extends to a section `A → R` over all of `Spec R`. This file
-proves it when the differentials of `A` restricted to the section, the `A ⧸ ker σ`-module
-`Ω[A⁄R] ⧸ (ker σ) • Ω[A⁄R]`, are free (`TauCeti.HenselianRing.exists_comp_eq_of_free`). This
-holds when `R ⧸ I` is local (`TauCeti.HenselianRing.comp_surjective_of_isLocalRing`), and in
-particular for a Henselian local ring and its residue field
-(`TauCeti.HenselianLocalRing.comp_surjective_of_smooth`). The general case reduces to the free
-one after adjoining the symmetric algebra of a finite projective complement of that module.
+Let `(S, J)` be a Henselian pair and let `A` be a smooth `S`-algebra. Reducing modulo `J` is a
+surjection from `S`-algebra maps `A → S` to `S`-algebra maps `A → S ⧸ J`
+(`TauCeti.HenselianRing.comp_surjective`): every section of `Spec A → Spec S` over the closed
+subscheme `V(J)` lifts to a section over `Spec S`. Neither locality nor Noetherianity of `S` nor
+freeness or constant rank of `Ω[A⁄S]` along `V(J)` is required. Unlike the étale case
+(`TauCeti.HenselianRing.comp_bijective`), the lift is not unique in positive relative dimension.
 
-The proof follows the Stacks Project. Lift a basis of `Ω[A⁄R] ⧸ J Ω[A⁄R]`, with `J = ker σ`, to
-differentials `D xᵢ` of elements `xᵢ ∈ J`. By Nakayama's lemma, after inverting some
-`g ≡ 1 (mod J)` the `D xᵢ` form a basis of `Ω[A[1/g]⁄R]`, so `A[1/g] ⧸ (xᵢ)` is étale over `R`.
-The section `σ` factors through it, and sections of étale algebras lift over a Henselian pair
-(`TauCeti.HenselianRing.comp_bijective`).
+More generally, for a smooth algebra `A` over an arbitrary base `R` and a Henselian pair `(S, J)`
+under `R`, every `R`-algebra map `A → S ⧸ J` lifts to an `R`-algebra map `A → S`
+(`TauCeti.HenselianRing.comp_surjective_of_algebra`), and more generally still any surjective
+`R`-algebra homomorphism `f : S →ₐ[R] T` whose kernel is a Henselian ideal of `S` has the
+`R`-algebra lifting property against smooth `R`-algebras
+(`TauCeti.HenselianRing.comp_surjective_of_surjective`). Compare
+`Algebra.FormallySmooth.comp_surjective`, which lifts algebra maps out of formally smooth algebras
+along square-zero kernels.
+
+Applying this to the nonzero powers `J ^ n` (`Ideal.henselianRing_pow`) approximates completed
+points of smooth algebras over arbitrary Henselian pairs (`exists_algHom_comp_eq_evalₐ`): for every
+`n : ℕ`, every `R`-algebra map `A →ₐ[R] AdicCompletion J S` agrees modulo `J ^ n` with an actual
+`R`-algebra map `A →ₐ[R] S`. This is the smooth case (`h = 1`, where the Jacobian ideal is the
+unit ideal and the smooth locus is all of `Spec A`) of Elkik's approximation theorem, holding
+without any Noetherian assumption on `S`.
+
+The proof combines `Algebra.Smooth.exists_etale_algHom_comp_eq` — which factors any closed-fibre
+point `A →ₐ[S] S ⧸ J` of a smooth `S`-algebra through an étale slice `C` after adjoining the
+symmetric algebra of a finite projective complement to `Ω[A⁄S]` — with the étale section lifting
+theorem `TauCeti.HenselianRing.comp_bijective`.
 
 ## Main results
 
-* `TauCeti.HenselianRing.exists_comp_eq_of_free`: over a Henselian pair `(R, I)`, a section
-  `σ : A →ₐ[R] R ⧸ I` of a smooth `R`-algebra lifts to `A →ₐ[R] R` when the differentials of `A`
-  restricted to the section are free.
-* `TauCeti.HenselianRing.comp_surjective_of_isLocalRing`: the same for every section, when
-  `R ⧸ I` is local.
-* `TauCeti.HenselianLocalRing.comp_surjective_of_smooth`: over a Henselian local ring, every
-  residue-field point of a smooth algebra lifts to an `R`-point.
+* `TauCeti.HenselianRing.comp_surjective`: over a Henselian pair `(S, J)`, every `S`-algebra map
+  `A →ₐ[S] S ⧸ J` out of a smooth `S`-algebra lifts to `A →ₐ[S] S` (Stacks, Lemma 15.13.3, 0H74).
+* `TauCeti.HenselianRing.comp_surjective_of_algebra`: the relative form for a smooth `R`-algebra
+  `A` and a Henselian pair `(S, J)` over `R`.
+* `TauCeti.HenselianRing.comp_surjective_of_surjective`: lifting `A →ₐ[R] T` along any surjective
+  `f : S →ₐ[R] T` with `HenselianRing S (RingHom.ker f)`.
+* `TauCeti.HenselianRing.exists_algHom_comp_eq_evalₐ`: any `J`-adically completed `R`-point
+  `A →ₐ[R] AdicCompletion J S` of a smooth `R`-algebra is congruent modulo `J ^ n` to an `S`-point
+  `A →ₐ[R] S`.
+* `TauCeti.HenselianLocalRing.comp_surjective_of_smooth` and
+  `TauCeti.HenselianLocalRing.comp_surjective_of_algebra`: residue-field points of smooth algebras
+  lift to Henselian local rings.
+* `TauCeti.henselianRing_iff_forall_smooth_comp_surjective`: a pair `(R, I)` is Henselian if and
+  only if every smooth `R`-algebra satisfies section lifting modulo `I`.
 
 ## References
 
-* [Stacks Project, Lemma 15.13.3](https://stacks.math.columbia.edu/tag/0H74), via Lemma 15.9.14
-  ([Tag 07M7](https://stacks.math.columbia.edu/tag/07M7)), whose proof in the free case is
-  followed here.
-* R. Elkik, *Solutions d'équations à coefficients dans un anneau hensélien*, Ann. Sci. École
-  Norm. Sup. (4) 6 (1973), 553–603.
+* [Stacks Project, Lemma 15.13.3](https://stacks.math.columbia.edu/tag/0H74).
+* R. Elkik, *Solutions d'équations à coefficients dans un anneau hensélien*, Ann. Sci. École Norm.
+  Sup. (4) 6 (1973), 553–603.
 -/
 
 public section
 
-open KaehlerDifferential
+open IsLocalRing TensorProduct
 
 universe u v
 
-namespace TauCeti.HenselianRing
+namespace TauCeti
 
-variable {R : Type u} [CommRing R] (I : Ideal R) [HenselianRing R I]
-  {A : Type v} [CommRing A] [Algebra R A]
+namespace HenselianRing
 
-/-- If `A ⧸ ker σ` is trivial, then so is `R ⧸ I`, so `I = ⊤`; as `I` lies in the Jacobson radical,
-`R` and `A` are trivial and any map is a lift. -/
-private theorem exists_comp_eq_of_subsingleton (σ : A →ₐ[R] R ⧸ I)
-    (hσ : Subsingleton (A ⧸ RingHom.ker σ)) :
-    ∃ φ : A →ₐ[R] R, (Ideal.Quotient.mkₐ R I).comp φ = σ := by
-  have hI : I = ⊤ := by
-    -- `1 ∈ ker σ`, so `1 = σ 1 = 0` in `R ⧸ I`.
-    have h1 : (1 : A) ∈ RingHom.ker σ := Ideal.Quotient.subsingleton_iff.mp hσ ▸ trivial
-    have h10 : (1 : R ⧸ I) = 0 := by simpa using RingHom.mem_ker.mp h1
-    rw [← Ideal.Quotient.subsingleton_iff]
-    exact subsingleton_of_zero_eq_one h10.symm
-  have : Subsingleton R := by
-    have := Ring.mem_jacobson_iff.mp
-      (HenselianRing.jac (I := I) (hI ▸ Submodule.mem_top (x := (1 : R)))) (-1)
-    exact subsingleton_of_zero_eq_one (isUnit_zero_iff.mp (by simpa using this))
-  have : Subsingleton A := subsingleton_of_zero_eq_one (by
-    rw [← map_zero (algebraMap R A), ← map_one (algebraMap R A), Subsingleton.elim (0 : R) 1])
-  exact ⟨(AlgEquiv.ofBijective (Algebra.ofId R A) ⟨fun _ _ _ ↦ Subsingleton.elim _ _,
-    fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩).symm.toAlgHom, AlgHom.ext fun _ ↦ Subsingleton.elim _ _⟩
+section Absolute
 
-/-- **Elkik's lifting, for free differentials along the section.** Let `(R, I)` be a Henselian
-pair, `A` a smooth `R`-algebra and `σ : A →ₐ[R] R ⧸ I`. If the differentials of `A` restricted to
-the section, the `A ⧸ ker σ`-module `Ω[A⁄R] ⧸ (ker σ) • Ω[A⁄R]`, are free, then `σ` lifts to an
-`R`-algebra map `A →ₐ[R] R`. -/
-@[stacks 0H74 "when the differentials restricted to the section are free"]
-theorem exists_comp_eq_of_free [Algebra.Smooth R A] (σ : A →ₐ[R] R ⧸ I)
-    [Module.Free (A ⧸ RingHom.ker σ) (Ω[A⁄R] ⧸ RingHom.ker σ • (⊤ : Submodule A Ω[A⁄R]))] :
-    ∃ φ : A →ₐ[R] R, (Ideal.Quotient.mkₐ R I).comp φ = σ := by
-  set J := RingHom.ker σ
-  by_cases hJ : Subsingleton (A ⧸ J)
-  · exact exists_comp_eq_of_subsingleton I σ hJ
-  have : Nontrivial (A ⧸ J) := not_subsingleton_iff_nontrivial.mp hJ
-  -- `R → A ⧸ J` is surjective, as `A ⧸ J ≅ R ⧸ I`.
-  have hR : Function.Surjective (algebraMap R (A ⧸ J)) := fun y ↦ by
-    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective y
-    obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (σ a)
-    exact ⟨r, (Ideal.Quotient.eq.mpr (by simp [J, RingHom.mem_ker, ← hr])).symm⟩
-  -- Lift a basis of `Ω ⧸ J Ω` to differentials `D xᵢ` with `xᵢ ∈ J`; they form a basis of
-  -- `Ω[W⁄R]` for `W = A[1/g]` with `g ≡ 1 (mod J)`.
-  let b := Module.Free.chooseBasis (A ⧸ J) (Ω[A⁄R] ⧸ J • (⊤ : Submodule A Ω[A⁄R]))
-  have : Finite (Module.Free.ChooseBasisIndex (A ⧸ J) _) := Module.Finite.finite_basis b
-  have : Algebra.FormallyUnramified R (A ⧸ J) := .of_surjective (Algebra.ofId R (A ⧸ J)) hR
-  choose x hxJ hxb using fun i ↦ KaehlerDifferential.exists_mem_and_mk_D_eq J (b i)
-  obtain ⟨g, hgJ, bW, hbW⟩ :=
-    KaehlerDifferential.exists_sub_one_mem_and_basis_localizationAway J b fun i ↦ (hxb i).symm
-  let W := Localization.Away g
-  have : Algebra.Smooth A W := .of_isLocalization_Away g
-  have : Algebra.Smooth R W := .comp R A W
-  -- So `W ⧸ (xᵢ)` is étale over `R`, and `σ` factors through it.
-  let K : Ideal W := Ideal.span (Set.range fun i ↦ algebraMap A W (x i))
-  have : Algebra.Etale R (W ⧸ K) := bW.etale_quotient_span_range hbW
-  let σW : W →ₐ[R] R ⧸ I := IsLocalization.Away.liftAlgHom g (f := σ)
-    (by simp [show σ g = 1 by simpa [J, sub_eq_zero] using hgJ])
-  have hσW (a : A) : σW (algebraMap A W a) = σ a := by
-    simp [σW, IsLocalization.Away.liftAlgHom_apply]
-  have hK : ∀ w ∈ K, σW w = 0 := fun w hw ↦ by
-    refine (Ideal.span_le (I := RingHom.ker σW)).mpr ?_ hw
-    rintro _ ⟨i, rfl⟩
-    simpa [hσW] using RingHom.mem_ker.mp (hxJ i)
-  have hτ (a : A) : Ideal.Quotient.liftₐ K σW hK (Ideal.Quotient.mk _ (algebraMap A W a)) = σ a :=
-    (AlgHom.congr_fun (Ideal.Quotient.liftₐ_comp K σW hK) (algebraMap A W a)).trans (hσW a)
-  -- Sections of étale algebras lift over the Henselian pair `(R, I)`.
-  obtain ⟨ρ, hρ⟩ := (HenselianRing.comp_bijective I).2 (Ideal.Quotient.liftₐ K σW hK)
-  refine ⟨ρ.comp ((Ideal.Quotient.mkₐ R K).comp (IsScalarTower.toAlgHom R A W)),
-    AlgHom.ext fun a ↦ ?_⟩
-  rw [← hτ]
-  exact AlgHom.congr_fun hρ (Ideal.Quotient.mk _ (algebraMap A W a))
+variable {S : Type u} [CommRing S] (J : Ideal S) [HenselianRing S J]
+  {A : Type v} [CommRing A] [Algebra S A] [Algebra.Smooth S A]
 
-/-- Over a Henselian pair `(R, I)` with `R ⧸ I` local, for instance a Henselian pair with `R`
-local, every `R`-algebra map from a smooth `R`-algebra to `R ⧸ I` lifts to `R`. -/
-theorem comp_surjective_of_isLocalRing [Algebra.Smooth R A] [IsLocalRing (R ⧸ I)] :
-    Function.Surjective ((Ideal.Quotient.mkₐ R I).comp : (A →ₐ[R] R) → A →ₐ[R] R ⧸ I) := by
-  intro σ
-  have hσ : Function.Surjective σ := fun y ↦ by
-    obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective y
-    exact ⟨algebraMap R A r, by simp⟩
-  -- `A ⧸ ker σ ≅ R ⧸ I` is local, and `Ω ⧸ (ker σ) Ω` is finite and flat over it, hence free.
-  let e := Ideal.quotientKerAlgEquivOfSurjective hσ
-  have := e.toEquiv.nontrivial
-  have := IsLocalRing.of_surjective' e.symm.toRingHom e.symm.surjective
-  have : Module.Flat (A ⧸ RingHom.ker σ) (Ω[A⁄R] ⧸ RingHom.ker σ • (⊤ : Submodule A Ω[A⁄R])) :=
-    .of_linearEquiv ((TensorProduct.quotTensorEquivQuotSMul _ _).extendScalarsOfSurjective
-      Ideal.Quotient.mk_surjective).symm
-  have := Module.free_of_flat_of_isLocalRing (R := A ⧸ RingHom.ker σ)
-    (P := Ω[A⁄R] ⧸ RingHom.ker σ • (⊤ : Submodule A Ω[A⁄R]))
-  exact exists_comp_eq_of_free I σ
+/-- **Elkik's smooth lifting theorem over a Henselian pair.** Over a Henselian pair `(S, J)`,
+reduction modulo `J` is surjective from `S`-algebra maps `A →ₐ[S] S` out of a smooth `S`-algebra `A`
+to `S`-algebra maps `A →ₐ[S] S ⧸ J`: every section modulo `J` lifts to a section over `S`. -/
+@[stacks 0H74]
+theorem comp_surjective :
+    Function.Surjective ((Ideal.Quotient.mkₐ S J).comp : (A →ₐ[S] S) → A →ₐ[S] S ⧸ J) := by
+  intro ψ
+  -- Factor `ψ : A →ₐ[S] S ⧸ J` through an étale slice `C` and lift the étale section.
+  obtain ⟨C, _, _, _, f, ψC, hψC⟩ :=
+    Algebra.Smooth.exists_etale_algHom_comp_eq (R := S) Ideal.Quotient.mk_surjective ψ
+  obtain ⟨φC, hφC⟩ := (comp_bijective (S := S) (A := C) J).surjective ψC
+  refine ⟨φC.comp f, ?_⟩
+  rw [← AlgHom.comp_assoc, hφC, hψC]
 
-end TauCeti.HenselianRing
+end Absolute
 
-namespace TauCeti.HenselianLocalRing
+section Relative
 
-open IsLocalRing
+variable {R : Type*} [CommRing R] {S : Type u} [CommRing S] [Algebra R S] (J : Ideal S)
+  [HenselianRing S J] {A : Type v} [CommRing A] [Algebra R A] [Algebra.Smooth R A]
 
-variable {R : Type u} [CommRing R] [HenselianLocalRing R]
-  {A : Type v} [CommRing A] [Algebra R A] [Algebra.Smooth R A]
+/-- **Relative smooth lifting over a Henselian pair.** For a Henselian pair `(S, J)` with `S` an
+`R`-algebra and a smooth `R`-algebra `A`, reduction modulo `J` is surjective from `R`-algebra maps
+`A →ₐ[R] S` to `R`-algebra maps `A →ₐ[R] S ⧸ J`. -/
+@[stacks 0H74 "relative form over an arbitrary base"]
+theorem comp_surjective_of_algebra :
+    Function.Surjective ((Ideal.Quotient.mkₐ R J).comp : (A →ₐ[R] S) → A →ₐ[R] S ⧸ J) :=
+  -- Base change `A` to the smooth `S`-algebra `S ⊗[R] A` and apply `comp_surjective` over `S`.
+  (AlgHom.restrictScalars_comp_surjective_iff R A (Ideal.Quotient.mkₐ S J)).mpr
+    (comp_surjective J)
 
-/-- Over a Henselian local ring `R`, every `R`-algebra map from a smooth `R`-algebra to the residue
-field lifts to an `R`-algebra map to `R`. -/
-theorem comp_surjective_of_smooth :
+/-- **Approximation of completed points of smooth algebras over a Henselian pair.** For any `n : ℕ`
+and any `R`-algebra map `ψ : A →ₐ[R] AdicCompletion J S` out of a smooth `R`-algebra `A`, there is
+an `R`-algebra map `φ : A →ₐ[R] S` congruent to `ψ` modulo `J ^ n`. No Noetherian hypothesis on `S`
+is required. -/
+theorem exists_algHom_comp_eq_evalₐ (n : ℕ) (ψ : A →ₐ[R] AdicCompletion J S) :
+    ∃ φ : A →ₐ[R] S,
+      (Ideal.Quotient.mkₐ R (J ^ n)).comp φ =
+        ((AdicCompletion.evalₐ J n).restrictScalars R).comp ψ := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · -- At `n = 0`, `S ⧸ J ^ 0 = S ⧸ ⊤` is subsingleton; lift the `n = 1` truncation to witness `φ`.
+    obtain ⟨φ, -⟩ := comp_surjective_of_algebra (J ^ 1)
+      (((AdicCompletion.evalₐ J 1).restrictScalars R).comp ψ)
+    have : Subsingleton (S ⧸ J ^ 0) := by simp
+    exact ⟨φ, Subsingleton.elim _ _⟩
+  · have : NeZero n := ⟨hn⟩
+    exact comp_surjective_of_algebra (J ^ n)
+      (((AdicCompletion.evalₐ J n).restrictScalars R).comp ψ)
+
+end Relative
+
+section SurjectiveHom
+
+variable {R : Type*} [CommRing R] {S : Type u} {T : Type*} [CommRing S] [CommRing T]
+  [Algebra R S] [Algebra R T] {A : Type v} [CommRing A] [Algebra R A] [Algebra.Smooth R A]
+
+/-- **Smooth lifting along a surjective homomorphism with Henselian kernel.** Compare
+`Algebra.FormallySmooth.comp_surjective` for square-zero kernels: for a smooth `R`-algebra `A` and a
+surjective `R`-algebra map `f : S →ₐ[R] T` with `HenselianRing S (RingHom.ker f)`, every `R`-algebra
+map `A →ₐ[R] T` lifts along `f` to `A →ₐ[R] S`. -/
+theorem comp_surjective_of_surjective (f : S →ₐ[R] T) (hf : Function.Surjective f)
+    [HenselianRing S (RingHom.ker f)] :
+    Function.Surjective (f.comp : (A →ₐ[R] S) → A →ₐ[R] T) := by
+  intro ψ
+  let e : (S ⧸ RingHom.ker f) ≃ₐ[R] T := Ideal.quotientKerAlgEquivOfSurjective hf
+  obtain ⟨φ, hφ⟩ := comp_surjective_of_algebra (RingHom.ker f) (e.symm.toAlgHom.comp ψ)
+  refine ⟨φ, AlgHom.ext fun a ↦ ?_⟩
+  have ha := congrArg e (AlgHom.congr_fun hφ a)
+  simpa [e] using ha
+
+end SurjectiveHom
+
+end HenselianRing
+
+namespace HenselianLocalRing
+
+/-- Over a Henselian local ring `R`, every `R`-algebra map `A →ₐ[R] ResidueField R` out of a smooth
+`R`-algebra `A` lifts to an `R`-point `A →ₐ[R] R`. -/
+theorem comp_surjective_of_smooth {R : Type u} [CommRing R] [HenselianLocalRing R]
+    {A : Type v} [CommRing A] [Algebra R A] [Algebra.Smooth R A] :
     Function.Surjective
       ((Algebra.ofId R (ResidueField R)).comp : (A →ₐ[R] R) → A →ₐ[R] ResidueField R) := by
-  intro ψ
-  -- Identify the residue field with `R ⧸ 𝔪`, where the Henselian pair `(R, 𝔪)` applies.
-  let e : ResidueField R ≃ₐ[R] R ⧸ maximalIdeal R :=
-    (Ideal.quotientKerAlgEquivOfSurjective (f := Algebra.ofId R (ResidueField R))
-      residue_surjective).symm.trans (Ideal.quotientEquivAlgOfEq R ker_residue)
-  have : IsLocalRing (R ⧸ maximalIdeal R) := .of_surjective' (Ideal.Quotient.mk _)
-    Ideal.Quotient.mk_surjective
-  obtain ⟨φ, hφ⟩ := HenselianRing.comp_surjective_of_isLocalRing (maximalIdeal R)
-    (e.toAlgHom.comp ψ)
-  refine ⟨φ, AlgHom.ext fun a ↦ e.injective ?_⟩
-  rw [AlgHom.comp_apply, Algebra.ofId_apply, AlgEquiv.commutes, Ideal.Quotient.algebraMap_eq]
-  simpa using AlgHom.congr_fun hφ a
+  have hker : RingHom.ker (Algebra.ofId R (ResidueField R)) = maximalIdeal R := by
+    ext r
+    simp [ResidueField.algebraMap_eq, residue_eq_zero_iff]
+  have : HenselianRing R (RingHom.ker (Algebra.ofId R (ResidueField R))) :=
+    hker ▸ inferInstance
+  exact HenselianRing.comp_surjective_of_surjective (Algebra.ofId R (ResidueField R))
+    residue_surjective
 
-end TauCeti.HenselianLocalRing
+/-- Relative form of `HenselianLocalRing.comp_surjective_of_smooth`: for a Henselian local
+`R`-algebra `S` and a smooth `R`-algebra `A`, every `R`-algebra map `A →ₐ[R] ResidueField S` lifts
+to an `R`-algebra map `A →ₐ[R] S`. -/
+theorem comp_surjective_of_algebra {R S A : Type*} [CommRing R] [CommRing S]
+    [HenselianLocalRing S] [Algebra R S] [CommRing A] [Algebra R A] [Algebra.Smooth R A] :
+    Function.Surjective
+      ((IsScalarTower.toAlgHom R S (ResidueField S)).comp :
+        (A →ₐ[R] S) → A →ₐ[R] ResidueField S) :=
+  (AlgHom.restrictScalars_comp_surjective_iff R A (Algebra.ofId S (ResidueField S))).mpr
+    comp_surjective_of_smooth
 
+end HenselianLocalRing
 
+/-- **Henselian pairs are characterised by lifting sections of smooth algebras.** Extending
+`henselianRing_iff_forall_comp_surjective`, a pair `(R, I)` is Henselian if and only if every
+smooth `R`-algebra `A` satisfies surjectivity of `(A →ₐ[R] R) → A →ₐ[R] R ⧸ I`. -/
+theorem henselianRing_iff_forall_smooth_comp_surjective {R : Type u} [CommRing R] {I : Ideal R} :
+    HenselianRing R I ↔ ∀ (A : Type u) [CommRing A] [Algebra R A] [Algebra.Smooth R A],
+      Function.Surjective ((Ideal.Quotient.mkₐ R I).comp : (A →ₐ[R] R) → A →ₐ[R] R ⧸ I) :=
+  ⟨fun _ _ _ _ _ ↦ HenselianRing.comp_surjective I,
+    fun h ↦ henselianRing_iff_forall_comp_surjective.mpr fun A _ _ _ ↦ h A⟩
+
+end TauCeti

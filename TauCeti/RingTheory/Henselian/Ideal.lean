@@ -105,4 +105,9 @@ theorem henselianRing_iff_of_radical_eq (h : I.radical = J.radical) :
     HenselianRing R I ↔ HenselianRing R J := by
   rw [← henselianRing_radical_iff, h, henselianRing_radical_iff]
 
+/-- Any nonzero power of a henselian ideal is henselian. -/
+instance henselianRing_pow (I : Ideal R) [HenselianRing R I] (n : ℕ) [NeZero n] :
+    HenselianRing R (I ^ n) :=
+  henselianRing_of_le (Ideal.pow_le_self (NeZero.ne n))
+
 end Ideal

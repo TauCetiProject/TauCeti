@@ -8,8 +8,9 @@ module
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import Mathlib.RingTheory.Kaehler.Basic
 public import Mathlib.RingTheory.Kaehler.JacobiZariski
-public import Mathlib.RingTheory.Kaehler.TensorProduct
 public import Mathlib.RingTheory.Kaehler.Polynomial
+public import Mathlib.RingTheory.Kaehler.TensorProduct
+public import Mathlib.RingTheory.Smooth.Basic
 public import Mathlib.RingTheory.Unramified.Basic
 
 /-!
@@ -22,8 +23,10 @@ of `KaehlerDifferential.map R R A B`, gives an extensionality criterion for `B`-
 * the base-change map onto `Ω[B⁄R]` is surjective exactly when `Ω[B⁄A]` vanishes, and if `Ω[A⁄R]`
   is spanned by a set `s` then its range is spanned by the image of `s`;
 * when `H¹(L_{B/A}) = 0` (for example, when `B` is formally smooth over `A`), the base-change map
-  `B ⊗[A] Ω[A⁄R] → Ω[B⁄R]` is injective, and if in addition `B` is faithfully flat over `A` then
-  `KaehlerDifferential.map R R A B : Ω[A⁄R] → Ω[B⁄R]` is injective.
+  `B ⊗[A] Ω[A⁄R] → Ω[B⁄R]` is injective, if in addition `B` is faithfully flat over `A` then
+  `KaehlerDifferential.map R R A B : Ω[A⁄R] → Ω[B⁄R]` is injective, and when `B` is formally smooth
+  over `A` the short exact sequence `0 → B ⊗[A] Ω[A⁄R] → Ω[B⁄R] → Ω[B⁄A] → 0` splits as a
+  `B`-module direct sum.
 
 For a base change `B = S ⊗[R] A`, Mathlib's isomorphism `B ⊗[A] Ω[A⁄R] ≃ Ω[B⁄S]`
 (`KaehlerDifferential.tensorKaehlerEquiv`) is the base-change map into `Ω[B⁄R]` followed by the
@@ -37,6 +40,7 @@ map `Ω[B⁄R] → Ω[B⁄S]` sending `d_R b` to `d_S b`.
 * `TauCeti.range_mapBaseChange_eq_span_image`
 * `TauCeti.injective_mapBaseChange_of_subsingleton_h1Cotangent`
 * `TauCeti.injective_kaehlerDifferential_map_of_subsingleton_h1Cotangent`
+* `TauCeti.exists_kaehlerDifferentialProdEquiv`
 * `TauCeti.map_comp_mapBaseChange_eq_tensorKaehlerEquiv`
 * `KaehlerDifferential.mapBaseChange_surjective_of_formallyUnramified`: if `B` is formally
   unramified over `A`, then `B ⊗[A] Ω[A⁄R] → Ω[B⁄R]` is surjective.
@@ -118,6 +122,20 @@ theorem injective_kaehlerDifferential_map_of_subsingleton_h1Cotangent
     simpa [mapBaseChange_tmul] using hω
   simpa using
     (map_eq_zero_iff _ (injective_mapBaseChange_of_subsingleton_h1Cotangent R A B)).mp h0
+
+/-- In a tower `R → A → B` with `B` formally smooth over `A`, the short exact Jacobi–Zariski
+sequence `0 → B ⊗[A] Ω[A⁄R] → Ω[B⁄R] → Ω[B⁄A] → 0` splits, yielding a `B`-linear equivalence
+`Ω[B⁄R] ≃ₗ[B] (B ⊗[A] Ω[A⁄R]) × Ω[B⁄A]` compatible with `mapBaseChange` and `map`. -/
+theorem exists_kaehlerDifferentialProdEquiv [Algebra.FormallySmooth A B] :
+    ∃ e : Ω[B⁄R] ≃ₗ[B] (B ⊗[A] Ω[A⁄R]) × Ω[B⁄A],
+      mapBaseChange R A B = e.symm.toLinearMap ∘ₗ LinearMap.inl B (B ⊗[A] Ω[A⁄R]) Ω[B⁄A] ∧
+      map R A B B = LinearMap.snd B (B ⊗[A] Ω[A⁄R]) Ω[B⁄A] ∘ₗ e.toLinearMap := by
+  -- `Ω[B⁄A]` is projective since `B` is formally smooth over `A`, splitting the surjection `map`.
+  obtain ⟨l, hl⟩ := Module.projective_lifting_property (map R A B B) LinearMap.id
+    (map_surjective R A B)
+  obtain ⟨e, he⟩ := (exact_mapBaseChange_map R A B).splitSurjectiveEquiv
+    (injective_mapBaseChange_of_subsingleton_h1Cotangent R A B) ⟨l, hl⟩
+  exact ⟨e, he⟩
 
 /-- For a base change `B = S ⊗[R] A`, Mathlib's isomorphism
 `KaehlerDifferential.tensorKaehlerEquiv : B ⊗[A] Ω[A⁄R] ≃ Ω[B⁄S]` is the base-change map

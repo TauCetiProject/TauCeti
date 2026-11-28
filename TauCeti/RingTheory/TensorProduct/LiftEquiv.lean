@@ -15,12 +15,14 @@ import Mathlib.LinearAlgebra.TensorProduct.Basis
 
 For an `R`-algebra `A`, an `R`-algebra `S` and an `S`-algebra map `q : S →ₐ[S] T`,
 `AlgHom.liftEquiv` identifies `R`-algebra maps `A → S` and `A → T` with `S`-algebra maps out of
-`S ⊗[R] A`, compatibly with composition by `q`. We record the left-inverse identity
-`AlgHom.liftEquiv_comp_includeRight` (composing `f.liftEquiv R S A B` with
-`Algebra.TensorProduct.includeRight` recovers `f`) and show that composing with `q` is bijective on
-`R`-algebra maps out of `A` if and only if it is bijective on `S`-algebra maps out of `S ⊗[R] A`
-(`AlgHom.restrictScalars_comp_bijective_iff`). This reduces lifting problems for algebras over an
-arbitrary base `R` to lifting problems over `S` itself.
+`S ⊗[R] A`, compatibly with composition by `q` (`AlgHom.restrictScalars_comp_eq`). We record the
+left-inverse identity `AlgHom.liftEquiv_comp_includeRight` (composing `f.liftEquiv R S A B` with
+`Algebra.TensorProduct.includeRight` recovers `f`) and show that composing with `q` is injective,
+surjective, or bijective on `R`-algebra maps out of `A` if and only if it has the corresponding
+property on `S`-algebra maps out of `S ⊗[R] A` (`AlgHom.restrictScalars_comp_injective_iff`,
+`AlgHom.restrictScalars_comp_surjective_iff`, `AlgHom.restrictScalars_comp_bijective_iff`). This
+reduces lifting and uniqueness problems for algebras over an arbitrary base `R` to problems over
+`S` itself.
 
 When an `R`-algebra map `φ : A →ₐ[R] B` into an `S`-algebra `B` carries an `R`-basis of `A` to an
 `S`-basis of `B`, the induced `S`-algebra multiplication map `AlgHom.liftEquiv R S A B φ` is
@@ -51,16 +53,37 @@ section Comp
 variable (R : Type*) {S T : Type*} (A : Type*) [CommSemiring R] [CommSemiring S] [Semiring T]
   [Semiring A] [Algebra R S] [Algebra S T] [Algebra R T] [IsScalarTower R S T] [Algebra R A]
 
+/-- Through `AlgHom.liftEquiv`, postcomposing `R`-algebra maps out of `A` with
+`q.restrictScalars R` corresponds to postcomposing `S`-algebra maps out of the base change
+`S ⊗[R] A` with `q : S →ₐ[S] T`. -/
+theorem restrictScalars_comp_eq (q : S →ₐ[S] T) :
+    ((q.restrictScalars R).comp : (A →ₐ[R] S) → A →ₐ[R] T) =
+      (liftEquiv R S A T).symm ∘ q.comp ∘ liftEquiv R S A S := by
+  ext f a
+  simp
+
+/-- Composing with an `S`-algebra map `q : S →ₐ[S] T` is injective on `R`-algebra maps out of `A`
+if and only if it is injective on `S`-algebra maps out of the base change `S ⊗[R] A`. -/
+theorem restrictScalars_comp_injective_iff (q : S →ₐ[S] T) :
+    Function.Injective ((q.restrictScalars R).comp : (A →ₐ[R] S) → A →ₐ[R] T) ↔
+      Function.Injective (q.comp : (S ⊗[R] A →ₐ[S] S) → S ⊗[R] A →ₐ[S] T) := by
+  rw [restrictScalars_comp_eq R A q, (liftEquiv R S A T).symm.comp_injective,
+    (liftEquiv R S A S).injective_comp]
+
+/-- Composing with an `S`-algebra map `q : S →ₐ[S] T` is surjective on `R`-algebra maps out of `A`
+if and only if it is surjective on `S`-algebra maps out of the base change `S ⊗[R] A`. -/
+theorem restrictScalars_comp_surjective_iff (q : S →ₐ[S] T) :
+    Function.Surjective ((q.restrictScalars R).comp : (A →ₐ[R] S) → A →ₐ[R] T) ↔
+      Function.Surjective (q.comp : (S ⊗[R] A →ₐ[S] S) → S ⊗[R] A →ₐ[S] T) := by
+  rw [restrictScalars_comp_eq R A q, (liftEquiv R S A T).symm.comp_surjective,
+    (liftEquiv R S A S).surjective_comp]
+
 /-- Composing with an `S`-algebra map `q : S →ₐ[S] T` is bijective on `R`-algebra maps out of `A`
 if and only if it is bijective on `S`-algebra maps out of the base change `S ⊗[R] A`. -/
 theorem restrictScalars_comp_bijective_iff (q : S →ₐ[S] T) :
     Function.Bijective ((q.restrictScalars R).comp : (A →ₐ[R] S) → A →ₐ[R] T) ↔
       Function.Bijective (q.comp : (S ⊗[R] A →ₐ[S] S) → S ⊗[R] A →ₐ[S] T) := by
-  have hcomp : ((q.restrictScalars R).comp : (A →ₐ[R] S) → A →ₐ[R] T) =
-      (liftEquiv R S A T).symm ∘ q.comp ∘ liftEquiv R S A S := by
-    ext f a
-    simp
-  rw [hcomp, (liftEquiv R S A T).symm.bijective.of_comp_iff',
+  rw [restrictScalars_comp_eq R A q, (liftEquiv R S A T).symm.bijective.of_comp_iff',
     Function.Bijective.of_comp_iff _ (liftEquiv R S A S).bijective]
 
 end Comp

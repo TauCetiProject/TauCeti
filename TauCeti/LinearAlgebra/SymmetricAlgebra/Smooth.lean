@@ -7,15 +7,41 @@ module
 
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.RingTheory.Smooth.Basic
+import Mathlib.LinearAlgebra.TensorProduct.Projective
+import Mathlib.RingTheory.TensorProduct.Finite
+import TauCeti.LinearAlgebra.SymmetricAlgebra.FiniteType
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Kaehler
+import TauCeti.RingTheory.Smooth.Retract
 
 /-!
-# Smoothness of symmetric algebras
+# Formal smoothness and smoothness of symmetric algebras
 
-The symmetric algebra of a finite free module is a polynomial algebra in finitely many
-variables (`SymmetricAlgebra.equivMvPolynomial`), hence a smooth algebra: formally smooth and
-finitely presented. This is the smoothness input for the affine group schemes whose coordinate
-algebras are symmetric algebras, such as the additive group `𝔾ₐ` with coordinate algebra
-`SymmetricAlgebra R R`.
+For a commutative ring `R` and an `R`-module `M`, the symmetric algebra `SymmetricAlgebra R M` is:
+* formally smooth over `R` if and only if `M` is projective (`formallySmooth_iff`);
+* smooth over `R` if and only if `M` is finite projective (`smooth_iff`).
+
+Sufficiency uses functoriality of `SymmetricAlgebra`: a projective module is a direct summand of a
+free module `F`, making `SymmetricAlgebra R M` an `R`-algebra retract of the polynomial algebra
+`SymmetricAlgebra R F` (`Algebra.FormallySmooth.of_retract`); when `M` is also finite it is finitely
+presented (`Module.finitePresentation_of_projective`), giving finite presentation of
+`SymmetricAlgebra R M` (`TauCeti.SymmetricAlgebra.instFinitePresentation`).
+
+Necessity uses `SymmetricAlgebra.tensorKaehlerDifferentialEquiv` along the augmentation
+`SymmetricAlgebra.algebraMapInv : Sym M →ₐ[R] R` (`R ⊗[Sym M] Ω[Sym M⁄R] ≃ₗ[R] M`) to descend
+projectivity (`Module.Projective.tensorProduct`) and finiteness (`Module.Finite.base_change`) of
+`Ω[Sym M⁄R]` over `Sym M` back to `M` over `R`.
+
+## Main declarations
+
+* `TauCeti.SymmetricAlgebra.instFormallySmooth`: `SymmetricAlgebra R M` is formally smooth over `R`
+  when `M` is projective.
+* `TauCeti.SymmetricAlgebra.instSmooth`: `SymmetricAlgebra R M` is smooth over `R` when `M` is
+  finite projective.
+* `TauCeti.SymmetricAlgebra.formallySmooth_iff`: `SymmetricAlgebra R M` is formally smooth over `R`
+  iff `M` is projective over `R`.
+* `TauCeti.SymmetricAlgebra.smooth_iff`: `SymmetricAlgebra R M` is smooth over `R` iff `M` is
+  projective and finite over `R`.
 -/
 
 public section
@@ -26,12 +52,49 @@ universe u v
 
 variable (R : Type u) (M : Type v) [CommRing R] [AddCommGroup M] [Module R M]
 
-/-- The symmetric algebra of a finite free module is smooth: it is the polynomial algebra on a
-basis. -/
-instance instSmooth [Module.Free R M] [Module.Finite R M] :
+/-- The symmetric algebra of a projective module is formally smooth: it is an `R`-algebra retract
+of the symmetric algebra of a free module, which is a polynomial algebra. -/
+instance instFormallySmooth [Module.Projective R M] :
+    Algebra.FormallySmooth R (SymmetricAlgebra R M) := by
+  obtain ⟨s, hs⟩ := Module.projective_def'.mp ‹Module.Projective R M›
+  let b := Finsupp.basisSingleOne (R := R) (ι := M)
+  have : Algebra.FormallySmooth R (SymmetricAlgebra R (M →₀ R)) :=
+    .of_equiv (_root_.SymmetricAlgebra.equivMvPolynomial b).symm
+  refine Algebra.FormallySmooth.of_retract
+    (_root_.SymmetricAlgebra.map R s)
+    (_root_.SymmetricAlgebra.map R (Finsupp.linearCombination R id)) ?_
+  rw [_root_.SymmetricAlgebra.map_comp_map, hs, _root_.SymmetricAlgebra.map_id]
+
+/-- The symmetric algebra of a finite projective module is smooth: it is formally smooth as a
+retract of a polynomial algebra and finitely presented because finite projective modules are
+finitely presented. -/
+instance instSmooth [Module.Projective R M] [Module.Finite R M] :
     Algebra.Smooth R (SymmetricAlgebra R M) :=
-  letI : Algebra.Smooth R (MvPolynomial (Module.Free.ChooseBasisIndex R M) R) :=
-    ⟨inferInstance, inferInstance⟩
-  Algebra.Smooth.of_equiv (SymmetricAlgebra.equivMvPolynomial (Module.Free.chooseBasis R M)).symm
+  letI : Module.FinitePresentation R M := Module.finitePresentation_of_projective R M
+  ⟨inferInstance, inferInstance⟩
+
+section Augmentation
+
+private local instance : Algebra (SymmetricAlgebra R M) R :=
+  (_root_.SymmetricAlgebra.algebraMapInv (R := R) (M := M)).toRingHom.toAlgebra
+
+private local instance : IsScalarTower R (SymmetricAlgebra R M) R :=
+  .of_algebraMap_eq fun r ↦ (_root_.SymmetricAlgebra.algebraMap_leftInverse M r).symm
+
+/-- `SymmetricAlgebra R M` is formally smooth over `R` if and only if `M` is projective over `R`. -/
+theorem formallySmooth_iff :
+    Algebra.FormallySmooth R (SymmetricAlgebra R M) ↔ Module.Projective R M :=
+  ⟨fun _ ↦ .of_equiv (_root_.SymmetricAlgebra.tensorKaehlerDifferentialEquiv R M),
+    fun _ ↦ inferInstance⟩
+
+/-- `SymmetricAlgebra R M` is smooth over `R` if and only if `M` is projective and finite over
+`R`. -/
+theorem smooth_iff :
+    Algebra.Smooth R (SymmetricAlgebra R M) ↔ Module.Projective R M ∧ Module.Finite R M :=
+  ⟨fun h ↦ ⟨(formallySmooth_iff R M).mp h.formallySmooth,
+    .equiv (_root_.SymmetricAlgebra.tensorKaehlerDifferentialEquiv R M)⟩,
+    fun ⟨_, _⟩ ↦ inferInstance⟩
+
+end Augmentation
 
 end TauCeti.SymmetricAlgebra
