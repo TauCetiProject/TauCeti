@@ -22,12 +22,12 @@ present, `R`-algebra) structure as `A`, with the same counit and the reversed co
 * `TauCeti.Coop.linearEquiv`, `TauCeti.Coop.unopLinearEquiv`, `TauCeti.Coop.algEquiv`: canonical
   equivalences `Coop A ≃ A` and `(Coop A)ᵐᵒᵖ ≃ A`.
 * `TauCeti.Coop.instCoalgebra`, `TauCeti.Coop.instIsCocomm`: coalgebra instances on `Coop A`.
-* `TauCeti.Coop.comul_mk`, `TauCeti.Coop.counit_mk`: simp lemmas for the co-opposite coalgebra
-  operations.
+* `TauCeti.Coop.comul_mk`, `TauCeti.Coop.counit_mk`, `TauCeti.Coop.comul_linearEquiv`: simp and
+  transport lemmas for the co-opposite coalgebra operations.
 * `Coalgebra.Repr.coop`: reverses the legs of a finite coproduct representation.
 -/
 
-@[expose] public section
+public section
 
 open scoped TensorProduct
 
@@ -69,6 +69,7 @@ theorem mk_surjective : Function.Surjective (@mk A) := fun x ↦ ⟨x.val, rfl�
 
 variable (A) in
 /-- The underlying bijection `Coop A ≃ A`. -/
+@[expose]
 def equiv : Coop A ≃ A where
   toFun := val
   invFun := mk
@@ -169,6 +170,7 @@ theorem mk_algebraMap [CommSemiring R] [Semiring A] [Algebra R A] (r : R) :
 
 variable (A) in
 /-- `Coop.val` as an additive equivalence `Coop A ≃+ A`. -/
+@[expose]
 def addEquiv [Add A] : Coop A ≃+ A where
   __ := equiv A
   map_add' _ _ := rfl
@@ -178,6 +180,7 @@ def addEquiv [Add A] : Coop A ≃+ A where
 
 variable (R A) in
 /-- `Coop.val` as an `R`-linear equivalence `Coop A ≃ₗ[R] A`. -/
+@[expose]
 def linearEquiv [Semiring R] [AddCommMonoid A] [Module R A] : Coop A ≃ₗ[R] A where
   __ := addEquiv A
   map_smul' _ _ := rfl
@@ -194,6 +197,7 @@ theorem linearEquiv_symm_apply [Semiring R] [AddCommMonoid A] [Module R A] (a : 
 
 variable (R A) in
 /-- The canonical `R`-linear equivalence `(Coop A)ᵐᵒᵖ ≃ₗ[R] A`. -/
+@[expose]
 def unopLinearEquiv [Semiring R] [AddCommMonoid A] [Module R A] : (Coop A)ᵐᵒᵖ ≃ₗ[R] A :=
   (MulOpposite.opLinearEquiv R).symm.trans (linearEquiv R A)
 
@@ -209,6 +213,7 @@ theorem unopLinearEquiv_symm_apply [Semiring R] [AddCommMonoid A] [Module R A] (
 
 variable (A) in
 /-- `Coop.val` as a ring equivalence `Coop A ≃+* A`. -/
+@[expose]
 def ringEquiv [Add A] [Mul A] : Coop A ≃+* A where
   __ := equiv A
   map_mul' _ _ := rfl
@@ -219,6 +224,7 @@ def ringEquiv [Add A] [Mul A] : Coop A ≃+* A where
 
 variable (R A) in
 /-- `Coop.val` as an `R`-algebra equivalence `Coop A ≃ₐ[R] A`. -/
+@[expose]
 def algEquiv [CommSemiring R] [Semiring A] [Algebra R A] : Coop A ≃ₐ[R] A where
   __ := ringEquiv A
   commutes' _ := rfl
@@ -272,6 +278,22 @@ theorem counit_mk [CoalgebraStruct R A] (a : A) :
 theorem counit_apply [CoalgebraStruct R A] (x : Coop A) :
     Coalgebra.counit (R := R) x = Coalgebra.counit (R := R) x.val :=
   rfl
+
+/-- Comultiplication commutes with `Coop.linearEquiv R A` up to swapping tensor factors. -/
+theorem comul_linearEquiv [CoalgebraStruct R A] (x : Coop A) :
+    Coalgebra.comul (R := R) (linearEquiv R A x) =
+      TensorProduct.map (linearEquiv R A).toLinearMap (linearEquiv R A).toLinearMap
+        (TensorProduct.comm R (Coop A) (Coop A) (Coalgebra.comul (R := R) x)) := by
+  induction x with | mk a =>
+  simp only [linearEquiv_apply, comul_mk]
+  generalize Coalgebra.comul (R := R) a = w
+  induction w using TensorProduct.inductionOn with
+  | add u v hu hv =>
+    simp only [map_add]
+    rw [← hu, ← hv]
+  | tmul b c =>
+    simp only [TensorProduct.comm_tmul, TensorProduct.map_tmul, LinearEquiv.coe_coe,
+      LinearEquiv.apply_symm_apply]
 
 private def tau (R : Type u) (A : Type v) [CommSemiring R] [AddCommMonoid A] [Module R A] :
     A ⊗[R] (A ⊗[R] A) →ₗ[R] A ⊗[R] (A ⊗[R] A) :=
@@ -403,17 +425,17 @@ def coop {a : A} (r : Coalgebra.Repr R a ι) : Coalgebra.Repr R (Coop.mk a) ι w
     simpa [map_sum] using h
 
 @[simp]
-theorem coop_index {a : A} (r : Coalgebra.Repr R a ι) : r.coop.index = r.index :=
+theorem coop_index {a : A} (r : Coalgebra.Repr R a ι) : r.coop.index = r.index := by
   rfl
 
 @[simp]
 theorem coop_left {a : A} (r : Coalgebra.Repr R a ι) (i : ι) :
-    r.coop.left i = Coop.mk (r.right i) :=
+    r.coop.left i = Coop.mk (r.right i) := by
   rfl
 
 @[simp]
 theorem coop_right {a : A} (r : Coalgebra.Repr R a ι) (i : ι) :
-    r.coop.right i = Coop.mk (r.left i) :=
+    r.coop.right i = Coop.mk (r.left i) := by
   rfl
 
 end Coalgebra.Repr

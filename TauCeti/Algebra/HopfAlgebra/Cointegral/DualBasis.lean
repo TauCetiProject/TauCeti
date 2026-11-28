@@ -163,7 +163,7 @@ private theorem IsRightCointegral.sum_apply_antipode_mul_smul_eq {φ : Module.Du
 
 /-- For a right cointegral `φ` and a left integral `t` such that `φ t` is a unit,
 `φ (S t) = φ t`. -/
-theorem IsRightCointegral.apply_antipode_of_mem_leftIntegral {φ : Module.Dual R H}
+theorem IsRightCointegral.map_antipode_of_mem_leftIntegral_of_isUnit {φ : Module.Dual R H}
     (hφ : IsRightCointegral φ) {t : H} (ht : t ∈ leftIntegral R H) (hu : IsUnit (φ t)) :
     φ (HopfAlgebra.antipode R t) = φ t := by
   classical
@@ -188,7 +188,7 @@ theorem IsRightCointegral.sum_apply_antipode_mul_smul {φ : Module.Dual R H}
     {ι : Type*} (r : Coalgebra.Repr R t ι) (x : H) :
     ∑ i ∈ r.index, φ (HopfAlgebra.antipode R (r.right i) * x) • r.left i = x := by
   have hSt : φ (HopfAlgebra.antipode R t) = 1 :=
-    (hφ.apply_antipode_of_mem_leftIntegral ht (htφ ▸ isUnit_one)).trans htφ
+    (hφ.map_antipode_of_mem_leftIntegral_of_isUnit ht (htφ ▸ isUnit_one)).trans htφ
   simpa [hSt] using hφ.sum_apply_antipode_mul_smul_eq ht r x
 
 /-- Dual-basis partner of `IsLeftCointegral.sum_apply_mul_smul_antipode`: for a left cointegral

@@ -12,12 +12,12 @@ public import Mathlib.RingTheory.Coalgebra.MulOpposite
 
 For an `R`-coalgebra `A` equipped with Mathlib's coalgebra structure on `Aᵐᵒᵖ`
 (`Mathlib.RingTheory.Coalgebra.MulOpposite`), this file records `@[simp]` evaluation lemmas for
-`Coalgebra.comul` and `Coalgebra.counit` on `MulOpposite.op`, the cocommutativity instance
-`MulOpposite.instIsCocomm`, and `Coalgebra.Repr.op` for mapping finite coproduct representations
-into `Aᵐᵒᵖ`.
+`Coalgebra.comul` and `Coalgebra.counit` on `MulOpposite.op`, the comultiplication transport
+`MulOpposite.comul_opLinearEquiv_symm`, the cocommutativity instance `MulOpposite.instIsCocomm`, and
+`Coalgebra.Repr.op` for mapping finite coproduct representations into `Aᵐᵒᵖ`.
 -/
 
-@[expose] public section
+public section
 
 open scoped TensorProduct
 
@@ -40,6 +40,21 @@ theorem counit_op [CoalgebraStruct R A] (a : A) :
 theorem counit_apply [CoalgebraStruct R A] (x : Aᵐᵒᵖ) :
     Coalgebra.counit (R := R) x = Coalgebra.counit (R := R) x.unop :=
   rfl
+
+/-- Comultiplication commutes with `(MulOpposite.opLinearEquiv R).symm`. -/
+theorem comul_opLinearEquiv_symm [CoalgebraStruct R A] (x : Aᵐᵒᵖ) :
+    Coalgebra.comul (R := R) ((opLinearEquiv R).symm x) =
+      TensorProduct.map (opLinearEquiv R).symm.toLinearMap
+        (opLinearEquiv R).symm.toLinearMap (Coalgebra.comul (R := R) x) := by
+  induction x using MulOpposite.rec' with | h a =>
+  simp only [coe_opLinearEquiv_symm, unop_op, comul_op]
+  generalize Coalgebra.comul (R := R) a = w
+  induction w using TensorProduct.inductionOn with
+  | add u v hu hv =>
+    simp only [map_add]
+    rw [← hu, ← hv]
+  | tmul b c =>
+    simp only [TensorProduct.map_tmul, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply]
 
 instance instIsCocomm [Coalgebra R A] [Coalgebra.IsCocomm R A] :
     Coalgebra.IsCocomm R Aᵐᵒᵖ where
@@ -65,17 +80,17 @@ def op {a : A} (r : Coalgebra.Repr R a ι) : Coalgebra.Repr R (MulOpposite.op a)
     simpa [map_sum] using h
 
 @[simp]
-theorem op_index {a : A} (r : Coalgebra.Repr R a ι) : r.op.index = r.index :=
+theorem op_index {a : A} (r : Coalgebra.Repr R a ι) : r.op.index = r.index := by
   rfl
 
 @[simp]
 theorem op_left {a : A} (r : Coalgebra.Repr R a ι) (i : ι) :
-    r.op.left i = MulOpposite.op (r.left i) :=
+    r.op.left i = MulOpposite.op (r.left i) := by
   rfl
 
 @[simp]
 theorem op_right {a : A} (r : Coalgebra.Repr R a ι) (i : ι) :
-    r.op.right i = MulOpposite.op (r.right i) :=
+    r.op.right i = MulOpposite.op (r.right i) := by
   rfl
 
 end Coalgebra.Repr

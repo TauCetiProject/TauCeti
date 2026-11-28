@@ -28,8 +28,8 @@ variable {R : Type u} {A : Type v} [CommSemiring R] [Semiring A] [Bialgebra R A]
 
 noncomputable instance instBialgebra : Bialgebra R (Coop A) :=
   Bialgebra.mk' R (Coop A)
-    (Bialgebra.counit_one (R := R) (A := A))
-    (fun {a b} ↦ Bialgebra.counit_mul (R := R) a.val b.val)
+    (by rw [counit_apply, val_one, Bialgebra.counit_one])
+    (fun {a b} ↦ by rw [counit_apply, val_mul, counit_apply, counit_apply, Bialgebra.counit_mul])
     (by
       rw [← mk_one, comul_mk, Bialgebra.comul_one, Algebra.TensorProduct.one_def]
       simp [Algebra.TensorProduct.one_def])

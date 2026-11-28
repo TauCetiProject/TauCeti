@@ -272,11 +272,6 @@ cointegrals. -/
 theorem leftCointegrals_ne_bot : leftCointegrals k H ≠ ⊥ :=
   Submodule.one_le_finrank_iff.mp (finrank_leftCointegrals k H).ge
 
-/-- Every finite-dimensional Hopf algebra over a field admits a nonzero left cointegral. -/
-theorem exists_isLeftCointegral_ne_zero :
-    ∃ φ : Module.Dual k H, IsLeftCointegral φ ∧ φ ≠ 0 := by
-  simpa [Submodule.ne_bot_iff] using leftCointegrals_ne_bot k H
-
 /-- **Larson–Sweedler Antipode Bijectivity Theorem**: the antipode of any finite-dimensional Hopf
 algebra over a field is bijective. -/
 theorem antipode_bijective : Function.Bijective (antipode k : H →ₗ[k] H) := by

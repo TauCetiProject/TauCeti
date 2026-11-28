@@ -269,18 +269,24 @@ variable {R H : Type*} [CommSemiring R] [Semiring H] [Bialgebra R H]
 theorem mk_mem_leftIntegral_iff {t : H} :
     mk t ∈ leftIntegral R (Coop H) ↔ t ∈ leftIntegral R H := by
   simp only [mem_leftIntegral_iff]
-  refine ⟨fun ht h ↦ congrArg val (ht (mk h)), fun ht h ↦ ?_⟩
-  induction h with | mk h =>
-  exact ext (ht h)
+  constructor
+  · intro ht h
+    simpa only [val_mul, val_smul, val_mk, counit_mk] using congrArg val (ht (mk h))
+  · intro ht h
+    induction h with | mk h =>
+    exact ext (by simpa only [val_mul, val_smul, val_mk, counit_mk] using ht h)
 
 /-- Right integrals in `Coop H` are the same elements as right integrals in `H`. -/
 @[simp]
 theorem mk_mem_rightIntegral_iff {t : H} :
     mk t ∈ rightIntegral R (Coop H) ↔ t ∈ rightIntegral R H := by
   simp only [mem_rightIntegral_iff]
-  refine ⟨fun ht h ↦ congrArg val (ht (mk h)), fun ht h ↦ ?_⟩
-  induction h with | mk h =>
-  exact ext (ht h)
+  constructor
+  · intro ht h
+    simpa only [val_mul, val_smul, val_mk, counit_mk] using congrArg val (ht (mk h))
+  · intro ht h
+    induction h with | mk h =>
+    exact ext (by simpa only [val_mul, val_smul, val_mk, counit_mk] using ht h)
 
 end TauCeti.Coop
 
@@ -295,18 +301,20 @@ variable {R H : Type*} [CommSemiring R] [Semiring H] [Bialgebra R H]
 theorem op_mem_leftIntegral_iff {t : H} :
     op t ∈ leftIntegral R Hᵐᵒᵖ ↔ t ∈ rightIntegral R H := by
   simp only [mem_leftIntegral_iff, mem_rightIntegral_iff]
-  refine ⟨fun ht h ↦ op_injective (by simpa [← op_mul] using ht (op h)), fun ht h ↦ ?_⟩
+  refine ⟨fun ht h ↦ op_injective (by
+    simpa only [← op_mul, counit_op, op_smul] using ht (op h)), fun ht h ↦ ?_⟩
   induction h using MulOpposite.rec' with | h h =>
-  simpa [← op_mul] using congrArg op (ht h)
+  simpa only [← op_mul, counit_op, op_smul] using congrArg op (ht h)
 
 /-- Right integrals in `Hᵐᵒᵖ` correspond to left integrals in `H`. -/
 @[simp]
 theorem op_mem_rightIntegral_iff {t : H} :
     op t ∈ rightIntegral R Hᵐᵒᵖ ↔ t ∈ leftIntegral R H := by
   simp only [mem_rightIntegral_iff, mem_leftIntegral_iff]
-  refine ⟨fun ht h ↦ op_injective (by simpa [← op_mul] using ht (op h)), fun ht h ↦ ?_⟩
+  refine ⟨fun ht h ↦ op_injective (by
+    simpa only [← op_mul, counit_op, op_smul] using ht (op h)), fun ht h ↦ ?_⟩
   induction h using MulOpposite.rec' with | h h =>
-  simpa [← op_mul] using congrArg op (ht h)
+  simpa only [← op_mul, counit_op, op_smul] using congrArg op (ht h)
 
 end MulOpposite
 
