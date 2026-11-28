@@ -39,18 +39,16 @@ private theorem eval_denom_ne_zero {K : Type*} [NormedField K] {ι : Type*} [Fin
     (cycleGeneratingFactor pos p ((q : K) ^ 2) 1 a).eval x ≠ 0 := by
   rw [eval_cycleGeneratingFactor]
   set M : ℝ := max 1 (max ‖(q : K) ^ 2‖ ‖(q : K) ^ 2 - 1‖)
-  have hpa : ‖p a‖ ≤ ∑ b, ‖p b‖ :=
-    Finset.single_le_sum (fun _ _ ↦ norm_nonneg _) (Finset.mem_univ a)
+  have hpa : ‖p a‖ ≤ ∑ b, ‖p b‖ := Finset.single_le_sum (fun _ _ ↦ norm_nonneg _)
+    (Finset.mem_univ a)
   have h1M : 1 ≤ M := le_max_left _ _
   have hQM : ‖(q : K) ^ 2‖ ≤ M := (le_max_left _ _).trans (le_max_right _ _)
   split_ifs <;> intro h0
   · have : ‖(q : K) ^ 2 * p a * x‖ = 1 := by simpa [sub_eq_zero.mp h0] using norm_one (α := K)
     linarith [show ‖(q : K) ^ 2 * p a * x‖ ≤ M * (∑ b, ‖p b‖) * ‖x‖ by simp only [norm_mul]; gcongr]
-  · have : ‖p a * x‖ = 1 := by
-      rw [show p a * x = -1 from eq_neg_of_add_eq_zero_left (by simpa [add_comm] using h0),
-        norm_neg, norm_one]
-    linarith [show ‖p a * x‖ ≤ M * (∑ b, ‖p b‖) * ‖x‖ by
-      rw [norm_mul, ← one_mul ‖p a‖]; gcongr]
+  · have : ‖p a * x‖ = 1 := by rw [show p a * x = -1 from eq_neg_of_add_eq_zero_left (by
+      simpa [add_comm] using h0), norm_neg, norm_one]
+    linarith [show ‖p a * x‖ ≤ M * (∑ b, ‖p b‖) * ‖x‖ by rw [norm_mul, ← one_mul ‖p a‖]; gcongr]
 
 /-- **Analytic evaluation of the cycle-trace generating function on a finite alphabet** on the disk
 `max 1 (max ‖Q‖ ‖Q - 1‖) * (∑ a, ‖p a‖) * ‖x‖ < 1` (`Q = q ^ 2`). -/
@@ -72,15 +70,15 @@ theorem atomicTrace_cycleWord_generating_eval {K : Type*} [NormedField K]
     (summable_nat_add_iff 1).mp <| (hsum.mul_left ‖(q : K) ^ 2 - 1‖).of_nonneg_of_le
       (fun _ ↦ norm_nonneg _) fun m ↦ by simp [F, smul_eq_mul, mul_assoc]
   have heval := PowerSeries.evalAt_mul_coe_of_summable_norm P hF_sum
-  rw [show F * (P : PowerSeries K) = (Qp : PowerSeries K) by
-      dsimp only [F, P, Qp]; simp only [← Polynomial.coeToPowerSeries.ringHom_apply, map_prod]
-      exact atomicTrace_cycleWord_generating_function_eq_prod pos q p,
-    PowerSeries.evalAt_coe, PowerSeries.evalAt_def, hF_sum.of_norm.tsum_eq_zero_add] at heval
+  have hFP : F * (P : PowerSeries K) = (Qp : PowerSeries K) := by
+    dsimp only [F, P, Qp]; simp only [← Polynomial.coeToPowerSeries.ringHom_apply, map_prod]
+    exact atomicTrace_cycleWord_generating_function_eq_prod pos q p
+  rw [hFP, PowerSeries.evalAt_coe, PowerSeries.evalAt_def, hF_sum.of_norm.tsum_eq_zero_add] at heval
   simp only [F, P, Qp, PowerSeries.coeff_mk, ↓reduceIte, smul_eq_mul, pow_zero, mul_one,
     Nat.succ_ne_zero, mul_assoc, hsum.of_norm.tsum_mul_left, Polynomial.coe_aeval_eq_eval,
     Polynomial.eval_prod] at heval
-  rw [(eq_div_iff (Finset.prod_ne_zero_iff.mpr fun a _ ↦
-    eval_denom_ne_zero pos q p hx a)).mpr heval.symm, ← Finset.prod_div_distrib]
+  rw [(eq_div_iff (Finset.prod_ne_zero_iff.mpr fun a _ ↦ eval_denom_ne_zero pos q p hx a)).mpr
+    heval.symm, ← Finset.prod_div_distrib]
   exact Finset.prod_congr rfl fun a _ ↦ by
     simp only [eval_cycleGeneratingFactor]; split_ifs <;> simp
 

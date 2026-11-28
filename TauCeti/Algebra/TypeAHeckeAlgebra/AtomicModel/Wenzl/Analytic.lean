@@ -45,9 +45,9 @@ theorem wenzlGtOneWeight_cycleWord_hasProd {q : ℂˣ} {Q : ℝ} (hQ : 1 < Q) (h
     rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (by linarith [(div_le_iff₀ h1Q).mp hη.1])]
     exact (mul_le_mul_of_nonneg_right (by linarith [(le_div_iff₀ h1Q).mp hη.2])
       (norm_nonneg x)).trans_lt hx
-  exact hasProd_ofReal_cycleWord wenzlGtOnePos hqQ (summable_norm_wenzlGtOneWeight hQ η)
-    (wenzlGtOneWeight_nonneg hQ hη) (tsum_wenzlGtOneWeight hQ η) η
-    (wenzlGtOneWeight_leftSlice hQ η) (by rwa [hmax]) hsx
+  exact hasProd_ofReal_cycleWord wenzlGtOnePos hqQ (summable_norm_wenzlGtOneWeight hQ η) (
+    wenzlGtOneWeight_nonneg hQ hη) (tsum_wenzlGtOneWeight hQ η) η (wenzlGtOneWeight_leftSlice hQ η)
+    (by rwa [hmax]) hsx
 
 /-- **Telescoping infinite product for Wenzl's `0 < Q < 1` countable model.** For `0 < Q < 1`,
 `η ∈ [Q / (1 + Q), 1 / (1 + Q)]`, and `‖x‖ < 1`, the cycle-trace product converges to
@@ -68,11 +68,10 @@ theorem wenzlLtOneWeight_cycleWord_hasProd {q : ℂˣ} {Q : ℝ} (hQ0 : 0 < Q) (
   have hsx : ‖(((1 + Q) * η - 1 : ℝ) : ℂ) * x‖ < 1 := by
     have h1Q : 0 < 1 + Q := by linarith
     rw [norm_mul, Complex.norm_real, Real.norm_of_nonpos (by linarith [(le_div_iff₀ h1Q).mp hη.2])]
-    have hs1 : -(1 - Q) ≤ (1 + Q) * η - 1 := by linarith [(div_le_iff₀ h1Q).mp hη.1]
-    exact (mul_le_mul_of_nonneg_right (by linarith : -((1 + Q) * η - 1) ≤ 1)
-      (norm_nonneg x)).trans_lt (by simpa using hx)
-  exact hasProd_ofReal_cycleWord wenzlLtOnePos hqQ (summable_norm_wenzlLtOneWeight hQ0 hQ1 η)
-    (wenzlLtOneWeight_nonneg hQ0 hη) (tsum_wenzlLtOneWeight hQ0 hQ1 η) η
-    (wenzlLtOneWeight_leftSlice hQ0 hQ1 η) (by rwa [hmax, one_mul]) hsx
+    have h1 : -((1 + Q) * η - 1) ≤ 1 := by linarith [(div_le_iff₀ h1Q).mp hη.1]
+    exact (mul_le_mul_of_nonneg_right h1 (norm_nonneg x)).trans_lt (by simpa using hx)
+  exact hasProd_ofReal_cycleWord wenzlLtOnePos hqQ (summable_norm_wenzlLtOneWeight hQ0 hQ1 η) (
+    wenzlLtOneWeight_nonneg hQ0 hη) (tsum_wenzlLtOneWeight hQ0 hQ1 η) η (
+      wenzlLtOneWeight_leftSlice hQ0 hQ1 η) (by rwa [hmax, one_mul]) hsx
 
 end TauCeti.TypeAHeckeAlgebra

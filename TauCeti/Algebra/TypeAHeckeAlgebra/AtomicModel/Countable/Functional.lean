@@ -33,18 +33,17 @@ noncomputable def countableAtomicPositiveFunctional (q : ℂˣ) [Fact (IsSelfAdj
   square_nonneg := countableAtomicTrace_star_mul_self_nonneg pos q hp hp0
 
 /-- Forgetting positivity recovers the underlying countable atomic trace. -/
-@[simp]
-theorem toLinearMap_countableAtomicPositiveFunctional (q : ℂˣ) [Fact (IsSelfAdjoint (q : ℂ))]
-    {p : ι → ℂ} (hp : Summable fun a ↦ ‖p a‖) (hp0 : ∀ a, 0 ≤ p a) (n : ℕ) :
+@[simp] theorem toLinearMap_countableAtomicPositiveFunctional (q : ℂˣ)
+    [Fact (IsSelfAdjoint (q : ℂ))] {p : ι → ℂ} (hp : Summable fun a ↦ ‖p a‖)
+    (hp0 : ∀ a, 0 ≤ p a) (n : ℕ) :
     (countableAtomicPositiveFunctional pos q hp hp0 n).toLinearMap =
       countableAtomicTrace pos q p hp n := (rfl)
 
 /-- Evaluating `countableAtomicPositiveFunctional` at an element recovers `countableAtomicTrace`. -/
-@[simp]
-theorem countableAtomicPositiveFunctional_apply (q : ℂˣ) [Fact (IsSelfAdjoint (q : ℂ))]
+@[simp] theorem countableAtomicPositiveFunctional_apply (q : ℂˣ) [Fact (IsSelfAdjoint (q : ℂ))]
     {p : ι → ℂ} (hp : Summable fun a ↦ ‖p a‖) (hp0 : ∀ a, 0 ≤ p a) (n : ℕ)
     (x : TypeAHeckeAlgebra ℂ q n) :
-    countableAtomicPositiveFunctional pos q hp hp0 n x =
-      countableAtomicTrace pos q p hp n x := (rfl)
+    countableAtomicPositiveFunctional pos q hp hp0 n x = countableAtomicTrace pos q p hp n x :=
+  (rfl)
 
 end TauCeti.TypeAHeckeAlgebra

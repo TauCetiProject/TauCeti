@@ -32,14 +32,12 @@ noncomputable def atomicPositiveFunctional (q : ℂˣ) [Fact (IsSelfAdjoint (q :
   square_nonneg := atomicTrace_star_mul_self_nonneg pos q p hp
 
 /-- Forgetting positivity recovers the underlying atomic trace. -/
-@[simp]
-theorem toLinearMap_atomicPositiveFunctional (q : ℂˣ) [Fact (IsSelfAdjoint (q : ℂ))] [Finite ι]
-    {p : ι → ℂ} (hp : ∀ a, 0 ≤ p a) (n : ℕ) :
+@[simp] theorem toLinearMap_atomicPositiveFunctional (q : ℂˣ) [Fact (IsSelfAdjoint (q : ℂ))]
+    [Finite ι] {p : ι → ℂ} (hp : ∀ a, 0 ≤ p a) (n : ℕ) :
     (atomicPositiveFunctional pos q hp n).toLinearMap = atomicTrace pos q p n := (rfl)
 
 /-- Evaluating `atomicPositiveFunctional` at an element recovers `atomicTrace`. -/
-@[simp]
-theorem atomicPositiveFunctional_apply (q : ℂˣ) [Fact (IsSelfAdjoint (q : ℂ))] [Finite ι]
+@[simp] theorem atomicPositiveFunctional_apply (q : ℂˣ) [Fact (IsSelfAdjoint (q : ℂ))] [Finite ι]
     {p : ι → ℂ} (hp : ∀ a, 0 ≤ p a) (n : ℕ) (x : TypeAHeckeAlgebra ℂ q n) :
     atomicPositiveFunctional pos q hp n x = atomicTrace pos q p n x := (rfl)
 

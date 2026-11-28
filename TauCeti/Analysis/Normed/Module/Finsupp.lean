@@ -29,8 +29,7 @@ theorem sum_norm_smul_le {α R E : Type*} [SeminormedAddGroup R] [SeminormedAddC
     [SMulZeroClass R E] [IsBoundedSMul R E] (r : R) (f : α →₀ E) :
     ((r • f).sum fun _ a ↦ ‖a‖) ≤ ‖r‖ * f.sum fun _ a ↦ ‖a‖ := by
   rw [sum_norm_eq_sum_of_support_subset (r • f) support_smul, sum, Finset.mul_sum]
-  exact Finset.sum_le_sum fun a _ ↦ by
-    simpa only [coe_smul, Pi.smul_apply] using norm_smul_le r (f a)
+  exact Finset.sum_le_sum fun a _ ↦ norm_smul_le r (f a)
 
 end Finsupp
 
@@ -45,8 +44,8 @@ theorem sum_norm_apply_le {α β R E : Type*} [SeminormedRing R] [SeminormedAddC
     ((f v).sum fun _ x ↦ ‖x‖) ≤ C * v.sum fun _ r ↦ ‖r‖ := by
   rw [f.apply_eq_finsuppSum_smul v, Finsupp.sum]
   refine (Finsupp.sum_norm_sum_le _ _).trans ((Finset.sum_le_sum fun a _ ↦
-    (Finsupp.sum_norm_smul_le (v a) _).trans
-      (mul_le_mul_of_nonneg_left (hC a) (norm_nonneg _))).trans_eq ?_)
+    (Finsupp.sum_norm_smul_le (v a) _).trans (mul_le_mul_of_nonneg_left (hC a)
+      (norm_nonneg _))).trans_eq ?_)
   rw [← Finset.sum_mul, mul_comm, Finsupp.sum]
 
 end LinearMap

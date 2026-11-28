@@ -33,9 +33,9 @@ theorem atomicTrace_eq_of_cycleWord {ι' : Type*} [LinearOrder ι'] [Finite ι']
     [DecidablePred pos'] (p' : ι' → R)
     (h : ∀ m, atomicTrace pos q p m (cycleWord q m) = atomicTrace pos' q p' m (cycleWord q m))
     (n : ℕ) : atomicTrace pos q p n = atomicTrace pos' q p' n :=
-  trace_eq_of_cycleWord_values (fun _ ↦ atomicTrace_mul_comm pos q p)
-    (fun _ ↦ atomicTrace_mul_comm pos' q p') (fun _ _ ↦ atomicTrace_castAdd_mul_natAdd pos q p)
-    (fun _ _ ↦ atomicTrace_castAdd_mul_natAdd pos' q p') h n
+  trace_eq_of_cycleWord_values (fun _ ↦ atomicTrace_mul_comm pos q p) (fun _ ↦
+    atomicTrace_mul_comm pos' q p') (fun _ _ ↦ atomicTrace_castAdd_mul_natAdd pos q p) (fun _ _ ↦
+      atomicTrace_castAdd_mul_natAdd pos' q p') h n
 
 open PowerSeries in
 /-- **Order-independence of atomic traces.** If `q ^ 2 - 1` is left-regular, any sign- and
@@ -46,14 +46,13 @@ theorem atomicTrace_eq_of_equiv {ι' : Type*} [LinearOrder ι'] [Finite ι'] (po
     atomicTrace pos q p n = atomicTrace pos' q p' n := by
   have := Fintype.ofFinite ι; have := Fintype.ofFinite ι'
   refine atomicTrace_eq_of_cycleWord pos q p pos' p' (fun m ↦ ?_) n
-  have hcongr (c₁ c₂ : R) :
-      ∏ a, (cycleGeneratingFactor pos p c₁ c₂ a : PowerSeries R) =
-        ∏ a, (cycleGeneratingFactor pos' p' c₁ c₂ a : PowerSeries R) :=
+  have hcongr (c₁ c₂ : R) : ∏ a, (cycleGeneratingFactor pos p c₁ c₂ a : PowerSeries R) =
+      ∏ a, (cycleGeneratingFactor pos' p' c₁ c₂ a : PowerSeries R) :=
     Fintype.prod_equiv e _ _ fun a ↦ by simp only [coe_cycleGeneratingFactor, hpos, hp]
-  have hseries := (isUnit_prod_cycleGeneratingFactor pos p ((q : R) ^ 2) 1).mul_left_injective
-    ((atomicTrace_cycleWord_generating_function_eq_prod pos q p).trans ((hcongr 1 _).trans
-      ((atomicTrace_cycleWord_generating_function_eq_prod pos' q p').symm.trans
-        (congrArg _ (hcongr _ 1).symm))))
+  have hseries := (isUnit_prod_cycleGeneratingFactor pos p ((q : R) ^ 2) 1).mul_left_injective ((
+    atomicTrace_cycleWord_generating_function_eq_prod pos q p).trans ((hcongr 1 _).trans ((
+      atomicTrace_cycleWord_generating_function_eq_prod pos' q p').symm.trans (congrArg _
+        (hcongr _ 1).symm))))
   rcases m with _ | m <;> [simp; exact hq (by simpa using congrArg (coeff (m + 1)) hseries)]
 
 end TauCeti.TypeAHeckeAlgebra

@@ -330,10 +330,8 @@ theorem signedCheckedR_comp_lmapDomain_strictMono {ι' : Type*} [LinearOrder ι'
     (hpos : ∀ a, pos (g a) ↔ pos' a) (j k : Fin n) :
     (signedCheckedR pos s j k).comp (lmapDomain R R (fun w : Fin n → ι' ↦ g ∘ w)) =
       (lmapDomain R R (fun w : Fin n → ι' ↦ g ∘ w)).comp (signedCheckedR pos' s j k) := by
-  ext w : 2
-  simp only [LinearMap.coe_comp, comp_apply, lsingle_apply]
-  conv_lhs => rw [lmapDomain_apply, mapDomain_single]
-  rw [signedCheckedR_single_one, signedCheckedR_single_one]
+  ext w : 2; simp only [LinearMap.coe_comp, comp_apply, lsingle_apply]
+  rw [lmapDomain_apply, mapDomain_single, signedCheckedR_single_one, signedCheckedR_single_one]
   by_cases hjk : w j = w k
   · simp only [comp_apply, hjk, ↓reduceIte, hpos (w k)]
     split_ifs <;> simp only [map_smul, lmapDomain_apply, mapDomain_single]

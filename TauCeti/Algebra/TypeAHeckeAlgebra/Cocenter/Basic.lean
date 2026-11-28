@@ -826,7 +826,7 @@ theorem eq_toInfinite_of_T_zero_mul_tailIncl (hτ : IsMarkovTrace z τ)
       toInfinite_natAdd]
     exact hτ.map_mul_shift (by rw [← range_toInfinite]; exact ⟨u, rfl⟩) _
   refine DFunLike.congr_fun (trace_eq_of_cycleWord_values h_comm
-    (fun m u v ↦ by simp [ψ, hτ.map_mul_comm]) h_block hψm (fun m ↦ ?_) n) x
+    (fun _ _ _ ↦ by simp [ψ, hτ.map_mul_comm]) h_block hψm (fun m ↦ ?_) n) x
   induction m with
   | zero => simpa [ψ, hτ.map_one, h_one] using (h_block 0 1 1 1).symm
   | succ m ih =>

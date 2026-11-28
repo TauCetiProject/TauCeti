@@ -34,9 +34,8 @@ theorem HasProd.prod_fiberwise_of_fintype {β γ E : Type*} [CommMonoid E] [Topo
     HasProd (fun b ↦ ∏ c, f (b, c)) a := by
   classical
   have h : Filter.Tendsto (fun T : Finset β ↦ T ×ˢ (Finset.univ : Finset γ)) Filter.atTop
-      Filter.atTop := by
-    refine Filter.tendsto_atTop_atTop.2 fun S ↦ ⟨S.image Prod.fst, fun T hT x hx ↦ ?_⟩
-    exact Finset.mem_product.2 ⟨hT (Finset.mem_image_of_mem _ hx), Finset.mem_univ _⟩
+      Filter.atTop := Filter.tendsto_atTop_atTop.2 fun S ↦ ⟨S.image Prod.fst, fun _ hT _ hx ↦
+    Finset.mem_product.2 ⟨hT (Finset.mem_image_of_mem _ hx), Finset.mem_univ _⟩⟩
   rw [HasProd, SummationFilter.unconditional_filter] at hf ⊢
   exact (hf.comp h).congr fun T ↦ by simp [Finset.prod_product]
 

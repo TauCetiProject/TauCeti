@@ -388,15 +388,15 @@ theorem wenzlParam_mem_wenzlPositiveSet {d : ℤ} (hd : d ≠ 0) (Q : ℝ) :
 
 /-- When `1 ≤ Q`, `[1 / (1 + Q), Q / (1 + Q)] ⊆ wenzlPositiveSet Q`. -/
 theorem mem_wenzlPositiveSet_of_mem_Icc_of_one_le {Q : ℝ} (hQ : 1 ≤ Q) {η : ℝ}
-    (hη : η ∈ Set.Icc (1 / (1 + Q)) (Q / (1 + Q))) : η ∈ wenzlPositiveSet Q := by
+    (hη : η ∈ Set.Icc (1 / (1 + Q)) (Q / (1 + Q))) : η ∈ wenzlPositiveSet Q :=
   have hle : 1 / (1 + Q) ≤ Q / (1 + Q) := div_le_div_of_nonneg_right hQ (by linarith)
-  exact Or.inl ⟨(min_eq_left hle).symm ▸ hη.1, (max_eq_right hle).symm ▸ hη.2⟩
+  Or.inl ⟨(min_eq_left hle).symm ▸ hη.1, (max_eq_right hle).symm ▸ hη.2⟩
 
 /-- When `0 ≤ Q ≤ 1`, `[Q / (1 + Q), 1 / (1 + Q)] ⊆ wenzlPositiveSet Q`. -/
 theorem mem_wenzlPositiveSet_of_mem_Icc_of_le_one {Q : ℝ} (hQ0 : 0 ≤ Q) (hQ1 : Q ≤ 1) {η : ℝ}
-    (hη : η ∈ Set.Icc (Q / (1 + Q)) (1 / (1 + Q))) : η ∈ wenzlPositiveSet Q := by
+    (hη : η ∈ Set.Icc (Q / (1 + Q)) (1 / (1 + Q))) : η ∈ wenzlPositiveSet Q :=
   have hle : Q / (1 + Q) ≤ 1 / (1 + Q) := div_le_div_of_nonneg_right hQ1 (by linarith)
-  exact Or.inl ⟨(min_eq_right hle).symm ▸ hη.1, (max_eq_left hle).symm ▸ hη.2⟩
+  Or.inl ⟨(min_eq_right hle).symm ▸ hη.1, (max_eq_left hle).symm ▸ hη.2⟩
 
 /-- Inversion symmetry `wenzlPositiveSet Q⁻¹ = wenzlPositiveSet Q` for `0 < Q`. -/
 @[simp] theorem wenzlPositiveSet_inv {Q : ℝ} (hQ : 0 < Q) :
@@ -408,15 +408,15 @@ theorem mem_wenzlPositiveSet_of_mem_Icc_of_le_one {Q : ℝ} (hQ0 : 0 ≤ Q) (hQ1
 /-- Complement symmetry `1 - η ∈ wenzlPositiveSet Q ↔ η ∈ wenzlPositiveSet Q` for `0 < Q`. -/
 @[simp] theorem one_sub_mem_wenzlPositiveSet_iff {Q : ℝ} (hQ : 0 < Q) {η : ℝ} :
     1 - η ∈ wenzlPositiveSet Q ↔ η ∈ wenzlPositiveSet Q := by
-  suffices h : ∀ x, x ∈ wenzlPositiveSet Q → 1 - x ∈ wenzlPositiveSet Q from
-    ⟨fun hx ↦ by simpa using h (1 - η) hx, h η⟩
+  suffices h : ∀ x ∈ wenzlPositiveSet Q, 1 - x ∈ wenzlPositiveSet Q from ⟨fun hx ↦ by
+    simpa using h (1 - η) hx, h η⟩
   rintro x (hx | ⟨d, hd, rfl⟩)
-  · left; have hmm : min (1 / (1 + Q)) (Q / (1 + Q)) + max (1 / (1 + Q)) (Q / (1 + Q)) = 1 :=
+  · have hmm : min (1 / (1 + Q)) (Q / (1 + Q)) + max (1 / (1 + Q)) (Q / (1 + Q)) = 1 :=
       (min_add_max _ _).trans (by field_simp [show 1 + Q ≠ 0 by linarith])
-    exact ⟨by linarith [hx.2], by linarith [hx.1]⟩
-  · refine Or.inr ⟨-d, neg_ne_zero.mpr hd, ?_⟩
-    linarith [wenzlParam_add_wenzlParam_neg (mul_ne_zero (by linarith : 1 + Q ≠ 0)
-      (sum_pos (fun i _ ↦ pow_pos hQ i) (nonempty_range_iff.mpr (Int.natAbs_ne_zero.mpr hd))).ne')]
+    exact Or.inl ⟨by linarith [hx.2], by linarith [hx.1]⟩
+  · refine Or.inr ⟨-d, neg_ne_zero.mpr hd, ?_⟩; linarith [wenzlParam_add_wenzlParam_neg (mul_ne_zero
+      (by linarith : 1 + Q ≠ 0) (sum_pos (fun i _ ↦ pow_pos hQ i) (nonempty_range_iff.mpr
+        (Int.natAbs_ne_zero.mpr hd))).ne')]
 
 /-- Converting projection parameter `η` to `q * z`:
 `q * (q * η - q⁻¹ * (1 - η)) = (1 + Q) * η - 1`. -/
@@ -427,19 +427,17 @@ theorem mul_markovParam_proj_eq {q : ℂˣ} {Q : ℝ} (hqQ : (q : ℂ) ^ 2 = Q) 
 /-- Projection parameter `a_(r + 1)(Q)` corresponds to Markov parameter `c * q ^ (2 * r + 1)`. -/
 theorem mul_wenzlParam_natCast_sub {q : Kˣ} (hQ : 1 + (q : K) ^ 2 ≠ 0) {r : ℕ} {c : K}
     (hc : c * ∑ a ∈ range (r + 1), ((q : K) ^ 2) ^ a = 1) :
-    (q : K) * wenzlParam ((r + 1 : ℕ) : ℤ) ((q : K) ^ 2) -
-        ((q⁻¹ : Kˣ) : K) * (1 - wenzlParam ((r + 1 : ℕ) : ℤ) ((q : K) ^ 2)) =
-      c * (q : K) ^ (2 * r + 1) := by
+    (q : K) * wenzlParam ((r + 1 : ℕ) : ℤ) ((q : K) ^ 2) - ((q⁻¹ : Kˣ) : K) *
+      (1 - wenzlParam ((r + 1 : ℕ) : ℤ) ((q : K) ^ 2)) = c * (q : K) ^ (2 * r + 1) := by
   have hq := q.ne_zero; have hZ := right_ne_zero_of_mul_eq_one hc
-  rw [wenzlParam_natCast, Units.val_inv_eq_inv_val, geom_sum_succ' (n := r + 1)]
-  field_simp; linear_combination -((1 + (q : K) ^ 2) * (q : K) ^ (2 * r + 2)) * hc
+  rw [wenzlParam_natCast, Units.val_inv_eq_inv_val, geom_sum_succ' (n := r + 1)]; field_simp
+  linear_combination -((1 + (q : K) ^ 2) * (q : K) ^ (2 * r + 2)) * hc
 
 /-- Projection parameter `a_(-(r + 1))(Q)` corresponds to Markov parameter `-(c * q⁻¹)`. -/
 theorem mul_wenzlParam_neg_natCast_sub {q : Kˣ} (hQ : 1 + (q : K) ^ 2 ≠ 0) {r : ℕ} {c : K}
     (hc : c * ∑ a ∈ range (r + 1), ((q : K) ^ 2) ^ a = 1) :
-    (q : K) * wenzlParam (-((r + 1 : ℕ) : ℤ)) ((q : K) ^ 2) -
-        ((q⁻¹ : Kˣ) : K) * (1 - wenzlParam (-((r + 1 : ℕ) : ℤ)) ((q : K) ^ 2)) =
-      -(c * ((q⁻¹ : Kˣ) : K)) := by
+    (q : K) * wenzlParam (-((r + 1 : ℕ) : ℤ)) ((q : K) ^ 2) - ((q⁻¹ : Kˣ) : K) *
+      (1 - wenzlParam (-((r + 1 : ℕ) : ℤ)) ((q : K) ^ 2)) = -(c * ((q⁻¹ : Kˣ) : K)) := by
   have hq := q.ne_zero; have hZ := right_ne_zero_of_mul_eq_one hc
   rw [wenzlParam_neg_natCast, Nat.add_sub_cancel, Units.val_inv_eq_inv_val]; field_simp
   linear_combination -((1 + (q : K) ^ 2) * geom_sum_succ (x := (q : K) ^ 2) (n := r)) +
@@ -454,28 +452,21 @@ variable {q : Kˣ}
 theorem ocneanuTrace_mul_eigenprojection_geometric (s : Kˣ) (hs : (s : K) = q + ↑q⁻¹) {r : ℕ}
     {c : K} (hc : c * ∑ a ∈ range (r + 1), ((q : K) ^ 2) ^ a = 1) {n : ℕ}
     {x : InfiniteTypeAHeckeAlgebra K q} (hx : x ∈ stage K q (n + 1)) :
-    ocneanuTrace K q (c * (q : K) ^ (2 * r + 1))
-        (x * (↑s⁻¹ : K) • (T q n + algebraMap K _ (↑q⁻¹ : K))) =
-      wenzlParam ((r + 1 : ℕ) : ℤ) ((q : K) ^ 2) *
-        ocneanuTrace K q (c * (q : K) ^ (2 * r + 1)) x :=
-  (isMarkovTrace_ocneanuTrace _).map_mul_eigenprojection s hs
-    (mul_wenzlParam_natCast_sub
-      (by rw [Units.one_add_sq_eq_mul_add_inv, ← hs]; exact mul_ne_zero q.ne_zero s.ne_zero)
-      hc).symm hx
+    ocneanuTrace K q (c * (q : K) ^ (2 * r + 1)) (x * (↑s⁻¹ : K) • (T q n + algebraMap K _
+      (↑q⁻¹ : K))) = wenzlParam ((r + 1 : ℕ) : ℤ) ((q : K) ^ 2) * ocneanuTrace K q
+        (c * (q : K) ^ (2 * r + 1)) x :=
+  (isMarkovTrace_ocneanuTrace _).map_mul_eigenprojection s hs (mul_wenzlParam_natCast_sub (by
+    rw [Units.one_add_sq_eq_mul_add_inv, ← hs]; exact mul_ne_zero q.ne_zero s.ne_zero) hc).symm hx
 
 /-- **The projection parameter of a negative geometric atomic model** is `wenzlParam (-(r + 1)) Q`
 (`Q = q ^ 2`, `c * [r + 1]_Q = 1`). -/
 theorem ocneanuTrace_mul_eigenprojection_negGeometric (s : Kˣ) (hs : (s : K) = q + ↑q⁻¹) {r : ℕ}
     {c : K} (hc : c * ∑ a ∈ range (r + 1), ((q : K) ^ 2) ^ a = 1) {n : ℕ}
     {x : InfiniteTypeAHeckeAlgebra K q} (hx : x ∈ stage K q (n + 1)) :
-    ocneanuTrace K q (-(c * ↑q⁻¹))
-        (x * (↑s⁻¹ : K) • (T q n + algebraMap K _ (↑q⁻¹ : K))) =
-      wenzlParam (-((r + 1 : ℕ) : ℤ)) ((q : K) ^ 2) *
-        ocneanuTrace K q (-(c * ↑q⁻¹)) x :=
-  (isMarkovTrace_ocneanuTrace _).map_mul_eigenprojection s hs
-    (mul_wenzlParam_neg_natCast_sub
-      (by rw [Units.one_add_sq_eq_mul_add_inv, ← hs]; exact mul_ne_zero q.ne_zero s.ne_zero)
-      hc).symm hx
+    ocneanuTrace K q (-(c * ↑q⁻¹)) (x * (↑s⁻¹ : K) • (T q n + algebraMap K _ (↑q⁻¹ : K))) =
+      wenzlParam (-((r + 1 : ℕ) : ℤ)) ((q : K) ^ 2) * ocneanuTrace K q (-(c * ↑q⁻¹)) x :=
+  (isMarkovTrace_ocneanuTrace _).map_mul_eigenprojection s hs (mul_wenzlParam_neg_natCast_sub (by
+    rw [Units.one_add_sq_eq_mul_add_inv, ← hs]; exact mul_ne_zero q.ne_zero s.ne_zero) hc).symm hx
 
 end InfiniteTypeAHeckeAlgebra
 

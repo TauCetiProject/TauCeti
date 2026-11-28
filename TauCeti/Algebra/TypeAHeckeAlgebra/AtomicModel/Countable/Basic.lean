@@ -41,7 +41,7 @@ theorem summable_norm_signedChecked_mul_prod {p : ι → R} (hp : Summable fun a
   obtain ⟨C, _, hC⟩ := exists_norm_signedChecked_single_apply_le pos q x
   refine ((summable_norm_prod_of_summable_norm (f := fun _ : Fin n ↦ p) fun _ ↦ hp).mul_left
     C).of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun w ↦
-    (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (hC w w) (norm_nonneg _))
+      (norm_mul_le _ _).trans (by gcongr; exact hC w w)
 
 /-- **The countable atomic trace** on `TypeAHeckeAlgebra R q n` for an absolutely summable weight
 family `p : ι → R`. -/
@@ -59,8 +59,7 @@ noncomputable def countableAtomicTrace (p : ι → R) (hp : Summable fun a ↦ �
 
 /-- Evaluating `countableAtomicTrace` as a diagonal series over words. -/
 theorem countableAtomicTrace_apply (p : ι → R) (hp : Summable fun a ↦ ‖p a‖) (n : ℕ)
-    (x : TypeAHeckeAlgebra R q n) :
-    countableAtomicTrace pos q p hp n x =
+    (x : TypeAHeckeAlgebra R q n) : countableAtomicTrace pos q p hp n x =
       ∑' w : Fin n → ι, signedChecked pos q x (single w 1) w * ∏ i, p (w i) := (rfl)
 
 /-- On a finite alphabet, `countableAtomicTrace` agrees with `atomicTrace`. -/
@@ -73,28 +72,24 @@ theorem countableAtomicTrace_eq_atomicTrace [Finite ι] (p : ι → R)
 `countableAtomicTrace`. -/
 theorem countableAtomicTrace_subtype_eq_of_eq_zero (P : ι → Prop) (p : ι → R)
     (hp_sum : Summable fun a ↦ ‖p a‖) (hp : ∀ a, ¬ P a → p a = 0) {n : ℕ}
-    (x : TypeAHeckeAlgebra R q n) :
-    countableAtomicTrace (fun a : {a : ι // P a} ↦ pos a) q (fun a ↦ p a)
-        (hp_sum.comp_injective Subtype.val_injective) n x =
+    (x : TypeAHeckeAlgebra R q n) : countableAtomicTrace (fun a : {a : ι // P a} ↦ pos a) q
+      (fun a ↦ p a) (hp_sum.comp_injective Subtype.val_injective) n x =
       countableAtomicTrace pos q p hp_sum n x := by
-  rw [countableAtomicTrace_apply, countableAtomicTrace_apply,
-    ← (Subtype.val_injective.comp_left (α := Fin n)).tsum_eq
-      (f := fun w : Fin n → ι ↦ signedChecked pos q x (single w 1) w * ∏ i, p (w i))
-      fun w hw ↦ by
-        by_contra hrange; rw [Set.mem_range_comp_subtype_val] at hrange
-        exact hw (mul_eq_zero_of_right _ (Finset.prod_eq_zero_of_not_forall Finset.univ P hp
-          fun hP ↦ hrange fun i ↦ hP i (Finset.mem_univ _)))]
+  rw [countableAtomicTrace_apply, countableAtomicTrace_apply, ← (Subtype.val_injective.comp_left
+    (α := Fin n)).tsum_eq (f := fun w : Fin n → ι ↦ signedChecked pos q x (single w 1) w *
+      ∏ i, p (w i)) fun w hw ↦ by
+    by_contra hrange; rw [Set.mem_range_comp_subtype_val] at hrange
+    exact hw (mul_eq_zero_of_right _ (Finset.prod_eq_zero_of_not_forall Finset.univ P hp fun hP ↦
+      hrange fun i ↦ hP i (Finset.mem_univ _)))]
   exact tsum_congr fun w ↦ congrArg (· * ∏ i, p (w i)) (signedChecked_strictMono_single_apply
     pos q _ (Subtype.strictMono_coe P) (fun _ ↦ Iff.rfl) x w w).symm
 
 /-- Dropping zero-weight letters from a countable alphabet preserves `countableAtomicTrace`. -/
 theorem countableAtomicTrace_subtype_ne_zero (p : ι → R) (hp_sum : Summable fun a ↦ ‖p a‖) {n : ℕ}
-    (x : TypeAHeckeAlgebra R q n) :
-    countableAtomicTrace (fun a : {a : ι // p a ≠ 0} ↦ pos a) q (fun a ↦ p a)
-        (hp_sum.comp_injective Subtype.val_injective) n x =
+    (x : TypeAHeckeAlgebra R q n) : countableAtomicTrace (fun a : {a : ι // p a ≠ 0} ↦ pos a) q
+      (fun a ↦ p a) (hp_sum.comp_injective Subtype.val_injective) n x =
       countableAtomicTrace pos q p hp_sum n x :=
-  countableAtomicTrace_subtype_eq_of_eq_zero pos q (fun a ↦ p a ≠ 0) p hp_sum
-    (fun _ h ↦ not_not.mp h) x
+  countableAtomicTrace_subtype_eq_of_eq_zero pos q _ p hp_sum (fun _ h ↦ not_not.mp h) x
 
 /-- **Exhaustion of `countableAtomicTrace` by finite sub-alphabets** along `atTop`. -/
 theorem tendsto_atomicTrace_finset (p : ι → R) (hp : Summable fun a ↦ ‖p a‖) (n : ℕ)
@@ -103,17 +98,16 @@ theorem tendsto_atomicTrace_finset (p : ι → R) (hp : Summable fun a ↦ ‖p 
       atTop (𝓝 (countableAtomicTrace pos q p hp n x)) := by
   classical
   refine ((summable_norm_signedChecked_mul_prod pos q hp n x).of_norm.hasSum.comp
-    (tendsto_atTop_atTop.mpr fun T ↦ ⟨T.biUnion fun w ↦ Finset.univ.image w,
-      fun s hs w hw ↦ Fintype.mem_piFinset.mpr fun i ↦
-        hs (Finset.mem_biUnion.mpr ⟨w, hw, Finset.mem_image_of_mem w (Finset.mem_univ i)⟩)⟩)).congr
-    fun s ↦ ?_
+    (tendsto_atTop_atTop.mpr fun T ↦ ⟨T.biUnion fun w ↦ Finset.univ.image w, fun s hs w hw ↦
+      Fintype.mem_piFinset.mpr fun i ↦ hs (Finset.mem_biUnion.mpr ⟨w, hw,
+        Finset.mem_image_of_mem w (Finset.mem_univ i)⟩)⟩)).congr fun s ↦ ?_
   rw [comp_apply, atomicTrace_eq_sum]; symm
-  refine Finset.sum_bij (fun (w : Fin n → s) _ ↦ Subtype.val ∘ w)
-    (fun w _ ↦ Fintype.mem_piFinset.mpr fun i ↦ (w i).property)
-    (fun _ _ _ _ h ↦ funext fun i ↦ Subtype.ext (congrFun h i))
-    (fun w hw ↦ ⟨fun i ↦ ⟨w i, Fintype.mem_piFinset.mp hw i⟩, Finset.mem_univ _, rfl⟩) fun w _ ↦ ?_
-  rw [signedChecked_strictMono_single_apply pos q (fun a : s ↦ pos a)
-    (fun _ _ h ↦ h) (fun _ ↦ Iff.rfl)]; rfl
+  refine Finset.sum_bij (fun (w : Fin n → s) _ ↦ Subtype.val ∘ w) (fun w _ ↦
+    Fintype.mem_piFinset.mpr fun i ↦ (w i).property) (fun _ _ _ _ h ↦ funext fun i ↦ Subtype.ext
+    (congrFun h i)) (fun w hw ↦ ⟨fun i ↦ ⟨w i, Fintype.mem_piFinset.mp hw i⟩, Finset.mem_univ _,
+    rfl⟩) fun w _ ↦ ?_
+  rw [signedChecked_strictMono_single_apply pos q (fun a : s ↦ pos a) (fun _ _ h ↦ h)
+    fun _ ↦ Iff.rfl]; rfl
 
 /-- The countable atomic trace is tracial. -/
 theorem countableAtomicTrace_mul_comm (p : ι → R) (hp : Summable fun a ↦ ‖p a‖) {n : ℕ}

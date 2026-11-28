@@ -30,11 +30,9 @@ variable {R : Type*} [NormedCommRing R] {ι : Type*} [LinearOrder ι] (pos : ι 
 theorem exists_norm_signedChecked_single_apply_le (x : TypeAHeckeAlgebra R q n) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ w u : Fin n → ι, ‖signedChecked pos q x (single w 1) u‖ ≤ C := by
   suffices h : ∃ B : ℝ, 0 ≤ B ∧
-      ∀ w : Fin n → ι, (signedChecked pos q x (single w 1)).sum (fun _ r ↦ ‖r‖) ≤ B by
-    obtain ⟨B, hB0, hB⟩ := h
-    exact ⟨B, hB0, fun w u ↦ (Finsupp.norm_apply_le_sum_norm _ u).trans (hB w)⟩
-  have h1 (u : Fin n → ι) : (single u (1 : R)).sum (fun _ r ↦ ‖r‖) ≤ ‖(1 : R)‖ := by
-    simp [Finsupp.sum_single_index]
+      ∀ w : Fin n → ι, (signedChecked pos q x (single w 1)).sum (fun _ r ↦ ‖r‖) ≤ B from
+    let ⟨B, hB0, hB⟩ := h; ⟨B, hB0, fun w u ↦ (Finsupp.norm_apply_le_sum_norm _ u).trans (hB w)⟩
+  have h1 (u : Fin n → ι) : (single u (1 : R)).sum (fun _ r ↦ ‖r‖) ≤ ‖(1 : R)‖ := by simp
   have hs (r : R) (u : Fin n → ι) : (r • single u (1 : R)).sum (fun _ c ↦ ‖c‖) ≤ ‖r‖ * ‖(1 : R)‖ :=
     (Finsupp.sum_norm_smul_le r _).trans (mul_le_mul_of_nonneg_left (h1 u) (norm_nonneg _))
   have hx : x ∈ Algebra.adjoin R (Set.range (T (n := n) q)) := by rw [adjoin_range_T]; trivial
@@ -53,15 +51,13 @@ theorem exists_norm_signedChecked_single_apply_le (x : TypeAHeckeAlgebra R q n) 
     · rw [Finsupp.sum_norm_neg]; exact (hs _ _).trans (by nlinarith)
   | algebraMap r => exact ⟨‖r‖ * ‖(1 : R)‖, by positivity, fun w ↦ by
       rw [AlgHom.commutes, Module.algebraMap_end_apply]; exact hs r w⟩
-  | add _ _ _ _ hx hy =>
-    obtain ⟨Bx, hBx0, hBx⟩ := hx; obtain ⟨By, hBy0, hBy⟩ := hy
-    exact ⟨Bx + By, add_nonneg hBx0 hBy0, fun w ↦ by
-      rw [map_add, LinearMap.add_apply]
-      exact (Finsupp.sum_norm_add_le _ _).trans (add_le_add (hBx w) (hBy w))⟩
-  | mul _ _ _ _ hx hy =>
-    obtain ⟨Bx, hBx0, hBx⟩ := hx; obtain ⟨By, hBy0, hBy⟩ := hy
-    exact ⟨Bx * By, mul_nonneg hBx0 hBy0, fun w ↦ by
-      rw [map_mul, mul_apply_eq_comp]
-      exact (LinearMap.sum_norm_apply_le _ hBx _).trans (mul_le_mul_of_nonneg_left (hBy w) hBx0)⟩
+  | add _ _ _ _ hx hy => obtain ⟨Bx, hBx0, hBx⟩ := hx; obtain ⟨By, hBy0, hBy⟩ := hy; exact
+      ⟨Bx + By, add_nonneg hBx0 hBy0, fun w ↦ by
+        rw [map_add, LinearMap.add_apply]
+        exact (Finsupp.sum_norm_add_le _ _).trans (add_le_add (hBx w) (hBy w))⟩
+  | mul _ _ _ _ hx hy => obtain ⟨Bx, hBx0, hBx⟩ := hx; obtain ⟨By, hBy0, hBy⟩ := hy; exact
+      ⟨Bx * By, mul_nonneg hBx0 hBy0, fun w ↦ by
+        rw [map_mul, mul_apply_eq_comp]
+        exact (LinearMap.sum_norm_apply_le _ hBx _).trans (by gcongr; exact hBy w)⟩
 
 end TauCeti.TypeAHeckeAlgebra

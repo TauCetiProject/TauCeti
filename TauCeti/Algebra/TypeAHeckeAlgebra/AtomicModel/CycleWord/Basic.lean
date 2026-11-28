@@ -97,13 +97,9 @@ private theorem signedChecked_T_last_mul_strandIncl_single_snoc_apply
   simp only [Fin.snoc_castSucc, Fin.snoc_last, smul_eq_mul, crossingDiag,
     signedChecked_strandIncl_single_snoc_apply_snoc]
   rcases lt_trichotomy (w (Fin.last n)) c with h | h | h
-  · simp only [h.ne, h.ne', h, ↓reduceIte]
-    ring
-  · subst h
-    simp only [↓reduceIte]
-    ring
-  · simp only [h.ne', h.ne, h.not_gt, ↓reduceIte]
-    ring
+  · simp only [h.ne, h.ne', h, ↓reduceIte]; ring
+  · subst h; simp only [↓reduceIte]; ring
+  · simp only [h.ne', h.ne, h.not_gt, ↓reduceIte]; ring
 
 /-- **Cycle-word diagonal recursion across an appended last strand.** -/
 theorem signedChecked_cycleWord_succ_snoc_apply {m : ℕ} (w : Fin (m + 1) → ι) (c : ι) :
@@ -250,8 +246,8 @@ private theorem lastLetterSeries_mul (c : ι) :
   ext (_ | m)
   · simp [lastLetterSeries, lastLetterSum_zero]
   · simp only [map_sub, map_add, coeff_succ_mul_X, coeff_C_mul, coeff_C, lastLetterSeries,
-      coeff_mk, S, map_sum, lastLetterSum_succ, sum_crossingDiag_mul, ε]
-    simp only [reduceCtorEq, ↓reduceIte, zero_add]
+      coeff_mk, S, map_sum, lastLetterSum_succ, sum_crossingDiag_mul, ε, reduceCtorEq, ↓reduceIte,
+      zero_add]
     split_ifs <;> ring
 
 /-- Adding the letters of a lower set of the alphabet in increasing order: the series
@@ -268,15 +264,13 @@ private theorem lastLetterSeries_prod (s : Finset ι) (hs : ∀ a ∈ s, ∀ b <
     have has : a ∉ s := fun h ↦ (hlt a h).false
     -- The letters before `a` are exactly those of `s`.
     have hfilter : ({b | b < a} : Finset ι) = s := by
-      ext b
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+      ext b; simp only [Finset.mem_filter, Finset.mem_univ, true_and]
       exact ⟨fun hb ↦ (Finset.mem_insert.mp (hs a (Finset.mem_insert_self a s) b hb)).resolve_left
         hb.ne, hlt b⟩
     have hs' : ∀ a ∈ s, ∀ b < a, b ∈ s := fun x hx b hb ↦
       (Finset.mem_insert.mp (hs x (Finset.mem_insert_of_mem hx) b hb)).resolve_left
         (hb.trans (hlt x hx)).ne
-    have ha := lastLetterSeries_mul pos q p a
-    rw [hfilter] at ha
+    have ha := lastLetterSeries_mul pos q p a; rw [hfilter] at ha
     rw [Finset.sum_insert has, Finset.prod_insert has, Finset.prod_insert has]
     simp only [map_mul, map_sub, map_one] at ha ih ⊢
     linear_combination (1 - C (if pos a then (q : R) ^ 2 else -1) * C (p a) * X +
@@ -302,18 +296,14 @@ theorem atomicTrace_cycleWord_generating_function :
     · rw [mul_assoc, map_add, coeff_C_mul, coeff_succ_X_mul, map_sum]
       simp [lastLetterSeries, atomicTrace_cycleWord_eq_sum_lastLetterSum]
   have hD : ∏ a, (if pos a then 1 - C ((q : R) ^ 2 * p a) * X else 1 + C (p a) * X) =
-      ∏ a, (1 - C ((if pos a then (q : R) ^ 2 else -1) * p a) * X) :=
-    Finset.prod_congr rfl fun a _ ↦ by
-      split_ifs
-      · rfl
-      · simp only [map_mul, map_neg, map_one]
-        ring
+      ∏ a, (1 - C ((if pos a then (q : R) ^ 2 else -1) * p a) * X) := Finset.prod_congr rfl
+    fun a _ ↦ by split_ifs <;> [rfl; (simp only [map_mul, map_neg, map_one]; ring)]
   have hN : ∏ a, (if pos a then 1 - C (p a) * X else 1 + C ((q : R) ^ 2 * p a) * X) =
       ∏ a, (1 + C (((q : R) ^ 2 - 1 - if pos a then (q : R) ^ 2 else -1) * p a) * X) :=
     Finset.prod_congr rfl fun a _ ↦ by
       split_ifs <;> simp only [map_mul, map_sub, map_neg, map_one, map_pow] <;> ring
   rw [hseries, hD, hN]
-  exact lastLetterSeries_prod pos q p Finset.univ fun _ _ b _ ↦ Finset.mem_univ b
+  exact lastLetterSeries_prod pos q p Finset.univ fun _ _ _ _ ↦ Finset.mem_univ _
 
 omit [LinearOrder ι] [Fintype ι] in
 /-- The linear generating-function factor `1 - c₁ * p a * X` at a positive letter `a` and
@@ -324,9 +314,8 @@ noncomputable def cycleGeneratingFactor (c₁ c₂ : R) (a : ι) : Polynomial R 
 
 omit [LinearOrder ι] [Fintype ι] in
 /-- Coercing `cycleGeneratingFactor` from `Polynomial R` to `PowerSeries R`. -/
-theorem coe_cycleGeneratingFactor (c₁ c₂ : R) (a : ι) :
-    (cycleGeneratingFactor pos p c₁ c₂ a : R⟦X⟧) =
-      if pos a then 1 - C (c₁ * p a) * X else 1 + C (c₂ * p a) * X := by
+theorem coe_cycleGeneratingFactor (c₁ c₂ : R) (a : ι) : (cycleGeneratingFactor pos p c₁ c₂ a :
+    R⟦X⟧) = if pos a then 1 - C (c₁ * p a) * X else 1 + C (c₂ * p a) * X := by
   dsimp only [cycleGeneratingFactor]; split_ifs <;> simp
 
 omit [LinearOrder ι] [Fintype ι] in
@@ -345,18 +334,16 @@ theorem constantCoeff_cycleGeneratingFactor (c₁ c₂ : R) (a : ι) :
 omit [LinearOrder ι] in
 /-- The finite product of `cycleGeneratingFactor` in `R⟦X⟧` is a unit. -/
 theorem isUnit_prod_cycleGeneratingFactor (c₁ c₂ : R) :
-    IsUnit (∏ a, (cycleGeneratingFactor pos p c₁ c₂ a : R⟦X⟧)) :=
-  isUnit_iff_constantCoeff.mpr <| by
-    rw [map_prod, Finset.prod_eq_one fun a _ ↦ constantCoeff_cycleGeneratingFactor pos p c₁ c₂ a]
-    exact isUnit_one
+    IsUnit (∏ a, (cycleGeneratingFactor pos p c₁ c₂ a : R⟦X⟧)) := isUnit_iff_constantCoeff.mpr <| by
+  rw [map_prod, Finset.prod_eq_one fun a _ ↦ constantCoeff_cycleGeneratingFactor pos p c₁ c₂ a]
+  exact isUnit_one
 
 /-- **The cycle-trace generating identity for atomic traces**, written in terms of
 `cycleGeneratingFactor`. -/
-theorem atomicTrace_cycleWord_generating_function_eq_prod :
-    PowerSeries.mk (fun m ↦
-        if m = 0 then 1 else ((q : R) ^ 2 - 1) * atomicTrace pos q p m (cycleWord q m)) *
-        ∏ a, (cycleGeneratingFactor pos p ((q : R) ^ 2) 1 a : R⟦X⟧) =
-      ∏ a, (cycleGeneratingFactor pos p 1 ((q : R) ^ 2) a : R⟦X⟧) := by
+theorem atomicTrace_cycleWord_generating_function_eq_prod : PowerSeries.mk (fun m ↦ if m = 0 then 1
+    else ((q : R) ^ 2 - 1) * atomicTrace pos q p m (cycleWord q m)) *
+      ∏ a, (cycleGeneratingFactor pos p ((q : R) ^ 2) 1 a : R⟦X⟧) =
+    ∏ a, (cycleGeneratingFactor pos p 1 ((q : R) ^ 2) a : R⟦X⟧) := by
   simpa only [coe_cycleGeneratingFactor, one_mul] using
     atomicTrace_cycleWord_generating_function pos q p
 

@@ -70,8 +70,8 @@ theorem wenzlGtOneWeight_nonneg {Q : ℝ} (hQ : 1 < Q) {η : ℝ}
 /-- For `1 < Q` and any `η : ℝ`, `wenzlGtOneWeight Q η` is absolutely summable. -/
 theorem summable_norm_wenzlGtOneWeight {Q : ℝ} (hQ : 1 < Q) (η : ℝ) :
     Summable fun a ↦ ‖wenzlGtOneWeight Q η a‖ :=
-  summable_norm_twoSidedGeom _ _
-    (inv_nonneg.mpr (zero_lt_one.trans hQ).le) (inv_lt_one_of_one_lt₀ hQ)
+  summable_norm_twoSidedGeom _ _ (inv_nonneg.mpr (zero_lt_one.trans hQ).le)
+    (inv_lt_one_of_one_lt₀ hQ)
 
 /-- For `1 < Q` and any `η : ℝ`, the total weight of `wenzlGtOneWeight Q η` is `1`. -/
 theorem tsum_wenzlGtOneWeight {Q : ℝ} (hQ : 1 < Q) (η : ℝ) :
@@ -140,8 +140,8 @@ theorem wenzlLtOneWeight_nonneg {Q : ℝ} (hQ0 : 0 < Q) {η : ℝ}
     (hη : η ∈ Set.Icc (Q / (1 + Q)) (1 / (1 + Q))) (a : ℕ ⊕ₗ ℕᵒᵈ) :
     0 ≤ wenzlLtOneWeight Q η a := by
   have h1Q : 0 < 1 + Q := by linarith
-  exact twoSidedGeom_nonneg (by linarith [(le_div_iff₀ h1Q).mp hη.2])
-    (by linarith [(div_le_iff₀ h1Q).mp hη.1]) hQ0.le a
+  exact twoSidedGeom_nonneg (by linarith [(le_div_iff₀ h1Q).mp hη.2]) (by
+    linarith [(div_le_iff₀ h1Q).mp hη.1]) hQ0.le a
 
 /-- For `0 < Q < 1` and any `η : ℝ`, `wenzlLtOneWeight Q η` is absolutely summable. -/
 theorem summable_norm_wenzlLtOneWeight {Q : ℝ} (hQ0 : 0 < Q) (hQ1 : Q < 1) (η : ℝ) :
@@ -150,8 +150,8 @@ theorem summable_norm_wenzlLtOneWeight {Q : ℝ} (hQ0 : 0 < Q) (hQ1 : Q < 1) (η
 /-- For `0 < Q < 1` and any `η : ℝ`, the total weight of `wenzlLtOneWeight Q η` is `1`. -/
 theorem tsum_wenzlLtOneWeight {Q : ℝ} (hQ0 : 0 < Q) (hQ1 : Q < 1) (η : ℝ) :
     (∑' a, wenzlLtOneWeight Q η a) = 1 := by
-  have h1Q : 1 - Q ≠ 0 := sub_ne_zero.mpr hQ1.ne'
-  rw [wenzlLtOneWeight_eq_twoSidedGeom, tsum_twoSidedGeom _ _ hQ0.le hQ1]; field_simp; ring
+  rw [wenzlLtOneWeight_eq_twoSidedGeom, tsum_twoSidedGeom _ _ hQ0.le hQ1]
+  have := sub_ne_zero.mpr hQ1.ne'; field_simp; ring
 
 /-- Every left slice of `wenzlLtOneWeight Q η` equals `(1 + Q) * η - 1`. -/
 theorem wenzlLtOneWeight_leftSlice {Q : ℝ} (hQ0 : 0 < Q) (hQ1 : Q < 1) (η : ℝ) (b : ℕ ⊕ₗ ℕᵒᵈ) :
@@ -161,8 +161,7 @@ theorem wenzlLtOneWeight_leftSlice {Q : ℝ} (hQ0 : 0 < Q) (hQ1 : Q < 1) (η : �
   · rw [wenzlLtOneWeight_inl, wenzlLtOneWeight_eq_twoSidedGeom, mul_tsum_lt_twoSidedGeom_inl]
     simp only [not_wenzlLtOnePos_inl, ↓reduceIte]; ring
   · rw [← toDual_ofDual m, wenzlLtOneWeight_inr, wenzlLtOneWeight_eq_twoSidedGeom,
-      mul_tsum_lt_twoSidedGeom_inr _ _ hQ0.le hQ1, pow_succ']
-    simp only [wenzlLtOnePos_inr, ↓reduceIte, ofDual_toDual]; ring
+      mul_tsum_lt_twoSidedGeom_inr _ _ hQ0.le hQ1, pow_succ']; simp; ring
 
 /-- **Countable geometric realization of the Ocneanu trace for `0 < Q < 1`.** -/
 theorem countableAtomicTrace_wenzlLtOneWeight_eq_ocneanuTrace {q : ℂˣ} {Q : ℝ} (hQ0 : 0 < Q)
@@ -172,7 +171,7 @@ theorem countableAtomicTrace_wenzlLtOneWeight_eq_ocneanuTrace {q : ℂˣ} {Q : �
       InfiniteTypeAHeckeAlgebra.ocneanuTrace ℂ q
         ((q : ℂ) * η - (↑q⁻¹ : ℂ) * (1 - η)) (toInfinite ℂ q n x) :=
   countableAtomicTrace_ofReal_eq_ocneanuTrace_of_leftSlice wenzlLtOnePos hqQ
-    (summable_norm_wenzlLtOneWeight hQ0 hQ1 η) η (tsum_wenzlLtOneWeight hQ0 hQ1 η)
-    (wenzlLtOneWeight_leftSlice hQ0 hQ1 η) x
+    (summable_norm_wenzlLtOneWeight hQ0 hQ1 η) η (tsum_wenzlLtOneWeight hQ0 hQ1 η) (
+      wenzlLtOneWeight_leftSlice hQ0 hQ1 η) x
 
 end TauCeti.TypeAHeckeAlgebra

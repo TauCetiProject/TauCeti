@@ -40,14 +40,12 @@ theorem canonicalTrace_eq_ocneanuTrace_zero {n : ℕ} {W : Type*} [Group W]
   rw [canonicalTrace_eq_regularRep_toInfinite cs cs',
     ← canonicalTrace_eq_regularRep_toInfinite (cs₀ n) cs']
   refine eq_ocneanuTrace_toInfinite (fun m ↦ canonicalTrace (cs₀ m))
-    (canonicalTrace_one (cs₀ 0)) (fun m y ↦ by
-      rw [canonicalTrace_eq_regularRep_toInfinite (cs₀ (m + 1)) cs',
-        canonicalTrace_eq_regularRep_toInfinite (cs₀ m) cs', toInfinite_strandIncl])
-    (fun m ↦ canonicalTrace_mul_comm (cs₀ m)) (fun m y ↦ ?_) n x
+    (canonicalTrace_one (cs₀ 0)) (fun m y ↦ by rw [canonicalTrace_eq_regularRep_toInfinite
+      (cs₀ (m + 1)) cs', canonicalTrace_eq_regularRep_toInfinite (cs₀ m) cs',
+      toInfinite_strandIncl]) (fun m ↦ canonicalTrace_mul_comm (cs₀ m)) (fun m y ↦ ?_) n x
   rw [zero_mul, canonicalTrace_mul_comm]; refine LinearMap.congr_fun ((basisTw q (cs₀ (m + 1))).ext
-    (f₁ := (canonicalTrace (R := R) (q := q) (cs₀ (m + 2))).comp
-      ((LinearMap.mulLeft R (T q (Fin.last m))).comp (strandIncl R q (m + 1)).toLinearMap))
-    (f₂ := 0) fun w ↦ ?_) y
+    (f₁ := (canonicalTrace (R := R) (q := q) (cs₀ (m + 2))).comp ((LinearMap.mulLeft R
+      (T q (Fin.last m))).comp (strandIncl R q (m + 1)).toLinearMap)) (f₂ := 0) fun w ↦ ?_) y
   simp only [LinearMap.coe_comp, Function.comp_apply, AlgHom.toLinearMap_apply,
     LinearMap.mulLeft_apply, LinearMap.zero_apply, coe_basisTw,
     canonicalTrace_eq_regularRep_toInfinite (cs₀ (m + 2)) cs', map_mul, toInfinite_T,
@@ -55,9 +53,9 @@ theorem canonicalTrace_eq_ocneanuTrace_zero {n : ℕ} {W : Type*} [Group W]
     InfiniteTypeAHeckeAlgebra.regularRep_T, regularRep_toInfinite_Tw_apply_single_one]
   set u := (cs₀ (m + 1)).parabolicHom cs' coxeterMatrixA_eq_coxeterMatrixAInfty w
   have hsu : cs'.simple m * u ≠ 1 := fun hmul ↦ by
-    have hm : cs'.simple m ∈
-        ((cs₀ (m + 1)).parabolicHom cs' coxeterMatrixA_eq_coxeterMatrixAInfty).range :=
-      ⟨w⁻¹, by rw [map_inv]; exact (eq_inv_of_mul_eq_one_left hmul).symm⟩
+    have hm : cs'.simple m ∈ ((cs₀ (m + 1)).parabolicHom cs'
+        coxeterMatrixA_eq_coxeterMatrixAInfty).range := ⟨w⁻¹, by rw [map_inv]; exact
+          (eq_inv_of_mul_eq_one_left hmul).symm⟩
     rw [(cs₀ (m + 1)).range_parabolicHom coxeterMatrixA_eq_coxeterMatrixAInfty,
       cs'.simple_mem_parabolic_iff] at hm; exact hm.choose.isLt.ne hm.choose_spec
   by_cases hd : cs'.IsLeftDescent u m
@@ -73,8 +71,7 @@ namespace InfiniteTypeAHeckeAlgebra
 theorem ocneanuTrace_zero_star_mul_self_nonneg {R : Type*} [CommRing R] [PartialOrder R]
     [StarRing R] [StarOrderedRing R] {q : Rˣ} [Fact (IsSelfAdjoint (q : R))]
     (x : InfiniteTypeAHeckeAlgebra R q) : 0 ≤ ocneanuTrace R q 0 (star x * x) := by
-  obtain ⟨n, y, rfl⟩ := exists_toInfinite_eq x
-  rw [← TypeAHeckeAlgebra.toInfinite_star, ← map_mul,
+  obtain ⟨n, y, rfl⟩ := exists_toInfinite_eq x; rw [← TypeAHeckeAlgebra.toInfinite_star, ← map_mul,
     ← TypeAHeckeAlgebra.canonicalTrace_eq_ocneanuTrace_zero (permCoxeterSystem n),
     TypeAHeckeAlgebra.canonicalTrace_star_mul]
   exact Finset.sum_nonneg fun _ _ ↦ star_mul_self_nonneg _
@@ -83,8 +80,7 @@ theorem ocneanuTrace_zero_star_mul_self_nonneg {R : Type*} [CommRing R] [Partial
 @[simp] theorem ocneanuTrace_zero_star_mul_self_eq_zero_iff {𝕜 : Type*} [RCLike 𝕜] {q : 𝕜ˣ}
     [Fact (IsSelfAdjoint (q : 𝕜))] (x : InfiniteTypeAHeckeAlgebra 𝕜 q) :
     ocneanuTrace 𝕜 q 0 (star x * x) = 0 ↔ x = 0 := by
-  obtain ⟨n, y, rfl⟩ := exists_toInfinite_eq x
-  rw [← TypeAHeckeAlgebra.toInfinite_star, ← map_mul,
+  obtain ⟨n, y, rfl⟩ := exists_toInfinite_eq x; rw [← TypeAHeckeAlgebra.toInfinite_star, ← map_mul,
     ← TypeAHeckeAlgebra.canonicalTrace_eq_ocneanuTrace_zero (permCoxeterSystem n),
     TypeAHeckeAlgebra.canonicalTrace_star_mul_self_eq_zero_iff,
     map_eq_zero_iff _ (TypeAHeckeAlgebra.toInfinite_injective 𝕜 q n)]

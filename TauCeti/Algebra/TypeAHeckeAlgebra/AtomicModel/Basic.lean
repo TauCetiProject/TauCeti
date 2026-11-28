@@ -388,7 +388,7 @@ omit [Fintype ι] in
 theorem atomicTrace_subtype_ne_zero [Finite ι] (x : TypeAHeckeAlgebra R q n) :
     atomicTrace (fun a : {a : ι // p a ≠ 0} ↦ pos a) q (fun a ↦ p a) n x =
       atomicTrace pos q p n x :=
-  atomicTrace_subtype_eq_of_eq_zero pos q p (fun a ↦ p a ≠ 0) (fun _ h ↦ not_not.mp h) x
+  atomicTrace_subtype_eq_of_eq_zero pos q p _ (fun _ h ↦ not_not.mp h) x
 
 end Trace
 
@@ -400,14 +400,11 @@ theorem atomicTrace_orderIso {α β : Type*} [LinearOrder α] [LinearOrder β] [
     (hp : ∀ a, pβ (e a) = pα a) (n : ℕ) (x : TypeAHeckeAlgebra R q n) :
     atomicTrace posα q pα n x = atomicTrace posβ q pβ n x := by
   classical
-  let := Fintype.ofFinite α
-  let := Fintype.ofFinite β
+  have := Fintype.ofFinite α; have := Fintype.ofFinite β
   rw [atomicTrace_eq_sum, atomicTrace_eq_sum, ← (Equiv.piCongrRight fun _ ↦ e.toEquiv).sum_comp]
   refine Finset.sum_congr rfl fun w _ ↦ ?_
-  have hw : (Equiv.piCongrRight fun _ ↦ e.toEquiv) w = e ∘ w :=
-    funext fun i ↦ Equiv.piCongrRight_apply _ w i
-  rw [hw, signedChecked_strictMono_single_apply posβ q posα e.strictMono hpos x w w]
-  simp [hp]
+  rw [show (Equiv.piCongrRight fun _ ↦ e.toEquiv) w = e ∘ w from rfl,
+    signedChecked_strictMono_single_apply posβ q posα e.strictMono hpos x w w]; simp [hp]
 
 /-- **A geometric atomic model.** On `r + 1` positive letters with weights `c * Q ^ a`,
 `Q = q ^ 2`, normalized by `c * [r + 1]_Q = 1`, the atomic trace is the Ocneanu trace with
