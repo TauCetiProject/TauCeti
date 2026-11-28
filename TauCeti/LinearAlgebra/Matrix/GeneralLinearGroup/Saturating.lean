@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Idempotent
 import TauCeti.Algebra.Algebra.Subalgebra.Matrix
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Subalgebra
 import TauCeti.LinearAlgebra.Matrix.Range
 
 /-!
@@ -188,8 +189,8 @@ matrix. -/
 theorem IsSaturating.mul_map (h : IsSaturating S g u) (k : GL n S) :
     IsSaturating S g (u * map S.val.toRingHom k) := by
   obtain ⟨l, hl, m, hm, hlm⟩ := h.exists_inv_eq
-  have hk := Subalgebra.coe_map_val_mem_matrix k
-  have hk' := Subalgebra.coe_map_val_mem_matrix k⁻¹
+  have hk := coe_map_val_mem_matrix k
+  have hk' := coe_map_val_mem_matrix k⁻¹
   rw [map_inv] at hk'
   refine ⟨?_, ?_, ((map S.val.toRingHom k)⁻¹ : GL n A) * l, mul_mem hk' hl,
     ((map S.val.toRingHom k)⁻¹ : GL n A) * m, mul_mem hk' hm, ?_⟩
@@ -205,9 +206,9 @@ theorem IsSaturating.map_mul_mul_map (h : IsSaturating S g u) (k k' : GL n S) :
     IsSaturating S (map S.val.toRingHom k * g * map S.val.toRingHom k')
       ((map S.val.toRingHom k')⁻¹ * u) := by
   obtain ⟨l, hl, m, hm, hlm⟩ := h.exists_inv_eq
-  have hk' := Subalgebra.coe_map_val_mem_matrix k'
-  have hk_inv := Subalgebra.coe_map_val_mem_matrix k⁻¹
-  have hk'_inv := Subalgebra.coe_map_val_mem_matrix k'⁻¹
+  have hk' := coe_map_val_mem_matrix k'
+  have hk_inv := coe_map_val_mem_matrix k⁻¹
+  have hk'_inv := coe_map_val_mem_matrix k'⁻¹
   rw [map_inv] at hk_inv hk'_inv
   refine ⟨?_, ?_, l * map S.val.toRingHom k', mul_mem hl hk',
     m * ((map S.val.toRingHom k)⁻¹ : GL n A), mul_mem hm hk_inv, ?_⟩
@@ -219,7 +220,7 @@ theorem IsSaturating.map_mul_mul_map (h : IsSaturating S g u) (k k' : GL n S) :
           (map S.val.toRingHom k : Matrix n n A) * ((g : Matrix n n A) * (u : Matrix n n A)) := by
       simp only [← Units.val_mul, mul_assoc, mul_inv_cancel_left]
     rw [h_mul]
-    exact mul_mem (Subalgebra.coe_map_val_mem_matrix k) h.mul_val_mem
+    exact mul_mem (coe_map_val_mem_matrix k) h.mul_val_mem
   · -- `(k'⁻¹ u)⁻¹ = u⁻¹ k' = l k' + m k⁻¹ (k g k')`.
     rw [_root_.mul_inv_rev, inv_inv, Units.val_mul, hlm, Matrix.add_mul]
     simp only [Units.val_mul, Matrix.mul_assoc, Units.inv_mul_cancel_left]

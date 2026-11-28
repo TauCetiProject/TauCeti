@@ -29,6 +29,9 @@ and `0` otherwise (`NumberField.FiniteAdeleRing.genIndex`). It is multiplicative
 * `NumberField.FiniteAdeleRing.genIndex_eq_cardQuot`: `[g] = [Ô : gÔ]`.
 * `NumberField.FiniteAdeleRing.genIndex_map`: invariance under automorphisms preserving `Ô`.
 * `NumberField.FiniteAdeleRing.genIndex_det_map_eq_one`: `[det U] = 1` for `U ∈ GL_r(Ô)`.
+* `NumberField.FiniteAdeleRing.exists_natCast_mul_mem_integralAdeles` and
+  `NumberField.FiniteAdeleRing.exists_natCast_mul_mem_matrix`: some positive integer multiple of
+  a finite adele, or of a square matrix of finite adeles, is integral.
 
 ## Attribution
 
@@ -143,6 +146,20 @@ theorem exists_natCast_mul_mem_integralAdeles (a : 𝔸ᶠ[K]) :
     ring
   rw [h_eq]
   exact mul_mem ((integralAdeles (𝓞 K) K).algebraMap_mem c) hab
+
+/-- Some positive integer multiple of a square matrix over the finite adeles has integral
+entries. -/
+theorem exists_natCast_mul_mem_matrix {n : Type*} [Finite n] (g : Matrix n n 𝔸ᶠ[K]) :
+    ∃ N : ℕ, N ≠ 0 ∧ ∀ i j, (N : 𝔸ᶠ[K]) * g i j ∈ integralAdeles (𝓞 K) K := by
+  have := Fintype.ofFinite n
+  choose N hN0 hN using fun i j ↦ exists_natCast_mul_mem_integralAdeles (g i j)
+  refine ⟨∏ i, ∏ j, N i j, Finset.prod_ne_zero_iff.2 fun i _ ↦
+    Finset.prod_ne_zero_iff.2 fun j _ ↦ hN0 i j, fun i j ↦ ?_⟩
+  obtain ⟨c, hc⟩ : N i j ∣ ∏ i, ∏ j, N i j :=
+    (Finset.dvd_prod_of_mem _ (Finset.mem_univ j)).trans
+      (Finset.dvd_prod_of_mem (fun i ↦ ∏ j, N i j) (Finset.mem_univ i))
+  rw [hc, Nat.cast_mul, mul_comm (N i j : 𝔸ᶠ[K]), mul_assoc]
+  exact mul_mem (natCast_mem _ c) (hN i j)
 
 /-- The generalised index is invariant under a ring automorphism `σ` of the finite adeles that
 preserves the integral finite adeles. -/

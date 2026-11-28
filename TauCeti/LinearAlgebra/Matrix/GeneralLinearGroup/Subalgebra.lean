@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.FixedSubgroup
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
+public import Mathlib.Algebra.Algebra.Subalgebra.Matrix
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
@@ -29,6 +30,8 @@ endomorphisms of algebras over finite fields, including the zero ring.
 
 * `Matrix.GeneralLinearGroup.mem_range_map_val_iff`: descent to a subalgebra is equivalent to
   membership of the entries of the matrix and its inverse.
+* `Matrix.GeneralLinearGroup.coe_map_val_mem_matrix`: the image of a matrix over the subalgebra
+  has its entries in the subalgebra.
 * `Matrix.GeneralLinearGroup.forall_mulVec_mem_iff`: a matrix coming from the subalgebra carries a
   vector to a vector with entries in the subalgebra exactly when the vector has entries in it.
 * `Matrix.GeneralLinearGroup.mem_map_map_val_iff`: entrywise membership in the image of a subgroup
@@ -66,6 +69,11 @@ theorem mem_range_map_val_iff (S : Subalgebra R A) (g : Matrix.GeneralLinearGrou
     ⟨fun ⟨b, hb⟩ ↦ hb ▸ b.property, fun h ↦ ⟨⟨a, h⟩, rfl⟩⟩
   simpa only [MonoidHom.mem_range, hS] using
     mem_range_map_iff_of_injective (n := ι) (f := (S.val : ↥S →+* A)) Subtype.val_injective (g := g)
+
+/-- The image in `GL_n(A)` of an invertible matrix over a subalgebra `S` has its entries in `S`. -/
+theorem coe_map_val_mem_matrix {S : Subalgebra R A} (k : Matrix.GeneralLinearGroup ι S) :
+    (Matrix.GeneralLinearGroup.map S.val.toRingHom k : Matrix ι ι A) ∈ S.matrix :=
+  fun i j ↦ ((k : Matrix ι ι S) i j).property
 
 /-- **Matrices over a subalgebra preserve the vectors over it.** For `g` coming from the
 subalgebra `S`, the vector `g v` has its entries in `S` exactly when `v` does, as the entries of

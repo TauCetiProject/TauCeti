@@ -44,6 +44,8 @@ the everywhere-integral units together with the principal finite ideles.
   everywhere-integral units are the unit group of the integral finite adeles.
 * `IsDedekindDomain.FiniteAdeleRing.range_units_map_val_eq_integralUnits`: the everywhere-integral
   units are the images of the units of the integral finite adeles.
+* `IsDedekindDomain.FiniteAdeleRing.det_map_mem_integralUnits`: the determinant of a matrix of
+  `GL_n` of the integral finite adeles is an everywhere-integral unit.
 * `IsDedekindDomain.FiniteAdeleRing.mem_integralUnits_iff_val_mem_and_inv_mem`: membership
   means that both the idele and its inverse are integral finite adeles.
 * `IsDedekindDomain.FiniteAdeleRing.sIntegralUnits_eq_units_sIntegralAdeles`: the analogous
@@ -397,6 +399,16 @@ theorem range_units_map_val_eq_integralUnits :
       integralUnits R K := by
   rw [integralUnits_eq_units_integralAdeles]
   exact (integralAdeles R K).toSubmonoid.range_units_map_subtype
+
+/-- The determinant of the image in `GL_n(𝔸_f)` of a matrix of `GL_n(Ô)` is an everywhere-integral
+unit. -/
+theorem det_map_mem_integralUnits {n : Type*} [Fintype n] [DecidableEq n]
+    (k : GL n (integralAdeles R K)) :
+    Matrix.GeneralLinearGroup.det
+        (Matrix.GeneralLinearGroup.map (integralAdeles R K).val.toRingHom k) ∈
+      integralUnits R K := by
+  rw [Matrix.GeneralLinearGroup.map_det, ← range_units_map_val_eq_integralUnits]
+  exact ⟨_, rfl⟩
 
 /-- An idele is an everywhere-integral unit if and only if it and its inverse
 are integral finite adeles. -/

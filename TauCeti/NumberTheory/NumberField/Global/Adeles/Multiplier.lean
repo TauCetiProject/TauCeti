@@ -88,20 +88,6 @@ variable {E : Type*} [Field E] [NumberField E] {n : Type*} [Fintype n] [Decidabl
 
 /-! ### Existence of saturating matrices -/
 
-omit [Fintype n] [DecidableEq n] in
-/-- Some nonzero integer multiple of a matrix over the finite adeles has integral entries. -/
-private theorem exists_natCast_mul_mem_matrix [Finite n] (g : Matrix n n 𝔸ᶠ[E]) :
-    ∃ N : ℕ, N ≠ 0 ∧ ∀ i j, (N : 𝔸ᶠ[E]) * g i j ∈ integralAdeles (𝓞 E) E := by
-  have := Fintype.ofFinite n
-  choose N hN0 hN using fun i j ↦ exists_natCast_mul_mem_integralAdeles (g i j)
-  refine ⟨∏ i, ∏ j, N i j, Finset.prod_ne_zero_iff.2 fun i _ ↦
-    Finset.prod_ne_zero_iff.2 fun j _ ↦ hN0 i j, fun i j ↦ ?_⟩
-  obtain ⟨c, hc⟩ : N i j ∣ ∏ i, ∏ j, N i j :=
-    (Finset.dvd_prod_of_mem _ (Finset.mem_univ j)).trans
-      (Finset.dvd_prod_of_mem (fun i ↦ ∏ j, N i j) (Finset.mem_univ i))
-  rw [hc, Nat.cast_mul, mul_comm (N i j : 𝔸ᶠ[E]), mul_assoc]
-  exact mul_mem (natCast_mem _ c) (hN i j)
-
 /-- **Saturating matrices exist** over the finite adeles: every `g ∈ GL_n(𝔸_f)` has one. -/
 theorem exists_isSaturating (g : GL n 𝔸ᶠ[E]) :
     ∃ u : GL n 𝔸ᶠ[E], IsSaturating (integralAdeles (𝓞 E) E) g u := by
@@ -159,12 +145,6 @@ theorem _root_.Matrix.GeneralLinearGroup.IsSaturating.genIndex_det_eq_relIndex_i
   rw [← h.span_col_eq, genIndex_det_eq_relIndex h.val_mem]
 
 /-! ### The multiplier -/
-
-/-- The determinant of an element of `GL_n(Ô)` is an integral unit. -/
-private theorem det_map_mem_integralUnits (k : GL n (integralAdeles (𝓞 E) E)) :
-    det (map (integralAdeles (𝓞 E) E).val.toRingHom k) ∈ integralUnits (𝓞 E) E := by
-  rw [GeneralLinearGroup.map_det, ← range_units_map_val_eq_integralUnits]
-  exact ⟨_, rfl⟩
 
 /-- The **multiplier** of `g ∈ GL_n(𝔸_f)`: the class of `det u` modulo the integral units `Ô^×`,
 for a saturating matrix `u` of `g` (`u` and `g u` integral, `u⁻¹ = l + m g` with `l`, `m`
