@@ -280,6 +280,31 @@ lemma mapPullHom_mapPullHomEquiv_symm ⦃X₁ X₂ : C⦄ (M₁ : F.obj (.mk (op
     η.mapPullHom ((η.mapPullHomEquiv M₁ M₂ f₁ f₂ h).symm ψ) = ψ := by
   rw [← mapPullHomEquiv_apply _ _ _ _ _ h, Equiv.apply_symm_apply]
 
+/-- A strong transformation with fully faithful components identifies the presheaves of
+morphisms between objects and between their images. -/
+noncomputable def presheafHomIsoOfFullyFaithful
+    (hη : ∀ Y : C, (η.app (.mk (op Y))).toFunctor.FullyFaithful)
+    {U : C} (M N : F.obj (.mk (op U))) :
+    F.presheafHom M N ≅ G.presheafHom ((η.app (.mk (op U))).toFunctor.obj M)
+      ((η.app (.mk (op U))).toFunctor.obj N) :=
+  NatIso.ofComponents (fun T ↦
+    (η.mapPullHomEquiv M N T.unop.hom T.unop.hom (hη T.unop.left)).toIso)
+    (fun {T T'} f ↦ by
+      ext φ
+      simp only [Equiv.toIso, mapPullHomEquiv_apply]
+      exact η.mapPullHom_pullHom φ f.unop.left T'.unop.hom T'.unop.hom
+        (Over.w f.unop) (Over.w f.unop))
+
+/-- The isomorphism on Hom presheaves sends a local morphism to its image conjugated by the
+naturality isomorphisms of the strong transformation. -/
+@[simp]
+lemma presheafHomIsoOfFullyFaithful_hom_app_apply
+    (hη : ∀ Y : C, (η.app (.mk (op Y))).toFunctor.FullyFaithful)
+    {U : C} (M N : F.obj (.mk (op U))) (T : (Over U)ᵒᵖ)
+    (φ : (F.presheafHom M N).obj T) :
+    dsimp% (η.presheafHomIsoOfFullyFaithful hη M N).hom.app T φ = η.mapPullHom φ :=
+  η.mapPullHomEquiv_apply M N T.unop.hom T.unop.hom (hη T.unop.left) φ
+
 variable {ι : Type t} {S : C} {X : ι → C} (f : ∀ i, X i ⟶ S)
 
 /-- The functor from descent data for `F` to descent data for `G` induced by a strong
