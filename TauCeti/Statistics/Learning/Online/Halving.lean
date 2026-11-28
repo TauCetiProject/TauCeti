@@ -29,7 +29,7 @@ learner makes at most `⌊log₂ |H|⌋` mistakes.
 
 * `TauCeti.two_mul_ncard_versionSpace_append_singleton_le`: a mistake of the halving learner at
   least halves a finite version space.
-* `TauCeti.two_pow_mistakes_mul_ncard_versionSpace_le`: on a finite class,
+* `TauCeti.two_pow_mistakes_halvingLearner_mul_ncard_versionSpace_le`: on a finite class,
   `2 ^ M * |versionSpace H s| ≤ |H|`, where `M` is the number of mistakes of the halving learner
   on `s`.
 * `TauCeti.mistakeBound_halvingLearner_le`: the halving bound, `mistakeBound (halvingLearner H) H
@@ -80,6 +80,7 @@ theorem versionSpace_append_subset (H : Set (X → Bool)) (s t : List (X × Bool
   fun _ hh ↦ ⟨hh.1, fun p hp ↦ hh.2 p (List.mem_append_left t hp)⟩
 
 /-- One more example `(x, y)` keeps the members of the version space that are `y` at `x`. -/
+@[simp]
 theorem versionSpace_append_singleton (H : Set (X → Bool)) (s : List (X × Bool)) (x : X)
     (y : Bool) : versionSpace H (s ++ [(x, y)]) = {h ∈ versionSpace H s | h x = y} := by
   ext h
@@ -89,8 +90,8 @@ theorem versionSpace_append_singleton (H : Set (X → Bool)) (s : List (X × Boo
 
 /-- A sequence is realizable by `H` exactly when its version space is nonempty. -/
 theorem isRealizable_iff_versionSpace_nonempty {H : Set (X → Bool)} {s : List (X × Bool)} :
-    IsRealizable H s ↔ (versionSpace H s).Nonempty :=
-  isRealizable_iff
+    IsRealizable H s ↔ (versionSpace H s).Nonempty := by
+  simp [isRealizable_iff, Set.Nonempty]
 
 /-- The halving learner of the class `H`: it predicts `true` at `x` exactly when at least half of
 the version space, counted with `Set.ncard`, is `true` at `x`. Ties go to `true`. -/
@@ -112,12 +113,10 @@ theorem two_mul_ncard_versionSpace_append_singleton_le {H : Set (X → Bool)}
   rw [versionSpace_append_singleton]
   have hsplit : {h ∈ versionSpace H s | h x = true}.ncard +
       {h ∈ versionSpace H s | h x = false}.ncard = (versionSpace H s).ncard := by
-    rw [← Set.ncard_union_eq _ (hs.subset (Set.sep_subset _ _))
-      (hs.subset (Set.sep_subset _ _))]
-    · congr 1
-      ext h
-      cases hx : h x <;> simp [hx]
-    · exact Set.disjoint_left.2 fun h h₁ h₂ ↦ by simp_all
+    rw [← Set.ncard_inter_add_ncard_sdiff_eq_ncard _ {h | h x = true} hs]
+    congr 2
+    ext h
+    simp
   cases y with
   | false =>
     rw [ne_eq, Bool.not_eq_false, halvingLearner_eq_true_iff] at hy
@@ -128,8 +127,8 @@ theorem two_mul_ncard_versionSpace_append_singleton_le {H : Set (X → Bool)}
 
 /-- On a finite class, after `M` mistakes of the halving learner on `s`, the version space has
 at most `|H| / 2 ^ M` members: `2 ^ M * |versionSpace H s| ≤ |H|`. -/
-theorem two_pow_mistakes_mul_ncard_versionSpace_le (H : Set (X → Bool)) (hH : H.Finite)
-    (s : List (X × Bool)) :
+theorem two_pow_mistakes_halvingLearner_mul_ncard_versionSpace_le (H : Set (X → Bool))
+    (hH : H.Finite) (s : List (X × Bool)) :
     2 ^ mistakes (halvingLearner H) s * (versionSpace H s).ncard ≤ H.ncard := by
   induction s using List.reverseRecOn with
   | nil => simp
@@ -154,6 +153,7 @@ theorem mistakeBound_halvingLearner_le (H : Set (X → Bool)) (hH : H.Finite) :
     (Set.ncard_pos (hH.subset (versionSpace_subset H s))).2
       (isRealizable_iff_versionSpace_nonempty.1 hs)
   exact_mod_cast Nat.le_log_of_pow_le one_lt_two
-    ((Nat.le_mul_of_pos_right _ hV).trans (two_pow_mistakes_mul_ncard_versionSpace_le H hH s))
+    ((Nat.le_mul_of_pos_right _ hV).trans
+      (two_pow_mistakes_halvingLearner_mul_ncard_versionSpace_le H hH s))
 
 end TauCeti

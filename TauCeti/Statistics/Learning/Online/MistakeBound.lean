@@ -70,6 +70,7 @@ theorem mistakes_nil (A : Learner X) : mistakes A [] = 0 := by
 
 /-- One more round adds one mistake exactly when the prediction from the earlier examples is
 wrong. -/
+@[simp]
 theorem mistakes_append_singleton (A : Learner X) (s : List (X × Bool)) (p : X × Bool) :
     mistakes A (s ++ [p]) = mistakes A s + if A s p.1 = p.2 then 0 else 1 := by
   -- Reindex the rounds of `s ++ [p]` by `Fin (s.length + 1)`, then split off the last round.
@@ -77,7 +78,7 @@ theorem mistakes_append_singleton (A : Learner X) (s : List (X × Bool)) (p : X 
       ((List.finRange m).filter q).length =
         ((List.finRange (s.length + 1)).filter (q ∘ Fin.cast hm.symm)).length := by
     rintro m rfl q
-    rfl
+    simp
   rw [mistakes, reindex _ (by simp), List.finRange_succ_last, List.filter_append,
     List.filter_map, List.length_append, List.length_map, mistakes]
   congr 1
