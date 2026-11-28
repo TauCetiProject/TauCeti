@@ -159,6 +159,20 @@ theorem gammaFactor_ne_zero_of_forall_re_add_pos {s : ℂ}
   · have hre : s.re + ν.re = -(n : ℝ) := by simpa using congrArg re hn
     linarith [hC ν hν, (Nat.cast_nonneg n : (0 : ℝ) ≤ n)]
 
+/-- The dual gamma factor is nonzero at the reflected point `1 - s` whenever every reflected
+shifted real part `1 - s.re + μ.re` and `1 - s.re + ν.re` is strictly positive: conjugating a
+shift leaves its real part unchanged. -/
+theorem dual_gammaFactor_one_sub_ne_zero {s : ℂ}
+    (hR : ∀ μ ∈ d.gammaR, 0 < 1 - s.re + μ.re) (hC : ∀ ν ∈ d.gammaC, 0 < 1 - s.re + ν.re) :
+    d.dual.gammaFactor (1 - s) ≠ 0 := by
+  refine d.dual.gammaFactor_ne_zero_of_forall_re_add_pos (fun μ hμ ↦ ?_) (fun ν hν ↦ ?_)
+  · rw [dual_gammaR] at hμ
+    obtain ⟨μ₀, hμ₀, rfl⟩ := Multiset.mem_map.mp hμ
+    simpa using hR μ₀ hμ₀
+  · rw [dual_gammaC] at hν
+    obtain ⟨ν₀, hν₀, rfl⟩ := Multiset.mem_map.mp hν
+    simpa using hC ν₀ hν₀
+
 /-- Away from the poles of `d.gammaFactor`, `log ‖d.gammaFactor s‖` is the sum of the logarithms of
 the norms of its shifted `Gammaℝ` and `Gammaℂ` factors. -/
 theorem log_norm_gammaFactor {s : ℂ} (hs : d.gammaFactor s ≠ 0) :
