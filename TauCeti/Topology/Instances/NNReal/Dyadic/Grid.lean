@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.ENNReal.Lemmas
+import Mathlib.Algebra.Order.Floor.Semiring
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
@@ -15,7 +16,8 @@ For each level `n : ℕ`, the dyadic nonnegative rationals `k / 2 ^ n : ℚ≥0`
 mesh `2⁻ⁿ` on `ℝ≥0`. Every `t : ℝ≥0` is approximated from below by
 `approxDyadicNNRat n t = ⌊(t : ℝ) * 2 ^ n⌋₊ / 2 ^ n` and strictly from above by
 `dyadicNNRat n (⌊(t : ℝ) * 2 ^ n⌋₊ + 1)`, each within `2⁻ⁿ` of `t`, and the downward
-approximants converge to `t` as `n → ∞`.
+approximants converge to `t` as `n → ∞`. Clipping the grid at a finite horizon `T` gives
+`dyadicGridClip n T k = min (k / 2 ^ n) T`.
 
 ## Main definitions and results
 
@@ -33,6 +35,9 @@ approximants converge to `t` as `n → ∞`.
   `TauCeti.edist_approxDyadicNNRat_le`, `TauCeti.tendsto_approxDyadicNNRat`, and
   `TauCeti.tendsto_approxDyadicNNRat_apply_of_continuousAt`: bracketing, error bounds, and
   convergence of `approxDyadicNNRat n t` to `t` and through functions continuous at `t` on `Iic T`.
+* `TauCeti.dyadicGridClip`, `TauCeti.dyadicGridClip_of_lt_ceil`, and
+  `TauCeti.dyadicGridClip_of_ceil_le`: the level-`n` dyadic grid clipped at `T` and its values
+  below and beyond `⌈T * 2 ^ n⌉₊`.
 -/
 
 public section
@@ -188,5 +193,51 @@ theorem tendsto_approxDyadicNNRat_apply_of_continuousAt {E : Type*} [Topological
   refine (hg.tendsto.comp hconv).congr fun n ↦ ?_
   simp only [Function.comp_apply, approxDyadicNNRat_def]
   exact hg_dyad n ⌊(t.val : ℝ) * 2 ^ n⌋₊ ((coe_approxDyadicNNRat_le n t.val).trans t.property)
+
+/-- The `k`-th dyadic grid point of mesh `2⁻ⁿ`, clipped at horizon `T`. -/
+noncomputable def dyadicGridClip (n : ℕ) (T : ℝ≥0) (k : ℕ) : ℝ≥0 :=
+  min ((k : ℝ≥0) / 2 ^ n) T
+
+/-- The defining formula for the clipped dyadic grid point. -/
+theorem dyadicGridClip_def (n : ℕ) (T : ℝ≥0) (k : ℕ) :
+    dyadicGridClip n T k = min ((k : ℝ≥0) / 2 ^ n) T := (rfl)
+
+/-- The clipped dyadic grid starts at zero. -/
+@[simp]
+theorem dyadicGridClip_zero (n : ℕ) (T : ℝ≥0) : dyadicGridClip n T 0 = 0 := by
+  simp [dyadicGridClip_def]
+
+/-- The clipped dyadic grid is monotone in the cell index. -/
+theorem monotone_dyadicGridClip (n : ℕ) (T : ℝ≥0) : Monotone (dyadicGridClip n T) :=
+  fun _ _ h ↦ min_le_min_right T (div_le_div_of_nonneg_right (Nat.cast_le.mpr h) (by positivity))
+
+/-- Every clipped dyadic grid point is at most the horizon `T`. -/
+theorem dyadicGridClip_le (n : ℕ) (T : ℝ≥0) (k : ℕ) : dyadicGridClip n T k ≤ T :=
+  min_le_right _ _
+
+/-- Every clipped dyadic grid point is at most the unclipped grid point `k / 2 ^ n`. -/
+theorem dyadicGridClip_le_div (n : ℕ) (T : ℝ≥0) (k : ℕ) :
+    dyadicGridClip n T k ≤ (k : ℝ≥0) / 2 ^ n :=
+  min_le_left _ _
+
+/-- Any dyadic index strictly below `⌈T * 2 ^ m⌉₊` gives a grid point strictly before `T`. -/
+theorem dyadic_div_lt_of_lt_ceil {m k : ℕ} {T : ℝ≥0} (hk : k < ⌈T * 2 ^ m⌉₊) :
+    (k : ℝ≥0) / 2 ^ m < T :=
+  (div_lt_iff₀ (by positivity)).mpr (Nat.lt_ceil.mp hk)
+
+/-- A clipped dyadic grid point strictly below `⌈T * 2 ^ m⌉₊` equals the unclipped grid point. -/
+theorem dyadicGridClip_of_lt_ceil {m k : ℕ} {T : ℝ≥0} (hk : k < ⌈T * 2 ^ m⌉₊) :
+    dyadicGridClip m T k = (k : ℝ≥0) / 2 ^ m :=
+  min_eq_left (dyadic_div_lt_of_lt_ceil hk).le
+
+/-- Any clipped dyadic grid point at or beyond `⌈T * 2 ^ m⌉₊` equals the horizon `T`. -/
+theorem dyadicGridClip_of_ceil_le {m k : ℕ} {T : ℝ≥0} (hk : ⌈T * 2 ^ m⌉₊ ≤ k) :
+    dyadicGridClip m T k = T :=
+  min_eq_right ((le_div_iff₀ (by positivity)).mpr (Nat.ceil_le.mp hk))
+
+/-- The terminal clipped dyadic grid point at `⌈T * 2 ^ m⌉₊` equals the horizon `T`. -/
+@[simp]
+theorem dyadicGridClip_ceil (m : ℕ) (T : ℝ≥0) : dyadicGridClip m T ⌈T * 2 ^ m⌉₊ = T :=
+  dyadicGridClip_of_ceil_le le_rfl
 
 end TauCeti

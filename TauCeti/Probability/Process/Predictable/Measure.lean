@@ -10,6 +10,7 @@ public import TauCeti.Probability.Process.Predictable.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 import TauCeti.MeasureTheory.Function.Lp.Iterated
+import TauCeti.Order.Interval.Set.LinearOrder
 import Mathlib.MeasureTheory.Function.LpSeminorm.Trim
 import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
 import Mathlib.MeasureTheory.Integral.Prod
@@ -438,9 +439,7 @@ theorem indicator_Ioc_prod_eq_predictableMeasureExtendLp_sub
   let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
   have hdiff : (Ioc 0 b ×ˢ (univ : Set Ω)) \ (Ioc 0 a ×ˢ (univ : Set Ω)) =
       Ioc a b ×ˢ (univ : Set Ω) := by
-    rw [prod_sdiff_prod, sdiff_self, prod_empty, empty_union,
-      ← (Ioc_inter_Iic 0 b a).trans (congrArg (Ioc 0) (min_eq_right hab)),
-      inter_comm, sdiff_inter_self_eq_sdiff, Ioc_sdiff_Iic, max_eq_right zero_le]
+    rw [prod_sdiff_prod, sdiff_self, prod_empty, empty_union, Set.Ioc_sdiff_Ioc_of_le zero_le]
   have hsub : Ioc 0 a ×ˢ (univ : Set Ω) ⊆ Ioc 0 b ×ˢ (univ : Set Ω) :=
     prod_mono_left (Ioc_subset_Ioc_right hab)
   apply Lp.ext

@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import TauCeti.Probability.BrownianMotion.Integral.Integrable
 public import TauCeti.Probability.BrownianMotion.Integral.L2
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.Probability.BrownianMotion.Integral.Energy.Basic
 import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 import TauCeti.Probability.Finance.SimpleStrategy.Energy
@@ -25,10 +27,12 @@ values or be bounded. Both results only require square integrability of the actu
 predictable time-product integrand, so they also cover empty intervals and intervals beyond
 the horizon without moment assumptions on their unused heights.
 
-For any `TauCeti.BrownianIntegrable` integrand, bounded simple holdings approximate the
-integrand in `L²` and in square energy in probability while their elementary gains converge in
-`L²(P)` to the terminal `L²` integral (`exists_simpleHolding_approx`) and to an approximating
-martingale (`exists_simpleHolding_martingale_approx`).
+For any `TauCeti.BrownianIntegrable` integrand, `TauCeti.Probability.SimpleHoldingApprox` and
+`TauCeti.Probability.IsFilteredPreBrownianReal.exists_simpleHoldingApprox` bundle a sequence of
+bounded simple holdings on strictly increasing grids starting at zero that approximate the
+integrand in `L²` and in square energy in probability while their elementary gains are true
+martingales converging in `L²(P)` to the terminal `L²` integral `hW.l2Integral T`. Passing to an
+`L²`-martingale limit yields `exists_simpleHolding_martingale_approx`.
 
 These identities connect completion in predictable L² with elementary stochastic integrals.
 They concern terminal L² values and almost-everywhere equality at each fixed observation time,
@@ -47,10 +51,80 @@ noncomputable section
 open MeasureTheory ProbabilityTheory Set Filter
 open scoped NNReal ENNReal Topology
 
-namespace TauCeti.Probability.IsFilteredPreBrownianReal
+namespace TauCeti.Probability
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
-  {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
+  {ℱ : Filtration ℝ≥0 mΩ} {W H : ℝ≥0 → Ω → ℝ}
+
+/-- A bundled sequence of bounded simple holdings on strictly increasing deterministic grids
+starting at zero that approximates a `BrownianIntegrable` integrand `H` on every finite horizon in
+`L²` while its elementary gains form `L²`-martingales converging at every horizon to
+`hW.l2Integral T`. -/
+structure SimpleHoldingApprox {Ω : Type*} {mΩ : MeasurableSpace Ω}
+    (ℱ : Filtration ℝ≥0 mΩ) (P : Measure Ω) (W H : ℝ≥0 → Ω → ℝ)
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H) where
+  /-- Number of grid steps at approximation stage `m`. -/
+  n : ℕ → ℕ
+  /-- Deterministic time grid at approximation stage `m`. -/
+  τ : ℕ → ℕ → ℝ≥0
+  /-- Left-endpoint-measurable holding heights at stage `m`. -/
+  a : ℕ → ℕ → Ω → ℝ
+  /-- Uniform bound on the holding heights at stage `m`. -/
+  C : ℕ → ℝ
+  /-- Every approximating grid starts at time zero. -/
+  tau_zero : ∀ m, τ m 0 = 0
+  /-- Every approximating grid is strictly increasing on `Iic (n m)`. -/
+  strictMonoOn : ∀ m, StrictMonoOn (τ m) (Iic (n m))
+  /-- Each holding height is strongly measurable at its left grid endpoint. -/
+  stronglyMeasurable : ∀ m j, j < n m → StronglyMeasurable[ℱ (τ m j)] (a m j)
+  /-- Each holding height at stage `m` is uniformly bounded by `C m`. -/
+  norm_le : ∀ m j, j < n m → ∀ ω, ‖a m j ω‖ ≤ C m
+  /-- The elementary gains of each approximating stage form a martingale. -/
+  martingale : ∀ m, Martingale (Finance.simpleGains (τ m) (n m) (a m) W) ℱ P
+  /-- The elementary gains are square integrable at every time. -/
+  memLp : ∀ m T, MemLp (Finance.simpleGains (τ m) (n m) (a m) W T) 2 P
+  /-- The simple holdings converge to `H` in `L²((timeMeasure T).prod P)` at every horizon. -/
+  tendsto_holding : ∀ T, Tendsto (fun m ↦ eLpNorm
+    (fun p ↦ Finance.simpleHolding (τ m) (n m) (a m) p.1 p.2 - H p.1 p.2) 2
+      ((timeMeasure T).prod P)) atTop (𝓝 0)
+  /-- The elementary gains converge in `L²(P)` at every horizon to `hW.l2Integral T`. -/
+  tendsto_l2Integral : ∀ T, Tendsto (fun m ↦ (memLp m T).toLp
+    (Finance.simpleGains (τ m) (n m) (a m) W T)) atTop
+    (𝓝 (hW.l2Integral T ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H))))
+
+/-- The approximating simple holdings converge to `H` in square energy in probability on
+`[0, T]`. -/
+theorem SimpleHoldingApprox.tendsto_energy
+    {hW : IsFilteredPreBrownianReal ℱ W P} {hH : BrownianIntegrable ℱ P H}
+    (h : SimpleHoldingApprox ℱ P W H hW hH) (T : ℝ≥0) (ε : ℝ≥0∞) (hε : 0 < ε) :
+    Tendsto (fun m ↦ P {ω | ε ≤ ∫⁻ s,
+      ‖Finance.simpleHolding (h.τ m) (h.n m) (h.a m) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure T})
+      atTop (𝓝 0) :=
+  let := (hW.hasLaw_eval 0).isProbabilityMeasure
+  IsStronglyPredictable.tendsto_measure_lintegral_enorm_sub_sq_of_tendsto_eLpNorm
+    (fun m ↦ Finance.isStronglyPredictable_simpleHolding (h.stronglyMeasurable m))
+    (fun _ ↦ hH.isStronglyPredictable) (h.tendsto_holding T) hε
+
+/-- The elementary gains of the approximating simple holdings converge in probability at horizon `T`
+to `hW.l2Integral T`. -/
+theorem SimpleHoldingApprox.tendstoInMeasure_l2Integral
+    {hW : IsFilteredPreBrownianReal ℱ W P} {hH : BrownianIntegrable ℱ P H}
+    (h : SimpleHoldingApprox ℱ P W H hW hH) (T : ℝ≥0) :
+    TendstoInMeasure P (fun m ↦ Finance.simpleGains (h.τ m) (h.n m) (h.a m) W T) atTop
+      (hW.l2Integral T ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H))) :=
+  (MeasureTheory.tendstoInMeasure_of_tendsto_Lp (h.tendsto_l2Integral T)).congr_left
+    fun m ↦ (h.memLp m T).coeFn_toLp
+
+/-- Each bounded holding height of an approximating simple holding lies in `L²(P)`. -/
+theorem SimpleHoldingApprox.memLp_coeff
+    {hW : IsFilteredPreBrownianReal ℱ W P} {hH : BrownianIntegrable ℱ P H}
+    (h : SimpleHoldingApprox ℱ P W H hW hH) (m j : ℕ) (hj : j < h.n m) :
+    MemLp (h.a m j) 2 P :=
+  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
+  MemLp.of_bound ((h.stronglyMeasurable m j hj).mono (ℱ.le _)).aestronglyMeasurable (h.C m)
+    (.of_forall (h.norm_le m j hj))
+
+namespace IsFilteredPreBrownianReal
 
 private theorem coeFn_l2Integral_simpleFunc_Ioc (hW : IsFilteredPreBrownianReal ℱ W P)
     (T s t : ℝ≥0) (g : @SimpleFunc Ω (ℱ s) ℝ)
@@ -201,52 +275,33 @@ theorem l2Integral_simpleHolding (hW : IsFilteredPreBrownianReal ℱ W P)
       hg.toLp (Finance.simpleGains τ n a W T) :=
   Lp.ext ((hW.coeFn_l2Integral_simpleHolding hτ ha T hH).trans hg.coeFn_toLp.symm)
 
-/-- Bounded simple holdings approximating a Brownian-integrable integrand on every finite horizon
-in `L²` also approximate it in square energy in probability, produce true elementary martingales,
-and have elementary gains converging in `L²(P)` at every horizon to the terminal `L²` integral
-`hW.l2Integral T`. -/
-theorem exists_simpleHolding_approx
+/-- Every `BrownianIntegrable` integrand admits a `SimpleHoldingApprox` sequence of bounded
+simple holdings on strictly increasing grids starting at zero whose elementary gains are
+martingales converging in `L²(P)` at every horizon to `hW.l2Integral T`. -/
+theorem exists_simpleHoldingApprox
     (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H) :
-    ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ) (C : ℕ → ℝ)
-      (hmem : ∀ k t, MemLp (Finance.simpleGains (τ k) (n k) (a k) W t) 2 P),
-      (∀ k, MonotoneOn (τ k) (Iic (n k))) ∧
-      (∀ k j, j < n k → StronglyMeasurable[ℱ (τ k j)] (a k j)) ∧
-      (∀ k j, j < n k → ∀ ω, ‖a k j ω‖ ≤ C k) ∧
-      (∀ k j, j < n k → MemLp (a k j) 2 P) ∧
-      (∀ k, Martingale (Finance.simpleGains (τ k) (n k) (a k) W) ℱ P) ∧
-      (∀ T, Tendsto (fun k ↦ eLpNorm (Function.uncurry (Finance.simpleHolding (τ k) (n k) (a k)) -
-        Function.uncurry H) 2 ((timeMeasure T).prod P)) atTop (𝓝 0)) ∧
-      (∀ T ε, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
-        ∫⁻ s, ‖Finance.simpleHolding (τ k) (n k) (a k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure T})
-          atTop (𝓝 0)) ∧
-      (∀ T, Tendsto (fun k ↦ (hmem k T).toLp (Finance.simpleGains (τ k) (n k) (a k) W T)) atTop
-        (𝓝 (hW.l2Integral T ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H))))) := by
-  have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨n, τ, a, C, -, hτ, ha, haC, hlim⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
-  have ha₂ (k j : ℕ) (hj : j < n k) : MemLp (a k j) 2 P :=
-    MemLp.of_bound ((ha k j hj).mono (ℱ.le _)).aestronglyMeasurable (C k)
-      (ae_of_all _ (haC k j hj))
-  have hKm (k : ℕ) (T : ℝ≥0) : MemLp (Function.uncurry (Finance.simpleHolding (τ k) (n k) (a k)))
-      2 (ℱ.predictableMeasure P T) :=
-    Finance.memLp_simpleHolding_predictableMeasure (ha k) (ha₂ k) T
-  have hgain (k : ℕ) (T : ℝ≥0) :
-      hW.l2Integral T ((hKm k T).toLp _) =ᵐ[P] Finance.simpleGains (τ k) (n k) (a k) W T :=
-    hW.coeFn_l2Integral_simpleHolding (hτ k).monotoneOn (ha k) T (hKm k T)
-  have hmem (k : ℕ) (T : ℝ≥0) : MemLp (Finance.simpleGains (τ k) (n k) (a k) W T) 2 P :=
-    (Lp.memLp _).ae_eq (hgain k T)
-  refine ⟨n, τ, a, C, hmem, fun k ↦ (hτ k).monotoneOn, ha, haC, ha₂,
-    fun k ↦ hW.martingale.simpleGains_of_bdd (hτ k).monotoneOn (ha k)
-      fun j hj ↦ ⟨C k, ae_of_all _ fun ω ↦ by simpa using haC k j hj ω⟩,
-    hlim,
-    fun T ε hε ↦ tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm
-      (fun k ↦ (((Finance.isStronglyPredictable_simpleHolding (ha k)).sub
-        hH.isStronglyPredictable).mono ℱ.predictable_le_prod).aestronglyMeasurable)
-      (hlim T) hε,
-    fun T ↦ (Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).2 <| (hlim T).congr fun k ↦ by
-      have hsub := hW.eLpNorm_l2Integral_sub T (Finance.isStronglyPredictable_simpleHolding (ha k))
-        hH.isStronglyPredictable (hKm k T) (hH.memLp_predictableMeasure T)
-      exact hsub.symm.trans (eLpNorm_congr_ae
-        (((hgain k T).trans (hmem k T).coeFn_toLp.symm).sub EventuallyEq.rfl))⟩
+    Nonempty (SimpleHoldingApprox ℱ P W H hW hH) := by
+  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
+  obtain ⟨n, τ, a, C, hτ₀, hτ, ha, hb, herr⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
+  have ha₂ (m j : ℕ) (hj : j < n m) : MemLp (a m j) 2 P :=
+    MemLp.of_bound ((ha m j hj).mono (ℱ.le _)).aestronglyMeasurable (C m)
+      (.of_forall (hb m j hj))
+  refine ⟨⟨n, τ, a, C, hτ₀, hτ, ha, hb,
+    fun m ↦ hW.martingale.simpleGains_of_bdd (hτ m).monotoneOn (ha m) fun j hj ↦
+      ⟨C m, .of_forall fun ω ↦ by simpa [Real.norm_eq_abs] using hb m j hj ω⟩,
+    fun m T ↦ hW.memLp_simpleGains (hτ m).monotoneOn (ha m) (ha₂ m) T, herr, fun T ↦ ?_⟩⟩
+  have hu : Tendsto (fun m ↦ (Finance.memLp_simpleHolding_predictableMeasure (ha m) (ha₂ m) T).toLp
+      (Function.uncurry (Finance.simpleHolding (τ m) (n m) (a m)))) atTop
+      (𝓝 ((hH.memLp_predictableMeasure T).toLp (Function.uncurry H))) := by
+    rw [tendsto_iff_edist_tendsto_0]
+    refine (herr T).congr fun m ↦ ?_
+    rw [Lp.edist_toLp_toLp, ℱ.eLpNorm_predictableMeasure P
+      ((Finance.isStronglyPredictable_simpleHolding (ha m)).sub hH.isStronglyPredictable) T 2]
+    simp only [Function.uncurry_def, Pi.sub_def]
+  exact (((hW.l2Integral T).continuous.tendsto _).comp hu).congr fun m ↦
+    hW.l2Integral_simpleHolding (hτ m).monotoneOn (ha m) T
+      (Finance.memLp_simpleHolding_predictableMeasure (ha m) (ha₂ m) T)
+      (hW.memLp_simpleGains (hτ m).monotoneOn (ha m) (ha₂ m) T)
 
 /-- Bounded simple holdings approximating a Brownian-integrable integrand on every finite horizon
 in `L²` have elementary integrals converging in `L²(P)` to a martingale that agrees almost surely
@@ -266,13 +321,15 @@ theorem exists_simpleHolding_martingale_approx
       (∀ t, Z t =ᵐ[P]
         hW.l2Integral t ((hH.memLp_predictableMeasure t).toLp (Function.uncurry H))) := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨n, τ, a, -, hmem, hτ, ha, -, ha₂, hmart, hlim, -, hLp⟩ :=
-    hW.exists_simpleHolding_approx hH
-  obtain ⟨Z, hZ, hZlim⟩ :=
-    exists_martingale_of_cauchySeq_Lp hmart hmem fun t ↦ (hLp t).cauchySeq
-  refine ⟨n, τ, a, Z, hτ, ha, ha₂, hlim, hZ, fun t ↦ (hZlim t).1, fun t ↦ (hZlim t).2,
+  obtain ⟨h⟩ := hW.exists_simpleHoldingApprox hH
+  obtain ⟨Z, hZ, hZlim⟩ := exists_martingale_of_cauchySeq_Lp h.martingale h.memLp
+    fun t ↦ (h.tendsto_l2Integral t).cauchySeq
+  refine ⟨h.n, h.τ, h.a, Z, fun k ↦ (h.strictMonoOn k).monotoneOn, h.stronglyMeasurable,
+    h.memLp_coeff, h.tendsto_holding, hZ, fun t ↦ (hZlim t).1, fun t ↦ (hZlim t).2,
     fun t ↦ tendstoInMeasure_ae_unique
       (tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hZlim t).2)
-      ((tendstoInMeasure_of_tendsto_Lp (hLp t)).congr_left fun k ↦ (hmem k t).coeFn_toLp)⟩
+      (h.tendstoInMeasure_l2Integral t)⟩
 
-end TauCeti.Probability.IsFilteredPreBrownianReal
+end IsFilteredPreBrownianReal
+
+end TauCeti.Probability

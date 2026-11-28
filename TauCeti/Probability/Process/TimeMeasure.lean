@@ -95,24 +95,26 @@ theorem timeMeasure_univ (T : ℝ≥0) : timeMeasure T univ = T := by
       rw [timeMeasure_def, Measure.restrict_apply_univ, Measure.restrict_apply_self]
     _ = T := by simp
 
+/-- Coercion from `ℝ≥0` to `ℝ` is measure-preserving from `timeMeasure T` to real Lebesgue
+measure restricted to `(0, (T : ℝ)]`. -/
+theorem measurePreserving_coe_timeMeasure (T : ℝ≥0) :
+    MeasurePreserving ((↑) : ℝ≥0 → ℝ) (timeMeasure T) (volume.restrict (Ioc 0 (T : ℝ))) := by
+  refine ⟨NNReal.isClosedEmbedding_coe.measurableEmbedding.measurable, ?_⟩
+  have hsub : Ioc 0 (T : ℝ) ⊆ Set.range ((↑) : ℝ≥0 → ℝ) := fun x hx ↦ ⟨⟨x, hx.1.le⟩, rfl⟩
+  have hcomap : (volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ) = timeMeasure T := by
+    rw [NNReal.isClosedEmbedding_coe.measurableEmbedding.comap_restrict, timeMeasure_def]
+    congr 1
+  rw [← hcomap, NNReal.isClosedEmbedding_coe.measurableEmbedding.map_comap,
+    Measure.restrict_restrict
+      NNReal.isClosedEmbedding_coe.measurableEmbedding.measurableSet_range,
+    inter_eq_self_of_subset_right hsub]
+
 /-- Integration against time measure is the interval integral over `(0,T]` of the function
 extended to real time by truncation at zero. -/
 theorem integral_timeMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (T : ℝ≥0)
     (g : ℝ≥0 → E) : ∫ s, g s ∂timeMeasure T = ∫ r in (0 : ℝ)..T, g r.toNNReal := by
-  have he : MeasurableEmbedding ((↑) : ℝ≥0 → ℝ) :=
-    NNReal.isClosedEmbedding_coe.measurableEmbedding
-  have hmap : (timeMeasure T).map ((↑) : ℝ≥0 → ℝ) = volume.restrict (Ioc (0 : ℝ) T) := by
-    ext s hs
-    rw [he.map_apply, timeMeasure_apply T (he.measurable hs), Measure.restrict_apply hs]
-    congr 1
-    ext x
-    simp only [mem_image, mem_inter_iff, mem_preimage, mem_Ioc]
-    refine ⟨?_, fun hx ↦ ⟨x.toNNReal, ?_, Real.coe_toNNReal x hx.2.1.le⟩⟩
-    · rintro ⟨y, ⟨hy, hy0, hyT⟩, rfl⟩
-      exact ⟨hy, NNReal.coe_pos.2 hy0, NNReal.coe_le_coe.2 hyT⟩
-    · rw [Real.coe_toNNReal x hx.2.1.le]
-      exact ⟨hx.1, Real.toNNReal_pos.2 hx.2.1, Real.toNNReal_le_iff_le_coe.2 hx.2.2⟩
-  rw [intervalIntegral.integral_of_le T.coe_nonneg, ← hmap, he.integral_map]
+  rw [intervalIntegral.integral_of_le T.coe_nonneg, ← (measurePreserving_coe_timeMeasure T).map_eq,
+    NNReal.isClosedEmbedding_coe.measurableEmbedding.integral_map]
   simp
 
 /-- Finite time horizons have finite time mass. -/
@@ -175,20 +177,6 @@ theorem tendsto_indicator_Ioc_prod_ae {Ω E : Type*} {mΩ : MeasurableSpace Ω}
   · refine tendsto_const_nhds.congr fun s ↦ ?_
     have hnot (u : ℝ≥0) : p ∉ Ioc a u ×ˢ A := fun h ↦ hbase ⟨h.1.1, h.2⟩
     simp [hnot]
-
-/-- Coercion from `ℝ≥0` to `ℝ` is measure-preserving from `timeMeasure T` to real Lebesgue
-measure restricted to `(0, (T : ℝ)]`. -/
-theorem measurePreserving_coe_timeMeasure (T : ℝ≥0) :
-    MeasurePreserving ((↑) : ℝ≥0 → ℝ) (timeMeasure T) (volume.restrict (Ioc 0 (T : ℝ))) := by
-  refine ⟨NNReal.isClosedEmbedding_coe.measurableEmbedding.measurable, ?_⟩
-  have hsub : Ioc 0 (T : ℝ) ⊆ Set.range ((↑) : ℝ≥0 → ℝ) := fun x hx ↦ ⟨⟨x, hx.1.le⟩, rfl⟩
-  have hcomap : (volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ) = timeMeasure T := by
-    rw [NNReal.isClosedEmbedding_coe.measurableEmbedding.comap_restrict, timeMeasure_def]
-    congr 1
-  rw [← hcomap, NNReal.isClosedEmbedding_coe.measurableEmbedding.map_comap,
-    Measure.restrict_restrict
-      NNReal.isClosedEmbedding_coe.measurableEmbedding.measurableSet_range,
-    inter_eq_self_of_subset_right hsub]
 
 /-- Restricting time measure again clips the horizon to the smaller endpoint. -/
 @[simp]

@@ -13,6 +13,7 @@ public import TauCeti.Probability.Process.TimeMeasure
 import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Measure.Prod
+import TauCeti.Order.Interval.Set.LinearOrder
 import TauCeti.Probability.Finance.SimpleStrategy.Energy
 
 /-!
@@ -149,9 +150,6 @@ theorem BrownianIntegrable.setIntegral_sq_timeMeasure_sub [SFinite P]
       ∫ r, H r ω ^ 2 ∂Probability.timeMeasure s) ∂P =
       ∫ p in Ioc s t ×ˢ A, H p.fst p.snd ^ 2 ∂ℱ.predictableMeasure P T := by
   have hsT : s ≤ T := hst.trans htT
-  have hdiff : Ioc 0 t \ Ioc 0 s = Ioc s t := by
-    rw [← (Ioc_inter_Iic 0 t s).trans (congrArg (Ioc 0) (min_eq_right hst)),
-      inter_comm, sdiff_inter_self_eq_sdiff, Ioc_sdiff_Iic, max_eq_right zero_le]
   have hsec : ∀ᵐ ω ∂P,
       ((∫ r, H r ω ^ 2 ∂Probability.timeMeasure t) -
         ∫ r, H r ω ^ 2 ∂Probability.timeMeasure s) =
@@ -164,7 +162,8 @@ theorem BrownianIntegrable.setIntegral_sq_timeMeasure_sub [SFinite P]
       rwa [← Probability.timeMeasure_restrict_of_le htT] at h
     rw [← Probability.timeMeasure_restrict_of_le htT,
       ← Probability.timeMeasure_restrict_of_le hsT,
-      ← setIntegral_sdiff measurableSet_Ioc hHT (Ioc_subset_Ioc_right hst), hdiff]
+      ← setIntegral_sdiff measurableSet_Ioc hHT (Ioc_subset_Ioc_right hst),
+      Set.Ioc_sdiff_Ioc_of_le zero_le]
   have hprod_int : IntegrableOn (fun z : Ω × ℝ≥0 ↦ H z.2 z.1 ^ 2)
       (A ×ˢ Ioc s t) (P.prod (Probability.timeMeasure T)) :=
     ((hH.memLp_timeMeasure T).comp_measurePreserving
