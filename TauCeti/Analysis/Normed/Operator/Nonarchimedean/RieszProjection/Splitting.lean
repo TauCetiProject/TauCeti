@@ -51,18 +51,18 @@ variable [CompleteSpace R]
 theorem finite_ker_pow (hE : IsRieszProjection u a h E) (hu : u.IsRowCompact) (hn : h ≤ n) :
     Module.Finite R (LinearMap.ker (((1 - a • u) ^ n : C₀(I, R) →L[R] C₀(I, R)) :
       C₀(I, R) →ₗ[R] C₀(I, R))) := by
-  rw [← ((isRieszProjection_def.mp hE).of_le hn).range_eq_ker]
+  rw [← (hE.toIsSpectralProjection.of_le hn).range_eq_ker]
   exact (hE.isRowCompact hu).finite_range_of_isIdempotentElem
-    (isRieszProjection_def.mp hE).isIdempotentElem
+    hE.toIsSpectralProjection.isIdempotentElem
 
 /-- The stabilised generalised eigenspace of a row-compact operator is projective over the
 coefficient ring. No Noetherian hypothesis is needed. -/
 theorem projective_ker_pow (hE : IsRieszProjection u a h E) (hu : u.IsRowCompact) (hn : h ≤ n) :
     Module.Projective R (LinearMap.ker (((1 - a • u) ^ n : C₀(I, R) →L[R] C₀(I, R)) :
       C₀(I, R) →ₗ[R] C₀(I, R))) := by
-  rw [← ((isRieszProjection_def.mp hE).of_le hn).range_eq_ker]
+  rw [← (hE.toIsSpectralProjection.of_le hn).range_eq_ker]
   exact (hE.isRowCompact hu).projective_range_of_isIdempotentElem
-    (isRieszProjection_def.mp hE).isIdempotentElem
+    hE.toIsSpectralProjection.isIdempotentElem
 
 end IsRieszProjection
 

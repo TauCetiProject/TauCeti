@@ -42,15 +42,15 @@ variable {I R : Type*} [TopologicalSpace I]
 /-- A bounded operator commuting with `u` commutes with every Riesz projector of `u`. -/
 theorem commute_of_commute (hE : IsRieszProjection u a h E)
     {w : C₀(I, R) →L[R] C₀(I, R)} (hw : Commute w u) : Commute w E :=
-  (isRieszProjection_def.mp hE).commute_of_commute
+  hE.toIsSpectralProjection.commute_of_commute
     (Commute.one_sub_smul_right (A := C₀(I, R) →L[R] C₀(I, R)) hw a)
 
 /-- A bounded operator commuting with `u` commutes with the complementary inverse of any
 Riesz projector of `u`. -/
 theorem commute_inverse_of_commute (hE : IsRieszProjection u a h E)
     {w : C₀(I, R) →L[R] C₀(I, R)} (hw : Commute w u) :
-    Commute w (isRieszProjection_def.mp hE).inverse :=
-  (isRieszProjection_def.mp hE).commute_inverse_of_commute
+    Commute w hE.toIsSpectralProjection.inverse :=
+  hE.toIsSpectralProjection.commute_inverse_of_commute
     (Commute.one_sub_smul_right (A := C₀(I, R) →L[R] C₀(I, R)) hw a)
 
 end ContinuousLinearMap.IsRieszProjection

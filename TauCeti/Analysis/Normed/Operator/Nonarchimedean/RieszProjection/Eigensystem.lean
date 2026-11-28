@@ -49,20 +49,20 @@ theorem exists_jointEigenvector (hE : IsRieszProjection u a h E) (hu : u.IsRowCo
     (hcomm : Pairwise fun i j ↦ Commute (f i) (f j))
     (hfu : ∀ i, Function.Semiconj (f i) u u)
     (htri : ∀ i, ⨆ μ, Module.End.maxGenEigenspace (R := K) (M := E.range) ((f i).restrict
-      ((isRieszProjection_def.mp hE).mapsTo_range_of_semiconj (isRieszProjection_def.mp hE)
+      (hE.toIsSpectralProjection.mapsTo_range_of_semiconj hE.toIsSpectralProjection
         (f i) ((hfu i).one_sub_smul a))) μ = ⊤) :
     ∃ (χ : ι → K) (v : C₀(I, K)), v ≠ 0 ∧ v ∈ E.range ∧
       ∀ i, f i v = χ i • v := by
   let := (hE.isRowCompact hu).finite_range_of_isIdempotentElem
-    (isRieszProjection_def.mp hE).isIdempotentElem
+    hE.toIsSpectralProjection.isIdempotentElem
   have hrange : E.range ≠ ⊥ := by
     intro hz
     apply hE0
     exact ContinuousLinearMap.coe_injective (LinearMap.range_eq_bot.mp hz)
   let : Nontrivial E.range := Submodule.nontrivial_iff_ne_bot.mpr hrange
   let g : ι → Module.End K E.range := fun i ↦
-    (f i).restrict ((isRieszProjection_def.mp hE).mapsTo_range_of_semiconj
-      (isRieszProjection_def.mp hE) (f i) ((hfu i).one_sub_smul a))
+    (f i).restrict (hE.toIsSpectralProjection.mapsTo_range_of_semiconj
+      hE.toIsSpectralProjection (f i) ((hfu i).one_sub_smul a))
   have hg : Pairwise fun i j ↦ Commute (g i) (g j) := fun i j hij ↦
     LinearMap.restrict_commute (hcomm hij) _ _
   obtain ⟨χ, v, hv, heigen⟩ :=
@@ -80,7 +80,7 @@ theorem exists_jointEigenvector_of_isAlgClosed [IsAlgClosed K]
     ∃ (χ : ι → K) (v : C₀(I, K)), v ≠ 0 ∧ v ∈ E.range ∧
       ∀ i, f i v = χ i • v := by
   let := (hE.isRowCompact hu).finite_range_of_isIdempotentElem
-    (isRieszProjection_def.mp hE).isIdempotentElem
+    hE.toIsSpectralProjection.isIdempotentElem
   exact hE.exists_jointEigenvector hu hE0 f hcomm hfu
     (fun _ ↦ Module.End.iSup_maxGenEigenspace_eq_top _)
 
@@ -92,7 +92,7 @@ theorem exists_eigenvalueHom (hE : IsRieszProjection u a h E) (hu : u.IsRowCompa
     (ρ : A →ₐ[K] Module.End K C₀(I, K))
     (hρu : ∀ b, Function.Semiconj (ρ b) u u)
     (htri : ∀ b, ⨆ μ, Module.End.maxGenEigenspace (R := K) (M := E.range) ((ρ b).restrict
-      ((isRieszProjection_def.mp hE).mapsTo_range_of_semiconj (isRieszProjection_def.mp hE)
+      (hE.toIsSpectralProjection.mapsTo_range_of_semiconj hE.toIsSpectralProjection
         (ρ b) ((hρu b).one_sub_smul a))) μ = ⊤) :
     ∃ (χ : A →ₐ[K] K) (v : C₀(I, K)), v ≠ 0 ∧ v ∈ E.range ∧
       ∀ b, ρ b v = χ b • v := by
@@ -114,7 +114,7 @@ theorem exists_eigenvalueHom_of_isAlgClosed [IsAlgClosed K]
     ∃ (χ : A →ₐ[K] K) (v : C₀(I, K)), v ≠ 0 ∧ v ∈ E.range ∧
       ∀ b, ρ b v = χ b • v := by
   let := (hE.isRowCompact hu).finite_range_of_isIdempotentElem
-    (isRieszProjection_def.mp hE).isIdempotentElem
+    hE.toIsSpectralProjection.isIdempotentElem
   exact hE.exists_eigenvalueHom hu hE0 ρ hρu
     (fun _ ↦ Module.End.iSup_maxGenEigenspace_eq_top _)
 

@@ -97,7 +97,7 @@ theorem IsRieszProjection.isPrCompact (hE : IsRieszProjection u a h E) (hu : u.I
   -- The geometric sum expresses `E` as the row-compact factor `a • u` followed by bounded maps.
   have hEq : E = (1 - C) * (∑ i ∈ Finset.range h, C ^ i) * E := by
     rw [mul_neg_geom_sum C h]
-    simp only [C, sub_mul (α := M →L[R] M), one_mul, (isRieszProjection_def.mp hE).pow_mul_eq_zero,
+    simp only [C, sub_mul (α := M →L[R] M), one_mul, hE.toIsSpectralProjection.pow_mul_eq_zero,
       sub_zero (G := M →L[R] M)]
   have hc : (1 - C).IsPrCompact := by
     simpa only [C, sub_sub_cancel (1 : M →L[R] M) (a • u)] using hu.smul a
@@ -110,18 +110,18 @@ endomorphism of a module with property (Pr) is finitely generated. -/
 theorem IsRieszProjection.finite_ker_pow_of_isPrCompact (hE : IsRieszProjection u a h E)
     (hu : u.IsPrCompact) {n : ℕ} (hn : h ≤ n) :
     Module.Finite R (LinearMap.ker (((1 - a • u) ^ n : M →L[R] M) : M →ₗ[R] M)) := by
-  rw [← ((isRieszProjection_def.mp hE).of_le hn).range_eq_ker]
+  rw [← (hE.toIsSpectralProjection.of_le hn).range_eq_ker]
   exact (hE.isPrCompact hu).finite_range_of_isIdempotentElem
-    (isRieszProjection_def.mp hE).isIdempotentElem
+    hE.toIsSpectralProjection.isIdempotentElem
 
 /-- The stabilised generalised eigenspace `ker (1 - a • u) ^ n`, `n ≥ h`, of a row-compact
 endomorphism of a module with property (Pr) is projective over the coefficient ring. -/
 theorem IsRieszProjection.projective_ker_pow_of_isPrCompact (hE : IsRieszProjection u a h E)
     (hu : u.IsPrCompact) {n : ℕ} (hn : h ≤ n) :
     Module.Projective R (LinearMap.ker (((1 - a • u) ^ n : M →L[R] M) : M →ₗ[R] M)) := by
-  rw [← ((isRieszProjection_def.mp hE).of_le hn).range_eq_ker]
+  rw [← (hE.toIsSpectralProjection.of_le hn).range_eq_ker]
   exact (hE.isPrCompact hu).projective_range_of_isIdempotentElem
-    (isRieszProjection_def.mp hE).isIdempotentElem
+    hE.toIsSpectralProjection.isIdempotentElem
 
 end PrModule
 
@@ -170,8 +170,7 @@ theorem IsPrCompact.rankAtStalk_ker_pow (hu : u.IsPrCompact)
     let : AddCommGroup (LinearMap.ker (((1 - a • i.comp (u.comp r)) ^ n :
         C₀(J, R) →L[R] C₀(J, R)) : C₀(J, R) →ₗ[R] C₀(J, R))) := inferInstance
     exact Module.rankAtStalk_eq_of_equiv heq.symm
-  rw [hker, (isRieszProjection_def.mp hF).ker_pow_eq hn,
-    ← (isRieszProjection_def.mp hF).range_eq_ker]
+  rw [hker, hF.toIsSpectralProjection.ker_pow_eq hn, ← hF.toIsSpectralProjection.range_eq_ker]
   exact hF.rankAtStalk_range hv hH p
 
 /-- The range of any Riesz projection at a good Fredholm zero on a module with property
@@ -180,7 +179,7 @@ theorem IsRieszProjection.rankAtStalk_range_of_isPrCompact [IsBoundedSMul R M]
     (hE : IsRieszProjection u a h E) (hu : u.IsPrCompact)
     (hH : u.charPowerSeries.IsGoodZero a h) (p : PrimeSpectrum R) :
     Module.rankAtStalk (R := R) E.range p = h := by
-  rw [(isRieszProjection_def.mp hE).range_eq_ker]
+  rw [hE.toIsSpectralProjection.range_eq_ker]
   exact hu.rankAtStalk_ker_pow hH le_rfl p
 
 end Ring
@@ -205,7 +204,7 @@ to the order of the good Fredholm zero. This includes order zero. -/
 theorem IsRieszProjection.finrank_range_of_isPrCompact [IsBoundedSMul K M]
     (hE : IsRieszProjection u a h E) (hu : u.IsPrCompact)
     (hH : u.charPowerSeries.IsGoodZero a h) : Module.finrank K E.range = h := by
-  rw [(isRieszProjection_def.mp hE).range_eq_ker]
+  rw [hE.toIsSpectralProjection.range_eq_ker]
   exact hu.finrank_ker_pow hH le_rfl
 
 /-- **Algebraic multiplicities are orders of Fredholm zeros.** Over a complete ultrametric field,

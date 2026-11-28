@@ -107,7 +107,7 @@ theorem IsRieszColemanProjection.finite_range_of_isPrCompact
     (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) (hu : u.IsPrCompact) :
     Module.Finite R E.range :=
   (hE.isPrCompact hQ hu).finite_range_of_isIdempotentElem
-    (isRieszColemanProjection_def.mp hE).isIdempotentElem
+    hE.toIsSpectralProjection.isIdempotentElem
 
 /-- On a module with property `(Pr)`, when `Q.leadingCoeff` is a unit, the range of a Riesz–Coleman
 projection of a `(Pr)`-compact operator is projective over the coefficient ring. -/
@@ -115,14 +115,14 @@ theorem IsRieszColemanProjection.projective_range_of_isPrCompact
     (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) (hu : u.IsPrCompact) :
     Module.Projective R E.range :=
   (hE.isPrCompact hQ hu).projective_range_of_isIdempotentElem
-    (isRieszColemanProjection_def.mp hE).isIdempotentElem
+    hE.toIsSpectralProjection.isIdempotentElem
 
 /-- On a module with property `(Pr)`, when `Q.leadingCoeff` is a unit, `ker Q*(u)` for a
 Riesz–Coleman projection of a `(Pr)`-compact operator is finitely generated. -/
 theorem IsRieszColemanProjection.finite_ker_aeval_reverse_of_isPrCompact
     (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) (hu : u.IsPrCompact) :
     Module.Finite R (Polynomial.aeval u Q.reverse : M →L[R] M).ker := by
-  rw [← (isRieszColemanProjection_def.mp hE).range_eq_ker_spectral]
+  rw [← hE.toIsSpectralProjection.range_eq_ker_spectral]
   exact hE.finite_range_of_isPrCompact hQ hu
 
 /-- On a module with property `(Pr)`, when `Q.leadingCoeff` is a unit, `ker Q*(u)` for a
@@ -130,7 +130,7 @@ Riesz–Coleman projection of a `(Pr)`-compact operator is projective over the c
 theorem IsRieszColemanProjection.projective_ker_aeval_reverse_of_isPrCompact
     (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff) (hu : u.IsPrCompact) :
     Module.Projective R (Polynomial.aeval u Q.reverse : M →L[R] M).ker := by
-  rw [← (isRieszColemanProjection_def.mp hE).range_eq_ker_spectral]
+  rw [← hE.toIsSpectralProjection.range_eq_ker_spectral]
   exact hE.projective_range_of_isPrCompact hQ hu
 
 end Compact
@@ -234,7 +234,7 @@ theorem rankAtStalk_range_of_isPrCompact {u E : M →L[R] M} {Q : R[X]} {S : R�
     (hcop : IsCoprime (IsEntire.polynomialHom Q) ⟨S, IsEntire.mem_subring.mpr hS⟩)
     (p : PrimeSpectrum R) :
     Module.rankAtStalk (R := R) E.range p = Q.natDegree := by
-  rw [(isRieszColemanProjection_def.mp hE).range_eq_ker_spectral]
+  rw [hE.toIsSpectralProjection.range_eq_ker_spectral]
   exact hu.rankAtStalk_ker_aeval_reverse hQ hS hQS hcop p
 
 /-- **Fredholm factor on the finite Riesz–Coleman summand on a module with property `(Pr)`.** For a
@@ -293,14 +293,12 @@ theorem charPowerSeries_restrict_range_of_isPrCompact {u E : M →L[R] M} {Q : R
     (hQ : IsUnit Q.leadingCoeff) (hS : S.IsEntire)
     (hQS : u.charPowerSeries = (Q : R⟦X⟧) * S)
     (hcop : IsCoprime (IsEntire.polynomialHom Q) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
-    (u.restrict (isRieszColemanProjection_def.mp hE).mapsTo_range).charPowerSeries =
+    (u.restrict hE.toIsSpectralProjection.mapsTo_range).charPowerSeries =
       ((Polynomial.C (Ring.inverse (Q.coeff 0)) * Q : R[X]) : R⟦X⟧) := by
-  have hcompl := ContinuousLinearMap.IsIdempotentElem.isTopCompl
-    (isRieszColemanProjection_def.mp hE).isIdempotentElem
-  rw [hu.charPowerSeries_restrict_of_isTopCompl hcompl
-      (isRieszColemanProjection_def.mp hE).mapsTo_range,
-    ← ContinuousLinearMap.IsIdempotentElem.eq_projectionL
-      (isRieszColemanProjection_def.mp hE).isIdempotentElem]
+  have hSp := hE.toIsSpectralProjection
+  rw [hu.charPowerSeries_restrict_of_isTopCompl
+      (ContinuousLinearMap.IsIdempotentElem.isTopCompl hSp.isIdempotentElem) hSp.mapsTo_range,
+    ← ContinuousLinearMap.IsIdempotentElem.eq_projectionL hSp.isIdempotentElem]
   exact hE.charPowerSeries_mul_of_isPrCompact hu hQ hS hQS hcop
 
 /-- **Fredholm series of the restriction to `ker E`.** For a `(Pr)`-compact operator `u` with a
@@ -312,15 +310,13 @@ theorem charPowerSeries_restrict_ker_of_isPrCompact {u E : M →L[R] M} {Q : R[X
     (hQ : IsUnit Q.leadingCoeff) (hS : S.IsEntire)
     (hQS : u.charPowerSeries = (Q : R⟦X⟧) * S)
     (hcop : IsCoprime (IsEntire.polynomialHom Q) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
-    (u.restrict (isRieszColemanProjection_def.mp hE).mapsTo_ker).charPowerSeries =
+    (u.restrict hE.toIsSpectralProjection.mapsTo_ker).charPowerSeries =
       PowerSeries.C (Q.coeff 0) * S := by
-  have hcompl := ContinuousLinearMap.IsIdempotentElem.isTopCompl
-    (isRieszColemanProjection_def.mp hE).isIdempotentElem
-  rw [hu.charPowerSeries_restrict_of_isTopCompl hcompl.symm
-      (isRieszColemanProjection_def.mp hE).mapsTo_ker,
+  have hSp := hE.toIsSpectralProjection
+  have hcompl := ContinuousLinearMap.IsIdempotentElem.isTopCompl hSp.isIdempotentElem
+  rw [hu.charPowerSeries_restrict_of_isTopCompl hcompl.symm hSp.mapsTo_ker,
     Submodule.projectionL_eq_id_sub_projectionL hcompl,
-    ← ContinuousLinearMap.IsIdempotentElem.eq_projectionL
-      (isRieszColemanProjection_def.mp hE).isIdempotentElem, ← one_def]
+    ← ContinuousLinearMap.IsIdempotentElem.eq_projectionL hSp.isIdempotentElem, ← one_def]
   exact hE.charPowerSeries_mul_one_sub_of_isPrCompact hu hQ hS hQS hcop
 
 /-- **Characteristic polynomial of `u` on the finite Riesz–Coleman summand.** For a `(Pr)`-compact
@@ -336,18 +332,17 @@ theorem projectiveCharpolyRev_restrict_range_of_isPrCompact {u E : M →L[R] M} 
     haveI : Module.Finite R E.range := hE.finite_range_of_isPrCompact hQ hu
     haveI : Module.Projective R E.range := hE.projective_range_of_isPrCompact hQ hu
     (((u.restrict fun _ hx ↦
-      (isRieszColemanProjection_def.mp hE).mapsTo_range hx).toLinearMap).projectiveCharpolyRev) =
+      hE.toIsSpectralProjection.mapsTo_range hx).toLinearMap).projectiveCharpolyRev) =
       Polynomial.C (Ring.inverse (Q.coeff 0)) * Q := by
   let : AddCommGroup E.range := inferInstance
   have := hE.finite_range_of_isPrCompact hQ hu
   have := hE.projective_range_of_isPrCompact hQ hu
   have hPr : TauCeti.HasPr R E.range :=
     hu.hasPr_source.of_isTopCompl
-      (ContinuousLinearMap.IsIdempotentElem.isTopCompl
-        (isRieszColemanProjection_def.mp hE).isIdempotentElem)
+      (ContinuousLinearMap.IsIdempotentElem.isTopCompl hE.toIsSpectralProjection.isIdempotentElem)
   apply Polynomial.coe_inj.mp
   rw [← ContinuousLinearMap.charPowerSeries_eq_projectiveCharpolyRev hPr
-    (u.restrict (isRieszColemanProjection_def.mp hE).mapsTo_range)]
+    (u.restrict hE.toIsSpectralProjection.mapsTo_range)]
   exact hE.charPowerSeries_restrict_range_of_isPrCompact hu hQ hS hQS hcop
 
 end IsRieszColemanProjection
@@ -387,7 +382,7 @@ theorem IsRieszColemanProjection.finrank_range_of_isPrCompact {u E : M →L[K] M
     (hS : S.IsEntire) (hQS : u.charPowerSeries = (Q : K⟦X⟧) * S)
     (hcop : IsCoprime (IsEntire.polynomialHom Q) ⟨S, IsEntire.mem_subring.mpr hS⟩) :
     Module.finrank K E.range = Q.natDegree := by
-  rw [(isRieszColemanProjection_def.mp hE).range_eq_ker_spectral]
+  rw [hE.toIsSpectralProjection.range_eq_ker_spectral]
   exact hu.finrank_ker_aeval_reverse hS hQS hcop
 
 end FieldRange

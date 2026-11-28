@@ -166,7 +166,7 @@ theorem IsRieszProjection.mapCoeffs [TauCeti.NormedRing.IsTate S]
     IsRieszProjection (u.mapCoeffs f hf) (f a) h (E.mapCoeffs f hf) :=
   isRieszProjection_def.mpr <| by
     simpa only [mapCoeffsRingHom_apply, mapCoeffs_sub, mapCoeffs_one, mapCoeffs_smul] using
-      IsSpectralProjection.map (isRieszProjection_def.mp hE) (mapCoeffsRingHom f hf)
+      hE.toIsSpectralProjection.map (mapCoeffsRingHom f hf)
         (fun hv ↦ by simpa only [mapCoeffsRingHom_apply] using mapCoeffs_mem_closure_adjoin f hf hv)
 
 /-- Bounded coefficient extension commutes with taking the complementary inverse of a Riesz
@@ -174,10 +174,10 @@ projection. -/
 theorem IsRieszProjection.inverse_mapCoeffs [TauCeti.NormedRing.IsTate S]
     {u E : C₀(J, R) →L[R] C₀(J, R)} {a : R} {h : ℕ} (hE : IsRieszProjection u a h E)
     (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
-    (isRieszProjection_def.mp (hE.mapCoeffs f hf)).inverse =
-      (isRieszProjection_def.mp hE).inverse.mapCoeffs f hf :=
-  ((isRieszProjection_def.mp hE).inverse_map (mapCoeffsRingHom f hf)
-    (isRieszProjection_def.mp (hE.mapCoeffs f hf))
+    (hE.mapCoeffs f hf).toIsSpectralProjection.inverse =
+      hE.toIsSpectralProjection.inverse.mapCoeffs f hf :=
+  (hE.toIsSpectralProjection.inverse_map (mapCoeffsRingHom f hf)
+    (hE.mapCoeffs f hf).toIsSpectralProjection
     (by simp [mapCoeffsRingHom_apply]) (mapCoeffsRingHom_apply _ _ _).symm).trans
     (mapCoeffsRingHom_apply _ _ _)
 

@@ -545,7 +545,7 @@ theorem IsRieszProjection.completedBaseChange [TauCeti.NormedRing.IsTate S]
   have hE' : Φ E = E.completedBaseChange α α := completedBaseChangeRingHom_apply α E
   exact isRieszProjection_def.mpr <| by
     simpa only [hu', h1sub, hE'] using
-      (isRieszProjection_def.mp hE).map Φ fun {v} hv ↦
+      hE.toIsSpectralProjection.map Φ fun {v} hv ↦
         completedBaseChange_mem_closure_adjoin hS hM α hv
 
 /-- Completed-tensor base change commutes with taking the complementary inverse of a Riesz
@@ -553,10 +553,10 @@ projection. -/
 theorem IsRieszProjection.inverse_completedBaseChange [TauCeti.NormedRing.IsTate S]
     [IsBoundedSMul R M₁] [IsBoundedSMul S N₁] (hM : HasPr R M₁) (α : S ⊗̂[R] M₁ ≃L[S] N₁)
     {u E : M₁ →L[R] M₁} {a : R} {h : ℕ} (hE : IsRieszProjection u a h E) :
-    (isRieszProjection_def.mp (hE.completedBaseChange hS hM α)).inverse =
-      (isRieszProjection_def.mp hE).inverse.completedBaseChange α α :=
-  ((isRieszProjection_def.mp hE).inverse_map (completedBaseChangeRingHom α)
-    (isRieszProjection_def.mp (hE.completedBaseChange hS hM α))
+    (hE.completedBaseChange hS hM α).toIsSpectralProjection.inverse =
+      hE.toIsSpectralProjection.inverse.completedBaseChange α α :=
+  (hE.toIsSpectralProjection.inverse_map (completedBaseChangeRingHom α)
+    (hE.completedBaseChange hS hM α).toIsSpectralProjection
     (by simp [completedBaseChangeRingHom_apply])
     (completedBaseChangeRingHom_apply α _).symm).trans
     (completedBaseChangeRingHom_apply α _)

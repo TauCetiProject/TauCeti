@@ -122,6 +122,12 @@ namespace IsRieszProjection
 
 variable {u E : M →L[R] M} {a : R} {h : ℕ}
 
+/-- View a Riesz projection as a `ContinuousLinearMap.IsSpectralProjection` for `1 - a • u` of
+order `h`. -/
+theorem toIsSpectralProjection (hE : IsRieszProjection u a h E) :
+    IsSpectralProjection u (1 - a • u) h E :=
+  hE
+
 /-- **The range of a Riesz projection is the maximal generalised eigenspace.** If `a * μ = 1`,
 the range of a Riesz projection of `u` at `a` is the space of all vectors killed by some power of
 `u - μ`, the maximal generalised eigenspace of `u` at the eigenvalue `μ = a⁻¹`. -/
@@ -138,9 +144,9 @@ theorem maxGenEigenspace_eq_range (hE : IsRieszProjection u a h E) {μ : R} (hμ
     (hunit.pow _).smul_eq_zero, ← toLinearMap_pow, coe_coe]
   refine ⟨fun ⟨k, hk⟩ ↦ ?_, fun hx ↦ ⟨h, ?_⟩⟩
   · -- The kernels of the powers of `1 - a • u` stabilise in the range of `E`.
-    rw [((isRieszProjection_def.mp hE).of_le (le_max_right k h)).range_eq_ker, LinearMap.mem_ker,
+    rw [(hE.toIsSpectralProjection.of_le (le_max_right k h)).range_eq_ker, LinearMap.mem_ker,
       coe_coe, ← Nat.sub_add_cancel (le_max_left k h), pow_add, mul_apply_eq_comp, hk, map_zero]
-  · rw [(isRieszProjection_def.mp hE).range_eq_ker, LinearMap.mem_ker, coe_coe] at hx
+  · rw [hE.toIsSpectralProjection.range_eq_ker, LinearMap.mem_ker, coe_coe] at hx
     exact hx
 
 end IsRieszProjection
@@ -167,7 +173,7 @@ theorem IsRieszProjection.map (Φ : (M₁ →L[R₁] M₁) →+* (M₂ →L[R₂
       Φ v ∈ closure (Algebra.adjoin R₂ {Φ u} : Set (M₂ →L[R₂] M₂))) :
     IsRieszProjection (Φ u) a' h (Φ E) :=
   isRieszProjection_def.mpr <| by
-    simpa only [← ha] using (isRieszProjection_def.mp hE).map Φ hclosure
+    simpa only [← ha] using hE.toIsSpectralProjection.map Φ hclosure
 
 end Map
 
@@ -188,7 +194,7 @@ theorem IsRieszProjection.comp_comp_of_retract (hri : r.comp i = .id R M) {a : R
   have hi : Function.Semiconj (i : M →ₗ[R] N) u (i.comp (u.comp r)) := fun x ↦ by simp [hri']
   exact isRieszProjection_def.mpr
     (IsSpectralProjection.comp_comp_of_retract hri (hr.one_sub_smul a) (hi.one_sub_smul a)
-      (isRieszProjection_def.mp hE))
+      hE.toIsSpectralProjection)
 
 end Retract
 
@@ -233,7 +239,7 @@ theorem IsRieszProjection.isRowCompact {u E : C₀(I, R) →L[R] C₀(I, R)} {a 
   have hEq : E = (1 - C) * (∑ i ∈ Finset.range h, C ^ i) * E := by
     rw [mul_neg_geom_sum C h]
     simp only [C, sub_mul (α := C₀(I, R) →L[R] C₀(I, R)), one_mul,
-      (isRieszProjection_def.mp hE).pow_mul_eq_zero, sub_zero (G := C₀(I, R) →L[R] C₀(I, R))]
+      hE.toIsSpectralProjection.pow_mul_eq_zero, sub_zero (G := C₀(I, R) →L[R] C₀(I, R))]
   have hc : (1 - C).IsRowCompact := by
     simpa only [C, sub_sub_cancel (1 : C₀(I, R) →L[R] C₀(I, R)) (a • u)] using
       hu.smul a
@@ -323,8 +329,8 @@ theorem IsRieszProjection.eq_rieszProjection {u E : C₀(I, R) →L[R] C₀(I, R
     (hH : ∀ j < h, (PowerSeries.hasseDeriv j u.matrixCoeff.charPowerSeries).evalAt a = 0)
     (hc : IsUnit ((PowerSeries.hasseDeriv h u.matrixCoeff.charPowerSeries).evalAt a)) :
     E = u.rieszProjection a h :=
-  (isRieszProjection_def.mp hE).unique
-    (isRieszProjection_def.mp (hu.isRieszProjection_rieszProjection hH hc))
+  hE.toIsSpectralProjection.unique
+    (hu.isRieszProjection_rieszProjection hH hc).toIsSpectralProjection
 
 end Projection
 

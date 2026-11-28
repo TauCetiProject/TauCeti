@@ -297,7 +297,7 @@ theorem IsPrCompact.range_eq_range_of_split (hu : u.IsPrCompact) (hF : TauCeti.H
       rw [Module.rankAtStalk_eq_finrank_of_free, Pi.natCast_apply, Nat.cast_id, hdeg]
   have hle : i.range ≤ E.range := by
     rintro _ ⟨x, rfl⟩
-    rw [(isRieszColemanProjection_def.mp hE).range_eq_ker_spectral, LinearMap.mem_ker, coe_coe,
+    rw [hE.toIsSpectralProjection.range_eq_ker_spectral, LinearMap.mem_ker, coe_coe,
       ← hsemi.aeval _ x, hCH, zero_apply, map_zero]
   have hinj : Function.Injective i := fun x y hxy ↦
     ((Module.End.isUnit_iff _).mp hunit).injective (by simp [hxy])
@@ -335,7 +335,7 @@ theorem IsPrCompact.eq_comp_of_split [ContinuousConstSMul K N] (hu : u.IsPrCompa
     obtain ⟨y, hy⟩ : i x ∈ E.range := hrange ▸ LinearMap.mem_range_self _ x
     rw [← hy]
     simpa only [mul_apply_eq_comp, coe_coe] using
-      congr($((isRieszColemanProjection_def.mp hE).isIdempotentElem.eq) y)
+      congr($(hE.toIsSpectralProjection.isIdempotentElem.eq) y)
   -- `E` kills the image of `N`: there `j` intertwines `s u j` with `u`, and `Q*(s u j)` is
   -- invertible because `Q` is coprime to `det (1 - T (s u j))`.
   have hEj (y : N) : E (j y) = 0 := by
@@ -343,7 +343,7 @@ theorem IsPrCompact.eq_comp_of_split [ContinuousConstSMul K N] (hu : u.IsPrCompa
     obtain ⟨w, hw⟩ := ((((hu.comp_clm j hN).clm_comp s hN).isUnit_aeval_reverse_iff
       hQS.isUnit_leadingCoeff).mpr (hQS.isCoprime hdist hc)).exists_right_inv
     have hy : j y ∈ LinearMap.ker (E : M →ₗ[K] M) := by
-      rw [← (isRieszColemanProjection_def.mp hE).range_spectral_eq_ker]
+      rw [← hE.toIsSpectralProjection.range_spectral_eq_ker]
       have hjw := hsemi.aeval Q.reverse (w y)
       simp only [coe_coe] at hjw
       exact ⟨j (w y), by rw [coe_coe, ← hjw, ← mul_apply_eq_comp, hw, one_apply_eq_self]⟩

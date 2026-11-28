@@ -74,8 +74,8 @@ theorem IsRieszColemanProjection.mapCoeffs {u E : C₀(I, R) →L[R] C₀(I, R)}
 theorem IsRieszColemanProjection.inverse_mapCoeffs {u E : C₀(I, R) →L[R] C₀(I, R)}
     {Q : R[X]} (hE : IsRieszColemanProjection u Q E) (hQ : IsUnit Q.leadingCoeff)
     (f : R →+* S) (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) :
-    (isRieszColemanProjection_def.mp (hE.mapCoeffs hQ f hf)).inverse =
-      (isRieszColemanProjection_def.mp hE).inverse.mapCoeffs f hf := by
+    (hE.mapCoeffs hQ f hf).toIsSpectralProjection.inverse =
+      hE.toIsSpectralProjection.inverse.mapCoeffs f hf := by
   have hinv := hE.inverse_map (mapCoeffsRingHom f hf)
     (by
       simp only [mapCoeffsRingHom_apply]

@@ -165,10 +165,7 @@ theorem isUnit_of_aeval_eq_zero {R A : Type*} [CommSemiring R] [Semiring A] [Alg
     calc (x * y) * (x * y) = (x * y) * (x * y) + (x * y + 1) := by rw [he, add_zero]
       _ = (x * y) * (x * y + 1) + 1 := by rw [← add_assoc, mul_add, mul_one]
       _ = 1 := by rw [he, mul_zero, zero_add]
-  have hxy : IsUnit (x * y) := (isUnit_pow_iff (by decide : 2 ≠ 0)).mp <| by
-    rw [pow_two, hee]
-    exact isUnit_one
-  exact (hcomm.isUnit_mul_iff.mp hxy).1
+  exact (hcomm.isUnit_mul_iff.mp ⟨⟨x * y, x * y, hee, hee⟩, rfl⟩).1
 
 /-- Evaluating `1 - C c * P` at `u` satisfies `1 - aeval u (1 - C c * P) = c • aeval u P`. -/
 theorem one_sub_aeval_one_sub_C_mul {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
