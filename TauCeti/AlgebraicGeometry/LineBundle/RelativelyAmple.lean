@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
 public import TauCeti.AlgebraicGeometry.LineBundle.Ample
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
+import TauCeti.AlgebraicGeometry.Morphisms.Affine.TargetLocal
 import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact
 
 /-!
@@ -30,7 +31,11 @@ The preimage of an affine open under an affine morphism is affine, and every lin
 affine scheme is ample, so every line-bundle class is relatively ample for an affine morphism
 (`LineBundleClass.isRelativelyAmple_of_isAffineHom`). The trivial class is relatively ample
 exactly when the preimages of affine opens are quasi-affine, that is, when `f` is quasi-affine
-(`LineBundleClass.isRelativelyAmple_one_iff`).
+(`LineBundleClass.isRelativelyAmple_one_iff`). More generally, relative ampleness is preserved by
+pullback along an affine morphism `X' ⟶ X`, for instance a closed immersion
+(`LineBundleClass.IsRelativelyAmple.pullback`): over an affine open `V` of the base, the preimage
+of `V` in `X'` maps to the preimage of `V` in `X` by an affine morphism, and ampleness is preserved
+by affine pullback.
 
 ## Main definitions
 
@@ -44,6 +49,8 @@ exactly when the preimages of affine opens are quasi-affine, that is, when `f` i
   relatively ample line bundle is quasi-compact and quasi-separated.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.IsRelativelyAmple.of_pow`: if a positive power `aⁿ`
   is relatively ample, then so is `a`.
+* `TauCeti.AlgebraicGeometry.LineBundleClass.IsRelativelyAmple.pullback`: the pullback of a
+  `g`-ample class along an affine morphism `f` is `f ≫ g`-ample.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.isRelativelyAmple_of_isAffineHom`: every line-bundle
   class is relatively ample for an affine morphism.
 * `TauCeti.AlgebraicGeometry.LineBundleClass.isRelativelyAmple_one_iff`: the trivial class is
@@ -98,6 +105,19 @@ theorem IsRelativelyAmple.quasiSeparated {f : X ⟶ S} {a : LineBundleClass X}
 theorem IsRelativelyAmple.of_pow {f : X ⟶ S} {a : LineBundleClass X} {n : ℕ} (hn : 0 < n)
     (h : (a ^ n).IsRelativelyAmple f) : a.IsRelativelyAmple f where
   isAmple_pullback V hV := IsAmple.of_pow hn (pullback_pow _ a n ▸ h.isAmple_pullback V hV)
+
+/-- **Relative ampleness is preserved by affine pullback.** If `a` is relatively ample for
+`g : Y ⟶ S` and `f : X ⟶ Y` is an affine morphism, for instance a closed immersion, then the
+pullback of `a` to `X` is relatively ample for `f ≫ g`. -/
+theorem IsRelativelyAmple.pullback {Y : Scheme.{u}} {g : Y ⟶ S} {a : LineBundleClass Y}
+    (h : a.IsRelativelyAmple g) (f : X ⟶ Y) [IsAffineHom f] :
+    (pullback f a).IsRelativelyAmple (f ≫ g) where
+  isAmple_pullback V hV := by
+    have : IsAffineHom (f ∣_ (g ⁻¹ᵁ V)) := IsZariskiLocalAtTarget.restrict ‹_› _
+    have h' := (h.isAmple_pullback V hV).pullback (f ∣_ (g ⁻¹ᵁ V))
+    rw [pullback_comp, morphismRestrict_ι, ← pullback_comp] at h'
+    -- `(f ≫ g) ⁻¹ᵁ V` is `f ⁻¹ᵁ g ⁻¹ᵁ V` by definition (`Scheme.Hom.comp_preimage`)
+    exact h'
 
 /-- **Every line bundle is relatively ample for an affine morphism.** The preimage of an affine
 open under an affine morphism is affine, and every line bundle on an affine scheme is ample. -/
