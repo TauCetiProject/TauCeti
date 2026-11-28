@@ -33,7 +33,7 @@ matrix representation in the sense of Chenevier (`TauCeti.Determinant.algHomDet`
 * `PolynomialLaw.isHomogeneousOfDegree_det`, `PolynomialLaw.isMultiplicative_det`: it is
   homogeneous of degree `card n` and multiplicative.
 * `AlgHom.det_comp_toPolynomialLaw`: it is invariant under matrix-algebra endomorphisms,
-  by `AlgHom.det_apply_matrix` after scalar extension.
+  by `TauCeti.det_apply_matrix` after scalar extension.
 * `AlgEquiv.det_comp_toPolynomialLaw`: the corresponding simplification for matrix-algebra
   automorphisms.
 
@@ -169,7 +169,7 @@ theorem _root_.AlgHom.det_comp_toPolynomialLaw (σ : AlgHom A (Matrix n n A) (Ma
     simp only [τ, AlgEquiv.arrowCongr_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
       AlgEquiv.symm_apply_apply]
   rw [det_toFun, det_toFun, hf, AlgHom.toLinearMap_apply]
-  exact congrArg (· ⊗ₜ 1) (hτ ▸ τ.det_apply_matrix (e x))
+  exact congrArg (· ⊗ₜ 1) (hτ ▸ TauCeti.det_apply_matrix τ (e x))
 
 /-- The determinant polynomial law is invariant under matrix-algebra automorphisms. -/
 @[simp]
