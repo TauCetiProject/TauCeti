@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
+import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+import Mathlib.MeasureTheory.Function.SimpleFuncDense
 import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 import TauCeti.Topology.Algebra.InfiniteSum.Basic
 
@@ -25,10 +27,11 @@ are pairwise disjoint measurable sets `Aₙ` of finite measure and values `cₙ 
 the pieces cut the finite-measure parts of a σ-finite support of `f` along the `ε`-balls around
 these values. Taking `K` a closed ball centred at zero bounds the approximant by its radius.
 
-On a set of finite measure only finitely many pieces matter up to small measure, which gives
-uniform approximation by finitely-valued simple functions outside sets of arbitrarily small
-measure (`MeasureTheory.AEStronglyMeasurable.exists_simpleFunc_measure_inter_dist_lt`). This is
-the substitute for simple-function density at the exponent `∞`.
+On a set of finite measure, simple functions with values in `K` or zero approximate `f`
+uniformly outside sets of arbitrarily small measure
+(`MeasureTheory.AEStronglyMeasurable.exists_simpleFunc_measure_inter_dist_ge_lt`): Mathlib's
+range-controlled approximants `SimpleFunc.approxOn` converge almost everywhere, hence in measure
+on the set. This is the substitute for simple-function density at the exponent `∞`.
 
 A countable sum `∑ₙ 𝟙_{Aₙ} cₙ` over disjoint measurable sets of finite measure is finitely
 strongly measurable (`MeasureTheory.finStronglyMeasurable_tsum_indicator_const`).
@@ -52,23 +55,23 @@ variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
 finitely strongly measurable: its partial sums are simple functions of finite-measure support
 converging pointwise. -/
 theorem finStronglyMeasurable_tsum_indicator_const {M : Type*} [AddCommMonoid M]
-    [TopologicalSpace M] [T2Space M] {A : ℕ → Set α}
+    [TopologicalSpace M] {A : ℕ → Set α}
     (hA : ∀ n, MeasurableSet (A n)) (hμA : ∀ n, μ (A n) < ∞) (hAd : Pairwise (Disjoint on A))
     (c : ℕ → M) : FinStronglyMeasurable (fun x ↦ ∑' n, (A n).indicator (fun _ ↦ c n) x) μ := by
   classical
   refine ⟨fun N ↦ ∑ n ∈ Finset.range N, (SimpleFunc.const α (c n)).restrict (A n),
     fun N ↦ ?_, fun x ↦ ?_⟩
-  · refine (measure_mono fun x hx ↦ ?_).trans_lt ((measure_biUnion_finset_le
-      (Finset.range N) A).trans_lt (ENNReal.sum_lt_top.2 fun n _ ↦ hμA n))
+  · refine (measure_mono fun x hx ↦ ?_).trans_lt
+      (measure_biUnion_lt_top (Finset.range N).finite_toSet fun n _ ↦ hμA n)
     obtain ⟨n, hn, hxn⟩ := Finset.exists_ne_zero_of_sum_ne_zero (by simpa using hx)
     rw [SimpleFunc.restrict_apply _ (hA n)] at hxn
-    exact mem_biUnion hn (mem_of_indicator_ne_zero hxn)
+    exact mem_biUnion (Finset.mem_coe.2 hn) (mem_of_indicator_ne_zero hxn)
   · have hsum : HasSum (fun n ↦ (A n).indicator (fun _ ↦ c n) x)
         (∑' n, (A n).indicator (fun _ ↦ c n) x) := by
       by_cases hx : ∃ n, x ∈ A n
       · obtain ⟨n, hn⟩ := hx
-        rw [TauCeti.tsum_indicator_apply_of_mem hAd _ hn]
-        exact TauCeti.hasSum_indicator_apply_of_mem hAd _ hn
+        rw [hAd.tsum_indicator_apply_of_mem _ hn]
+        exact hAd.hasSum_indicator_apply_of_mem _ hn
       · simp only [not_exists] at hx
         simp [indicator_of_notMem (hx _)]
     simpa [SimpleFunc.restrict_apply _ (hA _), ← Function.const_def] using hsum.tendsto_sum_nat
@@ -114,7 +117,7 @@ theorem AEFinStronglyMeasurable.exists_dist_tsum_indicator_const_lt {f : α → 
   filter_upwards [hfg, hfK] with x hfx hxK
   by_cases hx : ∃ n, x ∈ disjointed B n
   · obtain ⟨n, hn⟩ := hx
-    rw [TauCeti.tsum_indicator_apply_of_mem (disjoint_disjointed B) _ hn, hfx]
+    rw [(disjoint_disjointed B).tsum_indicator_apply_of_mem _ hn, hfx]
     exact (disjointed_subset B n hn).2
   · simp only [not_exists] at hx
     -- A point of `t` with a value in `K` lies in some piece, so `x ∉ t` and `f x = g x = 0`.
@@ -130,83 +133,54 @@ theorem AEFinStronglyMeasurable.exists_dist_tsum_indicator_const_lt {f : α → 
       exact hx n hn
     simpa [indicator_of_notMem (hx _), hfx, hgt x hxt] using hε
 
-/-- Truncating a countable sum `∑ₙ 𝟙_{Aₙ} cₙ` to `n < N` and to a measurable set `B` gives a
-simple function with values among the `cₙ` and zero, supported in `B`, which agrees with the
-countable sum at the points of `B` outside the tail `⋃ n ≥ N, Aₙ`. -/
-private lemma exists_simpleFunc_eq_tsum_indicator_const {A : ℕ → Set α}
-    (hA : ∀ n, MeasurableSet (A n)) (hAd : Pairwise (Disjoint on A)) (c : ℕ → E) {B : Set α}
-    (hB : MeasurableSet B) (N : ℕ) :
-    ∃ φ : SimpleFunc α E, range φ ⊆ insert 0 (range c) ∧ support φ ⊆ B ∧
-      ∀ x ∈ B, (∀ n, N ≤ n → x ∉ A n) → φ x = ∑' n, (A n).indicator (fun _ ↦ c n) x := by
-  classical
-  let φ : SimpleFunc α E := ∑ n ∈ Finset.range N, (SimpleFunc.const α (c n)).restrict (A n ∩ B)
-  have hφ (x : α) : φ x = ∑ n ∈ Finset.range N, (A n ∩ B).indicator (fun _ ↦ c n) x := by
-    simp [φ, SimpleFunc.restrict_apply _ ((hA _).inter hB), ← Function.const_def]
-  -- At a point of `B` in the `n`-th piece, `φ` takes the value `c n` if `n < N`, else `0`.
-  have hφ_mem {x : α} {n : ℕ} (hxB : x ∈ B) (hxn : x ∈ A n) :
-      φ x = if n < N then c n else 0 := by
-    rw [hφ]
-    split_ifs with hn
-    · rw [Finset.sum_eq_single_of_mem n (Finset.mem_range.2 hn) fun m _ hmn ↦
-        indicator_of_notMem (fun (hxm : x ∈ A m ∩ B) ↦ disjoint_left.1 (hAd hmn) hxm.1 hxn) _]
-      exact indicator_of_mem (show x ∈ A n ∩ B from ⟨hxn, hxB⟩) _
-    · refine Finset.sum_eq_zero fun m hm ↦ indicator_of_notMem (fun (hxm : x ∈ A m ∩ B) ↦ ?_) _
-      have hmn : m ≠ n := fun h ↦ hn (h ▸ Finset.mem_range.1 hm)
-      exact disjoint_left.1 (hAd hmn) hxm.1 hxn
-  have hφ_notMem {x : α} (hx : ∀ n, x ∈ B → x ∉ A n) : φ x = 0 := by
-    rw [hφ]
-    exact Finset.sum_eq_zero fun m _ ↦
-      indicator_of_notMem (fun (hxm : x ∈ A m ∩ B) ↦ hx m hxm.2 hxm.1) _
-  refine ⟨φ, ?_, fun x hx ↦ by_contra fun hxB ↦ hx (hφ_notMem fun _ h ↦ (hxB h).elim), ?_⟩
-  · rintro _ ⟨x, rfl⟩
-    by_cases hx : ∃ n, x ∈ B ∧ x ∈ A n
-    · obtain ⟨n, hxB, hxn⟩ := hx
-      rw [hφ_mem hxB hxn]
-      split_ifs
-      exacts [mem_insert_of_mem _ (mem_range_self n), mem_insert _ _]
-    · simp only [not_exists, not_and] at hx
-      exact hφ_notMem hx ▸ mem_insert _ _
-  intro x hxB hxN
-  by_cases hxA : ∃ n, x ∈ A n
-  · obtain ⟨n, hn⟩ := hxA
-    have hnN : n < N := not_le.1 fun h ↦ hxN n h hn
-    simp [hφ_mem hxB hn, hnN, TauCeti.tsum_indicator_apply_of_mem hAd (fun m _ ↦ c m) hn]
-  · simp only [not_exists] at hxA
-    simp [hφ_notMem fun n _ ↦ hxA n, indicator_of_notMem (hxA _)]
-
 /-- **Local uniform approximation by simple functions.** Let `f` be almost everywhere strongly
-measurable with values almost everywhere in a nonempty set `K`, and let `B` have finite measure.
-For `ε > 0` and `δ > 0` there is a simple function `φ` of finite-measure support, with values in
-`K` or zero, such that `‖f - φ‖ < ε` on `B` outside a set of measure less than `δ`. -/
-theorem AEStronglyMeasurable.exists_simpleFunc_measure_inter_dist_lt {f : α → E}
-    (hf : AEStronglyMeasurable f μ) {K : Set E} (hK : K.Nonempty) (hfK : ∀ᵐ x ∂μ, f x ∈ K)
+measurable with values almost everywhere in a set `K`, and let `B` have finite measure. For
+`ε > 0` and `δ > 0` there is a simple function `φ` of finite-measure support, with values in `K`
+or zero, such that `‖f - φ‖ < ε` on `B` outside a set of measure less than `δ`. -/
+theorem AEStronglyMeasurable.exists_simpleFunc_measure_inter_dist_ge_lt {f : α → E}
+    (hf : AEStronglyMeasurable f μ) {K : Set E} (hfK : ∀ᵐ x ∂μ, f x ∈ K)
     {B : Set α} (hB : μ B ≠ ∞) {ε : ℝ} (hε : 0 < ε) {δ : ℝ≥0∞} (hδ : δ ≠ 0) :
     ∃ φ : SimpleFunc α E, range φ ⊆ insert 0 K ∧ μ (support φ) < ∞ ∧
       μ (B ∩ {x | ε ≤ dist (f x) (φ x)}) < δ := by
+  borelize E
   set B' := toMeasurable μ B
   have hB' : MeasurableSet B' := measurableSet_toMeasurable μ B
   have hμB' : μ B' ≠ ∞ := by rwa [measure_toMeasurable]
   have : IsFiniteMeasure (μ.restrict B') := isFiniteMeasure_restrict.2 hμB'
-  have hfB : AEStronglyMeasurable f (μ.restrict B') := hf.restrict
-  -- A countably-valued approximant for the finite measure `μ.restrict B'`.
-  obtain ⟨A, c, hA, -, hAd, hcK, hae⟩ := AEFinStronglyMeasurable.exists_dist_tsum_indicator_const_lt
-    ⟨_, hfB.stronglyMeasurable_mk.finStronglyMeasurable _, hfB.ae_eq_mk⟩ hK
-    (ae_restrict_of_ae hfK) hε
-  -- Only finitely many pieces carry measure at least `δ` in `B'`.
-  obtain ⟨N, hN⟩ := ((tendsto_measure_biUnion_Ici_zero_of_pairwise_disjoint
-    (μ := μ.restrict B') (fun n ↦ (hA n).nullMeasurableSet) hAd).eventually
-      (gt_mem_nhds (pos_iff_ne_zero.2 hδ))).exists
-  obtain ⟨φ, hφK, hφB', hφ⟩ := exists_simpleFunc_eq_tsum_indicator_const hA hAd c hB' N
-  refine ⟨φ, hφK.trans (insert_subset_insert (range_subset_iff.2 hcK)),
-    (measure_mono hφB').trans_lt hμB'.lt_top, ?_⟩
-  -- Off the tail `⋃ n ≥ N, A n`, `φ` agrees with the countable approximant on `B'`.
-  refine (measure_mono (inter_subset_inter_left _ (subset_toMeasurable μ B))).trans_lt
-    (lt_of_le_of_lt ?_ hN)
-  rw [inter_comm, ← Measure.restrict_apply' hB']
-  refine measure_mono_ae ?_
-  filter_upwards [hae, ae_restrict_mem hB'] with x hx hxB hxε
-  by_contra hxN
-  simp only [mem_iUnion, not_exists] at hxN
-  exact not_lt.2 hxε (hφ x hxB hxN ▸ hx)
+  -- Mathlib's simple approximants of a strongly measurable representative `g`, with values in
+  -- `insert 0 (K ∩ range g)`, cut down to `B'`.
+  obtain ⟨g, hg, hfg⟩ := hf
+  let s : Set E := insert 0 (K ∩ range g)
+  have : SeparableSpace s := by
+    rw [show s = {0} ∪ (K ∩ range g) from insert_eq _ _]
+    exact ((countable_singleton 0).isSeparable.union
+      (hg.isSeparable_range.mono inter_subset_right)).separableSpace
+  let F (n : ℕ) : SimpleFunc α E :=
+    (SimpleFunc.approxOn g hg.measurable s 0 (mem_insert _ _) n).restrict B'
+  have hF : TendstoInMeasure (μ.restrict B') (fun n ↦ F n) atTop f := by
+    refine tendstoInMeasure_of_tendsto_ae (fun n ↦ (F n).aestronglyMeasurable) ?_
+    filter_upwards [ae_restrict_mem hB', ae_restrict_of_ae hfK, ae_restrict_of_ae hfg]
+      with x hxB hxK hfx
+    simp only [F, SimpleFunc.restrict_apply _ hB', indicator_of_mem hxB, hfx]
+    exact SimpleFunc.tendsto_approxOn _ _
+      (subset_closure (mem_insert_of_mem _ ⟨hfx ▸ hxK, mem_range_self x⟩))
+  obtain ⟨n, hn⟩ := ((tendstoInMeasure_iff_dist.1 hF ε hε).eventually
+    (gt_mem_nhds (pos_iff_ne_zero.2 hδ))).exists
+  refine ⟨F n, ?_, ?_, ?_⟩
+  · rintro _ ⟨x, rfl⟩
+    rw [SimpleFunc.restrict_apply _ hB']
+    by_cases hx : x ∈ B'
+    · rw [indicator_of_mem hx]
+      exact insert_subset_insert inter_subset_left (SimpleFunc.approxOn_mem _ _ _ _)
+    · rw [indicator_of_notMem hx (SimpleFunc.approxOn g hg.measurable s 0 (mem_insert _ _) n)]
+      exact mem_insert _ _
+  · refine (measure_mono ?_).trans_lt hμB'.lt_top
+    rw [SimpleFunc.coe_restrict _ hB']
+    exact support_indicator_subset
+  · calc μ (B ∩ {x | ε ≤ dist (f x) (F n x)})
+        ≤ μ ({x | ε ≤ dist (F n x) (f x)} ∩ B') := measure_mono fun x ⟨hxB, hx⟩ ↦
+          ⟨by rwa [mem_ofPred_eq, dist_comm], subset_toMeasurable μ B hxB⟩
+      _ = μ.restrict B' {x | ε ≤ dist (F n x) (f x)} := (Measure.restrict_apply' hB').symm
+      _ < δ := hn
 
 end MeasureTheory

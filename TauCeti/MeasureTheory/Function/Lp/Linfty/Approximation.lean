@@ -26,11 +26,11 @@ density at the exponent `∞`.
 * In native `L∞`, simple functions approximate locally in measure: on a set of finite measure and
   outside a set of arbitrarily small measure, a simple function of finite-measure support bounded
   by `‖f‖` is uniformly close to `f`
-  (`MeasureTheory.Lp.exists_simpleFunc_norm_le_measure_inter_dist_lt`).
+  (`MeasureTheory.Lp.exists_simpleFunc_norm_le_measure_inter_dist_ge_lt`).
 
 The pointwise constructions are
 `MeasureTheory.AEFinStronglyMeasurable.exists_dist_tsum_indicator_const_lt` and
-`MeasureTheory.AEStronglyMeasurable.exists_simpleFunc_measure_inter_dist_lt`, applied with the
+`MeasureTheory.AEStronglyMeasurable.exists_simpleFunc_measure_inter_dist_ge_lt`, applied with the
 closed ball of radius `‖f‖` as the set of values.
 
 ## References
@@ -69,7 +69,7 @@ theorem exists_ae_eq_tsum_indicator_const_dist_lt {f : Lp E ∞ μ} (hf : f ∈ 
   have hGf (x : α) : ‖G x‖ ≤ ‖f‖ := by
     by_cases hx : ∃ n, x ∈ A n
     · obtain ⟨n, hn⟩ := hx
-      simpa [G, TauCeti.tsum_indicator_apply_of_mem hAd _ hn] using hc n
+      simpa [G, hAd.tsum_indicator_apply_of_mem _ hn] using hc n
     · simp only [not_exists] at hx
       simp [G, indicator_of_notMem (hx _)]
   have hGmem : MemLp G ∞ μ :=
@@ -106,13 +106,13 @@ namespace MeasureTheory.Lp
 /-- **Local approximation by simple functions in `L∞`.** For `f ∈ L∞`, a set `B` of finite
 measure, `ε > 0` and `δ > 0`, there is a simple function `φ` of finite-measure support with
 `‖φ‖ ≤ ‖f‖` everywhere such that `‖f - φ‖ < ε` on `B` outside a set of measure less than `δ`. -/
-theorem exists_simpleFunc_norm_le_measure_inter_dist_lt (f : Lp E ∞ μ) {B : Set α}
+theorem exists_simpleFunc_norm_le_measure_inter_dist_ge_lt (f : Lp E ∞ μ) {B : Set α}
     (hB : μ B ≠ ∞) {ε : ℝ} (hε : 0 < ε) {δ : ℝ≥0∞} (hδ : δ ≠ 0) :
     ∃ φ : SimpleFunc α E, (∀ x, ‖φ x‖ ≤ ‖f‖) ∧ μ (support φ) < ∞ ∧
       μ (B ∩ {x | ε ≤ dist (f x) (φ x)}) < δ := by
-  obtain ⟨φ, hφ, hsupp, hB⟩ := (Lp.aestronglyMeasurable f).exists_simpleFunc_measure_inter_dist_lt
-    (K := Metric.closedBall 0 ‖f‖) ⟨0, Metric.mem_closedBall_self (norm_nonneg f)⟩
-    (by simpa using Lp.ae_norm_le_norm_top f) hB hε hδ
+  obtain ⟨φ, hφ, hsupp, hB⟩ :=
+    (Lp.aestronglyMeasurable f).exists_simpleFunc_measure_inter_dist_ge_lt
+      (K := Metric.closedBall 0 ‖f‖) (by simpa using Lp.ae_norm_le_norm_top f) hB hε hδ
   refine ⟨φ, fun x ↦ ?_, hsupp, hB⟩
   rcases hφ (mem_range_self x) with h | h
   · simp [h]

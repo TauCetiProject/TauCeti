@@ -20,11 +20,11 @@ the defining predicates.
 
 * `tprod_subtype_eq_of_mulIndicator_eq`, `tsum_subtype_eq_of_indicator_eq`: products (sums)
   over two subtypes agree when the factors (summands), extended by one (zero), agree.
-* `hasProd_mulIndicator_apply_of_mem`, `tprod_mulIndicator_apply_of_mem` (additive:
-  `hasSum_indicator_apply_of_mem`, `tsum_indicator_apply_of_mem`): over a pairwise disjoint family
-  of sets, at a point of the `i`-th set, the product of the multiplicative indicators (the sum of
-  the indicators) reduces to the `i`-th factor (summand). This evaluates countably-valued
-  functions written as `∑ₙ 𝟙_{Aₙ} cₙ` with disjoint `Aₙ`.
+* `Pairwise.hasProd_mulIndicator_apply_of_mem`, `Pairwise.tprod_mulIndicator_apply_of_mem`
+  (additive: `Pairwise.hasSum_indicator_apply_of_mem`, `Pairwise.tsum_indicator_apply_of_mem`):
+  over a pairwise disjoint family of sets, at a point of the `i`-th set, the product of the
+  multiplicative indicators (the sum of the indicators) reduces to the `i`-th factor (summand).
+  This evaluates countably-valued functions written as `∑ₙ 𝟙_{Aₙ} cₙ` with disjoint `Aₙ`.
 * `hasProd_union_leftCoset`, `hasSum_union_leftAddCoset`: a product (sum) over the union of a
   subgroup `s` and a left coset `g • s` (`g +ᵥ s`) with `g ∉ s`, computed coset by coset.
 -/
@@ -43,26 +43,6 @@ theorem tprod_subtype_eq_of_mulIndicator_eq {α β : Type*} [CommMonoid α] [Top
     ∏' b : {b // p b}, g b = ∏' b : {b // q b}, g' b :=
   (tprod_subtype {b | p b} g).trans <| (tprod_congr h).trans (tprod_subtype {b | q b} g').symm
 
-/-- At a point of the `i`-th set of a pairwise disjoint family, the product of the multiplicative
-indicators has the `i`-th factor as its value. -/
-@[to_additive /-- At a point of the `i`-th set of a pairwise disjoint family, the sum of the
-indicators has the `i`-th summand as its value. -/]
-theorem hasProd_mulIndicator_apply_of_mem {ι α β : Type*} [CommMonoid α] [TopologicalSpace α]
-    {s : ι → Set β} (hs : Pairwise (Disjoint on s)) (f : ι → β → α) {i : ι} {x : β}
-    (hx : x ∈ s i) : HasProd (fun j ↦ (s j).mulIndicator (f j) x) (f i x) := by
-  convert hasProd_single i fun j hj ↦
-    Set.mulIndicator_of_notMem (fun hxj ↦ Set.disjoint_left.1 (hs hj) hxj hx) (f j)
-  exact (Set.mulIndicator_of_mem hx (f i)).symm
-
-/-- At a point of the `i`-th set of a pairwise disjoint family, the product of the multiplicative
-indicators is the `i`-th factor. -/
-@[to_additive /-- At a point of the `i`-th set of a pairwise disjoint family, the sum of the
-indicators is the `i`-th summand. -/]
-theorem tprod_mulIndicator_apply_of_mem {ι α β : Type*} [CommMonoid α] [TopologicalSpace α]
-    [T2Space α] {s : ι → Set β} (hs : Pairwise (Disjoint on s)) (f : ι → β → α) {i : ι} {x : β}
-    (hx : x ∈ s i) : ∏' j, (s j).mulIndicator (f j) x = f i x :=
-  (hasProd_mulIndicator_apply_of_mem hs f hx).tprod_eq
-
 open scoped Pointwise in
 /-- A product over the union of a subgroup `s` and its left coset `g • s`, for `g ∉ s`, is the
 product over `s` times the product over the coset, the latter indexed by `s` through `x ↦ g * x`. -/
@@ -80,3 +60,29 @@ theorem hasProd_union_leftCoset {α G : Type*} [CommMonoid α] [TopologicalSpace
   exact ha.mul_disjoint hdisj ((Subgroup.leftCosetEquivSubgroup g).symm.hasProd_iff.mp hb)
 
 end TauCeti
+
+namespace Pairwise
+
+/-- At a point of the `i`-th set of a pairwise disjoint family, the product of the multiplicative
+indicators has the `i`-th factor as its value. -/
+@[to_additive /-- At a point of the `i`-th set of a pairwise disjoint family, the sum of the
+indicators has the `i`-th summand as its value. -/]
+theorem hasProd_mulIndicator_apply_of_mem {ι α β : Type*} [CommMonoid α] [TopologicalSpace α]
+    {s : ι → Set β} (hs : Pairwise (Disjoint on s)) (f : ι → β → α) {i : ι} {x : β}
+    (hx : x ∈ s i) : HasProd (fun j ↦ (s j).mulIndicator (f j) x) (f i x) := by
+  convert hasProd_single i fun j hj ↦
+    Set.mulIndicator_of_notMem (fun hxj ↦ Set.disjoint_left.1 (hs hj) hxj hx) (f j)
+  exact (Set.mulIndicator_of_mem hx (f i)).symm
+
+/-- At a point of the `i`-th set of a pairwise disjoint family, the product of the multiplicative
+indicators is the `i`-th factor. -/
+@[to_additive /-- At a point of the `i`-th set of a pairwise disjoint family, the sum of the
+indicators is the `i`-th summand. -/]
+theorem tprod_mulIndicator_apply_of_mem {ι α β : Type*} [CommMonoid α] [TopologicalSpace α]
+    {s : ι → Set β} (hs : Pairwise (Disjoint on s)) (f : ι → β → α) {i : ι} {x : β}
+    (hx : x ∈ s i) : ∏' j, (s j).mulIndicator (f j) x = f i x := by
+  rw [tprod_eq_mulSingle i fun j hj ↦
+    Set.mulIndicator_of_notMem (fun hxj ↦ Set.disjoint_left.1 (hs hj) hxj hx) (f j)]
+  exact Set.mulIndicator_of_mem hx (f i)
+
+end Pairwise
