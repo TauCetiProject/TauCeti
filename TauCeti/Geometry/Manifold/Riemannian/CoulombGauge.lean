@@ -112,17 +112,6 @@ end Measure
 
 /-! ### Existence and uniqueness on a closed connected manifold -/
 
-/-- Evaluating `d*df` on a smooth `0`-form `f` gives `Δ⁺f = -Δf`, where `Δ = div grad` is the
-Laplace–Beltrami operator. -/
-private theorem codifferential_mextDerivₗ_apply_zero (hkl : 0 + 1 + l = m)
-    (f : SmoothForm I M ℝ 0) (x : M) :
-    (codifferential o hkl (mextDerivₗ I 0 f)).val x 0 =
-      -Manifold.laplaceBeltrami I (fun y ↦ f.val y 0) x := by
-  have h := congrArg (fun φ : RoughForm I M ℝ 0 ↦ φ x 0)
-    (hodgeLaplacian_eq_ofFunction_neg_laplaceBeltrami o (show 0 + (l + 1) = m by omega) f)
-  simpa only [hodgeLaplacian_zero_add_one o (show 0 + (l + 1) = m by omega) hkl,
-    RoughForm.ofFunction_apply, Pi.neg_apply] using h
-
 /-- The Coulomb gauge condition `d*(a - df) = 0` is equivalent to the pointwise Poisson equation
 `Δ⁺f = -Δf = d*a`. -/
 private theorem codifferential_sub_mextDerivₗ_eq_zero_iff (hkl : 0 + 1 + l = m)

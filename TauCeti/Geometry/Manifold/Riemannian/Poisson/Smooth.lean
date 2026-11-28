@@ -52,6 +52,14 @@ Poisson solution operator.
   inverse of `negLaplaceBeltramiEquiv`.
 * `TauCeti.Manifold.existsUnique_contMDiff_integral_eq_zero_and_neg_laplaceBeltrami_eq`: smooth
   solvability and uniqueness of `∫ u dV = 0` and `Δ⁺u = f` on a closed connected smooth manifold.
+
+## References
+
+* T. Aubin, *Some Nonlinear Problems in Riemannian Geometry*, Springer (1998), Theorem 4.7.
+* L. C. Evans, *Partial Differential Equations*, 2nd ed., American Mathematical Society (2010),
+  §6.3.
+* D. Gilbarg and N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
+  Springer (2001), Chapter 8.
 -/
 
 public section
@@ -75,30 +83,19 @@ local instance instIsContinuousRiemannianBundlePoisson :
   IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle
     (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
 
+local instance instIsContMDiffRiemannianBundleOnePoisson :
+    IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
+  IsContMDiffRiemannianBundle.of_le (n := ∞) (by simp)
+
 omit [PreconnectedSpace M] in
 /-- The Laplace–Beltrami operator sends every smooth function on a closed manifold into the
 mean-zero submodule `meanZeroSmoothFunctions I M (riemannianVolume I M) ∞`. -/
 theorem smoothLaplaceBeltrami_mem_meanZeroSmoothFunctions (u : C^∞⟮I, M; ℝ⟯) :
     smoothLaplaceBeltrami I M u ∈ meanZeroSmoothFunctions I M (riemannianVolume I M) ∞ := by
-  let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
-    IsContMDiffRiemannianBundle.of_le (n := ∞) (by simp)
   rw [mem_meanZeroSmoothFunctions_iff]
   simpa only [smoothLaplaceBeltrami_apply] using
     integral_laplaceBeltrami_eq_zero (u.contMDiff.of_le (by simp))
       (HasCompactSupport.of_compactSpace _)
-
-/-- Two smooth functions on a closed connected smooth Riemannian manifold with the same
-nonnegative Laplacian `-Δ` and zero Riemannian integral coincide. -/
-private theorem eq_of_neg_laplaceBeltrami_eq_of_integral_eq_zero {u v : M → ℝ}
-    (hu : ContMDiff I 𝓘(ℝ) ∞ u) (hv : ContMDiff I 𝓘(ℝ) ∞ v)
-    (hΔ : ∀ x, -laplaceBeltrami I u x = -laplaceBeltrami I v x)
-    (hu0 : ∫ x, u x ∂riemannianVolume I M = 0)
-    (hv0 : ∫ x, v x ∂riemannianVolume I M = 0) :
-    u = v := by
-  let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
-    IsContMDiffRiemannianBundle.of_le (n := ∞) (by simp)
-  exact eq_of_laplaceBeltrami_eq_of_integral_eq (hu.of_le (by simp)) (hv.of_le (by simp))
-    (fun x ↦ neg_inj.1 (hΔ x)) (hu0.trans hv0.symm)
 
 /-- **Existence for the smooth Poisson equation on a closed manifold.** On a closed connected
 smooth Riemannian manifold of any dimension, every smooth function `f` of integral zero is `Δ⁺u`
@@ -131,25 +128,20 @@ private def negLaplaceBeltramiMeanZero :
     smoothLaplaceBeltrami_mem_meanZeroSmoothFunctions u)
 
 omit [PreconnectedSpace M] in
-private theorem coe_negLaplaceBeltramiMeanZero_apply
-    (u : meanZeroSmoothFunctions I M (riemannianVolume I M) ∞) :
-    (negLaplaceBeltramiMeanZero I M u).val = -(smoothLaplaceBeltrami I M u.val) :=
-  rfl
-
-omit [PreconnectedSpace M] in
 private theorem negLaplaceBeltramiMeanZero_apply
     (u : meanZeroSmoothFunctions I M (riemannianVolume I M) ∞) (x : M) :
     (negLaplaceBeltramiMeanZero I M u).val x = -laplaceBeltrami I u.val x := by
-  simp [coe_negLaplaceBeltramiMeanZero_apply]
+  simp [negLaplaceBeltramiMeanZero]
 
 private theorem negLaplaceBeltrami_injective :
     Function.Injective (negLaplaceBeltramiMeanZero I M) := by
   intro u₁ u₂ hu
   refine Subtype.ext (ContMDiffMap.ext (congrFun
-    (eq_of_neg_laplaceBeltrami_eq_of_integral_eq_zero
-      u₁.val.contMDiff u₂.val.contMDiff (fun x ↦ ?_)
-      (integral_coe_meanZeroSmoothFunctions_eq_zero u₁)
-      (integral_coe_meanZeroSmoothFunctions_eq_zero u₂))))
+    (eq_of_laplaceBeltrami_eq_of_integral_eq
+      (u₁.val.contMDiff.of_le (by simp)) (u₂.val.contMDiff.of_le (by simp))
+      (fun x ↦ neg_inj.1 ?_)
+      ((integral_coe_meanZeroSmoothFunctions_eq_zero u₁).trans
+        (integral_coe_meanZeroSmoothFunctions_eq_zero u₂).symm))))
   simpa only [negLaplaceBeltramiMeanZero_apply] using congrArg (fun g ↦ g.val x) hu
 
 private theorem negLaplaceBeltrami_surjective :
@@ -177,7 +169,7 @@ def negLaplaceBeltramiEquiv :
 theorem coe_negLaplaceBeltramiEquiv_apply
     (u : meanZeroSmoothFunctions I M (riemannianVolume I M) ∞) :
     (negLaplaceBeltramiEquiv I M u).val = -(smoothLaplaceBeltrami I M u.val) :=
-  coe_negLaplaceBeltramiMeanZero_apply u
+  (rfl)
 
 /-- A mean-zero smooth function `u` equals `(negLaplaceBeltramiEquiv I M).symm f` if and only if
 it solves `-laplaceBeltrami I u x = f x` pointwise. -/
@@ -211,8 +203,8 @@ theorem existsUnique_contMDiff_integral_eq_zero_and_neg_laplaceBeltrami_eq
       (congrFun (meanZeroSmoothFunctions.coe_mk hf hf0) x)
   refine ⟨u.val, ⟨u.val.contMDiff, integral_coe_meanZeroSmoothFunctions_eq_zero u, hu⟩,
     fun u' ⟨hu'_smooth, hu'0, hu'eq⟩ ↦ ?_⟩
-  exact eq_of_neg_laplaceBeltrami_eq_of_integral_eq_zero hu'_smooth u.val.contMDiff
-    (fun x ↦ (hu'eq x).trans (hu x).symm) hu'0
-    (integral_coe_meanZeroSmoothFunctions_eq_zero u)
+  exact eq_of_laplaceBeltrami_eq_of_integral_eq (hu'_smooth.of_le (by simp))
+    (u.val.contMDiff.of_le (by simp)) (fun x ↦ neg_inj.1 ((hu'eq x).trans (hu x).symm))
+    (hu'0.trans (integral_coe_meanZeroSmoothFunctions_eq_zero u).symm)
 
 end TauCeti.Manifold

@@ -108,6 +108,8 @@ whose Laplacian is computed in powers of `t` by `TauCeti.SmoothForm.laplacian_ad
 * `TauCeti.SmoothForm.hodgeStar_hodgeLaplacian`: `⋆Δ = Δ⋆`.
 * `TauCeti.SmoothForm.hodgeLaplacian_eq_ofFunction_neg_laplaceBeltrami`: on functions,
   `Δf = -div grad f`.
+* `TauCeti.SmoothForm.codifferential_mextDerivₗ_apply_zero`: pointwise evaluation
+  `(d*df) x 0 = -div grad f x`.
 * `TauCeti.SmoothForm.coe_codifferential_funSMulₗ`, `TauCeti.SmoothForm.codifferential_funSMulₗ`:
   the Leibniz rule `d*(f β) = f d*β - ι_(grad f) β`.
 * `TauCeti.SmoothForm.codifferential_lie_lie_funSMulₗ_eq_zero`: `d*` has order one,
@@ -621,6 +623,17 @@ theorem hodgeLaplacian_eq_ofFunction_neg_laplaceBeltrami (o : Manifold.Orientati
     funext x
     ext v
     simp [Manifold.laplaceBeltrami_def]
+
+/-- Evaluating `d*df` on a smooth `0`-form `f` at `x` gives `-div grad f x`
+(`-Manifold.laplaceBeltrami I (fun y ↦ f.val y 0) x`). -/
+theorem codifferential_mextDerivₗ_apply_zero (o : Manifold.Orientation I M (Fin m))
+    (hkl : 0 + 1 + l = m) (f : SmoothForm I M ℝ 0) (x : M) :
+    (codifferential o hkl (mextDerivₗ I 0 f)).val x 0 =
+      -Manifold.laplaceBeltrami I (fun y ↦ f.val y 0) x := by
+  have h := congrArg (fun φ : RoughForm I M ℝ 0 ↦ φ x 0)
+    (hodgeLaplacian_eq_ofFunction_neg_laplaceBeltrami o (show 0 + (l + 1) = m by omega) f)
+  simpa only [hodgeLaplacian_zero_add_one o (show 0 + (l + 1) = m by omega) hkl,
+    RoughForm.ofFunction_apply, Pi.neg_apply] using h
 
 end HodgeLaplacian
 
