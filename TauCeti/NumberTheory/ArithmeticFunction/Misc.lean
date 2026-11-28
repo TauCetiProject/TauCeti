@@ -31,6 +31,9 @@ For multiplicative `f` and fixed `k`, the sum `∑ f(d)` over the divisors `d` o
 split uniquely as products of the corresponding divisors of `m` and of `n`
 (`Nat.Coprime.divisors_filter_pow_dvd_mul`).
 
+At a prime `p`, the product `∏ᵖ q ∣ p, f q` over the prime factors of `p` is just `f p`
+(`ArithmeticFunction.prodPrimeFactors_apply_prime`).
+
 Finally, for `n ≠ 0` the divisor count is `d(n) = ∏_{p ∈ n.primeFactors} (v_p(n) + 1)`, so
 `log d(n) = ∑_{p ∈ n.primeFactors} log (v_p(n) + 1)`. This logarithmic identity also holds at
 `n = 0`, where `d(0) = 0`, the set `Nat.primeFactors 0` is empty, and both sides are zero
@@ -133,6 +136,11 @@ theorem IsMultiplicative.sum_divisors_filter_pow_dvd_mul {f : ArithmeticFunction
       (Nat.dvd_of_mem_divisors (mem_filter.1 hb).1)
   · exact hmn.mul_injOn_divisors.mono <| coe_subset.2 <|
       product_subset_product (filter_subset _ _) (filter_subset _ _)
+
+/-- At a prime `p`, the product of `f` over the prime factors of `p` is `f p`. -/
+theorem prodPrimeFactors_apply_prime {M : Type*} [CommMonoidWithZero M] (f : ℕ → M) {p : ℕ}
+    (hp : p.Prime) : prodPrimeFactors f p = f p := by
+  rw [prodPrimeFactors_apply hp.ne_zero, hp.primeFactors, prod_singleton]
 
 end ArithmeticFunction
 
