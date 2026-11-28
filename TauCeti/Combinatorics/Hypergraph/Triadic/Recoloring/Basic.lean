@@ -722,14 +722,11 @@ theorem TopRegularOverMostPolyads.exists_approximates3_of_polyadEnergy_sub_le [F
     let s₁ := univ.filter fun Q : Polyad3 D.skeleton ↦ ¬N₀ ≤ (#Q.support : ℝ)
     let s₂ := univ.filter fun Q : Polyad3 D.skeleton ↦ ¬H.IsTopRegularOverPolyad Q η 1
     have hunion : (univ.filter fun Q : Polyad3 D.skeleton ↦ ¬Good Q) = s₁ ∪ s₂ := by
-      ext Q; simp only [Good, s₁, s₂, mem_union, mem_filter, mem_univ, true_and, not_and]
-      tauto
-    have hsmall_sum : ∑ Q ∈ s₁, (#Q.support : ℝ) ≤ Fintype.card (Polyad3 D.skeleton) * N₀ := by
-      calc ∑ Q ∈ s₁, (#Q.support : ℝ)
-          ≤ ∑ _Q ∈ s₁, N₀ := sum_le_sum fun Q hQ ↦ (not_le.1 (mem_filter.1 hQ).2).le
-        _ ≤ ∑ _Q : Polyad3 D.skeleton, N₀ :=
-            sum_le_sum_of_subset_of_nonneg (subset_univ _) fun _ _ _ ↦ hN₀_pos.le
-        _ = Fintype.card (Polyad3 D.skeleton) * N₀ := by rw [sum_const, card_univ, nsmul_eq_mul]
+      simp only [Good, not_and_or, Finset.filter_or, s₁, s₂]
+    have hsmall_sum : ∑ Q ∈ s₁, (#Q.support : ℝ) ≤ Fintype.card (Polyad3 D.skeleton) * N₀ :=
+      (Finset.sum_le_card_nsmul s₁ _ N₀ fun Q hQ ↦ (not_le.1 (mem_filter.1 hQ).2).le).trans <| by
+        rw [nsmul_eq_mul]
+        exact mul_le_mul_of_nonneg_right (Nat.cast_le.2 (card_le_univ s₁)) hN₀_pos.le
     have hirr_D : ∑ Q ∈ s₂, (#Q.support : ℝ) ≤ μ * (Fintype.card V).descFactorial 3 := by
       simpa only [s₂] using h.sum_card_support_univ_le hD
     rw [hunion]

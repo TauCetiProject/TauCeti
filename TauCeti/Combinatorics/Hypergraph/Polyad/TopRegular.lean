@@ -46,8 +46,8 @@ parameter worsened by a factor depending only on the relative size of `P'`.
   subpolyads.
 * `TauCeti.Colored3Graph.IsTopRegularOverPolyad.nonneg`: the parameter of a top-regular coloring
   is nonnegative.
-* `TauCeti.Colored3Graph.isTopRegularOverPolyad_of_count_le`: common count-to-density reduction
-  for `(δ, r)`-top regularity from a count-scaled discrepancy budget.
+* `TauCeti.Colored3Graph.isTopRegularOverPolyad_of_abs_relDensityOn_sub_mul_card_le`: common
+  count-to-density reduction for `(δ, r)`-top regularity from a count-scaled discrepancy budget.
 * `TauCeti.Colored3Graph.IsTopRegularOverPolyad.abs_relativeDensity_sub_le`: a large polyad with
   smaller pair graphs inherits the relative densities up to `δ`.
 * `TauCeti.Colored3Graph.IsTopRegularOverPolyad.of_pairSupport_subset`: the slicing lemma; top
@@ -172,7 +172,8 @@ variable (H) in
 and `P.support.Nonempty` the count-scaled discrepancy of each top color `c` on `unionSupport U` is
 at most `ε * #P.support` for every family of `r` subpolyads of `P`, then `H` is `(δ, r)`-top-regular
 over `P`. -/
-theorem isTopRegularOverPolyad_of_count_le {ε : ℝ} (hδ : 0 < δ) (hεδ : ε ≤ δ ^ 2)
+theorem isTopRegularOverPolyad_of_abs_relDensityOn_sub_mul_card_le {ε : ℝ}
+    (hδ : 0 < δ) (hεδ : ε ≤ δ ^ 2)
     (hcount : δ < 1 → P.support.Nonempty → ∀ (c : κ) (U : Fin r → Subpolyad3 P),
       |(H.relDensityOn c (unionSupport U) : ℝ) - H.relativeDensity c P| * #(unionSupport U) ≤
         ε * #P.support) :
