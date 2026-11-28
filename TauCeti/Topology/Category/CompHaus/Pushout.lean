@@ -11,7 +11,7 @@ public import Mathlib.Topology.ContinuousMap.Compact
 public import TauCeti.Topology.ContinuousMap.Algebra
 public import TauCeti.Topology.ContinuousMap.Compact
 public import TauCeti.Topology.Instances.Shrink
-public import TauCeti.Topology.TietzeExtension
+public import TauCeti.Topology.Tietze.Basic
 
 /-!
 # Continuous functions on a pushout of compact Hausdorff spaces

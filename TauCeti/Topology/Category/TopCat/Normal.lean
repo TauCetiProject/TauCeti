@@ -10,7 +10,7 @@ public import Mathlib.Topology.UrysohnsLemma
 public import TauCeti.Topology.Category.TopCat.DisjointOpens
 public import TauCeti.Topology.Category.TopCat.OpenEmbedding
 import TauCeti.Topology.Category.TopCat.ClosedEmbedding
-import TauCeti.Topology.TietzeExtension
+import TauCeti.Topology.Tietze.Basic
 
 /-!
 # Normality of attaching spaces and of sequential colimits in `TopCat`
