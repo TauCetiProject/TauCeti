@@ -32,8 +32,9 @@ number of triples of `n` elements with the number of injective ones;
 `Nat.factorial_add_mul_factorial_add_le`, `(s + j)! * (s + j)! ≤ (2 * s + j)! * j !`, which bounds
 products of factorials in double hypergeometric series;
 `Nat.ascFactorial_two_mul_le_pow_add`, `n (n + 1) ⋯ (n + 2k - 1) ≤ (n + k) ^ (2k)`, the inequality
-of arithmetic and geometric means for a rising factorial of even length; and
-`Nat.factorial_div_mul_factorial_div_dvd`, `(i / d)! * (j / d)! ∣ ((i + j) / d)!`.
+of arithmetic and geometric means for a rising factorial of even length;
+`Nat.factorial_div_mul_factorial_div_dvd`, `(i / d)! * (j / d)! ∣ ((i + j) / d)!`; and
+`Nat.six_mul_factorial_le_pow`, `6 * n ! ≤ n ^ n` for `4 ≤ n`.
 -/
 
 public section
@@ -149,5 +150,16 @@ theorem factorial_div_mul_factorial_div_dvd (d i j : ℕ) :
     (i / d)! * (j / d)! ∣ ((i + j) / d)! :=
   Nat.dvd_trans (factorial_mul_factorial_dvd_factorial_add (i / d) (j / d))
     (factorial_dvd_factorial div_add_div_le_add_div)
+
+/-- For `4 ≤ n`, `6 * n ! ≤ n ^ n`. -/
+theorem six_mul_factorial_le_pow {n : ℕ} (hn : 4 ≤ n) : 6 * n ! ≤ n ^ n := by
+  induction n, hn using Nat.le_induction with
+  | base => decide
+  | succ m _hm ih =>
+    calc
+      6 * (m + 1)! = (m + 1) * (6 * m !) := by rw [Nat.factorial_succ, Nat.mul_left_comm]
+      _ ≤ (m + 1) * m ^ m := Nat.mul_le_mul_left _ ih
+      _ ≤ (m + 1) * (m + 1) ^ m := Nat.mul_le_mul_left _ (Nat.pow_le_pow_left (Nat.le_succ m) m)
+      _ = (m + 1) ^ (m + 1) := Nat.pow_succ'.symm
 
 end Nat

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
@@ -53,6 +55,9 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exp_sub_one_sq_le_two_mul_sq_mul_cosh`: `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real
   `t`.
 * `TauCeti.fourteen_le_two_mul_exp_two_pi`: the numerical bound `14 ≤ 2 exp (2π)`.
+* `TauCeti.five_eighths_lt_one_sub_exp_neg_one`: the numerical bound `5 / 8 < 1 - exp (-1)`.
+* `TauCeti.mul_pow_lt_exp_neg_one_mul_pow`: `(n + 1) x ^ n < exp (-1) * (x + 1) ^ n` for `0 ≤ x`
+  and `x + 1 < n / (log (n + 1) + 1)`.
 * `TauCeti.two_mul_exp_two_pi_mul_add_one_le`: `2 exp (2π s) + 1 ≤ 2 exp (2π (s + 1))` for
   `s ≥ -1`.
 * `Real.abs_exp_sub_exp_le`: `|exp a - exp b| ≤ exp M * |a - b|` for `a, b ≤ M`.
@@ -301,6 +306,56 @@ theorem exp_sub_one_sq_le_two_mul_sq_mul_cosh (t : ℝ) :
 /-- `2 exp (2π)` is at least `14`. -/
 theorem fourteen_le_two_mul_exp_two_pi : 14 ≤ 2 * exp (2 * π) := by
   nlinarith [quadratic_le_exp_of_nonneg (by positivity : 0 ≤ 2 * π), two_le_pi]
+
+/-- Numerical lower bound `5 / 8 < 1 - exp (-1)`. -/
+theorem five_eighths_lt_one_sub_exp_neg_one : (5 : ℝ) / 8 < 1 - exp (-1) := by
+  linarith [Real.exp_neg_one_lt_d9]
+
+/-- For `n : ℕ` and `0 ≤ x` with `x + 1 < n / (log (n + 1) + 1)`,
+`(n + 1) * x ^ n < exp (-1) * (x + 1) ^ n`. -/
+theorem mul_pow_lt_exp_neg_one_mul_pow {n : ℕ} {x : ℝ} (hx : 0 ≤ x)
+    (h : x + 1 < (n : ℝ) / (log ((n : ℝ) + 1) + 1)) :
+    ((n : ℝ) + 1) * x ^ n < exp (-1) * (x + 1) ^ n := by
+  have hn : 0 < n := by
+    by_contra hn0
+    have hnz : n = 0 := Nat.eq_zero_of_not_pos hn0
+    subst hnz
+    simp only [Nat.cast_zero, zero_div] at h
+    linarith
+  rcases hx.eq_or_lt with rfl | hx0
+  · simp only [zero_pow hn.ne', mul_zero, zero_add, one_pow, mul_one]
+    exact exp_pos (-1)
+  have hx1pos : 0 < x + 1 := by linarith
+  have hn1gt : (1 : ℝ) < (n : ℝ) + 1 := by exact_mod_cast (by omega : 1 < n + 1)
+  have hlogpos : 0 < log ((n : ℝ) + 1) + 1 := by linarith [log_pos hn1gt]
+  have hdiv : log ((n : ℝ) + 1) + 1 < (n : ℝ) / (x + 1) :=
+    (lt_div_iff₀ hx1pos).mpr (by have := (lt_div_iff₀ hlogpos).mp h; nlinarith)
+  have hne : -1 / (x + 1) ≠ 0 := by positivity
+  have hadd : x / (x + 1) < exp (-1 / (x + 1)) := by
+    have hexp := add_one_lt_exp hne
+    have heq : -1 / (x + 1) + 1 = x / (x + 1) := by field_simp; ring
+    rwa [heq] at hexp
+  have hpow : (x / (x + 1)) ^ n < exp (-((n : ℝ) / (x + 1))) := by
+    calc
+      (x / (x + 1)) ^ n < (exp (-1 / (x + 1))) ^ n :=
+        pow_lt_pow_left₀ hadd (by positivity) hn.ne'
+      _ = exp ((n : ℝ) * (-1 / (x + 1))) := by rw [← exp_natCast_mul]
+      _ = exp (-((n : ℝ) / (x + 1))) := by ring_nf
+  have hexp_bound : exp (-((n : ℝ) / (x + 1))) < exp (-1) / ((n : ℝ) + 1) := by
+    calc
+      exp (-((n : ℝ) / (x + 1))) < exp (-(log ((n : ℝ) + 1) + 1)) :=
+        exp_lt_exp.mpr (by linarith)
+      _ = exp (-1) * exp (-log ((n : ℝ) + 1)) := by rw [← exp_add]; ring_nf
+      _ = exp (-1) / ((n : ℝ) + 1) := by
+        rw [exp_neg (log _), exp_log (by positivity), div_eq_mul_inv]
+  have hrat : (x ^ n / (x + 1) ^ n) * ((n : ℝ) + 1) < exp (-1) := by
+    have hlt := hpow.trans hexp_bound
+    rw [div_pow, lt_div_iff₀ (by positivity)] at hlt
+    exact hlt
+  calc
+    ((n : ℝ) + 1) * x ^ n
+        = ((x ^ n / (x + 1) ^ n) * ((n : ℝ) + 1)) * (x + 1) ^ n := by field_simp
+    _ < exp (-1) * (x + 1) ^ n := mul_lt_mul_of_pos_right hrat (by positivity)
 
 /-- `2 exp (2π s) + 1 ≤ 2 exp (2π (s + 1))` for `s ≥ -1`. -/
 theorem two_mul_exp_two_pi_mul_add_one_le (s : ℝ) (hs : -1 ≤ s) :
