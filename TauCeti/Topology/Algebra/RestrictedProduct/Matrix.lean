@@ -59,13 +59,10 @@ theorem eventually_map_evalRingHom_smul_univ_pi_eq_self {𝓕 : Filter P}
     rw [mem_subalgebraOfSubring, ← SetLike.mem_coe, Subring.coe_ofClass, SetLike.mem_coe]
   have hg : (GeneralLinearGroup.map (evalRingHom R v) g)⁻¹ ∈
       (GeneralLinearGroup.map (n := ι) (A.val : A →+* R v)).range := by
-    refine MonoidHom.mem_range.2 ((mem_range_map_val_iff A _).2 ⟨fun i j ↦ ?_, fun i j ↦ ?_⟩)
-    · rw [hA, ← map_inv, GeneralLinearGroup.val_map_apply, Matrix.map_apply,
-        evalRingHom_apply]
-      exact (hv i j).2
-    · rw [hA, inv_inv, GeneralLinearGroup.val_map_apply, Matrix.map_apply,
-        evalRingHom_apply]
-      exact (hv i j).1
+    apply MonoidHom.mem_range.2
+    apply (mem_range_map_val_iff A _).2
+    simpa only [hA, ← map_inv, inv_inv, GeneralLinearGroup.val_map_apply, Matrix.map_apply,
+      evalRingHom_apply] using ⟨fun i j ↦ (hv i j).2, fun i j ↦ (hv i j).1⟩
   ext x
   rw [mem_smul_set_iff_inv_smul_mem, Units.smul_def, smul_eq_mulVec]
   simp only [mem_univ_pi, SetLike.mem_coe, ← hA]
@@ -86,13 +83,13 @@ theorem smul_apply_apply_restrictedProduct {𝓕 : Filter P} (g : GL ι (Πʳ v,
 matrix `g` of the integral vectors `(box O)ᶥ` is the coordinate box with factors `g_v • O vᶥ`. -/
 theorem preimage_addPiRestrictedProduct_symm_smul_univ_pi_box {𝓕 : Filter P}
     (g : GL ι (Πʳ v, [R v, O v]_[𝓕])) :
-    (addPiRestrictedProduct (n := ι) (𝓕 := 𝓕) O).symm ⁻¹'
+    (addPiRestrictedProduct (n := ι) (𝓕 := 𝓕) (fun _ ↦ O)).symm ⁻¹'
         (g • univ.pi fun _ : ι ↦ (box fun v ↦ (O v : Set (R v)) : Set (Πʳ v, [R v, O v]_[𝓕]))) =
       box fun v ↦ GeneralLinearGroup.map (evalRingHom R v) g •
         univ.pi fun _ : ι ↦ (O v : Set (R v)) := by
   ext y
-  have hy (v : P) : (fun j ↦ (addPiRestrictedProduct O).symm y j v) = y v :=
-    funext fun j ↦ addPiRestrictedProduct_symm_apply O y j v
+  have hy (v : P) : (fun j ↦ (addPiRestrictedProduct (fun _ ↦ O)).symm y j v) = y v :=
+    funext fun j ↦ addPiRestrictedProduct_symm_apply (fun _ ↦ O) y j v
   rw [mem_preimage, mem_smul_set_iff_inv_smul_mem, mem_box]
   simp_rw [mem_smul_set_iff_inv_smul_mem, ← map_inv]
   simp only [mem_univ_pi, mem_box, smul_apply_apply_restrictedProduct, hy]
