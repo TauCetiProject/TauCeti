@@ -26,7 +26,10 @@ Composites of rescaled linear equivalences rescale by the quotient of the factor
 Linear maps conjugate under linear equivalences have linearly equivalent kernels and cokernels,
 `LinearMap.kerEquivOfComp` and `LinearMap.cokerEquivOfComp`.
 Coordinate relabelling of function modules (`LinearEquiv.funCongrLeft`) is injective in the
-coordinate equivalence over a nontrivial target module.
+coordinate equivalence over a nontrivial target module, and respects multiplication, identity, and
+inverses of coordinate permutations (`LinearEquiv.funCongrLeft_mul_symm`,
+`LinearEquiv.funCongrLeft_one_symm`, `LinearEquiv.funCongrLeft_inv_symm_cancel`,
+`LinearEquiv.funCongrLeft_inv_cancel`).
 Conjugating an algebra homomorphism into `Module.End` by `LinearEquiv.conjAlgEquiv` agrees with
 pointwise intertwining (`LinearEquiv.conjAlgEquiv_toAlgHom_comp_eq_iff`).
 Following the identification of equal submodules by an inclusion is the other inclusion,
@@ -153,6 +156,36 @@ theorem cast_congr {i j : ι} (h₁ h₂ : i = j) (x : M i) :
     LinearEquiv.cast (R := R) (M := M) h₁ x = LinearEquiv.cast (R := R) (M := M) h₂ x := rfl
 
 end Cast
+
+section FunCongrLeftPerm
+
+variable (R M : Type*) [Semiring R] [AddCommMonoid M] [Module R M] {σ : Type*}
+
+/-- Coordinate relabelling along the inverse of a product of permutations factors as the reverse
+composite of the individual relabellings. -/
+theorem funCongrLeft_mul_symm (a b : Equiv.Perm σ) (v : σ → M) :
+    funCongrLeft R M (a * b).symm v =
+      funCongrLeft R M a.symm (funCongrLeft R M b.symm v) := by
+  rw [Equiv.Perm.mul_def, Equiv.symm_trans, funCongrLeft_comp, trans_apply]
+
+/-- Coordinate relabelling along the inverse of the identity permutation is the identity linear
+equivalence. -/
+@[simp]
+theorem funCongrLeft_one_symm :
+    funCongrLeft R M (1 : Equiv.Perm σ).symm = refl R (σ → M) := by
+  rw [Equiv.Perm.one_def, Equiv.refl_symm, funCongrLeft_id]
+
+/-- Coordinate relabelling along `a⁻¹.symm` cancels relabelling along `a.symm`. -/
+theorem funCongrLeft_inv_symm_cancel (a : Equiv.Perm σ) (v : σ → M) :
+    funCongrLeft R M a⁻¹.symm (funCongrLeft R M a.symm v) = v := by
+  rw [← funCongrLeft_mul_symm, inv_mul_cancel, funCongrLeft_one_symm, refl_apply]
+
+/-- Coordinate relabelling along `a.symm` cancels relabelling along `a⁻¹.symm`. -/
+theorem funCongrLeft_inv_cancel (a : Equiv.Perm σ) (v : σ → M) :
+    funCongrLeft R M a.symm (funCongrLeft R M a⁻¹.symm v) = v := by
+  rw [← funCongrLeft_mul_symm, mul_inv_cancel, funCongrLeft_one_symm, refl_apply]
+
+end FunCongrLeftPerm
 
 /-- Conjugating an algebra homomorphism `φ` into `Module.End S M₁` along `e : M₁ ≃ₗ[S] M₂` equals
 `ψ` into `Module.End S M₂` exactly when `e` intertwines `φ a` with `ψ a` for every `a`. -/

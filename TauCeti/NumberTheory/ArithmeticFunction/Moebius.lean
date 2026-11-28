@@ -5,8 +5,10 @@ Authors: Arend Mellendijk, The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Ring.Basic
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 public import TauCeti.NumberTheory.ArithmeticFunction.DilateSq
+import Mathlib.Algebra.Module.BigOperators
 import Mathlib.Algebra.Order.Ring.Abs
 import TauCeti.NumberTheory.ArithmeticFunction.Misc
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Basic
@@ -45,7 +47,9 @@ Summing `μ²` over the divisors of `n ≠ 0` counts its squarefree divisors, gi
 behind the Dirichlet series `ζ(s)² / ζ(2s)` of `2 ^ ω`. Over an interval `L < m ≤ M` the same
 squares sum to at most `M - L` (`ArithmeticFunction.sum_Ioc_moebius_sq_le`), the Möbius coefficient
 energy of bilinear estimates. Since `|μ(n)| ≤ 1`, multiplying by `μ(n)` never increases an
-absolute value (`ArithmeticFunction.abs_moebius_mul_le`).
+absolute value (`ArithmeticFunction.abs_moebius_mul_le`) or norm
+(`ArithmeticFunction.norm_mul_moebius_le`). The norm bound also holds for integer scalar
+multiplication in a seminormed additive group (`ArithmeticFunction.norm_moebius_smul_le`).
 
 Summed over the divisors `d` with `d² ∣ n`, the Möbius function gives back its own square:
 `μ(n)² = ∑_{d² ∣ n} μ(d)` (`ArithmeticFunction.sum_divisors_filter_sq_dvd_moebius`). The right side
@@ -72,7 +76,11 @@ so the identity reduces to prime powers, where both sides are `1` for exponents 
 * `ArithmeticFunction.eq_sum_divisors_moebius_mul_moebius_smul_of_dvd`,
   `ArithmeticFunction.eq_sum_divisors_moebius_mul_moebius_mul_of_dvd`: specialization to the
   divisors of a fixed nonzero integer `N`.
+* `ArithmeticFunction.sum_filter_natAbs_coprime_eq_sum_divisors_smul`: expand a sum over integers
+  coprime to a modulus into sums over multiples of its divisors.
 * `ArithmeticFunction.sum_divisors_moebius_sq`: `∑_{d ∣ n} μ(d)² = 2 ^ ω(n)` for `n ≠ 0`.
+* `ArithmeticFunction.sum_divisors_filter_dvd_moebius`: `∑_{d ∣ r, d ∣ k} μ(d)` is `1` if
+  `gcd(k, r) = 1` and `0` otherwise, for `r ≠ 0`.
 * `ArithmeticFunction.sum_Ioc_moebius_sq_le`: `∑_{L<m≤M} μ(m)² ≤ M - L`.
 * `ArithmeticFunction.abs_moebius_mul_le`: `|μ(n) a| ≤ |a|` in a ring whose linear order is
   compatible with addition.
@@ -102,6 +110,24 @@ open Finset Nat
 namespace ArithmeticFunction
 
 open scoped Moebius zeta ArithmeticFunction.sigma
+
+/-- Möbius inversion for a finite sum over integers prime to `r`. The sum at divisor `d`
+is over the multiples of `d` in the original finset, including zero if present. -/
+theorem sum_filter_natAbs_coprime_eq_sum_divisors_smul {A : Type*} [AddCommGroup A]
+    (s : Finset ℤ) (f : ℤ → A) {r : ℕ} (hr : r ≠ 0) :
+    ∑ n ∈ s with n.natAbs.Coprime r, f n =
+      ∑ d ∈ r.divisors, μ d • ∑ n ∈ s with (d : ℤ) ∣ n, f n := by
+  simp_rw [sum_filter, Finset.smul_sum, smul_ite, smul_zero]
+  rw [sum_comm]
+  refine sum_congr rfl fun n _ ↦ ?_
+  rw [← sum_filter, ← sum_smul]
+  have hfilter : (r.divisors.filter fun d : ℕ ↦ (d : ℤ) ∣ n) = (n.natAbs.gcd r).divisors := by
+    rw [← Nat.divisors_filter_dvd_of_dvd hr (Nat.gcd_dvd_right n.natAbs r)]
+    ext d
+    simp only [mem_filter, Int.natCast_dvd, Nat.dvd_gcd_iff]
+    exact ⟨fun h ↦ ⟨h.1, h.2, dvd_of_mem_divisors h.1⟩, fun h ↦ ⟨h.1, h.2.1⟩⟩
+  rw [hfilter, ← coe_mul_zeta_apply, moebius_mul_coe_zeta, ArithmeticFunction.one_apply]
+  by_cases h : n.natAbs.gcd r = 1 <;> simp [Nat.Coprime, h]
 
 variable {G R : Type*}
 
@@ -318,7 +344,18 @@ theorem sum_Ioc_moebius_sq_le [Ring R] [PartialOrder R] [IsOrderedRing R] (L M :
   rw [← Int.cast_pow, moebius_sq]
   split_ifs <;> simp
 
-/-! ### Absolute values -/
+/-! ### Absolute values and norms -/
+
+/-- Scaling by a value of the Möbius function does not increase the norm. -/
+theorem norm_moebius_smul_le [SeminormedAddGroup G] (n : ℕ) (a : G) :
+    ‖μ n • a‖ ≤ ‖a‖ := by
+  rcases moebius_eq_or n with h | h | h <;> simp [h]
+
+/-- Right multiplication by a value of the Möbius function does not increase the norm. -/
+theorem norm_mul_moebius_le [SeminormedRing R] (n : ℕ) (a : R) :
+    ‖a * (μ n : R)‖ ≤ ‖a‖ := by
+  rw [← (Int.cast_commute (μ n) a).eq, ← zsmul_eq_mul]
+  exact norm_moebius_smul_le n a
 
 /-- Multiplying by a value of the Möbius function does not increase the absolute value:
 `|μ(n) a| ≤ |a|`, as `μ(n)` is `0` or `±1`. -/
@@ -341,6 +378,22 @@ theorem IsMultiplicative.moebius_sq_mul_nonneg [CommRing R] [PartialOrder R]
       ← hf.prod_primeFactors hn]
     exact prod_nonneg fun p hp ↦ hf0 p (prime_of_mem_primeFactors hp)
   · simp [moebius_eq_zero_of_not_squarefree hn]
+
+/-- The Möbius function summed over the divisors `d` of `r ≠ 0` that divide `k` is `1` if `k` is
+prime to `r` and `0` otherwise. -/
+theorem sum_divisors_filter_dvd_moebius [AddCommGroupWithOne R] {r : ℕ} (hr : r ≠ 0) (k : ℕ) :
+    ∑ d ∈ r.divisors with d ∣ k, (μ d : R) = if k.Coprime r then 1 else 0 := by
+  -- The divisors of `r` that divide `k` are the divisors of `gcd(k, r)`.
+  have hfilter : {d ∈ r.divisors | d ∣ k} = (k.gcd r).divisors := by
+    ext d
+    simp only [mem_filter, Nat.mem_divisors, Nat.dvd_gcd_iff, ne_eq, Nat.gcd_eq_zero_iff]
+    tauto
+  have h := congrArg (fun g : ArithmeticFunction ℤ ↦ (g (k.gcd r) : R)) moebius_mul_coe_zeta
+  simp only [coe_mul_zeta_apply, ArithmeticFunction.one_apply, Int.cast_sum] at h
+  rw [hfilter, h]
+  by_cases hk : k.gcd r = 1
+  · rw [ite_eq_left hk, ite_eq_left (Nat.coprime_iff_gcd_eq_one.mpr hk), Int.cast_one]
+  · rw [ite_eq_right hk, ite_eq_right (mt Nat.coprime_iff_gcd_eq_one.mp hk), Int.cast_zero]
 
 /-! ### The Möbius function over square divisors -/
 

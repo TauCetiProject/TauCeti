@@ -226,6 +226,16 @@ def IsContactForm.volumeOrientation {α : SmoothForm I M ℝ 1} (hα : α.IsCont
     ((wedge α ((mextDerivₗ I 1 α).wedgePow n)).isSmoothForm.of_le bot_le)
     ((isContactForm_iff_wedge_wedgePow_apply_ne_zero hn α).1 hα)
 
+/-- The orientation of a contact form is the orientation defined by its volume form
+`α ∧ (dα)ⁿ`. -/
+theorem IsContactForm.volumeOrientation_def {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm)
+    (hn : finrank ℝ E = 2 * n + 1) :
+    hα.volumeOrientation hn = Manifold.Orientation.ofTopForm (hn.trans (Nat.add_comm _ _))
+      (wedge α ((mextDerivₗ I 1 α).wedgePow n)).val
+      ((wedge α ((mextDerivₗ I 1 α).wedgePow n)).isSmoothForm.of_le bot_le)
+      ((isContactForm_iff_wedge_wedgePow_apply_ne_zero hn α).1 hα) :=
+  (rfl)
+
 /-- The tangent orientations of a contact form `α` are those selected by its volume form
 `α ∧ (dα)ⁿ`. -/
 @[simp]

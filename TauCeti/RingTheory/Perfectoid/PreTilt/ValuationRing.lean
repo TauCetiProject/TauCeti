@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 public import Mathlib.RingTheory.Valuation.ValuationRing
+public import TauCeti.RingTheory.Perfectoid.PreTilt.Pi
 public import TauCeti.RingTheory.Perfectoid.Untilt
-public import TauCeti.RingTheory.Valuation.ValuationRing
+public import TauCeti.RingTheory.Valuation.ValuationRing.Basic
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import Mathlib.Topology.Algebra.Valued.ValuedField
 
@@ -55,7 +56,7 @@ valuation; here `V` is any `p`-adically complete domain.
 ## Main results
 
 * `PreTilt.untilt_dvd_untilt_iff`: for an integrally closed domain `V`, `x♯ ∣ y♯` if and only if
-  `x ∣ y`.
+  `x ∣ y`; `PreTilt.untilt_dvd_untilt_iff_pi` is the same for a product of such domains.
 * `PreTilt.instValuationRing`: the tilt of a `p`-adically complete valuation ring is a valuation
   ring.
 * `PreTilt.norm_untilt_lt_one_iff`: `c ∈ O_C♭` is a nonunit iff `‖c♯‖ < 1`.
@@ -116,6 +117,17 @@ integrally closed domain `V` and `x, y ∈ V♭`, `x♯ ∣ y♯` in `V` if and 
 theorem untilt_dvd_untilt_iff [IsDomain V] [IsIntegrallyClosed V] {x y : PreTilt V p} :
     x.untilt ∣ y.untilt ↔ x ∣ y :=
   ⟨dvd_of_untilt_dvd_untilt, map_dvd untilt⟩
+
+/-- **Divisibility in the tilt of a product of integrally closed domains is detected by the sharp
+map.** For a family `(W i)` of `p`-adically complete integrally closed domains and
+`x, y ∈ (∏ W i)♭`, `x♯ ∣ y♯` in `∏ W i` if and only if `x ∣ y`: both sides are read off
+componentwise through `(∏ W i)♭ ≅ ∏ (W i)♭` (`PreTilt.piEquiv`). -/
+theorem untilt_dvd_untilt_iff_pi {ι : Type*} {W : ι → Type*} [∀ i, CommRing (W i)]
+    [∀ i, IsDomain (W i)] [∀ i, IsIntegrallyClosed (W i)] [∀ i, Fact ¬IsUnit (p : W i)]
+    [∀ i, IsAdicComplete (span {(p : W i)}) (W i)] [Fact ¬IsUnit (p : ∀ i, W i)]
+    {x y : PreTilt (∀ i, W i) p} : x.untilt ∣ y.untilt ↔ x ∣ y := by
+  rw [← map_dvd_iff (piEquiv (A := W) p), pi_dvd_iff, pi_dvd_iff]
+  simp_rw [← untilt_dvd_untilt_iff, untilt_piEquiv_apply]
 
 /-- **The tilt of a `p`-adically complete valuation ring is a valuation ring.** -/
 instance instValuationRing [IsDomain V] [ValuationRing V] : ValuationRing (PreTilt V p) :=

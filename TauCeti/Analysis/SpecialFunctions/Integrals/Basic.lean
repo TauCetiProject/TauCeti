@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors, Matteo Cipollina
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
+public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 public import Mathlib.Basic.Real.Sign
@@ -16,6 +17,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
+import TauCeti.Analysis.Calculus.Deriv.Complex
 import TauCeti.Analysis.Contour.LogDerivFTC
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arccos
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
@@ -67,8 +69,6 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.integral_inv_linear_mul_eq_log_sub`:
   `∫ t in a₀..b₀, (z₀ + t * d)⁻¹ * d = log (u * (z₀ + b₀ * d)) - log (u * (z₀ + a₀ * d))`
   when `u * (z₀ + t * d) ∈ Complex.slitPlane` on `uIcc a₀ b₀`.
-* `TauCeti.integral_log_div_self`: `∫ x in a..b, log x / x = ((log b)² - (log a)²) / 2` on an
-  interval avoiding `0`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I_arc`: `∫_α^{2π−α} e^{imθ} dθ = −2 sin(mα) / m` for
@@ -108,6 +108,8 @@ Interval integrals of elementary functions in closed form or as series, continui
   `TauCeti.integral_comp_sin_sq_int_mul_pi`: the integral from `0` of an integrand
   `θ ↦ G (sin² θ)` (with `G` valued in a normed space) is odd and quasi-periodic in its upper
   limit.
+* `TauCeti.integral_log_ofReal_add`: `∫ u in a..b, Complex.log (u + z)` in closed form when
+  `u + z` remains in `Complex.slitPlane`.
 -/
 
 public section
@@ -386,17 +388,6 @@ theorem integral_inv_mul_one_add_mul {s t C : ℝ} (hs : 0 < s) (ht : 0 < t) (hC
   · refine ContinuousOn.intervalIntegrable (ContinuousOn.inv₀ (by fun_prop) fun σ hσ => ?_)
     have := hpos σ hσ
     positivity
-
-/-- The integral of `x ↦ log x / x` over an interval avoiding `0`: an antiderivative is
-`x ↦ (log x)² / 2`. -/
-theorem integral_log_div_self {a b : ℝ} (h : (0 : ℝ) ∉ Set.uIcc a b) :
-    ∫ x in a..b, Real.log x / x = (Real.log b ^ 2 - Real.log a ^ 2) / 2 := by
-  have hne {x : ℝ} (hx : x ∈ Set.uIcc a b) : x ≠ 0 := fun h0 => h (h0 ▸ hx)
-  rw [sub_div]
-  refine intervalIntegral.integral_eq_sub_of_hasDerivAt (f := fun x => Real.log x ^ 2 / 2)
-    (fun x hx => ?_) (ContinuousOn.intervalIntegrable ?_)
-  · exact (((Real.hasDerivAt_log (hne hx)).pow 2).div_const 2).congr_deriv (by ring)
-  · exact (Real.continuousOn_log.mono fun x hx => hne hx).div continuousOn_id fun x hx => hne hx
 
 /-- The integral of the Fourier character `θ ↦ exp (k θ i)` over `[-π, π]`, for an integer `k`: it
 is `2π` when `k = 0`, and vanishes otherwise because `exp (k θ i)` has period `2π`. -/
@@ -699,6 +690,28 @@ theorem integral_add_rpow_le_of_lt_neg_one {r β S : ℝ} (hr : 0 < r) (hS : S <
   rw [intervalIntegral.integral_comp_sub_left (fun x : ℝ => x ^ S) (r + β)] at h
   rw [intervalIntegral.integral_comp_add_left (fun x : ℝ => x ^ S) r]
   convert h using 2 <;> ring
+
+/-- For any `a b : ℝ` and `z : ℂ` such that `(u : ℂ) + z ∈ Complex.slitPlane` for all `u` in
+`Set.uIcc a b`, `∫ u in a..b, Complex.log (u + z) = ((z + b) * log (z + b) - (z + b)) -
+((z + a) * log (z + a) - (z + a))`. -/
+theorem integral_log_ofReal_add {a b : ℝ} {z : ℂ}
+    (h : ∀ u ∈ Set.uIcc a b, (u : ℂ) + z ∈ Complex.slitPlane) :
+    ∫ u in a..b, Complex.log ((u : ℂ) + z) =
+      ((z + b) * Complex.log (z + b) - (z + b)) - ((z + a) * Complex.log (z + a) - (z + a)) := by
+  have hderiv : ∀ u ∈ Set.uIcc a b,
+      HasDerivAt (fun t : ℝ ↦ ((t : ℂ) + z) * Complex.log ((t : ℂ) + z) - ((t : ℂ) + z))
+        (Complex.log ((u : ℂ) + z)) u := by
+    intro u hu
+    have hmem : (u : ℂ) + z ∈ Complex.slitPlane := h u hu
+    have hlin := TauCeti.hasDerivAt_ofReal_add u z
+    refine ((hlin.mul ((Complex.hasDerivAt_log hmem).comp u hlin)).sub hlin).congr_deriv ?_
+    simp [mul_inv_cancel₀ (Complex.slitPlane_ne_zero hmem)]
+  have hcont : ContinuousOn (fun u : ℝ ↦ Complex.log ((u : ℂ) + z)) (Set.uIcc a b) := by
+    intro u hu
+    have hd := (Complex.hasDerivAt_log (h u hu)).comp u (TauCeti.hasDerivAt_ofReal_add u z)
+    exact hd.continuousAt.continuousWithinAt
+  simpa [add_comm] using
+    intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hcont.intervalIntegrable
 
 /-- Fundamental theorem of calculus for `t ↦ (z₀ + t * d)⁻¹ * d` along a real segment mapped into
 `Complex.slitPlane` after rotation by a constant `u`. -/

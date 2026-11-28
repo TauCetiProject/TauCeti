@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.Basis
+public import Mathlib.Data.Matrix.Composition
 public import Mathlib.LinearAlgebra.Matrix.Block
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
@@ -37,12 +38,19 @@ principal minors of order `n`.
 * `Matrix.det_fromBlocks_single₁₁_single₂₂`: the determinant of a block matrix whose diagonal blocks
   each have a single entry at the last corner, in terms of the determinants and the leading
   principal minors of the off-diagonal blocks.
+* `Matrix.det_comp_map_of_eq_reindex_fromBlocks_diagonal`: if every `χ c` is, up to reindexing,
+  the block sum of `ψ c` and the diagonal matrix of the `η t c`, then the determinant of the block
+  matrix `(χ (M i j))_{i,j}` is that of `(ψ (M i j))_{i,j}` times the determinants of the
+  `(η t (M i j))_{i,j}`.
 
 ## Provenance
 
 `Matrix.det_fromBlocks_single₁₂_single₂₁` is adapted from the Lean project grh-lean
 (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), file
 `src/New/Spanning/Bessel/Basic.lean`, declaration `New.det_fromBlocks_single`.
+`Matrix.det_comp_map_of_eq_reindex_fromBlocks_diagonal` follows
+`New.Selmer.det_comp_map_eq_mul_prod` in grh-lean, file
+`src/New/Congruences/FirstOrder/RibetMethod.lean`.
 -/
 
 public section
@@ -131,5 +139,23 @@ theorem det_fromBlocks_single₁₁_single₂₂ (Z W : Matrix (Fin (n + 1)) (Fi
   ring
 
 end Block
+
+/-- Suppose that every matrix `χ c` is, after reindexing along `e : r ⊕ T ≃ σ`, the block sum of
+`ψ c` and of the diagonal matrix of the scalars `η t c`. Then for a square matrix `M` over `A`, the
+determinant of the block matrix `(χ (M i j))_{i,j}` is the determinant of `(ψ (M i j))_{i,j}` times
+the product over `t` of the determinants of `(η t (M i j))_{i,j}`. -/
+theorem det_comp_map_of_eq_reindex_fromBlocks_diagonal {ι r T σ A : Type*} [Fintype ι]
+    [DecidableEq ι] [Fintype r] [DecidableEq r] [Fintype T] [DecidableEq T] [Fintype σ]
+    [DecidableEq σ] {e : r ⊕ T ≃ σ} {χ : A → Matrix σ σ R} {ψ : A → Matrix r r R}
+    {η : T → A → R} (M : Matrix ι ι A)
+    (hχ : ∀ c, χ c = reindex e e (fromBlocks (ψ c) 0 0 (diagonal fun t ↦ η t c))) :
+    (comp ι ι σ σ R (M.map χ)).det =
+      (comp ι ι r r R (M.map ψ)).det * ∏ t, (M.map (η t)).det := by
+  let e' : ι × r ⊕ ι × T ≃ ι × σ :=
+    (Equiv.prodSumDistrib ι r T).symm.trans (.prodCongr (.refl ι) e)
+  have h : (comp ι ι σ σ R (M.map χ)).submatrix e' e' =
+      fromBlocks (comp ι ι r r R (M.map ψ)) 0 0 (blockDiagonal fun t ↦ M.map (η t)) := by
+    ext1 (a | a) (b | b) <;> simp [e', hχ, blockDiagonal, diagonal]
+  rw [← det_submatrix_equiv_self e', h, det_fromBlocks_zero₂₁, det_blockDiagonal]
 
 end Matrix

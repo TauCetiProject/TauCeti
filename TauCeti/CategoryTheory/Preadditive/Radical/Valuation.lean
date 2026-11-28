@@ -7,10 +7,14 @@ module
 
 public import TauCeti.CategoryTheory.Preadditive.Radical.Bimodule
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import Mathlib.RingTheory.Length
 -- Non-public: the tower law, finiteness transfer and Schur's lemma for division algebras are used
 -- only inside proofs.
 import Mathlib.LinearAlgebra.Dimension.Free
 import Mathlib.RingTheory.Finiteness.Basic
+import TauCeti.CategoryTheory.Preadditive.Endomorphism
+import TauCeti.RingTheory.Jacobson.Quotient
+import TauCeti.RingTheory.Length.Free
 import TauCeti.RingTheory.Semisimple.Schur
 
 /-!
@@ -67,6 +71,9 @@ Over a commutative base ring `k`, both residue actions are compatible with the s
 * `TauCeti.finrank_residue_mul_irreducibleMorphismValuation_fst` and
   `TauCeti.finrank_residueOp_mul_irreducibleMorphismValuation_snd`: **the tower law**
   `dim_k F_Y · a = dim_k Irr(X, Y) = dim_k F_X · b` over a field.
+* `TauCeti.toNat_length_irreducibleMorphismSpace_eq_fst_mul` and
+  `TauCeti.toNat_length_irreducibleMorphismSpace_eq_snd_mul`: the corresponding tower laws for
+  module lengths converted to natural numbers over a commutative base ring.
 * `TauCeti.irreducibleMorphismValuation_eq_of_isAlgClosed`: over an algebraically closed field
   the valuation is `(dim_k Irr(X, Y), dim_k Irr(X, Y))`.
 
@@ -224,7 +231,73 @@ theorem irreducibleMorphismValuation_eq_one_one_of_forall_sub_smul_mem {A : Type
       let ⟨c, hc⟩ := h u hu
       ⟨c • 𝟙 X, by rwa [Linear.smul_comp, Category.id_comp]⟩⟩)
 
+omit [Limits.HasBinaryBiproducts C] in
+/-- Isomorphisms of the endpoints preserve both entries of the irreducible-morphism valuation. -/
+theorem irreducibleMorphismValuation_congr {X X' Y Y' : C} (e : X ≅ X') (e' : Y ≅ Y') :
+    irreducibleMorphismValuation k X Y = irreducibleMorphismValuation k X' Y' := by
+  let i := (irreducibleMorphismSpaceCongr k e e').toAddEquiv
+  refine Prod.ext (congrArg Cardinal.toNat ?_) (congrArg Cardinal.toNat ?_)
+  · refine rank_eq_of_equiv_equiv e'.endRingEquiv.quotientJacobsonCongr i
+      e'.endRingEquiv.quotientJacobsonCongr.bijective ?_
+    intro r m
+    obtain ⟨g, rfl⟩ := Ideal.Quotient.mk_surjective r
+    obtain ⟨f, rfl⟩ := irreducibleMorphismMk_surjective m
+    -- `rank_eq_of_equiv_equiv` states semilinearity for the additive equivalence `i`. Restate it
+    -- for `irreducibleMorphismSpaceCongr`, to which the `simp` lemmas below apply.
+    change irreducibleMorphismSpaceCongr k e e' (_ • _) =
+      _ • irreducibleMorphismSpaceCongr k e e' _
+    simp only [RingEquiv.quotientJacobsonCongr_mk,
+      irreducibleMorphismSpace_residue_smul_eq, irreducibleMorphismPostcomp_irreducibleMorphismMk,
+      irreducibleMorphismSpaceCongr_mk]
+    apply congrArg (irreducibleMorphismMk k X' Y')
+    apply Subtype.ext
+    simp [Category.assoc]
+  · let d := RingEquiv.op e.endRingEquiv
+    refine rank_eq_of_equiv_equiv d.quotientJacobsonCongr i
+      d.quotientJacobsonCongr.bijective ?_
+    intro r m
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective r
+    obtain ⟨f, rfl⟩ := irreducibleMorphismMk_surjective m
+    -- As in the first component: restate semilinearity for `irreducibleMorphismSpaceCongr`.
+    change irreducibleMorphismSpaceCongr k e e' (_ • _) =
+      _ • irreducibleMorphismSpaceCongr k e e' _
+    simp only [RingEquiv.quotientJacobsonCongr_mk,
+      irreducibleMorphismSpace_residueOp_smul_eq,
+      irreducibleMorphismPrecomp_irreducibleMorphismMk, irreducibleMorphismSpaceCongr_mk]
+    apply congrArg (irreducibleMorphismMk k X' Y')
+    apply Subtype.ext
+    simp only [coe_jacobsonRadicalPrecomp]
+    -- `d` is `RingEquiv.op e.endRingEquiv`, so `d a` unfolds to `op (e.endRingEquiv a.unop)`; state
+    -- the composite with the endomorphism of `X'` so that `simp` can reassociate it.
+    change _ = (e.endRingEquiv a.unop).asHom ≫ _
+    simp [Category.assoc]
+
 end Valuation
+
+/-! ### Length over the base ring -/
+
+section Length
+
+variable (k : Type*) [CommRing k] [Linear k C] (X Y : C)
+
+/-- The base-ring length of the space of irreducible morphisms, converted to a natural number,
+is the first entry of the valuation times the converted length of the target's residue division
+ring. -/
+theorem toNat_length_irreducibleMorphismSpace_eq_fst_mul [IsLocalRing (End Y)] :
+    (length k (irreducibleMorphismSpace k X Y)).toNat =
+      (irreducibleMorphismValuation k X Y).1 * (length k (End Y ⧸ Ring.jacobson (End Y))).toNat :=
+  Module.toNat_length_eq_finrank_mul_of_free k (End Y ⧸ Ring.jacobson (End Y)) _
+
+/-- The base-ring length of the space of irreducible morphisms, converted to a natural number,
+is the second entry of the valuation times the converted length of the opposite of the source's
+residue division ring. -/
+theorem toNat_length_irreducibleMorphismSpace_eq_snd_mul [IsLocalRing (End X)] :
+    (length k (irreducibleMorphismSpace k X Y)).toNat =
+      (irreducibleMorphismValuation k X Y).2 *
+        (length k ((End X)ᵐᵒᵖ ⧸ Ring.jacobson (End X)ᵐᵒᵖ)).toNat :=
+  Module.toNat_length_eq_finrank_mul_of_free k ((End X)ᵐᵒᵖ ⧸ Ring.jacobson (End X)ᵐᵒᵖ) _
+
+end Length
 
 /-! ### Over a field -/
 

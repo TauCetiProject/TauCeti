@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.E2.Defs
+public import TauCeti.Algebra.Module.ZLattice.Complex
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
 import Mathlib.NumberTheory.ModularForms.EisensteinSeries.E2.Transform
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
 
 /-!
@@ -34,15 +36,27 @@ leaves the `π`-periodic cotangents unchanged. Under `z ↦ -1 / z` the lattice 
 of some `ℤ τ + ℤ`, and rescaling multiplies `ω₁`, `ω₂` by `c` and `η` by `c⁻¹`, which gives the
 general relation.
 
+Legendre's relation also determines the unique complex-linear correction `s₂` for which
+`η(l) - s₂ l = (π/A) conj(l)`, where `A` is the Lebesgue covolume of the lattice.
+The coefficient `PeriodPair.sigmaCorrection` depends only on the lattice. It supplies the
+quadratic exponential correction used to construct the reduced sigma function in
+`Weierstrass/ReducedSigma.lean`, without requiring the sigma product here.
+
 ## Main results
 
 * `UpperHalfPlane.hasSum_quasiPeriod_ω₂_periodPair`: `η(1; ℤ z + ℤ) = ∑_m ∑_n (m z + n)⁻²`,
   absolutely convergent in `m`.
 * `UpperHalfPlane.quasiPeriod_ω₂_periodPair`: `η(1; ℤ z + ℤ) = G₂(z)`.
 * `UpperHalfPlane.quasiPeriod_ω₁_periodPair`: `η(z; ℤ z + ℤ) = z η(1; ℤ z + ℤ) - 2π i`.
+* `PeriodPair.quasiPeriod_legendre_covolume`: the orientation-free relation using the lattice's
+  Lebesgue covolume.
 * `PeriodPair.quasiPeriod_legendre`: `η(ω₁) ω₂ - η(ω₂) ω₁ = 2π i` when `Im(ω₂ / ω₁) > 0`.
 * `PeriodPair.quasiPeriod_legendre_of_im_neg`: `η(ω₁) ω₂ - η(ω₂) ω₁ = -2π i` when
   `Im(ω₂ / ω₁) < 0`.
+* `PeriodPair.sigmaCorrection`: the complex-linear coefficient `s₂` of the quasi-period map.
+* `PeriodPair.quasiPeriod_sub_sigmaCorrection_mul`: `η(l) - s₂ l = (π/A) conj(l)`.
+* `PeriodPair.eq_sigmaCorrection_iff`: uniqueness of the correction coefficient.
+* `PeriodPair.sigmaCorrection_eq_of_lattice_eq`: independence from the lattice generators.
 
 ## References
 
@@ -166,5 +180,89 @@ theorem quasiPeriod_legendre (L : PeriodPair) (h : 0 < (L.ω₂ / L.ω₁).im) :
     Subtype.ext hω₁.symm
   rw [e₁, e₂, ← hω₁, ← hω₂]
   linear_combination -key
+
+open scoped ComplexConjugate
+
+/-- The orientation-free Legendre relation, with the area expressed as Lebesgue covolume. -/
+theorem quasiPeriod_legendre_covolume (L : PeriodPair) :
+    L.quasiPeriod ⟨_, L.ω₁_mem_lattice⟩ * L.ω₂ -
+        L.quasiPeriod ⟨_, L.ω₂_mem_lattice⟩ * L.ω₁ =
+      (Real.pi / ZLattice.covolume L.lattice : ℝ) *
+        (conj L.ω₁ * L.ω₂ - conj L.ω₂ * L.ω₁) := by
+  have harea : ZLattice.covolume L.lattice = |(conj L.ω₁ * L.ω₂).im| := by
+    simpa using ZLattice.covolume_eq_abs_im L.lattice L.latticeBasis
+  have hδ : (conj L.ω₁ * L.ω₂).im ≠ 0 := by
+    have := ZLattice.covolume_pos L.lattice MeasureTheory.volume
+    rw [harea] at this
+    exact abs_pos.mp this
+  have hdiv : (L.ω₂ / L.ω₁).im = (conj L.ω₁ * L.ω₂).im / normSq L.ω₁ := by
+    simpa [mul_comm] using Complex.div_im_eq_im_mul_conj_div_normSq L.ω₂ L.ω₁
+  have hdiff : conj L.ω₁ * L.ω₂ - conj L.ω₂ * L.ω₁ =
+      2 * ((conj L.ω₁ * L.ω₂).im : ℂ) * I := by
+    simpa [map_mul, mul_comm] using Complex.sub_conj (conj L.ω₁ * L.ω₂)
+  have hnorm := normSq_pos.mpr L.ω₁_ne_zero
+  have hδc : ((conj L.ω₁ * L.ω₂).im : ℂ) ≠ 0 := by exact_mod_cast hδ
+  rcases hδ.lt_or_gt with hδ | hδ
+  · rw [L.quasiPeriod_legendre_of_im_neg (hdiv ▸ div_neg_of_neg_of_pos hδ hnorm),
+      harea, abs_of_neg hδ, hdiff]
+    push_cast
+    field_simp [hδc]
+  · rw [L.quasiPeriod_legendre (hdiv ▸ div_pos hδ hnorm), harea, abs_of_pos hδ]
+    rw [hdiff]
+    push_cast
+    field_simp [hδc]
+
+variable (L : PeriodPair)
+
+/-- The complex-linear correction to the quasi-period map of a lattice. Subtracting `s₂ l`
+from `η(l)` leaves `π conj(l) / area(ℂ/Λ)`. -/
+def sigmaCorrection : ℂ :=
+  (L.quasiPeriod ⟨_, L.ω₁_mem_lattice⟩ -
+    (Real.pi / ZLattice.covolume L.lattice : ℝ) * conj L.ω₁) / L.ω₁
+
+/-- The formula for the complex-linear sigma correction in a pair of periods. -/
+theorem sigmaCorrection_def :
+    L.sigmaCorrection = (L.quasiPeriod ⟨_, L.ω₁_mem_lattice⟩ -
+      (Real.pi / ZLattice.covolume L.lattice : ℝ) * conj L.ω₁) / L.ω₁ := (rfl)
+
+/-- The corrected quasi-period map is conjugate-linear, with coefficient `π / area(ℂ/Λ)`. -/
+theorem quasiPeriod_sub_sigmaCorrection_mul (l : L.lattice) :
+    L.quasiPeriod l - L.sigmaCorrection * l =
+      (Real.pi / ZLattice.covolume L.lattice : ℝ) * conj (l : ℂ) := by
+  have h₁ : L.quasiPeriod ⟨_, L.ω₁_mem_lattice⟩ - L.sigmaCorrection * L.ω₁ =
+      (Real.pi / ZLattice.covolume L.lattice : ℝ) * conj L.ω₁ := by
+    rw [sigmaCorrection_def, div_mul_cancel₀ _ L.ω₁_ne_zero]
+    ring
+  have h₂ : L.quasiPeriod ⟨_, L.ω₂_mem_lattice⟩ - L.sigmaCorrection * L.ω₂ =
+      (Real.pi / ZLattice.covolume L.lattice : ℝ) * conj L.ω₂ := by
+    apply mul_right_cancel₀ L.ω₁_ne_zero
+    linear_combination L.ω₂ * h₁ - L.quasiPeriod_legendre_covolume
+  obtain ⟨m, n, h⟩ := mem_lattice.mp l.property
+  rw [L.quasiPeriod_eq_intCast_mul_add l h, ← h, map_add, map_mul, map_mul]
+  simp only [map_intCast]
+  linear_combination (m : ℂ) * h₁ + (n : ℂ) * h₂
+
+/-- The sigma correction is the unique coefficient making the corrected quasi-period map
+conjugate-linear with coefficient `π / area(ℂ/Λ)`. -/
+theorem eq_sigmaCorrection_iff (c : ℂ) :
+    c = L.sigmaCorrection ↔ ∀ l : L.lattice,
+      L.quasiPeriod l - c * l =
+        (Real.pi / ZLattice.covolume L.lattice : ℝ) * conj (l : ℂ) := by
+  constructor
+  · rintro rfl
+    exact L.quasiPeriod_sub_sigmaCorrection_mul
+  · intro h
+    have h₁ := h ⟨_, L.ω₁_mem_lattice⟩
+    have h₂ := L.quasiPeriod_sub_sigmaCorrection_mul ⟨_, L.ω₁_mem_lattice⟩
+    apply mul_right_cancel₀ L.ω₁_ne_zero
+    linear_combination h₂ - h₁
+
+/-- The sigma correction is independent of the generators of the lattice. -/
+theorem sigmaCorrection_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice) :
+    L.sigmaCorrection = L'.sigmaCorrection := by
+  apply Eq.symm
+  refine (L.eq_sigmaCorrection_iff _).mpr fun l ↦ ?_
+  rw [quasiPeriod_eq_of_lattice_eq h l]
+  simpa only [h] using L'.quasiPeriod_sub_sigmaCorrection_mul ⟨l, h ▸ l.property⟩
 
 end PeriodPair

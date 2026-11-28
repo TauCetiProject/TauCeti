@@ -22,6 +22,7 @@ The file also records that, in a ring without zero divisors, a unit `u` other th
 its own inverse in the form `u - u⁻¹ ≠ 0`, as used for quantum integers at `δ = u + u⁻¹`.
 It finally records that a pair of units `r + s = 1` gives the pair `r⁻¹ + (-(s r⁻¹)) = 1`, the
 step reducing the Steinberg relation for the tame symbol from negative to positive order.
+If the commutator of `p` with a unit `u` is `u`, then that of `p` with `u⁻¹` is `-u⁻¹`.
 In a semiring, if `q` is a two-sided inverse of `p` and `n₁ q n₂ = 0`, then
 `(p + n₁) q (p + n₂) = p + n₁ + n₂`: this splits an invertible matrix over a unitization of a
 product into its two factors.
@@ -32,8 +33,11 @@ product into its two factors.
 * `TauCeti.isUnit_one_add_mul_comm`: `IsUnit (1 + a * b) ↔ IsUnit (1 + b * a)`.
 * `Units.val_sub_val_inv_ne_zero`: in a ring without zero divisors, a unit `u ≠ ±1` satisfies
   `u - u⁻¹ ≠ 0`.
+* `Units.val_mul_val_add_val_inv`: for any unit `q` in a ring, `q * (q + q⁻¹) = 1 + q ^ 2`.
+* `Units.val_inv_mul_eq_val_add_val_inv`: if `u = 1 + q ^ 2`, then `q⁻¹ * u = q + q⁻¹`.
 * `Units.val_inv_add_val_neg_mul_inv_eq_one`: if `r + s = 1` for units, then
   `r⁻¹ + (-(s r⁻¹)) = 1`.
+* `Units.mul_inv_eq_inv_mul_sub_inv`: if `[p, u] = u` for a unit `u`, then `[p, u⁻¹] = -u⁻¹`.
 * `TauCeti.add_mul_mul_add_of_mul_eq_one`: if `p q = q p = 1` and `n₁ q n₂ = 0`, then
   `(p + n₁) q (p + n₂) = p + n₁ + n₂`.
 -/
@@ -69,12 +73,31 @@ namespace Units
 
 variable {R : Type*} [Ring R]
 
+/-- For any unit `q` in a ring, `q * (q + q⁻¹) = 1 + q ^ 2`. -/
+theorem val_mul_val_add_val_inv (q : Rˣ) :
+    (q : R) * ((q : R) + ↑q⁻¹) = 1 + (q : R) ^ 2 := by
+  rw [mul_add, q.mul_inv, sq, add_comm]
+
+/-- If `u = 1 + q ^ 2` for units `q` and `u`, then `q⁻¹ * u = q + q⁻¹`. -/
+theorem val_inv_mul_eq_val_add_val_inv {q u : Rˣ} (hu : (u : R) = 1 + (q : R) ^ 2) :
+    ((q⁻¹ * u : Rˣ) : R) = (q : R) + ↑q⁻¹ := by
+  rw [Units.val_mul, hu, ← q.val_mul_val_add_val_inv, ← mul_assoc, q.inv_mul, one_mul]
+
 /-- If `r + s = 1` for units `r` and `s`, then `r⁻¹ + (-(s r⁻¹)) = 1`. This trades a pair adding
 up to one for another such pair whose first entry is `r⁻¹`, as in the Steinberg relation. -/
 theorem val_inv_add_val_neg_mul_inv_eq_one {r s : Rˣ} (h : (r : R) + s = 1) :
     ((r⁻¹ : Rˣ) : R) + ((-(s * r⁻¹) : Rˣ) : R) = 1 := by
   rw [Units.val_neg, Units.val_mul, ← sub_eq_add_neg, ← one_sub_mul, ← eq_sub_of_add_eq h,
     Units.mul_inv]
+
+/-- If `p u = u p + u`, that is `[p, u] = u`, then `p u⁻¹ = u⁻¹ p - u⁻¹`, that is
+`[p, u⁻¹] = -u⁻¹`. -/
+theorem mul_inv_eq_inv_mul_sub_inv {p : R} {u : Rˣ} (h : p * u = u * p + u) :
+    p * ↑u⁻¹ = ↑u⁻¹ * p - ↑u⁻¹ := by
+  -- Conjugate `h` by `u⁻¹`.
+  have h' := congr(↑u⁻¹ * $h * ↑u⁻¹)
+  simp only [mul_add, add_mul, mul_assoc, Units.mul_inv, mul_one, Units.inv_mul_cancel_left] at h'
+  rw [h', add_sub_cancel_right]
 
 variable [NoZeroDivisors R]
 

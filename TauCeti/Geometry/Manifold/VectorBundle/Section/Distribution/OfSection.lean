@@ -65,8 +65,10 @@ in charts are Mathlib's `TestFunction.integralAgainstBilinCLM`, the map underlyi
 
 * `TauCeti.LocallyIntegrableSection`: local integrability of a section, with
   `TauCeti.locallyIntegrableSection_def`, `TauCeti.LocallyIntegrableSection.locallyIntegrableOn`,
-  `TauCeti.LocallyIntegrableSection.zero`, `TauCeti.LocallyIntegrableSection.add` and
-  `TauCeti.LocallyIntegrableSection.smul`.
+  `TauCeti.LocallyIntegrableSection.zero`, `TauCeti.LocallyIntegrableSection.add`,
+  `TauCeti.LocallyIntegrableSection.smul`, and
+  `TauCeti.LocallyIntegrableSection.locallyIntegrableOn_target` in restrictions of preferred charts.
+  Continuous sections are locally integrable (`Continuous.locallyIntegrableSection`).
 * `TauCeti.locallyIntegrableSection_iff_of_iUnion_eq_univ`,
   `TauCeti.localRep_ae_eq_of_iUnion_eq_univ`: local integrability and almost everywhere equality of
   readings from a chart cover.
@@ -386,6 +388,23 @@ theorem localRep_ae_eq_of_iUnion_eq_univ {ι : Type*} [Countable ι] (β : ι �
 
 end ChangeOfChart
 
+omit [IsManifold I ∞ M] [NormedSpace ℝ G] [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)]
+  [VectorBundle ℝ G W] in
+variable (I) in
+/-- A continuous section is locally integrable: its readings are continuous where they are
+defined. -/
+theorem _root_.Continuous.locallyIntegrableSection {u : (x : M) → W x}
+    (hu : Continuous fun x ↦ TotalSpace.mk' G x (u x)) : LocallyIntegrableSection I G u := by
+  refine locallyIntegrableSection_def.2 fun α ↦ ContinuousOn.locallyIntegrableOn ?_
+    ((isChartMeasurable_def _).1
+      ((trivializationAt G W α).open_baseSet.isChartMeasurable (I := I)) α)
+  have hs : ContinuousOn (fun x ↦ (trivializationAt G W α ⟨x, u x⟩).2)
+      (trivializationAt G W α).baseSet :=
+    continuous_snd.comp_continuousOn ((trivializationAt G W α).continuousOn.comp
+      hu.continuousOn fun _ hy ↦ (trivializationAt G W α).mem_source.2 hy)
+  exact (hs.comp ((continuousOn_extChartAt_symm α).mono inter_subset_left)
+    fun _ hy ↦ hy.2).congr fun z _ ↦ FirstJetBundle.localRep_apply I G u α z
+
 variable [ContMDiffVectorBundle ∞ G W I] [T2Space M]
   {u : (x : M) → W x} {α : M}
   (c : OpenPartialHomeomorph M E) (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source)
@@ -396,7 +415,7 @@ omit [ContMDiffVectorBundle ∞ G W I] [MeasurableSpace E] [BorelSpace E] [T2Spa
 include hct in
 /-- A chart whose source lies over the base set of the preferred frame of the dual-density bundle
 at `α` has its source in the chart source and in the base set of `W` at `α`. -/
-private theorem source_subset_of_subset_baseSet :
+theorem source_subset_of_subset_baseSet :
     c.source ⊆ (chartAt H α).source ∩ (trivializationAt G W α).baseSet := by
   intro x hx
   have h := hct hx
@@ -407,7 +426,7 @@ private theorem source_subset_of_subset_baseSet :
 omit [ContMDiffVectorBundle ∞ G W I] [MeasurableSpace E] [BorelSpace E] [T2Space M] in
 include hct hcα in
 /-- A restriction of the preferred chart at `α` has the inverse of the preferred chart. -/
-private theorem symm_eq_extChartAt_symm {y : E} (hy : y ∈ c.target) :
+theorem symm_eq_extChartAt_symm {y : E} (hy : y ∈ c.target) :
     c.symm y = (extChartAt I α).symm y := by
   have hx := c.map_target hy
   have hxs : c.symm y ∈ (extChartAt I α).source := by
@@ -433,7 +452,7 @@ omit [ContMDiffVectorBundle ∞ G W I] [T2Space M] in
 include hct hcα in
 /-- The reading at `α` of a locally integrable section is locally integrable on the target of a
 restriction of the preferred chart at `α`. -/
-private theorem LocallyIntegrableSection.locallyIntegrableOn_target
+theorem LocallyIntegrableSection.locallyIntegrableOn_target
     (hu : LocallyIntegrableSection I G u) :
     LocallyIntegrableOn (FirstJetBundle.localRep I G u α) c.target (Module.finBasis ℝ E).addHaar :=
   (hu.locallyIntegrableOn α).mono_set (target_subset_inter_preimage_baseSet c hct hcα)

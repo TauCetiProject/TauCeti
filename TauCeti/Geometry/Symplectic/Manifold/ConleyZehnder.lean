@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Symplectic.Complex.ImInner.Maslov
 public import TauCeti.Geometry.Symplectic.ConleyZehnder.FrameChange
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Geometry.Symplectic.Complex.ImInner.Basic
@@ -64,6 +65,10 @@ index of the capped orbit, which grades the generators of the capped Floer compl
 ## Main results
 
 * `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_add_maslovIndex`: the change of frame law.
+* `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_mul_two_pi_eq_of_complex`: for frames with model
+  `(G, Im ⟪·, ·⟫)` differing by complex automorphisms `k`, the index changes by twice the winding
+  of `det k`; such a `k` exists for frames complex linear for an almost complex structure
+  (`TauCeti.SmoothAlmostComplexStructure.exists_continuous_complex_frame_change`).
 * `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_of_square`: frames along `γ` extended over a
   square, with change of frame a loop on every segment and constant along the far edge, give the
   same index.
@@ -478,5 +483,42 @@ theorem frameConleyZehnderIndex_comp_eq [FiniteDimensional ℝ W] [FiniteDimensi
   rw [ω₀.maslovIndex_congr _ (β.map ha) _ fun t ↦ by ext v; simp,
     ω₀.maslovIndex_map_eq_zero ha (hφ''.apply_trans_symm_apply hφ), Int.cast_zero, mul_zero,
     add_zero]
+
+/-! ### Complex frames -/
+
+section Complex
+
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℂ G] [FiniteDimensional ℂ G]
+
+/-- **Change of frame by complex automorphisms.** Let `ψ` and `ψ'` be symplectic frames along `γ`
+with model `(G, Im ⟪·, ·⟫)` whose change of frame is a loop, and suppose that they differ by complex
+automorphisms of the model, `ψ t = ψ' t ∘ k t`. Then for every continuous lift `θ` of the normalized
+determinant of `k` through `Circle.exp`, `2π` times the Conley–Zehnder index of `Φ` read in `ψ'` is
+`2π` times its index read in `ψ` plus `2 (θ 1 - θ 0)`: the change of frame is the loop `k⁻¹` of
+unitary maps, whose Maslov index is minus the winding of `det k`. -/
+theorem frameConleyZehnderIndex_mul_two_pi_eq_of_complex {ψ ψ' : ∀ t, G ≃L[ℝ] TangentSpace I (γ t)}
+    (hψ : IsSymplecticFrame σ (imInnerSymplecticForm G) γ ψ)
+    (hψ' : IsSymplecticFrame σ (imInnerSymplecticForm G) γ ψ')
+    (hper : (ψ' 0).trans (ψ 0).symm = (ψ' 1).trans (ψ 1).symm) {k : unitInterval → G ≃L[ℂ] G}
+    (hk : ∀ t v, ψ t v = ψ' t (k t v)) {θ : unitInterval → ℝ} (hθ : Continuous θ)
+    (hθk : ∀ t, Circle.exp (θ t) = (k t).normalizedDet)
+    (hΦ : Continuous fun q : unitInterval × TangentSpace I (γ 0) ↦
+      (⟨γ q.1, Φ q.1 q.2⟩ : TangentBundle I M))
+    (hΦσ : ∀ t u v, σ.eval₂ (γ t) (Φ t u) (Φ t v) = σ.eval₂ (γ 0) u v) :
+    frameConleyZehnderIndex (imInnerSymplecticForm G) hψ' hΦ hΦσ * (2 * Real.pi) =
+      frameConleyZehnderIndex (imInnerSymplecticForm G) hψ hΦ hΦσ * (2 * Real.pi) +
+        2 * (θ 1 - θ 0) := by
+  have hm := SymplecticForm.maslovIndex_imInnerSymplecticForm_mul_two_pi_eq
+    (transitionLoop hψ.continuous hψ'.continuous hper) (apply_transitionLoop_apply hψ hψ' hper)
+    (k := fun t ↦ (k t).symm)
+    (fun t v ↦ by
+      rw [transitionLoop_apply, ContinuousLinearEquiv.symm_apply_eq, hk,
+        ContinuousLinearEquiv.apply_symm_apply])
+    (θ := fun t ↦ -θ t) hθ.neg
+    fun t ↦ by rw [Circle.exp_neg, hθk, ContinuousLinearEquiv.normalizedDet_symm]
+  rw [frameConleyZehnderIndex_eq_add_maslovIndex hψ hψ' hper hΦ hΦσ]
+  linear_combination 2 * hm
+
+end Complex
 
 end TauCeti.SmoothTwoForm
