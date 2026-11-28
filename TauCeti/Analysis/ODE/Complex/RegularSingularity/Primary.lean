@@ -14,6 +14,8 @@ import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Analysis.Complex.PowerSeries.BranchCut
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Analysis.ODE.Complex.SecondOrder
+import TauCeti.Analysis.ODE.SecondOrder.Operator
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
@@ -33,6 +35,9 @@ This file records power-series and pointwise identities for the second-order dif
 * `TauCeti.hasSum_regularSingularLogCoeff_ofScalars` and
   `TauCeti.hasSum_regularSingularLogForcing_ofScalars`: series expansions for the unshifted and
   `N`-shifted logarithmic forcing operators.
+* `TauCeti.deriv_deriv_add_mul_deriv_add_mul_cpow_mul_tsum_add_log`: shared holomorphy, series
+  convergence, and pointwise operator identity for the logarithmic second-solution ansatz
+  `(z - z₀)^{α₂} ∑ b_s (z - z₀)^s + c ((z - z₀)^{α₂ + N} ∑ a_s (z - z₀)^s) log(z - z₀)`.
 
 ## References
 
@@ -66,8 +71,7 @@ theorem hasSum_eulerOperator_ofScalars {𝕜 : Type*} [NontriviallyNormedField �
       (σ * (σ - 1) * S ζ + 2 * σ * (ζ * deriv S ζ) + ζ ^ 2 * deriv (deriv S) ζ +
         F * (σ * S ζ + ζ * deriv S ζ) + G * S ζ) := by
   -- the series of `S`, of `ζ S'` and of `ζ² S''`
-  have h0 : HasSum (fun n ↦ c n * ζ ^ n) (S ζ) := by
-    simpa [ofScalars_apply_eq, mul_comm] using hS.hasSum (mem_eball_zero_iff.mpr hζ)
+  have h0 := hS.hasSum_ofScalars hζ
   have h1 := hS.hasSum_mul_deriv_ofScalars hζ
   have h2 := hS.hasSum_sq_mul_deriv_deriv_ofScalars hζ
   -- absolute convergence of the factors of the two Cauchy products
@@ -194,8 +198,7 @@ theorem hasSum_regularSingularLogCoeff_ofScalars {𝕜 : Type*} [NontriviallyNor
     (hζf : ‖ζ‖ₑ < (ofScalars 𝕜 fs).radius) (hF : HasSum (fun s ↦ fs s * ζ ^ s) F) :
     HasSum (fun n ↦ ((2 * (α + n) - 1) * a n + ∑ k ∈ range (n + 1), fs (n - k) * a k) * ζ ^ n)
       (2 * α * S ζ + 2 * (ζ * deriv S ζ) - S ζ + F * S ζ) := by
-  have h0 : HasSum (fun n ↦ a n * ζ ^ n) (S ζ) := by
-    simpa [ofScalars_apply_eq, mul_comm] using hS.hasSum (mem_eball_zero_iff.mpr hζ)
+  have h0 := hS.hasSum_ofScalars hζ
   have h1 := hS.hasSum_mul_deriv_ofScalars hζ
   have hC := hasSum_sum_range_mul_of_summable_norm
     (summable_norm_mul_pow_of_lt_radius a (hζ.trans_le hS.r_le))
@@ -226,5 +229,110 @@ theorem hasSum_regularSingularLogForcing_ofScalars {α₂ c ζ F : ℂ} {N : ℕ
     sum_range_succ, Nat.sub_self, pow_add]
   push_cast
   ring
+
+/-- Shared holomorphy, coefficient-series convergence, and pointwise operator formula for any
+logarithmic second-solution ansatz
+`w₂(z) = (z - z₀)^α₂ ∑ b_s (z - z₀)^s + c ((z - z₀)^{α₂ + N} ∑ a_s (z - z₀)^s) log(z - z₀)`
+when `w₁(z) = (z - z₀)^{α₂ + N} ∑ a_s (z - z₀)^s` solves `w₁'' + f w₁' + g w₁ = 0` on the slit
+punctured disc `{z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}`. -/
+theorem deriv_deriv_add_mul_deriv_add_mul_cpow_mul_tsum_add_log {z₀ α₂ c : ℂ} {N : ℕ} {r : ℝ}
+    {f g : ℂ → ℂ} {fs gs a b : ℕ → ℂ}
+    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
+      HasSum (fun s ↦ fs s * (z - z₀) ^ s) ((z - z₀) * f z))
+    (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
+      HasSum (fun s ↦ gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
+    (ha_sum : ∀ z, ‖z - z₀‖ < r → Summable fun s ↦ a s * (z - z₀) ^ s)
+    (hb_sum : ∀ z, ‖z - z₀‖ < r → Summable fun s ↦ b s * (z - z₀) ^ s)
+    (hw₁_op : ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
+      deriv (deriv fun w ↦ (w - z₀) ^ (α₂ + (N : ℂ)) * ∑' s, a s * (w - z₀) ^ s) z +
+        f z * deriv (fun w ↦ (w - z₀) ^ (α₂ + (N : ℂ)) * ∑' s, a s * (w - z₀) ^ s) z +
+        g z * ((z - z₀) ^ (α₂ + (N : ℂ)) * ∑' s, a s * (z - z₀) ^ s) = 0) :
+    DifferentiableOn ℂ (fun w ↦ (w - z₀) ^ α₂ * (∑' s, b s * (w - z₀) ^ s) +
+        c * ((w - z₀) ^ (α₂ + (N : ℂ)) * (∑' s, a s * (w - z₀) ^ s) * log (w - z₀)))
+      {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} ∧
+    (∀ u : ℂ, ‖u‖ < r →
+      Summable fun s : ℕ ↦ ((indicialPoly (fs 0) (gs 0) (α₂ + s) * b s +
+        ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b k) +
+        c * regularSingularLogForcing fs a α₂ N s) * u ^ s) ∧
+    ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
+      deriv (deriv fun w ↦ (w - z₀) ^ α₂ * (∑' s, b s * (w - z₀) ^ s) +
+          c * ((w - z₀) ^ (α₂ + (N : ℂ)) * (∑' s, a s * (w - z₀) ^ s) * log (w - z₀))) z +
+        f z * deriv (fun w ↦ (w - z₀) ^ α₂ * (∑' s, b s * (w - z₀) ^ s) +
+          c * ((w - z₀) ^ (α₂ + (N : ℂ)) * (∑' s, a s * (w - z₀) ^ s) * log (w - z₀))) z +
+        g z * ((z - z₀) ^ α₂ * (∑' s, b s * (z - z₀) ^ s) +
+          c * ((z - z₀) ^ (α₂ + (N : ℂ)) * (∑' s, a s * (z - z₀) ^ s) * log (z - z₀))) =
+      (z - z₀) ^ (α₂ - 2) * ∑' s : ℕ,
+        ((indicialPoly (fs 0) (gs 0) (α₂ + s) * b s +
+          ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b k) +
+          c * regularSingularLogForcing fs a α₂ N s) * (z - z₀) ^ s := by
+  set U : Set ℂ := {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}
+  set w₁ : ℂ → ℂ := fun w ↦ (w - z₀) ^ (α₂ + (N : ℂ)) * ∑' s, a s * (w - z₀) ^ s
+  set ψ : ℂ → ℂ := fun w ↦ (w - z₀) ^ α₂ * ∑' s, b s * (w - z₀) ^ s
+  set Φ : ℂ → ℂ := fun w ↦ w₁ w * log (w - z₀)
+  have hopen : IsOpen U := isOpen_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r
+  have hw₁_diff : DifferentiableOn ℂ w₁ U := fun w hw ↦
+    (hasDerivAt_cpow_mul_tsum ha_sum hw.1 hw.2).differentiableAt.differentiableWithinAt
+  have hψ_diff : DifferentiableOn ℂ ψ U := fun w hw ↦
+    (hasDerivAt_cpow_mul_tsum hb_sum hw.1 hw.2).differentiableAt.differentiableWithinAt
+  obtain ⟨hΦ_diff, hΦ_op⟩ :=
+    operator_mul_log (z₀ := z₀) hopen (fun _ hz ↦ hz.1) hw₁_diff (fun z hz ↦ hw₁_op z hz.1 hz.2)
+  have hfr := le_radius_ofScalars_of_summable_sub fs fun w hw0 hwr ↦ (hf w hw0 hwr).summable
+  have har := le_radius_ofScalars_of_summable_sub a fun w _ hwr ↦ ha_sum w hwr
+  have hlog_hasSum : ∀ {u F : ℂ} (hu : ‖u‖ < r) (hF : HasSum (fun s ↦ fs s * u ^ s) F),
+      HasSum (fun s ↦ (c * regularSingularLogForcing fs a α₂ N s) * u ^ s)
+        (c * u ^ N * (2 * (α₂ + N) * (∑' s, a s * u ^ s) +
+          2 * (u * deriv (fun w ↦ ∑' s, a s * w ^ s) u) -
+          (∑' s, a s * u ^ s) + F * ∑' s, a s * u ^ s)) := fun {u F} hu hF ↦ by
+    have hr : 0 < r := (norm_nonneg u).trans_lt hu
+    have hue : ‖u‖ₑ < ENNReal.ofReal r := eNorm_lt_ofReal_iff.mpr hu
+    have hpA := hasFPowerSeriesOnBall_tsum_mul_pow a (ENNReal.ofReal_pos.mpr hr) har
+    exact hasSum_regularSingularLogForcing_ofScalars (α₂ := α₂) (c := c) (N := N) hpA hue
+      (hue.trans_le hfr) hF
+  have hD_hasSum : ∀ {u F : ℂ} (hu : ‖u‖ < r) (hF : HasSum (fun s ↦ fs s * u ^ s) F),
+      HasSum (fun s : ℕ ↦ ((indicialPoly (fs 0) (gs 0) (α₂ + s) * b s +
+          ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b k) +
+          c * regularSingularLogForcing fs a α₂ N s) * u ^ s)
+        ((∑' s : ℕ, (indicialPoly (fs 0) (gs 0) (α₂ + s) * b s +
+            ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b k) * u ^ s) +
+          c * u ^ N * (2 * (α₂ + N) * (∑' s, a s * u ^ s) +
+            2 * (u * deriv (fun w ↦ ∑' s, a s * w ^ s) u) -
+            (∑' s, a s * u ^ s) + F * ∑' s, a s * u ^ s)) := fun {u F} hu hF ↦ by
+    have heul := (hasSum_eulerOperator_ofScalars_of_norm_sub_lt (σ := α₂)
+      (fun w hw0 hwr ↦ (hf w hw0 hwr).summable)
+      (fun w hw0 hwr ↦ (hg w hw0 hwr).summable) hb_sum hu).summable.hasSum
+    refine (heul.add (hlog_hasSum hu hF)).congr_fun fun _ ↦ by ring
+  have hw₂_eq : (fun w ↦ (w - z₀) ^ α₂ * (∑' s, b s * (w - z₀) ^ s) +
+      c * ((w - z₀) ^ (α₂ + (N : ℂ)) * (∑' s, a s * (w - z₀) ^ s) * log (w - z₀))) =
+      fun w ↦ ψ w + c * Φ w := by
+    ext w; simp only [ψ, Φ, w₁, mul_assoc]
+  refine ⟨by rw [hw₂_eq]; exact hψ_diff.add (hΦ_diff.const_mul c), fun u hu ↦ ?_,
+    fun z hzs hzb ↦ ?_⟩
+  · have hue : ‖u‖ₑ < ENNReal.ofReal r := eNorm_lt_ofReal_iff.mpr hu
+    have hf_sum := (summable_norm_mul_pow_of_lt_radius fs (hue.trans_le hfr)).of_norm
+    exact (hD_hasSum hu hf_sum.hasSum).summable
+  · have hzU : z ∈ U := ⟨hzs, hzb⟩
+    have hu0 : z - z₀ ≠ 0 := slitPlane_ne_zero hzs
+    have hlin := secondOrder_operator_add_const_mul (f := f) (g := g) (c' := c) (z := z)
+      (Eventually.mono (hopen.mem_nhds hzU) fun _ hw ↦ hψ_diff.differentiableAt (hopen.mem_nhds hw))
+      (Eventually.mono (hopen.mem_nhds hzU) fun _ hw ↦ hΦ_diff.differentiableAt (hopen.mem_nhds hw))
+      ((hψ_diff.deriv hopen).differentiableAt (hopen.mem_nhds hzU))
+      ((hΦ_diff.deriv hopen).differentiableAt (hopen.mem_nhds hzU))
+    have hdw₁ : deriv w₁ z = (z - z₀) ^ (α₂ + (N : ℂ) - 1) *
+        ((α₂ + N) * (∑' s, a s * (z - z₀) ^ s) +
+          (z - z₀) * deriv (fun w ↦ ∑' s, a s * w ^ s) (z - z₀)) :=
+      (hasDerivAt_cpow_mul_tsum ha_sum hzs hzb).deriv
+    have e1 : (z - z₀) ^ (α₂ + (N : ℂ) - 1) = (z - z₀) ^ (α₂ - 2) * (z - z₀) ^ N * (z - z₀) := by
+      rw [show α₂ + (N : ℂ) - 1 = α₂ - 2 + (N : ℂ) + 1 by ring, cpow_add _ _ hu0,
+        cpow_add _ _ hu0, cpow_natCast, cpow_one]
+    have e2 : (z - z₀) ^ (α₂ + (N : ℂ)) = (z - z₀) ^ (α₂ - 2) * (z - z₀) ^ N * (z - z₀) ^ 2 := by
+      rw [show α₂ + (N : ℂ) = α₂ - 2 + (N : ℂ) + 2 by ring, cpow_add _ _ hu0,
+        cpow_add _ _ hu0, cpow_natCast, show (2 : ℂ) = (2 : ℕ) by norm_num, cpow_natCast]
+    rw [hw₂_eq, hlin,
+      deriv_deriv_add_mul_deriv_add_mul_cpow_mul_tsum (σ := α₂) hf hg hb_sum hzs hzb,
+      hΦ_op z hzU, (hD_hasSum hzb (hf z (norm_pos_iff.mpr hu0) hzb)).tsum_eq, hdw₁]
+    dsimp only [w₁]
+    rw [e1, e2]
+    field_simp [hu0]
+    ring
 
 end TauCeti

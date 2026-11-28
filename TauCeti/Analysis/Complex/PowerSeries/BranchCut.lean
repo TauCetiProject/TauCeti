@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 
 import Mathlib.Analysis.Normed.Module.Convex
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import Mathlib.Tactic.LinearCombination
 import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -17,8 +20,8 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 /-!
 # Branch-cut power series on a slit punctured disc
 
-This file records differentiation and analytic uniqueness for complex functions of the form
-`(z - z₀) ^ σ * ∑' s, c s * (z - z₀) ^ s` on the slit punctured disc
+This file records differentiation, analytic uniqueness, and Wronskian factorization for complex
+functions of the form `(z - z₀) ^ σ * ∑' s, c s * (z - z₀) ^ s` on the slit punctured disc
 `{z : ℂ | z - z₀ ∈ Complex.slitPlane ∧ ‖z - z₀‖ < r}`:
 * `TauCeti.hasDerivAt_cpow_mul_tsum`: product-rule derivative formula on the slit punctured disc in
   terms of the inner series `A` and `deriv A` (for termwise expansion of `deriv A`, see
@@ -26,6 +29,8 @@ This file records differentiation and analytic uniqueness for complex functions 
 * `TauCeti.eq_zero_of_cpow_mul_tsum_eq_zero`: for a series with positive radius `0 < r` converging
   on the punctured disc `0 < ‖u‖ < r`, vanishing on the slit punctured disc forces every series
   coefficient to vanish.
+* `TauCeti.wronskian_cpow_mul_log_eq`: Wronskian factorization for `y^{α₁} ∑ a_s y^s` and
+  `y^{α₂} ∑ b_s y^s + c y^{α₁} (∑ a_s y^s) log y` on the slit disc when `c = 0` or `α₁ = α₂ + N`.
 -/
 
 public section
@@ -78,5 +83,48 @@ theorem eq_zero_of_cpow_mul_tsum_eq_zero {z₀ α : ℂ} {d : ℕ → ℂ} {r : 
   exact congrFun (hp.ofScalars_eq_zero_of_eventuallyEq_zero
     (Metric.eball_ofReal (x := (0 : ℂ)) (ε := r) ▸ (convex_ball (0 : ℂ) r).isPreconnected)
     (by rwa [Metric.eball_ofReal]) hev)
+
+/-- The Wronskian of `y^{α₁} ∑ aₛ yˢ` and `y^{α₂} ∑ bₛ yˢ + c y^{α₁} (∑ aₛ yˢ) log y` at a point
+`y` of the slit disc of convergence is `y^{α₁ + α₂ - 1} H(y)`, with `H` holomorphic on that disc,
+provided that `c = 0` or `α₁ = α₂ + N`. -/
+theorem wronskian_cpow_mul_log_eq {α₁ α₂ c y : ℂ} {N : ℕ} {r : ℝ} {a b : ℕ → ℂ}
+    (ha : ∀ u, ‖u‖ < r → Summable fun s ↦ a s * u ^ s)
+    (hb : ∀ u, ‖u‖ < r → Summable fun s ↦ b s * u ^ s)
+    (hc : c = 0 ∨ α₁ = α₂ + N) (hy : y ∈ slitPlane) (hyr : ‖y‖ < r) :
+    y ^ α₁ * (∑' s, a s * y ^ s) *
+        deriv (fun y ↦ y ^ α₂ * (∑' s, b s * y ^ s) +
+          c * (y ^ α₁ * (∑' s, a s * y ^ s) * log y)) y -
+        deriv (fun y ↦ y ^ α₁ * (∑' s, a s * y ^ s)) y *
+          (y ^ α₂ * (∑' s, b s * y ^ s) + c * (y ^ α₁ * (∑' s, a s * y ^ s) * log y)) =
+      y ^ (α₁ + α₂ - 1) * ((α₂ - α₁) * (∑' s, a s * y ^ s) * (∑' s, b s * y ^ s) +
+        y * ((∑' s, a s * y ^ s) * deriv (fun u ↦ ∑' s, b s * u ^ s) y -
+          deriv (fun u ↦ ∑' s, a s * u ^ s) y * (∑' s, b s * y ^ s)) +
+        c * y ^ N * (∑' s, a s * y ^ s) ^ 2) := by
+  have hy0 : y ≠ 0 := slitPlane_ne_zero hy
+  have h1 := hasDerivAt_cpow_mul_tsum (z₀ := 0) (σ := α₁)
+    (fun u hu ↦ by simpa using ha u (by simpa using hu)) (by simpa using hy) (by simpa using hyr)
+  have h2 := (hasDerivAt_cpow_mul_tsum (z₀ := 0) (σ := α₂)
+    (fun u hu ↦ by simpa using hb u (by simpa using hu)) (by simpa using hy)
+    (by simpa using hyr)).fun_add ((h1.fun_mul (hasDerivAt_log hy)).const_mul c)
+  simp only [sub_zero] at h1 h2
+  rw [h2.deriv, h1.deriv]
+  set S := ∑' s, a s * y ^ s
+  set T := ∑' s, b s * y ^ s
+  set dS := deriv (fun u ↦ ∑' s, a s * u ^ s) y
+  set dT := deriv (fun u ↦ ∑' s, b s * u ^ s) y
+  have e₁ : y ^ α₁ = y ^ (α₁ - 1) * y := by
+    conv_lhs => rw [show α₁ = α₁ - 1 + 1 by ring, cpow_add _ _ hy0, cpow_one]
+  have e₂ : y ^ α₂ = y ^ (α₂ - 1) * y := by
+    conv_lhs => rw [show α₂ = α₂ - 1 + 1 by ring, cpow_add _ _ hy0, cpow_one]
+  have e₁₂ : y ^ (α₁ + α₂ - 1) = y ^ (α₁ - 1) * y ^ (α₂ - 1) * y := by
+    rw [show α₁ + α₂ - 1 = α₁ - 1 + (α₂ - 1) + 1 by ring, cpow_add _ _ hy0, cpow_add _ _ hy0,
+      cpow_one]
+  have eN : c * y ^ (α₁ - 1) = c * (y ^ (α₂ - 1) * y ^ N) := by
+    rcases hc with rfl | rfl
+    · simp only [zero_mul]
+    · rw [show α₂ + N - 1 = α₂ - 1 + N by ring, cpow_add _ _ hy0, cpow_natCast]
+  rw [e₁, e₂, e₁₂]
+  linear_combination c * y ^ (α₁ - 1) * y ^ (α₁ - 1) * y * S ^ 2 * mul_inv_cancel₀ hy0 +
+    y ^ (α₁ - 1) * y * S ^ 2 * eN
 
 end TauCeti

@@ -10,16 +10,11 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import TauCeti.Analysis.ODE.Complex.LinearEquation
 public import TauCeti.Analysis.ODE.Complex.RegularSingularity.Defs
 
-import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.Complex.PowerSeries.BranchCut
 import TauCeti.Analysis.Complex.SlitPlane
-import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.ODE.Complex.RegularSingularity.Primary
 import TauCeti.Analysis.ODE.Complex.RegularSingularPoint
-import TauCeti.Analysis.ODE.Complex.SecondOrder
-import TauCeti.Analysis.ODE.SecondOrder.Operator
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # Convergent series solutions at a regular singularity
@@ -36,8 +31,6 @@ punctured disc `TauCeti.regularSingularSlitDisc z₀ r`
   `TauCeti.Analysis.ODE.Complex.RegularSingularPoint`, returning series convergence and
   `IsSolution` for `TauCeti.regularSingularEquation`), with normalized uniqueness
   `TauCeti.eq_regularSingularCoeff_of_solution`.
-* The shifted logarithmic forcing coefficients `TauCeti.regularSingularLogForcing` sum to the
-  Euler–Frobenius forcing series (`TauCeti.hasSum_regularSingularLogForcing_mul_pow`).
 * When `α₁ - α₂ = N ∈ ℕ`, `TauCeti.regularSingularSecondSolution`
   (`TauCeti.regularSingularSecondSolution_eq`) defines the holomorphic second solution
   `w₂(z) = (z - z₀)^{α₂} ∑ b_s (z - z₀)^s + c w₁(z) log(z - z₀)` (`b_N = 0`, `c = 1` for
@@ -216,123 +209,6 @@ theorem eq_regularSingularCoeff_of_solution {z₀ ρ : ℂ} {r : ℝ} {f g : ℂ
 
 /-! ### Second solution when the indicial roots differ by a natural number -/
 
-/-- Power-series expansion for the shifted logarithmic forcing terms
-`u ^ N * (2 u A₁'(u) + (2(α₂ + N) + P(u) - 1) A₁(u))` on `‖u‖ < r`. -/
-theorem hasSum_regularSingularLogForcing_mul_pow {z₀ α₂ : ℂ} {N : ℕ} {r : ℝ}
-    {fs a : ℕ → ℂ}
-    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r → Summable fun s => fs s * (z - z₀) ^ s)
-    (ha : ∀ z, ‖z - z₀‖ < r → Summable fun s => a s * (z - z₀) ^ s)
-    {u : ℂ} (hu : ‖u‖ < r) :
-    HasSum (fun s => regularSingularLogForcing fs a α₂ N s * u ^ s)
-      (u ^ N * (2 * u * deriv (fun w => ∑' s, a s * w ^ s) u +
-        (2 * (α₂ + N) + (∑' s, fs s * u ^ s) - 1) * ∑' s, a s * u ^ s)) := by
-  have hr : 0 < r := (norm_nonneg u).trans_lt hu
-  have hue : ‖u‖ₑ < ENNReal.ofReal r := eNorm_lt_ofReal_iff.mpr hu
-  have har := le_radius_ofScalars_of_summable_sub a fun z _ hzr => ha z hzr
-  have hfr := le_radius_ofScalars_of_summable_sub fs hf
-  have hpA := hasFPowerSeriesOnBall_tsum_mul_pow a (ENNReal.ofReal_pos.mpr hr) har
-  have hf_sum := (FormalMultilinearSeries.summable_norm_mul_pow_of_lt_radius fs
-    (hue.trans_le hfr)).of_norm
-  have hfor := hasSum_regularSingularLogForcing_ofScalars (α₂ := α₂) (c := 1) (N := N)
-    hpA hue (hue.trans_le hfr) hf_sum.hasSum
-  simp only [one_mul] at hfor
-  convert hfor using 1
-  ring
-
-/-- Algebraic recombination of `(z - z₀)^α` powers when adding the `(z - z₀)^α₂` series part
-to `c'` times the logarithmic forcing of `w₁(z) = (z - z₀)^{α₂ + N} A₁(z - z₀)`. -/
-private theorem operator_second_ansatz_cpow_recombine {u α₂ : ℂ} {N : ℕ} (hu0 : u ≠ 0)
-    (c' A₁ dA₁ fz S : ℂ) :
-    u ^ (α₂ - 2) * S + c' * ((u ^ 2)⁻¹ *
-      (2 * u * (u ^ (α₂ + (N : ℂ) - 1) * ((α₂ + N) * A₁ + u * dA₁)) +
-        (u * fz - 1) * (u ^ (α₂ + (N : ℂ)) * A₁))) =
-      u ^ (α₂ - 2) *
-        (S + c' * (u ^ N * (2 * u * dA₁ + (2 * (α₂ + N) + u * fz - 1) * A₁))) := by
-  have hcpow1 : u ^ (α₂ + (N : ℂ)) = u ^ (α₂ + (N : ℂ) - 1) * u := by
-    simpa [Nat.cast_one, pow_one] using cpow_eq_cpow_sub_natCast_mul_pow hu0 (α₂ + (N : ℂ)) 1
-  have hcpow2 : u ^ α₂ = u ^ (α₂ - 2) * u ^ 2 := by
-    simpa using cpow_eq_cpow_sub_natCast_mul_pow hu0 α₂ 2
-  have hcpow_N : (u ^ 2)⁻¹ * u ^ (α₂ + (N : ℂ)) = u ^ (α₂ - 2) * u ^ N := by
-    rw [Complex.cpow_add _ _ hu0, Complex.cpow_natCast, hcpow2]
-    field_simp [hu0]
-  linear_combination
-    c' * (2 * (u ^ 2)⁻¹ * ((α₂ + ↑N) * A₁ + u * dA₁)) * hcpow1.symm +
-    c' * (2 * u * dA₁ + (2 * (α₂ + ↑N) + u * fz - 1) * A₁) * hcpow_N
-
-/-- Shared operator formula for any second-solution candidate
-`w₂'(z) = (z - z₀)^{α₂} ∑ b' s * (z - z₀)^s + c' * w₁(z) * log(z - z₀)` when `α₁ = α₂ + N`. -/
-private theorem operator_second_ansatz_eq {z₀ α₂ : ℂ} {N : ℕ} {r : ℝ} {f g : ℂ → ℂ}
-    {fs gs b' : ℕ → ℂ} {c' : ℂ}
-    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) * f z))
-    (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
-    (ha_sum : ∀ z, ‖z - z₀‖ < r →
-      Summable fun s => regularSingularCoeff fs gs (α₂ + N) s * (z - z₀) ^ s)
-    (hw₁_sol : (regularSingularEquation hf hg).IsSolution
-      (regularSingularSolution fs gs z₀ (α₂ + N)))
-    (hlog_sum : ∀ u : ℂ, ‖u‖ < r →
-      let a := regularSingularCoeff fs gs (α₂ + N)
-      HasSum (fun s => regularSingularLogForcing fs a α₂ N s * u ^ s)
-        (u ^ N * (2 * u * deriv (fun w => ∑' s, a s * w ^ s) u +
-          (2 * (α₂ + N) + (∑' s, fs s * u ^ s) - 1) * ∑' s, a s * u ^ s)))
-    (hb'_sum : ∀ z, ‖z - z₀‖ < r → Summable fun s => b' s * (z - z₀) ^ s) :
-    let a := regularSingularCoeff fs gs (α₂ + N)
-    let w₁ : ℂ → ℂ := fun w => (w - z₀) ^ (α₂ + (N : ℂ)) * ∑' s, a s * (w - z₀) ^ s
-    let w₂' : ℂ → ℂ := fun w =>
-      (w - z₀) ^ α₂ * (∑' s, b' s * (w - z₀) ^ s) + c' * w₁ w * Complex.log (w - z₀)
-    let D : ℕ → ℂ := fun s =>
-      (indicialPoly (fs 0) (gs 0) (α₂ + s) * b' s +
-        ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b' k) +
-      c' * regularSingularLogForcing fs a α₂ N s
-    let U : Set ℂ := {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}
-    DifferentiableOn ℂ w₂' U ∧
-      (∀ u : ℂ, ‖u‖ < r → Summable fun s => D s * u ^ s) ∧
-      ∀ z ∈ U, deriv (deriv w₂') z + f z * deriv w₂' z + g z * w₂' z =
-        (z - z₀) ^ (α₂ - 2) * ∑' s, D s * (z - z₀) ^ s := by
-  intro a w₁ w₂' D U
-  -- 1. Unpack holomorphy and the ODE for `w₁`, and derive the forcing on `Φ = w₁ * log(· - z₀)`.
-  obtain ⟨hw₁_diff, hw₁_op⟩ := (isSolution_regularSingularEquation_iff hf hg _).mp hw₁_sol
-  have hopen := isOpen_setOf_sub_mem_slitPlane_and_norm_sub_lt z₀ r
-  obtain ⟨hΦ_diff, hΦ_op⟩ := operator_mul_log (z₀ := z₀) hopen (fun _ hz => hz.1) hw₁_diff hw₁_op
-  set ψ : ℂ → ℂ := fun w => (w - z₀) ^ α₂ * ∑' s, b' s * (w - z₀) ^ s
-  set Φ : ℂ → ℂ := fun w => regularSingularSolution fs gs z₀ (α₂ + N) w * Complex.log (w - z₀)
-  have hψ_diff : DifferentiableOn ℂ ψ U := fun w hw =>
-    (hasDerivAt_cpow_mul_tsum hb'_sum hw.1 hw.2).differentiableAt.differentiableWithinAt
-  have hw₁_fn : w₁ = regularSingularSolution fs gs z₀ (α₂ + N) :=
-    (regularSingularSolution_eq fs gs z₀ (α₂ + N)).symm
-  have hw₂'_eq : w₂' = fun w => ψ w + c' * Φ w := by
-    dsimp only [w₂', ψ, Φ]; rw [hw₁_fn]; simp only [mul_assoc]
-  -- 2. Sum the series contributions from `ψ` and the logarithmic forcing series `D`.
-  have hD_hasSum : ∀ u : ℂ, ‖u‖ < r → HasSum (fun s => D s * u ^ s)
-      ((∑' s : ℕ, (indicialPoly (fs 0) (gs 0) (α₂ + s) * b' s +
-          ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b' k) * u ^ s) +
-        c' * (u ^ N * (2 * u * deriv (fun w => ∑' s, a s * w ^ s) u +
-          (2 * (α₂ + N) + (∑' s, fs s * u ^ s) - 1) * ∑' s, a s * u ^ s))) := fun u hu =>
-    (((hasSum_eulerOperator_ofScalars_of_norm_sub_lt (σ := α₂)
-        (fun w hw0 hwr => (hf w hw0 hwr).summable)
-        (fun w hw0 hwr => (hg w hw0 hwr).summable) hb'_sum hu).summable.hasSum).add
-      ((hlog_sum u hu).mul_left c')).congr_fun fun _ => by dsimp [D]; ring
-  refine ⟨by rw [hw₂'_eq]; exact hψ_diff.add (hΦ_diff.const_mul c'),
-    fun u hu => (hD_hasSum u hu).summable, fun z ⟨hzs, hzb⟩ => ?_⟩
-  -- 3. Apply operator linearity to `ψ + c' Φ` and recombine the `cpow` prefactors.
-  have hzU : z ∈ U := ⟨hzs, hzb⟩
-  have hlin := secondOrder_operator_add_const_mul (f := f) (g := g) (c' := c') (z := z)
-    (Eventually.mono (hopen.mem_nhds hzU) fun _ hw => hψ_diff.differentiableAt (hopen.mem_nhds hw))
-    (Eventually.mono (hopen.mem_nhds hzU) fun _ hw => hΦ_diff.differentiableAt (hopen.mem_nhds hw))
-    ((hψ_diff.deriv hopen).differentiableAt (hopen.mem_nhds hzU))
-    ((hΦ_diff.deriv hopen).differentiableAt (hopen.mem_nhds hzU))
-  rw [hw₂'_eq, hlin,
-    deriv_deriv_add_mul_deriv_add_mul_cpow_mul_tsum (σ := α₂) hf hg hb'_sum hzs hzb,
-    hΦ_op z hzU, (hD_hasSum (z - z₀) hzb).tsum_eq]
-  have hu0 : z - z₀ ≠ 0 := Complex.slitPlane_ne_zero hzs
-  have hdw₁ : deriv w₁ z = (z - z₀) ^ (α₂ + (N : ℂ) - 1) *
-      ((α₂ + N) * (∑' s, a s * (z - z₀) ^ s) +
-        (z - z₀) * deriv (fun w => ∑' s, a s * w ^ s) (z - z₀)) :=
-    (hasDerivAt_cpow_mul_tsum ha_sum hzs hzb).deriv
-  rw [(hf z (norm_pos_iff.mpr hu0) hzb).tsum_eq, ← hw₁_fn, hdw₁]
-  exact operator_second_ansatz_cpow_recombine hu0 c' _ _ (f z) _
-
 /-- Canonical logarithmic second Frobenius solution attached to indicial roots `α₁ = α₂ + N`:
 `(z - z₀)^{α₂} ∑' s, regularSingularSecondCoeff fs gs α₂ N s * (z - z₀)^s +`
 `regularSingularLogMultiplier fs gs α₂ N * regularSingularSolution fs gs z₀ (α₂ + N) z *`
@@ -358,34 +234,6 @@ theorem regularSingularSecondSolution_eq (fs gs : ℕ → ℂ) (z₀ α₂ : ℂ
           Complex.log (z - z₀) :=
   funext fun z => regularSingularSecondSolution_apply fs gs z₀ α₂ N z
 
-/-- In the resonant case `α₁ = α₂ + N` (`N : ℕ`), the primary root `α₂ + N` satisfies the
-non-resonance condition, so `regularSingularCoeff fs gs (α₂ + N)` converges on `‖z - z₀‖ < r`,
-`regularSingularSolution fs gs z₀ (α₂ + N)` solves `regularSingularEquation hf hg`, and the
-shifted logarithmic forcing coefficients sum to the Euler–Frobenius forcing series. -/
-theorem regularSingularCoeff_solution_add_nat {z₀ α₂ : ℂ} {N : ℕ} {r : ℝ} {f g : ℂ → ℂ}
-    {fs gs : ℕ → ℂ}
-    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => fs s * (z - z₀) ^ s) ((z - z₀) * f z))
-    (hg : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
-      HasSum (fun s => gs s * (z - z₀) ^ s) ((z - z₀) ^ 2 * g z))
-    (hfact : ∀ α, indicialPoly (fs 0) (gs 0) α = (α - (α₂ + N)) * (α - α₂)) :
-    (∀ z, ‖z - z₀‖ < r →
-        Summable fun s => regularSingularCoeff fs gs (α₂ + N) s * (z - z₀) ^ s) ∧
-      (regularSingularEquation hf hg).IsSolution
-        (regularSingularSolution fs gs z₀ (α₂ + N)) ∧
-      ∀ u : ℂ, ‖u‖ < r →
-        HasSum
-          (fun s =>
-            regularSingularLogForcing fs (regularSingularCoeff fs gs (α₂ + N)) α₂ N s * u ^ s)
-          (u ^ N * (2 * u *
-              deriv (fun w => ∑' s, regularSingularCoeff fs gs (α₂ + N) s * w ^ s) u +
-            (2 * (α₂ + N) + (∑' s, fs s * u ^ s) - 1) *
-              ∑' s, regularSingularCoeff fs gs (α₂ + N) s * u ^ s)) := by
-  obtain ⟨ha_sum, hw₁_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact])
-    fun s hs => indicialPoly_add_nat_ne_zero_of_re_le hfact (by simp) hs
-  exact ⟨ha_sum, hw₁_sol, fun u hu => hasSum_regularSingularLogForcing_mul_pow (α₂ := α₂) (N := N)
-    (fun w hw0 hwr => (hf w hw0 hwr).summable) ha_sum hu⟩
-
 /-- **Logarithmic second solution at a regular singularity** (DLMF 2.7.6). When the indicial
 polynomial factors as `(α - α₁)(α - α₂)` with `α₁ - α₂ = N ∈ ℕ`, the series
 `∑ regularSingularSecondCoeff fs gs α₂ N s * (z - z₀)^s` converges on `‖z - z₀‖ < r`, and
@@ -405,6 +253,8 @@ theorem regularSingular_second_solution {z₀ α₁ α₂ : ℂ} {N : ℕ} {r : 
         (regularSingularSecondSolution fs gs z₀ α₂ N) := by
   have hα₁ : α₁ = α₂ + N := by linear_combination hdiff
   subst hα₁
+  obtain ⟨hb, hc⟩ := (forall_regularSingularLogForcing_rec_iff rfl).mp
+    (regularSingularSecondCoeff_rec hfact)
   obtain ⟨hb_sum, hw₂_diff, hw₂_sol⟩ := regularSingular_log_solution
     (a := regularSingularCoeff fs gs (α₂ + N))
     (b := regularSingularSecondCoeff fs gs α₂ N)
@@ -413,14 +263,7 @@ theorem regularSingular_second_solution {z₀ α₁ α₂ : ℂ} {N : ℕ} {r : 
     hf hg (by simp [hfact]) rfl
     (fun s hs => indicialPoly_mul_regularSingularCoeff hs
       (indicialPoly_add_nat_ne_zero_of_re_le hfact (by simp) hs))
-    (fun s hs => by
-      have hrec := regularSingularSecondCoeff_rec hfact s
-      rw [regularSingularLogForcing_of_lt _ _ _ hs, mul_zero, add_zero] at hrec
-      linear_combination hrec)
-    (fun s => by
-      have hrec := regularSingularSecondCoeff_rec hfact (s + N)
-      rw [show α₂ + ((s + N : ℕ) : ℂ) = (α₂ + N) + s by push_cast; ring] at hrec
-      linear_combination hrec)
+    hb hc
     (by
       funext w
       simp only [regularSingularSecondSolution_apply, regularSingularSolution_apply, mul_assoc])
@@ -458,11 +301,27 @@ theorem eq_regularSingularSecondCoeff_of_solution {z₀ α₁ α₂ : ℂ} {N : 
       c' = regularSingularLogMultiplier fs gs α₂ N := by
   have hα₁ : α₁ = α₂ + N := by linear_combination hdiff
   subst hα₁
-  obtain ⟨ha_sum, hw₁_sol, hlog_sum⟩ := regularSingularCoeff_solution_add_nat hf hg hfact
-  obtain ⟨_, hD_sum, hD_op⟩ :=
-    operator_second_ansatz_eq (c' := c') hf hg ha_sum hw₁_sol hlog_sum hb'_sum
+  obtain ⟨ha_sum, hw₁_sol⟩ := regularSingularCoeff_solution hf hg (by simp [hfact])
+    fun _ hs => indicialPoly_add_nat_ne_zero_of_re_le hfact (by simp) hs
+  have hw₁_op : ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
+      deriv (deriv fun w => (w - z₀) ^ (α₂ + (N : ℂ)) *
+          ∑' s, regularSingularCoeff fs gs (α₂ + N) s * (w - z₀) ^ s) z +
+        f z * deriv (fun w => (w - z₀) ^ (α₂ + (N : ℂ)) *
+          ∑' s, regularSingularCoeff fs gs (α₂ + N) s * (w - z₀) ^ s) z +
+        g z * ((z - z₀) ^ (α₂ + (N : ℂ)) *
+          ∑' s, regularSingularCoeff fs gs (α₂ + N) s * (z - z₀) ^ s) = 0 := by
+    have hw₁ := ((isSolution_regularSingularEquation_iff hf hg _).mp hw₁_sol).2
+    intro z hzs hzb
+    rw [regularSingularSolution_eq] at hw₁
+    exact hw₁ z ⟨hzs, hzb⟩
+  obtain ⟨_, hD_sum, hD_op⟩ := deriv_deriv_add_mul_deriv_add_mul_cpow_mul_tsum_add_log
+    (c := c') hf hg ha_sum hb'_sum hw₁_op
   exact eq_regularSingularSecondCoeff_of_rec hfact hb'N hc'0 hb'0 <|
     eq_zero_of_cpow_mul_tsum_eq_zero (z₀ := z₀) (α := α₂ - 2) hr (fun u _ hu => hD_sum u hu)
-      fun z hzs hzb => (hD_op z ⟨hzs, hzb⟩).symm.trans (hsol z hzs hzb)
+      fun z hzs hzb => by
+        have hD := hD_op z hzs hzb
+        have hsolz := hsol z hzs hzb
+        simp only [regularSingularSolution_apply, mul_assoc] at hD hsolz
+        exact hD.symm.trans hsolz
 
 end TauCeti

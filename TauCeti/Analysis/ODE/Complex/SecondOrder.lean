@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import TauCeti.Analysis.ODE.SecondOrder.Operator
 
+import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Tactic.FieldSimp
@@ -47,29 +48,42 @@ theorem deriv_deriv_add_mul_deriv_add_mul_mul_log_sub
         g z * (w z * Complex.log (z - z₀))) -
         Complex.log (z - z₀) * (deriv (deriv w) z + f z * deriv w z + g z * w z) =
       ((z - z₀) ^ 2)⁻¹ * (2 * (z - z₀) * deriv w z + ((z - z₀) * f z - 1) * w z) := by
-  set Φ : ℂ → ℂ := fun u ↦ w u * Complex.log (u - z₀)
+  set v : ℂ → ℂ := fun u ↦ w (u + z₀)
+  have hv : ∀ᶠ y in 𝓝 (z - z₀), DifferentiableAt ℂ v y := by
+    have hcont : ContinuousAt (fun y : ℂ ↦ y + z₀) (z - z₀) :=
+      (continuous_id.add continuous_const).continuousAt
+    have htend : Tendsto (fun y : ℂ ↦ y + z₀) (𝓝 (z - z₀)) (𝓝 z) := by
+      simpa [sub_add_cancel] using hcont.tendsto
+    exact (htend.eventually hw).mono fun y hy ↦ hy.comp y (differentiableAt_id.add_const z₀)
+  have hdv_eq : deriv v = fun y ↦ deriv w (y + z₀) := funext fun y ↦ deriv_comp_add_const w z₀ y
+  have hdv : DifferentiableAt ℂ (deriv v) (z - z₀) := by
+    rw [hdv_eq]
+    have hdw' : DifferentiableAt ℂ (deriv w) ((z - z₀) + z₀) := by
+      simpa [sub_add_cancel] using hdw
+    exact hdw'.comp (z - z₀) (differentiableAt_id.add_const z₀)
+  have hd1_shift := Complex.deriv_mul_log hv.self_of_nhds hzs
+  have hd2_shift := Complex.deriv_deriv_mul_log hv hdv hzs
+  have hd1_fun : ∀ u, deriv (fun x ↦ w x * Complex.log (x - z₀)) u =
+      deriv (fun y ↦ v y * Complex.log y) (u - z₀) := fun u ↦ by
+    have hΦ_eq : (fun x ↦ w x * Complex.log (x - z₀)) =
+        fun x ↦ (fun y ↦ v y * Complex.log y) (x - z₀) := by
+      ext x; simp [v, sub_add_cancel]
+    rw [hΦ_eq]
+    exact deriv_comp_sub_const (fun y ↦ v y * Complex.log y) z₀ u
+  have hd1 : deriv (fun u ↦ w u * Complex.log (u - z₀)) z =
+      deriv w z * Complex.log (z - z₀) + w z * (z - z₀)⁻¹ := by
+    rw [hd1_fun z, hd1_shift, deriv_comp_add_const]
+    simp [v, sub_add_cancel]
+  have hd2 : deriv (deriv fun u ↦ w u * Complex.log (u - z₀)) z =
+      deriv (deriv w) z * Complex.log (z - z₀) + 2 * deriv w z * (z - z₀)⁻¹ -
+        w z * ((z - z₀) ^ 2)⁻¹ := by
+    rw [funext hd1_fun, deriv_comp_sub_const (deriv fun y ↦ v y * Complex.log y) z₀ z, hd2_shift,
+      show deriv v (z - z₀) = deriv w z by rw [deriv_comp_add_const]; simp [sub_add_cancel],
+      show deriv (deriv v) (z - z₀) = deriv (deriv w) z by
+        rw [hdv_eq, deriv_comp_add_const]; simp [sub_add_cancel]]
+    simp [v, sub_add_cancel]
   have hzu0 : z - z₀ ≠ 0 := Complex.slitPlane_ne_zero hzs
-  have hsub : HasDerivAt (fun u : ℂ ↦ u - z₀) 1 z := (hasDerivAt_id z).sub_const z₀
-  have hU_log : ∀ᶠ u in 𝓝 z, u - z₀ ∈ Complex.slitPlane :=
-    (Complex.isOpen_slitPlane.preimage (continuous_id.sub continuous_const)).mem_nhds hzs
-  have hderiv1 : ∀ᶠ u in 𝓝 z,
-      HasDerivAt Φ (deriv w u * Complex.log (u - z₀) + (u - z₀)⁻¹ * w u) u := by
-    filter_upwards [hw, hU_log] with u hu hsu
-    exact hu.hasDerivAt.mul_log_sub hsu
-  have hd1 : deriv Φ z = deriv w z * Complex.log (z - z₀) + (z - z₀)⁻¹ * w z :=
-    hderiv1.self_of_nhds.deriv
-  have hev : deriv Φ =ᶠ[𝓝 z]
-      (deriv w * (fun u : ℂ ↦ Complex.log (u - z₀)) + (fun u : ℂ ↦ (u - z₀)⁻¹) * w) :=
-    hderiv1.mono fun _ hu ↦ hu.deriv
-  have hd2 : deriv (deriv Φ) z = deriv (deriv w) z * Complex.log (z - z₀) +
-      2 * (z - z₀)⁻¹ * deriv w z - ((z - z₀) ^ 2)⁻¹ * w z := by
-    rw [(((hdw.hasDerivAt.mul (hsub.clog hzs)).add
-      ((hsub.inv hzu0).mul hw.self_of_nhds.hasDerivAt)).congr_of_eventuallyEq hev).deriv]
-    simp only [Pi.inv_apply]; field_simp [hzu0]; ring
-  change (deriv (deriv Φ) z + f z * deriv Φ z + g z * Φ z) -
-      Complex.log (z - z₀) * (deriv (deriv w) z + f z * deriv w z + g z * w z) = _
   rw [hd1, hd2]
-  dsimp only [Φ]
   field_simp [hzu0]
   ring
 

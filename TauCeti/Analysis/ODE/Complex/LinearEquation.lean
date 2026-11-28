@@ -37,8 +37,8 @@ and `Module.finrank ℂ E.solutionSpace = n`. Non-monic scalar equations
 `∑ i : Fin (m + 1), p i z * iteratedDeriv i y z = 0` with nowhere-zero leading coefficient
 `p (Fin.last m)` normalize to monic equations via `LinearEquation.ofLeadingNeZero`. Second-order
 equations `y'' + f y' + g y = 0` are constructed directly via `LinearEquation.ofTwo`, with
-`LinearEquation.isSolution_two_iff` and `LinearEquation.isSolution_ofTwo_iff` characterizing
-`LinearEquation.IsSolution` in terms of `DifferentiableOn` and `deriv`.
+`LinearEquation.isSolution_iff_deriv_deriv` and `LinearEquation.isSolution_ofTwo_iff` characterizing
+`LinearEquation.IsSolution` in terms of `deriv`.
 
 ## References
 
@@ -651,19 +651,18 @@ theorem mem_solutionSpace_ofLeadingNeZero {U : Opens ℂ} {m : ℕ} (hm : 0 < m)
 
 /-! ### Second-order characterization in terms of `deriv` -/
 
-/-- A second-order monic scalar linear equation `E : LinearEquation U 2` is solved by `y` iff `y`
-is complex differentiable on `U` and satisfies
-`deriv (deriv y) z + extend (E.coeff 1) z * deriv y z + extend (E.coeff 0) z * y z = 0` on `U`. -/
-theorem isSolution_two_iff (E : LinearEquation U 2) (y : ℂ → ℂ) :
-    E.IsSolution y ↔ DifferentiableOn ℂ y U ∧
-      ∀ z ∈ U, deriv (deriv y) z + HolomorphicFunctions.extend (E.coeff 1) z * deriv y z +
+/-- Solutions of the second-order equation `y'' + a₁ y' + a₀ y = 0` are the functions analytic on
+the domain that satisfy it there, written with `deriv` in place of `iteratedDeriv`. -/
+theorem isSolution_iff_deriv_deriv {E : LinearEquation U 2} {y : ℂ → ℂ} :
+    E.IsSolution y ↔ AnalyticOnNhd ℂ y U ∧ ∀ z ∈ U, deriv (deriv y) z +
+      HolomorphicFunctions.extend (E.coeff 1) z * deriv y z +
         HolomorphicFunctions.extend (E.coeff 0) z * y z = 0 := by
   rw [isSolution_iff]
-  refine and_congr ⟨fun h ↦ h.differentiableOn, fun h ↦ h.analyticOnNhd U.isOpen⟩
-    (forall₂_congr fun z _ ↦ ?_)
-  simp only [Fin.sum_univ_two, Fin.isValue, Fin.val_zero, Fin.val_one, iteratedDeriv_succ,
-    iteratedDeriv_zero]
-  exact Iff.of_eq (congrArg (· = 0) (by ring))
+  refine and_congr_right fun _ ↦ forall₂_congr fun z _ ↦ ?_
+  simp only [Fin.sum_univ_two, Fin.isValue, Fin.val_zero, Fin.val_one, iteratedDeriv_zero,
+    iteratedDeriv_one]
+  rw [iteratedDeriv_succ, iteratedDeriv_one]
+  constructor <;> intro h <;> linear_combination h
 
 /-- Construct a second-order monic linear differential equation `y'' + f y' + g y = 0` on `U` from
 holomorphic coefficients `f` and `g`. -/
@@ -693,8 +692,9 @@ theorem isSolution_ofTwo_iff {U : Opens ℂ} {f g : ℂ → ℂ} (hf : Different
     (hg : DifferentiableOn ℂ g U) (y : ℂ → ℂ) :
     (ofTwo f g hf hg).IsSolution y ↔ DifferentiableOn ℂ y U ∧
       ∀ z ∈ U, deriv (deriv y) z + f z * deriv y z + g z * y z = 0 := by
-  rw [isSolution_two_iff]
-  refine and_congr_right fun _ ↦ forall₂_congr fun z hz ↦ ?_
+  rw [isSolution_iff_deriv_deriv]
+  refine and_congr ⟨fun h ↦ h.differentiableOn, fun h ↦ h.analyticOnNhd U.isOpen⟩
+    (forall₂_congr fun z hz ↦ ?_)
   simp only [extend_ofTwo_coeff_zero hf hg hz, extend_ofTwo_coeff_one hf hg hz]
 
 /-! The following checks fix the coefficient sign, unscaled-jet convention, and disc dimension. -/

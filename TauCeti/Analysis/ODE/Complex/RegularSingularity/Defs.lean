@@ -422,6 +422,35 @@ theorem eq_regularSingularLogCoeff_of_rec {fs gs a b' : ℕ → ℂ} {α₂ c c'
     · simp [b, hb'N]
     · exact hstep s (by omega) hsN.ne' ih (by rw [hc'_eq])
 
+/-- Equivalence between the unified resonant indicial recursion for `(b, c)` at all `s : ℕ`
+and the split form below and from the resonant index `N` (DLMF 2.7.6). -/
+theorem forall_regularSingularLogForcing_rec_iff {fs gs a b : ℕ → ℂ} {α₁ α₂ c : ℂ} {N : ℕ}
+    (hN : α₁ = α₂ + N) :
+    (∀ s : ℕ,
+      (indicialPoly (fs 0) (gs 0) (α₂ + s) * b s +
+        ∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b k) +
+      c * regularSingularLogForcing fs a α₂ N s = 0) ↔
+      (∀ s < N, indicialPoly (fs 0) (gs 0) (α₂ + s) * b s =
+        -∑ k ∈ range s, ((α₂ + k) * fs (s - k) + gs (s - k)) * b k) ∧
+      ∀ s : ℕ, indicialPoly (fs 0) (gs 0) (α₁ + s) * b (s + N) =
+        -∑ k ∈ range (s + N), ((α₂ + k) * fs (s + N - k) + gs (s + N - k)) * b k -
+          c * regularSingularLogForcing fs a α₂ N (s + N) := by
+  subst hN
+  refine ⟨fun h => ⟨fun s hs => ?_, fun s => ?_⟩, fun ⟨hlt, hge⟩ s => ?_⟩
+  · have hs' := h s
+    rw [regularSingularLogForcing_of_lt _ _ _ hs, mul_zero, add_zero] at hs'
+    linear_combination hs'
+  · have hs' := h (s + N)
+    rw [show α₂ + ((s + N : ℕ) : ℂ) = (α₂ + N) + s by push_cast; ring] at hs'
+    linear_combination hs'
+  · rcases lt_or_ge s N with hs | hs
+    · rw [regularSingularLogForcing_of_lt _ _ _ hs, mul_zero, add_zero]
+      linear_combination hlt s hs
+    · obtain ⟨j, rfl⟩ : ∃ j, s = j + N := ⟨s - N, by omega⟩
+      have hj := hge j
+      rw [show (α₂ + (N : ℂ)) + (j : ℂ) = α₂ + ((j + N : ℕ) : ℂ) by push_cast; ring] at hj
+      linear_combination hj
+
 /-- The series coefficients `b_s` of the second solution when `α₁ - α₂ = N ∈ ℕ` (DLMF 2.7.6),
 normalized by `b_N = 0` (omitting the resonant term) and `b₀ = 1` when `N ≥ 1`. -/
 def regularSingularSecondCoeff (fs gs : ℕ → ℂ) (α₂ : ℂ) (N s : ℕ) : ℂ :=
@@ -437,44 +466,6 @@ theorem regularSingularSecondCoeff_self (fs gs : ℕ → ℂ) (α₂ : ℂ) (N :
 theorem regularSingularSecondCoeff_zero_of_pos (fs gs : ℕ → ℂ) (α₂ : ℂ) {N : ℕ} (hN : 0 < N) :
     regularSingularSecondCoeff fs gs α₂ N 0 = 1 :=
   regularSingularLogCoeff_zero_of_pos fs gs _ α₂ _ hN
-
-/-- Below the resonant index `N`, `regularSingularSecondCoeff` agrees with
-`regularSingularCoeff`. -/
-theorem regularSingularSecondCoeff_eq_regularSingularCoeff_of_lt (fs gs : ℕ → ℂ) (α₂ : ℂ)
-    {N s : ℕ} (hs : s < N) :
-    regularSingularSecondCoeff fs gs α₂ N s = regularSingularCoeff fs gs α₂ s :=
-  regularSingularLogCoeff_eq_regularSingularCoeff_of_lt fs gs _ α₂ _ hs
-
-/-- Recursion for `regularSingularSecondCoeff` at indices `1 ≤ s < N` when `Q(α₂ + s) ≠ 0`
-(see `regularSingularSecondCoeff_rec` for the unified factored resonant recursion). -/
-theorem indicialPoly_mul_regularSingularSecondCoeff_of_lt {fs gs : ℕ → ℂ} {α₂ : ℂ} {N s : ℕ}
-    (hs1 : 1 ≤ s) (hsN : s < N) (hQ : indicialPoly (fs 0) (gs 0) (α₂ + s) ≠ 0) :
-    indicialPoly (fs 0) (gs 0) (α₂ + s) * regularSingularSecondCoeff fs gs α₂ N s =
-      -∑ k ∈ range s,
-        ((α₂ + k) * fs (s - k) + gs (s - k)) * regularSingularSecondCoeff fs gs α₂ N k :=
-  indicialPoly_mul_regularSingularLogCoeff_of_lt hs1 hsN hQ
-
-/-- Unfolding formula for `regularSingularSecondCoeff` above the resonant index `N < s`. -/
-theorem regularSingularSecondCoeff_of_gt (fs gs : ℕ → ℂ) (α₂ : ℂ) {N s : ℕ} (hsN : N < s) :
-    regularSingularSecondCoeff fs gs α₂ N s =
-      -(indicialPoly (fs 0) (gs 0) (α₂ + s))⁻¹ *
-        ((∑ k ∈ range s,
-            ((α₂ + k) * fs (s - k) + gs (s - k)) * regularSingularSecondCoeff fs gs α₂ N k) +
-          regularSingularLogMultiplier fs gs α₂ N *
-            regularSingularLogForcing fs (regularSingularCoeff fs gs (α₂ + N)) α₂ N s) :=
-  regularSingularLogCoeff_of_gt fs gs _ α₂ _ hsN
-
-/-- Recursion for `regularSingularSecondCoeff` above the resonant index `N < s` when
-`Q(α₂ + s) ≠ 0` (see `regularSingularSecondCoeff_rec` for the unified factored resonant
-recursion). -/
-theorem indicialPoly_mul_regularSingularSecondCoeff_of_gt {fs gs : ℕ → ℂ} {α₂ : ℂ} {N s : ℕ}
-    (hsN : N < s) (hQ : indicialPoly (fs 0) (gs 0) (α₂ + s) ≠ 0) :
-    indicialPoly (fs 0) (gs 0) (α₂ + s) * regularSingularSecondCoeff fs gs α₂ N s =
-      -(∑ k ∈ range s,
-          ((α₂ + k) * fs (s - k) + gs (s - k)) * regularSingularSecondCoeff fs gs α₂ N k) -
-        regularSingularLogMultiplier fs gs α₂ N *
-          regularSingularLogForcing fs (regularSingularCoeff fs gs (α₂ + N)) α₂ N s :=
-  indicialPoly_mul_regularSingularLogCoeff_of_gt hsN hQ
 
 /-- The canonical resonant pair `(regularSingularSecondCoeff, regularSingularLogMultiplier)`
 satisfies the unified resonant indicial recursion for every `s : ℕ`. -/
