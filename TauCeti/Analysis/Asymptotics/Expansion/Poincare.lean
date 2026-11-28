@@ -235,8 +235,7 @@ theorem _root_.HasFPowerSeriesWithinAt.hasAsymptoticExpansion [NontriviallyNorme
         simpa using (continuous_sub_right c).tendsto c
       exact h.mono_left nhdsWithin_le_nhds
     · filter_upwards [self_mem_nhdsWithin] with z hz
-      change c + (z - c) ∈ insert c s
-      rw [add_sub_cancel]
+      rw [Set.mem_preimage, add_sub_cancel]
       exact mem_insert_of_mem c hz
   have hcomp := h0.comp_tendsto hsub
   refine hcomp.congr' (Eventually.of_forall fun z => ?_) EventuallyEq.rfl
