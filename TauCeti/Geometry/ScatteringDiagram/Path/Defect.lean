@@ -13,11 +13,12 @@ import TauCeti.Combinatorics.Quiver.PathWeight
 /-!
 # Lift defects for wall transport
 
-Suppose chosen vertex lifts project to transports from a common basepoint. A segment
-then has a corrected transport in the projection kernel. Corrected transports multiply
-along paths by cancellation of all interior lifts. A homomorphism from the kernel to an
-additive coefficient group turns the corrected path product into the sum of the local
-defects. At a vertex with identity lift the formula evaluates the original loop product.
+Suppose that on each segment the projected transport carries the source lift's projection
+to the target lift's projection. The corrected segment transport then lies in the projection
+kernel. Corrected transports multiply along paths by cancellation of the interior lifts.
+A homomorphism from the kernel to an additive commutative monoid turns the corrected path
+product into the sum of the local defects. At a vertex with identity lift the formula
+evaluates the original loop product.
 -/
 
 public section
@@ -130,7 +131,7 @@ theorem coe_wallPathDefect_loop (p : AdmissiblePLPath x x) (hx : t x = 1) :
   simp [hx]
 
 /-- An additive evaluation of the kernel product is the sum of the evaluated
-segment defects. In particular this applies to the central logarithm. -/
+segment defects. -/
 theorem log_wallPathDefect_eq_addWeight {A : Type*} [AddCommMonoid A]
     (log : f.ker →* Multiplicative A) (p : AdmissiblePLPath x y) :
     (log (p.wallPathDefect ν labels hc f t ht)).toAdd =
