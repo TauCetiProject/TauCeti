@@ -5,73 +5,46 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
-public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import Mathlib.Topology.Homotopy.Contractible
+public import TauCeti.Geometry.Manifold.ContMDiffMap.BranchLog
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Comp
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Prod
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.WithSeminorms
-public import TauCeti.Geometry.Manifold.Instances.Rectangle
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import Mathlib.Analysis.Complex.CoveringMap
-import Mathlib.Topology.Homotopy.Lifting
-import TauCeti.Analysis.Complex.BranchLogRoot
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 
 /-!
-# Smooth logarithms of nonvanishing functions on simply connected manifolds
+# Continuity of the branch of the logarithm, and contractibility
 
-Let `M` be a simply connected, locally path connected `C^n` manifold over `ℝ`, and let
-`f : M → ℂ` be a nowhere-vanishing `C^n` function. Since `exp : ℂ → ℂ \ {0}` is a covering map,
-`f` has a continuous logarithm, unique once its value at a base point `x₀` is fixed; the branch
-`ContMDiffMap.branchLog f x₀` takes the principal value `log (f x₀)` there. Near each point a
-continuous logarithm of `f` is a constant plus the principal logarithm of `f` divided by its value
-at that point, so it is again `C^n` (`ContMDiff.of_continuous_of_exp_eq`).
-
-For compact `M` and `n ≤ ∞` the branch depends continuously on `f` in the weak Whitney topology,
-as long as `f x₀` stays off the branch cut of `log` (`ContMDiffMap.continuousOn_branchLog`): near
-`f₀`, the branch of `f` is the branch of `f₀` plus the principal logarithm of `f / f₀`, which is
-a postcomposition with a fixed smooth map.
+Let `M` be a compact, simply connected, locally path connected `C^n` manifold over `ℝ`, with
+`n ≤ ∞`. The branch `ContMDiffMap.branchLog f x₀` of the logarithm of a nowhere-vanishing `C^n`
+function `f : M → ℂ` depends continuously on `f` in the weak Whitney topology, as long as `f x₀`
+stays off the branch cut of `log` (`ContMDiffMap.continuousOn_branchLog`): near `f₀`, the branch
+of `f` is the branch of `f₀` plus the principal logarithm of `f / f₀`, which is a postcomposition
+with a fixed smooth map.
 
 The main application is a computation of homotopy type. For a connected nonempty set `s ⊆ M`,
 the nowhere-vanishing `C^n` functions `M → ℂ` equal to `1` near `s`
 (`ContMDiffMap.nonvanishingEqOneNear`) form a contractible space: their branches normalized at
 a point of `s` vanish near `s`, so `exp ((1 - t) • branchLog f x₀)` contracts the space onto the
-constant `1`, fixing `1` throughout, and the formula is `C^n` in the time and the point jointly.
-For the rectangle `[a, b] × [c, d]` and `s` its boundary, reading `ℂ` as `ℝ²`, these functions are
-the nowhere-vanishing vector fields equal to the constant field `(1, 0)` near the boundary
-(`ContMDiffMap.contractibleSpace_nonvanishingEqOneNear_boundary_rectangle`). On Smale's route to
-the contractibility of the diffeomorphisms of the square equal to the identity near the boundary,
-a diffeomorphism `φ` is compared with the vector field `φ_* (1, 0)`, and the contractibility of
-this space of fields, a space of maps to the circle with the homotopy type of `Ω² S¹`, is the
-homotopy-theoretic input (S. Smale, *Diffeomorphisms of the 2-sphere*, Proc. Amer. Math. Soc. 10
-(1959), 621–626).
+constant `1`, fixing `1` throughout. On Smale's route to the contractibility of the
+diffeomorphisms of the square equal to the identity near the boundary, a diffeomorphism `φ` is
+compared with the vector field `φ_* (1, 0)`, and the contractibility of this space of fields, a
+space of maps to the circle with the homotopy type of `Ω² S¹`, is the homotopy-theoretic input
+(S. Smale, *Diffeomorphisms of the 2-sphere*, Proc. Amer. Math. Soc. 10 (1959), 621–626); the
+case of a rectangle is in `TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Rectangle`.
 
 ## Main definitions
 
-* `ContMDiffMap.branchLog f x₀`: the `C^n` logarithm of a nowhere-vanishing `C^n` function `f`
-  with principal value at `x₀`.
-* `ContMDiffMap.nonvanishingEqOneNear I n s`: the nowhere-vanishing `C^n` functions `M → ℂ` equal
-  to `1` on a neighbourhood of `s`.
 * `ContMDiffMap.nonvanishingEqOneNearContraction`: the contraction
   `(t, f) ↦ exp ((1 - t) • branchLog f x₀)`, relative to the constant `1`.
 
 ## Main results
 
-* `ContMDiff.of_continuous_of_exp_eq`: a continuous logarithm of a `C^n` function is `C^n`.
-* `ContMDiffMap.exp_branchLog_apply`, `ContMDiffMap.branchLog_apply_self`: the defining
-  properties, and `ContMDiffMap.coe_branchLog_eq`: they characterize the branch among continuous
-  functions.
-* `ContMDiffMap.eventually_branchLog_eq_zero`: the branch of a function equal to `1` near a
-  preconnected set containing the base point vanishes near that set.
 * `ContMDiffMap.continuousOn_branchLog`: the branch is continuous in the function.
-* `ContMDiffMap.contMDiff_exp_smul_branchLog`: the contraction formula is `C^n` in the time and the
-  point jointly.
 * `ContMDiffMap.contractibleSpace_nonvanishingEqOneNear`: for connected nonempty `s`, the
-  nowhere-vanishing functions equal to `1` near `s` form a contractible space, and
-  `ContMDiffMap.contractibleSpace_nonvanishingEqOneNear_boundary_rectangle` is the case of a
-  rectangle and its boundary.
+  nowhere-vanishing functions equal to `1` near `s` form a contractible space.
 -/
 
 public section
@@ -88,49 +61,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : WithTop ℕ∞}
   {f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯}
 
-/-! ### Continuous logarithms are smooth -/
-
-/-- A continuous logarithm of a `C^n` function on a manifold is `C^n`: near each point it is a
-constant plus the principal logarithm of the function divided by its value there. This is the
-manifold form of the local argument of `TauCeti.exists_contDiffOn_eqOn_exp_comp`, which treats
-open subsets of `ℂ`. -/
-theorem _root_.ContMDiff.of_continuous_of_exp_eq {f w : M → ℂ} (hf : ContMDiff I 𝓘(ℝ, ℂ) n f)
-    (hw : Continuous w) (hexp : ∀ x, exp (w x) = f x) : ContMDiff I 𝓘(ℝ, ℂ) n w := by
-  intro x
-  have hev : w =ᶠ[𝓝 x] fun y ↦ w x + log (f y * exp (-w x)) := by
-    filter_upwards [hw.continuousAt.eventually (Metric.ball_mem_nhds (w x) one_pos)] with y hy
-    rw [dist_eq_norm] at hy
-    have him := (abs_le.1 (abs_im_le_norm (w y - w x)))
-    rw [← hexp y, ← Complex.exp_add, ← sub_eq_add_neg,
-      log_exp (by linarith [Real.two_le_pi]) (by linarith [Real.two_le_pi])]
-    ring
-  have hlog : ContDiffAt ℝ n log (f x * exp (-w x)) := by
-    rw [← hexp x, ← Complex.exp_add, add_neg_cancel, Complex.exp_zero]
-    exact ContDiffAt.restrict_scalars ℝ (contDiffAt_log one_mem_slitPlane)
-  have hmul : ContMDiff I 𝓘(ℝ, ℂ) n fun y ↦ f y * exp (-w x) :=
-    (contDiff_id.mul contDiff_const).comp_contMDiff hf
-  exact (contMDiffAt_const.add (ContDiffAt.comp_contMDiffAt (f := fun y ↦ f y * exp (-w x))
-    hlog hmul.contMDiffAt)).congr_of_eventuallyEq hev
-
-/-! ### Functions equal to one near a set -/
-
-variable (I n) in
-/-- The nowhere-vanishing `C^n` functions `M → ℂ` equal to `1` on a neighbourhood of `s`. When
-`M` is a domain in `ℝ²` and `ℂ` is read as `ℝ²`, these are the nowhere-vanishing vector fields
-equal to the constant field `(1, 0)` near `s`. -/
-def nonvanishingEqOneNear (s : Set M) : Set C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ :=
-  {f | (∀ x, f x ≠ 0) ∧ ∀ᶠ x in 𝓝ˢ s, f x = 1}
-
-/-- Membership in `nonvanishingEqOneNear`. -/
-@[simp]
-theorem mem_nonvanishingEqOneNear {s : Set M} :
-    f ∈ nonvanishingEqOneNear I n s ↔ (∀ x, f x ≠ 0) ∧ ∀ᶠ x in 𝓝ˢ s, f x = 1 :=
-  Iff.rfl
-
-/-- The constant function `1` is nowhere zero and equal to `1` near every set. -/
-theorem one_mem_nonvanishingEqOneNear (s : Set M) :
-    (1 : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) ∈ nonvanishingEqOneNear I n s :=
-  ⟨by simp, by simp⟩
+variable [SimplyConnectedSpace M] [LocallyPathConnectedSpace M]
 
 /-- The exponential map of `ℂ`, as a `C^n` map. -/
 private def expMap : C^n⟮𝓘(ℝ, ℂ), ℂ; 𝓘(ℝ, ℂ), ℂ⟯ := ⟨exp, Complex.contDiff_exp.contMDiff⟩
@@ -138,100 +69,12 @@ private def expMap : C^n⟮𝓘(ℝ, ℂ), ℂ; 𝓘(ℝ, ℂ), ℂ⟯ := ⟨exp
 @[simp]
 private theorem expMap_apply (z : ℂ) : (expMap : C^n⟮𝓘(ℝ, ℂ), ℂ; 𝓘(ℝ, ℂ), ℂ⟯) z = exp z := rfl
 
-/-! ### The branch of the logarithm -/
-
-variable [SimplyConnectedSpace M] [LocallyPathConnectedSpace M]
-
-/-- A nowhere-vanishing continuous function on a simply connected, locally path connected space
-has a unique continuous logarithm with principal value at `x₀`. -/
-private theorem existsUnique_lift {f : M → ℂ} (hf : Continuous f) (h0 : ∀ x, f x ≠ 0) (x₀ : M) :
-    ∃! w : C(M, ℂ), w x₀ = log (f x₀) ∧ exp ∘ w = f :=
-  isCoveringMapOn_exp.existsUnique_continuousMap_lifts ⟨f, hf⟩ (exp_log (h0 x₀)) fun x ↦ h0 x
-
-open scoped Classical in
-/-- **The branch of the logarithm** of a nowhere-vanishing `C^n` function `f : M → ℂ` on a simply
-connected manifold, normalized at `x₀`: the unique continuous `w : M → ℂ` with `exp ∘ w = f` and
-`w x₀ = log (f x₀)`, which is again `C^n`. If `f` has a zero it is `0`, by convention. -/
-def branchLog (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x₀ : M) : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ :=
-  ⟨if hf : ∀ x, f x ≠ 0 then ⇑(existsUnique_lift f.contMDiff.continuous hf x₀).exists.choose
-    else fun _ ↦ 0, by
-    split_ifs with hf
-    · exact f.contMDiff.of_continuous_of_exp_eq (map_continuous _) fun x ↦
-        congrFun (existsUnique_lift f.contMDiff.continuous hf x₀).exists.choose_spec.2 x
-    · exact contMDiff_const⟩
-
-private theorem branchLog_spec (hf : ∀ x, f x ≠ 0) (x₀ : M) :
-    branchLog f x₀ x₀ = log (f x₀) ∧ ∀ x, exp (branchLog f x₀ x) = f x := by
-  have h := (existsUnique_lift f.contMDiff.continuous hf x₀).exists.choose_spec
-  have hc : ⇑(branchLog f x₀) = ⇑(existsUnique_lift f.contMDiff.continuous hf x₀).exists.choose :=
-    by rw [branchLog, coeFn_mk, dite_eq_left hf]
-  rw [hc]
-  exact ⟨h.1, fun x ↦ congrFun h.2 x⟩
-
-/-- The branch of the logarithm of `f` exponentiates to `f`. -/
-theorem exp_branchLog_apply (hf : ∀ x, f x ≠ 0) (x₀ x : M) : exp (branchLog f x₀ x) = f x :=
-  (branchLog_spec hf x₀).2 x
-
-/-- The branch of the logarithm normalized at `x₀` takes the principal value there. -/
-theorem branchLog_apply_self (hf : ∀ x, f x ≠ 0) (x₀ : M) :
-    branchLog f x₀ x₀ = log (f x₀) :=
-  (branchLog_spec hf x₀).1
-
-/-- The branch of the logarithm normalized at `x₀` is the only continuous logarithm of `f` with
-principal value at `x₀`. -/
-theorem coe_branchLog_eq (hf : ∀ x, f x ≠ 0) {x₀ : M} {g : M → ℂ} (hg : Continuous g)
-    (hexp : ∀ x, exp (g x) = f x) (h₀ : g x₀ = log (f x₀)) : ⇑(branchLog f x₀) = g := by
-  have h := (existsUnique_lift f.contMDiff.continuous hf x₀).unique
-    (y₁ := ⟨branchLog f x₀, (branchLog f x₀).contMDiff.continuous⟩)
-    (y₂ := ⟨g, hg⟩) ⟨branchLog_apply_self hf x₀, funext (exp_branchLog_apply hf x₀)⟩
-    ⟨h₀, funext hexp⟩
-  exact congrArg (⇑) h
-
-/-- The branch of the logarithm of a function with a zero is `0`, by convention. -/
-theorem branchLog_of_exists_eq_zero (h : ∃ x, f x = 0) (x₀ : M) : branchLog f x₀ = 0 := by
-  refine ContMDiffMap.ext fun x ↦ ?_
-  rw [branchLog, coeFn_mk, dite_eq_right (by simpa using h)]
-  rfl
-
-/-- The branch of the logarithm of the constant function `1` is `0`. -/
-@[simp]
-theorem branchLog_one (x₀ : M) : branchLog (1 : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) x₀ = 0 :=
-  ContMDiffMap.ext fun x ↦ congrFun (coe_branchLog_eq (f := 1) (by simp) continuous_const
-    (by simp) (by simp)) x
-
-/-- **The branch of the logarithm vanishes near a set where the function is `1`.** If `f` is `1`
-on a neighbourhood of a preconnected set `s` containing the base point, then the branch of its
-logarithm normalized there is `0` on a neighbourhood of `s`. -/
-theorem eventually_branchLog_eq_zero (hf : ∀ x, f x ≠ 0) {s : Set M} (hs : IsPreconnected s)
-    {x₀ : M} (hx₀ : x₀ ∈ s) (h1 : ∀ᶠ x in 𝓝ˢ s, f x = 1) :
-    ∀ᶠ x in 𝓝ˢ s, branchLog f x₀ x = 0 := by
-  set w := branchLog f x₀
-  have hexp1 : ∀ x ∈ s, exp (w x) = 1 := fun x hx ↦
-    (exp_branchLog_apply hf x₀ x).trans (h1.self_of_nhdsSet x hx)
-  -- On `s` the branch is a continuous logarithm of `1` vanishing at `x₀`, hence `0`.
-  have hs0 : ∀ x ∈ s, w x = 0 := fun x hx ↦
-    w.contMDiff.continuous.continuousOn.eqOn_of_eqOn_exp_comp continuousOn_const hs
-      (fun y hy ↦ by simp [hexp1 y hy]) hx₀
-      (by rw [branchLog_apply_self hf, h1.self_of_nhdsSet x₀ hx₀, log_one]) hx
-  refine eventually_nhdsSet_iff_forall.2 fun x hx ↦ ?_
-  filter_upwards [h1.filter_mono (nhds_le_nhdsSet hx),
-    w.contMDiff.continuous.continuousAt.eventually
-      (Metric.ball_mem_nhds (w x) (by positivity : (0 : ℝ) < 2 * π))] with y hy1 hyb
-  rw [dist_eq_norm, hs0 x hx] at hyb
-  exact eq_of_exp_eq_of_norm_sub_lt (by rw [exp_branchLog_apply hf, hy1, Complex.exp_zero]) hyb
-
-/-- **The contraction is smooth in the time and the point jointly**: on `ℝ × M` its formula
-`(t, x) ↦ exp ((1 - t) • branchLog f x₀ x)` is `C^n`. -/
-theorem contMDiff_exp_smul_branchLog (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x₀ : M) :
-    ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ, ℂ) n fun p : ℝ × M ↦ exp ((1 - p.1) • branchLog f x₀ p.2) :=
-  (Complex.contDiff_exp.comp ((contDiff_const.sub contDiff_fst).smul contDiff_snd)).comp_contMDiff
-    (contMDiff_fst.prodMk_space ((branchLog f x₀).contMDiff.comp contMDiff_snd))
-
 private theorem expMap_comp_smul_branchLog_mem {s : Set M} (hs : IsPreconnected s) {x₀ : M}
     (hx₀ : x₀ ∈ s) (t : ℝ) (f : nonvanishingEqOneNear I n s) :
     expMap.comp (t • branchLog (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) x₀) ∈ nonvanishingEqOneNear I n s := by
-  refine ⟨fun x ↦ by simp [Complex.exp_ne_zero], ?_⟩
-  filter_upwards [eventually_branchLog_eq_zero f.property.1 hs hx₀ f.property.2] with x hx
+  obtain ⟨hf, h1⟩ := mem_nonvanishingEqOneNear.1 f.property
+  refine mem_nonvanishingEqOneNear.2 ⟨fun x ↦ by simp [Complex.exp_ne_zero], ?_⟩
+  filter_upwards [eventually_branchLog_eq_zero hf hs hx₀ h1] with x hx
   simp [hx]
 
 /-! ### Continuity in the function -/
@@ -348,18 +191,20 @@ def nonvanishingEqOneNearContraction {s : Set M} (hs : IsPreconnected s) {x₀ :
     have hb : Continuous fun f : nonvanishingEqOneNear I n s ↦
         branchLog (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) x₀ :=
       (continuousOn_branchLog x₀).comp_continuous continuous_subtypeVal fun f ↦
-        ⟨f.property.1, by rw [f.property.2.self_of_nhdsSet x₀ hx₀]; exact one_mem_slitPlane⟩
+        have hf := mem_nonvanishingEqOneNear.1 f.property
+        ⟨hf.1, by rw [hf.2.self_of_nhdsSet x₀ hx₀]; exact one_mem_slitPlane⟩
     exact ((continuous_postcomp_manifoldWeakWhitney expMap).comp
       ((continuous_const.sub (continuous_subtypeVal.comp continuous_fst)).smul
         (hb.comp continuous_snd))).subtype_mk _
   map_zero_left f := Subtype.ext <| ContMDiffMap.ext fun x ↦ by
-    simp [exp_branchLog_apply f.property.1]
+    simp [exp_branchLog_apply (mem_nonvanishingEqOneNear.1 f.property).1]
   map_one_left f := Subtype.ext <| ContMDiffMap.ext fun x ↦ by simp
   prop' t f hf := by
     rw [mem_singleton_iff.1 hf]
     exact Subtype.ext <| ContMDiffMap.ext fun x ↦ by simp
 
 /-- The contraction at time `t` is `exp ((1 - t) • branchLog f x₀)`. -/
+@[simp]
 theorem nonvanishingEqOneNearContraction_apply {s : Set M} (hs : IsPreconnected s) {x₀ : M}
     (hx₀ : x₀ ∈ s) (t : unitInterval) (f : nonvanishingEqOneNear I n s) (x : M) :
     (nonvanishingEqOneNearContraction hs hx₀ (t, f) : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) x =
@@ -374,16 +219,5 @@ theorem contractibleSpace_nonvanishingEqOneNear {s : Set M} (hs : IsConnected s)
   obtain ⟨x₀, hx₀⟩ := hs.nonempty
   exact (contractible_iff_id_nullhomotopic _).2
     ⟨_, ⟨(nonvanishingEqOneNearContraction hs.isPreconnected hx₀).toHomotopy⟩⟩
-
-/-! ### The rectangle -/
-
-/-- **The nowhere-vanishing functions on a rectangle equal to `1` near its boundary form a
-contractible space.** Reading `ℂ` as `ℝ²`, these are the nowhere-vanishing vector fields on
-`[a, b] × [c, d]` equal to the constant field `(1, 0)` near the boundary. -/
-theorem contractibleSpace_nonvanishingEqOneNear_boundary_rectangle {a b c d : ℝ}
-    [Fact (a < b)] [Fact (c < d)] :
-    ContractibleSpace (nonvanishingEqOneNear ((𝓡∂ 1).prod (𝓡∂ 1)) n
-      (((𝓡∂ 1).prod (𝓡∂ 1)).boundary (Icc a b × Icc c d))) :=
-  contractibleSpace_nonvanishingEqOneNear TauCeti.isConnected_boundary_rectangle
 
 end ContMDiffMap

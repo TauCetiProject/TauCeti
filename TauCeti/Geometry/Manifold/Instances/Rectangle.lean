@@ -5,11 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Connected.LocallyPathConnected
-public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.Geometry.Manifold.Instances.Icc
-import Mathlib.Analysis.Convex.Contractible
-import Mathlib.Topology.Algebra.Module.LocallyConvex
 import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
@@ -19,8 +15,7 @@ A rectangle uses the actual product of the two closed-interval manifolds. Its pr
 are products of the interval charts; their inverse inclusion derivatives retain the signs of
 both interval factors.
 
-As a convex subset of the plane, the rectangle is contractible and locally path connected, and
-its manifold boundary, the union of its four edges, is connected
+The manifold boundary of the rectangle, the union of its four edges, is connected
 (`TauCeti.isConnected_boundary_rectangle`).
 -/
 
@@ -147,18 +142,6 @@ theorem subtypeValRectangleTangentEquiv_toContinuousLinearMap (x : Icc a b × Ic
 
 /-! ### Topology of the rectangle -/
 
-/-- The rectangle `[a, b] × [c, d]` is contractible, as a convex subset of the plane. -/
-instance : ContractibleSpace (Icc a b × Icc c d) :=
-  haveI := (convex_Icc a b).contractibleSpace (nonempty_Icc.2 (Fact.out : a < b).le)
-  haveI := (convex_Icc c d).contractibleSpace (nonempty_Icc.2 (Fact.out : c < d).le)
-  inferInstance
-
-/-- The rectangle `[a, b] × [c, d]` is locally path connected, as a convex subset of the plane. -/
-instance : LocallyPathConnectedSpace (Icc a b × Icc c d) :=
-  haveI := Convex.locallyPathConnectedSpace ℝ (convex_Icc a b)
-  haveI := Convex.locallyPathConnectedSpace ℝ (convex_Icc c d)
-  inferInstance
-
 /-- The manifold boundary of the rectangle `[a, b] × [c, d]`, the union of its four edges, is
 connected. -/
 theorem isConnected_boundary_rectangle :
@@ -177,10 +160,13 @@ theorem isConnected_boundary_rectangle :
   have h := ((hB.union ⟨(⊥, ⊥), by simp⟩ hL).union ⟨(⊤, ⊥), by simp⟩ hR).union
     ⟨(⊥, ⊤), by simp⟩ hT
   convert h using 1
-  rw [ModelWithCorners.boundary_prod, boundary_Icc, boundary_Icc]
+  rw [ModelWithCorners.boundary_prod]
+  -- Mathlib's `boundary_prod` writes the products with `Set.prod`, which is `×ˢ` by definition.
+  change univ ×ˢ _ ∪ _ ×ˢ univ = _
+  rw [boundary_Icc, boundary_Icc]
   ext ⟨x, y⟩
-  simp only [Set.prod, mem_union, mem_ofPred_eq, mem_univ, mem_insert_iff, mem_singleton_iff,
-    true_and, and_true, mem_prod]
+  simp only [mem_union, mem_prod, mem_univ, mem_insert_iff, mem_singleton_iff, true_and,
+    and_true]
   tauto
 
 end TauCeti

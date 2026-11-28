@@ -86,6 +86,8 @@ vanishes identically near `z₀`, of order `⊤`, is its own `n`-th root.
   `n` divides its order of vanishing.
 * `TauCeti.deriv_eq_logDeriv_of_eqOn_exp_comp` — the derivative of a branch of the logarithm is the
   logarithmic derivative, and so does not depend on which branch was chosen.
+* `TauCeti.eventuallyEq_add_log_div_exp` — near a point of continuity, a continuous logarithm of
+  `g` is a constant plus the principal logarithm of `g` divided by a constant.
 * `ContinuousOn.eqOn_of_eqOn_exp_comp` — on a preconnected set, a continuous lift along
   `Complex.exp` is determined by its value at one point.
 * `AnalyticOnNhd.exists_eqOn_exp_comp_ball` — a function analytic and zero-free on an open disc
@@ -125,34 +127,29 @@ private theorem differentiableAt_logBranch {a v : ℂ} (h : v / Complex.exp a �
     DifferentiableAt ℂ (logBranch a) v :=
   ((differentiableAt_id.div_const _).clog h).const_add _
 
-/-- **The branch based at `a` inverts `Complex.exp`** on the strip of height `2 π` centred at `a`,
-because `Complex.log_exp` inverts it on `-π < im ≤ π`. -/
-private theorem logBranch_exp {a w : ℂ} (h₁ : -Real.pi < (w - a).im) (h₂ : (w - a).im ≤ Real.pi) :
-    logBranch a (Complex.exp w) = w := by
-  rw [logBranch, ← Complex.exp_sub, Complex.log_exp h₁ h₂]
+/-- **A continuous logarithm is locally a translate of the principal logarithm.** Near a point
+`x₀` at which `L` is continuous and `exp ∘ L` agrees with `g`, `L` is `L x₀` plus the principal
+logarithm of `g / exp (L x₀)`: continuity confines `L x - L x₀` to the strip of height `2 π` on
+which that branch inverts `Complex.exp`. -/
+theorem eventuallyEq_add_log_div_exp {X : Type*} [TopologicalSpace X] {L g : X → ℂ} {x₀ : X}
+    (hL : ContinuousAt L x₀) (hEq : ∀ᶠ x in nhds x₀, Complex.exp (L x) = g x) :
+    L =ᶠ[nhds x₀] fun x => L x₀ + Complex.log (g x / Complex.exp (L x₀)) := by
+  -- Continuity confines `L x - L x₀` to the strip where the branch based at `L x₀` inverts `exp`.
+  have hstrip : ∀ᶠ x in nhds x₀, |(L x - L x₀).im| < Real.pi :=
+    ((continuous_abs.comp Complex.continuous_im).continuousAt.comp
+      (hL.sub continuousAt_const)) (Iio_mem_nhds (by simp [Real.pi_pos]))
+  filter_upwards [hstrip, hEq] with x hx hgx
+  rw [← hgx, ← Complex.exp_sub,
+    Complex.log_exp (by linarith [(abs_lt.mp hx).1]) (abs_lt.mp hx).2.le]
   ring
 
 /-- Near any point of an open set, a continuous branch `L` of `log ∘ g` coincides with the
-branch of the logarithm based at `L z₀`, composed with `g`: continuity confines `L z - L z₀` to
-the strip on which that branch inverts `Complex.exp`. -/
+branch of the logarithm based at `L z₀`, composed with `g`. -/
 private theorem eventuallyEq_logBranch_comp {U : Set ℂ} (hU : IsOpen U) {L g : ℂ → ℂ}
     (hL : ContinuousOn L U) (hEq : EqOn (Complex.exp ∘ L) g U) {z₀ : ℂ} (hz₀ : z₀ ∈ U) :
-    L =ᶠ[nhds z₀] logBranch (L z₀) ∘ g := by
-  set w₀ : ℂ := L z₀ with hw₀
-  -- `L` is continuous at `z₀` in the ambient sense, `U` being open.
-  have hLat : ContinuousAt L z₀ := (hL.continuousAt (hU.mem_nhds hz₀))
-  -- Continuity confines `L z - w₀` to the strip where the branch based at `w₀` inverts `exp`.
-  have hstrip : ∀ᶠ z in nhds z₀, |(L z - w₀).im| < Real.pi := by
-    have hcont : ContinuousAt (fun z => |(L z - w₀).im|) z₀ := by
-      exact (continuous_abs.comp Complex.continuous_im).continuousAt.comp
-        (hLat.sub continuousAt_const)
-    have hz : |(L z₀ - w₀).im| < Real.pi := by
-      simp [hw₀, Real.pi_pos]
-    exact hcont (Iio_mem_nhds hz)
-  filter_upwards [hstrip, hU.mem_nhds hz₀] with z hz hzU
-  have hgz : g z = Complex.exp (L z) := (hEq hzU).symm
-  simp only [Function.comp_apply, hgz]
-  exact (logBranch_exp (by linarith [abs_lt.mp hz |>.1]) (le_of_lt (abs_lt.mp hz).2)).symm
+    L =ᶠ[nhds z₀] logBranch (L z₀) ∘ g :=
+  eventuallyEq_add_log_div_exp (hL.continuousAt (hU.mem_nhds hz₀))
+    (Filter.eventually_of_mem (hU.mem_nhds hz₀) fun _ hz => hEq hz)
 
 /-- The value of `g` at `z₀`, translated by the branch based at `L z₀`, is `1`, which lies in the
 slit plane. -/
