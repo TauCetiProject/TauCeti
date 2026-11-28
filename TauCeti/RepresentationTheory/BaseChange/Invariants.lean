@@ -15,7 +15,8 @@ Let `ρ` be a representation of a group `G` over a commutative ring `R`, and let
 the comparison map `A ⊗_R V^G → (A ⊗_R V)^G` (`Representation.invariantsBaseChangeMap`) is
 bijective, with no finiteness assumption on `G` or `V`
 (`Representation.invariantsBaseChangeEquivOfFree`). Unlike
-`Representation.invariantsBaseChangeMap_bijective`, `G` need not be finite.
+`Representation.invariantsBaseChangeMap_bijective`, this does not require `G` to be finitely
+generated as a monoid.
 
 Proof: a `R`-basis `(bᵢ)` of `A` writes every `w ∈ A ⊗ V` uniquely as `∑ bᵢ ⊗ vᵢ`, and `G` acts on
 the coefficients `vᵢ` (`Representation.equivFinsuppOfBasisLeft_apply_fixed_of_baseChange`), so `w`
@@ -23,6 +24,8 @@ is invariant exactly when every `vᵢ` is. Injectivity holds because free module
 
 ## Main results
 
+* `Representation.mem_baseChange_iff_fixed_of_free`: scalar extension of a submodule
+  characterized by fixedness is again characterized by fixedness for free coefficients.
 * `Representation.invariantsBaseChangeMap_surjective_of_free`,
   `Representation.invariantsBaseChangeMap_bijective_of_free`: the comparison map is surjective and
   bijective for free coefficients.
@@ -50,6 +53,24 @@ theorem mem_range_lTensor_subtype_of_fixed_baseChange_of_free (ρ : Representati
   let b := Module.Free.chooseBasis R A
   exact (b.mem_range_lTensor_subtype_iff P w).2 fun i ↦
     hP _ (equivFinsuppOfBasisLeft_apply_fixed_of_baseChange b ρ hw i)
+
+/-- For an algebra free as a module, scalar extension of a submodule of fixed vectors is
+the submodule of fixed vectors of the extended monoid action. -/
+theorem mem_baseChange_iff_fixed_of_free (ρ : Representation R G V) (P : Submodule R V)
+    (hP : ∀ v, v ∈ P ↔ ∀ g, ρ g v = v) {w : A ⊗[R] V} :
+    w ∈ P.baseChange A ↔ ∀ g, baseChange A ρ g w = w := by
+  rw [Submodule.baseChange, LinearMap.mem_range]
+  constructor
+  · rintro ⟨x, rfl⟩ g
+    induction x with
+    | add x y hx hy => simp only [map_add, hx, hy]
+    | tmul a v =>
+      simp only [LinearMap.baseChange_tmul, Submodule.subtype_apply, baseChange_apply,
+        (hP v).1 v.property g]
+  · intro hw
+    have hw' := ρ.mem_range_lTensor_subtype_of_fixed_baseChange_of_free P
+      (fun v ↦ (hP v).2) hw
+    simpa only [LinearMap.mem_range, LinearMap.baseChange_eq_lTensor] using hw'
 
 end CommSemiring
 

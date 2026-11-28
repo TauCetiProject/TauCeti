@@ -77,9 +77,7 @@ invariants remain basic invariants of the same degrees. -/
 theorem IsBasicInvariants.baseChange {f : ι → ρ.symmetricAlgebraInvariants} {d : ι → ℕ}
     (h : ρ.IsBasicInvariants f d) :
     (ρ.baseChange S).IsBasicInvariants
-      (fun i ↦ ρ.symmetricAlgebraInvariantsBaseChangeMap (1 ⊗ₜ[R] f i)) d := by
-  apply h.baseChange_of_bijective
-  rw [← symmetricAlgebraInvariantsBaseChangeEquiv_toAlgHom, AlgEquiv.coe_toAlgHom]
-  exact ρ.symmetricAlgebraInvariantsBaseChangeEquiv.bijective
+      (fun i ↦ ρ.symmetricAlgebraInvariantsBaseChangeMap (1 ⊗ₜ[R] f i)) d :=
+  h.baseChange_of_bijective ρ.symmetricAlgebraInvariantsBaseChangeMap_bijective
 
 end Representation

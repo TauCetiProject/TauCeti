@@ -17,6 +17,7 @@ public import TauCeti.RepresentationTheory.RestrictScalars
 -- of finite products (`TensorProduct.piRight`) are used only to construct the invariant and
 -- intertwiner comparisons.
 import Mathlib.RingTheory.Flat.Equalizer
+import TauCeti.GroupTheory.GroupAction.Closure
 -- Non-public: the finite-product tensor criterion is used only in the fixed-vector proof.
 import TauCeti.LinearAlgebra.TensorProduct.Pi
 -- Non-public: bijectivity of the base-changed quotient map (`QuotSMulTop.baseChange_mkQ_bijective`)
@@ -50,9 +51,9 @@ free coefficient algebra, and the resulting invariance of intertwiner dimensions
 in `TauCeti.RepresentationTheory.BaseChange.Intertwiner`.
 
 For a group finitely generated as a monoid, the invariant submodule commutes with flat scalar
-extension. Invariants are the kernel of the finite family of maps `ρ(g) - 1` indexed by a generating
-set. Flatness preserves that kernel, and the finite product comparison identifies the base-changed
-family with the invariance conditions after extending scalars.
+extension of commutative rings. Invariants are the kernel of the finite family of maps
+`ρ(g) - 1` indexed by a generating set. Flatness preserves that kernel, and the finite product
+comparison identifies the base-changed family with the invariance conditions after scalar extension.
 For an arbitrary group the natural comparison map `A ⊗_R V^G → (A ⊗_R V)^G` is still injective
 when `A` is flat over `R`, since it is the scalar extension of the inclusion `V^G → V`.
 
@@ -77,10 +78,11 @@ to torsion modules and do not require the coefficient algebra to be flat.
   representation on a flat module.
 * `Representation.asAlgebraHom_baseChange_mapAlgHom`: an element of `R[G]`, with its coefficients
   mapped to `A`, acts on `A ⊗_R V` as the base change of its action on `V`.
-* `Representation.invariantsBaseChangeEquiv`: flat scalar extension commutes with taking the
-  invariants of a group finitely generated as a monoid.
-* `Representation.invariantsBaseChangeMap`: the comparison map `A ⊗_R V^G → (A ⊗_R V)^G`,
-  injective for flat `A` (`Representation.invariantsBaseChangeMap_injective`).
+* `Representation.invariantsBaseChangeEquiv`: flat scalar extension of commutative rings
+  commutes with taking the invariants of a group finitely generated as a monoid.
+* `Representation.invariantsBaseChangeMap`: the comparison map `A ⊗_R V^G → (A ⊗_R V)^G`
+  for commutative rings, injective for flat `A`
+  (`Representation.invariantsBaseChangeMap_injective`).
 * `Representation.averageMap_baseChange`: the averaging projection commutes with scalar
   extension.
 * `Representation.equivFinsuppOfBasisLeft_apply_fixed_of_baseChange`: the coordinates of a fixed
@@ -204,11 +206,9 @@ private theorem fixed_iff_of_closure_eq_top {k : Type*} [Semiring k] [AddCommMon
     [Module k V] (ρ : Representation k G V) {T : Set G}
     (hT : Submonoid.closure T = ⊤) (v : V) :
     (∀ g : T, ρ g v = v) ↔ ∀ g, ρ g v = v := by
-  refine ⟨fun h g ↦ ?_, fun h g ↦ h g⟩
   let _ : MulAction G V := MulAction.compHom V ρ
-  have hle : Submonoid.closure T ≤ MulAction.stabilizerSubmonoid G v :=
-    Submonoid.closure_le.mpr fun a ha ↦ MulAction.mem_stabilizerSubmonoid_iff.mpr (h ⟨a, ha⟩)
-  exact MulAction.mem_stabilizerSubmonoid_iff.mp (hle (hT ▸ Submonoid.mem_top g))
+  have h := TauCeti.Submonoid.forall_smul_eq_self_iff_of_closure_eq_top hT (x := v)
+  exact ⟨fun hv ↦ h.mpr (fun g hg ↦ hv ⟨g, hg⟩), fun hv g ↦ hv g⟩
 
 section FixedVectors
 
@@ -285,8 +285,8 @@ theorem invariantsBaseChangeMap_injective (ρ : Representation R G V) :
   exact Module.Flat.lTensor_preserves_injective_linearMap (M := A) ρ.invariants.subtype
     ρ.invariants.injective_subtype h'
 
-/-- For a group finitely generated as a monoid and flat coefficients, the invariant comparison map
-is bijective. -/
+/-- For a group finitely generated as a monoid and a flat extension of commutative rings,
+the invariant comparison map is bijective. -/
 theorem invariantsBaseChangeMap_bijective [Monoid.FG G] (ρ : Representation R G V) :
     Function.Bijective (ρ.invariantsBaseChangeMap (A := A)) := by
   refine ⟨ρ.invariantsBaseChangeMap_injective, fun y ↦ ?_⟩
@@ -294,9 +294,9 @@ theorem invariantsBaseChangeMap_bijective [Monoid.FG G] (ρ : Representation R G
     ρ.invariants (mem_invariants ρ)).2 ((mem_invariants _ _).1 y.property)
   exact ⟨x, Subtype.ext ((ρ.coe_invariantsBaseChangeMap x).trans hx)⟩
 
-/-- If `A` is flat over `R` and `G` is finitely generated as a monoid, the canonical comparison is a
-linear equivalence between the scalar extension of the invariant submodule of `ρ` and the
-invariants of the scalar-extended representation. -/
+/-- For a flat extension of commutative rings `R → A` and a group `G` finitely generated as a
+monoid, the canonical comparison identifies the scalar extension of the invariant submodule
+of `ρ` with the invariants of the scalar-extended representation. -/
 noncomputable def invariantsBaseChangeEquiv [Monoid.FG G] (ρ : Representation R G V) :
     A ⊗[R] ρ.invariants ≃ₗ[A] (baseChange A ρ).invariants :=
   LinearEquiv.ofBijective _ ρ.invariantsBaseChangeMap_bijective
