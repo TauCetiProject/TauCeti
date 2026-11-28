@@ -29,6 +29,9 @@ is the empty analogue of `GridRectangleBetween.left_right_eq_cases`.
   an opposite-side-order returning pair is empty exactly when it forms a thin horizontal annulus.
 * `TauCeti.GridRectangleBetween.isEmpty_and_isEmpty_iff`: every empty returning pair has exactly
   one of these two thin-annulus shapes.
+* `TauCeti.GridRectangleBetween.isEmpty_and_isEmpty_verticalComplement_iff` and
+  `TauCeti.GridRectangleBetween.isEmpty_and_isEmpty_horizontalComplement_iff`: specializations to
+  `GridRectangleBetween.verticalComplement` and `GridRectangleBetween.horizontalComplement`.
 
 ## References
 
@@ -118,6 +121,20 @@ theorem isEmpty_and_isEmpty_iff :
       · exact absurd (hopposite.1.symm.trans hleft) R.left_ne_right.symm
       · exact
           (R.isEmpty_and_isEmpty_iff_top_eq_finRotate_of_left_eq_right S hopposite.1).2 hnext
+
+/-- A rectangle and its vertical annular complement are both empty if and only if the rectangle's
+terminal column is the cyclic successor of its initial column. -/
+theorem isEmpty_and_isEmpty_verticalComplement_iff :
+    R.IsEmpty ∧ R.verticalComplement.IsEmpty ↔ R.right = finRotate n R.left :=
+  R.isEmpty_and_isEmpty_iff_right_eq_finRotate_of_left_eq_left R.verticalComplement
+    R.verticalComplement_left
+
+/-- A rectangle and its horizontal annular complement are both empty if and only if the rectangle's
+top row is the cyclic successor of its bottom row. -/
+theorem isEmpty_and_isEmpty_horizontalComplement_iff :
+    R.IsEmpty ∧ R.horizontalComplement.IsEmpty ↔ R.top = finRotate n R.bottom :=
+  R.isEmpty_and_isEmpty_iff_top_eq_finRotate_of_left_eq_right R.horizontalComplement
+    R.horizontalComplement_left
 
 end GridRectangleBetween
 

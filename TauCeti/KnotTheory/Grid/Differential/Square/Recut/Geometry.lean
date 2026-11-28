@@ -31,6 +31,8 @@ arguments for grid differentials and commutation maps.
 * `TauCeti.GridRectangleDecomposition.recut_geometry_of_left_eq_right` and
   `TauCeti.GridRectangleDecomposition.recut_geometry_of_right_eq_left`: the same descriptions
   specialized to the canonical recut.
+* `TauCeti.GridRectangleDecomposition.hasSameSideOverlap_recut_iff`: recutting exchanges same-side
+  and mixed-side overlaps.
 
 ## References
 
@@ -180,5 +182,40 @@ theorem recut_geometry_of_right_eq_left (D : GridRectangleDecomposition x z)
             E.first.bottom = D.first.bottom ∧ E.first.top = D.second.top ∧
               E.second.bottom = D.second.top ∧ E.second.top = D.first.top) :=
   (D.isRecutOfRightEqLeft_recut hcommon hone hfirst hsecond).recut_geometry
+
+/-- Recutting exchanges same-side overlaps and mixed-side overlaps. -/
+theorem hasSameSideOverlap_recut_iff (D : GridRectangleDecomposition x z)
+    (hone : D.HasOneCommonSide) (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
+    (D.recut hone hfirst hsecond).HasSameSideOverlap ↔ D.HasMixedSideOverlap := by
+  have hone' := D.hasOneCommonSide_recut hone hfirst hsecond
+  constructor
+  · intro hsame'
+    rcases D.hasSameSideOverlap_or_hasMixedSideOverlap hone with hsame | hmixed
+    · exfalso
+      apply (D.recut hone hfirst hsecond).not_hasMixedSideOverlap_of_hasSameSideOverlap hsame'
+      rw [GridRectangleDecomposition.hasMixedSideOverlap_iff]
+      rcases (D.hasSameSideOverlap_iff.mp hsame).2 with hleft | hright
+      · have hdata := D.isRecutOfLeftEqLeft_recut hleft hone hfirst hsecond
+        obtain ⟨hE₁, hE₂⟩ := hdata.recut_sides
+        rcases hdata.recut_branch with ⟨-, -, hEl₁, -⟩ | ⟨-, -, -, hEl₂⟩
+        · exact ⟨hone', Or.inl (hEl₁.trans hE₂.symm)⟩
+        · exact ⟨hone', Or.inr (hE₁.trans hEl₂.symm)⟩
+      · have hdata := D.isRecutOfRightEqRight_recut hright hone hfirst hsecond
+        obtain ⟨hE₁, hE₂⟩ := hdata.recut_sides
+        rcases hdata.recut_branch with ⟨-, -, hEr₁, -⟩ | ⟨-, -, -, hEr₂⟩
+        · exact ⟨hone', Or.inr (hEr₁.trans hE₂.symm)⟩
+        · exact ⟨hone', Or.inl (hE₁.trans hEr₂.symm)⟩
+    · exact hmixed
+  · intro hmixed
+    rw [GridRectangleDecomposition.hasSameSideOverlap_iff]
+    rcases (D.hasMixedSideOverlap_iff.mp hmixed).2 with hlr | hrl
+    · rcases D.recut_geometry_of_left_eq_right hlr hone hfirst hsecond with
+          ⟨-, hEl₁, -, hEl₂, -, -⟩ | ⟨-, -, hEr₁, -, hEr₂, -⟩
+      · exact ⟨hone', Or.inl (hEl₁.trans hEl₂.symm)⟩
+      · exact ⟨hone', Or.inr (hEr₁.trans hEr₂.symm)⟩
+    · rcases D.recut_geometry_of_right_eq_left hrl hone hfirst hsecond with
+          ⟨-, -, hEr₁, -, hEr₂, -⟩ | ⟨-, hEl₁, -, hEl₂, -, -⟩
+      · exact ⟨hone', Or.inr (hEr₁.trans hEr₂.symm)⟩
+      · exact ⟨hone', Or.inl (hEl₁.trans hEl₂.symm)⟩
 
 end TauCeti.GridRectangleDecomposition

@@ -39,6 +39,12 @@ for any grid differential whose marking-free test is that disjointness — in pa
 `GridRectangle.AvoidsMarkings` tests that same region, `coveredSquares`, so the lemma serves
 `TauCeti.GridDiagram.fullyBlockedDifferential` unchanged.
 
+## Main definitions
+
+* `TauCeti.GridRectangleBetween.verticalComplement` and
+  `TauCeti.GridRectangleBetween.horizontalComplement`: the returning rectangles from `y` to `x`
+  forming a vertical or horizontal toroidal annulus with a given rectangle from `x` to `y`.
+
 ## Main results
 
 * `TauCeti.GridRectangleBetween.sideColumns_eq_sideColumns`: a returning pair of rectangles uses
@@ -252,6 +258,53 @@ theorem not_disjoint_coveredSquares_or_not_disjoint_coveredSquares (M : GridStat
         (R.not_disjoint_union_coveredSquares_pointSet S M)
     · exact Or.inr hS
   · exact Or.inl hR
+
+/-- The vertical annular complement of an oriented rectangle `R : GridRectangleBetween x y`: the
+returning rectangle from `y` to `x` with the same initial and terminal side columns as `R` and
+complementary rows. Together `R` and `R.verticalComplement` cover a full vertical band. -/
+def verticalComplement : GridRectangleBetween y x where
+  left := R.left
+  right := R.right
+  left_ne_right := R.left_ne_right
+  map_left := R.map_right.symm
+  map_right := R.map_left.symm
+  map_of_ne c hl hr := (R.map_of_ne c hl hr).symm
+
+/-- The vertical annular complement starts on the initial side column of `R`. -/
+@[simp] theorem verticalComplement_left : R.verticalComplement.left = R.left := (rfl)
+
+/-- The vertical annular complement ends on the terminal side column of `R`. -/
+@[simp] theorem verticalComplement_right : R.verticalComplement.right = R.right := (rfl)
+
+/-- The vertical annular complement starts on the top row of `R`. -/
+@[simp] theorem verticalComplement_bottom : R.verticalComplement.bottom = R.top :=
+  R.bottom_eq_top_of_left_eq_left R.verticalComplement (rfl)
+
+/-- The vertical annular complement ends on the bottom row of `R`. -/
+@[simp] theorem verticalComplement_top : R.verticalComplement.top = R.bottom :=
+  R.top_eq_bottom_of_left_eq_left R.verticalComplement (rfl)
+
+/-- The horizontal annular complement of an oriented rectangle `R : GridRectangleBetween x y`: the
+returning rectangle from `y` to `x` with reversed side columns `(R.right, R.left)` and the same
+bottom and top rows as `R`. Together `R` and `R.horizontalComplement` cover a full horizontal
+band. -/
+def horizontalComplement : GridRectangleBetween y x := R.verticalComplement.swapSides
+
+/-- The horizontal annular complement starts on the terminal side column of `R`. -/
+@[simp] theorem horizontalComplement_left : R.horizontalComplement.left = R.right := by
+  simp [horizontalComplement]
+
+/-- The horizontal annular complement ends on the initial side column of `R`. -/
+@[simp] theorem horizontalComplement_right : R.horizontalComplement.right = R.left := by
+  simp [horizontalComplement]
+
+/-- The horizontal annular complement starts on the bottom row of `R`. -/
+@[simp] theorem horizontalComplement_bottom : R.horizontalComplement.bottom = R.bottom := by
+  simp [horizontalComplement]
+
+/-- The horizontal annular complement ends on the top row of `R`. -/
+@[simp] theorem horizontalComplement_top : R.horizontalComplement.top = R.top := by
+  simp [horizontalComplement]
 
 end GridRectangleBetween
 
