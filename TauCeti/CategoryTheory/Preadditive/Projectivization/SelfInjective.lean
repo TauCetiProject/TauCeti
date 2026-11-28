@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Preadditive.Projectivization
 import Mathlib.Algebra.Category.ModuleCat.Injective
 import TauCeti.Algebra.Module.Injective.SelfInjective
+import TauCeti.CategoryTheory.Abelian.Injective.Basic
 
 /-!
 # Splitting epimorphisms in an additive closure
@@ -25,22 +26,26 @@ open CategoryTheory CategoryTheory.Limits Opposite
 namespace TauCeti
 
 /-- Over a left self-injective `End M`, an epimorphism between objects of `add M` splits. -/
-theorem isSplitEpi_of_injective_end {C : Type*} [Category* C] [Preadditive C]
+theorem isSplitEpi_of_selfInjective_end {C : Type*} [Category* C] [Preadditive C]
     [HasFiniteBiproducts C] {M X Y : C} (hX : additiveClosure M X) (hY : additiveClosure M Y)
     (hEnd : Module.Injective (End M) (End M)) (f : X ⟶ Y) [Epi f] : IsSplitEpi f := by
   let F := preadditiveYonedaObj M
-  have : Mono (F.map f.op) := (ModuleCat.mono_iff_injective _).2 fun g g' h ↦
-    (cancel_epi f).1 h
+  have : Mono (F.map f.op) := (ModuleCat.mono_iff_injective _).2 fun g g' h ↦ by
+    -- Expose the Yoneda map for rewriting, then read the bundled linear maps as compositions.
+    change (preadditiveYonedaObj M).map f.op g = (preadditiveYonedaObj M).map f.op g' at h
+    rw [preadditiveYonedaObj_map] at h
+    change f ≫ g = f ≫ g' at h
+    exact (cancel_epi f).mp h
   obtain ⟨hfinite, hproj⟩ := finiteProjectiveModules_iff.mp
     (finiteProjectiveModules_preadditiveYonedaObj_obj hY)
   have hmodule : Module.Injective (End M) (F.obj (op Y)) := .of_finite_projective hEnd
-  have : Injective (F.obj (op Y)) :=
+  have hInjective : Injective (F.obj (op Y)) :=
     Module.injective_object_of_injective_module _ _ (inj := hmodule)
-  obtain ⟨s, hs⟩ := (preadditiveYonedaObj_map_bijective hX Y).surjective
-    (Injective.factorThru (𝟙 (F.obj (op Y))) (F.map f.op))
-  refine ⟨⟨s.unop, Quiver.Hom.op_inj ?_⟩⟩
-  apply (preadditiveYonedaObj_map_bijective hY Y).injective
-  rw [op_comp, Functor.map_comp, Quiver.Hom.op_unop, hs, Injective.comp_factorThru]
-  exact (F.map_id _).symm
+  have hsplit := (injective_iff_forall_isSplitMono _).mp hInjective (F.map f.op)
+  let P := additiveClosure M
+  let g : (⟨X, hX⟩ : P.FullSubcategory) ⟶ ⟨Y, hY⟩ := ObjectProperty.homMk f
+  have hg : IsSplitMono g.op := ((P.ι.op ⋙ F).isSplitMono_iff g.op).mp hsplit
+  have : IsSplitEpi g := .mk' ⟨(retraction g.op).unop, Quiver.Hom.op_inj (IsSplitMono.id g.op)⟩
+  exact inferInstanceAs (IsSplitEpi (P.ι.map g))
 
 end TauCeti
