@@ -9,6 +9,8 @@ public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.Trace.Basic
 public import TauCeti.RingTheory.WittVector.Truncated.Basic
 
+import Mathlib.FieldTheory.Galois.Infinite
+import TauCeti.RingTheory.WittVector.Ideal
 import TauCeti.RingTheory.WittVector.Units
 
 /-!
@@ -38,22 +40,15 @@ variable {p : ℕ} [Fact p.Prime]
 variable (K L : Type*) [Field K] [Field L] [Algebra K L]
   [FiniteDimensional K L] [IsGalois K L]
 
-/-- A Witt vector over a finite Galois extension comes from the base field exactly when
+omit [FiniteDimensional K L] in
+/-- A Witt vector over a Galois extension comes from the base field exactly when
 every Galois automorphism fixes it. -/
 theorem mem_range_map_algebraMap_iff (x : WittVector p L) :
     x ∈ Set.range (map (algebraMap K L) : WittVector p K → WittVector p L) ↔
       ∀ σ : L ≃ₐ[K] L, map (σ : L →+* L) x = x := by
-  constructor
-  · rintro ⟨y, rfl⟩ σ
-    ext i
-    simp
-  · intro hx
-    have hcoeff (i : ℕ) : x.coeff i ∈ Set.range (algebraMap K L) := by
-      apply (IsGalois.mem_range_algebraMap_iff_fixed _).mpr
-      intro σ
-      simpa using congrArg (fun y ↦ y.coeff i) (hx σ)
-    choose y hy using hcoeff
-    exact ⟨mk p y, ext fun i ↦ by simpa only [map_coeff, coeff_mk] using hy i⟩
+  simp only [mem_range_map_iff, InfiniteGalois.mem_range_algebraMap_iff_fixed (k := K),
+    WittVector.ext_iff, map_coeff]
+  exact forall_comm
 
 omit [IsGalois K L] in
 private theorem map_sum_conjugates (σ : L ≃ₐ[K] L) (x : WittVector p L) :
@@ -65,31 +60,30 @@ private theorem map_sum_conjugates (σ : L ≃ₐ[K] L) (x : WittVector p L) :
   ext i
   simp [AlgEquiv.mul_apply]
 
+private def galoisTraceFun (x : WittVector p L) : WittVector p K :=
+  Classical.choose ((mem_range_map_algebraMap_iff K L _).mpr
+    (fun σ ↦ map_sum_conjugates K L σ x))
+
+private theorem map_galoisTraceFun (x : WittVector p L) :
+    map (algebraMap K L) (galoisTraceFun K L x) = ∑ σ : L ≃ₐ[K] L, map (σ : L →+* L) x :=
+  Classical.choose_spec ((mem_range_map_algebraMap_iff K L _).mpr
+    (fun σ ↦ map_sum_conjugates K L σ x))
+
 /-- The Witt trace of a finite Galois extension, the sum of all conjugates descended to
 the base field. -/
 def galoisTrace : WittVector p L →+ WittVector p K where
-  toFun x := Classical.choose ((mem_range_map_algebraMap_iff K L _).mpr
-    (fun σ ↦ map_sum_conjugates K L σ x))
+  toFun := galoisTraceFun K L
   map_zero' := by
     apply map_injective (algebraMap K L) (algebraMap K L).injective
-    rw [Classical.choose_spec ((mem_range_map_algebraMap_iff K L _).mpr
-      (fun σ ↦ map_sum_conjugates K L σ 0))]
-    simp
+    simp only [map_galoisTraceFun, map_zero, Finset.sum_const_zero]
   map_add' x y := by
     apply map_injective (algebraMap K L) (algebraMap K L).injective
-    rw [Classical.choose_spec ((mem_range_map_algebraMap_iff K L _).mpr
-      (fun σ ↦ map_sum_conjugates K L σ (x + y))), map_add,
-      Classical.choose_spec ((mem_range_map_algebraMap_iff K L _).mpr
-        (fun σ ↦ map_sum_conjugates K L σ x)),
-      Classical.choose_spec ((mem_range_map_algebraMap_iff K L _).mpr
-        (fun σ ↦ map_sum_conjugates K L σ y))]
-    simp only [map_add, Finset.sum_add_distrib]
+    simp only [map_add, map_galoisTraceFun, Finset.sum_add_distrib]
 
 /-- After inclusion into the extension, the Witt trace is the sum of the conjugates. -/
 theorem map_galoisTrace (x : WittVector p L) :
     map (algebraMap K L) (galoisTrace K L x) = ∑ σ : L ≃ₐ[K] L, map (σ : L →+* L) x :=
-  Classical.choose_spec ((mem_range_map_algebraMap_iff K L _).mpr
-    (fun σ ↦ map_sum_conjugates K L σ x))
+  map_galoisTraceFun K L x
 
 /-- The zeroth coordinate of the Witt trace is the ordinary field trace. -/
 @[simp]
@@ -149,8 +143,9 @@ variable {p : ℕ} [Fact p.Prime]
 variable (K L : Type*) [Field K] [Field L] [Algebra K L]
   [FiniteDimensional K L] [IsGalois K L]
 
-/-- A truncated Witt vector descends to the base field exactly when every Galois
-automorphism fixes it. This includes length zero. -/
+omit [FiniteDimensional K L] in
+/-- A truncated Witt vector over a Galois extension descends to the base field exactly when
+every Galois automorphism fixes it. This includes length zero. -/
 theorem mem_range_map_algebraMap_iff (n : ℕ) (x : TruncatedWittVector p n L) :
     x ∈ Set.range (map n (algebraMap K L) : TruncatedWittVector p n K → _) ↔
       ∀ σ : L ≃ₐ[K] L, map n (σ : L →+* L) x = x := by
@@ -160,7 +155,7 @@ theorem mem_range_map_algebraMap_iff (n : ℕ) (x : TruncatedWittVector p n L) :
     simp
   · intro hx
     have hcoeff (i : Fin n) : x.coeff i ∈ Set.range (algebraMap K L) := by
-      apply (IsGalois.mem_range_algebraMap_iff_fixed _).mpr
+      apply (InfiniteGalois.mem_range_algebraMap_iff_fixed _).mpr
       intro σ
       simpa using congrArg (fun y ↦ y.coeff i) (hx σ)
     choose y hy using hcoeff
@@ -174,7 +169,8 @@ private theorem map_truncate_galoisTrace_out (n : ℕ) (x : TruncatedWittVector 
   intro σ _
   rw [← map_wittVector_truncate]
   congr 1
-  exact truncateFun_out x
+  ext i
+  rw [WittVector.coeff_truncate, coeff_out]
 
 /-- The Galois trace on length-`n` Witt vectors. -/
 def galoisTrace (n : ℕ) : TruncatedWittVector p n L →+ TruncatedWittVector p n K where
@@ -198,11 +194,9 @@ theorem map_galoisTrace (n : ℕ) (x : TruncatedWittVector p n L) :
 theorem galoisTrace_wittVector_truncate (n : ℕ) (x : WittVector p L) :
     galoisTrace K L n (WittVector.truncate n x) =
       WittVector.truncate n (WittVector.galoisTrace K L x) := by
-  ext i
-  apply (algebraMap K L).injective
-  have h := congrArg (coeff i) (map_galoisTrace K L n (WittVector.truncate n x))
-  simpa only [map_coeff, map_wittVector_truncate, ← map_sum,
-    ← WittVector.map_galoisTrace, WittVector.coeff_truncate, WittVector.map_coeff] using h
+  apply map_injective n (algebraMap K L) (algebraMap K L).injective
+  rw [map_galoisTrace, map_wittVector_truncate, WittVector.map_galoisTrace, map_sum]
+  simp only [map_wittVector_truncate]
 
 /-- The trace commutes with every projection between finite Witt lengths. -/
 @[simp]
@@ -239,9 +233,9 @@ theorem galoisTrace_map (n : ℕ) (σ : L ≃ₐ[K] L) (x : TruncatedWittVector 
 theorem galoisTrace_surjective [CharP L p] (n : ℕ) :
     Function.Surjective (galoisTrace (p := p) K L n) := by
   intro y
-  obtain ⟨x, hx⟩ := WittVector.galoisTrace_surjective K L y.out
+  obtain ⟨y, rfl⟩ := WittVector.truncate_surjective p n K y
+  obtain ⟨x, hx⟩ := WittVector.galoisTrace_surjective K L y
   exact ⟨WittVector.truncate n x, by
-    rw [galoisTrace_wittVector_truncate, hx]
-    exact truncateFun_out y⟩
+    rw [galoisTrace_wittVector_truncate, hx]⟩
 
 end TruncatedWittVector
