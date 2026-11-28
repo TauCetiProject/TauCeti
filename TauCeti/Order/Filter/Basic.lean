@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Filter.Basic
+public import Mathlib.Order.Filter.Map
 
 /-!
 # Basic facts about filters
@@ -20,6 +21,8 @@ inclusion.
 * `Filter.isCodirectedOrder_mem`: the members of a filter are codirected under inclusion.
 * `Filter.le_of_eventually_le_and_le`: bounds `a ≤ f x ≤ b` holding eventually along a nontrivial
   filter force `a ≤ b`.
+* `Filter.eventually_mem_map_val`: along the image of a filter on a subtype `s`, points eventually
+  lie in `s`.
 * `Equiv.symm_comp_eventuallyEq_iff`: the eventual form of `Equiv.symm_comp_eq`, which moves an
   equivalence to the other side of an eventual equality.
 -/
@@ -40,6 +43,10 @@ theorem le_of_eventually_le_and_le {β : Type*} [Preorder β] {l : Filter α} [l
     {f : α → β} {a b : β} (h : ∀ᶠ x in l, a ≤ f x ∧ f x ≤ b) : a ≤ b :=
   let ⟨_, hx⟩ := h.exists
   hx.1.trans hx.2
+
+/-- Along the image in `α` of a filter on the subtype `s`, points eventually lie in `s`. -/
+theorem eventually_mem_map_val {s : Set α} (l : Filter s) : ∀ᶠ x in map ((↑) : s → α) l, x ∈ s :=
+  eventually_map.2 (Eventually.of_forall Subtype.property)
 
 end Filter
 

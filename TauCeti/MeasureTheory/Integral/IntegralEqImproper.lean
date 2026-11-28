@@ -69,6 +69,13 @@ these preimages converge as the radii `r i` tend to infinity has the limit as it
 over the whole space (`TauCeti.lintegral_ofReal_eq_of_tendsto_setIntegral_closedBall`). For
 example, the plane `ℝ × ℝ` is exhausted by the Euclidean discs `{‖w‖ ≤ r}` of `ℂ`.
 
+For an order-connected set `s ⊆ ℝ` (an interval) and a function integrable on each tail
+`(x, ∞) ∩ s` with `x ∈ s`, the tail integrals tend to `0` as `x` tends to the right end of `s`
+within `s`, that is along the image `map (↑) atTop` of the filter `atTop` on the subtype `s`
+(`TauCeti.tendsto_setIntegral_Ioi_inter_map_val_atTop`); dually, the integrals over
+`(-∞, x) ∩ s` tend to `0` along `map (↑) atBot`
+(`TauCeti.tendsto_setIntegral_Iio_inter_map_val_atBot`).
+
 For improper interval integrals on a ray `[a, ∞)`,
 `MeasureTheory.LocallyIntegrableOn.tendsto_intervalIntegral_sub` shifts the lower endpoint between
 any two points of `[a, ∞)`, while
@@ -469,6 +476,56 @@ theorem norm_integral_Ioi_le_of_three_pieces {E : Type*} [NormedAddCommGroup E]
     hφ₂ hφ₃, ← add_assoc]
   exact (norm_add₃_le).trans (add_le_add_three (hn measurableSet_Ioc hi₁ hb₁)
     (hn measurableSet_Ioc hi₂ hb₂) (hn measurableSet_Ioi hi₃ hb₃))
+
+section Tails
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure ℝ} {g : ℝ → E}
+  {s : Set ℝ}
+
+/-- **Right tails of an integral vanish.** Let `s` be order-connected (an interval). If `g` is
+integrable on each tail `(x, ∞) ∩ s` with `x ∈ s`, then `∫_{(x, ∞) ∩ s} g → 0` as `x` tends to
+the right end of `s` within `s`. -/
+theorem tendsto_setIntegral_Ioi_inter_map_val_atTop (hs : s.OrdConnected)
+    (hg : ∀ x ∈ s, IntegrableOn g (Ioi x ∩ s) μ) :
+    Tendsto (fun x ↦ ∫ v in Ioi x ∩ s, g v ∂μ) (map ((↑) : s → ℝ) atTop) (𝓝 0) := by
+  rcases isEmpty_or_nonempty s with hs0 | hne
+  · rw [filter_eq_bot_of_isEmpty (atTop : Filter s), map_bot]
+    exact tendsto_bot
+  obtain ⟨x₀⟩ := hne
+  have h := tendsto_setIntegral_of_antitone (μ := μ) (f := g)
+    (s := fun x : s ↦ Ioi (x : ℝ) ∩ s) (fun _ ↦ measurableSet_Ioi.inter hs.measurableSet)
+    (fun _ _ hxy ↦ inter_subset_inter_left _ (Ioi_subset_Ioi hxy)) ⟨x₀, hg x₀ x₀.property⟩
+  have h0 : ⋂ x : s, Ioi (x : ℝ) ∩ s = ∅ := eq_empty_of_forall_notMem fun v hv ↦ by
+    have hv' := mem_iInter.1 hv
+    exact lt_irrefl v (hv' ⟨v, (hv' x₀).2⟩).1
+  rw [h0, setIntegral_empty] at h
+  exact tendsto_map'_iff.2 h
+
+/-- **Left tails of an integral vanish.** Let `s` be order-connected (an interval). If `g` is
+integrable on each tail `(-∞, x) ∩ s` with `x ∈ s`, then `∫_{(-∞, x) ∩ s} g → 0` as `x` tends
+to the left end of `s` within `s`. -/
+theorem tendsto_setIntegral_Iio_inter_map_val_atBot (hs : s.OrdConnected)
+    (hg : ∀ x ∈ s, IntegrableOn g (Iio x ∩ s) μ) :
+    Tendsto (fun x ↦ ∫ v in Iio x ∩ s, g v ∂μ) (map ((↑) : s → ℝ) atBot) (𝓝 0) := by
+  rcases isEmpty_or_nonempty s with hs0 | hne
+  · rw [filter_eq_bot_of_isEmpty (atBot : Filter s), map_bot]
+    exact tendsto_bot
+  obtain ⟨x₀⟩ := hne
+  -- the sets `(-∞, x) ∩ s` decrease as `x` decreases, that is along `atTop` of the order dual
+  -- `sᵒᵈ`, which is `atBot` of `s` by definition (as in Mathlib's dual lemmas, e.g. `atBot_basis`)
+  have h := tendsto_setIntegral_of_antitone (μ := μ) (f := g)
+    (s := fun x : sᵒᵈ ↦ Iio ((OrderDual.ofDual x : s) : ℝ) ∩ s)
+    (fun _ ↦ measurableSet_Iio.inter hs.measurableSet)
+    (fun _ _ hxy ↦ inter_subset_inter_left _ (Iio_subset_Iio hxy))
+    ⟨OrderDual.toDual x₀, hg x₀ x₀.property⟩
+  have h0 : ⋂ x : sᵒᵈ, Iio ((OrderDual.ofDual x : s) : ℝ) ∩ s = ∅ :=
+    eq_empty_of_forall_notMem fun v hv ↦ by
+      have hv' := mem_iInter.1 hv
+      exact lt_irrefl v (hv' (OrderDual.toDual ⟨v, (hv' (OrderDual.toDual x₀)).2⟩)).1
+  rw [h0, setIntegral_empty] at h
+  exact tendsto_map'_iff.2 h
+
+end Tails
 
 end TauCeti
 
